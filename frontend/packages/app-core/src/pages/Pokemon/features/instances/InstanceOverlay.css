@@ -168,16 +168,9 @@
   cursor: default;
 }
 
-/* caught mode layout */
-.instance-overlay.caught-mode {
-  align-items: stretch;
+:is(.instance-overlay.caught-mode, .instance-overlay.trade-mode) {
   --overlay-close-button-size: clamp(50px, 12vw, 80px);
   --overlay-close-button-bottom: 20px;
-  --overlay-close-button-gap: 20px;
-  --caught-scroll-tail-pad: 0px;
-  --caught-shell-max-width: 500px;
-  --caught-shell-width: min(95vw, var(--caught-shell-max-width));
-  --instance-shell-side-gap: 2.5vw;
   --instance-nav-hit-size: 34px;
   --instance-nav-x-outset: 32px;
   --instance-nav-y-nudge: 15px;
@@ -185,18 +178,21 @@
   overscroll-behavior-x: contain;
 }
 
+/* caught mode layout */
+.instance-overlay.caught-mode {
+  align-items: stretch;
+  --overlay-close-button-gap: 20px;
+  --caught-scroll-tail-pad: 0px;
+  --caught-shell-max-width: 500px;
+  --caught-shell-width: min(95vw, var(--caught-shell-max-width));
+  --instance-shell-side-gap: 2.5vw;
+}
+
 .instance-overlay.trade-mode {
-  --overlay-close-button-size: clamp(50px, 12vw, 80px);
-  --overlay-close-button-bottom: 20px;
-  --instance-nav-hit-size: 34px;
-  --instance-nav-x-outset: 32px;
-  --instance-nav-y-nudge: 15px;
   --trade-pane-max-width: 500px;
   --trade-shell-max-width: calc((var(--trade-pane-max-width) * 2) + clamp(12px, 2vw, 18px));
   --trade-shell-width: min(var(--trade-shell-max-width), 96vw);
   --instance-shell-side-gap: calc((100vw - var(--trade-shell-width)) / 2);
-  touch-action: pan-y;
-  overscroll-behavior-x: contain;
 }
 
 @media (min-width: 527px) {
@@ -252,12 +248,13 @@
 }
 
 /* the centered content column/panel */
-.caught-column {
-  /* Keep panel start fixed so larger sprites can overlap behind the panel */
+:is(.caught-column, .trade-pane-shell--offer) {
   --caught-image-stage-size: 296px;
   --caught-stage-lift: 48px;
   --panel-offset: 240px;
+}
 
+.caught-column {
   flex: 0 0 var(--caught-shell-width);
   width: var(--caught-shell-width);
   min-width: var(--caught-shell-width);
@@ -275,7 +272,7 @@
 }
 
 /* draw the #333 panel starting lower down, exposing the image above */
-.caught-column::before {
+:is(.caught-column, .trade-pane-shell--offer)::before {
   content: "";
   position: absolute;
   top: var(--panel-offset);
@@ -289,7 +286,7 @@
 }
 
 /* keep all content above the pseudo background */
-.caught-column > * {
+:is(.caught-column, .trade-pane-shell--offer) > * {
   position: relative;
   z-index: 1;
 }
@@ -362,30 +359,6 @@
   min-height: 100%;
   box-sizing: border-box;
   position: relative;
-}
-
-.trade-pane-shell--offer {
-  --caught-image-stage-size: 296px;
-  --caught-stage-lift: 48px;
-  --panel-offset: 240px;
-}
-
-.trade-pane-shell--offer::before {
-  content: "";
-  position: absolute;
-  top: var(--panel-offset);
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: #333;
-  border-radius: 12px;
-  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.35);
-  z-index: 0;
-}
-
-.trade-pane-shell--offer > * {
-  position: relative;
-  z-index: 1;
 }
 
 .trade-pane-shell--targets {
@@ -523,12 +496,6 @@
   background: var(--io-bg, var(--light-caught-surface));
 }
 
-:root[data-theme='light'] .instance-overlay.caught-mode .caught-column::before {
-  background: linear-gradient(180deg, rgba(248, 255, 249, 0.98) 0%, rgba(228, 241, 235, 0.96) 100%);
-  border: 1px solid rgba(157, 181, 173, 0.42);
-  box-shadow: var(--light-caught-shadow);
-}
-
 :root[data-theme='light'] :is(.instance-overlay.caught-mode, .instance-overlay.trade-mode) .instance-nav-arrow {
   color: var(--light-text-primary);
   text-shadow: 0 0 4px rgba(248, 255, 249, 0.72);
@@ -545,7 +512,7 @@
   color: var(--light-text-primary);
 }
 
-:root[data-theme='light'] .trade-pane-shell--offer::before {
+:root[data-theme='light'] :is(.instance-overlay.caught-mode .caught-column, .trade-pane-shell--offer)::before {
   background: linear-gradient(180deg, rgba(248, 255, 249, 0.98) 0%, rgba(228, 241, 235, 0.96) 100%);
   border: 1px solid rgba(157, 181, 173, 0.42);
   box-shadow: var(--light-caught-shadow);

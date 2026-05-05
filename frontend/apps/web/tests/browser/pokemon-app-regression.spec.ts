@@ -46,6 +46,51 @@ test.describe('pokemon app browser regressions', () => {
     ).toEqual([]);
   });
 
+  test('keeps the Pokemon grid scroll area bounded to the viewport', async ({
+    page,
+  }, testInfo) => {
+    const diagnostics = attachBrowserDiagnostics(page, testInfo);
+
+    try {
+      await openPokemonPage(page);
+
+      const metrics = await page.evaluate(() => {
+        const wrapper = document.querySelector('.grid-wrapper');
+        const container = document.querySelector('.grid-container');
+        if (!wrapper || !container) {
+          throw new Error('Pokemon grid did not render expected scroll elements');
+        }
+
+        const wrapperRect = wrapper.getBoundingClientRect();
+        const containerRect = container.getBoundingClientRect();
+        return {
+          viewportHeight: window.innerHeight,
+          viewportWidth: window.innerWidth,
+          wrapperHeight: wrapperRect.height,
+          containerHeight: containerRect.height,
+          wrapperOverflowY: window.getComputedStyle(wrapper).overflowY,
+          containerOverflowY: window.getComputedStyle(container).overflowY,
+        };
+      });
+
+      const expectedOffset = metrics.viewportWidth <= 480 ? 130 : 164;
+      expect(
+        Math.abs(metrics.wrapperHeight - (metrics.viewportHeight - expectedOffset)),
+      ).toBeLessThanOrEqual(2);
+      expect(metrics.containerHeight).toBeCloseTo(metrics.wrapperHeight, 0);
+      expect(metrics.containerOverflowY).toBe('auto');
+      expect(metrics.wrapperOverflowY).toBe('visible');
+    } finally {
+      await diagnostics.flush();
+    }
+
+    const blockingErrors = diagnostics.blockingErrors();
+    expect(
+      blockingErrors,
+      `browser diagnostics should not include runtime errors:\n${JSON.stringify(blockingErrors, null, 2)}`,
+    ).toEqual([]);
+  });
+
   test('opens a caught instance overlay with scroll-safe layout', async ({
     page,
   }, testInfo) => {
