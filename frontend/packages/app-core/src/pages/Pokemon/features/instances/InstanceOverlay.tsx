@@ -304,7 +304,7 @@ const InstanceOverlay: React.FC<InstanceOverlayProps> = ({
           </div>
         );
       }
-      case 'wanted':
+      case 'wanted': {
         if (!activePokemon) return null;
         const wantedInstanceKey =
           getOverlayIdentityKey(activePokemon) ??
@@ -335,6 +335,7 @@ const InstanceOverlay: React.FC<InstanceOverlayProps> = ({
             </div>
           </div>
         );
+      }
       default:
         return null;
     }
