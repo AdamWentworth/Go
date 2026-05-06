@@ -9,6 +9,18 @@ type LoadingProbeWindow = Window & {
   __e2eLoadingOverlayObserver?: MutationObserver;
 };
 
+type GridOverlapSample = {
+  first: string;
+  second: string;
+  overlapWidth: number;
+  overlapHeight: number;
+};
+
+type GridLayoutProbeWindow = Window & {
+  __e2ePokemonGridOverlapSamples?: GridOverlapSample[];
+  __e2eStopPokemonGridLayoutProbe?: boolean;
+};
+
 type TouchPoint = {
   clientX: number;
   clientY: number;
@@ -104,6 +116,224 @@ export async function disconnectLoadingOverlayProbe(page: Page) {
     delete targetWindow.__e2eLoadingOverlayObserver;
     delete targetWindow.__e2eLoadingOverlaySeen;
   });
+}
+
+export async function installPokemonGridLayoutProbe(page: Page) {
+  await page.addInitScript(() => {
+    const targetWindow = window as GridLayoutProbeWindow;
+    targetWindow.__e2ePokemonGridOverlapSamples = [];
+    targetWindow.__e2eStopPokemonGridLayoutProbe = false;
+
+    const describeCard = (element: Element, index: number) =>
+      element.getAttribute('aria-label') || `card-${index}`;
+
+    const isInActiveSliderPanel = (element: Element) => {
+      const container = document.querySelector<HTMLElement>('.view-slider-container');
+      const panel = element.closest<HTMLElement>('.slider-panel');
+      if (!container || !panel) return true;
+
+      const containerRect = container.getBoundingClientRect();
+      const panelRect = panel.getBoundingClientRect();
+      const visibleWidth =
+        Math.min(panelRect.right, containerRect.right) -
+        Math.max(panelRect.left, containerRect.left);
+      const visibleHeight =
+        Math.min(panelRect.bottom, containerRect.bottom) -
+        Math.max(panelRect.top, containerRect.top);
+
+      return (
+        visibleWidth > containerRect.width * 0.5 &&
+        visibleHeight > containerRect.height * 0.5
+      );
+    };
+
+    const intersectsViewport = (rect: DOMRect) => {
+      const container = document.querySelector<HTMLElement>('.view-slider-container');
+      const bounds = container?.getBoundingClientRect() ?? {
+        left: 0,
+        top: 0,
+        right: window.innerWidth,
+        bottom: window.innerHeight,
+      };
+
+      return (
+        rect.right > bounds.left &&
+        rect.left < bounds.right &&
+        rect.bottom > bounds.top &&
+        rect.top < bounds.bottom
+      );
+    };
+
+    const sample = () => {
+      const target = window as GridLayoutProbeWindow;
+      if (target.__e2eStopPokemonGridLayoutProbe) return;
+
+      if (document.querySelector('.app-loading-overlay')) {
+        window.requestAnimationFrame(sample);
+        return;
+      }
+
+      const cards = Array.from(
+        document.querySelectorAll<HTMLElement>('.pokemon-grid-cell.visible .pokemon-card'),
+      )
+        .map((element, index) => {
+          const cell = element.closest<HTMLElement>('.pokemon-grid-cell');
+          const cellStyle = cell ? window.getComputedStyle(cell) : null;
+          const cellOpacity = cellStyle ? Number(cellStyle.opacity) : 0;
+          return {
+            element,
+            label: describeCard(element, index),
+            rect: element.getBoundingClientRect(),
+            cellOpacity,
+            cellVisibility: cellStyle?.visibility,
+          };
+        })
+        .filter(
+          ({ element, rect, cellOpacity, cellVisibility }) =>
+            cellOpacity > 0.95 &&
+            cellVisibility === 'visible' &&
+            rect.width > 0 &&
+            rect.height > 0 &&
+            intersectsViewport(rect) &&
+            isInActiveSliderPanel(element),
+        );
+
+      for (let i = 0; i < cards.length; i += 1) {
+        for (let j = i + 1; j < cards.length; j += 1) {
+          const first = cards[i];
+          const second = cards[j];
+          const overlapWidth =
+            Math.min(first.rect.right, second.rect.right) -
+            Math.max(first.rect.left, second.rect.left);
+          const overlapHeight =
+            Math.min(first.rect.bottom, second.rect.bottom) -
+            Math.max(first.rect.top, second.rect.top);
+
+          if (overlapWidth > 2 && overlapHeight > 2) {
+            target.__e2ePokemonGridOverlapSamples?.push({
+              first: first.label,
+              second: second.label,
+              overlapWidth,
+              overlapHeight,
+            });
+          }
+        }
+      }
+
+      window.requestAnimationFrame(sample);
+    };
+
+    window.requestAnimationFrame(sample);
+  });
+}
+
+export async function expectNoPokemonGridOverlapObserved(page: Page) {
+  await page.evaluate(() => {
+    (window as GridLayoutProbeWindow).__e2ePokemonGridOverlapSamples = [];
+  });
+  await page.waitForTimeout(250);
+  await expect
+    .poll(() =>
+      page.evaluate(
+        () => (window as GridLayoutProbeWindow).__e2ePokemonGridOverlapSamples ?? [],
+      ),
+    )
+    .toEqual([]);
+}
+
+export async function disconnectPokemonGridLayoutProbe(page: Page) {
+  await page.evaluate(() => {
+    const targetWindow = window as GridLayoutProbeWindow;
+    targetWindow.__e2eStopPokemonGridLayoutProbe = true;
+  });
+}
+
+export async function expectVisiblePokemonCardsDoNotOverlap(page: Page) {
+  await expect(page.locator('.pokemon-grid-cell.visible .pokemon-card').first()).toBeVisible();
+
+  const overlaps = await page.evaluate(() => {
+    const isInActiveSliderPanel = (element: Element) => {
+      const container = document.querySelector<HTMLElement>('.view-slider-container');
+      const panel = element.closest<HTMLElement>('.slider-panel');
+      if (!container || !panel) return true;
+
+      const containerRect = container.getBoundingClientRect();
+      const panelRect = panel.getBoundingClientRect();
+      const visibleWidth =
+        Math.min(panelRect.right, containerRect.right) -
+        Math.max(panelRect.left, containerRect.left);
+      const visibleHeight =
+        Math.min(panelRect.bottom, containerRect.bottom) -
+        Math.max(panelRect.top, containerRect.top);
+
+      return (
+        visibleWidth > containerRect.width * 0.5 &&
+        visibleHeight > containerRect.height * 0.5
+      );
+    };
+
+    const intersectsViewport = (rect: DOMRect) => {
+      const container = document.querySelector<HTMLElement>('.view-slider-container');
+      const bounds = container?.getBoundingClientRect() ?? {
+        left: 0,
+        top: 0,
+        right: window.innerWidth,
+        bottom: window.innerHeight,
+      };
+
+      return (
+        rect.right > bounds.left &&
+        rect.left < bounds.right &&
+        rect.bottom > bounds.top &&
+        rect.top < bounds.bottom
+      );
+    };
+
+    const cards = Array.from(
+      document.querySelectorAll<HTMLElement>('.pokemon-grid-cell.visible .pokemon-card'),
+    )
+      .map((element, index) => ({
+        element,
+        label: element.getAttribute('aria-label') || `card-${index}`,
+        rect: element.getBoundingClientRect(),
+      }))
+      .filter(
+        ({ element, rect }) =>
+          rect.width > 0 &&
+          rect.height > 0 &&
+          intersectsViewport(rect) &&
+          isInActiveSliderPanel(element),
+      );
+
+    const found: GridOverlapSample[] = [];
+    for (let i = 0; i < cards.length; i += 1) {
+      for (let j = i + 1; j < cards.length; j += 1) {
+        const first = cards[i];
+        const second = cards[j];
+        const overlapWidth =
+          Math.min(first.rect.right, second.rect.right) -
+          Math.max(first.rect.left, second.rect.left);
+        const overlapHeight =
+          Math.min(first.rect.bottom, second.rect.bottom) -
+          Math.max(first.rect.top, second.rect.top);
+
+        if (overlapWidth > 2 && overlapHeight > 2) {
+          found.push({
+            first: first.label,
+            second: second.label,
+            overlapWidth,
+            overlapHeight,
+          });
+        }
+      }
+    }
+    return found;
+  });
+
+  expect(
+    overlaps,
+    `visible Pokemon cards should not overlap:\n${JSON.stringify(overlaps, null, 2)}`,
+  ).toEqual([]);
 }
 
 export async function dispatchTouchSwipe(

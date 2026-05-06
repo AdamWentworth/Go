@@ -1,6 +1,12 @@
+import { existsSync } from 'node:fs';
+import path from 'node:path';
+
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { normalizeAssetUrlsDeep, resolveAssetUrl } from '@/utils/assetUrl';
+
+const assetPath = (url: string) =>
+  path.resolve(process.cwd(), '../../../assets', url.replace(/^\/images\//, 'images/'));
 
 describe('assetUrl', () => {
   afterEach(() => {
@@ -40,5 +46,18 @@ describe('assetUrl', () => {
     expect(normalized.type_1_icon).toBe('https://pokemongonexus.com/images/types/grass.png');
     expect(normalized.nested.sprite_url).toBe('https://pokemongonexus.com/images/sprites/pokemon_1.png');
     expect(normalized.nested.ignored).toBe('/not-an-asset-field.png');
+  });
+
+  it('keeps TCG Pikachu costume URLs aligned with tracked asset casing', () => {
+    const urls = [
+      '/images/costumes/pokemon_25_TCG_default.png',
+      '/images/costumes_shiny/pokemon_25_TCG_shiny.png',
+      '/images/female/costumes/female_pokemon_25_TCG_default.png',
+      '/images/female/costumes_shiny/female_pokemon_25_TCG_shiny.png',
+    ];
+
+    for (const url of urls) {
+      expect(existsSync(assetPath(url)), url).toBe(true);
+    }
   });
 });
