@@ -3,7 +3,7 @@ export type PokemonMaxMoveValue = string | number | null;
 export interface PokemonInstance {
   // identity
   instance_id?: string;
-  variant_id: string | null;
+  variant_id: string;
   user_id?: string;
   pokemon_id: number;
   nickname: string | null;

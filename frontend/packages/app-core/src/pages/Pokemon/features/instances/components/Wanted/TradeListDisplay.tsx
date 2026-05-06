@@ -11,7 +11,7 @@ interface ParentPokemonRef {
   currentImage?: string;
   instanceData?: {
     instance_id?: string;
-    variant_id?: string | null;
+    variant_id?: string;
   };
 }
 
@@ -23,7 +23,7 @@ interface TradeEntry {
   currentImage?: string;
   image_url?: string;
   image_url_shiny?: string;
-  variant_id?: string | null;
+  variant_id?: string;
   variantType?: string;
   form?: string | null;
   mirror?: boolean;

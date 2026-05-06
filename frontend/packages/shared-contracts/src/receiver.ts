@@ -7,8 +7,9 @@ export const receiverContract = {
   },
 } as const;
 
-export type ReceiverPokemonUpdate = Partial<PokemonInstance> & {
+export type ReceiverPokemonUpdate = Omit<Partial<PokemonInstance>, 'variant_id'> & {
   instance_id: string;
+  variant_id?: string;
 };
 
 export type ReceiverTradeUpdate = Partial<TradeRecord> & {

@@ -28,6 +28,10 @@ func parseAndUpsertPokemon(data map[string]interface{}, userID string, messageTr
 			continue
 		}
 
+		if hasExplicitEmptyString(pm, "variant_id") {
+			logrus.Warnf("Invalid empty variant_id for instance %s; omit variant_id for patch/delete semantics or send a non-empty string.", instanceID)
+			continue
+		}
 		variantID := parseNullableString(pm["variant_id"])
 		variantForRegistration := normalizeOptionalString(variantID)
 
@@ -96,6 +100,7 @@ func parseAndUpsertPokemon(data map[string]interface{}, userID string, messageTr
 
 		var existingInstance PokemonInstance
 		tx := DB.Where("instance_id = ?", instanceID).First(&existingInstance)
+		existingVariantID := ""
 
 		// Compare last_update
 		msgLastUpdate := int64(safeFloat(pm["last_update"], 0))
@@ -109,11 +114,19 @@ func parseAndUpsertPokemon(data map[string]interface{}, userID string, messageTr
 				logrus.Infof("Ignored older or same update for instance %s", instanceID)
 				continue
 			}
-			if variantForRegistration == "" {
-				variantForRegistration = normalizeOptionalString(existingInstance.VariantID)
-			}
+			existingVariantID = normalizeOptionalString(existingInstance.VariantID)
 		} else if !errors.Is(tx.Error, gorm.ErrRecordNotFound) {
 			logrus.Errorf("Error finding instance %s: %v", instanceID, tx.Error)
+			continue
+		}
+
+		var resolvedVariant bool
+		variantID, variantForRegistration, resolvedVariant = resolveTrackedVariantID(
+			variantID,
+			existingVariantID,
+		)
+		if !resolvedVariant {
+			logrus.Warnf("Missing required variant_id for tracked instance %s; skipping.", instanceID)
 			continue
 		}
 

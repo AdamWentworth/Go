@@ -2,7 +2,7 @@ interface EntityRef {
   instanceData?: {
     instance_id?: string | null;
   } | null;
-  variant_id?: string | null;
+  variant_id?: string;
 }
 
 export const getEntityKey = (value: EntityRef | null | undefined): string => {

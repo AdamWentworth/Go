@@ -12,7 +12,7 @@ const log = createScopedLogger('createMirrorEntry');
 type GenericMap = Record<string, unknown>;
 
 export interface MirrorSourcePokemon {
-  variant_id?: string | null;
+  variant_id?: string;
   pokemon_id?: number | string;
   species_name?: string;
   name?: string;
@@ -20,7 +20,7 @@ export interface MirrorSourcePokemon {
   image_url?: string;
   instanceData?: {
     instance_id?: string;
-    variant_id?: string | null;
+    variant_id?: string;
     pokemon_id?: number | string;
     shiny?: boolean;
     [key: string]: unknown;
@@ -30,7 +30,7 @@ export interface MirrorSourcePokemon {
 
 export interface MirrorInstance extends Partial<PokemonInstance>, GenericMap {
   instance_id: string;
-  variant_id?: string | null;
+  variant_id?: string;
   pokemon_id?: number;
   is_caught: boolean;
   is_for_trade: boolean;

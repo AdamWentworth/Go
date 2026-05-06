@@ -58,7 +58,7 @@ export function parseVariantId(input: string): {
 
 /** Canonical variant key accessor. */
 export function getVariantIdFrom(input: {
-  variant_id?: string | null;
+  variant_id?: string;
 } | null | undefined): string {
   return String(input?.variant_id ?? '');
 }
@@ -66,7 +66,7 @@ export function getVariantIdFrom(input: {
 /** Preferred entity key for mutations: instance_id first, variant_id second. */
 export function getEntityKeyFrom(input: {
   instance_id?: string | null;
-  variant_id?: string | null;
+  variant_id?: string;
   instanceData?: { instance_id?: string | null } | null;
 } | null | undefined): string {
   return String(
@@ -142,4 +142,3 @@ export function determineVariantId(pokemon: PokemonVariant): string {
   // Final fallback: just use the ID if no image match
   return paddedId;
 }
-

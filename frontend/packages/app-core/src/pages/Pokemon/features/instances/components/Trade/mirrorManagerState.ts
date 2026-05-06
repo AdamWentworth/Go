@@ -15,9 +15,9 @@ export type MirrorPokemon = Omit<
   instanceData?: Partial<PokemonInstance> & {
     instance_id?: string;
     mirror?: boolean;
-    variant_id?: string | null;
+    variant_id?: string;
   };
-  variant_id?: string | null;
+  variant_id?: string;
   pokemon_id?: number | string;
   species_name?: string;
   currentImage?: string;

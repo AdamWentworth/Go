@@ -2,7 +2,7 @@ import { parseVariantId } from '@/utils/PokemonIDUtils';
 import type { PokemonVariant } from '@/types/pokemonVariants';
 
 type MaybeInstance = {
-  variant_id?: string | null;
+  variant_id?: string;
   pokemon_id?: number | null;
   shiny?: boolean | null;
   shadow?: boolean | null;

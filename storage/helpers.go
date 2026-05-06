@@ -45,6 +45,25 @@ func firstNonEmptyString(data map[string]interface{}, fields ...string) string {
 	return ""
 }
 
+func hasExplicitEmptyString(data map[string]interface{}, field string) bool {
+	value, ok := data[field]
+	return ok && parseNullableString(value) == nil
+}
+
+func resolveTrackedVariantID(incoming *string, existing string) (*string, string, bool) {
+	variantID := normalizeOptionalString(incoming)
+	if variantID == "" {
+		variantID = strings.TrimSpace(existing)
+	}
+	if variantID == "" {
+		return incoming, "", false
+	}
+	if incoming == nil {
+		incoming = &variantID
+	}
+	return incoming, variantID, true
+}
+
 // parseOptionalBool tries to convert a value to bool, defaults to false if nil/invalid.
 func parseOptionalBool(value interface{}) bool {
 	if value == nil {

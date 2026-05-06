@@ -5,9 +5,12 @@ import type {
   ReceiverPokemonUpdate,
 } from '@shared-contracts/receiver';
 
+type ReceiverPokemonVariantId = ReceiverPokemonUpdate['variant_id'];
+const receiverVariantIdRejectsNull: null extends ReceiverPokemonVariantId ? never : true = true;
+
 const backendInstance = {
   instance_id: 'inst-1',
-  variant_id: null,
+  variant_id: '0025-default',
   user_id: 'user-1',
   pokemon_id: 25,
   nickname: null,
@@ -72,18 +75,17 @@ const backendInstance = {
 } satisfies PokemonInstance;
 
 describe('instance and receiver shared contracts', () => {
-  it('accepts backend-shaped instance rows from users/search/storage services', () => {
-    expect(backendInstance.variant_id).toBeNull();
+  it('accepts backend-shaped persisted instance rows from users/search/storage services', () => {
+    expect(backendInstance.variant_id).toBe('0025-default');
     expect(backendInstance.max_attack).toBe('3');
     expect(backendInstance.friendship_level).toBeNull();
   });
 
-  it('types receiver pokemon updates with the instance_id transport field', () => {
-	    const update = {
-	      instance_id: 'inst-1',
-	      variant_id: null,
-	      pokemon_id: 25,
-	      is_caught: true,
+  it('types receiver pokemon updates as patch payloads with the instance_id transport field', () => {
+    const update = {
+      instance_id: 'inst-1',
+      pokemon_id: 25,
+      is_caught: true,
       max_attack: '3',
       friendship_level: 4,
       last_update: 1_778_000_000_000,
@@ -93,9 +95,10 @@ describe('instance and receiver shared contracts', () => {
       location: null,
       pokemonUpdates: [update],
       tradeUpdates: [],
-	    } satisfies ReceiverBatchedUpdatesPayload;
+    } satisfies ReceiverBatchedUpdatesPayload;
 
-	    expect(payload.pokemonUpdates[0].instance_id).toBe('inst-1');
-	    expect(payload.pokemonUpdates[0].max_attack).toBe('3');
-	  });
+    expect(receiverVariantIdRejectsNull).toBe(true);
+    expect(payload.pokemonUpdates[0].instance_id).toBe('inst-1');
+    expect(payload.pokemonUpdates[0].max_attack).toBe('3');
+  });
 });
