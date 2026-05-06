@@ -3,6 +3,34 @@
 import { generationMap, pokemonTypes } from '@/utils/constants';
 import type { PokemonVariant } from "@/types/pokemonVariants";
 
+function normalizeSearchText(value: string): string {
+  return value
+    .toLowerCase()
+    .normalize('NFKD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9]+/g, ' ')
+    .trim();
+}
+
+function matchesNamePrefix(pokemon: PokemonVariant, term: string): boolean {
+  const normalizedTerm = normalizeSearchText(term);
+  if (!normalizedTerm) return true;
+
+  const names = [pokemon.species_name, pokemon.name].filter(
+    (value): value is string => typeof value === 'string' && value.trim().length > 0,
+  );
+
+  return names.some((name) => {
+    const normalizedName = normalizeSearchText(name);
+    if (!normalizedName) return false;
+    if (normalizedName.startsWith(normalizedTerm)) return true;
+
+    return normalizedName
+      .split(' ')
+      .some((part) => part.startsWith(normalizedTerm));
+  });
+}
+
 export function checkTermMatches(
   pokemon: PokemonVariant,
   term: string
@@ -59,7 +87,7 @@ export function checkTermMatches(
              pokemon.variantType?.toLowerCase().includes('gigantamax') || false;
   else if (checks.dynamax) result = pokemon.variantType?.toLowerCase().includes('dynamax') ?? false;
   else if (checks.gigantamax) result = pokemon.variantType?.toLowerCase().includes('gigantamax') ?? false;
-  else result = pokemon.species_name?.toLowerCase().includes(term) ?? false;
+  else result = matchesNamePrefix(pokemon, term);
 
   return isNegation ? !result : result;
 }

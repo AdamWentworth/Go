@@ -31,6 +31,7 @@
   --color-search-section-title: #fff;
   --color-search-section-text: #fff;
   --color-search-section-input-bg: #fff;
+  --color-search-section-input-text: #111;
   --color-search-section-checkbox-border: #fff;
   --color-search-section-arrow-filter: none;
   --color-app-surface: #111;
@@ -149,6 +150,7 @@
   --color-search-section-title: var(--light-text-primary);
   --color-search-section-text: var(--light-text-primary);
   --color-search-section-input-bg: var(--light-input-bg);
+  --color-search-section-input-text: var(--light-text-primary);
   --color-search-section-checkbox-border: var(--light-border-strong);
   --color-search-section-arrow-filter: var(--light-filter-mid-invert);
   --color-app-surface: var(--light-surface-base);

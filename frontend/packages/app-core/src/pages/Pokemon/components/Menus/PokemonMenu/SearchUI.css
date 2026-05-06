@@ -67,6 +67,9 @@
   padding: 0 20px;
   font-size: 16px;
   background-color: var(--color-search-section-input-bg);
+  color: var(--color-search-section-input-text, #111);
+  caret-color: var(--color-search-section-input-text, #111);
+  -webkit-text-fill-color: var(--color-search-section-input-text, #111);
   border: none;
   outline: none;
   border-radius: 9999px;
