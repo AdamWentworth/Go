@@ -1,5 +1,9 @@
 import type { PokemonVariant } from '@/types/pokemonVariants';
 import type { Fusion } from '@/types/pokemonSubTypes';
+import {
+  buildTypeIcon,
+  resolvePokemonDisplayActiveFusionEntry,
+} from './displayHelpers';
 
 type FusionDisplayState = {
   is_fused: boolean;
@@ -41,51 +45,6 @@ export type ResolveFusionDisplayDataResult = {
   sizes?: PokemonVariant['sizes'];
   source: 'base' | 'fusion';
   fusionId: number | null;
-};
-
-const normalizeToken = (value: string | null | undefined): string =>
-  String(value ?? '')
-    .trim()
-    .toLowerCase()
-    .replace(/[_-]+/g, ' ')
-    .replace(/\s+/g, ' ');
-
-const parseFusionId = (value: unknown): number | null => {
-  if (typeof value === 'number' && Number.isFinite(value)) return value;
-  if (typeof value === 'string' && value.trim().length > 0) {
-    const parsed = Number.parseInt(value, 10);
-    return Number.isFinite(parsed) ? parsed : null;
-  }
-  return null;
-};
-
-const buildTypeIcon = (typeName?: string | null): string | undefined => {
-  const normalized = typeof typeName === 'string' ? typeName.trim().toLowerCase() : '';
-  return normalized ? `/images/types/${normalized}.png` : undefined;
-};
-
-const resolveActiveFusion = (
-  fusionEntries: Fusion[],
-  fusionForm: string | null,
-  storedFusionObject: Record<string, unknown> | null | undefined,
-): Fusion | undefined => {
-  const normalizedFusionForm = normalizeToken(fusionForm);
-  if (normalizedFusionForm.length > 0) {
-    const byForm = fusionEntries.find(
-      (entry) => normalizeToken(entry.name) === normalizedFusionForm,
-    );
-    if (byForm) return byForm;
-  }
-
-  const storedFusionId =
-    parseFusionId(storedFusionObject?.fusion_id) ??
-    parseFusionId(storedFusionObject?.id);
-  if (storedFusionId != null) {
-    const byId = fusionEntries.find((entry) => entry.fusion_id === storedFusionId);
-    if (byId) return byId;
-  }
-
-  return fusionEntries[0];
 };
 
 const resolveFusionVariant = ({
@@ -138,11 +97,12 @@ export const resolveFusionDisplayData = ({
   const fusionEntries = Array.isArray(pokemon.fusion) ? pokemon.fusion : [];
   if (fusionEntries.length === 0) return base;
 
-  const selectedFusion = resolveActiveFusion(
+  const selectedFusion = resolvePokemonDisplayActiveFusionEntry({
+    isFused: true,
+    fusionForm: fusion.fusion_form,
     fusionEntries,
-    fusion.fusion_form,
-    fusion.storedFusionObject,
-  );
+    storedFusion: fusion.storedFusionObject,
+  });
   if (!selectedFusion) return base;
 
   const fusionId =
@@ -177,4 +137,3 @@ export const resolveFusionDisplayData = ({
     fusionId,
   };
 };
-

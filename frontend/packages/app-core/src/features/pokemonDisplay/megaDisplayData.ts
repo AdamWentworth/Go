@@ -1,5 +1,11 @@
 import type { PokemonVariant } from '@/types/pokemonVariants';
 import type { MegaEvolution } from '@/types/pokemonSubTypes';
+import {
+  buildTypeIcon,
+  normalizeFormToken,
+  normalizeTypeName,
+  resolvePokemonDisplayActiveMegaEvolution,
+} from './displayHelpers';
 
 type MegaDisplayState = {
   is_mega: boolean;
@@ -43,13 +49,6 @@ export type ResolveMegaDisplayDataResult = {
   megaVariantType: string | null;
 };
 
-const normalizeToken = (value: string | null | undefined): string =>
-  String(value ?? '')
-    .trim()
-    .toLowerCase()
-    .replace(/[_-]+/g, ' ')
-    .replace(/\s+/g, ' ');
-
 const isMegaVariantType = (variantType: string | undefined): boolean => {
   const normalized = String(variantType ?? '').toLowerCase();
   return (
@@ -60,37 +59,11 @@ const isMegaVariantType = (variantType: string | undefined): boolean => {
   );
 };
 
-const buildTypeIcon = (typeName?: string | null): string | undefined => {
-  const normalized = typeof typeName === 'string' ? typeName.trim().toLowerCase() : '';
-  return normalized ? `/images/types/${normalized}.png` : undefined;
-};
-
-const normalizeTypeName = (value: string | null | undefined): string | undefined => {
-  if (typeof value !== 'string') return undefined;
-  const trimmed = value.trim();
-  return trimmed.length > 0 ? trimmed : undefined;
-};
-
 const resolveMegaVariantType = (megaEvolution: MegaEvolution): string => {
   const explicit = typeof megaEvolution.variantType === 'string' ? megaEvolution.variantType.trim() : '';
   if (explicit.length > 0) return explicit;
   const suffix = megaEvolution.form ? `_${megaEvolution.form.toLowerCase()}` : '';
   return megaEvolution.primal ? 'primal' : `mega${suffix}`;
-};
-
-const resolveActiveMegaEvolution = (
-  megaEvolutions: MegaEvolution[] | undefined,
-  megaForm: string | null,
-): MegaEvolution | undefined => {
-  if (!Array.isArray(megaEvolutions) || megaEvolutions.length === 0) return undefined;
-  const normalizedForm = normalizeToken(megaForm);
-  if (normalizedForm.length === 0) {
-    return megaEvolutions.find((entry) => normalizeToken(entry.form) === '') ?? megaEvolutions[0];
-  }
-  return (
-    megaEvolutions.find((entry) => normalizeToken(entry.form) === normalizedForm) ??
-    megaEvolutions[0]
-  );
 };
 
 const preferNonShinyVariant = (
@@ -125,10 +98,10 @@ const resolveMegaVariant = ({
   );
   if (shinyExact.length > 0) return preferNonShinyVariant(shinyExact);
 
-  const normalizedForm = normalizeToken(selectedMegaEvolution.form);
+  const normalizedForm = normalizeFormToken(selectedMegaEvolution.form);
   if (normalizedForm.length > 0) {
     const byMegaForm = megaCandidates.filter(
-      (variant) => normalizeToken(variant.megaForm) === normalizedForm,
+      (variant) => normalizeFormToken(variant.megaForm) === normalizedForm,
     );
     if (byMegaForm.length > 0) return preferNonShinyVariant(byMegaForm);
   }
@@ -158,7 +131,11 @@ export const resolveMegaDisplayData = ({
 
   if (!mega.is_mega) return base;
 
-  const selectedMegaEvolution = resolveActiveMegaEvolution(pokemon.megaEvolutions, mega.mega_form);
+  const selectedMegaEvolution = resolvePokemonDisplayActiveMegaEvolution({
+    isMega: true,
+    megaForm: mega.mega_form,
+    megaEvolutions: pokemon.megaEvolutions,
+  });
   if (!selectedMegaEvolution) return base;
 
   const megaVariantType = resolveMegaVariantType(selectedMegaEvolution);

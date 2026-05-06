@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { determineImageUrl } from '@/utils/imageHelpers';
 import { cpMultipliers } from '@/utils/constants';
 import { calculateCP } from '@/utils/calculateCP';
 import { calculateBaseStats } from '@/utils/calculateBaseStats';
+import { resolvePokemonDisplayImageUrl } from '@/features/pokemonDisplay/pokemonDisplayPresentation';
 import type { PokemonInstance } from '@/types/pokemonInstance';
 import type { PokemonVariant } from '@/types/pokemonVariants';
 import type { VariantBackground } from '@/types/pokemonSubTypes';
@@ -47,9 +47,6 @@ export const useTradeInstanceController = (
   const gigantamax = !!pokemon.instanceData.gigantamax;
   const initialGenderState = getInitialGenderState(pokemon.instanceData);
   const [isFemale, setIsFemale] = useState<boolean>(initialGenderState.isFemale);
-  const [currentImage, setCurrentImage] = useState<string>(
-    determineImageUrl(isFemale, pokemon, false, undefined, false, undefined, false, gigantamax, isCrown, crownForm ?? undefined),
-  );
   const [editMode, setEditMode] = useState<boolean>(false);
   const [nickname, setNickname] = useState<string | null>(
     pokemon.instanceData.nickname,
@@ -108,6 +105,24 @@ export const useTradeInstanceController = (
     [crownForm, isCrown, pokemon],
   );
 
+  const currentImage = useMemo(
+    () =>
+      resolvePokemonDisplayImageUrl({
+        pokemon,
+        attributes: {
+          isFemale,
+          isMega: false,
+          isFused: false,
+          isPurified: false,
+          isGigantamax: gigantamax,
+          isCrown,
+          crownForm,
+        },
+        crownForm,
+      }),
+    [crownForm, gigantamax, isCrown, isFemale, pokemon],
+  );
+
   useEffect(() => {
     if (pokemon.instanceData.location_card !== null) {
       const locationCardId = parseInt(pokemon.instanceData.location_card, 10);
@@ -119,23 +134,6 @@ export const useTradeInstanceController = (
       }
     }
   }, [pokemon.backgrounds, pokemon.instanceData.location_card]);
-
-  useEffect(() => {
-    setCurrentImage(
-      determineImageUrl(
-        isFemale,
-        pokemon,
-        false,
-        undefined,
-        false,
-        undefined,
-        false,
-        gigantamax,
-        isCrown,
-        crownForm ?? undefined,
-      ),
-    );
-  }, [crownForm, gigantamax, isCrown, isFemale, pokemon]);
 
   useEffect(() => {
     const { attack, defense, stamina } = currentBaseStats;

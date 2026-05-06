@@ -124,8 +124,14 @@ describe('useTradeInstanceController', () => {
   });
 
   it('updates gender/image state and applies computed values', () => {
-    const pokemon = makePokemon();
+    const pokemon = makePokemon({
+      female_data: {
+        image_url: '/images/pikachu-female.png',
+      },
+    } as Partial<TradePokemon>);
     const { result } = renderHook(() => useTradeInstanceController(pokemon));
+
+    expect(result.current.currentImage).toBe('/images/pikachu.png');
 
     act(() => {
       result.current.handleGenderChange('Female');
@@ -138,6 +144,7 @@ describe('useTradeInstanceController', () => {
 
     expect(result.current.gender).toBe('Female');
     expect(result.current.isFemale).toBe(true);
+    expect(result.current.currentImage).toBe('/images/pikachu-female.png');
     expect(result.current.level).toBe(40);
     expect(result.current.ivs).toEqual({ Attack: 15, Defense: 14, Stamina: 13 });
 

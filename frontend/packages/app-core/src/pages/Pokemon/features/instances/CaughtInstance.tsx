@@ -15,9 +15,9 @@ import { getCrownFormLabel, resolveActiveCrownForm } from '@/utils/crownHelpers'
 import useValidation from './hooks/useValidation';
 import { useFusion } from './hooks/useFusion';
 import { useCalculatedCP } from './hooks/useCalculatedCP';
-import { useSprite } from './hooks/useSprite';
 import { useArcHeight } from './hooks/useArcHeight';
 import { createScopedLogger } from '@/utils/logger';
+import { resolvePokemonDisplayImageUrl } from '@/features/pokemonDisplay/pokemonDisplayPresentation';
 
 import { calculateBaseStats } from '@/utils/calculateBaseStats';
 import { type MegaData as PersistMegaData } from './utils/buildInstanceChanges';
@@ -197,18 +197,36 @@ const CaughtInstance: React.FC<CaughtInstanceProps> = ({
     ],
   );
 
-  const currentImage = useSprite({
-    isFemale,
-    pokemon,
-    isMega: megaData.isMega,
-    megaForm: megaData.megaForm,
-    isFused: fusion.is_fused,
-    fusionForm: fusion.fusion_form,
-    isPurified,
-    gigantamax,
-    isCrown: crownData.isCrown,
-    crownForm: crownData.crownForm,
-  });
+  const currentImage = useMemo(
+    () =>
+      resolvePokemonDisplayImageUrl({
+        pokemon,
+        attributes: {
+          isFemale,
+          isMega: megaData.isMega,
+          megaForm: megaData.megaForm,
+          isFused: fusion.is_fused,
+          fusionForm: fusion.fusion_form,
+          isPurified,
+          isGigantamax: gigantamax,
+          isCrown: crownData.isCrown,
+          crownForm: crownData.crownForm,
+        },
+        crownForm: crownData.crownForm,
+      }),
+    [
+      crownData.crownForm,
+      crownData.isCrown,
+      fusion.fusion_form,
+      fusion.is_fused,
+      gigantamax,
+      isFemale,
+      isPurified,
+      megaData.isMega,
+      megaData.megaForm,
+      pokemon,
+    ],
+  );
 
   useCalculatedCP({ currentBaseStats, level, ivs, setCP });
 

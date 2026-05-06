@@ -91,10 +91,6 @@ vi.mock('@/pages/Pokemon/features/instances/hooks/useBackgrounds', () => ({
   }),
 }));
 
-vi.mock('@/pages/Pokemon/features/instances/hooks/useSprite', () => ({
-  useSprite: () => '/images/rendered-sprite.png',
-}));
-
 vi.mock('@/pages/Pokemon/features/instances/hooks/useCalculatedCP', () => ({
   useCalculatedCP: () => undefined,
 }));
@@ -294,7 +290,7 @@ describe('CaughtInstance', () => {
     expect(layout).toHaveAttribute('data-cp', '500');
     expect(layout).toHaveAttribute('data-favorite', 'true');
     expect(layout).toHaveAttribute('data-level', '20');
-    expect(layout).toHaveAttribute('data-image', '/images/rendered-sprite.png');
+    expect(layout).toHaveAttribute('data-image', '/images/pikachu.png');
     expect(layout).toHaveAttribute('data-background-id', '2');
     expect(layout).toHaveAttribute('data-pokeball', 'poke_ball');
     expect(layout).toHaveAttribute('data-ivs-empty', 'false');

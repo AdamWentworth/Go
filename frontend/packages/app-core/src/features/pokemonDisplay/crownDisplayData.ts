@@ -1,5 +1,6 @@
 import type { PokemonVariant } from '@/types/pokemonVariants';
 import { resolveActiveCrownForm } from '@/utils/crownHelpers';
+import { buildTypeIcon } from './displayHelpers';
 
 type CrownDisplayState = {
   is_crown: boolean;
@@ -39,11 +40,6 @@ export type ResolveCrownDisplayDataResult = {
   sizes?: PokemonVariant['sizes'];
   source: 'base' | 'crown';
   crownPokemonId: number | null;
-};
-
-const buildTypeIcon = (typeName?: string | null): string | undefined => {
-  const normalized = typeof typeName === 'string' ? typeName.trim().toLowerCase() : '';
-  return normalized ? `/images/types/${normalized}.png` : undefined;
 };
 
 export const resolveCrownDisplayData = ({

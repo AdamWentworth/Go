@@ -4,8 +4,6 @@ import CP from '@/components/pokemonComponents/CP';
 import PokemonImagePresentation from './PokemonImagePresentation';
 import './PokemonCard.css';
 import { usePokemonCardTouchHandlers } from './hooks/usePokemonCardTouchHandlers';
-import { usePokemonAttributes } from './hooks/usePokemonAttributes';
-import { usePokemonImage } from './hooks/usePokemonImage';
 import SelectChip from './SelectChip';
 import { useInstancesStore } from '@/features/instances/store/useInstancesStore';
 import {
@@ -15,6 +13,10 @@ import {
   resolvePokemonDisplayFusionBackgroundPool,
   resolvePokemonDisplayLocationBackground,
 } from '@/features/pokemonDisplay/pokemonDisplayModel';
+import {
+  resolvePokemonDisplayAttributes,
+  resolvePokemonDisplayImageUrl,
+} from '@/features/pokemonDisplay/pokemonDisplayPresentation';
 
 import type { PokemonVariant } from '@/types/pokemonVariants';
 import type { PokemonInstance } from '@/types/pokemonInstance';
@@ -52,10 +54,19 @@ const PokemonCard = memo(({
 }: Props) => {
   const [shouldJiggle, setShouldJiggle] = useState(false);
   const prevIsHighlighted = useRef(isHighlighted);
+  const displayAttributes = resolvePokemonDisplayAttributes(pokemon);
   const {
-    isDisabled, isFemale, isMega, megaForm,
-    isFused, fusionForm, isCrown, isPurified, isDynamax, isGigantamax
-  } = usePokemonAttributes(pokemon);
+    isDisabled = false,
+    isFemale = false,
+    isMega = false,
+    megaForm,
+    isFused = false,
+    fusionForm,
+    isCrown = false,
+    isPurified = false,
+    isDynamax = false,
+    isGigantamax = false,
+  } = displayAttributes;
   const displayModel = useMemo(
     () =>
       buildPokemonDisplayModel({
@@ -128,19 +139,39 @@ const PokemonCard = memo(({
     prevIsHighlighted.current = isHighlighted;
   }, [isHighlighted]);
 
-  const currentImage = usePokemonImage({
-    pokemon,
-    isDisabled,
-    isFemale,
-    isMega,
-    megaForm,
-    isFused,
-    fusionForm,
-    isCrown,
-    crownForm: displayModel.crownFormLabel,
-    isPurified,
-    isGigantamax,
-  });
+  const currentImage = useMemo(
+    () =>
+      resolvePokemonDisplayImageUrl({
+        pokemon,
+        attributes: {
+          isDisabled,
+          isFemale,
+          isMega,
+          megaForm,
+          isFused,
+          fusionForm,
+          isCrown,
+          isPurified,
+          isDynamax,
+          isGigantamax,
+        },
+        crownForm: displayModel.crownFormLabel,
+      }),
+    [
+      displayModel.crownFormLabel,
+      fusionForm,
+      isCrown,
+      isDisabled,
+      isDynamax,
+      isFemale,
+      isFused,
+      isGigantamax,
+      isMega,
+      isPurified,
+      megaForm,
+      pokemon,
+    ],
+  );
 
   // Prefer instance UUID, fallback to variant key
   const highlightKey = displayModel.highlightKey;
