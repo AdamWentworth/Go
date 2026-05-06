@@ -1,6 +1,7 @@
 // vite.config.mjs
 import { defineConfig, loadEnv } from 'vite';
 import react            from '@vitejs/plugin-react';
+import fs               from 'node:fs';
 import path             from 'node:path';
 
 const isCI = process.env.CI === 'true';
@@ -9,10 +10,80 @@ const lowMemoryMode = isWindows || process.env.VITEST_LOW_MEMORY === '1';
 const enableHtmlReport = process.env.VITEST_HTML_REPORT === '1';
 const appCoreRoot = path.resolve(__dirname, '../../packages/app-core');
 const webRoot = __dirname;
+const sharedAssetsRoot = path.resolve(__dirname, '../../../assets');
 const testArtifactsRoot = path.resolve(webRoot, '.artifacts/tests');
 const appCoreSetupFile = `/@fs/${path
   .resolve(appCoreRoot, 'tests/setupTests.ts')
   .replace(/\\/g, '/')}`;
+
+const mediaContentTypes = new Map([
+  ['.avif', 'image/avif'],
+  ['.gif', 'image/gif'],
+  ['.ico', 'image/x-icon'],
+  ['.jpg', 'image/jpeg'],
+  ['.jpeg', 'image/jpeg'],
+  ['.png', 'image/png'],
+  ['.svg', 'image/svg+xml'],
+  ['.webm', 'video/webm'],
+  ['.webp', 'image/webp'],
+]);
+
+const sharedMediaAssetsPlugin = () => ({
+  name: 'go-shared-media-assets',
+  configureServer(server) {
+    server.middlewares.use((req, res, next) => {
+      if (!req.url || (req.method !== 'GET' && req.method !== 'HEAD')) {
+        next();
+        return;
+      }
+
+      const { pathname } = new URL(req.url, 'http://localhost');
+      if (!pathname.startsWith('/media/')) {
+        next();
+        return;
+      }
+
+      let relativePath;
+      try {
+        relativePath = decodeURIComponent(pathname.slice('/media/'.length));
+      } catch {
+        res.statusCode = 400;
+        res.end('Bad Request');
+        return;
+      }
+
+      const filePath = path.resolve(sharedAssetsRoot, relativePath);
+      if (!filePath.startsWith(`${sharedAssetsRoot}${path.sep}`)) {
+        res.statusCode = 403;
+        res.end('Forbidden');
+        return;
+      }
+
+      fs.stat(filePath, (statError, stats) => {
+        if (statError || !stats.isFile()) {
+          next();
+          return;
+        }
+
+        const contentType = mediaContentTypes.get(path.extname(filePath).toLowerCase());
+        if (contentType) {
+          res.setHeader('Content-Type', contentType);
+        }
+        res.setHeader('Content-Length', stats.size);
+        res.setHeader('Cache-Control', 'no-cache');
+
+        if (req.method === 'HEAD') {
+          res.end();
+          return;
+        }
+
+        const stream = fs.createReadStream(filePath);
+        stream.on('error', next);
+        stream.pipe(res);
+      });
+    });
+  },
+});
 
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, webRoot, '');
@@ -21,7 +92,7 @@ export default defineConfig(({ mode }) => {
   return {
     root: appCoreRoot,
     envDir: webRoot,
-    plugins: [react()],
+    plugins: [sharedMediaAssetsPlugin(), react()],
     resolve: {
       alias: {
         '@': path.resolve(appCoreRoot, 'src'),

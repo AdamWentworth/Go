@@ -1,6 +1,6 @@
-# Shared Assets (Temporary Canonical Source)
+# Shared Assets
 
-This folder is a temporary shared asset source for web and mobile while deployment stabilizes.
+This folder is the canonical source for shared web/mobile media while the app uses the frontend nginx image as its static asset host.
 
 Structure:
 
@@ -9,13 +9,7 @@ Structure:
 - `assets/media` - Shared media files (loading spinners).
 - `assets/favicons` - Browser favicon assets.
 
-Original source paths copied from:
-
-- `frontend/public/images`
-- `frontend/public/icons`
-- `frontend/public/assets/loading_spinner.webm`
-- `frontend/public/assets/loading_spinner_light.webm`
-- `frontend/public/favicon*`
+Do not duplicate shared media under frontend package `public/` folders. The web app should request these files through the same `/media/...` paths that production serves.
 
 Long-term target:
 
@@ -28,6 +22,11 @@ Current production serving path (frontend nginx):
 - `https://pokemongonexus.com/media/icons/...`
 - `https://pokemongonexus.com/media/media/...`
 - `https://pokemongonexus.com/media/favicons/...`
+
+Loading spinner sources:
+
+- `/media/media/loading_spinner.webm`
+- `/media/media/loading_spinner_light.webm`
 
 Deploy flow (current CI/CD):
 

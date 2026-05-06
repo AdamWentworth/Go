@@ -1,27 +1,38 @@
 // LoadingSpinner.tsx
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import './LoadingSpinner.css';
 
-const LoadingSpinner: React.FC = () => {
-  const spinnerVideoSrc = "/assets/loading_spinner.webm";
-  const [loadingText, setLoadingText] = useState('Loading');
+const SPINNER_VIDEOS = [
+  {
+    className: 'spinner-video spinner-video--dark',
+    src: '/media/media/loading_spinner.webm',
+  },
+  {
+    className: 'spinner-video spinner-video--light',
+    src: '/media/media/loading_spinner_light.webm',
+  },
+];
 
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setLoadingText((prev) => (prev === 'Loading...' ? 'Loading' : prev + '.'));
-    }, 500);
-
-    return () => clearInterval(interval);
-  }, []);
-
-  return (
-    <div className="loading-container">
-      <video className="spinner-video" autoPlay loop muted playsInline>
-        <source src={spinnerVideoSrc} type="video/webm" />
-      </video>
-      <div className="loading-text">{loadingText}</div>
+const LoadingSpinner: React.FC = () => (
+  <div className="loading-container" aria-label="Loading" role="status">
+    <div className="spinner-visual-shell">
+      {SPINNER_VIDEOS.map((video) => (
+        <video
+          key={video.className}
+          className={video.className}
+          autoPlay
+          loop
+          muted
+          playsInline
+          preload="auto"
+          aria-hidden="true"
+          tabIndex={-1}
+        >
+          <source src={video.src} type="video/webm" />
+        </video>
+      ))}
     </div>
-  );
-};
+  </div>
+);
 
 export default LoadingSpinner;
