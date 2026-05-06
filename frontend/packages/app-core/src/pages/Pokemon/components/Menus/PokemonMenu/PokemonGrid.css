@@ -14,12 +14,15 @@
   display: flex;
   justify-content: center;
   align-items: center;
-  opacity: 0; /* Start invisible */
-  transition: opacity 0.05s ease-in; /* Smooth transition */
+  opacity: 0;
+  transition: none;
+  visibility: hidden;
 }
 
 .pokemon-grid-cell.visible {
-  opacity: 1; /* Become visible */
+  opacity: 1;
+  transition: opacity 0.05s ease-in;
+  visibility: visible;
 }
 
 /* Responsive grid adjustments */

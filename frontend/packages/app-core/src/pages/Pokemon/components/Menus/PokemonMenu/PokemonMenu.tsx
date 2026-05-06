@@ -77,6 +77,7 @@ const PokemonMenu: React.FC<PokemonMenuProps> = ({
   activeView,
 }) => {
   const [isMenuVisible, setIsMenuVisible] = useState(false);
+  const [hasGridCompletedInitialLayout, setHasGridCompletedInitialLayout] = useState(false);
   const { alert } = useModal();
 
   // Use non-nullable ref for grid container
@@ -169,6 +170,10 @@ const PokemonMenu: React.FC<PokemonMenuProps> = ({
     [setSearchTerm]
   );
 
+  const handleGridInitialLayoutReady = useCallback(() => {
+    setHasGridCompletedInitialLayout(true);
+  }, []);
+
   useEffect(() => {
     onSearchMenuStateChange?.(isMenuVisible);
   }, [isMenuVisible, onSearchMenuStateChange]);
@@ -210,6 +215,8 @@ const PokemonMenu: React.FC<PokemonMenuProps> = ({
               variants={variants}
               gridContainerRef={gridContainerRef}
               activeView={activeView}
+              enableInitialLayoutLoader={!hasGridCompletedInitialLayout}
+              onInitialLayoutReady={handleGridInitialLayoutReady}
             />
           </div>
           <CustomScrollbar containerRef={gridContainerRef} totalItems={renderablePokemons.length} />
