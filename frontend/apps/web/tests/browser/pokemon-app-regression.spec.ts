@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect, type Route, test } from '@playwright/test';
 
 import { attachBrowserDiagnostics } from './support/diagnostics';
 import { installE2eRoutes } from './support/e2eRoutes';
@@ -24,6 +24,7 @@ test.describe('pokemon app browser regressions', () => {
     const diagnostics = attachBrowserDiagnostics(page, testInfo);
 
     try {
+      await installE2eRoutes(page);
       await page.goto('/');
 
       const assetResults = await page.evaluate(async () => {
@@ -162,10 +163,16 @@ test.describe('pokemon app browser regressions', () => {
 
     try {
       await installE2eRoutes(page);
-      await page.route('**/src/pages/Pokemon/Pokemon.tsx*', async (route) => {
+      const blockPokemonRouteModule = async (route: Route) => {
         resolvePokemonModuleRequested();
         await releaseBlockedPokemonModule;
         await route.continue();
+      };
+      await page.route('**/src/pages/Pokemon/Pokemon.tsx*', async (route) => {
+        await blockPokemonRouteModule(route);
+      });
+      await page.route(/\/assets\/Pokemon-[^/]+\.js(?:\?.*)?$/, async (route) => {
+        await blockPokemonRouteModule(route);
       });
 
       const response = await page.goto('/pokemon', { waitUntil: 'commit' });
