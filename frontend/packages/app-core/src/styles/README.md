@@ -43,4 +43,4 @@ This folder contains shared styling primitives used across the app.
    - Choose an existing token first.
    - Add a new token only if reuse is expected.
 2. Do not duplicate hard-coded brand colors or elevation values across files.
-3. Run `npm run lint:styles` before merging styling-heavy changes.
+3. From `frontend/`, run `npm --workspace apps/web run lint:styles` before merging styling-heavy changes.

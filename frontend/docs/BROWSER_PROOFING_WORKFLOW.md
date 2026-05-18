@@ -7,16 +7,16 @@ WebKit is the closest local Linux signal for Safari rendering and JavaScript eng
 ## One-time setup
 
 ```bash
-cd frontend/apps/web
+cd frontend
 npm ci
-npm run install:browsers
+npm --workspace apps/web run install:browsers
 ```
 
 On a fresh Ubuntu machine, WebKit may need extra system libraries. If Playwright reports missing packages, run:
 
 ```bash
-cd frontend/apps/web
-npm run install:browsers:deps
+cd frontend
+npm --workspace apps/web run install:browsers:deps
 ```
 
 That command uses `sudo` because it installs OS packages.
@@ -33,29 +33,29 @@ sudo apt-get install -y libevent-2.1-7t64 libavif16
 Run the full local browser matrix:
 
 ```bash
-cd frontend/apps/web
-npm run test:browsers
+cd frontend
+npm --workspace apps/web run test:browsers
 ```
 
 Focus on Safari-family failures:
 
 ```bash
-cd frontend/apps/web
-npm run test:browsers:safari
+cd frontend
+npm --workspace apps/web run test:browsers:safari
 ```
 
 Watch the browser while debugging:
 
 ```bash
-cd frontend/apps/web
-npm run test:browsers:headed
+cd frontend
+npm --workspace apps/web run test:browsers:headed
 ```
 
 Open the saved report:
 
 ```bash
-cd frontend/apps/web
-npm run test:browsers:report
+cd frontend
+npm --workspace apps/web run test:browsers:report
 ```
 
 Artifacts are written under `frontend/apps/web/.artifacts/browser/`, including screenshots, traces, videos on failure, JSON results, and captured browser console/network diagnostics.
@@ -73,8 +73,8 @@ By default the smoke test opens:
 To target only pages reported by friends or QA:
 
 ```bash
-cd frontend/apps/web
-E2E_ROUTE_PATHS="/pokemon,/search" npm run test:browsers:safari
+cd frontend
+E2E_ROUTE_PATHS="/pokemon,/search" npm --workspace apps/web run test:browsers:safari
 ```
 
 Use `E2E_SETTLE_MS=3000` when a page needs more time for async rendering before diagnostics are evaluated.
@@ -84,8 +84,8 @@ Use `E2E_SETTLE_MS=3000` when a page needs more time for async rendering before 
 If you already have a dev server running, point Playwright at it:
 
 ```bash
-cd frontend/apps/web
-E2E_BASE_URL=http://127.0.0.1:3000 E2E_SKIP_WEBSERVER=1 npm run test:browsers:safari
+cd frontend
+E2E_BASE_URL=http://127.0.0.1:3000 E2E_SKIP_WEBSERVER=1 npm --workspace apps/web run test:browsers:safari
 ```
 
 The tests mock core API and image calls so browser failures are easier to separate from backend availability. Set `E2E_FAIL_ON_REQUEST_FAILED=1` when you want failed network requests to break the run too.

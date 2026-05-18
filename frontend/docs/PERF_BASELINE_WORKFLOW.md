@@ -19,8 +19,8 @@ Build-time companion metrics from CI:
 ## Local Capture (Runtime)
 
 1. Enable the panel in local env:
-   - set `VITE_SHOW_PERF_PANEL=true` in `frontend/.env.development`
-   - restart `npm run dev`
+   - set `VITE_SHOW_PERF_PANEL=true` in `frontend/apps/web/.env.development`
+   - restart `npm --workspace apps/web run dev` from `frontend/`
 2. Open DevTools:
    - Network tab: enable `Disable cache`
    - keep CPU throttling disabled unless you are doing a dedicated throttled run

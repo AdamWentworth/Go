@@ -14,6 +14,7 @@ Expo mobile shell for Pokemon Go Nexus.
 
 ```bash
 cd frontend
+nvm use
 npm ci
 npm --workspace apps/mobile run start
 npm --workspace apps/mobile run android
@@ -32,8 +33,8 @@ Copy `.env.example` values into your environment (or EAS secrets) using `EXPO_PU
 
 ## Note on Node version
 
-Expo/React Native dependencies in this scaffold expect Node `>= 20.19.4`.  
-If you are below that, install may still work but runtime/tooling issues are possible.
+Use the repo `.nvmrc` Node version (`24`) for normal development and CI parity.
+Expo/React Native dependencies in this scaffold require at least Node `>= 20.19.4`, so Node 24 is the intended path here.
 
 ## Monorepo Resolution Note
 
