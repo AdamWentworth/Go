@@ -18,14 +18,14 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   extra: {
     ...config.extra,
     api: {
-      authApiUrl: readEnv('EXPO_PUBLIC_AUTH_API_URL', 'https://pokemongonexus.com/api/auth'),
-      usersApiUrl: readEnv('EXPO_PUBLIC_USERS_API_URL', 'https://pokemongonexus.com/api/users'),
-      searchApiUrl: readEnv('EXPO_PUBLIC_SEARCH_API_URL', 'https://pokemongonexus.com/api/search'),
-      pokemonApiUrl: readEnv('EXPO_PUBLIC_POKEMON_API_URL', 'https://pokemongonexus.com/api/pokemon'),
-      locationApiUrl: readEnv('EXPO_PUBLIC_LOCATION_API_URL', 'https://pokemongonexus.com/api/location'),
-      eventsApiUrl: readEnv('EXPO_PUBLIC_EVENTS_API_URL', 'https://pokemongonexus.com/api/events'),
-      receiverApiUrl: readEnv('EXPO_PUBLIC_RECEIVER_API_URL', 'https://pokemongonexus.com/api/receiver'),
-      frontendAppUrl: readEnv('EXPO_PUBLIC_FRONTEND_APP_URL', 'https://pokemongonexus.com'),
+      authApiUrl: readEnv('EXPO_PUBLIC_AUTH_API_URL', 'https://pokegonexus.com/api/auth'),
+      usersApiUrl: readEnv('EXPO_PUBLIC_USERS_API_URL', 'https://pokegonexus.com/api/users'),
+      searchApiUrl: readEnv('EXPO_PUBLIC_SEARCH_API_URL', 'https://pokegonexus.com/api/search'),
+      pokemonApiUrl: readEnv('EXPO_PUBLIC_POKEMON_API_URL', 'https://pokegonexus.com/api/pokemon'),
+      locationApiUrl: readEnv('EXPO_PUBLIC_LOCATION_API_URL', 'https://pokegonexus.com/api/location'),
+      eventsApiUrl: readEnv('EXPO_PUBLIC_EVENTS_API_URL', 'https://pokegonexus.com/api/events'),
+      receiverApiUrl: readEnv('EXPO_PUBLIC_RECEIVER_API_URL', 'https://pokegonexus.com/api/receiver'),
+      frontendAppUrl: readEnv('EXPO_PUBLIC_FRONTEND_APP_URL', 'https://pokegonexus.com'),
     },
     observability: {
       crashReportUrl: readEnv('EXPO_PUBLIC_CRASH_REPORT_URL', ''),

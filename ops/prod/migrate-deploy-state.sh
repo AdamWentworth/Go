@@ -2,7 +2,7 @@
 set -euo pipefail
 
 SOURCE_ROOT="${1:-/home/adam/deploy/Go}"
-TARGET_ROOT="${2:-/home/adam/deploy/state}"
+TARGET_ROOT="${2:-/srv/pokegonexus}"
 
 if [[ ! -d "${SOURCE_ROOT}" ]]; then
   echo "Source deploy root not found: ${SOURCE_ROOT}" >&2

@@ -1,6 +1,7 @@
 #!/bin/bash
 
-NGINX_CONF="/home/adam/deploy/Go/nginx/nginx.conf"
+REPO_ROOT="${POKEGONEXUS_REPO:-/home/adam/deploy/Go}"
+NGINX_CONF="${NGINX_CONF:-${REPO_ROOT}/nginx/nginx.conf}"
 
 case "$1" in
   start)

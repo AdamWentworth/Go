@@ -1,6 +1,6 @@
 # Pokémon Database Editor
 
-This is a custom-built **Tkinter-based GUI application** for visually editing and managing data in the `pokego.db` SQLite database used by the Pokémon Go Nexus backend.
+This is a custom-built **Tkinter-based GUI application** for visually editing and managing data in the `pokego.db` SQLite database used by the PokeGo Nexus backend.
 
 It serves as an internal tool for editing Pokémon records, evolutions, shadow data, costumes, moves, mega evolutions, and female-specific assets through a user-friendly interface.
 
@@ -141,7 +141,7 @@ A single point of access to all low-level managers:
 
 ## 🧪 Development Status
 
-This editor is stable and used in production to manage the `pokego.db` database. It is a critical part of the Pokémon Go Nexus data editing workflow.
+This editor is stable and used in production to manage the `pokego.db` database. It is a critical part of the PokeGo Nexus data editing workflow.
 
 There is currently **no undo**, so always **backup your DB** before performing batch edits.
 

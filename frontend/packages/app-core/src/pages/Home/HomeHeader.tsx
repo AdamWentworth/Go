@@ -16,7 +16,7 @@ const HomeHeader = ({ logoUrl, isLoggedIn }: HomeHeaderProps) => {
         <img src={logoUrl} alt="Logo" onContextMenu={(e) => e.preventDefault()} />
       </div>
       <div className="titleContainer">
-        <h1>Welcome to Pokémon Go Nexus</h1>
+        <h1>Welcome to PokeGo Nexus</h1>
         <h2>The Ultimate Trainer Hub</h2>
         <p>
           The go-to platform for Pokémon GO trainers to{' '}

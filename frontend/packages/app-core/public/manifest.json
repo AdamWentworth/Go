@@ -1,6 +1,6 @@
 {
-  "short_name": "Pokémon Go Nexus",
-  "name": "Pokémon Go Nexus",
+  "short_name": "PokeGo Nexus",
+  "name": "PokeGo Nexus",
   "description": "Collect, Discover and Connect with Pokémon Go players near you!",
   "icons": [
     { "src": "/icons/icon-48x48.png", "sizes": "48x48", "type": "image/png", "purpose": "any" },

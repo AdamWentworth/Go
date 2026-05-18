@@ -13,7 +13,7 @@ import { logDebug } from '../observability/logger';
 
 const PRIMARY_PATH = '/pokemon';
 const FALLBACK_PATH = '/';
-const PROD_FRONTEND_APP_URL = 'https://pokemongonexus.com';
+const PROD_FRONTEND_APP_URL = 'https://pokegonexus.com';
 const LOAD_TIMEOUT_MS = 8000;
 
 const trimTrailingSlash = (value: string): string => value.replace(/\/+$/, '');

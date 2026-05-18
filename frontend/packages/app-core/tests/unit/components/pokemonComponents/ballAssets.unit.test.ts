@@ -8,13 +8,13 @@ describe('ballAssets', () => {
   });
 
   it('resolves known and legacy ultra-ball values to the same media asset', () => {
-    vi.stubEnv('VITE_ASSET_ORIGIN', 'https://pokemongonexus.com');
+    vi.stubEnv('VITE_ASSET_ORIGIN', 'https://pokegonexus.com');
 
     expect(getBallImageUrl('ultra_ball')).toBe(
-      'https://pokemongonexus.com/media/images/balls/ultraball.png',
+      'https://pokegonexus.com/media/images/balls/ultraball.png',
     );
     expect(getBallImageUrl('ultraball')).toBe(
-      'https://pokemongonexus.com/media/images/balls/ultraball.png',
+      'https://pokegonexus.com/media/images/balls/ultraball.png',
     );
   });
 

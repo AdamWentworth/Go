@@ -47,7 +47,7 @@ func Load() Config {
 	cacheToken := getString("CACHE_REFRESH_TOKEN", "")
 	cacheBuildTimeout := getDuration("CACHE_BUILD_TIMEOUT", 60*time.Second)
 
-	origins := getString("ALLOWED_ORIGINS", "http://localhost:3000,https://pokemongonexus.com,https://www.pokemongonexus.com")
+	origins := getString("ALLOWED_ORIGINS", "http://localhost:3000,https://pokegonexus.com,https://www.pokegonexus.com,https://pokemongonexus.com,https://www.pokemongonexus.com")
 	allowed := splitCSV(origins)
 
 	allowCF := getBool("ALLOW_CLOUDFLARE_SUBDOMAINS", true)

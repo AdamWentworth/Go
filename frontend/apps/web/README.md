@@ -1,6 +1,6 @@
-# Pokémon Go Nexus Frontend
+# PokeGo Nexus Frontend
 
-This is the **React web frontend** for the Pokémon Go Nexus platform. It is the primary client for managing Pokémon ownership, proposing trades, maintaining wanted lists, browsing Pokédex data, searching trainers/Pokémon, and validating Safari/WebKit behavior before production deploys.
+This is the **React web frontend** for the PokeGo Nexus platform. It is the primary client for managing Pokémon ownership, proposing trades, maintaining wanted lists, browsing Pokédex data, searching trainers/Pokémon, and validating Safari/WebKit behavior before production deploys.
 
 ---
 
@@ -194,9 +194,10 @@ This service now has dedicated frontend workflows:
 ### What `deploy-frontend-prod` does
 
 - Manual trigger (`workflow_dispatch`) on your self-hosted prod runner.
-- Uses the workflow checkout for compose files and keeps prod state under `deploy_root`.
+- Uses the workflow checkout for compose definitions and keeps prod state under `deploy_root`.
+- Runs the frontend image as a self-contained artifact; nginx config is not bind-mounted from the runner checkout.
 - Validates compose and required Docker networks (`kafka_default`, `pokemon_edge`).
-- Pulls requested image and recreates `frontend_nginx` with rollback on failed health check.
+- Pulls requested image, deploys its resolved digest when available, and recreates `frontend_nginx` with rollback on failed health check.
 
 ### Deploy input examples
 
@@ -232,13 +233,13 @@ VITE_FORCED_REFRESH_TIMESTAMP=1740519179122
 ### 🚀 `.env.production`
 
 ```env
-VITE_POKEMON_API_URL=https://pokemongonexus.com/api/pokemon
-VITE_AUTH_API_URL=https://pokemongonexus.com/api/auth
-VITE_RECEIVER_API_URL=https://pokemongonexus.com/api/receiver
-VITE_USERS_API_URL=https://pokemongonexus.com/api/users
-VITE_SEARCH_API_URL=https://pokemongonexus.com/api/search
-VITE_LOCATION_SERVICE_URL=https://pokemongonexus.com/api/location
-VITE_EVENTS_API_URL=https://pokemongonexus.com/api/events
+VITE_POKEMON_API_URL=https://pokegonexus.com/api/pokemon
+VITE_AUTH_API_URL=https://pokegonexus.com/api/auth
+VITE_RECEIVER_API_URL=https://pokegonexus.com/api/receiver
+VITE_USERS_API_URL=https://pokegonexus.com/api/users
+VITE_SEARCH_API_URL=https://pokegonexus.com/api/search
+VITE_LOCATION_SERVICE_URL=https://pokegonexus.com/api/location
+VITE_EVENTS_API_URL=https://pokegonexus.com/api/events
 
 VITE_FORCED_REFRESH_TIMESTAMP=1741290124604
 ```

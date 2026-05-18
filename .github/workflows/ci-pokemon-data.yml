@@ -17,7 +17,7 @@ on:
   workflow_dispatch:
     inputs:
       publish_pokemon_db:
-        description: "Package and deploy pokemon/data/pokego.db even if this run was not triggered by a DB diff."
+        description: "Package and publish pokemon/data/pokego.db even if this run was not triggered by a DB diff."
         required: false
         default: false
         type: boolean
@@ -289,47 +289,3 @@ jobs:
               --title "${release_title}" \
               --notes-file "${release_notes}"
           fi
-
-  deploy-pokemon-db-prod:
-    name: Deploy Pokemon DB To Prod
-    runs-on: [self-hosted, linux, x64, prod]
-    needs: pokemon-db-artifact
-    if: ${{ github.event_name != 'pull_request' && needs.pokemon-db-artifact.result == 'success' }}
-    environment: production
-    concurrency:
-      group: deploy-pokemon-db-prod
-      cancel-in-progress: false
-    permissions:
-      actions: read
-      contents: read
-    env:
-      DEPLOY_ROOT: ${{ vars.PROD_DEPLOY_ROOT || '/home/adam/deploy/Go' }}
-      TARGET_IMAGE: adamwentworth/pokemon_service_go:sha-${{ github.sha }}
-
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v5
-
-      - name: Download Pokemon DB Artifact
-        uses: actions/download-artifact@v8
-        with:
-          name: ${{ needs.pokemon-db-artifact.outputs.artifact_name }}
-          path: dist/pokemon-db-release
-
-      - name: Install Pokemon DB And Deploy Matching Image
-        shell: bash
-        run: |
-          set -euo pipefail
-
-          package_path="$(find dist/pokemon-db-release -maxdepth 1 -type f -name 'pokemon-db-*.tgz' -print -quit)"
-          if [[ -z "${package_path}" ]]; then
-            echo "Pokemon DB package was not downloaded." >&2
-            exit 1
-          fi
-
-          bash ops/pokemon-db/install-pokemon-db.sh \
-            "${package_path}" \
-            "${DEPLOY_ROOT}" \
-            "${GITHUB_WORKSPACE}/pokemon/docker-compose.yml" \
-            "${TARGET_IMAGE}" \
-            "pokemon_data"

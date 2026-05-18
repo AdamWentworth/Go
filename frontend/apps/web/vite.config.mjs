@@ -92,7 +92,7 @@ const sharedMediaAssetsPlugin = () => ({
 
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, webRoot, '');
-  const assetOrigin = (env.VITE_ASSET_ORIGIN || 'https://pokemongonexus.com').replace(/\/+$/, '');
+  const assetOrigin = (env.VITE_ASSET_ORIGIN || 'https://pokegonexus.com').replace(/\/+$/, '');
 
   return {
     root: appCoreRoot,

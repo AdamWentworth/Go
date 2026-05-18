@@ -31,7 +31,7 @@ const e2eServerEnv = {
   VITE_SEARCH_API_URL: `${baseURL}/__e2e/search`,
   VITE_LOCATION_SERVICE_URL: `${baseURL}/__e2e/location`,
   VITE_EVENTS_API_URL: `${baseURL}/__e2e/events`,
-  VITE_ASSET_ORIGIN: 'https://pokemongonexus.com',
+  VITE_ASSET_ORIGIN: 'https://pokegonexus.com',
   VITE_FORCED_REFRESH_TIMESTAMP: '0',
   VITE_DISABLE_SERVICE_WORKER: 'true',
   VITE_LOG_LEVEL: 'warn',

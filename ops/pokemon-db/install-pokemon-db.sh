@@ -2,10 +2,14 @@
 set -euo pipefail
 
 PACKAGE_PATH="${1:?Usage: install-pokemon-db.sh PACKAGE_PATH [DEPLOY_ROOT] [COMPOSE_FILE] [TARGET_IMAGE] [SERVICE_NAME]}"
-DEPLOY_ROOT="${2:-/home/adam/deploy/Go}"
+DEPLOY_ROOT="${2:-/srv/pokegonexus}"
 COMPOSE_FILE="${3:-pokemon/docker-compose.yml}"
 TARGET_IMAGE="${4:-}"
 SERVICE_NAME="${5:-pokemon_data}"
+RAW_IMAGE_INPUT="${TARGET_IMAGE}"
+SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+
+source "${SCRIPT_DIR}/../prod/deploy-image-utils.sh"
 
 POKEMON_DEPLOY_DIR="${DEPLOY_ROOT}/pokemon"
 ENV_FILE="${POKEMON_DEPLOY_DIR}/.env"
@@ -16,12 +20,17 @@ COMPOSE_PROJECT_NAME="${COMPOSE_PROJECT_NAME:-pokemon}"
 EDGE_NETWORK="${EDGE_NETWORK:-pokemon_edge}"
 EDGE_SUBNET="${EDGE_SUBNET:-172.30.0.0/24}"
 EDGE_GATEWAY="${EDGE_GATEWAY:-172.30.0.1}"
-DEFAULT_IMAGE="adamwentworth/pokemon_service_go:latest"
+IMAGE_REPO="${IMAGE_REPO:-adamwentworth/pokemon_service_go}"
+DEFAULT_IMAGE="${IMAGE_REPO}:latest"
 ALPINE_IMAGE="alpine:3.23"
 
 TMP_DIR=""
 BACKUP_NAME=""
 PREVIOUS_IMAGE=""
+PREVIOUS_IMAGE_ID=""
+ROLLBACK_IMAGE=""
+TARGET_DIGEST=""
+DEPLOY_IMAGE=""
 ROLLBACK_NEEDED=0
 
 fail() {
@@ -107,7 +116,7 @@ rollback() {
     docker stop "${CONTAINER_NAME}" >/dev/null 2>&1 || true
     restore_db_backup
 
-    local rollback_image="${PREVIOUS_IMAGE:-${DEFAULT_IMAGE}}"
+    local rollback_image="${ROLLBACK_IMAGE:-${PREVIOUS_IMAGE:-${DEFAULT_IMAGE}}}"
     if [[ -n "${rollback_image}" ]]; then
       compose_up "${rollback_image}" || true
     fi
@@ -157,23 +166,26 @@ fi
 NETWORK_SUBNET="$(docker network inspect -f '{{(index .IPAM.Config 0).Subnet}}' "${EDGE_NETWORK}")"
 [[ "${NETWORK_SUBNET}" == "${EDGE_SUBNET}" ]] || fail "network ${EDGE_NETWORK} subnet is ${NETWORK_SUBNET}; expected ${EDGE_SUBNET}"
 
-PREVIOUS_IMAGE="$(docker inspect --format '{{.Config.Image}}' "${CONTAINER_NAME}" 2>/dev/null || true)"
+prepare_rollback_image "${IMAGE_REPO}" "pokemon-db" "${CONTAINER_NAME}"
 if [[ -z "${TARGET_IMAGE}" ]]; then
   TARGET_IMAGE="${PREVIOUS_IMAGE:-${DEFAULT_IMAGE}}"
+else
+  TARGET_IMAGE="$(resolve_image_ref "${IMAGE_REPO}" "${TARGET_IMAGE}")"
 fi
 
 echo "Target Pokemon image: ${TARGET_IMAGE}"
 docker pull "${TARGET_IMAGE}"
+select_deploy_image "${TARGET_IMAGE}" "${IMAGE_REPO}"
 docker pull "${ALPINE_IMAGE}" >/dev/null
 
-POKEMON_IMAGE="${TARGET_IMAGE}" docker compose \
+POKEMON_IMAGE="${DEPLOY_IMAGE}" docker compose \
   --project-directory "${POKEMON_DEPLOY_DIR}" \
   -f "${COMPOSE_FILE}" \
   --env-file "${ENV_FILE}" \
   config >/dev/null
 
-APP_UID="$(docker run --rm --entrypoint /bin/sh "${TARGET_IMAGE}" -c 'id -u app 2>/dev/null || id -u')"
-APP_GID="$(docker run --rm --entrypoint /bin/sh "${TARGET_IMAGE}" -c 'id -g app 2>/dev/null || id -g')"
+APP_UID="$(docker run --rm --entrypoint /bin/sh "${DEPLOY_IMAGE}" -c 'id -u app 2>/dev/null || id -u')"
+APP_GID="$(docker run --rm --entrypoint /bin/sh "${DEPLOY_IMAGE}" -c 'id -g app 2>/dev/null || id -g')"
 
 if docker inspect "${CONTAINER_NAME}" >/dev/null 2>&1; then
   echo "Stopping ${CONTAINER_NAME} before replacing ${DB_FILE}."
@@ -244,7 +256,7 @@ if [[ -n "${EXISTING_PROJECT}" && "${EXISTING_PROJECT}" != "${COMPOSE_PROJECT_NA
   docker rm -f "${CONTAINER_NAME}"
 fi
 
-compose_up "${TARGET_IMAGE}"
+compose_up "${DEPLOY_IMAGE}"
 
 CONTAINER_IP="$(docker inspect -f '{{with index .NetworkSettings.Networks "pokemon_edge"}}{{.IPAddress}}{{end}}' "${CONTAINER_NAME}" 2>/dev/null || true)"
 [[ -n "${CONTAINER_IP}" ]] || fail "failed to determine ${CONTAINER_NAME} IP on pokemon_edge"
@@ -267,6 +279,18 @@ if [[ "${HEALTH_OK}" -ne 1 ]]; then
 fi
 
 ROLLBACK_NEEDED=0
+write_deploy_metadata \
+  "${POKEMON_DEPLOY_DIR}/deployments/${SERVICE_NAME}-db.json" \
+  "${SERVICE_NAME}-db" \
+  "${RAW_IMAGE_INPUT}" \
+  "${TARGET_IMAGE}" \
+  "${TARGET_DIGEST}" \
+  "${DEPLOY_IMAGE}" \
+  "${CONTAINER_NAME}" \
+  "${PREVIOUS_IMAGE}" \
+  "${PREVIOUS_IMAGE_ID}" \
+  "${ROLLBACK_IMAGE}"
+
 rm -rf "${TMP_DIR}"
 TMP_DIR=""
 echo "Pokemon DB deployment succeeded."

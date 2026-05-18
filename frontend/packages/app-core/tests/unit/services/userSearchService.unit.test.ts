@@ -163,7 +163,7 @@ describe.sequential('userSearchService', () => {
     const outcome = await fetchTrainerAutocomplete('ash');
     expect(outcome).toEqual({
       type: 'error',
-      message: "Looks like this trainer hasn't signed up for Pokemon Go Nexus yet.",
+      message: "Looks like this trainer hasn't signed up for PokeGo Nexus yet.",
     });
   });
 

@@ -18,10 +18,10 @@ Long-term target:
 
 Current production serving path (frontend nginx):
 
-- `https://pokemongonexus.com/media/images/...`
-- `https://pokemongonexus.com/media/icons/...`
-- `https://pokemongonexus.com/media/media/...`
-- `https://pokemongonexus.com/media/favicons/...`
+- `https://pokegonexus.com/media/images/...`
+- `https://pokegonexus.com/media/icons/...`
+- `https://pokegonexus.com/media/media/...`
+- `https://pokegonexus.com/media/favicons/...`
 
 Loading spinner sources:
 
@@ -34,15 +34,15 @@ Deploy flow (current CI/CD):
 2. `ci-frontend` rebuilds the frontend nginx image and now stages `assets/**` into the image.
 3. Run `deploy-frontend-prod` workflow to roll out `frontend_nginx`.
 4. Verify from prod:
-   - `curl -I https://pokemongonexus.com/media/images/alola_search.png`
+   - `curl -I https://pokegonexus.com/media/images/alola_search.png`
    - Expect `200` with `Cache-Control: public, max-age=31536000, immutable`.
 
-Cloudflare cache setup:
+Optional CDN cache setup:
 
-- Keep Cloudflare proxy enabled for `pokemongonexus.com` (orange cloud).
-- Add a Cache Rule for URL path starts with `/media/`:
+- Put a CDN in front of `pokegonexus.com` when you are ready for edge caching.
+- Add a cache rule for URL path starts with `/media/`:
   - Cache eligibility: `Eligible for cache`.
   - Edge TTL: e.g. `1 month` or `1 year`.
   - Browser TTL: respect origin (or set explicit TTL).
 
-This gives CDN-backed assets now without paid object storage.
+This gives CDN-backed assets later without moving media into object storage.

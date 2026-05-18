@@ -3,12 +3,12 @@ import { buildUrl } from '@shared-contracts/common';
 
 describe('shared common contract helpers', () => {
   it('builds absolute URLs with normalized slashes', () => {
-    const url = buildUrl('https://pokemongonexus.com/api/users', '/overview');
-    expect(url).toBe('https://pokemongonexus.com/api/users/overview');
+    const url = buildUrl('https://pokegonexus.com/api/users', '/overview');
+    expect(url).toBe('https://pokegonexus.com/api/users/overview');
   });
 
   it('serializes query params and skips nullish values', () => {
-    const url = buildUrl('https://pokemongonexus.com/api/search', '/searchPokemon', {
+    const url = buildUrl('https://pokegonexus.com/api/search', '/searchPokemon', {
       pokemon_id: 25,
       shiny: true,
       costume_id: null,
@@ -17,7 +17,7 @@ describe('shared common contract helpers', () => {
     });
 
     expect(url).toBe(
-      'https://pokemongonexus.com/api/search/searchPokemon?pokemon_id=25&shiny=true&ownership=caught',
+      'https://pokegonexus.com/api/search/searchPokemon?pokemon_id=25&shiny=true&ownership=caught',
     );
   });
 });

@@ -29,14 +29,14 @@ type ExpoExtra = {
 };
 
 const DEFAULT_API_CONFIG: RuntimeApiConfig = {
-  authApiUrl: 'https://pokemongonexus.com/api/auth',
-  usersApiUrl: 'https://pokemongonexus.com/api/users',
-  searchApiUrl: 'https://pokemongonexus.com/api/search',
-  pokemonApiUrl: 'https://pokemongonexus.com/api/pokemon',
-  locationApiUrl: 'https://pokemongonexus.com/api/location',
-  eventsApiUrl: 'https://pokemongonexus.com/api/events',
-  receiverApiUrl: 'https://pokemongonexus.com/api/receiver',
-  frontendAppUrl: 'https://pokemongonexus.com',
+  authApiUrl: 'https://pokegonexus.com/api/auth',
+  usersApiUrl: 'https://pokegonexus.com/api/users',
+  searchApiUrl: 'https://pokegonexus.com/api/search',
+  pokemonApiUrl: 'https://pokegonexus.com/api/pokemon',
+  locationApiUrl: 'https://pokegonexus.com/api/location',
+  eventsApiUrl: 'https://pokegonexus.com/api/events',
+  receiverApiUrl: 'https://pokegonexus.com/api/receiver',
+  frontendAppUrl: 'https://pokegonexus.com',
 };
 
 const deriveExpoHost = (): string | null => {

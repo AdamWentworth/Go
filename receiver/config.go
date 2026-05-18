@@ -31,6 +31,8 @@ var allowedOrigins []string
 var defaultAllowedOrigins = []string{
 	"http://localhost:3000",
 	"http://127.0.0.1:3000",
+	"https://pokegonexus.com",
+	"https://www.pokegonexus.com",
 	"https://pokemongonexus.com",
 	"https://www.pokemongonexus.com",
 }

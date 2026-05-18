@@ -1,4 +1,4 @@
-# 🌐 NGINX Reverse Proxy Web Server — Pokémon Go Nexus
+# 🌐 NGINX Reverse Proxy Web Server — PokeGo Nexus
 
 This configuration sets up **NGINX on Windows** to serve the production frontend and route backend traffic via reverse proxy to local services. It includes support for SSL, SSE, and service namespacing under `/api/`.
 
@@ -22,7 +22,7 @@ nginx/
 ### 📦 Frontend
 
 - Served from: `A:/Visual-Studio-Code/Go/frontend/build`
-- Access via: `https://pokemongonexus.com/`
+- Access via: `https://pokegonexus.com/`
 
 ### 🔁 Proxied APIs
 
@@ -47,7 +47,7 @@ All backend services are routed under `/api/` to local development ports:
   - `privkey.pem`
 - Stored at:
   ```
-  C:/Certbot/live/pokemongonexus.com/
+  C:/Certbot/live/pokegonexus.com/
   ```
 
 > Uses **TLS 1.2/1.3** with secure ciphers.
@@ -58,9 +58,9 @@ All backend services are routed under `/api/` to local development ports:
 
 | From                           | To                                 |
 |--------------------------------|-------------------------------------|
-| `http://www.pokemongonexus.com` | `https://pokemongonexus.com`       |
-| `http://pokemongonexus.com`    | `https://pokemongonexus.com`       |
-| `https://www.pokemongonexus.com` | `https://pokemongonexus.com` (301) |
+| `http://www.pokegonexus.com` | `https://pokegonexus.com`       |
+| `http://pokegonexus.com`    | `https://pokegonexus.com`       |
+| `https://www.pokegonexus.com` | `https://pokegonexus.com` (301) |
 
 ---
 
@@ -134,7 +134,7 @@ sudo certbot renew
 Then copy `fullchain.pem` and `privkey.pem` to:
 
 ```
-C:/Certbot/live/pokemongonexus.com/
+C:/Certbot/live/pokegonexus.com/
 ```
 
 Restart nginx after renewal.
@@ -143,5 +143,5 @@ Restart nginx after renewal.
 
 ## 👨‍💻 Author Notes
 
-This config was optimized for the Pokémon Go Nexus platform, enabling smooth local development and production deployment using NGINX as a central routing layer. It supports hot-swapping backend services and handles SSE without hitches.
+This config was optimized for the PokeGo Nexus platform, enabling smooth local development and production deployment using NGINX as a central routing layer. It supports hot-swapping backend services and handles SSE without hitches.
 

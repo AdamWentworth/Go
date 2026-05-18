@@ -2,7 +2,6 @@
 
 services:
   frontend_nginx:
-    build: .
     image: ${FRONTEND_NGINX_IMAGE:-adamwentworth/frontend-nginx:latest}
     container_name: frontend_nginx
     restart: unless-stopped
@@ -10,7 +9,6 @@ services:
       - "80:80"
       - "443:443"
     volumes:
-      - ./nginx.conf:/etc/nginx/nginx.conf:ro
       - /etc/letsencrypt:/etc/letsencrypt:ro
     networks:
       kafka_default: {}

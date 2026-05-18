@@ -19,7 +19,7 @@ func TestInitAllowedOrigins_FromEnv(t *testing.T) {
 	if _, ok := allowedOrigins["https://b.example.com"]; !ok {
 		t.Fatalf("expected https://b.example.com in allow list")
 	}
-	if _, ok := allowedOrigins["https://pokemongonexus.com"]; ok {
+	if _, ok := allowedOrigins["https://pokegonexus.com"]; ok {
 		t.Fatalf("unexpected default origin present when ALLOWED_ORIGINS is set")
 	}
 }
@@ -31,8 +31,8 @@ func TestInitAllowedOrigins_DefaultsWhenUnset(t *testing.T) {
 	defaults := []string{
 		"http://localhost:3000",
 		"http://127.0.0.1:3000",
-		"https://pokemongonexus.com",
-		"https://www.pokemongonexus.com",
+		"https://pokegonexus.com",
+		"https://www.pokegonexus.com",
 	}
 
 	for _, origin := range defaults {

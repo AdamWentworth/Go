@@ -8,7 +8,7 @@ import (
 )
 
 func TestCORSMiddleware_AllowsConfiguredOrigin(t *testing.T) {
-	t.Setenv("ALLOWED_ORIGINS", "https://pokemongonexus.com")
+	t.Setenv("ALLOWED_ORIGINS", "https://pokegonexus.com")
 	initAllowedOrigins()
 
 	app := fiber.New()
@@ -16,19 +16,19 @@ func TestCORSMiddleware_AllowsConfiguredOrigin(t *testing.T) {
 	app.Get("/ok", func(c *fiber.Ctx) error { return c.SendStatus(fiber.StatusOK) })
 
 	req := httptest.NewRequest("GET", "/ok", nil)
-	req.Header.Set("Origin", "https://pokemongonexus.com")
+	req.Header.Set("Origin", "https://pokegonexus.com")
 	resp, err := app.Test(req)
 	if err != nil {
 		t.Fatalf("app.Test: %v", err)
 	}
 
-	if got := resp.Header.Get("Access-Control-Allow-Origin"); got != "https://pokemongonexus.com" {
+	if got := resp.Header.Get("Access-Control-Allow-Origin"); got != "https://pokegonexus.com" {
 		t.Fatalf("unexpected allow-origin header: %q", got)
 	}
 }
 
 func TestCORSMiddleware_RejectsUnknownOrigin(t *testing.T) {
-	t.Setenv("ALLOWED_ORIGINS", "https://pokemongonexus.com")
+	t.Setenv("ALLOWED_ORIGINS", "https://pokegonexus.com")
 	initAllowedOrigins()
 
 	app := fiber.New()
@@ -48,7 +48,7 @@ func TestCORSMiddleware_RejectsUnknownOrigin(t *testing.T) {
 }
 
 func TestCORSMiddleware_OPTIONS(t *testing.T) {
-	t.Setenv("ALLOWED_ORIGINS", "https://pokemongonexus.com")
+	t.Setenv("ALLOWED_ORIGINS", "https://pokegonexus.com")
 	initAllowedOrigins()
 
 	app := fiber.New()
@@ -56,7 +56,7 @@ func TestCORSMiddleware_OPTIONS(t *testing.T) {
 	app.Get("/ok", func(c *fiber.Ctx) error { return c.SendStatus(fiber.StatusOK) })
 
 	req := httptest.NewRequest("OPTIONS", "/ok", nil)
-	req.Header.Set("Origin", "https://pokemongonexus.com")
+	req.Header.Set("Origin", "https://pokegonexus.com")
 	resp, err := app.Test(req)
 	if err != nil {
 		t.Fatalf("app.Test: %v", err)

@@ -19,17 +19,17 @@ describe('assetUrl', () => {
   });
 
   it('resolves relative paths against VITE_ASSET_ORIGIN', () => {
-    vi.stubEnv('VITE_ASSET_ORIGIN', 'https://pokemongonexus.com');
+    vi.stubEnv('VITE_ASSET_ORIGIN', 'https://pokegonexus.com');
     expect(resolveAssetUrl('/images/default/pokemon_1.png')).toBe(
-      'https://pokemongonexus.com/images/default/pokemon_1.png',
+      'https://pokegonexus.com/images/default/pokemon_1.png',
     );
     expect(resolveAssetUrl('images/default/pokemon_1.png')).toBe(
-      'https://pokemongonexus.com/images/default/pokemon_1.png',
+      'https://pokegonexus.com/images/default/pokemon_1.png',
     );
   });
 
   it('normalizes nested image/icon fields while leaving unrelated fields unchanged', () => {
-    vi.stubEnv('VITE_ASSET_ORIGIN', 'https://pokemongonexus.com');
+    vi.stubEnv('VITE_ASSET_ORIGIN', 'https://pokegonexus.com');
     const payload = {
       name: 'Bulbasaur',
       image_url: '/images/default/pokemon_1.png',
@@ -42,9 +42,9 @@ describe('assetUrl', () => {
 
     const normalized = normalizeAssetUrlsDeep(payload);
 
-    expect(normalized.image_url).toBe('https://pokemongonexus.com/images/default/pokemon_1.png');
-    expect(normalized.type_1_icon).toBe('https://pokemongonexus.com/images/types/grass.png');
-    expect(normalized.nested.sprite_url).toBe('https://pokemongonexus.com/images/sprites/pokemon_1.png');
+    expect(normalized.image_url).toBe('https://pokegonexus.com/images/default/pokemon_1.png');
+    expect(normalized.type_1_icon).toBe('https://pokegonexus.com/images/types/grass.png');
+    expect(normalized.nested.sprite_url).toBe('https://pokegonexus.com/images/sprites/pokemon_1.png');
     expect(normalized.nested.ignored).toBe('/not-an-asset-field.png');
   });
 

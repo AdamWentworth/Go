@@ -7,7 +7,7 @@ import (
 )
 
 func TestHealthzAndReadyz(t *testing.T) {
-	t.Setenv("ALLOWED_ORIGINS", "https://pokemongonexus.com")
+	t.Setenv("ALLOWED_ORIGINS", "https://pokegonexus.com")
 	initAllowedOrigins()
 	registerMetrics()
 
@@ -33,7 +33,7 @@ func TestHealthzAndReadyz(t *testing.T) {
 }
 
 func TestMetricsEndpoint(t *testing.T) {
-	t.Setenv("ALLOWED_ORIGINS", "https://pokemongonexus.com")
+	t.Setenv("ALLOWED_ORIGINS", "https://pokegonexus.com")
 	initAllowedOrigins()
 	registerMetrics()
 

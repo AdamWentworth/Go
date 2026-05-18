@@ -143,7 +143,7 @@ Set `reader/events/.env`:
 
 ```env
 PORT=3008
-ALLOWED_ORIGINS=http://localhost:3000,http://127.0.0.1:3000,https://pokemongonexus.com,https://www.pokemongonexus.com
+ALLOWED_ORIGINS=http://localhost:3000,http://127.0.0.1:3000,https://pokegonexus.com,https://www.pokegonexus.com,https://pokemongonexus.com,https://www.pokemongonexus.com
 
 JWT_SECRET=...
 
@@ -213,7 +213,7 @@ Compose behavior:
 - workflow: `.github/workflows/deploy-events-prod.yml`
 - dispatch inputs:
   - `image_ref` (`latest`, `sha-<commit>`, or full image ref)
-  - `deploy_root` (default `/home/adam/deploy/Go`)
+  - `deploy_root` (default `/srv/pokegonexus`)
   - `service_name` (default `events_service`)
 - deploy behavior:
   - sync git repo on prod runner

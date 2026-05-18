@@ -1,6 +1,6 @@
 # 📍 Location Service (`location`)
 
-Geospatial lookup service for Pokémon Go Nexus.  
+Geospatial lookup service for PokeGo Nexus.
 Provides autocomplete, geocode, reverse geocode, and city boundary lookups from PostGIS.
 
 ## ✅ What It Does

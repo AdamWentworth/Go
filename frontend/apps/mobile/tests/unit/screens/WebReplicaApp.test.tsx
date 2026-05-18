@@ -7,7 +7,7 @@ const mockWebViewSpy = jest.fn();
 jest.mock('../../../src/config/runtimeConfig', () => ({
   runtimeConfig: {
     api: {
-      frontendAppUrl: 'https://pokemongonexus.com',
+      frontendAppUrl: 'https://pokegonexus.com',
     },
   },
 }));
@@ -44,7 +44,7 @@ describe('WebReplicaApp', () => {
   it('loads the pokemon route from configured frontend host', () => {
     render(<WebReplicaApp />);
     const props = getWebViewProps();
-    expect(props.source?.uri).toBe('https://pokemongonexus.com/pokemon');
+    expect(props.source?.uri).toBe('https://pokegonexus.com/pokemon');
   });
 
   it('hides loading overlay once load ends', () => {
@@ -68,7 +68,7 @@ describe('WebReplicaApp', () => {
       });
     });
 
-    expect(getWebViewProps().source?.uri).toBe('https://pokemongonexus.com/');
+    expect(getWebViewProps().source?.uri).toBe('https://pokegonexus.com/');
   });
 
   it('shows error panel when both pokemon and root routes fail', () => {
@@ -104,7 +104,7 @@ describe('WebReplicaApp', () => {
       });
     });
 
-    expect(getWebViewProps().source?.uri).toBe('https://pokemongonexus.com/');
+    expect(getWebViewProps().source?.uri).toBe('https://pokegonexus.com/');
 
     act(() => {
       getWebViewProps().onMessage?.({
@@ -140,7 +140,7 @@ describe('WebReplicaApp', () => {
       fireEvent.press(screen.getByText('Retry'));
     });
 
-    expect(getWebViewProps().source?.uri).toBe('https://pokemongonexus.com/pokemon');
+    expect(getWebViewProps().source?.uri).toBe('https://pokegonexus.com/pokemon');
   });
 
   it('falls back from stuck loading after timeout', () => {
@@ -151,7 +151,7 @@ describe('WebReplicaApp', () => {
       jest.advanceTimersByTime(15001);
     });
 
-    expect(getWebViewProps().source?.uri).toBe('https://pokemongonexus.com/');
+    expect(getWebViewProps().source?.uri).toBe('https://pokegonexus.com/');
   });
 
   it('shows error overlay after repeated timeout and exposes recovery actions', () => {

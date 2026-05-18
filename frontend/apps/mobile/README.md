@@ -1,6 +1,6 @@
 # Mobile App (Expo)
 
-Expo mobile shell for Pokemon Go Nexus.
+Expo mobile shell for PokeGo Nexus.
 
 ## Included baseline
 

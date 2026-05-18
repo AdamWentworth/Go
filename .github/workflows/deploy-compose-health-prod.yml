@@ -9,7 +9,7 @@ on:
         type: string
       deploy_root:
         required: false
-        default: "/home/adam/deploy/Go"
+        default: "/srv/pokegonexus"
         type: string
       service_name:
         required: true
@@ -165,13 +165,17 @@ jobs:
         run: |
           set -euo pipefail
 
+          source "${GITHUB_WORKSPACE}/ops/prod/deploy-image-utils.sh"
+
           DEPLOY_ROOT="${{ inputs.deploy_root }}"
           SERVICE_DEPLOY_DIR="${DEPLOY_ROOT}/${{ inputs.service_deploy_subdir }}"
           SERVICE_NAME="${{ inputs.service_name }}"
           IMAGE_REPO="${{ inputs.image_repo }}"
           IMAGE_ENV_VAR="${{ inputs.image_env_var }}"
           RAW_IMAGE_INPUT="${{ inputs.image_ref }}"
-          TARGET_IMAGE=""
+          TARGET_IMAGE="$(resolve_image_ref "${IMAGE_REPO}" "${RAW_IMAGE_INPUT}")"
+          TARGET_DIGEST=""
+          DEPLOY_IMAGE=""
           COMPOSE_FILE="${GITHUB_WORKSPACE}/${{ inputs.compose_file }}"
           ENV_FILE="${SERVICE_DEPLOY_DIR}/.env"
           CONTAINER_NAME="${{ inputs.container_name }}"
@@ -180,29 +184,11 @@ jobs:
           HEALTH_LABEL="${{ inputs.health_label }}"
           HEALTH_BODY_FILE="/tmp/${HEALTH_LABEL}_health_body.txt"
 
-          if [[ -z "${RAW_IMAGE_INPUT}" ]]; then
-            TARGET_IMAGE="${IMAGE_REPO}:latest"
-          elif [[ "${RAW_IMAGE_INPUT}" == :* ]]; then
-            TARGET_IMAGE="${IMAGE_REPO}${RAW_IMAGE_INPUT}"
-          elif [[ "${RAW_IMAGE_INPUT}" == */* ]]; then
-            TARGET_IMAGE="${RAW_IMAGE_INPUT}"
-          else
-            TARGET_IMAGE="${IMAGE_REPO}:${RAW_IMAGE_INPUT}"
-          fi
-
-          if [[ "${TARGET_IMAGE}" == */* && "${TARGET_IMAGE}" != *:* && "${TARGET_IMAGE}" != *@* ]]; then
-            TARGET_IMAGE="${TARGET_IMAGE}:latest"
-          fi
-
-          PREVIOUS_IMAGE="$(docker inspect --format '{{.Config.Image}}' "${CONTAINER_NAME}" 2>/dev/null || true)"
-          if [[ -n "${PREVIOUS_IMAGE}" ]]; then
-            echo "Previous image: ${PREVIOUS_IMAGE}"
-          else
-            echo "No existing container image found for ${CONTAINER_NAME}; rollback image will be unavailable."
-          fi
+          prepare_rollback_image "${IMAGE_REPO}" "${HEALTH_LABEL}" "${CONTAINER_NAME}"
 
           echo "Pulling target image: ${TARGET_IMAGE}"
           docker pull "${TARGET_IMAGE}"
+          select_deploy_image "${TARGET_IMAGE}" "${IMAGE_REPO}"
 
           EXISTING_PROJECT="$(docker inspect --format '{{ index .Config.Labels "com.docker.compose.project" }}' "${CONTAINER_NAME}" 2>/dev/null || true)"
           if [[ -n "${EXISTING_PROJECT}" && "${EXISTING_PROJECT}" != "${COMPOSE_PROJECT_NAME}" ]]; then
@@ -210,8 +196,8 @@ jobs:
             docker rm -f "${CONTAINER_NAME}"
           fi
 
-          echo "Deploying ${SERVICE_NAME} with image ${TARGET_IMAGE}"
-          env "${IMAGE_ENV_VAR}=${TARGET_IMAGE}" docker compose \
+          echo "Deploying ${SERVICE_NAME} with image ${DEPLOY_IMAGE}"
+          env "${IMAGE_ENV_VAR}=${DEPLOY_IMAGE}" docker compose \
             --project-directory "${SERVICE_DEPLOY_DIR}" \
             -f "${COMPOSE_FILE}" \
             --env-file "${ENV_FILE}" \
@@ -242,9 +228,10 @@ jobs:
             echo "Recent container logs:" >&2
             docker logs --tail 200 "${CONTAINER_NAME}" || true
 
-            if [[ -n "${PREVIOUS_IMAGE}" ]]; then
-              echo "Rolling back to ${PREVIOUS_IMAGE}"
-              env "${IMAGE_ENV_VAR}=${PREVIOUS_IMAGE}" docker compose \
+            ROLLBACK_TARGET="${ROLLBACK_IMAGE:-${PREVIOUS_IMAGE}}"
+            if [[ -n "${ROLLBACK_TARGET}" ]]; then
+              echo "Rolling back to ${ROLLBACK_TARGET}"
+              env "${IMAGE_ENV_VAR}=${ROLLBACK_TARGET}" docker compose \
                 --project-directory "${SERVICE_DEPLOY_DIR}" \
                 -f "${COMPOSE_FILE}" \
                 --env-file "${ENV_FILE}" \
@@ -255,6 +242,18 @@ jobs:
             fi
             exit 1
           fi
+
+          write_deploy_metadata \
+            "${SERVICE_DEPLOY_DIR}/deployments/${SERVICE_NAME}.json" \
+            "${SERVICE_NAME}" \
+            "${RAW_IMAGE_INPUT}" \
+            "${TARGET_IMAGE}" \
+            "${TARGET_DIGEST}" \
+            "${DEPLOY_IMAGE}" \
+            "${CONTAINER_NAME}" \
+            "${PREVIOUS_IMAGE}" \
+            "${PREVIOUS_IMAGE_ID}" \
+            "${ROLLBACK_IMAGE}"
 
           rm -f "${HEALTH_BODY_FILE}"
           echo "Deployment succeeded."

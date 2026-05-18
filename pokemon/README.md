@@ -1,6 +1,6 @@
 ﻿# Pokemon Data Service (Go) 🐉
 
-Production Pokemon API service for Pokemon Go Nexus, implemented in Go (`net/http` + `chi`) as the replacement for the legacy Node `pokemon_data` runtime.
+Production Pokemon API service for PokeGo Nexus, implemented in Go (`net/http` + `chi`) as the replacement for the legacy Node `pokemon_data` runtime.
 
 ## ✨ Highlights
 
@@ -26,7 +26,7 @@ Production Pokemon API service for Pokemon Go Nexus, implemented in Go (`net/htt
 ```env
 PORT=3001
 SQLITE_PATH=./data/pokego.db
-ALLOWED_ORIGINS=https://pokemongonexus.com,https://www.pokemongonexus.com
+ALLOWED_ORIGINS=https://pokegonexus.com,https://www.pokegonexus.com,https://pokemongonexus.com,https://www.pokemongonexus.com
 INTERNAL_ONLY_ENABLED=true
 INTERNAL_ONLY_CIDRS=127.0.0.0/8,::1/128,172.30.0.11/32
 TRUSTED_PROXY_CIDRS=127.0.0.0/8,::1/128,172.30.0.10/32

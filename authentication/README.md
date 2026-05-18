@@ -1,6 +1,6 @@
 ﻿# Authentication Service (Node.js) 🔒
 
-Authentication API for Pokemon Go Nexus.
+Authentication API for PokeGo Nexus.
 
 ## 📌 Overview
 
@@ -256,7 +256,7 @@ Workflow:
 Manual inputs:
 
 - `image_ref` (for example `latest` or `sha-<commit>`)
-- `deploy_root` (default `/home/adam/deploy/Go`)
+- `deploy_root` (default `/srv/pokegonexus`)
 - `service_name` (default `auth_service`)
 
 Deploy behavior:
