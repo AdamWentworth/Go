@@ -61,8 +61,8 @@ jobs:
             /etc/letsencrypt/live/pokemongonexus.com/fullchain.pem \
             /etc/letsencrypt/live/pokemongonexus.com/privkey.pem
           do
-            if [[ ! -f "${cert_file}" ]]; then
-              echo "Required TLS file not found: ${cert_file}" >&2
+            if ! docker run --rm -v /etc/letsencrypt:/etc/letsencrypt:ro alpine:3.22 sh -c "test -f '${cert_file}'"; then
+              echo "Required TLS file not found inside /etc/letsencrypt mount: ${cert_file}" >&2
               exit 1
             fi
           done
