@@ -9,7 +9,7 @@ The deploy workflows use GitHub's fresh checkout for compose definitions and use
 - Kafka and monitoring data
 
 The workflow default is `/srv/pokegonexus`. The existing repo checkout can
-stay at `/home/adam/deploy/Go`; the point is only to move durable runtime state
+stay at `/home/adam/deploy/PokeGoNexus`; the point is only to move durable runtime state
 out of that checkout. Before triggering deploys against a prod host that still
 keeps state under the source checkout, create the runtime root and copy the
 state first:
@@ -17,7 +17,7 @@ state first:
 ```bash
 sudo mkdir -p /srv/pokegonexus
 sudo chown -R adam:adam /srv/pokegonexus
-bash ops/prod/migrate-deploy-state.sh /home/adam/deploy/Go /srv/pokegonexus
+bash ops/prod/migrate-deploy-state.sh /home/adam/deploy/PokeGoNexus /srv/pokegonexus
 ```
 
 The migration script copies files only when the target path is missing, so it is

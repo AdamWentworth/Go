@@ -1,6 +1,6 @@
 #!/bin/bash
 
-REPO_ROOT="${POKEGONEXUS_REPO:-/home/adam/deploy/Go}"
+REPO_ROOT="${POKEGONEXUS_REPO:-/home/adam/deploy/PokeGoNexus}"
 NGINX_CONF="${NGINX_CONF:-${REPO_ROOT}/nginx/nginx.conf}"
 
 case "$1" in

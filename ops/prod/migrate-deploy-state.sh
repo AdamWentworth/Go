@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-SOURCE_ROOT="${1:-/home/adam/deploy/Go}"
+SOURCE_ROOT="${1:-/home/adam/deploy/PokeGoNexus}"
 TARGET_ROOT="${2:-/srv/pokegonexus}"
 
 if [[ ! -d "${SOURCE_ROOT}" ]]; then
