@@ -21,7 +21,7 @@ nginx/
 
 ### 📦 Frontend
 
-- Served from: `A:/Visual-Studio-Code/Go/frontend/build`
+- Served from: `A:/Visual-Studio-Code/PokeGoNexus/frontend/build`
 - Access via: `https://pokegonexus.com/`
 
 ### 🔁 Proxied APIs
@@ -144,4 +144,3 @@ Restart nginx after renewal.
 ## 👨‍💻 Author Notes
 
 This config was optimized for the PokeGo Nexus platform, enabling smooth local development and production deployment using NGINX as a central routing layer. It supports hot-swapping backend services and handles SSE without hitches.
-
