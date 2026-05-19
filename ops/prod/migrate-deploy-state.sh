@@ -71,6 +71,7 @@ copy_dir_if_missing "${SOURCE_ROOT}/pokemon/data" "${TARGET_ROOT}/pokemon/data"
 copy_dir_if_missing "${SOURCE_ROOT}/kafka/data" "${TARGET_ROOT}/kafka/data"
 copy_dir_if_missing "${SOURCE_ROOT}/monitoring/data" "${TARGET_ROOT}/monitoring/data"
 copy_dir_if_missing "${SOURCE_ROOT}/monitoring/alertmanager-data" "${TARGET_ROOT}/monitoring/alertmanager-data"
+copy_dir_if_missing "${SOURCE_ROOT}/ops/certbot" "${TARGET_ROOT}/ops/certbot"
 
 # Legacy Pokemon data path used before the Go service layout.
 if [[ ! -f "${TARGET_ROOT}/pokemon/data/pokego.db" && -f "${SOURCE_ROOT}/pokemon_data/data/pokego.db" ]]; then
@@ -90,6 +91,7 @@ fi
 
 for dir in \
   "authentication/backups" \
+  "ops/certbot" \
   "storage/backups" \
   "pokemon/data" \
   "kafka/data" \

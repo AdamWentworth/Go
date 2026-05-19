@@ -7,6 +7,7 @@ The deploy workflows use GitHub's fresh checkout for compose definitions and use
 - service backups and logs
 - Pokemon SQLite data
 - Kafka and monitoring data
+- certbot hook scripts used by automatic TLS renewal
 
 The workflow default is `/srv/pokegonexus`. The existing repo checkout can
 stay at `/home/adam/deploy/PokeGoNexus`; the point is only to move durable runtime state
@@ -22,6 +23,11 @@ bash ops/prod/migrate-deploy-state.sh /home/adam/deploy/PokeGoNexus /srv/pokegon
 
 The migration script copies files only when the target path is missing, so it is
 safe to rerun while preparing the new state root.
+
+After recreating the remaining bind-mounted helper containers and repointing
+certbot renewal hooks to `/srv/pokegonexus/ops/certbot`, the persistent repo
+checkout on prod becomes optional. The live runtime should then depend on
+`/srv/pokegonexus`, Docker volumes, and the self-hosted runner workspace only.
 
 ## Pokemon Database
 
