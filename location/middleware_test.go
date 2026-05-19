@@ -18,6 +18,8 @@ func TestInitAllowedOrigins_Defaults(t *testing.T) {
 		"http://127.0.0.1:3000",
 		"https://pokegonexus.com",
 		"https://www.pokegonexus.com",
+		"https://pokemongonexus.com",
+		"https://www.pokemongonexus.com",
 	}
 	for _, origin := range defaults {
 		if _, ok := allowedOrigins[origin]; !ok {

@@ -55,6 +55,18 @@ jobs:
             exit 1
           fi
 
+          for cert_file in \
+            /etc/letsencrypt/live/pokegonexus.com/fullchain.pem \
+            /etc/letsencrypt/live/pokegonexus.com/privkey.pem \
+            /etc/letsencrypt/live/pokemongonexus.com/fullchain.pem \
+            /etc/letsencrypt/live/pokemongonexus.com/privkey.pem
+          do
+            if [[ ! -f "${cert_file}" ]]; then
+              echo "Required TLS file not found: ${cert_file}" >&2
+              exit 1
+            fi
+          done
+
           if ! docker network inspect "${KAFKA_NETWORK}" >/dev/null 2>&1; then
             echo "External docker network ${KAFKA_NETWORK} not found; creating it now."
             docker network create "${KAFKA_NETWORK}"
@@ -135,7 +147,7 @@ jobs:
             # HTTP can legitimately redirect to HTTPS in this stack.
             if [[ "${LAST_STATUS}" == "301" || "${LAST_STATUS}" == "302" ]]; then
               HTTPS_STATUS="$(curl -k -sS \
-                -H 'Host: pokemongonexus.com' \
+                -H 'Host: pokegonexus.com' \
                 -o /tmp/frontend_health_body.txt \
                 -w '%{http_code}' \
                 https://127.0.0.1/ || true)"
