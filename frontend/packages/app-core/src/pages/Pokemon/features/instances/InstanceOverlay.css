@@ -183,6 +183,7 @@
   align-items: stretch;
   --overlay-close-button-gap: 20px;
   --caught-scroll-tail-pad: 0px;
+  --caught-overlay-top-gap: 16px;
   --caught-shell-max-width: 500px;
   --caught-shell-width: min(95vw, var(--caught-shell-max-width));
   --instance-shell-side-gap: 2.5vw;
@@ -205,11 +206,19 @@
   :is(.instance-overlay.caught-mode, .instance-overlay.trade-mode) {
     --overlay-close-button-size: clamp(60px, 10vw, 90px);
   }
+
+  .instance-overlay.caught-mode {
+    --caught-overlay-top-gap: clamp(26px, 5vw, 36px);
+  }
 }
 
 @media (min-width: 768px) {
   :is(.instance-overlay.caught-mode, .instance-overlay.trade-mode) {
     --overlay-close-button-size: clamp(60px, 3.5vw, 80px);
+  }
+
+  .instance-overlay.caught-mode {
+    --caught-overlay-top-gap: clamp(40px, 4vw, 64px);
   }
 }
 
@@ -237,7 +246,7 @@
   display: flex;
   justify-content: center;
   overflow: visible;
-  padding-top: calc(16px + env(safe-area-inset-top));
+  padding-top: calc(var(--caught-overlay-top-gap) + env(safe-area-inset-top));
   padding-bottom: calc(
     var(--overlay-close-button-size) +
     var(--overlay-close-button-bottom) +
