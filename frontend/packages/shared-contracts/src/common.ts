@@ -9,7 +9,11 @@ export const buildUrl = (
   path: string,
   query?: Record<string, UrlQueryValue>,
 ): string => {
-  const normalizedBase = baseUrl.endsWith('/') ? baseUrl : `${baseUrl}/`;
+  const browserLocation = (globalThis as { location?: { origin?: string } }).location;
+  const absoluteBase = /^[a-z][a-z\d+.-]*:/i.test(baseUrl)
+    ? baseUrl
+    : new URL(baseUrl, browserLocation?.origin).toString();
+  const normalizedBase = absoluteBase.endsWith('/') ? absoluteBase : `${absoluteBase}/`;
   const normalizedPath = path.replace(/^\/+/, '');
   const url = new URL(normalizedPath, normalizedBase);
   if (!query) return url.toString();

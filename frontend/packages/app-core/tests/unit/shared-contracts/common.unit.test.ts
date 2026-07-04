@@ -20,4 +20,10 @@ describe('shared common contract helpers', () => {
       'https://pokegonexus.com/api/search/searchPokemon?pokemon_id=25&shiny=true&ownership=caught',
     );
   });
+
+  it('resolves same-origin base URLs against the browser origin', () => {
+    const url = buildUrl('/api/pokemon', '/pokemons');
+
+    expect(url).toBe('http://localhost:3000/api/pokemon/pokemons');
+  });
 });

@@ -24,6 +24,9 @@ document.addEventListener('contextmenu', (event) => {
 const shouldRegisterServiceWorker =
   'serviceWorker' in navigator &&
   import.meta.env.VITE_DISABLE_SERVICE_WORKER !== 'true';
+const shouldDisableServiceWorker =
+  'serviceWorker' in navigator &&
+  import.meta.env.VITE_DISABLE_SERVICE_WORKER === 'true';
 
 if (shouldRegisterServiceWorker) {
   window.addEventListener('load', () => {
@@ -55,6 +58,15 @@ if (shouldRegisterServiceWorker) {
         log.error('Service Worker registration failed:', error);
       });
   });
+}
+
+if (shouldDisableServiceWorker) {
+  navigator.serviceWorker
+    .getRegistrations()
+    .then((registrations) => Promise.all(registrations.map((registration) => registration.unregister())))
+    .catch((error) => {
+      log.error('Service Worker unregister failed:', error);
+    });
 }
 
 const container = document.getElementById('root');
