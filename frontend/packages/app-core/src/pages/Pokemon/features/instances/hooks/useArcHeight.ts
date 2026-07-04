@@ -7,6 +7,27 @@ type ArcHeightInput = {
   headerBottomY: number;
 };
 
+function resolveCssLengthPx(element: HTMLElement, propertyName: string, fallback: number): number {
+  const rawValue = window.getComputedStyle(element).getPropertyValue(propertyName).trim();
+  if (!rawValue) return fallback;
+
+  if (/^-?\d*\.?\d+px$/.test(rawValue)) {
+    return parseFloat(rawValue);
+  }
+
+  const probe = document.createElement('div');
+  probe.style.position = 'absolute';
+  probe.style.visibility = 'hidden';
+  probe.style.pointerEvents = 'none';
+  probe.style.width = rawValue;
+  element.appendChild(probe);
+
+  const resolved = parseFloat(window.getComputedStyle(probe).width);
+  probe.remove();
+
+  return Number.isFinite(resolved) ? resolved : fallback;
+}
+
 export const calculateArcHeight = ({
   panelTopPx,
   baselineLift,
@@ -33,9 +54,8 @@ export const useArcHeight = () => {
     const before = window.getComputedStyle(column, '::before');
     const panelTopPx = parseFloat(before.top) || 0;
 
-    const css = window.getComputedStyle(layer);
-    const baselineLift = parseFloat(css.getPropertyValue('--arc-baseline-offset')) || 6;
-    const topGap = parseFloat(css.getPropertyValue('--arc-top-gap')) || 0;
+    const baselineLift = resolveCssLengthPx(layer, '--arc-baseline-offset', 6);
+    const topGap = resolveCssLengthPx(layer, '--arc-top-gap', 0);
 
     const tops: number[] = [];
     const topRow = column.querySelector('.top-row') as HTMLElement | null;

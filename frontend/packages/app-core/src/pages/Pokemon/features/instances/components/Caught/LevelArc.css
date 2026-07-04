@@ -58,3 +58,15 @@
     var(--arc-dot-scale-y, 1)
   );
 }
+
+@media (min-width: 481px) and (max-width: 767px) {
+  .level-arc-layer {
+    --arc-top-gap: 44px;
+  }
+}
+
+@media (min-width: 768px) {
+  .level-arc-layer {
+    --arc-top-gap: clamp(46px, 5vw, 64px);
+  }
+}

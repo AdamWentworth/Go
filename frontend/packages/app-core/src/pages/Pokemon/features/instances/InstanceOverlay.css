@@ -218,7 +218,7 @@
   }
 
   .instance-overlay.caught-mode {
-    --caught-overlay-top-gap: clamp(40px, 4vw, 64px);
+    --caught-overlay-top-gap: clamp(28px, 2.8vw, 44px);
   }
 }
 
