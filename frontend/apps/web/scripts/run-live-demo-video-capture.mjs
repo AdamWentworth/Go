@@ -61,6 +61,9 @@ async function resolveCredentials() {
     'Video capture defaults to dark theme. Set DEMO_VIDEO_THEMES=dark,light to record both themes.',
   );
   console.log(
+    'Videos are trimmed from the visual-ready frame and capped at DEMO_VIDEO_MAX_SECONDS, defaulting to just under 20 seconds.',
+  );
+  console.log(
     `Capturing web surface: ${process.env.E2E_BASE_URL ?? 'https://pokegonexus.com'}`,
   );
 

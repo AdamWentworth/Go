@@ -1,4 +1,5 @@
 import fs from 'node:fs';
+import { spawnSync } from 'node:child_process';
 import path from 'node:path';
 
 import {
@@ -10,6 +11,7 @@ import {
   type Page,
   type TestInfo,
 } from '@playwright/test';
+import ffmpegStaticPath from 'ffmpeg-static';
 
 import { attachBrowserDiagnostics } from './support/diagnostics';
 
@@ -51,9 +53,11 @@ const videoViewports = runLiveVideoCapture
       ['desktop', 'mobile'],
     )
   : [];
-const videoPauseMs = parsePositiveInteger(process.env.DEMO_VIDEO_PAUSE_MS, 4_000);
-const videoActionPauseMs = parsePositiveInteger(process.env.DEMO_VIDEO_ACTION_PAUSE_MS, 900);
-const videoFinalPauseMs = parsePositiveInteger(process.env.DEMO_VIDEO_FINAL_PAUSE_MS, 7_000);
+const videoPauseMs = parsePositiveInteger(process.env.DEMO_VIDEO_PAUSE_MS, 2_500);
+const videoActionPauseMs = parsePositiveInteger(process.env.DEMO_VIDEO_ACTION_PAUSE_MS, 650);
+const videoFinalPauseMs = parsePositiveInteger(process.env.DEMO_VIDEO_FINAL_PAUSE_MS, 4_500);
+const videoMaxDurationSeconds = parsePositiveNumber(process.env.DEMO_VIDEO_MAX_SECONDS, 19.8);
+const videoTrimPrerollMs = parsePositiveInteger(process.env.DEMO_VIDEO_TRIM_PREROLL_MS, 150);
 
 test.use({
   screenshot: 'off',
@@ -107,6 +111,78 @@ function parsePositiveInteger(rawValue: string | undefined, fallback: number) {
 
   const value = Number(rawValue);
   return Number.isFinite(value) && value > 0 ? Math.round(value) : fallback;
+}
+
+function parsePositiveNumber(rawValue: string | undefined, fallback: number) {
+  if (!rawValue) return fallback;
+
+  const value = Number(rawValue);
+  return Number.isFinite(value) && value > 0 ? value : fallback;
+}
+
+function resolveFfmpegPath() {
+  if (process.env.FFMPEG_PATH) {
+    return process.env.FFMPEG_PATH;
+  }
+
+  if (ffmpegStaticPath) {
+    return ffmpegStaticPath;
+  }
+
+  return 'ffmpeg';
+}
+
+function formatSeconds(durationMs: number) {
+  return (Math.max(0, durationMs) / 1_000).toFixed(3);
+}
+
+function videoTrimStart(recordingStartedAt: number) {
+  return Math.max(0, Date.now() - recordingStartedAt - videoTrimPrerollMs);
+}
+
+function trimVideoClip(rawVideoPath: string, outputVideoPath: string, trimStartMs: number) {
+  const ffmpegPath = resolveFfmpegPath();
+  const result = spawnSync(
+    ffmpegPath,
+    [
+      '-hide_banner',
+      '-loglevel',
+      'error',
+      '-y',
+      '-i',
+      rawVideoPath,
+      '-ss',
+      formatSeconds(trimStartMs),
+      '-t',
+      String(videoMaxDurationSeconds),
+      '-an',
+      '-vf',
+      'fps=30',
+      '-c:v',
+      'libvpx-vp9',
+      '-crf',
+      '28',
+      '-b:v',
+      '0',
+      '-row-mt',
+      '1',
+      outputVideoPath,
+    ],
+    { encoding: 'utf8' },
+  );
+
+  if (result.status !== 0) {
+    throw new Error(
+      [
+        `Could not trim live demo video with ffmpeg at ${ffmpegPath}.`,
+        `Raw video kept at: ${rawVideoPath}`,
+        result.error ? `Error: ${result.error.message}` : '',
+        result.stderr ? `stderr:\n${result.stderr}` : '',
+      ]
+        .filter(Boolean)
+        .join('\n'),
+    );
+  }
 }
 
 async function setThemeMode(page: Page, theme: ThemeMode) {
@@ -195,6 +271,7 @@ async function installVideoPresentationHelpers(context: BrowserContext, showCurs
   await context.addInitScript((options: { showCursor: boolean }) => {
     const styleId = 'live-demo-video-presentation-style';
     const cursorId = 'live-demo-video-cursor';
+    const tapClassName = 'live-demo-mobile-tap';
     let lastCursorX = 24;
     let lastCursorY = 24;
 
@@ -242,6 +319,49 @@ async function installVideoPresentationHelpers(context: BrowserContext, showCurs
           #${cursorId}.is-pressing {
             scale: 0.88;
           }
+          .${tapClassName} {
+            --tap-x: 0px;
+            --tap-y: 0px;
+            animation: live-demo-tap-ripple 720ms ease-out forwards;
+            background: rgb(255 255 255 / 0.22);
+            border: 2px solid rgb(255 255 255 / 0.92);
+            border-radius: 999px;
+            box-shadow:
+              0 0 0 1px rgb(0 0 0 / 0.25),
+              0 6px 18px rgb(0 0 0 / 0.28);
+            height: 54px;
+            left: 0;
+            pointer-events: none;
+            position: fixed;
+            top: 0;
+            transform: translate3d(calc(var(--tap-x) - 27px), calc(var(--tap-y) - 27px), 0) scale(0.58);
+            width: 54px;
+            z-index: 2147483647;
+          }
+          .${tapClassName}::after {
+            background: rgb(255 255 255 / 0.92);
+            border-radius: inherit;
+            content: '';
+            height: 10px;
+            left: 50%;
+            position: absolute;
+            top: 50%;
+            transform: translate(-50%, -50%);
+            width: 10px;
+          }
+          @keyframes live-demo-tap-ripple {
+            0% {
+              opacity: 0;
+              transform: translate3d(calc(var(--tap-x) - 27px), calc(var(--tap-y) - 27px), 0) scale(0.48);
+            }
+            16% {
+              opacity: 1;
+            }
+            100% {
+              opacity: 0;
+              transform: translate3d(calc(var(--tap-x) - 27px), calc(var(--tap-y) - 27px), 0) scale(1.12);
+            }
+          }
         `;
         (document.head ?? root).appendChild(style);
       }
@@ -279,12 +399,28 @@ async function installVideoPresentationHelpers(context: BrowserContext, showCurs
 
     type DemoVideoWindow = Window & {
       __setLiveDemoCursor?: (x: number, y: number) => void;
+      __showLiveDemoTap?: (x: number, y: number) => void;
     };
     (window as DemoVideoWindow).__setLiveDemoCursor = (x: number, y: number) => {
       lastCursorX = x;
       lastCursorY = y;
       ensurePresentation();
       updateCursor();
+    };
+    (window as DemoVideoWindow).__showLiveDemoTap = (x: number, y: number) => {
+      if (options.showCursor) return;
+
+      ensurePresentation();
+      const tap = document.createElement('div');
+      tap.className = tapClassName;
+      tap.setAttribute('aria-hidden', 'true');
+      tap.style.setProperty('--tap-x', `${x}px`);
+      tap.style.setProperty('--tap-y', `${y}px`);
+      (document.body ?? document.documentElement).appendChild(tap);
+
+      const removeTap = () => tap.remove();
+      tap.addEventListener('animationend', removeTap, { once: true });
+      window.setTimeout(removeTap, 900);
     };
 
     ensurePresentation();
@@ -316,10 +452,30 @@ async function moveVideoCursorToLocator(locator: Locator) {
   await page.waitForTimeout(220);
 }
 
+async function showVideoTapAtLocator(locator: Locator) {
+  const page = locator.page();
+  const box = await locator.boundingBox();
+  if (!box) return;
+
+  const x = Math.round(box.x + box.width / 2);
+  const y = Math.round(box.y + box.height / 2);
+  await page.evaluate(
+    ({ tapX, tapY }) => {
+      type DemoVideoWindow = Window & {
+        __showLiveDemoTap?: (x: number, y: number) => void;
+      };
+      (window as DemoVideoWindow).__showLiveDemoTap?.(tapX, tapY);
+    },
+    { tapX: x, tapY: y },
+  );
+  await page.waitForTimeout(120);
+}
+
 async function clickForVideo(locator: Locator, timeout = 10_000) {
   await expect(locator).toBeVisible({ timeout });
   await hideToastNotifications(locator.page());
   await moveVideoCursorToLocator(locator);
+  await showVideoTapAtLocator(locator);
   await locator.click({ timeout });
   await hideToastNotifications(locator.page());
 }
@@ -440,15 +596,19 @@ async function waitForCollectionMediaReady(page: Page, timeout = 90_000) {
       const visibleCards = Array.from(document.querySelectorAll<HTMLElement>('.pokemon-card'))
         .filter(isInViewport);
       const visibleCardImages = visibleCards.flatMap((card) =>
-        Array.from(
-          card.querySelectorAll<HTMLImageElement>(
-            '.location-backdrop, .pokemon-image, .lucky-backdrop, .max-badge, .purified-badge-image',
-          ),
-        ).filter(isInViewport),
+        Array.from(card.querySelectorAll<HTMLImageElement>('img')).filter(isInViewport),
       );
 
-      return visibleCardImages.every(
-        (image) => image.complete && image.naturalWidth > 0 && image.naturalHeight > 0,
+      return (
+        visibleCards.length > 0 &&
+        visibleCardImages.length > 0 &&
+        visibleCardImages.every(
+          (image) =>
+            Boolean(image.currentSrc || image.src) &&
+            image.complete &&
+            image.naturalWidth > 0 &&
+            image.naturalHeight > 0,
+        )
       );
     },
     undefined,
@@ -669,6 +829,38 @@ async function chooseCaughtTag(page: Page) {
   await waitForAppSettled(page);
 }
 
+async function chooseFavoritesTag(page: Page) {
+  await clickIfVisible(page.getByText('TAGS', { exact: true }), 5_000);
+  await clickIfVisible(page.locator('.tag-item[data-tag="Favorites"]'), 10_000);
+  await waitForAppSettled(page);
+}
+
+async function selectAllPokedexFilter(page: Page) {
+  const pokedexActive = await page
+    .locator('.toggle-text.active')
+    .filter({ hasText: 'POKÉDEX' })
+    .first()
+    .isVisible({ timeout: 500 })
+    .catch(() => false);
+
+  if (!pokedexActive) {
+    await clickIfVisible(page.getByText('POKÉDEX', { exact: true }), 5_000);
+  }
+
+  const allPokedexList = page
+    .locator('.pokedex-fullwidth-list .pokedex-list-item, .pokedex-lists-menu.one-column .pokedex-list-item')
+    .first();
+  await expect(allPokedexList).toBeVisible({ timeout: 30_000 });
+  await hideToastNotifications(page);
+  await allPokedexList.click({ timeout: 10_000 });
+  await waitForAppSettled(page);
+  await centerPokemonPanel(page);
+  await waitForCollectionCardsOrEmpty(page);
+  await ensureCollectionContentInViewport(page);
+  await forcePokemonPanelCentered(page);
+  await waitForCollectionMediaReady(page);
+}
+
 async function sortCollectionByFavorites(page: Page) {
   const readSortState = () =>
     page.locator('.sort-button').first().evaluate((button) => {
@@ -865,10 +1057,10 @@ async function pauseForVideo(page: Page, duration = videoPauseMs) {
   await page.waitForTimeout(duration);
 }
 
-async function chooseCaughtTagForVideo(page: Page) {
+async function chooseFavoritesTagForVideo(page: Page) {
   await clickIfVisibleForVideo(page.getByText('TAGS', { exact: true }), 5_000);
   await page.waitForTimeout(videoActionPauseMs);
-  await clickIfVisibleForVideo(page.locator('.tag-item[data-tag="Caught"]'), 10_000);
+  await clickIfVisibleForVideo(page.locator('.tag-item[data-tag="Favorites"]'), 10_000);
   await waitForAppSettled(page);
 }
 
@@ -892,7 +1084,8 @@ async function warmCollectionVideoContext(page: Page) {
   await page.goto('/pokemon', { waitUntil: 'domcontentloaded' });
   await waitForAppSettled(page);
 
-  await chooseCaughtTag(page);
+  await selectAllPokedexFilter(page);
+  await chooseFavoritesTag(page);
   await centerPokemonPanel(page);
   await sortCollectionByFavorites(page);
   await centerPokemonPanel(page);
@@ -929,24 +1122,28 @@ async function openShinyShadowRaikouOverlayForVideo(page: Page) {
   await waitForVisibleImagesReady(page, 45_000);
 }
 
-async function performCollectionOverlayVideoFlow(page: Page) {
+async function performCollectionOverlayVideoFlow(page: Page, recordingStartedAt: number) {
   await page.goto('/pokemon', { waitUntil: 'domcontentloaded' });
   await waitForAppSettled(page);
-  await pauseForVideo(page, 1_500);
 
-  await chooseCaughtTagForVideo(page);
+  await selectAllPokedexFilter(page);
+  const trimStartMs = videoTrimStart(recordingStartedAt);
+  await pauseForVideo(page, 1_200);
+
+  await chooseFavoritesTagForVideo(page);
   await centerPokemonPanel(page);
-  await page.waitForTimeout(videoActionPauseMs);
   await sortCollectionByFavoritesForVideo(page);
   await centerPokemonPanel(page);
   await waitForCollectionCardsOrEmpty(page);
   await ensureCollectionContentInViewport(page);
   await forcePokemonPanelCentered(page);
   await waitForCollectionMediaReady(page);
-  await pauseForVideo(page, 3_000);
+  await pauseForVideo(page, 2_000);
 
   await openShinyShadowRaikouOverlayForVideo(page);
   await pauseForVideo(page, videoFinalPauseMs);
+
+  return { trimStartMs };
 }
 
 async function warmSearchVideoContext(page: Page) {
@@ -957,14 +1154,14 @@ async function warmSearchVideoContext(page: Page) {
   return await waitForPokemonCatalogReady(page);
 }
 
-async function performSearchResultsVideoFlow(page: Page) {
+async function performSearchResultsVideoFlow(page: Page, recordingStartedAt: number) {
   await page.goto('/search', { waitUntil: 'domcontentloaded' });
   await waitForAppSettled(page);
-  await pauseForVideo(page, 1_200);
 
-  await clickForVideo(page.getByRole('button', { name: 'Pokemon' }), 10_000);
+  await page.getByRole('button', { name: 'Pokemon' }).click();
   await expect(page.getByPlaceholder('Enter Pokemon name')).toBeVisible({ timeout: 30_000 });
   const catalogReady = await waitForPokemonCatalogReady(page);
+  const trimStartMs = videoTrimStart(recordingStartedAt);
   await pauseForVideo(page, 1_000);
 
   const pokemonInput = page.getByPlaceholder('Enter Pokemon name');
@@ -995,7 +1192,7 @@ async function performSearchResultsVideoFlow(page: Page) {
       page.getByText(/Use the Toolbar above/i),
     ], 10_000);
     await pauseForVideo(page, videoFinalPauseMs);
-    return;
+    return { trimStartMs };
   }
 
   await waitForAnyVisible(page, [
@@ -1013,6 +1210,8 @@ async function performSearchResultsVideoFlow(page: Page) {
     await page.waitForTimeout(1_200);
     await pauseForVideo(page, videoFinalPauseMs);
   }
+
+  return { trimStartMs };
 }
 
 async function recordVideoClip(
@@ -1069,6 +1268,7 @@ async function recordVideoClip(
   await setupPage.close();
   await setupVideo?.delete().catch(() => {});
 
+  const recordingStartedAt = Date.now();
   const page = await context.newPage();
   const diagnostics = attachBrowserDiagnostics(page, testInfo);
   const blockedMutations = [
@@ -1077,12 +1277,15 @@ async function recordVideoClip(
   ];
   let blockingErrors: unknown[] = [];
   let video = page.video();
+  let trimStartMs = 0;
 
   try {
     if (flow === 'collection-overlay') {
-      await performCollectionOverlayVideoFlow(page);
+      const result = await performCollectionOverlayVideoFlow(page, recordingStartedAt);
+      trimStartMs = result.trimStartMs;
     } else {
-      await performSearchResultsVideoFlow(page);
+      const result = await performSearchResultsVideoFlow(page, recordingStartedAt);
+      trimStartMs = result.trimStartMs;
     }
   } finally {
     await diagnostics.flush();
@@ -1096,8 +1299,12 @@ async function recordVideoClip(
   }
 
   if (video) {
-    await video.saveAs(path.join(liveDemoVideoDir, `${videoName(theme, flow, viewport)}.webm`));
+    const finalVideoPath = path.join(liveDemoVideoDir, `${videoName(theme, flow, viewport)}.webm`);
+    const rawVideoPath = path.join(liveDemoVideoDir, `${videoName(theme, flow, viewport)}.raw.webm`);
+    await video.saveAs(rawVideoPath);
     await video.delete().catch(() => {});
+    trimVideoClip(rawVideoPath, finalVideoPath, trimStartMs);
+    fs.rmSync(rawVideoPath, { force: true });
   }
 
   return { blockedMutations, blockingErrors };

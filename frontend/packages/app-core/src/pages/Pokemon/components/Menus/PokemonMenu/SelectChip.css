@@ -85,3 +85,10 @@
 .pokemon-card.hide-select-chip .select-chip {
   display: none !important;
 }
+
+/* Mobile/touch uses long-press selection instead of the desktop hover chip. */
+@media (hover: none), (pointer: coarse) {
+  .pokemon-card .select-chip {
+    display: none !important;
+  }
+}

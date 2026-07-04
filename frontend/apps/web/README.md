@@ -186,8 +186,10 @@ npm --workspace apps/web run capture:demo:video:live
 - Videos are written to `frontend/apps/web/.artifacts/demo-video-live/`.
 - Screenshots capture dark and light themes for desktop and mobile.
 - Videos default to dark theme for desktop and mobile, matching the app default.
-- Videos use a disposable warm-up page for login/cache priming, then record a fresh high-resolution page with paced 15-20 second app moments.
+- Videos use a disposable warm-up page for login/cache priming, then record a fresh high-resolution page and trim each clip from the visual-ready frame.
+- Videos are capped just under 20 seconds by default.
 - Desktop videos include an in-page demo cursor because browser video capture does not record the operating-system cursor.
+- Mobile videos show a brief circular tap ripple for scripted interactions.
 - Video capture suppresses notification toasts so location/auth messages do not cover the demo surface.
 
 Video capture can be expanded when Phlosion or README embeds need more variants:
@@ -196,7 +198,7 @@ Video capture can be expanded when Phlosion or README embeds need more variants:
 DEMO_VIDEO_THEMES=dark,light npm --workspace apps/web run capture:demo:video:live
 DEMO_VIDEO_VIEWPORTS=desktop npm --workspace apps/web run capture:demo:video:live
 DEMO_VIDEO_FLOWS=collection-overlay npm --workspace apps/web run capture:demo:video:live
-DEMO_VIDEO_PAUSE_MS=4500 DEMO_VIDEO_FINAL_PAUSE_MS=8000 npm --workspace apps/web run capture:demo:video:live
+DEMO_VIDEO_MAX_SECONDS=18 DEMO_VIDEO_PAUSE_MS=2500 npm --workspace apps/web run capture:demo:video:live
 ```
 
 Current video flows are `collection-overlay` and `search-results`. Keep dark media as the primary Phlosion surface, and expose light media as an alternate view when a page has room for a theme toggle.
