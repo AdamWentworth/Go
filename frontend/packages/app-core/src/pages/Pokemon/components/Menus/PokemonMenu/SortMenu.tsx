@@ -69,7 +69,7 @@ const SortMenu: React.FC<SortMenuProps> = ({
       setSortMode(sortMode === 'ascending' ? 'descending' : 'ascending');
     } else {
       setSortType(newSortType);
-      setSortMode('ascending');
+      setSortMode(newSortType === 'favorite' ? 'descending' : 'ascending');
     }
     setIsAnimating(false);
   };
