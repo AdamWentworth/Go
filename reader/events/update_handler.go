@@ -5,7 +5,7 @@ package main
 import (
 	"strconv"
 
-	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v3"
 	"github.com/sirupsen/logrus"
 )
 
@@ -75,7 +75,7 @@ func buildPokemonInstancePayload(instance PokemonInstance) map[string]interface{
 	}
 }
 
-func GetUpdates(c *fiber.Ctx) error {
+func GetUpdates(c fiber.Ctx) error {
 	userID, ok := c.Locals("user_id").(string)
 	if !ok || userID == "" {
 		logrus.Error("Authentication failed: user_id missing")

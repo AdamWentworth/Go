@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v3"
 	"github.com/golang-jwt/jwt/v4"
 )
 
@@ -26,7 +26,7 @@ func newAuthTestApp() *fiber.App {
 		ReadBufferSize: 16 * 1024,
 	})
 	app.Use(verifyJWT)
-	app.Get("/ok", func(c *fiber.Ctx) error {
+	app.Get("/ok", func(c fiber.Ctx) error {
 		return c.JSON(fiber.Map{
 			"user_id":   c.Locals("user_id"),
 			"username":  c.Locals("username"),
@@ -44,7 +44,7 @@ func TestVerifyJWT_MissingSecret(t *testing.T) {
 	app := newAuthTestApp()
 
 	req := httptest.NewRequest(fiber.MethodGet, "/ok", nil)
-	resp, err := app.Test(req, -1)
+	resp, err := app.Test(req, fiber.TestConfig{Timeout: 0})
 	if err != nil {
 		t.Fatalf("request failed: %v", err)
 	}
@@ -62,7 +62,7 @@ func TestVerifyJWT_MissingCookie(t *testing.T) {
 	app := newAuthTestApp()
 
 	req := httptest.NewRequest(fiber.MethodGet, "/ok", nil)
-	resp, err := app.Test(req, -1)
+	resp, err := app.Test(req, fiber.TestConfig{Timeout: 0})
 	if err != nil {
 		t.Fatalf("request failed: %v", err)
 	}
@@ -93,7 +93,7 @@ func TestVerifyJWT_ValidAuthorizationHeaderSetsLocals(t *testing.T) {
 	req := httptest.NewRequest(fiber.MethodGet, "/ok", nil)
 	req.Header.Set("Authorization", "Bearer "+token)
 
-	resp, err := app.Test(req, -1)
+	resp, err := app.Test(req, fiber.TestConfig{Timeout: 0})
 	if err != nil {
 		t.Fatalf("request failed: %v", err)
 	}
@@ -121,7 +121,7 @@ func TestVerifyJWT_ValidQueryTokenSetsLocals(t *testing.T) {
 	token := signAccessToken(t, secret, claims)
 
 	req := httptest.NewRequest(fiber.MethodGet, "/ok?access_token="+token, nil)
-	resp, err := app.Test(req, -1)
+	resp, err := app.Test(req, fiber.TestConfig{Timeout: 0})
 	if err != nil {
 		t.Fatalf("request failed: %v", err)
 	}
@@ -150,7 +150,7 @@ func TestVerifyJWT_ValidStreamTokenQuerySetsLocals(t *testing.T) {
 	token := signAccessToken(t, secret, claims)
 
 	req := httptest.NewRequest(fiber.MethodGet, "/ok?device_id=device-stream&stream_token="+token, nil)
-	resp, err := app.Test(req, -1)
+	resp, err := app.Test(req, fiber.TestConfig{Timeout: 0})
 	if err != nil {
 		t.Fatalf("request failed: %v", err)
 	}
@@ -178,7 +178,7 @@ func TestVerifyJWT_StreamTokenRequiresSSETokenUse(t *testing.T) {
 	token := signAccessToken(t, secret, claims)
 
 	req := httptest.NewRequest(fiber.MethodGet, "/ok?device_id=device-stream&stream_token="+token, nil)
-	resp, err := app.Test(req, -1)
+	resp, err := app.Test(req, fiber.TestConfig{Timeout: 0})
 	if err != nil {
 		t.Fatalf("request failed: %v", err)
 	}
@@ -197,7 +197,7 @@ func TestVerifyJWT_OversizedCookie(t *testing.T) {
 	req := httptest.NewRequest(fiber.MethodGet, "/ok", nil)
 	req.Header.Set("Cookie", "accessToken="+strings.Repeat("a", 9000))
 
-	resp, err := app.Test(req, -1)
+	resp, err := app.Test(req, fiber.TestConfig{Timeout: 0})
 	if err != nil {
 		t.Fatalf("request failed: %v", err)
 	}
@@ -228,7 +228,7 @@ func TestVerifyJWT_ValidCookieSetsLocals(t *testing.T) {
 	req := httptest.NewRequest(fiber.MethodGet, "/ok", nil)
 	req.Header.Set("Cookie", "accessToken="+token)
 
-	resp, err := app.Test(req, -1)
+	resp, err := app.Test(req, fiber.TestConfig{Timeout: 0})
 	if err != nil {
 		t.Fatalf("request failed: %v", err)
 	}

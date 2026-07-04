@@ -5,7 +5,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v3"
 )
 
 func TestAutocomplete_RejectsShortQuery(t *testing.T) {
@@ -13,7 +13,7 @@ func TestAutocomplete_RejectsShortQuery(t *testing.T) {
 	app.Get("/autocomplete", AutocompleteHandler(nil))
 
 	req := httptest.NewRequest(http.MethodGet, "/autocomplete?query=ab", nil)
-	resp, err := app.Test(req, -1)
+	resp, err := app.Test(req, fiber.TestConfig{Timeout: 0})
 	if err != nil {
 		t.Fatalf("request failed: %v", err)
 	}
@@ -27,7 +27,7 @@ func TestGeocode_MissingQueryReturnsBadRequest(t *testing.T) {
 	app.Get("/geocode", GeocodeHandler(nil))
 
 	req := httptest.NewRequest(http.MethodGet, "/geocode", nil)
-	resp, err := app.Test(req, -1)
+	resp, err := app.Test(req, fiber.TestConfig{Timeout: 0})
 	if err != nil {
 		t.Fatalf("request failed: %v", err)
 	}
@@ -41,7 +41,7 @@ func TestReverse_MissingLatLonReturnsBadRequest(t *testing.T) {
 	app.Get("/reverse", ReverseGeocodeHandler(nil))
 
 	req := httptest.NewRequest(http.MethodGet, "/reverse", nil)
-	resp, err := app.Test(req, -1)
+	resp, err := app.Test(req, fiber.TestConfig{Timeout: 0})
 	if err != nil {
 		t.Fatalf("request failed: %v", err)
 	}
@@ -55,7 +55,7 @@ func TestReverse_OutOfRangeReturnsBadRequest(t *testing.T) {
 	app.Get("/reverse", ReverseGeocodeHandler(nil))
 
 	req := httptest.NewRequest(http.MethodGet, "/reverse?lat=95&lon=200", nil)
-	resp, err := app.Test(req, -1)
+	resp, err := app.Test(req, fiber.TestConfig{Timeout: 0})
 	if err != nil {
 		t.Fatalf("request failed: %v", err)
 	}
@@ -70,7 +70,7 @@ func TestViewer_LongPathParamsRejected(t *testing.T) {
 
 	long := "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
 	req := httptest.NewRequest(http.MethodGet, "/city/"+long, nil)
-	resp, err := app.Test(req, -1)
+	resp, err := app.Test(req, fiber.TestConfig{Timeout: 0})
 	if err != nil {
 		t.Fatalf("request failed: %v", err)
 	}

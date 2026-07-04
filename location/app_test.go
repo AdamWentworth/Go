@@ -4,6 +4,8 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
+
+	"github.com/gofiber/fiber/v3"
 )
 
 func TestHealthzAndReadyz(t *testing.T) {
@@ -14,7 +16,7 @@ func TestHealthzAndReadyz(t *testing.T) {
 	app := newApp(nil)
 
 	healthReq := httptest.NewRequest(http.MethodGet, "/healthz", nil)
-	healthResp, err := app.Test(healthReq, -1)
+	healthResp, err := app.Test(healthReq, fiber.TestConfig{Timeout: 0})
 	if err != nil {
 		t.Fatalf("health request failed: %v", err)
 	}
@@ -23,7 +25,7 @@ func TestHealthzAndReadyz(t *testing.T) {
 	}
 
 	readyReq := httptest.NewRequest(http.MethodGet, "/readyz", nil)
-	readyResp, err := app.Test(readyReq, -1)
+	readyResp, err := app.Test(readyReq, fiber.TestConfig{Timeout: 0})
 	if err != nil {
 		t.Fatalf("ready request failed: %v", err)
 	}
@@ -40,7 +42,7 @@ func TestMetricsEndpoint(t *testing.T) {
 	app := newApp(nil)
 
 	req := httptest.NewRequest(http.MethodGet, "/metrics", nil)
-	resp, err := app.Test(req, -1)
+	resp, err := app.Test(req, fiber.TestConfig{Timeout: 0})
 	if err != nil {
 		t.Fatalf("metrics request failed: %v", err)
 	}

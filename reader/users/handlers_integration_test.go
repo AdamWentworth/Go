@@ -10,7 +10,7 @@ import (
 	"time"
 
 	sqlmock "github.com/DATA-DOG/go-sqlmock"
-	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v3"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
 )
@@ -46,7 +46,7 @@ func setupMockDB(t *testing.T) (sqlmock.Sqlmock, func()) {
 func newHandlerTestApp(authUserID string) *fiber.App {
 	app := fiber.New(fiber.Config{ErrorHandler: errorHandler})
 
-	app.Use(func(c *fiber.Ctx) error {
+	app.Use(func(c fiber.Ctx) error {
 		c.Locals("user_id", authUserID)
 		return c.Next()
 	})
@@ -91,7 +91,7 @@ func TestUpdateUserHandler_ForbiddenWhenAuthUserMismatch(t *testing.T) {
 		"username": "adam",
 	})
 
-	resp, err := app.Test(req, -1)
+	resp, err := app.Test(req, fiber.TestConfig{Timeout: 0})
 	if err != nil {
 		t.Fatalf("request failed: %v", err)
 	}
@@ -124,7 +124,7 @@ func TestUpdateUserHandler_UpdatesExistingUser(t *testing.T) {
 		"username": "adam",
 	})
 
-	resp, err := app.Test(req, -1)
+	resp, err := app.Test(req, fiber.TestConfig{Timeout: 0})
 	if err != nil {
 		t.Fatalf("request failed: %v", err)
 	}
@@ -166,7 +166,7 @@ func TestUpdateUserHandler_InsertsWhenNoExistingRow(t *testing.T) {
 		"username": "new_user",
 	})
 
-	resp, err := app.Test(req, -1)
+	resp, err := app.Test(req, fiber.TestConfig{Timeout: 0})
 	if err != nil {
 		t.Fatalf("request failed: %v", err)
 	}
@@ -193,7 +193,7 @@ func TestUpdateUserHandler_UsernameConflict(t *testing.T) {
 		"username": "taken_name",
 	})
 
-	resp, err := app.Test(req, -1)
+	resp, err := app.Test(req, fiber.TestConfig{Timeout: 0})
 	if err != nil {
 		t.Fatalf("request failed: %v", err)
 	}
@@ -225,7 +225,7 @@ func TestGetPublicSnapshotByUsername_UsesUserIDForInstanceLookup(t *testing.T) {
 		WillReturnRows(sqlmock.NewRows([]string{"instance_id", "user_id", "pokemon_id", "shiny", "lucky", "shadow", "purified", "date_added", "last_update", "disabled", "is_traded", "mega", "dynamax", "gigantamax", "crown", "is_fused", "is_caught", "is_for_trade", "is_wanted", "most_wanted", "mirror", "pref_lucky", "registered", "favorite"}))
 
 	req := makeJSONRequest(t, http.MethodGet, "/api/public/users/adam", nil)
-	resp, err := app.Test(req, -1)
+	resp, err := app.Test(req, fiber.TestConfig{Timeout: 0})
 	if err != nil {
 		t.Fatalf("request failed: %v", err)
 	}
@@ -242,7 +242,7 @@ func TestGetUserOverviewHandler_RejectsMissingDeviceID(t *testing.T) {
 	app := newHandlerTestApp("user-1")
 	req := makeJSONRequest(t, http.MethodGet, "/api/users/user-1/overview", nil)
 
-	resp, err := app.Test(req, -1)
+	resp, err := app.Test(req, fiber.TestConfig{Timeout: 0})
 	if err != nil {
 		t.Fatalf("request failed: %v", err)
 	}
@@ -255,7 +255,7 @@ func TestGetUserOverviewHandler_RejectsUserMismatch(t *testing.T) {
 	app := newHandlerTestApp("user-auth")
 	req := makeJSONRequest(t, http.MethodGet, "/api/users/user-other/overview?device_id=dev-1", nil)
 
-	resp, err := app.Test(req, -1)
+	resp, err := app.Test(req, fiber.TestConfig{Timeout: 0})
 	if err != nil {
 		t.Fatalf("request failed: %v", err)
 	}
@@ -288,7 +288,7 @@ func TestGetInstancesByUsername_Found_CaseInsensitive(t *testing.T) {
 		))
 
 	req := makeJSONRequest(t, http.MethodGet, "/api/users/instances/by-username/FakeUser0632", nil)
-	resp, err := app.Test(req, -1)
+	resp, err := app.Test(req, fiber.TestConfig{Timeout: 0})
 	if err != nil {
 		t.Fatalf("request failed: %v", err)
 	}
@@ -320,7 +320,7 @@ func TestGetInstancesByUsername_NotFound(t *testing.T) {
 		WillReturnError(gorm.ErrRecordNotFound)
 
 	req := makeJSONRequest(t, http.MethodGet, "/api/instances/by-username/missinguser", nil)
-	resp, err := app.Test(req, -1)
+	resp, err := app.Test(req, fiber.TestConfig{Timeout: 0})
 	if err != nil {
 		t.Fatalf("request failed: %v", err)
 	}

@@ -7,7 +7,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v3"
 )
 
 func TestMetricsEndpoint_ExposesPrometheusMetrics(t *testing.T) {
@@ -15,7 +15,7 @@ func TestMetricsEndpoint_ExposesPrometheusMetrics(t *testing.T) {
 
 	app := fiber.New(fiber.Config{ErrorHandler: errorHandler})
 	app.Use(metricsMiddleware)
-	app.Get("/healthz", func(c *fiber.Ctx) error {
+	app.Get("/healthz", func(c fiber.Ctx) error {
 		return c.SendStatus(http.StatusOK)
 	})
 	app.Get("/metrics", metricsHandler())

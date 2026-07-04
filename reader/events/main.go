@@ -5,7 +5,7 @@ import (
 	"log"
 	"os"
 
-	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v3"
 	"gorm.io/gorm"
 )
 
@@ -33,8 +33,7 @@ func main() {
 	initDB()
 
 	app := fiber.New(fiber.Config{
-		ErrorHandler:          errorHandler,
-		DisableStartupMessage: true,
+		ErrorHandler: errorHandler,
 	})
 
 	registerMetrics()
@@ -42,10 +41,10 @@ func main() {
 	app.Use(corsMiddleware)
 	app.Use(metricsMiddleware)
 
-	app.Get("/healthz", func(c *fiber.Ctx) error {
+	app.Get("/healthz", func(c fiber.Ctx) error {
 		return c.Status(fiber.StatusOK).JSON(fiber.Map{"ok": true})
 	})
-	app.Get("/readyz", func(c *fiber.Ctx) error {
+	app.Get("/readyz", func(c fiber.Ctx) error {
 		if !dbReady() {
 			return c.Status(fiber.StatusServiceUnavailable).JSON(fiber.Map{"ok": false, "message": "db not ready"})
 		}

@@ -8,11 +8,11 @@ import (
 	"sync"
 	"time"
 
-	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v3"
 	"github.com/sirupsen/logrus"
 )
 
-func sseHandler(c *fiber.Ctx) error {
+func sseHandler(c fiber.Ctx) error {
 	logrus.Infof("SSE handler invoked for username %v", c.Locals("username"))
 	// Get user_id from context
 	userID, ok := c.Locals("user_id").(string)
@@ -52,7 +52,7 @@ func sseHandler(c *fiber.Ctx) error {
 	c.Set("Connection", "keep-alive")
 
 	// Use SetBodyStreamWriter for streaming
-	c.Context().SetBodyStreamWriter(func(w *bufio.Writer) {
+	c.RequestCtx().SetBodyStreamWriter(func(w *bufio.Writer) {
 		// Send initial event to confirm connection
 		if _, err := fmt.Fprintf(w, "event: connected\ndata: Connected to SSE stream\n\n"); err != nil {
 			handleClientDisconnect(clientID, client)

@@ -7,13 +7,13 @@ import (
 	"testing"
 	"time"
 
-	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v3"
 	"github.com/golang-jwt/jwt/v4"
 )
 
 func newSSETokenTestApp() *fiber.App {
 	app := fiber.New()
-	app.Use(func(c *fiber.Ctx) error {
+	app.Use(func(c fiber.Ctx) error {
 		c.Locals("user_id", "u-123")
 		c.Locals("username", "ash")
 		return c.Next()
@@ -29,7 +29,7 @@ func TestIssueSSEToken_ReturnsSignedToken(t *testing.T) {
 
 	app := newSSETokenTestApp()
 	req := httptest.NewRequest(fiber.MethodGet, "/api/sse-token?device_id=device-42", nil)
-	resp, err := app.Test(req, -1)
+	resp, err := app.Test(req, fiber.TestConfig{Timeout: 0})
 	if err != nil {
 		t.Fatalf("request failed: %v", err)
 	}
@@ -77,7 +77,7 @@ func TestIssueSSEToken_RejectsMissingDeviceID(t *testing.T) {
 
 	app := newSSETokenTestApp()
 	req := httptest.NewRequest(fiber.MethodGet, "/api/sse-token", nil)
-	resp, err := app.Test(req, -1)
+	resp, err := app.Test(req, fiber.TestConfig{Timeout: 0})
 	if err != nil {
 		t.Fatalf("request failed: %v", err)
 	}
@@ -93,7 +93,7 @@ func TestIssueSSEToken_RejectsWithoutSecret(t *testing.T) {
 
 	app := newSSETokenTestApp()
 	req := httptest.NewRequest(fiber.MethodGet, "/api/sse-token?device_id=device-1", nil)
-	resp, err := app.Test(req, -1)
+	resp, err := app.Test(req, fiber.TestConfig{Timeout: 0})
 	if err != nil {
 		t.Fatalf("request failed: %v", err)
 	}
@@ -108,7 +108,7 @@ func TestIssueSSEToken_UsesDeviceIDFromLocalsFallback(t *testing.T) {
 	jwtSecret = []byte("test-secret")
 
 	app := fiber.New()
-	app.Use(func(c *fiber.Ctx) error {
+	app.Use(func(c fiber.Ctx) error {
 		c.Locals("user_id", "u-123")
 		c.Locals("username", "ash")
 		c.Locals("device_id", "device-local")
@@ -117,7 +117,7 @@ func TestIssueSSEToken_UsesDeviceIDFromLocalsFallback(t *testing.T) {
 	app.Get("/api/sse-token", issueSSEToken)
 
 	req := httptest.NewRequest(fiber.MethodGet, "/api/sse-token", nil)
-	resp, err := app.Test(req, -1)
+	resp, err := app.Test(req, fiber.TestConfig{Timeout: 0})
 	if err != nil {
 		t.Fatalf("request failed: %v", err)
 	}

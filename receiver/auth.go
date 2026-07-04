@@ -2,7 +2,7 @@
 package main
 
 import (
-	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v3"
 	"github.com/golang-jwt/jwt/v4"
 )
 
@@ -13,7 +13,7 @@ type AccessTokenClaims struct {
 	jwt.RegisteredClaims
 }
 
-func verifyAccessToken(c *fiber.Ctx) (string, string, string, error) {
+func verifyAccessToken(c fiber.Ctx) (string, string, string, error) {
 	cookie := c.Cookies("accessToken")
 	if cookie == "" {
 		logger.Warn("Access token cookie not found")

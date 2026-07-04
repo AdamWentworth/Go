@@ -6,13 +6,13 @@ import (
 	"context"
 	"strings"
 
-	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v3"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/sirupsen/logrus"
 )
 
 func GeocodeHandler(db *pgxpool.Pool) fiber.Handler {
-	return func(c *fiber.Ctx) error {
+	return func(c fiber.Ctx) error {
 		query := c.Query("q", "")
 		if query == "" {
 			query = c.Query("query", "")

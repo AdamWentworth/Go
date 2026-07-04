@@ -4,7 +4,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v3"
 )
 
 var allowedOrigins map[string]struct{}
@@ -24,7 +24,7 @@ func initAllowedOrigins() {
 	}
 }
 
-func corsMiddleware(c *fiber.Ctx) error {
+func corsMiddleware(c fiber.Ctx) error {
 	origin := c.Get("Origin")
 	if origin != "" {
 		if _, ok := allowedOrigins[origin]; ok {

@@ -11,8 +11,8 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/gofiber/fiber/v2"
-	"github.com/gofiber/fiber/v2/middleware/cors"
+	"github.com/gofiber/fiber/v3"
+	"github.com/gofiber/fiber/v3/middleware/cors"
 )
 
 // ------------------------------------------------------------
@@ -70,7 +70,7 @@ func NewSecurityConfig() *SecurityConfig {
 
 // SecurityMiddleware creates a new security middleware for Fiber
 func SecurityMiddleware(config *SecurityConfig) fiber.Handler {
-	return func(c *fiber.Ctx) error {
+	return func(c fiber.Ctx) error {
 		ip := c.IP()
 
 		// Check if IP is blocked
@@ -93,7 +93,7 @@ func SecurityMiddleware(config *SecurityConfig) fiber.Handler {
 
 		// TLS verification if using HTTPS
 		if c.Protocol() == "https" {
-			if tlsConn, ok := c.Context().Conn().(*tls.Conn); ok {
+			if tlsConn, ok := c.RequestCtx().Conn().(*tls.Conn); ok {
 				state := tlsConn.ConnectionState()
 
 				// Check TLS version
@@ -160,7 +160,7 @@ func checkRateLimit(limiter *RateLimiter, ip string, limit int) bool {
 }
 
 // detectSuspiciousPatterns attempts to identify common malicious input patterns
-func detectSuspiciousPatterns(c *fiber.Ctx) bool {
+func detectSuspiciousPatterns(c fiber.Ctx) bool {
 	suspicious := false
 	headers := make(map[string]string)
 
@@ -223,12 +223,11 @@ func main() {
 
 	// 5. Create new Fiber app with custom error handler and body limit
 	app := fiber.New(fiber.Config{
-		ErrorHandler:          errorHandler,
-		BodyLimit:             10 * 1024 * 1024, // 10 MB
-		ReadTimeout:           10 * time.Second,
-		WriteTimeout:          30 * time.Second,
-		IdleTimeout:           60 * time.Second,
-		DisableStartupMessage: true,
+		ErrorHandler: errorHandler,
+		BodyLimit:    10 * 1024 * 1024, // 10 MB
+		ReadTimeout:  10 * time.Second,
+		WriteTimeout: 30 * time.Second,
+		IdleTimeout:  60 * time.Second,
 	})
 
 	// 6. Register custom logger and recovery middleware
@@ -245,17 +244,17 @@ func main() {
 
 	// 8. Set up CORS
 	app.Use(cors.New(cors.Config{
-		AllowOrigins:     strings.Join(allowedOrigins, ","),
-		AllowMethods:     "GET,POST,PUT,DELETE,OPTIONS",
-		AllowHeaders:     "Content-Type,Authorization,X-Requested-With",
+		AllowOrigins:     allowedOrigins,
+		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
+		AllowHeaders:     []string{"Content-Type", "Authorization", "X-Requested-With"},
 		AllowCredentials: true,
 	}))
 
 	// 9. Health/readiness endpoints
-	app.Get("/healthz", func(c *fiber.Ctx) error {
+	app.Get("/healthz", func(c fiber.Ctx) error {
 		return c.Status(fiber.StatusOK).JSON(fiber.Map{"ok": true})
 	})
-	app.Get("/readyz", func(c *fiber.Ctx) error {
+	app.Get("/readyz", func(c fiber.Ctx) error {
 		if !kafkaProducerReady() {
 			return c.Status(fiber.StatusServiceUnavailable).JSON(fiber.Map{
 				"ok":      false,

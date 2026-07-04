@@ -7,7 +7,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v3"
 	"github.com/sirupsen/logrus"
 )
 
@@ -25,13 +25,13 @@ func TestRequestLogger_QuietHealthPaths(t *testing.T) {
 
 	app := fiber.New()
 	app.Use(requestLogger)
-	app.Get("/healthz", func(c *fiber.Ctx) error { return c.SendStatus(fiber.StatusOK) })
-	app.Get("/readyz", func(c *fiber.Ctx) error { return c.SendStatus(fiber.StatusOK) })
-	app.Get("/other", func(c *fiber.Ctx) error { return c.SendStatus(fiber.StatusOK) })
+	app.Get("/healthz", func(c fiber.Ctx) error { return c.SendStatus(fiber.StatusOK) })
+	app.Get("/readyz", func(c fiber.Ctx) error { return c.SendStatus(fiber.StatusOK) })
+	app.Get("/other", func(c fiber.Ctx) error { return c.SendStatus(fiber.StatusOK) })
 
 	for _, path := range []string{"/healthz", "/readyz"} {
 		req := httptest.NewRequest(fiber.MethodGet, path, nil)
-		resp, err := app.Test(req, -1)
+		resp, err := app.Test(req, fiber.TestConfig{Timeout: 0})
 		if err != nil {
 			t.Fatalf("request failed for %s: %v", path, err)
 		}
@@ -45,7 +45,7 @@ func TestRequestLogger_QuietHealthPaths(t *testing.T) {
 	}
 
 	req := httptest.NewRequest(fiber.MethodGet, "/other", nil)
-	resp, err := app.Test(req, -1)
+	resp, err := app.Test(req, fiber.TestConfig{Timeout: 0})
 	if err != nil {
 		t.Fatalf("request failed for /other: %v", err)
 	}

@@ -6,7 +6,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v3"
 	"github.com/golang-jwt/jwt/v4"
 	"github.com/sirupsen/logrus"
 )
@@ -22,7 +22,7 @@ type AccessTokenClaims struct {
 const maxAccessTokenLength = 8192
 const sseTokenTTL = 5 * time.Minute
 
-func readAccessToken(c *fiber.Ctx) (string, string) {
+func readAccessToken(c fiber.Ctx) (string, string) {
 	if token := strings.TrimSpace(c.Cookies("accessToken")); token != "" {
 		return token, "cookie"
 	}
@@ -49,7 +49,7 @@ func readAccessToken(c *fiber.Ctx) (string, string) {
 }
 
 // Middleware to verify the access token from cookie/header/query.
-func verifyJWT(c *fiber.Ctx) error {
+func verifyJWT(c fiber.Ctx) error {
 	if len(jwtSecret) == 0 {
 		logrus.Error("JWT secret is not initialized")
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Server configuration error"})

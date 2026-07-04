@@ -6,8 +6,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/gofiber/adaptor/v2"
-	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v3"
+	"github.com/gofiber/fiber/v3/middleware/adaptor"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
@@ -48,7 +48,7 @@ func tryRegister(c prometheus.Collector) {
 	}
 }
 
-func metricsMiddleware(c *fiber.Ctx) error {
+func metricsMiddleware(c fiber.Ctx) error {
 	start := time.Now()
 	err := c.Next()
 

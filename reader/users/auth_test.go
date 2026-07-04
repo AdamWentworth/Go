@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v3"
 	"github.com/golang-jwt/jwt/v4"
 )
 
@@ -26,7 +26,7 @@ func newProtectedApp() *fiber.App {
 	app := fiber.New(fiber.Config{
 		ReadBufferSize: 16384,
 	})
-	app.Get("/protected", verifyJWT, func(c *fiber.Ctx) error {
+	app.Get("/protected", verifyJWT, func(c fiber.Ctx) error {
 		return c.JSON(fiber.Map{
 			"user_id":   c.Locals("user_id"),
 			"username":  c.Locals("username"),
@@ -42,7 +42,7 @@ func TestVerifyJWT_NoSecret(t *testing.T) {
 
 	req := httptest.NewRequest(http.MethodGet, "/protected", nil)
 	req.Header.Set("Cookie", "accessToken=anything")
-	resp, err := app.Test(req, -1)
+	resp, err := app.Test(req, fiber.TestConfig{Timeout: 0})
 	if err != nil {
 		t.Fatalf("request failed: %v", err)
 	}
@@ -56,7 +56,7 @@ func TestVerifyJWT_MissingCookie(t *testing.T) {
 	app := newProtectedApp()
 
 	req := httptest.NewRequest(http.MethodGet, "/protected", nil)
-	resp, err := app.Test(req, -1)
+	resp, err := app.Test(req, fiber.TestConfig{Timeout: 0})
 	if err != nil {
 		t.Fatalf("request failed: %v", err)
 	}
@@ -71,7 +71,7 @@ func TestVerifyJWT_TooLargeCookie(t *testing.T) {
 
 	req := httptest.NewRequest(http.MethodGet, "/protected", nil)
 	req.Header.Set("Cookie", "accessToken="+strings.Repeat("a", 9000))
-	resp, err := app.Test(req, -1)
+	resp, err := app.Test(req, fiber.TestConfig{Timeout: 0})
 	if err != nil {
 		t.Fatalf("request failed: %v", err)
 	}
@@ -95,7 +95,7 @@ func TestVerifyJWT_InvalidSignature(t *testing.T) {
 
 	req := httptest.NewRequest(http.MethodGet, "/protected", nil)
 	req.Header.Set("Cookie", "accessToken="+token)
-	resp, err := app.Test(req, -1)
+	resp, err := app.Test(req, fiber.TestConfig{Timeout: 0})
 	if err != nil {
 		t.Fatalf("request failed: %v", err)
 	}
@@ -119,7 +119,7 @@ func TestVerifyJWT_ExpiredToken(t *testing.T) {
 
 	req := httptest.NewRequest(http.MethodGet, "/protected", nil)
 	req.Header.Set("Cookie", "accessToken="+token)
-	resp, err := app.Test(req, -1)
+	resp, err := app.Test(req, fiber.TestConfig{Timeout: 0})
 	if err != nil {
 		t.Fatalf("request failed: %v", err)
 	}
@@ -142,7 +142,7 @@ func TestVerifyJWT_MissingUserIDClaim(t *testing.T) {
 
 	req := httptest.NewRequest(http.MethodGet, "/protected", nil)
 	req.Header.Set("Cookie", "accessToken="+token)
-	resp, err := app.Test(req, -1)
+	resp, err := app.Test(req, fiber.TestConfig{Timeout: 0})
 	if err != nil {
 		t.Fatalf("request failed: %v", err)
 	}
@@ -166,7 +166,7 @@ func TestVerifyJWT_ValidToken(t *testing.T) {
 
 	req := httptest.NewRequest(http.MethodGet, "/protected", nil)
 	req.Header.Set("Cookie", "accessToken="+token)
-	resp, err := app.Test(req, -1)
+	resp, err := app.Test(req, fiber.TestConfig{Timeout: 0})
 	if err != nil {
 		t.Fatalf("request failed: %v", err)
 	}

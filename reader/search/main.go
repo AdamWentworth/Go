@@ -9,8 +9,8 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/gofiber/fiber/v2"
-	"github.com/gofiber/fiber/v2/middleware/limiter"
+	"github.com/gofiber/fiber/v3"
+	"github.com/gofiber/fiber/v3/middleware/limiter"
 	"gorm.io/gorm"
 )
 
@@ -47,13 +47,13 @@ func newRateLimiter() fiber.Handler {
 	return limiter.New(limiter.Config{
 		Max:        maxReq,
 		Expiration: time.Duration(windowSec) * time.Second,
-		KeyGenerator: func(c *fiber.Ctx) string {
+		KeyGenerator: func(c fiber.Ctx) string {
 			if uid, ok := c.Locals("user_id").(string); ok && uid != "" {
 				return "uid:" + uid
 			}
 			return "ip:" + c.IP()
 		},
-		LimitReached: func(c *fiber.Ctx) error {
+		LimitReached: func(c fiber.Ctx) error {
 			return c.Status(fiber.StatusTooManyRequests).JSON(fiber.Map{
 				"error": "rate limit exceeded",
 			})
@@ -65,9 +65,8 @@ func newApp() *fiber.App {
 	bodyLimit := readEnvInt("MAX_BODY_BYTES", 1*1024*1024)
 
 	app := fiber.New(fiber.Config{
-		ErrorHandler:          errorHandler,
-		DisableStartupMessage: true,
-		BodyLimit:             bodyLimit,
+		ErrorHandler: errorHandler,
+		BodyLimit:    bodyLimit,
 	})
 
 	registerMetrics()
@@ -75,10 +74,10 @@ func newApp() *fiber.App {
 	app.Use(corsMiddleware)
 	app.Use(metricsMiddleware)
 
-	app.Get("/healthz", func(c *fiber.Ctx) error {
+	app.Get("/healthz", func(c fiber.Ctx) error {
 		return c.Status(fiber.StatusOK).JSON(fiber.Map{"ok": true})
 	})
-	app.Get("/readyz", func(c *fiber.Ctx) error {
+	app.Get("/readyz", func(c fiber.Ctx) error {
 		if !dbReady() {
 			return c.Status(fiber.StatusServiceUnavailable).JSON(fiber.Map{"ok": false, "message": "db not ready"})
 		}

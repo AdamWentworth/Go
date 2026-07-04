@@ -6,12 +6,12 @@ import (
 	"strings"
 	"time"
 
-	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v3"
 	"gorm.io/gorm"
 )
 
 // GET /api/instances/by-username/:username (public, rate-limited)
-func GetInstancesByUsername(c *fiber.Ctx) error {
+func GetInstancesByUsername(c fiber.Ctx) error {
 	raw := strings.TrimSpace(c.Params("username"))
 	if raw == "" {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Missing username"})

@@ -8,7 +8,7 @@ import (
 	"math"
 	"strconv"
 
-	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v3"
 	"github.com/sirupsen/logrus"
 )
 
@@ -28,7 +28,7 @@ func haversine(lat1, lon1, lat2, lon2 float64) float64 {
 	return R * c
 }
 
-func SearchPokemonInstances(c *fiber.Ctx) error {
+func SearchPokemonInstances(c fiber.Ctx) error {
 	// Extract query parameters
 	pokemonIDStr := c.Query("pokemon_id")
 	shinyStr := c.Query("shiny")

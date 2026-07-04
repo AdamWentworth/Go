@@ -9,7 +9,7 @@ import (
 	"net/url"
 	"strings"
 
-	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v3"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/sirupsen/logrus"
 )
@@ -21,7 +21,7 @@ type GeoJSONFeature struct {
 }
 
 func ViewerHandler(db *pgxpool.Pool) fiber.Handler {
-	return func(c *fiber.Ctx) error {
+	return func(c fiber.Ctx) error {
 		originalCountry := c.Params("country")
 		originalState := c.Params("state")
 		originalCity := c.Params("name")

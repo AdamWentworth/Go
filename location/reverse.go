@@ -6,13 +6,13 @@ import (
 	"context"
 	"strconv"
 
-	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v3"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/sirupsen/logrus"
 )
 
 func ReverseGeocodeHandler(db *pgxpool.Pool) fiber.Handler {
-	return func(c *fiber.Ctx) error {
+	return func(c fiber.Ctx) error {
 		latStr := c.Query("lat", "")
 		lonStr := c.Query("lon", "")
 

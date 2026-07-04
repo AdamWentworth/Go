@@ -4,13 +4,13 @@ import (
 	"strings"
 	"time"
 
-	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v3"
 	"github.com/golang-jwt/jwt/v4"
 )
 
 const maxDeviceIDLength = 255
 
-func issueSSEToken(c *fiber.Ctx) error {
+func issueSSEToken(c fiber.Ctx) error {
 	if len(jwtSecret) == 0 {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Server configuration error"})
 	}

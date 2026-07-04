@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v3"
 	"github.com/golang-jwt/jwt/v4"
 )
 
@@ -22,7 +22,7 @@ func TestVerifyAccessToken_Success(t *testing.T) {
 	})
 
 	app := fiber.New()
-	app.Get("/", func(c *fiber.Ctx) error {
+	app.Get("/", func(c fiber.Ctx) error {
 		userID, username, deviceID, err := verifyAccessToken(c)
 		if err != nil {
 			return err
@@ -96,7 +96,7 @@ func verifyTokenStatusForTest(t *testing.T, token string) int {
 	t.Helper()
 
 	app := fiber.New()
-	app.Get("/", func(c *fiber.Ctx) error {
+	app.Get("/", func(c fiber.Ctx) error {
 		_, _, _, err := verifyAccessToken(c)
 		if err != nil {
 			return err

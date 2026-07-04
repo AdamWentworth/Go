@@ -4,7 +4,7 @@ package main
 import (
 	"time"
 
-	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v3"
 	"github.com/sirupsen/logrus"
 	"gorm.io/gorm"
 )
@@ -42,7 +42,7 @@ type UpdateUserResponse struct {
 
 // ---------- handler ----------
 
-func UpdateUserHandler(c *fiber.Ctx) error {
+func UpdateUserHandler(c fiber.Ctx) error {
 	userID := c.Params("user_id")
 	if userID == "" {
 		return c.Status(fiber.StatusBadRequest).JSON(UpdateUserResponse{
@@ -57,7 +57,7 @@ func UpdateUserHandler(c *fiber.Ctx) error {
 	}
 
 	var req UpdateUserRequest
-	if err := c.BodyParser(&req); err != nil {
+	if err := c.Bind().Body(&req); err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(UpdateUserResponse{
 			Success: false, Message: "Invalid JSON payload",
 		})

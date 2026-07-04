@@ -9,7 +9,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v3"
 	"github.com/sirupsen/logrus"
 )
 
@@ -72,7 +72,7 @@ func initLogging() {
 }
 
 // Custom error handler for Fiber
-func errorHandler(c *fiber.Ctx, err error) error {
+func errorHandler(c fiber.Ctx, err error) error {
 	// Default to 500 Internal Server Error
 	code := fiber.StatusInternalServerError
 
@@ -91,7 +91,7 @@ func errorHandler(c *fiber.Ctx, err error) error {
 }
 
 // Custom request logging middleware
-func requestLogger(c *fiber.Ctx) error {
+func requestLogger(c fiber.Ctx) error {
 	switch c.Path() {
 	case "/metrics", "/healthz", "/readyz":
 		return c.Next()

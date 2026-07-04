@@ -4,7 +4,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v3"
 )
 
 func TestCORSMiddleware_AllowsConfiguredOrigin(t *testing.T) {
@@ -13,7 +13,7 @@ func TestCORSMiddleware_AllowsConfiguredOrigin(t *testing.T) {
 
 	app := fiber.New()
 	app.Use(corsMiddleware)
-	app.Get("/ok", func(c *fiber.Ctx) error { return c.SendStatus(fiber.StatusOK) })
+	app.Get("/ok", func(c fiber.Ctx) error { return c.SendStatus(fiber.StatusOK) })
 
 	req := httptest.NewRequest("GET", "/ok", nil)
 	req.Header.Set("Origin", "https://pokegonexus.com")
@@ -33,7 +33,7 @@ func TestCORSMiddleware_RejectsUnknownOrigin(t *testing.T) {
 
 	app := fiber.New()
 	app.Use(corsMiddleware)
-	app.Get("/ok", func(c *fiber.Ctx) error { return c.SendStatus(fiber.StatusOK) })
+	app.Get("/ok", func(c fiber.Ctx) error { return c.SendStatus(fiber.StatusOK) })
 
 	req := httptest.NewRequest("GET", "/ok", nil)
 	req.Header.Set("Origin", "https://evil.example")
@@ -53,7 +53,7 @@ func TestCORSMiddleware_OPTIONS(t *testing.T) {
 
 	app := fiber.New()
 	app.Use(corsMiddleware)
-	app.Get("/ok", func(c *fiber.Ctx) error { return c.SendStatus(fiber.StatusOK) })
+	app.Get("/ok", func(c fiber.Ctx) error { return c.SendStatus(fiber.StatusOK) })
 
 	req := httptest.NewRequest("OPTIONS", "/ok", nil)
 	req.Header.Set("Origin", "https://pokegonexus.com")

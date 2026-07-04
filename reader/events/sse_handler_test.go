@@ -4,7 +4,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v3"
 )
 
 func TestSSEHandler_UnauthorizedWithoutUserID(t *testing.T) {
@@ -12,7 +12,7 @@ func TestSSEHandler_UnauthorizedWithoutUserID(t *testing.T) {
 	app.Get("/api/sse", sseHandler)
 
 	req := httptest.NewRequest(fiber.MethodGet, "/api/sse", nil)
-	resp, err := app.Test(req, -1)
+	resp, err := app.Test(req, fiber.TestConfig{Timeout: 0})
 	if err != nil {
 		t.Fatalf("request failed: %v", err)
 	}
@@ -24,14 +24,14 @@ func TestSSEHandler_UnauthorizedWithoutUserID(t *testing.T) {
 
 func TestSSEHandler_BadRequestWithoutDeviceID(t *testing.T) {
 	app := fiber.New()
-	app.Use(func(c *fiber.Ctx) error {
+	app.Use(func(c fiber.Ctx) error {
 		c.Locals("user_id", "u-1")
 		return c.Next()
 	})
 	app.Get("/api/sse", sseHandler)
 
 	req := httptest.NewRequest(fiber.MethodGet, "/api/sse", nil)
-	resp, err := app.Test(req, -1)
+	resp, err := app.Test(req, fiber.TestConfig{Timeout: 0})
 	if err != nil {
 		t.Fatalf("request failed: %v", err)
 	}

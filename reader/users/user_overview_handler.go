@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v3"
 	"github.com/sirupsen/logrus"
 )
 
@@ -64,7 +64,7 @@ func instanceToMap(in PokemonInstance) map[string]interface{} {
 /*  GET /api/users/:user_id/overview  (protected)                              */
 /* -------------------------------------------------------------------------- */
 
-func GetUserOverviewHandler(c *fiber.Ctx) error {
+func GetUserOverviewHandler(c fiber.Ctx) error {
 	userID := c.Params("user_id")
 
 	if tokenID, _ := c.Locals("user_id").(string); tokenID != userID {

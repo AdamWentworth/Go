@@ -5,7 +5,7 @@ package main
 import (
 	"time"
 
-	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v3"
 	"github.com/golang-jwt/jwt/v4"
 	"github.com/sirupsen/logrus"
 )
@@ -18,7 +18,7 @@ type AccessTokenClaims struct {
 }
 
 // Middleware to verify the JWT
-func verifyJWT(c *fiber.Ctx) error {
+func verifyJWT(c fiber.Ctx) error {
 	if len(jwtSecret) == 0 {
 		logrus.Error("JWT secret is not initialized")
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Server configuration error"})

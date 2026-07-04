@@ -4,7 +4,7 @@ package main
 import (
 	"strings"
 
-	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v3"
 	"github.com/sirupsen/logrus"
 )
 
@@ -17,7 +17,7 @@ type TrainerSuggestion struct {
 }
 
 // GET /api/autocomplete-trainers?q=<partial>
-func AutocompleteTrainersHandler(c *fiber.Ctx) error {
+func AutocompleteTrainersHandler(c fiber.Ctx) error {
 	q := strings.TrimSpace(c.Query("q"))
 	if len(q) < 2 {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{

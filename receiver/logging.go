@@ -8,7 +8,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v3"
 	"github.com/sirupsen/logrus"
 )
 
@@ -143,7 +143,7 @@ func (h *MultiLoggerHook) Fire(entry *logrus.Entry) error {
 }
 
 // Custom request logger middleware for Fiber
-func requestLogger(c *fiber.Ctx) error {
+func requestLogger(c fiber.Ctx) error {
 	start := time.Now()
 	err := c.Next()
 	stop := time.Now()
@@ -186,7 +186,7 @@ func shouldSkipRequestLog(path string) bool {
 }
 
 // Recovery middleware for Fiber to handle panics
-func recoverMiddleware(c *fiber.Ctx) error {
+func recoverMiddleware(c fiber.Ctx) error {
 	defer func() {
 		if r := recover(); r != nil {
 			logger.Errorf("Panic recovered: %v", r)
@@ -199,7 +199,7 @@ func recoverMiddleware(c *fiber.Ctx) error {
 }
 
 // Custom error handler for Fiber
-func errorHandler(c *fiber.Ctx, err error) error {
+func errorHandler(c fiber.Ctx, err error) error {
 	// Default 500 status code
 	code := fiber.StatusInternalServerError
 

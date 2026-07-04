@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v3"
 	"github.com/golang-jwt/jwt/v4"
 )
 
@@ -22,7 +22,7 @@ func signAccessToken(t *testing.T, secret []byte, method jwt.SigningMethod, clai
 func TestVerifyJWT_OK(t *testing.T) {
 	jwtSecret = []byte("test-secret")
 	app := fiber.New()
-	app.Get("/ok", verifyJWT, func(c *fiber.Ctx) error {
+	app.Get("/ok", verifyJWT, func(c fiber.Ctx) error {
 		return c.SendString(c.Locals("user_id").(string))
 	})
 
@@ -47,7 +47,7 @@ func TestVerifyJWT_OK(t *testing.T) {
 func TestVerifyJWT_MissingCookie(t *testing.T) {
 	jwtSecret = []byte("test-secret")
 	app := fiber.New()
-	app.Get("/ok", verifyJWT, func(c *fiber.Ctx) error { return c.SendStatus(fiber.StatusOK) })
+	app.Get("/ok", verifyJWT, func(c fiber.Ctx) error { return c.SendStatus(fiber.StatusOK) })
 
 	req := httptest.NewRequest("GET", "/ok", nil)
 	resp, err := app.Test(req)
@@ -62,7 +62,7 @@ func TestVerifyJWT_MissingCookie(t *testing.T) {
 func TestVerifyJWT_InvalidAlg(t *testing.T) {
 	jwtSecret = []byte("test-secret")
 	app := fiber.New()
-	app.Get("/ok", verifyJWT, func(c *fiber.Ctx) error { return c.SendStatus(fiber.StatusOK) })
+	app.Get("/ok", verifyJWT, func(c fiber.Ctx) error { return c.SendStatus(fiber.StatusOK) })
 
 	token := signAccessToken(t, jwtSecret, jwt.SigningMethodHS512, AccessTokenClaims{
 		UserID: "u1",
@@ -85,7 +85,7 @@ func TestVerifyJWT_InvalidAlg(t *testing.T) {
 func TestVerifyJWT_Expired(t *testing.T) {
 	jwtSecret = []byte("test-secret")
 	app := fiber.New()
-	app.Get("/ok", verifyJWT, func(c *fiber.Ctx) error { return c.SendStatus(fiber.StatusOK) })
+	app.Get("/ok", verifyJWT, func(c fiber.Ctx) error { return c.SendStatus(fiber.StatusOK) })
 
 	token := signAccessToken(t, jwtSecret, jwt.SigningMethodHS256, AccessTokenClaims{
 		UserID: "u1",
@@ -108,7 +108,7 @@ func TestVerifyJWT_Expired(t *testing.T) {
 func TestVerifyJWT_MissingUserID(t *testing.T) {
 	jwtSecret = []byte("test-secret")
 	app := fiber.New()
-	app.Get("/ok", verifyJWT, func(c *fiber.Ctx) error { return c.SendStatus(fiber.StatusOK) })
+	app.Get("/ok", verifyJWT, func(c fiber.Ctx) error { return c.SendStatus(fiber.StatusOK) })
 
 	token := signAccessToken(t, jwtSecret, jwt.SigningMethodHS256, AccessTokenClaims{
 		RegisteredClaims: jwt.RegisteredClaims{

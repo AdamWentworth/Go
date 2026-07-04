@@ -8,9 +8,10 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/gofiber/adaptor/v2"
-	"github.com/gofiber/fiber/v2"
-	"github.com/gofiber/fiber/v2/middleware/limiter"
+	"github.com/gofiber/fiber/v3"
+	"github.com/gofiber/fiber/v3/middleware/adaptor"
+	"github.com/gofiber/fiber/v3/middleware/limiter"
+	"github.com/gofiber/fiber/v3/middleware/static"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/sirupsen/logrus"
@@ -44,10 +45,10 @@ func newRateLimiter() fiber.Handler {
 	return limiter.New(limiter.Config{
 		Max:        maxReq,
 		Expiration: time.Duration(windowSec) * time.Second,
-		KeyGenerator: func(c *fiber.Ctx) string {
+		KeyGenerator: func(c fiber.Ctx) string {
 			return c.IP()
 		},
-		LimitReached: func(c *fiber.Ctx) error {
+		LimitReached: func(c fiber.Ctx) error {
 			return c.Status(fiber.StatusTooManyRequests).JSON(fiber.Map{
 				"error": "rate limit exceeded",
 			})
@@ -58,9 +59,8 @@ func newRateLimiter() fiber.Handler {
 func newApp(pool *pgxpool.Pool) *fiber.App {
 	bodyLimit := readEnvInt("MAX_BODY_BYTES", 1*1024*1024)
 	app := fiber.New(fiber.Config{
-		ErrorHandler:          errorHandler,
-		DisableStartupMessage: true,
-		BodyLimit:             bodyLimit,
+		ErrorHandler: errorHandler,
+		BodyLimit:    bodyLimit,
 	})
 
 	registerMetrics()
@@ -68,10 +68,10 @@ func newApp(pool *pgxpool.Pool) *fiber.App {
 	app.Use(corsMiddleware)
 	app.Use(metricsMiddleware)
 
-	app.Get("/healthz", func(c *fiber.Ctx) error {
+	app.Get("/healthz", func(c fiber.Ctx) error {
 		return c.Status(fiber.StatusOK).JSON(fiber.Map{"ok": true})
 	})
-	app.Get("/readyz", func(c *fiber.Ctx) error {
+	app.Get("/readyz", func(c fiber.Ctx) error {
 		if !dbReady(pool) {
 			return c.Status(fiber.StatusServiceUnavailable).JSON(fiber.Map{"ok": false, "message": "db not ready"})
 		}
@@ -88,7 +88,7 @@ func newApp(pool *pgxpool.Pool) *fiber.App {
 
 	// Serve static files last, so API routes take precedence.
 	logrus.Info("Serving static files from ./static")
-	app.Static("/", "./static")
+	app.Use("/", static.New("./static"))
 
 	return app
 }

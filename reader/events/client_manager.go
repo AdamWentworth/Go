@@ -5,14 +5,14 @@ package main
 import (
 	"sync"
 
-	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v3"
 )
 
 type Client struct {
 	UserID    string
 	DeviceID  string
 	Channel   chan []byte
-	Context   *fiber.Ctx
+	Context   fiber.Ctx
 	Connected bool
 	closeOnce sync.Once // ensures Channel is closed only once
 }

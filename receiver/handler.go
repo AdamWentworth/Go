@@ -7,7 +7,7 @@ import (
 	"encoding/json"
 	"io"
 
-	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v3"
 	"github.com/google/uuid"
 )
 
@@ -21,7 +21,7 @@ type BatchedUpdatesRequest struct {
 	TradeUpdates   []any          `json:"tradeUpdates"`
 }
 
-func handleBatchedUpdates(c *fiber.Ctx) error {
+func handleBatchedUpdates(c fiber.Ctx) error {
 	traceID := uuid.New().String()
 	// Store trace_id in context for middleware logging
 	c.Locals("trace_id", traceID)

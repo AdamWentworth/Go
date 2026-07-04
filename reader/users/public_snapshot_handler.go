@@ -4,11 +4,11 @@ package main
 import (
 	"strings"
 
-	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v3"
 )
 
 // GET /api/public/users/:username
-func GetPublicSnapshotByUsername(c *fiber.Ctx) error {
+func GetPublicSnapshotByUsername(c fiber.Ctx) error {
 	username := c.Params("username")
 
 	// public-facing user slice

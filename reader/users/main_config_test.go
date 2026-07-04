@@ -7,7 +7,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v3"
 )
 
 func TestReadEnvInt_FallbackCases(t *testing.T) {
@@ -37,18 +37,18 @@ func TestNewRateLimiter_EnforcesLimit(t *testing.T) {
 	t.Setenv("RATE_LIMIT_WINDOW_SEC", "60")
 
 	app := fiber.New()
-	app.Use(func(c *fiber.Ctx) error {
+	app.Use(func(c fiber.Ctx) error {
 		c.Locals("user_id", "user-1")
 		return c.Next()
 	})
 	app.Use(newRateLimiter())
-	app.Get("/limited", func(c *fiber.Ctx) error {
+	app.Get("/limited", func(c fiber.Ctx) error {
 		return c.SendStatus(fiber.StatusOK)
 	})
 
 	for i := 0; i < 2; i++ {
 		req := httptest.NewRequest(http.MethodGet, "/limited", nil)
-		resp, err := app.Test(req, -1)
+		resp, err := app.Test(req, fiber.TestConfig{Timeout: 0})
 		if err != nil {
 			t.Fatalf("request %d failed: %v", i+1, err)
 		}
@@ -58,7 +58,7 @@ func TestNewRateLimiter_EnforcesLimit(t *testing.T) {
 	}
 
 	req := httptest.NewRequest(http.MethodGet, "/limited", nil)
-	resp, err := app.Test(req, -1)
+	resp, err := app.Test(req, fiber.TestConfig{Timeout: 0})
 	if err != nil {
 		t.Fatalf("request 3 failed: %v", err)
 	}
@@ -75,9 +75,9 @@ func TestBodyLimit_Guard(t *testing.T) {
 		BodyLimit:    bodyLimit,
 		ErrorHandler: errorHandler,
 	})
-	app.Post("/body", func(c *fiber.Ctx) error {
+	app.Post("/body", func(c fiber.Ctx) error {
 		var payload map[string]any
-		if err := c.BodyParser(&payload); err != nil {
+		if err := c.Bind().Body(&payload); err != nil {
 			return err
 		}
 		return c.SendStatus(fiber.StatusOK)
@@ -86,7 +86,7 @@ func TestBodyLimit_Guard(t *testing.T) {
 	req := httptest.NewRequest(http.MethodPost, "/body", strings.NewReader(`{"username":"this-payload-is-definitely-longer-than-thirty-two-bytes"}`))
 	req.Header.Set("Content-Type", "application/json")
 
-	resp, err := app.Test(req, -1)
+	resp, err := app.Test(req, fiber.TestConfig{Timeout: 0})
 	if err == nil {
 		if resp.StatusCode != http.StatusRequestEntityTooLarge {
 			t.Fatalf("unexpected status: got %d, want %d", resp.StatusCode, http.StatusRequestEntityTooLarge)

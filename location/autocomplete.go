@@ -8,7 +8,7 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v3"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/sirupsen/logrus"
 )
@@ -23,7 +23,7 @@ type AutocompleteState struct {
 var state = AutocompleteState{}
 
 func AutocompleteHandler(db *pgxpool.Pool) fiber.Handler {
-	return func(c *fiber.Ctx) error {
+	return func(c fiber.Ctx) error {
 		queryParam := c.Query("query", "")
 		logrus.Infof("Autocomplete request received with query: %s", queryParam)
 

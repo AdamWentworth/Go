@@ -4,13 +4,13 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v3"
 )
 
 func newCORSTestApp() *fiber.App {
 	app := fiber.New()
 	app.Use(corsMiddleware)
-	app.Get("/ok", func(c *fiber.Ctx) error {
+	app.Get("/ok", func(c fiber.Ctx) error {
 		return c.SendStatus(fiber.StatusOK)
 	})
 	return app
@@ -24,7 +24,7 @@ func TestCORSMiddleware_AllowedOrigin(t *testing.T) {
 	req := httptest.NewRequest(fiber.MethodGet, "/ok", nil)
 	req.Header.Set("Origin", "https://allowed.example")
 
-	resp, err := app.Test(req, -1)
+	resp, err := app.Test(req, fiber.TestConfig{Timeout: 0})
 	if err != nil {
 		t.Fatalf("request failed: %v", err)
 	}
@@ -45,7 +45,7 @@ func TestCORSMiddleware_DisallowedOrigin(t *testing.T) {
 	req := httptest.NewRequest(fiber.MethodGet, "/ok", nil)
 	req.Header.Set("Origin", "https://blocked.example")
 
-	resp, err := app.Test(req, -1)
+	resp, err := app.Test(req, fiber.TestConfig{Timeout: 0})
 	if err != nil {
 		t.Fatalf("request failed: %v", err)
 	}
@@ -66,7 +66,7 @@ func TestCORSMiddleware_OptionsShortCircuit(t *testing.T) {
 	req := httptest.NewRequest(fiber.MethodOptions, "/ok", nil)
 	req.Header.Set("Origin", "https://allowed.example")
 
-	resp, err := app.Test(req, -1)
+	resp, err := app.Test(req, fiber.TestConfig{Timeout: 0})
 	if err != nil {
 		t.Fatalf("request failed: %v", err)
 	}
