@@ -25,7 +25,13 @@ test.describe('pokemon app browser regressions', () => {
 
     try {
       await installE2eRoutes(page);
-      await page.goto('/');
+      await page.route('**/__asset-probe', async (route) => {
+        await route.fulfill({
+          contentType: 'text/html',
+          body: '<!doctype html><meta charset="utf-8"><title>asset probe</title>',
+        });
+      });
+      await page.goto('/__asset-probe');
 
       const assetResults = await page.evaluate(async () => {
         type SpinnerVideoInspection = {
@@ -69,14 +75,49 @@ test.describe('pokemon app browser regressions', () => {
             video.muted = true;
             video.playsInline = true;
             video.preload = 'auto';
-            video.onloadeddata = () => {
+
+            let isDone = false;
+            let timeoutId: number | undefined;
+
+            const finish = (result: SpinnerVideoInspection) => {
+              if (isDone) {
+                return;
+              }
+              isDone = true;
+              if (timeoutId !== undefined) {
+                window.clearTimeout(timeoutId);
+              }
+              video.pause();
+              resolve(result);
+            };
+
+            const fail = (error: Error) => {
+              if (isDone) {
+                return;
+              }
+              isDone = true;
+              if (timeoutId !== undefined) {
+                window.clearTimeout(timeoutId);
+              }
+              video.pause();
+              reject(error);
+            };
+
+            timeoutId = window.setTimeout(
+              () => fail(new Error(`Timed out while decoding ${src}`)),
+              5_000,
+            );
+
+            const delay = (milliseconds: number) =>
+              new Promise<void>((resolveDelay) => window.setTimeout(resolveDelay, milliseconds));
+
+            const inspectCurrentFrame = (): SpinnerVideoInspection => {
               const canvas = document.createElement('canvas');
               canvas.width = video.videoWidth;
               canvas.height = video.videoHeight;
               const context = canvas.getContext('2d');
               if (!context) {
-                reject(new Error('Could not inspect spinner video transparency'));
-                return;
+                throw new Error('Could not inspect spinner video transparency');
               }
 
               context.drawImage(video, 0, 0);
@@ -97,7 +138,7 @@ test.describe('pokemon app browser regressions', () => {
                 maxAlpha = Math.max(maxAlpha, alpha);
               }
 
-              resolve({
+              return {
                 src,
                 byteLength,
                 canDecodeWebM,
@@ -106,9 +147,37 @@ test.describe('pokemon app browser regressions', () => {
                 cornerAlpha,
                 lowAlphaPixels,
                 maxAlpha,
-              });
+              };
             };
-            video.onerror = () => reject(new Error(`Could not decode ${src}`));
+
+            video.onloadeddata = () => {
+              void (async () => {
+                try {
+                  await video.play().catch(() => undefined);
+
+                  let bestResult = inspectCurrentFrame();
+                  for (let attempt = 0; attempt < 8 && bestResult.maxAlpha <= 200; attempt += 1) {
+                    await delay(100);
+                    const nextResult = inspectCurrentFrame();
+                    if (nextResult.maxAlpha > bestResult.maxAlpha) {
+                      bestResult = nextResult;
+                    }
+                  }
+
+                  finish(bestResult);
+                } catch (error) {
+                  fail(error instanceof Error ? error : new Error(String(error)));
+                }
+              })();
+            };
+            video.onerror = () => {
+              fail(new Error(`Could not decode ${src}`));
+            };
+            video.onabort = () => {
+              if (!isDone) {
+                fail(new Error(`Video load aborted for ${src}`));
+              }
+            };
             video.src = src;
             video.load();
           });
