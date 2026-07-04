@@ -1,16 +1,26 @@
 import fs from 'node:fs';
 import path from 'node:path';
 
-import { expect, test, type Locator, type Page } from '@playwright/test';
+import {
+  expect,
+  test,
+  type Browser,
+  type BrowserContext,
+  type Locator,
+  type Page,
+  type TestInfo,
+} from '@playwright/test';
 
 import { attachBrowserDiagnostics } from './support/diagnostics';
 
 const liveDemoMediaDir = path.resolve(process.cwd(), '.artifacts/demo-media-live');
+const liveDemoVideoDir = path.resolve(process.cwd(), '.artifacts/demo-video-live');
 const demoUsername = process.env.POKEGONEXUS_DEMO_USERNAME ?? '';
 const demoPassword = process.env.POKEGONEXUS_DEMO_PASSWORD ?? '';
 
 type ThemeMode = 'dark' | 'light';
 type ViewportMode = 'desktop' | 'mobile';
+type VideoFlow = 'collection-overlay' | 'search-results';
 
 type BlockedMutation = {
   method: string;
@@ -23,6 +33,27 @@ const captureViewports: Record<ViewportMode, { width: number; height: number }> 
   desktop: { width: 1440, height: 900 },
   mobile: { width: 390, height: 844 },
 };
+const runLiveVideoCapture = process.env.DEMO_VIDEO_CAPTURE_LIVE === '1';
+const videoFlows = runLiveVideoCapture
+  ? parseModes<VideoFlow>(
+      process.env.DEMO_VIDEO_FLOWS,
+      ['collection-overlay', 'search-results'],
+      ['collection-overlay', 'search-results'],
+    )
+  : [];
+const videoThemes = runLiveVideoCapture
+  ? parseModes<ThemeMode>(process.env.DEMO_VIDEO_THEMES, captureThemes, ['dark'])
+  : [];
+const videoViewports = runLiveVideoCapture
+  ? parseModes<ViewportMode>(
+      process.env.DEMO_VIDEO_VIEWPORTS,
+      Object.keys(captureViewports) as ViewportMode[],
+      ['desktop', 'mobile'],
+    )
+  : [];
+const videoPauseMs = parsePositiveInteger(process.env.DEMO_VIDEO_PAUSE_MS, 4_000);
+const videoActionPauseMs = parsePositiveInteger(process.env.DEMO_VIDEO_ACTION_PAUSE_MS, 900);
+const videoFinalPauseMs = parsePositiveInteger(process.env.DEMO_VIDEO_FINAL_PAUSE_MS, 7_000);
 
 test.use({
   screenshot: 'off',
@@ -41,6 +72,41 @@ function formatUrlForReport(rawUrl: string) {
 
 function mediaName(theme: ThemeMode, surface: string, viewport: ViewportMode) {
   return `${theme}-${surface}-${viewport}`;
+}
+
+function videoName(theme: ThemeMode, flow: VideoFlow, viewport: ViewportMode) {
+  return `${theme}-${flow}-${viewport}`;
+}
+
+function parseModes<T extends string>(
+  rawValue: string | undefined,
+  allowedValues: readonly T[],
+  defaultValues: readonly T[],
+) {
+  if (!rawValue) return [...defaultValues];
+
+  const allowed = new Set<string>(allowedValues);
+  const values = rawValue
+    .split(',')
+    .map((value) => value.trim())
+    .filter(Boolean);
+  const invalidValues = values.filter((value) => !allowed.has(value));
+
+  if (invalidValues.length > 0) {
+    throw new Error(
+      `Invalid live demo video option(s): ${invalidValues.join(', ')}. ` +
+        `Allowed values are: ${allowedValues.join(', ')}.`,
+    );
+  }
+
+  return Array.from(new Set(values)) as T[];
+}
+
+function parsePositiveInteger(rawValue: string | undefined, fallback: number) {
+  if (!rawValue) return fallback;
+
+  const value = Number(rawValue);
+  return Number.isFinite(value) && value > 0 ? Math.round(value) : fallback;
 }
 
 async function setThemeMode(page: Page, theme: ThemeMode) {
@@ -125,11 +191,157 @@ async function clickIfVisible(locator: Locator, timeout = 2_000) {
   return false;
 }
 
+async function installVideoPresentationHelpers(context: BrowserContext, showCursor: boolean) {
+  await context.addInitScript((options: { showCursor: boolean }) => {
+    const styleId = 'live-demo-video-presentation-style';
+    const cursorId = 'live-demo-video-cursor';
+    let lastCursorX = 24;
+    let lastCursorY = 24;
+
+    const updateCursor = () => {
+      const cursor = document.getElementById(cursorId) as HTMLElement | null;
+      if (!cursor) return;
+      cursor.style.transform = `translate3d(${lastCursorX}px, ${lastCursorY}px, 0)`;
+    };
+
+    const ensurePresentation = () => {
+      const root = document.documentElement;
+      if (!root) return;
+
+      if (!document.getElementById(styleId)) {
+        const style = document.createElement('style');
+        style.id = styleId;
+        style.textContent = `
+          .Toastify,
+          .Toastify__toast-container,
+          .Toastify__toast {
+            display: none !important;
+            opacity: 0 !important;
+            pointer-events: none !important;
+            visibility: hidden !important;
+          }
+          .app-loading-overlay {
+            display: none !important;
+            opacity: 0 !important;
+            pointer-events: none !important;
+            visibility: hidden !important;
+          }
+          #${cursorId} {
+            background: #ffffff;
+            clip-path: polygon(0 0, 0 21px, 6px 15px, 10px 24px, 14px 22px, 10px 13px, 18px 13px);
+            filter: drop-shadow(0 1px 2px rgb(0 0 0 / 0.75));
+            height: 24px;
+            left: 0;
+            pointer-events: none;
+            position: fixed;
+            top: 0;
+            transition: transform 180ms ease, scale 120ms ease;
+            width: 18px;
+            z-index: 2147483647;
+          }
+          #${cursorId}.is-pressing {
+            scale: 0.88;
+          }
+        `;
+        (document.head ?? root).appendChild(style);
+      }
+
+      if (!options.showCursor) {
+        document.getElementById(cursorId)?.remove();
+        return;
+      }
+
+      if (!document.getElementById(cursorId)) {
+        const cursor = document.createElement('div');
+        cursor.id = cursorId;
+        cursor.setAttribute('aria-hidden', 'true');
+        (document.body ?? root).appendChild(cursor);
+        updateCursor();
+      }
+    };
+
+    const markCursorPressing = (isPressing: boolean) => {
+      const cursor = document.getElementById(cursorId);
+      cursor?.classList.toggle('is-pressing', isPressing);
+    };
+
+    window.addEventListener(
+      'mousemove',
+      (event) => {
+        lastCursorX = event.clientX;
+        lastCursorY = event.clientY;
+        updateCursor();
+      },
+      true,
+    );
+    window.addEventListener('mousedown', () => markCursorPressing(true), true);
+    window.addEventListener('mouseup', () => markCursorPressing(false), true);
+
+    type DemoVideoWindow = Window & {
+      __setLiveDemoCursor?: (x: number, y: number) => void;
+    };
+    (window as DemoVideoWindow).__setLiveDemoCursor = (x: number, y: number) => {
+      lastCursorX = x;
+      lastCursorY = y;
+      ensurePresentation();
+      updateCursor();
+    };
+
+    ensurePresentation();
+    document.addEventListener('DOMContentLoaded', ensurePresentation);
+    new MutationObserver(ensurePresentation).observe(document, {
+      childList: true,
+      subtree: true,
+    });
+  }, { showCursor });
+}
+
+async function moveVideoCursorToLocator(locator: Locator) {
+  const page = locator.page();
+  const box = await locator.boundingBox();
+  if (!box) return;
+
+  const x = Math.round(box.x + box.width / 2);
+  const y = Math.round(box.y + box.height / 2);
+  await page.evaluate(
+    ({ nextX, nextY }) => {
+      type DemoVideoWindow = Window & {
+        __setLiveDemoCursor?: (x: number, y: number) => void;
+      };
+      (window as DemoVideoWindow).__setLiveDemoCursor?.(nextX, nextY);
+    },
+    { nextX: x, nextY: y },
+  );
+  await page.mouse.move(x, y, { steps: 16 });
+  await page.waitForTimeout(220);
+}
+
+async function clickForVideo(locator: Locator, timeout = 10_000) {
+  await expect(locator).toBeVisible({ timeout });
+  await hideToastNotifications(locator.page());
+  await moveVideoCursorToLocator(locator);
+  await locator.click({ timeout });
+  await hideToastNotifications(locator.page());
+}
+
+async function clickIfVisibleForVideo(locator: Locator, timeout = 2_000) {
+  if (await locator.isVisible({ timeout }).catch(() => false)) {
+    await clickForVideo(locator, Math.max(timeout, 5_000));
+    return true;
+  }
+  return false;
+}
+
 async function hideToastNotifications(page: Page) {
   await page.evaluate(() => {
-    for (const element of Array.from(document.querySelectorAll<HTMLElement>('.Toastify'))) {
+    for (const element of Array.from(
+      document.querySelectorAll<HTMLElement>(
+        '.Toastify, .Toastify__toast-container, .Toastify__toast',
+      ),
+    )) {
       element.style.display = 'none';
       element.style.pointerEvents = 'none';
+      element.style.visibility = 'hidden';
     }
   });
 }
@@ -353,6 +565,18 @@ async function centerPokemonPanel(page: Page) {
 async function capture(page: Page, name: string, options: Parameters<Page['screenshot']>[0] = {}) {
   await page.mouse.move(4, 4);
   await page.waitForTimeout(100);
+  await prepareMediaFrame(page);
+  await waitForVisibleImagesReady(page);
+
+  await page.screenshot({
+    path: path.join(liveDemoMediaDir, `${name}.png`),
+    fullPage: false,
+    animations: 'disabled',
+    ...options,
+  });
+}
+
+async function prepareMediaFrame(page: Page) {
   await hideToastNotifications(page);
   await page.evaluate(() => {
     for (const button of Array.from(document.querySelectorAll('button'))) {
@@ -363,14 +587,6 @@ async function capture(page: Page, name: string, options: Parameters<Page['scree
         }
       }
     }
-  });
-  await waitForVisibleImagesReady(page);
-
-  await page.screenshot({
-    path: path.join(liveDemoMediaDir, `${name}.png`),
-    fullPage: false,
-    animations: 'disabled',
-    ...options,
   });
 }
 
@@ -643,6 +859,250 @@ async function captureSearch(page: Page, theme: ThemeMode, viewport: ViewportMod
   await capture(page, mapName);
 }
 
+async function pauseForVideo(page: Page, duration = videoPauseMs) {
+  await prepareMediaFrame(page);
+  await waitForVisibleImagesReady(page);
+  await page.waitForTimeout(duration);
+}
+
+async function chooseCaughtTagForVideo(page: Page) {
+  await clickIfVisibleForVideo(page.getByText('TAGS', { exact: true }), 5_000);
+  await page.waitForTimeout(videoActionPauseMs);
+  await clickIfVisibleForVideo(page.locator('.tag-item[data-tag="Caught"]'), 10_000);
+  await waitForAppSettled(page);
+}
+
+async function sortCollectionByFavoritesForVideo(page: Page) {
+  const sortButton = page.locator('.sort-button').first();
+  await expect(sortButton).toBeVisible({ timeout: 15_000 });
+  await hideToastNotifications(page);
+  await clickForVideo(sortButton, 10_000);
+  await page.waitForTimeout(videoActionPauseMs);
+
+  await expect(page.locator('.sort-menu-overlay')).toBeVisible({ timeout: 10_000 });
+  await clickForVideo(
+    page.locator('.sort-menu-overlay .sort-type-button').filter({ hasText: 'FAVORITE' }),
+    10_000,
+  );
+  await expect(page.locator('.sort-menu-overlay')).toHaveCount(0, { timeout: 15_000 });
+  await waitForAppSettled(page);
+}
+
+async function warmCollectionVideoContext(page: Page) {
+  await page.goto('/pokemon', { waitUntil: 'domcontentloaded' });
+  await waitForAppSettled(page);
+
+  await chooseCaughtTag(page);
+  await centerPokemonPanel(page);
+  await sortCollectionByFavorites(page);
+  await centerPokemonPanel(page);
+  await waitForCollectionCardsOrEmpty(page);
+  await ensureCollectionContentInViewport(page);
+  await forcePokemonPanelCentered(page);
+  await page.waitForTimeout(100);
+  await waitForCollectionMediaReady(page);
+}
+
+async function openShinyShadowRaikouOverlayForVideo(page: Page) {
+  const searchInput = page.locator('.search-input').first();
+  await expect(searchInput).toBeVisible({ timeout: 15_000 });
+  await clickForVideo(searchInput, 15_000);
+  await page.waitForTimeout(videoActionPauseMs);
+  await searchInput.fill('');
+  await searchInput.pressSequentially('raikou', { delay: 120 });
+  await waitForAppSettled(page);
+  await waitForVisibleImagesReady(page, 45_000);
+  await page.waitForTimeout(videoActionPauseMs);
+
+  for (let attempt = 0; attempt < 5; attempt += 1) {
+    const raikouCard = await getPreferredRaikouCard(page);
+    try {
+      await clickForVideo(raikouCard, 10_000);
+      break;
+    } catch (error) {
+      if (attempt === 4) throw error;
+      await page.waitForTimeout(500);
+    }
+  }
+
+  await expect(page.locator('.instance-overlay')).toBeVisible({ timeout: 15_000 });
+  await waitForVisibleImagesReady(page, 45_000);
+}
+
+async function performCollectionOverlayVideoFlow(page: Page) {
+  await page.goto('/pokemon', { waitUntil: 'domcontentloaded' });
+  await waitForAppSettled(page);
+  await pauseForVideo(page, 1_500);
+
+  await chooseCaughtTagForVideo(page);
+  await centerPokemonPanel(page);
+  await page.waitForTimeout(videoActionPauseMs);
+  await sortCollectionByFavoritesForVideo(page);
+  await centerPokemonPanel(page);
+  await waitForCollectionCardsOrEmpty(page);
+  await ensureCollectionContentInViewport(page);
+  await forcePokemonPanelCentered(page);
+  await waitForCollectionMediaReady(page);
+  await pauseForVideo(page, 3_000);
+
+  await openShinyShadowRaikouOverlayForVideo(page);
+  await pauseForVideo(page, videoFinalPauseMs);
+}
+
+async function warmSearchVideoContext(page: Page) {
+  await page.goto('/search', { waitUntil: 'domcontentloaded' });
+  await waitForAppSettled(page);
+  await page.getByRole('button', { name: 'Pokemon' }).click();
+  await expect(page.getByPlaceholder('Enter Pokemon name')).toBeVisible({ timeout: 30_000 });
+  return await waitForPokemonCatalogReady(page);
+}
+
+async function performSearchResultsVideoFlow(page: Page) {
+  await page.goto('/search', { waitUntil: 'domcontentloaded' });
+  await waitForAppSettled(page);
+  await pauseForVideo(page, 1_200);
+
+  await clickForVideo(page.getByRole('button', { name: 'Pokemon' }), 10_000);
+  await expect(page.getByPlaceholder('Enter Pokemon name')).toBeVisible({ timeout: 30_000 });
+  const catalogReady = await waitForPokemonCatalogReady(page);
+  await pauseForVideo(page, 1_000);
+
+  const pokemonInput = page.getByPlaceholder('Enter Pokemon name');
+  await clickForVideo(pokemonInput, 10_000);
+  await pokemonInput.fill('');
+  await pokemonInput.pressSequentially('Pikachu', { delay: 110 });
+  await page.waitForTimeout(videoActionPauseMs);
+  await clickIfVisibleForVideo(page.getByRole('button', { name: 'Pikachu', exact: true }), 2_000);
+  await page.waitForTimeout(videoActionPauseMs);
+
+  if (await seedStoredLocationFromAccount(page)) {
+    await page.waitForTimeout(videoActionPauseMs);
+    await clickForVideo(page.getByRole('button', { name: 'Use Current Location' }), 10_000);
+  } else {
+    const locationInput = page.getByPlaceholder('Enter location');
+    await clickForVideo(locationInput, 10_000);
+    await locationInput.fill('');
+    await locationInput.pressSequentially('Vancouver', { delay: 70 });
+    await page.waitForTimeout(videoActionPauseMs);
+    await clickIfVisibleForVideo(page.getByText(/Vancouver/i).first(), 10_000);
+  }
+
+  await page.waitForTimeout(videoActionPauseMs);
+  await clickForVideo(page.getByRole('button', { name: 'Search', exact: true }), 10_000);
+  if (!catalogReady) {
+    await waitForAnyVisible(page, [
+      page.getByText(/No Pokemon data found in the default store/i),
+      page.getByText(/Use the Toolbar above/i),
+    ], 10_000);
+    await pauseForVideo(page, videoFinalPauseMs);
+    return;
+  }
+
+  await waitForAnyVisible(page, [
+    page.locator('.list-view-container'),
+    page.getByText('No Pokemon found matching your criteria.'),
+    page.getByText(/No Pokemon data found in the default store/i),
+    page.getByText(/Use the Toolbar above/i),
+  ]);
+  const hasSearchResults = await page.locator('.list-view-container').isVisible().catch(() => false);
+  await pauseForVideo(page);
+
+  if (hasSearchResults) {
+    await clickForVideo(page.getByRole('button', { name: 'Map view' }), 10_000);
+    await waitForAnyVisible(page, [page.locator('.ol-viewport')]);
+    await page.waitForTimeout(1_200);
+    await pauseForVideo(page, videoFinalPauseMs);
+  }
+}
+
+async function recordVideoClip(
+  browser: Browser,
+  theme: ThemeMode,
+  viewport: ViewportMode,
+  flow: VideoFlow,
+  testInfo: TestInfo,
+) {
+  const viewportSize = captureViewports[viewport];
+  const context = await browser.newContext({
+    baseURL: process.env.E2E_BASE_URL ?? 'https://pokegonexus.com',
+    viewport: viewportSize,
+    serviceWorkers: 'block',
+    recordVideo: {
+      dir: liveDemoVideoDir,
+      size: viewportSize,
+    },
+  });
+  await installVideoPresentationHelpers(context, viewport === 'desktop');
+  await context.addInitScript((mode: ThemeMode) => {
+    const isLightMode = mode === 'light';
+    window.localStorage.setItem('isLightMode', JSON.stringify(isLightMode));
+    const applyTheme = () => {
+      const root = document.documentElement;
+      if (!root) return;
+
+      root.setAttribute('data-theme', isLightMode ? 'light' : 'dark');
+      root.style.colorScheme = isLightMode ? 'light' : 'dark';
+    };
+
+    applyTheme();
+    document.addEventListener('DOMContentLoaded', applyTheme);
+    new MutationObserver(applyTheme).observe(document, {
+      childList: true,
+      subtree: true,
+    });
+  }, theme);
+
+  const setupPage = await context.newPage();
+  const setupVideo = setupPage.video();
+  const setupDiagnostics = attachBrowserDiagnostics(setupPage, testInfo);
+  const setupBlockedMutations = await installReadOnlyNetworkGuard(setupPage);
+
+  await loginWithDemoAccount(setupPage);
+  await prepareCaptureContext(setupPage, theme, viewport);
+  if (flow === 'collection-overlay') {
+    await warmCollectionVideoContext(setupPage);
+  } else {
+    await warmSearchVideoContext(setupPage);
+  }
+  await setupDiagnostics.flush();
+  const setupBlockingErrors = setupDiagnostics.blockingErrors();
+  await setupPage.close();
+  await setupVideo?.delete().catch(() => {});
+
+  const page = await context.newPage();
+  const diagnostics = attachBrowserDiagnostics(page, testInfo);
+  const blockedMutations = [
+    ...setupBlockedMutations,
+    ...(await installReadOnlyNetworkGuard(page)),
+  ];
+  let blockingErrors: unknown[] = [];
+  let video = page.video();
+
+  try {
+    if (flow === 'collection-overlay') {
+      await performCollectionOverlayVideoFlow(page);
+    } else {
+      await performSearchResultsVideoFlow(page);
+    }
+  } finally {
+    await diagnostics.flush();
+    blockingErrors = [
+      ...setupBlockingErrors,
+      ...diagnostics.blockingErrors(),
+    ];
+    video = page.video();
+    await page.close().catch(() => {});
+    await context.close();
+  }
+
+  if (video) {
+    await video.saveAs(path.join(liveDemoVideoDir, `${videoName(theme, flow, viewport)}.webm`));
+    await video.delete().catch(() => {});
+  }
+
+  return { blockedMutations, blockingErrors };
+}
+
 test.describe('live demo media capture', () => {
   test.setTimeout(600_000);
 
@@ -683,4 +1143,53 @@ test.describe('live demo media capture', () => {
       `browser diagnostics should not include runtime errors:\n${JSON.stringify(blockingErrors, null, 2)}`,
     ).toEqual([]);
   });
+});
+
+test.describe('live demo video capture', () => {
+  test.setTimeout(900_000);
+
+  test.skip(
+    !runLiveVideoCapture,
+    'Only run through npm run capture:demo:video:live',
+  );
+  test.skip(
+    !demoUsername || !demoPassword,
+    'Set POKEGONEXUS_DEMO_USERNAME and POKEGONEXUS_DEMO_PASSWORD to capture live video',
+  );
+
+  test(
+    'records PokeGo Nexus demo flows with a real read-only demo account',
+    async ({ browser }, testInfo) => {
+      fs.rmSync(liveDemoVideoDir, { recursive: true, force: true });
+      fs.mkdirSync(liveDemoVideoDir, { recursive: true });
+      const blockedMutations: BlockedMutation[] = [];
+      const blockingErrors: unknown[] = [];
+
+      for (const theme of videoThemes) {
+        for (const viewport of videoViewports) {
+          for (const flow of videoFlows) {
+            const result = await recordVideoClip(
+              browser,
+              theme,
+              viewport,
+              flow,
+              testInfo,
+            );
+            blockedMutations.push(...result.blockedMutations);
+            blockingErrors.push(...result.blockingErrors);
+          }
+        }
+      }
+
+      expect(
+        blockedMutations,
+        `live video capture blocked unexpected account-mutating requests:\n${JSON.stringify(blockedMutations, null, 2)}`,
+      ).toEqual([]);
+
+      expect(
+        blockingErrors,
+        `browser diagnostics should not include runtime errors:\n${JSON.stringify(blockingErrors, null, 2)}`,
+      ).toEqual([]);
+    },
+  );
 });

@@ -173,6 +173,36 @@ npm --workspace apps/web run test:browsers:safari
 
 ---
 
+## 🎞️ Demo Media Capture
+
+The live demo capture commands log in to the production web surface and use a read-only Playwright guard that blocks Pokémon, trade, and profile mutation requests. Auth session-token metadata may still change because the capture performs a normal login.
+
+```bash
+npm --workspace apps/web run capture:demo:live
+npm --workspace apps/web run capture:demo:video:live
+```
+
+- Screenshots are written to `frontend/apps/web/.artifacts/demo-media-live/`.
+- Videos are written to `frontend/apps/web/.artifacts/demo-video-live/`.
+- Screenshots capture dark and light themes for desktop and mobile.
+- Videos default to dark theme for desktop and mobile, matching the app default.
+- Videos use a disposable warm-up page for login/cache priming, then record a fresh high-resolution page with paced 15-20 second app moments.
+- Desktop videos include an in-page demo cursor because browser video capture does not record the operating-system cursor.
+- Video capture suppresses notification toasts so location/auth messages do not cover the demo surface.
+
+Video capture can be expanded when Phlosion or README embeds need more variants:
+
+```bash
+DEMO_VIDEO_THEMES=dark,light npm --workspace apps/web run capture:demo:video:live
+DEMO_VIDEO_VIEWPORTS=desktop npm --workspace apps/web run capture:demo:video:live
+DEMO_VIDEO_FLOWS=collection-overlay npm --workspace apps/web run capture:demo:video:live
+DEMO_VIDEO_PAUSE_MS=4500 DEMO_VIDEO_FINAL_PAUSE_MS=8000 npm --workspace apps/web run capture:demo:video:live
+```
+
+Current video flows are `collection-overlay` and `search-results`. Keep dark media as the primary Phlosion surface, and expose light media as an alternate view when a page has room for a theme toggle.
+
+---
+
 ## CI/CD (GitHub Actions)
 
 This service now has dedicated frontend workflows:
