@@ -4,6 +4,8 @@ const parsedPort = Number(process.env.E2E_PORT ?? 3000);
 const port = Number.isInteger(parsedPort) && parsedPort > 0 ? parsedPort : 3000;
 const rawBaseURL = process.env.E2E_BASE_URL ?? `http://127.0.0.1:${port}`;
 const baseURL = rawBaseURL.replace(/\/+$/, '');
+const useRealApis = process.env.E2E_USE_REAL_APIS === '1';
+const viteMode = process.env.E2E_VITE_MODE ?? (useRealApis ? 'development' : 'e2e');
 const shouldStartWebServer =
   process.env.E2E_SKIP_WEBSERVER !== '1' &&
   (Boolean(process.env.E2E_WEB_SERVER_COMMAND) || !process.env.E2E_BASE_URL);
@@ -22,22 +24,36 @@ const inheritedEnv = Object.fromEntries(
   ),
 );
 
+const e2eApiEnv = useRealApis
+  ? {
+      VITE_POKEMON_API_URL: `${baseURL}/api/pokemon`,
+      VITE_AUTH_API_URL: `${baseURL}/api/auth`,
+      VITE_RECEIVER_API_URL: `${baseURL}/api/receiver`,
+      VITE_USERS_API_URL: `${baseURL}/api/users`,
+      VITE_SEARCH_API_URL: `${baseURL}/api/search`,
+      VITE_LOCATION_SERVICE_URL: `${baseURL}/api/location`,
+      VITE_EVENTS_API_URL: `${baseURL}/api/events`,
+    }
+  : {
+      VITE_POKEMON_API_URL: `${baseURL}/__e2e/pokemon`,
+      VITE_AUTH_API_URL: `${baseURL}/__e2e/auth`,
+      VITE_RECEIVER_API_URL: `${baseURL}/__e2e/receiver`,
+      VITE_USERS_API_URL: `${baseURL}/__e2e/users`,
+      VITE_SEARCH_API_URL: `${baseURL}/__e2e/search`,
+      VITE_LOCATION_SERVICE_URL: `${baseURL}/__e2e/location`,
+      VITE_EVENTS_API_URL: `${baseURL}/__e2e/events`,
+    } satisfies Record<string, string>;
+
 const e2eServerEnv = {
   ...inheritedEnv,
-  VITE_POKEMON_API_URL: `${baseURL}/__e2e/pokemon`,
-  VITE_AUTH_API_URL: `${baseURL}/__e2e/auth`,
-  VITE_RECEIVER_API_URL: `${baseURL}/__e2e/receiver`,
-  VITE_USERS_API_URL: `${baseURL}/__e2e/users`,
-  VITE_SEARCH_API_URL: `${baseURL}/__e2e/search`,
-  VITE_LOCATION_SERVICE_URL: `${baseURL}/__e2e/location`,
-  VITE_EVENTS_API_URL: `${baseURL}/__e2e/events`,
+  ...e2eApiEnv,
   VITE_ASSET_ORIGIN: 'https://pokegonexus.com',
   VITE_FORCED_REFRESH_TIMESTAMP: '0',
   VITE_DISABLE_SERVICE_WORKER: 'true',
   VITE_LOG_LEVEL: 'warn',
 } satisfies Record<string, string>;
 
-const devServerCommand = `npm run dev -- --host 127.0.0.1 --port ${port} --strictPort --mode e2e`;
+const devServerCommand = `npm run dev -- --host 127.0.0.1 --port ${port} --strictPort --mode ${viteMode}`;
 const previewServerCommand = [
   'npm run build -- --mode e2e',
   `npm run preview -- --host 127.0.0.1 --port ${port} --strictPort`,

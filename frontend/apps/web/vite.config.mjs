@@ -93,6 +93,17 @@ const sharedMediaAssetsPlugin = () => ({
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, webRoot, '');
   const assetOrigin = (env.VITE_ASSET_ORIGIN || 'https://pokegonexus.com').replace(/\/+$/, '');
+  const apiProxyTarget = (
+    process.env.E2E_REAL_API_ORIGIN ||
+    process.env.VITE_ASSET_ORIGIN ||
+    (() => {
+      try {
+        return new URL(env.VITE_AUTH_API_URL).origin;
+      } catch {
+        return 'https://pokemongonexus.com';
+      }
+    })()
+  ).replace(/\/+$/, '');
 
   return {
     root: appCoreRoot,
@@ -115,6 +126,29 @@ export default defineConfig(({ mode }) => {
           target: assetOrigin,
           changeOrigin: true,
           secure: true,
+        },
+        '/api': {
+          target: apiProxyTarget,
+          changeOrigin: true,
+          secure: true,
+          configure(proxy) {
+            proxy.on('proxyReq', (proxyReq) => {
+              proxyReq.setHeader('Origin', apiProxyTarget);
+              proxyReq.setHeader('Referer', `${apiProxyTarget}/`);
+            });
+            proxy.on('proxyRes', (proxyRes) => {
+              const cookies = proxyRes.headers['set-cookie'];
+              if (!Array.isArray(cookies)) {
+                return;
+              }
+
+              proxyRes.headers['set-cookie'] = cookies.map((cookie) =>
+                cookie
+                  .replace(/;\s*Secure/gi, '')
+                  .replace(/;\s*SameSite=None/gi, '; SameSite=Lax'),
+              );
+            });
+          },
         },
       },
     },
