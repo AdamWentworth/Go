@@ -178,30 +178,60 @@ npm --workspace apps/web run test:browsers:safari
 The live demo capture commands log in to the production web surface and use a read-only Playwright guard that blocks Pokémon, trade, and profile mutation requests. Auth session-token metadata may still change because the capture performs a normal login.
 
 ```bash
+npm --workspace apps/web run capture:demo:media:live
+```
+
+That all-media command prompts once for the AdamZilla credentials, then runs the screenshot,
+AdamZilla video, disposable auth video, disposable workflow video, and video-poster steps.
+Use `DEMO_MEDIA_STEPS=screenshots,videos,auth,workflows,posters` to run a subset.
+
+The same steps can also be run individually:
+
+```bash
 npm --workspace apps/web run capture:demo:live
 npm --workspace apps/web run capture:demo:video:live
+npm --workspace apps/web run capture:demo:auth:live
+npm --workspace apps/web run capture:demo:workflows:live
+npm --workspace apps/web run capture:demo:posters:live
 ```
 
 - Screenshots are written to `frontend/apps/web/.artifacts/demo-media-live/`.
+- Video poster images are written to `frontend/apps/web/.artifacts/demo-media-live/video-posters/`.
 - Videos are written to `frontend/apps/web/.artifacts/demo-video-live/`.
 - Screenshots capture dark and light themes for desktop and mobile.
-- Videos default to dark theme for desktop and mobile, matching the app default.
-- Videos use a disposable warm-up page for login/cache priming, then record a fresh high-resolution page and trim each clip from the visual-ready frame.
-- Videos are capped just under 20 seconds by default.
+- Videos default to dark and light themes for desktop and mobile, producing four variants per flow.
+- Running the full media command produces 16 hand-captured screenshots, 32 videos, and 32 video poster images.
+- The 32 videos are 8 read-only AdamZilla demo videos, 4 auth lifecycle videos, and 20 Pokémon workflow videos.
+- Videos use a disposable warm-up page for login/cache priming, then record a fresh page and trim each clip from the visual-ready frame.
+- Videos keep the app viewport size and are capped just under 15 seconds by default.
 - Desktop videos include an in-page demo cursor because browser video capture does not record the operating-system cursor.
 - Mobile videos show a brief circular tap ripple for scripted interactions.
 - Video capture suppresses notification toasts so location/auth messages do not cover the demo surface.
+- Auth lifecycle capture creates a generated disposable account, records Home-to-register navigation, registration auto-login, account edit/deletion, and deletes the account before finishing. It does not use a real user account.
+- Workflow capture creates generated disposable accounts, records Pokémon catalog/search and instance workflows, then deletes each account before finishing. Service workers are blocked during workflow recording, so Pokémon instance edits stay in the disposable browser session and are not batch-synced to the backend.
 
-Video capture can be expanded when Phlosion or README embeds need more variants:
+Video capture can be narrowed when Phlosion or README embeds only need a subset:
 
 ```bash
-DEMO_VIDEO_THEMES=dark,light npm --workspace apps/web run capture:demo:video:live
+DEMO_VIDEO_THEMES=dark npm --workspace apps/web run capture:demo:video:live
 DEMO_VIDEO_VIEWPORTS=desktop npm --workspace apps/web run capture:demo:video:live
 DEMO_VIDEO_FLOWS=collection-overlay npm --workspace apps/web run capture:demo:video:live
-DEMO_VIDEO_MAX_SECONDS=18 DEMO_VIDEO_PAUSE_MS=2500 npm --workspace apps/web run capture:demo:video:live
+DEMO_VIDEO_MAX_SECONDS=14.5 DEMO_VIDEO_CRF=18 npm --workspace apps/web run capture:demo:video:live
+DEMO_VIDEO_COLLECTION_FAVORITES_PAUSE_MS=500 npm --workspace apps/web run capture:demo:video:live
+DEMO_VIDEO_SEARCH_COSTUME_MENU_PAUSE_MS=1100 npm --workspace apps/web run capture:demo:video:live
+DEMO_VIDEO_SEARCH_MAP_POPUP_PAUSE_MS=2800 npm --workspace apps/web run capture:demo:video:live
+DEMO_AUTH_VIDEO_MAX_SECONDS=26 npm --workspace apps/web run capture:demo:auth:live
+DEMO_AUTH_INCLUDE_EXPLICIT_LOGIN=1 DEMO_AUTH_VIDEO_MAX_SECONDS=36 npm --workspace apps/web run capture:demo:auth:live
+DEMO_WORKFLOW_FLOWS=caught-instance,trade-instance npm --workspace apps/web run capture:demo:workflows:live
+DEMO_WORKFLOW_THEMES=dark npm --workspace apps/web run capture:demo:workflows:live
+DEMO_WORKFLOW_VIEWPORTS=desktop npm --workspace apps/web run capture:demo:workflows:live
+DEMO_WORKFLOW_VIDEO_MAX_SECONDS=18 npm --workspace apps/web run capture:demo:workflows:live
+DEMO_WORKFLOW_EDIT_VIDEO_MAX_SECONDS=25 npm --workspace apps/web run capture:demo:workflows:live
+DEMO_POSTER_OFFSET_SECONDS=4 npm --workspace apps/web run capture:demo:posters:live
+DEMO_MEDIA_STEPS=videos,posters npm --workspace apps/web run capture:demo:media:live
 ```
 
-Current video flows are `collection-overlay` and `search-results`. Keep dark media as the primary Phlosion surface, and expose light media as an alternate view when a page has room for a theme toggle.
+Current read-only video flows are `collection-overlay` and `search-results`. Current disposable workflow flows are `caught-instance`, `catalog-search`, `wanted-instance`, `trade-instance`, and `instance-edit`. Keep dark media as the primary Phlosion surface, and expose light media as an alternate view when a page has room for a theme toggle.
 
 ---
 

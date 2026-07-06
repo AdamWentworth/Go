@@ -58,10 +58,16 @@ async function resolveCredentials() {
     'Live video capture performs a normal login. The guard blocks Pokemon, trade, and profile mutations, but auth session-token metadata may change.',
   );
   console.log(
-    'Video capture defaults to dark theme. Set DEMO_VIDEO_THEMES=dark,light to record both themes.',
+    'Video capture defaults to dark and light themes across desktop and mobile, producing four variants per flow.',
   );
   console.log(
-    'Videos are trimmed from the visual-ready frame and capped at DEMO_VIDEO_MAX_SECONDS, defaulting to just under 20 seconds.',
+    'Set DEMO_VIDEO_THEMES, DEMO_VIDEO_VIEWPORTS, or DEMO_VIDEO_FLOWS to narrow a run.',
+  );
+  console.log(
+    'Videos are trimmed from the visual-ready frame and capped at DEMO_VIDEO_MAX_SECONDS, defaulting to just under 15 seconds.',
+  );
+  console.log(
+    'Video output keeps the app viewport size; lower DEMO_VIDEO_CRF improves compression quality.',
   );
   console.log(
     `Capturing web surface: ${process.env.E2E_BASE_URL ?? 'https://pokegonexus.com'}`,
