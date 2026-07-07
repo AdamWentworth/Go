@@ -53,7 +53,7 @@ type BlockedMutation = {
 const readOnlyMethods = new Set(['GET', 'HEAD', 'OPTIONS']);
 const captureThemes: ThemeMode[] = ['dark', 'light'];
 const captureViewports: Record<ViewportMode, { width: number; height: number }> = {
-  desktop: { width: 1440, height: 900 },
+  desktop: { width: 1760, height: 1100 },
   mobile: { width: 390, height: 844 },
 };
 const runLiveVideoCapture = process.env.DEMO_VIDEO_CAPTURE_LIVE === '1';
@@ -1925,10 +1925,10 @@ async function performAuthLifecycleVideoFlow(
 }
 
 async function loginWithAccountCredentials(page: Page, username: string, password: string) {
-  await page.goto('/login', { waitUntil: 'domcontentloaded' });
-  await expect(page.getByPlaceholder('Username or Email')).toBeVisible({ timeout: 30_000 });
+  const usernameInput = page.getByPlaceholder('Username or Email');
+  await gotoLoginPageWithRetry(page, usernameInput);
 
-  await page.getByPlaceholder('Username or Email').fill(username);
+  await usernameInput.fill(username);
   await page.getByPlaceholder('Password').fill(password);
 
   const loginResponse = page.waitForResponse(
@@ -1972,6 +1972,36 @@ async function loginWithAccountCredentials(page: Page, username: string, passwor
   ]);
 
   return loginBody;
+}
+
+async function gotoLoginPageWithRetry(page: Page, usernameInput: Locator) {
+  const maxAttempts = parsePositiveInteger(process.env.DEMO_LOGIN_PAGE_ATTEMPTS, 3);
+  const loginFormTimeout = parsePositiveInteger(process.env.DEMO_LOGIN_FORM_TIMEOUT_MS, 30_000);
+  let lastError: unknown = null;
+
+  for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
+    await page.goto('/login', { waitUntil: 'domcontentloaded' });
+
+    if (await usernameInput.waitFor({ state: 'visible', timeout: loginFormTimeout }).then(() => true).catch(() => false)) {
+      return;
+    }
+
+    lastError = await loginPageFailureMessage(page);
+    if (attempt < maxAttempts) {
+      await page.waitForTimeout(attempt * 2_500);
+    }
+  }
+
+  throw new Error(`Login page did not load after ${maxAttempts} attempt(s). Last page: ${lastError ?? 'unknown'}`);
+}
+
+async function loginPageFailureMessage(page: Page) {
+  const title = await page.title().catch(() => '');
+  const bodyText = await page.locator('body').innerText({ timeout: 1_000 }).catch(() => '');
+  const cloudflareMatch = bodyText.match(/Error code\s+\d{3}/i)?.[0];
+  const headingMatch = bodyText.match(/Connection timed out|Bad gateway|Gateway timeout|Service unavailable/i)?.[0];
+  const bodySnippet = bodyText.replace(/\s+/g, ' ').trim().slice(0, 160);
+  return [title, headingMatch, cloudflareMatch, bodySnippet].filter(Boolean).join(' | ') || formatUrlForReport(page.url());
 }
 
 async function loginWithDemoAccount(page: Page) {
