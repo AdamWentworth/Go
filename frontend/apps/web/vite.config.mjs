@@ -35,14 +35,18 @@ const serveSharedMediaAsset = (req, res, next) => {
   }
 
   const { pathname } = new URL(req.url, 'http://localhost');
-  if (!pathname.startsWith('/media/')) {
+  const isSharedMediaPath = pathname.startsWith('/media/');
+  const isLegacyImagesPath = pathname.startsWith('/images/');
+  if (!isSharedMediaPath && !isLegacyImagesPath) {
     next();
     return;
   }
 
   let relativePath;
   try {
-    relativePath = decodeURIComponent(pathname.slice('/media/'.length));
+    relativePath = decodeURIComponent(
+      isSharedMediaPath ? pathname.slice('/media/'.length) : pathname.slice(1),
+    );
   } catch {
     res.statusCode = 400;
     res.end('Bad Request');
