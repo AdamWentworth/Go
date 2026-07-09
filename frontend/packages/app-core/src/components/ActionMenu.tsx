@@ -1,7 +1,7 @@
 // ActionMenu.tsx
 
 import React, { useEffect, useState } from 'react';
-import { useNavigate, useLocation, Link } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import ActionMenuButton from './ActionMenuButton';
 import CloseButton from './CloseButton';
 import { useModal } from '../contexts/ModalContext';
@@ -84,38 +84,44 @@ const ActionMenu: React.FC = () => {
 
           <div className="auth-button-container">
             {isLoggedIn ? (
-              <Link to="/account" style={{ textDecoration: 'none' }}>
-                <button className="auth-button">
-                  <span className="auth-button-text">Account</span>
-                  <img
-                    className="auth-button-icon"
-                    src="/images/profile-icon.png"
-                    alt="Account"
-                  />
-                </button>
-              </Link>
+              <button
+                className="auth-button"
+                type="button"
+                onClick={() => handleNavigation('/account')}
+              >
+                <span className="auth-button-text">Account</span>
+                <img
+                  className="auth-button-icon"
+                  src="/images/profile-icon.png"
+                  alt="Account"
+                />
+              </button>
             ) : (
               <div className="auth-button-stacked">
-                <Link to="/register" style={{ textDecoration: 'none' }}>
-                  <button className="auth-button">
-                    <span className="auth-button-text">Register</span>
-                    <img
-                      className="auth-button-icon"
-                      src="/images/register-icon.png"
-                      alt="Register"
-                    />
-                  </button>
-                </Link>
-                <Link to="/login" style={{ textDecoration: 'none' }}>
-                  <button className="auth-button">
-                    <span className="auth-button-text">Login</span>
-                    <img
-                      className="auth-button-icon"
-                      src="/images/login-icon.png"
-                      alt="Log In"
-                    />
-                  </button>
-                </Link>
+                <button
+                  className="auth-button"
+                  type="button"
+                  onClick={() => handleNavigation('/register')}
+                >
+                  <span className="auth-button-text">Register</span>
+                  <img
+                    className="auth-button-icon"
+                    src="/images/register-icon.png"
+                    alt="Register"
+                  />
+                </button>
+                <button
+                  className="auth-button"
+                  type="button"
+                  onClick={() => handleNavigation('/login')}
+                >
+                  <span className="auth-button-text">Login</span>
+                  <img
+                    className="auth-button-icon"
+                    src="/images/login-icon.png"
+                    alt="Log In"
+                  />
+                </button>
               </div>
             )}
           </div>
