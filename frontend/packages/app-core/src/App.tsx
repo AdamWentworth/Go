@@ -17,6 +17,7 @@ import {
 } from './contexts/AppLoadingContext';
 
 const Home = lazy(() => import('./pages/Home/Home'));
+const Pokedex = lazy(() => import('./pages/Pokedex/Pokedex'));
 const Pokemon = lazy(() => import('./pages/Pokemon/Pokemon'));
 const Login = lazy(() => import('./pages/Authentication/Login'));
 const Register = lazy(() => import('./pages/Authentication/Register'));
@@ -34,6 +35,7 @@ const AppContent: React.FC = () => (
       <Suspense fallback={<AppRouteFallback />}>
         <Routes>
           <Route path="/"             element={<Home />} />
+          <Route path="/pokedex"      element={<Pokedex />} />
           <Route path="/pokemon"      element={<Pokemon isOwnCollection />} />
           <Route path="/trades"       element={<Trades />} />
           <Route path="/login"        element={<Login />} />

@@ -104,7 +104,7 @@ flowchart TD
 
 ### Reading Guide
 
-- The main collection workflow lives at `/pokemon`, which has three horizontally sliding panels: Pokédex, Pokémon, and Tags.
+- The standalone catalog workflow begins at `/pokedex`, while the main collection workflow lives at `/pokemon`, which currently has three horizontally sliding panels: Pokédex, Pokémon, and Tags.
 - Opening a Pokémon card branches into either a Pokédex overlay for variant-only data or an instance overlay for owned/caught/trade/wanted data.
 - Search is separate from collection management: it helps users discover Pokémon or trainers, then leads into trade proposals or public trainer collections.
 - Trades are managed from `/trades` by status, with actions that write back through the same store, IndexedDB, and receiver update path used by instance edits.
@@ -119,6 +119,7 @@ The current app does not treat every route as a hard auth boundary. Instead, aut
 | Home and navigation | Can view the landing page, browse public navigation, switch theme, and go to Login/Register. | Sees Account instead of Login/Register and can use the app as a known trainer. |
 | Register/Login | Can create an account or sign in. | Login/register are no longer the main path; account management becomes available. |
 | Account | No user profile is available. | Can edit profile details, location preferences, password, logout, or delete account. |
+| `/pokedex` catalog | Can browse Pokédex-style variant data and open raw variant details. | Same catalog browsing flow, with future collector-complete registrations able to use the authenticated trainer identity. |
 | `/pokemon` collection | Can browse Pokédex-style variant data, but user-owned instance data and durable edits depend on an authenticated user session. | Hydrates the trainer's instances, tags, and trades; supports editing caught/trade/wanted details, changing tags, and queueing updates. |
 | `/pokemon/:username` public collection | Can view another trainer's public collection if the profile exists. | Same public viewing flow, while still retaining the logged-in user's own session and local data. |
 | Search | Can use discovery-oriented search surfaces where backend endpoints allow it. Trade-oriented actions may be limited because there is no current trainer identity. | Can search Pokémon/trainers, inspect list or map results, and move into trade proposal flows as the current trainer. |
@@ -382,6 +383,7 @@ This is the **main UI** for managing a user's collection or another player's Pok
 Currently implemented:
 
 - `/` - home/landing page with navigation, auth entry points, and feature overview.
+- `/pokedex` - standalone variant catalog and registration workspace.
 - `/pokemon` - the current trainer's collection and Pokédex workspace.
 - `/pokemon/:username` - public view of another trainer's collection.
 - `/search` - Pokémon/trainer discovery with list and map result modes.

@@ -6,7 +6,7 @@ import { expect, test } from '@playwright/test';
 import { attachBrowserDiagnostics } from './support/diagnostics';
 import { installE2eRoutes } from './support/e2eRoutes';
 
-const defaultRoutePaths = ['/', '/login', '/register', '/pokemon', '/search', '/trades'];
+const defaultRoutePaths = ['/', '/login', '/register', '/pokedex', '/pokemon', '/search', '/trades'];
 
 const configuredRoutePaths = process.env.E2E_ROUTE_PATHS
   ? process.env.E2E_ROUTE_PATHS.split(',')
