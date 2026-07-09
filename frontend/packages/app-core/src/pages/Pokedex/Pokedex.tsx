@@ -1,31 +1,59 @@
-import React, { useCallback, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { useInstancesStore } from '@/features/instances/store/useInstancesStore';
 import {
+  buildPokedexRegistrationId,
   projectPokedexRegistrations,
   type PokedexRegistrationEntry,
+  type PokedexRegistrationFacets,
+  type PokedexSizeClass,
 } from '@/features/pokedex/registrationProjection';
 import { useVariantsStore } from '@/features/variants/store/useVariantsStore';
-import { emptyTagBuckets } from '@/features/tags/utils/initializePokemonTags';
 import { AppLoadingFallback } from '@/contexts/AppLoadingContext';
-import PokedexListsMenu from '@/pages/Pokemon/components/Menus/PokedexMenu/PokedexListsMenu';
-import PokemonMenu from '@/pages/Pokemon/components/Menus/PokemonMenu/PokemonMenu';
+import CloseButton from '@/components/CloseButton';
 import PokedexOverlay from '@/pages/Pokemon/features/pokedex/PokedexOverlay';
-import usePokemonProcessing from '@/pages/Pokemon/hooks/usePokemonProcessing';
-import useUIControls from '@/pages/Pokemon/hooks/useUIControls';
+import { determineImageUrl } from '@/utils/imageHelpers';
 
 import type { PokemonVariant } from '@/types/pokemonVariants';
-import type { PokemonInstance } from '@/types/pokemonInstance';
-import type { Instances } from '@/types/instances';
-import type { TagBuckets } from '@/types/tags';
 
 import './Pokedex.css';
 
-type PokedexViewMode = 'regions' | 'region' | 'categories' | 'list';
+type PokedexViewMode = 'regions' | 'detail';
+type PokedexGenderValue = 'Male' | 'Female';
+type PokedexInternalVariantCategoryKey =
+  | 'default'
+  | 'shiny'
+  | 'costume'
+  | 'shadow'
+  | 'shiny costume'
+  | 'shiny shadow'
+  | 'shadow costume'
+  | 'mega'
+  | 'shiny mega'
+  | 'dynamax'
+  | 'shiny dynamax'
+  | 'gigantamax'
+  | 'shiny gigantamax'
+  | 'fusion'
+  | 'shiny fusion';
+type PokedexVariantCategoryKey = 'pokemon' | Exclude<PokedexInternalVariantCategoryKey, 'default'>;
+type PokedexAdvancedFacetKey =
+  | 'gender-male'
+  | 'gender-female'
+  | 'size-xxs'
+  | 'size-xs'
+  | 'size-xl'
+  | 'size-xxl'
+  | 'lucky'
+  | 'purified'
+  | 'perfect';
+type PokedexAdvancedFacetGroup = 'gender' | 'size' | 'other';
 type SelectedPokemon =
   | PokemonVariant
   | { pokemon: PokemonVariant; overlayType: 'instance' }
   | null;
+
+const DEFAULT_POKEMON_IMAGE_URL = '/images/default_pokemon.png';
 
 interface RegionDefinition {
   key: string;
@@ -34,11 +62,12 @@ interface RegionDefinition {
   starterDexNumbers: number[];
   accent: string;
   secondaryAccent: string;
+  tertiaryAccent: string;
+  textAccent: string;
 }
 
 interface RegionSummary extends RegionDefinition {
   species: PokemonVariant[];
-  previewPokemon: PokemonVariant[];
   registeredDexNumbers: Set<number>;
   totalCount: number;
   registeredCount: number;
@@ -49,8 +78,263 @@ interface RegionSummary extends RegionDefinition {
   perfectCount: number;
 }
 
-const emptyInstances: Instances = {};
-const emptyLists: Record<string, Record<string, unknown>> = {};
+interface PokedexCategoryDefinition {
+  key: PokedexVariantCategoryKey;
+  label: string;
+  icons: string[];
+  accent: string;
+  secondaryAccent: string;
+}
+
+interface PokedexAdvancedFacetDefinition {
+  key: PokedexAdvancedFacetKey;
+  label: string;
+  icons: string[];
+  group: PokedexAdvancedFacetGroup;
+  facets: PokedexRegistrationFacets;
+  accent: string;
+  secondaryAccent: string;
+}
+
+interface PokedexAdvancedFacetSelection {
+  gender?: PokedexGenderValue;
+  size?: PokedexSizeClass;
+  lucky?: boolean;
+  purified?: boolean;
+  appraisal?: '4-star';
+}
+
+interface RegionCategorySummary {
+  species: PokemonVariant[];
+  registeredKeys: Set<string>;
+  totalCount: number;
+  registeredCount: number;
+}
+
+type PokedexThemeDefinition = Pick<PokedexCategoryDefinition, 'accent' | 'secondaryAccent'>;
+
+const POKEDEX_BASE_VARIANT_CATEGORIES: PokedexCategoryDefinition[] = [
+  {
+    key: 'pokemon',
+    label: 'Pokemon',
+    icons: ['/images/pokedex-icon.png'],
+    accent: '#1699c9',
+    secondaryAccent: '#4ad8c7',
+  },
+  {
+    key: 'shiny',
+    label: 'Shiny',
+    icons: ['/images/shiny_icon.png'],
+    accent: '#f4a229',
+    secondaryAccent: '#ffe16a',
+  },
+  {
+    key: 'shadow',
+    label: 'Shadow',
+    icons: ['/images/shadow_icon.png'],
+    accent: '#6730a5',
+    secondaryAccent: '#bd75ff',
+  },
+  {
+    key: 'costume',
+    label: 'Costume',
+    icons: ['/images/costume_icon.png'],
+    accent: '#ef6a8a',
+    secondaryAccent: '#67c7f2',
+  },
+  {
+    key: 'mega',
+    label: 'Mega',
+    icons: ['/images/mega.png'],
+    accent: '#b551d6',
+    secondaryAccent: '#ff82d0',
+  },
+  {
+    key: 'dynamax',
+    label: 'Dynamax',
+    icons: ['/images/dynamax-icon.png'],
+    accent: '#d94973',
+    secondaryAccent: '#ff9bb1',
+  },
+  {
+    key: 'gigantamax',
+    label: 'Gigantamax',
+    icons: ['/images/gigantamax-icon.png'],
+    accent: '#d73442',
+    secondaryAccent: '#ff7d5f',
+  },
+  {
+    key: 'fusion',
+    label: 'Fusion',
+    icons: ['/images/fusion_1.png', '/images/fusion_2.png'],
+    accent: '#416ed8',
+    secondaryAccent: '#64d2ff',
+  },
+];
+
+const POKEDEX_COMBO_VARIANT_CATEGORIES: PokedexCategoryDefinition[] = [
+  {
+    key: 'shiny shadow',
+    label: 'Shiny Shadow',
+    icons: ['/images/shiny_icon.png', '/images/shadow_icon.png'],
+    accent: '#8845b8',
+    secondaryAccent: '#f2a53d',
+  },
+  {
+    key: 'shiny costume',
+    label: 'Shiny Costume',
+    icons: ['/images/shiny_icon.png', '/images/costume_icon.png'],
+    accent: '#e89a2f',
+    secondaryAccent: '#ef6a8a',
+  },
+  {
+    key: 'shadow costume',
+    label: 'Shadow Costume',
+    icons: ['/images/shadow_icon.png', '/images/costume_icon.png'],
+    accent: '#5a348f',
+    secondaryAccent: '#ef6a8a',
+  },
+  {
+    key: 'shiny mega',
+    label: 'Shiny Mega',
+    icons: ['/images/shiny_icon.png', '/images/mega.png'],
+    accent: '#c768cb',
+    secondaryAccent: '#ffc860',
+  },
+  {
+    key: 'shiny dynamax',
+    label: 'Shiny Dynamax',
+    icons: ['/images/shiny_icon.png', '/images/dynamax-icon.png'],
+    accent: '#e76478',
+    secondaryAccent: '#ffd166',
+  },
+  {
+    key: 'shiny gigantamax',
+    label: 'Shiny Gigantamax',
+    icons: ['/images/shiny_icon.png', '/images/gigantamax-icon.png'],
+    accent: '#df4651',
+    secondaryAccent: '#ffc65e',
+  },
+  {
+    key: 'shiny fusion',
+    label: 'Shiny Fusion',
+    icons: ['/images/shiny_icon.png', '/images/fusion_1.png', '/images/fusion_2.png'],
+    accent: '#6676e8',
+    secondaryAccent: '#ffc447',
+  },
+];
+
+const POKEDEX_VARIANT_CATEGORIES: PokedexCategoryDefinition[] = [
+  ...POKEDEX_BASE_VARIANT_CATEGORIES,
+  ...POKEDEX_COMBO_VARIANT_CATEGORIES,
+];
+
+const POKEDEX_BASE_QUALITY_FACETS: PokedexAdvancedFacetDefinition[] = [
+  {
+    key: 'lucky',
+    label: 'Lucky',
+    icons: ['/images/lucky-icon.png'],
+    group: 'other',
+    facets: { lucky: true },
+    accent: '#d84e24',
+    secondaryAccent: '#ff9a3d',
+  },
+  {
+    key: 'purified',
+    label: 'Purified',
+    icons: ['/images/purified.png'],
+    group: 'other',
+    facets: { purified: true },
+    accent: '#16aeb7',
+    secondaryAccent: '#8ce9e1',
+  },
+  {
+    key: 'size-xxs',
+    label: 'XXS',
+    icons: ['/images/xxs.png'],
+    group: 'size',
+    facets: { size: 'xxs' },
+    accent: '#102f70',
+    secondaryAccent: '#4b7be8',
+  },
+  {
+    key: 'size-xxl',
+    label: 'XXL',
+    icons: ['/images/xxl.png'],
+    group: 'size',
+    facets: { size: 'xxl' },
+    accent: '#1767b7',
+    secondaryAccent: '#5ba8ff',
+  },
+  {
+    key: 'perfect',
+    label: '100%',
+    icons: ['/images/appraisal_04.png'],
+    group: 'other',
+    facets: { appraisal: '4-star' },
+    accent: '#e3303d',
+    secondaryAccent: '#ff727c',
+  },
+];
+
+const POKEDEX_ADVANCED_ONLY_QUALITY_FACETS: PokedexAdvancedFacetDefinition[] = [
+  {
+    key: 'size-xs',
+    label: 'XS',
+    icons: ['/images/height.png'],
+    group: 'size',
+    facets: { size: 'xs' },
+    accent: '#1d4d95',
+    secondaryAccent: '#6996ff',
+  },
+  {
+    key: 'size-xl',
+    label: 'XL',
+    icons: ['/images/height.png'],
+    group: 'size',
+    facets: { size: 'xl' },
+    accent: '#1a7cc6',
+    secondaryAccent: '#6fc6ff',
+  },
+  {
+    key: 'gender-male',
+    label: 'Male',
+    icons: ['/images/male-icon.png'],
+    group: 'gender',
+    facets: { gender: 'Male' },
+    accent: '#2c78d8',
+    secondaryAccent: '#69c2ff',
+  },
+  {
+    key: 'gender-female',
+    label: 'Female',
+    icons: ['/images/female-icon.png'],
+    group: 'gender',
+    facets: { gender: 'Female' },
+    accent: '#ca4bb6',
+    secondaryAccent: '#ff8aca',
+  },
+];
+
+const POKEDEX_QUALITY_FACETS: PokedexAdvancedFacetDefinition[] = [
+  POKEDEX_BASE_QUALITY_FACETS[0],
+  POKEDEX_BASE_QUALITY_FACETS[1],
+  POKEDEX_BASE_QUALITY_FACETS[2],
+  POKEDEX_ADVANCED_ONLY_QUALITY_FACETS[0],
+  POKEDEX_ADVANCED_ONLY_QUALITY_FACETS[1],
+  POKEDEX_BASE_QUALITY_FACETS[3],
+  POKEDEX_BASE_QUALITY_FACETS[4],
+  POKEDEX_ADVANCED_ONLY_QUALITY_FACETS[2],
+  POKEDEX_ADVANCED_ONLY_QUALITY_FACETS[3],
+];
+
+const LIGHT_MODE_DARK_ICON_PATHS = new Set([
+  '/images/appraisal_04.png',
+  '/images/height.png',
+  '/images/lucky-icon.png',
+  '/images/xxl.png',
+  '/images/xxs.png',
+]);
 
 const REGION_DEFINITIONS: RegionDefinition[] = [
   {
@@ -58,90 +342,102 @@ const REGION_DEFINITIONS: RegionDefinition[] = [
     label: 'Kanto',
     generation: 1,
     starterDexNumbers: [1, 4, 7],
-    accent: '#0796bb',
-    secondaryAccent: '#42d8bd',
+    accent: '#ee4b2b',
+    secondaryAccent: '#3b4cca',
+    tertiaryAccent: '#ffde00',
+    textAccent: '#1687b8',
   },
   {
     key: 'johto',
     label: 'Johto',
     generation: 2,
     starterDexNumbers: [152, 155, 158],
-    accent: '#1a9dcc',
-    secondaryAccent: '#ffd057',
+    accent: '#d4af37',
+    secondaryAccent: '#c0c0c0',
+    tertiaryAccent: '#9bd3e0',
+    textAccent: '#b8871f',
   },
   {
     key: 'hoenn',
     label: 'Hoenn',
     generation: 3,
     starterDexNumbers: [252, 255, 258],
-    accent: '#0f9fb0',
-    secondaryAccent: '#ff934f',
+    accent: '#aa0000',
+    secondaryAccent: '#0a6dc2',
+    tertiaryAccent: '#2e8b57',
+    textAccent: '#168a72',
   },
   {
     key: 'sinnoh',
     label: 'Sinnoh',
     generation: 4,
     starterDexNumbers: [387, 390, 393],
-    accent: '#297fc8',
-    secondaryAccent: '#87dc6d',
+    accent: '#8fd2f5',
+    secondaryAccent: '#e1b8d8',
+    tertiaryAccent: '#a7a7a7',
+    textAccent: '#607c9c',
   },
   {
     key: 'unova',
     label: 'Unova',
     generation: 5,
     starterDexNumbers: [495, 498, 501],
-    accent: '#168cb7',
-    secondaryAccent: '#f37c67',
+    accent: '#1c1c1c',
+    secondaryAccent: '#f5f5f5',
+    tertiaryAccent: '#7f64c5',
+    textAccent: '#7561d5',
   },
   {
     key: 'kalos',
     label: 'Kalos',
     generation: 6,
     starterDexNumbers: [650, 653, 656],
-    accent: '#239fcb',
-    secondaryAccent: '#ffd76a',
+    accent: '#637cff',
+    secondaryAccent: '#ff6b81',
+    tertiaryAccent: '#b68fcc',
+    textAccent: '#526de0',
   },
   {
     key: 'alola',
     label: 'Alola',
     generation: 7,
     starterDexNumbers: [722, 725, 728],
-    accent: '#008f9d',
-    secondaryAccent: '#ffb84d',
+    accent: '#fdb813',
+    secondaryAccent: '#2d2d70',
+    tertiaryAccent: '#eaadea',
+    textAccent: '#008f9c',
   },
   {
     key: 'galar',
     label: 'Galar',
     generation: 8,
     starterDexNumbers: [810, 813, 816],
-    accent: '#246fba',
-    secondaryAccent: '#df70ce',
+    accent: '#0074b8',
+    secondaryAccent: '#d80040',
+    tertiaryAccent: '#b9a0e7',
+    textAccent: '#0074b8',
   },
   {
     key: 'hisui',
     label: 'Hisui',
     generation: 9,
     starterDexNumbers: [722, 155, 501],
-    accent: '#487c9e',
-    secondaryAccent: '#d39b64',
+    accent: '#a1a1a1',
+    secondaryAccent: '#ae8baf',
+    tertiaryAccent: '#e3d1a7',
+    textAccent: '#6f7f8d',
   },
   {
     key: 'paldea',
     label: 'Paldea',
     generation: 10,
     starterDexNumbers: [906, 909, 912],
-    accent: '#cc5a58',
-    secondaryAccent: '#5ac3b6',
+    accent: '#b80000',
+    secondaryAccent: '#7f3fbf',
+    tertiaryAccent: '#ffd966',
+    textAccent: '#b80000',
   },
 ];
-
-function formatListLabel(key: string): string {
-  if (key === 'all') return 'All Pokemon';
-  return key
-    .split(/\s+/)
-    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-    .join(' ');
-}
 
 function asNumber(value: unknown): number | null {
   if (typeof value === 'number' && Number.isFinite(value)) return value;
@@ -162,11 +458,51 @@ function formatDexNumber(pokemon: PokemonVariant): string {
 }
 
 function getDisplayName(pokemon: PokemonVariant): string {
-  return pokemon.species_name || pokemon.name;
+  return pokemon.name || pokemon.species_name;
 }
 
-function getPokemonImage(pokemon: PokemonVariant): string | undefined {
-  return pokemon.currentImage || pokemon.image_url;
+function getPokemonImage(pokemon: PokemonVariant, gender?: PokedexGenderValue): string | undefined {
+  const isFemale = gender === 'Female';
+
+  return (
+    determineImageUrl(isFemale, pokemon) ||
+    pokemon.currentImage ||
+    pokemon.image_url ||
+    DEFAULT_POKEMON_IMAGE_URL
+  );
+}
+
+function PokedexPokemonImage({
+  pokemon,
+  className,
+  gender,
+}: {
+  pokemon: PokemonVariant;
+  className: string;
+  gender?: PokedexGenderValue;
+}) {
+  const image = getPokemonImage(pokemon, gender) || DEFAULT_POKEMON_IMAGE_URL;
+  const [src, setSrc] = useState(image);
+
+  useEffect(() => {
+    setSrc(image);
+  }, [image]);
+
+  return (
+    <img
+      alt=""
+      className={className}
+      src={src}
+      loading="lazy"
+      decoding="async"
+      draggable={false}
+      onError={() => {
+        if (src !== DEFAULT_POKEMON_IMAGE_URL) {
+          setSrc(DEFAULT_POKEMON_IMAGE_URL);
+        }
+      }}
+    />
+  );
 }
 
 function getBaseSpeciesByDex(variants: PokemonVariant[]): PokemonVariant[] {
@@ -201,8 +537,359 @@ function getBaseSpeciesByDex(variants: PokemonVariant[]): PokemonVariant[] {
   });
 }
 
+function getRegionBaseSpecies(variants: PokemonVariant[], generation: number): PokemonVariant[] {
+  return getBaseSpeciesByDex(
+    variants.filter((pokemon) => getRegionGeneration(pokemon) === generation),
+  );
+}
+
 function getRegionGeneration(pokemon: PokemonVariant): number | null {
   return asNumber(pokemon.generation);
+}
+
+function getSupportedGenders(pokemon: PokemonVariant): Set<PokedexGenderValue> {
+  const genderRate = String(pokemon.gender_rate ?? '').trim();
+  if (!genderRate) return new Set<PokedexGenderValue>(['Male', 'Female']);
+
+  const maleRate = genderRate.match(/(\d+)M/)?.[1];
+  const femaleRate = genderRate.match(/(\d+)F/)?.[1];
+  if (maleRate !== undefined || femaleRate !== undefined) {
+    const supported = new Set<PokedexGenderValue>();
+    if (Number(maleRate ?? 0) > 0) supported.add('Male');
+    if (Number(femaleRate ?? 0) > 0) supported.add('Female');
+    return supported;
+  }
+
+  if (genderRate === 'M/M') return new Set<PokedexGenderValue>(['Male']);
+  if (genderRate === 'F/F') return new Set<PokedexGenderValue>(['Female']);
+  if (genderRate === 'M/F' || genderRate === 'F/M') return new Set<PokedexGenderValue>(['Male', 'Female']);
+
+  return new Set<PokedexGenderValue>();
+}
+
+function pokemonSupportsGender(pokemon: PokemonVariant, gender: PokedexGenderValue): boolean {
+  return getSupportedGenders(pokemon).has(gender);
+}
+
+function classifyPokedexVariantCategory(variantType: string): PokedexInternalVariantCategoryKey {
+  const normalizedVariantType = variantType.toLowerCase();
+
+  if (normalizedVariantType === 'shiny') {
+    return 'shiny';
+  }
+
+  if (normalizedVariantType.includes('fusion')) {
+    return normalizedVariantType.includes('shiny') ? 'shiny fusion' : 'fusion';
+  }
+
+  if (normalizedVariantType.includes('gigantamax')) {
+    return normalizedVariantType.includes('shiny') ? 'shiny gigantamax' : 'gigantamax';
+  }
+
+  if (normalizedVariantType.includes('dynamax')) {
+    return normalizedVariantType.includes('shiny') ? 'shiny dynamax' : 'dynamax';
+  }
+
+  if (normalizedVariantType.includes('mega') || normalizedVariantType.includes('primal')) {
+    return normalizedVariantType.includes('shiny') ? 'shiny mega' : 'mega';
+  }
+
+  if (normalizedVariantType.includes('shiny') && normalizedVariantType.includes('costume')) {
+    return 'shiny costume';
+  }
+
+  if (normalizedVariantType.includes('shiny') && normalizedVariantType.includes('shadow')) {
+    return 'shiny shadow';
+  }
+
+  if (normalizedVariantType.includes('shadow') && normalizedVariantType.includes('costume')) {
+    return 'shadow costume';
+  }
+
+  if (normalizedVariantType.includes('costume')) {
+    return 'costume';
+  }
+
+  if (normalizedVariantType.includes('shadow')) {
+    return 'shadow';
+  }
+
+  return 'default';
+}
+
+function isShadowCategory(categoryKey: PokedexVariantCategoryKey): boolean {
+  return categoryKey.includes('shadow');
+}
+
+function isShadowVariantType(variantType: string): boolean {
+  return classifyPokedexVariantCategory(variantType).includes('shadow');
+}
+
+function getAdvancedFacets(selection: PokedexAdvancedFacetSelection): PokedexRegistrationFacets {
+  const facets: PokedexRegistrationFacets = {};
+  if (selection.gender) facets.gender = selection.gender;
+  if (selection.size) facets.size = selection.size;
+  if (selection.lucky) facets.lucky = true;
+  if (selection.purified) facets.purified = true;
+  if (selection.appraisal) facets.appraisal = selection.appraisal;
+  return facets;
+}
+
+function hasAdvancedFacets(selection: PokedexAdvancedFacetSelection): boolean {
+  return Object.keys(getAdvancedFacets(selection)).length > 0;
+}
+
+function facetsMatchSelection(
+  entryFacets: PokedexRegistrationFacets,
+  expectedFacets: PokedexRegistrationFacets,
+): boolean {
+  return Object.entries(expectedFacets).every(([key, value]) => entryFacets[key] === value);
+}
+
+function isAdvancedFacetSelected(
+  selection: PokedexAdvancedFacetSelection,
+  facet: PokedexAdvancedFacetDefinition,
+): boolean {
+  switch (facet.key) {
+    case 'gender-male':
+      return selection.gender === 'Male';
+    case 'gender-female':
+      return selection.gender === 'Female';
+    case 'size-xxs':
+      return selection.size === 'xxs';
+    case 'size-xs':
+      return selection.size === 'xs';
+    case 'size-xl':
+      return selection.size === 'xl';
+    case 'size-xxl':
+      return selection.size === 'xxl';
+    case 'lucky':
+      return selection.lucky === true;
+    case 'purified':
+      return selection.purified === true;
+    case 'perfect':
+      return selection.appraisal === '4-star';
+    default:
+      return false;
+  }
+}
+
+function isAdvancedFacetDisabled(
+  categoryKey: PokedexVariantCategoryKey,
+  facet: PokedexAdvancedFacetDefinition,
+): boolean {
+  return (facet.key === 'lucky' || facet.key === 'purified') && isShadowCategory(categoryKey);
+}
+
+function getThemeStyle(theme: PokedexThemeDefinition): React.CSSProperties {
+  return {
+    '--pokedex-category-accent': theme.accent,
+    '--pokedex-category-secondary-accent': theme.secondaryAccent,
+  } as React.CSSProperties;
+}
+
+function getRegionStyle(region: RegionDefinition): React.CSSProperties {
+  return {
+    '--region-accent': region.accent,
+    '--region-secondary-accent': region.secondaryAccent,
+    '--region-tertiary-accent': region.tertiaryAccent,
+    '--region-text-accent': region.textAccent,
+  } as React.CSSProperties;
+}
+
+function getRegionSectionRefKey(categoryKey: PokedexVariantCategoryKey, regionKey: string): string {
+  return `${categoryKey}:${regionKey}`;
+}
+
+function doesVariantMatchCategory(
+  categoryKey: PokedexVariantCategoryKey,
+  variantType: string,
+): boolean {
+  const variantCategory = classifyPokedexVariantCategory(variantType);
+  return categoryKey === 'pokemon'
+    ? variantCategory === 'default'
+    : variantCategory === categoryKey;
+}
+
+function shouldCollapseCategoryByDex(categoryKey: PokedexVariantCategoryKey): boolean {
+  return categoryKey === 'pokemon' || categoryKey === 'shiny' || categoryKey === 'shadow';
+}
+
+function registrationMatchesCategory(
+  entry: PokedexRegistrationEntry,
+  categoryKey: PokedexVariantCategoryKey,
+  options?: {
+    selectedFacets?: PokedexRegistrationFacets;
+  },
+): boolean {
+  const entryVariantType = String(entry.facets.variant ?? entry.variant_type ?? '');
+  const matchesVariant = doesVariantMatchCategory(categoryKey, entryVariantType);
+  if (!matchesVariant) return false;
+  return facetsMatchSelection(entry.facets, options?.selectedFacets ?? {});
+}
+
+function getPokemonRegistrationKey(
+  pokemon: PokemonVariant,
+  options?: {
+    selectedFacets?: PokedexRegistrationFacets;
+  },
+): string | null {
+  const selectedFacets = options?.selectedFacets ?? {};
+
+  if (Object.keys(selectedFacets).length > 0) {
+    return buildPokedexRegistrationId({
+      pokemon_id: pokemon.pokemon_id,
+      form: pokemon.form,
+      facets: { variant: pokemon.variantType, ...selectedFacets },
+    });
+  }
+
+  return pokemon.variant_id;
+}
+
+function getRegistrationEntryKey(
+  entry: PokedexRegistrationEntry,
+  options?: {
+    useFacetRegistration?: boolean;
+    useDexRegistration?: boolean;
+  },
+): string | null {
+  if (options?.useDexRegistration) {
+    return entry.pokedex_number === null ? null : String(entry.pokedex_number);
+  }
+
+  if (options?.useFacetRegistration) {
+    return entry.registration_id;
+  }
+
+  return entry.base_variant_id;
+}
+
+function sortPokedexEntries(entries: PokemonVariant[]): PokemonVariant[] {
+  return [...entries].sort((left, right) => {
+    const leftDex = getDexNumber(left) ?? 0;
+    const rightDex = getDexNumber(right) ?? 0;
+    if (leftDex !== rightDex) return leftDex - rightDex;
+    return String(left.variant_id).localeCompare(String(right.variant_id));
+  });
+}
+
+function pokemonSupportsAdvancedSelection(
+  pokemon: PokemonVariant,
+  categoryKey: PokedexVariantCategoryKey,
+  selection: PokedexAdvancedFacetSelection,
+): boolean {
+  if (selection.gender && !pokemonSupportsGender(pokemon, selection.gender)) {
+    return false;
+  }
+
+  if (
+    (selection.lucky || selection.purified) &&
+    (isShadowCategory(categoryKey) || isShadowVariantType(pokemon.variantType))
+  ) {
+    return false;
+  }
+
+  return true;
+}
+
+function getRegionCategorySpecies(
+  region: RegionSummary,
+  allVariants: PokemonVariant[],
+  categoryKey: PokedexVariantCategoryKey,
+  options?: {
+    selection?: PokedexAdvancedFacetSelection;
+  },
+): PokemonVariant[] {
+  const advancedSelection = options?.selection ?? {};
+
+  if (categoryKey !== 'pokemon') {
+    const matchingVariants = allVariants.filter(
+      (pokemon) =>
+        getRegionGeneration(pokemon) === region.generation &&
+        doesVariantMatchCategory(categoryKey, pokemon.variantType) &&
+        pokemonSupportsAdvancedSelection(pokemon, categoryKey, advancedSelection),
+    );
+
+    if (shouldCollapseCategoryByDex(categoryKey)) {
+      return getBaseSpeciesByDex(matchingVariants);
+    }
+
+    return sortPokedexEntries(matchingVariants);
+  }
+
+  return region.species.filter((pokemon) =>
+    pokemonSupportsAdvancedSelection(pokemon, categoryKey, advancedSelection),
+  );
+}
+
+function getRegionCategoryPreviewPokemon(
+  region: RegionSummary,
+  categorySpecies: PokemonVariant[],
+): PokemonVariant[] {
+  if (categorySpecies.length === 0) return [];
+
+  const previewPokemon = region.starterDexNumbers
+    .map((dexNumber) => categorySpecies.find((pokemon) => getDexNumber(pokemon) === dexNumber))
+    .filter((pokemon): pokemon is PokemonVariant => Boolean(pokemon));
+  const previewIds = new Set(previewPokemon.map((pokemon) => pokemon.variant_id));
+  const fallbackPokemon = categorySpecies.filter((pokemon) => !previewIds.has(pokemon.variant_id));
+
+  return [...previewPokemon, ...fallbackPokemon].slice(0, 3);
+}
+
+function getVariantBadgeIcons(pokemon: PokemonVariant): { src: string; label: string }[] {
+  const variantType = pokemon.variantType.toLowerCase();
+
+  if (variantType.includes('gigantamax')) {
+    return [{ src: '/images/gigantamax.png', label: 'Gigantamax' }];
+  }
+
+  if (variantType.includes('dynamax')) {
+    return [{ src: '/images/dynamax.png', label: 'Dynamax' }];
+  }
+
+  return [];
+}
+
+function getPokemonMaxBadge(pokemon: PokemonVariant): string | null {
+  const variantType = pokemon.variantType.toLowerCase();
+
+  if (variantType.includes('gigantamax')) {
+    return '/images/gigantamax.png';
+  }
+
+  if (variantType.includes('dynamax')) {
+    return '/images/dynamax.png';
+  }
+
+  return null;
+}
+
+function getActiveFacetBadgeIcons(
+  selection: PokedexAdvancedFacetSelection,
+): { src: string; label: string }[] {
+  return POKEDEX_QUALITY_FACETS.filter((facet) => isAdvancedFacetSelected(selection, facet)).flatMap(
+    (facet) => facet.icons.map((src) => ({ src, label: facet.label })),
+  );
+}
+
+function getPokedexIconClassName(baseClassName: string, src: string): string {
+  return LIGHT_MODE_DARK_ICON_PATHS.has(src)
+    ? `${baseClassName} ${baseClassName}--dark-on-light`
+    : baseClassName;
+}
+
+function filterPokemonBySearch(pokemon: PokemonVariant[], normalizedSearchTerm: string): PokemonVariant[] {
+  if (!normalizedSearchTerm) return pokemon;
+
+  return pokemon.filter((entry) => {
+    const dexNumber = getDexNumber(entry);
+    return (
+      getDisplayName(entry).toLowerCase().includes(normalizedSearchTerm) ||
+      (dexNumber !== null && String(dexNumber).includes(normalizedSearchTerm))
+    );
+  });
 }
 
 function getRegisteredEntriesForRegion(
@@ -229,66 +916,28 @@ function countRegisteredDexNumbers(
 
 function Pokedex() {
   const variants = useVariantsStore((s) => s.variants);
-  const pokedexLists = useVariantsStore((s) => s.pokedexLists);
   const loading = useVariantsStore((s) => s.variantsLoading);
   const instances = useInstancesStore((s) => s.instances);
 
   const [viewMode, setViewMode] = useState<PokedexViewMode>('regions');
   const [selectedRegionKey, setSelectedRegionKey] = useState(REGION_DEFINITIONS[0].key);
-  const [selectedList, setSelectedList] = useState<PokemonVariant[]>(variants);
-  const [selectedListKey, setSelectedListKey] = useState('all');
+  const [selectedCategoryKey, setSelectedCategoryKey] = useState<PokedexVariantCategoryKey>('pokemon');
+  const [advancedMode, setAdvancedMode] = useState(false);
+  const [advancedSelection, setAdvancedSelection] = useState<PokedexAdvancedFacetSelection>({});
+  const [activeThemeKey, setActiveThemeKey] = useState<string>('pokemon');
   const [selectedPokemon, setSelectedPokemon] = useState<SelectedPokemon>(null);
-  const [searchTerm, setSearchTerm] = useState('');
   const [regionSearchTerm, setRegionSearchTerm] = useState('');
+  const [pendingScrollRegionKey, setPendingScrollRegionKey] = useState<string | null>(null);
+  const regionSectionRefs = useRef<Record<string, HTMLElement | null>>({});
 
-  const {
-    showEvolutionaryLine,
-    toggleEvolutionaryLine,
-    isFastSelectEnabled,
-    setIsFastSelectEnabled,
-    sortType,
-    setSortType,
-    sortMode,
-    setSortMode,
-    highlightedCards,
-    setHighlightedCards,
-    toggleCardHighlight,
-  } = useUIControls({
-    showEvolutionaryLine: false,
-    isFastSelectEnabled: false,
-    sortType: 'number',
-    sortMode: 'ascending',
-  });
-
-  React.useEffect(() => {
-    if (selectedListKey !== 'all') return;
-    setSelectedList(variants);
-  }, [selectedListKey, variants]);
-
-  const activeTags = useMemo(() => emptyTagBuckets as TagBuckets, []);
-  const baseVariants = selectedListKey === 'all' ? variants : selectedList;
-  const baseSpecies = useMemo(() => getBaseSpeciesByDex(variants), [variants]);
   const registrations = useMemo(
     () => projectPokedexRegistrations(variants, instances),
     [instances, variants],
   );
 
-  const { sortedPokemons } = usePokemonProcessing(
-    baseVariants,
-    emptyInstances,
-    '',
-    activeTags,
-    searchTerm,
-    showEvolutionaryLine,
-    sortType,
-    sortMode,
-  );
-
   const regionSummaries = useMemo<RegionSummary[]>(() => {
     return REGION_DEFINITIONS.map((region) => {
-      const species = baseSpecies.filter(
-        (pokemon) => getRegionGeneration(pokemon) === region.generation,
-      );
+      const species = getRegionBaseSpecies(variants, region.generation);
       const regionDexNumbers = new Set(
         species
           .map((pokemon) => getDexNumber(pokemon))
@@ -300,14 +949,9 @@ function Pokedex() {
           .map((entry) => entry.pokedex_number)
           .filter((dexNumber): dexNumber is number => dexNumber !== null),
       );
-      const previewPokemon = region.starterDexNumbers
-        .map((dexNumber) => species.find((pokemon) => getDexNumber(pokemon) === dexNumber))
-        .filter((pokemon): pokemon is PokemonVariant => Boolean(pokemon));
-
       return {
         ...region,
         species,
-        previewPokemon: previewPokemon.length ? previewPokemon : species.slice(0, 3),
         registeredDexNumbers,
         totalCount: species.length,
         registeredCount: registeredDexNumbers.size,
@@ -324,79 +968,287 @@ function Pokedex() {
         ),
       };
     }).filter((region) => region.totalCount > 0);
-  }, [baseSpecies, registrations]);
+  }, [registrations, variants]);
 
-  const selectedRegion = useMemo(
+  const activeCategory = useMemo(
     () =>
-      regionSummaries.find((region) => region.key === selectedRegionKey) ??
-      regionSummaries[0] ??
-      null,
-    [regionSummaries, selectedRegionKey],
+      POKEDEX_VARIANT_CATEGORIES.find((category) => category.key === selectedCategoryKey) ??
+      POKEDEX_BASE_VARIANT_CATEGORIES[0],
+    [selectedCategoryKey],
   );
-
-  const filteredRegionSpecies = useMemo(() => {
-    if (!selectedRegion) return [];
-    const normalizedSearchTerm = regionSearchTerm.trim().toLowerCase();
-    if (!normalizedSearchTerm) return selectedRegion.species;
-
-    return selectedRegion.species.filter((pokemon) => {
-      const dexNumber = getDexNumber(pokemon);
-      return (
-        getDisplayName(pokemon).toLowerCase().includes(normalizedSearchTerm) ||
-        (dexNumber !== null && String(dexNumber).includes(normalizedSearchTerm))
-      );
-    });
-  }, [regionSearchTerm, selectedRegion]);
-
-  const totalRegisteredCount = useMemo(
-    () => regionSummaries.reduce((total, region) => total + region.registeredCount, 0),
-    [regionSummaries],
+  const advancedFacets = useMemo(() => getAdvancedFacets(advancedSelection), [advancedSelection]);
+  const hasActiveAdvancedFacets = useMemo(
+    () => hasAdvancedFacets(advancedSelection),
+    [advancedSelection],
   );
-  const totalSpeciesCount = useMemo(
-    () => regionSummaries.reduce((total, region) => total + region.totalCount, 0),
-    [regionSummaries],
+  const displayGender = useMemo<PokedexGenderValue | undefined>(() => {
+    return advancedSelection.gender;
+  }, [advancedSelection.gender]);
+  const visibleVariantCategories = useMemo(
+    () =>
+      advancedMode
+        ? POKEDEX_VARIANT_CATEGORIES
+        : POKEDEX_BASE_VARIANT_CATEGORIES,
+    [advancedMode],
   );
-
-  const handleListSelect = useCallback((list: PokemonVariant[], key: string) => {
-    setHighlightedCards(new Set());
-    setSelectedList(list);
-    setSelectedListKey(key || 'all');
-    setViewMode('list');
-  }, [setHighlightedCards]);
-
-  const handleHighlightedCardsChange = useCallback(
-    (cards: Set<number | string>) => {
-      setHighlightedCards(new Set(Array.from(cards).map(String)));
-    },
-    [setHighlightedCards],
+  const visibleQualityFacets = useMemo(
+    () =>
+      advancedMode
+        ? POKEDEX_QUALITY_FACETS
+        : POKEDEX_BASE_QUALITY_FACETS,
+    [advancedMode],
   );
+  const visibleQualityFacetKeys = useMemo(
+    () => new Set(visibleQualityFacets.map((facet) => facet.key)),
+    [visibleQualityFacets],
+  );
+  const selectedCategoryIndex = useMemo(() => {
+    const index = visibleVariantCategories.findIndex((category) => category.key === selectedCategoryKey);
+    return index === -1 ? 0 : index;
+  }, [selectedCategoryKey, visibleVariantCategories]);
+  const activeTheme = useMemo<PokedexThemeDefinition>(() => {
+    const activeFacet = visibleQualityFacets.find(
+      (facet) => facet.key === activeThemeKey && isAdvancedFacetSelected(advancedSelection, facet),
+    );
+    if (activeFacet) return activeFacet;
 
-  const handlePokedexActiveViewChange = useCallback((view: string) => {
-    if (view === 'pokemon') {
-      setViewMode('list');
+    return (
+      visibleVariantCategories.find((category) => category.key === activeThemeKey) ??
+      activeCategory
+    );
+  }, [activeCategory, activeThemeKey, advancedSelection, visibleQualityFacets, visibleVariantCategories]);
+  const regionCategorySummariesByKey = useMemo(() => {
+    const summariesByKey = new Map<PokedexVariantCategoryKey, Map<string, RegionCategorySummary>>();
+    const useFacetRegistration = Object.keys(advancedFacets).length > 0;
+
+    for (const category of visibleVariantCategories) {
+      const summaries = new Map<string, RegionCategorySummary>();
+      const useDexRegistration = shouldCollapseCategoryByDex(category.key);
+
+      for (const region of regionSummaries) {
+        const eligibleSpecies = getRegionCategorySpecies(region, variants, category.key, {
+          selection: advancedSelection,
+        });
+        const eligibleVariantIds = new Set(eligibleSpecies.map((pokemon) => pokemon.variant_id));
+        const eligibleDexNumbers = new Set(
+          eligibleSpecies
+            .map((pokemon) => getDexNumber(pokemon))
+            .filter((dexNumber): dexNumber is number => dexNumber !== null),
+        );
+        const matchingRegisteredEntries = getRegisteredEntriesForRegion(registrations, eligibleDexNumbers).filter(
+          (entry) =>
+            (useDexRegistration || eligibleVariantIds.has(entry.base_variant_id)) &&
+            registrationMatchesCategory(entry, category.key, {
+              selectedFacets: advancedFacets,
+            }),
+        );
+        const registeredKeys = new Set<string>();
+        for (const entry of matchingRegisteredEntries) {
+          const key = getRegistrationEntryKey(entry, {
+            useDexRegistration,
+            useFacetRegistration,
+          });
+          if (key) registeredKeys.add(key);
+        }
+
+        summaries.set(region.key, {
+          species: eligibleSpecies,
+          registeredKeys,
+          totalCount: eligibleSpecies.length,
+          registeredCount: registeredKeys.size,
+        });
+      }
+
+      summariesByKey.set(category.key, summaries);
     }
-  }, []);
+
+    return summariesByKey;
+  }, [
+    advancedFacets,
+    advancedSelection,
+    regionSummaries,
+    registrations,
+    visibleVariantCategories,
+    variants,
+  ]);
+  const normalizedRegionSearchTerm = useMemo(
+    () => regionSearchTerm.trim().toLowerCase(),
+    [regionSearchTerm],
+  );
+
+  const activeRegistrationSummary = useMemo(() => {
+    const categorySummaries = regionCategorySummariesByKey.get(selectedCategoryKey);
+    if (!categorySummaries) {
+      return { registeredCount: 0, totalCount: 0 };
+    }
+
+    let registeredCount = 0;
+    let totalCount = 0;
+    for (const summary of categorySummaries.values()) {
+      registeredCount += summary.registeredCount;
+      totalCount += summary.totalCount;
+    }
+
+    return { registeredCount, totalCount };
+  }, [regionCategorySummariesByKey, selectedCategoryKey]);
+
+  useEffect(() => {
+    const selectedVariantIsVisible = visibleVariantCategories.some(
+      (category) => category.key === selectedCategoryKey,
+    );
+    if (!selectedVariantIsVisible) {
+      setSelectedCategoryKey('pokemon');
+      setActiveThemeKey('pokemon');
+    }
+  }, [selectedCategoryKey, visibleVariantCategories]);
+
+  useEffect(() => {
+    setAdvancedSelection((current) => {
+      let changed = false;
+      const next = { ...current };
+
+      if (!visibleQualityFacetKeys.has('gender-male') && next.gender === 'Male') {
+        next.gender = undefined;
+        changed = true;
+      }
+      if (!visibleQualityFacetKeys.has('gender-female') && next.gender === 'Female') {
+        next.gender = undefined;
+        changed = true;
+      }
+      if (!visibleQualityFacetKeys.has('size-xs') && next.size === 'xs') {
+        next.size = undefined;
+        changed = true;
+      }
+      if (!visibleQualityFacetKeys.has('size-xl') && next.size === 'xl') {
+        next.size = undefined;
+        changed = true;
+      }
+      if (!visibleQualityFacetKeys.has('purified') && next.purified) {
+        next.purified = undefined;
+        changed = true;
+      }
+
+      return changed ? next : current;
+    });
+  }, [visibleQualityFacetKeys]);
+
+  useEffect(() => {
+    if (
+      (advancedSelection.lucky || advancedSelection.purified) &&
+      isShadowCategory(selectedCategoryKey)
+    ) {
+      setAdvancedSelection((current) => ({ ...current, lucky: false, purified: false }));
+    }
+  }, [advancedSelection.lucky, advancedSelection.purified, selectedCategoryKey]);
+
+  useEffect(() => {
+    const activeFacet = visibleQualityFacets.find(
+      (facet) => facet.key === activeThemeKey && isAdvancedFacetSelected(advancedSelection, facet),
+    );
+    const activeCategoryThemeIsVisible = visibleVariantCategories.some(
+      (category) => category.key === activeThemeKey,
+    );
+
+    if (!activeFacet && !activeCategoryThemeIsVisible) {
+      setActiveThemeKey(selectedCategoryKey);
+    }
+  }, [
+    activeThemeKey,
+    advancedSelection,
+    selectedCategoryKey,
+    visibleQualityFacets,
+    visibleVariantCategories,
+  ]);
+
+  useEffect(() => {
+    if (viewMode !== 'detail' || !pendingScrollRegionKey) return;
+    const timeoutId = window.setTimeout(() => {
+      const sectionRefKey = getRegionSectionRefKey(selectedCategoryKey, pendingScrollRegionKey);
+      regionSectionRefs.current[sectionRefKey]?.scrollIntoView({
+        block: 'start',
+        behavior: 'smooth',
+      });
+      setPendingScrollRegionKey(null);
+    }, 50);
+
+    return () => window.clearTimeout(timeoutId);
+  }, [pendingScrollRegionKey, selectedCategoryKey, viewMode]);
 
   const handleShowRegions = useCallback(() => {
     setSelectedPokemon(null);
+    setRegionSearchTerm('');
+    setSelectedCategoryKey('pokemon');
+    setActiveThemeKey('pokemon');
     setViewMode('regions');
   }, []);
 
-  const handleShowCategories = useCallback(() => {
-    setViewMode('categories');
+  const handleCategorySelect = useCallback((categoryKey: PokedexVariantCategoryKey) => {
     setSelectedPokemon(null);
+    setSelectedCategoryKey(categoryKey);
+    setActiveThemeKey(categoryKey);
   }, []);
 
-  const handleShowSelectedList = useCallback(() => {
+  const handleAdvancedModeToggle = useCallback(() => {
     setSelectedPokemon(null);
-    setViewMode('list');
+    setAdvancedMode((current) => !current);
   }, []);
+
+  const handleAdvancedFacetToggle = useCallback(
+    (facet: PokedexAdvancedFacetDefinition) => {
+      if (isAdvancedFacetDisabled(selectedCategoryKey, facet)) return;
+
+      setSelectedPokemon(null);
+      setAdvancedSelection((current) => {
+        const next = { ...current };
+        const isSelected = isAdvancedFacetSelected(current, facet);
+
+        switch (facet.key) {
+          case 'gender-male':
+            next.gender = isSelected ? undefined : 'Male';
+            break;
+          case 'gender-female':
+            next.gender = isSelected ? undefined : 'Female';
+            break;
+          case 'size-xxs':
+            next.size = isSelected ? undefined : 'xxs';
+            break;
+          case 'size-xs':
+            next.size = isSelected ? undefined : 'xs';
+            break;
+          case 'size-xl':
+            next.size = isSelected ? undefined : 'xl';
+            break;
+          case 'size-xxl':
+            next.size = isSelected ? undefined : 'xxl';
+            break;
+          case 'lucky':
+            next.lucky = isSelected ? undefined : true;
+            break;
+          case 'purified':
+            next.purified = isSelected ? undefined : true;
+            break;
+          case 'perfect':
+            next.appraisal = isSelected ? undefined : '4-star';
+            break;
+          default:
+            break;
+        }
+
+        return next;
+      });
+      setActiveThemeKey((current) =>
+        isAdvancedFacetSelected(advancedSelection, facet) ? current : facet.key,
+      );
+    },
+    [advancedSelection, selectedCategoryKey],
+  );
 
   const handleRegionSelect = useCallback((regionKey: string) => {
     setSelectedPokemon(null);
     setRegionSearchTerm('');
     setSelectedRegionKey(regionKey);
-    setViewMode('region');
+    setPendingScrollRegionKey(regionKey);
+    setViewMode('detail');
   }, []);
 
   const handleCloseRegionOverlay = useCallback(() => {
@@ -412,141 +1264,207 @@ function Pokedex() {
   }
 
   return (
-    <div className="pokedex-page">
+    <div
+      className={`pokedex-page ${viewMode === 'detail' ? 'pokedex-page--detail' : ''}`}
+      style={getThemeStyle(activeTheme)}
+    >
       <div className="pokedex-page__shell">
         <header className="pokedex-page__header">
-          <p className="pokedex-page__eyebrow">Pokedex</p>
           <div className="pokedex-page__title-row">
             <h1 className="pokedex-page__title">Pokedex</h1>
-            <p className="pokedex-page__caught-total">
-              Caught: {totalRegisteredCount} / {totalSpeciesCount}
-            </p>
+            <div className="pokedex-page__header-tools">
+              <p className="pokedex-page__registration-total">
+                Registered: {activeRegistrationSummary.registeredCount} / {activeRegistrationSummary.totalCount}
+              </p>
+              <button
+                className={`pokedex-advanced-toggle ${advancedMode ? 'is-active' : ''}`}
+                type="button"
+                role="switch"
+                aria-checked={advancedMode}
+                onClick={handleAdvancedModeToggle}
+              >
+                <span className="pokedex-advanced-toggle__label">Advanced</span>
+                <span className="pokedex-advanced-toggle__track" aria-hidden="true">
+                  <span className="pokedex-advanced-toggle__thumb" />
+                </span>
+              </button>
+            </div>
           </div>
-          <div className="pokedex-page__actions" aria-label="Pokedex views">
-            <button
-              className={`pokedex-page__button ${viewMode === 'regions' || viewMode === 'region' ? 'is-active' : ''}`}
-              type="button"
-              onClick={handleShowRegions}
+          <div className="pokedex-category-groups">
+            <div className="pokedex-category-tabs" role="tablist" aria-label="Pokedex variant category">
+              {visibleVariantCategories.map((category) => {
+                const isActive = selectedCategoryKey === category.key;
+
+                return (
+                  <button
+                    className={`pokedex-category-tabs__button ${isActive ? 'is-active' : ''}`}
+                    key={category.key}
+                    type="button"
+                    role="tab"
+                    aria-selected={isActive}
+                    style={getThemeStyle(category)}
+                    onClick={() => handleCategorySelect(category.key)}
+                  >
+                    <span className="pokedex-category-tabs__icons" aria-hidden="true">
+                      {category.icons.map((icon) => (
+                        <img
+                          className={getPokedexIconClassName('pokedex-category-tabs__icon', icon)}
+                          key={icon}
+                          src={icon}
+                          alt=""
+                        />
+                      ))}
+                    </span>
+                    <span>{category.label}</span>
+                  </button>
+                );
+              })}
+            </div>
+
+            <div
+              className="pokedex-category-tabs pokedex-category-tabs--qualities"
+              role="toolbar"
+              aria-label="Pokedex quality facets"
             >
-              Regions
-            </button>
-            <button
-              className={`pokedex-page__button ${viewMode === 'categories' ? 'is-active' : ''}`}
-              type="button"
-              onClick={handleShowCategories}
-            >
-              Categories
-            </button>
-            <button
-              className={`pokedex-page__button ${viewMode === 'list' ? 'is-active' : ''}`}
-              type="button"
-              onClick={handleShowSelectedList}
-            >
-              {formatListLabel(selectedListKey)}
-            </button>
+              {visibleQualityFacets.map((facet) => {
+                const isActive = isAdvancedFacetSelected(advancedSelection, facet);
+                const isDisabled = isAdvancedFacetDisabled(selectedCategoryKey, facet);
+
+                return (
+                  <button
+                    className={`pokedex-category-tabs__button pokedex-category-tabs__button--facet ${isActive ? 'is-active' : ''}`}
+                    key={facet.key}
+                    type="button"
+                    aria-pressed={isActive}
+                    disabled={isDisabled}
+                    style={getThemeStyle(facet)}
+                    onClick={() => handleAdvancedFacetToggle(facet)}
+                  >
+                    <span className="pokedex-category-tabs__icons" aria-hidden="true">
+                      {facet.icons.map((icon) => (
+                        <img
+                          className={getPokedexIconClassName('pokedex-category-tabs__icon', icon)}
+                          key={icon}
+                          src={icon}
+                          alt=""
+                        />
+                      ))}
+                    </span>
+                    <span>{facet.label}</span>
+                  </button>
+                );
+              })}
+            </div>
           </div>
         </header>
 
         <section className="pokedex-page__panel" aria-label="Pokedex catalog">
           {viewMode === 'regions' ? (
-            <div className="pokedex-regions" aria-label="Regions">
-              {regionSummaries.map((region) => {
-                const isComplete = region.totalCount > 0 && region.registeredCount >= region.totalCount;
+            <div className="pokedex-category-slider-container">
+              <div
+                className="pokedex-category-slider"
+                style={{ transform: `translateX(-${selectedCategoryIndex * 100}%)` }}
+              >
+                {visibleVariantCategories.map((category) => {
+                  const categorySummaryMap = regionCategorySummariesByKey.get(category.key);
+                  const visibleRegions = regionSummaries.filter((region) => {
+                    const categorySummary = categorySummaryMap?.get(region.key);
+                    return (categorySummary?.totalCount ?? 0) > 0;
+                  });
 
-                return (
-                  <button
-                    className="pokedex-region-card"
-                    key={region.key}
-                    style={{
-                      '--region-accent': region.accent,
-                      '--region-secondary-accent': region.secondaryAccent,
-                    } as React.CSSProperties}
-                    type="button"
-                    onClick={() => handleRegionSelect(region.key)}
-                  >
-                    <span className="pokedex-region-card__copy">
-                      <span className="pokedex-region-card__name">{region.label}</span>
-                      <span className="pokedex-region-card__status">
-                        {isComplete ? 'Complete!' : 'In progress'}
-                      </span>
-                      <span className="pokedex-region-card__count">
-                        {region.registeredCount} / {region.totalCount}
-                      </span>
-                      <span className={`pokedex-region-card__badge ${isComplete ? 'is-complete' : ''}`}>
-                        {isComplete ? 'OK' : '!'}
-                      </span>
-                    </span>
-                    <span className="pokedex-region-card__art" aria-hidden="true">
-                      {region.previewPokemon.map((pokemon, index) => {
-                        const image = getPokemonImage(pokemon);
+                  return (
+                    <div
+                      className="pokedex-category-panel"
+                      key={category.key}
+                      style={getThemeStyle(category)}
+                      aria-hidden={category.key !== selectedCategoryKey}
+                    >
+                      <div className="pokedex-regions" aria-label={`${category.label} regions`}>
+                        {visibleRegions.map((region) => {
+                          const categorySummary = categorySummaryMap?.get(region.key) ?? {
+                            species: [],
+                            registeredKeys: new Set<string>(),
+                            totalCount: region.totalCount,
+                            registeredCount: region.registeredCount,
+                          };
+                          const isComplete =
+                            categorySummary.totalCount > 0 &&
+                            categorySummary.registeredCount >= categorySummary.totalCount;
+                          const previewPokemon = getRegionCategoryPreviewPokemon(
+                            region,
+                            categorySummary.species,
+                          );
 
-                        return image ? (
-                          <img
-                            alt=""
-                            className={`pokedex-region-card__pokemon pokedex-region-card__pokemon--${index + 1}`}
-                            key={pokemon.variant_id}
-                            src={image}
-                          />
-                        ) : null;
-                      })}
-                    </span>
-                  </button>
-                );
-              })}
-              {regionSummaries.length === 0 ? (
-                <p className="pokedex-page__empty">
-                  Pokedex data is not available yet. Try again after the Pokemon catalog finishes loading.
-                </p>
-              ) : null}
+                          return (
+                            <button
+                              className="pokedex-region-card"
+                              key={region.key}
+                              style={getRegionStyle(region)}
+                              type="button"
+                              tabIndex={category.key === selectedCategoryKey ? 0 : -1}
+                              onClick={() => handleRegionSelect(region.key)}
+                            >
+                              <span className="pokedex-region-card__copy">
+                                <span className="pokedex-region-card__name">{region.label}</span>
+                                <span className="pokedex-region-card__status">
+                                  {isComplete ? 'Complete!' : 'In progress'}
+                                </span>
+                                <span className="pokedex-region-card__count">
+                                  {categorySummary.registeredCount} / {categorySummary.totalCount}
+                                </span>
+                                <span className={`pokedex-region-card__badge ${isComplete ? 'is-complete' : ''}`}>
+                                  {isComplete ? 'OK' : '!'}
+                                </span>
+                              </span>
+                              <span className="pokedex-region-card__art" aria-hidden="true">
+                                {previewPokemon.map((pokemon, index) => {
+                                  const maxBadge = getPokemonMaxBadge(pokemon);
+
+                                  return (
+                                    <span
+                                      className={`pokedex-region-card__pokemon-preview pokedex-region-card__pokemon-preview--${index + 1}`}
+                                      key={pokemon.variant_id}
+                                    >
+                                      <PokedexPokemonImage
+                                        className="pokedex-region-card__pokemon"
+                                        pokemon={pokemon}
+                                      />
+                                      {maxBadge ? (
+                                        <img
+                                          className="pokedex-region-card__max-badge"
+                                          src={maxBadge}
+                                          alt=""
+                                          draggable={false}
+                                        />
+                                      ) : null}
+                                    </span>
+                                  );
+                                })}
+                              </span>
+                            </button>
+                          );
+                        })}
+                        {regionSummaries.length === 0 ? (
+                          <p className="pokedex-page__empty">
+                            Pokedex data is not available yet. Try again after the Pokemon catalog finishes loading.
+                          </p>
+                        ) : null}
+                        {regionSummaries.length > 0 && visibleRegions.length === 0 ? (
+                          <p className="pokedex-page__empty">
+                            No regions have {category.label.toLowerCase()} Pokemon in this view.
+                          </p>
+                        ) : null}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
             </div>
           ) : null}
 
-          {viewMode === 'region' && selectedRegion ? (
-            <div
-              className="pokedex-region-detail"
-              style={{
-                '--region-accent': selectedRegion.accent,
-                '--region-secondary-accent': selectedRegion.secondaryAccent,
-              } as React.CSSProperties}
-            >
-              <header className="pokedex-region-detail__summary">
-                <div className="pokedex-region-detail__summary-top">
-                  <div>
-                    <p className="pokedex-region-detail__eyebrow">Region</p>
-                    <h2 className="pokedex-region-detail__title">{selectedRegion.label}</h2>
-                  </div>
-                  <div className="pokedex-region-detail__count">
-                    {selectedRegion.registeredCount} / {selectedRegion.totalCount}
-                  </div>
-                </div>
-                <dl className="pokedex-region-detail__stats" aria-label={`${selectedRegion.label} registration totals`}>
-                  <div>
-                    <dt>Shiny</dt>
-                    <dd>{selectedRegion.shinyCount}</dd>
-                  </div>
-                  <div>
-                    <dt>Lucky</dt>
-                    <dd>{selectedRegion.luckyCount}</dd>
-                  </div>
-                  <div>
-                    <dt>XXL</dt>
-                    <dd>{selectedRegion.xxlCount}</dd>
-                  </div>
-                  <div>
-                    <dt>XXS</dt>
-                    <dd>{selectedRegion.xxsCount}</dd>
-                  </div>
-                  <div>
-                    <dt>100%</dt>
-                    <dd>{selectedRegion.perfectCount}</dd>
-                  </div>
-                </dl>
-              </header>
-
+          {viewMode === 'detail' ? (
+            <div className="pokedex-region-detail">
               <div className="pokedex-region-detail__toolbar">
-                <button className="pokedex-region-detail__toolbar-button" type="button" onClick={handleShowRegions}>
-                  Regions
-                </button>
                 <label className="pokedex-region-detail__search">
                   <span className="pokedex-region-detail__search-label">Search</span>
                   <input
@@ -558,81 +1476,155 @@ function Pokedex() {
                 </label>
               </div>
 
-              <div className="pokedex-region-grid" aria-label={`${selectedRegion.label} Pokemon`}>
-                {filteredRegionSpecies.map((pokemon) => {
-                  const dexNumber = getDexNumber(pokemon);
-                  const image = getPokemonImage(pokemon);
-                  const isRegistered = dexNumber !== null && selectedRegion.registeredDexNumbers.has(dexNumber);
+              <div className="pokedex-category-slider-container">
+                <div
+                  className="pokedex-category-slider"
+                  style={{ transform: `translateX(-${selectedCategoryIndex * 100}%)` }}
+                >
+                  {visibleVariantCategories.map((category) => {
+                    const categorySummaryMap = regionCategorySummariesByKey.get(category.key);
+                    const categoryLabel = hasActiveAdvancedFacets
+                      ? `${category.label} + qualities`
+                      : category.label;
 
-                  return (
-                    <button
-                      className={`pokedex-region-grid__cell ${isRegistered ? 'is-registered' : ''}`}
-                      key={pokemon.variant_id}
-                      type="button"
-                      onClick={() => setSelectedPokemon(pokemon)}
-                    >
-                      <span className="pokedex-region-grid__image-frame">
-                        {image ? (
-                          <img src={image} alt="" className="pokedex-region-grid__image" />
-                        ) : (
-                          <span className="pokedex-region-grid__placeholder" aria-hidden="true" />
-                        )}
-                      </span>
-                      <span className="pokedex-region-grid__number">{formatDexNumber(pokemon)}</span>
-                      <span className="pokedex-region-grid__name">{getDisplayName(pokemon)}</span>
-                    </button>
-                  );
-                })}
+                    return (
+                      <div
+                        className="pokedex-category-panel"
+                        key={category.key}
+                        style={getThemeStyle(category)}
+                        aria-hidden={category.key !== selectedCategoryKey}
+                      >
+                        <div className="pokedex-region-detail__sections">
+                          {regionSummaries.map((region) => {
+                            const categorySummary = categorySummaryMap?.get(region.key) ?? {
+                              species: [],
+                              registeredKeys: new Set<string>(),
+                              totalCount: 0,
+                              registeredCount: 0,
+                            };
+                            if (categorySummary.totalCount === 0) return null;
+
+                            const visibleSpecies = filterPokemonBySearch(
+                              categorySummary.species,
+                              normalizedRegionSearchTerm,
+                            );
+                            const isCurrentRegion =
+                              category.key === selectedCategoryKey && region.key === selectedRegionKey;
+                            const regionSectionRefKey = getRegionSectionRefKey(category.key, region.key);
+
+                            return (
+                              <section
+                                className={`pokedex-region-detail__section ${isCurrentRegion ? 'is-current' : ''}`}
+                                key={region.key}
+                                ref={(element) => {
+                                  regionSectionRefs.current[regionSectionRefKey] = element;
+                                }}
+                                style={getRegionStyle(region)}
+                              >
+                                <header className="pokedex-region-detail__summary">
+                                  <div className="pokedex-region-detail__summary-top">
+                                    <div>
+                                      <p className="pokedex-region-detail__eyebrow">{categoryLabel}</p>
+                                      <h2 className="pokedex-region-detail__title">{region.label}</h2>
+                                    </div>
+                                    <div className="pokedex-region-detail__count">
+                                      {categorySummary.registeredCount} / {categorySummary.totalCount}
+                                    </div>
+                                  </div>
+                                  <dl
+                                    className="pokedex-region-detail__stats"
+                                    aria-label={`${region.label} registration totals`}
+                                  >
+                                    <div>
+                                      <dt>Shiny</dt>
+                                      <dd>{region.shinyCount}</dd>
+                                    </div>
+                                    <div>
+                                      <dt>Lucky</dt>
+                                      <dd>{region.luckyCount}</dd>
+                                    </div>
+                                    <div>
+                                      <dt>XXL</dt>
+                                      <dd>{region.xxlCount}</dd>
+                                    </div>
+                                    <div>
+                                      <dt>XXS</dt>
+                                      <dd>{region.xxsCount}</dd>
+                                    </div>
+                                    <div>
+                                      <dt>100%</dt>
+                                      <dd>{region.perfectCount}</dd>
+                                    </div>
+                                  </dl>
+                                </header>
+
+                                <div className="pokedex-region-grid" aria-label={`${region.label} ${categoryLabel}`}>
+                                  {visibleSpecies.map((pokemon) => {
+                                    const registrationKey = getPokemonRegistrationKey(pokemon, {
+                                      selectedFacets: advancedFacets,
+                                    });
+                                    const isRegistered =
+                                      registrationKey !== null && categorySummary.registeredKeys.has(registrationKey);
+                                    const variantBadges = [
+                                      ...getVariantBadgeIcons(pokemon),
+                                      ...getActiveFacetBadgeIcons(advancedSelection),
+                                    ];
+
+                                    return (
+                                      <button
+                                        className={`pokedex-region-grid__cell ${isRegistered ? 'is-registered' : ''}`}
+                                        key={pokemon.variant_id}
+                                        type="button"
+                                        tabIndex={category.key === selectedCategoryKey ? 0 : -1}
+                                        onClick={() => setSelectedPokemon(pokemon)}
+                                      >
+                                        <span className="pokedex-region-grid__image-frame">
+                                          <PokedexPokemonImage
+                                            className="pokedex-region-grid__image"
+                                            pokemon={pokemon}
+                                            gender={displayGender}
+                                          />
+                                          {variantBadges.length > 0 ? (
+                                            <span className="pokedex-region-grid__variant-badges" aria-hidden="true">
+                                              {variantBadges.map((badge) => (
+                                                <img
+                                                  className={getPokedexIconClassName(
+                                                    'pokedex-region-grid__variant-badge',
+                                                    badge.src,
+                                                  )}
+                                                  key={badge.label}
+                                                  src={badge.src}
+                                                  alt={badge.label}
+                                                />
+                                              ))}
+                                            </span>
+                                          ) : null}
+                                        </span>
+                                        <span className="pokedex-region-grid__number">{formatDexNumber(pokemon)}</span>
+                                        <span className="pokedex-region-grid__name">{getDisplayName(pokemon)}</span>
+                                      </button>
+                                    );
+                                  })}
+                                </div>
+
+                                {visibleSpecies.length === 0 ? (
+                                  <p className="pokedex-region-detail__empty">
+                                    No {categoryLabel.toLowerCase()} Pokemon match this view.
+                                  </p>
+                                ) : null}
+                              </section>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
-
-              {filteredRegionSpecies.length === 0 ? (
-                <p className="pokedex-region-detail__empty">No Pokemon match this search.</p>
-              ) : null}
             </div>
           ) : null}
 
-          {viewMode === 'categories' ? (
-            <PokedexListsMenu
-              setHighlightedCards={handleHighlightedCardsChange}
-              setActiveView={handlePokedexActiveViewChange}
-              onListSelect={handleListSelect}
-              pokedexLists={pokedexLists}
-              variants={variants}
-            />
-          ) : null}
-
-          {viewMode === 'list' ? (
-            <div className="pokedex-page__grid-panel">
-              <PokemonMenu
-                isEditable={false}
-                sortedPokemons={sortedPokemons}
-                allPokemons={variants}
-                loading={loading}
-                selectedPokemon={selectedPokemon}
-                setSelectedPokemon={setSelectedPokemon}
-                isFastSelectEnabled={isFastSelectEnabled}
-                toggleCardHighlight={toggleCardHighlight}
-                highlightedCards={highlightedCards}
-                tagFilter=""
-                lists={emptyLists}
-                instances={emptyInstances as Record<string, PokemonInstance>}
-                sortType={sortType}
-                setSortType={setSortType}
-                sortMode={sortMode}
-                setSortMode={setSortMode}
-                variants={variants}
-                username=""
-                setIsFastSelectEnabled={setIsFastSelectEnabled}
-                searchTerm={searchTerm}
-                setSearchTerm={setSearchTerm}
-                showEvolutionaryLine={showEvolutionaryLine}
-                toggleEvolutionaryLine={toggleEvolutionaryLine}
-                activeView={`pokedex-${selectedListKey}`}
-              />
-            </div>
-          ) : null}
-
-          {viewMode === 'region' && selectedPokemon && !('overlayType' in selectedPokemon) ? (
+          {viewMode === 'detail' && selectedPokemon && !('overlayType' in selectedPokemon) ? (
             <PokedexOverlay
               pokemon={selectedPokemon}
               onClose={handleCloseRegionOverlay}
@@ -642,6 +1634,13 @@ function Pokedex() {
           ) : null}
         </section>
       </div>
+      {viewMode === 'detail' && !selectedPokemon ? (
+        <CloseButton
+          className="pokedex-page__detail-close"
+          onClick={handleShowRegions}
+          title="Back to regions"
+        />
+      ) : null}
     </div>
   );
 }
