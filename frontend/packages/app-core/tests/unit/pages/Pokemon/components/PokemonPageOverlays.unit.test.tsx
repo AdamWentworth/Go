@@ -26,18 +26,6 @@ vi.mock('@/pages/Pokemon/components/Menus/PokemonMenu/HighlightActionButton', ()
   ),
 }));
 
-vi.mock('@/components/CloseButton', () => ({
-  default: ({ onClick }: { onClick: () => void }) => (
-    <button data-testid="close-button" onClick={onClick}>
-      close
-    </button>
-  ),
-}));
-
-vi.mock('@/components/ActionMenu', () => ({
-  default: () => <div data-testid="action-menu">action menu</div>,
-}));
-
 vi.mock('@/pages/Pokemon/features/mega/components/MegaPokemonModal', () => ({
   default: ({
     open,
@@ -119,8 +107,6 @@ const makeProps = (overrides: Partial<Props> = {}): Props => ({
   onConfirmChangeTags: vi.fn(async () => undefined),
   activeStatusFilter: 'Caught',
   isUpdating: false,
-  showActionMenu: false,
-  onActionMenuToggle: vi.fn(),
   isMegaSelectionOpen: false,
   megaSelectionData: null,
   onMegaResolve: vi.fn(),
@@ -146,22 +132,12 @@ describe('PokemonPageOverlays', () => {
     rerender(
       <PokemonPageOverlays
         {...makeProps({
-      isEditable: false,
-      highlightedCards: new Set(),
+          isEditable: false,
+          highlightedCards: new Set(),
         })}
       />,
     );
     expect(screen.queryByTestId('highlight-action')).not.toBeInTheDocument();
-  });
-
-  it('shows action menu overlay content and wires close callback', () => {
-    const props = makeProps({ showActionMenu: true });
-    render(<PokemonPageOverlays {...props} />);
-
-    expect(screen.getByText('This is the action menu content.')).toBeInTheDocument();
-    fireEvent.click(screen.getByTestId('close-button'));
-    expect(props.onActionMenuToggle).toHaveBeenCalledTimes(1);
-    expect(screen.getByTestId('action-menu')).toBeInTheDocument();
   });
 
   it('forwards mega and fusion modal actions when open', () => {

@@ -151,6 +151,13 @@
   opacity: 1;
 }
 
+.action-menu-buttons-container.open .button-pokedex {
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, calc(-50% + 24vh));
+  opacity: 1;
+}
+
 .action-menu-buttons-container.open .button-home {
   top: 50%;
   left: 50%;

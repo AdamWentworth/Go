@@ -9,6 +9,7 @@ import './App.css';
 
 import AppProviders  from './AppProviders';
 import AppBootstrap  from './AppBootstrap';
+import ActionMenu from './components/ActionMenu';
 import PerfTelemetryPanel from './components/dev/PerfTelemetryPanel';
 import ErrorBoundary from './components/ErrorBoundary';
 import {
@@ -47,6 +48,7 @@ const AppContent: React.FC = () => (
       </Suspense>
     </main>
 
+    <ActionMenu />
     <ToastContainer position="top-center" autoClose={5000} />
   </div>
 );

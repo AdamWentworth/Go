@@ -100,8 +100,6 @@ function Pokemon({ isOwnCollection }: PokemonProps) {
         onConfirmChangeTags={controller.handleConfirmChangeTags}
         activeStatusFilter={controller.activeStatusFilter}
         isUpdating={controller.isUpdating}
-        showActionMenu={controller.showActionMenu}
-        onActionMenuToggle={controller.handleActionMenuToggle}
         isMegaSelectionOpen={controller.isMegaSelectionOpen}
         megaSelectionData={controller.megaSelectionData}
         onMegaResolve={controller.handleMegaSelectionResolve}

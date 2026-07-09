@@ -10,7 +10,6 @@ import { useAuth } from '../../contexts/AuthContext';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import LoadingSpinner from '../../components/LoadingSpinner';
-import ActionMenu from '../../components/ActionMenu';
 import { isApiError } from '../../utils/errors';
 import { updateUserInSecondaryDB } from "@/services/authService";
 import { createScopedLogger } from '@/utils/logger';
@@ -180,8 +179,6 @@ const Register: FC = () => {
           locationOptions={locationOptions}
         />
       )}
-      {/* Render the ActionMenu component */}
-      <ActionMenu />
       <ToastContainer />
     </div>
   );

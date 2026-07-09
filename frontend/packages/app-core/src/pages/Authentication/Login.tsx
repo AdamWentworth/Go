@@ -14,7 +14,6 @@ import { useTradeStore } from '@/features/trades/store/useTradeStore';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import ResetPasswordOverlay from './ResetPasswordOverlay';
-import ActionMenu from '../../components/ActionMenu';
 import { isApiError } from '../../utils/errors';
 import { createScopedLogger } from '@/utils/logger';
 
@@ -164,7 +163,6 @@ const Login: FC = () => {
       )}
 
       {isResetPasswordOpen && <ResetPasswordOverlay onClose={closeResetPassword} />}
-      <ActionMenu />
       <ToastContainer />
     </div>
   );

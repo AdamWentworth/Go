@@ -92,8 +92,6 @@ type UsePokemonPageControllerResult = {
   handleConfirmChangeTags: (filter: InstanceStatus) => Promise<void>;
   activeStatusFilter: InstanceStatus | null;
   isUpdating: boolean;
-  showActionMenu: boolean;
-  handleActionMenuToggle: () => void;
   isMegaSelectionOpen: boolean;
   megaSelectionData: MegaSelectionData | null;
   handleMegaSelectionResolve: (selectedOption: string) => void;
@@ -146,7 +144,6 @@ export default function usePokemonPageController({
   const [selectedPokedexKey, setSelectedPokedexKey] = useState<string>('all');
   const [lastMenu, setLastMenu] = useState<LastMenu>('pokedex');
   const [defaultListLoaded, setDefaultListLoaded] = useState<boolean>(false);
-  const [showActionMenu, setShowActionMenu] = useState<boolean>(false);
   const [searchTerm, setSearchTerm] = useState<string>('');
   const [activeView, setActiveView] = useState<ActiveView>('pokemon');
   const [dragOffset, setDragOffset] = useState<number>(0);
@@ -223,10 +220,6 @@ export default function usePokemonPageController({
     setSelectedPokemon,
     setHasProcessedInstanceId,
   });
-
-  const handleActionMenuToggle = useCallback(() => {
-    setShowActionMenu((prev) => !prev);
-  }, []);
 
   const handleClearSelection = useCallback(() => {
     setIsFastSelectEnabled(false);
@@ -403,8 +396,6 @@ export default function usePokemonPageController({
     handleConfirmChangeTags,
     activeStatusFilter,
     isUpdating,
-    showActionMenu,
-    handleActionMenuToggle,
     isMegaSelectionOpen,
     megaSelectionData,
     handleMegaSelectionResolve,

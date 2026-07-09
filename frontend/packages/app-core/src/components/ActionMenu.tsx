@@ -152,6 +152,16 @@ const ActionMenu: React.FC = () => {
             </button>
 
             <button
+              className="action-menu-item button-pokedex"
+              onClick={() => handleNavigation('/pokedex')}
+            >
+              <div className="button-content">
+                <img src="/images/btn_pokedex.png" alt="Pokedex" className="button-icon" />
+                <span className="button-label">Pokedex</span>
+              </div>
+            </button>
+
+            <button
               className="action-menu-item button-home"
               onClick={() => handleNavigation('/')}
             >

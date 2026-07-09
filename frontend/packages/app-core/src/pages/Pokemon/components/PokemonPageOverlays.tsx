@@ -1,8 +1,6 @@
 import React from 'react';
 
 import HighlightActionButton from './Menus/PokemonMenu/HighlightActionButton';
-import ActionMenu from '@/components/ActionMenu';
-import CloseButton from '@/components/CloseButton';
 import FusionPokemonModal from '../features/fusion/components/FusionPokemonModal';
 import MegaPokemonModal from '../features/mega/components/MegaPokemonModal';
 import type { MegaSelectionData } from '../features/mega/hooks/useMegaPokemonHandler';
@@ -15,8 +13,6 @@ type PokemonPageOverlaysProps = {
   onConfirmChangeTags: (filter: InstanceStatus) => Promise<void>;
   activeStatusFilter: InstanceStatus | null;
   isUpdating: boolean;
-  showActionMenu: boolean;
-  onActionMenuToggle: () => void;
   isMegaSelectionOpen: boolean;
   megaSelectionData: MegaSelectionData | null;
   onMegaResolve: (option: string) => void;
@@ -35,8 +31,6 @@ const PokemonPageOverlays: React.FC<PokemonPageOverlaysProps> = ({
   onConfirmChangeTags,
   activeStatusFilter,
   isUpdating,
-  showActionMenu,
-  onActionMenuToggle,
   isMegaSelectionOpen,
   megaSelectionData,
   onMegaResolve,
@@ -57,18 +51,6 @@ const PokemonPageOverlays: React.FC<PokemonPageOverlaysProps> = ({
         isUpdating={isUpdating}
       />
     )}
-
-    <div className={`action-menu-overlay ${showActionMenu ? 'active' : ''}`}>
-      {showActionMenu && (
-        <>
-          <CloseButton onClick={onActionMenuToggle} />
-          <div className="action-menu-content">
-            <p>This is the action menu content.</p>
-          </div>
-        </>
-      )}
-    </div>
-    <ActionMenu />
 
     <MegaPokemonModal
       open={isMegaSelectionOpen}
@@ -91,4 +73,3 @@ const PokemonPageOverlays: React.FC<PokemonPageOverlaysProps> = ({
 );
 
 export default PokemonPageOverlays;
-

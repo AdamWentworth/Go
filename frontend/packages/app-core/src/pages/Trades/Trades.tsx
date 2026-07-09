@@ -1,6 +1,5 @@
 import { useState } from 'react';
 
-import ActionMenu from '@/components/ActionMenu';
 import { useInstancesStore } from '@/features/instances/store/useInstancesStore';
 import { useTradeStore } from '@/features/trades/store/useTradeStore';
 import { useVariantsStore } from '@/features/variants/store/useVariantsStore';
@@ -41,8 +40,6 @@ function Trades() {
         loading={loading}
         periodicUpdates={periodicUpdates}
       />
-
-      <ActionMenu />
     </div>
   );
 }

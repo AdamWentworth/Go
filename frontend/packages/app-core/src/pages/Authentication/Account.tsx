@@ -8,7 +8,6 @@ import { useNavigate } from 'react-router-dom';
 import AccountForm from './FormComponents/AccountForm';
 import './Account.css';
 import { toast } from 'react-toastify';
-import ActionMenu from '../../components/ActionMenu';
 import type { FormErrors, AccountFormValues } from '@/types/auth';
 import type { AccountFormHandle } from './FormComponents/AccountForm';
 import { isApiError } from '../../utils/errors';
@@ -134,7 +133,6 @@ const Account: FC = () => {
         onDeleteAccount={handleDeleteAccount}
         errors={errors}
       />
-      <ActionMenu />
     </div>
   );
 };

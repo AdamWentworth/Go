@@ -6,7 +6,6 @@ import SearchModeToggle from './SearchModeToggle';
 import ListView from './views/ListView';
 import MapView from './views/MapView';
 import LoadingSpinner from '../../components/LoadingSpinner';
-import ActionMenu from '../../components/ActionMenu';
 import { useVariantsStore } from '@/features/variants/store/useVariantsStore';
 import { useModal } from '../../contexts/ModalContext';
 import { createScopedLogger } from '@/utils/logger';
@@ -212,7 +211,6 @@ const Search: React.FC = () => {
           ))}
       </div>
 
-      <ActionMenu />
     </div>
   );
 };
