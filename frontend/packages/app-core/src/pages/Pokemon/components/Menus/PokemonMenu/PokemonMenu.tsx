@@ -11,6 +11,7 @@ import PokedexOverlay from '@/pages/Pokemon/features/pokedex/PokedexOverlay';
 import InstanceOverlay from '@/pages/Pokemon/features/instances/InstanceOverlay';
 import CustomScrollbar from './CustomScrollbar';
 import './PokemonMenu.css';
+import { useContextBackHandler } from '@/contexts/ContextBackContext';
 import { useModal } from '@/contexts/ModalContext';
 import { AppLoadingFallback } from '@/contexts/AppLoadingContext';
 import SearchUI from './SearchUI';
@@ -177,6 +178,15 @@ const PokemonMenu: React.FC<PokemonMenuProps> = ({
   useEffect(() => {
     onSearchMenuStateChange?.(isMenuVisible);
   }, [isMenuVisible, onSearchMenuStateChange]);
+
+  useContextBackHandler(
+    isMenuVisible,
+    () => {
+      setIsMenuVisible(false);
+      searchAreaRef.current?.querySelector('input')?.blur();
+    },
+    'pokemon-search-menu',
+  );
 
   if (loading) return <AppLoadingFallback source="pokemon-menu" />;
 

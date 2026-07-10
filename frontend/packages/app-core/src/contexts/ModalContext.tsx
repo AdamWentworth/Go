@@ -1,6 +1,7 @@
 import { createContext, useCallback, useContext, useState, type ReactNode } from 'react';
 import ConfirmDialog from '../components/modals/ConfirmDialog';
 import AlertDialog from '../components/modals/AlertDialog';
+import { useContextBackHandler } from './ContextBackContext';
 
 type ConfirmModalContent = {
   type: 'confirm';
@@ -64,6 +65,20 @@ export const ModalProvider = ({ children }: { children: ReactNode }) => {
       });
     });
   }, []);
+
+  const closeActiveModal = useCallback(() => {
+    if (!modalContent) return false;
+
+    if (modalContent.type === 'confirm') {
+      modalContent.onCancel();
+      return true;
+    }
+
+    modalContent.onClose();
+    return true;
+  }, [modalContent]);
+
+  useContextBackHandler(Boolean(modalContent), closeActiveModal, 'modal');
 
   return (
     <ModalContext.Provider value={{ confirm, alert }}>

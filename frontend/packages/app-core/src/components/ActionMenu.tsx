@@ -1,12 +1,13 @@
 // ActionMenu.tsx
 
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import ActionMenuButton from './ActionMenuButton';
 import CloseButton from './CloseButton';
 import { useModal } from '../contexts/ModalContext';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
+import { useContextBackHandler } from '../contexts/ContextBackContext';
 import ThemeSwitch from './ThemeSwitch';
 import './ActionMenu.css';
 
@@ -32,16 +33,16 @@ const ActionMenu: React.FC = () => {
     return undefined;
   }, [isOpen, isVisible]);
 
-  const openMenu = () => {
+  const openMenu = useCallback(() => {
     setIsVisible(true);
     window.requestAnimationFrame(() => {
       setIsOpen(true);
     });
-  };
+  }, []);
 
-  const closeMenu = () => {
+  const closeMenu = useCallback(() => {
     setIsOpen(false);
-  };
+  }, []);
 
   const toggleMenu = () => {
     if (isOpen) {
@@ -57,6 +58,8 @@ const ActionMenu: React.FC = () => {
     }
     closeMenu();
   };
+
+  useContextBackHandler(isOpen, closeMenu, 'action-menu');
 
   return (
     <>

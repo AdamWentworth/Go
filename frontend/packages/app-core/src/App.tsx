@@ -12,6 +12,7 @@ import AppBootstrap  from './AppBootstrap';
 import ActionMenu from './components/ActionMenu';
 import PerfTelemetryPanel from './components/dev/PerfTelemetryPanel';
 import ErrorBoundary from './components/ErrorBoundary';
+import { ContextBackProvider } from './contexts/ContextBackContext';
 import {
   AppLoadingFallback,
   AppLoadingProvider,
@@ -55,15 +56,17 @@ const AppContent: React.FC = () => (
 
 const App: React.FC = () => (
   <Router>
-    <AppLoadingProvider>
-      <AppProviders>
-        <AppBootstrap />
-        <ErrorBoundary>
-          <AppContent />
-        </ErrorBoundary>
-        <PerfTelemetryPanel />
-      </AppProviders>
-    </AppLoadingProvider>
+    <ContextBackProvider>
+      <AppLoadingProvider>
+        <AppProviders>
+          <AppBootstrap />
+          <ErrorBoundary>
+            <AppContent />
+          </ErrorBoundary>
+          <PerfTelemetryPanel />
+        </AppProviders>
+      </AppLoadingProvider>
+    </ContextBackProvider>
   </Router>
 );
 

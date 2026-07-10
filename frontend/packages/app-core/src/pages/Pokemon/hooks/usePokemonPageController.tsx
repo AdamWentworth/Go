@@ -7,6 +7,7 @@ import { useTagsStore } from '@/features/tags/store/useTagsStore';
 import { useUserSearchStore } from '@/stores/useUserSearchStore';
 import { emptyTagBuckets } from '@/features/tags/utils/initializePokemonTags';
 import { useModal } from '@/contexts/ModalContext';
+import { useContextBackHandler } from '@/contexts/ContextBackContext';
 
 import type { PokemonVariant } from '@/types/pokemonVariants';
 import type { InstanceStatus, Instances } from '@/types/instances';
@@ -306,6 +307,24 @@ export default function usePokemonPageController({
     promptFusionPokemonSelection,
     setIsFastSelectEnabled,
   });
+
+  const closeSelectedPokemon = useCallback(() => {
+    setSelectedPokemon(null);
+  }, []);
+
+  const closeMegaSelectionFromBack = useCallback(() => {
+    handleMegaSelectionReject('User canceled');
+  }, [handleMegaSelectionReject]);
+
+  const returnToPokemonView = useCallback(() => {
+    setActiveView('pokemon');
+  }, []);
+
+  useContextBackHandler(activeView !== 'pokemon', returnToPokemonView, 'pokemon-view');
+  useContextBackHandler(highlightedCards.size > 0, handleClearSelection, 'pokemon-selection');
+  useContextBackHandler(selectedPokemon !== null, closeSelectedPokemon, 'pokemon-overlay');
+  useContextBackHandler(isMegaSelectionOpen, closeMegaSelectionFromBack, 'mega-selection');
+  useContextBackHandler(isFusionSelectionOpen, closeFusionSelection, 'fusion-selection');
 
   const containerRef = useRef<HTMLDivElement | null>(null);
   const maxPeekDistance = 0.3;

@@ -1,4 +1,4 @@
-import { expect, type Route, test } from '@playwright/test';
+import { expect, type Page, type Route, test } from '@playwright/test';
 
 import { attachBrowserDiagnostics } from './support/diagnostics';
 import { installE2eRoutes } from './support/e2eRoutes';
@@ -16,6 +16,13 @@ import {
   openCaughtPokemonList,
   openPokemonPage,
 } from './support/pokemonApp';
+
+async function triggerBrowserBack(page: Page) {
+  await page.evaluate(() => {
+    window.history.back();
+  });
+  await page.waitForTimeout(350);
+}
 
 test.describe('pokemon app browser regressions', () => {
   test('loads theme loading spinner WebM assets from shared media in every browser project', async ({
@@ -696,6 +703,137 @@ test.describe('pokemon app browser regressions', () => {
 
       await expect(overlay).toBeVisible();
       await expectActivePokemonView(page, 'Pokémon');
+    } finally {
+      await diagnostics.flush();
+    }
+
+    const blockingErrors = diagnostics.blockingErrors();
+    expect(
+      blockingErrors,
+      `browser diagnostics should not include runtime errors:\n${JSON.stringify(blockingErrors, null, 2)}`,
+    ).toEqual([]);
+  });
+
+  test('uses browser back to close the action menu without leaving the current URL', async ({
+    page,
+  }, testInfo) => {
+    const diagnostics = attachBrowserDiagnostics(page, testInfo);
+
+    try {
+      await openPokemonPage(page);
+      await expect(page).toHaveURL(/\/pokemon$/);
+
+      await page.getByRole('button', { name: 'Action Menu' }).click();
+      await expect(page.locator('.action-menu-overlay.active')).toBeVisible();
+
+      await triggerBrowserBack(page);
+
+      await expect(page).toHaveURL(/\/pokemon$/);
+      await expect(page.locator('.action-menu-overlay.active')).toHaveCount(0);
+      await expect(page.getByRole('button', { name: 'Action Menu' })).toBeVisible();
+    } finally {
+      await diagnostics.flush();
+    }
+
+    const blockingErrors = diagnostics.blockingErrors();
+    expect(
+      blockingErrors,
+      `browser diagnostics should not include runtime errors:\n${JSON.stringify(blockingErrors, null, 2)}`,
+    ).toEqual([]);
+  });
+
+  test('keeps browser back from navigating to a previous app URL', async ({
+    page,
+  }, testInfo) => {
+    const diagnostics = attachBrowserDiagnostics(page, testInfo);
+
+    try {
+      await openPokemonPage(page);
+      await expect(page).toHaveURL(/\/pokemon$/);
+
+      await page.getByRole('button', { name: 'Action Menu' }).click();
+      await expect(page.locator('.action-menu-overlay.active')).toBeVisible();
+      await page.locator('.button-search').click();
+      await expect(page).toHaveURL(/\/search$/);
+      await expect(page.getByText('Which type of search would you like?')).toBeVisible();
+
+      await triggerBrowserBack(page);
+
+      await expect(page).toHaveURL(/\/search$/);
+      await expect(page.getByText('Which type of search would you like?')).toBeVisible();
+    } finally {
+      await diagnostics.flush();
+    }
+
+    const blockingErrors = diagnostics.blockingErrors();
+    expect(
+      blockingErrors,
+      `browser diagnostics should not include runtime errors:\n${JSON.stringify(blockingErrors, null, 2)}`,
+    ).toEqual([]);
+  });
+
+  test('uses browser back to close a Pokemon instance overlay without navigating away', async ({
+    page,
+  }, testInfo) => {
+    const diagnostics = attachBrowserDiagnostics(page, testInfo);
+
+    try {
+      const { firstCaughtCard } = await openCaughtPokemonList(page);
+      await expect(page).toHaveURL(/\/pokemon$/);
+      await firstCaughtCard.click();
+
+      const overlay = page.locator('.instance-overlay.caught-mode');
+      await expect(overlay).toBeVisible();
+
+      await triggerBrowserBack(page);
+
+      await expect(page).toHaveURL(/\/pokemon$/);
+      await expect(overlay).toHaveCount(0);
+      await expectActivePokemonView(page, 'Pokémon');
+    } finally {
+      await diagnostics.flush();
+    }
+
+    const blockingErrors = diagnostics.blockingErrors();
+    expect(
+      blockingErrors,
+      `browser diagnostics should not include runtime errors:\n${JSON.stringify(blockingErrors, null, 2)}`,
+    ).toEqual([]);
+  });
+
+  test('uses browser back to step out of Pokedex contexts before URL navigation', async ({
+    page,
+  }, testInfo) => {
+    const diagnostics = attachBrowserDiagnostics(page, testInfo);
+
+    try {
+      await installE2eRoutes(page);
+      const response = await page.goto('/pokedex', { waitUntil: 'domcontentloaded' });
+      expect(response?.ok(), '/pokedex document response should be OK').toBe(true);
+
+      const pokemonRegions = page.getByLabel('Pokemon regions', { exact: true });
+      const kantoRegion = pokemonRegions.getByRole('button', { name: /Kanto/i });
+      await expect(kantoRegion).toBeVisible({ timeout: 30_000 });
+      await kantoRegion.click();
+      await expect(page.locator('.pokedex-region-detail')).toBeVisible();
+      await expect(page).toHaveURL(/\/pokedex$/);
+
+      await triggerBrowserBack(page);
+
+      await expect(page).toHaveURL(/\/pokedex$/);
+      await expect(page.locator('.pokedex-region-detail')).toHaveCount(0);
+      await expect(pokemonRegions).toBeVisible();
+
+      await kantoRegion.click();
+      await expect(page.locator('.pokedex-region-detail')).toBeVisible();
+      await page.locator('.pokedex-region-grid__open').first().click();
+      await expect(page.locator('.pokedex-page--pokemon-detail')).toBeVisible();
+
+      await triggerBrowserBack(page);
+
+      await expect(page).toHaveURL(/\/pokedex$/);
+      await expect(page.locator('.pokedex-page--pokemon-detail')).toHaveCount(0);
+      await expect(page.locator('.pokedex-region-detail')).toBeVisible();
     } finally {
       await diagnostics.flush();
     }

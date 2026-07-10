@@ -12,6 +12,7 @@ import {
 import { useManualPokedexRegistrationsStore } from '@/features/pokedex/store/useManualPokedexRegistrationsStore';
 import { useVariantsStore } from '@/features/variants/store/useVariantsStore';
 import { AppLoadingFallback } from '@/contexts/AppLoadingContext';
+import { useContextBackHandler } from '@/contexts/ContextBackContext';
 import { useModal } from '@/contexts/ModalContext';
 import CloseButton from '@/components/CloseButton';
 import { determineImageUrl } from '@/utils/imageHelpers';
@@ -1395,6 +1396,26 @@ function Pokedex() {
       void registerManualRegistrations([entry]);
     },
     [registerManualRegistrations, unregisterManualRegistrations],
+  );
+
+  const handlePokedexBackContext = useCallback(() => {
+    if (selectedPokemon) {
+      setSelectedPokemon(null);
+      return true;
+    }
+
+    if (viewMode === 'detail') {
+      handleShowRegions();
+      return true;
+    }
+
+    return false;
+  }, [handleShowRegions, selectedPokemon, viewMode]);
+
+  useContextBackHandler(
+    viewMode === 'detail' || selectedPokemon !== null,
+    handlePokedexBackContext,
+    'pokedex-context',
   );
 
   if (loading && variants.length === 0) {
