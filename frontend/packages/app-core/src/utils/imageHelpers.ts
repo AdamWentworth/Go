@@ -1,12 +1,13 @@
 // imageHelpers.ts
 
 import type { PokemonVariant } from '../types/pokemonVariants';
-import type { Costume, CrownForm, MegaEvolution } from '../types/pokemonSubTypes';
+import type { Costume, CrownForm, FemaleVariantData, MegaEvolution } from '../types/pokemonSubTypes';
 import { createScopedLogger } from '@/utils/logger';
 import { resolveActiveCrownForm } from '@/utils/crownHelpers';
 
 const DEFAULT_IMAGE_URL = '/images/default_pokemon.png';
 const log = createScopedLogger('imageHelpers');
+type VariantImageData = Partial<PokemonVariant> & Partial<FemaleVariantData>;
 
 export function determineImageUrl(
   isFemale: boolean,
@@ -35,6 +36,9 @@ export function determineImageUrl(
   const isShiny = isPurifiedShiny || pokemon.variantType.includes('shiny');
   const variantType = (pokemon.variantType || '').toLowerCase();
 
+  const firstImage = (...urls: Array<string | null | undefined>): string | null =>
+    urls.find((url): url is string => Boolean(url)) ?? null;
+
   const getCostumeImage = (
     costumes: Costume[] | undefined,
     variantType: string,
@@ -51,27 +55,31 @@ export function determineImageUrl(
     if (variantType.includes('shadow_') && costume.shadow_costume) {
       const shadow = costume.shadow_costume;
       if (isShiny) {
-        return (
-          (isFemale
-            ? shadow.image_url_female_shiny_shadow_costume
-            : shadow.image_url_shiny_shadow_costume) || DEFAULT_IMAGE_URL
+        return firstImage(
+          isFemale ? shadow.image_url_female_shiny_shadow_costume : null,
+          shadow.image_url_shiny_shadow_costume,
+          DEFAULT_IMAGE_URL,
         );
       }
-      return (
-        (isFemale
-          ? shadow.image_url_female_shadow_costume
-          : shadow.image_url_shadow_costume) || DEFAULT_IMAGE_URL
+      return firstImage(
+        isFemale ? shadow.image_url_female_shadow_costume : null,
+        shadow.image_url_shadow_costume,
+        DEFAULT_IMAGE_URL,
       );
     }
 
     if (variantType.includes('costume')) {
       if (isShiny) {
-        return (
-          (isFemale ? costume.image_url_shiny_female : costume.image_url_shiny) || DEFAULT_IMAGE_URL
+        return firstImage(
+          isFemale ? costume.image_url_shiny_female : null,
+          costume.image_url_shiny,
+          DEFAULT_IMAGE_URL,
         );
       }
-      return (
-        (isFemale ? costume.image_url_female : costume.image_url) || DEFAULT_IMAGE_URL
+      return firstImage(
+        isFemale ? costume.image_url_female : null,
+        costume.image_url,
+        DEFAULT_IMAGE_URL,
       );
     }
 
@@ -79,20 +87,26 @@ export function determineImageUrl(
   };
 
   const getVariantImage = (
-    data: Partial<PokemonVariant>,
+    data: VariantImageData,
     variantType: string,
     isShiny: boolean,
     defaultUrl: string
   ): string => {
     if (variantType.includes('shadow')) {
-      return isShiny
-        ? data.image_url_shiny_shadow || defaultUrl
-        : data.image_url_shadow || defaultUrl;
+      return (
+        firstImage(
+          isShiny
+            ? data.image_url_shiny_shadow || data.shiny_shadow_image_url
+            : data.image_url_shadow || data.shadow_image_url,
+          defaultUrl
+        ) ?? defaultUrl
+      );
     }
 
-    return isShiny
-      ? data.image_url_shiny || defaultUrl
-      : data.image_url || defaultUrl;
+    return (
+      firstImage(isShiny ? data.image_url_shiny || data.shiny_image_url : data.image_url, defaultUrl) ??
+      defaultUrl
+    );
   };
 
   const handleMegaEvolution = (): string | null => {
@@ -123,11 +137,18 @@ export function determineImageUrl(
     }
 
     if (isFemale && megaEvolution?.female_data) {
+      const baseMegaImage = getVariantImage(
+        megaEvolution as VariantImageData,
+        megaVariantType,
+        isShiny,
+        megaEvolution.image_url || DEFAULT_IMAGE_URL
+      );
+
       return getVariantImage(
         megaEvolution.female_data,
         megaVariantType,
         isShiny,
-        megaEvolution.image_url || DEFAULT_IMAGE_URL
+        baseMegaImage
       );
     }
 
@@ -195,11 +216,18 @@ export function determineImageUrl(
       const costumeImage = getCostumeImage(pokemon.costumes, variantType, isFemale, isShiny);
       if (costumeImage) return costumeImage;
 
+      const baseVariantImage = getVariantImage(
+        pokemon,
+        variantType,
+        isShiny,
+        pokemon.currentImage || pokemon.image_url || DEFAULT_IMAGE_URL
+      );
+
       return getVariantImage(
         pokemon.female_data,
         variantType,
         isShiny,
-        pokemon.image_url || DEFAULT_IMAGE_URL
+        baseVariantImage
       );
     }
 

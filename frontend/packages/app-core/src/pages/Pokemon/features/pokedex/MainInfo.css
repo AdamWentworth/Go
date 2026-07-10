@@ -93,6 +93,7 @@
     cursor: pointer;
     width: 40px; /* Set your desired width */
     height: 40px; /* Set your desired height */
+    filter: brightness(0) invert(1) drop-shadow(0 2px 4px rgba(0, 25, 40, 0.38));
     transform: translate(-10px, -10px); /* Optional: fine-tune position, negative X moves left, positive Y moves down */
 }
 
