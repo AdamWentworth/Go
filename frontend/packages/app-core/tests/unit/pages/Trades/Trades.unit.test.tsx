@@ -51,10 +51,6 @@ vi.mock('@/pages/Trades/TradeList', () => ({
   },
 }));
 
-vi.mock('@/components/ActionMenu', () => ({
-  default: () => <div data-testid="action-menu" />,
-}));
-
 describe('Trades page', () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -67,7 +63,6 @@ describe('Trades page', () => {
 
     expect(screen.getByTestId('trade-status-buttons')).toBeInTheDocument();
     expect(screen.getByTestId('trade-list')).toBeInTheDocument();
-    expect(screen.getByTestId('action-menu')).toBeInTheDocument();
 
     const initialStatusProps = mocks.statusPropsHistory.at(-1);
     const initialListProps = mocks.listPropsHistory.at(-1);

@@ -16,10 +16,6 @@ vi.mock('@/components/Navbar', () => ({
   default: () => <div data-testid="navbar" />,
 }));
 
-vi.mock('@/components/ActionMenu', () => ({
-  default: () => <div data-testid="action-menu" />,
-}));
-
 vi.mock('@/components/AuthButtons', () => ({
   default: () => <div data-testid="auth-buttons">AuthButtons</div>,
 }));
@@ -31,7 +27,6 @@ describe('Home page', () => {
     render(<Home />);
 
     expect(screen.getByTestId('navbar')).toBeInTheDocument();
-    expect(screen.getByTestId('action-menu')).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: /how it works/i })).toBeInTheDocument();
     expect(screen.getByTestId('auth-buttons')).toBeInTheDocument();
   });
