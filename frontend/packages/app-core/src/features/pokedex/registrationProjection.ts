@@ -4,7 +4,7 @@ import type { Instances } from '@/types/instances';
 
 export type PokedexRegistrationFacetValue = string | number | boolean | null;
 export type PokedexRegistrationFacets = Record<string, PokedexRegistrationFacetValue>;
-export type PokedexRegistrationSource = 'catalog' | 'instance';
+export type PokedexRegistrationSource = 'catalog' | 'manual' | 'instance';
 export type PokedexRegistrationLevel = 'base' | 'derived' | 'exact';
 export type PokedexSizeClass = 'xxs' | 'xs' | 'normal' | 'xl' | 'xxl';
 
@@ -118,10 +118,399 @@ export function projectCatalogRegistration(variant: PokemonVariant): PokedexRegi
   });
 }
 
+export function createManualPokedexRegistration(
+  variant: PokemonVariant,
+  facets: PokedexRegistrationFacets = {},
+  registeredAt = new Date().toISOString(),
+): PokedexRegistrationEntry {
+  return createRegistrationEntry({
+    variant,
+    facets: { variant: variant.variantType, ...facets },
+    isRegistered: true,
+    registeredAt,
+    source: 'manual',
+    sourceInstanceId: null,
+    level: 'exact',
+  });
+}
+
 function asFiniteNumber(value: unknown): number | null {
   if (value === null || value === undefined || value === '') return null;
   const numeric = typeof value === 'number' ? value : Number(value);
   return Number.isFinite(numeric) ? numeric : null;
+}
+
+function normalizeToken(value: unknown): string {
+  return String(value ?? '')
+    .trim()
+    .toLowerCase()
+    .replace(/[_-]+/g, ' ')
+    .replace(/\s+/g, ' ');
+}
+
+function parseFusionId(value: unknown): number | null {
+  const direct = asFiniteNumber(value);
+  if (direct !== null) return direct;
+
+  const normalized = normalizeToken(value);
+  if (!normalized) return null;
+
+  const match = normalized.match(/(?:^|\s)fusion\s*(\d+)$/) ?? normalized.match(/(?:^|\s)(\d+)$/);
+  return match ? asFiniteNumber(match[1]) : null;
+}
+
+function parseFusionIdsFromStoredObject(value: unknown): number[] {
+  if (!value) return [];
+
+  if (Array.isArray(value)) {
+    return value
+      .map((entry) =>
+        typeof entry === 'object' && entry !== null
+          ? parseFusionId((entry as { fusion_id?: unknown; id?: unknown }).fusion_id) ??
+            parseFusionId((entry as { id?: unknown }).id)
+          : parseFusionId(entry),
+      )
+      .filter((id): id is number => id !== null);
+  }
+
+  if (typeof value !== 'object') {
+    const parsed = parseFusionId(value);
+    return parsed === null ? [] : [parsed];
+  }
+
+  const record = value as Record<string, unknown>;
+  const explicit = parseFusionId(record.fusion_id) ?? parseFusionId(record.id);
+  const keyIds = Object.entries(record)
+    .filter(([, isSelected]) => isSelected !== false && isSelected !== null && isSelected !== undefined)
+    .map(([key]) => parseFusionId(key))
+    .filter((id): id is number => id !== null);
+
+  return explicit === null ? keyIds : [explicit, ...keyIds];
+}
+
+function isShinyRegistrationInstance(
+  variant: PokemonVariant,
+  instance: PokemonInstance,
+): boolean {
+  return Boolean(instance.shiny) || variant.variantType.toLowerCase().includes('shiny');
+}
+
+function isFusionVariantType(variantType: string): boolean {
+  return variantType.toLowerCase().includes('fusion');
+}
+
+function isMegaVariantType(variantType: string): boolean {
+  const normalized = variantType.toLowerCase();
+  return (
+    normalized === 'primal' ||
+    normalized === 'shiny_primal' ||
+    normalized.startsWith('mega') ||
+    normalized.startsWith('shiny_mega')
+  );
+}
+
+function resolveFusionIdForInstance(
+  variant: PokemonVariant,
+  instance: PokemonInstance,
+): number | null {
+  const entries = Array.isArray(variant.fusion) ? variant.fusion : [];
+  const directId = parseFusionId(instance.fusion_form);
+  if (directId !== null) return directId;
+
+  const normalizedFusionForm = normalizeToken(instance.fusion_form);
+  if (normalizedFusionForm) {
+    const byName = entries.find((entry) => normalizeToken(entry.name) === normalizedFusionForm);
+    if (typeof byName?.fusion_id === 'number') return byName.fusion_id;
+  }
+
+  const storedIds = parseFusionIdsFromStoredObject(instance.fusion);
+  for (const id of storedIds) {
+    if (entries.length === 0 || entries.some((entry) => entry.fusion_id === id)) return id;
+  }
+
+  if (entries.length === 1 && typeof entries[0].fusion_id === 'number') {
+    return entries[0].fusion_id;
+  }
+
+  return null;
+}
+
+function resolveFusionRegistrationVariant(
+  variants: PokemonVariant[],
+  variant: PokemonVariant,
+  instance: PokemonInstance,
+): PokemonVariant | null {
+  if (!instance.is_fused) return null;
+  if (isFusionVariantType(variant.variantType)) return variant;
+
+  const fusionId = resolveFusionIdForInstance(variant, instance);
+  if (fusionId === null) return null;
+
+  const wantsShiny = isShinyRegistrationInstance(variant, instance);
+  const preferredVariantType = `${wantsShiny ? 'shiny_' : ''}fusion_${fusionId}`;
+  const fallbackVariantType = `${wantsShiny ? '' : 'shiny_'}fusion_${fusionId}`;
+
+  return (
+    variants.find(
+      (candidate) =>
+        candidate.pokemon_id === variant.pokemon_id &&
+        candidate.variantType.toLowerCase() === preferredVariantType,
+    ) ??
+    variants.find(
+      (candidate) =>
+        candidate.pokemon_id === variant.pokemon_id &&
+        candidate.variantType.toLowerCase() === fallbackVariantType,
+    ) ??
+    null
+  );
+}
+
+function resolveMegaRegistrationVariant(
+  variants: PokemonVariant[],
+  variant: PokemonVariant,
+  instance: PokemonInstance,
+): PokemonVariant | null {
+  if (!instance.is_mega && !instance.mega) return null;
+  if (isMegaVariantType(variant.variantType)) return variant;
+
+  const candidates = variants.filter(
+    (candidate) =>
+      candidate.pokemon_id === variant.pokemon_id && isMegaVariantType(candidate.variantType),
+  );
+  if (candidates.length === 0) return null;
+
+  const requestedForm = normalizeToken(instance.mega_form);
+  const formMatches = requestedForm
+    ? candidates.filter((candidate) => normalizeToken(candidate.megaForm) === requestedForm)
+    : candidates.filter((candidate) => normalizeToken(candidate.megaForm) === '');
+  const scopedCandidates = formMatches.length > 0 ? formMatches : candidates;
+  const wantsShiny = isShinyRegistrationInstance(variant, instance);
+
+  return (
+    scopedCandidates.find((candidate) =>
+      wantsShiny
+        ? candidate.variantType.toLowerCase().startsWith('shiny_')
+        : !candidate.variantType.toLowerCase().startsWith('shiny_'),
+    ) ??
+    scopedCandidates[0] ??
+    null
+  );
+}
+
+interface ResolvedRegistrationVariant {
+  variant: PokemonVariant;
+  derived: boolean;
+}
+
+function getParentVariantTypes(variantType: string): string[] {
+  const normalized = variantType.toLowerCase();
+  const parents = new Set<string>();
+  const add = (parent: string) => {
+    if (parent !== normalized) parents.add(parent);
+  };
+
+  if (normalized === 'default') return [];
+
+  const shinyFusionMatch = normalized.match(/^shiny_fusion_(.+)$/);
+  if (shinyFusionMatch) {
+    add(`fusion_${shinyFusionMatch[1]}`);
+    add('shiny');
+    add('default');
+    return Array.from(parents);
+  }
+
+  if (normalized.startsWith('fusion_')) {
+    add('default');
+    return Array.from(parents);
+  }
+
+  const shinyMegaMatch = normalized.match(/^shiny_mega(.+)$/);
+  if (shinyMegaMatch) {
+    add(`mega${shinyMegaMatch[1]}`);
+    add('shiny');
+    add('default');
+    return Array.from(parents);
+  }
+
+  if (normalized.startsWith('mega')) {
+    add('default');
+    return Array.from(parents);
+  }
+
+  const shinyCostumeMatch = normalized.match(/^costume_(.+)_shiny$/);
+  if (shinyCostumeMatch) {
+    add(`costume_${shinyCostumeMatch[1]}`);
+    add('shiny');
+    add('default');
+    return Array.from(parents);
+  }
+
+  const shadowCostumeMatch = normalized.match(/^shadow_costume_(.+)$/);
+  if (shadowCostumeMatch) {
+    add(`costume_${shadowCostumeMatch[1]}`);
+    add('shadow');
+    add('default');
+    return Array.from(parents);
+  }
+
+  if (normalized.startsWith('costume_')) {
+    add('default');
+    return Array.from(parents);
+  }
+
+  if (normalized === 'shiny_shadow') {
+    add('shadow');
+    add('shiny');
+    add('default');
+    return Array.from(parents);
+  }
+
+  if (normalized === 'shiny_primal') {
+    add('primal');
+    add('shiny');
+    add('default');
+    return Array.from(parents);
+  }
+
+  if (normalized === 'shiny_dynamax') {
+    add('dynamax');
+    add('shiny');
+    add('default');
+    return Array.from(parents);
+  }
+
+  if (normalized === 'shiny_gigantamax') {
+    add('gigantamax');
+    add('shiny');
+    add('default');
+    return Array.from(parents);
+  }
+
+  if (normalized === 'shiny') {
+    add('default');
+    return Array.from(parents);
+  }
+
+  if (
+    normalized === 'shadow' ||
+    normalized === 'primal' ||
+    normalized === 'dynamax' ||
+    normalized === 'gigantamax'
+  ) {
+    add('default');
+  }
+
+  return Array.from(parents);
+}
+
+function findRelatedVariantByType(
+  variants: PokemonVariant[],
+  variant: PokemonVariant,
+  variantType: string,
+): PokemonVariant | null {
+  const candidates = variants.filter(
+    (candidate) =>
+      candidate.pokemon_id === variant.pokemon_id &&
+      candidate.variantType.toLowerCase() === variantType,
+  );
+
+  if (candidates.length === 0) return null;
+
+  const normalizedForm = normalizeToken(variant.form);
+  if (normalizedForm) {
+    const formMatch = candidates.find(
+      (candidate) => normalizeToken(candidate.form) === normalizedForm,
+    );
+    if (formMatch) return formMatch;
+  }
+
+  return candidates[0] ?? null;
+}
+
+function collectParentRegistrationVariants(
+  variants: PokemonVariant[],
+  variant: PokemonVariant,
+): ResolvedRegistrationVariant[] {
+  return getParentVariantTypes(variant.variantType)
+    .map((variantType) => findRelatedVariantByType(variants, variant, variantType))
+    .filter((parent): parent is PokemonVariant => parent !== null)
+    .map((parent) => ({ variant: parent, derived: true }));
+}
+
+function createDerivedManualRegistration(
+  parentVariant: PokemonVariant,
+  entry: PokedexRegistrationEntry,
+): PokedexRegistrationEntry {
+  const remainingFacets = { ...entry.facets };
+  delete remainingFacets.variant;
+
+  return createRegistrationEntry({
+    variant: parentVariant,
+    facets: { variant: parentVariant.variantType, ...remainingFacets },
+    isRegistered: entry.is_registered,
+    registeredAt: entry.registered_at,
+    source: 'manual',
+    sourceInstanceId: null,
+    level: 'derived',
+  });
+}
+
+function projectManualRegistrationParents(
+  variants: PokemonVariant[],
+  entry: PokedexRegistrationEntry,
+): PokedexRegistrationEntry[] {
+  const variant =
+    variants.find((candidate) => candidate.variant_id === entry.base_variant_id) ??
+    variants.find(
+      (candidate) =>
+        candidate.pokemon_id === entry.pokemon_id &&
+        candidate.variantType.toLowerCase() === entry.variant_type.toLowerCase(),
+    );
+
+  if (!variant) return [];
+
+  return collectParentRegistrationVariants(variants, variant).map((parentVariant) =>
+    createDerivedManualRegistration(parentVariant.variant, entry),
+  );
+}
+
+function addResolvedVariant(
+  resolved: Map<string, ResolvedRegistrationVariant>,
+  variant: PokemonVariant,
+  derived: boolean,
+) {
+  const current = resolved.get(variant.variant_id);
+  if (!current || (current.derived && !derived)) {
+    resolved.set(variant.variant_id, { variant, derived });
+  }
+}
+
+function resolveRegistrationVariantsForInstance(
+  variants: PokemonVariant[],
+  variant: PokemonVariant,
+  instance: PokemonInstance,
+): ResolvedRegistrationVariant[] {
+  const resolved = new Map<string, ResolvedRegistrationVariant>();
+  addResolvedVariant(resolved, variant, false);
+
+  const specialVariant =
+    resolveFusionRegistrationVariant(variants, variant, instance) ??
+    resolveMegaRegistrationVariant(variants, variant, instance);
+
+  if (specialVariant) {
+    addResolvedVariant(resolved, specialVariant, false);
+  }
+
+  for (const directVariant of Array.from(resolved.values())) {
+    for (const parentVariant of collectParentRegistrationVariants(
+      variants,
+      directVariant.variant,
+    )) {
+      addResolvedVariant(resolved, parentVariant.variant, true);
+    }
+  }
+
+  return Array.from(resolved.values());
 }
 
 function classifyAgainstThresholds(
@@ -279,6 +668,13 @@ function mergeRegistrationEntries(
   const isRegistered = current.is_registered || next.is_registered;
   const currentIsRegistered = current.is_registered;
   const nextIsRegistered = next.is_registered;
+  const sourcePriority: Record<PokedexRegistrationSource, number> = {
+    catalog: 0,
+    manual: 1,
+    instance: 2,
+  };
+  const authoritative =
+    sourcePriority[next.source] > sourcePriority[current.source] ? next : current;
 
   return {
     ...current,
@@ -289,7 +685,7 @@ function mergeRegistrationEntries(
         : nextIsRegistered
         ? next.registered_at
         : current.registered_at,
-    source: current.source === 'instance' || next.source === 'instance' ? 'instance' : 'catalog',
+    source: authoritative.source,
     source_instance_id:
       current.source_instance_id ?? next.source_instance_id ?? null,
     level: current.level === 'base' ? next.level : current.level,
@@ -299,6 +695,7 @@ function mergeRegistrationEntries(
 export function projectPokedexRegistrations(
   variants: PokemonVariant[],
   instances: Instances = {},
+  manualRegistrations: PokedexRegistrationEntry[] = [],
 ): PokedexRegistrationEntry[] {
   const byId = new Map<string, PokedexRegistrationEntry>();
   const variantById = new Map(variants.map((variant) => [variant.variant_id, variant]));
@@ -308,17 +705,39 @@ export function projectPokedexRegistrations(
     byId.set(entry.registration_id, entry);
   }
 
+  for (const entry of manualRegistrations) {
+    for (const projectedEntry of [
+      entry,
+      ...projectManualRegistrationParents(variants, entry),
+    ]) {
+      const current = byId.get(projectedEntry.registration_id);
+      byId.set(
+        projectedEntry.registration_id,
+        current ? mergeRegistrationEntries(current, projectedEntry) : projectedEntry,
+      );
+    }
+  }
+
   for (const instance of Object.values(instances)) {
     if (!instance) continue;
     const variant = variantById.get(instance.variant_id);
     if (!variant) continue;
 
-    for (const entry of projectInstanceRegistrations(variant, instance)) {
-      const current = byId.get(entry.registration_id);
-      byId.set(
-        entry.registration_id,
-        current ? mergeRegistrationEntries(current, entry) : entry,
-      );
+    for (const registrationVariant of resolveRegistrationVariantsForInstance(
+      variants,
+      variant,
+      instance,
+    )) {
+      for (const entry of projectInstanceRegistrations(registrationVariant.variant, instance)) {
+        const projectedEntry = registrationVariant.derived
+          ? ({ ...entry, level: 'derived' } satisfies PokedexRegistrationEntry)
+          : entry;
+        const current = byId.get(projectedEntry.registration_id);
+        byId.set(
+          projectedEntry.registration_id,
+          current ? mergeRegistrationEntries(current, projectedEntry) : projectedEntry,
+        );
+      }
     }
   }
 

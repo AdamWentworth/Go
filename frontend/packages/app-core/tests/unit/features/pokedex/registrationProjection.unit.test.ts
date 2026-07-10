@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import {
   buildPokedexRegistrationId,
+  createManualPokedexRegistration,
   deriveAppraisalFacet,
   deriveInstanceSizeClass,
   projectCatalogRegistration,
@@ -116,6 +117,105 @@ function makeInstance(overrides: Partial<PokemonInstance> = {}): PokemonInstance
     last_update: 12345,
     ...overrides,
   } as PokemonInstance;
+}
+
+function makeKyuremFusionVariants() {
+  const kyurem = makeVariant({
+    pokemon_id: 646,
+    pokedex_number: 646,
+    variant_id: '0646-default',
+    name: 'Kyurem',
+    species_name: 'Kyurem',
+    fusion: [
+      {
+        fusion_id: 3,
+        name: 'White Kyurem',
+        base_pokemon_id1: 646,
+        base_pokemon_id2: 643,
+        date_available: '2025-02-21',
+        image_url: '/images/fusion/fusion_3.png',
+        image_url_shiny: '/images/shiny_fusion/shiny_fusion_3.png',
+        type_1_id: 16,
+        type_2_id: 15,
+        type1_name: 'Dragon',
+        type2_name: 'Ice',
+      },
+      {
+        fusion_id: 4,
+        name: 'Black Kyurem',
+        base_pokemon_id1: 646,
+        base_pokemon_id2: 644,
+        date_available: '2025-02-21',
+        image_url: '/images/fusion/fusion_4.png',
+        image_url_shiny: '/images/shiny_fusion/shiny_fusion_4.png',
+        type_1_id: 16,
+        type_2_id: 15,
+        type1_name: 'Dragon',
+        type2_name: 'Ice',
+      },
+    ],
+  });
+  const shinyKyurem = makeVariant({
+    ...kyurem,
+    variant_id: '0646-shiny',
+    variantType: 'shiny',
+    currentImage: '/images/shiny/shiny_pokemon_646.png',
+    image_url: '/images/shiny/shiny_pokemon_646.png',
+    species_name: 'Shiny Kyurem',
+  });
+  const whiteKyurem = makeVariant({
+    ...kyurem,
+    variant_id: '0646-fusion_3',
+    variantType: 'fusion_3',
+    fusion_id: 3,
+    currentImage: '/images/fusion/fusion_3.png',
+    image_url: '/images/fusion/fusion_3.png',
+    species_name: 'White Kyurem',
+  });
+  const blackKyurem = makeVariant({
+    ...kyurem,
+    variant_id: '0646-fusion_4',
+    variantType: 'fusion_4',
+    fusion_id: 4,
+    currentImage: '/images/fusion/fusion_4.png',
+    image_url: '/images/fusion/fusion_4.png',
+    species_name: 'Black Kyurem',
+  });
+  const shinyWhiteKyurem = makeVariant({
+    ...kyurem,
+    variant_id: '0646-shiny_fusion_3',
+    variantType: 'shiny_fusion_3',
+    fusion_id: 3,
+    currentImage: '/images/shiny_fusion/shiny_fusion_3.png',
+    image_url: '/images/shiny_fusion/shiny_fusion_3.png',
+    species_name: 'White Kyurem',
+  });
+  const shinyBlackKyurem = makeVariant({
+    ...kyurem,
+    variant_id: '0646-shiny_fusion_4',
+    variantType: 'shiny_fusion_4',
+    fusion_id: 4,
+    currentImage: '/images/shiny_fusion/shiny_fusion_4.png',
+    image_url: '/images/shiny_fusion/shiny_fusion_4.png',
+    species_name: 'Black Kyurem',
+  });
+
+  return {
+    kyurem,
+    shinyKyurem,
+    whiteKyurem,
+    blackKyurem,
+    shinyWhiteKyurem,
+    shinyBlackKyurem,
+    variants: [
+      kyurem,
+      shinyKyurem,
+      whiteKyurem,
+      blackKyurem,
+      shinyWhiteKyurem,
+      shinyBlackKyurem,
+    ],
+  };
 }
 
 describe('pokedex registration projection', () => {
@@ -233,6 +333,244 @@ describe('pokedex registration projection', () => {
       is_registered: true,
       source: 'instance',
       source_instance_id: 'instance-1',
+      level: 'exact',
+    });
+  });
+
+  it('projects fused caught instances onto the selected fusion variant registration', () => {
+    const kyurem = makeVariant({
+      pokemon_id: 646,
+      pokedex_number: 646,
+      variant_id: '0646-default',
+      name: 'Kyurem',
+      species_name: 'Kyurem',
+      fusion: [
+        {
+          fusion_id: 3,
+          name: 'White Kyurem',
+          base_pokemon_id1: 646,
+          base_pokemon_id2: 643,
+          date_available: '2025-02-21',
+          image_url: '/images/fusion/fusion_3.png',
+          image_url_shiny: '/images/shiny_fusion/shiny_fusion_3.png',
+          type_1_id: 16,
+          type_2_id: 15,
+          type1_name: 'Dragon',
+          type2_name: 'Ice',
+        },
+        {
+          fusion_id: 4,
+          name: 'Black Kyurem',
+          base_pokemon_id1: 646,
+          base_pokemon_id2: 644,
+          date_available: '2025-02-21',
+          image_url: '/images/fusion/fusion_4.png',
+          image_url_shiny: '/images/shiny_fusion/shiny_fusion_4.png',
+          type_1_id: 16,
+          type_2_id: 15,
+          type1_name: 'Dragon',
+          type2_name: 'Ice',
+        },
+      ],
+    });
+    const whiteKyurem = makeVariant({
+      ...kyurem,
+      variant_id: '0646-fusion_3',
+      variantType: 'fusion_3',
+      fusion_id: 3,
+      currentImage: '/images/fusion/fusion_3.png',
+      image_url: '/images/fusion/fusion_3.png',
+      species_name: 'White Kyurem',
+    });
+    const blackKyurem = makeVariant({
+      ...kyurem,
+      variant_id: '0646-fusion_4',
+      variantType: 'fusion_4',
+      fusion_id: 4,
+      currentImage: '/images/fusion/fusion_4.png',
+      image_url: '/images/fusion/fusion_4.png',
+      species_name: 'Black Kyurem',
+    });
+
+    const entries = projectPokedexRegistrations(
+      [kyurem, whiteKyurem, blackKyurem],
+      {
+        'instance-kyurem': makeInstance({
+          instance_id: 'instance-kyurem',
+          pokemon_id: 646,
+          variant_id: '0646-default',
+          is_caught: true,
+          is_fused: true,
+          fusion_form: 'Black Kyurem',
+          fusion: { 4: true },
+          attack_iv: null,
+          defense_iv: null,
+          stamina_iv: null,
+        }),
+      },
+    );
+    const byId = new Map(entries.map((entry) => [entry.registration_id, entry]));
+
+    expect(byId.get('species:646|form:normal|variant:default')?.is_registered).toBe(true);
+    expect(byId.get('species:646|form:normal|variant:fusion-3')?.is_registered).toBe(false);
+    expect(byId.get('species:646|form:normal|variant:fusion-4')).toMatchObject({
+      is_registered: true,
+      source: 'instance',
+      source_instance_id: 'instance-kyurem',
+      level: 'exact',
+    });
+  });
+
+  it('derives regular fusion registrations from shiny fused caught instances', () => {
+    const { variants } = makeKyuremFusionVariants();
+    const entries = projectPokedexRegistrations(
+      variants,
+      {
+        'instance-kyurem': makeInstance({
+          instance_id: 'instance-kyurem',
+          pokemon_id: 646,
+          variant_id: '0646-default',
+          shiny: true,
+          is_caught: true,
+          is_fused: true,
+          fusion_form: 'Black Kyurem',
+          fusion: { 4: true },
+          attack_iv: null,
+          defense_iv: null,
+          stamina_iv: null,
+        }),
+      },
+    );
+    const byId = new Map(entries.map((entry) => [entry.registration_id, entry]));
+
+    expect(byId.get('species:646|form:normal|variant:default')?.is_registered).toBe(true);
+    expect(byId.get('species:646|form:normal|variant:shiny')).toMatchObject({
+      is_registered: true,
+      source: 'instance',
+      source_instance_id: 'instance-kyurem',
+      level: 'derived',
+    });
+    expect(byId.get('species:646|form:normal|variant:fusion-4')).toMatchObject({
+      is_registered: true,
+      source: 'instance',
+      source_instance_id: 'instance-kyurem',
+      level: 'derived',
+    });
+    expect(byId.get('species:646|form:normal|variant:shiny-fusion-4')).toMatchObject({
+      is_registered: true,
+      source: 'instance',
+      source_instance_id: 'instance-kyurem',
+      level: 'exact',
+    });
+    expect(byId.get('species:646|form:normal|variant:fusion-3')?.is_registered).toBe(false);
+    expect(byId.get('species:646|form:normal|variant:shiny-fusion-3')?.is_registered).toBe(false);
+  });
+
+  it('derives regular fusion registrations from manual shiny fusion registrations', () => {
+    const { variants, shinyBlackKyurem } = makeKyuremFusionVariants();
+    const entries = projectPokedexRegistrations(
+      variants,
+      {},
+      [createManualPokedexRegistration(shinyBlackKyurem, {}, '2026-07-09T12:00:00.000Z')],
+    );
+    const byId = new Map(entries.map((entry) => [entry.registration_id, entry]));
+
+    expect(byId.get('species:646|form:normal|variant:shiny-fusion-4')).toMatchObject({
+      is_registered: true,
+      source: 'manual',
+      level: 'exact',
+    });
+    expect(byId.get('species:646|form:normal|variant:fusion-4')).toMatchObject({
+      is_registered: true,
+      source: 'manual',
+      level: 'derived',
+    });
+    expect(byId.get('species:646|form:normal|variant:shiny')).toMatchObject({
+      is_registered: true,
+      source: 'manual',
+      level: 'derived',
+    });
+    expect(byId.get('species:646|form:normal|variant:default')).toMatchObject({
+      is_registered: true,
+      source: 'manual',
+      level: 'derived',
+    });
+    expect(byId.get('species:646|form:normal|variant:fusion-3')?.is_registered).toBe(false);
+  });
+
+  it('projects mega caught instances onto the selected mega form registration', () => {
+    const charizard = makeVariant({
+      pokemon_id: 6,
+      pokedex_number: 6,
+      variant_id: '0006-shiny',
+      variantType: 'shiny',
+      name: 'Charizard',
+      species_name: 'Charizard',
+      currentImage: '/images/shiny/shiny_pokemon_6.png',
+      image_url: '/images/shiny/shiny_pokemon_6.png',
+    });
+    const megaX = makeVariant({
+      ...charizard,
+      variant_id: '0006-shiny_mega_x',
+      variantType: 'shiny_mega_x',
+      megaForm: 'X',
+      currentImage: '/images/mega/shiny_mega_charizard_x.png',
+      image_url: '/images/mega/shiny_mega_charizard_x.png',
+    });
+    const megaY = makeVariant({
+      ...charizard,
+      variant_id: '0006-shiny_mega_y',
+      variantType: 'shiny_mega_y',
+      megaForm: 'Y',
+      currentImage: '/images/mega/shiny_mega_charizard_y.png',
+      image_url: '/images/mega/shiny_mega_charizard_y.png',
+    });
+
+    const entries = projectPokedexRegistrations(
+      [charizard, megaX, megaY],
+      {
+        'instance-charizard': makeInstance({
+          instance_id: 'instance-charizard',
+          pokemon_id: 6,
+          variant_id: '0006-shiny',
+          shiny: true,
+          is_caught: true,
+          mega: true,
+          is_mega: true,
+          mega_form: 'Y',
+          attack_iv: null,
+          defense_iv: null,
+          stamina_iv: null,
+        }),
+      },
+    );
+    const byId = new Map(entries.map((entry) => [entry.registration_id, entry]));
+
+    expect(byId.get('species:6|form:normal|variant:shiny')?.is_registered).toBe(true);
+    expect(byId.get('species:6|form:normal|variant:shiny-mega-x')?.is_registered).toBe(false);
+    expect(byId.get('species:6|form:normal|variant:shiny-mega-y')).toMatchObject({
+      is_registered: true,
+      source: 'instance',
+      source_instance_id: 'instance-charizard',
+      level: 'exact',
+    });
+  });
+
+  it('merges manual registrations into the projected Pokedex view', () => {
+    const variant = makeVariant();
+    const manualEntry = createManualPokedexRegistration(
+      variant,
+      { size: 'xxl', appraisal: '4-star' },
+      '2026-07-09T12:00:00.000Z',
+    );
+    const entries = projectPokedexRegistrations([variant], {}, [manualEntry]);
+    const byId = new Map(entries.map((entry) => [entry.registration_id, entry]));
+
+    expect(byId.get('species:1|form:normal|variant:default')?.source).toBe('catalog');
+    expect(byId.get('species:1|form:normal|variant:default|size:xxl|appraisal:4-star')).toMatchObject({
+      is_registered: true,
+      registered_at: '2026-07-09T12:00:00.000Z',
+      source: 'manual',
       level: 'exact',
     });
   });
