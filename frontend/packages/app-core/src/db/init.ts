@@ -13,7 +13,7 @@ import {
   REGISTRATIONS_DB_NAME,
   VARIANTS_STORE, INSTANCES_STORE,
   POKEMON_TRADES_STORE, RELATED_INSTANCES_STORE,
-  REGISTRATIONS_STORE,
+  REGISTRATIONS_STORE, MANUAL_POKEDEX_REGISTRATIONS_STORE,
   BATCHED_POKEMON_UPDATES_STORE, BATCHED_TRADE_UPDATES_STORE,
   POKEDEX_STORES,
   TAG_DEFS_STORE, INSTANCE_TAGS_STORE,
@@ -155,5 +155,8 @@ export const initPokedexDB = makeInit(POKEDEX_DB_NAME, (db) => {
 export const initRegistrationsDB = makeInit(REGISTRATIONS_DB_NAME, (db) => {
   if (!db.objectStoreNames.contains(REGISTRATIONS_STORE)) {
     db.createObjectStore(REGISTRATIONS_STORE, { keyPath: 'variant_id' });
+  }
+  if (!db.objectStoreNames.contains(MANUAL_POKEDEX_REGISTRATIONS_STORE)) {
+    db.createObjectStore(MANUAL_POKEDEX_REGISTRATIONS_STORE, { keyPath: 'registration_id' });
   }
 });

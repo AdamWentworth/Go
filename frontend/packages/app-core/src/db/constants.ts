@@ -11,7 +11,7 @@ export const POKEDEX_DB_NAME       = 'pokedexDB';
 export const REGISTRATIONS_DB_NAME = 'registrationsDB';
 
 /** bump for object store/index changes */
-export const DB_VERSION = 2;
+export const DB_VERSION = 3;
 
 /* Stores */
 export const VARIANTS_STORE  = 'variants';
@@ -25,6 +25,7 @@ export const SYSTEM_CHILDREN_STORE = 'systemChildren'; // lean snapshot of compu
 export const POKEMON_TRADES_STORE     = 'trades';
 export const RELATED_INSTANCES_STORE  = 'relatedInstances';
 export const REGISTRATIONS_STORE      = 'registrations';
+export const MANUAL_POKEDEX_REGISTRATIONS_STORE = 'manualPokedexRegistrations';
 
 /* Batched updates */
 export const BATCHED_POKEMON_UPDATES_STORE = 'batchedPokemonUpdates';
