@@ -1,5 +1,6 @@
 import { useState } from 'react';
 
+import { POKEMON_TRADES_STORE } from '@/db/constants';
 import { getAllInstances } from '@/db/instancesDB';
 import { getAllFromTradesDB } from '@/db/tradesDB';
 import type { Instances } from '@/types/instances';
@@ -38,7 +39,7 @@ interface UseTradeProposalFlowResult {
   closeTradeSelectionModal: () => void;
 }
 
-const defaultFetchTrades = async (): Promise<unknown[]> => getAllFromTradesDB('pokemonTrades');
+const defaultFetchTrades = async (): Promise<unknown[]> => getAllFromTradesDB(POKEMON_TRADES_STORE);
 
 const useTradeProposalFlow = ({
   selectedPokemon,

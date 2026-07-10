@@ -32,6 +32,8 @@ import {
   clearInstancesStore,
   clearTradesStore,
   clearAllTagsDB,
+  POKEMON_TRADES_STORE,
+  RELATED_INSTANCES_STORE,
 } from '../db/indexedDB';
 import type { User } from '../types/auth';
 import type { ApiResponse } from '../types/common';
@@ -99,8 +101,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     try {
       await clearInstancesStore();
       await clearAllTagsDB();
-      await clearTradesStore('pokemonTrades');
-      await clearTradesStore('relatedInstances');
+      await clearTradesStore(POKEMON_TRADES_STORE);
+      await clearTradesStore(RELATED_INSTANCES_STORE);
     } catch (err) {
       log.error('Error clearing IndexedDB data:', err);
     }

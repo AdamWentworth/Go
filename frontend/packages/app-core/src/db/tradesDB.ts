@@ -5,6 +5,22 @@ import { POKEMON_TRADES_STORE } from './constants';
 import { createScopedLogger } from '@/utils/logger';
 
 const log = createScopedLogger('tradesDB');
+const LEGACY_POKEMON_TRADES_STORE = 'pokemonTrades';
+
+function normalizeTradesStoreName(storeName: string): string {
+  if (storeName === LEGACY_POKEMON_TRADES_STORE) {
+    return POKEMON_TRADES_STORE;
+  }
+
+  return storeName;
+}
+
+function hasTradesStore(
+  db: Awaited<ReturnType<typeof initTradesDB>>,
+  storeName: string,
+): boolean {
+  return Boolean(db?.objectStoreNames.contains(storeName));
+}
 
 // Define the structure of a trade entry
 export interface TradeEntry {
@@ -44,18 +60,24 @@ export async function getAllFromTradesDB<T extends Record<string, unknown> = Tra
     return [];
   }
 
-  const tx = db.transaction(storeName, 'readonly');
-  const store = tx.objectStore(storeName);
+  const normalizedStoreName = normalizeTradesStoreName(storeName);
+  if (!hasTradesStore(db, normalizedStoreName)) {
+    log.warn(`TradesDB store '${normalizedStoreName}' is not available; returning empty data.`);
+    return [];
+  }
+
+  const tx = db.transaction(normalizedStoreName, 'readonly');
+  const store = tx.objectStore(normalizedStoreName);
   const allData = (await store.getAll()) as T[];
   await tx.done;
 
   try {
     const allDataSize: number = new Blob([JSON.stringify(allData)]).size;
     log.debug(
-      `getAllFromTradesDB: Retrieved ${allData.length} items from '${storeName}' (approx size: ${allDataSize} bytes)`
+      `getAllFromTradesDB: Retrieved ${allData.length} items from '${normalizedStoreName}' (approx size: ${allDataSize} bytes)`
     );
   } catch (err) {
-    log.debug(`Error measuring size in getAllFromTradesDB for store '${storeName}':`, err);
+    log.debug(`Error measuring size in getAllFromTradesDB for store '${normalizedStoreName}':`, err);
   }
 
   return allData;
@@ -71,17 +93,23 @@ export async function setTradesinDB<T extends Record<string, unknown>>(
     return;
   }
 
+  const normalizedStoreName = normalizeTradesStoreName(storeName);
+  if (!hasTradesStore(db, normalizedStoreName)) {
+    log.warn(`TradesDB store '${normalizedStoreName}' is not available; skipping write.`);
+    return;
+  }
+
   try {
     const totalDataSize: number = new Blob([JSON.stringify(dataArray)]).size;
     log.debug(
-      `setTradesinDB: Storing ${dataArray.length} items in '${storeName}', size: ${totalDataSize} bytes`
+      `setTradesinDB: Storing ${dataArray.length} items in '${normalizedStoreName}', size: ${totalDataSize} bytes`
     );
   } catch (err) {
     log.debug('Error measuring size in setTradesinDB:', err);
   }
 
-  const tx = db.transaction(storeName, 'readwrite');
-  const store = tx.objectStore(storeName);
+  const tx = db.transaction(normalizedStoreName, 'readwrite');
+  const store = tx.objectStore(normalizedStoreName);
   for (const data of dataArray) {
     store.put(data);
   }
@@ -92,8 +120,11 @@ export async function deleteFromTradesDB(storeName: string, key: string): Promis
   const db = await initTradesDB();
   if (!db) return;
 
-  const tx = db.transaction(storeName, 'readwrite');
-  const store = tx.objectStore(storeName);
+  const normalizedStoreName = normalizeTradesStoreName(storeName);
+  if (!hasTradesStore(db, normalizedStoreName)) return;
+
+  const tx = db.transaction(normalizedStoreName, 'readwrite');
+  const store = tx.objectStore(normalizedStoreName);
   await store.delete(key);
   await tx.done;
 }
@@ -102,5 +133,8 @@ export async function clearTradesStore(storeName: string): Promise<void> {
   const db = await initTradesDB();
   if (!db) return;
 
-  await db.clear(storeName);
+  const normalizedStoreName = normalizeTradesStoreName(storeName);
+  if (!hasTradesStore(db, normalizedStoreName)) return;
+
+  await db.clear(normalizedStoreName);
 }
