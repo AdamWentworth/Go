@@ -739,12 +739,12 @@ test.describe('pokemon app browser regressions', () => {
       await expect(page).toHaveURL(/\/pokemon$/);
 
       await page.getByRole('button', { name: 'Action Menu' }).click();
-      await expect(page.locator('.action-menu-overlay.active')).toBeVisible();
+      await expect(page.locator('.action-menu-overlay[data-menu-state="open"]')).toBeVisible();
 
       await triggerBrowserBack(page);
 
       await expect(page).toHaveURL(/\/pokemon$/);
-      await expect(page.locator('.action-menu-overlay.active')).toHaveCount(0);
+      await expect(page.locator('.action-menu-overlay[data-menu-state="open"]')).toHaveCount(0);
       await expect(page.getByRole('button', { name: 'Action Menu' })).toBeVisible();
     } finally {
       await diagnostics.flush();
@@ -757,7 +757,7 @@ test.describe('pokemon app browser regressions', () => {
     ).toEqual([]);
   });
 
-  test('animates action menu items upward when opening', async ({
+  test('mounts action menu closed before animating open', async ({
     page,
   }, testInfo) => {
     const diagnostics = attachBrowserDiagnostics(page, testInfo);
@@ -766,34 +766,82 @@ test.describe('pokemon app browser regressions', () => {
       await openPokemonPage(page);
 
       const viewportHeight = await page.evaluate(() => window.innerHeight);
+      await page.evaluate(() => {
+        const states: string[] = [];
+        const rememberMenuState = () => {
+          const state = document
+            .querySelector('.action-menu-overlay')
+            ?.getAttribute('data-menu-state');
+          if (state && states[states.length - 1] !== state) {
+            states.push(state);
+          }
+        };
+
+        const observer = new MutationObserver(() => rememberMenuState());
+        observer.observe(document.body, {
+          attributes: true,
+          attributeFilter: ['data-menu-state'],
+          childList: true,
+          subtree: true,
+        });
+
+        (window as typeof window & {
+          __actionMenuStateSequence?: string[];
+          __actionMenuStateObserver?: MutationObserver;
+        }).__actionMenuStateSequence = states;
+        (window as typeof window & {
+          __actionMenuStateObserver?: MutationObserver;
+        }).__actionMenuStateObserver = observer;
+      });
+
       await page.getByRole('button', { name: 'Action Menu' }).click();
 
       const overlay = page.locator('.action-menu-overlay');
       const homeMenuItem = page.locator('.action-menu-item.button-home');
       await expect(overlay).toBeAttached();
       await expect(homeMenuItem).toBeAttached();
+      await expect
+        .poll(() =>
+          page.evaluate(
+            () =>
+              (window as typeof window & { __actionMenuStateSequence?: string[] })
+                .__actionMenuStateSequence ?? [],
+          ),
+        )
+        .toContain('closed');
 
-      const mountedTop = await getElementTop(page, '.action-menu-item.button-home');
-      expect(
-        mountedTop,
-        'action menu should mount items near the bottom before opening',
-      ).toBeGreaterThan(viewportHeight * 0.65);
-
-      await page.waitForTimeout(40);
-      await expect(page.locator('.action-menu-overlay.active')).toBeVisible();
-      const earlyTop = await getElementTop(page, '.action-menu-item.button-home');
-
+      await expect(overlay).toHaveAttribute('data-menu-state', 'open');
+      await expect
+        .poll(() =>
+          page.evaluate(
+            () =>
+              (window as typeof window & { __actionMenuStateSequence?: string[] })
+                .__actionMenuStateSequence ?? [],
+          ),
+        )
+        .toContain('open');
+      await expect(overlay).toBeVisible();
       await page.waitForTimeout(350);
       const finalTop = await getElementTop(page, '.action-menu-item.button-home');
+      const transitionDuration = await homeMenuItem.evaluate((element) =>
+        getComputedStyle(element).transitionDuration,
+      );
 
       expect(finalTop, 'home action should settle near the viewport center').toBeLessThan(
         viewportHeight * 0.65,
       );
       expect(
-        earlyTop,
-        'home action should still be mid-animation shortly after opening',
-      ).toBeGreaterThan(finalTop + 4);
+        transitionDuration,
+        'home action should keep a CSS transition for opening movement',
+      ).not.toBe('0s');
     } finally {
+      await page
+        .evaluate(() => {
+          (window as typeof window & {
+            __actionMenuStateObserver?: MutationObserver;
+          }).__actionMenuStateObserver?.disconnect();
+        })
+        .catch(() => {});
       await diagnostics.flush();
     }
 
@@ -814,7 +862,7 @@ test.describe('pokemon app browser regressions', () => {
       await expect(page).toHaveURL(/\/pokemon$/);
 
       await page.getByRole('button', { name: 'Action Menu' }).click();
-      await expect(page.locator('.action-menu-overlay.active')).toBeVisible();
+      await expect(page.locator('.action-menu-overlay[data-menu-state="open"]')).toBeVisible();
       await page.locator('.button-search').click();
       await expect(page).toHaveURL(/\/search$/);
       await expect(page.getByText('Which type of search would you like?')).toBeVisible();

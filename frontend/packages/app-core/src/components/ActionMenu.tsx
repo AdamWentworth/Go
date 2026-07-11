@@ -13,9 +13,10 @@ import './ActionMenu.css';
 
 const ActionMenu: React.FC = () => {
   const MENU_TRANSITION_MS = 300;
+  const MENU_OPEN_DELAY_MS = 75;
   const [isOpen, setIsOpen] = useState(false);
   const [isVisible, setIsVisible] = useState(false);
-  const openingAnimationFrameRef = useRef<number | null>(null);
+  const openingAnimationTimeoutRef = useRef<number | null>(null);
   const navigate = useNavigate();
   const location = useLocation();
   const { alert } = useModal();
@@ -23,9 +24,9 @@ const ActionMenu: React.FC = () => {
   useTheme();
 
   const cancelPendingOpenAnimation = useCallback(() => {
-    if (openingAnimationFrameRef.current === null) return;
-    window.cancelAnimationFrame(openingAnimationFrameRef.current);
-    openingAnimationFrameRef.current = null;
+    if (openingAnimationTimeoutRef.current === null) return;
+    window.clearTimeout(openingAnimationTimeoutRef.current);
+    openingAnimationTimeoutRef.current = null;
   }, []);
 
   useEffect(() => {
@@ -48,12 +49,10 @@ const ActionMenu: React.FC = () => {
     cancelPendingOpenAnimation();
     setIsVisible(true);
 
-    openingAnimationFrameRef.current = window.requestAnimationFrame(() => {
-      openingAnimationFrameRef.current = window.requestAnimationFrame(() => {
-        openingAnimationFrameRef.current = null;
-        setIsOpen(true);
-      });
-    });
+    openingAnimationTimeoutRef.current = window.setTimeout(() => {
+      openingAnimationTimeoutRef.current = null;
+      setIsOpen(true);
+    }, MENU_OPEN_DELAY_MS);
   }, [cancelPendingOpenAnimation]);
 
   const closeMenu = useCallback(() => {
