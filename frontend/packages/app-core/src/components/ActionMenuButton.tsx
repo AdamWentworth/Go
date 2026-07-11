@@ -13,6 +13,7 @@ const ActionMenuButton: React.FC<ActionMenuButtonProps> = ({ onClick, style = {}
     <button 
       className="action-menu-button" 
       type="button" 
+      aria-label="Action Menu"
       onClick={onClick} 
       style={style}
     >
@@ -26,4 +27,3 @@ const ActionMenuButton: React.FC<ActionMenuButtonProps> = ({ onClick, style = {}
 };
 
 export default ActionMenuButton;
-

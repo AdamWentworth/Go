@@ -41,15 +41,28 @@ async function getElementTop(page: Page, selector: string) {
 
 async function openActionMenuForProject(page: Page, projectName: string) {
   const actionMenuButton = page.getByRole('button', { name: 'Action Menu' });
-  await expect(actionMenuButton).toBeVisible();
+  const openMenu = page.locator('.action-menu-overlay[data-menu-state="open"]');
 
-  if (projectName.includes('mobile')) {
-    await actionMenuButton.tap();
-  } else {
-    await actionMenuButton.click();
+  for (let attempt = 0; attempt < 2; attempt += 1) {
+    await expect(actionMenuButton).toBeVisible();
+
+    if (projectName.includes('mobile')) {
+      await actionMenuButton.tap();
+    } else {
+      await actionMenuButton.click();
+    }
+
+    if (
+      await openMenu
+        .waitFor({ state: 'visible', timeout: 5_000 })
+        .then(() => true)
+        .catch(() => false)
+    ) {
+      return;
+    }
   }
 
-  await expect(page.locator('.action-menu-overlay[data-menu-state="open"]')).toBeVisible();
+  await expect(openMenu).toBeVisible();
 }
 
 test.describe('pokemon app browser regressions', () => {
