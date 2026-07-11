@@ -35,9 +35,7 @@ const ActionMenu: React.FC = () => {
 
   const openMenu = useCallback(() => {
     setIsVisible(true);
-    window.requestAnimationFrame(() => {
-      setIsOpen(true);
-    });
+    setIsOpen(true);
   }, []);
 
   const closeMenu = useCallback(() => {
