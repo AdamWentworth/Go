@@ -6,23 +6,29 @@
   left: 50%;
   transform: translateX(-50%);
   z-index: 50;
+  display: flex;
+  width: clamp(50px, 12vw, 80px);
+  height: clamp(50px, 12vw, 80px);
+  align-items: center;
+  justify-content: center;
   background: transparent;
   border: none;
+  padding: 0;
   cursor: pointer;
   overflow: hidden;
 }
 
 .action-menu-button-image {
   /* Small screens */
-  width: clamp(50px, 12vw, 80px);
-  height: clamp(50px, 12vw, 80px);
+  width: 100%;
+  height: 100%;
   transition: transform 0.2s;
   filter: drop-shadow(0 0 3px #ffffff);
 }
 
 /* Medium screens */
 @media (min-width: 481px) and (max-width: 767px) {
-  .action-menu-button-image {
+  .action-menu-button {
     width: clamp(60px, 10vw, 90px);
     height: clamp(60px, 10vw, 90px);
   }
@@ -30,7 +36,7 @@
 
 /* Wider screens */
 @media (min-width: 768px) {
-  .action-menu-button-image {
+  .action-menu-button {
     width: clamp(60px, 3.5vw, 80px);
     height: clamp(60px, 3.5vw, 80px);
   }
