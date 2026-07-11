@@ -40,7 +40,7 @@ async function getElementTop(page: Page, selector: string) {
 }
 
 async function openActionMenuForProject(page: Page, projectName: string) {
-  const actionMenuButton = page.getByRole('button', { name: 'Action Menu' });
+  const actionMenuButton = page.locator('.action-menu-button');
   const openMenu = page.locator('.action-menu-overlay[data-menu-state="open"]');
 
   for (let attempt = 0; attempt < 2; attempt += 1) {
