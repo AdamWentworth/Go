@@ -39,6 +39,19 @@ async function getElementTop(page: Page, selector: string) {
   return page.locator(selector).evaluate((element) => element.getBoundingClientRect().top);
 }
 
+async function openActionMenuForProject(page: Page, projectName: string) {
+  const actionMenuButton = page.getByRole('button', { name: 'Action Menu' });
+  await expect(actionMenuButton).toBeVisible();
+
+  if (projectName.includes('mobile')) {
+    await actionMenuButton.tap();
+  } else {
+    await actionMenuButton.click();
+  }
+
+  await expect(page.locator('.action-menu-overlay[data-menu-state="open"]')).toBeVisible();
+}
+
 test.describe('pokemon app browser regressions', () => {
   test('loads theme loading spinner WebM assets from shared media in every browser project', async ({
     page,
@@ -738,8 +751,7 @@ test.describe('pokemon app browser regressions', () => {
       await openPokemonPage(page);
       await expect(page).toHaveURL(/\/pokemon$/);
 
-      await page.getByRole('button', { name: 'Action Menu' }).click();
-      await expect(page.locator('.action-menu-overlay[data-menu-state="open"]')).toBeVisible();
+      await openActionMenuForProject(page, testInfo.project.name);
 
       await triggerBrowserBack(page);
 
@@ -794,7 +806,7 @@ test.describe('pokemon app browser regressions', () => {
         }).__actionMenuStateObserver = observer;
       });
 
-      await page.getByRole('button', { name: 'Action Menu' }).click();
+      await openActionMenuForProject(page, testInfo.project.name);
 
       const overlay = page.locator('.action-menu-overlay');
       const homeMenuItem = page.locator('.action-menu-item.button-home');
@@ -861,9 +873,11 @@ test.describe('pokemon app browser regressions', () => {
       await openPokemonPage(page);
       await expect(page).toHaveURL(/\/pokemon$/);
 
-      await page.getByRole('button', { name: 'Action Menu' }).click();
-      await expect(page.locator('.action-menu-overlay[data-menu-state="open"]')).toBeVisible();
-      await page.locator('.button-search').click();
+      await openActionMenuForProject(page, testInfo.project.name);
+      await page
+        .locator('.action-menu-overlay[data-menu-state="open"]')
+        .getByRole('button', { name: /Search/i })
+        .click();
       await expect(page).toHaveURL(/\/search$/);
       await expect(page.getByText('Which type of search would you like?')).toBeVisible();
 
