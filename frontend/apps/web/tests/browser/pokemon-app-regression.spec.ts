@@ -24,6 +24,21 @@ async function triggerBrowserBack(page: Page) {
   await page.waitForTimeout(350);
 }
 
+async function getDocumentScrollTop(page: Page) {
+  return page.evaluate(
+    () =>
+      window.scrollY ||
+      document.scrollingElement?.scrollTop ||
+      document.documentElement.scrollTop ||
+      document.body.scrollTop ||
+      0,
+  );
+}
+
+async function getElementTop(page: Page, selector: string) {
+  return page.locator(selector).evaluate((element) => element.getBoundingClientRect().top);
+}
+
 test.describe('pokemon app browser regressions', () => {
   test('loads theme loading spinner WebM assets from shared media in every browser project', async ({
     page,
@@ -742,6 +757,53 @@ test.describe('pokemon app browser regressions', () => {
     ).toEqual([]);
   });
 
+  test('animates action menu items upward when opening', async ({
+    page,
+  }, testInfo) => {
+    const diagnostics = attachBrowserDiagnostics(page, testInfo);
+
+    try {
+      await openPokemonPage(page);
+
+      const viewportHeight = await page.evaluate(() => window.innerHeight);
+      await page.getByRole('button', { name: 'Action Menu' }).click();
+
+      const overlay = page.locator('.action-menu-overlay');
+      const homeMenuItem = page.locator('.action-menu-item.button-home');
+      await expect(overlay).toBeAttached();
+      await expect(homeMenuItem).toBeAttached();
+
+      const mountedTop = await getElementTop(page, '.action-menu-item.button-home');
+      expect(
+        mountedTop,
+        'action menu should mount items near the bottom before opening',
+      ).toBeGreaterThan(viewportHeight * 0.65);
+
+      await page.waitForTimeout(40);
+      await expect(page.locator('.action-menu-overlay.active')).toBeVisible();
+      const earlyTop = await getElementTop(page, '.action-menu-item.button-home');
+
+      await page.waitForTimeout(350);
+      const finalTop = await getElementTop(page, '.action-menu-item.button-home');
+
+      expect(finalTop, 'home action should settle near the viewport center').toBeLessThan(
+        viewportHeight * 0.65,
+      );
+      expect(
+        earlyTop,
+        'home action should still be mid-animation shortly after opening',
+      ).toBeGreaterThan(finalTop + 4);
+    } finally {
+      await diagnostics.flush();
+    }
+
+    const blockingErrors = diagnostics.blockingErrors();
+    expect(
+      blockingErrors,
+      `browser diagnostics should not include runtime errors:\n${JSON.stringify(blockingErrors, null, 2)}`,
+    ).toEqual([]);
+  });
+
   test('keeps browser back from navigating to a previous app URL', async ({
     page,
   }, testInfo) => {
@@ -834,6 +896,60 @@ test.describe('pokemon app browser regressions', () => {
       await expect(page).toHaveURL(/\/pokedex$/);
       await expect(page.locator('.pokedex-page--pokemon-detail')).toHaveCount(0);
       await expect(page.locator('.pokedex-region-detail')).toBeVisible();
+    } finally {
+      await diagnostics.flush();
+    }
+
+    const blockingErrors = diagnostics.blockingErrors();
+    expect(
+      blockingErrors,
+      `browser diagnostics should not include runtime errors:\n${JSON.stringify(blockingErrors, null, 2)}`,
+    ).toEqual([]);
+  });
+
+  test('keeps Pokedex region scroll position when closing a Pokemon detail view', async ({
+    page,
+  }, testInfo) => {
+    const diagnostics = attachBrowserDiagnostics(page, testInfo);
+
+    try {
+      await installE2eRoutes(page);
+      const response = await page.goto('/pokedex', { waitUntil: 'domcontentloaded' });
+      expect(response?.ok(), '/pokedex document response should be OK').toBe(true);
+
+      const pokemonRegions = page.getByLabel('Pokemon regions', { exact: true });
+      await expect(pokemonRegions.getByRole('button', { name: /Kanto/i })).toBeVisible({
+        timeout: 30_000,
+      });
+      await pokemonRegions.getByRole('button', { name: /Kanto/i }).click();
+      await expect(page.locator('.pokedex-region-detail')).toBeVisible();
+
+      const activeKantoCards = page.locator(
+        '.pokedex-category-panel[aria-hidden="false"] .pokedex-region-detail__section.is-current .pokedex-region-grid__open',
+      );
+      const lowerKantoCard = activeKantoCards.nth(24);
+      await lowerKantoCard.scrollIntoViewIfNeeded();
+      await expect.poll(() => getDocumentScrollTop(page)).toBeGreaterThan(200);
+      const scrollBeforeDetail = await getDocumentScrollTop(page);
+
+      await lowerKantoCard.click();
+      await expect(page.locator('.pokedex-page--pokemon-detail')).toBeVisible();
+
+      const closeButton = page.locator('.pokedex-pokemon-detail__close');
+      await expect(closeButton).toBeVisible();
+      const closeButtonBox = await closeButton.boundingBox();
+      expect(
+        closeButtonBox?.width ?? 0,
+        'Pokemon detail close button should be a comfortable touch target',
+      ).toBeGreaterThanOrEqual(70);
+
+      await closeButton.click();
+
+      await expect(page.locator('.pokedex-page--pokemon-detail')).toHaveCount(0);
+      await expect(page.locator('.pokedex-region-detail')).toBeVisible();
+      await expect
+        .poll(() => getDocumentScrollTop(page))
+        .toBeGreaterThanOrEqual(scrollBeforeDetail - 80);
     } finally {
       await diagnostics.flush();
     }

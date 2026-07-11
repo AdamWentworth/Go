@@ -939,6 +939,27 @@ function countRegisteredDexNumbers(
   return dexNumbers.size;
 }
 
+function getPokedexScrollTop(): number {
+  return (
+    window.scrollY ||
+    document.scrollingElement?.scrollTop ||
+    document.documentElement.scrollTop ||
+    document.body.scrollTop ||
+    0
+  );
+}
+
+function restorePokedexScrollTop(scrollTop: number) {
+  window.scrollTo({ top: scrollTop, left: 0, behavior: 'auto' });
+
+  if (document.scrollingElement) {
+    document.scrollingElement.scrollTop = scrollTop;
+  }
+
+  document.documentElement.scrollTop = scrollTop;
+  document.body.scrollTop = scrollTop;
+}
+
 function Pokedex() {
   const variants = useVariantsStore((s) => s.variants);
   const loading = useVariantsStore((s) => s.variantsLoading);
@@ -962,6 +983,8 @@ function Pokedex() {
     () => new Set(),
   );
   const regionSectionRefs = useRef<Record<string, HTMLElement | null>>({});
+  const regionDetailScrollYRef = useRef(0);
+  const pendingRegionDetailScrollRestoreRef = useRef<number | null>(null);
 
   const registrations = useMemo(
     () => projectPokedexRegistrations(variants, instances, manualRegistrations),
@@ -1257,6 +1280,19 @@ function Pokedex() {
     return () => window.clearTimeout(timeoutId);
   }, [pendingScrollRegionKey, selectedCategoryKey, viewMode]);
 
+  useEffect(() => {
+    if (selectedPokemon !== null || pendingRegionDetailScrollRestoreRef.current === null) return;
+
+    const scrollY = pendingRegionDetailScrollRestoreRef.current;
+    pendingRegionDetailScrollRestoreRef.current = null;
+
+    const animationFrame = window.requestAnimationFrame(() => {
+      restorePokedexScrollTop(scrollY);
+    });
+
+    return () => window.cancelAnimationFrame(animationFrame);
+  }, [selectedPokemon]);
+
   const handleShowRegions = useCallback(() => {
     setSelectedPokemon(null);
     setRegionSearchTerm('');
@@ -1358,7 +1394,13 @@ function Pokedex() {
     [],
   );
 
-  const handleCloseRegionOverlay = useCallback(() => {
+  const handleOpenPokemonDetail = useCallback((pokemon: PokemonVariant) => {
+    regionDetailScrollYRef.current = getPokedexScrollTop();
+    setSelectedPokemon(pokemon);
+  }, []);
+
+  const handleClosePokemonDetail = useCallback(() => {
+    pendingRegionDetailScrollRestoreRef.current = regionDetailScrollYRef.current;
     setSelectedPokemon(null);
   }, []);
 
@@ -1400,7 +1442,7 @@ function Pokedex() {
 
   const handlePokedexBackContext = useCallback(() => {
     if (selectedPokemon) {
-      setSelectedPokemon(null);
+      handleClosePokemonDetail();
       return true;
     }
 
@@ -1410,7 +1452,7 @@ function Pokedex() {
     }
 
     return false;
-  }, [handleShowRegions, selectedPokemon, viewMode]);
+  }, [handleClosePokemonDetail, handleShowRegions, selectedPokemon, viewMode]);
 
   useContextBackHandler(
     viewMode === 'detail' || selectedPokemon !== null,
@@ -1432,7 +1474,7 @@ function Pokedex() {
           gender={displayGender}
           onRegister={registerManualRegistrations}
           onUnregister={unregisterManualRegistrations}
-          onClose={handleCloseRegionOverlay}
+          onClose={handleClosePokemonDetail}
         />
       </div>
     );
@@ -1831,7 +1873,7 @@ function Pokedex() {
                                           className="pokedex-region-grid__open"
                                           type="button"
                                           tabIndex={category.key === selectedCategoryKey && !isCollapsed ? 0 : -1}
-                                          onClick={() => setSelectedPokemon(pokemon)}
+                                          onClick={() => handleOpenPokemonDetail(pokemon)}
                                         >
                                           <span className="pokedex-region-grid__image-frame">
                                             <PokedexPokemonImage

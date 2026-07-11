@@ -1,6 +1,6 @@
 // ActionMenu.tsx
 
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import ActionMenuButton from './ActionMenuButton';
 import CloseButton from './CloseButton';
@@ -15,11 +15,18 @@ const ActionMenu: React.FC = () => {
   const MENU_TRANSITION_MS = 300;
   const [isOpen, setIsOpen] = useState(false);
   const [isVisible, setIsVisible] = useState(false);
+  const openingAnimationFrameRef = useRef<number | null>(null);
   const navigate = useNavigate();
   const location = useLocation();
   const { alert } = useModal();
   const { isLoggedIn } = useAuth() ?? {};
   useTheme();
+
+  const cancelPendingOpenAnimation = useCallback(() => {
+    if (openingAnimationFrameRef.current === null) return;
+    window.cancelAnimationFrame(openingAnimationFrameRef.current);
+    openingAnimationFrameRef.current = null;
+  }, []);
 
   useEffect(() => {
     if (!isOpen && isVisible) {
@@ -33,14 +40,26 @@ const ActionMenu: React.FC = () => {
     return undefined;
   }, [isOpen, isVisible]);
 
+  useEffect(() => {
+    return () => cancelPendingOpenAnimation();
+  }, [cancelPendingOpenAnimation]);
+
   const openMenu = useCallback(() => {
+    cancelPendingOpenAnimation();
     setIsVisible(true);
-    setIsOpen(true);
-  }, []);
+
+    openingAnimationFrameRef.current = window.requestAnimationFrame(() => {
+      openingAnimationFrameRef.current = window.requestAnimationFrame(() => {
+        openingAnimationFrameRef.current = null;
+        setIsOpen(true);
+      });
+    });
+  }, [cancelPendingOpenAnimation]);
 
   const closeMenu = useCallback(() => {
+    cancelPendingOpenAnimation();
     setIsOpen(false);
-  }, []);
+  }, [cancelPendingOpenAnimation]);
 
   const toggleMenu = () => {
     if (isOpen) {
@@ -57,12 +76,15 @@ const ActionMenu: React.FC = () => {
     closeMenu();
   };
 
-  useContextBackHandler(isOpen, closeMenu, 'action-menu');
+  useContextBackHandler(isVisible, closeMenu, 'action-menu');
 
   return (
     <>
       {isVisible && (
-        <div className={`action-menu-overlay ${isOpen ? 'active' : ''}`}>
+        <div
+          className={`action-menu-overlay ${isOpen ? 'active' : ''}`}
+          data-menu-state={isOpen ? 'open' : 'closed'}
+        >
           <CloseButton onClick={toggleMenu} />
 
           <button
@@ -211,7 +233,7 @@ const ActionMenu: React.FC = () => {
         </div>
       )}
 
-      {!isOpen && <ActionMenuButton onClick={toggleMenu} />}
+      {!isVisible && <ActionMenuButton onClick={toggleMenu} />}
     </>
   );
 };

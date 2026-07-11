@@ -1751,8 +1751,8 @@
 }
 
 .pokedex-pokemon-detail__close .close-button-image {
-  width: clamp(48px, 8vw, 62px);
-  height: clamp(48px, 8vw, 62px);
+  width: clamp(76px, 12vw, 96px);
+  height: clamp(76px, 12vw, 96px);
 }
 
 @media (max-width: 720px) {
