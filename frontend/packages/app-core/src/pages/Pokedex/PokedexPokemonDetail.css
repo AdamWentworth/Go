@@ -1750,11 +1750,6 @@
   z-index: 1210;
 }
 
-.pokedex-pokemon-detail__close .close-button-image {
-  width: clamp(76px, 12vw, 96px);
-  height: clamp(76px, 12vw, 96px);
-}
-
 @media (max-width: 720px) {
   .pokedex-pokemon-detail {
     padding: 0 0 104px;

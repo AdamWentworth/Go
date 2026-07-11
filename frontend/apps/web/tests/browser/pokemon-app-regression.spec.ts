@@ -1015,8 +1015,12 @@ test.describe('pokemon app browser regressions', () => {
       const closeButtonBox = await closeButton.boundingBox();
       expect(
         closeButtonBox?.width ?? 0,
-        'Pokemon detail close button should be a comfortable touch target',
-      ).toBeGreaterThanOrEqual(70);
+        'Pokemon detail close button should use the shared app close-button sizing',
+      ).toBeGreaterThanOrEqual(50);
+      expect(
+        closeButtonBox?.width ?? 0,
+        'Pokemon detail close button should not use oversized page-specific sizing',
+      ).toBeLessThanOrEqual(90);
 
       await closeButton.click();
 
