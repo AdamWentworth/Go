@@ -6,7 +6,7 @@ modules:
       method: GET
       preferred_ip_protocol: ip4
       no_follow_redirects: false
-      valid_http_versions: ["HTTP/1.1", "HTTP/2"]
+      valid_http_versions: ["HTTP/1.1", "HTTP/2", "HTTP/2.0"]
 
   frontend_internal:
     prober: http
@@ -15,5 +15,5 @@ modules:
       method: GET
       preferred_ip_protocol: ip4
       no_follow_redirects: true
-      valid_http_versions: ["HTTP/1.1", "HTTP/2"]
+      valid_http_versions: ["HTTP/1.1", "HTTP/2", "HTTP/2.0"]
       valid_status_codes: [200, 301, 302, 307, 308]
