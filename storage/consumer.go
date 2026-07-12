@@ -6,7 +6,6 @@ import (
 	"compress/gzip"
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -57,7 +56,7 @@ func StartConsumer(ctx context.Context) {
 	for {
 		message, err := reader.FetchMessage(ctx)
 		if err != nil {
-			if errors.Is(err, context.Canceled) || errors.Is(err, context.DeadlineExceeded) {
+			if shouldStopConsumer(ctx, err) {
 				logrus.Info("Kafka consumer shutting down.")
 				return
 			}
@@ -79,6 +78,13 @@ func StartConsumer(ctx context.Context) {
 			logrus.Errorf("Error processing message (partition=%d offset=%d): %v", message.Partition, message.Offset, err)
 		}
 	}
+}
+
+func shouldStopConsumer(ctx context.Context, err error) bool {
+	if err == nil {
+		return false
+	}
+	return ctx.Err() != nil
 }
 
 func newKafkaReader(events EventsConfig, retryInterval time.Duration) *kafka.Reader {

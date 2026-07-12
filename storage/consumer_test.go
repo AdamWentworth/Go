@@ -108,6 +108,21 @@ func TestProcessMessageCommitFailureReturnsError(t *testing.T) {
 	}
 }
 
+func TestShouldStopConsumerRetriesTransientDeadline(t *testing.T) {
+	if shouldStopConsumer(context.Background(), context.DeadlineExceeded) {
+		t.Fatal("expected transient deadline errors to be retried while app context is active")
+	}
+}
+
+func TestShouldStopConsumerStopsWhenAppContextCanceled(t *testing.T) {
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
+
+	if !shouldStopConsumer(ctx, context.Canceled) {
+		t.Fatal("expected canceled app context to stop the consumer")
+	}
+}
+
 func mustGzipJSON(t *testing.T, payload map[string]interface{}) []byte {
 	t.Helper()
 
