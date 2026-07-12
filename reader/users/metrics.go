@@ -20,16 +20,16 @@ var (
 
 	httpRequestsTotal = prometheus.NewCounterVec(
 		prometheus.CounterOpts{
-			Name: "users_http_requests_total",
-			Help: "Total number of HTTP requests processed by users service.",
+			Name: "http_requests_total",
+			Help: "Total number of HTTP requests processed.",
 		},
 		[]string{"method", "route", "status"},
 	)
 
 	httpRequestDurationSeconds = prometheus.NewHistogramVec(
 		prometheus.HistogramOpts{
-			Name:    "users_http_request_duration_seconds",
-			Help:    "HTTP request duration in seconds for users service.",
+			Name:    "http_request_duration_seconds",
+			Help:    "HTTP request duration in seconds.",
 			Buckets: prometheus.DefBuckets,
 		},
 		[]string{"method", "route", "status"},
