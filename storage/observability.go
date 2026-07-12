@@ -70,7 +70,7 @@ func registerObservabilityMetrics() {
 		registerCollector(kafkaMessagesTotal)
 		registerCollector(kafkaMessageDurationSeconds)
 		registerCollector(kafkaConsumerReady)
-		kafkaConsumerReady.Set(0)
+		syncConsumerReadyGauge()
 	})
 }
 
@@ -84,7 +84,11 @@ func registerCollector(c prometheus.Collector) {
 
 func setConsumerReady(ready bool) {
 	consumerReady.Store(ready)
-	if ready {
+	syncConsumerReadyGauge()
+}
+
+func syncConsumerReadyGauge() {
+	if consumerReady.Load() {
 		kafkaConsumerReady.Set(1)
 		return
 	}
