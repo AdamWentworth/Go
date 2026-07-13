@@ -57,23 +57,11 @@ jobs:
           release_json="${install_dir}/release.json"
           curl -fsSL https://api.github.com/repos/cli/cli/releases/latest -o "${release_json}"
 
-          download_url="$(
-            python3 - "${release_json}" <<'PY'
-import json
-import sys
-
-with open(sys.argv[1], encoding="utf-8") as handle:
-    release = json.load(handle)
-
-for asset in release.get("assets", []):
-    name = asset.get("name", "")
-    if name.startswith("gh_") and name.endswith("_linux_amd64.tar.gz"):
-        print(asset["browser_download_url"])
-        break
-else:
-    raise SystemExit("No linux_amd64 GitHub CLI release asset found.")
-PY
-          )"
+          download_url="$(python3 -c 'import json, sys; release = json.load(open(sys.argv[1], encoding="utf-8")); print(next((asset["browser_download_url"] for asset in release.get("assets", []) if asset.get("name", "").startswith("gh_") and asset.get("name", "").endswith("_linux_amd64.tar.gz")), ""))' "${release_json}")"
+          if [[ -z "${download_url}" ]]; then
+            echo "No linux_amd64 GitHub CLI release asset found." >&2
+            exit 1
+          fi
 
           archive="${install_dir}/gh.tar.gz"
           curl -fsSL "${download_url}" -o "${archive}"
