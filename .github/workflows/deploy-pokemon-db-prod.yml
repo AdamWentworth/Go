@@ -40,6 +40,56 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v5
 
+      - name: Ensure GitHub CLI
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          if command -v gh >/dev/null 2>&1; then
+            gh --version
+            exit 0
+          fi
+
+          install_dir="${RUNNER_TEMP:-/tmp}/gh-cli"
+          rm -rf "${install_dir}"
+          mkdir -p "${install_dir}/bin"
+
+          release_json="${install_dir}/release.json"
+          curl -fsSL https://api.github.com/repos/cli/cli/releases/latest -o "${release_json}"
+
+          download_url="$(
+            python3 - "${release_json}" <<'PY'
+import json
+import sys
+
+with open(sys.argv[1], encoding="utf-8") as handle:
+    release = json.load(handle)
+
+for asset in release.get("assets", []):
+    name = asset.get("name", "")
+    if name.startswith("gh_") and name.endswith("_linux_amd64.tar.gz"):
+        print(asset["browser_download_url"])
+        break
+else:
+    raise SystemExit("No linux_amd64 GitHub CLI release asset found.")
+PY
+          )"
+
+          archive="${install_dir}/gh.tar.gz"
+          curl -fsSL "${download_url}" -o "${archive}"
+          tar -xzf "${archive}" -C "${install_dir}"
+
+          gh_bin="$(find "${install_dir}" -type f -path '*/bin/gh' -print -quit)"
+          if [[ -z "${gh_bin}" ]]; then
+            echo "Downloaded GitHub CLI archive did not contain bin/gh." >&2
+            exit 1
+          fi
+
+          cp "${gh_bin}" "${install_dir}/bin/gh"
+          chmod +x "${install_dir}/bin/gh"
+          echo "${install_dir}/bin" >> "${GITHUB_PATH}"
+          "${install_dir}/bin/gh" --version
+
       - name: Download Pokemon DB Release
         id: release
         shell: bash
