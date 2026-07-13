@@ -18,7 +18,8 @@ func (b *Builder) attachRaidBoss(ctx context.Context, orderedIDs []int, pokemonB
 	  min_boosted_cp,
 	  min_unboosted_cp,
 	  possible_shiny,
-	  tier
+	  tier,
+	  costume_id
 	FROM raid_bosses
 	`)
 	if err != nil {

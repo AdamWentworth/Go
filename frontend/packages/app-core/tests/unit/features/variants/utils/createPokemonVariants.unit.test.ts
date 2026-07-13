@@ -122,4 +122,147 @@ describe('createPokemonVariants (unit)', () => {
     expect(defaultVariant?.backgrounds).toEqual(baseBackgrounds);
     expect(fusionVariant?.backgrounds).toEqual(fusionBackgrounds);
   });
+
+  it('keeps curated fusion raid data only on matching fusion variants', () => {
+    const sample = samplePokemons[0];
+    const pokemon: BasePokemon = {
+      ...sample,
+      pokemon_id: 646,
+      name: 'Kyurem',
+      backgrounds: [],
+      costumes: [],
+      fusion: [
+        {
+          fusion_id: 3,
+          base_pokemon_id1: 646,
+          base_pokemon_id2: 643,
+          date_available: '2025-01-01',
+          type_1_id: 3,
+          type_2_id: 12,
+          type1_name: 'Dragon',
+          type2_name: 'Ice',
+          name: 'White Kyurem',
+          image_url: 'https://example.com/white-kyurem.png',
+        },
+      ],
+      megaEvolutions: [],
+      raid_boss: [
+        {
+          id: 900002,
+          pokemon_id: 646,
+          name: 'White Kyurem',
+          form: 'White',
+          type: 'Dragon / Ice',
+          boosted_weather: 'Windy / Snow',
+          max_boosted_cp: 2553,
+          max_unboosted_cp: 2042,
+          min_boosted_cp: 2446,
+          min_unboosted_cp: 1957,
+          possible_shiny: 1,
+          tier: 'fusion_5',
+        },
+      ],
+      max: [],
+      evolves_from: [],
+    };
+
+    const variants = createPokemonVariants([pokemon]);
+    const defaultVariant = variants.find((v) => v.variantType === 'default');
+    const fusionVariant = variants.find((v) => v.variantType === 'fusion_3');
+
+    expect(defaultVariant?.raid_boss).toBeUndefined();
+    expect(fusionVariant?.raid_boss?.[0]?.tier).toBe('fusion_5');
+  });
+
+  it('keeps curated shadow raid data only on shadow variants', () => {
+    const sample = samplePokemons[0];
+    const pokemon: BasePokemon = {
+      ...sample,
+      pokemon_id: 484,
+      name: 'Palkia',
+      backgrounds: [],
+      costumes: [],
+      fusion: [],
+      megaEvolutions: [],
+      date_shadow_available: '2026-07-01',
+      image_url_shadow: 'https://example.com/shadow-palkia.png',
+      raid_boss: [
+        {
+          id: 900011,
+          pokemon_id: 484,
+          name: 'Shadow Palkia',
+          form: 'Normal',
+          type: 'Water / Dragon',
+          boosted_weather: 'Rainy / Windy',
+          max_boosted_cp: 2850,
+          max_unboosted_cp: 2280,
+          min_boosted_cp: 2648,
+          min_unboosted_cp: 2118,
+          possible_shiny: 1,
+          tier: 'shadow_5',
+        },
+      ],
+      max: [],
+      evolves_from: [],
+    };
+
+    const variants = createPokemonVariants([pokemon]);
+    const defaultVariant = variants.find((v) => v.variantType === 'default');
+    const shadowVariant = variants.find((v) => v.variantType === 'shadow');
+
+    expect(defaultVariant?.raid_boss).toBeUndefined();
+    expect(shadowVariant?.raid_boss?.[0]?.tier).toBe('shadow_5');
+  });
+
+  it('keeps costume raid data only on the matching costume variant', () => {
+    const sample = samplePokemons[0];
+    const pokemon: BasePokemon = {
+      ...sample,
+      pokemon_id: 25,
+      name: 'Pikachu',
+      backgrounds: [],
+      costumes: [
+        {
+          costume_id: 216,
+          name: 'holiday_2023',
+          image_url: 'https://example.com/holiday-pikachu.png',
+          image_url_shiny: 'https://example.com/holiday-pikachu-shiny.png',
+          shiny_available: 1,
+          date_available: '2023-12-18',
+          date_shiny_available: '2023-12-18',
+          shadow_costume: null,
+        },
+      ],
+      fusion: [],
+      megaEvolutions: [],
+      raid_boss: [
+        {
+          id: 920013,
+          pokemon_id: 25,
+          name: 'Holiday 2023 Pikachu',
+          form: 'Normal',
+          type: 'Electric',
+          boosted_weather: 'Rainy',
+          max_boosted_cp: 670,
+          max_unboosted_cp: 536,
+          min_boosted_cp: 616,
+          min_unboosted_cp: 493,
+          possible_shiny: 1,
+          tier: '1',
+          costume_id: 216,
+        },
+      ],
+      max: [],
+      evolves_from: [],
+    };
+
+    const variants = createPokemonVariants([pokemon]);
+    const defaultVariant = variants.find((v) => v.variantType === 'default');
+    const costumeVariant = variants.find((v) => v.variantType === 'costume_216');
+    const shinyCostumeVariant = variants.find((v) => v.variantType === 'costume_216_shiny');
+
+    expect(defaultVariant?.raid_boss).toBeUndefined();
+    expect(costumeVariant?.raid_boss?.[0]?.costume_id).toBe(216);
+    expect(shinyCostumeVariant?.raid_boss).toBeUndefined();
+  });
 });

@@ -51,6 +51,10 @@ describe('ModalContext', () => {
     );
 
     fireEvent.click(screen.getByText('open-confirm'));
+    expect(screen.getByRole('dialog', { name: /confirm action/i })).toHaveClass(
+      'confirm-modal',
+    );
+    expect(screen.getByText('Trainer action')).toBeInTheDocument();
     expect(screen.getByText('Confirm trade?')).toBeInTheDocument();
 
     fireEvent.click(screen.getByText('OK'));

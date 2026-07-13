@@ -14,15 +14,20 @@ const getTypeIcon = (typeName?: string) =>
 const createPokemonVariants = (pokemons: BasePokemon[]): PokemonVariant[] => {
   const generateVariants = (pokemon: BasePokemon): PokemonVariant[] => {
     const variants: PokemonVariant[] = [];
-    const raidForms = (pokemon.raid_boss || []).map((rb: RaidBoss) => rb.form);
+    const raidBosses = pokemon.raid_boss || [];
 
     // Finalize in one place to avoid duplicate transform work.
     const addVariant = (variant: PokemonVariant) => {
       variant.variant_id = determineVariantId(variant);
       variant.name = getDisplayName(variant);
 
-      const shouldKeepRaidBoss = raidForms.some((form: string) =>
-        matchFormsAndVariantType(variant.form, form, variant.variantType),
+      const shouldKeepRaidBoss = raidBosses.some((raidBoss: RaidBoss) =>
+        matchFormsAndVariantType(variant.form, raidBoss.form, variant.variantType, {
+          raidBossName: raidBoss.name,
+          raidBossTier: raidBoss.tier,
+          raidBossCostumeId: raidBoss.costume_id,
+          variantName: variant.species_name || variant.name,
+        }),
       );
 
       if (shouldKeepRaidBoss) {

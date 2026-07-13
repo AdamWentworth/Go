@@ -1,39 +1,623 @@
-.raid-container {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    padding: 20px;
+.raid-page {
+  min-height: 100vh;
+  padding: clamp(1rem, 3vw, 2rem);
+  color: var(--color-text-primary, #f6ffff);
+  background:
+    radial-gradient(circle at 12% 0%, rgba(47, 214, 208, 0.16), transparent 30rem),
+    radial-gradient(circle at 90% 12%, rgba(255, 188, 69, 0.14), transparent 26rem),
+    var(--color-background, #0d1011);
 }
 
-.raid-table {
-    width: 100%;
-    max-width: 960px; /* Adjust this as needed for your design */
-    margin: 20px;
-    border-collapse: collapse;
+.raid-hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(18rem, 28rem);
+  gap: 1rem;
+  align-items: stretch;
+  max-width: 1180px;
+  margin: 0 auto 1rem;
 }
 
-.raid-table th,
-.raid-table td {
-    border: 1px solid #ddd;
-    padding: 8px;
+.raid-hero-copy,
+.raid-mechanics-card,
+.raid-panel,
+.raid-empty-state {
+  border: 1px solid rgba(102, 220, 220, 0.24);
+  border-radius: 18px;
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.07), rgba(255, 255, 255, 0.025)),
+    rgba(15, 19, 20, 0.9);
+  box-shadow: 0 22px 50px rgba(0, 0, 0, 0.28);
+}
+
+.raid-hero-copy {
+  padding: clamp(1.25rem, 3vw, 2rem);
+}
+
+.raid-eyebrow {
+  margin: 0 0 0.35rem;
+  color: rgba(177, 211, 213, 0.84);
+  font-size: 0.78rem;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.raid-hero h1 {
+  max-width: 46rem;
+  margin: 0;
+  font-size: clamp(2rem, 6vw, 4rem);
+  line-height: 0.98;
+}
+
+.raid-hero p:not(.raid-eyebrow) {
+  max-width: 48rem;
+  margin: 0.9rem 0 0;
+  color: rgba(231, 246, 246, 0.82);
+  font-size: clamp(1rem, 2vw, 1.18rem);
+  font-weight: 650;
+  line-height: 1.45;
+}
+
+.raid-mechanics-card {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.7rem;
+  padding: 1rem;
+}
+
+.raid-mechanics-card div,
+.raid-boss-math div,
+.raid-catch-card div {
+  display: grid;
+  gap: 0.25rem;
+  min-width: 0;
+  padding: 0.95rem;
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.055);
+}
+
+.raid-mechanics-card span,
+.raid-boss-math span,
+.raid-catch-card span {
+  color: rgba(178, 202, 204, 0.78);
+  font-size: 0.74rem;
+  font-weight: 900;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.raid-mechanics-card strong,
+.raid-boss-math strong,
+.raid-catch-card strong {
+  color: #fff;
+  font-size: 1.15rem;
+  font-weight: 950;
+  line-height: 1.05;
+}
+
+.raid-layout {
+  display: grid;
+  grid-template-columns: minmax(17rem, 22rem) minmax(0, 1fr);
+  gap: 1rem;
+  max-width: 1180px;
+  margin: 0 auto;
+}
+
+.raid-panel {
+  min-width: 0;
+  padding: 1rem;
+}
+
+.raid-panel-header h2 {
+  margin: 0;
+  font-size: 1.75rem;
+  line-height: 1;
+}
+
+.raid-boss-panel {
+  align-self: start;
+  position: sticky;
+  top: 1rem;
+}
+
+.raid-boss-card {
+  display: grid;
+  gap: 0.8rem;
+  margin: 1rem 0;
+  padding: 1rem;
+  border: 1px solid rgba(47, 214, 208, 0.2);
+  border-radius: 16px;
+  background:
+    radial-gradient(circle at 75% 18%, rgba(255, 190, 70, 0.14), transparent 45%),
+    linear-gradient(145deg, rgba(47, 214, 208, 0.12), rgba(255, 255, 255, 0.04));
+}
+
+.raid-boss-image-shell {
+  display: grid;
+  place-items: center;
+  min-height: 10rem;
+}
+
+.raid-boss-image-shell img {
+  width: min(12rem, 80%);
+  max-height: 12rem;
+  object-fit: contain;
+  filter: drop-shadow(0 18px 24px rgba(0, 0, 0, 0.35));
+}
+
+.raid-boss-summary {
+  display: grid;
+  gap: 0.2rem;
+  text-align: center;
+}
+
+.raid-boss-summary span {
+  justify-self: center;
+  padding: 0.35rem 0.7rem;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 999px;
+  color: #071214;
+  background: linear-gradient(135deg, #2fd6d0, #ffbd4a);
+  font-size: 0.72rem;
+  font-weight: 950;
+  text-transform: uppercase;
+}
+
+.raid-boss-summary strong {
+  color: #fff;
+  font-size: 1.6rem;
+  font-weight: 950;
+}
+
+.raid-boss-summary small {
+  color: rgba(221, 239, 240, 0.82);
+  font-weight: 700;
+}
+
+.raid-field {
+  display: grid;
+  gap: 0.35rem;
+  min-width: 0;
+}
+
+.raid-field span {
+  color: rgba(181, 204, 207, 0.8);
+  font-size: 0.75rem;
+  font-weight: 900;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.raid-field input,
+.raid-field select {
+  width: 100%;
+  min-height: 2.75rem;
+  padding: 0.7rem 0.85rem;
+  border: 1px solid rgba(180, 225, 226, 0.28);
+  border-radius: 999px;
+  color: #f8ffff;
+  background: rgba(0, 0, 0, 0.2);
+  font: inherit;
+  font-weight: 750;
+  outline: none;
+}
+
+.raid-field select {
+  border-radius: 14px;
+}
+
+.raid-field input:focus,
+.raid-field select:focus {
+  border-color: rgba(47, 214, 208, 0.8);
+  box-shadow: 0 0 0 3px rgba(47, 214, 208, 0.16);
+}
+
+.raid-boss-suggestions {
+  display: grid;
+  gap: 0.55rem;
+  margin-top: 0.9rem;
+}
+
+.raid-boss-option {
+  display: grid;
+  grid-template-columns: 2.5rem minmax(0, 1fr) auto;
+  gap: 0.65rem;
+  align-items: center;
+  min-height: 3.2rem;
+  padding: 0.45rem 0.65rem;
+  border: 1px solid rgba(255, 255, 255, 0.11);
+  border-radius: 14px;
+  color: rgba(244, 255, 255, 0.92);
+  background: rgba(255, 255, 255, 0.045);
+  cursor: pointer;
+}
+
+.raid-boss-option.active {
+  border-color: rgba(47, 214, 208, 0.75);
+  background: rgba(47, 214, 208, 0.16);
+}
+
+.raid-boss-option img {
+  width: 2.4rem;
+  height: 2.4rem;
+  object-fit: contain;
+}
+
+.raid-boss-option span {
+  overflow: hidden;
+  font-weight: 900;
+  text-align: left;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.raid-boss-option small {
+  color: rgba(183, 205, 208, 0.78);
+  font-weight: 850;
+}
+
+.raid-boss-empty {
+  margin: 0;
+  padding: 0.85rem;
+  border: 1px dashed rgba(180, 225, 226, 0.22);
+  border-radius: 14px;
+  color: rgba(221, 239, 240, 0.76);
+  font-weight: 800;
+  text-align: center;
+}
+
+.raid-main-panel {
+  display: grid;
+  gap: 1rem;
+}
+
+.raid-toggle-button,
+.raid-segmented-control button {
+  border: 1px solid rgba(230, 250, 250, 0.22);
+  border-radius: 999px;
+  color: rgba(244, 255, 255, 0.92);
+  background: rgba(255, 255, 255, 0.055);
+  cursor: pointer;
+}
+
+.raid-toggle-button.active,
+.raid-segmented-control button.active {
+  border-color: rgba(47, 214, 208, 0.75);
+  color: #071214;
+  background: linear-gradient(135deg, #2fd6d0, #55e0aa);
+}
+
+.raid-category-card {
+  display: grid;
+  grid-template-columns: minmax(0, max-content) minmax(0, 1fr);
+  gap: 0.9rem;
+  align-items: center;
+  padding: 1rem;
+  border: 1px solid rgba(47, 214, 208, 0.26);
+  border-radius: 16px;
+  background:
+    radial-gradient(circle at 8% 20%, rgba(47, 214, 208, 0.22), transparent 14rem),
+    rgba(255, 255, 255, 0.045);
+}
+
+.raid-category-card div {
+  display: grid;
+  gap: 0.1rem;
+  padding: 0.75rem 1rem;
+  border-radius: 14px;
+  color: #071214;
+  background: linear-gradient(135deg, #2fd6d0, #ffbd4a);
+}
+
+.raid-category-card span {
+  font-size: 0.72rem;
+  font-weight: 950;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.raid-category-card strong {
+  font-size: 1.15rem;
+  font-weight: 950;
+  line-height: 1.05;
+}
+
+.raid-category-card p {
+  margin: 0;
+  color: rgba(225, 240, 241, 0.78);
+  font-weight: 750;
+  line-height: 1.35;
+}
+
+.raid-boss-math,
+.raid-catch-card {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.7rem;
+}
+
+.raid-catch-card {
+  padding: 0.75rem;
+  border: 1px solid rgba(255, 190, 70, 0.24);
+  border-radius: 16px;
+  background: rgba(255, 190, 70, 0.08);
+}
+
+.raid-settings-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.8rem;
+  align-items: end;
+}
+
+.raid-shadow-controls {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.raid-toggle-button {
+  min-height: 2.75rem;
+  padding: 0.7rem 1rem;
+  font-size: 0.82rem;
+  font-weight: 950;
+  text-transform: uppercase;
+}
+
+.raid-segmented-control {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.4rem;
+}
+
+.raid-segmented-control button {
+  min-height: 2.35rem;
+  font-weight: 900;
+}
+
+.raid-shadow-note {
+  display: grid;
+  gap: 0.3rem;
+  padding: 0.85rem 1rem;
+  border: 1px solid rgba(154, 95, 255, 0.36);
+  border-radius: 16px;
+  background: rgba(100, 46, 180, 0.14);
+}
+
+.raid-shadow-note strong {
+  color: #f8ffff;
+  font-weight: 950;
+}
+
+.raid-shadow-note span {
+  color: rgba(235, 226, 255, 0.82);
+  font-weight: 720;
+  line-height: 1.35;
+}
+
+.raid-counter-toolbar {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 0.8rem;
+  align-items: end;
+}
+
+.raid-counter-list {
+  display: grid;
+  gap: 0.7rem;
+}
+
+.raid-counter-card {
+  display: grid;
+  grid-template-columns: 2.2rem 4rem minmax(0, 1fr) auto;
+  gap: 0.75rem;
+  align-items: center;
+  padding: 0.75rem;
+  border: 1px solid rgba(255, 255, 255, 0.11);
+  border-radius: 16px;
+  background:
+    linear-gradient(135deg, rgba(47, 214, 208, 0.09), rgba(255, 255, 255, 0.035)),
+    rgba(0, 0, 0, 0.16);
+}
+
+.raid-counter-rank {
+  display: grid;
+  place-items: center;
+  width: 2.1rem;
+  height: 2.1rem;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 999px;
+  color: #071214;
+  background: linear-gradient(135deg, #ffbd4a, #2fd6d0);
+  font-size: 0.9rem;
+  font-weight: 950;
+}
+
+.raid-counter-card img {
+  width: 4rem;
+  height: 4rem;
+  object-fit: contain;
+  filter: drop-shadow(0 10px 12px rgba(0, 0, 0, 0.28));
+}
+
+.raid-counter-main {
+  display: grid;
+  gap: 0.18rem;
+  min-width: 0;
+}
+
+.raid-counter-main strong,
+.raid-counter-main span,
+.raid-counter-main small {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.raid-counter-main strong {
+  color: #fff;
+  font-size: 1rem;
+  font-weight: 950;
+}
+
+.raid-counter-main span {
+  color: rgba(230, 246, 247, 0.82);
+  font-weight: 760;
+}
+
+.raid-counter-main small {
+  color: rgba(182, 205, 207, 0.74);
+  font-weight: 750;
+}
+
+.raid-counter-stats {
+  display: grid;
+  grid-template-columns: repeat(3, max-content);
+  gap: 0.4rem;
+}
+
+.raid-counter-stats span {
+  padding: 0.35rem 0.55rem;
+  border-radius: 999px;
+  color: rgba(241, 255, 255, 0.92);
+  background: rgba(255, 255, 255, 0.075);
+  font-size: 0.78rem;
+  font-weight: 900;
+}
+
+.raid-empty-state {
+  max-width: 42rem;
+  margin: 10vh auto;
+  padding: 2rem;
+}
+
+:root[data-theme='light'] .raid-page {
+  color: #102a32;
+  background:
+    radial-gradient(circle at 12% 0%, rgba(47, 188, 204, 0.2), transparent 30rem),
+    radial-gradient(circle at 90% 12%, rgba(255, 188, 69, 0.16), transparent 26rem),
+    var(--color-background, #f5fbfc);
+}
+
+:root[data-theme='light'] .raid-hero-copy,
+:root[data-theme='light'] .raid-mechanics-card,
+:root[data-theme='light'] .raid-panel,
+:root[data-theme='light'] .raid-empty-state {
+  border-color: rgba(21, 139, 154, 0.2);
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.88), rgba(232, 249, 251, 0.78)),
+    #fff;
+  box-shadow: 0 18px 42px rgba(36, 104, 116, 0.16);
+}
+
+:root[data-theme='light'] .raid-hero p:not(.raid-eyebrow),
+:root[data-theme='light'] .raid-category-card p,
+:root[data-theme='light'] .raid-shadow-note span,
+:root[data-theme='light'] .raid-boss-summary small {
+  color: rgba(20, 55, 63, 0.76);
+}
+
+:root[data-theme='light'] .raid-eyebrow,
+:root[data-theme='light'] .raid-field span,
+:root[data-theme='light'] .raid-mechanics-card span,
+:root[data-theme='light'] .raid-boss-math span,
+:root[data-theme='light'] .raid-catch-card span {
+  color: rgba(25, 70, 80, 0.68);
+}
+
+:root[data-theme='light'] .raid-mechanics-card strong,
+:root[data-theme='light'] .raid-boss-math strong,
+:root[data-theme='light'] .raid-catch-card strong,
+:root[data-theme='light'] .raid-panel-header h2,
+:root[data-theme='light'] .raid-counter-main strong,
+:root[data-theme='light'] .raid-boss-summary strong {
+  color: #102a32;
+}
+
+:root[data-theme='light'] .raid-mechanics-card div,
+:root[data-theme='light'] .raid-boss-math div,
+:root[data-theme='light'] .raid-catch-card div,
+:root[data-theme='light'] .raid-category-card,
+:root[data-theme='light'] .raid-counter-card,
+:root[data-theme='light'] .raid-boss-card {
+  border-color: rgba(21, 139, 154, 0.16);
+  background: rgba(255, 255, 255, 0.58);
+}
+
+:root[data-theme='light'] .raid-field input,
+:root[data-theme='light'] .raid-field select {
+  border-color: rgba(21, 139, 154, 0.24);
+  color: #102a32;
+  background: rgba(255, 255, 255, 0.78);
+}
+
+:root[data-theme='light'] .raid-boss-option,
+:root[data-theme='light'] .raid-toggle-button,
+:root[data-theme='light'] .raid-segmented-control button {
+  border-color: rgba(21, 139, 154, 0.2);
+  color: #102a32;
+  background: rgba(255, 255, 255, 0.7);
+}
+
+:root[data-theme='light'] .raid-counter-main span,
+:root[data-theme='light'] .raid-counter-main small,
+:root[data-theme='light'] .raid-counter-stats span,
+:root[data-theme='light'] .raid-boss-option small {
+  color: rgba(20, 55, 63, 0.72);
+}
+
+:root[data-theme='light'] .raid-counter-stats span {
+  background: rgba(26, 107, 120, 0.08);
+}
+
+@media (max-width: 920px) {
+  .raid-hero,
+  .raid-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .raid-boss-panel {
+    position: static;
+  }
+
+  .raid-boss-math,
+  .raid-catch-card,
+  .raid-settings-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 640px) {
+  .raid-page {
+    padding: 0.75rem;
+  }
+
+  .raid-hero-copy,
+  .raid-panel,
+  .raid-empty-state {
+    border-radius: 16px;
+    padding: 0.9rem;
+  }
+
+  .raid-mechanics-card,
+  .raid-category-card,
+  .raid-boss-math,
+  .raid-catch-card,
+  .raid-settings-grid,
+  .raid-counter-toolbar {
+    grid-template-columns: 1fr;
+  }
+
+  .raid-counter-card {
+    grid-template-columns: 2rem 3.6rem minmax(0, 1fr);
+  }
+
+  .raid-counter-stats {
+    grid-column: 1 / -1;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .raid-counter-stats span {
     text-align: center;
-    background-color: white; /* Ensures all cells are white */
-}
-
-.raid-table th {
-    background-color: #4CAF50;
-    color: white;
-}
-
-/* Removing hover effect */
-.raid-table tr:hover {
-    background-color: inherit; /* Keeps the background the same on hover */
-}
-
-.pokemon-filter-input {
-    margin-bottom: 15px;
-    padding: 8px;
-    font-size: 14px;
-    width: 100%;
-    box-sizing: border-box;
+  }
 }

@@ -1,6 +1,4 @@
-// ConfirmDialog.txs
-
-import React from 'react';
+import React, { useId } from 'react';
 import './ModalStyles.css';
 
 type ConfirmDialogProps = {
@@ -10,22 +8,51 @@ type ConfirmDialogProps = {
 };
 
 const ConfirmDialog: React.FC<ConfirmDialogProps> = ({ message, onConfirm, onCancel }) => {
+  const titleId = useId();
+  const descriptionId = useId();
   const lines = message.split('\n');
 
   return (
-    <div className="modal-overlay">
-      <div className="modal">
-        <div className="modal-content">
+    <div className="modal-overlay confirm-modal-overlay">
+      <div
+        aria-describedby={descriptionId}
+        aria-labelledby={titleId}
+        aria-modal="true"
+        className="modal confirm-modal"
+        role="dialog"
+      >
+        <div className="confirm-modal__header">
+          <span aria-hidden="true" className="confirm-modal__icon">
+            !
+          </span>
+          <div className="confirm-modal__heading">
+            <p className="confirm-modal__eyebrow">Trainer action</p>
+            <h2 className="confirm-modal__title" id={titleId}>
+              Confirm action
+            </h2>
+          </div>
+        </div>
+
+        <div className="modal-content confirm-modal__content" id={descriptionId}>
           {lines.map((line, idx) => (
             <p key={idx}>{line}</p>
           ))}
         </div>
-        <div className="modal-actions">
-          <button onClick={onConfirm} className="btn btn-primary">
-            OK
-          </button>
-          <button onClick={onCancel} className="btn btn-secondary">
+
+        <div className="modal-actions confirm-modal__actions">
+          <button
+            className="btn btn-secondary confirm-modal__button confirm-modal__button--secondary"
+            onClick={onCancel}
+            type="button"
+          >
             Cancel
+          </button>
+          <button
+            className="btn btn-primary confirm-modal__button confirm-modal__button--primary"
+            onClick={onConfirm}
+            type="button"
+          >
+            OK
           </button>
         </div>
       </div>

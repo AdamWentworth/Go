@@ -143,6 +143,7 @@ export interface RaidBoss {
   min_unboosted_cp: number;
   possible_shiny: number;
   tier: string;
+  costume_id?: number | null;
 }
 
 export interface Move {

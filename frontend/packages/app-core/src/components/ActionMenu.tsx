@@ -151,7 +151,7 @@ const ActionMenu: React.FC = () => {
           <div className={`action-menu-buttons-container ${isOpen ? 'open' : ''}`}>
             <button
               className="action-menu-item button-raid"
-              onClick={() => alert("Raid page is not implemented yet!")}
+              onClick={() => handleNavigation('/raid')}
             >
               <div className="button-content">
                 <img src="/images/btn_raid.png" alt="Raid" className="button-icon" />
