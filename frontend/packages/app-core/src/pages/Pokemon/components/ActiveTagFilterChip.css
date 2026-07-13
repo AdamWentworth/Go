@@ -1,0 +1,125 @@
+.active-tag-filter-row {
+  --active-tag-accent: #1db5d1;
+  --active-tag-contrast: #071014;
+  --active-tag-surface: rgba(29, 181, 209, 0.16);
+
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  width: fit-content;
+  max-width: min(86%, 28rem);
+  min-height: 1.95rem;
+  margin: 0 auto;
+  padding: 0.18rem 0.28rem 0.18rem 0.58rem;
+  border: 1px solid var(--active-tag-accent);
+  border-radius: 999px;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0)),
+    var(--active-tag-surface);
+  color: var(--color-search-section-text);
+  box-shadow:
+    0 8px 20px rgba(0, 0, 0, 0.16),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.08);
+}
+
+.active-tag-filter-placement-search {
+  margin-block-end: 0.3rem;
+}
+
+.active-tag-filter-placement-panel {
+  position: sticky;
+  top: 0.35rem;
+  z-index: 8;
+  margin-block: 0 0.75rem;
+  backdrop-filter: blur(8px);
+}
+
+.active-tag-filter-row::before {
+  content: "";
+  flex: 0 0 auto;
+  width: 0.56rem;
+  height: 0.56rem;
+  border-radius: 50%;
+  background: var(--active-tag-accent);
+  box-shadow: 0 0 10px var(--active-tag-accent);
+}
+
+.active-tag-filter-with-icon::before {
+  display: none;
+}
+
+.active-tag-filter-icon {
+  flex: 0 0 auto;
+  width: 1rem;
+  height: 1rem;
+  object-fit: contain;
+  filter: drop-shadow(0 0 8px rgba(255, 212, 90, 0.65));
+}
+
+.active-tag-filter-caught {
+  --active-tag-accent: #3f89ff;
+  --active-tag-contrast: #ffffff;
+  --active-tag-surface: rgba(63, 137, 255, 0.18);
+}
+
+.active-tag-filter-trade {
+  --active-tag-accent: #3aa85f;
+  --active-tag-contrast: #ffffff;
+  --active-tag-surface: rgba(58, 168, 95, 0.18);
+}
+
+.active-tag-filter-favorites {
+  --active-tag-accent: #ffd45a;
+  --active-tag-contrast: #171106;
+  --active-tag-surface: rgba(255, 212, 90, 0.18);
+}
+
+.active-tag-filter-wanted {
+  --active-tag-accent: #dd5260;
+  --active-tag-contrast: #ffffff;
+  --active-tag-surface: rgba(221, 82, 96, 0.18);
+}
+
+.active-tag-filter-most-wanted {
+  --active-tag-accent: #ff6f61;
+  --active-tag-contrast: #ffffff;
+  --active-tag-surface: rgba(255, 111, 97, 0.18);
+}
+
+.active-tag-filter-name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 13rem;
+  padding: 0 0.25rem;
+  font-size: 0.92rem;
+  font-weight: 900;
+}
+
+.active-tag-filter-clear {
+  flex: 0 0 auto;
+  border: 0;
+  border-radius: 50%;
+  width: 1.55rem;
+  height: 1.55rem;
+  padding: 0;
+  background: var(--active-tag-accent);
+  color: var(--active-tag-contrast);
+  font-size: 1.18rem;
+  font-weight: 900;
+  line-height: 1;
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.22);
+}
+
+.active-tag-filter-clear:hover,
+.active-tag-filter-clear:focus-visible {
+  filter: brightness(1.08);
+  outline: 2px solid rgba(255, 255, 255, 0.7);
+  outline-offset: 2px;
+}

@@ -15,7 +15,6 @@ import type { TagBuckets } from '@/types/tags';
 import type { SortMode, SortType } from '@/types/sort';
 import type { SwipeHandlers } from './useSwipeHandler';
 import type { PokemonOverlaySelection } from './useInstanceIdProcessor';
-import type { PokedexLists } from '@/types/pokedex';
 import type { MegaSelectionData } from '../features/mega/hooks/useMegaPokemonHandler';
 import type { FusionSelectionData } from '@/types/fusion';
 
@@ -31,7 +30,6 @@ import {
   buildSelectAllIds,
   buildSliderTransform,
   clampDragOffset,
-  isActiveView,
   toInstanceStatus,
   type ActiveView,
   type LastMenu,
@@ -39,6 +37,7 @@ import {
 import { createScopedLogger } from '@/utils/logger';
 
 const log = createScopedLogger('PokemonPage');
+const SIDE_PANEL_TAG_FILTER_SYNC_DELAY_MS = 300;
 
 type UsePokemonPageControllerArgs = {
   isOwnCollection: boolean;
@@ -54,23 +53,20 @@ type UsePokemonPageControllerResult = {
   activeView: ActiveView;
   setActiveView: React.Dispatch<React.SetStateAction<ActiveView>>;
   handleListsButtonClick: () => void;
+  handleClearTagFilter: () => void;
   contextText: React.ReactNode;
   sortedPokemons: PokemonVariant[];
   highlightedCards: Set<string>;
   handleClearSelection: () => void;
   handleSelectAll: () => void;
   lastMenu: LastMenu;
-  selectedPokedexKey: string;
   tagFilter: string;
+  sidePanelTagFilter: string;
   containerRef: React.RefObject<HTMLDivElement | null>;
   swipeHandlers: SwipeHandlers;
   transform: string;
   isDragging: boolean;
   setTagFilter: React.Dispatch<React.SetStateAction<string>>;
-  handlePokedexHighlightedCardsChange: (cards: Set<number | string>) => void;
-  handlePokedexActiveViewChange: (view: string) => void;
-  handlePokedexListSelect: (list: PokemonVariant[], key: string) => void;
-  pokedexLists: PokedexLists;
   variants: PokemonVariant[];
   isEditable: boolean;
   selectedPokemon: PokemonOverlaySelection;
@@ -124,7 +120,6 @@ export default function usePokemonPageController({
   const canonicalUsername = useUserSearchStore((s) => s.canonicalUsername);
 
   const variants = useVariantsStore((s) => s.variants);
-  const pokedexLists = useVariantsStore((s) => s.pokedexLists);
   const loading = useVariantsStore((s) => s.variantsLoading);
   const updateInstanceStatus = useInstancesStore((s) => s.updateInstanceStatus);
   const { alert } = useModal();
@@ -138,18 +133,43 @@ export default function usePokemonPageController({
     : foreignInstances || contextInstanceData) as Instances;
 
   const [tagFilter, setTagFilter] = useState<string>('');
+  const [sidePanelTagFilter, setSidePanelTagFilter] = useState<string>('');
   const [selectedPokemon, setSelectedPokemon] = useState<PokemonOverlaySelection>(null);
   const [hasProcessedInstanceId, setHasProcessedInstanceId] = useState<boolean>(false);
   const [isUpdating, setIsUpdating] = useState<boolean>(false);
-  const [selectedPokedexList, setSelectedPokedexList] = useState<PokemonVariant[]>([]);
-  const [selectedPokedexKey, setSelectedPokedexKey] = useState<string>('all');
-  const [lastMenu, setLastMenu] = useState<LastMenu>('pokedex');
-  const [defaultListLoaded, setDefaultListLoaded] = useState<boolean>(false);
+  const [lastMenu, setLastMenu] = useState<LastMenu>('ownership');
   const [searchTerm, setSearchTerm] = useState<string>('');
   const [activeView, setActiveView] = useState<ActiveView>('pokemon');
   const [dragOffset, setDragOffset] = useState<number>(0);
   const [isDragging, setIsDragging] = useState<boolean>(false);
   const isOverlayOpen = selectedPokemon !== null;
+  const sidePanelTagFilterSyncRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const syncSidePanelTagFilter = useCallback((nextFilter: string, delay: boolean) => {
+    if (sidePanelTagFilterSyncRef.current) {
+      clearTimeout(sidePanelTagFilterSyncRef.current);
+      sidePanelTagFilterSyncRef.current = null;
+    }
+
+    if (!delay) {
+      setSidePanelTagFilter(nextFilter);
+      return;
+    }
+
+    sidePanelTagFilterSyncRef.current = setTimeout(() => {
+      setSidePanelTagFilter(nextFilter);
+      sidePanelTagFilterSyncRef.current = null;
+    }, SIDE_PANEL_TAG_FILTER_SYNC_DELAY_MS);
+  }, []);
+
+  useEffect(
+    () => () => {
+      if (sidePanelTagFilterSyncRef.current) {
+        clearTimeout(sidePanelTagFilterSyncRef.current);
+      }
+    },
+    [],
+  );
 
   const {
     showEvolutionaryLine,
@@ -171,12 +191,6 @@ export default function usePokemonPageController({
   });
 
   useEffect(() => {
-    setSelectedPokedexList(variants);
-    setSelectedPokedexKey('all');
-    setDefaultListLoaded(true);
-  }, [isUsernamePath, variants, pokedexLists]);
-
-  useEffect(() => {
     if (!isUsernamePath) return;
     setHighlightedCards(new Set());
     setActiveView('pokemon');
@@ -189,14 +203,17 @@ export default function usePokemonPageController({
 
   useEffect(() => {
     if (!isUsernamePath || !urlUsername) return;
-    void loadForeignProfile(urlUsername, () => setTagFilter('Caught'));
-  }, [isUsernamePath, urlUsername, loadForeignProfile]);
+    void loadForeignProfile(urlUsername, () => {
+      setTagFilter('Caught');
+      syncSidePanelTagFilter('Caught', false);
+    });
+  }, [isUsernamePath, urlUsername, loadForeignProfile, syncSidePanelTagFilter]);
 
   const activeTags: TagBuckets = (
     isUsernamePath ? foreignTags ?? (emptyTagBuckets as TagBuckets) : tags
   ) as TagBuckets;
 
-  const baseVariants = lastMenu === 'pokedex' ? selectedPokedexList : variants;
+  const baseVariants = variants;
   const activeStatusFilter = toInstanceStatus(tagFilter);
 
   const { filteredVariants, sortedPokemons } = usePokemonProcessing(
@@ -236,38 +253,30 @@ export default function usePokemonPageController({
     setActiveView((prev) => (prev === 'tags' ? 'pokemon' : 'tags'));
   }, []);
 
-  const handlePokedexHighlightedCardsChange = useCallback(
-    (cards: Set<number | string>) => {
-      setHighlightedCards(new Set(Array.from(cards).map(String)));
-    },
-    [setHighlightedCards],
-  );
-
-  const handlePokedexActiveViewChange = useCallback((view: string) => {
-    if (isActiveView(view)) {
-      setActiveView(view);
-    }
-  }, []);
-
-  const handlePokedexListSelect = useCallback((list: PokemonVariant[], key: string) => {
-    setSelectedPokedexList(list);
-    setSelectedPokedexKey(key || 'all');
-    setLastMenu('pokedex');
-  }, []);
+  const handleClearTagFilter = useCallback(() => {
+    const shouldDelaySidePanelUpdate = activeView !== 'pokemon';
+    setHighlightedCards(new Set());
+    setTagFilter('');
+    setActiveView('pokemon');
+    syncSidePanelTagFilter('', shouldDelaySidePanelUpdate);
+  }, [activeView, setHighlightedCards, syncSidePanelTagFilter]);
 
   const handleTagSelect = useCallback(
     (filter: string) => {
+      const shouldDelaySidePanelUpdate = activeView !== 'pokemon';
       setHighlightedCards(new Set());
       setTagFilter(filter);
       setLastMenu('ownership');
       setActiveView('pokemon');
+      syncSidePanelTagFilter(filter, shouldDelaySidePanelUpdate);
     },
-    [setHighlightedCards],
+    [activeView, setHighlightedCards, syncSidePanelTagFilter],
   );
 
   const setStatusFilter = useCallback((filter: InstanceStatus) => {
     setTagFilter(filter);
-  }, []);
+    syncSidePanelTagFilter(filter, false);
+  }, [syncSidePanelTagFilter]);
 
   const updateInstanceStatusBatch = useCallback(
     (keys: string[], filter: InstanceStatus) =>
@@ -358,7 +367,7 @@ export default function usePokemonPageController({
   const isEditable = isOwnCollection;
   const contextText: React.ReactNode =
     tagFilter === ''
-      ? 'Pokedex View'
+      ? 'Catalog View'
       : isEditable
       ? 'Editing your Collection'
       : (
@@ -367,7 +376,7 @@ export default function usePokemonPageController({
           </>
         );
 
-  const isPageLoading = loading || viewedLoading || isUpdating || !defaultListLoaded;
+  const isPageLoading = loading || viewedLoading || isUpdating;
 
   return {
     isPageLoading,
@@ -376,23 +385,20 @@ export default function usePokemonPageController({
     activeView,
     setActiveView,
     handleListsButtonClick,
+    handleClearTagFilter,
     contextText,
     sortedPokemons,
     highlightedCards,
     handleClearSelection,
     handleSelectAll,
     lastMenu,
-    selectedPokedexKey,
     tagFilter,
+    sidePanelTagFilter,
     containerRef,
     swipeHandlers,
     transform,
     isDragging,
     setTagFilter,
-    handlePokedexHighlightedCardsChange,
-    handlePokedexActiveViewChange,
-    handlePokedexListSelect,
-    pokedexLists,
     variants,
     isEditable,
     selectedPokemon,

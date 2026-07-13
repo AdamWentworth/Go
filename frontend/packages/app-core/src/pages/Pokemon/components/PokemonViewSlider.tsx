@@ -1,6 +1,5 @@
 import React from 'react';
 
-import PokedexFiltersMenu from './Menus/PokedexMenu/PokedexListsMenu';
 import PokemonMenu from './Menus/PokemonMenu/PokemonMenu';
 import TagsMenu from './Menus/TagsMenu/TagsMenu';
 import type { SwipeHandlers } from '../hooks/useSwipeHandler';
@@ -10,18 +9,12 @@ import type { PokemonVariant } from '@/types/pokemonVariants';
 import type { Instances } from '@/types/instances';
 import type { SortMode, SortType } from '@/types/sort';
 import type { TagBuckets } from '@/types/tags';
-import type { PokedexLists } from '@/types/pokedex';
 
 type PokemonViewSliderProps = {
   containerRef: React.RefObject<HTMLDivElement | null>;
   swipeHandlers: SwipeHandlers;
   transform: string;
   isDragging: boolean;
-  setTagFilter: React.Dispatch<React.SetStateAction<string>>;
-  onPokedexHighlightedCardsChange: (cards: Set<number | string>) => void;
-  onPokedexActiveViewChange: (view: string) => void;
-  onPokedexListSelect: (list: PokemonVariant[], key: string) => void;
-  pokedexLists: PokedexLists;
   variants: PokemonVariant[];
   isEditable: boolean;
   sortedPokemons: PokemonVariant[];
@@ -32,6 +25,8 @@ type PokemonViewSliderProps = {
   toggleCardHighlight: (key: string) => void;
   highlightedCards: Set<string>;
   tagFilter: string;
+  sidePanelTagFilter: string;
+  onClearTagFilter: () => void;
   activeTags: TagBuckets;
   instances: Instances;
   sortType: SortType;
@@ -53,11 +48,6 @@ const PokemonViewSlider: React.FC<PokemonViewSliderProps> = ({
   swipeHandlers,
   transform,
   isDragging,
-  setTagFilter,
-  onPokedexHighlightedCardsChange,
-  onPokedexActiveViewChange,
-  onPokedexListSelect,
-  pokedexLists,
   variants,
   isEditable,
   sortedPokemons,
@@ -68,6 +58,8 @@ const PokemonViewSlider: React.FC<PokemonViewSliderProps> = ({
   toggleCardHighlight,
   highlightedCards,
   tagFilter,
+  sidePanelTagFilter,
+  onClearTagFilter,
   activeTags,
   instances,
   sortType,
@@ -103,13 +95,13 @@ const PokemonViewSlider: React.FC<PokemonViewSliderProps> = ({
       }}
     >
       <div className="slider-panel">
-        <PokedexFiltersMenu
-          setTagFilter={setTagFilter}
-          setHighlightedCards={onPokedexHighlightedCardsChange}
-          setActiveView={onPokedexActiveViewChange}
-          onListSelect={onPokedexListSelect}
-          pokedexLists={pokedexLists}
+        <TagsMenu
+          panel="inventory"
+          onSelectTag={onTagSelect}
+          activeTags={activeTags}
           variants={variants}
+          tagFilter={sidePanelTagFilter}
+          onClearTagFilter={onClearTagFilter}
         />
       </div>
 
@@ -125,6 +117,7 @@ const PokemonViewSlider: React.FC<PokemonViewSliderProps> = ({
           toggleCardHighlight={toggleCardHighlight}
           highlightedCards={highlightedCards}
           tagFilter={tagFilter}
+          onClearTagFilter={onClearTagFilter}
           lists={activeTags}
           instances={instances}
           sortType={sortType}
@@ -144,9 +137,12 @@ const PokemonViewSlider: React.FC<PokemonViewSliderProps> = ({
 
       <div className="slider-panel">
         <TagsMenu
+          panel="wishlist"
           onSelectTag={onTagSelect}
           activeTags={activeTags}
           variants={variants}
+          tagFilter={sidePanelTagFilter}
+          onClearTagFilter={onClearTagFilter}
         />
       </div>
     </div>

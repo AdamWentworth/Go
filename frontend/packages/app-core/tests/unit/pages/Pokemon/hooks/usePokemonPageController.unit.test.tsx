@@ -1,5 +1,5 @@
 import { act, renderHook, waitFor } from '@testing-library/react';
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { NavigateFunction } from 'react-router-dom';
 
 import usePokemonPageController from '@/pages/Pokemon/hooks/usePokemonPageController';
@@ -146,6 +146,10 @@ vi.mock('@/pages/Pokemon/hooks/useSwipeHandler', () => ({
 }));
 
 describe('usePokemonPageController', () => {
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
   it('forwards derived tag filters like Favorites into pokemon processing', async () => {
     const navigate = vi.fn() as unknown as NavigateFunction;
     const location = { pathname: '/pokemon', state: null } as any;
@@ -241,7 +245,84 @@ describe('usePokemonPageController', () => {
     });
 
     expect(result.current.tagFilter).toBe('Trade');
+    expect(result.current.sidePanelTagFilter).toBe('Trade');
     expect(result.current.lastMenu).toBe('ownership');
     expect(result.current.activeView).toBe('pokemon');
+  });
+
+  it('waits for the side panel slide to settle before syncing side-panel tag state', async () => {
+    const navigate = vi.fn() as unknown as NavigateFunction;
+    const location = { pathname: '/pokemon', state: null } as any;
+
+    const { result } = renderHook(() =>
+      usePokemonPageController({
+        isOwnCollection: true,
+        location,
+        navigate,
+      }),
+    );
+
+    await waitFor(() => {
+      expect(result.current.isPageLoading).toBe(false);
+    });
+
+    act(() => {
+      result.current.setActiveView('pokedex');
+    });
+
+    vi.useFakeTimers();
+
+    act(() => {
+      result.current.handleTagSelect('Trade');
+    });
+
+    expect(result.current.tagFilter).toBe('Trade');
+    expect(result.current.sidePanelTagFilter).toBe('');
+    expect(result.current.activeView).toBe('pokemon');
+
+    act(() => {
+      vi.advanceTimersByTime(299);
+    });
+    expect(result.current.sidePanelTagFilter).toBe('');
+
+    act(() => {
+      vi.advanceTimersByTime(1);
+    });
+    expect(result.current.sidePanelTagFilter).toBe('Trade');
+  });
+
+  it('clears the active tag filter back to the full catalog', async () => {
+    const navigate = vi.fn() as unknown as NavigateFunction;
+    const location = { pathname: '/pokemon', state: null } as any;
+
+    const { result } = renderHook(() =>
+      usePokemonPageController({
+        isOwnCollection: true,
+        location,
+        navigate,
+      }),
+    );
+
+    await waitFor(() => {
+      expect(result.current.isPageLoading).toBe(false);
+    });
+
+    act(() => {
+      result.current.handleTagSelect('Wanted');
+    });
+    expect(result.current.tagFilter).toBe('Wanted');
+
+    act(() => {
+      result.current.handleClearTagFilter();
+    });
+
+    expect(result.current.tagFilter).toBe('');
+    expect(result.current.sidePanelTagFilter).toBe('');
+    expect(result.current.activeView).toBe('pokemon');
+
+    const latestCall = usePokemonProcessingMock.mock.calls.at(-1) as
+      | UsePokemonProcessingArgs
+      | undefined;
+    expect(latestCall?.[2]).toBe('');
   });
 });

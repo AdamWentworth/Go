@@ -8,8 +8,8 @@ import PokemonPageOverlays from './components/PokemonPageOverlays';
 import { AppLoadingFallback } from '@/contexts/AppLoadingContext';
 
 import {
-  getPokedexSubLabel,
-  getTagsSubLabel,
+  getHaveTagsSubLabel,
+  getWishlistSubLabel,
 } from './utils/pokemonPageHelpers';
 import usePokemonPageController from './hooks/usePokemonPageController';
 
@@ -40,8 +40,8 @@ function Pokemon({ isOwnCollection }: PokemonProps) {
 
       <HeaderUIMemo
         activeView={controller.activeView}
-        onListsButtonClick={controller.handleListsButtonClick}
-        onPokedexClick={() =>
+        onWishlistClick={controller.handleListsButtonClick}
+        onHaveTagsClick={() =>
           controller.setActiveView((prev) => (prev === 'pokedex' ? 'pokemon' : 'pokedex'))
         }
         onPokemonClick={() => controller.setActiveView('pokemon')}
@@ -50,12 +50,11 @@ function Pokemon({ isOwnCollection }: PokemonProps) {
         highlightedCards={controller.highlightedCards}
         onClearSelection={controller.handleClearSelection}
         onSelectAll={controller.handleSelectAll}
-        pokedexSubLabel={getPokedexSubLabel(
-          controller.isUsernamePath,
+        haveTagsSubLabel={getHaveTagsSubLabel(
           controller.lastMenu,
-          controller.selectedPokedexKey,
+          controller.sidePanelTagFilter,
         )}
-        tagsSubLabel={getTagsSubLabel(controller.lastMenu, controller.tagFilter)}
+        wishlistSubLabel={getWishlistSubLabel(controller.lastMenu, controller.sidePanelTagFilter)}
       />
 
       <PokemonViewSlider
@@ -63,11 +62,6 @@ function Pokemon({ isOwnCollection }: PokemonProps) {
         swipeHandlers={controller.swipeHandlers}
         transform={controller.transform}
         isDragging={controller.isDragging}
-        setTagFilter={controller.setTagFilter}
-        onPokedexHighlightedCardsChange={controller.handlePokedexHighlightedCardsChange}
-        onPokedexActiveViewChange={controller.handlePokedexActiveViewChange}
-        onPokedexListSelect={controller.handlePokedexListSelect}
-        pokedexLists={controller.pokedexLists}
         variants={controller.variants}
         isEditable={controller.isEditable}
         sortedPokemons={controller.sortedPokemons}
@@ -78,6 +72,8 @@ function Pokemon({ isOwnCollection }: PokemonProps) {
         toggleCardHighlight={controller.toggleCardHighlight}
         highlightedCards={controller.highlightedCards}
         tagFilter={controller.tagFilter}
+        sidePanelTagFilter={controller.sidePanelTagFilter}
+        onClearTagFilter={controller.handleClearTagFilter}
         activeTags={controller.activeTags}
         instances={controller.instances}
         sortType={controller.sortType}

@@ -9,11 +9,15 @@ import useFavoriteList from '@/hooks/sort/useFavoriteList';
 import TagItems, { type TagSummary } from './TagItems';
 import type { TagBuckets, TagItem } from '@/types/tags';
 import type { AllVariants } from '@/types/pokemonVariants';
+import ActiveTagFilterChip from '../../ActiveTagFilterChip';
 
 export interface TagsMenuProps {
   onSelectTag: (tagName: string) => void;
   activeTags : TagBuckets;
   variants   : AllVariants;
+  panel?: 'inventory' | 'wishlist' | 'all';
+  tagFilter?: string;
+  onClearTagFilter?: () => void;
 }
 
 const PREVIEW_LIMIT = 18;
@@ -52,6 +56,9 @@ const TagsMenu: React.FC<TagsMenuProps> = ({
   onSelectTag,
   activeTags,
   variants,
+  panel = 'all',
+  tagFilter = '',
+  onClearTagFilter,
 }) => {
   // Derive system-children from the currently active buckets (own or foreign).
   // This prevents foreign profile views from accidentally using local-user children.
@@ -139,6 +146,10 @@ const TagsMenu: React.FC<TagsMenuProps> = ({
     favs   : tagSummaries.Favorites?.count ?? 0,
   };
 
+  const showInventory = panel === 'all' || panel === 'inventory';
+  const showWishlist = panel === 'all' || panel === 'wishlist';
+  const showPreviewButton = panel !== 'inventory';
+
   const TagGroup = ({
     tagNames,
     onSelect,
@@ -155,7 +166,7 @@ const TagsMenu: React.FC<TagsMenuProps> = ({
 
   /* ----- render ---------------------------------------------------- */
   return (
-    <div className="tags-menu">
+    <div className={`tags-menu tags-menu-${panel}`}>
       {isPreviewMode ? (
         <PreviewContainer
           isDownloading={isDownloading}
@@ -175,133 +186,147 @@ const TagsMenu: React.FC<TagsMenuProps> = ({
         />
       ) : (
         <>
-          <div className="tag-toggle-row">
-            <button
-              className="tag-preview-toggle-button"
-              onClick={() => setIsPreviewMode(true)}
-            >
-              <img
-                src="/images/image-icon.png"
-                alt="Image Icon"
-                className="button-icon"
-              />
-              Preview Trade / Wanted Image
-            </button>
-          </div>
+          {showPreviewButton && (
+            <div className="tag-toggle-row">
+              <button
+                className="tag-preview-toggle-button"
+                onClick={() => setIsPreviewMode(true)}
+              >
+                <img
+                  src="/images/image-icon.png"
+                  alt="Image Icon"
+                  className="button-icon"
+                />
+                Preview Trade / Wanted Image
+              </button>
+            </div>
+          )}
+
+          {tagFilter.trim() && onClearTagFilter ? (
+            <ActiveTagFilterChip
+              tagFilter={tagFilter}
+              onClearTagFilter={onClearTagFilter}
+              placement="panel"
+            />
+          ) : null}
 
           {/* TAG TREE */}
           <div className="tag-tree">
             {/* Inventory (Caught) */}
-            <div className="tag-folder">
-              <button
-                className="tag-folder-header Caught"
-                onClick={toggleCaught}
-                aria-expanded={isCaughtOpen}
-                aria-controls="tag-folder-caught"
-              >
-                <span className="tag-folder-title">Inventory</span>
-                <span className="tag-folder-meta">
-                  <span className="tag-count-badge">{counts.caught}</span>
-                  <span className={`tag-chev ${isCaughtOpen ? 'open' : ''}`} />
-                </span>
-              </button>
+            {showInventory && (
+              <div className="tag-folder">
+                <button
+                  className="tag-folder-header Caught"
+                  onClick={toggleCaught}
+                  aria-expanded={isCaughtOpen}
+                  aria-controls="tag-folder-caught"
+                >
+                  <span className="tag-folder-title">Inventory</span>
+                  <span className="tag-folder-meta">
+                    <span className="tag-count-badge">{counts.caught}</span>
+                    <span className={`tag-chev ${isCaughtOpen ? 'open' : ''}`} />
+                  </span>
+                </button>
 
-              <div id="tag-folder-caught" className="tag-folder-body">
-                {isCaughtOpen ? (
-                  <div className="tag-sublist">
-                    <TagGroup tagNames={['Favorites']} onSelect={handleSelectTagInternal} />
-                    <TagGroup tagNames={['Trade']} onSelect={handleSelectTagInternal} />
-                    <TagGroup tagNames={['Caught']} onSelect={handleSelectTagInternal} />
-                  </div>
-                ) : (
-                  /* ⬇ Collapsed: show all child tags as colored peek buttons */
-                  <div className="tag-peek-row">
-                    <button
-                      className="tag-peek-button"
-                      data-tag="Favorites"
-                      onClick={() => handleSelectTagInternal('Favorites')}
-                      title="Open Favorites"
-                      aria-label="Open Favorites tag"
-                    >
-                      <span className="tag-peek-title">Favorites</span>
-                      <span className="tag-count-badge dark">{counts.favs}</span>
-                    </button>
+                <div id="tag-folder-caught" className="tag-folder-body">
+                  {isCaughtOpen ? (
+                    <div className="tag-sublist">
+                      <TagGroup tagNames={['Favorites']} onSelect={handleSelectTagInternal} />
+                      <TagGroup tagNames={['Trade']} onSelect={handleSelectTagInternal} />
+                      <TagGroup tagNames={['Caught']} onSelect={handleSelectTagInternal} />
+                    </div>
+                  ) : (
+                    /* ⬇ Collapsed: show all child tags as colored peek buttons */
+                    <div className="tag-peek-row">
+                      <button
+                        className="tag-peek-button"
+                        data-tag="Favorites"
+                        onClick={() => handleSelectTagInternal('Favorites')}
+                        title="Open Favorites"
+                        aria-label="Open Favorites tag"
+                      >
+                        <span className="tag-peek-title">Favorites</span>
+                        <span className="tag-count-badge dark">{counts.favs}</span>
+                      </button>
 
-                    <button
-                      className="tag-peek-button"
-                      data-tag="Trade"
-                      onClick={() => handleSelectTagInternal('Trade')}
-                      title="Open Trade"
-                      aria-label="Open Trade tag"
-                    >
-                      <span className="tag-peek-title">Trade</span>
-                      <span className="tag-count-badge dark">{counts.trade}</span>
-                    </button>
+                      <button
+                        className="tag-peek-button"
+                        data-tag="Trade"
+                        onClick={() => handleSelectTagInternal('Trade')}
+                        title="Open Trade"
+                        aria-label="Open Trade tag"
+                      >
+                        <span className="tag-peek-title">Trade</span>
+                        <span className="tag-count-badge dark">{counts.trade}</span>
+                      </button>
 
-                    <button
-                      className="tag-peek-button"
-                      data-tag="Caught"
-                      onClick={() => handleSelectTagInternal('Caught')}
-                      title="Open Caught"
-                      aria-label="Open Caught tag"
-                    >
-                      <span className="tag-peek-title">Caught</span>
-                      <span className="tag-count-badge dark">{counts.caught}</span>
-                    </button>
-                  </div>
-                )}
+                      <button
+                        className="tag-peek-button"
+                        data-tag="Caught"
+                        onClick={() => handleSelectTagInternal('Caught')}
+                        title="Open Caught"
+                        aria-label="Open Caught tag"
+                      >
+                        <span className="tag-peek-title">Caught</span>
+                        <span className="tag-count-badge dark">{counts.caught}</span>
+                      </button>
+                    </div>
+                  )}
+                </div>
               </div>
-            </div>
+            )}
 
             {/* Wanted */}
-            <div className="tag-folder">
-              <button
-                className="tag-folder-header Wanted"
-                onClick={toggleWanted}
-                aria-expanded={isWantedOpen}
-                aria-controls="tag-folder-wanted"
-              >
-                <span className="tag-folder-title">Wanted</span>
-                <span className="tag-folder-meta">
-                  <span className="tag-count-badge">{counts.wanted}</span>
-                  <span className={`tag-chev ${isWantedOpen ? 'open' : ''}`} />
-                </span>
-              </button>
+            {showWishlist && (
+              <div className="tag-folder">
+                <button
+                  className="tag-folder-header Wanted"
+                  onClick={toggleWanted}
+                  aria-expanded={isWantedOpen}
+                  aria-controls="tag-folder-wanted"
+                >
+                  <span className="tag-folder-title">Wanted</span>
+                  <span className="tag-folder-meta">
+                    <span className="tag-count-badge">{counts.wanted}</span>
+                    <span className={`tag-chev ${isWantedOpen ? 'open' : ''}`} />
+                  </span>
+                </button>
 
-              <div id="tag-folder-wanted" className="tag-folder-body">
-                {isWantedOpen ? (
-                  <div className="tag-sublist">
-                    <TagGroup tagNames={['Most Wanted']} onSelect={handleSelectTagInternal} />
-                    <TagGroup tagNames={['Wanted']} onSelect={handleSelectTagInternal} />
-                  </div>
-                ) : (
-                  /* ⬇ Collapsed: show both child tags as colored peek buttons */
-                  <div className="tag-peek-row">
-                    <button
-                      className="tag-peek-button"
-                      data-tag="Most Wanted"
-                      onClick={() => handleSelectTagInternal('Most Wanted')}
-                      title="Open Most Wanted"
-                      aria-label="Open Most Wanted tag"
-                    >
-                      <span className="tag-peek-title">Most Wanted</span>
-                      <span className="tag-count-badge dark">{counts.mostW}</span>
-                    </button>
+                <div id="tag-folder-wanted" className="tag-folder-body">
+                  {isWantedOpen ? (
+                    <div className="tag-sublist">
+                      <TagGroup tagNames={['Most Wanted']} onSelect={handleSelectTagInternal} />
+                      <TagGroup tagNames={['Wanted']} onSelect={handleSelectTagInternal} />
+                    </div>
+                  ) : (
+                    /* ⬇ Collapsed: show both child tags as colored peek buttons */
+                    <div className="tag-peek-row">
+                      <button
+                        className="tag-peek-button"
+                        data-tag="Most Wanted"
+                        onClick={() => handleSelectTagInternal('Most Wanted')}
+                        title="Open Most Wanted"
+                        aria-label="Open Most Wanted tag"
+                      >
+                        <span className="tag-peek-title">Most Wanted</span>
+                        <span className="tag-count-badge dark">{counts.mostW}</span>
+                      </button>
 
-                    <button
-                      className="tag-peek-button"
-                      data-tag="Wanted"
-                      onClick={() => handleSelectTagInternal('Wanted')}
-                      title="Open Wanted"
-                      aria-label="Open Wanted tag"
-                    >
-                      <span className="tag-peek-title">Wanted</span>
-                      <span className="tag-count-badge dark">{counts.wanted}</span>
-                    </button>
-                  </div>
-                )}
+                      <button
+                        className="tag-peek-button"
+                        data-tag="Wanted"
+                        onClick={() => handleSelectTagInternal('Wanted')}
+                        title="Open Wanted"
+                        aria-label="Open Wanted tag"
+                      >
+                        <span className="tag-peek-title">Wanted</span>
+                        <span className="tag-count-badge dark">{counts.wanted}</span>
+                      </button>
+                    </div>
+                  )}
+                </div>
               </div>
-            </div>
+            )}
           </div>
         </>
       )}
@@ -310,5 +335,3 @@ const TagsMenu: React.FC<TagsMenuProps> = ({
 };
 
 export default TagsMenu;
-
-

@@ -8,38 +8,6 @@ import type { Instances } from '@/types/instances';
 import type { PokemonVariant } from '@/types/pokemonVariants';
 import type { TagBuckets } from '@/types/tags';
 import type { SortMode, SortType } from '@/types/sort';
-import type { PokedexLists } from '@/types/pokedex';
-
-type PokedexMenuMockProps = {
-  setTagFilter?: (value: string) => void;
-  setHighlightedCards?: (cards: Set<number | string>) => void;
-  setActiveView?: (value: string) => void;
-  onListSelect?: (list: PokemonVariant[], key: string) => void;
-};
-
-vi.mock('@/pages/Pokemon/components/Menus/PokedexMenu/PokedexListsMenu', () => ({
-  default: ({
-    setTagFilter,
-    setHighlightedCards,
-    setActiveView,
-    onListSelect,
-  }: PokedexMenuMockProps) => (
-    <button
-      data-testid="pokedex-menu-trigger"
-      onClick={() => {
-        setTagFilter?.('Caught');
-        setHighlightedCards?.(new Set(['inst-1']));
-        setActiveView?.('pokemon');
-        onListSelect?.(
-          [{ variant_id: '0001-default' } as PokemonVariant],
-          'default',
-        );
-      }}
-    >
-      Pokedex Menu
-    </button>
-  ),
-}));
 
 vi.mock('@/pages/Pokemon/components/Menus/PokemonMenu/PokemonMenu', () => ({
   default: ({ activeView }: { activeView: string }) => (
@@ -48,12 +16,24 @@ vi.mock('@/pages/Pokemon/components/Menus/PokemonMenu/PokemonMenu', () => ({
 }));
 
 vi.mock('@/pages/Pokemon/components/Menus/TagsMenu/TagsMenu', () => ({
-  default: ({ onSelectTag }: { onSelectTag: (filter: string) => void }) => (
+  default: ({
+    onSelectTag,
+    panel,
+    tagFilter,
+    onClearTagFilter,
+  }: {
+    onSelectTag: (filter: string) => void;
+    panel: 'inventory' | 'wishlist';
+    tagFilter?: string;
+    onClearTagFilter?: () => void;
+  }) => (
     <button
-      data-testid="tags-menu-trigger"
-      onClick={() => onSelectTag('Trade')}
+      data-testid={`tags-menu-${panel}`}
+      data-tag-filter={tagFilter}
+      data-can-clear-tag={onClearTagFilter ? 'true' : 'false'}
+      onClick={() => onSelectTag(panel === 'wishlist' ? 'Wanted' : 'Trade')}
     >
-      Tags Menu
+      Tags Menu {panel}
     </button>
   ),
 }));
@@ -74,11 +54,6 @@ const makeProps = (overrides: Partial<Props> = {}): Props => {
     },
     transform: 'translate3d(-1000px,0,0)',
     isDragging: false,
-    setTagFilter: toSetter<string>(),
-    onPokedexHighlightedCardsChange: vi.fn(),
-    onPokedexActiveViewChange: vi.fn(),
-    onPokedexListSelect: vi.fn(),
-    pokedexLists: { default: variants } as PokedexLists,
     variants,
     isEditable: true,
     sortedPokemons: variants,
@@ -89,6 +64,8 @@ const makeProps = (overrides: Partial<Props> = {}): Props => {
     toggleCardHighlight: vi.fn(),
     highlightedCards: new Set<string>(),
     tagFilter: '',
+    sidePanelTagFilter: '',
+    onClearTagFilter: vi.fn(),
     activeTags: {} as TagBuckets,
     instances: {} as Instances,
     sortType: 'number' as SortType,
@@ -121,39 +98,52 @@ describe('PokemonViewSlider', () => {
     expect(draggingSlider?.style.transition).toBe('none');
   });
 
-  it('wires pokedex panel callbacks to parent handlers', () => {
-    const setTagFilter = toSetter<string>();
-    const onPokedexHighlightedCardsChange = vi.fn();
-    const onPokedexActiveViewChange = vi.fn();
-    const onPokedexListSelect = vi.fn();
+  it('renders inventory and wishlist tag panels around the pokemon catalog', () => {
+    render(<PokemonViewSlider {...makeProps()} />);
 
+    expect(screen.getByTestId('tags-menu-inventory')).toBeInTheDocument();
+    expect(screen.getByTestId('pokemon-menu')).toHaveTextContent('pokemon');
+    expect(screen.getByTestId('tags-menu-wishlist')).toBeInTheDocument();
+  });
+
+  it('forwards tag selection from both tag side panels', () => {
+    const onTagSelect = vi.fn();
+    render(<PokemonViewSlider {...makeProps({ onTagSelect })} />);
+
+    fireEvent.click(screen.getByTestId('tags-menu-inventory'));
+    fireEvent.click(screen.getByTestId('tags-menu-wishlist'));
+
+    expect(onTagSelect).toHaveBeenNthCalledWith(1, 'Trade');
+    expect(onTagSelect).toHaveBeenNthCalledWith(2, 'Wanted');
+  });
+
+  it('forwards active tag clearing controls to both tag side panels', () => {
+    const onClearTagFilter = vi.fn();
     render(
       <PokemonViewSlider
         {...makeProps({
-          setTagFilter,
-          onPokedexHighlightedCardsChange,
-          onPokedexActiveViewChange,
-          onPokedexListSelect,
+          tagFilter: 'Favorites',
+          sidePanelTagFilter: 'Favorites',
+          onClearTagFilter,
         })}
       />,
     );
 
-    fireEvent.click(screen.getByTestId('pokedex-menu-trigger'));
-
-    expect(setTagFilter).toHaveBeenCalledWith('Caught');
-    expect(onPokedexHighlightedCardsChange).toHaveBeenCalledWith(new Set(['inst-1']));
-    expect(onPokedexActiveViewChange).toHaveBeenCalledWith('pokemon');
-    expect(onPokedexListSelect).toHaveBeenCalledWith(
-      [{ variant_id: '0001-default' }],
-      'default',
+    expect(screen.getByTestId('tags-menu-inventory')).toHaveAttribute(
+      'data-tag-filter',
+      'Favorites',
     );
-  });
-
-  it('forwards tag selection from tags panel', () => {
-    const onTagSelect = vi.fn();
-    render(<PokemonViewSlider {...makeProps({ onTagSelect })} />);
-
-    fireEvent.click(screen.getByTestId('tags-menu-trigger'));
-    expect(onTagSelect).toHaveBeenCalledWith('Trade');
+    expect(screen.getByTestId('tags-menu-inventory')).toHaveAttribute(
+      'data-can-clear-tag',
+      'true',
+    );
+    expect(screen.getByTestId('tags-menu-wishlist')).toHaveAttribute(
+      'data-tag-filter',
+      'Favorites',
+    );
+    expect(screen.getByTestId('tags-menu-wishlist')).toHaveAttribute(
+      'data-can-clear-tag',
+      'true',
+    );
   });
 });

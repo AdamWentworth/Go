@@ -1,6 +1,6 @@
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import type React from 'react';
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { AppLoadingProvider } from '@/contexts/AppLoadingContext';
 import PokemonMenu from '@/pages/Pokemon/components/Menus/PokemonMenu/PokemonMenu';
@@ -9,8 +9,12 @@ vi.mock('@/components/LoadingSpinner', () => ({
   default: () => <div data-testid="loading-spinner" />,
 }));
 
+const { confirmMock } = vi.hoisted(() => ({
+  confirmMock: vi.fn().mockResolvedValue(true),
+}));
+
 vi.mock('@/contexts/ModalContext', () => ({
-  useModal: () => ({ alert: () => undefined }),
+  useModal: () => ({ alert: () => undefined, confirm: confirmMock }),
 }));
 
 const makeProps = (
@@ -26,6 +30,7 @@ const makeProps = (
   toggleCardHighlight: vi.fn(),
   highlightedCards: new Set(),
   tagFilter: '',
+  onClearTagFilter: vi.fn(),
   lists: {},
   instances: {},
   sortType: 'number',
@@ -44,6 +49,11 @@ const makeProps = (
 });
 
 describe('PokemonMenu', () => {
+  beforeEach(() => {
+    confirmMock.mockClear();
+    confirmMock.mockResolvedValue(true);
+  });
+
   it('uses the shared loading spinner for its loading fallback', () => {
     render(
       <AppLoadingProvider>
@@ -53,5 +63,57 @@ describe('PokemonMenu', () => {
 
     expect(screen.getByTestId('loading-spinner')).toBeInTheDocument();
     expect(screen.queryByText('Loading...')).not.toBeInTheDocument();
+  });
+
+  it('shows an active tag filter chip and confirms before clearing it', async () => {
+    const onClearTagFilter = vi.fn();
+
+    render(
+      <AppLoadingProvider>
+        <PokemonMenu
+          {...makeProps({
+            tagFilter: 'Caught',
+            onClearTagFilter,
+          })}
+        />
+      </AppLoadingProvider>,
+    );
+
+    expect(screen.getByText('Caught').closest('.active-tag-filter-row')).toHaveClass(
+      'active-tag-filter-caught',
+    );
+
+    fireEvent.click(
+      screen.getByRole('button', {
+        name: /clear caught tag filter/i,
+      }),
+    );
+
+    await waitFor(() => {
+      expect(confirmMock).toHaveBeenCalledWith(
+        expect.stringContaining('Clear the Caught tag?'),
+      );
+      expect(onClearTagFilter).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  it('uses the favorite star icon for the Favorites tag chip', () => {
+    render(
+      <AppLoadingProvider>
+        <PokemonMenu
+          {...makeProps({
+            tagFilter: 'Favorites',
+          })}
+        />
+      </AppLoadingProvider>,
+    );
+
+    const chip = screen.getByText('Favorites').closest('.active-tag-filter-row');
+    expect(chip).toHaveClass('active-tag-filter-favorites');
+    expect(chip).toHaveClass('active-tag-filter-with-icon');
+    expect(chip?.querySelector('.active-tag-filter-icon')).toHaveAttribute(
+      'src',
+      '/images/fav_pressed.png',
+    );
   });
 });

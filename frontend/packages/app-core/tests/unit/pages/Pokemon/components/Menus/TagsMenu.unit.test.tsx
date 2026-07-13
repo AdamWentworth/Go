@@ -1,12 +1,20 @@
 import React from 'react';
-import { describe, expect, it, vi } from 'vitest';
-import { fireEvent, render } from '@testing-library/react';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 
 import TagsMenu from '@/pages/Pokemon/components/Menus/TagsMenu/TagsMenu';
 import type { TagBuckets, TagItem } from '@/types/tags';
 
 vi.mock('@/pages/Pokemon/components/Menus/TagsMenu/hooks/useDownloadImage', () => ({
   default: () => ({ isDownloading: false, downloadImage: vi.fn() }),
+}));
+
+const { confirmMock } = vi.hoisted(() => ({
+  confirmMock: vi.fn().mockResolvedValue(true),
+}));
+
+vi.mock('@/contexts/ModalContext', () => ({
+  useModal: () => ({ confirm: confirmMock }),
 }));
 
 const makeItem = (overrides: Partial<TagItem>): TagItem =>
@@ -33,6 +41,11 @@ const makeItem = (overrides: Partial<TagItem>): TagItem =>
   }) as TagItem;
 
 describe('TagsMenu', () => {
+  beforeEach(() => {
+    confirmMock.mockClear();
+    confirmMock.mockResolvedValue(true);
+  });
+
   it('derives Trade from caught and Most Wanted from wanted only', () => {
     const activeTags: TagBuckets = {
       caught: {
@@ -90,6 +103,84 @@ describe('TagsMenu', () => {
     fireEvent.click(caughtTag as Element);
     expect(onSelectTag).toHaveBeenCalledWith('Caught');
   });
+
+  it('can focus the inventory side without rendering wishlist tags', () => {
+    const activeTags: TagBuckets = {
+      caught: {
+        c1: makeItem({ instance_id: 'c1', is_caught: true, is_for_trade: true }),
+      },
+      wanted: {
+        w1: makeItem({ instance_id: 'w1', is_wanted: true, most_wanted: true }),
+      },
+    };
+
+    const { container } = render(
+      <TagsMenu
+        panel="inventory"
+        onSelectTag={vi.fn()}
+        activeTags={activeTags}
+        variants={[]}
+      />,
+    );
+
+    expect(container.querySelector('[data-tag="Caught"]')).toBeTruthy();
+    expect(container.querySelector('[data-tag="Trade"]')).toBeTruthy();
+    expect(container.querySelector('[data-tag="Wanted"]')).toBeNull();
+    expect(container.querySelector('[data-tag="Most Wanted"]')).toBeNull();
+  });
+
+  it('can focus the wishlist side without rendering inventory tags', () => {
+    const activeTags: TagBuckets = {
+      caught: {
+        c1: makeItem({ instance_id: 'c1', is_caught: true, is_for_trade: true }),
+      },
+      wanted: {
+        w1: makeItem({ instance_id: 'w1', is_wanted: true, most_wanted: true }),
+      },
+    };
+
+    const { container } = render(
+      <TagsMenu
+        panel="wishlist"
+        onSelectTag={vi.fn()}
+        activeTags={activeTags}
+        variants={[]}
+      />,
+    );
+
+    expect(container.querySelector('[data-tag="Wanted"]')).toBeTruthy();
+    expect(container.querySelector('[data-tag="Most Wanted"]')).toBeTruthy();
+    expect(container.querySelector('[data-tag="Caught"]')).toBeNull();
+    expect(container.querySelector('[data-tag="Trade"]')).toBeNull();
+  });
+
+  it('shows a sticky active tag filter escape hatch in focused side panels', async () => {
+    const onClearTagFilter = vi.fn();
+
+    render(
+      <TagsMenu
+        panel="wishlist"
+        onSelectTag={vi.fn()}
+        activeTags={{ caught: {}, wanted: {} }}
+        variants={[]}
+        tagFilter="Wanted"
+        onClearTagFilter={onClearTagFilter}
+      />,
+    );
+
+    const clearButton = screen.getByRole('button', { name: /clear wanted tag filter/i });
+    const chip = clearButton.closest('.active-tag-filter-row');
+    expect(chip).toHaveClass('active-tag-filter-placement-panel');
+    expect(chip).toHaveClass('active-tag-filter-wanted');
+
+    fireEvent.click(clearButton);
+
+    await waitFor(() => {
+      expect(confirmMock).toHaveBeenCalledWith(expect.stringContaining('Clear the Wanted tag?'));
+      expect(onClearTagFilter).toHaveBeenCalledTimes(1);
+    });
+  });
+
 
   it('caps preview rendering to 18 sprites per tag for large datasets', () => {
     const caught: Record<string, TagItem> = {};

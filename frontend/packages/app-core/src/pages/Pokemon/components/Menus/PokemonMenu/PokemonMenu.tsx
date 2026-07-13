@@ -11,6 +11,7 @@ import PokedexOverlay from '@/pages/Pokemon/features/pokedex/PokedexOverlay';
 import InstanceOverlay from '@/pages/Pokemon/features/instances/InstanceOverlay';
 import CustomScrollbar from './CustomScrollbar';
 import './PokemonMenu.css';
+import ActiveTagFilterChip from '../../ActiveTagFilterChip';
 import { useContextBackHandler } from '@/contexts/ContextBackContext';
 import { useModal } from '@/contexts/ModalContext';
 import { AppLoadingFallback } from '@/contexts/AppLoadingContext';
@@ -33,6 +34,7 @@ interface PokemonMenuProps {
   toggleCardHighlight: (key: string) => void;
   highlightedCards: Set<string>;
   tagFilter: string;
+  onClearTagFilter: () => void;
   lists: Record<string, Record<string, unknown>>;
   instances: Record<string, PokemonInstance>;
   sortType: SortType;
@@ -61,6 +63,7 @@ const PokemonMenu: React.FC<PokemonMenuProps> = ({
   toggleCardHighlight,
   highlightedCards,
   tagFilter,
+  onClearTagFilter,
   lists,
   instances,
   sortType,
@@ -190,8 +193,15 @@ const PokemonMenu: React.FC<PokemonMenuProps> = ({
 
   if (loading) return <AppLoadingFallback source="pokemon-menu" />;
 
+  const hasTagFilter = tagFilter.trim().length > 0;
+  const containerClassName = [
+    'pokemon-container',
+    searchTerm.trim() ? 'has-checkbox' : '',
+    hasTagFilter ? 'has-tag-filter' : '',
+  ].filter(Boolean).join(' ');
+
   return (
-    <div className={`pokemon-container ${searchTerm.trim() ? 'has-checkbox' : ''}`}>
+    <div className={containerClassName}>
       <header className="search-header" ref={searchAreaRef}>
         <SearchUI
           searchTerm={searchTerm}
@@ -204,6 +214,13 @@ const PokemonMenu: React.FC<PokemonMenuProps> = ({
             setSearchTerm('');
           }}
         />
+        {hasTagFilter && (
+          <ActiveTagFilterChip
+            tagFilter={tagFilter}
+            onClearTagFilter={onClearTagFilter}
+            placement="search"
+          />
+        )}
         {isMenuVisible && (
           <SearchMenu onFilterClick={handleFilterClick} onCloseMenu={() => setIsMenuVisible(false)} />
         )}

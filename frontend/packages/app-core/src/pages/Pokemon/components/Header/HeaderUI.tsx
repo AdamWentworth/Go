@@ -4,8 +4,8 @@ import React, { useRef, useState, useEffect } from 'react';
 import './HeaderUI.css';
 
 export interface HeaderUIProps {
-  onListsButtonClick: () => void;
-  onPokedexClick: () => void;
+  onWishlistClick: () => void;
+  onHaveTagsClick: () => void;
   onPokemonClick: () => void;
   contextText: React.ReactNode;
   totalPokemon: number;
@@ -13,15 +13,13 @@ export interface HeaderUIProps {
   onClearSelection: () => void;
   onSelectAll: () => void;
   activeView: 'pokedex' | 'pokemon' | 'tags';
-  /** optional sub-label shown under “POKÉDEX” */
-  pokedexSubLabel?: string;
-  /** optional sub-label shown under “TAGS” */
-  tagsSubLabel?: string;                // NEW
+  haveTagsSubLabel?: string;
+  wishlistSubLabel?: string;
 }
 
 const HeaderUI: React.FC<HeaderUIProps> = ({
-  onListsButtonClick,
-  onPokedexClick,
+  onWishlistClick,
+  onHaveTagsClick,
   onPokemonClick,
   contextText,
   totalPokemon,
@@ -29,12 +27,12 @@ const HeaderUI: React.FC<HeaderUIProps> = ({
   onClearSelection,
   onSelectAll,
   activeView,
-  pokedexSubLabel,
-  tagsSubLabel,          // NEW
+  haveTagsSubLabel,
+  wishlistSubLabel,
 }) => {
   const hasSelection = Boolean(highlightedCards && highlightedCards.size > 0);
   const isCustomContext = React.isValidElement(contextText);
-  const attachPokedexClick = !isCustomContext;
+  const attachHaveTagsClick = !isCustomContext;
 
   // Refs for header and each column
   const headerRef = useRef<HTMLElement>(null);         // ← use HTMLElement here
@@ -44,10 +42,10 @@ const HeaderUI: React.FC<HeaderUIProps> = ({
 
   const [underlineLeft, setUnderlineLeft] = useState(0);
 
-  const isPokedexActive = activeView === 'pokedex';
+  const isHaveTagsActive = activeView === 'pokedex';
   const isPokemonActive = activeView === 'pokemon';
-  const isTagsActive = activeView === 'tags';
-  const activeIndex = isPokedexActive ? 0 : isPokemonActive ? 1 : 2;
+  const isWishlistActive = activeView === 'tags';
+  const activeIndex = isHaveTagsActive ? 0 : isPokemonActive ? 1 : 2;
 
   useEffect(() => {
     const updateUnderline = () => {
@@ -69,7 +67,7 @@ const HeaderUI: React.FC<HeaderUIProps> = ({
 
   const headerClassName = `header${hasSelection ? ' header-fast-select' : ''}`;
 
-  const renderPokedexToggle = () => {
+  const renderHaveTagsToggle = () => {
     if (hasSelection) {
       return (
         <div className="free-toggle" onClick={onClearSelection}>
@@ -88,23 +86,22 @@ const HeaderUI: React.FC<HeaderUIProps> = ({
     return (
       <div
         className={btnClass}
-        onClick={attachPokedexClick ? onPokedexClick : undefined}
+        onClick={attachHaveTagsClick ? onHaveTagsClick : undefined}
       >
-        <span className={`${textClass} ${isPokedexActive ? 'active' : ''}`}>
-          {isCustomContext ? contextText : 'POKÉDEX'}
+        <span className={`${textClass} ${isHaveTagsActive ? 'active' : ''}`}>
+          {isCustomContext ? contextText : 'TAGS'}
         </span>
 
-        {/* NEW — second line, only when supplied and not in custom context */}
-        {!isCustomContext && pokedexSubLabel && (
-          <span className={`${textClass} ${isPokedexActive ? 'active' : ''}`}>
-            {pokedexSubLabel}
+        {!isCustomContext && haveTagsSubLabel && (
+          <span className={`${textClass} ${isHaveTagsActive ? 'active' : ''}`}>
+            {haveTagsSubLabel}
           </span>
         )}
       </div>
     );
   };
 
-  const renderListsToggle = () => {
+  const renderWishlistToggle = () => {
     if (hasSelection) {
       return (
         <div className="free-toggle" onClick={onSelectAll}>
@@ -113,14 +110,13 @@ const HeaderUI: React.FC<HeaderUIProps> = ({
       );
     }
     return (
-      <div className="toggle-button" onClick={onListsButtonClick}>
-        <span className={`toggle-text ${isTagsActive ? 'active' : ''}`}>
-          TAGS
+      <div className="toggle-button" onClick={onWishlistClick}>
+        <span className={`toggle-text ${isWishlistActive ? 'active' : ''}`}>
+          WISHLIST
         </span>
-        {/* NEW — second line under TAGS when supplied */}
-        {tagsSubLabel && (
-          <span className={`toggle-text ${isTagsActive ? 'active' : ''}`}>
-            {tagsSubLabel}
+        {wishlistSubLabel && (
+          <span className={`toggle-text ${isWishlistActive ? 'active' : ''}`}>
+            {wishlistSubLabel}
           </span>
         )}
       </div>
@@ -131,7 +127,7 @@ const HeaderUI: React.FC<HeaderUIProps> = ({
     <header className={headerClassName} ref={headerRef}>
       <div className="controls-row">
         <div className="toggle-col" ref={colRef0}>
-          {renderPokedexToggle()}
+          {renderHaveTagsToggle()}
         </div>
 
         <div className="toggle-col" ref={colRef1} onClick={onPokemonClick}>
@@ -146,7 +142,7 @@ const HeaderUI: React.FC<HeaderUIProps> = ({
         </div>
 
         <div className="toggle-col" ref={colRef2}>
-          {renderListsToggle()}
+          {renderWishlistToggle()}
         </div>
       </div>
 

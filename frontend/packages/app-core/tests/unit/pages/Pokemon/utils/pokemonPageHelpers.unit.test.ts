@@ -4,8 +4,8 @@ import {
   buildSelectAllIds,
   buildSliderTransform,
   clampDragOffset,
-  getPokedexSubLabel,
-  getTagsSubLabel,
+  getHaveTagsSubLabel,
+  getWishlistSubLabel,
   isActiveView,
   toInstanceStatus,
 } from '@/pages/Pokemon/utils/pokemonPageHelpers';
@@ -56,14 +56,18 @@ describe('pokemonPageHelpers', () => {
     expect(buildSliderTransform('tags', 100, 1000)).toBe('translate3d(-1900px,0,0)');
   });
 
-  it('returns expected sub-labels for pokedex and tags views', () => {
-    expect(getPokedexSubLabel(false, 'pokedex', 'shiny')).toBe('(SHINY)');
-    expect(getPokedexSubLabel(true, 'pokedex', 'shiny')).toBeUndefined();
-    expect(getPokedexSubLabel(false, 'ownership', 'shiny')).toBeUndefined();
-    expect(getPokedexSubLabel(false, 'pokedex', '')).toBe('(ALL)');
+  it('returns expected sub-labels for inventory and wishlist tag panels', () => {
+    expect(getHaveTagsSubLabel('ownership', 'Caught')).toBe('(CAUGHT)');
+    expect(getHaveTagsSubLabel('ownership', 'Trade')).toBe('(TRADE)');
+    expect(getHaveTagsSubLabel('ownership', 'Favorites')).toBe('(FAVORITES)');
+    expect(getHaveTagsSubLabel('ownership', 'Wanted')).toBeUndefined();
+    expect(getHaveTagsSubLabel('pokedex', 'Caught')).toBeUndefined();
+    expect(getHaveTagsSubLabel('ownership', '')).toBeUndefined();
 
-    expect(getTagsSubLabel('ownership', 'Caught')).toBe('(CAUGHT)');
-    expect(getTagsSubLabel('pokedex', 'Caught')).toBeUndefined();
-    expect(getTagsSubLabel('ownership', '')).toBeUndefined();
+    expect(getWishlistSubLabel('ownership', 'Wanted')).toBe('(WANTED)');
+    expect(getWishlistSubLabel('ownership', 'Most Wanted')).toBe('(MOST WANTED)');
+    expect(getWishlistSubLabel('ownership', 'Caught')).toBeUndefined();
+    expect(getWishlistSubLabel('pokedex', 'Wanted')).toBeUndefined();
+    expect(getWishlistSubLabel('ownership', '')).toBeUndefined();
   });
 });
