@@ -4,15 +4,21 @@ import createPokemonVariants from "@/features/variants/utils/createPokemonVarian
 import { getAllVariants, queueVariantsPersist } from "@/db/variantsDB";
 import { recordVariantPipelineMetrics } from "@/utils/perfTelemetry";
 import type { PokemonVariant } from "@/types/pokemonVariants";
+import type { PokemonCatalogManifest } from '@shared-contracts/pokemon';
 import { computePayloadHash } from "@/features/variants/utils/payloadHash";
 import { createScopedLogger } from "@/utils/logger";
 import {
   getStorageString,
   setStorageNumber,
+  setStorageString,
   STORAGE_KEYS,
 } from "@/utils/storage";
 
 const log = createScopedLogger('fetchAndProcessVariants');
+
+type FetchAndProcessVariantsOptions = {
+  manifest?: PokemonCatalogManifest | null;
+};
 
 function assertVariantIds(variants: PokemonVariant[]): void {
   const seen = new Set<string>();
@@ -41,12 +47,13 @@ function assertVariantIds(variants: PokemonVariant[]): void {
   }
 }
 
-export async function fetchAndProcessVariants() {
+export async function fetchAndProcessVariants(options: FetchAndProcessVariantsOptions = {}) {
   log.debug('Fetching new data from API');
   const pipelineStart = performance.now();
+  const catalogVersion = options.manifest?.catalogVersion;
 
   const t0 = Date.now();
-  const pokemons = await getPokemons();
+  const pokemons = await getPokemons({ manifest: options.manifest });
   const fetchedMs = performance.now() - pipelineStart;
   log.debug(`Fetched new Pokemon data from API in ${Date.now() - t0} ms`);
 
@@ -67,6 +74,9 @@ export async function fetchAndProcessVariants() {
     if (cachedVariants.length > 0) {
       // We confirmed API payload equivalence with cached data.
       setStorageNumber(STORAGE_KEYS.variantsTimestamp, Date.now());
+      if (catalogVersion) {
+        setStorageString(STORAGE_KEYS.pokemonCatalogVersion, catalogVersion);
+      }
       const totalMs = performance.now() - pipelineStart;
 
       recordVariantPipelineMetrics({
@@ -101,7 +111,7 @@ export async function fetchAndProcessVariants() {
 
   const t2 = Date.now();
   const persistStart = performance.now();
-  queueVariantsPersist(variants, Date.now(), payloadHash);
+  queueVariantsPersist(variants, Date.now(), payloadHash, catalogVersion);
   const persistMs = performance.now() - persistStart;
   log.debug(`Queued variants persistence in ${Date.now() - t2} ms`);
   const totalMs = performance.now() - pipelineStart;

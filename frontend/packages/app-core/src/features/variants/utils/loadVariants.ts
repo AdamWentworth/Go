@@ -14,11 +14,15 @@ import { logSize } from '@/utils/loggers';
 import { fetchAndProcessVariants } from './fetchAndProcessVariants';
 import { POKEDEX_STORES } from '@/db/constants';
 import { createScopedLogger } from '@/utils/logger';
+import { getPokemonCatalogManifest } from '@/services/pokemonDataService';
 import {
   getStorageNumber,
+  getStorageString,
   setStorageNumber,
+  setStorageString,
   STORAGE_KEYS,
 } from '@/utils/storage';
+import type { PokemonCatalogManifest } from '@shared-contracts/pokemon';
 
 let derivedListsMemo: { key: string; lists: PokedexLists } | null = null;
 const log = createScopedLogger('loadVariants');
@@ -52,6 +56,40 @@ function getOrBuildPokedexLists(variants: PokemonVariant[], variantsTimestamp: n
   return lists;
 }
 
+function getForcedRefreshCutoff(): number {
+  const raw = import.meta.env.VITE_FORCED_REFRESH_TIMESTAMP || '0';
+  const parsed = Number.parseInt(raw, 10);
+  return Number.isNaN(parsed) ? 0 : parsed;
+}
+
+function passesForcedRefreshCutoff(timestamp: number): boolean {
+  const forcedRefreshCutoff = getForcedRefreshCutoff();
+  return !forcedRefreshCutoff || timestamp >= forcedRefreshCutoff;
+}
+
+function isVersionedCacheFresh(
+  timestamp: number,
+  cachedCatalogVersion: string | null,
+  currentCatalogVersion: string | null,
+): boolean {
+  if (!timestamp || !passesForcedRefreshCutoff(timestamp)) return false;
+
+  if (currentCatalogVersion) {
+    return cachedCatalogVersion === currentCatalogVersion;
+  }
+
+  return isDataFresh(timestamp);
+}
+
+async function getManifestOrNull(): Promise<PokemonCatalogManifest | null> {
+  try {
+    return await getPokemonCatalogManifest();
+  } catch (error) {
+    log.warn('Pokemon catalog manifest unavailable; falling back to timestamp cache freshness.', error);
+    return null;
+  }
+}
+
 export async function loadVariants() {
   log.debug('Fetching data from API or cache...');
 
@@ -60,15 +98,32 @@ export async function loadVariants() {
     STORAGE_KEYS.pokedexListsTimestamp,
     0,
   );
+  const manifest = await getManifestOrNull();
+  const currentCatalogVersion = manifest?.catalogVersion || null;
+  const variantsCatalogVersion = getStorageString(STORAGE_KEYS.pokemonCatalogVersion);
+  const pokedexListsCatalogVersion = getStorageString(STORAGE_KEYS.pokedexListsCatalogVersion);
 
-  const variantsFresh = variantsTimestamp && isDataFresh(variantsTimestamp);
-  const pokedexFresh  = pokedexListsTimestamp && isDataFresh(pokedexListsTimestamp);
+  const variantsFresh = isVersionedCacheFresh(
+    variantsTimestamp,
+    variantsCatalogVersion,
+    currentCatalogVersion,
+  );
+  const pokedexFresh = isVersionedCacheFresh(
+    pokedexListsTimestamp,
+    pokedexListsCatalogVersion,
+    currentCatalogVersion,
+  );
 
   const logAge = (label: string, t: number) =>
     log.debug(t ? `${label} Age: ${formatTimeAgo(t)}` : `${label} data is missing.`);
 
   logAge('Cached Variants', variantsTimestamp);
   logAge('Cached PokedexLists', pokedexListsTimestamp);
+  if (currentCatalogVersion) {
+    log.debug(
+      `Pokemon catalog version: current=${currentCatalogVersion}, variants=${variantsCatalogVersion ?? 'missing'}, pokedex=${pokedexListsCatalogVersion ?? 'missing'}`,
+    );
+  }
 
   let variants: PokemonVariant[];
   let pokedexLists: PokedexLists;
@@ -102,7 +157,7 @@ export async function loadVariants() {
       logSize('cached variants', variants);
     } else {
       log.debug('Variants are stale or missing, updating...');
-      variants = await fetchAndProcessVariants();
+      variants = await fetchAndProcessVariants({ manifest });
     }
 
     /* -------------------------------------------------------------- */
@@ -116,6 +171,9 @@ export async function loadVariants() {
     try {
       await storePokedexLists(pokedexLists);
       setStorageNumber(STORAGE_KEYS.pokedexListsTimestamp, Date.now());
+      if (currentCatalogVersion) {
+        setStorageString(STORAGE_KEYS.pokedexListsCatalogVersion, currentCatalogVersion);
+      }
       listsBuiltNow = true;
       log.debug('Successfully stored new PokedexLists in IndexedDB');
     } catch (error) {

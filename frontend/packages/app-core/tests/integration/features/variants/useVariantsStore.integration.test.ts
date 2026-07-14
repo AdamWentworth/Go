@@ -23,6 +23,7 @@ const dummyVariants = variantsFixture as unknown as PokemonVariant[];
 const dummyPokedexLists = pokedexListsFixture as unknown as PokedexLists;
 
 let loadCacheSpy: MockInstance;
+let fetchFreshSpy: MockInstance;
 
 describe.sequential('useVariantsStore integration', () => {
   beforeEach(() => {
@@ -38,6 +39,10 @@ describe.sequential('useVariantsStore integration', () => {
         variants: dummyVariants,
         pokedexLists: dummyPokedexLists,
       });
+
+    fetchFreshSpy = vi
+      .spyOn(variantsRepository, 'fetchFresh')
+      .mockResolvedValue({ variants: dummyVariants, pokedexLists: dummyPokedexLists });
   });
 
   afterEach(() => {
@@ -54,16 +59,13 @@ describe.sequential('useVariantsStore integration', () => {
     await useVariantsStore.getState().hydrateFromCache();
     expect(useVariantsStore.getState().variantsLoading).toBe(false);
     expect(useVariantsStore.getState().variants).toEqual(dummyVariants);
+    expect(fetchFreshSpy).toHaveBeenCalled();
   });
 
   it('fetches fresh variants when cache is stale', async () => {
     const stale = Date.now() - CACHE_TTL_MS - 1_000;
     localStorage.setItem('variantsTimestamp', stale.toString());
     localStorage.setItem('pokedexListsTimestamp', stale.toString());
-
-    const fetchFreshSpy = vi
-      .spyOn(variantsRepository, 'fetchFresh')
-      .mockResolvedValue({ variants: dummyVariants, pokedexLists: dummyPokedexLists });
 
     await useVariantsStore.getState().refreshVariants();
 
@@ -87,14 +89,10 @@ describe.sequential('useVariantsStore integration', () => {
     expect(useVariantsStore.getState().variants).toEqual(dummyVariants);
   });
 
-  it('returns early for fresh cache and never calls fetchFresh', async () => {
-    const fetchFreshSpy = vi
-      .spyOn(variantsRepository, 'fetchFresh')
-      .mockResolvedValue({ variants: [], pokedexLists: {} as PokedexLists });
-
+  it('checks the manifest-aware refresh path even when timestamp cache is fresh', async () => {
     await useVariantsStore.getState().refreshVariants();
 
-    expect(fetchFreshSpy).not.toHaveBeenCalled();
+    expect(fetchFreshSpy).toHaveBeenCalled();
     expect(useVariantsStore.getState().variants).toEqual(dummyVariants);
   });
 

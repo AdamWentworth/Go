@@ -29,6 +29,7 @@ type QueuedVariantSnapshot<T> = {
   timestamp: number;
   enqueuedAtMs: number;
   payloadHash?: string;
+  catalogVersion?: string;
 };
 
 let queuedSnapshot: QueuedVariantSnapshot<unknown> | null = null;
@@ -69,6 +70,9 @@ async function drainVariantPersistQueue() {
       if (current.payloadHash) {
         setStorageString(STORAGE_KEYS.variantsPayloadHash, current.payloadHash);
       }
+      if (current.catalogVersion) {
+        setStorageString(STORAGE_KEYS.pokemonCatalogVersion, current.catalogVersion);
+      }
       recordVariantPersistCommitMetrics({
         persistCommittedMs,
         persistEndToEndMs,
@@ -83,6 +87,7 @@ export function queueVariantsPersist<T>(
   data: T[],
   timestamp = Date.now(),
   payloadHash?: string,
+  catalogVersion?: string,
 ) {
   // Keep only the newest full snapshot.
   queuedSnapshot = {
@@ -90,6 +95,7 @@ export function queueVariantsPersist<T>(
     timestamp,
     enqueuedAtMs: performance.now(),
     payloadHash,
+    catalogVersion,
   };
   scheduleDrainQueue();
 }

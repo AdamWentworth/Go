@@ -4,11 +4,6 @@ import type { PokemonVariant } from '@/types/pokemonVariants';
 import type { PokedexLists } from '@/types/pokedex';
 import { variantsRepository } from '../repositories/variantsRepository';
 import { createScopedLogger } from '@/utils/logger';
-import {
-  VARIANTS_KEY,
-  POKEDEX_LISTS_KEY,
-  isCacheFresh,
-} from '../utils/cache';
 
 interface VariantsState {
   variants: PokemonVariant[];
@@ -34,9 +29,12 @@ export const useVariantsStore = create<VariantsState>((set, get) => ({
         set({ variants, pokedexLists, variantsLoading: false });
       }
 
-      // If either cache is stale, trigger a background refresh
-      if (!isCacheFresh(VARIANTS_KEY) || !isCacheFresh(POKEDEX_LISTS_KEY)) {
+      // Always let the manifest-aware refresh path verify the cached catalog version.
+      // If the server version matches, this only costs the small manifest request.
+      if (variants.length) {
         void get().refreshVariants();
+      } else {
+        await get().refreshVariants();
       }
     } catch (error) {
       log.error('hydrateFromCache failed', error);
@@ -49,16 +47,8 @@ export const useVariantsStore = create<VariantsState>((set, get) => ({
     set({ isRefreshing: true });
 
     try {
-      // Try serving fresh cache first
-      if (isCacheFresh(VARIANTS_KEY) && isCacheFresh(POKEDEX_LISTS_KEY)) {
-        const { variants, pokedexLists } = await variantsRepository.loadCache();
-        if (variants.length) {
-          set({ variants, pokedexLists, variantsLoading: false });
-          return;
-        }
-      }
-
-      // Otherwise fetch from network
+      // The repository refresh path checks the lightweight catalog manifest first.
+      // Matching versions return IndexedDB data; changed versions fetch the data chunk.
       const { variants, pokedexLists } = await variantsRepository.fetchFresh();
       set({ variants, pokedexLists, variantsLoading: false });
     } catch (error) {

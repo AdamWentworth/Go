@@ -5,6 +5,7 @@ import { getPokemons } from '@/services/pokemonDataService';
 import createPokemonVariants from '@/features/variants/utils/createPokemonVariants';
 import { getAllVariants, queueVariantsPersist } from '@/db/variantsDB';
 import { computePayloadHash } from '@/features/variants/utils/payloadHash';
+import type { PokemonCatalogManifest } from '@shared-contracts/pokemon';
 
 import pokemonsFixture from '@/../tests/__helpers__/fixtures/pokemons.json';
 import variantsFixture from '@/../tests/__helpers__/fixtures/variants.json';
@@ -23,6 +24,22 @@ vi.mock('@/db/variantsDB', () => ({
 }));
 
 describe.sequential('fetchAndProcessVariants (unit)', () => {
+  const manifest: PokemonCatalogManifest = {
+    schemaVersion: 1,
+    catalogVersion: 'catalog-v1',
+    generatedAt: '2026-07-14T00:00:00Z',
+    chunks: {
+      pokemonFull: {
+        name: 'pokemonFull',
+        endpoint: '/pokemon/pokemons',
+        contentType: 'application/json',
+        etag: '"catalog-v1"',
+        version: 'catalog-v1',
+        bytesJson: 100,
+        bytesGzip: 50,
+      },
+    },
+  };
   const baseVariants = (variantsFixture as any[]).slice(0, 4).map((v, idx) => ({
     ...v,
     variant_id: (v as any).variant_id ?? `0000-default-${idx}`,
@@ -54,6 +71,18 @@ describe.sequential('fetchAndProcessVariants (unit)', () => {
     }
   });
 
+  it('passes manifest metadata through fetch and queued persistence', async () => {
+    const result = await fetchAndProcessVariants({ manifest });
+
+    expect(getPokemons).toHaveBeenCalledWith({ manifest });
+    expect(queueVariantsPersist).toHaveBeenCalledWith(
+      result,
+      expect.any(Number),
+      expect.any(String),
+      manifest.catalogVersion,
+    );
+  });
+
   it('produces stable variant_id values for identical input across calls', async () => {
     const first = await fetchAndProcessVariants();
     const second = await fetchAndProcessVariants();
@@ -78,12 +107,13 @@ describe.sequential('fetchAndProcessVariants (unit)', () => {
     vi.mocked(getPokemons).mockResolvedValue(payload);
     localStorage.setItem('variantsPayloadHash', computePayloadHash(payload));
 
-    const result = await fetchAndProcessVariants();
+    const result = await fetchAndProcessVariants({ manifest });
 
     expect(getAllVariants).toHaveBeenCalled();
     expect(createPokemonVariants).not.toHaveBeenCalled();
     expect(queueVariantsPersist).not.toHaveBeenCalled();
     expect(result).toEqual(baseVariants);
     expect(localStorage.getItem('variantsTimestamp')).toBeTruthy();
+    expect(localStorage.getItem('pokemonCatalogVersion')).toBe(manifest.catalogVersion);
   });
 });

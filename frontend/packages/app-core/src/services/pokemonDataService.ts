@@ -18,17 +18,28 @@ const log = createScopedLogger('pokemonDataService');
 const canDebugLog = loggerInternals.shouldEmit('debug');
 const STALE_LOCAL_STORAGE_KEYS = ['pokemonData', 'pokemonDataEtag'] as const;
 
+type GetPokemonsOptions = {
+  manifest?: PokemonCatalogManifest | null;
+};
+
 function clearStaleLocalStorageCache(): void {
   for (const key of STALE_LOCAL_STORAGE_KEYS) {
     removeStorageItem(key);
   }
 }
 
-export const getPokemons = async (): Promise<Pokemons> => {
+function getPokemonFullEndpoint(manifest?: PokemonCatalogManifest | null): string {
+  const endpoint = manifest?.chunks?.pokemonFull?.endpoint;
+  return typeof endpoint === 'string' && endpoint.trim()
+    ? endpoint
+    : pokemonContract.endpoints.pokemons;
+}
+
+export const getPokemons = async (options: GetPokemonsOptions = {}): Promise<Pokemons> => {
   try {
     clearStaleLocalStorageCache();
 
-    const response = await requestWithPolicy(buildUrl(BASE_URL, pokemonContract.endpoints.pokemons), {
+    const response = await requestWithPolicy(buildUrl(BASE_URL, getPokemonFullEndpoint(options.manifest)), {
       method: 'GET',
       headers: {},
     });
@@ -81,7 +92,17 @@ export const getPokemonCatalogManifest = async (): Promise<PokemonCatalogManifes
       );
     }
 
-    return payload as PokemonCatalogManifest;
+    const manifest = payload as PokemonCatalogManifest;
+    if (
+      typeof manifest.schemaVersion !== 'number' ||
+      typeof manifest.catalogVersion !== 'string' ||
+      !manifest.chunks?.pokemonFull ||
+      typeof manifest.chunks.pokemonFull.endpoint !== 'string'
+    ) {
+      throw new Error('[pokemonDataService] invalid manifest payload shape: missing catalog metadata');
+    }
+
+    return manifest;
   } catch (error: unknown) {
     log.error('Error fetching the Pokemon catalog manifest', error);
     throw error;
