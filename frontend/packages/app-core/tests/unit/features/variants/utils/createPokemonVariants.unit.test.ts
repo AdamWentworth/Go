@@ -265,4 +265,94 @@ describe('createPokemonVariants (unit)', () => {
     expect(costumeVariant?.raid_boss?.[0]?.costume_id).toBe(216);
     expect(shinyCostumeVariant?.raid_boss).toBeUndefined();
   });
+
+  it('creates both Mega Mewtwo forms with form-specific images, stats, CP, and types', () => {
+    const sample = samplePokemons[0];
+    const pokemon: BasePokemon = {
+      ...sample,
+      pokemon_id: 150,
+      name: 'Mewtwo',
+      pokedex_number: 150,
+      image_url: '/images/default/pokemon_150.png',
+      image_url_shiny: '/images/shiny/shiny_pokemon_150.png',
+      shiny_available: 1,
+      backgrounds: [],
+      costumes: [],
+      fusion: [],
+      megaEvolutions: [
+        {
+          id: 46,
+          mega_energy_cost: 300,
+          attack: 399,
+          defense: 215,
+          stamina: 228,
+          image_url: '/images/mega/mega_150_X.png',
+          image_url_shiny: '/images/shiny_mega/shiny_mega_150_X.png',
+          sprite_url: null,
+          primal: null,
+          form: 'X',
+          type_1_id: 15,
+          type_2_id: 6,
+          type1_name: 'Psychic',
+          type2_name: 'Fighting',
+          date_available: '2026-05-25',
+          cp40: 6112,
+          cp50: 6910,
+        },
+        {
+          id: 47,
+          mega_energy_cost: 300,
+          attack: 413,
+          defense: 223,
+          stamina: 228,
+          image_url: '/images/mega/mega_150_Y.png',
+          image_url_shiny: '/images/shiny_mega/shiny_mega_150_Y.png',
+          sprite_url: null,
+          primal: null,
+          form: 'Y',
+          type_1_id: 15,
+          type_2_id: undefined,
+          type1_name: 'Psychic',
+          type2_name: undefined,
+          date_available: '2026-05-25',
+          cp40: 6428,
+          cp50: 7267,
+        },
+      ],
+      raid_boss: [],
+      max: [],
+      evolves_from: [],
+    };
+
+    const variants = createPokemonVariants([pokemon]);
+    const megaX = variants.find((v) => v.variantType === 'mega_x');
+    const megaY = variants.find((v) => v.variantType === 'mega_y');
+    const shinyMegaX = variants.find((v) => v.variantType === 'shiny_mega_x');
+    const shinyMegaY = variants.find((v) => v.variantType === 'shiny_mega_y');
+
+    expect(megaX).toMatchObject({
+      variant_id: '0150-mega_x',
+      currentImage: '/images/mega/mega_150_X.png',
+      attack: 399,
+      defense: 215,
+      stamina: 228,
+      cp40: 6112,
+      cp50: 6910,
+      type_1_icon: '/images/types/psychic.png',
+      type_2_icon: '/images/types/fighting.png',
+    });
+    expect(megaY).toMatchObject({
+      variant_id: '0150-mega_y',
+      currentImage: '/images/mega/mega_150_Y.png',
+      attack: 413,
+      defense: 223,
+      stamina: 228,
+      cp40: 6428,
+      cp50: 7267,
+      type_1_icon: '/images/types/psychic.png',
+      type_2_icon: '',
+    });
+    expect(shinyMegaX?.currentImage).toBe('/images/shiny_mega/shiny_mega_150_X.png');
+    expect(shinyMegaY?.currentImage).toBe('/images/shiny_mega/shiny_mega_150_Y.png');
+  });
 });
