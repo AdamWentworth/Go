@@ -105,6 +105,9 @@ jobs:
       - name: PostgreSQL Catalog Parity
         run: bash scripts/test-postgres-catalog-parity.sh
 
+      - name: PostgreSQL Catalog Publisher Drill
+        run: bash ../ops/pokemon-catalog/test-publisher.sh
+
       - name: Integration Contract Test
         run: go test -tags=integration ./internal/builder -run TestPokemonPayload_StableShape -v
 

@@ -1,0 +1,50 @@
+name: publish-pokemon-catalog-prod
+
+on:
+  workflow_dispatch:
+    inputs:
+      deploy_root:
+        description: "Absolute path to the prod deploy state root"
+        required: false
+        default: "/srv/pokegonexus"
+        type: string
+      release_id:
+        description: "Optional durable catalog release ID. Empty derives one from this commit."
+        required: false
+        default: ""
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  publish:
+    name: Publish Pokemon Catalog To PostgreSQL
+    runs-on: [self-hosted, linux, x64, prod]
+    environment: production
+    concurrency:
+      group: publish-pokemon-catalog-prod
+      cancel-in-progress: false
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.26.5"
+          cache: true
+          cache-dependency-path: pokemon/go.sum
+
+      - name: Publish Catalog With Backup And Rollback
+        shell: bash
+        run: |
+          set -euo pipefail
+          release_id="${{ inputs.release_id }}"
+          if [[ -z "${release_id}" ]]; then
+            release_id="catalog-${GITHUB_SHA}"
+          fi
+          bash ops/pokemon-catalog/publish-catalog-prod.sh \
+            "${GITHUB_WORKSPACE}" \
+            "${{ inputs.deploy_root }}" \
+            "${GITHUB_WORKSPACE}/pokemon/data/pokego.db" \
+            "${release_id}"
