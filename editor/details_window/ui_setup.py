@@ -2,10 +2,29 @@
 import tkinter as tk
 from tkinter import ttk
 
+
+def maximize_window(window):
+    try:
+        window.state('zoomed')
+        return
+    except tk.TclError:
+        pass
+
+    try:
+        window.attributes('-zoomed', True)
+        return
+    except tk.TclError:
+        pass
+
+    width = window.winfo_screenwidth()
+    height = window.winfo_screenheight()
+    window.geometry(f'{width}x{height}+0+0')
+
+
 def create_scrollable_window(parent, title):
     window = tk.Toplevel(parent)
     window.title(title)
-    window.state('zoomed')
+    maximize_window(window)
 
     canvas = tk.Canvas(window)
     scrollable_frame = ttk.Frame(canvas)
@@ -36,4 +55,3 @@ def bind_scroll_events(window, canvas):
 
     window.bind("<MouseWheel>", _on_mousewheel)
     window.bind("<Shift-MouseWheel>", _on_shift_mousewheel)
-

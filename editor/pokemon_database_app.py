@@ -4,6 +4,7 @@ import tkinter as tk
 from tkinter import ttk
 
 from database_manager import DatabaseManager
+from details_window.ui_setup import maximize_window
 from fusion_details_window import FusionDetailsWindow
 from move_details_window import MoveDetailsWindow
 from pokemon_details_window import PokemonDetailsWindow
@@ -13,7 +14,7 @@ class PokemonDatabaseApp:
     def __init__(self, root):
         self.root = root
         self.root.title("Pokémon Database Editor")
-        self.root.state('zoomed')
+        maximize_window(self.root)
         self.db_manager = DatabaseManager('../pokemon/data/pokego.db')
 
         self.entity_options = {
