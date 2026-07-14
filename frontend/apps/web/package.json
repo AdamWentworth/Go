@@ -20,6 +20,7 @@
   },
   "scripts": {
     "check:shared-contracts": "node scripts/verify-shared-contracts.mjs",
+    "audit:game-master": "node scripts/audit-game-master.mjs",
     "dev": "vite",
     "build": "vite build",
     "build:budget": "node scripts/check-bundle-budget.mjs",

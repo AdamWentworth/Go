@@ -3,3 +3,5 @@
 /.env
 /.env.*
 /apps/*/package-lock.json
+/.artifacts/*
+!/.artifacts/README.md

@@ -66,6 +66,45 @@ export type RaidCounterScore = {
   trainersNeeded: number;
 };
 
+export type RaidTypeDpsScore = {
+  variant: PokemonVariant;
+  fastMove: Move;
+  chargedMove: Move;
+  cp: number;
+  totalDps: number;
+  dps: number;
+  tdo: number;
+  er: number;
+  fastDamage: number;
+  chargedDamage: number;
+  fastEffectiveness: number;
+  chargedEffectiveness: number;
+  cycleSeconds: number;
+  cycleDamage: number;
+  targetEffectiveness: number;
+  fastMatchesType: boolean;
+  chargedMatchesType: boolean;
+};
+
+export type RaidOverallScore = {
+  variant: PokemonVariant;
+  fastMove: Move;
+  chargedMove: Move;
+  cp: number;
+  dps: number;
+  tdo: number;
+  er: number;
+  fastDamage: number;
+  chargedDamage: number;
+  cycleSeconds: number;
+  cycleDamage: number;
+};
+
+type RaidOverallTargetProfile = {
+  types: string[];
+  weight: number;
+};
+
 export type RaidGroupEstimate = {
   topTeamDps: number;
   minTrainers: number;
@@ -206,18 +245,30 @@ const PARTY_POWER_CHARGED_DAMAGE_BONUS: Record<PartyPowerKey, number> = {
 };
 
 const SHADOW_ATTACKER_DAMAGE_BONUS = 1.2;
+const SHADOW_ATTACKER_DEFENSE_MULTIPLIER = 0.8333333;
 const WEATHER_DAMAGE_BONUS = 1.2;
 const STAB_DAMAGE_BONUS = 1.2;
 const SHADOW_BOSS_ENRAGED_ATTACK_MULTIPLIER = 1.81;
 const SHADOW_BOSS_ENRAGED_DEFENSE_MULTIPLIER = 3;
 const RAID_SAFETY_FACTOR = 0.82;
 const COMFORTABLE_SAFETY_FACTOR = 0.68;
+const TYPE_DPS_TARGET_DEFENSE = 180;
+const TYPE_DPS_INCOMING_DAMAGE_NUMERATOR = 1340;
+const TYPE_DPS_INCOMING_CHARGED_DAMAGE_NUMERATOR = 11670;
+const TYPE_DPS_ER_TDO_EXPONENT = 0.25;
 const LEGACY_RAID_TIERS = new Set(['2']);
+const FALLBACK_OVERALL_TARGET_PROFILES: RaidOverallTargetProfile[] = [{ types: [], weight: 1 }];
 
 const normalizeTypeName = (value?: string | null): string => {
   const normalized = value?.trim().toLowerCase() ?? '';
   return normalized === 'none' || normalized === 'unknown' ? '' : normalized;
 };
+
+const getRaidMovePower = (move: Move): number => move.raid_power;
+
+const getRaidMoveEnergy = (move: Move): number => move.raid_energy;
+
+const getRaidMoveCooldown = (move: Move): number => move.raid_cooldown;
 
 export const getVariantTypeNames = (variant: PokemonVariant): string[] => {
   const type1 = normalizeTypeName(variant.type1_name ?? TYPE_MAPPING[variant.type_1_id]?.name);
@@ -377,6 +428,44 @@ export const isEligibleRaidBoss = (variant: PokemonVariant): boolean =>
   variant.moves.length > 0 &&
   getPrimaryRaidMetadataForVariant(variant) !== null;
 
+const getOverallTargetWeight = (target: PokemonVariant): number => {
+  const tierKey = getRaidTierKeyForVariant(target);
+  if (
+    tierKey === 'legendary' ||
+    tierKey === 'elite' ||
+    tierKey === 'primal' ||
+    tierKey === 'legendary-mega' ||
+    tierKey === 'super-mega' ||
+    tierKey === 'shadow-legendary'
+  ) {
+    return 4;
+  }
+  if (tierKey === 'mega') {
+    return 3;
+  }
+  if (tierKey === 'tier3' || tierKey === 'community-day' || tierKey === 'shadow-tier3') {
+    return 1;
+  }
+  if (tierKey === 'tier1' || tierKey === 'shadow-tier1') {
+    return 0.25;
+  }
+  return 1;
+};
+
+const getRaidOverallTargetProfiles = (
+  targets?: PokemonVariant[],
+): RaidOverallTargetProfile[] => {
+  const profiles =
+    targets
+      ?.map((target) => ({
+        types: getVariantTypeNames(target),
+        weight: getOverallTargetWeight(target),
+      }))
+      .filter((profile) => profile.types.length > 0) ?? [];
+
+  return profiles.length > 0 ? profiles : FALLBACK_OVERALL_TARGET_PROFILES;
+};
+
 export const calculateRaidBossCp = (variant: PokemonVariant, bossHp: number): number => {
   const attack = variant.attack + 15;
   const defense = variant.defense + 15;
@@ -451,9 +540,173 @@ export const calculateRaidMoveDamage = ({
 
   return Math.max(
     1,
-    Math.floor(0.5 * move.raid_power * (attackerAttack / bossDefense) * damageMultiplier) + 1,
+    Math.floor(0.5 * getRaidMovePower(move) * (attackerAttack / bossDefense) * damageMultiplier) +
+      1,
   );
 };
+
+type TypeDpsMoveDamageInput = Omit<MoveDamageInput, 'bossTypes' | 'bossDefense'> & {
+  selectedType: string;
+  targetTypes?: string[];
+};
+
+const getProcessedRaidMoveSeconds = (move: Move): number => {
+  const rawSeconds = Math.max(0.5, getRaidMoveCooldown(move) / 1000);
+  return Math.max(0.5, Math.round(rawSeconds * 2) / 2);
+};
+
+const getProcessedRaidMovePower = (move: Move): number => {
+  const power = getRaidMovePower(move);
+  const rawSeconds = Math.max(0.5, getRaidMoveCooldown(move) / 1000);
+  const processedSeconds = getProcessedRaidMoveSeconds(move);
+  const timingAdjustment = (processedSeconds - rawSeconds) / processedSeconds;
+
+  return Math.abs(timingAdjustment) >= 0.199
+    ? power * (1 + timingAdjustment)
+    : power;
+};
+
+const getTypeDpsEffectiveness = (moveType: string, selectedType: string): number =>
+  selectedType !== 'normal' && moveType === selectedType ? 1.6 : 1;
+
+const calculateTypeDpsMoveDamage = ({
+  move,
+  attacker,
+  attackerAttack,
+  selectedType,
+  targetTypes,
+  settings,
+  charged,
+}: TypeDpsMoveDamageInput): number => {
+  const moveType = normalizeTypeName(move.type_name || move.type);
+  const attackerTypes = getVariantTypeNames(attacker);
+  const stab = attackerTypes.includes(moveType) ? STAB_DAMAGE_BONUS : 1;
+  const effectiveness =
+    targetTypes && targetTypes.length > 0
+      ? getTypeEffectivenessMultiplier(moveType, targetTypes)
+      : getTypeDpsEffectiveness(moveType, selectedType);
+  const weather = settings.weatherBoostedType === moveType ? WEATHER_DAMAGE_BONUS : 1;
+  const shadow =
+    attacker.variantType.toLowerCase().includes('shadow') ? SHADOW_ATTACKER_DAMAGE_BONUS : 1;
+  const partyPower = charged ? PARTY_POWER_CHARGED_DAMAGE_BONUS[settings.partyPower] : 1;
+  const damageMultiplier =
+    stab *
+    effectiveness *
+    weather *
+    shadow *
+    FRIENDSHIP_DAMAGE_BONUS[settings.friendship] *
+    MEGA_ALLY_DAMAGE_BONUS[settings.megaAllyBonus] *
+    partyPower;
+
+  return Math.max(
+    1,
+    Math.floor(
+      0.5 *
+        getProcessedRaidMovePower(move) *
+        (attackerAttack / TYPE_DPS_TARGET_DEFENSE) *
+        damageMultiplier,
+    ) + 1,
+  );
+};
+
+const calculateComprehensiveTypeDps = ({
+  fastDamage,
+  chargedDamage,
+  fastMove,
+  chargedMove,
+  attackerHp,
+  incomingDps,
+  incomingChargedDamage,
+}: {
+  fastDamage: number;
+  chargedDamage: number;
+  fastMove: Move;
+  chargedMove: Move;
+  attackerHp: number;
+  incomingDps: number;
+  incomingChargedDamage: number;
+}): number => {
+  const fastSeconds = getProcessedRaidMoveSeconds(fastMove);
+  const chargedSeconds = getProcessedRaidMoveSeconds(chargedMove);
+  const fastEnergy = Math.max(1, getRaidMoveEnergy(fastMove));
+  const chargedEnergyCost = Math.max(1, Math.abs(getRaidMoveEnergy(chargedMove)));
+  const fastDps = fastDamage / fastSeconds;
+  const chargedDps = chargedDamage / chargedSeconds;
+  const fastEps = fastEnergy / fastSeconds;
+  let chargedEps = chargedEnergyCost / chargedSeconds;
+
+  if (chargedEnergyCost >= 100) {
+    chargedEps = (chargedEnergyCost + 0.5 * fastEnergy) / chargedSeconds;
+  }
+
+  if (fastDps >= chargedDps || fastEps <= 0 || chargedEps <= 0) {
+    return Math.max(0, fastDps);
+  }
+
+  const expectedOverflowEnergy =
+    0.5 * chargedEnergyCost + 0.5 * fastEnergy + 0.5 * incomingChargedDamage;
+  const baselineDps =
+    (fastDps * chargedEps + chargedDps * fastEps) / (chargedEps + fastEps);
+  const incomingEnergyAdjustment =
+    ((chargedDps - fastDps) / (chargedEps + fastEps)) *
+    (0.5 - expectedOverflowEnergy / attackerHp) *
+    incomingDps;
+  const dps = baselineDps + incomingEnergyAdjustment;
+
+  return Math.max(0, fastDps, dps);
+};
+
+const calculateSelectedTypeRoleDps = ({
+  fastDamage,
+  chargedDamage,
+  fastMove,
+  chargedMove,
+  fastMatchesType,
+  chargedMatchesType,
+}: {
+  fastDamage: number;
+  chargedDamage: number;
+  fastMove: Move;
+  chargedMove: Move;
+  fastMatchesType: boolean;
+  chargedMatchesType: boolean;
+}): number => {
+  const fastSeconds = getProcessedRaidMoveSeconds(fastMove);
+  const chargedSeconds = getProcessedRaidMoveSeconds(chargedMove);
+  const fastEnergy = Math.max(1, getRaidMoveEnergy(fastMove));
+  const chargedEnergyCost = Math.max(1, Math.abs(getRaidMoveEnergy(chargedMove)));
+  const fastDps = fastDamage / fastSeconds;
+  const chargedDps = chargedDamage / chargedSeconds;
+  const fastEps = fastEnergy / fastSeconds;
+  const chargedEps = chargedEnergyCost / chargedSeconds;
+  const energyThroughput = fastEps + chargedEps;
+
+  if (energyThroughput <= 0) return 0;
+
+  return (
+    (fastMatchesType ? fastDps * (chargedEps / energyThroughput) : 0) +
+    (chargedMatchesType ? chargedDps * (fastEps / energyThroughput) : 0)
+  );
+};
+
+const compareRaidTypeDpsScores = (a: RaidTypeDpsScore, b: RaidTypeDpsScore): number => {
+  const aPureMoveset = a.fastMatchesType && a.chargedMatchesType ? 1 : 0;
+  const bPureMoveset = b.fastMatchesType && b.chargedMatchesType ? 1 : 0;
+  const aChargedMatch = a.chargedMatchesType ? 1 : 0;
+  const bChargedMatch = b.chargedMatchesType ? 1 : 0;
+
+  return (
+    b.er - a.er ||
+    b.dps - a.dps ||
+    bPureMoveset - aPureMoveset ||
+    bChargedMatch - aChargedMatch ||
+    b.tdo - a.tdo ||
+    b.totalDps - a.totalDps
+  );
+};
+
+const compareRaidOverallScores = (a: RaidOverallScore, b: RaidOverallScore): number =>
+  b.er - a.er || b.dps - a.dps || b.tdo - a.tdo || b.cp - a.cp;
 
 export const calculateMoveCycleScore = (
   attacker: PokemonVariant,
@@ -486,11 +739,11 @@ export const calculateMoveCycleScore = (
     settings,
     charged: true,
   });
-  const fastEnergy = Math.max(1, fastMove.raid_energy);
-  const chargedEnergyCost = Math.max(1, Math.abs(chargedMove.raid_energy));
+  const fastEnergy = Math.max(1, getRaidMoveEnergy(fastMove));
+  const chargedEnergyCost = Math.max(1, Math.abs(getRaidMoveEnergy(chargedMove)));
   const fastUses = Math.max(1, Math.ceil(chargedEnergyCost / fastEnergy));
-  const fastSeconds = Math.max(0.5, fastMove.raid_cooldown / 1000);
-  const chargedSeconds = Math.max(0.5, chargedMove.raid_cooldown / 1000);
+  const fastSeconds = Math.max(0.5, getRaidMoveCooldown(fastMove) / 1000);
+  const chargedSeconds = Math.max(0.5, getRaidMoveCooldown(chargedMove) / 1000);
   const cycleSeconds = fastUses * fastSeconds + chargedSeconds;
   const cycleDamage = fastUses * fastDamage + chargedDamage;
   const dps = cycleDamage / cycleSeconds;
@@ -540,6 +793,253 @@ export const scoreRaidCounters = (
     })
     .sort((a, b) => b.dps - a.dps);
 
+export const calculateOverallMoveCycleScore = (
+  attacker: PokemonVariant,
+  fastMove: Move,
+  chargedMove: Move,
+  settings: RaidCounterSettings,
+  targetProfiles: RaidOverallTargetProfile[] = FALLBACK_OVERALL_TARGET_PROFILES,
+): RaidOverallScore => {
+  const cpMultiplier = cpMultipliers[settings.attackerLevel];
+  const attackerAttack = (attacker.attack + 15) * cpMultiplier;
+  const shadowDefense =
+    attacker.variantType.toLowerCase().includes('shadow') ? SHADOW_ATTACKER_DEFENSE_MULTIPLIER : 1;
+  const attackerDefense = (attacker.defense + 15) * cpMultiplier * shadowDefense;
+  const attackerHp = Math.max(1, Math.floor((attacker.stamina + 15) * cpMultiplier));
+  const incomingDps = TYPE_DPS_INCOMING_DAMAGE_NUMERATOR / attackerDefense;
+  const incomingChargedDamage = TYPE_DPS_INCOMING_CHARGED_DAMAGE_NUMERATOR / attackerDefense;
+  const fastEnergy = Math.max(1, getRaidMoveEnergy(fastMove));
+  const chargedEnergyCost = Math.max(1, Math.abs(getRaidMoveEnergy(chargedMove)));
+  const fastUses = Math.max(1, Math.ceil(chargedEnergyCost / fastEnergy));
+  const fastSeconds = getProcessedRaidMoveSeconds(fastMove);
+  const chargedSeconds = getProcessedRaidMoveSeconds(chargedMove);
+  const cycleSeconds = fastUses * fastSeconds + chargedSeconds;
+  const timeToFaintSeconds = attackerHp / incomingDps;
+  const matchupScores = targetProfiles.map((targetProfile) => {
+    const targetTypes = targetProfile.types;
+    const fastDamage = calculateTypeDpsMoveDamage({
+      move: fastMove,
+      attacker,
+      attackerAttack,
+      selectedType: '',
+      targetTypes,
+      settings,
+      charged: false,
+    });
+    const chargedDamage = calculateTypeDpsMoveDamage({
+      move: chargedMove,
+      attacker,
+      attackerAttack,
+      selectedType: '',
+      targetTypes,
+      settings,
+      charged: true,
+    });
+    const dps = calculateComprehensiveTypeDps({
+      fastDamage,
+      chargedDamage,
+      fastMove,
+      chargedMove,
+      attackerHp,
+      incomingDps,
+      incomingChargedDamage,
+    });
+    const tdo = dps * timeToFaintSeconds;
+    const er =
+      dps > 0 && tdo > 0
+        ? Math.pow(dps, 1 - TYPE_DPS_ER_TDO_EXPONENT) *
+          Math.pow(tdo, TYPE_DPS_ER_TDO_EXPONENT)
+        : 0;
+
+    return {
+      fastDamage,
+      chargedDamage,
+      cycleDamage: fastUses * fastDamage + chargedDamage,
+      dps,
+      tdo,
+      er,
+      weight: targetProfile.weight,
+    };
+  });
+  const scoreWeight = Math.max(
+    1,
+    matchupScores.reduce((sum, score) => sum + score.weight, 0),
+  );
+  const fastDamage =
+    matchupScores.reduce((sum, score) => sum + score.fastDamage * score.weight, 0) / scoreWeight;
+  const chargedDamage =
+    matchupScores.reduce((sum, score) => sum + score.chargedDamage * score.weight, 0) /
+    scoreWeight;
+  const cycleDamage =
+    matchupScores.reduce((sum, score) => sum + score.cycleDamage * score.weight, 0) /
+    scoreWeight;
+  const dps =
+    matchupScores.reduce((sum, score) => sum + score.dps * score.weight, 0) / scoreWeight;
+  const tdo =
+    matchupScores.reduce((sum, score) => sum + score.tdo * score.weight, 0) / scoreWeight;
+  const er =
+    matchupScores.reduce((sum, score) => sum + score.er * score.weight, 0) / scoreWeight;
+
+  return {
+    variant: attacker,
+    fastMove,
+    chargedMove,
+    cp: calculatePokemonCpForLevel(attacker, settings.attackerLevel),
+    dps,
+    tdo,
+    er,
+    fastDamage,
+    chargedDamage,
+    cycleSeconds,
+    cycleDamage,
+  };
+};
+
+export const scoreRaidOverallAttackers = (
+  attackers: PokemonVariant[],
+  settings: RaidCounterSettings,
+  targets?: PokemonVariant[],
+): RaidOverallScore[] =>
+  {
+    const targetProfiles = getRaidOverallTargetProfiles(targets);
+
+    return attackers
+    .filter(isEligibleRaidAttacker)
+    .flatMap((attacker) => {
+      const fastMoves = attacker.moves.filter((move) => move.is_fast === 1 && move.raid_power > 0);
+      const chargedMoves = attacker.moves.filter(
+        (move) => move.is_fast === 0 && move.raid_power > 0,
+      );
+
+      return fastMoves.flatMap((fastMove) =>
+        chargedMoves.map((chargedMove) =>
+          calculateOverallMoveCycleScore(attacker, fastMove, chargedMove, settings, targetProfiles),
+        ),
+      );
+    })
+    .sort(compareRaidOverallScores);
+  };
+
+export const calculateTypeMoveCycleScore = (
+  attacker: PokemonVariant,
+  fastMove: Move,
+  chargedMove: Move,
+  typeName: string,
+  settings: RaidCounterSettings,
+): RaidTypeDpsScore => {
+  const targetType = normalizeTypeName(typeName);
+  const fastType = normalizeTypeName(fastMove.type_name || fastMove.type);
+  const chargedType = normalizeTypeName(chargedMove.type_name || chargedMove.type);
+  const fastEffectiveness = getTypeDpsEffectiveness(fastType, targetType);
+  const chargedEffectiveness = getTypeDpsEffectiveness(chargedType, targetType);
+  const cpMultiplier = cpMultipliers[settings.attackerLevel];
+  const attackerAttack = (attacker.attack + 15) * cpMultiplier;
+  const shadowDefense =
+    attacker.variantType.toLowerCase().includes('shadow') ? SHADOW_ATTACKER_DEFENSE_MULTIPLIER : 1;
+  const attackerDefense = (attacker.defense + 15) * cpMultiplier * shadowDefense;
+  const attackerHp = Math.max(1, Math.floor((attacker.stamina + 15) * cpMultiplier));
+  const incomingDps = TYPE_DPS_INCOMING_DAMAGE_NUMERATOR / attackerDefense;
+  const incomingChargedDamage = TYPE_DPS_INCOMING_CHARGED_DAMAGE_NUMERATOR / attackerDefense;
+
+  const fastDamage = calculateTypeDpsMoveDamage({
+    move: fastMove,
+    attacker,
+    attackerAttack,
+    selectedType: targetType,
+    settings,
+    charged: false,
+  });
+  const chargedDamage = calculateTypeDpsMoveDamage({
+    move: chargedMove,
+    attacker,
+    attackerAttack,
+    selectedType: targetType,
+    settings,
+    charged: true,
+  });
+  const fastEnergy = Math.max(1, getRaidMoveEnergy(fastMove));
+  const chargedEnergyCost = Math.max(1, Math.abs(getRaidMoveEnergy(chargedMove)));
+  const fastUses = Math.max(1, Math.ceil(chargedEnergyCost / fastEnergy));
+  const fastSeconds = getProcessedRaidMoveSeconds(fastMove);
+  const chargedSeconds = getProcessedRaidMoveSeconds(chargedMove);
+  const cycleSeconds = fastUses * fastSeconds + chargedSeconds;
+  const cycleDamage = fastUses * fastDamage + chargedDamage;
+  const dps = calculateComprehensiveTypeDps({
+    fastDamage,
+    chargedDamage,
+    fastMove,
+    chargedMove,
+    attackerHp,
+    incomingDps,
+    incomingChargedDamage,
+  });
+  const typeDps = calculateSelectedTypeRoleDps({
+    fastDamage,
+    chargedDamage,
+    fastMove,
+    chargedMove,
+    fastMatchesType: fastType === targetType,
+    chargedMatchesType: chargedType === targetType,
+  });
+  const timeToFaintSeconds = attackerHp / incomingDps;
+  const tdo = typeDps * timeToFaintSeconds;
+
+  return {
+    variant: attacker,
+    fastMove,
+    chargedMove,
+    cp: calculatePokemonCpForLevel(attacker, settings.attackerLevel),
+    totalDps: dps,
+    dps: typeDps,
+    tdo,
+    er:
+      typeDps > 0 && tdo > 0
+        ? Math.pow(typeDps, 1 - TYPE_DPS_ER_TDO_EXPONENT) *
+          Math.pow(tdo, TYPE_DPS_ER_TDO_EXPONENT)
+        : 0,
+    fastDamage,
+    chargedDamage,
+    fastEffectiveness,
+    chargedEffectiveness,
+    cycleSeconds,
+    cycleDamage,
+    targetEffectiveness: targetType === 'normal' ? 1 : 1.6,
+    fastMatchesType: fastType === targetType,
+    chargedMatchesType: chargedType === targetType,
+  };
+};
+
+export const scoreRaidTypeDps = (
+  attackers: PokemonVariant[],
+  typeName: string,
+  settings: RaidCounterSettings,
+): RaidTypeDpsScore[] => {
+  const targetType = normalizeTypeName(typeName);
+  if (!targetType) return [];
+
+  return attackers
+    .filter(isEligibleRaidAttacker)
+    .flatMap((attacker) => {
+      const fastMoves = attacker.moves.filter((move) => move.is_fast === 1 && move.raid_power > 0);
+      const chargedMoves = attacker.moves.filter(
+        (move) => move.is_fast === 0 && move.raid_power > 0,
+      );
+
+      return fastMoves.flatMap((fastMove) =>
+        chargedMoves
+          .filter((chargedMove) => {
+            const fastType = normalizeTypeName(fastMove.type_name || fastMove.type);
+            const chargedType = normalizeTypeName(chargedMove.type_name || chargedMove.type);
+            return fastType === targetType || chargedType === targetType;
+          })
+          .map((chargedMove) =>
+            calculateTypeMoveCycleScore(attacker, fastMove, chargedMove, targetType, settings),
+          ),
+      );
+    })
+    .sort(compareRaidTypeDpsScores);
+};
+
 export const dedupeBestCounterPerVariant = (scores: RaidCounterScore[]): RaidCounterScore[] => {
   const bestByVariant = new Map<string, RaidCounterScore>();
   scores.forEach((score) => {
@@ -551,6 +1051,36 @@ export const dedupeBestCounterPerVariant = (scores: RaidCounterScore[]): RaidCou
   });
 
   return Array.from(bestByVariant.values()).sort((a, b) => b.dps - a.dps);
+};
+
+export const dedupeBestTypeDpsPerVariant = (
+  scores: RaidTypeDpsScore[],
+): RaidTypeDpsScore[] => {
+  const bestByVariant = new Map<string, RaidTypeDpsScore>();
+  scores.forEach((score) => {
+    const key = score.variant.variant_id || `${score.variant.pokemon_id}-${score.variant.variantType}`;
+    const current = bestByVariant.get(key);
+    if (!current || compareRaidTypeDpsScores(score, current) < 0) {
+      bestByVariant.set(key, score);
+    }
+  });
+
+  return Array.from(bestByVariant.values()).sort(compareRaidTypeDpsScores);
+};
+
+export const dedupeBestOverallAttackerPerVariant = (
+  scores: RaidOverallScore[],
+): RaidOverallScore[] => {
+  const bestByVariant = new Map<string, RaidOverallScore>();
+  scores.forEach((score) => {
+    const key = score.variant.variant_id || `${score.variant.pokemon_id}-${score.variant.variantType}`;
+    const current = bestByVariant.get(key);
+    if (!current || compareRaidOverallScores(score, current) < 0) {
+      bestByVariant.set(key, score);
+    }
+  });
+
+  return Array.from(bestByVariant.values()).sort(compareRaidOverallScores);
 };
 
 export const estimateRaidGroup = (

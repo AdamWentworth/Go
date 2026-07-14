@@ -3,6 +3,7 @@ import './Raid.css';
 import { useVariantsStore } from '@/features/variants/store/useVariantsStore';
 import type { PokemonVariant } from '@/types/pokemonVariants';
 import { resolveAssetUrl } from '@/utils/assetUrl';
+import { getTypeIconPath } from '@/utils/imageHelpers';
 import LoadingSpinner from '../../components/LoadingSpinner';
 import { TYPE_MAPPING } from './utils/constants';
 import {
@@ -10,7 +11,9 @@ import {
   MEGA_ALLY_DAMAGE_BONUS,
   RAID_TIER_PRESETS,
   calculateRaidBossStats,
+  dedupeBestOverallAttackerPerVariant,
   dedupeBestCounterPerVariant,
+  dedupeBestTypeDpsPerVariant,
   estimateRaidGroup,
   formatSeconds,
   getPrimaryRaidMetadataForVariant,
@@ -20,14 +23,27 @@ import {
   isEligibleRaidBoss,
   isShadowRaidTier,
   scoreRaidCounters,
+  scoreRaidOverallAttackers,
+  scoreRaidTypeDps,
   type FriendshipKey,
   type MegaAllyBonusKey,
   type PartyPowerKey,
   type RaidCounterScore,
   type RaidCounterSettings,
+  type RaidOverallScore,
+  type RaidTypeDpsScore,
   type RaidTierKey,
   type ShadowBossMode,
 } from './utils/raidCalculations';
+
+type RaidViewMode = 'overall' | 'type-dps' | 'boss';
+type SearchableCounterScore = {
+  variant: PokemonVariant;
+  fastMove: RaidCounterScore['fastMove'];
+  chargedMove: RaidCounterScore['chargedMove'];
+};
+
+const DEFAULT_TYPE_DPS_PAGE = 'dark';
 
 const FRIENDSHIP_OPTIONS: Array<{ key: FriendshipKey; label: string }> = [
   { key: 'none', label: 'No friendship' },
@@ -55,6 +71,8 @@ const ATTACKER_LEVEL_OPTIONS: RaidCounterSettings['attackerLevel'][] = ['40.0', 
 const capitalize = (value: string): string =>
   value.length === 0 ? value : `${value.charAt(0).toUpperCase()}${value.slice(1)}`;
 
+const formatTypeList = (types: string[]): string => types.map(capitalize).join(' / ');
+
 const getPokemonImage = (variant: PokemonVariant): string =>
   resolveAssetUrl(variant.currentImage || variant.image_url || variant.sprite_url || '');
 
@@ -70,6 +88,17 @@ const getVariantBadge = (variant: PokemonVariant): string => {
 };
 
 const formatDps = (value: number): string => value.toFixed(1);
+const formatEr = (value: number): string => value.toFixed(2);
+const formatWholeNumber = (value: number): string => Math.round(value).toLocaleString();
+
+const getMoveTypeName = (move: RaidTypeDpsScore['fastMove']): string =>
+  capitalize(move.type_name || move.type || 'unknown');
+
+const getMoveTypeIcon = (move: SearchableCounterScore['fastMove']): string =>
+  getTypeIconPath(move.type_name || move.type || 'unknown');
+
+const getTypeClassName = (typeName?: string): string =>
+  `type-${(typeName || 'unknown').trim().toLowerCase().replace(/[^a-z0-9-]/g, '-')}`;
 
 const getUniqueByVariant = (variants: PokemonVariant[]): PokemonVariant[] => {
   const seen = new Set<string>();
@@ -81,7 +110,7 @@ const getUniqueByVariant = (variants: PokemonVariant[]): PokemonVariant[] => {
   });
 };
 
-const matchesCounterSearch = (score: RaidCounterScore, query: string): boolean => {
+const matchesCounterSearch = (score: SearchableCounterScore, query: string): boolean => {
   const normalized = query.trim().toLowerCase();
   if (!normalized) return true;
 
@@ -98,8 +127,10 @@ const Raid: React.FC = () => {
   const variants = useVariantsStore((state) => state.variants) as PokemonVariant[];
   const loading = useVariantsStore((state) => state.variantsLoading);
 
+  const [viewMode, setViewMode] = useState<RaidViewMode>('overall');
   const [bossSearch, setBossSearch] = useState('');
   const [selectedBossId, setSelectedBossId] = useState<string>('');
+  const [selectedType, setSelectedType] = useState(DEFAULT_TYPE_DPS_PAGE);
   const [shadowRaid, setShadowRaid] = useState(false);
   const [shadowBossMode, setShadowBossMode] = useState<ShadowBossMode>('subdued');
   const [attackerSearch, setAttackerSearch] = useState('');
@@ -186,6 +217,18 @@ const Raid: React.FC = () => {
     return scored.filter((score) => matchesCounterSearch(score, attackerSearch)).slice(0, 30);
   }, [attackerSearch, attackers, bestOnly, selectedBoss, selectedTier, settings]);
 
+  const overallScores = useMemo(() => {
+    const allScores = scoreRaidOverallAttackers(attackers, settings);
+    const scored = bestOnly ? dedupeBestOverallAttackerPerVariant(allScores) : allScores;
+    return scored.filter((score) => matchesCounterSearch(score, attackerSearch)).slice(0, 30);
+  }, [attackerSearch, attackers, bestOnly, settings]);
+
+  const typeDpsScores = useMemo(() => {
+    const allScores = scoreRaidTypeDps(attackers, selectedType, settings);
+    const scored = bestOnly ? dedupeBestTypeDpsPerVariant(allScores) : allScores;
+    return scored.filter((score) => matchesCounterSearch(score, attackerSearch)).slice(0, 30);
+  }, [attackerSearch, attackers, bestOnly, selectedType, settings]);
+
   const groupEstimate = useMemo(() => {
     if (!selectedBoss) return null;
     const allScores = scoreRaidCounters(attackers, selectedBoss, selectedTier, settings);
@@ -204,17 +247,231 @@ const Raid: React.FC = () => {
     setBossSearch('');
   };
 
+  const renderCounterToolbar = (label: string) => (
+    <section className="raid-counter-toolbar">
+      <label className="raid-field">
+        <span>{label}</span>
+        <input
+          type="search"
+          value={attackerSearch}
+          onChange={(event) => setAttackerSearch(event.target.value)}
+          placeholder="Pokemon, type, or move"
+        />
+      </label>
+      <button
+        className={`raid-toggle-button ${bestOnly ? 'active' : ''}`}
+        onClick={() => setBestOnly((previous) => !previous)}
+        type="button"
+      >
+        {bestOnly ? 'Best moves only' : 'All move pairs'}
+      </button>
+    </section>
+  );
+
+  const renderSharedModifiers = (includeShadowControls: boolean) => (
+    <section className="raid-settings-grid" aria-label="Raid modifiers">
+      <label className="raid-field">
+        <span>Attacker level</span>
+        <select
+          value={attackerLevel}
+          onChange={(event) =>
+            setAttackerLevel(event.target.value as RaidCounterSettings['attackerLevel'])
+          }
+        >
+          {ATTACKER_LEVEL_OPTIONS.map((level) => (
+            <option key={level} value={level}>
+              Level {level.replace('.0', '')}
+            </option>
+          ))}
+        </select>
+      </label>
+
+      <label className="raid-field">
+        <span>Friendship</span>
+        <select
+          value={friendship}
+          onChange={(event) => setFriendship(event.target.value as FriendshipKey)}
+        >
+          {FRIENDSHIP_OPTIONS.map((option) => (
+            <option key={option.key} value={option.key}>
+              {option.label} ({FRIENDSHIP_DAMAGE_BONUS[option.key].toFixed(2)}x)
+            </option>
+          ))}
+        </select>
+      </label>
+
+      <label className="raid-field">
+        <span>Mega ally</span>
+        <select
+          value={megaAllyBonus}
+          onChange={(event) => setMegaAllyBonus(event.target.value as MegaAllyBonusKey)}
+        >
+          {MEGA_OPTIONS.map((option) => (
+            <option key={option.key} value={option.key}>
+              {option.label} ({MEGA_ALLY_DAMAGE_BONUS[option.key].toFixed(1)}x)
+            </option>
+          ))}
+        </select>
+      </label>
+
+      <label className="raid-field">
+        <span>Party Power</span>
+        <select
+          value={partyPower}
+          onChange={(event) => setPartyPower(event.target.value as PartyPowerKey)}
+        >
+          {PARTY_POWER_OPTIONS.map((option) => (
+            <option key={option.key} value={option.key}>
+              {option.label}
+            </option>
+          ))}
+        </select>
+      </label>
+
+      <label className="raid-field">
+        <span>Weather boost</span>
+        <select
+          value={weatherBoostedType}
+          onChange={(event) => setWeatherBoostedType(event.target.value)}
+        >
+          <option value="none">No weather boost</option>
+          {typeOptions.map((type) => (
+            <option key={type} value={type}>
+              {capitalize(type)}
+            </option>
+          ))}
+        </select>
+      </label>
+
+      {includeShadowControls && (
+        <div className="raid-shadow-controls">
+          <button
+            className={`raid-toggle-button ${shadowMechanicsEnabled ? 'active' : ''}`}
+            disabled={selectedBossIsShadowRaid}
+            onClick={() => setShadowRaid((previous) => !previous)}
+            type="button"
+          >
+            {selectedBossIsShadowRaid ? 'Shadow raid data' : 'Shadow raid'}
+          </button>
+          {shadowMechanicsEnabled && (
+            <div className="raid-segmented-control" aria-label="Shadow boss state">
+              {(['subdued', 'enraged'] as ShadowBossMode[]).map((mode) => (
+                <button
+                  className={shadowBossMode === mode ? 'active' : ''}
+                  key={mode}
+                  onClick={() => setShadowBossMode(mode)}
+                  type="button"
+                >
+                  {capitalize(mode)}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+    </section>
+  );
+
+  const renderBossCounterCard = (score: RaidCounterScore, index: number) => (
+    <article className="raid-counter-card" key={`${score.variant.variant_id}-${index}`}>
+      <div className="raid-counter-rank">{index + 1}</div>
+      <img src={getPokemonImage(score.variant)} alt="" />
+      <div className="raid-counter-main">
+        <strong>{score.variant.name}</strong>
+        <span>
+          {score.fastMove.name} / {score.chargedMove.name}
+        </span>
+        <small>
+          CP {score.cp.toLocaleString()} at level {attackerLevel.replace('.0', '')}
+        </small>
+      </div>
+      <div className="raid-counter-stats">
+        <span>{formatDps(score.dps)} DPS</span>
+        <span>{score.trainersNeeded} trainers</span>
+        <span>{formatSeconds(score.soloTimeSeconds)}</span>
+      </div>
+    </article>
+  );
+
+  const renderTypeDpsMove = (
+    label: 'Fast' | 'Charged',
+    move: RaidTypeDpsScore['fastMove'],
+    matchesType: boolean,
+  ) => (
+    <span className="raid-type-table-move">
+      <span
+        className={`raid-type-table-move-type ${getTypeClassName(
+          move.type_name || move.type,
+        )} ${matchesType ? 'type-match' : ''}`}
+      >
+        <img src={getMoveTypeIcon(move)} alt="" draggable={false} />
+        {label} {getMoveTypeName(move)}
+      </span>
+      <span className="raid-type-table-move-name">{move.name}</span>
+    </span>
+  );
+
+  const renderOverallRow = (score: RaidOverallScore, index: number) => (
+    <tr key={`${score.variant.variant_id}-${index}`}>
+      <td>
+        <div className="raid-type-table-pokemon">
+          <span className="raid-type-table-rank">{index + 1}</span>
+          <img src={getPokemonImage(score.variant)} alt="" />
+          <span className="raid-type-table-pokemon-copy">
+            <strong>{score.variant.name}</strong>
+            <small>{formatTypeList(getVariantTypeNames(score.variant)) || 'Unknown type'}</small>
+          </span>
+        </div>
+      </td>
+      <td>
+        <div className="raid-type-table-moves">
+          {renderTypeDpsMove('Fast', score.fastMove, false)}
+          {renderTypeDpsMove('Charged', score.chargedMove, false)}
+        </div>
+      </td>
+      <td className="raid-type-table-number">{formatDps(score.dps)}</td>
+      <td className="raid-type-table-number">{formatWholeNumber(score.tdo)}</td>
+      <td className="raid-type-table-number">{formatEr(score.er)}</td>
+      <td className="raid-type-table-number">{score.cp.toLocaleString()}</td>
+    </tr>
+  );
+
+  const renderTypeDpsRow = (score: RaidTypeDpsScore, index: number) => (
+    <tr key={`${score.variant.variant_id}-${index}`}>
+      <td>
+        <div className="raid-type-table-pokemon">
+          <span className="raid-type-table-rank">{index + 1}</span>
+          <img src={getPokemonImage(score.variant)} alt="" />
+          <span className="raid-type-table-pokemon-copy">
+            <strong>{score.variant.name}</strong>
+            <small>{formatTypeList(getVariantTypeNames(score.variant)) || 'Unknown type'}</small>
+          </span>
+        </div>
+      </td>
+      <td>
+        <div className="raid-type-table-moves">
+          {renderTypeDpsMove('Fast', score.fastMove, score.fastMatchesType)}
+          {renderTypeDpsMove('Charged', score.chargedMove, score.chargedMatchesType)}
+        </div>
+      </td>
+      <td className="raid-type-table-number">{formatDps(score.dps)}</td>
+      <td className="raid-type-table-number">{formatWholeNumber(score.tdo)}</td>
+      <td className="raid-type-table-number">{formatEr(score.er)}</td>
+      <td className="raid-type-table-number">{score.cp.toLocaleString()}</td>
+    </tr>
+  );
+
   if (loading) {
     return <LoadingSpinner />;
   }
 
-  if (!selectedBoss || !bossStats || !groupEstimate) {
+  if (attackers.length === 0) {
     return (
       <div className="raid-page">
         <section className="raid-empty-state">
           <p className="raid-eyebrow">Raid planner</p>
-          <h1>No raid-ready Pokémon data yet.</h1>
-          <p>Once the Pokédex data finishes loading, the planner can build raid boss options.</p>
+          <h1>No raid-ready attacker data yet.</h1>
+          <p>Once the Pokédex data finishes loading, the planner can rank raid attackers.</p>
         </section>
       </div>
     );
@@ -222,307 +479,323 @@ const Raid: React.FC = () => {
 
   return (
     <div className="raid-page">
-      <section className="raid-hero">
-        <div className="raid-hero-copy">
-          <p className="raid-eyebrow">Raid planner</p>
-          <h1>Build a raid team around today&apos;s Gym raid rules.</h1>
-          <p>
-            Pick a boss, let known raid data choose its category, then layer in current
-            bonuses like friendship, Mega ally boosts, weather, Party Power, and Shadow raid
-            enrage state.
-          </p>
-        </div>
-
-        <div className="raid-mechanics-card" aria-label="Current raid mechanics summary">
-          <div>
-            <span>Lobby</span>
-            <strong>20 Trainers</strong>
-          </div>
-          <div>
-            <span>Team</span>
-            <strong>6 Pokemon</strong>
-          </div>
-          <div>
-            <span>Boss HP</span>
-            <strong>{selectedTier.bossHp.toLocaleString()}</strong>
-          </div>
-          <div>
-            <span>Timer</span>
-            <strong>{formatSeconds(selectedTier.timeLimitSeconds)}</strong>
-          </div>
-        </div>
+      <section className="raid-mode-tabs" aria-label="Raid planner views">
+        <button
+          className={viewMode === 'overall' ? 'active' : ''}
+          onClick={() => setViewMode('overall')}
+          type="button"
+        >
+          Top attackers
+        </button>
+        <button
+          className={viewMode === 'type-dps' ? 'active' : ''}
+          onClick={() => setViewMode('type-dps')}
+          type="button"
+        >
+          Type breakdowns
+        </button>
+        <button
+          className={viewMode === 'boss' ? 'active' : ''}
+          onClick={() => setViewMode('boss')}
+          type="button"
+        >
+          Boss counters
+        </button>
       </section>
 
-      <section className="raid-layout">
-        <aside className="raid-panel raid-boss-panel">
-          <div className="raid-panel-header">
-            <p className="raid-eyebrow">Raid boss</p>
-            <h2>{selectedBoss.name}</h2>
-          </div>
-
-          <div className="raid-boss-card">
-            <div className="raid-boss-image-shell">
-              <img src={getPokemonImage(selectedBoss)} alt={selectedBoss.name} />
+      {viewMode === 'overall' && (
+        <section className="raid-layout raid-overall-layout">
+          <aside className="raid-panel raid-type-panel">
+            <div className="raid-panel-header">
+              <p className="raid-eyebrow">Raid attackers</p>
+              <h2>Overall</h2>
             </div>
-            <div className="raid-boss-summary">
-              <span>{getVariantBadge(selectedBoss)}</span>
-              <strong>CP {bossStats.bossCp.toLocaleString()}</strong>
-              <small>
-                {getVariantTypeNames(selectedBoss).map(capitalize).join(' / ') || 'Unknown type'}
-              </small>
+
+            <p className="raid-panel-copy">
+              Ranked by ER against a neutral raid target so strong attackers rise without forcing a
+              boss matchup.
+            </p>
+
+            <div className="raid-type-grid" aria-label="Type DPS pages">
+              {typeOptions.map((type) => (
+                <button
+                  className={getTypeClassName(type)}
+                  key={type}
+                  onClick={() => {
+                    setSelectedType(type);
+                    setViewMode('type-dps');
+                  }}
+                  type="button"
+                >
+                  <img src={getTypeIconPath(type)} alt="" draggable={false} />
+                  <span>{capitalize(type)}</span>
+                </button>
+              ))}
             </div>
-          </div>
+          </aside>
 
-          <label className="raid-field">
-            <span>Find boss</span>
-            <input
-              type="search"
-              value={bossSearch}
-              autoComplete="off"
-              onChange={(event) => setBossSearch(event.target.value)}
-              onKeyDown={(event) => {
-                if (event.key === 'Enter' && filteredBossOptions[0]) {
-                  handleBossSelect(filteredBossOptions[0]);
-                }
-              }}
-              placeholder="Search by name or number"
-            />
-          </label>
+          <main className="raid-panel raid-main-panel">
+            <section className="raid-category-card" aria-label="Overall attacker category">
+              <div>
+                <span>Leaderboard</span>
+                <strong>Overall ER</strong>
+              </div>
+              <p>
+                ER balances raid DPS with time on field. Use the type breakdowns for same-type
+                attacker roles, or boss counters for actual matchup effectiveness.
+              </p>
+            </section>
 
-          {bossSearchActive && (
-            <div className="raid-boss-suggestions" aria-label="Raid boss suggestions">
-              {filteredBossOptions.length > 0 ? (
-                filteredBossOptions.map((boss) => (
-                  <button
-                    className={`raid-boss-option ${
-                      boss.variant_id === selectedBoss.variant_id ? 'active' : ''
-                    }`}
-                    key={boss.variant_id}
-                    onClick={() => handleBossSelect(boss)}
-                    type="button"
-                  >
-                    <img src={getPokemonImage(boss)} alt="" />
-                    <span>{boss.name}</span>
-                    <small>#{String(boss.pokedex_number).padStart(4, '0')}</small>
-                  </button>
-                ))
+            {renderSharedModifiers(false)}
+            {renderCounterToolbar('Attacker search')}
+
+            <section className="raid-type-results" aria-label="Top raid attackers">
+              {overallScores.length > 0 ? (
+                <table>
+                  <thead>
+                    <tr>
+                      <th scope="col">Pokémon</th>
+                      <th scope="col">Moves</th>
+                      <th scope="col">DPS</th>
+                      <th scope="col">TDO</th>
+                      <th scope="col">ER</th>
+                      <th scope="col">CP</th>
+                    </tr>
+                  </thead>
+                  <tbody>{overallScores.map(renderOverallRow)}</tbody>
+                </table>
               ) : (
-                <p className="raid-boss-empty">No matching raid boss found.</p>
+                <div className="raid-list-empty">No attackers match the current filters.</div>
               )}
-            </div>
-          )}
-        </aside>
-
-        <main className="raid-panel raid-main-panel">
-          <section className="raid-category-card" aria-label="Raid category">
-            <div>
-              <span>Raid category</span>
-              <strong>{selectedTier.label}</strong>
-            </div>
-            <p>{selectedTier.note}</p>
-          </section>
-
-          <section className="raid-boss-math">
-            <div>
-              <span>Boss CP</span>
-              <strong>{bossStats.bossCp.toLocaleString()}</strong>
-            </div>
-            <div>
-              <span>Boss HP</span>
-              <strong>{bossStats.hp.toLocaleString()}</strong>
-            </div>
-            <div>
-              <span>Tier</span>
-              <strong>{selectedTier.shortLabel}</strong>
-            </div>
-            <div>
-              <span>Top team DPS</span>
-              <strong>{formatDps(groupEstimate.topTeamDps)}</strong>
-            </div>
-            <div>
-              <span>Min trainers</span>
-              <strong>{groupEstimate.minTrainers || '-'}</strong>
-            </div>
-            <div>
-              <span>Comfortable</span>
-              <strong>{groupEstimate.comfortableTrainers || '-'}</strong>
-            </div>
-          </section>
-
-          {bossMetadata && (
-            <section className="raid-catch-card">
-              <div>
-                <span>Known raid data</span>
-                <strong>{bossMetadata.tier}</strong>
-              </div>
-              <div>
-                <span>Catch CP</span>
-                <strong>
-                  {bossMetadata.min_unboosted_cp} - {bossMetadata.max_unboosted_cp}
-                </strong>
-              </div>
-              <div>
-                <span>Boosted CP</span>
-                <strong>
-                  {bossMetadata.min_boosted_cp} - {bossMetadata.max_boosted_cp}
-                </strong>
-              </div>
             </section>
-          )}
+          </main>
+        </section>
+      )}
 
-          <section className="raid-settings-grid" aria-label="Raid modifiers">
-            <label className="raid-field">
-              <span>Attacker level</span>
-              <select
-                value={attackerLevel}
-                onChange={(event) =>
-                  setAttackerLevel(event.target.value as RaidCounterSettings['attackerLevel'])
-                }
-              >
-                {ATTACKER_LEVEL_OPTIONS.map((level) => (
-                  <option key={level} value={level}>
-                    Level {level.replace('.0', '')}
-                  </option>
-                ))}
-              </select>
-            </label>
+      {viewMode === 'boss' &&
+        (selectedBoss && bossStats && groupEstimate ? (
+          <section className="raid-layout">
+            <aside className="raid-panel raid-boss-panel">
+              <div className="raid-panel-header">
+                <p className="raid-eyebrow">Raid boss</p>
+                <h2>{selectedBoss.name}</h2>
+              </div>
 
-            <label className="raid-field">
-              <span>Friendship</span>
-              <select
-                value={friendship}
-                onChange={(event) => setFriendship(event.target.value as FriendshipKey)}
-              >
-                {FRIENDSHIP_OPTIONS.map((option) => (
-                  <option key={option.key} value={option.key}>
-                    {option.label} ({FRIENDSHIP_DAMAGE_BONUS[option.key].toFixed(2)}x)
-                  </option>
-                ))}
-              </select>
-            </label>
-
-            <label className="raid-field">
-              <span>Mega ally</span>
-              <select
-                value={megaAllyBonus}
-                onChange={(event) => setMegaAllyBonus(event.target.value as MegaAllyBonusKey)}
-              >
-                {MEGA_OPTIONS.map((option) => (
-                  <option key={option.key} value={option.key}>
-                    {option.label} ({MEGA_ALLY_DAMAGE_BONUS[option.key].toFixed(1)}x)
-                  </option>
-                ))}
-              </select>
-            </label>
-
-            <label className="raid-field">
-              <span>Party Power</span>
-              <select
-                value={partyPower}
-                onChange={(event) => setPartyPower(event.target.value as PartyPowerKey)}
-              >
-                {PARTY_POWER_OPTIONS.map((option) => (
-                  <option key={option.key} value={option.key}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
-            </label>
-
-            <label className="raid-field">
-              <span>Weather boost</span>
-              <select
-                value={weatherBoostedType}
-                onChange={(event) => setWeatherBoostedType(event.target.value)}
-              >
-                <option value="none">No weather boost</option>
-                {typeOptions.map((type) => (
-                  <option key={type} value={type}>
-                    {capitalize(type)}
-                  </option>
-                ))}
-              </select>
-            </label>
-
-            <div className="raid-shadow-controls">
-              <button
-                className={`raid-toggle-button ${shadowMechanicsEnabled ? 'active' : ''}`}
-                disabled={selectedBossIsShadowRaid}
-                onClick={() => setShadowRaid((previous) => !previous)}
-                type="button"
-              >
-                {selectedBossIsShadowRaid ? 'Shadow raid data' : 'Shadow raid'}
-              </button>
-              {shadowMechanicsEnabled && (
-                <div className="raid-segmented-control" aria-label="Shadow boss state">
-                  {(['subdued', 'enraged'] as ShadowBossMode[]).map((mode) => (
-                    <button
-                      className={shadowBossMode === mode ? 'active' : ''}
-                      key={mode}
-                      onClick={() => setShadowBossMode(mode)}
-                      type="button"
-                    >
-                      {capitalize(mode)}
-                    </button>
-                  ))}
+              <div className="raid-boss-card">
+                <div className="raid-boss-image-shell">
+                  <img src={getPokemonImage(selectedBoss)} alt={selectedBoss.name} />
                 </div>
-              )}
-            </div>
-          </section>
-
-          {shadowMechanicsEnabled && (
-            <section className="raid-shadow-note">
-              <strong>Purified Gem reminder</strong>
-              <span>
-                Each Trainer can use up to 5 Purified Gems. It takes coordinated Gems to subdue an
-                enraged Shadow Raid Boss, so solo attempts should use the enraged estimate.
-              </span>
-            </section>
-          )}
-
-          <section className="raid-counter-toolbar">
-            <label className="raid-field">
-              <span>Counter search</span>
-              <input
-                type="search"
-                value={attackerSearch}
-                onChange={(event) => setAttackerSearch(event.target.value)}
-                placeholder="Pokemon, type, or move"
-              />
-            </label>
-            <button
-              className={`raid-toggle-button ${bestOnly ? 'active' : ''}`}
-              onClick={() => setBestOnly((previous) => !previous)}
-              type="button"
-            >
-              {bestOnly ? 'Best moves only' : 'All move pairs'}
-            </button>
-          </section>
-
-          <section className="raid-counter-list" aria-label="Raid counters">
-            {raidScores.map((score, index) => (
-              <article className="raid-counter-card" key={`${score.variant.variant_id}-${index}`}>
-                <div className="raid-counter-rank">{index + 1}</div>
-                <img src={getPokemonImage(score.variant)} alt="" />
-                <div className="raid-counter-main">
-                  <strong>{score.variant.name}</strong>
-                  <span>
-                    {score.fastMove.name} / {score.chargedMove.name}
-                  </span>
+                <div className="raid-boss-summary">
+                  <span>{getVariantBadge(selectedBoss)}</span>
+                  <strong>CP {bossStats.bossCp.toLocaleString()}</strong>
                   <small>
-                    CP {score.cp.toLocaleString()} at level {attackerLevel.replace('.0', '')}
+                    {formatTypeList(getVariantTypeNames(selectedBoss)) || 'Unknown type'}
                   </small>
                 </div>
-                <div className="raid-counter-stats">
-                  <span>{formatDps(score.dps)} DPS</span>
-                  <span>{score.trainersNeeded} trainers</span>
-                  <span>{formatSeconds(score.soloTimeSeconds)}</span>
+              </div>
+
+              <label className="raid-field">
+                <span>Find boss</span>
+                <input
+                  type="search"
+                  value={bossSearch}
+                  autoComplete="off"
+                  onChange={(event) => setBossSearch(event.target.value)}
+                  onKeyDown={(event) => {
+                    if (event.key === 'Enter' && filteredBossOptions[0]) {
+                      handleBossSelect(filteredBossOptions[0]);
+                    }
+                  }}
+                  placeholder="Search by name or number"
+                />
+              </label>
+
+              {bossSearchActive && (
+                <div className="raid-boss-suggestions" aria-label="Raid boss suggestions">
+                  {filteredBossOptions.length > 0 ? (
+                    filteredBossOptions.map((boss) => (
+                      <button
+                        className={`raid-boss-option ${
+                          boss.variant_id === selectedBoss.variant_id ? 'active' : ''
+                        }`}
+                        key={boss.variant_id}
+                        onClick={() => handleBossSelect(boss)}
+                        type="button"
+                      >
+                        <img src={getPokemonImage(boss)} alt="" />
+                        <span>{boss.name}</span>
+                        <small>#{String(boss.pokedex_number).padStart(4, '0')}</small>
+                      </button>
+                    ))
+                  ) : (
+                    <p className="raid-boss-empty">No matching raid boss found.</p>
+                  )}
                 </div>
-              </article>
-            ))}
+              )}
+            </aside>
+
+            <main className="raid-panel raid-main-panel">
+              <section className="raid-category-card" aria-label="Raid category">
+                <div>
+                  <span>Raid category</span>
+                  <strong>{selectedTier.label}</strong>
+                </div>
+                <p>{selectedTier.note}</p>
+              </section>
+
+              <section className="raid-boss-math">
+                <div>
+                  <span>Boss CP</span>
+                  <strong>{bossStats.bossCp.toLocaleString()}</strong>
+                </div>
+                <div>
+                  <span>Boss HP</span>
+                  <strong>{bossStats.hp.toLocaleString()}</strong>
+                </div>
+                <div>
+                  <span>Tier</span>
+                  <strong>{selectedTier.shortLabel}</strong>
+                </div>
+                <div>
+                  <span>Top team DPS</span>
+                  <strong>{formatDps(groupEstimate.topTeamDps)}</strong>
+                </div>
+                <div>
+                  <span>Min trainers</span>
+                  <strong>{groupEstimate.minTrainers || '-'}</strong>
+                </div>
+                <div>
+                  <span>Comfortable</span>
+                  <strong>{groupEstimate.comfortableTrainers || '-'}</strong>
+                </div>
+              </section>
+
+              {bossMetadata && (
+                <section className="raid-catch-card">
+                  <div>
+                    <span>Known raid data</span>
+                    <strong>{bossMetadata.tier}</strong>
+                  </div>
+                  <div>
+                    <span>Catch CP</span>
+                    <strong>
+                      {bossMetadata.min_unboosted_cp} - {bossMetadata.max_unboosted_cp}
+                    </strong>
+                  </div>
+                  <div>
+                    <span>Boosted CP</span>
+                    <strong>
+                      {bossMetadata.min_boosted_cp} - {bossMetadata.max_boosted_cp}
+                    </strong>
+                  </div>
+                </section>
+              )}
+
+              {renderSharedModifiers(true)}
+
+              {shadowMechanicsEnabled && (
+                <section className="raid-shadow-note">
+                  <strong>Purified Gem reminder</strong>
+                  <span>
+                    Each Trainer can use up to 5 Purified Gems. It takes coordinated Gems to subdue
+                    an enraged Shadow Raid Boss, so solo attempts should use the enraged estimate.
+                  </span>
+                </section>
+              )}
+
+              {renderCounterToolbar('Counter search')}
+
+              <section className="raid-counter-list" aria-label="Raid counters">
+                {raidScores.length > 0 ? (
+                  raidScores.map(renderBossCounterCard)
+                ) : (
+                  <div className="raid-list-empty">No counters match the current filters.</div>
+                )}
+              </section>
+            </main>
           </section>
-        </main>
-      </section>
+        ) : (
+          <section className="raid-empty-state">
+            <div className="raid-panel-header">
+              <p className="raid-eyebrow">Boss counters</p>
+              <h2>No raid boss data yet.</h2>
+            </div>
+            <p>Overall and type leaderboards can still rank attackers while boss data loads.</p>
+          </section>
+        ))}
+
+      {viewMode === 'type-dps' && (
+        <section className="raid-layout raid-type-layout">
+          <aside className="raid-panel raid-type-panel">
+            <div className="raid-panel-header">
+              <p className="raid-eyebrow">Type DPS</p>
+              <h2>{capitalize(selectedType)}</h2>
+            </div>
+
+            <div className="raid-type-grid" aria-label="Type DPS pages">
+              {typeOptions.map((type) => (
+                <button
+                  className={`${getTypeClassName(type)} ${selectedType === type ? 'active' : ''}`}
+                  key={type}
+                  onClick={() => setSelectedType(type)}
+                  type="button"
+                >
+                  <img src={getTypeIconPath(type)} alt="" draggable={false} />
+                  <span>{capitalize(type)}</span>
+                </button>
+              ))}
+            </div>
+          </aside>
+
+          <main className="raid-panel raid-main-panel">
+            <section
+              className="raid-category-card raid-type-category-card"
+              aria-label="Type DPS category"
+            >
+              <div>
+                <span>Type DPS</span>
+                <strong>{capitalize(selectedType)}</strong>
+              </div>
+              {selectedType === 'normal' ? (
+                <p>
+                  Normal has no super-effective matchup, so this page uses neutral raid damage.
+                </p>
+              ) : (
+                <p>
+                  {capitalize(selectedType)} moves get the selected-type raid boost. DPS, TDO, and
+                  ER are ranked by selected-type role damage while mixed off-type moves stay
+                  neutral.
+                </p>
+              )}
+            </section>
+
+            {renderSharedModifiers(false)}
+            {renderCounterToolbar('DPS search')}
+
+            <section className="raid-type-results" aria-label="Type DPS counters">
+              {typeDpsScores.length > 0 ? (
+                <table>
+                  <thead>
+                    <tr>
+                      <th scope="col">Pokémon</th>
+                      <th scope="col">Moves</th>
+                      <th scope="col">DPS</th>
+                      <th scope="col">TDO</th>
+                      <th scope="col">ER</th>
+                      <th scope="col">CP</th>
+                    </tr>
+                  </thead>
+                  <tbody>{typeDpsScores.map(renderTypeDpsRow)}</tbody>
+                </table>
+              ) : (
+                <div className="raid-list-empty">
+                  No eligible attackers have a {capitalize(selectedType)} fast or charged move.
+                </div>
+              )}
+            </section>
+          </main>
+        </section>
+      )}
     </div>
   );
 };

@@ -127,6 +127,23 @@ describe('Raid page', () => {
         ],
       }),
       variant({
+        name: 'Absol',
+        variant_id: 'absol-default',
+        pokemon_id: 359,
+        pokedex_number: 359,
+        attack: 246,
+        defense: 120,
+        stamina: 163,
+        type_1_id: 2,
+        type_2_id: 0,
+        type1_name: 'dark',
+        type2_name: 'none',
+        moves: [
+          move('Psycho Cut', 'psychic', 1, 5, 600, 8),
+          move('Dark Pulse', 'dark', 0, 80, 3000, -50),
+        ],
+      }),
+      variant({
         name: 'Raikou',
         variant_id: 'raikou-default',
         pokemon_id: 243,
@@ -175,23 +192,24 @@ describe('Raid page', () => {
     expect(screen.getByTestId('loading-spinner')).toBeInTheDocument();
   });
 
-  it('renders current raid mechanics and selects the metadata-backed raid tier', () => {
+  it('renders the selected boss and metadata-backed raid tier', () => {
     render(<Raid />);
 
-    expect(
-      screen.getByRole('heading', {
-        name: "Build a raid team around today's Gym raid rules.",
-      }),
-    ).toBeInTheDocument();
-    expect(screen.getByText('20 Trainers')).toBeInTheDocument();
-    expect(screen.getByText('6 Pokemon')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Boss counters' }));
+
+    expect(screen.getByRole('button', { name: 'Boss counters' })).toBeInTheDocument();
+    expect(screen.queryByText(/Build a raid team/i)).not.toBeInTheDocument();
     expect(screen.getByText('Boss CP')).toBeInTheDocument();
     expect(screen.getAllByText('5-star').length).toBeGreaterThan(0);
-    expect(screen.getByText('1889 - 1972')).toBeInTheDocument();
+    expect(
+      screen.getByText((_, element) => element?.textContent === '1889 - 1972'),
+    ).toBeInTheDocument();
   });
 
   it('keeps raid boss choices hidden until searching', () => {
     render(<Raid />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Boss counters' }));
 
     expect(screen.queryByLabelText('Raid boss suggestions')).not.toBeInTheDocument();
 
@@ -209,6 +227,8 @@ describe('Raid page', () => {
   it('supports current raid modifiers and filters eligible counter results', () => {
     render(<Raid />);
 
+    fireEvent.click(screen.getByRole('button', { name: 'Boss counters' }));
+
     fireEvent.click(screen.getByRole('button', { name: 'Shadow raid' }));
     expect(screen.getByText('Purified Gem reminder')).toBeInTheDocument();
 
@@ -223,5 +243,48 @@ describe('Raid page', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Best moves only' }));
     expect(screen.getByRole('button', { name: 'All move pairs' })).toBeInTheDocument();
+  });
+
+  it('opens on an overall raid attacker leaderboard', () => {
+    render(<Raid />);
+
+    expect(screen.getByRole('button', { name: 'Top attackers' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Overall' })).toBeInTheDocument();
+    expect(screen.getByText(/ER balances raid DPS with time on field/i)).toBeInTheDocument();
+    expect(screen.queryByText('Boss CP')).not.toBeInTheDocument();
+
+    const counterList = screen.getByLabelText('Top raid attackers');
+    expect(within(counterList).getByRole('columnheader', { name: 'Pokémon' })).toBeInTheDocument();
+    expect(within(counterList).getByRole('columnheader', { name: 'Moves' })).toBeInTheDocument();
+    expect(within(counterList).getByRole('columnheader', { name: 'DPS' })).toBeInTheDocument();
+    expect(within(counterList).getByRole('columnheader', { name: 'TDO' })).toBeInTheDocument();
+    expect(within(counterList).getByRole('columnheader', { name: 'ER' })).toBeInTheDocument();
+    expect(within(counterList).getByRole('columnheader', { name: 'CP' })).toBeInTheDocument();
+    expect(within(counterList).getByText('Gengar')).toBeInTheDocument();
+    expect(within(counterList).queryByText('Shiny Tyranitar')).not.toBeInTheDocument();
+  });
+
+  it('shows type DPS pages using fast or charged moves that match the selected type', () => {
+    render(<Raid />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Type breakdowns' }));
+
+    expect(screen.getByRole('heading', { name: 'Dark' })).toBeInTheDocument();
+    expect(screen.getByText(/Dark moves get the selected-type raid boost/i)).toBeInTheDocument();
+    expect(screen.getByLabelText('Type DPS pages')).toBeInTheDocument();
+    expect(screen.getAllByRole('button', { name: 'Dark' }).length).toBeGreaterThan(0);
+
+    const counterList = screen.getByLabelText('Type DPS counters');
+    expect(within(counterList).getByRole('columnheader', { name: 'Pokémon' })).toBeInTheDocument();
+    expect(within(counterList).getByRole('columnheader', { name: 'Moves' })).toBeInTheDocument();
+    expect(within(counterList).getByRole('columnheader', { name: 'DPS' })).toBeInTheDocument();
+    expect(within(counterList).getByRole('columnheader', { name: 'TDO' })).toBeInTheDocument();
+    expect(within(counterList).getByRole('columnheader', { name: 'ER' })).toBeInTheDocument();
+    expect(within(counterList).getByRole('columnheader', { name: 'CP' })).toBeInTheDocument();
+    expect(within(counterList).getByText('Tyranitar')).toBeInTheDocument();
+    expect(within(counterList).getByText('Absol')).toBeInTheDocument();
+    expect(within(counterList).queryByText('Gengar')).not.toBeInTheDocument();
+    expect(within(counterList).queryByText('Shiny Tyranitar')).not.toBeInTheDocument();
+    expect(within(counterList).getAllByText('Charged Dark').length).toBeGreaterThan(0);
   });
 });

@@ -6,13 +6,19 @@ import {
   RAID_TIER_PRESETS,
   calculateRaidBossCp,
   calculateRaidMoveDamage,
+  dedupeBestOverallAttackerPerVariant,
+  dedupeBestTypeDpsPerVariant,
   estimateRaidGroup,
   isEligibleRaidAttacker,
   getPrimaryRaidMetadataForVariant,
   getRaidTierKeyForVariant,
   isEligibleRaidBoss,
   scoreRaidCounters,
+  scoreRaidOverallAttackers,
+  scoreRaidTypeDps,
   type RaidCounterSettings,
+  type RaidOverallScore,
+  type RaidTypeDpsScore,
 } from '@/pages/Raid/utils/raidCalculations';
 
 type RaidCalculationVariantOverrides = Omit<Partial<PokemonVariant>, 'moves' | 'raid_boss'> & {
@@ -359,5 +365,422 @@ describe('raid calculations', () => {
     expect(estimate.topTeamDps).toBeGreaterThan(0);
     expect(estimate.minTrainers).toBeGreaterThan(0);
     expect(estimate.comfortableTrainers).toBeGreaterThanOrEqual(estimate.minTrainers);
+  });
+
+  it('ranks overall attackers by neutral raid ER without needing a boss matchup', () => {
+    const gengar = pokemon({
+      name: 'Gengar',
+      variant_id: 'gengar-default',
+      attack: 261,
+      defense: 149,
+      stamina: 155,
+      type1_name: 'ghost',
+      type2_name: 'poison',
+      moves: [
+        move('Lick', 'ghost', 1, 5, 500, 6),
+        move('Shadow Ball', 'ghost', 0, 100, 3000, -50),
+      ],
+    });
+    const blissey = pokemon({
+      name: 'Blissey',
+      variant_id: 'blissey-default',
+      attack: 129,
+      defense: 169,
+      stamina: 496,
+      type1_name: 'normal',
+      type2_name: 'none',
+      moves: [
+        move('Pound', 'normal', 1, 7, 600, 6),
+        move('Hyper Beam', 'normal', 0, 150, 3800, -100),
+      ],
+    });
+    const shinyGengar = pokemon({
+      name: 'Shiny Gengar',
+      variant_id: 'gengar-shiny',
+      variantType: 'shiny',
+      moves: [
+        move('Lick', 'ghost', 1, 5, 500, 6),
+        move('Shadow Ball', 'ghost', 0, 100, 3000, -50),
+      ],
+    });
+
+    const scores = scoreRaidOverallAttackers([gengar, blissey, shinyGengar], baseSettings);
+    const scoreNames = scores.map((score) => score.variant.name);
+    const gengarScore = scores.find((score) => score.variant.name === 'Gengar');
+
+    expect(scoreNames).toContain('Gengar');
+    expect(scoreNames).toContain('Blissey');
+    expect(scoreNames).not.toContain('Shiny Gengar');
+    expect(gengarScore?.dps).toBeGreaterThan(0);
+    expect(gengarScore?.tdo).toBeGreaterThan(0);
+    expect(gengarScore?.er).toBeGreaterThan(0);
+    expect(scores[0]?.er).toBeGreaterThanOrEqual(scores[1]?.er ?? 0);
+  });
+
+  it('dedupes overall attackers by ER instead of raw DPS', () => {
+    const baseScore = scoreRaidOverallAttackers(
+      [
+        pokemon({
+          name: 'Raider',
+          variant_id: 'raider-default',
+          attack: 220,
+          defense: 190,
+          stamina: 190,
+          type1_name: 'electric',
+          type2_name: 'none',
+          moves: [
+            move('Thunder Shock', 'electric', 1, 5, 600, 8),
+            move('Wild Charge', 'electric', 0, 90, 2600, -50),
+          ],
+        }),
+      ],
+      baseSettings,
+    )[0] as RaidOverallScore;
+    const highDpsLowEr = {
+      ...baseScore,
+      dps: 40,
+      tdo: 20,
+      er: 25,
+      fastMove: move('Glass Cannon', 'electric', 1, 8, 500, 6),
+    };
+    const lowerDpsHigherEr = {
+      ...baseScore,
+      dps: 30,
+      tdo: 900,
+      er: 45,
+      fastMove: move('Stable Shock', 'electric', 1, 5, 600, 8),
+    };
+
+    expect(
+      dedupeBestOverallAttackerPerVariant([highDpsLowEr, lowerDpsHigherEr])[0]?.fastMove.name,
+    ).toBe('Stable Shock');
+  });
+
+  it('keeps Mega Rayquaza above Crowned Shield Zamazenta on broad raid attacker scoring', () => {
+    const megaRayquaza = pokemon({
+      name: 'Mega Rayquaza',
+      variant_id: 'rayquaza-mega',
+      attack: 377,
+      defense: 210,
+      stamina: 227,
+      type1_name: 'dragon',
+      type2_name: 'flying',
+      variantType: 'mega',
+      moves: [
+        move('Air Slash', 'flying', 1, 14, 1000, 10),
+        move('Dragon Tail', 'dragon', 1, 15, 1000, 9),
+        move('Dragon Ascent', 'flying', 0, 140, 3500, -50),
+      ],
+    });
+    const crownedShieldZamazenta = pokemon({
+      name: 'Zamazenta',
+      species_name: 'Zamazenta',
+      form: 'Crowned_shield',
+      variant_id: 'zamazenta-crowned-shield',
+      attack: 250,
+      defense: 292,
+      stamina: 192,
+      type1_name: 'fighting',
+      type2_name: 'steel',
+      moves: [
+        move('Metal Claw', 'steel', 1, 8, 500, 7),
+        move('Behemoth Bash', 'steel', 0, 125, 1500, -50),
+      ],
+    });
+    const raidTargets = [
+      pokemon({
+        name: 'Palkia',
+        variant_id: 'target-palkia',
+        type1_name: 'dragon',
+        type2_name: 'water',
+      }),
+      pokemon({
+        name: 'Rayquaza',
+        variant_id: 'target-rayquaza',
+        type1_name: 'dragon',
+        type2_name: 'flying',
+      }),
+      pokemon({
+        name: 'Giratina',
+        variant_id: 'target-giratina',
+        type1_name: 'ghost',
+        type2_name: 'dragon',
+      }),
+      pokemon({
+        name: 'Terrakion',
+        variant_id: 'target-terrakion',
+        type1_name: 'rock',
+        type2_name: 'fighting',
+      }),
+      pokemon({
+        name: 'Virizion',
+        variant_id: 'target-virizion',
+        type1_name: 'grass',
+        type2_name: 'fighting',
+      }),
+    ];
+
+    const scores = dedupeBestOverallAttackerPerVariant(
+      scoreRaidOverallAttackers(
+        [crownedShieldZamazenta, megaRayquaza],
+        baseSettings,
+        raidTargets,
+      ),
+    );
+
+    expect(scores[0]?.variant.name).toBe('Mega Rayquaza');
+    expect(scores[0]?.fastMove.name).toBe('Dragon Tail');
+    expect(scores[0]?.chargedMove.name).toBe('Dragon Ascent');
+    expect(scores[0]?.er).toBeGreaterThan(scores[1]?.er ?? 0);
+  });
+
+  it('ranks type DPS when either the fast or charged move matches the selected type', () => {
+    const tyranitar = pokemon({
+      name: 'Tyranitar',
+      variant_id: 'tyranitar-default',
+      attack: 251,
+      defense: 207,
+      stamina: 225,
+      type1_name: 'rock',
+      type2_name: 'dark',
+      moves: [
+        move('Bite', 'dark', 1, 6, 500, 4),
+        move('Brutal Swing', 'dark', 0, 65, 1900, -33),
+      ],
+    });
+    const absol = pokemon({
+      name: 'Absol',
+      variant_id: 'absol-default',
+      attack: 246,
+      defense: 120,
+      stamina: 163,
+      type1_name: 'dark',
+      type2_name: 'none',
+      moves: [
+        move('Psycho Cut', 'psychic', 1, 5, 600, 8),
+        move('Dark Pulse', 'dark', 0, 80, 3000, -50),
+      ],
+    });
+    const mandibuzz = pokemon({
+      name: 'Mandibuzz',
+      variant_id: 'mandibuzz-default',
+      attack: 129,
+      defense: 205,
+      stamina: 242,
+      type1_name: 'dark',
+      type2_name: 'flying',
+      moves: [
+        move('Snarl', 'dark', 1, 12, 1100, 14),
+        move('Aerial Ace', 'flying', 0, 55, 2400, -33),
+      ],
+    });
+    const gengar = pokemon({
+      name: 'Gengar',
+      variant_id: 'gengar-default',
+      attack: 261,
+      defense: 149,
+      stamina: 155,
+      type1_name: 'ghost',
+      type2_name: 'poison',
+      moves: [
+        move('Lick', 'ghost', 1, 5, 500, 6),
+        move('Shadow Ball', 'ghost', 0, 100, 3000, -50),
+      ],
+    });
+    const shinyTyranitar = pokemon({
+      name: 'Shiny Tyranitar',
+      variant_id: 'tyranitar-shiny',
+      variantType: 'shiny',
+      moves: [
+        move('Bite', 'dark', 1, 6, 500, 4),
+        move('Brutal Swing', 'dark', 0, 65, 1900, -33),
+      ],
+    });
+
+    const scores = scoreRaidTypeDps(
+      [tyranitar, absol, mandibuzz, gengar, shinyTyranitar],
+      'dark',
+      baseSettings,
+    );
+    const scoreNames = scores.map((score) => score.variant.name);
+    const absolScore = scores.find((score) => score.variant.name === 'Absol');
+    const mandibuzzScore = scores.find((score) => score.variant.name === 'Mandibuzz');
+
+    expect(scoreNames).toContain('Tyranitar');
+    expect(scoreNames).toContain('Absol');
+    expect(scoreNames).toContain('Mandibuzz');
+    expect(scoreNames).not.toContain('Gengar');
+    expect(scoreNames).not.toContain('Shiny Tyranitar');
+    expect(absolScore?.targetEffectiveness).toBe(1.6);
+    expect(absolScore?.fastMatchesType).toBe(false);
+    expect(absolScore?.chargedMatchesType).toBe(true);
+    expect(absolScore?.fastEffectiveness).toBe(1);
+    expect(absolScore?.chargedEffectiveness).toBe(1.6);
+    expect(absolScore?.tdo).toBeGreaterThan(0);
+    expect(absolScore?.er).toBeGreaterThan(0);
+    expect(mandibuzzScore?.fastMatchesType).toBe(true);
+    expect(mandibuzzScore?.chargedMatchesType).toBe(false);
+    expect(mandibuzzScore?.fastEffectiveness).toBe(1.6);
+    expect(mandibuzzScore?.chargedEffectiveness).toBe(1);
+    expect(
+      dedupeBestTypeDpsPerVariant(scores).filter(
+        (score) => score.variant.name === 'Tyranitar',
+      ),
+    ).toHaveLength(1);
+  });
+
+  it('does not boost off-type companion moves on theoretical type DPS pages', () => {
+    const megaAbsol = pokemon({
+      name: 'Mega Absol',
+      variant_id: 'absol-mega',
+      attack: 314,
+      defense: 130,
+      stamina: 163,
+      type1_name: 'dark',
+      type2_name: 'none',
+      variantType: 'mega',
+      moves: [
+        move('Snarl', 'dark', 1, 12, 1100, 14),
+        move('Megahorn', 'bug', 0, 110, 2200, -100),
+      ],
+    });
+    const shadowSneasler = pokemon({
+      name: 'Shadow Sneasler',
+      variant_id: 'sneasler-shadow',
+      attack: 259,
+      defense: 158,
+      stamina: 190,
+      type1_name: 'fighting',
+      type2_name: 'poison',
+      variantType: 'shadow',
+      moves: [
+        move('Shadow Claw', 'ghost', 1, 9, 700, 6),
+        move('X-Scissor', 'bug', 0, 45, 1600, -33),
+      ],
+    });
+    const pheromosa = pokemon({
+      name: 'Pheromosa',
+      variant_id: 'pheromosa-default',
+      attack: 316,
+      defense: 85,
+      stamina: 174,
+      type1_name: 'bug',
+      type2_name: 'fighting',
+      variantType: 'default',
+      moves: [
+        move('Bug Bite', 'bug', 1, 5, 500, 6),
+        move('Bug Buzz', 'bug', 0, 100, 3700, -50),
+      ],
+    });
+
+    const scores = scoreRaidTypeDps([megaAbsol, shadowSneasler, pheromosa], 'bug', baseSettings);
+    const megaAbsolScore = scores.find((score) => score.variant.name === 'Mega Absol');
+    const shadowSneaslerScore = scores.find((score) => score.variant.name === 'Shadow Sneasler');
+    const pheromosaScore = scores.find((score) => score.variant.name === 'Pheromosa');
+
+    expect(megaAbsolScore?.fastMatchesType).toBe(false);
+    expect(megaAbsolScore?.chargedMatchesType).toBe(true);
+    expect(megaAbsolScore?.fastEffectiveness).toBe(1);
+    expect(megaAbsolScore?.chargedEffectiveness).toBe(1.6);
+    expect(shadowSneaslerScore?.fastMatchesType).toBe(false);
+    expect(shadowSneaslerScore?.chargedMatchesType).toBe(true);
+    expect(shadowSneaslerScore?.fastEffectiveness).toBe(1);
+    expect(shadowSneaslerScore?.chargedEffectiveness).toBe(1.6);
+    expect(pheromosaScore?.fastEffectiveness).toBe(1.6);
+    expect(pheromosaScore?.chargedEffectiveness).toBe(1.6);
+    expect(scores[0]?.variant.name).toBe('Pheromosa');
+  });
+
+  it('ranks type pages by selected-type role output instead of total off-type damage', () => {
+    const megaAbsol = pokemon({
+      name: 'Mega Absol',
+      variant_id: 'absol-mega',
+      attack: 314,
+      defense: 130,
+      stamina: 163,
+      type1_name: 'dark',
+      type2_name: 'none',
+      variantType: 'mega',
+      moves: [
+        move('Snarl', 'dark', 1, 12, 1100, 14),
+        move('Megahorn', 'bug', 0, 110, 2200, -100),
+      ],
+    });
+    const vikavolt = pokemon({
+      name: 'Vikavolt',
+      variant_id: 'vikavolt-default',
+      attack: 254,
+      defense: 158,
+      stamina: 184,
+      type1_name: 'bug',
+      type2_name: 'electric',
+      moves: [
+        move('Bug Bite', 'bug', 1, 5, 500, 6),
+        move('Fly', 'flying', 0, 80, 1800, -50),
+      ],
+    });
+    const pheromosa = pokemon({
+      name: 'Pheromosa',
+      variant_id: 'pheromosa-default',
+      attack: 316,
+      defense: 85,
+      stamina: 174,
+      type1_name: 'bug',
+      type2_name: 'fighting',
+      moves: [
+        move('Bug Bite', 'bug', 1, 5, 500, 6),
+        move('Bug Buzz', 'bug', 0, 100, 3700, -50),
+      ],
+    });
+
+    const scores = scoreRaidTypeDps([megaAbsol, vikavolt, pheromosa], 'bug', baseSettings);
+    const scoreNames = scores.map((score) => score.variant.name);
+    const megaAbsolScore = scores.find((score) => score.variant.name === 'Mega Absol');
+    const pheromosaScore = scores.find((score) => score.variant.name === 'Pheromosa');
+
+    expect(scoreNames.indexOf('Pheromosa')).toBeLessThan(scoreNames.indexOf('Mega Absol'));
+    expect(megaAbsolScore?.totalDps).toBeGreaterThan(megaAbsolScore?.dps ?? 0);
+    expect(pheromosaScore?.totalDps).toBeGreaterThan(0);
+    expect(pheromosaScore?.dps).toBeGreaterThan(megaAbsolScore?.dps ?? 0);
+  });
+
+  it('dedupes type DPS movesets using ER instead of raw DPS', () => {
+    const baseScore = scoreRaidTypeDps(
+      [
+        pokemon({
+          name: 'Bugmon',
+          variant_id: 'bugmon-default',
+          attack: 200,
+          defense: 200,
+          stamina: 200,
+          type1_name: 'bug',
+          type2_name: 'none',
+          moves: [
+            move('Bug Bite', 'bug', 1, 5, 500, 6),
+            move('Bug Buzz', 'bug', 0, 100, 3700, -50),
+          ],
+        }),
+      ],
+      'bug',
+      baseSettings,
+    )[0] as RaidTypeDpsScore;
+    const highDpsLowEr = {
+      ...baseScore,
+      dps: 40,
+      tdo: 20,
+      er: 25,
+      fastMove: move('Fast Spike', 'bug', 1, 9, 500, 6),
+    };
+    const lowerDpsHigherEr = {
+      ...baseScore,
+      dps: 30,
+      tdo: 900,
+      er: 45,
+      fastMove: move('Sustained Bite', 'bug', 1, 5, 500, 6),
+    };
+
+    expect(dedupeBestTypeDpsPerVariant([highDpsLowEr, lowerDpsHigherEr])[0]?.fastMove.name).toBe(
+      'Sustained Bite',
+    );
   });
 });
