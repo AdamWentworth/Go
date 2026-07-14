@@ -9,7 +9,7 @@ import {
   requestWithPolicy,
   toHttpError,
 } from './httpClient';
-import { pokemonContract } from '@shared-contracts/pokemon';
+import { pokemonContract, type PokemonCatalogManifest } from '@shared-contracts/pokemon';
 import { removeStorageItem } from '@/utils/storage';
 
 const BASE_URL: string = import.meta.env.VITE_POKEMON_API_URL;
@@ -59,6 +59,31 @@ export const getPokemons = async (): Promise<Pokemons> => {
     return normalizedPayload;
   } catch (error: unknown) {
     log.error('Error fetching the Pokemon data', error);
+    throw error;
+  }
+};
+
+export const getPokemonCatalogManifest = async (): Promise<PokemonCatalogManifest> => {
+  try {
+    const response = await requestWithPolicy(buildUrl(BASE_URL, pokemonContract.endpoints.manifest), {
+      method: 'GET',
+      headers: {},
+    });
+
+    const payload = await parseJsonSafe<unknown>(response);
+    if (!response.ok) {
+      throw toHttpError(response.status, payload);
+    }
+
+    if (!payload || typeof payload !== 'object' || Array.isArray(payload)) {
+      throw new Error(
+        `[pokemonDataService] invalid manifest payload shape: expected object, got ${typeof payload}`,
+      );
+    }
+
+    return payload as PokemonCatalogManifest;
+  } catch (error: unknown) {
+    log.error('Error fetching the Pokemon catalog manifest', error);
     throw error;
   }
 };

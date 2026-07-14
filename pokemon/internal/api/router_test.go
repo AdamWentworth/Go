@@ -136,6 +136,96 @@ func TestPokemonPokemons_IfNoneMatch_Returns304(t *testing.T) {
 	}
 }
 
+func TestPokemonManifest_OK(t *testing.T) {
+	r := newTestRouter(t)
+
+	req := httptest.NewRequest(http.MethodGet, "/pokemon/manifest", nil)
+	req.Header.Set("Origin", "http://localhost:3000")
+	rr := httptest.NewRecorder()
+
+	r.ServeHTTP(rr, req)
+
+	if rr.Code != http.StatusOK {
+		t.Fatalf("status=%d body=%s", rr.Code, rr.Body.String())
+	}
+	if rr.Header().Get("ETag") == "" {
+		t.Fatalf("expected manifest ETag")
+	}
+	if rr.Header().Get("Cache-Control") != "no-cache" {
+		t.Fatalf("expected no-cache manifest cache-control, got %q", rr.Header().Get("Cache-Control"))
+	}
+
+	var manifest struct {
+		SchemaVersion  int       `json:"schemaVersion"`
+		CatalogVersion string    `json:"catalogVersion"`
+		GeneratedAt    time.Time `json:"generatedAt"`
+		Chunks         map[string]struct {
+			Name        string `json:"name"`
+			Endpoint    string `json:"endpoint"`
+			ContentType string `json:"contentType"`
+			ETag        string `json:"etag"`
+			Version     string `json:"version"`
+			BytesJSON   int    `json:"bytesJson"`
+			BytesGzip   int    `json:"bytesGzip"`
+		} `json:"chunks"`
+	}
+	if err := json.Unmarshal(rr.Body.Bytes(), &manifest); err != nil {
+		t.Fatalf("manifest json: %v", err)
+	}
+	if manifest.SchemaVersion != 1 {
+		t.Fatalf("schemaVersion=%d, want 1", manifest.SchemaVersion)
+	}
+	if manifest.CatalogVersion == "" {
+		t.Fatalf("expected catalogVersion")
+	}
+	if manifest.GeneratedAt.IsZero() {
+		t.Fatalf("expected generatedAt")
+	}
+
+	chunk, ok := manifest.Chunks["pokemonFull"]
+	if !ok {
+		t.Fatalf("expected pokemonFull chunk, got %#v", manifest.Chunks)
+	}
+	if chunk.Name != "pokemonFull" || chunk.Endpoint != "/pokemon/pokemons" || chunk.ContentType != "application/json" {
+		t.Fatalf("unexpected chunk metadata: %#v", chunk)
+	}
+	if chunk.ETag == "" || chunk.Version != manifest.CatalogVersion {
+		t.Fatalf("unexpected chunk version metadata: %#v manifest version %q", chunk, manifest.CatalogVersion)
+	}
+	if chunk.BytesJSON <= 0 || chunk.BytesGzip <= 0 {
+		t.Fatalf("expected positive chunk sizes, got json=%d gzip=%d", chunk.BytesJSON, chunk.BytesGzip)
+	}
+}
+
+func TestPokemonManifest_IfNoneMatch_Returns304(t *testing.T) {
+	r := newTestRouter(t)
+
+	req1 := httptest.NewRequest(http.MethodGet, "/pokemon/manifest", nil)
+	req1.Header.Set("Origin", "http://localhost:3000")
+	rr1 := httptest.NewRecorder()
+	r.ServeHTTP(rr1, req1)
+	if rr1.Code != http.StatusOK {
+		t.Fatalf("status=%d body=%s", rr1.Code, rr1.Body.String())
+	}
+	etag := rr1.Header().Get("ETag")
+	if etag == "" {
+		t.Fatalf("expected ETag on first manifest response")
+	}
+
+	req2 := httptest.NewRequest(http.MethodGet, "/pokemon/manifest", nil)
+	req2.Header.Set("Origin", "http://localhost:3000")
+	req2.Header.Set("If-None-Match", etag)
+	rr2 := httptest.NewRecorder()
+	r.ServeHTTP(rr2, req2)
+
+	if rr2.Code != http.StatusNotModified {
+		t.Fatalf("expected 304, got %d body=%s", rr2.Code, rr2.Body.String())
+	}
+	if rr2.Body.Len() != 0 {
+		t.Fatalf("expected empty body for 304, got %d bytes", rr2.Body.Len())
+	}
+}
+
 func TestCORS_DisallowedOrigin_Forbidden(t *testing.T) {
 	r := newTestRouter(t)
 

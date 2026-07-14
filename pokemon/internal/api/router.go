@@ -2,10 +2,13 @@ package api
 
 import (
 	"context"
+	"crypto/sha256"
 	"database/sql"
+	"encoding/hex"
 	"encoding/json"
 	"log/slog"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/go-chi/chi/v5"
@@ -55,6 +58,29 @@ func NewRouter(deps RouterDeps) http.Handler {
 			enc.SetIndent("", "  ")
 		}
 		_ = enc.Encode(v)
+	}
+
+	writeJSONWithETag := func(w http.ResponseWriter, r *http.Request, v any) {
+		raw, err := json.Marshal(v)
+		if err != nil {
+			log.Error("json marshal failed", slog.String("err", err.Error()))
+			http.Error(w, "internal server error", http.StatusInternalServerError)
+			return
+		}
+
+		sum := sha256.Sum256(raw)
+		etag := `"` + hex.EncodeToString(sum[:]) + `"`
+		w.Header().Set("Content-Type", "application/json; charset=utf-8")
+		w.Header().Set("Cache-Control", "no-cache")
+		w.Header().Set("ETag", etag)
+
+		if r.Header.Get("If-None-Match") == etag {
+			w.WriteHeader(http.StatusNotModified)
+			return
+		}
+
+		w.WriteHeader(http.StatusOK)
+		_, _ = w.Write(raw)
 	}
 
 	r.Use(middleware.Recoverer)
@@ -173,13 +199,64 @@ func NewRouter(deps RouterDeps) http.Handler {
 		}
 	})
 
+	var manifestHandler http.Handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		ctx, cancel := context.WithTimeout(r.Context(), deps.Cfg.CacheBuildTimeout)
+		defer cancel()
+
+		if err := deps.PayloadCache.EnsureBuilt(ctx); err != nil {
+			log.Error("manifest cache ensure failed", slog.String("err", err.Error()))
+			http.Error(w, "internal server error", http.StatusInternalServerError)
+			return
+		}
+
+		stats := deps.PayloadCache.Stats()
+		catalogVersion := strings.Trim(stats.ETag, `"`)
+		manifest := pokemonCatalogManifest{
+			SchemaVersion:  1,
+			CatalogVersion: catalogVersion,
+			GeneratedAt:    stats.LastBuiltAt.UTC(),
+			Chunks: map[string]pokemonCatalogChunk{
+				"pokemonFull": {
+					Name:        "pokemonFull",
+					Endpoint:    "/pokemon/pokemons",
+					ContentType: "application/json",
+					ETag:        stats.ETag,
+					Version:     catalogVersion,
+					BytesJSON:   stats.BytesJSON,
+					BytesGzip:   stats.BytesGzip,
+				},
+			},
+		}
+
+		writeJSONWithETag(w, r, manifest)
+	})
+
 	if deps.Cfg.RateLimitEnabled {
 		lim := NewIPRateLimiter(deps.Cfg.RateLimitRPS, deps.Cfg.RateLimitBurst, 5*time.Minute)
 		pokemonHandler = RateLimitMiddleware(baseCtx, lim, ipr.ClientIP)(pokemonHandler)
+		manifestHandler = RateLimitMiddleware(baseCtx, lim, ipr.ClientIP)(manifestHandler)
 	}
+	r.Method(http.MethodGet, "/pokemon/manifest", manifestHandler)
 	r.Method(http.MethodGet, "/pokemon/pokemons", pokemonHandler)
 
 	return r
+}
+
+type pokemonCatalogManifest struct {
+	SchemaVersion  int                            `json:"schemaVersion"`
+	CatalogVersion string                         `json:"catalogVersion"`
+	GeneratedAt    time.Time                      `json:"generatedAt"`
+	Chunks         map[string]pokemonCatalogChunk `json:"chunks"`
+}
+
+type pokemonCatalogChunk struct {
+	Name        string `json:"name"`
+	Endpoint    string `json:"endpoint"`
+	ContentType string `json:"contentType"`
+	ETag        string `json:"etag"`
+	Version     string `json:"version"`
+	BytesJSON   int    `json:"bytesJson"`
+	BytesGzip   int    `json:"bytesGzip"`
 }
 
 type statusRecorder struct {

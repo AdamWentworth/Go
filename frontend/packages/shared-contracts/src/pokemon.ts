@@ -1,8 +1,29 @@
 export const pokemonContract = {
   endpoints: {
+    manifest: '/manifest',
     pokemons: '/pokemons',
   },
 } as const;
+
+export interface PokemonCatalogChunkManifest {
+  name: string;
+  endpoint: string;
+  contentType: string;
+  etag: string;
+  version: string;
+  bytesJson: number;
+  bytesGzip: number;
+}
+
+export interface PokemonCatalogManifest {
+  schemaVersion: number;
+  catalogVersion: string;
+  generatedAt: string;
+  chunks: {
+    pokemonFull: PokemonCatalogChunkManifest;
+    [key: string]: PokemonCatalogChunkManifest;
+  };
+}
 
 export interface Costume {
   costume_id: number;

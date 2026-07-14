@@ -13,6 +13,7 @@ Production Pokemon API service for PokeGo Nexus, implemented in Go (`net/http` +
 ## 🔌 Endpoints
 
 - `GET /pokemon/pokemons`
+- `GET /pokemon/manifest`
 - `GET /healthz`
 - `GET /readyz`
 - `GET /metrics` (internal-only when enabled)
@@ -66,6 +67,7 @@ go run ./cmd/pokemon
 Service default URL:
 
 - `http://localhost:3001/pokemon/pokemons`
+- `http://localhost:3001/pokemon/manifest`
 
 ## 🐳 Docker + Networking
 
