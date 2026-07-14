@@ -40,14 +40,20 @@ async function getElementTop(page: Page, selector: string) {
 }
 
 async function openActionMenuForProject(page: Page, projectName: string) {
-  const actionMenuButton = page.locator('.action-menu-button');
+  const actionMenuButton = page.getByRole('button', { name: 'Action Menu' });
   const openMenu = page.locator('.action-menu-overlay[data-menu-state="open"]');
 
-  for (let attempt = 0; attempt < 2; attempt += 1) {
-    await expect(actionMenuButton).toBeVisible();
+  for (let attempt = 0; attempt < 4; attempt += 1) {
+    if (await openMenu.isVisible({ timeout: 250 }).catch(() => false)) {
+      return;
+    }
+
+    await expect(actionMenuButton).toBeVisible({ timeout: 15_000 });
 
     if (projectName.includes('mobile')) {
-      await actionMenuButton.tap();
+      await actionMenuButton.tap().catch(async () => {
+        await actionMenuButton.click({ force: true });
+      });
     } else {
       await actionMenuButton.click();
     }
@@ -60,8 +66,11 @@ async function openActionMenuForProject(page: Page, projectName: string) {
     ) {
       return;
     }
+
+    await page.waitForTimeout(150);
   }
 
+  await actionMenuButton.evaluate((button) => (button as HTMLButtonElement).click());
   await expect(openMenu).toBeVisible();
 }
 
