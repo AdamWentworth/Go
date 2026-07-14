@@ -6,6 +6,8 @@ vi.mock('@/features/variants/utils/fetchAndProcessVariants', () => ({
 
 vi.mock('@/services/pokemonDataService', () => ({
   getPokemonCatalogManifest: vi.fn(),
+  getCatalogDataVersion: (manifest: { chunks?: { catalog?: { version?: string } }; catalogVersion?: string } | null) =>
+    manifest?.chunks?.catalog?.version ?? manifest?.catalogVersion ?? null,
 }));
 
 import { loadVariants } from '@/features/variants/utils/loadVariants';
@@ -57,8 +59,8 @@ async function persistPokedexLists(lists: ReturnType<typeof sortPokedexLists>) {
 
 describe.sequential('loadVariants (integration)', () => {
   const manifest: PokemonCatalogManifest = {
-    schemaVersion: 1,
-    catalogVersion: 'catalog-v1',
+    schemaVersion: 2,
+    catalogVersion: 'legacy-catalog-v1',
     generatedAt: '2026-07-14T00:00:00Z',
     chunks: {
       pokemonFull: {
@@ -70,8 +72,27 @@ describe.sequential('loadVariants (integration)', () => {
         bytesJson: 100,
         bytesGzip: 50,
       },
+      catalog: {
+        name: 'catalog',
+        endpoint: '/pokemon/catalog',
+        contentType: 'application/json',
+        etag: '"catalog-chunk-v1"',
+        version: 'catalog-chunk-v1',
+        bytesJson: 90,
+        bytesGzip: 45,
+      },
+      moves: {
+        name: 'moves',
+        endpoint: '/pokemon/moves',
+        contentType: 'application/json',
+        etag: '"moves-v1"',
+        version: 'moves-v1',
+        bytesJson: 20,
+        bytesGzip: 10,
+      },
     },
   };
+  const catalogChunkVersion = manifest.chunks.catalog?.version as string;
   const freshVariants = (variantsFixture as PokemonVariant[]).slice(0, 50).map((variant, idx) => ({
     ...variant,
     variant_id:
@@ -98,7 +119,7 @@ describe.sequential('loadVariants (integration)', () => {
     expect(result.listsBuiltNow).toBe(true);
     expect(Object.values(persistedLists).flat().length).toBe(freshVariants.length);
     expect(localStorage.getItem('pokedexListsTimestamp')).toBeTruthy();
-    expect(localStorage.getItem('pokedexListsCatalogVersion')).toBe(manifest.catalogVersion);
+    expect(localStorage.getItem('pokedexListsCatalogVersion')).toBe(catalogChunkVersion);
   });
 
   it('warm cache: uses IndexedDB only and skips fetch path', async () => {
@@ -108,8 +129,8 @@ describe.sequential('loadVariants (integration)', () => {
 
     localStorage.setItem('variantsTimestamp', Date.now().toString());
     localStorage.setItem('pokedexListsTimestamp', Date.now().toString());
-    localStorage.setItem('pokemonCatalogVersion', manifest.catalogVersion);
-    localStorage.setItem('pokedexListsCatalogVersion', manifest.catalogVersion);
+    localStorage.setItem('pokemonCatalogVersion', catalogChunkVersion);
+    localStorage.setItem('pokedexListsCatalogVersion', catalogChunkVersion);
 
     const result = await loadVariants();
 
@@ -125,8 +146,8 @@ describe.sequential('loadVariants (integration)', () => {
 
     localStorage.setItem('variantsTimestamp', staleTimestamp.toString());
     localStorage.setItem('pokedexListsTimestamp', staleTimestamp.toString());
-    localStorage.setItem('pokemonCatalogVersion', manifest.catalogVersion);
-    localStorage.setItem('pokedexListsCatalogVersion', manifest.catalogVersion);
+    localStorage.setItem('pokemonCatalogVersion', catalogChunkVersion);
+    localStorage.setItem('pokedexListsCatalogVersion', catalogChunkVersion);
 
     const result = await loadVariants();
 
@@ -153,7 +174,7 @@ describe.sequential('loadVariants (integration)', () => {
 
     localStorage.setItem('variantsTimestamp', Date.now().toString());
     localStorage.setItem('pokedexListsTimestamp', staleTimestamp.toString());
-    localStorage.setItem('pokemonCatalogVersion', manifest.catalogVersion);
+    localStorage.setItem('pokemonCatalogVersion', catalogChunkVersion);
 
     const result = await loadVariants();
 
@@ -171,6 +192,35 @@ describe.sequential('loadVariants (integration)', () => {
     localStorage.setItem('variantsTimestamp', Date.now().toString());
     localStorage.setItem('pokedexListsTimestamp', Date.now().toString());
     vi.mocked(getPokemonCatalogManifest).mockRejectedValueOnce(new Error('manifest unavailable'));
+
+    const result = await loadVariants();
+
+    expect(fetchAndProcessVariants).not.toHaveBeenCalled();
+    expect(result.listsBuiltNow).toBe(false);
+    expect(result.variants).toHaveLength(freshVariants.length);
+  });
+
+  it('does not rebuild catalog variants when only the moves chunk version changes', async () => {
+    const lists = sortPokedexLists(freshVariants);
+    await persistVariants(freshVariants);
+    await persistPokedexLists(lists);
+
+    const movesChangedManifest: PokemonCatalogManifest = {
+      ...manifest,
+      chunks: {
+        ...manifest.chunks,
+        moves: {
+          ...manifest.chunks.moves!,
+          etag: '"moves-v2"',
+          version: 'moves-v2',
+        },
+      },
+    };
+    vi.mocked(getPokemonCatalogManifest).mockResolvedValueOnce(movesChangedManifest);
+    localStorage.setItem('variantsTimestamp', Date.now().toString());
+    localStorage.setItem('pokedexListsTimestamp', Date.now().toString());
+    localStorage.setItem('pokemonCatalogVersion', catalogChunkVersion);
+    localStorage.setItem('pokedexListsCatalogVersion', catalogChunkVersion);
 
     const result = await loadVariants();
 

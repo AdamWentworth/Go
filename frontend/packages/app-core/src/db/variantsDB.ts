@@ -90,12 +90,15 @@ export function queueVariantsPersist<T>(
   catalogVersion?: string,
 ) {
   // Keep only the newest full snapshot.
+  // When a supplemental chunk wins the queue race immediately after a catalog
+  // refresh, preserve the metadata queued by that catalog refresh.
+  const previousSnapshot = queuedSnapshot;
   queuedSnapshot = {
     data: [...data],
     timestamp,
     enqueuedAtMs: performance.now(),
-    payloadHash,
-    catalogVersion,
+    payloadHash: payloadHash ?? previousSnapshot?.payloadHash,
+    catalogVersion: catalogVersion ?? previousSnapshot?.catalogVersion,
   };
   scheduleDrainQueue();
 }

@@ -10,6 +10,8 @@ import { testLogger, enableLogging } from '../../../../setupTests';
 describe('🪝 useBootstrapVariants', () => {
   let mockHydrate: Mock<() => Promise<void>>;
   let mockRefresh: Mock<() => Promise<void>>;
+  let mockEnsureMoves: Mock<() => Promise<void>>;
+  let mockEnsureRaidData: Mock<() => Promise<void>>;
 
   beforeAll(() => {
     enableLogging('verbose');
@@ -27,6 +29,8 @@ describe('🪝 useBootstrapVariants', () => {
     vi.clearAllMocks();
     mockHydrate = vi.fn<() => Promise<void>>().mockResolvedValue(undefined);
     mockRefresh = vi.fn<() => Promise<void>>();
+    mockEnsureMoves = vi.fn<() => Promise<void>>().mockResolvedValue(undefined);
+    mockEnsureRaidData = vi.fn<() => Promise<void>>().mockResolvedValue(undefined);
 
     vi.spyOn(useVariantsStore, 'getState').mockReturnValue({
       hydrateFromCache: mockHydrate,
@@ -35,6 +39,10 @@ describe('🪝 useBootstrapVariants', () => {
       pokedexLists: {},
       variantsLoading: false,
       isRefreshing: false,
+      isMovesLoading: false,
+      isRaidDataLoading: false,
+      ensureMoves: mockEnsureMoves,
+      ensureRaidData: mockEnsureRaidData,
     });
 
     testLogger.testStep('Mocks initialized');

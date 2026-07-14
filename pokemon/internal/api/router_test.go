@@ -23,6 +23,32 @@ func buildSmallPayload(ctx context.Context) (any, error) {
 	}, nil
 }
 
+func buildSmallCatalogPayload(ctx context.Context) (any, error) {
+	return []any{
+		map[string]any{"pokemon_id": 1, "name": "Bulbasaur", "costumes": []any{}, "moves": []any{}, "fusion": []any{}, "backgrounds": []any{}, "megaEvolutions": []any{}, "crownForms": []any{}, "raid_boss": []any{}, "max": []any{}, "female_data": nil, "sizes": nil, "evolutionData": map[string]any{}},
+	}, nil
+}
+
+func buildSmallMovesPayload(ctx context.Context) (any, error) {
+	return []any{
+		map[string]any{"pokemon_id": 1, "moves": []any{}, "fusion": []any{}, "crownForms": []any{}},
+	}, nil
+}
+
+func buildSmallRaidDataPayload(ctx context.Context) (any, error) {
+	return []any{
+		map[string]any{"pokemon_id": 1, "raid_boss": []any{}},
+	}, nil
+}
+
+func newTestCache(name string, build func(context.Context) (any, error)) *cache.JSONGzipCache {
+	return cache.NewJSONGzipCache(cache.JSONGzipCacheConfig{
+		Name:         name,
+		BuildPayload: build,
+		GzipLevel:    6,
+	})
+}
+
 func newTestRouter(t *testing.T) http.Handler {
 	t.Helper()
 
@@ -38,16 +64,18 @@ func newTestRouter(t *testing.T) http.Handler {
 		// LogLevel omitted: router doesn't require it
 	}
 
-	c := cache.NewJSONGzipCache(cache.JSONGzipCacheConfig{
-		Name:         "/pokemon/pokemons",
-		BuildPayload: buildSmallPayload,
-		GzipLevel:    6,
-	})
+	fullCache := newTestCache("/pokemon/pokemons", buildSmallPayload)
+	catalogCache := newTestCache("/pokemon/catalog", buildSmallCatalogPayload)
+	movesCache := newTestCache("/pokemon/moves", buildSmallMovesPayload)
+	raidDataCache := newTestCache("/pokemon/raid-data", buildSmallRaidDataPayload)
 
 	return api.NewRouter(api.RouterDeps{
-		Cfg:          cfg,
-		Logger:       nil,
-		PayloadCache: c,
+		Cfg:           cfg,
+		Logger:        nil,
+		PayloadCache:  fullCache,
+		CatalogCache:  catalogCache,
+		MovesCache:    movesCache,
+		RaidDataCache: raidDataCache,
 	})
 }
 
@@ -172,8 +200,8 @@ func TestPokemonManifest_OK(t *testing.T) {
 	if err := json.Unmarshal(rr.Body.Bytes(), &manifest); err != nil {
 		t.Fatalf("manifest json: %v", err)
 	}
-	if manifest.SchemaVersion != 1 {
-		t.Fatalf("schemaVersion=%d, want 1", manifest.SchemaVersion)
+	if manifest.SchemaVersion != 2 {
+		t.Fatalf("schemaVersion=%d, want 2", manifest.SchemaVersion)
 	}
 	if manifest.CatalogVersion == "" {
 		t.Fatalf("expected catalogVersion")
@@ -182,18 +210,57 @@ func TestPokemonManifest_OK(t *testing.T) {
 		t.Fatalf("expected generatedAt")
 	}
 
-	chunk, ok := manifest.Chunks["pokemonFull"]
-	if !ok {
-		t.Fatalf("expected pokemonFull chunk, got %#v", manifest.Chunks)
+	wantChunks := map[string]string{
+		"pokemonFull": "/pokemon/pokemons",
+		"catalog":     "/pokemon/catalog",
+		"moves":       "/pokemon/moves",
+		"raidData":    "/pokemon/raid-data",
 	}
-	if chunk.Name != "pokemonFull" || chunk.Endpoint != "/pokemon/pokemons" || chunk.ContentType != "application/json" {
-		t.Fatalf("unexpected chunk metadata: %#v", chunk)
+	for name, endpoint := range wantChunks {
+		chunk, ok := manifest.Chunks[name]
+		if !ok {
+			t.Fatalf("expected %s chunk, got %#v", name, manifest.Chunks)
+		}
+		if chunk.Name != name || chunk.Endpoint != endpoint || chunk.ContentType != "application/json" {
+			t.Fatalf("unexpected %s metadata: %#v", name, chunk)
+		}
+		if chunk.ETag == "" || chunk.Version == "" {
+			t.Fatalf("unexpected %s version metadata: %#v", name, chunk)
+		}
+		if chunk.BytesJSON <= 0 || chunk.BytesGzip <= 0 {
+			t.Fatalf("expected positive %s chunk sizes, got json=%d gzip=%d", name, chunk.BytesJSON, chunk.BytesGzip)
+		}
 	}
-	if chunk.ETag == "" || chunk.Version != manifest.CatalogVersion {
-		t.Fatalf("unexpected chunk version metadata: %#v manifest version %q", chunk, manifest.CatalogVersion)
+
+	if manifest.Chunks["catalog"].Version != manifest.CatalogVersion {
+		t.Fatalf("catalog chunk version %q does not match catalogVersion %q", manifest.Chunks["catalog"].Version, manifest.CatalogVersion)
 	}
-	if chunk.BytesJSON <= 0 || chunk.BytesGzip <= 0 {
-		t.Fatalf("expected positive chunk sizes, got json=%d gzip=%d", chunk.BytesJSON, chunk.BytesGzip)
+}
+
+func TestPokemonChunkEndpoints_OK(t *testing.T) {
+	r := newTestRouter(t)
+
+	for _, path := range []string{"/pokemon/catalog", "/pokemon/moves", "/pokemon/raid-data"} {
+		t.Run(path, func(t *testing.T) {
+			req := httptest.NewRequest(http.MethodGet, path, nil)
+			req.Header.Set("Origin", "http://localhost:3000")
+			rr := httptest.NewRecorder()
+			r.ServeHTTP(rr, req)
+
+			if rr.Code != http.StatusOK {
+				t.Fatalf("status=%d body=%s", rr.Code, rr.Body.String())
+			}
+			if rr.Header().Get("ETag") == "" {
+				t.Fatalf("expected ETag")
+			}
+			var payload []any
+			if err := json.Unmarshal(rr.Body.Bytes(), &payload); err != nil {
+				t.Fatalf("invalid JSON response: %v", err)
+			}
+			if len(payload) != 1 {
+				t.Fatalf("payload length=%d, want 1", len(payload))
+			}
+		})
 	}
 }
 

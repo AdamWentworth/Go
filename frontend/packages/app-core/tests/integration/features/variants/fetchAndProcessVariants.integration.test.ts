@@ -12,6 +12,8 @@ import pokemonsFixture from '@/../tests/__helpers__/fixtures/pokemons.json';
 
 vi.mock('@/services/pokemonDataService', () => ({
   getPokemons: vi.fn(),
+  getCatalogDataVersion: (manifest: { chunks?: { catalog?: { version?: string } }; catalogVersion?: string } | null) =>
+    manifest?.chunks?.catalog?.version ?? manifest?.catalogVersion ?? null,
 }));
 
 async function clearVariantsStore() {

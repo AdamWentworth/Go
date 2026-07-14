@@ -1,4 +1,4 @@
-import { getPokemons } from "@/services/pokemonDataService";
+import { getCatalogDataVersion, getPokemons } from "@/services/pokemonDataService";
 import { logSize } from "@/utils/loggers";
 import createPokemonVariants from "@/features/variants/utils/createPokemonVariants";
 import { getAllVariants, queueVariantsPersist } from "@/db/variantsDB";
@@ -8,6 +8,7 @@ import type { PokemonCatalogManifest } from '@shared-contracts/pokemon';
 import { computePayloadHash } from "@/features/variants/utils/payloadHash";
 import { createScopedLogger } from "@/utils/logger";
 import {
+  removeStorageKeys,
   getStorageString,
   setStorageNumber,
   setStorageString,
@@ -50,7 +51,7 @@ function assertVariantIds(variants: PokemonVariant[]): void {
 export async function fetchAndProcessVariants(options: FetchAndProcessVariantsOptions = {}) {
   log.debug('Fetching new data from API');
   const pipelineStart = performance.now();
-  const catalogVersion = options.manifest?.catalogVersion;
+  const catalogVersion = getCatalogDataVersion(options.manifest);
 
   const t0 = Date.now();
   const pokemons = await getPokemons({ manifest: options.manifest });
@@ -100,6 +101,13 @@ export async function fetchAndProcessVariants(options: FetchAndProcessVariantsOp
   // Guard before persistence: variant_id must be non-empty and unique.
   assertVariantIds(variants as PokemonVariant[]);
 
+  // Catalog rebuilds intentionally start without supplemental move and raid
+  // chunks. Their own independently versioned hydration paths repopulate them.
+  removeStorageKeys([
+    STORAGE_KEYS.pokemonMovesVersion,
+    STORAGE_KEYS.pokemonRaidDataVersion,
+  ]);
+
   log.debug(`Processed Pokemon into variants in ${Date.now() - t1} ms`);
 
   try {
@@ -111,7 +119,7 @@ export async function fetchAndProcessVariants(options: FetchAndProcessVariantsOp
 
   const t2 = Date.now();
   const persistStart = performance.now();
-  queueVariantsPersist(variants, Date.now(), payloadHash, catalogVersion);
+  queueVariantsPersist(variants, Date.now(), payloadHash, catalogVersion ?? undefined);
   const persistMs = performance.now() - persistStart;
   log.debug(`Queued variants persistence in ${Date.now() - t2} ms`);
   const totalMs = performance.now() - pipelineStart;

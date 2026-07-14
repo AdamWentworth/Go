@@ -14,7 +14,7 @@ import { logSize } from '@/utils/loggers';
 import { fetchAndProcessVariants } from './fetchAndProcessVariants';
 import { POKEDEX_STORES } from '@/db/constants';
 import { createScopedLogger } from '@/utils/logger';
-import { getPokemonCatalogManifest } from '@/services/pokemonDataService';
+import { getCatalogDataVersion, getPokemonCatalogManifest } from '@/services/pokemonDataService';
 import {
   getStorageNumber,
   getStorageString,
@@ -99,7 +99,7 @@ export async function loadVariants() {
     0,
   );
   const manifest = await getManifestOrNull();
-  const currentCatalogVersion = manifest?.catalogVersion || null;
+  const currentCatalogVersion = getCatalogDataVersion(manifest);
   const variantsCatalogVersion = getStorageString(STORAGE_KEYS.pokemonCatalogVersion);
   const pokedexListsCatalogVersion = getStorageString(STORAGE_KEYS.pokedexListsCatalogVersion);
 

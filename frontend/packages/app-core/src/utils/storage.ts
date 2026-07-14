@@ -16,6 +16,8 @@ export const STORAGE_KEYS = {
   variantsTimestamp: 'variantsTimestamp',
   variantsPayloadHash: 'variantsPayloadHash',
   pokemonCatalogVersion: 'pokemonCatalogVersion',
+  pokemonMovesVersion: 'pokemonMovesVersion',
+  pokemonRaidDataVersion: 'pokemonRaidDataVersion',
   pokedexListsTimestamp: 'pokedexListsTimestamp',
   pokedexListsCatalogVersion: 'pokedexListsCatalogVersion',
   tagsTimestamp: 'tagsTimestamp',

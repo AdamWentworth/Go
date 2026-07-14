@@ -1,6 +1,11 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { getPokemonCatalogManifest, getPokemons } from '@/services/pokemonDataService';
+import {
+  getPokemonCatalogManifest,
+  getPokemonMovesChunk,
+  getPokemonRaidDataChunk,
+  getPokemons,
+} from '@/services/pokemonDataService';
 import { normalizeAssetUrlsDeep } from '@/utils/assetUrl';
 import type { BasePokemon } from '@/types/pokemonBase';
 import type { PokemonCatalogManifest } from '@shared-contracts/pokemon';
@@ -9,7 +14,7 @@ import pokemonFixtures from '../../__helpers__/fixtures/pokemons.json' with { ty
 describe('pokemonDataService', () => {
   const payload = (pokemonFixtures as BasePokemon[]).slice(0, 2);
   const manifest: PokemonCatalogManifest = {
-    schemaVersion: 1,
+    schemaVersion: 2,
     catalogVersion: 'catalog-v1',
     generatedAt: '2026-07-14T00:00:00Z',
     chunks: {
@@ -21,6 +26,33 @@ describe('pokemonDataService', () => {
         version: 'catalog-v1',
         bytesJson: 123,
         bytesGzip: 45,
+      },
+      catalog: {
+        name: 'catalog',
+        endpoint: '/catalog/pokemon-bootstrap',
+        contentType: 'application/json',
+        etag: '"catalog-bootstrap-v1"',
+        version: 'catalog-bootstrap-v1',
+        bytesJson: 111,
+        bytesGzip: 42,
+      },
+      moves: {
+        name: 'moves',
+        endpoint: '/catalog/moves',
+        contentType: 'application/json',
+        etag: '"moves-v1"',
+        version: 'moves-v1',
+        bytesJson: 55,
+        bytesGzip: 25,
+      },
+      raidData: {
+        name: 'raidData',
+        endpoint: '/catalog/raid-data',
+        contentType: 'application/json',
+        etag: '"raid-v1"',
+        version: 'raid-v1',
+        bytesJson: 44,
+        bytesGzip: 22,
       },
     },
   };
@@ -50,7 +82,7 @@ describe('pokemonDataService', () => {
     );
   });
 
-  it('fetches pokemon data from the manifest pokemonFull chunk endpoint', async () => {
+  it('prefers the manifest catalog chunk endpoint for bootstrap data', async () => {
     const fetchSpy = vi.spyOn(global, 'fetch').mockResolvedValueOnce(
       new Response(JSON.stringify(payload), {
         status: 200,
@@ -62,11 +94,32 @@ describe('pokemonDataService', () => {
 
     expect(result).toEqual(normalizeAssetUrlsDeep(payload));
     expect(fetchSpy).toHaveBeenCalledWith(
-      expect.stringContaining('/catalog/pokemon-full'),
+      expect.stringContaining('/catalog/pokemon-bootstrap'),
       expect.objectContaining({
         method: 'GET',
         headers: {},
       }),
+    );
+  });
+
+  it('fetches independently versioned moves and raid-data chunks', async () => {
+    const moves = [{ pokemon_id: 1, moves: [], fusion: [], crownForms: [] }];
+    const raidData = [{ pokemon_id: 1, raid_boss: [] }];
+    const fetchSpy = vi.spyOn(global, 'fetch')
+      .mockResolvedValueOnce(new Response(JSON.stringify(moves), { status: 200 }))
+      .mockResolvedValueOnce(new Response(JSON.stringify(raidData), { status: 200 }));
+
+    await expect(getPokemonMovesChunk(manifest)).resolves.toEqual(moves);
+    await expect(getPokemonRaidDataChunk(manifest)).resolves.toEqual(raidData);
+    expect(fetchSpy).toHaveBeenNthCalledWith(
+      1,
+      expect.stringContaining('/catalog/moves'),
+      expect.objectContaining({ method: 'GET' }),
+    );
+    expect(fetchSpy).toHaveBeenNthCalledWith(
+      2,
+      expect.stringContaining('/catalog/raid-data'),
+      expect.objectContaining({ method: 'GET' }),
     );
   });
 

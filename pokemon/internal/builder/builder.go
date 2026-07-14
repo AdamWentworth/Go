@@ -4,14 +4,31 @@ import (
 	"context"
 	"database/sql"
 	"log/slog"
+	"sync"
 	"time"
 
+	"golang.org/x/sync/singleflight"
 	"pokemon_data/internal/orderedjson"
 )
 
 type Builder struct {
 	db  *sql.DB
 	log *slog.Logger
+
+	payloadMu     sync.RWMutex
+	payloadBundle *pokemonPayloadBundle
+	payloadBuild  singleflight.Group
+}
+
+// pokemonPayloadBundle keeps the legacy response and the independently cached
+// delivery chunks backed by one SQLite read pass. The JSON response caches own
+// compression, ETags, and HTTP delivery; this cache only prevents duplicate DB
+// work while those responses are warming.
+type pokemonPayloadBundle struct {
+	full     any
+	catalog  any
+	moves    any
+	raidData any
 }
 
 func New(db *sql.DB, log *slog.Logger) *Builder {
@@ -194,6 +211,85 @@ var (
 )
 
 func (b *Builder) BuildFullPokemonPayload(ctx context.Context) (any, error) {
+	bundle, err := b.getPokemonPayloadBundle(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return bundle.full, nil
+}
+
+// BuildCatalogPayload returns the fast bootstrap payload. It preserves every
+// field required to construct the Pokedex and Pokemon catalog, but defers move
+// pools and historical raid entries to their own chunks.
+func (b *Builder) BuildCatalogPayload(ctx context.Context) (any, error) {
+	bundle, err := b.getPokemonPayloadBundle(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return bundle.catalog, nil
+}
+
+// BuildMovesPayload returns move pools keyed by base Pokemon. Fusion and crown
+// move pools stay attached to the parent record that already owns those forms.
+func (b *Builder) BuildMovesPayload(ctx context.Context) (any, error) {
+	bundle, err := b.getPokemonPayloadBundle(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return bundle.moves, nil
+}
+
+// BuildRaidDataPayload returns raid history keyed by base Pokemon. It is only
+// needed by the raid planner, so normal catalog browsing does not parse it.
+func (b *Builder) BuildRaidDataPayload(ctx context.Context) (any, error) {
+	bundle, err := b.getPokemonPayloadBundle(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return bundle.raidData, nil
+}
+
+// InvalidatePokemonPayloadBundle must be paired with response-cache
+// invalidation after the underlying SQLite data changes.
+func (b *Builder) InvalidatePokemonPayloadBundle() {
+	b.payloadMu.Lock()
+	b.payloadBundle = nil
+	b.payloadMu.Unlock()
+}
+
+func (b *Builder) getPokemonPayloadBundle(ctx context.Context) (*pokemonPayloadBundle, error) {
+	b.payloadMu.RLock()
+	cached := b.payloadBundle
+	b.payloadMu.RUnlock()
+	if cached != nil {
+		return cached, nil
+	}
+
+	value, err, _ := b.payloadBuild.Do("pokemon-payload-bundle", func() (any, error) {
+		b.payloadMu.RLock()
+		cached := b.payloadBundle
+		b.payloadMu.RUnlock()
+		if cached != nil {
+			return cached, nil
+		}
+
+		bundle, err := b.buildPokemonPayloadBundle(ctx)
+		if err != nil {
+			return nil, err
+		}
+
+		b.payloadMu.Lock()
+		b.payloadBundle = bundle
+		b.payloadMu.Unlock()
+		return bundle, nil
+	})
+	if err != nil {
+		return nil, err
+	}
+	return value.(*pokemonPayloadBundle), nil
+}
+
+func (b *Builder) buildPokemonPayloadBundle(ctx context.Context) (*pokemonPayloadBundle, error) {
 	start := time.Now()
 
 	orderedIDs, pokemonByID, err := b.loadBasePokemon(ctx)
@@ -238,15 +334,27 @@ func (b *Builder) BuildFullPokemonPayload(ctx context.Context) (any, error) {
 		return nil, err
 	}
 
-	out := make([]any, 0, len(orderedIDs))
+	full := make([]any, 0, len(orderedIDs))
+	catalog := make([]any, 0, len(orderedIDs))
+	moves := make([]any, 0, len(orderedIDs))
+	raidData := make([]any, 0, len(orderedIDs))
 	for _, id := range orderedIDs {
-		out = append(out, orderedjson.Map{M: pokemonByID[id], Order: pokemonKeyOrder})
+		pokemon := pokemonByID[id]
+		full = append(full, orderedjson.Map{M: pokemon, Order: pokemonKeyOrder})
+		catalog = append(catalog, buildCatalogPokemonEntry(pokemon))
+		moves = append(moves, buildPokemonMovesEntry(id, pokemon))
+		raidData = append(raidData, buildPokemonRaidEntry(id, pokemon))
 	}
 
 	b.log.Info("built full pokemon payload",
-		"count", len(out),
+		"count", len(full),
 		"buildMs", time.Since(start).Milliseconds(),
 	)
 
-	return out, nil
+	return &pokemonPayloadBundle{
+		full:     full,
+		catalog:  catalog,
+		moves:    moves,
+		raidData: raidData,
+	}, nil
 }

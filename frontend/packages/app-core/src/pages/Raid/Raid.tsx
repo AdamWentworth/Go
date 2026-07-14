@@ -126,6 +126,10 @@ const matchesCounterSearch = (score: SearchableCounterScore, query: string): boo
 const Raid: React.FC = () => {
   const variants = useVariantsStore((state) => state.variants) as PokemonVariant[];
   const loading = useVariantsStore((state) => state.variantsLoading);
+  const movesLoading = useVariantsStore((state) => state.isMovesLoading);
+  const raidDataLoading = useVariantsStore((state) => state.isRaidDataLoading);
+  const ensureMoves = useVariantsStore((state) => state.ensureMoves);
+  const ensureRaidData = useVariantsStore((state) => state.ensureRaidData);
 
   const [viewMode, setViewMode] = useState<RaidViewMode>('overall');
   const [bossSearch, setBossSearch] = useState('');
@@ -141,6 +145,11 @@ const Raid: React.FC = () => {
   const [partyPower, setPartyPower] = useState<PartyPowerKey>('none');
   const [weatherBoostedType, setWeatherBoostedType] = useState('none');
   const [bestOnly, setBestOnly] = useState(true);
+
+  useEffect(() => {
+    void ensureMoves();
+    void ensureRaidData();
+  }, [ensureMoves, ensureRaidData]);
 
   const bossOptions = useMemo(
     () =>
@@ -468,7 +477,7 @@ const Raid: React.FC = () => {
     </tr>
   );
 
-  if (loading) {
+  if (loading || movesLoading || raidDataLoading) {
     return <LoadingSpinner />;
   }
 

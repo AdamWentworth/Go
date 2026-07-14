@@ -12,6 +12,8 @@ import variantsFixture from '@/../tests/__helpers__/fixtures/variants.json';
 
 vi.mock('@/services/pokemonDataService', () => ({
   getPokemons: vi.fn(),
+  getCatalogDataVersion: (manifest: { chunks?: { catalog?: { version?: string } }; catalogVersion?: string } | null) =>
+    manifest?.chunks?.catalog?.version ?? manifest?.catalogVersion ?? null,
 }));
 
 vi.mock('@/features/variants/utils/createPokemonVariants', () => ({

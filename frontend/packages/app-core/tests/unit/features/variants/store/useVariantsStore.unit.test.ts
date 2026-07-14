@@ -2,6 +2,13 @@ import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 
 import { useVariantsStore } from '@/features/variants/store/useVariantsStore';
 import { variantsRepository } from '@/features/variants/repositories/variantsRepository';
+import {
+  getChunkVersion,
+  getPokemonCatalogManifest,
+  getPokemonMovesChunk,
+  getPokemonRaidDataChunk,
+} from '@/services/pokemonDataService';
+import { queueVariantsPersist } from '@/db/variantsDB';
 import type { PokemonVariant } from '@/types/pokemonVariants';
 import type { PokedexLists } from '@/types/pokedex';
 
@@ -13,6 +20,33 @@ vi.mock('@/features/variants/repositories/variantsRepository', () => ({
     loadCache: vi.fn(),
     fetchFresh: vi.fn(),
   },
+}));
+
+vi.mock('@/services/pokemonDataService', () => ({
+  getPokemonCatalogManifest: vi.fn().mockResolvedValue({
+    schemaVersion: 1,
+    catalogVersion: 'catalog-v1',
+    generatedAt: '2026-07-14T00:00:00Z',
+    chunks: {
+      pokemonFull: {
+        name: 'pokemonFull',
+        endpoint: '/pokemon/pokemons',
+        contentType: 'application/json',
+        etag: '"catalog-v1"',
+        version: 'catalog-v1',
+        bytesJson: 1,
+        bytesGzip: 1,
+      },
+    },
+  }),
+  getCatalogDataVersion: vi.fn((manifest: { catalogVersion?: string } | null) => manifest?.catalogVersion ?? null),
+  getChunkVersion: vi.fn(() => null),
+  getPokemonMovesChunk: vi.fn(),
+  getPokemonRaidDataChunk: vi.fn(),
+}));
+
+vi.mock('@/db/variantsDB', () => ({
+  queueVariantsPersist: vi.fn(),
 }));
 
 const cachedVariants = (variantsFixture as unknown as PokemonVariant[]).slice(0, 3);
@@ -33,6 +67,8 @@ describe.sequential('useVariantsStore (unit)', () => {
       pokedexLists: {} as PokedexLists,
       variantsLoading: true,
       isRefreshing: false,
+      isMovesLoading: false,
+      isRaidDataLoading: false,
     });
 
     vi.mocked(variantsRepository.loadCache).mockResolvedValue({
@@ -44,6 +80,8 @@ describe.sequential('useVariantsStore (unit)', () => {
       variants: freshVariants,
       pokedexLists: freshLists,
     });
+
+    vi.mocked(getChunkVersion).mockReturnValue(null);
 
   });
 
@@ -128,5 +166,83 @@ describe.sequential('useVariantsStore (unit)', () => {
     expect(variantsRepository.fetchFresh).not.toHaveBeenCalled();
     expect(variantsRepository.loadCache).not.toHaveBeenCalled();
     expect(useVariantsStore.getState().isRefreshing).toBe(true);
+  });
+
+  it('hydrates move pools independently without rebuilding the catalog', async () => {
+    const variant = {
+      ...(cachedVariants[0] as PokemonVariant),
+      pokemon_id: 1,
+      variantType: 'default' as const,
+      moves: [],
+      fusion: [],
+      crownForms: [],
+    } as PokemonVariant;
+    const manifest = {
+      schemaVersion: 2,
+      catalogVersion: 'catalog-v1',
+      generatedAt: '2026-07-14T00:00:00Z',
+      chunks: {
+        pokemonFull: {} as any,
+        catalog: { version: 'catalog-v1' },
+        moves: { version: 'moves-v2' },
+      },
+    } as any;
+
+    useVariantsStore.setState({ variants: [variant], variantsLoading: false });
+    vi.mocked(getPokemonCatalogManifest).mockResolvedValueOnce(manifest);
+    vi.mocked(getChunkVersion).mockImplementation((_, chunk) =>
+      chunk === 'moves' ? 'moves-v2' : null,
+    );
+    vi.mocked(getPokemonMovesChunk).mockResolvedValueOnce([
+      { pokemon_id: 1, moves: [{ move_id: 1, name: 'Tackle' } as any], fusion: [], crownForms: [] },
+    ]);
+
+    await useVariantsStore.getState().ensureMoves();
+
+    expect(useVariantsStore.getState().variants[0]?.moves.map((move) => move.name)).toEqual(['Tackle']);
+    expect(localStorage.getItem('pokemonMovesVersion')).toBe('moves-v2');
+    expect(queueVariantsPersist).toHaveBeenCalledOnce();
+  });
+
+  it('hydrates raid history only when the raid loader requests it', async () => {
+    const variant = {
+      ...(cachedVariants[0] as PokemonVariant),
+      pokemon_id: 1,
+      form: null,
+      name: 'Bulbasaur',
+      species_name: 'Bulbasaur',
+      variantType: 'shadow' as const,
+      moves: [],
+      fusion: [],
+      crownForms: [],
+    } as PokemonVariant;
+    const manifest = {
+      schemaVersion: 2,
+      catalogVersion: 'catalog-v1',
+      generatedAt: '2026-07-14T00:00:00Z',
+      chunks: {
+        pokemonFull: {} as any,
+        catalog: { version: 'catalog-v1' },
+        raidData: { version: 'raids-v2' },
+      },
+    } as any;
+
+    useVariantsStore.setState({ variants: [variant], variantsLoading: false });
+    vi.mocked(getPokemonCatalogManifest).mockResolvedValueOnce(manifest);
+    vi.mocked(getChunkVersion).mockImplementation((_, chunk) =>
+      chunk === 'raidData' ? 'raids-v2' : null,
+    );
+    vi.mocked(getPokemonRaidDataChunk).mockResolvedValueOnce([
+      {
+        pokemon_id: 1,
+        raid_boss: [{ id: 1, pokemon_id: 1, name: 'Shadow Bulbasaur', form: '', tier: 'shadow_1' } as any],
+      },
+    ]);
+
+    await useVariantsStore.getState().ensureRaidData();
+
+    expect(useVariantsStore.getState().variants[0]?.raid_boss).toHaveLength(1);
+    expect(localStorage.getItem('pokemonRaidDataVersion')).toBe('raids-v2');
+    expect(queueVariantsPersist).toHaveBeenCalledOnce();
   });
 });

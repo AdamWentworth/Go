@@ -45,16 +45,38 @@ func main() {
 		Logger:       logger,
 		GzipLevel:    6,
 	})
+	catalogCache := cache.NewJSONGzipCache(cache.JSONGzipCacheConfig{
+		Name:         "/pokemon/catalog",
+		BuildPayload: payloadBuilder.BuildCatalogPayload,
+		Logger:       logger,
+		GzipLevel:    6,
+	})
+	movesCache := cache.NewJSONGzipCache(cache.JSONGzipCacheConfig{
+		Name:         "/pokemon/moves",
+		BuildPayload: payloadBuilder.BuildMovesPayload,
+		Logger:       logger,
+		GzipLevel:    6,
+	})
+	raidDataCache := cache.NewJSONGzipCache(cache.JSONGzipCacheConfig{
+		Name:         "/pokemon/raid-data",
+		BuildPayload: payloadBuilder.BuildRaidDataPayload,
+		Logger:       logger,
+		GzipLevel:    6,
+	})
 
 	baseCtx, baseCancel := context.WithCancel(context.Background())
 	defer baseCancel()
 
 	router := api.NewRouter(api.RouterDeps{
-		BaseContext:  baseCtx,
-		Cfg:          cfg,
-		Logger:       logger,
-		DB:           sqlDB,
-		PayloadCache: payloadCache,
+		BaseContext:             baseCtx,
+		Cfg:                     cfg,
+		Logger:                  logger,
+		DB:                      sqlDB,
+		PayloadCache:            payloadCache,
+		CatalogCache:            catalogCache,
+		MovesCache:              movesCache,
+		RaidDataCache:           raidDataCache,
+		InvalidatePayloadBundle: payloadBuilder.InvalidatePokemonPayloadBundle,
 	})
 
 	srv := &http.Server{
@@ -70,12 +92,22 @@ func main() {
 
 	if cfg.CachePrewarm {
 		go func() {
-			logger.Info("Prewarming /pokemon/pokemons cache at startup.")
+			logger.Info("Prewarming Pokemon catalog caches at startup.")
 			ctx, cancel := context.WithTimeout(context.Background(), cfg.CacheBuildTimeout)
 			defer cancel()
-			if err := payloadCache.EnsureBuilt(ctx); err != nil {
-				logger.Error(fmt.Sprintf("Prewarm failed: %v", err))
-				return
+			for _, entry := range []struct {
+				name  string
+				cache *cache.JSONGzipCache
+			}{
+				{name: "/pokemon/pokemons", cache: payloadCache},
+				{name: "/pokemon/catalog", cache: catalogCache},
+				{name: "/pokemon/moves", cache: movesCache},
+				{name: "/pokemon/raid-data", cache: raidDataCache},
+			} {
+				if err := entry.cache.EnsureBuilt(ctx); err != nil {
+					logger.Error(fmt.Sprintf("Prewarm failed for %s: %v", entry.name, err))
+					return
+				}
 			}
 			logger.Info("Prewarm complete")
 		}()

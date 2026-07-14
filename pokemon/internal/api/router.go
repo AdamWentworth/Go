@@ -23,10 +23,14 @@ import (
 type RouterDeps struct {
 	BaseContext context.Context
 
-	Cfg          config.Config
-	Logger       *slog.Logger
-	DB           *sql.DB
-	PayloadCache *cache.JSONGzipCache
+	Cfg                     config.Config
+	Logger                  *slog.Logger
+	DB                      *sql.DB
+	PayloadCache            *cache.JSONGzipCache // Legacy /pokemon/pokemons response.
+	CatalogCache            *cache.JSONGzipCache
+	MovesCache              *cache.JSONGzipCache
+	RaidDataCache           *cache.JSONGzipCache
+	InvalidatePayloadBundle func()
 }
 
 func NewRouter(deps RouterDeps) http.Handler {
@@ -50,6 +54,13 @@ func NewRouter(deps RouterDeps) http.Handler {
 	peerIP := remoteIP
 
 	prettyJSON := deps.Cfg.JSONPretty
+	fullCache := deps.PayloadCache
+	catalogCache := deps.CatalogCache
+	movesCache := deps.MovesCache
+	raidDataCache := deps.RaidDataCache
+	if catalogCache == nil {
+		catalogCache = fullCache
+	}
 
 	writeJSON := func(w http.ResponseWriter, v any) {
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")
@@ -102,7 +113,7 @@ func NewRouter(deps RouterDeps) http.Handler {
 				MountPprof(ir)
 
 				ir.Get("/internal/cache/stats", func(w http.ResponseWriter, r *http.Request) {
-					writeJSON(w, deps.PayloadCache.Stats())
+					writeJSON(w, pokemonCacheStats(fullCache, catalogCache, movesCache, raidDataCache))
 				})
 
 				ir.Post("/internal/cache/refresh", func(w http.ResponseWriter, r *http.Request) {
@@ -112,7 +123,7 @@ func NewRouter(deps RouterDeps) http.Handler {
 							return
 						}
 					}
-					deps.PayloadCache.Invalidate()
+					invalidatePokemonCaches(fullCache, catalogCache, movesCache, raidDataCache, deps.InvalidatePayloadBundle)
 					w.WriteHeader(http.StatusNoContent)
 				})
 			})
@@ -122,7 +133,7 @@ func NewRouter(deps RouterDeps) http.Handler {
 		MountPprof(r)
 
 		r.Get("/internal/cache/stats", func(w http.ResponseWriter, r *http.Request) {
-			writeJSON(w, deps.PayloadCache.Stats())
+			writeJSON(w, pokemonCacheStats(fullCache, catalogCache, movesCache, raidDataCache))
 		})
 
 		r.Post("/internal/cache/refresh", func(w http.ResponseWriter, r *http.Request) {
@@ -132,7 +143,7 @@ func NewRouter(deps RouterDeps) http.Handler {
 					return
 				}
 			}
-			deps.PayloadCache.Invalidate()
+			invalidatePokemonCaches(fullCache, catalogCache, movesCache, raidDataCache, deps.InvalidatePayloadBundle)
 			w.WriteHeader(http.StatusNoContent)
 		})
 	}
@@ -164,7 +175,7 @@ func NewRouter(deps RouterDeps) http.Handler {
 			resp.Message = "db not configured"
 		}
 
-		cacheStats := deps.PayloadCache.Stats()
+		cacheStats := catalogCache.Stats()
 		if deps.Cfg.CachePrewarm {
 			resp.CacheReady = cacheStats.HasCache
 			if !resp.CacheReady && resp.Message == "" {
@@ -183,48 +194,70 @@ func NewRouter(deps RouterDeps) http.Handler {
 		writeJSON(w, resp)
 	})
 
-	var pokemonHandler http.Handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		ctx, cancel := context.WithTimeout(r.Context(), deps.Cfg.CacheBuildTimeout)
-		defer cancel()
+	newPokemonPayloadHandler := func(name string, payloadCache *cache.JSONGzipCache) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			if payloadCache == nil {
+				http.Error(w, "payload cache not configured", http.StatusServiceUnavailable)
+				return
+			}
 
-		if err := deps.PayloadCache.EnsureBuilt(ctx); err != nil {
-			log.Error("cache ensure failed", slog.String("err", err.Error()))
-			http.Error(w, "internal server error", http.StatusInternalServerError)
-			return
-		}
+			ctx, cancel := context.WithTimeout(r.Context(), deps.Cfg.CacheBuildTimeout)
+			defer cancel()
 
-		_, _, _, _, sendErr := deps.PayloadCache.Send(w, r)
-		if sendErr != nil {
-			log.Warn("cache send write error", slog.String("err", sendErr.Error()))
-		}
-	})
+			if err := payloadCache.EnsureBuilt(ctx); err != nil {
+				log.Error("cache ensure failed", slog.String("cache", name), slog.String("err", err.Error()))
+				http.Error(w, "internal server error", http.StatusInternalServerError)
+				return
+			}
+
+			_, _, _, _, sendErr := payloadCache.Send(w, r)
+			if sendErr != nil {
+				log.Warn("cache send write error", slog.String("cache", name), slog.String("err", sendErr.Error()))
+			}
+		})
+	}
+
+	pokemonHandler := newPokemonPayloadHandler("pokemonFull", fullCache)
+	catalogHandler := newPokemonPayloadHandler("catalog", catalogCache)
+	movesHandler := newPokemonPayloadHandler("moves", movesCache)
+	raidDataHandler := newPokemonPayloadHandler("raidData", raidDataCache)
 
 	var manifestHandler http.Handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx, cancel := context.WithTimeout(r.Context(), deps.Cfg.CacheBuildTimeout)
 		defer cancel()
 
-		if err := deps.PayloadCache.EnsureBuilt(ctx); err != nil {
-			log.Error("manifest cache ensure failed", slog.String("err", err.Error()))
-			http.Error(w, "internal server error", http.StatusInternalServerError)
-			return
+		for name, payloadCache := range map[string]*cache.JSONGzipCache{
+			"pokemonFull": fullCache,
+			"catalog":     catalogCache,
+			"moves":       movesCache,
+			"raidData":    raidDataCache,
+		} {
+			if payloadCache == nil {
+				log.Error("manifest cache missing", slog.String("cache", name))
+				http.Error(w, "internal server error", http.StatusInternalServerError)
+				return
+			}
+			if err := payloadCache.EnsureBuilt(ctx); err != nil {
+				log.Error("manifest cache ensure failed", slog.String("cache", name), slog.String("err", err.Error()))
+				http.Error(w, "internal server error", http.StatusInternalServerError)
+				return
+			}
 		}
 
-		stats := deps.PayloadCache.Stats()
-		catalogVersion := strings.Trim(stats.ETag, `"`)
+		fullStats := fullCache.Stats()
+		catalogStats := catalogCache.Stats()
+		movesStats := movesCache.Stats()
+		raidDataStats := raidDataCache.Stats()
+		catalogVersion := strings.Trim(catalogStats.ETag, `"`)
 		manifest := pokemonCatalogManifest{
-			SchemaVersion:  1,
+			SchemaVersion:  2,
 			CatalogVersion: catalogVersion,
-			GeneratedAt:    stats.LastBuiltAt.UTC(),
+			GeneratedAt:    latestCacheBuildAt(fullStats, catalogStats, movesStats, raidDataStats),
 			Chunks: map[string]pokemonCatalogChunk{
-				"pokemonFull": {
-					Name:        "pokemonFull",
-					Endpoint:    "/pokemon/pokemons",
-					ContentType: "application/json",
-					ETag:        stats.ETag,
-					Version:     catalogVersion,
-					BytesJSON:   stats.BytesJSON,
-					BytesGzip:   stats.BytesGzip,
-				},
+				"pokemonFull": newPokemonCatalogChunk("pokemonFull", "/pokemon/pokemons", fullStats),
+				"catalog":     newPokemonCatalogChunk("catalog", "/pokemon/catalog", catalogStats),
+				"moves":       newPokemonCatalogChunk("moves", "/pokemon/moves", movesStats),
+				"raidData":    newPokemonCatalogChunk("raidData", "/pokemon/raid-data", raidDataStats),
 			},
 		}
 
@@ -234,12 +267,72 @@ func NewRouter(deps RouterDeps) http.Handler {
 	if deps.Cfg.RateLimitEnabled {
 		lim := NewIPRateLimiter(deps.Cfg.RateLimitRPS, deps.Cfg.RateLimitBurst, 5*time.Minute)
 		pokemonHandler = RateLimitMiddleware(baseCtx, lim, ipr.ClientIP)(pokemonHandler)
+		catalogHandler = RateLimitMiddleware(baseCtx, lim, ipr.ClientIP)(catalogHandler)
+		movesHandler = RateLimitMiddleware(baseCtx, lim, ipr.ClientIP)(movesHandler)
+		raidDataHandler = RateLimitMiddleware(baseCtx, lim, ipr.ClientIP)(raidDataHandler)
 		manifestHandler = RateLimitMiddleware(baseCtx, lim, ipr.ClientIP)(manifestHandler)
 	}
 	r.Method(http.MethodGet, "/pokemon/manifest", manifestHandler)
 	r.Method(http.MethodGet, "/pokemon/pokemons", pokemonHandler)
+	r.Method(http.MethodGet, "/pokemon/catalog", catalogHandler)
+	r.Method(http.MethodGet, "/pokemon/moves", movesHandler)
+	r.Method(http.MethodGet, "/pokemon/raid-data", raidDataHandler)
 
 	return r
+}
+
+func newPokemonCatalogChunk(name string, endpoint string, stats cache.Stats) pokemonCatalogChunk {
+	return pokemonCatalogChunk{
+		Name:        name,
+		Endpoint:    endpoint,
+		ContentType: "application/json",
+		ETag:        stats.ETag,
+		Version:     strings.Trim(stats.ETag, `"`),
+		BytesJSON:   stats.BytesJSON,
+		BytesGzip:   stats.BytesGzip,
+	}
+}
+
+func latestCacheBuildAt(stats ...cache.Stats) time.Time {
+	var latest time.Time
+	for _, stat := range stats {
+		if stat.LastBuiltAt.After(latest) {
+			latest = stat.LastBuiltAt
+		}
+	}
+	return latest.UTC()
+}
+
+func pokemonCacheStats(full, catalog, moves, raidData *cache.JSONGzipCache) map[string]cache.Stats {
+	stats := map[string]cache.Stats{}
+	for name, payloadCache := range map[string]*cache.JSONGzipCache{
+		"pokemonFull": full,
+		"catalog":     catalog,
+		"moves":       moves,
+		"raidData":    raidData,
+	} {
+		if payloadCache != nil {
+			stats[name] = payloadCache.Stats()
+		}
+	}
+	return stats
+}
+
+func invalidatePokemonCaches(full, catalog, moves, raidData *cache.JSONGzipCache, invalidateBundle func()) {
+	if invalidateBundle != nil {
+		invalidateBundle()
+	}
+	seen := map[*cache.JSONGzipCache]struct{}{}
+	for _, payloadCache := range []*cache.JSONGzipCache{full, catalog, moves, raidData} {
+		if payloadCache == nil {
+			continue
+		}
+		if _, exists := seen[payloadCache]; exists {
+			continue
+		}
+		seen[payloadCache] = struct{}{}
+		payloadCache.Invalidate()
+	}
 }
 
 type pokemonCatalogManifest struct {

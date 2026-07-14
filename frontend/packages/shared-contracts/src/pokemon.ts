@@ -2,6 +2,9 @@ export const pokemonContract = {
   endpoints: {
     manifest: '/manifest',
     pokemons: '/pokemons',
+    catalog: '/catalog',
+    moves: '/moves',
+    raidData: '/raid-data',
   },
 } as const;
 
@@ -21,9 +24,28 @@ export interface PokemonCatalogManifest {
   generatedAt: string;
   chunks: {
     pokemonFull: PokemonCatalogChunkManifest;
-    [key: string]: PokemonCatalogChunkManifest;
+    catalog?: PokemonCatalogChunkManifest;
+    moves?: PokemonCatalogChunkManifest;
+    raidData?: PokemonCatalogChunkManifest;
+    [key: string]: PokemonCatalogChunkManifest | undefined;
   };
 }
+
+export interface PokemonMovesChunkEntry {
+  pokemon_id: number;
+  moves: Move[];
+  fusion: Array<Pick<Fusion, 'fusion_id' | 'moves'>>;
+  crownForms: Array<Pick<CrownForm, 'id' | 'moves'>>;
+}
+
+export type PokemonMovesChunk = PokemonMovesChunkEntry[];
+
+export interface PokemonRaidDataChunkEntry {
+  pokemon_id: number;
+  raid_boss: RaidBoss[];
+}
+
+export type PokemonRaidDataChunk = PokemonRaidDataChunkEntry[];
 
 export interface Costume {
   costume_id: number;

@@ -16,6 +16,10 @@ const mocks = vi.hoisted(() => ({
   storeState: {
     variants: [] as PokemonVariant[],
     variantsLoading: false,
+    isMovesLoading: false,
+    isRaidDataLoading: false,
+    ensureMoves: vi.fn(),
+    ensureRaidData: vi.fn(),
   },
 }));
 
@@ -77,6 +81,8 @@ const variant = (overrides: RaidTestVariantOverrides): PokemonVariant =>
 describe('Raid page', () => {
   beforeEach(() => {
     mocks.storeState.variantsLoading = false;
+    mocks.storeState.isMovesLoading = false;
+    mocks.storeState.isRaidDataLoading = false;
     mocks.storeState.variants = [
       variant({
         name: 'Mewtwo',

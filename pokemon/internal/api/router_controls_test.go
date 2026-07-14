@@ -260,3 +260,52 @@ func TestInternalCacheRefreshRequiresToken(t *testing.T) {
 		t.Fatalf("expected 204 with token, got %d", rr2.Code)
 	}
 }
+
+func TestInternalCacheRefreshInvalidatesEveryPokemonChunk(t *testing.T) {
+	cfg := config.Config{
+		CacheBuildTimeout:   2 * time.Second,
+		InternalOnlyEnabled: true,
+		InternalOnlyCIDRs:   []string{"127.0.0.0/8"},
+		CacheRefreshToken:   "secret-token",
+	}
+
+	fullCache := newTestPayloadCache(t)
+	catalogCache := newTestPayloadCache(t)
+	movesCache := newTestPayloadCache(t)
+	raidDataCache := newTestPayloadCache(t)
+	for _, payloadCache := range []*cache.JSONGzipCache{fullCache, catalogCache, movesCache, raidDataCache} {
+		if err := payloadCache.EnsureBuilt(context.Background()); err != nil {
+			t.Fatalf("prebuild cache: %v", err)
+		}
+	}
+
+	invalidatedBundle := false
+	h := NewRouter(RouterDeps{
+		Cfg:                     cfg,
+		Logger:                  nil,
+		DB:                      nil,
+		PayloadCache:            fullCache,
+		CatalogCache:            catalogCache,
+		MovesCache:              movesCache,
+		RaidDataCache:           raidDataCache,
+		InvalidatePayloadBundle: func() { invalidatedBundle = true },
+	})
+
+	req := httptest.NewRequest(http.MethodPost, "/internal/cache/refresh", nil)
+	req.RemoteAddr = "127.0.0.1:12345"
+	req.Header.Set("X-Cache-Refresh-Token", "secret-token")
+	rr := httptest.NewRecorder()
+	h.ServeHTTP(rr, req)
+
+	if rr.Code != http.StatusNoContent {
+		t.Fatalf("expected 204 with token, got %d", rr.Code)
+	}
+	if !invalidatedBundle {
+		t.Fatal("expected shared payload bundle to be invalidated")
+	}
+	for index, payloadCache := range []*cache.JSONGzipCache{fullCache, catalogCache, movesCache, raidDataCache} {
+		if payloadCache.Stats().HasCache {
+			t.Fatalf("expected payload cache %d to be invalidated", index)
+		}
+	}
+}
