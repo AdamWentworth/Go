@@ -1,3 +1,4 @@
+import { readFileSync } from 'node:fs';
 import path from 'node:path';
 
 import type { Page, Route } from '@playwright/test';
@@ -18,6 +19,90 @@ const placeholderImagePath = path.resolve(
   process.cwd(),
   '../../packages/app-core/public/icons/icon-48x48.png',
 );
+
+type PokemonFixtureEntry = Record<string, unknown>;
+
+const pokemonFixture = JSON.parse(
+  readFileSync(fixturePath('pokemons.json'), 'utf8'),
+) as PokemonFixtureEntry[];
+
+const asRecords = (value: unknown): PokemonFixtureEntry[] =>
+  Array.isArray(value)
+    ? value.filter((entry): entry is PokemonFixtureEntry => !!entry && typeof entry === 'object')
+    : [];
+
+const stripMovePools = (value: unknown): PokemonFixtureEntry[] =>
+  asRecords(value).map((entry) => ({ ...entry, moves: [] }));
+
+const catalogFixture = pokemonFixture.map((pokemon) => ({
+  ...pokemon,
+  moves: [],
+  raid_boss: [],
+  fusion: stripMovePools(pokemon.fusion),
+  crownForms: stripMovePools(pokemon.crownForms),
+}));
+
+const movesFixture = pokemonFixture.map((pokemon) => ({
+  pokemon_id: pokemon.pokemon_id,
+  moves: Array.isArray(pokemon.moves) ? pokemon.moves : [],
+  fusion: asRecords(pokemon.fusion).map((fusion) => ({
+    fusion_id: fusion.fusion_id,
+    moves: Array.isArray(fusion.moves) ? fusion.moves : [],
+  })),
+  crownForms: asRecords(pokemon.crownForms).map((crown) => ({
+    id: crown.id,
+    moves: Array.isArray(crown.moves) ? crown.moves : [],
+  })),
+}));
+
+const raidDataFixture = pokemonFixture.map((pokemon) => ({
+  pokemon_id: pokemon.pokemon_id,
+  raid_boss: Array.isArray(pokemon.raid_boss) ? pokemon.raid_boss : [],
+}));
+
+const pokemonManifestFixture = {
+  schemaVersion: 2,
+  catalogVersion: 'e2e-catalog-v2',
+  generatedAt: '2026-07-14T00:00:00.000Z',
+  chunks: {
+    pokemonFull: {
+      name: 'pokemonFull',
+      endpoint: '/pokemons',
+      contentType: 'application/json',
+      etag: '"e2e-pokemons"',
+      version: 'e2e-pokemons',
+      bytesJson: 1,
+      bytesGzip: 1,
+    },
+    catalog: {
+      name: 'catalog',
+      endpoint: '/catalog',
+      contentType: 'application/json',
+      etag: '"e2e-catalog-v2"',
+      version: 'e2e-catalog-v2',
+      bytesJson: 1,
+      bytesGzip: 1,
+    },
+    moves: {
+      name: 'moves',
+      endpoint: '/moves',
+      contentType: 'application/json',
+      etag: '"e2e-moves-v2"',
+      version: 'e2e-moves-v2',
+      bytesJson: 1,
+      bytesGzip: 1,
+    },
+    raidData: {
+      name: 'raidData',
+      endpoint: '/raid-data',
+      contentType: 'application/json',
+      etag: '"e2e-raid-data-v2"',
+      version: 'e2e-raid-data-v2',
+      bytesJson: 1,
+      bytesGzip: 1,
+    },
+  },
+};
 
 async function fulfillJson(route: Route, body: unknown, status = 200) {
   await route.fulfill({
@@ -65,6 +150,30 @@ export async function installE2eRoutes(page: Page, options: E2eRouteOptions = {}
       path: fixturePath('pokemons.json'),
     });
   });
+
+  for (const pathPattern of ['**/api/pokemon/manifest', '**/__e2e/pokemon/manifest']) {
+    await page.route(pathPattern, async (route) => {
+      await fulfillJson(route, pokemonManifestFixture);
+    });
+  }
+
+  for (const pathPattern of ['**/api/pokemon/catalog', '**/__e2e/pokemon/catalog']) {
+    await page.route(pathPattern, async (route) => {
+      await fulfillJson(route, catalogFixture);
+    });
+  }
+
+  for (const pathPattern of ['**/api/pokemon/moves', '**/__e2e/pokemon/moves']) {
+    await page.route(pathPattern, async (route) => {
+      await fulfillJson(route, movesFixture);
+    });
+  }
+
+  for (const pathPattern of ['**/api/pokemon/raid-data', '**/__e2e/pokemon/raid-data']) {
+    await page.route(pathPattern, async (route) => {
+      await fulfillJson(route, raidDataFixture);
+    });
+  }
 
   await page.route('**/api/search/searchPokemon**', async (route) => {
     await fulfillJson(route, options.searchResults ?? []);
