@@ -218,10 +218,10 @@ const Raid: React.FC = () => {
   }, [attackerSearch, attackers, bestOnly, selectedBoss, selectedTier, settings]);
 
   const overallScores = useMemo(() => {
-    const allScores = scoreRaidOverallAttackers(attackers, settings);
+    const allScores = scoreRaidOverallAttackers(attackers, settings, bossOptions);
     const scored = bestOnly ? dedupeBestOverallAttackerPerVariant(allScores) : allScores;
     return scored.filter((score) => matchesCounterSearch(score, attackerSearch)).slice(0, 30);
-  }, [attackerSearch, attackers, bestOnly, settings]);
+  }, [attackerSearch, attackers, bestOnly, bossOptions, settings]);
 
   const typeDpsScores = useMemo(() => {
     const allScores = scoreRaidTypeDps(attackers, selectedType, settings);
@@ -512,8 +512,8 @@ const Raid: React.FC = () => {
             </div>
 
             <p className="raid-panel-copy">
-              Ranked by ER against a neutral raid target so strong attackers rise without forcing a
-              boss matchup.
+              Ranked by ER against known raid-boss typings so broadly useful attackers rise without
+              forcing a single boss matchup.
             </p>
 
             <div className="raid-type-grid" aria-label="Type DPS pages">

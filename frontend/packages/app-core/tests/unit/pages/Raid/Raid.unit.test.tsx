@@ -264,6 +264,78 @@ describe('Raid page', () => {
     expect(within(counterList).queryByText('Shiny Tyranitar')).not.toBeInTheDocument();
   });
 
+  it('uses raid boss typings for the overall leaderboard instead of neutral scoring', () => {
+    const bossOnlyMoves = [
+      move('Tackle', 'normal', 1, 0, 500, 6),
+      move('Struggle', 'normal', 0, 0, 2000, -33),
+    ];
+
+    mocks.storeState.variants = [
+      variant({
+        name: 'Mega Rayquaza',
+        variant_id: 'rayquaza-mega',
+        pokemon_id: 384,
+        pokedex_number: 384,
+        attack: 377,
+        defense: 210,
+        stamina: 227,
+        type1_name: 'dragon',
+        type2_name: 'flying',
+        variantType: 'mega',
+        moves: [
+          move('Air Slash', 'flying', 1, 14, 1000, 10),
+          move('Dragon Tail', 'dragon', 1, 15, 1000, 9),
+          move('Dragon Ascent', 'flying', 0, 140, 3500, -50),
+        ],
+      }),
+      variant({
+        name: 'Zamazenta - Crowned Shield',
+        species_name: 'Zamazenta',
+        form: 'Crowned_shield',
+        variant_id: 'zamazenta-crowned-shield',
+        pokemon_id: 889,
+        pokedex_number: 889,
+        attack: 250,
+        defense: 292,
+        stamina: 192,
+        type1_name: 'fighting',
+        type2_name: 'steel',
+        moves: [
+          move('Metal Claw', 'steel', 1, 8, 500, 7),
+          move('Behemoth Bash', 'steel', 0, 125, 1500, -50),
+        ],
+      }),
+      ...[
+        ['Palkia', 'dragon', 'water'],
+        ['Rayquaza', 'dragon', 'flying'],
+        ['Giratina', 'ghost', 'dragon'],
+        ['Terrakion', 'rock', 'fighting'],
+        ['Virizion', 'grass', 'fighting'],
+      ].map(([name, type1, type2], index) =>
+        variant({
+          name,
+          variant_id: `target-${name.toLowerCase()}`,
+          pokemon_id: 9000 + index,
+          pokedex_number: 9000 + index,
+          type1_name: type1,
+          type2_name: type2,
+          moves: bossOnlyMoves,
+          raid_boss: [{ id: 9000 + index, tier: '5', form: 'Normal', name }],
+        }),
+      ),
+    ];
+
+    render(<Raid />);
+
+    const counterList = screen.getByLabelText('Top raid attackers');
+    const dataRows = within(counterList).getAllByRole('row').slice(1);
+
+    expect(dataRows[0]).toHaveTextContent('Mega Rayquaza');
+    expect(dataRows[0]).toHaveTextContent('Dragon Tail');
+    expect(dataRows[0]).toHaveTextContent('Dragon Ascent');
+    expect(dataRows[1]).toHaveTextContent('Zamazenta - Crowned Shield');
+  });
+
   it('shows type DPS pages using fast or charged moves that match the selected type', () => {
     render(<Raid />);
 
