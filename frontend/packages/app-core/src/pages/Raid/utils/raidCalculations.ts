@@ -455,13 +455,25 @@ const getOverallTargetWeight = (target: PokemonVariant): number => {
 const getRaidOverallTargetProfiles = (
   targets?: PokemonVariant[],
 ): RaidOverallTargetProfile[] => {
-  const profiles =
-    targets
-      ?.map((target) => ({
-        types: getVariantTypeNames(target),
-        weight: getOverallTargetWeight(target),
-      }))
-      .filter((profile) => profile.types.length > 0) ?? [];
+  const profilesByTypes = new Map<string, RaidOverallTargetProfile>();
+
+  targets?.forEach((target) => {
+    const types = getVariantTypeNames(target);
+    if (types.length === 0) return;
+
+    const key = [...types].sort().join('/');
+    const weight = getOverallTargetWeight(target);
+    const existing = profilesByTypes.get(key);
+
+    if (existing) {
+      existing.weight += weight;
+      return;
+    }
+
+    profilesByTypes.set(key, { types, weight });
+  });
+
+  const profiles = Array.from(profilesByTypes.values());
 
   return profiles.length > 0 ? profiles : FALLBACK_OVERALL_TARGET_PROFILES;
 };
@@ -815,8 +827,18 @@ export const calculateOverallMoveCycleScore = (
   const chargedSeconds = getProcessedRaidMoveSeconds(chargedMove);
   const cycleSeconds = fastUses * fastSeconds + chargedSeconds;
   const timeToFaintSeconds = attackerHp / incomingDps;
-  const matchupScores = targetProfiles.map((targetProfile) => {
+
+  let scoreWeight = 0;
+  let fastDamageSum = 0;
+  let chargedDamageSum = 0;
+  let cycleDamageSum = 0;
+  let dpsSum = 0;
+  let tdoSum = 0;
+  let erSum = 0;
+
+  for (const targetProfile of targetProfiles) {
     const targetTypes = targetProfile.types;
+    const weight = targetProfile.weight;
     const fastDamage = calculateTypeDpsMoveDamage({
       move: fastMove,
       attacker,
@@ -851,34 +873,22 @@ export const calculateOverallMoveCycleScore = (
           Math.pow(tdo, TYPE_DPS_ER_TDO_EXPONENT)
         : 0;
 
-    return {
-      fastDamage,
-      chargedDamage,
-      cycleDamage: fastUses * fastDamage + chargedDamage,
-      dps,
-      tdo,
-      er,
-      weight: targetProfile.weight,
-    };
-  });
-  const scoreWeight = Math.max(
-    1,
-    matchupScores.reduce((sum, score) => sum + score.weight, 0),
-  );
-  const fastDamage =
-    matchupScores.reduce((sum, score) => sum + score.fastDamage * score.weight, 0) / scoreWeight;
-  const chargedDamage =
-    matchupScores.reduce((sum, score) => sum + score.chargedDamage * score.weight, 0) /
-    scoreWeight;
-  const cycleDamage =
-    matchupScores.reduce((sum, score) => sum + score.cycleDamage * score.weight, 0) /
-    scoreWeight;
-  const dps =
-    matchupScores.reduce((sum, score) => sum + score.dps * score.weight, 0) / scoreWeight;
-  const tdo =
-    matchupScores.reduce((sum, score) => sum + score.tdo * score.weight, 0) / scoreWeight;
-  const er =
-    matchupScores.reduce((sum, score) => sum + score.er * score.weight, 0) / scoreWeight;
+    scoreWeight += weight;
+    fastDamageSum += fastDamage * weight;
+    chargedDamageSum += chargedDamage * weight;
+    cycleDamageSum += (fastUses * fastDamage + chargedDamage) * weight;
+    dpsSum += dps * weight;
+    tdoSum += tdo * weight;
+    erSum += er * weight;
+  }
+
+  const averageWeight = Math.max(1, scoreWeight);
+  const fastDamage = fastDamageSum / averageWeight;
+  const chargedDamage = chargedDamageSum / averageWeight;
+  const cycleDamage = cycleDamageSum / averageWeight;
+  const dps = dpsSum / averageWeight;
+  const tdo = tdoSum / averageWeight;
+  const er = erSum / averageWeight;
 
   return {
     variant: attacker,
@@ -919,6 +929,121 @@ export const scoreRaidOverallAttackers = (
     })
     .sort(compareRaidOverallScores);
   };
+
+export const scoreBestRaidOverallAttackers = (
+  attackers: PokemonVariant[],
+  settings: RaidCounterSettings,
+  targets?: PokemonVariant[],
+): RaidOverallScore[] => {
+  const targetProfiles = getRaidOverallTargetProfiles(targets);
+  const targetWeight = Math.max(
+    1,
+    targetProfiles.reduce((sum, profile) => sum + profile.weight, 0),
+  );
+  const bestByVariant = new Map<string, RaidOverallScore>();
+
+  attackers.filter(isEligibleRaidAttacker).forEach((attacker) => {
+    const fastMoves = attacker.moves.filter((move) => move.is_fast === 1 && move.raid_power > 0);
+    const chargedMoves = attacker.moves.filter(
+      (move) => move.is_fast === 0 && move.raid_power > 0,
+    );
+    const key = attacker.variant_id || `${attacker.pokemon_id}-${attacker.variantType}`;
+    const cpMultiplier = cpMultipliers[settings.attackerLevel];
+    const attackerAttack = (attacker.attack + 15) * cpMultiplier;
+    const shadowDefense = attacker.variantType.toLowerCase().includes('shadow')
+      ? SHADOW_ATTACKER_DEFENSE_MULTIPLIER
+      : 1;
+    const attackerDefense = (attacker.defense + 15) * cpMultiplier * shadowDefense;
+    const attackerHp = Math.max(1, Math.floor((attacker.stamina + 15) * cpMultiplier));
+    const incomingDps = TYPE_DPS_INCOMING_DAMAGE_NUMERATOR / attackerDefense;
+    const incomingChargedDamage = TYPE_DPS_INCOMING_CHARGED_DAMAGE_NUMERATOR / attackerDefense;
+    const timeToFaintSeconds = attackerHp / incomingDps;
+    const cp = calculatePokemonCpForLevel(attacker, settings.attackerLevel);
+    const prepareMoveDamages = (moves: Move[], charged: boolean) =>
+      moves.map((move) => ({
+        move,
+        damages: targetProfiles.map((targetProfile) =>
+          calculateTypeDpsMoveDamage({
+            move,
+            attacker,
+            attackerAttack,
+            selectedType: '',
+            targetTypes: targetProfile.types,
+            settings,
+            charged,
+          }),
+        ),
+      }));
+    const fastMoveDamages = prepareMoveDamages(fastMoves, false);
+    const chargedMoveDamages = prepareMoveDamages(chargedMoves, true);
+
+    fastMoveDamages.forEach(({ move: fastMove, damages: fastDamages }) => {
+      chargedMoveDamages.forEach(({ move: chargedMove, damages: chargedDamages }) => {
+        const fastEnergy = Math.max(1, getRaidMoveEnergy(fastMove));
+        const chargedEnergyCost = Math.max(1, Math.abs(getRaidMoveEnergy(chargedMove)));
+        const fastUses = Math.max(1, Math.ceil(chargedEnergyCost / fastEnergy));
+        const fastSeconds = getProcessedRaidMoveSeconds(fastMove);
+        const chargedSeconds = getProcessedRaidMoveSeconds(chargedMove);
+        const cycleSeconds = fastUses * fastSeconds + chargedSeconds;
+
+        let fastDamageSum = 0;
+        let chargedDamageSum = 0;
+        let cycleDamageSum = 0;
+        let dpsSum = 0;
+        let tdoSum = 0;
+        let erSum = 0;
+
+        targetProfiles.forEach((targetProfile, index) => {
+          const weight = targetProfile.weight;
+          const fastDamage = fastDamages[index] ?? 0;
+          const chargedDamage = chargedDamages[index] ?? 0;
+          const dps = calculateComprehensiveTypeDps({
+            fastDamage,
+            chargedDamage,
+            fastMove,
+            chargedMove,
+            attackerHp,
+            incomingDps,
+            incomingChargedDamage,
+          });
+          const tdo = dps * timeToFaintSeconds;
+          const er =
+            dps > 0 && tdo > 0
+              ? Math.pow(dps, 1 - TYPE_DPS_ER_TDO_EXPONENT) *
+                Math.pow(tdo, TYPE_DPS_ER_TDO_EXPONENT)
+              : 0;
+
+          fastDamageSum += fastDamage * weight;
+          chargedDamageSum += chargedDamage * weight;
+          cycleDamageSum += (fastUses * fastDamage + chargedDamage) * weight;
+          dpsSum += dps * weight;
+          tdoSum += tdo * weight;
+          erSum += er * weight;
+        });
+
+        const score: RaidOverallScore = {
+          variant: attacker,
+          fastMove,
+          chargedMove,
+          cp,
+          dps: dpsSum / targetWeight,
+          tdo: tdoSum / targetWeight,
+          er: erSum / targetWeight,
+          fastDamage: fastDamageSum / targetWeight,
+          chargedDamage: chargedDamageSum / targetWeight,
+          cycleSeconds,
+          cycleDamage: cycleDamageSum / targetWeight,
+        };
+        const current = bestByVariant.get(key);
+        if (!current || compareRaidOverallScores(score, current) < 0) {
+          bestByVariant.set(key, score);
+        }
+      });
+    });
+  });
+
+  return Array.from(bestByVariant.values()).sort(compareRaidOverallScores);
+};
 
 export const calculateTypeMoveCycleScore = (
   attacker: PokemonVariant,

@@ -11,7 +11,6 @@ import {
   MEGA_ALLY_DAMAGE_BONUS,
   RAID_TIER_PRESETS,
   calculateRaidBossStats,
-  dedupeBestOverallAttackerPerVariant,
   dedupeBestCounterPerVariant,
   dedupeBestTypeDpsPerVariant,
   estimateRaidGroup,
@@ -22,6 +21,7 @@ import {
   isEligibleRaidAttacker,
   isEligibleRaidBoss,
   isShadowRaidTier,
+  scoreBestRaidOverallAttackers,
   scoreRaidCounters,
   scoreRaidOverallAttackers,
   scoreRaidTypeDps,
@@ -210,30 +210,37 @@ const Raid: React.FC = () => {
     ],
   );
 
-  const raidScores = useMemo(() => {
+  const bossCounterScores = useMemo(() => {
+    if (viewMode !== 'boss') return [];
     if (!selectedBoss) return [];
-    const allScores = scoreRaidCounters(attackers, selectedBoss, selectedTier, settings);
-    const scored = bestOnly ? dedupeBestCounterPerVariant(allScores) : allScores;
+    return scoreRaidCounters(attackers, selectedBoss, selectedTier, settings);
+  }, [attackers, selectedBoss, selectedTier, settings, viewMode]);
+
+  const raidScores = useMemo(() => {
+    const scored = bestOnly ? dedupeBestCounterPerVariant(bossCounterScores) : bossCounterScores;
     return scored.filter((score) => matchesCounterSearch(score, attackerSearch)).slice(0, 30);
-  }, [attackerSearch, attackers, bestOnly, selectedBoss, selectedTier, settings]);
+  }, [attackerSearch, bestOnly, bossCounterScores]);
 
   const overallScores = useMemo(() => {
-    const allScores = scoreRaidOverallAttackers(attackers, settings, bossOptions);
-    const scored = bestOnly ? dedupeBestOverallAttackerPerVariant(allScores) : allScores;
+    if (viewMode !== 'overall') return [];
+    const scored = bestOnly
+      ? scoreBestRaidOverallAttackers(attackers, settings, bossOptions)
+      : scoreRaidOverallAttackers(attackers, settings, bossOptions);
     return scored.filter((score) => matchesCounterSearch(score, attackerSearch)).slice(0, 30);
-  }, [attackerSearch, attackers, bestOnly, bossOptions, settings]);
+  }, [attackerSearch, attackers, bestOnly, bossOptions, settings, viewMode]);
 
   const typeDpsScores = useMemo(() => {
+    if (viewMode !== 'type-dps') return [];
     const allScores = scoreRaidTypeDps(attackers, selectedType, settings);
     const scored = bestOnly ? dedupeBestTypeDpsPerVariant(allScores) : allScores;
     return scored.filter((score) => matchesCounterSearch(score, attackerSearch)).slice(0, 30);
-  }, [attackerSearch, attackers, bestOnly, selectedType, settings]);
+  }, [attackerSearch, attackers, bestOnly, selectedType, settings, viewMode]);
 
   const groupEstimate = useMemo(() => {
+    if (viewMode !== 'boss') return null;
     if (!selectedBoss) return null;
-    const allScores = scoreRaidCounters(attackers, selectedBoss, selectedTier, settings);
-    return estimateRaidGroup(allScores, selectedBoss, selectedTier, activeShadowBossMode);
-  }, [activeShadowBossMode, attackers, selectedBoss, selectedTier, settings]);
+    return estimateRaidGroup(bossCounterScores, selectedBoss, selectedTier, activeShadowBossMode);
+  }, [activeShadowBossMode, bossCounterScores, selectedBoss, selectedTier, viewMode]);
 
   const bossStats = selectedBoss
     ? calculateRaidBossStats(selectedBoss, selectedTier, activeShadowBossMode)

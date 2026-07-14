@@ -13,6 +13,7 @@ import {
   getPrimaryRaidMetadataForVariant,
   getRaidTierKeyForVariant,
   isEligibleRaidBoss,
+  scoreBestRaidOverallAttackers,
   scoreRaidCounters,
   scoreRaidOverallAttackers,
   scoreRaidTypeDps,
@@ -532,6 +533,120 @@ describe('raid calculations', () => {
     expect(scores[0]?.fastMove.name).toBe('Dragon Tail');
     expect(scores[0]?.chargedMove.name).toBe('Dragon Ascent');
     expect(scores[0]?.er).toBeGreaterThan(scores[1]?.er ?? 0);
+  });
+
+  it('keeps overall attacker scores stable when raid bosses share the same typings', () => {
+    const megaRayquaza = pokemon({
+      name: 'Mega Rayquaza',
+      variant_id: 'rayquaza-mega',
+      attack: 377,
+      defense: 210,
+      stamina: 227,
+      type1_name: 'dragon',
+      type2_name: 'flying',
+      variantType: 'mega',
+      moves: [
+        move('Dragon Tail', 'dragon', 1, 15, 1000, 9),
+        move('Dragon Ascent', 'flying', 0, 140, 3500, -50),
+      ],
+    });
+    const dragonFlyingTarget = pokemon({
+      name: 'Rayquaza',
+      variant_id: 'target-rayquaza',
+      type1_name: 'dragon',
+      type2_name: 'flying',
+    });
+    const duplicateTypeTargets = [
+      dragonFlyingTarget,
+      pokemon({
+        name: 'Mega Rayquaza',
+        variant_id: 'target-mega-rayquaza',
+        type1_name: 'dragon',
+        type2_name: 'flying',
+      }),
+      pokemon({
+        name: 'Salamence',
+        variant_id: 'target-salamence',
+        type1_name: 'dragon',
+        type2_name: 'flying',
+      }),
+    ];
+
+    const singleTargetScore = scoreRaidOverallAttackers(
+      [megaRayquaza],
+      baseSettings,
+      [dragonFlyingTarget],
+    )[0] as RaidOverallScore;
+    const duplicateTargetScore = scoreRaidOverallAttackers(
+      [megaRayquaza],
+      baseSettings,
+      duplicateTypeTargets,
+    )[0] as RaidOverallScore;
+
+    expect(duplicateTargetScore.dps).toBeCloseTo(singleTargetScore.dps, 6);
+    expect(duplicateTargetScore.tdo).toBeCloseTo(singleTargetScore.tdo, 6);
+    expect(duplicateTargetScore.er).toBeCloseTo(singleTargetScore.er, 6);
+  });
+
+  it('matches full overall scoring when taking the best moveset per variant', () => {
+    const attackers = [
+      pokemon({
+        name: 'Mega Rayquaza',
+        variant_id: 'rayquaza-mega',
+        attack: 377,
+        defense: 210,
+        stamina: 227,
+        type1_name: 'dragon',
+        type2_name: 'flying',
+        variantType: 'mega',
+        moves: [
+          move('Air Slash', 'flying', 1, 14, 1000, 10),
+          move('Dragon Tail', 'dragon', 1, 15, 1000, 9),
+          move('Outrage', 'dragon', 0, 110, 3900, -50),
+          move('Dragon Ascent', 'flying', 0, 140, 3500, -50),
+        ],
+      }),
+      pokemon({
+        name: 'Zamazenta',
+        variant_id: 'zamazenta-crowned-shield',
+        attack: 250,
+        defense: 292,
+        stamina: 192,
+        type1_name: 'fighting',
+        type2_name: 'steel',
+        moves: [
+          move('Metal Claw', 'steel', 1, 8, 500, 7),
+          move('Ice Fang', 'ice', 1, 12, 1000, 8),
+          move('Behemoth Bash', 'steel', 0, 125, 1500, -50),
+        ],
+      }),
+    ];
+    const raidTargets = [
+      pokemon({
+        name: 'Palkia',
+        variant_id: 'target-palkia',
+        type1_name: 'dragon',
+        type2_name: 'water',
+      }),
+      pokemon({
+        name: 'Terrakion',
+        variant_id: 'target-terrakion',
+        type1_name: 'rock',
+        type2_name: 'fighting',
+      }),
+    ];
+
+    const fullBest = dedupeBestOverallAttackerPerVariant(
+      scoreRaidOverallAttackers(attackers, baseSettings, raidTargets),
+    );
+    const fastBest = scoreBestRaidOverallAttackers(attackers, baseSettings, raidTargets);
+
+    expect(fastBest.map((score) => score.variant.variant_id)).toEqual(
+      fullBest.map((score) => score.variant.variant_id),
+    );
+    expect(fastBest[0]?.fastMove.name).toBe(fullBest[0]?.fastMove.name);
+    expect(fastBest[0]?.chargedMove.name).toBe(fullBest[0]?.chargedMove.name);
+    expect(fastBest[0]?.er).toBeCloseTo(fullBest[0]?.er ?? 0, 6);
   });
 
   it('ranks type DPS when either the fast or charged move matches the selected type', () => {
