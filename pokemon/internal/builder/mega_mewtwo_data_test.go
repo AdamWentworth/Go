@@ -140,6 +140,46 @@ WHERE me.pokemon_id = 150 AND me.form = ?
 	}
 }
 
+func TestMewtwoLegacyCounterMove(t *testing.T) {
+	dbPath := resolveLocalSQLitePath(t)
+	db, err := sql.Open("sqlite", dbPath)
+	if err != nil {
+		t.Fatalf("open sqlite: %v", err)
+	}
+	defer db.Close()
+
+	var row struct {
+		name     string
+		typeName string
+		isFast   int
+		legacy   int
+	}
+
+	err = db.QueryRow(`
+SELECT m.name, t.name, m.is_fast, pm.legacy
+FROM pokemon_moves pm
+JOIN moves m ON m.move_id = pm.move_id
+JOIN types t ON t.type_id = m.type_id
+WHERE pm.pokemon_id = 150 AND m.name = 'Counter'
+`).Scan(&row.name, &row.typeName, &row.isFast, &row.legacy)
+	if err != nil {
+		t.Fatalf("query Mewtwo Counter move: %v", err)
+	}
+
+	if row.name != "Counter" {
+		t.Fatalf("move name = %q, want Counter", row.name)
+	}
+	if row.typeName != "Fighting" {
+		t.Fatalf("move type = %q, want Fighting", row.typeName)
+	}
+	if row.isFast != 1 {
+		t.Fatal("Counter should be a fast move")
+	}
+	if row.legacy != 1 {
+		t.Fatal("Mewtwo Counter should be marked legacy")
+	}
+}
+
 func resolveLocalSQLitePath(t *testing.T) string {
 	t.Helper()
 
