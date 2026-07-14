@@ -414,12 +414,12 @@ test.describe('pokemon app browser regressions', () => {
       await expectActivePokemonView(page, 'Pokémon');
       await installLoadingOverlayProbe(page);
 
-      await page.getByText('TAGS', { exact: true }).click();
-      await expectActivePokemonView(page, 'TAGS');
+      await page.getByText('WISHLIST', { exact: true }).click();
+      await expectActivePokemonView(page, 'WISHLIST');
       await expectNoLoadingOverlaySeen(page);
 
-      await page.getByText('POKÉDEX', { exact: true }).click();
-      await expectActivePokemonView(page, 'POKÉDEX');
+      await page.getByText('TAGS', { exact: true }).click();
+      await expectActivePokemonView(page, 'TAGS');
       await expectNoLoadingOverlaySeen(page);
 
       await page.getByText('Pokémon', { exact: true }).click();
@@ -661,8 +661,8 @@ test.describe('pokemon app browser regressions', () => {
         (element) => (element as HTMLElement).style.transform,
       );
 
-      await page.getByText('TAGS', { exact: true }).click();
-      await expectActivePokemonView(page, 'TAGS');
+      await page.getByText('WISHLIST', { exact: true }).click();
+      await expectActivePokemonView(page, 'WISHLIST');
       await expect
         .poll(() =>
           slider.evaluate((element) =>
@@ -673,10 +673,10 @@ test.describe('pokemon app browser regressions', () => {
       const transitionProperty = await slider.evaluate(
         (element) => window.getComputedStyle(element).transitionProperty,
       );
-      const tagsTransform = await slider.evaluate(
+      const wishlistTransform = await slider.evaluate(
         (element) => (element as HTMLElement).style.transform,
       );
-      expect(tagsTransform).not.toBe(pokemonTransform);
+      expect(wishlistTransform).not.toBe(pokemonTransform);
       expect(transitionProperty).toContain('transform');
     } finally {
       await diagnostics.flush();
@@ -1087,7 +1087,7 @@ test.describe('pokemon app browser regressions', () => {
         { clientX: Math.round(box.x + box.width * 0.82), clientY: y },
         { clientX: Math.round(box.x + box.width * 0.18), clientY: y },
       );
-      await expectActivePokemonView(page, 'TAGS');
+      await expectActivePokemonView(page, 'WISHLIST');
       await expectNoLoadingOverlaySeen(page);
 
       await dispatchTouchSwipe(
