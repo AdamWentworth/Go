@@ -416,11 +416,59 @@ export const getRaidTierKeyForVariant = (variant: PokemonVariant): RaidTierKey |
   return metadata ? getRaidMetadataTierKey(metadata, variant) : null;
 };
 
+const normalizeFusionId = (value: unknown): number | null =>
+  typeof value === 'number' && Number.isFinite(value) && value > 0 ? value : null;
+
+const getVariantFusionId = (variant: PokemonVariant): number | null =>
+  normalizeFusionId(variant.fusion_id);
+
+const isFusionVariant = (variant: PokemonVariant): boolean =>
+  variant.variantType.toLowerCase().includes('fusion');
+
+const getLegalRaidMovesForVariant = (variant: PokemonVariant): Move[] => {
+  const moves = Array.isArray(variant.moves) ? variant.moves : [];
+  const fusionId = getVariantFusionId(variant);
+
+  if (isFusionVariant(variant) && fusionId != null) {
+    const fusionMovePool =
+      variant.fusion?.find((fusion) => normalizeFusionId(fusion.fusion_id) === fusionId)?.moves ??
+      [];
+
+    if (fusionMovePool.length > 0) {
+      const hasFusionFastMoves = fusionMovePool.some((move) => move.is_fast === 1);
+      if (hasFusionFastMoves) {
+        return fusionMovePool;
+      }
+
+      return [
+        ...moves.filter((move) => normalizeFusionId(move.fusion_id) == null),
+        ...fusionMovePool,
+      ];
+    }
+  }
+
+  return moves.filter((move) => {
+    const moveFusionId = normalizeFusionId(move.fusion_id);
+    if (moveFusionId == null) return true;
+    return isFusionVariant(variant) && fusionId != null && moveFusionId === fusionId;
+  });
+};
+
+const getLegalRaidFastMoves = (variant: PokemonVariant): Move[] =>
+  getLegalRaidMovesForVariant(variant).filter(
+    (move) => move.is_fast === 1 && move.raid_power > 0,
+  );
+
+const getLegalRaidChargedMoves = (variant: PokemonVariant): Move[] =>
+  getLegalRaidMovesForVariant(variant).filter(
+    (move) => move.is_fast === 0 && move.raid_power > 0,
+  );
+
 export const isEligibleRaidAttacker = (variant: PokemonVariant): boolean =>
   !isRaidCosmeticVariant(variant) &&
   Array.isArray(variant.moves) &&
-  variant.moves.some((move) => move.is_fast === 1 && move.raid_power > 0) &&
-  variant.moves.some((move) => move.is_fast === 0 && move.raid_power > 0);
+  getLegalRaidFastMoves(variant).length > 0 &&
+  getLegalRaidChargedMoves(variant).length > 0;
 
 export const isEligibleRaidBoss = (variant: PokemonVariant): boolean =>
   !isRaidShinyVariant(variant) &&
@@ -792,10 +840,8 @@ export const scoreRaidCounters = (
   attackers
     .filter(isEligibleRaidAttacker)
     .flatMap((attacker) => {
-      const fastMoves = attacker.moves.filter((move) => move.is_fast === 1 && move.raid_power > 0);
-      const chargedMoves = attacker.moves.filter(
-        (move) => move.is_fast === 0 && move.raid_power > 0,
-      );
+      const fastMoves = getLegalRaidFastMoves(attacker);
+      const chargedMoves = getLegalRaidChargedMoves(attacker);
 
       return fastMoves.flatMap((fastMove) =>
         chargedMoves.map((chargedMove) =>
@@ -916,10 +962,8 @@ export const scoreRaidOverallAttackers = (
     return attackers
     .filter(isEligibleRaidAttacker)
     .flatMap((attacker) => {
-      const fastMoves = attacker.moves.filter((move) => move.is_fast === 1 && move.raid_power > 0);
-      const chargedMoves = attacker.moves.filter(
-        (move) => move.is_fast === 0 && move.raid_power > 0,
-      );
+      const fastMoves = getLegalRaidFastMoves(attacker);
+      const chargedMoves = getLegalRaidChargedMoves(attacker);
 
       return fastMoves.flatMap((fastMove) =>
         chargedMoves.map((chargedMove) =>
@@ -943,10 +987,8 @@ export const scoreBestRaidOverallAttackers = (
   const bestByVariant = new Map<string, RaidOverallScore>();
 
   attackers.filter(isEligibleRaidAttacker).forEach((attacker) => {
-    const fastMoves = attacker.moves.filter((move) => move.is_fast === 1 && move.raid_power > 0);
-    const chargedMoves = attacker.moves.filter(
-      (move) => move.is_fast === 0 && move.raid_power > 0,
-    );
+    const fastMoves = getLegalRaidFastMoves(attacker);
+    const chargedMoves = getLegalRaidChargedMoves(attacker);
     const key = attacker.variant_id || `${attacker.pokemon_id}-${attacker.variantType}`;
     const cpMultiplier = cpMultipliers[settings.attackerLevel];
     const attackerAttack = (attacker.attack + 15) * cpMultiplier;
@@ -1145,10 +1187,8 @@ export const scoreRaidTypeDps = (
   return attackers
     .filter(isEligibleRaidAttacker)
     .flatMap((attacker) => {
-      const fastMoves = attacker.moves.filter((move) => move.is_fast === 1 && move.raid_power > 0);
-      const chargedMoves = attacker.moves.filter(
-        (move) => move.is_fast === 0 && move.raid_power > 0,
-      );
+      const fastMoves = getLegalRaidFastMoves(attacker);
+      const chargedMoves = getLegalRaidChargedMoves(attacker);
 
       return fastMoves.flatMap((fastMove) =>
         chargedMoves

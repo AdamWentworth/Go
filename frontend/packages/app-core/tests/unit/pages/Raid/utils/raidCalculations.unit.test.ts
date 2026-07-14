@@ -34,6 +34,7 @@ const move = (
   power: number,
   cooldown: number,
   energy: number,
+  overrides: Partial<Move> = {},
 ) =>
   ({
     name,
@@ -43,6 +44,8 @@ const move = (
     raid_power: power,
     raid_cooldown: cooldown,
     raid_energy: energy,
+    fusion_id: null,
+    ...overrides,
   }) as unknown as Move;
 
 const pokemon = (overrides: RaidCalculationVariantOverrides = {}): PokemonVariant =>
@@ -59,6 +62,7 @@ const pokemon = (overrides: RaidCalculationVariantOverrides = {}): PokemonVarian
     type1_name: overrides.type1_name ?? 'psychic',
     type2_name: overrides.type2_name ?? 'none',
     variantType: overrides.variantType ?? 'default',
+    fusion_id: overrides.fusion_id ?? null,
     currentImage: overrides.currentImage ?? '',
     image_url: overrides.image_url ?? '',
     sprite_url: overrides.sprite_url ?? '',
@@ -586,6 +590,102 @@ describe('raid calculations', () => {
     expect(duplicateTargetScore.dps).toBeCloseTo(singleTargetScore.dps, 6);
     expect(duplicateTargetScore.tdo).toBeCloseTo(singleTargetScore.tdo, 6);
     expect(duplicateTargetScore.er).toBeCloseTo(singleTargetScore.er, 6);
+  });
+
+  it('only lets fusion variants use their matching fusion-exclusive raid moves', () => {
+    const metalClaw = move('Metal Claw', 'steel', 1, 8, 500, 7);
+    const psychoCut = move('Psycho Cut', 'psychic', 1, 5, 600, 8);
+    const ironHead = move('Iron Head', 'steel', 0, 60, 1900, -50);
+    const psychic = move('Psychic', 'psychic', 0, 90, 2800, -50);
+    const sunsteelStrike = move('Sunsteel Strike', 'steel', 0, 230, 3100, -100, {
+      fusion_id: 1,
+    });
+    const moongeistBeam = move('Moongeist Beam', 'ghost', 0, 230, 3100, -100, {
+      fusion_id: 2,
+    });
+    const solgaleo = pokemon({
+      name: 'Solgaleo',
+      variant_id: 'solgaleo-default',
+      pokemon_id: 791,
+      pokedex_number: 791,
+      attack: 255,
+      defense: 191,
+      stamina: 264,
+      type1_name: 'psychic',
+      type2_name: 'steel',
+      moves: [metalClaw, ironHead, sunsteelStrike],
+    });
+    const lunala = pokemon({
+      name: 'Lunala',
+      variant_id: 'lunala-default',
+      pokemon_id: 792,
+      pokedex_number: 792,
+      attack: 255,
+      defense: 191,
+      stamina: 264,
+      type1_name: 'psychic',
+      type2_name: 'ghost',
+      moves: [psychoCut, psychic, moongeistBeam],
+    });
+    const duskMane = pokemon({
+      name: 'Dusk Mane Necrozma',
+      species_name: 'Dusk Mane Necrozma',
+      variant_id: 'necrozma-fusion-1',
+      pokemon_id: 800,
+      pokedex_number: 800,
+      attack: 277,
+      defense: 220,
+      stamina: 200,
+      type1_name: 'psychic',
+      type2_name: 'steel',
+      variantType: 'fusion_1',
+      fusion_id: 1,
+      moves: [metalClaw, ironHead, sunsteelStrike, moongeistBeam],
+    });
+    const dawnWings = pokemon({
+      name: 'Dawn Wings Necrozma',
+      species_name: 'Dawn Wings Necrozma',
+      variant_id: 'necrozma-fusion-2',
+      pokemon_id: 800,
+      pokedex_number: 800,
+      attack: 277,
+      defense: 220,
+      stamina: 200,
+      type1_name: 'psychic',
+      type2_name: 'ghost',
+      variantType: 'fusion_2',
+      fusion_id: 2,
+      moves: [psychoCut, psychic, sunsteelStrike, moongeistBeam],
+    });
+
+    const scores = scoreRaidOverallAttackers(
+      [solgaleo, lunala, duskMane, dawnWings],
+      baseSettings,
+    );
+    const bestScores = scoreBestRaidOverallAttackers(
+      [solgaleo, lunala, duskMane, dawnWings],
+      baseSettings,
+    );
+    const movesByVariant = new Map<string, Set<string>>();
+    scores.forEach((score) => {
+      const names = movesByVariant.get(score.variant.name) ?? new Set<string>();
+      names.add(score.chargedMove.name);
+      movesByVariant.set(score.variant.name, names);
+    });
+    const bestChargedMoveByVariant = new Map(
+      bestScores.map((score) => [score.variant.name, score.chargedMove.name]),
+    );
+
+    expect(movesByVariant.get('Solgaleo')).not.toContain('Sunsteel Strike');
+    expect(movesByVariant.get('Lunala')).not.toContain('Moongeist Beam');
+    expect(movesByVariant.get('Dusk Mane Necrozma')).toContain('Sunsteel Strike');
+    expect(movesByVariant.get('Dusk Mane Necrozma')).not.toContain('Moongeist Beam');
+    expect(movesByVariant.get('Dawn Wings Necrozma')).toContain('Moongeist Beam');
+    expect(movesByVariant.get('Dawn Wings Necrozma')).not.toContain('Sunsteel Strike');
+    expect(bestChargedMoveByVariant.get('Solgaleo')).not.toBe('Sunsteel Strike');
+    expect(bestChargedMoveByVariant.get('Lunala')).not.toBe('Moongeist Beam');
+    expect(bestChargedMoveByVariant.get('Dusk Mane Necrozma')).toBe('Sunsteel Strike');
+    expect(bestChargedMoveByVariant.get('Dawn Wings Necrozma')).toBe('Moongeist Beam');
   });
 
   it('matches full overall scoring when taking the best moveset per variant', () => {
