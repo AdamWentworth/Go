@@ -102,6 +102,9 @@ jobs:
       - name: Test
         run: go test ./...
 
+      - name: PostgreSQL Catalog Parity
+        run: bash scripts/test-postgres-catalog-parity.sh
+
       - name: Integration Contract Test
         run: go test -tags=integration ./internal/builder -run TestPokemonPayload_StableShape -v
 

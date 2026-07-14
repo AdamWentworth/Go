@@ -20,6 +20,7 @@ func (b *Builder) attachBackgrounds(ctx context.Context, orderedIDs []int, pokem
 	  b.date
 	FROM pokemon_backgrounds pb
 	INNER JOIN backgrounds b ON pb.background_id = b.background_id
+	ORDER BY pb.pokemon_id, b.background_id, COALESCE(pb.costume_id, 0)
 	`)
 	if err != nil {
 		return err

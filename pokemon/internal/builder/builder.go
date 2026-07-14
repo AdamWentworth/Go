@@ -12,13 +12,24 @@ import (
 )
 
 type Builder struct {
-	db  *sql.DB
-	log *slog.Logger
+	db      *sql.DB
+	dialect SQLDialect
+	log     *slog.Logger
 
 	payloadMu     sync.RWMutex
 	payloadBundle *pokemonPayloadBundle
 	payloadBuild  singleflight.Group
 }
+
+// SQLDialect describes the catalog query behavior. SQLite remains the
+// compatibility fallback while PostgreSQL is prepared for the production
+// source-of-truth cutover.
+type SQLDialect string
+
+const (
+	DialectSQLite   SQLDialect = "sqlite"
+	DialectPostgres SQLDialect = "postgres"
+)
 
 // pokemonPayloadBundle keeps the legacy response and the independently cached
 // delivery chunks backed by one SQLite read pass. The JSON response caches own
@@ -32,10 +43,17 @@ type pokemonPayloadBundle struct {
 }
 
 func New(db *sql.DB, log *slog.Logger) *Builder {
+	return NewWithDialect(db, DialectSQLite, log)
+}
+
+func NewWithDialect(db *sql.DB, dialect SQLDialect, log *slog.Logger) *Builder {
 	if log == nil {
 		log = slog.Default()
 	}
-	return &Builder{db: db, log: log}
+	if dialect == "" {
+		dialect = DialectSQLite
+	}
+	return &Builder{db: db, dialect: dialect, log: log}
 }
 
 // Key order presets to match Node's JSON.stringify insertion order as closely as practical.

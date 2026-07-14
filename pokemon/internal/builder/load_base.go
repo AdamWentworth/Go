@@ -36,8 +36,8 @@ func (b *Builder) loadBasePokemon(ctx context.Context) ([]int, map[int]map[strin
 	    pokemon.pokemon_id = fusion_pokemon.base_pokemon_id1
 	 OR pokemon.pokemon_id = fusion_pokemon.base_pokemon_id2
 	)
-	WHERE pokemon.available = 1
-	ORDER BY pokemon.pokedex_number ASC
+	WHERE pokemon.available IS TRUE
+	ORDER BY pokemon.pokedex_number ASC, pokemon.pokemon_id ASC
 	`)
 	if err != nil {
 		return nil, nil, err

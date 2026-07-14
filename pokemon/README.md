@@ -27,6 +27,8 @@ Production Pokemon API service for PokeGo Nexus, implemented in Go (`net/http` +
 ```env
 PORT=3001
 SQLITE_PATH=./data/pokego.db
+# Keep the default SQLite fallback during the catalog migration.
+CATALOG_DB_DRIVER=sqlite
 ALLOWED_ORIGINS=https://pokegonexus.com,https://www.pokegonexus.com,https://pokemongonexus.com,https://www.pokemongonexus.com
 INTERNAL_ONLY_ENABLED=true
 INTERNAL_ONLY_CIDRS=127.0.0.0/8,::1/128,172.30.0.11/32
@@ -38,6 +40,7 @@ TRUSTED_PROXY_CIDRS=127.0.0.0/8,::1/128,172.30.0.10/32
 ```env
 PORT=3001
 SQLITE_PATH=./data/pokego.db
+CATALOG_DB_DRIVER=sqlite
 ALLOWED_ORIGINS=http://localhost:3000,http://127.0.0.1:3000
 INTERNAL_ONLY_ENABLED=false
 ```
@@ -55,6 +58,32 @@ INTERNAL_ONLY_ENABLED=false
 - `RATE_LIMIT_ENABLED` (default true in production)
 - `RATE_LIMIT_RPS` (default `5`)
 - `RATE_LIMIT_BURST` (default `10`)
+- `CATALOG_DB_DRIVER` (`sqlite` by default; set `postgres` for the migrated catalog)
+- `CATALOG_DATABASE_URL` (required when `CATALOG_DB_DRIVER=postgres`; kept in the host `.env`, never committed)
+
+### PostgreSQL Catalog Migration
+
+SQLite remains the production fallback until a PostgreSQL import passes payload
+parity and the deployment/rollback path is enabled. The importer runs schema
+migrations and the catalog copy in one PostgreSQL transaction, records a
+catalog revision, and never changes the source SQLite file.
+
+```bash
+cd pokemon
+go run ./cmd/catalog-import \
+  --sqlite ./data/pokego.db \
+  --database-url "$CATALOG_DATABASE_URL" \
+  --release-id "catalog-$(date -u +%Y%m%dT%H%M%SZ)" \
+  --source-label "editor-approved-catalog"
+```
+
+Run the backend parity guard before any cutover. It imports into an ephemeral
+PostgreSQL 17 container and asserts that PostgreSQL produces identical JSON
+bytes to SQLite for the full browser payload:
+
+```bash
+bash scripts/test-postgres-catalog-parity.sh
+```
 
 ## 🧪 Local Run
 

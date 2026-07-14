@@ -2,7 +2,7 @@ package builder
 
 import (
 	"database/sql"
-	"fmt"
+	"strconv"
 )
 
 func scanRowsToMaps(rows *sql.Rows) ([]map[string]any, error) {
@@ -28,7 +28,22 @@ func scanRowsToMaps(rows *sql.Rows) ([]map[string]any, error) {
 		m := make(map[string]any, len(cols))
 		for i, c := range cols {
 			v := vals[i]
-			// Normalize []byte to string for text-ish types
+			// PostgreSQL exposes actual booleans while SQLite historically
+			// exposed 0/1. Preserve the established JSON wire contract until
+			// a deliberate client schema revision says otherwise.
+			if b, ok := v.(bool); ok {
+				if b {
+					m[c] = int64(1)
+				} else {
+					m[c] = int64(0)
+				}
+				continue
+			}
+			if normalized, ok := legacyScalarWireValue(c, v); ok {
+				m[c] = normalized
+				continue
+			}
+			// Normalize []byte to string for text-ish types.
 			if b, ok := v.([]byte); ok {
 				// Keep bytes for blobs; otherwise convert to string
 				if len(colTypes) > i && colTypes[i] != nil {
@@ -50,6 +65,25 @@ func scanRowsToMaps(rows *sql.Rows) ([]map[string]any, error) {
 	return out, nil
 }
 
+func legacyScalarWireValue(column string, value any) (any, bool) {
+	switch column {
+	case "shiny_available", "apex", "primal", "trade_discount", "shadow_shiny_available", "shadow_apex":
+		// PostgreSQL stores a small set of historically heterogeneous fields as
+		// text to retain exact legacy meanings. Convert numeric strings back to
+		// the SQLite JSON number representation, while preserving blanks/None.
+		switch typed := value.(type) {
+		case string:
+			if integer, err := strconv.ParseInt(typed, 10, 64); err == nil {
+				return integer, true
+			}
+			return typed, true
+		case []byte:
+			return legacyScalarWireValue(column, string(typed))
+		}
+	}
+	return nil, false
+}
+
 func isTextType(dbType string) bool {
 	switch dbType {
 	case "TEXT", "VARCHAR", "CHAR", "NVARCHAR":
@@ -57,20 +91,4 @@ func isTextType(dbType string) bool {
 	default:
 		return false
 	}
-}
-
-func inClause(col string, ids []int) (string, []any) {
-	if len(ids) == 0 {
-		return "1=0", nil
-	}
-	args := make([]any, 0, len(ids))
-	placeholders := ""
-	for i, id := range ids {
-		if i > 0 {
-			placeholders += ","
-		}
-		placeholders += "?"
-		args = append(args, id)
-	}
-	return fmt.Sprintf("%s IN (%s)", col, placeholders), args
 }

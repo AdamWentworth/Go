@@ -14,7 +14,7 @@ func (b *Builder) attachFemaleData(ctx context.Context, orderedIDs []int, pokemo
 		return nil
 	}
 
-	q, args := inClause("pokemon_id", femaleIDs)
+	q, args := b.inClause("pokemon_id", femaleIDs)
 	rows, err := b.queryRows(ctx, `
 	SELECT
 	  pokemon_id,

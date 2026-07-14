@@ -30,6 +30,7 @@ func (b *Builder) attachMegaEvolutions(ctx context.Context, orderedIDs []int, po
 	FROM mega_evolution
 	LEFT JOIN types AS t1 ON mega_evolution.type_1_id = t1.type_id
 	LEFT JOIN types AS t2 ON mega_evolution.type_2_id = t2.type_id
+	ORDER BY mega_evolution.pokemon_id, mega_evolution.id
 	`)
 	if err != nil {
 		return err

@@ -21,6 +21,7 @@ func (b *Builder) attachRaidBoss(ctx context.Context, orderedIDs []int, pokemonB
 	  tier,
 	  costume_id
 	FROM raid_bosses
+	ORDER BY pokemon_id, id
 	`)
 	if err != nil {
 		return err

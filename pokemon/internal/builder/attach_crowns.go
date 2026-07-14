@@ -10,16 +10,11 @@ func (b *Builder) attachCrownForms(ctx context.Context, orderedIDs []int, pokemo
 	_ = orderedIDs
 
 	// Optional table: if absent, crown forms are simply not added.
-	tableRows, err := b.queryRows(ctx, `
-	SELECT name
-	FROM sqlite_master
-	WHERE type='table' AND name='crown_forms'
-	LIMIT 1
-	`)
+	tableExists, err := b.tableExists(ctx, "crown_forms")
 	if err != nil {
 		return err
 	}
-	if len(tableRows) == 0 {
+	if !tableExists {
 		return nil
 	}
 
@@ -47,7 +42,7 @@ func (b *Builder) attachCrownForms(ctx context.Context, orderedIDs []int, pokemo
 	INNER JOIN pokemon p ON p.pokemon_id = cf.crown_pokemon_id
 	LEFT JOIN types t1 ON p.type_1_id = t1.type_id
 	LEFT JOIN types t2 ON p.type_2_id = t2.type_id
-	WHERE COALESCE(cf.is_active, 1) = 1
+	WHERE COALESCE(cf.is_active, FALSE) IS TRUE
 	ORDER BY cf.base_pokemon_id, cf.id
 	`)
 	if err != nil {
@@ -72,7 +67,7 @@ func (b *Builder) attachCrownForms(ctx context.Context, orderedIDs []int, pokemo
 	WHERE pm.pokemon_id IN (
 	  SELECT crown_pokemon_id
 	  FROM crown_forms
-	  WHERE COALESCE(is_active, 1) = 1
+	  WHERE COALESCE(is_active, FALSE) IS TRUE
 	)
 	ORDER BY pm.pokemon_id, m.is_fast DESC, m.name
 	`)

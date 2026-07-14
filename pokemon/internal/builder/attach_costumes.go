@@ -21,6 +21,7 @@ func (b *Builder) attachCostumes(ctx context.Context, orderedIDs []int, pokemonB
 	       cp.image_url_shiny_costume_female
 	FROM costume_pokemon cp
 	LEFT JOIN shadow_costume_pokemon scp ON cp.costume_id = scp.costume_id
+	ORDER BY cp.pokemon_id, cp.costume_id
 	`)
 	if err != nil {
 		return err

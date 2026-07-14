@@ -97,18 +97,9 @@ func (b *Builder) attachFusions(ctx context.Context, orderedIDs []int, pokemonBy
 	}
 
 	// Optional table: if absent, combo backgrounds are simply not added.
-	fusionBackgroundRulesTableExists := false
-	tableRows, err := b.queryRows(ctx, `
-	SELECT name
-	FROM sqlite_master
-	WHERE type='table' AND name='fusion_background_combo_rules'
-	LIMIT 1
-	`)
+	fusionBackgroundRulesTableExists, err := b.tableExists(ctx, "fusion_background_combo_rules")
 	if err != nil {
 		return err
-	}
-	if len(tableRows) > 0 {
-		fusionBackgroundRulesTableExists = true
 	}
 
 	type fusionComboRule struct {
@@ -134,7 +125,7 @@ func (b *Builder) attachFusions(ctx context.Context, orderedIDs []int, pokemonBy
 		  b.date
 		FROM fusion_background_combo_rules r
 		INNER JOIN backgrounds b ON b.background_id = r.combo_background_id
-		WHERE COALESCE(r.is_active, 1) = 1
+		WHERE COALESCE(r.is_active, FALSE) IS TRUE
 		ORDER BY r.fusion_id, r.combo_background_id
 		`)
 		if err != nil {
@@ -185,6 +176,7 @@ func (b *Builder) attachFusions(ctx context.Context, orderedIDs []int, pokemonBy
 	FROM fusion_pokemon AS fusion
 	LEFT JOIN types AS t1 ON fusion.type_1_id = t1.type_id
 	LEFT JOIN types AS t2 ON fusion.type_2_id = t2.type_id
+	ORDER BY fusion.fusion_id
 	`)
 	if err != nil {
 		return err
@@ -261,13 +253,13 @@ func (b *Builder) attachFusions(ctx context.Context, orderedIDs []int, pokemonBy
 		fusionComboRules := make([]any, 0, len(comboRulesByFusionID[fid]))
 		for _, rule := range comboRulesByFusionID[fid] {
 			fusionComboRules = append(fusionComboRules, orderedjson.Map{M: map[string]any{
-				"member1_background_id": rule.member1BackgroundID,
-				"member2_background_id": rule.member2BackgroundID,
-				"combo_background_id":   rule.comboBackgroundID,
-				"combo_background_name": rule.name,
-				"combo_background_location": rule.location,
+				"member1_background_id":      rule.member1BackgroundID,
+				"member2_background_id":      rule.member2BackgroundID,
+				"combo_background_id":        rule.comboBackgroundID,
+				"combo_background_name":      rule.name,
+				"combo_background_location":  rule.location,
 				"combo_background_image_url": rule.imageURL,
-				"combo_background_date": rule.date,
+				"combo_background_date":      rule.date,
 			}, Order: []string{
 				"member1_background_id",
 				"member2_background_id",
@@ -280,32 +272,32 @@ func (b *Builder) attachFusions(ctx context.Context, orderedIDs []int, pokemonBy
 		}
 
 		fusion := orderedjson.Map{M: map[string]any{
-			"fusion_id":            f["fusion_id"],
-			"base_pokemon_id1":     f["base_pokemon_id1"],
-			"base_pokemon_id2":     f["base_pokemon_id2"],
-			"name":                 f["name"],
-			"pokedex_number":       f["pokedex_number"],
-			"image_url":            f["image_url"],
-			"image_url_shiny":      f["image_url_shiny"],
-			"sprite_url":           f["sprite_url"],
-			"attack":               f["attack"],
-			"defense":              f["defense"],
-			"stamina":              f["stamina"],
-			"type_1_id":            f["type_1_id"],
-			"type_2_id":            f["type_2_id"],
-			"type1_name":           f["type1_name"],
-			"type2_name":           f["type2_name"],
-			"generation":           f["generation"],
-			"available":            f["available"],
-			"shiny_available":      f["shiny_available"],
-			"shiny_rarity":         f["shiny_rarity"],
-			"date_available":       f["date_available"],
-			"date_shiny_available": f["date_shiny_available"],
-			"backgrounds":          fusionBackgrounds,
+			"fusion_id":              f["fusion_id"],
+			"base_pokemon_id1":       f["base_pokemon_id1"],
+			"base_pokemon_id2":       f["base_pokemon_id2"],
+			"name":                   f["name"],
+			"pokedex_number":         f["pokedex_number"],
+			"image_url":              f["image_url"],
+			"image_url_shiny":        f["image_url_shiny"],
+			"sprite_url":             f["sprite_url"],
+			"attack":                 f["attack"],
+			"defense":                f["defense"],
+			"stamina":                f["stamina"],
+			"type_1_id":              f["type_1_id"],
+			"type_2_id":              f["type_2_id"],
+			"type1_name":             f["type1_name"],
+			"type2_name":             f["type2_name"],
+			"generation":             f["generation"],
+			"available":              f["available"],
+			"shiny_available":        f["shiny_available"],
+			"shiny_rarity":           f["shiny_rarity"],
+			"date_available":         f["date_available"],
+			"date_shiny_available":   f["date_shiny_available"],
+			"backgrounds":            fusionBackgrounds,
 			"background_combo_rules": fusionComboRules,
-			"moves":                moves,
-			"cp40":                 cp.cp40,
-			"cp50":                 cp.cp50,
+			"moves":                  moves,
+			"cp40":                   cp.cp40,
+			"cp50":                   cp.cp50,
 		}, Order: fusionKeyOrder}
 
 		if p, ok := pokemonByID[id1]; ok {

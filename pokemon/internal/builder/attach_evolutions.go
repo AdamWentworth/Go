@@ -8,7 +8,11 @@ import (
 
 func (b *Builder) attachEvolutions(ctx context.Context, orderedIDs []int, pokemonByID map[int]map[string]any) error {
 	// 8) evolutions
-	evoRows, err := b.queryRows(ctx, `SELECT pokemon_id, evolves_to FROM pokemon_evolutions`)
+	evoRows, err := b.queryRows(ctx, `
+		SELECT pokemon_id, evolves_to
+		FROM pokemon_evolutions
+		ORDER BY pokemon_id, evolves_to
+	`)
 	if err != nil {
 		return err
 	}
