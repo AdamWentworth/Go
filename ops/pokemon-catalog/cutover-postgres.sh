@@ -19,6 +19,8 @@ env_backup_file="${backup_dir}/pokemon.env.pre-postgres-${timestamp}"
 catalog_env_changed=0
 service_recreated=0
 health_ok=0
+parity_snapshot_dir=""
+parity_sqlite_path=""
 
 # shellcheck disable=SC1091
 source "${repo_root}/ops/pokemon-catalog/runtime-env.sh"
@@ -53,6 +55,10 @@ rollback() {
     fi
   fi
 
+  if [[ -n "${parity_snapshot_dir}" ]]; then
+    rm -rf "${parity_snapshot_dir}"
+  fi
+
   exit "${status}"
 }
 trap rollback EXIT
@@ -70,10 +76,14 @@ catalog_load_reader_settings "${reader_env_file}"
 parity_database_url="${CATALOG_PARITY_DATABASE_URL:-}"
 [[ -n "${parity_database_url}" ]] || fail "CATALOG_PARITY_DATABASE_URL is missing from ${reader_env_file}; regenerate the reader settings before cutover"
 
-echo "Verifying live PostgreSQL catalog payload parity against production SQLite."
+parity_snapshot_dir="$(mktemp -d "${TMPDIR:-/tmp}/pokemon-catalog-parity.XXXXXX")"
+parity_sqlite_path="${parity_snapshot_dir}/pokego.db"
+catalog_copy_sqlite_snapshot "${sqlite_path}" "${parity_sqlite_path}"
+
+echo "Verifying PostgreSQL catalog payload parity against a production SQLite snapshot."
 (
   cd "${repo_root}/pokemon"
-  SQLITE_PATH="${sqlite_path}" \
+  SQLITE_PATH="${parity_sqlite_path}" \
   POSTGRES_TEST_URL="${parity_database_url}" \
     go test -count=1 -run TestPostgresPayloadParity ./internal/builder
 )

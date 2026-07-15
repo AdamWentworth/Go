@@ -74,3 +74,31 @@ catalog_restore_runtime_env() {
   }
   install -m 600 "${backup_file}" "${app_env_file}"
 }
+
+catalog_copy_sqlite_snapshot() {
+  local source_path="$1"
+  local snapshot_path="$2"
+  local suffix=""
+
+  [[ -r "${source_path}" ]] || {
+    echo "catalog cutover error: SQLite catalog is not readable: ${source_path}" >&2
+    return 1
+  }
+  mkdir -p "$(dirname "${snapshot_path}")"
+  cp --reflink=auto -- "${source_path}" "${snapshot_path}"
+  cmp -s -- "${source_path}" "${snapshot_path}" || {
+    echo "catalog cutover error: copied SQLite snapshot does not match source" >&2
+    return 1
+  }
+
+  # Include any WAL state without ever opening or changing the live source.
+  for suffix in -wal -shm; do
+    if [[ -f "${source_path}${suffix}" ]]; then
+      cp --reflink=auto -- "${source_path}${suffix}" "${snapshot_path}${suffix}"
+      cmp -s -- "${source_path}${suffix}" "${snapshot_path}${suffix}" || {
+        echo "catalog cutover error: copied SQLite ${suffix#-} sidecar does not match source" >&2
+        return 1
+      }
+    fi
+  done
+}

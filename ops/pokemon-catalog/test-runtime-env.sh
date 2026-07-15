@@ -46,6 +46,17 @@ catalog_restore_runtime_env "${backup_file}" "${app_env_file}"
 grep -Fxq 'CATALOG_DB_DRIVER=sqlite' "${app_env_file}"
 grep -Fxq 'CATALOG_DATABASE_URL=postgres://obsolete' "${app_env_file}"
 
+source_sqlite="${work_dir}/live/pokego.db"
+snapshot_sqlite="${work_dir}/snapshot/pokego.db"
+mkdir -p "$(dirname "${source_sqlite}")"
+printf 'catalog-main' > "${source_sqlite}"
+printf 'catalog-wal' > "${source_sqlite}-wal"
+printf 'catalog-shm' > "${source_sqlite}-shm"
+catalog_copy_sqlite_snapshot "${source_sqlite}" "${snapshot_sqlite}"
+cmp -s "${source_sqlite}" "${snapshot_sqlite}"
+cmp -s "${source_sqlite}-wal" "${snapshot_sqlite}-wal"
+cmp -s "${source_sqlite}-shm" "${snapshot_sqlite}-shm"
+
 # Compose must receive the exact URL, including the query string. A shell-escaped
 # URL is valid for `source` but can be wrong when treated as a Compose env_file.
 compose_dir="${work_dir}/compose/pokemon"

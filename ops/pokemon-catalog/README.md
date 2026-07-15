@@ -63,11 +63,13 @@ the reader role, and retains four rolling dumps by default.
 
 The workflow never creates a public GitHub Release. The API remains on SQLite
 until the manual `cutover-pokemon-catalog-postgres-prod` workflow runs. The
-cutover proves byte-for-byte parity between the actual production SQLite file
-and PostgreSQL through the read-only account, backs up `pokemon/.env`, switches
-only the private runtime settings, and checks `/readyz`. If the replacement API
-does not become ready, it restores both the prior environment and image. The
-SQLite file remains in place after a successful cutover.
+cutover first takes an in-place temporary copy of the production SQLite file
+and any WAL sidecars, then proves byte-for-byte payload parity between that
+snapshot and PostgreSQL through the read-only account. It backs up
+`pokemon/.env`, switches only the private runtime settings, and checks
+`/readyz`. If the replacement API does not become ready, it restores both the
+prior environment and image. The SQLite file remains in place after a
+successful cutover.
 
 ## Guardrail
 
