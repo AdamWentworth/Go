@@ -25,6 +25,33 @@ fail() {
   exit 1
 }
 
+resolve_compose_command() {
+  if [[ -n "${DOCKER_COMPOSE_BIN:-}" ]]; then
+    [[ -x "${DOCKER_COMPOSE_BIN}" ]] || fail "DOCKER_COMPOSE_BIN is not executable: ${DOCKER_COMPOSE_BIN}"
+    compose_command=("${DOCKER_COMPOSE_BIN}")
+    return
+  fi
+
+  # Ubuntu can expose legacy docker-compose to root while the invoking admin has
+  # the supported Compose v2 plugin in their Docker config directory.
+  if [[ -n "${SUDO_USER:-}" ]]; then
+    local sudo_home
+    sudo_home="$(getent passwd "${SUDO_USER}" | cut -d: -f6)"
+    if [[ -n "${sudo_home}" && -x "${sudo_home}/.docker/cli-plugins/docker-compose" ]]; then
+      compose_command=("${sudo_home}/.docker/cli-plugins/docker-compose")
+      return
+    fi
+  fi
+
+  if docker compose version >/dev/null 2>&1; then
+    compose_command=(docker compose)
+  elif command -v docker-compose >/dev/null 2>&1; then
+    compose_command=(docker-compose)
+  else
+    fail "Docker Compose v2 is required"
+  fi
+}
+
 require_identifier() {
   local value="$1"
   [[ "${value}" =~ ^[a-z_][a-z0-9_]*$ ]] || fail "unsafe PostgreSQL identifier: ${value}"
@@ -37,6 +64,7 @@ done
 [[ -f "${compose_source}" ]] || fail "catalog compose source not found: ${compose_source}"
 command -v docker >/dev/null 2>&1 || fail "docker is required"
 command -v openssl >/dev/null 2>&1 || fail "openssl is required to generate database passwords"
+resolve_compose_command
 
 volume_name="${CATALOG_POSTGRES_VOLUME_NAME:-pokemon_catalog_pgdata}"
 if [[ -e "${database_env_file}" || -e "${publisher_env_file}" || -e "${reader_env_file}" ]]; then
@@ -75,7 +103,7 @@ chmod 600 "${database_env_file}"
 CATALOG_DB_CONTAINER="${catalog_container}" \
 CATALOG_POSTGRES_HOST_PORT="${publisher_port}" \
 POKEMON_EDGE_NETWORK="${edge_network_name}" \
-docker compose \
+"${compose_command[@]}" \
   --project-name "${compose_project_name}" \
   --project-directory "${pokemon_dir}" \
   -f "${compose_file}" \
