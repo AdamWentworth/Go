@@ -15,6 +15,9 @@ backups, upgrades, and future cloud placement independent.
 - `pokemon_catalog_publisher`: schema owner used only by catalog publishing.
 - `pokemon_catalog_reader`: read-only account used by the Pokemon API after
   cutover.
+- `adam`: optional human operator account. The sync operation below mirrors the
+  existing MySQL `adam` login and grants catalog publisher access without
+  exposing an administrative PostgreSQL role to the API.
 
 The database exposes only `127.0.0.1:5433` to the host for the publisher. The
 API uses the internal hostname `pokemon_catalog_db:5432`; no catalog database
@@ -58,6 +61,22 @@ that updates only this database service's compose configuration and verifies
 its health. It preserves `pokemon_catalog_pgdata` and never restarts the
 Pokemon API.
 
+## Human Operator Login
+
+To mirror the existing MySQL `adam` credentials into the catalog database, copy
+`sync-operator-from-mysql.sh` to the production host and run:
+
+```bash
+sudo bash /tmp/sync-operator-from-mysql.sh /srv/pokegonexus
+```
+
+It reads `MYSQL_USER` and `MYSQL_PASSWORD` from the live `mysql_storage`
+container without printing the password, creates or rotates the matching
+PostgreSQL login, and grants that account membership in
+`pokemon_catalog_publisher`. The account can manage catalog data but cannot
+create PostgreSQL roles or databases. The API continues to use only
+`pokemon_catalog_reader`.
+
 ## Publishing
 
 The manual `publish-pokemon-catalog-prod` GitHub Action imports the checked-in
@@ -87,6 +106,9 @@ It starts the same `pokemon/docker-compose.yml` database service in an ephemeral
 provisions roles, proves the reader can select but cannot write, publishes two
 catalog revisions, then restores the retained dump and verifies the prior
 revision is active again.
+
+The operator-sync guardrail separately proves that the mirrored human account
+inherits catalog publisher permissions but cannot create PostgreSQL roles.
 
 The CI runtime-environment test separately proves the cutover can replace only
 the catalog driver settings, preserve unrelated runtime configuration, keep a
