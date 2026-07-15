@@ -80,22 +80,28 @@ the password for the prior custom bootstrap superuser, which PostgreSQL must
 retain internally, and removes any temporary `adam` operator role. The API
 continues to use only `pokemon_catalog_reader`.
 
-## Publishing
+## Authoring, Deploying, And Recovery
 
-The manual `publish-pokemon-catalog-prod` GitHub Action imports the checked-in
-SQLite catalog directly into the dedicated Postgres service. It takes a schema
-dump first, imports in one transaction, verifies the active revision, grants
-the reader role, and retains four rolling dumps by default.
+The Pokemon API reads this PostgreSQL catalog through the read-only
+`pokemon_catalog_reader` account. The editor is the normal authoring route:
+it connects through an SSH tunnel with the separate
+`pokemon_catalog_publisher` role, creates a retained PostgreSQL dump before an
+editor session, and refreshes the API cache after a normal editor exit. See
+`editor/README.md` for the launcher command.
 
-The workflow never creates a public GitHub Release. The API remains on SQLite
-until the manual `cutover-pokemon-catalog-postgres-prod` workflow runs. The
-cutover first takes an in-place temporary copy of the production SQLite file
-and any WAL sidecars, then proves byte-for-byte payload parity between that
-snapshot and PostgreSQL through the read-only account. It backs up
-`pokemon/.env`, switches only the private runtime settings, and checks
-`/readyz`. If the replacement API does not become ready, it restores both the
-prior environment and image. The SQLite file remains in place after a
-successful cutover.
+Normal `deploy-pokemon-prod` runs apply pending versioned PostgreSQL schema
+migrations before the API is recreated. They do not import, overwrite, or
+otherwise replace catalog records.
+
+`rebuild-pokemon-catalog-from-sqlite-prod` is the only SQLite-to-PostgreSQL
+import path. It is an explicit disaster-recovery workflow: it requires a
+confirmation input, takes a PostgreSQL dump first, imports in one transaction,
+verifies the active revision, and retains four rolling recovery dumps by
+default. The checked-in SQLite file remains a recovery source and parity test
+fixture, not the production source of truth.
+
+The CI data workflow no longer packages the SQLite catalog or creates public
+GitHub releases for catalog changes.
 
 ## Guardrail
 
@@ -141,3 +147,14 @@ sudo bash /tmp/repair-compose-env-access.sh /srv/pokegonexus
 
 It changes only owner/group/mode on the three private catalog env files. It
 does not rotate credentials, restart containers, or change catalog data.
+
+## Manual Cache Refresh
+
+The editor launcher handles this after a normal exit. Use the following only
+after an interrupted editor session that may have saved data:
+
+```bash
+ssh -i "$HOME/.ssh/pokegonexus_recovery_ed25519" adam@192.168.1.77 \
+  'bash -s -- /srv/pokegonexus' \
+  < ops/pokemon-catalog/refresh-api-cache-prod.sh
+```

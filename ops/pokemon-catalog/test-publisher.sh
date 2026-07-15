@@ -90,6 +90,29 @@ CATALOG_DB_CONTAINER="${container_name}" \
 bash "${repo_root}/ops/pokemon-catalog/publish-catalog-prod.sh" \
   "${repo_root}" "${deploy_root}" "${repo_root}/pokemon/data/pokego.db" "catalog-publisher-test-two"
 
+CATALOG_DB_CONTAINER="${container_name}" \
+CATALOG_EDITOR_BACKUP_KEEP=1 \
+bash "${repo_root}/ops/pokemon-catalog/backup-editor-session-prod.sh" "${deploy_root}"
+sleep 1
+CATALOG_DB_CONTAINER="${container_name}" \
+CATALOG_EDITOR_BACKUP_KEEP=1 \
+bash "${repo_root}/ops/pokemon-catalog/backup-editor-session-prod.sh" "${deploy_root}"
+
+editor_backup_count="$(find "${deploy_root}/pokemon/catalog-backups" -type f -name 'editor-*.dump' | wc -l | tr -d '[:space:]')"
+[[ "${editor_backup_count}" == "1" ]] || {
+  echo "expected one retained PostgreSQL editor backup, got ${editor_backup_count}" >&2
+  exit 1
+}
+editor_backup_path="$(find "${deploy_root}/pokemon/catalog-backups" -type f -name 'editor-*.dump' -print -quit)"
+set -a
+# shellcheck disable=SC1090
+source "${deploy_root}/pokemon/catalog-publisher.env"
+set +a
+docker exec -i \
+  -e PGPASSWORD="${CATALOG_PUBLISHER_PASSWORD}" \
+  "${container_name}" \
+  pg_restore --list < "${editor_backup_path}" >/dev/null
+
 backup_count="$(find "${deploy_root}/pokemon/catalog-backups" -type f -name 'catalog-*.dump' | wc -l | tr -d '[:space:]')"
 [[ "${backup_count}" -ge 1 ]] || {
   echo "expected a PostgreSQL catalog backup after the second publish" >&2

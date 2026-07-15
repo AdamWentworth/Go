@@ -35,6 +35,67 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v5
 
+      - name: Set Up Go For Catalog Migrations
+        uses: actions/setup-go@v5
+        with:
+          go-version: "1.26.5"
+          cache: true
+          cache-dependency-path: pokemon/go.sum
+
+      - name: Apply Pending Catalog Schema Migrations
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          deploy_root="${{ inputs.deploy_root }}"
+          pokemon_deploy_dir="${deploy_root}/pokemon"
+          compose_file="${GITHUB_WORKSPACE}/pokemon/docker-compose.yml"
+          database_env_file="${pokemon_deploy_dir}/catalog-db.env"
+          publisher_env_file="${pokemon_deploy_dir}/catalog-publisher.env"
+
+          [[ -f "${database_env_file}" ]] || {
+            echo "Catalog database environment file is missing: ${database_env_file}" >&2
+            exit 1
+          }
+          [[ -f "${publisher_env_file}" ]] || {
+            echo "Catalog publisher environment file is missing: ${publisher_env_file}" >&2
+            exit 1
+          }
+
+          docker compose \
+            --project-name pokemon \
+            --project-directory "${pokemon_deploy_dir}" \
+            -f "${compose_file}" \
+            --env-file "${database_env_file}" \
+            up -d pokemon_catalog_db
+
+          for _ in $(seq 1 30); do
+            status="$(docker inspect --format '{{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}}' pokemon_catalog_db 2>/dev/null || true)"
+            if [[ "${status}" == "healthy" ]]; then
+              break
+            fi
+            sleep 2
+          done
+          [[ "${status:-}" == "healthy" ]] || {
+            docker logs --tail 200 pokemon_catalog_db || true
+            echo "pokemon_catalog_db did not become healthy before schema migration." >&2
+            exit 1
+          }
+
+          set -a
+          # shellcheck disable=SC1090
+          source "${publisher_env_file}"
+          set +a
+          [[ -n "${CATALOG_PUBLISHER_DATABASE_URL:-}" ]] || {
+            echo "CATALOG_PUBLISHER_DATABASE_URL is missing from ${publisher_env_file}" >&2
+            exit 1
+          }
+
+          (
+            cd "${GITHUB_WORKSPACE}/pokemon"
+            go run ./cmd/catalog-migrate --database-url "${CATALOG_PUBLISHER_DATABASE_URL}"
+          )
+
       - name: Preflight Checks
         shell: bash
         run: |

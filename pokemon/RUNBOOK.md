@@ -50,21 +50,29 @@ Rollback steps:
    - `GET /readyz` returns `200`
    - Prometheus target `pokemon_data` is `up`
 
-## SQLite Backup And Restore Drill
+## Catalog PostgreSQL Operations
 
-Use the PowerShell scripts in `pokemon/scripts/`:
+`pokemon_data` reads the reference catalog from the dedicated
+`pokemon_catalog_db` PostgreSQL container. The runtime account is
+`pokemon_catalog_reader`; catalog authoring uses the separate
+`pokemon_catalog_publisher` role through the editor launcher documented in
+`editor/README.md`.
 
-- `sqlite_backup.ps1` creates timestamped backups including `-wal` and `-shm` when present.
-- `sqlite_restore_drill.ps1` launches a temporary container from a backup and validates `/readyz`.
+Normal API deployments apply any pending migrations through
+`go run ./cmd/catalog-migrate` before recreating the API container. They do not
+import SQLite data.
 
-Run backup:
+Before every production editor session, the launcher creates a compressed dump
+in `/srv/pokegonexus/pokemon/catalog-backups`. The newest eight editor-session
+dumps are retained by default. To refresh the API cache manually after an
+interrupted editor session, run:
 
-```powershell
-powershell -ExecutionPolicy Bypass -File pokemon/scripts/sqlite_backup.ps1
+```bash
+ssh -i "$HOME/.ssh/pokegonexus_recovery_ed25519" adam@192.168.1.77 \
+  'bash -s -- /srv/pokegonexus' \
+  < ops/pokemon-catalog/refresh-api-cache-prod.sh
 ```
 
-Run restore drill:
-
-```powershell
-powershell -ExecutionPolicy Bypass -File pokemon/scripts/sqlite_restore_drill.ps1 -ImageRef adamwentworth/pokemon_data:latest
-```
+The checked-in SQLite catalog is a recovery source and local parity fixture.
+Use `rebuild-pokemon-catalog-from-sqlite-prod` only for an explicitly confirmed
+recovery rebuild of the live PostgreSQL catalog.

@@ -1,4 +1,4 @@
-name: publish-pokemon-catalog-prod
+name: rebuild-pokemon-catalog-from-sqlite-prod
 
 on:
   workflow_dispatch:
@@ -13,13 +13,18 @@ on:
         required: false
         default: ""
         type: string
+      confirm_rebuild_from_sqlite:
+        description: "I understand this recovery action replaces the live PostgreSQL catalog with the checked-in SQLite copy."
+        required: true
+        default: false
+        type: boolean
 
 permissions:
   contents: read
 
 jobs:
   publish:
-    name: Publish Pokemon Catalog To PostgreSQL
+    name: Rebuild Pokemon Catalog From SQLite Recovery Copy
     runs-on: [self-hosted, linux, x64, prod]
     environment: production
     concurrency:
@@ -35,7 +40,16 @@ jobs:
           cache: true
           cache-dependency-path: pokemon/go.sum
 
-      - name: Publish Catalog With Backup And Rollback
+      - name: Require Explicit Recovery Confirmation
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ "${{ inputs.confirm_rebuild_from_sqlite }}" != "true" ]]; then
+            echo "Refusing to replace PostgreSQL catalog data without confirm_rebuild_from_sqlite=true." >&2
+            exit 1
+          fi
+
+      - name: Rebuild Catalog With Backup And Rollback
         shell: bash
         run: |
           set -euo pipefail
