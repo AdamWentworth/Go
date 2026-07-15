@@ -122,6 +122,9 @@ jobs:
       - name: PostgreSQL Reader Settings Repair Guardrail
         run: bash ../ops/pokemon-catalog/test-repair-reader-settings.sh
 
+      - name: PostgreSQL Compose Environment Access Guardrail
+        run: bash ../ops/pokemon-catalog/test-repair-compose-env-access.sh
+
       - name: Integration Contract Test
         run: go test -tags=integration ./internal/builder -run TestPokemonPayload_StableShape -v
 

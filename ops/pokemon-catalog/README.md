@@ -23,7 +23,11 @@ port is exposed to the public network.
 No credentials are committed. Provisioning writes private files under the
 production deploy root:
 
-- `pokemon/catalog-db.env`: mode 600 container bootstrap credential.
+- `pokemon/catalog-db.env`: container bootstrap credential. When provisioned
+  through `sudo`, it is mode 640 for `root` and the deployment runner group so
+  Compose can resolve the full service stack during an API deployment. That
+  runner already has Docker control on this single-node host, so it can inspect
+  container environments regardless of the file mode.
 - `pokemon/catalog-publisher.env`: publisher-only connection details. When
   provisioned through `sudo`, it is mode 640 for `root` and the invoking
   deployment-runner user's group so the self-hosted publish workflow can read
@@ -101,3 +105,13 @@ It derives a loopback-only URL for the existing read-only account and changes
 the reader file to `root:<deployment-runner-group>` mode 640. It does not alter
 the database, catalog contents, publisher credentials, SQLite file, or running
 Pokemon API.
+
+The same hosts also need the bootstrap Compose env file readable to the Docker
+deployment runner. Copy `repair-compose-env-access.sh` to the host and run:
+
+```bash
+sudo bash /tmp/repair-compose-env-access.sh /srv/pokegonexus
+```
+
+It changes only owner/group/mode on the three private catalog env files. It
+does not rotate credentials, restart containers, or change catalog data.

@@ -177,8 +177,12 @@ parity_url="postgres://${reader_user}:${reader_password}@${parity_host}:${parity
 chmod 600 "${publisher_env_file}" "${reader_env_file}"
 if [[ "${EUID}" -eq 0 && -n "${SUDO_USER:-}" ]]; then
   runtime_group="$(id -gn "${SUDO_USER}")"
-  chown root:"${runtime_group}" "${publisher_env_file}" "${reader_env_file}"
-  chmod 640 "${publisher_env_file}" "${reader_env_file}"
+  # The deployment runner already has Docker control on this single-node host,
+  # which permits inspecting a container's environment. Keep all Compose
+  # service env files consistently readable by that runner so normal API
+  # deploys and the cutover do not fail while resolving the database service.
+  chown root:"${runtime_group}" "${database_env_file}" "${publisher_env_file}" "${reader_env_file}"
+  chmod 640 "${database_env_file}" "${publisher_env_file}" "${reader_env_file}"
 fi
 
 echo "Provisioned dedicated PostgreSQL catalog container: ${catalog_container}"
