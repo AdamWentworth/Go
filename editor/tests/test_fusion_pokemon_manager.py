@@ -41,13 +41,23 @@ class FusionPokemonManagerTests(TempDBTestCase):
         new_data[7] = 999  # attack
         new_data[8] = 998  # defense
         new_data[9] = 997  # stamina
+        new_data[13] = "0"  # available
+        new_data[14] = "1"  # shiny_available
+        new_data[15] = "1 in 64"  # shiny_rarity
 
         self.manager.update_fusion_data(fusion_id, new_data)
         updated = self.row(
-            "SELECT name, attack, defense, stamina FROM fusion_pokemon WHERE fusion_id = ?",
+            """
+            SELECT name, attack, defense, stamina, available, shiny_available, shiny_rarity
+            FROM fusion_pokemon
+            WHERE fusion_id = ?
+            """,
             (fusion_id,),
         )
-        self.assertEqual(updated, ("Fusion Unit Test Name", 999, 998, 997))
+        self.assertEqual(
+            updated,
+            ("Fusion Unit Test Name", 999, 998, 997, 0, 1, "1 in 64"),
+        )
 
     def test_update_fusion_moveset_replaces_with_given_set(self):
         fusion_id = self.scalar("SELECT fusion_id FROM fusion_pokemon LIMIT 1")

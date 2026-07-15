@@ -2,11 +2,12 @@ import tkinter as tk
 from tkinter import messagebox, ttk
 
 from database_manager import DatabaseManager
+from config import catalog_database_target
 
 
 class MoveDetailsWindow:
     def __init__(self, parent, move_id, details, db_manager=None, on_commit=None):
-        self.db_manager = db_manager if db_manager is not None else DatabaseManager("../pokemon/data/pokego.db")
+        self.db_manager = db_manager if db_manager is not None else DatabaseManager(catalog_database_target())
         self.on_commit = on_commit
         self.move_id = int(move_id) if move_id is not None else None
         self.details = details

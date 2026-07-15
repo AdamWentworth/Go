@@ -43,7 +43,7 @@ class MaxPokemonManager:
 
         cur.execute(
             """
-            INSERT OR IGNORE INTO max_pokemon (
+            INSERT INTO max_pokemon (
                 pokemon_id,
                 dynamax,
                 gigantamax,
@@ -51,12 +51,12 @@ class MaxPokemonManager:
                 gigantamax_release_date,
                 gigantamax_image_url,
                 shiny_gigantamax_image_url
-            ) VALUES (?, 0, 0, '', '', '', '')
+            ) VALUES (?, ?, ?, '', '', '', '')
             """,
-            (pokemon_id,)
+            (pokemon_id, self.conn.bool_value(0), self.conn.bool_value(0))
         )
         self.conn.commit()
-        return cur.lastrowid  # 0 → row already present
+        return pokemon_id if self.conn.is_postgres else cur.lastrowid
 
     # ──────────────────────────────────────────────────────────────────────────
     # Update
@@ -85,8 +85,8 @@ class MaxPokemonManager:
              WHERE pokemon_id = ?
             """,
             (
-                dynamax,
-                gigantamax,
+                self.conn.bool_value(dynamax),
+                self.conn.bool_value(gigantamax),
                 dynamax_release_date,
                 gigantamax_release_date,
                 gigantamax_image_url,

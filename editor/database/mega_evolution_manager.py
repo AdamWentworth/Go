@@ -28,6 +28,15 @@ class MegaEvolutionManager:
 
     def add_mega_evolution(self, pokemon_id):
         cursor = self.conn.get_cursor()
+        mega_id = self.conn.next_identifier("mega_evolution", "id")
+        if mega_id is not None:
+            insert_query = """
+                INSERT INTO mega_evolution (id, pokemon_id, mega_energy_cost, attack, defense, stamina, image_url, image_url_shiny, sprite_url, primal, form, type_1_id, type_2_id)
+                VALUES (?, ?, 0, 0, 0, 0, '', '', '', 'None', '', NULL, NULL)
+            """
+            cursor.execute(insert_query, (mega_id, pokemon_id))
+            self.conn.commit()
+            return mega_id
         insert_query = """
             INSERT INTO mega_evolution (pokemon_id, mega_energy_cost, attack, defense, stamina, image_url, image_url_shiny, sprite_url, primal, form, type_1_id, type_2_id)
             VALUES (?, 0, 0, 0, 0, '', '', '', 'None', '', NULL, NULL)

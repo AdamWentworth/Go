@@ -91,7 +91,10 @@ class PokemonManager:
         WHERE pokemon_id=?
         """
         # Ensure that data has 19 items and pokemon_id is the 20th item
-        parameters = tuple(data) + (pokemon_id,)
+        parameters = list(data)
+        parameters[14] = self.conn.bool_value(parameters[14])
+        parameters[15] = self.conn.bool_value(parameters[15])
+        parameters = tuple(parameters) + (pokemon_id,)
         cursor.execute(update_query, parameters)
         self.conn.commit()
 
@@ -114,13 +117,19 @@ class PokemonManager:
                         UPDATE pokemon_moves
                         SET legacy = ?
                         WHERE pokemon_id = ? AND move_id = ?
-                    """, (is_legacy, pokemon_id, move_id))
+                    """, (self.conn.bool_value(is_legacy), pokemon_id, move_id))
             else:
-                # Insert new move
-                cursor.execute("""
-                    INSERT INTO pokemon_moves (pokemon_id, move_id, legacy)
-                    VALUES (?, ?, ?)
-                """, (pokemon_id, move_id, is_legacy))
+                if self.conn.is_postgres:
+                    move_link_id = self.conn.next_identifier("pokemon_moves", "id")
+                    cursor.execute("""
+                        INSERT INTO pokemon_moves (id, pokemon_id, move_id, legacy)
+                        VALUES (?, ?, ?, ?)
+                    """, (move_link_id, pokemon_id, move_id, self.conn.bool_value(is_legacy)))
+                else:
+                    cursor.execute("""
+                        INSERT INTO pokemon_moves (pokemon_id, move_id, legacy)
+                        VALUES (?, ?, ?)
+                    """, (pokemon_id, move_id, is_legacy))
 
             processed_moves.add(move_id)
 

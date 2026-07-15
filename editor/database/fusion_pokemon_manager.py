@@ -73,7 +73,12 @@ class FusionPokemonManager:
             generation=?, available=?, shiny_available=?, shiny_rarity=?, date_available=?, date_shiny_available=?
         WHERE fusion_id=?
         """
-        parameters = tuple(data) + (fusion_id,)
+        parameters = list(data)
+        # data excludes fusion_id: available and shiny_available are positions
+        # 13 and 14. Keep shiny_rarity and the availability dates untouched.
+        parameters[13] = self.conn.bool_value(parameters[13])
+        parameters[14] = self.conn.bool_value(parameters[14])
+        parameters = tuple(parameters) + (fusion_id,)
         cursor.execute(update_query, parameters)
         self.conn.commit()
 
@@ -96,7 +101,7 @@ class FusionPokemonManager:
                         SET legacy = ?
                         WHERE fusion_id = ? AND move_id = ?
                         """,
-                        (is_legacy, fusion_id, move_id),
+                        (self.conn.bool_value(is_legacy), fusion_id, move_id),
                     )
             else:
                 cursor.execute(
@@ -104,7 +109,7 @@ class FusionPokemonManager:
                     INSERT INTO fusion_moveset (fusion_id, move_id, legacy)
                     VALUES (?, ?, ?)
                     """,
-                    (fusion_id, move_id, is_legacy),
+                    (fusion_id, move_id, self.conn.bool_value(is_legacy)),
                 )
 
             processed_moves.add(move_id)
@@ -119,6 +124,8 @@ class FusionPokemonManager:
         self.conn.commit()
 
     def _ensure_fusion_background_combo_rules_table(self):
+        if self.conn.is_postgres:
+            return
         cursor = self.conn.get_cursor()
         cursor.execute(
             """
@@ -191,7 +198,7 @@ class FusionPokemonManager:
         member1_background_id = int(member1_background_id)
         member2_background_id = int(member2_background_id)
         combo_background_id = int(combo_background_id)
-        active_value = 1 if int(is_active) else 0
+        active_value = self.conn.bool_value(1 if int(is_active) else 0)
 
         cursor = self.conn.get_cursor()
         cursor.execute(
@@ -267,7 +274,7 @@ class FusionPokemonManager:
                 int(member1_background_id),
                 int(member2_background_id),
                 int(combo_background_id),
-                1 if int(is_active) else 0,
+                self.conn.bool_value(1 if int(is_active) else 0),
                 notes,
                 int(rule_id),
             ),

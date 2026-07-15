@@ -14,8 +14,8 @@ from database.background_pokemon_manager import BackgroundPokemonManager
 from database.move_manager import MoveManager
 
 class DatabaseManager:
-    def __init__(self, db_path):
-        self.conn = DatabaseConnection(db_path)
+    def __init__(self, db_target):
+        self.conn = DatabaseConnection(db_target)
         self.pokemon_manager = PokemonManager(self.conn)
         self.shadow_pokemon_manager = ShadowPokemonManager(self.conn)
         self.costume_pokemon_manager = CostumePokemonManager(self.conn)

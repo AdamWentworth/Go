@@ -1,7 +1,9 @@
 package catalogimport
 
 import (
+	"context"
 	"testing"
+	"testing/fstest"
 	"time"
 )
 
@@ -32,6 +34,39 @@ func TestParseBool(t *testing.T) {
 				t.Fatalf("ParseBool(%v) = %v, want %v", testCase.input, got, testCase.want)
 			}
 		})
+	}
+}
+
+func TestCatalogMigrationNamesAreOrdered(t *testing.T) {
+	t.Parallel()
+
+	files := fstest.MapFS{
+		"0010_later.sql": {Data: []byte("SELECT 10;")},
+		"0002_next.sql":  {Data: []byte("SELECT 2;")},
+		"0001_first.sql": {Data: []byte("SELECT 1;")},
+		"notes.txt":      {Data: []byte("ignored")},
+	}
+
+	got, err := CatalogMigrationNames(files)
+	if err != nil {
+		t.Fatalf("CatalogMigrationNames() error = %v", err)
+	}
+	want := []string{"0001_first.sql", "0002_next.sql", "0010_later.sql"}
+	if len(got) != len(want) {
+		t.Fatalf("CatalogMigrationNames() = %v, want %v", got, want)
+	}
+	for index := range want {
+		if got[index] != want[index] {
+			t.Fatalf("CatalogMigrationNames() = %v, want %v", got, want)
+		}
+	}
+}
+
+func TestMigrateRequiresDatabaseURL(t *testing.T) {
+	t.Parallel()
+
+	if err := Migrate(context.Background(), "  "); err == nil {
+		t.Fatal("expected Migrate to reject an empty database URL")
 	}
 }
 

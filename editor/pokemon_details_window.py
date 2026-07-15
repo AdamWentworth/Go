@@ -3,6 +3,7 @@ import os
 import tkinter as tk
 
 from database_manager import DatabaseManager
+from config import catalog_database_target
 from details_window.ui_setup import create_scrollable_window, bind_scroll_events
 from frames.pokemon_background_frame import PokemonBackgroundFrame
 from frames.pokemon_costume_image_frame import PokemonCostumeImageFrame
@@ -23,7 +24,7 @@ from utils.image_cache import LocalImagePreviewCache
 class PokemonDetailsWindow:
     def __init__(self, parent, pokemon_id, details, db_manager=None):
         self.pokemon_id = pokemon_id
-        self.db_manager = db_manager if db_manager is not None else DatabaseManager("../pokemon/data/pokego.db")
+        self.db_manager = db_manager if db_manager is not None else DatabaseManager(catalog_database_target())
 
         self.shadow_pokemon_data = self.db_manager.fetch_shadow_pokemon_data(pokemon_id)
         self.max_pokemon_row = self.db_manager.fetch_max_pokemon(pokemon_id)

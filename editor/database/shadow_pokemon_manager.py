@@ -32,15 +32,23 @@ class ShadowPokemonManager:
                 WHERE pokemon_id = ?
             """
         else:
-            update_query = """
-                INSERT INTO shadow_pokemon (shiny_available, apex, date_available, date_shiny_available,
-                    image_url_shadow, image_url_shiny_shadow, pokemon_id)
-                VALUES (?, ?, ?, ?, ?, ?, ?)
-            """
+            shadow_id = self.conn.next_identifier("shadow_pokemon", "id")
+            if shadow_id is not None:
+                update_query = """
+                    INSERT INTO shadow_pokemon (id, shiny_available, apex, date_available, date_shiny_available,
+                        image_url_shadow, image_url_shiny_shadow, pokemon_id)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                """
+            else:
+                update_query = """
+                    INSERT INTO shadow_pokemon (shiny_available, apex, date_available, date_shiny_available,
+                        image_url_shadow, image_url_shiny_shadow, pokemon_id)
+                    VALUES (?, ?, ?, ?, ?, ?, ?)
+                """
         
         parameters = (
-            shadow_data.get('Shiny Available'),
-            shadow_data.get('Apex'),
+            self.conn.legacy_scalar_value(shadow_data.get('Shiny Available')),
+            self.conn.legacy_scalar_value(shadow_data.get('Apex')),
             shadow_data.get('Date Available'),
             shadow_data.get('Date Shiny Available'),
             shadow_data.get('Image URL Shadow'),
@@ -48,7 +56,10 @@ class ShadowPokemonManager:
             pokemon_id
         )
 
-        cursor.execute(update_query, parameters)
+        if exists or shadow_id is None:
+            cursor.execute(update_query, parameters)
+        else:
+            cursor.execute(update_query, (shadow_id,) + parameters)
         self.conn.commit()
 
     def fetch_shadow_costume_data(self, pokemon_id):
@@ -80,11 +91,20 @@ class ShadowPokemonManager:
             cursor.execute(update_query, (date_available, date_shiny_available, image_url_shadow_costume, image_url_shiny_shadow_costume, record[0]))
         else:
             insert_query = """
-                INSERT INTO shadow_costume_pokemon (shadow_id, costume_id, date_available, date_shiny_available, 
+                INSERT INTO shadow_costume_pokemon (id, shadow_id, costume_id, date_available, date_shiny_available,
                                                     image_url_shadow_costume, image_url_shiny_shadow_costume)
-                VALUES (?, ?, ?, ?, ?, ?)
+                VALUES (?, ?, ?, ?, ?, ?, ?)
             """
-            cursor.execute(insert_query, (shadow_id, costume_id, date_available, date_shiny_available, image_url_shadow_costume, image_url_shiny_shadow_costume))
+            link_id = self.conn.next_identifier("shadow_costume_pokemon", "id")
+            if link_id is None:
+                insert_query = """
+                    INSERT INTO shadow_costume_pokemon (shadow_id, costume_id, date_available, date_shiny_available,
+                                                        image_url_shadow_costume, image_url_shiny_shadow_costume)
+                    VALUES (?, ?, ?, ?, ?, ?)
+                """
+                cursor.execute(insert_query, (shadow_id, costume_id, date_available, date_shiny_available, image_url_shadow_costume, image_url_shiny_shadow_costume))
+            else:
+                cursor.execute(insert_query, (link_id, shadow_id, costume_id, date_available, date_shiny_available, image_url_shadow_costume, image_url_shiny_shadow_costume))
 
         self.conn.commit()
 

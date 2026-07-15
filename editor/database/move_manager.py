@@ -61,10 +61,38 @@ class MoveManager:
 
     def add_move(self, move_id, data):
         cursor = self.conn.get_cursor()
+        values = list(data)
+        for index in (8, 10, 11, 12):
+            values[index] = self.conn.bool_value(values[index])
         if move_id is None:
-            cursor.execute(
-                """
-                INSERT INTO moves (
+            if self.conn.is_postgres:
+                move_id = self.conn.next_identifier("moves", "move_id")
+                cursor.execute(
+                    """
+                    INSERT INTO moves (
+                        move_id,
+                        name,
+                        type_id,
+                        raid_power,
+                        pvp_power,
+                        raid_energy,
+                        pvp_energy,
+                        raid_cooldown,
+                        pvp_turns,
+                        is_fast,
+                        fusion_id,
+                        shadow,
+                        purified,
+                        apex
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    """,
+                    (move_id,) + tuple(values),
+                )
+                new_move_id = move_id
+            else:
+                cursor.execute(
+                    """
+                    INSERT INTO moves (
                     name,
                     type_id,
                     raid_power,
@@ -79,10 +107,10 @@ class MoveManager:
                     purified,
                     apex
                 ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                """,
-                data,
-            )
-            new_move_id = cursor.lastrowid
+                    """,
+                    tuple(values),
+                )
+                new_move_id = cursor.lastrowid
         else:
             cursor.execute(
                 """
@@ -103,7 +131,7 @@ class MoveManager:
                     apex
                 ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
-                (int(move_id),) + tuple(data),
+                (int(move_id),) + tuple(values),
             )
             new_move_id = int(move_id)
         self.conn.commit()
@@ -111,6 +139,9 @@ class MoveManager:
 
     def update_move(self, move_id, data):
         cursor = self.conn.get_cursor()
+        values = list(data)
+        for index in (8, 10, 11, 12):
+            values[index] = self.conn.bool_value(values[index])
         cursor.execute(
             """
             UPDATE moves
@@ -130,7 +161,7 @@ class MoveManager:
                 apex = ?
             WHERE move_id = ?
             """,
-            tuple(data) + (int(move_id),),
+            tuple(values) + (int(move_id),),
         )
         self.conn.commit()
 

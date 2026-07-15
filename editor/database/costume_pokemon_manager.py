@@ -35,6 +35,7 @@ class CostumePokemonManager:
             updated_details[shiny_index] = None  # Or raise an error if an invalid value is passed
 
         updated_details = [None if detail == '' else detail for detail in updated_details]
+        updated_details[1] = self.conn.bool_value(updated_details[1])
         cursor.execute(query, (*updated_details, costume_id))
         self.conn.commit()
 
@@ -47,9 +48,12 @@ class CostumePokemonManager:
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
         """
         values = (pokemon_id,) + tuple(costume_details.values())
-        cursor.execute(query, values)
+        values = list(values)
+        values[2] = self.conn.bool_value(values[2])
+        values = tuple(values)
+        new_costume_id = self.conn.insert_returning_id(cursor, query, values, "costume_id")
         self.conn.commit()
-        return cursor.lastrowid
+        return new_costume_id
 
     def delete_costume(self, costume_id):
         cursor = self.conn.get_cursor()

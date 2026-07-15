@@ -5,12 +5,20 @@ on:
     paths:
       - "editor/**"
       - "pokemon/data/pokego.db"
+      - "pokemon/migrations/**"
+      - "pokemon/internal/catalogimport/**"
+      - "pokemon/go.mod"
+      - "pokemon/go.sum"
       - ".github/workflows/ci-editor.yml"
   push:
     branches: ["main", "master"]
     paths:
       - "editor/**"
       - "pokemon/data/pokego.db"
+      - "pokemon/migrations/**"
+      - "pokemon/internal/catalogimport/**"
+      - "pokemon/go.mod"
+      - "pokemon/go.sum"
       - ".github/workflows/ci-editor.yml"
   workflow_dispatch: {}
 
@@ -28,6 +36,12 @@ jobs:
         with:
           python-version: "3.11"
 
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.26.5"
+          cache: true
+          cache-dependency-path: pokemon/go.sum
+
       - name: Install Editor Test Dependencies
         run: |
           python -m pip install --upgrade pip
@@ -38,3 +52,6 @@ jobs:
 
       - name: Run Editor Unit Tests
         run: python -m unittest discover -s editor/tests -p "test_*.py" -v
+
+      - name: Prove Editor PostgreSQL Compatibility
+        run: bash editor/tests/test-postgres-database-manager.sh

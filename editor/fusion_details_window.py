@@ -4,6 +4,7 @@ from tkinter import messagebox
 import os
 
 from database_manager import DatabaseManager
+from config import catalog_database_target
 from frames.fusion_info_frames import FusionInfoFrames
 from frames.fusion_image_frames import FusionImageFrames
 from frames.fusion_background_frame import FusionBackgroundFrame
@@ -14,7 +15,7 @@ from utils.image_cache import LocalImagePreviewCache
 class FusionDetailsWindow:
     def __init__(self, parent, fusion_id, details, db_manager=None):
         self.fusion_id = int(fusion_id)
-        self.db_manager = db_manager if db_manager is not None else DatabaseManager('../pokemon/data/pokego.db')
+        self.db_manager = db_manager if db_manager is not None else DatabaseManager(catalog_database_target())
         self.type_ids = self.db_manager.fetch_type_ids()
 
         self.fusion_data, self.moves = details

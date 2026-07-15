@@ -6,6 +6,14 @@ class EvolutionManager:
 
     def add_evolves_to(self, pokemon_id, evolves_to_id):
         cursor = self.conn.get_cursor()
+        evolution_id = self.conn.next_identifier("pokemon_evolutions", "evolution_id")
+        if evolution_id is not None:
+            cursor.execute("""
+                INSERT INTO pokemon_evolutions (evolution_id, pokemon_id, evolves_to)
+                VALUES (?, ?, ?)
+            """, (evolution_id, pokemon_id, evolves_to_id))
+            self.conn.commit()
+            return evolution_id
         cursor.execute("""
             INSERT INTO pokemon_evolutions (pokemon_id, evolves_to)
             VALUES (?, ?)
@@ -38,7 +46,14 @@ class EvolutionManager:
             SET evolves_to = ?, candies_needed = ?, trade_discount = ?, item_id = ?, other = ?
             WHERE evolution_id = ?
         """
-        parameters = (evolves_to_id, candies_needed, trade_discount, item_id, other, evolution_id)
+        parameters = (
+            evolves_to_id,
+            candies_needed,
+            self.conn.legacy_scalar_value(trade_discount),
+            item_id,
+            other,
+            evolution_id,
+        )
         cursor.execute(query, parameters)
         self.conn.commit()
 
