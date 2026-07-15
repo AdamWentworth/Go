@@ -2,9 +2,9 @@
 set -euo pipefail
 
 deploy_root="${1:-/srv/pokegonexus}"
-compose_source="${2:-${deploy_root}/pokemon/catalog-postgres.compose.yml}"
+compose_source="${2:-${deploy_root}/pokemon/docker-compose.yml}"
 pokemon_dir="${deploy_root}/pokemon"
-compose_file="${CATALOG_COMPOSE_FILE:-${pokemon_dir}/catalog-postgres.compose.yml}"
+compose_file="${CATALOG_COMPOSE_FILE:-${pokemon_dir}/docker-compose.yml}"
 database_env_file="${CATALOG_DATABASE_ENV_FILE:-${pokemon_dir}/catalog-db.env}"
 publisher_env_file="${CATALOG_PUBLISHER_ENV_FILE:-${pokemon_dir}/catalog-publisher.env}"
 reader_env_file="${CATALOG_READER_ENV_FILE:-${pokemon_dir}/catalog-postgres.env}"
@@ -13,7 +13,8 @@ admin_user="${CATALOG_ADMIN_USER:-pokemon_catalog_admin}"
 publisher_user="${CATALOG_PUBLISHER_USER:-pokemon_catalog_publisher}"
 reader_user="${CATALOG_READER_USER:-pokemon_catalog_reader}"
 catalog_container="${CATALOG_DB_CONTAINER:-pokemon_catalog_db}"
-network_name="${CATALOG_NETWORK_NAME:-pokemon_catalog_internal}"
+compose_project_name="${CATALOG_COMPOSE_PROJECT_NAME:-pokemon}"
+edge_network_name="${POKEMON_EDGE_NETWORK:-pokemon_edge}"
 publisher_host="${CATALOG_PUBLISHER_HOST:-127.0.0.1}"
 publisher_port="${CATALOG_POSTGRES_HOST_PORT:-5433}"
 reader_host="${CATALOG_READER_HOST:-${catalog_container}}"
@@ -46,9 +47,7 @@ if [[ "${compose_source}" != "${compose_file}" ]]; then
   install -m 644 "${compose_source}" "${compose_file}"
 fi
 
-if ! docker network inspect "${network_name}" >/dev/null 2>&1; then
-  docker network create "${network_name}" >/dev/null
-fi
+docker network inspect "${edge_network_name}" >/dev/null 2>&1 || fail "Pokemon edge network not found: ${edge_network_name}"
 
 admin_password="$(openssl rand -hex 32)"
 publisher_password="$(openssl rand -hex 32)"
@@ -61,17 +60,16 @@ umask 077
   printf 'POSTGRES_USER=%q\n' "${admin_user}"
   printf 'POSTGRES_PASSWORD=%q\n' "${admin_password}"
   printf 'CATALOG_DB_CONTAINER=%q\n' "${catalog_container}"
-  printf 'CATALOG_NETWORK_NAME=%q\n' "${network_name}"
   printf 'CATALOG_POSTGRES_VOLUME_NAME=%q\n' "${volume_name}"
   printf 'CATALOG_POSTGRES_HOST_PORT=%q\n' "${publisher_port}"
 } > "${database_env_file}"
 chmod 600 "${database_env_file}"
 
 CATALOG_DB_CONTAINER="${catalog_container}" \
-CATALOG_NETWORK_NAME="${network_name}" \
 CATALOG_POSTGRES_HOST_PORT="${publisher_port}" \
+POKEMON_EDGE_NETWORK="${edge_network_name}" \
 docker compose \
-  --project-name pokemon-catalog \
+  --project-name "${compose_project_name}" \
   --project-directory "${pokemon_dir}" \
   -f "${compose_file}" \
   --env-file "${database_env_file}" \

@@ -31,32 +31,32 @@ jobs:
 
           deploy_root="${{ inputs.deploy_root }}"
           deploy_dir="${deploy_root}/pokemon"
-          source_compose="${GITHUB_WORKSPACE}/pokemon/catalog-postgres.compose.yml"
-          compose_file="${deploy_dir}/catalog-postgres.compose.yml"
+          source_compose="${GITHUB_WORKSPACE}/pokemon/docker-compose.yml"
+          compose_file="${deploy_dir}/docker-compose.yml"
           env_file="${deploy_dir}/catalog-db.env"
           container_name="pokemon_catalog_db"
-          network_name="pokemon_catalog_internal"
+          pokemon_env_file="${deploy_dir}/.env"
 
           [[ -f "${env_file}" ]] || {
             echo "Catalog database is not provisioned: ${env_file} is missing." >&2
             exit 1
           }
+          [[ -f "${pokemon_env_file}" ]] || {
+            echo "Pokemon service environment file is missing: ${pokemon_env_file}" >&2
+            exit 1
+          }
           install -d -m 700 "${deploy_dir}"
           install -m 644 "${source_compose}" "${compose_file}"
 
-          if ! docker network inspect "${network_name}" >/dev/null 2>&1; then
-            docker network create "${network_name}" >/dev/null
-          fi
-
           docker compose \
-            --project-name pokemon-catalog \
+            --project-name pokemon \
             --project-directory "${deploy_dir}" \
             -f "${compose_file}" \
             --env-file "${env_file}" \
             config >/dev/null
 
           docker compose \
-            --project-name pokemon-catalog \
+            --project-name pokemon \
             --project-directory "${deploy_dir}" \
             -f "${compose_file}" \
             --env-file "${env_file}" \

@@ -1,7 +1,8 @@
 # Pokemon Catalog PostgreSQL Flow
 
-The Pokemon reference catalog has its own PostgreSQL service boundary. It is
-not stored in the location/PostGIS database: this keeps ownership, storage,
+The Pokemon reference catalog has its own PostgreSQL service boundary, defined
+directly beside `pokemon_data` in `pokemon/docker-compose.yml`. It is not
+stored in the location/PostGIS database: this keeps ownership, storage,
 backups, upgrades, and future cloud placement independent.
 
 ## Runtime Topology
@@ -9,8 +10,8 @@ backups, upgrades, and future cloud placement independent.
 - `pokemon_catalog_db`: dedicated official PostgreSQL container, pinned by
   digest for reproducible deployments.
 - `pokemon_catalog_pgdata`: its named Docker volume.
-- `pokemon_catalog_internal`: an isolated Docker network. The Pokemon API joins
-  it only during the later PostgreSQL cutover.
+- `pokemon_catalog_internal`: an isolated Compose-managed Docker network shared
+  only by `pokemon_data` and `pokemon_catalog_db`.
 - `pokemon_catalog_publisher`: schema owner used only by catalog publishing.
 - `pokemon_catalog_reader`: read-only account used by the Pokemon API after
   cutover.
@@ -28,18 +29,18 @@ production deploy root:
 
 ## First Provisioning
 
-Copy `pokemon/catalog-postgres.compose.yml` and
-`ops/pokemon-catalog/provision-postgres.sh` to the production host, then run:
+Copy `pokemon/docker-compose.yml` and `ops/pokemon-catalog/provision-postgres.sh`
+to the production host, then run:
 
 ```bash
 sudo bash /tmp/provision-postgres.sh \
   /srv/pokegonexus \
-  /tmp/catalog-postgres.compose.yml
+  /tmp/pokemon-docker-compose.yml
 ```
 
-It creates the isolated Docker network, starts the dedicated database,
-generates private credentials, and creates the read/write roles. It does not
-change `pokemon/.env`, restart the Pokemon API, or change serving behavior.
+It installs the service compose file, starts the dedicated database, generates
+private credentials, and creates the read/write roles. It does not change
+`pokemon/.env`, restart the Pokemon API, or change serving behavior.
 
 After provisioning, `deploy-pokemon-catalog-db-prod` is the manual workflow
 that updates only this database service's compose configuration and verifies
@@ -65,7 +66,7 @@ Run the full publisher drill locally or in CI:
 bash ops/pokemon-catalog/test-publisher.sh
 ```
 
-It starts the same dedicated compose service in an ephemeral environment,
+It starts the same `pokemon/docker-compose.yml` database service in an ephemeral environment,
 provisions roles, proves the reader can select but cannot write, publishes two
 catalog revisions, then restores the retained dump and verifies the prior
 revision is active again.

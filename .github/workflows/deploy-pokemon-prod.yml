@@ -44,6 +44,7 @@ jobs:
           POKEMON_DEPLOY_DIR="${DEPLOY_ROOT}/pokemon"
           COMPOSE_FILE="${GITHUB_WORKSPACE}/pokemon/docker-compose.yml"
           ENV_FILE="${POKEMON_DEPLOY_DIR}/.env"
+          CATALOG_DB_ENV_FILE="${POKEMON_DEPLOY_DIR}/catalog-db.env"
           NEW_DB_DIR="${POKEMON_DEPLOY_DIR}/data"
           OLD_DB_DIR="${DEPLOY_ROOT}/pokemon_data/data"
           DB_FILE="pokego.db"
@@ -60,6 +61,12 @@ jobs:
 
           if [[ ! -f "${ENV_FILE}" ]]; then
             echo "Env file not found: ${ENV_FILE}" >&2
+            exit 1
+          fi
+
+          if [[ ! -f "${CATALOG_DB_ENV_FILE}" ]]; then
+            echo "Catalog database environment file not found: ${CATALOG_DB_ENV_FILE}" >&2
+            echo "Provision the Pokemon catalog PostgreSQL service before deploying this compose stack." >&2
             exit 1
           fi
 
@@ -144,6 +151,13 @@ jobs:
             echo "Removing existing ${CONTAINER_NAME} from compose project ${EXISTING_PROJECT} before deploy."
             docker rm -f "${CONTAINER_NAME}"
           fi
+
+          echo "Ensuring pokemon_catalog_db is running before deploying ${SERVICE_NAME}"
+          docker compose \
+            --project-directory "${POKEMON_DEPLOY_DIR}" \
+            -f "${COMPOSE_FILE}" \
+            --env-file "${ENV_FILE}" \
+            up -d pokemon_catalog_db
 
           echo "Deploying ${SERVICE_NAME} with image ${DEPLOY_IMAGE}"
           POKEMON_IMAGE="${DEPLOY_IMAGE}" docker compose \

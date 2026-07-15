@@ -11,11 +11,39 @@ services:
     volumes:
       - ./data:/usr/src/app/data
     restart: unless-stopped
+    depends_on:
+      pokemon_catalog_db:
+        condition: service_healthy
     networks:
       pokemon_edge:
         ipv4_address: 172.30.0.12
+      pokemon_catalog_internal: {}
+
+  pokemon_catalog_db:
+    image: postgres@sha256:742f40ea20b9ff2ff31db5458d127452988a2164df9e17441e191f3b72252193
+    container_name: ${CATALOG_DB_CONTAINER:-pokemon_catalog_db}
+    restart: unless-stopped
+    env_file:
+      - ./catalog-db.env
+    ports:
+      - "127.0.0.1:${CATALOG_POSTGRES_HOST_PORT:-5433}:5432"
+    volumes:
+      - pokemon_catalog_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U \"$$POSTGRES_USER\" -d \"$$POSTGRES_DB\""]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+    networks:
+      - pokemon_catalog_internal
+
+volumes:
+  pokemon_catalog_pgdata:
+    name: ${CATALOG_POSTGRES_VOLUME_NAME:-pokemon_catalog_pgdata}
 
 networks:
   pokemon_edge:
     external: true
-    name: pokemon_edge
+    name: ${POKEMON_EDGE_NETWORK:-pokemon_edge}
+  pokemon_catalog_internal:

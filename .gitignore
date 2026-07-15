@@ -33,3 +33,7 @@ build/
 # Local database/backups
 pokemon/data/*.bak*
 assets/images/backup/
+pokemon/catalog-db.env
+pokemon/catalog-publisher.env
+pokemon/catalog-postgres.env
+pokemon/catalog-backups/
