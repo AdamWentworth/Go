@@ -19,8 +19,11 @@ def reexec_with_editor_venv() -> None:
     if not venv_python.is_file():
         return
 
+    # A venv's Python executable is normally a symlink to the system Python,
+    # so comparing executable paths incorrectly treats the system interpreter
+    # as the venv. sys.prefix identifies the active runtime reliably.
     try:
-        already_using_venv = Path(sys.executable).resolve() == venv_python.resolve()
+        already_using_venv = Path(sys.prefix).resolve() == venv_python.parent.parent.resolve()
     except OSError:
         already_using_venv = False
     if already_using_venv:
