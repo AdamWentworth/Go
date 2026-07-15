@@ -51,7 +51,7 @@ jobs:
         run: go test ./...
 
       - name: PostgreSQL Catalog Contract
-        run: bash scripts/test-postgres-catalog.sh
+        run: bash scripts/test-postgres-catalog.sh coverage_builder_int.out
 
       - name: PostgreSQL Reader Settings Repair Guardrail
         run: bash ../ops/pokemon-catalog/test-repair-reader-settings.sh
@@ -74,7 +74,6 @@ jobs:
 
           go test -count=1 -coverprofile coverage_api.out ./internal/api
           go test -count=1 -coverprofile coverage_cache.out ./internal/cache
-          go test -count=1 -coverprofile coverage_builder_int.out ./internal/builder
 
           api_cov=$(go tool cover -func=coverage_api.out | awk '/^total:/ {gsub("%","",$3); print $3}')
           cache_cov=$(go tool cover -func=coverage_cache.out | awk '/^total:/ {gsub("%","",$3); print $3}')

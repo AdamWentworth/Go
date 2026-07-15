@@ -2,6 +2,7 @@
 set -euo pipefail
 
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+coverprofile="${1:-}"
 container_name="pokegonexus-catalog-test-${RANDOM}"
 database_url="postgres://catalog:catalog-test-password@127.0.0.1:55432/pokemon_catalog_test?sslmode=disable"
 fixture_path="${repo_root}/editor/tests/postgres_catalog_fixture.sql"
@@ -41,5 +42,9 @@ docker exec -i "${container_name}" \
 
 (
   cd "${repo_root}/pokemon"
-  POSTGRES_TEST_URL="${database_url}" go test -count=1 -tags=integration ./internal/builder
+  test_args=(-count=1 -tags=integration)
+  if [[ -n "${coverprofile}" ]]; then
+    test_args+=("-coverprofile=${coverprofile}")
+  fi
+  POSTGRES_TEST_URL="${database_url}" go test "${test_args[@]}" ./internal/builder
 )
