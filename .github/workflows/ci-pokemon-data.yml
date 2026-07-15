@@ -72,6 +72,9 @@ jobs:
       - name: PostgreSQL Bootstrap Admin Sync Guardrail
         run: bash ../ops/pokemon-catalog/test-sync-bootstrap-admin-from-location-postgres.sh
 
+      - name: Pokemon API Cache Refresh Guardrail
+        run: bash ../ops/pokemon-catalog/test-refresh-api-cache-prod.sh
+
       - name: Integration Contract Test
         run: go test -tags=integration ./internal/builder -run TestPokemonPayload_StableShape -v
 
