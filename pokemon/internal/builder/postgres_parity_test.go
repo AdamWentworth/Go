@@ -26,7 +26,7 @@ func TestPostgresPayloadParity(t *testing.T) {
 	}
 
 	sqlitePath := resolveParitySQLitePath(t)
-	sqliteDB, err := db.OpenSQLite(sqlitePath)
+	sqliteDB, err := db.OpenSQLiteReadOnly(sqlitePath)
 	if err != nil {
 		t.Fatalf("open SQLite catalog: %v", err)
 	}

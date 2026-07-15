@@ -3,6 +3,8 @@ package db
 import (
 	"database/sql"
 	"fmt"
+	"net/url"
+	"path/filepath"
 	"time"
 
 	_ "modernc.org/sqlite"
@@ -48,6 +50,37 @@ func OpenSQLite(path string) (*sql.DB, error) {
 	if _, err := db.Exec(`PRAGMA journal_mode = WAL;`); err != nil {
 		// Best-effort fallback.
 		_, _ = db.Exec(`PRAGMA journal_mode = DELETE;`)
+	}
+
+	return db, nil
+}
+
+// OpenSQLiteReadOnly opens a catalog snapshot without attempting WAL or any
+// other write-oriented pragma. It is used by migration parity checks against
+// the production SQLite file while the live SQLite-backed API is still running.
+func OpenSQLiteReadOnly(path string) (*sql.DB, error) {
+	absPath, err := filepath.Abs(path)
+	if err != nil {
+		return nil, fmt.Errorf("resolve SQLite path: %w", err)
+	}
+
+	dsn := (&url.URL{
+		Scheme:   "file",
+		Path:     filepath.ToSlash(absPath),
+		RawQuery: "mode=ro",
+	}).String()
+	db, err := sql.Open("sqlite", dsn)
+	if err != nil {
+		return nil, err
+	}
+
+	db.SetMaxOpenConns(4)
+	db.SetMaxIdleConns(4)
+	db.SetConnMaxLifetime(30 * time.Minute)
+
+	if err := db.Ping(); err != nil {
+		_ = db.Close()
+		return nil, fmt.Errorf("ping read-only SQLite: %w", err)
 	}
 
 	return db, nil
