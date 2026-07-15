@@ -171,6 +171,11 @@ reader_url="postgres://${reader_user}:${reader_password}@${reader_host}:${reader
 } > "${reader_env_file}"
 
 chmod 600 "${publisher_env_file}" "${reader_env_file}"
+if [[ "${EUID}" -eq 0 && -n "${SUDO_USER:-}" ]]; then
+  publisher_group="$(id -gn "${SUDO_USER}")"
+  chown root:"${publisher_group}" "${publisher_env_file}"
+  chmod 640 "${publisher_env_file}"
+fi
 
 echo "Provisioned dedicated PostgreSQL catalog container: ${catalog_container}"
 echo "Catalog database: ${catalog_database}"

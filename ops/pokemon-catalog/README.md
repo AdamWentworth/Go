@@ -20,12 +20,16 @@ The database exposes only `127.0.0.1:5433` to the host for the publisher. The
 API uses the internal hostname `pokemon_catalog_db:5432`; no catalog database
 port is exposed to the public network.
 
-No credentials are committed. Provisioning writes mode-600 files under the
+No credentials are committed. Provisioning writes private files under the
 production deploy root:
 
-- `pokemon/catalog-db.env`: the container bootstrap credential.
-- `pokemon/catalog-publisher.env`: publisher-only connection details.
-- `pokemon/catalog-postgres.env`: reader settings for the later API cutover.
+- `pokemon/catalog-db.env`: mode 600 container bootstrap credential.
+- `pokemon/catalog-publisher.env`: publisher-only connection details. When
+  provisioned through `sudo`, it is mode 640 for `root` and the invoking
+  deployment-runner user's group so the self-hosted publish workflow can read
+  only this credential.
+- `pokemon/catalog-postgres.env`: mode 600 reader settings for the later API
+  cutover.
 
 ## First Provisioning
 
