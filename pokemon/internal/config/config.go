@@ -15,6 +15,13 @@ type Config struct {
 	CachePrewarm       bool
 	CacheRefreshToken  string
 	CacheBuildTimeout  time.Duration
+	RedisURL           string
+	RedisKeyPrefix     string
+	RedisCacheTTL      time.Duration
+	RedisOpTimeout     time.Duration
+	RedisRevalidate    time.Duration
+	RedisBuildLockTTL  time.Duration
+	RedisBuildWait     time.Duration
 	AllowedOrigins     []string
 	AllowCloudflareSub bool
 	LogLevel           slog.Level
@@ -46,6 +53,13 @@ func Load() Config {
 	cachePrewarm := getBool("CACHE_PREWARM", true)
 	cacheToken := getString("CACHE_REFRESH_TOKEN", "")
 	cacheBuildTimeout := getDuration("CACHE_BUILD_TIMEOUT", 60*time.Second)
+	redisURL := getString("REDIS_URL", "")
+	redisKeyPrefix := getString("REDIS_KEY_PREFIX", "pokegonexus:pokemon:v1")
+	redisCacheTTL := getDuration("REDIS_CACHE_TTL", 24*time.Hour)
+	redisOpTimeout := getDuration("REDIS_OPERATION_TIMEOUT", 300*time.Millisecond)
+	redisRevalidate := getDuration("REDIS_REVALIDATE_INTERVAL", 5*time.Second)
+	redisBuildLockTTL := getDuration("REDIS_BUILD_LOCK_TTL", 2*time.Minute)
+	redisBuildWait := getDuration("REDIS_BUILD_WAIT", 5*time.Second)
 
 	origins := getString("ALLOWED_ORIGINS", "http://localhost:3000,https://pokegonexus.com,https://www.pokegonexus.com,https://pokemongonexus.com,https://www.pokemongonexus.com")
 	allowed := splitCSV(origins)
@@ -74,6 +88,13 @@ func Load() Config {
 		CachePrewarm:        cachePrewarm,
 		CacheRefreshToken:   cacheToken,
 		CacheBuildTimeout:   cacheBuildTimeout,
+		RedisURL:            redisURL,
+		RedisKeyPrefix:      redisKeyPrefix,
+		RedisCacheTTL:       redisCacheTTL,
+		RedisOpTimeout:      redisOpTimeout,
+		RedisRevalidate:     redisRevalidate,
+		RedisBuildLockTTL:   redisBuildLockTTL,
+		RedisBuildWait:      redisBuildWait,
 		AllowedOrigins:      allowed,
 		AllowCloudflareSub:  allowCF,
 		LogLevel:            logLevel,

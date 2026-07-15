@@ -8,6 +8,8 @@ services:
       - "3001"
     env_file:
       - .env
+    environment:
+      REDIS_URL: ${REDIS_URL:-redis://pokemon_cache:6379/0}
     restart: unless-stopped
     depends_on:
       pokemon_catalog_db:
@@ -16,6 +18,33 @@ services:
       pokemon_edge:
         ipv4_address: 172.30.0.12
       pokemon_catalog_internal: {}
+
+  pokemon_cache:
+    image: redis@sha256:223b183cbc49f5ff48728e1fc52ccf101f05072decad2bd9867281a3c9bf75fd
+    container_name: ${POKEMON_CACHE_CONTAINER:-pokemon_cache}
+    restart: unless-stopped
+    command:
+      - redis-server
+      - --save
+      - ""
+      - --appendonly
+      - "no"
+      - --maxmemory
+      - ${POKEMON_CACHE_MAXMEMORY:-384mb}
+      - --maxmemory-policy
+      - allkeys-lru
+    ports:
+      - "127.0.0.1:${POKEMON_CACHE_HOST_PORT:-6380}:6379"
+    tmpfs:
+      - /data:size=32m,mode=0700
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 5s
+    networks:
+      - pokemon_catalog_internal
 
   pokemon_catalog_db:
     image: postgres@sha256:742f40ea20b9ff2ff31db5458d127452988a2164df9e17441e191f3b72252193

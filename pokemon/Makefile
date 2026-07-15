@@ -7,15 +7,15 @@ test:
 	go test ./...
 
 test-integration:
-	go test -tags=integration ./...
+	bash scripts/test-postgres-catalog.sh coverage_builder_int.out
 
 slo-gate:
 	go test -count=1 ./internal/api -run TestPokemonPokemons_WarmCacheSLO -v
 
 coverage-gates:
+	@test -f coverage_builder_int.out || bash scripts/test-postgres-catalog.sh coverage_builder_int.out
 	go test -count=1 -coverprofile coverage_api.out ./internal/api
 	go test -count=1 -coverprofile coverage_cache.out ./internal/cache
-	go test -count=1 -tags=integration -coverprofile coverage_builder_int.out ./internal/builder
 	@api_cov=$$(go tool cover -func=coverage_api.out | awk '/^total:/ {gsub("%","",$$3); print $$3}'); \
 	cache_cov=$$(go tool cover -func=coverage_cache.out | awk '/^total:/ {gsub("%","",$$3); print $$3}'); \
 	builder_cov=$$(go tool cover -func=coverage_builder_int.out | awk '/^total:/ {gsub("%","",$$3); print $$3}'); \

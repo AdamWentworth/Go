@@ -76,3 +76,41 @@ ssh -i "$HOME/.ssh/pokegonexus_recovery_ed25519" adam@192.168.1.77 \
 Recovery uses the retained private PostgreSQL dumps and the two independently
 verified cutover archives. Catalog binaries are not tracked or released from
 the public repository.
+
+## Redis L2 Cache Operations
+
+`pokemon_cache` is a private, non-persistent Redis service used only to avoid
+rebuilding serialized catalog payloads when an API process starts. It is not a
+database and does not require backup or restore procedures. The API remains
+ready when Redis is unavailable and falls back to memory and PostgreSQL.
+
+Check the service and memory policy:
+
+```bash
+docker compose -f /srv/pokegonexus/pokemon/docker-compose.yml \
+  --env-file /srv/pokegonexus/pokemon/.env ps pokemon_cache
+docker exec pokemon_cache redis-cli INFO memory
+docker exec pokemon_cache redis-cli CONFIG GET maxmemory maxmemory-policy
+```
+
+Inspect cache behavior through the API metrics rather than treating Redis key
+contents as a public contract:
+
+```bash
+curl -fsS http://127.0.0.1:3001/internal/cache/stats
+curl -fsS http://127.0.0.1:3001/metrics | grep pokemon_catalog_cache
+```
+
+To prove fallback behavior during maintenance, stop Redis and verify the API
+before starting it again:
+
+```bash
+docker stop pokemon_cache
+curl -fsS https://pokegonexus.com/api/pokemon/manifest >/dev/null
+docker start pokemon_cache
+```
+
+After Redis restarts, an existing API process continues serving its L1 memory
+cache and repopulates L2 on the next catalog refresh. Restarting the API also
+rebuilds any missing Redis payloads from PostgreSQL. Do not make `/readyz`
+depend on Redis and do not add persistence to this cache.

@@ -15,6 +15,10 @@ Database data belongs to its service-owned Docker volume. The Pokemon catalog
 uses `pokemon_catalog_pgdata`; deployments preserve that volume and apply
 versioned migrations before starting the API.
 
+The Pokemon API's `pokemon_cache` Redis container is disposable acceleration,
+not durable state. It intentionally has no named volume and is excluded from
+backup and restore procedures.
+
 The old checkout-to-runtime state migration is retired. New hosts should be
 provisioned using each service's current Compose file and runbook, then restore
 private database backups where required.

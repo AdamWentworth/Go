@@ -7,6 +7,7 @@ Pokemon API in `pokemon/docker-compose.yml`.
 
 - `pokemon_catalog_db`: pinned official PostgreSQL container
 - `pokemon_catalog_pgdata`: persistent named volume
+- `pokemon_cache`: pinned, disposable Redis L2 response cache
 - `pokemon_catalog_internal`: private API/database network
 - `pokemon_catalog_reader`: read-only API role
 - `pokemon_catalog_publisher`: editor and maintenance writer role
@@ -14,6 +15,11 @@ Pokemon API in `pokemon/docker-compose.yml`.
 
 Only `127.0.0.1:5433` is exposed on the host. The API connects through the
 private Compose network at `pokemon_catalog_db:5432`.
+
+Redis is exposed only on host loopback port `6380` for diagnostics. It has no
+persistent volume and is not included in catalog backups. API deployment makes
+a best-effort attempt to start it, but PostgreSQL and API health remain the
+hard deployment requirements.
 
 Private environment files live under `/srv/pokegonexus/pokemon`:
 
@@ -47,9 +53,10 @@ least-privileged reader and publisher roles.
 Normal Pokemon deployment:
 
 1. Starts or verifies `pokemon_catalog_db`.
-2. Applies versioned migrations with `cmd/catalog-migrate`.
-3. Recreates `pokemon_data` with the read-only catalog URL.
-4. Verifies `/healthz` and `/readyz`.
+2. Makes a best-effort start of the optional `pokemon_cache` service.
+3. Applies versioned migrations with `cmd/catalog-migrate`.
+4. Recreates `pokemon_data` with the read-only catalog URL.
+5. Verifies `/healthz` and `/readyz`.
 
 Normal authoring uses `editor/main.py`. It creates a private compressed dump,
 opens the publisher tunnel, and refreshes the API cache on clean exit.

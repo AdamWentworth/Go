@@ -69,6 +69,13 @@ jobs:
             --env-file "${database_env_file}" \
             up -d pokemon_catalog_db
 
+          docker compose \
+            --project-name pokemon \
+            --project-directory "${pokemon_deploy_dir}" \
+            -f "${compose_file}" \
+            --env-file "${database_env_file}" \
+            up -d pokemon_cache || echo "Warning: optional Redis L2 cache did not start; API fallback remains available."
+
           for _ in $(seq 1 30); do
             status="$(docker inspect --format '{{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}}' pokemon_catalog_db 2>/dev/null || true)"
             if [[ "${status}" == "healthy" ]]; then
@@ -183,12 +190,19 @@ jobs:
             docker rm -f "${CONTAINER_NAME}"
           fi
 
-          echo "Ensuring pokemon_catalog_db is running before deploying ${SERVICE_NAME}"
+          echo "Ensuring PostgreSQL is running before deploying ${SERVICE_NAME}"
           docker compose \
             --project-directory "${POKEMON_DEPLOY_DIR}" \
             -f "${COMPOSE_FILE}" \
             --env-file "${ENV_FILE}" \
             up -d pokemon_catalog_db
+
+          echo "Starting the optional Redis L2 cache"
+          docker compose \
+            --project-directory "${POKEMON_DEPLOY_DIR}" \
+            -f "${COMPOSE_FILE}" \
+            --env-file "${ENV_FILE}" \
+            up -d pokemon_cache || echo "Warning: optional Redis L2 cache did not start; deploying with PostgreSQL fallback."
 
           echo "Deploying ${SERVICE_NAME} with image ${DEPLOY_IMAGE}"
           POKEMON_IMAGE="${DEPLOY_IMAGE}" docker compose \

@@ -32,7 +32,7 @@ Use `pokemon/` for all current Pokemon API development and deployment.
 |---------------|---------------------------------------------------|
 | Frontend      | React 18, Context API, SSE, IndexedDB             |
 | Auth          | Node.js + Express + MongoDB + JWT                 |
-| Pokémon API   | Go (`net/http` + `chi`) + PostgreSQL + cache layer |
+| Pokémon API   | Go (`net/http` + `chi`) + PostgreSQL + Redis/L1 caching |
 | Location      | Go + PostgreSQL/PostGIS                           |
 | Event Sync    | Kafka (Docker) + Go consumers/producers           |
 | Search        | Go + MySQL + Haversine filters                    |
@@ -68,6 +68,7 @@ go run ./cmd/pokemon
 ```
 
 - Powered by the dedicated PostgreSQL reference catalog
+- Uses Redis as an optional cross-replica L2 while retaining PostgreSQL fallback
 - Runs on port `3001`  
 - Supports mega, shiny, costumes, evolutions
 
@@ -311,8 +312,8 @@ If you're contributing:
 - Metrics tracking, audit logs, and system insights
 
 ### 🧠 Backend & Infra
-- Redis or PostgreSQL migration for Pokémon API scalability
-- Selective data sync with improved caching strategies
+- Horizontal service scaling and managed-cache deployment experiments
+- Selective catalog delivery and client-side incremental synchronization
 
 ---
 

@@ -37,30 +37,46 @@ func main() {
 
 	payloadBuilder := builder.New(sqlDB, logger)
 
-	payloadCache := cache.NewJSONGzipCache(cache.JSONGzipCacheConfig{
-		Name:         "/pokemon/pokemons",
-		BuildPayload: payloadBuilder.BuildFullPokemonPayload,
-		Logger:       logger,
-		GzipLevel:    6,
-	})
-	catalogCache := cache.NewJSONGzipCache(cache.JSONGzipCacheConfig{
-		Name:         "/pokemon/catalog",
-		BuildPayload: payloadBuilder.BuildCatalogPayload,
-		Logger:       logger,
-		GzipLevel:    6,
-	})
-	movesCache := cache.NewJSONGzipCache(cache.JSONGzipCacheConfig{
-		Name:         "/pokemon/moves",
-		BuildPayload: payloadBuilder.BuildMovesPayload,
-		Logger:       logger,
-		GzipLevel:    6,
-	})
-	raidDataCache := cache.NewJSONGzipCache(cache.JSONGzipCacheConfig{
-		Name:         "/pokemon/raid-data",
-		BuildPayload: payloadBuilder.BuildRaidDataPayload,
-		Logger:       logger,
-		GzipLevel:    6,
-	})
+	var l2Store cache.PayloadStore
+	if cfg.RedisURL != "" {
+		redisStore, redisErr := cache.NewRedisPayloadStore(cache.RedisPayloadStoreConfig{
+			URL:       cfg.RedisURL,
+			KeyPrefix: cfg.RedisKeyPrefix,
+		})
+		if redisErr != nil {
+			logger.Warn("Redis L2 cache configuration is invalid; continuing with memory and PostgreSQL", "err", redisErr)
+		} else {
+			l2Store = redisStore
+			defer func() { _ = redisStore.Close() }()
+			pingCtx, pingCancel := context.WithTimeout(context.Background(), cfg.RedisOpTimeout)
+			if pingErr := redisStore.Ping(pingCtx); pingErr != nil {
+				logger.Warn("Redis L2 cache is unavailable at startup; requests will fall back safely", "err", pingErr)
+			} else {
+				logger.Info("Redis L2 cache connected", "key_prefix", cfg.RedisKeyPrefix)
+			}
+			pingCancel()
+		}
+	}
+
+	newPayloadCache := func(name string, build func(context.Context) (any, error)) *cache.JSONGzipCache {
+		return cache.NewJSONGzipCache(cache.JSONGzipCacheConfig{
+			Name:                    name,
+			BuildPayload:            build,
+			Logger:                  logger,
+			GzipLevel:               6,
+			Store:                   l2Store,
+			StoreTTL:                cfg.RedisCacheTTL,
+			StoreOperationTimeout:   cfg.RedisOpTimeout,
+			StoreRevalidateInterval: cfg.RedisRevalidate,
+			StoreBuildLockTTL:       cfg.RedisBuildLockTTL,
+			StoreBuildWait:          cfg.RedisBuildWait,
+		})
+	}
+
+	payloadCache := newPayloadCache("/pokemon/pokemons", payloadBuilder.BuildFullPokemonPayload)
+	catalogCache := newPayloadCache("/pokemon/catalog", payloadBuilder.BuildCatalogPayload)
+	movesCache := newPayloadCache("/pokemon/moves", payloadBuilder.BuildMovesPayload)
+	raidDataCache := newPayloadCache("/pokemon/raid-data", payloadBuilder.BuildRaidDataPayload)
 
 	baseCtx, baseCancel := context.WithCancel(context.Background())
 	defer baseCancel()
