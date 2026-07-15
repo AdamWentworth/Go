@@ -1,17 +1,18 @@
 # Editor Tests
 
-These tests verify editor database manager behavior against an isolated temporary copy of `pokego.db`.
+These tests verify editor database manager behavior against an isolated
+PostgreSQL catalog populated with a small synthetic fixture.
 
 ## Run
 
 From repo root:
 
 ```bash
-python -m unittest discover -s editor/tests -p "test_*.py" -v
+bash editor/tests/test-postgres-database-manager.sh
 ```
 
 ## Safety
 
-- Every test copies `pokemon/data/pokego.db` into a temp directory.
-- Inserts/updates/deletes only run against that temp file.
-- The real DB is never modified by the test suite.
+- The harness starts a disposable PostgreSQL container.
+- It applies the production migrations before loading synthetic test data.
+- Inserts, updates, and deletes never target the production catalog.

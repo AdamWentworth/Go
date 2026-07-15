@@ -123,36 +123,7 @@ class FusionPokemonManager:
 
         self.conn.commit()
 
-    def _ensure_fusion_background_combo_rules_table(self):
-        if self.conn.is_postgres:
-            return
-        cursor = self.conn.get_cursor()
-        cursor.execute(
-            """
-            CREATE TABLE IF NOT EXISTS fusion_background_combo_rules (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                fusion_id INTEGER NOT NULL,
-                member1_background_id INTEGER NOT NULL,
-                member2_background_id INTEGER NOT NULL,
-                combo_background_id INTEGER NOT NULL,
-                is_active INTEGER NOT NULL DEFAULT 1 CHECK (is_active IN (0, 1)),
-                notes TEXT,
-                created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
-                updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
-                UNIQUE (fusion_id, member1_background_id, member2_background_id, combo_background_id)
-            )
-            """
-        )
-        cursor.execute(
-            """
-            CREATE INDEX IF NOT EXISTS idx_fusion_bg_combo_rules_fusion_id
-            ON fusion_background_combo_rules (fusion_id)
-            """
-        )
-        self.conn.commit()
-
     def fetch_fusion_background_rule_rows(self, fusion_id):
-        self._ensure_fusion_background_combo_rules_table()
         cursor = self.conn.get_cursor()
         cursor.execute(
             """
@@ -168,7 +139,7 @@ class FusionPokemonManager:
                 r.combo_background_id,
                 b3.name AS combo_background_name,
                 b3.image_url AS combo_background_image_url,
-                COALESCE(r.is_active, 1) AS is_active,
+                COALESCE(r.is_active, TRUE) AS is_active,
                 r.notes
             FROM fusion_background_combo_rules r
             LEFT JOIN backgrounds b1
@@ -193,7 +164,6 @@ class FusionPokemonManager:
         is_active=1,
         notes=None,
     ):
-        self._ensure_fusion_background_combo_rules_table()
         fusion_id = int(fusion_id)
         member1_background_id = int(member1_background_id)
         member2_background_id = int(member2_background_id)
@@ -257,7 +227,6 @@ class FusionPokemonManager:
         is_active=1,
         notes=None,
     ):
-        self._ensure_fusion_background_combo_rules_table()
         cursor = self.conn.get_cursor()
         cursor.execute(
             """
@@ -282,7 +251,6 @@ class FusionPokemonManager:
         self.conn.commit()
 
     def delete_fusion_background_rule(self, rule_id):
-        self._ensure_fusion_background_combo_rules_table()
         cursor = self.conn.get_cursor()
         cursor.execute(
             "DELETE FROM fusion_background_combo_rules WHERE id = ?",

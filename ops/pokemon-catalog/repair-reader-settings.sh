@@ -28,10 +28,9 @@ source "${database_env_file}"
 source "${reader_env_file}"
 set +a
 
-for required in CATALOG_DB_DRIVER CATALOG_DATABASE_URL CATALOG_POSTGRES_HOST_PORT; do
+for required in CATALOG_DATABASE_URL CATALOG_POSTGRES_HOST_PORT; do
   [[ -n "${!required:-}" ]] || fail "${required} is missing from the existing catalog settings"
 done
-[[ "${CATALOG_DB_DRIVER}" == "postgres" || "${CATALOG_DB_DRIVER}" == "postgresql" ]] || fail "reader settings do not select PostgreSQL"
 
 reader_host_port="@${reader_host}:${reader_port}/"
 parity_host_port="@${parity_host}:${CATALOG_POSTGRES_HOST_PORT}/"
@@ -57,5 +56,5 @@ fi
 mv "${tmp_file}" "${reader_env_file}"
 trap - EXIT
 
-echo "Repaired reader settings for PostgreSQL cutover parity."
+echo "Repaired reader settings for PostgreSQL runtime parity."
 echo "Reader settings: ${reader_env_file}"

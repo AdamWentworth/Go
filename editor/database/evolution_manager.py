@@ -7,19 +7,12 @@ class EvolutionManager:
     def add_evolves_to(self, pokemon_id, evolves_to_id):
         cursor = self.conn.get_cursor()
         evolution_id = self.conn.next_identifier("pokemon_evolutions", "evolution_id")
-        if evolution_id is not None:
-            cursor.execute("""
-                INSERT INTO pokemon_evolutions (evolution_id, pokemon_id, evolves_to)
-                VALUES (?, ?, ?)
-            """, (evolution_id, pokemon_id, evolves_to_id))
-            self.conn.commit()
-            return evolution_id
         cursor.execute("""
-            INSERT INTO pokemon_evolutions (pokemon_id, evolves_to)
-            VALUES (?, ?)
-        """, (pokemon_id, evolves_to_id))
+            INSERT INTO pokemon_evolutions (evolution_id, pokemon_id, evolves_to)
+            VALUES (?, ?, ?)
+        """, (evolution_id, pokemon_id, evolves_to_id))
         self.conn.commit()
-        return cursor.lastrowid
+        return evolution_id
 
     def remove_evolves_to(self, pokemon_id, evolves_to_id):
         cursor = self.conn.get_cursor()
@@ -37,7 +30,10 @@ class EvolutionManager:
             WHERE pokemon_id = ?
         """
         cursor.execute(query, (pokemon_id,))
-        return cursor.fetchall()
+        return [
+            (*row[:3], self.conn.legacy_boolean_scalar(row[3]), *row[4:])
+            for row in cursor.fetchall()
+        ]
 
     def update_evolution_details(self, evolution_id, evolves_to_id, candies_needed, trade_discount, item_id, other):
         cursor = self.conn.get_cursor()
@@ -65,4 +61,7 @@ class EvolutionManager:
             WHERE pokemon_id = ? AND evolves_to = ?
         """
         cursor.execute(query, (pokemon_id, evolves_to_id))
-        return cursor.fetchall()
+        return [
+            (*row[:3], self.conn.legacy_boolean_scalar(row[3]), *row[4:])
+            for row in cursor.fetchall()
+        ]

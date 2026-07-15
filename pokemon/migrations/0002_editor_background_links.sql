@@ -1,5 +1,5 @@
--- PostgreSQL has no stable SQLite-style rowid. The editor needs an explicit
--- link key so background relationships can be updated and deleted safely.
+-- The editor needs an explicit stable link key in PostgreSQL so background
+-- relationships can be updated and deleted safely.
 CREATE SEQUENCE IF NOT EXISTS pokemon_catalog.pokemon_backgrounds_id_seq;
 
 ALTER TABLE pokemon_catalog.pokemon_backgrounds

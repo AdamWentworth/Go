@@ -1,35 +1,12 @@
-import shutil
-import tempfile
 import unittest
-from pathlib import Path
-
-import sys
-
-
-ROOT_DIR = Path(__file__).resolve().parents[2]
-EDITOR_DIR = ROOT_DIR / "editor"
-if str(EDITOR_DIR) not in sys.path:
-    sys.path.insert(0, str(EDITOR_DIR))
-
-from database.db_utils import DatabaseConnection
+from test_base import TempDBTestCase
 from database.background_pokemon_manager import BackgroundPokemonManager
 
 
-SOURCE_DB = ROOT_DIR / "pokemon" / "data" / "pokego.db"
-
-
-class BackgroundPokemonManagerTests(unittest.TestCase):
+class BackgroundPokemonManagerTests(TempDBTestCase):
     def setUp(self):
-        self.temp_dir = tempfile.TemporaryDirectory()
-        self.test_db_path = Path(self.temp_dir.name) / "pokego_test.db"
-        shutil.copy2(SOURCE_DB, self.test_db_path)
-
-        self.db_connection = DatabaseConnection(str(self.test_db_path))
+        super().setUp()
         self.manager = BackgroundPokemonManager(self.db_connection)
-
-    def tearDown(self):
-        self.db_connection.close()
-        self.temp_dir.cleanup()
 
     def _scalar(self, query, params=()):
         cursor = self.db_connection.get_cursor()
@@ -136,21 +113,21 @@ class BackgroundPokemonManagerTests(unittest.TestCase):
         link_row_id = self.manager.add_pokemon_background_link(1, background_id_1, None)
 
         row = self._row(
-            "SELECT pokemon_id, background_id, costume_id FROM pokemon_backgrounds WHERE rowid = ?",
+            "SELECT pokemon_id, background_id, costume_id FROM pokemon_backgrounds WHERE id = ?",
             (link_row_id,),
         )
         self.assertEqual(row, (1, background_id_1, None))
 
         self.manager.update_pokemon_background_link(link_row_id, background_id_2, 25)
         updated_row = self._row(
-            "SELECT pokemon_id, background_id, costume_id FROM pokemon_backgrounds WHERE rowid = ?",
+            "SELECT pokemon_id, background_id, costume_id FROM pokemon_backgrounds WHERE id = ?",
             (link_row_id,),
         )
         self.assertEqual(updated_row, (1, background_id_2, 25))
 
         self.manager.delete_pokemon_background_link(link_row_id)
         deleted_row = self._row(
-            "SELECT rowid FROM pokemon_backgrounds WHERE rowid = ?",
+            "SELECT id FROM pokemon_backgrounds WHERE id = ?",
             (link_row_id,),
         )
         self.assertIsNone(deleted_row)

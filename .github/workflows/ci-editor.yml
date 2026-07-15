@@ -4,9 +4,7 @@ on:
   pull_request:
     paths:
       - "editor/**"
-      - "pokemon/data/pokego.db"
       - "pokemon/migrations/**"
-      - "pokemon/internal/catalogimport/**"
       - "pokemon/go.mod"
       - "pokemon/go.sum"
       - ".github/workflows/ci-editor.yml"
@@ -14,9 +12,7 @@ on:
     branches: ["main", "master"]
     paths:
       - "editor/**"
-      - "pokemon/data/pokego.db"
       - "pokemon/migrations/**"
-      - "pokemon/internal/catalogimport/**"
       - "pokemon/go.mod"
       - "pokemon/go.sum"
       - ".github/workflows/ci-editor.yml"
@@ -50,8 +46,5 @@ jobs:
       - name: Validate Editor Python Syntax
         run: python -m compileall editor
 
-      - name: Run Editor Unit Tests
-        run: python -m unittest discover -s editor/tests -p "test_*.py" -v
-
-      - name: Prove Editor PostgreSQL Compatibility
+      - name: Run PostgreSQL-only Editor Test Suite
         run: bash editor/tests/test-postgres-database-manager.sh

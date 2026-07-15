@@ -64,7 +64,7 @@ class EvolutionManagerTests(TempDBTestCase):
             """,
             (evolution_id,),
         )
-        self.assertEqual(updated, (3, 25, 1, 77, "unit-test"))
+        self.assertEqual(updated, (3, 25, "1", 77, "unit-test"))
 
     def test_fetch_evolution_details_for_evolves_to_filter(self):
         _ = self.manager.add_evolves_to(10, 11)

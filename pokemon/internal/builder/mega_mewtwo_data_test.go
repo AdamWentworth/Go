@@ -4,19 +4,14 @@ import (
 	"database/sql"
 	"math"
 	"os"
-	"path/filepath"
 	"strings"
 	"testing"
 
-	_ "modernc.org/sqlite"
+	"pokemon_data/internal/db"
 )
 
 func TestMegaMewtwoDataRows(t *testing.T) {
-	dbPath := resolveLocalSQLitePath(t)
-	db, err := sql.Open("sqlite", dbPath)
-	if err != nil {
-		t.Fatalf("open sqlite: %v", err)
-	}
+	db := openMegaDataPostgres(t)
 	defer db.Close()
 
 	tests := []struct {
@@ -87,7 +82,7 @@ SELECT me.id, me.pokemon_id, me.mega_energy_cost, me.attack, me.defense, me.stam
 FROM mega_evolution me
 JOIN types t1 ON t1.type_id = me.type_1_id
 LEFT JOIN types t2 ON t2.type_id = me.type_2_id
-WHERE me.pokemon_id = 150 AND me.form = ?
+WHERE me.pokemon_id = 150 AND me.form = $1
 `, tc.form).Scan(
 				&row.id,
 				&row.pokemonID,
@@ -141,21 +136,17 @@ WHERE me.pokemon_id = 150 AND me.form = ?
 }
 
 func TestMewtwoLegacyCounterMove(t *testing.T) {
-	dbPath := resolveLocalSQLitePath(t)
-	db, err := sql.Open("sqlite", dbPath)
-	if err != nil {
-		t.Fatalf("open sqlite: %v", err)
-	}
+	db := openMegaDataPostgres(t)
 	defer db.Close()
 
 	var row struct {
 		name     string
 		typeName string
-		isFast   int
-		legacy   int
+		isFast   bool
+		legacy   bool
 	}
 
-	err = db.QueryRow(`
+	err := db.QueryRow(`
 SELECT m.name, t.name, m.is_fast, pm.legacy
 FROM pokemon_moves pm
 JOIN moves m ON m.move_id = pm.move_id
@@ -172,36 +163,32 @@ WHERE pm.pokemon_id = 150 AND m.name = 'Counter'
 	if row.typeName != "Fighting" {
 		t.Fatalf("move type = %q, want Fighting", row.typeName)
 	}
-	if row.isFast != 1 {
+	if !row.isFast {
 		t.Fatal("Counter should be a fast move")
 	}
-	if row.legacy != 1 {
+	if !row.legacy {
 		t.Fatal("Mewtwo Counter should be marked legacy")
 	}
 }
 
-func resolveLocalSQLitePath(t *testing.T) string {
+func openMegaDataPostgres(t *testing.T) *sql.DB {
 	t.Helper()
-
-	candidates := []string{
-		filepath.Join("..", "..", "data", "pokego.db"),
-		filepath.Join("pokemon", "data", "pokego.db"),
-		"data/pokego.db",
+	databaseURL := os.Getenv("POSTGRES_TEST_URL")
+	if databaseURL == "" {
+		t.Skip("POSTGRES_TEST_URL is not configured")
 	}
-	for _, path := range candidates {
-		if _, err := os.Stat(path); err == nil {
-			return path
-		}
+	database, err := db.OpenPostgres(databaseURL)
+	if err != nil {
+		t.Fatalf("open PostgreSQL catalog: %v", err)
 	}
-	t.Skipf("sqlite db not found in %v", candidates)
-	return ""
+	return database
 }
 
 func fetchMegaCP(t *testing.T, db *sql.DB, megaID int, level int) int {
 	t.Helper()
 
 	var cp int
-	if err := db.QueryRow(`SELECT cp FROM mega_cp_stats WHERE mega_id = ? AND level_id = ?`, megaID, level).Scan(&cp); err != nil {
+	if err := db.QueryRow(`SELECT cp FROM mega_cp_stats WHERE mega_id = $1 AND level_id = $2`, megaID, level).Scan(&cp); err != nil {
 		t.Fatalf("fetch CP for mega_id=%d level=%d: %v", megaID, level, err)
 	}
 	return cp
@@ -211,7 +198,7 @@ func fetchCPMultiplier(t *testing.T, db *sql.DB, level int) float64 {
 	t.Helper()
 
 	var multiplier float64
-	if err := db.QueryRow(`SELECT multiplier FROM cp_multipliers WHERE level_id = ?`, level).Scan(&multiplier); err != nil {
+	if err := db.QueryRow(`SELECT multiplier FROM cp_multipliers WHERE level_id = $1`, level).Scan(&multiplier); err != nil {
 		t.Fatalf("fetch CP multiplier for level=%d: %v", level, err)
 	}
 	return multiplier

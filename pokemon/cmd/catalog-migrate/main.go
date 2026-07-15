@@ -9,7 +9,7 @@ import (
 	"strings"
 	"time"
 
-	"pokemon_data/internal/catalogimport"
+	"pokemon_data/migrations"
 )
 
 func main() {
@@ -30,7 +30,7 @@ func run() error {
 
 	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
 	defer cancel()
-	if err := catalogimport.Migrate(ctx, databaseURL); err != nil {
+	if err := migrations.Apply(ctx, databaseURL); err != nil {
 		return err
 	}
 	if _, err := fmt.Fprintln(os.Stdout, "Pokemon catalog schema migrations are current."); err != nil {

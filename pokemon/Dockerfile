@@ -24,12 +24,7 @@ RUN apk add --no-cache ca-certificates tzdata \
 
 COPY --from=build /out/pokemon_data /usr/local/bin/pokemon_data
 
-# data volume + defaults
-RUN mkdir -p /usr/src/app/data \
-    && chown -R app:app /usr/src/app/data
-
 USER app
 
 EXPOSE 3001
-ENV SQLITE_PATH=/usr/src/app/data/pokego.db
 CMD ["pokemon_data"]

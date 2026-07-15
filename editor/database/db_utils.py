@@ -3,82 +3,12 @@
 from __future__ import annotations
 
 import re
-import sqlite3
 from typing import Any
 
 
 def is_postgres_target(target: str) -> bool:
     normalized = target.strip().lower()
     return normalized.startswith(("postgres://", "postgresql://"))
-
-
-class DatabaseConnection:
-    PERFORMANCE_INDEXES = {
-        "costume_pokemon": (
-            "CREATE INDEX IF NOT EXISTS idx_costume_pokemon_pokemon_id ON costume_pokemon(pokemon_id)",
-        ),
-        "pokemon_backgrounds": (
-            "CREATE INDEX IF NOT EXISTS idx_pokemon_backgrounds_pokemon_id ON pokemon_backgrounds(pokemon_id)",
-            "CREATE INDEX IF NOT EXISTS idx_pokemon_backgrounds_background_id ON pokemon_backgrounds(background_id)",
-        ),
-        "pokemon_moves": (
-            "CREATE INDEX IF NOT EXISTS idx_pokemon_moves_pokemon_id ON pokemon_moves(pokemon_id)",
-        ),
-        "female_pokemon": (
-            "CREATE INDEX IF NOT EXISTS idx_female_pokemon_pokemon_id ON female_pokemon(pokemon_id)",
-        ),
-    }
-
-    def __new__(cls, target: str):
-        if cls is DatabaseConnection and is_postgres_target(target):
-            return super().__new__(PostgresDatabaseConnection)
-        return super().__new__(cls)
-
-    def __init__(self, db_path: str):
-        self.dialect = "sqlite"
-        self.conn = sqlite3.connect(db_path)
-        self.ensure_performance_indexes()
-
-    def get_cursor(self):
-        return self.conn.cursor()
-
-    def commit(self):
-        self.conn.commit()
-
-    def ensure_performance_indexes(self):
-        cursor = self.conn.cursor()
-        existing_tables = {
-            row[0]
-            for row in cursor.execute(
-                "SELECT name FROM sqlite_master WHERE type = 'table'"
-            ).fetchall()
-        }
-        for table_name, statements in self.PERFORMANCE_INDEXES.items():
-            if table_name not in existing_tables:
-                continue
-            for statement in statements:
-                cursor.execute(statement)
-        self.conn.commit()
-
-    def close(self):
-        self.conn.close()
-
-    @property
-    def is_postgres(self) -> bool:
-        return False
-
-    def bool_value(self, value: Any) -> Any:
-        return value
-
-    def legacy_scalar_value(self, value: Any) -> Any:
-        return value
-
-    def next_identifier(self, table_name: str, column_name: str) -> int | None:
-        return None
-
-    def insert_returning_id(self, cursor, query: str, params: tuple[Any, ...], column_name: str):
-        cursor.execute(query, params)
-        return cursor.lastrowid
 
 
 class PostgresCursor:
@@ -95,11 +25,17 @@ class PostgresCursor:
             self._cursor.execute(translated, params)
         return self
 
+    def executemany(self, query: str, params_seq):
+        translated = re.sub(r"\?", "%s", query)
+        self._cursor.executemany(translated, params_seq)
+        return self
+
     def fetchone(self):
-        return self._cursor.fetchone()
+        row = self._cursor.fetchone()
+        return self._legacy_row(row)
 
     def fetchall(self):
-        return self._cursor.fetchall()
+        return [self._legacy_row(row) for row in self._cursor.fetchall()]
 
     def close(self):
         self._cursor.close()
@@ -107,11 +43,19 @@ class PostgresCursor:
     def __getattr__(self, name: str):
         return getattr(self._cursor, name)
 
+    @staticmethod
+    def _legacy_row(row):
+        if row is None:
+            return None
+        return tuple(1 if value is True else 0 if value is False else value for value in row)
 
-class PostgresDatabaseConnection(DatabaseConnection):
+
+class DatabaseConnection:
     """PostgreSQL editor connection with the catalog schema on the search path."""
 
     def __init__(self, database_url: str):
+        if not is_postgres_target(database_url):
+            raise ValueError("The catalog editor requires a PostgreSQL database URL.")
         try:
             import psycopg
         except ImportError as error:  # pragma: no cover - local dependency state
@@ -158,8 +102,16 @@ class PostgresDatabaseConnection(DatabaseConnection):
             return "1" if value else "0"
         return str(value)
 
+    def legacy_boolean_scalar(self, value: Any) -> Any:
+        """Expose legacy text-backed flags as the editor's historical 0/1 values."""
+        normalized = self.bool_value(value)
+        if isinstance(normalized, bool):
+            return 1 if normalized else 0
+        return value
+
     def next_identifier(self, table_name: str, column_name: str) -> int:
-        # Legacy SQLite tables own several explicit integer identifiers.
+        # Several catalog tables retain explicit integer identifiers for
+        # compatibility with the published catalog contract.
         # The editor is a single-operator tool; a transaction-local advisory
         # lock keeps its compatible MAX+1 allocation safe for these writes.
         cursor = self.get_cursor()
@@ -177,3 +129,13 @@ class PostgresDatabaseConnection(DatabaseConnection):
         cursor.execute(statement, params)
         row = cursor.fetchone()
         return row[0] if row else None
+
+    def commit(self):
+        self.conn.commit()
+
+    def close(self):
+        self.conn.close()
+
+
+# Kept as a clear explicit name for callers outside the editor package.
+PostgresDatabaseConnection = DatabaseConnection

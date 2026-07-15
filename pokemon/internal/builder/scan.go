@@ -28,7 +28,7 @@ func scanRowsToMaps(rows *sql.Rows) ([]map[string]any, error) {
 		m := make(map[string]any, len(cols))
 		for i, c := range cols {
 			v := vals[i]
-			// PostgreSQL exposes actual booleans while SQLite historically
+			// PostgreSQL exposes actual booleans while the browser payload
 			// exposed 0/1. Preserve the established JSON wire contract until
 			// a deliberate client schema revision says otherwise.
 			if b, ok := v.(bool); ok {
@@ -70,7 +70,7 @@ func legacyScalarWireValue(column string, value any) (any, bool) {
 	case "shiny_available", "apex", "primal", "trade_discount", "shadow_shiny_available", "shadow_apex":
 		// PostgreSQL stores a small set of historically heterogeneous fields as
 		// text to retain exact legacy meanings. Convert numeric strings back to
-		// the SQLite JSON number representation, while preserving blanks/None.
+		// the established JSON number representation, while preserving blanks/None.
 		switch typed := value.(type) {
 		case string:
 			if integer, err := strconv.ParseInt(typed, 10, 64); err == nil {

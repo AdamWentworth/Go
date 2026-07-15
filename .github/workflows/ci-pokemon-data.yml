@@ -8,9 +8,7 @@ on:
       - "nginx/**"
       - "ops/pokemon-catalog/**"
       - ".github/workflows/ci-pokemon-data.yml"
-      - ".github/workflows/publish-pokemon-catalog-prod.yml"
       - ".github/workflows/deploy-pokemon-catalog-db-prod.yml"
-      - ".github/workflows/cutover-pokemon-catalog-postgres-prod.yml"
       - ".github/workflows/deploy-pokemon-prod.yml"
   push:
     branches: ["main", "master"]
@@ -20,9 +18,7 @@ on:
       - "nginx/**"
       - "ops/pokemon-catalog/**"
       - ".github/workflows/ci-pokemon-data.yml"
-      - ".github/workflows/publish-pokemon-catalog-prod.yml"
       - ".github/workflows/deploy-pokemon-catalog-db-prod.yml"
-      - ".github/workflows/cutover-pokemon-catalog-postgres-prod.yml"
       - ".github/workflows/deploy-pokemon-prod.yml"
   workflow_dispatch: {}
 
@@ -54,14 +50,8 @@ jobs:
       - name: Test
         run: go test ./...
 
-      - name: PostgreSQL Catalog Parity
-        run: bash scripts/test-postgres-catalog-parity.sh
-
-      - name: PostgreSQL Catalog Publisher Drill
-        run: bash ../ops/pokemon-catalog/test-publisher.sh
-
-      - name: PostgreSQL Runtime Environment Cutover Guardrail
-        run: bash ../ops/pokemon-catalog/test-runtime-env.sh
+      - name: PostgreSQL Catalog Contract
+        run: bash scripts/test-postgres-catalog.sh
 
       - name: PostgreSQL Reader Settings Repair Guardrail
         run: bash ../ops/pokemon-catalog/test-repair-reader-settings.sh
@@ -75,9 +65,6 @@ jobs:
       - name: Pokemon API Cache Refresh Guardrail
         run: bash ../ops/pokemon-catalog/test-refresh-api-cache-prod.sh
 
-      - name: Integration Contract Test
-        run: go test -tags=integration ./internal/builder -run TestPokemonPayload_StableShape -v
-
       - name: SLO Gate (Warm Cache)
         run: go test -count=1 ./internal/api -run TestPokemonPokemons_WarmCacheSLO -v
 
@@ -87,7 +74,7 @@ jobs:
 
           go test -count=1 -coverprofile coverage_api.out ./internal/api
           go test -count=1 -coverprofile coverage_cache.out ./internal/cache
-          go test -count=1 -tags=integration -coverprofile coverage_builder_int.out ./internal/builder
+          go test -count=1 -coverprofile coverage_builder_int.out ./internal/builder
 
           api_cov=$(go tool cover -func=coverage_api.out | awk '/^total:/ {gsub("%","",$3); print $3}')
           cache_cov=$(go tool cover -func=coverage_cache.out | awk '/^total:/ {gsub("%","",$3); print $3}')

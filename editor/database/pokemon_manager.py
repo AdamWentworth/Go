@@ -119,17 +119,11 @@ class PokemonManager:
                         WHERE pokemon_id = ? AND move_id = ?
                     """, (self.conn.bool_value(is_legacy), pokemon_id, move_id))
             else:
-                if self.conn.is_postgres:
-                    move_link_id = self.conn.next_identifier("pokemon_moves", "id")
-                    cursor.execute("""
-                        INSERT INTO pokemon_moves (id, pokemon_id, move_id, legacy)
-                        VALUES (?, ?, ?, ?)
-                    """, (move_link_id, pokemon_id, move_id, self.conn.bool_value(is_legacy)))
-                else:
-                    cursor.execute("""
-                        INSERT INTO pokemon_moves (pokemon_id, move_id, legacy)
-                        VALUES (?, ?, ?)
-                    """, (pokemon_id, move_id, is_legacy))
+                move_link_id = self.conn.next_identifier("pokemon_moves", "id")
+                cursor.execute("""
+                    INSERT INTO pokemon_moves (id, pokemon_id, move_id, legacy)
+                    VALUES (?, ?, ?, ?)
+                """, (move_link_id, pokemon_id, move_id, self.conn.bool_value(is_legacy)))
 
             processed_moves.add(move_id)
 

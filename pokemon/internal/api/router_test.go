@@ -16,7 +16,7 @@ import (
 	"pokemon_data/internal/config"
 )
 
-// buildSmallPayload returns a tiny payload so tests don't depend on a local sqlite DB.
+// buildSmallPayload returns a tiny payload so router tests do not need a database.
 func buildSmallPayload(ctx context.Context) (any, error) {
 	return []any{
 		map[string]any{"pokemon_id": 1, "name": "Bulbasaur", "costumes": []any{}, "moves": []any{}, "fusion": []any{}, "backgrounds": []any{}, "megaEvolutions": []any{}, "crownForms": []any{}, "raid_boss": []any{}, "max": []any{}, "female_data": nil, "sizes": nil, "evolutionData": map[string]any{}},
@@ -55,7 +55,6 @@ func newTestRouter(t *testing.T) http.Handler {
 	cfg := config.Config{
 		Port:               3001,
 		Env:                "test",
-		SQLitePath:         "",
 		CachePrewarm:       false,
 		CacheRefreshToken:  "",
 		CacheBuildTimeout:  5 * time.Second,

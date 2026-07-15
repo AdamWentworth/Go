@@ -50,14 +50,11 @@ def main() -> None:
     from config import editor_mode, load_editor_environment, production_editor_settings
 
     load_editor_environment()
-    if editor_mode() == "production":
-        from production_session import ProductionCatalogSession
+    editor_mode()
+    from production_session import ProductionCatalogSession
 
-        with ProductionCatalogSession(production_editor_settings()):
-            run_editor()
-        return
-
-    run_editor()
+    with ProductionCatalogSession(production_editor_settings()):
+        run_editor()
 
 
 if __name__ == "__main__":

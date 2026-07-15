@@ -2,7 +2,13 @@
 set -euo pipefail
 
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
-python_bin="${PYTHON_BIN:-python3}"
+if [[ -n "${PYTHON_BIN:-}" ]]; then
+  python_bin="${PYTHON_BIN}"
+elif [[ -x "${repo_root}/editor/.venv/bin/python" ]]; then
+  python_bin="${repo_root}/editor/.venv/bin/python"
+else
+  python_bin="python3"
+fi
 container_name="${EDITOR_POSTGRES_TEST_CONTAINER:-pokegonexus_editor_catalog_test}"
 postgres_port="${EDITOR_POSTGRES_TEST_PORT:-55432}"
 postgres_password="editor_test_password"
@@ -37,13 +43,10 @@ fi
 
 (
   cd "${repo_root}/pokemon"
-  go run ./cmd/catalog-import \
-    --sqlite ./data/pokego.db \
-    --database-url "${postgres_url}" \
-    --release-id editor-postgres-manager-test \
-    --source-label editor-postgres-manager-test >/dev/null
   go run ./cmd/catalog-migrate --database-url "${postgres_url}" >/dev/null
 )
+docker exec -i "${container_name}" \
+  psql -v ON_ERROR_STOP=1 -U editor_test -d pokemon_catalog < "${repo_root}/editor/tests/postgres_catalog_fixture.sql" >/dev/null
 
 EDITOR_POSTGRES_TEST_URL="${postgres_url}" \
-  "${python_bin}" "${repo_root}/editor/tests/test_postgres_database_manager.py"
+  "${python_bin}" -m unittest discover -s "${repo_root}/editor/tests" -p "test_*.py" -v

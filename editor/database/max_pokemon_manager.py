@@ -56,7 +56,7 @@ class MaxPokemonManager:
             (pokemon_id, self.conn.bool_value(0), self.conn.bool_value(0))
         )
         self.conn.commit()
-        return pokemon_id if self.conn.is_postgres else cur.lastrowid
+        return pokemon_id
 
     # ──────────────────────────────────────────────────────────────────────────
     # Update

@@ -13,9 +13,7 @@ import (
 const catalogSchema = "pokemon_catalog"
 
 // OpenPostgres opens the reference catalog with a connection-local search
-// path. The service can use the same database/sql query boundary for SQLite
-// fallback and PostgreSQL cutover, while every pooled Postgres connection sees
-// the catalog schema first.
+// path. Every pooled PostgreSQL connection sees the catalog schema first.
 func OpenPostgres(databaseURL string) (*sql.DB, error) {
 	if strings.TrimSpace(databaseURL) == "" {
 		return nil, fmt.Errorf("PostgreSQL database URL is required")

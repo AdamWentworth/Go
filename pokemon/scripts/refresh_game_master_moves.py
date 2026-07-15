@@ -12,23 +12,25 @@ The updater is intentionally conservative:
 from __future__ import annotations
 
 import argparse
-import datetime as dt
 import json
 import re
-import shutil
-import sqlite3
 import sys
-import tempfile
 import urllib.request
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
 
+EDITOR_DIR = Path(__file__).resolve().parents[2] / "editor"
+if str(EDITOR_DIR) not in sys.path:
+    sys.path.insert(0, str(EDITOR_DIR))
+
+from scripts.postgres_catalog import CatalogConnection, open_catalog_authoring_connection
+
+
 DEFAULT_GAME_MASTER_URL = (
     "https://raw.githubusercontent.com/PokeMiners/game_masters/master/latest/latest.json"
 )
-DEFAULT_DB_PATH = Path(__file__).resolve().parents[1] / "data" / "pokego.db"
 
 
 @dataclass(frozen=True)
@@ -125,7 +127,7 @@ def normalize_form(value: Any, species_enum: Any) -> str:
     return aliases.get(normalized, normalized)
 
 
-def local_pool_key(row: sqlite3.Row) -> str:
+def local_pool_key(row: Any) -> str:
     return f"{row['pokedex_number'] or row['pokemon_id']}:{normalize_form(row['form'], row['name'])}"
 
 
@@ -224,14 +226,14 @@ def build_game_master_pools(
     return pools
 
 
-def get_type_ids(conn: sqlite3.Connection) -> dict[str, int]:
+def get_type_ids(conn: CatalogConnection) -> dict[str, int]:
     return {
         normalize_type(row["name"]): int(row["type_id"])
         for row in conn.execute("SELECT type_id, name FROM types")
     }
 
 
-def get_local_moves(conn: sqlite3.Connection) -> tuple[dict[str, sqlite3.Row], dict[str, sqlite3.Row]]:
+def get_local_moves(conn: CatalogConnection) -> tuple[dict[str, Any], dict[str, Any]]:
     rows = list(
         conn.execute(
             """
@@ -241,8 +243,8 @@ def get_local_moves(conn: sqlite3.Connection) -> tuple[dict[str, sqlite3.Row], d
             """
         )
     )
-    by_key: dict[str, sqlite3.Row] = {}
-    by_typed_key: dict[str, sqlite3.Row] = {}
+    by_key: dict[str, Any] = {}
+    by_typed_key: dict[str, Any] = {}
     key_counts: dict[str, int] = {}
     for row in rows:
         key = normalize_key(row["name"])
@@ -258,7 +260,7 @@ def get_local_moves(conn: sqlite3.Connection) -> tuple[dict[str, sqlite3.Row], d
 
 
 def ensure_moves(
-    conn: sqlite3.Connection,
+    conn: CatalogConnection,
     gm_moves: dict[str, GameMasterMove],
     apply: bool,
 ) -> tuple[int, int]:
@@ -293,7 +295,7 @@ def ensure_moves(
                         """,
                         (
                             type_id,
-                            gm_move.is_fast,
+                            bool(gm_move.is_fast),
                             gm_move.raid_power,
                             gm_move.raid_energy,
                             gm_move.raid_cooldown,
@@ -319,7 +321,7 @@ def ensure_moves(
                         gm_move.raid_power,
                         gm_move.raid_energy,
                         gm_move.raid_cooldown,
-                        gm_move.is_fast,
+                        bool(gm_move.is_fast),
                     ),
                 )
                 by_typed_key[gm_move.typed_key] = conn.execute(
@@ -336,13 +338,13 @@ def ensure_moves(
     return updates, inserts
 
 
-def refresh_move_maps(conn: sqlite3.Connection) -> dict[str, int]:
+def refresh_move_maps(conn: CatalogConnection) -> dict[str, int]:
     _by_key, by_typed_key = get_local_moves(conn)
     return {typed_key: int(row["move_id"]) for typed_key, row in by_typed_key.items()}
 
 
 def sync_assignment_table(
-    conn: sqlite3.Connection,
+    conn: CatalogConnection,
     table: str,
     id_column: str,
     entity_id: int,
@@ -354,7 +356,7 @@ def sync_assignment_table(
     existing = list(
         conn.execute(
             f"""
-            SELECT rowid AS assignment_rowid, move_id, COALESCE(legacy, 0) AS legacy
+            SELECT move_id, COALESCE(legacy, FALSE) AS legacy
             FROM {table}
             WHERE {id_column} = ?
             """,
@@ -380,8 +382,8 @@ def sync_assignment_table(
             delete_count += 1
             if apply:
                 conn.execute(
-                    f"DELETE FROM {table} WHERE rowid = ?",
-                    (row["assignment_rowid"],),
+                    f"DELETE FROM {table} WHERE {id_column} = ? AND move_id = ?",
+                    (entity_id, move_id),
                 )
 
     for move_id in sorted(current_move_ids):
@@ -389,32 +391,50 @@ def sync_assignment_table(
         if row is None:
             insert_count += 1
             if apply:
-                conn.execute(
-                    f"INSERT INTO {table} ({id_column}, move_id, legacy) VALUES (?, ?, 0)",
-                    (entity_id, move_id),
-                )
+                if table == "pokemon_moves":
+                    assignment_id = int(
+                        conn.execute("SELECT COALESCE(MAX(id), 0) + 1 FROM pokemon_moves").fetchone()[0]
+                    )
+                    conn.execute(
+                        "INSERT INTO pokemon_moves (id, pokemon_id, move_id, legacy) VALUES (?, ?, ?, FALSE)",
+                        (assignment_id, entity_id, move_id),
+                    )
+                else:
+                    conn.execute(
+                        f"INSERT INTO {table} ({id_column}, move_id, legacy) VALUES (?, ?, FALSE)",
+                        (entity_id, move_id),
+                    )
         elif int(row["legacy"] or 0) != 0:
             update_count += 1
             if apply:
                 conn.execute(
-                    f"UPDATE {table} SET legacy = 0 WHERE rowid = ?",
-                    (row["assignment_rowid"],),
+                    f"UPDATE {table} SET legacy = FALSE WHERE {id_column} = ? AND move_id = ?",
+                    (entity_id, move_id),
                 )
 
     for move_id in sorted(elite_move_ids - current_move_ids):
         if move_id not in by_move:
             insert_count += 1
             if apply:
-                conn.execute(
-                    f"INSERT INTO {table} ({id_column}, move_id, legacy) VALUES (?, ?, 1)",
-                    (entity_id, move_id),
-                )
+                if table == "pokemon_moves":
+                    assignment_id = int(
+                        conn.execute("SELECT COALESCE(MAX(id), 0) + 1 FROM pokemon_moves").fetchone()[0]
+                    )
+                    conn.execute(
+                        "INSERT INTO pokemon_moves (id, pokemon_id, move_id, legacy) VALUES (?, ?, ?, TRUE)",
+                        (assignment_id, entity_id, move_id),
+                    )
+                else:
+                    conn.execute(
+                        f"INSERT INTO {table} ({id_column}, move_id, legacy) VALUES (?, ?, TRUE)",
+                        (entity_id, move_id),
+                    )
 
     return insert_count, update_count, delete_count
 
 
 def sync_pokemon_moves(
-    conn: sqlite3.Connection,
+    conn: CatalogConnection,
     gm_pools: dict[str, GameMasterPool],
     move_ids_by_typed_key: dict[str, int],
     replaceable_duplicate_move_ids_by_key: dict[str, set[int]],
@@ -459,7 +479,7 @@ FUSION_FORM_KEYS = {
 
 
 def sync_fusion_moves(
-    conn: sqlite3.Connection,
+    conn: CatalogConnection,
     gm_pools: dict[str, GameMasterPool],
     move_ids_by_typed_key: dict[str, int],
     replaceable_duplicate_move_ids_by_key: dict[str, set[int]],
@@ -496,13 +516,6 @@ def sync_fusion_moves(
     return matched, inserts, updates, deletes
 
 
-def backup_database(db_path: Path) -> Path:
-    timestamp = dt.datetime.now().strftime("%Y%m%d_%H%M%S")
-    backup = db_path.with_name(f"{db_path.name}.bak_game_master_{timestamp}")
-    shutil.copy2(db_path, backup)
-    return backup
-
-
 def duplicate_move_ids_by_base_key(
     gm_moves: dict[str, GameMasterMove],
     move_ids_by_typed_key: dict[str, int],
@@ -520,53 +533,37 @@ def duplicate_move_ids_by_base_key(
 
 
 def run(args: argparse.Namespace) -> int:
-    db_path = Path(args.db).resolve()
-    if not db_path.exists():
-        raise SystemExit(f"Database not found: {db_path}")
-
     game_master = fetch_json(args.game_master_url)
     gm_moves = build_game_master_moves(game_master)
     gm_pools = build_game_master_pools(game_master, gm_moves)
 
-    backup_path: Path | None = None
-    if args.apply and not args.no_backup:
-        backup_path = backup_database(db_path)
+    with open_catalog_authoring_connection(args.database_url) as conn:
+        try:
+            conn.execute("BEGIN")
+            move_updates, move_inserts = ensure_moves(conn, gm_moves, args.apply)
+            move_ids_by_typed_key = refresh_move_maps(conn)
+            replaceable_duplicate_move_ids_by_key = duplicate_move_ids_by_base_key(
+                gm_moves, move_ids_by_typed_key
+            )
+            pokemon_matched, pokemon_inserts, pokemon_updates, pokemon_deletes = sync_pokemon_moves(
+                conn, gm_pools, move_ids_by_typed_key, replaceable_duplicate_move_ids_by_key, args.apply
+            )
+            fusion_matched, fusion_inserts, fusion_updates, fusion_deletes = sync_fusion_moves(
+                conn, gm_pools, move_ids_by_typed_key, replaceable_duplicate_move_ids_by_key, args.apply
+            )
 
-    conn = sqlite3.connect(db_path)
-    conn.row_factory = sqlite3.Row
-    try:
-        conn.execute("BEGIN")
-        move_updates, move_inserts = ensure_moves(conn, gm_moves, args.apply)
-        move_ids_by_typed_key = refresh_move_maps(conn)
-        replaceable_duplicate_move_ids_by_key = duplicate_move_ids_by_base_key(
-            gm_moves, move_ids_by_typed_key
-        )
-        pokemon_matched, pokemon_inserts, pokemon_updates, pokemon_deletes = sync_pokemon_moves(
-            conn, gm_pools, move_ids_by_typed_key, replaceable_duplicate_move_ids_by_key, args.apply
-        )
-        fusion_matched, fusion_inserts, fusion_updates, fusion_deletes = sync_fusion_moves(
-            conn, gm_pools, move_ids_by_typed_key, replaceable_duplicate_move_ids_by_key, args.apply
-        )
-
-        if args.apply:
-            integrity = conn.execute("PRAGMA integrity_check").fetchone()[0]
-            if integrity != "ok":
-                raise RuntimeError(f"SQLite integrity check failed: {integrity}")
-            conn.commit()
-        else:
+            if args.apply:
+                conn.commit()
+            else:
+                conn.rollback()
+        except Exception:
             conn.rollback()
-    except Exception:
-        conn.rollback()
-        raise
-    finally:
-        conn.close()
+            raise
 
     mode = "APPLIED" if args.apply else "DRY RUN"
     print(f"{mode}: Game Master move refresh")
-    print(f"Database: {db_path}")
+    print("Database: PostgreSQL catalog")
     print(f"Game Master: {args.game_master_url}")
-    if backup_path:
-        print(f"Backup: {backup_path}")
     print(f"Game Master moves: {len(gm_moves)}")
     print(f"Game Master Pokemon/form pools: {len(gm_pools)}")
     print(f"Move stat rows updated: {move_updates}")
@@ -588,10 +585,12 @@ def run(args: argparse.Namespace) -> int:
 
 def parse_args(argv: list[str]) -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--db", default=str(DEFAULT_DB_PATH), help="SQLite database path")
+    parser.add_argument(
+        "--database-url",
+        help="PostgreSQL catalog URL. Defaults to the editor's production SSH session.",
+    )
     parser.add_argument("--game-master-url", default=DEFAULT_GAME_MASTER_URL)
     parser.add_argument("--apply", action="store_true", help="Write changes to the database")
-    parser.add_argument("--no-backup", action="store_true", help="Skip creating a DB backup")
     return parser.parse_args(argv)
 
 

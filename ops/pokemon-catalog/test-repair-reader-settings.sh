@@ -11,7 +11,6 @@ cat > "${pokemon_dir}/catalog-db.env" <<'EOF'
 CATALOG_POSTGRES_HOST_PORT=5433
 EOF
 cat > "${pokemon_dir}/catalog-postgres.env" <<'EOF'
-CATALOG_DB_DRIVER=postgres
 CATALOG_DATABASE_URL=postgres://pokemon_catalog_reader:reader-secret@pokemon_catalog_db:5432/pokemon_catalog?sslmode=disable
 EOF
 

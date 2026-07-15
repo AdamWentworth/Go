@@ -22,14 +22,19 @@ class EditorConfigTests(unittest.TestCase):
                 "POKEGO_EDITOR_PROD_HOST=from-file@example.test\n",
                 encoding="utf-8",
             )
-            with patch.dict(os.environ, {"POKEGO_EDITOR_MODE": "sqlite"}, clear=True):
+            with patch.dict(os.environ, {"POKEGO_EDITOR_MODE": "production"}, clear=True):
                 load_editor_environment(env_path)
-                self.assertEqual(os.environ["POKEGO_EDITOR_MODE"], "sqlite")
+                self.assertEqual(os.environ["POKEGO_EDITOR_MODE"], "production")
                 self.assertEqual(os.environ["POKEGO_EDITOR_PROD_HOST"], "from-file@example.test")
 
     def test_editor_mode_rejects_unknown_values(self):
         with patch.dict(os.environ, {"POKEGO_EDITOR_MODE": "unknown"}, clear=True):
             with self.assertRaisesRegex(ValueError, "POKEGO_EDITOR_MODE"):
+                editor_mode()
+
+    def test_editor_mode_rejects_removed_local_recovery_mode(self):
+        with patch.dict(os.environ, {"POKEGO_EDITOR_MODE": "local"}, clear=True):
+            with self.assertRaisesRegex(ValueError, "production"):
                 editor_mode()
 
     def test_production_settings_resolve_ssh_key_and_validate_port(self):

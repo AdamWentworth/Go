@@ -65,7 +65,7 @@ class FusionPokemonManagerTests(TempDBTestCase):
             """
             SELECT move_id
             FROM moves
-            WHERE is_fast = 1
+            WHERE is_fast IS TRUE
             ORDER BY move_id
             LIMIT 2
             """

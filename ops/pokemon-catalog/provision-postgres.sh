@@ -169,7 +169,6 @@ parity_url="postgres://${reader_user}:${reader_password}@${parity_host}:${parity
 } > "${publisher_env_file}"
 
 {
-  printf 'CATALOG_DB_DRIVER=postgres\n'
   printf 'CATALOG_DATABASE_URL=%q\n' "${reader_url}"
   printf 'CATALOG_PARITY_DATABASE_URL=%q\n' "${parity_url}"
 } > "${reader_env_file}"
@@ -189,5 +188,5 @@ echo "Provisioned dedicated PostgreSQL catalog container: ${catalog_container}"
 echo "Catalog database: ${catalog_database}"
 echo "Persistent volume: ${volume_name}"
 echo "Publisher credentials: ${publisher_env_file}"
-echo "Reader cutover settings: ${reader_env_file}"
-echo "The Pokemon API remains on SQLite until the explicit cutover step."
+echo "Reader runtime settings: ${reader_env_file}"
+echo "The Pokemon API reads this PostgreSQL catalog when deployed."

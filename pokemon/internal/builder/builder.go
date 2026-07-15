@@ -21,18 +21,16 @@ type Builder struct {
 	payloadBuild  singleflight.Group
 }
 
-// SQLDialect describes the catalog query behavior. SQLite remains the
-// compatibility fallback while PostgreSQL is prepared for the production
-// source-of-truth cutover.
+// SQLDialect is retained at the query boundary so PostgreSQL-specific query
+// details stay explicit.
 type SQLDialect string
 
 const (
-	DialectSQLite   SQLDialect = "sqlite"
 	DialectPostgres SQLDialect = "postgres"
 )
 
 // pokemonPayloadBundle keeps the legacy response and the independently cached
-// delivery chunks backed by one SQLite read pass. The JSON response caches own
+// delivery chunks backed by one PostgreSQL read pass. The JSON response caches own
 // compression, ETags, and HTTP delivery; this cache only prevents duplicate DB
 // work while those responses are warming.
 type pokemonPayloadBundle struct {
@@ -43,7 +41,7 @@ type pokemonPayloadBundle struct {
 }
 
 func New(db *sql.DB, log *slog.Logger) *Builder {
-	return NewWithDialect(db, DialectSQLite, log)
+	return NewWithDialect(db, DialectPostgres, log)
 }
 
 func NewWithDialect(db *sql.DB, dialect SQLDialect, log *slog.Logger) *Builder {
@@ -51,7 +49,7 @@ func NewWithDialect(db *sql.DB, dialect SQLDialect, log *slog.Logger) *Builder {
 		log = slog.Default()
 	}
 	if dialect == "" {
-		dialect = DialectSQLite
+		dialect = DialectPostgres
 	}
 	return &Builder{db: db, dialect: dialect, log: log}
 }
@@ -268,7 +266,7 @@ func (b *Builder) BuildRaidDataPayload(ctx context.Context) (any, error) {
 }
 
 // InvalidatePokemonPayloadBundle must be paired with response-cache
-// invalidation after the underlying SQLite data changes.
+// invalidation after the underlying catalog data changes.
 func (b *Builder) InvalidatePokemonPayloadBundle() {
 	b.payloadMu.Lock()
 	b.payloadBundle = nil

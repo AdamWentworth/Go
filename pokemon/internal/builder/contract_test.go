@@ -5,10 +5,9 @@ package builder_test
 
 import (
 	"context"
+	"database/sql"
 	"encoding/json"
 	"os"
-	"path/filepath"
-	"strings"
 	"testing"
 	"time"
 
@@ -28,15 +27,7 @@ func TestPokemonPayload_StableShape(t *testing.T) {
 }
 
 func TestPokemonPayloadChunks_KeepCatalogLeanAndAddressable(t *testing.T) {
-	sqlitePath := resolveIntegrationSQLitePath()
-	if _, err := os.Stat(sqlitePath); err != nil {
-		t.Skipf("sqlite db not found at %s (skipping integration contract test): %v", sqlitePath, err)
-	}
-
-	sqlDB, err := db.OpenSQLite(sqlitePath)
-	if err != nil {
-		t.Fatalf("open sqlite: %v", err)
-	}
+	sqlDB := openIntegrationPostgres(t)
 	defer sqlDB.Close()
 
 	b := builder.New(sqlDB, nil)
@@ -116,15 +107,7 @@ func TestPokemonPayloadChunks_KeepCatalogLeanAndAddressable(t *testing.T) {
 func buildIntegrationPayload(t *testing.T) ([]byte, []map[string]any) {
 	t.Helper()
 
-	sqlitePath := resolveIntegrationSQLitePath()
-	if _, err := os.Stat(sqlitePath); err != nil {
-		t.Skipf("sqlite db not found at %s (skipping integration contract test): %v", sqlitePath, err)
-	}
-
-	sqlDB, err := db.OpenSQLite(sqlitePath)
-	if err != nil {
-		t.Fatalf("open sqlite: %v", err)
-	}
+	sqlDB := openIntegrationPostgres(t)
 	defer sqlDB.Close()
 
 	b := builder.New(sqlDB, nil)
@@ -153,19 +136,15 @@ func buildIntegrationPayload(t *testing.T) ([]byte, []map[string]any) {
 	return raw, arr
 }
 
-func resolveIntegrationSQLitePath() string {
-	if p := strings.TrimSpace(os.Getenv("SQLITE_PATH")); p != "" {
-		return p
+func openIntegrationPostgres(t *testing.T) *sql.DB {
+	t.Helper()
+	databaseURL := os.Getenv("POSTGRES_TEST_URL")
+	if databaseURL == "" {
+		t.Skip("POSTGRES_TEST_URL is not configured")
 	}
-
-	candidates := []string{
-		"./data/pokego.db",
-		filepath.Join("..", "..", "data", "pokego.db"),
+	sqlDB, err := db.OpenPostgres(databaseURL)
+	if err != nil {
+		t.Fatalf("open PostgreSQL catalog: %v", err)
 	}
-	for _, p := range candidates {
-		if _, err := os.Stat(p); err == nil {
-			return p
-		}
-	}
-	return candidates[len(candidates)-1]
+	return sqlDB
 }

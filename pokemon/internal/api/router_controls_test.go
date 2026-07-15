@@ -5,17 +5,17 @@ import (
 	"compress/gzip"
 	"context"
 	"database/sql"
+	"database/sql/driver"
 	"io"
 	"net/http"
 	"net/http/httptest"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 
 	"pokemon_data/internal/cache"
 	"pokemon_data/internal/config"
-
-	_ "modernc.org/sqlite"
 )
 
 // helper: make a cache that can serve /pokemon/pokemons successfully.
@@ -158,11 +158,25 @@ func TestPokemonEndpointReturnsGzipWhenAccepted(t *testing.T) {
 	}
 }
 
+const readyzTestDriverName = "pokemon-readyz-test"
+
+var registerReadyzTestDriver sync.Once
+
+type readyzTestDriver struct{}
+type readyzTestConn struct{}
+
+func (readyzTestDriver) Open(string) (driver.Conn, error)  { return readyzTestConn{}, nil }
+func (readyzTestConn) Prepare(string) (driver.Stmt, error) { return nil, driver.ErrSkip }
+func (readyzTestConn) Close() error                        { return nil }
+func (readyzTestConn) Begin() (driver.Tx, error)           { return nil, driver.ErrSkip }
+func (readyzTestConn) Ping(context.Context) error          { return nil }
+
 func newReadyzTestDB(t *testing.T) *sql.DB {
 	t.Helper()
-	db, err := sql.Open("sqlite", ":memory:")
+	registerReadyzTestDriver.Do(func() { sql.Register(readyzTestDriverName, readyzTestDriver{}) })
+	db, err := sql.Open(readyzTestDriverName, "")
 	if err != nil {
-		t.Fatalf("open sqlite memory db: %v", err)
+		t.Fatalf("open readiness test database: %v", err)
 	}
 	return db
 }

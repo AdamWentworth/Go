@@ -65,34 +65,11 @@ class MoveManager:
         for index in (8, 10, 11, 12):
             values[index] = self.conn.bool_value(values[index])
         if move_id is None:
-            if self.conn.is_postgres:
-                move_id = self.conn.next_identifier("moves", "move_id")
-                cursor.execute(
-                    """
-                    INSERT INTO moves (
-                        move_id,
-                        name,
-                        type_id,
-                        raid_power,
-                        pvp_power,
-                        raid_energy,
-                        pvp_energy,
-                        raid_cooldown,
-                        pvp_turns,
-                        is_fast,
-                        fusion_id,
-                        shadow,
-                        purified,
-                        apex
-                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                    """,
-                    (move_id,) + tuple(values),
-                )
-                new_move_id = move_id
-            else:
-                cursor.execute(
-                    """
-                    INSERT INTO moves (
+            move_id = self.conn.next_identifier("moves", "move_id")
+            cursor.execute(
+                """
+                INSERT INTO moves (
+                    move_id,
                     name,
                     type_id,
                     raid_power,
@@ -106,11 +83,11 @@ class MoveManager:
                     shadow,
                     purified,
                     apex
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                    """,
-                    tuple(values),
-                )
-                new_move_id = cursor.lastrowid
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """,
+                (move_id,) + tuple(values),
+            )
+            new_move_id = move_id
         else:
             cursor.execute(
                 """

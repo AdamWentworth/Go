@@ -37,9 +37,9 @@ class CostumePokemonManagerTests(TempDBTestCase):
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
             [
-                (7003, pokemon_id, "third", 0, None, None, None, None, None, None),
-                (7001, pokemon_id, "first", 0, None, None, None, None, None, None),
-                (7002, pokemon_id, "second", 0, None, None, None, None, None, None),
+                (7003, pokemon_id, "third", False, None, None, None, None, None, None),
+                (7001, pokemon_id, "first", False, None, None, None, None, None, None),
+                (7002, pokemon_id, "second", False, None, None, None, None, None, None),
             ],
         )
         self.db_connection.commit()
@@ -93,9 +93,9 @@ class CostumePokemonManagerTests(TempDBTestCase):
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
             [
-                (7010, pokemon_id, "ten", 0, None, None, None, None, None, None),
-                (7008, pokemon_id, "eight", 0, None, None, None, None, None, None),
-                (7009, pokemon_id, "nine", 0, None, None, None, None, None, None),
+                (7010, pokemon_id, "ten", False, None, None, None, None, None, None),
+                (7008, pokemon_id, "eight", False, None, None, None, None, None, None),
+                (7009, pokemon_id, "nine", False, None, None, None, None, None, None),
             ],
         )
         self.db_connection.commit()

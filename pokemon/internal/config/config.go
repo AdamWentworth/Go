@@ -11,9 +11,7 @@ import (
 type Config struct {
 	Port               int
 	Env                string
-	CatalogDBDriver    string
 	CatalogDatabaseURL string
-	SQLitePath         string
 	CachePrewarm       bool
 	CacheRefreshToken  string
 	CacheBuildTimeout  time.Duration
@@ -43,9 +41,7 @@ func Load() Config {
 	port := getInt("PORT", 3001)
 	env := getString("NODE_ENV", getString("ENV", "production"))
 
-	catalogDBDriver := strings.ToLower(getString("CATALOG_DB_DRIVER", "sqlite"))
 	catalogDatabaseURL := getString("CATALOG_DATABASE_URL", "")
-	sqlitePath := getString("SQLITE_PATH", "./data/pokego.db")
 
 	cachePrewarm := getBool("CACHE_PREWARM", true)
 	cacheToken := getString("CACHE_REFRESH_TOKEN", "")
@@ -74,9 +70,7 @@ func Load() Config {
 	return Config{
 		Port:                port,
 		Env:                 env,
-		CatalogDBDriver:     catalogDBDriver,
 		CatalogDatabaseURL:  catalogDatabaseURL,
-		SQLitePath:          sqlitePath,
 		CachePrewarm:        cachePrewarm,
 		CacheRefreshToken:   cacheToken,
 		CacheBuildTimeout:   cacheBuildTimeout,

@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
-"""
-Sync background metadata from the Pokemon GO Fandom page into pokego.db.
+"""Sync Fandom background metadata into the PostgreSQL catalog.
 
 Default behavior is DRY-RUN (no DB/file writes). Use --apply to persist.
 """
@@ -10,7 +9,7 @@ from __future__ import annotations
 import argparse
 import os
 import re
-import sqlite3
+import sys
 from dataclasses import dataclass, field
 from datetime import datetime
 from io import BytesIO
@@ -21,6 +20,13 @@ from urllib.parse import urlparse
 import requests
 from PIL import Image
 from bs4 import BeautifulSoup, Tag
+
+
+EDITOR_DIR = Path(__file__).resolve().parents[1]
+if str(EDITOR_DIR) not in sys.path:
+    sys.path.insert(0, str(EDITOR_DIR))
+
+from scripts.postgres_catalog import CatalogConnection, open_catalog_authoring_connection
 
 
 FANDOM_PARSE_API = (
@@ -617,7 +623,7 @@ def fetch_fandom_background_html(session: requests.Session, timeout: int) -> str
     return payload["parse"]["text"]["*"]
 
 
-def build_pokemon_lookup(conn: sqlite3.Connection) -> Dict[str, int]:
+def build_pokemon_lookup(conn: CatalogConnection) -> Dict[str, int]:
     cursor = conn.cursor()
     cursor.execute("SELECT pokemon_id, name, form FROM pokemon")
     grouped: Dict[str, List[Tuple[int, str, Optional[str]]]] = {}
@@ -655,7 +661,7 @@ def resolve_pokemon_id(title: str, pokemon_lookup: Dict[str, int]) -> Optional[i
     return None
 
 
-def build_costume_lookup(conn: sqlite3.Connection) -> Dict[int, List[CostumeRecord]]:
+def build_costume_lookup(conn: CatalogConnection) -> Dict[int, List[CostumeRecord]]:
     cursor = conn.cursor()
     cursor.execute(
         """
@@ -739,7 +745,7 @@ def normalize_desired_links(desired_links: Set[Tuple[int, Optional[int]]]) -> Se
 
 
 def load_background_records(
-    conn: sqlite3.Connection,
+    conn: CatalogConnection,
 ) -> Tuple[
     Dict[str, BackgroundRecord],
     Dict[Tuple[str, str, str], BackgroundRecord],
@@ -786,7 +792,7 @@ def load_background_records(
 
 
 def collapse_equivalent_background_records(
-    conn: sqlite3.Connection,
+    conn: CatalogConnection,
     dry_run: bool,
     verbose: bool,
     stats: SyncStats,
@@ -864,7 +870,7 @@ def collapse_equivalent_background_records(
 
 
 def dedupe_exact_background_links(
-    conn: sqlite3.Connection,
+    conn: CatalogConnection,
     dry_run: bool,
     verbose: bool,
     stats: SyncStats,
@@ -872,37 +878,37 @@ def dedupe_exact_background_links(
     cursor = conn.cursor()
     cursor.execute(
         """
-        SELECT rowid, pokemon_id, background_id, costume_id
+        SELECT id, pokemon_id, background_id, costume_id
         FROM pokemon_backgrounds
-        ORDER BY pokemon_id, background_id, COALESCE(costume_id, -1), rowid
+        ORDER BY pokemon_id, background_id, COALESCE(costume_id, -1), id
         """
     )
     rows = cursor.fetchall()
     seen: Set[Tuple[int, int, Optional[int]]] = set()
-    duplicate_rowids: List[int] = []
-    for rowid, pokemon_id, background_id, costume_id in rows:
+    duplicate_ids: List[int] = []
+    for link_id, pokemon_id, background_id, costume_id in rows:
         key = (int(pokemon_id), int(background_id), int(costume_id) if costume_id is not None else None)
         if key in seen:
-            duplicate_rowids.append(int(rowid))
+            duplicate_ids.append(int(link_id))
         else:
             seen.add(key)
 
-    if not duplicate_rowids:
+    if not duplicate_ids:
         return
 
-    stats.links_deduped_exact += len(duplicate_rowids)
+    stats.links_deduped_exact += len(duplicate_ids)
     if dry_run:
         if verbose:
-            print(f"[DRY] Would remove {len(duplicate_rowids)} exact duplicate pokemon_background rows")
+            print(f"[DRY] Would remove {len(duplicate_ids)} exact duplicate pokemon_background rows")
         return
 
-    cursor.executemany("DELETE FROM pokemon_backgrounds WHERE rowid = ?", [(rowid,) for rowid in duplicate_rowids])
+    cursor.executemany("DELETE FROM pokemon_backgrounds WHERE id = ?", [(link_id,) for link_id in duplicate_ids])
     if verbose:
-        print(f"[INFO] Removed {len(duplicate_rowids)} exact duplicate pokemon_background rows")
+        print(f"[INFO] Removed {len(duplicate_ids)} exact duplicate pokemon_background rows")
 
 
 def collapse_links_to_one_per_pokemon_background(
-    conn: sqlite3.Connection,
+    conn: CatalogConnection,
     dry_run: bool,
     verbose: bool,
     stats: SyncStats,
@@ -910,26 +916,26 @@ def collapse_links_to_one_per_pokemon_background(
     cursor = conn.cursor()
     cursor.execute(
         """
-        SELECT pb.rowid, pb.pokemon_id, pb.background_id, pb.costume_id, b.image_url, b.name
+        SELECT pb.id, pb.pokemon_id, pb.background_id, pb.costume_id, b.image_url, b.name
         FROM pokemon_backgrounds pb
         LEFT JOIN backgrounds b ON b.background_id = pb.background_id
-        ORDER BY pb.pokemon_id, pb.background_id, pb.rowid
+        ORDER BY pb.pokemon_id, pb.background_id, pb.id
         """
     )
     rows = cursor.fetchall()
     rows_by_pair: Dict[Tuple[int, int], List[Tuple[int, Optional[int], Optional[str], Optional[str]]]] = {}
-    for rowid, pokemon_id, background_id, costume_id, image_url, background_name in rows:
+    for link_id, pokemon_id, background_id, costume_id, image_url, background_name in rows:
         pair = (int(pokemon_id), int(background_id))
         rows_by_pair.setdefault(pair, []).append(
             (
-                int(rowid),
+                int(link_id),
                 int(costume_id) if costume_id is not None else None,
                 image_url,
                 background_name,
             )
         )
 
-    remove_rowids: List[int] = []
+    remove_ids: List[int] = []
     for _pair, pair_rows in rows_by_pair.items():
         if len(pair_rows) <= 1:
             continue
@@ -942,58 +948,58 @@ def collapse_links_to_one_per_pokemon_background(
         )
 
         if allow_multi_costume:
-            kept_costume_to_rowid: Dict[int, int] = {}
-            kept_generic_rowid: Optional[int] = None
-            for rowid, costume_id, _image_url, _background_name in pair_rows:
+            kept_costume_to_id: Dict[int, int] = {}
+            kept_generic_id: Optional[int] = None
+            for link_id, costume_id, _image_url, _background_name in pair_rows:
                 if costume_id is None:
-                    if kept_generic_rowid is None and not kept_costume_to_rowid:
-                        kept_generic_rowid = rowid
+                    if kept_generic_id is None and not kept_costume_to_id:
+                        kept_generic_id = link_id
                     else:
-                        remove_rowids.append(rowid)
+                        remove_ids.append(link_id)
                     continue
 
-                if costume_id in kept_costume_to_rowid:
-                    remove_rowids.append(rowid)
+                if costume_id in kept_costume_to_id:
+                    remove_ids.append(link_id)
                     continue
 
-                kept_costume_to_rowid[costume_id] = rowid
-                if kept_generic_rowid is not None:
-                    remove_rowids.append(kept_generic_rowid)
-                    kept_generic_rowid = None
+                kept_costume_to_id[costume_id] = link_id
+                if kept_generic_id is not None:
+                    remove_ids.append(kept_generic_id)
+                    kept_generic_id = None
             continue
 
-        kept_rowid: Optional[int] = None
+        kept_id: Optional[int] = None
         kept_costume: Optional[int] = None
-        for rowid, costume_id, _image_url, _background_name in pair_rows:
-            if kept_rowid is None:
-                kept_rowid = rowid
+        for link_id, costume_id, _image_url, _background_name in pair_rows:
+            if kept_id is None:
+                kept_id = link_id
                 kept_costume = costume_id
                 continue
 
             should_replace_kept = kept_costume is None and costume_id is not None
             if should_replace_kept:
-                remove_rowids.append(kept_rowid)
-                kept_rowid = rowid
+                remove_ids.append(kept_id)
+                kept_id = link_id
                 kept_costume = costume_id
             else:
-                remove_rowids.append(rowid)
+                remove_ids.append(link_id)
 
-    if not remove_rowids:
+    if not remove_ids:
         return
 
-    stats.links_collapsed_pair += len(remove_rowids)
+    stats.links_collapsed_pair += len(remove_ids)
     if dry_run:
         if verbose:
             print(
-                f"[DRY] Would remove {len(remove_rowids)} extra pokemon_background rows "
+                f"[DRY] Would remove {len(remove_ids)} extra pokemon_background rows "
                 "to enforce one row per (pokemon_id, background_id)"
             )
         return
 
-    cursor.executemany("DELETE FROM pokemon_backgrounds WHERE rowid = ?", [(rowid,) for rowid in remove_rowids])
+    cursor.executemany("DELETE FROM pokemon_backgrounds WHERE id = ?", [(link_id,) for link_id in remove_ids])
     if verbose:
         print(
-            f"[INFO] Removed {len(remove_rowids)} extra pokemon_background rows "
+            f"[INFO] Removed {len(remove_ids)} extra pokemon_background rows "
             "to enforce one row per (pokemon_id, background_id)"
         )
 
@@ -1035,7 +1041,7 @@ def resolve_local_image_rel_path(
 
 
 def ensure_background_row(
-    conn: sqlite3.Connection,
+    conn: CatalogConnection,
     record: Optional[BackgroundRecord],
     parsed: ParsedBackground,
     dry_run: bool,
@@ -1059,15 +1065,18 @@ def ensure_background_row(
             return fake_id, desired_image_rel
 
         cursor = conn.cursor()
+        next_background_id = int(
+            conn.execute("SELECT COALESCE(MAX(background_id), 0) + 1 FROM backgrounds").fetchone()[0]
+        )
         cursor.execute(
             """
-            INSERT INTO backgrounds (name, location, image_url, date)
-            VALUES (?, ?, ?, ?)
+            INSERT INTO backgrounds (background_id, name, location, image_url, date)
+            VALUES (?, ?, ?, ?, ?)
             """,
-            (desired_name, desired_location, desired_image_rel, desired_date),
+            (next_background_id, desired_name, desired_location, desired_image_rel, desired_date),
         )
         stats.backgrounds_inserted += 1
-        return int(cursor.lastrowid), desired_image_rel
+        return next_background_id, desired_image_rel
 
     updates: Dict[str, Optional[str]] = {}
     if not normalize_space(record.name or "") and desired_name:
@@ -1115,7 +1124,7 @@ def ensure_background_row(
 
 
 def add_missing_links(
-    conn: sqlite3.Connection,
+    conn: CatalogConnection,
     background_id: int,
     desired_links: Set[Tuple[int, Optional[int]]],
     existing_links: Set[Tuple[int, Optional[int]]],
@@ -1232,7 +1241,7 @@ def maybe_download_image(
 
 
 def sync_backgrounds(
-    conn: sqlite3.Connection,
+    conn: CatalogConnection,
     assets_root: Path,
     parsed_backgrounds: List[ParsedBackground],
     dry_run: bool,
@@ -1414,16 +1423,18 @@ def sync_backgrounds(
 
 def parse_args() -> argparse.Namespace:
     repo_root = Path(__file__).resolve().parents[2]
-    default_db = repo_root / "pokemon" / "data" / "pokego.db"
     default_assets = repo_root / "assets"
 
     parser = argparse.ArgumentParser(
         description=(
-            "Sync backgrounds from the Fandom Backgrounds page into pokego.db and "
+            "Sync backgrounds from the Fandom Backgrounds page into the PostgreSQL catalog and "
             "download images into assets/images/backgrounds."
         )
     )
-    parser.add_argument("--db-path", default=str(default_db), help="Path to pokego.db")
+    parser.add_argument(
+        "--database-url",
+        help="PostgreSQL catalog URL. Defaults to the editor's production SSH session.",
+    )
     parser.add_argument("--assets-root", default=str(default_assets), help="Path to repo assets directory")
     parser.add_argument(
         "--apply",
@@ -1472,10 +1483,7 @@ def main() -> int:
     args = parse_args()
     dry_run = not args.apply
 
-    db_path = Path(args.db_path).resolve()
     assets_root = Path(args.assets_root).resolve()
-    if not db_path.exists():
-        raise FileNotFoundError(f"Database not found: {db_path}")
     if not assets_root.exists():
         raise FileNotFoundError(f"Assets root not found: {assets_root}")
 
@@ -1486,8 +1494,7 @@ def main() -> int:
     if args.limit and args.limit > 0:
         parsed = parsed[: args.limit]
 
-    conn = sqlite3.connect(str(db_path))
-    try:
+    with open_catalog_authoring_connection(args.database_url) as conn:
         stats = sync_backgrounds(
             conn=conn,
             assets_root=assets_root,
@@ -1502,8 +1509,6 @@ def main() -> int:
             conn.rollback()
         else:
             conn.commit()
-    finally:
-        conn.close()
 
     print_summary(stats, dry_run=dry_run)
     return 0

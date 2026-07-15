@@ -1,8 +1,7 @@
 .env
 data/backups/
-data/pokego.db-shm
-data/pokego.db-wal
-data/pokego.db.sha256
-data/pokego.db.release.json
-data/.pokego.db.*.tmp
+data/*.db
+data/*.db-*
+data/*.db.*
+data/.*.db.*.tmp
 data/*.bak*

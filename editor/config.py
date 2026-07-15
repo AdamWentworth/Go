@@ -9,7 +9,6 @@ from dotenv import load_dotenv
 
 
 EDITOR_DIR = Path(__file__).resolve().parent
-DEFAULT_SQLITE_PATH = EDITOR_DIR.parent / "pokemon" / "data" / "pokego.db"
 DEFAULT_EDITOR_ENV_PATH = EDITOR_DIR / ".env"
 
 
@@ -19,10 +18,10 @@ def load_editor_environment(path: Path = DEFAULT_EDITOR_ENV_PATH) -> None:
 
 
 def editor_mode() -> str:
-    """Return the requested authoring target mode."""
-    mode = os.environ.get("POKEGO_EDITOR_MODE", "sqlite").strip().lower()
-    if mode not in {"production", "sqlite"}:
-        raise ValueError("POKEGO_EDITOR_MODE must be either 'production' or 'sqlite'.")
+    """Return the sole supported authoring target mode."""
+    mode = os.environ.get("POKEGO_EDITOR_MODE", "production").strip().lower()
+    if mode != "production":
+        raise ValueError("POKEGO_EDITOR_MODE must be 'production'.")
     return mode
 
 
@@ -54,11 +53,11 @@ def production_editor_settings() -> dict[str, str]:
 
 
 def catalog_database_target() -> str:
-    """Return the explicit editor target or the local SQLite fallback."""
+    """Return the PostgreSQL catalog URL prepared for the editor session."""
     configured = os.environ.get("POKEGO_EDITOR_DATABASE_URL", "").strip()
-    if configured:
-        return configured
-    return str(DEFAULT_SQLITE_PATH)
+    if not configured:
+        raise ValueError("POKEGO_EDITOR_DATABASE_URL is required for the PostgreSQL catalog editor.")
+    return configured
 
 
 def catalog_database_label(target: str) -> str:
@@ -66,7 +65,4 @@ def catalog_database_label(target: str) -> str:
     configured_label = os.environ.get("POKEGO_EDITOR_DATABASE_LABEL", "").strip()
     if configured_label:
         return configured_label
-    normalized = target.strip().lower()
-    if normalized.startswith(("postgres://", "postgresql://")):
-        return "PostgreSQL catalog"
-    return "SQLite recovery copy"
+    return "PostgreSQL catalog"

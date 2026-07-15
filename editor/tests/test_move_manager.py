@@ -76,13 +76,14 @@ class MoveManagerTests(TempDBTestCase):
         self.assertIsNotNone(fusion_id)
 
         cursor = self.db_connection.get_cursor()
+        pokemon_move_id = self.db_connection.next_identifier("pokemon_moves", "id")
         cursor.execute(
-            "INSERT INTO pokemon_moves (move_id, pokemon_id, legacy) VALUES (?, ?, ?)",
-            (new_move_id, pokemon_id, 0),
+            "INSERT INTO pokemon_moves (id, move_id, pokemon_id, legacy) VALUES (?, ?, ?, ?)",
+            (pokemon_move_id, new_move_id, pokemon_id, False),
         )
         cursor.execute(
             "INSERT INTO fusion_moveset (fusion_id, move_id, legacy) VALUES (?, ?, ?)",
-            (fusion_id, new_move_id, 0),
+            (fusion_id, new_move_id, False),
         )
         self.db_connection.commit()
 

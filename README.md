@@ -9,12 +9,12 @@ Welcome to the **PokeGo Nexus** — a full-stack web application and data ecosys
 ```plaintext
 Go/
 ├── authentication/     # JWT auth microservice with MongoDB
-├── editor/             # Tkinter-based GUI to edit pokego.db
+├── editor/             # Tkinter GUI for the PostgreSQL reference catalog
 ├── frontend/           # React 18+ app with SSE & IndexedDB
 ├── location/           # Go + PostGIS location microservice
 ├── nginx/              # Reverse proxy config and SSL setup
 ├── notes/              # Technical notes and architecture
-├── pokemon/            # Pokémon API (Go) powered by enriched SQLite
+├── pokemon/            # Pokémon API (Go) backed by dedicated PostgreSQL
 ├── reader/             # Read microservices: search, users, events
 ├── receiver/           # Kafka producer, ingest client updates
 ├── storage/            # Kafka consumer, persist to MySQL, backup jobs
@@ -32,7 +32,7 @@ Use `pokemon/` for all current Pokemon API development and deployment.
 |---------------|---------------------------------------------------|
 | Frontend      | React 18, Context API, SSE, IndexedDB             |
 | Auth          | Node.js + Express + MongoDB + JWT                 |
-| Pokémon API   | Go (`net/http` + `chi`) + SQLite + cache layer     |
+| Pokémon API   | Go (`net/http` + `chi`) + PostgreSQL + cache layer |
 | Location      | Go + PostgreSQL/PostGIS                           |
 | Event Sync    | Kafka (Docker) + Go consumers/producers           |
 | Search        | Go + MySQL + Haversine filters                    |
@@ -67,7 +67,7 @@ go mod tidy
 go run ./cmd/pokemon
 ```
 
-- Powered by `pokego.db`  
+- Powered by the dedicated PostgreSQL reference catalog
 - Runs on port `3001`  
 - Supports mega, shiny, costumes, evolutions
 
@@ -166,8 +166,8 @@ python main.py
 ```
 
 - Tkinter GUI  
-- Directly edits `pokego.db`  
-- Always back up before changes
+- Opens a protected production PostgreSQL authoring session
+- Creates a private dump before changes
 
 ---
 
@@ -257,7 +257,7 @@ Events Service → Notifies connected clients via SSE
 
 | Tool         | Purpose                                    |
 |--------------|--------------------------------------------|
-| Editor GUI   | Modify `pokego.db` visually                |
+| Editor GUI   | Modify the PostgreSQL catalog visually     |
 | Kafka        | Monitor message flow (`batchedUpdates`)    |
 | NGINX        | Central API router + TLS termination       |
 | Notes/       | Includes design docs, plans, and ideas     |
@@ -321,4 +321,3 @@ If you're contributing:
 This monorepo is built by a passionate trainer/dev and is not affiliated with Niantic or Pokémon.
 
 **Gotta catch 'em all!** 🧢✨
-

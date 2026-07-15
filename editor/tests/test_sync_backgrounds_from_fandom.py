@@ -1,5 +1,4 @@
 import sys
-import sqlite3
 import unittest
 from pathlib import Path
 
@@ -26,6 +25,8 @@ from scripts.sync_backgrounds_from_fandom import (  # noqa: E402
     parse_start_date,
     resolve_costume_id_for_ref,
 )
+from scripts.postgres_catalog import CatalogConnection  # noqa: E402
+from test_base import TempDBTestCase  # noqa: E402
 
 
 class SyncBackgroundsFromFandomTests(unittest.TestCase):
@@ -202,40 +203,26 @@ class SyncBackgroundsFromFandomTests(unittest.TestCase):
         )
         self.assertEqual(key_a, key_b)
 
+class BackgroundCatalogSyncTests(TempDBTestCase):
+    def reset_background_tables(self):
+        connection = CatalogConnection(self.db_connection.conn)
+        cursor = connection.cursor()
+        cursor.execute(
+            "TRUNCATE TABLE fusion_background_combo_rules, pokemon_backgrounds, backgrounds RESTART IDENTITY CASCADE"
+        )
+        connection.commit()
+        return connection, cursor
+
+    def add_costumes(self, rows):
+        cursor = self.db_connection.get_cursor()
+        cursor.executemany(
+            "INSERT INTO costume_pokemon (costume_id, pokemon_id, costume_name) VALUES (?, ?, ?)",
+            rows,
+        )
+        self.db_connection.commit()
+
     def test_collapse_equivalent_background_records_merges_seattle_style_duplicates(self):
-        conn = sqlite3.connect(":memory:")
-        cur = conn.cursor()
-        cur.execute(
-            """
-            CREATE TABLE backgrounds (
-                background_id INTEGER PRIMARY KEY,
-                name TEXT,
-                location TEXT,
-                image_url TEXT,
-                date TEXT
-            )
-            """
-        )
-        cur.execute(
-            """
-            CREATE TABLE pokemon_backgrounds (
-                pokemon_id INTEGER,
-                background_id INTEGER,
-                costume_id INTEGER
-            )
-            """
-        )
-        cur.execute(
-            """
-            CREATE TABLE fusion_background_combo_rules (
-                rule_id INTEGER PRIMARY KEY,
-                fusion_id INTEGER,
-                member1_background_id INTEGER,
-                member2_background_id INTEGER,
-                combo_background_id INTEGER
-            )
-            """
-        )
+        conn, cur = self.reset_background_tables()
         cur.executemany(
             "INSERT INTO backgrounds (background_id, name, location, image_url, date) VALUES (?, ?, ?, ?, ?)",
             [
@@ -263,8 +250,8 @@ class SyncBackgroundsFromFandomTests(unittest.TestCase):
             ],
         )
         cur.execute(
-            "INSERT INTO fusion_background_combo_rules (rule_id, fusion_id, member1_background_id, member2_background_id, combo_background_id) VALUES (?, ?, ?, ?, ?)",
-            (1, 800, 62, 24, 62),
+            "INSERT INTO fusion_background_combo_rules (fusion_id, member1_background_id, member2_background_id, combo_background_id) VALUES (?, ?, ?, ?)",
+            (1, 62, 24, 62),
         )
         conn.commit()
 
@@ -285,31 +272,9 @@ class SyncBackgroundsFromFandomTests(unittest.TestCase):
         self.assertEqual(pokemon_links, [(25, 24, None), (25, 24, None)])
         self.assertEqual(fusion_refs, (24, 24, 24))
         self.assertEqual(stats.backgrounds_merged, 1)
-        conn.close()
 
     def test_load_background_records_exposes_equivalent_background_lookup(self):
-        conn = sqlite3.connect(":memory:")
-        cur = conn.cursor()
-        cur.execute(
-            """
-            CREATE TABLE backgrounds (
-                background_id INTEGER PRIMARY KEY,
-                name TEXT,
-                location TEXT,
-                image_url TEXT,
-                date TEXT
-            )
-            """
-        )
-        cur.execute(
-            """
-            CREATE TABLE pokemon_backgrounds (
-                pokemon_id INTEGER,
-                background_id INTEGER,
-                costume_id INTEGER
-            )
-            """
-        )
+        conn, cur = self.reset_background_tables()
         cur.execute(
             "INSERT INTO backgrounds (background_id, name, location, image_url, date) VALUES (?, ?, ?, ?, ?)",
             (
@@ -332,20 +297,9 @@ class SyncBackgroundsFromFandomTests(unittest.TestCase):
         )
         self.assertEqual(by_equivalence[seattle_key].background_id, 24)
         self.assertEqual(links, {})
-        conn.close()
 
     def test_collapse_links_to_one_per_pokemon_background_prefers_costume(self):
-        conn = sqlite3.connect(":memory:")
-        cur = conn.cursor()
-        cur.execute(
-            """
-            CREATE TABLE backgrounds (
-                background_id INTEGER PRIMARY KEY,
-                name TEXT,
-                image_url TEXT
-            )
-            """
-        )
+        conn, cur = self.reset_background_tables()
         cur.executemany(
             "INSERT INTO backgrounds (background_id, name, image_url) VALUES (?, ?, ?)",
             [
@@ -354,15 +308,7 @@ class SyncBackgroundsFromFandomTests(unittest.TestCase):
                 (300, "Location C", "/images/backgrounds/Location_Background_C.png"),
             ],
         )
-        cur.execute(
-            """
-            CREATE TABLE pokemon_backgrounds (
-                pokemon_id INTEGER,
-                background_id INTEGER,
-                costume_id INTEGER
-            )
-            """
-        )
+        self.add_costumes([(78, 25, "Costume A"), (102, 133, "Costume B")])
         cur.executemany(
             "INSERT INTO pokemon_backgrounds (pokemon_id, background_id, costume_id) VALUES (?, ?, ?)",
             [
@@ -400,33 +346,14 @@ class SyncBackgroundsFromFandomTests(unittest.TestCase):
             ],
         )
         self.assertEqual(stats.links_collapsed_pair, 3)
-        conn.close()
 
     def test_collapse_links_keeps_multiple_costumes_for_team_backgrounds(self):
-        conn = sqlite3.connect(":memory:")
-        cur = conn.cursor()
-        cur.execute(
-            """
-            CREATE TABLE backgrounds (
-                background_id INTEGER PRIMARY KEY,
-                name TEXT,
-                image_url TEXT
-            )
-            """
-        )
+        conn, cur = self.reset_background_tables()
         cur.execute(
             "INSERT INTO backgrounds (background_id, name, image_url) VALUES (?, ?, ?)",
             (500, "Triumph Together - Valor", "/images/backgrounds/Special_Background_Valor.png"),
         )
-        cur.execute(
-            """
-            CREATE TABLE pokemon_backgrounds (
-                pokemon_id INTEGER,
-                background_id INTEGER,
-                costume_id INTEGER
-            )
-            """
-        )
+        self.add_costumes([(317, 25, "Valor A"), (318, 25, "Valor B")])
         cur.executemany(
             "INSERT INTO pokemon_backgrounds (pokemon_id, background_id, costume_id) VALUES (?, ?, ?)",
             [
@@ -456,19 +383,12 @@ class SyncBackgroundsFromFandomTests(unittest.TestCase):
             ],
         )
         self.assertEqual(stats.links_collapsed_pair, 2)
-        conn.close()
 
     def test_add_missing_links_skips_when_pair_already_exists_with_any_costume(self):
-        conn = sqlite3.connect(":memory:")
-        cur = conn.cursor()
+        conn, cur = self.reset_background_tables()
         cur.execute(
-            """
-            CREATE TABLE pokemon_backgrounds (
-                pokemon_id INTEGER,
-                background_id INTEGER,
-                costume_id INTEGER
-            )
-            """
+            "INSERT INTO backgrounds (background_id, name) VALUES (?, ?)",
+            (100, "Location A"),
         )
         cur.execute(
             "INSERT INTO pokemon_backgrounds (pokemon_id, background_id, costume_id) VALUES (?, ?, ?)",
@@ -497,20 +417,14 @@ class SyncBackgroundsFromFandomTests(unittest.TestCase):
         ).fetchall()
         self.assertEqual(rows, [(25, 100, None)])
         self.assertEqual(stats.links_added, 0)
-        conn.close()
 
     def test_add_missing_links_allows_second_costume_for_team_backgrounds(self):
-        conn = sqlite3.connect(":memory:")
-        cur = conn.cursor()
+        conn, cur = self.reset_background_tables()
         cur.execute(
-            """
-            CREATE TABLE pokemon_backgrounds (
-                pokemon_id INTEGER,
-                background_id INTEGER,
-                costume_id INTEGER
-            )
-            """
+            "INSERT INTO backgrounds (background_id, name) VALUES (?, ?)",
+            (500, "Triumph Together - Valor"),
         )
+        self.add_costumes([(317, 25, "Valor A"), (318, 25, "Valor B")])
         cur.execute(
             "INSERT INTO pokemon_backgrounds (pokemon_id, background_id, costume_id) VALUES (?, ?, ?)",
             (25, 500, 317),
@@ -538,7 +452,6 @@ class SyncBackgroundsFromFandomTests(unittest.TestCase):
         ).fetchall()
         self.assertEqual(rows, [(25, 500, 317), (25, 500, 318)])
         self.assertEqual(stats.links_added, 1)
-        conn.close()
 
 
 if __name__ == "__main__":

@@ -1,160 +1,77 @@
-# Pokemon Catalog PostgreSQL Flow
+# Pokemon Catalog PostgreSQL Operations
 
-The Pokemon reference catalog has its own PostgreSQL service boundary, defined
-directly beside `pokemon_data` in `pokemon/docker-compose.yml`. It is not
-stored in the location/PostGIS database: this keeps ownership, storage,
-backups, upgrades, and future cloud placement independent.
+The reference catalog has a dedicated PostgreSQL service boundary beside the
+Pokemon API in `pokemon/docker-compose.yml`.
 
-## Runtime Topology
+## Topology
 
-- `pokemon_catalog_db`: dedicated official PostgreSQL container, pinned by
-  digest for reproducible deployments.
-- `pokemon_catalog_pgdata`: its named Docker volume.
-- `pokemon_catalog_internal`: an isolated Compose-managed Docker network shared
-  only by `pokemon_data` and `pokemon_catalog_db`.
-- `pokemon_catalog_publisher`: schema owner used only by catalog publishing.
-- `pokemon_catalog_reader`: read-only account used by the Pokemon API after
-  cutover.
-- `postgres`: bootstrap and human-administration account. The sync operation
-  below aligns it with the existing location/PostGIS `postgres` credential.
+- `pokemon_catalog_db`: pinned official PostgreSQL container
+- `pokemon_catalog_pgdata`: persistent named volume
+- `pokemon_catalog_internal`: private API/database network
+- `pokemon_catalog_reader`: read-only API role
+- `pokemon_catalog_publisher`: editor and maintenance writer role
+- `postgres`: bootstrap and human-administration superuser
 
-The database exposes only `127.0.0.1:5433` to the host for the publisher. The
-API uses the internal hostname `pokemon_catalog_db:5432`; no catalog database
-port is exposed to the public network.
+Only `127.0.0.1:5433` is exposed on the host. The API connects through the
+private Compose network at `pokemon_catalog_db:5432`.
 
-No credentials are committed. Provisioning writes private files under the
-production deploy root:
+Private environment files live under `/srv/pokegonexus/pokemon`:
 
-- `pokemon/catalog-db.env`: container bootstrap credential. When provisioned
-  through `sudo`, it is mode 640 for `root` and the deployment runner group so
-  Compose can resolve the full service stack during an API deployment. That
-  runner already has Docker control on this single-node host, so it can inspect
-  container environments regardless of the file mode.
-- `pokemon/catalog-publisher.env`: publisher-only connection details. When
-  provisioned through `sudo`, it is mode 640 for `root` and the invoking
-  deployment-runner user's group so the self-hosted publish workflow can read
-  only this credential.
-- `pokemon/catalog-postgres.env`: read-only API settings. When provisioned
-  through `sudo`, it is mode 640 for `root` and the invoking deployment-runner
-  user's group so the guarded cutover can configure the service with the
-  least-privileged catalog account. It also contains a reader-only loopback URL
-  used only to prove live SQLite/PostgreSQL payload parity before cutover.
+- `catalog-db.env`: database bootstrap credentials
+- `catalog-publisher.env`: publisher connection settings
+- `catalog-postgres.env`: read-only API settings
 
-## First Provisioning
+They must remain mode `640`, owned by `root` and the deployment-runner group.
 
-Copy `pokemon/docker-compose.yml` and `ops/pokemon-catalog/provision-postgres.sh`
-to the production host, then run:
+## Provisioning
+
+Provision a new host with the service compose file and
+`provision-postgres.sh`:
 
 ```bash
-sudo bash /tmp/provision-postgres.sh \
+sudo bash /tmp/provision-pokemon-catalog-postgres.sh \
   /srv/pokegonexus \
   /tmp/pokemon-docker-compose.yml
 ```
 
-It installs the service compose file, starts the dedicated database, generates
-private credentials, and creates the read/write roles. It does not change
-`pokemon/.env`, restart the Pokemon API, or change serving behavior.
+For an existing host, `repair-compose-env-access.sh` and
+`repair-reader-settings.sh` repair private file access without rotating
+credentials or changing catalog records.
 
-After provisioning, `deploy-pokemon-catalog-db-prod` is the manual workflow
-that updates only this database service's compose configuration and verifies
-its health. It preserves `pokemon_catalog_pgdata` and never restarts the
-Pokemon API.
+`sync-bootstrap-admin-from-location-postgres.sh` can align the catalog
+`postgres` superuser password with the location database while preserving the
+least-privileged reader and publisher roles.
 
-## Bootstrap Admin Alignment
+## Deployment And Authoring
 
-To align the catalog bootstrap account with the existing location/PostGIS
-`postgres` credentials, copy `sync-bootstrap-admin-from-location-postgres.sh`
-to the production host and run:
+Normal Pokemon deployment:
 
-```bash
-sudo CATALOG_PRUNE_LEGACY_ROLES=true \
-  bash /tmp/sync-bootstrap-admin-from-location-postgres.sh /srv/pokegonexus
-```
+1. Starts or verifies `pokemon_catalog_db`.
+2. Applies versioned migrations with `cmd/catalog-migrate`.
+3. Recreates `pokemon_data` with the read-only catalog URL.
+4. Verifies `/healthz` and `/readyz`.
 
-It reads `POSTGRES_USER` and `POSTGRES_PASSWORD` from the live `location_db`
-container without printing the password, promotes the catalog's `postgres`
-login to the database owner and superuser, atomically updates the private
-catalog bootstrap environment, and recreates only `pokemon_catalog_db` to make
-its health check use that identity. The pruning option disables login and clears
-the password for the prior custom bootstrap superuser, which PostgreSQL must
-retain internally, and removes any temporary `adam` operator role. The API
-continues to use only `pokemon_catalog_reader`.
+Normal authoring uses `editor/main.py`. It creates a private compressed dump,
+opens the publisher tunnel, and refreshes the API cache on clean exit.
 
-## Authoring, Deploying, And Recovery
-
-The Pokemon API reads this PostgreSQL catalog through the read-only
-`pokemon_catalog_reader` account. The editor is the normal authoring route:
-it connects through an SSH tunnel with the separate
-`pokemon_catalog_publisher` role, creates a retained PostgreSQL dump before an
-editor session, and refreshes the API cache after a normal editor exit. See
-`editor/README.md` for the launcher command.
-
-Normal `deploy-pokemon-prod` runs apply pending versioned PostgreSQL schema
-migrations before the API is recreated. They do not import, overwrite, or
-otherwise replace catalog records.
-
-`rebuild-pokemon-catalog-from-sqlite-prod` is the only SQLite-to-PostgreSQL
-import path. It is an explicit disaster-recovery workflow: it requires a
-confirmation input, takes a PostgreSQL dump first, imports in one transaction,
-verifies the active revision, and retains four rolling recovery dumps by
-default. The checked-in SQLite file remains a recovery source and parity test
-fixture, not the production source of truth.
-
-The CI data workflow no longer packages the SQLite catalog or creates public
-GitHub releases for catalog changes.
-
-## Guardrail
-
-Run the full publisher drill locally or in CI:
+After an interrupted authoring session, refresh manually:
 
 ```bash
-bash ops/pokemon-catalog/test-publisher.sh
-```
-
-It starts the same `pokemon/docker-compose.yml` database service in an ephemeral environment,
-provisions roles, proves the reader can select but cannot write, publishes two
-catalog revisions, then restores the retained dump and verifies the prior
-revision is active again.
-
-The bootstrap-admin sync guardrail separately proves that the catalog adopts the
-location/PostGIS `postgres` credential, keeps it superuser, and removes legacy
-operator identities only after a healthy database-container recreation.
-
-The CI runtime-environment test separately proves the cutover can replace only
-the catalog driver settings, preserve unrelated runtime configuration, keep a
-private backup, and restore the SQLite configuration exactly.
-
-## Existing Provisioned Hosts
-
-Hosts provisioned before the reader parity URL was added can be updated without
-rotating credentials. Copy `repair-reader-settings.sh` to the host and run:
-
-```bash
-sudo bash /tmp/repair-reader-settings.sh /srv/pokegonexus
-```
-
-It derives a loopback-only URL for the existing read-only account and changes
-the reader file to `root:<deployment-runner-group>` mode 640. It does not alter
-the database, catalog contents, publisher credentials, SQLite file, or running
-Pokemon API.
-
-The same hosts also need the bootstrap Compose env file readable to the Docker
-deployment runner. Copy `repair-compose-env-access.sh` to the host and run:
-
-```bash
-sudo bash /tmp/repair-compose-env-access.sh /srv/pokegonexus
-```
-
-It changes only owner/group/mode on the three private catalog env files. It
-does not rotate credentials, restart containers, or change catalog data.
-
-## Manual Cache Refresh
-
-The editor launcher handles this after a normal exit. Use the following only
-after an interrupted editor session that may have saved data:
-
-```bash
-ssh -i "$HOME/.ssh/pokegonexus_recovery_ed25519" adam@192.168.1.77 \
+ssh -i ~/.ssh/pokegonexus_recovery_ed25519 adam@192.168.1.77 \
   'bash -s -- /srv/pokegonexus' \
   < ops/pokemon-catalog/refresh-api-cache-prod.sh
 ```
+
+## Guardrails
+
+```bash
+bash ops/pokemon-catalog/test-repair-reader-settings.sh
+bash ops/pokemon-catalog/test-repair-compose-env-access.sh
+bash ops/pokemon-catalog/test-sync-bootstrap-admin-from-location-postgres.sh
+bash ops/pokemon-catalog/test-refresh-api-cache-prod.sh
+bash pokemon/scripts/test-postgres-catalog.sh
+bash editor/tests/test-postgres-database-manager.sh
+```
+
+Recovery uses private PostgreSQL dumps and the independently retained cutover
+archives. Catalog data is not packaged in public repository releases.

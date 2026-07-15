@@ -1,32 +1,15 @@
-import shutil
-import tempfile
-import unittest
-from pathlib import Path
-
-import sys
-
-
-ROOT_DIR = Path(__file__).resolve().parents[2]
-EDITOR_DIR = ROOT_DIR / "editor"
-if str(EDITOR_DIR) not in sys.path:
-    sys.path.insert(0, str(EDITOR_DIR))
-
+from test_base import POSTGRES_URL, TempDBTestCase
 from database_manager import DatabaseManager
 
 
-SOURCE_DB = ROOT_DIR / "pokemon" / "data" / "pokego.db"
-
-
-class DatabaseManagerBackgroundMethodsTests(unittest.TestCase):
+class DatabaseManagerBackgroundMethodsTests(TempDBTestCase):
     def setUp(self):
-        self.temp_dir = tempfile.TemporaryDirectory()
-        self.test_db_path = Path(self.temp_dir.name) / "pokego_test.db"
-        shutil.copy2(SOURCE_DB, self.test_db_path)
-        self.db_manager = DatabaseManager(str(self.test_db_path))
+        super().setUp()
+        self.db_manager = DatabaseManager(POSTGRES_URL)
 
     def tearDown(self):
         self.db_manager.conn.close()
-        self.temp_dir.cleanup()
+        super().tearDown()
 
     def _scalar(self, query, params=()):
         cursor = self.db_manager.conn.get_cursor()
@@ -61,7 +44,7 @@ class DatabaseManagerBackgroundMethodsTests(unittest.TestCase):
             "/images/backgrounds/wrapper_bg_updated.png",
             "2026-03-05",
         )
-        self.db_manager.update_pokemon_background_link(link_row_id, background_id, 123)
+        self.db_manager.update_pokemon_background_link(link_row_id, background_id, 25)
 
         usage_count = self.db_manager.count_background_usage(background_id)
         self.assertEqual(usage_count, 1)

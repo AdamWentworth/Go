@@ -27,30 +27,15 @@ func main() {
 	slog.SetDefault(logger)
 
 	var sqlDB *sql.DB
-	var dialect builder.SQLDialect
 	var err error
-	switch cfg.CatalogDBDriver {
-	case "", "sqlite":
-		dsn := cfg.SQLitePath
-		if dsn == "" {
-			dsn = "./data/pokego.db"
-		}
-		sqlDB, err = db.OpenSQLite(dsn)
-		dialect = builder.DialectSQLite
-	case "postgres", "postgresql":
-		sqlDB, err = db.OpenPostgres(cfg.CatalogDatabaseURL)
-		dialect = builder.DialectPostgres
-	default:
-		logger.Error("unsupported catalog database driver", "driver", cfg.CatalogDBDriver)
-		os.Exit(1)
-	}
+	sqlDB, err = db.OpenPostgres(cfg.CatalogDatabaseURL)
 	if err != nil {
 		logger.Error(fmt.Sprintf("db open failed: %v", err))
 		os.Exit(1)
 	}
 	defer func() { _ = sqlDB.Close() }()
 
-	payloadBuilder := builder.NewWithDialect(sqlDB, dialect, logger)
+	payloadBuilder := builder.New(sqlDB, logger)
 
 	payloadCache := cache.NewJSONGzipCache(cache.JSONGzipCacheConfig{
 		Name:         "/pokemon/pokemons",

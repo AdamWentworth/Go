@@ -15,9 +15,12 @@ class ShadowPokemonManager:
         result = cursor.fetchone()
 
         if result:
-            return result
-        else:
-            return [None] * 6  # Return list of None if no shadow data is found
+            return (
+                self.conn.legacy_boolean_scalar(result[0]),
+                self.conn.legacy_boolean_scalar(result[1]),
+                *result[2:],
+            )
+        return [None] * 6  # Return list of None if no shadow data is found
 
     def update_shadow_pokemon_data(self, pokemon_id, shadow_data):
         cursor = self.conn.get_cursor()

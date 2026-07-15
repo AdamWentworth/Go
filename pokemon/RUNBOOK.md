@@ -60,7 +60,7 @@ Rollback steps:
 
 Normal API deployments apply any pending migrations through
 `go run ./cmd/catalog-migrate` before recreating the API container. They do not
-import SQLite data.
+replace catalog records.
 
 Before every production editor session, the launcher creates a compressed dump
 in `/srv/pokegonexus/pokemon/catalog-backups`. The newest eight editor-session
@@ -73,6 +73,6 @@ ssh -i "$HOME/.ssh/pokegonexus_recovery_ed25519" adam@192.168.1.77 \
   < ops/pokemon-catalog/refresh-api-cache-prod.sh
 ```
 
-The checked-in SQLite catalog is a recovery source and local parity fixture.
-Use `rebuild-pokemon-catalog-from-sqlite-prod` only for an explicitly confirmed
-recovery rebuild of the live PostgreSQL catalog.
+Recovery uses the retained private PostgreSQL dumps and the two independently
+verified cutover archives. Catalog binaries are not tracked or released from
+the public repository.

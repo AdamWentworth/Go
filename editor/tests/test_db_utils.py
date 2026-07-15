@@ -1,7 +1,5 @@
 import unittest
 from pathlib import Path
-import tempfile
-import sqlite3
 import sys
 
 
@@ -11,51 +9,35 @@ if str(EDITOR_DIR) not in sys.path:
     sys.path.insert(0, str(EDITOR_DIR))
 
 from database.db_utils import DatabaseConnection
+from test_base import POSTGRES_URL, TempDBTestCase
 
 
-class DatabaseConnectionTests(unittest.TestCase):
-    def test_open_commit_and_close(self):
-        with tempfile.TemporaryDirectory() as temp_dir:
-            db_path = Path(temp_dir) / "temp.db"
-            conn = DatabaseConnection(str(db_path))
-            cur = conn.get_cursor()
-            cur.execute("CREATE TABLE sample (id INTEGER PRIMARY KEY, name TEXT)")
-            cur.execute("INSERT INTO sample (name) VALUES (?)", ("unit-test",))
-            conn.commit()
-            conn.close()
+class DatabaseConnectionTests(TempDBTestCase):
+    def test_requires_a_postgresql_url(self):
+        with self.assertRaisesRegex(ValueError, "PostgreSQL"):
+            DatabaseConnection("/tmp/catalog.db")
 
-            check = sqlite3.connect(db_path)
-            row = check.execute("SELECT name FROM sample WHERE id = 1").fetchone()
-            check.close()
+    def test_qmark_adapter_preserves_legacy_boolean_scalars(self):
+        cursor = self.db_connection.get_cursor()
+        cursor.execute("SELECT ?::boolean, ?::boolean, ?::text", (True, False, "catalog"))
+        self.assertEqual(cursor.fetchone(), (1, 0, "catalog"))
 
-            self.assertEqual(row, ("unit-test",))
-
-    def test_initializes_performance_indexes_for_editor_hot_paths(self):
-        with tempfile.TemporaryDirectory() as temp_dir:
-            db_path = Path(temp_dir) / "temp.db"
-            raw = sqlite3.connect(db_path)
-            raw.execute("CREATE TABLE costume_pokemon (pokemon_id INTEGER)")
-            raw.execute("CREATE TABLE pokemon_backgrounds (pokemon_id INTEGER, background_id INTEGER, costume_id INTEGER)")
-            raw.execute("CREATE TABLE pokemon_moves (pokemon_id INTEGER)")
-            raw.execute("CREATE TABLE female_pokemon (pokemon_id INTEGER)")
-            raw.commit()
-            raw.close()
-
-            conn = DatabaseConnection(str(db_path))
-            cur = conn.get_cursor()
-
-            costume_indexes = cur.execute("PRAGMA index_list('costume_pokemon')").fetchall()
-            background_indexes = cur.execute("PRAGMA index_list('pokemon_backgrounds')").fetchall()
-            pokemon_move_indexes = cur.execute("PRAGMA index_list('pokemon_moves')").fetchall()
-            female_indexes = cur.execute("PRAGMA index_list('female_pokemon')").fetchall()
-
-            conn.close()
-
-            self.assertTrue(any("pokemon_id" in row[1] for row in costume_indexes))
-            self.assertTrue(any("pokemon_id" in row[1] for row in background_indexes))
-            self.assertTrue(any("background_id" in row[1] for row in background_indexes))
-            self.assertTrue(any("pokemon_id" in row[1] for row in pokemon_move_indexes))
-            self.assertTrue(any("pokemon_id" in row[1] for row in female_indexes))
+    def test_migration_owned_editor_indexes_exist(self):
+        cursor = self.db_connection.get_cursor()
+        cursor.execute(
+            """
+            SELECT indexname
+            FROM pg_indexes
+            WHERE schemaname = 'pokemon_catalog'
+              AND indexname IN (
+                'idx_costume_pokemon_pokemon_id',
+                'idx_pokemon_backgrounds_pokemon_id',
+                'idx_pokemon_backgrounds_background_id',
+                'idx_pokemon_moves_pokemon_id'
+              )
+            """
+        )
+        self.assertEqual(len(cursor.fetchall()), 4)
 
 
 if __name__ == "__main__":

@@ -38,8 +38,8 @@ class ShadowPokemonManagerTests(TempDBTestCase):
         self.assertEqual(
             inserted,
             (
-                1,
-                0,
+                True,
+                False,
                 "2026-03-01",
                 "2026-03-02",
                 "/images/shadow/unit_test.png",
@@ -82,7 +82,7 @@ class ShadowPokemonManagerTests(TempDBTestCase):
             (
                 1,
                 "Shadow Costume Unit Test",
-                1,
+                True,
                 "2026-03-12",
                 "2026-03-13",
                 "/images/costume/shadow_unit.png",
@@ -176,7 +176,7 @@ class ShadowPokemonManagerTests(TempDBTestCase):
             (
                 25,
                 "Shadow Join Costume",
-                0,
+                False,
                 None,
                 None,
                 None,

@@ -2,94 +2,58 @@
 
 This Tkinter application is the internal authoring tool for the PokeGo Nexus
 reference catalog. It edits Pokemon, moves, evolutions, shadows, costumes,
-mega evolutions, fusions, gender-specific assets, backgrounds, and size data.
-
-The production catalog lives in dedicated PostgreSQL. The checked-in SQLite
-file is retained only as a recovery/import source and for local editor work.
+forms, backgrounds, and size data directly in the dedicated PostgreSQL
+catalog.
 
 ## Setup
 
-The editor needs Python 3.11+ with Tkinter. On Ubuntu:
-
 ```bash
-sudo apt install python3-tk
+sudo apt install python3-tk python3-venv
 cd editor
 python -m venv .venv
 ./.venv/bin/pip install -r requirements.txt
-```
-
-## Production PostgreSQL
-
-Copy `.env.example` to `.env` once, then update only
-`POKEGO_EDITOR_PROD_HOST` when your server's local address changes. The other
-values already match this deployment.
-
-```bash
-cd editor
 cp .env.example .env
 ```
 
-Normal catalog authoring is simply:
+Set `POKEGO_EDITOR_PROD_HOST` in `.env` to the current production host. The
+real `.env` is ignored by Git.
+
+## Run
 
 ```bash
-cd editor
 python main.py
 ```
 
-`main.py` reuses `editor/.venv` automatically when it exists. It creates a
-retained PostgreSQL dump before the editor opens, starts a loopback-only SSH
-tunnel, loads the publisher URL only into the editor process, and refreshes
-and prewarms the Pokemon API cache after a normal editor exit. SSH asks for a
-password only when your local SSH setup requires one.
+`main.py` automatically reuses `editor/.venv`, creates a retained PostgreSQL
+dump, opens a loopback-only SSH tunnel, and connects as
+`pokemon_catalog_publisher`. The API uses the separate read-only
+`pokemon_catalog_reader` role.
 
-The editor connects as `pokemon_catalog_publisher`, the schema-owning writer
-role. It does not use the `postgres` superuser and the API continues to use
-the separate read-only `pokemon_catalog_reader` role.
-
-The window title identifies this target as `PRODUCTION PostgreSQL catalog`.
-Close the editor normally after saving so the launcher can refresh the API
-cache. If the editor or SSH session is interrupted after a save, run the cache
-refresh script from the repository root:
+Close the editor normally after saving. A clean exit refreshes and prewarms the
+Pokemon API cache. After an interrupted session, refresh it manually from the
+repository root:
 
 ```bash
-ssh -i "$HOME/.ssh/pokegonexus_recovery_ed25519" adam@192.168.1.77 \
+ssh -i ~/.ssh/pokegonexus_recovery_ed25519 adam@192.168.1.77 \
   'bash -s -- /srv/pokegonexus' \
   < ops/pokemon-catalog/refresh-api-cache-prod.sh
 ```
 
-## Local Recovery Copy
+## Safety
 
-Use this only for offline inspection or deliberate SQLite recovery-copy work:
-
-```bash
-cd editor
-POKEGO_EDITOR_MODE=sqlite python main.py
-```
-
-The window title identifies this target as `SQLite recovery copy`.
-
-## Data Safety
-
-- The checked-in `.env.example` documents non-secret connection settings;
-  the real `editor/.env` is ignored by Git. Shell variables take precedence
-  when you need a one-off override.
-- Each production editor session creates a compressed PostgreSQL dump under
-  `/srv/pokegonexus/pokemon/catalog-backups`; the newest eight editor-session
-  dumps are retained by default.
-- Normal Pokemon service deployment applies versioned PostgreSQL schema
-  migrations only. It does not replace catalog records from SQLite.
-- The `rebuild-pokemon-catalog-from-sqlite-prod` GitHub workflow is a
-  deliberately confirmed disaster-recovery action that replaces live catalog
-  records from the checked-in SQLite copy.
+- Production authoring always creates a compressed dump first.
+- The newest eight editor-session dumps are retained by default.
+- Database credentials are read from private production environment files and
+  are only exposed to the local editor process through the SSH tunnel.
+- Normal API deployment applies schema migrations without replacing catalog
+  records.
 
 ## Tests
 
-From the repository root:
-
 ```bash
-editor/.venv/bin/python -m unittest discover -s editor/tests -p 'test_*.py' -v
-PYTHON_BIN="$PWD/editor/.venv/bin/python" bash editor/tests/test-postgres-database-manager.sh
+bash tests/test-postgres-database-manager.sh
 ```
 
-The PostgreSQL test imports a disposable catalog database and exercises the
-editor's read, update, insert, and delete paths without touching production.
+The suite starts a disposable PostgreSQL container, applies the production
+migrations, loads a synthetic fixture, and exercises editor reads and writes
+without touching production data.
