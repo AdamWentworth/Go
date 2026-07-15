@@ -25,6 +25,8 @@ trap cleanup EXIT
 mkdir -p "${deploy_root}/pokemon"
 cp "${repo_root}/pokemon/docker-compose.yml" "${compose_file}"
 : > "${deploy_root}/pokemon/.env"
+# Simulate a prior interruption after credential generation but before Docker starts.
+printf 'POSTGRES_PASSWORD=interrupted-provision\n' > "${deploy_root}/pokemon/catalog-db.env"
 docker network create "${edge_network_name}" >/dev/null
 
 CATALOG_DB_CONTAINER="${container_name}" \

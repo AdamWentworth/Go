@@ -38,8 +38,16 @@ done
 command -v docker >/dev/null 2>&1 || fail "docker is required"
 command -v openssl >/dev/null 2>&1 || fail "openssl is required to generate database passwords"
 
+volume_name="${CATALOG_POSTGRES_VOLUME_NAME:-pokemon_catalog_pgdata}"
 if [[ -e "${database_env_file}" || -e "${publisher_env_file}" || -e "${reader_env_file}" ]]; then
-  fail "catalog credential file already exists; rotate credentials explicitly instead of overwriting it"
+  if [[ -f "${database_env_file}" && ! -e "${publisher_env_file}" && ! -e "${reader_env_file}" ]] \
+    && ! docker inspect "${catalog_container}" >/dev/null 2>&1 \
+    && ! docker volume inspect "${volume_name}" >/dev/null 2>&1; then
+    echo "Discarding incomplete catalog bootstrap credential file from a prior failed provision."
+    rm -f "${database_env_file}"
+  else
+    fail "catalog credential or database state already exists; rotate credentials explicitly instead of overwriting it"
+  fi
 fi
 
 install -d -m 700 "${pokemon_dir}"
@@ -52,7 +60,6 @@ docker network inspect "${edge_network_name}" >/dev/null 2>&1 || fail "Pokemon e
 admin_password="$(openssl rand -hex 32)"
 publisher_password="$(openssl rand -hex 32)"
 reader_password="$(openssl rand -hex 32)"
-volume_name="${CATALOG_POSTGRES_VOLUME_NAME:-pokemon_catalog_pgdata}"
 
 umask 077
 {
