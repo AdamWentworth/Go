@@ -6,14 +6,20 @@ on:
       - "pokemon/**"
       - "monitoring/**"
       - "nginx/**"
+      - "ops/pokemon-catalog/**"
       - ".github/workflows/ci-pokemon-data.yml"
+      - ".github/workflows/publish-pokemon-catalog-prod.yml"
+      - ".github/workflows/deploy-pokemon-catalog-db-prod.yml"
   push:
     branches: ["main", "master"]
     paths:
       - "pokemon/**"
       - "monitoring/**"
       - "nginx/**"
+      - "ops/pokemon-catalog/**"
       - ".github/workflows/ci-pokemon-data.yml"
+      - ".github/workflows/publish-pokemon-catalog-prod.yml"
+      - ".github/workflows/deploy-pokemon-catalog-db-prod.yml"
   workflow_dispatch:
     inputs:
       publish_pokemon_db:

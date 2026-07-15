@@ -1,46 +1,60 @@
 # Pokemon Catalog PostgreSQL Flow
 
-This directory introduces a private, direct publication path for the Pokemon
-reference catalog. It is intentionally staged beside the current SQLite and
-GitHub-release path; do not retire the old path until the service is reading
-PostgreSQL in production and rollback has been exercised.
+The Pokemon reference catalog has its own PostgreSQL service boundary. It is
+not stored in the location/PostGIS database: this keeps ownership, storage,
+backups, upgrades, and future cloud placement independent.
 
-## Roles And Databases
+## Runtime Topology
 
-The existing PostgreSQL 17 / PostGIS host gets one separate logical database:
-
-- `pokemon_catalog`: catalog source of truth.
-- `pokemon_catalog_publisher`: schema owner used only by the publish workflow.
+- `pokemon_catalog_db`: dedicated `postgres:17-alpine` container.
+- `pokemon_catalog_pgdata`: its named Docker volume.
+- `pokemon_catalog_internal`: an isolated Docker network. The Pokemon API joins
+  it only during the later PostgreSQL cutover.
+- `pokemon_catalog_publisher`: schema owner used only by catalog publishing.
 - `pokemon_catalog_reader`: read-only account used by the Pokemon API after
   cutover.
 
-No credentials are committed. Provisioning writes two mode-600 files under the
-prod deploy root:
+The database exposes only `127.0.0.1:5433` to the host for the publisher. The
+API uses the internal hostname `pokemon_catalog_db:5432`; no catalog database
+port is exposed to the public network.
 
+No credentials are committed. Provisioning writes mode-600 files under the
+production deploy root:
+
+- `pokemon/catalog-db.env`: the container bootstrap credential.
 - `pokemon/catalog-publisher.env`: publisher-only connection details.
 - `pokemon/catalog-postgres.env`: reader settings for the later API cutover.
 
 ## First Provisioning
 
-Run this once on the production host after a current backup and while the
-existing SQLite service is still healthy:
+Copy `pokemon/catalog-postgres.compose.yml` and
+`ops/pokemon-catalog/provision-postgres.sh` to the production host, then run:
 
 ```bash
-bash ops/pokemon-catalog/provision-postgres.sh /srv/pokegonexus
+sudo bash /tmp/provision-postgres.sh \
+  /srv/pokegonexus \
+  /tmp/catalog-postgres.compose.yml
 ```
 
-It does not change `pokemon/.env` or restart the Pokemon API.
+It creates the isolated Docker network, starts the dedicated database,
+generates private credentials, and creates the read/write roles. It does not
+change `pokemon/.env`, restart the Pokemon API, or change serving behavior.
+
+After provisioning, `deploy-pokemon-catalog-db-prod` is the manual workflow
+that updates only this database service's compose configuration and verifies
+its health. It preserves `pokemon_catalog_pgdata` and never restarts the
+Pokemon API.
 
 ## Publishing
 
 The manual `publish-pokemon-catalog-prod` GitHub Action imports the checked-in
-SQLite catalog directly into PostgreSQL. It takes a schema dump of the current
-PostgreSQL catalog first, imports in one transaction, verifies the active
-revision, grants the reader role, and retains four rolling dumps by default.
+SQLite catalog directly into the dedicated Postgres service. It takes a schema
+dump first, imports in one transaction, verifies the active revision, grants
+the reader role, and retains four rolling dumps by default.
 
 The workflow never creates a public GitHub Release. The API remains on SQLite
 until a separate cutover changes its private runtime environment to the reader
-settings and verifies `/readyz` plus payload parity.
+settings and verifies `/readyz` plus byte-for-byte payload parity.
 
 ## Guardrail
 
@@ -50,6 +64,7 @@ Run the full publisher drill locally or in CI:
 bash ops/pokemon-catalog/test-publisher.sh
 ```
 
-It creates an ephemeral PostgreSQL container, provisions roles, proves the API
-reader can select but cannot write, publishes two catalog revisions, then
-restores the retained dump and verifies the prior revision is active again.
+It starts the same dedicated compose service in an ephemeral environment,
+provisions roles, proves the reader can select but cannot write, publishes two
+catalog revisions, then restores the retained dump and verifies the prior
+revision is active again.

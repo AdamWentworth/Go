@@ -14,12 +14,8 @@ services:
     networks:
       pokemon_edge:
         ipv4_address: 172.30.0.12
-      kafka_default: {}
 
 networks:
   pokemon_edge:
     external: true
     name: pokemon_edge
-  kafka_default:
-    external: true
-    name: kafka_default

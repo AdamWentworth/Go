@@ -2,17 +2,21 @@
 set -euo pipefail
 
 deploy_root="${1:-/srv/pokegonexus}"
-location_env_file="${LOCATION_ENV_FILE:-${deploy_root}/location/.env}"
+compose_source="${2:-${deploy_root}/pokemon/catalog-postgres.compose.yml}"
 pokemon_dir="${deploy_root}/pokemon"
+compose_file="${CATALOG_COMPOSE_FILE:-${pokemon_dir}/catalog-postgres.compose.yml}"
+database_env_file="${CATALOG_DATABASE_ENV_FILE:-${pokemon_dir}/catalog-db.env}"
 publisher_env_file="${CATALOG_PUBLISHER_ENV_FILE:-${pokemon_dir}/catalog-publisher.env}"
 reader_env_file="${CATALOG_READER_ENV_FILE:-${pokemon_dir}/catalog-postgres.env}"
-location_db_container="${LOCATION_DB_CONTAINER:-location_db}"
 catalog_database="${CATALOG_DATABASE_NAME:-pokemon_catalog}"
+admin_user="${CATALOG_ADMIN_USER:-pokemon_catalog_admin}"
 publisher_user="${CATALOG_PUBLISHER_USER:-pokemon_catalog_publisher}"
 reader_user="${CATALOG_READER_USER:-pokemon_catalog_reader}"
+catalog_container="${CATALOG_DB_CONTAINER:-pokemon_catalog_db}"
+network_name="${CATALOG_NETWORK_NAME:-pokemon_catalog_internal}"
 publisher_host="${CATALOG_PUBLISHER_HOST:-127.0.0.1}"
-publisher_port="${CATALOG_PUBLISHER_PORT:-5432}"
-reader_host="${CATALOG_READER_HOST:-location_db}"
+publisher_port="${CATALOG_POSTGRES_HOST_PORT:-5433}"
+reader_host="${CATALOG_READER_HOST:-${catalog_container}}"
 reader_port="${CATALOG_READER_PORT:-5432}"
 
 fail() {
@@ -25,32 +29,74 @@ require_identifier() {
   [[ "${value}" =~ ^[a-z_][a-z0-9_]*$ ]] || fail "unsafe PostgreSQL identifier: ${value}"
 }
 
-[[ -f "${location_env_file}" ]] || fail "location env file not found: ${location_env_file}"
-docker inspect "${location_db_container}" >/dev/null 2>&1 || fail "PostgreSQL container not found: ${location_db_container}"
+for identifier in "${catalog_database}" "${admin_user}" "${publisher_user}" "${reader_user}"; do
+  require_identifier "${identifier}"
+done
+
+[[ -f "${compose_source}" ]] || fail "catalog compose source not found: ${compose_source}"
+command -v docker >/dev/null 2>&1 || fail "docker is required"
 command -v openssl >/dev/null 2>&1 || fail "openssl is required to generate database passwords"
 
-require_identifier "${catalog_database}"
-require_identifier "${publisher_user}"
-require_identifier "${reader_user}"
-
-# shellcheck disable=SC1090
-set -a
-source "${location_env_file}"
-set +a
-[[ -n "${DB_USER:-}" ]] || fail "DB_USER is missing from ${location_env_file}"
-[[ -n "${DB_PASSWORD:-}" ]] || fail "DB_PASSWORD is missing from ${location_env_file}"
-
-if [[ -e "${publisher_env_file}" || -e "${reader_env_file}" ]]; then
+if [[ -e "${database_env_file}" || -e "${publisher_env_file}" || -e "${reader_env_file}" ]]; then
   fail "catalog credential file already exists; rotate credentials explicitly instead of overwriting it"
 fi
 
+install -d -m 700 "${pokemon_dir}"
+if [[ "${compose_source}" != "${compose_file}" ]]; then
+  install -m 644 "${compose_source}" "${compose_file}"
+fi
+
+if ! docker network inspect "${network_name}" >/dev/null 2>&1; then
+  docker network create "${network_name}" >/dev/null
+fi
+
+admin_password="$(openssl rand -hex 32)"
 publisher_password="$(openssl rand -hex 32)"
 reader_password="$(openssl rand -hex 32)"
+volume_name="${CATALOG_POSTGRES_VOLUME_NAME:-pokemon_catalog_pgdata}"
+
+umask 077
+{
+  printf 'POSTGRES_DB=%q\n' "${catalog_database}"
+  printf 'POSTGRES_USER=%q\n' "${admin_user}"
+  printf 'POSTGRES_PASSWORD=%q\n' "${admin_password}"
+  printf 'CATALOG_DB_CONTAINER=%q\n' "${catalog_container}"
+  printf 'CATALOG_NETWORK_NAME=%q\n' "${network_name}"
+  printf 'CATALOG_POSTGRES_VOLUME_NAME=%q\n' "${volume_name}"
+  printf 'CATALOG_POSTGRES_HOST_PORT=%q\n' "${publisher_port}"
+} > "${database_env_file}"
+chmod 600 "${database_env_file}"
+
+CATALOG_DB_CONTAINER="${catalog_container}" \
+CATALOG_NETWORK_NAME="${network_name}" \
+CATALOG_POSTGRES_HOST_PORT="${publisher_port}" \
+docker compose \
+  --project-name pokemon-catalog \
+  --project-directory "${pokemon_dir}" \
+  -f "${compose_file}" \
+  --env-file "${database_env_file}" \
+  up -d pokemon_catalog_db
+
+for _ in $(seq 1 30); do
+  health="$(docker inspect --format '{{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}}' "${catalog_container}" 2>/dev/null || true)"
+  if [[ "${health}" == "healthy" ]]; then
+    break
+  fi
+  sleep 2
+done
+health="$(docker inspect --format '{{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}}' "${catalog_container}" 2>/dev/null || true)"
+[[ "${health}" == "healthy" ]] || {
+  docker logs --tail 200 "${catalog_container}" >&2 || true
+  fail "catalog PostgreSQL container did not become healthy"
+}
 
 docker exec -i \
-  -e PGPASSWORD="${DB_PASSWORD}" \
-  "${location_db_container}" \
-  psql -v ON_ERROR_STOP=1 -U "${DB_USER}" -d postgres <<SQL
+  -e PGPASSWORD="${admin_password}" \
+  "${catalog_container}" \
+  psql -v ON_ERROR_STOP=1 -U "${admin_user}" -d "${catalog_database}" <<SQL
+REVOKE ALL ON DATABASE ${catalog_database} FROM PUBLIC;
+REVOKE ALL ON SCHEMA public FROM PUBLIC;
+
 DO \$\$
 BEGIN
   IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = '${publisher_user}') THEN
@@ -66,24 +112,14 @@ BEGIN
   END IF;
 END
 \$\$;
+
+CREATE SCHEMA IF NOT EXISTS pokemon_catalog AUTHORIZATION ${publisher_user};
+ALTER SCHEMA pokemon_catalog OWNER TO ${publisher_user};
+REVOKE ALL ON SCHEMA pokemon_catalog FROM PUBLIC;
+GRANT CONNECT, CREATE ON DATABASE ${catalog_database} TO ${publisher_user};
+GRANT CONNECT ON DATABASE ${catalog_database} TO ${reader_user};
 SQL
 
-database_exists="$(docker exec -e PGPASSWORD="${DB_PASSWORD}" "${location_db_container}" psql -U "${DB_USER}" -d postgres -Atc "SELECT 1 FROM pg_database WHERE datname = '${catalog_database}'")"
-if [[ "${database_exists}" != "1" ]]; then
-  docker exec -e PGPASSWORD="${DB_PASSWORD}" "${location_db_container}" \
-    createdb -U "${DB_USER}" --owner="${publisher_user}" "${catalog_database}"
-fi
-
-docker exec -i \
-  -e PGPASSWORD="${DB_PASSWORD}" \
-  "${location_db_container}" \
-  psql -v ON_ERROR_STOP=1 -U "${DB_USER}" -d postgres <<SQL
-REVOKE ALL ON DATABASE ${catalog_database} FROM PUBLIC;
-GRANT CONNECT ON DATABASE ${catalog_database} TO ${publisher_user}, ${reader_user};
-SQL
-
-mkdir -p "${pokemon_dir}"
-umask 077
 publisher_url="postgres://${publisher_user}:${publisher_password}@${publisher_host}:${publisher_port}/${catalog_database}?sslmode=disable"
 reader_url="postgres://${reader_user}:${reader_password}@${reader_host}:${reader_port}/${catalog_database}?sslmode=disable"
 
@@ -93,7 +129,7 @@ reader_url="postgres://${reader_user}:${reader_password}@${reader_host}:${reader
   printf 'CATALOG_PUBLISHER_USER=%q\n' "${publisher_user}"
   printf 'CATALOG_PUBLISHER_PASSWORD=%q\n' "${publisher_password}"
   printf 'CATALOG_READER_USER=%q\n' "${reader_user}"
-  printf 'LOCATION_DB_CONTAINER=%q\n' "${location_db_container}"
+  printf 'CATALOG_DB_CONTAINER=%q\n' "${catalog_container}"
 } > "${publisher_env_file}"
 
 {
@@ -103,7 +139,9 @@ reader_url="postgres://${reader_user}:${reader_password}@${reader_host}:${reader
 
 chmod 600 "${publisher_env_file}" "${reader_env_file}"
 
-echo "Provisioned PostgreSQL catalog database: ${catalog_database}"
+echo "Provisioned dedicated PostgreSQL catalog container: ${catalog_container}"
+echo "Catalog database: ${catalog_database}"
+echo "Persistent volume: ${volume_name}"
 echo "Publisher credentials: ${publisher_env_file}"
 echo "Reader cutover settings: ${reader_env_file}"
 echo "The Pokemon API remains on SQLite until the explicit cutover step."

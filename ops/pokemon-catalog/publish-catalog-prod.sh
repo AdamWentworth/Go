@@ -24,15 +24,15 @@ set -a
 source "${publisher_env_file}"
 set +a
 
-for required in CATALOG_PUBLISHER_DATABASE_URL CATALOG_DATABASE_NAME CATALOG_PUBLISHER_USER CATALOG_PUBLISHER_PASSWORD CATALOG_READER_USER LOCATION_DB_CONTAINER; do
+for required in CATALOG_PUBLISHER_DATABASE_URL CATALOG_DATABASE_NAME CATALOG_PUBLISHER_USER CATALOG_PUBLISHER_PASSWORD CATALOG_READER_USER CATALOG_DB_CONTAINER; do
   [[ -n "${!required:-}" ]] || fail "${required} is missing from ${publisher_env_file}"
 done
-docker inspect "${LOCATION_DB_CONTAINER}" >/dev/null 2>&1 || fail "PostgreSQL container not found: ${LOCATION_DB_CONTAINER}"
+docker inspect "${CATALOG_DB_CONTAINER}" >/dev/null 2>&1 || fail "PostgreSQL container not found: ${CATALOG_DB_CONTAINER}"
 
-catalog_schema_exists() {
-  docker exec -e PGPASSWORD="${CATALOG_PUBLISHER_PASSWORD}" "${LOCATION_DB_CONTAINER}" \
+catalog_initialized() {
+  docker exec -e PGPASSWORD="${CATALOG_PUBLISHER_PASSWORD}" "${CATALOG_DB_CONTAINER}" \
     psql -U "${CATALOG_PUBLISHER_USER}" -d "${CATALOG_DATABASE_NAME}" -Atc \
-    "SELECT EXISTS (SELECT 1 FROM information_schema.schemata WHERE schema_name = 'pokemon_catalog')"
+    "SELECT to_regclass('pokemon_catalog.catalog_releases') IS NOT NULL"
 }
 
 active_release=""
@@ -45,15 +45,15 @@ restore_backup() {
     echo "Post-publish verification failed; restoring PostgreSQL catalog backup: ${backup_path}" >&2
     cat "${backup_path}" | docker exec -i \
       -e PGPASSWORD="${CATALOG_PUBLISHER_PASSWORD}" \
-      "${LOCATION_DB_CONTAINER}" \
+      "${CATALOG_DB_CONTAINER}" \
       pg_restore -U "${CATALOG_PUBLISHER_USER}" -d "${CATALOG_DATABASE_NAME}" --clean --if-exists --no-owner -n pokemon_catalog || true
   fi
   exit "${status}"
 }
 trap 'restore_backup $?' EXIT
 
-if [[ "$(catalog_schema_exists)" == "t" ]]; then
-  active_release="$(docker exec -e PGPASSWORD="${CATALOG_PUBLISHER_PASSWORD}" "${LOCATION_DB_CONTAINER}" \
+if [[ "$(catalog_initialized)" == "t" ]]; then
+  active_release="$(docker exec -e PGPASSWORD="${CATALOG_PUBLISHER_PASSWORD}" "${CATALOG_DB_CONTAINER}" \
     psql -U "${CATALOG_PUBLISHER_USER}" -d "${CATALOG_DATABASE_NAME}" -Atc \
     "SELECT COALESCE((SELECT release_id FROM pokemon_catalog.catalog_releases WHERE is_active), 'unversioned')")"
 
@@ -62,7 +62,7 @@ if [[ "$(catalog_schema_exists)" == "t" ]]; then
   backup_path="${backup_dir}/catalog-${active_release}-$(date -u +%Y%m%dT%H%M%SZ).dump"
   backup_tmp="${backup_path}.tmp"
   echo "Backing up active PostgreSQL catalog ${active_release}"
-  docker exec -e PGPASSWORD="${CATALOG_PUBLISHER_PASSWORD}" "${LOCATION_DB_CONTAINER}" \
+  docker exec -e PGPASSWORD="${CATALOG_PUBLISHER_PASSWORD}" "${CATALOG_DB_CONTAINER}" \
     pg_dump -U "${CATALOG_PUBLISHER_USER}" -d "${CATALOG_DATABASE_NAME}" -Fc -n pokemon_catalog > "${backup_tmp}"
   [[ -s "${backup_tmp}" ]] || fail "PostgreSQL catalog backup is empty"
   mv "${backup_tmp}" "${backup_path}"
@@ -81,7 +81,7 @@ import_committed=1
 
 docker exec -i \
   -e PGPASSWORD="${CATALOG_PUBLISHER_PASSWORD}" \
-  "${LOCATION_DB_CONTAINER}" \
+  "${CATALOG_DB_CONTAINER}" \
   psql -v ON_ERROR_STOP=1 -U "${CATALOG_PUBLISHER_USER}" -d "${CATALOG_DATABASE_NAME}" <<SQL
 REVOKE ALL ON SCHEMA pokemon_catalog FROM PUBLIC;
 REVOKE ALL ON ALL TABLES IN SCHEMA pokemon_catalog FROM PUBLIC;
@@ -91,7 +91,7 @@ ALTER DEFAULT PRIVILEGES IN SCHEMA pokemon_catalog REVOKE ALL ON TABLES FROM PUB
 ALTER DEFAULT PRIVILEGES IN SCHEMA pokemon_catalog GRANT SELECT ON TABLES TO ${CATALOG_READER_USER};
 SQL
 
-actual_release="$(docker exec -e PGPASSWORD="${CATALOG_PUBLISHER_PASSWORD}" "${LOCATION_DB_CONTAINER}" \
+actual_release="$(docker exec -e PGPASSWORD="${CATALOG_PUBLISHER_PASSWORD}" "${CATALOG_DB_CONTAINER}" \
   psql -U "${CATALOG_PUBLISHER_USER}" -d "${CATALOG_DATABASE_NAME}" -Atc \
   "SELECT release_id FROM pokemon_catalog.catalog_releases WHERE is_active")"
 [[ "${actual_release}" == "${release_id}" ]] || fail "active PostgreSQL release is ${actual_release:-missing}, expected ${release_id}"

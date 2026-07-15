@@ -61,6 +61,11 @@ INTERNAL_ONLY_ENABLED=false
 - `CATALOG_DB_DRIVER` (`sqlite` by default; set `postgres` for the migrated catalog)
 - `CATALOG_DATABASE_URL` (required when `CATALOG_DB_DRIVER=postgres`; kept in the host `.env`, never committed)
 
+The future PostgreSQL catalog is a dedicated `pokemon_catalog_db` service, not
+the location/PostGIS database. Its compose and operational flow live in
+[`../ops/pokemon-catalog/README.md`](../ops/pokemon-catalog/README.md). The
+runtime default remains SQLite until the explicit cutover.
+
 ### PostgreSQL Catalog Migration
 
 SQLite remains the production fallback until a PostgreSQL import passes payload
