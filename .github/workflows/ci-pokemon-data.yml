@@ -10,6 +10,7 @@ on:
       - ".github/workflows/ci-pokemon-data.yml"
       - ".github/workflows/publish-pokemon-catalog-prod.yml"
       - ".github/workflows/deploy-pokemon-catalog-db-prod.yml"
+      - ".github/workflows/cutover-pokemon-catalog-postgres-prod.yml"
   push:
     branches: ["main", "master"]
     paths:
@@ -20,6 +21,7 @@ on:
       - ".github/workflows/ci-pokemon-data.yml"
       - ".github/workflows/publish-pokemon-catalog-prod.yml"
       - ".github/workflows/deploy-pokemon-catalog-db-prod.yml"
+      - ".github/workflows/cutover-pokemon-catalog-postgres-prod.yml"
   workflow_dispatch:
     inputs:
       publish_pokemon_db:
@@ -113,6 +115,12 @@ jobs:
 
       - name: PostgreSQL Catalog Publisher Drill
         run: bash ../ops/pokemon-catalog/test-publisher.sh
+
+      - name: PostgreSQL Runtime Environment Cutover Guardrail
+        run: bash ../ops/pokemon-catalog/test-runtime-env.sh
+
+      - name: PostgreSQL Reader Settings Repair Guardrail
+        run: bash ../ops/pokemon-catalog/test-repair-reader-settings.sh
 
       - name: Integration Contract Test
         run: go test -tags=integration ./internal/builder -run TestPokemonPayload_StableShape -v

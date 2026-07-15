@@ -70,6 +70,10 @@ set -a
 # shellcheck disable=SC1090
 source "${deploy_root}/pokemon/catalog-postgres.env"
 set +a
+[[ -n "${CATALOG_PARITY_DATABASE_URL:-}" ]] || {
+  echo "expected a reader-only host parity URL" >&2
+  exit 1
+}
 reader_count="$(docker exec -e CATALOG_DATABASE_URL="${CATALOG_DATABASE_URL}" "${container_name}" \
   sh -c 'psql "$CATALOG_DATABASE_URL" -Atc "SELECT COUNT(*) FROM pokemon_catalog.pokemon"')"
 [[ "${reader_count}" =~ ^[1-9][0-9]*$ ]] || {

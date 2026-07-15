@@ -19,6 +19,8 @@ publisher_host="${CATALOG_PUBLISHER_HOST:-127.0.0.1}"
 publisher_port="${CATALOG_POSTGRES_HOST_PORT:-5433}"
 reader_host="${CATALOG_READER_HOST:-${catalog_container}}"
 reader_port="${CATALOG_READER_PORT:-5432}"
+parity_host="${CATALOG_PARITY_HOST:-127.0.0.1}"
+parity_port="${CATALOG_PARITY_PORT:-${publisher_port}}"
 
 fail() {
   echo "pokemon catalog PostgreSQL provision error: $*" >&2
@@ -155,6 +157,7 @@ SQL
 
 publisher_url="postgres://${publisher_user}:${publisher_password}@${publisher_host}:${publisher_port}/${catalog_database}?sslmode=disable"
 reader_url="postgres://${reader_user}:${reader_password}@${reader_host}:${reader_port}/${catalog_database}?sslmode=disable"
+parity_url="postgres://${reader_user}:${reader_password}@${parity_host}:${parity_port}/${catalog_database}?sslmode=disable"
 
 {
   printf 'CATALOG_PUBLISHER_DATABASE_URL=%q\n' "${publisher_url}"
@@ -168,13 +171,14 @@ reader_url="postgres://${reader_user}:${reader_password}@${reader_host}:${reader
 {
   printf 'CATALOG_DB_DRIVER=postgres\n'
   printf 'CATALOG_DATABASE_URL=%q\n' "${reader_url}"
+  printf 'CATALOG_PARITY_DATABASE_URL=%q\n' "${parity_url}"
 } > "${reader_env_file}"
 
 chmod 600 "${publisher_env_file}" "${reader_env_file}"
 if [[ "${EUID}" -eq 0 && -n "${SUDO_USER:-}" ]]; then
-  publisher_group="$(id -gn "${SUDO_USER}")"
-  chown root:"${publisher_group}" "${publisher_env_file}"
-  chmod 640 "${publisher_env_file}"
+  runtime_group="$(id -gn "${SUDO_USER}")"
+  chown root:"${runtime_group}" "${publisher_env_file}" "${reader_env_file}"
+  chmod 640 "${publisher_env_file}" "${reader_env_file}"
 fi
 
 echo "Provisioned dedicated PostgreSQL catalog container: ${catalog_container}"

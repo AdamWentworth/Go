@@ -15,13 +15,20 @@ docker run --detach --rm --name "${container_name}" --tmpfs /var/lib/postgresql/
   -e POSTGRES_PASSWORD=catalog-test-password \
   -p 127.0.0.1:55432:5432 postgres:17-alpine >/dev/null
 
+database_ready=0
 for _ in $(seq 1 30); do
-  if docker exec "${container_name}" pg_isready -U catalog -d pokemon_catalog_test >/dev/null 2>&1; then
+  if docker exec "${container_name}" \
+    psql -v ON_ERROR_STOP=1 -U catalog -d pokemon_catalog_test -Atqc 'SELECT 1' >/dev/null 2>&1; then
+    database_ready=1
     break
   fi
   sleep 1
 done
-docker exec "${container_name}" pg_isready -U catalog -d pokemon_catalog_test >/dev/null
+if [[ "${database_ready}" -ne 1 ]]; then
+  echo "ephemeral PostgreSQL catalog test database did not accept queries" >&2
+  docker logs --tail 200 "${container_name}" >&2 || true
+  exit 1
+fi
 
 go run ./cmd/catalog-import \
   --sqlite ./data/pokego.db \

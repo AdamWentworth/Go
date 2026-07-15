@@ -28,8 +28,11 @@ production deploy root:
   provisioned through `sudo`, it is mode 640 for `root` and the invoking
   deployment-runner user's group so the self-hosted publish workflow can read
   only this credential.
-- `pokemon/catalog-postgres.env`: mode 600 reader settings for the later API
-  cutover.
+- `pokemon/catalog-postgres.env`: read-only API settings. When provisioned
+  through `sudo`, it is mode 640 for `root` and the invoking deployment-runner
+  user's group so the guarded cutover can configure the service with the
+  least-privileged catalog account. It also contains a reader-only loopback URL
+  used only to prove live SQLite/PostgreSQL payload parity before cutover.
 
 ## First Provisioning
 
@@ -59,8 +62,12 @@ dump first, imports in one transaction, verifies the active revision, grants
 the reader role, and retains four rolling dumps by default.
 
 The workflow never creates a public GitHub Release. The API remains on SQLite
-until a separate cutover changes its private runtime environment to the reader
-settings and verifies `/readyz` plus byte-for-byte payload parity.
+until the manual `cutover-pokemon-catalog-postgres-prod` workflow runs. The
+cutover proves byte-for-byte parity between the actual production SQLite file
+and PostgreSQL through the read-only account, backs up `pokemon/.env`, switches
+only the private runtime settings, and checks `/readyz`. If the replacement API
+does not become ready, it restores both the prior environment and image. The
+SQLite file remains in place after a successful cutover.
 
 ## Guardrail
 
@@ -74,3 +81,21 @@ It starts the same `pokemon/docker-compose.yml` database service in an ephemeral
 provisions roles, proves the reader can select but cannot write, publishes two
 catalog revisions, then restores the retained dump and verifies the prior
 revision is active again.
+
+The CI runtime-environment test separately proves the cutover can replace only
+the catalog driver settings, preserve unrelated runtime configuration, keep a
+private backup, and restore the SQLite configuration exactly.
+
+## Existing Provisioned Hosts
+
+Hosts provisioned before the reader parity URL was added can be updated without
+rotating credentials. Copy `repair-reader-settings.sh` to the host and run:
+
+```bash
+sudo bash /tmp/repair-reader-settings.sh /srv/pokegonexus
+```
+
+It derives a loopback-only URL for the existing read-only account and changes
+the reader file to `root:<deployment-runner-group>` mode 640. It does not alter
+the database, catalog contents, publisher credentials, SQLite file, or running
+Pokemon API.

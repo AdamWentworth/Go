@@ -1,0 +1,50 @@
+name: cutover-pokemon-catalog-postgres-prod
+
+on:
+  workflow_dispatch:
+    inputs:
+      deploy_root:
+        description: "Absolute path to the production deploy state root"
+        required: false
+        default: "/srv/pokegonexus"
+        type: string
+      image_ref:
+        description: "Pinned Pokémon API image. Empty deploys sha-<this workflow commit>."
+        required: false
+        default: ""
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  cutover:
+    name: Cut Over Pokemon API To PostgreSQL
+    runs-on: [self-hosted, linux, x64, prod]
+    environment: production
+    concurrency:
+      group: deploy-pokemon-prod
+      cancel-in-progress: false
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.26.5"
+          cache: true
+          cache-dependency-path: pokemon/go.sum
+
+      - name: Cut Over With Live Parity And Rollback
+        shell: bash
+        run: |
+          set -euo pipefail
+          image_ref="${{ inputs.image_ref }}"
+          if [[ -z "${image_ref}" ]]; then
+            image_ref="adamwentworth/pokemon_service_go:sha-${GITHUB_SHA}"
+          fi
+
+          bash ops/pokemon-catalog/cutover-postgres.sh \
+            "${GITHUB_WORKSPACE}" \
+            "${{ inputs.deploy_root }}" \
+            "${image_ref}"
