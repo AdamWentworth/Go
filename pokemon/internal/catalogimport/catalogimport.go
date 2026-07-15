@@ -466,7 +466,10 @@ func ParseReleaseID(value string) (string, error) {
 		return "", errors.New("release ID exceeds 160 characters")
 	}
 	for _, r := range value {
-		if !(r == '-' || r == '_' || r == '.' || (r >= 'a' && r <= 'z') || (r >= 'A' && r <= 'Z') || (r >= '0' && r <= '9')) {
+		if r != '-' && r != '_' && r != '.' &&
+			(r < 'a' || r > 'z') &&
+			(r < 'A' || r > 'Z') &&
+			(r < '0' || r > '9') {
 			return "", fmt.Errorf("release ID contains unsupported character %q", r)
 		}
 	}

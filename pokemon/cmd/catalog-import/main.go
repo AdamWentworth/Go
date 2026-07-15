@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"flag"
-	"fmt"
 	"log"
 	"os"
 	"time"
@@ -37,12 +36,13 @@ func main() {
 		DryRun:      dryRun,
 	})
 	if err != nil {
-		log.Fatal(err)
+		log.Printf("catalog import failed: %v", err)
+		return
 	}
 
 	encoder := json.NewEncoder(os.Stdout)
 	encoder.SetIndent("", "  ")
 	if err := encoder.Encode(result); err != nil {
-		log.Fatal(fmt.Errorf("write import result: %w", err))
+		log.Printf("write import result: %v", err)
 	}
 }
