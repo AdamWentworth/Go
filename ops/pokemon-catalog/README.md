@@ -15,9 +15,8 @@ backups, upgrades, and future cloud placement independent.
 - `pokemon_catalog_publisher`: schema owner used only by catalog publishing.
 - `pokemon_catalog_reader`: read-only account used by the Pokemon API after
   cutover.
-- `adam`: optional human operator account. The sync operation below mirrors the
-  existing MySQL `adam` login and grants catalog publisher access without
-  exposing an administrative PostgreSQL role to the API.
+- `postgres`: bootstrap and human-administration account. The sync operation
+  below aligns it with the existing location/PostGIS `postgres` credential.
 
 The database exposes only `127.0.0.1:5433` to the host for the publisher. The
 API uses the internal hostname `pokemon_catalog_db:5432`; no catalog database
@@ -61,21 +60,25 @@ that updates only this database service's compose configuration and verifies
 its health. It preserves `pokemon_catalog_pgdata` and never restarts the
 Pokemon API.
 
-## Human Operator Login
+## Bootstrap Admin Alignment
 
-To mirror the existing MySQL `adam` credentials into the catalog database, copy
-`sync-operator-from-mysql.sh` to the production host and run:
+To align the catalog bootstrap account with the existing location/PostGIS
+`postgres` credentials, copy `sync-bootstrap-admin-from-location-postgres.sh`
+to the production host and run:
 
 ```bash
-sudo bash /tmp/sync-operator-from-mysql.sh /srv/pokegonexus
+sudo CATALOG_PRUNE_LEGACY_ROLES=true \
+  bash /tmp/sync-bootstrap-admin-from-location-postgres.sh /srv/pokegonexus
 ```
 
-It reads `MYSQL_USER` and `MYSQL_PASSWORD` from the live `mysql_storage`
-container without printing the password, creates or rotates the matching
-PostgreSQL login, and grants that account membership in
-`pokemon_catalog_publisher`. The account can manage catalog data but cannot
-create PostgreSQL roles or databases. The API continues to use only
-`pokemon_catalog_reader`.
+It reads `POSTGRES_USER` and `POSTGRES_PASSWORD` from the live `location_db`
+container without printing the password, promotes the catalog's `postgres`
+login to the database owner and superuser, atomically updates the private
+catalog bootstrap environment, and recreates only `pokemon_catalog_db` to make
+its health check use that identity. The pruning option disables login and clears
+the password for the prior custom bootstrap superuser, which PostgreSQL must
+retain internally, and removes any temporary `adam` operator role. The API
+continues to use only `pokemon_catalog_reader`.
 
 ## Publishing
 
@@ -107,8 +110,9 @@ provisions roles, proves the reader can select but cannot write, publishes two
 catalog revisions, then restores the retained dump and verifies the prior
 revision is active again.
 
-The operator-sync guardrail separately proves that the mirrored human account
-inherits catalog publisher permissions but cannot create PostgreSQL roles.
+The bootstrap-admin sync guardrail separately proves that the catalog adopts the
+location/PostGIS `postgres` credential, keeps it superuser, and removes legacy
+operator identities only after a healthy database-container recreation.
 
 The CI runtime-environment test separately proves the cutover can replace only
 the catalog driver settings, preserve unrelated runtime configuration, keep a
