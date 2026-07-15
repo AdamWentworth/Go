@@ -6,7 +6,8 @@ backups, upgrades, and future cloud placement independent.
 
 ## Runtime Topology
 
-- `pokemon_catalog_db`: dedicated `postgres:17-alpine` container.
+- `pokemon_catalog_db`: dedicated official PostgreSQL container, pinned by
+  digest for reproducible deployments.
 - `pokemon_catalog_pgdata`: its named Docker volume.
 - `pokemon_catalog_internal`: an isolated Docker network. The Pokemon API joins
   it only during the later PostgreSQL cutover.

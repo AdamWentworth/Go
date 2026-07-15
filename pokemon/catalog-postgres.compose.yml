@@ -1,6 +1,6 @@
 services:
   pokemon_catalog_db:
-    image: postgres:17-alpine
+    image: postgres@sha256:742f40ea20b9ff2ff31db5458d127452988a2164df9e17441e191f3b72252193
     container_name: ${CATALOG_DB_CONTAINER:-pokemon_catalog_db}
     restart: unless-stopped
     env_file:
