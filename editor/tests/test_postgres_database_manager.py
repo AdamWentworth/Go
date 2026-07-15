@@ -34,6 +34,14 @@ class PostgresDatabaseManagerTests(unittest.TestCase):
         cursor.close()
         return row[0] if row else None
 
+    def test_move_picker_accepts_integer_fast_flags_from_the_editor_ui(self):
+        fast_moves = self.db_manager.fetch_moves(1)
+        charged_moves = self.db_manager.fetch_moves(0)
+
+        self.assertGreater(len(fast_moves), 0)
+        self.assertGreater(len(charged_moves), 0)
+        self.assertNotEqual(fast_moves, charged_moves)
+
     def test_reads_catalog_and_edits_generated_and_legacy_identifiers(self):
         self.assertEqual(self.db_manager.fetch_pokemon_name(1), "Bulbasaur")
         self.assertGreater(len(self.db_manager.fetch_all_pokemon_sorted("pokemon_id")), 0)

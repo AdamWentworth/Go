@@ -44,7 +44,10 @@ class DatabaseManager:
     
     def fetch_moves(self, is_fast):
         cursor = self.conn.get_cursor()
-        cursor.execute("SELECT move_id, name FROM moves WHERE is_fast = ?", (is_fast,))
+        cursor.execute(
+            "SELECT move_id, name FROM moves WHERE is_fast = ?",
+            (self.conn.bool_value(is_fast),),
+        )
         return {name: move_id for move_id, name in cursor.fetchall()}
     
     def fetch_pokemon_moves(self, pokemon_id):
