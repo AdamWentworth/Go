@@ -10,9 +10,9 @@ import {
 import "./Raid.css";
 import { useVariantsStore } from "@/features/variants/store/useVariantsStore";
 import type { PokemonVariant } from "@/types/pokemonVariants";
-import { resolveAssetUrl } from "@/utils/assetUrl";
 import { getTypeIconPath } from "@/utils/imageHelpers";
 import LoadingSpinner from "../../components/LoadingSpinner";
+import RaidPokemonImage from "./components/RaidPokemonImage";
 import { TYPE_MAPPING } from "./utils/constants";
 import {
   DEFAULT_RAID_RELOBBY_SECONDS,
@@ -44,155 +44,30 @@ import {
   type RaidTierKey,
   type ShadowBossMode,
 } from "./utils/raidCalculations";
-
-type RaidViewMode = "overall" | "type-dps" | "boss";
-type RaidMetricSortKey = "eDps" | "dps" | "tdo" | "er" | "cp";
-type RaidMetricSortDirection = "ascending" | "descending";
-type RaidMetricScore = Pick<
-  RaidOverallScore,
-  RaidMetricSortKey | "variant"
->;
-type SearchableCounterScore = {
-  variant: PokemonVariant;
-  fastMove: RaidCounterScore["fastMove"];
-  chargedMove: RaidCounterScore["chargedMove"];
-};
-
-const DEFAULT_TYPE_DPS_PAGE = "dark";
-const DEFAULT_METRIC_SORT: RaidMetricSortKey = "eDps";
-
-const FRIENDSHIP_OPTIONS: Array<{ key: FriendshipKey; label: string }> = [
-  { key: "none", label: "No friendship" },
-  { key: "good", label: "Good" },
-  { key: "great", label: "Great" },
-  { key: "ultra", label: "Ultra" },
-  { key: "best", label: "Best" },
-];
-
-const MEGA_OPTIONS: Array<{ key: MegaAllyBonusKey; label: string }> = [
-  { key: "none", label: "No Mega ally" },
-  { key: "general", label: "Mega ally" },
-  { key: "matching", label: "Matching Mega" },
-];
-
-const PARTY_POWER_OPTIONS: Array<{ key: PartyPowerKey; label: string }> = [
-  { key: "none", label: "No Party Power" },
-  { key: "occasional", label: "Occasional" },
-  { key: "frequent", label: "Frequent" },
-  { key: "every", label: "Every charge" },
-];
-
-const ATTACKER_LEVEL_OPTIONS: RaidCounterSettings["attackerLevel"][] = [
-  "40.0",
-  "50.0",
-  "51.0",
-];
-const RELOBBY_DELAY_OPTIONS = [0, 5, 10, 15, 20];
-
-const capitalize = (value: string): string =>
-  value.length === 0
-    ? value
-    : `${value.charAt(0).toUpperCase()}${value.slice(1)}`;
-
-const formatTypeList = (types: string[]): string =>
-  types.map(capitalize).join(" / ");
-
-const getPokemonImage = (variant: PokemonVariant): string =>
-  resolveAssetUrl(
-    variant.currentImage || variant.image_url || variant.sprite_url || "",
-  );
-
-const isMegaMewtwoY = (variant: PokemonVariant): boolean => {
-  const megaForm = (variant.megaForm || variant.form || "").trim().toUpperCase();
-  return (
-    variant.pokemon_id === 150 &&
-    variant.variantType.toLowerCase().includes("mega") &&
-    megaForm === "Y"
-  );
-};
-
-const RaidPokemonImage: React.FC<{
-  variant: PokemonVariant;
-  alt?: string;
-}> = ({ variant, alt = "" }) => (
-  <img
-    className={`raid-pokemon-image${
-      isMegaMewtwoY(variant) ? " raid-pokemon-image--mega-mewtwo-y" : ""
-    }`}
-    src={getPokemonImage(variant)}
-    alt={alt}
-    draggable={false}
-  />
-);
-
-const getVariantBadge = (variant: PokemonVariant): string => {
-  const type = variant.variantType.toLowerCase();
-  if (type.includes("shadow")) return "Shadow";
-  if (type.includes("primal")) return "Primal";
-  if (type.includes("mega")) return "Mega";
-  if (type.includes("fusion")) return "Fusion";
-  if (type.includes("dynamax")) return "Dynamax";
-  if (type.includes("gigantamax")) return "Gigantamax";
-  return "Pokemon";
-};
-
-const formatDps = (value: number): string => value.toFixed(1);
-const formatEr = (value: number): string => value.toFixed(2);
-const formatWholeNumber = (value: number): string =>
-  Math.round(value).toLocaleString();
-
-const getMoveTypeName = (move: RaidTypeDpsScore["fastMove"]): string =>
-  capitalize(move.type_name || move.type || "unknown");
-
-const getMoveTypeIcon = (move: SearchableCounterScore["fastMove"]): string =>
-  getTypeIconPath(move.type_name || move.type || "unknown");
-
-const getTypeClassName = (typeName?: string): string =>
-  `type-${(typeName || "unknown")
-    .trim()
-    .toLowerCase()
-    .replace(/[^a-z0-9-]/g, "-")}`;
-
-const getUniqueByVariant = (variants: PokemonVariant[]): PokemonVariant[] => {
-  const seen = new Set<string>();
-  return variants.filter((variant) => {
-    const key =
-      variant.variant_id || `${variant.pokemon_id}-${variant.variantType}`;
-    if (seen.has(key)) return false;
-    seen.add(key);
-    return true;
-  });
-};
-
-const sortRaidMetricScores = <Score extends RaidMetricScore>(
-  scores: Score[],
-  metric: RaidMetricSortKey,
-  direction: RaidMetricSortDirection,
-): Score[] =>
-  [...scores].sort((a, b) => {
-    const difference = a[metric] - b[metric];
-    if (difference !== 0) {
-      return direction === "descending" ? -difference : difference;
-    }
-
-    return a.variant.name.localeCompare(b.variant.name);
-  });
-
-const matchesCounterSearch = (
-  score: SearchableCounterScore,
-  query: string,
-): boolean => {
-  const normalized = query.trim().toLowerCase();
-  if (!normalized) return true;
-
-  const types = getVariantTypeNames(score.variant);
-  return (
-    score.variant.name.toLowerCase().includes(normalized) ||
-    score.fastMove.name.toLowerCase().includes(normalized) ||
-    score.chargedMove.name.toLowerCase().includes(normalized) ||
-    types.some((type) => type.includes(normalized))
-  );
-};
+import {
+  ATTACKER_LEVEL_OPTIONS,
+  DEFAULT_METRIC_SORT,
+  DEFAULT_TYPE_DPS_PAGE,
+  FRIENDSHIP_OPTIONS,
+  MEGA_OPTIONS,
+  PARTY_POWER_OPTIONS,
+  RELOBBY_DELAY_OPTIONS,
+  capitalize,
+  formatDps,
+  formatEr,
+  formatTypeList,
+  formatWholeNumber,
+  getMoveTypeIcon,
+  getMoveTypeName,
+  getTypeClassName,
+  getUniqueByVariant,
+  getVariantBadge,
+  matchesCounterSearch,
+  sortRaidMetricScores,
+  type RaidMetricSortDirection,
+  type RaidMetricSortKey,
+  type RaidViewMode,
+} from "./utils/raidViewModel";
 
 const Raid: React.FC = () => {
   const variants = useVariantsStore(
