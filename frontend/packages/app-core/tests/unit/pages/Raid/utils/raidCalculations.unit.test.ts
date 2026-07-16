@@ -792,6 +792,12 @@ describe("raid calculations", () => {
       fusion_id: 2,
       moves: [psychoCut, psychic, sunsteelStrike, moongeistBeam],
     });
+    const psychicRaidTarget = pokemon({
+      name: "Psychic Raid Boss",
+      variant_id: "target-psychic",
+      type1_name: "psychic",
+      type2_name: "none",
+    });
 
     const scores = scoreRaidOverallAttackers(
       [solgaleo, lunala, duskMane, dawnWings],
@@ -800,6 +806,7 @@ describe("raid calculations", () => {
     const bestScores = scoreBestRaidOverallAttackers(
       [solgaleo, lunala, duskMane, dawnWings],
       baseSettings,
+      [psychicRaidTarget],
     );
     const movesByVariant = new Map<string, Set<string>>();
     scores.forEach((score) => {
@@ -835,6 +842,13 @@ describe("raid calculations", () => {
     expect(bestChargedMoveByVariant.get("Dawn Wings Necrozma")).toBe(
       "Moongeist Beam",
     );
+    const duskManeScore = bestScores.find(
+      (score) => score.variant.name === "Dusk Mane Necrozma",
+    );
+    const dawnWingsScore = bestScores.find(
+      (score) => score.variant.name === "Dawn Wings Necrozma",
+    );
+    expect(dawnWingsScore?.eDps).toBeGreaterThan(duskManeScore?.eDps ?? 0);
   });
 
   it("matches full overall scoring when taking the best moveset per variant", () => {

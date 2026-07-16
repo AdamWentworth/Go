@@ -25,6 +25,9 @@ interface VariantsState {
   isRefreshing: boolean;
   isMovesLoading: boolean;
   isRaidDataLoading: boolean;
+  movesHydrationPending: boolean;
+  raidDataHydrationPending: boolean;
+  raidDataRequested: boolean;
   hydrateFromCache(): Promise<void>;
   refreshVariants(): Promise<void>;
   ensureMoves(): Promise<void>;
@@ -33,6 +36,17 @@ interface VariantsState {
 
 const log = createScopedLogger('VariantsStore');
 
+const hasHydratedMoves = (variants: PokemonVariant[]): boolean =>
+  variants.some(
+    (variant) =>
+      (variant.moves?.length ?? 0) > 0 ||
+      variant.fusion?.some((fusion) => (fusion.moves?.length ?? 0) > 0) ||
+      variant.crownForms?.some((crown) => (crown.moves?.length ?? 0) > 0),
+  );
+
+const hasHydratedRaidData = (variants: PokemonVariant[]): boolean =>
+  variants.some((variant) => (variant.raid_boss?.length ?? 0) > 0);
+
 export const useVariantsStore = create<VariantsState>((set, get) => ({
   variants: [],
   pokedexLists: {} as PokedexLists,
@@ -40,6 +54,9 @@ export const useVariantsStore = create<VariantsState>((set, get) => ({
   isRefreshing: false,
   isMovesLoading: false,
   isRaidDataLoading: false,
+  movesHydrationPending: false,
+  raidDataHydrationPending: false,
+  raidDataRequested: false,
 
   async hydrateFromCache() {
     try {
@@ -75,6 +92,9 @@ export const useVariantsStore = create<VariantsState>((set, get) => ({
       set({ variants, pokedexLists, variantsLoading: false });
       if (variants.length) {
         void get().ensureMoves();
+        if (get().raidDataRequested) {
+          void get().ensureRaidData();
+        }
       }
     } catch (error) {
       log.error('refreshVariants failed', error);
@@ -97,13 +117,18 @@ export const useVariantsStore = create<VariantsState>((set, get) => ({
   },
 
   async ensureMoves() {
-    if (get().isMovesLoading || get().variants.length === 0) return;
-    set({ isMovesLoading: true });
+    if (get().variants.length === 0) return;
+    if (get().isMovesLoading) {
+      set({ movesHydrationPending: true });
+      return;
+    }
+    set({ isMovesLoading: true, movesHydrationPending: false });
 
     try {
       const manifest = await getPokemonCatalogManifest();
       const version = getChunkVersion(manifest, 'moves');
-      if (!version || getStorageString(STORAGE_KEYS.pokemonMovesVersion) === version) return;
+      const versionMatches = getStorageString(STORAGE_KEYS.pokemonMovesVersion) === version;
+      if (!version || (versionMatches && hasHydratedMoves(get().variants))) return;
 
       const movesChunk = await getPokemonMovesChunk(manifest);
       if (!movesChunk) return;
@@ -115,18 +140,28 @@ export const useVariantsStore = create<VariantsState>((set, get) => ({
     } catch (error) {
       log.warn('ensureMoves failed; retaining the current catalog cache', error);
     } finally {
-      set({ isMovesLoading: false });
+      const retry = get().movesHydrationPending;
+      set({ isMovesLoading: false, movesHydrationPending: false });
+      if (retry) {
+        void get().ensureMoves();
+      }
     }
   },
 
   async ensureRaidData() {
-    if (get().isRaidDataLoading || get().variants.length === 0) return;
-    set({ isRaidDataLoading: true });
+    set({ raidDataRequested: true });
+    if (get().variants.length === 0) return;
+    if (get().isRaidDataLoading) {
+      set({ raidDataHydrationPending: true });
+      return;
+    }
+    set({ isRaidDataLoading: true, raidDataHydrationPending: false });
 
     try {
       const manifest = await getPokemonCatalogManifest();
       const version = getChunkVersion(manifest, 'raidData');
-      if (!version || getStorageString(STORAGE_KEYS.pokemonRaidDataVersion) === version) return;
+      const versionMatches = getStorageString(STORAGE_KEYS.pokemonRaidDataVersion) === version;
+      if (!version || (versionMatches && hasHydratedRaidData(get().variants))) return;
 
       const raidDataChunk = await getPokemonRaidDataChunk(manifest);
       if (!raidDataChunk) return;
@@ -138,7 +173,11 @@ export const useVariantsStore = create<VariantsState>((set, get) => ({
     } catch (error) {
       log.warn('ensureRaidData failed; retaining the current catalog cache', error);
     } finally {
-      set({ isRaidDataLoading: false });
+      const retry = get().raidDataHydrationPending;
+      set({ isRaidDataLoading: false, raidDataHydrationPending: false });
+      if (retry) {
+        void get().ensureRaidData();
+      }
     }
   },
 }));
