@@ -6,6 +6,11 @@ from tkinter import filedialog, messagebox, simpledialog
 from PIL import Image, ImageTk
 import requests
 
+from utils.catalog_image_url import (
+    catalog_image_file_path,
+    version_catalog_image_url,
+)
+
 
 class PokemonMegaFrame:
     """
@@ -115,8 +120,12 @@ class PokemonMegaFrame:
         if not label:
             return
         if url:
-            fp = os.path.join(self.dw.relative_path_to_images, url.lstrip("\\/"))
-            img = Image.open(fp) if os.path.exists(fp) else Image.new("RGB", (self.IMG, self.IMG), "grey")
+            fp = catalog_image_file_path(self.dw.relative_path_to_images, url)
+            img = (
+                Image.open(fp)
+                if os.path.exists(fp)
+                else Image.new("RGB", (self.IMG, self.IMG), "grey")
+            )
         else:
             img = Image.new("RGB", (self.IMG, self.IMG), "grey")
 
@@ -144,6 +153,7 @@ class PokemonMegaFrame:
             img.save(abs_fp)
 
             rel_path = "/" + os.path.join(rel_dir, fname).replace("\\", "/")
+            rel_path = version_catalog_image_url(rel_path, abs_fp)
             if shiny:
                 self.shiny_url = rel_path
                 self._load_image(self.shiny_url, self.shiny_lbl)
