@@ -1,6 +1,7 @@
 import { readdirSync, statSync } from 'node:fs';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
+import { createRequire } from 'node:module';
 
 const PROJECT_ROOT = process.cwd();
 const APP_CORE_ROOT = path.join(PROJECT_ROOT, '..', '..', 'packages', 'app-core');
@@ -49,10 +50,9 @@ for (let i = 0; i < files.length; i += BATCH_SIZE) {
 }
 
 const nodeCmd = process.execPath;
+const require = createRequire(import.meta.url);
 const vitestEntry = path.join(
-  PROJECT_ROOT,
-  'node_modules',
-  'vitest',
+  path.dirname(require.resolve('vitest/package.json')),
   'vitest.mjs',
 );
 const vitestConfig = path.join(PROJECT_ROOT, 'vite.config.mjs');
