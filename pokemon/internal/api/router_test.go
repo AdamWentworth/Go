@@ -210,10 +210,10 @@ func TestPokemonManifest_OK(t *testing.T) {
 	}
 
 	wantChunks := map[string]string{
-		"pokemonFull": "/pokemon/pokemons",
-		"catalog":     "/pokemon/catalog",
-		"moves":       "/pokemon/moves",
-		"raidData":    "/pokemon/raid-data",
+		"pokemonFull": "/pokemons",
+		"catalog":     "/catalog",
+		"moves":       "/moves",
+		"raidData":    "/raid-data",
 	}
 	for name, endpoint := range wantChunks {
 		chunk, ok := manifest.Chunks[name]

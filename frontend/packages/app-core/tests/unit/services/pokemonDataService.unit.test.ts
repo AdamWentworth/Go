@@ -102,6 +102,31 @@ describe('pokemonDataService', () => {
     );
   });
 
+  it('accepts legacy manifest endpoints without duplicating the service path', async () => {
+    const legacyManifest: PokemonCatalogManifest = {
+      ...manifest,
+      chunks: {
+        ...manifest.chunks,
+        catalog: {
+          ...manifest.chunks.catalog!,
+          endpoint: '/pokemon/catalog',
+        },
+      },
+    };
+    const fetchSpy = vi.spyOn(global, 'fetch').mockResolvedValueOnce(
+      new Response(JSON.stringify(payload), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' },
+      }),
+    );
+
+    await getPokemons({ manifest: legacyManifest });
+
+    const requestUrl = String(fetchSpy.mock.calls[0]?.[0]);
+    expect(requestUrl).toContain('/api/pokemon/catalog');
+    expect(requestUrl).not.toContain('/pokemon/pokemon/catalog');
+  });
+
   it('fetches independently versioned moves and raid-data chunks', async () => {
     const moves = [{ pokemon_id: 1, moves: [], fusion: [], crownForms: [] }];
     const raidData = [{ pokemon_id: 1, raid_boss: [] }];

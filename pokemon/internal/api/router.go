@@ -254,10 +254,10 @@ func NewRouter(deps RouterDeps) http.Handler {
 			CatalogVersion: catalogVersion,
 			GeneratedAt:    latestCacheBuildAt(fullStats, catalogStats, movesStats, raidDataStats),
 			Chunks: map[string]pokemonCatalogChunk{
-				"pokemonFull": newPokemonCatalogChunk("pokemonFull", "/pokemon/pokemons", fullStats),
-				"catalog":     newPokemonCatalogChunk("catalog", "/pokemon/catalog", catalogStats),
-				"moves":       newPokemonCatalogChunk("moves", "/pokemon/moves", movesStats),
-				"raidData":    newPokemonCatalogChunk("raidData", "/pokemon/raid-data", raidDataStats),
+				"pokemonFull": newPokemonCatalogChunk("pokemonFull", "/pokemons", fullStats),
+				"catalog":     newPokemonCatalogChunk("catalog", "/catalog", catalogStats),
+				"moves":       newPokemonCatalogChunk("moves", "/moves", movesStats),
+				"raidData":    newPokemonCatalogChunk("raidData", "/raid-data", raidDataStats),
 			},
 		}
 

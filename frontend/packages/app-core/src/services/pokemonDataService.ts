@@ -35,6 +35,25 @@ function clearStaleLocalStorageCache(): void {
 
 type PokemonChunkName = 'pokemonFull' | 'catalog' | 'moves' | 'raidData';
 
+function normalizeManifestChunkEndpoint(endpoint: string): string {
+  if (/^[a-z][a-z\d+.-]*:/i.test(endpoint)) return endpoint;
+
+  try {
+    const browserOrigin = globalThis.location?.origin ?? 'http://localhost';
+    const basePath = new URL(BASE_URL, browserOrigin).pathname.replace(/\/+$/, '');
+    const serviceName = basePath.split('/').filter(Boolean).at(-1);
+    const normalizedEndpoint = `/${endpoint.replace(/^\/+/, '')}`;
+
+    if (serviceName && normalizedEndpoint.startsWith(`/${serviceName}/`)) {
+      return normalizedEndpoint.slice(serviceName.length + 1);
+    }
+
+    return normalizedEndpoint;
+  } catch {
+    return endpoint;
+  }
+}
+
 function getChunkEndpoint(
   manifest: PokemonCatalogManifest | null | undefined,
   chunk: PokemonChunkName,
@@ -42,7 +61,7 @@ function getChunkEndpoint(
 ): string {
   const endpoint = manifest?.chunks?.[chunk]?.endpoint;
   return typeof endpoint === 'string' && endpoint.trim()
-    ? endpoint
+    ? normalizeManifestChunkEndpoint(endpoint)
     : fallback;
 }
 
