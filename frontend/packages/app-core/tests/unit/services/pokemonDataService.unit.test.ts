@@ -148,6 +148,27 @@ describe('pokemonDataService', () => {
     );
   });
 
+  it('retries a lazy catalog chunk once after a transient browser load failure', async () => {
+    const moves = [{ pokemon_id: 1, moves: [], fusion: [], crownForms: [] }];
+    const fetchSpy = vi.spyOn(global, 'fetch')
+      .mockRejectedValueOnce(new TypeError('Load failed'))
+      .mockResolvedValueOnce(new Response(JSON.stringify(moves), { status: 200 }));
+
+    await expect(getPokemonMovesChunk(manifest)).resolves.toEqual(moves);
+    expect(fetchSpy).toHaveBeenCalledTimes(2);
+  });
+
+  it('does not retry malformed chunk payloads', async () => {
+    const fetchSpy = vi.spyOn(global, 'fetch').mockResolvedValueOnce(
+      new Response(JSON.stringify({ pokemon_id: 1 }), { status: 200 }),
+    );
+
+    await expect(getPokemonMovesChunk(manifest)).rejects.toThrow(
+      'invalid moves chunk shape',
+    );
+    expect(fetchSpy).toHaveBeenCalledOnce();
+  });
+
   it('fetches and validates the pokemon catalog manifest', async () => {
     const fetchSpy = vi.spyOn(global, 'fetch').mockResolvedValueOnce(
       new Response(JSON.stringify(manifest), {

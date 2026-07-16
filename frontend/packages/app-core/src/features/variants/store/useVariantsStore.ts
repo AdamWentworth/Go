@@ -5,8 +5,6 @@ import type { PokedexLists } from '@/types/pokedex';
 import { variantsRepository } from '../repositories/variantsRepository';
 import { createScopedLogger } from '@/utils/logger';
 import {
-  getCatalogDataVersion,
-  getChunkVersion,
   getPokemonCatalogManifest,
   getPokemonMovesChunk,
   getPokemonRaidDataChunk,
@@ -17,6 +15,11 @@ import {
   mergePokemonMovesChunk,
   mergePokemonRaidDataChunk,
 } from '../utils/mergePokemonDataChunks';
+import {
+  hasHydratedMoves,
+  hasHydratedRaidData,
+  prepareVariantChunkHydration,
+} from '../utils/prepareVariantChunkHydration';
 
 interface VariantsState {
   variants: PokemonVariant[];
@@ -35,17 +38,6 @@ interface VariantsState {
 }
 
 const log = createScopedLogger('VariantsStore');
-
-const hasHydratedMoves = (variants: PokemonVariant[]): boolean =>
-  variants.some(
-    (variant) =>
-      (variant.moves?.length ?? 0) > 0 ||
-      variant.fusion?.some((fusion) => (fusion.moves?.length ?? 0) > 0) ||
-      variant.crownForms?.some((crown) => (crown.moves?.length ?? 0) > 0),
-  );
-
-const hasHydratedRaidData = (variants: PokemonVariant[]): boolean =>
-  variants.some((variant) => (variant.raid_boss?.length ?? 0) > 0);
 
 export const useVariantsStore = create<VariantsState>((set, get) => ({
   variants: [],
@@ -126,17 +118,22 @@ export const useVariantsStore = create<VariantsState>((set, get) => ({
 
     try {
       const manifest = await getPokemonCatalogManifest();
-      const version = getChunkVersion(manifest, 'moves');
-      const versionMatches = getStorageString(STORAGE_KEYS.pokemonMovesVersion) === version;
-      if (!version || (versionMatches && hasHydratedMoves(get().variants))) return;
+      const update = await prepareVariantChunkHydration({
+        manifest,
+        chunkName: 'moves',
+        storedVersion: getStorageString(STORAGE_KEYS.pokemonMovesVersion),
+        getVariants: () => get().variants,
+        hasHydratedData: hasHydratedMoves,
+        fetchChunk: getPokemonMovesChunk,
+      });
+      if (!update) return;
 
-      const movesChunk = await getPokemonMovesChunk(manifest);
-      if (!movesChunk) return;
-
-      const variants = mergePokemonMovesChunk(get().variants, movesChunk);
+      // Merge and commit synchronously against the latest snapshot so another
+      // lazy chunk cannot overwrite data that finished hydrating first.
+      const variants = mergePokemonMovesChunk(get().variants, update.chunk);
       set({ variants });
-      queueVariantsPersist(variants, Date.now(), undefined, getCatalogDataVersion(manifest) ?? undefined);
-      setStorageString(STORAGE_KEYS.pokemonMovesVersion, version);
+      queueVariantsPersist(variants, Date.now(), undefined, update.catalogVersion);
+      setStorageString(STORAGE_KEYS.pokemonMovesVersion, update.chunkVersion);
     } catch (error) {
       log.warn('ensureMoves failed; retaining the current catalog cache', error);
     } finally {
@@ -159,17 +156,20 @@ export const useVariantsStore = create<VariantsState>((set, get) => ({
 
     try {
       const manifest = await getPokemonCatalogManifest();
-      const version = getChunkVersion(manifest, 'raidData');
-      const versionMatches = getStorageString(STORAGE_KEYS.pokemonRaidDataVersion) === version;
-      if (!version || (versionMatches && hasHydratedRaidData(get().variants))) return;
+      const update = await prepareVariantChunkHydration({
+        manifest,
+        chunkName: 'raidData',
+        storedVersion: getStorageString(STORAGE_KEYS.pokemonRaidDataVersion),
+        getVariants: () => get().variants,
+        hasHydratedData: hasHydratedRaidData,
+        fetchChunk: getPokemonRaidDataChunk,
+      });
+      if (!update) return;
 
-      const raidDataChunk = await getPokemonRaidDataChunk(manifest);
-      if (!raidDataChunk) return;
-
-      const variants = mergePokemonRaidDataChunk(get().variants, raidDataChunk);
+      const variants = mergePokemonRaidDataChunk(get().variants, update.chunk);
       set({ variants });
-      queueVariantsPersist(variants, Date.now(), undefined, getCatalogDataVersion(manifest) ?? undefined);
-      setStorageString(STORAGE_KEYS.pokemonRaidDataVersion, version);
+      queueVariantsPersist(variants, Date.now(), undefined, update.catalogVersion);
+      setStorageString(STORAGE_KEYS.pokemonRaidDataVersion, update.chunkVersion);
     } catch (error) {
       log.warn('ensureRaidData failed; retaining the current catalog cache', error);
     } finally {

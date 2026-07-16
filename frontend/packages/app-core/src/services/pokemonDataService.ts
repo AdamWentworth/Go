@@ -34,6 +34,7 @@ function clearStaleLocalStorageCache(): void {
 }
 
 type PokemonChunkName = 'pokemonFull' | 'catalog' | 'moves' | 'raidData';
+const POKEMON_CHUNK_REQUEST_ATTEMPTS = 2;
 
 function normalizeManifestChunkEndpoint(endpoint: string): string {
   if (/^[a-z][a-z\d+.-]*:/i.test(endpoint)) return endpoint;
@@ -91,19 +92,34 @@ async function getPokemonChunk<T>(
   const endpoint = getChunkEndpoint(manifest, chunk, '');
   if (!endpoint) return null;
 
-  const response = await requestWithPolicy(buildUrl(BASE_URL, endpoint), {
-    method: 'GET',
-    headers: {},
-  });
-  const payload = await parseJsonSafe<unknown>(response);
-  if (!response.ok) {
-    throw toHttpError(response.status, payload);
-  }
-  if (!Array.isArray(payload)) {
-    throw new Error(`[pokemonDataService] invalid ${chunk} chunk shape: expected array`);
+  const requestUrl = buildUrl(BASE_URL, endpoint);
+
+  for (let attempt = 1; attempt <= POKEMON_CHUNK_REQUEST_ATTEMPTS; attempt += 1) {
+    let response: Response;
+    try {
+      response = await requestWithPolicy(requestUrl, {
+        method: 'GET',
+        headers: {},
+      });
+    } catch (error) {
+      if (attempt < POKEMON_CHUNK_REQUEST_ATTEMPTS) continue;
+      throw error;
+    }
+
+    const payload = await parseJsonSafe<unknown>(response);
+    if (!response.ok) {
+      const canRetry = response.status === 408 || response.status === 429 || response.status >= 500;
+      if (canRetry && attempt < POKEMON_CHUNK_REQUEST_ATTEMPTS) continue;
+      throw toHttpError(response.status, payload);
+    }
+    if (!Array.isArray(payload)) {
+      throw new Error(`[pokemonDataService] invalid ${chunk} chunk shape: expected array`);
+    }
+
+    return normalizeAssetUrlsDeep(payload as T);
   }
 
-  return normalizeAssetUrlsDeep(payload as T);
+  return null;
 }
 
 export const getPokemons = async (options: GetPokemonsOptions = {}): Promise<Pokemons> => {
