@@ -40,7 +40,7 @@ class PokemonShinyImageFrame:
         image_url_shiny = (
             image_url_shiny or f"/images/shiny/shiny_pokemon_{pokemon_id}.png"
         ).lstrip("\\/")
-        self.catalog_image_url = f"/{image_url_shiny.replace('\\', '/')}"
+        self.catalog_image_url = "/" + image_url_shiny.replace("\\", "/")
 
         # Combine the base path with the specific shiny image URL
         self.full_image_path = os.path.join(self.relative_path_to_images, image_url_shiny)

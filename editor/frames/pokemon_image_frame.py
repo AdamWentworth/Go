@@ -39,7 +39,7 @@ class PokemonImageFrame:
         # New catalog entries intentionally start without image URLs. Give the
         # editor a canonical destination so an image can be added immediately.
         image_url = (image_url or f"/images/default/pokemon_{pokemon_id}.png").lstrip("\\/")
-        self.catalog_image_url = f"/{image_url.replace('\\', '/')}"
+        self.catalog_image_url = "/" + image_url.replace("\\", "/")
 
         # Combine the base path with the specific image URL
         self.full_image_path = os.path.join(self.relative_path_to_images, image_url)
