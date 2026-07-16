@@ -286,6 +286,12 @@
   filter: drop-shadow(0 18px 24px rgba(0, 0, 0, 0.35));
 }
 
+/* Normalize the unusually padded source art without resizing its layout box. */
+.raid-pokemon-image--mega-mewtwo-y {
+  transform: scale(1.45);
+  transform-origin: center;
+}
+
 .raid-boss-summary {
   display: grid;
   gap: 0.2rem;

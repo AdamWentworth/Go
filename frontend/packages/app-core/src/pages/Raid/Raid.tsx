@@ -102,6 +102,29 @@ const getPokemonImage = (variant: PokemonVariant): string =>
     variant.currentImage || variant.image_url || variant.sprite_url || "",
   );
 
+const isMegaMewtwoY = (variant: PokemonVariant): boolean => {
+  const megaForm = (variant.megaForm || variant.form || "").trim().toUpperCase();
+  return (
+    variant.pokemon_id === 150 &&
+    variant.variantType.toLowerCase().includes("mega") &&
+    megaForm === "Y"
+  );
+};
+
+const RaidPokemonImage: React.FC<{
+  variant: PokemonVariant;
+  alt?: string;
+}> = ({ variant, alt = "" }) => (
+  <img
+    className={`raid-pokemon-image${
+      isMegaMewtwoY(variant) ? " raid-pokemon-image--mega-mewtwo-y" : ""
+    }`}
+    src={getPokemonImage(variant)}
+    alt={alt}
+    draggable={false}
+  />
+);
+
 const getVariantBadge = (variant: PokemonVariant): string => {
   const type = variant.variantType.toLowerCase();
   if (type.includes("shadow")) return "Shadow";
@@ -603,7 +626,7 @@ const Raid: React.FC = () => {
       key={`${score.variant.variant_id}-${index}`}
     >
       <div className="raid-counter-rank">{index + 1}</div>
-      <img src={getPokemonImage(score.variant)} alt="" />
+      <RaidPokemonImage variant={score.variant} />
       <div className="raid-counter-main">
         <strong>{score.variant.name}</strong>
         <span>
@@ -650,7 +673,7 @@ const Raid: React.FC = () => {
       <td>
         <div className="raid-type-table-pokemon">
           <span className="raid-type-table-rank">{index + 1}</span>
-          <img src={getPokemonImage(score.variant)} alt="" />
+          <RaidPokemonImage variant={score.variant} />
           <span className="raid-type-table-pokemon-copy">
             <strong>{score.variant.name}</strong>
             <small>
@@ -679,7 +702,7 @@ const Raid: React.FC = () => {
       <td>
         <div className="raid-type-table-pokemon">
           <span className="raid-type-table-rank">{index + 1}</span>
-          <img src={getPokemonImage(score.variant)} alt="" />
+          <RaidPokemonImage variant={score.variant} />
           <span className="raid-type-table-pokemon-copy">
             <strong>{score.variant.name}</strong>
             <small>
@@ -818,8 +841,8 @@ const Raid: React.FC = () => {
 
               <div className="raid-boss-card">
                 <div className="raid-boss-image-shell">
-                  <img
-                    src={getPokemonImage(selectedBoss)}
+                  <RaidPokemonImage
+                    variant={selectedBoss}
                     alt={selectedBoss.name}
                   />
                 </div>
@@ -866,7 +889,7 @@ const Raid: React.FC = () => {
                         onClick={() => handleBossSelect(boss)}
                         type="button"
                       >
-                        <img src={getPokemonImage(boss)} alt="" />
+                        <RaidPokemonImage variant={boss} />
                         <span>{boss.name}</span>
                         <small>
                           #{String(boss.pokedex_number).padStart(4, "0")}

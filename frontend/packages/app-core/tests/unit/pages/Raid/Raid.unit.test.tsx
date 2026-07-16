@@ -66,6 +66,8 @@ const variant = (overrides: RaidTestVariantOverrides): PokemonVariant =>
     type_2_id: overrides.type_2_id ?? 0,
     type1_name: overrides.type1_name ?? "psychic",
     type2_name: overrides.type2_name ?? "none",
+    form: overrides.form,
+    megaForm: overrides.megaForm,
     variantType: overrides.variantType ?? "default",
     currentImage: overrides.currentImage ?? "/images/missing-pokemon.png",
     image_url: overrides.image_url ?? "",
@@ -308,6 +310,28 @@ describe("Raid page", () => {
     ).toBeInTheDocument();
     expect(within(counterList).getAllByAltText("Ghost type").length).toBeGreaterThan(0);
     expect(within(counterList).queryByText("Fast Ghost")).not.toBeInTheDocument();
+  });
+
+  it("normalizes the padded Mega Mewtwo Y artwork in raid layouts", () => {
+    mocks.storeState.variants = [
+      variant({
+        name: "Mega Mewtwo Y",
+        variant_id: "mewtwo-mega-y",
+        pokemon_id: 150,
+        pokedex_number: 150,
+        variantType: "mega_y",
+        megaForm: "Y",
+        currentImage: "/images/mega/mega_150_Y.png?v=content-hash",
+      }),
+    ];
+
+    const { container } = render(<Raid />);
+    const image = container.querySelector<HTMLImageElement>(
+      'img[src*="/images/mega/mega_150_Y.png"]',
+    );
+
+    expect(image).not.toBeNull();
+    expect(image).toHaveClass("raid-pokemon-image--mega-mewtwo-y");
   });
 
   it("sorts the overall leaderboard by every displayed raid metric", () => {
