@@ -171,6 +171,15 @@ class PokemonDetailsWindow:
         self.window.lift()
         self.window.title(f"Details Updated - Pokemon ID: {self.pokemon_id}")
 
+    def set_catalog_image_url(self, field_name, image_url):
+        """Keep an added image path in sync with the pending catalog edit."""
+        entry = self.info_frames.entry_widgets[field_name]
+        entry.delete(0, tk.END)
+        entry.insert(0, image_url)
+
+        data_index = {"Image URL": 3, "Image URL Shiny": 4}[field_name]
+        self.pokemon_data[data_index] = image_url
+
     def capture_scroll_position(self):
         if not hasattr(self, "canvas") or self.canvas is None:
             return 0.0, 0.0

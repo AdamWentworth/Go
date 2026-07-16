@@ -70,6 +70,17 @@ class _FakeFemaleImageFrame:
         self.frame = _FakeWidget()
 
 
+class _FakeEntry:
+    def __init__(self, value=""):
+        self.value = value
+
+    def delete(self, _start, _end):
+        self.value = ""
+
+    def insert(self, _index, value):
+        self.value = value
+
+
 class PokemonDetailsWindowTests(unittest.TestCase):
     def setUp(self):
         _FakeFemaleImageFrame.calls = []
@@ -193,6 +204,20 @@ class PokemonDetailsWindowTests(unittest.TestCase):
         self.assertEqual(call_order, ["callback"])
         self.assertEqual(window.canvas.x_fraction, 0.15)
         self.assertEqual(window.canvas.y_fraction, 0.45)
+
+    def test_set_catalog_image_url_updates_pending_entry_and_record(self):
+        window = PokemonDetailsWindow.__new__(PokemonDetailsWindow)
+        window.info_frames = Mock()
+        window.info_frames.entry_widgets = {"Image URL": _FakeEntry()}
+        window.pokemon_data = [890, "Eternatus", 890, None, None]
+
+        window.set_catalog_image_url("Image URL", "/images/default/pokemon_890.png")
+
+        self.assertEqual(
+            window.info_frames.entry_widgets["Image URL"].value,
+            "/images/default/pokemon_890.png",
+        )
+        self.assertEqual(window.pokemon_data[3], "/images/default/pokemon_890.png")
 
 
 if __name__ == "__main__":

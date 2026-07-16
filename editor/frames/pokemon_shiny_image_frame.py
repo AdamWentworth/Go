@@ -35,8 +35,12 @@ class PokemonShinyImageFrame:
         # Construct the path root that backs /images/... URLs
         self.relative_path_to_images = os.path.join(go_directory, 'assets')
 
-        # Trim leading slash from image_url_shiny if present to ensure it's treated as relative
-        image_url_shiny = image_url_shiny.lstrip("\\/")
+        # A shiny path may be absent for a newly-authored species. Keep its
+        # destination separate from the default image from the first edit.
+        image_url_shiny = (
+            image_url_shiny or f"/images/shiny/shiny_pokemon_{pokemon_id}.png"
+        ).lstrip("\\/")
+        self.catalog_image_url = f"/{image_url_shiny.replace('\\', '/')}"
 
         # Combine the base path with the specific shiny image URL
         self.full_image_path = os.path.join(self.relative_path_to_images, image_url_shiny)
@@ -69,7 +73,7 @@ class PokemonShinyImageFrame:
 
     def update_image(self, new_image_url):
         # Ensure image_url is treated as relative
-        new_image_url = new_image_url.lstrip("\\/")
+        new_image_url = (new_image_url or self.catalog_image_url).lstrip("\\/")
 
         # Update the image displayed
         image_path = os.path.join(self.relative_path_to_images, new_image_url)
@@ -112,13 +116,7 @@ class PokemonShinyImageFrame:
     def save_and_update_image(self, image):
         # Combine image with the shiny icon before saving
         combined_image = self.combine_images(image)
-        # Check if the image_url already contains the 'images' directory
-        if 'images' not in self.full_image_path:
-            # If 'images' is not in the path, it's a new image, so add the directory
-            save_path = os.path.join(self.relative_path_to_images, 'images', f'default/pokemon_{self.pokemon_id}.png')
-        else:
-            # If 'images' is in the path, we're replacing an existing image
-            save_path = self.full_image_path
+        save_path = self.full_image_path
 
         # Normalize the path to ensure consistent slashes
         save_path = os.path.normpath(save_path)
@@ -130,12 +128,14 @@ class PokemonShinyImageFrame:
         combined_image.save(save_path, "PNG")
 
         # Update the displayed image
-        self.photo = ImageTk.PhotoImage(Image.open(save_path))
+        self.photo = ImageTk.PhotoImage(combined_image)
         self.image_label.configure(image=self.photo)
         self.image_label.image = self.photo
 
         # Show success message on top of the details window
         messagebox.showinfo("Success", f"Image updated successfully at {save_path}", parent=self.details_window.window)
+
+        self.details_window.set_catalog_image_url("Image URL Shiny", self.catalog_image_url)
 
         # Call method on details_window to react to the update
         self.details_window.react_to_image_update()

@@ -36,8 +36,10 @@ class PokemonImageFrame:
         # Construct the path root that backs /images/... URLs
         self.relative_path_to_images = os.path.join(go_directory, 'assets')
 
-        # Trim leading slash from image_url if present to ensure it's treated as relative
-        image_url = image_url.lstrip("\\/")
+        # New catalog entries intentionally start without image URLs. Give the
+        # editor a canonical destination so an image can be added immediately.
+        image_url = (image_url or f"/images/default/pokemon_{pokemon_id}.png").lstrip("\\/")
+        self.catalog_image_url = f"/{image_url.replace('\\', '/')}"
 
         # Combine the base path with the specific image URL
         self.full_image_path = os.path.join(self.relative_path_to_images, image_url)
@@ -67,7 +69,7 @@ class PokemonImageFrame:
 
     def update_image(self, new_image_url):
         # Ensure image_url is treated as relative
-        new_image_url = new_image_url.lstrip("\\/")
+        new_image_url = (new_image_url or self.catalog_image_url).lstrip("\\/")
 
         # Update the image displayed
         image_path = os.path.join(self.relative_path_to_images, new_image_url)
@@ -108,13 +110,7 @@ class PokemonImageFrame:
                 messagebox.showerror("Error", f"Failed to process the image: {e}")
 
     def save_and_update_image(self, image):
-        # Check if the image_url already contains the 'images' directory
-        if 'images' not in self.full_image_path:
-            # If 'images' is not in the path, it's a new image, so add the directory
-            save_path = os.path.join(self.relative_path_to_images, 'images', f'default/pokemon_{self.pokemon_id}.png')
-        else:
-            # If 'images' is in the path, we're replacing an existing image
-            save_path = self.full_image_path
+        save_path = self.full_image_path
 
         # Normalize the path to ensure consistent slashes
         save_path = os.path.normpath(save_path)
@@ -130,10 +126,10 @@ class PokemonImageFrame:
         self.image_label.configure(image=self.photo)
         self.image_label.image = self.photo  # keep a reference
 
-       # Show success message on top of the details window
+        # Show success message on top of the details window
         messagebox.showinfo("Success", f"Image updated successfully at {save_path}", parent=self.details_window.window)
+
+        self.details_window.set_catalog_image_url("Image URL", self.catalog_image_url)
 
         # You can call a method on details_window to react to the update if needed
         self.details_window.react_to_image_update()
-
-
