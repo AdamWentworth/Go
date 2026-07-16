@@ -6,7 +6,11 @@ import path             from 'node:path';
 
 const isCI = process.env.CI === 'true';
 const isWindows = process.platform === 'win32';
-const lowMemoryMode = isWindows || process.env.VITEST_LOW_MEMORY === '1';
+const allowLocalParallelTests = process.env.VITEST_ALLOW_PARALLEL === '1';
+const lowMemoryMode =
+  isWindows ||
+  process.env.VITEST_LOW_MEMORY === '1' ||
+  (!isCI && !allowLocalParallelTests);
 const enableHtmlReport = process.env.VITEST_HTML_REPORT === '1';
 const appCoreRoot = path.resolve(__dirname, '../../packages/app-core');
 const webRoot = __dirname;

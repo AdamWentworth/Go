@@ -68,7 +68,10 @@ for (let i = 0; i < chunks.length; i += 1) {
     {
       cwd: APP_CORE_ROOT,
       stdio: 'inherit',
-      env: process.env,
+      env: {
+        ...process.env,
+        NODE_OPTIONS: process.env.NODE_OPTIONS ?? '--max-old-space-size=4096',
+      },
     },
   );
   if (result.error) {
