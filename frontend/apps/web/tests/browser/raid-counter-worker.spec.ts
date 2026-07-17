@@ -213,6 +213,11 @@ test.describe("raid counter worker", () => {
     await expect(page.getByLabel(/attacker level/i)).toHaveCount(0);
 
     const typeFilter = page.getByLabel("Attacker type filter");
+    expect(
+      await typeFilter.locator(".raid-ranking-type-options").evaluate(
+        (options) => options.scrollWidth <= options.clientWidth + 1,
+      ),
+    ).toBe(true);
     const electricButton = typeFilter.getByRole("button", {
       name: "Electric",
     });

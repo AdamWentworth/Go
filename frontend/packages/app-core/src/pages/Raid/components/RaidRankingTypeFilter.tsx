@@ -20,9 +20,11 @@ const RaidRankingTypeFilter = ({
     <span className="raid-ranking-type-filter-label">Ranking scope</span>
     <div className="raid-ranking-type-options">
       <button
+        aria-label="Overall"
         aria-pressed={selectedType === ""}
         className={selectedType === "" ? "active" : ""}
         onClick={() => onChange("")}
+        title="Overall"
         type="button"
       >
         <FaGlobeAmericas aria-hidden="true" />
@@ -30,10 +32,12 @@ const RaidRankingTypeFilter = ({
       </button>
       {typeOptions.map((type) => (
         <button
+          aria-label={capitalize(type)}
           aria-pressed={selectedType === type}
           className={`${getTypeClassName(type)} ${selectedType === type ? "active" : ""}`}
           key={type}
           onClick={() => onChange(type)}
+          title={capitalize(type)}
           type="button"
         >
           <img src={getTypeIconPath(type)} alt="" draggable={false} />

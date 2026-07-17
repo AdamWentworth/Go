@@ -1994,28 +1994,6 @@
     position: static;
   }
 
-  .raid-ranking-type-options {
-    grid-auto-flow: column;
-    grid-template-rows: repeat(2, minmax(2.35rem, auto));
-    grid-template-columns: none;
-    grid-auto-columns: 6.8rem;
-    gap: 0.4rem;
-    overflow-x: auto;
-    padding: 0.05rem;
-    scrollbar-width: none;
-    scroll-snap-type: x proximity;
-  }
-
-  .raid-ranking-type-options::-webkit-scrollbar {
-    display: none;
-  }
-
-  .raid-ranking-type-options button {
-    min-height: 2.35rem;
-    padding: 0.45rem 0.65rem;
-    scroll-snap-align: start;
-  }
-
   .raid-boss-math,
   .raid-catch-card,
   .raid-settings-grid {
@@ -2284,12 +2262,40 @@
   }
 
   .raid-ranking-type-options {
-    grid-auto-columns: 5.8rem;
+    display: flex;
+    flex-wrap: wrap;
     gap: 0.3rem;
+    justify-content: center;
+    overflow: visible;
+    padding: 0;
   }
 
   .raid-ranking-type-options button {
+    flex: 0 0 calc((100% - 1.8rem) / 7);
+    min-height: 2.75rem;
     padding: 0.4rem;
-    font-size: 0.64rem;
+  }
+
+  .raid-ranking-type-options button img,
+  .raid-ranking-type-options button svg {
+    width: 1.35rem;
+    height: 1.35rem;
+  }
+
+  .raid-ranking-type-options button span {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+  }
+}
+
+@media (max-width: 380px) {
+  .raid-ranking-type-options button {
+    flex-basis: calc((100% - 1.2rem) / 5);
   }
 }
