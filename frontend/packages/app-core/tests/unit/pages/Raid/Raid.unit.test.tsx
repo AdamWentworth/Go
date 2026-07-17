@@ -456,7 +456,9 @@ describe("Raid page", () => {
 
     render(<Raid />);
 
-    expect(screen.getByText("0 raid-ready of 1 caught")).toBeInTheDocument();
+    expect(
+      screen.getByText("0 raid-ready entries from 1 caught"),
+    ).toBeInTheDocument();
     expect(
       screen.getByText(/1 caught entries need complete battle details/i),
     ).toBeInTheDocument();

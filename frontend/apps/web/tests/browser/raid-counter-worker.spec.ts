@@ -28,7 +28,7 @@ const caughtBulbasaur = {
   charged_move2_id: null,
 };
 
-async function seedRaidRoster(page: Page) {
+async function seedRaidRoster(page: Page, caught = caughtBulbasaur) {
   await page.goto("/login", { waitUntil: "domcontentloaded" });
   await page.evaluate(
     ({ user, caught }) =>
@@ -62,7 +62,7 @@ async function seedRaidRoster(page: Page) {
           };
         };
       }),
-    { user: raidUser, caught: caughtBulbasaur },
+    { user: raidUser, caught },
   );
 }
 
@@ -106,5 +106,43 @@ test.describe("raid counter worker", () => {
     await expect(leaderboard.getByText("Bulbasaur")).toBeVisible();
     await expect(leaderboard.getByText(/Sprout · Level 20/)).toBeVisible();
     await expect(page.getByLabel(/attacker level/i)).toHaveCount(0);
+  });
+
+  test("lists an unlocked Mega alongside its caught base form", async ({
+    page,
+  }) => {
+    const caughtRayquaza = {
+      ...caughtBulbasaur,
+      instance_id: "raid-rayquaza",
+      variant_id: "0384-default",
+      pokemon_id: 384,
+      nickname: "Emerald",
+      cp: 3835,
+      level: 40,
+      attack_iv: 15,
+      defense_iv: 15,
+      stamina_iv: 15,
+      fast_move_id: 47,
+      charged_move1_id: 275,
+      mega: true,
+      is_mega: false,
+    };
+    await installE2eRoutes(page, {
+      userInstances: {
+        username: raidUser.username,
+        instances: { [caughtRayquaza.instance_id]: caughtRayquaza },
+      },
+    });
+    await seedRaidRoster(page, caughtRayquaza);
+
+    await page.goto("/raid", { waitUntil: "domcontentloaded" });
+
+    await expect(
+      page.getByText("2 raid-ready entries from 1 caught"),
+    ).toBeVisible();
+    const leaderboard = page.getByLabel("Your top raid attackers");
+    await expect(leaderboard.getByText("Rayquaza", { exact: true })).toBeVisible();
+    await expect(leaderboard.getByText("Mega Rayquaza", { exact: true })).toBeVisible();
+    await expect(leaderboard.getByText(/Emerald · Level 40/)).toHaveCount(2);
   });
 });

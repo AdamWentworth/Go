@@ -15,7 +15,12 @@ import { scoreBestRaidOverallAttackers } from "@/pages/Raid/utils/raidRankings";
 import { cpMultipliers } from "@/pages/Raid/utils/constants";
 import type { PokemonInstance } from "@/types/pokemonInstance";
 import type { PokemonVariant } from "@/types/pokemonVariants";
-import type { Move } from "@/types/pokemonSubTypes";
+import type {
+  CrownForm,
+  Fusion,
+  MegaEvolution,
+  Move,
+} from "@/types/pokemonSubTypes";
 
 const move = (
   moveId: number,
@@ -87,9 +92,272 @@ describe("personalized raid roster", () => {
     expect(summary.caughtCount).toBe(2);
     expect(summary.eligibleCount).toBe(2);
     expect(summary.attackers.map((attacker) => attacker.variant_id)).toEqual([
-      "pikachu-default::caught::first",
-      "pikachu-default::caught::second",
+      "pikachu-default::caught::first::base",
+      "pikachu-default::caught::second::base",
     ]);
+  });
+
+  it("lists an unlocked Mega separately from the same caught Pokemon", () => {
+    const rayquaza = baseVariant({
+      pokemon_id: 384,
+      pokedex_number: 384,
+      name: "Rayquaza",
+      species_name: "Rayquaza",
+      variant_id: "0384-default",
+      attack: 284,
+      defense: 170,
+      stamina: 213,
+      megaEvolutions: [
+        {
+          id: 36,
+          form: null,
+          mega_energy_cost: 400,
+          attack: 377,
+          defense: 210,
+          stamina: 227,
+          type1_name: "Dragon",
+          type2_name: "Flying",
+          type_1_id: 3,
+          type_2_id: 8,
+          date_available: "2023-08-04",
+        } as MegaEvolution,
+      ],
+    });
+    const megaRayquaza = baseVariant({
+      ...rayquaza,
+      name: "Mega Rayquaza",
+      species_name: "Rayquaza",
+      variant_id: "0384-mega",
+      variantType: "mega",
+      attack: 377,
+      defense: 210,
+      stamina: 227,
+      megaForm: "",
+    });
+    const summary = buildRaidRoster([rayquaza, megaRayquaza], {
+      rayquaza: instance({
+        instance_id: "rayquaza",
+        variant_id: rayquaza.variant_id,
+        pokemon_id: 384,
+        cp: 3835,
+        mega: true,
+        is_mega: false,
+      }),
+    });
+
+    expect(summary.caughtCount).toBe(1);
+    expect(summary.eligibleCount).toBe(2);
+    expect(summary.projectedFormCount).toBe(1);
+    expect(summary.attackers.map((attacker) => attacker.name)).toEqual([
+      "Rayquaza",
+      "Mega Rayquaza",
+    ]);
+    expect(summary.attackers.map((attacker) => attacker.raidRoster?.formSource)).toEqual([
+      "base",
+      "mega",
+    ]);
+    expect(summary.attackers[0].raidRoster?.cpSource).toBe("recorded");
+    expect(summary.attackers[1].raidRoster?.cpSource).toBe("calculated");
+    expect(calculateRaidAttackerCp(summary.attackers[0], "50.0")).toBe(3835);
+    expect(calculateRaidAttackerCp(summary.attackers[1], "50.0")).toBeGreaterThan(3835);
+  });
+
+  it("lists every unlocked Mega choice alongside a species' caught base form", () => {
+    const megaFast = move(30, "Psycho Cut", 1);
+    const megaCharged = move(31, "Psystrike", 0);
+    const mewtwo = baseVariant({
+      pokemon_id: 150,
+      pokedex_number: 150,
+      name: "Mewtwo",
+      species_name: "Mewtwo",
+      variant_id: "0150-default",
+      moves: [megaFast, megaCharged],
+      megaEvolutions: [
+        {
+          id: 37,
+          form: "X",
+          mega_energy_cost: 200,
+          date_available: "2026-07-13",
+          attack: 375,
+          defense: 202,
+          stamina: 214,
+          type1_name: "Psychic",
+          type2_name: "Fighting",
+          type_1_id: 15,
+          type_2_id: 7,
+        } as MegaEvolution,
+        {
+          id: 38,
+          form: "Y",
+          mega_energy_cost: 200,
+          date_available: "2026-07-13",
+          attack: 426,
+          defense: 229,
+          stamina: 214,
+          type1_name: "Psychic",
+          type_1_id: 15,
+        } as MegaEvolution,
+      ],
+    });
+    const megaX = baseVariant({
+      ...mewtwo,
+      name: "Mega Mewtwo X",
+      variant_id: "0150-mega-x",
+      variantType: "mega_x",
+      megaForm: "X",
+      attack: 375,
+      defense: 202,
+      stamina: 214,
+      moves: [megaFast, megaCharged],
+    });
+    const megaY = baseVariant({
+      ...mewtwo,
+      name: "Mega Mewtwo Y",
+      variant_id: "0150-mega-y",
+      variantType: "mega_y",
+      megaForm: "Y",
+      attack: 426,
+      defense: 229,
+      stamina: 214,
+      moves: [megaFast, megaCharged],
+    });
+    const summary = buildRaidRoster([mewtwo, megaX, megaY], {
+      mewtwo: instance({
+        instance_id: "mewtwo",
+        variant_id: mewtwo.variant_id,
+        pokemon_id: 150,
+        fast_move_id: 30,
+        charged_move1_id: 31,
+        mega: true,
+        is_mega: false,
+      }),
+    });
+
+    expect(summary.caughtCount).toBe(1);
+    expect(summary.eligibleCount).toBe(3);
+    expect(summary.projectedFormCount).toBe(2);
+    expect(summary.attackers.map((attacker) => attacker.name)).toEqual([
+      "Mewtwo",
+      "Mega Mewtwo X",
+      "Mega Mewtwo Y",
+    ]);
+    expect(
+      summary.attackers.map((attacker) => attacker.raidRoster?.cpSource),
+    ).toEqual(["recorded", "calculated", "calculated"]);
+  });
+
+  it("uses the selected fusion form instead of the stored base variant", () => {
+    const fusionFast = move(10, "Shadow Claw", 1);
+    const fusionCharged = move(11, "Moongeist Beam", 0);
+    const necrozma = baseVariant({
+      pokemon_id: 800,
+      pokedex_number: 800,
+      name: "Necrozma",
+      species_name: "Necrozma",
+      variant_id: "0800-default",
+      fusion: [
+        {
+          fusion_id: 2,
+          name: "Dawn Wings Necrozma",
+          base_pokemon_id1: 800,
+          base_pokemon_id2: 792,
+          type_1_id: 15,
+          type_2_id: 9,
+          type1_name: "Psychic",
+          type2_name: "Ghost",
+          date_available: "2024-05-30",
+          moves: [fusionFast, fusionCharged],
+        } as Fusion,
+      ],
+    });
+    const dawnWings = baseVariant({
+      ...necrozma,
+      name: "Dawn Wings Necrozma",
+      species_name: "Dawn Wings Necrozma",
+      variant_id: "0800-fusion_2",
+      variantType: "fusion_2",
+      fusion_id: 2,
+      attack: 277,
+      defense: 220,
+      stamina: 200,
+      currentImage: "/dawn-wings.png",
+      moves: [fusionFast, fusionCharged],
+    });
+    const summary = buildRaidRoster([necrozma, dawnWings], {
+      necrozma: instance({
+        instance_id: "necrozma",
+        variant_id: necrozma.variant_id,
+        pokemon_id: 800,
+        fast_move_id: 10,
+        charged_move1_id: 11,
+        is_fused: true,
+        fusion_form: "Dawn Wings Necrozma",
+      }),
+    });
+
+    expect(summary.eligibleCount).toBe(1);
+    expect(summary.projectedFormCount).toBe(1);
+    expect(summary.attackers[0]).toMatchObject({
+      name: "Dawn Wings Necrozma",
+      attack: 277,
+      currentImage: "/dawn-wings.png",
+      fusion_id: 2,
+    });
+    expect(summary.attackers[0].raidRoster).toMatchObject({
+      formSource: "fusion",
+      cpSource: "recorded",
+    });
+  });
+
+  it("projects a caught crowned form with its own stats, image, and moves", () => {
+    const crownFast = move(20, "Metal Claw", 1);
+    const crownCharged = move(21, "Behemoth Blade", 0);
+    const zacian = baseVariant({
+      pokemon_id: 888,
+      pokedex_number: 888,
+      name: "Zacian",
+      species_name: "Zacian",
+      variant_id: "0888-default",
+      crownForms: [
+        {
+          id: 1,
+          base_pokemon_id: 888,
+          crown_pokemon_id: 1888,
+          display_form: "Crowned Sword",
+          name: "Zacian",
+          image_url: "/crowned-zacian.png",
+          attack: 332,
+          defense: 240,
+          stamina: 192,
+          type_1_id: 5,
+          type_2_id: 17,
+          type1_name: "Fairy",
+          type2_name: "Steel",
+          moves: [crownFast, crownCharged],
+        } as CrownForm,
+      ],
+    });
+    const summary = buildRaidRoster([zacian], {
+      zacian: instance({
+        instance_id: "zacian",
+        variant_id: zacian.variant_id,
+        pokemon_id: 888,
+        fast_move_id: 20,
+        charged_move1_id: 21,
+        crown: true,
+      }),
+    });
+
+    expect(summary.eligibleCount).toBe(1);
+    expect(summary.projectedFormCount).toBe(1);
+    expect(summary.attackers[0]).toMatchObject({
+      name: "Crowned Sword Zacian",
+      attack: 332,
+      defense: 240,
+      stamina: 192,
+      currentImage: "/crowned-zacian.png",
+    });
+    expect(summary.attackers[0].raidRoster?.formSource).toBe("crown");
   });
 
   it("uses recorded moves and preserves both recorded Charged Attacks", () => {
