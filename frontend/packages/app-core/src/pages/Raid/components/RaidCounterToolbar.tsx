@@ -9,6 +9,8 @@ interface RaidCounterToolbarProps {
   includeRankingSettings?: boolean;
   rankingSettingsOpen?: boolean;
   onRankingSettingsOpenChange?: (open: boolean) => void;
+  bestOnlyLabel?: string;
+  allMovesLabel?: string;
 }
 
 const RaidCounterToolbar = ({
@@ -20,6 +22,8 @@ const RaidCounterToolbar = ({
   includeRankingSettings = false,
   rankingSettingsOpen = false,
   onRankingSettingsOpenChange,
+  bestOnlyLabel = "Best moves",
+  allMovesLabel = "All moves",
 }: RaidCounterToolbarProps) => (
   <section className="raid-counter-toolbar">
     <label className="raid-field">
@@ -37,7 +41,7 @@ const RaidCounterToolbar = ({
         onClick={() => onBestOnlyChange(!bestOnly)}
         type="button"
       >
-        {bestOnly ? "Best moves" : "All moves"}
+        {bestOnly ? bestOnlyLabel : allMovesLabel}
       </button>
       {includeRankingSettings && (
         <button

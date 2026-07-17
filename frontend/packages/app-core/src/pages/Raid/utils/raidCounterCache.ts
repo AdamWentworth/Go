@@ -80,6 +80,19 @@ const variantSignature = (variant: PokemonVariant) => ({
   stamina: variant.stamina,
   type1: variant.type1_name,
   type2: variant.type2_name,
+  roster: variant.raidRoster
+    ? {
+        ...variant.raidRoster,
+        cp: variant.instanceData?.cp ?? null,
+        level: variant.instanceData?.level ?? null,
+        attackIv: variant.instanceData?.attack_iv ?? null,
+        defenseIv: variant.instanceData?.defense_iv ?? null,
+        staminaIv: variant.instanceData?.stamina_iv ?? null,
+        fastMoveId: variant.instanceData?.fast_move_id ?? null,
+        chargedMove1Id: variant.instanceData?.charged_move1_id ?? null,
+        chargedMove2Id: variant.instanceData?.charged_move2_id ?? null,
+      }
+    : null,
   fastMoves: getLegalRaidFastMoves(variant)
     .map(moveSignature)
     .sort(compareMoveSignatures),

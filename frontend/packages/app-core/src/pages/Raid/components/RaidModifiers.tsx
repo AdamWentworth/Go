@@ -36,6 +36,7 @@ interface RaidModifiersProps {
   dodgeStrategy: RaidDodgeStrategy;
   onDodgeStrategyChange: (strategy: RaidDodgeStrategy) => void;
   includeShadowControls: boolean;
+  includeAttackerLevel?: boolean;
   includeRelobbyControls?: boolean;
   includeBossMovesetControls?: boolean;
   includeMonteCarloOption?: boolean;
@@ -66,6 +67,7 @@ const RaidModifiers = ({
   dodgeStrategy,
   onDodgeStrategyChange,
   includeShadowControls,
+  includeAttackerLevel = true,
   includeRelobbyControls = false,
   includeBossMovesetControls = false,
   includeMonteCarloOption = false,
@@ -79,23 +81,25 @@ const RaidModifiers = ({
   onShadowBossModeChange,
 }: RaidModifiersProps) => (
   <section className="raid-settings-grid" aria-label="Raid modifiers">
-    <label className="raid-field">
-      <span>Attacker level</span>
-      <select
-        value={attackerLevel}
-        onChange={(event) =>
-          onAttackerLevelChange(
-            event.target.value as RaidCounterSettings["attackerLevel"],
-          )
-        }
-      >
-        {ATTACKER_LEVEL_OPTIONS.map((level) => (
-          <option key={level} value={level}>
-            Level {level.replace(".0", "")}
-          </option>
-        ))}
-      </select>
-    </label>
+    {includeAttackerLevel && (
+      <label className="raid-field">
+        <span>Attacker level</span>
+        <select
+          value={attackerLevel}
+          onChange={(event) =>
+            onAttackerLevelChange(
+              event.target.value as RaidCounterSettings["attackerLevel"],
+            )
+          }
+        >
+          {ATTACKER_LEVEL_OPTIONS.map((level) => (
+            <option key={level} value={level}>
+              Level {level.replace(".0", "")}
+            </option>
+          ))}
+        </select>
+      </label>
+    )}
 
     <label className="raid-field">
       <span>Friendship</span>

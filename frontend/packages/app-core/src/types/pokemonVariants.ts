@@ -29,6 +29,14 @@ export interface VariantCommon {
   megaForm?: string;
   fusion_id?: number | null;
   instanceData?: PokemonInstance;
+  raidRoster?: {
+    source: 'caught';
+    instanceId: string;
+    moveSource: 'recorded' | 'estimated';
+    hiddenPowerTypeEstimated?: boolean;
+    levelSource: 'recorded' | 'inferred' | 'estimated';
+    ivSource: 'recorded' | 'estimated';
+  };
 }
 
 // Omit base fields that get transformed in variants

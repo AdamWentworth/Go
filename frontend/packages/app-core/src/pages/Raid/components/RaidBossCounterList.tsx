@@ -1,11 +1,18 @@
-import type { RaidCounterScore } from "../utils/raidCalculations";
-import { formatDps, getRaidVariantDisplayName } from "../utils/raidViewModel";
+import type {
+  RaidCounterScore,
+  RaidCounterSettings,
+} from "../utils/raidCalculations";
+import {
+  formatDps,
+  getRaidRosterDetail,
+  getRaidVariantDisplayName,
+} from "../utils/raidViewModel";
 import { formatSeconds } from "../utils/raidCalculations";
 import RaidPokemonImage from "./RaidPokemonImage";
 
 interface RaidBossCounterListProps {
   scores: RaidCounterScore[];
-  attackerLevel: string;
+  attackerLevel: RaidCounterSettings["attackerLevel"];
 }
 
 const formatOutcomeCount = (value: number): string =>
@@ -22,6 +29,10 @@ const RaidBossCounterList = ({
         const medianTime =
           distribution?.timeToWinSeconds.p50 ?? score.soloTimeSeconds;
         const medianFaints = distribution?.faints.p50 ?? score.faints;
+        const rosterDetail = getRaidRosterDetail(
+          score.variant,
+          attackerLevel,
+        );
 
         return (
           <article
@@ -36,8 +47,10 @@ const RaidBossCounterList = ({
                 {score.fastMove.name} / {score.chargedMove.name}
               </span>
               <small>
-                CP {score.cp.toLocaleString()} at level{" "}
-                {attackerLevel.replace(".0", "")}
+                CP {score.cp.toLocaleString()}
+                {rosterDetail
+                  ? ` · ${rosterDetail}`
+                  : ` at level ${attackerLevel.replace(".0", "")}`}
               </small>
             </div>
             <div className="raid-counter-stats">

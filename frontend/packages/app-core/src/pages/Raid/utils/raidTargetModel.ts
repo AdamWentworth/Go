@@ -1,4 +1,8 @@
 import type { PokemonVariant } from "@/types/pokemonVariants";
+import {
+  getRaidAttackerIvs,
+  resolveRaidAttackerLevel,
+} from "./raidAttackerModel";
 import { cpMultipliers } from "./constants";
 import {
   buildRaidIncomingPressureScenarios,
@@ -51,15 +55,21 @@ export const calculateRaidAttackerBattleStats = (
   attacker: PokemonVariant,
   settings: RaidCounterSettings,
 ): RaidAttackerBattleStats => {
-  const cpMultiplier = cpMultipliers[settings.attackerLevel];
+  const cpMultiplier =
+    cpMultipliers[resolveRaidAttackerLevel(attacker, settings.attackerLevel)];
+  const ivs = getRaidAttackerIvs(attacker);
   const shadowDefense = attacker.variantType.toLowerCase().includes("shadow")
     ? SHADOW_ATTACKER_DEFENSE_MULTIPLIER
     : 1;
 
   return {
-    attack: (attacker.attack + 15) * cpMultiplier,
-    defense: (attacker.defense + 15) * cpMultiplier * shadowDefense,
-    hp: Math.max(1, Math.floor((attacker.stamina + 15) * cpMultiplier)),
+    attack: (attacker.attack + ivs.attack) * cpMultiplier,
+    defense:
+      (attacker.defense + ivs.defense) * cpMultiplier * shadowDefense,
+    hp: Math.max(
+      1,
+      Math.floor((attacker.stamina + ivs.stamina) * cpMultiplier),
+    ),
   };
 };
 

@@ -1,6 +1,8 @@
 import React, { useEffect, useMemo, useState } from "react";
 import "./Raid.css";
+import { useInstancesStore } from "@/features/instances/store/useInstancesStore";
 import { useVariantsStore } from "@/features/variants/store/useVariantsStore";
+import { useAuthStore } from "@/stores/useAuthStore";
 import type { PokemonVariant } from "@/types/pokemonVariants";
 import { getTypeIconPath } from "@/utils/imageHelpers";
 import LoadingSpinner from "../../components/LoadingSpinner";
@@ -12,6 +14,7 @@ import RaidModeTabs from "./components/RaidModeTabs";
 import RaidModifiers from "./components/RaidModifiers";
 import RaidModelProvenance from "./components/RaidModelProvenance";
 import RaidRankingTable from "./components/RaidRankingTable";
+import RaidRosterScope from "./components/RaidRosterScope";
 import { TYPE_MAPPING } from "./utils/constants";
 import {
   DEFAULT_RAID_RELOBBY_SECONDS,
@@ -52,6 +55,10 @@ import {
   type RaidMetricSortKey,
   type RaidViewMode,
 } from "./utils/raidViewModel";
+import {
+  buildRaidRoster,
+  type RaidRosterScope as RaidRosterScopeValue,
+} from "./utils/raidRoster";
 
 const Raid: React.FC = () => {
   const variants = useVariantsStore(
@@ -62,8 +69,13 @@ const Raid: React.FC = () => {
   const raidDataLoading = useVariantsStore((state) => state.isRaidDataLoading);
   const ensureMoves = useVariantsStore((state) => state.ensureMoves);
   const ensureRaidData = useVariantsStore((state) => state.ensureRaidData);
+  const instances = useInstancesStore((state) => state.instances);
+  const instancesLoading = useInstancesStore((state) => state.instancesLoading);
+  const isLoggedIn = useAuthStore((state) => state.isLoggedIn);
 
   const [viewMode, setViewMode] = useState<RaidViewMode>("overall");
+  const [rosterScope, setRosterScope] =
+    useState<RaidRosterScopeValue>(isLoggedIn ? "owned" : "catalog");
   const [bossSearch, setBossSearch] = useState("");
   const [selectedBossId, setSelectedBossId] = useState<string>("");
   const [selectedType, setSelectedType] = useState(DEFAULT_TYPE_DPS_PAGE);
@@ -100,6 +112,10 @@ const Raid: React.FC = () => {
     void ensureMoves();
     void ensureRaidData();
   }, [ensureMoves, ensureRaidData]);
+
+  useEffect(() => {
+    setRosterScope(isLoggedIn ? "owned" : "catalog");
+  }, [isLoggedIn]);
 
   const bossOptions = useMemo(
     () =>
@@ -140,10 +156,17 @@ const Raid: React.FC = () => {
       .slice(0, 6);
   }, [bossOptions, bossSearch]);
 
-  const attackers = useMemo(
+  const catalogAttackers = useMemo(
     () => getUniqueByVariant(variants.filter(isEligibleRaidAttacker)),
     [variants],
   );
+  const raidRoster = useMemo(
+    () => buildRaidRoster(variants, instances),
+    [instances, variants],
+  );
+  const attackers =
+    rosterScope === "owned" ? raidRoster.attackers : catalogAttackers;
+  const personalized = rosterScope === "owned";
 
   const selectedTierKey: RaidTierKey = selectedBoss
     ? (getRaidTierKeyForVariant(selectedBoss) ?? "legendary")
@@ -182,6 +205,12 @@ const Raid: React.FC = () => {
 
   useEffect(() => {
     if (viewMode !== "boss" || !selectedBoss) {
+      setBossCounterScores([]);
+      setBossCounterScoresLoading(false);
+      return;
+    }
+
+    if (attackers.length === 0) {
       setBossCounterScores([]);
       setBossCounterScoresLoading(false);
       return;
@@ -332,6 +361,7 @@ const Raid: React.FC = () => {
     onShadowRaidChange: setShadowRaid,
     shadowBossMode,
     onShadowBossModeChange: setShadowBossMode,
+    includeAttackerLevel: !personalized,
   };
 
   const handleBossSelect = (boss: PokemonVariant) => {
@@ -355,7 +385,7 @@ const Raid: React.FC = () => {
     return <LoadingSpinner />;
   }
 
-  if (attackers.length === 0) {
+  if (catalogAttackers.length === 0) {
     return (
       <div className="raid-page">
         <section className="raid-empty-state">
@@ -373,6 +403,13 @@ const Raid: React.FC = () => {
   return (
     <div className="raid-page">
       <RaidModeTabs viewMode={viewMode} onChange={setViewMode} />
+      <RaidRosterScope
+        scope={rosterScope}
+        onChange={setRosterScope}
+        isLoggedIn={isLoggedIn}
+        loading={instancesLoading}
+        summary={raidRoster}
+      />
 
       {viewMode === "overall" && (
         <section className="raid-layout raid-overall-layout">
@@ -380,11 +417,17 @@ const Raid: React.FC = () => {
             <header className="raid-leaderboard-header">
               <div>
                 <p className="raid-eyebrow">Overall eDPS</p>
-                <h1>Top raid attackers</h1>
+                <h1>
+                  {personalized ? "Your top raid attackers" : "Top raid attackers"}
+                </h1>
               </div>
               <div className="raid-leaderboard-meta">
                 <span>Team of six, {relobbySeconds}s relobby</span>
-                <span>Neutral typeless benchmark</span>
+                <span>
+                  {personalized
+                    ? "Caught levels, IVs, CP, and moves"
+                    : "Neutral typeless benchmark"}
+                </span>
                 <RaidModelProvenance />
               </div>
             </header>
@@ -398,6 +441,8 @@ const Raid: React.FC = () => {
               includeRankingSettings
               rankingSettingsOpen={rankingSettingsOpen}
               onRankingSettingsOpenChange={setRankingSettingsOpen}
+              bestOnlyLabel={personalized ? "Best current" : "Best moves"}
+              allMovesLabel={personalized ? "All current" : "All moves"}
             />
 
             {rankingSettingsOpen && (
@@ -414,12 +459,19 @@ const Raid: React.FC = () => {
             )}
 
             <RaidRankingTable
-              ariaLabel="Top raid attackers"
+              ariaLabel={
+                personalized ? "Your top raid attackers" : "Top raid attackers"
+              }
               scores={overallScores}
+              attackerLevel={attackerLevel}
               sortMetric={sortMetric}
               sortDirection={sortDirection}
               onSort={handleMetricSort}
-              emptyMessage="No attackers match the current filters."
+              emptyMessage={
+                personalized
+                  ? "No caught attackers match the current filters. Add level, IV, and move details to improve personalized rankings."
+                  : "No attackers match the current filters."
+              }
             />
           </main>
         </section>
@@ -446,6 +498,22 @@ const Raid: React.FC = () => {
                   groupEstimate={groupEstimate}
                   metadata={bossMetadata}
                 />
+              ) : personalized && attackers.length === 0 ? (
+                <section className="raid-calculation-status" role="status">
+                  <strong>No caught raid-ready Pokémon</strong>
+                  <span>
+                    Mark Pokémon as caught to build a personalized counter
+                    team for {selectedBoss.name}.
+                  </span>
+                </section>
+              ) : !bossCounterScoresLoading &&
+                bossCounterScores.length === 0 ? (
+                <section className="raid-calculation-status" role="status">
+                  <strong>No compatible raid counters</strong>
+                  <span>
+                    The selected roster has no legal movesets for this battle.
+                  </span>
+                </section>
               ) : (
                 <section className="raid-calculation-status" role="status">
                   <strong>Calculating raid counters</strong>
@@ -480,6 +548,8 @@ const Raid: React.FC = () => {
                 onSearchChange={setAttackerSearch}
                 bestOnly={bestOnly}
                 onBestOnlyChange={setBestOnly}
+                bestOnlyLabel={personalized ? "Best current" : "Best moves"}
+                allMovesLabel={personalized ? "All current" : "All moves"}
               />
 
               <RaidModelProvenance />
@@ -567,6 +637,8 @@ const Raid: React.FC = () => {
               includeRankingSettings
               rankingSettingsOpen={rankingSettingsOpen}
               onRankingSettingsOpenChange={setRankingSettingsOpen}
+              bestOnlyLabel={personalized ? "Best current" : "Best moves"}
+              allMovesLabel={personalized ? "All current" : "All moves"}
             />
 
             {rankingSettingsOpen && (
@@ -588,14 +660,22 @@ const Raid: React.FC = () => {
             <RaidRankingTable
               ariaLabel="Type DPS counters"
               scores={typeDpsScores}
+              attackerLevel={attackerLevel}
               sortMetric={sortMetric}
               sortDirection={sortDirection}
               onSort={handleMetricSort}
               emptyMessage={
-                <>
-                  No eligible attackers have a {capitalize(selectedType)} fast
-                  or charged move.
-                </>
+                personalized ? (
+                  <>
+                    None of your caught Pokémon have a usable{" "}
+                    {capitalize(selectedType)} moveset for this ranking.
+                  </>
+                ) : (
+                  <>
+                    No eligible attackers have a {capitalize(selectedType)} fast
+                    or charged move.
+                  </>
+                )
               }
             />
           </main>

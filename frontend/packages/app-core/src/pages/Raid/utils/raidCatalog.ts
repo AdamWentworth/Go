@@ -197,7 +197,7 @@ const getVariantFusionId = (variant: PokemonVariant): number | null =>
 const isFusionVariant = (variant: PokemonVariant): boolean =>
   variant.variantType.toLowerCase().includes("fusion");
 
-const getLegalRaidMovesForVariant = (variant: PokemonVariant): Move[] => {
+const getVariantRaidMovePool = (variant: PokemonVariant): Move[] => {
   const moves = Array.isArray(variant.moves) ? variant.moves : [];
   const fusionId = getVariantFusionId(variant);
 
@@ -231,6 +231,27 @@ const getLegalRaidMovesForVariant = (variant: PokemonVariant): Move[] => {
   });
 };
 
+const getLegalRaidMovesForVariant = (variant: PokemonVariant): Move[] => {
+  const moves = getVariantRaidMovePool(variant);
+  if (variant.raidRoster?.moveSource !== "recorded") return moves;
+
+  const instance = variant.instanceData;
+  const recordedMoveIds = new Set(
+    [
+      instance?.fast_move_id,
+      instance?.charged_move1_id,
+      instance?.charged_move2_id,
+    ].filter((moveId): moveId is number => moveId != null),
+  );
+  const recordedMoves = moves.filter((move) =>
+    recordedMoveIds.has(move.move_id),
+  );
+  const hasFastMove = recordedMoves.some((move) => move.is_fast === 1);
+  const hasChargedMove = recordedMoves.some((move) => move.is_fast === 0);
+
+  return hasFastMove && hasChargedMove ? recordedMoves : moves;
+};
+
 export const getLegalRaidFastMoves = (variant: PokemonVariant): Move[] =>
   expandHiddenPowerFastMoves(
     getLegalRaidMovesForVariant(variant).filter(
@@ -244,8 +265,8 @@ export const getLegalRaidChargedMoves = (variant: PokemonVariant): Move[] =>
   );
 
 export const isEligibleRaidAttacker = (variant: PokemonVariant): boolean =>
-  !isRaidCosmeticVariant(variant) &&
-  !isMaxBattleVariant(variant) &&
+  (variant.raidRoster?.source === "caught" ||
+    (!isRaidCosmeticVariant(variant) && !isMaxBattleVariant(variant))) &&
   Array.isArray(variant.moves) &&
   getLegalRaidFastMoves(variant).length > 0 &&
   getLegalRaidChargedMoves(variant).length > 0;

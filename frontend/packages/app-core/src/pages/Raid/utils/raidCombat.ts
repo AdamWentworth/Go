@@ -31,6 +31,7 @@ import type {
   ShadowBossMode,
 } from "./raidTypes";
 import { getTypeEffectivenessMultiplier } from "./typeEffectiveness";
+import { calculateRaidAttackerCp } from "./raidAttackerModel";
 
 export const getRaidMovePower = (move: Move): number => move.raid_power;
 
@@ -50,15 +51,7 @@ export const calculateRaidBossCp = (
 export const calculatePokemonCpForLevel = (
   variant: PokemonVariant,
   level: keyof typeof cpMultipliers,
-): number => {
-  const cpMultiplier = cpMultipliers[level];
-  const attack = variant.attack + 15;
-  const defense = variant.defense + 15;
-  const stamina = variant.stamina + 15;
-  return Math.floor(
-    (attack * Math.sqrt(defense) * Math.sqrt(stamina) * cpMultiplier ** 2) / 10,
-  );
-};
+): number => calculateRaidAttackerCp(variant, level);
 
 export const calculateRaidBossStats = (
   variant: PokemonVariant,

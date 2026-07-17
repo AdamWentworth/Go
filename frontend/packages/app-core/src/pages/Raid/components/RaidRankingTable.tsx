@@ -3,6 +3,7 @@ import { FaSort, FaSortDown, FaSortUp } from "react-icons/fa";
 import RaidPokemonImage from "./RaidPokemonImage";
 import {
   getVariantTypeNames,
+  type RaidCounterSettings,
   type RaidOverallScore,
   type RaidTypeDpsScore,
 } from "../utils/raidCalculations";
@@ -14,6 +15,7 @@ import {
   getMoveTypeIcon,
   getMoveTypeName,
   getRaidVariantDisplayName,
+  getRaidRosterDetail,
   type RaidMetricSortDirection,
   type RaidMetricSortKey,
 } from "../utils/raidViewModel";
@@ -27,6 +29,7 @@ interface RaidRankingTableProps {
   sortDirection: RaidMetricSortDirection;
   onSort: (metric: RaidMetricSortKey) => void;
   emptyMessage: ReactNode;
+  attackerLevel: RaidCounterSettings["attackerLevel"];
 }
 
 const isTypeDpsScore = (score: RaidRankingScore): score is RaidTypeDpsScore =>
@@ -39,6 +42,7 @@ const RaidRankingTable = ({
   sortDirection,
   onSort,
   emptyMessage,
+  attackerLevel,
 }: RaidRankingTableProps) => {
   const renderSortableMetricHeader = (
     metric: RaidMetricSortKey,
@@ -125,8 +129,13 @@ const RaidRankingTable = ({
             </tr>
           </thead>
           <tbody>
-            {scores.map((score, index) => (
-              <tr key={`${score.variant.variant_id}-${index}`}>
+            {scores.map((score, index) => {
+              const rosterDetail = getRaidRosterDetail(
+                score.variant,
+                attackerLevel,
+              );
+              return (
+                <tr key={`${score.variant.variant_id}-${index}`}>
                 <td>
                   <div className="raid-type-table-pokemon">
                     <span className="raid-type-table-rank">{index + 1}</span>
@@ -139,6 +148,11 @@ const RaidRankingTable = ({
                         {formatTypeList(getVariantTypeNames(score.variant)) ||
                           "Unknown type"}
                       </small>
+                      {rosterDetail && (
+                        <small className="raid-roster-row-detail">
+                          {rosterDetail}
+                        </small>
+                      )}
                     </span>
                   </div>
                 </td>
@@ -161,8 +175,9 @@ const RaidRankingTable = ({
                 <td className="raid-type-table-number">
                   {score.cp.toLocaleString()}
                 </td>
-              </tr>
-            ))}
+                </tr>
+              );
+            })}
           </tbody>
         </table>
       ) : (

@@ -1,6 +1,5 @@
 import type { PokemonVariant } from "@/types/pokemonVariants";
 import type { Move } from "@/types/pokemonSubTypes";
-import { cpMultipliers } from "./constants";
 import { getTypeEffectivenessMultiplier } from "./typeEffectiveness";
 import type {
   RaidCounterScore,
@@ -113,8 +112,10 @@ const calculateMoveCycleEstimate = (
   tier: RaidTierPreset,
   settings: RaidCounterSettings,
 ): RaidCounterScore => {
-  const cpMultiplier = cpMultipliers[settings.attackerLevel];
-  const attackerAttack = (attacker.attack + 15) * cpMultiplier;
+  const attackerAttack = calculateRaidAttackerBattleStats(
+    attacker,
+    settings,
+  ).attack;
   const bossTypes = getVariantTypeNames(boss);
   const bossStats = calculateRaidBossStats(boss, tier, settings.shadowBossMode);
 

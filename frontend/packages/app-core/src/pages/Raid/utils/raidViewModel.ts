@@ -12,6 +12,10 @@ import type {
   RaidOverallScore,
   RaidTypeDpsScore,
 } from "./raidCalculations";
+import {
+  getRaidAttackerIvPercent,
+  getRaidAttackerLevelLabel,
+} from "./raidAttackerModel";
 
 export type RaidViewMode = "overall" | "type-dps" | "boss";
 export type RaidMetricSortKey = "eDps" | "dps" | "tdo" | "er" | "cp";
@@ -144,6 +148,33 @@ export const getVariantBadge = (variant: PokemonVariant): string => {
   if (type.includes("dynamax")) return "Dynamax";
   if (type.includes("gigantamax")) return "Gigantamax";
   return "Pokemon";
+};
+
+export const getRaidRosterDetail = (
+  variant: PokemonVariant,
+  fallbackLevel: RaidCounterSettings["attackerLevel"],
+): string | null => {
+  if (!variant.raidRoster) return null;
+
+  const details: string[] = [];
+  const nickname = variant.instanceData?.nickname?.trim();
+  if (nickname) details.push(nickname);
+  details.push(`Level ${getRaidAttackerLevelLabel(variant, fallbackLevel)}`);
+  const ivPercent = getRaidAttackerIvPercent(variant);
+  if (ivPercent != null) details.push(`${ivPercent}% IV`);
+  if (variant.raidRoster.moveSource === "estimated") {
+    details.push("best legal moves estimated");
+  } else if (variant.raidRoster.hiddenPowerTypeEstimated) {
+    details.push("Hidden Power type estimated");
+  }
+  if (variant.raidRoster.levelSource === "estimated") {
+    details.push("level estimated");
+  }
+  if (variant.raidRoster.ivSource === "estimated") {
+    details.push("IVs estimated");
+  }
+
+  return details.join(" · ");
 };
 
 export const formatDps = (value: number): string => value.toFixed(1);
