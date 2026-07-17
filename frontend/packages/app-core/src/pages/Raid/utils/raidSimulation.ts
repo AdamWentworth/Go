@@ -49,6 +49,7 @@ type SimulationEvent = {
   bossGeneration: number;
   move?: Move;
   dodged?: boolean;
+  dodgeSucceeded?: boolean;
   partyPowered?: boolean;
 };
 
@@ -160,6 +161,7 @@ export const simulateRaidTeamBattle = ({
   settings,
   chargedDecisionOffset = 0,
   shouldBossUseCharged,
+  shouldDodgeSucceed,
   getBossActionDelaySeconds,
   trainerCount = 1,
 }: {
@@ -171,6 +173,7 @@ export const simulateRaidTeamBattle = ({
   settings: RaidCounterSettings;
   chargedDecisionOffset?: 0 | 1;
   shouldBossUseCharged?: () => boolean;
+  shouldDodgeSucceed?: () => boolean;
   getBossActionDelaySeconds?: () => number;
   trainerCount?: number;
 }): RaidBattleSimulationResult => {
@@ -186,6 +189,10 @@ export const simulateRaidTeamBattle = ({
     (type): type is string => Boolean(type && type !== "none"),
   );
   const activeTrainerCount = Math.max(1, Math.floor(trainerCount));
+  const dodgeSuccessRate = Math.min(
+    1,
+    Math.max(0, settings.dodgeSuccessRate ?? 1),
+  );
   const profiles = team.map(({ attacker, fastMove, chargedMove }) => {
     const attackerStats = calculateRaidAttackerBattleStats(attacker, settings);
     return {
@@ -287,6 +294,7 @@ export const simulateRaidTeamBattle = ({
     move?: Move,
     dodged?: boolean,
     partyPowered?: boolean,
+    dodgeSucceeded?: boolean,
   ) => {
     events.push({
       actor,
@@ -296,6 +304,7 @@ export const simulateRaidTeamBattle = ({
       bossGeneration,
       move,
       dodged,
+      dodgeSucceeded,
       partyPowered,
     });
   };
@@ -439,21 +448,46 @@ export const simulateRaidTeamBattle = ({
         useCharged &&
         settings.dodgeStrategy === "charged" &&
         !attackerMoveOverlapsHit;
+      const dodgeSucceeded = willDodge
+        ? shouldDodgeSucceed?.()
+        : undefined;
       if (willDodge) reservedDodgeHitTime = bossHitTime;
-      enqueue("boss-hit", bossHitTime, move, willDodge);
+      enqueue(
+        "boss-hit",
+        bossHitTime,
+        move,
+        willDodge,
+        undefined,
+        dodgeSucceeded,
+      );
       continue;
     }
 
     if (event.actor === "boss-hit") {
       const profile = profiles[teamPosition];
       const charged = event.move === bossChargedMove;
+      const expectedDodgedDamage = Math.round(
+        profile.dodgedBossChargedDamage * dodgeSuccessRate +
+          profile.bossChargedDamage * (1 - dodgeSuccessRate),
+      );
       const damage = charged
         ? event.dodged
-          ? profile.dodgedBossChargedDamage
+          ? event.dodgeSucceeded == null
+            ? expectedDodgedDamage
+            : event.dodgeSucceeded
+              ? profile.dodgedBossChargedDamage
+              : profile.bossChargedDamage
           : profile.bossChargedDamage
         : profile.bossFastDamage;
       if (charged) bossChargedMoves += 1;
-      if (event.dodged) dodges += 1;
+      if (event.dodged) {
+        dodges +=
+          event.dodgeSucceeded == null
+            ? dodgeSuccessRate
+            : event.dodgeSucceeded
+              ? 1
+              : 0;
+      }
       if (reservedDodgeHitTime === event.time) reservedDodgeHitTime = null;
       attackerHp -= damage;
       attackerEnergy = Math.min(
@@ -526,6 +560,7 @@ export const simulateRaidBattle = ({
   settings: RaidCounterSettings;
   chargedDecisionOffset?: 0 | 1;
   shouldBossUseCharged?: () => boolean;
+  shouldDodgeSucceed?: () => boolean;
   getBossActionDelaySeconds?: () => number;
   trainerCount?: number;
 }): RaidBattleSimulationResult =>
@@ -612,6 +647,8 @@ export const simulateRaidTeamAcrossBossMovesets = ({
         settings,
         trainerCount,
         shouldBossUseCharged: () => random() < 0.5,
+        shouldDodgeSucceed: () =>
+          random() < Math.min(1, Math.max(0, settings.dodgeSuccessRate ?? 1)),
         getBossActionDelaySeconds: () => {
           const index = Math.min(
             RAID_SIMULATION_BOSS_DELAY_OPTIONS_SECONDS.length - 1,
@@ -676,6 +713,7 @@ const simulateMonteCarloRaidCounter = ({
     settings.megaAllyBonus,
     settings.partyPower,
     settings.dodgeStrategy,
+    settings.dodgeSuccessRate ?? 1,
     settings.weatherBoostedType,
     settings.shadowBossMode,
     settings.relobbySeconds,
@@ -693,6 +731,8 @@ const simulateMonteCarloRaidCounter = ({
       tier,
       settings,
       shouldBossUseCharged: () => random() < 0.5,
+      shouldDodgeSucceed: () =>
+        random() < Math.min(1, Math.max(0, settings.dodgeSuccessRate ?? 1)),
       getBossActionDelaySeconds: () => {
         const index = Math.min(
           RAID_SIMULATION_BOSS_DELAY_OPTIONS_SECONDS.length - 1,

@@ -343,6 +343,64 @@ describe("raid event simulation", () => {
     expect(dodgeCharged.damageDealt).toBeLessThan(noDodge.damageDealt);
   });
 
+  it("blends observed dodge success without changing dodge eligibility", () => {
+    const durableAttacker = pokemon({
+      name: "Calibrated Dodge Attacker",
+      attack: 220,
+      defense: 220,
+      stamina: 400,
+      types: ["normal"],
+      moves: [fastAttack, chargedAttack],
+    });
+    const chargedBoss = pokemon({
+      name: "Calibration Boss",
+      attack: 320,
+      defense: 220,
+      stamina: 400,
+      types: ["fighting"],
+      moves: [weakBossFast, strongBossCharged],
+    });
+    const sharedInput = {
+      attacker: durableAttacker,
+      attackerFastMove: fastAttack,
+      attackerChargedMove: chargedAttack,
+      boss: chargedBoss,
+      bossFastMove: weakBossFast,
+      bossChargedMove: strongBossCharged,
+      tier: { ...tier, bossHp: 5000, timeLimitSeconds: 45 },
+      shouldBossUseCharged: () => true,
+    };
+    const perfect = simulateRaidBattle({
+      ...sharedInput,
+      settings: {
+        ...settings,
+        dodgeStrategy: "charged",
+        dodgeSuccessRate: 1,
+      },
+    });
+    const observedHalf = simulateRaidBattle({
+      ...sharedInput,
+      settings: {
+        ...settings,
+        dodgeStrategy: "charged",
+        dodgeSuccessRate: 0.5,
+      },
+    });
+    const failed = simulateRaidBattle({
+      ...sharedInput,
+      settings: {
+        ...settings,
+        dodgeStrategy: "charged",
+        dodgeSuccessRate: 0,
+      },
+    });
+
+    expect(perfect.dodges).toBeGreaterThan(observedHalf.dodges);
+    expect(observedHalf.dodges).toBeGreaterThan(failed.dodges);
+    expect(perfect.faints).toBeLessThanOrEqual(observedHalf.faints);
+    expect(observedHalf.faints).toBeLessThanOrEqual(failed.faints);
+  });
+
   it("charges relobby downtime after every six faints", () => {
     const fragileAttacker = pokemon({
       name: "Fragile Attacker",

@@ -1,0 +1,214 @@
+import { useState, type FormEvent } from "react";
+import { FaSave, FaTimes } from "react-icons/fa";
+import { useContextBackHandler } from "@/contexts/ContextBackContext";
+import type { RaidObservationActual } from "../utils/raidCalibration";
+
+type RaidObservationDialogProps = {
+  bossName: string;
+  defaultTrainerCount: number;
+  onCancel: () => void;
+  onSave: (actual: RaidObservationActual) => void;
+};
+
+type ObservationForm = {
+  trainerCount: string;
+  clearTimeSeconds: string;
+  faints: string;
+  relobbies: string;
+  dodgeAttempts: string;
+  successfulDodges: string;
+  latencyMs: string;
+};
+
+const parseWholeNumber = (value: string): number =>
+  Math.max(0, Math.floor(Number(value)));
+
+const RaidObservationDialog = ({
+  bossName,
+  defaultTrainerCount,
+  onCancel,
+  onSave,
+}: RaidObservationDialogProps) => {
+  const [form, setForm] = useState<ObservationForm>({
+    trainerCount: String(Math.max(1, defaultTrainerCount)),
+    clearTimeSeconds: "",
+    faints: "0",
+    relobbies: "0",
+    dodgeAttempts: "0",
+    successfulDodges: "0",
+    latencyMs: "",
+  });
+  const [error, setError] = useState("");
+
+  useContextBackHandler(true, onCancel, "raid-observation");
+
+  const setField = (field: keyof ObservationForm, value: string) => {
+    setForm((current) => ({ ...current, [field]: value }));
+  };
+
+  const handleSubmit = (event: FormEvent) => {
+    event.preventDefault();
+    const trainerCount = parseWholeNumber(form.trainerCount);
+    const clearTimeSeconds = Number(form.clearTimeSeconds);
+    const faints = parseWholeNumber(form.faints);
+    const relobbies = parseWholeNumber(form.relobbies);
+    const dodgeAttempts = parseWholeNumber(form.dodgeAttempts);
+    const successfulDodges = parseWholeNumber(form.successfulDodges);
+    const latencyMs = form.latencyMs.trim() ? Number(form.latencyMs) : null;
+
+    if (trainerCount < 1 || trainerCount > 20) {
+      setError("Trainer count must be between 1 and 20.");
+      return;
+    }
+    if (
+      !Number.isFinite(clearTimeSeconds) ||
+      clearTimeSeconds <= 0 ||
+      clearTimeSeconds > 1800
+    ) {
+      setError("Clear time must be between 1 and 1800 seconds.");
+      return;
+    }
+    if (successfulDodges > dodgeAttempts) {
+      setError("Successful dodges cannot exceed attempted dodges.");
+      return;
+    }
+    if (
+      latencyMs != null &&
+      (!Number.isFinite(latencyMs) || latencyMs < 0 || latencyMs > 5000)
+    ) {
+      setError("Latency must be between 0 and 5000 ms.");
+      return;
+    }
+
+    onSave({
+      trainerCount,
+      clearTimeSeconds,
+      faints,
+      relobbies,
+      dodgeAttempts,
+      successfulDodges,
+      latencyMs,
+    });
+  };
+
+  return (
+    <div className="raid-observation-overlay">
+      <form
+        aria-label={`Log ${bossName} raid`}
+        aria-modal="true"
+        className="raid-observation-dialog"
+        onSubmit={handleSubmit}
+        role="dialog"
+      >
+        <header>
+          <div>
+            <span>Observed battle</span>
+            <h2>{bossName}</h2>
+          </div>
+          <button
+            aria-label="Close raid log"
+            onClick={onCancel}
+            type="button"
+          >
+            <FaTimes aria-hidden="true" />
+          </button>
+        </header>
+
+        <div className="raid-observation-fields">
+          <label>
+            <span>Trainers</span>
+            <input
+              inputMode="numeric"
+              max="20"
+              min="1"
+              onChange={(event) => setField("trainerCount", event.target.value)}
+              required
+              type="number"
+              value={form.trainerCount}
+            />
+          </label>
+          <label>
+            <span>Clear time (seconds)</span>
+            <input
+              inputMode="decimal"
+              max="1800"
+              min="1"
+              onChange={(event) => setField("clearTimeSeconds", event.target.value)}
+              required
+              step="0.1"
+              type="number"
+              value={form.clearTimeSeconds}
+            />
+          </label>
+          <label>
+            <span>Faints</span>
+            <input
+              inputMode="numeric"
+              min="0"
+              onChange={(event) => setField("faints", event.target.value)}
+              required
+              type="number"
+              value={form.faints}
+            />
+          </label>
+          <label>
+            <span>Relobbies</span>
+            <input
+              inputMode="numeric"
+              min="0"
+              onChange={(event) => setField("relobbies", event.target.value)}
+              required
+              type="number"
+              value={form.relobbies}
+            />
+          </label>
+          <label>
+            <span>Dodges attempted</span>
+            <input
+              inputMode="numeric"
+              min="0"
+              onChange={(event) => setField("dodgeAttempts", event.target.value)}
+              required
+              type="number"
+              value={form.dodgeAttempts}
+            />
+          </label>
+          <label>
+            <span>Dodges successful</span>
+            <input
+              inputMode="numeric"
+              min="0"
+              onChange={(event) => setField("successfulDodges", event.target.value)}
+              required
+              type="number"
+              value={form.successfulDodges}
+            />
+          </label>
+          <label className="raid-observation-latency">
+            <span>Measured latency (ms, optional)</span>
+            <input
+              inputMode="numeric"
+              max="5000"
+              min="0"
+              onChange={(event) => setField("latencyMs", event.target.value)}
+              type="number"
+              value={form.latencyMs}
+            />
+          </label>
+        </div>
+
+        {error && <p className="raid-observation-error">{error}</p>}
+
+        <footer>
+          <span>Saved only on this device</span>
+          <button className="raid-observation-save" type="submit">
+            <FaSave aria-hidden="true" />
+            <span>Save result</span>
+          </button>
+        </footer>
+      </form>
+    </div>
+  );
+};
+
+export default RaidObservationDialog;

@@ -25,6 +25,7 @@ import {
   scoreRaidCounters,
   scoreRaidOverallAttackers,
   scoreRaidTypeDps,
+  simulateRaidGroupAtTrainerCount,
   type RaidCounterSettings,
   type RaidOverallScore,
   type RaidTypeDpsScore,
@@ -510,6 +511,26 @@ describe("raid calculations", () => {
     expect(estimate.minTrainers).toBeGreaterThan(0);
     expect(estimate.comfortableTrainers).toBeGreaterThanOrEqual(
       estimate.minTrainers,
+    );
+
+    const solo = simulateRaidGroupAtTrainerCount(
+      scores,
+      boss,
+      RAID_TIER_PRESETS.legendary,
+      baseSettings,
+      1,
+    );
+    const duo = simulateRaidGroupAtTrainerCount(
+      scores,
+      boss,
+      RAID_TIER_PRESETS.legendary,
+      baseSettings,
+      2,
+    );
+    expect(solo).not.toBeNull();
+    expect(duo).not.toBeNull();
+    expect(duo!.projectedTimeToWinSeconds).toBeLessThan(
+      solo!.projectedTimeToWinSeconds,
     );
   });
 

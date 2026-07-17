@@ -123,6 +123,24 @@ test.describe("raid counter worker", () => {
     await expect(
       page.getByLabel("Raid counters").locator("article").first(),
     ).toBeVisible();
+
+    const calibration = page.getByLabel("Observed raid calibration");
+    await expect(calibration).toContainText("Private to this device");
+    await calibration.getByRole("button", { name: "Log raid" }).click();
+    const dialog = page.getByRole("dialog", { name: /Log .* raid/i });
+    await dialog.getByLabel("Clear time (seconds)").fill("145.5");
+    await dialog.getByLabel("Dodges attempted").fill("4");
+    await dialog.getByLabel("Dodges successful").fill("3");
+    await dialog.getByLabel(/Measured latency/i).fill("90");
+    await dialog.getByRole("button", { name: "Save result" }).click();
+    await expect(dialog).toBeHidden();
+    expect(
+      await page.evaluate(() =>
+        JSON.parse(
+          localStorage.getItem("raidCalibrationObservations") ?? "[]",
+        ).length,
+      ),
+    ).toBe(1);
   });
 
   test("ranks a logged-in Trainer's caught Pokemon at its real level", async ({

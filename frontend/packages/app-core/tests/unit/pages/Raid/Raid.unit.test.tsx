@@ -89,6 +89,7 @@ const variant = (overrides: RaidTestVariantOverrides): PokemonVariant =>
 
 describe("Raid page", () => {
   beforeEach(() => {
+    localStorage.clear();
     useAuthStore.setState({ isLoggedIn: false, user: null });
     useInstancesStore.setState({ instances: {}, instancesLoading: false });
     mocks.storeState.variantsLoading = false;
@@ -223,6 +224,48 @@ describe("Raid page", () => {
     expect(
       screen.getByText((_, element) => element?.textContent === "1889 - 1972"),
     ).toBeInTheDocument();
+  });
+
+  it("records and clears a private observed raid result", () => {
+    render(<Raid />);
+
+    fireEvent.click(screen.getByRole("button", { name: "Boss counters" }));
+    const calibration = screen.getByLabelText("Observed raid calibration");
+    expect(within(calibration).getByText("Private to this device"))
+      .toBeInTheDocument();
+    expect(within(calibration).getByLabelText("Use observed dodges"))
+      .toBeDisabled();
+
+    fireEvent.click(within(calibration).getByRole("button", { name: "Log raid" }));
+    const dialog = screen.getByRole("dialog", { name: /Log Raikou raid/i });
+    fireEvent.change(within(dialog).getByLabelText("Clear time (seconds)"), {
+      target: { value: "142.5" },
+    });
+    fireEvent.change(within(dialog).getByLabelText("Dodges attempted"), {
+      target: { value: "4" },
+    });
+    fireEvent.change(within(dialog).getByLabelText("Dodges successful"), {
+      target: { value: "3" },
+    });
+    fireEvent.change(within(dialog).getByLabelText(/Measured latency/i), {
+      target: { value: "85" },
+    });
+    fireEvent.click(within(dialog).getByRole("button", { name: "Save result" }));
+
+    expect(screen.queryByRole("dialog", { name: /Log Raikou raid/i }))
+      .not.toBeInTheDocument();
+    expect(within(calibration).getByText("1")).toBeInTheDocument();
+    expect(JSON.parse(localStorage.getItem("raidCalibrationObservations") ?? "[]"))
+      .toHaveLength(1);
+
+    fireEvent.click(
+      within(calibration).getByRole("button", {
+        name: "Clear observed raid data",
+      }),
+    );
+    fireEvent.click(screen.getByRole("button", { name: "OK" }));
+    expect(JSON.parse(localStorage.getItem("raidCalibrationObservations") ?? "[]"))
+      .toEqual([]);
   });
 
   it("keeps raid boss choices hidden until searching", () => {

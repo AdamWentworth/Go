@@ -5,7 +5,10 @@ import { useVariantsStore } from "@/features/variants/store/useVariantsStore";
 import { useAuthStore } from "@/stores/useAuthStore";
 import type { PokemonVariant } from "@/types/pokemonVariants";
 import { getTypeIconPath } from "@/utils/imageHelpers";
+import { getStorageString, STORAGE_KEYS } from "@/utils/storage";
+import ConfirmDialog from "../../components/modals/ConfirmDialog";
 import LoadingSpinner from "../../components/LoadingSpinner";
+import RaidCalibrationPanel from "./components/RaidCalibrationPanel";
 import RaidBossCounterList from "./components/RaidBossCounterList";
 import RaidBossDetails from "./components/RaidBossDetails";
 import RaidBossPicker from "./components/RaidBossPicker";
@@ -15,6 +18,7 @@ import RaidModifiers from "./components/RaidModifiers";
 import RaidModelProvenance from "./components/RaidModelProvenance";
 import RaidRankingTable from "./components/RaidRankingTable";
 import RaidRosterScope from "./components/RaidRosterScope";
+import RaidObservationDialog from "./components/RaidObservationDialog";
 import { TYPE_MAPPING } from "./utils/constants";
 import {
   DEFAULT_RAID_RELOBBY_SECONDS,
@@ -33,6 +37,8 @@ import {
   scoreRaidCounters,
   scoreRaidOverallAttackers,
   scoreRaidTypeDps,
+  simulateRaidGroupAtTrainerCount,
+  RAID_SIMULATION_MODEL_VERSION,
   type FriendshipKey,
   type MegaAllyBonusKey,
   type PartyPowerKey,
@@ -42,6 +48,14 @@ import {
   type RaidTierKey,
   type ShadowBossMode,
 } from "./utils/raidCalculations";
+import {
+  analyzeRaidCalibration,
+  appendRaidCalibrationObservation,
+  clearRaidCalibrationObservations,
+  createRaidCalibrationObservation,
+  loadRaidCalibrationObservations,
+  type RaidObservationActual,
+} from "./utils/raidCalibration";
 import { scoreRaidCountersAsync } from "./utils/raidCounterWorkers";
 import {
   DEFAULT_METRIC_SORT,
@@ -74,6 +88,11 @@ const Raid: React.FC = () => {
   const instances = useInstancesStore((state) => state.instances);
   const instancesLoading = useInstancesStore((state) => state.instancesLoading);
   const isLoggedIn = useAuthStore((state) => state.isLoggedIn);
+  const user = useAuthStore((state) => state.user);
+  const calibrationOwnerKey =
+    user?.user_id ??
+    getStorageString(STORAGE_KEYS.deviceId) ??
+    "signed-out-device";
 
   const [viewMode, setViewMode] = useState<RaidViewMode>("overall");
   const [rosterScope, setRosterScope] =
@@ -109,6 +128,24 @@ const Raid: React.FC = () => {
   >([]);
   const [bossCounterScoresLoading, setBossCounterScoresLoading] =
     useState(false);
+  const [calibrationObservations, setCalibrationObservations] = useState(
+    loadRaidCalibrationObservations,
+  );
+  const [dodgeCalibrationEnabled, setDodgeCalibrationEnabled] =
+    useState(false);
+  const [observationDialogOpen, setObservationDialogOpen] = useState(false);
+  const [clearCalibrationConfirmOpen, setClearCalibrationConfirmOpen] =
+    useState(false);
+
+  const calibrationProfile = useMemo(
+    () =>
+      analyzeRaidCalibration(
+        calibrationObservations.filter(
+          (observation) => observation.ownerKey === calibrationOwnerKey,
+        ),
+      ),
+    [calibrationObservations, calibrationOwnerKey],
+  );
 
   useEffect(() => {
     void ensureMoves();
@@ -118,6 +155,10 @@ const Raid: React.FC = () => {
   useEffect(() => {
     setRosterScope(isLoggedIn ? "owned" : "catalog");
   }, [isLoggedIn]);
+
+  useEffect(() => {
+    setDodgeCalibrationEnabled(false);
+  }, [calibrationOwnerKey]);
 
   const bossOptions = useMemo(
     () =>
@@ -191,6 +232,11 @@ const Raid: React.FC = () => {
       shadowBossMode: activeShadowBossMode,
       bossMovesetMode,
       relobbySeconds,
+      dodgeSuccessRate:
+        dodgeCalibrationEnabled &&
+        calibrationProfile.canApplyDodgeCalibration
+          ? calibrationProfile.dodgeSuccessRate
+          : 1,
     }),
     [
       activeShadowBossMode,
@@ -200,6 +246,9 @@ const Raid: React.FC = () => {
       megaAllyBonus,
       partyPower,
       dodgeStrategy,
+      dodgeCalibrationEnabled,
+      calibrationProfile.canApplyDodgeCalibration,
+      calibrationProfile.dodgeSuccessRate,
       relobbySeconds,
       weatherBoostedType,
     ],
@@ -403,6 +452,49 @@ const Raid: React.FC = () => {
     setSortDirection("descending");
   };
 
+  const handleSaveObservation = (actual: RaidObservationActual) => {
+    if (!selectedBoss) return;
+
+    const prediction = simulateRaidGroupAtTrainerCount(
+      bossCounterScores,
+      selectedBoss,
+      selectedTier,
+      settings,
+      actual.trainerCount,
+    );
+    if (!prediction) return;
+
+    const observation = createRaidCalibrationObservation({
+      ownerKey: calibrationOwnerKey,
+      modelVersion: RAID_SIMULATION_MODEL_VERSION,
+      catalogVersion:
+        getStorageString(STORAGE_KEYS.pokemonCatalogVersion) ?? "unknown",
+      bossVariantId: selectedBoss.variant_id,
+      bossName: getRaidVariantDisplayName(selectedBoss),
+      tierKey: selectedTierKey,
+      dodgeCalibrationApplied:
+        dodgeCalibrationEnabled &&
+        calibrationProfile.canApplyDodgeCalibration,
+      predicted: {
+        clearTimeSeconds: prediction.projectedTimeToWinSeconds,
+        faints: prediction.faints,
+        relobbies: prediction.relobbies,
+      },
+      actual,
+    });
+
+    setCalibrationObservations(appendRaidCalibrationObservation(observation));
+    setObservationDialogOpen(false);
+  };
+
+  const handleClearCalibration = () => {
+    setCalibrationObservations(
+      clearRaidCalibrationObservations(calibrationOwnerKey),
+    );
+    setDodgeCalibrationEnabled(false);
+    setClearCalibrationConfirmOpen(false);
+  };
+
   if (loading || movesLoading || (viewMode === "boss" && raidDataLoading)) {
     return <LoadingSpinner />;
   }
@@ -544,6 +636,19 @@ const Raid: React.FC = () => {
                   </span>
                 </section>
               )}
+
+              <RaidCalibrationPanel
+                profile={calibrationProfile}
+                enabled={dodgeCalibrationEnabled}
+                disabled={
+                  bossCounterScoresLoading ||
+                  bossCounterScores.length === 0 ||
+                  !groupEstimate
+                }
+                onEnabledChange={setDodgeCalibrationEnabled}
+                onLogRaid={() => setObservationDialogOpen(true)}
+                onClear={() => setClearCalibrationConfirmOpen(true)}
+              />
 
               <RaidModifiers
                 {...modifierProps}
@@ -702,6 +807,22 @@ const Raid: React.FC = () => {
             />
           </main>
         </section>
+      )}
+
+      {observationDialogOpen && selectedBoss && groupEstimate && (
+        <RaidObservationDialog
+          bossName={getRaidVariantDisplayName(selectedBoss)}
+          defaultTrainerCount={Math.max(1, groupEstimate.minTrainers)}
+          onCancel={() => setObservationDialogOpen(false)}
+          onSave={handleSaveObservation}
+        />
+      )}
+      {clearCalibrationConfirmOpen && (
+        <ConfirmDialog
+          message="Clear your locally stored raid observations? This cannot be undone."
+          onCancel={() => setClearCalibrationConfirmOpen(false)}
+          onConfirm={handleClearCalibration}
+        />
       )}
     </div>
   );

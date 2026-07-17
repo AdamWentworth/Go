@@ -4,6 +4,7 @@ import { getTypeEffectivenessMultiplier } from "./typeEffectiveness";
 import type {
   RaidCounterScore,
   RaidCounterSettings,
+  RaidBattleSimulationResult,
   RaidGroupEstimate,
   RaidNeutralBenchmark,
   RaidOverallScore,
@@ -996,6 +997,31 @@ export const estimateRaidGroup = (
     soloTimeSeconds:
       teamSimulation?.projectedTimeToWinSeconds ?? bossStats.hp / topTeamDps,
   };
+};
+
+export const simulateRaidGroupAtTrainerCount = (
+  scores: RaidCounterScore[],
+  boss: PokemonVariant,
+  tier: RaidTierPreset,
+  settings: RaidCounterSettings,
+  trainerCount: number,
+): RaidBattleSimulationResult | null => {
+  const bestCounters = selectLegalRaidTeamCounters(
+    dedupeBestCounterPerVariant(scores),
+  );
+  if (bestCounters.length === 0) return null;
+
+  return simulateRaidTeamAcrossBossMovesets({
+    team: bestCounters.map((counter) => ({
+      attacker: counter.variant,
+      fastMove: counter.fastMove,
+      chargedMove: counter.chargedMove,
+    })),
+    boss,
+    tier,
+    settings,
+    trainerCount: Math.min(20, Math.max(1, Math.floor(trainerCount))),
+  });
 };
 
 export const inferRaidTierFromMetadata = (

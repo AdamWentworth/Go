@@ -61,6 +61,7 @@ export type RaidCounterSettings = {
   shadowBossMode: ShadowBossMode;
   bossMovesetMode: RaidBossMovesetMode;
   relobbySeconds: number;
+  dodgeSuccessRate?: number;
 };
 
 export type RaidBossStats = {
