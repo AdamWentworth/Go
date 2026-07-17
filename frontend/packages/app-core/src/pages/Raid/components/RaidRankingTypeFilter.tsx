@@ -1,4 +1,3 @@
-import { FaGlobeAmericas } from "react-icons/fa";
 import { getTypeIconPath } from "@/utils/imageHelpers";
 import { capitalize, getTypeClassName } from "../utils/raidViewModel";
 
@@ -20,15 +19,14 @@ const RaidRankingTypeFilter = ({
     <span className="raid-ranking-type-filter-label">Ranking scope</span>
     <div className="raid-ranking-type-options">
       <button
-        aria-label="Overall"
+        aria-label="All types"
         aria-pressed={selectedType === ""}
         className={`raid-ranking-overall ${selectedType === "" ? "active" : ""}`}
         onClick={() => onChange("")}
-        title="Overall"
+        title="All types"
         type="button"
       >
-        <FaGlobeAmericas aria-hidden="true" />
-        <span>Overall</span>
+        <span>All types</span>
       </button>
       {typeOptions.map((type) => (
         <button

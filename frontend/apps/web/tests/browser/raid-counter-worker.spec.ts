@@ -237,7 +237,7 @@ test.describe("raid counter worker", () => {
       page.getByRole("heading", { name: "Your top Electric raid attackers" }),
     ).toBeVisible();
 
-    await typeFilter.getByRole("button", { name: "Overall" }).click();
+    await typeFilter.getByRole("button", { name: "All types" }).click();
     await expect(
       page.getByRole("heading", { name: "Your top raid attackers" }),
     ).toBeVisible();

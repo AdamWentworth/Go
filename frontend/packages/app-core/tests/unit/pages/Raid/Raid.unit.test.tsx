@@ -461,7 +461,7 @@ describe("Raid page", () => {
     ).toBeInTheDocument();
     const typeFilter = screen.getByLabelText("Attacker type filter");
     expect(
-      within(typeFilter).getByRole("button", { name: "Overall" }),
+      within(typeFilter).getByRole("button", { name: "All types" }),
     ).toHaveAttribute("aria-pressed", "true");
     expect(screen.queryByText("Boss CP")).not.toBeInTheDocument();
     expect(screen.queryByLabelText(/relobby delay/i)).not.toBeInTheDocument();
@@ -866,7 +866,7 @@ describe("Raid page", () => {
 
     const typeFilter = screen.getByLabelText("Attacker type filter");
     const overallButton = within(typeFilter).getByRole("button", {
-      name: "Overall",
+      name: "All types",
     });
     const darkButton = within(typeFilter).getByRole("button", { name: "Dark" });
 
