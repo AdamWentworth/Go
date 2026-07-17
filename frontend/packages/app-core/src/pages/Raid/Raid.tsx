@@ -10,6 +10,7 @@ import RaidBossPicker from "./components/RaidBossPicker";
 import RaidCounterToolbar from "./components/RaidCounterToolbar";
 import RaidModeTabs from "./components/RaidModeTabs";
 import RaidModifiers from "./components/RaidModifiers";
+import RaidModelProvenance from "./components/RaidModelProvenance";
 import RaidRankingTable from "./components/RaidRankingTable";
 import { TYPE_MAPPING } from "./utils/constants";
 import {
@@ -51,9 +52,6 @@ import {
   type RaidMetricSortKey,
   type RaidViewMode,
 } from "./utils/raidViewModel";
-
-const RAID_RANKING_METHODOLOGY_URL =
-  "https://github.com/AdamWentworth/PokeGoNexus/blob/master/docs/raid-ranking-methodology.md";
 
 const Raid: React.FC = () => {
   const variants = useVariantsStore(
@@ -387,13 +385,7 @@ const Raid: React.FC = () => {
               <div className="raid-leaderboard-meta">
                 <span>Team of six, {relobbySeconds}s relobby</span>
                 <span>Neutral typeless benchmark</span>
-                <a
-                  href={RAID_RANKING_METHODOLOGY_URL}
-                  target="_blank"
-                  rel="noreferrer"
-                >
-                  How rankings work
-                </a>
+                <RaidModelProvenance />
               </div>
             </header>
 
@@ -489,6 +481,8 @@ const Raid: React.FC = () => {
                 bestOnly={bestOnly}
                 onBestOnlyChange={setBestOnly}
               />
+
+              <RaidModelProvenance />
 
               {bossCounterScoresLoading ? (
                 <div className="raid-list-empty" role="status">
@@ -588,6 +582,8 @@ const Raid: React.FC = () => {
                 />
               </section>
             )}
+
+            <RaidModelProvenance />
 
             <RaidRankingTable
               ariaLabel="Type DPS counters"

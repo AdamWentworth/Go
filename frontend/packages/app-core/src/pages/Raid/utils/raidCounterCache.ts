@@ -7,6 +7,7 @@ import {
 } from "@/utils/storage";
 import { openDB, type DBSchema, type IDBPDatabase } from "idb";
 import { getLegalRaidChargedMoves, getLegalRaidFastMoves } from "./raidCatalog";
+import { RAID_SIMULATION_MODEL_VERSION } from "./raidRules";
 import type {
   RaidCounterScore,
   RaidCounterSettings,
@@ -18,8 +19,6 @@ const RAID_COUNTER_CACHE_STORE = "results";
 const RAID_COUNTER_CACHE_DB_VERSION = 1;
 const RAID_COUNTER_CACHE_MAX_ENTRIES = 12;
 const RAID_COUNTER_CACHE_TTL_MS = 7 * 24 * 60 * 60 * 1000;
-
-export const RAID_SIMULATION_MODEL_VERSION = 8;
 
 const log = createScopedLogger("raidCounterCache");
 

@@ -288,6 +288,7 @@ describe("Raid page", () => {
   });
 
   it("opens on an overall raid attacker leaderboard", () => {
+    localStorage.setItem("pokemonCatalogVersion", "catalog-2026-07-17");
     render(<Raid />);
 
     expect(screen.getByRole("button", { name: "Overall" })).toBeInTheDocument();
@@ -300,6 +301,16 @@ describe("Raid page", () => {
       "href",
       "https://github.com/AdamWentworth/PokeGoNexus/blob/master/docs/raid-ranking-methodology.md",
     );
+    expect(
+      within(screen.getByLabelText("Raid ranking versions")).getByText(
+        "Model v8",
+      ),
+    ).toBeInTheDocument();
+    expect(
+      within(screen.getByLabelText("Raid ranking versions")).getByText(
+        "Catalog catalog-2026…",
+      ),
+    ).toBeInTheDocument();
     expect(screen.queryByLabelText("Type DPS pages")).not.toBeInTheDocument();
     expect(screen.queryByText("Boss CP")).not.toBeInTheDocument();
     expect(screen.queryByLabelText(/relobby delay/i)).not.toBeInTheDocument();

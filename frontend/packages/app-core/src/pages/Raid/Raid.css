@@ -472,6 +472,41 @@
   background: rgba(65, 215, 207, 0.14);
 }
 
+.raid-model-provenance {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.45rem;
+  min-width: 0;
+  color: rgba(177, 211, 213, 0.74);
+  font-size: 0.68rem;
+  font-weight: 800;
+  line-height: 1.2;
+}
+
+.raid-model-provenance span {
+  white-space: nowrap;
+}
+
+.raid-model-provenance a {
+  color: #75e6df;
+  text-decoration: none;
+}
+
+.raid-model-provenance a:hover,
+.raid-model-provenance a:focus-visible {
+  color: #efffff;
+  text-decoration: underline;
+  text-underline-offset: 0.18rem;
+}
+
+.raid-leaderboard-meta .raid-model-provenance {
+  padding: 0.4rem 0.65rem;
+  border: 1px solid rgba(102, 220, 220, 0.2);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.045);
+}
+
 .raid-toggle-button,
 .raid-segmented-control button {
   border: 1px solid rgba(230, 250, 250, 0.22);
@@ -1079,6 +1114,19 @@
   background: rgba(54, 202, 199, 0.14);
 }
 
+:root[data-theme='light'] .raid-model-provenance {
+  color: rgba(20, 55, 63, 0.68);
+}
+
+:root[data-theme='light'] .raid-model-provenance a {
+  color: #087d91;
+}
+
+:root[data-theme='light'] .raid-leaderboard-meta .raid-model-provenance {
+  border-color: rgba(21, 139, 154, 0.18);
+  background: rgba(255, 255, 255, 0.66);
+}
+
 :root[data-theme='light'] .raid-list-empty {
   border-color: rgba(21, 139, 154, 0.2);
   color: rgba(20, 55, 63, 0.68);
@@ -1169,6 +1217,17 @@
 
   .raid-leaderboard-meta > span,
   .raid-leaderboard-meta > a {
+    padding: 0.35rem 0.5rem;
+    font-size: 0.64rem;
+  }
+
+  .raid-model-provenance {
+    flex-wrap: wrap;
+    justify-content: flex-start;
+  }
+
+  .raid-leaderboard-meta .raid-model-provenance {
+    justify-content: flex-end;
     padding: 0.35rem 0.5rem;
     font-size: 0.64rem;
   }
