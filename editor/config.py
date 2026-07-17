@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import os
 from pathlib import Path
+from urllib.parse import urlparse
 
 from dotenv import load_dotenv
 
@@ -39,6 +40,14 @@ def production_editor_settings() -> dict[str, str]:
     if ssh_key:
         ssh_key = str(Path(ssh_key).expanduser())
 
+    catalog_api_url = os.environ.get(
+        "POKEGO_EDITOR_CATALOG_API_URL",
+        "https://pokegonexus.com/api/pokemon",
+    ).strip().rstrip("/")
+    parsed_catalog_url = urlparse(catalog_api_url)
+    if parsed_catalog_url.scheme not in {"http", "https"} or not parsed_catalog_url.netloc:
+        raise ValueError("POKEGO_EDITOR_CATALOG_API_URL must be an HTTP(S) URL.")
+
     return {
         "host": host,
         "ssh_key": ssh_key,
@@ -49,6 +58,7 @@ def production_editor_settings() -> dict[str, str]:
             "POKEGO_EDITOR_PUBLISHER_ENV", ""
         ).strip(),
         "local_port": local_port,
+        "catalog_api_url": catalog_api_url,
     }
 
 

@@ -30,7 +30,8 @@ dump, opens a loopback-only SSH tunnel, and connects as
 `pokemon_catalog_reader` role.
 
 Close the editor normally after saving. A clean exit refreshes and prewarms the
-Pokemon API cache. After an interrupted session, refresh it manually from the
+Pokemon API cache, then validates the live catalog against the canonical raid
+ranking fixture. After an interrupted session, refresh it manually from the
 repository root:
 
 ```bash
@@ -47,6 +48,8 @@ ssh -i ~/.ssh/pokegonexus_recovery_ed25519 adam@192.168.1.77 \
   are only exposed to the local editor process through the SSH tunnel.
 - Normal API deployment applies schema migrations without replacing catalog
   records.
+- A clean production edit fails visibly if the refreshed catalog changes the
+  canonical raid ranking or assigns an invalid signature moveset.
 
 ## Tests
 

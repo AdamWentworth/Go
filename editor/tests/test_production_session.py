@@ -1,6 +1,5 @@
 import os
 import sys
-import subprocess
 import unittest
 from pathlib import Path
 from unittest.mock import Mock, patch
@@ -21,6 +20,7 @@ class ProductionCatalogSessionTests(unittest.TestCase):
             "deploy_root": "/srv/pokegonexus",
             "publisher_env": "",
             "local_port": "5433",
+            "catalog_api_url": "https://catalog.example.test/api/pokemon",
         }
 
     def test_reads_publisher_url_without_exposing_it_in_a_command(self):
@@ -43,13 +43,16 @@ class ProductionCatalogSessionTests(unittest.TestCase):
         try:
             with patch.object(session, "_run_remote_script") as remote_script, patch.object(
                 session, "_read_publisher_database_url", return_value="postgresql://publisher@127.0.0.1/catalog"
-            ), patch("production_session.subprocess.Popen", return_value=tunnel), patch(
+            ), patch.object(
+                session, "_validate_live_rankings"
+            ) as validate_rankings, patch("production_session.subprocess.Popen", return_value=tunnel), patch(
                 "production_session.time.sleep"
             ):
                 with session:
                     self.assertEqual(os.environ["POKEGO_EDITOR_DATABASE_LABEL"], "PRODUCTION PostgreSQL catalog")
 
             self.assertEqual(remote_script.call_count, 2)
+            validate_rankings.assert_called_once_with()
             tunnel.terminate.assert_called_once()
             tunnel.wait.assert_called_once_with(timeout=5)
         finally:
@@ -68,7 +71,9 @@ class ProductionCatalogSessionTests(unittest.TestCase):
         tunnel.poll.return_value = None
         with patch.object(session, "_run_remote_script") as remote_script, patch.object(
             session, "_read_publisher_database_url", return_value="postgresql://publisher@127.0.0.1/catalog"
-        ), patch("production_session.subprocess.Popen", return_value=tunnel), patch(
+        ), patch.object(
+            session, "_validate_live_rankings"
+        ) as validate_rankings, patch("production_session.subprocess.Popen", return_value=tunnel), patch(
             "production_session.time.sleep"
         ):
             with self.assertRaisesRegex(RuntimeError, "editor failed"):
@@ -76,4 +81,27 @@ class ProductionCatalogSessionTests(unittest.TestCase):
                     raise RuntimeError("editor failed")
 
         self.assertEqual(remote_script.call_count, 1)
+        validate_rankings.assert_not_called()
         tunnel.terminate.assert_called_once()
+
+    def test_live_validation_uses_configured_catalog_without_secrets(self):
+        session = ProductionCatalogSession(self.settings)
+        with patch.dict(
+            os.environ,
+            {"POKEGO_EDITOR_DATABASE_URL": "postgresql://publisher:secret@db/catalog"},
+        ):
+            with patch("production_session.subprocess.run") as run:
+                session._validate_live_rankings()
+
+        command = run.call_args.args[0]
+        environment = run.call_args.kwargs["env"]
+        self.assertEqual(
+            command,
+            ["npm", "--workspace", "apps/web", "run", "test:raid-model:live"],
+        )
+        self.assertEqual(
+            environment["RAID_CATALOG_VALIDATION_URL"],
+            "https://catalog.example.test/api/pokemon",
+        )
+        self.assertNotIn("POKEGO_EDITOR_DATABASE_URL", environment)
+        self.assertNotIn("postgresql://", " ".join(command))

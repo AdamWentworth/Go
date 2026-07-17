@@ -6,6 +6,7 @@ import type {
   RaidCounterScore,
   RaidCounterSettings,
   RaidGroupEstimate,
+  RaidNeutralBenchmark,
   RaidOverallScore,
   RaidOverallTargetProfile,
   RaidTierKey,
@@ -15,6 +16,7 @@ import type {
 } from "./raidTypes";
 import {
   COMFORTABLE_SAFETY_FACTOR,
+  DEFAULT_RAID_NEUTRAL_BENCHMARK,
   FALLBACK_OVERALL_TARGET_PROFILES,
   RAID_SAFETY_FACTOR,
   TYPE_DPS_ER_TDO_EXPONENT,
@@ -59,6 +61,7 @@ export type {
   RaidCounterScore,
   RaidCounterSettings,
   RaidGroupEstimate,
+  RaidNeutralBenchmark,
   RaidOverallScore,
   RaidTierKey,
   RaidTierPreset,
@@ -67,6 +70,7 @@ export type {
 } from "./raidTypes";
 
 export {
+  DEFAULT_RAID_NEUTRAL_BENCHMARK,
   DEFAULT_RAID_RELOBBY_SECONDS,
   FRIENDSHIP_DAMAGE_BONUS,
   MEGA_ALLY_DAMAGE_BONUS,
@@ -196,6 +200,7 @@ export const calculateOverallMoveCycleScore = (
   settings: RaidCounterSettings,
   targetProfiles: RaidOverallTargetProfile[] = FALLBACK_OVERALL_TARGET_PROFILES,
   preparedTargetContexts?: RaidTargetCombatContext[],
+  neutralBenchmark: RaidNeutralBenchmark = DEFAULT_RAID_NEUTRAL_BENCHMARK,
 ): RaidOverallScore => {
   const attackerStats = calculateRaidAttackerBattleStats(attacker, settings);
   const targetContexts =
@@ -205,6 +210,7 @@ export const calculateOverallMoveCycleScore = (
       settings,
       targetProfiles,
       attackerStats,
+      neutralBenchmark,
     );
   const attackerAttack = attackerStats.attack;
   const attackerHp = attackerStats.hp;
@@ -310,6 +316,7 @@ export const calculateOverallMoveCycleScore = (
 export const scoreRaidOverallAttackers = (
   attackers: PokemonVariant[],
   settings: RaidCounterSettings,
+  neutralBenchmark: RaidNeutralBenchmark = DEFAULT_RAID_NEUTRAL_BENCHMARK,
 ): RaidOverallScore[] => {
   const targetProfiles = getRaidOverallTargetProfiles();
 
@@ -322,6 +329,8 @@ export const scoreRaidOverallAttackers = (
         attacker,
         settings,
         targetProfiles,
+        undefined,
+        neutralBenchmark,
       );
 
       return fastMoves.flatMap((fastMove) =>
@@ -333,6 +342,7 @@ export const scoreRaidOverallAttackers = (
             settings,
             targetProfiles,
             targetContexts,
+            neutralBenchmark,
           ),
         ),
       );
@@ -344,6 +354,7 @@ export const scoreBestRaidOverallAttackers = (
   attackers: PokemonVariant[],
   settings: RaidCounterSettings,
   hiddenPowerCoverageTargets?: PokemonVariant[],
+  neutralBenchmark: RaidNeutralBenchmark = DEFAULT_RAID_NEUTRAL_BENCHMARK,
 ): RaidOverallScore[] => {
   const targetProfiles = getRaidOverallTargetProfiles();
   const hiddenPowerCoverageProfiles = getRaidOverallCoverageProfiles(
@@ -384,6 +395,7 @@ export const scoreBestRaidOverallAttackers = (
       settings,
       targetProfiles,
       attackerStats,
+      neutralBenchmark,
     );
     const cp = calculatePokemonCpForLevel(attacker, settings.attackerLevel);
     const prepareMoveDamages = (moves: Move[], charged: boolean) =>

@@ -14,6 +14,7 @@ EDITOR_DIR = Path(__file__).resolve().parent
 REPO_ROOT = EDITOR_DIR.parent
 BACKUP_SCRIPT = REPO_ROOT / "ops" / "pokemon-catalog" / "backup-editor-session-prod.sh"
 CACHE_REFRESH_SCRIPT = REPO_ROOT / "ops" / "pokemon-catalog" / "refresh-api-cache-prod.sh"
+FRONTEND_DIR = REPO_ROOT / "frontend"
 
 
 class ProductionCatalogSession:
@@ -27,6 +28,9 @@ class ProductionCatalogSession:
             f"{self.deploy_root}/pokemon/catalog-publisher.env"
         )
         self.local_port = settings["local_port"]
+        self.catalog_api_url = settings.get("catalog_api_url") or (
+            "https://pokegonexus.com/api/pokemon"
+        )
         self.tunnel: subprocess.Popen[bytes] | None = None
         self.previous_database_url: str | None = None
         self.previous_database_label: str | None = None
@@ -77,6 +81,17 @@ class ProductionCatalogSession:
             raise RuntimeError("Production publisher settings did not provide a PostgreSQL URL.")
         return database_url
 
+    def _validate_live_rankings(self) -> None:
+        environment = os.environ.copy()
+        environment.pop("POKEGO_EDITOR_DATABASE_URL", None)
+        environment["RAID_CATALOG_VALIDATION_URL"] = self.catalog_api_url
+        subprocess.run(
+            ["npm", "--workspace", "apps/web", "run", "test:raid-model:live"],
+            cwd=FRONTEND_DIR,
+            env=environment,
+            check=True,
+        )
+
     def __enter__(self):
         self._run_remote_script(BACKUP_SCRIPT)
         database_url = self._read_publisher_database_url()
@@ -104,6 +119,7 @@ class ProductionCatalogSession:
         try:
             if exception_type is None:
                 self._run_remote_script(CACHE_REFRESH_SCRIPT)
+                self._validate_live_rankings()
         finally:
             self._restore_environment()
             if self.tunnel is not None:

@@ -66,6 +66,9 @@ jobs:
       - name: Typecheck
         run: npm run typecheck
 
+      - name: Validate Raid Ranking Model
+        run: npm run test:raid-model
+
       - name: Test + Coverage Gate
         run: npm run test:coverage
 

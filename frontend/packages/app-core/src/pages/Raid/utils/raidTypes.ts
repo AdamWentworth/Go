@@ -108,6 +108,12 @@ export type RaidOverallTargetProfile = {
   target?: PokemonVariant;
 };
 
+export type RaidNeutralBenchmark = {
+  targetDefense: number;
+  incomingDamageNumerator: number;
+  incomingChargedDamageNumerator: number;
+};
+
 export type RaidGroupEstimate = {
   topTeamDps: number;
   minTrainers: number;

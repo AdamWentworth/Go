@@ -12,14 +12,13 @@ import {
   isShadowRaidTier,
 } from "./raidCatalog";
 import {
+  DEFAULT_RAID_NEUTRAL_BENCHMARK,
   RAID_TIER_PRESETS,
   SHADOW_ATTACKER_DEFENSE_MULTIPLIER,
-  TYPE_DPS_INCOMING_CHARGED_DAMAGE_NUMERATOR,
-  TYPE_DPS_INCOMING_DAMAGE_NUMERATOR,
-  TYPE_DPS_TARGET_DEFENSE,
 } from "./raidRules";
 import type {
   RaidCounterSettings,
+  RaidNeutralBenchmark,
   RaidOverallTargetProfile,
 } from "./raidTypes";
 
@@ -68,8 +67,14 @@ const prepareRaidTargetContexts = (
   profiles: RaidOverallTargetProfile[],
   attackerTypes: string[],
   weatherBoostedType: string,
+  neutralBenchmark: RaidNeutralBenchmark,
 ): PreparedRaidTargetContext[] => {
-  const cacheKey = `${[...attackerTypes].sort().join("/")}|${weatherBoostedType}`;
+  const benchmarkKey = [
+    neutralBenchmark.targetDefense,
+    neutralBenchmark.incomingDamageNumerator,
+    neutralBenchmark.incomingChargedDamageNumerator,
+  ].join("/");
+  const cacheKey = `${[...attackerTypes].sort().join("/")}|${weatherBoostedType}|${benchmarkKey}`;
   const profileCache =
     preparedTargetContextCache.get(profiles) ??
     new Map<string, PreparedRaidTargetContext[]>();
@@ -82,7 +87,7 @@ const prepareRaidTargetContexts = (
     if (!profile.target) {
       return {
         profile,
-        targetDefense: TYPE_DPS_TARGET_DEFENSE,
+        targetDefense: neutralBenchmark.targetDefense,
         incomingPressureScenarios: [],
       };
     }
@@ -100,7 +105,7 @@ const prepareRaidTargetContexts = (
 
     return {
       profile,
-      targetDefense: bossStats?.defense ?? TYPE_DPS_TARGET_DEFENSE,
+      targetDefense: bossStats?.defense ?? neutralBenchmark.targetDefense,
       incomingPressureScenarios: bossStats
         ? buildRaidIncomingPressureScenarios({
             boss: target,
@@ -121,11 +126,13 @@ export const buildRaidTargetCombatContexts = (
   settings: RaidCounterSettings,
   profiles: RaidOverallTargetProfile[],
   attackerStats = calculateRaidAttackerBattleStats(attacker, settings),
+  neutralBenchmark: RaidNeutralBenchmark = DEFAULT_RAID_NEUTRAL_BENCHMARK,
 ): RaidTargetCombatContext[] =>
   prepareRaidTargetContexts(
     profiles,
     getVariantTypeNames(attacker),
     settings.weatherBoostedType,
+    neutralBenchmark,
   ).map((prepared) => {
     const pressure = calculateRaidIncomingPressure(
       prepared.incomingPressureScenarios,
@@ -134,10 +141,10 @@ export const buildRaidTargetCombatContexts = (
     );
     const incomingDps =
       pressure?.incomingDps ??
-      TYPE_DPS_INCOMING_DAMAGE_NUMERATOR / attackerStats.defense;
+      neutralBenchmark.incomingDamageNumerator / attackerStats.defense;
     const incomingChargedDamage =
       pressure?.incomingChargedDamage ??
-      TYPE_DPS_INCOMING_CHARGED_DAMAGE_NUMERATOR / attackerStats.defense;
+      neutralBenchmark.incomingChargedDamageNumerator / attackerStats.defense;
 
     return {
       profile: prepared.profile,

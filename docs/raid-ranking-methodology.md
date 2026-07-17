@@ -89,6 +89,17 @@ The current boss result is a deterministic cycle estimate. It is useful for quic
 
 For a specific difficult raid, use the boss counter page and confirm the result with a full battle simulator. For long-term investment and team building, the overall and type eDPS lists are the intended tools.
 
+## Validation guardrails
+
+The ranking model has two complementary regression gates:
+
+- A fixed canonical cohort checks the headline order and legal signature moves for Mega Rayquaza, both Mega Mewtwo forms, Eternatus, Shadow Regigigas, and Zacian.
+- A sensitivity matrix varies neutral target Defense across `160`, `180`, and `200`, and incoming pressure across `0.8x`, `1x`, and `1.2x`. The top-three order and signature charged moves must remain stable in all nine scenarios.
+- Relobby delays of `0`, `5`, `10`, and `20` seconds must preserve the canonical headline result.
+- Exact damage floors may legitimately change the preferred fast move at some Defense breakpoints. The validation therefore locks the stable rank and signature charged move across sensitivity scenarios while requiring the exact production-default moveset at the documented benchmark.
+
+Frontend CI runs the deterministic model gate. After every clean production catalog-editor session, the editor refreshes the API cache and runs the same canonical check against the live catalog. This catches move-pool, form-stat, and move-stat drift before a catalog edit is considered complete.
+
 ## Methodology comparison
 
 The tiers below rank calculation methods for their stated purpose, not the amount of content or visual polish on each site.
@@ -113,7 +124,7 @@ It is not yet S-tier for exact boss simulation. The clearest path there is:
 1. Add an event-driven boss simulator over every legal boss fast and charged moveset.
 2. Report average, best-case, and worst-case TTW, faints, and relobbies.
 3. Add no-dodge and realistic-dodge modes.
-4. Validate canonical rankings after every Game Master update against fixed regression fixtures and at least one independent full simulator.
+4. Extend the existing canonical and sensitivity regression gates with a machine-readable comparison against at least one independent full simulator.
 5. Publish the catalog version, model version, assumptions, and last validation date with every ranking.
 
 The broad eDPS leaderboard should remain the default because it answers the most common team-building question. A future simulator should strengthen boss mode rather than replace the transparent general model.

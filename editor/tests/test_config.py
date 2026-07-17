@@ -51,8 +51,24 @@ class EditorConfigTests(unittest.TestCase):
         self.assertEqual(settings["host"], "adam@example.test")
         self.assertTrue(settings["ssh_key"].endswith("/.ssh/editor-test"))
         self.assertEqual(settings["local_port"], "6543")
+        self.assertEqual(
+            settings["catalog_api_url"],
+            "https://pokegonexus.com/api/pokemon",
+        )
 
     def test_production_settings_require_host(self):
         with patch.dict(os.environ, {}, clear=True):
             with self.assertRaisesRegex(ValueError, "POKEGO_EDITOR_PROD_HOST"):
+                production_editor_settings()
+
+    def test_production_settings_reject_invalid_catalog_api_url(self):
+        with patch.dict(
+            os.environ,
+            {
+                "POKEGO_EDITOR_PROD_HOST": "adam@example.test",
+                "POKEGO_EDITOR_CATALOG_API_URL": "not-a-url",
+            },
+            clear=True,
+        ):
+            with self.assertRaisesRegex(ValueError, "POKEGO_EDITOR_CATALOG_API_URL"):
                 production_editor_settings()

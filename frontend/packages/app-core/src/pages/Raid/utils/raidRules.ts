@@ -2,6 +2,7 @@ import type {
   FriendshipKey,
   MegaAllyBonusKey,
   PartyPowerKey,
+  RaidNeutralBenchmark,
   RaidOverallTargetProfile,
   RaidTierKey,
   RaidTierPreset,
@@ -151,6 +152,12 @@ export const TYPE_DPS_TARGET_DEFENSE = 180;
 export const TYPE_DPS_INCOMING_DAMAGE_NUMERATOR = 1340;
 export const TYPE_DPS_INCOMING_CHARGED_DAMAGE_NUMERATOR = 11670;
 export const TYPE_DPS_ER_TDO_EXPONENT = 0.25;
+export const DEFAULT_RAID_NEUTRAL_BENCHMARK: RaidNeutralBenchmark = {
+  targetDefense: TYPE_DPS_TARGET_DEFENSE,
+  incomingDamageNumerator: TYPE_DPS_INCOMING_DAMAGE_NUMERATOR,
+  incomingChargedDamageNumerator:
+    TYPE_DPS_INCOMING_CHARGED_DAMAGE_NUMERATOR,
+};
 export const RAID_ATTACKER_TEAM_SIZE = 6;
 export const DEFAULT_RAID_RELOBBY_SECONDS = 10;
 export const RAID_BOSS_ACTION_DELAY_SECONDS = 1.75;

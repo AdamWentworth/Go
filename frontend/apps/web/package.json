@@ -35,6 +35,8 @@
     "test:unit:single-process": "cd ../../packages/app-core && cross-env VITEST_LOW_MEMORY=1 NODE_OPTIONS=--max-old-space-size=4096 vitest run --config ../../apps/web/vite.config.mjs tests/unit",
     "test:unit:parallel": "cd ../../packages/app-core && cross-env NODE_OPTIONS=--max-old-space-size=4096 VITEST_ALLOW_PARALLEL=1 vitest run --config ../../apps/web/vite.config.mjs tests/unit",
     "test:integration": "cd ../../packages/app-core && cross-env NODE_OPTIONS=--max-old-space-size=4096 vitest run --config ../../apps/web/vite.config.mjs tests/integration",
+    "test:raid-model": "cd ../../packages/app-core && cross-env NODE_OPTIONS=--max-old-space-size=4096 vitest run --config ../../apps/web/vite.config.mjs tests/unit/pages/Raid/utils/raidRankingValidation.unit.test.ts",
+    "test:raid-model:live": "cd ../../packages/app-core && cross-env RUN_LIVE_RAID_CATALOG_VALIDATION=1 NODE_OPTIONS=--max-old-space-size=4096 vitest run --config ../../apps/web/vite.config.mjs tests/integration/pages/Raid/raidLiveCatalog.integration.test.ts",
     "test:contracts": "cd ../../packages/app-core && cross-env NODE_OPTIONS=--max-old-space-size=4096 vitest run --config ../../apps/web/vite.config.mjs tests/contracts",
     "test:e2e": "cd ../../packages/app-core && cross-env NODE_OPTIONS=--max-old-space-size=4096 vitest run --config ../../apps/web/vite.config.mjs tests/e2e",
     "test:variants": "cd ../../packages/app-core && cross-env NODE_OPTIONS=--max-old-space-size=4096 vitest run --config ../../apps/web/vite.config.mjs tests/unit/features/variants tests/integration/features/variants tests/contracts/pokemonDataService.contract.test.ts",
