@@ -18,7 +18,6 @@ import {
   COMFORTABLE_SAFETY_FACTOR,
   DEFAULT_RAID_NEUTRAL_BENCHMARK,
   FALLBACK_OVERALL_TARGET_PROFILES,
-  RAID_COUNTER_SIMULATION_MOVESET_LIMIT,
   RAID_COUNTER_SIMULATION_VARIANT_LIMIT,
   RAID_SAFETY_FACTOR,
   TYPE_DPS_ER_TDO_EXPONENT,
@@ -230,6 +229,21 @@ export const scoreRaidCounters = (
   tier: RaidTierPreset,
   settings: RaidCounterSettings,
 ): RaidCounterScore[] => {
+  const finalists = selectRaidCounterFinalists(
+    attackers,
+    boss,
+    tier,
+    settings,
+  );
+  return scoreRaidCounterFinalists(finalists, boss, tier, settings);
+};
+
+export const selectRaidCounterFinalists = (
+  attackers: PokemonVariant[],
+  boss: PokemonVariant,
+  tier: RaidTierPreset,
+  settings: RaidCounterSettings,
+): PokemonVariant[] => {
   const estimates = attackers
     .filter(isEligibleRaidAttacker)
     .flatMap((attacker) => {
@@ -259,33 +273,41 @@ export const scoreRaidCounters = (
     estimatesByVariant.set(key, current);
   });
 
-  const candidates = Array.from(estimatesByVariant.values())
-    .map((variantScores) =>
-      variantScores
-        .sort((a, b) => b.dps - a.dps)
-        .slice(0, RAID_COUNTER_SIMULATION_MOVESET_LIMIT),
-    )
+  return Array.from(estimatesByVariant.values())
+    .map((variantScores) => variantScores.sort((a, b) => b.dps - a.dps))
     .sort((a, b) => (b[0]?.dps ?? 0) - (a[0]?.dps ?? 0))
     .slice(0, RAID_COUNTER_SIMULATION_VARIANT_LIMIT)
-    .flat();
+    .map((variantScores) => variantScores[0].variant);
+};
 
-  return candidates
-    .map((candidate) =>
-      calculateRaidCounterScore(
-        candidate.variant,
-        candidate.fastMove,
-        candidate.chargedMove,
-        boss,
-        tier,
-        settings,
-      ),
-    )
+export const scoreRaidCounterFinalists = (
+  finalists: PokemonVariant[],
+  boss: PokemonVariant,
+  tier: RaidTierPreset,
+  settings: RaidCounterSettings,
+): RaidCounterScore[] =>
+  finalists
+    .flatMap((attacker) => {
+      const fastMoves = getLegalRaidFastMoves(attacker);
+      const chargedMoves = getLegalRaidChargedMoves(attacker);
+      return fastMoves.flatMap((fastMove) =>
+        chargedMoves.map((chargedMove) =>
+          calculateRaidCounterScore(
+            attacker,
+            fastMove,
+            chargedMove,
+            boss,
+            tier,
+            settings,
+          ),
+        ),
+      );
+    })
     .sort((a, b) =>
       b.dps - a.dps ||
       a.soloTimeSeconds - b.soloTimeSeconds ||
       a.faints - b.faints,
     );
-};
 
 export const calculateOverallMoveCycleScore = (
   attacker: PokemonVariant,

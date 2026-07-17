@@ -588,6 +588,19 @@
   background: rgba(100, 46, 180, 0.14);
 }
 
+.raid-calculation-status {
+  display: grid;
+  gap: 0.25rem;
+  padding: 1rem;
+  border: 1px solid color-mix(in srgb, var(--raid-accent) 35%, transparent);
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--raid-panel) 92%, var(--raid-accent));
+}
+
+.raid-calculation-status span {
+  color: var(--raid-muted);
+}
+
 .raid-shadow-note strong {
   color: #f8ffff;
   font-weight: 950;

@@ -36,6 +36,7 @@ import {
   type RaidTierKey,
   type ShadowBossMode,
 } from "./utils/raidCalculations";
+import { scoreRaidCountersAsync } from "./utils/raidCounterWorkers";
 import {
   DEFAULT_METRIC_SORT,
   DEFAULT_TYPE_DPS_PAGE,
@@ -88,6 +89,11 @@ const Raid: React.FC = () => {
     useState<RaidMetricSortKey>(DEFAULT_METRIC_SORT);
   const [sortDirection, setSortDirection] =
     useState<RaidMetricSortDirection>("descending");
+  const [bossCounterScores, setBossCounterScores] = useState<
+    ReturnType<typeof scoreRaidCounters>
+  >([]);
+  const [bossCounterScoresLoading, setBossCounterScoresLoading] =
+    useState(false);
 
   useEffect(() => {
     void ensureMoves();
@@ -171,11 +177,49 @@ const Raid: React.FC = () => {
     ],
   );
 
-  const bossCounterScores = useMemo(() => {
-    if (viewMode !== "boss") return [];
-    if (!selectedBoss) return [];
-    return scoreRaidCounters(attackers, selectedBoss, selectedTier, settings);
-  }, [attackers, selectedBoss, selectedTier, settings, viewMode]);
+  useEffect(() => {
+    if (viewMode !== "boss" || !selectedBoss) {
+      setBossCounterScores([]);
+      setBossCounterScoresLoading(false);
+      return;
+    }
+
+    setBossCounterScores([]);
+    setBossCounterScoresLoading(true);
+
+    if (typeof Worker !== "function") {
+      setBossCounterScores(
+        scoreRaidCounters(attackers, selectedBoss, selectedTier, settings),
+      );
+      setBossCounterScoresLoading(false);
+      return;
+    }
+
+    const controller = new AbortController();
+    void scoreRaidCountersAsync(
+      attackers,
+      selectedBoss,
+      selectedTier,
+      settings,
+      bestOnly,
+      controller.signal,
+    )
+      .then((scores) => {
+        if (!controller.signal.aborted) {
+          setBossCounterScores(scores);
+          setBossCounterScoresLoading(false);
+        }
+      })
+      .catch(() => {
+        if (controller.signal.aborted) return;
+        setBossCounterScores(
+          scoreRaidCounters(attackers, selectedBoss, selectedTier, settings),
+        );
+        setBossCounterScoresLoading(false);
+      });
+
+    return () => controller.abort();
+  }, [attackers, bestOnly, selectedBoss, selectedTier, settings, viewMode]);
 
   const raidScores = useMemo(() => {
     const scored = bestOnly
@@ -383,7 +427,7 @@ const Raid: React.FC = () => {
       )}
 
       {viewMode === "boss" &&
-        (selectedBoss && bossStats && groupEstimate ? (
+        (selectedBoss && bossStats ? (
           <section className="raid-layout">
             <RaidBossPicker
               selectedBoss={selectedBoss}
@@ -396,12 +440,21 @@ const Raid: React.FC = () => {
             />
 
             <main className="raid-panel raid-main-panel">
-              <RaidBossDetails
-                tier={selectedTier}
-                bossStats={bossStats}
-                groupEstimate={groupEstimate}
-                metadata={bossMetadata}
-              />
+              {groupEstimate ? (
+                <RaidBossDetails
+                  tier={selectedTier}
+                  bossStats={bossStats}
+                  groupEstimate={groupEstimate}
+                  metadata={bossMetadata}
+                />
+              ) : (
+                <section className="raid-calculation-status" role="status">
+                  <strong>Calculating raid counters</strong>
+                  <span>
+                    Evaluating legal movesets against {selectedBoss.name}.
+                  </span>
+                </section>
+              )}
 
               <RaidModifiers
                 {...modifierProps}
@@ -430,10 +483,16 @@ const Raid: React.FC = () => {
                 onBestOnlyChange={setBestOnly}
               />
 
-              <RaidBossCounterList
-                scores={raidScores}
-                attackerLevel={attackerLevel}
-              />
+              {bossCounterScoresLoading ? (
+                <div className="raid-list-empty" role="status">
+                  Modeling raid timelines…
+                </div>
+              ) : (
+                <RaidBossCounterList
+                  scores={raidScores}
+                  attackerLevel={attackerLevel}
+                />
+              )}
             </main>
           </section>
         ) : (

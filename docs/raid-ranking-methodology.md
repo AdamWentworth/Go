@@ -2,7 +2,7 @@
 
 Last reviewed: July 2026
 
-Model version: 6
+Model version: 7
 
 PokeGo Nexus ranks raid attackers for three different questions:
 
@@ -89,7 +89,7 @@ Expected mode simulates both deterministic phases of the boss's 50% charged-move
 
 Monte Carlo mode runs a reproducible 24–48 trial distribution. Trials are stratified so every legal boss moveset is represented, while a seeded random stream chooses each eligible charged move at 50% probability and samples half-second-aligned boss action delays of 1.5, 2.0, or 2.5 seconds. Counter cards report median (P50) Time to Win and faints alongside P10–P90 timing and P90 faint/relobby pressure. Shared boss-scenario seeds prevent random refresh-to-refresh ranking noise.
 
-To keep boss lookup responsive in a browser, the closed-form cycle model screens the catalog before simulation. The event engine then determines final ordering among up to 256 attacker forms and the three strongest estimated movesets for each form. This performance screen can omit an unusually weak-looking moveset that would behave better in a specific event timeline, so the list is a high-confidence counter ranking rather than an exhaustive proof over every catalog move combination.
+To keep boss lookup responsive, the closed-form cycle model screens the catalog before simulation. A balanced pool of up to four browser workers then evaluates every legal moveset for up to 256 finalist attacker forms without blocking interaction on the page. Workers return only the best moveset for each form by default and return every simulated moveset when All moves is selected. The remaining form-level screen can omit an unusually weak-looking form whose event timeline would outperform its closed-form estimate, so the list is exhaustive within the finalist cohort rather than a proof over every catalog form.
 
 ## Assumptions and limits
 
@@ -112,8 +112,9 @@ The ranking model has two complementary regression gates:
 - A sensitivity matrix varies neutral target Defense across `160`, `180`, and `200`, and incoming pressure across `0.8x`, `1x`, and `1.2x`. The top-three order and signature charged moves must remain stable in all nine scenarios.
 - Relobby delays of `0`, `5`, `10`, and `20` seconds must preserve the canonical headline result.
 - Exact damage floors may legitimately change the preferred fast move at some Defense breakpoints. The validation therefore locks the stable rank and signature charged move across sensitivity scenarios while requiring the exact production-default moveset at the documented benchmark.
-- Event-engine tests lock half-second action timing, start-of-action energy commitment, incoming-damage energy, charged-move use, faint cancellation, six-Pokemon relobbies, expected/favorable/hostile boss movesets, and the bounded browser candidate screen.
+- Event-engine tests lock half-second action timing, start-of-action energy commitment, incoming-damage energy, charged-move use, faint cancellation, six-Pokemon relobbies, expected/favorable/hostile boss movesets, every legal finalist moveset, and the bounded browser candidate screen.
 - Monte Carlo tests lock seeded reproducibility, sample bounds, ordered P10/P50/P90 distributions, legal-moveset aggregation, and the rendered uncertainty summaries.
+- A browser regression verifies that the production worker bundle starts, completes an exhaustive finalist calculation, and renders its results.
 - Live-catalog validation runs a real boss-counter simulation in addition to the broad canonical ranking gate.
 
 Frontend CI runs the deterministic model gate. After every clean production catalog-editor session, the editor refreshes the API cache and runs the same canonical check against the live catalog. This catches move-pool, form-stat, and move-stat drift before a catalog edit is considered complete.
@@ -126,7 +127,7 @@ The tiers below rank calculation methods for their stated purpose, not the amoun
 | --- | --- | --- | --- | --- |
 | S | Pokebattler | Exact boss simulations | Models boss matchups, deaths, dodging choices, TTW, and relobby-aware Estimator results | More complex; results depend heavily on selected battle conditions |
 | S | DialgaDex | Broad theoretical attacker rankings | Transparent DPS/TDO/eDPS choices, configurable team and relobby assumptions, and Type Affinity using real high-tier bosses | Still a closed-form ranking; no single broad score can reproduce every raid timeline |
-| A | PokeGo Nexus | Explainable general planning plus integrated boss lookup | Neutral all-type benchmark, legal form-specific move pools, independently scored tier-scaled type targets, exact damage floors, event-driven no-dodge boss counters, seeded Monte Carlo percentiles, expected/favorable/hostile legal boss attacks, real two-move type effectiveness, Hidden Power handling, sortable component metrics, and adjustable modifiers | Broad lists remain closed-form; browser-sized simulation still uses a bounded attacker/moveset screen and fewer trials than a dedicated server simulator |
+| A | PokeGo Nexus | Explainable general planning plus integrated boss lookup | Neutral all-type benchmark, legal form-specific move pools, independently scored tier-scaled type targets, exact damage floors, event-driven no-dodge boss counters, seeded Monte Carlo percentiles, worker-pooled exhaustive finalist movesets, expected/favorable/hostile legal boss attacks, real two-move type effectiveness, Hidden Power handling, sortable component metrics, and adjustable modifiers | Broad lists remain closed-form; browser-sized simulation still uses a bounded form screen and fewer trials than a dedicated server simulator |
 | A | PokéBase | Transparent closed-form DPS and ER analysis | Publishes the Comprehensive DPS derivation and exposes DPS, TDO, ER, and CP | General formulas need a simulator for highly specific matchups; editorial type lists include manual judgment |
 | A | Dittobase | Accessible eDPS rankings | Representative boss pool, relobby-aware eDPS, and extensive player-facing settings | Public explanations are strong, but less implementation detail is exposed than the formula-first tools |
 | B | GO Hub Database | Quick type lists and counter references | EER/TER options and broad database integration | Some counter outputs are estimates and documented modifiers are not applied uniformly to every metric |
@@ -141,7 +142,7 @@ Boss mode now includes reproducible Monte Carlo outcomes, closing the largest pr
 
 1. Add realistic-dodge modes and mixed six-Pokemon teams.
 2. Model multi-Trainer boss-energy feedback and Party Power meter timing.
-3. Expand or move the candidate screen to a worker so every legal attacker moveset can be simulated with a larger trial count without blocking the UI.
+3. Increase the worker-pooled form cohort and trial count, supported by durable result caching so repeated settings do not repeat identical simulations.
 4. Add a machine-readable comparison against at least one independent full simulator and publish model/catalog versions with every ranking.
 
 The broad eDPS leaderboard should remain the default because it answers the most common team-building question. A future simulator should strengthen boss mode rather than replace the transparent general model.

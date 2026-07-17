@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import type { PokemonVariant } from "@/types/pokemonVariants";
 import type { Move } from "@/types/pokemonSubTypes";
@@ -10,6 +10,10 @@ import {
   type RaidTierPreset,
 } from "@/pages/Raid/utils/raidCalculations";
 import { RAID_COUNTER_SIMULATION_VARIANT_LIMIT } from "@/pages/Raid/utils/raidRules";
+import {
+  buildRaidCounterWorkerChunks,
+  scoreRaidCountersAsync,
+} from "@/pages/Raid/utils/raidCounterWorkers";
 
 const move = (
   name: string,
@@ -459,6 +463,114 @@ describe("raid event simulation", () => {
           ),
       ),
     ).toBe(true);
+  });
+
+  it("sends every legal finalist moveset through the event simulator", () => {
+    const alternateFast = move("Alternate Fast", "normal", true, 8, 500, 12);
+    const alternateCharged = move(
+      "Alternate Charged",
+      "normal",
+      false,
+      80,
+      500,
+      -33,
+    );
+    const flexibleAttacker = pokemon({
+      name: "Flexible Attacker",
+      attack: 260,
+      defense: 160,
+      stamina: 170,
+      types: ["normal"],
+      moves: [
+        fastAttack,
+        alternateFast,
+        chargedAttack,
+        alternateCharged,
+      ],
+    });
+
+    const scores = scoreRaidCounters(
+      [flexibleAttacker],
+      boss,
+      tier,
+      settings,
+    );
+
+    expect(scores).toHaveLength(4);
+    expect(
+      new Set(
+        scores.map(
+          (score) => `${score.fastMove.name}/${score.chargedMove.name}`,
+        ),
+      ).size,
+    ).toBe(4);
+    expect(scores.every((score) => score.simulationDistribution)).toBe(true);
+  });
+
+  it("balances costly finalist forms across calculation workers", () => {
+    const alternateFast = move("Alternate Fast", "normal", true, 8, 500, 12);
+    const alternateCharged = move(
+      "Alternate Charged",
+      "normal",
+      false,
+      80,
+      500,
+      -33,
+    );
+    const finalists = [
+      pokemon({
+        name: "Flexible A",
+        attack: 260,
+        defense: 160,
+        stamina: 170,
+        types: ["normal"],
+        moves: [
+          fastAttack,
+          alternateFast,
+          chargedAttack,
+          alternateCharged,
+        ],
+      }),
+      pokemon({
+        name: "Flexible B",
+        attack: 259,
+        defense: 160,
+        stamina: 170,
+        types: ["normal"],
+        moves: [
+          fastAttack,
+          alternateFast,
+          chargedAttack,
+          alternateCharged,
+        ],
+      }),
+      attacker,
+      { ...attacker, name: "Simple B", variant_id: "simple-b" },
+    ];
+
+    const chunks = buildRaidCounterWorkerChunks(finalists, 2);
+
+    expect(chunks).toHaveLength(2);
+    expect(chunks.flat()).toHaveLength(finalists.length);
+    expect(chunks.every((chunk) => chunk.length === 2)).toBe(true);
+  });
+
+  it("matches synchronous scoring when workers are unavailable", async () => {
+    vi.stubGlobal("Worker", undefined);
+    try {
+      const asyncScores = await scoreRaidCountersAsync(
+        [attacker],
+        boss,
+        tier,
+        settings,
+        true,
+      );
+      const syncScores = scoreRaidCounters([attacker], boss, tier, settings);
+
+      expect(asyncScores).toEqual(syncScores);
+    } finally {
+      vi.unstubAllGlobals();
+    }
   });
 
   it("bounds the variants sent through the event simulator", () => {

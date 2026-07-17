@@ -170,7 +170,6 @@ export const RAID_SIMULATION_BOSS_DELAY_OPTIONS_SECONDS = [
 export const RAID_MONTE_CARLO_MIN_SAMPLES = 24;
 export const RAID_MONTE_CARLO_MAX_SAMPLES = 48;
 export const RAID_COUNTER_SIMULATION_VARIANT_LIMIT = 256;
-export const RAID_COUNTER_SIMULATION_MOVESET_LIMIT = 3;
 export const LEGACY_RAID_TIERS = new Set(["2"]);
 export const FALLBACK_OVERALL_TARGET_PROFILES: RaidOverallTargetProfile[] = [
   { types: [], weight: 1 },
