@@ -1,0 +1,54 @@
+{
+  "schemaVersion": 1,
+  "modelVersion": 8,
+  "reviewedAt": "2026-07-17",
+  "productionDefaults": {
+    "attackerLevel": "50.0",
+    "relobbySeconds": 10,
+    "defaultMetric": "eDPS",
+    "neutralTargetDefense": 180
+  },
+  "bossSimulation": {
+    "finalistLimit": 384,
+    "monteCarloSamples": {
+      "minimum": 32,
+      "maximum": 64
+    },
+    "cache": {
+      "storage": "IndexedDB",
+      "ttlDays": 7,
+      "maximumEntries": 12
+    }
+  },
+  "canonicalOverall": [
+    {
+      "name": "Mega Rayquaza",
+      "fastMove": "Dragon Tail",
+      "chargedMove": "Dragon Ascent"
+    },
+    {
+      "name": "Mega Mewtwo Y",
+      "fastMove": "Confusion",
+      "chargedMove": "Psystrike"
+    },
+    {
+      "name": "Mega Mewtwo X",
+      "fastMove": "Counter",
+      "chargedMove": "Psystrike"
+    }
+  ],
+  "externalReferenceSnapshot": {
+    "scenario": "Top overall raid attacker with released PokeGo Nexus forms",
+    "sharedLeader": "Mega Rayquaza",
+    "references": [
+      {
+        "tool": "DialgaDex",
+        "url": "https://www.dialgadex.com/?strongest=&t=Any"
+      },
+      {
+        "tool": "PokeBase",
+        "url": "https://pokebase.app/pokemon-go/dps-calc"
+      }
+    ]
+  }
+}

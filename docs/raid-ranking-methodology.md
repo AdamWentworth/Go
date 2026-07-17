@@ -113,7 +113,9 @@ For a specific difficult raid, use the boss counter page and confirm the result 
 
 ## Validation guardrails
 
-The ranking model has two complementary regression gates:
+The ranking model has complementary regression gates:
+
+The current model settings, canonical headline order, and external leader snapshot are also published as [machine-readable JSON](./raid-ranking-validation.json). CI verifies that its model version, cohort bounds, sample bounds, and canonical movesets match the executable model.
 
 - A fixed canonical cohort checks the headline order and legal signature moves for Mega Rayquaza, both Mega Mewtwo forms, Eternatus, Shadow Regigigas, and Zacian.
 - A sensitivity matrix varies neutral target Defense across `160`, `180`, and `200`, and incoming pressure across `0.8x`, `1x`, and `1.2x`. The top-three order and signature charged moves must remain stable in all nine scenarios.

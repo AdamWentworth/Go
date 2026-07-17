@@ -10,6 +10,13 @@ import {
   type RaidCounterSettings,
   type RaidNeutralBenchmark,
 } from "@/pages/Raid/utils/raidCalculations";
+import {
+  RAID_COUNTER_SIMULATION_VARIANT_LIMIT,
+  RAID_MONTE_CARLO_MAX_SAMPLES,
+  RAID_MONTE_CARLO_MIN_SAMPLES,
+  RAID_SIMULATION_MODEL_VERSION,
+} from "@/pages/Raid/utils/raidRules";
+import validationProfile from "../../../../../../../../docs/raid-ranking-validation.json";
 
 const defaultSettings: RaidCounterSettings = {
   attackerLevel: "50.0",
@@ -55,6 +62,25 @@ const canonicalTopNames = canonicalOverallExpectation.map(
 );
 
 describe("raid ranking validation", () => {
+  it("keeps the machine-readable validation profile aligned with the model", () => {
+    expect(validationProfile.modelVersion).toBe(
+      RAID_SIMULATION_MODEL_VERSION,
+    );
+    expect(validationProfile.bossSimulation.finalistLimit).toBe(
+      RAID_COUNTER_SIMULATION_VARIANT_LIMIT,
+    );
+    expect(validationProfile.bossSimulation.monteCarloSamples).toEqual({
+      minimum: RAID_MONTE_CARLO_MIN_SAMPLES,
+      maximum: RAID_MONTE_CARLO_MAX_SAMPLES,
+    });
+    expect(validationProfile.canonicalOverall).toEqual(
+      canonicalOverallExpectation,
+    );
+    expect(validationProfile.externalReferenceSnapshot.sharedLeader).toBe(
+      canonicalOverallExpectation[0].name,
+    );
+  });
+
   it("matches the canonical headline order and legal movesets", () => {
     expect(summarizeTop()).toEqual(canonicalOverallExpectation);
   });
