@@ -10,7 +10,6 @@ import { useInstancesStore } from "@/features/instances/store/useInstancesStore"
 import { useVariantsStore } from "@/features/variants/store/useVariantsStore";
 import { useAuthStore } from "@/stores/useAuthStore";
 import type { PokemonVariant } from "@/types/pokemonVariants";
-import { getTypeIconPath } from "@/utils/imageHelpers";
 import { getStorageString, STORAGE_KEYS } from "@/utils/storage";
 import ConfirmDialog from "../../components/modals/ConfirmDialog";
 import LoadingSpinner from "../../components/LoadingSpinner";
@@ -23,6 +22,7 @@ import RaidModeTabs from "./components/RaidModeTabs";
 import RaidModifiers from "./components/RaidModifiers";
 import RaidModelProvenance from "./components/RaidModelProvenance";
 import RaidRankingTable from "./components/RaidRankingTable";
+import RaidRankingTypeFilter from "./components/RaidRankingTypeFilter";
 import RaidRosterScope from "./components/RaidRosterScope";
 import RaidObservationDialog from "./components/RaidObservationDialog";
 import RaidPartyBuilder from "./components/RaidPartyBuilder";
@@ -69,10 +69,9 @@ import {
 import { scoreRaidCountersAsync } from "./utils/raidCounterWorkers";
 import {
   DEFAULT_METRIC_SORT,
-  DEFAULT_TYPE_DPS_PAGE,
+  DEFAULT_RAID_RANKING_TYPE,
   capitalize,
   getRaidVariantDisplayName,
-  getTypeClassName,
   getUniqueByVariant,
   matchesCounterSearch,
   sortRaidMetricScores,
@@ -104,13 +103,15 @@ const Raid: React.FC = () => {
     getStorageString(STORAGE_KEYS.deviceId) ??
     "signed-out-device";
 
-  const [viewMode, setViewMode] = useState<RaidViewMode>("overall");
+  const [viewMode, setViewMode] = useState<RaidViewMode>("rankings");
   const [rosterScope, setRosterScope] = useState<RaidRosterScopeValue>(
     isLoggedIn ? "owned" : "catalog",
   );
   const [bossSearch, setBossSearch] = useState("");
   const [selectedBossId, setSelectedBossId] = useState<string>("");
-  const [selectedType, setSelectedType] = useState(DEFAULT_TYPE_DPS_PAGE);
+  const [selectedType, setSelectedType] = useState(
+    DEFAULT_RAID_RANKING_TYPE,
+  );
   const [shadowRaid, setShadowRaid] = useState(false);
   const [shadowBossMode, setShadowBossMode] =
     useState<ShadowBossMode>("subdued");
@@ -353,11 +354,11 @@ const Raid: React.FC = () => {
   );
 
   const overallRankingScores = useMemo(() => {
-    if (viewMode !== "overall") return [];
+    if (viewMode !== "rankings" || selectedType) return [];
     return bestOnly
       ? scoreBestRaidOverallAttackers(attackers, settings, bossOptions)
       : scoreRaidOverallAttackers(attackers, settings);
-  }, [attackers, bestOnly, bossOptions, settings, viewMode]);
+  }, [attackers, bestOnly, bossOptions, selectedType, settings, viewMode]);
 
   const overallScores = useMemo(() => {
     return sortRaidMetricScores(
@@ -372,7 +373,7 @@ const Raid: React.FC = () => {
   useEffect(() => {
     if (
       routeReadyMeasured.current ||
-      viewMode !== "overall" ||
+      viewMode !== "rankings" ||
       loading ||
       movesLoading ||
       overallScores.length === 0 ||
@@ -390,7 +391,7 @@ const Raid: React.FC = () => {
   }, [loading, movesLoading, overallScores.length, viewMode]);
 
   const typeDpsRankingScores = useMemo(() => {
-    if (viewMode !== "type-dps") return [];
+    if (viewMode !== "rankings" || !selectedType) return [];
     const allScores = scoreRaidTypeDps(
       attackers,
       selectedType,
@@ -409,6 +410,13 @@ const Raid: React.FC = () => {
       sortDirection,
     ).slice(0, 30);
   }, [attackerSearch, typeDpsRankingScores, sortDirection, sortMetric]);
+
+  const typeRankingActive = selectedType.length > 0;
+  const rankingScores = typeRankingActive ? typeDpsScores : overallScores;
+  const rankingHeading = `${personalized ? "Your top" : "Top"}${
+    typeRankingActive ? ` ${capitalize(selectedType)}` : ""
+  } raid attackers`;
+  const rankingAriaLabel = rankingHeading;
 
   const groupEstimate = useMemo(() => {
     if (viewMode !== "boss") return null;
@@ -596,24 +604,32 @@ const Raid: React.FC = () => {
         summary={raidRoster}
       />
 
-      {viewMode === "overall" && (
+      {viewMode === "rankings" && (
         <section className="raid-layout raid-overall-layout">
           <main className="raid-panel raid-main-panel raid-overall-panel">
+            <RaidRankingTypeFilter
+              selectedType={selectedType}
+              typeOptions={typeOptions}
+              onChange={setSelectedType}
+            />
+
             <header className="raid-leaderboard-header">
               <div>
-                <p className="raid-eyebrow">Overall eDPS</p>
-                <h1>
-                  {personalized
-                    ? "Your top raid attackers"
-                    : "Top raid attackers"}
-                </h1>
+                <p className="raid-eyebrow">
+                  {typeRankingActive
+                    ? `${capitalize(selectedType)} type eDPS`
+                    : "Overall eDPS"}
+                </p>
+                <h1>{rankingHeading}</h1>
               </div>
               <div className="raid-leaderboard-meta">
                 <span>Team of six, {relobbySeconds}s relobby</span>
                 <span>
                   {personalized
                     ? "Caught levels, IVs, CP, and moves"
-                    : "Neutral typeless benchmark"}
+                    : typeRankingActive
+                      ? `${capitalize(selectedType)} matchup benchmark`
+                      : "Neutral typeless benchmark"}
                 </span>
                 <RaidModelProvenance />
               </div>
@@ -641,23 +657,36 @@ const Raid: React.FC = () => {
                   {...modifierProps}
                   includeShadowControls={false}
                   includeRelobbyControls
+                  includeBossMovesetControls={typeRankingActive}
                 />
               </section>
             )}
 
             <RaidRankingTable
-              ariaLabel={
-                personalized ? "Your top raid attackers" : "Top raid attackers"
-              }
-              scores={overallScores}
+              ariaLabel={rankingAriaLabel}
+              scores={rankingScores}
               attackerLevel={attackerLevel}
               sortMetric={sortMetric}
               sortDirection={sortDirection}
               onSort={handleMetricSort}
               emptyMessage={
-                personalized
-                  ? "No caught attackers match the current filters. Add level, IV, and move details to improve personalized rankings."
-                  : "No attackers match the current filters."
+                personalized ? (
+                  typeRankingActive ? (
+                    <>
+                      None of your caught Pokémon have a usable{" "}
+                      {capitalize(selectedType)} moveset for this ranking.
+                    </>
+                  ) : (
+                    "No caught attackers match the current filters. Add level, IV, and move details to improve personalized rankings."
+                  )
+                ) : typeRankingActive ? (
+                  <>
+                    No eligible attackers have a {capitalize(selectedType)} fast
+                    or charged move.
+                  </>
+                ) : (
+                  "No attackers match the current filters."
+                )
               }
             />
           </main>
@@ -788,109 +817,6 @@ const Raid: React.FC = () => {
             </p>
           </section>
         ))}
-
-      {viewMode === "type-dps" && (
-        <section className="raid-layout raid-type-layout">
-          <aside className="raid-panel raid-type-panel">
-            <div className="raid-panel-header">
-              <p className="raid-eyebrow">Type DPS</p>
-              <h2>{capitalize(selectedType)}</h2>
-            </div>
-
-            <div className="raid-type-grid" aria-label="Type DPS pages">
-              {typeOptions.map((type) => (
-                <button
-                  className={`${getTypeClassName(type)} ${selectedType === type ? "active" : ""}`}
-                  key={type}
-                  onClick={() => setSelectedType(type)}
-                  type="button"
-                >
-                  <img src={getTypeIconPath(type)} alt="" draggable={false} />
-                  <span>{capitalize(type)}</span>
-                </button>
-              ))}
-            </div>
-          </aside>
-
-          <main className="raid-panel raid-main-panel">
-            <section
-              className="raid-category-card raid-type-category-card"
-              aria-label="Type DPS category"
-            >
-              <div>
-                <span>Type DPS</span>
-                <strong>{capitalize(selectedType)}</strong>
-              </div>
-              {selectedType === "normal" ? (
-                <p>
-                  Uses the same complete-moveset metrics as Overall against a
-                  set of high-tier bosses taking neutral Normal damage. Each
-                  moveset includes at least one Normal move.
-                </p>
-              ) : (
-                <p>
-                  Uses the same eDPS, DPS, TDO, ER, and CP metrics as Overall.
-                  Each moveset includes at least one {capitalize(selectedType)}
-                  move and is modeled across high-tier raid-boss typings weak to{" "}
-                  {capitalize(selectedType)}. Companion moves use their real
-                  effectiveness in those matchups.
-                </p>
-              )}
-            </section>
-
-            <RaidCounterToolbar
-              label="Attacker search"
-              search={attackerSearch}
-              onSearchChange={setAttackerSearch}
-              bestOnly={bestOnly}
-              onBestOnlyChange={setBestOnly}
-              includeRankingSettings
-              rankingSettingsOpen={rankingSettingsOpen}
-              onRankingSettingsOpenChange={setRankingSettingsOpen}
-              bestOnlyLabel={personalized ? "Best current" : "Best moves"}
-              allMovesLabel={personalized ? "All current" : "All moves"}
-            />
-
-            {rankingSettingsOpen && (
-              <section
-                className="raid-ranking-settings"
-                aria-label="Ranking settings"
-              >
-                <RaidModifiers
-                  {...modifierProps}
-                  includeShadowControls={false}
-                  includeRelobbyControls
-                  includeBossMovesetControls
-                />
-              </section>
-            )}
-
-            <RaidModelProvenance />
-
-            <RaidRankingTable
-              ariaLabel="Type DPS counters"
-              scores={typeDpsScores}
-              attackerLevel={attackerLevel}
-              sortMetric={sortMetric}
-              sortDirection={sortDirection}
-              onSort={handleMetricSort}
-              emptyMessage={
-                personalized ? (
-                  <>
-                    None of your caught Pokémon have a usable{" "}
-                    {capitalize(selectedType)} moveset for this ranking.
-                  </>
-                ) : (
-                  <>
-                    No eligible attackers have a {capitalize(selectedType)} fast
-                    or charged move.
-                  </>
-                )
-              }
-            />
-          </main>
-        </section>
-      )}
 
       {observationDialogOpen && selectedBoss && groupEstimate && (
         <RaidObservationDialog

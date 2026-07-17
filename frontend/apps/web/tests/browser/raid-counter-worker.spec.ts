@@ -211,6 +211,31 @@ test.describe("raid counter worker", () => {
     await expect(leaderboard.getByText("Bulbasaur")).toBeVisible();
     await expect(leaderboard.getByText(/Sprout · Level 20/)).toBeVisible();
     await expect(page.getByLabel(/attacker level/i)).toHaveCount(0);
+
+    const typeFilter = page.getByLabel("Attacker type filter");
+    const electricButton = typeFilter.getByRole("button", {
+      name: "Electric",
+    });
+    await electricButton.click();
+    await expect(
+      page.getByRole("heading", { name: "Your top Electric raid attackers" }),
+    ).toBeVisible();
+
+    await page.getByRole("button", { name: "All Pokémon" }).click();
+    await expect(
+      page.getByRole("heading", { name: "Top Electric raid attackers" }),
+    ).toBeVisible();
+    await expect(electricButton).toHaveAttribute("aria-pressed", "true");
+
+    await page.getByRole("button", { name: "My Pokémon" }).click();
+    await expect(
+      page.getByRole("heading", { name: "Your top Electric raid attackers" }),
+    ).toBeVisible();
+
+    await typeFilter.getByRole("button", { name: "Overall" }).click();
+    await expect(
+      page.getByRole("heading", { name: "Your top raid attackers" }),
+    ).toBeVisible();
   });
 
   test("lists an unlocked Mega alongside its caught base form", async ({

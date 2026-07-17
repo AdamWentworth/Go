@@ -18,7 +18,7 @@ import {
   getRaidAttackerLevelLabel,
 } from "./raidAttackerModel";
 
-export type RaidViewMode = "overall" | "type-dps" | "boss";
+export type RaidViewMode = "rankings" | "boss";
 export type RaidMetricSortKey = "eDps" | "dps" | "tdo" | "er" | "cp";
 export type RaidMetricSortDirection = "ascending" | "descending";
 
@@ -30,7 +30,7 @@ export type SearchableCounterScore = {
   chargedMove: RaidCounterScore["chargedMove"];
 };
 
-export const DEFAULT_TYPE_DPS_PAGE = "dark";
+export const DEFAULT_RAID_RANKING_TYPE = "";
 export const DEFAULT_METRIC_SORT: RaidMetricSortKey = "eDps";
 
 export const FRIENDSHIP_OPTIONS: Array<{

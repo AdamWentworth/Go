@@ -6,8 +6,7 @@ interface RaidModeTabsProps {
 }
 
 const RAID_VIEWS: Array<{ label: string; value: RaidViewMode }> = [
-  { label: "Overall", value: "overall" },
-  { label: "By type", value: "type-dps" },
+  { label: "Attacker rankings", value: "rankings" },
   { label: "Boss counters", value: "boss" },
 ];
 

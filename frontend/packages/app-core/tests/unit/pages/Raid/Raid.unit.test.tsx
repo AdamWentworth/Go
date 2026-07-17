@@ -434,7 +434,12 @@ describe("Raid page", () => {
     localStorage.setItem("pokemonCatalogVersion", "catalog-2026-07-17");
     render(<Raid />);
 
-    expect(screen.getByRole("button", { name: "Overall" })).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "Attacker rankings" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "By type" }),
+    ).not.toBeInTheDocument();
     expect(
       screen.getByRole("heading", { name: "Top raid attackers" }),
     ).toBeInTheDocument();
@@ -454,7 +459,10 @@ describe("Raid page", () => {
         "Catalog catalog-2026…",
       ),
     ).toBeInTheDocument();
-    expect(screen.queryByLabelText("Type DPS pages")).not.toBeInTheDocument();
+    const typeFilter = screen.getByLabelText("Attacker type filter");
+    expect(
+      within(typeFilter).getByRole("button", { name: "Overall" }),
+    ).toHaveAttribute("aria-pressed", "true");
     expect(screen.queryByText("Boss CP")).not.toBeInTheDocument();
     expect(screen.queryByLabelText(/relobby delay/i)).not.toBeInTheDocument();
 
@@ -541,10 +549,29 @@ describe("Raid page", () => {
     fireEvent.click(screen.getByRole("button", { name: "Settings" }));
     expect(screen.queryByLabelText(/attacker level/i)).not.toBeInTheDocument();
 
-    fireEvent.click(screen.getByRole("button", { name: "By type" }));
+    const typeFilter = screen.getByLabelText("Attacker type filter");
+    const darkButton = within(typeFilter).getByRole("button", {
+      name: "Dark",
+    });
+    fireEvent.click(darkButton);
     expect(
-      within(screen.getByLabelText("Type DPS counters")).getByText("Tyranitar"),
+      within(screen.getByLabelText("Your top Dark raid attackers")).getByText(
+        "Tyranitar",
+      ),
     ).toBeInTheDocument();
+    expect(darkButton).toHaveAttribute("aria-pressed", "true");
+
+    fireEvent.click(screen.getByRole("button", { name: "All Pokémon" }));
+    expect(
+      screen.getByRole("heading", { name: "Top Dark raid attackers" }),
+    ).toBeInTheDocument();
+    expect(darkButton).toHaveAttribute("aria-pressed", "true");
+
+    fireEvent.click(screen.getByRole("button", { name: "My Pokémon" }));
+    expect(
+      screen.getByRole("heading", { name: "Your top Dark raid attackers" }),
+    ).toBeInTheDocument();
+    expect(darkButton).toHaveAttribute("aria-pressed", "true");
 
     fireEvent.click(screen.getByRole("button", { name: "Boss counters" }));
     expect(
@@ -834,21 +861,25 @@ describe("Raid page", () => {
     );
   });
 
-  it("shows type DPS pages using fast or charged moves that match the selected type", () => {
+  it("filters the shared leaderboard by type and returns explicitly to overall", () => {
     render(<Raid />);
 
-    fireEvent.click(screen.getByRole("button", { name: "By type" }));
+    const typeFilter = screen.getByLabelText("Attacker type filter");
+    const overallButton = within(typeFilter).getByRole("button", {
+      name: "Overall",
+    });
+    const darkButton = within(typeFilter).getByRole("button", { name: "Dark" });
 
-    expect(screen.getByRole("heading", { name: "Dark" })).toBeInTheDocument();
+    expect(overallButton).toHaveAttribute("aria-pressed", "true");
+    fireEvent.click(darkButton);
+
+    expect(darkButton).toHaveAttribute("aria-pressed", "true");
+    expect(overallButton).toHaveAttribute("aria-pressed", "false");
     expect(
-      screen.getByText(/same eDPS, DPS, TDO, ER, and CP metrics as Overall/i),
+      screen.getByRole("heading", { name: "Top Dark raid attackers" }),
     ).toBeInTheDocument();
-    expect(screen.getByLabelText("Type DPS pages")).toBeInTheDocument();
-    expect(
-      screen.getAllByRole("button", { name: "Dark" }).length,
-    ).toBeGreaterThan(0);
 
-    const counterList = screen.getByLabelText("Type DPS counters");
+    const counterList = screen.getByLabelText("Top Dark raid attackers");
     expect(
       within(counterList).getByRole("columnheader", { name: "Pokémon" }),
     ).toBeInTheDocument();
@@ -879,5 +910,12 @@ describe("Raid page", () => {
     expect(
       within(counterList).queryByText("Charged Dark"),
     ).not.toBeInTheDocument();
+
+    fireEvent.click(overallButton);
+    expect(overallButton).toHaveAttribute("aria-pressed", "true");
+    expect(
+      screen.getByRole("heading", { name: "Top raid attackers" }),
+    ).toBeInTheDocument();
+    expect(screen.getByLabelText("Top raid attackers")).toBeInTheDocument();
   });
 });
