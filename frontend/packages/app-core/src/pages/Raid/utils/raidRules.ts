@@ -187,9 +187,9 @@ export const RAID_SIMULATION_ENERGY_CAP = 100;
 export const RAID_SIMULATION_BOSS_DELAY_OPTIONS_SECONDS = [
   1.5, 2, 2.5,
 ] as const;
-export const RAID_MONTE_CARLO_MIN_SAMPLES = 24;
-export const RAID_MONTE_CARLO_MAX_SAMPLES = 48;
-export const RAID_COUNTER_SIMULATION_VARIANT_LIMIT = 256;
+export const RAID_MONTE_CARLO_MIN_SAMPLES = 32;
+export const RAID_MONTE_CARLO_MAX_SAMPLES = 64;
+export const RAID_COUNTER_SIMULATION_VARIANT_LIMIT = 384;
 export const LEGACY_RAID_TIERS = new Set(["2"]);
 export const FALLBACK_OVERALL_TARGET_PROFILES: RaidOverallTargetProfile[] = [
   { types: [], weight: 1 },

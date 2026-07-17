@@ -210,7 +210,7 @@ const RaidModifiers = ({
           <option value="expected">Expected across legal movesets</option>
           {includeMonteCarloOption && (
             <option value="monte-carlo">
-              Monte Carlo distribution (24+ trials)
+              Monte Carlo distribution (32+ trials)
             </option>
           )}
           <option value="favorable">Favorable incoming moveset</option>

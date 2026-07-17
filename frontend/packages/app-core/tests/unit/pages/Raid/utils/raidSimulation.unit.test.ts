@@ -10,7 +10,16 @@ import {
   type RaidCounterSettings,
   type RaidTierPreset,
 } from "@/pages/Raid/utils/raidCalculations";
-import { RAID_COUNTER_SIMULATION_VARIANT_LIMIT } from "@/pages/Raid/utils/raidRules";
+import {
+  RAID_COUNTER_SIMULATION_VARIANT_LIMIT,
+  RAID_MONTE_CARLO_MAX_SAMPLES,
+  RAID_MONTE_CARLO_MIN_SAMPLES,
+} from "@/pages/Raid/utils/raidRules";
+import {
+  clearRaidCounterSimulationCache,
+  getCachedRaidCounterScores,
+  resetRaidCounterMemoryCache,
+} from "@/pages/Raid/utils/raidCounterCache";
 import {
   buildRaidCounterWorkerChunks,
   scoreRaidCountersAsync,
@@ -603,8 +612,12 @@ describe("raid event simulation", () => {
 
     expect(first).toEqual(second);
     expect(first).not.toBeNull();
-    expect(first!.distribution.sampleCount).toBeGreaterThanOrEqual(24);
-    expect(first!.distribution.sampleCount).toBeLessThanOrEqual(48);
+    expect(first!.distribution.sampleCount).toBeGreaterThanOrEqual(
+      RAID_MONTE_CARLO_MIN_SAMPLES,
+    );
+    expect(first!.distribution.sampleCount).toBeLessThanOrEqual(
+      RAID_MONTE_CARLO_MAX_SAMPLES,
+    );
     expect(first!.distribution.winRate).toBeGreaterThanOrEqual(0);
     expect(first!.distribution.winRate).toBeLessThanOrEqual(1);
     expect(first!.distribution.timeToWinSeconds.p10).toBeLessThanOrEqual(
@@ -628,7 +641,7 @@ describe("raid event simulation", () => {
 
     expect(scores).toHaveLength(1);
     expect(scores[0].simulationDistribution?.sampleCount).toBeGreaterThanOrEqual(
-      24,
+      RAID_MONTE_CARLO_MIN_SAMPLES,
     );
     expect(
       Number.isFinite(
@@ -658,7 +671,8 @@ describe("raid event simulation", () => {
     expect(
       scores.every(
         (score) =>
-          (score.simulationDistribution?.sampleCount ?? 0) >= 24 &&
+          (score.simulationDistribution?.sampleCount ?? 0) >=
+            RAID_MONTE_CARLO_MIN_SAMPLES &&
           Number.isFinite(
             score.simulationDistribution?.timeToWinSeconds.p50 ?? NaN,
           ),
@@ -771,6 +785,55 @@ describe("raid event simulation", () => {
       expect(asyncScores).toEqual(syncScores);
     } finally {
       vi.unstubAllGlobals();
+    }
+  });
+
+  it("restores exact counter results before starting workers and invalidates settings", async () => {
+    await clearRaidCounterSimulationCache();
+    const request = {
+      finalists: [attacker],
+      boss,
+      tier,
+      settings,
+      bestOnly: true,
+    };
+
+    try {
+      vi.stubGlobal("Worker", undefined);
+      const scores = await scoreRaidCountersAsync(
+        [attacker],
+        boss,
+        tier,
+        settings,
+        true,
+      );
+      resetRaidCounterMemoryCache();
+      const workerConstructor = vi.fn();
+      vi.stubGlobal("Worker", workerConstructor);
+
+      await expect(
+        scoreRaidCountersAsync(
+          [attacker],
+          boss,
+          tier,
+          settings,
+          true,
+        ),
+      ).resolves.toEqual(scores);
+      expect(workerConstructor).not.toHaveBeenCalled();
+      resetRaidCounterMemoryCache();
+      await expect(getCachedRaidCounterScores(request)).resolves.toEqual(
+        scores,
+      );
+      await expect(
+        getCachedRaidCounterScores({
+          ...request,
+          settings: { ...settings, dodgeStrategy: "charged" },
+        }),
+      ).resolves.toBeNull();
+    } finally {
+      vi.unstubAllGlobals();
+      await clearRaidCounterSimulationCache();
     }
   });
 

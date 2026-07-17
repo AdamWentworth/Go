@@ -14,6 +14,10 @@ import type {
   RaidCounterWorkerRequest,
   RaidCounterWorkerResponse,
 } from "./raidCounterWorkerProtocol";
+import {
+  getCachedRaidCounterScores,
+  setCachedRaidCounterScores,
+} from "./raidCounterCache";
 
 type WeightedFinalistChunk = {
   finalists: PokemonVariant[];
@@ -123,6 +127,12 @@ export const scoreRaidCountersAsync = async (
     settings,
   );
   if (finalists.length === 0) return [];
+  const cacheRequest = { finalists, boss, tier, settings, bestOnly };
+  const cachedScores = await getCachedRaidCounterScores(cacheRequest);
+  if (signal?.aborted) {
+    throw new DOMException("Raid calculation cancelled", "AbortError");
+  }
+  if (cachedScores) return cachedScores;
 
   if (typeof Worker !== "function") {
     const scores = scoreRaidCounterFinalists(
@@ -131,7 +141,9 @@ export const scoreRaidCountersAsync = async (
       tier,
       settings,
     );
-    return bestOnly ? dedupeBestCounterPerVariant(scores) : scores;
+    const result = bestOnly ? dedupeBestCounterPerVariant(scores) : scores;
+    await setCachedRaidCounterScores(cacheRequest, result);
+    return result;
   }
 
   const chunks = buildRaidCounterWorkerChunks(
@@ -147,5 +159,7 @@ export const scoreRaidCountersAsync = async (
     ),
   );
 
-  return results.flat().sort(compareRaidCounterScores);
+  const scores = results.flat().sort(compareRaidCounterScores);
+  await setCachedRaidCounterScores(cacheRequest, scores);
+  return scores;
 };
