@@ -340,6 +340,11 @@
   white-space: nowrap;
 }
 
+.raid-ranking-overall {
+  --raid-type-color: #2e6597;
+  --raid-type-contrast: #fff;
+}
+
 .raid-ranking-type-options button:not(.active) {
   border-color: rgba(230, 250, 250, 0.22);
   box-shadow: inset 0 -0.18rem 0 var(--raid-type-color, rgba(47, 214, 208, 0.55));
@@ -1977,6 +1982,38 @@
 }
 
 @media (max-width: 920px) {
+  .raid-ranking-type-options {
+    grid-template-columns: repeat(9, minmax(0, 1fr));
+    gap: 0.35rem;
+  }
+
+  .raid-ranking-type-options .raid-ranking-overall {
+    grid-column: 1 / -1;
+    min-height: 2.1rem;
+  }
+
+  .raid-ranking-type-options button:not(.raid-ranking-overall) {
+    min-height: 2.65rem;
+    padding: 0.4rem;
+    border-radius: 8px;
+  }
+
+  .raid-ranking-type-options button:not(.raid-ranking-overall) img {
+    width: 1.45rem;
+    height: 1.45rem;
+  }
+
+  .raid-ranking-type-options button:not(.raid-ranking-overall) span {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+  }
+
   .raid-calibration {
     grid-template-columns: minmax(10rem, 1fr) minmax(16rem, 2fr);
   }
@@ -2262,40 +2299,24 @@
   }
 
   .raid-ranking-type-options {
-    display: flex;
-    flex-wrap: wrap;
+    display: grid;
+    grid-template-columns: repeat(6, minmax(0, 1fr));
     gap: 0.3rem;
-    justify-content: center;
-    overflow: visible;
     padding: 0;
   }
 
   .raid-ranking-type-options button {
-    flex: 0 0 calc((100% - 1.8rem) / 7);
-    min-height: 2.75rem;
-    padding: 0.4rem;
-  }
-
-  .raid-ranking-type-options button img,
-  .raid-ranking-type-options button svg {
-    width: 1.35rem;
-    height: 1.35rem;
-  }
-
-  .raid-ranking-type-options button span {
-    position: absolute;
-    width: 1px;
-    height: 1px;
-    padding: 0;
-    overflow: hidden;
-    clip: rect(0, 0, 0, 0);
-    white-space: nowrap;
-    border: 0;
+    min-height: 2.65rem;
   }
 }
 
 @media (max-width: 380px) {
-  .raid-ranking-type-options button {
-    flex-basis: calc((100% - 1.2rem) / 5);
+  .raid-ranking-type-options {
+    gap: 0.25rem;
+  }
+
+  .raid-ranking-type-options button:not(.raid-ranking-overall) {
+    min-height: 2.5rem;
+    padding: 0.3rem;
   }
 }

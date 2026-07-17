@@ -22,7 +22,7 @@ const RaidRankingTypeFilter = ({
       <button
         aria-label="Overall"
         aria-pressed={selectedType === ""}
-        className={selectedType === "" ? "active" : ""}
+        className={`raid-ranking-overall ${selectedType === "" ? "active" : ""}`}
         onClick={() => onChange("")}
         title="Overall"
         type="button"
