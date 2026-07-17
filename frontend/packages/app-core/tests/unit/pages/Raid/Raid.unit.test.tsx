@@ -274,6 +274,12 @@ describe("Raid page", () => {
     expect(
       screen.getByRole("heading", { name: "Top raid attackers" }),
     ).toBeInTheDocument();
+    expect(
+      screen.getByRole("link", { name: "How rankings work" }),
+    ).toHaveAttribute(
+      "href",
+      "https://github.com/AdamWentworth/PokeGoNexus/blob/master/docs/raid-ranking-methodology.md",
+    );
     expect(screen.queryByLabelText("Type DPS pages")).not.toBeInTheDocument();
     expect(screen.queryByText("Boss CP")).not.toBeInTheDocument();
     expect(screen.queryByLabelText(/relobby delay/i)).not.toBeInTheDocument();

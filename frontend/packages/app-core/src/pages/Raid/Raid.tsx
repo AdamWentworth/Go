@@ -49,6 +49,9 @@ import {
   type RaidViewMode,
 } from "./utils/raidViewModel";
 
+const RAID_RANKING_METHODOLOGY_URL =
+  "https://github.com/AdamWentworth/PokeGoNexus/blob/master/docs/raid-ranking-methodology.md";
+
 const Raid: React.FC = () => {
   const variants = useVariantsStore(
     (state) => state.variants,
@@ -322,7 +325,16 @@ const Raid: React.FC = () => {
                 <p className="raid-eyebrow">Overall eDPS</p>
                 <h1>Top raid attackers</h1>
               </div>
-              <span>Team of six, {relobbySeconds}s relobby</span>
+              <div className="raid-leaderboard-meta">
+                <span>Team of six, {relobbySeconds}s relobby</span>
+                <a
+                  href={RAID_RANKING_METHODOLOGY_URL}
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  How rankings work
+                </a>
+              </div>
             </header>
 
             <RaidCounterToolbar

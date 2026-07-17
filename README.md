@@ -183,6 +183,7 @@ npm start
 - React 18+  
 - Uses `.env.development` to point to local APIs  
 - Features: Pokédex, trade proposals, filtering, variant management, map-based search
+- Publishes the [raid attacker ranking methodology](docs/raid-ranking-methodology.md), including formulas, assumptions, limitations, and comparisons with other tools
 
 ---
 

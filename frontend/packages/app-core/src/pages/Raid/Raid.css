@@ -437,7 +437,15 @@
   line-height: 1;
 }
 
-.raid-leaderboard-header > span {
+.raid-leaderboard-meta {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 0.45rem;
+}
+
+.raid-leaderboard-meta > span,
+.raid-leaderboard-meta > a {
   flex: 0 0 auto;
   padding: 0.4rem 0.65rem;
   border: 1px solid rgba(102, 220, 220, 0.2);
@@ -446,6 +454,22 @@
   background: rgba(255, 255, 255, 0.045);
   font-size: 0.72rem;
   font-weight: 850;
+}
+
+.raid-leaderboard-meta > a {
+  color: #75e6df;
+  text-decoration: none;
+  transition:
+    border-color 160ms ease,
+    color 160ms ease,
+    background 160ms ease;
+}
+
+.raid-leaderboard-meta > a:hover,
+.raid-leaderboard-meta > a:focus-visible {
+  border-color: rgba(117, 230, 223, 0.68);
+  color: #efffff;
+  background: rgba(65, 215, 207, 0.14);
 }
 
 .raid-toggle-button,
@@ -1018,10 +1042,18 @@
   color: #102a32;
 }
 
-:root[data-theme='light'] .raid-leaderboard-header > span {
+:root[data-theme='light'] .raid-leaderboard-meta > span,
+:root[data-theme='light'] .raid-leaderboard-meta > a {
   border-color: rgba(21, 139, 154, 0.18);
   color: rgba(20, 55, 63, 0.7);
   background: rgba(255, 255, 255, 0.66);
+}
+
+:root[data-theme='light'] .raid-leaderboard-meta > a:hover,
+:root[data-theme='light'] .raid-leaderboard-meta > a:focus-visible {
+  border-color: rgba(21, 139, 154, 0.46);
+  color: #075b68;
+  background: rgba(54, 202, 199, 0.14);
 }
 
 :root[data-theme='light'] .raid-list-empty {
@@ -1106,7 +1138,14 @@
     align-items: start;
   }
 
-  .raid-leaderboard-header > span {
+  .raid-leaderboard-meta {
+    align-items: flex-end;
+    flex-direction: column;
+    gap: 0.3rem;
+  }
+
+  .raid-leaderboard-meta > span,
+  .raid-leaderboard-meta > a {
     padding: 0.35rem 0.5rem;
     font-size: 0.64rem;
   }
