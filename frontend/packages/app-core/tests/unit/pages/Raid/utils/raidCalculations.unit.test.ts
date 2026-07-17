@@ -2,7 +2,11 @@ import { describe, expect, it } from "vitest";
 
 import type { PokemonVariant } from "@/types/pokemonVariants";
 import type { Move } from "@/types/pokemonSubTypes";
-import { getRaidOverallTargetProfiles } from "@/pages/Raid/utils/raidCatalog";
+import {
+  getRaidOverallTargetProfiles,
+  getRaidTypeTargetProfiles,
+} from "@/pages/Raid/utils/raidCatalog";
+import { calculateRaidIncomingPressure } from "@/pages/Raid/utils/raidCombat";
 import {
   RAID_TIER_PRESETS,
   calculateEffectiveRaidDps,
@@ -85,6 +89,21 @@ const pokemon = (
     variant_id: overrides.variant_id ?? `${overrides.name ?? "mewtwo"}-default`,
   }) as unknown as PokemonVariant;
 
+const legendaryRaidTarget = (
+  overrides: RaidCalculationVariantOverrides = {},
+): PokemonVariant =>
+  pokemon({
+    ...overrides,
+    raid_boss: overrides.raid_boss ?? [
+      {
+        id: overrides.pokemon_id ?? 1,
+        tier: "5",
+        form: "Normal",
+        name: overrides.name ?? "Raid Target",
+      },
+    ],
+  });
+
 const baseSettings: RaidCounterSettings = {
   attackerLevel: "50.0",
   friendship: "none",
@@ -92,6 +111,7 @@ const baseSettings: RaidCounterSettings = {
   partyPower: "none",
   weatherBoostedType: "",
   shadowBossMode: "normal",
+  bossMovesetMode: "expected",
   relobbySeconds: 10,
 };
 
@@ -349,6 +369,60 @@ describe("raid calculations", () => {
     expect(neutralDamage).toBeGreaterThanOrEqual(1);
     expect(superEffectiveDamage).toBeGreaterThan(neutralDamage);
     expect(shadowDamage).toBeGreaterThan(superEffectiveDamage);
+  });
+
+  it("applies incoming raid damage floors before averaging boss movesets", () => {
+    const scenarios = [
+      {
+        fastDamageCoefficient: 199.9,
+        chargedDamageCoefficient: 399.9,
+        fastUsesPerChargedMove: 1,
+        cycleSeconds: 2,
+      },
+    ];
+
+    expect(calculateRaidIncomingPressure(scenarios, 100)).toEqual({
+      incomingDps: 3,
+      incomingChargedDamage: 4,
+    });
+    expect(calculateRaidIncomingPressure(scenarios, 99)).toEqual({
+      incomingDps: 4,
+      incomingChargedDamage: 5,
+    });
+  });
+
+  it("exposes favorable, expected, and hostile boss moveset pressure", () => {
+    const scenarios = [
+      {
+        fastDamageCoefficient: 100,
+        chargedDamageCoefficient: 300,
+        fastUsesPerChargedMove: 1,
+        cycleSeconds: 2,
+      },
+      {
+        fastDamageCoefficient: 300,
+        chargedDamageCoefficient: 700,
+        fastUsesPerChargedMove: 1,
+        cycleSeconds: 2,
+      },
+    ];
+
+    const favorable = calculateRaidIncomingPressure(
+      scenarios,
+      100,
+      "favorable",
+    );
+    const expected = calculateRaidIncomingPressure(
+      scenarios,
+      100,
+      "expected",
+    );
+    const hostile = calculateRaidIncomingPressure(scenarios, 100, "hostile");
+
+    expect(favorable?.incomingDps).toBeLessThan(expected?.incomingDps ?? 0);
+    expect(expected?.incomingDps).toBeLessThan(hostile?.incomingDps ?? 0);
+    expect(favorable?.incomingChargedDamage).toBe(4);
+    expect(hostile?.incomingChargedDamage).toBe(8);
   });
 
   it("models Party Power as a charged-move damage boost", () => {
@@ -610,7 +684,7 @@ describe("raid calculations", () => {
     );
   });
 
-  it("aggregates same-typing raid targets without dropping their weights", () => {
+  it("keeps same-typing raid targets independent for exact scoring", () => {
     const targets = [
       pokemon({
         name: "First Rock Boss",
@@ -634,9 +708,59 @@ describe("raid calculations", () => {
 
     const profiles = getRaidOverallTargetProfiles(targets);
 
+    expect(profiles).toHaveLength(2);
+    expect(profiles.map((profile) => profile.weight)).toEqual([1, 1]);
+    expect(profiles.map((profile) => profile.target?.name)).toEqual([
+      "First Rock Boss",
+      "Second Rock Boss",
+    ]);
+  });
+
+  it("uses only high-tier bosses in broad investment rankings", () => {
+    const tierOneBoss = pokemon({
+      name: "Tier One Boss",
+      variant_id: "tier-one-boss",
+      raid_boss: [
+        { id: 1, tier: "1", form: "Normal", name: "Tier One Boss" },
+      ],
+    });
+    const legendaryBoss = legendaryRaidTarget({
+      name: "Legendary Boss",
+      variant_id: "legendary-boss",
+    });
+
+    const profiles = getRaidOverallTargetProfiles([
+      tierOneBoss,
+      legendaryBoss,
+    ]);
+
     expect(profiles).toHaveLength(1);
-    expect(profiles[0]?.weight).toBe(8);
-    expect(profiles[0]?.targets).toHaveLength(2);
+    expect(profiles[0]?.target?.name).toBe("Legendary Boss");
+    expect(profiles[0]?.weight).toBe(1);
+  });
+
+  it("models Normal rankings against real high-tier neutral targets", () => {
+    const neutralBoss = legendaryRaidTarget({
+      name: "Neutral Psychic Boss",
+      variant_id: "neutral-psychic-boss",
+      type1_name: "psychic",
+      type2_name: "none",
+    });
+    const resistantBoss = legendaryRaidTarget({
+      name: "Resistant Steel Boss",
+      variant_id: "resistant-steel-boss",
+      type1_name: "steel",
+      type2_name: "none",
+    });
+
+    const profiles = getRaidTypeTargetProfiles("normal", [
+      neutralBoss,
+      resistantBoss,
+    ]);
+
+    expect(profiles.map((profile) => profile.target?.name)).toEqual([
+      "Neutral Psychic Boss",
+    ]);
   });
 
   it("uses legal boss moves and typing to model broad-ranking survival", () => {
@@ -761,31 +885,31 @@ describe("raid calculations", () => {
       ],
     });
     const raidTargets = [
-      pokemon({
+      legendaryRaidTarget({
         name: "Palkia",
         variant_id: "target-palkia",
         type1_name: "dragon",
         type2_name: "water",
       }),
-      pokemon({
+      legendaryRaidTarget({
         name: "Rayquaza",
         variant_id: "target-rayquaza",
         type1_name: "dragon",
         type2_name: "flying",
       }),
-      pokemon({
+      legendaryRaidTarget({
         name: "Giratina",
         variant_id: "target-giratina",
         type1_name: "ghost",
         type2_name: "dragon",
       }),
-      pokemon({
+      legendaryRaidTarget({
         name: "Terrakion",
         variant_id: "target-terrakion",
         type1_name: "rock",
         type2_name: "fighting",
       }),
-      pokemon({
+      legendaryRaidTarget({
         name: "Virizion",
         variant_id: "target-virizion",
         type1_name: "grass",
@@ -822,7 +946,7 @@ describe("raid calculations", () => {
         move("Dragon Ascent", "flying", 0, 140, 3500, -50),
       ],
     });
-    const dragonFlyingTarget = pokemon({
+    const dragonFlyingTarget = legendaryRaidTarget({
       name: "Rayquaza",
       variant_id: "target-rayquaza",
       type1_name: "dragon",
@@ -836,7 +960,7 @@ describe("raid calculations", () => {
         type1_name: "dragon",
         type2_name: "flying",
       }),
-      pokemon({
+      legendaryRaidTarget({
         name: "Salamence",
         variant_id: "target-salamence",
         type1_name: "dragon",
@@ -934,7 +1058,7 @@ describe("raid calculations", () => {
       fusion_id: 2,
       moves: [psychoCut, psychic, sunsteelStrike, moongeistBeam],
     });
-    const psychicRaidTarget = pokemon({
+    const psychicRaidTarget = legendaryRaidTarget({
       name: "Psychic Raid Boss",
       variant_id: "target-psychic",
       type1_name: "psychic",
@@ -995,7 +1119,7 @@ describe("raid calculations", () => {
 
   it("matches full overall scoring when taking the best moveset per variant", () => {
     const attackers = [
-      pokemon({
+      legendaryRaidTarget({
         name: "Mega Rayquaza",
         variant_id: "rayquaza-mega",
         attack: 377,
@@ -1027,13 +1151,13 @@ describe("raid calculations", () => {
       }),
     ];
     const raidTargets = [
-      pokemon({
+      legendaryRaidTarget({
         name: "Palkia",
         variant_id: "target-palkia",
         type1_name: "dragon",
         type2_name: "water",
       }),
-      pokemon({
+      legendaryRaidTarget({
         name: "Terrakion",
         variant_id: "target-terrakion",
         type1_name: "rock",
@@ -1076,7 +1200,7 @@ describe("raid calculations", () => {
         move("Giga Impact", "normal", 0, 200, 4700, -100),
       ],
     });
-    const electricTarget = pokemon({
+    const electricTarget = legendaryRaidTarget({
       name: "Electric Raid Boss",
       variant_id: "electric-target",
       type1_name: "electric",

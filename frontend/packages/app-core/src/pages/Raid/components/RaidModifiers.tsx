@@ -4,6 +4,7 @@ import {
   type FriendshipKey,
   type MegaAllyBonusKey,
   type PartyPowerKey,
+  type RaidBossMovesetMode,
   type RaidCounterSettings,
   type ShadowBossMode,
 } from "../utils/raidCalculations";
@@ -32,6 +33,9 @@ interface RaidModifiersProps {
   onRelobbySecondsChange: (seconds: number) => void;
   includeShadowControls: boolean;
   includeRelobbyControls?: boolean;
+  includeBossMovesetControls?: boolean;
+  bossMovesetMode: RaidBossMovesetMode;
+  onBossMovesetModeChange: (mode: RaidBossMovesetMode) => void;
   shadowMechanicsEnabled: boolean;
   selectedBossIsShadowRaid: boolean;
   shadowRaid: boolean;
@@ -56,6 +60,9 @@ const RaidModifiers = ({
   onRelobbySecondsChange,
   includeShadowControls,
   includeRelobbyControls = false,
+  includeBossMovesetControls = false,
+  bossMovesetMode,
+  onBossMovesetModeChange,
   shadowMechanicsEnabled,
   selectedBossIsShadowRaid,
   shadowRaid,
@@ -159,6 +166,24 @@ const RaidModifiers = ({
               {seconds === 0 ? "No delay" : `${seconds} seconds`}
             </option>
           ))}
+        </select>
+      </label>
+    )}
+
+    {includeBossMovesetControls && (
+      <label className="raid-field">
+        <span>Boss movesets</span>
+        <select
+          value={bossMovesetMode}
+          onChange={(event) =>
+            onBossMovesetModeChange(
+              event.target.value as RaidBossMovesetMode,
+            )
+          }
+        >
+          <option value="expected">Expected across legal movesets</option>
+          <option value="favorable">Favorable incoming moveset</option>
+          <option value="hostile">Hostile incoming moveset</option>
         </select>
       </label>
     )}

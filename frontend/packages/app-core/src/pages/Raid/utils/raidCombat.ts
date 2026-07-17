@@ -21,6 +21,7 @@ import {
   WEATHER_DAMAGE_BONUS,
 } from "./raidRules";
 import type {
+  RaidBossMovesetMode,
   RaidBossStats,
   RaidCounterSettings,
   RaidOverallScore,
@@ -241,14 +242,19 @@ const calculateIncomingRaidMoveDamageCoefficient = ({
   );
 };
 
-export type RaidIncomingPressureModel = {
-  incomingDpsCoefficient: number;
-  incomingDpsFloorContribution: number;
-  incomingChargedDamageCoefficient: number;
-  incomingChargedDamageFloorContribution: number;
+export type RaidIncomingPressureScenario = {
+  fastDamageCoefficient: number;
+  chargedDamageCoefficient: number;
+  fastUsesPerChargedMove: number;
+  cycleSeconds: number;
 };
 
-export const calculateRaidIncomingPressureModel = ({
+export type RaidIncomingPressure = {
+  incomingDps: number;
+  incomingChargedDamage: number;
+};
+
+export const buildRaidIncomingPressureScenarios = ({
   boss,
   bossAttack,
   attackerTypes,
@@ -258,19 +264,13 @@ export const calculateRaidIncomingPressureModel = ({
   bossAttack: number;
   attackerTypes: string[];
   weatherBoostedType: string;
-}): RaidIncomingPressureModel | null => {
+}): RaidIncomingPressureScenario[] => {
   const fastMoves = getLegalRaidFastMoves(boss);
   const chargedMoves = getLegalRaidChargedMoves(boss);
-  if (fastMoves.length === 0 || chargedMoves.length === 0) return null;
+  if (fastMoves.length === 0 || chargedMoves.length === 0) return [];
 
-  let incomingDpsCoefficient = 0;
-  let incomingDpsFloorContribution = 0;
-  let incomingChargedDamageCoefficient = 0;
-  let incomingChargedDamageFloorContribution = 0;
-  let scenarios = 0;
-
-  fastMoves.forEach((fastMove) => {
-    chargedMoves.forEach((chargedMove) => {
+  return fastMoves.flatMap((fastMove) =>
+    chargedMoves.map((chargedMove) => {
       const fastDamageCoefficient =
         calculateIncomingRaidMoveDamageCoefficient({
           move: fastMove,
@@ -302,29 +302,62 @@ export const calculateRaidIncomingPressureModel = ({
       const cycleSeconds =
         fastUsesPerChargedMove * fastActionSeconds + chargedActionSeconds;
 
-      incomingDpsCoefficient +=
-        (fastUsesPerChargedMove * fastDamageCoefficient +
-          chargedDamageCoefficient) /
-        cycleSeconds;
-      incomingDpsFloorContribution +=
-        (fastUsesPerChargedMove + 1) / cycleSeconds;
-      incomingChargedDamageCoefficient += chargedDamageCoefficient;
-      incomingChargedDamageFloorContribution += 1;
-      scenarios += 1;
-    });
+      return {
+        fastDamageCoefficient,
+        chargedDamageCoefficient,
+        fastUsesPerChargedMove,
+        cycleSeconds,
+      };
+    }),
+  );
+};
+
+export const calculateRaidIncomingPressure = (
+  scenarios: RaidIncomingPressureScenario[],
+  attackerDefense: number,
+  mode: RaidBossMovesetMode = "expected",
+): RaidIncomingPressure | null => {
+  if (scenarios.length === 0 || attackerDefense <= 0) return null;
+
+  let incomingDps = 0;
+  let incomingChargedDamage = 0;
+
+  const pressures = scenarios.map((scenario) => {
+    const fastDamage =
+      Math.floor(scenario.fastDamageCoefficient / attackerDefense) + 1;
+    const chargedDamage =
+      Math.floor(scenario.chargedDamageCoefficient / attackerDefense) + 1;
+
+    return {
+      incomingDps:
+        (scenario.fastUsesPerChargedMove * fastDamage + chargedDamage) /
+        scenario.cycleSeconds,
+      incomingChargedDamage: chargedDamage,
+    };
   });
 
-  return scenarios > 0
-    ? {
-        incomingDpsCoefficient: incomingDpsCoefficient / scenarios,
-        incomingDpsFloorContribution:
-          incomingDpsFloorContribution / scenarios,
-        incomingChargedDamageCoefficient:
-          incomingChargedDamageCoefficient / scenarios,
-        incomingChargedDamageFloorContribution:
-          incomingChargedDamageFloorContribution / scenarios,
-      }
-    : null;
+  if (mode !== "expected") {
+    const compare =
+      mode === "hostile"
+        ? (candidate: RaidIncomingPressure, current: RaidIncomingPressure) =>
+            candidate.incomingDps > current.incomingDps
+        : (candidate: RaidIncomingPressure, current: RaidIncomingPressure) =>
+            candidate.incomingDps < current.incomingDps;
+
+    return pressures.reduce((selected, candidate) =>
+      compare(candidate, selected) ? candidate : selected,
+    );
+  }
+
+  pressures.forEach((pressure) => {
+    incomingDps += pressure.incomingDps;
+    incomingChargedDamage += pressure.incomingChargedDamage;
+  });
+
+  return {
+    incomingDps: incomingDps / scenarios.length,
+    incomingChargedDamage: incomingChargedDamage / scenarios.length,
+  };
 };
 
 export const calculateComprehensiveTypeDps = ({

@@ -31,6 +31,7 @@ import {
   type FriendshipKey,
   type MegaAllyBonusKey,
   type PartyPowerKey,
+  type RaidBossMovesetMode,
   type RaidCounterSettings,
   type RaidTierKey,
   type ShadowBossMode,
@@ -51,6 +52,12 @@ import {
 
 const RAID_RANKING_METHODOLOGY_URL =
   "https://github.com/AdamWentworth/PokeGoNexus/blob/master/docs/raid-ranking-methodology.md";
+
+const BOSS_MOVESET_MODE_LABELS: Record<RaidBossMovesetMode, string> = {
+  expected: "expected legal movesets",
+  favorable: "favorable boss movesets",
+  hostile: "hostile boss movesets",
+};
 
 const Raid: React.FC = () => {
   const variants = useVariantsStore(
@@ -79,6 +86,8 @@ const Raid: React.FC = () => {
   const [relobbySeconds, setRelobbySeconds] = useState(
     DEFAULT_RAID_RELOBBY_SECONDS,
   );
+  const [bossMovesetMode, setBossMovesetMode] =
+    useState<RaidBossMovesetMode>("expected");
   const [bestOnly, setBestOnly] = useState(true);
   const [rankingSettingsOpen, setRankingSettingsOpen] = useState(false);
   const [sortMetric, setSortMetric] =
@@ -153,11 +162,13 @@ const Raid: React.FC = () => {
       weatherBoostedType:
         weatherBoostedType === "none" ? "" : weatherBoostedType,
       shadowBossMode: activeShadowBossMode,
+      bossMovesetMode,
       relobbySeconds,
     }),
     [
       activeShadowBossMode,
       attackerLevel,
+      bossMovesetMode,
       friendship,
       megaAllyBonus,
       partyPower,
@@ -181,28 +192,29 @@ const Raid: React.FC = () => {
       .slice(0, 30);
   }, [attackerSearch, bestOnly, bossCounterScores]);
 
-  const overallScores = useMemo(() => {
+  const overallRankingScores = useMemo(() => {
     if (viewMode !== "overall") return [];
-    const scored = bestOnly
+    return bestOnly
       ? scoreBestRaidOverallAttackers(attackers, settings, bossOptions)
       : scoreRaidOverallAttackers(attackers, settings, bossOptions);
+  }, [attackers, bestOnly, bossOptions, settings, viewMode]);
+
+  const overallScores = useMemo(() => {
     return sortRaidMetricScores(
-      scored.filter((score) => matchesCounterSearch(score, attackerSearch)),
+      overallRankingScores.filter((score) =>
+        matchesCounterSearch(score, attackerSearch),
+      ),
       sortMetric,
       sortDirection,
     ).slice(0, 30);
   }, [
     attackerSearch,
-    attackers,
-    bestOnly,
-    bossOptions,
-    settings,
+    overallRankingScores,
     sortDirection,
     sortMetric,
-    viewMode,
   ]);
 
-  const typeDpsScores = useMemo(() => {
+  const typeDpsRankingScores = useMemo(() => {
     if (viewMode !== "type-dps") return [];
     const allScores = scoreRaidTypeDps(
       attackers,
@@ -210,24 +222,24 @@ const Raid: React.FC = () => {
       settings,
       bossOptions,
     );
-    const scored = bestOnly
+    return bestOnly
       ? dedupeBestTypeDpsPerVariant(allScores)
       : allScores;
+  }, [attackers, bestOnly, bossOptions, selectedType, settings, viewMode]);
+
+  const typeDpsScores = useMemo(() => {
     return sortRaidMetricScores(
-      scored.filter((score) => matchesCounterSearch(score, attackerSearch)),
+      typeDpsRankingScores.filter((score) =>
+        matchesCounterSearch(score, attackerSearch),
+      ),
       sortMetric,
       sortDirection,
     ).slice(0, 30);
   }, [
     attackerSearch,
-    attackers,
-    bestOnly,
-    bossOptions,
-    selectedType,
-    settings,
+    typeDpsRankingScores,
     sortDirection,
     sortMetric,
-    viewMode,
   ]);
 
   const groupEstimate = useMemo(() => {
@@ -269,6 +281,8 @@ const Raid: React.FC = () => {
     onWeatherBoostedTypeChange: setWeatherBoostedType,
     relobbySeconds,
     onRelobbySecondsChange: setRelobbySeconds,
+    bossMovesetMode,
+    onBossMovesetModeChange: setBossMovesetMode,
     shadowMechanicsEnabled,
     selectedBossIsShadowRaid,
     shadowRaid,
@@ -327,6 +341,7 @@ const Raid: React.FC = () => {
               </div>
               <div className="raid-leaderboard-meta">
                 <span>Team of six, {relobbySeconds}s relobby</span>
+                <span>{BOSS_MOVESET_MODE_LABELS[bossMovesetMode]}</span>
                 <a
                   href={RAID_RANKING_METHODOLOGY_URL}
                   target="_blank"
@@ -357,6 +372,7 @@ const Raid: React.FC = () => {
                   {...modifierProps}
                   includeShadowControls={false}
                   includeRelobbyControls
+                  includeBossMovesetControls
                 />
               </section>
             )}
@@ -469,8 +485,8 @@ const Raid: React.FC = () => {
               {selectedType === "normal" ? (
                 <p>
                   Uses the same complete-moveset metrics as Overall against a
-                  neutral target. Each moveset includes at least one Normal
-                  move.
+                  set of high-tier bosses taking neutral Normal damage. Each
+                  moveset includes at least one Normal move.
                 </p>
               ) : (
                 <p>
@@ -503,6 +519,7 @@ const Raid: React.FC = () => {
                   {...modifierProps}
                   includeShadowControls={false}
                   includeRelobbyControls
+                  includeBossMovesetControls
                 />
               </section>
             )}

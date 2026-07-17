@@ -1,8 +1,10 @@
 import type { PokemonVariant } from "@/types/pokemonVariants";
 import { cpMultipliers } from "./constants";
 import {
+  buildRaidIncomingPressureScenarios,
   calculateRaidBossStats,
-  calculateRaidIncomingPressureModel,
+  calculateRaidIncomingPressure,
+  type RaidIncomingPressureScenario,
 } from "./raidCombat";
 import {
   getRaidTierKeyForVariant,
@@ -38,10 +40,7 @@ export type RaidTargetCombatContext = {
 type PreparedRaidTargetContext = {
   profile: RaidOverallTargetProfile;
   targetDefense: number;
-  incomingDpsCoefficient: number;
-  incomingDpsFloorContribution: number;
-  incomingChargedDamageCoefficient: number;
-  incomingChargedDamageFloorContribution: number;
+  incomingPressureScenarios: RaidIncomingPressureScenario[];
 };
 
 const preparedTargetContextCache = new WeakMap<
@@ -80,81 +79,36 @@ const prepareRaidTargetContexts = (
   if (cached) return cached;
 
   const prepared = profiles.map((profile) => {
-    const members =
-      profile.targets && profile.targets.length > 0
-        ? profile.targets
-        : profile.target
-          ? [{ target: profile.target, weight: profile.weight }]
-          : [];
-
-    if (members.length === 0) {
+    if (!profile.target) {
       return {
         profile,
         targetDefense: TYPE_DPS_TARGET_DEFENSE,
-        incomingDpsCoefficient: TYPE_DPS_INCOMING_DAMAGE_NUMERATOR,
-        incomingDpsFloorContribution: 0,
-        incomingChargedDamageCoefficient:
-          TYPE_DPS_INCOMING_CHARGED_DAMAGE_NUMERATOR,
-        incomingChargedDamageFloorContribution: 0,
+        incomingPressureScenarios: [],
       };
     }
 
-    let totalWeight = 0;
-    let reciprocalDefenseSum = 0;
-    let incomingDpsCoefficientSum = 0;
-    let incomingDpsFloorContributionSum = 0;
-    let incomingChargedDamageCoefficientSum = 0;
-    let incomingChargedDamageFloorContributionSum = 0;
+    const target = profile.target;
+    const tierKey = getRaidTierKeyForVariant(target);
+    const tier = tierKey ? RAID_TIER_PRESETS[tierKey] : null;
+    const bossStats = tier
+      ? calculateRaidBossStats(
+          target,
+          tier,
+          isShadowRaidTier(tier.key) ? "subdued" : "normal",
+        )
+      : null;
 
-    members.forEach(({ target, weight }) => {
-      const tierKey = getRaidTierKeyForVariant(target);
-      const tier = tierKey ? RAID_TIER_PRESETS[tierKey] : null;
-      const bossStats = tier
-        ? calculateRaidBossStats(
-            target,
-            tier,
-            isShadowRaidTier(tier.key) ? "subdued" : "normal",
-          )
-        : null;
-      const pressureModel = bossStats
-        ? calculateRaidIncomingPressureModel({
+    return {
+      profile,
+      targetDefense: bossStats?.defense ?? TYPE_DPS_TARGET_DEFENSE,
+      incomingPressureScenarios: bossStats
+        ? buildRaidIncomingPressureScenarios({
             boss: target,
             bossAttack: bossStats.attack,
             attackerTypes,
             weatherBoostedType,
           })
-        : null;
-
-      totalWeight += weight;
-      reciprocalDefenseSum +=
-        weight / (bossStats?.defense ?? TYPE_DPS_TARGET_DEFENSE);
-      incomingDpsCoefficientSum +=
-        (pressureModel?.incomingDpsCoefficient ??
-          TYPE_DPS_INCOMING_DAMAGE_NUMERATOR) * weight;
-      incomingDpsFloorContributionSum +=
-        (pressureModel?.incomingDpsFloorContribution ?? 0) * weight;
-      incomingChargedDamageCoefficientSum +=
-        (pressureModel?.incomingChargedDamageCoefficient ??
-          TYPE_DPS_INCOMING_CHARGED_DAMAGE_NUMERATOR) * weight;
-      incomingChargedDamageFloorContributionSum +=
-        (pressureModel?.incomingChargedDamageFloorContribution ?? 0) * weight;
-    });
-
-    const averageWeight = Math.max(1, totalWeight);
-    return {
-      profile,
-      targetDefense:
-        reciprocalDefenseSum > 0
-          ? averageWeight / reciprocalDefenseSum
-          : TYPE_DPS_TARGET_DEFENSE,
-      incomingDpsCoefficient:
-        incomingDpsCoefficientSum / averageWeight,
-      incomingDpsFloorContribution:
-        incomingDpsFloorContributionSum / averageWeight,
-      incomingChargedDamageCoefficient:
-        incomingChargedDamageCoefficientSum / averageWeight,
-      incomingChargedDamageFloorContribution:
-        incomingChargedDamageFloorContributionSum / averageWeight,
+        : [],
     };
   });
 
@@ -173,12 +127,17 @@ export const buildRaidTargetCombatContexts = (
     getVariantTypeNames(attacker),
     settings.weatherBoostedType,
   ).map((prepared) => {
+    const pressure = calculateRaidIncomingPressure(
+      prepared.incomingPressureScenarios,
+      attackerStats.defense,
+      settings.bossMovesetMode,
+    );
     const incomingDps =
-      prepared.incomingDpsCoefficient / attackerStats.defense +
-      prepared.incomingDpsFloorContribution;
+      pressure?.incomingDps ??
+      TYPE_DPS_INCOMING_DAMAGE_NUMERATOR / attackerStats.defense;
     const incomingChargedDamage =
-      prepared.incomingChargedDamageCoefficient / attackerStats.defense +
-      prepared.incomingChargedDamageFloorContribution;
+      pressure?.incomingChargedDamage ??
+      TYPE_DPS_INCOMING_CHARGED_DAMAGE_NUMERATOR / attackerStats.defense;
 
     return {
       profile: prepared.profile,

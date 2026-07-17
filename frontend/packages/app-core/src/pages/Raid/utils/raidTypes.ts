@@ -20,6 +20,7 @@ export type FriendshipKey = "none" | "good" | "great" | "ultra" | "best";
 export type MegaAllyBonusKey = "none" | "general" | "matching";
 export type PartyPowerKey = "none" | "occasional" | "frequent" | "every";
 export type ShadowBossMode = "normal" | "enraged" | "subdued";
+export type RaidBossMovesetMode = "expected" | "favorable" | "hostile";
 
 export type RaidTierPreset = {
   key: RaidTierKey;
@@ -38,6 +39,7 @@ export type RaidCounterSettings = {
   partyPower: PartyPowerKey;
   weatherBoostedType: string;
   shadowBossMode: ShadowBossMode;
+  bossMovesetMode: RaidBossMovesetMode;
   relobbySeconds: number;
 };
 
@@ -104,10 +106,6 @@ export type RaidOverallTargetProfile = {
   types: string[];
   weight: number;
   target?: PokemonVariant;
-  targets?: Array<{
-    target: PokemonVariant;
-    weight: number;
-  }>;
 };
 
 export type RaidGroupEstimate = {

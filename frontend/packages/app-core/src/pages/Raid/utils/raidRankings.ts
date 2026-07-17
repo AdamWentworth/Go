@@ -53,6 +53,7 @@ export type {
   FriendshipKey,
   MegaAllyBonusKey,
   PartyPowerKey,
+  RaidBossMovesetMode,
   RaidBossStats,
   RaidCounterScore,
   RaidCounterSettings,

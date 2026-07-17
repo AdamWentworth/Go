@@ -290,6 +290,10 @@ describe("Raid page", () => {
 
     expect(settingsButton).toHaveAttribute("aria-expanded", "true");
     expect(screen.getByLabelText(/relobby delay/i)).toHaveValue("10");
+    const bossMovesets = screen.getByLabelText(/boss movesets/i);
+    expect(bossMovesets).toHaveValue("expected");
+    fireEvent.change(bossMovesets, { target: { value: "hostile" } });
+    expect(screen.getByText("hostile boss movesets")).toBeInTheDocument();
 
     const counterList = screen.getByLabelText("Top raid attackers");
     expect(

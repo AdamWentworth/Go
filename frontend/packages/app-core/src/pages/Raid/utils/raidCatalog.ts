@@ -257,34 +257,6 @@ export const isEligibleRaidBoss = (variant: PokemonVariant): boolean =>
   variant.moves.length > 0 &&
   getPrimaryRaidMetadataForVariant(variant) !== null;
 
-const getOverallTargetWeight = (target: PokemonVariant): number => {
-  const tierKey = getRaidTierKeyForVariant(target);
-  if (
-    tierKey === "legendary" ||
-    tierKey === "elite" ||
-    tierKey === "primal" ||
-    tierKey === "legendary-mega" ||
-    tierKey === "super-mega" ||
-    tierKey === "shadow-legendary"
-  ) {
-    return 4;
-  }
-  if (tierKey === "mega") {
-    return 3;
-  }
-  if (
-    tierKey === "tier3" ||
-    tierKey === "community-day" ||
-    tierKey === "shadow-tier3"
-  ) {
-    return 1;
-  }
-  if (tierKey === "tier1" || tierKey === "shadow-tier1") {
-    return 0.25;
-  }
-  return 1;
-};
-
 const isHighTierRaidTarget = (target: PokemonVariant): boolean => {
   const tierKey = getRaidTierKeyForVariant(target);
   return (
@@ -301,25 +273,13 @@ const isHighTierRaidTarget = (target: PokemonVariant): boolean => {
 export const getRaidOverallTargetProfiles = (
   targets?: PokemonVariant[],
 ): RaidOverallTargetProfile[] => {
-  const profilesByTypes = new Map<string, RaidOverallTargetProfile>();
-
-  targets?.forEach((target) => {
-    const types = getVariantTypeNames(target);
-    if (types.length === 0) return;
-
-    const key = [...types].sort().join("/");
-    const weight = getOverallTargetWeight(target);
-    const profile = profilesByTypes.get(key) ?? {
-      types,
-      weight: 0,
-      targets: [],
-    };
-    profile.weight += weight;
-    profile.targets?.push({ target, weight });
-    profilesByTypes.set(key, profile);
-  });
-
-  const profiles = Array.from(profilesByTypes.values());
+  const profiles =
+    targets?.flatMap((target) => {
+      const types = getVariantTypeNames(target);
+      return isHighTierRaidTarget(target) && types.length > 0
+        ? [{ types, weight: 1, target }]
+        : [];
+    }) ?? [];
 
   return profiles.length > 0 ? profiles : FALLBACK_OVERALL_TARGET_PROFILES;
 };
@@ -331,29 +291,20 @@ export const getRaidTypeTargetProfiles = (
   const attackingType = normalizeTypeName(typeName);
   if (!attackingType) return [];
 
-  const profilesByTypes = new Map<string, RaidOverallTargetProfile>();
-
-  targets?.forEach((target) => {
-    const types = getVariantTypeNames(target);
-    if (
-      !isHighTierRaidTarget(target) ||
-      types.length === 0 ||
-      getTypeEffectivenessMultiplier(attackingType, types) <= 1
-    ) {
-      return;
-    }
-
-    const key = [...types].sort().join("/");
-    const weight = getOverallTargetWeight(target);
-    const profile = profilesByTypes.get(key) ?? {
-      types,
-      weight: 0,
-      targets: [],
-    };
-    profile.weight += weight;
-    profile.targets?.push({ target, weight });
-    profilesByTypes.set(key, profile);
-  });
-
-  return Array.from(profilesByTypes.values());
+  return (
+    targets?.flatMap((target) => {
+      const types = getVariantTypeNames(target);
+      const effectiveness = getTypeEffectivenessMultiplier(
+        attackingType,
+        types,
+      );
+      const isRelevantTarget =
+        attackingType === "normal" ? effectiveness === 1 : effectiveness > 1;
+      return isHighTierRaidTarget(target) &&
+        types.length > 0 &&
+        isRelevantTarget
+        ? [{ types, weight: 1, target }]
+        : [];
+    }) ?? []
+  );
 };
