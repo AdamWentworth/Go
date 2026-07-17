@@ -448,17 +448,17 @@ describe("raid calculations", () => {
       settings: baseSettings,
       charged: true,
     });
-    const withEveryChargeBoosted = calculateRaidMoveDamage({
+    const withPartyPowerAverage = calculateRaidMoveDamage({
       move: chargedMove,
       attacker,
       attackerAttack: attacker.attack,
       bossDefense: boss.defense,
       bossTypes: ["psychic"],
-      settings: { ...baseSettings, partyPower: "every" },
+      settings: { ...baseSettings, partyPower: "party4" },
       charged: true,
     });
 
-    expect(withEveryChargeBoosted).toBeGreaterThan(withoutPartyPower);
+    expect(withPartyPowerAverage).toBeGreaterThan(withoutPartyPower);
   });
 
   it("estimates the group size from the best six scored counters", () => {

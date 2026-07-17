@@ -12,12 +12,12 @@ import type {
   RaidTierKey,
   RaidTierPreset,
   RaidTypeDpsScore,
-  ShadowBossMode,
 } from "./raidTypes";
 import {
   COMFORTABLE_SAFETY_FACTOR,
   DEFAULT_RAID_NEUTRAL_BENCHMARK,
   FALLBACK_OVERALL_TARGET_PROFILES,
+  PARTY_POWER_GROUP_SIZE,
   RAID_COUNTER_SIMULATION_VARIANT_LIMIT,
   RAID_SAFETY_FACTOR,
   TYPE_DPS_ER_TDO_EXPONENT,
@@ -174,6 +174,7 @@ const calculateMoveCycleEstimate = (
     attackerChargedMoves: 0,
     bossChargedMoves: 0,
     dodges: 0,
+    partyPoweredChargedMoves: 0,
     simulationWon: false,
     simulationDistribution: null,
   };
@@ -224,6 +225,7 @@ export const calculateRaidCounterScore = (
     attackerChargedMoves: simulation.attackerChargedMoves,
     bossChargedMoves: simulation.bossChargedMoves,
     dodges: simulation.dodges,
+    partyPoweredChargedMoves: simulation.partyPoweredChargedMoves,
     simulationWon: simulation.won,
     simulationDistribution: simulation.distribution,
   };
@@ -930,22 +932,59 @@ export const estimateRaidGroup = (
     };
   }
 
+  const minimumPartySize = PARTY_POWER_GROUP_SIZE[settings.partyPower];
+  let simulatedMinimum = 0;
+  let simulatedComfortable = 0;
+  for (
+    let trainerCount = minimumPartySize;
+    trainerCount <= 20;
+    trainerCount += 1
+  ) {
+    const groupSimulation = simulateRaidTeamAcrossBossMovesets({
+      team: bestCounters.map((counter) => ({
+        attacker: counter.variant,
+        fastMove: counter.fastMove,
+        chargedMove: counter.chargedMove,
+      })),
+      boss,
+      tier,
+      settings,
+      trainerCount,
+    });
+    if (!groupSimulation?.won) continue;
+    if (simulatedMinimum === 0) simulatedMinimum = trainerCount;
+    if (
+      groupSimulation.elapsedSeconds <=
+      bossStats.timeLimitSeconds * COMFORTABLE_SAFETY_FACTOR
+    ) {
+      simulatedComfortable = trainerCount;
+      break;
+    }
+  }
+
+  const fallbackMinimum = Math.max(
+    minimumPartySize,
+    Math.ceil(
+      bossStats.hp /
+        (topTeamDps * bossStats.timeLimitSeconds * RAID_SAFETY_FACTOR),
+    ),
+  );
+  const minTrainers = simulatedMinimum || fallbackMinimum;
+  const comfortableTrainers = Math.max(
+    minTrainers,
+    simulatedComfortable ||
+      Math.ceil(
+        bossStats.hp /
+          (topTeamDps *
+            bossStats.timeLimitSeconds *
+            COMFORTABLE_SAFETY_FACTOR),
+      ),
+  );
+
   return {
     topTeamDps,
-    minTrainers: Math.max(
-      1,
-      Math.ceil(
-        bossStats.hp /
-          (topTeamDps * bossStats.timeLimitSeconds * RAID_SAFETY_FACTOR),
-      ),
-    ),
-    comfortableTrainers: Math.max(
-      1,
-      Math.ceil(
-        bossStats.hp /
-          (topTeamDps * bossStats.timeLimitSeconds * COMFORTABLE_SAFETY_FACTOR),
-      ),
-    ),
+    minTrainers,
+    comfortableTrainers,
     soloTimeSeconds:
       teamSimulation?.projectedTimeToWinSeconds ?? bossStats.hp / topTeamDps,
   };

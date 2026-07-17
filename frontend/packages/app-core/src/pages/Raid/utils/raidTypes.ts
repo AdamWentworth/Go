@@ -18,7 +18,7 @@ export type RaidTierKey =
 
 export type FriendshipKey = "none" | "good" | "great" | "ultra" | "best";
 export type MegaAllyBonusKey = "none" | "general" | "matching";
-export type PartyPowerKey = "none" | "occasional" | "frequent" | "every";
+export type PartyPowerKey = "none" | "party2" | "party3" | "party4";
 export type RaidDodgeStrategy = "none" | "charged";
 export type ShadowBossMode = "normal" | "enraged" | "subdued";
 export type RaidBossMovesetMode =
@@ -89,6 +89,7 @@ export type RaidCounterScore = {
   attackerChargedMoves: number;
   bossChargedMoves: number;
   dodges: number;
+  partyPoweredChargedMoves: number;
   simulationWon: boolean;
   simulationDistribution: RaidSimulationDistribution | null;
 };
@@ -103,6 +104,7 @@ export type RaidBattleSimulationResult = {
   attackerChargedMoves: number;
   bossChargedMoves: number;
   dodges: number;
+  partyPoweredChargedMoves: number;
   won: boolean;
   distribution: RaidSimulationDistribution;
 };

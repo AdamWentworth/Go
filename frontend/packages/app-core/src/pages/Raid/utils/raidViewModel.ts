@@ -56,9 +56,9 @@ export const PARTY_POWER_OPTIONS: Array<{
   label: string;
 }> = [
   { key: "none", label: "No Party Power" },
-  { key: "occasional", label: "Occasional" },
-  { key: "frequent", label: "Frequent" },
-  { key: "every", label: "Every charge" },
+  { key: "party2", label: "Party of 2" },
+  { key: "party3", label: "Party of 3" },
+  { key: "party4", label: "Party of 4" },
 ];
 
 export const ATTACKER_LEVEL_OPTIONS: RaidCounterSettings["attackerLevel"][] = [

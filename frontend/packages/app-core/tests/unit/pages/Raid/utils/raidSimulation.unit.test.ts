@@ -448,6 +448,99 @@ describe("raid event simulation", () => {
     expect(mixed.damageDealt).not.toBe(repeatedLead.damageDealt);
   });
 
+  it("feeds boss energy from every active Trainer in a homogeneous group", () => {
+    const emptyEnergyFast = move(
+      "Empty Energy Fast",
+      "normal",
+      true,
+      1,
+      500,
+      0,
+    );
+    const expensiveCharged = move(
+      "Expensive Charged",
+      "normal",
+      false,
+      25,
+      1000,
+      -100,
+    );
+    const groupBoss = pokemon({
+      name: "Group Boss",
+      attack: 180,
+      defense: 220,
+      stamina: 400,
+      types: ["normal"],
+      moves: [emptyEnergyFast, expensiveCharged],
+    });
+    const sharedInput = {
+      attacker,
+      attackerFastMove: fastAttack,
+      attackerChargedMove: chargedAttack,
+      boss: groupBoss,
+      bossFastMove: emptyEnergyFast,
+      bossChargedMove: expensiveCharged,
+      tier: { ...tier, bossHp: 10_000, timeLimitSeconds: 45 },
+      settings,
+      shouldBossUseCharged: () => true,
+    };
+    const solo = simulateRaidBattle({ ...sharedInput, trainerCount: 1 });
+    const trio = simulateRaidBattle({ ...sharedInput, trainerCount: 3 });
+
+    expect(trio.damageDealt).toBeGreaterThan(solo.damageDealt);
+    expect(trio.bossChargedMoves).toBeGreaterThan(solo.bossChargedMoves);
+  });
+
+  it("fills Party Power by party size and doubles the next charged move", () => {
+    const partyFast = move("Party Fast", "normal", true, 4, 500, 10);
+    const partyCharged = move(
+      "Party Charged",
+      "normal",
+      false,
+      100,
+      1000,
+      -50,
+    );
+    const partyAttacker = pokemon({
+      name: "Party Attacker",
+      attack: 260,
+      defense: 500,
+      stamina: 800,
+      types: ["normal"],
+      moves: [partyFast, partyCharged],
+    });
+    const sharedInput = {
+      attacker: partyAttacker,
+      attackerFastMove: partyFast,
+      attackerChargedMove: partyCharged,
+      boss,
+      bossFastMove: weakBossFast,
+      bossChargedMove: weakBossCharged,
+      tier: { ...tier, bossHp: 10_000, timeLimitSeconds: 50 },
+    };
+    const withoutPartyPower = simulateRaidBattle({
+      ...sharedInput,
+      settings,
+    });
+    const partyOfTwo = simulateRaidBattle({
+      ...sharedInput,
+      settings: { ...settings, partyPower: "party2" },
+    });
+    const partyOfFour = simulateRaidBattle({
+      ...sharedInput,
+      settings: { ...settings, partyPower: "party4" },
+    });
+
+    expect(partyOfFour.partyPoweredChargedMoves).toBeGreaterThan(0);
+    expect(partyOfFour.partyPoweredChargedMoves).toBeGreaterThanOrEqual(
+      partyOfTwo.partyPoweredChargedMoves,
+    );
+    expect(partyOfFour.damageDealt).toBeGreaterThan(partyOfTwo.damageDealt);
+    expect(partyOfFour.damageDealt).toBeGreaterThan(
+      withoutPartyPower.damageDealt,
+    );
+  });
+
   it("selects genuinely favorable and hostile legal boss movesets", () => {
     const expected = simulateRaidCounterAcrossBossMovesets({
       attacker,

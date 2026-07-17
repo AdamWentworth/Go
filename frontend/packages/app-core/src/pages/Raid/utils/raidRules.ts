@@ -135,10 +135,28 @@ export const MEGA_ALLY_DAMAGE_BONUS: Record<MegaAllyBonusKey, number> = {
 
 export const PARTY_POWER_CHARGED_DAMAGE_BONUS: Record<PartyPowerKey, number> = {
   none: 1,
-  occasional: 1.18,
-  frequent: 1.35,
-  every: 2,
+  party2: 1.18,
+  party3: 1.35,
+  party4: 1.5,
 };
+
+export const PARTY_POWER_GROUP_SIZE: Record<PartyPowerKey, number> = {
+  none: 1,
+  party2: 2,
+  party3: 3,
+  party4: 4,
+};
+
+export const PARTY_POWER_POINTS_PER_MOVE: Record<PartyPowerKey, number> = {
+  none: 0,
+  party2: 1,
+  party3: 2,
+  party4: 3,
+};
+
+export const PARTY_POWER_METER_MAX = 18;
+export const PARTY_POWER_ACTIVATION_DELAY_SECONDS = 1;
+export const PARTY_POWER_ACTIVE_CHARGED_MULTIPLIER = 2;
 
 export const SHADOW_ATTACKER_DAMAGE_BONUS = 1.2;
 export const SHADOW_ATTACKER_DEFENSE_MULTIPLIER = 0.8333333;

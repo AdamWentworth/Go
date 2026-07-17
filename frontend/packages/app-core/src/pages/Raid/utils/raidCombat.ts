@@ -91,6 +91,7 @@ type MoveDamageInput = {
   bossTypes: string[];
   settings: RaidCounterSettings;
   charged: boolean;
+  partyPowerMultiplierOverride?: number;
 };
 
 export const calculateRaidMoveDamage = ({
@@ -101,6 +102,7 @@ export const calculateRaidMoveDamage = ({
   bossTypes,
   settings,
   charged,
+  partyPowerMultiplierOverride,
 }: MoveDamageInput): number => {
   const moveType = normalizeTypeName(move.type_name || move.type);
   const attackerTypes = getVariantTypeNames(attacker);
@@ -112,7 +114,8 @@ export const calculateRaidMoveDamage = ({
     ? SHADOW_ATTACKER_DAMAGE_BONUS
     : 1;
   const partyPower = charged
-    ? PARTY_POWER_CHARGED_DAMAGE_BONUS[settings.partyPower]
+    ? (partyPowerMultiplierOverride ??
+        PARTY_POWER_CHARGED_DAMAGE_BONUS[settings.partyPower])
     : 1;
   const damageMultiplier =
     stab *

@@ -14,6 +14,10 @@ import {
 import {
   RAID_MONTE_CARLO_MAX_SAMPLES,
   RAID_MONTE_CARLO_MIN_SAMPLES,
+  PARTY_POWER_ACTIVATION_DELAY_SECONDS,
+  PARTY_POWER_ACTIVE_CHARGED_MULTIPLIER,
+  PARTY_POWER_METER_MAX,
+  PARTY_POWER_POINTS_PER_MOVE,
   RAID_ATTACKER_TEAM_SIZE,
   RAID_SIMULATION_ATTACKER_SWAP_SECONDS,
   RAID_SIMULATION_BOSS_ACTION_DELAY_SECONDS,
@@ -45,6 +49,7 @@ type SimulationEvent = {
   bossGeneration: number;
   move?: Move;
   dodged?: boolean;
+  partyPowered?: boolean;
 };
 
 type BossMoveset = {
@@ -138,6 +143,9 @@ const averageSimulationResults = (
     attackerChargedMoves: average((result) => result.attackerChargedMoves),
     bossChargedMoves: average((result) => result.bossChargedMoves),
     dodges: average((result) => result.dodges),
+    partyPoweredChargedMoves: average(
+      (result) => result.partyPoweredChargedMoves,
+    ),
     won: results.every((result) => result.won),
     distribution: buildSimulationDistribution(results),
   };
@@ -153,6 +161,7 @@ export const simulateRaidTeamBattle = ({
   chargedDecisionOffset = 0,
   shouldBossUseCharged,
   getBossActionDelaySeconds,
+  trainerCount = 1,
 }: {
   team: RaidSimulationTeamMember[];
   boss: PokemonVariant;
@@ -163,6 +172,7 @@ export const simulateRaidTeamBattle = ({
   chargedDecisionOffset?: 0 | 1;
   shouldBossUseCharged?: () => boolean;
   getBossActionDelaySeconds?: () => number;
+  trainerCount?: number;
 }): RaidBattleSimulationResult => {
   if (team.length === 0) {
     throw new Error("Raid simulation requires at least one team member.");
@@ -175,6 +185,7 @@ export const simulateRaidTeamBattle = ({
   const bossTypes = [boss.type1_name, boss.type2_name].filter(
     (type): type is string => Boolean(type && type !== "none"),
   );
+  const activeTrainerCount = Math.max(1, Math.floor(trainerCount));
   const profiles = team.map(({ attacker, fastMove, chargedMove }) => {
     const attackerStats = calculateRaidAttackerBattleStats(attacker, settings);
     return {
@@ -199,6 +210,18 @@ export const simulateRaidTeamBattle = ({
         bossTypes,
         settings,
         charged: true,
+        partyPowerMultiplierOverride: 1,
+      }),
+      partyPoweredChargedDamage: calculateRaidMoveDamage({
+        move: chargedMove,
+        attacker,
+        attackerAttack: attackerStats.attack,
+        bossDefense: bossStats.defense,
+        bossTypes,
+        settings,
+        charged: true,
+        partyPowerMultiplierOverride:
+          PARTY_POWER_ACTIVE_CHARGED_MULTIPLIER,
       }),
       bossFastDamage: calculateRaidBossMoveDamage({
         move: bossFastMove,
@@ -245,11 +268,14 @@ export const simulateRaidTeamBattle = ({
   let attackerChargedMoves = 0;
   let bossChargedMoves = 0;
   let dodges = 0;
+  let partyPoweredChargedMoves = 0;
   let bossChargedOpportunity = 0;
   let sequence = 0;
   let damageDealt = 0;
   let winTime: number | null = null;
   let reservedDodgeHitTime: number | null = null;
+  let partyPowerMeter = 0;
+  let partyPowerReadyAt: number | null = null;
   const events: SimulationEvent[] = [];
   const nextBossActionDelay = () =>
     getBossActionDelaySeconds?.() ??
@@ -260,6 +286,7 @@ export const simulateRaidTeamBattle = ({
     time: number,
     move?: Move,
     dodged?: boolean,
+    partyPowered?: boolean,
   ) => {
     events.push({
       actor,
@@ -269,6 +296,7 @@ export const simulateRaidTeamBattle = ({
       bossGeneration,
       move,
       dodged,
+      partyPowered,
     });
   };
 
@@ -327,10 +355,20 @@ export const simulateRaidTeamBattle = ({
             RAID_SIMULATION_ENERGY_CAP,
             attackerEnergy + Math.max(0, getRaidMoveEnergy(profile.fastMove)),
           );
+      const partyPowered =
+        useCharged &&
+        partyPowerReadyAt != null &&
+        event.time >= partyPowerReadyAt;
+      if (partyPowered) {
+        partyPowerMeter = 0;
+        partyPowerReadyAt = null;
+      }
       enqueue(
         "attacker-hit",
         event.time + getProcessedRaidMoveSeconds(move),
         move,
+        undefined,
+        partyPowered,
       );
       continue;
     }
@@ -338,15 +376,32 @@ export const simulateRaidTeamBattle = ({
     if (event.actor === "attacker-hit") {
       const profile = profiles[teamPosition];
       const charged = event.move === profile.chargedMove;
-      const damage = charged ? profile.chargedDamage : profile.fastDamage;
+      const damage = charged
+        ? event.partyPowered
+          ? profile.partyPoweredChargedDamage
+          : profile.chargedDamage
+        : profile.fastDamage;
       if (charged) attackerChargedMoves += 1;
+      if (event.partyPowered) partyPoweredChargedMoves += 1;
       const bossHpBeforeDamage = bossHp;
-      bossHp = Math.max(0, bossHp - damage);
-      damageDealt += Math.min(damage, bossHpBeforeDamage);
+      const groupDamage = damage * activeTrainerCount;
+      bossHp = Math.max(0, bossHp - groupDamage);
+      damageDealt += Math.min(groupDamage, bossHpBeforeDamage);
       bossEnergy = Math.min(
         RAID_SIMULATION_ENERGY_CAP,
-        bossEnergy + Math.ceil(damage / 2),
+        bossEnergy + Math.ceil(damage / 2) * activeTrainerCount,
       );
+      const partyPowerPoints = PARTY_POWER_POINTS_PER_MOVE[settings.partyPower];
+      if (partyPowerPoints > 0 && partyPowerReadyAt == null) {
+        partyPowerMeter = Math.min(
+          PARTY_POWER_METER_MAX,
+          partyPowerMeter + partyPowerPoints,
+        );
+        if (partyPowerMeter >= PARTY_POWER_METER_MAX) {
+          partyPowerReadyAt =
+            event.time + PARTY_POWER_ACTIVATION_DELAY_SECONDS;
+        }
+      }
       if (bossHp <= 0) {
         winTime = event.time;
       } else {
@@ -446,6 +501,7 @@ export const simulateRaidTeamBattle = ({
     attackerChargedMoves,
     bossChargedMoves,
     dodges,
+    partyPoweredChargedMoves,
     won: winTime != null,
   };
   return {
@@ -471,6 +527,7 @@ export const simulateRaidBattle = ({
   chargedDecisionOffset?: 0 | 1;
   shouldBossUseCharged?: () => boolean;
   getBossActionDelaySeconds?: () => number;
+  trainerCount?: number;
 }): RaidBattleSimulationResult =>
   simulateRaidTeamBattle({
     ...battle,
@@ -519,11 +576,13 @@ export const simulateRaidTeamAcrossBossMovesets = ({
   boss,
   tier,
   settings,
+  trainerCount = 1,
 }: {
   team: RaidSimulationTeamMember[];
   boss: PokemonVariant;
   tier: RaidTierPreset;
   settings: RaidCounterSettings;
+  trainerCount?: number;
 }): RaidBattleSimulationResult | null => {
   const movesets = getBossMovesets(boss);
   if (movesets.length === 0 || team.length === 0) return null;
@@ -551,6 +610,7 @@ export const simulateRaidTeamAcrossBossMovesets = ({
         bossChargedMove: moveset.chargedMove,
         tier,
         settings,
+        trainerCount,
         shouldBossUseCharged: () => random() < 0.5,
         getBossActionDelaySeconds: () => {
           const index = Math.min(
@@ -575,6 +635,7 @@ export const simulateRaidTeamAcrossBossMovesets = ({
         bossChargedMove: chargedMove,
         tier,
         settings,
+        trainerCount,
         chargedDecisionOffset,
       }),
     ),

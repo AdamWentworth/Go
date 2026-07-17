@@ -68,6 +68,12 @@ const RaidBossCounterList = ({
                 {score.dodges > 0 && (
                   <small>{formatOutcomeCount(score.dodges)} dodges</small>
                 )}
+                {score.partyPoweredChargedMoves > 0 && (
+                  <small>
+                    {formatOutcomeCount(score.partyPoweredChargedMoves)} Party
+                    Power attacks
+                  </small>
+                )}
               </span>
             </div>
           </article>
