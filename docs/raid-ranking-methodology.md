@@ -2,7 +2,7 @@
 
 Last reviewed: July 2026
 
-Model version: 8
+Model version: 9
 
 PokeGo Nexus ranks raid attackers for three different questions:
 
@@ -100,9 +100,11 @@ Exact boss results are cached in IndexedDB for seven days, with a maximum of 12 
 
 Logged-in Trainers can switch Overall, By Type, and Boss Counters from the full catalog benchmark to **My Pokemon**. Each caught copy remains a separate attacker and uses its recorded level, IVs, CP, and current fast and Charged Attacks. Boss mode builds its six-Pokemon team from those distinct copies instead of cloning a single ideal catalog entry.
 
+Generated teams also enforce battle-form legality. A team can contain at most one Mega Evolution or Primal Reversion, and one caught Pokemon cannot occupy both its base and transformed slots. Public comparison tables still show every eligible form independently so Trainers can compare investments; the restriction applies when the app turns those entries into a playable team estimate.
+
 The selected catalog level never overrides a caught Pokemon's recorded level. If level is absent but CP and IVs are available, the closest legal level is inferred from the CP formula. A caught entry with insufficient level, IV, or current moveset data is omitted from personalized rankings instead of being promoted to catalog benchmark assumptions. Hidden Power uses the recorded move but marks its rolled type as estimated because the current instance schema does not store that roll.
 
-Personalized rankings establish the input model needed for heterogeneous Trainer teams. They do not yet claim measured network latency, dodge success, or independent-simulator calibration; those require external reference runs or opt-in battle telemetry rather than ownership data alone.
+Personalized rankings establish the input model needed for heterogeneous Trainer teams. External reference cohorts guard the shared catalog model, but personalized predictions do not yet claim measured network latency or dodge success; those require opt-in battle telemetry rather than ownership data alone.
 
 ## Assumptions and limits
 
@@ -123,9 +125,12 @@ For a specific difficult raid, use the boss counter page and confirm the result 
 
 The ranking model has complementary regression gates:
 
-The current model settings, canonical headline order, and external leader snapshot are also published as [machine-readable JSON](./raid-ranking-validation.json). CI verifies that its model version, cohort bounds, sample bounds, and canonical movesets match the executable model.
+The current model settings, canonical headline order, independent-reference cohorts, tolerances, and loading budgets are also published as [machine-readable JSON](./raid-ranking-validation.json). CI verifies that its model version, cohort bounds, sample bounds, performance constants, and canonical movesets match the executable model.
 
 - A fixed canonical cohort checks the headline order and legal signature moves for Mega Rayquaza, both Mega Mewtwo forms, Eternatus, Shadow Regigigas, and Zacian.
+- Three independently maintained tools must agree on Mega Rayquaza as the released-form leader. Their published top cohorts must retain the configured overlap and relative-order tolerances. Raw scores are not compared directly because eDPS, ER, and Pokebattler Estimator answer different mathematical questions.
+- A versioned Pokebattler Rayquaza counter cohort records a full-simulator boss-specific reference separately from the broad overall model.
+- Generated-team tests enforce one Mega or Primal, distinct caught instances, and the stronger legal choice when a base form and its transformation compete for the same roster slot.
 - A sensitivity matrix varies neutral target Defense across `160`, `180`, and `200`, and incoming pressure across `0.8x`, `1x`, and `1.2x`. The top-three order and signature charged moves must remain stable in all nine scenarios.
 - Relobby delays of `0`, `5`, `10`, and `20` seconds must preserve the canonical headline result.
 - Exact damage floors may legitimately change the preferred fast move at some Defense breakpoints. The validation therefore locks the stable rank and signature charged move across sensitivity scenarios while requiring the exact production-default moveset at the documented benchmark.
@@ -133,6 +138,7 @@ The current model settings, canonical headline order, and external leader snapsh
 - Monte Carlo tests lock seeded reproducibility, sample bounds, ordered P10/P50/P90 distributions, legal-moveset aggregation, and the rendered uncertainty summaries.
 - Cache tests discard the memory layer, restore the structured result from IndexedDB, and verify that a changed simulation setting misses the old entry.
 - A browser regression verifies that the production worker bundle starts, completes an exhaustive finalist calculation, and renders its results.
+- A browser performance regression measures the first useful Overall leaderboard render. Cold fixture-backed loads have an eight-second ceiling and warm IndexedDB-backed loads have a three-second ceiling; raid-event metadata is fetched concurrently and may not block the default Overall view.
 - Live-catalog validation runs a real boss-counter simulation in addition to the broad canonical ranking gate.
 
 Frontend CI runs the deterministic model gate. After every clean production catalog-editor session, the editor refreshes the API cache and runs the same canonical check against the live catalog. This catches move-pool, form-stat, and move-stat drift before a catalog edit is considered complete.
@@ -145,7 +151,7 @@ The tiers below rank calculation methods for their stated purpose, not the amoun
 | --- | --- | --- | --- | --- |
 | S | Pokebattler | Exact boss simulations | Models boss matchups, deaths, dodging choices, TTW, and relobby-aware Estimator results | More complex; results depend heavily on selected battle conditions |
 | S | DialgaDex | Broad theoretical attacker rankings | Transparent DPS/TDO/eDPS choices, configurable team and relobby assumptions, and Type Affinity using real high-tier bosses | Still a closed-form ranking; no single broad score can reproduce every raid timeline |
-| A+ | PokeGo Nexus | Explainable general planning plus integrated boss lookup | Neutral all-type benchmark, legal form-specific move pools, independently scored tier-scaled type targets, exact damage floors, event-driven mixed-team boss counters, charged dodging, group boss-energy feedback, timed Party Power, seeded Monte Carlo percentiles, worker-pooled finalist movesets, durable versioned caching, expected/favorable/hostile legal boss attacks, real two-move type effectiveness, Hidden Power handling, sortable component metrics, and adjustable modifiers | Broad lists remain closed-form; browser-sized simulation still uses a bounded form screen and homogeneous Trainer groups |
+| A+ | PokeGo Nexus | Explainable general planning plus integrated boss lookup | Neutral all-type benchmark, legal form-specific move pools and generated teams, independently scored tier-scaled type targets, exact damage floors, event-driven mixed-team boss counters, charged dodging, group boss-energy feedback, timed Party Power, seeded Monte Carlo percentiles, worker-pooled finalist movesets, durable versioned caching, expected/favorable/hostile legal boss attacks, real two-move type effectiveness, Hidden Power handling, sortable component metrics, and adjustable modifiers | Broad lists remain closed-form; browser-sized simulation still uses a bounded form screen and homogeneous Trainer groups |
 | A | PokéBase | Transparent closed-form DPS and ER analysis | Publishes the Comprehensive DPS derivation and exposes DPS, TDO, ER, and CP | General formulas need a simulator for highly specific matchups; editorial type lists include manual judgment |
 | A | Dittobase | Accessible eDPS rankings | Representative boss pool, relobby-aware eDPS, and extensive player-facing settings | Public explanations are strong, but less implementation detail is exposed than the formula-first tools |
 | B | GO Hub Database | Quick type lists and counter references | EER/TER options and broad database integration | Some counter outputs are estimates and documented modifiers are not applied uniformly to every metric |
@@ -156,10 +162,10 @@ The tiers below rank calculation methods for their stated purpose, not the amoun
 
 PokeGo Nexus is a **strong A+ broad ranking model with an event-driven boss-counter mode**. Its main advantage is auditability: the displayed eDPS, DPS, TDO, ER, CP, moveset, target selection, boss-pressure mode, and user modifiers all belong to one model instead of mixing a hidden score with editorial ordering. Overall uses a documented typeless benchmark so the historical boss roster cannot bias its movesets. By Type independently scores real high-tier raid targets instead of collapsing them into a same-typing aggregate.
 
-Boss mode now includes reproducible Monte Carlo outcomes, mixed teams, charged dodging, group boss-energy feedback, and timed Party Power. It is not yet equivalent to a large dedicated Pokebattler simulation. The clearest remaining path is:
+Boss mode now includes reproducible Monte Carlo outcomes, legal mixed teams, charged dodging, group boss-energy feedback, and timed Party Power. Independent public reference cohorts now guard broad-list leadership and a full-simulator boss-counter sample, but this is calibration rather than an assertion that unlike scalar metrics should match. It is not yet equivalent to a large dedicated Pokebattler simulation. The clearest remaining path is:
 
-1. Add a machine-readable comparison against at least one independent full simulator and publish model/catalog versions with every ranking.
-2. Support heterogeneous Trainer teams, independent action timelines, and manual Party Power activation.
+1. Expand full-simulator calibration from the versioned Rayquaza cohort to a representative multi-boss matrix.
+2. Support heterogeneous multi-Trainer teams, independent action timelines, and manual Party Power activation.
 3. Calibrate successful-dodge rates and network delay from measured live-raid samples.
 
 The broad eDPS leaderboard should remain the default because it answers the most common team-building question. A future simulator should strengthen boss mode rather than replace the transparent general model.

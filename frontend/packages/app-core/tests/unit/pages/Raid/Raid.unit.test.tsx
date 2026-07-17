@@ -8,6 +8,7 @@ import { useAuthStore } from "@/stores/useAuthStore";
 import type { PokemonInstance } from "@/types/pokemonInstance";
 import type { PokemonVariant } from "@/types/pokemonVariants";
 import type { Move } from "@/types/pokemonSubTypes";
+import { RAID_SIMULATION_MODEL_VERSION } from "@/pages/Raid/utils/raidRules";
 
 type RaidTestVariantOverrides = Omit<
   Partial<PokemonVariant>,
@@ -309,7 +310,7 @@ describe("Raid page", () => {
     );
     expect(
       within(screen.getByLabelText("Raid ranking versions")).getByText(
-        "Model v8",
+        `Model v${RAID_SIMULATION_MODEL_VERSION}`,
       ),
     ).toBeInTheDocument();
     expect(

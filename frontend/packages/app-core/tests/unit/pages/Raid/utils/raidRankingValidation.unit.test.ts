@@ -11,10 +11,13 @@ import {
   type RaidNeutralBenchmark,
 } from "@/pages/Raid/utils/raidCalculations";
 import {
+  RAID_COLD_ROUTE_READY_BUDGET_MS,
   RAID_COUNTER_SIMULATION_VARIANT_LIMIT,
   RAID_MONTE_CARLO_MAX_SAMPLES,
   RAID_MONTE_CARLO_MIN_SAMPLES,
+  RAID_ROUTE_READY_MEASURE,
   RAID_SIMULATION_MODEL_VERSION,
+  RAID_WARM_ROUTE_READY_BUDGET_MS,
 } from "@/pages/Raid/utils/raidRules";
 import validationProfile from "../../../../../../../../docs/raid-ranking-validation.json";
 
@@ -61,6 +64,12 @@ const canonicalTopNames = canonicalOverallExpectation.map(
   (expectation) => expectation.name,
 );
 
+const summarizeCanonicalOrder = () =>
+  scoreBestRaidOverallAttackers(
+    canonicalOverallRaidAttackers,
+    defaultSettings,
+  ).map((score) => score.variant.name);
+
 describe("raid ranking validation", () => {
   it("keeps the machine-readable validation profile aligned with the model", () => {
     expect(validationProfile.modelVersion).toBe(
@@ -76,8 +85,64 @@ describe("raid ranking validation", () => {
     expect(validationProfile.canonicalOverall).toEqual(
       canonicalOverallExpectation,
     );
-    expect(validationProfile.externalReferenceSnapshot.sharedLeader).toBe(
-      canonicalOverallExpectation[0].name,
+    expect(validationProfile.performanceBudgets).toEqual({
+      measure: RAID_ROUTE_READY_MEASURE,
+      coldMilliseconds: RAID_COLD_ROUTE_READY_BUDGET_MS,
+      warmMilliseconds: RAID_WARM_ROUTE_READY_BUDGET_MS,
+      initialViewMayDeferRaidMetadata: true,
+    });
+    expect(validationProfile.externalCalibration.requiredLeader).toEqual(
+      canonicalOverallExpectation[0],
+    );
+  });
+
+  it("stays within the versioned independent-reference tolerances", () => {
+    const calibration = validationProfile.externalCalibration;
+    const localOrder = summarizeCanonicalOrder();
+    const localTopThree = new Set(localOrder.slice(0, 3));
+
+    expect(calibration.references.length).toBeGreaterThanOrEqual(
+      calibration.tolerances.minimumIndependentReferences,
+    );
+
+    calibration.references.forEach((reference) => {
+      expect(reference.releasedTopCohort[0]).toBe(
+        calibration.requiredLeader.name,
+      );
+      const overlap = reference.releasedTopCohort.filter((name) =>
+        localTopThree.has(name),
+      ).length;
+      expect(overlap / 3).toBeGreaterThanOrEqual(
+        calibration.tolerances.minimumTopThreeReferenceOverlap,
+      );
+
+      const sharedNames = new Set(reference.sharedCanonicalOrder);
+      const localSharedOrder = localOrder.filter((name) =>
+        sharedNames.has(name),
+      );
+      reference.sharedCanonicalOrder.forEach((name, expectedIndex) => {
+        expect(
+          Math.abs(localSharedOrder.indexOf(name) - expectedIndex),
+        ).toBeLessThanOrEqual(
+          calibration.tolerances.maximumSharedCanonicalRankDisplacement,
+        );
+      });
+    });
+  });
+
+  it("records a full-simulator boss-counter calibration cohort", () => {
+    const reference =
+      validationProfile.externalCalibration.bossSpecificReference;
+
+    expect(reference.tool).toBe("Pokebattler");
+    expect(reference.boss).toBe("Rayquaza");
+    expect(reference.topCounterCohort).toHaveLength(6);
+    expect(reference.topCounterCohort).toEqual(
+      expect.arrayContaining([
+        "White Kyurem",
+        "Black Kyurem",
+        "Shadow Mamoswine",
+      ]),
     );
   });
 

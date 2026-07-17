@@ -14,6 +14,7 @@ import {
   scoreRaidCounters,
 } from "@/pages/Raid/utils/raidRankings";
 import { simulateRaidBattle } from "@/pages/Raid/utils/raidSimulation";
+import { selectLegalRaidTeamCounters } from "@/pages/Raid/utils/raidTeamSelection";
 import {
   RAID_ATTACKER_TEAM_SIZE,
   RAID_TIER_PRESETS,
@@ -40,5 +41,8 @@ describe("raid calculation module boundaries", () => {
       scoreBestRaidOverallAttackers,
     );
     expect(raidFacade.simulateRaidBattle).toBe(simulateRaidBattle);
+    expect(raidFacade.selectLegalRaidTeamCounters).toBe(
+      selectLegalRaidTeamCounters,
+    );
   });
 });

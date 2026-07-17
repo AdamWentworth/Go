@@ -1,12 +1,18 @@
 {
-  "schemaVersion": 1,
-  "modelVersion": 8,
+  "schemaVersion": 2,
+  "modelVersion": 9,
   "reviewedAt": "2026-07-17",
   "productionDefaults": {
     "attackerLevel": "50.0",
     "relobbySeconds": 10,
     "defaultMetric": "eDPS",
     "neutralTargetDefense": 180
+  },
+  "performanceBudgets": {
+    "measure": "pokegonexus:raid-route-ready",
+    "coldMilliseconds": 8000,
+    "warmMilliseconds": 3000,
+    "initialViewMayDeferRaidMetadata": true
   },
   "bossSimulation": {
     "finalistLimit": 384,
@@ -37,18 +43,96 @@
       "chargedMove": "Psystrike"
     }
   ],
-  "externalReferenceSnapshot": {
-    "scenario": "Top overall raid attacker with released PokeGo Nexus forms",
-    "sharedLeader": "Mega Rayquaza",
+  "externalCalibration": {
+    "scenario": "Released-form overall raid attackers with no weather or ally boost",
+    "observedAt": "2026-07-17",
+    "requiredLeader": {
+      "name": "Mega Rayquaza",
+      "fastMove": "Dragon Tail",
+      "chargedMove": "Dragon Ascent"
+    },
+    "tolerances": {
+      "minimumIndependentReferences": 3,
+      "minimumTopThreeReferenceOverlap": 0.66,
+      "maximumSharedCanonicalRankDisplacement": 1
+    },
     "references": [
       {
         "tool": "DialgaDex",
-        "url": "https://www.dialgadex.com/?strongest=&t=Any"
+        "url": "https://www.dialgadex.com/?strongest=&t=Any",
+        "model": "eDPS across real high-tier raid-boss profiles with six-stack relobby cost",
+        "releasedTopCohort": [
+          "Mega Rayquaza",
+          "Dawn Wings Necrozma",
+          "Mega Mewtwo Y",
+          "Mega Mewtwo X",
+          "Eternatus",
+          "Zacian"
+        ],
+        "sharedCanonicalOrder": [
+          "Mega Rayquaza",
+          "Mega Mewtwo Y",
+          "Mega Mewtwo X"
+        ]
       },
       {
         "tool": "PokeBase",
-        "url": "https://pokebase.app/pokemon-go/dps-calc"
+        "url": "https://pokebase.app/pokemon-go/dps-calc",
+        "model": "DPS, TDO, and ER cycle model at level 40",
+        "leaderSnapshot": {
+          "dps": 29.84,
+          "tdo": 1128,
+          "er": 73.98,
+          "cp": 5713
+        },
+        "releasedTopCohort": [
+          "Mega Rayquaza",
+          "Mega Mewtwo Y",
+          "Mega Mewtwo X",
+          "Eternatus",
+          "Dawn Wings Necrozma",
+          "Dusk Mane Necrozma"
+        ],
+        "sharedCanonicalOrder": [
+          "Mega Rayquaza",
+          "Mega Mewtwo Y",
+          "Mega Mewtwo X"
+        ]
+      },
+      {
+        "tool": "Pokebattler",
+        "url": "https://www.pokebattler.com/raids/ATTACKERS/rankings",
+        "model": "Level-40 full-simulation estimator aggregated across raid-boss matchups",
+        "leaderSnapshot": {
+          "matchups": 283,
+          "estimator": 0.73,
+          "points": 2318
+        },
+        "releasedTopCohort": [
+          "Mega Rayquaza",
+          "Mega Lucario",
+          "Primal Groudon",
+          "Mega Mewtwo Y",
+          "White Kyurem"
+        ],
+        "sharedCanonicalOrder": [
+          "Mega Rayquaza",
+          "Mega Mewtwo Y"
+        ]
       }
-    ]
+    ],
+    "bossSpecificReference": {
+      "tool": "Pokebattler",
+      "url": "https://www.pokebattler.com/raids/defenders/RAYQUAZA/levels/RAID_LEVEL_5/attackers/levels/40/strategies/CINEMATIC_ATTACK_WHEN_POSSIBLE/DEFENSE_RANDOM_MC",
+      "boss": "Rayquaza",
+      "topCounterCohort": [
+        "White Kyurem",
+        "Black Kyurem",
+        "Mega Mewtwo Y",
+        "Shadow Mamoswine",
+        "Mega Mewtwo X",
+        "Eternatus"
+      ]
+    }
   }
 }

@@ -11,6 +11,7 @@ export type E2eRouteOptions = {
   userInstances?: unknown;
   publicUser?: unknown;
   userOverview?: unknown;
+  raidDataDelayMs?: number;
 };
 
 const fixturePath = (relativePath: string) =>
@@ -171,6 +172,9 @@ export async function installE2eRoutes(page: Page, options: E2eRouteOptions = {}
 
   for (const pathPattern of ['**/api/pokemon/raid-data', '**/__e2e/pokemon/raid-data']) {
     await page.route(pathPattern, async (route) => {
+      if (options.raidDataDelayMs) {
+        await new Promise((resolve) => setTimeout(resolve, options.raidDataDelayMs));
+      }
       await fulfillJson(route, raidDataFixture);
     });
   }

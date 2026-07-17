@@ -2,6 +2,10 @@ import { expect, test, type Page } from "@playwright/test";
 
 import { installE2eRoutes } from "./support/e2eRoutes";
 
+const RAID_ROUTE_READY_MEASURE = "pokegonexus:raid-route-ready";
+const RAID_COLD_ROUTE_READY_BUDGET_MS = 8000;
+const RAID_WARM_ROUTE_READY_BUDGET_MS = 3000;
+
 const raidUser = {
   user_id: "raid-user",
   username: "RaidTrainer",
@@ -67,6 +71,41 @@ async function seedRaidRoster(page: Page, caught = caughtBulbasaur) {
 }
 
 test.describe("raid counter worker", () => {
+  test("renders rankings within cold and warm budgets without blocking on raid metadata", async ({
+    page,
+  }) => {
+    await installE2eRoutes(page, { raidDataDelayMs: 10_000 });
+
+    await page.goto("/raid", { waitUntil: "domcontentloaded" });
+    await expect(
+      page.getByRole("heading", { name: "Top raid attackers" }),
+    ).toBeVisible({ timeout: RAID_COLD_ROUTE_READY_BUDGET_MS });
+    const coldDuration = await page.waitForFunction(
+      (measureName) =>
+        performance.getEntriesByName(measureName, "measure").at(-1)
+          ?.duration,
+      RAID_ROUTE_READY_MEASURE,
+    );
+    expect(await coldDuration.jsonValue()).toBeLessThan(
+      RAID_COLD_ROUTE_READY_BUDGET_MS,
+    );
+
+    await page.goto("/login", { waitUntil: "domcontentloaded" });
+    await page.goto("/raid", { waitUntil: "domcontentloaded" });
+    await expect(
+      page.getByRole("heading", { name: "Top raid attackers" }),
+    ).toBeVisible({ timeout: RAID_COLD_ROUTE_READY_BUDGET_MS });
+    const warmDuration = await page.waitForFunction(
+      (measureName) =>
+        performance.getEntriesByName(measureName, "measure").at(-1)
+          ?.duration,
+      RAID_ROUTE_READY_MEASURE,
+    );
+    expect(await warmDuration.jsonValue()).toBeLessThan(
+      RAID_WARM_ROUTE_READY_BUDGET_MS,
+    );
+  });
+
   test("calculates exhaustive boss counters off the main thread", async ({
     page,
   }) => {
