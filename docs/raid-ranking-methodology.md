@@ -2,7 +2,7 @@
 
 Last reviewed: July 2026
 
-Model version: 1
+Model version: 2
 
 PokeGo Nexus ranks raid attackers for three different questions:
 
@@ -56,7 +56,7 @@ Sustained DPS uses the Comprehensive DPS approach: move duration, energy generat
 
 ### Overall rankings
 
-Overall rankings average each legal moveset against type profiles drawn from the raid-boss catalog. Higher-impact raids receive more weight:
+Overall rankings average each legal moveset against actual targets drawn from the raid-boss catalog. Each target contributes its real typing, tier-scaled defense, attack, and legal fast-and-charged move pool. Higher-impact raids receive more weight:
 
 - Legendary, Elite, Primal, legendary Mega, super Mega, and Shadow Legendary: `4`
 - Mega: `3`
@@ -65,9 +65,11 @@ Overall rankings average each legal moveset against type profiles drawn from the
 
 This prevents a moveset that only excels against low-tier bosses from dominating the general leaderboard. It also means the result is deliberately a broad planning score, not a prediction for today's single boss.
 
+Bosses with the same defensive typing are reduced to one weighted combat profile for responsive client-side scoring. Harmonic mean defense preserves their average attack-to-defense relationship, while every member boss still contributes its tier-scaled attack, legal moves, STAB, and incoming type effectiveness to the profile's pressure model.
+
 ### Type rankings
 
-A Pokemon is eligible when at least one move matches the selected type. Targets are high-tier raid profiles weak to that type. The matching move receives the expected super-effective multiplier, while the companion move keeps its real type effectiveness. An off-type companion move is therefore neither silently boosted nor discarded.
+A Pokemon is eligible when at least one move matches the selected type. Targets are actual high-tier raid bosses weak to that type, including their tier-scaled stats and legal move pools. The matching move receives its real effectiveness against each boss, while the companion move keeps its own type effectiveness. An off-type companion move is therefore neither silently boosted nor discarded.
 
 ### Boss counters
 
@@ -78,8 +80,9 @@ The current boss result is a deterministic cycle estimate. It is useful for quic
 ## Assumptions and limits
 
 - Rankings assume 15/15/15 IVs at the selected attacker level.
-- Overall and type rankings use a generic incoming-damage model to estimate survival and energy gained from being hit.
+- Overall and type rankings average the damage pressure from every legal fast-and-charged boss moveset. They use boss STAB, weather, effectiveness against the attacker, processed move duration, and the current average raid action delay.
 - Overall results depend on the raid-history metadata in the catalog, not only the bosses currently in rotation.
+- Legal boss movesets are weighted equally because future raid moveset frequency is not known; broad rankings do not simulate a random event timeline.
 - Party Power is a configurable cycle-average approximation rather than a simulation of the live meter.
 - Boss counter trainer counts include safety margins, but they remain estimates.
 - Breakpoints, dodging, network delay, boss move randomness, party composition, and staggered Mega uptime can change a real raid result.
@@ -94,7 +97,7 @@ The tiers below rank calculation methods for their stated purpose, not the amoun
 | --- | --- | --- | --- | --- |
 | S | Pokebattler | Exact boss simulations | Models boss matchups, deaths, dodging choices, TTW, and relobby-aware Estimator results | More complex; results depend heavily on selected battle conditions |
 | S | DialgaDex | Broad theoretical attacker rankings | Transparent DPS/TDO/eDPS choices, configurable team and relobby assumptions, and Type Affinity using real high-tier bosses | Still a closed-form ranking; no single broad score can reproduce every raid timeline |
-| A | PokeGo Nexus | Explainable general planning plus integrated boss lookup | Legal form-specific move pools, real two-move type effectiveness, weighted raid targets, Hidden Power handling, sortable component metrics, and adjustable modifiers | Generic incoming damage in broad lists; boss mode is not yet a full event simulation |
+| A | PokeGo Nexus | Explainable general planning plus integrated boss lookup | Legal form-specific move pools, actual tier-scaled raid targets, averaged legal boss attacks, real two-move type effectiveness, Hidden Power handling, sortable component metrics, and adjustable modifiers | Broad lists use closed-form moveset averages; boss mode is not yet a full event simulation |
 | A | PokéBase | Transparent closed-form DPS and ER analysis | Publishes the Comprehensive DPS derivation and exposes DPS, TDO, ER, and CP | General formulas need a simulator for highly specific matchups; editorial type lists include manual judgment |
 | A | Dittobase | Accessible eDPS rankings | Representative boss pool, relobby-aware eDPS, and extensive player-facing settings | Public explanations are strong, but less implementation detail is exposed than the formula-first tools |
 | B | GO Hub Database | Quick type lists and counter references | EER/TER options and broad database integration | Some counter outputs are estimates and documented modifiers are not applied uniformly to every metric |
@@ -103,7 +106,7 @@ The tiers below rank calculation methods for their stated purpose, not the amoun
 
 ### Where PokeGo Nexus stands
 
-PokeGo Nexus is already an **A-tier broad ranking model**. Its main advantage is auditability: the displayed eDPS, DPS, TDO, ER, CP, moveset, target selection, and user modifiers all belong to one model instead of mixing a hidden score with editorial ordering.
+PokeGo Nexus is a **strong A-tier broad ranking model**. Its main advantage is auditability: the displayed eDPS, DPS, TDO, ER, CP, moveset, target selection, and user modifiers all belong to one model instead of mixing a hidden score with editorial ordering. Overall and By Type now use real raid-target defense and averaged incoming pressure rather than a universal dummy target.
 
 It is not yet S-tier for exact boss simulation. The clearest path there is:
 

@@ -103,6 +103,11 @@ export type RaidOverallScore = {
 export type RaidOverallTargetProfile = {
   types: string[];
   weight: number;
+  target?: PokemonVariant;
+  targets?: Array<{
+    target: PokemonVariant;
+    weight: number;
+  }>;
 };
 
 export type RaidGroupEstimate = {

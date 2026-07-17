@@ -1,12 +1,18 @@
 import type { PokemonVariant } from "@/types/pokemonVariants";
 import type { Move } from "@/types/pokemonSubTypes";
 import { cpMultipliers } from "./constants";
-import { getVariantTypeNames, normalizeTypeName } from "./raidCatalog";
+import {
+  getLegalRaidChargedMoves,
+  getLegalRaidFastMoves,
+  getVariantTypeNames,
+  normalizeTypeName,
+} from "./raidCatalog";
 import {
   FRIENDSHIP_DAMAGE_BONUS,
   MEGA_ALLY_DAMAGE_BONUS,
   PARTY_POWER_CHARGED_DAMAGE_BONUS,
   RAID_ATTACKER_TEAM_SIZE,
+  RAID_BOSS_ACTION_DELAY_SECONDS,
   SHADOW_ATTACKER_DAMAGE_BONUS,
   SHADOW_BOSS_ENRAGED_ATTACK_MULTIPLIER,
   SHADOW_BOSS_ENRAGED_DEFENSE_MULTIPLIER,
@@ -132,6 +138,7 @@ type TypeDpsMoveDamageInput = Omit<
 > & {
   selectedType: string;
   targetTypes?: string[];
+  targetDefense?: number;
 };
 
 export const getProcessedRaidMoveSeconds = (move: Move): number => {
@@ -161,6 +168,7 @@ export const calculateTypeDpsMoveDamage = ({
   attackerAttack,
   selectedType,
   targetTypes,
+  targetDefense = TYPE_DPS_TARGET_DEFENSE,
   settings,
   charged,
 }: TypeDpsMoveDamageInput): number => {
@@ -193,10 +201,130 @@ export const calculateTypeDpsMoveDamage = ({
     Math.floor(
       0.5 *
         getProcessedRaidMovePower(move) *
-        (attackerAttack / TYPE_DPS_TARGET_DEFENSE) *
+        (attackerAttack / targetDefense) *
         damageMultiplier,
     ) + 1,
   );
+};
+
+const calculateIncomingRaidMoveDamageCoefficient = ({
+  move,
+  boss,
+  bossAttack,
+  attackerTypes,
+  weatherBoostedType,
+}: {
+  move: Move;
+  boss: PokemonVariant;
+  bossAttack: number;
+  attackerTypes: string[];
+  weatherBoostedType: string;
+}): number => {
+  const moveType = normalizeTypeName(move.type_name || move.type);
+  const stab = getVariantTypeNames(boss).includes(moveType)
+    ? STAB_DAMAGE_BONUS
+    : 1;
+  const effectiveness = getTypeEffectivenessMultiplier(
+    moveType,
+    attackerTypes,
+  );
+  const weather =
+    weatherBoostedType === moveType ? WEATHER_DAMAGE_BONUS : 1;
+
+  return (
+    0.5 *
+    getProcessedRaidMovePower(move) *
+    bossAttack *
+    stab *
+    effectiveness *
+    weather
+  );
+};
+
+export type RaidIncomingPressureModel = {
+  incomingDpsCoefficient: number;
+  incomingDpsFloorContribution: number;
+  incomingChargedDamageCoefficient: number;
+  incomingChargedDamageFloorContribution: number;
+};
+
+export const calculateRaidIncomingPressureModel = ({
+  boss,
+  bossAttack,
+  attackerTypes,
+  weatherBoostedType,
+}: {
+  boss: PokemonVariant;
+  bossAttack: number;
+  attackerTypes: string[];
+  weatherBoostedType: string;
+}): RaidIncomingPressureModel | null => {
+  const fastMoves = getLegalRaidFastMoves(boss);
+  const chargedMoves = getLegalRaidChargedMoves(boss);
+  if (fastMoves.length === 0 || chargedMoves.length === 0) return null;
+
+  let incomingDpsCoefficient = 0;
+  let incomingDpsFloorContribution = 0;
+  let incomingChargedDamageCoefficient = 0;
+  let incomingChargedDamageFloorContribution = 0;
+  let scenarios = 0;
+
+  fastMoves.forEach((fastMove) => {
+    chargedMoves.forEach((chargedMove) => {
+      const fastDamageCoefficient =
+        calculateIncomingRaidMoveDamageCoefficient({
+          move: fastMove,
+          boss,
+          bossAttack,
+          attackerTypes,
+          weatherBoostedType,
+        });
+      const chargedDamageCoefficient =
+        calculateIncomingRaidMoveDamageCoefficient({
+          move: chargedMove,
+          boss,
+          bossAttack,
+          attackerTypes,
+          weatherBoostedType,
+        });
+      const chargedEnergyCost = Math.max(
+        1,
+        Math.abs(getRaidMoveEnergy(chargedMove)),
+      );
+      const fastUsesPerChargedMove =
+        chargedEnergyCost >= 100 ? 3 : chargedEnergyCost >= 50 ? 1.5 : 1;
+      const fastActionSeconds =
+        getProcessedRaidMoveSeconds(fastMove) +
+        RAID_BOSS_ACTION_DELAY_SECONDS;
+      const chargedActionSeconds =
+        getProcessedRaidMoveSeconds(chargedMove) +
+        RAID_BOSS_ACTION_DELAY_SECONDS;
+      const cycleSeconds =
+        fastUsesPerChargedMove * fastActionSeconds + chargedActionSeconds;
+
+      incomingDpsCoefficient +=
+        (fastUsesPerChargedMove * fastDamageCoefficient +
+          chargedDamageCoefficient) /
+        cycleSeconds;
+      incomingDpsFloorContribution +=
+        (fastUsesPerChargedMove + 1) / cycleSeconds;
+      incomingChargedDamageCoefficient += chargedDamageCoefficient;
+      incomingChargedDamageFloorContribution += 1;
+      scenarios += 1;
+    });
+  });
+
+  return scenarios > 0
+    ? {
+        incomingDpsCoefficient: incomingDpsCoefficient / scenarios,
+        incomingDpsFloorContribution:
+          incomingDpsFloorContribution / scenarios,
+        incomingChargedDamageCoefficient:
+          incomingChargedDamageCoefficient / scenarios,
+        incomingChargedDamageFloorContribution:
+          incomingChargedDamageFloorContribution / scenarios,
+      }
+    : null;
 };
 
 export const calculateComprehensiveTypeDps = ({

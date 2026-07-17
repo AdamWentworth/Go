@@ -309,14 +309,14 @@ export const getRaidOverallTargetProfiles = (
 
     const key = [...types].sort().join("/");
     const weight = getOverallTargetWeight(target);
-    const existing = profilesByTypes.get(key);
-
-    if (existing) {
-      existing.weight += weight;
-      return;
-    }
-
-    profilesByTypes.set(key, { types, weight });
+    const profile = profilesByTypes.get(key) ?? {
+      types,
+      weight: 0,
+      targets: [],
+    };
+    profile.weight += weight;
+    profile.targets?.push({ target, weight });
+    profilesByTypes.set(key, profile);
   });
 
   const profiles = Array.from(profilesByTypes.values());
@@ -345,14 +345,14 @@ export const getRaidTypeTargetProfiles = (
 
     const key = [...types].sort().join("/");
     const weight = getOverallTargetWeight(target);
-    const existing = profilesByTypes.get(key);
-
-    if (existing) {
-      existing.weight += weight;
-      return;
-    }
-
-    profilesByTypes.set(key, { types, weight });
+    const profile = profilesByTypes.get(key) ?? {
+      types,
+      weight: 0,
+      targets: [],
+    };
+    profile.weight += weight;
+    profile.targets?.push({ target, weight });
+    profilesByTypes.set(key, profile);
   });
 
   return Array.from(profilesByTypes.values());

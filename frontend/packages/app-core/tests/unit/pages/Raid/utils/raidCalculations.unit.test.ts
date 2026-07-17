@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import type { PokemonVariant } from "@/types/pokemonVariants";
 import type { Move } from "@/types/pokemonSubTypes";
+import { getRaidOverallTargetProfiles } from "@/pages/Raid/utils/raidCatalog";
 import {
   RAID_TIER_PRESETS,
   calculateEffectiveRaidDps,
@@ -544,6 +545,146 @@ describe("raid calculations", () => {
     expect(longDelay.dps).toBeCloseTo(noDelay.dps, 6);
     expect(longDelay.tdo).toBeCloseTo(noDelay.tdo, 6);
     expect(longDelay.er).toBeCloseTo(noDelay.er, 6);
+  });
+
+  it("uses each real raid target's defense in overall and type rankings", () => {
+    const attacker = pokemon({
+      name: "Machamp",
+      variant_id: "machamp-default",
+      attack: 234,
+      defense: 159,
+      stamina: 207,
+      type1_name: "fighting",
+      type2_name: "none",
+      moves: [
+        move("Counter", "fighting", 1, 13, 1000, 9),
+        move("Dynamic Punch", "fighting", 0, 90, 2700, -50),
+      ],
+    });
+    const raidBoss = (name: string, defense: number) =>
+      pokemon({
+        name,
+        variant_id: `${name.toLowerCase()}-raid-target`,
+        attack: 220,
+        defense,
+        stamina: 220,
+        type1_name: "rock",
+        type2_name: "none",
+        moves: [
+          move("Rock Throw", "rock", 1, 12, 900, 7),
+          move("Stone Edge", "rock", 0, 105, 2300, -100),
+        ],
+        raid_boss: [{ id: defense, tier: "5", form: "Normal", name }],
+      });
+    const lowerDefenseBoss = raidBoss("Lower Defense Boss", 100);
+    const higherDefenseBoss = raidBoss("Higher Defense Boss", 300);
+
+    const lowerOverall = scoreBestRaidOverallAttackers(
+      [attacker],
+      baseSettings,
+      [lowerDefenseBoss],
+    )[0] as RaidOverallScore;
+    const higherOverall = scoreBestRaidOverallAttackers(
+      [attacker],
+      baseSettings,
+      [higherDefenseBoss],
+    )[0] as RaidOverallScore;
+    const lowerType = scoreRaidTypeDps(
+      [attacker],
+      "fighting",
+      baseSettings,
+      [lowerDefenseBoss],
+    )[0] as RaidTypeDpsScore;
+    const higherType = scoreRaidTypeDps(
+      [attacker],
+      "fighting",
+      baseSettings,
+      [higherDefenseBoss],
+    )[0] as RaidTypeDpsScore;
+
+    expect(lowerOverall.dps).toBeGreaterThan(higherOverall.dps);
+    expect(lowerOverall.fastDamage).toBeGreaterThan(higherOverall.fastDamage);
+    expect(lowerType.dps).toBeGreaterThan(higherType.dps);
+    expect(lowerType.chargedDamage).toBeGreaterThan(
+      higherType.chargedDamage,
+    );
+  });
+
+  it("aggregates same-typing raid targets without dropping their weights", () => {
+    const targets = [
+      pokemon({
+        name: "First Rock Boss",
+        variant_id: "first-rock-boss",
+        type1_name: "rock",
+        type2_name: "none",
+        raid_boss: [
+          { id: 1, tier: "5", form: "Normal", name: "First Rock Boss" },
+        ],
+      }),
+      pokemon({
+        name: "Second Rock Boss",
+        variant_id: "second-rock-boss",
+        type1_name: "rock",
+        type2_name: "none",
+        raid_boss: [
+          { id: 2, tier: "5", form: "Normal", name: "Second Rock Boss" },
+        ],
+      }),
+    ];
+
+    const profiles = getRaidOverallTargetProfiles(targets);
+
+    expect(profiles).toHaveLength(1);
+    expect(profiles[0]?.weight).toBe(8);
+    expect(profiles[0]?.targets).toHaveLength(2);
+  });
+
+  it("uses legal boss moves and typing to model broad-ranking survival", () => {
+    const attacker = pokemon({
+      name: "Venusaur",
+      variant_id: "venusaur-default",
+      attack: 198,
+      defense: 189,
+      stamina: 190,
+      type1_name: "grass",
+      type2_name: "poison",
+      moves: [
+        move("Vine Whip", "grass", 1, 7, 600, 6),
+        move("Frenzy Plant", "grass", 0, 100, 2600, -50),
+      ],
+    });
+    const raidBoss = (name: string, moveType: string) =>
+      pokemon({
+        name,
+        variant_id: `${name.toLowerCase()}-raid-target`,
+        attack: 250,
+        defense: 200,
+        stamina: 220,
+        type1_name: "normal",
+        type2_name: "none",
+        moves: [
+          move(`${moveType} Fast`, moveType, 1, 15, 1000, 10),
+          move(`${moveType} Charged`, moveType, 0, 120, 2500, -100),
+        ],
+        raid_boss: [{ id: moveType, tier: "5", form: "Normal", name }],
+      });
+    const fireBoss = raidBoss("Fire Moveset Boss", "fire");
+    const waterBoss = raidBoss("Water Moveset Boss", "water");
+
+    const versusFire = scoreBestRaidOverallAttackers(
+      [attacker],
+      baseSettings,
+      [fireBoss],
+    )[0] as RaidOverallScore;
+    const versusWater = scoreBestRaidOverallAttackers(
+      [attacker],
+      baseSettings,
+      [waterBoss],
+    )[0] as RaidOverallScore;
+
+    expect(versusFire.tdo).toBeLessThan(versusWater.tdo);
+    expect(versusFire.er).toBeLessThan(versusWater.er);
+    expect(versusFire.eDps).toBeLessThan(versusWater.eDps);
   });
 
   it("dedupes overall attackers by effective DPS before paper ER", () => {

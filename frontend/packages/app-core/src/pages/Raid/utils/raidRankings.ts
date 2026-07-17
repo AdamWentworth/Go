@@ -17,10 +17,7 @@ import {
   COMFORTABLE_SAFETY_FACTOR,
   FALLBACK_OVERALL_TARGET_PROFILES,
   RAID_SAFETY_FACTOR,
-  SHADOW_ATTACKER_DEFENSE_MULTIPLIER,
   TYPE_DPS_ER_TDO_EXPONENT,
-  TYPE_DPS_INCOMING_CHARGED_DAMAGE_NUMERATOR,
-  TYPE_DPS_INCOMING_DAMAGE_NUMERATOR,
 } from "./raidRules";
 import {
   getLegalRaidChargedMoves,
@@ -46,6 +43,11 @@ import {
   getRaidMoveEnergy,
   getTypeDpsEffectiveness,
 } from "./raidCombat";
+import {
+  buildRaidTargetCombatContexts,
+  calculateRaidAttackerBattleStats,
+  type RaidTargetCombatContext,
+} from "./raidTargetModel";
 
 export type {
   FriendshipKey,
@@ -191,21 +193,19 @@ export const calculateOverallMoveCycleScore = (
   chargedMove: Move,
   settings: RaidCounterSettings,
   targetProfiles: RaidOverallTargetProfile[] = FALLBACK_OVERALL_TARGET_PROFILES,
+  preparedTargetContexts?: RaidTargetCombatContext[],
 ): RaidOverallScore => {
-  const cpMultiplier = cpMultipliers[settings.attackerLevel];
-  const attackerAttack = (attacker.attack + 15) * cpMultiplier;
-  const shadowDefense = attacker.variantType.toLowerCase().includes("shadow")
-    ? SHADOW_ATTACKER_DEFENSE_MULTIPLIER
-    : 1;
-  const attackerDefense =
-    (attacker.defense + 15) * cpMultiplier * shadowDefense;
-  const attackerHp = Math.max(
-    1,
-    Math.floor((attacker.stamina + 15) * cpMultiplier),
-  );
-  const incomingDps = TYPE_DPS_INCOMING_DAMAGE_NUMERATOR / attackerDefense;
-  const incomingChargedDamage =
-    TYPE_DPS_INCOMING_CHARGED_DAMAGE_NUMERATOR / attackerDefense;
+  const attackerStats = calculateRaidAttackerBattleStats(attacker, settings);
+  const targetContexts =
+    preparedTargetContexts ??
+    buildRaidTargetCombatContexts(
+      attacker,
+      settings,
+      targetProfiles,
+      attackerStats,
+    );
+  const attackerAttack = attackerStats.attack;
+  const attackerHp = attackerStats.hp;
   const fastEnergy = Math.max(1, getRaidMoveEnergy(fastMove));
   const chargedEnergyCost = Math.max(
     1,
@@ -215,7 +215,6 @@ export const calculateOverallMoveCycleScore = (
   const fastSeconds = getProcessedRaidMoveSeconds(fastMove);
   const chargedSeconds = getProcessedRaidMoveSeconds(chargedMove);
   const cycleSeconds = fastUses * fastSeconds + chargedSeconds;
-  const timeToFaintSeconds = attackerHp / incomingDps;
 
   let scoreWeight = 0;
   let fastDamageSum = 0;
@@ -226,7 +225,8 @@ export const calculateOverallMoveCycleScore = (
   let erSum = 0;
   let eDpsSum = 0;
 
-  for (const targetProfile of targetProfiles) {
+  for (const targetContext of targetContexts) {
+    const targetProfile = targetContext.profile;
     const targetTypes = targetProfile.types;
     const weight = targetProfile.weight;
     const fastDamage = calculateTypeDpsMoveDamage({
@@ -235,6 +235,7 @@ export const calculateOverallMoveCycleScore = (
       attackerAttack,
       selectedType: "",
       targetTypes,
+      targetDefense: targetContext.targetDefense,
       settings,
       charged: false,
     });
@@ -244,6 +245,7 @@ export const calculateOverallMoveCycleScore = (
       attackerAttack,
       selectedType: "",
       targetTypes,
+      targetDefense: targetContext.targetDefense,
       settings,
       charged: true,
     });
@@ -253,10 +255,10 @@ export const calculateOverallMoveCycleScore = (
       fastMove,
       chargedMove,
       attackerHp,
-      incomingDps,
-      incomingChargedDamage,
+      incomingDps: targetContext.incomingDps,
+      incomingChargedDamage: targetContext.incomingChargedDamage,
     });
-    const tdo = dps * timeToFaintSeconds;
+    const tdo = dps * targetContext.timeToFaintSeconds;
     const er =
       dps > 0 && tdo > 0
         ? Math.pow(dps, 1 - TYPE_DPS_ER_TDO_EXPONENT) *
@@ -315,6 +317,11 @@ export const scoreRaidOverallAttackers = (
     .flatMap((attacker) => {
       const fastMoves = getLegalRaidFastMoves(attacker);
       const chargedMoves = getLegalRaidChargedMoves(attacker);
+      const targetContexts = buildRaidTargetCombatContexts(
+        attacker,
+        settings,
+        targetProfiles,
+      );
 
       return fastMoves.flatMap((fastMove) =>
         chargedMoves.map((chargedMove) =>
@@ -324,6 +331,7 @@ export const scoreRaidOverallAttackers = (
             chargedMove,
             settings,
             targetProfiles,
+            targetContexts,
           ),
         ),
       );
@@ -348,32 +356,27 @@ export const scoreBestRaidOverallAttackers = (
     const chargedMoves = getLegalRaidChargedMoves(attacker);
     const key =
       attacker.variant_id || `${attacker.pokemon_id}-${attacker.variantType}`;
-    const cpMultiplier = cpMultipliers[settings.attackerLevel];
-    const attackerAttack = (attacker.attack + 15) * cpMultiplier;
-    const shadowDefense = attacker.variantType.toLowerCase().includes("shadow")
-      ? SHADOW_ATTACKER_DEFENSE_MULTIPLIER
-      : 1;
-    const attackerDefense =
-      (attacker.defense + 15) * cpMultiplier * shadowDefense;
-    const attackerHp = Math.max(
-      1,
-      Math.floor((attacker.stamina + 15) * cpMultiplier),
+    const attackerStats = calculateRaidAttackerBattleStats(attacker, settings);
+    const attackerAttack = attackerStats.attack;
+    const attackerHp = attackerStats.hp;
+    const targetContexts = buildRaidTargetCombatContexts(
+      attacker,
+      settings,
+      targetProfiles,
+      attackerStats,
     );
-    const incomingDps = TYPE_DPS_INCOMING_DAMAGE_NUMERATOR / attackerDefense;
-    const incomingChargedDamage =
-      TYPE_DPS_INCOMING_CHARGED_DAMAGE_NUMERATOR / attackerDefense;
-    const timeToFaintSeconds = attackerHp / incomingDps;
     const cp = calculatePokemonCpForLevel(attacker, settings.attackerLevel);
     const prepareMoveDamages = (moves: Move[], charged: boolean) =>
       moves.map((move) => ({
         move,
-        damages: targetProfiles.map((targetProfile) =>
+        damages: targetContexts.map((targetContext) =>
           calculateTypeDpsMoveDamage({
             move,
             attacker,
             attackerAttack,
             selectedType: "",
-            targetTypes: targetProfile.types,
+            targetTypes: targetContext.profile.types,
+            targetDefense: targetContext.targetDefense,
             settings,
             charged,
           }),
@@ -406,7 +409,8 @@ export const scoreBestRaidOverallAttackers = (
           let erSum = 0;
           let eDpsSum = 0;
 
-          targetProfiles.forEach((targetProfile, index) => {
+          targetContexts.forEach((targetContext, index) => {
+            const targetProfile = targetContext.profile;
             const weight = targetProfile.weight;
             const fastDamage = fastDamages[index] ?? 0;
             const chargedDamage = chargedDamages[index] ?? 0;
@@ -416,10 +420,10 @@ export const scoreBestRaidOverallAttackers = (
               fastMove,
               chargedMove,
               attackerHp,
-              incomingDps,
-              incomingChargedDamage,
+              incomingDps: targetContext.incomingDps,
+              incomingChargedDamage: targetContext.incomingChargedDamage,
             });
-            const tdo = dps * timeToFaintSeconds;
+            const tdo = dps * targetContext.timeToFaintSeconds;
             const er =
               dps > 0 && tdo > 0
                 ? Math.pow(dps, 1 - TYPE_DPS_ER_TDO_EXPONENT) *
@@ -473,26 +477,16 @@ export const calculateTypeMoveCycleScore = (
   typeName: string,
   settings: RaidCounterSettings,
   targetProfiles: RaidOverallTargetProfile[] = [],
+  preparedTargetContexts?: RaidTargetCombatContext[],
 ): RaidTypeDpsScore => {
   const targetType = normalizeTypeName(typeName);
   const fastType = normalizeTypeName(fastMove.type_name || fastMove.type);
   const chargedType = normalizeTypeName(
     chargedMove.type_name || chargedMove.type,
   );
-  const cpMultiplier = cpMultipliers[settings.attackerLevel];
-  const attackerAttack = (attacker.attack + 15) * cpMultiplier;
-  const shadowDefense = attacker.variantType.toLowerCase().includes("shadow")
-    ? SHADOW_ATTACKER_DEFENSE_MULTIPLIER
-    : 1;
-  const attackerDefense =
-    (attacker.defense + 15) * cpMultiplier * shadowDefense;
-  const attackerHp = Math.max(
-    1,
-    Math.floor((attacker.stamina + 15) * cpMultiplier),
-  );
-  const incomingDps = TYPE_DPS_INCOMING_DAMAGE_NUMERATOR / attackerDefense;
-  const incomingChargedDamage =
-    TYPE_DPS_INCOMING_CHARGED_DAMAGE_NUMERATOR / attackerDefense;
+  const attackerStats = calculateRaidAttackerBattleStats(attacker, settings);
+  const attackerAttack = attackerStats.attack;
+  const attackerHp = attackerStats.hp;
   const fastEnergy = Math.max(1, getRaidMoveEnergy(fastMove));
   const chargedEnergyCost = Math.max(
     1,
@@ -502,11 +496,18 @@ export const calculateTypeMoveCycleScore = (
   const fastSeconds = getProcessedRaidMoveSeconds(fastMove);
   const chargedSeconds = getProcessedRaidMoveSeconds(chargedMove);
   const cycleSeconds = fastUses * fastSeconds + chargedSeconds;
-  const timeToFaintSeconds = attackerHp / incomingDps;
   const effectiveProfiles =
     targetProfiles.length > 0
       ? targetProfiles
       : [{ types: [], weight: 1 } satisfies RaidOverallTargetProfile];
+  const targetContexts =
+    preparedTargetContexts ??
+    buildRaidTargetCombatContexts(
+      attacker,
+      settings,
+      effectiveProfiles,
+      attackerStats,
+    );
 
   let totalWeight = 0;
   let fastDamageSum = 0;
@@ -520,7 +521,8 @@ export const calculateTypeMoveCycleScore = (
   let eDpsSum = 0;
   let erSum = 0;
 
-  effectiveProfiles.forEach((targetProfile) => {
+  targetContexts.forEach((targetContext) => {
+    const targetProfile = targetContext.profile;
     const useRealTarget = targetProfile.types.length > 0;
     const fastEffectiveness = useRealTarget
       ? getTypeEffectivenessMultiplier(fastType, targetProfile.types)
@@ -539,6 +541,7 @@ export const calculateTypeMoveCycleScore = (
       attackerAttack,
       selectedType: targetType,
       targetTypes: useRealTarget ? targetProfile.types : undefined,
+      targetDefense: targetContext.targetDefense,
       settings,
       charged: false,
     });
@@ -548,6 +551,7 @@ export const calculateTypeMoveCycleScore = (
       attackerAttack,
       selectedType: targetType,
       targetTypes: useRealTarget ? targetProfile.types : undefined,
+      targetDefense: targetContext.targetDefense,
       settings,
       charged: true,
     });
@@ -557,10 +561,10 @@ export const calculateTypeMoveCycleScore = (
       fastMove,
       chargedMove,
       attackerHp,
-      incomingDps,
-      incomingChargedDamage,
+      incomingDps: targetContext.incomingDps,
+      incomingChargedDamage: targetContext.incomingChargedDamage,
     });
-    const tdo = dps * timeToFaintSeconds;
+    const tdo = dps * targetContext.timeToFaintSeconds;
     const eDps = calculateEffectiveRaidDps({
       dps,
       tdo,
@@ -629,6 +633,15 @@ export const scoreRaidTypeDps = (
     .flatMap((attacker) => {
       const fastMoves = getLegalRaidFastMoves(attacker);
       const chargedMoves = getLegalRaidChargedMoves(attacker);
+      const effectiveProfiles =
+        targetProfiles.length > 0
+          ? targetProfiles
+          : [{ types: [], weight: 1 } satisfies RaidOverallTargetProfile];
+      const targetContexts = buildRaidTargetCombatContexts(
+        attacker,
+        settings,
+        effectiveProfiles,
+      );
 
       return fastMoves.flatMap((fastMove) =>
         chargedMoves
@@ -649,6 +662,7 @@ export const scoreRaidTypeDps = (
               targetType,
               settings,
               targetProfiles,
+              targetContexts,
             ),
           ),
       );
