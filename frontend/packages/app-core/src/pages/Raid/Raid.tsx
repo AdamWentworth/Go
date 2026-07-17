@@ -1,32 +1,26 @@
 import React, { useEffect, useMemo, useState } from "react";
-import {
-  FaChevronDown,
-  FaChevronUp,
-  FaSlidersH,
-  FaSort,
-  FaSortDown,
-  FaSortUp,
-} from "react-icons/fa";
 import "./Raid.css";
 import { useVariantsStore } from "@/features/variants/store/useVariantsStore";
 import type { PokemonVariant } from "@/types/pokemonVariants";
 import { getTypeIconPath } from "@/utils/imageHelpers";
 import LoadingSpinner from "../../components/LoadingSpinner";
-import RaidPokemonImage from "./components/RaidPokemonImage";
+import RaidBossCounterList from "./components/RaidBossCounterList";
+import RaidBossDetails from "./components/RaidBossDetails";
+import RaidBossPicker from "./components/RaidBossPicker";
+import RaidCounterToolbar from "./components/RaidCounterToolbar";
+import RaidModeTabs from "./components/RaidModeTabs";
+import RaidModifiers from "./components/RaidModifiers";
+import RaidRankingTable from "./components/RaidRankingTable";
 import { TYPE_MAPPING } from "./utils/constants";
 import {
   DEFAULT_RAID_RELOBBY_SECONDS,
-  FRIENDSHIP_DAMAGE_BONUS,
-  MEGA_ALLY_DAMAGE_BONUS,
   RAID_TIER_PRESETS,
   calculateRaidBossStats,
   dedupeBestCounterPerVariant,
   dedupeBestTypeDpsPerVariant,
   estimateRaidGroup,
-  formatSeconds,
   getPrimaryRaidMetadataForVariant,
   getRaidTierKeyForVariant,
-  getVariantTypeNames,
   isEligibleRaidAttacker,
   isEligibleRaidBoss,
   isShadowRaidTier,
@@ -37,31 +31,17 @@ import {
   type FriendshipKey,
   type MegaAllyBonusKey,
   type PartyPowerKey,
-  type RaidCounterScore,
   type RaidCounterSettings,
-  type RaidOverallScore,
-  type RaidTypeDpsScore,
   type RaidTierKey,
   type ShadowBossMode,
 } from "./utils/raidCalculations";
 import {
-  ATTACKER_LEVEL_OPTIONS,
   DEFAULT_METRIC_SORT,
   DEFAULT_TYPE_DPS_PAGE,
-  FRIENDSHIP_OPTIONS,
-  MEGA_OPTIONS,
-  PARTY_POWER_OPTIONS,
-  RELOBBY_DELAY_OPTIONS,
   capitalize,
-  formatDps,
-  formatEr,
-  formatTypeList,
-  formatWholeNumber,
-  getMoveTypeIcon,
-  getMoveTypeName,
+  getRaidVariantDisplayName,
   getTypeClassName,
   getUniqueByVariant,
-  getVariantBadge,
   matchesCounterSearch,
   sortRaidMetricScores,
   type RaidMetricSortDirection,
@@ -116,7 +96,9 @@ const Raid: React.FC = () => {
         return (
           aHasRaidData - bHasRaidData ||
           a.pokedex_number - b.pokedex_number ||
-          a.name.localeCompare(b.name)
+          getRaidVariantDisplayName(a).localeCompare(
+            getRaidVariantDisplayName(b),
+          )
         );
       }),
     [variants],
@@ -139,7 +121,7 @@ const Raid: React.FC = () => {
     return bossOptions
       .filter(
         (boss) =>
-          boss.name.toLowerCase().includes(query) ||
+          getRaidVariantDisplayName(boss).toLowerCase().includes(query) ||
           String(boss.pokedex_number).padStart(4, "0").includes(query),
       )
       .slice(0, 6);
@@ -219,7 +201,12 @@ const Raid: React.FC = () => {
 
   const typeDpsScores = useMemo(() => {
     if (viewMode !== "type-dps") return [];
-    const allScores = scoreRaidTypeDps(attackers, selectedType, settings);
+    const allScores = scoreRaidTypeDps(
+      attackers,
+      selectedType,
+      settings,
+      bossOptions,
+    );
     const scored = bestOnly
       ? dedupeBestTypeDpsPerVariant(allScores)
       : allScores;
@@ -232,6 +219,7 @@ const Raid: React.FC = () => {
     attackerSearch,
     attackers,
     bestOnly,
+    bossOptions,
     selectedType,
     settings,
     sortDirection,
@@ -264,6 +252,27 @@ const Raid: React.FC = () => {
     : null;
   const typeOptions = Object.values(TYPE_MAPPING).map((type) => type.name);
   const bossSearchActive = bossSearch.trim().length > 0;
+  const modifierProps = {
+    typeOptions,
+    attackerLevel,
+    onAttackerLevelChange: setAttackerLevel,
+    friendship,
+    onFriendshipChange: setFriendship,
+    megaAllyBonus,
+    onMegaAllyBonusChange: setMegaAllyBonus,
+    partyPower,
+    onPartyPowerChange: setPartyPower,
+    weatherBoostedType,
+    onWeatherBoostedTypeChange: setWeatherBoostedType,
+    relobbySeconds,
+    onRelobbySecondsChange: setRelobbySeconds,
+    shadowMechanicsEnabled,
+    selectedBossIsShadowRaid,
+    shadowRaid,
+    onShadowRaidChange: setShadowRaid,
+    shadowBossMode,
+    onShadowBossModeChange: setShadowBossMode,
+  };
 
   const handleBossSelect = (boss: PokemonVariant) => {
     setSelectedBossId(boss.variant_id);
@@ -281,329 +290,6 @@ const Raid: React.FC = () => {
     setSortMetric(metric);
     setSortDirection("descending");
   };
-
-  const renderSortableMetricHeader = (
-    metric: RaidMetricSortKey,
-    label: string,
-    title?: string,
-  ) => {
-    const active = sortMetric === metric;
-    const currentDirection = active ? sortDirection : "none";
-
-    return (
-      <th
-        aria-sort={currentDirection}
-        className="raid-sort-header"
-        scope="col"
-        title={title}
-      >
-        <button
-          aria-label={`Sort by ${label}${
-            active ? `, currently ${sortDirection}` : ""
-          }`}
-          onClick={() => handleMetricSort(metric)}
-          type="button"
-        >
-          <span>{label}</span>
-          {active ? (
-            sortDirection === "descending" ? (
-              <FaSortDown aria-hidden="true" />
-            ) : (
-              <FaSortUp aria-hidden="true" />
-            )
-          ) : (
-            <FaSort aria-hidden="true" />
-          )}
-        </button>
-      </th>
-    );
-  };
-
-  const renderCounterToolbar = (
-    label: string,
-    includeRankingSettings = false,
-  ) => (
-    <section className="raid-counter-toolbar">
-      <label className="raid-field">
-        <span>{label}</span>
-        <input
-          type="search"
-          value={attackerSearch}
-          onChange={(event) => setAttackerSearch(event.target.value)}
-          placeholder="Pokemon, type, or move"
-        />
-      </label>
-      <div className="raid-counter-actions">
-        <button
-          className={`raid-toggle-button ${bestOnly ? "active" : ""}`}
-          onClick={() => setBestOnly((previous) => !previous)}
-          type="button"
-        >
-          {bestOnly ? "Best moves" : "All moves"}
-        </button>
-        {includeRankingSettings && (
-          <button
-            aria-expanded={rankingSettingsOpen}
-            className="raid-ranking-settings-toggle"
-            onClick={() => setRankingSettingsOpen((previous) => !previous)}
-            type="button"
-          >
-            <FaSlidersH aria-hidden="true" />
-            <span>Settings</span>
-            {rankingSettingsOpen ? (
-              <FaChevronUp aria-hidden="true" />
-            ) : (
-              <FaChevronDown aria-hidden="true" />
-            )}
-          </button>
-        )}
-      </div>
-    </section>
-  );
-
-  const renderSharedModifiers = (
-    includeShadowControls: boolean,
-    includeRelobbyControls = false,
-  ) => (
-    <section className="raid-settings-grid" aria-label="Raid modifiers">
-      <label className="raid-field">
-        <span>Attacker level</span>
-        <select
-          value={attackerLevel}
-          onChange={(event) =>
-            setAttackerLevel(
-              event.target.value as RaidCounterSettings["attackerLevel"],
-            )
-          }
-        >
-          {ATTACKER_LEVEL_OPTIONS.map((level) => (
-            <option key={level} value={level}>
-              Level {level.replace(".0", "")}
-            </option>
-          ))}
-        </select>
-      </label>
-
-      <label className="raid-field">
-        <span>Friendship</span>
-        <select
-          value={friendship}
-          onChange={(event) =>
-            setFriendship(event.target.value as FriendshipKey)
-          }
-        >
-          {FRIENDSHIP_OPTIONS.map((option) => (
-            <option key={option.key} value={option.key}>
-              {option.label} ({FRIENDSHIP_DAMAGE_BONUS[option.key].toFixed(2)}x)
-            </option>
-          ))}
-        </select>
-      </label>
-
-      <label className="raid-field">
-        <span>Mega ally</span>
-        <select
-          value={megaAllyBonus}
-          onChange={(event) =>
-            setMegaAllyBonus(event.target.value as MegaAllyBonusKey)
-          }
-        >
-          {MEGA_OPTIONS.map((option) => (
-            <option key={option.key} value={option.key}>
-              {option.label} ({MEGA_ALLY_DAMAGE_BONUS[option.key].toFixed(1)}x)
-            </option>
-          ))}
-        </select>
-      </label>
-
-      <label className="raid-field">
-        <span>Party Power</span>
-        <select
-          value={partyPower}
-          onChange={(event) =>
-            setPartyPower(event.target.value as PartyPowerKey)
-          }
-        >
-          {PARTY_POWER_OPTIONS.map((option) => (
-            <option key={option.key} value={option.key}>
-              {option.label}
-            </option>
-          ))}
-        </select>
-      </label>
-
-      <label className="raid-field">
-        <span>Weather boost</span>
-        <select
-          value={weatherBoostedType}
-          onChange={(event) => setWeatherBoostedType(event.target.value)}
-        >
-          <option value="none">No weather boost</option>
-          {typeOptions.map((type) => (
-            <option key={type} value={type}>
-              {capitalize(type)}
-            </option>
-          ))}
-        </select>
-      </label>
-
-      {includeRelobbyControls && (
-        <label className="raid-field">
-          <span>Relobby delay</span>
-          <select
-            value={relobbySeconds}
-            onChange={(event) => setRelobbySeconds(Number(event.target.value))}
-          >
-            {RELOBBY_DELAY_OPTIONS.map((seconds) => (
-              <option key={seconds} value={seconds}>
-                {seconds === 0 ? "No delay" : `${seconds} seconds`}
-              </option>
-            ))}
-          </select>
-        </label>
-      )}
-
-      {includeShadowControls && (
-        <div className="raid-shadow-controls">
-          <button
-            className={`raid-toggle-button ${shadowMechanicsEnabled ? "active" : ""}`}
-            disabled={selectedBossIsShadowRaid}
-            onClick={() => setShadowRaid((previous) => !previous)}
-            type="button"
-          >
-            {selectedBossIsShadowRaid ? "Shadow raid data" : "Shadow raid"}
-          </button>
-          {shadowMechanicsEnabled && (
-            <div
-              className="raid-segmented-control"
-              aria-label="Shadow boss state"
-            >
-              {(["subdued", "enraged"] as ShadowBossMode[]).map((mode) => (
-                <button
-                  className={shadowBossMode === mode ? "active" : ""}
-                  key={mode}
-                  onClick={() => setShadowBossMode(mode)}
-                  type="button"
-                >
-                  {capitalize(mode)}
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
-      )}
-    </section>
-  );
-
-  const renderBossCounterCard = (score: RaidCounterScore, index: number) => (
-    <article
-      className="raid-counter-card"
-      key={`${score.variant.variant_id}-${index}`}
-    >
-      <div className="raid-counter-rank">{index + 1}</div>
-      <RaidPokemonImage variant={score.variant} />
-      <div className="raid-counter-main">
-        <strong>{score.variant.name}</strong>
-        <span>
-          {score.fastMove.name} / {score.chargedMove.name}
-        </span>
-        <small>
-          CP {score.cp.toLocaleString()} at level{" "}
-          {attackerLevel.replace(".0", "")}
-        </small>
-      </div>
-      <div className="raid-counter-stats">
-        <span>{formatDps(score.dps)} DPS</span>
-        <span>{score.trainersNeeded} trainers</span>
-        <span>{formatSeconds(score.soloTimeSeconds)}</span>
-      </div>
-    </article>
-  );
-
-  const renderTypeDpsMove = (
-    label: "Fast" | "Charged",
-    move: RaidTypeDpsScore["fastMove"],
-    matchesType: boolean,
-  ) => {
-    const typeName = getMoveTypeName(move);
-
-    return (
-      <span
-        aria-label={`${label} move: ${move.name}, ${typeName} type`}
-        className={`raid-type-table-move ${matchesType ? "type-match" : ""}`}
-      >
-        <img
-          className="raid-type-table-move-icon"
-          src={getMoveTypeIcon(move)}
-          alt={`${typeName} type`}
-          draggable={false}
-        />
-        <span className="raid-type-table-move-name">{move.name}</span>
-      </span>
-    );
-  };
-
-  const renderOverallRow = (score: RaidOverallScore, index: number) => (
-    <tr key={`${score.variant.variant_id}-${index}`}>
-      <td>
-        <div className="raid-type-table-pokemon">
-          <span className="raid-type-table-rank">{index + 1}</span>
-          <RaidPokemonImage variant={score.variant} />
-          <span className="raid-type-table-pokemon-copy">
-            <strong>{score.variant.name}</strong>
-            <small>
-              {formatTypeList(getVariantTypeNames(score.variant)) ||
-                "Unknown type"}
-            </small>
-          </span>
-        </div>
-      </td>
-      <td>
-        <div className="raid-type-table-moves">
-          {renderTypeDpsMove("Fast", score.fastMove, false)}
-          {renderTypeDpsMove("Charged", score.chargedMove, false)}
-        </div>
-      </td>
-      <td className="raid-type-table-number">{formatDps(score.eDps)}</td>
-      <td className="raid-type-table-number">{formatDps(score.dps)}</td>
-      <td className="raid-type-table-number">{formatWholeNumber(score.tdo)}</td>
-      <td className="raid-type-table-number">{formatEr(score.er)}</td>
-      <td className="raid-type-table-number">{score.cp.toLocaleString()}</td>
-    </tr>
-  );
-
-  const renderTypeDpsRow = (score: RaidTypeDpsScore, index: number) => (
-    <tr key={`${score.variant.variant_id}-${index}`}>
-      <td>
-        <div className="raid-type-table-pokemon">
-          <span className="raid-type-table-rank">{index + 1}</span>
-          <RaidPokemonImage variant={score.variant} />
-          <span className="raid-type-table-pokemon-copy">
-            <strong>{score.variant.name}</strong>
-            <small>
-              {formatTypeList(getVariantTypeNames(score.variant)) ||
-                "Unknown type"}
-            </small>
-          </span>
-        </div>
-      </td>
-      <td>
-        <div className="raid-type-table-moves">
-          {renderTypeDpsMove("Fast", score.fastMove, score.fastMatchesType)}
-          {renderTypeDpsMove(
-            "Charged",
-            score.chargedMove,
-            score.chargedMatchesType,
-          )}
-        </div>
-      </td>
-      <td className="raid-type-table-number">{formatDps(score.eDps)}</td>
-      <td className="raid-type-table-number">{formatDps(score.dps)}</td>
-      <td className="raid-type-table-number">{formatWholeNumber(score.tdo)}</td>
-      <td className="raid-type-table-number">{formatEr(score.er)}</td>
-      <td className="raid-type-table-number">{score.cp.toLocaleString()}</td>
-    </tr>
-  );
 
   if (loading || movesLoading || raidDataLoading) {
     return <LoadingSpinner />;
@@ -626,29 +312,7 @@ const Raid: React.FC = () => {
 
   return (
     <div className="raid-page">
-      <section className="raid-mode-tabs" aria-label="Raid planner views">
-        <button
-          className={viewMode === "overall" ? "active" : ""}
-          onClick={() => setViewMode("overall")}
-          type="button"
-        >
-          Overall
-        </button>
-        <button
-          className={viewMode === "type-dps" ? "active" : ""}
-          onClick={() => setViewMode("type-dps")}
-          type="button"
-        >
-          By type
-        </button>
-        <button
-          className={viewMode === "boss" ? "active" : ""}
-          onClick={() => setViewMode("boss")}
-          type="button"
-        >
-          Boss counters
-        </button>
-      </section>
+      <RaidModeTabs viewMode={viewMode} onChange={setViewMode} />
 
       {viewMode === "overall" && (
         <section className="raid-layout raid-overall-layout">
@@ -661,46 +325,38 @@ const Raid: React.FC = () => {
               <span>Team of six, {relobbySeconds}s relobby</span>
             </header>
 
-            {renderCounterToolbar("Attacker search", true)}
+            <RaidCounterToolbar
+              label="Attacker search"
+              search={attackerSearch}
+              onSearchChange={setAttackerSearch}
+              bestOnly={bestOnly}
+              onBestOnlyChange={setBestOnly}
+              includeRankingSettings
+              rankingSettingsOpen={rankingSettingsOpen}
+              onRankingSettingsOpenChange={setRankingSettingsOpen}
+            />
 
             {rankingSettingsOpen && (
               <section
                 className="raid-ranking-settings"
                 aria-label="Ranking settings"
               >
-                {renderSharedModifiers(false, true)}
+                <RaidModifiers
+                  {...modifierProps}
+                  includeShadowControls={false}
+                  includeRelobbyControls
+                />
               </section>
             )}
 
-            <section
-              className="raid-type-results"
-              aria-label="Top raid attackers"
-            >
-              {overallScores.length > 0 ? (
-                <table>
-                  <thead>
-                    <tr>
-                      <th scope="col">Pokémon</th>
-                      <th scope="col">Moves</th>
-                      {renderSortableMetricHeader(
-                        "eDps",
-                        "eDPS",
-                        "Effective damage per second after team relobby time",
-                      )}
-                      {renderSortableMetricHeader("dps", "DPS")}
-                      {renderSortableMetricHeader("tdo", "TDO")}
-                      {renderSortableMetricHeader("er", "ER")}
-                      {renderSortableMetricHeader("cp", "CP")}
-                    </tr>
-                  </thead>
-                  <tbody>{overallScores.map(renderOverallRow)}</tbody>
-                </table>
-              ) : (
-                <div className="raid-list-empty">
-                  No attackers match the current filters.
-                </div>
-              )}
-            </section>
+            <RaidRankingTable
+              ariaLabel="Top raid attackers"
+              scores={overallScores}
+              sortMetric={sortMetric}
+              sortDirection={sortDirection}
+              onSort={handleMetricSort}
+              emptyMessage="No attackers match the current filters."
+            />
           </main>
         </section>
       )}
@@ -708,141 +364,25 @@ const Raid: React.FC = () => {
       {viewMode === "boss" &&
         (selectedBoss && bossStats && groupEstimate ? (
           <section className="raid-layout">
-            <aside className="raid-panel raid-boss-panel">
-              <div className="raid-panel-header">
-                <p className="raid-eyebrow">Raid boss</p>
-                <h2>{selectedBoss.name}</h2>
-              </div>
-
-              <div className="raid-boss-card">
-                <div className="raid-boss-image-shell">
-                  <RaidPokemonImage
-                    variant={selectedBoss}
-                    alt={selectedBoss.name}
-                  />
-                </div>
-                <div className="raid-boss-summary">
-                  <span>{getVariantBadge(selectedBoss)}</span>
-                  <strong>CP {bossStats.bossCp.toLocaleString()}</strong>
-                  <small>
-                    {formatTypeList(getVariantTypeNames(selectedBoss)) ||
-                      "Unknown type"}
-                  </small>
-                </div>
-              </div>
-
-              <label className="raid-field">
-                <span>Find boss</span>
-                <input
-                  type="search"
-                  value={bossSearch}
-                  autoComplete="off"
-                  onChange={(event) => setBossSearch(event.target.value)}
-                  onKeyDown={(event) => {
-                    if (event.key === "Enter" && filteredBossOptions[0]) {
-                      handleBossSelect(filteredBossOptions[0]);
-                    }
-                  }}
-                  placeholder="Search by name or number"
-                />
-              </label>
-
-              {bossSearchActive && (
-                <div
-                  className="raid-boss-suggestions"
-                  aria-label="Raid boss suggestions"
-                >
-                  {filteredBossOptions.length > 0 ? (
-                    filteredBossOptions.map((boss) => (
-                      <button
-                        className={`raid-boss-option ${
-                          boss.variant_id === selectedBoss.variant_id
-                            ? "active"
-                            : ""
-                        }`}
-                        key={boss.variant_id}
-                        onClick={() => handleBossSelect(boss)}
-                        type="button"
-                      >
-                        <RaidPokemonImage variant={boss} />
-                        <span>{boss.name}</span>
-                        <small>
-                          #{String(boss.pokedex_number).padStart(4, "0")}
-                        </small>
-                      </button>
-                    ))
-                  ) : (
-                    <p className="raid-boss-empty">
-                      No matching raid boss found.
-                    </p>
-                  )}
-                </div>
-              )}
-            </aside>
+            <RaidBossPicker
+              selectedBoss={selectedBoss}
+              bossCp={bossStats.bossCp}
+              search={bossSearch}
+              searchActive={bossSearchActive}
+              filteredBossOptions={filteredBossOptions}
+              onSearchChange={setBossSearch}
+              onBossSelect={handleBossSelect}
+            />
 
             <main className="raid-panel raid-main-panel">
-              <section
-                className="raid-category-card"
-                aria-label="Raid category"
-              >
-                <div>
-                  <span>Raid category</span>
-                  <strong>{selectedTier.label}</strong>
-                </div>
-                <p>{selectedTier.note}</p>
-              </section>
+              <RaidBossDetails
+                tier={selectedTier}
+                bossStats={bossStats}
+                groupEstimate={groupEstimate}
+                metadata={bossMetadata}
+              />
 
-              <section className="raid-boss-math">
-                <div>
-                  <span>Boss CP</span>
-                  <strong>{bossStats.bossCp.toLocaleString()}</strong>
-                </div>
-                <div>
-                  <span>Boss HP</span>
-                  <strong>{bossStats.hp.toLocaleString()}</strong>
-                </div>
-                <div>
-                  <span>Tier</span>
-                  <strong>{selectedTier.shortLabel}</strong>
-                </div>
-                <div>
-                  <span>Top team DPS</span>
-                  <strong>{formatDps(groupEstimate.topTeamDps)}</strong>
-                </div>
-                <div>
-                  <span>Min trainers</span>
-                  <strong>{groupEstimate.minTrainers || "-"}</strong>
-                </div>
-                <div>
-                  <span>Comfortable</span>
-                  <strong>{groupEstimate.comfortableTrainers || "-"}</strong>
-                </div>
-              </section>
-
-              {bossMetadata && (
-                <section className="raid-catch-card">
-                  <div>
-                    <span>Known raid data</span>
-                    <strong>{bossMetadata.tier}</strong>
-                  </div>
-                  <div>
-                    <span>Catch CP</span>
-                    <strong>
-                      {bossMetadata.min_unboosted_cp} -{" "}
-                      {bossMetadata.max_unboosted_cp}
-                    </strong>
-                  </div>
-                  <div>
-                    <span>Boosted CP</span>
-                    <strong>
-                      {bossMetadata.min_boosted_cp} -{" "}
-                      {bossMetadata.max_boosted_cp}
-                    </strong>
-                  </div>
-                </section>
-              )}
-
-              {renderSharedModifiers(true)}
+              <RaidModifiers {...modifierProps} includeShadowControls />
 
               {shadowMechanicsEnabled && (
                 <section className="raid-shadow-note">
@@ -855,17 +395,18 @@ const Raid: React.FC = () => {
                 </section>
               )}
 
-              {renderCounterToolbar("Counter search")}
+              <RaidCounterToolbar
+                label="Counter search"
+                search={attackerSearch}
+                onSearchChange={setAttackerSearch}
+                bestOnly={bestOnly}
+                onBestOnlyChange={setBestOnly}
+              />
 
-              <section className="raid-counter-list" aria-label="Raid counters">
-                {raidScores.length > 0 ? (
-                  raidScores.map(renderBossCounterCard)
-                ) : (
-                  <div className="raid-list-empty">
-                    No counters match the current filters.
-                  </div>
-                )}
-              </section>
+              <RaidBossCounterList
+                scores={raidScores}
+                attackerLevel={attackerLevel}
+              />
             </main>
           </section>
         ) : (
@@ -923,53 +464,50 @@ const Raid: React.FC = () => {
                 <p>
                   Uses the same eDPS, DPS, TDO, ER, and CP metrics as Overall.
                   Each moveset includes at least one {capitalize(selectedType)}
-                  move; {capitalize(selectedType)} damage is super effective
-                  while companion move types stay neutral.
+                  move and is modeled across high-tier raid-boss typings weak to{" "}
+                  {capitalize(selectedType)}. Companion moves use their real
+                  effectiveness in those matchups.
                 </p>
               )}
             </section>
 
-            {renderCounterToolbar("Attacker search", true)}
+            <RaidCounterToolbar
+              label="Attacker search"
+              search={attackerSearch}
+              onSearchChange={setAttackerSearch}
+              bestOnly={bestOnly}
+              onBestOnlyChange={setBestOnly}
+              includeRankingSettings
+              rankingSettingsOpen={rankingSettingsOpen}
+              onRankingSettingsOpenChange={setRankingSettingsOpen}
+            />
 
             {rankingSettingsOpen && (
               <section
                 className="raid-ranking-settings"
                 aria-label="Ranking settings"
               >
-                {renderSharedModifiers(false, true)}
+                <RaidModifiers
+                  {...modifierProps}
+                  includeShadowControls={false}
+                  includeRelobbyControls
+                />
               </section>
             )}
 
-            <section
-              className="raid-type-results"
-              aria-label="Type DPS counters"
-            >
-              {typeDpsScores.length > 0 ? (
-                <table>
-                  <thead>
-                    <tr>
-                      <th scope="col">Pokémon</th>
-                      <th scope="col">Moves</th>
-                      {renderSortableMetricHeader(
-                        "eDps",
-                        "eDPS",
-                        "Effective damage per second after team relobby time",
-                      )}
-                      {renderSortableMetricHeader("dps", "DPS")}
-                      {renderSortableMetricHeader("tdo", "TDO")}
-                      {renderSortableMetricHeader("er", "ER")}
-                      {renderSortableMetricHeader("cp", "CP")}
-                    </tr>
-                  </thead>
-                  <tbody>{typeDpsScores.map(renderTypeDpsRow)}</tbody>
-                </table>
-              ) : (
-                <div className="raid-list-empty">
+            <RaidRankingTable
+              ariaLabel="Type DPS counters"
+              scores={typeDpsScores}
+              sortMetric={sortMetric}
+              sortDirection={sortDirection}
+              onSort={handleMetricSort}
+              emptyMessage={
+                <>
                   No eligible attackers have a {capitalize(selectedType)} fast
                   or charged move.
-                </div>
-              )}
-            </section>
+                </>
+              }
+            />
           </main>
         </section>
       )}

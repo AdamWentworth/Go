@@ -81,6 +81,42 @@ export const getPokemonImage = (variant: PokemonVariant): string =>
     variant.currentImage || variant.image_url || variant.sprite_url || "",
   );
 
+const RAID_FUSION_NAMES: Readonly<Record<number, string>> = {
+  1: "Dusk Mane Necrozma",
+  2: "Dawn Wings Necrozma",
+  3: "White Kyurem",
+  4: "Black Kyurem",
+};
+
+const getFusionId = (variant: PokemonVariant): number | null => {
+  const explicitId = Number(variant.fusion_id);
+  if (Number.isInteger(explicitId) && explicitId > 0) return explicitId;
+
+  const match = variant.variantType.toLowerCase().match(/fusion_(\d+)/);
+  if (!match) return null;
+
+  const variantTypeId = Number(match[1]);
+  return Number.isInteger(variantTypeId) ? variantTypeId : null;
+};
+
+export const getRaidVariantDisplayName = (
+  variant: PokemonVariant,
+): string => {
+  const variantType = variant.variantType.toLowerCase();
+  if (!variantType.includes("fusion")) return variant.name;
+
+  const fusionId = getFusionId(variant);
+  const fusionName =
+    (fusionId == null ? undefined : RAID_FUSION_NAMES[fusionId]) ||
+    variant.fusion?.find((fusion) => fusion.fusion_id === fusionId)?.name ||
+    variant.species_name ||
+    variant.name;
+  const normalizedName = fusionName.replace(/^Shiny\s+/i, "");
+  const isShiny = variantType.includes("shiny") || /^Shiny\s+/i.test(variant.name);
+
+  return `${isShiny ? "Shiny " : ""}${normalizedName}`;
+};
+
 export const isMegaMewtwoY = (variant: PokemonVariant): boolean => {
   const megaForm = (variant.megaForm || variant.form || "").trim().toUpperCase();
   return (
@@ -144,7 +180,9 @@ export const sortRaidMetricScores = <Score extends RaidMetricScore>(
       return direction === "descending" ? -difference : difference;
     }
 
-    return a.variant.name.localeCompare(b.variant.name);
+    return getRaidVariantDisplayName(a.variant).localeCompare(
+      getRaidVariantDisplayName(b.variant),
+    );
   });
 
 export const matchesCounterSearch = (
@@ -157,7 +195,9 @@ export const matchesCounterSearch = (
   const types = getVariantTypeNames(score.variant);
 
   return (
-    score.variant.name.toLowerCase().includes(normalized) ||
+    getRaidVariantDisplayName(score.variant)
+      .toLowerCase()
+      .includes(normalized) ||
     score.fastMove.name.toLowerCase().includes(normalized) ||
     score.chargedMove.name.toLowerCase().includes(normalized) ||
     types.some((type) => type.includes(normalized))

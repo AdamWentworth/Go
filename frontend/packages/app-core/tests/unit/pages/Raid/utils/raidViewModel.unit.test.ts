@@ -4,6 +4,7 @@ import type { PokemonVariant } from "@/types/pokemonVariants";
 import type { Move } from "@/types/pokemonSubTypes";
 import {
   getUniqueByVariant,
+  getRaidVariantDisplayName,
   getVariantBadge,
   isMegaMewtwoY,
   matchesCounterSearch,
@@ -116,5 +117,35 @@ describe("raidViewModel", () => {
         makeVariant("Shadow Mewtwo", { variantType: "shiny_shadow" }),
       ),
     ).toBe("Shadow");
+  });
+
+  it.each([
+    [1, "fusion_1", "Necrozma", "Dusk Mane Necrozma"],
+    [2, "fusion_2", "Necrozma", "Dawn Wings Necrozma"],
+    [3, "fusion_3", "Kyurem", "White Kyurem"],
+    [4, "fusion_4", "Kyurem", "Black Kyurem"],
+  ] as const)(
+    "shows the canonical name for fusion %s",
+    (fusionId, variantType, sourceName, expectedName) => {
+      const variant = makeVariant(sourceName, {
+        pokemon_id: fusionId <= 2 ? 800 : 646,
+        fusion_id: fusionId,
+        variantType,
+      });
+
+      expect(getRaidVariantDisplayName(variant)).toBe(expectedName);
+    },
+  );
+
+  it("preserves the shiny state in canonical fusion names", () => {
+    expect(
+      getRaidVariantDisplayName(
+        makeVariant("Shiny Necrozma", {
+          pokemon_id: 800,
+          fusion_id: 2,
+          variantType: "shiny_fusion_2",
+        }),
+      ),
+    ).toBe("Shiny Dawn Wings Necrozma");
   });
 });

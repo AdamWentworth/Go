@@ -221,12 +221,12 @@ describe('resolveFusionMovePool', () => {
         ],
         fusion: [
           { fusion_id: 1, base_pokemon_id2: 791, name: 'Dusk Mane Necrozma' } as Fusion,
-          { fusion_id: 2, base_pokemon_id2: 792, name: 'Dusk Wings Necrozma' } as Fusion,
+          { fusion_id: 2, base_pokemon_id2: 792, name: 'Dawn Wings Necrozma' } as Fusion,
         ],
       } as unknown as Pick<PokemonVariant, 'moves' | 'fusion' | 'fusion_id' | 'variantType'>,
       fusion: {
         is_fused: true,
-        fusion_form: 'Dawn Wings Necrozma',
+        fusion_form: 'Unknown Necrozma Fusion',
       },
     });
 

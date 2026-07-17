@@ -26,6 +26,7 @@ import {
   getLegalRaidChargedMoves,
   getLegalRaidFastMoves,
   getRaidOverallTargetProfiles,
+  getRaidTypeTargetProfiles,
   getRaidTierKeyForVariant,
   getVariantTypeNames,
   isEligibleRaidAttacker,
@@ -471,14 +472,13 @@ export const calculateTypeMoveCycleScore = (
   chargedMove: Move,
   typeName: string,
   settings: RaidCounterSettings,
+  targetProfiles: RaidOverallTargetProfile[] = [],
 ): RaidTypeDpsScore => {
   const targetType = normalizeTypeName(typeName);
   const fastType = normalizeTypeName(fastMove.type_name || fastMove.type);
   const chargedType = normalizeTypeName(
     chargedMove.type_name || chargedMove.type,
   );
-  const fastEffectiveness = getTypeDpsEffectiveness(fastType, targetType);
-  const chargedEffectiveness = getTypeDpsEffectiveness(chargedType, targetType);
   const cpMultiplier = cpMultipliers[settings.attackerLevel];
   const attackerAttack = (attacker.attack + 15) * cpMultiplier;
   const shadowDefense = attacker.variantType.toLowerCase().includes("shadow")
@@ -493,23 +493,6 @@ export const calculateTypeMoveCycleScore = (
   const incomingDps = TYPE_DPS_INCOMING_DAMAGE_NUMERATOR / attackerDefense;
   const incomingChargedDamage =
     TYPE_DPS_INCOMING_CHARGED_DAMAGE_NUMERATOR / attackerDefense;
-
-  const fastDamage = calculateTypeDpsMoveDamage({
-    move: fastMove,
-    attacker,
-    attackerAttack,
-    selectedType: targetType,
-    settings,
-    charged: false,
-  });
-  const chargedDamage = calculateTypeDpsMoveDamage({
-    move: chargedMove,
-    attacker,
-    attackerAttack,
-    selectedType: targetType,
-    settings,
-    charged: true,
-  });
   const fastEnergy = Math.max(1, getRaidMoveEnergy(fastMove));
   const chargedEnergyCost = Math.max(
     1,
@@ -519,23 +502,95 @@ export const calculateTypeMoveCycleScore = (
   const fastSeconds = getProcessedRaidMoveSeconds(fastMove);
   const chargedSeconds = getProcessedRaidMoveSeconds(chargedMove);
   const cycleSeconds = fastUses * fastSeconds + chargedSeconds;
-  const cycleDamage = fastUses * fastDamage + chargedDamage;
-  const dps = calculateComprehensiveTypeDps({
-    fastDamage,
-    chargedDamage,
-    fastMove,
-    chargedMove,
-    attackerHp,
-    incomingDps,
-    incomingChargedDamage,
-  });
   const timeToFaintSeconds = attackerHp / incomingDps;
-  const tdo = dps * timeToFaintSeconds;
-  const eDps = calculateEffectiveRaidDps({
-    dps,
-    tdo,
-    relobbySeconds: settings.relobbySeconds,
+  const effectiveProfiles =
+    targetProfiles.length > 0
+      ? targetProfiles
+      : [{ types: [], weight: 1 } satisfies RaidOverallTargetProfile];
+
+  let totalWeight = 0;
+  let fastDamageSum = 0;
+  let chargedDamageSum = 0;
+  let fastEffectivenessSum = 0;
+  let chargedEffectivenessSum = 0;
+  let targetEffectivenessSum = 0;
+  let cycleDamageSum = 0;
+  let dpsSum = 0;
+  let tdoSum = 0;
+  let eDpsSum = 0;
+  let erSum = 0;
+
+  effectiveProfiles.forEach((targetProfile) => {
+    const useRealTarget = targetProfile.types.length > 0;
+    const fastEffectiveness = useRealTarget
+      ? getTypeEffectivenessMultiplier(fastType, targetProfile.types)
+      : getTypeDpsEffectiveness(fastType, targetType);
+    const chargedEffectiveness = useRealTarget
+      ? getTypeEffectivenessMultiplier(chargedType, targetProfile.types)
+      : getTypeDpsEffectiveness(chargedType, targetType);
+    const targetEffectiveness = useRealTarget
+      ? getTypeEffectivenessMultiplier(targetType, targetProfile.types)
+      : targetType === "normal"
+        ? 1
+        : 1.6;
+    const fastDamage = calculateTypeDpsMoveDamage({
+      move: fastMove,
+      attacker,
+      attackerAttack,
+      selectedType: targetType,
+      targetTypes: useRealTarget ? targetProfile.types : undefined,
+      settings,
+      charged: false,
+    });
+    const chargedDamage = calculateTypeDpsMoveDamage({
+      move: chargedMove,
+      attacker,
+      attackerAttack,
+      selectedType: targetType,
+      targetTypes: useRealTarget ? targetProfile.types : undefined,
+      settings,
+      charged: true,
+    });
+    const dps = calculateComprehensiveTypeDps({
+      fastDamage,
+      chargedDamage,
+      fastMove,
+      chargedMove,
+      attackerHp,
+      incomingDps,
+      incomingChargedDamage,
+    });
+    const tdo = dps * timeToFaintSeconds;
+    const eDps = calculateEffectiveRaidDps({
+      dps,
+      tdo,
+      relobbySeconds: settings.relobbySeconds,
+    });
+    const er =
+      dps > 0 && tdo > 0
+        ? Math.pow(dps, 1 - TYPE_DPS_ER_TDO_EXPONENT) *
+          Math.pow(tdo, TYPE_DPS_ER_TDO_EXPONENT)
+        : 0;
+    const weight = targetProfile.weight;
+
+    totalWeight += weight;
+    fastDamageSum += fastDamage * weight;
+    chargedDamageSum += chargedDamage * weight;
+    fastEffectivenessSum += fastEffectiveness * weight;
+    chargedEffectivenessSum += chargedEffectiveness * weight;
+    targetEffectivenessSum += targetEffectiveness * weight;
+    cycleDamageSum += (fastUses * fastDamage + chargedDamage) * weight;
+    dpsSum += dps * weight;
+    tdoSum += tdo * weight;
+    eDpsSum += eDps * weight;
+    erSum += er * weight;
   });
+
+  const averageWeight = Math.max(1, totalWeight);
+  const fastDamage = fastDamageSum / averageWeight;
+  const chargedDamage = chargedDamageSum / averageWeight;
+  const dps = dpsSum / averageWeight;
+  const tdo = tdoSum / averageWeight;
 
   return {
     variant: attacker,
@@ -543,21 +598,17 @@ export const calculateTypeMoveCycleScore = (
     chargedMove,
     cp: calculatePokemonCpForLevel(attacker, settings.attackerLevel),
     totalDps: dps,
-    eDps,
+    eDps: eDpsSum / averageWeight,
     dps,
     tdo,
-    er:
-      dps > 0 && tdo > 0
-        ? Math.pow(dps, 1 - TYPE_DPS_ER_TDO_EXPONENT) *
-          Math.pow(tdo, TYPE_DPS_ER_TDO_EXPONENT)
-        : 0,
+    er: erSum / averageWeight,
     fastDamage,
     chargedDamage,
-    fastEffectiveness,
-    chargedEffectiveness,
+    fastEffectiveness: fastEffectivenessSum / averageWeight,
+    chargedEffectiveness: chargedEffectivenessSum / averageWeight,
     cycleSeconds,
-    cycleDamage,
-    targetEffectiveness: targetType === "normal" ? 1 : 1.6,
+    cycleDamage: cycleDamageSum / averageWeight,
+    targetEffectiveness: targetEffectivenessSum / averageWeight,
     fastMatchesType: fastType === targetType,
     chargedMatchesType: chargedType === targetType,
   };
@@ -567,9 +618,11 @@ export const scoreRaidTypeDps = (
   attackers: PokemonVariant[],
   typeName: string,
   settings: RaidCounterSettings,
+  targets?: PokemonVariant[],
 ): RaidTypeDpsScore[] => {
   const targetType = normalizeTypeName(typeName);
   if (!targetType) return [];
+  const targetProfiles = getRaidTypeTargetProfiles(targetType, targets);
 
   return attackers
     .filter(isEligibleRaidAttacker)
@@ -595,6 +648,7 @@ export const scoreRaidTypeDps = (
               chargedMove,
               targetType,
               settings,
+              targetProfiles,
             ),
           ),
       );

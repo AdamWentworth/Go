@@ -7,6 +7,7 @@ import {
   calculateEffectiveRaidDps,
   calculateRaidBossCp,
   calculateRaidMoveDamage,
+  calculateTypeMoveCycleScore,
   dedupeBestOverallAttackerPerVariant,
   dedupeBestTypeDpsPerVariant,
   estimateRaidGroup,
@@ -973,6 +974,90 @@ describe("raid calculations", () => {
     expect(scores[0]?.fastMove.type).toBe("ice");
     expect(scores[0]?.fastMatchesType).toBe(true);
     expect(scores[0]?.fastEffectiveness).toBe(1.6);
+  });
+
+  it("does not grant Regigigas STAB for a rolled Hidden Power type", () => {
+    const hiddenPowerWater = move(
+      "Hidden Power (Water)",
+      "water",
+      1,
+      15,
+      1500,
+      15,
+    );
+    const regigigas = pokemon({
+      name: "Shadow Regigigas",
+      variant_id: "regigigas-shadow",
+      type1_name: "normal",
+      type2_name: "none",
+      variantType: "shadow",
+    });
+    const waterAttacker = pokemon({
+      name: "Shadow Water Attacker",
+      variant_id: "water-shadow",
+      type1_name: "water",
+      type2_name: "none",
+      variantType: "shadow",
+    });
+
+    const regigigasScore = calculateTypeMoveCycleScore(
+      regigigas,
+      hiddenPowerWater,
+      move("Crush Grip", "normal", 0, 210, 2000, -100),
+      "water",
+      baseSettings,
+    );
+    const waterAttackerScore = calculateTypeMoveCycleScore(
+      waterAttacker,
+      hiddenPowerWater,
+      move("Off-type Charge", "normal", 0, 210, 2000, -100),
+      "water",
+      baseSettings,
+    );
+
+    expect(waterAttackerScore.fastDamage).toBeGreaterThan(
+      regigigasScore.fastDamage,
+    );
+  });
+
+  it("uses real raid typings so Rock bosses resist Regigigas's Crush Grip", () => {
+    const regigigas = pokemon({
+      name: "Shadow Regigigas",
+      variant_id: "regigigas-shadow",
+      type1_name: "normal",
+      type2_name: "none",
+      variantType: "shadow",
+      moves: [
+        move("Hidden Power", "normal", 1, 15, 1500, 15),
+        move("Crush Grip", "normal", 0, 210, 2000, -100),
+      ],
+    });
+    const rockRaidBoss = pokemon({
+      name: "Rock Raid Boss",
+      variant_id: "rock-raid-boss",
+      type1_name: "rock",
+      type2_name: "none",
+      raid_boss: [
+        { id: 99, tier: "5", form: "Normal", name: "Rock Raid Boss" },
+      ],
+    });
+
+    const synthetic = dedupeBestTypeDpsPerVariant(
+      scoreRaidTypeDps([regigigas], "water", baseSettings),
+    )[0] as RaidTypeDpsScore;
+    const raidAffinity = dedupeBestTypeDpsPerVariant(
+      scoreRaidTypeDps(
+        [regigigas],
+        "water",
+        baseSettings,
+        [rockRaidBoss],
+      ),
+    )[0] as RaidTypeDpsScore;
+
+    expect(raidAffinity.fastEffectiveness).toBe(1.6);
+    expect(raidAffinity.chargedEffectiveness).toBe(0.625);
+    expect(raidAffinity.dps).toBeLessThan(synthetic.dps);
+    expect(raidAffinity.eDps).toBeLessThan(synthetic.eDps);
   });
 
   it("selects a matchup-effective Hidden Power roll for boss counters", () => {

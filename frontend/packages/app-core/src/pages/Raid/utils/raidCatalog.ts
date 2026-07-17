@@ -7,6 +7,7 @@ import {
   LEGACY_RAID_TIERS,
 } from "./raidRules";
 import type { RaidOverallTargetProfile, RaidTierKey } from "./raidTypes";
+import { getTypeEffectivenessMultiplier } from "./typeEffectiveness";
 
 type RaidBossMetadata = NonNullable<PokemonVariant["raid_boss"]>[number];
 
@@ -284,6 +285,19 @@ const getOverallTargetWeight = (target: PokemonVariant): number => {
   return 1;
 };
 
+const isHighTierRaidTarget = (target: PokemonVariant): boolean => {
+  const tierKey = getRaidTierKeyForVariant(target);
+  return (
+    tierKey === "legendary" ||
+    tierKey === "elite" ||
+    tierKey === "primal" ||
+    tierKey === "legendary-mega" ||
+    tierKey === "super-mega" ||
+    tierKey === "mega" ||
+    tierKey === "shadow-legendary"
+  );
+};
+
 export const getRaidOverallTargetProfiles = (
   targets?: PokemonVariant[],
 ): RaidOverallTargetProfile[] => {
@@ -308,4 +322,38 @@ export const getRaidOverallTargetProfiles = (
   const profiles = Array.from(profilesByTypes.values());
 
   return profiles.length > 0 ? profiles : FALLBACK_OVERALL_TARGET_PROFILES;
+};
+
+export const getRaidTypeTargetProfiles = (
+  typeName: string,
+  targets?: PokemonVariant[],
+): RaidOverallTargetProfile[] => {
+  const attackingType = normalizeTypeName(typeName);
+  if (!attackingType) return [];
+
+  const profilesByTypes = new Map<string, RaidOverallTargetProfile>();
+
+  targets?.forEach((target) => {
+    const types = getVariantTypeNames(target);
+    if (
+      !isHighTierRaidTarget(target) ||
+      types.length === 0 ||
+      getTypeEffectivenessMultiplier(attackingType, types) <= 1
+    ) {
+      return;
+    }
+
+    const key = [...types].sort().join("/");
+    const weight = getOverallTargetWeight(target);
+    const existing = profilesByTypes.get(key);
+
+    if (existing) {
+      existing.weight += weight;
+      return;
+    }
+
+    profilesByTypes.set(key, { types, weight });
+  });
+
+  return Array.from(profilesByTypes.values());
 };
