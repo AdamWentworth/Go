@@ -753,7 +753,7 @@
 
 .raid-calibration-metrics {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 0.4rem;
   margin: 0;
 }
@@ -787,6 +787,7 @@
 }
 
 .raid-calibration-log,
+.raid-calibration-export,
 .raid-calibration-clear {
   display: inline-flex;
   align-items: center;
@@ -812,6 +813,13 @@
   color: #ffb0aa;
   border-color: rgba(255, 104, 96, 0.38);
   background: rgba(126, 34, 29, 0.24);
+}
+
+.raid-calibration-export {
+  width: 2.35rem;
+  color: #9af4eb;
+  border-color: rgba(47, 214, 208, 0.38);
+  background: rgba(47, 214, 208, 0.11);
 }
 
 .raid-calibration-log:disabled {
@@ -844,6 +852,30 @@
   padding: 1rem;
   background: rgba(3, 8, 10, 0.76);
   backdrop-filter: blur(8px);
+}
+
+.raid-observation-outcome {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.35rem;
+}
+
+.raid-observation-outcome button {
+  min-height: 2.45rem;
+  border: 1px solid rgba(190, 232, 233, 0.2);
+  border-radius: 8px;
+  color: rgba(226, 243, 244, 0.78);
+  background: rgba(255, 255, 255, 0.04);
+  font: inherit;
+  font-size: 0.76rem;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.raid-observation-outcome button.active {
+  color: #071214;
+  border-color: #45ddd0;
+  background: #45ddd0;
 }
 
 .raid-observation-dialog {
@@ -1392,6 +1424,12 @@
   opacity: 0.55;
 }
 
+.raid-party-run-actions {
+  display: grid;
+  grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr);
+  gap: 0.55rem;
+}
+
 .raid-party-trainers {
   display: grid;
   gap: 0.5rem;
@@ -1505,12 +1543,22 @@
 }
 
 .raid-party-run {
-  justify-self: stretch;
+  width: 100%;
   min-height: 2.7rem;
   border-color: rgba(67, 227, 210, 0.82);
   color: #061415;
   background: linear-gradient(135deg, #43e3d2, #72e69e);
   font-size: 0.8rem;
+}
+
+.raid-party-simulate {
+  color: #d9ffff;
+  background: rgba(47, 214, 208, 0.1);
+}
+
+.raid-party-optimize {
+  border-color: rgba(255, 199, 78, 0.78);
+  background: linear-gradient(135deg, #ffd064, #43e3d2);
 }
 
 .raid-party-error {
@@ -1552,6 +1600,29 @@
   color: #fff;
   font-size: 1.55rem;
   font-weight: 950;
+}
+
+.raid-party-optimization-summary {
+  display: grid;
+  grid-column: 1 / -1;
+  gap: 0.12rem;
+  order: 3;
+  padding: 0.55rem 0.65rem;
+  border: 1px solid rgba(255, 208, 100, 0.24);
+  border-radius: 8px;
+  background: rgba(255, 190, 65, 0.07);
+}
+
+.raid-party-optimization-summary strong {
+  color: #ffd064;
+  font-size: 0.78rem;
+  font-weight: 950;
+}
+
+.raid-party-optimization-summary span {
+  color: #e8fbfb;
+  font-size: 0.7rem;
+  font-weight: 850;
 }
 
 .raid-party-contributions {
@@ -1810,6 +1881,10 @@
   color: rgba(33, 69, 73, 0.7);
 }
 
+:root[data-theme='light'] .raid-party-optimization-summary span {
+  color: #173238;
+}
+
 :root[data-theme='light'] .raid-party-trainer {
   border-color: rgba(22, 76, 80, 0.13);
 }
@@ -1845,7 +1920,8 @@
 }
 
 :root[data-theme='light'] .raid-observation-dialog header > button,
-:root[data-theme='light'] .raid-observation-fields input {
+:root[data-theme='light'] .raid-observation-fields input,
+:root[data-theme='light'] .raid-observation-outcome button:not(.active) {
   border-color: rgba(21, 139, 154, 0.24);
   color: #102a32;
   background: rgba(255, 255, 255, 0.82);
@@ -1943,6 +2019,10 @@
     grid-template-columns: 1fr;
   }
 
+  .raid-party-run-actions {
+    grid-template-columns: 1fr;
+  }
+
   .raid-party-trainer-fields {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
@@ -1967,7 +2047,7 @@
   .raid-calibration-actions {
     grid-column: auto;
     display: grid;
-    grid-template-columns: auto minmax(0, 1fr) auto;
+    grid-template-columns: auto minmax(0, 1fr) auto auto;
     justify-content: stretch;
   }
 
@@ -2035,12 +2115,15 @@
   }
 
   .raid-leaderboard-header {
+    display: grid;
+    gap: 0.5rem;
     align-items: start;
   }
 
   .raid-leaderboard-meta {
-    align-items: flex-end;
-    flex-direction: column;
+    flex-wrap: wrap;
+    align-items: center;
+    width: 100%;
     gap: 0.3rem;
   }
 
@@ -2056,9 +2139,14 @@
   }
 
   .raid-leaderboard-meta .raid-model-provenance {
-    justify-content: flex-end;
+    justify-content: flex-start;
+    max-width: 100%;
     padding: 0.35rem 0.5rem;
     font-size: 0.64rem;
+  }
+
+  .raid-leaderboard-meta .raid-model-provenance span {
+    white-space: normal;
   }
 
   .raid-category-card,

@@ -48,7 +48,10 @@ const move = (
   energy: number,
 ) =>
   ({
-    move_id: [...name].reduce((sum, character) => sum + character.charCodeAt(0), 0),
+    move_id: [...name].reduce(
+      (sum, character) => sum + character.charCodeAt(0),
+      0,
+    ),
     name,
     type,
     type_name: type,
@@ -239,14 +242,18 @@ describe("Raid page", () => {
     fireEvent.click(screen.getByRole("button", { name: "Add Trainer" }));
     expect(screen.getByText("3 Trainers")).toBeInTheDocument();
 
-    fireEvent.click(screen.getByRole("button", { name: "Simulate party" }));
+    fireEvent.click(
+      screen.getByRole("button", { name: /^Simulate$/ }),
+    );
     const result = await screen.findByLabelText("Raid party result");
 
     expect(within(result).getByText(/Clear|Time expired/)).toBeInTheDocument();
     expect(within(result).getAllByText(/DPS/).length).toBeGreaterThan(0);
 
     const calibration = screen.getByLabelText("Observed raid calibration");
-    fireEvent.click(within(calibration).getByRole("button", { name: "Log raid" }));
+    fireEvent.click(
+      within(calibration).getByRole("button", { name: "Log raid" }),
+    );
     const dialog = screen.getByRole("dialog", { name: /Log .* raid/i });
     expect(within(dialog).getByLabelText("Trainers")).toHaveValue(3);
   });
@@ -256,14 +263,18 @@ describe("Raid page", () => {
 
     fireEvent.click(screen.getByRole("button", { name: "Boss counters" }));
     const calibration = screen.getByLabelText("Observed raid calibration");
-    expect(within(calibration).getByText("Private to this device"))
-      .toBeInTheDocument();
-    expect(within(calibration).getByLabelText("Use observed dodges"))
-      .toBeDisabled();
+    expect(
+      within(calibration).getByText("Private to this device"),
+    ).toBeInTheDocument();
+    expect(
+      within(calibration).getByLabelText("Use observed dodges"),
+    ).toBeDisabled();
 
-    fireEvent.click(within(calibration).getByRole("button", { name: "Log raid" }));
+    fireEvent.click(
+      within(calibration).getByRole("button", { name: "Log raid" }),
+    );
     const dialog = screen.getByRole("dialog", { name: /Log Raikou raid/i });
-    fireEvent.change(within(dialog).getByLabelText("Clear time (seconds)"), {
+    fireEvent.change(within(dialog).getByLabelText("Battle time (seconds)"), {
       target: { value: "142.5" },
     });
     fireEvent.change(within(dialog).getByLabelText("Dodges attempted"), {
@@ -275,13 +286,17 @@ describe("Raid page", () => {
     fireEvent.change(within(dialog).getByLabelText(/Measured latency/i), {
       target: { value: "85" },
     });
-    fireEvent.click(within(dialog).getByRole("button", { name: "Save result" }));
+    fireEvent.click(
+      within(dialog).getByRole("button", { name: "Save result" }),
+    );
 
-    expect(screen.queryByRole("dialog", { name: /Log Raikou raid/i }))
-      .not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("dialog", { name: /Log Raikou raid/i }),
+    ).not.toBeInTheDocument();
     expect(within(calibration).getByText("1")).toBeInTheDocument();
-    expect(JSON.parse(localStorage.getItem("raidCalibrationObservations") ?? "[]"))
-      .toHaveLength(1);
+    expect(
+      JSON.parse(localStorage.getItem("raidCalibrationObservations") ?? "[]"),
+    ).toHaveLength(1);
 
     fireEvent.click(
       within(calibration).getByRole("button", {
@@ -289,8 +304,9 @@ describe("Raid page", () => {
       }),
     );
     fireEvent.click(screen.getByRole("button", { name: "OK" }));
-    expect(JSON.parse(localStorage.getItem("raidCalibrationObservations") ?? "[]"))
-      .toEqual([]);
+    expect(
+      JSON.parse(localStorage.getItem("raidCalibrationObservations") ?? "[]"),
+    ).toEqual([]);
   });
 
   it("does not apply observations from an older simulation model", () => {
@@ -329,7 +345,7 @@ describe("Raid page", () => {
     render(<Raid />);
     fireEvent.click(screen.getByRole("button", { name: "Boss counters" }));
     const calibration = screen.getByLabelText("Observed raid calibration");
-    const samplesLabel = within(calibration).getByText("Samples");
+    const samplesLabel = within(calibration).getByText("Raids");
 
     expect(samplesLabel.nextElementSibling).toHaveTextContent("0");
     expect(
@@ -377,9 +393,7 @@ describe("Raid page", () => {
     fireEvent.change(screen.getByLabelText(/boss behavior/i), {
       target: { value: "monte-carlo" },
     });
-    expect(screen.getByLabelText(/boss behavior/i)).toHaveValue(
-      "monte-carlo",
-    );
+    expect(screen.getByLabelText(/boss behavior/i)).toHaveValue("monte-carlo");
     fireEvent.change(screen.getByLabelText(/dodging/i), {
       target: { value: "charged" },
     });
@@ -462,12 +476,14 @@ describe("Raid page", () => {
       within(counterList).queryByText("Shiny Tyranitar"),
     ).not.toBeInTheDocument();
     expect(
-      within(counterList).getByLabelText(
-        "Fast move: Lick, Ghost type",
-      ),
+      within(counterList).getByLabelText("Fast move: Lick, Ghost type"),
     ).toBeInTheDocument();
-    expect(within(counterList).getAllByAltText("Ghost type").length).toBeGreaterThan(0);
-    expect(within(counterList).queryByText("Fast Ghost")).not.toBeInTheDocument();
+    expect(
+      within(counterList).getAllByAltText("Ghost type").length,
+    ).toBeGreaterThan(0);
+    expect(
+      within(counterList).queryByText("Fast Ghost"),
+    ).not.toBeInTheDocument();
   });
 
   it("uses the same caught roster across overall, type, and boss rankings", async () => {
@@ -507,7 +523,9 @@ describe("Raid page", () => {
     const overall = screen.getByLabelText("Your top raid attackers");
     expect(within(overall).getByText("Tyranitar")).toBeInTheDocument();
     expect(within(overall).queryByText("Gengar")).not.toBeInTheDocument();
-    expect(within(overall).getByText(/Stonewall · Level 35 · 93% IV/)).toBeInTheDocument();
+    expect(
+      within(overall).getByText(/Stonewall · Level 35 · 93% IV/),
+    ).toBeInTheDocument();
     expect(within(overall).getByText("3,210")).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole("button", { name: "Settings" }));
@@ -524,7 +542,9 @@ describe("Raid page", () => {
         "Tyranitar",
       ),
     ).toBeInTheDocument();
-    expect(screen.getByText(/Stonewall · Level 35 · 93% IV/)).toBeInTheDocument();
+    expect(
+      screen.getByText(/Stonewall · Level 35 · 93% IV/),
+    ).toBeInTheDocument();
   });
 
   it("does not rank an incomplete catch with level 50 catalog assumptions", () => {
@@ -786,8 +806,12 @@ describe("Raid page", () => {
     });
     const leaderboard = screen.getByLabelText("Top raid attackers");
     expect(within(leaderboard).getByText("Metagross")).toBeInTheDocument();
-    expect(within(leaderboard).queryByText("Dynamax Metagross")).not.toBeInTheDocument();
-    expect(within(leaderboard).queryByText("Gigantamax Metagross")).not.toBeInTheDocument();
+    expect(
+      within(leaderboard).queryByText("Dynamax Metagross"),
+    ).not.toBeInTheDocument();
+    expect(
+      within(leaderboard).queryByText("Gigantamax Metagross"),
+    ).not.toBeInTheDocument();
 
     fireEvent.click(screen.getByRole("button", { name: "Boss counters" }));
     fireEvent.change(screen.getByLabelText(/find boss/i), {
@@ -839,7 +863,11 @@ describe("Raid page", () => {
     expect(
       within(counterList).queryByText("Shiny Tyranitar"),
     ).not.toBeInTheDocument();
-    expect(within(counterList).getAllByAltText("Dark type").length).toBeGreaterThan(0);
-    expect(within(counterList).queryByText("Charged Dark")).not.toBeInTheDocument();
+    expect(
+      within(counterList).getAllByAltText("Dark type").length,
+    ).toBeGreaterThan(0);
+    expect(
+      within(counterList).queryByText("Charged Dark"),
+    ).not.toBeInTheDocument();
   });
 });

@@ -11,6 +11,7 @@ type RaidObservationDialogProps = {
 };
 
 type ObservationForm = {
+  outcome: RaidObservationActual["outcome"];
   trainerCount: string;
   clearTimeSeconds: string;
   faints: string;
@@ -18,6 +19,7 @@ type ObservationForm = {
   dodgeAttempts: string;
   successfulDodges: string;
   latencyMs: string;
+  remainingBossHpPercent: string;
 };
 
 const parseWholeNumber = (value: string): number =>
@@ -30,6 +32,7 @@ const RaidObservationDialog = ({
   onSave,
 }: RaidObservationDialogProps) => {
   const [form, setForm] = useState<ObservationForm>({
+    outcome: "cleared",
     trainerCount: String(Math.max(1, defaultTrainerCount)),
     clearTimeSeconds: "",
     faints: "0",
@@ -37,6 +40,7 @@ const RaidObservationDialog = ({
     dodgeAttempts: "0",
     successfulDodges: "0",
     latencyMs: "",
+    remainingBossHpPercent: "",
   });
   const [error, setError] = useState("");
 
@@ -55,6 +59,9 @@ const RaidObservationDialog = ({
     const dodgeAttempts = parseWholeNumber(form.dodgeAttempts);
     const successfulDodges = parseWholeNumber(form.successfulDodges);
     const latencyMs = form.latencyMs.trim() ? Number(form.latencyMs) : null;
+    const remainingBossHpPercent = form.remainingBossHpPercent.trim()
+      ? Number(form.remainingBossHpPercent)
+      : null;
 
     if (trainerCount < 1 || trainerCount > 20) {
       setError("Trainer count must be between 1 and 20.");
@@ -65,7 +72,7 @@ const RaidObservationDialog = ({
       clearTimeSeconds <= 0 ||
       clearTimeSeconds > 1800
     ) {
-      setError("Clear time must be between 1 and 1800 seconds.");
+      setError("Battle time must be between 1 and 1800 seconds.");
       return;
     }
     if (successfulDodges > dodgeAttempts) {
@@ -79,10 +86,22 @@ const RaidObservationDialog = ({
       setError("Latency must be between 0 and 5000 ms.");
       return;
     }
+    if (
+      remainingBossHpPercent != null &&
+      (!Number.isFinite(remainingBossHpPercent) ||
+        remainingBossHpPercent < 0 ||
+        remainingBossHpPercent > 100)
+    ) {
+      setError("Remaining boss HP must be between 0 and 100%.");
+      return;
+    }
 
     onSave({
+      outcome: form.outcome,
       trainerCount,
       clearTimeSeconds,
+      remainingBossHpPercent:
+        form.outcome === "timed-out" ? remainingBossHpPercent : null,
       faints,
       relobbies,
       dodgeAttempts,
@@ -105,14 +124,27 @@ const RaidObservationDialog = ({
             <span>Observed battle</span>
             <h2>{bossName}</h2>
           </div>
-          <button
-            aria-label="Close raid log"
-            onClick={onCancel}
-            type="button"
-          >
+          <button aria-label="Close raid log" onClick={onCancel} type="button">
             <FaTimes aria-hidden="true" />
           </button>
         </header>
+
+        <div className="raid-observation-outcome" aria-label="Raid outcome">
+          <button
+            className={form.outcome === "cleared" ? "active" : ""}
+            onClick={() => setField("outcome", "cleared")}
+            type="button"
+          >
+            Cleared
+          </button>
+          <button
+            className={form.outcome === "timed-out" ? "active" : ""}
+            onClick={() => setField("outcome", "timed-out")}
+            type="button"
+          >
+            Timed out
+          </button>
+        </div>
 
         <div className="raid-observation-fields">
           <label>
@@ -128,18 +160,36 @@ const RaidObservationDialog = ({
             />
           </label>
           <label>
-            <span>Clear time (seconds)</span>
+            <span>Battle time (seconds)</span>
             <input
               inputMode="decimal"
               max="1800"
               min="1"
-              onChange={(event) => setField("clearTimeSeconds", event.target.value)}
+              onChange={(event) =>
+                setField("clearTimeSeconds", event.target.value)
+              }
               required
               step="0.1"
               type="number"
               value={form.clearTimeSeconds}
             />
           </label>
+          {form.outcome === "timed-out" && (
+            <label>
+              <span>Boss HP left % (optional)</span>
+              <input
+                inputMode="decimal"
+                max="100"
+                min="0"
+                onChange={(event) =>
+                  setField("remainingBossHpPercent", event.target.value)
+                }
+                step="0.1"
+                type="number"
+                value={form.remainingBossHpPercent}
+              />
+            </label>
+          )}
           <label>
             <span>Faints</span>
             <input
@@ -167,7 +217,9 @@ const RaidObservationDialog = ({
             <input
               inputMode="numeric"
               min="0"
-              onChange={(event) => setField("dodgeAttempts", event.target.value)}
+              onChange={(event) =>
+                setField("dodgeAttempts", event.target.value)
+              }
               required
               type="number"
               value={form.dodgeAttempts}
@@ -178,7 +230,9 @@ const RaidObservationDialog = ({
             <input
               inputMode="numeric"
               min="0"
-              onChange={(event) => setField("successfulDodges", event.target.value)}
+              onChange={(event) =>
+                setField("successfulDodges", event.target.value)
+              }
               required
               type="number"
               value={form.successfulDodges}

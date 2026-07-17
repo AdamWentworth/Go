@@ -19,15 +19,22 @@ const observationInput = (
   bossVariantId: "rayquaza-default",
   bossName: "Rayquaza",
   tierKey: "legendary",
+  predictionSource: "custom-party",
+  scenarioKey: "party-3-test",
   dodgeCalibrationApplied: false,
   predicted: {
     clearTimeSeconds: 100,
     faints: 4,
     relobbies: 0,
+    winRate: 1,
+    p10ClearTimeSeconds: 90,
+    p90ClearTimeSeconds: 115,
   },
   actual: {
+    outcome: "cleared",
     trainerCount: 3,
     clearTimeSeconds: 110,
+    remainingBossHpPercent: null,
     faints: 5,
     relobbies: 1,
     dodgeAttempts: 2,
@@ -57,10 +64,15 @@ describe("raid battle calibration", () => {
             clearTimeSeconds: 130,
             faints: 7,
             relobbies: 2,
+            winRate: 1,
+            p10ClearTimeSeconds: 120,
+            p90ClearTimeSeconds: 140,
           },
           actual: {
+            outcome: "cleared",
             trainerCount: 4,
             clearTimeSeconds: 100,
+            remainingBossHpPercent: null,
             faints: 5,
             relobbies: 1,
             dodgeAttempts: 4,
@@ -74,10 +86,14 @@ describe("raid battle calibration", () => {
     const profile = analyzeRaidCalibration(observations);
 
     expect(profile.sampleCount).toBe(2);
+    expect(profile.exactPartySampleCount).toBe(2);
     expect(profile.bossCount).toBe(2);
     expect(profile.meanAbsoluteTimingErrorSeconds).toBe(20);
     expect(profile.meanAbsoluteTimingErrorPercent).toBeCloseTo(0.19545, 4);
     expect(profile.timingBiasSeconds).toBe(10);
+    expect(profile.p90AbsoluteTimingErrorSeconds).toBe(30);
+    expect(profile.predictionIntervalCoverage).toBe(0.5);
+    expect(profile.predictedOutcomeAccuracy).toBe(1);
     expect(profile.meanAbsoluteFaintError).toBe(1.5);
     expect(profile.meanAbsoluteRelobbyError).toBe(1);
     expect(profile.dodgeAttempts).toBe(6);
@@ -106,6 +122,42 @@ describe("raid battle calibration", () => {
     });
   });
 
+  it("separates exact parties and failed raids from clear-time accuracy", () => {
+    const cleared = createRaidCalibrationObservation(
+      observationInput({ id: "cleared", predictionSource: "optimized-party" }),
+    );
+    const timedOut = createRaidCalibrationObservation(
+      observationInput({
+        id: "timeout",
+        predictionSource: "group-estimate",
+        predicted: {
+          clearTimeSeconds: 150,
+          faints: 10,
+          relobbies: 1,
+          winRate: 0.25,
+          p10ClearTimeSeconds: 140,
+          p90ClearTimeSeconds: 180,
+        },
+        actual: {
+          ...observationInput().actual,
+          outcome: "timed-out",
+          clearTimeSeconds: 300,
+          remainingBossHpPercent: 18,
+        },
+      }),
+    );
+
+    expect(analyzeRaidCalibration([cleared, timedOut])).toMatchObject({
+      sampleCount: 2,
+      clearSampleCount: 1,
+      timedOutSampleCount: 1,
+      exactPartySampleCount: 1,
+      optimizedPartySampleCount: 1,
+      meanAbsoluteTimingErrorSeconds: 10,
+      predictedOutcomeAccuracy: 1,
+    });
+  });
+
   it("isolates owners, discards malformed records, and caps retention", () => {
     const malformed = { schemaVersion: 1, id: "bad" };
     const impossible = createRaidCalibrationObservation(
@@ -123,7 +175,11 @@ describe("raid battle calibration", () => {
     );
     expect(loadRaidCalibrationObservations()).toEqual([]);
 
-    for (let index = 0; index < RAID_CALIBRATION_MAX_OBSERVATIONS + 5; index += 1) {
+    for (
+      let index = 0;
+      index < RAID_CALIBRATION_MAX_OBSERVATIONS + 5;
+      index += 1
+    ) {
       appendRaidCalibrationObservation(
         createRaidCalibrationObservation(
           observationInput({

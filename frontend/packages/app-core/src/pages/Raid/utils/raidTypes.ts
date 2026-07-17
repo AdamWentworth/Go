@@ -22,10 +22,7 @@ export type PartyPowerKey = "none" | "party2" | "party3" | "party4";
 export type RaidDodgeStrategy = "none" | "charged";
 export type ShadowBossMode = "normal" | "enraged" | "subdued";
 export type RaidBossMovesetMode =
-  | "expected"
-  | "monte-carlo"
-  | "favorable"
-  | "hostile";
+  "expected" | "monte-carlo" | "favorable" | "hostile";
 
 export type RaidSimulationPercentiles = {
   p10: number;
@@ -139,6 +136,17 @@ export type RaidBattleSimulationResult = {
 
 export type RaidPartySimulationResult = RaidBattleSimulationResult & {
   trainers: RaidPartyTrainerResult[];
+};
+
+export type RaidPartyOptimizationResult = {
+  trainers: RaidPartyTrainer[];
+  result: RaidPartySimulationResult;
+  baselineResult: RaidPartySimulationResult;
+  evaluatedLineups: number;
+  changedTrainerCount: number;
+  timeSavedSeconds: number;
+  faintReduction: number;
+  relobbyReduction: number;
 };
 
 export type RaidTypeDpsScore = {

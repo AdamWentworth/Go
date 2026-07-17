@@ -1,10 +1,15 @@
 import { describe, expect, it } from "vitest";
 
 import type { PokemonVariant } from "@/types/pokemonVariants";
-import type { RaidCounterScore, RaidCounterSettings } from "@/pages/Raid/utils/raidTypes";
+import type {
+  RaidCounterScore,
+  RaidCounterSettings,
+} from "@/pages/Raid/utils/raidTypes";
 import {
+  applyRaidPartyTrainersToDrafts,
   buildRaidPartyTrainer,
   createRaidPartyTrainerDraft,
+  getRaidPartyScenarioKey,
 } from "@/pages/Raid/utils/raidParty";
 
 const settings = {
@@ -77,5 +82,45 @@ describe("raid party builder rules", () => {
     expect(trainer?.settings.relobbySeconds).toBe(0);
     expect(trainer?.settings.megaAllyBonus).toBe("none");
     expect(trainer?.actionDelaySeconds).toBe(0);
+  });
+
+  it("applies optimized teams back to their matching Trainer drafts", () => {
+    const scores = [score("one"), score("two"), score("three")];
+    const draft = createRaidPartyTrainerDraft(0, scores, settings);
+    const trainer = buildRaidPartyTrainer(
+      {
+        ...draft,
+        memberVariantIds: ["three", "one"],
+      },
+      scores,
+      settings,
+    );
+
+    expect(trainer).not.toBeNull();
+    expect(
+      applyRaidPartyTrainersToDrafts([draft], [trainer!])[0].memberVariantIds,
+    ).toEqual(["three", "one"]);
+  });
+
+  it("creates stable anonymous fingerprints that change with the scenario", () => {
+    const scores = [score("one"), score("two")];
+    const base = buildRaidPartyTrainer(
+      {
+        ...createRaidPartyTrainerDraft(0, scores, settings),
+        memberVariantIds: ["one", "two"],
+      },
+      scores,
+      settings,
+    )!;
+    const relabeled = { ...base, id: "other-id", label: "Other Trainer" };
+    const delayed = { ...base, actionDelaySeconds: 0.5 };
+
+    expect(getRaidPartyScenarioKey([base])).toBe(
+      getRaidPartyScenarioKey([relabeled]),
+    );
+    expect(getRaidPartyScenarioKey([base])).not.toBe(
+      getRaidPartyScenarioKey([delayed]),
+    );
+    expect(getRaidPartyScenarioKey([base])).toMatch(/^party-1-[a-f0-9]{8}$/);
   });
 });

@@ -16,6 +16,7 @@ import {
   RAID_MONTE_CARLO_MAX_SAMPLES,
   RAID_MONTE_CARLO_MIN_SAMPLES,
   RAID_PARTY_MAX_TRAINERS,
+  RAID_PARTY_OPTIMIZER_MAX_EVALUATIONS,
   RAID_ROUTE_READY_MEASURE,
   RAID_SIMULATION_MODEL_VERSION,
   RAID_WARM_ROUTE_READY_BUDGET_MS,
@@ -77,9 +78,7 @@ const summarizeCanonicalOrder = () =>
 
 describe("raid ranking validation", () => {
   it("keeps the machine-readable validation profile aligned with the model", () => {
-    expect(validationProfile.modelVersion).toBe(
-      RAID_SIMULATION_MODEL_VERSION,
-    );
+    expect(validationProfile.modelVersion).toBe(RAID_SIMULATION_MODEL_VERSION);
     expect(validationProfile.bossSimulation.finalistLimit).toBe(
       RAID_COUNTER_SIMULATION_VARIANT_LIMIT,
     );
@@ -90,6 +89,10 @@ describe("raid ranking validation", () => {
     expect(
       validationProfile.bossSimulation.heterogeneousParty.maximumTrainers,
     ).toBe(RAID_PARTY_MAX_TRAINERS);
+    expect(
+      validationProfile.bossSimulation.heterogeneousParty.optimizer
+        .maximumEvaluatedLineups,
+    ).toBe(RAID_PARTY_OPTIMIZER_MAX_EVALUATIONS);
     expect(validationProfile.canonicalOverall).toEqual(
       canonicalOverallExpectation,
     );
@@ -108,6 +111,10 @@ describe("raid ranking validation", () => {
       minimumDodgeAttempts: RAID_CALIBRATION_MIN_DODGE_ATTEMPTS,
       appliedParameter: "dodgeSuccessRate",
       latencyMode: "diagnostic-only",
+      predictionSources: ["group-estimate", "custom-party", "optimized-party"],
+      recordsFailedRaids: true,
+      recordsPredictionIntervals: true,
+      exportFormat: "json",
     });
   });
 
@@ -155,9 +162,9 @@ describe("raid ranking validation", () => {
     expect(matrix.scenarios.length).toBeGreaterThanOrEqual(
       matrix.minimumScenarios,
     );
-    expect(new Set(matrix.scenarios.map((scenario) => scenario.boss)).size).toBe(
-      matrix.scenarios.length,
-    );
+    expect(
+      new Set(matrix.scenarios.map((scenario) => scenario.boss)).size,
+    ).toBe(matrix.scenarios.length);
     expect(coveredTypes.size).toBeGreaterThanOrEqual(10);
     matrix.scenarios.forEach((scenario) => {
       expect(scenario.url).toContain("pokebattler.com/raids/defenders/");

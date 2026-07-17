@@ -1,5 +1,6 @@
 import {
   FaChartLine,
+  FaDownload,
   FaStopwatch,
   FaTrashAlt,
 } from "react-icons/fa";
@@ -12,10 +13,10 @@ type RaidCalibrationPanelProps = {
   onEnabledChange: (enabled: boolean) => void;
   onLogRaid: () => void;
   onClear: () => void;
+  onExport: () => void;
 };
 
-const formatPercent = (value: number): string =>
-  `${Math.round(value * 100)}%`;
+const formatPercent = (value: number): string => `${Math.round(value * 100)}%`;
 
 const RaidCalibrationPanel = ({
   profile,
@@ -24,24 +25,54 @@ const RaidCalibrationPanel = ({
   onEnabledChange,
   onLogRaid,
   onClear,
+  onExport,
 }: RaidCalibrationPanelProps) => (
   <section className="raid-calibration" aria-label="Observed raid calibration">
     <div className="raid-calibration-heading">
       <FaChartLine aria-hidden="true" />
       <div>
         <strong>Battle calibration</strong>
-        <span>Private to this device</span>
+        <span>
+          Private to this device
+          {profile.medianLatencyMs == null
+            ? ""
+            : ` · ${Math.round(profile.medianLatencyMs)} ms median`}
+        </span>
       </div>
     </div>
 
     <dl className="raid-calibration-metrics">
       <div>
-        <dt>Samples</dt>
+        <dt>Raids</dt>
         <dd>{profile.sampleCount}</dd>
       </div>
       <div>
+        <dt>Exact parties</dt>
+        <dd>{profile.exactPartySampleCount}</dd>
+      </div>
+      <div>
         <dt>TTW error</dt>
-        <dd>{formatPercent(profile.meanAbsoluteTimingErrorPercent)}</dd>
+        <dd>
+          {profile.clearSampleCount > 0
+            ? formatPercent(profile.meanAbsoluteTimingErrorPercent)
+            : "-"}
+        </dd>
+      </div>
+      <div>
+        <dt>P90 error</dt>
+        <dd>
+          {profile.clearSampleCount > 0
+            ? `${Math.round(profile.p90AbsoluteTimingErrorSeconds)}s`
+            : "-"}
+        </dd>
+      </div>
+      <div>
+        <dt>Outcome</dt>
+        <dd>
+          {profile.sampleCount > 0
+            ? formatPercent(profile.predictedOutcomeAccuracy)
+            : "-"}
+        </dd>
       </div>
       <div>
         <dt>Dodge</dt>
@@ -49,14 +80,6 @@ const RaidCalibrationPanel = ({
           {profile.dodgeAttempts > 0
             ? formatPercent(profile.dodgeSuccessRate)
             : "-"}
-        </dd>
-      </div>
-      <div>
-        <dt>Latency</dt>
-        <dd>
-          {profile.medianLatencyMs == null
-            ? "-"
-            : `${Math.round(profile.medianLatencyMs)} ms`}
         </dd>
       </div>
     </dl>
@@ -87,6 +110,17 @@ const RaidCalibrationPanel = ({
         />
         <span>Use observed dodges</span>
       </label>
+      {profile.sampleCount > 0 && (
+        <button
+          aria-label="Export observed raid data"
+          className="raid-calibration-export"
+          onClick={onExport}
+          title="Export observed raid data"
+          type="button"
+        >
+          <FaDownload aria-hidden="true" />
+        </button>
+      )}
       {profile.sampleCount > 0 && (
         <button
           aria-label="Clear observed raid data"

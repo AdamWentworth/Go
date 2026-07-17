@@ -24,8 +24,7 @@ export const getRaidPartyScoreKey = (score: RaidCounterScore): string =>
 
 export const getDefaultRaidPartyMemberIds = (
   scores: RaidCounterScore[],
-): string[] =>
-  selectLegalRaidTeamCounters(scores).map(getRaidPartyScoreKey);
+): string[] => selectLegalRaidTeamCounters(scores).map(getRaidPartyScoreKey);
 
 export const createRaidPartyTrainerDraft = (
   index: number,
@@ -85,3 +84,51 @@ export const buildRaidPartyTrainers = (
   drafts
     .map((draft) => buildRaidPartyTrainer(draft, scores, settings))
     .filter((trainer): trainer is RaidPartyTrainer => Boolean(trainer));
+
+const hashRaidPartyScenario = (value: string): string => {
+  let hash = 2166136261;
+  for (let index = 0; index < value.length; index += 1) {
+    hash ^= value.charCodeAt(index);
+    hash = Math.imul(hash, 16777619);
+  }
+  return (hash >>> 0).toString(16).padStart(8, "0");
+};
+
+export const getRaidPartyScenarioKey = (
+  trainers: RaidPartyTrainer[],
+): string => {
+  const serialized = trainers
+    .map((trainer) =>
+      [
+        trainer.settings.friendship,
+        trainer.settings.partyPower,
+        trainer.settings.dodgeStrategy,
+        trainer.settings.dodgeSuccessRate ?? 1,
+        trainer.settings.relobbySeconds,
+        trainer.actionDelaySeconds,
+        ...trainer.team.map(
+          ({ attacker, fastMove, chargedMove }) =>
+            `${attacker.variant_id}:${fastMove.name}:${chargedMove.name}`,
+        ),
+      ].join(":"),
+    )
+    .join("|");
+  return `party-${trainers.length}-${hashRaidPartyScenario(serialized)}`;
+};
+
+export const applyRaidPartyTrainersToDrafts = (
+  drafts: RaidPartyTrainerDraft[],
+  trainers: RaidPartyTrainer[],
+): RaidPartyTrainerDraft[] => {
+  const trainersById = new Map(
+    trainers.map((trainer) => [trainer.id, trainer]),
+  );
+  return drafts.map((draft) => {
+    const trainer = trainersById.get(draft.id);
+    if (!trainer) return draft;
+    return {
+      ...draft,
+      memberVariantIds: trainer.team.map(({ attacker }) => attacker.variant_id),
+    };
+  });
+};

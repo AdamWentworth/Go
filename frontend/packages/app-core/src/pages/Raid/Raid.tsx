@@ -62,6 +62,7 @@ import {
   clearRaidCalibrationObservations,
   createRaidCalibrationObservation,
   loadRaidCalibrationObservations,
+  type RaidCalibrationPredictionSource,
   type RaidObservationActual,
 } from "./utils/raidCalibration";
 import { scoreRaidCountersAsync } from "./utils/raidCounterWorkers";
@@ -103,8 +104,9 @@ const Raid: React.FC = () => {
     "signed-out-device";
 
   const [viewMode, setViewMode] = useState<RaidViewMode>("overall");
-  const [rosterScope, setRosterScope] =
-    useState<RaidRosterScopeValue>(isLoggedIn ? "owned" : "catalog");
+  const [rosterScope, setRosterScope] = useState<RaidRosterScopeValue>(
+    isLoggedIn ? "owned" : "catalog",
+  );
   const [bossSearch, setBossSearch] = useState("");
   const [selectedBossId, setSelectedBossId] = useState<string>("");
   const [selectedType, setSelectedType] = useState(DEFAULT_TYPE_DPS_PAGE);
@@ -117,8 +119,7 @@ const Raid: React.FC = () => {
   const [friendship, setFriendship] = useState<FriendshipKey>("best");
   const [megaAllyBonus, setMegaAllyBonus] = useState<MegaAllyBonusKey>("none");
   const [partyPower, setPartyPower] = useState<PartyPowerKey>("none");
-  const [dodgeStrategy, setDodgeStrategy] =
-    useState<RaidDodgeStrategy>("none");
+  const [dodgeStrategy, setDodgeStrategy] = useState<RaidDodgeStrategy>("none");
   const [weatherBoostedType, setWeatherBoostedType] = useState("none");
   const [relobbySeconds, setRelobbySeconds] = useState(
     DEFAULT_RAID_RELOBBY_SECONDS,
@@ -139,13 +140,16 @@ const Raid: React.FC = () => {
   const [calibrationObservations, setCalibrationObservations] = useState(
     loadRaidCalibrationObservations,
   );
-  const [dodgeCalibrationEnabled, setDodgeCalibrationEnabled] =
-    useState(false);
+  const [dodgeCalibrationEnabled, setDodgeCalibrationEnabled] = useState(false);
   const [observationDialogOpen, setObservationDialogOpen] = useState(false);
   const [clearCalibrationConfirmOpen, setClearCalibrationConfirmOpen] =
     useState(false);
   const [customPartyResult, setCustomPartyResult] =
     useState<RaidPartySimulationResult | null>(null);
+  const [customPartyPrediction, setCustomPartyPrediction] = useState<{
+    source: RaidCalibrationPredictionSource;
+    scenarioKey: string;
+  } | null>(null);
 
   const calibrationProfile = useMemo(
     () =>
@@ -245,8 +249,7 @@ const Raid: React.FC = () => {
       bossMovesetMode,
       relobbySeconds,
       dodgeSuccessRate:
-        dodgeCalibrationEnabled &&
-        calibrationProfile.canApplyDodgeCalibration
+        dodgeCalibrationEnabled && calibrationProfile.canApplyDodgeCalibration
           ? calibrationProfile.dodgeSuccessRate
           : 1,
     }),
@@ -331,8 +334,15 @@ const Raid: React.FC = () => {
   );
 
   const handleCustomPartyResultChange = useCallback(
-    (result: RaidPartySimulationResult | null) => {
+    (
+      result: RaidPartySimulationResult | null,
+      source?: RaidCalibrationPredictionSource,
+      scenarioKey?: string,
+    ) => {
       setCustomPartyResult(result);
+      setCustomPartyPrediction(
+        result && source && scenarioKey ? { source, scenarioKey } : null,
+      );
     },
     [],
   );
@@ -352,12 +362,7 @@ const Raid: React.FC = () => {
       sortMetric,
       sortDirection,
     ).slice(0, 30);
-  }, [
-    attackerSearch,
-    overallRankingScores,
-    sortDirection,
-    sortMetric,
-  ]);
+  }, [attackerSearch, overallRankingScores, sortDirection, sortMetric]);
 
   useEffect(() => {
     if (
@@ -387,9 +392,7 @@ const Raid: React.FC = () => {
       settings,
       bossOptions,
     );
-    return bestOnly
-      ? dedupeBestTypeDpsPerVariant(allScores)
-      : allScores;
+    return bestOnly ? dedupeBestTypeDpsPerVariant(allScores) : allScores;
   }, [attackers, bestOnly, bossOptions, selectedType, settings, viewMode]);
 
   const typeDpsScores = useMemo(() => {
@@ -400,12 +403,7 @@ const Raid: React.FC = () => {
       sortMetric,
       sortDirection,
     ).slice(0, 30);
-  }, [
-    attackerSearch,
-    typeDpsRankingScores,
-    sortDirection,
-    sortMetric,
-  ]);
+  }, [attackerSearch, typeDpsRankingScores, sortDirection, sortMetric]);
 
   const groupEstimate = useMemo(() => {
     if (viewMode !== "boss") return null;
@@ -416,13 +414,7 @@ const Raid: React.FC = () => {
       selectedTier,
       settings,
     );
-  }, [
-    bossCounterScores,
-    selectedBoss,
-    selectedTier,
-    settings,
-    viewMode,
-  ]);
+  }, [bossCounterScores, selectedBoss, selectedTier, settings, viewMode]);
 
   const bossStats = selectedBoss
     ? calculateRaidBossStats(selectedBoss, selectedTier, activeShadowBossMode)
@@ -479,17 +471,18 @@ const Raid: React.FC = () => {
   const handleSaveObservation = (actual: RaidObservationActual) => {
     if (!selectedBoss) return;
 
-    const prediction =
+    const exactPartyPrediction =
       customPartyResult &&
-      customPartyResult.trainers.length === actual.trainerCount
-        ? customPartyResult
-        : simulateRaidGroupAtTrainerCount(
-            bossCounterScores,
-            selectedBoss,
-            selectedTier,
-            settings,
-            actual.trainerCount,
-          );
+      customPartyResult.trainers.length === actual.trainerCount;
+    const prediction = exactPartyPrediction
+      ? customPartyResult
+      : simulateRaidGroupAtTrainerCount(
+          bossCounterScores,
+          selectedBoss,
+          selectedTier,
+          settings,
+          actual.trainerCount,
+        );
     if (!prediction) return;
 
     const observation = createRaidCalibrationObservation({
@@ -500,13 +493,24 @@ const Raid: React.FC = () => {
       bossVariantId: selectedBoss.variant_id,
       bossName: getRaidVariantDisplayName(selectedBoss),
       tierKey: selectedTierKey,
+      predictionSource: exactPartyPrediction
+        ? (customPartyPrediction?.source ?? "custom-party")
+        : "group-estimate",
+      scenarioKey: exactPartyPrediction
+        ? (customPartyPrediction?.scenarioKey ??
+          `custom-party-${actual.trainerCount}`)
+        : `group-estimate-${actual.trainerCount}`,
       dodgeCalibrationApplied:
-        dodgeCalibrationEnabled &&
-        calibrationProfile.canApplyDodgeCalibration,
+        dodgeCalibrationEnabled && calibrationProfile.canApplyDodgeCalibration,
       predicted: {
         clearTimeSeconds: prediction.projectedTimeToWinSeconds,
         faints: prediction.faints,
         relobbies: prediction.relobbies,
+        winRate: prediction.distribution.winRate,
+        p10ClearTimeSeconds:
+          prediction.distribution.timeToWinSeconds.p10 || null,
+        p90ClearTimeSeconds:
+          prediction.distribution.timeToWinSeconds.p90 || null,
       },
       actual,
     });
@@ -521,6 +525,38 @@ const Raid: React.FC = () => {
     );
     setDodgeCalibrationEnabled(false);
     setClearCalibrationConfirmOpen(false);
+  };
+
+  const handleExportCalibration = () => {
+    const observations = calibrationObservations.filter(
+      (observation) =>
+        observation.ownerKey === calibrationOwnerKey &&
+        observation.modelVersion === RAID_SIMULATION_MODEL_VERSION,
+    );
+    const blob = new Blob(
+      [
+        JSON.stringify(
+          {
+            exportedAt: new Date().toISOString(),
+            modelVersion: RAID_SIMULATION_MODEL_VERSION,
+            observations,
+          },
+          null,
+          2,
+        ),
+      ],
+      { type: "application/json" },
+    );
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement("a");
+    anchor.href = url;
+    anchor.download = `pokegonexus-raid-calibration-${new Date()
+      .toISOString()
+      .slice(0, 10)}.json`;
+    document.body.append(anchor);
+    anchor.click();
+    anchor.remove();
+    window.setTimeout(() => URL.revokeObjectURL(url), 0);
   };
 
   if (loading || movesLoading || (viewMode === "boss" && raidDataLoading)) {
@@ -560,7 +596,9 @@ const Raid: React.FC = () => {
               <div>
                 <p className="raid-eyebrow">Overall eDPS</p>
                 <h1>
-                  {personalized ? "Your top raid attackers" : "Top raid attackers"}
+                  {personalized
+                    ? "Your top raid attackers"
+                    : "Top raid attackers"}
                 </h1>
               </div>
               <div className="raid-leaderboard-meta">
@@ -653,8 +691,8 @@ const Raid: React.FC = () => {
                 <section className="raid-calculation-status" role="status">
                   <strong>No caught raid-ready Pokémon</strong>
                   <span>
-                    Mark Pokémon as caught to build a personalized counter
-                    team for {selectedBoss.name}.
+                    Mark Pokémon as caught to build a personalized counter team
+                    for {selectedBoss.name}.
                   </span>
                 </section>
               ) : !bossCounterScoresLoading &&
@@ -684,6 +722,7 @@ const Raid: React.FC = () => {
                 }
                 onEnabledChange={setDodgeCalibrationEnabled}
                 onLogRaid={() => setObservationDialogOpen(true)}
+                onExport={handleExportCalibration}
                 onClear={() => setClearCalibrationConfirmOpen(true)}
               />
 

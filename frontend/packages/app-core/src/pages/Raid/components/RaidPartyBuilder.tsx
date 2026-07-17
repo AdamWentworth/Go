@@ -3,6 +3,7 @@ import {
   FaBolt,
   FaChevronDown,
   FaChevronUp,
+  FaMagic,
   FaPlus,
   FaRedo,
   FaTrash,
@@ -11,18 +12,25 @@ import {
 
 import type { PokemonVariant } from "@/types/pokemonVariants";
 import {
+  applyRaidPartyTrainersToDrafts,
   buildRaidPartyTrainers,
   createRaidPartyTrainerDraft,
   getDefaultRaidPartyMemberIds,
+  getRaidPartyScenarioKey,
   getRaidPartyScoreKey,
   type RaidPartyTrainerDraft,
 } from "../utils/raidParty";
-import { simulateRaidPartyAsync } from "../utils/raidPartyWorkers";
+import {
+  optimizeRaidPartyAsync,
+  simulateRaidPartyAsync,
+} from "../utils/raidPartyWorkers";
+import type { RaidCalibrationPredictionSource } from "../utils/raidCalibration";
 import { RAID_PARTY_MAX_TRAINERS } from "../utils/raidRules";
 import { variantUsesRaidMegaSlot } from "../utils/raidTeamSelection";
 import type {
   RaidCounterScore,
   RaidCounterSettings,
+  RaidPartyOptimizationResult,
   RaidPartySimulationResult,
   RaidTierPreset,
 } from "../utils/raidTypes";
@@ -33,7 +41,11 @@ type RaidPartyBuilderProps = {
   boss: PokemonVariant;
   tier: RaidTierPreset;
   settings: RaidCounterSettings;
-  onResultChange: (result: RaidPartySimulationResult | null) => void;
+  onResultChange: (
+    result: RaidPartySimulationResult | null,
+    source?: RaidCalibrationPredictionSource,
+    scenarioKey?: string,
+  ) => void;
 };
 
 const formatSeconds = (seconds: number): string =>
@@ -57,7 +69,10 @@ const RaidPartyBuilder = ({
     () => new Set(["trainer-1"]),
   );
   const [result, setResult] = useState<RaidPartySimulationResult | null>(null);
+  const [optimization, setOptimization] =
+    useState<RaidPartyOptimizationResult | null>(null);
   const [running, setRunning] = useState(false);
+  const [optimizing, setOptimizing] = useState(false);
   const [error, setError] = useState("");
   const candidateScores = useMemo(() => scores.slice(0, 80), [scores]);
   const scoreById = useMemo(
@@ -70,6 +85,8 @@ const RaidPartyBuilder = ({
 
   useEffect(() => {
     simulationAbortRef.current?.abort();
+    setRunning(false);
+    setOptimizing(false);
     const bossChanged = previousBossIdRef.current !== boss.variant_id;
     previousBossIdRef.current = boss.variant_id;
     if (bossChanged) {
@@ -96,6 +113,7 @@ const RaidPartyBuilder = ({
       );
     }
     setResult(null);
+    setOptimization(null);
     setError("");
     onResultChange(null);
   }, [boss.variant_id, scores, settings, onResultChange]);
@@ -111,14 +129,21 @@ const RaidPartyBuilder = ({
     id: string,
     update: (draft: RaidPartyTrainerDraft) => RaidPartyTrainerDraft,
   ) => {
+    simulationAbortRef.current?.abort();
+    setRunning(false);
+    setOptimizing(false);
     setDrafts((current) =>
       current.map((draft) => (draft.id === id ? update(draft) : draft)),
     );
     setResult(null);
+    setOptimization(null);
     onResultChange(null);
   };
 
   const handleAddTrainer = () => {
+    simulationAbortRef.current?.abort();
+    setRunning(false);
+    setOptimizing(false);
     setDrafts((current) => {
       const nextTrainerNumber =
         Math.max(
@@ -137,10 +162,14 @@ const RaidPartyBuilder = ({
       return [...current, nextDraft];
     });
     setResult(null);
+    setOptimization(null);
     onResultChange(null);
   };
 
   const handleRemoveTrainer = (id: string) => {
+    simulationAbortRef.current?.abort();
+    setRunning(false);
+    setOptimizing(false);
     setDrafts((current) => current.filter((draft) => draft.id !== id));
     setExpandedTrainerIds((expanded) => {
       const next = new Set(expanded);
@@ -148,6 +177,7 @@ const RaidPartyBuilder = ({
       return next;
     });
     setResult(null);
+    setOptimization(null);
     onResultChange(null);
   };
 
@@ -162,6 +192,7 @@ const RaidPartyBuilder = ({
     const controller = new AbortController();
     simulationAbortRef.current = controller;
     setRunning(true);
+    setOptimization(null);
     setError("");
     try {
       const nextResult = await simulateRaidPartyAsync(
@@ -170,7 +201,11 @@ const RaidPartyBuilder = ({
       );
       if (controller.signal.aborted) return;
       setResult(nextResult);
-      onResultChange(nextResult);
+      onResultChange(
+        nextResult,
+        "custom-party",
+        nextResult ? getRaidPartyScenarioKey(trainers) : undefined,
+      );
       if (!nextResult) setError("The boss has no usable raid movesets.");
     } catch (simulationError) {
       if (controller.signal.aborted) return;
@@ -181,6 +216,50 @@ const RaidPartyBuilder = ({
       );
     } finally {
       if (!controller.signal.aborted) setRunning(false);
+    }
+  };
+
+  const handleOptimize = async () => {
+    const trainers = buildRaidPartyTrainers(drafts, scores, settings);
+    if (trainers.length !== drafts.length) {
+      setError("Every Trainer needs at least one valid team member.");
+      return;
+    }
+
+    simulationAbortRef.current?.abort();
+    const controller = new AbortController();
+    simulationAbortRef.current = controller;
+    setOptimizing(true);
+    setError("");
+    try {
+      const nextOptimization = await optimizeRaidPartyAsync(
+        { trainers, scores: candidateScores, boss, tier },
+        controller.signal,
+      );
+      if (controller.signal.aborted) return;
+      if (!nextOptimization) {
+        setError("The optimizer could not build a legal raid party.");
+        return;
+      }
+      setDrafts((current) =>
+        applyRaidPartyTrainersToDrafts(current, nextOptimization.trainers),
+      );
+      setOptimization(nextOptimization);
+      setResult(nextOptimization.result);
+      onResultChange(
+        nextOptimization.result,
+        "optimized-party",
+        getRaidPartyScenarioKey(nextOptimization.trainers),
+      );
+    } catch (optimizationError) {
+      if (controller.signal.aborted) return;
+      setError(
+        optimizationError instanceof Error
+          ? optimizationError.message
+          : "Party optimization failed.",
+      );
+    } finally {
+      if (!controller.signal.aborted) setOptimizing(false);
     }
   };
 
@@ -197,7 +276,11 @@ const RaidPartyBuilder = ({
           <strong>Custom raid party</strong>
           <small>Independent teams, dodges, relobbies, and contribution</small>
         </span>
-        {open ? <FaChevronUp aria-hidden="true" /> : <FaChevronDown aria-hidden="true" />}
+        {open ? (
+          <FaChevronUp aria-hidden="true" />
+        ) : (
+          <FaChevronDown aria-hidden="true" />
+        )}
       </button>
 
       {open && (
@@ -277,7 +360,8 @@ const RaidPartyBuilder = ({
                         onChange={(event) =>
                           updateDraft(draft.id, (current) => ({
                             ...current,
-                            dodgeStrategy: event.target.value as RaidCounterSettings["dodgeStrategy"],
+                            dodgeStrategy: event.target
+                              .value as RaidCounterSettings["dodgeStrategy"],
                           }))
                         }
                       >
@@ -346,7 +430,8 @@ const RaidPartyBuilder = ({
                       onClick={() =>
                         updateDraft(draft.id, (current) => ({
                           ...current,
-                          memberVariantIds: getDefaultRaidPartyMemberIds(scores),
+                          memberVariantIds:
+                            getDefaultRaidPartyMemberIds(scores),
                         }))
                       }
                     >
@@ -356,9 +441,12 @@ const RaidPartyBuilder = ({
                   </div>
                   <div className="raid-party-team">
                     {Array.from({ length: 6 }, (_, slotIndex) => {
-                      const selectedId = draft.memberVariantIds[slotIndex] ?? "";
+                      const selectedId =
+                        draft.memberVariantIds[slotIndex] ?? "";
                       const otherIds = new Set(
-                        draft.memberVariantIds.filter((_, index) => index !== slotIndex),
+                        draft.memberVariantIds.filter(
+                          (_, index) => index !== slotIndex,
+                        ),
                       );
                       const selectedScore = scoreById.get(selectedId);
                       const anotherMegaSelected = selectedScores.some(
@@ -374,8 +462,11 @@ const RaidPartyBuilder = ({
                             value={selectedId}
                             onChange={(event) =>
                               updateDraft(draft.id, (current) => {
-                                const memberVariantIds = [...current.memberVariantIds];
-                                memberVariantIds[slotIndex] = event.target.value;
+                                const memberVariantIds = [
+                                  ...current.memberVariantIds,
+                                ];
+                                memberVariantIds[slotIndex] =
+                                  event.target.value;
                                 return { ...current, memberVariantIds };
                               })
                             }
@@ -390,7 +481,9 @@ const RaidPartyBuilder = ({
                                   selectedScore?.variant.variant_id !== id);
                               return (
                                 <option key={id} value={id} disabled={disabled}>
-                                  {getRaidVariantDisplayName(score.variant)} · {score.fastMove.name} / {score.chargedMove.name}
+                                  {getRaidVariantDisplayName(score.variant)} ·{" "}
+                                  {score.fastMove.name} /{" "}
+                                  {score.chargedMove.name}
                                 </option>
                               );
                             })}
@@ -415,38 +508,87 @@ const RaidPartyBuilder = ({
             })}
           </div>
 
-          <button
-            type="button"
-            className="raid-party-run"
-            onClick={handleRun}
-            disabled={running || drafts.length === 0}
-          >
-            <FaBolt aria-hidden="true" />
-            {running ? "Simulating party..." : "Simulate party"}
-          </button>
+          <div className="raid-party-run-actions">
+            <button
+              type="button"
+              className="raid-party-run raid-party-simulate"
+              onClick={handleRun}
+              disabled={running || optimizing || drafts.length === 0}
+            >
+              <FaBolt aria-hidden="true" />
+              {running ? "Simulating..." : "Simulate"}
+            </button>
+            <button
+              type="button"
+              className="raid-party-run raid-party-optimize"
+              onClick={handleOptimize}
+              disabled={running || optimizing || drafts.length === 0}
+              title="Coordinate teams, Mega uptime, survival, and relobbies"
+            >
+              <FaMagic aria-hidden="true" />
+              {optimizing ? "Optimizing lobby..." : "Optimize lobby"}
+            </button>
+          </div>
 
-          {error && <p className="raid-party-error" role="alert">{error}</p>}
+          {error && (
+            <p className="raid-party-error" role="alert">
+              {error}
+            </p>
+          )}
 
           {result && (
-            <section className="raid-party-result" aria-label="Raid party result">
+            <section
+              className="raid-party-result"
+              aria-label="Raid party result"
+            >
               <header>
                 <span className={result.won ? "won" : "lost"}>
                   {result.won ? "Clear" : "Time expired"}
                 </span>
-                <strong>{formatSeconds(result.projectedTimeToWinSeconds)}</strong>
+                <strong>
+                  {formatSeconds(result.projectedTimeToWinSeconds)}
+                </strong>
                 <small>
-                  {formatDps(result.dps)} DPS · {Math.round(result.faints)} faints · {Math.round(result.relobbies)} relobbies
+                  {formatDps(result.dps)} DPS · {Math.round(result.faints)}{" "}
+                  faints · {Math.round(result.relobbies)} relobbies
                 </small>
               </header>
+              {optimization && (
+                <div className="raid-party-optimization-summary">
+                  <strong>Lobby optimized</strong>
+                  <span>
+                    {optimization.evaluatedLineups} coordinated lineups checked
+                  </span>
+                  <small>
+                    {optimization.changedTrainerCount} teams changed
+                    {optimization.timeSavedSeconds >= 0.05
+                      ? ` · ${optimization.timeSavedSeconds.toFixed(1)}s faster`
+                      : ""}
+                    {optimization.faintReduction >= 0.5
+                      ? ` · ${optimization.faintReduction.toFixed(1)} fewer faints`
+                      : ""}
+                    {optimization.relobbyReduction >= 0.5
+                      ? ` · ${optimization.relobbyReduction.toFixed(1)} fewer relobbies`
+                      : ""}
+                  </small>
+                </div>
+              )}
               <div className="raid-party-contributions">
                 {result.trainers.map((trainer) => (
                   <div key={trainer.id}>
                     <span>
                       <strong>{trainer.label}</strong>
-                      <small>{formatDps(trainer.dps)} DPS · {Math.round(trainer.damageShare * 100)}%</small>
+                      <small>
+                        {formatDps(trainer.dps)} DPS ·{" "}
+                        {Math.round(trainer.damageShare * 100)}%
+                      </small>
                     </span>
                     <div aria-label={`${trainer.label} damage contribution`}>
-                      <i style={{ width: `${Math.max(2, trainer.damageShare * 100)}%` }} />
+                      <i
+                        style={{
+                          width: `${Math.max(2, trainer.damageShare * 100)}%`,
+                        }}
+                      />
                     </div>
                   </div>
                 ))}

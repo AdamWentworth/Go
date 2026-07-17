@@ -82,8 +82,7 @@ test.describe("raid counter worker", () => {
     ).toBeVisible({ timeout: RAID_COLD_ROUTE_READY_BUDGET_MS });
     const coldDuration = await page.waitForFunction(
       (measureName) =>
-        performance.getEntriesByName(measureName, "measure").at(-1)
-          ?.duration,
+        performance.getEntriesByName(measureName, "measure").at(-1)?.duration,
       RAID_ROUTE_READY_MEASURE,
     );
     expect(await coldDuration.jsonValue()).toBeLessThan(
@@ -97,8 +96,7 @@ test.describe("raid counter worker", () => {
     ).toBeVisible({ timeout: RAID_COLD_ROUTE_READY_BUDGET_MS });
     const warmDuration = await page.waitForFunction(
       (measureName) =>
-        performance.getEntriesByName(measureName, "measure").at(-1)
-          ?.duration,
+        performance.getEntriesByName(measureName, "measure").at(-1)?.duration,
       RAID_ROUTE_READY_MEASURE,
     );
     expect(await warmDuration.jsonValue()).toBeLessThan(
@@ -128,19 +126,24 @@ test.describe("raid counter worker", () => {
     await expect(calibration).toContainText("Private to this device");
     await calibration.getByRole("button", { name: "Log raid" }).click();
     const dialog = page.getByRole("dialog", { name: /Log .* raid/i });
-    await dialog.getByLabel("Clear time (seconds)").fill("145.5");
+    await dialog.getByLabel("Battle time (seconds)").fill("145.5");
     await dialog.getByLabel("Dodges attempted").fill("4");
     await dialog.getByLabel("Dodges successful").fill("3");
     await dialog.getByLabel(/Measured latency/i).fill("90");
     await dialog.getByRole("button", { name: "Save result" }).click();
     await expect(dialog).toBeHidden();
     expect(
-      await page.evaluate(() =>
-        JSON.parse(
+      await page.evaluate(() => {
+        const observations = JSON.parse(
           localStorage.getItem("raidCalibrationObservations") ?? "[]",
-        ).length,
-      ),
-    ).toBe(1);
+        );
+        return {
+          count: observations.length,
+          source: observations[0]?.predictionSource,
+          outcome: observations[0]?.actual?.outcome,
+        };
+      }),
+    ).toEqual({ count: 1, source: "group-estimate", outcome: "cleared" });
   });
 
   test("builds a responsive custom party and simulates it off the main thread", async ({
@@ -162,7 +165,7 @@ test.describe("raid counter worker", () => {
     const partyWorkerStarted = page.waitForEvent("worker", {
       predicate: (worker) => worker.url().includes("raidParty.worker"),
     });
-    await party.getByRole("button", { name: "Simulate party" }).click();
+    await party.getByRole("button", { name: "Simulate", exact: true }).click();
     const partyWorker = await partyWorkerStarted;
 
     expect(partyWorker.url()).toContain("raidParty.worker");
@@ -170,6 +173,16 @@ test.describe("raid counter worker", () => {
       timeout: 30_000,
     });
     await expect(party.getByLabel("Raid party result")).toContainText("DPS");
+
+    const optimizerWorkerStarted = page.waitForEvent("worker", {
+      predicate: (worker) => worker.url().includes("raidParty.worker"),
+    });
+    await party.getByRole("button", { name: "Optimize lobby" }).click();
+    await optimizerWorkerStarted;
+    await expect(party.getByText("Lobby optimized")).toBeVisible({
+      timeout: 60_000,
+    });
+    await expect(party.getByText(/coordinated lineups checked/)).toBeVisible();
   });
 
   test("ranks a logged-in Trainer's caught Pokemon at its real level", async ({
@@ -227,8 +240,12 @@ test.describe("raid counter worker", () => {
       page.getByText("2 raid-ready entries from 1 caught"),
     ).toBeVisible();
     const leaderboard = page.getByLabel("Your top raid attackers");
-    await expect(leaderboard.getByText("Rayquaza", { exact: true })).toBeVisible();
-    await expect(leaderboard.getByText("Mega Rayquaza", { exact: true })).toBeVisible();
+    await expect(
+      leaderboard.getByText("Rayquaza", { exact: true }),
+    ).toBeVisible();
+    await expect(
+      leaderboard.getByText("Mega Rayquaza", { exact: true }),
+    ).toBeVisible();
     await expect(leaderboard.getByText(/Emerald · Level 40/)).toHaveCount(2);
   });
 });

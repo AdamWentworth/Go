@@ -210,12 +210,9 @@ describe("heterogeneous raid party simulation", () => {
       [fast, charged],
       "mega",
     );
-    const regularSupport = { ...megaSupport, variantType: "default" };
+    const regularSupport = { ...megaSupport, variantType: "default" as const };
     const withMega = simulateHeterogeneousRaidPartyBattle({
-      trainers: [
-        trainer("attacker", strong),
-        trainer("support", megaSupport),
-      ],
+      trainers: [trainer("attacker", strong), trainer("support", megaSupport)],
       boss,
       bossFastMove: bossFast,
       bossChargedMove: bossCharged,
