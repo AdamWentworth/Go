@@ -34,6 +34,7 @@ interface RaidModifiersProps {
   includeShadowControls: boolean;
   includeRelobbyControls?: boolean;
   includeBossMovesetControls?: boolean;
+  includeMonteCarloOption?: boolean;
   bossMovesetMode: RaidBossMovesetMode;
   onBossMovesetModeChange: (mode: RaidBossMovesetMode) => void;
   shadowMechanicsEnabled: boolean;
@@ -61,6 +62,7 @@ const RaidModifiers = ({
   includeShadowControls,
   includeRelobbyControls = false,
   includeBossMovesetControls = false,
+  includeMonteCarloOption = false,
   bossMovesetMode,
   onBossMovesetModeChange,
   shadowMechanicsEnabled,
@@ -172,7 +174,7 @@ const RaidModifiers = ({
 
     {includeBossMovesetControls && (
       <label className="raid-field">
-        <span>Boss movesets</span>
+        <span>Boss behavior</span>
         <select
           value={bossMovesetMode}
           onChange={(event) =>
@@ -182,6 +184,11 @@ const RaidModifiers = ({
           }
         >
           <option value="expected">Expected across legal movesets</option>
+          {includeMonteCarloOption && (
+            <option value="monte-carlo">
+              Monte Carlo distribution (24+ trials)
+            </option>
+          )}
           <option value="favorable">Favorable incoming moveset</option>
           <option value="hostile">Hostile incoming moveset</option>
         </select>

@@ -374,6 +374,93 @@ describe("raid event simulation", () => {
     expect(favorable!.faints).toBeLessThanOrEqual(hostile!.faints);
   });
 
+  it("produces reproducible Monte Carlo percentiles", () => {
+    const monteCarloSettings: RaidCounterSettings = {
+      ...settings,
+      bossMovesetMode: "monte-carlo",
+    };
+    const first = simulateRaidCounterAcrossBossMovesets({
+      attacker,
+      attackerFastMove: fastAttack,
+      attackerChargedMove: chargedAttack,
+      boss,
+      tier,
+      settings: monteCarloSettings,
+    });
+    const second = simulateRaidCounterAcrossBossMovesets({
+      attacker,
+      attackerFastMove: fastAttack,
+      attackerChargedMove: chargedAttack,
+      boss,
+      tier,
+      settings: monteCarloSettings,
+    });
+
+    expect(first).toEqual(second);
+    expect(first).not.toBeNull();
+    expect(first!.distribution.sampleCount).toBeGreaterThanOrEqual(24);
+    expect(first!.distribution.sampleCount).toBeLessThanOrEqual(48);
+    expect(first!.distribution.winRate).toBeGreaterThanOrEqual(0);
+    expect(first!.distribution.winRate).toBeLessThanOrEqual(1);
+    expect(first!.distribution.timeToWinSeconds.p10).toBeLessThanOrEqual(
+      first!.distribution.timeToWinSeconds.p50,
+    );
+    expect(first!.distribution.timeToWinSeconds.p50).toBeLessThanOrEqual(
+      first!.distribution.timeToWinSeconds.p90,
+    );
+    expect(first!.distribution.faints.p10).toBeLessThanOrEqual(
+      first!.distribution.faints.p90,
+    );
+  });
+
+  it("attaches Monte Carlo outcomes to ranked counters", () => {
+    const scores = scoreRaidCounters(
+      [attacker],
+      boss,
+      tier,
+      { ...settings, bossMovesetMode: "monte-carlo" },
+    );
+
+    expect(scores).toHaveLength(1);
+    expect(scores[0].simulationDistribution?.sampleCount).toBeGreaterThanOrEqual(
+      24,
+    );
+    expect(
+      Number.isFinite(
+        scores[0].simulationDistribution?.timeToWinSeconds.p50 ?? NaN,
+      ),
+    ).toBe(true);
+  });
+
+  it("keeps a practical Monte Carlo counter batch bounded and complete", () => {
+    const candidates = Array.from({ length: 32 }, (_, index) =>
+      pokemon({
+        name: `Monte Carlo Candidate ${index.toString().padStart(2, "0")}`,
+        attack: 300 - index,
+        defense: 160,
+        stamina: 170,
+        types: ["normal"],
+        moves: [fastAttack, chargedAttack],
+      }),
+    );
+
+    const scores = scoreRaidCounters(candidates, boss, tier, {
+      ...settings,
+      bossMovesetMode: "monte-carlo",
+    });
+
+    expect(scores).toHaveLength(candidates.length);
+    expect(
+      scores.every(
+        (score) =>
+          (score.simulationDistribution?.sampleCount ?? 0) >= 24 &&
+          Number.isFinite(
+            score.simulationDistribution?.timeToWinSeconds.p50 ?? NaN,
+          ),
+      ),
+    ).toBe(true);
+  });
+
   it("bounds the variants sent through the event simulator", () => {
     const candidates = Array.from(
       { length: RAID_COUNTER_SIMULATION_VARIANT_LIMIT + 44 },

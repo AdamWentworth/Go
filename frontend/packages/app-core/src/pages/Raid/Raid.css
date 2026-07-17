@@ -718,12 +718,22 @@
 }
 
 .raid-counter-stats span {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
   padding: 0.35rem 0.55rem;
   border-radius: 999px;
   color: rgba(241, 255, 255, 0.92);
   background: rgba(255, 255, 255, 0.075);
   font-size: 0.78rem;
   font-weight: 900;
+}
+
+.raid-counter-stats small {
+  margin-top: 0.08rem;
+  color: rgba(182, 205, 207, 0.78);
+  font-size: 0.62rem;
+  font-weight: 760;
 }
 
 .raid-type-results {

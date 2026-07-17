@@ -12,8 +12,11 @@ import {
   getLegalRaidFastMoves,
 } from "./raidCatalog";
 import {
+  RAID_MONTE_CARLO_MAX_SAMPLES,
+  RAID_MONTE_CARLO_MIN_SAMPLES,
   RAID_SIMULATION_ATTACKER_SWAP_SECONDS,
   RAID_SIMULATION_BOSS_ACTION_DELAY_SECONDS,
+  RAID_SIMULATION_BOSS_DELAY_OPTIONS_SECONDS,
   RAID_SIMULATION_ENERGY_CAP,
 } from "./raidRules";
 import { calculateRaidAttackerBattleStats } from "./raidTargetModel";
@@ -21,6 +24,7 @@ import type {
   RaidBattleSimulationResult,
   RaidBossMovesetMode,
   RaidCounterSettings,
+  RaidSimulationDistribution,
   RaidTierPreset,
 } from "./raidTypes";
 
@@ -48,6 +52,64 @@ type BossMoveset = {
 const roundToRaidTurn = (seconds: number): number =>
   Math.round(seconds * 2) / 2;
 
+const percentile = (values: number[], position: number): number => {
+  if (values.length === 0) return 0;
+  const sorted = [...values].sort((a, b) => a - b);
+  const index = (sorted.length - 1) * position;
+  const lower = Math.floor(index);
+  const upper = Math.ceil(index);
+  if (lower === upper) return sorted[lower];
+  return sorted[lower] + (sorted[upper] - sorted[lower]) * (index - lower);
+};
+
+const buildSimulationDistribution = (
+  results: Array<
+    Pick<
+      RaidBattleSimulationResult,
+      "projectedTimeToWinSeconds" | "faints" | "relobbies" | "won"
+    >
+  >,
+): RaidSimulationDistribution => {
+  const summarize = (values: number[]) => ({
+    p10: percentile(values, 0.1),
+    p50: percentile(values, 0.5),
+    p90: percentile(values, 0.9),
+  });
+
+  return {
+    sampleCount: results.length,
+    winRate:
+      results.length > 0
+        ? results.filter((result) => result.won).length / results.length
+        : 0,
+    timeToWinSeconds: summarize(
+      results.map((result) => result.projectedTimeToWinSeconds),
+    ),
+    faints: summarize(results.map((result) => result.faints)),
+    relobbies: summarize(results.map((result) => result.relobbies)),
+  };
+};
+
+const hashSeed = (value: string): number => {
+  let hash = 2166136261;
+  for (let index = 0; index < value.length; index += 1) {
+    hash ^= value.charCodeAt(index);
+    hash = Math.imul(hash, 16777619);
+  }
+  return hash >>> 0;
+};
+
+const createSeededRandom = (seed: string): (() => number) => {
+  let state = hashSeed(seed) || 0x6d2b79f5;
+  return () => {
+    state += 0x6d2b79f5;
+    let value = state;
+    value = Math.imul(value ^ (value >>> 15), value | 1);
+    value ^= value + Math.imul(value ^ (value >>> 7), value | 61);
+    return ((value ^ (value >>> 14)) >>> 0) / 4294967296;
+  };
+};
+
 const averageSimulationResults = (
   results: RaidBattleSimulationResult[],
 ): RaidBattleSimulationResult => {
@@ -67,6 +129,7 @@ const averageSimulationResults = (
     attackerChargedMoves: average((result) => result.attackerChargedMoves),
     bossChargedMoves: average((result) => result.bossChargedMoves),
     won: results.every((result) => result.won),
+    distribution: buildSimulationDistribution(results),
   };
 };
 
@@ -80,6 +143,8 @@ export const simulateRaidBattle = ({
   tier,
   settings,
   chargedDecisionOffset = 0,
+  shouldBossUseCharged,
+  getBossActionDelaySeconds,
 }: {
   attacker: PokemonVariant;
   attackerFastMove: Move;
@@ -90,6 +155,8 @@ export const simulateRaidBattle = ({
   tier: RaidTierPreset;
   settings: RaidCounterSettings;
   chargedDecisionOffset?: 0 | 1;
+  shouldBossUseCharged?: () => boolean;
+  getBossActionDelaySeconds?: () => number;
 }): RaidBattleSimulationResult => {
   const attackerStats = calculateRaidAttackerBattleStats(attacker, settings);
   const bossStats = calculateRaidBossStats(
@@ -160,6 +227,9 @@ export const simulateRaidBattle = ({
   let damageDealt = 0;
   let winTime: number | null = null;
   const events: SimulationEvent[] = [];
+  const nextBossActionDelay = () =>
+    getBossActionDelaySeconds?.() ??
+    RAID_SIMULATION_BOSS_ACTION_DELAY_SECONDS;
 
   const enqueue = (
     actor: SimulationActor,
@@ -194,7 +264,7 @@ export const simulateRaidBattle = ({
   };
 
   enqueue("attacker-start", 0);
-  enqueue("boss-start", RAID_SIMULATION_BOSS_ACTION_DELAY_SECONDS);
+  enqueue("boss-start", nextBossActionDelay());
 
   while (events.length > 0) {
     const event = takeNextEvent();
@@ -246,9 +316,13 @@ export const simulateRaidBattle = ({
 
     if (event.actor === "boss-start") {
       const chargedAvailable = bossEnergy >= bossChargedCost;
+      const chargedDecision = chargedAvailable
+        ? shouldBossUseCharged?.()
+        : undefined;
       const useCharged =
         chargedAvailable &&
-        (bossChargedOpportunity++ + chargedDecisionOffset) % 2 === 1;
+        (chargedDecision ??
+          (bossChargedOpportunity++ + chargedDecisionOffset) % 2 === 1);
       const move = useCharged ? bossChargedMove : bossFastMove;
       bossEnergy = useCharged
         ? Math.max(0, bossEnergy - bossChargedCost)
@@ -289,10 +363,7 @@ export const simulateRaidBattle = ({
               : RAID_SIMULATION_ATTACKER_SWAP_SECONDS),
         );
       } else {
-        enqueue(
-          "boss-start",
-          event.time + RAID_SIMULATION_BOSS_ACTION_DELAY_SECONDS,
-        );
+        enqueue("boss-start", event.time + nextBossActionDelay());
       }
       continue;
     }
@@ -300,16 +371,13 @@ export const simulateRaidBattle = ({
     attackerHp = attackerStats.hp;
     attackerEnergy = 0;
     enqueue("attacker-start", event.time);
-    enqueue(
-      "boss-start",
-      event.time + RAID_SIMULATION_BOSS_ACTION_DELAY_SECONDS,
-    );
+    enqueue("boss-start", event.time + nextBossActionDelay());
   }
 
   const elapsedSeconds = winTime ?? bossStats.timeLimitSeconds;
   const dps = elapsedSeconds > 0 ? damageDealt / elapsedSeconds : 0;
 
-  return {
+  const result = {
     damageDealt,
     elapsedSeconds,
     dps,
@@ -321,6 +389,10 @@ export const simulateRaidBattle = ({
     bossChargedMoves,
     won: winTime != null,
   };
+  return {
+    ...result,
+    distribution: buildSimulationDistribution([result]),
+  };
 };
 
 const getBossMovesets = (boss: PokemonVariant): BossMoveset[] =>
@@ -330,6 +402,67 @@ const getBossMovesets = (boss: PokemonVariant): BossMoveset[] =>
       chargedMove,
     })),
   );
+
+const simulateMonteCarloRaidCounter = ({
+  attacker,
+  attackerFastMove,
+  attackerChargedMove,
+  boss,
+  tier,
+  settings,
+  movesets,
+}: {
+  attacker: PokemonVariant;
+  attackerFastMove: Move;
+  attackerChargedMove: Move;
+  boss: PokemonVariant;
+  tier: RaidTierPreset;
+  settings: RaidCounterSettings;
+  movesets: BossMoveset[];
+}): RaidBattleSimulationResult => {
+  const sampleCount = Math.min(
+    RAID_MONTE_CARLO_MAX_SAMPLES,
+    Math.max(RAID_MONTE_CARLO_MIN_SAMPLES, movesets.length * 2),
+  );
+  const sharedSeed = [
+    boss.variant_id,
+    boss.pokemon_id,
+    tier.key,
+    settings.attackerLevel,
+    settings.friendship,
+    settings.megaAllyBonus,
+    settings.partyPower,
+    settings.weatherBoostedType,
+    settings.shadowBossMode,
+    settings.relobbySeconds,
+  ].join("|");
+  const results = Array.from({ length: sampleCount }, (_, sampleIndex) => {
+    const moveset = movesets[sampleIndex % movesets.length];
+    const random = createSeededRandom(`${sharedSeed}|${sampleIndex}`);
+    return simulateRaidBattle({
+      attacker,
+      attackerFastMove,
+      attackerChargedMove,
+      boss,
+      bossFastMove: moveset.fastMove,
+      bossChargedMove: moveset.chargedMove,
+      tier,
+      settings,
+      shouldBossUseCharged: () => random() < 0.5,
+      getBossActionDelaySeconds: () => {
+        const index = Math.min(
+          RAID_SIMULATION_BOSS_DELAY_OPTIONS_SECONDS.length - 1,
+          Math.floor(
+            random() * RAID_SIMULATION_BOSS_DELAY_OPTIONS_SECONDS.length,
+          ),
+        );
+        return RAID_SIMULATION_BOSS_DELAY_OPTIONS_SECONDS[index];
+      },
+    });
+  });
+
+  return averageSimulationResults(results);
+};
 
 export const simulateRaidCounterAcrossBossMovesets = ({
   attacker,
@@ -349,27 +482,39 @@ export const simulateRaidCounterAcrossBossMovesets = ({
   const movesets = getBossMovesets(boss);
   if (movesets.length === 0) return null;
 
-  const results = movesets.map(({ fastMove, chargedMove }) =>
-    averageSimulationResults(
-      ([0, 1] as const).map((chargedDecisionOffset) =>
-        simulateRaidBattle({
-          attacker,
-          attackerFastMove,
-          attackerChargedMove,
-          boss,
-          bossFastMove: fastMove,
-          bossChargedMove: chargedMove,
-          tier,
-          settings,
-          chargedDecisionOffset,
-        }),
-      ),
+  if (settings.bossMovesetMode === "monte-carlo") {
+    return simulateMonteCarloRaidCounter({
+      attacker,
+      attackerFastMove,
+      attackerChargedMove,
+      boss,
+      tier,
+      settings,
+      movesets,
+    });
+  }
+
+  const resultsByMoveset = movesets.map(({ fastMove, chargedMove }) =>
+    ([0, 1] as const).map((chargedDecisionOffset) =>
+      simulateRaidBattle({
+        attacker,
+        attackerFastMove,
+        attackerChargedMove,
+        boss,
+        bossFastMove: fastMove,
+        bossChargedMove: chargedMove,
+        tier,
+        settings,
+        chargedDecisionOffset,
+      }),
     ),
   );
 
   if (settings.bossMovesetMode === "expected") {
-    return averageSimulationResults(results);
+    return averageSimulationResults(resultsByMoveset.flat());
   }
+
+  const results = resultsByMoveset.map(averageSimulationResults);
 
   const compare = (
     candidate: RaidBattleSimulationResult,

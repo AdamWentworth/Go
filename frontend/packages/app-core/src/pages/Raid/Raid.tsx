@@ -408,6 +408,7 @@ const Raid: React.FC = () => {
                 includeShadowControls
                 includeRelobbyControls
                 includeBossMovesetControls
+                includeMonteCarloOption
               />
 
               {shadowMechanicsEnabled && (

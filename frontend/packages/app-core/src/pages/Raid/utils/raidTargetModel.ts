@@ -137,7 +137,9 @@ export const buildRaidTargetCombatContexts = (
     const pressure = calculateRaidIncomingPressure(
       prepared.incomingPressureScenarios,
       attackerStats.defense,
-      settings.bossMovesetMode,
+      settings.bossMovesetMode === "monte-carlo"
+        ? "expected"
+        : settings.bossMovesetMode,
     );
     const incomingDps =
       pressure?.incomingDps ??

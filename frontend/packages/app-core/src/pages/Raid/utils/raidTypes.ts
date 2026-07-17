@@ -20,7 +20,25 @@ export type FriendshipKey = "none" | "good" | "great" | "ultra" | "best";
 export type MegaAllyBonusKey = "none" | "general" | "matching";
 export type PartyPowerKey = "none" | "occasional" | "frequent" | "every";
 export type ShadowBossMode = "normal" | "enraged" | "subdued";
-export type RaidBossMovesetMode = "expected" | "favorable" | "hostile";
+export type RaidBossMovesetMode =
+  | "expected"
+  | "monte-carlo"
+  | "favorable"
+  | "hostile";
+
+export type RaidSimulationPercentiles = {
+  p10: number;
+  p50: number;
+  p90: number;
+};
+
+export type RaidSimulationDistribution = {
+  sampleCount: number;
+  winRate: number;
+  timeToWinSeconds: RaidSimulationPercentiles;
+  faints: RaidSimulationPercentiles;
+  relobbies: RaidSimulationPercentiles;
+};
 
 export type RaidTierPreset = {
   key: RaidTierKey;
@@ -69,6 +87,7 @@ export type RaidCounterScore = {
   attackerChargedMoves: number;
   bossChargedMoves: number;
   simulationWon: boolean;
+  simulationDistribution: RaidSimulationDistribution | null;
 };
 
 export type RaidBattleSimulationResult = {
@@ -81,6 +100,7 @@ export type RaidBattleSimulationResult = {
   attackerChargedMoves: number;
   bossChargedMoves: number;
   won: boolean;
+  distribution: RaidSimulationDistribution;
 };
 
 export type RaidTypeDpsScore = {

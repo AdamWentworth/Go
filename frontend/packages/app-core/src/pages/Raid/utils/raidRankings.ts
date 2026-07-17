@@ -171,6 +171,7 @@ const calculateMoveCycleEstimate = (
     attackerChargedMoves: 0,
     bossChargedMoves: 0,
     simulationWon: false,
+    simulationDistribution: null,
   };
 };
 
@@ -219,6 +220,7 @@ export const calculateRaidCounterScore = (
     attackerChargedMoves: simulation.attackerChargedMoves,
     bossChargedMoves: simulation.bossChargedMoves,
     simulationWon: simulation.won,
+    simulationDistribution: simulation.distribution,
   };
 };
 
