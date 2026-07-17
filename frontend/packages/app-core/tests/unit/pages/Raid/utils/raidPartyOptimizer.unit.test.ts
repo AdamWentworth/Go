@@ -142,10 +142,13 @@ describe("raid party optimizer", () => {
     }: {
       trainers: RaidPartyTrainer[];
     }) => {
-      const leadMegas = new Set(
-        lineup.map((entry) => entry.team[0].attacker.variant_id),
+      const betaLeads = lineup.filter(
+        (entry) => entry.team[0].attacker.variant_id === "mega-beta",
+      ).length;
+      return simulationResult(
+        lineup,
+        betaLeads === 2 ? 200 : betaLeads === 1 ? 90 : 100,
       );
-      return simulationResult(lineup, leadMegas.size === 2 ? 200 : 100);
     };
 
     const optimized = optimizeRaidParty(
@@ -159,9 +162,48 @@ describe("raid party optimizer", () => {
     );
 
     expect(optimized).not.toBeNull();
-    expect(optimized?.changedTrainerCount).toBeGreaterThanOrEqual(1);
+    expect(optimized?.changedTrainerCount).toBe(2);
     expect(optimized?.result.dps).toBe(200);
     expect(optimized?.timeSavedSeconds).toBe(50);
+    expect(optimized?.searchStrategy).toBe("bounded-beam");
+    expect(optimized?.beamWidth).toBeGreaterThanOrEqual(2);
+    expect(optimized?.trainerChanges).toHaveLength(2);
+    expect(
+      optimized?.trainerChanges.every((change) => change.reasons.length > 0),
+    ).toBe(true);
     expect(optimized?.evaluatedLineups).toBeLessThanOrEqual(160);
+  });
+
+  it("keeps a full 20-Trainer search within the browser evaluation ceiling", () => {
+    let evaluations = 0;
+    const startingTeam = [scores[0], ...scores.slice(2, 7)];
+    const trainers = Array.from({ length: 20 }, (_, index) =>
+      trainer(`trainer-${index + 1}`, startingTeam),
+    );
+    const evaluate = ({
+      trainers: lineup,
+    }: {
+      trainers: RaidPartyTrainer[];
+    }) => {
+      evaluations += 1;
+      const betaLeads = lineup.filter(
+        (entry) => entry.team[0].attacker.variant_id === "mega-beta",
+      ).length;
+      return simulationResult(lineup, 100 + betaLeads);
+    };
+
+    const optimized = optimizeRaidParty(
+      {
+        trainers,
+        scores,
+        boss: { variant_id: "boss", name: "Boss" } as PokemonVariant,
+        tier: { key: "legendary" } as RaidTierPreset,
+      },
+      evaluate,
+    );
+
+    expect(optimized).not.toBeNull();
+    expect(evaluations).toBe(optimized?.evaluatedLineups);
+    expect(evaluations).toBeLessThanOrEqual(160);
   });
 });

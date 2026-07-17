@@ -233,4 +233,40 @@ describe("heterogeneous raid party simulation", () => {
       withoutMega.trainers[0].dps,
     );
   });
+
+  it("applies each Trainer's Party Power timing policy independently", () => {
+    const partySettings: RaidCounterSettings = {
+      ...settings,
+      partyPower: "party4",
+      partyPowerStrategy: "immediate",
+    };
+    const immediate = simulateHeterogeneousRaidPartyBattle({
+      trainers: [
+        trainer("first", steady, { settings: partySettings }),
+        trainer("second", steady, { settings: partySettings }),
+      ],
+      boss,
+      bossFastMove: bossFast,
+      bossChargedMove: bossCharged,
+      tier: { ...tier, bossHp: 12_000, timeLimitSeconds: 60 },
+    });
+    const manual = simulateHeterogeneousRaidPartyBattle({
+      trainers: [
+        trainer("first", steady, {
+          settings: { ...partySettings, partyPowerStrategy: "manual" },
+        }),
+        trainer("second", steady, {
+          settings: { ...partySettings, partyPowerStrategy: "manual" },
+        }),
+      ],
+      boss,
+      bossFastMove: bossFast,
+      bossChargedMove: bossCharged,
+      tier: { ...tier, bossHp: 12_000, timeLimitSeconds: 60 },
+    });
+
+    expect(immediate.partyPoweredChargedMoves).toBeGreaterThan(0);
+    expect(manual.partyPoweredChargedMoves).toBe(0);
+    expect(immediate.damageDealt).toBeGreaterThan(manual.damageDealt);
+  });
 });

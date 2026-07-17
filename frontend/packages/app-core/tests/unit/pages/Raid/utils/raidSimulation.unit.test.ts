@@ -597,6 +597,14 @@ describe("raid event simulation", () => {
       ...sharedInput,
       settings: { ...settings, partyPower: "party4" },
     });
+    const manualPartyPower = simulateRaidBattle({
+      ...sharedInput,
+      settings: {
+        ...settings,
+        partyPower: "party4",
+        partyPowerStrategy: "manual",
+      },
+    });
 
     expect(partyOfFour.partyPoweredChargedMoves).toBeGreaterThan(0);
     expect(partyOfFour.partyPoweredChargedMoves).toBeGreaterThanOrEqual(
@@ -605,6 +613,10 @@ describe("raid event simulation", () => {
     expect(partyOfFour.damageDealt).toBeGreaterThan(partyOfTwo.damageDealt);
     expect(partyOfFour.damageDealt).toBeGreaterThan(
       withoutPartyPower.damageDealt,
+    );
+    expect(manualPartyPower.partyPoweredChargedMoves).toBe(0);
+    expect(partyOfFour.damageDealt).toBeGreaterThan(
+      manualPartyPower.damageDealt,
     );
   });
 

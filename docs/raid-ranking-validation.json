@@ -1,6 +1,6 @@
 {
-  "schemaVersion": 3,
-  "modelVersion": 11,
+  "schemaVersion": 4,
+  "modelVersion": 12,
   "reviewedAt": "2026-07-17",
   "productionDefaults": {
     "attackerLevel": "50.0",
@@ -33,10 +33,19 @@
       "sharedBossHealthAndEnergy": true,
       "activeMegaAllyUptime": true,
       "actionDelayMode": "explicit-trainer-setting",
+      "partyPowerStrategies": [
+        "immediate",
+        "next-charged",
+        "strongest-charged",
+        "manual"
+      ],
       "optimizer": {
-        "strategy": "bounded-coordinate-search",
+        "strategy": "bounded-beam-search",
         "maximumEvaluatedLineups": 160,
+        "maximumBeamWidth": 6,
         "wholeLobbyObjective": true,
+        "retainsNonImprovingIntermediateStates": true,
+        "explainsTrainerChanges": true,
         "monteCarloFinalistReevaluation": true
       }
     }
@@ -47,11 +56,7 @@
     "minimumDodgeAttempts": 10,
     "appliedParameter": "dodgeSuccessRate",
     "latencyMode": "diagnostic-only",
-    "predictionSources": [
-      "group-estimate",
-      "custom-party",
-      "optimized-party"
-    ],
+    "predictionSources": ["group-estimate", "custom-party", "optimized-party"],
     "recordsFailedRaids": true,
     "recordsPredictionIntervals": true,
     "exportFormat": "json"
@@ -145,10 +150,7 @@
           "Mega Mewtwo Y",
           "White Kyurem"
         ],
-        "sharedCanonicalOrder": [
-          "Mega Rayquaza",
-          "Mega Mewtwo Y"
-        ]
+        "sharedCanonicalOrder": ["Mega Rayquaza", "Mega Mewtwo Y"]
       }
     ],
     "bossSpecificMatrix": {

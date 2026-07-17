@@ -19,6 +19,8 @@ export type RaidTierKey =
 export type FriendshipKey = "none" | "good" | "great" | "ultra" | "best";
 export type MegaAllyBonusKey = "none" | "general" | "matching";
 export type PartyPowerKey = "none" | "party2" | "party3" | "party4";
+export type PartyPowerStrategy =
+  "immediate" | "next-charged" | "strongest-charged" | "manual";
 export type RaidDodgeStrategy = "none" | "charged";
 export type ShadowBossMode = "normal" | "enraged" | "subdued";
 export type RaidBossMovesetMode =
@@ -53,6 +55,7 @@ export type RaidCounterSettings = {
   friendship: FriendshipKey;
   megaAllyBonus: MegaAllyBonusKey;
   partyPower: PartyPowerKey;
+  partyPowerStrategy?: PartyPowerStrategy;
   dodgeStrategy: RaidDodgeStrategy;
   weatherBoostedType: string;
   shadowBossMode: ShadowBossMode;
@@ -147,6 +150,13 @@ export type RaidPartyOptimizationResult = {
   timeSavedSeconds: number;
   faintReduction: number;
   relobbyReduction: number;
+  searchStrategy: "bounded-beam";
+  beamWidth: number;
+  trainerChanges: Array<{
+    trainerId: string;
+    label: string;
+    reasons: string[];
+  }>;
 };
 
 export type RaidTypeDpsScore = {

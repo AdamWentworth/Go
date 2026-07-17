@@ -114,12 +114,22 @@ describe("raid party builder rules", () => {
     )!;
     const relabeled = { ...base, id: "other-id", label: "Other Trainer" };
     const delayed = { ...base, actionDelaySeconds: 0.5 };
+    const differentPartyPowerTiming = {
+      ...base,
+      settings: {
+        ...base.settings,
+        partyPowerStrategy: "strongest-charged" as const,
+      },
+    };
 
     expect(getRaidPartyScenarioKey([base])).toBe(
       getRaidPartyScenarioKey([relabeled]),
     );
     expect(getRaidPartyScenarioKey([base])).not.toBe(
       getRaidPartyScenarioKey([delayed]),
+    );
+    expect(getRaidPartyScenarioKey([base])).not.toBe(
+      getRaidPartyScenarioKey([differentPartyPowerTiming]),
     );
     expect(getRaidPartyScenarioKey([base])).toMatch(/^party-1-[a-f0-9]{8}$/);
   });

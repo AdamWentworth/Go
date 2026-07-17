@@ -27,6 +27,10 @@ import {
   createRaidSeededRandom,
   getRaidBossMovesets,
 } from "./raidSimulation";
+import {
+  activatesPartyPowerWhenMeterFills,
+  shouldActivatePartyPowerForChargedMove,
+} from "./raidPartyPower";
 import { calculateRaidAttackerBattleStats } from "./raidTargetModel";
 import { variantUsesRaidMegaSlot } from "./raidTeamSelection";
 import type {
@@ -39,11 +43,7 @@ import type {
 } from "./raidTypes";
 
 type PartySimulationActor =
-  | "trainer-start"
-  | "trainer-hit"
-  | "trainer-spawn"
-  | "boss-start"
-  | "boss-hit";
+  "trainer-start" | "trainer-hit" | "trainer-spawn" | "boss-start" | "boss-hit";
 
 type PartySimulationEvent = {
   actor: PartySimulationActor;
@@ -63,6 +63,7 @@ type TrainerMemberProfile = {
   defense: number;
   hp: number;
   chargedCost: number;
+  chargedDamage: number;
   bossFastDamage: number;
   bossChargedDamage: number;
   dodgedBossChargedDamage: number;
@@ -154,12 +155,16 @@ const buildTrainerProfiles = ({
   bossFastMove,
   bossChargedMove,
   bossAttack,
+  bossDefense,
+  bossTypes,
 }: {
   trainer: RaidPartyTrainer;
   boss: PokemonVariant;
   bossFastMove: Move;
   bossChargedMove: Move;
   bossAttack: number;
+  bossDefense: number;
+  bossTypes: string[];
 }): TrainerMemberProfile[] =>
   trainer.team.map((member) => {
     const attackerStats = calculateRaidAttackerBattleStats(
@@ -172,6 +177,16 @@ const buildTrainerProfiles = ({
       defense: attackerStats.defense,
       hp: attackerStats.hp,
       chargedCost: Math.max(1, Math.abs(getRaidMoveEnergy(member.chargedMove))),
+      chargedDamage: calculateRaidMoveDamage({
+        move: member.chargedMove,
+        attacker: member.attacker,
+        attackerAttack: attackerStats.attack,
+        bossDefense,
+        bossTypes,
+        settings: trainer.settings,
+        charged: true,
+        partyPowerMultiplierOverride: 1,
+      }),
       bossFastDamage: calculateRaidBossMoveDamage({
         move: bossFastMove,
         boss,
@@ -235,8 +250,13 @@ export const simulateHeterogeneousRaidPartyBattle = ({
   tier: RaidTierPreset;
   chargedDecisionOffset?: 0 | 1;
 } & PartySimulationRandomness): RaidPartySimulationResult => {
-  if (trainers.length === 0 || trainers.some((trainer) => trainer.team.length === 0)) {
-    throw new Error("Every raid party Trainer requires at least one team member.");
+  if (
+    trainers.length === 0 ||
+    trainers.some((trainer) => trainer.team.length === 0)
+  ) {
+    throw new Error(
+      "Every raid party Trainer requires at least one team member.",
+    );
   }
   if (trainers.length > RAID_PARTY_MAX_TRAINERS) {
     throw new Error(
@@ -258,6 +278,8 @@ export const simulateHeterogeneousRaidPartyBattle = ({
       bossFastMove,
       bossChargedMove,
       bossAttack: bossStats.attack,
+      bossDefense: bossStats.defense,
+      bossTypes,
     });
     return {
       trainer,
@@ -292,7 +314,11 @@ export const simulateHeterogeneousRaidPartyBattle = ({
   let winTime: number | null = null;
 
   const enqueue = (event: Omit<PartySimulationEvent, "sequence">) => {
-    events.push({ ...event, time: roundToRaidTurn(event.time), sequence: sequence++ });
+    events.push({
+      ...event,
+      time: roundToRaidTurn(event.time),
+      sequence: sequence++,
+    });
   };
   const takeNextEvent = (): PartySimulationEvent | undefined => {
     let selectedIndex = -1;
@@ -301,7 +327,8 @@ export const simulateHeterogeneousRaidPartyBattle = ({
       if (
         !selected ||
         candidate.time < selected.time ||
-        (candidate.time === selected.time && candidate.sequence < selected.sequence)
+        (candidate.time === selected.time &&
+          candidate.sequence < selected.sequence)
       ) {
         selectedIndex = index;
       }
@@ -323,7 +350,8 @@ export const simulateHeterogeneousRaidPartyBattle = ({
 
   while (events.length > 0) {
     const event = takeNextEvent();
-    if (!event || event.time > bossStats.timeLimitSeconds || winTime != null) break;
+    if (!event || event.time > bossStats.timeLimitSeconds || winTime != null)
+      break;
 
     if (event.trainerIndex != null) {
       const state = states[event.trainerIndex];
@@ -341,6 +369,29 @@ export const simulateHeterogeneousRaidPartyBattle = ({
       const state = states[trainerIndex];
       const profile = getCurrentProfile(state);
       const useCharged = state.energy >= profile.chargedCost;
+      if (
+        state.partyPowerReadyAt == null &&
+        shouldActivatePartyPowerForChargedMove({
+          settings: state.trainer.settings,
+          meterFull: state.partyPowerMeter >= PARTY_POWER_METER_MAX,
+          chargedAvailable: useCharged,
+          currentChargedDamage: profile.chargedDamage,
+          strongestChargedDamage: Math.max(
+            ...state.profiles.map((candidate) => candidate.chargedDamage),
+          ),
+        })
+      ) {
+        state.partyPowerReadyAt = roundToRaidTurn(
+          event.time + PARTY_POWER_ACTIVATION_DELAY_SECONDS,
+        );
+        enqueue({
+          actor: "trainer-start",
+          time: state.partyPowerReadyAt,
+          trainerIndex,
+          trainerGeneration: state.generation,
+        });
+        continue;
+      }
       const move = useCharged
         ? profile.member.chargedMove
         : profile.member.fastMove;
@@ -424,14 +475,24 @@ export const simulateHeterogeneousRaidPartyBattle = ({
       );
 
       states.forEach((partyState) => {
-        if (!partyState.active || partyState.partyPowerReadyAt != null) return;
-        const points = PARTY_POWER_POINTS_PER_MOVE[partyState.trainer.settings.partyPower];
+        if (
+          !partyState.active ||
+          partyState.partyPowerReadyAt != null ||
+          partyState.partyPowerMeter >= PARTY_POWER_METER_MAX
+        ) {
+          return;
+        }
+        const points =
+          PARTY_POWER_POINTS_PER_MOVE[partyState.trainer.settings.partyPower];
         if (points <= 0) return;
         partyState.partyPowerMeter = Math.min(
           PARTY_POWER_METER_MAX,
           partyState.partyPowerMeter + points,
         );
-        if (partyState.partyPowerMeter >= PARTY_POWER_METER_MAX) {
+        if (
+          partyState.partyPowerMeter >= PARTY_POWER_METER_MAX &&
+          activatesPartyPowerWhenMeterFills(partyState.trainer.settings)
+        ) {
           partyState.partyPowerReadyAt =
             event.time + PARTY_POWER_ACTIVATION_DELAY_SECONDS;
         }
@@ -507,9 +568,12 @@ export const simulateHeterogeneousRaidPartyBattle = ({
       states.forEach((state, trainerIndex) => {
         if (!state.active) return;
         const profile = getCurrentProfile(state);
-        const attemptedDodge = event.dodgeAttempts?.includes(trainerIndex) ?? false;
+        const attemptedDodge =
+          event.dodgeAttempts?.includes(trainerIndex) ?? false;
         const sampledDodge = event.dodgeOutcomes?.[trainerIndex];
-        const dodgeRate = clampUnit(state.trainer.settings.dodgeSuccessRate ?? 1);
+        const dodgeRate = clampUnit(
+          state.trainer.settings.dodgeSuccessRate ?? 1,
+        );
         const expectedDodgedDamage = Math.round(
           profile.dodgedBossChargedDamage * dodgeRate +
             profile.bossChargedDamage * (1 - dodgeRate),
@@ -524,7 +588,8 @@ export const simulateHeterogeneousRaidPartyBattle = ({
             : profile.bossChargedDamage
           : profile.bossFastDamage;
         if (attemptedDodge) {
-          state.dodges += sampledDodge == null ? dodgeRate : sampledDodge ? 1 : 0;
+          state.dodges +=
+            sampledDodge == null ? dodgeRate : sampledDodge ? 1 : 0;
         }
         if (state.reservedDodgeHitTime === event.time) {
           state.reservedDodgeHitTime = null;
@@ -553,7 +618,10 @@ export const simulateHeterogeneousRaidPartyBattle = ({
           trainerGeneration: state.generation,
         });
       });
-      enqueue({ actor: "boss-start", time: event.time + nextBossActionDelay() });
+      enqueue({
+        actor: "boss-start",
+        time: event.time + nextBossActionDelay(),
+      });
       continue;
     }
 

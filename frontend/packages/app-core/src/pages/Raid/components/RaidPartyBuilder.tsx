@@ -558,6 +558,7 @@ const RaidPartyBuilder = ({
                   <strong>Lobby optimized</strong>
                   <span>
                     {optimization.evaluatedLineups} coordinated lineups checked
+                    {` · ${optimization.beamWidth}-wide search`}
                   </span>
                   <small>
                     {optimization.changedTrainerCount} teams changed
@@ -571,6 +572,16 @@ const RaidPartyBuilder = ({
                       ? ` · ${optimization.relobbyReduction.toFixed(1)} fewer relobbies`
                       : ""}
                   </small>
+                  {optimization.trainerChanges.length > 0 && (
+                    <ul className="raid-party-optimization-reasons">
+                      {optimization.trainerChanges.map((change) => (
+                        <li key={change.trainerId}>
+                          <strong>{change.label}</strong>
+                          <span>{change.reasons.join(" · ")}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
                 </div>
               )}
               <div className="raid-party-contributions">

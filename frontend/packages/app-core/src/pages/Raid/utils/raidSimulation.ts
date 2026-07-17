@@ -7,10 +7,7 @@ import {
   getProcessedRaidMoveSeconds,
   getRaidMoveEnergy,
 } from "./raidCombat";
-import {
-  getLegalRaidChargedMoves,
-  getLegalRaidFastMoves,
-} from "./raidCatalog";
+import { getLegalRaidChargedMoves, getLegalRaidFastMoves } from "./raidCatalog";
 import {
   RAID_MONTE_CARLO_MAX_SAMPLES,
   RAID_MONTE_CARLO_MIN_SAMPLES,
@@ -25,6 +22,10 @@ import {
   RAID_SIMULATION_DODGE_SECONDS,
   RAID_SIMULATION_ENERGY_CAP,
 } from "./raidRules";
+import {
+  activatesPartyPowerWhenMeterFills,
+  shouldActivatePartyPowerForChargedMove,
+} from "./raidPartyPower";
 import { calculateRaidAttackerBattleStats } from "./raidTargetModel";
 import type {
   RaidBattleSimulationResult,
@@ -175,11 +176,7 @@ export const simulateRaidTeamBattle = ({
   if (team.length === 0) {
     throw new Error("Raid simulation requires at least one team member.");
   }
-  const bossStats = calculateRaidBossStats(
-    boss,
-    tier,
-    settings.shadowBossMode,
-  );
+  const bossStats = calculateRaidBossStats(boss, tier, settings.shadowBossMode);
   const bossTypes = [boss.type1_name, boss.type2_name].filter(
     (type): type is string => Boolean(type && type !== "none"),
   );
@@ -222,8 +219,7 @@ export const simulateRaidTeamBattle = ({
         bossTypes,
         settings,
         charged: true,
-        partyPowerMultiplierOverride:
-          PARTY_POWER_ACTIVE_CHARGED_MULTIPLIER,
+        partyPowerMultiplierOverride: PARTY_POWER_ACTIVE_CHARGED_MULTIPLIER,
       }),
       bossFastDamage: calculateRaidBossMoveDamage({
         move: bossFastMove,
@@ -253,6 +249,9 @@ export const simulateRaidTeamBattle = ({
       chargedCost: Math.max(1, Math.abs(getRaidMoveEnergy(chargedMove))),
     };
   });
+  const strongestChargedDamage = Math.max(
+    ...profiles.map((profile) => profile.chargedDamage),
+  );
   const bossChargedCost = Math.max(
     1,
     Math.abs(getRaidMoveEnergy(bossChargedMove)),
@@ -280,8 +279,7 @@ export const simulateRaidTeamBattle = ({
   let partyPowerReadyAt: number | null = null;
   const events: SimulationEvent[] = [];
   const nextBossActionDelay = () =>
-    getBossActionDelaySeconds?.() ??
-    RAID_SIMULATION_BOSS_ACTION_DELAY_SECONDS;
+    getBossActionDelaySeconds?.() ?? RAID_SIMULATION_BOSS_ACTION_DELAY_SECONDS;
 
   const enqueue = (
     actor: SimulationActor,
@@ -339,14 +337,27 @@ export const simulateRaidTeamBattle = ({
     if (event.actor === "attacker-start") {
       const profile = profiles[teamPosition];
       const useCharged = attackerEnergy >= profile.chargedCost;
+      if (
+        partyPowerReadyAt == null &&
+        shouldActivatePartyPowerForChargedMove({
+          settings,
+          meterFull: partyPowerMeter >= PARTY_POWER_METER_MAX,
+          chargedAvailable: useCharged,
+          currentChargedDamage: profile.chargedDamage,
+          strongestChargedDamage,
+        })
+      ) {
+        partyPowerReadyAt = roundToRaidTurn(
+          event.time + PARTY_POWER_ACTIVATION_DELAY_SECONDS,
+        );
+        enqueue("attacker-start", partyPowerReadyAt);
+        continue;
+      }
       const move = useCharged ? profile.chargedMove : profile.fastMove;
       const moveHitTime = roundToRaidTurn(
         event.time + getProcessedRaidMoveSeconds(move),
       );
-      if (
-        reservedDodgeHitTime != null &&
-        moveHitTime > reservedDodgeHitTime
-      ) {
+      if (reservedDodgeHitTime != null && moveHitTime > reservedDodgeHitTime) {
         enqueue(
           "attacker-start",
           reservedDodgeHitTime + RAID_SIMULATION_DODGE_SECONDS,
@@ -396,14 +407,20 @@ export const simulateRaidTeamBattle = ({
         bossEnergy + Math.ceil(damage / 2) * activeTrainerCount,
       );
       const partyPowerPoints = PARTY_POWER_POINTS_PER_MOVE[settings.partyPower];
-      if (partyPowerPoints > 0 && partyPowerReadyAt == null) {
+      if (
+        partyPowerPoints > 0 &&
+        partyPowerReadyAt == null &&
+        partyPowerMeter < PARTY_POWER_METER_MAX
+      ) {
         partyPowerMeter = Math.min(
           PARTY_POWER_METER_MAX,
           partyPowerMeter + partyPowerPoints,
         );
-        if (partyPowerMeter >= PARTY_POWER_METER_MAX) {
-          partyPowerReadyAt =
-            event.time + PARTY_POWER_ACTIVATION_DELAY_SECONDS;
+        if (
+          partyPowerMeter >= PARTY_POWER_METER_MAX &&
+          activatesPartyPowerWhenMeterFills(settings)
+        ) {
+          partyPowerReadyAt = event.time + PARTY_POWER_ACTIVATION_DELAY_SECONDS;
         }
       }
       if (bossHp <= 0) {
@@ -443,9 +460,7 @@ export const simulateRaidTeamBattle = ({
         useCharged &&
         settings.dodgeStrategy === "charged" &&
         !attackerMoveOverlapsHit;
-      const dodgeSucceeded = willDodge
-        ? shouldDodgeSucceed?.()
-        : undefined;
+      const dodgeSucceeded = willDodge ? shouldDodgeSucceed?.() : undefined;
       if (willDodge) reservedDodgeHitTime = bossHitTime;
       enqueue(
         "boss-hit",
@@ -568,9 +583,7 @@ export const simulateRaidBattle = ({
     })),
   });
 
-export const getRaidBossMovesets = (
-  boss: PokemonVariant,
-): RaidBossMoveset[] =>
+export const getRaidBossMovesets = (boss: PokemonVariant): RaidBossMoveset[] =>
   getLegalRaidFastMoves(boss).flatMap((fastMove) =>
     getLegalRaidChargedMoves(boss).map((chargedMove) => ({
       fastMove,

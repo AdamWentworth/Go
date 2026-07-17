@@ -6,6 +6,7 @@ import type {
   FriendshipKey,
   MegaAllyBonusKey,
   PartyPowerKey,
+  PartyPowerStrategy,
   RaidCounterScore,
   RaidCounterSettings,
   RaidDodgeStrategy,
@@ -21,10 +22,7 @@ export type RaidViewMode = "overall" | "type-dps" | "boss";
 export type RaidMetricSortKey = "eDps" | "dps" | "tdo" | "er" | "cp";
 export type RaidMetricSortDirection = "ascending" | "descending";
 
-type RaidMetricScore = Pick<
-  RaidOverallScore,
-  RaidMetricSortKey | "variant"
->;
+type RaidMetricScore = Pick<RaidOverallScore, RaidMetricSortKey | "variant">;
 
 export type SearchableCounterScore = {
   variant: PokemonVariant;
@@ -63,6 +61,16 @@ export const PARTY_POWER_OPTIONS: Array<{
   { key: "party2", label: "Party of 2" },
   { key: "party3", label: "Party of 3" },
   { key: "party4", label: "Party of 4" },
+];
+
+export const PARTY_POWER_STRATEGY_OPTIONS: Array<{
+  key: PartyPowerStrategy;
+  label: string;
+}> = [
+  { key: "immediate", label: "Activate as soon as ready" },
+  { key: "next-charged", label: "Use on next Charged Attack" },
+  { key: "strongest-charged", label: "Save for strongest Charged Attack" },
+  { key: "manual", label: "Manual timing (no automatic use)" },
 ];
 
 export const ATTACKER_LEVEL_OPTIONS: RaidCounterSettings["attackerLevel"][] = [
@@ -112,9 +120,7 @@ const getFusionId = (variant: PokemonVariant): number | null => {
   return Number.isInteger(variantTypeId) ? variantTypeId : null;
 };
 
-export const getRaidVariantDisplayName = (
-  variant: PokemonVariant,
-): string => {
+export const getRaidVariantDisplayName = (variant: PokemonVariant): string => {
   const variantType = variant.variantType.toLowerCase();
   if (!variantType.includes("fusion")) return variant.name;
 
@@ -125,13 +131,16 @@ export const getRaidVariantDisplayName = (
     variant.species_name ||
     variant.name;
   const normalizedName = fusionName.replace(/^Shiny\s+/i, "");
-  const isShiny = variantType.includes("shiny") || /^Shiny\s+/i.test(variant.name);
+  const isShiny =
+    variantType.includes("shiny") || /^Shiny\s+/i.test(variant.name);
 
   return `${isShiny ? "Shiny " : ""}${normalizedName}`;
 };
 
 export const isMegaMewtwoY = (variant: PokemonVariant): boolean => {
-  const megaForm = (variant.megaForm || variant.form || "").trim().toUpperCase();
+  const megaForm = (variant.megaForm || variant.form || "")
+    .trim()
+    .toUpperCase();
   return (
     variant.pokemon_id === 150 &&
     variant.variantType.toLowerCase().includes("mega") &&
@@ -182,9 +191,8 @@ export const formatEr = (value: number): string => value.toFixed(2);
 export const formatWholeNumber = (value: number): string =>
   Math.round(value).toLocaleString();
 
-export const getMoveTypeName = (
-  move: RaidTypeDpsScore["fastMove"],
-): string => capitalize(move.type_name || move.type || "unknown");
+export const getMoveTypeName = (move: RaidTypeDpsScore["fastMove"]): string =>
+  capitalize(move.type_name || move.type || "unknown");
 
 export const getMoveTypeIcon = (
   move: SearchableCounterScore["fastMove"],

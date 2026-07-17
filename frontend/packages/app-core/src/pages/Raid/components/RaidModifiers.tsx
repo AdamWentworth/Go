@@ -4,6 +4,7 @@ import {
   type FriendshipKey,
   type MegaAllyBonusKey,
   type PartyPowerKey,
+  type PartyPowerStrategy,
   type RaidBossMovesetMode,
   type RaidCounterSettings,
   type RaidDodgeStrategy,
@@ -15,6 +16,7 @@ import {
   FRIENDSHIP_OPTIONS,
   MEGA_OPTIONS,
   PARTY_POWER_OPTIONS,
+  PARTY_POWER_STRATEGY_OPTIONS,
   RELOBBY_DELAY_OPTIONS,
   capitalize,
 } from "../utils/raidViewModel";
@@ -29,6 +31,8 @@ interface RaidModifiersProps {
   onMegaAllyBonusChange: (bonus: MegaAllyBonusKey) => void;
   partyPower: PartyPowerKey;
   onPartyPowerChange: (partyPower: PartyPowerKey) => void;
+  partyPowerStrategy: PartyPowerStrategy;
+  onPartyPowerStrategyChange: (strategy: PartyPowerStrategy) => void;
   weatherBoostedType: string;
   onWeatherBoostedTypeChange: (type: string) => void;
   relobbySeconds: number;
@@ -60,6 +64,8 @@ const RaidModifiers = ({
   onMegaAllyBonusChange,
   partyPower,
   onPartyPowerChange,
+  partyPowerStrategy,
+  onPartyPowerStrategyChange,
   weatherBoostedType,
   onWeatherBoostedTypeChange,
   relobbySeconds,
@@ -149,6 +155,24 @@ const RaidModifiers = ({
       </select>
     </label>
 
+    {includeBossMovesetControls && partyPower !== "none" && (
+      <label className="raid-field">
+        <span>Party Power timing</span>
+        <select
+          value={partyPowerStrategy}
+          onChange={(event) =>
+            onPartyPowerStrategyChange(event.target.value as PartyPowerStrategy)
+          }
+        >
+          {PARTY_POWER_STRATEGY_OPTIONS.map((option) => (
+            <option key={option.key} value={option.key}>
+              {option.label}
+            </option>
+          ))}
+        </select>
+      </label>
+    )}
+
     <label className="raid-field">
       <span>Weather boost</span>
       <select
@@ -206,9 +230,7 @@ const RaidModifiers = ({
         <select
           value={bossMovesetMode}
           onChange={(event) =>
-            onBossMovesetModeChange(
-              event.target.value as RaidBossMovesetMode,
-            )
+            onBossMovesetModeChange(event.target.value as RaidBossMovesetMode)
           }
         >
           <option value="expected">Expected across legal movesets</option>

@@ -102,6 +102,7 @@ export const getRaidPartyScenarioKey = (
       [
         trainer.settings.friendship,
         trainer.settings.partyPower,
+        trainer.settings.partyPowerStrategy ?? "immediate",
         trainer.settings.dodgeStrategy,
         trainer.settings.dodgeSuccessRate ?? 1,
         trainer.settings.relobbySeconds,

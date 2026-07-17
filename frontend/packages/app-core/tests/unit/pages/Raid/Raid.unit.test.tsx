@@ -242,9 +242,7 @@ describe("Raid page", () => {
     fireEvent.click(screen.getByRole("button", { name: "Add Trainer" }));
     expect(screen.getByText("3 Trainers")).toBeInTheDocument();
 
-    fireEvent.click(
-      screen.getByRole("button", { name: /^Simulate$/ }),
-    );
+    fireEvent.click(screen.getByRole("button", { name: /^Simulate$/ }));
     const result = await screen.findByLabelText("Raid party result");
 
     expect(within(result).getByText(/Clear|Time expired/)).toBeInTheDocument();
@@ -385,6 +383,18 @@ describe("Raid page", () => {
     expect(screen.getByLabelText(/relobby delay/i)).toHaveValue("10");
     expect(screen.getByLabelText(/boss behavior/i)).toHaveValue("expected");
     expect(screen.getByLabelText(/dodging/i)).toHaveValue("none");
+    expect(
+      screen.queryByLabelText(/Party Power timing/i),
+    ).not.toBeInTheDocument();
+    fireEvent.change(screen.getByLabelText(/^Party Power$/i), {
+      target: { value: "party4" },
+    });
+    fireEvent.change(screen.getByLabelText(/Party Power timing/i), {
+      target: { value: "strongest-charged" },
+    });
+    expect(screen.getByLabelText(/Party Power timing/i)).toHaveValue(
+      "strongest-charged",
+    );
     expect(
       within(screen.getByLabelText("Raid counters")).getAllByText(/faints/)
         .length,

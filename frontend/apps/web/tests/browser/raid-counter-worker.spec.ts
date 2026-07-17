@@ -155,6 +155,11 @@ test.describe("raid counter worker", () => {
     await expect(page.getByText("Modeling raid timelines…")).toBeHidden({
       timeout: 30_000,
     });
+    await page.getByLabel("Party Power").selectOption("party4");
+    const partyPowerTiming = page.getByLabel("Party Power timing");
+    await expect(partyPowerTiming).toBeVisible();
+    await partyPowerTiming.selectOption("strongest-charged");
+    await expect(partyPowerTiming).toHaveValue("strongest-charged");
 
     const party = page.getByLabel("Custom raid party");
     await party.getByRole("button", { name: /Custom raid party/i }).click();
@@ -183,6 +188,7 @@ test.describe("raid counter worker", () => {
       timeout: 60_000,
     });
     await expect(party.getByText(/coordinated lineups checked/)).toBeVisible();
+    await expect(party.getByText(/-wide search/)).toBeVisible();
   });
 
   test("ranks a logged-in Trainer's caught Pokemon at its real level", async ({

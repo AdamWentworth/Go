@@ -1,4 +1,5 @@
 import {
+  RAID_PARTY_OPTIMIZER_MAX_BEAM_WIDTH,
   RAID_PARTY_OPTIMIZER_MAX_EVALUATIONS,
   RAID_PARTY_OPTIMIZER_MAX_TEAM_OPTIONS,
 } from "./raidRules";
@@ -6,6 +7,7 @@ import { simulateHeterogeneousRaidPartyAcrossBossMovesets } from "./raidPartySim
 import {
   preserveLegalRaidTeamOrder,
   usesRaidMegaSlot,
+  variantUsesRaidMegaSlot,
 } from "./raidTeamSelection";
 import type {
   RaidCounterScore,
@@ -42,6 +44,23 @@ const teamKey = (team: RaidSimulationTeamMember[]): string =>
       ({ attacker, fastMove, chargedMove }) =>
         `${attacker.variant_id}:${fastMove.name}:${chargedMove.name}`,
     )
+    .join("|");
+
+const lineupKey = (trainers: RaidPartyTrainer[]): string =>
+  trainers.map((trainer) => `${trainer.id}=${teamKey(trainer.team)}`).join("|");
+
+const lineupCompositionKey = (trainers: RaidPartyTrainer[]): string =>
+  trainers
+    .map((trainer) => {
+      const members = trainer.team
+        .map(
+          ({ attacker, fastMove, chargedMove }) =>
+            `${attacker.variant_id}:${fastMove.name}:${chargedMove.name}`,
+        )
+        .sort()
+        .join(",");
+      return `${trainer.id}=${members}`;
+    })
     .join("|");
 
 const buildForcedLeadTeam = (
@@ -174,6 +193,69 @@ const withExpectedSearchMode = (
     },
   }));
 
+type RaidPartyBeamState = {
+  trainers: RaidPartyTrainer[];
+  result: RaidPartySimulationResult;
+};
+
+const sortBestFirst = (a: RaidPartyBeamState, b: RaidPartyBeamState): number =>
+  compareRaidPartyResults(b.result, a.result);
+
+const teamUsesMegaSlot = (team: RaidSimulationTeamMember[]): boolean =>
+  team.some(({ attacker }) => variantUsesRaidMegaSlot(attacker));
+
+const explainTrainerChanges = (
+  baselineTrainers: RaidPartyTrainer[],
+  optimizedTrainers: RaidPartyTrainer[],
+  baselineResult: RaidPartySimulationResult,
+  optimizedResult: RaidPartySimulationResult,
+): RaidPartyOptimizationResult["trainerChanges"] => {
+  const baselineResults = new Map(
+    baselineResult.trainers.map((trainer) => [trainer.id, trainer]),
+  );
+  const optimizedResults = new Map(
+    optimizedResult.trainers.map((trainer) => [trainer.id, trainer]),
+  );
+
+  return optimizedTrainers.flatMap((trainer, index) => {
+    const baselineTrainer = baselineTrainers[index];
+    if (
+      !baselineTrainer ||
+      teamKey(trainer.team) === teamKey(baselineTrainer.team)
+    ) {
+      return [];
+    }
+
+    const before = baselineResults.get(trainer.id);
+    const after = optimizedResults.get(trainer.id);
+    const reasons: string[] = [];
+    if (after && before && after.dps > before.dps + 0.05) {
+      reasons.push("Higher damage");
+    }
+    if (after && before && after.faints < before.faints - 0.05) {
+      reasons.push("Fewer faints");
+    }
+    if (after && before && after.relobbies < before.relobbies - 0.05) {
+      reasons.push("Fewer relobbies");
+    }
+    if (
+      after &&
+      before &&
+      after.partyPoweredChargedMoves > before.partyPoweredChargedMoves + 0.05
+    ) {
+      reasons.push("Better Party Power timing");
+    }
+    if (
+      teamUsesMegaSlot(trainer.team) !== teamUsesMegaSlot(baselineTrainer.team)
+    ) {
+      reasons.push("Mega/Primal coverage");
+    }
+    if (reasons.length === 0) reasons.push("Better lobby coordination");
+
+    return [{ trainerId: trainer.id, label: trainer.label, reasons }];
+  });
+};
+
 export const optimizeRaidParty = (
   {
     trainers,
@@ -193,63 +275,123 @@ export const optimizeRaidParty = (
   const baselineResult = evaluate({ trainers, boss, tier });
   if (!baselineResult) return null;
 
-  const optionLimit = Math.max(
-    4,
+  let evaluatedLineups = 1;
+  const searchTrainers = withExpectedSearchMode(trainers);
+  const searchUsesExpectedFallback = searchTrainers.some(
+    (trainer, index) =>
+      trainer.settings.bossMovesetMode !==
+      trainers[index].settings.bossMovesetMode,
+  );
+  const searchBaselineResult = searchUsesExpectedFallback
+    ? evaluate({ trainers: searchTrainers, boss, tier })
+    : baselineResult;
+  if (!searchBaselineResult) return null;
+  if (searchUsesExpectedFallback) evaluatedLineups += 1;
+
+  const remainingSearchBudget = Math.max(
+    1,
+    RAID_PARTY_OPTIMIZER_MAX_EVALUATIONS - evaluatedLineups - 1,
+  );
+  const beamWidth = Math.max(
+    2,
     Math.min(
-      RAID_PARTY_OPTIMIZER_MAX_TEAM_OPTIONS,
-      Math.floor(
-        (RAID_PARTY_OPTIMIZER_MAX_EVALUATIONS - 1) /
-          Math.max(1, trainers.length * 2),
-      ),
+      RAID_PARTY_OPTIMIZER_MAX_BEAM_WIDTH,
+      Math.floor(Math.sqrt(remainingSearchBudget / trainers.length)),
     ),
   );
-  const optionsByTrainer = trainers.map((trainer) =>
-    buildRaidPartyTeamCandidates(trainer.team, scores, optionLimit),
+  const optionLimit = Math.max(
+    2,
+    Math.min(
+      RAID_PARTY_OPTIMIZER_MAX_TEAM_OPTIONS,
+      1 + Math.floor(remainingSearchBudget / (trainers.length * beamWidth)),
+    ),
   );
-  let evaluatedLineups = 1;
-  let selectedTrainers = withExpectedSearchMode(trainers);
-  let selectedResult = evaluate({ trainers: selectedTrainers, boss, tier });
-  if (!selectedResult) return null;
-  evaluatedLineups += 1;
+  const optionsByTrainer = searchTrainers.map((trainer) => {
+    const candidates = buildRaidPartyTeamCandidates(
+      trainer.team,
+      scores,
+      optionLimit,
+    );
+    const seen = new Set<string>();
+    return [trainer.team, ...candidates].filter((team) => {
+      const key = teamKey(team);
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+  });
+  const evaluated = new Map<string, RaidPartySimulationResult>([
+    [lineupKey(searchTrainers), searchBaselineResult],
+  ]);
+  let beam: RaidPartyBeamState[] = [
+    { trainers: searchTrainers, result: searchBaselineResult },
+  ];
+  let bestSearchState = beam[0];
 
-  for (let pass = 0; pass < 2; pass += 1) {
-    let passImproved = false;
-    for (
-      let trainerIndex = 0;
-      trainerIndex < selectedTrainers.length;
-      trainerIndex += 1
-    ) {
+  for (
+    let trainerIndex = 0;
+    trainerIndex < searchTrainers.length;
+    trainerIndex += 1
+  ) {
+    const expanded = [...beam];
+    let budgetReached = false;
+    for (const state of beam) {
       for (const team of optionsByTrainer[trainerIndex]) {
-        if (evaluatedLineups >= RAID_PARTY_OPTIMIZER_MAX_EVALUATIONS - 1) break;
-        if (teamKey(team) === teamKey(selectedTrainers[trainerIndex].team))
+        if (teamKey(team) === teamKey(state.trainers[trainerIndex].team))
           continue;
+        if (evaluatedLineups >= RAID_PARTY_OPTIMIZER_MAX_EVALUATIONS - 1) {
+          budgetReached = true;
+          break;
+        }
 
-        const trialTrainers = selectedTrainers.map((trainer, index) =>
+        const trialTrainers = state.trainers.map((trainer, index) =>
           index === trainerIndex ? { ...trainer, team } : trainer,
         );
-        const trialResult = evaluate({ trainers: trialTrainers, boss, tier });
-        evaluatedLineups += 1;
-        if (
-          !trialResult ||
-          compareRaidPartyResults(trialResult, selectedResult) <= 0
-        ) {
-          continue;
+        const key = lineupKey(trialTrainers);
+        let trialResult = evaluated.get(key);
+        if (!trialResult) {
+          trialResult =
+            evaluate({ trainers: trialTrainers, boss, tier }) ?? undefined;
+          evaluatedLineups += 1;
+          if (trialResult) evaluated.set(key, trialResult);
         }
-        selectedTrainers = trialTrainers;
-        selectedResult = trialResult;
-        passImproved = true;
+        if (trialResult)
+          expanded.push({ trainers: trialTrainers, result: trialResult });
       }
-      if (evaluatedLineups >= RAID_PARTY_OPTIMIZER_MAX_EVALUATIONS - 1) break;
+      if (budgetReached) break;
+    }
+
+    const unique = new Map<string, RaidPartyBeamState>();
+    expanded.sort(sortBestFirst).forEach((state) => {
+      const key = lineupKey(state.trainers);
+      if (!unique.has(key)) unique.set(key, state);
+    });
+    const uniqueStates = [...unique.values()];
+    const diverse = new Map<string, RaidPartyBeamState>();
+    uniqueStates.forEach((state) => {
+      const key = lineupCompositionKey(state.trainers);
+      if (!diverse.has(key)) diverse.set(key, state);
+    });
+    beam = [...diverse.values()].slice(0, beamWidth);
+    if (beam.length < beamWidth) {
+      const selected = new Set(beam.map((state) => lineupKey(state.trainers)));
+      beam.push(
+        ...uniqueStates
+          .filter((state) => !selected.has(lineupKey(state.trainers)))
+          .slice(0, beamWidth - beam.length),
+      );
+      beam.sort(sortBestFirst);
     }
     if (
-      !passImproved ||
-      evaluatedLineups >= RAID_PARTY_OPTIMIZER_MAX_EVALUATIONS - 1
+      beam[0] &&
+      compareRaidPartyResults(beam[0].result, bestSearchState.result) > 0
     ) {
-      break;
+      bestSearchState = beam[0];
     }
+    if (budgetReached) break;
   }
 
-  const optimizedTrainers = selectedTrainers.map((trainer, index) => ({
+  const optimizedTrainers = bestSearchState.trainers.map((trainer, index) => ({
     ...trainer,
     settings: trainers[index].settings,
   }));
@@ -281,6 +423,14 @@ export const optimizeRaidParty = (
     relobbyReduction: Math.max(
       0,
       baselineResult.relobbies - finalResult.relobbies,
+    ),
+    searchStrategy: "bounded-beam",
+    beamWidth,
+    trainerChanges: explainTrainerChanges(
+      trainers,
+      finalTrainers,
+      baselineResult,
+      finalResult,
     ),
   };
 };

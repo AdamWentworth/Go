@@ -16,6 +16,7 @@ import {
   RAID_MONTE_CARLO_MAX_SAMPLES,
   RAID_MONTE_CARLO_MIN_SAMPLES,
   RAID_PARTY_MAX_TRAINERS,
+  RAID_PARTY_OPTIMIZER_MAX_BEAM_WIDTH,
   RAID_PARTY_OPTIMIZER_MAX_EVALUATIONS,
   RAID_ROUTE_READY_MEASURE,
   RAID_SIMULATION_MODEL_VERSION,
@@ -93,6 +94,16 @@ describe("raid ranking validation", () => {
       validationProfile.bossSimulation.heterogeneousParty.optimizer
         .maximumEvaluatedLineups,
     ).toBe(RAID_PARTY_OPTIMIZER_MAX_EVALUATIONS);
+    expect(
+      validationProfile.bossSimulation.heterogeneousParty.optimizer
+        .maximumBeamWidth,
+    ).toBe(RAID_PARTY_OPTIMIZER_MAX_BEAM_WIDTH);
+    expect(
+      validationProfile.bossSimulation.heterogeneousParty.optimizer.strategy,
+    ).toBe("bounded-beam-search");
+    expect(
+      validationProfile.bossSimulation.heterogeneousParty.partyPowerStrategies,
+    ).toEqual(["immediate", "next-charged", "strongest-charged", "manual"]);
     expect(validationProfile.canonicalOverall).toEqual(
       canonicalOverallExpectation,
     );

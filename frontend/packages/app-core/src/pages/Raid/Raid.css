@@ -1625,6 +1625,29 @@
   font-weight: 850;
 }
 
+.raid-party-optimization-reasons {
+  display: grid;
+  gap: 0.35rem;
+  margin: 0.25rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.raid-party-optimization-reasons li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.3rem 0.55rem;
+}
+
+.raid-party-optimization-reasons li strong {
+  font-size: 0.78rem;
+}
+
+.raid-party-optimization-reasons li span {
+  font-size: 0.72rem;
+}
+
 .raid-party-contributions {
   display: grid;
   gap: 0.45rem;

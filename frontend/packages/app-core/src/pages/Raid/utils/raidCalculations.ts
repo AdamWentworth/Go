@@ -7,4 +7,5 @@ export * from "./raidSimulation";
 export * from "./raidPartySimulation";
 export * from "./raidPartyOptimizer";
 export * from "./raidParty";
+export * from "./raidPartyPower";
 export * from "./raidTeamSelection";
