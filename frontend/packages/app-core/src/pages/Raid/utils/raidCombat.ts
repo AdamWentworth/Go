@@ -13,6 +13,7 @@ import {
   PARTY_POWER_CHARGED_DAMAGE_BONUS,
   RAID_ATTACKER_TEAM_SIZE,
   RAID_BOSS_ACTION_DELAY_SECONDS,
+  RAID_DODGE_DAMAGE_MULTIPLIER,
   SHADOW_ATTACKER_DAMAGE_BONUS,
   SHADOW_BOSS_ENRAGED_ATTACK_MULTIPLIER,
   SHADOW_BOSS_ENRAGED_DEFENSE_MULTIPLIER,
@@ -149,6 +150,7 @@ export const calculateRaidBossMoveDamage = ({
   attacker,
   attackerDefense,
   weatherBoostedType,
+  dodged = false,
 }: {
   move: Move;
   boss: PokemonVariant;
@@ -156,6 +158,7 @@ export const calculateRaidBossMoveDamage = ({
   attacker: PokemonVariant;
   attackerDefense: number;
   weatherBoostedType: string;
+  dodged?: boolean;
 }): number => {
   const moveType = normalizeTypeName(move.type_name || move.type);
   const stab = getVariantTypeNames(boss).includes(moveType)
@@ -176,7 +179,8 @@ export const calculateRaidBossMoveDamage = ({
         (bossAttack / attackerDefense) *
         stab *
         effectiveness *
-        weather,
+        weather *
+        (dodged ? RAID_DODGE_DAMAGE_MULTIPLIER : 1),
     ) + 1,
   );
 };

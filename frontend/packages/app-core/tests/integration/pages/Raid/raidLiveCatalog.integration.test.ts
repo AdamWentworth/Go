@@ -32,6 +32,7 @@ const defaultSettings: RaidCounterSettings = {
   friendship: "none",
   megaAllyBonus: "none",
   partyPower: "none",
+  dodgeStrategy: "none",
   weatherBoostedType: "",
   shadowBossMode: "normal",
   bossMovesetMode: "expected",

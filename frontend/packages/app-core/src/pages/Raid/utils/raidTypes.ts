@@ -19,6 +19,7 @@ export type RaidTierKey =
 export type FriendshipKey = "none" | "good" | "great" | "ultra" | "best";
 export type MegaAllyBonusKey = "none" | "general" | "matching";
 export type PartyPowerKey = "none" | "occasional" | "frequent" | "every";
+export type RaidDodgeStrategy = "none" | "charged";
 export type ShadowBossMode = "normal" | "enraged" | "subdued";
 export type RaidBossMovesetMode =
   | "expected"
@@ -55,6 +56,7 @@ export type RaidCounterSettings = {
   friendship: FriendshipKey;
   megaAllyBonus: MegaAllyBonusKey;
   partyPower: PartyPowerKey;
+  dodgeStrategy: RaidDodgeStrategy;
   weatherBoostedType: string;
   shadowBossMode: ShadowBossMode;
   bossMovesetMode: RaidBossMovesetMode;
@@ -86,6 +88,7 @@ export type RaidCounterScore = {
   relobbies: number;
   attackerChargedMoves: number;
   bossChargedMoves: number;
+  dodges: number;
   simulationWon: boolean;
   simulationDistribution: RaidSimulationDistribution | null;
 };
@@ -99,6 +102,7 @@ export type RaidBattleSimulationResult = {
   relobbies: number;
   attackerChargedMoves: number;
   bossChargedMoves: number;
+  dodges: number;
   won: boolean;
   distribution: RaidSimulationDistribution;
 };

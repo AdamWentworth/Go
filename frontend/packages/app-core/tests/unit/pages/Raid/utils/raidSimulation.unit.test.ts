@@ -129,6 +129,7 @@ const settings: RaidCounterSettings = {
   friendship: "none",
   megaAllyBonus: "none",
   partyPower: "none",
+  dodgeStrategy: "none",
   weatherBoostedType: "",
   shadowBossMode: "normal",
   bossMovesetMode: "expected",
@@ -289,6 +290,47 @@ describe("raid event simulation", () => {
 
     expect(result.faints).toBe(1);
     expect(result.attackerChargedMoves).toBe(0);
+  });
+
+  it("dodges charged damage when the attacker can reach the damage window", () => {
+    const durableAttacker = pokemon({
+      name: "Dodge Attacker",
+      attack: 220,
+      defense: 220,
+      stamina: 400,
+      types: ["normal"],
+      moves: [fastAttack, chargedAttack],
+    });
+    const chargedBoss = pokemon({
+      name: "Charged Boss",
+      attack: 320,
+      defense: 220,
+      stamina: 400,
+      types: ["fighting"],
+      moves: [weakBossFast, strongBossCharged],
+    });
+    const sharedInput = {
+      attacker: durableAttacker,
+      attackerFastMove: fastAttack,
+      attackerChargedMove: chargedAttack,
+      boss: chargedBoss,
+      bossFastMove: weakBossFast,
+      bossChargedMove: strongBossCharged,
+      tier: { ...tier, bossHp: 5000, timeLimitSeconds: 45 },
+      shouldBossUseCharged: () => true,
+    };
+    const noDodge = simulateRaidBattle({
+      ...sharedInput,
+      settings,
+    });
+    const dodgeCharged = simulateRaidBattle({
+      ...sharedInput,
+      settings: { ...settings, dodgeStrategy: "charged" },
+    });
+
+    expect(dodgeCharged.dodges).toBeGreaterThan(0);
+    expect(dodgeCharged.faints).toBeLessThan(noDodge.faints);
+    expect(dodgeCharged.damageDealt).toBeLessThan(noDodge.damageDealt);
   });
 
   it("charges relobby downtime after every six faints", () => {

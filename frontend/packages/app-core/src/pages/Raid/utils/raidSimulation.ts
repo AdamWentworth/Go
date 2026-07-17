@@ -17,6 +17,7 @@ import {
   RAID_SIMULATION_ATTACKER_SWAP_SECONDS,
   RAID_SIMULATION_BOSS_ACTION_DELAY_SECONDS,
   RAID_SIMULATION_BOSS_DELAY_OPTIONS_SECONDS,
+  RAID_SIMULATION_DODGE_SECONDS,
   RAID_SIMULATION_ENERGY_CAP,
 } from "./raidRules";
 import { calculateRaidAttackerBattleStats } from "./raidTargetModel";
@@ -42,6 +43,7 @@ type SimulationEvent = {
   attackerGeneration: number;
   bossGeneration: number;
   move?: Move;
+  dodged?: boolean;
 };
 
 type BossMoveset = {
@@ -128,6 +130,7 @@ const averageSimulationResults = (
     relobbies: average((result) => result.relobbies),
     attackerChargedMoves: average((result) => result.attackerChargedMoves),
     bossChargedMoves: average((result) => result.bossChargedMoves),
+    dodges: average((result) => result.dodges),
     won: results.every((result) => result.won),
     distribution: buildSimulationDistribution(results),
   };
@@ -202,6 +205,15 @@ export const simulateRaidBattle = ({
     attackerDefense: attackerStats.defense,
     weatherBoostedType: settings.weatherBoostedType,
   });
+  const dodgedBossChargedDamage = calculateRaidBossMoveDamage({
+    move: bossChargedMove,
+    boss,
+    bossAttack: bossStats.attack,
+    attacker,
+    attackerDefense: attackerStats.defense,
+    weatherBoostedType: settings.weatherBoostedType,
+    dodged: true,
+  });
   const attackerChargedCost = Math.max(
     1,
     Math.abs(getRaidMoveEnergy(attackerChargedMove)),
@@ -222,10 +234,12 @@ export const simulateRaidBattle = ({
   let relobbies = 0;
   let attackerChargedMoves = 0;
   let bossChargedMoves = 0;
+  let dodges = 0;
   let bossChargedOpportunity = 0;
   let sequence = 0;
   let damageDealt = 0;
   let winTime: number | null = null;
+  let reservedDodgeHitTime: number | null = null;
   const events: SimulationEvent[] = [];
   const nextBossActionDelay = () =>
     getBossActionDelaySeconds?.() ??
@@ -235,6 +249,7 @@ export const simulateRaidBattle = ({
     actor: SimulationActor,
     time: number,
     move?: Move,
+    dodged?: boolean,
   ) => {
     events.push({
       actor,
@@ -243,6 +258,7 @@ export const simulateRaidBattle = ({
       attackerGeneration,
       bossGeneration,
       move,
+      dodged,
     });
   };
 
@@ -281,6 +297,19 @@ export const simulateRaidBattle = ({
     if (event.actor === "attacker-start") {
       const useCharged = attackerEnergy >= attackerChargedCost;
       const move = useCharged ? attackerChargedMove : attackerFastMove;
+      const moveHitTime = roundToRaidTurn(
+        event.time + getProcessedRaidMoveSeconds(move),
+      );
+      if (
+        reservedDodgeHitTime != null &&
+        moveHitTime > reservedDodgeHitTime
+      ) {
+        enqueue(
+          "attacker-start",
+          reservedDodgeHitTime + RAID_SIMULATION_DODGE_SECONDS,
+        );
+        continue;
+      }
       attackerEnergy = useCharged
         ? Math.max(0, attackerEnergy - attackerChargedCost)
         : Math.min(
@@ -330,18 +359,34 @@ export const simulateRaidBattle = ({
             RAID_SIMULATION_ENERGY_CAP,
             bossEnergy + Math.max(0, getRaidMoveEnergy(bossFastMove)),
           );
-      enqueue(
-        "boss-hit",
+      const bossHitTime = roundToRaidTurn(
         event.time + getProcessedRaidMoveSeconds(move),
-        move,
       );
+      const attackerMoveOverlapsHit = events.some(
+        (queuedEvent) =>
+          queuedEvent.actor === "attacker-hit" &&
+          queuedEvent.attackerGeneration === attackerGeneration &&
+          queuedEvent.time > bossHitTime,
+      );
+      const willDodge =
+        useCharged &&
+        settings.dodgeStrategy === "charged" &&
+        !attackerMoveOverlapsHit;
+      if (willDodge) reservedDodgeHitTime = bossHitTime;
+      enqueue("boss-hit", bossHitTime, move, willDodge);
       continue;
     }
 
     if (event.actor === "boss-hit") {
       const charged = event.move === bossChargedMove;
-      const damage = charged ? bossChargedDamage : bossFastDamage;
+      const damage = charged
+        ? event.dodged
+          ? dodgedBossChargedDamage
+          : bossChargedDamage
+        : bossFastDamage;
       if (charged) bossChargedMoves += 1;
+      if (event.dodged) dodges += 1;
+      if (reservedDodgeHitTime === event.time) reservedDodgeHitTime = null;
       attackerHp -= damage;
       attackerEnergy = Math.min(
         RAID_SIMULATION_ENERGY_CAP,
@@ -387,6 +432,7 @@ export const simulateRaidBattle = ({
     relobbies,
     attackerChargedMoves,
     bossChargedMoves,
+    dodges,
     won: winTime != null,
   };
   return {
@@ -432,6 +478,7 @@ const simulateMonteCarloRaidCounter = ({
     settings.friendship,
     settings.megaAllyBonus,
     settings.partyPower,
+    settings.dodgeStrategy,
     settings.weatherBoostedType,
     settings.shadowBossMode,
     settings.relobbySeconds,

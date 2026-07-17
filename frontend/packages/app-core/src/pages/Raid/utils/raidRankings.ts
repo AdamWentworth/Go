@@ -62,6 +62,7 @@ export type {
   RaidBossStats,
   RaidCounterScore,
   RaidCounterSettings,
+  RaidDodgeStrategy,
   RaidGroupEstimate,
   RaidNeutralBenchmark,
   RaidOverallScore,
@@ -169,6 +170,7 @@ const calculateMoveCycleEstimate = (
     relobbies: 0,
     attackerChargedMoves: 0,
     bossChargedMoves: 0,
+    dodges: 0,
     simulationWon: false,
     simulationDistribution: null,
   };
@@ -218,6 +220,7 @@ export const calculateRaidCounterScore = (
     relobbies: simulation.relobbies,
     attackerChargedMoves: simulation.attackerChargedMoves,
     bossChargedMoves: simulation.bossChargedMoves,
+    dodges: simulation.dodges,
     simulationWon: simulation.won,
     simulationDistribution: simulation.distribution,
   };

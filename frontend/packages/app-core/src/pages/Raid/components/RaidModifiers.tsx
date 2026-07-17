@@ -6,10 +6,12 @@ import {
   type PartyPowerKey,
   type RaidBossMovesetMode,
   type RaidCounterSettings,
+  type RaidDodgeStrategy,
   type ShadowBossMode,
 } from "../utils/raidCalculations";
 import {
   ATTACKER_LEVEL_OPTIONS,
+  DODGE_OPTIONS,
   FRIENDSHIP_OPTIONS,
   MEGA_OPTIONS,
   PARTY_POWER_OPTIONS,
@@ -31,6 +33,8 @@ interface RaidModifiersProps {
   onWeatherBoostedTypeChange: (type: string) => void;
   relobbySeconds: number;
   onRelobbySecondsChange: (seconds: number) => void;
+  dodgeStrategy: RaidDodgeStrategy;
+  onDodgeStrategyChange: (strategy: RaidDodgeStrategy) => void;
   includeShadowControls: boolean;
   includeRelobbyControls?: boolean;
   includeBossMovesetControls?: boolean;
@@ -59,6 +63,8 @@ const RaidModifiers = ({
   onWeatherBoostedTypeChange,
   relobbySeconds,
   onRelobbySecondsChange,
+  dodgeStrategy,
+  onDodgeStrategyChange,
   includeShadowControls,
   includeRelobbyControls = false,
   includeBossMovesetControls = false,
@@ -166,6 +172,24 @@ const RaidModifiers = ({
           {RELOBBY_DELAY_OPTIONS.map((seconds) => (
             <option key={seconds} value={seconds}>
               {seconds === 0 ? "No delay" : `${seconds} seconds`}
+            </option>
+          ))}
+        </select>
+      </label>
+    )}
+
+    {includeBossMovesetControls && (
+      <label className="raid-field">
+        <span>Dodging</span>
+        <select
+          value={dodgeStrategy}
+          onChange={(event) =>
+            onDodgeStrategyChange(event.target.value as RaidDodgeStrategy)
+          }
+        >
+          {DODGE_OPTIONS.map((option) => (
+            <option key={option.key} value={option.key}>
+              {option.label}
             </option>
           ))}
         </select>

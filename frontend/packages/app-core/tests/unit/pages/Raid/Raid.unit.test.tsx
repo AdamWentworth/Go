@@ -249,6 +249,7 @@ describe("Raid page", () => {
 
     expect(screen.getByLabelText(/relobby delay/i)).toHaveValue("10");
     expect(screen.getByLabelText(/boss behavior/i)).toHaveValue("expected");
+    expect(screen.getByLabelText(/dodging/i)).toHaveValue("none");
     expect(
       within(screen.getByLabelText("Raid counters")).getAllByText(/faints/)
         .length,
@@ -260,6 +261,10 @@ describe("Raid page", () => {
     expect(screen.getByLabelText(/boss behavior/i)).toHaveValue(
       "monte-carlo",
     );
+    fireEvent.change(screen.getByLabelText(/dodging/i), {
+      target: { value: "charged" },
+    });
+    expect(screen.getByLabelText(/dodging/i)).toHaveValue("charged");
     expect(screen.getAllByText(/modeled outcomes/i).length).toBeGreaterThan(0);
 
     fireEvent.click(screen.getByRole("button", { name: "Shadow raid" }));

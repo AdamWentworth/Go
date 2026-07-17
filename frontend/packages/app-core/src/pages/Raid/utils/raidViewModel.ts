@@ -8,6 +8,7 @@ import type {
   PartyPowerKey,
   RaidCounterScore,
   RaidCounterSettings,
+  RaidDodgeStrategy,
   RaidOverallScore,
   RaidTypeDpsScore,
 } from "./raidCalculations";
@@ -67,6 +68,14 @@ export const ATTACKER_LEVEL_OPTIONS: RaidCounterSettings["attackerLevel"][] = [
 ];
 
 export const RELOBBY_DELAY_OPTIONS = [0, 5, 10, 15, 20];
+
+export const DODGE_OPTIONS: Array<{
+  key: RaidDodgeStrategy;
+  label: string;
+}> = [
+  { key: "none", label: "No dodging" },
+  { key: "charged", label: "Dodge Charged Attacks" },
+];
 
 export const capitalize = (value: string): string =>
   value.length === 0

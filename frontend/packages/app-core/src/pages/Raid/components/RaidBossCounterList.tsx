@@ -65,6 +65,9 @@ const RaidBossCounterList = ({
                 ) : score.relobbies > 0 ? (
                   <small>{formatOutcomeCount(score.relobbies)} relobbies</small>
                 ) : null}
+                {score.dodges > 0 && (
+                  <small>{formatOutcomeCount(score.dodges)} dodges</small>
+                )}
               </span>
             </div>
           </article>

@@ -33,6 +33,7 @@ import {
   type PartyPowerKey,
   type RaidBossMovesetMode,
   type RaidCounterSettings,
+  type RaidDodgeStrategy,
   type RaidTierKey,
   type ShadowBossMode,
 } from "./utils/raidCalculations";
@@ -77,6 +78,8 @@ const Raid: React.FC = () => {
   const [friendship, setFriendship] = useState<FriendshipKey>("best");
   const [megaAllyBonus, setMegaAllyBonus] = useState<MegaAllyBonusKey>("none");
   const [partyPower, setPartyPower] = useState<PartyPowerKey>("none");
+  const [dodgeStrategy, setDodgeStrategy] =
+    useState<RaidDodgeStrategy>("none");
   const [weatherBoostedType, setWeatherBoostedType] = useState("none");
   const [relobbySeconds, setRelobbySeconds] = useState(
     DEFAULT_RAID_RELOBBY_SECONDS,
@@ -159,6 +162,7 @@ const Raid: React.FC = () => {
       friendship,
       megaAllyBonus,
       partyPower,
+      dodgeStrategy,
       weatherBoostedType:
         weatherBoostedType === "none" ? "" : weatherBoostedType,
       shadowBossMode: activeShadowBossMode,
@@ -172,6 +176,7 @@ const Raid: React.FC = () => {
       friendship,
       megaAllyBonus,
       partyPower,
+      dodgeStrategy,
       relobbySeconds,
       weatherBoostedType,
     ],
@@ -319,6 +324,8 @@ const Raid: React.FC = () => {
     onWeatherBoostedTypeChange: setWeatherBoostedType,
     relobbySeconds,
     onRelobbySecondsChange: setRelobbySeconds,
+    dodgeStrategy,
+    onDodgeStrategyChange: setDodgeStrategy,
     bossMovesetMode,
     onBossMovesetModeChange: setBossMovesetMode,
     shadowMechanicsEnabled,
