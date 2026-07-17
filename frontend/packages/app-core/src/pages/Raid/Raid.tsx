@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import "./Raid.css";
 import { useInstancesStore } from "@/features/instances/store/useInstancesStore";
 import { useVariantsStore } from "@/features/variants/store/useVariantsStore";
@@ -18,6 +18,7 @@ import RaidRosterScope from "./components/RaidRosterScope";
 import { TYPE_MAPPING } from "./utils/constants";
 import {
   DEFAULT_RAID_RELOBBY_SECONDS,
+  RAID_ROUTE_READY_MEASURE,
   RAID_TIER_PRESETS,
   calculateRaidBossStats,
   dedupeBestCounterPerVariant,
@@ -61,6 +62,7 @@ import {
 } from "./utils/raidRoster";
 
 const Raid: React.FC = () => {
+  const routeReadyMeasured = useRef(false);
   const variants = useVariantsStore(
     (state) => state.variants,
   ) as PokemonVariant[];
@@ -284,6 +286,26 @@ const Raid: React.FC = () => {
     sortMetric,
   ]);
 
+  useEffect(() => {
+    if (
+      routeReadyMeasured.current ||
+      viewMode !== "overall" ||
+      loading ||
+      movesLoading ||
+      overallScores.length === 0 ||
+      typeof performance === "undefined"
+    ) {
+      return;
+    }
+
+    routeReadyMeasured.current = true;
+    performance.clearMeasures(RAID_ROUTE_READY_MEASURE);
+    performance.measure(RAID_ROUTE_READY_MEASURE, {
+      start: 0,
+      end: performance.now(),
+    });
+  }, [loading, movesLoading, overallScores.length, viewMode]);
+
   const typeDpsRankingScores = useMemo(() => {
     if (viewMode !== "type-dps") return [];
     const allScores = scoreRaidTypeDps(
@@ -381,7 +403,7 @@ const Raid: React.FC = () => {
     setSortDirection("descending");
   };
 
-  if (loading || movesLoading || raidDataLoading) {
+  if (loading || movesLoading || (viewMode === "boss" && raidDataLoading)) {
     return <LoadingSpinner />;
   }
 

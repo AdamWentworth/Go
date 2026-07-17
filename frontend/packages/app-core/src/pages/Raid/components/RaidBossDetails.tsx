@@ -55,6 +55,11 @@ const RaidBossDetails = ({
       </div>
     </section>
 
+    <p className="raid-team-legality-note">
+      Team estimates use six distinct attackers and at most one Mega or
+      Primal. One caught Pokemon cannot fill two form slots.
+    </p>
+
     {metadata && (
       <section className="raid-catch-card">
         <div>

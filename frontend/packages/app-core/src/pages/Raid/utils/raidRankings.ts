@@ -55,6 +55,7 @@ import {
   simulateRaidCounterAcrossBossMovesets,
   simulateRaidTeamAcrossBossMovesets,
 } from "./raidSimulation";
+import { selectLegalRaidTeamCounters } from "./raidTeamSelection";
 
 export type {
   FriendshipKey,
@@ -80,8 +81,11 @@ export {
   FRIENDSHIP_DAMAGE_BONUS,
   MEGA_ALLY_DAMAGE_BONUS,
   RAID_ATTACKER_TEAM_SIZE,
+  RAID_COLD_ROUTE_READY_BUDGET_MS,
+  RAID_ROUTE_READY_MEASURE,
   RAID_SIMULATION_MODEL_VERSION,
   RAID_TIER_PRESETS,
+  RAID_WARM_ROUTE_READY_BUDGET_MS,
 } from "./raidRules";
 
 export {
@@ -902,7 +906,9 @@ export const estimateRaidGroup = (
   tier: RaidTierPreset,
   settings: RaidCounterSettings,
 ): RaidGroupEstimate => {
-  const bestCounters = dedupeBestCounterPerVariant(scores).slice(0, 6);
+  const bestCounters = selectLegalRaidTeamCounters(
+    dedupeBestCounterPerVariant(scores),
+  );
   const fallbackTeamDps =
     bestCounters.length > 0
       ? bestCounters.reduce((sum, counter) => sum + counter.dps, 0) /
