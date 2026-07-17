@@ -1,6 +1,6 @@
 {
   "schemaVersion": 2,
-  "modelVersion": 9,
+  "modelVersion": 10,
   "reviewedAt": "2026-07-17",
   "productionDefaults": {
     "attackerLevel": "50.0",
@@ -25,6 +25,13 @@
       "ttlDays": 7,
       "maximumEntries": 12
     }
+  },
+  "observedCalibration": {
+    "storage": "local-device",
+    "minimumSamples": 5,
+    "minimumDodgeAttempts": 10,
+    "appliedParameter": "dodgeSuccessRate",
+    "latencyMode": "diagnostic-only"
   },
   "canonicalOverall": [
     {
@@ -121,17 +128,90 @@
         ]
       }
     ],
-    "bossSpecificReference": {
+    "bossSpecificMatrix": {
       "tool": "Pokebattler",
-      "url": "https://www.pokebattler.com/raids/defenders/RAYQUAZA/levels/RAID_LEVEL_5/attackers/levels/40/strategies/CINEMATIC_ATTACK_WHEN_POSSIBLE/DEFENSE_RANDOM_MC",
-      "boss": "Rayquaza",
-      "topCounterCohort": [
-        "White Kyurem",
-        "Black Kyurem",
-        "Mega Mewtwo Y",
-        "Shadow Mamoswine",
-        "Mega Mewtwo X",
-        "Eternatus"
+      "minimumScenarios": 6,
+      "minimumReferenceCohortOverlap": 0.5,
+      "comparisonWindow": 12,
+      "scenarios": [
+        {
+          "boss": "Rayquaza",
+          "coverageTypes": ["ice", "dragon", "fairy", "rock"],
+          "url": "https://www.pokebattler.com/raids/defenders/RAYQUAZA/levels/RAID_LEVEL_5/attackers/levels/40/strategies/CINEMATIC_ATTACK_WHEN_POSSIBLE/DEFENSE_RANDOM_MC",
+          "referenceCounterCohort": [
+            "White Kyurem",
+            "Black Kyurem",
+            "Mega Mewtwo Y",
+            "Shadow Mamoswine",
+            "Mega Mewtwo X",
+            "Eternatus"
+          ]
+        },
+        {
+          "boss": "Kyogre",
+          "coverageTypes": ["grass", "electric"],
+          "url": "https://www.pokebattler.com/raids/defenders/KYOGRE/levels/RAID_LEVEL_5/attackers/levels/40/strategies/CINEMATIC_ATTACK_WHEN_POSSIBLE/DEFENSE_RANDOM_MC",
+          "referenceCounterCohort": [
+            "Mega Mewtwo Y",
+            "Mega Mewtwo X",
+            "Shadow Raikou",
+            "Shadow Regigigas",
+            "Zekrom",
+            "Kartana"
+          ]
+        },
+        {
+          "boss": "Groudon",
+          "coverageTypes": ["water", "grass", "ice"],
+          "url": "https://www.pokebattler.com/raids/defenders/GROUDON/levels/RAID_LEVEL_5/attackers/levels/40/strategies/CINEMATIC_ATTACK_WHEN_POSSIBLE/DEFENSE_RANDOM_MC",
+          "referenceCounterCohort": [
+            "Primal Kyogre",
+            "White Kyurem",
+            "Mega Sceptile",
+            "Black Kyurem",
+            "Mega Rayquaza",
+            "Mega Mewtwo Y"
+          ]
+        },
+        {
+          "boss": "Kartana",
+          "coverageTypes": ["fire", "fighting"],
+          "url": "https://www.pokebattler.com/raids/defenders/KARTANA/levels/RAID_LEVEL_ULTRA_BEAST/attackers/levels/40/strategies/CINEMATIC_ATTACK_WHEN_POSSIBLE/DEFENSE_RANDOM_MC",
+          "referenceCounterCohort": [
+            "Shadow Moltres",
+            "Mega Charizard Y",
+            "Mega Blaziken",
+            "Shadow Heatran",
+            "Blacephalon",
+            "Reshiram"
+          ]
+        },
+        {
+          "boss": "Xerneas",
+          "coverageTypes": ["steel", "poison"],
+          "url": "https://www.pokebattler.com/raids/defenders/XERNEAS/levels/RAID_LEVEL_5/attackers/levels/40/strategies/CINEMATIC_ATTACK_WHEN_POSSIBLE/DEFENSE_RANDOM_MC",
+          "referenceCounterCohort": [
+            "Dusk Mane Necrozma",
+            "Shadow Metagross",
+            "Mega Lucario",
+            "Mega Gengar",
+            "Shadow Dialga",
+            "Genesect"
+          ]
+        },
+        {
+          "boss": "Zekrom",
+          "coverageTypes": ["dragon", "ground", "ice", "fairy"],
+          "url": "https://www.pokebattler.com/raids/defenders/ZEKROM/levels/RAID_LEVEL_5/attackers/levels/40/strategies/CINEMATIC_ATTACK_WHEN_POSSIBLE/DEFENSE_RANDOM_MC",
+          "referenceCounterCohort": [
+            "Eternatus",
+            "Mega Rayquaza",
+            "Black Kyurem",
+            "Mega Garchomp",
+            "Primal Groudon",
+            "White Kyurem"
+          ]
+        }
       ]
     }
   }

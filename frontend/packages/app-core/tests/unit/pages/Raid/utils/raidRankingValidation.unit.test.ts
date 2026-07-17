@@ -19,6 +19,10 @@ import {
   RAID_SIMULATION_MODEL_VERSION,
   RAID_WARM_ROUTE_READY_BUDGET_MS,
 } from "@/pages/Raid/utils/raidRules";
+import {
+  RAID_CALIBRATION_MIN_DODGE_ATTEMPTS,
+  RAID_CALIBRATION_MIN_SAMPLES,
+} from "@/pages/Raid/utils/raidCalibration";
 import validationProfile from "../../../../../../../../docs/raid-ranking-validation.json";
 
 const defaultSettings: RaidCounterSettings = {
@@ -94,6 +98,13 @@ describe("raid ranking validation", () => {
     expect(validationProfile.externalCalibration.requiredLeader).toEqual(
       canonicalOverallExpectation[0],
     );
+    expect(validationProfile.observedCalibration).toEqual({
+      storage: "local-device",
+      minimumSamples: RAID_CALIBRATION_MIN_SAMPLES,
+      minimumDodgeAttempts: RAID_CALIBRATION_MIN_DODGE_ATTEMPTS,
+      appliedParameter: "dodgeSuccessRate",
+      latencyMode: "diagnostic-only",
+    });
   });
 
   it("stays within the versioned independent-reference tolerances", () => {
@@ -130,20 +141,26 @@ describe("raid ranking validation", () => {
     });
   });
 
-  it("records a full-simulator boss-counter calibration cohort", () => {
-    const reference =
-      validationProfile.externalCalibration.bossSpecificReference;
-
-    expect(reference.tool).toBe("Pokebattler");
-    expect(reference.boss).toBe("Rayquaza");
-    expect(reference.topCounterCohort).toHaveLength(6);
-    expect(reference.topCounterCohort).toEqual(
-      expect.arrayContaining([
-        "White Kyurem",
-        "Black Kyurem",
-        "Shadow Mamoswine",
-      ]),
+  it("records a representative full-simulator boss-counter matrix", () => {
+    const matrix = validationProfile.externalCalibration.bossSpecificMatrix;
+    const coveredTypes = new Set(
+      matrix.scenarios.flatMap((scenario) => scenario.coverageTypes),
     );
+
+    expect(matrix.tool).toBe("Pokebattler");
+    expect(matrix.scenarios.length).toBeGreaterThanOrEqual(
+      matrix.minimumScenarios,
+    );
+    expect(new Set(matrix.scenarios.map((scenario) => scenario.boss)).size).toBe(
+      matrix.scenarios.length,
+    );
+    expect(coveredTypes.size).toBeGreaterThanOrEqual(10);
+    matrix.scenarios.forEach((scenario) => {
+      expect(scenario.url).toContain("pokebattler.com/raids/defenders/");
+      expect(scenario.coverageTypes.length).toBeGreaterThan(0);
+      expect(scenario.referenceCounterCohort).toHaveLength(6);
+      expect(new Set(scenario.referenceCounterCohort).size).toBe(6);
+    });
   });
 
   it("matches the canonical headline order and legal movesets", () => {

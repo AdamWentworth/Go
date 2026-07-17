@@ -2,7 +2,7 @@
 
 Last reviewed: July 2026
 
-Model version: 9
+Model version: 10
 
 PokeGo Nexus ranks raid attackers for three different questions:
 
@@ -104,7 +104,9 @@ Generated teams also enforce battle-form legality. A team can contain at most on
 
 The selected catalog level never overrides a caught Pokemon's recorded level. If level is absent but CP and IVs are available, the closest legal level is inferred from the CP formula. A caught entry with insufficient level, IV, or current moveset data is omitted from personalized rankings instead of being promoted to catalog benchmark assumptions. Hidden Power uses the recorded move but marks its rolled type as estimated because the current instance schema does not store that roll.
 
-Personalized rankings establish the input model needed for heterogeneous Trainer teams. External reference cohorts guard the shared catalog model, but personalized predictions do not yet claim measured network latency or dodge success; those require opt-in battle telemetry rather than ownership data alone.
+Personalized rankings establish the input model needed for heterogeneous Trainer teams. Trainers can also opt into a local battle-calibration log from Boss mode. Each observation stores the boss, model and catalog versions, Trainer count, predicted and observed clear time, faints, relobbies, dodge attempts, successful dodges, and optional measured latency. The records stay in that browser and are scoped to the signed-in user.
+
+Observed dodge success is not applied until the local profile contains at least five raids and ten dodge attempts. Even then, it only changes the success probability of dodges the timeline says were possible. Latency remains a diagnostic measurement: Pokemon GO uses a half-second battle clock and client-side action queuing, so adding raw ping to every move would create false precision. The standard model remains active unless the Trainer explicitly enables the qualified local dodge profile.
 
 ## Assumptions and limits
 
@@ -115,9 +117,9 @@ Personalized rankings establish the input model needed for heterogeneous Trainer
 - Overall and By Type use a configurable cycle-average Party Power approximation. Boss mode simulates the meter event by event.
 - The Party Power fill rates are current empirical behavior rather than a complete published Niantic formula: an 18-point meter receives one, two, or three points per landed move in a party of two, three, or four. Boss mode automatically uses the boost on the next eligible Charged Attack one second after the meter fills.
 - Group estimates model a homogeneous group: every Trainer uses the displayed mixed team and shares the same action timeline. This reproduces group damage and boss-energy feedback, but not different teams, latency, staggered Mega uptime, or manual Party Power timing across individual Trainers.
-- Charged-only dodging assumes the swipe succeeds whenever the attacker has not committed to an action that overlaps the damage window. It does not assign a failure probability for latency or player reaction.
+- Charged-only dodging assumes the swipe succeeds whenever the attacker has not committed to an action that overlaps the damage window. An explicitly enabled, sufficiently sampled local profile can replace perfect execution with the Trainer's observed success rate.
 - Expected mode represents boss cadence and the 50% charged decision with deterministic phases. Monte Carlo mode samples both, but 32–64 trials remain a browser-sized distribution rather than a large server-side convergence run.
-- Network delay, relobby healing bugs, and undocumented live-mechanics changes can still alter a real raid result.
+- Raw latency is reported but not directly converted into per-move delay. Network delay, relobby healing bugs, and undocumented live-mechanics changes can still alter a real raid result.
 
 For a specific difficult raid, use the boss counter page and confirm the result with a full battle simulator. For long-term investment and team building, the overall and type eDPS lists are the intended tools.
 
@@ -129,7 +131,8 @@ The current model settings, canonical headline order, independent-reference coho
 
 - A fixed canonical cohort checks the headline order and legal signature moves for Mega Rayquaza, both Mega Mewtwo forms, Eternatus, Shadow Regigigas, and Zacian.
 - Three independently maintained tools must agree on Mega Rayquaza as the released-form leader. Their published top cohorts must retain the configured overlap and relative-order tolerances. Raw scores are not compared directly because eDPS, ER, and Pokebattler Estimator answer different mathematical questions.
-- A versioned Pokebattler Rayquaza counter cohort records a full-simulator boss-specific reference separately from the broad overall model.
+- A versioned six-boss Pokebattler matrix covers Dragon/Ice, Water, Ground, double-weak Fire, Fairy, and Dragon/Electric raid targets. Each scenario records six published reference contenders that are released and modelable in the live catalog, plus a comparison window and minimum overlap tolerance separate from the broad overall model.
+- Battle-calibration tests lock local-only persistence, owner isolation, bounded retention, evidence thresholds, aggregate timing/faint/relobby errors, dodge success, and diagnostic latency.
 - Generated-team tests enforce one Mega or Primal, distinct caught instances, and the stronger legal choice when a base form and its transformation compete for the same roster slot.
 - A sensitivity matrix varies neutral target Defense across `160`, `180`, and `200`, and incoming pressure across `0.8x`, `1x`, and `1.2x`. The top-three order and signature charged moves must remain stable in all nine scenarios.
 - Relobby delays of `0`, `5`, `10`, and `20` seconds must preserve the canonical headline result.
@@ -162,11 +165,11 @@ The tiers below rank calculation methods for their stated purpose, not the amoun
 
 PokeGo Nexus is a **strong A+ broad ranking model with an event-driven boss-counter mode**. Its main advantage is auditability: the displayed eDPS, DPS, TDO, ER, CP, moveset, target selection, boss-pressure mode, and user modifiers all belong to one model instead of mixing a hidden score with editorial ordering. Overall uses a documented typeless benchmark so the historical boss roster cannot bias its movesets. By Type independently scores real high-tier raid targets instead of collapsing them into a same-typing aggregate.
 
-Boss mode now includes reproducible Monte Carlo outcomes, legal mixed teams, charged dodging, group boss-energy feedback, and timed Party Power. Independent public reference cohorts now guard broad-list leadership and a full-simulator boss-counter sample, but this is calibration rather than an assertion that unlike scalar metrics should match. It is not yet equivalent to a large dedicated Pokebattler simulation. The clearest remaining path is:
+Boss mode now includes reproducible Monte Carlo outcomes, legal mixed teams, charged dodging, group boss-energy feedback, timed Party Power, a six-boss independent-reference matrix, and opt-in observed dodge calibration. Public cohorts are calibration rather than an assertion that unlike scalar metrics should match. It is not yet equivalent to a large dedicated Pokebattler simulation. The clearest remaining path is:
 
-1. Expand full-simulator calibration from the versioned Rayquaza cohort to a representative multi-boss matrix.
+1. Accumulate and review real observations across different bosses, group sizes, devices, and networks.
 2. Support heterogeneous multi-Trainer teams, independent action timelines, and manual Party Power activation.
-3. Calibrate successful-dodge rates and network delay from measured live-raid samples.
+3. Compare calibrated predictions against an additional independent full simulator before tightening matrix tolerances.
 
 The broad eDPS leaderboard should remain the default because it answers the most common team-building question. A future simulator should strengthen boss mode rather than replace the transparent general model.
 
@@ -177,6 +180,12 @@ The broad eDPS leaderboard should remain the default because it answers the most
 - [PokéBase attacker-list methodology](https://pokebase.app/pokemon-go/p/best-attackers-by-type)
 - [Pokebattler explanation of Estimator versus Time to Win](https://articles.pokebattler.com/2023/04/05/analysis-shadow-blaziken-and-shadow-sceptile-as-raid-attackers/)
 - [Pokebattler Monte Carlo simulation methodology](https://articles.pokebattler.com/simulations/)
+- [Pokebattler Rayquaza counter simulation](https://www.pokebattler.com/raids/defenders/RAYQUAZA/levels/RAID_LEVEL_5/attackers/levels/40/strategies/CINEMATIC_ATTACK_WHEN_POSSIBLE/DEFENSE_RANDOM_MC)
+- [Pokebattler Kyogre counter simulation](https://www.pokebattler.com/raids/defenders/KYOGRE/levels/RAID_LEVEL_5/attackers/levels/40/strategies/CINEMATIC_ATTACK_WHEN_POSSIBLE/DEFENSE_RANDOM_MC)
+- [Pokebattler Groudon counter simulation](https://www.pokebattler.com/raids/defenders/GROUDON/levels/RAID_LEVEL_5/attackers/levels/40/strategies/CINEMATIC_ATTACK_WHEN_POSSIBLE/DEFENSE_RANDOM_MC)
+- [Pokebattler Kartana counter simulation](https://www.pokebattler.com/raids/defenders/KARTANA/levels/RAID_LEVEL_ULTRA_BEAST/attackers/levels/40/strategies/CINEMATIC_ATTACK_WHEN_POSSIBLE/DEFENSE_RANDOM_MC)
+- [Pokebattler Xerneas counter simulation](https://www.pokebattler.com/raids/defenders/XERNEAS/levels/RAID_LEVEL_5/attackers/levels/40/strategies/CINEMATIC_ATTACK_WHEN_POSSIBLE/DEFENSE_RANDOM_MC)
+- [Pokebattler Zekrom counter simulation](https://www.pokebattler.com/raids/defenders/ZEKROM/levels/RAID_LEVEL_5/attackers/levels/40/strategies/CINEMATIC_ATTACK_WHEN_POSSIBLE/DEFENSE_RANDOM_MC)
 - [Niantic Party Play and Party Power help](https://niantic.helpshift.com/hc/en/6-pokemon-go/faq/4171-how-to-use-party-play/)
 - [Current empirical Party Power meter research](https://9db.jp/pokemongo/data/23926)
 - [Niantic raid dodging help](https://niantic.helpshift.com/hc/en/6-pokemon-go/faq/2738-i-m-unable-to-defeat-a-raid-boss/)
