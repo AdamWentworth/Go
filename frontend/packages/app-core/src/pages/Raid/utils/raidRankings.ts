@@ -52,7 +52,10 @@ import {
   calculateRaidAttackerBattleStats,
   type RaidTargetCombatContext,
 } from "./raidTargetModel";
-import { simulateRaidCounterAcrossBossMovesets } from "./raidSimulation";
+import {
+  simulateRaidCounterAcrossBossMovesets,
+  simulateRaidTeamAcrossBossMovesets,
+} from "./raidSimulation";
 
 export type {
   FriendshipKey,
@@ -893,15 +896,30 @@ export const estimateRaidGroup = (
   scores: RaidCounterScore[],
   boss: PokemonVariant,
   tier: RaidTierPreset,
-  shadowBossMode: ShadowBossMode,
+  settings: RaidCounterSettings,
 ): RaidGroupEstimate => {
   const bestCounters = dedupeBestCounterPerVariant(scores).slice(0, 6);
-  const topTeamDps =
+  const fallbackTeamDps =
     bestCounters.length > 0
       ? bestCounters.reduce((sum, counter) => sum + counter.dps, 0) /
         bestCounters.length
       : 0;
-  const bossStats = calculateRaidBossStats(boss, tier, shadowBossMode);
+  const teamSimulation = simulateRaidTeamAcrossBossMovesets({
+    team: bestCounters.map((counter) => ({
+      attacker: counter.variant,
+      fastMove: counter.fastMove,
+      chargedMove: counter.chargedMove,
+    })),
+    boss,
+    tier,
+    settings,
+  });
+  const topTeamDps = teamSimulation?.dps ?? fallbackTeamDps;
+  const bossStats = calculateRaidBossStats(
+    boss,
+    tier,
+    settings.shadowBossMode,
+  );
 
   if (topTeamDps <= 0) {
     return {
@@ -928,7 +946,8 @@ export const estimateRaidGroup = (
           (topTeamDps * bossStats.timeLimitSeconds * COMFORTABLE_SAFETY_FACTOR),
       ),
     ),
-    soloTimeSeconds: bossStats.hp / topTeamDps,
+    soloTimeSeconds:
+      teamSimulation?.projectedTimeToWinSeconds ?? bossStats.hp / topTeamDps,
   };
 };
 

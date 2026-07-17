@@ -292,13 +292,13 @@ const Raid: React.FC = () => {
       bossCounterScores,
       selectedBoss,
       selectedTier,
-      activeShadowBossMode,
+      settings,
     );
   }, [
-    activeShadowBossMode,
     bossCounterScores,
     selectedBoss,
     selectedTier,
+    settings,
     viewMode,
   ]);
 

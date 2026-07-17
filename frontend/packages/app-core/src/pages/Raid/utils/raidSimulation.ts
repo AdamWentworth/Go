@@ -14,6 +14,7 @@ import {
 import {
   RAID_MONTE_CARLO_MAX_SAMPLES,
   RAID_MONTE_CARLO_MIN_SAMPLES,
+  RAID_ATTACKER_TEAM_SIZE,
   RAID_SIMULATION_ATTACKER_SWAP_SECONDS,
   RAID_SIMULATION_BOSS_ACTION_DELAY_SECONDS,
   RAID_SIMULATION_BOSS_DELAY_OPTIONS_SECONDS,
@@ -47,6 +48,12 @@ type SimulationEvent = {
 };
 
 type BossMoveset = {
+  fastMove: Move;
+  chargedMove: Move;
+};
+
+export type RaidSimulationTeamMember = {
+  attacker: PokemonVariant;
   fastMove: Move;
   chargedMove: Move;
 };
@@ -136,10 +143,8 @@ const averageSimulationResults = (
   };
 };
 
-export const simulateRaidBattle = ({
-  attacker,
-  attackerFastMove,
-  attackerChargedMove,
+export const simulateRaidTeamBattle = ({
+  team,
   boss,
   bossFastMove,
   bossChargedMove,
@@ -149,9 +154,7 @@ export const simulateRaidBattle = ({
   shouldBossUseCharged,
   getBossActionDelaySeconds,
 }: {
-  attacker: PokemonVariant;
-  attackerFastMove: Move;
-  attackerChargedMove: Move;
+  team: RaidSimulationTeamMember[];
   boss: PokemonVariant;
   bossFastMove: Move;
   bossChargedMove: Move;
@@ -161,63 +164,70 @@ export const simulateRaidBattle = ({
   shouldBossUseCharged?: () => boolean;
   getBossActionDelaySeconds?: () => number;
 }): RaidBattleSimulationResult => {
-  const attackerStats = calculateRaidAttackerBattleStats(attacker, settings);
+  if (team.length === 0) {
+    throw new Error("Raid simulation requires at least one team member.");
+  }
   const bossStats = calculateRaidBossStats(
     boss,
     tier,
     settings.shadowBossMode,
   );
-  const attackerFastDamage = calculateRaidMoveDamage({
-    move: attackerFastMove,
-    attacker,
-    attackerAttack: attackerStats.attack,
-    bossDefense: bossStats.defense,
-    bossTypes: [boss.type1_name, boss.type2_name].filter(
-      (type): type is string => Boolean(type && type !== "none"),
-    ),
-    settings,
-    charged: false,
-  });
-  const attackerChargedDamage = calculateRaidMoveDamage({
-    move: attackerChargedMove,
-    attacker,
-    attackerAttack: attackerStats.attack,
-    bossDefense: bossStats.defense,
-    bossTypes: [boss.type1_name, boss.type2_name].filter(
-      (type): type is string => Boolean(type && type !== "none"),
-    ),
-    settings,
-    charged: true,
-  });
-  const bossFastDamage = calculateRaidBossMoveDamage({
-    move: bossFastMove,
-    boss,
-    bossAttack: bossStats.attack,
-    attacker,
-    attackerDefense: attackerStats.defense,
-    weatherBoostedType: settings.weatherBoostedType,
-  });
-  const bossChargedDamage = calculateRaidBossMoveDamage({
-    move: bossChargedMove,
-    boss,
-    bossAttack: bossStats.attack,
-    attacker,
-    attackerDefense: attackerStats.defense,
-    weatherBoostedType: settings.weatherBoostedType,
-  });
-  const dodgedBossChargedDamage = calculateRaidBossMoveDamage({
-    move: bossChargedMove,
-    boss,
-    bossAttack: bossStats.attack,
-    attacker,
-    attackerDefense: attackerStats.defense,
-    weatherBoostedType: settings.weatherBoostedType,
-    dodged: true,
-  });
-  const attackerChargedCost = Math.max(
-    1,
-    Math.abs(getRaidMoveEnergy(attackerChargedMove)),
+  const bossTypes = [boss.type1_name, boss.type2_name].filter(
+    (type): type is string => Boolean(type && type !== "none"),
   );
+  const profiles = team.map(({ attacker, fastMove, chargedMove }) => {
+    const attackerStats = calculateRaidAttackerBattleStats(attacker, settings);
+    return {
+      attacker,
+      fastMove,
+      chargedMove,
+      attackerStats,
+      fastDamage: calculateRaidMoveDamage({
+        move: fastMove,
+        attacker,
+        attackerAttack: attackerStats.attack,
+        bossDefense: bossStats.defense,
+        bossTypes,
+        settings,
+        charged: false,
+      }),
+      chargedDamage: calculateRaidMoveDamage({
+        move: chargedMove,
+        attacker,
+        attackerAttack: attackerStats.attack,
+        bossDefense: bossStats.defense,
+        bossTypes,
+        settings,
+        charged: true,
+      }),
+      bossFastDamage: calculateRaidBossMoveDamage({
+        move: bossFastMove,
+        boss,
+        bossAttack: bossStats.attack,
+        attacker,
+        attackerDefense: attackerStats.defense,
+        weatherBoostedType: settings.weatherBoostedType,
+      }),
+      bossChargedDamage: calculateRaidBossMoveDamage({
+        move: bossChargedMove,
+        boss,
+        bossAttack: bossStats.attack,
+        attacker,
+        attackerDefense: attackerStats.defense,
+        weatherBoostedType: settings.weatherBoostedType,
+      }),
+      dodgedBossChargedDamage: calculateRaidBossMoveDamage({
+        move: bossChargedMove,
+        boss,
+        bossAttack: bossStats.attack,
+        attacker,
+        attackerDefense: attackerStats.defense,
+        weatherBoostedType: settings.weatherBoostedType,
+        dodged: true,
+      }),
+      chargedCost: Math.max(1, Math.abs(getRaidMoveEnergy(chargedMove))),
+    };
+  });
   const bossChargedCost = Math.max(
     1,
     Math.abs(getRaidMoveEnergy(bossChargedMove)),
@@ -225,7 +235,7 @@ export const simulateRaidBattle = ({
 
   let bossHp = bossStats.hp;
   let bossEnergy = 0;
-  let attackerHp = attackerStats.hp;
+  let attackerHp = profiles[0].attackerStats.hp;
   let attackerEnergy = 0;
   let attackerGeneration = 0;
   let bossGeneration = 0;
@@ -295,8 +305,9 @@ export const simulateRaidBattle = ({
     }
 
     if (event.actor === "attacker-start") {
-      const useCharged = attackerEnergy >= attackerChargedCost;
-      const move = useCharged ? attackerChargedMove : attackerFastMove;
+      const profile = profiles[teamPosition];
+      const useCharged = attackerEnergy >= profile.chargedCost;
+      const move = useCharged ? profile.chargedMove : profile.fastMove;
       const moveHitTime = roundToRaidTurn(
         event.time + getProcessedRaidMoveSeconds(move),
       );
@@ -311,10 +322,10 @@ export const simulateRaidBattle = ({
         continue;
       }
       attackerEnergy = useCharged
-        ? Math.max(0, attackerEnergy - attackerChargedCost)
+        ? Math.max(0, attackerEnergy - profile.chargedCost)
         : Math.min(
             RAID_SIMULATION_ENERGY_CAP,
-            attackerEnergy + Math.max(0, getRaidMoveEnergy(attackerFastMove)),
+            attackerEnergy + Math.max(0, getRaidMoveEnergy(profile.fastMove)),
           );
       enqueue(
         "attacker-hit",
@@ -325,8 +336,9 @@ export const simulateRaidBattle = ({
     }
 
     if (event.actor === "attacker-hit") {
-      const charged = event.move === attackerChargedMove;
-      const damage = charged ? attackerChargedDamage : attackerFastDamage;
+      const profile = profiles[teamPosition];
+      const charged = event.move === profile.chargedMove;
+      const damage = charged ? profile.chargedDamage : profile.fastDamage;
       if (charged) attackerChargedMoves += 1;
       const bossHpBeforeDamage = bossHp;
       bossHp = Math.max(0, bossHp - damage);
@@ -378,12 +390,13 @@ export const simulateRaidBattle = ({
     }
 
     if (event.actor === "boss-hit") {
+      const profile = profiles[teamPosition];
       const charged = event.move === bossChargedMove;
       const damage = charged
         ? event.dodged
-          ? dodgedBossChargedDamage
-          : bossChargedDamage
-        : bossFastDamage;
+          ? profile.dodgedBossChargedDamage
+          : profile.bossChargedDamage
+        : profile.bossFastDamage;
       if (charged) bossChargedMoves += 1;
       if (event.dodged) dodges += 1;
       if (reservedDodgeHitTime === event.time) reservedDodgeHitTime = null;
@@ -395,7 +408,7 @@ export const simulateRaidBattle = ({
 
       if (attackerHp <= 0) {
         faints += 1;
-        teamPosition = (teamPosition + 1) % 6;
+        teamPosition = (teamPosition + 1) % profiles.length;
         attackerGeneration += 1;
         bossGeneration += 1;
         const needsRelobby = teamPosition === 0;
@@ -413,7 +426,7 @@ export const simulateRaidBattle = ({
       continue;
     }
 
-    attackerHp = attackerStats.hp;
+    attackerHp = profiles[teamPosition].attackerStats.hp;
     attackerEnergy = 0;
     enqueue("attacker-start", event.time);
     enqueue("boss-start", event.time + nextBossActionDelay());
@@ -441,6 +454,33 @@ export const simulateRaidBattle = ({
   };
 };
 
+export const simulateRaidBattle = ({
+  attacker,
+  attackerFastMove,
+  attackerChargedMove,
+  ...battle
+}: {
+  attacker: PokemonVariant;
+  attackerFastMove: Move;
+  attackerChargedMove: Move;
+  boss: PokemonVariant;
+  bossFastMove: Move;
+  bossChargedMove: Move;
+  tier: RaidTierPreset;
+  settings: RaidCounterSettings;
+  chargedDecisionOffset?: 0 | 1;
+  shouldBossUseCharged?: () => boolean;
+  getBossActionDelaySeconds?: () => number;
+}): RaidBattleSimulationResult =>
+  simulateRaidTeamBattle({
+    ...battle,
+    team: Array.from({ length: RAID_ATTACKER_TEAM_SIZE }, () => ({
+      attacker,
+      fastMove: attackerFastMove,
+      chargedMove: attackerChargedMove,
+    })),
+  });
+
 const getBossMovesets = (boss: PokemonVariant): BossMoveset[] =>
   getLegalRaidFastMoves(boss).flatMap((fastMove) =>
     getLegalRaidChargedMoves(boss).map((chargedMove) => ({
@@ -448,6 +488,102 @@ const getBossMovesets = (boss: PokemonVariant): BossMoveset[] =>
       chargedMove,
     })),
   );
+
+const selectBossMovesetSimulation = (
+  resultsByMoveset: RaidBattleSimulationResult[][],
+  mode: RaidBossMovesetMode,
+): RaidBattleSimulationResult => {
+  if (mode === "expected") {
+    return averageSimulationResults(resultsByMoveset.flat());
+  }
+
+  const results = resultsByMoveset.map(averageSimulationResults);
+  return results.reduce((selected, candidate) => {
+    const timeDifference =
+      candidate.projectedTimeToWinSeconds - selected.projectedTimeToWinSeconds;
+    if (timeDifference !== 0) {
+      const candidateWins =
+        mode === "favorable" ? timeDifference < 0 : timeDifference > 0;
+      return candidateWins ? candidate : selected;
+    }
+    const candidateWins =
+      mode === "favorable"
+        ? candidate.faints < selected.faints
+        : candidate.faints > selected.faints;
+    return candidateWins ? candidate : selected;
+  });
+};
+
+export const simulateRaidTeamAcrossBossMovesets = ({
+  team,
+  boss,
+  tier,
+  settings,
+}: {
+  team: RaidSimulationTeamMember[];
+  boss: PokemonVariant;
+  tier: RaidTierPreset;
+  settings: RaidCounterSettings;
+}): RaidBattleSimulationResult | null => {
+  const movesets = getBossMovesets(boss);
+  if (movesets.length === 0 || team.length === 0) return null;
+
+  if (settings.bossMovesetMode === "monte-carlo") {
+    const sampleCount = Math.min(
+      RAID_MONTE_CARLO_MAX_SAMPLES,
+      Math.max(RAID_MONTE_CARLO_MIN_SAMPLES, movesets.length * 2),
+    );
+    const teamSeed = team
+      .map(
+        ({ attacker, fastMove, chargedMove }) =>
+          `${attacker.variant_id}:${fastMove.name}:${chargedMove.name}`,
+      )
+      .join(",");
+    const results = Array.from({ length: sampleCount }, (_, sampleIndex) => {
+      const moveset = movesets[sampleIndex % movesets.length];
+      const random = createSeededRandom(
+        `${boss.variant_id}|${tier.key}|${teamSeed}|${sampleIndex}`,
+      );
+      return simulateRaidTeamBattle({
+        team,
+        boss,
+        bossFastMove: moveset.fastMove,
+        bossChargedMove: moveset.chargedMove,
+        tier,
+        settings,
+        shouldBossUseCharged: () => random() < 0.5,
+        getBossActionDelaySeconds: () => {
+          const index = Math.min(
+            RAID_SIMULATION_BOSS_DELAY_OPTIONS_SECONDS.length - 1,
+            Math.floor(
+              random() * RAID_SIMULATION_BOSS_DELAY_OPTIONS_SECONDS.length,
+            ),
+          );
+          return RAID_SIMULATION_BOSS_DELAY_OPTIONS_SECONDS[index];
+        },
+      });
+    });
+    return averageSimulationResults(results);
+  }
+
+  const resultsByMoveset = movesets.map(({ fastMove, chargedMove }) =>
+    ([0, 1] as const).map((chargedDecisionOffset) =>
+      simulateRaidTeamBattle({
+        team,
+        boss,
+        bossFastMove: fastMove,
+        bossChargedMove: chargedMove,
+        tier,
+        settings,
+        chargedDecisionOffset,
+      }),
+    ),
+  );
+  return selectBossMovesetSimulation(
+    resultsByMoveset,
+    settings.bossMovesetMode,
+  );
+};
 
 const simulateMonteCarloRaidCounter = ({
   attacker,
@@ -557,30 +693,8 @@ export const simulateRaidCounterAcrossBossMovesets = ({
     ),
   );
 
-  if (settings.bossMovesetMode === "expected") {
-    return averageSimulationResults(resultsByMoveset.flat());
-  }
-
-  const results = resultsByMoveset.map(averageSimulationResults);
-
-  const compare = (
-    candidate: RaidBattleSimulationResult,
-    current: RaidBattleSimulationResult,
-    mode: RaidBossMovesetMode,
-  ) => {
-    const timeDifference =
-      candidate.projectedTimeToWinSeconds - current.projectedTimeToWinSeconds;
-    if (timeDifference !== 0) {
-      return mode === "favorable" ? timeDifference < 0 : timeDifference > 0;
-    }
-    return mode === "favorable"
-      ? candidate.faints < current.faints
-      : candidate.faints > current.faints;
-  };
-
-  return results.reduce((selected, candidate) =>
-    compare(candidate, selected, settings.bossMovesetMode)
-      ? candidate
-      : selected,
+  return selectBossMovesetSimulation(
+    resultsByMoveset,
+    settings.bossMovesetMode,
   );
 };

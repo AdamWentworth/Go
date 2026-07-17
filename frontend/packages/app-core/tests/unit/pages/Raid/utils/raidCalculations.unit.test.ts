@@ -502,7 +502,7 @@ describe("raid calculations", () => {
       scores,
       boss,
       RAID_TIER_PRESETS.legendary,
-      "normal",
+      baseSettings,
     );
 
     expect(scores.length).toBeGreaterThan(0);

@@ -42,7 +42,7 @@ const RaidBossDetails = ({
         <strong>{tier.shortLabel}</strong>
       </div>
       <div>
-        <span>Top team DPS</span>
+        <span>Mixed team DPS</span>
         <strong>{formatDps(groupEstimate.topTeamDps)}</strong>
       </div>
       <div>

@@ -6,6 +6,7 @@ import {
   scoreRaidCounters,
   simulateRaidBattle,
   simulateRaidCounterAcrossBossMovesets,
+  simulateRaidTeamBattle,
   type RaidCounterSettings,
   type RaidTierPreset,
 } from "@/pages/Raid/utils/raidCalculations";
@@ -380,6 +381,71 @@ describe("raid event simulation", () => {
     expect(delayed.projectedTimeToWinSeconds).toBeGreaterThan(
       noDelay.projectedTimeToWinSeconds,
     );
+  });
+
+  it("advances through each member of a mixed team with its own battle stats", () => {
+    const lead = pokemon({
+      name: "Glass Lead",
+      attack: 350,
+      defense: 30,
+      stamina: 30,
+      types: ["normal"],
+      moves: [fastAttack, chargedAttack],
+    });
+    const anchorFast = move("Anchor Fast", "normal", true, 7, 500, 10);
+    const anchorCharged = move(
+      "Anchor Charged",
+      "normal",
+      false,
+      70,
+      1000,
+      -50,
+    );
+    const anchor = pokemon({
+      name: "Durable Anchor",
+      attack: 170,
+      defense: 500,
+      stamina: 700,
+      types: ["normal"],
+      moves: [anchorFast, anchorCharged],
+    });
+    const crushingFast = move(
+      "Team Crushing Fast",
+      "fighting",
+      true,
+      120,
+      500,
+      10,
+    );
+    const mixed = simulateRaidTeamBattle({
+      team: [
+        { attacker: lead, fastMove: fastAttack, chargedMove: chargedAttack },
+        {
+          attacker: anchor,
+          fastMove: anchorFast,
+          chargedMove: anchorCharged,
+        },
+      ],
+      boss,
+      bossFastMove: crushingFast,
+      bossChargedMove: strongBossCharged,
+      tier: { ...tier, bossHp: 5000, timeLimitSeconds: 20 },
+      settings,
+    });
+    const repeatedLead = simulateRaidBattle({
+      attacker: lead,
+      attackerFastMove: fastAttack,
+      attackerChargedMove: chargedAttack,
+      boss,
+      bossFastMove: crushingFast,
+      bossChargedMove: strongBossCharged,
+      tier: { ...tier, bossHp: 5000, timeLimitSeconds: 20 },
+      settings,
+    });
+
+    expect(mixed.faints).toBeGreaterThan(0);
+    expect(mixed.faints).toBeLessThan(repeatedLead.faints);
+    expect(mixed.damageDealt).not.toBe(repeatedLead.damageDealt);
   });
 
   it("selects genuinely favorable and hostile legal boss movesets", () => {
