@@ -621,7 +621,7 @@ describe("raid calculations", () => {
     expect(longDelay.er).toBeCloseTo(noDelay.er, 6);
   });
 
-  it("uses each real raid target's defense in overall and type rankings", () => {
+  it("uses each real raid target's defense in type rankings", () => {
     const attacker = pokemon({
       name: "Machamp",
       variant_id: "machamp-default",
@@ -653,16 +653,6 @@ describe("raid calculations", () => {
     const lowerDefenseBoss = raidBoss("Lower Defense Boss", 100);
     const higherDefenseBoss = raidBoss("Higher Defense Boss", 300);
 
-    const lowerOverall = scoreBestRaidOverallAttackers(
-      [attacker],
-      baseSettings,
-      [lowerDefenseBoss],
-    )[0] as RaidOverallScore;
-    const higherOverall = scoreBestRaidOverallAttackers(
-      [attacker],
-      baseSettings,
-      [higherDefenseBoss],
-    )[0] as RaidOverallScore;
     const lowerType = scoreRaidTypeDps(
       [attacker],
       "fighting",
@@ -676,15 +666,13 @@ describe("raid calculations", () => {
       [higherDefenseBoss],
     )[0] as RaidTypeDpsScore;
 
-    expect(lowerOverall.dps).toBeGreaterThan(higherOverall.dps);
-    expect(lowerOverall.fastDamage).toBeGreaterThan(higherOverall.fastDamage);
     expect(lowerType.dps).toBeGreaterThan(higherType.dps);
     expect(lowerType.chargedDamage).toBeGreaterThan(
       higherType.chargedDamage,
     );
   });
 
-  it("keeps same-typing raid targets independent for exact scoring", () => {
+  it("keeps same-typing raid targets independent for exact type scoring", () => {
     const targets = [
       pokemon({
         name: "First Rock Boss",
@@ -706,7 +694,7 @@ describe("raid calculations", () => {
       }),
     ];
 
-    const profiles = getRaidOverallTargetProfiles(targets);
+    const profiles = getRaidTypeTargetProfiles("fighting", targets);
 
     expect(profiles).toHaveLength(2);
     expect(profiles.map((profile) => profile.weight)).toEqual([1, 1]);
@@ -716,10 +704,12 @@ describe("raid calculations", () => {
     ]);
   });
 
-  it("uses only high-tier bosses in broad investment rankings", () => {
+  it("uses only high-tier bosses in type investment rankings", () => {
     const tierOneBoss = pokemon({
       name: "Tier One Boss",
       variant_id: "tier-one-boss",
+      type1_name: "rock",
+      type2_name: "none",
       raid_boss: [
         { id: 1, tier: "1", form: "Normal", name: "Tier One Boss" },
       ],
@@ -727,9 +717,11 @@ describe("raid calculations", () => {
     const legendaryBoss = legendaryRaidTarget({
       name: "Legendary Boss",
       variant_id: "legendary-boss",
+      type1_name: "rock",
+      type2_name: "none",
     });
 
-    const profiles = getRaidOverallTargetProfiles([
+    const profiles = getRaidTypeTargetProfiles("fighting", [
       tierOneBoss,
       legendaryBoss,
     ]);
@@ -763,7 +755,7 @@ describe("raid calculations", () => {
     ]);
   });
 
-  it("uses legal boss moves and typing to model broad-ranking survival", () => {
+  it("uses legal boss moves and typing to model type-ranking survival", () => {
     const attacker = pokemon({
       name: "Venusaur",
       variant_id: "venusaur-default",
@@ -784,7 +776,7 @@ describe("raid calculations", () => {
         attack: 250,
         defense: 200,
         stamina: 220,
-        type1_name: "normal",
+        type1_name: "water",
         type2_name: "none",
         moves: [
           move(`${moveType} Fast`, moveType, 1, 15, 1000, 10),
@@ -795,16 +787,18 @@ describe("raid calculations", () => {
     const fireBoss = raidBoss("Fire Moveset Boss", "fire");
     const waterBoss = raidBoss("Water Moveset Boss", "water");
 
-    const versusFire = scoreBestRaidOverallAttackers(
+    const versusFire = scoreRaidTypeDps(
       [attacker],
+      "grass",
       baseSettings,
       [fireBoss],
-    )[0] as RaidOverallScore;
-    const versusWater = scoreBestRaidOverallAttackers(
+    )[0] as RaidTypeDpsScore;
+    const versusWater = scoreRaidTypeDps(
       [attacker],
+      "grass",
       baseSettings,
       [waterBoss],
-    )[0] as RaidOverallScore;
+    )[0] as RaidTypeDpsScore;
 
     expect(versusFire.tdo).toBeLessThan(versusWater.tdo);
     expect(versusFire.er).toBeLessThan(versusWater.er);
@@ -884,105 +878,22 @@ describe("raid calculations", () => {
         move("Behemoth Bash", "steel", 0, 125, 1500, -50),
       ],
     });
-    const raidTargets = [
-      legendaryRaidTarget({
-        name: "Palkia",
-        variant_id: "target-palkia",
-        type1_name: "dragon",
-        type2_name: "water",
-      }),
-      legendaryRaidTarget({
-        name: "Rayquaza",
-        variant_id: "target-rayquaza",
-        type1_name: "dragon",
-        type2_name: "flying",
-      }),
-      legendaryRaidTarget({
-        name: "Giratina",
-        variant_id: "target-giratina",
-        type1_name: "ghost",
-        type2_name: "dragon",
-      }),
-      legendaryRaidTarget({
-        name: "Terrakion",
-        variant_id: "target-terrakion",
-        type1_name: "rock",
-        type2_name: "fighting",
-      }),
-      legendaryRaidTarget({
-        name: "Virizion",
-        variant_id: "target-virizion",
-        type1_name: "grass",
-        type2_name: "fighting",
-      }),
-    ];
-
     const scores = dedupeBestOverallAttackerPerVariant(
       scoreRaidOverallAttackers(
         [crownedShieldZamazenta, megaRayquaza],
         baseSettings,
-        raidTargets,
       ),
     );
 
     expect(scores[0]?.variant.name).toBe("Mega Rayquaza");
-    expect(scores[0]?.fastMove.name).toBe("Dragon Tail");
     expect(scores[0]?.chargedMove.name).toBe("Dragon Ascent");
     expect(scores[0]?.eDps).toBeGreaterThan(scores[1]?.eDps ?? 0);
   });
 
-  it("keeps overall attacker scores stable when raid bosses share the same typings", () => {
-    const megaRayquaza = pokemon({
-      name: "Mega Rayquaza",
-      variant_id: "rayquaza-mega",
-      attack: 377,
-      defense: 210,
-      stamina: 227,
-      type1_name: "dragon",
-      type2_name: "flying",
-      variantType: "mega",
-      moves: [
-        move("Dragon Tail", "dragon", 1, 15, 1000, 9),
-        move("Dragon Ascent", "flying", 0, 140, 3500, -50),
-      ],
-    });
-    const dragonFlyingTarget = legendaryRaidTarget({
-      name: "Rayquaza",
-      variant_id: "target-rayquaza",
-      type1_name: "dragon",
-      type2_name: "flying",
-    });
-    const duplicateTypeTargets = [
-      dragonFlyingTarget,
-      pokemon({
-        name: "Mega Rayquaza",
-        variant_id: "target-mega-rayquaza",
-        type1_name: "dragon",
-        type2_name: "flying",
-      }),
-      legendaryRaidTarget({
-        name: "Salamence",
-        variant_id: "target-salamence",
-        type1_name: "dragon",
-        type2_name: "flying",
-      }),
-    ];
-
-    const singleTargetScore = scoreRaidOverallAttackers(
-      [megaRayquaza],
-      baseSettings,
-      [dragonFlyingTarget],
-    )[0] as RaidOverallScore;
-    const duplicateTargetScore = scoreRaidOverallAttackers(
-      [megaRayquaza],
-      baseSettings,
-      duplicateTypeTargets,
-    )[0] as RaidOverallScore;
-
-    expect(duplicateTargetScore.dps).toBeCloseTo(singleTargetScore.dps, 6);
-    expect(duplicateTargetScore.tdo).toBeCloseTo(singleTargetScore.tdo, 6);
-    expect(duplicateTargetScore.er).toBeCloseTo(singleTargetScore.er, 6);
-    expect(duplicateTargetScore.eDps).toBeCloseTo(singleTargetScore.eDps, 6);
+  it("uses one neutral typeless benchmark for overall rankings", () => {
+    expect(getRaidOverallTargetProfiles()).toEqual([
+      { types: [], weight: 1 },
+    ]);
   });
 
   it("only lets fusion variants use their matching fusion-exclusive raid moves", () => {
@@ -1058,13 +969,6 @@ describe("raid calculations", () => {
       fusion_id: 2,
       moves: [psychoCut, psychic, sunsteelStrike, moongeistBeam],
     });
-    const psychicRaidTarget = legendaryRaidTarget({
-      name: "Psychic Raid Boss",
-      variant_id: "target-psychic",
-      type1_name: "psychic",
-      type2_name: "none",
-    });
-
     const scores = scoreRaidOverallAttackers(
       [solgaleo, lunala, duskMane, dawnWings],
       baseSettings,
@@ -1072,7 +976,6 @@ describe("raid calculations", () => {
     const bestScores = scoreBestRaidOverallAttackers(
       [solgaleo, lunala, duskMane, dawnWings],
       baseSettings,
-      [psychicRaidTarget],
     );
     const movesByVariant = new Map<string, Set<string>>();
     scores.forEach((score) => {
@@ -1108,13 +1011,6 @@ describe("raid calculations", () => {
     expect(bestChargedMoveByVariant.get("Dawn Wings Necrozma")).toBe(
       "Moongeist Beam",
     );
-    const duskManeScore = bestScores.find(
-      (score) => score.variant.name === "Dusk Mane Necrozma",
-    );
-    const dawnWingsScore = bestScores.find(
-      (score) => score.variant.name === "Dawn Wings Necrozma",
-    );
-    expect(dawnWingsScore?.eDps).toBeGreaterThan(duskManeScore?.eDps ?? 0);
   });
 
   it("matches full overall scoring when taking the best moveset per variant", () => {
@@ -1150,29 +1046,10 @@ describe("raid calculations", () => {
         ],
       }),
     ];
-    const raidTargets = [
-      legendaryRaidTarget({
-        name: "Palkia",
-        variant_id: "target-palkia",
-        type1_name: "dragon",
-        type2_name: "water",
-      }),
-      legendaryRaidTarget({
-        name: "Terrakion",
-        variant_id: "target-terrakion",
-        type1_name: "rock",
-        type2_name: "fighting",
-      }),
-    ];
-
     const fullBest = dedupeBestOverallAttackerPerVariant(
-      scoreRaidOverallAttackers(attackers, baseSettings, raidTargets),
+      scoreRaidOverallAttackers(attackers, baseSettings),
     );
-    const fastBest = scoreBestRaidOverallAttackers(
-      attackers,
-      baseSettings,
-      raidTargets,
-    );
+    const fastBest = scoreBestRaidOverallAttackers(attackers, baseSettings);
 
     expect(fastBest.map((score) => score.variant.variant_id)).toEqual(
       fullBest.map((score) => score.variant.variant_id),
@@ -1215,6 +1092,34 @@ describe("raid calculations", () => {
 
     expect(score?.fastMove.name).toBe("Hidden Power (Ground)");
     expect(score?.fastMove.type).toBe("ground");
+  });
+
+  it("selects Psystrike over Shadow Ball for neutral Mega Mewtwo Y output", () => {
+    const megaMewtwoY = pokemon({
+      name: "Mega Mewtwo Y",
+      variant_id: "mewtwo-mega-y",
+      pokemon_id: 150,
+      pokedex_number: 150,
+      attack: 388,
+      defense: 202,
+      stamina: 228,
+      type1_name: "psychic",
+      type2_name: "none",
+      variantType: "mega",
+      moves: [
+        move("Psycho Cut", "psychic", 1, 5, 600, 8),
+        move("Confusion", "psychic", 1, 20, 1600, 15),
+        move("Psystrike", "psychic", 0, 95, 2300, -50),
+        move("Shadow Ball", "ghost", 0, 100, 3000, -50),
+      ],
+    });
+
+    const [score] = scoreBestRaidOverallAttackers(
+      [megaMewtwoY],
+      baseSettings,
+    );
+
+    expect(score?.chargedMove.name).toBe("Psystrike");
   });
 
   it("exposes Hidden Power as the selected type on theoretical type pages", () => {

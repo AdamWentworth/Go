@@ -270,19 +270,18 @@ const isHighTierRaidTarget = (target: PokemonVariant): boolean => {
   );
 };
 
-export const getRaidOverallTargetProfiles = (
-  targets?: PokemonVariant[],
-): RaidOverallTargetProfile[] => {
-  const profiles =
-    targets?.flatMap((target) => {
-      const types = getVariantTypeNames(target);
-      return isHighTierRaidTarget(target) && types.length > 0
-        ? [{ types, weight: 1, target }]
-        : [];
-    }) ?? [];
+export const getRaidOverallTargetProfiles = (): RaidOverallTargetProfile[] =>
+  FALLBACK_OVERALL_TARGET_PROFILES;
 
-  return profiles.length > 0 ? profiles : FALLBACK_OVERALL_TARGET_PROFILES;
-};
+export const getRaidOverallCoverageProfiles = (
+  targets?: PokemonVariant[],
+): RaidOverallTargetProfile[] =>
+  targets?.flatMap((target) => {
+    const types = getVariantTypeNames(target);
+    return isHighTierRaidTarget(target) && types.length > 0
+      ? [{ types, weight: 1, target }]
+      : [];
+  }) ?? [];
 
 export const getRaidTypeTargetProfiles = (
   typeName: string,

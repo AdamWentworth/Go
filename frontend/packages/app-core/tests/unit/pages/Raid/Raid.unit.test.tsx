@@ -290,10 +290,8 @@ describe("Raid page", () => {
 
     expect(settingsButton).toHaveAttribute("aria-expanded", "true");
     expect(screen.getByLabelText(/relobby delay/i)).toHaveValue("10");
-    const bossMovesets = screen.getByLabelText(/boss movesets/i);
-    expect(bossMovesets).toHaveValue("expected");
-    fireEvent.change(bossMovesets, { target: { value: "hostile" } });
-    expect(screen.getByText("hostile boss movesets")).toBeInTheDocument();
+    expect(screen.queryByLabelText(/boss movesets/i)).not.toBeInTheDocument();
+    expect(screen.getByText("Neutral typeless benchmark")).toBeInTheDocument();
 
     const counterList = screen.getByLabelText("Top raid attackers");
     expect(
@@ -384,7 +382,7 @@ describe("Raid page", () => {
     }
   });
 
-  it("uses raid boss typings for the overall leaderboard instead of neutral scoring", () => {
+  it("keeps historical boss typings out of neutral overall moveset selection", () => {
     const bossOnlyMoves = [
       move("Tackle", "normal", 1, 0, 500, 6),
       move("Struggle", "normal", 0, 0, 2000, -33),
@@ -392,55 +390,40 @@ describe("Raid page", () => {
 
     mocks.storeState.variants = [
       variant({
-        name: "Mega Rayquaza",
-        variant_id: "rayquaza-mega",
-        pokemon_id: 384,
-        pokedex_number: 384,
-        attack: 377,
-        defense: 210,
-        stamina: 227,
-        type1_name: "dragon",
-        type2_name: "flying",
+        name: "Mega Mewtwo Y",
+        variant_id: "mewtwo-mega-y",
+        pokemon_id: 150,
+        pokedex_number: 150,
+        attack: 388,
+        defense: 202,
+        stamina: 228,
+        type1_name: "psychic",
+        type2_name: "none",
         variantType: "mega",
         moves: [
-          move("Air Slash", "flying", 1, 14, 1000, 10),
-          move("Dragon Tail", "dragon", 1, 15, 1000, 9),
-          move("Dragon Ascent", "flying", 0, 140, 3500, -50),
+          move("Psycho Cut", "psychic", 1, 5, 600, 8),
+          move("Confusion", "psychic", 1, 20, 1600, 15),
+          move("Psystrike", "psychic", 0, 95, 2300, -50),
+          move("Shadow Ball", "ghost", 0, 100, 3000, -50),
         ],
       }),
-      variant({
-        name: "Zamazenta - Crowned Shield",
-        species_name: "Zamazenta",
-        form: "Crowned_shield",
-        variant_id: "zamazenta-crowned-shield",
-        pokemon_id: 889,
-        pokedex_number: 889,
-        attack: 250,
-        defense: 292,
-        stamina: 192,
-        type1_name: "fighting",
-        type2_name: "steel",
-        moves: [
-          move("Metal Claw", "steel", 1, 8, 500, 7),
-          move("Behemoth Bash", "steel", 0, 125, 1500, -50),
-        ],
-      }),
-      ...[
-        ["Palkia", "dragon", "water"],
-        ["Rayquaza", "dragon", "flying"],
-        ["Giratina", "ghost", "dragon"],
-        ["Terrakion", "rock", "fighting"],
-        ["Virizion", "grass", "fighting"],
-      ].map(([name, type1, type2], index) =>
+      ...Array.from({ length: 8 }, (_, index) =>
         variant({
-          name,
-          variant_id: `target-${name.toLowerCase()}`,
+          name: `Psychic Boss ${index + 1}`,
+          variant_id: `target-psychic-${index + 1}`,
           pokemon_id: 9000 + index,
           pokedex_number: 9000 + index,
-          type1_name: type1,
-          type2_name: type2,
+          type1_name: "psychic",
+          type2_name: "none",
           moves: bossOnlyMoves,
-          raid_boss: [{ id: 9000 + index, tier: "5", form: "Normal", name }],
+          raid_boss: [
+            {
+              id: 9000 + index,
+              tier: "5",
+              form: "Normal",
+              name: `Psychic Boss ${index + 1}`,
+            },
+          ],
         }),
       ),
     ];
@@ -450,10 +433,9 @@ describe("Raid page", () => {
     const counterList = screen.getByLabelText("Top raid attackers");
     const dataRows = within(counterList).getAllByRole("row").slice(1);
 
-    expect(dataRows[0]).toHaveTextContent("Mega Rayquaza");
-    expect(dataRows[0]).toHaveTextContent("Dragon Tail");
-    expect(dataRows[0]).toHaveTextContent("Dragon Ascent");
-    expect(dataRows[1]).toHaveTextContent("Zamazenta - Crowned Shield");
+    expect(dataRows[0]).toHaveTextContent("Mega Mewtwo Y");
+    expect(dataRows[0]).toHaveTextContent("Psystrike");
+    expect(dataRows[0]).not.toHaveTextContent("Shadow Ball");
   });
 
   it("labels Hidden Power with the modeled type and matching type icon", () => {

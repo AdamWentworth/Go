@@ -2,11 +2,11 @@
 
 Last reviewed: July 2026
 
-Model version: 3
+Model version: 4
 
 PokeGo Nexus ranks raid attackers for three different questions:
 
-1. **Overall:** Which released attacker and legal moveset performs well across a representative set of raid targets?
+1. **Overall:** Which released attacker and legal moveset has the strongest general output against a neutral benchmark?
 2. **By type:** Which attacker performs best when a selected attack type is useful?
 3. **Boss counters:** Which attacker deals damage fastest to one selected raid boss?
 
@@ -56,11 +56,16 @@ Sustained DPS uses the Comprehensive DPS approach: move duration, energy generat
 
 ### Overall rankings
 
-Overall rankings average each legal attacker moveset against every unique high-tier boss form in the raid-boss catalog: Legendary, Elite, Primal, Mega, legendary Mega, super Mega, and Shadow Legendary raids. Every boss form receives one equal vote. One-star, three-star, Community Day, and cosmetic duplicates are excluded because the leaderboard answers a long-term investment question rather than a low-tier soloing question.
+Overall rankings use one neutral, typeless benchmark rather than the historical raid-boss catalog. Every move deals neutral damage, so a coverage move cannot win merely because the catalog happens to contain more bosses weak to its type. This is the same separation used by established all-type damage tables: Overall measures general moveset output, while By Type and Boss mode answer matchup questions.
 
-Each boss is scored independently. Its actual two-type combination, tier-scaled defense, tier-scaled attack, and legal fast-and-charged move pool are retained through the final score. Damage floors are applied to each attacker-versus-boss and boss-versus-attacker move before results are averaged. Bosses with matching typings are not collapsed into an aggregate defense profile.
+The neutral benchmark currently uses:
 
-The target set is historical and catalog-versioned rather than rotation-weighted. This avoids requiring manual rotation maintenance, but it does not claim that every boss appears equally often in live play. The equal vote answers a narrower and auditable question: how well does this attacker perform across the distinct high-tier bosses represented in the catalog?
+- target Defense: `180`
+- incoming DPS estimate: `1340 / attacker Defense`
+- estimated final charged-hit damage: `11670 / attacker Defense`
+- neutral `1x` effectiveness for every move type
+
+Those generic incoming-pressure estimates feed Comprehensive DPS, TDO, ER, and eDPS without favoring a particular offensive or defensive type. Exact damage floors still apply. If two Hidden Power rolls have an identical neutral score, the displayed roll is selected by high-tier boss coverage as a presentation tie-break; that tie-break does not alter the attacker's metrics or rank.
 
 ### Type rankings
 
@@ -75,9 +80,9 @@ The current boss result is a deterministic cycle estimate. It is useful for quic
 ## Assumptions and limits
 
 - Rankings assume 15/15/15 IVs at the selected attacker level.
-- Overall and type rankings default to the expected damage pressure across every legal fast-and-charged boss moveset. Ranking settings can instead show the favorable or hostile legal moveset for each boss. All three modes apply exact incoming damage floors and use boss STAB, weather, effectiveness against the attacker, processed move duration, and the current average raid action delay.
-- Overall results depend on the raid-history metadata in the catalog, not only the bosses currently in rotation.
-- Legal boss movesets are weighted equally in expected mode because future raid moveset frequency is not known; broad rankings do not simulate a random event timeline.
+- Overall rankings use the documented neutral incoming-pressure approximation and therefore do not change with the historical boss mix.
+- Type rankings default to the expected damage pressure across every legal fast-and-charged boss moveset. Ranking settings can instead show the favorable or hostile legal moveset for each boss. All three modes apply exact incoming damage floors and use boss STAB, weather, effectiveness against the attacker, processed move duration, and the current average raid action delay.
+- Legal boss movesets are weighted equally in expected mode because future raid moveset frequency is not known; type rankings do not simulate a random event timeline.
 - Party Power is a configurable cycle-average approximation rather than a simulation of the live meter.
 - Boss counter trainer counts include safety margins, but they remain estimates.
 - Breakpoints, dodging, network delay, boss move randomness, party composition, and staggered Mega uptime can change a real raid result.
@@ -92,7 +97,7 @@ The tiers below rank calculation methods for their stated purpose, not the amoun
 | --- | --- | --- | --- | --- |
 | S | Pokebattler | Exact boss simulations | Models boss matchups, deaths, dodging choices, TTW, and relobby-aware Estimator results | More complex; results depend heavily on selected battle conditions |
 | S | DialgaDex | Broad theoretical attacker rankings | Transparent DPS/TDO/eDPS choices, configurable team and relobby assumptions, and Type Affinity using real high-tier bosses | Still a closed-form ranking; no single broad score can reproduce every raid timeline |
-| A | PokeGo Nexus | Explainable general planning plus integrated boss lookup | Legal form-specific move pools, independently scored tier-scaled bosses, exact damage floors, expected/favorable/hostile legal boss attacks, real two-move type effectiveness, Hidden Power handling, sortable component metrics, and adjustable modifiers | Broad lists use closed-form moveset scenarios; boss mode is not yet a full event simulation |
+| A | PokeGo Nexus | Explainable general planning plus integrated boss lookup | Neutral all-type benchmark, legal form-specific move pools, independently scored tier-scaled type targets, exact damage floors, expected/favorable/hostile legal boss attacks, real two-move type effectiveness, Hidden Power handling, sortable component metrics, and adjustable modifiers | Broad lists use closed-form moveset scenarios; boss mode is not yet a full event simulation |
 | A | PokéBase | Transparent closed-form DPS and ER analysis | Publishes the Comprehensive DPS derivation and exposes DPS, TDO, ER, and CP | General formulas need a simulator for highly specific matchups; editorial type lists include manual judgment |
 | A | Dittobase | Accessible eDPS rankings | Representative boss pool, relobby-aware eDPS, and extensive player-facing settings | Public explanations are strong, but less implementation detail is exposed than the formula-first tools |
 | B | GO Hub Database | Quick type lists and counter references | EER/TER options and broad database integration | Some counter outputs are estimates and documented modifiers are not applied uniformly to every metric |
@@ -101,7 +106,7 @@ The tiers below rank calculation methods for their stated purpose, not the amoun
 
 ### Where PokeGo Nexus stands
 
-PokeGo Nexus is a **strong A-tier broad ranking model**. Its main advantage is auditability: the displayed eDPS, DPS, TDO, ER, CP, moveset, target selection, boss-pressure mode, and user modifiers all belong to one model instead of mixing a hidden score with editorial ordering. Overall and By Type use independently scored high-tier raid targets rather than a universal dummy target or a same-typing aggregate.
+PokeGo Nexus is a **strong A-tier broad ranking model**. Its main advantage is auditability: the displayed eDPS, DPS, TDO, ER, CP, moveset, target selection, boss-pressure mode, and user modifiers all belong to one model instead of mixing a hidden score with editorial ordering. Overall uses a documented typeless benchmark so the historical boss roster cannot bias its movesets. By Type independently scores real high-tier raid targets instead of collapsing them into a same-typing aggregate.
 
 It is not yet S-tier for exact boss simulation. The clearest path there is:
 

@@ -53,12 +53,6 @@ import {
 const RAID_RANKING_METHODOLOGY_URL =
   "https://github.com/AdamWentworth/PokeGoNexus/blob/master/docs/raid-ranking-methodology.md";
 
-const BOSS_MOVESET_MODE_LABELS: Record<RaidBossMovesetMode, string> = {
-  expected: "expected legal movesets",
-  favorable: "favorable boss movesets",
-  hostile: "hostile boss movesets",
-};
-
 const Raid: React.FC = () => {
   const variants = useVariantsStore(
     (state) => state.variants,
@@ -196,7 +190,7 @@ const Raid: React.FC = () => {
     if (viewMode !== "overall") return [];
     return bestOnly
       ? scoreBestRaidOverallAttackers(attackers, settings, bossOptions)
-      : scoreRaidOverallAttackers(attackers, settings, bossOptions);
+      : scoreRaidOverallAttackers(attackers, settings);
   }, [attackers, bestOnly, bossOptions, settings, viewMode]);
 
   const overallScores = useMemo(() => {
@@ -341,7 +335,7 @@ const Raid: React.FC = () => {
               </div>
               <div className="raid-leaderboard-meta">
                 <span>Team of six, {relobbySeconds}s relobby</span>
-                <span>{BOSS_MOVESET_MODE_LABELS[bossMovesetMode]}</span>
+                <span>Neutral typeless benchmark</span>
                 <a
                   href={RAID_RANKING_METHODOLOGY_URL}
                   target="_blank"
@@ -372,7 +366,6 @@ const Raid: React.FC = () => {
                   {...modifierProps}
                   includeShadowControls={false}
                   includeRelobbyControls
-                  includeBossMovesetControls
                 />
               </section>
             )}

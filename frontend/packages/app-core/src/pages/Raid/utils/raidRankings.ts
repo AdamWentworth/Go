@@ -22,6 +22,7 @@ import {
 import {
   getLegalRaidChargedMoves,
   getLegalRaidFastMoves,
+  getRaidOverallCoverageProfiles,
   getRaidOverallTargetProfiles,
   getRaidTypeTargetProfiles,
   getRaidTierKeyForVariant,
@@ -309,9 +310,8 @@ export const calculateOverallMoveCycleScore = (
 export const scoreRaidOverallAttackers = (
   attackers: PokemonVariant[],
   settings: RaidCounterSettings,
-  targets?: PokemonVariant[],
 ): RaidOverallScore[] => {
-  const targetProfiles = getRaidOverallTargetProfiles(targets);
+  const targetProfiles = getRaidOverallTargetProfiles();
 
   return attackers
     .filter(isEligibleRaidAttacker)
@@ -343,9 +343,28 @@ export const scoreRaidOverallAttackers = (
 export const scoreBestRaidOverallAttackers = (
   attackers: PokemonVariant[],
   settings: RaidCounterSettings,
-  targets?: PokemonVariant[],
+  hiddenPowerCoverageTargets?: PokemonVariant[],
 ): RaidOverallScore[] => {
-  const targetProfiles = getRaidOverallTargetProfiles(targets);
+  const targetProfiles = getRaidOverallTargetProfiles();
+  const hiddenPowerCoverageProfiles = getRaidOverallCoverageProfiles(
+    hiddenPowerCoverageTargets,
+  );
+  const hiddenPowerCoverageByType = new Map<string, number>();
+  const getHiddenPowerCoverage = (move: Move): number => {
+    const moveType = normalizeTypeName(move.type_name || move.type);
+    const cached = hiddenPowerCoverageByType.get(moveType);
+    if (cached !== undefined) return cached;
+
+    const coverage = hiddenPowerCoverageProfiles.reduce(
+      (total, profile) =>
+        total +
+        getTypeEffectivenessMultiplier(moveType, profile.types) *
+          profile.weight,
+      0,
+    );
+    hiddenPowerCoverageByType.set(moveType, coverage);
+    return coverage;
+  };
   const targetWeight = Math.max(
     1,
     targetProfiles.reduce((sum, profile) => sum + profile.weight, 0),
@@ -460,7 +479,24 @@ export const scoreBestRaidOverallAttackers = (
             cycleDamage: cycleDamageSum / targetWeight,
           };
           const current = bestByVariant.get(key);
-          if (!current || compareRaidOverallScores(score, current) < 0) {
+          const scoreComparison = current
+            ? compareRaidOverallScores(score, current)
+            : -1;
+          const bothHiddenPower =
+            current?.fastMove.name.toLowerCase().startsWith("hidden power") &&
+            fastMove.name.toLowerCase().startsWith("hidden power");
+          const winsHiddenPowerCoverageTie =
+            current !== undefined &&
+            scoreComparison === 0 &&
+            bothHiddenPower &&
+            getHiddenPowerCoverage(fastMove) >
+              getHiddenPowerCoverage(current.fastMove);
+
+          if (
+            !current ||
+            scoreComparison < 0 ||
+            winsHiddenPowerCoverageTie
+          ) {
             bestByVariant.set(key, score);
           }
         },
