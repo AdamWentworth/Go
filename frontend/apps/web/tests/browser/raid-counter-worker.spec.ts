@@ -143,6 +143,35 @@ test.describe("raid counter worker", () => {
     ).toBe(1);
   });
 
+  test("builds a responsive custom party and simulates it off the main thread", async ({
+    page,
+  }) => {
+    await installE2eRoutes(page);
+    await page.goto("/raid", { waitUntil: "domcontentloaded" });
+    await page.getByRole("button", { name: "Boss counters" }).click();
+    await expect(page.getByText("Modeling raid timelines…")).toBeHidden({
+      timeout: 30_000,
+    });
+
+    const party = page.getByLabel("Custom raid party");
+    await party.getByRole("button", { name: /Custom raid party/i }).click();
+    await expect(party.getByLabel("Trainer 1 team slot 1")).not.toHaveValue("");
+    await party.getByRole("button", { name: "Add Trainer" }).click();
+    await expect(party.getByText("3 Trainers")).toBeVisible();
+
+    const partyWorkerStarted = page.waitForEvent("worker", {
+      predicate: (worker) => worker.url().includes("raidParty.worker"),
+    });
+    await party.getByRole("button", { name: "Simulate party" }).click();
+    const partyWorker = await partyWorkerStarted;
+
+    expect(partyWorker.url()).toContain("raidParty.worker");
+    await expect(party.getByLabel("Raid party result")).toBeVisible({
+      timeout: 30_000,
+    });
+    await expect(party.getByLabel("Raid party result")).toContainText("DPS");
+  });
+
   test("ranks a logged-in Trainer's caught Pokemon at its real level", async ({
     page,
   }) => {

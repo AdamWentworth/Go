@@ -1294,6 +1294,310 @@
   padding: 2rem;
 }
 
+.raid-party-builder {
+  overflow: hidden;
+  border: 1px solid rgba(102, 220, 220, 0.25);
+  border-radius: 14px;
+  background: rgba(8, 17, 19, 0.58);
+}
+
+.raid-party-toggle {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 0.75rem;
+  align-items: center;
+  width: 100%;
+  min-height: 3.6rem;
+  padding: 0.7rem 0.85rem;
+  border: 0;
+  color: #f7ffff;
+  background: transparent;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.raid-party-toggle > svg:first-child {
+  color: #45ddd0;
+  font-size: 1.2rem;
+}
+
+.raid-party-toggle > span,
+.raid-party-heading > div,
+.raid-party-trainer summary > span:nth-child(2) {
+  display: grid;
+  gap: 0.1rem;
+  min-width: 0;
+}
+
+.raid-party-toggle strong,
+.raid-party-heading strong,
+.raid-party-trainer summary strong {
+  font-weight: 950;
+}
+
+.raid-party-toggle small,
+.raid-party-trainer summary small,
+.raid-party-result small {
+  color: rgba(185, 208, 210, 0.76);
+  font-size: 0.7rem;
+  font-weight: 750;
+}
+
+.raid-party-content {
+  display: grid;
+  gap: 0.75rem;
+  padding: 0 0.75rem 0.75rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.raid-party-heading {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+  justify-content: space-between;
+  padding-top: 0.75rem;
+}
+
+.raid-party-heading span {
+  color: #45ddd0;
+  font-size: 0.7rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.raid-party-add,
+.raid-party-run,
+.raid-party-team-heading button,
+.raid-party-remove {
+  display: inline-flex;
+  gap: 0.4rem;
+  align-items: center;
+  justify-content: center;
+  min-height: 2.3rem;
+  padding: 0.45rem 0.7rem;
+  border: 1px solid rgba(91, 228, 216, 0.45);
+  border-radius: 999px;
+  color: #efffff;
+  background: rgba(47, 214, 208, 0.12);
+  font: inherit;
+  font-size: 0.72rem;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.raid-party-add:disabled,
+.raid-party-run:disabled {
+  cursor: wait;
+  opacity: 0.55;
+}
+
+.raid-party-trainers {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.raid-party-trainer {
+  border-block: 1px solid rgba(255, 255, 255, 0.09);
+}
+
+.raid-party-trainer summary {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 0.65rem;
+  align-items: center;
+  min-height: 3.2rem;
+  padding: 0.55rem 0.15rem;
+  list-style: none;
+  cursor: pointer;
+}
+
+.raid-party-trainer summary::-webkit-details-marker {
+  display: none;
+}
+
+.raid-party-trainer[open] summary > svg {
+  transform: rotate(180deg);
+}
+
+.raid-party-trainer-number {
+  display: grid;
+  place-items: center;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 50%;
+  color: #081315;
+  background: linear-gradient(135deg, #ffc44f, #42dbd0);
+  font-weight: 950;
+}
+
+.raid-party-trainer-fields {
+  display: grid;
+  grid-template-columns: minmax(9rem, 1.4fr) repeat(4, minmax(7rem, 1fr));
+  gap: 0.55rem;
+  padding: 0.5rem 0 0.75rem;
+}
+
+.raid-party-trainer-fields label,
+.raid-party-team label {
+  display: grid;
+  gap: 0.25rem;
+  min-width: 0;
+}
+
+.raid-party-trainer-fields label > span {
+  color: rgba(185, 208, 210, 0.76);
+  font-size: 0.65rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.raid-party-trainer-fields input,
+.raid-party-trainer-fields select,
+.raid-party-team select {
+  min-width: 0;
+  min-height: 2.35rem;
+  padding: 0.45rem 0.55rem;
+  border: 1px solid rgba(190, 232, 233, 0.2);
+  border-radius: 8px;
+  color: #f5ffff;
+  background: #151d1f;
+  font: inherit;
+  font-size: 0.76rem;
+  font-weight: 750;
+}
+
+.raid-party-team-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-block: 0.25rem 0.45rem;
+}
+
+.raid-party-team {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.45rem;
+}
+
+.raid-party-team label {
+  grid-template-columns: 1.7rem minmax(0, 1fr);
+  align-items: center;
+}
+
+.raid-party-team label > span {
+  display: grid;
+  place-items: center;
+  width: 1.7rem;
+  height: 1.7rem;
+  border: 1px solid rgba(69, 221, 208, 0.42);
+  border-radius: 50%;
+  color: #45ddd0;
+  font-size: 0.68rem;
+  font-weight: 950;
+}
+
+.raid-party-remove {
+  margin-block: 0.65rem;
+  border-color: rgba(255, 102, 102, 0.4);
+  color: #ffb3b3;
+  background: rgba(135, 35, 35, 0.14);
+}
+
+.raid-party-run {
+  justify-self: stretch;
+  min-height: 2.7rem;
+  border-color: rgba(67, 227, 210, 0.82);
+  color: #061415;
+  background: linear-gradient(135deg, #43e3d2, #72e69e);
+  font-size: 0.8rem;
+}
+
+.raid-party-error {
+  margin: 0;
+  color: #ffabab;
+  font-size: 0.78rem;
+  font-weight: 800;
+  text-align: center;
+}
+
+.raid-party-result {
+  display: grid;
+  grid-template-columns: minmax(9rem, 0.6fr) minmax(0, 1.4fr);
+  gap: 0.85rem;
+  padding: 0.75rem;
+  border: 1px solid rgba(69, 221, 208, 0.28);
+  border-radius: 10px;
+  background: rgba(47, 214, 208, 0.07);
+}
+
+.raid-party-result > header {
+  display: grid;
+  align-content: center;
+  gap: 0.2rem;
+}
+
+.raid-party-result > header > span {
+  color: #ffd064;
+  font-size: 0.68rem;
+  font-weight: 950;
+  text-transform: uppercase;
+}
+
+.raid-party-result > header > span.won {
+  color: #62e7b3;
+}
+
+.raid-party-result > header > strong {
+  color: #fff;
+  font-size: 1.55rem;
+  font-weight: 950;
+}
+
+.raid-party-contributions {
+  display: grid;
+  gap: 0.45rem;
+}
+
+.raid-party-contributions > div {
+  display: grid;
+  grid-template-columns: minmax(7rem, 0.6fr) minmax(0, 1fr);
+  gap: 0.55rem;
+  align-items: center;
+}
+
+.raid-party-contributions span {
+  display: grid;
+  gap: 0.05rem;
+  min-width: 0;
+}
+
+.raid-party-contributions span strong {
+  overflow: hidden;
+  font-size: 0.76rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.raid-party-contributions span small {
+  color: rgba(185, 208, 210, 0.72);
+  font-size: 0.65rem;
+}
+
+.raid-party-contributions > div > div {
+  overflow: hidden;
+  height: 0.55rem;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.09);
+}
+
+.raid-party-contributions i {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #ffc44f, #43e3d2);
+}
+
 :root[data-theme='light'] .raid-page {
   color: #102a32;
   background:
@@ -1486,6 +1790,43 @@
   border-color: rgba(21, 139, 154, 0.2);
 }
 
+:root[data-theme='light'] .raid-party-builder {
+  border-color: rgba(21, 119, 126, 0.24);
+  background: rgba(255, 255, 255, 0.7);
+}
+
+:root[data-theme='light'] .raid-party-toggle,
+:root[data-theme='light'] .raid-party-result > header > strong,
+:root[data-theme='light'] .raid-party-trainer summary strong,
+:root[data-theme='light'] .raid-party-contributions span strong {
+  color: #163539;
+}
+
+:root[data-theme='light'] .raid-party-toggle small,
+:root[data-theme='light'] .raid-party-trainer summary small,
+:root[data-theme='light'] .raid-party-result small,
+:root[data-theme='light'] .raid-party-trainer-fields label > span,
+:root[data-theme='light'] .raid-party-contributions span small {
+  color: rgba(33, 69, 73, 0.7);
+}
+
+:root[data-theme='light'] .raid-party-trainer {
+  border-color: rgba(22, 76, 80, 0.13);
+}
+
+:root[data-theme='light'] .raid-party-trainer-fields input,
+:root[data-theme='light'] .raid-party-trainer-fields select,
+:root[data-theme='light'] .raid-party-team select {
+  border-color: rgba(21, 85, 91, 0.22);
+  color: #17363a;
+  background: rgba(255, 255, 255, 0.92);
+}
+
+:root[data-theme='light'] .raid-party-result {
+  border-color: rgba(21, 119, 126, 0.25);
+  background: rgba(31, 175, 167, 0.08);
+}
+
 :root[data-theme='light'] .raid-calibration-heading strong,
 :root[data-theme='light'] .raid-calibration-metrics dd {
   color: #102a32;
@@ -1578,6 +1919,46 @@
 }
 
 @media (max-width: 640px) {
+  .raid-party-toggle {
+    min-height: 3.25rem;
+    padding: 0.6rem;
+  }
+
+  .raid-party-content {
+    padding: 0 0.55rem 0.55rem;
+  }
+
+  .raid-party-heading {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .raid-party-add {
+    align-self: start;
+  }
+
+  .raid-party-trainer-fields,
+  .raid-party-team,
+  .raid-party-result {
+    grid-template-columns: 1fr;
+  }
+
+  .raid-party-trainer-fields {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .raid-party-name-field {
+    grid-column: 1 / -1;
+  }
+
+  .raid-party-team select {
+    min-height: 2.6rem;
+  }
+
+  .raid-party-contributions > div {
+    grid-template-columns: minmax(6.5rem, 0.75fr) minmax(0, 1fr);
+  }
+
   .raid-calibration {
     grid-template-columns: 1fr;
     gap: 0.7rem;

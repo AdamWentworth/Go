@@ -64,6 +64,33 @@ export type RaidCounterSettings = {
   dodgeSuccessRate?: number;
 };
 
+export type RaidSimulationTeamMember = {
+  attacker: PokemonVariant;
+  fastMove: Move;
+  chargedMove: Move;
+};
+
+export type RaidPartyTrainer = {
+  id: string;
+  label: string;
+  team: RaidSimulationTeamMember[];
+  settings: RaidCounterSettings;
+  actionDelaySeconds: number;
+};
+
+export type RaidPartyTrainerResult = {
+  id: string;
+  label: string;
+  damageDealt: number;
+  damageShare: number;
+  dps: number;
+  faints: number;
+  relobbies: number;
+  dodges: number;
+  attackerChargedMoves: number;
+  partyPoweredChargedMoves: number;
+};
+
 export type RaidBossStats = {
   bossCp: number;
   attack: number;
@@ -108,6 +135,10 @@ export type RaidBattleSimulationResult = {
   partyPoweredChargedMoves: number;
   won: boolean;
   distribution: RaidSimulationDistribution;
+};
+
+export type RaidPartySimulationResult = RaidBattleSimulationResult & {
+  trainers: RaidPartyTrainerResult[];
 };
 
 export type RaidTypeDpsScore = {

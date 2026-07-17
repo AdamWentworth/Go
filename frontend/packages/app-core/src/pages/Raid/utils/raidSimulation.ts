@@ -30,6 +30,7 @@ import type {
   RaidBattleSimulationResult,
   RaidBossMovesetMode,
   RaidCounterSettings,
+  RaidSimulationTeamMember,
   RaidSimulationDistribution,
   RaidTierPreset,
 } from "./raidTypes";
@@ -53,13 +54,7 @@ type SimulationEvent = {
   partyPowered?: boolean;
 };
 
-type BossMoveset = {
-  fastMove: Move;
-  chargedMove: Move;
-};
-
-export type RaidSimulationTeamMember = {
-  attacker: PokemonVariant;
+export type RaidBossMoveset = {
   fastMove: Move;
   chargedMove: Move;
 };
@@ -77,7 +72,7 @@ const percentile = (values: number[], position: number): number => {
   return sorted[lower] + (sorted[upper] - sorted[lower]) * (index - lower);
 };
 
-const buildSimulationDistribution = (
+export const buildRaidSimulationDistribution = (
   results: Array<
     Pick<
       RaidBattleSimulationResult,
@@ -114,7 +109,7 @@ const hashSeed = (value: string): number => {
   return hash >>> 0;
 };
 
-const createSeededRandom = (seed: string): (() => number) => {
+export const createRaidSeededRandom = (seed: string): (() => number) => {
   let state = hashSeed(seed) || 0x6d2b79f5;
   return () => {
     state += 0x6d2b79f5;
@@ -148,7 +143,7 @@ const averageSimulationResults = (
       (result) => result.partyPoweredChargedMoves,
     ),
     won: results.every((result) => result.won),
-    distribution: buildSimulationDistribution(results),
+    distribution: buildRaidSimulationDistribution(results),
   };
 };
 
@@ -540,7 +535,7 @@ export const simulateRaidTeamBattle = ({
   };
   return {
     ...result,
-    distribution: buildSimulationDistribution([result]),
+    distribution: buildRaidSimulationDistribution([result]),
   };
 };
 
@@ -573,7 +568,9 @@ export const simulateRaidBattle = ({
     })),
   });
 
-const getBossMovesets = (boss: PokemonVariant): BossMoveset[] =>
+export const getRaidBossMovesets = (
+  boss: PokemonVariant,
+): RaidBossMoveset[] =>
   getLegalRaidFastMoves(boss).flatMap((fastMove) =>
     getLegalRaidChargedMoves(boss).map((chargedMove) => ({
       fastMove,
@@ -619,7 +616,7 @@ export const simulateRaidTeamAcrossBossMovesets = ({
   settings: RaidCounterSettings;
   trainerCount?: number;
 }): RaidBattleSimulationResult | null => {
-  const movesets = getBossMovesets(boss);
+  const movesets = getRaidBossMovesets(boss);
   if (movesets.length === 0 || team.length === 0) return null;
 
   if (settings.bossMovesetMode === "monte-carlo") {
@@ -635,7 +632,7 @@ export const simulateRaidTeamAcrossBossMovesets = ({
       .join(",");
     const results = Array.from({ length: sampleCount }, (_, sampleIndex) => {
       const moveset = movesets[sampleIndex % movesets.length];
-      const random = createSeededRandom(
+      const random = createRaidSeededRandom(
         `${boss.variant_id}|${tier.key}|${teamSeed}|${sampleIndex}`,
       );
       return simulateRaidTeamBattle({
@@ -698,7 +695,7 @@ const simulateMonteCarloRaidCounter = ({
   boss: PokemonVariant;
   tier: RaidTierPreset;
   settings: RaidCounterSettings;
-  movesets: BossMoveset[];
+  movesets: RaidBossMoveset[];
 }): RaidBattleSimulationResult => {
   const sampleCount = Math.min(
     RAID_MONTE_CARLO_MAX_SAMPLES,
@@ -720,7 +717,7 @@ const simulateMonteCarloRaidCounter = ({
   ].join("|");
   const results = Array.from({ length: sampleCount }, (_, sampleIndex) => {
     const moveset = movesets[sampleIndex % movesets.length];
-    const random = createSeededRandom(`${sharedSeed}|${sampleIndex}`);
+    const random = createRaidSeededRandom(`${sharedSeed}|${sampleIndex}`);
     return simulateRaidBattle({
       attacker,
       attackerFastMove,
@@ -763,7 +760,7 @@ export const simulateRaidCounterAcrossBossMovesets = ({
   tier: RaidTierPreset;
   settings: RaidCounterSettings;
 }): RaidBattleSimulationResult | null => {
-  const movesets = getBossMovesets(boss);
+  const movesets = getRaidBossMovesets(boss);
   if (movesets.length === 0) return null;
 
   if (settings.bossMovesetMode === "monte-carlo") {

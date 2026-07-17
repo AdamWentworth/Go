@@ -226,6 +226,31 @@ describe("Raid page", () => {
     ).toBeInTheDocument();
   });
 
+  it("builds and simulates a heterogeneous raid party", async () => {
+    render(<Raid />);
+
+    fireEvent.click(screen.getByRole("button", { name: "Boss counters" }));
+    fireEvent.click(
+      await screen.findByRole("button", { name: /Custom raid party/i }),
+    );
+
+    expect(screen.getByLabelText("Custom raid party")).toBeInTheDocument();
+    expect(screen.getByLabelText("Trainer 1 team slot 1")).not.toHaveValue("");
+    fireEvent.click(screen.getByRole("button", { name: "Add Trainer" }));
+    expect(screen.getByText("3 Trainers")).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: "Simulate party" }));
+    const result = await screen.findByLabelText("Raid party result");
+
+    expect(within(result).getByText(/Clear|Time expired/)).toBeInTheDocument();
+    expect(within(result).getAllByText(/DPS/).length).toBeGreaterThan(0);
+
+    const calibration = screen.getByLabelText("Observed raid calibration");
+    fireEvent.click(within(calibration).getByRole("button", { name: "Log raid" }));
+    const dialog = screen.getByRole("dialog", { name: /Log .* raid/i });
+    expect(within(dialog).getByLabelText("Trainers")).toHaveValue(3);
+  });
+
   it("records and clears a private observed raid result", () => {
     render(<Raid />);
 
@@ -266,6 +291,50 @@ describe("Raid page", () => {
     fireEvent.click(screen.getByRole("button", { name: "OK" }));
     expect(JSON.parse(localStorage.getItem("raidCalibrationObservations") ?? "[]"))
       .toEqual([]);
+  });
+
+  it("does not apply observations from an older simulation model", () => {
+    localStorage.setItem(
+      "raidCalibrationObservations",
+      JSON.stringify([
+        {
+          schemaVersion: 1,
+          id: "old-model-observation",
+          recordedAt: "2026-07-17T00:00:00.000Z",
+          ownerKey: "signed-out-device",
+          modelVersion: RAID_SIMULATION_MODEL_VERSION - 1,
+          catalogVersion: "old-catalog",
+          bossVariantId: "raikou-default",
+          bossName: "Raikou",
+          tierKey: "legendary",
+          dodgeCalibrationApplied: false,
+          predicted: {
+            clearTimeSeconds: 150,
+            faints: 6,
+            relobbies: 1,
+          },
+          actual: {
+            trainerCount: 2,
+            clearTimeSeconds: 140,
+            faints: 5,
+            relobbies: 1,
+            dodgeAttempts: 4,
+            successfulDodges: 4,
+            latencyMs: 80,
+          },
+        },
+      ]),
+    );
+
+    render(<Raid />);
+    fireEvent.click(screen.getByRole("button", { name: "Boss counters" }));
+    const calibration = screen.getByLabelText("Observed raid calibration");
+    const samplesLabel = within(calibration).getByText("Samples");
+
+    expect(samplesLabel.nextElementSibling).toHaveTextContent("0");
+    expect(
+      within(calibration).queryByLabelText("Clear observed raid data"),
+    ).not.toBeInTheDocument();
   });
 
   it("keeps raid boss choices hidden until searching", () => {

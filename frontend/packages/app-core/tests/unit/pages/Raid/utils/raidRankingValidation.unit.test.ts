@@ -15,6 +15,7 @@ import {
   RAID_COUNTER_SIMULATION_VARIANT_LIMIT,
   RAID_MONTE_CARLO_MAX_SAMPLES,
   RAID_MONTE_CARLO_MIN_SAMPLES,
+  RAID_PARTY_MAX_TRAINERS,
   RAID_ROUTE_READY_MEASURE,
   RAID_SIMULATION_MODEL_VERSION,
   RAID_WARM_ROUTE_READY_BUDGET_MS,
@@ -86,6 +87,9 @@ describe("raid ranking validation", () => {
       minimum: RAID_MONTE_CARLO_MIN_SAMPLES,
       maximum: RAID_MONTE_CARLO_MAX_SAMPLES,
     });
+    expect(
+      validationProfile.bossSimulation.heterogeneousParty.maximumTrainers,
+    ).toBe(RAID_PARTY_MAX_TRAINERS);
     expect(validationProfile.canonicalOverall).toEqual(
       canonicalOverallExpectation,
     );

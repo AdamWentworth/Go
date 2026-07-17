@@ -1,4 +1,10 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import "./Raid.css";
 import { useInstancesStore } from "@/features/instances/store/useInstancesStore";
 import { useVariantsStore } from "@/features/variants/store/useVariantsStore";
@@ -19,6 +25,7 @@ import RaidModelProvenance from "./components/RaidModelProvenance";
 import RaidRankingTable from "./components/RaidRankingTable";
 import RaidRosterScope from "./components/RaidRosterScope";
 import RaidObservationDialog from "./components/RaidObservationDialog";
+import RaidPartyBuilder from "./components/RaidPartyBuilder";
 import { TYPE_MAPPING } from "./utils/constants";
 import {
   DEFAULT_RAID_RELOBBY_SECONDS,
@@ -45,6 +52,7 @@ import {
   type RaidBossMovesetMode,
   type RaidCounterSettings,
   type RaidDodgeStrategy,
+  type RaidPartySimulationResult,
   type RaidTierKey,
   type ShadowBossMode,
 } from "./utils/raidCalculations";
@@ -136,12 +144,16 @@ const Raid: React.FC = () => {
   const [observationDialogOpen, setObservationDialogOpen] = useState(false);
   const [clearCalibrationConfirmOpen, setClearCalibrationConfirmOpen] =
     useState(false);
+  const [customPartyResult, setCustomPartyResult] =
+    useState<RaidPartySimulationResult | null>(null);
 
   const calibrationProfile = useMemo(
     () =>
       analyzeRaidCalibration(
         calibrationObservations.filter(
-          (observation) => observation.ownerKey === calibrationOwnerKey,
+          (observation) =>
+            observation.ownerKey === calibrationOwnerKey &&
+            observation.modelVersion === RAID_SIMULATION_MODEL_VERSION,
         ),
       ),
     [calibrationObservations, calibrationOwnerKey],
@@ -313,6 +325,18 @@ const Raid: React.FC = () => {
       .slice(0, 30);
   }, [attackerSearch, bestOnly, bossCounterScores]);
 
+  const customPartyScores = useMemo(
+    () => dedupeBestCounterPerVariant(bossCounterScores),
+    [bossCounterScores],
+  );
+
+  const handleCustomPartyResultChange = useCallback(
+    (result: RaidPartySimulationResult | null) => {
+      setCustomPartyResult(result);
+    },
+    [],
+  );
+
   const overallRankingScores = useMemo(() => {
     if (viewMode !== "overall") return [];
     return bestOnly
@@ -455,13 +479,17 @@ const Raid: React.FC = () => {
   const handleSaveObservation = (actual: RaidObservationActual) => {
     if (!selectedBoss) return;
 
-    const prediction = simulateRaidGroupAtTrainerCount(
-      bossCounterScores,
-      selectedBoss,
-      selectedTier,
-      settings,
-      actual.trainerCount,
-    );
+    const prediction =
+      customPartyResult &&
+      customPartyResult.trainers.length === actual.trainerCount
+        ? customPartyResult
+        : simulateRaidGroupAtTrainerCount(
+            bossCounterScores,
+            selectedBoss,
+            selectedTier,
+            settings,
+            actual.trainerCount,
+          );
     if (!prediction) return;
 
     const observation = createRaidCalibrationObservation({
@@ -606,12 +634,21 @@ const Raid: React.FC = () => {
 
             <main className="raid-panel raid-main-panel">
               {groupEstimate ? (
-                <RaidBossDetails
-                  tier={selectedTier}
-                  bossStats={bossStats}
-                  groupEstimate={groupEstimate}
-                  metadata={bossMetadata}
-                />
+                <>
+                  <RaidBossDetails
+                    tier={selectedTier}
+                    bossStats={bossStats}
+                    groupEstimate={groupEstimate}
+                    metadata={bossMetadata}
+                  />
+                  <RaidPartyBuilder
+                    scores={customPartyScores}
+                    boss={selectedBoss}
+                    tier={selectedTier}
+                    settings={settings}
+                    onResultChange={handleCustomPartyResultChange}
+                  />
+                </>
               ) : personalized && attackers.length === 0 ? (
                 <section className="raid-calculation-status" role="status">
                   <strong>No caught raid-ready Pokémon</strong>
@@ -812,7 +849,10 @@ const Raid: React.FC = () => {
       {observationDialogOpen && selectedBoss && groupEstimate && (
         <RaidObservationDialog
           bossName={getRaidVariantDisplayName(selectedBoss)}
-          defaultTrainerCount={Math.max(1, groupEstimate.minTrainers)}
+          defaultTrainerCount={
+            customPartyResult?.trainers.length ??
+            Math.max(1, groupEstimate.minTrainers)
+          }
           onCancel={() => setObservationDialogOpen(false)}
           onSave={handleSaveObservation}
         />

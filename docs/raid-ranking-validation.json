@@ -1,6 +1,6 @@
 {
   "schemaVersion": 2,
-  "modelVersion": 10,
+  "modelVersion": 11,
   "reviewedAt": "2026-07-17",
   "productionDefaults": {
     "attackerLevel": "50.0",
@@ -24,6 +24,15 @@
       "storage": "IndexedDB",
       "ttlDays": 7,
       "maximumEntries": 12
+    },
+    "heterogeneousParty": {
+      "maximumTrainers": 20,
+      "independentTrainerTimelines": true,
+      "independentTeams": true,
+      "independentDodgesAndRelobbies": true,
+      "sharedBossHealthAndEnergy": true,
+      "activeMegaAllyUptime": true,
+      "actionDelayMode": "explicit-trainer-setting"
     }
   },
   "observedCalibration": {

@@ -1,3 +1,4 @@
+import type { PokemonVariant } from "@/types/pokemonVariants";
 import type { RaidCounterScore } from "./raidTypes";
 import { RAID_ATTACKER_TEAM_SIZE } from "./raidRules";
 
@@ -6,17 +7,20 @@ const compareCounterDps = (a: RaidCounterScore, b: RaidCounterScore): number =>
   a.soloTimeSeconds - b.soloTimeSeconds ||
   a.variant.variant_id.localeCompare(b.variant.variant_id);
 
-export const usesRaidMegaSlot = (score: RaidCounterScore): boolean => {
-  if (score.variant.raidRoster?.formSource === "mega") return true;
-  const variantType = (score.variant.variantType ?? "").toLowerCase();
+export const variantUsesRaidMegaSlot = (variant: PokemonVariant): boolean => {
+  if (variant.raidRoster?.formSource === "mega") return true;
+  const variantType = (variant.variantType ?? "").toLowerCase();
   return (
-    Boolean(score.variant.primal) ||
+    Boolean(variant.primal) ||
     variantType.includes("mega") ||
     variantType.includes("primal")
   );
 };
 
-const getRosterSlotKey = (score: RaidCounterScore): string => {
+export const usesRaidMegaSlot = (score: RaidCounterScore): boolean =>
+  variantUsesRaidMegaSlot(score.variant);
+
+export const getRaidRosterSlotKey = (score: RaidCounterScore): string => {
   const instanceId = score.variant.raidRoster?.instanceId;
   return instanceId
     ? `caught:${instanceId}`
@@ -34,7 +38,7 @@ const selectRegularMembers = (
   for (const score of scores) {
     if (selected.length >= limit) break;
     if (usesRaidMegaSlot(score)) continue;
-    const rosterSlot = getRosterSlotKey(score);
+    const rosterSlot = getRaidRosterSlotKey(score);
     if (rosterSlot === excludedRosterSlot || usedRosterSlots.has(rosterSlot)) {
       continue;
     }
@@ -72,7 +76,7 @@ export const selectLegalRaidTeamCounters = (
 
   for (const mega of sorted) {
     if (!usesRaidMegaSlot(mega)) continue;
-    const rosterSlot = getRosterSlotKey(mega);
+    const rosterSlot = getRaidRosterSlotKey(mega);
     if (seenMegaSlots.has(rosterSlot)) continue;
     seenMegaSlots.add(rosterSlot);
     scenarios.push([
@@ -82,4 +86,25 @@ export const selectLegalRaidTeamCounters = (
   }
 
   return scenarios.sort(compareTeams)[0] ?? [];
+};
+
+export const preserveLegalRaidTeamOrder = (
+  scores: RaidCounterScore[],
+  limit = RAID_ATTACKER_TEAM_SIZE,
+): RaidCounterScore[] => {
+  const selected: RaidCounterScore[] = [];
+  const usedRosterSlots = new Set<string>();
+  let megaSlotUsed = false;
+
+  for (const score of scores) {
+    if (selected.length >= Math.max(1, Math.floor(limit))) break;
+    const rosterSlot = getRaidRosterSlotKey(score);
+    const usesMega = usesRaidMegaSlot(score);
+    if (usedRosterSlots.has(rosterSlot) || (usesMega && megaSlotUsed)) continue;
+    usedRosterSlots.add(rosterSlot);
+    if (usesMega) megaSlotUsed = true;
+    selected.push(score);
+  }
+
+  return selected;
 };
