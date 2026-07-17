@@ -3,6 +3,9 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { fireEvent, render, screen, within } from "@testing-library/react";
 
 import Raid from "@/pages/Raid/Raid";
+import { useInstancesStore } from "@/features/instances/store/useInstancesStore";
+import { useAuthStore } from "@/stores/useAuthStore";
+import type { PokemonInstance } from "@/types/pokemonInstance";
 import type { PokemonVariant } from "@/types/pokemonVariants";
 import type { Move } from "@/types/pokemonSubTypes";
 
@@ -44,6 +47,7 @@ const move = (
   energy: number,
 ) =>
   ({
+    move_id: [...name].reduce((sum, character) => sum + character.charCodeAt(0), 0),
     name,
     type,
     type_name: type,
@@ -84,6 +88,8 @@ const variant = (overrides: RaidTestVariantOverrides): PokemonVariant =>
 
 describe("Raid page", () => {
   beforeEach(() => {
+    useAuthStore.setState({ isLoggedIn: false, user: null });
+    useInstancesStore.setState({ instances: {}, instancesLoading: false });
     mocks.storeState.variantsLoading = false;
     mocks.storeState.isMovesLoading = false;
     mocks.storeState.isRaidDataLoading = false;
@@ -349,6 +355,114 @@ describe("Raid page", () => {
     ).toBeInTheDocument();
     expect(within(counterList).getAllByAltText("Ghost type").length).toBeGreaterThan(0);
     expect(within(counterList).queryByText("Fast Ghost")).not.toBeInTheDocument();
+  });
+
+  it("uses the same caught roster across overall, type, and boss rankings", async () => {
+    const tyranitar = mocks.storeState.variants.find(
+      (entry) => entry.variant_id === "tyranitar-default",
+    )!;
+    const fastMove = tyranitar.moves.find((entry) => entry.is_fast === 1)!;
+    const chargedMove = tyranitar.moves.find((entry) => entry.is_fast === 0)!;
+    useAuthStore.setState({ isLoggedIn: true });
+    useInstancesStore.setState({
+      instancesLoading: false,
+      instances: {
+        tyranitar: {
+          instance_id: "tyranitar",
+          variant_id: tyranitar.variant_id,
+          pokemon_id: tyranitar.pokemon_id,
+          nickname: "Stonewall",
+          is_caught: true,
+          disabled: false,
+          cp: 3210,
+          level: 35,
+          attack_iv: 15,
+          defense_iv: 14,
+          stamina_iv: 13,
+          fast_move_id: fastMove.move_id,
+          charged_move1_id: chargedMove.move_id,
+          charged_move2_id: null,
+        } as PokemonInstance,
+      },
+    });
+
+    render(<Raid />);
+
+    expect(
+      screen.getByRole("heading", { name: "Your top raid attackers" }),
+    ).toBeInTheDocument();
+    const overall = screen.getByLabelText("Your top raid attackers");
+    expect(within(overall).getByText("Tyranitar")).toBeInTheDocument();
+    expect(within(overall).queryByText("Gengar")).not.toBeInTheDocument();
+    expect(within(overall).getByText(/Stonewall · Level 35 · 93% IV/)).toBeInTheDocument();
+    expect(within(overall).getByText("3,210")).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: "Settings" }));
+    expect(screen.queryByLabelText(/attacker level/i)).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: "By type" }));
+    expect(
+      within(screen.getByLabelText("Type DPS counters")).getByText("Tyranitar"),
+    ).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: "Boss counters" }));
+    expect(
+      await within(screen.getByLabelText("Raid counters")).findByText(
+        "Tyranitar",
+      ),
+    ).toBeInTheDocument();
+    expect(screen.getByText(/Stonewall · Level 35 · 93% IV/)).toBeInTheDocument();
+  });
+
+  it("does not rank an incomplete catch with level 50 catalog assumptions", () => {
+    const regigigas = variant({
+      name: "Shadow Regigigas",
+      variant_id: "regigigas-shadow",
+      pokemon_id: 486,
+      pokedex_number: 486,
+      variantType: "shadow",
+      attack: 287,
+      defense: 210,
+      stamina: 221,
+      type1_name: "normal",
+      type2_name: "none",
+      moves: [
+        move("Zen Headbutt", "psychic", 1, 12, 1100, 10),
+        move("Crush Grip", "normal", 0, 150, 2600, -50),
+      ],
+    });
+    mocks.storeState.variants.push(regigigas);
+    useAuthStore.setState({ isLoggedIn: true });
+    useInstancesStore.setState({
+      instancesLoading: false,
+      instances: {
+        regigigas: {
+          instance_id: "regigigas",
+          variant_id: regigigas.variant_id,
+          pokemon_id: regigigas.pokemon_id,
+          is_caught: true,
+          disabled: false,
+          cp: null,
+          level: null,
+          attack_iv: 15,
+          defense_iv: 15,
+          stamina_iv: 15,
+          fast_move_id: regigigas.moves[0].move_id,
+          charged_move1_id: regigigas.moves[1].move_id,
+          charged_move2_id: null,
+        } as PokemonInstance,
+      },
+    });
+
+    render(<Raid />);
+
+    expect(screen.getByText("0 raid-ready of 1 caught")).toBeInTheDocument();
+    expect(
+      screen.getByText(/1 caught entries need complete battle details/i),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole("cell", { name: /Shadow Regigigas/i }),
+    ).not.toBeInTheDocument();
   });
 
   it("normalizes the padded Mega Mewtwo Y artwork in raid layouts", () => {

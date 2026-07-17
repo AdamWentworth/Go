@@ -96,9 +96,17 @@ To keep boss lookup responsive, the closed-form cycle model screens the catalog 
 
 Exact boss results are cached in IndexedDB for seven days, with a maximum of 12 result sets. The key includes model version, catalog version, boss and finalist stats/moves, raid tier, every simulation setting, and the Best moves/All moves choice. A rules change, catalog update, move/stat edit, or setting change therefore cannot silently reuse an incompatible result. Memory caching accelerates repeat calculations in the same session; IndexedDB avoids repeating them after a reload.
 
+## Personalized rosters
+
+Logged-in Trainers can switch Overall, By Type, and Boss Counters from the full catalog benchmark to **My Pokemon**. Each caught copy remains a separate attacker and uses its recorded level, IVs, CP, and current fast and Charged Attacks. Boss mode builds its six-Pokemon team from those distinct copies instead of cloning a single ideal catalog entry.
+
+The selected catalog level never overrides a caught Pokemon's recorded level. If level is absent but CP and IVs are available, the closest legal level is inferred from the CP formula. A caught entry with insufficient level, IV, or current moveset data is omitted from personalized rankings instead of being promoted to catalog benchmark assumptions. Hidden Power uses the recorded move but marks its rolled type as estimated because the current instance schema does not store that roll.
+
+Personalized rankings establish the input model needed for heterogeneous Trainer teams. They do not yet claim measured network latency, dodge success, or independent-simulator calibration; those require external reference runs or opt-in battle telemetry rather than ownership data alone.
+
 ## Assumptions and limits
 
-- Rankings assume 15/15/15 IVs at the selected attacker level.
+- Catalog rankings assume 15/15/15 IVs at the selected attacker level. Personalized rankings use each caught Pokemon's recorded or explicitly marked estimated values.
 - Overall rankings use the documented neutral incoming-pressure approximation and therefore do not change with the historical boss mix.
 - Type rankings default to the expected damage pressure across every legal fast-and-charged boss moveset. Ranking settings can instead show the favorable or hostile legal moveset for each boss. All three modes apply exact incoming damage floors and use boss STAB, weather, effectiveness against the attacker, processed move duration, and the current average raid action delay.
 - Legal boss movesets are weighted equally because future raid moveset frequency is not known. Overall and type rankings remain closed-form planning models; only Boss mode runs the event simulation.
