@@ -5,6 +5,7 @@ import {
   getLegalRaidFastMoves,
   isEligibleRaidAttacker,
 } from "./raidCatalog";
+import { resolveRaidRosterFormProjections } from "./raidRosterForms";
 
 export type RaidRosterScope = "catalog" | "owned";
 
@@ -18,6 +19,7 @@ export type RaidRosterSummary = {
   incompleteEntryCount: number;
   hiddenPowerEstimatedCount: number;
   unmappedCount: number;
+  projectedFormCount: number;
 };
 
 const hasRecordedIvs = (instance: PokemonInstance): boolean =>
@@ -58,6 +60,7 @@ export const buildRaidRoster = (
   let incompleteIvCount = 0;
   let hiddenPowerEstimatedCount = 0;
   let unmappedCount = 0;
+  let projectedFormCount = 0;
   const incompleteEntryIds = new Set<string>();
   const attackers: PokemonVariant[] = [];
 
@@ -75,35 +78,6 @@ export const buildRaidRoster = (
       : canInferLevel(instance)
         ? "inferred"
         : "estimated";
-    const probe: PokemonVariant = {
-      ...base,
-      variant_id: `${base.variant_id}::caught::${instanceId}`,
-      instanceData: { ...instance, instance_id: instanceId },
-      raidRoster: {
-        source: "caught",
-        instanceId,
-        moveSource: "estimated",
-        levelSource,
-        ivSource: recordedIvs ? "recorded" : "estimated",
-      },
-    };
-    const legalFastMoves = getLegalRaidFastMoves(probe);
-    const legalChargedMoves = getLegalRaidChargedMoves(probe);
-    const recordedFastMove = legalFastMoves.find(
-      (move) => move.move_id === instance.fast_move_id,
-    );
-    const hiddenPowerTypeEstimated =
-      recordedFastMove?.name.toLowerCase().startsWith("hidden power") ?? false;
-    const recordedMoves =
-      moveIdsContain(legalFastMoves, instance.fast_move_id) &&
-      [instance.charged_move1_id, instance.charged_move2_id].some((moveId) =>
-        moveIdsContain(legalChargedMoves, moveId),
-      );
-
-    if (!recordedMoves) {
-      incompleteMoveCount += 1;
-      incompleteEntryIds.add(instanceId);
-    }
     if (levelSource === "estimated") {
       incompleteLevelCount += 1;
       incompleteEntryIds.add(instanceId);
@@ -113,23 +87,72 @@ export const buildRaidRoster = (
       incompleteEntryIds.add(instanceId);
     }
 
-    if (!recordedMoves || levelSource === "estimated" || !recordedIvs) {
+    if (levelSource === "estimated" || !recordedIvs) {
       return;
     }
 
-    const attacker: PokemonVariant = {
-      ...probe,
-      raidRoster: {
-        ...probe.raidRoster!,
-        moveSource: "recorded",
-        hiddenPowerTypeEstimated,
-      },
-    };
-
-    if (hiddenPowerTypeEstimated) {
-      hiddenPowerEstimatedCount += 1;
+    const projections = resolveRaidRosterFormProjections(
+      variants,
+      base,
+      instance,
+    );
+    if (projections.length === 0) {
+      unmappedCount += 1;
+      return;
     }
-    if (isEligibleRaidAttacker(attacker)) attackers.push(attacker);
+
+    let hasRecordedForm = false;
+    projections.forEach(({ variant, formSource, useRecordedCp }) => {
+      const probe: PokemonVariant = {
+        ...variant,
+        variant_id: `${variant.variant_id}::caught::${instanceId}::${formSource}`,
+        instanceData: { ...instance, instance_id: instanceId },
+        raidRoster: {
+          source: "caught",
+          instanceId,
+          moveSource: "estimated",
+          levelSource,
+          ivSource: "recorded",
+          formSource,
+          cpSource: useRecordedCp ? "recorded" : "calculated",
+        },
+      };
+      const legalFastMoves = getLegalRaidFastMoves(probe);
+      const legalChargedMoves = getLegalRaidChargedMoves(probe);
+      const recordedFastMove = legalFastMoves.find(
+        (move) => move.move_id === instance.fast_move_id,
+      );
+      const hiddenPowerTypeEstimated =
+        recordedFastMove?.name.toLowerCase().startsWith("hidden power") ??
+        false;
+      const recordedMoves =
+        moveIdsContain(legalFastMoves, instance.fast_move_id) &&
+        [instance.charged_move1_id, instance.charged_move2_id].some((moveId) =>
+          moveIdsContain(legalChargedMoves, moveId),
+        );
+      if (!recordedMoves) return;
+
+      hasRecordedForm = true;
+      const attacker: PokemonVariant = {
+        ...probe,
+        raidRoster: {
+          ...probe.raidRoster!,
+          moveSource: "recorded",
+          hiddenPowerTypeEstimated,
+        },
+      };
+
+      if (hiddenPowerTypeEstimated) hiddenPowerEstimatedCount += 1;
+      if (isEligibleRaidAttacker(attacker)) {
+        attackers.push(attacker);
+        if (formSource !== "base") projectedFormCount += 1;
+      }
+    });
+
+    if (!hasRecordedForm) {
+      incompleteMoveCount += 1;
+      incompleteEntryIds.add(instanceId);
+    }
   });
 
   return {
@@ -142,5 +165,6 @@ export const buildRaidRoster = (
     incompleteEntryCount: incompleteEntryIds.size,
     hiddenPowerEstimatedCount,
     unmappedCount,
+    projectedFormCount,
   };
 };

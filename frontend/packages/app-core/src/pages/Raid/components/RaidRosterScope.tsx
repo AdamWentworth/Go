@@ -56,10 +56,12 @@ const RaidRosterScope = ({
         ) : (
           <>
             <strong>
-              {summary.eligibleCount} raid-ready of {summary.caughtCount} caught
+              {summary.eligibleCount} raid-ready entries from {summary.caughtCount} caught
             </strong>
             <span>
               Uses each copy's current level, IVs, CP, and recorded moves.
+              {summary.projectedFormCount > 0 &&
+                ` Includes ${summary.projectedFormCount} available fusion, crowned, or Mega form entries.`}
               {summary.incompleteEntryCount > 0 &&
                 ` ${summary.incompleteEntryCount} caught entries need complete battle details before ranking.`}
               {summary.hiddenPowerEstimatedCount > 0 &&

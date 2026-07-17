@@ -79,7 +79,11 @@ export const calculateRaidAttackerCp = (
   fallbackLevel: RaidCounterSettings["attackerLevel"],
 ): number => {
   const recordedCp = Number(attacker.instanceData?.cp);
-  if (Number.isFinite(recordedCp) && recordedCp > 0) {
+  if (
+    attacker.raidRoster?.cpSource !== "calculated" &&
+    Number.isFinite(recordedCp) &&
+    recordedCp > 0
+  ) {
     return Math.round(recordedCp);
   }
 

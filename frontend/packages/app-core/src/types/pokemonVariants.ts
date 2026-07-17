@@ -36,6 +36,8 @@ export interface VariantCommon {
     hiddenPowerTypeEstimated?: boolean;
     levelSource: 'recorded' | 'inferred' | 'estimated';
     ivSource: 'recorded' | 'estimated';
+    formSource?: 'base' | 'fusion' | 'crown' | 'mega';
+    cpSource?: 'recorded' | 'calculated';
   };
 }
 
