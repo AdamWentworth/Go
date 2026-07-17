@@ -18,6 +18,8 @@ import {
   COMFORTABLE_SAFETY_FACTOR,
   DEFAULT_RAID_NEUTRAL_BENCHMARK,
   FALLBACK_OVERALL_TARGET_PROFILES,
+  RAID_COUNTER_SIMULATION_MOVESET_LIMIT,
+  RAID_COUNTER_SIMULATION_VARIANT_LIMIT,
   RAID_SAFETY_FACTOR,
   TYPE_DPS_ER_TDO_EXPONENT,
 } from "./raidRules";
@@ -51,6 +53,7 @@ import {
   calculateRaidAttackerBattleStats,
   type RaidTargetCombatContext,
 } from "./raidTargetModel";
+import { simulateRaidCounterAcrossBossMovesets } from "./raidSimulation";
 
 export type {
   FriendshipKey,
@@ -98,7 +101,7 @@ export {
   calculateRaidMoveDamage,
 } from "./raidCombat";
 
-export const calculateMoveCycleScore = (
+const calculateMoveCycleEstimate = (
   attacker: PokemonVariant,
   fastMove: Move,
   chargedMove: Move,
@@ -163,6 +166,59 @@ export const calculateMoveCycleScore = (
         bossStats.hp / (dps * bossStats.timeLimitSeconds * RAID_SAFETY_FACTOR),
       ),
     ),
+    faints: 0,
+    relobbies: 0,
+    attackerChargedMoves: 0,
+    bossChargedMoves: 0,
+    simulationWon: false,
+  };
+};
+
+export const calculateRaidCounterScore = (
+  attacker: PokemonVariant,
+  fastMove: Move,
+  chargedMove: Move,
+  boss: PokemonVariant,
+  tier: RaidTierPreset,
+  settings: RaidCounterSettings,
+): RaidCounterScore => {
+  const estimate = calculateMoveCycleEstimate(
+    attacker,
+    fastMove,
+    chargedMove,
+    boss,
+    tier,
+    settings,
+  );
+  const simulation = simulateRaidCounterAcrossBossMovesets({
+    attacker,
+    attackerFastMove: fastMove,
+    attackerChargedMove: chargedMove,
+    boss,
+    tier,
+    settings,
+  });
+  if (!simulation) return estimate;
+
+  const bossStats = calculateRaidBossStats(boss, tier, settings.shadowBossMode);
+  return {
+    ...estimate,
+    dps: simulation.dps,
+    soloTimeSeconds: simulation.projectedTimeToWinSeconds,
+    trainersNeeded: Math.max(
+      1,
+      Math.ceil(
+        bossStats.hp /
+          (simulation.dps *
+            bossStats.timeLimitSeconds *
+            RAID_SAFETY_FACTOR),
+      ),
+    ),
+    faints: simulation.faints,
+    relobbies: simulation.relobbies,
+    attackerChargedMoves: simulation.attackerChargedMoves,
+    bossChargedMoves: simulation.bossChargedMoves,
+    simulationWon: simulation.won,
   };
 };
 
@@ -171,8 +227,8 @@ export const scoreRaidCounters = (
   boss: PokemonVariant,
   tier: RaidTierPreset,
   settings: RaidCounterSettings,
-): RaidCounterScore[] =>
-  attackers
+): RaidCounterScore[] => {
+  const estimates = attackers
     .filter(isEligibleRaidAttacker)
     .flatMap((attacker) => {
       const fastMoves = getLegalRaidFastMoves(attacker);
@@ -180,7 +236,7 @@ export const scoreRaidCounters = (
 
       return fastMoves.flatMap((fastMove) =>
         chargedMoves.map((chargedMove) =>
-          calculateMoveCycleScore(
+          calculateMoveCycleEstimate(
             attacker,
             fastMove,
             chargedMove,
@@ -190,8 +246,44 @@ export const scoreRaidCounters = (
           ),
         ),
       );
-    })
-    .sort((a, b) => b.dps - a.dps);
+    });
+  const estimatesByVariant = new Map<string, RaidCounterScore[]>();
+  estimates.forEach((estimate) => {
+    const key =
+      estimate.variant.variant_id ||
+      `${estimate.variant.pokemon_id}-${estimate.variant.variantType}`;
+    const current = estimatesByVariant.get(key) ?? [];
+    current.push(estimate);
+    estimatesByVariant.set(key, current);
+  });
+
+  const candidates = Array.from(estimatesByVariant.values())
+    .map((variantScores) =>
+      variantScores
+        .sort((a, b) => b.dps - a.dps)
+        .slice(0, RAID_COUNTER_SIMULATION_MOVESET_LIMIT),
+    )
+    .sort((a, b) => (b[0]?.dps ?? 0) - (a[0]?.dps ?? 0))
+    .slice(0, RAID_COUNTER_SIMULATION_VARIANT_LIMIT)
+    .flat();
+
+  return candidates
+    .map((candidate) =>
+      calculateRaidCounterScore(
+        candidate.variant,
+        candidate.fastMove,
+        candidate.chargedMove,
+        boss,
+        tier,
+        settings,
+      ),
+    )
+    .sort((a, b) =>
+      b.dps - a.dps ||
+      a.soloTimeSeconds - b.soloTimeSeconds ||
+      a.faints - b.faints,
+    );
+};
 
 export const calculateOverallMoveCycleScore = (
   attacker: PokemonVariant,

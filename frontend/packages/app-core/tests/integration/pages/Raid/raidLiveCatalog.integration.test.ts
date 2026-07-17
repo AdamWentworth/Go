@@ -6,7 +6,9 @@ import {
 } from "@/../tests/__helpers__/raidCanonicalAttackers";
 import createPokemonVariants from "@/features/variants/utils/createPokemonVariants";
 import {
+  RAID_TIER_PRESETS,
   scoreBestRaidOverallAttackers,
+  scoreRaidCounters,
   type RaidCounterSettings,
 } from "@/pages/Raid/utils/raidCalculations";
 import type { BasePokemon } from "@/types/pokemonBase";
@@ -71,5 +73,28 @@ liveCatalogDescribe("live raid catalog validation", () => {
     expect(scores).toEqual(canonicalOverallExpectation);
     expect(scores.find((score) => score.name === "Mega Mewtwo Y")?.chargedMove)
       .not.toBe("Shadow Ball");
+
+    const liveBoss = variants.find(
+      (variant) =>
+        variant.name === "Mewtwo" && variant.variantType === "default",
+    );
+    expect(liveBoss).toBeDefined();
+
+    const counterScores = scoreRaidCounters(
+      liveCohort,
+      liveBoss!,
+      RAID_TIER_PRESETS.legendary,
+      defaultSettings,
+    );
+    expect(counterScores.length).toBeGreaterThan(0);
+    expect(
+      counterScores.every(
+        (score) =>
+          Number.isFinite(score.dps) &&
+          Number.isFinite(score.soloTimeSeconds) &&
+          score.faints >= 0 &&
+          score.relobbies >= 0,
+      ),
+    ).toBe(true);
   });
 });

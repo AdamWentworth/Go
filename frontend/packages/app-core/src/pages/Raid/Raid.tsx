@@ -403,7 +403,12 @@ const Raid: React.FC = () => {
                 metadata={bossMetadata}
               />
 
-              <RaidModifiers {...modifierProps} includeShadowControls />
+              <RaidModifiers
+                {...modifierProps}
+                includeShadowControls
+                includeRelobbyControls
+                includeBossMovesetControls
+              />
 
               {shadowMechanicsEnabled && (
                 <section className="raid-shadow-note">

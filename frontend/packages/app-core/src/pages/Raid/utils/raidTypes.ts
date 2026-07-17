@@ -64,6 +64,23 @@ export type RaidCounterScore = {
   effectiveness: number;
   soloTimeSeconds: number;
   trainersNeeded: number;
+  faints: number;
+  relobbies: number;
+  attackerChargedMoves: number;
+  bossChargedMoves: number;
+  simulationWon: boolean;
+};
+
+export type RaidBattleSimulationResult = {
+  damageDealt: number;
+  elapsedSeconds: number;
+  dps: number;
+  projectedTimeToWinSeconds: number;
+  faints: number;
+  relobbies: number;
+  attackerChargedMoves: number;
+  bossChargedMoves: number;
+  won: boolean;
 };
 
 export type RaidTypeDpsScore = {

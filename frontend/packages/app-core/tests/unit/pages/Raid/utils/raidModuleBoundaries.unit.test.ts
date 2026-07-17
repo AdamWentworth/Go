@@ -13,6 +13,7 @@ import {
   scoreBestRaidOverallAttackers,
   scoreRaidCounters,
 } from "@/pages/Raid/utils/raidRankings";
+import { simulateRaidBattle } from "@/pages/Raid/utils/raidSimulation";
 import {
   RAID_ATTACKER_TEAM_SIZE,
   RAID_TIER_PRESETS,
@@ -38,5 +39,6 @@ describe("raid calculation module boundaries", () => {
     expect(raidFacade.scoreBestRaidOverallAttackers).toBe(
       scoreBestRaidOverallAttackers,
     );
+    expect(raidFacade.simulateRaidBattle).toBe(simulateRaidBattle);
   });
 });

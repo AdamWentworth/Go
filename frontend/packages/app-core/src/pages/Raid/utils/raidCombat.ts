@@ -142,6 +142,45 @@ type TypeDpsMoveDamageInput = Omit<
   targetDefense?: number;
 };
 
+export const calculateRaidBossMoveDamage = ({
+  move,
+  boss,
+  bossAttack,
+  attacker,
+  attackerDefense,
+  weatherBoostedType,
+}: {
+  move: Move;
+  boss: PokemonVariant;
+  bossAttack: number;
+  attacker: PokemonVariant;
+  attackerDefense: number;
+  weatherBoostedType: string;
+}): number => {
+  const moveType = normalizeTypeName(move.type_name || move.type);
+  const stab = getVariantTypeNames(boss).includes(moveType)
+    ? STAB_DAMAGE_BONUS
+    : 1;
+  const effectiveness = getTypeEffectivenessMultiplier(
+    moveType,
+    getVariantTypeNames(attacker),
+  );
+  const weather =
+    weatherBoostedType === moveType ? WEATHER_DAMAGE_BONUS : 1;
+
+  return Math.max(
+    1,
+    Math.floor(
+      0.5 *
+        getRaidMovePower(move) *
+        (bossAttack / attackerDefense) *
+        stab *
+        effectiveness *
+        weather,
+    ) + 1,
+  );
+};
+
 export const getProcessedRaidMoveSeconds = (move: Move): number => {
   const rawSeconds = Math.max(0.5, getRaidMoveCooldown(move) / 1000);
   return Math.max(0.5, Math.round(rawSeconds * 2) / 2);

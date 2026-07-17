@@ -161,6 +161,11 @@ export const DEFAULT_RAID_NEUTRAL_BENCHMARK: RaidNeutralBenchmark = {
 export const RAID_ATTACKER_TEAM_SIZE = 6;
 export const DEFAULT_RAID_RELOBBY_SECONDS = 10;
 export const RAID_BOSS_ACTION_DELAY_SECONDS = 1.75;
+export const RAID_SIMULATION_BOSS_ACTION_DELAY_SECONDS = 2;
+export const RAID_SIMULATION_ATTACKER_SWAP_SECONDS = 1;
+export const RAID_SIMULATION_ENERGY_CAP = 100;
+export const RAID_COUNTER_SIMULATION_VARIANT_LIMIT = 256;
+export const RAID_COUNTER_SIMULATION_MOVESET_LIMIT = 3;
 export const LEGACY_RAID_TIERS = new Set(["2"]);
 export const FALLBACK_OVERALL_TARGET_PROFILES: RaidOverallTargetProfile[] = [
   { types: [], weight: 1 },

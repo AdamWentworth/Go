@@ -713,7 +713,7 @@
 
 .raid-counter-stats {
   display: grid;
-  grid-template-columns: repeat(3, max-content);
+  grid-template-columns: repeat(4, max-content);
   gap: 0.4rem;
 }
 
@@ -1264,7 +1264,7 @@
 
   .raid-counter-stats {
     grid-column: 1 / -1;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .raid-counter-stats span {

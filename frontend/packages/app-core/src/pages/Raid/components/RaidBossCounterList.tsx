@@ -35,6 +35,12 @@ const RaidBossCounterList = ({
             <span>{formatDps(score.dps)} DPS</span>
             <span>{score.trainersNeeded} trainers</span>
             <span>{formatSeconds(score.soloTimeSeconds)}</span>
+            <span>
+              {score.faints.toFixed(1)} faints
+              {score.relobbies > 0
+                ? ` · ${score.relobbies.toFixed(1)} relobbies`
+                : ""}
+            </span>
           </div>
         </article>
       ))

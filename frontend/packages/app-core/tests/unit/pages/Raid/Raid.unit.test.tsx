@@ -247,6 +247,13 @@ describe("Raid page", () => {
 
     fireEvent.click(screen.getByRole("button", { name: "Boss counters" }));
 
+    expect(screen.getByLabelText(/relobby delay/i)).toHaveValue("10");
+    expect(screen.getByLabelText(/boss movesets/i)).toHaveValue("expected");
+    expect(
+      within(screen.getByLabelText("Raid counters")).getAllByText(/faints/)
+        .length,
+    ).toBeGreaterThan(0);
+
     fireEvent.click(screen.getByRole("button", { name: "Shadow raid" }));
     expect(screen.getByText("Purified Gem reminder")).toBeInTheDocument();
 
