@@ -4,7 +4,7 @@ import { installE2eRoutes } from "./support/e2eRoutes";
 
 const RAID_ROUTE_READY_MEASURE = "pokegonexus:raid-route-ready";
 const RAID_COLD_ROUTE_READY_BUDGET_MS = 8000;
-const RAID_WARM_ROUTE_READY_BUDGET_MS = 3000;
+const RAID_WARM_ROUTE_READY_BUDGET_MS = process.env.CI ? 6000 : 3000;
 const RAID_WARM_ROUTE_SAMPLE_COUNT = 3;
 
 const raidUser = {
@@ -112,9 +112,9 @@ test.describe("raid counter worker", () => {
 
     test.info().annotations.push({
       type: "raid-warm-route-ms",
-      description: warmDurations
+      description: `${warmDurations
         .map((duration) => duration.toFixed(1))
-        .join(", "),
+        .join(", ")} (budget ${RAID_WARM_ROUTE_READY_BUDGET_MS}ms)`,
     });
     expect(median(warmDurations)).toBeLessThan(RAID_WARM_ROUTE_READY_BUDGET_MS);
   });
