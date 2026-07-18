@@ -71,7 +71,7 @@ async function seedRaidRoster(page: Page, caught = caughtBulbasaur) {
 }
 
 test.describe("raid counter worker", () => {
-  test("renders rankings within cold and warm budgets without blocking on raid metadata", async ({
+  test("@performance renders rankings within cold and warm budgets without blocking on raid metadata", async ({
     page,
   }) => {
     await installE2eRoutes(page, { raidDataDelayMs: 10_000 });

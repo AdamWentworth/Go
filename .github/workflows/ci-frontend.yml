@@ -75,8 +75,14 @@ jobs:
       - name: Install Browser Runtimes
         run: npx playwright install --with-deps chromium firefox webkit
 
+      - name: Validate Raid Route Performance Budgets
+        run: >-
+          npm run test:browsers:ci --
+          --grep '@performance'
+          --workers 1
+
       - name: Cross-Browser Smoke
-        run: npm run test:browsers:ci
+        run: npm run test:browsers:ci -- --grep-invert '@performance'
 
       - name: Build
         run: npm run build
