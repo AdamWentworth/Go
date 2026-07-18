@@ -12,6 +12,7 @@ import {
   calculateEffectiveRaidDps,
   calculateRaidBossCp,
   calculateRaidMoveDamage,
+  calculateRaidCounterScore,
   calculateTypeMoveCycleScore,
   dedupeBestOverallAttackerPerVariant,
   dedupeBestTypeDpsPerVariant,
@@ -131,6 +132,81 @@ describe("raid calculations", () => {
     expect(
       calculateRaidBossCp(pokemon(), RAID_TIER_PRESETS.legendary.bossHp),
     ).toBe(54148);
+  });
+
+  it("keeps Mega Charizard Y's stronger Fire DPS visible when a tiny boss dies on the same tick", () => {
+    const fireSpin = move("Fire Spin", "fire", 1, 14, 1100, 10);
+    const blastBurn = move("Blast Burn", "fire", 0, 110, 3300, -50);
+    const vineWhip = move("Vine Whip", "grass", 1, 7, 600, 6);
+    const powerWhip = move("Power Whip", "grass", 0, 90, 2600, -50);
+    const megaCharizardX = pokemon({
+      pokemon_id: 6,
+      pokedex_number: 6,
+      name: "Mega Charizard X",
+      species_name: "Charizard",
+      variant_id: "6-mega-x",
+      variantType: "mega_x",
+      attack: 273,
+      defense: 213,
+      stamina: 186,
+      type1_name: "fire",
+      type2_name: "dragon",
+      moves: [fireSpin, blastBurn],
+    });
+    const megaCharizardY = pokemon({
+      pokemon_id: 6,
+      pokedex_number: 6,
+      name: "Mega Charizard Y",
+      species_name: "Charizard",
+      variant_id: "6-mega-y",
+      variantType: "mega_y",
+      attack: 319,
+      defense: 212,
+      stamina: 186,
+      type1_name: "fire",
+      type2_name: "flying",
+      moves: [fireSpin, blastBurn],
+    });
+    const bulbasaur = pokemon({
+      pokemon_id: 1,
+      pokedex_number: 1,
+      name: "Bulbasaur",
+      variant_id: "1-default",
+      attack: 118,
+      defense: 111,
+      stamina: 128,
+      type1_name: "grass",
+      type2_name: "poison",
+      moves: [vineWhip, powerWhip],
+    });
+    const tinyTier = { ...RAID_TIER_PRESETS.tier1, bossHp: 1 };
+
+    const xScore = calculateRaidCounterScore(
+      megaCharizardX,
+      fireSpin,
+      blastBurn,
+      bulbasaur,
+      tinyTier,
+      baseSettings,
+    );
+    const yScore = calculateRaidCounterScore(
+      megaCharizardY,
+      fireSpin,
+      blastBurn,
+      bulbasaur,
+      tinyTier,
+      baseSettings,
+    );
+    const ranked = scoreRaidCounters(
+      [megaCharizardX, megaCharizardY],
+      bulbasaur,
+      tinyTier,
+      baseSettings,
+    );
+
+    expect(yScore.dps).toBe(xScore.dps);
+    expect(yScore.sustainedDps).toBeGreaterThan(xScore.sustainedDps);
+    expect(ranked[0]?.variant.variant_id).toBe("6-mega-y");
   });
 
   it("selects one raid category per variant and separates normal from mega rows", () => {
@@ -414,11 +490,7 @@ describe("raid calculations", () => {
       100,
       "favorable",
     );
-    const expected = calculateRaidIncomingPressure(
-      scenarios,
-      100,
-      "expected",
-    );
+    const expected = calculateRaidIncomingPressure(scenarios, 100, "expected");
     const hostile = calculateRaidIncomingPressure(scenarios, 100, "hostile");
 
     expect(favorable?.incomingDps).toBeLessThan(expected?.incomingDps ?? 0);
@@ -532,6 +604,73 @@ describe("raid calculations", () => {
     expect(duo!.projectedTimeToWinSeconds).toBeLessThan(
       solo!.projectedTimeToWinSeconds,
     );
+  });
+
+  it("requires one Mega-ready Trainer per Super Mega shield in group estimates", () => {
+    const boss = {
+      ...pokemon({
+        pokemon_id: 150,
+        name: "Mega Mewtwo Y",
+        species_name: "Mewtwo",
+        variant_id: "mewtwo-mega-y",
+        variantType: "mega_y",
+        raid_boss: [
+          {
+            id: 1,
+            pokemon_id: 150,
+            name: "Mega Mewtwo Y",
+            form: "Y",
+            tier: "super_mega",
+            shield_count: 2,
+          },
+        ],
+      }),
+      megaForm: "Y",
+    } as PokemonVariant;
+    const megaCounter = pokemon({
+      name: "Mega Gengar",
+      variant_id: "gengar-mega",
+      variantType: "mega",
+      attack: 349,
+      type1_name: "ghost",
+      type2_name: "poison",
+      moves: [
+        move("Lick", "ghost", 1, 5, 500, 6),
+        move("Shadow Ball", "ghost", 0, 100, 3000, -50),
+      ],
+    });
+    const scores = scoreRaidCounters(
+      [megaCounter],
+      boss,
+      RAID_TIER_PRESETS["super-mega"],
+      baseSettings,
+    );
+    const estimate = estimateRaidGroup(
+      scores,
+      boss,
+      RAID_TIER_PRESETS["super-mega"],
+      baseSettings,
+    );
+    const group = simulateRaidGroupAtTrainerCount(
+      scores,
+      boss,
+      RAID_TIER_PRESETS["super-mega"],
+      baseSettings,
+      2,
+    );
+
+    expect(estimate.minTrainers).toBeGreaterThanOrEqual(2);
+    expect(estimate.superMega).toMatchObject({
+      shieldCount: 2,
+      shieldCountSource: "catalog",
+      assumesMegaPerTrainer: true,
+    });
+    expect(group?.superMega).toMatchObject({
+      shieldCount: 2,
+      shieldsBroken: 2,
+      eligibleMegaTrainers: 2,
+      shieldCleared: true,
+    });
   });
 
   it("models effective DPS across a team of six and its relobby downtime", () => {
@@ -675,23 +814,15 @@ describe("raid calculations", () => {
     const lowerDefenseBoss = raidBoss("Lower Defense Boss", 100);
     const higherDefenseBoss = raidBoss("Higher Defense Boss", 300);
 
-    const lowerType = scoreRaidTypeDps(
-      [attacker],
-      "fighting",
-      baseSettings,
-      [lowerDefenseBoss],
-    )[0] as RaidTypeDpsScore;
-    const higherType = scoreRaidTypeDps(
-      [attacker],
-      "fighting",
-      baseSettings,
-      [higherDefenseBoss],
-    )[0] as RaidTypeDpsScore;
+    const lowerType = scoreRaidTypeDps([attacker], "fighting", baseSettings, [
+      lowerDefenseBoss,
+    ])[0] as RaidTypeDpsScore;
+    const higherType = scoreRaidTypeDps([attacker], "fighting", baseSettings, [
+      higherDefenseBoss,
+    ])[0] as RaidTypeDpsScore;
 
     expect(lowerType.dps).toBeGreaterThan(higherType.dps);
-    expect(lowerType.chargedDamage).toBeGreaterThan(
-      higherType.chargedDamage,
-    );
+    expect(lowerType.chargedDamage).toBeGreaterThan(higherType.chargedDamage);
   });
 
   it("keeps same-typing raid targets independent for exact type scoring", () => {
@@ -732,9 +863,7 @@ describe("raid calculations", () => {
       variant_id: "tier-one-boss",
       type1_name: "rock",
       type2_name: "none",
-      raid_boss: [
-        { id: 1, tier: "1", form: "Normal", name: "Tier One Boss" },
-      ],
+      raid_boss: [{ id: 1, tier: "1", form: "Normal", name: "Tier One Boss" }],
     });
     const legendaryBoss = legendaryRaidTarget({
       name: "Legendary Boss",
@@ -809,18 +938,12 @@ describe("raid calculations", () => {
     const fireBoss = raidBoss("Fire Moveset Boss", "fire");
     const waterBoss = raidBoss("Water Moveset Boss", "water");
 
-    const versusFire = scoreRaidTypeDps(
-      [attacker],
-      "grass",
-      baseSettings,
-      [fireBoss],
-    )[0] as RaidTypeDpsScore;
-    const versusWater = scoreRaidTypeDps(
-      [attacker],
-      "grass",
-      baseSettings,
-      [waterBoss],
-    )[0] as RaidTypeDpsScore;
+    const versusFire = scoreRaidTypeDps([attacker], "grass", baseSettings, [
+      fireBoss,
+    ])[0] as RaidTypeDpsScore;
+    const versusWater = scoreRaidTypeDps([attacker], "grass", baseSettings, [
+      waterBoss,
+    ])[0] as RaidTypeDpsScore;
 
     expect(versusFire.tdo).toBeLessThan(versusWater.tdo);
     expect(versusFire.er).toBeLessThan(versusWater.er);
@@ -913,9 +1036,7 @@ describe("raid calculations", () => {
   });
 
   it("uses one neutral typeless benchmark for overall rankings", () => {
-    expect(getRaidOverallTargetProfiles()).toEqual([
-      { types: [], weight: 1 },
-    ]);
+    expect(getRaidOverallTargetProfiles()).toEqual([{ types: [], weight: 1 }]);
   });
 
   it("only lets fusion variants use their matching fusion-exclusive raid moves", () => {
@@ -1106,11 +1227,9 @@ describe("raid calculations", () => {
       type2_name: "none",
     });
 
-    const [score] = scoreBestRaidOverallAttackers(
-      [regigigas],
-      baseSettings,
-      [electricTarget],
-    );
+    const [score] = scoreBestRaidOverallAttackers([regigigas], baseSettings, [
+      electricTarget,
+    ]);
 
     expect(score?.fastMove.name).toBe("Hidden Power (Ground)");
     expect(score?.fastMove.type).toBe("ground");
@@ -1136,10 +1255,7 @@ describe("raid calculations", () => {
       ],
     });
 
-    const [score] = scoreBestRaidOverallAttackers(
-      [megaMewtwoY],
-      baseSettings,
-    );
+    const [score] = scoreBestRaidOverallAttackers([megaMewtwoY], baseSettings);
 
     expect(score?.chargedMove.name).toBe("Psystrike");
   });
@@ -1238,12 +1354,7 @@ describe("raid calculations", () => {
       scoreRaidTypeDps([regigigas], "water", baseSettings),
     )[0] as RaidTypeDpsScore;
     const raidAffinity = dedupeBestTypeDpsPerVariant(
-      scoreRaidTypeDps(
-        [regigigas],
-        "water",
-        baseSettings,
-        [rockRaidBoss],
-      ),
+      scoreRaidTypeDps([regigigas], "water", baseSettings, [rockRaidBoss]),
     )[0] as RaidTypeDpsScore;
 
     expect(raidAffinity.fastEffectiveness).toBe(1.6);
@@ -1512,9 +1623,7 @@ describe("raid calculations", () => {
       scoreNames.indexOf("Mega Absol"),
     );
     expect(megaAbsolScore?.totalDps).toBeCloseTo(megaAbsolScore?.dps ?? 0);
-    expect(megaAbsolScore?.eDps ?? 0).toBeLessThan(
-      megaAbsolScore?.dps ?? 0,
-    );
+    expect(megaAbsolScore?.eDps ?? 0).toBeLessThan(megaAbsolScore?.dps ?? 0);
     expect(pheromosaScore?.totalDps).toBeGreaterThan(0);
     expect(pheromosaScore?.dps).toBeGreaterThan(megaAbsolScore?.dps ?? 0);
   });

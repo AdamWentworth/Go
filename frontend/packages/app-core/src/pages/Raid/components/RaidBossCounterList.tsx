@@ -8,6 +8,7 @@ import {
   getRaidVariantDisplayName,
 } from "../utils/raidViewModel";
 import { formatSeconds } from "../utils/raidCalculations";
+import { getRaidCounterSustainedDps } from "../utils/raidCounterRanking";
 import RaidPokemonImage from "./RaidPokemonImage";
 
 interface RaidBossCounterListProps {
@@ -18,6 +19,13 @@ interface RaidBossCounterListProps {
 const formatOutcomeCount = (value: number): string =>
   Number.isInteger(value) ? String(value) : value.toFixed(1);
 
+const getRankTier = (rank: number): "gold" | "silver" | "bronze" | "standard" => {
+  if (rank === 1) return "gold";
+  if (rank === 2) return "silver";
+  if (rank === 3) return "bronze";
+  return "standard";
+};
+
 const RaidBossCounterList = ({
   scores,
   attackerLevel,
@@ -25,6 +33,8 @@ const RaidBossCounterList = ({
   <section className="raid-counter-list" aria-label="Raid counters">
     {scores.length > 0 ? (
       scores.map((score, index) => {
+        const rank = index + 1;
+        const rankTier = getRankTier(rank);
         const distribution = score.simulationDistribution;
         const medianTime =
           distribution?.timeToWinSeconds.p50 ?? score.soloTimeSeconds;
@@ -39,7 +49,16 @@ const RaidBossCounterList = ({
             className="raid-counter-card"
             key={`${score.variant.variant_id}-${index}`}
           >
-            <div className="raid-counter-rank">{index + 1}</div>
+            <div
+              aria-label={
+                rankTier === "standard"
+                  ? `Rank ${rank}`
+                  : `Rank ${rank}, ${rankTier} podium`
+              }
+              className={`raid-counter-rank raid-counter-rank--${rankTier}`}
+            >
+              {rank}
+            </div>
             <RaidPokemonImage variant={score.variant} />
             <div className="raid-counter-main">
               <strong>{getRaidVariantDisplayName(score.variant)}</strong>
@@ -54,8 +73,11 @@ const RaidBossCounterList = ({
               </small>
             </div>
             <div className="raid-counter-stats">
-              <span>{formatDps(score.dps)} DPS</span>
-              <span>{score.trainersNeeded} trainers</span>
+              <span>{formatDps(getRaidCounterSustainedDps(score))} DPS</span>
+              <span>
+                {score.trainersNeeded} trainer
+                {score.trainersNeeded === 1 ? "" : "s"}
+              </span>
               <span>
                 P50 {formatSeconds(medianTime)}
                 {distribution && distribution.sampleCount > 1 && (

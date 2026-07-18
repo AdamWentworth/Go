@@ -40,6 +40,25 @@ export type RaidSimulationDistribution = {
   relobbies: RaidSimulationPercentiles;
 };
 
+export type SuperMegaShieldCountSource = "catalog" | "curated" | "fallback";
+
+export type SuperMegaShieldRules = {
+  shieldCount: number;
+  shieldCountSource: SuperMegaShieldCountSource;
+  triggerHpFraction: number;
+  shieldedDefenseMultiplier: number;
+  enragedAttackMultiplier: number;
+};
+
+export type SuperMegaSimulationResult = {
+  shieldCount: number;
+  shieldsBroken: number;
+  eligibleMegaTrainers: number;
+  triggerHpFraction: number;
+  shieldCountSource: SuperMegaShieldCountSource;
+  shieldCleared: boolean;
+};
+
 export type RaidTierPreset = {
   key: RaidTierKey;
   label: string;
@@ -104,6 +123,7 @@ export type RaidCounterScore = {
   fastMove: Move;
   chargedMove: Move;
   cp: number;
+  sustainedDps: number;
   dps: number;
   fastDamage: number;
   chargedDamage: number;
@@ -135,6 +155,7 @@ export type RaidBattleSimulationResult = {
   partyPoweredChargedMoves: number;
   won: boolean;
   distribution: RaidSimulationDistribution;
+  superMega?: SuperMegaSimulationResult;
 };
 
 export type RaidPartySimulationResult = RaidBattleSimulationResult & {
@@ -212,4 +233,9 @@ export type RaidGroupEstimate = {
   minTrainers: number;
   comfortableTrainers: number;
   soloTimeSeconds: number;
+  superMega?: {
+    shieldCount: number;
+    shieldCountSource: SuperMegaShieldCountSource;
+    assumesMegaPerTrainer: boolean;
+  };
 };

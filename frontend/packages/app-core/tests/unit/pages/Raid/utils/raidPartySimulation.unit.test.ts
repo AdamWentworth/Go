@@ -269,4 +269,87 @@ describe("heterogeneous raid party simulation", () => {
     expect(manual.partyPoweredChargedMoves).toBe(0);
     expect(immediate.damageDealt).toBeGreaterThan(manual.damageDealt);
   });
+
+  it("breaks one Super Mega shield per Trainer with an actual Mega charged attack", () => {
+    const mega = pokemon(
+      "Mega Attacker",
+      300,
+      190,
+      220,
+      [fast, charged],
+      "mega",
+    );
+    const superMegaBoss = {
+      ...boss,
+      variantType: "mega_test" as const,
+      megaForm: "Test",
+      raid_boss: [
+        {
+          id: 1,
+          pokemon_id: boss.pokemon_id,
+          name: "Mega Boss",
+          form: "Test",
+          tier: "super_mega",
+          shield_count: 2,
+        },
+      ],
+    } as unknown as PokemonVariant;
+    const result = simulateHeterogeneousRaidPartyBattle({
+      trainers: [trainer("first", mega), trainer("second", mega)],
+      boss: superMegaBoss,
+      bossFastMove: bossFast,
+      bossChargedMove: bossCharged,
+      tier: {
+        ...tier,
+        key: "super-mega",
+        bossHp: 2_000,
+      },
+    });
+
+    expect(result.superMega).toMatchObject({
+      shieldCount: 2,
+      shieldsBroken: 2,
+      eligibleMegaTrainers: 2,
+      shieldCleared: true,
+    });
+  });
+
+  it("does not count Primal Pokémon as Super Mega shield breakers", () => {
+    const primal = {
+      ...pokemon("Primal Support", 300, 190, 220, [fast, charged], "primal"),
+      primal: true,
+    } as unknown as PokemonVariant;
+    const superMegaBoss = {
+      ...boss,
+      variantType: "mega_test" as const,
+      megaForm: "Test",
+      raid_boss: [
+        {
+          id: 1,
+          pokemon_id: boss.pokemon_id,
+          name: "Mega Boss",
+          form: "Test",
+          tier: "super_mega",
+          shield_count: 2,
+        },
+      ],
+    } as unknown as PokemonVariant;
+    const result = simulateHeterogeneousRaidPartyBattle({
+      trainers: [trainer("first", primal), trainer("second", primal)],
+      boss: superMegaBoss,
+      bossFastMove: bossFast,
+      bossChargedMove: bossCharged,
+      tier: {
+        ...tier,
+        key: "super-mega",
+        bossHp: 2_000,
+      },
+    });
+
+    expect(result.superMega).toMatchObject({
+      shieldsBroken: 0,
+      eligibleMegaTrainers: 0,
+      shieldCleared: false,
+    });
+  });
 });

@@ -9,3 +9,4 @@ export * from "./raidPartyOptimizer";
 export * from "./raidParty";
 export * from "./raidPartyPower";
 export * from "./raidTeamSelection";
+export * from "./superMegaRaid";

@@ -23,6 +23,10 @@ import {
   RAID_SIMULATION_ENERGY_CAP,
 } from "./raidRules";
 import {
+  canBreakSuperMegaShield,
+  getSuperMegaShieldRules,
+} from "./superMegaRaid";
+import {
   activatesPartyPowerWhenMeterFills,
   shouldActivatePartyPowerForChargedMove,
 } from "./raidPartyPower";
@@ -128,6 +132,24 @@ const averageSimulationResults = (
   const average = (select: (result: RaidBattleSimulationResult) => number) =>
     results.reduce((sum, result) => sum + select(result), 0) / divisor;
 
+  const superMegaSamples = results.flatMap((result) =>
+    result.superMega ? [result.superMega] : [],
+  );
+  const superMega = superMegaSamples[0]
+    ? {
+        shieldCount: superMegaSamples[0].shieldCount,
+        shieldsBroken:
+          superMegaSamples.reduce(
+            (sum, result) => sum + result.shieldsBroken,
+            0,
+          ) / superMegaSamples.length,
+        eligibleMegaTrainers: superMegaSamples[0].eligibleMegaTrainers,
+        triggerHpFraction: superMegaSamples[0].triggerHpFraction,
+        shieldCountSource: superMegaSamples[0].shieldCountSource,
+        shieldCleared: superMegaSamples.every((result) => result.shieldCleared),
+      }
+    : undefined;
+
   return {
     damageDealt: average((result) => result.damageDealt),
     elapsedSeconds: average((result) => result.elapsedSeconds),
@@ -145,6 +167,7 @@ const averageSimulationResults = (
     ),
     won: results.every((result) => result.won),
     distribution: buildRaidSimulationDistribution(results),
+    superMega,
   };
 };
 
@@ -160,6 +183,7 @@ export const simulateRaidTeamBattle = ({
   shouldDodgeSucceed,
   getBossActionDelaySeconds,
   trainerCount = 1,
+  modelSuperMegaMechanics = false,
 }: {
   team: RaidSimulationTeamMember[];
   boss: PokemonVariant;
@@ -172,6 +196,7 @@ export const simulateRaidTeamBattle = ({
   shouldDodgeSucceed?: () => boolean;
   getBossActionDelaySeconds?: () => number;
   trainerCount?: number;
+  modelSuperMegaMechanics?: boolean;
 }): RaidBattleSimulationResult => {
   if (team.length === 0) {
     throw new Error("Raid simulation requires at least one team member.");
@@ -181,6 +206,9 @@ export const simulateRaidTeamBattle = ({
     (type): type is string => Boolean(type && type !== "none"),
   );
   const activeTrainerCount = Math.max(1, Math.floor(trainerCount));
+  const superMegaRules = modelSuperMegaMechanics
+    ? getSuperMegaShieldRules(boss, tier)
+    : null;
   const dodgeSuccessRate = Math.min(
     1,
     Math.max(0, settings.dodgeSuccessRate ?? 1),
@@ -247,6 +275,7 @@ export const simulateRaidTeamBattle = ({
         dodged: true,
       }),
       chargedCost: Math.max(1, Math.abs(getRaidMoveEnergy(chargedMove))),
+      canBreakSuperMegaShield: canBreakSuperMegaShield(attacker),
     };
   });
   const strongestChargedDamage = Math.max(
@@ -277,6 +306,14 @@ export const simulateRaidTeamBattle = ({
   let reservedDodgeHitTime: number | null = null;
   let partyPowerMeter = 0;
   let partyPowerReadyAt: number | null = null;
+  let superMegaShieldActive = false;
+  let superMegaShieldsBroken = 0;
+  let superMegaShieldBreakUsed = false;
+  const superMegaProfileIndex = profiles.findIndex(
+    (profile) => profile.canBreakSuperMegaShield,
+  );
+  const eligibleMegaTrainers =
+    superMegaProfileIndex >= 0 ? activeTrainerCount : 0;
   const events: SimulationEvent[] = [];
   const nextBossActionDelay = () =>
     getBossActionDelaySeconds?.() ?? RAID_SIMULATION_BOSS_ACTION_DELAY_SECONDS;
@@ -398,8 +435,33 @@ export const simulateRaidTeamBattle = ({
         : profile.fastDamage;
       if (charged) attackerChargedMoves += 1;
       if (event.partyPowered) partyPoweredChargedMoves += 1;
+      const shieldedForHit = superMegaShieldActive;
+      if (
+        shieldedForHit &&
+        charged &&
+        profile.canBreakSuperMegaShield &&
+        !superMegaShieldBreakUsed &&
+        superMegaRules
+      ) {
+        superMegaShieldsBroken = Math.min(
+          superMegaRules.shieldCount,
+          superMegaShieldsBroken + activeTrainerCount,
+        );
+        superMegaShieldBreakUsed = true;
+        if (superMegaShieldsBroken >= superMegaRules.shieldCount) {
+          superMegaShieldActive = false;
+        }
+      }
       const bossHpBeforeDamage = bossHp;
-      const groupDamage = damage * activeTrainerCount;
+      const rawGroupDamage = damage * activeTrainerCount;
+      const groupDamage = shieldedForHit
+        ? Math.max(
+            1,
+            Math.floor(
+              rawGroupDamage / superMegaRules!.shieldedDefenseMultiplier,
+            ),
+          )
+        : rawGroupDamage;
       bossHp = Math.max(0, bossHp - groupDamage);
       damageDealt += Math.min(groupDamage, bossHpBeforeDamage);
       bossEnergy = Math.min(
@@ -421,6 +483,23 @@ export const simulateRaidTeamBattle = ({
           activatesPartyPowerWhenMeterFills(settings)
         ) {
           partyPowerReadyAt = event.time + PARTY_POWER_ACTIVATION_DELAY_SECONDS;
+        }
+      }
+      const superMegaTriggered = Boolean(
+        superMegaRules &&
+        !superMegaShieldActive &&
+        superMegaShieldsBroken === 0 &&
+        bossHp > 0 &&
+        bossHp <= bossStats.hp * superMegaRules.triggerHpFraction,
+      );
+      if (superMegaTriggered) {
+        superMegaShieldActive = true;
+        if (superMegaProfileIndex >= 0) {
+          teamPosition = superMegaProfileIndex;
+          attackerGeneration += 1;
+          attackerHp = profiles[teamPosition].attackerStats.hp;
+          attackerEnergy = profiles[teamPosition].chargedCost;
+          reservedDodgeHitTime = null;
         }
       }
       if (bossHp <= 0) {
@@ -499,10 +578,16 @@ export const simulateRaidTeamBattle = ({
               : 0;
       }
       if (reservedDodgeHitTime === event.time) reservedDodgeHitTime = null;
-      attackerHp -= damage;
+      const appliedBossDamage = superMegaShieldActive
+        ? Math.max(
+            1,
+            Math.round(damage * superMegaRules!.enragedAttackMultiplier),
+          )
+        : damage;
+      attackerHp -= appliedBossDamage;
       attackerEnergy = Math.min(
         RAID_SIMULATION_ENERGY_CAP,
-        attackerEnergy + Math.ceil(damage / 2),
+        attackerEnergy + Math.ceil(appliedBossDamage / 2),
       );
 
       if (attackerHp <= 0) {
@@ -551,6 +636,16 @@ export const simulateRaidTeamBattle = ({
   return {
     ...result,
     distribution: buildRaidSimulationDistribution([result]),
+    superMega: superMegaRules
+      ? {
+          shieldCount: superMegaRules.shieldCount,
+          shieldsBroken: superMegaShieldsBroken,
+          eligibleMegaTrainers,
+          triggerHpFraction: superMegaRules.triggerHpFraction,
+          shieldCountSource: superMegaRules.shieldCountSource,
+          shieldCleared: superMegaShieldsBroken >= superMegaRules.shieldCount,
+        }
+      : undefined,
   };
 };
 
@@ -573,6 +668,7 @@ export const simulateRaidBattle = ({
   shouldDodgeSucceed?: () => boolean;
   getBossActionDelaySeconds?: () => number;
   trainerCount?: number;
+  modelSuperMegaMechanics?: boolean;
 }): RaidBattleSimulationResult =>
   simulateRaidTeamBattle({
     ...battle,
@@ -622,12 +718,14 @@ export const simulateRaidTeamAcrossBossMovesets = ({
   tier,
   settings,
   trainerCount = 1,
+  modelSuperMegaMechanics = false,
 }: {
   team: RaidSimulationTeamMember[];
   boss: PokemonVariant;
   tier: RaidTierPreset;
   settings: RaidCounterSettings;
   trainerCount?: number;
+  modelSuperMegaMechanics?: boolean;
 }): RaidBattleSimulationResult | null => {
   const movesets = getRaidBossMovesets(boss);
   if (movesets.length === 0 || team.length === 0) return null;
@@ -656,6 +754,7 @@ export const simulateRaidTeamAcrossBossMovesets = ({
         tier,
         settings,
         trainerCount,
+        modelSuperMegaMechanics,
         shouldBossUseCharged: () => random() < 0.5,
         shouldDodgeSucceed: () =>
           random() < Math.min(1, Math.max(0, settings.dodgeSuccessRate ?? 1)),
@@ -683,6 +782,7 @@ export const simulateRaidTeamAcrossBossMovesets = ({
         tier,
         settings,
         trainerCount,
+        modelSuperMegaMechanics,
         chargedDecisionOffset,
       }),
     ),

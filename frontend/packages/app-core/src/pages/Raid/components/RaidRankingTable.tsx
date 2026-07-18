@@ -35,6 +35,13 @@ interface RaidRankingTableProps {
 const isTypeDpsScore = (score: RaidRankingScore): score is RaidTypeDpsScore =>
   "fastMatchesType" in score;
 
+const getRankTier = (rank: number) => {
+  if (rank === 1) return "gold";
+  if (rank === 2) return "silver";
+  if (rank === 3) return "bronze";
+  return "standard";
+};
+
 const RaidRankingTable = ({
   ariaLabel,
   scores,
@@ -113,6 +120,11 @@ const RaidRankingTable = ({
     <section className="raid-type-results" aria-label={ariaLabel}>
       {scores.length > 0 ? (
         <table>
+          <colgroup>
+            <col className="raid-type-table-pokemon-column" />
+            <col className="raid-type-table-moves-column" />
+            <col span={5} className="raid-type-table-metric-column" />
+          </colgroup>
           <thead>
             <tr>
               <th scope="col">Pokémon</th>
@@ -134,47 +146,60 @@ const RaidRankingTable = ({
                 score.variant,
                 attackerLevel,
               );
+              const rank = index + 1;
+              const rankTier = getRankTier(rank);
               return (
                 <tr key={`${score.variant.variant_id}-${index}`}>
-                <td>
-                  <div className="raid-type-table-pokemon">
-                    <span className="raid-type-table-rank">{index + 1}</span>
-                    <RaidPokemonImage variant={score.variant} />
-                    <span className="raid-type-table-pokemon-copy">
-                      <strong>
-                        {getRaidVariantDisplayName(score.variant)}
-                      </strong>
-                      <small>
-                        {formatTypeList(getVariantTypeNames(score.variant)) ||
-                          "Unknown type"}
-                      </small>
-                      {rosterDetail && (
-                        <small className="raid-roster-row-detail">
-                          {rosterDetail}
+                  <td>
+                    <div className="raid-type-table-pokemon">
+                      <span
+                        aria-label={
+                          rankTier === "standard"
+                            ? `Rank ${rank}`
+                            : `Rank ${rank}, ${rankTier} podium`
+                        }
+                        className={`raid-type-table-rank raid-type-table-rank--${rankTier}`}
+                      >
+                        {rank}
+                      </span>
+                      <RaidPokemonImage variant={score.variant} />
+                      <span className="raid-type-table-pokemon-copy">
+                        <strong>
+                          {getRaidVariantDisplayName(score.variant)}
+                        </strong>
+                        <small>
+                          {formatTypeList(getVariantTypeNames(score.variant)) ||
+                            "Unknown type"}
                         </small>
-                      )}
-                    </span>
-                  </div>
-                </td>
-                <td>
-                  <div className="raid-type-table-moves">
-                    {renderMove("Fast", score, score.fastMove)}
-                    {renderMove("Charged", score, score.chargedMove)}
-                  </div>
-                </td>
-                <td className="raid-type-table-number">
-                  {formatDps(score.eDps)}
-                </td>
-                <td className="raid-type-table-number">
-                  {formatDps(score.dps)}
-                </td>
-                <td className="raid-type-table-number">
-                  {formatWholeNumber(score.tdo)}
-                </td>
-                <td className="raid-type-table-number">{formatEr(score.er)}</td>
-                <td className="raid-type-table-number">
-                  {score.cp.toLocaleString()}
-                </td>
+                        {rosterDetail && (
+                          <small className="raid-roster-row-detail">
+                            {rosterDetail}
+                          </small>
+                        )}
+                      </span>
+                    </div>
+                  </td>
+                  <td>
+                    <div className="raid-type-table-moves">
+                      {renderMove("Fast", score, score.fastMove)}
+                      {renderMove("Charged", score, score.chargedMove)}
+                    </div>
+                  </td>
+                  <td className="raid-type-table-number">
+                    {formatDps(score.eDps)}
+                  </td>
+                  <td className="raid-type-table-number">
+                    {formatDps(score.dps)}
+                  </td>
+                  <td className="raid-type-table-number">
+                    {formatWholeNumber(score.tdo)}
+                  </td>
+                  <td className="raid-type-table-number">
+                    {formatEr(score.er)}
+                  </td>
+                  <td className="raid-type-table-number">
+                    {score.cp.toLocaleString()}
+                  </td>
                 </tr>
               );
             })}

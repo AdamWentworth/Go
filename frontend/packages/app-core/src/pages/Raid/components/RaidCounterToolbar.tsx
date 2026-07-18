@@ -22,8 +22,8 @@ const RaidCounterToolbar = ({
   includeRankingSettings = false,
   rankingSettingsOpen = false,
   onRankingSettingsOpenChange,
-  bestOnlyLabel = "Best moves",
-  allMovesLabel = "All moves",
+  bestOnlyLabel = "Best moveset",
+  allMovesLabel = "All movesets",
 }: RaidCounterToolbarProps) => (
   <section className="raid-counter-toolbar">
     <label className="raid-field">
@@ -36,13 +36,28 @@ const RaidCounterToolbar = ({
       />
     </label>
     <div className="raid-counter-actions">
-      <button
-        className={`raid-toggle-button ${bestOnly ? "active" : ""}`}
-        onClick={() => onBestOnlyChange(!bestOnly)}
-        type="button"
+      <div
+        aria-label="Result detail"
+        className="raid-moveset-segments"
+        role="group"
       >
-        {bestOnly ? bestOnlyLabel : allMovesLabel}
-      </button>
+        <button
+          aria-pressed={bestOnly}
+          className={bestOnly ? "active" : ""}
+          onClick={() => onBestOnlyChange(true)}
+          type="button"
+        >
+          {bestOnlyLabel}
+        </button>
+        <button
+          aria-pressed={!bestOnly}
+          className={!bestOnly ? "active" : ""}
+          onClick={() => onBestOnlyChange(false)}
+          type="button"
+        >
+          {allMovesLabel}
+        </button>
+      </div>
       {includeRankingSettings && (
         <button
           aria-expanded={rankingSettingsOpen}

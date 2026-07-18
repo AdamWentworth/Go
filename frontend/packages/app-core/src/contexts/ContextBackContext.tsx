@@ -100,10 +100,13 @@ export function ContextBackProvider({ children }: { children: ReactNode }) {
     const handlePopState = () => {
       const currentUrl = currentUrlRef.current;
       pushGuardEntry(currentUrl);
-      handleContextBack();
-      window.setTimeout(() => {
-        navigate(currentUrl, { replace: true });
-      }, 0);
+      const handled = handleContextBack();
+
+      if (!handled) {
+        window.setTimeout(() => {
+          navigate(currentUrl, { replace: true });
+        }, 0);
+      }
     };
 
     window.addEventListener('popstate', handlePopState);

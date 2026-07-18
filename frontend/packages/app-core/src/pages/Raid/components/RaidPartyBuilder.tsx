@@ -552,6 +552,13 @@ const RaidPartyBuilder = ({
                   {formatDps(result.dps)} DPS · {Math.round(result.faints)}{" "}
                   faints · {Math.round(result.relobbies)} relobbies
                 </small>
+                {result.superMega && (
+                  <small className="raid-party-shield-result">
+                    {Math.round(result.superMega.shieldsBroken)} /{" "}
+                    {result.superMega.shieldCount} shields broken ·{" "}
+                    {result.superMega.eligibleMegaTrainers} Mega-ready Trainers
+                  </small>
+                )}
               </header>
               {optimization && (
                 <div className="raid-party-optimization-summary">

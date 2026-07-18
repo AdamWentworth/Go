@@ -1,3 +1,4 @@
+import { FaChevronDown, FaSlidersH } from "react-icons/fa";
 import {
   FRIENDSHIP_DAMAGE_BONUS,
   MEGA_ALLY_DAMAGE_BONUS,
@@ -10,6 +11,7 @@ import {
   type RaidDodgeStrategy,
   type ShadowBossMode,
 } from "../utils/raidCalculations";
+import { DEFAULT_RAID_RELOBBY_SECONDS } from "../utils/raidRules";
 import {
   ATTACKER_LEVEL_OPTIONS,
   DODGE_OPTIONS,
@@ -52,6 +54,7 @@ interface RaidModifiersProps {
   onShadowRaidChange: (shadowRaid: boolean) => void;
   shadowBossMode: ShadowBossMode;
   onShadowBossModeChange: (mode: ShadowBossMode) => void;
+  collapsible?: boolean;
 }
 
 const RaidModifiers = ({
@@ -85,8 +88,23 @@ const RaidModifiers = ({
   onShadowRaidChange,
   shadowBossMode,
   onShadowBossModeChange,
-}: RaidModifiersProps) => (
-  <section className="raid-settings-grid" aria-label="Raid modifiers">
+  collapsible = false,
+}: RaidModifiersProps) => {
+  const customSettingCount = [
+    includeAttackerLevel && attackerLevel !== "50.0",
+    friendship !== "none",
+    megaAllyBonus !== "none",
+    partyPower !== "none",
+    weatherBoostedType !== "none",
+    includeRelobbyControls &&
+      relobbySeconds !== DEFAULT_RAID_RELOBBY_SECONDS,
+    includeBossMovesetControls && dodgeStrategy !== "none",
+    includeBossMovesetControls && bossMovesetMode !== "expected",
+    includeShadowControls && shadowMechanicsEnabled,
+  ].filter(Boolean).length;
+
+  const fields = (
+    <section className="raid-settings-grid" aria-label="Raid modifiers">
     {includeAttackerLevel && (
       <label className="raid-field">
         <span>Attacker level</span>
@@ -274,7 +292,32 @@ const RaidModifiers = ({
         )}
       </div>
     )}
-  </section>
-);
+    </section>
+  );
+
+  if (!collapsible) {
+    return fields;
+  }
+
+  return (
+    <details className="raid-modifier-panel">
+      <summary>
+        <FaSlidersH aria-hidden="true" />
+        <span>
+          <strong>Battle settings</strong>
+          <small>
+            {customSettingCount === 0
+              ? "Standard conditions"
+              : `${customSettingCount} custom ${
+                  customSettingCount === 1 ? "setting" : "settings"
+                }`}
+          </small>
+        </span>
+        <FaChevronDown className="raid-modifier-chevron" aria-hidden="true" />
+      </summary>
+      {fields}
+    </details>
+  );
+};
 
 export default RaidModifiers;

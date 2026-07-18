@@ -18,19 +18,12 @@ import {
   getCachedRaidCounterScores,
   setCachedRaidCounterScores,
 } from "./raidCounterCache";
+import { compareRaidCounterScores } from "./raidCounterRanking";
 
 type WeightedFinalistChunk = {
   finalists: PokemonVariant[];
   weight: number;
 };
-
-const compareRaidCounterScores = (
-  a: RaidCounterScore,
-  b: RaidCounterScore,
-) =>
-  b.dps - a.dps ||
-  a.soloTimeSeconds - b.soloTimeSeconds ||
-  a.faints - b.faints;
 
 const getFinalistWeight = (variant: PokemonVariant): number =>
   Math.max(

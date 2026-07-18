@@ -1,10 +1,14 @@
 import type { PokemonVariant } from "@/types/pokemonVariants";
 import type { RaidCounterScore } from "./raidTypes";
 import { RAID_ATTACKER_TEAM_SIZE } from "./raidRules";
+import {
+  compareRaidCounterScores,
+  getRaidCounterSustainedDps,
+} from "./raidCounterRanking";
+import { canBreakSuperMegaShield } from "./superMegaRaid";
 
 const compareCounterDps = (a: RaidCounterScore, b: RaidCounterScore): number =>
-  b.dps - a.dps ||
-  a.soloTimeSeconds - b.soloTimeSeconds ||
+  compareRaidCounterScores(a, b) ||
   a.variant.variant_id.localeCompare(b.variant.variant_id);
 
 export const variantUsesRaidMegaSlot = (variant: PokemonVariant): boolean => {
@@ -52,11 +56,12 @@ const selectRegularMembers = (
 const sumTeamDps = (team: RaidCounterScore[]): number =>
   team.reduce((sum, member) => sum + member.dps, 0);
 
-const compareTeams = (
-  a: RaidCounterScore[],
-  b: RaidCounterScore[],
-): number =>
+const sumTeamSustainedDps = (team: RaidCounterScore[]): number =>
+  team.reduce((sum, member) => sum + getRaidCounterSustainedDps(member), 0);
+
+const compareTeams = (a: RaidCounterScore[], b: RaidCounterScore[]): number =>
   sumTeamDps(b) - sumTeamDps(a) ||
+  sumTeamSustainedDps(b) - sumTeamSustainedDps(a) ||
   b.length - a.length ||
   a
     .map((member) => member.variant.variant_id)
@@ -66,6 +71,7 @@ const compareTeams = (
 export const selectLegalRaidTeamCounters = (
   scores: RaidCounterScore[],
   limit = RAID_ATTACKER_TEAM_SIZE,
+  options: { requireSuperMegaShieldBreaker?: boolean } = {},
 ): RaidCounterScore[] => {
   const teamSize = Math.max(1, Math.floor(limit));
   const sorted = [...scores].sort(compareCounterDps);
@@ -85,7 +91,13 @@ export const selectLegalRaidTeamCounters = (
     ]);
   }
 
-  return scenarios.sort(compareTeams)[0] ?? [];
+  const eligibleScenarios = options.requireSuperMegaShieldBreaker
+    ? scenarios.filter((team) =>
+        team.some((member) => canBreakSuperMegaShield(member.variant)),
+      )
+    : scenarios;
+
+  return eligibleScenarios.sort(compareTeams)[0] ?? [];
 };
 
 export const preserveLegalRaidTeamOrder = (

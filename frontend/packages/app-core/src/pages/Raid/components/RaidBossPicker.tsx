@@ -1,4 +1,5 @@
 import type { KeyboardEvent } from "react";
+import { FaSearch } from "react-icons/fa";
 import type { PokemonVariant } from "@/types/pokemonVariants";
 import RaidPokemonImage from "./RaidPokemonImage";
 import { getVariantTypeNames } from "../utils/raidCalculations";
@@ -27,6 +28,9 @@ const RaidBossPicker = ({
   onSearchChange,
   onBossSelect,
 }: RaidBossPickerProps) => {
+  const variantBadge = getVariantBadge(selectedBoss);
+  const showVariantBadge = variantBadge.toLowerCase() !== "pokemon";
+
   const handleSearchKeyDown = (event: KeyboardEvent<HTMLInputElement>) => {
     if (event.key === "Enter" && filteredBossOptions[0]) {
       onBossSelect(filteredBossOptions[0]);
@@ -34,12 +38,10 @@ const RaidBossPicker = ({
   };
 
   return (
-    <aside className="raid-panel raid-boss-panel">
-      <div className="raid-panel-header">
-        <p className="raid-eyebrow">Raid boss</p>
-        <h2>{getRaidVariantDisplayName(selectedBoss)}</h2>
-      </div>
-
+    <aside
+      aria-label="Raid boss picker"
+      className="raid-panel raid-boss-panel"
+    >
       <div className="raid-boss-card">
         <div className="raid-boss-image-shell">
           <RaidPokemonImage
@@ -48,26 +50,33 @@ const RaidBossPicker = ({
           />
         </div>
         <div className="raid-boss-summary">
-          <span>{getVariantBadge(selectedBoss)}</span>
-          <strong>CP {bossCp.toLocaleString()}</strong>
-          <small>
-            {formatTypeList(getVariantTypeNames(selectedBoss)) ||
-              "Unknown type"}
-          </small>
+          <p className="raid-eyebrow">Raid boss</p>
+          <h2>{getRaidVariantDisplayName(selectedBoss)}</h2>
+          <div className="raid-boss-meta">
+            {showVariantBadge && (
+              <span className="raid-boss-badge">{variantBadge}</span>
+            )}
+            <strong>CP {bossCp.toLocaleString()}</strong>
+            <small>
+              {formatTypeList(getVariantTypeNames(selectedBoss)) ||
+                "Unknown type"}
+            </small>
+          </div>
         </div>
       </div>
 
-      <label className="raid-field">
-        <span>Find boss</span>
+      <div className="raid-boss-search">
+        <FaSearch aria-hidden="true" />
         <input
+          aria-label="Find boss"
           type="search"
           value={search}
           autoComplete="off"
           onChange={(event) => onSearchChange(event.target.value)}
           onKeyDown={handleSearchKeyDown}
-          placeholder="Search by name or number"
+          placeholder="Search raid bosses"
         />
-      </label>
+      </div>
 
       {searchActive && (
         <div

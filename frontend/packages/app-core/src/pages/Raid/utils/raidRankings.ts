@@ -56,7 +56,9 @@ import {
   simulateRaidCounterAcrossBossMovesets,
   simulateRaidTeamAcrossBossMovesets,
 } from "./raidSimulation";
+import { compareRaidCounterScores } from "./raidCounterRanking";
 import { selectLegalRaidTeamCounters } from "./raidTeamSelection";
+import { getSuperMegaShieldRules } from "./superMegaRaid";
 
 export type {
   FriendshipKey,
@@ -152,15 +154,16 @@ const calculateMoveCycleEstimate = (
   const chargedSeconds = Math.max(0.5, getRaidMoveCooldown(chargedMove) / 1000);
   const cycleSeconds = fastUses * fastSeconds + chargedSeconds;
   const cycleDamage = fastUses * fastDamage + chargedDamage;
-  const dps = cycleDamage / cycleSeconds;
-  const soloTimeSeconds = bossStats.hp / dps;
+  const sustainedDps = cycleDamage / cycleSeconds;
+  const soloTimeSeconds = bossStats.hp / sustainedDps;
 
   return {
     variant: attacker,
     fastMove,
     chargedMove,
     cp: calculatePokemonCpForLevel(attacker, settings.attackerLevel),
-    dps,
+    sustainedDps,
+    dps: sustainedDps,
     fastDamage,
     chargedDamage,
     cycleSeconds,
@@ -173,7 +176,8 @@ const calculateMoveCycleEstimate = (
     trainersNeeded: Math.max(
       1,
       Math.ceil(
-        bossStats.hp / (dps * bossStats.timeLimitSeconds * RAID_SAFETY_FACTOR),
+        bossStats.hp /
+          (sustainedDps * bossStats.timeLimitSeconds * RAID_SAFETY_FACTOR),
       ),
     ),
     faints: 0,
@@ -222,9 +226,7 @@ export const calculateRaidCounterScore = (
       1,
       Math.ceil(
         bossStats.hp /
-          (simulation.dps *
-            bossStats.timeLimitSeconds *
-            RAID_SAFETY_FACTOR),
+          (simulation.dps * bossStats.timeLimitSeconds * RAID_SAFETY_FACTOR),
       ),
     ),
     faints: simulation.faints,
@@ -244,12 +246,7 @@ export const scoreRaidCounters = (
   tier: RaidTierPreset,
   settings: RaidCounterSettings,
 ): RaidCounterScore[] => {
-  const finalists = selectRaidCounterFinalists(
-    attackers,
-    boss,
-    tier,
-    settings,
-  );
+  const finalists = selectRaidCounterFinalists(attackers, boss, tier, settings);
   return scoreRaidCounterFinalists(finalists, boss, tier, settings);
 };
 
@@ -318,11 +315,7 @@ export const scoreRaidCounterFinalists = (
         ),
       );
     })
-    .sort((a, b) =>
-      b.dps - a.dps ||
-      a.soloTimeSeconds - b.soloTimeSeconds ||
-      a.faints - b.faints,
-    );
+    .sort(compareRaidCounterScores);
 
 export const calculateOverallMoveCycleScore = (
   attacker: PokemonVariant,
@@ -635,11 +628,7 @@ export const scoreBestRaidOverallAttackers = (
             getHiddenPowerCoverage(fastMove) >
               getHiddenPowerCoverage(current.fastMove);
 
-          if (
-            !current ||
-            scoreComparison < 0 ||
-            winsHiddenPowerCoverageTie
-          ) {
+          if (!current || scoreComparison < 0 || winsHiddenPowerCoverageTie) {
             bestByVariant.set(key, score);
           }
         },
@@ -859,12 +848,12 @@ export const dedupeBestCounterPerVariant = (
       score.variant.variant_id ||
       `${score.variant.pokemon_id}-${score.variant.variantType}`;
     const current = bestByVariant.get(key);
-    if (!current || score.dps > current.dps) {
+    if (!current || compareRaidCounterScores(score, current) < 0) {
       bestByVariant.set(key, score);
     }
   });
 
-  return Array.from(bestByVariant.values()).sort((a, b) => b.dps - a.dps);
+  return Array.from(bestByVariant.values()).sort(compareRaidCounterScores);
 };
 
 export const dedupeBestTypeDpsPerVariant = (
@@ -907,8 +896,11 @@ export const estimateRaidGroup = (
   tier: RaidTierPreset,
   settings: RaidCounterSettings,
 ): RaidGroupEstimate => {
+  const superMegaRules = getSuperMegaShieldRules(boss, tier);
   const bestCounters = selectLegalRaidTeamCounters(
     dedupeBestCounterPerVariant(scores),
+    undefined,
+    { requireSuperMegaShieldBreaker: Boolean(superMegaRules) },
   );
   const fallbackTeamDps =
     bestCounters.length > 0
@@ -926,11 +918,7 @@ export const estimateRaidGroup = (
     settings,
   });
   const topTeamDps = teamSimulation?.dps ?? fallbackTeamDps;
-  const bossStats = calculateRaidBossStats(
-    boss,
-    tier,
-    settings.shadowBossMode,
-  );
+  const bossStats = calculateRaidBossStats(boss, tier, settings.shadowBossMode);
 
   if (topTeamDps <= 0) {
     return {
@@ -945,7 +933,10 @@ export const estimateRaidGroup = (
   let simulatedMinimum = 0;
   let simulatedComfortable = 0;
   for (
-    let trainerCount = minimumPartySize;
+    let trainerCount = Math.max(
+      minimumPartySize,
+      superMegaRules?.shieldCount ?? 1,
+    );
     trainerCount <= 20;
     trainerCount += 1
   ) {
@@ -959,6 +950,7 @@ export const estimateRaidGroup = (
       tier,
       settings,
       trainerCount,
+      modelSuperMegaMechanics: Boolean(superMegaRules),
     });
     if (!groupSimulation?.won) continue;
     if (simulatedMinimum === 0) simulatedMinimum = trainerCount;
@@ -973,6 +965,7 @@ export const estimateRaidGroup = (
 
   const fallbackMinimum = Math.max(
     minimumPartySize,
+    superMegaRules?.shieldCount ?? 1,
     Math.ceil(
       bossStats.hp /
         (topTeamDps * bossStats.timeLimitSeconds * RAID_SAFETY_FACTOR),
@@ -984,9 +977,7 @@ export const estimateRaidGroup = (
     simulatedComfortable ||
       Math.ceil(
         bossStats.hp /
-          (topTeamDps *
-            bossStats.timeLimitSeconds *
-            COMFORTABLE_SAFETY_FACTOR),
+          (topTeamDps * bossStats.timeLimitSeconds * COMFORTABLE_SAFETY_FACTOR),
       ),
   );
 
@@ -996,6 +987,13 @@ export const estimateRaidGroup = (
     comfortableTrainers,
     soloTimeSeconds:
       teamSimulation?.projectedTimeToWinSeconds ?? bossStats.hp / topTeamDps,
+    superMega: superMegaRules
+      ? {
+          shieldCount: superMegaRules.shieldCount,
+          shieldCountSource: superMegaRules.shieldCountSource,
+          assumesMegaPerTrainer: true,
+        }
+      : undefined,
   };
 };
 
@@ -1006,8 +1004,11 @@ export const simulateRaidGroupAtTrainerCount = (
   settings: RaidCounterSettings,
   trainerCount: number,
 ): RaidBattleSimulationResult | null => {
+  const superMegaRules = getSuperMegaShieldRules(boss, tier);
   const bestCounters = selectLegalRaidTeamCounters(
     dedupeBestCounterPerVariant(scores),
+    undefined,
+    { requireSuperMegaShieldBreaker: Boolean(superMegaRules) },
   );
   if (bestCounters.length === 0) return null;
 
@@ -1021,6 +1022,7 @@ export const simulateRaidGroupAtTrainerCount = (
     tier,
     settings,
     trainerCount: Math.min(20, Math.max(1, Math.floor(trainerCount))),
+    modelSuperMegaMechanics: Boolean(superMegaRules),
   });
 };
 

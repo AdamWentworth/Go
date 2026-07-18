@@ -27,62 +27,66 @@ const RaidCalibrationPanel = ({
   onClear,
   onExport,
 }: RaidCalibrationPanelProps) => (
-  <section className="raid-calibration" aria-label="Observed raid calibration">
+  <section
+    className={`raid-calibration ${profile.sampleCount === 0 ? "empty" : ""}`}
+    aria-label="Observed raid calibration"
+  >
     <div className="raid-calibration-heading">
       <FaChartLine aria-hidden="true" />
       <div>
         <strong>Battle calibration</strong>
         <span>
-          Private to this device
-          {profile.medianLatencyMs == null
-            ? ""
-            : ` · ${Math.round(profile.medianLatencyMs)} ms median`}
+          {profile.sampleCount === 0
+            ? "No raids logged on this device"
+            : `Private to this device${
+                profile.medianLatencyMs == null
+                  ? ""
+                  : ` · ${Math.round(profile.medianLatencyMs)} ms median`
+              }`}
         </span>
       </div>
     </div>
 
-    <dl className="raid-calibration-metrics">
-      <div>
-        <dt>Raids</dt>
-        <dd>{profile.sampleCount}</dd>
-      </div>
-      <div>
-        <dt>Exact parties</dt>
-        <dd>{profile.exactPartySampleCount}</dd>
-      </div>
-      <div>
-        <dt>TTW error</dt>
-        <dd>
-          {profile.clearSampleCount > 0
-            ? formatPercent(profile.meanAbsoluteTimingErrorPercent)
-            : "-"}
-        </dd>
-      </div>
-      <div>
-        <dt>P90 error</dt>
-        <dd>
-          {profile.clearSampleCount > 0
-            ? `${Math.round(profile.p90AbsoluteTimingErrorSeconds)}s`
-            : "-"}
-        </dd>
-      </div>
-      <div>
-        <dt>Outcome</dt>
-        <dd>
-          {profile.sampleCount > 0
-            ? formatPercent(profile.predictedOutcomeAccuracy)
-            : "-"}
-        </dd>
-      </div>
-      <div>
-        <dt>Dodge</dt>
-        <dd>
-          {profile.dodgeAttempts > 0
-            ? formatPercent(profile.dodgeSuccessRate)
-            : "-"}
-        </dd>
-      </div>
-    </dl>
+    {profile.sampleCount > 0 && (
+      <dl className="raid-calibration-metrics">
+        <div>
+          <dt>Raids</dt>
+          <dd>{profile.sampleCount}</dd>
+        </div>
+        <div>
+          <dt>Exact parties</dt>
+          <dd>{profile.exactPartySampleCount}</dd>
+        </div>
+        <div>
+          <dt>TTW error</dt>
+          <dd>
+            {profile.clearSampleCount > 0
+              ? formatPercent(profile.meanAbsoluteTimingErrorPercent)
+              : "-"}
+          </dd>
+        </div>
+        <div>
+          <dt>P90 error</dt>
+          <dd>
+            {profile.clearSampleCount > 0
+              ? `${Math.round(profile.p90AbsoluteTimingErrorSeconds)}s`
+              : "-"}
+          </dd>
+        </div>
+        <div>
+          <dt>Outcome</dt>
+          <dd>{formatPercent(profile.predictedOutcomeAccuracy)}</dd>
+        </div>
+        <div>
+          <dt>Dodge</dt>
+          <dd>
+            {profile.dodgeAttempts > 0
+              ? formatPercent(profile.dodgeSuccessRate)
+              : "-"}
+          </dd>
+        </div>
+      </dl>
+    )}
 
     <div className="raid-calibration-actions">
       <button
@@ -94,22 +98,24 @@ const RaidCalibrationPanel = ({
         <FaStopwatch aria-hidden="true" />
         <span>Log raid</span>
       </button>
-      <label
-        className="raid-calibration-toggle"
-        title={
-          profile.canApplyDodgeCalibration
-            ? undefined
-            : "Requires 5 raids and 10 dodge attempts"
-        }
-      >
-        <input
-          checked={enabled}
-          disabled={!profile.canApplyDodgeCalibration}
-          onChange={(event) => onEnabledChange(event.target.checked)}
-          type="checkbox"
-        />
-        <span>Use observed dodges</span>
-      </label>
+      {profile.sampleCount > 0 && (
+        <label
+          className="raid-calibration-toggle"
+          title={
+            profile.canApplyDodgeCalibration
+              ? undefined
+              : "Requires 5 raids and 10 dodge attempts"
+          }
+        >
+          <input
+            checked={enabled}
+            disabled={!profile.canApplyDodgeCalibration}
+            onChange={(event) => onEnabledChange(event.target.checked)}
+            type="checkbox"
+          />
+          <span>Use observed dodges</span>
+        </label>
+      )}
       {profile.sampleCount > 0 && (
         <button
           aria-label="Export observed raid data"

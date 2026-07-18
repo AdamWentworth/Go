@@ -1,6 +1,6 @@
 {
   "schemaVersion": 4,
-  "modelVersion": 12,
+  "modelVersion": 13,
   "reviewedAt": "2026-07-17",
   "productionDefaults": {
     "attackerLevel": "50.0",
@@ -15,6 +15,8 @@
     "initialViewMayDeferRaidMetadata": true
   },
   "bossSimulation": {
+    "displayedDps": "sustained move-cycle DPS",
+    "practicalOutcomes": "finite-boss Monte Carlo time, faints, and relobbies",
     "finalistLimit": 384,
     "monteCarloSamples": {
       "minimum": 32,

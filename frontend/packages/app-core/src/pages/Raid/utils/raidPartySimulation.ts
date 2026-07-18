@@ -33,6 +33,10 @@ import {
 } from "./raidPartyPower";
 import { calculateRaidAttackerBattleStats } from "./raidTargetModel";
 import { variantUsesRaidMegaSlot } from "./raidTeamSelection";
+import {
+  canBreakSuperMegaShield,
+  getSuperMegaShieldRules,
+} from "./superMegaRaid";
 import type {
   MegaAllyBonusKey,
   RaidPartySimulationResult,
@@ -67,6 +71,7 @@ type TrainerMemberProfile = {
   bossFastDamage: number;
   bossChargedDamage: number;
   dodgedBossChargedDamage: number;
+  canBreakSuperMegaShield: boolean;
 };
 
 type TrainerState = {
@@ -86,6 +91,7 @@ type TrainerState = {
   dodges: number;
   attackerChargedMoves: number;
   partyPoweredChargedMoves: number;
+  superMegaShieldBreakUsed: boolean;
 };
 
 type PartySimulationRandomness = {
@@ -212,6 +218,7 @@ const buildTrainerProfiles = ({
         weatherBoostedType: trainer.settings.weatherBoostedType,
         dodged: true,
       }),
+      canBreakSuperMegaShield: canBreakSuperMegaShield(member.attacker),
     };
   });
 
@@ -270,6 +277,7 @@ export const simulateHeterogeneousRaidPartyBattle = ({
     tier,
     globalSettings.shadowBossMode,
   );
+  const superMegaRules = getSuperMegaShieldRules(boss, tier);
   const bossTypes = getVariantTypeNames(boss);
   const states: TrainerState[] = trainers.map((trainer) => {
     const profiles = buildTrainerProfiles({
@@ -298,6 +306,7 @@ export const simulateHeterogeneousRaidPartyBattle = ({
       dodges: 0,
       attackerChargedMoves: 0,
       partyPoweredChargedMoves: 0,
+      superMegaShieldBreakUsed: false,
     };
   });
   const bossChargedCost = Math.max(
@@ -312,6 +321,11 @@ export const simulateHeterogeneousRaidPartyBattle = ({
   let bossChargedMoves = 0;
   let damageDealt = 0;
   let winTime: number | null = null;
+  let superMegaShieldActive = false;
+  let superMegaShieldsBroken = 0;
+  const eligibleMegaTrainers = states.filter((state) =>
+    state.profiles.some((profile) => profile.canBreakSuperMegaShield),
+  ).length;
 
   const enqueue = (event: Omit<PartySimulationEvent, "sequence">) => {
     events.push({
@@ -337,6 +351,32 @@ export const simulateHeterogeneousRaidPartyBattle = ({
   };
   const nextBossActionDelay = () =>
     getBossActionDelaySeconds?.() ?? RAID_SIMULATION_BOSS_ACTION_DELAY_SECONDS;
+  const activateSuperMegaShield = (time: number) => {
+    superMegaShieldActive = true;
+    states.forEach((state, trainerIndex) => {
+      if (!state.active) return;
+      const megaIndex = state.profiles.findIndex(
+        (profile) => profile.canBreakSuperMegaShield,
+      );
+      if (megaIndex < 0) return;
+
+      const alreadyActive = state.teamPosition === megaIndex;
+      state.teamPosition = megaIndex;
+      state.generation += 1;
+      state.hp = alreadyActive ? state.hp : state.profiles[megaIndex].hp;
+      state.energy = Math.max(
+        state.energy,
+        state.profiles[megaIndex].chargedCost,
+      );
+      state.reservedDodgeHitTime = null;
+      enqueue({
+        actor: "trainer-start",
+        time: time + Math.max(0, state.trainer.actionDelaySeconds),
+        trainerIndex,
+        trainerGeneration: state.generation,
+      });
+    });
+  };
 
   states.forEach((state, trainerIndex) => {
     enqueue({
@@ -464,14 +504,37 @@ export const simulateHeterogeneousRaidPartyBattle = ({
       });
       if (charged) state.attackerChargedMoves += 1;
       if (event.partyPowered) state.partyPoweredChargedMoves += 1;
+      const shieldedForHit = superMegaShieldActive;
+      if (
+        shieldedForHit &&
+        charged &&
+        profile.canBreakSuperMegaShield &&
+        !state.superMegaShieldBreakUsed &&
+        superMegaRules
+      ) {
+        state.superMegaShieldBreakUsed = true;
+        superMegaShieldsBroken = Math.min(
+          superMegaRules.shieldCount,
+          superMegaShieldsBroken + 1,
+        );
+        if (superMegaShieldsBroken >= superMegaRules.shieldCount) {
+          superMegaShieldActive = false;
+        }
+      }
       const bossHpBeforeDamage = bossHp;
-      bossHp = Math.max(0, bossHp - damage);
-      const appliedDamage = Math.min(damage, bossHpBeforeDamage);
+      const phaseDamage = shieldedForHit
+        ? Math.max(
+            1,
+            Math.floor(damage / superMegaRules!.shieldedDefenseMultiplier),
+          )
+        : damage;
+      bossHp = Math.max(0, bossHp - phaseDamage);
+      const appliedDamage = Math.min(phaseDamage, bossHpBeforeDamage);
       state.damageDealt += appliedDamage;
       damageDealt += appliedDamage;
       bossEnergy = Math.min(
         RAID_SIMULATION_ENERGY_CAP,
-        bossEnergy + Math.ceil(damage / 2),
+        bossEnergy + Math.ceil(phaseDamage / 2),
       );
 
       states.forEach((partyState) => {
@@ -498,9 +561,20 @@ export const simulateHeterogeneousRaidPartyBattle = ({
         }
       });
 
+      const superMegaTriggered = Boolean(
+        superMegaRules &&
+        !superMegaShieldActive &&
+        superMegaShieldsBroken === 0 &&
+        bossHp > 0 &&
+        bossHp <= bossStats.hp * superMegaRules.triggerHpFraction,
+      );
+      if (superMegaTriggered) {
+        activateSuperMegaShield(event.time);
+      }
+
       if (bossHp <= 0) {
         winTime = event.time;
-      } else {
+      } else if (!superMegaTriggered) {
         enqueue({
           actor: "trainer-start",
           time: event.time + Math.max(0, state.trainer.actionDelaySeconds),
@@ -594,10 +668,16 @@ export const simulateHeterogeneousRaidPartyBattle = ({
         if (state.reservedDodgeHitTime === event.time) {
           state.reservedDodgeHitTime = null;
         }
-        state.hp -= damage;
+        const appliedBossDamage = superMegaShieldActive
+          ? Math.max(
+              1,
+              Math.round(damage * superMegaRules!.enragedAttackMultiplier),
+            )
+          : damage;
+        state.hp -= appliedBossDamage;
         state.energy = Math.min(
           RAID_SIMULATION_ENERGY_CAP,
-          state.energy + Math.ceil(damage / 2),
+          state.energy + Math.ceil(appliedBossDamage / 2),
         );
 
         if (state.hp > 0) return;
@@ -670,6 +750,16 @@ export const simulateHeterogeneousRaidPartyBattle = ({
     ...baseResult,
     distribution: buildRaidSimulationDistribution([baseResult]),
     trainers: trainerResults,
+    superMega: superMegaRules
+      ? {
+          shieldCount: superMegaRules.shieldCount,
+          shieldsBroken: superMegaShieldsBroken,
+          eligibleMegaTrainers,
+          triggerHpFraction: superMegaRules.triggerHpFraction,
+          shieldCountSource: superMegaRules.shieldCountSource,
+          shieldCleared: superMegaShieldsBroken >= superMegaRules.shieldCount,
+        }
+      : undefined,
   };
 };
 
@@ -704,6 +794,24 @@ const averagePartyResults = (
       ),
     };
   });
+  const superMegaSamples = results.flatMap((result) =>
+    result.superMega ? [result.superMega] : [],
+  );
+  const superMega = superMegaSamples[0]
+    ? {
+        shieldCount: superMegaSamples[0].shieldCount,
+        shieldsBroken:
+          superMegaSamples.reduce(
+            (sum, result) => sum + result.shieldsBroken,
+            0,
+          ) / superMegaSamples.length,
+        eligibleMegaTrainers: superMegaSamples[0].eligibleMegaTrainers,
+        triggerHpFraction: superMegaSamples[0].triggerHpFraction,
+        shieldCountSource: superMegaSamples[0].shieldCountSource,
+        shieldCleared: superMegaSamples.every((result) => result.shieldCleared),
+      }
+    : undefined;
+
   return {
     damageDealt: average((result) => result.damageDealt),
     elapsedSeconds: average((result) => result.elapsedSeconds),
@@ -722,6 +830,7 @@ const averagePartyResults = (
     won: results.every((result) => result.won),
     distribution: buildRaidSimulationDistribution(results),
     trainers,
+    superMega,
   };
 };
 

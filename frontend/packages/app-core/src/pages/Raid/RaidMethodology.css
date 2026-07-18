@@ -1,0 +1,420 @@
+.raid-methodology-page {
+  min-height: 100vh;
+  padding: clamp(1rem, 3vw, 2rem);
+  color: var(--color-text-primary, #f6ffff);
+  text-align: left;
+  background:
+    radial-gradient(circle at 12% 0%, rgba(47, 214, 208, 0.16), transparent 30rem),
+    radial-gradient(circle at 90% 12%, rgba(255, 188, 69, 0.14), transparent 26rem),
+    var(--color-background, #0d1011);
+}
+
+.raid-methodology-shell {
+  width: min(100%, 960px);
+  margin: 0 auto;
+}
+
+.raid-methodology-header {
+  padding: clamp(0.75rem, 3vw, 2rem) 0 clamp(1.5rem, 4vw, 2.75rem);
+  border-bottom: 1px solid rgba(102, 220, 220, 0.24);
+}
+
+.raid-methodology-back,
+.raid-methodology-return {
+  display: inline-flex;
+  gap: 0.5rem;
+  align-items: center;
+  min-height: 2.5rem;
+  padding: 0.55rem 0.8rem;
+  border: 1px solid rgba(117, 230, 223, 0.3);
+  border-radius: 999px;
+  color: #75e6df;
+  background: rgba(255, 255, 255, 0.045);
+  font-size: 0.78rem;
+  font-weight: 900;
+  text-decoration: none;
+  text-transform: uppercase;
+  transition: border-color 160ms ease, color 160ms ease, background 160ms ease;
+}
+
+.raid-methodology-back:hover,
+.raid-methodology-back:focus-visible,
+.raid-methodology-return:hover,
+.raid-methodology-return:focus-visible {
+  border-color: rgba(117, 230, 223, 0.68);
+  color: #efffff;
+  background: rgba(65, 215, 207, 0.14);
+}
+
+.raid-methodology-eyebrow,
+.raid-methodology-kicker {
+  margin: 2rem 0 0.35rem;
+  color: #75e6df;
+  font-size: 0.75rem;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.raid-methodology-header h1 {
+  max-width: 18ch;
+  margin: 0;
+  font-size: clamp(2rem, 6vw, 4.25rem);
+  line-height: 0.98;
+}
+
+.raid-methodology-intro {
+  max-width: 66ch;
+  margin: 1rem 0 0;
+  color: rgba(224, 242, 243, 0.82);
+  font-size: clamp(1rem, 2vw, 1.2rem);
+  line-height: 1.55;
+}
+
+.raid-methodology-nav {
+  position: sticky;
+  z-index: 4;
+  top: 0;
+  display: flex;
+  gap: 0.35rem;
+  overflow-x: auto;
+  padding: 0.65rem 0;
+  border-bottom: 1px solid rgba(102, 220, 220, 0.18);
+  background: color-mix(in srgb, var(--color-background, #0d1011) 88%, transparent);
+  backdrop-filter: blur(14px);
+  scrollbar-width: none;
+}
+
+.raid-methodology-nav::-webkit-scrollbar {
+  display: none;
+}
+
+.raid-methodology-nav a {
+  flex: 0 0 auto;
+  padding: 0.4rem 0.65rem;
+  border-radius: 999px;
+  color: rgba(224, 242, 243, 0.76);
+  font-size: 0.72rem;
+  font-weight: 900;
+  text-decoration: none;
+  text-transform: uppercase;
+}
+
+.raid-methodology-nav a:hover,
+.raid-methodology-nav a:focus-visible {
+  color: #071214;
+  background: #75e6df;
+}
+
+.raid-methodology-section {
+  scroll-margin-top: 4.25rem;
+  padding: clamp(2.5rem, 7vw, 5rem) 0;
+  border-bottom: 1px solid rgba(102, 220, 220, 0.18);
+}
+
+.raid-methodology-section .raid-methodology-kicker {
+  margin-top: 0;
+}
+
+.raid-methodology-section h2 {
+  max-width: 26ch;
+  margin: 0 0 1rem;
+  font-size: clamp(1.5rem, 4vw, 2.5rem);
+  line-height: 1.05;
+}
+
+.raid-methodology-section > p:not(.raid-methodology-kicker, .raid-methodology-validation) {
+  max-width: 72ch;
+  color: rgba(224, 242, 243, 0.78);
+  line-height: 1.65;
+}
+
+.raid-methodology-mode-list {
+  display: grid;
+  margin-top: 2rem;
+}
+
+.raid-methodology-mode-list > article {
+  display: grid;
+  grid-template-columns: 3rem minmax(0, 1fr);
+  gap: 1rem;
+  padding: 1.35rem 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.raid-methodology-mode-list > article > span {
+  color: #ffbd4a;
+  font-size: 0.78rem;
+  font-weight: 950;
+}
+
+.raid-methodology-mode-list h3,
+.raid-methodology-metrics h3 {
+  margin: 0;
+}
+
+.raid-methodology-mode-list strong {
+  display: block;
+  margin-top: 0.2rem;
+  color: rgba(238, 255, 255, 0.9);
+}
+
+.raid-methodology-mode-list p {
+  max-width: 70ch;
+  margin: 0.5rem 0 0;
+  color: rgba(199, 224, 225, 0.72);
+  line-height: 1.55;
+}
+
+.raid-methodology-metrics {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 0.5rem;
+  margin-top: 1.5rem;
+}
+
+.raid-methodology-metrics article {
+  display: flex;
+  min-height: 10.5rem;
+  padding: 0.9rem;
+  border: 1px solid rgba(102, 220, 220, 0.18);
+  border-radius: 8px;
+  flex-direction: column;
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.raid-methodology-metrics h3 {
+  color: #75e6df;
+  font-size: 1.15rem;
+}
+
+.raid-methodology-metrics p {
+  margin: 0.45rem 0;
+  color: rgba(224, 242, 243, 0.76);
+  font-size: 0.8rem;
+  line-height: 1.45;
+}
+
+.raid-methodology-metrics span {
+  margin-top: auto;
+  color: rgba(255, 189, 74, 0.82);
+  font-size: 0.68rem;
+  font-weight: 850;
+}
+
+.raid-methodology-formulas {
+  display: grid;
+  gap: 0.5rem;
+  margin-top: 1rem;
+}
+
+.raid-methodology-formulas code,
+.raid-methodology-damage-formula {
+  overflow-x: auto;
+  padding: 0.8rem 0.9rem;
+  border-left: 3px solid #75e6df;
+  color: #efffff;
+  background: rgba(117, 230, 223, 0.07);
+  font-size: 0.78rem;
+  white-space: nowrap;
+}
+
+.raid-methodology-steps {
+  display: grid;
+  gap: 0;
+  margin: 1.5rem 0;
+  padding: 0;
+  list-style: none;
+  counter-reset: methodology-step;
+}
+
+.raid-methodology-steps li {
+  display: grid;
+  grid-template-columns: minmax(10rem, 0.45fr) minmax(0, 1fr);
+  gap: 1rem;
+  padding: 1rem 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  counter-increment: methodology-step;
+}
+
+.raid-methodology-steps strong::before {
+  margin-right: 0.55rem;
+  color: #ffbd4a;
+  content: counter(methodology-step, decimal-leading-zero);
+}
+
+.raid-methodology-steps span {
+  color: rgba(199, 224, 225, 0.72);
+  line-height: 1.55;
+}
+
+.raid-methodology-damage-formula {
+  margin: 0;
+}
+
+.raid-methodology-limit-list {
+  display: grid;
+  gap: 0.8rem;
+  max-width: 74ch;
+  margin: 1.5rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.raid-methodology-limit-list li {
+  position: relative;
+  padding-left: 1.35rem;
+  color: rgba(224, 242, 243, 0.78);
+  line-height: 1.55;
+}
+
+.raid-methodology-limit-list li::before {
+  position: absolute;
+  top: 0.6em;
+  left: 0;
+  width: 0.45rem;
+  height: 0.45rem;
+  border-radius: 50%;
+  background: #75e6df;
+  content: "";
+}
+
+.raid-methodology-validation {
+  max-width: 74ch;
+  margin: 1.75rem 0 0;
+  padding: 1rem;
+  border: 1px solid rgba(255, 189, 74, 0.25);
+  border-radius: 8px;
+  color: rgba(255, 239, 210, 0.85);
+  background: rgba(255, 189, 74, 0.07);
+  line-height: 1.55;
+}
+
+.raid-methodology-footer {
+  display: flex;
+  gap: 1.5rem;
+  align-items: center;
+  justify-content: space-between;
+  padding: 2rem 0 5rem;
+}
+
+.raid-methodology-footer p {
+  max-width: 58ch;
+  margin: 0;
+  color: rgba(177, 211, 213, 0.58);
+  font-size: 0.68rem;
+  line-height: 1.45;
+  text-align: right;
+}
+
+:root[data-theme='light'] .raid-methodology-page {
+  color: #102a32;
+  background:
+    radial-gradient(circle at 12% 0%, rgba(47, 214, 208, 0.18), transparent 30rem),
+    radial-gradient(circle at 90% 12%, rgba(255, 188, 69, 0.16), transparent 26rem),
+    #edf7f6;
+}
+
+:root[data-theme='light'] .raid-methodology-intro,
+:root[data-theme='light'] .raid-methodology-section > p:not(.raid-methodology-kicker, .raid-methodology-validation),
+:root[data-theme='light'] .raid-methodology-mode-list p,
+:root[data-theme='light'] .raid-methodology-metrics p,
+:root[data-theme='light'] .raid-methodology-steps span,
+:root[data-theme='light'] .raid-methodology-limit-list li {
+  color: rgba(20, 55, 63, 0.76);
+}
+
+:root[data-theme='light'] .raid-methodology-mode-list strong {
+  color: #102a32;
+}
+
+:root[data-theme='light'] .raid-methodology-nav {
+  background: rgba(237, 247, 246, 0.9);
+}
+
+:root[data-theme='light'] .raid-methodology-nav a {
+  color: rgba(20, 55, 63, 0.72);
+}
+
+:root[data-theme='light'] .raid-methodology-metrics article {
+  border-color: rgba(21, 139, 154, 0.18);
+  background: rgba(255, 255, 255, 0.66);
+}
+
+:root[data-theme='light'] .raid-methodology-formulas code,
+:root[data-theme='light'] .raid-methodology-damage-formula {
+  color: #102a32;
+  background: rgba(54, 202, 199, 0.12);
+}
+
+:root[data-theme='light'] .raid-methodology-back,
+:root[data-theme='light'] .raid-methodology-return {
+  color: #087d91;
+  border-color: rgba(21, 139, 154, 0.2);
+  background: rgba(255, 255, 255, 0.7);
+}
+
+@media (max-width: 760px) {
+  .raid-methodology-page {
+    padding: 0.65rem;
+  }
+
+  .raid-methodology-header h1 {
+    max-width: 14ch;
+  }
+
+  .raid-methodology-nav {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    overflow: visible;
+    display: grid;
+  }
+
+  .raid-methodology-nav a {
+    min-width: 0;
+    padding-inline: 0.25rem;
+    text-align: center;
+  }
+
+  .raid-methodology-section {
+    scroll-margin-top: 6.5rem;
+  }
+
+  .raid-methodology-metrics {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .raid-methodology-metrics article {
+    min-height: 9.5rem;
+  }
+
+  .raid-methodology-steps li {
+    grid-template-columns: 1fr;
+    gap: 0.45rem;
+  }
+
+  .raid-methodology-footer {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .raid-methodology-footer p {
+    text-align: left;
+  }
+}
+
+@media (max-width: 390px) {
+  .raid-methodology-metrics {
+    grid-template-columns: 1fr;
+  }
+
+  .raid-methodology-metrics article {
+    min-height: auto;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .raid-methodology-back,
+  .raid-methodology-return {
+    transition: none;
+  }
+}

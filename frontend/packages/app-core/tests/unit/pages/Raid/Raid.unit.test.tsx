@@ -1,6 +1,7 @@
 import React from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { fireEvent, render, screen, within } from "@testing-library/react";
+import { MemoryRouter } from "react-router-dom";
 
 import Raid from "@/pages/Raid/Raid";
 import { useInstancesStore } from "@/features/instances/store/useInstancesStore";
@@ -89,6 +90,20 @@ const variant = (overrides: RaidTestVariantOverrides): PokemonVariant =>
     backgrounds: [],
     variant_id: overrides.variant_id,
   }) as unknown as PokemonVariant;
+
+const renderRaid = () =>
+  render(
+    <MemoryRouter>
+      <Raid />
+    </MemoryRouter>,
+  );
+
+const openRaidSetup = () => {
+  const setup = screen.getByText("Raid setup").closest("details");
+  expect(setup).not.toHaveAttribute("open");
+  fireEvent.click(screen.getByText("Raid setup").closest("summary")!);
+  expect(setup).toHaveAttribute("open");
+};
 
 describe("Raid page", () => {
   beforeEach(() => {
@@ -208,13 +223,13 @@ describe("Raid page", () => {
   it("renders loading spinner while variants are loading", () => {
     mocks.storeState.variantsLoading = true;
 
-    render(<Raid />);
+    renderRaid();
 
     expect(screen.getByTestId("loading-spinner")).toBeInTheDocument();
   });
 
   it("renders the selected boss and metadata-backed raid tier", () => {
-    render(<Raid />);
+    renderRaid();
 
     fireEvent.click(screen.getByRole("button", { name: "Boss counters" }));
 
@@ -222,17 +237,44 @@ describe("Raid page", () => {
       screen.getByRole("button", { name: "Boss counters" }),
     ).toBeInTheDocument();
     expect(screen.queryByText(/Build a raid team/i)).not.toBeInTheDocument();
-    expect(screen.getByText("Boss CP")).toBeInTheDocument();
-    expect(screen.getAllByText("5-star").length).toBeGreaterThan(0);
+    expect(screen.getByText("Raid setup").closest("details")).not.toHaveAttribute(
+      "open",
+    );
+    openRaidSetup();
+    const raidSummary = screen.getByLabelText("Raid summary");
+    expect(within(raidSummary).getByText("Legendary Raid")).toBeInTheDocument();
+    expect(within(raidSummary).getByText("Boss HP")).toBeInTheDocument();
+    expect(within(raidSummary).getByText("Minimum")).toBeInTheDocument();
+    expect(within(raidSummary).getByText("Comfortable")).toBeInTheDocument();
+    expect(within(raidSummary).getByText("Team DPS")).toBeInTheDocument();
+    const estimateRules = within(raidSummary)
+      .getByText("Team estimate rules")
+      .closest("details");
+    expect(estimateRules).not.toHaveAttribute("open");
+    fireEvent.click(within(raidSummary).getByText("Team estimate rules"));
+    expect(estimateRules).toHaveAttribute("open");
     expect(
-      screen.getByText((_, element) => element?.textContent === "1889 - 1972"),
+      screen.getByText((_, element) => element?.textContent === "1889–1972"),
     ).toBeInTheDocument();
+    const bossPicker = screen.getByLabelText("Raid boss picker");
+    expect(
+      within(bossPicker).getByRole("heading", { name: "Raikou" }),
+    ).toBeInTheDocument();
+    expect(within(bossPicker).getByLabelText("Find boss")).toHaveAttribute(
+      "placeholder",
+      "Search raid bosses",
+    );
+    expect(within(bossPicker).queryByText("Pokemon")).not.toBeInTheDocument();
+    const battleSettings = screen.getByText("Battle settings").closest("details");
+    expect(battleSettings).not.toHaveAttribute("open");
+    expect(screen.getByText("Standard conditions")).toBeInTheDocument();
   });
 
   it("builds and simulates a heterogeneous raid party", async () => {
-    render(<Raid />);
+    renderRaid();
 
     fireEvent.click(screen.getByRole("button", { name: "Boss counters" }));
+    openRaidSetup();
     fireEvent.click(
       await screen.findByRole("button", { name: /Custom raid party/i }),
     );
@@ -257,16 +299,18 @@ describe("Raid page", () => {
   });
 
   it("records and clears a private observed raid result", () => {
-    render(<Raid />);
+    renderRaid();
 
     fireEvent.click(screen.getByRole("button", { name: "Boss counters" }));
+    openRaidSetup();
     const calibration = screen.getByLabelText("Observed raid calibration");
     expect(
-      within(calibration).getByText("Private to this device"),
+      within(calibration).getByText("No raids logged on this device"),
     ).toBeInTheDocument();
     expect(
-      within(calibration).getByLabelText("Use observed dodges"),
-    ).toBeDisabled();
+      within(calibration).queryByLabelText("Use observed dodges"),
+    ).not.toBeInTheDocument();
+    expect(within(calibration).queryByText("TTW error")).not.toBeInTheDocument();
 
     fireEvent.click(
       within(calibration).getByRole("button", { name: "Log raid" }),
@@ -340,19 +384,22 @@ describe("Raid page", () => {
       ]),
     );
 
-    render(<Raid />);
+    renderRaid();
     fireEvent.click(screen.getByRole("button", { name: "Boss counters" }));
+    openRaidSetup();
     const calibration = screen.getByLabelText("Observed raid calibration");
-    const samplesLabel = within(calibration).getByText("Raids");
 
-    expect(samplesLabel.nextElementSibling).toHaveTextContent("0");
+    expect(
+      within(calibration).getByText("No raids logged on this device"),
+    ).toBeInTheDocument();
+    expect(within(calibration).queryByText("Raids")).not.toBeInTheDocument();
     expect(
       within(calibration).queryByLabelText("Clear observed raid data"),
     ).not.toBeInTheDocument();
   });
 
   it("keeps raid boss choices hidden until searching", () => {
-    render(<Raid />);
+    renderRaid();
 
     fireEvent.click(screen.getByRole("button", { name: "Boss counters" }));
 
@@ -376,9 +423,14 @@ describe("Raid page", () => {
   });
 
   it("supports current raid modifiers and filters eligible counter results", () => {
-    render(<Raid />);
+    renderRaid();
 
     fireEvent.click(screen.getByRole("button", { name: "Boss counters" }));
+    openRaidSetup();
+    const battleSettings = screen.getByText("Battle settings").closest("details");
+    expect(battleSettings).not.toHaveAttribute("open");
+    fireEvent.click(screen.getByText("Battle settings").closest("summary")!);
+    expect(battleSettings).toHaveAttribute("open");
 
     expect(screen.getByLabelText(/relobby delay/i)).toHaveValue("10");
     expect(screen.getByLabelText(/boss behavior/i)).toHaveValue("expected");
@@ -389,6 +441,7 @@ describe("Raid page", () => {
     fireEvent.change(screen.getByLabelText(/^Party Power$/i), {
       target: { value: "party4" },
     });
+    expect(screen.getByText("1 custom setting")).toBeInTheDocument();
     fireEvent.change(screen.getByLabelText(/Party Power timing/i), {
       target: { value: "strongest-charged" },
     });
@@ -424,15 +477,19 @@ describe("Raid page", () => {
       within(counterList).queryByText("Shiny Tyranitar"),
     ).not.toBeInTheDocument();
 
-    fireEvent.click(screen.getByRole("button", { name: "Best moves" }));
-    expect(
-      screen.getByRole("button", { name: "All moves" }),
-    ).toBeInTheDocument();
+    const bestMoveset = screen.getByRole("button", { name: "Best moveset" });
+    const allMovesets = screen.getByRole("button", { name: "All movesets" });
+    expect(bestMoveset).toHaveAttribute("aria-pressed", "true");
+    expect(allMovesets).toHaveAttribute("aria-pressed", "false");
+
+    fireEvent.click(allMovesets);
+
+    expect(bestMoveset).toHaveAttribute("aria-pressed", "false");
+    expect(allMovesets).toHaveAttribute("aria-pressed", "true");
   });
 
   it("opens on an overall raid attacker leaderboard", () => {
-    localStorage.setItem("pokemonCatalogVersion", "catalog-2026-07-17");
-    render(<Raid />);
+    renderRaid();
 
     expect(
       screen.getByRole("button", { name: "Attacker rankings" }),
@@ -444,17 +501,11 @@ describe("Raid page", () => {
       screen.getByRole("heading", { name: "Top raid attackers" }),
     ).toBeInTheDocument();
     const methodLink = screen.getByRole("link", { name: "Ranking method" });
-    expect(methodLink).toHaveAttribute(
-      "href",
-      "https://github.com/AdamWentworth/PokeGoNexus/blob/master/docs/raid-ranking-methodology.md",
-    );
+    expect(methodLink).toHaveAttribute("href", "/raid/methodology");
+    expect(methodLink).not.toHaveAttribute("target", "_blank");
     expect(methodLink).toHaveAttribute(
       "title",
-      expect.stringContaining(`Model: v${RAID_SIMULATION_MODEL_VERSION}`),
-    );
-    expect(methodLink).toHaveAttribute(
-      "title",
-      expect.stringContaining("Catalog: catalog-2026-07-17"),
+      "How raid rankings are calculated",
     );
     const typeFilter = screen.getByLabelText("Attacker type filter");
     expect(
@@ -468,6 +519,7 @@ describe("Raid page", () => {
     fireEvent.click(settingsButton);
 
     expect(settingsButton).toHaveAttribute("aria-expanded", "true");
+    expect(screen.getByLabelText(/friendship/i)).toHaveValue("none");
     expect(screen.getByLabelText(/relobby delay/i)).toHaveValue("10");
     expect(screen.queryByLabelText(/boss movesets/i)).not.toBeInTheDocument();
 
@@ -498,6 +550,18 @@ describe("Raid page", () => {
     expect(
       within(counterList).queryByText("Fast Ghost"),
     ).not.toBeInTheDocument();
+    expect(
+      within(counterList).getByLabelText("Rank 1, gold podium"),
+    ).toHaveClass("raid-type-table-rank--gold");
+    expect(
+      within(counterList).getByLabelText("Rank 2, silver podium"),
+    ).toHaveClass("raid-type-table-rank--silver");
+    expect(
+      within(counterList).getByLabelText("Rank 3, bronze podium"),
+    ).toHaveClass("raid-type-table-rank--bronze");
+    expect(within(counterList).getByLabelText("Rank 4")).toHaveClass(
+      "raid-type-table-rank--standard",
+    );
   });
 
   it("uses the same caught roster across overall, type, and boss rankings", async () => {
@@ -529,7 +593,7 @@ describe("Raid page", () => {
       },
     });
 
-    render(<Raid />);
+    renderRaid();
 
     expect(
       screen.getByRole("heading", { name: "Your top raid attackers" }),
@@ -620,14 +684,12 @@ describe("Raid page", () => {
       },
     });
 
-    render(<Raid />);
+    renderRaid();
 
     expect(
       within(screen.getByRole("button", { name: "My Pokémon" })).getByText("0"),
     ).toBeInTheDocument();
-    expect(
-      screen.getByRole("status"),
-    ).toHaveTextContent(
+    expect(screen.getByRole("status")).toHaveTextContent(
       /1 caught entries need complete battle details/i,
     );
     expect(
@@ -648,7 +710,7 @@ describe("Raid page", () => {
       }),
     ];
 
-    const { container } = render(<Raid />);
+    const { container } = renderRaid();
     const image = container.querySelector<HTMLImageElement>(
       'img[src*="/images/mega/mega_150_Y.png"]',
     );
@@ -658,7 +720,7 @@ describe("Raid page", () => {
   });
 
   it("sorts the overall leaderboard by every displayed raid metric", () => {
-    render(<Raid />);
+    renderRaid();
 
     const counterList = screen.getByLabelText("Top raid attackers");
     const eDpsSort = within(counterList).getByRole("button", {
@@ -743,7 +805,7 @@ describe("Raid page", () => {
       ),
     ];
 
-    render(<Raid />);
+    renderRaid();
 
     const counterList = screen.getByLabelText("Top raid attackers");
     const dataRows = within(counterList).getAllByRole("row").slice(1);
@@ -788,7 +850,7 @@ describe("Raid page", () => {
       }),
     ];
 
-    render(<Raid />);
+    renderRaid();
 
     const counterList = screen.getByLabelText("Top raid attackers");
     expect(
@@ -834,7 +896,7 @@ describe("Raid page", () => {
       }),
     ];
 
-    render(<Raid />);
+    renderRaid();
 
     fireEvent.change(screen.getByLabelText(/attacker search/i), {
       target: { value: "metagross" },
@@ -860,7 +922,7 @@ describe("Raid page", () => {
   });
 
   it("filters the shared leaderboard by type and returns explicitly to overall", () => {
-    render(<Raid />);
+    renderRaid();
 
     const typeFilter = screen.getByLabelText("Attacker type filter");
     const overallButton = within(typeFilter).getByRole("button", {

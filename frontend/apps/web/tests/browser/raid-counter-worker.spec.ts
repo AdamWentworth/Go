@@ -118,12 +118,45 @@ test.describe("raid counter worker", () => {
     await expect(page.getByText("Modeling raid timelines…")).toBeHidden({
       timeout: 30_000,
     });
-    await expect(
-      page.getByLabel("Raid counters").locator("article").first(),
-    ).toBeVisible();
+    const counterList = page.getByLabel("Raid counters");
+    await expect(counterList.locator("article").first()).toBeVisible();
+
+    const megaCharizardX = counterList
+      .locator("article")
+      .filter({ hasText: "Mega Charizard X" });
+    const megaCharizardY = counterList
+      .locator("article")
+      .filter({ hasText: "Mega Charizard Y" });
+    await expect(megaCharizardX).toBeVisible();
+    await expect(megaCharizardY).toBeVisible();
+
+    const visibleNames = await counterList
+      .locator(".raid-counter-main strong")
+      .allTextContents();
+    expect(visibleNames.indexOf("Mega Charizard Y")).toBeLessThan(
+      visibleNames.indexOf("Mega Charizard X"),
+    );
+
+    const displayedDps = async (card: typeof megaCharizardX) =>
+      Number.parseFloat(
+        (await card.locator(".raid-counter-stats > span").first().textContent()) ??
+          "0",
+      );
+    expect(await displayedDps(megaCharizardY)).toBeGreaterThan(
+      await displayedDps(megaCharizardX),
+    );
+    const visibleDps = await counterList
+      .locator(".raid-counter-stats > span:first-child")
+      .allTextContents();
+    const dpsValues = visibleDps.map((value) => Number.parseFloat(value));
+    expect(dpsValues).toEqual([...dpsValues].sort((a, b) => b - a));
+    await expect(counterList.getByLabel("Rank 1, gold podium")).toBeVisible();
+    await expect(counterList.getByLabel("Rank 2, silver podium")).toBeVisible();
+    await expect(counterList.getByLabel("Rank 3, bronze podium")).toBeVisible();
 
     const calibration = page.getByLabel("Observed raid calibration");
-    await expect(calibration).toContainText("Private to this device");
+    await page.getByText("Raid setup", { exact: true }).click();
+    await expect(calibration).toContainText("No raids logged on this device");
     await calibration.getByRole("button", { name: "Log raid" }).click();
     const dialog = page.getByRole("dialog", { name: /Log .* raid/i });
     await dialog.getByLabel("Battle time (seconds)").fill("145.5");
@@ -155,6 +188,8 @@ test.describe("raid counter worker", () => {
     await expect(page.getByText("Modeling raid timelines…")).toBeHidden({
       timeout: 30_000,
     });
+    await page.getByText("Raid setup", { exact: true }).click();
+    await page.getByText("Battle settings", { exact: true }).click();
     await page.getByLabel("Party Power").selectOption("party4");
     const partyPowerTiming = page.getByLabel("Party Power timing");
     await expect(partyPowerTiming).toBeVisible();

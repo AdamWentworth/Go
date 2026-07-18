@@ -26,6 +26,7 @@ import RaidRankingTypeFilter from "./components/RaidRankingTypeFilter";
 import RaidRosterScope from "./components/RaidRosterScope";
 import RaidObservationDialog from "./components/RaidObservationDialog";
 import RaidPartyBuilder from "./components/RaidPartyBuilder";
+import RaidSetupPanel from "./components/RaidSetupPanel";
 import { TYPE_MAPPING } from "./utils/constants";
 import {
   DEFAULT_RAID_RELOBBY_SECONDS,
@@ -118,7 +119,7 @@ const Raid: React.FC = () => {
   const [attackerSearch, setAttackerSearch] = useState("");
   const [attackerLevel, setAttackerLevel] =
     useState<RaidCounterSettings["attackerLevel"]>("50.0");
-  const [friendship, setFriendship] = useState<FriendshipKey>("best");
+  const [friendship, setFriendship] = useState<FriendshipKey>("none");
   const [megaAllyBonus, setMegaAllyBonus] = useState<MegaAllyBonusKey>("none");
   const [partyPower, setPartyPower] = useState<PartyPowerKey>("none");
   const [partyPowerStrategy, setPartyPowerStrategy] =
@@ -629,8 +630,6 @@ const Raid: React.FC = () => {
               includeRankingSettings
               rankingSettingsOpen={rankingSettingsOpen}
               onRankingSettingsOpenChange={setRankingSettingsOpen}
-              bestOnlyLabel={personalized ? "Best current" : "Best moves"}
-              allMovesLabel={personalized ? "All current" : "All moves"}
             />
 
             {rankingSettingsOpen && (
@@ -692,22 +691,74 @@ const Raid: React.FC = () => {
             />
 
             <main className="raid-panel raid-main-panel">
-              {groupEstimate ? (
-                <>
-                  <RaidBossDetails
-                    tier={selectedTier}
-                    bossStats={bossStats}
-                    groupEstimate={groupEstimate}
-                    metadata={bossMetadata}
-                  />
-                  <RaidPartyBuilder
-                    scores={customPartyScores}
-                    boss={selectedBoss}
-                    tier={selectedTier}
-                    settings={settings}
-                    onResultChange={handleCustomPartyResultChange}
-                  />
-                </>
+              <RaidCounterToolbar
+                label="Counter search"
+                search={attackerSearch}
+                onSearchChange={setAttackerSearch}
+                bestOnly={bestOnly}
+                onBestOnlyChange={setBestOnly}
+              />
+
+              <RaidSetupPanel tierLabel={selectedTier.label}>
+                {groupEstimate && (
+                  <>
+                    <RaidBossDetails
+                      tier={selectedTier}
+                      bossStats={bossStats}
+                      groupEstimate={groupEstimate}
+                      metadata={bossMetadata}
+                    />
+                    <RaidPartyBuilder
+                      scores={customPartyScores}
+                      boss={selectedBoss}
+                      tier={selectedTier}
+                      settings={settings}
+                      onResultChange={handleCustomPartyResultChange}
+                    />
+                  </>
+                )}
+
+                <RaidCalibrationPanel
+                  profile={calibrationProfile}
+                  enabled={dodgeCalibrationEnabled}
+                  disabled={
+                    bossCounterScoresLoading ||
+                    bossCounterScores.length === 0 ||
+                    !groupEstimate
+                  }
+                  onEnabledChange={setDodgeCalibrationEnabled}
+                  onLogRaid={() => setObservationDialogOpen(true)}
+                  onExport={handleExportCalibration}
+                  onClear={() => setClearCalibrationConfirmOpen(true)}
+                />
+
+                <RaidModifiers
+                  {...modifierProps}
+                  includeShadowControls
+                  includeRelobbyControls
+                  includeBossMovesetControls
+                  includeMonteCarloOption
+                  collapsible
+                />
+
+                {shadowMechanicsEnabled && (
+                  <section className="raid-shadow-note">
+                    <strong>Purified Gem reminder</strong>
+                    <span>
+                      Each Trainer can use up to 5 Purified Gems. It takes
+                      coordinated Gems to subdue an enraged Shadow Raid Boss,
+                      so solo attempts should use the enraged estimate.
+                    </span>
+                  </section>
+                )}
+
+                <RaidModelProvenance />
+              </RaidSetupPanel>
+
+              {bossCounterScoresLoading ? (
+                <div className="raid-list-empty" role="status">
+                  Modeling raid timelines…
+                </div>
               ) : personalized && attackers.length === 0 ? (
                 <section className="raid-calculation-status" role="status">
                   <strong>No caught raid-ready Pokémon</strong>
@@ -716,72 +767,13 @@ const Raid: React.FC = () => {
                     for {selectedBoss.name}.
                   </span>
                 </section>
-              ) : !bossCounterScoresLoading &&
-                bossCounterScores.length === 0 ? (
+              ) : bossCounterScores.length === 0 ? (
                 <section className="raid-calculation-status" role="status">
                   <strong>No compatible raid counters</strong>
                   <span>
                     The selected roster has no legal movesets for this battle.
                   </span>
                 </section>
-              ) : (
-                <section className="raid-calculation-status" role="status">
-                  <strong>Calculating raid counters</strong>
-                  <span>
-                    Evaluating legal movesets against {selectedBoss.name}.
-                  </span>
-                </section>
-              )}
-
-              <RaidCalibrationPanel
-                profile={calibrationProfile}
-                enabled={dodgeCalibrationEnabled}
-                disabled={
-                  bossCounterScoresLoading ||
-                  bossCounterScores.length === 0 ||
-                  !groupEstimate
-                }
-                onEnabledChange={setDodgeCalibrationEnabled}
-                onLogRaid={() => setObservationDialogOpen(true)}
-                onExport={handleExportCalibration}
-                onClear={() => setClearCalibrationConfirmOpen(true)}
-              />
-
-              <RaidModifiers
-                {...modifierProps}
-                includeShadowControls
-                includeRelobbyControls
-                includeBossMovesetControls
-                includeMonteCarloOption
-              />
-
-              {shadowMechanicsEnabled && (
-                <section className="raid-shadow-note">
-                  <strong>Purified Gem reminder</strong>
-                  <span>
-                    Each Trainer can use up to 5 Purified Gems. It takes
-                    coordinated Gems to subdue an enraged Shadow Raid Boss, so
-                    solo attempts should use the enraged estimate.
-                  </span>
-                </section>
-              )}
-
-              <RaidCounterToolbar
-                label="Counter search"
-                search={attackerSearch}
-                onSearchChange={setAttackerSearch}
-                bestOnly={bestOnly}
-                onBestOnlyChange={setBestOnly}
-                bestOnlyLabel={personalized ? "Best current" : "Best moves"}
-                allMovesLabel={personalized ? "All current" : "All moves"}
-              />
-
-              <RaidModelProvenance />
-
-              {bossCounterScoresLoading ? (
-                <div className="raid-list-empty" role="status">
-                  Modeling raid timelines…
-                </div>
               ) : (
                 <RaidBossCounterList
                   scores={raidScores}

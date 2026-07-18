@@ -88,7 +88,7 @@ export const RAID_TIER_PRESETS: Record<RaidTierKey, RaidTierPreset> = {
     bossHp: 25000,
     bossStatMultiplier: 0.79,
     timeLimitSeconds: 300,
-    note: "Shielded Super Mega baseline before shield pacing.",
+    note: "Enrages mid-battle; each Trainer needs a Mega charged attack to break one shield.",
   },
   "shadow-tier1": {
     key: "shadow-tier1",
@@ -190,7 +190,7 @@ export const RAID_SIMULATION_ENERGY_CAP = 100;
 export const RAID_SIMULATION_BOSS_DELAY_OPTIONS_SECONDS = [
   1.5, 2, 2.5,
 ] as const;
-export const RAID_SIMULATION_MODEL_VERSION = 12;
+export const RAID_SIMULATION_MODEL_VERSION = 13;
 export const RAID_MONTE_CARLO_MIN_SAMPLES = 32;
 export const RAID_MONTE_CARLO_MAX_SAMPLES = 64;
 export const RAID_COUNTER_SIMULATION_VARIANT_LIMIT = 384;
