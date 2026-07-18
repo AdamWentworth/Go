@@ -139,14 +139,17 @@ test.describe("raid counter worker", () => {
 
     const displayedDps = async (card: typeof megaCharizardX) =>
       Number.parseFloat(
-        (await card.locator(".raid-counter-stats > span").first().textContent()) ??
-          "0",
+        (await card
+          .locator(".raid-counter-stat")
+          .filter({ hasText: "DPS" })
+          .locator("dd")
+          .textContent()) ?? "0",
       );
     expect(await displayedDps(megaCharizardY)).toBeGreaterThan(
       await displayedDps(megaCharizardX),
     );
     const visibleDps = await counterList
-      .locator(".raid-counter-stats > span:first-child")
+      .locator(".raid-counter-stat:first-child dd")
       .allTextContents();
     const dpsValues = visibleDps.map((value) => Number.parseFloat(value));
     expect(dpsValues).toEqual([...dpsValues].sort((a, b) => b - a));
