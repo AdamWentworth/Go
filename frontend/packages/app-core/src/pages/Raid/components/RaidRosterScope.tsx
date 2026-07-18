@@ -50,28 +50,38 @@ const RaidRosterScope = ({
           <span>All Pokémon</span>
         </button>
         <button
+          aria-describedby={scope === "owned" ? "raid-roster-details" : undefined}
+          aria-label="My Pokémon"
           className={scope === "owned" ? "active" : ""}
           disabled={!isLoggedIn}
           onClick={() => onChange("owned")}
-          title={isLoggedIn ? undefined : "Log in to rank your caught Pokémon"}
+          title={
+            !isLoggedIn
+              ? "Log in to rank your caught Pokémon"
+              : scope === "owned" && !loading
+                ? rosterDetails
+                : undefined
+          }
           type="button"
         >
           <FaUser aria-hidden="true" />
           <span>My Pokémon</span>
+          {scope === "owned" && (
+            <strong aria-hidden="true" className="raid-roster-count">
+              {loading ? "…" : summary.eligibleCount}
+            </strong>
+          )}
         </button>
       </div>
 
       {scope === "owned" && (
-        <div
-          aria-label={loading ? "Loading your raid roster" : rosterDetails}
-          className="raid-roster-status"
+        <span
+          className="raid-roster-description"
+          id="raid-roster-details"
           role="status"
-          title={loading ? undefined : rosterDetails}
         >
-          <strong>
-            {loading ? "Loading roster…" : `${summary.eligibleCount} raid-ready`}
-          </strong>
-        </div>
+          {loading ? "Loading your raid roster" : rosterDetails}
+        </span>
       )}
     </section>
   );

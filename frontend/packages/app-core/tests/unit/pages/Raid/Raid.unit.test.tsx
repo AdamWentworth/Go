@@ -627,11 +627,13 @@ describe("Raid page", () => {
     render(<Raid />);
 
     expect(
-      screen.getByText("0 raid-ready"),
+      within(screen.getByRole("button", { name: "My Pokémon" })).getByText("0"),
     ).toBeInTheDocument();
     expect(
-      screen.getByLabelText(/1 caught entries need complete battle details/i),
-    ).toBeInTheDocument();
+      screen.getByRole("status"),
+    ).toHaveTextContent(
+      /1 caught entries need complete battle details/i,
+    );
     expect(
       screen.queryByRole("cell", { name: /Shadow Regigigas/i }),
     ).not.toBeInTheDocument();

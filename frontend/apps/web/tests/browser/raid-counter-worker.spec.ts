@@ -273,8 +273,10 @@ test.describe("raid counter worker", () => {
     await page.goto("/raid", { waitUntil: "domcontentloaded" });
 
     await expect(
-      page.getByText("2 raid-ready"),
-    ).toBeVisible();
+      page
+        .getByRole("button", { name: "My Pokémon" })
+        .locator(".raid-roster-count"),
+    ).toHaveText("2");
     const leaderboard = page.getByLabel("Your top raid attackers");
     await expect(
       leaderboard.getByText("Rayquaza", { exact: true }),
