@@ -314,6 +314,265 @@ describe("heterogeneous raid party simulation", () => {
     });
   });
 
+  it("clears a full ten-shield Super Mega raid when ten Mega-ready Trainers have enough damage", () => {
+    const mega = pokemon(
+      "Mega Attacker",
+      400,
+      220,
+      240,
+      [fast, charged],
+      "mega",
+    );
+    const superMegaBoss = {
+      ...boss,
+      variantType: "mega_test" as const,
+      megaForm: "Test",
+      raid_boss: [
+        {
+          id: 1,
+          pokemon_id: boss.pokemon_id,
+          name: "Mega Boss",
+          form: "Test",
+          tier: "super_mega",
+          shield_count: 10,
+        },
+      ],
+    } as unknown as PokemonVariant;
+    const result = simulateHeterogeneousRaidPartyBattle({
+      trainers: Array.from({ length: 10 }, (_, index) =>
+        trainer(`trainer-${index + 1}`, mega),
+      ),
+      boss: superMegaBoss,
+      bossFastMove: bossFast,
+      bossChargedMove: bossCharged,
+      tier: {
+        ...tier,
+        key: "super-mega",
+        bossHp: 25_000,
+        timeLimitSeconds: 300,
+      },
+    });
+
+    expect(result.won).toBe(true);
+    expect(result.projectedTimeToWinSeconds).toBeLessThan(300);
+    expect(result.superMega).toMatchObject({
+      shieldCount: 10,
+      shieldsBroken: 10,
+      eligibleMegaTrainers: 10,
+      shieldCleared: true,
+    });
+  });
+
+  it("automatically deploys a Mega from the final slot with a charged attack ready", () => {
+    const regular = pokemon(
+      "Regular Lead",
+      280,
+      190,
+      220,
+      [fast, charged],
+    );
+    const mega = pokemon(
+      "Mega Finisher",
+      320,
+      200,
+      230,
+      [fast, charged],
+      "mega",
+    );
+    const finalSlotMegaTrainer: RaidPartyTrainer = {
+      ...trainer("final-slot-mega", regular),
+      team: [
+        ...Array.from({ length: 5 }, () => ({
+          attacker: regular,
+          fastMove: fast,
+          chargedMove: charged,
+        })),
+        { attacker: mega, fastMove: fast, chargedMove: charged },
+      ],
+    };
+    const result = simulateHeterogeneousRaidPartyBattle({
+      trainers: [finalSlotMegaTrainer],
+      boss: {
+        ...boss,
+        variantType: "mega_test" as const,
+        megaForm: "Test",
+        raid_boss: [
+          {
+            id: 1,
+            pokemon_id: boss.pokemon_id,
+            name: "Mega Boss",
+            form: "Test",
+            tier: "super_mega",
+            shield_count: 1,
+          },
+        ],
+      } as unknown as PokemonVariant,
+      bossFastMove: bossFast,
+      bossChargedMove: bossCharged,
+      tier: { ...tier, key: "super-mega", bossHp: 1_500 },
+    });
+
+    expect(result.superMega).toMatchObject({
+      shieldsBroken: 1,
+      eligibleMegaTrainers: 1,
+      shieldCleared: true,
+    });
+  });
+
+  it("allows each Trainer to break only one shield even with six Megas", () => {
+    const mega = pokemon(
+      "Mega Team",
+      350,
+      210,
+      230,
+      [fast, charged],
+      "mega",
+    );
+    const result = simulateHeterogeneousRaidPartyBattle({
+      trainers: [trainer("one-trainer", mega)],
+      boss: {
+        ...boss,
+        variantType: "mega_test" as const,
+        megaForm: "Test",
+        raid_boss: [
+          {
+            id: 1,
+            pokemon_id: boss.pokemon_id,
+            name: "Mega Boss",
+            form: "Test",
+            tier: "super_mega",
+            shield_count: 2,
+          },
+        ],
+      } as unknown as PokemonVariant,
+      bossFastMove: bossFast,
+      bossChargedMove: bossCharged,
+      tier: { ...tier, key: "super-mega", bossHp: 2_000 },
+    });
+
+    expect(result.superMega).toMatchObject({
+      shieldsBroken: 1,
+      eligibleMegaTrainers: 1,
+      shieldCleared: false,
+    });
+  });
+
+  it("leaves one shield active when only nine of ten Trainers bring a Mega", () => {
+    const mega = pokemon(
+      "Mega Attacker",
+      400,
+      220,
+      240,
+      [fast, charged],
+      "mega",
+    );
+    const regular = pokemon(
+      "Regular Attacker",
+      400,
+      220,
+      240,
+      [fast, charged],
+    );
+    const result = simulateHeterogeneousRaidPartyBattle({
+      trainers: [
+        ...Array.from({ length: 9 }, (_, index) =>
+          trainer(`mega-${index + 1}`, mega),
+        ),
+        trainer("no-mega", regular),
+      ],
+      boss: {
+        ...boss,
+        variantType: "mega_test" as const,
+        megaForm: "Test",
+        raid_boss: [
+          {
+            id: 1,
+            pokemon_id: boss.pokemon_id,
+            name: "Mega Boss",
+            form: "Test",
+            tier: "super_mega",
+            shield_count: 10,
+          },
+        ],
+      } as unknown as PokemonVariant,
+      bossFastMove: bossFast,
+      bossChargedMove: bossCharged,
+      tier: {
+        ...tier,
+        key: "super-mega",
+        bossHp: 25_000,
+        timeLimitSeconds: 300,
+      },
+    });
+
+    expect(result.superMega).toMatchObject({
+      shieldsBroken: 9,
+      eligibleMegaTrainers: 9,
+      shieldCleared: false,
+    });
+  });
+
+  it("can still time out after clearing every shield when lobby damage is inadequate", () => {
+    const lowDamageFast = move("Soft Tap", "normal", true, 1, 3000, 1);
+    const lowDamageCharged = move(
+      "Soft Burst",
+      "normal",
+      false,
+      1,
+      3000,
+      -100,
+    );
+    const weakMega = pokemon(
+      "Weak Mega",
+      20,
+      220,
+      240,
+      [lowDamageFast, lowDamageCharged],
+      "mega",
+    );
+    const result = simulateHeterogeneousRaidPartyBattle({
+      trainers: Array.from({ length: 10 }, (_, index) =>
+        ({
+          ...trainer(`weak-${index + 1}`, weakMega),
+          team: Array.from({ length: 6 }, () => ({
+            attacker: weakMega,
+            fastMove: lowDamageFast,
+            chargedMove: lowDamageCharged,
+          })),
+        }),
+      ),
+      boss: {
+        ...boss,
+        variantType: "mega_test" as const,
+        megaForm: "Test",
+        raid_boss: [
+          {
+            id: 1,
+            pokemon_id: boss.pokemon_id,
+            name: "Mega Boss",
+            form: "Test",
+            tier: "super_mega",
+            shield_count: 10,
+          },
+        ],
+      } as unknown as PokemonVariant,
+      bossFastMove: bossFast,
+      bossChargedMove: bossCharged,
+      tier: {
+        ...tier,
+        key: "super-mega",
+        bossHp: 100,
+        timeLimitSeconds: 30,
+      },
+    });
+
+    expect(result.superMega).toMatchObject({
+      shieldsBroken: 10,
+      shieldCleared: true,
+    });
+    expect(result.won).toBe(false);
+  });
+
   it("does not count Primal Pokémon as Super Mega shield breakers", () => {
     const primal = {
       ...pokemon("Primal Support", 300, 190, 220, [fast, charged], "primal"),

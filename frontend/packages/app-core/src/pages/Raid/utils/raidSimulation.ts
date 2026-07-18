@@ -105,6 +105,29 @@ export const buildRaidSimulationDistribution = (
   };
 };
 
+export const summarizeRaidSimulationOutcomes = (
+  results: Array<
+    Pick<
+      RaidBattleSimulationResult,
+      "projectedTimeToWinSeconds" | "faints" | "relobbies" | "won"
+    >
+  >,
+): {
+  distribution: RaidSimulationDistribution;
+  projectedTimeToWinSeconds: number;
+  won: boolean;
+} => {
+  const distribution = buildRaidSimulationDistribution(results);
+
+  return {
+    distribution,
+    projectedTimeToWinSeconds: distribution.timeToWinSeconds.p50,
+    // Expected-mode results represent the median modeled battle. The full
+    // clear rate remains available for mixed favorable/hostile outcomes.
+    won: distribution.winRate >= 0.5,
+  };
+};
+
 const hashSeed = (value: string): number => {
   let hash = 2166136261;
   for (let index = 0; index < value.length; index += 1) {
@@ -131,6 +154,7 @@ const averageSimulationResults = (
   const divisor = Math.max(1, results.length);
   const average = (select: (result: RaidBattleSimulationResult) => number) =>
     results.reduce((sum, result) => sum + select(result), 0) / divisor;
+  const outcome = summarizeRaidSimulationOutcomes(results);
 
   const superMegaSamples = results.flatMap((result) =>
     result.superMega ? [result.superMega] : [],
@@ -146,7 +170,9 @@ const averageSimulationResults = (
         eligibleMegaTrainers: superMegaSamples[0].eligibleMegaTrainers,
         triggerHpFraction: superMegaSamples[0].triggerHpFraction,
         shieldCountSource: superMegaSamples[0].shieldCountSource,
-        shieldCleared: superMegaSamples.every((result) => result.shieldCleared),
+        shieldCleared:
+          superMegaSamples.filter((result) => result.shieldCleared).length >=
+          superMegaSamples.length / 2,
       }
     : undefined;
 
@@ -154,9 +180,7 @@ const averageSimulationResults = (
     damageDealt: average((result) => result.damageDealt),
     elapsedSeconds: average((result) => result.elapsedSeconds),
     dps: average((result) => result.dps),
-    projectedTimeToWinSeconds: average(
-      (result) => result.projectedTimeToWinSeconds,
-    ),
+    projectedTimeToWinSeconds: outcome.projectedTimeToWinSeconds,
     faints: average((result) => result.faints),
     relobbies: average((result) => result.relobbies),
     attackerChargedMoves: average((result) => result.attackerChargedMoves),
@@ -165,8 +189,8 @@ const averageSimulationResults = (
     partyPoweredChargedMoves: average(
       (result) => result.partyPoweredChargedMoves,
     ),
-    won: results.every((result) => result.won),
-    distribution: buildRaidSimulationDistribution(results),
+    won: outcome.won,
+    distribution: outcome.distribution,
     superMega,
   };
 };

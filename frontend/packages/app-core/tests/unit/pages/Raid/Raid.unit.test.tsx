@@ -461,7 +461,9 @@ describe("Raid page", () => {
       target: { value: "charged" },
     });
     expect(screen.getByLabelText(/dodging/i)).toHaveValue("charged");
-    expect(screen.getAllByText(/modeled outcomes/i).length).toBeGreaterThan(0);
+    expect(
+      screen.getAllByLabelText(/based on \d+ modeled outcomes/i).length,
+    ).toBeGreaterThan(0);
 
     fireEvent.click(screen.getByRole("button", { name: "Shadow raid" }));
     expect(screen.getByText("Purified Gem reminder")).toBeInTheDocument();
@@ -757,6 +759,37 @@ describe("Raid page", () => {
         "descending",
       );
     }
+  });
+
+  it("makes every mobile ranking row explicitly expandable for all stats", () => {
+    renderRaid();
+
+    const leaderboard = screen.getByLabelText("Top raid attackers");
+    const toggle = within(leaderboard).getAllByRole("button", {
+      name: /Show all raid stats for/i,
+    })[0]!;
+    expect(toggle).toHaveAttribute("aria-expanded", "false");
+    expect(within(toggle).getByText("Tap for all stats")).toBeInTheDocument();
+    expect(within(toggle).getByText("eDPS")).toBeInTheDocument();
+
+    const row = toggle.closest("tr");
+    expect(row).not.toBeNull();
+    expect(
+      Array.from(row!.querySelectorAll("td[data-label]")).map((cell) =>
+        cell.getAttribute("data-label"),
+      ),
+    ).toEqual(["eDPS", "DPS", "TDO", "ER", "CP"]);
+
+    fireEvent.click(toggle);
+
+    expect(toggle).toHaveAttribute("aria-expanded", "true");
+    expect(within(toggle).getByText("Hide extra stats")).toBeInTheDocument();
+    expect(row).toHaveClass("raid-ranking-row--expanded");
+
+    fireEvent.click(toggle);
+
+    expect(toggle).toHaveAttribute("aria-expanded", "false");
+    expect(row).not.toHaveClass("raid-ranking-row--expanded");
   });
 
   it("keeps historical boss typings out of neutral overall moveset selection", () => {

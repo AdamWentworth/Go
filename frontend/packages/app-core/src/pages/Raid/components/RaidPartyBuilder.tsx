@@ -34,7 +34,11 @@ import type {
   RaidPartySimulationResult,
   RaidTierPreset,
 } from "../utils/raidTypes";
-import { formatDps, getRaidVariantDisplayName } from "../utils/raidViewModel";
+import {
+  formatDps,
+  getRaidOutcomePresentation,
+  getRaidVariantDisplayName,
+} from "../utils/raidViewModel";
 
 type RaidPartyBuilderProps = {
   scores: RaidCounterScore[];
@@ -262,6 +266,10 @@ const RaidPartyBuilder = ({
       if (!controller.signal.aborted) setOptimizing(false);
     }
   };
+
+  const resultOutcome = result
+    ? getRaidOutcomePresentation(result.distribution.winRate)
+    : null;
 
   return (
     <section className="raid-party-builder" aria-label="Custom raid party">
@@ -542,8 +550,8 @@ const RaidPartyBuilder = ({
               aria-label="Raid party result"
             >
               <header>
-                <span className={result.won ? "won" : "lost"}>
-                  {result.won ? "Clear" : "Time expired"}
+                <span className={resultOutcome?.className}>
+                  {resultOutcome?.label}
                 </span>
                 <strong>
                   {formatSeconds(result.projectedTimeToWinSeconds)}
@@ -552,6 +560,12 @@ const RaidPartyBuilder = ({
                   {formatDps(result.dps)} DPS · {Math.round(result.faints)}{" "}
                   faints · {Math.round(result.relobbies)} relobbies
                 </small>
+                {result.distribution.sampleCount > 1 && (
+                  <small className="raid-party-clear-rate">
+                    {Math.round(result.distribution.winRate * 100)}% of modeled
+                    outcomes clear
+                  </small>
+                )}
                 {result.superMega && (
                   <small className="raid-party-shield-result">
                     {Math.round(result.superMega.shieldsBroken)} /{" "}

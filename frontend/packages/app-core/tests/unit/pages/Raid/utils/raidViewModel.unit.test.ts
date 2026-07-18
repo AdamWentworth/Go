@@ -4,6 +4,7 @@ import type { PokemonVariant } from "@/types/pokemonVariants";
 import type { Move } from "@/types/pokemonSubTypes";
 import {
   getUniqueByVariant,
+  getRaidOutcomePresentation,
   getRaidVariantDisplayName,
   getVariantBadge,
   isMegaMewtwoY,
@@ -40,6 +41,22 @@ const makeMove = (name: string, typeName: string): Move =>
   }) as Move;
 
 describe("raidViewModel", () => {
+  it.each([
+    [1, "Clear", "won"],
+    [0.75, "Likely clear", "likely"],
+    [0.5, "Likely clear", "likely"],
+    [0.25, "Risky", "risky"],
+    [0, "Time expired", "lost"],
+  ] as const)(
+    "presents a %s modeled clear rate as %s",
+    (winRate, label, className) => {
+      expect(getRaidOutcomePresentation(winRate)).toEqual({
+        label,
+        className,
+      });
+    },
+  );
+
   it("sorts metrics without mutating the scoring result", () => {
     const original = [
       {

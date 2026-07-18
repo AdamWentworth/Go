@@ -7,6 +7,7 @@ import {
   simulateRaidBattle,
   simulateRaidCounterAcrossBossMovesets,
   simulateRaidTeamBattle,
+  summarizeRaidSimulationOutcomes,
   type RaidCounterSettings,
   type RaidTierPreset,
 } from "@/pages/Raid/utils/raidCalculations";
@@ -147,6 +148,60 @@ const settings: RaidCounterSettings = {
 };
 
 describe("raid event simulation", () => {
+  it("uses the median modeled outcome instead of treating one timeout as a total failure", () => {
+    const outcome = summarizeRaidSimulationOutcomes([
+      {
+        projectedTimeToWinSeconds: 110,
+        faints: 4,
+        relobbies: 0,
+        won: true,
+      },
+      {
+        projectedTimeToWinSeconds: 140,
+        faints: 8,
+        relobbies: 1,
+        won: true,
+      },
+      {
+        projectedTimeToWinSeconds: 340,
+        faints: 20,
+        relobbies: 3,
+        won: false,
+      },
+    ]);
+
+    expect(outcome.won).toBe(true);
+    expect(outcome.projectedTimeToWinSeconds).toBe(140);
+    expect(outcome.distribution.winRate).toBeCloseTo(2 / 3, 6);
+  });
+
+  it("keeps a majority-timeout model classified as unsuccessful", () => {
+    const outcome = summarizeRaidSimulationOutcomes([
+      {
+        projectedTimeToWinSeconds: 140,
+        faints: 8,
+        relobbies: 1,
+        won: true,
+      },
+      {
+        projectedTimeToWinSeconds: 320,
+        faints: 18,
+        relobbies: 3,
+        won: false,
+      },
+      {
+        projectedTimeToWinSeconds: 360,
+        faints: 22,
+        relobbies: 4,
+        won: false,
+      },
+    ]);
+
+    expect(outcome.won).toBe(false);
+    expect(outcome.projectedTimeToWinSeconds).toBe(320);
+    expect(outcome.distribution.winRate).toBeCloseTo(1 / 3, 6);
+  });
+
   it("resolves actions on half-second turns and completes a winnable raid", () => {
     const result = simulateRaidBattle({
       attacker,

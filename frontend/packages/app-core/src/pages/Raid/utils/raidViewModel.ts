@@ -33,6 +33,22 @@ export type SearchableCounterScore = {
 export const DEFAULT_RAID_RANKING_TYPE = "";
 export const DEFAULT_METRIC_SORT: RaidMetricSortKey = "eDps";
 
+export type RaidOutcomePresentation = {
+  label: "Clear" | "Likely clear" | "Risky" | "Time expired";
+  className: "won" | "likely" | "risky" | "lost";
+};
+
+export const getRaidOutcomePresentation = (
+  winRate: number,
+): RaidOutcomePresentation => {
+  if (winRate >= 1) return { label: "Clear", className: "won" };
+  if (winRate <= 0) return { label: "Time expired", className: "lost" };
+  if (winRate >= 0.5) {
+    return { label: "Likely clear", className: "likely" };
+  }
+  return { label: "Risky", className: "risky" };
+};
+
 export const FRIENDSHIP_OPTIONS: Array<{
   key: FriendshipKey;
   label: string;

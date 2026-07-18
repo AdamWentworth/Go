@@ -26,6 +26,7 @@ import {
   buildRaidSimulationDistribution,
   createRaidSeededRandom,
   getRaidBossMovesets,
+  summarizeRaidSimulationOutcomes,
 } from "./raidSimulation";
 import {
   activatesPartyPowerWhenMeterFills,
@@ -769,6 +770,7 @@ const averagePartyResults = (
   const divisor = Math.max(1, results.length);
   const average = (select: (result: RaidPartySimulationResult) => number) =>
     results.reduce((sum, result) => sum + select(result), 0) / divisor;
+  const outcome = summarizeRaidSimulationOutcomes(results);
   const trainerIds = results[0]?.trainers.map((trainer) => trainer.id) ?? [];
   const trainers = trainerIds.map((id) => {
     const samples = results.flatMap((result) =>
@@ -808,7 +810,9 @@ const averagePartyResults = (
         eligibleMegaTrainers: superMegaSamples[0].eligibleMegaTrainers,
         triggerHpFraction: superMegaSamples[0].triggerHpFraction,
         shieldCountSource: superMegaSamples[0].shieldCountSource,
-        shieldCleared: superMegaSamples.every((result) => result.shieldCleared),
+        shieldCleared:
+          superMegaSamples.filter((result) => result.shieldCleared).length >=
+          superMegaSamples.length / 2,
       }
     : undefined;
 
@@ -816,9 +820,7 @@ const averagePartyResults = (
     damageDealt: average((result) => result.damageDealt),
     elapsedSeconds: average((result) => result.elapsedSeconds),
     dps: average((result) => result.dps),
-    projectedTimeToWinSeconds: average(
-      (result) => result.projectedTimeToWinSeconds,
-    ),
+    projectedTimeToWinSeconds: outcome.projectedTimeToWinSeconds,
     faints: average((result) => result.faints),
     relobbies: average((result) => result.relobbies),
     attackerChargedMoves: average((result) => result.attackerChargedMoves),
@@ -827,8 +829,8 @@ const averagePartyResults = (
     partyPoweredChargedMoves: average(
       (result) => result.partyPoweredChargedMoves,
     ),
-    won: results.every((result) => result.won),
-    distribution: buildRaidSimulationDistribution(results),
+    won: outcome.won,
+    distribution: outcome.distribution,
     trainers,
     superMega,
   };

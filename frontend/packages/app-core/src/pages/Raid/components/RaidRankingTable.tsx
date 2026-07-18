@@ -1,5 +1,10 @@
-import type { ReactNode } from "react";
-import { FaSort, FaSortDown, FaSortUp } from "react-icons/fa";
+import { useState, type ReactNode } from "react";
+import {
+  FaChevronDown,
+  FaSort,
+  FaSortDown,
+  FaSortUp,
+} from "react-icons/fa";
 import RaidPokemonImage from "./RaidPokemonImage";
 import {
   getVariantTypeNames,
@@ -42,6 +47,32 @@ const getRankTier = (rank: number) => {
   return "standard";
 };
 
+const metricLabels: Record<RaidMetricSortKey, string> = {
+  eDps: "eDPS",
+  dps: "DPS",
+  tdo: "TDO",
+  er: "ER",
+  cp: "CP",
+};
+
+const formatMetricValue = (
+  score: RaidRankingScore,
+  metric: RaidMetricSortKey,
+) => {
+  switch (metric) {
+    case "eDps":
+      return formatDps(score.eDps);
+    case "dps":
+      return formatDps(score.dps);
+    case "tdo":
+      return formatWholeNumber(score.tdo);
+    case "er":
+      return formatEr(score.er);
+    case "cp":
+      return score.cp.toLocaleString();
+  }
+};
+
 const RaidRankingTable = ({
   ariaLabel,
   scores,
@@ -51,6 +82,20 @@ const RaidRankingTable = ({
   emptyMessage,
   attackerLevel,
 }: RaidRankingTableProps) => {
+  const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
+
+  const toggleExpandedRow = (rowKey: string) => {
+    setExpandedRows((current) => {
+      const next = new Set(current);
+      if (next.has(rowKey)) {
+        next.delete(rowKey);
+      } else {
+        next.add(rowKey);
+      }
+      return next;
+    });
+  };
+
   const renderSortableMetricHeader = (
     metric: RaidMetricSortKey,
     label: string,
@@ -148,8 +193,14 @@ const RaidRankingTable = ({
               );
               const rank = index + 1;
               const rankTier = getRankTier(rank);
+              const displayName = getRaidVariantDisplayName(score.variant);
+              const rowKey = `${score.variant.variant_id}-${score.fastMove.name}-${score.chargedMove.name}-${index}`;
+              const expanded = expandedRows.has(rowKey);
               return (
-                <tr key={`${score.variant.variant_id}-${index}`}>
+                <tr
+                  className={expanded ? "raid-ranking-row--expanded" : undefined}
+                  key={rowKey}
+                >
                   <td>
                     <div className="raid-type-table-pokemon">
                       <span
@@ -164,9 +215,7 @@ const RaidRankingTable = ({
                       </span>
                       <RaidPokemonImage variant={score.variant} />
                       <span className="raid-type-table-pokemon-copy">
-                        <strong>
-                          {getRaidVariantDisplayName(score.variant)}
-                        </strong>
+                        <strong>{displayName}</strong>
                         <small>
                           {formatTypeList(getVariantTypeNames(score.variant)) ||
                             "Unknown type"}
@@ -178,6 +227,22 @@ const RaidRankingTable = ({
                         )}
                       </span>
                     </div>
+                    <button
+                      aria-expanded={expanded}
+                      aria-label={`${expanded ? "Hide" : "Show"} all raid stats for ${displayName}`}
+                      className="raid-ranking-mobile-details-toggle"
+                      onClick={() => toggleExpandedRow(rowKey)}
+                      type="button"
+                    >
+                      <span className="raid-ranking-mobile-primary-metric">
+                        <small>{metricLabels[sortMetric]}</small>
+                        <strong>{formatMetricValue(score, sortMetric)}</strong>
+                      </span>
+                      <span className="raid-ranking-mobile-details-prompt">
+                        {expanded ? "Hide extra stats" : "Tap for all stats"}
+                        <FaChevronDown aria-hidden="true" />
+                      </span>
+                    </button>
                   </td>
                   <td>
                     <div className="raid-type-table-moves">
@@ -185,19 +250,22 @@ const RaidRankingTable = ({
                       {renderMove("Charged", score, score.chargedMove)}
                     </div>
                   </td>
-                  <td className="raid-type-table-number">
+                  <td
+                    className="raid-type-table-number"
+                    data-label="eDPS"
+                  >
                     {formatDps(score.eDps)}
                   </td>
-                  <td className="raid-type-table-number">
+                  <td className="raid-type-table-number" data-label="DPS">
                     {formatDps(score.dps)}
                   </td>
-                  <td className="raid-type-table-number">
+                  <td className="raid-type-table-number" data-label="TDO">
                     {formatWholeNumber(score.tdo)}
                   </td>
-                  <td className="raid-type-table-number">
+                  <td className="raid-type-table-number" data-label="ER">
                     {formatEr(score.er)}
                   </td>
-                  <td className="raid-type-table-number">
+                  <td className="raid-type-table-number" data-label="CP">
                     {score.cp.toLocaleString()}
                   </td>
                 </tr>
