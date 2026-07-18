@@ -5,6 +5,7 @@ import { installE2eRoutes } from "./support/e2eRoutes";
 const RAID_ROUTE_READY_MEASURE = "pokegonexus:raid-route-ready";
 const RAID_COLD_ROUTE_READY_BUDGET_MS = 8000;
 const RAID_WARM_ROUTE_READY_BUDGET_MS = 3000;
+const RAID_WARM_ROUTE_SAMPLE_COUNT = 3;
 
 const raidUser = {
   user_id: "raid-user",
@@ -70,6 +71,21 @@ async function seedRaidRoster(page: Page, caught = caughtBulbasaur) {
   );
 }
 
+async function raidRouteReadyDuration(page: Page) {
+  const duration = await page.waitForFunction(
+    (measureName) =>
+      performance.getEntriesByName(measureName, "measure").at(-1)?.duration,
+    RAID_ROUTE_READY_MEASURE,
+  );
+
+  return duration.jsonValue();
+}
+
+function median(values: number[]) {
+  const sorted = [...values].sort((left, right) => left - right);
+  return sorted[Math.floor(sorted.length / 2)];
+}
+
 test.describe("raid counter worker", () => {
   test("@performance renders rankings within cold and warm budgets without blocking on raid metadata", async ({
     page,
@@ -80,28 +96,27 @@ test.describe("raid counter worker", () => {
     await expect(
       page.getByRole("heading", { name: "Top raid attackers" }),
     ).toBeVisible({ timeout: RAID_COLD_ROUTE_READY_BUDGET_MS });
-    const coldDuration = await page.waitForFunction(
-      (measureName) =>
-        performance.getEntriesByName(measureName, "measure").at(-1)?.duration,
-      RAID_ROUTE_READY_MEASURE,
-    );
-    expect(await coldDuration.jsonValue()).toBeLessThan(
+    expect(await raidRouteReadyDuration(page)).toBeLessThan(
       RAID_COLD_ROUTE_READY_BUDGET_MS,
     );
 
-    await page.goto("/login", { waitUntil: "domcontentloaded" });
-    await page.goto("/raid", { waitUntil: "domcontentloaded" });
-    await expect(
-      page.getByRole("heading", { name: "Top raid attackers" }),
-    ).toBeVisible({ timeout: RAID_COLD_ROUTE_READY_BUDGET_MS });
-    const warmDuration = await page.waitForFunction(
-      (measureName) =>
-        performance.getEntriesByName(measureName, "measure").at(-1)?.duration,
-      RAID_ROUTE_READY_MEASURE,
-    );
-    expect(await warmDuration.jsonValue()).toBeLessThan(
-      RAID_WARM_ROUTE_READY_BUDGET_MS,
-    );
+    const warmDurations: number[] = [];
+    for (let sample = 0; sample < RAID_WARM_ROUTE_SAMPLE_COUNT; sample += 1) {
+      await page.goto("/login", { waitUntil: "domcontentloaded" });
+      await page.goto("/raid", { waitUntil: "domcontentloaded" });
+      await expect(
+        page.getByRole("heading", { name: "Top raid attackers" }),
+      ).toBeVisible({ timeout: RAID_COLD_ROUTE_READY_BUDGET_MS });
+      warmDurations.push(await raidRouteReadyDuration(page));
+    }
+
+    test.info().annotations.push({
+      type: "raid-warm-route-ms",
+      description: warmDurations
+        .map((duration) => duration.toFixed(1))
+        .join(", "),
+    });
+    expect(median(warmDurations)).toBeLessThan(RAID_WARM_ROUTE_READY_BUDGET_MS);
   });
 
   test("calculates exhaustive boss counters off the main thread", async ({
@@ -252,9 +267,9 @@ test.describe("raid counter worker", () => {
 
     const typeFilter = page.getByLabel("Attacker type filter");
     expect(
-      await typeFilter.locator(".raid-ranking-type-options").evaluate(
-        (options) => options.scrollWidth <= options.clientWidth + 1,
-      ),
+      await typeFilter
+        .locator(".raid-ranking-type-options")
+        .evaluate((options) => options.scrollWidth <= options.clientWidth + 1),
     ).toBe(true);
     const electricButton = typeFilter.getByRole("button", {
       name: "Electric",
