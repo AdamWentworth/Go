@@ -19,6 +19,25 @@ const RaidRosterScope = ({
   loading,
   summary,
 }: RaidRosterScopeProps) => {
+  const rosterDetails = [
+    `${summary.eligibleCount} raid-ready entries from ${summary.caughtCount} caught.`,
+    "Uses each copy's current level, IVs, CP, and recorded moves.",
+    summary.projectedFormCount > 0
+      ? `${summary.projectedFormCount} available fusion, crowned, or Mega form entries included.`
+      : "",
+    summary.incompleteEntryCount > 0
+      ? `${summary.incompleteEntryCount} caught entries need complete battle details before ranking.`
+      : "",
+    summary.hiddenPowerEstimatedCount > 0
+      ? `${summary.hiddenPowerEstimatedCount} Hidden Power rolls use a marked type estimate.`
+      : "",
+    summary.unmappedCount > 0
+      ? `${summary.unmappedCount} could not be matched to the current catalog.`
+      : "",
+  ]
+    .filter(Boolean)
+    .join(" ");
+
   return (
     <section className="raid-roster-scope" aria-label="Raid attacker roster">
       <div className="raid-roster-segments" role="group" aria-label="Attacker source">
@@ -42,36 +61,18 @@ const RaidRosterScope = ({
         </button>
       </div>
 
-      <div className="raid-roster-status" role="status">
-        {scope === "catalog" ? (
-          <>
-            <strong>Catalog benchmark</strong>
-            <span>Compares every released attacker at the selected level.</span>
-          </>
-        ) : loading ? (
-          <>
-            <strong>Loading your raid roster</strong>
-            <span>Matching caught Pokémon to the battle catalog.</span>
-          </>
-        ) : (
-          <>
-            <strong>
-              {summary.eligibleCount} raid-ready entries from {summary.caughtCount} caught
-            </strong>
-            <span>
-              Uses each copy's current level, IVs, CP, and recorded moves.
-              {summary.projectedFormCount > 0 &&
-                ` Includes ${summary.projectedFormCount} available fusion, crowned, or Mega form entries.`}
-              {summary.incompleteEntryCount > 0 &&
-                ` ${summary.incompleteEntryCount} caught entries need complete battle details before ranking.`}
-              {summary.hiddenPowerEstimatedCount > 0 &&
-                ` ${summary.hiddenPowerEstimatedCount} Hidden Power rolls use a marked type estimate.`}
-              {summary.unmappedCount > 0 &&
-                ` ${summary.unmappedCount} could not be matched to the current catalog.`}
-            </span>
-          </>
-        )}
-      </div>
+      {scope === "owned" && (
+        <div
+          aria-label={loading ? "Loading your raid roster" : rosterDetails}
+          className="raid-roster-status"
+          role="status"
+          title={loading ? undefined : rosterDetails}
+        >
+          <strong>
+            {loading ? "Loading roster…" : `${summary.eligibleCount} raid-ready`}
+          </strong>
+        </div>
+      )}
     </section>
   );
 };

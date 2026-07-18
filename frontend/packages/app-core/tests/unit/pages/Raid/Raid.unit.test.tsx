@@ -627,10 +627,10 @@ describe("Raid page", () => {
     render(<Raid />);
 
     expect(
-      screen.getByText("0 raid-ready entries from 1 caught"),
+      screen.getByText("0 raid-ready"),
     ).toBeInTheDocument();
     expect(
-      screen.getByText(/1 caught entries need complete battle details/i),
+      screen.getByLabelText(/1 caught entries need complete battle details/i),
     ).toBeInTheDocument();
     expect(
       screen.queryByRole("cell", { name: /Shadow Regigigas/i }),

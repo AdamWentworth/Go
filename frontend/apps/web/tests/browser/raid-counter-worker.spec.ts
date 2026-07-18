@@ -273,7 +273,7 @@ test.describe("raid counter worker", () => {
     await page.goto("/raid", { waitUntil: "domcontentloaded" });
 
     await expect(
-      page.getByText("2 raid-ready entries from 1 caught"),
+      page.getByText("2 raid-ready"),
     ).toBeVisible();
     const leaderboard = page.getByLabel("Your top raid attackers");
     await expect(
