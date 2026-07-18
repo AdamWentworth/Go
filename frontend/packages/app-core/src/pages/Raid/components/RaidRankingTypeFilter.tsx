@@ -16,18 +16,17 @@ const RaidRankingTypeFilter = ({
     className="raid-ranking-type-filter"
     aria-label="Attacker type filter"
   >
-    <span className="raid-ranking-type-filter-label">Ranking scope</span>
+    <button
+      aria-label="All types"
+      aria-pressed={selectedType === ""}
+      className={`raid-ranking-all ${selectedType === "" ? "active" : ""}`}
+      onClick={() => onChange("")}
+      title="Show overall rankings"
+      type="button"
+    >
+      All types
+    </button>
     <div className="raid-ranking-type-options">
-      <button
-        aria-label="All types"
-        aria-pressed={selectedType === ""}
-        className={`raid-ranking-overall ${selectedType === "" ? "active" : ""}`}
-        onClick={() => onChange("")}
-        title="All types"
-        type="button"
-      >
-        <span>All types</span>
-      </button>
       {typeOptions.map((type) => (
         <button
           aria-label={capitalize(type)}

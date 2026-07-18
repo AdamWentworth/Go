@@ -614,23 +614,8 @@ const Raid: React.FC = () => {
             />
 
             <header className="raid-leaderboard-header">
-              <div>
-                <p className="raid-eyebrow">
-                  {typeRankingActive
-                    ? `${capitalize(selectedType)} type eDPS`
-                    : "Overall eDPS"}
-                </p>
-                <h1>{rankingHeading}</h1>
-              </div>
+              <h1>{rankingHeading}</h1>
               <div className="raid-leaderboard-meta">
-                <span>Team of six, {relobbySeconds}s relobby</span>
-                <span>
-                  {personalized
-                    ? "Caught levels, IVs, CP, and moves"
-                    : typeRankingActive
-                      ? `${capitalize(selectedType)} matchup benchmark`
-                      : "Neutral typeless benchmark"}
-                </span>
                 <RaidModelProvenance />
               </div>
             </header>

@@ -443,22 +443,19 @@ describe("Raid page", () => {
     expect(
       screen.getByRole("heading", { name: "Top raid attackers" }),
     ).toBeInTheDocument();
-    expect(
-      screen.getByRole("link", { name: "How rankings work" }),
-    ).toHaveAttribute(
+    const methodLink = screen.getByRole("link", { name: "Ranking method" });
+    expect(methodLink).toHaveAttribute(
       "href",
       "https://github.com/AdamWentworth/PokeGoNexus/blob/master/docs/raid-ranking-methodology.md",
     );
-    expect(
-      within(screen.getByLabelText("Raid ranking versions")).getByText(
-        `Model v${RAID_SIMULATION_MODEL_VERSION}`,
-      ),
-    ).toBeInTheDocument();
-    expect(
-      within(screen.getByLabelText("Raid ranking versions")).getByText(
-        "Catalog catalog-2026…",
-      ),
-    ).toBeInTheDocument();
+    expect(methodLink).toHaveAttribute(
+      "title",
+      expect.stringContaining(`Model: v${RAID_SIMULATION_MODEL_VERSION}`),
+    );
+    expect(methodLink).toHaveAttribute(
+      "title",
+      expect.stringContaining("Catalog: catalog-2026-07-17"),
+    );
     const typeFilter = screen.getByLabelText("Attacker type filter");
     expect(
       within(typeFilter).getByRole("button", { name: "All types" }),
@@ -473,7 +470,6 @@ describe("Raid page", () => {
     expect(settingsButton).toHaveAttribute("aria-expanded", "true");
     expect(screen.getByLabelText(/relobby delay/i)).toHaveValue("10");
     expect(screen.queryByLabelText(/boss movesets/i)).not.toBeInTheDocument();
-    expect(screen.getByText("Neutral typeless benchmark")).toBeInTheDocument();
 
     const counterList = screen.getByLabelText("Top raid attackers");
     expect(

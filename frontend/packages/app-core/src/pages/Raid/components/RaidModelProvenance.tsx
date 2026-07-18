@@ -1,3 +1,4 @@
+import { FaCircleInfo } from "react-icons/fa6";
 import {
   getStorageString,
   STORAGE_KEYS,
@@ -6,11 +7,6 @@ import { RAID_SIMULATION_MODEL_VERSION } from "../utils/raidRules";
 
 const RAID_RANKING_METHODOLOGY_URL =
   "https://github.com/AdamWentworth/PokeGoNexus/blob/master/docs/raid-ranking-methodology.md";
-
-const compactVersion = (version: string | null): string => {
-  if (!version) return "pending";
-  return version.length > 12 ? `${version.slice(0, 12)}…` : version;
-};
 
 const RaidModelProvenance = () => {
   const catalogVersion = getStorageString(
@@ -21,23 +17,24 @@ const RaidModelProvenance = () => {
     STORAGE_KEYS.pokemonRaidDataVersion,
   );
   const versionDetails = [
+    `Model: v${RAID_SIMULATION_MODEL_VERSION}`,
     `Catalog: ${catalogVersion ?? "pending"}`,
     `Moves: ${movesVersion ?? "pending"}`,
     `Raid data: ${raidDataVersion ?? "pending"}`,
   ].join("\n");
 
   return (
-    <div className="raid-model-provenance" aria-label="Raid ranking versions">
-      <span>Model v{RAID_SIMULATION_MODEL_VERSION}</span>
-      <span title={versionDetails}>Catalog {compactVersion(catalogVersion)}</span>
-      <a
-        href={RAID_RANKING_METHODOLOGY_URL}
-        target="_blank"
-        rel="noreferrer"
-      >
-        How rankings work
-      </a>
-    </div>
+    <a
+      aria-label="Ranking method"
+      className="raid-model-provenance"
+      href={RAID_RANKING_METHODOLOGY_URL}
+      target="_blank"
+      rel="noreferrer"
+      title={versionDetails}
+    >
+      <FaCircleInfo aria-hidden="true" />
+      <span>Method</span>
+    </a>
   );
 };
 
