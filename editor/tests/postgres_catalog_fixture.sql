@@ -159,9 +159,9 @@ INSERT INTO fusion_background_combo_rules (
 INSERT INTO raid_bosses (
   pokemon_id, name, form, type, boosted_weather, max_boosted_cp,
   max_unboosted_cp, min_boosted_cp, min_unboosted_cp, possible_shiny, tier,
-  costume_id
+  costume_id, shield_count
 ) VALUES
-  (1, 'Bulbasaur', NULL, '1-star', 'Cloudy', 1000, 900, 800, 700, TRUE, '1', NULL);
+  (1, 'Bulbasaur', NULL, '1-star', 'Cloudy', 1000, 900, 800, 700, TRUE, '1', NULL, NULL);
 
 INSERT INTO catalog_releases (release_id, source_sha256, source_label, table_counts, is_active, activated_at) VALUES
   ('fixture-20260715', repeat('0', 64), 'synthetic-test-fixture', '{"pokemon": 12}', TRUE, CURRENT_TIMESTAMP);

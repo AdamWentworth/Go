@@ -187,6 +187,7 @@ export interface RaidBoss {
   possible_shiny: number;
   tier: string;
   costume_id?: number | null;
+  shield_count?: number | null;
 }
 
 export interface Move {

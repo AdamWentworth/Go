@@ -19,7 +19,8 @@ func (b *Builder) attachRaidBoss(ctx context.Context, orderedIDs []int, pokemonB
 	  min_unboosted_cp,
 	  possible_shiny,
 	  tier,
-	  costume_id
+	  costume_id,
+	  shield_count
 	FROM raid_bosses
 	ORDER BY pokemon_id, id
 	`)

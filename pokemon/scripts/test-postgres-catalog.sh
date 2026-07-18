@@ -48,3 +48,127 @@ docker exec -i "${container_name}" \
   fi
   POSTGRES_TEST_URL="${database_url}" go test "${test_args[@]}" ./internal/builder
 )
+
+# Prove that the authored Super Mega roster can be applied repeatedly without
+# duplicating rows or erasing editor-managed images.
+docker exec -i "${container_name}" \
+  psql -v ON_ERROR_STOP=1 -U catalog -d pokemon_catalog_test >/dev/null <<'SQL'
+SET search_path = pokemon_catalog, public;
+
+INSERT INTO types (type_id, name, icon_url) VALUES
+  (101, 'Electric', '/images/types/Electric.png'),
+  (102, 'Dark', '/images/types/Dark.png'),
+  (103, 'Steel', '/images/types/Steel.png');
+
+WITH desired (pokemon_id, name, type_1_name, type_2_name) AS (
+  VALUES
+    (26, 'Raichu', 'Electric', NULL),
+    (71, 'Victreebel', 'Grass', 'Poison'),
+    (121, 'Starmie', 'Water', 'Psychic'),
+    (149, 'Dragonite', 'Dragon', 'Flying'),
+    (227, 'Skarmory', 'Steel', 'Flying'),
+    (687, 'Malamar', 'Dark', 'Psychic'),
+    (870, 'Falinks', 'Fighting', NULL)
+)
+INSERT INTO pokemon (
+  pokemon_id, name, pokedex_number, attack, defense, stamina, type_1_id,
+  type_2_id, available, shiny_available, date_available
+)
+SELECT desired.pokemon_id,
+       desired.name,
+       desired.pokemon_id,
+       100,
+       100,
+       100,
+       type_1.type_id,
+       type_2.type_id,
+       TRUE,
+       TRUE,
+       '2026-01-01'
+FROM desired
+JOIN types type_1 ON LOWER(type_1.name) = LOWER(desired.type_1_name)
+LEFT JOIN types type_2 ON LOWER(type_2.name) = LOWER(desired.type_2_name);
+SQL
+
+for _ in 1 2; do
+  docker exec -i "${container_name}" \
+    psql -v ON_ERROR_STOP=1 -U catalog -d pokemon_catalog_test \
+    < "${repo_root}/pokemon/scripts/sql/20260717_super_mega_raid_roster.sql" >/dev/null
+done
+
+docker exec -i "${container_name}" \
+  psql -v ON_ERROR_STOP=1 -U catalog -d pokemon_catalog_test >/dev/null <<'SQL'
+SET search_path = pokemon_catalog, public;
+
+DO $$
+DECLARE
+  roster_mega_count INTEGER;
+  roster_raid_count INTEGER;
+  roster_cp_count INTEGER;
+  populated_new_images INTEGER;
+BEGIN
+  SELECT COUNT(*) INTO roster_mega_count
+  FROM mega_evolution
+  WHERE pokemon_id IN (26, 71, 121, 149, 150, 227, 687, 870);
+
+  SELECT COUNT(*) INTO roster_raid_count
+  FROM raid_bosses
+  WHERE LOWER(COALESCE(tier, '')) = 'super_mega';
+
+  SELECT COUNT(*) INTO roster_cp_count
+  FROM mega_cp_stats cp
+  JOIN mega_evolution me ON me.id = cp.mega_id
+  WHERE me.pokemon_id IN (26, 71, 121, 149, 150, 227, 687, 870)
+    AND cp.level_id IN (40, 50);
+
+  SELECT COUNT(*) INTO populated_new_images
+  FROM mega_evolution
+  WHERE pokemon_id IN (26, 71, 121, 149, 227, 687, 870)
+    AND image_url IS NOT NULL
+    AND image_url_shiny IS NOT NULL
+    AND sprite_url IS NULL;
+
+  IF roster_mega_count <> 10 OR roster_raid_count <> 10 OR roster_cp_count <> 20 THEN
+    RAISE EXCEPTION 'unexpected Super Mega roster counts (mega %, raid %, CP %)',
+      roster_mega_count, roster_raid_count, roster_cp_count;
+  END IF;
+
+  IF populated_new_images <> 8 THEN
+    RAISE EXCEPTION 'new authored images are missing: % of 8 populated', populated_new_images;
+  END IF;
+
+  IF NOT EXISTS (
+    SELECT 1 FROM mega_evolution
+    WHERE pokemon_id = 150 AND form = 'X'
+      AND image_url = '/images/mega/mega_150_X.png?v=f8169f5'
+  ) THEN
+    RAISE EXCEPTION 'idempotent roster update overwrote an existing Mega image';
+  END IF;
+
+  IF NOT EXISTS (
+    SELECT 1 FROM raid_bosses
+    WHERE pokemon_id = 227 AND tier = 'super_mega' AND shield_count = 7
+  ) OR NOT EXISTS (
+    SELECT 1 FROM raid_bosses
+    WHERE pokemon_id = 870 AND tier = 'super_mega' AND shield_count = 8
+  ) THEN
+    RAISE EXCEPTION 'released Super Mega shield counts are incorrect';
+  END IF;
+
+  IF EXISTS (
+    SELECT 1 FROM raid_bosses
+    WHERE pokemon_id IN (26, 121) AND tier = 'super_mega' AND shield_count IS NOT NULL
+  ) THEN
+    RAISE EXCEPTION 'future unconfirmed shield counts must remain NULL';
+  END IF;
+
+  IF NOT EXISTS (
+    SELECT 1 FROM mega_evolution me
+    JOIN mega_cp_stats cp ON cp.mega_id = me.id
+    WHERE me.pokemon_id = 121 AND me.form IS NULL
+      AND cp.level_id = 50 AND cp.cp = 4184
+  ) THEN
+    RAISE EXCEPTION 'Mega Starmie level-50 CP is missing or incorrect';
+  END IF;
+END $$;
+SQL

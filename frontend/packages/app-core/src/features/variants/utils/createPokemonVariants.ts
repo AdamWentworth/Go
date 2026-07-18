@@ -11,6 +11,23 @@ import type { Costume, MegaEvolution, Fusion, MaxForm, RaidBoss } from '../../..
 const getTypeIcon = (typeName?: string) =>
   typeName ? `/images/types/${typeName.toLowerCase()}.png` : '';
 
+export const isCatalogEntryReleased = (
+  dateAvailable?: string | null,
+  now = Date.now(),
+): boolean => {
+  if (!dateAvailable) return true;
+
+  const dateOnly = /^(\d{4})-(\d{2})-(\d{2})$/.exec(dateAvailable);
+  const releaseTime = dateOnly
+    ? new Date(
+        Number(dateOnly[1]),
+        Number(dateOnly[2]) - 1,
+        Number(dateOnly[3]),
+      ).getTime()
+    : Date.parse(dateAvailable);
+  return Number.isNaN(releaseTime) || releaseTime <= now;
+};
+
 const createPokemonVariants = (pokemons: BasePokemon[]): PokemonVariant[] => {
   const generateVariants = (pokemon: BasePokemon): PokemonVariant[] => {
     const variants: PokemonVariant[] = [];
@@ -149,6 +166,8 @@ const createPokemonVariants = (pokemons: BasePokemon[]): PokemonVariant[] => {
 
     /* ---------- mega / primal variants ---------- */
     pokemon.megaEvolutions?.forEach((mega: MegaEvolution) => {
+      if (!isCatalogEntryReleased(mega.date_available)) return;
+
       const suffix = mega.form ? `_${mega.form.toLowerCase()}` : '';
       const base: PokemonVariant = {
         ...defaultVariant,
@@ -162,6 +181,8 @@ const createPokemonVariants = (pokemons: BasePokemon[]): PokemonVariant[] => {
         form: mega.form ?? defaultVariant.form,
         type_1_id: mega.type_1_id,
         type_2_id: mega.type_2_id ?? defaultVariant.type_2_id,
+        type1_name: mega.type1_name,
+        type2_name: mega.type2_name ?? '',
         type_1_icon: getTypeIcon(mega.type1_name),
         type_2_icon: getTypeIcon(mega.type2_name),
         currentImage: mega.image_url || defaultVariant.image_url,

@@ -305,7 +305,8 @@ CREATE TABLE IF NOT EXISTS pokemon_catalog.raid_bosses (
   min_unboosted_cp INTEGER,
   possible_shiny BOOLEAN,
   tier TEXT,
-  costume_id INTEGER REFERENCES pokemon_catalog.costume_pokemon(costume_id)
+  costume_id INTEGER REFERENCES pokemon_catalog.costume_pokemon(costume_id),
+  shield_count INTEGER CHECK (shield_count IS NULL OR shield_count > 0)
 );
 
 CREATE INDEX IF NOT EXISTS idx_raid_bosses_pokemon_id

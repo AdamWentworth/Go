@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 
-import createPokemonVariants from '@/features/variants/utils/createPokemonVariants';
+import createPokemonVariants, {
+  isCatalogEntryReleased,
+} from '@/features/variants/utils/createPokemonVariants';
 import type { BasePokemon } from '@/types/pokemonBase';
 import type { PokemonVariant } from '@/types/pokemonVariants';
 
@@ -9,6 +11,15 @@ import pokemonsFixture from '@/../tests/__helpers__/fixtures/pokemons.json';
 const samplePokemons = (pokemonsFixture as BasePokemon[]).slice(0, 40);
 
 describe('createPokemonVariants (unit)', () => {
+  it('keeps undated and released catalog entries while rejecting future releases', () => {
+    const referenceTime = new Date(2026, 6, 17, 12).getTime();
+
+    expect(isCatalogEntryReleased(null, referenceTime)).toBe(true);
+    expect(isCatalogEntryReleased('not-a-date', referenceTime)).toBe(true);
+    expect(isCatalogEntryReleased('2026-07-17', referenceTime)).toBe(true);
+    expect(isCatalogEntryReleased('2026-07-18', referenceTime)).toBe(false);
+  });
+
   it('creates at least one variant per base pokemon', () => {
     const variants = createPokemonVariants(samplePokemons);
     const defaults = variants.filter((v) => v.variantType === 'default');
@@ -121,6 +132,59 @@ describe('createPokemonVariants (unit)', () => {
 
     expect(defaultVariant?.backgrounds).toEqual(baseBackgrounds);
     expect(fusionVariant?.backgrounds).toEqual(fusionBackgrounds);
+  });
+
+  it('uses each Mega form\'s types instead of inheriting the base Pokemon types', () => {
+    const sample = samplePokemons[0];
+    const charizard: BasePokemon = {
+      ...sample,
+      pokemon_id: 6,
+      name: 'Charizard',
+      type_1_id: 10,
+      type_2_id: 3,
+      type1_name: 'Fire',
+      type2_name: 'Flying',
+      costumes: [],
+      fusion: [],
+      raid_boss: [],
+      max: [],
+      evolves_from: [],
+      megaEvolutions: [
+        {
+          id: 1,
+          form: 'X',
+          date_available: '2020-08-27',
+          mega_energy_cost: 200,
+          type_1_id: 10,
+          type_2_id: 3,
+          type1_name: 'Fire',
+          type2_name: 'Dragon',
+        },
+        {
+          id: 2,
+          form: 'Y',
+          date_available: '2020-08-27',
+          mega_energy_cost: 200,
+          type_1_id: 10,
+          type_2_id: 11,
+          type1_name: 'Fire',
+          type2_name: 'Flying',
+        },
+      ],
+    };
+
+    const variants = createPokemonVariants([charizard]);
+    const megaX = variants.find((variant) => variant.megaForm === 'X');
+    const megaY = variants.find((variant) => variant.megaForm === 'Y');
+
+    expect([megaX?.type1_name, megaX?.type2_name]).toEqual([
+      'Fire',
+      'Dragon',
+    ]);
+    expect([megaY?.type1_name, megaY?.type2_name]).toEqual([
+      'Fire',
+      'Flying',
+    ]);
   });
 
   it('keeps curated fusion raid data only on matching fusion variants', () => {
@@ -354,5 +418,47 @@ describe('createPokemonVariants (unit)', () => {
     });
     expect(shinyMegaX?.currentImage).toBe('/images/shiny_mega/shiny_mega_150_X.png');
     expect(shinyMegaY?.currentImage).toBe('/images/shiny_mega/shiny_mega_150_Y.png');
+  });
+
+  it('does not create a Mega variant before its catalog release date', () => {
+    const sample = samplePokemons[0];
+    const pokemon: BasePokemon = {
+      ...sample,
+      pokemon_id: 121,
+      name: 'Starmie',
+      pokedex_number: 121,
+      backgrounds: [],
+      costumes: [],
+      fusion: [],
+      megaEvolutions: [
+        {
+          id: 155,
+          mega_energy_cost: 300,
+          attack: 276,
+          defense: 229,
+          stamina: 155,
+          image_url: '',
+          image_url_shiny: '',
+          sprite_url: null,
+          primal: null,
+          form: null,
+          type_1_id: 18,
+          type_2_id: 15,
+          type1_name: 'Water',
+          type2_name: 'Psychic',
+          date_available: '2099-08-22',
+          cp40: 3701,
+          cp50: 4184,
+        },
+      ],
+      raid_boss: [],
+      max: [],
+      evolves_from: [],
+    };
+
+    const variants = createPokemonVariants([pokemon]);
+
+    expect(variants.some((variant) => variant.variantType === 'mega')).toBe(false);
+    expect(variants.some((variant) => variant.variantType === 'default')).toBe(true);
   });
 });
