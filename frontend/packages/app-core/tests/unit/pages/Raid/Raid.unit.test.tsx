@@ -281,14 +281,30 @@ describe("Raid page", () => {
 
     expect(screen.getByLabelText("Custom raid party")).toBeInTheDocument();
     expect(screen.getByLabelText("Trainer 1 team slot 1")).not.toHaveValue("");
+    const trainerOne = screen
+      .getByText("Trainer 1", { selector: "strong" })
+      .closest("details");
+    expect(trainerOne).toHaveAttribute("open");
     fireEvent.click(screen.getByRole("button", { name: "Add Trainer" }));
     expect(screen.getByText("3 Trainers")).toBeInTheDocument();
+    const lobbyControls = screen.getByLabelText("Lobby controls");
+    expect(
+      within(lobbyControls).getByRole("button", { name: "Add Trainer" }),
+    ).toBeInTheDocument();
+    expect(
+      within(lobbyControls).getByRole("button", { name: "Simulate" }),
+    ).toBeInTheDocument();
+    expect(trainerOne).not.toHaveAttribute("open");
+    expect(
+      screen.getByText("Trainer 3", { selector: "strong" }).closest("details"),
+    ).toHaveAttribute("open");
 
     fireEvent.click(screen.getByRole("button", { name: /^Simulate$/ }));
     const result = await screen.findByLabelText("Raid party result");
 
     expect(within(result).getByText(/Clear|Time expired/)).toBeInTheDocument();
     expect(within(result).getAllByText(/DPS/).length).toBeGreaterThan(0);
+    expect(within(lobbyControls).getByText(/Clear|Time expired/)).toBeInTheDocument();
 
     const calibration = screen.getByLabelText("Observed raid calibration");
     fireEvent.click(

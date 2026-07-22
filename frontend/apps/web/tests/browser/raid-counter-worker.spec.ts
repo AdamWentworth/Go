@@ -219,6 +219,21 @@ test.describe("raid counter worker", () => {
     await expect(party.getByLabel("Trainer 1 team slot 1")).not.toHaveValue("");
     await party.getByRole("button", { name: "Add Trainer" }).click();
     await expect(party.getByText("3 Trainers")).toBeVisible();
+    const lobbyControls = party.getByLabel("Lobby controls");
+    await expect(lobbyControls).toHaveCSS("position", "sticky");
+    await expect(
+      lobbyControls.getByRole("button", { name: "Simulate" }),
+    ).toBeVisible();
+    await party
+      .getByText("Trainer 3", { exact: true })
+      .first()
+      .scrollIntoViewIfNeeded();
+    expect(
+      await lobbyControls.evaluate((element) => {
+        const bounds = element.getBoundingClientRect();
+        return bounds.top >= 0 && bounds.bottom <= window.innerHeight;
+      }),
+    ).toBe(true);
 
     const partyWorkerStarted = page.waitForEvent("worker", {
       predicate: (worker) => worker.url().includes("raidParty.worker"),
@@ -231,11 +246,14 @@ test.describe("raid counter worker", () => {
       timeout: 30_000,
     });
     await expect(party.getByLabel("Raid party result")).toContainText("DPS");
+    await expect(lobbyControls).toContainText(/Clear|Time expired/);
 
     const optimizerWorkerStarted = page.waitForEvent("worker", {
       predicate: (worker) => worker.url().includes("raidParty.worker"),
     });
-    await party.getByRole("button", { name: "Optimize lobby" }).click();
+    await party
+      .getByRole("button", { name: "Optimize", exact: true })
+      .click();
     await optimizerWorkerStarted;
     await expect(party.getByText("Lobby optimized")).toBeVisible({
       timeout: 60_000,

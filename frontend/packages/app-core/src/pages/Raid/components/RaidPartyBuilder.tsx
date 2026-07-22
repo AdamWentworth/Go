@@ -162,7 +162,7 @@ const RaidPartyBuilder = ({
         scores,
         settings,
       );
-      setExpandedTrainerIds((expanded) => new Set(expanded).add(nextDraft.id));
+      setExpandedTrainerIds(new Set([nextDraft.id]));
       return [...current, nextDraft];
     });
     setResult(null);
@@ -293,22 +293,75 @@ const RaidPartyBuilder = ({
 
       {open && (
         <div className="raid-party-content">
-          <header className="raid-party-heading">
-            <div>
-              <span>{drafts.length} Trainers</span>
-              <strong>Build the actual lobby</strong>
+          <div className="raid-party-lobby-bar" aria-label="Lobby controls">
+            <div className="raid-party-lobby-summary">
+              <span className="raid-party-lobby-count">
+                <FaUsers aria-hidden="true" />
+                <span>
+                  <strong>
+                    {drafts.length}{" "}
+                    {drafts.length === 1 ? "Trainer" : "Trainers"}
+                  </strong>
+                  <small>Lobby size</small>
+                </span>
+              </span>
+              <span
+                className="raid-party-lobby-outcome"
+                aria-live="polite"
+                aria-atomic="true"
+              >
+                {result ? (
+                  <>
+                    <strong className={resultOutcome?.className}>
+                      {resultOutcome?.label}
+                    </strong>
+                    <small>
+                      {formatSeconds(result.projectedTimeToWinSeconds)} ·{" "}
+                      {Math.round(result.distribution.winRate * 100)}% clear
+                    </small>
+                  </>
+                ) : (
+                  <>
+                    <strong>Ready to test</strong>
+                    <small>Build and simulate this lobby</small>
+                  </>
+                )}
+              </span>
             </div>
-            <button
-              type="button"
-              className="raid-party-add"
-              onClick={handleAddTrainer}
-              disabled={drafts.length >= RAID_PARTY_MAX_TRAINERS}
-              title="Add Trainer"
-            >
-              <FaPlus aria-hidden="true" />
-              Add Trainer
-            </button>
-          </header>
+
+            <div className="raid-party-lobby-actions">
+              <button
+                type="button"
+                className="raid-party-add"
+                onClick={handleAddTrainer}
+                disabled={drafts.length >= RAID_PARTY_MAX_TRAINERS}
+                aria-label="Add Trainer"
+                title="Add Trainer"
+              >
+                <FaPlus aria-hidden="true" />
+                <span>Add</span>
+              </button>
+              <button
+                type="button"
+                className="raid-party-run raid-party-simulate"
+                onClick={handleRun}
+                disabled={running || optimizing || drafts.length === 0}
+              >
+                <FaBolt aria-hidden="true" />
+                {running ? "Running..." : "Simulate"}
+              </button>
+              <button
+                type="button"
+                className="raid-party-run raid-party-optimize"
+                onClick={handleOptimize}
+                disabled={running || optimizing || drafts.length === 0}
+                title="Coordinate teams, Mega uptime, survival, and relobbies"
+              >
+                <FaMagic aria-hidden="true" />
+                {optimizing ? "Optimizing..." : "Optimize"}
+              </button>
+            </div>
+          </div>
 
           <div className="raid-party-trainers">
             {drafts.map((draft, trainerIndex) => {
@@ -514,28 +567,6 @@ const RaidPartyBuilder = ({
                 </details>
               );
             })}
-          </div>
-
-          <div className="raid-party-run-actions">
-            <button
-              type="button"
-              className="raid-party-run raid-party-simulate"
-              onClick={handleRun}
-              disabled={running || optimizing || drafts.length === 0}
-            >
-              <FaBolt aria-hidden="true" />
-              {running ? "Simulating..." : "Simulate"}
-            </button>
-            <button
-              type="button"
-              className="raid-party-run raid-party-optimize"
-              onClick={handleOptimize}
-              disabled={running || optimizing || drafts.length === 0}
-              title="Coordinate teams, Mega uptime, survival, and relobbies"
-            >
-              <FaMagic aria-hidden="true" />
-              {optimizing ? "Optimizing lobby..." : "Optimize lobby"}
-            </button>
           </div>
 
           {error && (
