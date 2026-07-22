@@ -101,8 +101,13 @@ const sharedMediaAssetsPlugin = () => ({
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, webRoot, '');
   const assetOrigin = (env.VITE_ASSET_ORIGIN || 'https://pokegonexus.com').replace(/\/+$/, '');
+  const devProxyTarget = env.DEV_PROXY_TARGET?.trim().replace(/\/+$/, '');
+  const devProxyHost = env.DEV_PROXY_HOST?.trim();
+  const devProxySecure = env.DEV_PROXY_SECURE !== 'false';
+  const assetProxyTarget = devProxyTarget || assetOrigin;
   const apiProxyTarget = (
     process.env.E2E_REAL_API_ORIGIN ||
+    devProxyTarget ||
     process.env.VITE_ASSET_ORIGIN ||
     env.VITE_ASSET_ORIGIN ||
     (() => {
@@ -132,14 +137,16 @@ export default defineConfig(({ mode }) => {
       proxy: {
         // Keep legacy /images paths functional in dev without local public/images files.
         '/images': {
-          target: assetOrigin,
+          target: assetProxyTarget,
           changeOrigin: true,
-          secure: true,
+          secure: devProxySecure,
+          ...(devProxyHost ? { headers: { host: devProxyHost } } : {}),
         },
         '/api': {
           target: apiProxyTarget,
           changeOrigin: true,
-          secure: true,
+          secure: devProxySecure,
+          ...(devProxyHost ? { headers: { host: devProxyHost } } : {}),
           configure(proxy) {
             proxy.on('proxyRes', (proxyRes) => {
               const cookies = proxyRes.headers['set-cookie'];

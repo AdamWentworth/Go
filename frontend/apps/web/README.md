@@ -155,6 +155,15 @@ npm ci
 
 Use `frontend/apps/web/.env.development` for local API URLs and `frontend/apps/web/.env.production` for production build defaults. If you want local frontend work to hit live APIs, copy the production values into your local development env.
 
+When public DNS is unavailable but the stack is reachable on the local network, add these ignored overrides to `frontend/apps/web/.env.development.local`:
+
+```dotenv
+DEV_PROXY_TARGET=https://192.168.1.77
+DEV_PROXY_HOST=pokegonexus.com
+DEV_PROXY_SECURE=false
+VITE_ASSET_ORIGIN=
+```
+
 Restart Vite after changing `.env*` values.
 
 ### 3. Start the dev server
