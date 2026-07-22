@@ -21,6 +21,7 @@ import type { PokemonVariant } from '@/types/pokemonVariants';
 
 import './Pokedex.css';
 import PokedexPokemonDetail from './PokedexPokemonDetail';
+import { schedulePokedexScrollRestore } from './pokedexScrollRestoration';
 
 type PokedexViewMode = 'regions' | 'detail';
 type PokedexGenderValue = 'Male' | 'Female';
@@ -949,17 +950,6 @@ function getPokedexScrollTop(): number {
   );
 }
 
-function restorePokedexScrollTop(scrollTop: number) {
-  window.scrollTo({ top: scrollTop, left: 0, behavior: 'auto' });
-
-  if (document.scrollingElement) {
-    document.scrollingElement.scrollTop = scrollTop;
-  }
-
-  document.documentElement.scrollTop = scrollTop;
-  document.body.scrollTop = scrollTop;
-}
-
 function Pokedex() {
   const variants = useVariantsStore((s) => s.variants);
   const loading = useVariantsStore((s) => s.variantsLoading);
@@ -1286,11 +1276,7 @@ function Pokedex() {
     const scrollY = pendingRegionDetailScrollRestoreRef.current;
     pendingRegionDetailScrollRestoreRef.current = null;
 
-    const animationFrame = window.requestAnimationFrame(() => {
-      restorePokedexScrollTop(scrollY);
-    });
-
-    return () => window.cancelAnimationFrame(animationFrame);
+    return schedulePokedexScrollRestore(scrollY);
   }, [selectedPokemon]);
 
   const handleShowRegions = useCallback(() => {
