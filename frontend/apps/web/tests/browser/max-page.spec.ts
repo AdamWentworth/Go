@@ -187,6 +187,7 @@ test.describe('Max Battles page', () => {
       await expect(page.getByLabel('Trainer count')).toHaveValue('2');
 
       await page.getByText('Advanced setup', { exact: true }).click();
+      await expect(page.getByText('Charge plan', { exact: true })).toBeVisible();
       await expect(page.getByLabel('Boss HP estimate')).toBeVisible();
       await expect(page.getByLabel('Boss HP estimate')).toHaveValue('1700');
       await page.getByLabel('Max Battle difficulty').selectOption('three-star');

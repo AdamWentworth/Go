@@ -277,6 +277,14 @@ const MaxBattleSimulator = ({
                   <dt>Max phases</dt>
                   <dd>{result.estimatedMaxPhases}</dd>
                 </div>
+                <div>
+                  <dt>Charge plan</dt>
+                  <dd>
+                    {result.meterPlan.chargedMove
+                      ? `${result.meterPlan.fastMove.name} + ${result.meterPlan.chargedMove.name}`
+                      : `${result.meterPlan.fastMove.name} only`}
+                  </dd>
+                </div>
               </dl>
               {difficultyOptions.length > 1 && (
                 <label className="max-simulator-difficulty">
@@ -347,8 +355,11 @@ const MaxBattleSimulator = ({
                   attack.
                 </p>
                 <p>
-                  The estimate uses Fast Move cadence, per-boss damage, one collected
-                  Max Meter orb per cycle, Max Move levels, three Max actions, and a
+                  The estimate compares Fast Move-only play with every legal charged
+                  rotation under this tier's Max Meter rules. The selected plan reaches
+                  each Max phase in about {formatDuration(result.meterPlan.meterSeconds)}.
+                  It also uses per-boss damage, one collected Max Meter orb per cycle,
+                  Max Move levels, three Max actions, and a
                   {formatDuration(preset.enrageSeconds)} enrage window. It excludes
                   cheering, Power Spot bonuses,
                   Max Mushrooms, dodging, and network latency.{' '}

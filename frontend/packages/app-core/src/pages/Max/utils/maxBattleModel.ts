@@ -441,6 +441,32 @@ const calculateDamage = (
     ) + 1,
   );
 
+export const calculateMaxBattleMoveDamage = (
+  entry: MaxRankingEntry,
+  boss: PokemonVariant,
+  move: Move,
+): number => {
+  const bossStats = getStats(boss);
+  const moveType = Number(move.is_fast) === 1
+    ? getFastMoveType(move)
+    : getMoveType(move);
+  const stab = variantTypes(entry.variant).includes(moveType)
+    ? MAX_MODEL_CONSTANTS.stabMultiplier
+    : 1;
+  const effectiveness = getTypeEffectivenessMultiplier(
+    moveType,
+    variantTypes(boss),
+  );
+
+  return calculateDamage(
+    Number(move.raid_power),
+    entry.attack,
+    bossStats.defense,
+    stab,
+    effectiveness,
+  );
+};
+
 const getMeterCycleSeconds = (fastMoveSeconds: number): number => {
   const actionsPerPokemon = Math.ceil(
     MAX_MODEL_CONSTANTS.maxMeterEnergy / MAX_MODEL_CONSTANTS.maxGroupSize,

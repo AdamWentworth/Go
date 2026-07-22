@@ -18,6 +18,9 @@ const boss = {
   variantType: 'gigantamax',
   name: 'Gigantamax Venusaur',
   species_name: 'Venusaur',
+  attack: 198,
+  defense: 189,
+  stamina: 190,
   type1_name: 'grass',
   type2_name: 'poison',
 } as PokemonVariant;
@@ -94,8 +97,21 @@ const fastMove = {
   name: 'Vine Whip',
   is_fast: 1,
   raid_power: 10,
+  raid_energy: 10,
   raid_cooldown: 0.5,
   type_name: 'grass',
+  type: 'grass',
+} as Move;
+
+const chargedMove = {
+  move_id: 2,
+  name: 'Psychic',
+  is_fast: 0,
+  raid_power: 100,
+  raid_energy: -50,
+  raid_cooldown: 2,
+  type_name: 'psychic',
+  type: 'psychic',
 } as Move;
 
 const entry = (
@@ -187,6 +203,7 @@ describe('Max Battle simulator', () => {
     expect(result.trainerCount).toBe(12);
     expect(result.subgroupCount).toBe(3);
     expect(result.supportActionsPerGroup).toBe(2);
+    expect(result.meterPlan.fastMove.name).toBe('Vine Whip');
   });
 
   it('makes additional coordinated Trainers improve the clear estimate', () => {
@@ -239,6 +256,28 @@ describe('Max Battle simulator', () => {
     expect(result.trainerCount).toBe(1);
     expect(result.bossHp).toBe(1_700);
     expect(result.outcome).toBe('likely-clear');
+  });
+
+  it('feeds the best legal charge rotation into the clear estimate', () => {
+    const tank = entry('tank');
+    const result = simulateMaxBattle({
+      boss: dynamaxBulbasaur,
+      trainerCount: 1,
+      team: {
+        ...team,
+        tank: {
+          ...tank,
+          variant: {
+            ...tank.variant,
+            moves: [fastMove, chargedMove],
+          },
+        },
+      },
+    });
+
+    expect(result.meterPlan.strategy).toBe('fast-and-charged');
+    expect(result.meterPlan.chargedMove?.name).toBe('Psychic');
+    expect(result.meterPlan.chargedUses).toBeGreaterThan(0);
   });
 
   it('uses catalog profile mechanics instead of evolutionary inference', () => {

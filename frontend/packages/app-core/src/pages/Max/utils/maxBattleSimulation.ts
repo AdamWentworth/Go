@@ -5,6 +5,11 @@ import {
   MAX_MODEL_CONSTANTS,
   type MaxRankingEntry,
 } from './maxBattleModel';
+import {
+  selectMaxMeterPlan,
+  type MaxMeterPlan,
+  type MaxMeterTier,
+} from './maxMeterModel';
 
 export type MaxBattleSimulationTeam = {
   damage: MaxRankingEntry;
@@ -12,12 +17,7 @@ export type MaxBattleSimulationTeam = {
   healing: MaxRankingEntry;
 };
 
-export type MaxBattleTier =
-  | 'one-star'
-  | 'two-star'
-  | 'three-star'
-  | 'legendary'
-  | 'gigantamax';
+export type MaxBattleTier = MaxMeterTier;
 
 export type MaxBattleBossPreset = {
   kind: 'standard' | 'legendary' | 'gigantamax';
@@ -56,6 +56,7 @@ export type MaxBattleSimulationResult = {
   estimatedMaxPhases: number;
   supportActionsPerGroup: number;
   limitedBySurvival: boolean;
+  meterPlan: MaxMeterPlan;
 };
 
 export const MAX_BATTLE_SIMULATION_CONSTANTS = {
@@ -319,32 +320,16 @@ type SubgroupEstimate = {
   cycleSeconds: number;
   survivalSeconds: number;
   supportActions: number;
+  meterPlan: MaxMeterPlan;
 };
 
 const estimateSubgroup = (
   size: number,
   team: MaxBattleSimulationTeam,
+  boss: PokemonVariant,
   bossHp: number,
   preset: MaxBattleBossPreset,
 ): SubgroupEstimate => {
-  const maxEnergyPerFastHit = Math.max(
-    1,
-    Math.floor(
-      Math.max(1, team.tank.fastHitDamage) / Math.max(1, bossHp * 0.005),
-    ),
-  );
-  const meterActionsPerTrainer = Math.ceil(
-    Math.max(
-      1,
-      MAX_MODEL_CONSTANTS.maxMeterEnergy -
-        preset.meterOrbEnergy,
-    ) /
-      (size * maxEnergyPerFastHit),
-  );
-  const meterSeconds =
-    meterActionsPerTrainer * Math.max(0.5, team.tank.meterSeconds);
-  const cycleSeconds =
-    meterSeconds + MAX_BATTLE_SIMULATION_CONSTANTS.maxPhaseSeconds;
   const maxActions =
     size * MAX_BATTLE_SIMULATION_CONSTANTS.maxActionsPerTrainer;
   const isEasyTier = preset.tier === 'one-star' || preset.tier === 'two-star';
@@ -360,9 +345,20 @@ const estimateSubgroup = (
     1,
     team.damage.bossBenchmark?.maxHitDamage ?? 1,
   );
-  const regularDamage =
-    Math.max(1, team.tank.fastHitDamage) * meterActionsPerTrainer * size;
-  const cycleDamage = regularDamage + maxHitDamage * attackActions;
+  const meterPlan = selectMaxMeterPlan({
+    boss,
+    bossHp,
+    entry: team.tank,
+    maxPhaseDamage: maxHitDamage * attackActions,
+    maxPhaseSeconds: MAX_BATTLE_SIMULATION_CONSTANTS.maxPhaseSeconds,
+    meterOrbEnergy: preset.meterOrbEnergy,
+    subgroupSize: size,
+    tier: preset.tier,
+  });
+  const meterSeconds = meterPlan.meterSeconds;
+  const cycleSeconds =
+    meterSeconds + MAX_BATTLE_SIMULATION_CONSTANTS.maxPhaseSeconds;
+  const cycleDamage = meterPlan.cycleDamage;
   const incomingDps = Math.max(
     0,
     team.tank.bossBenchmark?.incomingDps ?? 0,
@@ -382,6 +378,7 @@ const estimateSubgroup = (
     cycleSeconds,
     survivalSeconds: survivalCycles * cycleSeconds,
     supportActions,
+    meterPlan,
   };
 };
 
@@ -411,7 +408,7 @@ export const simulateMaxBattle = ({
     normalizedTrainerCount,
     preset.subgroupSize,
   ).map((size) =>
-    estimateSubgroup(size, team, normalizedBossHp, preset),
+    estimateSubgroup(size, team, boss, normalizedBossHp, preset),
   );
   const lobbyDps = subgroups.reduce((total, group) => total + group.dps, 0);
   const estimatedClearSeconds = normalizedBossHp / Math.max(0.01, lobbyDps);
@@ -466,5 +463,6 @@ export const simulateMaxBattle = ({
     ),
     limitedBySurvival:
       survivalSeconds < Math.min(preset.battleSeconds, preset.enrageSeconds),
+    meterPlan: subgroups[0].meterPlan,
   };
 };
