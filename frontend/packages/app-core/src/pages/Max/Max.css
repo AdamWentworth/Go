@@ -793,6 +793,7 @@
 
 .max-simulator-header span,
 .max-simulator-trainers > span,
+.max-simulator-execution > span,
 .max-simulator-difficulty > span,
 .max-simulator-hp > span {
   color: #8fc6cb;
@@ -824,6 +825,7 @@
 }
 
 .max-simulator-trainers,
+.max-simulator-execution,
 .max-simulator-difficulty,
 .max-simulator-hp {
   display: grid;
@@ -890,7 +892,22 @@
   cursor: pointer;
 }
 
+.max-simulator-execution select {
+  width: 100%;
+  min-width: 10rem;
+  height: 2.15rem;
+  padding-inline: 0.55rem 1.7rem;
+  border: 1px solid var(--max-line-strong);
+  border-radius: 6px;
+  color: var(--max-text);
+  background: #101516;
+  font-size: 0.72rem;
+  font-weight: 900;
+  cursor: pointer;
+}
+
 .max-simulator-trainers small,
+.max-simulator-execution small,
 .max-simulator-difficulty small,
 .max-simulator-hp small {
   grid-column: 1 / -1;
@@ -1062,6 +1079,31 @@
   margin: 0.05rem 0 0;
   font-size: 0.78rem;
   font-weight: 950;
+}
+
+.max-simulator-range {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) minmax(0, 1fr);
+  gap: 0.4rem 0.75rem;
+  align-items: center;
+  grid-column: 1 / -1;
+  padding: 0.5rem 0.6rem;
+  border: 1px solid rgba(133, 213, 214, 0.16);
+  border-radius: 6px;
+  background: rgba(66, 213, 194, 0.035);
+}
+
+.max-simulator-range > span {
+  color: #8fc6cb;
+  font-size: 0.58rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.max-simulator-range > strong {
+  min-width: 0;
+  color: var(--max-text);
+  font-size: 0.68rem;
 }
 
 .max-simulator-advanced {
@@ -1258,6 +1300,7 @@
 :root[data-theme='light'] .max-simulator input,
 :root[data-theme='light'] .max-simulator select,
 :root[data-theme='light'] .max-simulator-trainers,
+:root[data-theme='light'] .max-simulator-execution,
 :root[data-theme='light'] .max-simulator-difficulty,
 :root[data-theme='light'] .max-simulator-hp,
 :root[data-theme='light'] .max-simulator-party article,
@@ -1265,6 +1308,11 @@
 :root[data-theme='light'] .max-simulator-reset {
   color: var(--light-text-primary);
   background: #fff;
+}
+
+:root[data-theme='light'] .max-simulator-range {
+  border-color: var(--light-border);
+  background: #f2f7f6;
 }
 
 :root[data-theme='light'] .max-simulator-header > strong {
@@ -1324,6 +1372,10 @@
 
   .max-simulator-snapshot {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .max-simulator-range {
+    grid-template-columns: 1fr;
   }
 
   .max-simulator-decision {

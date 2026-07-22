@@ -19,6 +19,37 @@ export type MaxBattleSimulationTeam = {
 
 export type MaxBattleTier = MaxMeterTier;
 
+export type MaxBattleExecution = 'standard' | 'stress-test';
+
+// Targeted Max Battle hits deal twice the spread-hit damage. A successful
+// dodge removes at least half, so standard play returns to the base pressure;
+// the stress test deliberately keeps the full targeted-hit upper bound.
+export const MAX_BATTLE_EXECUTION_PRESETS: Record<
+  MaxBattleExecution,
+  {
+    label: string;
+    detail: string;
+    collectMeterOrbs: boolean;
+    useHostileBossMoveset: boolean;
+    targetedDamageMultiplier: number;
+  }
+> = {
+  standard: {
+    label: 'Standard play',
+    detail: 'Collect scheduled meter orbs and dodge targeted warnings.',
+    collectMeterOrbs: true,
+    useHostileBossMoveset: false,
+    targetedDamageMultiplier: 1,
+  },
+  'stress-test': {
+    label: 'Stress test',
+    detail: 'Miss orbs and targeted dodges against the hardest legal moveset.',
+    collectMeterOrbs: false,
+    useHostileBossMoveset: true,
+    targetedDamageMultiplier: 2,
+  },
+};
+
 export type MaxBattleBossPreset = {
   kind: 'standard' | 'legendary' | 'gigantamax';
   tier: MaxBattleTier;
@@ -44,6 +75,7 @@ export type MaxBattleSimulationOutcome =
 
 export type MaxBattleSimulationResult = {
   outcome: MaxBattleSimulationOutcome;
+  execution: MaxBattleExecution;
   bossHp: number;
   trainerCount: number;
   subgroupCount: number;
@@ -55,6 +87,7 @@ export type MaxBattleSimulationResult = {
   damagePercent: number;
   estimatedMaxPhases: number;
   supportActionsPerGroup: number;
+  incomingDps: number;
   limitedBySurvival: boolean;
   meterPlan: MaxMeterPlan;
 };
@@ -318,6 +351,7 @@ const getSubgroupSizes = (trainerCount: number, subgroupSize: number): number[] 
 type SubgroupEstimate = {
   dps: number;
   cycleSeconds: number;
+  incomingDps: number;
   survivalSeconds: number;
   supportActions: number;
   meterPlan: MaxMeterPlan;
@@ -329,7 +363,9 @@ const estimateSubgroup = (
   boss: PokemonVariant,
   bossHp: number,
   preset: MaxBattleBossPreset,
+  execution: MaxBattleExecution,
 ): SubgroupEstimate => {
+  const executionPreset = MAX_BATTLE_EXECUTION_PRESETS[execution];
   const maxActions =
     size * MAX_BATTLE_SIMULATION_CONSTANTS.maxActionsPerTrainer;
   const isEasyTier = preset.tier === 'one-star' || preset.tier === 'two-star';
@@ -351,6 +387,7 @@ const estimateSubgroup = (
     entry: team.tank,
     maxPhaseDamage: maxHitDamage * attackActions,
     maxPhaseSeconds: MAX_BATTLE_SIMULATION_CONSTANTS.maxPhaseSeconds,
+    collectMeterOrbs: executionPreset.collectMeterOrbs,
     meterOrbEnergy: preset.meterOrbEnergy,
     subgroupSize: size,
     tier: preset.tier,
@@ -359,10 +396,14 @@ const estimateSubgroup = (
   const cycleSeconds =
     meterSeconds + MAX_BATTLE_SIMULATION_CONSTANTS.maxPhaseSeconds;
   const cycleDamage = meterPlan.cycleDamage;
-  const incomingDps = Math.max(
-    0,
-    team.tank.bossBenchmark?.incomingDps ?? 0,
-  );
+  const benchmark = team.tank.bossBenchmark;
+  const incomingDps =
+    Math.max(
+      0,
+      executionPreset.useHostileBossMoveset
+        ? benchmark?.hostileIncomingDps ?? benchmark?.incomingDps ?? 0
+        : benchmark?.incomingDps ?? 0,
+    ) * executionPreset.targetedDamageMultiplier;
   const incomingDamage = incomingDps * meterSeconds;
   const guardAbsorption =
     team.tank.maxGuardLevel > 0 ? team.tank.maxGuardHp : 0;
@@ -376,6 +417,7 @@ const estimateSubgroup = (
   return {
     dps: cycleDamage / cycleSeconds,
     cycleSeconds,
+    incomingDps,
     survivalSeconds: survivalCycles * cycleSeconds,
     supportActions,
     meterPlan,
@@ -385,12 +427,14 @@ const estimateSubgroup = (
 export const simulateMaxBattle = ({
   boss,
   bossHp,
+  execution = 'standard',
   trainerCount,
   team,
   tier,
 }: {
   boss: PokemonVariant;
   bossHp?: number;
+  execution?: MaxBattleExecution;
   trainerCount: number;
   team: MaxBattleSimulationTeam;
   tier?: MaxBattleTier;
@@ -408,7 +452,7 @@ export const simulateMaxBattle = ({
     normalizedTrainerCount,
     preset.subgroupSize,
   ).map((size) =>
-    estimateSubgroup(size, team, boss, normalizedBossHp, preset),
+    estimateSubgroup(size, team, boss, normalizedBossHp, preset, execution),
   );
   const lobbyDps = subgroups.reduce((total, group) => total + group.dps, 0);
   const estimatedClearSeconds = normalizedBossHp / Math.max(0.01, lobbyDps);
@@ -447,6 +491,7 @@ export const simulateMaxBattle = ({
 
   return {
     outcome,
+    execution,
     bossHp: normalizedBossHp,
     trainerCount: normalizedTrainerCount,
     subgroupCount: subgroups.length,
@@ -461,6 +506,7 @@ export const simulateMaxBattle = ({
       0,
       ...subgroups.map((group) => group.supportActions),
     ),
+    incomingDps: Math.max(0, ...subgroups.map((group) => group.incomingDps)),
     limitedBySurvival:
       survivalSeconds < Math.min(preset.battleSeconds, preset.enrageSeconds),
     meterPlan: subgroups[0].meterPlan,

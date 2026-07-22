@@ -27,6 +27,8 @@ export type MaxMeterPlan = {
   cycleDps: number;
   fastUses: number;
   chargedUses: number;
+  orbsCollected: number;
+  orbEnergy: number;
 };
 
 type MaxMeterRule = {
@@ -54,6 +56,8 @@ const MAX_METER_RULES: Record<MaxMeterTier, MaxMeterRule> = {
     fractionalEnergy: true,
   },
 };
+
+export const MAX_METER_ORB_INTERVAL_SECONDS = 15;
 
 const getMoveCooldownSeconds = (move: Move): number => {
   const raw = Number(move.raid_cooldown);
@@ -96,7 +100,9 @@ const simulateRotation = ({
   entry,
   maxPhaseDamage,
   maxPhaseSeconds,
+  collectMeterOrbs,
   meterOrbEnergy,
+  meterOrbIntervalSeconds,
   subgroupSize,
   tier,
 }: {
@@ -106,15 +112,14 @@ const simulateRotation = ({
   entry: MaxRankingEntry;
   maxPhaseDamage: number;
   maxPhaseSeconds: number;
+  collectMeterOrbs: boolean;
   meterOrbEnergy: number;
+  meterOrbIntervalSeconds: number;
   subgroupSize: number;
   tier: MaxMeterTier;
 }): MaxMeterPlan => {
   const fastMove = entry.fastMove;
-  const targetEnergy = Math.max(
-    1,
-    MAX_MODEL_CONSTANTS.maxMeterEnergy - meterOrbEnergy,
-  );
+  const targetEnergy = MAX_MODEL_CONSTANTS.maxMeterEnergy;
   const chargedCost = chargedMove
     ? Math.abs(Number(chargedMove.raid_energy))
     : Number.POSITIVE_INFINITY;
@@ -125,6 +130,9 @@ const simulateRotation = ({
   let regularDamage = 0;
   let fastUses = 0;
   let chargedUses = 0;
+  let orbsCollected = 0;
+  let orbEnergy = 0;
+  let nextOrbSeconds = Math.max(0.5, meterOrbIntervalSeconds);
 
   for (let action = 0; meterEnergy < targetEnergy && action < 10_000; action += 1) {
     const canUseChargedMove =
@@ -137,6 +145,18 @@ const simulateRotation = ({
     meterEnergy +=
       getMaxMeterEnergyForHit({ damage: hitDamage, bossHp, tier }) *
       subgroupSize;
+
+    while (
+      collectMeterOrbs &&
+      meterOrbEnergy > 0 &&
+      meterEnergy < targetEnergy &&
+      meterSeconds >= nextOrbSeconds
+    ) {
+      meterEnergy += meterOrbEnergy;
+      orbEnergy += meterOrbEnergy;
+      orbsCollected += 1;
+      nextOrbSeconds += Math.max(0.5, meterOrbIntervalSeconds);
+    }
 
     if (canUseChargedMove) {
       storedCombatEnergy = Math.max(0, storedCombatEnergy - chargedCost);
@@ -164,6 +184,8 @@ const simulateRotation = ({
     cycleDps: cycleDamage / Math.max(0.5, cycleSeconds),
     fastUses,
     chargedUses,
+    orbsCollected,
+    orbEnergy,
   };
 };
 
@@ -173,7 +195,9 @@ export const selectMaxMeterPlan = ({
   entry,
   maxPhaseDamage,
   maxPhaseSeconds,
+  collectMeterOrbs = true,
   meterOrbEnergy,
+  meterOrbIntervalSeconds = MAX_METER_ORB_INTERVAL_SECONDS,
   subgroupSize,
   tier,
 }: {
@@ -182,7 +206,9 @@ export const selectMaxMeterPlan = ({
   entry: MaxRankingEntry;
   maxPhaseDamage: number;
   maxPhaseSeconds: number;
+  collectMeterOrbs?: boolean;
   meterOrbEnergy: number;
+  meterOrbIntervalSeconds?: number;
   subgroupSize: number;
   tier: MaxMeterTier;
 }): MaxMeterPlan => {
@@ -195,7 +221,9 @@ export const selectMaxMeterPlan = ({
       entry,
       maxPhaseDamage,
       maxPhaseSeconds,
+      collectMeterOrbs,
       meterOrbEnergy,
+      meterOrbIntervalSeconds,
       subgroupSize,
       tier,
     }),

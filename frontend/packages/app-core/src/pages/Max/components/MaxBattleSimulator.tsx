@@ -13,7 +13,9 @@ import {
 import {
   getMaxBattleBossPreset,
   getMaxBattleTierOptions,
+  MAX_BATTLE_EXECUTION_PRESETS,
   simulateMaxBattle,
+  type MaxBattleExecution,
   type MaxBattleTier,
   type MaxBattleSimulationOutcome,
   type MaxBattleSimulationTeam,
@@ -130,6 +132,7 @@ const MaxBattleSimulator = ({
   const defaults = useMemo(() => recommendedSelection(candidates), [candidates]);
   const [selection, setSelection] = useState<TeamSelection>(defaults);
   const [bossHp, setBossHp] = useState(preset.bossHp);
+  const [execution, setExecution] = useState<MaxBattleExecution>('standard');
 
   useEffect(() => {
     setSelection(defaults);
@@ -143,13 +146,31 @@ const MaxBattleSimulator = ({
     () => resolveTeam(candidates, selection),
     [candidates, selection],
   );
-  const result = useMemo(
+  const scenarioResults = useMemo(
     () =>
       team
-        ? simulateMaxBattle({ boss, bossHp, trainerCount, team, tier: difficulty })
+        ? {
+            standard: simulateMaxBattle({
+              boss,
+              bossHp,
+              execution: 'standard',
+              trainerCount,
+              team,
+              tier: difficulty,
+            }),
+            'stress-test': simulateMaxBattle({
+              boss,
+              bossHp,
+              execution: 'stress-test',
+              trainerCount,
+              team,
+              tier: difficulty,
+            }),
+          }
         : null,
     [boss, bossHp, difficulty, team, trainerCount],
   );
+  const result = scenarioResults?.[execution] ?? null;
 
   const setBoundedTrainerCount = (value: number) => {
     onTrainerCountChange(
@@ -286,6 +307,38 @@ const MaxBattleSimulator = ({
                   </dd>
                 </div>
               </dl>
+              {scenarioResults && (
+                <div className="max-simulator-range" aria-label="Modeled outcome range">
+                  <span>Outcome range</span>
+                  <strong>
+                    Standard: {OUTCOME_COPY[scenarioResults.standard.outcome].label},{' '}
+                    {formatDuration(scenarioResults.standard.estimatedClearSeconds)}
+                  </strong>
+                  <strong>
+                    Stress: {OUTCOME_COPY[scenarioResults['stress-test'].outcome].label},{' '}
+                    {formatDuration(scenarioResults['stress-test'].estimatedClearSeconds)}
+                  </strong>
+                </div>
+              )}
+              <label className="max-simulator-execution">
+                <span>Execution</span>
+                <select
+                  aria-label="Max Battle execution"
+                  onChange={(event) =>
+                    setExecution(event.target.value as MaxBattleExecution)
+                  }
+                  value={execution}
+                >
+                  {Object.entries(MAX_BATTLE_EXECUTION_PRESETS).map(
+                    ([value, option]) => (
+                      <option key={value} value={value}>
+                        {option.label}
+                      </option>
+                    ),
+                  )}
+                </select>
+                <small>{MAX_BATTLE_EXECUTION_PRESETS[execution].detail}</small>
+              </label>
               {difficultyOptions.length > 1 && (
                 <label className="max-simulator-difficulty">
                   <span>Battle difficulty</span>
@@ -325,6 +378,7 @@ const MaxBattleSimulator = ({
                 onClick={() => {
                   setSelection(defaults);
                   setBossHp(preset.bossHp);
+                  setExecution('standard');
                 }}
                 type="button"
               >
@@ -358,11 +412,11 @@ const MaxBattleSimulator = ({
                   The estimate compares Fast Move-only play with every legal charged
                   rotation under this tier's Max Meter rules. The selected plan reaches
                   each Max phase in about {formatDuration(result.meterPlan.meterSeconds)}.
-                  It also uses per-boss damage, one collected Max Meter orb per cycle,
+                  It also uses per-boss damage, scheduled 15-second shared-meter orbs,
                   Max Move levels, three Max actions, and a
                   {formatDuration(preset.enrageSeconds)} enrage window. It excludes
                   cheering, Power Spot bonuses,
-                  Max Mushrooms, dodging, and network latency.{' '}
+                  Max Mushrooms, and network latency.{' '}
                   {rosterScope === 'owned'
                     ? 'Other Trainers are modeled at the same strength as your selected trio.'
                     : 'Catalog entries use level 50, perfect IVs, and level-3 Max Moves.'}

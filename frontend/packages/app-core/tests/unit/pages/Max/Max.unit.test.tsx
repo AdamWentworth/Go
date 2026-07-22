@@ -254,6 +254,14 @@ describe('Max page', () => {
     ).toBeVisible();
     expect(screen.getByLabelText('Trainer count')).toHaveValue(1);
     expect(screen.getByLabelText('Boss HP estimate')).toHaveValue(1_700);
+    fireEvent.click(screen.getByText('Advanced setup', { exact: true }));
+    expect(screen.getByLabelText('Max Battle execution')).toHaveValue('standard');
+    expect(screen.getByLabelText('Modeled outcome range')).toHaveTextContent(
+      /Standard: Likely clear/i,
+    );
+    expect(screen.getByLabelText('Modeled outcome range')).toHaveTextContent(
+      /Stress:/i,
+    );
     expect(screen.getByText('Likely clear')).toBeVisible();
     expect(screen.getByLabelText('Recommended three-Pokémon party')).toBeVisible();
     expect(
@@ -277,6 +285,12 @@ describe('Max page', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Add one Trainer' }));
     expect(screen.getByLabelText('Trainer count')).toHaveValue(2);
     expect(screen.getByTestId('max-test-location')).toHaveTextContent('trainers=2');
+
+    fireEvent.change(screen.getByLabelText('Max Battle execution'), {
+      target: { value: 'stress-test' },
+    });
+    expect(screen.getByLabelText('Max Battle execution')).toHaveValue('stress-test');
+    expect(screen.getByText(/Miss orbs and targeted dodges/i)).toBeVisible();
 
     fireEvent.change(screen.getByLabelText('Max Battle difficulty'), {
       target: { value: 'three-star' },

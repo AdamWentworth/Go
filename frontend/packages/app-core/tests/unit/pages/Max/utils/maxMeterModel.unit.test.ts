@@ -171,4 +171,61 @@ describe('Max Meter model', () => {
     expect(plan.strategy).toBe('fast-only');
     expect(plan.chargedMove).toBeNull();
   });
+
+  it('does not credit a shared meter orb before its 15-second spawn', () => {
+    const withOrbs = selectMaxMeterPlan({
+      boss,
+      bossHp: 1_700,
+      entry: entry([fastMove]),
+      maxPhaseDamage: 1_400,
+      maxPhaseSeconds: 10,
+      meterOrbEnergy: 10,
+      subgroupSize: 4,
+      tier: 'one-star',
+    });
+    const withoutOrbs = selectMaxMeterPlan({
+      boss,
+      bossHp: 1_700,
+      collectMeterOrbs: false,
+      entry: entry([fastMove]),
+      maxPhaseDamage: 1_400,
+      maxPhaseSeconds: 10,
+      meterOrbEnergy: 10,
+      subgroupSize: 4,
+      tier: 'one-star',
+    });
+
+    expect(withOrbs.meterSeconds).toBeLessThan(15);
+    expect(withOrbs.orbsCollected).toBe(0);
+    expect(withOrbs.meterSeconds).toBe(withoutOrbs.meterSeconds);
+  });
+
+  it('collects one shared orb at each elapsed spawn interval', () => {
+    const withOrbs = selectMaxMeterPlan({
+      boss,
+      bossHp: 90_000,
+      entry: entry([fastMove]),
+      maxPhaseDamage: 1_350,
+      maxPhaseSeconds: 10,
+      meterOrbEnergy: 10,
+      subgroupSize: 1,
+      tier: 'gigantamax',
+    });
+    const withoutOrbs = selectMaxMeterPlan({
+      boss,
+      bossHp: 90_000,
+      collectMeterOrbs: false,
+      entry: entry([fastMove]),
+      maxPhaseDamage: 1_350,
+      maxPhaseSeconds: 10,
+      meterOrbEnergy: 10,
+      subgroupSize: 1,
+      tier: 'gigantamax',
+    });
+
+    expect(withOrbs.orbsCollected).toBeGreaterThan(0);
+    expect(withOrbs.orbEnergy).toBe(withOrbs.orbsCollected * 10);
+    expect(withOrbs.meterSeconds).toBeLessThan(withoutOrbs.meterSeconds);
+    expect(withoutOrbs.orbsCollected).toBe(0);
+  });
 });

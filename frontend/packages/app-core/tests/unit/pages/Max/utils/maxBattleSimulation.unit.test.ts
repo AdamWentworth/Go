@@ -361,4 +361,37 @@ describe('Max Battle simulator', () => {
 
     expect(unsupported.supportActionsPerGroup).toBe(0);
   });
+
+  it('offers a conservative stress test without presenting invented odds', () => {
+    const noSupportTeam: MaxBattleSimulationTeam = {
+      damage: team.damage,
+      tank: entry('tank', { maxGuardLevel: 0, maxGuardHp: 0 }),
+      healing: entry('healing', {
+        maxSpiritLevel: 0,
+        maxSpiritRate: 0,
+        healPerAlly: 0,
+        teamHeal: 0,
+      }),
+    };
+    const standard = simulateMaxBattle({
+      boss,
+      execution: 'standard',
+      trainerCount: 4,
+      team: noSupportTeam,
+    });
+    const stressTest = simulateMaxBattle({
+      boss,
+      execution: 'stress-test',
+      trainerCount: 4,
+      team: noSupportTeam,
+    });
+
+    expect(standard.execution).toBe('standard');
+    expect(stressTest.execution).toBe('stress-test');
+    expect(standard.incomingDps).toBe(5);
+    expect(stressTest.incomingDps).toBe(12);
+    expect(stressTest.meterPlan.orbsCollected).toBe(0);
+    expect(stressTest.survivalSeconds).toBeLessThan(standard.survivalSeconds);
+    expect(stressTest.damagePercent).toBeLessThanOrEqual(standard.damagePercent);
+  });
 });

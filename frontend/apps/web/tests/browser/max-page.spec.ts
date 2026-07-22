@@ -188,6 +188,13 @@ test.describe('Max Battles page', () => {
 
       await page.getByText('Advanced setup', { exact: true }).click();
       await expect(page.getByText('Charge plan', { exact: true })).toBeVisible();
+      await expect(page.getByLabel('Modeled outcome range')).toContainText(
+        'Standard:',
+      );
+      await expect(page.getByLabel('Modeled outcome range')).toContainText('Stress:');
+      await expect(page.getByLabel('Max Battle execution')).toHaveValue('standard');
+      await page.getByLabel('Max Battle execution').selectOption('stress-test');
+      await expect(page.getByText(/Miss orbs and targeted dodges/i)).toBeVisible();
       await expect(page.getByLabel('Boss HP estimate')).toBeVisible();
       await expect(page.getByLabel('Boss HP estimate')).toHaveValue('1700');
       await page.getByLabel('Max Battle difficulty').selectOption('three-star');
