@@ -1,4 +1,5 @@
 import { fireEvent, render, screen, within } from '@testing-library/react';
+import { MemoryRouter, useLocation } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import Max from '@/pages/Max/Max';
@@ -110,6 +111,24 @@ function makeMaxVariant(
   } as unknown as PokemonVariant;
 }
 
+const MaxLocationProbe = () => {
+  const location = useLocation();
+  return (
+    <output data-testid="max-test-location" hidden>
+      {location.pathname}
+      {location.search}
+    </output>
+  );
+};
+
+const renderMax = (initialEntry = '/max') =>
+  render(
+    <MemoryRouter initialEntries={[initialEntry]}>
+      <Max />
+      <MaxLocationProbe />
+    </MemoryRouter>,
+  );
+
 describe('Max page', () => {
   beforeEach(() => {
     variantsState.variantsLoading = false;
@@ -155,7 +174,7 @@ describe('Max page', () => {
   });
 
   it('opens on damage rankings and removes cosmetic and non-Max duplicates', () => {
-    const { container } = render(<Max />);
+    const { container } = renderMax();
 
     expect(screen.getByRole('heading', { name: 'Max Battles' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Max rankings' })).toHaveAttribute(
@@ -191,7 +210,7 @@ describe('Max page', () => {
   });
 
   it('switches roles and applies the role-aware type filter', () => {
-    render(<Max />);
+    renderMax();
 
     fireEvent.click(screen.getByRole('button', { name: 'Tank' }));
     expect(screen.getByRole('heading', { name: 'Top tanks' })).toBeVisible();
@@ -212,7 +231,7 @@ describe('Max page', () => {
     });
     variantsState.variants = [variant];
 
-    const { container } = render(<Max />);
+    const { container } = renderMax();
 
     const moveIcons = [...container.querySelectorAll<HTMLImageElement>(
       '.max-ranking-fast-move img',
@@ -224,7 +243,7 @@ describe('Max page', () => {
   });
 
   it('shows three boss picks at a time through the shared role selector', () => {
-    const { container } = render(<Max />);
+    const { container } = renderMax();
 
     fireEvent.click(screen.getByRole('button', { name: 'Boss teams' }));
     expect(
@@ -286,6 +305,59 @@ describe('Max page', () => {
     expect(screen.getByRole('heading', { name: 'Gigantamax Charizard' })).toBeVisible();
   });
 
+  it('restores and updates a shareable Max Battle context in the URL', () => {
+    renderMax('/max?view=bosses&role=tank&boss=6-gigantamax');
+
+    expect(screen.getByRole('button', { name: 'Boss teams' })).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    );
+    expect(screen.getByRole('button', { name: 'Tank' })).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    );
+    expect(screen.getByRole('heading', { name: 'Gigantamax Charizard' })).toBeVisible();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Healing' }));
+    let currentUrl = screen.getByTestId('max-test-location').textContent ?? '';
+    expect(new URL(currentUrl, 'https://pokegonexus.test').searchParams.get('role')).toBe(
+      'healing',
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Max rankings' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Water' }));
+    currentUrl = screen.getByTestId('max-test-location').textContent ?? '';
+    const searchParams = new URL(
+      currentUrl,
+      'https://pokegonexus.test',
+    ).searchParams;
+    expect(searchParams.has('view')).toBe(false);
+    expect(searchParams.get('type')).toBe('water');
+    expect(searchParams.get('boss')).toBe('6-gigantamax');
+  });
+
+  it('reveals complete rankings progressively instead of silently truncating them', () => {
+    variantsState.variants = Array.from({ length: 25 }, (_, index) =>
+      makeMaxVariant(
+        'dynamax',
+        index + 1,
+        `Dynamax Test ${index + 1}`,
+        'grass',
+      ),
+    );
+
+    const { container } = renderMax();
+
+    expect(container.querySelectorAll('.max-ranking-row')).toHaveLength(18);
+    expect(screen.getByText('25 ranked')).toBeVisible();
+    expect(screen.getByText('Showing 18 of 25')).toBeVisible();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Show 7 more' }));
+
+    expect(container.querySelectorAll('.max-ranking-row')).toHaveLength(25);
+    expect(screen.queryByRole('button', { name: /Show .* more/ })).not.toBeInTheDocument();
+  });
+
   it('slides between catalog and caught rankings without losing the selected role', () => {
     authState.isLoggedIn = true;
     instancesState.instances = {
@@ -312,7 +384,7 @@ describe('Max page', () => {
       } as PokemonInstance,
     };
 
-    const { container } = render(<Max />);
+    const { container } = renderMax();
 
     expect(screen.getByRole('button', { name: 'My Pokémon' })).toHaveAttribute(
       'aria-pressed',
@@ -336,6 +408,9 @@ describe('Max page', () => {
     );
     expect(container.querySelector('[data-roster-scope="catalog"]')).toHaveClass(
       'max-scope-stage--backward',
+    );
+    expect(screen.getByTestId('max-test-location')).toHaveTextContent(
+      '/max?role=tank&scope=catalog',
     );
   });
 });

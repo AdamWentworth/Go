@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
-import { FaChartBar, FaCrosshairs, FaSearch } from 'react-icons/fa';
+import { FaChartBar, FaChevronDown, FaCrosshairs, FaSearch } from 'react-icons/fa';
+import { useSearchParams } from 'react-router-dom';
 
 import { AppLoadingFallback } from '@/contexts/AppLoadingContext';
 import { useInstancesStore } from '@/features/instances/store/useInstancesStore';
@@ -15,6 +16,7 @@ import MaxRosterScope from './components/MaxRosterScope';
 import MaxTypeFilter from './components/MaxTypeFilter';
 import {
   getMaxBattleCatalog,
+  MAX_BATTLE_TYPES,
   rankMaxBattlePokemon,
   type MaxRole,
 } from './utils/maxBattleModel';
@@ -26,6 +28,15 @@ import {
 import './Max.css';
 
 type MaxView = 'rankings' | 'bosses';
+
+const MAX_RESULTS_PAGE_SIZE = 18;
+const MAX_ROLES: MaxRole[] = ['damage', 'tank', 'healing'];
+
+const isMaxRole = (value: string | null): value is MaxRole =>
+  MAX_ROLES.includes(value as MaxRole);
+
+const isMaxType = (value: string | null): value is string =>
+  value != null && (MAX_BATTLE_TYPES as readonly string[]).includes(value);
 
 const roleHeading = (role: MaxRole, selectedType: string): string => {
   const type = selectedType
@@ -52,26 +63,44 @@ const Max = () => {
   const instances = useInstancesStore((state) => state.instances);
   const instancesLoading = useInstancesStore((state) => state.instancesLoading);
   const isLoggedIn = useAuthStore((state) => state.isLoggedIn);
-  const [view, setView] = useState<MaxView>('rankings');
-  const [rosterScope, setRosterScope] = useState<MaxRosterScopeValue>(
-    isLoggedIn ? 'owned' : 'catalog',
-  );
+  const [searchParams, setSearchParams] = useSearchParams();
   const [scopeDirection, setScopeDirection] = useState<'forward' | 'backward'>(
     'forward',
   );
-  const [role, setRole] = useState<MaxRole>('damage');
-  const [selectedType, setSelectedType] = useState('');
   const [search, setSearch] = useState('');
-  const [selectedBossId, setSelectedBossId] = useState('');
+  const [visibleLimit, setVisibleLimit] = useState(MAX_RESULTS_PAGE_SIZE);
+
+  const view: MaxView = searchParams.get('view') === 'bosses' ? 'bosses' : 'rankings';
+  const requestedScope = searchParams.get('scope');
+  const rosterScope: MaxRosterScopeValue =
+    requestedScope === 'catalog' || !isLoggedIn ? 'catalog' : 'owned';
+  const requestedRole = searchParams.get('role');
+  const role: MaxRole = isMaxRole(requestedRole) ? requestedRole : 'damage';
+  const requestedType = searchParams.get('type')?.toLowerCase() ?? null;
+  const selectedType = isMaxType(requestedType) ? requestedType : '';
+  const selectedBossId = searchParams.get('boss') ?? '';
+
+  const updateSearchParams = (updates: Record<string, string | null>) => {
+    const next = new URLSearchParams(searchParams);
+    Object.entries(updates).forEach(([key, value]) => {
+      if (value) next.set(key, value);
+      else next.delete(key);
+    });
+    setSearchParams(next, { replace: true });
+  };
+
+  const changeView = (nextView: MaxView) =>
+    updateSearchParams({ view: nextView === 'rankings' ? null : nextView });
+
+  const changeRole = (nextRole: MaxRole) =>
+    updateSearchParams({ role: nextRole === 'damage' ? null : nextRole });
+
+  const changeType = (nextType: string) =>
+    updateSearchParams({ type: nextType || null });
 
   useEffect(() => {
     if (variants.length > 0) void ensureMoves();
   }, [ensureMoves, variants.length]);
-
-  useEffect(() => {
-    setScopeDirection(isLoggedIn ? 'forward' : 'backward');
-    setRosterScope(isLoggedIn ? 'owned' : 'catalog');
-  }, [isLoggedIn]);
 
   const maxCatalog = useMemo(() => getMaxBattleCatalog(variants), [variants]);
   const maxRoster = useMemo(
@@ -83,12 +112,6 @@ const Max = () => {
   const selectedBoss =
     maxCatalog.find((boss) => boss.variant_id === selectedBossId) ?? maxCatalog[0];
 
-  useEffect(() => {
-    if (!selectedBossId && maxCatalog[0]) {
-      setSelectedBossId(maxCatalog[0].variant_id);
-    }
-  }, [maxCatalog, selectedBossId]);
-
   const rankingEntries = useMemo(
     () =>
       rankMaxBattlePokemon(rankingCatalog, {
@@ -98,17 +121,25 @@ const Max = () => {
     [rankingCatalog, role, selectedType],
   );
 
-  const visibleRankings = useMemo(() => {
+  const filteredRankings = useMemo(() => {
     const query = search.trim().toLowerCase();
-    if (!query) return rankingEntries.slice(0, 18);
+    if (!query) return rankingEntries;
     return rankingEntries
       .filter((entry) =>
         `${entry.variant.name} ${entry.fastMove.name} ${entry.maxMoveName} ${entry.maxMoveType}`
           .toLowerCase()
           .includes(query),
-      )
-      .slice(0, 30);
+      );
   }, [rankingEntries, search]);
+
+  const visibleRankings = useMemo(
+    () => filteredRankings.slice(0, visibleLimit),
+    [filteredRankings, visibleLimit],
+  );
+
+  useEffect(() => {
+    setVisibleLimit(MAX_RESULTS_PAGE_SIZE);
+  }, [role, rosterScope, search, selectedType, view]);
 
   const bossRankingEntries = useMemo(
     () =>
@@ -142,7 +173,8 @@ const Max = () => {
   const changeRosterScope = (nextScope: MaxRosterScopeValue) => {
     if (nextScope === rosterScope) return;
     setScopeDirection(nextScope === 'owned' ? 'forward' : 'backward');
-    setRosterScope(nextScope);
+    const defaultScope = isLoggedIn ? 'owned' : 'catalog';
+    updateSearchParams({ scope: nextScope === defaultScope ? null : nextScope });
   };
 
   const rankingAssumptions =
@@ -172,7 +204,7 @@ const Max = () => {
           <button
             aria-pressed={view === 'rankings'}
             className={view === 'rankings' ? 'active' : ''}
-            onClick={() => setView('rankings')}
+            onClick={() => changeView('rankings')}
             type="button"
           >
             <FaChartBar aria-hidden="true" />
@@ -181,7 +213,7 @@ const Max = () => {
           <button
             aria-pressed={view === 'bosses'}
             className={view === 'bosses' ? 'active' : ''}
-            onClick={() => setView('bosses')}
+            onClick={() => changeView('bosses')}
             type="button"
           >
             <FaCrosshairs aria-hidden="true" />
@@ -204,18 +236,22 @@ const Max = () => {
         >
           {view === 'rankings' ? (
           <>
-            <MaxRoleTabs label="Ranking role" role={role} onChange={setRole} />
-
-            <MaxTypeFilter
-              role={role}
-              selectedType={selectedType}
-              onChange={setSelectedType}
-            />
+            <section className="max-ranking-filter-deck" aria-label="Ranking filters">
+              <MaxRoleTabs label="Ranking role" role={role} onChange={changeRole} />
+              <MaxTypeFilter
+                role={role}
+                selectedType={selectedType}
+                onChange={changeType}
+              />
+            </section>
 
             <section className="max-results-panel" aria-labelledby="max-rankings-title">
               <div className="max-results-toolbar">
                 <div>
-                  <span>{selectedType || 'All Max Pokémon'}</span>
+                  <span className="max-results-context">
+                    <span>{selectedType || 'All Max Pokémon'}</span>
+                    <strong>{filteredRankings.length} ranked</strong>
+                  </span>
                   <h2 id="max-rankings-title">{roleHeading(role, selectedType)}</h2>
                   <p
                     aria-label="Ranking assumptions"
@@ -247,7 +283,35 @@ const Max = () => {
                   </span>
                 </div>
               ) : (
-                <MaxRankingList entries={visibleRankings} role={role} />
+                <>
+                  <MaxRankingList entries={visibleRankings} role={role} />
+                  {visibleRankings.length < filteredRankings.length && (
+                    <footer className="max-results-more">
+                      <span>
+                        Showing {visibleRankings.length} of {filteredRankings.length}
+                      </span>
+                      <button
+                        onClick={() =>
+                          setVisibleLimit((current) =>
+                            Math.min(
+                              filteredRankings.length,
+                              current + MAX_RESULTS_PAGE_SIZE,
+                            ),
+                          )
+                        }
+                        type="button"
+                      >
+                        <FaChevronDown aria-hidden="true" />
+                        Show{' '}
+                        {Math.min(
+                          MAX_RESULTS_PAGE_SIZE,
+                          filteredRankings.length - visibleRankings.length,
+                        )}{' '}
+                        more
+                      </button>
+                    </footer>
+                  )}
+                </>
               )}
             </section>
           </>
@@ -256,14 +320,14 @@ const Max = () => {
             <MaxBossPicker
               bosses={maxCatalog}
               selectedBoss={selectedBoss}
-              onSelect={(boss) => setSelectedBossId(boss.variant_id)}
+              onSelect={(boss) => updateSearchParams({ boss: boss.variant_id })}
             />
             <MaxBattleSimulator
               boss={selectedBoss}
               rosterScope={rosterScope}
               team={bossSimulationTeam}
             />
-            <MaxRoleTabs label="Boss team role" role={role} onChange={setRole} />
+            <MaxRoleTabs label="Boss team role" role={role} onChange={changeRole} />
             <aside className="max-boss-benchmark-note" aria-label="Boss ranking method">
               <strong>Standardized matchup</strong>
               <span>

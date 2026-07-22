@@ -145,6 +145,13 @@ test.describe('Max Battles page', () => {
       await expect(firstMoveset.getByText('Fast')).toBeVisible();
       await expect(firstMoveset.getByText('Charged')).toHaveCount(0);
       await expect(page.getByText('Damage rating')).toHaveCount(0);
+      await expect(page.locator('.max-ranking-row')).toHaveCount(18);
+      const showMoreRankings = page.getByRole('button', {
+        name: /Show \d+ more/,
+      });
+      await expect(showMoreRankings).toBeVisible();
+      await showMoreRankings.click();
+      expect(await page.locator('.max-ranking-row').count()).toBeGreaterThan(18);
       expect(
         await page.evaluate(
           () => document.documentElement.scrollWidth <= window.innerWidth,
@@ -158,8 +165,14 @@ test.describe('Max Battles page', () => {
       );
       await page.getByRole('button', { name: 'Water' }).click();
       await expect(page.getByRole('heading', { name: 'Top tanks vs Water' })).toBeVisible();
+      await expect.poll(() => new URL(page.url()).searchParams.get('role')).toBe('tank');
+      await expect.poll(() => new URL(page.url()).searchParams.get('type')).toBe('water');
+
+      await page.reload();
+      await expect(page.getByRole('heading', { name: 'Top tanks vs Water' })).toBeVisible();
 
       await page.getByRole('button', { name: 'Boss teams' }).click();
+      await expect.poll(() => new URL(page.url()).searchParams.get('view')).toBe('bosses');
       await expect(
         page.getByRole('heading', {
           name: 'Can this group beat Dynamax Bulbasaur?',
@@ -243,6 +256,9 @@ test.describe('Max Battles page', () => {
       await expect(page.getByRole('heading', { name: 'Top tanks' })).toBeVisible();
       await expect(page.locator('[data-roster-scope="catalog"]')).toHaveClass(
         /max-scope-stage--backward/,
+      );
+      await expect.poll(() => new URL(page.url()).searchParams.get('scope')).toBe(
+        'catalog',
       );
       await expect(page.getByLabel('Ranking assumptions')).toContainText(
         'Level 50 · 15/15/15 IVs · Max Moves Level 3',
