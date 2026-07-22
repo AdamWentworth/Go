@@ -13,7 +13,13 @@ INSERT INTO types (type_id, name, icon_url) VALUES
   (7, 'Fire', '/images/types/Fire.png'),
   (8, 'Water', '/images/types/Water.png'),
   (9, 'Bug', '/images/types/Bug.png'),
-  (10, 'Flying', '/images/types/Flying.png');
+  (10, 'Flying', '/images/types/Flying.png'),
+  (11, 'Electric', '/images/types/Electric.png'),
+  (12, 'Ghost', '/images/types/Ghost.png'),
+  (13, 'Ice', '/images/types/Ice.png'),
+  (14, 'Dark', '/images/types/Dark.png'),
+  (15, 'Steel', '/images/types/Steel.png'),
+  (16, 'Fairy', '/images/types/Fairy.png');
 
 INSERT INTO evolution_items (item_id, name, image_url) VALUES
   (1, 'Sun Stone', '/images/items/sun_stone.png');
@@ -38,6 +44,8 @@ INSERT INTO pokemon (
   (54, 'Psyduck', 54, '/images/pokemon_54.png', '/images/shiny_pokemon_54.png', '/sprites/54.png', 122, 95, 137, 8, NULL, '1:1', 'Common', NULL, 1, TRUE, TRUE, '1 in 512', '2016-07-06', '2019-08-23', FALSE),
   (133, 'Eevee', 133, '/images/pokemon_133.png', '/images/shiny_pokemon_133.png', '/sprites/133.png', 104, 114, 146, 1, NULL, '1:1', 'Common', NULL, 1, TRUE, TRUE, '1 in 512', '2016-07-06', '2018-08-11', FALSE),
   (150, 'Mewtwo', 150, '/images/pokemon_150.png', '/images/shiny_pokemon_150.png', '/sprites/150.png', 300, 182, 214, 6, NULL, 'Genderless', 'Legendary', NULL, 1, TRUE, TRUE, '1 in 20', '2017-08-14', '2018-09-20', FALSE),
+  (861, 'Grimmsnarl', 861, '/images/pokemon_861.png', NULL, NULL, 227, 139, 216, 14, 16, '100M_0F_0GL', 'Standard', NULL, 8, FALSE, FALSE, NULL, NULL, NULL, FALSE),
+  (884, 'Duraludon', 884, '/images/pokemon_884.png', NULL, NULL, 239, 185, 172, 15, 4, '50M_50F_0GL', 'Standard', NULL, 8, FALSE, FALSE, NULL, NULL, NULL, FALSE),
   (999001, 'Fixture Alpha', 999001, '/images/pokemon_fixture_alpha.png', '/images/shiny_pokemon_fixture_alpha.png', '/sprites/fixture_alpha.png', 100, 100, 100, 1, NULL, 'Genderless', 'Test', NULL, 9, TRUE, FALSE, NULL, '2026-01-01', NULL, FALSE),
   (999002, 'Fixture Beta', 999002, '/images/pokemon_fixture_beta.png', '/images/shiny_pokemon_fixture_beta.png', '/sprites/fixture_beta.png', 100, 100, 100, 1, NULL, 'Genderless', 'Test', NULL, 9, TRUE, FALSE, NULL, '2026-01-01', NULL, FALSE);
 
@@ -58,7 +66,11 @@ INSERT INTO moves (
   (7, 'Flamethrower', 7, 70, 90, -50, -55, 2200, 0, FALSE, NULL, FALSE, FALSE, FALSE),
   (8, 'Water Gun', 8, 5, 3, 0, 3, 500, 1, TRUE, NULL, FALSE, FALSE, FALSE),
   (9, 'Bug Bite', 9, 5, 3, 0, 3, 500, 1, TRUE, NULL, FALSE, FALSE, FALSE),
-  (10, 'Aerial Ace', 10, 55, 55, -45, -45, 2400, 0, FALSE, NULL, FALSE, FALSE, FALSE);
+  (10, 'Aerial Ace', 10, 55, 55, -45, -45, 2400, 0, FALSE, NULL, FALSE, FALSE, FALSE),
+  (11, 'Metal Claw', 15, 8, 5, 7, 6, 700, 2, TRUE, NULL, FALSE, FALSE, FALSE),
+  (12, 'Flash Cannon', 15, 100, 110, -100, -70, 2700, 0, FALSE, NULL, FALSE, FALSE, FALSE),
+  (13, 'Dragon Claw', 4, 50, 50, -33, -35, 1700, 0, FALSE, NULL, FALSE, FALSE, FALSE),
+  (14, 'Hyper Beam', 1, 150, 150, -100, -80, 3800, 0, FALSE, NULL, FALSE, FALSE, FALSE);
 
 INSERT INTO costume_pokemon (
   costume_id, pokemon_id, costume_name, shiny_available, date_available,

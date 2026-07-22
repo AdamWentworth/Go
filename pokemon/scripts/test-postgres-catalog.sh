@@ -45,6 +45,120 @@ SQL
 docker exec -i "${container_name}" \
   psql -v ON_ERROR_STOP=1 -U catalog -d pokemon_catalog_test < "${fixture_path}" >/dev/null
 
+# Release-roster authoring must remain repeatable, preserve existing images,
+# and expose every released Gigantamax move without adding announced future
+# Dynamax species.
+for _ in 1 2; do
+  docker exec -i "${container_name}" \
+    psql -v ON_ERROR_STOP=1 -U catalog -d pokemon_catalog_test \
+    < "${repo_root}/pokemon/scripts/sql/20260722_max_release_roster.sql" >/dev/null
+done
+
+docker exec -i "${container_name}" \
+  psql -v ON_ERROR_STOP=1 -U catalog -d pokemon_catalog_test >/dev/null <<'SQL'
+SET search_path = pokemon_catalog, public;
+
+DO $$
+DECLARE
+  duraludon_move_count INTEGER;
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1
+    FROM max_pokemon
+    WHERE pokemon_id = 12
+      AND dynamax IS TRUE
+      AND gigantamax IS TRUE
+      AND dynamax_release_date = '2025-03-24'
+      AND gigantamax_release_date = '2025-08-03'
+      AND gigantamax_move_name = 'G-Max Befuddle'
+  ) THEN
+    RAISE EXCEPTION 'Gigantamax Butterfree release metadata is incomplete';
+  END IF;
+
+  IF NOT EXISTS (
+    SELECT 1
+    FROM max_pokemon
+    WHERE pokemon_id = 25
+      AND dynamax IS TRUE
+      AND gigantamax IS TRUE
+      AND dynamax_release_date = '2026-03-09'
+      AND gigantamax_release_date = '2026-03-28'
+      AND gigantamax_move_name = 'G-Max Volt Crash'
+  ) THEN
+    RAISE EXCEPTION 'Pikachu Dynamax and Gigantamax releases are incomplete';
+  END IF;
+
+  IF NOT EXISTS (
+    SELECT 1
+    FROM max_pokemon
+    WHERE pokemon_id = 3
+      AND gigantamax_image_url = '/images/max/gigantamax_3.png'
+      AND shiny_gigantamax_image_url = '/images/max/shiny_gigantamax_3.png'
+  ) THEN
+    RAISE EXCEPTION 'release roster overwrote an editor-managed Gigantamax image';
+  END IF;
+
+  IF NOT EXISTS (
+    SELECT 1
+    FROM pokemon
+    WHERE pokemon_id = 884
+      AND name = 'Duraludon'
+      AND attack = 239
+      AND defense = 185
+      AND stamina = 172
+      AND available IS TRUE
+      AND date_available = '2025-09-30'
+  ) OR NOT EXISTS (
+    SELECT 1
+    FROM max_pokemon
+    WHERE pokemon_id = 884
+      AND dynamax IS TRUE
+      AND dynamax_release_date = '2025-09-30'
+  ) THEN
+    RAISE EXCEPTION 'Dynamax Duraludon catalog data is incomplete';
+  END IF;
+
+  IF NOT EXISTS (
+    SELECT 1
+    FROM pokemon
+    JOIN max_pokemon USING (pokemon_id)
+    WHERE pokemon_id = 861
+      AND pokemon.available IS TRUE
+      AND pokemon.date_available = '2025-11-07'
+      AND max_pokemon.gigantamax IS TRUE
+      AND max_pokemon.gigantamax_move_name = 'G-Max Snooze'
+  ) THEN
+    RAISE EXCEPTION 'Gigantamax Grimmsnarl is not publishable through the API catalog';
+  END IF;
+
+  IF EXISTS (
+    SELECT 1
+    FROM max_pokemon
+    JOIN pokemon USING (pokemon_id)
+    WHERE (max_pokemon.dynamax IS TRUE OR max_pokemon.gigantamax IS TRUE)
+      AND pokemon.available IS NOT TRUE
+  ) THEN
+    RAISE EXCEPTION 'a released Max form is hidden from the API catalog';
+  END IF;
+
+  SELECT COUNT(*) INTO duraludon_move_count
+  FROM pokemon_moves
+  WHERE pokemon_id = 884;
+
+  IF duraludon_move_count <> 5 THEN
+    RAISE EXCEPTION 'Duraludon move pool expected 5 entries, found %', duraludon_move_count;
+  END IF;
+
+  IF EXISTS (
+    SELECT 1
+    FROM max_pokemon
+    WHERE pokemon_id IN (349, 350, 126, 467, 129, 130, 237)
+  ) THEN
+    RAISE EXCEPTION 'future Dynamax releases were added before their release dates';
+  END IF;
+END $$;
+SQL
+
 # A migration must remain deployable through the publisher while immediately
 # exposing its new tables to the least-privileged API role.
 docker exec -i "${container_name}" \
@@ -70,10 +184,19 @@ docker exec -i "${container_name}" \
   psql -v ON_ERROR_STOP=1 -U catalog -d pokemon_catalog_test >/dev/null <<'SQL'
 SET search_path = pokemon_catalog, public;
 
-INSERT INTO types (type_id, name, icon_url) VALUES
-  (101, 'Electric', '/images/types/Electric.png'),
-  (102, 'Dark', '/images/types/Dark.png'),
-  (103, 'Steel', '/images/types/Steel.png');
+INSERT INTO types (type_id, name, icon_url)
+SELECT desired.type_id, desired.name, desired.icon_url
+FROM (
+  VALUES
+    (101, 'Electric', '/images/types/Electric.png'),
+    (102, 'Dark', '/images/types/Dark.png'),
+    (103, 'Steel', '/images/types/Steel.png')
+) AS desired(type_id, name, icon_url)
+WHERE NOT EXISTS (
+  SELECT 1
+  FROM types
+  WHERE LOWER(types.name) = LOWER(desired.name)
+);
 
 WITH desired (pokemon_id, name, type_1_name, type_2_name) AS (
   VALUES
@@ -102,7 +225,8 @@ SELECT desired.pokemon_id,
        '2026-01-01'
 FROM desired
 JOIN types type_1 ON LOWER(type_1.name) = LOWER(desired.type_1_name)
-LEFT JOIN types type_2 ON LOWER(type_2.name) = LOWER(desired.type_2_name);
+LEFT JOIN types type_2 ON LOWER(type_2.name) = LOWER(desired.type_2_name)
+ON CONFLICT (pokemon_id) DO NOTHING;
 SQL
 
 for _ in 1 2; do
