@@ -128,7 +128,16 @@ class DatabaseManagerCoreMethodsTests(TempDBTestCase):
         self.db_manager.insert_max_pokemon(max_missing_id)
         self.db_manager.update_max_pokemon(
             max_missing_id,
-            (1, 1, "2026-03-10", "2026-03-11", "/images/max/a.png", "/images/max/b.png"),
+            (
+                1,
+                1,
+                "2026-03-10",
+                "2026-03-11",
+                "/images/max/a.png",
+                "/images/max/b.png",
+                "G-Max Test Move",
+                self.scalar("SELECT type_id FROM types WHERE name = 'Normal'"),
+            ),
         )
         max_row = self.db_manager.fetch_max_pokemon(max_missing_id)
         self.assertIsNotNone(max_row)

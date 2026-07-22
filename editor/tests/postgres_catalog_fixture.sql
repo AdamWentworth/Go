@@ -94,9 +94,13 @@ INSERT INTO mega_evolution (
 
 INSERT INTO max_pokemon (
   pokemon_id, dynamax, gigantamax, dynamax_release_date, gigantamax_release_date,
-  gigantamax_image_url, shiny_gigantamax_image_url
+  gigantamax_image_url, shiny_gigantamax_image_url, gigantamax_move_name,
+  gigantamax_move_type_id
 ) VALUES
-  (1, TRUE, FALSE, '2026-01-01', NULL, NULL, NULL);
+  (1, TRUE, FALSE, '2026-01-01', NULL, NULL, NULL, NULL, NULL),
+  (3, TRUE, TRUE, '2026-01-01', '2026-02-01',
+   '/images/max/gigantamax_3.png', '/images/max/shiny_gigantamax_3.png',
+   'G-Max Vine Lash', 2);
 
 INSERT INTO pokemon_sizes (
   pokemon_id, pokedex_height, pokedex_weight, height_standard_deviation,

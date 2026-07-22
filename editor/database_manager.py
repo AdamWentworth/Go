@@ -200,7 +200,7 @@ class DatabaseManager:
         return self.max_pokemon_manager.insert_max_pokemon(pokemon_id)
 
     def update_max_pokemon(self, pokemon_id, data_tuple):
-        # data_tuple = (dyn, giga, dyn_dt, giga_dt, g_img, sg_img)
+        # data_tuple = (dyn, giga, dyn_dt, giga_dt, g_img, sg_img, move_name, move_type_id)
         return self.max_pokemon_manager.update_max_pokemon(pokemon_id, *data_tuple)
 
     # Pokémon size helpers

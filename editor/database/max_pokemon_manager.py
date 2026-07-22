@@ -11,6 +11,8 @@ class MaxPokemonManager:
         gigantamax_release_date     TEXT
         gigantamax_image_url        TEXT
         shiny_gigantamax_image_url  TEXT
+        gigantamax_move_name        TEXT
+        gigantamax_move_type_id     INTEGER
     """
 
     def __init__(self, db_conn):
@@ -23,7 +25,14 @@ class MaxPokemonManager:
         """Return the row (or *None*) for the given Pokémon ID."""
         cur = self.conn.get_cursor()
         cur.execute(
-            "SELECT * FROM max_pokemon WHERE pokemon_id = ?",
+            """
+            SELECT pokemon_id, dynamax, gigantamax, dynamax_release_date,
+                   gigantamax_release_date, gigantamax_image_url,
+                   shiny_gigantamax_image_url, gigantamax_move_name,
+                   gigantamax_move_type_id
+            FROM max_pokemon
+            WHERE pokemon_id = ?
+            """,
             (pokemon_id,)
         )
         return cur.fetchone()
@@ -50,8 +59,10 @@ class MaxPokemonManager:
                 dynamax_release_date,
                 gigantamax_release_date,
                 gigantamax_image_url,
-                shiny_gigantamax_image_url
-            ) VALUES (?, ?, ?, '', '', '', '')
+                shiny_gigantamax_image_url,
+                gigantamax_move_name,
+                gigantamax_move_type_id
+            ) VALUES (?, ?, ?, '', '', '', '', NULL, NULL)
             """,
             (pokemon_id, self.conn.bool_value(0), self.conn.bool_value(0))
         )
@@ -70,9 +81,12 @@ class MaxPokemonManager:
         gigantamax_release_date,
         gigantamax_image_url,
         shiny_gigantamax_image_url,
+        gigantamax_move_name,
+        gigantamax_move_type_id,
     ):
         """Update every column for the specified Pokémon."""
         cur = self.conn.get_cursor()
+        is_gigantamax = bool(gigantamax)
         cur.execute(
             """
             UPDATE max_pokemon
@@ -81,7 +95,9 @@ class MaxPokemonManager:
                    dynamax_release_date        = ?,
                    gigantamax_release_date     = ?,
                    gigantamax_image_url        = ?,
-                   shiny_gigantamax_image_url  = ?
+                   shiny_gigantamax_image_url  = ?,
+                   gigantamax_move_name        = ?,
+                   gigantamax_move_type_id     = ?
              WHERE pokemon_id = ?
             """,
             (
@@ -91,6 +107,8 @@ class MaxPokemonManager:
                 gigantamax_release_date,
                 gigantamax_image_url,
                 shiny_gigantamax_image_url,
+                (gigantamax_move_name or None) if is_gigantamax else None,
+                gigantamax_move_type_id if is_gigantamax else None,
                 pokemon_id,
             ),
         )

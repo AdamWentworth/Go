@@ -50,11 +50,14 @@ class MaxPokemonManagerTests(TempDBTestCase):
             "2026-03-11",
             "/images/max/gmax_unit_test.png",
             "/images/max/gmax_unit_test_shiny.png",
+            "G-Max Vine Lash",
+            self.scalar("SELECT type_id FROM types WHERE name = 'Grass'"),
         )
         row = self.row(
             """
             SELECT dynamax, gigantamax, dynamax_release_date, gigantamax_release_date,
-                   gigantamax_image_url, shiny_gigantamax_image_url
+                   gigantamax_image_url, shiny_gigantamax_image_url,
+                   gigantamax_move_name, gigantamax_move_type_id
             FROM max_pokemon
             WHERE pokemon_id = ?
             """,
@@ -69,8 +72,37 @@ class MaxPokemonManagerTests(TempDBTestCase):
                 "2026-03-11",
                 "/images/max/gmax_unit_test.png",
                 "/images/max/gmax_unit_test_shiny.png",
+                "G-Max Vine Lash",
+                self.scalar("SELECT type_id FROM types WHERE name = 'Grass'"),
             ),
         )
+
+    def test_disabling_gigantamax_clears_its_move_metadata(self):
+        pokemon_id = self.scalar(
+            "SELECT pokemon_id FROM max_pokemon WHERE gigantamax = ? LIMIT 1",
+            (self.db_connection.bool_value(1),),
+        )
+        self.manager.update_max_pokemon(
+            pokemon_id,
+            1,
+            0,
+            "2026-03-10",
+            None,
+            None,
+            None,
+            "G-Max Vine Lash",
+            self.scalar("SELECT type_id FROM types WHERE name = 'Grass'"),
+        )
+
+        row = self.row(
+            """
+            SELECT gigantamax, gigantamax_move_name, gigantamax_move_type_id
+            FROM max_pokemon
+            WHERE pokemon_id = ?
+            """,
+            (pokemon_id,),
+        )
+        self.assertEqual(row, (0, None, None))
 
 
 if __name__ == "__main__":

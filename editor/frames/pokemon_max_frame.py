@@ -16,6 +16,7 @@ class PokemonMaxFrame(tk.Frame):
         "Gigantamax Release Date",
         "Gigantamax Image URL",
         "Shiny Gigantamax Image URL",
+        "Gigantamax Move Name",
     )
     IMG = 240  # file & preview size (px)
 
@@ -60,7 +61,8 @@ class PokemonMaxFrame(tk.Frame):
         ( _,
           dyn, giga,
           dyn_dt, giga_dt,
-          g_img, sg_img) = row
+          g_img, sg_img,
+          gmax_move_name, gmax_move_type_id) = row
 
         outer = tk.LabelFrame(self, text="Max Info", bd=2, relief=tk.GROOVE, padx=8, pady=8)
         outer.pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
@@ -81,13 +83,28 @@ class PokemonMaxFrame(tk.Frame):
             self.widgets[lbl] = var
 
         row_start = len(self.BOOL_FIELDS)
-        entries_values = (dyn_dt, giga_dt, g_img, sg_img)
+        entries_values = (dyn_dt, giga_dt, g_img, sg_img, gmax_move_name)
         for i, (lbl, val) in enumerate(zip(self.ENTRY_FIELDS, entries_values), row_start):
             tk.Label(fields, text=f"{lbl}:").grid(row=i, column=0, sticky="e", padx=(0, 4), pady=1)
             ent = tk.Entry(fields)
             ent.insert(0, val or "")
             ent.grid(row=i, column=1, sticky="ew", pady=1)
             self.widgets[lbl] = ent
+
+        type_row = row_start + len(self.ENTRY_FIELDS)
+        type_ids = self.db.fetch_type_ids()
+        selected_type = next(
+            (name for name, type_id in type_ids.items() if type_id == gmax_move_type_id),
+            "",
+        )
+        type_var = tk.StringVar(value=selected_type)
+        tk.Label(fields, text="Gigantamax Move Type:").grid(
+            row=type_row, column=0, sticky="e", padx=(0, 4), pady=1
+        )
+        type_menu = tk.OptionMenu(fields, type_var, "", *sorted(type_ids))
+        type_menu.grid(row=type_row, column=1, sticky="ew", pady=1)
+        self.widgets["Gigantamax Move Type"] = type_var
+        self.gigantamax_move_type_ids = type_ids
 
         # ── image columns ────────────────────────────────────────────────────────
         self._build_image_box(
@@ -203,4 +220,8 @@ class PokemonMaxFrame(tk.Frame):
             self.widgets["Gigantamax Release Date"].get().strip() or None,
             self.widgets["Gigantamax Image URL"].get().strip() or None,
             self.widgets["Shiny Gigantamax Image URL"].get().strip() or None,
+            self.widgets["Gigantamax Move Name"].get().strip() or None,
+            self.gigantamax_move_type_ids.get(
+                self.widgets["Gigantamax Move Type"].get()
+            ),
         )

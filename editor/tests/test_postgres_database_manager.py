@@ -137,7 +137,7 @@ class PostgresDatabaseManagerTests(unittest.TestCase):
             self.db_manager.insert_max_pokemon(max_pokemon_id)
             self.db_manager.update_max_pokemon(
                 max_pokemon_id,
-                (1, 0, "2026-07-14", "", "", ""),
+                (1, 0, "2026-07-14", "", "", "", "", None),
             )
             self.assertTrue(self.db_manager.fetch_max_pokemon(max_pokemon_id)[1])
         finally:
@@ -376,7 +376,7 @@ class PostgresDatabaseManagerTests(unittest.TestCase):
             self.db_manager.insert_max_pokemon(max_pokemon_id)
             self.db_manager.update_max_pokemon(
                 max_pokemon_id,
-                (1, 0, "2026-07-14", "", "", ""),
+                (1, 0, "2026-07-14", "", "", "", "", None),
             )
             self.assertTrue(self.db_manager.fetch_max_pokemon(max_pokemon_id)[1])
 

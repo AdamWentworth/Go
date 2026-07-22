@@ -154,6 +154,9 @@ export interface MaxForm {
   gigantamax_release_date: string | null;
   gigantamax_image_url?: string | null;
   shiny_gigantamax_image_url?: string | null;
+  gigantamax_move_name?: string | null;
+  gigantamax_move_type_id?: number | null;
+  gigantamax_move_type?: string | null;
 }
 
 export interface FemaleVariantData {

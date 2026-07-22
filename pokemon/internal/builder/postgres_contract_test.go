@@ -48,3 +48,46 @@ func TestPostgresPayloadContract(t *testing.T) {
 		t.Fatal("PostgreSQL catalog payload changed between identical reads")
 	}
 }
+
+func TestPostgresPayloadIncludesCanonicalGigantamaxMove(t *testing.T) {
+	sqlDB := openIntegrationPostgres(t)
+	defer sqlDB.Close()
+
+	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
+	defer cancel()
+
+	payload, err := builder.New(sqlDB, nil).BuildFullPokemonPayload(ctx)
+	if err != nil {
+		t.Fatalf("build PostgreSQL payload: %v", err)
+	}
+	raw, err := json.Marshal(payload)
+	if err != nil {
+		t.Fatalf("marshal PostgreSQL payload: %v", err)
+	}
+	var entries []map[string]any
+	if err := json.Unmarshal(raw, &entries); err != nil {
+		t.Fatalf("decode PostgreSQL payload: %v", err)
+	}
+
+	for _, entry := range entries {
+		if entry["pokemon_id"] != float64(3) {
+			continue
+		}
+		maxForms, ok := entry["max"].([]any)
+		if !ok || len(maxForms) != 1 {
+			t.Fatalf("Venusaur max forms = %#v", entry["max"])
+		}
+		maxForm, ok := maxForms[0].(map[string]any)
+		if !ok {
+			t.Fatalf("Venusaur max form has unexpected shape: %#v", maxForms[0])
+		}
+		if maxForm["gigantamax_move_name"] != "G-Max Vine Lash" ||
+			maxForm["gigantamax_move_type"] != "Grass" ||
+			maxForm["gigantamax_move_type_id"] != float64(2) {
+			t.Fatalf("unexpected Venusaur G-Max move payload: %#v", maxForm)
+		}
+		return
+	}
+
+	t.Fatal("Venusaur missing from PostgreSQL payload")
+}
