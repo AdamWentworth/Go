@@ -1,5 +1,6 @@
 import { expect, type Page, type Route, test } from '@playwright/test';
 
+import { openActionMenu } from './support/actionMenu';
 import { attachBrowserDiagnostics } from './support/diagnostics';
 import { installE2eRoutes } from './support/e2eRoutes';
 import {
@@ -37,41 +38,6 @@ async function getDocumentScrollTop(page: Page) {
 
 async function getElementTop(page: Page, selector: string) {
   return page.locator(selector).evaluate((element) => element.getBoundingClientRect().top);
-}
-
-async function openActionMenuForProject(page: Page, projectName: string) {
-  const actionMenuButton = page.getByRole('button', { name: 'Action Menu' });
-  const openMenu = page.locator('.action-menu-overlay[data-menu-state="open"]');
-
-  for (let attempt = 0; attempt < 4; attempt += 1) {
-    if (await openMenu.isVisible({ timeout: 250 }).catch(() => false)) {
-      return;
-    }
-
-    await expect(actionMenuButton).toBeVisible({ timeout: 15_000 });
-
-    if (projectName.includes('mobile')) {
-      await actionMenuButton.tap().catch(async () => {
-        await actionMenuButton.click({ force: true });
-      });
-    } else {
-      await actionMenuButton.click();
-    }
-
-    if (
-      await openMenu
-        .waitFor({ state: 'visible', timeout: 5_000 })
-        .then(() => true)
-        .catch(() => false)
-    ) {
-      return;
-    }
-
-    await page.waitForTimeout(150);
-  }
-
-  await actionMenuButton.evaluate((button) => (button as HTMLButtonElement).click());
-  await expect(openMenu).toBeVisible();
 }
 
 test.describe('pokemon app browser regressions', () => {
@@ -773,7 +739,7 @@ test.describe('pokemon app browser regressions', () => {
       await openPokemonPage(page);
       await expect(page).toHaveURL(/\/pokemon$/);
 
-      await openActionMenuForProject(page, testInfo.project.name);
+      await openActionMenu(page, testInfo.project.name);
 
       await triggerBrowserBack(page);
 
@@ -828,7 +794,7 @@ test.describe('pokemon app browser regressions', () => {
         }).__actionMenuStateObserver = observer;
       });
 
-      await openActionMenuForProject(page, testInfo.project.name);
+      await openActionMenu(page, testInfo.project.name);
 
       const overlay = page.locator('.action-menu-overlay');
       const homeMenuItem = page.locator('.action-menu-item.button-home');
@@ -895,7 +861,7 @@ test.describe('pokemon app browser regressions', () => {
       await openPokemonPage(page);
       await expect(page).toHaveURL(/\/pokemon$/);
 
-      await openActionMenuForProject(page, testInfo.project.name);
+      await openActionMenu(page, testInfo.project.name);
       await page
         .locator('.action-menu-overlay[data-menu-state="open"]')
         .getByRole('button', { name: /Search/i })

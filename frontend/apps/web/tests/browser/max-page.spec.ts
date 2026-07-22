@@ -1,5 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
 
+import { openActionMenu } from './support/actionMenu';
 import { attachBrowserDiagnostics } from './support/diagnostics';
 import { installE2eRoutes } from './support/e2eRoutes';
 
@@ -82,7 +83,7 @@ test.describe('Max Battles page', () => {
       await installE2eRoutes(page);
       await page.goto('/');
 
-      await page.getByRole('button', { name: 'Action Menu' }).click();
+      await openActionMenu(page, testInfo.project.name);
       const menu = page.locator('.action-menu-overlay[data-menu-state="open"]');
       await expect(menu).toBeVisible();
       await expect(menu.locator('.action-menu-item')).toHaveCount(9);

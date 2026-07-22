@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from '@testing-library/react';
+import { act, fireEvent, render, screen } from '@testing-library/react';
 import { MemoryRouter, useLocation } from 'react-router-dom';
 import { describe, expect, it, vi } from 'vitest';
 
@@ -13,8 +13,8 @@ vi.mock('@/components/ActionMenuButton', () => ({
 }));
 
 vi.mock('@/components/CloseButton', () => ({
-  default: ({ onClick }: { onClick: () => void }) => (
-    <button type="button" onClick={onClick}>
+  default: ({ onClick, disabled }: { onClick: () => void; disabled?: boolean }) => (
+    <button type="button" onClick={onClick} disabled={disabled}>
       Close
     </button>
   ),
@@ -61,5 +61,40 @@ describe('ActionMenu', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Max Battles' }));
     expect(screen.getByTestId('location')).toHaveTextContent('/max');
+  });
+
+  it('keeps the close control disabled until the opening gesture has settled', () => {
+    vi.useFakeTimers();
+
+    try {
+      const { container } = render(
+        <MemoryRouter initialEntries={['/pokemon']}>
+          <ActionMenu />
+        </MemoryRouter>,
+      );
+
+      fireEvent.click(screen.getByRole('button', { name: 'Action Menu' }));
+
+      const closeButton = screen.getByRole('button', { name: 'Close' });
+      expect(closeButton).toBeDisabled();
+
+      act(() => {
+        vi.advanceTimersByTime(75);
+      });
+      expect(closeButton).toBeDisabled();
+
+      act(() => {
+        vi.advanceTimersByTime(300);
+      });
+
+      expect(closeButton).toBeEnabled();
+      fireEvent.click(closeButton);
+      expect(container.querySelector('.action-menu-overlay')).toHaveAttribute(
+        'data-menu-state',
+        'closed',
+      );
+    } finally {
+      vi.useRealTimers();
+    }
   });
 });

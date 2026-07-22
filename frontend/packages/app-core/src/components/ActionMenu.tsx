@@ -16,7 +16,9 @@ const ActionMenu: React.FC = () => {
   const MENU_OPEN_DELAY_MS = 75;
   const [isOpen, setIsOpen] = useState(false);
   const [isVisible, setIsVisible] = useState(false);
+  const [isCloseEnabled, setIsCloseEnabled] = useState(false);
   const openingAnimationTimeoutRef = useRef<number | null>(null);
+  const closeEnableTimeoutRef = useRef<number | null>(null);
   const navigate = useNavigate();
   const location = useLocation();
   const { alert } = useModal();
@@ -27,6 +29,12 @@ const ActionMenu: React.FC = () => {
     if (openingAnimationTimeoutRef.current === null) return;
     window.clearTimeout(openingAnimationTimeoutRef.current);
     openingAnimationTimeoutRef.current = null;
+  }, []);
+
+  const cancelPendingCloseEnable = useCallback(() => {
+    if (closeEnableTimeoutRef.current === null) return;
+    window.clearTimeout(closeEnableTimeoutRef.current);
+    closeEnableTimeoutRef.current = null;
   }, []);
 
   useEffect(() => {
@@ -42,23 +50,35 @@ const ActionMenu: React.FC = () => {
   }, [isOpen, isVisible]);
 
   useEffect(() => {
-    return () => cancelPendingOpenAnimation();
-  }, [cancelPendingOpenAnimation]);
+    return () => {
+      cancelPendingOpenAnimation();
+      cancelPendingCloseEnable();
+    };
+  }, [cancelPendingCloseEnable, cancelPendingOpenAnimation]);
 
   const openMenu = useCallback(() => {
     cancelPendingOpenAnimation();
+    cancelPendingCloseEnable();
+    setIsCloseEnabled(false);
     setIsVisible(true);
 
     openingAnimationTimeoutRef.current = window.setTimeout(() => {
       openingAnimationTimeoutRef.current = null;
       setIsOpen(true);
+
+      closeEnableTimeoutRef.current = window.setTimeout(() => {
+        closeEnableTimeoutRef.current = null;
+        setIsCloseEnabled(true);
+      }, MENU_TRANSITION_MS);
     }, MENU_OPEN_DELAY_MS);
-  }, [cancelPendingOpenAnimation]);
+  }, [cancelPendingCloseEnable, cancelPendingOpenAnimation]);
 
   const closeMenu = useCallback(() => {
     cancelPendingOpenAnimation();
+    cancelPendingCloseEnable();
+    setIsCloseEnabled(false);
     setIsOpen(false);
-  }, [cancelPendingOpenAnimation]);
+  }, [cancelPendingCloseEnable, cancelPendingOpenAnimation]);
 
   const toggleMenu = () => {
     if (isOpen) {
@@ -84,7 +104,7 @@ const ActionMenu: React.FC = () => {
           className={`action-menu-overlay ${isOpen ? 'active' : ''}`}
           data-menu-state={isOpen ? 'open' : 'closed'}
         >
-          <CloseButton onClick={toggleMenu} />
+          <CloseButton onClick={closeMenu} disabled={!isCloseEnabled} />
 
           <button
             className="settings-button"
