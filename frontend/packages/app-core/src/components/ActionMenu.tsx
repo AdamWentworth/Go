@@ -154,7 +154,7 @@ const ActionMenu: React.FC = () => {
               onClick={() => handleNavigation('/raid')}
             >
               <div className="button-content">
-                <img src="/images/btn_raid.png" alt="Raid" className="button-icon" />
+                <img src="/images/btn_raid.png" alt="" className="button-icon" />
                 <span className="button-label">Raid</span>
               </div>
             </button>
@@ -164,7 +164,7 @@ const ActionMenu: React.FC = () => {
               onClick={() => handleNavigation('/search')}
             >
               <div className="button-content">
-                <img src="/images/btn_search.png" alt="Search" className="button-icon" />
+                <img src="/images/btn_search.png" alt="" className="button-icon" />
                 <span className="button-label">Search</span>
               </div>
             </button>
@@ -174,7 +174,7 @@ const ActionMenu: React.FC = () => {
               onClick={() => handleNavigation('/pokemon')}
             >
               <div className="button-content">
-                <img src="/images/btn_pokemon.png" alt="Pokémon" className="button-icon" />
+                <img src="/images/btn_pokemon.png" alt="" className="button-icon" />
                 <span className="button-label">Pokémon</span>
               </div>
             </button>
@@ -184,7 +184,7 @@ const ActionMenu: React.FC = () => {
               onClick={() => handleNavigation('/pokedex')}
             >
               <div className="button-content">
-                <img src="/images/btn_pokedex.png" alt="Pokedex" className="button-icon" />
+                <img src="/images/btn_pokedex.png" alt="" className="button-icon" />
                 <span className="button-label">Pokedex</span>
               </div>
             </button>
@@ -194,7 +194,7 @@ const ActionMenu: React.FC = () => {
               onClick={() => handleNavigation('/')}
             >
               <div className="button-content">
-                <img src="/images/btn_home.png" alt="Home" className="button-icon" />
+                <img src="/images/btn_home.png" alt="" className="button-icon" />
                 <span className="button-label">Home</span>
               </div>
             </button>
@@ -204,7 +204,7 @@ const ActionMenu: React.FC = () => {
               onClick={() => alert("PvP page is not implemented yet!")}
             >
               <div className="button-content">
-                <img src="/images/btn_pvp.png" alt="PvP" className="button-icon" />
+                <img src="/images/btn_pvp.png" alt="" className="button-icon" />
                 <span className="button-label">PvP</span>
               </div>
             </button>
@@ -214,7 +214,7 @@ const ActionMenu: React.FC = () => {
               onClick={() => handleNavigation('/trades')}
             >
               <div className="button-content">
-                <img src="/images/btn_trades.png" alt="Trades" className="button-icon" />
+                <img src="/images/btn_trades.png" alt="" className="button-icon" />
                 <span className="button-label">Trades</span>
               </div>
             </button>
@@ -224,8 +224,18 @@ const ActionMenu: React.FC = () => {
               onClick={() => alert("Rankings page is not implemented yet!")}
             >
               <div className="button-content">
-                <img src="/images/btn_rankings.png" alt="Rankings" className="button-icon" />
+                <img src="/images/btn_rankings.png" alt="" className="button-icon" />
                 <span className="button-label">Rankings</span>
+              </div>
+            </button>
+
+            <button
+              className="action-menu-item button-max"
+              onClick={() => handleNavigation('/max')}
+            >
+              <div className="button-content">
+                <img src="/images/btn_max.png" alt="" className="button-icon" />
+                <span className="button-label">Max Battles</span>
               </div>
             </button>
           </div>

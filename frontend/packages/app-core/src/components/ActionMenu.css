@@ -115,13 +115,8 @@
   width: 100vw;
   height: 100vh;
   position: relative;
-  --action-menu-ring-radius: clamp(154px, 32vmin, 260px);
-  --action-menu-ring-wide-x: clamp(150px, 31.2vmin, 253.5px);
-  --action-menu-ring-small-y: clamp(34.25px, 7.12vmin, 58px);
-  --action-menu-ring-upper-x: clamp(120.5px, 25.02vmin, 203.25px);
-  --action-menu-ring-upper-y: clamp(96px, 19.95vmin, 162.25px);
-  --action-menu-ring-lower-x: clamp(66.75px, 13.88vmin, 112.75px);
-  --action-menu-ring-lower-y: clamp(138.75px, 28.83vmin, 234.25px);
+  --action-menu-column-offset: clamp(112px, 24vmin, 250px);
+  --action-menu-row-offset: clamp(116px, 22vmin, 220px);
 }
 
 .action-menu-item {
@@ -141,8 +136,8 @@
   top: 50%;
   left: 50%;
   transform: translate(
-    calc(-50% - var(--action-menu-ring-upper-x)),
-    calc(-50% - var(--action-menu-ring-upper-y))
+    calc(-50% - var(--action-menu-column-offset)),
+    calc(-50% - var(--action-menu-row-offset))
   );
   opacity: 1;
 }
@@ -151,8 +146,8 @@
   top: 50%;
   left: 50%;
   transform: translate(
-    calc(-50% - var(--action-menu-ring-wide-x)),
-    calc(-50% + var(--action-menu-ring-small-y))
+    calc(-50% - var(--action-menu-column-offset)),
+    -50%
   );
   opacity: 1;
 }
@@ -161,8 +156,8 @@
   top: 50%;
   left: 50%;
   transform: translate(
-    calc(-50% - var(--action-menu-ring-lower-x)),
-    calc(-50% + var(--action-menu-ring-lower-y))
+    calc(-50% - var(--action-menu-column-offset)),
+    calc(-50% + var(--action-menu-row-offset))
   );
   opacity: 1;
 }
@@ -170,7 +165,7 @@
 .action-menu-buttons-container.open .button-pokedex {
   top: 50%;
   left: 50%;
-  transform: translate(-50%, calc(-50% - var(--action-menu-ring-radius)));
+  transform: translate(-50%, calc(-50% - var(--action-menu-row-offset)));
   opacity: 1;
 }
 
@@ -185,8 +180,8 @@
   top: 50%;
   left: 50%;
   transform: translate(
-    calc(-50% + var(--action-menu-ring-upper-x)),
-    calc(-50% - var(--action-menu-ring-upper-y))
+    calc(-50% + var(--action-menu-column-offset)),
+    calc(-50% - var(--action-menu-row-offset))
   );
   opacity: 1;
 }
@@ -195,8 +190,8 @@
   top: 50%;
   left: 50%;
   transform: translate(
-    calc(-50% + var(--action-menu-ring-wide-x)),
-    calc(-50% + var(--action-menu-ring-small-y))
+    calc(-50% + var(--action-menu-column-offset)),
+    -50%
   );
   opacity: 1;
 }
@@ -205,9 +200,16 @@
   top: 50%;
   left: 50%;
   transform: translate(
-    calc(-50% + var(--action-menu-ring-lower-x)),
-    calc(-50% + var(--action-menu-ring-lower-y))
+    calc(-50% + var(--action-menu-column-offset)),
+    calc(-50% + var(--action-menu-row-offset))
   );
+  opacity: 1;
+}
+
+.action-menu-buttons-container.open .button-max {
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, calc(-50% + var(--action-menu-row-offset)));
   opacity: 1;
 }
 
@@ -237,13 +239,8 @@
 
 @media (min-width: 600px) and (max-width: 960px) {
   .action-menu-buttons-container {
-    --action-menu-ring-radius: clamp(178px, 24vmin, 205px);
-    --action-menu-ring-wide-x: clamp(173.5px, 23.4vmin, 200px);
-    --action-menu-ring-small-y: clamp(39.5px, 5.35vmin, 45.5px);
-    --action-menu-ring-upper-x: clamp(139px, 18.76vmin, 160.25px);
-    --action-menu-ring-upper-y: clamp(111px, 14.96vmin, 127.75px);
-    --action-menu-ring-lower-x: clamp(77.25px, 10.41vmin, 89px);
-    --action-menu-ring-lower-y: clamp(160.25px, 21.63vmin, 184.75px);
+    --action-menu-column-offset: clamp(145px, 23vmin, 190px);
+    --action-menu-row-offset: clamp(140px, 22vmin, 182px);
   }
 
   .button-icon {
@@ -253,6 +250,21 @@
 
   .button-label {
     font-size: clamp(1.15rem, 2vw, 1.4rem);
+  }
+}
+
+@media (max-height: 620px) {
+  .action-menu-buttons-container {
+    --action-menu-row-offset: clamp(98px, 22vh, 132px);
+  }
+
+  .button-icon {
+    width: clamp(58px, 14vh, 82px);
+    height: clamp(58px, 14vh, 82px);
+  }
+
+  .button-label {
+    font-size: clamp(0.85rem, 2.8vh, 1.1rem);
   }
 }
 

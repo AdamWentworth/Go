@@ -245,6 +245,7 @@ export function determineImageUrl(
   return handleNonMegaEvolution();
 }
 
-export function getTypeIconPath(typeName: string): string {
-  return `/images/types/${typeName.toLowerCase()}.png`;
+export function getTypeIconPath(typeName?: string | null): string {
+  const normalizedType = typeName?.trim().toLowerCase() || 'normal';
+  return `/images/types/${normalizedType}.png`;
 }
