@@ -91,3 +91,47 @@ func TestPostgresPayloadIncludesCanonicalGigantamaxMove(t *testing.T) {
 
 	t.Fatal("Venusaur missing from PostgreSQL payload")
 }
+
+func TestPostgresPayloadIncludesMaxBattleProfiles(t *testing.T) {
+	sqlDB := openIntegrationPostgres(t)
+	defer sqlDB.Close()
+
+	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
+	defer cancel()
+
+	payload, err := builder.New(sqlDB, nil).BuildCatalogPayload(ctx)
+	if err != nil {
+		t.Fatalf("build PostgreSQL catalog payload: %v", err)
+	}
+	raw, err := json.Marshal(payload)
+	if err != nil {
+		t.Fatalf("marshal PostgreSQL catalog payload: %v", err)
+	}
+	var entries []map[string]any
+	if err := json.Unmarshal(raw, &entries); err != nil {
+		t.Fatalf("decode PostgreSQL catalog payload: %v", err)
+	}
+
+	for _, entry := range entries {
+		if entry["pokemon_id"] != float64(1) {
+			continue
+		}
+		profiles, ok := entry["max_battle_profiles"].([]any)
+		if !ok || len(profiles) != 2 {
+			t.Fatalf("Bulbasaur Max Battle profiles = %#v", entry["max_battle_profiles"])
+		}
+		defaultProfile, ok := profiles[0].(map[string]any)
+		if !ok {
+			t.Fatalf("Bulbasaur profile has unexpected shape: %#v", profiles[0])
+		}
+		if defaultProfile["tier"] != "one-star" ||
+			defaultProfile["boss_hp"] != float64(1700) ||
+			defaultProfile["default_trainers"] != float64(1) ||
+			defaultProfile["is_default"] != float64(1) {
+			t.Fatalf("unexpected Bulbasaur Max Battle profile: %#v", defaultProfile)
+		}
+		return
+	}
+
+	t.Fatal("Bulbasaur missing from PostgreSQL catalog payload")
+}

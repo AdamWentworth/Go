@@ -193,6 +193,30 @@ export interface RaidBoss {
   shield_count?: number | null;
 }
 
+export interface MaxBattleProfile {
+  profile_id: number;
+  pokemon_id: number;
+  variant_kind: 'dynamax' | 'gigantamax' | 'special';
+  form: string | null;
+  tier: 'one-star' | 'two-star' | 'three-star' | 'legendary' | 'gigantamax';
+  label: string;
+  kind: 'standard' | 'legendary' | 'gigantamax';
+  boss_hp: number;
+  default_trainers: number;
+  max_trainers: number;
+  battle_seconds: number;
+  enrage_seconds: number;
+  subgroup_size: number;
+  meter_orb_energy: number;
+  starts_at: string | null;
+  ends_at: string | null;
+  is_default: boolean | 0 | 1;
+  priority: number;
+  source_name: string | null;
+  source_url: string | null;
+  notes: string | null;
+}
+
 export interface Move {
   move_id: number;
   name: string;
@@ -252,11 +276,16 @@ export interface BasePokemon {
   backgrounds: VariantBackground[];
   cp40: number;
   cp50: number;
+  evolutionData?: {
+    evolves_to?: number[];
+    evolves_from?: number[];
+  };
   evolves_to?: number[];
   evolves_from: number[];
   megaEvolutions: MegaEvolution[];
   crownForms?: CrownForm[];
   raid_boss: RaidBoss[];
+  max_battle_profiles?: MaxBattleProfile[];
   sizes: {
     pokedex_height: number;
     pokedex_weight: number;

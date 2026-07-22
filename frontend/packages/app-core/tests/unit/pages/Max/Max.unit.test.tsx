@@ -107,7 +107,8 @@ function makeMaxVariant(
           ]
         : [],
     evolves_from: [],
-    evolves_to: [],
+    evolutionData: pokemonId === 1 ? { evolves_to: [2] } : undefined,
+    evolves_to: pokemonId === 1 ? undefined : [],
   } as unknown as PokemonVariant;
 }
 
@@ -251,8 +252,9 @@ describe('Max page', () => {
         name: 'Can this group beat Dynamax Bulbasaur?',
       }),
     ).toBeVisible();
-    expect(screen.getByLabelText('Trainer count')).toHaveValue(4);
-    expect(screen.getByLabelText('Boss HP estimate')).toHaveValue(10_000);
+    expect(screen.getByLabelText('Trainer count')).toHaveValue(1);
+    expect(screen.getByLabelText('Boss HP estimate')).toHaveValue(1_700);
+    expect(screen.getByText('Likely clear')).toBeVisible();
     expect(screen.getByLabelText('Recommended three-Pokémon party')).toBeVisible();
     expect(
       screen
@@ -262,14 +264,39 @@ describe('Max page', () => {
     expect(container.querySelector('.max-simulator-verdict')).toHaveTextContent(
       /modeled damage/i,
     );
+    expect(screen.getByLabelText('Damage team member')).toBeVisible();
+    expect(screen.getByLabelText('Tank team member')).toBeVisible();
+    expect(screen.getByLabelText('Healing team member')).toBeVisible();
+
+    const damagePicker = screen.getByLabelText('Damage team member') as HTMLSelectElement;
+    expect(damagePicker.options.length).toBeGreaterThan(1);
+    const replacement = damagePicker.options[1].value;
+    fireEvent.change(damagePicker, { target: { value: replacement } });
+    expect(damagePicker).toHaveValue(replacement);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Add one Trainer' }));
+    expect(screen.getByLabelText('Trainer count')).toHaveValue(2);
+    expect(screen.getByTestId('max-test-location')).toHaveTextContent('trainers=2');
+
+    fireEvent.change(screen.getByLabelText('Max Battle difficulty'), {
+      target: { value: 'three-star' },
+    });
+    expect(screen.getByLabelText('Trainer count')).toHaveValue(2);
+    expect(screen.getByLabelText('Boss HP estimate')).toHaveValue(10_000);
+    expect(screen.getByTestId('max-test-location')).toHaveTextContent(
+      'difficulty=three-star',
+    );
     expect(screen.getByLabelText('Boss team role')).toBeVisible();
     expect(
       screen.getByRole('heading', {
         name: 'Top damage picks vs Dynamax Bulbasaur',
       }),
     ).toBeVisible();
-    expect(screen.getByText('Three-Pokémon battle party')).toBeVisible();
+    expect(screen.getByText('Role alternatives')).toBeVisible();
+    expect(screen.getByText('6 ranked')).toBeVisible();
     expect(container.querySelectorAll('.max-ranking-row')).toHaveLength(3);
+    fireEvent.click(screen.getByRole('button', { name: 'Show 3 more' }));
+    expect(container.querySelectorAll('.max-ranking-row')).toHaveLength(6);
     expect(screen.getByLabelText('Boss ranking method')).toHaveTextContent(
       'Standardized matchup',
     );
@@ -306,7 +333,7 @@ describe('Max page', () => {
   });
 
   it('restores and updates a shareable Max Battle context in the URL', () => {
-    renderMax('/max?view=bosses&role=tank&boss=6-gigantamax');
+    renderMax('/max?view=bosses&role=tank&boss=6-gigantamax&trainers=9');
 
     expect(screen.getByRole('button', { name: 'Boss teams' })).toHaveAttribute(
       'aria-pressed',
@@ -317,6 +344,7 @@ describe('Max page', () => {
       'true',
     );
     expect(screen.getByRole('heading', { name: 'Gigantamax Charizard' })).toBeVisible();
+    expect(screen.getByLabelText('Trainer count')).toHaveValue(9);
 
     fireEvent.click(screen.getByRole('button', { name: 'Healing' }));
     let currentUrl = screen.getByTestId('max-test-location').textContent ?? '';

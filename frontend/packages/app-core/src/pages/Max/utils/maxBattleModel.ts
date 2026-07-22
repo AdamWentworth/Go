@@ -72,6 +72,8 @@ export type MaxRankingEntry = {
   bossBenchmark?: MaxBossBenchmark;
 };
 
+export type MaxRoleCandidates = Record<MaxRole, MaxRankingEntry[]>;
+
 export const MAX_BATTLE_TYPES = [
   'bug',
   'dark',

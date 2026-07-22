@@ -33,12 +33,27 @@ if [[ "${database_ready}" -ne 1 ]]; then
   exit 1
 fi
 
+docker exec -i "${container_name}" \
+  psql -v ON_ERROR_STOP=1 -U catalog -d pokemon_catalog_test >/dev/null <<'SQL'
+CREATE ROLE pokemon_catalog_reader NOLOGIN;
+SQL
+
 (
   cd "${repo_root}/pokemon"
   go run ./cmd/catalog-migrate --database-url "${database_url}" >/dev/null
 )
 docker exec -i "${container_name}" \
   psql -v ON_ERROR_STOP=1 -U catalog -d pokemon_catalog_test < "${fixture_path}" >/dev/null
+
+# A migration must remain deployable through the publisher while immediately
+# exposing its new tables to the least-privileged API role.
+docker exec -i "${container_name}" \
+  psql -v ON_ERROR_STOP=1 -U catalog -d pokemon_catalog_test >/dev/null <<'SQL'
+SET ROLE pokemon_catalog_reader;
+SELECT COUNT(*) FROM pokemon_catalog.max_battle_tiers;
+SELECT COUNT(*) FROM pokemon_catalog.max_battle_profiles;
+RESET ROLE;
+SQL
 
 (
   cd "${repo_root}/pokemon"

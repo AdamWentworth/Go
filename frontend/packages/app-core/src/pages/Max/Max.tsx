@@ -19,7 +19,14 @@ import {
   MAX_BATTLE_TYPES,
   rankMaxBattlePokemon,
   type MaxRole,
+  type MaxRoleCandidates,
 } from './utils/maxBattleModel';
+import {
+  getDefaultMaxBattleTier,
+  getMaxBattleBossPreset,
+  getMaxBattleTierOptions,
+  type MaxBattleTier,
+} from './utils/maxBattleSimulation';
 import {
   buildMaxRoster,
   type MaxRosterScope as MaxRosterScopeValue,
@@ -30,6 +37,8 @@ import './Max.css';
 type MaxView = 'rankings' | 'bosses';
 
 const MAX_RESULTS_PAGE_SIZE = 18;
+const MAX_BOSS_RESULTS_INITIAL_SIZE = 3;
+const MAX_BOSS_RESULTS_PAGE_SIZE = 9;
 const MAX_ROLES: MaxRole[] = ['damage', 'tank', 'healing'];
 
 const isMaxRole = (value: string | null): value is MaxRole =>
@@ -37,6 +46,11 @@ const isMaxRole = (value: string | null): value is MaxRole =>
 
 const isMaxType = (value: string | null): value is string =>
   value != null && (MAX_BATTLE_TYPES as readonly string[]).includes(value);
+
+const isMaxBattleTier = (value: string | null): value is MaxBattleTier =>
+  value != null &&
+  (['one-star', 'two-star', 'three-star', 'legendary', 'gigantamax'] as const)
+    .includes(value as MaxBattleTier);
 
 const roleHeading = (role: MaxRole, selectedType: string): string => {
   const type = selectedType
@@ -69,6 +83,9 @@ const Max = () => {
   );
   const [search, setSearch] = useState('');
   const [visibleLimit, setVisibleLimit] = useState(MAX_RESULTS_PAGE_SIZE);
+  const [bossVisibleLimit, setBossVisibleLimit] = useState(
+    MAX_BOSS_RESULTS_INITIAL_SIZE,
+  );
 
   const view: MaxView = searchParams.get('view') === 'bosses' ? 'bosses' : 'rankings';
   const requestedScope = searchParams.get('scope');
@@ -112,6 +129,35 @@ const Max = () => {
   const selectedBoss =
     maxCatalog.find((boss) => boss.variant_id === selectedBossId) ?? maxCatalog[0];
 
+  const requestedDifficulty = searchParams.get('difficulty');
+  const availableDifficulties = selectedBoss
+    ? getMaxBattleTierOptions(selectedBoss)
+    : [];
+  const difficulty =
+    selectedBoss &&
+    isMaxBattleTier(requestedDifficulty) &&
+    availableDifficulties.includes(requestedDifficulty)
+      ? requestedDifficulty
+      : selectedBoss
+        ? getDefaultMaxBattleTier(selectedBoss)
+        : null;
+  const bossPreset =
+    selectedBoss && difficulty
+      ? getMaxBattleBossPreset(selectedBoss, difficulty)
+      : null;
+  const requestedTrainerCount = Number(searchParams.get('trainers'));
+  const trainerCount = bossPreset
+    ? Math.min(
+        bossPreset.maxTrainers,
+        Math.max(
+          1,
+          Number.isFinite(requestedTrainerCount) && requestedTrainerCount > 0
+            ? Math.round(requestedTrainerCount)
+            : bossPreset.defaultTrainers,
+        ),
+      )
+    : 1;
+
   const rankingEntries = useMemo(
     () =>
       rankMaxBattlePokemon(rankingCatalog, {
@@ -141,34 +187,35 @@ const Max = () => {
     setVisibleLimit(MAX_RESULTS_PAGE_SIZE);
   }, [role, rosterScope, search, selectedType, view]);
 
-  const bossRankingEntries = useMemo(
-    () =>
-      selectedBoss
-        ? rankMaxBattlePokemon(rankingCatalog, {
-            role,
-            boss: selectedBoss,
-          }).slice(0, 3)
-        : [],
-    [rankingCatalog, role, selectedBoss],
+  const bossRoleCandidates = useMemo<MaxRoleCandidates>(() => {
+    const empty: MaxRoleCandidates = { damage: [], tank: [], healing: [] };
+    if (!selectedBoss) return empty;
+
+    return {
+      damage: rankMaxBattlePokemon(rankingCatalog, {
+        role: 'damage',
+        boss: selectedBoss,
+      }),
+      tank: rankMaxBattlePokemon(rankingCatalog, {
+        role: 'tank',
+        boss: selectedBoss,
+      }),
+      healing: rankMaxBattlePokemon(rankingCatalog, {
+        role: 'healing',
+        boss: selectedBoss,
+      }),
+    };
+  }, [rankingCatalog, selectedBoss]);
+
+  const bossRankingEntries = bossRoleCandidates[role];
+  const visibleBossRankings = useMemo(
+    () => bossRankingEntries.slice(0, bossVisibleLimit),
+    [bossRankingEntries, bossVisibleLimit],
   );
 
-  const bossSimulationTeam = useMemo(() => {
-    if (!selectedBoss) return null;
-    const damage = rankMaxBattlePokemon(rankingCatalog, {
-      role: 'damage',
-      boss: selectedBoss,
-    })[0];
-    const tank = rankMaxBattlePokemon(rankingCatalog, {
-      role: 'tank',
-      boss: selectedBoss,
-    })[0];
-    const healing = rankMaxBattlePokemon(rankingCatalog, {
-      role: 'healing',
-      boss: selectedBoss,
-    })[0];
-
-    return damage && tank && healing ? { damage, tank, healing } : null;
-  }, [rankingCatalog, selectedBoss]);
+  useEffect(() => {
+    setBossVisibleLimit(MAX_BOSS_RESULTS_INITIAL_SIZE);
+  }, [role, rosterScope, selectedBossId, view]);
 
   const changeRosterScope = (nextScope: MaxRosterScopeValue) => {
     if (nextScope === rosterScope) return;
@@ -320,12 +367,37 @@ const Max = () => {
             <MaxBossPicker
               bosses={maxCatalog}
               selectedBoss={selectedBoss}
-              onSelect={(boss) => updateSearchParams({ boss: boss.variant_id })}
+              onSelect={(boss) =>
+                updateSearchParams({
+                  boss: boss.variant_id,
+                  difficulty: null,
+                  trainers: null,
+                })
+              }
             />
             <MaxBattleSimulator
               boss={selectedBoss}
+              candidates={bossRoleCandidates}
+              difficulty={difficulty ?? getDefaultMaxBattleTier(selectedBoss)}
+              onDifficultyChange={(nextDifficulty) =>
+                updateSearchParams({
+                  difficulty:
+                    nextDifficulty === getDefaultMaxBattleTier(selectedBoss)
+                      ? null
+                      : nextDifficulty,
+                  trainers: null,
+                })
+              }
+              onTrainerCountChange={(count) =>
+                updateSearchParams({
+                  trainers:
+                    bossPreset && count === bossPreset.defaultTrainers
+                      ? null
+                      : String(count),
+                })
+              }
               rosterScope={rosterScope}
-              team={bossSimulationTeam}
+              trainerCount={trainerCount}
             />
             <MaxRoleTabs label="Boss team role" role={role} onChange={changeRole} />
             <aside className="max-boss-benchmark-note" aria-label="Boss ranking method">
@@ -347,17 +419,44 @@ const Max = () => {
             >
               <div className="max-results-toolbar max-boss-role-toolbar">
                 <div>
-                  <span>Three-Pokémon battle party</span>
-                  <h2 id="max-boss-role-title">
-                    {bossRoleHeading(role, selectedBoss.name)}
-                  </h2>
+                  <span className="max-results-context">
+                    <span>Role alternatives</span>
+                    <strong>{bossRankingEntries.length} ranked</strong>
+                  </span>
+                  <h2 id="max-boss-role-title">{bossRoleHeading(role, selectedBoss.name)}</h2>
                   <p className="max-ranking-assumptions">
-                    Choose up to three Max Pokémon; these are the strongest picks for
-                    the selected role.
+                    Compare replacements for the selected role in your three-Pokémon
+                    party.
                   </p>
                 </div>
               </div>
-              <MaxRankingList entries={bossRankingEntries} role={role} />
+              <MaxRankingList entries={visibleBossRankings} role={role} />
+              {visibleBossRankings.length < bossRankingEntries.length && (
+                <footer className="max-results-more">
+                  <span>
+                    Showing {visibleBossRankings.length} of {bossRankingEntries.length}
+                  </span>
+                  <button
+                    onClick={() =>
+                      setBossVisibleLimit((current) =>
+                        Math.min(
+                          bossRankingEntries.length,
+                          current + MAX_BOSS_RESULTS_PAGE_SIZE,
+                        ),
+                      )
+                    }
+                    type="button"
+                  >
+                    <FaChevronDown aria-hidden="true" />
+                    Show{' '}
+                    {Math.min(
+                      MAX_BOSS_RESULTS_PAGE_SIZE,
+                      bossRankingEntries.length - visibleBossRankings.length,
+                    )}{' '}
+                    more
+                  </button>
+                </footer>
+              )}
             </section>
           </>
         ) : (

@@ -75,6 +75,7 @@ func (b *Builder) loadBasePokemon(ctx context.Context) ([]int, map[int]map[strin
 			pokemonByID[id]["crownForms"] = []any{}
 			pokemonByID[id]["raid_boss"] = []any{}
 			pokemonByID[id]["max"] = []any{}
+			pokemonByID[id]["max_battle_profiles"] = []any{}
 
 			// Stable-shape defaults: always present optional fields.
 			pokemonByID[id]["female_data"] = nil

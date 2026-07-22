@@ -178,12 +178,29 @@ test.describe('Max Battles page', () => {
           name: 'Can this group beat Dynamax Bulbasaur?',
         }),
       ).toBeVisible();
-      await expect(page.getByLabel('Trainer count')).toHaveValue('4');
+      await expect(page.getByLabel('Trainer count')).toHaveValue('1');
+      await expect(page.locator('.max-simulator-verdict')).toContainText('Likely clear');
+      await page.getByRole('button', { name: 'Add one Trainer' }).click();
+      await expect(page.getByLabel('Trainer count')).toHaveValue('2');
+      await expect.poll(() => new URL(page.url()).searchParams.get('trainers')).toBe('2');
+      await page.reload();
+      await expect(page.getByLabel('Trainer count')).toHaveValue('2');
+
+      await page.getByText('Advanced setup', { exact: true }).click();
+      await expect(page.getByLabel('Boss HP estimate')).toBeVisible();
+      await expect(page.getByLabel('Boss HP estimate')).toHaveValue('1700');
+      await page.getByLabel('Max Battle difficulty').selectOption('three-star');
       await expect(page.getByLabel('Boss HP estimate')).toHaveValue('10000');
+      await expect
+        .poll(() => new URL(page.url()).searchParams.get('difficulty'))
+        .toBe('three-star');
       await expect(page.getByLabel('Recommended three-Pokémon party')).toBeVisible();
       await expect(
         page.getByLabel('Recommended three-Pokémon party').locator('article'),
       ).toHaveCount(3);
+      await expect(page.getByLabel('Damage team member')).toBeVisible();
+      await expect(page.getByLabel('Tank team member')).toBeVisible();
+      await expect(page.getByLabel('Healing team member')).toBeVisible();
       await expect(page.locator('.max-simulator-verdict')).toContainText(
         /modeled damage/i,
       );
@@ -196,8 +213,12 @@ test.describe('Max Battles page', () => {
       await expect(
         page.getByRole('region', { name: 'Boss team role', exact: true }),
       ).toBeVisible();
-      await expect(page.getByText('Three-Pokémon battle party')).toBeVisible();
+      await expect(page.getByText('Role alternatives')).toBeVisible();
       await expect(page.locator('.max-ranking-row')).toHaveCount(3);
+      const showMoreBossPicks = page.getByRole('button', { name: /Show \d+ more/ });
+      await expect(showMoreBossPicks).toBeVisible();
+      await showMoreBossPicks.click();
+      expect(await page.locator('.max-ranking-row').count()).toBeGreaterThan(3);
       await expect(page.getByText('Max cycles').first()).toBeVisible();
       await expect(page.getByText('Next Max').first()).toBeVisible();
       await expect(page.getByText('With Guard').first()).toBeVisible();

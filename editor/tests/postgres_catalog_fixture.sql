@@ -102,6 +102,20 @@ INSERT INTO max_pokemon (
    '/images/max/gigantamax_3.png', '/images/max/shiny_gigantamax_3.png',
    'G-Max Vine Lash', 2);
 
+INSERT INTO max_battle_profiles (
+  profile_id, pokemon_id, variant_kind, form, tier_key, is_default, priority,
+  source_name, source_url, notes
+) VALUES
+  (1, 1, 'dynamax', NULL, 'one-star', TRUE, 100,
+   'Synthetic fixture', 'https://example.test/max/bulbasaur',
+   'Default one-star Dynamax Bulbasaur fixture profile.'),
+  (2, 1, 'dynamax', NULL, 'three-star', FALSE, 10,
+   'Synthetic fixture', NULL,
+   'Promoted three-star event option.'),
+  (3, 3, 'gigantamax', NULL, 'gigantamax', TRUE, 100,
+   'Synthetic fixture', 'https://example.test/max/venusaur',
+   'Default Gigantamax Venusaur fixture profile.');
+
 INSERT INTO pokemon_sizes (
   pokemon_id, pokedex_height, pokedex_weight, height_standard_deviation,
   weight_standard_deviation, height_xxs_threshold, height_xs_threshold,
@@ -171,3 +185,4 @@ INSERT INTO catalog_releases (release_id, source_sha256, source_label, table_cou
   ('fixture-20260715', repeat('0', 64), 'synthetic-test-fixture', '{"pokemon": 12}', TRUE, CURRENT_TIMESTAMP);
 
 SELECT setval('pokemon_catalog.pokemon_backgrounds_id_seq', 2, TRUE);
+SELECT setval('pokemon_catalog.max_battle_profiles_profile_id_seq', 3, TRUE);

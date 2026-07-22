@@ -4,7 +4,9 @@ import type { Move } from '@/types/pokemonSubTypes';
 import type { PokemonVariant } from '@/types/pokemonVariants';
 import type { MaxRankingEntry } from '@/pages/Max/utils/maxBattleModel';
 import {
+  getDefaultMaxBattleTier,
   getMaxBattleBossPreset,
+  getMaxBattleTierOptions,
   simulateMaxBattle,
   type MaxBattleSimulationTeam,
 } from '@/pages/Max/utils/maxBattleSimulation';
@@ -18,6 +20,73 @@ const boss = {
   species_name: 'Venusaur',
   type1_name: 'grass',
   type2_name: 'poison',
+} as PokemonVariant;
+
+const dynamaxBulbasaur = {
+  ...boss,
+  pokemon_id: 1,
+  pokedex_number: 1,
+  variant_id: '1-dynamax',
+  variantType: 'dynamax',
+  name: 'Dynamax Bulbasaur',
+  species_name: 'Bulbasaur',
+  evolves_from: [],
+  evolves_to: undefined,
+  evolutionData: { evolves_to: [2] },
+  rarity: 'Common',
+} as PokemonVariant;
+
+const profiledBulbasaur = {
+  ...dynamaxBulbasaur,
+  evolutionData: undefined,
+  max_battle_profiles: [
+    {
+      profile_id: 100001,
+      pokemon_id: 1,
+      variant_kind: 'dynamax',
+      form: null,
+      tier: 'one-star',
+      label: 'Starter Max',
+      kind: 'standard',
+      boss_hp: 1_800,
+      default_trainers: 1,
+      max_trainers: 4,
+      battle_seconds: 355,
+      enrage_seconds: 350,
+      subgroup_size: 4,
+      meter_orb_energy: 12,
+      starts_at: null,
+      ends_at: null,
+      is_default: true,
+      priority: 100,
+      source_name: 'Curated fixture',
+      source_url: 'https://example.test/max/bulbasaur',
+      notes: 'Catalog-owned profile.',
+    },
+    {
+      profile_id: 100002,
+      pokemon_id: 1,
+      variant_kind: 'dynamax',
+      form: null,
+      tier: 'three-star',
+      label: 'Promoted Starter Max',
+      kind: 'standard',
+      boss_hp: 12_000,
+      default_trainers: 3,
+      max_trainers: 4,
+      battle_seconds: 340,
+      enrage_seconds: 330,
+      subgroup_size: 4,
+      meter_orb_energy: 8,
+      starts_at: '2026-07-01T00:00:00Z',
+      ends_at: '2026-08-01T00:00:00Z',
+      is_default: false,
+      priority: 200,
+      source_name: 'Event fixture',
+      source_url: null,
+      notes: 'Temporary promoted event.',
+    },
+  ],
 } as PokemonVariant;
 
 const fastMove = {
@@ -104,7 +173,7 @@ describe('Max Battle simulator', () => {
       kind: 'gigantamax',
       bossHp: 90_000,
       defaultTrainers: 12,
-      maxTrainers: 40,
+      maxTrainers: 100,
     });
 
     const result = simulateMaxBattle({
@@ -131,10 +200,108 @@ describe('Max Battle simulator', () => {
   });
 
   it('clamps the lobby to the current Gigantamax maximum', () => {
-    const result = simulateMaxBattle({ boss, trainerCount: 100, team });
+    const result = simulateMaxBattle({ boss, trainerCount: 140, team });
 
-    expect(result.trainerCount).toBe(40);
-    expect(result.subgroupCount).toBe(10);
+    expect(result.trainerCount).toBe(100);
+    expect(result.subgroupCount).toBe(25);
+  });
+
+  it('models a basic one-star Dynamax boss as a practical solo', () => {
+    expect(getMaxBattleBossPreset(dynamaxBulbasaur)).toMatchObject({
+      tier: 'one-star',
+      bossHp: 1_700,
+      defaultTrainers: 1,
+    });
+
+    const result = simulateMaxBattle({
+      boss: dynamaxBulbasaur,
+      trainerCount: 1,
+      team: {
+        damage: entry('damage', {
+          hp: 120,
+          bossBenchmark: {
+            ...entry('damage').bossBenchmark!,
+            maxHitDamage: 180,
+          },
+        }),
+        tank: entry('tank', {
+          hp: 140,
+          fastHitDamage: 7,
+          bossBenchmark: {
+            ...entry('tank').bossBenchmark!,
+            incomingDps: 2.5,
+          },
+        }),
+        healing: entry('healing', { hp: 120, healPerAlly: 19 }),
+      },
+    });
+
+    expect(result.trainerCount).toBe(1);
+    expect(result.bossHp).toBe(1_700);
+    expect(result.outcome).toBe('likely-clear');
+  });
+
+  it('uses catalog profile mechanics instead of evolutionary inference', () => {
+    const afterEvent = new Date('2026-08-02T00:00:00Z');
+
+    expect(getDefaultMaxBattleTier(profiledBulbasaur, afterEvent)).toBe('one-star');
+    expect(getMaxBattleTierOptions(profiledBulbasaur)).toEqual([
+      'one-star',
+      'three-star',
+    ]);
+    expect(
+      getMaxBattleBossPreset(profiledBulbasaur, undefined, afterEvent),
+    ).toMatchObject({
+      source: 'catalog',
+      profileId: 100001,
+      tier: 'one-star',
+      label: 'Starter Max',
+      bossHp: 1_800,
+      defaultTrainers: 1,
+      maxTrainers: 4,
+      battleSeconds: 355,
+      enrageSeconds: 350,
+      subgroupSize: 4,
+      meterOrbEnergy: 12,
+      sourceName: 'Curated fixture',
+    });
+  });
+
+  it('activates and expires date-bounded event profiles', () => {
+    const duringEvent = new Date('2026-07-15T00:00:00Z');
+    const afterEvent = new Date('2026-08-02T00:00:00Z');
+
+    expect(getDefaultMaxBattleTier(profiledBulbasaur, duringEvent)).toBe(
+      'three-star',
+    );
+    expect(
+      getMaxBattleBossPreset(profiledBulbasaur, undefined, duringEvent),
+    ).toMatchObject({
+      profileId: 100002,
+      tier: 'three-star',
+      bossHp: 12_000,
+      defaultTrainers: 3,
+    });
+    expect(
+      getMaxBattleBossPreset(profiledBulbasaur, undefined, afterEvent),
+    ).toMatchObject({ profileId: 100001, tier: 'one-star' });
+  });
+
+  it('keeps promoted three-star events meaningfully harder', () => {
+    expect(getMaxBattleBossPreset(dynamaxBulbasaur, 'three-star')).toMatchObject({
+      tier: 'three-star',
+      bossHp: 10_000,
+      defaultTrainers: 2,
+    });
+
+    const result = simulateMaxBattle({
+      boss: dynamaxBulbasaur,
+      tier: 'three-star',
+      trainerCount: 1,
+      team,
+    });
+
+    expect(result.outcome).not.toBe('likely-clear');
   });
 
   it('accounts for locked support moves instead of granting free support', () => {

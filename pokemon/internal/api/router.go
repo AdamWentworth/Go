@@ -250,7 +250,7 @@ func NewRouter(deps RouterDeps) http.Handler {
 		raidDataStats := raidDataCache.Stats()
 		catalogVersion := strings.Trim(catalogStats.ETag, `"`)
 		manifest := pokemonCatalogManifest{
-			SchemaVersion:  2,
+			SchemaVersion:  3,
 			CatalogVersion: catalogVersion,
 			GeneratedAt:    latestCacheBuildAt(fullStats, catalogStats, movesStats, raidDataStats),
 			Chunks: map[string]pokemonCatalogChunk{

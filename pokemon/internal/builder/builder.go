@@ -92,6 +92,7 @@ var (
 		"crownForms",
 		"raid_boss",
 		"max",
+		"max_battle_profiles",
 		"sizes",
 
 		"shadow_shiny_available",
@@ -224,6 +225,30 @@ var (
 		"weight_xl_threshold",
 		"weight_xxl_threshold",
 	}
+
+	maxBattleProfileKeyOrder = []string{
+		"profile_id",
+		"pokemon_id",
+		"variant_kind",
+		"form",
+		"tier",
+		"label",
+		"kind",
+		"boss_hp",
+		"default_trainers",
+		"max_trainers",
+		"battle_seconds",
+		"enrage_seconds",
+		"subgroup_size",
+		"meter_orb_energy",
+		"starts_at",
+		"ends_at",
+		"is_default",
+		"priority",
+		"source_name",
+		"source_url",
+		"notes",
+	}
 )
 
 func (b *Builder) BuildFullPokemonPayload(ctx context.Context) (any, error) {
@@ -344,6 +369,9 @@ func (b *Builder) buildPokemonPayloadBundle(ctx context.Context) (*pokemonPayloa
 		return nil, err
 	}
 	if err := b.attachMax(ctx, orderedIDs, pokemonByID); err != nil {
+		return nil, err
+	}
+	if err := b.attachMaxBattleProfiles(ctx, orderedIDs, pokemonByID); err != nil {
 		return nil, err
 	}
 	if err := b.attachSizes(ctx, orderedIDs, pokemonByID); err != nil {

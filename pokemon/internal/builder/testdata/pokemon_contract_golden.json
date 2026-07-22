@@ -34,6 +34,7 @@
     "crownForms",
     "raid_boss",
     "max",
+    "max_battle_profiles",
     "sizes",
     "shadow_shiny_available",
     "shadow_apex",
@@ -51,7 +52,8 @@
     "megaEvolutions",
     "crownForms",
     "raid_boss",
-    "max"
+    "max",
+    "max_battle_profiles"
   ],
   "required_object_keys": [
     "evolutionData"

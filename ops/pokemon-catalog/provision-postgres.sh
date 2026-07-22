@@ -153,6 +153,10 @@ ALTER SCHEMA pokemon_catalog OWNER TO ${publisher_user};
 REVOKE ALL ON SCHEMA pokemon_catalog FROM PUBLIC;
 GRANT CONNECT, CREATE ON DATABASE ${catalog_database} TO ${publisher_user};
 GRANT CONNECT ON DATABASE ${catalog_database} TO ${reader_user};
+GRANT USAGE ON SCHEMA pokemon_catalog TO ${reader_user};
+GRANT SELECT ON ALL TABLES IN SCHEMA pokemon_catalog TO ${reader_user};
+ALTER DEFAULT PRIVILEGES FOR ROLE ${publisher_user} IN SCHEMA pokemon_catalog
+  GRANT SELECT ON TABLES TO ${reader_user};
 SQL
 
 publisher_url="postgres://${publisher_user}:${publisher_password}@${publisher_host}:${publisher_port}/${catalog_database}?sslmode=disable"

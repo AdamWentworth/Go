@@ -199,8 +199,8 @@ func TestPokemonManifest_OK(t *testing.T) {
 	if err := json.Unmarshal(rr.Body.Bytes(), &manifest); err != nil {
 		t.Fatalf("manifest json: %v", err)
 	}
-	if manifest.SchemaVersion != 2 {
-		t.Fatalf("schemaVersion=%d, want 2", manifest.SchemaVersion)
+	if manifest.SchemaVersion != 3 {
+		t.Fatalf("schemaVersion=%d, want 3", manifest.SchemaVersion)
 	}
 	if manifest.CatalogVersion == "" {
 		t.Fatalf("expected catalogVersion")

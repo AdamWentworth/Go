@@ -1,4 +1,5 @@
 import type { PokemonVariant } from '@/types/pokemonVariants';
+import type { MaxBattleProfile } from '@shared-contracts/pokemon';
 
 import {
   MAX_MODEL_CONSTANTS,
@@ -11,12 +12,29 @@ export type MaxBattleSimulationTeam = {
   healing: MaxRankingEntry;
 };
 
+export type MaxBattleTier =
+  | 'one-star'
+  | 'two-star'
+  | 'three-star'
+  | 'legendary'
+  | 'gigantamax';
+
 export type MaxBattleBossPreset = {
   kind: 'standard' | 'legendary' | 'gigantamax';
+  tier: MaxBattleTier;
   label: string;
   bossHp: number;
   defaultTrainers: number;
   maxTrainers: number;
+  battleSeconds: number;
+  enrageSeconds: number;
+  subgroupSize: number;
+  meterOrbEnergy: number;
+  source: 'catalog' | 'fallback';
+  profileId: number | null;
+  sourceName: string | null;
+  sourceUrl: string | null;
+  notes: string | null;
 };
 
 export type MaxBattleSimulationOutcome =
@@ -44,57 +62,251 @@ export const MAX_BATTLE_SIMULATION_CONSTANTS = {
   enrageSeconds: 360,
   maxPhaseSeconds: 10,
   maxActionsPerTrainer: 3,
-  standardBossHp: 10_000,
-  legendaryBossHp: 50_000,
+  meterOrbEnergy: 10,
+  oneStarBossHp: 1_700,
+  twoStarBossHp: 5_000,
+  threeStarBossHp: 10_000,
+  legendaryBossHp: 17_500,
   gigantamaxBossHp: 90_000,
   standardMaxTrainers: 4,
-  gigantamaxMaxTrainers: 40,
+  gigantamaxMaxTrainers: 100,
 } as const;
+
+const FALLBACK_TIER_PRESETS: Record<MaxBattleTier, MaxBattleBossPreset> = {
+  'one-star': {
+    kind: 'standard',
+    tier: 'one-star',
+    label: 'One-star Max',
+    bossHp: MAX_BATTLE_SIMULATION_CONSTANTS.oneStarBossHp,
+    defaultTrainers: 1,
+    maxTrainers: MAX_BATTLE_SIMULATION_CONSTANTS.standardMaxTrainers,
+    battleSeconds: MAX_BATTLE_SIMULATION_CONSTANTS.enrageSeconds,
+    enrageSeconds: MAX_BATTLE_SIMULATION_CONSTANTS.enrageSeconds,
+    subgroupSize: MAX_MODEL_CONSTANTS.maxGroupSize,
+    meterOrbEnergy: MAX_BATTLE_SIMULATION_CONSTANTS.meterOrbEnergy,
+    source: 'fallback',
+    profileId: null,
+    sourceName: null,
+    sourceUrl: null,
+    notes: null,
+  },
+  'two-star': {
+    kind: 'standard',
+    tier: 'two-star',
+    label: 'Two-star Max',
+    bossHp: MAX_BATTLE_SIMULATION_CONSTANTS.twoStarBossHp,
+    defaultTrainers: 1,
+    maxTrainers: MAX_BATTLE_SIMULATION_CONSTANTS.standardMaxTrainers,
+    battleSeconds: MAX_BATTLE_SIMULATION_CONSTANTS.enrageSeconds,
+    enrageSeconds: MAX_BATTLE_SIMULATION_CONSTANTS.enrageSeconds,
+    subgroupSize: MAX_MODEL_CONSTANTS.maxGroupSize,
+    meterOrbEnergy: MAX_BATTLE_SIMULATION_CONSTANTS.meterOrbEnergy,
+    source: 'fallback',
+    profileId: null,
+    sourceName: null,
+    sourceUrl: null,
+    notes: null,
+  },
+  'three-star': {
+    kind: 'standard',
+    tier: 'three-star',
+    label: 'Three-star Max',
+    bossHp: MAX_BATTLE_SIMULATION_CONSTANTS.threeStarBossHp,
+    defaultTrainers: 2,
+    maxTrainers: MAX_BATTLE_SIMULATION_CONSTANTS.standardMaxTrainers,
+    battleSeconds: MAX_BATTLE_SIMULATION_CONSTANTS.enrageSeconds,
+    enrageSeconds: MAX_BATTLE_SIMULATION_CONSTANTS.enrageSeconds,
+    subgroupSize: MAX_MODEL_CONSTANTS.maxGroupSize,
+    meterOrbEnergy: MAX_BATTLE_SIMULATION_CONSTANTS.meterOrbEnergy,
+    source: 'fallback',
+    profileId: null,
+    sourceName: null,
+    sourceUrl: null,
+    notes: null,
+  },
+  legendary: {
+    kind: 'legendary',
+    tier: 'legendary',
+    label: 'Legendary Max',
+    bossHp: MAX_BATTLE_SIMULATION_CONSTANTS.legendaryBossHp,
+    defaultTrainers: 4,
+    maxTrainers: MAX_BATTLE_SIMULATION_CONSTANTS.standardMaxTrainers,
+    battleSeconds: MAX_BATTLE_SIMULATION_CONSTANTS.enrageSeconds,
+    enrageSeconds: MAX_BATTLE_SIMULATION_CONSTANTS.enrageSeconds,
+    subgroupSize: MAX_MODEL_CONSTANTS.maxGroupSize,
+    meterOrbEnergy: MAX_BATTLE_SIMULATION_CONSTANTS.meterOrbEnergy,
+    source: 'fallback',
+    profileId: null,
+    sourceName: null,
+    sourceUrl: null,
+    notes: null,
+  },
+  gigantamax: {
+    kind: 'gigantamax',
+    tier: 'gigantamax',
+    label: 'Six-star Gigantamax',
+    bossHp: MAX_BATTLE_SIMULATION_CONSTANTS.gigantamaxBossHp,
+    defaultTrainers: 12,
+    maxTrainers: MAX_BATTLE_SIMULATION_CONSTANTS.gigantamaxMaxTrainers,
+    battleSeconds: MAX_BATTLE_SIMULATION_CONSTANTS.enrageSeconds,
+    enrageSeconds: MAX_BATTLE_SIMULATION_CONSTANTS.enrageSeconds,
+    subgroupSize: MAX_MODEL_CONSTANTS.maxGroupSize,
+    meterOrbEnergy: MAX_BATTLE_SIMULATION_CONSTANTS.meterOrbEnergy,
+    source: 'fallback',
+    profileId: null,
+    sourceName: null,
+    sourceUrl: null,
+    notes: null,
+  },
+};
+
+const TIER_ORDER: MaxBattleTier[] = [
+  'one-star',
+  'two-star',
+  'three-star',
+  'legendary',
+  'gigantamax',
+];
 
 const isGigantamaxBoss = (boss: PokemonVariant): boolean =>
   boss.variantType.toLowerCase().includes('gigantamax');
 
 const isSpecialLegendaryBoss = (boss: PokemonVariant): boolean =>
-  [888, 889, 890].includes(boss.pokemon_id);
+  [888, 889, 890].includes(boss.pokemon_id) ||
+  /legendary|mythical|ultra beast/i.test(boss.rarity ?? '');
 
-export const getMaxBattleBossPreset = (
+const profileVariantKind = (
   boss: PokemonVariant,
-): MaxBattleBossPreset => {
-  if (isGigantamaxBoss(boss)) {
-    return {
-      kind: 'gigantamax',
-      label: 'Six-star Gigantamax',
-      bossHp: MAX_BATTLE_SIMULATION_CONSTANTS.gigantamaxBossHp,
-      defaultTrainers: 12,
-      maxTrainers: MAX_BATTLE_SIMULATION_CONSTANTS.gigantamaxMaxTrainers,
-    };
-  }
+): MaxBattleProfile['variant_kind'] => {
+  if (isGigantamaxBoss(boss)) return 'gigantamax';
+  if ([888, 889, 890].includes(boss.pokemon_id)) return 'special';
+  return 'dynamax';
+};
 
-  if (isSpecialLegendaryBoss(boss)) {
-    return {
-      kind: 'legendary',
-      label: 'Legendary Max',
-      bossHp: MAX_BATTLE_SIMULATION_CONSTANTS.legendaryBossHp,
-      defaultTrainers: 4,
-      maxTrainers: MAX_BATTLE_SIMULATION_CONSTANTS.standardMaxTrainers,
-    };
-  }
+const normalizedForm = (value?: string | null): string =>
+  value?.trim().toLowerCase() ?? '';
 
+const isActiveProfile = (profile: MaxBattleProfile, at: Date): boolean => {
+  const timestamp = at.getTime();
+  const startsAt = profile.starts_at ? Date.parse(profile.starts_at) : null;
+  const endsAt = profile.ends_at ? Date.parse(profile.ends_at) : null;
+  return (
+    (startsAt === null || !Number.isFinite(startsAt) || startsAt <= timestamp) &&
+    (endsAt === null || !Number.isFinite(endsAt) || timestamp < endsAt)
+  );
+};
+
+const matchingProfiles = (boss: PokemonVariant): MaxBattleProfile[] => {
+  const kind = profileVariantKind(boss);
+  const form = normalizedForm(boss.form || boss.megaForm);
+  return (boss.max_battle_profiles ?? [])
+    .filter(
+      (profile) =>
+        profile.variant_kind === kind &&
+        (!profile.form || normalizedForm(profile.form) === form),
+    )
+    .sort(
+      (left, right) =>
+        Number(right.priority) - Number(left.priority) ||
+        Number(left.profile_id) - Number(right.profile_id),
+    );
+};
+
+const preferredProfile = (
+  profiles: MaxBattleProfile[],
+  at: Date,
+): MaxBattleProfile | null => {
+  const activeOverride = profiles.find(
+    (profile) =>
+      (profile.starts_at !== null || profile.ends_at !== null) &&
+      isActiveProfile(profile, at),
+  );
+  return activeOverride ?? profiles.find((profile) => profile.is_default) ?? profiles[0] ?? null;
+};
+
+const positiveInteger = (value: number, fallback: number): number => {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) && parsed > 0 ? Math.round(parsed) : fallback;
+};
+
+const presetFromProfile = (profile: MaxBattleProfile): MaxBattleBossPreset => {
+  const fallback = FALLBACK_TIER_PRESETS[profile.tier];
   return {
-    kind: 'standard',
-    label: 'Standard Max',
-    bossHp: MAX_BATTLE_SIMULATION_CONSTANTS.standardBossHp,
-    defaultTrainers: 4,
-    maxTrainers: MAX_BATTLE_SIMULATION_CONSTANTS.standardMaxTrainers,
+    kind: profile.kind,
+    tier: profile.tier,
+    label: profile.label || fallback.label,
+    bossHp: positiveInteger(profile.boss_hp, fallback.bossHp),
+    defaultTrainers: positiveInteger(
+      profile.default_trainers,
+      fallback.defaultTrainers,
+    ),
+    maxTrainers: positiveInteger(profile.max_trainers, fallback.maxTrainers),
+    battleSeconds: positiveInteger(profile.battle_seconds, fallback.battleSeconds),
+    enrageSeconds: positiveInteger(profile.enrage_seconds, fallback.enrageSeconds),
+    subgroupSize: positiveInteger(profile.subgroup_size, fallback.subgroupSize),
+    meterOrbEnergy: Math.max(0, Number(profile.meter_orb_energy) || 0),
+    source: 'catalog',
+    profileId: profile.profile_id,
+    sourceName: profile.source_name,
+    sourceUrl: profile.source_url,
+    notes: profile.notes,
   };
 };
 
-const getSubgroupSizes = (trainerCount: number): number[] => {
+export const getDefaultMaxBattleTier = (
+  boss: PokemonVariant,
+  at = new Date(),
+): MaxBattleTier => {
+  const profile = preferredProfile(matchingProfiles(boss), at);
+  if (profile) return profile.tier;
+  if (isGigantamaxBoss(boss)) return 'gigantamax';
+  if (isSpecialLegendaryBoss(boss)) return 'legendary';
+
+  const evolvesFrom = boss.evolves_from ?? boss.evolutionData?.evolves_from ?? [];
+  const evolvesTo = boss.evolves_to ?? boss.evolutionData?.evolves_to ?? [];
+  if (evolvesFrom.length === 0 && evolvesTo.length > 0) return 'one-star';
+  if (evolvesFrom.length > 0 && evolvesTo.length > 0) return 'two-star';
+  return 'three-star';
+};
+
+export const getMaxBattleTierOptions = (boss: PokemonVariant): MaxBattleTier[] => {
+  const profiles = matchingProfiles(boss);
+  if (profiles.length > 0) {
+    const tiers = new Set(profiles.map((profile) => profile.tier));
+    return TIER_ORDER.filter((tier) => tiers.has(tier));
+  }
+
+  const defaultTier = getDefaultMaxBattleTier(boss);
+  if (defaultTier === 'gigantamax' || defaultTier === 'legendary') {
+    return [defaultTier];
+  }
+  return ['one-star', 'two-star', 'three-star'];
+};
+
+export const getMaxBattleBossPreset = (
+  boss: PokemonVariant,
+  requestedTier?: MaxBattleTier,
+  at = new Date(),
+): MaxBattleBossPreset => {
+  const availableTiers = getMaxBattleTierOptions(boss);
+  const tier =
+    requestedTier && availableTiers.includes(requestedTier)
+      ? requestedTier
+      : getDefaultMaxBattleTier(boss, at);
+  const profile = preferredProfile(
+    matchingProfiles(boss).filter((candidate) => candidate.tier === tier),
+    at,
+  );
+
+  return profile ? presetFromProfile(profile) : FALLBACK_TIER_PRESETS[tier];
+};
+
+const getSubgroupSizes = (trainerCount: number, subgroupSize: number): number[] => {
   const sizes: number[] = [];
   let remaining = trainerCount;
 
   while (remaining > 0) {
-    const size = Math.min(MAX_MODEL_CONSTANTS.maxGroupSize, remaining);
+    const size = Math.min(subgroupSize, remaining);
     sizes.push(size);
     remaining -= size;
   }
@@ -112,9 +324,22 @@ type SubgroupEstimate = {
 const estimateSubgroup = (
   size: number,
   team: MaxBattleSimulationTeam,
+  bossHp: number,
+  preset: MaxBattleBossPreset,
 ): SubgroupEstimate => {
+  const maxEnergyPerFastHit = Math.max(
+    1,
+    Math.floor(
+      Math.max(1, team.tank.fastHitDamage) / Math.max(1, bossHp * 0.005),
+    ),
+  );
   const meterActionsPerTrainer = Math.ceil(
-    MAX_MODEL_CONSTANTS.maxMeterEnergy / size,
+    Math.max(
+      1,
+      MAX_MODEL_CONSTANTS.maxMeterEnergy -
+        preset.meterOrbEnergy,
+    ) /
+      (size * maxEnergyPerFastHit),
   );
   const meterSeconds =
     meterActionsPerTrainer * Math.max(0.5, team.tank.meterSeconds);
@@ -122,11 +347,14 @@ const estimateSubgroup = (
     meterSeconds + MAX_BATTLE_SIMULATION_CONSTANTS.maxPhaseSeconds;
   const maxActions =
     size * MAX_BATTLE_SIMULATION_CONSTANTS.maxActionsPerTrainer;
-  const supportActions = Math.min(
-    Math.max(0, maxActions - 1),
-    Number(team.tank.maxGuardLevel > 0) +
-      Number(team.healing.maxSpiritLevel > 0),
-  );
+  const isEasyTier = preset.tier === 'one-star' || preset.tier === 'two-star';
+  const supportActions = isEasyTier
+    ? 0
+    : Math.min(
+        Math.max(0, maxActions - 1),
+        Number(team.tank.maxGuardLevel > 0) +
+          Number(team.healing.maxSpiritLevel > 0),
+      );
   const attackActions = Math.max(1, maxActions - supportActions);
   const maxHitDamage = Math.max(
     1,
@@ -162,13 +390,15 @@ export const simulateMaxBattle = ({
   bossHp,
   trainerCount,
   team,
+  tier,
 }: {
   boss: PokemonVariant;
   bossHp?: number;
   trainerCount: number;
   team: MaxBattleSimulationTeam;
+  tier?: MaxBattleTier;
 }): MaxBattleSimulationResult => {
-  const preset = getMaxBattleBossPreset(boss);
+  const preset = getMaxBattleBossPreset(boss, tier);
   const normalizedTrainerCount = Math.min(
     preset.maxTrainers,
     Math.max(1, Math.round(trainerCount)),
@@ -177,8 +407,11 @@ export const simulateMaxBattle = ({
     1,
     Math.round(Number.isFinite(Number(bossHp)) ? Number(bossHp) : preset.bossHp),
   );
-  const subgroups = getSubgroupSizes(normalizedTrainerCount).map((size) =>
-    estimateSubgroup(size, team),
+  const subgroups = getSubgroupSizes(
+    normalizedTrainerCount,
+    preset.subgroupSize,
+  ).map((size) =>
+    estimateSubgroup(size, team, normalizedBossHp, preset),
   );
   const lobbyDps = subgroups.reduce((total, group) => total + group.dps, 0);
   const estimatedClearSeconds = normalizedBossHp / Math.max(0.01, lobbyDps);
@@ -187,7 +420,8 @@ export const simulateMaxBattle = ({
     ...subgroups.map((group) => group.survivalSeconds),
   );
   const limitingSeconds = Math.min(
-    MAX_BATTLE_SIMULATION_CONSTANTS.enrageSeconds,
+    preset.battleSeconds,
+    preset.enrageSeconds,
     survivalSeconds,
   );
   const damageBeforeLimit = Math.min(
@@ -231,6 +465,6 @@ export const simulateMaxBattle = ({
       ...subgroups.map((group) => group.supportActions),
     ),
     limitedBySurvival:
-      survivalSeconds < MAX_BATTLE_SIMULATION_CONSTANTS.enrageSeconds,
+      survivalSeconds < Math.min(preset.battleSeconds, preset.enrageSeconds),
   };
 };

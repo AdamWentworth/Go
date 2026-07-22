@@ -7,19 +7,20 @@ import (
 func TestStableShapeAssertions_MinimalSample(t *testing.T) {
 	arr := []map[string]any{
 		{
-			"pokemon_id":     1,
-			"name":           "Bulbasaur",
-			"costumes":       []any{},
-			"moves":          []any{},
-			"fusion":         []any{},
-			"backgrounds":    []any{},
-			"megaEvolutions": []any{},
-			"crownForms":     []any{},
-			"raid_boss":      []any{},
-			"max":            []any{},
-			"female_data":    nil,
-			"sizes":          nil,
-			"evolutionData":  map[string]any{},
+			"pokemon_id":          1,
+			"name":                "Bulbasaur",
+			"costumes":            []any{},
+			"moves":               []any{},
+			"fusion":              []any{},
+			"backgrounds":         []any{},
+			"megaEvolutions":      []any{},
+			"crownForms":          []any{},
+			"raid_boss":           []any{},
+			"max":                 []any{},
+			"max_battle_profiles": []any{},
+			"female_data":         nil,
+			"sizes":               nil,
+			"evolutionData":       map[string]any{},
 		},
 	}
 	assertStableShape(t, arr)
@@ -39,6 +40,7 @@ func assertStableShape(t *testing.T, arr []map[string]any) {
 		"crownForms",
 		"raid_boss",
 		"max",
+		"max_battle_profiles",
 	}
 
 	alwaysPresentAny := []string{
