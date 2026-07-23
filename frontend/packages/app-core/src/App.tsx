@@ -24,6 +24,7 @@ const Pokemon = lazy(() => import('./pages/Pokemon/Pokemon'));
 const Raid = lazy(() => import('./pages/Raid/Raid'));
 const RaidMethodology = lazy(() => import('./pages/Raid/RaidMethodology'));
 const Max = lazy(() => import('./pages/Max/Max'));
+const Pvp = lazy(() => import('./pages/Pvp/Pvp'));
 const Login = lazy(() => import('./pages/Authentication/Login'));
 const Register = lazy(() => import('./pages/Authentication/Register'));
 const Account = lazy(() => import('./pages/Authentication/Account'));
@@ -45,6 +46,7 @@ const AppContent: React.FC = () => (
           <Route path="/raid"         element={<Raid />} />
           <Route path="/raid/methodology" element={<RaidMethodology />} />
           <Route path="/max"          element={<Max />} />
+          <Route path="/pvp"          element={<Pvp />} />
           <Route path="/trades"       element={<Trades />} />
           <Route path="/login"        element={<Login />} />
           <Route path="/register"     element={<Register />} />

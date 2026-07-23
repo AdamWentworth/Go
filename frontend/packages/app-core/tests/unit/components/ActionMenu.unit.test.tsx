@@ -63,6 +63,19 @@ describe('ActionMenu', () => {
     expect(screen.getByTestId('location')).toHaveTextContent('/max');
   });
 
+  it('navigates to the PvP rankings page', () => {
+    render(
+      <MemoryRouter initialEntries={['/pokemon']}>
+        <ActionMenu />
+        <LocationProbe />
+      </MemoryRouter>,
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Action Menu' }));
+    fireEvent.click(screen.getByRole('button', { name: 'PvP' }));
+    expect(screen.getByTestId('location')).toHaveTextContent('/pvp');
+  });
+
   it('keeps the close control disabled until the opening gesture has settled', () => {
     vi.useFakeTimers();
 

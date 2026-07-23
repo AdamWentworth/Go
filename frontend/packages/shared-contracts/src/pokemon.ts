@@ -6,6 +6,7 @@ export const pokemonContract = {
     moves: '/moves',
     raidData: '/raid-data',
     maxData: '/max-data',
+    pvpData: '/pvp-data',
   },
 } as const;
 
@@ -29,8 +30,61 @@ export interface PokemonCatalogManifest {
     moves?: PokemonCatalogChunkManifest;
     raidData?: PokemonCatalogChunkManifest;
     maxData?: PokemonCatalogChunkManifest;
+    pvpData?: PokemonCatalogChunkManifest;
     [key: string]: PokemonCatalogChunkManifest | undefined;
   };
+}
+
+export type PokemonPvPLeagueKey = 'great' | 'ultra' | 'master';
+
+export interface PokemonPvPRankingMove {
+  id: string;
+  name: string;
+  type: string;
+  kind: 'fast' | 'charged';
+}
+
+export interface PokemonPvPRankingEntry {
+  rank: number;
+  sourceRank: number;
+  speciesId: string;
+  name: string;
+  pokemonId?: number;
+  fusionId?: number;
+  variantKind: 'pokemon' | 'shadow' | 'fusion' | 'crown';
+  imageUrl: string;
+  types: string[];
+  moveset: PokemonPvPRankingMove[];
+  score: number;
+  rating: number;
+  categoryScores: number[];
+  recommendedLevel: number;
+  attackIv: number;
+  defenseIv: number;
+  staminaIv: number;
+  statProduct?: number;
+  battleAttack?: number;
+  battleDefense?: number;
+  battleHp?: number;
+}
+
+export interface PokemonPvPLeague {
+  key: PokemonPvPLeagueKey;
+  label: string;
+  cpLimit: number | null;
+  entries: PokemonPvPRankingEntry[];
+}
+
+export interface PokemonPvPRankingsPayload {
+  source: {
+    name: string;
+    version: string;
+    url: string;
+    license: string;
+    importedAt: string;
+    metadata: Record<string, unknown>;
+  } | null;
+  leagues: Record<PokemonPvPLeagueKey, PokemonPvPLeague>;
 }
 
 export interface PokemonMovesChunkEntry {

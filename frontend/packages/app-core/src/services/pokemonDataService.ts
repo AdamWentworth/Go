@@ -13,6 +13,7 @@ import {
   pokemonContract,
   type PokemonCatalogManifest,
   type PokemonMovesChunk,
+  type PokemonPvPRankingsPayload,
   type PokemonRaidDataChunk,
 } from '@shared-contracts/pokemon';
 import { removeStorageItem } from '@/utils/storage';
@@ -33,7 +34,13 @@ function clearStaleLocalStorageCache(): void {
   }
 }
 
-type PokemonChunkName = 'pokemonFull' | 'catalog' | 'moves' | 'raidData' | 'maxData';
+type PokemonChunkName =
+  | 'pokemonFull'
+  | 'catalog'
+  | 'moves'
+  | 'raidData'
+  | 'maxData'
+  | 'pvpData';
 const POKEMON_CHUNK_REQUEST_ATTEMPTS = 2;
 
 function normalizeManifestChunkEndpoint(endpoint: string): string {
@@ -85,7 +92,7 @@ function getPokemonCatalogEndpoint(manifest?: PokemonCatalogManifest | null): st
 
 async function getPokemonChunk<T>(
   manifest: PokemonCatalogManifest,
-  chunk: Exclude<PokemonChunkName, 'pokemonFull' | 'catalog'>,
+  chunk: Exclude<PokemonChunkName, 'pokemonFull' | 'catalog' | 'pvpData'>,
 ): Promise<T | null> {
   if (!manifest.chunks?.[chunk]) return null;
 
@@ -114,6 +121,44 @@ async function getPokemonChunk<T>(
     }
     if (!Array.isArray(payload)) {
       throw new Error(`[pokemonDataService] invalid ${chunk} chunk shape: expected array`);
+    }
+
+    return normalizeAssetUrlsDeep(payload as T);
+  }
+
+  return null;
+}
+
+async function getPokemonObjectChunk<T>(
+  manifest: PokemonCatalogManifest,
+  chunk: 'pvpData',
+): Promise<T | null> {
+  if (!manifest.chunks?.[chunk]) return null;
+
+  const endpoint = getChunkEndpoint(manifest, chunk, '');
+  if (!endpoint) return null;
+
+  const requestUrl = buildUrl(BASE_URL, endpoint);
+  for (let attempt = 1; attempt <= POKEMON_CHUNK_REQUEST_ATTEMPTS; attempt += 1) {
+    let response: Response;
+    try {
+      response = await requestWithPolicy(requestUrl, {
+        method: 'GET',
+        headers: {},
+      });
+    } catch (error) {
+      if (attempt < POKEMON_CHUNK_REQUEST_ATTEMPTS) continue;
+      throw error;
+    }
+
+    const payload = await parseJsonSafe<unknown>(response);
+    if (!response.ok) {
+      const canRetry = response.status === 408 || response.status === 429 || response.status >= 500;
+      if (canRetry && attempt < POKEMON_CHUNK_REQUEST_ATTEMPTS) continue;
+      throw toHttpError(response.status, payload);
+    }
+    if (!payload || typeof payload !== 'object' || Array.isArray(payload)) {
+      throw new Error(`[pokemonDataService] invalid ${chunk} chunk shape: expected object`);
     }
 
     return normalizeAssetUrlsDeep(payload as T);
@@ -225,6 +270,17 @@ export const getPokemonMaxDataChunk = async (
     return await getPokemonChunk<Pokemons>(manifest, 'maxData');
   } catch (error: unknown) {
     log.error('Error fetching the Pokemon Max Battle chunk', error);
+    throw error;
+  }
+};
+
+export const getPokemonPvPDataChunk = async (
+  manifest: PokemonCatalogManifest,
+): Promise<PokemonPvPRankingsPayload | null> => {
+  try {
+    return await getPokemonObjectChunk<PokemonPvPRankingsPayload>(manifest, 'pvpData');
+  } catch (error: unknown) {
+    log.error('Error fetching the Pokemon PvP rankings chunk', error);
     throw error;
   }
 };

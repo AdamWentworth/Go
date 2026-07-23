@@ -4,6 +4,7 @@ import {
   getPokemonCatalogManifest,
   getPokemonMaxDataChunk,
   getPokemonMovesChunk,
+  getPokemonPvPDataChunk,
   getPokemonRaidDataChunk,
   getPokemons,
 } from '@/services/pokemonDataService';
@@ -63,6 +64,15 @@ describe('pokemonDataService', () => {
         version: 'max-v1',
         bytesJson: 33,
         bytesGzip: 18,
+      },
+      pvpData: {
+        name: 'pvpData',
+        endpoint: '/catalog/pvp-data',
+        contentType: 'application/json',
+        etag: '"pvp-v1"',
+        version: 'pvp-v1',
+        bytesJson: 30,
+        bytesGzip: 16,
       },
     },
   };
@@ -170,6 +180,37 @@ describe('pokemonDataService', () => {
       expect.stringContaining('/catalog/max-data'),
       expect.objectContaining({ method: 'GET' }),
     );
+  });
+
+  it('fetches and validates the object-shaped PvP rankings chunk', async () => {
+    const pvpData = {
+      source: null,
+      leagues: {
+        great: { key: 'great', label: 'Great League', cpLimit: 1500, entries: [] },
+        ultra: { key: 'ultra', label: 'Ultra League', cpLimit: 2500, entries: [] },
+        master: { key: 'master', label: 'Master League', cpLimit: null, entries: [] },
+      },
+    };
+    const fetchSpy = vi.spyOn(global, 'fetch').mockResolvedValueOnce(
+      new Response(JSON.stringify(pvpData), { status: 200 }),
+    );
+
+    await expect(getPokemonPvPDataChunk(manifest)).resolves.toEqual(pvpData);
+    expect(fetchSpy).toHaveBeenCalledWith(
+      expect.stringContaining('/catalog/pvp-data'),
+      expect.objectContaining({ method: 'GET' }),
+    );
+  });
+
+  it('rejects an array-shaped PvP rankings chunk', async () => {
+    const fetchSpy = vi.spyOn(global, 'fetch').mockResolvedValueOnce(
+      new Response(JSON.stringify([]), { status: 200 }),
+    );
+
+    await expect(getPokemonPvPDataChunk(manifest)).rejects.toThrow(
+      'invalid pvpData chunk shape',
+    );
+    expect(fetchSpy).toHaveBeenCalledOnce();
   });
 
   it('retries a lazy catalog chunk once after a transient browser load failure', async () => {

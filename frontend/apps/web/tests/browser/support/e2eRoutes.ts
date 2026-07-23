@@ -66,9 +66,85 @@ const maxDataFixture = pokemonFixture.filter((pokemon) => {
   return asRecords(pokemon.max).length > 0 || [888, 889, 890].includes(pokemonId);
 });
 
+const makePvPEntry = (
+  rank: number,
+  speciesId: string,
+  name: string,
+  type: string,
+  moveName: string,
+) => ({
+  rank,
+  sourceRank: rank,
+  speciesId,
+  name,
+  pokemonId: rank,
+  variantKind: 'pokemon',
+  imageUrl: `/images/pokemon/${rank}.png`,
+  types: [type],
+  moveset: [
+    {
+      id: `${speciesId}-fast`,
+      name: 'Quick Attack',
+      type: 'normal',
+      kind: 'fast',
+    },
+    {
+      id: `${speciesId}-charged`,
+      name: moveName,
+      type,
+      kind: 'charged',
+    },
+  ],
+  score: 96 - rank,
+  rating: 700,
+  categoryScores: [700],
+  recommendedLevel: 20 + rank / 2,
+  attackIv: 0,
+  defenseIv: 15,
+  staminaIv: 15,
+});
+
+const pvpDataFixture = {
+  source: {
+    name: 'PvPoke',
+    version: 'e2e-pvpoke',
+    url: 'https://github.com/pvpoke/pvpoke',
+    license: 'MIT',
+    importedAt: '2026-07-23T00:00:00Z',
+    metadata: {},
+  },
+  leagues: {
+    great: {
+      key: 'great',
+      label: 'Great League',
+      cpLimit: 1_500,
+      entries: [
+        makePvPEntry(1, 'clodsire', 'Clodsire', 'poison', 'Earthquake'),
+        makePvPEntry(2, 'azumarill', 'Azumarill', 'water', 'Play Rough'),
+      ],
+    },
+    ultra: {
+      key: 'ultra',
+      label: 'Ultra League',
+      cpLimit: 2_500,
+      entries: [
+        makePvPEntry(1, 'feraligatr', 'Feraligatr', 'water', 'Hydro Cannon'),
+      ],
+    },
+    master: {
+      key: 'master',
+      label: 'Master League',
+      cpLimit: null,
+      entries: [
+        makePvPEntry(1, 'zacian_crowned_sword', 'Zacian Crowned Sword', 'steel', 'Behemoth Blade'),
+      ],
+    },
+  },
+};
+
 const pokemonManifestFixture = {
-  schemaVersion: 2,
-  catalogVersion: 'e2e-catalog-v2',
+  schemaVersion: 3,
+  catalogVersion: 'e2e-catalog-v3',
   generatedAt: '2026-07-14T00:00:00.000Z',
   chunks: {
     pokemonFull: {
@@ -113,6 +189,15 @@ const pokemonManifestFixture = {
       contentType: 'application/json',
       etag: '"e2e-max-data-v1"',
       version: 'e2e-max-data-v1',
+      bytesJson: 1,
+      bytesGzip: 1,
+    },
+    pvpData: {
+      name: 'pvpData',
+      endpoint: '/pvp-data',
+      contentType: 'application/json',
+      etag: '"e2e-pvp-data-v1"',
+      version: 'e2e-pvp-data-v1',
       bytesJson: 1,
       bytesGzip: 1,
     },
@@ -196,6 +281,12 @@ export async function installE2eRoutes(page: Page, options: E2eRouteOptions = {}
   for (const pathPattern of ['**/api/pokemon/max-data', '**/__e2e/pokemon/max-data']) {
     await page.route(pathPattern, async (route) => {
       await fulfillJson(route, maxDataFixture);
+    });
+  }
+
+  for (const pathPattern of ['**/api/pokemon/pvp-data', '**/__e2e/pokemon/pvp-data']) {
+    await page.route(pathPattern, async (route) => {
+      await fulfillJson(route, pvpDataFixture);
     });
   }
 

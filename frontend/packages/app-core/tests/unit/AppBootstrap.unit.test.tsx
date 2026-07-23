@@ -65,13 +65,16 @@ describe('AppBootstrap', () => {
     expect(mockHooks.location).toHaveBeenCalledWith(true);
   });
 
-  it('defers the full application bootstrap on the Max Battle route', () => {
-    renderAt('/max');
+  it.each(['/max', '/pvp'])(
+    'defers the full application bootstrap on the focused data route %s',
+    (pathname) => {
+      renderAt(pathname);
 
-    expect(mockHooks.variants).toHaveBeenCalledWith(false);
-    expect(mockHooks.instances).toHaveBeenCalledWith(false);
-    expect(mockHooks.tags).toHaveBeenCalledWith(false);
-    expect(mockHooks.trades).toHaveBeenCalledWith(false);
-    expect(mockHooks.location).toHaveBeenCalledWith(false);
-  });
+      expect(mockHooks.variants).toHaveBeenCalledWith(false);
+      expect(mockHooks.instances).toHaveBeenCalledWith(false);
+      expect(mockHooks.tags).toHaveBeenCalledWith(false);
+      expect(mockHooks.trades).toHaveBeenCalledWith(false);
+      expect(mockHooks.location).toHaveBeenCalledWith(false);
+    },
+  );
 });

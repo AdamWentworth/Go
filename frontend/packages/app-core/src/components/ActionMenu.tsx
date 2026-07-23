@@ -221,7 +221,7 @@ const ActionMenu: React.FC = () => {
 
             <button
               className="action-menu-item button-pvp"
-              onClick={() => alert("PvP page is not implemented yet!")}
+              onClick={() => handleNavigation('/pvp')}
             >
               <div className="button-content">
                 <img src="/images/btn_pvp.png" alt="" className="button-icon" />

@@ -13,7 +13,9 @@ import { isAuthRoute } from '@/utils/routes/isAuthRoute';
 const AppBootstrap = () => {
   const location = useLocation();
   const enabled =
-    !isAuthRoute(location.pathname) && location.pathname !== '/max';
+    !isAuthRoute(location.pathname) &&
+    location.pathname !== '/max' &&
+    location.pathname !== '/pvp';
 
   useBootstrapVariants(enabled);
   useBootstrapInstances(enabled);
