@@ -84,6 +84,24 @@ class ProductionCatalogSessionTests(unittest.TestCase):
         validate_rankings.assert_not_called()
         tunnel.terminate.assert_called_once()
 
+    def test_read_only_session_skips_cache_refresh(self):
+        session = ProductionCatalogSession(self.settings, refresh_on_success=False)
+        tunnel = Mock()
+        tunnel.poll.return_value = None
+        with patch.object(session, "_run_remote_script") as remote_script, patch.object(
+            session, "_read_publisher_database_url", return_value="postgresql://publisher@127.0.0.1/catalog"
+        ), patch.object(
+            session, "_validate_live_rankings"
+        ) as validate_rankings, patch("production_session.subprocess.Popen", return_value=tunnel), patch(
+            "production_session.time.sleep"
+        ):
+            with session:
+                pass
+
+        self.assertEqual(remote_script.call_count, 1)
+        validate_rankings.assert_not_called()
+        tunnel.terminate.assert_called_once()
+
     def test_live_validation_uses_configured_catalog_without_secrets(self):
         session = ProductionCatalogSession(self.settings)
         with patch.dict(

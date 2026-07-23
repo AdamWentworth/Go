@@ -20,7 +20,7 @@ FRONTEND_DIR = REPO_ROOT / "frontend"
 class ProductionCatalogSession:
     """Create a local SSH tunnel and refresh the API after a clean GUI exit."""
 
-    def __init__(self, settings: Mapping[str, str]):
+    def __init__(self, settings: Mapping[str, str], *, refresh_on_success: bool = True):
         self.host = settings["host"]
         self.ssh_key = settings.get("ssh_key", "")
         self.deploy_root = settings["deploy_root"]
@@ -31,6 +31,7 @@ class ProductionCatalogSession:
         self.catalog_api_url = settings.get("catalog_api_url") or (
             "https://pokegonexus.com/api/pokemon"
         )
+        self.refresh_on_success = refresh_on_success
         self.tunnel: subprocess.Popen[bytes] | None = None
         self.previous_database_url: str | None = None
         self.previous_database_label: str | None = None
@@ -117,7 +118,7 @@ class ProductionCatalogSession:
 
     def __exit__(self, exception_type, _exception, _traceback) -> None:
         try:
-            if exception_type is None:
+            if exception_type is None and self.refresh_on_success:
                 self._run_remote_script(CACHE_REFRESH_SCRIPT)
                 self._validate_live_rankings()
         finally:
