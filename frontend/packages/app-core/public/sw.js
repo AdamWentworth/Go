@@ -46,7 +46,7 @@ self.addEventListener('message', (event) => {
 
   if (!action) return;
 
-  (async () => {
+  const operation = (async () => {
     try {
       switch (action) {
         case 'sendBatchedUpdatesToBackend':
@@ -66,6 +66,10 @@ self.addEventListener('message', (event) => {
       console.error('[SW] Action failed:', action, err);
     }
   })();
+
+  // Mobile browsers may stop an idle worker immediately after this handler
+  // returns. Keep it alive until any queued writes have reached the receiver.
+  event.waitUntil(operation);
 });
 
 /* -------------------------- Lifecycle (no cache) ------------------------- */
@@ -164,12 +168,20 @@ function normalizeBatchedUpdateRequest(data) {
       location: Object.prototype.hasOwnProperty.call(data, 'location') ? data.location : null,
       isLoggedIn:
         typeof data.isLoggedIn === 'boolean' ? data.isLoggedIn : null,
+      receiverApiUrl:
+        typeof data.receiverApiUrl === 'string' ? data.receiverApiUrl : null,
+      receiverBatchedUpdatesPath:
+        typeof data.receiverBatchedUpdatesPath === 'string'
+          ? data.receiverBatchedUpdatesPath
+          : null,
     };
   }
 
   return {
     location: data ?? null,
     isLoggedIn: null,
+    receiverApiUrl: null,
+    receiverBatchedUpdatesPath: null,
   };
 }
 
@@ -182,6 +194,12 @@ async function sendBatchedUpdatesToBackend(data) {
     if (typeof request.isLoggedIn === 'boolean') {
       IS_LOGGED_IN = request.isLoggedIn;
       log('AuthState(sync)', { IS_LOGGED_IN });
+    }
+    if (request.receiverApiUrl) {
+      RECEIVER_API_URL = request.receiverApiUrl;
+    }
+    if (request.receiverBatchedUpdatesPath) {
+      RECEIVER_BATCHED_UPDATES_PATH = request.receiverBatchedUpdatesPath;
     }
 
     if (!IS_LOGGED_IN) {

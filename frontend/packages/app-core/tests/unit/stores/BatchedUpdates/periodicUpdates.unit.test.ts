@@ -35,6 +35,7 @@ describe('periodicUpdates', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.useFakeTimers();
+    vi.stubEnv('VITE_RECEIVER_API_URL', 'https://sync.example.test/api/receiver');
 
     postMessage = vi.fn();
     Object.defineProperty(navigator, 'serviceWorker', {
@@ -62,7 +63,7 @@ describe('periodicUpdates', () => {
     expect(timerRef.current).toBeNull();
   });
 
-  it('sends immediately and schedules timer when user is logged in', async () => {
+  it('sends endpoint config with every request so a restarted mobile worker can sync', async () => {
     setLoggedIn();
     dbMocks.getBatchedPokemonUpdates.mockResolvedValue([]);
     dbMocks.getBatchedTradeUpdates.mockResolvedValue([]);
@@ -77,6 +78,8 @@ describe('periodicUpdates', () => {
         action: 'sendBatchedUpdatesToBackend',
         data: expect.objectContaining({
           isLoggedIn: true,
+          receiverApiUrl: 'https://sync.example.test/api/receiver',
+          receiverBatchedUpdatesPath: '/batchedUpdates',
         }),
       }),
     );

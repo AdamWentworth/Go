@@ -2,6 +2,7 @@
 import { getBatchedPokemonUpdates, getBatchedTradeUpdates } from '../../db/indexedDB';
 import { createScopedLogger } from '@/utils/logger';
 import { getStoredLocation, hasActiveStoredSession } from '@/utils/storage';
+import { receiverContract } from '@shared-contracts/receiver';
 import type { Coordinates } from '@/types/location';
 
 type Ref<T> = { current: T };
@@ -36,6 +37,8 @@ export const periodicUpdates = (
             data: {
               location,
               isLoggedIn,
+              receiverApiUrl: import.meta.env.VITE_RECEIVER_API_URL,
+              receiverBatchedUpdatesPath: receiverContract.endpoints.batchedUpdates,
             },
           });
           log.debug('Update request sent to service worker.');
