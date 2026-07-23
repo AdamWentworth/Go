@@ -352,6 +352,24 @@ export async function dispatchTouchSwipe(
   await dispatchTouch(locator, 'touchend', end, true);
 }
 
+export async function dispatchTouchLongPress(
+  locator: Locator,
+  holdMilliseconds = 350,
+) {
+  const box = await locator.boundingBox();
+  expect(box, 'long-press target should be measurable').not.toBeNull();
+  if (!box) return;
+
+  const point = {
+    clientX: Math.round(box.x + box.width / 2),
+    clientY: Math.round(box.y + box.height / 2),
+  };
+
+  await dispatchTouch(locator, 'touchstart', point);
+  await locator.page().waitForTimeout(holdMilliseconds);
+  await dispatchTouch(locator, 'touchend', point, true);
+}
+
 async function dispatchTouch(
   locator: Locator,
   type: 'touchstart' | 'touchmove' | 'touchend',

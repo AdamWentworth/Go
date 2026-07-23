@@ -5,17 +5,12 @@ import { useRef } from 'react';
 interface UseTouchHandlersProps {
   onSelect: () => void;
   onSwipe?: (dir: 'left' | 'right') => void;
-  toggleCardHighlight: (key: string) => void; // kept for API compatibility, not used here
+  toggleCardHighlight: (key: string) => void;
   setIsFastSelectEnabled: (enabled: boolean) => void;
   isEditable: boolean;
   isFastSelectEnabled: boolean;
   isDisabled: boolean;
-
-  /**
-   * Preferred identifier for this card (usually instance_id, falling back to variant key).
-   * Optional because the hook does not currently use it directly; parent owns selection logic.
-   */
-  selectKey?: string;
+  selectKey: string;
 }
 
 const LONG_PRESS_MS = 300;
@@ -25,10 +20,12 @@ const MOVE_CANCEL_THRESHOLD = 10;
 export function usePokemonCardTouchHandlers({
   onSelect,
   onSwipe,
+  toggleCardHighlight,
   setIsFastSelectEnabled,
   isEditable,
   isFastSelectEnabled,
   isDisabled,
+  selectKey,
 }: UseTouchHandlersProps) {
   const touchStartX = useRef(0);
   const touchStartY = useRef(0);
@@ -52,15 +49,16 @@ export function usePokemonCardTouchHandlers({
     touchStartY.current = touch.clientY;
     lastTouchX.current = touch.clientX;
 
-    // Long-press to enter fast-select mode and select this card via parent logic.
-    if (isEditable) {
+    // Select the initiating card directly because onSelect still belongs to the render
+    // where fast-select was disabled.
+    if (isEditable && !isDisabled && !isFastSelectEnabled) {
       longPressTimeout.current = setTimeout(() => {
-        if (!isSwiping.current && !isScrolling.current && !isFastSelectEnabled) {
+        if (!isSwiping.current && !isScrolling.current) {
           setIsFastSelectEnabled(true);
-          // Defer so the state flip is visible to parent before it runs handleSelect
-          setTimeout(() => onSelect(), 0);
+          toggleCardHighlight(selectKey);
+          touchHandled.current = true;
+          longPressTriggered.current = true;
         }
-        longPressTriggered.current = true;
       }, LONG_PRESS_MS);
     }
   };
@@ -99,7 +97,7 @@ export function usePokemonCardTouchHandlers({
     }
 
     // If we already did a long-press action, do nothing more on touch end.
-    if (isScrolling.current || longPressTriggered.current) return;
+    if (isDisabled || isScrolling.current || longPressTriggered.current) return;
 
     // Always route selection/highlight through parent so it picks the correct key (instance_id vs variant).
     onSelect();

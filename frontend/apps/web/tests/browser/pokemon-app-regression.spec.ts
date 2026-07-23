@@ -7,6 +7,7 @@ import {
   countIndexedDbStore,
   disconnectPokemonGridLayoutProbe,
   disconnectLoadingOverlayProbe,
+  dispatchTouchLongPress,
   dispatchTouchSwipe,
   expectActivePokemonView,
   expectNoPokemonGridOverlapObserved,
@@ -544,6 +545,40 @@ test.describe('pokemon app browser regressions', () => {
       await expect(catalogCard).toHaveClass(/highlighted/);
       await expect(page.locator('.pokemon-overlay')).toHaveCount(0);
       await expect(page.locator('.highlight-action-container')).toBeVisible();
+    } finally {
+      await diagnostics.flush();
+    }
+
+    const blockingErrors = diagnostics.blockingErrors();
+    expect(
+      blockingErrors,
+      `browser diagnostics should not include runtime errors:\n${JSON.stringify(blockingErrors, null, 2)}`,
+    ).toEqual([]);
+  });
+
+  test('long-press selects the initiating instance before enabling mobile fast-select', async ({
+    page,
+    isMobile,
+  }, testInfo) => {
+    test.skip(!isMobile, 'long-press selection coverage only runs on mobile browser projects');
+
+    const diagnostics = attachBrowserDiagnostics(page, testInfo);
+
+    try {
+      const { firstCaughtCard } = await openCaughtPokemonList(page);
+      const secondCaughtCard = page.locator('.pokemon-card[role="button"]').nth(1);
+      await expect(secondCaughtCard).toBeVisible();
+
+      await dispatchTouchLongPress(firstCaughtCard);
+
+      await expect(firstCaughtCard).toHaveClass(/highlighted/);
+      await expect(page.locator('.instance-overlay')).toHaveCount(0);
+      await expect(page.locator('.highlight-action-container')).toBeVisible();
+
+      await secondCaughtCard.tap();
+      await expect(secondCaughtCard).toHaveClass(/highlighted/);
+      await expect(firstCaughtCard).toHaveClass(/highlighted/);
+      await expect(page.locator('.instance-overlay')).toHaveCount(0);
     } finally {
       await diagnostics.flush();
     }
