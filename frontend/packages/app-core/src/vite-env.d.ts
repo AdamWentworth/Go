@@ -10,6 +10,7 @@ interface ImportMetaEnv {
   readonly VITE_EVENTS_API_URL: string;
 
   readonly VITE_FORCED_REFRESH_TIMESTAMP?: string;
+  readonly VITE_SERVICE_WORKER_VERSION?: string;
   readonly VITE_SHOW_PERF_PANEL?: string;
   readonly VITE_LOG_WARNINGS?: string;
   readonly VITE_LOG_LEVEL?: 'debug' | 'info' | 'warn' | 'error' | 'silent';

@@ -34,6 +34,7 @@ jobs:
       VITE_EVENTS_API_URL: ${{ vars.VITE_EVENTS_API_URL || 'https://pokegonexus.com/api/events' }}
       VITE_ASSET_ORIGIN: ${{ vars.VITE_ASSET_ORIGIN || 'https://pokegonexus.com' }}
       VITE_FORCED_REFRESH_TIMESTAMP: ${{ vars.VITE_FORCED_REFRESH_TIMESTAMP || '1770678424675' }}
+      VITE_SERVICE_WORKER_VERSION: ${{ github.sha }}
       FRONTEND_INITIAL_JS_GZIP_BUDGET_KB: ${{ vars.FRONTEND_INITIAL_JS_GZIP_BUDGET_KB || '180' }}
       FRONTEND_MAX_JS_CHUNK_GZIP_KB: ${{ vars.FRONTEND_MAX_JS_CHUNK_GZIP_KB || '130' }}
       FRONTEND_BUNDLE_BUDGET_REPORT_PATH: .artifacts/tests/reports/perf/bundle-budget.json
@@ -181,6 +182,7 @@ jobs:
       VITE_EVENTS_API_URL: ${{ vars.VITE_EVENTS_API_URL || 'https://pokegonexus.com/api/events' }}
       VITE_ASSET_ORIGIN: ${{ vars.VITE_ASSET_ORIGIN || 'https://pokegonexus.com' }}
       VITE_FORCED_REFRESH_TIMESTAMP: ${{ vars.VITE_FORCED_REFRESH_TIMESTAMP || '1770678424675' }}
+      VITE_SERVICE_WORKER_VERSION: ${{ github.sha }}
 
     steps:
       - uses: actions/checkout@v5

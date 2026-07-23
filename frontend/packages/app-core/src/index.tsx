@@ -8,6 +8,7 @@ import { initPerfPaintObservers } from './utils/perfTelemetry';
 import { createScopedLogger } from './utils/logger';
 import { hasActiveStoredSession } from './utils/storage';
 import { applyStoredThemePreferenceToDocument } from './utils/theme';
+import { buildServiceWorkerScriptUrl } from './utils/serviceWorker';
 import { receiverContract } from '@shared-contracts/receiver';
 import './styles/tokens.css';
 import './index.css';
@@ -31,7 +32,11 @@ const shouldDisableServiceWorker =
 if (shouldRegisterServiceWorker) {
   window.addEventListener('load', () => {
     navigator.serviceWorker
-      .register('/sw.js')
+      .register(
+        buildServiceWorkerScriptUrl(
+          import.meta.env.VITE_SERVICE_WORKER_VERSION,
+        ),
+      )
       .then((registration) => {
         if (!registration) {
           log.debug('Service Worker registration skipped by browser');
