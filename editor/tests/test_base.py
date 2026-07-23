@@ -23,6 +23,8 @@ def reset_postgres_fixture(connection):
         cursor.execute(
             """
             TRUNCATE TABLE
+              pokemon_catalog.pvp_rankings,
+              pokemon_catalog.pvp_ranking_snapshots,
               pokemon_catalog.catalog_releases,
               pokemon_catalog.raid_bosses,
               pokemon_catalog.fusion_background_combo_rules,
