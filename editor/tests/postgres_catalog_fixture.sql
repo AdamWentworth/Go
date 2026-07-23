@@ -203,5 +203,45 @@ INSERT INTO raid_bosses (
 INSERT INTO catalog_releases (release_id, source_sha256, source_label, table_counts, is_active, activated_at) VALUES
   ('fixture-20260715', repeat('0', 64), 'synthetic-test-fixture', '{"pokemon": 12}', TRUE, CURRENT_TIMESTAMP);
 
+INSERT INTO pvp_ranking_snapshots (
+  snapshot_id, source_name, source_version, source_url, source_license, is_active, metadata
+) VALUES (
+  'pvpoke-fixture',
+  'PvPoke',
+  'fixture-commit',
+  'https://github.com/pvpoke/pvpoke/tree/fixture-commit',
+  'MIT',
+  TRUE,
+  '{"importedCounts":{"great":1,"ultra":1,"master":1}}'
+);
+
+INSERT INTO pvp_rankings (
+  snapshot_id, league, rank, source_rank, species_id, species_name,
+  pokemon_id, fusion_id, variant_kind, image_url, types, moveset,
+  score, rating, category_scores, recommended_level, attack_iv, defense_iv,
+  stamina_iv, stat_product, battle_attack, battle_defense, battle_hp
+) VALUES
+  (
+    'pvpoke-fixture', 'great', 1, 1, 'bulbasaur', 'Bulbasaur',
+    1, NULL, 'pokemon', '/images/default/pokemon_1.png',
+    '["grass","poison"]',
+    '[{"id":"VINE_WHIP","name":"Vine Whip","type":"grass","kind":"fast"},{"id":"POWER_WHIP","name":"Power Whip","type":"grass","kind":"charged"}]',
+    91.2, 700, '[90,92,88]', 50, 15, 15, 15, 1800, 110.2, 115.3, 130
+  ),
+  (
+    'pvpoke-fixture', 'ultra', 1, 1, 'ivysaur', 'Ivysaur',
+    2, NULL, 'pokemon', '/images/default/pokemon_2.png',
+    '["grass","poison"]',
+    '[{"id":"VINE_WHIP","name":"Vine Whip","type":"grass","kind":"fast"},{"id":"POWER_WHIP","name":"Power Whip","type":"grass","kind":"charged"}]',
+    89.4, 680, '[89,91,87]', 50, 15, 15, 15, 2400, 140.2, 145.3, 155
+  ),
+  (
+    'pvpoke-fixture', 'master', 1, 1, 'mewtwo', 'Mewtwo',
+    150, NULL, 'pokemon', '/images/default/pokemon_150.png',
+    '["psychic"]',
+    '[{"id":"COUNTER","name":"Counter","type":"fighting","kind":"fast"},{"id":"PSYSTRIKE","name":"Psystrike","type":"psychic","kind":"charged"}]',
+    96.8, 820, '[97,95,96]', 50, 15, 15, 15, 7200, 250.2, 180.3, 190
+  );
+
 SELECT setval('pokemon_catalog.pokemon_backgrounds_id_seq', 2, TRUE);
 SELECT setval('pokemon_catalog.max_battle_profiles_profile_id_seq', 3, TRUE);

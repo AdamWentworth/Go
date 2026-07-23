@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
-"""Refresh raid move stats and current move pools from PokeMiners Game Master.
+"""Refresh raid/PvP move stats and current move pools from PokeMiners Game Master.
 
 The updater is intentionally conservative:
-- Updates/inserts move stat rows from current PVE move settings.
+- Pairs PVE move settings with current combatMove PvP settings.
+- Updates/inserts raid and PvP move stat rows.
 - Syncs non-legacy pokemon_moves rows to current Game Master pools.
 - Adds elite move rows as legacy rows.
 - Preserves existing legacy/special rows that are not in current pools.
@@ -44,6 +45,9 @@ class GameMasterMove:
     raid_power: int
     raid_energy: int
     raid_cooldown: int
+    pvp_power: int | None
+    pvp_energy: int | None
+    pvp_turns: int | None
     is_fast: int
 
 
@@ -91,6 +95,11 @@ def move_token_from_template(template_id: str) -> tuple[str, int] | None:
     return token, 0
 
 
+def combat_move_token_from_template(template_id: str) -> str:
+    match = re.match(r"^COMBAT_V\d+_MOVE_(.+)$", template_id)
+    return match.group(1) if match else ""
+
+
 def move_key_from_token(token: str) -> str:
     if token.endswith("_FAST"):
         token = token[:-5]
@@ -136,7 +145,28 @@ def fetch_json(url: str) -> list[dict[str, Any]]:
         return json.loads(response.read().decode("utf-8"))
 
 
+def build_game_master_combat_moves(
+    game_master: list[dict[str, Any]],
+) -> dict[str, dict[str, Any]]:
+    combat_moves: dict[str, dict[str, Any]] = {}
+    for entry in game_master:
+        template_id = str(entry.get("templateId") or "")
+        settings = entry.get("data", {}).get("combatMove")
+        if not settings:
+            continue
+
+        unique_id = str(settings.get("uniqueId") or "")
+        token = unique_id if not unique_id.isdigit() else combat_move_token_from_template(template_id)
+        if not token:
+            continue
+        type_name = normalize_type(settings.get("type"))
+        typed_key = f"{move_key_from_token(token)}:{type_name}"
+        combat_moves[typed_key] = settings
+    return combat_moves
+
+
 def build_game_master_moves(game_master: list[dict[str, Any]]) -> dict[str, GameMasterMove]:
+    combat_moves = build_game_master_combat_moves(game_master)
     moves: dict[str, GameMasterMove] = {}
     for entry in game_master:
         template_id = str(entry.get("templateId") or "")
@@ -149,6 +179,16 @@ def build_game_master_moves(game_master: list[dict[str, Any]]) -> dict[str, Game
         type_name = normalize_type(settings.get("pokemonType"))
         key = move_key_from_token(token)
         typed_key = f"{key}:{type_name}"
+        combat = combat_moves.get(typed_key)
+        pvp_turns = None
+        if combat:
+            # Niantic stores zero-based durationTurns for fast moves. Missing
+            # durationTurns is the normal one-turn fast-move representation.
+            pvp_turns = (
+                int(combat.get("durationTurns") or 0) + 1
+                if is_fast
+                else 1
+            )
         moves[typed_key] = GameMasterMove(
             key=key,
             typed_key=typed_key,
@@ -159,6 +199,9 @@ def build_game_master_moves(game_master: list[dict[str, Any]]) -> dict[str, Game
             raid_power=round(float(settings.get("power") or 0)),
             raid_energy=round(float(settings.get("energyDelta") or 0)),
             raid_cooldown=round(float(settings.get("durationMs") or 0)),
+            pvp_power=round(float(combat.get("power") or 0)) if combat else None,
+            pvp_energy=round(float(combat.get("energyDelta") or 0)) if combat else None,
+            pvp_turns=pvp_turns,
             is_fast=is_fast,
         )
     return moves
@@ -277,12 +320,33 @@ def ensure_moves(
             continue
 
         if local:
+            local_pvp_power = (
+                None if local["pvp_power"] is None else int(local["pvp_power"])
+            )
+            local_pvp_energy = (
+                None if local["pvp_energy"] is None else int(local["pvp_energy"])
+            )
+            local_pvp_turns = (
+                None if local["pvp_turns"] is None else int(local["pvp_turns"])
+            )
             changed = (
                 int(local["type_id"]) != type_id
                 or int(local["is_fast"] or 0) != gm_move.is_fast
                 or int(local["raid_power"] or 0) != gm_move.raid_power
                 or int(local["raid_energy"] or 0) != gm_move.raid_energy
                 or int(local["raid_cooldown"] or 0) != gm_move.raid_cooldown
+                or (
+                    gm_move.pvp_power is not None
+                    and local_pvp_power != gm_move.pvp_power
+                )
+                or (
+                    gm_move.pvp_energy is not None
+                    and local_pvp_energy != gm_move.pvp_energy
+                )
+                or (
+                    gm_move.pvp_turns is not None
+                    and local_pvp_turns != gm_move.pvp_turns
+                )
             )
             if changed:
                 updates += 1
@@ -290,7 +354,14 @@ def ensure_moves(
                     conn.execute(
                         """
                         UPDATE moves
-                        SET type_id = ?, is_fast = ?, raid_power = ?, raid_energy = ?, raid_cooldown = ?
+                        SET type_id = ?,
+                            is_fast = ?,
+                            raid_power = ?,
+                            raid_energy = ?,
+                            raid_cooldown = ?,
+                            pvp_power = COALESCE(?, pvp_power),
+                            pvp_energy = COALESCE(?, pvp_energy),
+                            pvp_turns = COALESCE(?, pvp_turns)
                         WHERE move_id = ?
                         """,
                         (
@@ -299,6 +370,9 @@ def ensure_moves(
                             gm_move.raid_power,
                             gm_move.raid_energy,
                             gm_move.raid_cooldown,
+                            gm_move.pvp_power,
+                            gm_move.pvp_energy,
+                            gm_move.pvp_turns,
                             local["move_id"],
                         ),
                     )
@@ -312,15 +386,18 @@ def ensure_moves(
                         pvp_energy, raid_cooldown, pvp_turns, is_fast, fusion_id,
                         shadow, purified, apex
                     )
-                    VALUES (?, ?, ?, ?, NULL, ?, NULL, ?, NULL, ?, NULL, NULL, NULL, NULL)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NULL, NULL, NULL, NULL)
                     """,
                     (
                         next_move_id,
                         gm_move.name,
                         type_id,
                         gm_move.raid_power,
+                        gm_move.pvp_power,
                         gm_move.raid_energy,
+                        gm_move.pvp_energy,
                         gm_move.raid_cooldown,
+                        gm_move.pvp_turns,
                         bool(gm_move.is_fast),
                     ),
                 )

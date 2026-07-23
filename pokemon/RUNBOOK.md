@@ -114,3 +114,35 @@ After Redis restarts, an existing API process continues serving its L1 memory
 cache and repopulates L2 on the next catalog refresh. Restarting the API also
 rebuilds any missing Redis payloads from PostgreSQL. Do not make `/readyz`
 depend on Redis and do not add persistence to this cache.
+
+## PvP Data Refresh
+
+The catalog keeps two independently versioned PvP inputs:
+
+- Niantic Game Master move stats and legal move pools, mirrored by PokeMiners.
+- PvPoke's MIT-licensed Great, Ultra, and Master League simulation rankings.
+
+From `editor/`, audit current move data without writing:
+
+```bash
+./.venv/bin/python ../pokemon/scripts/refresh_game_master_moves.py
+```
+
+Apply only after reviewing the reported move and assignment counts:
+
+```bash
+./.venv/bin/python ../pokemon/scripts/refresh_game_master_moves.py --apply
+```
+
+After catalog migration `0006_pvp_rankings.sql` is deployed, import the current
+PvPoke commit:
+
+```bash
+./.venv/bin/python ../pokemon/scripts/import_pvpoke_rankings.py
+```
+
+Both production commands use the editor's retained-backup SSH session, refresh
+and prewarm the API cache on success, and leave source version and license
+metadata in the published `/pokemon/pvp-data` payload. The importer filters
+unreleased or locally unsupported forms instead of publishing entries the app
+cannot display.

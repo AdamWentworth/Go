@@ -41,6 +41,20 @@ func buildSmallRaidDataPayload(ctx context.Context) (any, error) {
 	}, nil
 }
 
+func buildSmallPvPDataPayload(ctx context.Context) (any, error) {
+	return map[string]any{
+		"source": map[string]any{"name": "PvPoke", "version": "test"},
+		"leagues": map[string]any{
+			"great": map[string]any{
+				"key": "great",
+				"entries": []any{
+					map[string]any{"rank": 1, "speciesId": "bulbasaur"},
+				},
+			},
+		},
+	}, nil
+}
+
 func newTestCache(name string, build func(context.Context) (any, error)) *cache.JSONGzipCache {
 	return cache.NewJSONGzipCache(cache.JSONGzipCacheConfig{
 		Name:         name,
@@ -67,6 +81,7 @@ func newTestRouter(t *testing.T) http.Handler {
 	catalogCache := newTestCache("/pokemon/catalog", buildSmallCatalogPayload)
 	movesCache := newTestCache("/pokemon/moves", buildSmallMovesPayload)
 	raidDataCache := newTestCache("/pokemon/raid-data", buildSmallRaidDataPayload)
+	pvpDataCache := newTestCache("/pokemon/pvp-data", buildSmallPvPDataPayload)
 
 	return api.NewRouter(api.RouterDeps{
 		Cfg:           cfg,
@@ -75,6 +90,7 @@ func newTestRouter(t *testing.T) http.Handler {
 		CatalogCache:  catalogCache,
 		MovesCache:    movesCache,
 		RaidDataCache: raidDataCache,
+		PvPDataCache:  pvpDataCache,
 	})
 }
 
@@ -214,6 +230,8 @@ func TestPokemonManifest_OK(t *testing.T) {
 		"catalog":     "/catalog",
 		"moves":       "/moves",
 		"raidData":    "/raid-data",
+		"maxData":     "/max-data",
+		"pvpData":     "/pvp-data",
 	}
 	for name, endpoint := range wantChunks {
 		chunk, ok := manifest.Chunks[name]
@@ -233,6 +251,32 @@ func TestPokemonManifest_OK(t *testing.T) {
 
 	if manifest.Chunks["catalog"].Version != manifest.CatalogVersion {
 		t.Fatalf("catalog chunk version %q does not match catalogVersion %q", manifest.Chunks["catalog"].Version, manifest.CatalogVersion)
+	}
+}
+
+func TestPokemonPvPDataEndpoint_OK(t *testing.T) {
+	r := newTestRouter(t)
+	req := httptest.NewRequest(http.MethodGet, "/pokemon/pvp-data", nil)
+	req.Header.Set("Origin", "http://localhost:3000")
+	rr := httptest.NewRecorder()
+	r.ServeHTTP(rr, req)
+
+	if rr.Code != http.StatusOK {
+		t.Fatalf("status=%d body=%s", rr.Code, rr.Body.String())
+	}
+	var payload struct {
+		Source struct {
+			Name string `json:"name"`
+		} `json:"source"`
+		Leagues map[string]struct {
+			Entries []map[string]any `json:"entries"`
+		} `json:"leagues"`
+	}
+	if err := json.Unmarshal(rr.Body.Bytes(), &payload); err != nil {
+		t.Fatalf("invalid JSON response: %v", err)
+	}
+	if payload.Source.Name != "PvPoke" || len(payload.Leagues["great"].Entries) != 1 {
+		t.Fatalf("unexpected PvP payload: %#v", payload)
 	}
 }
 

@@ -78,6 +78,7 @@ func main() {
 	movesCache := newPayloadCache("/pokemon/moves", payloadBuilder.BuildMovesPayload)
 	raidDataCache := newPayloadCache("/pokemon/raid-data", payloadBuilder.BuildRaidDataPayload)
 	maxDataCache := newPayloadCache("/pokemon/max-data", payloadBuilder.BuildMaxBattlePayload)
+	pvpDataCache := newPayloadCache("/pokemon/pvp-data", payloadBuilder.BuildPvPRankingsPayload)
 
 	baseCtx, baseCancel := context.WithCancel(context.Background())
 	defer baseCancel()
@@ -92,6 +93,7 @@ func main() {
 		MovesCache:              movesCache,
 		RaidDataCache:           raidDataCache,
 		MaxDataCache:            maxDataCache,
+		PvPDataCache:            pvpDataCache,
 		InvalidatePayloadBundle: payloadBuilder.InvalidatePokemonPayloadBundle,
 	})
 
@@ -120,6 +122,7 @@ func main() {
 				{name: "/pokemon/moves", cache: movesCache},
 				{name: "/pokemon/raid-data", cache: raidDataCache},
 				{name: "/pokemon/max-data", cache: maxDataCache},
+				{name: "/pokemon/pvp-data", cache: pvpDataCache},
 			} {
 				if err := entry.cache.EnsureBuilt(ctx); err != nil {
 					logger.Error(fmt.Sprintf("Prewarm failed for %s: %v", entry.name, err))

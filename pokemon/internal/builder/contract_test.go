@@ -54,6 +54,10 @@ func TestPokemonPayloadChunks_KeepCatalogLeanAndAddressable(t *testing.T) {
 	if err != nil {
 		t.Fatalf("BuildMaxBattlePayload: %v", err)
 	}
+	pvpPayload, err := b.BuildPvPRankingsPayload(ctx)
+	if err != nil {
+		t.Fatalf("BuildPvPRankingsPayload: %v", err)
+	}
 
 	decode := func(label string, payload any) []map[string]any {
 		t.Helper()
@@ -73,6 +77,30 @@ func TestPokemonPayloadChunks_KeepCatalogLeanAndAddressable(t *testing.T) {
 	moves := decode("moves", movesPayload)
 	raids := decode("raid data", raidPayload)
 	maxEntries := decode("max data", maxPayload)
+
+	pvpRaw, err := json.Marshal(pvpPayload)
+	if err != nil {
+		t.Fatalf("marshal PvP data: %v", err)
+	}
+	var pvp struct {
+		Source *struct {
+			Name string `json:"name"`
+		} `json:"source"`
+		Leagues map[string]struct {
+			Entries []map[string]any `json:"entries"`
+		} `json:"leagues"`
+	}
+	if err := json.Unmarshal(pvpRaw, &pvp); err != nil {
+		t.Fatalf("decode PvP data: %v", err)
+	}
+	if pvp.Source == nil || pvp.Source.Name != "PvPoke" {
+		t.Fatalf("PvP snapshot source missing: %#v", pvp.Source)
+	}
+	for _, league := range []string{"great", "ultra", "master"} {
+		if len(pvp.Leagues[league].Entries) == 0 {
+			t.Fatalf("%s PvP league has no fixture entries", league)
+		}
+	}
 
 	if len(full) == 0 || len(catalog) != len(full) || len(moves) != len(full) || len(raids) != len(full) {
 		t.Fatalf("chunk lengths full=%d catalog=%d moves=%d raids=%d", len(full), len(catalog), len(moves), len(raids))
