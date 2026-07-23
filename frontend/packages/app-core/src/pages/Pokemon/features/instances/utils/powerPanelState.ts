@@ -1,6 +1,7 @@
 import type { PokemonInstance } from '@/types/pokemonInstance';
 import type { CrownForm, MegaEvolution } from '@/types/pokemonSubTypes';
 import type { PokemonVariant } from '@/types/pokemonVariants';
+import { isSpecialMaxMoveEligible } from '@/features/max/specialMaxPokemon';
 
 import type { MegaData } from './buildInstanceChanges';
 
@@ -10,6 +11,7 @@ type PowerPanelPokemon = {
   image_url_shiny?: string;
   variantType?: PokemonVariant['variantType'];
   variant_id?: PokemonVariant['variant_id'];
+  form?: string | null;
   max?: PokemonVariant['max'];
   instanceData?: Partial<PokemonInstance>;
 };
@@ -20,6 +22,7 @@ type ResolvePowerPanelStateArgs = {
   megaData?: MegaData | Partial<MegaData>;
   megaEvolutions?: MegaEvolution[];
   crownForms?: CrownForm[];
+  crownData?: { isCrown: boolean; crownForm: string | null };
   isShadow: boolean;
   name: string;
 };
@@ -30,6 +33,7 @@ export const resolvePowerPanelState = ({
   megaData,
   megaEvolutions = [],
   crownForms = [],
+  crownData,
   isShadow,
   name,
 }: ResolvePowerPanelStateArgs) => {
@@ -42,12 +46,18 @@ export const resolvePowerPanelState = ({
   const hasMaxVariant =
     typeof pokemon.variantType === 'string' &&
     (pokemon.variantType.includes('dynamax') || pokemon.variantType.includes('gigantamax'));
+  const hasSpecialMaxAccess = isSpecialMaxMoveEligible({
+    pokemonId: pokemon.pokemon_id,
+    variantType: pokemon.variantType,
+    form: crownData?.isCrown ? crownData.crownForm : pokemon.form,
+    isCrowned: crownData?.isCrown,
+  });
+  const hasCatalogMaxAccess =
+    hasMaxVariant && Array.isArray(pokemon.max) && pokemon.max.length > 0;
 
   const canRenderMax =
     editMode &&
-    hasMaxVariant &&
-    Array.isArray(pokemon.max) &&
-    pokemon.max.length > 0 &&
+    (hasCatalogMaxAccess || hasSpecialMaxAccess) &&
     !pokemon.instanceData?.shadow &&
     !pokemon.instanceData?.purified &&
     !pokemon.variantType?.includes('costume');
@@ -66,6 +76,8 @@ export const resolvePowerPanelState = ({
   return {
     normalizedMegaData,
     hasMaxVariant,
+    hasSpecialMaxAccess,
+    hasCatalogMaxAccess,
     canRenderMax,
     canRenderMega,
     canRenderCrown,

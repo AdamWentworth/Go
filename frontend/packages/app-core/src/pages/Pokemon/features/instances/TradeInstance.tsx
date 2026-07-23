@@ -25,6 +25,7 @@ import { createScopedLogger } from '@/utils/logger';
 import { getCrownFormLabel, resolveActiveCrownForm } from '@/utils/crownHelpers';
 import { resolveCrownDisplayData } from '@/features/pokemonDisplay/crownDisplayData';
 import { resolveCrownMovePool } from '@/features/pokemonDisplay/crownMovePool';
+import { isSpecialMaxMoveEligible } from '@/features/max/specialMaxPokemon';
 
 const log = createScopedLogger('TradeInstance');
 
@@ -142,10 +143,17 @@ const TradeInstance: React.FC<TradeInstanceProps> = ({ pokemon, isEditable }) =>
   );
   const showPowerSection = Boolean(
     (editMode &&
-      typeof pokemon.variantType === 'string' &&
-      (pokemon.variantType.includes('dynamax') || pokemon.variantType.includes('gigantamax')) &&
-      Array.isArray(pokemon.max) &&
-      pokemon.max.length > 0 &&
+      ((typeof pokemon.variantType === 'string' &&
+        (pokemon.variantType.includes('dynamax') ||
+          pokemon.variantType.includes('gigantamax')) &&
+        Array.isArray(pokemon.max) &&
+        pokemon.max.length > 0) ||
+        isSpecialMaxMoveEligible({
+          pokemonId: pokemon.pokemon_id,
+          variantType: pokemon.variantType,
+          form: crownData.isCrown ? crownData.crownForm : pokemon.form,
+          isCrowned: crownData.isCrown,
+        })) &&
       !isShadow &&
       !isPurified &&
       !pokemon.variantType?.includes('costume')) ||

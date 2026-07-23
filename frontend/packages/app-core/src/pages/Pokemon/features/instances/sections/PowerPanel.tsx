@@ -16,6 +16,7 @@ type PokemonWithInstance = {
   image_url_shiny?: string;
   variantType?: PokemonVariant['variantType'];
   variant_id?: PokemonVariant['variant_id'];
+  form?: string | null;
   max?: PokemonVariant['max'];
   instanceData?: Partial<PokemonInstance>;
 };
@@ -70,6 +71,7 @@ const PowerPanel: React.FC<PowerPanelProps> = ({
   const {
     normalizedMegaData,
     canRenderMax,
+    hasSpecialMaxAccess,
     canRenderMega,
     canRenderCrown,
     isShiny,
@@ -80,6 +82,7 @@ const PowerPanel: React.FC<PowerPanelProps> = ({
     megaData,
     megaEvolutions,
     crownForms,
+    crownData,
     isShadow,
     name,
   });
@@ -96,6 +99,7 @@ const PowerPanel: React.FC<PowerPanelProps> = ({
               gigantamax={gigantamax}
               onToggleMax={onToggleMax}
               showMaxOptions={showMaxOptions}
+              isSpecialMax={hasSpecialMaxAccess}
             />
           </div>
         ) : null}
@@ -129,20 +133,22 @@ const PowerPanel: React.FC<PowerPanelProps> = ({
         ) : null}
       </div>
 
-      <MaxMovesComponent
-        pokemon={pokemon}
-        editMode={editMode}
-        showMaxOptions={showMaxOptions}
-        setShowMaxOptions={() => {
-          // Kept for compatibility; no-op here.
-        }}
-        maxAttack={maxAttack}
-        maxGuard={maxGuard}
-        maxSpirit={maxSpirit}
-        handleMaxAttackChange={onMaxAttackChange}
-        handleMaxGuardChange={onMaxGuardChange}
-        handleMaxSpiritChange={onMaxSpiritChange}
-      />
+      {canRenderMax ? (
+        <MaxMovesComponent
+          pokemon={pokemon}
+          editMode={editMode}
+          showMaxOptions={showMaxOptions}
+          setShowMaxOptions={() => {
+            // Kept for compatibility; no-op here.
+          }}
+          maxAttack={maxAttack}
+          maxGuard={maxGuard}
+          maxSpirit={maxSpirit}
+          handleMaxAttackChange={onMaxAttackChange}
+          handleMaxGuardChange={onMaxGuardChange}
+          handleMaxSpiritChange={onMaxSpiritChange}
+        />
+      ) : null}
     </>
   );
 };

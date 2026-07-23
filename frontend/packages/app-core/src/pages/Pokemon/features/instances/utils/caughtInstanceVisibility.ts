@@ -1,3 +1,5 @@
+import { isSpecialMaxMoveEligible } from '@/features/max/specialMaxPokemon';
+
 type FusionOption = {
   base_pokemon_id1?: number | null;
   fusion_id?: number | null;
@@ -7,7 +9,10 @@ type CaughtPowerVisibilityInput = {
   megaEvolutionCount: number;
   crownFormCount: number;
   pokemonName: string;
+  pokemonId?: number | null;
   variantType?: string | null;
+  form?: string | null;
+  isCrowned?: boolean;
   maxCount: number;
   editMode: boolean;
   isShadow: boolean;
@@ -36,7 +41,10 @@ export const resolveCaughtPowerVisibility = ({
   megaEvolutionCount,
   crownFormCount,
   pokemonName,
+  pokemonId,
   variantType,
+  form,
+  isCrowned,
   maxCount,
   editMode,
   isShadow,
@@ -48,6 +56,13 @@ export const resolveCaughtPowerVisibility = ({
   const hasMaxVariant =
     typeof variantType === 'string' &&
     (variantType.includes('dynamax') || variantType.includes('gigantamax'));
+  const hasSpecialMaxAccess = isSpecialMaxMoveEligible({
+    pokemonId,
+    variantType,
+    form,
+    isCrowned,
+  });
+  const hasCatalogMaxAccess = hasMaxVariant && maxCount > 0;
 
   const canRenderMegaPower = Boolean(
     megaEvolutionCount > 0 && !isShadow && !normalizedName.includes('clone'),
@@ -55,8 +70,7 @@ export const resolveCaughtPowerVisibility = ({
   const canRenderCrownPower = Boolean(crownFormCount > 0 && !isShadow);
   const canRenderMaxPower = Boolean(
     editMode &&
-      hasMaxVariant &&
-      maxCount > 0 &&
+      (hasCatalogMaxAccess || hasSpecialMaxAccess) &&
       !isShadow &&
       !isPurified &&
       !variantType?.includes('costume'),
@@ -75,6 +89,8 @@ export const resolveCaughtPowerVisibility = ({
     canRenderMaxPower,
     canRenderFusionPower,
     hasMaxVariant,
+    hasSpecialMaxAccess,
+    hasCatalogMaxAccess,
     showPowerSectionDivider,
   };
 };

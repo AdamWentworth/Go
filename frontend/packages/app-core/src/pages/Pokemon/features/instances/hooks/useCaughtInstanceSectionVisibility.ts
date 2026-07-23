@@ -23,6 +23,7 @@ type UseCaughtInstanceSectionVisibilityArgs = {
   movesPokemon: MovesVisibilityPokemon;
   megaEvolutionCount: number;
   crownFormCount: number;
+  isCrowned: boolean;
   pokemonName: string;
   variantType?: string | null;
   maxCount: number;
@@ -43,6 +44,7 @@ export const useCaughtInstanceSectionVisibility = ({
   movesPokemon,
   megaEvolutionCount,
   crownFormCount,
+  isCrowned,
   pokemonName,
   variantType,
   maxCount,
@@ -68,7 +70,10 @@ export const useCaughtInstanceSectionVisibility = ({
         megaEvolutionCount,
         crownFormCount,
         pokemonName,
+        pokemonId: pokemon.pokemon_id,
         variantType,
+        form: pokemon.form,
+        isCrowned,
         maxCount,
         editMode,
         isShadow,
@@ -80,11 +85,14 @@ export const useCaughtInstanceSectionVisibility = ({
       crownFormCount,
       editMode,
       fusionOptionCount,
+      isCrowned,
       isFused,
       isPurified,
       isShadow,
       maxCount,
       megaEvolutionCount,
+      pokemon.form,
+      pokemon.pokemon_id,
       pokemonName,
       variantType,
     ],

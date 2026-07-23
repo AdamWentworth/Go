@@ -2,13 +2,8 @@
 
 import React from 'react';
 import './MaxComponent.css';
-import type { MaxForm } from '@/types/pokemonSubTypes';
-import type { PokemonInstance } from '@/types/pokemonInstance';
 
 type PokemonProps = {
-  max?: MaxForm[];
-  instanceData?: Partial<Pick<PokemonInstance, 'shadow' | 'purified'>>;
-  variantType?: string;
   variant_id?: string;
 };
 
@@ -19,6 +14,7 @@ interface MaxComponentProps {
   gigantamax: boolean;
   onToggleMax: () => void;
   showMaxOptions: boolean;
+  isSpecialMax?: boolean;
 }
 
 const MaxComponent: React.FC<MaxComponentProps> = ({
@@ -27,27 +23,12 @@ const MaxComponent: React.FC<MaxComponentProps> = ({
   dynamax,
   gigantamax,
   onToggleMax,
-  showMaxOptions
+  showMaxOptions,
+  isSpecialMax = false,
 }) => {
   const key = pokemon.variant_id ?? '';
-  const hasMaxVariant =
-    pokemon.variantType &&
-    (pokemon.variantType.includes('dynamax') || pokemon.variantType.includes('gigantamax'));
-
-  if (
-    !editMode ||
-    !hasMaxVariant ||
-    !Array.isArray(pokemon.max) ||
-    pokemon.max.length === 0 ||
-    pokemon.instanceData?.shadow ||
-    pokemon.instanceData?.purified ||
-    (pokemon.variantType && pokemon.variantType.includes('costume'))
-  ) {
-    return null;
-  }
-
-  const maxEntry: MaxForm | undefined = pokemon.max[0];
-  if (!maxEntry) return null;
+  if (!editMode) return null;
+  const label = gigantamax ? 'Gigantamax' : isSpecialMax ? 'Max Moves' : 'Dynamax';
 
   return (
     <div className="max-component">
@@ -64,8 +45,8 @@ const MaxComponent: React.FC<MaxComponentProps> = ({
               ? '/images/gigantamax-icon.png'
               : '/images/dynamax-icon.png'
           }
-          alt={gigantamax ? 'Gigantamax' : 'Dynamax'}
-          className={gigantamax || dynamax ? 'saturated' : 'desaturated'}
+          alt={label}
+          className={gigantamax || dynamax || isSpecialMax ? 'saturated' : 'desaturated'}
         />
       </div>
     </div>

@@ -327,6 +327,7 @@ const CaughtInstance: React.FC<CaughtInstanceProps> = ({
     movesPokemon,
     megaEvolutionCount: megaEvolutions.length,
     crownFormCount: crownForms.length,
+    isCrowned: crownData.isCrown,
     pokemonName: name,
     variantType,
     maxCount: Array.isArray(pokemon.max) ? pokemon.max.length : 0,

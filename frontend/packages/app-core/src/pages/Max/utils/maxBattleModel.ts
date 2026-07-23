@@ -1,6 +1,10 @@
 import type { Move } from '@/types/pokemonSubTypes';
 import type { PokemonVariant } from '@/types/pokemonVariants';
 
+import {
+  getSpecialMaxAttacker,
+  type SpecialMaxAttacker,
+} from '@/features/max/specialMaxPokemon';
 import { cpMultipliers } from '@/pages/Raid/utils/constants';
 import {
   buildRaidIncomingPressureScenarios,
@@ -14,11 +18,6 @@ import {
   resolveRaidAttackerLevel,
 } from '@/pages/Raid/utils/raidAttackerModel';
 import { getTypeEffectivenessMultiplier } from '@/pages/Raid/utils/typeEffectiveness';
-
-import {
-  getSpecialMaxAttacker,
-  type SpecialMaxAttacker,
-} from './specialMaxAttackers';
 
 export type MaxRole = 'damage' | 'tank' | 'healing';
 export type MaxMoveLevel = 0 | 1 | 2 | 3;

@@ -103,6 +103,46 @@ describe('caughtInstanceVisibility utils', () => {
     });
   });
 
+  it('shows special Max upgrades only for eligible crowned forms and Eternatus', () => {
+    const base = {
+      megaEvolutionCount: 0,
+      crownFormCount: 0,
+      pokemonName: 'Pokemon',
+      variantType: 'default',
+      maxCount: 0,
+      editMode: true,
+      isShadow: false,
+      isPurified: false,
+      fusionOptionCount: 0,
+      isFused: false,
+    };
+
+    expect(
+      resolveCaughtPowerVisibility({
+        ...base,
+        pokemonId: 888,
+        isCrowned: true,
+      }),
+    ).toMatchObject({
+      hasSpecialMaxAccess: true,
+      canRenderMaxPower: true,
+      showPowerSectionDivider: true,
+    });
+    expect(
+      resolveCaughtPowerVisibility({
+        ...base,
+        pokemonId: 888,
+        isCrowned: false,
+      }).canRenderMaxPower,
+    ).toBe(false);
+    expect(
+      resolveCaughtPowerVisibility({
+        ...base,
+        pokemonId: 890,
+      }).canRenderMaxPower,
+    ).toBe(true);
+  });
+
   it('resolves stats, meta divider, and bottom gap visibility', () => {
     expect(
       resolveCaughtSectionVisibility({

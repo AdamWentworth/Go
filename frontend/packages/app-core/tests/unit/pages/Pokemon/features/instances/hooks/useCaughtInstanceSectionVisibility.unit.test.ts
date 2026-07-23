@@ -35,6 +35,7 @@ const renderVisibility = (
       movesPokemon: basePokemon,
       megaEvolutionCount: 0,
       crownFormCount: 0,
+      isCrowned: false,
       pokemonName: 'Pikachu',
       variantType: 'default',
       maxCount: 0,
@@ -113,5 +114,22 @@ describe('useCaughtInstanceSectionVisibility', () => {
       showMetaDivider: false,
       addStatsBottomGap: false,
     });
+  });
+
+  it('shows the editable power section for Eternatus without catalog Max rows', () => {
+    const eternatus = pokemon({
+      pokemon_id: 890,
+      variant_id: '0890-default',
+      name: 'Eternatus',
+      species_name: 'Eternatus',
+    });
+    const { result } = renderVisibility({
+      pokemon: eternatus,
+      movesPokemon: eternatus,
+      pokemonName: 'Eternatus',
+      editMode: true,
+    });
+
+    expect(result.current.showPowerSectionDivider).toBe(true);
   });
 });

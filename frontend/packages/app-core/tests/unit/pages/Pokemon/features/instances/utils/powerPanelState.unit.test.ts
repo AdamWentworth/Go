@@ -98,4 +98,77 @@ describe('resolvePowerPanelState', () => {
       }).isShiny,
     ).toBe(true);
   });
+
+  it.each([
+    {
+      name: 'Crowned Sword Zacian',
+      pokemonId: 888,
+      variantType: 'default' as const,
+      crownForm: 'Crowned Sword',
+    },
+    {
+      name: 'legacy Crowned Shield Zamazenta',
+      pokemonId: 2292,
+      variantType: 'shiny' as const,
+      crownForm: 'Crowned Shield',
+    },
+  ])('enables Max Move upgrades for $name without catalog Max rows', ({
+    pokemonId,
+    variantType,
+    crownForm,
+  }) => {
+    expect(
+      resolvePowerPanelState({
+        pokemon: {
+          pokemon_id: pokemonId,
+          variantType,
+          max: [],
+        },
+        editMode: true,
+        crownData: { isCrown: true, crownForm },
+        isShadow: false,
+        name: 'Pokemon',
+      }),
+    ).toMatchObject({
+      hasMaxVariant: false,
+      hasCatalogMaxAccess: false,
+      hasSpecialMaxAccess: true,
+      canRenderMax: true,
+    });
+  });
+
+  it('does not expose Max Move upgrades for Hero Zacian', () => {
+    expect(
+      resolvePowerPanelState({
+        pokemon: {
+          pokemon_id: 888,
+          variantType: 'default',
+          form: 'Hero of Many Battles',
+          max: [],
+        },
+        editMode: true,
+        crownData: { isCrown: false, crownForm: 'Crowned Sword' },
+        isShadow: false,
+        name: 'Zacian',
+      }).canRenderMax,
+    ).toBe(false);
+  });
+
+  it('enables Max Move upgrades for Eternatus', () => {
+    expect(
+      resolvePowerPanelState({
+        pokemon: {
+          pokemon_id: 890,
+          variantType: 'default',
+          max: [],
+        },
+        editMode: true,
+        isShadow: false,
+        name: 'Eternatus',
+      }),
+    ).toMatchObject({
+      hasSpecialMaxAccess: true,
+      canRenderMax: true,
+    });
+  });
 });

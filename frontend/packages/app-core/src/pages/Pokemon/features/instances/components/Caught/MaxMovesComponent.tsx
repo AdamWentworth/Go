@@ -51,7 +51,7 @@ const MaxMovesComponent: React.FC<MaxMovesComponentProps> = ({
           </label>
           <select
             id="max-attack"
-            value={maxAttack}
+            value={maxAttack || "1"}
             onChange={(e) => handleMaxAttackChange(e.target.value)}
             disabled={!editMode}
           >
@@ -69,7 +69,7 @@ const MaxMovesComponent: React.FC<MaxMovesComponentProps> = ({
           </label>
           <select
             id="max-guard"
-            value={maxGuard}
+            value={maxGuard || "0"}
             onChange={(e) => handleMaxGuardChange(e.target.value)}
             disabled={!editMode}
           >
@@ -88,7 +88,7 @@ const MaxMovesComponent: React.FC<MaxMovesComponentProps> = ({
           </label>
           <select
             id="max-spirit"
-            value={maxSpirit}
+            value={maxSpirit || "0"}
             onChange={(e) => handleMaxSpiritChange(e.target.value)}
             disabled={!editMode}
           >

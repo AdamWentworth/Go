@@ -1,8 +1,8 @@
 import type { InstancesMap, PokemonInstance } from '@/types/pokemonInstance';
 import type { PokemonVariant } from '@/types/pokemonVariants';
 
+import { isSpecialMaxAttacker } from '@/features/max/specialMaxPokemon';
 import { resolveRaidRosterFormProjections } from '../../Raid/utils/raidRosterForms';
-import { isSpecialMaxAttacker } from './specialMaxAttackers';
 
 export type MaxRosterScope = 'catalog' | 'owned';
 
