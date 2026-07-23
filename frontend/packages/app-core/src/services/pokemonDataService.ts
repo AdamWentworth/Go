@@ -33,7 +33,7 @@ function clearStaleLocalStorageCache(): void {
   }
 }
 
-type PokemonChunkName = 'pokemonFull' | 'catalog' | 'moves' | 'raidData';
+type PokemonChunkName = 'pokemonFull' | 'catalog' | 'moves' | 'raidData' | 'maxData';
 const POKEMON_CHUNK_REQUEST_ATTEMPTS = 2;
 
 function normalizeManifestChunkEndpoint(endpoint: string): string {
@@ -214,6 +214,17 @@ export const getPokemonRaidDataChunk = async (
     return await getPokemonChunk<PokemonRaidDataChunk>(manifest, 'raidData');
   } catch (error: unknown) {
     log.error('Error fetching the Pokemon raid-data chunk', error);
+    throw error;
+  }
+};
+
+export const getPokemonMaxDataChunk = async (
+  manifest: PokemonCatalogManifest,
+): Promise<Pokemons | null> => {
+  try {
+    return await getPokemonChunk<Pokemons>(manifest, 'maxData');
+  } catch (error: unknown) {
+    log.error('Error fetching the Pokemon Max Battle chunk', error);
     throw error;
   }
 };

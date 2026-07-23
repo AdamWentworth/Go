@@ -61,6 +61,11 @@ const raidDataFixture = pokemonFixture.map((pokemon) => ({
   raid_boss: Array.isArray(pokemon.raid_boss) ? pokemon.raid_boss : [],
 }));
 
+const maxDataFixture = pokemonFixture.filter((pokemon) => {
+  const pokemonId = Number(pokemon.pokemon_id);
+  return asRecords(pokemon.max).length > 0 || [888, 889, 890].includes(pokemonId);
+});
+
 const pokemonManifestFixture = {
   schemaVersion: 2,
   catalogVersion: 'e2e-catalog-v2',
@@ -99,6 +104,15 @@ const pokemonManifestFixture = {
       contentType: 'application/json',
       etag: '"e2e-raid-data-v2"',
       version: 'e2e-raid-data-v2',
+      bytesJson: 1,
+      bytesGzip: 1,
+    },
+    maxData: {
+      name: 'maxData',
+      endpoint: '/max-data',
+      contentType: 'application/json',
+      etag: '"e2e-max-data-v1"',
+      version: 'e2e-max-data-v1',
       bytesJson: 1,
       bytesGzip: 1,
     },
@@ -176,6 +190,12 @@ export async function installE2eRoutes(page: Page, options: E2eRouteOptions = {}
         await new Promise((resolve) => setTimeout(resolve, options.raidDataDelayMs));
       }
       await fulfillJson(route, raidDataFixture);
+    });
+  }
+
+  for (const pathPattern of ['**/api/pokemon/max-data', '**/__e2e/pokemon/max-data']) {
+    await page.route(pathPattern, async (route) => {
+      await fulfillJson(route, maxDataFixture);
     });
   }
 

@@ -5,6 +5,7 @@ export const pokemonContract = {
     catalog: '/catalog',
     moves: '/moves',
     raidData: '/raid-data',
+    maxData: '/max-data',
   },
 } as const;
 
@@ -27,6 +28,7 @@ export interface PokemonCatalogManifest {
     catalog?: PokemonCatalogChunkManifest;
     moves?: PokemonCatalogChunkManifest;
     raidData?: PokemonCatalogChunkManifest;
+    maxData?: PokemonCatalogChunkManifest;
     [key: string]: PokemonCatalogChunkManifest | undefined;
   };
 }

@@ -12,7 +12,8 @@ import { isAuthRoute } from '@/utils/routes/isAuthRoute';
 /** Runs one-off bootstrapping side-effects. Mount once at app start. */
 const AppBootstrap = () => {
   const location = useLocation();
-  const enabled = !isAuthRoute(location.pathname);
+  const enabled =
+    !isAuthRoute(location.pathname) && location.pathname !== '/max';
 
   useBootstrapVariants(enabled);
   useBootstrapInstances(enabled);

@@ -38,6 +38,7 @@ type pokemonPayloadBundle struct {
 	catalog  any
 	moves    any
 	raidData any
+	maxData  any
 }
 
 func New(db *sql.DB, log *slog.Logger) *Builder {
@@ -290,6 +291,17 @@ func (b *Builder) BuildRaidDataPayload(ctx context.Context) (any, error) {
 	return bundle.raidData, nil
 }
 
+// BuildMaxBattlePayload returns the small, self-contained subset required by
+// the Max Battle page. Unlike the general catalog chunk, these entries retain
+// move pools so a direct /max visit does not need to hydrate the full catalog.
+func (b *Builder) BuildMaxBattlePayload(ctx context.Context) (any, error) {
+	bundle, err := b.getPokemonPayloadBundle(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return bundle.maxData, nil
+}
+
 // InvalidatePokemonPayloadBundle must be paired with response-cache
 // invalidation after the underlying catalog data changes.
 func (b *Builder) InvalidatePokemonPayloadBundle() {
@@ -382,12 +394,16 @@ func (b *Builder) buildPokemonPayloadBundle(ctx context.Context) (*pokemonPayloa
 	catalog := make([]any, 0, len(orderedIDs))
 	moves := make([]any, 0, len(orderedIDs))
 	raidData := make([]any, 0, len(orderedIDs))
+	maxData := make([]any, 0)
 	for _, id := range orderedIDs {
 		pokemon := pokemonByID[id]
 		full = append(full, orderedjson.Map{M: pokemon, Order: pokemonKeyOrder})
 		catalog = append(catalog, buildCatalogPokemonEntry(pokemon))
 		moves = append(moves, buildPokemonMovesEntry(id, pokemon))
 		raidData = append(raidData, buildPokemonRaidEntry(id, pokemon))
+		if isMaxBattlePokemon(id, pokemon) {
+			maxData = append(maxData, orderedjson.Map{M: pokemon, Order: pokemonKeyOrder})
+		}
 	}
 
 	b.log.Info("built full pokemon payload",
@@ -400,5 +416,17 @@ func (b *Builder) buildPokemonPayloadBundle(ctx context.Context) (*pokemonPayloa
 		catalog:  catalog,
 		moves:    moves,
 		raidData: raidData,
+		maxData:  maxData,
 	}, nil
+}
+
+func isMaxBattlePokemon(pokemonID int, pokemon map[string]any) bool {
+	// Zacian, Zamazenta, and Eternatus participate through their special Max
+	// mechanics even though they do not have ordinary Dynamax records.
+	if pokemonID == 888 || pokemonID == 889 || pokemonID == 890 {
+		return true
+	}
+
+	maxForms, ok := pokemon["max"].([]any)
+	return ok && len(maxForms) > 0
 }

@@ -3,10 +3,7 @@ import { FaChartBar, FaChevronDown, FaCrosshairs, FaSearch } from 'react-icons/f
 import { useSearchParams } from 'react-router-dom';
 
 import { AppLoadingFallback } from '@/contexts/AppLoadingContext';
-import { useInstancesStore } from '@/features/instances/store/useInstancesStore';
-import { useVariantsStore } from '@/features/variants/store/useVariantsStore';
 import { useAuthStore } from '@/stores/useAuthStore';
-import type { PokemonVariant } from '@/types/pokemonVariants';
 
 import MaxBossPicker from './components/MaxBossPicker';
 import MaxBattleSimulator from './components/MaxBattleSimulator';
@@ -14,6 +11,7 @@ import MaxRankingList from './components/MaxRankingList';
 import MaxRoleTabs from './components/MaxRoleTabs';
 import MaxRosterScope from './components/MaxRosterScope';
 import MaxTypeFilter from './components/MaxTypeFilter';
+import { useMaxBattleData } from './hooks/useMaxBattleData';
 import {
   getMaxBattleCatalog,
   MAX_BATTLE_TYPES,
@@ -70,12 +68,13 @@ const bossRoleHeading = (role: MaxRole, bossName: string): string => {
 };
 
 const Max = () => {
-  const variants = useVariantsStore((state) => state.variants) as PokemonVariant[];
-  const loading = useVariantsStore((state) => state.variantsLoading);
-  const movesLoading = useVariantsStore((state) => state.isMovesLoading);
-  const ensureMoves = useVariantsStore((state) => state.ensureMoves);
-  const instances = useInstancesStore((state) => state.instances);
-  const instancesLoading = useInstancesStore((state) => state.instancesLoading);
+  const {
+    variants,
+    variantsLoading: loading,
+    movesLoading,
+    instances,
+    instancesLoading,
+  } = useMaxBattleData();
   const isLoggedIn = useAuthStore((state) => state.isLoggedIn);
   const [searchParams, setSearchParams] = useSearchParams();
   const [scopeDirection, setScopeDirection] = useState<'forward' | 'backward'>(
@@ -114,10 +113,6 @@ const Max = () => {
 
   const changeType = (nextType: string) =>
     updateSearchParams({ type: nextType || null });
-
-  useEffect(() => {
-    if (variants.length > 0) void ensureMoves();
-  }, [ensureMoves, variants.length]);
 
   const maxCatalog = useMemo(() => getMaxBattleCatalog(variants), [variants]);
   const maxRoster = useMemo(

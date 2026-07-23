@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import {
   getPokemonCatalogManifest,
+  getPokemonMaxDataChunk,
   getPokemonMovesChunk,
   getPokemonRaidDataChunk,
   getPokemons,
@@ -53,6 +54,15 @@ describe('pokemonDataService', () => {
         version: 'raid-v1',
         bytesJson: 44,
         bytesGzip: 22,
+      },
+      maxData: {
+        name: 'maxData',
+        endpoint: '/catalog/max-data',
+        contentType: 'application/json',
+        etag: '"max-v1"',
+        version: 'max-v1',
+        bytesJson: 33,
+        bytesGzip: 18,
       },
     },
   };
@@ -144,6 +154,20 @@ describe('pokemonDataService', () => {
     expect(fetchSpy).toHaveBeenNthCalledWith(
       2,
       expect.stringContaining('/catalog/raid-data'),
+      expect.objectContaining({ method: 'GET' }),
+    );
+  });
+
+  it('fetches the self-contained Max Battle catalog chunk', async () => {
+    const fetchSpy = vi.spyOn(global, 'fetch').mockResolvedValueOnce(
+      new Response(JSON.stringify(payload), { status: 200 }),
+    );
+
+    await expect(getPokemonMaxDataChunk(manifest)).resolves.toEqual(
+      normalizeAssetUrlsDeep(payload),
+    );
+    expect(fetchSpy).toHaveBeenCalledWith(
+      expect.stringContaining('/catalog/max-data'),
       expect.objectContaining({ method: 'GET' }),
     );
   });

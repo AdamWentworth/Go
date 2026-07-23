@@ -50,6 +50,10 @@ func TestPokemonPayloadChunks_KeepCatalogLeanAndAddressable(t *testing.T) {
 	if err != nil {
 		t.Fatalf("BuildRaidDataPayload: %v", err)
 	}
+	maxPayload, err := b.BuildMaxBattlePayload(ctx)
+	if err != nil {
+		t.Fatalf("BuildMaxBattlePayload: %v", err)
+	}
 
 	decode := func(label string, payload any) []map[string]any {
 		t.Helper()
@@ -68,9 +72,13 @@ func TestPokemonPayloadChunks_KeepCatalogLeanAndAddressable(t *testing.T) {
 	catalog := decode("catalog", catalogPayload)
 	moves := decode("moves", movesPayload)
 	raids := decode("raid data", raidPayload)
+	maxEntries := decode("max data", maxPayload)
 
 	if len(full) == 0 || len(catalog) != len(full) || len(moves) != len(full) || len(raids) != len(full) {
 		t.Fatalf("chunk lengths full=%d catalog=%d moves=%d raids=%d", len(full), len(catalog), len(moves), len(raids))
+	}
+	if len(maxEntries) == 0 || len(maxEntries) >= len(full) {
+		t.Fatalf("max chunk should be a non-empty subset: max=%d full=%d", len(maxEntries), len(full))
 	}
 
 	for _, entry := range catalog {
@@ -100,6 +108,17 @@ func TestPokemonPayloadChunks_KeepCatalogLeanAndAddressable(t *testing.T) {
 		}
 		if _, ok := entry["raid_boss"].([]any); !ok {
 			t.Fatalf("raid entry missing raid_boss array: %#v", entry)
+		}
+	}
+
+	for _, entry := range maxEntries {
+		pokemonID := int(entry["pokemon_id"].(float64))
+		maxForms, _ := entry["max"].([]any)
+		if len(maxForms) == 0 && pokemonID != 888 && pokemonID != 889 && pokemonID != 890 {
+			t.Fatalf("max chunk contains ineligible Pokemon %d", pokemonID)
+		}
+		if movePool, ok := entry["moves"].([]any); !ok || len(movePool) == 0 {
+			t.Fatalf("max chunk Pokemon %d must retain move data", pokemonID)
 		}
 	}
 }
