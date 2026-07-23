@@ -176,7 +176,7 @@ func (b *Builder) BuildPvPRankingsPayload(ctx context.Context) (any, error) {
 	if err != nil {
 		return nil, fmt.Errorf("load PvP rankings: %w", err)
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 
 	for rows.Next() {
 		var (
