@@ -92,7 +92,10 @@ export const periodicUpdates = (
         timerRef.current = null;
       }
     } else {
-      log.debug('Function called again while waiting for timer to expire.');
+      log.debug('Function called again while waiting: sending newly queued updates now.');
+      if (isUserLoggedIn()) {
+        requestSend();
+      }
     }
   };
 };

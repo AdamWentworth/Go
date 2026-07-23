@@ -118,7 +118,9 @@ function txDone(tx) {
 
 function openUpdatesDB() {
   return new Promise((resolve, reject) => {
-    const req = indexedDB.open('updatesDB', 2);
+    // Open the installed schema version. The application owns migrations, and
+    // asking for an older hard-coded version fails with VersionError.
+    const req = indexedDB.open('updatesDB');
     req.onupgradeneeded = (e) => {
       const db = e.target.result;
       const tx = e.target.transaction;
@@ -134,7 +136,10 @@ function openUpdatesDB() {
       ensureStore('batchedPokemonUpdates', 'instance_id');
       ensureStore('batchedTradeUpdates', 'trade_id');
     };
-    req.onsuccess = () => resolve(req.result);
+    req.onsuccess = () => {
+      req.result.onversionchange = () => req.result.close();
+      resolve(req.result);
+    };
     req.onerror = () => reject(req.error);
   });
 }
@@ -189,6 +194,8 @@ function normalizeBatchedUpdateRequest(data) {
    Message handlers
    ========================================================================= */
 async function sendBatchedUpdatesToBackend(data) {
+  let db = null;
+
   try {
     const request = normalizeBatchedUpdateRequest(data);
     if (typeof request.isLoggedIn === 'boolean') {
@@ -207,7 +214,7 @@ async function sendBatchedUpdatesToBackend(data) {
       return;
     }
 
-    const db = await openUpdatesDB();
+    db = await openUpdatesDB();
     const [pokemonUpdates, tradeUpdates] = await Promise.all([
       getAllFromStore(db, 'batchedPokemonUpdates'),
       getAllFromStore(db, 'batchedTradeUpdates'),
@@ -251,6 +258,8 @@ async function sendBatchedUpdatesToBackend(data) {
     log('batchedUpdates:cleared', {});
   } catch (err) {
     console.error('[SW] sendBatchedUpdatesToBackend failed:', err);
+  } finally {
+    db?.close();
   }
 }
 

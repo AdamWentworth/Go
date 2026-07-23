@@ -122,6 +122,23 @@ describe('periodicUpdates', () => {
     expect(timerRef.current).not.toBeNull();
   });
 
+  it('sends newly queued updates immediately while the retry timer is already active', async () => {
+    setLoggedIn();
+    dbMocks.getBatchedPokemonUpdates.mockResolvedValue([{ instance_id: 'pokemon-1' }]);
+    dbMocks.getBatchedTradeUpdates.mockResolvedValue([]);
+
+    const run = periodicUpdates(scheduledRef, timerRef);
+    run();
+    await vi.runAllTicks();
+
+    const existingTimer = timerRef.current;
+    run();
+    await vi.runAllTicks();
+
+    expect(postMessage).toHaveBeenCalledTimes(2);
+    expect(timerRef.current).toBe(existingTimer);
+  });
+
   it('pauses periodic loop when updates exist but user logs out before timer fires', async () => {
     setLoggedIn();
     dbMocks.getBatchedPokemonUpdates.mockResolvedValue([{ instance_id: 'pokemon-1' }]);
