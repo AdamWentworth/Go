@@ -61,6 +61,7 @@ SET search_path = pokemon_catalog, public;
 DO $$
 DECLARE
   duraludon_move_count INTEGER;
+  grimmsnarl_move_count INTEGER;
 BEGIN
   IF NOT EXISTS (
     SELECT 1
@@ -147,6 +148,24 @@ BEGIN
 
   IF duraludon_move_count <> 5 THEN
     RAISE EXCEPTION 'Duraludon move pool expected 5 entries, found %', duraludon_move_count;
+  END IF;
+
+  SELECT COUNT(DISTINCT moves.name) INTO grimmsnarl_move_count
+  FROM pokemon_moves
+  JOIN moves USING (move_id)
+  WHERE pokemon_moves.pokemon_id = 861
+    AND LOWER(moves.name) IN (
+      'bite',
+      'low kick',
+      'sucker punch',
+      'dark pulse',
+      'foul play',
+      'play rough',
+      'power-up punch'
+    );
+
+  IF grimmsnarl_move_count <> 7 THEN
+    RAISE EXCEPTION 'Grimmsnarl move pool expected 7 canonical entries, found %', grimmsnarl_move_count;
   END IF;
 
   IF EXISTS (

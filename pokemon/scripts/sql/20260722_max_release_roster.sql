@@ -125,6 +125,37 @@ WHERE EXISTS (SELECT 1 FROM pokemon WHERE pokemon_id = 884)
       AND pokemon_moves.move_id = resolved.move_id
   );
 
+WITH grimmsnarl_moves (move_name) AS (
+  VALUES
+    ('Bite'),
+    ('Low Kick'),
+    ('Sucker Punch'),
+    ('Dark Pulse'),
+    ('Foul Play'),
+    ('Play Rough'),
+    ('Power-Up Punch')
+), resolved AS (
+  SELECT moves.move_id
+  FROM moves
+  JOIN grimmsnarl_moves
+    ON LOWER(grimmsnarl_moves.move_name) = LOWER(moves.name)
+)
+INSERT INTO pokemon_moves (id, move_id, pokemon_id, legacy)
+SELECT
+  (SELECT COALESCE(MAX(id), 0) FROM pokemon_moves)
+    + ROW_NUMBER() OVER (ORDER BY resolved.move_id),
+  resolved.move_id,
+  861,
+  FALSE
+FROM resolved
+WHERE EXISTS (SELECT 1 FROM pokemon WHERE pokemon_id = 861)
+  AND NOT EXISTS (
+    SELECT 1
+    FROM pokemon_moves
+    WHERE pokemon_moves.pokemon_id = 861
+      AND pokemon_moves.move_id = resolved.move_id
+  );
+
 INSERT INTO pokemon_cp_stats (pokemon_id, level_id, cp, hp)
 SELECT
   884,

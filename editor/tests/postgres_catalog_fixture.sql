@@ -70,7 +70,14 @@ INSERT INTO moves (
   (11, 'Metal Claw', 15, 8, 5, 7, 6, 700, 2, TRUE, NULL, FALSE, FALSE, FALSE),
   (12, 'Flash Cannon', 15, 100, 110, -100, -70, 2700, 0, FALSE, NULL, FALSE, FALSE, FALSE),
   (13, 'Dragon Claw', 4, 50, 50, -33, -35, 1700, 0, FALSE, NULL, FALSE, FALSE, FALSE),
-  (14, 'Hyper Beam', 1, 150, 150, -100, -80, 3800, 0, FALSE, NULL, FALSE, FALSE, FALSE);
+  (14, 'Hyper Beam', 1, 150, 150, -100, -80, 3800, 0, FALSE, NULL, FALSE, FALSE, FALSE),
+  (15, 'Bite', 14, 6, 4, 4, 2, 500, 1, TRUE, NULL, FALSE, FALSE, FALSE),
+  (16, 'Low Kick', 5, 5, 4, 5, 5, 500, 2, TRUE, NULL, FALSE, FALSE, FALSE),
+  (17, 'Sucker Punch', 14, 5, 5, 6, 7, 500, 2, TRUE, NULL, FALSE, FALSE, FALSE),
+  (18, 'Dark Pulse', 14, 80, 80, -50, -50, 3000, 1, FALSE, NULL, FALSE, FALSE, FALSE),
+  (19, 'Foul Play', 14, 70, 70, -50, -45, 2000, 1, FALSE, NULL, FALSE, FALSE, FALSE),
+  (20, 'Play Rough', 16, 90, 90, -50, -60, 3000, 1, FALSE, NULL, FALSE, FALSE, FALSE),
+  (21, 'Power-Up Punch', 5, 50, 20, -33, -35, 2000, 1, FALSE, NULL, FALSE, FALSE, FALSE);
 
 INSERT INTO costume_pokemon (
   costume_id, pokemon_id, costume_name, shiny_available, date_available,
