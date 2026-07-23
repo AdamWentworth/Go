@@ -1106,6 +1106,39 @@
   font-size: 0.68rem;
 }
 
+.max-simulator-profile {
+  display: grid;
+  gap: 0.25rem;
+  justify-items: end;
+}
+
+.max-simulator-profile > strong {
+  color: var(--max-text);
+  font-size: 0.74rem;
+}
+
+.max-simulator-confidence {
+  padding: 0.2rem 0.42rem;
+  border: 1px solid rgba(133, 213, 214, 0.24);
+  border-radius: 999px;
+  color: #bfe7e8;
+  background: rgba(66, 213, 194, 0.08);
+  font-size: 0.56rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.max-simulator-confidence--sourced {
+  border-color: rgba(92, 226, 174, 0.4);
+  color: #83ecc4;
+}
+
+.max-simulator-confidence--estimated {
+  border-color: rgba(244, 207, 101, 0.38);
+  color: #f4cf65;
+  background: rgba(244, 207, 101, 0.07);
+}
+
 .max-simulator-advanced {
   border-top: 1px solid rgba(133, 213, 214, 0.16);
   color: var(--max-muted);

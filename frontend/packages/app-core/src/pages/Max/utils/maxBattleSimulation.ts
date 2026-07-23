@@ -20,6 +20,7 @@ export type MaxBattleSimulationTeam = {
 export type MaxBattleTier = MaxMeterTier;
 
 export type MaxBattleExecution = 'standard' | 'stress-test';
+export type MaxBattleProfileConfidence = 'sourced' | 'curated' | 'estimated';
 
 // Targeted Max Battle hits deal twice the spread-hit damage. A successful
 // dodge removes at least half, so standard play returns to the base pressure;
@@ -66,6 +67,7 @@ export type MaxBattleBossPreset = {
   sourceName: string | null;
   sourceUrl: string | null;
   notes: string | null;
+  confidence: MaxBattleProfileConfidence;
 };
 
 export type MaxBattleSimulationOutcome =
@@ -123,6 +125,7 @@ const FALLBACK_TIER_PRESETS: Record<MaxBattleTier, MaxBattleBossPreset> = {
     sourceName: null,
     sourceUrl: null,
     notes: null,
+    confidence: 'estimated',
   },
   'two-star': {
     kind: 'standard',
@@ -140,6 +143,7 @@ const FALLBACK_TIER_PRESETS: Record<MaxBattleTier, MaxBattleBossPreset> = {
     sourceName: null,
     sourceUrl: null,
     notes: null,
+    confidence: 'estimated',
   },
   'three-star': {
     kind: 'standard',
@@ -157,6 +161,7 @@ const FALLBACK_TIER_PRESETS: Record<MaxBattleTier, MaxBattleBossPreset> = {
     sourceName: null,
     sourceUrl: null,
     notes: null,
+    confidence: 'estimated',
   },
   legendary: {
     kind: 'legendary',
@@ -174,6 +179,7 @@ const FALLBACK_TIER_PRESETS: Record<MaxBattleTier, MaxBattleBossPreset> = {
     sourceName: null,
     sourceUrl: null,
     notes: null,
+    confidence: 'estimated',
   },
   gigantamax: {
     kind: 'gigantamax',
@@ -191,6 +197,7 @@ const FALLBACK_TIER_PRESETS: Record<MaxBattleTier, MaxBattleBossPreset> = {
     sourceName: null,
     sourceUrl: null,
     notes: null,
+    confidence: 'estimated',
   },
 };
 
@@ -284,6 +291,11 @@ const presetFromProfile = (profile: MaxBattleProfile): MaxBattleBossPreset => {
     sourceName: profile.source_name,
     sourceUrl: profile.source_url,
     notes: profile.notes,
+    confidence: profile.source_url
+      ? 'sourced'
+      : profile.source_name
+        ? 'curated'
+        : 'estimated',
   };
 };
 

@@ -10,6 +10,7 @@ import {
   simulateMaxBattle,
   type MaxBattleSimulationTeam,
 } from '@/pages/Max/utils/maxBattleSimulation';
+import { MAX_BATTLE_CALIBRATION_FIXTURES } from '@tests/fixtures/maxBattleCalibrationFixtures';
 
 const boss = {
   pokemon_id: 3,
@@ -183,6 +184,25 @@ const team: MaxBattleSimulationTeam = {
   healing: entry('healing'),
 };
 
+const starterSoloTeam: MaxBattleSimulationTeam = {
+  damage: entry('damage', {
+    hp: 120,
+    bossBenchmark: {
+      ...entry('damage').bossBenchmark!,
+      maxHitDamage: 180,
+    },
+  }),
+  tank: entry('tank', {
+    hp: 140,
+    fastHitDamage: 7,
+    bossBenchmark: {
+      ...entry('tank').bossBenchmark!,
+      incomingDps: 2.5,
+    },
+  }),
+  healing: entry('healing', { hp: 120, healPerAlly: 19 }),
+};
+
 describe('Max Battle simulator', () => {
   it('uses the Gigantamax lobby and editable HP preset', () => {
     expect(getMaxBattleBossPreset(boss)).toMatchObject({
@@ -190,6 +210,7 @@ describe('Max Battle simulator', () => {
       bossHp: 90_000,
       defaultTrainers: 12,
       maxTrainers: 100,
+      confidence: 'estimated',
     });
 
     const result = simulateMaxBattle({
@@ -233,30 +254,30 @@ describe('Max Battle simulator', () => {
     const result = simulateMaxBattle({
       boss: dynamaxBulbasaur,
       trainerCount: 1,
-      team: {
-        damage: entry('damage', {
-          hp: 120,
-          bossBenchmark: {
-            ...entry('damage').bossBenchmark!,
-            maxHitDamage: 180,
-          },
-        }),
-        tank: entry('tank', {
-          hp: 140,
-          fastHitDamage: 7,
-          bossBenchmark: {
-            ...entry('tank').bossBenchmark!,
-            incomingDps: 2.5,
-          },
-        }),
-        healing: entry('healing', { hp: 120, healPerAlly: 19 }),
-      },
+      team: starterSoloTeam,
     });
 
     expect(result.trainerCount).toBe(1);
     expect(result.bossHp).toBe(1_700);
     expect(result.outcome).toBe('likely-clear');
   });
+
+  it.each(MAX_BATTLE_CALIBRATION_FIXTURES)(
+    'keeps the $id reference boundary reproducible',
+    (fixture) => {
+      const result = simulateMaxBattle({
+        boss: fixture.boss === 'starter' ? dynamaxBulbasaur : boss,
+        tier: fixture.tier,
+        trainerCount: fixture.trainers,
+        team: fixture.team === 'starter-solo' ? starterSoloTeam : team,
+      });
+
+      expect(fixture.expectedOutcomes).toContain(result.outcome);
+      expect(result.damagePercent).toBeGreaterThan(0);
+      expect(result.damagePercent).toBeLessThanOrEqual(1);
+      expect(result.estimatedClearSeconds).toBeGreaterThan(0);
+    },
+  );
 
   it('feeds the best legal charge rotation into the clear estimate', () => {
     const tank = entry('tank');
@@ -303,6 +324,7 @@ describe('Max Battle simulator', () => {
       subgroupSize: 4,
       meterOrbEnergy: 12,
       sourceName: 'Curated fixture',
+      confidence: 'sourced',
     });
   });
 
@@ -320,6 +342,7 @@ describe('Max Battle simulator', () => {
       tier: 'three-star',
       bossHp: 12_000,
       defaultTrainers: 3,
+      confidence: 'curated',
     });
     expect(
       getMaxBattleBossPreset(profiledBulbasaur, undefined, afterEvent),

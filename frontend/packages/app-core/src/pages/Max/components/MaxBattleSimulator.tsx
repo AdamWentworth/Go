@@ -109,6 +109,21 @@ const formatDuration = (seconds: number): string => {
 
 const formatNumber = (value: number): string => Math.round(value).toLocaleString();
 
+const PROFILE_CONFIDENCE_COPY = {
+  sourced: {
+    label: 'Sourced profile',
+    title: 'Encounter values include a linked external source.',
+  },
+  curated: {
+    label: 'Curated profile',
+    title: 'Encounter values are catalog-maintained but do not include a source link.',
+  },
+  estimated: {
+    label: 'Estimated profile',
+    title: 'Encounter values use the model fallback and can be edited under Advanced setup.',
+  },
+} as const;
+
 const MaxBattleSimulator = ({
   boss,
   candidates,
@@ -189,7 +204,15 @@ const MaxBattleSimulator = ({
           <span>Recommended party</span>
           <h2 id="max-simulator-title">Can this group beat {boss.name}?</h2>
         </div>
-        <strong>{preset.label}</strong>
+        <div className="max-simulator-profile">
+          <strong>{preset.label}</strong>
+          <span
+            className={`max-simulator-confidence max-simulator-confidence--${preset.confidence}`}
+            title={PROFILE_CONFIDENCE_COPY[preset.confidence].title}
+          >
+            {PROFILE_CONFIDENCE_COPY[preset.confidence].label}
+          </span>
+        </div>
       </header>
 
       {team && result ? (

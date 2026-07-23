@@ -37,6 +37,31 @@ const caughtDynamaxBulbasaur = {
   max_spirit: 3,
 };
 
+const caughtGigantamaxVenusaur = {
+  instance_id: 'max-venusaur',
+  variant_id: '0003-default',
+  pokemon_id: 3,
+  nickname: 'G-Max Garden',
+  is_caught: true,
+  disabled: false,
+  registered: true,
+  cp: 2_721,
+  level: 40,
+  attack_iv: 15,
+  defense_iv: 15,
+  stamina_iv: 14,
+  fast_move_id: 15,
+  charged_move1_id: 90,
+  charged_move2_id: null,
+  shiny: false,
+  dynamax: true,
+  gigantamax: true,
+  crown: false,
+  max_attack: 3,
+  max_guard: 2,
+  max_spirit: 2,
+};
+
 async function seedMaxRoster(page: Page) {
   await page.goto('/login', { waitUntil: 'domcontentloaded' });
   await page.evaluate(
@@ -58,7 +83,7 @@ async function seedMaxRoster(page: Page) {
           const transaction = database.transaction('instances', 'readwrite');
           const store = transaction.objectStore('instances');
           store.clear();
-          store.put(caught);
+          caught.forEach((instance) => store.put(instance));
           transaction.oncomplete = () => {
             database.close();
             resolve();
@@ -69,7 +94,10 @@ async function seedMaxRoster(page: Page) {
           };
         };
       }),
-    { user: maxUser, caught: caughtDynamaxBulbasaur },
+    {
+      user: maxUser,
+      caught: [caughtDynamaxBulbasaur, caughtGigantamaxVenusaur],
+    },
   );
 }
 
@@ -179,6 +207,7 @@ test.describe('Max Battles page', () => {
           name: 'Can this group beat Dynamax Bulbasaur?',
         }),
       ).toBeVisible();
+      await expect(page.getByText('Estimated profile')).toBeVisible();
       await expect(page.getByLabel('Trainer count')).toHaveValue('1');
       await expect(page.locator('.max-simulator-verdict')).toContainText('Likely clear');
       await page.getByRole('button', { name: 'Add one Trainer' }).click();
@@ -200,6 +229,14 @@ test.describe('Max Battles page', () => {
       await expect(page.getByLabel('Boss HP estimate')).toHaveValue('1700');
       await page.getByLabel('Max Battle difficulty').selectOption('three-star');
       await expect(page.getByLabel('Boss HP estimate')).toHaveValue('10000');
+      const modeledDamageAtTwo = await page
+        .locator('.max-simulator-verdict strong')
+        .textContent();
+      await page.getByRole('button', { name: 'Remove one Trainer' }).click();
+      await expect(page.getByLabel('Trainer count')).toHaveValue('1');
+      await expect(page.locator('.max-simulator-verdict strong')).not.toHaveText(
+        modeledDamageAtTwo ?? '',
+      );
       await expect
         .poll(() => new URL(page.url()).searchParams.get('difficulty'))
         .toBe('three-star');
@@ -265,6 +302,12 @@ test.describe('Max Battles page', () => {
     try {
       await installE2eRoutes(page);
       await seedMaxRoster(page);
+      const pokemonDataRequests: string[] = [];
+      page.on('request', (request) => {
+        if (request.url().includes('/pokemon/')) {
+          pokemonDataRequests.push(request.url());
+        }
+      });
       await page.goto('/max');
 
       await expect(page.getByRole('button', { name: 'My Pokémon' })).toHaveAttribute(
@@ -275,6 +318,14 @@ test.describe('Max Battles page', () => {
         'Recorded level · recorded IVs · recorded Fast Move · unlocked Max Move levels',
       );
       await expect(page.getByText('Sprout')).toBeVisible();
+      await expect(page.getByText('G-Max Garden')).toBeVisible();
+      await expect(page.getByText('G-Max Vine Lash').first()).toBeVisible();
+      expect(
+        pokemonDataRequests.some((url) => url.includes('/pokemon/max-data')),
+      ).toBe(true);
+      expect(
+        pokemonDataRequests.some((url) => url.includes('/pokemon/catalog')),
+      ).toBe(false);
       await expect(page.getByText('CP 927 · Level 30 · 89% IV')).toBeVisible();
       await expect(page.locator('[data-roster-scope="owned"]')).toHaveClass(
         /max-scope-stage--forward/,

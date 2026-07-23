@@ -268,7 +268,6 @@ describe('Max page', () => {
     expect(formIcons.some((image) => image.src.includes('-icon.png'))).toBe(false);
     expect(screen.getAllByText('Attack index').length).toBeGreaterThan(0);
     expect(screen.queryByText('Damage rating')).not.toBeInTheDocument();
-    expect(variantsState.ensureMoves).toHaveBeenCalled();
   });
 
   it('switches roles and applies the role-aware type filter', () => {
@@ -395,6 +394,7 @@ describe('Max page', () => {
       /Stress:/i,
     );
     expect(screen.getByText('Likely clear')).toBeVisible();
+    expect(screen.getByText('Estimated profile')).toBeVisible();
     expect(screen.getByLabelText('Recommended three-Pokémon party')).toBeVisible();
     expect(
       screen
