@@ -205,4 +205,190 @@ describe('Max caught roster adapter', () => {
       'Behemoth Blade',
     ]);
   });
+
+  it.each([
+    {
+      legacyPokemonId: 2290,
+      currentPokemonId: 888,
+      form: 'Crowned_sword',
+      species: 'Zacian',
+      fastMoveId: 29,
+      fastMoveName: 'Metal Claw',
+      maxMoveId: 468,
+      maxMoveName: 'Behemoth Blade',
+    },
+    {
+      legacyPokemonId: 2292,
+      currentPokemonId: 889,
+      form: 'Crowned_shield',
+      species: 'Zamazenta',
+      fastMoveId: 29,
+      fastMoveName: 'Metal Claw',
+      maxMoveId: 469,
+      maxMoveName: 'Behemoth Bash',
+    },
+  ])(
+    'maps a caught legacy $species entry to its current Crowned catalog form',
+    ({
+      legacyPokemonId,
+      currentPokemonId,
+      form,
+      species,
+      fastMoveId,
+      fastMoveName,
+      maxMoveId,
+      maxMoveName,
+    }) => {
+      const fastMove = move(fastMoveId, fastMoveName, true);
+      const maxMove = move(maxMoveId, maxMoveName, false);
+      const current = {
+        ...variant(
+          `${String(currentPokemonId).padStart(4, '0')}-default`,
+          'default',
+          [fastMove, maxMove],
+        ),
+        pokemon_id: currentPokemonId,
+        pokedex_number: currentPokemonId,
+        name: species,
+        species_name: species,
+        form,
+      } as PokemonVariant;
+      const hero = {
+        ...variant(
+          `${legacyPokemonId}-shiny`,
+          'shiny',
+          [fastMove, maxMove],
+        ),
+        pokemon_id: legacyPokemonId,
+        pokedex_number: currentPokemonId,
+        name: `Shiny ${species}`,
+        species_name: species,
+        form: 'Hero',
+        crownForms: [
+          {
+            id: legacyPokemonId,
+            base_pokemon_id: legacyPokemonId,
+            crown_pokemon_id: currentPokemonId,
+            display_form:
+              species === 'Zacian' ? 'Crowned Sword' : 'Crowned Shield',
+            name: species,
+            form,
+            attack: current.attack,
+            defense: current.defense,
+            stamina: current.stamina,
+            type1_name: current.type1_name,
+            type2_name: current.type2_name,
+            image_url: `/${species.toLowerCase()}-crowned.png`,
+            image_url_shiny: `/${species.toLowerCase()}-crowned-shiny.png`,
+            moves: [fastMove, maxMove],
+          },
+        ],
+      } as unknown as PokemonVariant;
+      const instances: InstancesMap = {
+        legacy: caughtInstance({
+          instance_id: `legacy-${species.toLowerCase()}`,
+          variant_id: `${legacyPokemonId}-shiny`,
+          pokemon_id: legacyPokemonId,
+          shiny: true,
+          fast_move_id: fastMoveId,
+          dynamax: false,
+          crown: true,
+        }),
+      };
+
+      const roster = buildMaxRoster([hero, current], instances);
+
+      expect(roster).toMatchObject({
+        caughtCount: 1,
+        eligibleCount: 1,
+        incompleteEntryCount: 0,
+        unmappedCount: 0,
+      });
+      expect(roster.pokemon[0]).toMatchObject({
+        pokemon_id: legacyPokemonId,
+        form,
+        variantType: 'default',
+        instanceData: {
+          pokemon_id: legacyPokemonId,
+        },
+      });
+      expect(roster.pokemon[0].moves?.map((entry) => entry.name)).toEqual([
+        fastMoveName,
+        maxMoveName,
+      ]);
+    },
+  );
+
+  it('does not promote a legacy Hero form that has not been crowned', () => {
+    const metalClaw = move(29, 'Metal Claw', true);
+    const hero = {
+      ...variant('2290-default', 'default', [
+        metalClaw,
+        move(468, 'Behemoth Blade', false),
+      ]),
+      pokemon_id: 2290,
+      pokedex_number: 888,
+      name: 'Zacian',
+      species_name: 'Zacian',
+      form: 'Hero',
+    } as PokemonVariant;
+
+    const roster = buildMaxRoster(
+      [hero],
+      {
+        hero: caughtInstance({
+          variant_id: '2290-default',
+          pokemon_id: 2290,
+          fast_move_id: 29,
+          dynamax: false,
+          crown: false,
+        }),
+      },
+    );
+
+    expect(roster.pokemon).toEqual([]);
+    expect(roster.unmappedCount).toBe(0);
+  });
+
+  it('includes a complete caught Eternatus without requiring a Dynamax flag', () => {
+    const dragonTail = move(47, 'Dragon Tail', true);
+    const eternatus = {
+      ...variant('0890-default', 'default', [
+        dragonTail,
+        move(479, 'Dynamax Cannon', false),
+      ]),
+      pokemon_id: 890,
+      pokedex_number: 890,
+      name: 'Eternatus',
+      species_name: 'Eternatus',
+      form: null,
+    } as PokemonVariant;
+
+    const roster = buildMaxRoster(
+      [eternatus],
+      {
+        eternatus: caughtInstance({
+          instance_id: 'caught-eternatus',
+          variant_id: '0890-default',
+          pokemon_id: 890,
+          fast_move_id: 47,
+          dynamax: false,
+          gigantamax: false,
+          crown: false,
+        }),
+      },
+    );
+
+    expect(roster).toMatchObject({
+      caughtCount: 1,
+      eligibleCount: 1,
+      incompleteEntryCount: 0,
+      unmappedCount: 0,
+    });
+    expect(roster.pokemon[0]).toMatchObject({
+      pokemon_id: 890,
+      name: 'Eternatus',
+      instanceData: { instance_id: 'caught-eternatus' },
+    });
+  });
 });

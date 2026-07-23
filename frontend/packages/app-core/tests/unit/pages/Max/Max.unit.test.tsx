@@ -112,6 +112,67 @@ function makeMaxVariant(
   } as unknown as PokemonVariant;
 }
 
+function makeCrownedCatalogVariants({
+  legacyPokemonId,
+  currentPokemonId,
+  species,
+  form,
+  displayForm,
+  signatureMoveId,
+  signatureMoveName,
+}: {
+  legacyPokemonId: number;
+  currentPokemonId: number;
+  species: string;
+  form: string;
+  displayForm: string;
+  signatureMoveId: number;
+  signatureMoveName: string;
+}): PokemonVariant[] {
+  const metalClaw = fastMove(29, 'Metal Claw', 'steel');
+  const signatureMove = chargedMove(
+    signatureMoveId,
+    signatureMoveName,
+    'steel',
+  );
+  const current = {
+    ...makeMaxVariant('default', currentPokemonId, species, 'steel'),
+    variant_id: `${String(currentPokemonId).padStart(4, '0')}-default`,
+    form,
+    moves: [metalClaw, signatureMove],
+  } as PokemonVariant;
+  const hero = {
+    ...makeMaxVariant('default', legacyPokemonId, species, 'fairy'),
+    variant_id: `${legacyPokemonId}-shiny`,
+    variantType: 'shiny',
+    pokedex_number: currentPokemonId,
+    name: `Shiny ${species}`,
+    species_name: species,
+    form: 'Hero',
+    image_url_shiny: `/images/shiny/${legacyPokemonId}.png`,
+    crownForms: [
+      {
+        id: legacyPokemonId,
+        base_pokemon_id: legacyPokemonId,
+        crown_pokemon_id: currentPokemonId,
+        display_form: displayForm,
+        name: species,
+        form,
+        attack: current.attack,
+        defense: current.defense,
+        stamina: current.stamina,
+        type1_name: current.type1_name,
+        type2_name: current.type2_name,
+        image_url: `/images/default/${currentPokemonId}.png`,
+        image_url_shiny: `/images/shiny/${currentPokemonId}.png`,
+        moves: [metalClaw, signatureMove],
+      },
+    ],
+  } as unknown as PokemonVariant;
+
+  return [hero, current];
+}
+
 const MaxLocationProbe = () => {
   const location = useLocation();
   return (
@@ -223,6 +284,77 @@ describe('Max page', () => {
       'aria-pressed',
       'true',
     );
+  });
+
+  it('renders caught Crowned forms projected from the real Hero catalog rows', () => {
+    authState.isLoggedIn = true;
+    variantsState.variants = [
+      ...makeCrownedCatalogVariants({
+        legacyPokemonId: 2290,
+        currentPokemonId: 888,
+        species: 'Zacian',
+        form: 'Crowned_sword',
+        displayForm: 'Crowned Sword',
+        signatureMoveId: 468,
+        signatureMoveName: 'Behemoth Blade',
+      }),
+      ...makeCrownedCatalogVariants({
+        legacyPokemonId: 2292,
+        currentPokemonId: 889,
+        species: 'Zamazenta',
+        form: 'Crowned_shield',
+        displayForm: 'Crowned Shield',
+        signatureMoveId: 469,
+        signatureMoveName: 'Behemoth Bash',
+      }),
+    ];
+    instancesState.instances = {
+      zacian: {
+        instance_id: 'caught-zacian',
+        variant_id: '2290-shiny',
+        pokemon_id: 2290,
+        cp: 4_172,
+        level: 29.5,
+        attack_iv: 13,
+        defense_iv: 15,
+        stamina_iv: 15,
+        shiny: true,
+        fast_move_id: 29,
+        charged_move1_id: 468,
+        crown: true,
+        is_caught: true,
+        disabled: false,
+      } as PokemonInstance,
+      zamazenta: {
+        instance_id: 'caught-zamazenta',
+        variant_id: '2292-shiny',
+        pokemon_id: 2292,
+        cp: 4_156,
+        level: 40,
+        attack_iv: 14,
+        defense_iv: 15,
+        stamina_iv: 15,
+        shiny: true,
+        fast_move_id: 29,
+        charged_move1_id: 469,
+        crown: true,
+        is_caught: true,
+        disabled: false,
+      } as PokemonInstance,
+    };
+
+    renderMax();
+
+    expect(screen.getByRole('button', { name: 'My Pokémon' })).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    );
+    expect(screen.getByText('Crowned Sword Zacian')).toBeVisible();
+    expect(screen.getByText('Crowned Shield Zamazenta')).toBeVisible();
+    expect(screen.getByText('CP 4,172 · Level 29.5 · 96% IV')).toBeVisible();
+    expect(screen.getByText('CP 4,156 · Level 40 · 98% IV')).toBeVisible();
+    expect(screen.getAllByText('Behemoth Blade')[0]).toBeVisible();
+    expect(screen.getAllByText('Behemoth Bash')[0]).toBeVisible();
   });
 
   it('renders move icons when the catalog only supplies the fallback type field', () => {

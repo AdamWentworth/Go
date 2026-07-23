@@ -178,6 +178,70 @@ describe('Max Battle ranking model', () => {
     ]);
   });
 
+  it('ranks an owned shiny Crowned form without exposing a public shiny duplicate', () => {
+    const shinyCrownedZacian = {
+      ...maxVariant(888, 'Shiny Zacian', 'default', {
+        form: 'Crowned_sword',
+        types: ['fairy', 'steel'],
+        moves: [
+          fastMove(29, 'Metal Claw', 'steel'),
+          chargedMove(468, 'Behemoth Blade', 'steel'),
+        ],
+      }),
+      variant_id: '2290-shiny::crown::1::max-caught::caught-zacian',
+      variantType: 'shiny',
+      pokemon_id: 2290,
+      pokedex_number: 888,
+      instanceData: {
+        instance_id: 'caught-zacian',
+        variant_id: '2290-shiny',
+        pokemon_id: 2290,
+        cp: 4_172,
+        level: 50,
+        attack_iv: 13,
+        defense_iv: 15,
+        stamina_iv: 15,
+        shiny: true,
+        fast_move_id: 29,
+        max_attack: 1,
+        max_guard: 0,
+        max_spirit: 0,
+        is_caught: true,
+        disabled: false,
+      } as PokemonInstance,
+      raidRoster: {
+        source: 'caught',
+        instanceId: 'caught-zacian',
+        moveSource: 'recorded',
+        levelSource: 'recorded',
+        ivSource: 'recorded',
+        formSource: 'crown',
+        cpSource: 'recorded',
+      },
+    } as PokemonVariant;
+    const publicShinyZacian = {
+      ...shinyCrownedZacian,
+      variant_id: '2290-shiny::crown::1',
+      instanceData: undefined,
+      raidRoster: undefined,
+    } as PokemonVariant;
+
+    const ownedResults = rankMaxBattlePokemon([shinyCrownedZacian], {
+      role: 'damage',
+    });
+    const catalogResults = rankMaxBattlePokemon([publicShinyZacian], {
+      role: 'damage',
+    });
+
+    expect(ownedResults).toHaveLength(1);
+    expect(ownedResults[0]).toMatchObject({
+      displayName: 'Crowned Sword Zacian',
+      maxForm: 'special',
+      maxMoveName: 'Behemoth Blade',
+    });
+    expect(catalogResults).toEqual([]);
+  });
+
   it('uses each special Max attack and its level-3 power without a fake Max form', () => {
     const variants = [
       maxVariant(888, 'Zacian', 'default', {

@@ -1,5 +1,6 @@
 import type { Move } from '@/types/pokemonSubTypes';
 import type { PokemonVariant } from '@/types/pokemonVariants';
+
 import { cpMultipliers } from '@/pages/Raid/utils/constants';
 import {
   buildRaidIncomingPressureScenarios,
@@ -13,6 +14,11 @@ import {
   resolveRaidAttackerLevel,
 } from '@/pages/Raid/utils/raidAttackerModel';
 import { getTypeEffectivenessMultiplier } from '@/pages/Raid/utils/typeEffectiveness';
+
+import {
+  getSpecialMaxAttacker,
+  type SpecialMaxAttacker,
+} from './specialMaxAttackers';
 
 export type MaxRole = 'damage' | 'tank' | 'healing';
 export type MaxMoveLevel = 0 | 1 | 2 | 3;
@@ -129,38 +135,6 @@ export const MAX_MODEL_CONSTANTS = {
   maxMeterEnergy: 100,
 } as const;
 
-type SpecialMaxAttacker = {
-  displayName: string;
-  form: string | null;
-  moveName: string;
-  moveType: string;
-  movePower: number;
-};
-
-const SPECIAL_MAX_ATTACKERS: Readonly<Record<number, SpecialMaxAttacker>> = {
-  888: {
-    displayName: 'Crowned Sword Zacian',
-    form: 'crowned_sword',
-    moveName: 'Behemoth Blade',
-    moveType: 'steel',
-    movePower: 350,
-  },
-  889: {
-    displayName: 'Crowned Shield Zamazenta',
-    form: 'crowned_shield',
-    moveName: 'Behemoth Bash',
-    moveType: 'steel',
-    movePower: 350,
-  },
-  890: {
-    displayName: 'Eternatus',
-    form: null,
-    moveName: 'Dynamax Cannon',
-    moveType: 'dragon',
-    movePower: 450,
-  },
-};
-
 const GIGANTAMAX_MOVE_FALLBACKS: Readonly<
   Record<number, { name: string; type: string }>
 > = {
@@ -189,18 +163,6 @@ const variantTypes = (variant: PokemonVariant): string[] =>
 
 const isGigantamax = (variant: PokemonVariant): boolean =>
   variant.variantType.toLowerCase().includes('gigantamax');
-
-const getSpecialMaxAttacker = (
-  variant: PokemonVariant,
-): SpecialMaxAttacker | null => {
-  if (variant.variantType.toLowerCase() !== 'default') return null;
-
-  const special = SPECIAL_MAX_ATTACKERS[variant.pokemon_id];
-  if (!special) return null;
-
-  const form = normalizeType(variant.form);
-  return special.form === null || form === special.form ? special : null;
-};
 
 export const isMaxBattleCatalogVariant = (
   variant: PokemonVariant,

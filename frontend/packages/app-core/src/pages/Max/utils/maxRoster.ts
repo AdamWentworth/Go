@@ -2,6 +2,7 @@ import type { InstancesMap, PokemonInstance } from '@/types/pokemonInstance';
 import type { PokemonVariant } from '@/types/pokemonVariants';
 
 import { resolveRaidRosterFormProjections } from '../../Raid/utils/raidRosterForms';
+import { isSpecialMaxAttacker } from './specialMaxAttackers';
 
 export type MaxRosterScope = 'catalog' | 'owned';
 
@@ -37,15 +38,6 @@ const isMaxVariant = (variant: PokemonVariant): boolean => {
   return type.includes('dynamax') || type.includes('gigantamax');
 };
 
-const isSpecialMaxVariant = (variant: PokemonVariant): boolean => {
-  const form = variant.form?.trim().toLowerCase() ?? '';
-  return (
-    variant.pokemon_id === 890 ||
-    (variant.pokemon_id === 888 && form === 'crowned_sword') ||
-    (variant.pokemon_id === 889 && form === 'crowned_shield')
-  );
-};
-
 const resolveMaxVariant = (
   variants: PokemonVariant[],
   base: PokemonVariant,
@@ -56,7 +48,7 @@ const resolveMaxVariant = (
       base)
     : base;
 
-  if (isSpecialMaxVariant(projectedBase)) return projectedBase;
+  if (isSpecialMaxAttacker(projectedBase)) return projectedBase;
 
   const wantsGigantamax = Boolean(instance.gigantamax);
   const wantsDynamax = Boolean(instance.dynamax) || wantsGigantamax;
