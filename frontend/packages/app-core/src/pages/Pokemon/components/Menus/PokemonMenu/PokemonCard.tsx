@@ -214,7 +214,8 @@ const PokemonCard = memo(({
     ${shouldJiggle ? 'jiggle' : ''}
   `.trim();
 
-  // Modifier-click toggles selection on desktop; normal click opens details
+  // Modifier-click toggles selection on desktop; normal activation delegates to the
+  // parent, which selects catalog entries and opens owned instance details.
   const handleCardClick = (e: React.MouseEvent) => {
     if (e.shiftKey || e.ctrlKey || e.metaKey) {
       e.preventDefault();
@@ -250,7 +251,11 @@ const PokemonCard = memo(({
       onKeyDown={handleKeyDown}
       tabIndex={0}
       role="button"
-      aria-label={`View ${pokemon.name} details`}
+      aria-label={
+        pokemon.instanceData?.instance_id
+          ? `View ${pokemon.name} details`
+          : `Select ${pokemon.name}`
+      }
     >
       {/* Select chip (desktop hover only before fast-select is enabled) */}
       {isEditable && (

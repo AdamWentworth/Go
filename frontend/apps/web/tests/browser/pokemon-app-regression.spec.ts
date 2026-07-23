@@ -471,8 +471,8 @@ test.describe('pokemon app browser regressions', () => {
       await searchInput.pressSequentially('pi', { delay: 60 });
       await expect(searchInput).toHaveValue('pi');
       await expectNoLoadingOverlaySeen(page);
-      await expect(page.getByRole('button', { name: /View Pikachu details/i }).first()).toBeVisible();
-      await expect(page.getByRole('button', { name: /View Caterpie details/i })).toHaveCount(0);
+      await expect(page.getByRole('button', { name: /Select Pikachu/i }).first()).toBeVisible();
+      await expect(page.getByRole('button', { name: /Select Caterpie/i })).toHaveCount(0);
 
       const contrast = await searchInput.evaluate((element) => {
         const parseRgb = (value: string) => {
@@ -523,6 +523,38 @@ test.describe('pokemon app browser regressions', () => {
     ).toEqual([]);
   });
 
+  test('selects catalog Pokemon on click or tap without opening the legacy Pokedex overlay', async ({
+    page,
+    isMobile,
+  }, testInfo) => {
+    const diagnostics = attachBrowserDiagnostics(page, testInfo);
+
+    try {
+      await openPokemonPage(page);
+
+      const catalogCard = page.getByRole('button', { name: /^Select / }).first();
+      await expect(catalogCard).toBeVisible();
+
+      if (isMobile) {
+        await catalogCard.tap();
+      } else {
+        await catalogCard.click();
+      }
+
+      await expect(catalogCard).toHaveClass(/highlighted/);
+      await expect(page.locator('.pokemon-overlay')).toHaveCount(0);
+      await expect(page.locator('.highlight-action-container')).toBeVisible();
+    } finally {
+      await diagnostics.flush();
+    }
+
+    const blockingErrors = diagnostics.blockingErrors();
+    expect(
+      blockingErrors,
+      `browser diagnostics should not include runtime errors:\n${JSON.stringify(blockingErrors, null, 2)}`,
+    ).toEqual([]);
+  });
+
   test('keeps visible Pokemon cards non-overlapping through boot and refresh', async ({
     page,
   }, testInfo) => {
@@ -536,7 +568,7 @@ test.describe('pokemon app browser regressions', () => {
 
       const response = await page.reload({ waitUntil: 'domcontentloaded' });
       expect(response?.ok(), '/pokemon reload response should be OK').toBe(true);
-      await expect(page.locator('[role="button"][aria-label^="View "]').first()).toBeVisible({
+      await expect(page.locator('.pokemon-card[role="button"]').first()).toBeVisible({
         timeout: 30_000,
       });
       await expect(page.locator('.pokemon-grid-cell.visible').first()).toBeVisible();

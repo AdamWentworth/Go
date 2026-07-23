@@ -17,6 +17,43 @@ vi.mock('@/contexts/ModalContext', () => ({
   useModal: () => ({ alert: () => undefined, confirm: confirmMock }),
 }));
 
+vi.mock('@/pages/Pokemon/components/Menus/PokemonMenu/PokemonGrid', () => ({
+  default: ({
+    sortedPokemons,
+    handleSelect,
+  }: {
+    sortedPokemons: Array<{ variant_id: string; name: string }>;
+    handleSelect: (pokemon: { variant_id: string; name: string }) => void;
+  }) => (
+    <div>
+      {sortedPokemons.map((pokemon) => (
+        <button
+          key={pokemon.variant_id}
+          type="button"
+          onClick={() => handleSelect(pokemon)}
+        >
+          activate {pokemon.name}
+        </button>
+      ))}
+    </div>
+  ),
+}));
+
+function makePokemon(
+  overrides: Record<string, unknown> = {},
+): React.ComponentProps<typeof PokemonMenu>['sortedPokemons'][number] {
+  return {
+    pokemon_id: 1,
+    name: 'Bulbasaur',
+    species_name: 'Bulbasaur',
+    variant_id: '0001-default',
+    variantType: 'default',
+    currentImage: '/images/1.png',
+    pokedex_number: 1,
+    ...overrides,
+  } as React.ComponentProps<typeof PokemonMenu>['sortedPokemons'][number];
+}
+
 const makeProps = (
   overrides: Partial<React.ComponentProps<typeof PokemonMenu>> = {},
 ): React.ComponentProps<typeof PokemonMenu> => ({
@@ -115,5 +152,58 @@ describe('PokemonMenu', () => {
       'src',
       '/images/fav_pressed.png',
     );
+  });
+
+  it('selects a catalog Pokemon instead of opening the legacy Pokedex overlay', () => {
+    const pokemon = makePokemon();
+    const setSelectedPokemon = vi.fn();
+    const setIsFastSelectEnabled = vi.fn();
+    const toggleCardHighlight = vi.fn();
+
+    render(
+      <AppLoadingProvider>
+        <PokemonMenu
+          {...makeProps({
+            sortedPokemons: [pokemon],
+            variants: [pokemon],
+            setSelectedPokemon,
+            setIsFastSelectEnabled,
+            toggleCardHighlight,
+          })}
+        />
+      </AppLoadingProvider>,
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'activate Bulbasaur' }));
+
+    expect(toggleCardHighlight).toHaveBeenCalledWith('0001-default');
+    expect(setIsFastSelectEnabled).toHaveBeenCalledWith(true);
+    expect(setSelectedPokemon).not.toHaveBeenCalled();
+  });
+
+  it('continues to open owned Pokemon instances for editing', () => {
+    const pokemon = makePokemon({
+      instanceData: { instance_id: 'instance-123' },
+    });
+    const setSelectedPokemon = vi.fn();
+
+    render(
+      <AppLoadingProvider>
+        <PokemonMenu
+          {...makeProps({
+            sortedPokemons: [pokemon],
+            variants: [pokemon],
+            setSelectedPokemon,
+          })}
+        />
+      </AppLoadingProvider>,
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'activate Bulbasaur' }));
+
+    expect(setSelectedPokemon).toHaveBeenCalledWith({
+      pokemon,
+      overlayType: 'instance',
+    });
   });
 });

@@ -2,7 +2,7 @@ import { expect, type Locator, type Page } from '@playwright/test';
 
 import { installE2eRoutes } from './e2eRoutes';
 
-const cardSelector = '[role="button"][aria-label^="View "][aria-label$=" details"]';
+const cardSelector = '.pokemon-card[role="button"]';
 
 type LoadingProbeWindow = Window & {
   __e2eLoadingOverlaySeen?: boolean;

@@ -119,11 +119,16 @@ const PokemonMenu: React.FC<PokemonMenuProps> = ({
         return;
       }
 
-      if (isFastSelectEnabled) {
+      // Catalog entries are blueprints for creating collection records, so activating one
+      // selects it. Owned instances retain their detail/edit overlay outside selection mode.
+      if (isFastSelectEnabled || !isInstance) {
         const key = pokemon.instanceData?.instance_id ?? pokemon.variant_id;
         const was = highlightedCards.has(key);
         toggleCardHighlight(key);
-        if (was && highlightedCards.size === 1) {
+
+        if (!was && !isFastSelectEnabled) {
+          setIsFastSelectEnabled(true);
+        } else if (was && highlightedCards.size === 1) {
           setIsFastSelectEnabled(false);
         }
         return;
@@ -134,8 +139,7 @@ const PokemonMenu: React.FC<PokemonMenuProps> = ({
         return;
       }
 
-      // default: open details immediately
-      setSelectedPokemon(isInstance ? { pokemon, overlayType: 'instance' } : pokemon);
+      setSelectedPokemon({ pokemon, overlayType: 'instance' });
     },
     [
       isEditable,

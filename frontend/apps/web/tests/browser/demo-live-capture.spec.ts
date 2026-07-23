@@ -2854,19 +2854,6 @@ async function selectLocationSuggestionForVideo(
   await page.waitForTimeout(workflowVideoActionPauseMs);
 }
 
-async function scrollCostumeViewAllForVideo(page: Page) {
-  const costumeGrid = page.locator('body.fullscreen-active .costume-column.fullscreen').first();
-  await expect(costumeGrid).toBeVisible({ timeout: 10_000 });
-  await moveVideoCursorToLocator(costumeGrid, 120);
-  await page.waitForTimeout(250);
-
-  for (const deltaY of [560, 560, -320]) {
-    await page.mouse.wheel(0, deltaY);
-    await page.waitForTimeout(420);
-    await waitForVisibleImagesReady(page, 12_000);
-  }
-}
-
 async function editCaughtInstanceFieldsForVideo(page: Page, alreadyEditing = false) {
   if (!alreadyEditing) {
     await clickForVideo(page.getByRole('button', { name: 'Edit' }), 10_000);
@@ -2942,24 +2929,11 @@ async function performCatalogSearchWorkflowVideoFlow(page: Page, recordingStarte
   await scrollPokemonGridForVideo(page, 4);
   await pauseForVideo(page, workflowVideoPauseMs);
 
-  await clickForVideo(page.locator('.pokemon-card').first(), 10_000);
-  await expect(page.locator('.pokemon-overlay')).toBeVisible({ timeout: 20_000 });
-  await waitForVisibleImagesReady(page, 45_000);
-  const costumesViewAllButton = page
-    .locator('.pokemon-overlay .overlay-costumes')
-    .getByRole('button', { name: 'View All' })
-    .first();
-  if (await costumesViewAllButton.isVisible({ timeout: 5_000 }).catch(() => false)) {
-    await clickForVideo(costumesViewAllButton, 10_000);
-    await expect(page.locator('body.fullscreen-active .costume-column.fullscreen')).toBeVisible({
-      timeout: 10_000,
-    });
-    await waitForVisibleImagesReady(page, 45_000);
-    await scrollCostumeViewAllForVideo(page);
-    await pauseForVideo(page, 900);
-  } else {
-    await pauseForVideo(page, workflowVideoFinalPauseMs);
-  }
+  const catalogCard = page.locator('.pokemon-card').first();
+  await clickForVideo(catalogCard, 10_000);
+  await expect(catalogCard).toHaveClass(/highlighted/, { timeout: 10_000 });
+  await expect(page.locator('.pokemon-overlay')).toHaveCount(0);
+  await pauseForVideo(page, workflowVideoFinalPauseMs);
 
   return { trimStartMs };
 }

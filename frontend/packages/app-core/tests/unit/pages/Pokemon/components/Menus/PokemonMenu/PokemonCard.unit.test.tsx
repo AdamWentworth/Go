@@ -108,7 +108,7 @@ describe('PokemonCard', () => {
       variant_id: '0001-default',
     });
 
-    const card = screen.getByRole('button', { name: /view bulbasaur details/i });
+    const card = screen.getByRole('button', { name: /select bulbasaur/i });
     fireEvent.click(card, { ctrlKey: true });
 
     expect(setIsFastSelectEnabled).toHaveBeenCalledWith(true);
@@ -127,6 +127,46 @@ describe('PokemonCard', () => {
     expect(setIsFastSelectEnabled).toHaveBeenCalledWith(true);
     expect(toggleCardHighlight).toHaveBeenCalledWith('instance-123');
     expect(onSelect).toHaveBeenCalledTimes(1);
+  });
+
+  it('describes catalog activation as selection and owned activation as viewing details', () => {
+    const { rerender } = render(
+      <PokemonCard
+        pokemon={makePokemon({ instanceData: {} })}
+        onSelect={vi.fn()}
+        onSwipe={vi.fn()}
+        toggleCardHighlight={vi.fn()}
+        setIsFastSelectEnabled={vi.fn()}
+        isEditable={true}
+        isFastSelectEnabled={false}
+        isHighlighted={false}
+        tagFilter=""
+        sortType="name"
+        variantByPokemonId={new Map()}
+      />,
+    );
+
+    expect(screen.getByRole('button', { name: 'Select Bulbasaur' })).toBeInTheDocument();
+
+    rerender(
+      <PokemonCard
+        pokemon={makePokemon({ instanceData: { instance_id: 'instance-123' } })}
+        onSelect={vi.fn()}
+        onSwipe={vi.fn()}
+        toggleCardHighlight={vi.fn()}
+        setIsFastSelectEnabled={vi.fn()}
+        isEditable={true}
+        isFastSelectEnabled={false}
+        isHighlighted={false}
+        tagFilter=""
+        sortType="name"
+        variantByPokemonId={new Map()}
+      />,
+    );
+
+    expect(
+      screen.getByRole('button', { name: 'View Bulbasaur details' }),
+    ).toBeInTheDocument();
   });
 
   it('renders mega-prefixed display names in catalog cards for mega instances', () => {
