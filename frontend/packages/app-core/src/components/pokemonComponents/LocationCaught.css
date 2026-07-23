@@ -75,12 +75,21 @@
 }
 
 .suggestion-item {
+    display: block;
+    width: 100%;
     padding: 8px 10px;
     cursor: pointer;
+    border: 0;
     border-bottom: 1px solid #ccc;
+    background: transparent;
+    color: inherit;
+    font: inherit;
+    text-align: left;
     box-sizing: border-box; /* Includes padding in sizing */
 }
 
-.suggestion-item:hover {
+.suggestion-item:hover,
+.suggestion-item:focus-visible {
     background-color: #f0f0f0;
+    outline: none;
 }

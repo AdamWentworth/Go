@@ -53,10 +53,39 @@ describe('LocationCaught', () => {
       expect(screen.getByText('Seattle, Washington, USA')).toBeInTheDocument();
     });
 
-    fireEvent.mouseDown(screen.getByText('Seattle, Washington, USA'));
+    fireEvent.click(screen.getByRole('option', { name: 'Seattle, Washington, USA' }));
 
     expect(input).toHaveValue('Seattle, Washington, USA');
     expect(onLocationChange).toHaveBeenLastCalledWith('Seattle, Washington, USA');
+  });
+
+  it('applies touch selections, closes suggestions, and dismisses input focus', async () => {
+    const onLocationChange = vi.fn();
+    fetchSuggestionsMock.mockResolvedValue([{ displayName: 'Vancouver, British Columbia, Canada' }]);
+
+    render(
+      <LocationCaught
+        pokemon={{ instanceData: { location_caught: '' } }}
+        editMode={true}
+        onLocationChange={onLocationChange}
+      />,
+    );
+
+    const input = screen.getByLabelText('Location Caught:');
+    input.focus();
+    fireEvent.change(input, { target: { value: 'Vanc' } });
+
+    const suggestion = await screen.findByRole('option', {
+      name: 'Vancouver, British Columbia, Canada',
+    });
+    fireEvent.pointerDown(suggestion, { pointerType: 'touch' });
+
+    expect(input).toHaveValue('Vancouver, British Columbia, Canada');
+    expect(input).not.toHaveFocus();
+    expect(screen.queryByLabelText('Location suggestions')).not.toBeInTheDocument();
+    expect(onLocationChange).toHaveBeenLastCalledWith(
+      'Vancouver, British Columbia, Canada',
+    );
   });
 
   it('does not auto-focus the input when edit mode is enabled', () => {

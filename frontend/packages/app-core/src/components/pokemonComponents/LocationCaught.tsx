@@ -24,30 +24,37 @@ const LocationCaught: React.FC<LocationCaughtProps> = ({
 
   const locationRef = useRef<HTMLInputElement>(null);
   const wrapperRef = useRef<HTMLDivElement>(null);
+  const suggestionRequestRef = useRef(0);
 
   useEffect(() => {
     setLocation(pokemon.instanceData?.location_caught ?? '');
   }, [pokemon]);
 
   useEffect(() => {
-    const handler = (e: MouseEvent) => {
+    const handler = (e: PointerEvent) => {
       if (wrapperRef.current && !wrapperRef.current.contains(e.target as Node)) {
         setSuggestions([]);
       }
     };
-    document.addEventListener('mousedown', handler);
-    return () => document.removeEventListener('mousedown', handler);
+    document.addEventListener('pointerdown', handler);
+    return () => document.removeEventListener('pointerdown', handler);
   }, []);
 
   const updateLocation = async (value: string) => {
+    const requestId = ++suggestionRequestRef.current;
     setLocation(value);
     onLocationChange(value);
 
     if (value.length > 2) {
       try {
-        setSuggestions(await fetchSuggestions(value));
+        const nextSuggestions = await fetchSuggestions(value);
+        if (requestId === suggestionRequestRef.current) {
+          setSuggestions(nextSuggestions);
+        }
       } catch {
-        setSuggestions([]);
+        if (requestId === suggestionRequestRef.current) {
+          setSuggestions([]);
+        }
       }
       return;
     }
@@ -56,10 +63,11 @@ const LocationCaught: React.FC<LocationCaughtProps> = ({
   };
 
   const pick = (s: { displayName: string }) => {
+    suggestionRequestRef.current += 1;
     setLocation(s.displayName);
     onLocationChange(s.displayName);
     setSuggestions([]);
-    locationRef.current?.focus({ preventScroll: true });
+    locationRef.current?.blur();
   };
 
   if (!editMode && location.trim() === '') return null;
@@ -81,6 +89,8 @@ const LocationCaught: React.FC<LocationCaughtProps> = ({
             onKeyDown={(e) => {
               if (e.key === 'Enter') {
                 e.preventDefault();
+                suggestionRequestRef.current += 1;
+                setSuggestions([]);
                 locationRef.current?.blur();
               }
             }}
@@ -92,18 +102,26 @@ const LocationCaught: React.FC<LocationCaughtProps> = ({
         )}
 
         {editMode && suggestions.length > 0 && (
-          <div className="suggestions">
+          <div className="suggestions" role="listbox" aria-label="Location suggestions">
             {suggestions.map((s, i) => (
-              <div
-                key={i}
+              <button
+                type="button"
+                key={`${s.displayName}-${i}`}
                 className="suggestion-item"
-                onMouseDown={(event) => {
+                role="option"
+                aria-selected="false"
+                onPointerDown={(event) => {
                   event.preventDefault();
                   pick(s);
                 }}
+                onClick={(event) => {
+                  if (event.detail === 0) {
+                    pick(s);
+                  }
+                }}
               >
                 {s.displayName}
-              </div>
+              </button>
             ))}
           </div>
         )}
