@@ -133,14 +133,10 @@ const PowerPanel: React.FC<PowerPanelProps> = ({
         ) : null}
       </div>
 
-      {canRenderMax ? (
+      {canRenderMax && showMaxOptions ? (
         <MaxMovesComponent
           pokemon={pokemon}
           editMode={editMode}
-          showMaxOptions={showMaxOptions}
-          setShowMaxOptions={() => {
-            // Kept for compatibility; no-op here.
-          }}
           maxAttack={maxAttack}
           maxGuard={maxGuard}
           maxSpirit={maxSpirit}

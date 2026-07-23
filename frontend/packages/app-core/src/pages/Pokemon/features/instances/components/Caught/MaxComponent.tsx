@@ -32,12 +32,14 @@ const MaxComponent: React.FC<MaxComponentProps> = ({
 
   return (
     <div className="max-component">
-      <div 
+      <button
+        type="button"
         className="max-icon"
         onClick={onToggleMax}
-        style={{ cursor: 'pointer' }}
         aria-expanded={showMaxOptions}
         aria-controls={`max-options-${key}`}
+        aria-label={`${showMaxOptions ? 'Close' : 'Open'} Max Move upgrades`}
+        title={`${showMaxOptions ? 'Close' : 'Open'} Max Move upgrades`}
       >
         <img
           src={
@@ -48,7 +50,7 @@ const MaxComponent: React.FC<MaxComponentProps> = ({
           alt={label}
           className={gigantamax || dynamax || isSpecialMax ? 'saturated' : 'desaturated'}
         />
-      </div>
+      </button>
     </div>
   );
 };

@@ -1,6 +1,6 @@
 // MaxMovesComponent.tsx
 
-import React, { useEffect } from "react";
+import React from "react";
 import "./MaxMovesComponent.css";
 
 type PokemonProps = { variant_id?: string };
@@ -8,8 +8,6 @@ type PokemonProps = { variant_id?: string };
 interface MaxMovesComponentProps {
   pokemon: PokemonProps;
   editMode: boolean;
-  showMaxOptions: boolean;
-  setShowMaxOptions: (show: boolean) => void;
   maxAttack: string;
   maxGuard: string;
   maxSpirit: string;
@@ -21,8 +19,6 @@ interface MaxMovesComponentProps {
 const MaxMovesComponent: React.FC<MaxMovesComponentProps> = ({
   pokemon,
   editMode,
-  showMaxOptions,
-  setShowMaxOptions,
   maxAttack,
   maxGuard,
   maxSpirit,
@@ -31,17 +27,14 @@ const MaxMovesComponent: React.FC<MaxMovesComponentProps> = ({
   handleMaxSpiritChange,
 }) => {
   const key = pokemon.variant_id ?? '';
-  useEffect(() => {
-    if (!editMode) {
-      setShowMaxOptions(false);
-    }
-  }, [editMode, setShowMaxOptions]);
 
   return (
     <div
-      className={`max-options-container ${showMaxOptions ? "show" : ""}`}
+      className="max-options-container"
       id={`max-options-${key}`}
+      aria-label="Max Move levels"
     >
+      <div className="max-moves-heading">Max Move Levels</div>
       <div className="max-moves-row">
         {/* Max Attack */}
         <div className="max-move">
@@ -51,6 +44,7 @@ const MaxMovesComponent: React.FC<MaxMovesComponentProps> = ({
           </label>
           <select
             id="max-attack"
+            aria-label="Max Attack"
             value={maxAttack || "1"}
             onChange={(e) => handleMaxAttackChange(e.target.value)}
             disabled={!editMode}
@@ -69,6 +63,7 @@ const MaxMovesComponent: React.FC<MaxMovesComponentProps> = ({
           </label>
           <select
             id="max-guard"
+            aria-label="Max Guard"
             value={maxGuard || "0"}
             onChange={(e) => handleMaxGuardChange(e.target.value)}
             disabled={!editMode}
@@ -88,6 +83,7 @@ const MaxMovesComponent: React.FC<MaxMovesComponentProps> = ({
           </label>
           <select
             id="max-spirit"
+            aria-label="Max Spirit"
             value={maxSpirit || "0"}
             onChange={(e) => handleMaxSpiritChange(e.target.value)}
             disabled={!editMode}

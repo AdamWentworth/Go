@@ -2,18 +2,39 @@
 
 /* Container for Max Moves */
 .max-options-container {
-    max-height: 0;
-    opacity: 0;
-    overflow: hidden;
-    transition: max-height 0.5s ease, opacity 0.5s ease, padding 0.5s ease;
     width: 100%;
+    padding: 10px;
     border-radius: 8px;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    animation: max-moves-reveal 180ms ease-out;
 }
 
-.max-options-container.show {
-    max-height: 250px; /* Adjust based on content */
-    opacity: 1;
+.max-moves-heading {
+    margin-bottom: 10px;
+    color: white;
+    font-size: 0.8rem;
+    font-weight: 700;
+    letter-spacing: 0;
+    text-align: center;
+    text-transform: uppercase;
+}
+
+@keyframes max-moves-reveal {
+    from {
+        opacity: 0;
+        transform: translateY(-4px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .max-options-container {
+        animation: none;
+    }
 }
 
 /* Arrange max moves in a row */
@@ -66,6 +87,10 @@
 
 :root[data-theme='light'] :is(.instance-overlay.caught-mode, .trade-instance--caught-layout) .max-move label {
     color: var(--light-text-secondary);
+}
+
+:root[data-theme='light'] :is(.instance-overlay.caught-mode, .trade-instance--caught-layout) .max-moves-heading {
+    color: var(--light-text-primary);
 }
 
 :root[data-theme='light'] :is(.instance-overlay.caught-mode, .trade-instance--caught-layout) .max-move select,
