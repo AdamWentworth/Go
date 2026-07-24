@@ -186,8 +186,9 @@ const PvpMethodology = () => {
             <h2>My Pokémon keeps the build honest</h2>
             <p>
               Each eligible caught copy uses its recorded CP, level, IVs, Fast
-              Move, and two Charged Moves. The page does not silently promote a
-              caught Pokémon to the catalog&apos;s recommended level or IV spread.
+              Move, and one or two recorded Charged Moves. The page does not
+              silently promote a caught Pokémon to the catalog&apos;s recommended
+              level or IV spread.
             </p>
             <div className="pvp-methodology-callout">
               <FaBolt aria-hidden="true" />

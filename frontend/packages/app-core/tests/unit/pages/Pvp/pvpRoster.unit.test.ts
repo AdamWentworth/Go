@@ -262,7 +262,10 @@ describe('buildOwnedPvPRoster', () => {
       [variant],
       {
         over: instance({ cp: 1_501 }),
-        incomplete: instance({ charged_move2_id: null }),
+        incomplete: instance({
+          charged_move1_id: null,
+          charged_move2_id: null,
+        }),
         unmatched: instance({ variant_id: '9999-default' }),
       },
       1_500,
@@ -273,7 +276,58 @@ describe('buildOwnedPvPRoster', () => {
       eligibleCount: 0,
       overCapCount: 1,
       incompleteCount: 1,
+      missingMoveCount: 1,
       unmatchedCount: 1,
+    });
+  });
+
+  it('includes a legal build with one recorded Charged Move', () => {
+    const roster = buildOwnedPvPRoster(
+      [ranking],
+      [variant],
+      {
+        singleChargedMove: instance({
+          charged_move2_id: null,
+        }),
+      },
+      1_500,
+    );
+
+    expect(roster).toMatchObject({
+      caughtCount: 1,
+      eligibleCount: 1,
+      incompleteCount: 0,
+      missingMoveCount: 0,
+    });
+    expect(roster.entries[0].entry.moveset.map((move) => move.name)).toEqual([
+      'Vine Whip',
+      'Power Whip',
+    ]);
+  });
+
+  it('reports which required battle details are missing', () => {
+    const roster = buildOwnedPvPRoster(
+      [ranking],
+      [variant],
+      {
+        cp: instance({ cp: null }),
+        ivs: instance({ attack_iv: null }),
+        moves: instance({
+          fast_move_id: null,
+          charged_move1_id: null,
+          charged_move2_id: null,
+        }),
+      },
+      null,
+    );
+
+    expect(roster).toMatchObject({
+      caughtCount: 3,
+      eligibleCount: 0,
+      incompleteCount: 3,
+      missingCpCount: 1,
+      missingLevelOrIvCount: 1,
+      missingMoveCount: 1,
     });
   });
 

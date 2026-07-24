@@ -23,6 +23,9 @@ export type OwnedPvPRoster = {
   caughtCount: number;
   eligibleCount: number;
   incompleteCount: number;
+  missingCpCount: number;
+  missingLevelOrIvCount: number;
+  missingMoveCount: number;
   overCapCount: number;
   unmatchedCount: number;
 };
@@ -34,6 +37,8 @@ const normalize = (value: unknown): string =>
     .replace(/[^a-z0-9]+/g, '');
 
 const hasFiniteNumber = (value: unknown): boolean =>
+  value != null &&
+  value !== '' &&
   Number.isFinite(Number(value));
 
 const moveIsFast = (move: Move): boolean =>
@@ -136,7 +141,7 @@ const recordedMoveset = (
     findMove(moves, instance.charged_move2_id, false),
   ].filter((move): move is Move => move != null);
 
-  if (!fast || charged.length < 2) return null;
+  if (!fast || charged.length < 1) return null;
   return [
     toPvPRankingMove(fast, 'fast'),
     ...charged.map((move) => toPvPRankingMove(move, 'charged')),
@@ -240,6 +245,9 @@ export const buildOwnedPvPRoster = (
     caughtCount: caught.length,
     eligibleCount: 0,
     incompleteCount: 0,
+    missingCpCount: 0,
+    missingLevelOrIvCount: 0,
+    missingMoveCount: 0,
     overCapCount: 0,
     unmatchedCount: 0,
   };
@@ -248,6 +256,7 @@ export const buildOwnedPvPRoster = (
     const cp = Number(instance.cp);
     if (!Number.isFinite(cp) || cp <= 0) {
       result.incompleteCount += 1;
+      result.missingCpCount += 1;
       continue;
     }
     if (cpLimit != null && cp > cpLimit) {
@@ -261,6 +270,7 @@ export const buildOwnedPvPRoster = (
       !hasFiniteNumber(instance.stamina_iv)
     ) {
       result.incompleteCount += 1;
+      result.missingLevelOrIvCount += 1;
       continue;
     }
 
@@ -285,6 +295,7 @@ export const buildOwnedPvPRoster = (
     const stats = battleStats(projection.variant, instance);
     if (!stats) {
       result.incompleteCount += 1;
+      result.missingLevelOrIvCount += 1;
       continue;
     }
     const moveset = recordedMoveset(
@@ -294,6 +305,7 @@ export const buildOwnedPvPRoster = (
     );
     if (!moveset) {
       result.incompleteCount += 1;
+      result.missingMoveCount += 1;
       continue;
     }
     const ranking = matchPvPRanking(

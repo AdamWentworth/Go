@@ -66,6 +66,9 @@ const EMPTY_OWNED_ROSTER = {
   caughtCount: 0,
   eligibleCount: 0,
   incompleteCount: 0,
+  missingCpCount: 0,
+  missingLevelOrIvCount: 0,
+  missingMoveCount: 0,
   overCapCount: 0,
   unmatchedCount: 0,
 } as const;
@@ -522,7 +525,7 @@ const Pvp = () => {
         ? 'Loading your caught Pokémon...'
         : 'Loading move data for your caught Pokémon...';
   const rosterDetails = [
-    `${ownedRoster.eligibleCount} PvP-ready from ${ownedRoster.caughtCount} caught`,
+    `${ownedRoster.eligibleCount} fully detailed from ${ownedRoster.caughtCount} caught`,
     ownedEvaluation.loading
       ? 'evaluating levels, IVs, and moves on this device'
       : ownedEvaluation.response
@@ -533,8 +536,14 @@ const Pvp = () => {
     ownedRoster.overCapCount > 0
       ? `${ownedRoster.overCapCount} over the format cap`
       : '',
-    ownedRoster.incompleteCount > 0
-      ? `${ownedRoster.incompleteCount} need level, IV, CP, or move details`
+    ownedRoster.missingCpCount > 0
+      ? `${ownedRoster.missingCpCount} need CP`
+      : '',
+    ownedRoster.missingLevelOrIvCount > 0
+      ? `${ownedRoster.missingLevelOrIvCount} need level or IVs`
+      : '',
+    ownedRoster.missingMoveCount > 0
+      ? `${ownedRoster.missingMoveCount} need a Fast and Charged Move`
       : '',
     ownedRoster.unmatchedCount > 0
       ? `${ownedRoster.unmatchedCount} unavailable in this format ranking`

@@ -519,7 +519,7 @@ describe('PvP rankings page', () => {
           stamina_iv: 15,
           fast_move_id: 1,
           charged_move1_id: 2,
-          charged_move2_id: 3,
+          charged_move2_id: null,
           is_caught: true,
           disabled: false,
           shadow: false,
@@ -542,6 +542,7 @@ describe('PvP rankings page', () => {
     expect(screen.getByText('CP 1,498')).toBeInTheDocument();
     expect(screen.getByText('Level 39.5')).toBeInTheDocument();
     expect(screen.getByText('1 ready')).toBeInTheDocument();
+    expect(screen.getByText(/1 fully detailed from 1 caught/)).toBeInTheDocument();
     expect(screen.queryByText('Clodsire')).not.toBeInTheDocument();
   });
 
