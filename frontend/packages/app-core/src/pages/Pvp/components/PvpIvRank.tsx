@@ -354,7 +354,11 @@ const PvpIvRank = ({
         )}
       </div>
 
-      <div className="pvp-iv-workbench">
+      <div
+        className={`pvp-iv-workbench${
+          selectedPokemon ? '' : ' pvp-iv-workbench--browsing'
+        }`}
+      >
         <section className="pvp-iv-controls">
           <label className="pvp-iv-search">
             <span>
@@ -454,9 +458,10 @@ const PvpIvRank = ({
                           {label}
                           {entry.favorite && <FaStar aria-label="Favorite" />}
                         </strong>
+                        <em>{formatCurrentDetails(entry)}</em>
                         <em>
-                          {formatCurrentDetails(entry)} · {entry.ivs.attack}/
-                          {entry.ivs.defense}/{entry.ivs.stamina} IV
+                          {entry.ivs.attack}/{entry.ivs.defense}/
+                          {entry.ivs.stamina} IV
                         </em>
                       </span>
                       <span className="pvp-iv-browser-ranks">
@@ -630,21 +635,12 @@ const PvpIvRank = ({
           </div>
         </section>
 
-        <section
-          className="pvp-iv-result"
-          aria-label="IV Rank result"
-          aria-live="polite"
-        >
-          {!result || !selectedPokemon ? (
-            <div className="pvp-iv-empty">
-              <strong>Select a Pokémon</strong>
-              <span>
-                {scope === 'owned'
-                  ? 'Choose an appraised copy to see how its IVs rank.'
-                  : 'Enter its appraisal IVs to compare all 4,096 possible spreads.'}
-              </span>
-            </div>
-          ) : (
+        {selectedPokemon && result && (
+          <section
+            className="pvp-iv-result"
+            aria-label="IV Rank result"
+            aria-live="polite"
+          >
             <>
               {scope === 'owned' && selectedOwnedCopy && (
                 <div className="pvp-iv-result-context">
@@ -736,8 +732,8 @@ const PvpIvRank = ({
                 </div>
               </div>
             </>
-          )}
-        </section>
+          </section>
+        )}
       </div>
     </section>
   );

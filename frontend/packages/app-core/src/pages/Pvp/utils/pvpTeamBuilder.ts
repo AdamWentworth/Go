@@ -40,6 +40,16 @@ export const formatPvPSpeciesName = (speciesId: string): string =>
     .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
     .join(' ');
 
+export const rankPvPTeamCandidates = (
+  candidates: readonly PvPTeamCandidate[],
+): PvPTeamCandidate[] =>
+  [...candidates].sort((left, right) => (
+    right.entry.score - left.entry.score ||
+    left.entry.rank - right.entry.rank ||
+    left.entry.name.localeCompare(right.entry.name) ||
+    left.key.localeCompare(right.key)
+  ));
+
 export const analyzePvPTeam = (
   team: PvPTeamCandidate[],
   candidates: PvPTeamCandidate[],

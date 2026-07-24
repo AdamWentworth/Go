@@ -413,6 +413,11 @@ describe('PvP rankings page', () => {
     expect(screen.getByRole('button', {
       name: /Check Paldea, Sprigatito, IV 1\/15\/15, Meta rank 3, IV rank/,
     })).toBeInTheDocument();
+    const browser = screen.getByLabelText('Browse your appraised Pokémon');
+    expect(browser.closest('.pvp-iv-workbench'))
+      .toHaveClass('pvp-iv-workbench--browsing');
+    expect(screen.queryByRole('region', { name: 'IV Rank result' }))
+      .not.toBeInTheDocument();
 
     fireEvent.change(screen.getByRole('searchbox', {
       name: 'Search IV Rank Pokémon',
@@ -433,6 +438,8 @@ describe('PvP rankings page', () => {
 
     fireEvent.click(sprout);
     const result = screen.getByRole('region', { name: 'IV Rank result' });
+    expect(result.closest('.pvp-iv-workbench'))
+      .not.toHaveClass('pvp-iv-workbench--browsing');
     expect(within(result).getByText('Sprout')).toBeInTheDocument();
     expect(within(result).getAllByText('#770')).toHaveLength(2);
     expect(within(result).getByText(/CP 1,118 · Level 50/)).toBeInTheDocument();

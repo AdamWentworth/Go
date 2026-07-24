@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import {
   analyzePvPTeam,
+  rankPvPTeamCandidates,
   type PvPTeamCandidate,
 } from '@/pages/Pvp/utils/pvpTeamBuilder';
 import type { PokemonPvPRankingEntry } from '@shared-contracts/pokemon';
@@ -36,6 +37,24 @@ const candidate = (
 });
 
 describe('analyzePvPTeam', () => {
+  it('orders default choices by score without mutating the source list', () => {
+    const lower = candidate('lower', [], [], 71);
+    const highest = candidate('highest', [], [], 96);
+    const middle = candidate('middle', [], [], 84);
+    const source = [lower, highest, middle];
+
+    expect(rankPvPTeamCandidates(source).map(({ key }) => key)).toEqual([
+      'highest',
+      'middle',
+      'lower',
+    ]);
+    expect(source.map(({ key }) => key)).toEqual([
+      'lower',
+      'highest',
+      'middle',
+    ]);
+  });
+
   it('separates covered and uncovered threats from source matchups', () => {
     const lead = candidate('lead', [], [
       { speciesId: 'threat-a', rating: 280 },
@@ -80,4 +99,3 @@ describe('analyzePvPTeam', () => {
     expect(analysis.recommendations[0].covers).toEqual(['threat-a', 'threat-b']);
   });
 });
-

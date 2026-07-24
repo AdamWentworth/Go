@@ -20,6 +20,7 @@ import type { PokemonPvPRankingEntry } from '@shared-contracts/pokemon';
 import {
   analyzePvPTeam,
   formatPvPSpeciesName,
+  rankPvPTeamCandidates,
   type PvPTeamCandidate,
 } from '../utils/pvpTeamBuilder';
 
@@ -138,8 +139,12 @@ const PvpTeamBuilder = ({
     () => analyzePvPTeam(team, candidates),
     [candidates, team],
   );
+  const rankedCandidates = useMemo(
+    () => rankPvPTeamCandidates(candidates),
+    [candidates],
+  );
   const query = search.trim().toLowerCase();
-  const visibleCandidates = candidates
+  const visibleCandidates = rankedCandidates
     .filter((candidate) => !query || normalizedSearch(candidate).includes(query))
     .slice(0, CANDIDATE_LIMIT);
   const hasMatchupEvidence = candidates.some(
@@ -325,7 +330,10 @@ const PvpTeamBuilder = ({
         </div>
 
         {candidates.length > CANDIDATE_LIMIT && !query && (
-          <small>Showing the top {CANDIDATE_LIMIT}. Search to reach the full ranking.</small>
+          <small>
+            Showing the {CANDIDATE_LIMIT} highest-scoring choices. Search to
+            reach the full ranking.
+          </small>
         )}
       </section>
     </section>
