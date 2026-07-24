@@ -8,7 +8,6 @@ export const pokemonContract = {
     maxData: '/max-data',
     pvpData: '/pvp-data',
     pvpBattle: '/pvp-battle',
-    pvpRosterEvaluation: '/pvp-roster-evaluation',
   },
 } as const;
 

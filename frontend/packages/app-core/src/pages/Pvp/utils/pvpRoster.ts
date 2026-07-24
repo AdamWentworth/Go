@@ -12,6 +12,7 @@ export type PvPRosterScope = 'catalog' | 'owned';
 
 export type OwnedPvPRankingEntry = {
   entry: PokemonPvPRankingEntry;
+  referenceEntry: PokemonPvPRankingEntry;
   instanceId: string;
   nickname: string | null;
   cp: number;
@@ -92,7 +93,7 @@ const findMove = (
   return move && moveIsFast(move) === fast ? move : undefined;
 };
 
-const toRankingMove = (
+export const toPvPRankingMove = (
   move: Move,
   kind: PokemonPvPRankingMove['kind'],
 ): PokemonPvPRankingMove => ({
@@ -137,8 +138,8 @@ const recordedMoveset = (
 
   if (!fast || charged.length < 2) return null;
   return [
-    toRankingMove(fast, 'fast'),
-    ...charged.map((move) => toRankingMove(move, 'charged')),
+    toPvPRankingMove(fast, 'fast'),
+    ...charged.map((move) => toPvPRankingMove(move, 'charged')),
   ];
 };
 
@@ -315,6 +316,7 @@ export const buildOwnedPvPRoster = (
         staminaIv: Number(instance.stamina_iv),
         ...stats,
       },
+      referenceEntry: ranking,
       instanceId: instanceId(key, instance),
       nickname: instance.nickname,
       cp,

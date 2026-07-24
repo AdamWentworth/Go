@@ -234,7 +234,6 @@ func NewRouter(deps RouterDeps) http.Handler {
 	maxDataHandler := newPokemonPayloadHandler("maxData", maxDataCache)
 	pvpDataHandler := newPokemonPayloadHandler("pvpData", pvpDataCache)
 	var pvpBattleHandler http.Handler = newPvPBattleHandler(log)
-	var pvpRosterEvaluationHandler http.Handler = newPvPRosterEvaluationHandler(log)
 
 	var manifestHandler http.Handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx, cancel := context.WithTimeout(r.Context(), deps.Cfg.CacheBuildTimeout)
@@ -293,7 +292,6 @@ func NewRouter(deps RouterDeps) http.Handler {
 		maxDataHandler = RateLimitMiddleware(baseCtx, lim, ipr.ClientIP)(maxDataHandler)
 		pvpDataHandler = RateLimitMiddleware(baseCtx, lim, ipr.ClientIP)(pvpDataHandler)
 		pvpBattleHandler = RateLimitMiddleware(baseCtx, lim, ipr.ClientIP)(pvpBattleHandler)
-		pvpRosterEvaluationHandler = RateLimitMiddleware(baseCtx, lim, ipr.ClientIP)(pvpRosterEvaluationHandler)
 		manifestHandler = RateLimitMiddleware(baseCtx, lim, ipr.ClientIP)(manifestHandler)
 	}
 	r.Method(http.MethodGet, "/pokemon/manifest", manifestHandler)
@@ -304,7 +302,6 @@ func NewRouter(deps RouterDeps) http.Handler {
 	r.Method(http.MethodGet, "/pokemon/max-data", maxDataHandler)
 	r.Method(http.MethodGet, "/pokemon/pvp-data", pvpDataHandler)
 	r.Method(http.MethodPost, "/pokemon/pvp-battle", pvpBattleHandler)
-	r.Method(http.MethodPost, "/pokemon/pvp-roster-evaluation", pvpRosterEvaluationHandler)
 
 	return r
 }

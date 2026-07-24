@@ -15,8 +15,6 @@ import {
   type PokemonMovesChunk,
   type PokemonPvPBattleRequest,
   type PokemonPvPBattleResponse,
-  type PokemonPvPRosterEvaluationRequest,
-  type PokemonPvPRosterEvaluationResponse,
   type PokemonPvPRankingsPayload,
   type PokemonRaidDataChunk,
 } from '@shared-contracts/pokemon';
@@ -325,47 +323,6 @@ export const simulatePokemonPvPBattle = async (
     return payload as PokemonPvPBattleResponse;
   } catch (error: unknown) {
     log.error('Error simulating the PvP battle', error);
-    throw error;
-  }
-};
-
-export const evaluatePokemonPvPRoster = async (
-  request: PokemonPvPRosterEvaluationRequest,
-): Promise<PokemonPvPRosterEvaluationResponse> => {
-  try {
-    const response = await requestWithPolicy(
-      buildUrl(BASE_URL, pokemonContract.endpoints.pvpRosterEvaluation),
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(request),
-        timeoutMs: 30_000,
-      },
-    );
-    const payload = await parseJsonSafe<unknown>(response);
-    if (!response.ok) {
-      const message =
-        payload &&
-        typeof payload === 'object' &&
-        typeof (payload as { error?: unknown }).error === 'string'
-          ? (payload as { error: string }).error
-          : 'Roster evaluation failed.';
-      throw toHttpError(response.status, payload, message);
-    }
-    if (
-      !payload ||
-      typeof payload !== 'object' ||
-      Array.isArray(payload) ||
-      !Array.isArray((payload as { results?: unknown }).results) ||
-      typeof (payload as { fieldSize?: unknown }).fieldSize !== 'number'
-    ) {
-      throw new Error(
-        '[pokemonDataService] invalid PvP roster evaluation response shape',
-      );
-    }
-    return payload as PokemonPvPRosterEvaluationResponse;
-  } catch (error: unknown) {
-    log.error('Error evaluating the PvP roster', error);
     throw error;
   }
 };

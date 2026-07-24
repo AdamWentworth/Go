@@ -5,6 +5,7 @@ import {
   buildPvPRosterEvaluationPlan,
 } from '@/pages/Pvp/utils/pvpRosterEvaluation';
 import type { OwnedPvPRankingEntry } from '@/pages/Pvp/utils/pvpRoster';
+import type { PokemonVariant } from '@/types/pokemonVariants';
 import type {
   PokemonPvPRankingEntry,
   PokemonPvPRosterEvaluationResponse,
@@ -75,6 +76,7 @@ const owned = (
   attack: number,
 ): OwnedPvPRankingEntry => ({
   entry: ranking('bulbasaur', 3, attack),
+  referenceEntry: ranking('bulbasaur', 3, 100),
   instanceId,
   nickname: null,
   cp: 1_400,
@@ -91,12 +93,13 @@ describe('PvP roster evaluation planning', () => {
     const plan = buildPvPRosterEvaluationPlan(
       builds,
       meta,
+      [],
       'great',
     );
 
     expect(plan).not.toBeNull();
     expect(plan!.request.candidates).toHaveLength(2);
-    expect(plan!.request.candidates.map((fighter) => ({
+    expect(plan!.request.candidates.map(({ fighter }) => ({
       id: fighter.id,
       attack: fighter.attack,
     }))).toEqual([
@@ -107,7 +110,7 @@ describe('PvP roster evaluation planning', () => {
     expect(plan!.request.opponents[0].fighter.id).toBe('meta:meta-18');
   });
 
-  it('applies simulated scores to the matching copy without mutating others', () => {
+  it('applies evaluated scores to the matching copy without mutating others', () => {
     const builds = [owned('weak-copy', 80), owned('strong-copy', 110)];
     const response: PokemonPvPRosterEvaluationResponse = {
       mechanics: 'pvpoke-legacy',
@@ -127,5 +130,51 @@ describe('PvP roster evaluation planning', () => {
       [80, 81, 82, 83, 84, 90],
     );
     expect(builds[1].entry.score).not.toBe(87.5);
+  });
+
+  it('hydrates omitted ranking move mechanics from the downloaded move catalog', () => {
+    const source = ranking('meta', 1, 120);
+    source.moveset = source.moveset.map((move) => ({
+      id: move.id,
+      name: move.name,
+      type: move.type,
+      kind: move.kind,
+    }));
+    const variant = {
+      variant_id: 'meta-default',
+      pokemon_id: 1,
+      moves: [
+        {
+          move_id: 1,
+          name: 'Fast',
+          type_name: 'normal',
+          is_fast: 1,
+          pvp_power: 5,
+          pvp_energy: 8,
+          pvp_turns: 2,
+        },
+        {
+          move_id: 2,
+          name: 'Charged',
+          type_name: 'normal',
+          is_fast: 0,
+          pvp_power: 80,
+          pvp_energy: -50,
+          pvp_turns: 1,
+        },
+      ],
+    } as unknown as PokemonVariant;
+
+    const plan = buildPvPRosterEvaluationPlan(
+      [owned('copy', 100)],
+      [source],
+      [variant],
+      'great',
+    );
+
+    expect(plan).not.toBeNull();
+    expect(plan!.request.opponents[0].fighter.fastMove.power).toBe(5);
+    expect(plan!.request.opponents[0].fighter.chargedMoves[0].energyCost)
+      .toBe(50);
   });
 });

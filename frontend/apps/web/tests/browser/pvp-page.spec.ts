@@ -172,6 +172,12 @@ test.describe('PvP rankings page', () => {
   test('opens a logged-in Trainer roster without an indefinite loading state', async ({
     page,
   }) => {
+    const rosterEvaluationRequests: string[] = [];
+    page.on('request', (request) => {
+      if (request.url().includes('/pokemon/pvp-roster-evaluation')) {
+        rosterEvaluationRequests.push(request.url());
+      }
+    });
     await installE2eRoutes(page, {
       userInstances: {
         username: pvpUser.username,
@@ -200,7 +206,9 @@ test.describe('PvP rankings page', () => {
     await expect(page.getByText('Sprout')).toBeVisible({ timeout: 8_000 });
     expect(Date.now() - rosterStartedAt).toBeLessThan(8_000);
     await expect(page.getByText('1 ready')).toBeVisible();
-    await expect(page.getByText(/simulated against 3 meta opponents/)).toBeVisible();
+    await expect(page.getByText(
+      /evaluated locally against 3 meta opponents/,
+    )).toBeVisible();
     await expect(page.getByText('Build Overall')).toBeVisible();
     await expect(page.getByText(/Loading .*Pokémon/)).toHaveCount(0);
 
@@ -227,5 +235,6 @@ test.describe('PvP rankings page', () => {
       viewportWidth: window.innerWidth,
     }));
     expect(viewport.documentWidth).toBeLessThanOrEqual(viewport.viewportWidth);
+    expect(rosterEvaluationRequests).toEqual([]);
   });
 });

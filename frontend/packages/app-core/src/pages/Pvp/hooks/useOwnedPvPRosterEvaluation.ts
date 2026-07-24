@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 
-import { evaluatePokemonPvPRoster } from '@/services/pokemonDataService';
+import type { PokemonVariant } from '@/types/pokemonVariants';
 import type {
   PokemonPvPRankingEntry,
   PokemonPvPRosterEvaluationResponse,
@@ -10,6 +10,11 @@ import type { OwnedPvPRankingEntry } from '../utils/pvpRoster';
 import {
   buildPvPRosterEvaluationPlan,
 } from '../utils/pvpRosterEvaluation';
+import {
+  getCachedPvPRosterEvaluation,
+  setCachedPvPRosterEvaluation,
+} from '../utils/pvpRosterEvaluationCache';
+import { evaluatePvPRosterAsync } from '../utils/pvpRosterWorkers';
 
 type OwnedPvPRosterEvaluationState = {
   response: PokemonPvPRosterEvaluationResponse | null;
@@ -17,52 +22,18 @@ type OwnedPvPRosterEvaluationState = {
   error: string | null;
 };
 
-const evaluationCache = new Map<
-  string,
-  PokemonPvPRosterEvaluationResponse
->();
-const EVALUATION_BATCH_SIZE = 200;
-
-const evaluatePlan = async (
-  plan: NonNullable<
-    ReturnType<typeof buildPvPRosterEvaluationPlan>
-  >,
-): Promise<PokemonPvPRosterEvaluationResponse> => {
-  const results: PokemonPvPRosterEvaluationResponse['results'] = [];
-  let fieldSize = plan.request.opponents.length;
-  for (
-    let start = 0;
-    start < plan.request.candidates.length;
-    start += EVALUATION_BATCH_SIZE
-  ) {
-    const response = await evaluatePokemonPvPRoster({
-      ...plan.request,
-      candidates: plan.request.candidates.slice(
-        start,
-        start + EVALUATION_BATCH_SIZE,
-      ),
-    });
-    fieldSize = response.fieldSize;
-    results.push(...response.results);
-  }
-  return {
-    mechanics: 'pvpoke-legacy',
-    fieldSize,
-    results,
-  };
-};
-
 export const useOwnedPvPRosterEvaluation = (
   enabled: boolean,
   owned: readonly OwnedPvPRankingEntry[],
   rankings: readonly PokemonPvPRankingEntry[],
+  variants: readonly PokemonVariant[],
   formatKey: string,
 ): OwnedPvPRosterEvaluationState => {
   const plan = useMemo(
     () => enabled
-      ? buildPvPRosterEvaluationPlan(owned, rankings, formatKey)
+      ? buildPvPRosterEvaluationPlan(owned, rankings, variants, formatKey)
       : null,
-    [enabled, formatKey, owned, rankings],
+    [enabled, formatKey, owned, rankings, variants],
   );
   const [state, setState] = useState<OwnedPvPRosterEvaluationState>({
     response: null,
@@ -72,25 +43,34 @@ export const useOwnedPvPRosterEvaluation = (
 
   useEffect(() => {
     if (!plan) {
-      setState({ response: null, loading: false, error: null });
-      return;
-    }
-    const cached = evaluationCache.get(plan.cacheKey);
-    if (cached) {
-      setState({ response: cached, loading: false, error: null });
+      setState({
+        response: null,
+        loading: false,
+        error: enabled && owned.length > 0 && rankings.length > 0
+          ? 'The current format does not contain a battle-ready local reference field.'
+          : null,
+      });
       return;
     }
 
-    let cancelled = false;
+    const controller = new AbortController();
     setState({ response: null, loading: true, error: null });
-    evaluatePlan(plan)
+    getCachedPvPRosterEvaluation(plan.cacheKey)
+      .then((cached) => {
+        if (controller.signal.aborted) return null;
+        if (cached) return cached;
+        return evaluatePvPRosterAsync(plan.request, controller.signal)
+          .then(async (response) => {
+            await setCachedPvPRosterEvaluation(plan.cacheKey, response);
+            return response;
+          });
+      })
       .then((response) => {
-        if (cancelled) return;
-        evaluationCache.set(plan.cacheKey, response);
+        if (controller.signal.aborted || !response) return;
         setState({ response, loading: false, error: null });
       })
       .catch((error: unknown) => {
-        if (cancelled) return;
+        if (controller.signal.aborted) return;
         setState({
           response: null,
           loading: false,
@@ -101,9 +81,9 @@ export const useOwnedPvPRosterEvaluation = (
       });
 
     return () => {
-      cancelled = true;
+      controller.abort();
     };
-  }, [plan]);
+  }, [enabled, owned.length, plan, rankings.length]);
 
   return state;
 };

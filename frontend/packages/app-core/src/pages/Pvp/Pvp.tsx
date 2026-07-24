@@ -433,6 +433,7 @@ const Pvp = () => {
     ownedRankingRequested,
     ownedRoster.entries,
     entries,
+    variants,
     formatKey,
   );
   const evaluatedOwnedEntries = useMemo(
@@ -523,11 +524,11 @@ const Pvp = () => {
   const rosterDetails = [
     `${ownedRoster.eligibleCount} PvP-ready from ${ownedRoster.caughtCount} caught`,
     ownedEvaluation.loading
-      ? 'evaluating exact levels, IVs, and moves'
+      ? 'evaluating levels, IVs, and moves on this device'
       : ownedEvaluation.response
-        ? `simulated against ${ownedEvaluation.response.fieldSize} meta opponents`
+        ? `evaluated locally against ${ownedEvaluation.response.fieldSize} meta opponents`
         : ownedEvaluation.error
-          ? 'species baseline shown; build simulation unavailable'
+          ? 'species baseline shown; local build evaluation unavailable'
           : '',
     ownedRoster.overCapCount > 0
       ? `${ownedRoster.overCapCount} over the format cap`
@@ -884,8 +885,8 @@ const Pvp = () => {
             <small>
               {rosterScope === 'owned'
                 ? ownedEvaluation.response
-                  ? `My Pokémon simulates every exact recorded build against ${ownedEvaluation.response.fieldSize} current meta opponents.`
-                  : 'My Pokémon shows every exact recorded build; species scores remain visible until its personal simulation is available.'
+                  ? `My Pokémon evaluates every recorded build locally against ${ownedEvaluation.response.fieldSize} current meta opponents.`
+                  : 'My Pokémon shows every recorded build; species scores remain visible until its local evaluation is available.'
                 : 'Recommended IVs maximize performance for the selected format, not rarity.'}
             </small>
           </footer>

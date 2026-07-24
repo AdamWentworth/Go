@@ -192,26 +192,29 @@ const PvpMethodology = () => {
             <div className="pvp-methodology-callout">
               <FaBolt aria-hidden="true" />
               <p>
-                Rankings simulates each exact build against a fixed field of up
-                to 12 top, battle-ready opponents from the selected format.
-                Those opponents remain fixed so adding a weak or duplicate
-                caught Pokémon cannot change another copy&apos;s score.
+                Rankings evaluates each recorded build in a browser worker
+                against a fixed field of up to 12 top, battle-ready opponents
+                from the selected format. The Pokémon service delivers
+                versioned catalog data; it does not perform this personal
+                roster work.
               </p>
             </div>
             <p>
-              Lead, Closer, Switch, Charger, and Attacker scores use the same
-              shield and energy scenarios as the pinned ranking model.
-              Consistency measures the recorded moveset, and Overall combines
-              those exact-build results. Scores are normalized against the
-              fixed reference field so they remain readable on the same
-              0-100 scale as the published rankings.
+              Each result starts from the published species score, then
+              measures the caught build and its reference build against the
+              same field with the standard Lead, Closer, Switch, Charger, and
+              Attacker shield and energy scenarios. Their relative performance
+              adjusts the published score for the caught Pokémon&apos;s actual
+              level, IVs, stats, and moves without inventing a new global tier
+              list.
             </p>
             <p>
               Entries over the format&apos;s CP cap, missing required battle
               details, or unavailable in the selected ranking snapshot are
               reported and omitted rather than guessed. If personal evaluation
               is unavailable, the page labels its temporary species baseline
-              instead of presenting it as an exact-build result.
+              instead of presenting it as a build result. Completed evaluations
+              are cached on the device by model, format, field, and roster.
             </p>
           </section>
 
