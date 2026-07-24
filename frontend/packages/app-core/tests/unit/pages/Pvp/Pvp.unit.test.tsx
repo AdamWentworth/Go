@@ -1,7 +1,12 @@
 import { fireEvent, render, screen, within } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { useInstancesStore } from '@/features/instances/store/useInstancesStore';
+import { useVariantsStore } from '@/features/variants/store/useVariantsStore';
 import Pvp from '@/pages/Pvp/Pvp';
+import { useAuthStore } from '@/stores/useAuthStore';
+import type { PokemonInstance } from '@/types/pokemonInstance';
+import type { PokemonVariant } from '@/types/pokemonVariants';
 import type {
   PokemonPvPLeagueKey,
   PokemonPvPRankingEntry,
@@ -79,6 +84,17 @@ describe('PvP rankings page', () => {
     hookState.data = makePayload();
     hookState.loading = false;
     hookState.error = null;
+    useAuthStore.setState({ isLoggedIn: false, user: null });
+    useVariantsStore.setState({
+      variants: [],
+      variantsLoading: false,
+      isMovesLoading: false,
+      ensureMoves: vi.fn(),
+    });
+    useInstancesStore.setState({
+      instances: {},
+      instancesLoading: false,
+    });
   });
 
   it('starts with Great League and renders its ranked team and build', () => {
@@ -125,6 +141,83 @@ describe('PvP rankings page', () => {
     const rankings = document.querySelector('.pvp-rankings');
     expect(rankings).not.toBeNull();
     expect(within(rankings as HTMLElement).getAllByRole('article')).toHaveLength(2);
+  });
+
+  it('shows only legal, fully recorded caught builds in My Pokemon', () => {
+    const moves = [
+      {
+        move_id: 1,
+        name: 'Bubble',
+        is_fast: 1,
+        type_name: 'water',
+        type: 'water',
+      },
+      {
+        move_id: 2,
+        name: 'Play Rough',
+        is_fast: 0,
+        type_name: 'fairy',
+        type: 'fairy',
+      },
+      {
+        move_id: 3,
+        name: 'Ice Beam',
+        is_fast: 0,
+        type_name: 'ice',
+        type: 'ice',
+      },
+    ];
+    useAuthStore.setState({ isLoggedIn: true });
+    useVariantsStore.setState({
+      variants: [{
+        variant_id: '0002-default',
+        pokemon_id: 2,
+        pokedex_number: 184,
+        name: 'Azumarill',
+        species_name: 'Azumarill',
+        variantType: 'default',
+        currentImage: '/images/my-azumarill.png',
+        moves,
+        fusion: [],
+        crownForms: [],
+        megaEvolutions: [],
+      } as unknown as PokemonVariant],
+    });
+    useInstancesStore.setState({
+      instances: {
+        azu: {
+          instance_id: 'azu',
+          variant_id: '0002-default',
+          pokemon_id: 2,
+          nickname: 'Blue',
+          cp: 1_498,
+          level: 39.5,
+          attack_iv: 0,
+          defense_iv: 15,
+          stamina_iv: 15,
+          fast_move_id: 1,
+          charged_move1_id: 2,
+          charged_move2_id: 3,
+          is_caught: true,
+          disabled: false,
+          shadow: false,
+          is_fused: false,
+          crown: false,
+          mega: false,
+          is_mega: false,
+          shiny: false,
+        } as PokemonInstance,
+      },
+    });
+
+    render(<Pvp />);
+    fireEvent.click(screen.getByRole('button', { name: 'My Pokémon' }));
+
+    expect(screen.getByText('Blue')).toBeInTheDocument();
+    expect(screen.getByText('CP 1,498')).toBeInTheDocument();
+    expect(screen.getByText('Level 39.5')).toBeInTheDocument();
+    expect(screen.getByText('1 ready')).toBeInTheDocument();
+    expect(screen.queryByText('Clodsire')).not.toBeInTheDocument();
   });
 
   it('shows loading and source failure states without rendering stale rankings', () => {

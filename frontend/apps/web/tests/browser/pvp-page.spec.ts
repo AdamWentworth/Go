@@ -18,6 +18,11 @@ test.describe('PvP rankings page', () => {
         'aria-pressed',
         'true',
       );
+      await expect(page.getByRole('button', { name: 'All Pokémon' })).toHaveAttribute(
+        'aria-pressed',
+        'true',
+      );
+      await expect(page.getByRole('button', { name: 'My Pokémon' })).toBeDisabled();
       await expect(page.getByText('Clodsire')).toBeVisible();
       await expect(page.getByText('Azumarill')).toBeVisible();
       await expect(page.locator('.pvp-rank--gold')).toHaveText('1');

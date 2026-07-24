@@ -105,6 +105,67 @@
   color: #123c39;
 }
 
+.pvp-roster-scope {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 0.65rem;
+  align-items: center;
+  margin-bottom: 0.7rem;
+  padding: 0.45rem;
+  border: 1px solid var(--pvp-line);
+  border-radius: 8px;
+  background: #101516;
+}
+
+.pvp-roster-scope > div {
+  display: flex;
+  gap: 0.35rem;
+}
+
+.pvp-roster-scope button {
+  display: inline-flex;
+  gap: 0.4rem;
+  align-items: center;
+  justify-content: center;
+  min-height: 2.45rem;
+  padding: 0.35rem 0.75rem;
+  border: 1px solid var(--pvp-line-strong);
+  border-radius: 999px;
+  color: var(--pvp-text);
+  background: var(--pvp-panel);
+  font-size: 0.74rem;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.pvp-roster-scope button.active {
+  border-color: var(--pvp-teal);
+  color: #071313;
+  background: var(--pvp-teal);
+}
+
+.pvp-roster-scope button:disabled {
+  opacity: 0.48;
+  cursor: not-allowed;
+}
+
+.pvp-roster-scope button strong {
+  min-width: 1.5rem;
+  padding: 0.08rem 0.35rem;
+  border-radius: 999px;
+  color: var(--pvp-text);
+  background: rgba(13, 17, 18, 0.68);
+  font-size: 0.66rem;
+}
+
+.pvp-roster-scope > span {
+  min-width: 0;
+  color: var(--pvp-muted);
+  font-size: 0.68rem;
+  font-weight: 750;
+  text-align: left;
+}
+
 .pvp-role-tabs {
   display: grid;
   grid-template-columns: repeat(7, minmax(0, 1fr));
@@ -284,6 +345,15 @@
   min-width: 0;
 }
 
+.pvp-nickname {
+  overflow: hidden;
+  color: var(--pvp-muted);
+  font-size: 0.68rem;
+  font-weight: 750;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .pvp-pokemon strong {
   overflow: hidden;
   font-size: 1rem;
@@ -410,7 +480,8 @@
 }
 
 :root[data-theme='light'] .pvp-league-tabs,
-:root[data-theme='light'] .pvp-search {
+:root[data-theme='light'] .pvp-search,
+:root[data-theme='light'] .pvp-roster-scope {
   background: #f7fbfb;
 }
 
@@ -483,6 +554,27 @@
     grid-template-columns: repeat(4, minmax(0, 1fr));
     gap: 0.25rem;
     margin-bottom: 0.45rem;
+  }
+
+  .pvp-roster-scope {
+    grid-template-columns: 1fr;
+    gap: 0.35rem;
+    margin-bottom: 0.45rem;
+  }
+
+  .pvp-roster-scope > div {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .pvp-roster-scope button {
+    min-width: 0;
+    padding-inline: 0.45rem;
+  }
+
+  .pvp-roster-scope > span {
+    padding-inline: 0.25rem;
+    text-align: center;
   }
 
   .pvp-role-tabs button {

@@ -1,15 +1,20 @@
 import { useEffect, useMemo, useState } from 'react';
 import {
   FaBalanceScale,
+  FaBookOpen,
   FaBolt,
   FaChartLine,
   FaExchangeAlt,
   FaFistRaised,
   FaFlag,
   FaSearch,
+  FaUser,
 } from 'react-icons/fa';
 import type { IconType } from 'react-icons';
 
+import { useInstancesStore } from '@/features/instances/store/useInstancesStore';
+import { useVariantsStore } from '@/features/variants/store/useVariantsStore';
+import { useAuthStore } from '@/stores/useAuthStore';
 import { getTypeIconPath } from '@/utils/imageHelpers';
 import { resolveAssetUrl } from '@/utils/assetUrl';
 import type {
@@ -18,6 +23,10 @@ import type {
 } from '@shared-contracts/pokemon';
 
 import { usePvPRankings } from './hooks/usePvPRankings';
+import {
+  buildOwnedPvPRoster,
+  type PvPRosterScope,
+} from './utils/pvpRoster';
 import './Pvp.css';
 
 
@@ -112,11 +121,15 @@ function RankingRow({
   rank,
   score,
   scoreLabel,
+  cp,
+  nickname,
 }: {
   entry: PokemonPvPRankingEntry;
   rank: number;
   score: number;
   scoreLabel: string;
+  cp?: number;
+  nickname?: string | null;
 }) {
   const ivSpread = `${entry.attackIv}/${entry.defenseIv}/${entry.staminaIv}`;
   return (
@@ -135,6 +148,7 @@ function RankingRow({
         />
         <div>
           <strong>{entry.name}</strong>
+          {nickname && <span className="pvp-nickname">{nickname}</span>}
           <TypeIcons types={entry.types} />
         </div>
       </div>
@@ -148,6 +162,7 @@ function RankingRow({
 
       <div className="pvp-build">
         <strong>Level {formatLevel(entry.recommendedLevel)}</strong>
+        {cp != null && <span>CP {cp.toLocaleString()}</span>}
         <span>{ivSpread} IV</span>
       </div>
     </article>
@@ -156,24 +171,62 @@ function RankingRow({
 
 const Pvp = () => {
   const { data, loading, error } = usePvPRankings();
+  const variants = useVariantsStore((state) => state.variants);
+  const variantsLoading = useVariantsStore((state) => state.variantsLoading);
+  const movesLoading = useVariantsStore((state) => state.isMovesLoading);
+  const ensureMoves = useVariantsStore((state) => state.ensureMoves);
+  const instances = useInstancesStore((state) => state.instances);
+  const instancesLoading = useInstancesStore((state) => state.instancesLoading);
+  const isLoggedIn = useAuthStore((state) => state.isLoggedIn);
   const [league, setLeague] = useState<PokemonPvPLeagueKey>('great');
   const [roleKey, setRoleKey] = useState<PvPRoleKey>('overall');
+  const [rosterScope, setRosterScope] = useState<PvPRosterScope>('catalog');
   const [search, setSearch] = useState('');
   const [visibleLimit, setVisibleLimit] = useState(INITIAL_LIMIT);
+
+  useEffect(() => {
+    void ensureMoves();
+  }, [ensureMoves]);
+
+  useEffect(() => {
+    if (!isLoggedIn) setRosterScope('catalog');
+  }, [isLoggedIn]);
 
   const entries = useMemo(
     () => data?.leagues[league]?.entries ?? [],
     [data, league],
   );
+  const cpLimit = data?.leagues[league]?.cpLimit ?? null;
+  const ownedRoster = useMemo(
+    () => buildOwnedPvPRoster(entries, variants, instances, cpLimit),
+    [cpLimit, entries, instances, variants],
+  );
+  const scopedEntries = useMemo(
+    () => rosterScope === 'owned'
+      ? ownedRoster.entries.map((owned) => ({
+        entry: owned.entry,
+        key: owned.instanceId,
+        cp: owned.cp,
+        nickname: owned.nickname,
+      }))
+      : entries.map((entry) => ({
+        entry,
+        key: entry.speciesId,
+        cp: undefined,
+        nickname: null,
+      })),
+    [entries, ownedRoster.entries, rosterScope],
+  );
   const activeRole = ROLES.find((item) => item.key === roleKey) ?? ROLES[0];
   const rankedEntries = useMemo(() => {
     const query = search.trim().toLowerCase();
-    return entries
-      .filter((entry) => {
+    return scopedEntries
+      .filter(({ entry, nickname }) => {
         if (!query) return true;
         return [
           entry.name,
           entry.speciesId,
+          nickname ?? '',
           ...entry.types,
           ...entry.moveset.flatMap((move) => [move.name, move.type]),
         ]
@@ -181,9 +234,9 @@ const Pvp = () => {
           .toLowerCase()
           .includes(query);
       })
-      .map((entry) => ({
-        entry,
-        score: scoreForRole(entry, activeRole),
+      .map((item) => ({
+        ...item,
+        score: scoreForRole(item.entry, activeRole),
       }))
       .sort((left, right) => (
         right.score - left.score ||
@@ -194,14 +247,30 @@ const Pvp = () => {
         ...item,
         rank: index + 1,
       }));
-  }, [activeRole, entries, search]);
+  }, [activeRole, scopedEntries, search]);
 
   useEffect(() => {
     setVisibleLimit(INITIAL_LIMIT);
-  }, [league, roleKey, search]);
+  }, [league, roleKey, rosterScope, search]);
 
   const activeLeague = LEAGUES.find((item) => item.key === league) ?? LEAGUES[0];
   const visibleEntries = rankedEntries.slice(0, visibleLimit);
+  const ownedLoading =
+    rosterScope === 'owned' &&
+    (variantsLoading || movesLoading || instancesLoading);
+  const pageLoading = loading || ownedLoading;
+  const rosterDetails = [
+    `${ownedRoster.eligibleCount} PvP-ready from ${ownedRoster.caughtCount} caught`,
+    ownedRoster.overCapCount > 0
+      ? `${ownedRoster.overCapCount} over the league cap`
+      : '',
+    ownedRoster.incompleteCount > 0
+      ? `${ownedRoster.incompleteCount} need level, IV, CP, or move details`
+      : '',
+    ownedRoster.unmatchedCount > 0
+      ? `${ownedRoster.unmatchedCount} unavailable in this league ranking`
+      : '',
+  ].filter(Boolean).join(' · ');
 
   return (
     <div className="pvp-page">
@@ -212,7 +281,11 @@ const Pvp = () => {
             <span>Trainer Battles</span>
             <h1>PvP Rankings</h1>
           </div>
-          <strong>{entries.length || '---'} ranked</strong>
+          <strong>
+            {rosterScope === 'owned'
+              ? `${ownedRoster.eligibleCount} ready`
+              : `${entries.length || '---'} ranked`}
+          </strong>
         </header>
 
         <nav className="pvp-league-tabs" aria-label="PvP league">
@@ -229,6 +302,39 @@ const Pvp = () => {
             </button>
           ))}
         </nav>
+
+        <section className="pvp-roster-scope" aria-label="PvP roster">
+          <div role="group" aria-label="Pokemon source">
+            <button
+              type="button"
+              className={rosterScope === 'catalog' ? 'active' : ''}
+              aria-pressed={rosterScope === 'catalog'}
+              onClick={() => setRosterScope('catalog')}
+            >
+              <FaBookOpen aria-hidden="true" />
+              <span>All Pokémon</span>
+            </button>
+            <button
+              type="button"
+              className={rosterScope === 'owned' ? 'active' : ''}
+              aria-pressed={rosterScope === 'owned'}
+              disabled={!isLoggedIn}
+              title={!isLoggedIn ? 'Log in to rank your caught Pokémon' : undefined}
+              onClick={() => setRosterScope('owned')}
+            >
+              <FaUser aria-hidden="true" />
+              <span>My Pokémon</span>
+              {rosterScope === 'owned' && (
+                <strong>{ownedLoading ? '…' : ownedRoster.eligibleCount}</strong>
+              )}
+            </button>
+          </div>
+          {rosterScope === 'owned' && (
+            <span role="status">
+              {ownedLoading ? 'Loading your PvP roster' : rosterDetails}
+            </span>
+          )}
+        </section>
 
         <nav className="pvp-role-tabs" aria-label="Ranking role">
           {ROLES.map((role) => {
@@ -265,9 +371,11 @@ const Pvp = () => {
           </label>
         </section>
 
-        {loading && (
+        {pageLoading && (
           <div className="pvp-status" role="status">
-            Loading current rankings...
+            {rosterScope === 'owned'
+              ? 'Loading your PvP-ready Pokémon...'
+              : 'Loading current rankings...'}
           </div>
         )}
         {error && (
@@ -275,11 +383,15 @@ const Pvp = () => {
             {error}
           </div>
         )}
-        {!loading && !error && visibleEntries.length === 0 && (
-          <div className="pvp-status">No rankings match that search.</div>
+        {!pageLoading && !error && visibleEntries.length === 0 && (
+          <div className="pvp-status">
+            {rosterScope === 'owned' && !search
+              ? 'No caught Pokémon are ready for this league. Add CP, level, IVs, one Fast Move, and two Charged Moves to a legal build.'
+              : 'No rankings match that search.'}
+          </div>
         )}
 
-        {!loading && !error && visibleEntries.length > 0 && (
+        {!pageLoading && !error && visibleEntries.length > 0 && (
           <>
             <div className="pvp-ranking-head" aria-hidden="true">
               <span>Rank</span>
@@ -289,13 +401,15 @@ const Pvp = () => {
               <span>Build</span>
             </div>
             <section className="pvp-rankings" aria-live="polite">
-              {visibleEntries.map(({ entry, rank, score }) => (
+              {visibleEntries.map(({ entry, rank, score, key, cp, nickname }) => (
                 <RankingRow
-                  key={entry.speciesId}
+                  key={key}
                   entry={entry}
                   rank={rank}
                   score={score}
                   scoreLabel={activeRole.label}
+                  cp={cp}
+                  nickname={nickname}
                 />
               ))}
             </section>
@@ -322,7 +436,9 @@ const Pvp = () => {
               ; filtered to the current PokeGoNexus catalog.
             </span>
             <small>
-              Recommended IVs maximize performance for the selected league, not rarity.
+              {rosterScope === 'owned'
+                ? 'My Pokémon shows each caught copy’s recorded build and sorts it by that species’ simulated matchup score.'
+                : 'Recommended IVs maximize performance for the selected league, not rarity.'}
             </small>
           </footer>
         )}
