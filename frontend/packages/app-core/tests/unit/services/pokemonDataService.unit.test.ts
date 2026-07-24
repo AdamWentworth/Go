@@ -7,10 +7,15 @@ import {
   getPokemonPvPDataChunk,
   getPokemonRaidDataChunk,
   getPokemons,
+  simulatePokemonPvPBattle,
 } from '@/services/pokemonDataService';
 import { normalizeAssetUrlsDeep } from '@/utils/assetUrl';
 import type { BasePokemon } from '@/types/pokemonBase';
-import type { PokemonCatalogManifest } from '@shared-contracts/pokemon';
+import type {
+  PokemonCatalogManifest,
+  PokemonPvPBattleRequest,
+  PokemonPvPBattleResponse,
+} from '@shared-contracts/pokemon';
 import pokemonFixtures from '../../__helpers__/fixtures/pokemons.json' with { type: 'json' };
 
 describe('pokemonDataService', () => {
@@ -211,6 +216,50 @@ describe('pokemonDataService', () => {
       'invalid pvpData chunk shape',
     );
     expect(fetchSpy).toHaveBeenCalledOnce();
+  });
+
+  it('posts a bounded PvP battle simulation request', async () => {
+    const request = {
+      mechanics: 'pvpoke-legacy',
+      fighters: [],
+      shields: [1, 1],
+      startingEnergy: [0, 0],
+    } as unknown as PokemonPvPBattleRequest;
+    const result = {
+      mechanics: 'pvpoke-legacy',
+      winner: 0,
+      turns: 20,
+      timeMs: 10_000,
+      ratings: [600, 399],
+      adjustedRatings: [600, 399],
+      fighters: [],
+      timeline: [],
+    } as unknown as PokemonPvPBattleResponse;
+    const fetchSpy = vi.spyOn(global, 'fetch').mockResolvedValueOnce(
+      new Response(JSON.stringify(result), { status: 200 }),
+    );
+
+    await expect(simulatePokemonPvPBattle(request)).resolves.toEqual(result);
+    expect(fetchSpy).toHaveBeenCalledWith(
+      expect.stringContaining('/pvp-battle'),
+      expect.objectContaining({
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(request),
+      }),
+    );
+  });
+
+  it('surfaces the simulator validation message', async () => {
+    vi.spyOn(global, 'fetch').mockResolvedValueOnce(
+      new Response(JSON.stringify({ error: 'fast move data is incomplete' }), {
+        status: 422,
+      }),
+    );
+
+    await expect(
+      simulatePokemonPvPBattle({} as PokemonPvPBattleRequest),
+    ).rejects.toThrow('fast move data is incomplete');
   });
 
   it('retries a lazy catalog chunk once after a transient browser load failure', async () => {

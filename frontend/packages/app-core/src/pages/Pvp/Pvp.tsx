@@ -8,6 +8,7 @@ import {
   FaExchangeAlt,
   FaFistRaised,
   FaFlag,
+  FaFlask,
   FaListOl,
   FaSearch,
   FaUser,
@@ -26,6 +27,7 @@ import type {
 } from '@shared-contracts/pokemon';
 
 import { usePvPRankings } from './hooks/usePvPRankings';
+import PvpBattleLab from './components/PvpBattleLab';
 import PvpTeamBuilder from './components/PvpTeamBuilder';
 import {
   buildOwnedPvPRoster,
@@ -56,7 +58,7 @@ type PvPRoleKey =
   | 'attacker'
   | 'consistency';
 
-type PvPWorkspace = 'rankings' | 'team';
+type PvPWorkspace = 'rankings' | 'team' | 'battle';
 
 const ROLES: Array<{
   key: PvPRoleKey;
@@ -454,7 +456,13 @@ const Pvp = () => {
           <img src="/images/btn_pvp.png" alt="" draggable={false} />
           <div>
             <span>Trainer Battles</span>
-            <h1>PvP Rankings</h1>
+            <h1>
+              {workspace === 'rankings'
+                ? 'PvP Rankings'
+                : workspace === 'team'
+                  ? 'PvP Team Builder'
+                  : 'PvP Battle Lab'}
+            </h1>
           </div>
           <strong>
             {rosterScope === 'owned'
@@ -481,6 +489,15 @@ const Pvp = () => {
           >
             <FaUsers aria-hidden="true" />
             Team Builder
+          </button>
+          <button
+            type="button"
+            className={workspace === 'battle' ? 'active' : ''}
+            aria-pressed={workspace === 'battle'}
+            onClick={() => setWorkspace('battle')}
+          >
+            <FaFlask aria-hidden="true" />
+            Battle Lab
           </button>
         </nav>
 
@@ -627,7 +644,7 @@ const Pvp = () => {
               </button>
             )}
           </>
-        ) : (
+        ) : workspace === 'team' ? (
           <>
             {pageLoading && (
               <div className="pvp-status" role="status">
@@ -650,6 +667,31 @@ const Pvp = () => {
                 candidates={scopedEntries}
                 entriesBySpeciesId={entriesBySpeciesId}
                 storageKey={`${league}:${rosterScope}`}
+              />
+            )}
+          </>
+        ) : (
+          <>
+            {pageLoading && (
+              <div className="pvp-status" role="status">
+                Loading Battle Lab...
+              </div>
+            )}
+            {error && (
+              <div className="pvp-status pvp-status--error" role="alert">
+                {error}
+              </div>
+            )}
+            {!pageLoading && !error && scopedEntries.length === 0 && (
+              <div className="pvp-status">
+                No Pokémon are available for this battle.
+              </div>
+            )}
+            {!pageLoading && !error && scopedEntries.length > 0 && (
+              <PvpBattleLab
+                key={`${league}-${rosterScope}`}
+                candidates={scopedEntries}
+                league={league}
               />
             )}
           </>

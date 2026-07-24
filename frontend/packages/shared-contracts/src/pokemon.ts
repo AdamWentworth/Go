@@ -7,6 +7,7 @@ export const pokemonContract = {
     raidData: '/raid-data',
     maxData: '/max-data',
     pvpData: '/pvp-data',
+    pvpBattle: '/pvp-battle',
   },
 } as const;
 

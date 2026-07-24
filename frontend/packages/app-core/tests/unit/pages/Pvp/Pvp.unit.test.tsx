@@ -199,6 +199,19 @@ describe('PvP rankings page', () => {
     expect(screen.getByText('2 / 3')).toBeInTheDocument();
   });
 
+  it('opens the Battle Lab workspace for the current league', () => {
+    render(<Pvp />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Battle Lab' }));
+
+    expect(screen.getByText('Great League · pinned PvPoke mechanics'))
+      .toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Swap battle sides' }))
+      .toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Run battle' }))
+      .toBeDisabled();
+  });
+
   it('shows only legal, fully recorded caught builds in My Pokemon', () => {
     const moves = [
       {
@@ -207,6 +220,14 @@ describe('PvP rankings page', () => {
         is_fast: 1,
         type_name: 'water',
         type: 'water',
+        pvp_power: 8,
+        pvp_energy: 11,
+        pvp_turns: 3,
+        pvp_attacker_attack_stage_change: 0,
+        pvp_attacker_defense_stage_change: 0,
+        pvp_target_attack_stage_change: 0,
+        pvp_target_defense_stage_change: 0,
+        pvp_buff_activation_chance: 0,
       },
       {
         move_id: 2,
@@ -214,6 +235,14 @@ describe('PvP rankings page', () => {
         is_fast: 0,
         type_name: 'fairy',
         type: 'fairy',
+        pvp_power: 90,
+        pvp_energy: -60,
+        pvp_turns: 1,
+        pvp_attacker_attack_stage_change: 0,
+        pvp_attacker_defense_stage_change: 0,
+        pvp_target_attack_stage_change: 0,
+        pvp_target_defense_stage_change: 0,
+        pvp_buff_activation_chance: 0,
       },
       {
         move_id: 3,
@@ -221,6 +250,14 @@ describe('PvP rankings page', () => {
         is_fast: 0,
         type_name: 'ice',
         type: 'ice',
+        pvp_power: 90,
+        pvp_energy: -55,
+        pvp_turns: 1,
+        pvp_attacker_attack_stage_change: 0,
+        pvp_attacker_defense_stage_change: 0,
+        pvp_target_attack_stage_change: 0,
+        pvp_target_defense_stage_change: 0,
+        pvp_buff_activation_chance: 0,
       },
     ];
     useAuthStore.setState({ isLoggedIn: true });
@@ -233,6 +270,9 @@ describe('PvP rankings page', () => {
         species_name: 'Azumarill',
         variantType: 'default',
         currentImage: '/images/my-azumarill.png',
+        attack: 112,
+        defense: 152,
+        stamina: 225,
         moves,
         fusion: [],
         crownForms: [],
