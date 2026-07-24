@@ -100,6 +100,12 @@ func TestPokemonPayloadChunks_KeepCatalogLeanAndAddressable(t *testing.T) {
 		if len(pvp.Leagues[league].Entries) == 0 {
 			t.Fatalf("%s PvP league has no fixture entries", league)
 		}
+		first := pvp.Leagues[league].Entries[0]
+		for _, field := range []string{"matchups", "counters", "moveUsage"} {
+			if _, ok := first[field].([]any); !ok {
+				t.Fatalf("%s PvP entry missing %s array: %#v", league, field, first[field])
+			}
+		}
 	}
 
 	if len(full) == 0 || len(catalog) != len(full) || len(moves) != len(full) || len(raids) != len(full) {

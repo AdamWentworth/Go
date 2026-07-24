@@ -100,6 +100,21 @@ const makePvPEntry = (
   categoryScores: rank === 1
     ? [70, 72, 74, 76, 78, 80]
     : [90, 88, 86, 84, 82, 81],
+  matchups: [
+    { speciesId: 'talonflame', rating: 740 - rank },
+  ],
+  counters: [
+    { speciesId: 'lanturn', rating: 310 + rank },
+  ],
+  moveUsage: [
+    {
+      id: `${speciesId}-fast`,
+      name: 'Quick Attack',
+      type: 'normal',
+      kind: 'fast',
+      uses: 120,
+    },
+  ],
   recommendedLevel: 20 + rank / 2,
   attackIv: 0,
   defenseIv: 15,

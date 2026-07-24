@@ -44,6 +44,15 @@ export interface PokemonPvPRankingMove {
   kind: 'fast' | 'charged';
 }
 
+export interface PokemonPvPRankingMatchup {
+  speciesId: string;
+  rating: number;
+}
+
+export interface PokemonPvPRankingMoveUsage extends PokemonPvPRankingMove {
+  uses: number;
+}
+
 export interface PokemonPvPRankingEntry {
   rank: number;
   sourceRank: number;
@@ -58,6 +67,9 @@ export interface PokemonPvPRankingEntry {
   score: number;
   rating: number;
   categoryScores: number[];
+  matchups: PokemonPvPRankingMatchup[];
+  counters: PokemonPvPRankingMatchup[];
+  moveUsage: PokemonPvPRankingMoveUsage[];
   recommendedLevel: number;
   attackIv: number;
   defenseIv: number;

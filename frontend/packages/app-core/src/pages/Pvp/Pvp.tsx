@@ -4,6 +4,7 @@ import {
   FaBookOpen,
   FaBolt,
   FaChartLine,
+  FaChevronDown,
   FaExchangeAlt,
   FaFistRaised,
   FaFlag,
@@ -116,6 +117,153 @@ function scoreForRole(
   return entry.categoryScores[role.scoreIndex] ?? entry.score;
 }
 
+const humanizeSpeciesId = (speciesId: string): string =>
+  speciesId
+    .replace(/_shadow$/, ' Shadow')
+    .split('_')
+    .filter(Boolean)
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(' ');
+
+function MatchupList({
+  title,
+  items,
+  entriesBySpeciesId,
+  kind,
+}: {
+  title: string;
+  items: PokemonPvPRankingEntry['matchups'];
+  entriesBySpeciesId: Map<string, PokemonPvPRankingEntry>;
+  kind: 'strong' | 'threat';
+}) {
+  return (
+    <section className={`pvp-matchups pvp-matchups--${kind}`}>
+      <h3>{title}</h3>
+      {items.length > 0 ? (
+        <div>
+          {items.map((matchup) => {
+            const opponent = entriesBySpeciesId.get(matchup.speciesId);
+            return (
+              <div key={`${kind}-${matchup.speciesId}`}>
+                {opponent?.imageUrl && (
+                  <img
+                    src={resolveAssetUrl(opponent.imageUrl)}
+                    alt=""
+                    loading="lazy"
+                    draggable={false}
+                  />
+                )}
+                <span>
+                  <strong>
+                    {opponent?.name ?? humanizeSpeciesId(matchup.speciesId)}
+                  </strong>
+                  <small>{matchup.rating.toFixed(0)} battle rating</small>
+                </span>
+              </div>
+            );
+          })}
+        </div>
+      ) : (
+        <p>Matchup details are not available in this snapshot.</p>
+      )}
+    </section>
+  );
+}
+
+function RankingDetails({
+  entry,
+  entriesBySpeciesId,
+}: {
+  entry: PokemonPvPRankingEntry;
+  entriesBySpeciesId: Map<string, PokemonPvPRankingEntry>;
+}) {
+  const selectedMoves = new Set(entry.moveset.map((move) => move.id));
+  const moveUsage = entry.moveUsage ?? [];
+  const maxMoveUses = Math.max(1, ...moveUsage.map((move) => move.uses));
+
+  return (
+    <div className="pvp-ranking-details-inner">
+      <div className="pvp-detail-summary">
+        <section className="pvp-role-profile">
+          <h3>Role profile</h3>
+          <div>
+            {ROLES.slice(1).map((role) => {
+              const score = scoreForRole(entry, role);
+              return (
+                <span key={role.key}>
+                  <small>{role.label}</small>
+                  <i>
+                    <b style={{ width: `${Math.max(0, Math.min(100, score))}%` }} />
+                  </i>
+                  <strong>{score.toFixed(1)}</strong>
+                </span>
+              );
+            })}
+          </div>
+        </section>
+
+        <section className="pvp-battle-stats">
+          <h3>Battle build</h3>
+          <div>
+            <span>
+              <small>Attack</small>
+              <strong>{entry.battleAttack?.toFixed(1) ?? '---'}</strong>
+            </span>
+            <span>
+              <small>Defense</small>
+              <strong>{entry.battleDefense?.toFixed(1) ?? '---'}</strong>
+            </span>
+            <span>
+              <small>HP</small>
+              <strong>{entry.battleHp ?? '---'}</strong>
+            </span>
+            <span>
+              <small>Stat product</small>
+              <strong>{entry.statProduct?.toLocaleString() ?? '---'}</strong>
+            </span>
+          </div>
+        </section>
+      </div>
+
+      <div className="pvp-matchup-grid">
+        <MatchupList
+          title="Strong matchups"
+          items={entry.matchups ?? []}
+          entriesBySpeciesId={entriesBySpeciesId}
+          kind="strong"
+        />
+        <MatchupList
+          title="Key threats"
+          items={entry.counters ?? []}
+          entriesBySpeciesId={entriesBySpeciesId}
+          kind="threat"
+        />
+      </div>
+
+      {moveUsage.length > 0 && (
+        <section className="pvp-move-options">
+          <h3>Simulated move options</h3>
+          <div>
+            {moveUsage.map((move) => (
+              <span
+                key={`${move.kind}-${move.id}`}
+                className={selectedMoves.has(move.id) ? 'selected' : ''}
+              >
+                <img src={getTypeIconPath(move.type)} alt="" draggable={false} />
+                <strong>{move.name}</strong>
+                <small>{move.kind === 'fast' ? 'Fast' : 'Charged'}</small>
+                <i>
+                  <b style={{ width: `${(move.uses / maxMoveUses) * 100}%` }} />
+                </i>
+              </span>
+            ))}
+          </div>
+        </section>
+      )}
+    </div>
+  );
+}
+
 function RankingRow({
   entry,
   rank,
@@ -123,6 +271,9 @@ function RankingRow({
   scoreLabel,
   cp,
   nickname,
+  expanded,
+  onToggle,
+  entriesBySpeciesId,
 }: {
   entry: PokemonPvPRankingEntry;
   rank: number;
@@ -130,42 +281,61 @@ function RankingRow({
   scoreLabel: string;
   cp?: number;
   nickname?: string | null;
+  expanded: boolean;
+  onToggle: () => void;
+  entriesBySpeciesId: Map<string, PokemonPvPRankingEntry>;
 }) {
   const ivSpread = `${entry.attackIv}/${entry.defenseIv}/${entry.staminaIv}`;
   return (
-    <article className="pvp-ranking-row">
-      <span className={`pvp-rank pvp-rank--${rankTier(rank)}`}>
-        {rank}
-      </span>
+    <section className={`pvp-ranking-item${expanded ? ' expanded' : ''}`}>
+      <article className="pvp-ranking-row">
+        <span className={`pvp-rank pvp-rank--${rankTier(rank)}`}>
+          {rank}
+        </span>
 
-      <div className="pvp-pokemon">
-        <img
-          className="pvp-pokemon-image"
-          src={resolveAssetUrl(entry.imageUrl)}
-          alt=""
-          loading="lazy"
-          draggable={false}
-        />
-        <div>
-          <strong>{entry.name}</strong>
-          {nickname && <span className="pvp-nickname">{nickname}</span>}
-          <TypeIcons types={entry.types} />
+        <div className="pvp-pokemon">
+          <img
+            className="pvp-pokemon-image"
+            src={resolveAssetUrl(entry.imageUrl)}
+            alt=""
+            loading="lazy"
+            draggable={false}
+          />
+          <div>
+            <strong>{entry.name}</strong>
+            {nickname && <span className="pvp-nickname">{nickname}</span>}
+            <TypeIcons types={entry.types} />
+          </div>
         </div>
-      </div>
 
-      <Moveset entry={entry} />
+        <Moveset entry={entry} />
 
-      <div className="pvp-score">
-        <strong>{score.toFixed(1)}</strong>
-        <span>{scoreLabel}</span>
-      </div>
+        <div className="pvp-score">
+          <strong>{score.toFixed(1)}</strong>
+          <span>{scoreLabel}</span>
+        </div>
 
-      <div className="pvp-build">
-        <strong>Level {formatLevel(entry.recommendedLevel)}</strong>
-        {cp != null && <span>CP {cp.toLocaleString()}</span>}
-        <span>{ivSpread} IV</span>
+        <div className="pvp-build">
+          <strong>Level {formatLevel(entry.recommendedLevel)}</strong>
+          {cp != null && <span>CP {cp.toLocaleString()}</span>}
+          <span>{ivSpread} IV</span>
+          <button
+            type="button"
+            aria-expanded={expanded}
+            aria-label={`${expanded ? 'Hide' : 'Show'} details for ${entry.name}`}
+            onClick={onToggle}
+          >
+            <span>{expanded ? 'Hide' : 'Details'}</span>
+            <FaChevronDown aria-hidden="true" />
+          </button>
+        </div>
+      </article>
+      <div className="pvp-ranking-details" aria-hidden={!expanded}>
+        {expanded && (
+          <RankingDetails entry={entry} entriesBySpeciesId={entriesBySpeciesId} />
+        )}
       </div>
-    </article>
+    </section>
   );
 }
 
@@ -183,6 +353,7 @@ const Pvp = () => {
   const [rosterScope, setRosterScope] = useState<PvPRosterScope>('catalog');
   const [search, setSearch] = useState('');
   const [visibleLimit, setVisibleLimit] = useState(INITIAL_LIMIT);
+  const [expandedKey, setExpandedKey] = useState<string | null>(null);
 
   useEffect(() => {
     void ensureMoves();
@@ -197,6 +368,10 @@ const Pvp = () => {
     [data, league],
   );
   const cpLimit = data?.leagues[league]?.cpLimit ?? null;
+  const entriesBySpeciesId = useMemo(
+    () => new Map(entries.map((entry) => [entry.speciesId, entry])),
+    [entries],
+  );
   const ownedRoster = useMemo(
     () => buildOwnedPvPRoster(entries, variants, instances, cpLimit),
     [cpLimit, entries, instances, variants],
@@ -251,6 +426,7 @@ const Pvp = () => {
 
   useEffect(() => {
     setVisibleLimit(INITIAL_LIMIT);
+    setExpandedKey(null);
   }, [league, roleKey, rosterScope, search]);
 
   const activeLeague = LEAGUES.find((item) => item.key === league) ?? LEAGUES[0];
@@ -410,6 +586,9 @@ const Pvp = () => {
                   scoreLabel={activeRole.label}
                   cp={cp}
                   nickname={nickname}
+                  expanded={expandedKey === key}
+                  onToggle={() => setExpandedKey((current) => current === key ? null : key)}
+                  entriesBySpeciesId={entriesBySpeciesId}
                 />
               ))}
             </section>

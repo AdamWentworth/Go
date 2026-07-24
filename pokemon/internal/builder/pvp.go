@@ -24,28 +24,44 @@ type pvpRankingMove struct {
 	Kind string `json:"kind"`
 }
 
+type pvpRankingMatchup struct {
+	SpeciesID string  `json:"speciesId"`
+	Rating    float64 `json:"rating"`
+}
+
+type pvpRankingMoveUsage struct {
+	ID   string `json:"id"`
+	Name string `json:"name"`
+	Type string `json:"type"`
+	Kind string `json:"kind"`
+	Uses int    `json:"uses"`
+}
+
 type pvpRankingEntry struct {
-	Rank             int              `json:"rank"`
-	SourceRank       int              `json:"sourceRank"`
-	SpeciesID        string           `json:"speciesId"`
-	Name             string           `json:"name"`
-	PokemonID        *int             `json:"pokemonId,omitempty"`
-	FusionID         *int             `json:"fusionId,omitempty"`
-	VariantKind      string           `json:"variantKind"`
-	ImageURL         string           `json:"imageUrl"`
-	Types            []string         `json:"types"`
-	Moveset          []pvpRankingMove `json:"moveset"`
-	Score            float64          `json:"score"`
-	Rating           float64          `json:"rating"`
-	CategoryScores   []float64        `json:"categoryScores"`
-	RecommendedLevel float64          `json:"recommendedLevel"`
-	AttackIV         int              `json:"attackIv"`
-	DefenseIV        int              `json:"defenseIv"`
-	StaminaIV        int              `json:"staminaIv"`
-	StatProduct      *float64         `json:"statProduct,omitempty"`
-	BattleAttack     *float64         `json:"battleAttack,omitempty"`
-	BattleDefense    *float64         `json:"battleDefense,omitempty"`
-	BattleHP         *int             `json:"battleHp,omitempty"`
+	Rank             int                   `json:"rank"`
+	SourceRank       int                   `json:"sourceRank"`
+	SpeciesID        string                `json:"speciesId"`
+	Name             string                `json:"name"`
+	PokemonID        *int                  `json:"pokemonId,omitempty"`
+	FusionID         *int                  `json:"fusionId,omitempty"`
+	VariantKind      string                `json:"variantKind"`
+	ImageURL         string                `json:"imageUrl"`
+	Types            []string              `json:"types"`
+	Moveset          []pvpRankingMove      `json:"moveset"`
+	Score            float64               `json:"score"`
+	Rating           float64               `json:"rating"`
+	CategoryScores   []float64             `json:"categoryScores"`
+	Matchups         []pvpRankingMatchup   `json:"matchups"`
+	Counters         []pvpRankingMatchup   `json:"counters"`
+	MoveUsage        []pvpRankingMoveUsage `json:"moveUsage"`
+	RecommendedLevel float64               `json:"recommendedLevel"`
+	AttackIV         int                   `json:"attackIv"`
+	DefenseIV        int                   `json:"defenseIv"`
+	StaminaIV        int                   `json:"staminaIv"`
+	StatProduct      *float64              `json:"statProduct,omitempty"`
+	BattleAttack     *float64              `json:"battleAttack,omitempty"`
+	BattleDefense    *float64              `json:"battleDefense,omitempty"`
+	BattleHP         *int                  `json:"battleHp,omitempty"`
 }
 
 type pvpLeaguePayload struct {
@@ -153,6 +169,9 @@ func (b *Builder) BuildPvPRankingsPayload(ctx context.Context) (any, error) {
 		  score,
 		  rating,
 		  category_scores,
+		  matchups,
+		  counters,
+		  move_usage,
 		  recommended_level,
 		  attack_iv,
 		  defense_iv,
@@ -185,6 +204,9 @@ func (b *Builder) BuildPvPRankingsPayload(ctx context.Context) (any, error) {
 			typesJSON     []byte
 			movesetJSON   []byte
 			scoresJSON    []byte
+			matchupsJSON  []byte
+			countersJSON  []byte
+			moveUsageJSON []byte
 			pokemonID     sql.NullInt64
 			fusionID      sql.NullInt64
 			statProduct   sql.NullFloat64
@@ -207,6 +229,9 @@ func (b *Builder) BuildPvPRankingsPayload(ctx context.Context) (any, error) {
 			&entry.Score,
 			&entry.Rating,
 			&scoresJSON,
+			&matchupsJSON,
+			&countersJSON,
+			&moveUsageJSON,
 			&entry.RecommendedLevel,
 			&entry.AttackIV,
 			&entry.DefenseIV,
@@ -226,6 +251,15 @@ func (b *Builder) BuildPvPRankingsPayload(ctx context.Context) (any, error) {
 		}
 		if err := json.Unmarshal(scoresJSON, &entry.CategoryScores); err != nil {
 			return nil, fmt.Errorf("decode PvP ranking scores for %s: %w", entry.SpeciesID, err)
+		}
+		if err := json.Unmarshal(matchupsJSON, &entry.Matchups); err != nil {
+			return nil, fmt.Errorf("decode PvP ranking matchups for %s: %w", entry.SpeciesID, err)
+		}
+		if err := json.Unmarshal(countersJSON, &entry.Counters); err != nil {
+			return nil, fmt.Errorf("decode PvP ranking counters for %s: %w", entry.SpeciesID, err)
+		}
+		if err := json.Unmarshal(moveUsageJSON, &entry.MoveUsage); err != nil {
+			return nil, fmt.Errorf("decode PvP ranking move usage for %s: %w", entry.SpeciesID, err)
 		}
 		if pokemonID.Valid {
 			value := int(pokemonID.Int64)

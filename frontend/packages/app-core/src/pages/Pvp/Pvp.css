@@ -285,13 +285,23 @@
   text-align: left;
 }
 
-.pvp-ranking-row:nth-child(even) {
+.pvp-ranking-item:nth-child(even) .pvp-ranking-row {
   background: var(--pvp-panel-raised);
 }
 
 .pvp-rankings {
   display: grid;
   gap: 0.4rem;
+}
+
+.pvp-ranking-item {
+  min-width: 0;
+}
+
+.pvp-ranking-item.expanded .pvp-ranking-row {
+  border-color: var(--pvp-line-strong);
+  border-bottom-color: transparent;
+  border-radius: 6px 6px 0 0;
 }
 
 .pvp-rank {
@@ -418,6 +428,228 @@
   font-size: 0.78rem;
 }
 
+.pvp-build button {
+  display: inline-flex;
+  gap: 0.28rem;
+  align-items: center;
+  width: fit-content;
+  min-height: 1.65rem;
+  margin-top: 0.18rem;
+  padding: 0.18rem 0.48rem;
+  border: 1px solid var(--pvp-line-strong);
+  border-radius: 999px;
+  color: var(--pvp-text);
+  background: transparent;
+  font-size: 0.63rem;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.pvp-build button:hover,
+.pvp-build button:focus-visible {
+  border-color: var(--pvp-teal);
+}
+
+.pvp-build button svg {
+  transition: transform 180ms ease;
+}
+
+.pvp-build button[aria-expanded='true'] svg {
+  transform: rotate(180deg);
+}
+
+.pvp-ranking-details {
+  display: grid;
+  grid-template-rows: 0fr;
+  overflow: hidden;
+  border: 0 solid var(--pvp-line-strong);
+  border-top: 0;
+  border-radius: 0 0 6px 6px;
+  background: #101516;
+  transition:
+    grid-template-rows 220ms ease,
+    border-width 220ms ease;
+}
+
+.pvp-ranking-item.expanded .pvp-ranking-details {
+  grid-template-rows: 1fr;
+  border-width: 0 1px 1px;
+}
+
+.pvp-ranking-details-inner {
+  display: grid;
+  min-height: 0;
+  gap: 0.85rem;
+  padding: 0.85rem;
+}
+
+.pvp-ranking-details h3 {
+  margin: 0;
+  color: #8fc6cb;
+  font-size: 0.7rem;
+  text-align: left;
+  text-transform: uppercase;
+}
+
+.pvp-detail-summary,
+.pvp-matchup-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.85rem;
+}
+
+.pvp-role-profile,
+.pvp-battle-stats,
+.pvp-matchups,
+.pvp-move-options {
+  display: grid;
+  gap: 0.55rem;
+  min-width: 0;
+}
+
+.pvp-role-profile > div {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.4rem 0.65rem;
+}
+
+.pvp-role-profile > div > span {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 0.12rem 0.4rem;
+  align-items: center;
+}
+
+.pvp-role-profile small,
+.pvp-battle-stats small,
+.pvp-matchups small,
+.pvp-move-options small {
+  color: var(--pvp-muted);
+  font-size: 0.62rem;
+  font-weight: 850;
+}
+
+.pvp-role-profile i,
+.pvp-move-options i {
+  grid-column: 1 / -1;
+  height: 0.22rem;
+  overflow: hidden;
+  border-radius: 999px;
+  background: rgba(157, 182, 184, 0.2);
+}
+
+.pvp-role-profile i b,
+.pvp-move-options i b {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--pvp-teal);
+}
+
+.pvp-role-profile strong {
+  font-size: 0.7rem;
+}
+
+.pvp-battle-stats > div {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.35rem;
+}
+
+.pvp-battle-stats span {
+  display: grid;
+  gap: 0.05rem;
+  padding-left: 0.45rem;
+  border-left: 2px solid var(--pvp-blue);
+}
+
+.pvp-battle-stats strong {
+  font-size: 0.82rem;
+}
+
+.pvp-matchups > div {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 0.3rem;
+}
+
+.pvp-matchups > div > div {
+  display: grid;
+  grid-template-columns: 2rem minmax(0, 1fr);
+  gap: 0.3rem;
+  align-items: center;
+  min-width: 0;
+}
+
+.pvp-matchups img {
+  width: 2rem;
+  height: 2rem;
+  object-fit: contain;
+}
+
+.pvp-matchups span {
+  display: grid;
+  min-width: 0;
+}
+
+.pvp-matchups strong {
+  overflow: hidden;
+  font-size: 0.68rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pvp-matchups p {
+  margin: 0;
+  color: var(--pvp-muted);
+  font-size: 0.7rem;
+}
+
+.pvp-matchups--strong {
+  border-left: 3px solid var(--pvp-teal);
+  padding-left: 0.55rem;
+}
+
+.pvp-matchups--threat {
+  border-left: 3px solid var(--pvp-pink);
+  padding-left: 0.55rem;
+}
+
+.pvp-move-options > div {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr));
+  gap: 0.35rem;
+}
+
+.pvp-move-options > div > span {
+  display: grid;
+  grid-template-columns: 1.05rem minmax(0, 1fr) auto;
+  gap: 0.25rem;
+  align-items: center;
+  min-width: 0;
+  padding: 0.35rem 0.45rem;
+  border: 1px solid rgba(141, 192, 194, 0.2);
+  border-radius: 4px;
+}
+
+.pvp-move-options > div > span.selected {
+  border-color: var(--pvp-teal);
+  background: rgba(66, 213, 194, 0.08);
+}
+
+.pvp-move-options img {
+  width: 1rem;
+  height: 1rem;
+  object-fit: contain;
+}
+
+.pvp-move-options strong {
+  overflow: hidden;
+  font-size: 0.68rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .pvp-status {
   padding: 3rem 1rem;
   border: 1px solid var(--pvp-line);
@@ -481,7 +713,8 @@
 
 :root[data-theme='light'] .pvp-league-tabs,
 :root[data-theme='light'] .pvp-search,
-:root[data-theme='light'] .pvp-roster-scope {
+:root[data-theme='light'] .pvp-roster-scope,
+:root[data-theme='light'] .pvp-ranking-details {
   background: #f7fbfb;
 }
 
@@ -654,6 +887,10 @@
     text-align: right;
   }
 
+  .pvp-build button {
+    margin-left: auto;
+  }
+
   .pvp-build strong {
     font-size: 0.69rem;
   }
@@ -663,6 +900,35 @@
     overflow: visible;
     text-overflow: clip;
     white-space: normal;
+  }
+
+  .pvp-ranking-details-inner,
+  .pvp-detail-summary,
+  .pvp-matchup-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .pvp-ranking-details-inner {
+    gap: 0.75rem;
+    padding: 0.7rem 0.55rem;
+  }
+
+  .pvp-role-profile > div {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .pvp-matchups > div {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.45rem;
+  }
+
+  .pvp-matchups > div > div {
+    grid-template-columns: 2.3rem minmax(0, 1fr);
+  }
+
+  .pvp-matchups img {
+    width: 2.3rem;
+    height: 2.3rem;
   }
 }
 

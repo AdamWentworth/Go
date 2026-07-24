@@ -246,6 +246,46 @@ def structured_moveset(
     return result
 
 
+def structured_matchups(ranking: dict[str, Any], key: str) -> list[dict[str, Any]]:
+    result: list[dict[str, Any]] = []
+    for matchup in ranking.get(key) or []:
+        species_id = str(matchup.get("opponent") or "")
+        rating = matchup.get("rating")
+        if not species_id or rating is None:
+            continue
+        result.append(
+            {
+                "speciesId": species_id,
+                "rating": float(rating),
+            }
+        )
+    return result
+
+
+def structured_move_usage(
+    ranking: dict[str, Any],
+    moves_by_id: dict[str, dict[str, Any]],
+) -> list[dict[str, Any]]:
+    usage = ranking.get("moves") or {}
+    result: list[dict[str, Any]] = []
+    for source_key, kind in (("fastMoves", "fast"), ("chargedMoves", "charged")):
+        for item in usage.get(source_key) or []:
+            move_id = str(item.get("moveId") or "")
+            if not move_id:
+                continue
+            move = moves_by_id.get(move_id, {})
+            result.append(
+                {
+                    "id": move_id,
+                    "name": str(move.get("name") or move_id.replace("_", " ").title()),
+                    "type": str(move.get("type") or "normal"),
+                    "kind": kind,
+                    "uses": int(item.get("uses") or 0),
+                }
+            )
+    return result
+
+
 def build_rows(
     league: str,
     rankings: list[dict[str, Any]],
@@ -290,6 +330,9 @@ def build_rows(
                 float(ranking.get("score") or 0),
                 float(ranking.get("rating") or 0),
                 json.dumps(ranking.get("scores") or []),
+                json.dumps(structured_matchups(ranking, "matchups")),
+                json.dumps(structured_matchups(ranking, "counters")),
+                json.dumps(structured_move_usage(ranking, moves_by_id)),
                 level,
                 attack_iv,
                 defense_iv,
@@ -371,12 +414,12 @@ def import_snapshot(
         INSERT INTO pvp_rankings (
           snapshot_id, league, rank, source_rank, species_id, species_name,
           pokemon_id, fusion_id, variant_kind, image_url, types, moveset,
-          score, rating, category_scores, recommended_level, attack_iv,
-          defense_iv, stamina_iv, stat_product, battle_attack, battle_defense,
-          battle_hp
+          score, rating, category_scores, matchups, counters, move_usage,
+          recommended_level, attack_iv, defense_iv, stamina_iv, stat_product,
+          battle_attack, battle_defense, battle_hp
         ) VALUES (
           ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?::JSONB, ?::JSONB, ?, ?, ?::JSONB,
-          ?, ?, ?, ?, ?, ?, ?, ?
+          ?::JSONB, ?::JSONB, ?::JSONB, ?, ?, ?, ?, ?, ?, ?, ?
         )
         """,
         [(snapshot_id, *row) for row in all_rows],

@@ -46,6 +46,21 @@ const makeEntry = (
   categoryScores: rank === 1
     ? [70, 72, 74, 76, 78, 80]
     : [90, 88, 86, 84, 82, 81],
+  matchups: [
+    { speciesId: 'talonflame', rating: 740 - rank },
+  ],
+  counters: [
+    { speciesId: 'lanturn', rating: 310 + rank },
+  ],
+  moveUsage: [
+    {
+      id: `${speciesId}-fast`,
+      name: 'Quick Attack',
+      type: 'normal',
+      kind: 'fast',
+      uses: 120,
+    },
+  ],
   recommendedLevel: 20 + rank / 2,
   attackIv: 0,
   defenseIv: 15,
@@ -141,6 +156,25 @@ describe('PvP rankings page', () => {
     const rankings = document.querySelector('.pvp-rankings');
     expect(rankings).not.toBeNull();
     expect(within(rankings as HTMLElement).getAllByRole('article')).toHaveLength(2);
+  });
+
+  it('expands ranking evidence and closes it from the same row', () => {
+    render(<Pvp />);
+
+    const details = screen.getByRole('button', {
+      name: 'Show details for Clodsire',
+    });
+    fireEvent.click(details);
+
+    expect(details).toHaveAttribute('aria-expanded', 'true');
+    expect(screen.getByRole('heading', { name: 'Strong matchups' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Key threats' })).toBeInTheDocument();
+    expect(screen.getByText('Talonflame')).toBeInTheDocument();
+    expect(screen.getByText('Lanturn')).toBeInTheDocument();
+    expect(screen.getByText('739 battle rating')).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Hide details for Clodsire' }));
+    expect(screen.queryByRole('heading', { name: 'Strong matchups' })).not.toBeInTheDocument();
   });
 
   it('shows only legal, fully recorded caught builds in My Pokemon', () => {
