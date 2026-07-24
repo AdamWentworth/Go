@@ -2,6 +2,7 @@ import { useCallback } from 'react';
 import {
   FaArrowLeft,
   FaBolt,
+  FaCalculator,
   FaFlask,
   FaShieldAlt,
   FaUsers,
@@ -18,6 +19,13 @@ const rankingViews = [
     detail:
       'Overall and role scores, recommended builds, matchup evidence, and counters come from the pinned PvPoke source snapshot for the selected league or cup.',
     icon: FaShieldAlt,
+  },
+  {
+    title: 'IV Rank',
+    summary: 'A same-species comparison of every appraisal spread.',
+    detail:
+      'IV Rank powers all 4,096 Attack, Defense, and HP combinations to their highest legal half-level, then orders them by battle-stat product for the selected league.',
+    icon: FaCalculator,
   },
   {
     title: 'Team Builder',
@@ -66,6 +74,7 @@ const PvpMethodology = () => {
         <nav className="pvp-methodology-nav" aria-label="Methodology sections">
           <a href="#tools">Three tools</a>
           <a href="#rankings">Rankings</a>
+          <a href="#iv-rank">IV Rank</a>
           <a href="#owned">My Pokémon</a>
           <a href="#cups">Cups</a>
           <a href="#battle-lab">Battle Lab</a>
@@ -75,7 +84,7 @@ const PvpMethodology = () => {
         <main className="pvp-methodology-content">
           <section id="tools" className="pvp-methodology-section">
             <p className="pvp-methodology-kicker">Choose the right question</p>
-            <h2>One workspace, three different jobs</h2>
+            <h2>One workspace, four different jobs</h2>
             <div className="pvp-methodology-tool-list">
               {rankingViews.map(({ title, summary, detail, icon: Icon }) => (
                 <article key={title}>
@@ -122,6 +131,44 @@ const PvpMethodology = () => {
                   Expanded rows show the recommended battle stats, role
                   profile, strong matchups, key threats, and simulated move
                   usage available in that source snapshot.
+                </span>
+              </li>
+            </ol>
+          </section>
+
+          <section id="iv-rank" className="pvp-methodology-section">
+            <p className="pvp-methodology-kicker">Appraisal comparison</p>
+            <h2>Every IV spread at its legal ceiling</h2>
+            <p>
+              IV Rank compares all 4,096 possible 0-15 Attack, Defense, and HP
+              appraisal combinations for one species or battle-stat form. Each
+              spread is powered to the highest legal half-level under the
+              selected league&apos;s CP cap, up to level 50 or Best Buddy level
+              51.
+            </p>
+            <ol className="pvp-methodology-steps">
+              <li>
+                <strong>Calculate the legal level and CP.</strong>
+                <span>
+                  Great and Ultra League stop at 1,500 and 2,500 CP. Master
+                  League has no CP cap, so perfect IVs lead at the selected
+                  level ceiling.
+                </span>
+              </li>
+              <li>
+                <strong>Measure the battle stats.</strong>
+                <span>
+                  The model calculates the resulting Attack, Defense, and
+                  floored HP at that level, then multiplies those three values
+                  into the spread&apos;s stat product.
+                </span>
+              </li>
+              <li>
+                <strong>Rank like against like.</strong>
+                <span>
+                  Results are ordered by stat product within that species and
+                  form. The percentile describes bulk-efficient CP use, not a
+                  Pokémon&apos;s matchup strength against other species.
                 </span>
               </li>
             </ol>
@@ -210,6 +257,11 @@ const PvpMethodology = () => {
                 and PokeGo Nexus catalog are refreshed and republished.
               </li>
               <li>
+                IV Rank measures stat product. Breakpoints, specific matchups,
+                Best Buddy availability, and team composition can make a
+                lower-ranked spread preferable in practice.
+              </li>
+              <li>
                 Only catalog forms that PokeGo Nexus can identify and display
                 are published. Unmatched or unreleased entries are omitted.
               </li>
@@ -229,6 +281,8 @@ const PvpMethodology = () => {
           </Link>
           <p>
             Ranking data is attributed to PvPoke under its published license.
+            IV Rank follows the established same-species stat-product model
+            used by tools such as Stadium Gaming.
             Pokémon and Pokémon GO are trademarks of their respective owners.
           </p>
         </footer>

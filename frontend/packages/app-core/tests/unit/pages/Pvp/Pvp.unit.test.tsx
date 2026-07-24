@@ -263,6 +263,55 @@ describe('PvP rankings page', () => {
       .toBeDisabled();
   });
 
+  it('opens IV Rank with a catalog-only lazy load and calculates a spread', () => {
+    useVariantsStore.setState({
+      variants: [{
+        variant_id: '0001-default',
+        pokemon_id: 1,
+        pokedex_number: 1,
+        name: 'Bulbasaur',
+        species_name: 'Bulbasaur',
+        variantType: 'default',
+        currentImage: '/images/bulbasaur.png',
+        image_url: '/images/bulbasaur.png',
+        attack: 118,
+        defense: 111,
+        stamina: 128,
+        type1_name: 'Grass',
+        type2_name: 'Poison',
+        crownForms: [],
+      } as unknown as PokemonVariant],
+      variantsLoading: false,
+    });
+
+    renderPvp();
+    fireEvent.click(screen.getByRole('button', { name: 'IV Rank' }));
+
+    expect(bootstrapHooks.variants).toHaveBeenLastCalledWith(true);
+    expect(bootstrapHooks.instances).toHaveBeenLastCalledWith(false);
+    expect(screen.getByRole('heading', { name: 'PvP IV Rank' })).toBeInTheDocument();
+    expect(screen.getByText('4,096 spreads')).toBeInTheDocument();
+    expect(screen.queryByRole('combobox', { name: 'Current PvP cup' }))
+      .not.toBeInTheDocument();
+    expect(screen.queryByRole('region', { name: 'PvP roster' }))
+      .not.toBeInTheDocument();
+
+    fireEvent.change(screen.getByRole('searchbox', {
+      name: 'Search IV Rank Pokémon',
+    }), {
+      target: { value: 'bulba' },
+    });
+    fireEvent.click(screen.getByRole('button', {
+      name: 'Select #0001 Bulbasaur',
+    }));
+
+    expect(screen.getByText('of 4,096')).toBeInTheDocument();
+    expect(screen.getByText('Rank 1 spread')).toBeInTheDocument();
+    expect(screen.getByRole('spinbutton', { name: 'Attack IV' })).toHaveValue(0);
+    expect(screen.getByRole('spinbutton', { name: 'Defense IV' })).toHaveValue(15);
+    expect(screen.getByRole('spinbutton', { name: 'HP IV' })).toHaveValue(15);
+  });
+
   it('shows only legal, fully recorded caught builds in My Pokemon', () => {
     const moves = [
       {

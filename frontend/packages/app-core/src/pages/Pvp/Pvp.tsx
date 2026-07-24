@@ -3,6 +3,7 @@ import {
   FaBalanceScale,
   FaBookOpen,
   FaBolt,
+  FaCalculator,
   FaChartLine,
   FaChevronDown,
   FaExchangeAlt,
@@ -35,6 +36,7 @@ import type {
 
 import { usePvPRankings } from './hooks/usePvPRankings';
 import PvpBattleLab from './components/PvpBattleLab';
+import PvpIvRank from './components/PvpIvRank';
 import PvpTeamBuilder from './components/PvpTeamBuilder';
 import {
   buildOwnedPvPRoster,
@@ -76,7 +78,7 @@ type PvPRoleKey =
   | 'attacker'
   | 'consistency';
 
-type PvPWorkspace = 'rankings' | 'team' | 'battle';
+type PvPWorkspace = 'rankings' | 'team' | 'battle' | 'iv-rank';
 
 const ROLES: Array<{
   key: PvPRoleKey;
@@ -373,10 +375,12 @@ const Pvp = () => {
   const [visibleLimit, setVisibleLimit] = useState(INITIAL_LIMIT);
   const [expandedKey, setExpandedKey] = useState<string | null>(null);
   const ownedRosterRequested = rosterScope === 'owned';
+  const ivRankRequested = workspace === 'iv-rank';
 
   // PvP rankings use their own lightweight payload. Load the much larger
-  // catalog and Trainer instance cache only when the personal roster is opened.
-  useBootstrapVariants(ownedRosterRequested);
+  // catalog only for personal rosters or IV Rank, and load Trainer instances
+  // only when the personal roster is opened.
+  useBootstrapVariants(ownedRosterRequested || ivRankRequested);
   useBootstrapInstances(ownedRosterRequested);
 
   useEffect(() => {
@@ -514,7 +518,9 @@ const Pvp = () => {
                 ? 'PvP Rankings'
                 : workspace === 'team'
                   ? 'PvP Team Builder'
-                  : 'PvP Battle Lab'}
+                  : workspace === 'battle'
+                    ? 'PvP Battle Lab'
+                    : 'PvP IV Rank'}
             </h1>
           </div>
           <div className="pvp-header-actions">
@@ -523,7 +529,9 @@ const Pvp = () => {
               <span>Method</span>
             </Link>
             <strong>
-              {rosterScope === 'owned'
+              {workspace === 'iv-rank'
+                ? '4,096 spreads'
+                : rosterScope === 'owned'
                 ? `${ownedRoster.eligibleCount} ready`
                 : `${entries.length || '---'} ranked`}
             </strong>
@@ -558,9 +566,25 @@ const Pvp = () => {
             <FaFlask aria-hidden="true" />
             Battle Lab
           </button>
+          <button
+            type="button"
+            className={workspace === 'iv-rank' ? 'active' : ''}
+            aria-pressed={workspace === 'iv-rank'}
+            onClick={() => {
+              setWorkspace('iv-rank');
+              setFormatKey(activeLeagueKey);
+            }}
+          >
+            <FaCalculator aria-hidden="true" />
+            IV Rank
+          </button>
         </nav>
 
-        <section className="pvp-format-controls">
+        <section
+          className={`pvp-format-controls${
+            workspace === 'iv-rank' ? ' pvp-format-controls--league-only' : ''
+          }`}
+        >
           <nav className="pvp-league-tabs" aria-label="PvP league">
             {LEAGUES.map((item) => (
               <button
@@ -575,32 +599,34 @@ const Pvp = () => {
               </button>
             ))}
           </nav>
-          <label className="pvp-cup-picker">
-            <FaTrophy aria-hidden="true" />
-            <span>
-              <small>Current cups</small>
-              <select
-                value={activeCup?.key ?? ''}
-                onChange={(event) => {
-                  if (event.target.value) setFormatKey(event.target.value);
-                }}
-                disabled={cupFormats.length === 0}
-                aria-label="Current PvP cup"
-              >
-                <option value="">
-                  {cupFormats.length > 0 ? 'Choose a cup' : 'No cups available'}
-                </option>
-                {cupFormats.map((format: PokemonPvPFormat) => (
-                  <option value={format.key} key={format.key}>
-                    {format.label}
+          {workspace !== 'iv-rank' && (
+            <label className="pvp-cup-picker">
+              <FaTrophy aria-hidden="true" />
+              <span>
+                <small>Current cups</small>
+                <select
+                  value={activeCup?.key ?? ''}
+                  onChange={(event) => {
+                    if (event.target.value) setFormatKey(event.target.value);
+                  }}
+                  disabled={cupFormats.length === 0}
+                  aria-label="Current PvP cup"
+                >
+                  <option value="">
+                    {cupFormats.length > 0 ? 'Choose a cup' : 'No cups available'}
                   </option>
-                ))}
-              </select>
-            </span>
-          </label>
+                  {cupFormats.map((format: PokemonPvPFormat) => (
+                    <option value={format.key} key={format.key}>
+                      {format.label}
+                    </option>
+                  ))}
+                </select>
+              </span>
+            </label>
+          )}
         </section>
 
-        {activeCup && activeCup.rules.length > 0 && (
+        {workspace !== 'iv-rank' && activeCup && activeCup.rules.length > 0 && (
           <details className="pvp-format-rules">
             <summary>Format rules</summary>
             <ul>
@@ -609,38 +635,40 @@ const Pvp = () => {
           </details>
         )}
 
-        <section className="pvp-roster-scope" aria-label="PvP roster">
-          <div role="group" aria-label="Pokemon source">
-            <button
-              type="button"
-              className={rosterScope === 'catalog' ? 'active' : ''}
-              aria-pressed={rosterScope === 'catalog'}
-              onClick={() => setRosterScope('catalog')}
-            >
-              <FaBookOpen aria-hidden="true" />
-              <span>All Pokémon</span>
-            </button>
-            <button
-              type="button"
-              className={rosterScope === 'owned' ? 'active' : ''}
-              aria-pressed={rosterScope === 'owned'}
-              disabled={!isLoggedIn}
-              title={!isLoggedIn ? 'Log in to rank your caught Pokémon' : undefined}
-              onClick={() => setRosterScope('owned')}
-            >
-              <FaUser aria-hidden="true" />
-              <span>My Pokémon</span>
-              {rosterScope === 'owned' && (
-                <strong>{ownedLoading ? '…' : ownedRoster.eligibleCount}</strong>
-              )}
-            </button>
-          </div>
-          {rosterScope === 'owned' && (
-            <span role="status">
-              {ownedLoading ? ownedLoadingMessage : rosterDetails}
-            </span>
-          )}
-        </section>
+        {workspace !== 'iv-rank' && (
+          <section className="pvp-roster-scope" aria-label="PvP roster">
+            <div role="group" aria-label="Pokemon source">
+              <button
+                type="button"
+                className={rosterScope === 'catalog' ? 'active' : ''}
+                aria-pressed={rosterScope === 'catalog'}
+                onClick={() => setRosterScope('catalog')}
+              >
+                <FaBookOpen aria-hidden="true" />
+                <span>All Pokémon</span>
+              </button>
+              <button
+                type="button"
+                className={rosterScope === 'owned' ? 'active' : ''}
+                aria-pressed={rosterScope === 'owned'}
+                disabled={!isLoggedIn}
+                title={!isLoggedIn ? 'Log in to rank your caught Pokémon' : undefined}
+                onClick={() => setRosterScope('owned')}
+              >
+                <FaUser aria-hidden="true" />
+                <span>My Pokémon</span>
+                {rosterScope === 'owned' && (
+                  <strong>{ownedLoading ? '…' : ownedRoster.eligibleCount}</strong>
+                )}
+              </button>
+            </div>
+            {rosterScope === 'owned' && (
+              <span role="status">
+                {ownedLoading ? ownedLoadingMessage : rosterDetails}
+              </span>
+            )}
+          </section>
+        )}
 
         {workspace === 'rankings' ? (
           <>
@@ -737,6 +765,12 @@ const Pvp = () => {
               </button>
             )}
           </>
+        ) : workspace === 'iv-rank' ? (
+          <PvpIvRank
+            variants={variants}
+            variantsLoading={variantsLoading}
+            league={activeLeagueKey}
+          />
         ) : workspace === 'team' ? (
           <>
             {pageLoading && (
@@ -790,7 +824,7 @@ const Pvp = () => {
           </>
         )}
 
-        {data?.source && (
+        {workspace !== 'iv-rank' && data?.source && (
           <footer className="pvp-source">
             <span>
               Battle-simulation rankings from{' '}

@@ -128,6 +128,20 @@ test.describe('PvP rankings page', () => {
       await expect(page.getByText('Azumarill')).toBeVisible();
       await expect(page.getByText('Clodsire')).toHaveCount(0);
 
+      await page.getByRole('button', { name: 'IV Rank' }).click();
+      await expect(page.getByRole('heading', { name: 'PvP IV Rank' })).toBeVisible();
+      await expect(page.getByRole('combobox', { name: 'Current PvP cup' })).toHaveCount(0);
+      const ivSearch = page.getByRole('searchbox', { name: 'Search IV Rank Pokémon' });
+      await ivSearch.fill('Bulbasaur');
+      await page.getByRole('button', {
+        name: 'Select #0001 Bulbasaur',
+      }).click();
+      await expect(page.getByText('of 4,096')).toBeVisible();
+      await expect(page.getByText('Rank 1 spread')).toBeVisible();
+      await expect(page.getByRole('spinbutton', { name: 'Attack IV' })).toHaveValue('0');
+      await expect(page.getByRole('spinbutton', { name: 'Defense IV' })).toHaveValue('15');
+      await expect(page.getByRole('spinbutton', { name: 'HP IV' })).toHaveValue('15');
+
       const layout = await page.locator('.pvp-page').evaluate(() => ({
         viewportWidth: window.innerWidth,
         documentWidth: document.documentElement.scrollWidth,

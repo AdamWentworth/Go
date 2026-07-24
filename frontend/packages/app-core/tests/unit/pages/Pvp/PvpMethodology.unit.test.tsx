@@ -5,7 +5,7 @@ import { describe, expect, it } from 'vitest';
 import PvpMethodology from '@/pages/Pvp/PvpMethodology';
 
 describe('PvP methodology page', () => {
-  it('documents rankings, caught builds, cups, Team Builder, and Battle Lab', () => {
+  it('documents rankings, IV Rank, caught builds, cups, Team Builder, and Battle Lab', () => {
     render(
       <MemoryRouter>
         <PvpMethodology />
@@ -16,6 +16,11 @@ describe('PvP methodology page', () => {
       screen.getByRole('heading', { name: 'How PvP rankings work' }),
     ).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: 'A pinned simulation snapshot' }))
+      .toBeInTheDocument();
+    expect(screen.getByRole('heading', {
+      name: 'Every IV spread at its legal ceiling',
+    })).toBeInTheDocument();
+    expect(screen.getByText(/compares all 4,096 possible/))
       .toBeInTheDocument();
     expect(screen.getByRole('heading', { name: 'My Pokémon keeps the build honest' }))
       .toBeInTheDocument();
