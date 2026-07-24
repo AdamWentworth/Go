@@ -38,7 +38,9 @@ const makeEntry = (
   ],
   score: 95 - rank,
   rating: 700,
-  categoryScores: [700],
+  categoryScores: rank === 1
+    ? [70, 72, 74, 76, 78, 80]
+    : [90, 88, 86, 84, 82, 81],
   recommendedLevel: 20 + rank / 2,
   attackIv: 0,
   defenseIv: 15,
@@ -96,6 +98,19 @@ describe('PvP rankings page', () => {
     expect(screen.getByText('Feraligatr')).toBeInTheDocument();
     expect(screen.queryByText('Clodsire')).not.toBeInTheDocument();
     expect(screen.getByText('1 ranked')).toBeInTheDocument();
+  });
+
+  it('re-ranks the current league by the selected battle role', () => {
+    const { container } = render(<Pvp />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Lead' }));
+
+    const rows = container.querySelectorAll('.pvp-ranking-row');
+    expect(rows[0]).toHaveTextContent('Azumarill');
+    expect(rows[0]).toHaveTextContent('90.0');
+    expect(rows[0]).toHaveTextContent('Lead');
+    expect(rows[1]).toHaveTextContent('Clodsire');
+    expect(screen.getByText('Lead rankings')).toBeInTheDocument();
   });
 
   it('searches by Pokemon, move, and type', () => {

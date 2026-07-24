@@ -23,6 +23,11 @@ test.describe('PvP rankings page', () => {
       await expect(page.locator('.pvp-rank--gold')).toHaveText('1');
       await expect(page.locator('.pvp-rank--silver')).toHaveText('2');
 
+      await page.getByRole('button', { name: 'Lead' }).click();
+      await expect(page.getByText('Lead rankings')).toBeVisible();
+      await expect(page.locator('.pvp-ranking-row').first()).toContainText('Azumarill');
+      await expect(page.locator('.pvp-ranking-row').first()).toContainText('Lead');
+
       await page.getByRole('button', { name: /Ultra/ }).click();
       await expect(page.getByText('Feraligatr')).toBeVisible();
       await expect(page.getByText('Clodsire')).toHaveCount(0);

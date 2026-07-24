@@ -97,7 +97,9 @@ const makePvPEntry = (
   ],
   score: 96 - rank,
   rating: 700,
-  categoryScores: [700],
+  categoryScores: rank === 1
+    ? [70, 72, 74, 76, 78, 80]
+    : [90, 88, 86, 84, 82, 81],
   recommendedLevel: 20 + rank / 2,
   attackIv: 0,
   defenseIv: 15,

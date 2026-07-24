@@ -1,5 +1,14 @@
 import { useEffect, useMemo, useState } from 'react';
-import { FaSearch } from 'react-icons/fa';
+import {
+  FaBalanceScale,
+  FaBolt,
+  FaChartLine,
+  FaExchangeAlt,
+  FaFistRaised,
+  FaFlag,
+  FaSearch,
+} from 'react-icons/fa';
+import type { IconType } from 'react-icons';
 
 import { getTypeIconPath } from '@/utils/imageHelpers';
 import { resolveAssetUrl } from '@/utils/assetUrl';
@@ -23,6 +32,30 @@ const LEAGUES: Array<{
 ];
 
 const INITIAL_LIMIT = 50;
+
+type PvPRoleKey =
+  | 'overall'
+  | 'lead'
+  | 'closer'
+  | 'switch'
+  | 'charger'
+  | 'attacker'
+  | 'consistency';
+
+const ROLES: Array<{
+  key: PvPRoleKey;
+  label: string;
+  icon: IconType;
+  scoreIndex: number | null;
+}> = [
+  { key: 'overall', label: 'Overall', icon: FaChartLine, scoreIndex: null },
+  { key: 'lead', label: 'Lead', icon: FaFlag, scoreIndex: 0 },
+  { key: 'closer', label: 'Closer', icon: FaFistRaised, scoreIndex: 1 },
+  { key: 'switch', label: 'Switch', icon: FaExchangeAlt, scoreIndex: 2 },
+  { key: 'charger', label: 'Charger', icon: FaBolt, scoreIndex: 3 },
+  { key: 'attacker', label: 'Attacker', icon: FaFistRaised, scoreIndex: 4 },
+  { key: 'consistency', label: 'Consistency', icon: FaBalanceScale, scoreIndex: 5 },
+];
 
 const rankTier = (rank: number): string => {
   if (rank === 1) return 'gold';
@@ -66,12 +99,30 @@ function Moveset({ entry }: { entry: PokemonPvPRankingEntry }) {
   );
 }
 
-function RankingRow({ entry }: { entry: PokemonPvPRankingEntry }) {
+function scoreForRole(
+  entry: PokemonPvPRankingEntry,
+  role: (typeof ROLES)[number],
+): number {
+  if (role.scoreIndex === null) return entry.score;
+  return entry.categoryScores[role.scoreIndex] ?? entry.score;
+}
+
+function RankingRow({
+  entry,
+  rank,
+  score,
+  scoreLabel,
+}: {
+  entry: PokemonPvPRankingEntry;
+  rank: number;
+  score: number;
+  scoreLabel: string;
+}) {
   const ivSpread = `${entry.attackIv}/${entry.defenseIv}/${entry.staminaIv}`;
   return (
     <article className="pvp-ranking-row">
-      <span className={`pvp-rank pvp-rank--${rankTier(entry.rank)}`}>
-        {entry.rank}
+      <span className={`pvp-rank pvp-rank--${rankTier(rank)}`}>
+        {rank}
       </span>
 
       <div className="pvp-pokemon">
@@ -91,8 +142,8 @@ function RankingRow({ entry }: { entry: PokemonPvPRankingEntry }) {
       <Moveset entry={entry} />
 
       <div className="pvp-score">
-        <strong>{entry.score.toFixed(1)}</strong>
-        <span>Overall</span>
+        <strong>{score.toFixed(1)}</strong>
+        <span>{scoreLabel}</span>
       </div>
 
       <div className="pvp-build">
@@ -106,6 +157,7 @@ function RankingRow({ entry }: { entry: PokemonPvPRankingEntry }) {
 const Pvp = () => {
   const { data, loading, error } = usePvPRankings();
   const [league, setLeague] = useState<PokemonPvPLeagueKey>('great');
+  const [roleKey, setRoleKey] = useState<PvPRoleKey>('overall');
   const [search, setSearch] = useState('');
   const [visibleLimit, setVisibleLimit] = useState(INITIAL_LIMIT);
 
@@ -113,28 +165,43 @@ const Pvp = () => {
     () => data?.leagues[league]?.entries ?? [],
     [data, league],
   );
-  const filteredEntries = useMemo(() => {
+  const activeRole = ROLES.find((item) => item.key === roleKey) ?? ROLES[0];
+  const rankedEntries = useMemo(() => {
     const query = search.trim().toLowerCase();
-    if (!query) return entries;
-    return entries.filter((entry) =>
-      [
-        entry.name,
-        entry.speciesId,
-        ...entry.types,
-        ...entry.moveset.flatMap((move) => [move.name, move.type]),
-      ]
-        .join(' ')
-        .toLowerCase()
-        .includes(query),
-    );
-  }, [entries, search]);
+    return entries
+      .filter((entry) => {
+        if (!query) return true;
+        return [
+          entry.name,
+          entry.speciesId,
+          ...entry.types,
+          ...entry.moveset.flatMap((move) => [move.name, move.type]),
+        ]
+          .join(' ')
+          .toLowerCase()
+          .includes(query);
+      })
+      .map((entry) => ({
+        entry,
+        score: scoreForRole(entry, activeRole),
+      }))
+      .sort((left, right) => (
+        right.score - left.score ||
+        left.entry.rank - right.entry.rank ||
+        left.entry.name.localeCompare(right.entry.name)
+      ))
+      .map((item, index) => ({
+        ...item,
+        rank: index + 1,
+      }));
+  }, [activeRole, entries, search]);
 
   useEffect(() => {
     setVisibleLimit(INITIAL_LIMIT);
-  }, [league, search]);
+  }, [league, roleKey, search]);
 
   const activeLeague = LEAGUES.find((item) => item.key === league) ?? LEAGUES[0];
-  const visibleEntries = filteredEntries.slice(0, visibleLimit);
+  const visibleEntries = rankedEntries.slice(0, visibleLimit);
 
   return (
     <div className="pvp-page">
@@ -163,9 +230,27 @@ const Pvp = () => {
           ))}
         </nav>
 
+        <nav className="pvp-role-tabs" aria-label="Ranking role">
+          {ROLES.map((role) => {
+            const Icon = role.icon;
+            return (
+              <button
+                type="button"
+                key={role.key}
+                className={roleKey === role.key ? 'active' : ''}
+                aria-pressed={roleKey === role.key}
+                onClick={() => setRoleKey(role.key)}
+              >
+                <Icon aria-hidden="true" />
+                <span>{role.label}</span>
+              </button>
+            );
+          })}
+        </nav>
+
         <section className="pvp-toolbar" aria-label={`${activeLeague.label} League rankings`}>
           <div>
-            <span>Overall rankings</span>
+            <span>{activeRole.label} rankings</span>
             <strong>{activeLeague.label} League</strong>
           </div>
           <label className="pvp-search">
@@ -200,24 +285,30 @@ const Pvp = () => {
               <span>Rank</span>
               <span>Pokemon</span>
               <span>Recommended team</span>
-              <span>Score</span>
+              <span>{activeRole.label}</span>
               <span>Build</span>
             </div>
             <section className="pvp-rankings" aria-live="polite">
-              {visibleEntries.map((entry) => (
-                <RankingRow key={entry.speciesId} entry={entry} />
+              {visibleEntries.map(({ entry, rank, score }) => (
+                <RankingRow
+                  key={entry.speciesId}
+                  entry={entry}
+                  rank={rank}
+                  score={score}
+                  scoreLabel={activeRole.label}
+                />
               ))}
             </section>
           </>
         )}
 
-        {visibleLimit < filteredEntries.length && (
+        {visibleLimit < rankedEntries.length && (
           <button
             type="button"
             className="pvp-show-more"
             onClick={() => setVisibleLimit((current) => current + INITIAL_LIMIT)}
           >
-            Show next {Math.min(INITIAL_LIMIT, filteredEntries.length - visibleLimit)}
+            Show next {Math.min(INITIAL_LIMIT, rankedEntries.length - visibleLimit)}
           </button>
         )}
 
