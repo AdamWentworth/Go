@@ -32,7 +32,7 @@ describe('PvP methodology page', () => {
       .toBeInTheDocument();
     expect(screen.getByRole('heading', { name: 'Recorded builds in a controlled 1v1' }))
       .toBeInTheDocument();
-    expect(screen.getByText(/Team Builder analyzes published matchup evidence/))
+    expect(screen.getByText(/Team Builder tests each assigned role/))
       .toBeInTheDocument();
     expect(screen.getByText(/does not yet model team swaps/))
       .toBeInTheDocument();

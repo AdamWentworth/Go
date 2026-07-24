@@ -98,4 +98,35 @@ describe('analyzePvPTeam', () => {
     ]);
     expect(analysis.recommendations[0].covers).toEqual(['threat-a', 'threat-b']);
   });
+
+  it('recommends a role replacement only when it reduces open threats', () => {
+    const lead = candidate('lead', [], [
+      { speciesId: 'threat-a', rating: 300 },
+    ]);
+    const switchMember = candidate('switch', [], [
+      { speciesId: 'threat-b', rating: 310 },
+    ]);
+    const closer = candidate('closer', [], [
+      { speciesId: 'threat-c', rating: 320 },
+    ]);
+    const replacement = candidate(
+      'replacement',
+      ['threat-b', 'threat-c'],
+      [],
+      88,
+    );
+
+    const analysis = analyzePvPTeam(
+      [lead, switchMember, closer],
+      [lead, switchMember, closer, replacement],
+    );
+
+    expect(analysis.replacements[0]).toMatchObject({
+      replaceKey: 'lead',
+      improvement: 3,
+      exposedAfter: 0,
+      covers: ['threat-b', 'threat-c'],
+    });
+    expect(analysis.replacements[0].candidate.key).toBe('replacement');
+  });
 });

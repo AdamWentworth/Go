@@ -35,6 +35,7 @@ import type {
 } from '@shared-contracts/pokemon';
 
 import { usePvPRankings } from './hooks/usePvPRankings';
+import { usePvPMoveMechanics } from './hooks/usePvPMoveMechanics';
 import PvpBattleLab from './components/PvpBattleLab';
 import PvpIvRank from './components/PvpIvRank';
 import PvpTeamBuilder from './components/PvpTeamBuilder';
@@ -47,6 +48,7 @@ import {
 } from './utils/pvpRosterEvaluation';
 import { useOwnedPvPRosterEvaluation } from './hooks/useOwnedPvPRosterEvaluation';
 import { formatPvPSpeciesName } from './utils/pvpTeamBuilder';
+import { hydratePvPRankingEntry } from './utils/pvpMoveHydration';
 import './Pvp.css';
 
 
@@ -86,6 +88,10 @@ type PvPRoleKey =
   | 'consistency';
 
 type PvPWorkspace = 'rankings' | 'team' | 'battle' | 'iv-rank';
+type PvPBattleSeed = {
+  leftKey: string;
+  rightKey: string;
+};
 
 const ROLES: Array<{
   key: PvPRoleKey;
@@ -389,6 +395,9 @@ const Pvp = () => {
   const [search, setSearch] = useState('');
   const [visibleLimit, setVisibleLimit] = useState(INITIAL_LIMIT);
   const [expandedKey, setExpandedKey] = useState<string | null>(null);
+  const [battleSeed, setBattleSeed] = useState<PvPBattleSeed | null>(null);
+  const battleToolsRequested = workspace === 'team' || workspace === 'battle';
+  const moveMechanics = usePvPMoveMechanics(battleToolsRequested);
   const ownedRosterRequested = rosterScope === 'owned';
   const ivRankRequested = workspace === 'iv-rank';
   const ownedRankingRequested =
@@ -462,6 +471,39 @@ const Pvp = () => {
       })),
     [entries, evaluatedOwnedEntries, rosterScope],
   );
+  const fieldCandidates = useMemo(
+    () => entries.map((entry) => ({
+      entry,
+      key: entry.speciesId,
+      cp: undefined,
+      nickname: null,
+    })),
+    [entries],
+  );
+  const battleToolEntries = useMemo(
+    () => {
+      const moveLookup = moveMechanics.data;
+      return moveLookup
+        ? scopedEntries.map((candidate) => ({
+          ...candidate,
+          entry: hydratePvPRankingEntry(candidate.entry, moveLookup),
+        }))
+        : scopedEntries;
+    },
+    [moveMechanics.data, scopedEntries],
+  );
+  const battleToolFieldCandidates = useMemo(
+    () => {
+      const moveLookup = moveMechanics.data;
+      return moveLookup
+        ? fieldCandidates.map((candidate) => ({
+          ...candidate,
+          entry: hydratePvPRankingEntry(candidate.entry, moveLookup),
+        }))
+        : fieldCandidates;
+    },
+    [fieldCandidates, moveMechanics.data],
+  );
   const activeRole = ROLES.find((item) => item.key === roleKey) ?? ROLES[0];
   const rankedEntries = useMemo(() => {
     const query = search.trim().toLowerCase();
@@ -518,6 +560,10 @@ const Pvp = () => {
       (instancesLoading && Object.keys(instances).length === 0)
     );
   const pageLoading = loading || ownedLoading;
+  const battleToolsLoading =
+    pageLoading || (battleToolsRequested && moveMechanics.loading);
+  const battleToolsError =
+    error || (battleToolsRequested ? moveMechanics.error : null);
   const ownedLoadingMessage =
     variantsLoading && variants.length === 0
       ? 'Loading the Pokémon catalog...'
@@ -605,7 +651,10 @@ const Pvp = () => {
             type="button"
             className={workspace === 'battle' ? 'active' : ''}
             aria-pressed={workspace === 'battle'}
-            onClick={() => setWorkspace('battle')}
+            onClick={() => {
+              setBattleSeed(null);
+              setWorkspace('battle');
+            }}
           >
             <FaFlask aria-hidden="true" />
             Battle Lab
@@ -831,52 +880,78 @@ const Pvp = () => {
           />
         ) : workspace === 'team' ? (
           <>
-            {pageLoading && (
+            {battleToolsLoading && (
               <div className="pvp-status" role="status">
-                Loading Team Builder...
+                {moveMechanics.loading
+                  ? 'Loading local battle mechanics...'
+                  : 'Loading Team Builder...'}
               </div>
             )}
-            {error && (
+            {battleToolsError && (
               <div className="pvp-status pvp-status--error" role="alert">
-                {error}
+                {battleToolsError}
               </div>
             )}
-            {!pageLoading && !error && scopedEntries.length === 0 && (
+            {!battleToolsLoading &&
+              !battleToolsError &&
+              battleToolEntries.length === 0 && (
               <div className="pvp-status">
                 No Pokémon are available for this team.
               </div>
             )}
-            {!pageLoading && !error && scopedEntries.length > 0 && (
+            {!battleToolsLoading &&
+              !battleToolsError &&
+              battleToolEntries.length > 0 && (
               <PvpTeamBuilder
                 key={`${formatKey}-${rosterScope}`}
-                candidates={scopedEntries}
+                candidates={battleToolEntries}
+                fieldCandidates={battleToolFieldCandidates}
                 entriesBySpeciesId={entriesBySpeciesId}
                 storageKey={`${formatKey}:${rosterScope}`}
+                onTestMatchup={(memberKey, opponentKey) => {
+                  setBattleSeed({
+                    leftKey: memberKey,
+                    rightKey: opponentKey,
+                  });
+                  setWorkspace('battle');
+                }}
               />
             )}
           </>
         ) : (
           <>
-            {pageLoading && (
+            {battleToolsLoading && (
               <div className="pvp-status" role="status">
-                Loading Battle Lab...
+                {moveMechanics.loading
+                  ? 'Loading local battle mechanics...'
+                  : 'Loading Battle Lab...'}
               </div>
             )}
-            {error && (
+            {battleToolsError && (
               <div className="pvp-status pvp-status--error" role="alert">
-                {error}
+                {battleToolsError}
               </div>
             )}
-            {!pageLoading && !error && scopedEntries.length === 0 && (
+            {!battleToolsLoading &&
+              !battleToolsError &&
+              battleToolEntries.length === 0 && (
               <div className="pvp-status">
                 No Pokémon are available for this battle.
               </div>
             )}
-            {!pageLoading && !error && scopedEntries.length > 0 && (
+            {!battleToolsLoading &&
+              !battleToolsError &&
+              battleToolEntries.length > 0 && (
               <PvpBattleLab
-                key={`${formatKey}-${rosterScope}`}
-                candidates={scopedEntries}
+                key={`${formatKey}-${rosterScope}-${battleSeed?.leftKey ?? ''}-${battleSeed?.rightKey ?? ''}`}
+                candidates={battleToolEntries}
+                opponentCandidates={
+                  rosterScope === 'owned'
+                    ? battleToolFieldCandidates
+                    : battleToolEntries
+                }
                 formatLabel={activeFormatLabel}
+                initialSelection={battleSeed}
               />
             )}
           </>

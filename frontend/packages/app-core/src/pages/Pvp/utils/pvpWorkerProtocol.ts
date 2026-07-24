@@ -24,7 +24,48 @@ export type PvPBattleWorkerRequest = {
   request: PokemonPvPBattleRequest;
 };
 
-export type PvPWorkerRequest = PvPRosterWorkerRequest | PvPBattleWorkerRequest;
+export type PvPTeamRole = 'lead' | 'switch' | 'closer';
+
+export type PvPTeamEvaluationMember = {
+  fighter: PokemonPvPBattleFighter;
+  role: PvPTeamRole;
+};
+
+export type PvPTeamEvaluationMemberResult = {
+  fighterId: string;
+  role: PvPTeamRole;
+  averageRating: number;
+  wins: number;
+  draws: number;
+  losses: number;
+};
+
+export type PvPTeamEvaluationOpponentResult = {
+  fighterId: string;
+  memberRatings: number[];
+  bestMemberId: string;
+  bestRating: number;
+  covered: boolean;
+};
+
+export type PvPTeamEvaluationResponse = {
+  mechanics: 'pvpoke-legacy';
+  fieldSize: number;
+  coverageCount: number;
+  members: PvPTeamEvaluationMemberResult[];
+  opponents: PvPTeamEvaluationOpponentResult[];
+};
+
+export type PvPTeamWorkerRequest = {
+  kind: 'team';
+  members: PvPTeamEvaluationMember[];
+  opponents: PokemonPvPRosterEvaluationOpponent[];
+};
+
+export type PvPWorkerRequest =
+  | PvPRosterWorkerRequest
+  | PvPBattleWorkerRequest
+  | PvPTeamWorkerRequest;
 
 export type PvPWorkerResponse =
   | {
@@ -34,6 +75,10 @@ export type PvPWorkerResponse =
   | {
     kind: 'battle';
     response: PokemonPvPBattleResponse;
+  }
+  | {
+    kind: 'team';
+    response: PvPTeamEvaluationResponse;
   }
   | {
     error: string;

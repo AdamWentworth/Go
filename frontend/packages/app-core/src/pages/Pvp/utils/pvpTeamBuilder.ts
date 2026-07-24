@@ -19,11 +19,18 @@ export type PvPTeamRecommendation = {
   covers: string[];
 };
 
+export type PvPTeamReplacement = PvPTeamRecommendation & {
+  replaceKey: string;
+  improvement: number;
+  exposedAfter: number;
+};
+
 export type PvPTeamAnalysis = {
   threats: PvPTeamThreat[];
   exposedThreats: PvPTeamThreat[];
   coveredThreats: PvPTeamThreat[];
   recommendations: PvPTeamRecommendation[];
+  replacements: PvPTeamReplacement[];
 };
 
 const matchupSpecies = (
@@ -32,28 +39,7 @@ const matchupSpecies = (
 ): Set<string> =>
   new Set((entry[kind] ?? []).map((matchup) => matchup.speciesId));
 
-export const formatPvPSpeciesName = (speciesId: string): string =>
-  speciesId
-    .replace(/_shadow$/, ' Shadow')
-    .split('_')
-    .filter(Boolean)
-    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
-    .join(' ');
-
-export const rankPvPTeamCandidates = (
-  candidates: readonly PvPTeamCandidate[],
-): PvPTeamCandidate[] =>
-  [...candidates].sort((left, right) => (
-    right.entry.score - left.entry.score ||
-    left.entry.rank - right.entry.rank ||
-    left.entry.name.localeCompare(right.entry.name) ||
-    left.key.localeCompare(right.key)
-  ));
-
-export const analyzePvPTeam = (
-  team: PvPTeamCandidate[],
-  candidates: PvPTeamCandidate[],
-): PvPTeamAnalysis => {
+const analyzeThreats = (team: readonly PvPTeamCandidate[]) => {
   const threatsBySpecies = new Map<string, PvPTeamThreat>();
 
   for (const member of team) {
@@ -85,8 +71,45 @@ export const analyzePvPTeam = (
       left.worstRating - right.worstRating ||
       left.speciesId.localeCompare(right.speciesId),
   );
-  const exposedThreats = threats.filter((threat) => threat.coveredByKeys.length === 0);
-  const coveredThreats = threats.filter((threat) => threat.coveredByKeys.length > 0);
+
+  return {
+    threats,
+    exposedThreats: threats.filter(
+      (threat) => threat.coveredByKeys.length === 0,
+    ),
+    coveredThreats: threats.filter(
+      (threat) => threat.coveredByKeys.length > 0,
+    ),
+  };
+};
+
+export const formatPvPSpeciesName = (speciesId: string): string =>
+  speciesId
+    .replace(/_shadow$/, ' Shadow')
+    .split('_')
+    .filter(Boolean)
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(' ');
+
+export const rankPvPTeamCandidates = (
+  candidates: readonly PvPTeamCandidate[],
+): PvPTeamCandidate[] =>
+  [...candidates].sort((left, right) => (
+    right.entry.score - left.entry.score ||
+    left.entry.rank - right.entry.rank ||
+    left.entry.name.localeCompare(right.entry.name) ||
+    left.key.localeCompare(right.key)
+  ));
+
+export const analyzePvPTeam = (
+  team: PvPTeamCandidate[],
+  candidates: PvPTeamCandidate[],
+): PvPTeamAnalysis => {
+  const {
+    threats,
+    exposedThreats,
+    coveredThreats,
+  } = analyzeThreats(team);
   const selectedKeys = new Set(team.map((member) => member.key));
   const exposedIds = new Set(exposedThreats.map((threat) => threat.speciesId));
   const recommendations = candidates
@@ -104,11 +127,37 @@ export const analyzePvPTeam = (
         left.candidate.entry.rank - right.candidate.entry.rank,
     )
     .slice(0, 5);
+  const replacements = team.length < 3
+    ? []
+    : candidates
+      .filter((candidate) => !selectedKeys.has(candidate.key))
+      .flatMap((candidate) =>
+        team.map((member) => {
+          const trialTeam = team.map((current) =>
+            current.key === member.key ? candidate : current);
+          const trial = analyzeThreats(trialTeam);
+          return {
+            candidate,
+            replaceKey: member.key,
+            covers: [...matchupSpecies(candidate.entry, 'matchups')]
+              .filter((speciesId) => exposedIds.has(speciesId)),
+            improvement: exposedThreats.length - trial.exposedThreats.length,
+            exposedAfter: trial.exposedThreats.length,
+          };
+        }))
+      .filter((replacement) => replacement.improvement > 0)
+      .sort((left, right) =>
+        right.improvement - left.improvement ||
+        right.covers.length - left.covers.length ||
+        right.candidate.entry.score - left.candidate.entry.score ||
+        left.candidate.entry.rank - right.candidate.entry.rank)
+      .slice(0, 5);
 
   return {
     threats,
     exposedThreats,
     coveredThreats,
     recommendations,
+    replacements,
   };
 };

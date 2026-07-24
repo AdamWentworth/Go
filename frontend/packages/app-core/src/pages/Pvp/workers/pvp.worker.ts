@@ -1,6 +1,7 @@
 /// <reference lib="webworker" />
 
 import {
+  evaluatePvPTeamLocally,
   evaluatePvPRosterLocally,
   simulatePvPBattleLocally,
 } from '../utils/pvpLocalRosterEvaluation';
@@ -17,6 +18,13 @@ workerScope.onmessage = (event: MessageEvent<PvPWorkerRequest>) => {
       workerScope.postMessage({
         kind: 'battle',
         response: simulatePvPBattleLocally(event.data.request),
+      } satisfies PvPWorkerResponse);
+      return;
+    }
+    if (event.data.kind === 'team') {
+      workerScope.postMessage({
+        kind: 'team',
+        response: evaluatePvPTeamLocally(event.data),
       } satisfies PvPWorkerResponse);
       return;
     }

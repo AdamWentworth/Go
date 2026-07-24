@@ -4,11 +4,12 @@ import type {
 } from '@shared-contracts/pokemon';
 import type { PokemonVariant } from '@/types/pokemonVariants';
 
-import {
-  type OwnedPvPRankingEntry,
-  toPvPRankingMove,
-} from './pvpRoster';
+import { type OwnedPvPRankingEntry } from './pvpRoster';
 import { buildPvPBattleFighter, buildPvPEntryFighter } from './pvpBattleLab';
+import {
+  buildPvPMoveMechanicsLookupFromVariants,
+  hydratePvPRankingEntry,
+} from './pvpMoveHydration';
 import type { PvPRosterWorkerRequest } from './pvpWorkerProtocol';
 
 export const PVP_REFERENCE_FIELD_SIZE = 12;
@@ -27,48 +28,6 @@ const sourceOrder = (
   left.rank - right.rank ||
   left.speciesId.localeCompare(right.speciesId);
 
-const normalize = (value: unknown): string =>
-  String(value ?? '')
-    .trim()
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '');
-
-const buildMoveMechanicsLookup = (
-  variants: readonly PokemonVariant[],
-): Map<string, ReturnType<typeof toPvPRankingMove>> => {
-  const lookup = new Map<string, ReturnType<typeof toPvPRankingMove>>();
-  for (const variant of variants) {
-    for (const move of variant.moves ?? []) {
-      const hydrated = toPvPRankingMove(
-        move,
-        Number(move.is_fast) === 1 ? 'fast' : 'charged',
-      );
-      lookup.set(normalize(move.name), hydrated);
-    }
-  }
-  return lookup;
-};
-
-const hydrateRankingEntry = (
-  entry: PokemonPvPRankingEntry,
-  moveLookup: ReadonlyMap<string, ReturnType<typeof toPvPRankingMove>>,
-): PokemonPvPRankingEntry => ({
-  ...entry,
-  moveset: entry.moveset.map((move) => {
-    const mechanics = moveLookup.get(normalize(move.name));
-    return mechanics
-      ? {
-        ...move,
-        power: mechanics.power,
-        energyGain: mechanics.energyGain,
-        energyCost: mechanics.energyCost,
-        turns: mechanics.turns,
-        buff: mechanics.buff,
-      }
-      : move;
-  }),
-});
-
 const hash = (value: string, seed: number): string => {
   let result = seed >>> 0;
   for (let index = 0; index < value.length; index += 1) {
@@ -84,7 +43,7 @@ export const buildPvPRosterEvaluationPlan = (
   variants: readonly PokemonVariant[],
   formatKey: string,
 ): PvPRosterEvaluationPlan | null => {
-  const moveLookup = buildMoveMechanicsLookup(variants);
+  const moveLookup = buildPvPMoveMechanicsLookupFromVariants(variants);
   const candidates = owned.flatMap((item) => {
     const fighter = buildPvPBattleFighter({
       key: item.instanceId,
@@ -92,7 +51,7 @@ export const buildPvPRosterEvaluationPlan = (
       cp: item.cp,
       nickname: item.nickname,
     });
-    const hydratedReference = hydrateRankingEntry(
+    const hydratedReference = hydratePvPRankingEntry(
       item.referenceEntry,
       moveLookup,
     );
@@ -113,7 +72,7 @@ export const buildPvPRosterEvaluationPlan = (
     .map((entry) => ({
       entry,
       fighter: buildPvPEntryFighter(
-        hydrateRankingEntry(entry, moveLookup),
+        hydratePvPRankingEntry(entry, moveLookup),
         `meta:${entry.speciesId}`,
       ),
     }))

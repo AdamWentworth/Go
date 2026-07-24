@@ -12,6 +12,9 @@ import type {
 import type {
   PvPRosterEvaluationCandidate,
   PvPRosterWorkerRequest,
+  PvPTeamEvaluationResponse,
+  PvPTeamRole,
+  PvPTeamWorkerRequest,
 } from './pvpWorkerProtocol';
 
 const ENERGY_CAP = 100;
@@ -37,6 +40,12 @@ const STANDARD_SCENARIOS: readonly Scenario[] = [
   { shields: [1, 1], energyTurns: [6, 0] },
   { shields: [0, 1], energyTurns: [0, 0] },
 ];
+
+const TEAM_ROLE_SCENARIOS: Record<PvPTeamRole, Scenario> = {
+  lead: STANDARD_SCENARIOS[0],
+  switch: STANDARD_SCENARIOS[2],
+  closer: STANDARD_SCENARIOS[1],
+};
 
 type TypeTraits = {
   weaknesses: readonly string[];
@@ -782,5 +791,72 @@ export const evaluatePvPRosterLocally = (
         categoryScores,
       };
     }),
+  };
+};
+
+export const evaluatePvPTeamLocally = (
+  request: PvPTeamWorkerRequest,
+): PvPTeamEvaluationResponse => {
+  if (request.members.length === 0) {
+    throw new Error('Team evaluation needs at least one battle-ready member.');
+  }
+  if (request.opponents.length === 0) {
+    throw new Error('Team evaluation needs a battle-ready meta field.');
+  }
+
+  const opponentResults = request.opponents.map((opponent) => {
+    const memberRatings = request.members.map((member) =>
+      evaluateMatchup(
+        member.fighter,
+        opponent.fighter,
+        TEAM_ROLE_SCENARIOS[member.role],
+      ));
+    const bestRating = Math.max(...memberRatings);
+    const bestMemberIndex = memberRatings.indexOf(bestRating);
+
+    return {
+      fighterId: opponent.fighter.id,
+      memberRatings,
+      bestMemberId: request.members[bestMemberIndex].fighter.id,
+      bestRating: Math.floor(bestRating),
+      covered: bestRating >= 500,
+    };
+  });
+
+  const members = request.members.map((member, memberIndex) => {
+    let weightedTotal = 0;
+    let weightTotal = 0;
+    let wins = 0;
+    let draws = 0;
+    let losses = 0;
+
+    request.opponents.forEach((opponent, opponentIndex) => {
+      const matchupRating =
+        opponentResults[opponentIndex].memberRatings[memberIndex];
+      weightedTotal += matchupRating * opponent.weight;
+      weightTotal += opponent.weight;
+      if (matchupRating > 500) wins += 1;
+      else if (matchupRating < 500) losses += 1;
+      else draws += 1;
+    });
+
+    return {
+      fighterId: member.fighter.id,
+      role: member.role,
+      averageRating: weightTotal > 0
+        ? Math.floor((weightedTotal / weightTotal) * 10) / 10
+        : 0,
+      wins,
+      draws,
+      losses,
+    };
+  });
+
+  return {
+    mechanics: 'pvpoke-legacy',
+    fieldSize: request.opponents.length,
+    coverageCount: opponentResults.filter((opponent) => opponent.covered).length,
+    members,
+    opponents: opponentResults,
   };
 };

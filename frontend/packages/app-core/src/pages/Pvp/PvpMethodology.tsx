@@ -29,9 +29,9 @@ const rankingViews = [
   },
   {
     title: 'Team Builder',
-    summary: 'A quick read on shared weaknesses and available coverage.',
+    summary: 'Three assigned roles tested against one current field.',
     detail:
-      'The builder compares the documented matchups and counters for three selected Pokémon. It finds exposed threats and suggests candidates that cover them.',
+      'The builder tests Lead, Safe Swap, and Closer under role-specific shield and energy conditions, then pairs those local results with published matchup evidence and actionable coverage swaps.',
     icon: FaUsers,
   },
   {
@@ -273,9 +273,10 @@ const PvpMethodology = () => {
                 does not predict every opponent, team order, or player choice.
               </li>
               <li>
-                Team Builder analyzes published matchup evidence. It does not
-                simulate switches, alignment, energy carryover, or an entire
-                three-Pokémon battle.
+                Team Builder tests each assigned role against the current local
+                meta field and supplements it with published matchup evidence.
+                It does not yet simulate full-team switches, alignment, energy
+                carryover between opponents, or an entire three-Pokémon battle.
               </li>
               <li>
                 Battle Lab is a deterministic 1v1. It does not yet model team

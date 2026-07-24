@@ -27,6 +27,13 @@ const bootstrapHooks = vi.hoisted(() => ({
 vi.mock('@/pages/Pvp/hooks/usePvPRankings', () => ({
   usePvPRankings: () => hookState,
 }));
+vi.mock('@/pages/Pvp/hooks/usePvPMoveMechanics', () => ({
+  usePvPMoveMechanics: () => ({
+    data: new Map(),
+    loading: false,
+    error: null,
+  }),
+}));
 vi.mock('@/features/variants/hooks/useBootstrapVariants', () => ({
   useBootstrapVariants: bootstrapHooks.variants,
 }));
@@ -52,8 +59,40 @@ const makeEntry = (
   imageUrl: `/images/pokemon/${rank}.png`,
   types: [type],
   moveset: [
-    { id: `${speciesId}-fast`, name: 'Quick Attack', type: 'normal', kind: 'fast' },
-    { id: `${speciesId}-charged`, name: 'Body Slam', type, kind: 'charged' },
+    {
+      id: `${speciesId}-fast`,
+      name: 'Quick Attack',
+      type: 'normal',
+      kind: 'fast',
+      power: 8,
+      energyGain: 10,
+      energyCost: 0,
+      turns: 2,
+      buff: {
+        attackerAttack: 0,
+        attackerDefense: 0,
+        targetAttack: 0,
+        targetDefense: 0,
+        chance: 0,
+      },
+    },
+    {
+      id: `${speciesId}-charged`,
+      name: 'Body Slam',
+      type,
+      kind: 'charged',
+      power: 60,
+      energyGain: 0,
+      energyCost: 35,
+      turns: 1,
+      buff: {
+        attackerAttack: 0,
+        attackerDefense: 0,
+        targetAttack: 0,
+        targetDefense: 0,
+        chance: 0,
+      },
+    },
   ],
   score: 95 - rank,
   rating: 700,
@@ -79,6 +118,9 @@ const makeEntry = (
   attackIv: 0,
   defenseIv: 15,
   staminaIv: 15,
+  battleAttack: 120 + rank,
+  battleDefense: 140 + rank,
+  battleHp: 160 + rank,
 });
 
 const makePayload = (): PokemonPvPRankingsPayload => {
@@ -149,7 +191,7 @@ describe('PvP rankings page', () => {
     expect(screen.getByRole('heading', { name: 'PvP Rankings' })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Method' }))
       .toHaveAttribute('href', '/pvp/methodology');
-    expect(screen.getByText('Clodsire')).toBeInTheDocument();
+    expect(screen.getAllByText('Clodsire').length).toBeGreaterThan(0);
     expect(screen.getByText('Azumarill')).toBeInTheDocument();
     expect(screen.getAllByText('0/15/15 IV')).toHaveLength(2);
     expect(container.querySelector('.pvp-rank--gold')).toHaveTextContent('1');
@@ -180,7 +222,9 @@ describe('PvP rankings page', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Team Builder' }));
     expect(screen.getAllByText('Choose Pokémon')).toHaveLength(3);
-    expect(screen.getByRole('button', { name: 'Select Diggersby' }))
+    expect(screen.getByRole('button', {
+      name: 'Select Lead with Diggersby',
+    }))
       .toBeInTheDocument();
   });
 
@@ -237,10 +281,15 @@ describe('PvP rankings page', () => {
     expect(screen.getByRole('heading', { name: 'Team Builder' })).toBeInTheDocument();
     expect(screen.getAllByText('Choose Pokémon')).toHaveLength(3);
 
-    fireEvent.click(screen.getByRole('button', { name: 'Select Clodsire' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Select Azumarill' }));
+    fireEvent.click(screen.getByRole('button', {
+      name: 'Select Lead with Clodsire',
+    }));
+    fireEvent.click(screen.getByRole('button', {
+      name: 'Select Safe Swap with Azumarill',
+    }));
 
     expect(screen.getByText('2 / 3')).toBeInTheDocument();
+    fireEvent.click(screen.getByText('Published matchup evidence'));
     expect(screen.getByText('Threatens 2 · Open')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Remove Clodsire from team' }))
       .toBeInTheDocument();
@@ -261,7 +310,39 @@ describe('PvP rankings page', () => {
     expect(screen.getByRole('button', { name: 'Swap battle sides' }))
       .toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Run battle' }))
-      .toBeDisabled();
+      .toBeEnabled();
+  });
+
+  it('evaluates all three roles locally and opens a hard matchup in Battle Lab', async () => {
+    hookState.data!.leagues.great.entries.push(
+      makeEntry(3, 'lanturn', 'Lanturn', 'water', 171),
+    );
+    renderPvp();
+    fireEvent.click(screen.getByRole('button', { name: 'Team Builder' }));
+
+    fireEvent.click(screen.getByRole('button', {
+      name: 'Select Lead with Clodsire',
+    }));
+    fireEvent.click(screen.getByRole('button', {
+      name: 'Select Safe Swap with Azumarill',
+    }));
+    fireEvent.click(screen.getByRole('button', {
+      name: 'Select Closer with Lanturn',
+    }));
+
+    expect(await screen.findByText('Role tests')).toBeInTheDocument();
+    expect(screen.getByText('3')).toBeInTheDocument();
+
+    fireEvent.click(screen.getByText('Published matchup evidence'));
+    fireEvent.click(screen.getByRole('button', {
+      name: 'Test Lanturn in Battle Lab',
+    }));
+
+    expect(screen.getByRole('heading', { name: 'PvP Battle Lab' }))
+      .toBeInTheDocument();
+    expect(screen.getAllByText('Clodsire').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('Lanturn').length).toBeGreaterThan(0);
+    expect(screen.getByRole('button', { name: 'Run battle' })).toBeEnabled();
   });
 
   it('opens IV Rank with a catalog-only lazy load and calculates a spread', () => {

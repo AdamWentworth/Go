@@ -868,60 +868,92 @@
 
 .pvp-team-slot {
   position: relative;
-  display: grid;
-  grid-template-columns: 1.8rem 3.5rem minmax(0, 1fr) 1.9rem;
-  gap: 0.35rem;
-  align-items: center;
   min-width: 0;
-  min-height: 4.6rem;
-  padding: 0.45rem;
+  min-height: 7.25rem;
+  padding: 0;
+  overflow: hidden;
   border: 1px solid var(--pvp-line-strong);
   border-radius: 6px;
   background: var(--pvp-panel);
   text-align: left;
 }
 
-.pvp-team-slot > span {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 1.65rem;
-  height: 1.65rem;
-  border: 1px solid var(--pvp-teal);
-  border-radius: 50%;
-  font-size: 0.72rem;
-  font-weight: 900;
+.pvp-team-slot.active {
+  border-color: var(--pvp-teal);
+  box-shadow: inset 0 0 0 1px rgba(66, 213, 194, 0.3);
 }
 
-.pvp-team-slot > img {
-  width: 3.5rem;
-  height: 3.5rem;
+.pvp-team-slot-main {
+  display: grid;
+  grid-template-columns: 4.25rem minmax(0, 1fr);
+  gap: 0.3rem 0.5rem;
+  align-items: center;
+  width: 100%;
+  min-width: 0;
+  min-height: 7.25rem;
+  padding: 0.5rem 2.35rem 0.5rem 0.55rem;
+  border: 0;
+  color: var(--pvp-text);
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+}
+
+.pvp-team-slot-main > img {
+  width: 4.25rem;
+  height: 4.25rem;
   object-fit: contain;
 }
 
-.pvp-team-slot > div {
+.pvp-team-role {
+  grid-column: 1 / -1;
+  display: flex;
+  gap: 0.4rem;
+  align-items: center;
+  min-width: 0;
+  color: var(--pvp-teal);
+}
+
+.pvp-team-role > svg {
+  width: 1rem;
+  color: var(--pvp-teal);
+}
+
+.pvp-team-role > span,
+.pvp-team-slot-copy {
   display: grid;
   min-width: 0;
 }
 
-.pvp-team-slot > div strong,
-.pvp-team-slot > div small {
+.pvp-team-role strong,
+.pvp-team-role small,
+.pvp-team-slot-copy strong,
+.pvp-team-slot-copy small {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.pvp-team-slot > div strong {
-  font-size: 0.8rem;
+.pvp-team-role strong {
+  font-size: 0.68rem;
+  text-transform: uppercase;
 }
 
-.pvp-team-slot > div small {
+.pvp-team-role small,
+.pvp-team-slot-copy small {
   color: var(--pvp-muted);
   font-size: 0.62rem;
   font-weight: 750;
 }
 
-.pvp-team-slot > button {
+.pvp-team-slot-copy strong {
+  font-size: 0.82rem;
+}
+
+.pvp-team-slot-remove {
+  position: absolute;
+  top: 0.45rem;
+  right: 0.45rem;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -936,13 +968,29 @@
 }
 
 .pvp-team-slot--empty {
-  grid-template-columns: 1.8rem auto minmax(0, 1fr);
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 0.5rem;
+  align-content: center;
+  align-items: center;
+  min-height: 7.25rem;
+  padding: 0.65rem;
   border-style: dashed;
   color: var(--pvp-muted);
+  text-align: left;
+  cursor: pointer;
+}
+
+.pvp-team-slot--empty .pvp-team-role {
+  grid-column: 1 / -1;
 }
 
 .pvp-team-slot--empty > svg {
   color: var(--pvp-teal);
+}
+
+.pvp-team-slot--empty > strong {
+  font-size: 0.75rem;
 }
 
 .pvp-team-analysis {
@@ -959,15 +1007,178 @@
   text-align: left;
 }
 
+.pvp-team-evaluation-error {
+  color: #ff9ebd !important;
+}
+
+.pvp-team-field-summary {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  border-block: 1px solid var(--pvp-line);
+}
+
+.pvp-team-field-summary > span {
+  display: grid;
+  gap: 0.15rem;
+  min-width: 0;
+  padding: 0.45rem;
+  text-align: center;
+}
+
+.pvp-team-field-summary > span + span {
+  border-left: 1px solid var(--pvp-line);
+}
+
+.pvp-team-field-summary small,
+.pvp-team-role-results small {
+  color: var(--pvp-muted);
+  font-size: 0.59rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.pvp-team-field-summary strong {
+  color: var(--pvp-teal);
+  font-size: 0.9rem;
+}
+
+.pvp-team-role-results {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.35rem;
+}
+
+.pvp-team-role-results > span {
+  display: grid;
+  grid-template-columns: 1.4rem minmax(0, 1fr) auto;
+  gap: 0.35rem;
+  align-items: center;
+  min-width: 0;
+  padding: 0.45rem;
+  border-left: 3px solid var(--pvp-teal);
+  background: rgba(66, 213, 194, 0.06);
+  text-align: left;
+}
+
+.pvp-team-role-results > span > svg {
+  color: var(--pvp-teal);
+}
+
+.pvp-team-role-results > span > span {
+  display: grid;
+  min-width: 0;
+}
+
+.pvp-team-role-results > span > span:last-child {
+  text-align: right;
+}
+
+.pvp-team-role-results strong,
+.pvp-team-role-results small {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pvp-team-role-results strong {
+  font-size: 0.67rem;
+}
+
+.pvp-team-field-losses {
+  display: grid;
+  gap: 0.4rem;
+  text-align: left;
+}
+
+.pvp-team-field-losses > strong,
+.pvp-team-evidence summary {
+  color: #8fc6cb;
+  font-size: 0.66rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.pvp-team-field-losses > div {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.35rem;
+}
+
+.pvp-team-field-losses button {
+  display: grid;
+  grid-template-columns: 2.5rem minmax(0, 1fr) auto;
+  gap: 0.4rem;
+  align-items: center;
+  min-width: 0;
+  padding: 0.35rem 0.45rem;
+  border: 1px solid rgba(237, 111, 165, 0.35);
+  border-radius: 5px;
+  color: var(--pvp-text);
+  background: rgba(237, 111, 165, 0.06);
+  text-align: left;
+  cursor: pointer;
+}
+
+.pvp-team-field-losses button > img {
+  width: 2.5rem;
+  height: 2.5rem;
+  object-fit: contain;
+}
+
+.pvp-team-field-losses button > span {
+  display: grid;
+  min-width: 0;
+}
+
+.pvp-team-field-losses button strong,
+.pvp-team-field-losses button small {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pvp-team-field-losses button strong {
+  font-size: 0.68rem;
+}
+
+.pvp-team-field-losses button small {
+  color: var(--pvp-muted);
+  font-size: 0.57rem;
+}
+
+.pvp-team-field-losses button > svg {
+  color: var(--pvp-pink);
+}
+
+.pvp-team-evidence {
+  padding-top: 0.5rem;
+  border-top: 1px solid var(--pvp-line);
+}
+
+.pvp-team-evidence summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  cursor: pointer;
+}
+
+.pvp-team-evidence summary strong {
+  color: var(--pvp-pink);
+}
+
+.pvp-team-evidence[open] summary {
+  margin-bottom: 0.45rem;
+}
+
 .pvp-threat-list {
   display: grid;
   grid-template-columns: repeat(5, minmax(0, 1fr));
   gap: 0.35rem;
 }
 
-.pvp-threat-list > span {
+.pvp-threat-list > article {
   display: grid;
-  grid-template-columns: 2.4rem minmax(0, 1fr);
+  grid-template-columns: 2.4rem minmax(0, 1fr) 1.75rem;
   gap: 0.3rem;
   align-items: center;
   min-width: 0;
@@ -977,7 +1188,7 @@
   text-align: left;
 }
 
-.pvp-threat-list > span.covered {
+.pvp-threat-list > article.covered {
   border-left-color: var(--pvp-teal);
   background: rgba(66, 213, 194, 0.06);
 }
@@ -987,6 +1198,22 @@
   width: 2.4rem;
   height: 2.4rem;
   object-fit: contain;
+}
+
+.pvp-threat-list article > button {
+  grid-column: 3;
+  grid-row: 1 / 3;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.65rem;
+  height: 1.65rem;
+  padding: 0;
+  border: 1px solid var(--pvp-line-strong);
+  border-radius: 50%;
+  color: var(--pvp-teal);
+  background: transparent;
+  cursor: pointer;
 }
 
 .pvp-threat-list strong,
@@ -1071,6 +1298,27 @@
 .pvp-team-picks {
   display: grid;
   gap: 0.45rem;
+}
+
+.pvp-team-picks > header {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  text-align: left;
+}
+
+.pvp-team-picks > header > span {
+  display: grid;
+}
+
+.pvp-team-picks > header strong {
+  font-size: 0.82rem;
+}
+
+.pvp-team-picks > header > small {
+  color: var(--pvp-muted);
+  font-size: 0.6rem;
+  font-weight: 750;
 }
 
 .pvp-team-picks > label {
@@ -1184,6 +1432,11 @@
 }
 
 .pvp-team-picks article > button:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.pvp-battle-swap:disabled {
   opacity: 0.35;
   cursor: not-allowed;
 }
@@ -2003,13 +2256,27 @@
   }
 
   .pvp-team-slot {
-    grid-template-columns: 1.8rem 3.25rem minmax(0, 1fr) 1.9rem;
-    min-height: 4.1rem;
+    min-height: 5.2rem;
   }
 
-  .pvp-team-slot > img {
-    width: 3.25rem;
-    height: 3.25rem;
+  .pvp-team-slot-main {
+    grid-template-columns: 3.5rem minmax(0, 1fr);
+    min-height: 5.2rem;
+    padding-block: 0.4rem;
+  }
+
+  .pvp-team-slot-main > img {
+    width: 3.5rem;
+    height: 3.5rem;
+  }
+
+  .pvp-team-slot--empty {
+    min-height: 5.2rem;
+  }
+
+  .pvp-team-role-results,
+  .pvp-team-field-losses > div {
+    grid-template-columns: 1fr;
   }
 
   .pvp-threat-list {
@@ -2074,6 +2341,10 @@
   .pvp-team-picks article > img {
     width: 2.7rem;
     height: 2.7rem;
+  }
+
+  .pvp-team-field-summary > span {
+    padding-inline: 0.25rem;
   }
 
   .pvp-team-pick-types {

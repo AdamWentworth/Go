@@ -1,10 +1,12 @@
 import { describe, expect, it, vi } from 'vitest';
 
 import {
+  evaluatePvPTeamLocally,
   evaluatePvPRosterLocally,
   simulatePvPBattleLocally,
 } from '@/pages/Pvp/utils/pvpLocalRosterEvaluation';
 import {
+  evaluatePvPTeamAsync,
   evaluatePvPRosterAsync,
   simulatePvPBattleAsync,
 } from '@/pages/Pvp/utils/pvpWorkers';
@@ -345,5 +347,56 @@ describe('local PvP Battle Lab simulation', () => {
     } as unknown as typeof battleRequest)).toThrow(
       'pinned PvPoke mechanics',
     );
+  });
+});
+
+describe('local PvP Team Builder evaluation', () => {
+  const teamRequest = {
+    kind: 'team' as const,
+    members: [
+      { fighter: fighter('lead', 250, 230, 220), role: 'lead' as const },
+      { fighter: fighter('switch', 225, 220, 215), role: 'switch' as const },
+      { fighter: fighter('closer', 210, 205, 200), role: 'closer' as const },
+    ],
+    opponents: [
+      { fighter: fighter('field-one', 165, 165, 165), weight: 1 },
+      { fighter: fighter('field-two', 175, 170, 170), weight: 0.8 },
+    ],
+  };
+
+  it('tests stable team roles against one shared local field', () => {
+    const result = evaluatePvPTeamLocally(teamRequest);
+
+    expect(result.fieldSize).toBe(2);
+    expect(result.coverageCount).toBe(2);
+    expect(result.members.map((member) => member.role)).toEqual([
+      'lead',
+      'switch',
+      'closer',
+    ]);
+    expect(result.opponents).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        fighterId: 'field-one',
+        covered: true,
+        bestMemberId: expect.any(String),
+      }),
+    ]));
+  });
+
+  it('uses the worker fallback without making an API request', async () => {
+    const fetchSpy = vi.spyOn(global, 'fetch');
+    const result = await evaluatePvPTeamAsync(teamRequest);
+
+    expect(result.mechanics).toBe('pvpoke-legacy');
+    expect(result.members).toHaveLength(3);
+    expect(fetchSpy).not.toHaveBeenCalled();
+    fetchSpy.mockRestore();
+  });
+
+  it('rejects a team test without a meta field', () => {
+    expect(() => evaluatePvPTeamLocally({
+      ...teamRequest,
+      opponents: [],
+    })).toThrow('battle-ready meta field');
   });
 });

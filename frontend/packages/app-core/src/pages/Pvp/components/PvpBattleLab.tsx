@@ -277,32 +277,63 @@ function BattleResult({
 
 const PvpBattleLab = ({
   candidates,
+  opponentCandidates = candidates,
   formatLabel,
+  initialSelection = null,
 }: {
   candidates: PvPTeamCandidate[];
+  opponentCandidates?: PvPTeamCandidate[];
   formatLabel: string;
+  initialSelection?: {
+    leftKey: string;
+    rightKey: string;
+  } | null;
 }) => {
   const readyCandidates = useMemo(
     () => candidates.filter(isPvPBattleCandidateReady),
     [candidates],
   );
-  const [selectedKeys, setSelectedKeys] = useState<[string, string]>([
-    readyCandidates[0]?.key ?? '',
-    readyCandidates[1]?.key ?? readyCandidates[0]?.key ?? '',
-  ]);
+  const readyOpponents = useMemo(
+    () => opponentCandidates.filter(isPvPBattleCandidateReady),
+    [opponentCandidates],
+  );
+  const [selectedKeys, setSelectedKeys] = useState<[string, string]>(() => {
+    const left =
+      readyCandidates.find((candidate) => candidate.key === initialSelection?.leftKey) ??
+      readyCandidates[0];
+    const right =
+      readyOpponents.find((candidate) => candidate.key === initialSelection?.rightKey) ??
+      readyOpponents.find((candidate) => candidate.key !== left?.key) ??
+      readyOpponents[0];
+    return [left?.key ?? '', right?.key ?? ''];
+  });
   const [shields, setShields] = useState<[number, number]>([1, 1]);
   const [energy, setEnergy] = useState<[number, number]>([0, 0]);
   const [result, setResult] = useState<PokemonPvPBattleResponse | null>(null);
   const [error, setError] = useState('');
   const [simulating, setSimulating] = useState(false);
-  const candidateByKey = useMemo(
+  const leftCandidateByKey = useMemo(
     () => new Map(candidates.map((candidate) => [candidate.key, candidate])),
     [candidates],
   );
-  const selected = selectedKeys.map((key) => candidateByKey.get(key)) as [
+  const rightCandidateByKey = useMemo(
+    () => new Map(
+      opponentCandidates.map((candidate) => [candidate.key, candidate]),
+    ),
+    [opponentCandidates],
+  );
+  const selected: [
     PvPTeamCandidate | undefined,
     PvPTeamCandidate | undefined,
+  ] = [
+    leftCandidateByKey.get(selectedKeys[0]),
+    rightCandidateByKey.get(selectedKeys[1]),
   ];
+  const canSwap =
+    selected[0] != null &&
+    selected[1] != null &&
+    leftCandidateByKey.has(selected[1].key) &&
+    rightCandidateByKey.has(selected[0].key);
 
   const changeSelection = (index: number, candidate: PvPTeamCandidate) => {
     setSelectedKeys((current) => {
@@ -371,9 +402,11 @@ const PvpBattleLab = ({
         <small>{formatLabel} · local pinned mechanics</small>
       </header>
 
-      {readyCandidates.length < candidates.length && (
+      {(readyCandidates.length < candidates.length ||
+        readyOpponents.length < opponentCandidates.length) && (
         <p className="pvp-battle-notice">
-          {readyCandidates.length} of {candidates.length} builds have complete simulation data.
+          {readyCandidates.length} player builds and {readyOpponents.length}{' '}
+          opponents have complete simulation data.
         </p>
       )}
 
@@ -388,7 +421,9 @@ const PvpBattleLab = ({
           type="button"
           className="pvp-battle-swap"
           aria-label="Swap battle sides"
+          disabled={!canSwap}
           onClick={() => {
+            if (!canSwap) return;
             setSelectedKeys(([left, right]) => [right, left]);
             setResult(null);
           }}
@@ -397,7 +432,7 @@ const PvpBattleLab = ({
         </button>
         <CandidatePicker
           side="Side B"
-          candidates={readyCandidates}
+          candidates={readyOpponents}
           selected={selected[1]}
           onSelect={(candidate) => changeSelection(1, candidate)}
         />
@@ -448,9 +483,12 @@ const PvpBattleLab = ({
       {result && selected[0] && selected[1] && (
         <BattleResult result={result} candidates={[selected[0], selected[1]]} />
       )}
-      {!result && !error && readyCandidates.length < 2 && (
+      {!result &&
+        !error &&
+        (readyCandidates.length < 1 || readyOpponents.length < 1) && (
         <div className="pvp-status">
-          Battle Lab needs two builds with complete stats and PvP move data.
+          Battle Lab needs a player build and opponent with complete stats and
+          PvP move data.
         </div>
       )}
       <footer>
