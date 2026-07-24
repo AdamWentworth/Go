@@ -29,6 +29,17 @@ const caughtBulbasaur = {
   charged_move2_id: 133,
 };
 
+const overCapBulbasaur = {
+  ...caughtBulbasaur,
+  instance_id: 'pvp-bulbasaur-over-cap',
+  nickname: 'Over Cap',
+  cp: 1_600,
+  level: 50,
+  attack_iv: 15,
+  defense_iv: 15,
+  stamina_iv: 15,
+};
+
 async function seedPvPRoster(page: Page) {
   await page.goto('/login', { waitUntil: 'domcontentloaded' });
   await page.evaluate(
@@ -52,7 +63,7 @@ async function seedPvPRoster(page: Page) {
           const transaction = database.transaction('instances', 'readwrite');
           const store = transaction.objectStore('instances');
           store.clear();
-          store.put(caught);
+          caught.forEach((instance) => store.put(instance));
           transaction.oncomplete = () => {
             database.close();
             resolve();
@@ -63,7 +74,7 @@ async function seedPvPRoster(page: Page) {
           };
         };
       }),
-    { user: pvpUser, caught: caughtBulbasaur },
+    { user: pvpUser, caught: [caughtBulbasaur, overCapBulbasaur] },
   );
 }
 
@@ -166,6 +177,7 @@ test.describe('PvP rankings page', () => {
         username: pvpUser.username,
         instances: {
           [caughtBulbasaur.instance_id]: caughtBulbasaur,
+          [overCapBulbasaur.instance_id]: overCapBulbasaur,
         },
       },
     });
@@ -191,11 +203,16 @@ test.describe('PvP rankings page', () => {
     await expect(page.getByText(/Loading .*Pokémon/)).toHaveCount(0);
 
     await page.getByRole('button', { name: 'IV Rank' }).click();
-    await expect(page.getByText('1 with complete IVs')).toBeVisible();
+    await expect(page.getByText(
+      '1 eligible for Great League · 1 over cap hidden',
+    )).toBeVisible();
+    await expect(page.getByRole('button', {
+      name: /Check Over Cap/,
+    })).toHaveCount(0);
     const ivSearch = page.getByRole('searchbox', { name: 'Search IV Rank Pokémon' });
     await ivSearch.fill('Sprout');
     await page.getByRole('button', {
-      name: 'Check Sprout, Bulbasaur, IV 4/14/15',
+      name: /Check Sprout, Bulbasaur, IV 4\/14\/15, Meta rank 3, IV rank/,
     }).click();
     await expect(page.getByRole('region', { name: 'Your Bulbasaur' })).toBeVisible();
     await expect(page.getByRole('button', {

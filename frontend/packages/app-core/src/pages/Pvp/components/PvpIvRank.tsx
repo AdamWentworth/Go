@@ -9,7 +9,10 @@ import {
   FaTimes,
   FaUser,
 } from 'react-icons/fa';
-import type { PokemonPvPLeagueKey } from '@shared-contracts/pokemon';
+import type {
+  PokemonPvPLeagueKey,
+  PokemonPvPRankingEntry,
+} from '@shared-contracts/pokemon';
 
 import type { PokemonVariant } from '@/types/pokemonVariants';
 import type { InstancesMap } from '@/types/pokemonInstance';
@@ -27,6 +30,7 @@ import {
 } from '../utils/pvpIvPokemon';
 import {
   buildOwnedPvPIvRoster,
+  rankOwnedPvPIvEntries,
   type OwnedPvPIvEntry,
 } from '../utils/pvpIvRoster';
 import type { PvPRosterScope } from '../utils/pvpRoster';
@@ -38,12 +42,6 @@ const LEAGUE_LABELS: Record<PokemonPvPLeagueKey, string> = {
   great: 'Great League',
   ultra: 'Ultra League',
   master: 'Master League',
-};
-
-const LEAGUE_CP_CAPS: Record<PokemonPvPLeagueKey, number | null> = {
-  great: 1_500,
-  ultra: 2_500,
-  master: null,
 };
 
 const clampIv = (value: number): number =>
@@ -159,6 +157,8 @@ const PvpIvRank = ({
   scope,
   onScopeChange,
   league,
+  cpLimit,
+  metaRankings,
 }: {
   variants: PokemonVariant[];
   variantsLoading: boolean;
@@ -168,6 +168,8 @@ const PvpIvRank = ({
   scope: PvPRosterScope;
   onScopeChange: (scope: PvPRosterScope) => void;
   league: PokemonPvPLeagueKey;
+  cpLimit: number | null;
+  metaRankings: PokemonPvPRankingEntry[];
 }) => {
   const [query, setQuery] = useState('');
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -183,16 +185,25 @@ const PvpIvRank = ({
     [variants],
   );
   const ownedRoster = useMemo(
-    () => buildOwnedPvPIvRoster(options, variants, instances),
-    [instances, options, variants],
+    () => buildOwnedPvPIvRoster(options, variants, instances, metaRankings),
+    [instances, metaRankings, options, variants],
+  );
+  const rankedOwnedEntries = useMemo(
+    () => rankOwnedPvPIvEntries(
+      ownedRoster.entries,
+      league,
+      bestBuddy ? 51 : 50,
+      cpLimit,
+    ),
+    [bestBuddy, cpLimit, league, ownedRoster.entries],
   );
   const ownedOptions = useMemo(() => {
     const unique = new Map<string, PvPIvPokemonOption>();
-    ownedRoster.entries.forEach((entry) => {
+    rankedOwnedEntries.forEach(({ entry }) => {
       unique.set(entry.pokemon.id, entry.pokemon);
     });
     return Array.from(unique.values());
-  }, [ownedRoster.entries]);
+  }, [rankedOwnedEntries]);
   const availableOptions = scope === 'owned' ? ownedOptions : options;
   const selectedPokemon = useMemo(
     () => availableOptions.find((option) => option.id === selectedId) ?? null,
@@ -212,14 +223,14 @@ const PvpIvRank = ({
   const matchingOwnedEntries = useMemo(() => {
     if (scope !== 'owned' || selectedPokemon) return [];
     const normalized = query.trim().toLowerCase();
-    if (!normalized) return ownedRoster.entries;
-    return ownedRoster.entries.filter((entry) => (
+    if (!normalized) return rankedOwnedEntries;
+    return rankedOwnedEntries.filter(({ entry }) => (
       entry.pokemon.name.toLowerCase().includes(normalized) ||
       String(entry.pokemon.pokedexNumber).includes(normalized) ||
       String(entry.nickname ?? '').toLowerCase().includes(normalized)
     ));
-  }, [ownedRoster.entries, query, scope, selectedPokemon]);
-  const rankings = useMemo(
+  }, [query, rankedOwnedEntries, scope, selectedPokemon]);
+  const ivRankings = useMemo(
     () => selectedPokemon
       ? buildPvPIvRankings(
         {
@@ -235,25 +246,21 @@ const PvpIvRank = ({
   );
   const rankedOwnedCopies = useMemo(() => {
     if (!selectedPokemon || scope !== 'owned') return [];
-    const cpCap = LEAGUE_CP_CAPS[league];
-    return ownedRoster.entries
-      .filter((entry) => entry.pokemon.id === selectedPokemon.id)
-      .map((entry) => ({
+    return rankedOwnedEntries
+      .filter(({ entry }) => entry.pokemon.id === selectedPokemon.id)
+      .map(({ entry }) => ({
         entry,
-        result: rankPvPIvSpread(rankings, entry.ivs),
-        overCap: cpCap != null && entry.cp != null && entry.cp > cpCap,
+        result: rankPvPIvSpread(ivRankings, entry.ivs),
       }))
       .filter((item): item is {
         entry: OwnedPvPIvEntry;
         result: NonNullable<ReturnType<typeof rankPvPIvSpread>>;
-        overCap: boolean;
       } => item.result != null)
       .sort((left, right) => (
-        Number(left.overCap) - Number(right.overCap) ||
         left.result.selected.rank - right.result.selected.rank ||
         left.entry.instanceId.localeCompare(right.entry.instanceId)
       ));
-  }, [league, ownedRoster.entries, rankings, scope, selectedPokemon]);
+  }, [ivRankings, rankedOwnedEntries, scope, selectedPokemon]);
   const [selectedOwnedId, setSelectedOwnedId] = useState<string | null>(null);
   const selectedOwnedCopy =
     rankedOwnedCopies.find((item) => item.entry.instanceId === selectedOwnedId) ??
@@ -264,8 +271,8 @@ const PvpIvRank = ({
       ? selectedOwnedCopy.entry.ivs
       : ivs;
   const result = useMemo(
-    () => rankPvPIvSpread(rankings, evaluatedIvs),
-    [evaluatedIvs, rankings],
+    () => rankPvPIvSpread(ivRankings, evaluatedIvs),
+    [evaluatedIvs, ivRankings],
   );
 
   const updateIv = (field: IvField, value: number) => {
@@ -323,14 +330,22 @@ const PvpIvRank = ({
           <FaUser aria-hidden="true" />
           My Pokémon
           {isLoggedIn && !instancesLoading && (
-            <strong>{ownedRoster.completeCount}</strong>
+            <strong>{rankedOwnedEntries.length}</strong>
           )}
         </button>
         {scope === 'owned' && (
           <span role="status">
             {instancesLoading && Object.keys(instances).length === 0
               ? 'Loading your caught Pokémon...'
-              : `${ownedRoster.completeCount} with complete IVs${
+              : `${rankedOwnedEntries.length} eligible for ${
+                LEAGUE_LABELS[league]
+              }${
+                ownedRoster.completeCount > rankedOwnedEntries.length
+                  ? ` · ${
+                    ownedRoster.completeCount - rankedOwnedEntries.length
+                  } over cap hidden`
+                  : ''
+              }${
                 ownedRoster.incompleteCount > 0
                   ? ` · ${ownedRoster.incompleteCount} need appraisal IVs`
                   : ''
@@ -395,7 +410,7 @@ const PvpIvRank = ({
                 <div className="pvp-iv-browser-summary">
                   <strong>Appraised Pokémon</strong>
                   <span>
-                    {matchingOwnedEntries.length} of {ownedRoster.completeCount}
+                    Recommended order · {matchingOwnedEntries.length} shown
                   </span>
                 </div>
               )}
@@ -408,7 +423,8 @@ const PvpIvRank = ({
               ) ? (
                 <span role="status">Loading your caught Pokémon...</span>
               ) : scope === 'owned' && matchingOwnedEntries.length > 0 ? (
-                matchingOwnedEntries.map((entry) => {
+                matchingOwnedEntries.map((rankedEntry) => {
+                  const { entry } = rankedEntry;
                   const label = entry.nickname || entry.pokemon.name;
                   return (
                     <button
@@ -416,7 +432,11 @@ const PvpIvRank = ({
                       key={entry.instanceId}
                       aria-label={`Check ${label}, ${entry.pokemon.name}, IV ${
                         entry.ivs.attack
-                      }/${entry.ivs.defense}/${entry.ivs.stamina}`}
+                      }/${entry.ivs.defense}/${entry.ivs.stamina}, ${
+                        entry.metaRank == null
+                          ? 'not meta ranked'
+                          : `Meta rank ${entry.metaRank}`
+                      }, IV rank ${rankedEntry.ivRank}`}
                       onClick={() => chooseOwnedPokemon(entry)}
                     >
                       <img
@@ -439,7 +459,15 @@ const PvpIvRank = ({
                           {entry.ivs.defense}/{entry.ivs.stamina} IV
                         </em>
                       </span>
-                      <TypeIcons types={entry.pokemon.types} />
+                      <span className="pvp-iv-browser-ranks">
+                        <TypeIcons types={entry.pokemon.types} />
+                        <b className={entry.metaRank == null ? 'unranked' : ''}>
+                          {entry.metaRank == null
+                            ? 'Not ranked'
+                            : `Meta #${entry.metaRank}`}
+                        </b>
+                        <b>IV #{rankedEntry.ivRank}</b>
+                      </span>
                     </button>
                   );
                 })
@@ -538,11 +566,7 @@ const PvpIvRank = ({
                 <span>Best IV rank first</span>
               </header>
               <div>
-                {rankedOwnedCopies.map(({
-                  entry,
-                  result: copyResult,
-                  overCap,
-                }) => {
+                {rankedOwnedCopies.map(({ entry, result: copyResult }) => {
                   const active =
                     selectedOwnedCopy?.entry.instanceId === entry.instanceId;
                   const label = entry.nickname || entry.pokemon.name;
@@ -554,7 +578,7 @@ const PvpIvRank = ({
                       aria-pressed={active}
                       aria-label={`View ${label}, IV Rank ${
                         copyResult.selected.rank
-                      }${overCap ? ', over league cap' : ''}`}
+                      }`}
                       onClick={() => setSelectedOwnedId(entry.instanceId)}
                     >
                       <img
@@ -573,9 +597,8 @@ const PvpIvRank = ({
                           {entry.ivs.attack}/{entry.ivs.defense}/{entry.ivs.stamina} IV
                         </em>
                       </span>
-                      <b className={overCap ? 'over-cap' : ''}>
+                      <b>
                         <span>#{copyResult.selected.rank}</span>
-                        {overCap && <small>Over cap</small>}
                       </b>
                     </button>
                   );
@@ -630,7 +653,6 @@ const PvpIvRank = ({
                       {selectedOwnedCopy.entry.nickname ||
                         selectedOwnedCopy.entry.pokemon.name}
                     </strong>
-                    {selectedOwnedCopy.overCap && <em>Over league cap</em>}
                   </div>
                   <span>
                     {selectedOwnedCopy.entry.ivs.attack}/

@@ -147,10 +147,11 @@ const PvpMethodology = () => {
               51.
             </p>
             <p>
-              My Pokémon groups caught copies of the selected species, applies
-              each copy&apos;s recorded IVs, and sorts eligible copies best-first.
-              Current CP and level identify the exact copy; entries already
-              above the league cap remain visible but are marked ineligible.
+              My Pokémon omits copies already above the selected league&apos;s CP
+              cap, then recommends eligible copies using both current league
+              relevance and species-specific IV quality. The browser weighs the
+              format simulation score at 70% and the copy&apos;s IV percentile at
+              30%, while showing both source ranks beside every recommendation.
             </p>
             <ol className="pvp-methodology-steps">
               <li>

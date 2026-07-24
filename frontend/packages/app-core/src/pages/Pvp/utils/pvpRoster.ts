@@ -38,7 +38,7 @@ const hasFiniteNumber = (value: unknown): boolean =>
 const moveIsFast = (move: Move): boolean =>
   Number(move.is_fast) === 1;
 
-type RankingLookup = {
+export type PvPRankingLookup = {
   byFusionId: Map<number, PokemonPvPRankingEntry>;
   byPokemonKind: Map<string, PokemonPvPRankingEntry[]>;
 };
@@ -48,10 +48,10 @@ const pokemonKindKey = (
   variantKind: PokemonPvPRankingEntry['variantKind'],
 ): string => `${pokemonId}:${variantKind}`;
 
-const buildRankingLookup = (
+export const buildPvPRankingLookup = (
   rankings: PokemonPvPRankingEntry[],
-): RankingLookup => {
-  const lookup: RankingLookup = {
+): PvPRankingLookup => {
+  const lookup: PvPRankingLookup = {
     byFusionId: new Map(),
     byPokemonKind: new Map(),
   };
@@ -157,8 +157,8 @@ const exactNameMatch = (
   );
 };
 
-const matchRanking = (
-  lookup: RankingLookup,
+export const matchPvPRanking = (
+  lookup: PvPRankingLookup,
   variant: PokemonVariant,
   formSource: 'base' | 'fusion' | 'crown',
   instance: PokemonInstance,
@@ -227,7 +227,7 @@ export const buildOwnedPvPRoster = (
   const variantsById = new Map(
     variants.map((variant) => [String(variant.variant_id), variant]),
   );
-  const rankingLookup = buildRankingLookup(rankings);
+  const rankingLookup = buildPvPRankingLookup(rankings);
   const moveLookups = new Map<PokemonVariant, Map<number, Move>>();
   const caught = Object.entries(instances).filter(
     ([, instance]) => instance.is_caught && !instance.disabled,
@@ -293,7 +293,7 @@ export const buildOwnedPvPRoster = (
       result.incompleteCount += 1;
       continue;
     }
-    const ranking = matchRanking(
+    const ranking = matchPvPRanking(
       rankingLookup,
       projection.variant,
       projection.formSource,

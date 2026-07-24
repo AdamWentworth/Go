@@ -33,6 +33,12 @@ export type PvPIvRankResult = {
   total: number;
 };
 
+export type PvPIvRankSummary = {
+  rank: number;
+  total: number;
+  statProductPercent: number;
+};
+
 const LEAGUE_CP_CAPS: Record<PokemonPvPLeagueKey, number | null> = {
   great: 1_500,
   ultra: 2_500,
@@ -41,10 +47,12 @@ const LEAGUE_CP_CAPS: Record<PokemonPvPLeagueKey, number | null> = {
 
 const IV_VALUES = Array.from({ length: 16 }, (_, value) => value);
 
-const levelsThrough = (maxLevel: 50 | 51): Array<{
+type PvPLevel = {
   level: number;
   multiplier: number;
-}> =>
+};
+
+const buildLevelsThrough = (maxLevel: 50 | 51): PvPLevel[] =>
   Object.entries(cpMultipliers)
     .map(([level, multiplier]) => ({
       level: Number(level),
@@ -56,6 +64,14 @@ const levelsThrough = (maxLevel: 50 | 51): Array<{
       Number.isFinite(multiplier)
     ))
     .sort((left, right) => right.level - left.level);
+
+const LEVELS_BY_MAX: Record<50 | 51, PvPLevel[]> = {
+  50: buildLevelsThrough(50),
+  51: buildLevelsThrough(51),
+};
+
+const levelsThrough = (maxLevel: 50 | 51): PvPLevel[] =>
+  LEVELS_BY_MAX[maxLevel];
 
 const clampIv = (value: number): number =>
   Math.max(0, Math.min(15, Math.round(Number(value) || 0)));
@@ -71,21 +87,34 @@ const legalBuild = (
 ): Omit<PvPIvRankedSpread, 'rank' | 'statProductPercent'> => {
   const cpCap = LEAGUE_CP_CAPS[league];
   const levels = levelsThrough(maxLevel);
-  const selectedLevel = levels.find(({ multiplier }) => (
-    cpCap === null ||
-    Math.max(
-      10,
-      calculateCP(
-        baseStats.attack,
-        baseStats.defense,
-        baseStats.stamina,
-        ivs.attack,
-        ivs.defense,
-        ivs.stamina,
-        multiplier,
-      ),
-    ) <= cpCap
-  )) ?? levels[levels.length - 1];
+  let selectedLevel = levels[0];
+  if (cpCap !== null) {
+    let low = 0;
+    let high = levels.length - 1;
+    let legalIndex = high;
+    while (low <= high) {
+      const middle = Math.floor((low + high) / 2);
+      const cp = Math.max(
+        10,
+        calculateCP(
+          baseStats.attack,
+          baseStats.defense,
+          baseStats.stamina,
+          ivs.attack,
+          ivs.defense,
+          ivs.stamina,
+          levels[middle].multiplier,
+        ),
+      );
+      if (cp <= cpCap) {
+        legalIndex = middle;
+        high = middle - 1;
+      } else {
+        low = middle + 1;
+      }
+    }
+    selectedLevel = levels[legalIndex] ?? levels[levels.length - 1];
+  }
 
   const battleAttack =
     (baseStats.attack + ivs.attack) * selectedLevel.multiplier;
@@ -119,6 +148,18 @@ const legalBuild = (
   };
 };
 
+const compareBuilds = (
+  left: Omit<PvPIvRankedSpread, 'rank' | 'statProductPercent'>,
+  right: Omit<PvPIvRankedSpread, 'rank' | 'statProductPercent'>,
+): number => (
+  right.statProduct - left.statProduct ||
+  (right.attack + right.defense + right.stamina) -
+    (left.attack + left.defense + left.stamina) ||
+  right.attack - left.attack ||
+  right.defense - left.defense ||
+  right.stamina - left.stamina
+);
+
 export const buildPvPIvRankings = (
   baseStats: PvPIvBaseStats,
   league: PokemonPvPLeagueKey,
@@ -139,14 +180,7 @@ export const buildPvPIvRankings = (
     }
   }
 
-  spreads.sort((left, right) => (
-    right.statProduct - left.statProduct ||
-    (right.attack + right.defense + right.stamina) -
-      (left.attack + left.defense + left.stamina) ||
-    right.attack - left.attack ||
-    right.defense - left.defense ||
-    right.stamina - left.stamina
-  ));
+  spreads.sort(compareBuilds);
 
   const bestStatProduct = spreads[0]?.statProduct ?? 1;
   return spreads.map((spread, index) => ({
@@ -154,6 +188,38 @@ export const buildPvPIvRankings = (
     rank: index + 1,
     statProductPercent: (spread.statProduct / bestStatProduct) * 100,
   }));
+};
+
+export const summarizePvPIvSpread = (
+  baseStats: PvPIvBaseStats,
+  ivs: PvPIvValues,
+  league: PokemonPvPLeagueKey,
+  maxLevel: 50 | 51 = 50,
+): PvPIvRankSummary => {
+  const selected = legalBuild(baseStats, ivs, league, maxLevel);
+  let rank = 1;
+  let bestStatProduct = selected.statProduct;
+
+  for (const attack of IV_VALUES) {
+    for (const defense of IV_VALUES) {
+      for (const stamina of IV_VALUES) {
+        const candidate = legalBuild(
+          baseStats,
+          { attack, defense, stamina },
+          league,
+          maxLevel,
+        );
+        if (compareBuilds(candidate, selected) < 0) rank += 1;
+        bestStatProduct = Math.max(bestStatProduct, candidate.statProduct);
+      }
+    }
+  }
+
+  return {
+    rank,
+    total: IV_VALUES.length ** 3,
+    statProductPercent: (selected.statProduct / bestStatProduct) * 100,
+  };
 };
 
 export const rankPvPIvSpread = (
@@ -178,4 +244,3 @@ export const rankPvPIvSpread = (
     total: rankings.length,
   };
 };
-

@@ -1,9 +1,20 @@
 import { resolveRaidRosterFormProjections } from '@/pages/Raid/utils/raidRosterForms';
 import type { InstancesMap, PokemonInstance } from '@/types/pokemonInstance';
 import type { PokemonVariant } from '@/types/pokemonVariants';
+import type {
+  PokemonPvPLeagueKey,
+  PokemonPvPRankingEntry,
+} from '@shared-contracts/pokemon';
 
-import type { PvPIvValues } from './pvpIvRank';
+import {
+  summarizePvPIvSpread,
+  type PvPIvValues,
+} from './pvpIvRank';
 import type { PvPIvPokemonOption } from './pvpIvPokemon';
+import {
+  buildPvPRankingLookup,
+  matchPvPRanking,
+} from './pvpRoster';
 
 export type OwnedPvPIvEntry = {
   instanceId: string;
@@ -14,6 +25,16 @@ export type OwnedPvPIvEntry = {
   level: number | null;
   ivs: PvPIvValues;
   favorite: boolean;
+  metaRank: number | null;
+  metaScore: number | null;
+};
+
+export type RankedOwnedPvPIvEntry = {
+  entry: OwnedPvPIvEntry;
+  ivRank: number;
+  ivTotal: number;
+  ivPercent: number;
+  recommendationScore: number;
 };
 
 export type OwnedPvPIvRoster = {
@@ -57,11 +78,13 @@ export const buildOwnedPvPIvRoster = (
   options: PvPIvPokemonOption[],
   variants: PokemonVariant[],
   instances: InstancesMap,
+  rankings: PokemonPvPRankingEntry[] = [],
 ): OwnedPvPIvRoster => {
   const variantsById = new Map(
     variants.map((variant) => [String(variant.variant_id), variant]),
   );
   const optionsByStats = new Map<string, PvPIvPokemonOption[]>();
+  const rankingLookup = buildPvPRankingLookup(rankings);
   options.forEach((option) => {
     const key = statsKey(
       option.pokemonId,
@@ -133,6 +156,12 @@ export const buildOwnedPvPIvRoster = (
       roster.unmatchedCount += 1;
       return;
     }
+    const meta = matchPvPRanking(
+      rankingLookup,
+      projection.variant,
+      projection.formSource,
+      instance,
+    );
 
     roster.entries.push({
       instanceId: instanceIdentity(key, instance),
@@ -150,6 +179,8 @@ export const buildOwnedPvPIvRoster = (
         stamina: Number(instance.stamina_iv),
       },
       favorite: Boolean(instance.favorite),
+      metaRank: meta?.rank ?? null,
+      metaScore: meta?.score ?? null,
     });
   });
 
@@ -162,3 +193,48 @@ export const buildOwnedPvPIvRoster = (
   roster.completeCount = roster.entries.length;
   return roster;
 };
+
+export const rankOwnedPvPIvEntries = (
+  entries: OwnedPvPIvEntry[],
+  league: PokemonPvPLeagueKey,
+  maxLevel: 50 | 51,
+  cpLimit: number | null,
+): RankedOwnedPvPIvEntry[] =>
+  entries
+    .filter((entry) => (
+      cpLimit == null ||
+      entry.cp == null ||
+      entry.cp <= cpLimit
+    ))
+    .map((entry) => {
+      const summary = summarizePvPIvSpread(
+        {
+          attack: entry.pokemon.attack,
+          defense: entry.pokemon.defense,
+          stamina: entry.pokemon.stamina,
+        },
+        entry.ivs,
+        league,
+        maxLevel,
+      );
+      const ivPercentile =
+        1 - ((summary.rank - 1) / Math.max(1, summary.total - 1));
+      const recommendationScore = entry.metaScore == null
+        ? ivPercentile * 20
+        : (entry.metaScore * 0.7) + (ivPercentile * 100 * 0.3);
+      return {
+        entry,
+        ivRank: summary.rank,
+        ivTotal: summary.total,
+        ivPercent: summary.statProductPercent,
+        recommendationScore,
+      };
+    })
+    .sort((left, right) => (
+      right.recommendationScore - left.recommendationScore ||
+      (left.entry.metaRank ?? Number.MAX_SAFE_INTEGER) -
+        (right.entry.metaRank ?? Number.MAX_SAFE_INTEGER) ||
+      left.ivRank - right.ivRank ||
+      left.entry.pokemon.pokedexNumber - right.entry.pokemon.pokedexNumber ||
+      left.entry.instanceId.localeCompare(right.entry.instanceId)
+    ));

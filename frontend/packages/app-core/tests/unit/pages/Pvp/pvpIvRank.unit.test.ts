@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import {
   buildPvPIvRankings,
   rankPvPIvSpread,
+  summarizePvPIvSpread,
 } from '@/pages/Pvp/utils/pvpIvRank';
 
 describe('PvP IV Rank model', () => {
@@ -100,5 +101,24 @@ describe('PvP IV Rank model', () => {
       (spread) => spread.rank === result.selected.rank,
     )).toBe(true);
   });
-});
 
+  it.each([
+    ['great', { attack: 118, defense: 111, stamina: 128 }, { attack: 4, defense: 14, stamina: 15 }],
+    ['ultra', { attack: 149, defense: 136, stamina: 163 }, { attack: 1, defense: 15, stamina: 13 }],
+    ['master', { attack: 250, defense: 200, stamina: 200 }, { attack: 15, defense: 14, stamina: 15 }],
+  ] as const)(
+    'summarizes one %s spread identically to the complete ranking table',
+    (league, baseStats, ivs) => {
+      const rankings = buildPvPIvRankings(baseStats, league);
+      const result = rankPvPIvSpread(rankings, ivs);
+      const summary = summarizePvPIvSpread(baseStats, ivs, league);
+
+      expect(result).not.toBeNull();
+      expect(summary).toEqual({
+        rank: result?.selected.rank,
+        total: result?.total,
+        statProductPercent: result?.selected.statProductPercent,
+      });
+    },
+  );
+});

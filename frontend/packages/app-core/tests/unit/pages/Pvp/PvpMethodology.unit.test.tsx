@@ -22,7 +22,9 @@ describe('PvP methodology page', () => {
     })).toBeInTheDocument();
     expect(screen.getByText(/compares all 4,096 possible/))
       .toBeInTheDocument();
-    expect(screen.getByText(/groups caught copies of the selected species/))
+    expect(screen.getByText(/omits copies already above the selected league/))
+      .toBeInTheDocument();
+    expect(screen.getByText(/format simulation score at 70%/))
       .toBeInTheDocument();
     expect(screen.getByRole('heading', { name: 'My Pokémon keeps the build honest' }))
       .toBeInTheDocument();

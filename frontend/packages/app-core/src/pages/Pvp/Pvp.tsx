@@ -777,6 +777,8 @@ const Pvp = () => {
             scope={rosterScope}
             onScopeChange={setRosterScope}
             league={activeLeagueKey}
+            cpLimit={cpLimit}
+            metaRankings={entries}
           />
         ) : workspace === 'team' ? (
           <>

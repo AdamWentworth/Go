@@ -41,12 +41,13 @@ const makeEntry = (
   speciesId: string,
   name: string,
   type: string,
+  pokemonId = rank,
 ): PokemonPvPRankingEntry => ({
   rank,
   sourceRank: rank,
   speciesId,
   name,
-  pokemonId: rank,
+  pokemonId,
   variantKind: 'pokemon',
   imageUrl: `/images/pokemon/${rank}.png`,
   types: [type],
@@ -83,11 +84,11 @@ const makeEntry = (
 const makePayload = (): PokemonPvPRankingsPayload => {
   const entries: Record<PokemonPvPLeagueKey, PokemonPvPRankingEntry[]> = {
     great: [
-      makeEntry(1, 'clodsire', 'Clodsire', 'poison'),
-      makeEntry(2, 'azumarill', 'Azumarill', 'water'),
+      makeEntry(1, 'clodsire', 'Clodsire', 'poison', 980),
+      makeEntry(2, 'azumarill', 'Azumarill', 'water', 184),
     ],
-    ultra: [makeEntry(1, 'feraligatr', 'Feraligatr', 'water')],
-    master: [makeEntry(1, 'zygarde_complete', 'Zygarde Complete', 'dragon')],
+    ultra: [makeEntry(1, 'feraligatr', 'Feraligatr', 'water', 160)],
+    master: [makeEntry(1, 'zygarde_complete', 'Zygarde Complete', 'dragon', 718)],
   };
 
   return {
@@ -112,7 +113,7 @@ const makePayload = (): PokemonPvPRankingsPayload => {
         cup: 'retro',
         cpLimit: 1500,
         rules: ['Dark-, Steel-, and Fairy-type Pokémon are not eligible.'],
-        entries: [makeEntry(1, 'diggersby', 'Diggersby', 'normal')],
+        entries: [makeEntry(1, 'diggersby', 'Diggersby', 'normal', 660)],
       },
     ],
   };
@@ -396,15 +397,21 @@ describe('PvP rankings page', () => {
       },
       instancesLoading: false,
     });
+    hookState.data!.leagues.great.entries.push(
+      makeEntry(3, 'sprigatito', 'Sprigatito', 'grass', 906),
+    );
 
     renderPvp();
     fireEvent.click(screen.getByRole('button', { name: 'IV Rank' }));
     fireEvent.click(screen.getByRole('button', { name: /My Pokémon/ }));
 
     expect(bootstrapHooks.instances).toHaveBeenLastCalledWith(true);
-    expect(screen.getByText('3 with complete IVs')).toBeInTheDocument();
+    expect(screen.getByText(
+      '2 eligible for Great League · 1 over cap hidden',
+    )).toBeInTheDocument();
+    expect(screen.queryByText('Perfect')).not.toBeInTheDocument();
     expect(screen.getByRole('button', {
-      name: 'Check Paldea, Sprigatito, IV 1/15/15',
+      name: /Check Paldea, Sprigatito, IV 1\/15\/15, Meta rank 3, IV rank/,
     })).toBeInTheDocument();
 
     fireEvent.change(screen.getByRole('searchbox', {
@@ -413,15 +420,11 @@ describe('PvP rankings page', () => {
       target: { value: 'sprout' },
     });
     fireEvent.click(screen.getByRole('button', {
-      name: 'Check Sprout, Bulbasaur, IV 0/15/15',
+      name: /Check Sprout, Bulbasaur, IV 0\/15\/15/,
     }));
 
     const copies = screen.getByRole('region', { name: 'Your Bulbasaur' });
     expect(copies).toBeInTheDocument();
-    expect(screen.getByRole('button', {
-      name: 'View Perfect, IV Rank 1, over league cap',
-    }))
-      .toBeInTheDocument();
     const sprout = screen.getByRole('button', {
       name: 'View Sprout, IV Rank 770',
     });
@@ -487,7 +490,7 @@ describe('PvP rankings page', () => {
     useVariantsStore.setState({
       variants: [{
         variant_id: '0002-default',
-        pokemon_id: 2,
+        pokemon_id: 184,
         pokedex_number: 184,
         name: 'Azumarill',
         species_name: 'Azumarill',
@@ -507,7 +510,7 @@ describe('PvP rankings page', () => {
         azu: {
           instance_id: 'azu',
           variant_id: '0002-default',
-          pokemon_id: 2,
+          pokemon_id: 184,
           nickname: 'Blue',
           cp: 1_498,
           level: 39.5,
@@ -547,7 +550,7 @@ describe('PvP rankings page', () => {
     useVariantsStore.setState({
       variants: [{
         variant_id: '0002-default',
-        pokemon_id: 2,
+        pokemon_id: 184,
         pokedex_number: 184,
         name: 'Azumarill',
         species_name: 'Azumarill',
@@ -597,7 +600,7 @@ describe('PvP rankings page', () => {
         azu: {
           instance_id: 'azu',
           variant_id: '0002-default',
-          pokemon_id: 2,
+          pokemon_id: 184,
           nickname: 'Cached Blue',
           cp: 1_498,
           level: 39.5,
