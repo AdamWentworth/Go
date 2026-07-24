@@ -193,9 +193,9 @@ test.describe('PvP rankings page', () => {
     await page.getByRole('button', { name: 'IV Rank' }).click();
     await expect(page.getByText('1 with complete IVs')).toBeVisible();
     const ivSearch = page.getByRole('searchbox', { name: 'Search IV Rank Pokémon' });
-    await ivSearch.fill('Bulbasaur');
+    await ivSearch.fill('Sprout');
     await page.getByRole('button', {
-      name: 'Select #0001 Bulbasaur',
+      name: 'Check Sprout, Bulbasaur, IV 4/14/15',
     }).click();
     await expect(page.getByRole('region', { name: 'Your Bulbasaur' })).toBeVisible();
     await expect(page.getByRole('button', {

@@ -217,10 +217,19 @@
 }
 
 .pvp-iv-search-results strong {
+  display: inline-flex;
+  gap: 0.25rem;
+  align-items: center;
   overflow: hidden;
   font-size: 0.7rem;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.pvp-iv-search-results strong svg {
+  flex: 0 0 auto;
+  color: #f5c75e;
+  font-size: 0.58rem;
 }
 
 .pvp-iv-search-results em {
@@ -231,6 +240,34 @@
   font-weight: 800;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.pvp-iv-search-results.owned {
+  max-height: 28rem;
+}
+
+.pvp-iv-browser-summary {
+  display: flex;
+  grid-column: 1 / -1;
+  align-items: baseline;
+  justify-content: space-between;
+  padding: 0.15rem 0.2rem;
+  color: var(--pvp-muted);
+}
+
+.pvp-iv-browser-summary strong {
+  color: #8fc6cb;
+  font-size: 0.62rem;
+  text-transform: uppercase;
+}
+
+.pvp-iv-browser-summary span {
+  font-size: 0.58rem;
+  font-weight: 850;
+}
+
+.pvp-iv-search-results.owned > button {
+  min-height: 4rem;
 }
 
 .pvp-iv-search-results > span {

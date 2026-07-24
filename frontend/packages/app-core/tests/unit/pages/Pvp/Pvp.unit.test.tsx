@@ -315,22 +315,40 @@ describe('PvP rankings page', () => {
   it('compares caught copies by IV rank without requiring move details', () => {
     useAuthStore.setState({ isLoggedIn: true });
     useVariantsStore.setState({
-      variants: [{
-        variant_id: '0001-default',
-        pokemon_id: 1,
-        pokedex_number: 1,
-        name: 'Bulbasaur',
-        species_name: 'Bulbasaur',
-        variantType: 'default',
-        currentImage: '/images/bulbasaur.png',
-        image_url: '/images/bulbasaur.png',
-        attack: 118,
-        defense: 111,
-        stamina: 128,
-        type1_name: 'Grass',
-        type2_name: 'Poison',
-        crownForms: [],
-      } as unknown as PokemonVariant],
+      variants: [
+        {
+          variant_id: '0001-default',
+          pokemon_id: 1,
+          pokedex_number: 1,
+          name: 'Bulbasaur',
+          species_name: 'Bulbasaur',
+          variantType: 'default',
+          currentImage: '/images/bulbasaur.png',
+          image_url: '/images/bulbasaur.png',
+          attack: 118,
+          defense: 111,
+          stamina: 128,
+          type1_name: 'Grass',
+          type2_name: 'Poison',
+          crownForms: [],
+        } as unknown as PokemonVariant,
+        {
+          variant_id: '0906-default',
+          pokemon_id: 906,
+          pokedex_number: 906,
+          name: 'Sprigatito',
+          species_name: 'Sprigatito',
+          variantType: 'default',
+          currentImage: '/images/sprigatito.png',
+          image_url: '/images/sprigatito.png',
+          attack: 116,
+          defense: 99,
+          stamina: 120,
+          type1_name: 'Grass',
+          type2_name: null,
+          crownForms: [],
+        } as unknown as PokemonVariant,
+      ],
       variantsLoading: false,
     });
     useInstancesStore.setState({
@@ -362,6 +380,19 @@ describe('PvP rankings page', () => {
           defense_iv: 15,
           stamina_iv: 15,
         } as PokemonInstance,
+        paldea: {
+          instance_id: 'paldea',
+          variant_id: '0906-default',
+          pokemon_id: 906,
+          nickname: 'Paldea',
+          is_caught: true,
+          disabled: false,
+          cp: 500,
+          level: 20,
+          attack_iv: 1,
+          defense_iv: 15,
+          stamina_iv: 15,
+        } as PokemonInstance,
       },
       instancesLoading: false,
     });
@@ -371,15 +402,18 @@ describe('PvP rankings page', () => {
     fireEvent.click(screen.getByRole('button', { name: /My Pokémon/ }));
 
     expect(bootstrapHooks.instances).toHaveBeenLastCalledWith(true);
-    expect(screen.getByText('2 with complete IVs')).toBeInTheDocument();
+    expect(screen.getByText('3 with complete IVs')).toBeInTheDocument();
+    expect(screen.getByRole('button', {
+      name: 'Check Paldea, Sprigatito, IV 1/15/15',
+    })).toBeInTheDocument();
 
     fireEvent.change(screen.getByRole('searchbox', {
       name: 'Search IV Rank Pokémon',
     }), {
-      target: { value: 'bulba' },
+      target: { value: 'sprout' },
     });
     fireEvent.click(screen.getByRole('button', {
-      name: 'Select #0001 Bulbasaur',
+      name: 'Check Sprout, Bulbasaur, IV 0/15/15',
     }));
 
     const copies = screen.getByRole('region', { name: 'Your Bulbasaur' });
