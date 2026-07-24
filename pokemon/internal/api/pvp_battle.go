@@ -161,28 +161,36 @@ func ensureJSONBodyConsumed(decoder *json.Decoder) error {
 func (request pvpBattleRequest) simulationFighters() ([2]pvp.Fighter, error) {
 	var fighters [2]pvp.Fighter
 	for index, source := range request.Fighters {
-		if source.Attack > 1000 || source.Defense > 1000 || source.HP > 1000 {
-			return fighters, fmt.Errorf("fighter %d stats exceed supported Trainer Battle limits", index+1)
-		}
-		fighter := pvp.Fighter{
-			ID:       strings.TrimSpace(source.ID),
-			Name:     strings.TrimSpace(source.Name),
-			Types:    append([]string(nil), source.Types...),
-			Attack:   source.Attack,
-			Defense:  source.Defense,
-			HP:       source.HP,
-			Shadow:   source.Shadow,
-			FastMove: source.FastMove.simulationMove(),
-		}
-		for _, move := range source.ChargedMoves {
-			fighter.ChargedMoves = append(fighter.ChargedMoves, move.simulationMove())
-		}
-		if len(fighter.ChargedMoves) > 2 {
-			return fighters, fmt.Errorf("fighter %d has more than two charged moves", index+1)
+		fighter, err := source.simulationFighter(fmt.Sprintf("fighter %d", index+1))
+		if err != nil {
+			return fighters, err
 		}
 		fighters[index] = fighter
 	}
 	return fighters, nil
+}
+
+func (source pvpBattleFighter) simulationFighter(label string) (pvp.Fighter, error) {
+	if source.Attack > 1000 || source.Defense > 1000 || source.HP > 1000 {
+		return pvp.Fighter{}, fmt.Errorf("%s stats exceed supported Trainer Battle limits", label)
+	}
+	fighter := pvp.Fighter{
+		ID:       strings.TrimSpace(source.ID),
+		Name:     strings.TrimSpace(source.Name),
+		Types:    append([]string(nil), source.Types...),
+		Attack:   source.Attack,
+		Defense:  source.Defense,
+		HP:       source.HP,
+		Shadow:   source.Shadow,
+		FastMove: source.FastMove.simulationMove(),
+	}
+	for _, move := range source.ChargedMoves {
+		fighter.ChargedMoves = append(fighter.ChargedMoves, move.simulationMove())
+	}
+	if len(fighter.ChargedMoves) > 2 {
+		return pvp.Fighter{}, fmt.Errorf("%s has more than two charged moves", label)
+	}
+	return fighter, nil
 }
 
 func (move pvpBattleMove) simulationMove() pvp.Move {

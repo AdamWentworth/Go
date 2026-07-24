@@ -200,6 +200,8 @@ test.describe('PvP rankings page', () => {
     await expect(page.getByText('Sprout')).toBeVisible({ timeout: 8_000 });
     expect(Date.now() - rosterStartedAt).toBeLessThan(8_000);
     await expect(page.getByText('1 ready')).toBeVisible();
+    await expect(page.getByText(/simulated against 3 meta opponents/)).toBeVisible();
+    await expect(page.getByText('Build Overall')).toBeVisible();
     await expect(page.getByText(/Loading .*Pokémon/)).toHaveCount(0);
 
     await page.getByRole('button', { name: 'IV Rank' }).click();

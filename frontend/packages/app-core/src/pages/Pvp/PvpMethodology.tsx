@@ -72,7 +72,7 @@ const PvpMethodology = () => {
         </header>
 
         <nav className="pvp-methodology-nav" aria-label="Methodology sections">
-          <a href="#tools">Three tools</a>
+          <a href="#tools">Four tools</a>
           <a href="#rankings">Rankings</a>
           <a href="#iv-rank">IV Rank</a>
           <a href="#owned">My Pokémon</a>
@@ -192,16 +192,26 @@ const PvpMethodology = () => {
             <div className="pvp-methodology-callout">
               <FaBolt aria-hidden="true" />
               <p>
-                The ranking order remains the matching species and form&apos;s
-                published matchup score. The caught details tell you which
-                build you own; Battle Lab is where that exact build is
-                simulated directly.
+                Rankings simulates each exact build against a fixed field of up
+                to 12 top, battle-ready opponents from the selected format.
+                Those opponents remain fixed so adding a weak or duplicate
+                caught Pokémon cannot change another copy&apos;s score.
               </p>
             </div>
             <p>
+              Lead, Closer, Switch, Charger, and Attacker scores use the same
+              shield and energy scenarios as the pinned ranking model.
+              Consistency measures the recorded moveset, and Overall combines
+              those exact-build results. Scores are normalized against the
+              fixed reference field so they remain readable on the same
+              0-100 scale as the published rankings.
+            </p>
+            <p>
               Entries over the format&apos;s CP cap, missing required battle
               details, or unavailable in the selected ranking snapshot are
-              reported and omitted rather than guessed.
+              reported and omitted rather than guessed. If personal evaluation
+              is unavailable, the page labels its temporary species baseline
+              instead of presenting it as an exact-build result.
             </p>
           </section>
 

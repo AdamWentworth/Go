@@ -42,6 +42,10 @@ import {
   buildOwnedPvPRoster,
   type PvPRosterScope,
 } from './utils/pvpRoster';
+import {
+  applyPvPRosterEvaluation,
+} from './utils/pvpRosterEvaluation';
+import { useOwnedPvPRosterEvaluation } from './hooks/useOwnedPvPRosterEvaluation';
 import { formatPvPSpeciesName } from './utils/pvpTeamBuilder';
 import './Pvp.css';
 
@@ -193,9 +197,11 @@ function MatchupList({
 function RankingDetails({
   entry,
   entriesBySpeciesId,
+  personalBuild,
 }: {
   entry: PokemonPvPRankingEntry;
   entriesBySpeciesId: Map<string, PokemonPvPRankingEntry>;
+  personalBuild: boolean;
 }) {
   const selectedMoves = new Set(entry.moveset.map((move) => move.id));
   const moveUsage = entry.moveUsage ?? [];
@@ -247,13 +253,13 @@ function RankingDetails({
 
       <div className="pvp-matchup-grid">
         <MatchupList
-          title="Strong matchups"
+          title={personalBuild ? 'Strong species matchups' : 'Strong matchups'}
           items={entry.matchups ?? []}
           entriesBySpeciesId={entriesBySpeciesId}
           kind="strong"
         />
         <MatchupList
-          title="Key threats"
+          title={personalBuild ? 'Species threats' : 'Key threats'}
           items={entry.counters ?? []}
           entriesBySpeciesId={entriesBySpeciesId}
           kind="threat"
@@ -294,6 +300,7 @@ function RankingRow({
   expanded,
   onToggle,
   entriesBySpeciesId,
+  personalBuild,
 }: {
   entry: PokemonPvPRankingEntry;
   rank: number;
@@ -304,6 +311,7 @@ function RankingRow({
   expanded: boolean;
   onToggle: () => void;
   entriesBySpeciesId: Map<string, PokemonPvPRankingEntry>;
+  personalBuild: boolean;
 }) {
   const ivSpread = `${entry.attackIv}/${entry.defenseIv}/${entry.staminaIv}`;
   return (
@@ -352,7 +360,11 @@ function RankingRow({
       </article>
       <div className="pvp-ranking-details" aria-hidden={!expanded}>
         {expanded && (
-          <RankingDetails entry={entry} entriesBySpeciesId={entriesBySpeciesId} />
+          <RankingDetails
+            entry={entry}
+            entriesBySpeciesId={entriesBySpeciesId}
+            personalBuild={personalBuild}
+          />
         )}
       </div>
     </section>
@@ -417,9 +429,22 @@ const Pvp = () => {
       : EMPTY_OWNED_ROSTER,
     [cpLimit, entries, instances, ownedRankingRequested, variants],
   );
+  const ownedEvaluation = useOwnedPvPRosterEvaluation(
+    ownedRankingRequested,
+    ownedRoster.entries,
+    entries,
+    formatKey,
+  );
+  const evaluatedOwnedEntries = useMemo(
+    () => applyPvPRosterEvaluation(
+      ownedRoster.entries,
+      ownedEvaluation.response,
+    ),
+    [ownedEvaluation.response, ownedRoster.entries],
+  );
   const scopedEntries = useMemo(
     () => rosterScope === 'owned'
-      ? ownedRoster.entries.map((owned) => ({
+      ? evaluatedOwnedEntries.map((owned) => ({
         entry: owned.entry,
         key: owned.instanceId,
         cp: owned.cp,
@@ -431,7 +456,7 @@ const Pvp = () => {
         cp: undefined,
         nickname: null,
       })),
-    [entries, ownedRoster.entries, rosterScope],
+    [entries, evaluatedOwnedEntries, rosterScope],
   );
   const activeRole = ROLES.find((item) => item.key === roleKey) ?? ROLES[0];
   const rankedEntries = useMemo(() => {
@@ -497,6 +522,13 @@ const Pvp = () => {
         : 'Loading move data for your caught Pokémon...';
   const rosterDetails = [
     `${ownedRoster.eligibleCount} PvP-ready from ${ownedRoster.caughtCount} caught`,
+    ownedEvaluation.loading
+      ? 'evaluating exact levels, IVs, and moves'
+      : ownedEvaluation.response
+        ? `simulated against ${ownedEvaluation.response.fieldSize} meta opponents`
+        : ownedEvaluation.error
+          ? 'species baseline shown; build simulation unavailable'
+          : '',
     ownedRoster.overCapCount > 0
       ? `${ownedRoster.overCapCount} over the format cap`
       : '',
@@ -745,9 +777,16 @@ const Pvp = () => {
                       entry={entry}
                       rank={rank}
                       score={score}
-                      scoreLabel={activeRole.label}
+                      scoreLabel={
+                        rosterScope === 'owned' && ownedEvaluation.response
+                          ? `Build ${activeRole.label}`
+                          : activeRole.label
+                      }
                       cp={cp}
                       nickname={nickname}
+                      personalBuild={
+                        rosterScope === 'owned' && ownedEvaluation.response != null
+                      }
                       expanded={expandedKey === key}
                       onToggle={() => setExpandedKey((current) => current === key ? null : key)}
                       entriesBySpeciesId={entriesBySpeciesId}
@@ -844,7 +883,9 @@ const Pvp = () => {
             </span>
             <small>
               {rosterScope === 'owned'
-                ? 'My Pokémon shows each caught copy’s recorded build and sorts it by that species’ simulated matchup score.'
+                ? ownedEvaluation.response
+                  ? `My Pokémon simulates every exact recorded build against ${ownedEvaluation.response.fieldSize} current meta opponents.`
+                  : 'My Pokémon shows every exact recorded build; species scores remain visible until its personal simulation is available.'
                 : 'Recommended IVs maximize performance for the selected format, not rarity.'}
             </small>
           </footer>

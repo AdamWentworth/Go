@@ -51,23 +51,34 @@ export const getPvPBattleCandidateLabel = (
 export const buildPvPBattleFighter = (
   candidate: PvPTeamCandidate,
 ): PokemonPvPBattleFighter | null => {
-  if (!isPvPBattleCandidateReady(candidate)) return null;
-  const fastMove = candidate.entry.moveset.find((move) => move.kind === 'fast');
-  const chargedMoves = candidate.entry.moveset
+  return buildPvPEntryFighter(
+    candidate.entry,
+    candidate.key,
+    getPvPBattleCandidateLabel(candidate),
+  );
+};
+
+export const buildPvPEntryFighter = (
+  entry: PvPTeamCandidate['entry'],
+  id: string,
+  name = entry.name,
+): PokemonPvPBattleFighter | null => {
+  if (!isPvPBattleCandidateReady({ key: id, entry })) return null;
+  const fastMove = entry.moveset.find((move) => move.kind === 'fast');
+  const chargedMoves = entry.moveset
     .filter((move) => move.kind === 'charged')
     .slice(0, 2);
   if (!fastMove) return null;
 
   return {
-    id: candidate.key,
-    name: getPvPBattleCandidateLabel(candidate),
-    types: candidate.entry.types,
-    attack: candidate.entry.battleAttack!,
-    defense: candidate.entry.battleDefense!,
-    hp: candidate.entry.battleHp!,
-    shadow: candidate.entry.variantKind === 'shadow',
+    id,
+    name,
+    types: entry.types,
+    attack: entry.battleAttack!,
+    defense: entry.battleDefense!,
+    hp: entry.battleHp!,
+    shadow: entry.variantKind === 'shadow',
     fastMove,
     chargedMoves,
   };
 };
-

@@ -88,12 +88,34 @@ const makePvPEntry = (
       name: 'Quick Attack',
       type: 'normal',
       kind: 'fast',
+      power: 5,
+      energyGain: 8,
+      energyCost: 0,
+      turns: 2,
+      buff: {
+        attackerAttack: 0,
+        attackerDefense: 0,
+        targetAttack: 0,
+        targetDefense: 0,
+        chance: 0,
+      },
     },
     {
       id: `${speciesId}-charged`,
       name: moveName,
       type,
       kind: 'charged',
+      power: 80,
+      energyGain: 0,
+      energyCost: 50,
+      turns: 1,
+      buff: {
+        attackerAttack: 0,
+        attackerDefense: 0,
+        targetAttack: 0,
+        targetDefense: 0,
+        chance: 0,
+      },
     },
   ],
   score: 96 - rank,
@@ -120,6 +142,10 @@ const makePvPEntry = (
   attackIv: 0,
   defenseIv: 15,
   staminaIv: 15,
+  battleAttack: 100 + rank,
+  battleDefense: 130 - rank,
+  battleHp: 140 + rank,
+  statProduct: (100 + rank) * (130 - rank) * (140 + rank),
 });
 
 const pvpDataFixture = {
@@ -306,6 +332,42 @@ export async function installE2eRoutes(page: Page, options: E2eRouteOptions = {}
   for (const pathPattern of ['**/api/pokemon/pvp-data', '**/__e2e/pokemon/pvp-data']) {
     await page.route(pathPattern, async (route) => {
       await fulfillJson(route, pvpDataFixture);
+    });
+  }
+
+  for (const pathPattern of [
+    '**/api/pokemon/pvp-roster-evaluation',
+    '**/__e2e/pokemon/pvp-roster-evaluation',
+  ]) {
+    await page.route(pathPattern, async (route) => {
+      const body = route.request().postDataJSON() as {
+        candidates?: Array<{ id?: string; attack?: number }>;
+        opponents?: unknown[];
+      };
+      const candidates = Array.isArray(body.candidates) ? body.candidates : [];
+      const results = candidates.map((candidate, index) => {
+        const buildScore = Math.min(
+          99,
+          70 + Number(candidate.attack ?? 0) / 10 - index,
+        );
+        return {
+          fighterId: String(candidate.id ?? `candidate-${index}`),
+          score: buildScore,
+          categoryScores: [
+            buildScore - 1,
+            buildScore - 2,
+            buildScore - 3,
+            buildScore - 4,
+            buildScore - 5,
+            90,
+          ],
+        };
+      });
+      await fulfillJson(route, {
+        mechanics: 'pvpoke-legacy',
+        fieldSize: Array.isArray(body.opponents) ? body.opponents.length : 0,
+        results,
+      });
     });
   }
 

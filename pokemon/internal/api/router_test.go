@@ -366,6 +366,90 @@ func TestPokemonPvPBattleEndpoint_RejectsUnsupportedMechanics(t *testing.T) {
 	}
 }
 
+func TestPokemonPvPRosterEvaluationEndpoint_UsesExactBuildStats(t *testing.T) {
+	r := newTestRouter(t)
+	move := func(id string, kind string) map[string]any {
+		result := map[string]any{
+			"id": id, "name": id, "type": "normal", "kind": kind,
+			"power": 5, "energyGain": 0, "energyCost": 0, "turns": 1,
+			"buff": map[string]any{
+				"attackerAttack": 0, "attackerDefense": 0,
+				"targetAttack": 0, "targetDefense": 0, "chance": 0,
+			},
+		}
+		if kind == "fast" {
+			result["energyGain"] = 10
+		} else {
+			result["power"] = 50
+			result["energyCost"] = 35
+		}
+		return result
+	}
+	fighter := func(id string, attack float64, defense float64, hp int) map[string]any {
+		return map[string]any{
+			"id": id, "name": id, "types": []string{"normal"},
+			"attack": attack, "defense": defense, "hp": hp, "shadow": false,
+			"fastMove":     move("TACKLE", "fast"),
+			"chargedMoves": []any{move("BODY_SLAM", "charged")},
+		}
+	}
+	body, err := json.Marshal(map[string]any{
+		"mechanics": "pvpoke-legacy",
+		"candidates": []any{
+			fighter("powered-copy", 125, 165, 170),
+			fighter("underleveled-copy", 80, 90, 95),
+		},
+		"opponents": []any{
+			map[string]any{
+				"fighter": fighter("meta-one", 110, 140, 150),
+				"weight":  1,
+			},
+			map[string]any{
+				"fighter": fighter("meta-two", 120, 125, 135),
+				"weight":  0.8,
+			},
+		},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	req := httptest.NewRequest(
+		http.MethodPost,
+		"/pokemon/pvp-roster-evaluation",
+		bytes.NewReader(body),
+	)
+	req.Header.Set("Content-Type", "application/json")
+	rr := httptest.NewRecorder()
+	r.ServeHTTP(rr, req)
+
+	if rr.Code != http.StatusOK {
+		t.Fatalf("status=%d body=%s", rr.Code, rr.Body.String())
+	}
+	var response struct {
+		Mechanics string `json:"mechanics"`
+		FieldSize int    `json:"fieldSize"`
+		Results   []struct {
+			FighterID      string     `json:"fighterId"`
+			Score          float64    `json:"score"`
+			CategoryScores [6]float64 `json:"categoryScores"`
+		} `json:"results"`
+	}
+	if err := json.Unmarshal(rr.Body.Bytes(), &response); err != nil {
+		t.Fatal(err)
+	}
+	if response.Mechanics != "pvpoke-legacy" || response.FieldSize != 2 {
+		t.Fatalf("unexpected response metadata: %#v", response)
+	}
+	if len(response.Results) != 2 {
+		t.Fatalf("result count=%d, want 2", len(response.Results))
+	}
+	if response.Results[0].FighterID != "powered-copy" ||
+		response.Results[0].Score <= response.Results[1].Score {
+		t.Fatalf("exact build stats did not affect score: %#v", response.Results)
+	}
+}
+
 func TestPokemonChunkEndpoints_OK(t *testing.T) {
 	r := newTestRouter(t)
 

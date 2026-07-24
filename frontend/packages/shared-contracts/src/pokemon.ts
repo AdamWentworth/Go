@@ -8,6 +8,7 @@ export const pokemonContract = {
     maxData: '/max-data',
     pvpData: '/pvp-data',
     pvpBattle: '/pvp-battle',
+    pvpRosterEvaluation: '/pvp-roster-evaluation',
   },
 } as const;
 
@@ -176,6 +177,36 @@ export interface PokemonPvPBattleResponse {
     PokemonPvPBattleCombatantResult,
   ];
   timeline: PokemonPvPBattleEvent[];
+}
+
+export interface PokemonPvPRosterEvaluationOpponent {
+  fighter: PokemonPvPBattleFighter;
+  weight: number;
+}
+
+export interface PokemonPvPRosterEvaluationRequest {
+  mechanics: 'pvpoke-legacy';
+  candidates: PokemonPvPBattleFighter[];
+  opponents: PokemonPvPRosterEvaluationOpponent[];
+}
+
+export interface PokemonPvPRosterEvaluationResult {
+  fighterId: string;
+  score: number;
+  categoryScores: [
+    number,
+    number,
+    number,
+    number,
+    number,
+    number,
+  ];
+}
+
+export interface PokemonPvPRosterEvaluationResponse {
+  mechanics: 'pvpoke-legacy';
+  fieldSize: number;
+  results: PokemonPvPRosterEvaluationResult[];
 }
 
 export interface PokemonMovesChunkEntry {
