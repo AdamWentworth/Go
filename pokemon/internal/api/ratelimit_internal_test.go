@@ -12,6 +12,7 @@ func TestNewIPRateLimiterDefaults(t *testing.T) {
 	l := NewIPRateLimiter(0, 0, 0)
 	if l == nil {
 		t.Fatalf("expected limiter")
+		return
 	}
 	if l.rps <= 0 {
 		t.Fatalf("expected default rps > 0")
