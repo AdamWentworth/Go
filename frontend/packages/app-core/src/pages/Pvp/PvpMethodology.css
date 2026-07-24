@@ -1,0 +1,410 @@
+.pvp-methodology-page {
+  min-height: 100vh;
+  padding: clamp(1rem, 3vw, 2rem);
+  color: var(--color-text-primary, #f6ffff);
+  text-align: left;
+  background:
+    radial-gradient(circle at 10% 0%, rgba(66, 213, 194, 0.17), transparent 30rem),
+    radial-gradient(circle at 92% 16%, rgba(237, 111, 165, 0.13), transparent 27rem),
+    var(--color-background, #0d1112);
+}
+
+.pvp-methodology-shell {
+  width: min(100%, 960px);
+  margin: 0 auto;
+}
+
+.pvp-methodology-header {
+  padding: clamp(0.75rem, 3vw, 2rem) 0 clamp(1.5rem, 4vw, 2.75rem);
+  border-bottom: 1px solid rgba(115, 204, 204, 0.24);
+}
+
+.pvp-methodology-back,
+.pvp-methodology-return {
+  display: inline-flex;
+  gap: 0.5rem;
+  align-items: center;
+  min-height: 2.5rem;
+  padding: 0.55rem 0.8rem;
+  border: 1px solid rgba(66, 213, 194, 0.36);
+  border-radius: 999px;
+  color: #72e8dc;
+  background: rgba(255, 255, 255, 0.045);
+  font-size: 0.78rem;
+  font-weight: 900;
+  text-decoration: none;
+  text-transform: uppercase;
+  transition: border-color 160ms ease, color 160ms ease, background 160ms ease;
+}
+
+.pvp-methodology-back:hover,
+.pvp-methodology-back:focus-visible,
+.pvp-methodology-return:hover,
+.pvp-methodology-return:focus-visible {
+  border-color: rgba(114, 232, 220, 0.76);
+  color: #efffff;
+  background: rgba(66, 213, 194, 0.14);
+}
+
+.pvp-methodology-eyebrow,
+.pvp-methodology-kicker {
+  margin: 2rem 0 0.35rem;
+  color: #72e8dc;
+  font-size: 0.75rem;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.pvp-methodology-header h1 {
+  max-width: 18ch;
+  margin: 0;
+  font-size: clamp(2rem, 6vw, 4.25rem);
+  line-height: 0.98;
+}
+
+.pvp-methodology-intro {
+  max-width: 66ch;
+  margin: 1rem 0 0;
+  color: rgba(224, 242, 243, 0.82);
+  font-size: clamp(1rem, 2vw, 1.2rem);
+  line-height: 1.55;
+}
+
+.pvp-methodology-nav {
+  position: sticky;
+  z-index: 4;
+  top: 0;
+  display: flex;
+  gap: 0.35rem;
+  overflow-x: auto;
+  padding: 0.65rem 0;
+  border-bottom: 1px solid rgba(115, 204, 204, 0.18);
+  background: color-mix(in srgb, var(--color-background, #0d1112) 88%, transparent);
+  backdrop-filter: blur(14px);
+  scrollbar-width: none;
+}
+
+.pvp-methodology-nav::-webkit-scrollbar {
+  display: none;
+}
+
+.pvp-methodology-nav a {
+  flex: 0 0 auto;
+  padding: 0.4rem 0.65rem;
+  border-radius: 999px;
+  color: rgba(224, 242, 243, 0.76);
+  font-size: 0.72rem;
+  font-weight: 900;
+  text-decoration: none;
+  text-transform: uppercase;
+}
+
+.pvp-methodology-nav a:hover,
+.pvp-methodology-nav a:focus-visible {
+  color: #071313;
+  background: #72e8dc;
+}
+
+.pvp-methodology-section {
+  scroll-margin-top: 4.25rem;
+  padding: clamp(2.5rem, 7vw, 5rem) 0;
+  border-bottom: 1px solid rgba(115, 204, 204, 0.18);
+}
+
+.pvp-methodology-section .pvp-methodology-kicker {
+  margin-top: 0;
+}
+
+.pvp-methodology-section h2 {
+  max-width: 26ch;
+  margin: 0 0 1rem;
+  font-size: clamp(1.5rem, 4vw, 2.5rem);
+  line-height: 1.05;
+}
+
+.pvp-methodology-section > p:not(.pvp-methodology-kicker, .pvp-methodology-validation) {
+  max-width: 72ch;
+  color: rgba(224, 242, 243, 0.78);
+  line-height: 1.65;
+}
+
+.pvp-methodology-tool-list {
+  display: grid;
+  margin-top: 2rem;
+}
+
+.pvp-methodology-tool-list > article {
+  display: grid;
+  grid-template-columns: 2.5rem minmax(0, 1fr);
+  gap: 1rem;
+  padding: 1.35rem 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.pvp-methodology-tool-list > article > svg {
+  margin-top: 0.2rem;
+  color: #ed79aa;
+  font-size: 1.25rem;
+}
+
+.pvp-methodology-tool-list h3 {
+  margin: 0;
+}
+
+.pvp-methodology-tool-list strong {
+  display: block;
+  margin-top: 0.2rem;
+  color: rgba(238, 255, 255, 0.9);
+}
+
+.pvp-methodology-tool-list p {
+  max-width: 70ch;
+  margin: 0.5rem 0 0;
+  color: rgba(199, 224, 225, 0.72);
+  line-height: 1.55;
+}
+
+.pvp-methodology-steps {
+  display: grid;
+  margin: 1.5rem 0 0;
+  padding: 0;
+  list-style: none;
+  counter-reset: pvp-methodology-step;
+}
+
+.pvp-methodology-steps li {
+  display: grid;
+  grid-template-columns: minmax(10rem, 0.45fr) minmax(0, 1fr);
+  gap: 1rem;
+  padding: 1rem 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  counter-increment: pvp-methodology-step;
+}
+
+.pvp-methodology-steps strong::before {
+  margin-right: 0.55rem;
+  color: #54a9ef;
+  content: counter(pvp-methodology-step, decimal-leading-zero);
+}
+
+.pvp-methodology-steps span {
+  color: rgba(199, 224, 225, 0.72);
+  line-height: 1.55;
+}
+
+.pvp-methodology-callout {
+  display: grid;
+  grid-template-columns: 2rem minmax(0, 1fr);
+  gap: 0.7rem;
+  align-items: start;
+  max-width: 74ch;
+  margin: 1.5rem 0;
+  padding: 1rem;
+  border: 1px solid rgba(84, 169, 239, 0.3);
+  border-radius: 8px;
+  background: rgba(84, 169, 239, 0.07);
+}
+
+.pvp-methodology-callout svg {
+  color: #69b9ff;
+  font-size: 1.15rem;
+}
+
+.pvp-methodology-callout p {
+  margin: 0;
+  color: rgba(224, 242, 243, 0.82);
+  line-height: 1.55;
+}
+
+.pvp-methodology-section code {
+  color: #7cecdf;
+  font-weight: 850;
+}
+
+.pvp-methodology-facts {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.5rem;
+  max-width: 42rem;
+  margin-top: 1.5rem;
+}
+
+.pvp-methodology-facts span {
+  display: grid;
+  gap: 0.2rem;
+  min-height: 5.5rem;
+  padding: 0.8rem;
+  border: 1px solid rgba(115, 204, 204, 0.2);
+  border-radius: 8px;
+  color: rgba(199, 224, 225, 0.72);
+  background: rgba(255, 255, 255, 0.035);
+  font-size: 0.74rem;
+}
+
+.pvp-methodology-facts strong {
+  color: #72e8dc;
+  font-size: 1.35rem;
+}
+
+.pvp-methodology-limit-list {
+  display: grid;
+  gap: 0.8rem;
+  max-width: 74ch;
+  margin: 1.5rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.pvp-methodology-limit-list li {
+  position: relative;
+  padding-left: 1.35rem;
+  color: rgba(224, 242, 243, 0.78);
+  line-height: 1.55;
+}
+
+.pvp-methodology-limit-list li::before {
+  position: absolute;
+  top: 0.6em;
+  left: 0;
+  width: 0.45rem;
+  height: 0.45rem;
+  border-radius: 50%;
+  background: #ed79aa;
+  content: '';
+}
+
+.pvp-methodology-validation {
+  max-width: 74ch;
+  margin: 1.75rem 0 0;
+  padding: 1rem;
+  border: 1px solid rgba(66, 213, 194, 0.27);
+  border-radius: 8px;
+  color: rgba(222, 255, 250, 0.86);
+  background: rgba(66, 213, 194, 0.07);
+  line-height: 1.55;
+}
+
+.pvp-methodology-footer {
+  display: flex;
+  gap: 1.5rem;
+  align-items: center;
+  justify-content: space-between;
+  padding: 2rem 0 5rem;
+}
+
+.pvp-methodology-footer p {
+  max-width: 58ch;
+  margin: 0;
+  color: rgba(177, 211, 213, 0.58);
+  font-size: 0.68rem;
+  line-height: 1.45;
+  text-align: right;
+}
+
+:root[data-theme='light'] .pvp-methodology-page {
+  color: #102a32;
+  background:
+    radial-gradient(circle at 10% 0%, rgba(66, 213, 194, 0.18), transparent 30rem),
+    radial-gradient(circle at 92% 16%, rgba(237, 111, 165, 0.14), transparent 27rem),
+    #edf7f6;
+}
+
+:root[data-theme='light'] .pvp-methodology-intro,
+:root[data-theme='light'] .pvp-methodology-section > p:not(.pvp-methodology-kicker, .pvp-methodology-validation),
+:root[data-theme='light'] .pvp-methodology-tool-list p,
+:root[data-theme='light'] .pvp-methodology-steps span,
+:root[data-theme='light'] .pvp-methodology-limit-list li {
+  color: rgba(20, 55, 63, 0.76);
+}
+
+:root[data-theme='light'] .pvp-methodology-tool-list strong {
+  color: #102a32;
+}
+
+:root[data-theme='light'] .pvp-methodology-nav {
+  background: rgba(237, 247, 246, 0.9);
+}
+
+:root[data-theme='light'] .pvp-methodology-nav a {
+  color: rgba(20, 55, 63, 0.72);
+}
+
+:root[data-theme='light'] .pvp-methodology-callout {
+  border-color: rgba(34, 122, 187, 0.24);
+  background: rgba(84, 169, 239, 0.11);
+}
+
+:root[data-theme='light'] .pvp-methodology-callout p {
+  color: rgba(20, 55, 63, 0.82);
+}
+
+:root[data-theme='light'] .pvp-methodology-facts span {
+  border-color: rgba(21, 139, 154, 0.2);
+  color: rgba(20, 55, 63, 0.72);
+  background: rgba(255, 255, 255, 0.66);
+}
+
+:root[data-theme='light'] .pvp-methodology-back,
+:root[data-theme='light'] .pvp-methodology-return {
+  color: #087d91;
+  border-color: rgba(21, 139, 154, 0.22);
+  background: rgba(255, 255, 255, 0.7);
+}
+
+@media (max-width: 760px) {
+  .pvp-methodology-page {
+    padding: 0.65rem;
+  }
+
+  .pvp-methodology-header h1 {
+    max-width: 14ch;
+  }
+
+  .pvp-methodology-nav {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    overflow: visible;
+  }
+
+  .pvp-methodology-nav a {
+    min-width: 0;
+    padding-inline: 0.25rem;
+    text-align: center;
+  }
+
+  .pvp-methodology-section {
+    scroll-margin-top: 6.5rem;
+  }
+
+  .pvp-methodology-steps li {
+    grid-template-columns: 1fr;
+    gap: 0.45rem;
+  }
+
+  .pvp-methodology-footer {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .pvp-methodology-footer p {
+    text-align: left;
+  }
+}
+
+@media (max-width: 430px) {
+  .pvp-methodology-facts {
+    grid-template-columns: 1fr;
+  }
+
+  .pvp-methodology-facts span {
+    min-height: auto;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pvp-methodology-back,
+  .pvp-methodology-return {
+    transition: none;
+  }
+}

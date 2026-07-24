@@ -1,4 +1,5 @@
 import { fireEvent, render, screen, within } from '@testing-library/react';
+import { MemoryRouter } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { useInstancesStore } from '@/features/instances/store/useInstancesStore';
@@ -22,6 +23,8 @@ const hookState = vi.hoisted(() => ({
 vi.mock('@/pages/Pvp/hooks/usePvPRankings', () => ({
   usePvPRankings: () => hookState,
 }));
+
+const renderPvp = () => render(<Pvp />, { wrapper: MemoryRouter });
 
 const makeEntry = (
   rank: number,
@@ -125,9 +128,11 @@ describe('PvP rankings page', () => {
   });
 
   it('starts with Great League and renders its ranked team and build', () => {
-    const { container } = render(<Pvp />);
+    const { container } = renderPvp();
 
     expect(screen.getByRole('heading', { name: 'PvP Rankings' })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Method' }))
+      .toHaveAttribute('href', '/pvp/methodology');
     expect(screen.getByText('Clodsire')).toBeInTheDocument();
     expect(screen.getByText('Azumarill')).toBeInTheDocument();
     expect(screen.getAllByText('0/15/15 IV')).toHaveLength(2);
@@ -136,7 +141,7 @@ describe('PvP rankings page', () => {
   });
 
   it('switches leagues without mixing entries from another league', () => {
-    fireEvent.click(render(<Pvp />).getByRole('button', { name: /Ultra/ }));
+    fireEvent.click(renderPvp().getByRole('button', { name: /Ultra/ }));
 
     expect(screen.getByText('Feraligatr')).toBeInTheDocument();
     expect(screen.queryByText('Clodsire')).not.toBeInTheDocument();
@@ -144,7 +149,7 @@ describe('PvP rankings page', () => {
   });
 
   it('switches the entire workspace to a source-ranked current cup', () => {
-    render(<Pvp />);
+    renderPvp();
 
     fireEvent.change(screen.getByRole('combobox', { name: 'Current PvP cup' }), {
       target: { value: 'retro-1500' },
@@ -164,7 +169,7 @@ describe('PvP rankings page', () => {
   });
 
   it('re-ranks the current league by the selected battle role', () => {
-    const { container } = render(<Pvp />);
+    const { container } = renderPvp();
 
     fireEvent.click(screen.getByRole('button', { name: 'Lead' }));
 
@@ -177,7 +182,7 @@ describe('PvP rankings page', () => {
   });
 
   it('searches by Pokemon, move, and type', () => {
-    render(<Pvp />);
+    renderPvp();
     const search = screen.getByRole('searchbox', { name: 'Search PvP rankings' });
 
     fireEvent.change(search, { target: { value: 'water' } });
@@ -191,7 +196,7 @@ describe('PvP rankings page', () => {
   });
 
   it('expands ranking evidence and closes it from the same row', () => {
-    render(<Pvp />);
+    renderPvp();
 
     const details = screen.getByRole('button', {
       name: 'Show details for Clodsire',
@@ -210,7 +215,7 @@ describe('PvP rankings page', () => {
   });
 
   it('builds and preserves a three-Pokemon team with threat evidence', () => {
-    const { unmount } = render(<Pvp />);
+    const { unmount } = renderPvp();
     fireEvent.click(screen.getByRole('button', { name: 'Team Builder' }));
 
     expect(screen.getByRole('heading', { name: 'Team Builder' })).toBeInTheDocument();
@@ -225,13 +230,13 @@ describe('PvP rankings page', () => {
       .toBeInTheDocument();
 
     unmount();
-    render(<Pvp />);
+    renderPvp();
     fireEvent.click(screen.getByRole('button', { name: 'Team Builder' }));
     expect(screen.getByText('2 / 3')).toBeInTheDocument();
   });
 
   it('opens the Battle Lab workspace for the current league', () => {
-    render(<Pvp />);
+    renderPvp();
 
     fireEvent.click(screen.getByRole('button', { name: 'Battle Lab' }));
 
@@ -337,7 +342,7 @@ describe('PvP rankings page', () => {
       },
     });
 
-    render(<Pvp />);
+    renderPvp();
     fireEvent.click(screen.getByRole('button', { name: 'My Pokémon' }));
 
     expect(screen.getByText('Blue')).toBeInTheDocument();
@@ -350,7 +355,7 @@ describe('PvP rankings page', () => {
   it('shows loading and source failure states without rendering stale rankings', () => {
     hookState.data = null;
     hookState.loading = true;
-    const { rerender } = render(<Pvp />);
+    const { rerender } = renderPvp();
     expect(screen.getByRole('status')).toHaveTextContent('Loading current rankings');
 
     hookState.loading = false;

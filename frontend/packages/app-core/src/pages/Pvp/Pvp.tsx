@@ -9,6 +9,7 @@ import {
   FaFistRaised,
   FaFlag,
   FaFlask,
+  FaInfoCircle,
   FaListOl,
   FaSearch,
   FaTrophy,
@@ -16,6 +17,7 @@ import {
   FaUsers,
 } from 'react-icons/fa';
 import type { IconType } from 'react-icons';
+import { Link } from 'react-router-dom';
 
 import { useInstancesStore } from '@/features/instances/store/useInstancesStore';
 import { useVariantsStore } from '@/features/variants/store/useVariantsStore';
@@ -487,11 +489,17 @@ const Pvp = () => {
                   : 'PvP Battle Lab'}
             </h1>
           </div>
-          <strong>
-            {rosterScope === 'owned'
-              ? `${ownedRoster.eligibleCount} ready`
-              : `${entries.length || '---'} ranked`}
-          </strong>
+          <div className="pvp-header-actions">
+            <Link to="/pvp/methodology">
+              <FaInfoCircle aria-hidden="true" />
+              <span>Method</span>
+            </Link>
+            <strong>
+              {rosterScope === 'owned'
+                ? `${ownedRoster.eligibleCount} ready`
+                : `${entries.length || '---'} ranked`}
+            </strong>
+          </div>
         </header>
 
         <nav className="pvp-workspace-tabs" aria-label="PvP workspace">
