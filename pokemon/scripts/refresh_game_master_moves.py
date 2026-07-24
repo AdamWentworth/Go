@@ -48,6 +48,11 @@ class GameMasterMove:
     pvp_power: int | None
     pvp_energy: int | None
     pvp_turns: int | None
+    pvp_attacker_attack_stage_change: int
+    pvp_attacker_defense_stage_change: int
+    pvp_target_attack_stage_change: int
+    pvp_target_defense_stage_change: int
+    pvp_buff_activation_chance: float
     is_fast: int
 
 
@@ -180,6 +185,7 @@ def build_game_master_moves(game_master: list[dict[str, Any]]) -> dict[str, Game
         key = move_key_from_token(token)
         typed_key = f"{key}:{type_name}"
         combat = combat_moves.get(typed_key)
+        buffs = (combat.get("buffs") or {}) if combat else {}
         pvp_turns = None
         if combat:
             # Niantic stores zero-based durationTurns for fast moves. Missing
@@ -202,6 +208,21 @@ def build_game_master_moves(game_master: list[dict[str, Any]]) -> dict[str, Game
             pvp_power=round(float(combat.get("power") or 0)) if combat else None,
             pvp_energy=round(float(combat.get("energyDelta") or 0)) if combat else None,
             pvp_turns=pvp_turns,
+            pvp_attacker_attack_stage_change=int(
+                buffs.get("attackerAttackStatStageChange") or 0
+            ),
+            pvp_attacker_defense_stage_change=int(
+                buffs.get("attackerDefenseStatStageChange") or 0
+            ),
+            pvp_target_attack_stage_change=int(
+                buffs.get("targetAttackStatStageChange") or 0
+            ),
+            pvp_target_defense_stage_change=int(
+                buffs.get("targetDefenseStatStageChange") or 0
+            ),
+            pvp_buff_activation_chance=float(
+                buffs.get("buffActivationChance") or 0
+            ),
             is_fast=is_fast,
         )
     return moves
@@ -329,6 +350,17 @@ def ensure_moves(
             local_pvp_turns = (
                 None if local["pvp_turns"] is None else int(local["pvp_turns"])
             )
+            local_attacker_attack = int(
+                local["pvp_attacker_attack_stage_change"] or 0
+            )
+            local_attacker_defense = int(
+                local["pvp_attacker_defense_stage_change"] or 0
+            )
+            local_target_attack = int(local["pvp_target_attack_stage_change"] or 0)
+            local_target_defense = int(
+                local["pvp_target_defense_stage_change"] or 0
+            )
+            local_buff_chance = float(local["pvp_buff_activation_chance"] or 0)
             changed = (
                 int(local["type_id"]) != type_id
                 or int(local["is_fast"] or 0) != gm_move.is_fast
@@ -347,6 +379,17 @@ def ensure_moves(
                     gm_move.pvp_turns is not None
                     and local_pvp_turns != gm_move.pvp_turns
                 )
+                or local_attacker_attack
+                != gm_move.pvp_attacker_attack_stage_change
+                or local_attacker_defense
+                != gm_move.pvp_attacker_defense_stage_change
+                or local_target_attack != gm_move.pvp_target_attack_stage_change
+                or local_target_defense
+                != gm_move.pvp_target_defense_stage_change
+                or abs(
+                    local_buff_chance - gm_move.pvp_buff_activation_chance
+                )
+                > 1e-9
             )
             if changed:
                 updates += 1
@@ -361,7 +404,12 @@ def ensure_moves(
                             raid_cooldown = ?,
                             pvp_power = COALESCE(?, pvp_power),
                             pvp_energy = COALESCE(?, pvp_energy),
-                            pvp_turns = COALESCE(?, pvp_turns)
+                            pvp_turns = COALESCE(?, pvp_turns),
+                            pvp_attacker_attack_stage_change = ?,
+                            pvp_attacker_defense_stage_change = ?,
+                            pvp_target_attack_stage_change = ?,
+                            pvp_target_defense_stage_change = ?,
+                            pvp_buff_activation_chance = ?
                         WHERE move_id = ?
                         """,
                         (
@@ -373,6 +421,11 @@ def ensure_moves(
                             gm_move.pvp_power,
                             gm_move.pvp_energy,
                             gm_move.pvp_turns,
+                            gm_move.pvp_attacker_attack_stage_change,
+                            gm_move.pvp_attacker_defense_stage_change,
+                            gm_move.pvp_target_attack_stage_change,
+                            gm_move.pvp_target_defense_stage_change,
+                            gm_move.pvp_buff_activation_chance,
                             local["move_id"],
                         ),
                     )
@@ -384,9 +437,17 @@ def ensure_moves(
                     INSERT INTO moves (
                         move_id, name, type_id, raid_power, pvp_power, raid_energy,
                         pvp_energy, raid_cooldown, pvp_turns, is_fast, fusion_id,
-                        shadow, purified, apex
+                        shadow, purified, apex,
+                        pvp_attacker_attack_stage_change,
+                        pvp_attacker_defense_stage_change,
+                        pvp_target_attack_stage_change,
+                        pvp_target_defense_stage_change,
+                        pvp_buff_activation_chance
                     )
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NULL, NULL, NULL, NULL)
+                    VALUES (
+                        ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NULL, NULL, NULL, NULL,
+                        ?, ?, ?, ?, ?
+                    )
                     """,
                     (
                         next_move_id,
@@ -399,6 +460,11 @@ def ensure_moves(
                         gm_move.raid_cooldown,
                         gm_move.pvp_turns,
                         bool(gm_move.is_fast),
+                        gm_move.pvp_attacker_attack_stage_change,
+                        gm_move.pvp_attacker_defense_stage_change,
+                        gm_move.pvp_target_attack_stage_change,
+                        gm_move.pvp_target_defense_stage_change,
+                        gm_move.pvp_buff_activation_chance,
                     ),
                 )
                 by_typed_key[gm_move.typed_key] = conn.execute(

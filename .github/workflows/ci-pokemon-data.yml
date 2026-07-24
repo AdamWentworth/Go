@@ -50,6 +50,9 @@ jobs:
       - name: Test
         run: go test ./...
 
+      - name: Catalog maintenance script tests
+        run: python3 -m unittest discover -s scripts -p "test_*.py"
+
       - name: PostgreSQL Catalog Contract
         run: bash scripts/test-postgres-catalog.sh coverage_builder_int.out
 
