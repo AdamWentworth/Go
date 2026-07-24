@@ -161,6 +161,7 @@ export const buildOwnedPvPIvRoster = (
       projection.variant,
       projection.formSource,
       instance,
+      projection.formPokemonId,
     );
 
     roster.entries.push({

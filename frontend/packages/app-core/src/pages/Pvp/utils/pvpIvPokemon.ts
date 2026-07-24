@@ -70,7 +70,12 @@ export const buildPvPIvPokemonOptions = (
     variant.crownForms?.forEach((crown) => {
       if (!validStats(crown.attack, crown.defense, crown.stamina)) return;
       const crownLabel = getCrownFormLabel(crown);
-      const crownName = String(crown.name || crownLabel || name).trim();
+      const crownSpecies = String(crown.name || name).trim();
+      const crownName =
+        crownLabel &&
+        !crownSpecies.toLowerCase().includes(crownLabel.toLowerCase())
+          ? `${crownLabel} ${crownSpecies}`
+          : crownSpecies || crownLabel || name;
       const crownKey = [
         variant.pokemon_id,
         'crown',
@@ -102,4 +107,3 @@ export const buildPvPIvPokemonOptions = (
     left.name.localeCompare(right.name)
   ));
 };
-

@@ -15,6 +15,7 @@ export type RaidRosterFormProjection = {
   variant: PokemonVariant;
   formSource: RaidRosterFormSource;
   useRecordedCp: boolean;
+  formPokemonId?: number;
 };
 
 const isShiny = (variant: PokemonVariant, instance: PokemonInstance): boolean =>
@@ -138,6 +139,7 @@ const resolveCrownProjection = (
     },
     formSource: "crown",
     useRecordedCp: true,
+    formPokemonId: selected.crown_pokemon_id,
   };
 };
 

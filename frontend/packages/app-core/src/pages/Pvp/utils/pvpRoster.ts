@@ -163,6 +163,7 @@ export const matchPvPRanking = (
   variant: PokemonVariant,
   formSource: 'base' | 'fusion' | 'crown',
   instance: PokemonInstance,
+  formPokemonId?: number,
 ): PokemonPvPRankingEntry | undefined => {
   if (formSource === 'fusion' && variant.fusion_id != null) {
     return lookup.byFusionId.get(variant.fusion_id);
@@ -173,9 +174,10 @@ export const matchPvPRanking = (
     : instance.shadow
       ? 'shadow'
       : 'pokemon';
+  const rankingPokemonId = formPokemonId ?? variant.pokemon_id;
   const candidates =
     lookup.byPokemonKind.get(
-      pokemonKindKey(variant.pokemon_id, expectedKind),
+      pokemonKindKey(rankingPokemonId, expectedKind),
     ) ?? [];
   return candidates.find((entry) => exactNameMatch(entry, variant)) ?? candidates[0];
 };
@@ -299,6 +301,7 @@ export const buildOwnedPvPRoster = (
       projection.variant,
       projection.formSource,
       instance,
+      projection.formPokemonId,
     );
     if (!ranking) {
       result.unmatchedCount += 1;

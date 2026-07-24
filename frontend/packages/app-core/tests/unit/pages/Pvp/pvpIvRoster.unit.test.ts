@@ -134,6 +134,106 @@ describe('PvP IV Rank caught roster', () => {
     });
   });
 
+  it.each([
+    {
+      species: 'Zacian',
+      pokedexNumber: 888,
+      heroPokemonId: 2_290,
+      crownPokemonId: 888,
+      crownLabel: 'Crowned Sword',
+    },
+    {
+      species: 'Zamazenta',
+      pokedexNumber: 889,
+      heroPokemonId: 2_292,
+      crownPokemonId: 889,
+      crownLabel: 'Crowned Shield',
+    },
+  ])(
+    'matches owned $crownLabel $species to its crown IV option and meta entry',
+    ({
+      species,
+      pokedexNumber,
+      heroPokemonId,
+      crownPokemonId,
+      crownLabel,
+    }) => {
+      const crownForm = {
+        id: crownPokemonId,
+        base_pokemon_id: heroPokemonId,
+        crown_pokemon_id: crownPokemonId,
+        display_form: crownLabel,
+        name: species,
+        image_url: `/images/${species.toLowerCase()}-crown.png`,
+        attack: 250,
+        defense: 240,
+        stamina: 220,
+        type_1_id: 9,
+        type1_name: 'Steel',
+        moves: [],
+      };
+      const hero = {
+        ...bulbasaur,
+        variant_id: `${pokedexNumber}-hero`,
+        pokemon_id: heroPokemonId,
+        pokedex_number: pokedexNumber,
+        name: species,
+        species_name: species,
+        currentImage: `/images/${species.toLowerCase()}-hero.png`,
+        crownForms: [crownForm],
+      } as unknown as PokemonVariant;
+      const crownVariant = {
+        ...hero,
+        variant_id: `${pokedexNumber}-crown`,
+        pokemon_id: crownPokemonId,
+        name: `${crownLabel} ${species}`,
+        species_name: `${crownLabel} ${species}`,
+        attack: crownForm.attack,
+        defense: crownForm.defense,
+        stamina: crownForm.stamina,
+        currentImage: crownForm.image_url,
+        crownForms: [],
+      } as unknown as PokemonVariant;
+      const crownRanking = {
+        ...ranking(2, crownPokemonId, `${species} (${crownLabel})`, 96),
+        speciesId: `${species.toLowerCase()}_${crownLabel.toLowerCase().replace(' ', '_')}`,
+        variantKind: 'crown',
+      } as PokemonPvPRankingEntry;
+      const variants = [hero, crownVariant];
+      const options = buildPvPIvPokemonOptions(variants);
+      const roster = buildOwnedPvPIvRoster(
+        options,
+        variants,
+        {
+          crown: caught('crown', {
+            variant_id: hero.variant_id,
+            pokemon_id: heroPokemonId,
+            crown: true,
+            crown_form: crownLabel,
+          }),
+        },
+        [crownRanking],
+      );
+
+      expect(roster).toMatchObject({
+        caughtCount: 1,
+        completeCount: 1,
+        unmatchedCount: 0,
+      });
+      expect(roster.entries[0]).toMatchObject({
+        pokemon: {
+          name: `${crownLabel} ${species}`,
+          attack: 250,
+          defense: 240,
+          stamina: 220,
+        },
+        imageUrl: crownForm.image_url,
+        metaRank: 2,
+        metaScore: 96,
+      });
+    },
+  );
+
   it('hides copies above the cap and recommends by league relevance plus IV rank', () => {
     const sprigatito = {
       ...bulbasaur,
