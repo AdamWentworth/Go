@@ -235,15 +235,46 @@ def structured_moveset(
     result: list[dict[str, Any]] = []
     for index, move_id in enumerate(ranking.get("moveset") or []):
         move = moves_by_id.get(str(move_id), {})
-        result.append(
-            {
-                "id": str(move_id),
-                "name": str(move.get("name") or str(move_id).replace("_", " ").title()),
-                "type": str(move.get("type") or "normal"),
-                "kind": "fast" if index == 0 else "charged",
-            }
-        )
+        kind = "fast" if index == 0 else "charged"
+        result.append(structured_move(move_id, move, kind))
     return result
+
+
+def structured_move(
+    move_id: Any,
+    move: dict[str, Any],
+    kind: str,
+) -> dict[str, Any]:
+    buffs = move.get("buffs") or [0, 0]
+    attacker_attack = 0
+    attacker_defense = 0
+    target_attack = 0
+    target_defense = 0
+    if move.get("buffTarget") == "self":
+        attacker_attack = int(buffs[0] or 0)
+        attacker_defense = int(buffs[1] or 0)
+    elif move.get("buffTarget") == "opponent":
+        target_attack = int(buffs[0] or 0)
+        target_defense = int(buffs[1] or 0)
+
+    energy = int(move.get("energy") or 0)
+    return {
+        "id": str(move_id),
+        "name": str(move.get("name") or str(move_id).replace("_", " ").title()),
+        "type": str(move.get("type") or "normal"),
+        "kind": kind,
+        "power": int(move.get("power") or 0),
+        "energyGain": int(move.get("energyGain") or 0) if kind == "fast" else 0,
+        "energyCost": energy if kind == "charged" else 0,
+        "turns": max(1, int(move.get("turns") or 1)),
+        "buff": {
+            "attackerAttack": attacker_attack,
+            "attackerDefense": attacker_defense,
+            "targetAttack": target_attack,
+            "targetDefense": target_defense,
+            "chance": float(move.get("buffApplyChance") or 0),
+        },
+    }
 
 
 def structured_matchups(ranking: dict[str, Any], key: str) -> list[dict[str, Any]]:
@@ -274,15 +305,10 @@ def structured_move_usage(
             if not move_id:
                 continue
             move = moves_by_id.get(move_id, {})
-            result.append(
-                {
-                    "id": move_id,
-                    "name": str(move.get("name") or move_id.replace("_", " ").title()),
-                    "type": str(move.get("type") or "normal"),
-                    "kind": kind,
-                    "uses": int(item.get("uses") or 0),
-                }
-            )
+            result.append({
+                **structured_move(move_id, move, kind),
+                "uses": int(item.get("uses") or 0),
+            })
     return result
 
 

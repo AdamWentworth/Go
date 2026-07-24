@@ -8,6 +8,7 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 	"time"
 
@@ -277,6 +278,91 @@ func TestPokemonPvPDataEndpoint_OK(t *testing.T) {
 	}
 	if payload.Source.Name != "PvPoke" || len(payload.Leagues["great"].Entries) != 1 {
 		t.Fatalf("unexpected PvP payload: %#v", payload)
+	}
+}
+
+func TestPokemonPvPBattleEndpoint_SimulatesPinnedMechanics(t *testing.T) {
+	r := newTestRouter(t)
+	move := func(id string, kind string) map[string]any {
+		result := map[string]any{
+			"id": id, "name": id, "type": "normal", "kind": kind,
+			"power": 5, "energyGain": 0, "energyCost": 0, "turns": 1,
+			"buff": map[string]any{
+				"attackerAttack": 0, "attackerDefense": 0,
+				"targetAttack": 0, "targetDefense": 0, "chance": 0,
+			},
+		}
+		if kind == "fast" {
+			result["energyGain"] = 10
+		} else {
+			result["power"] = 50
+			result["energyCost"] = 35
+		}
+		return result
+	}
+	fighter := func(id string) map[string]any {
+		return map[string]any{
+			"id": id, "name": id, "types": []string{"normal"},
+			"attack": 100, "defense": 100, "hp": 120, "shadow": false,
+			"fastMove":     move("TACKLE", "fast"),
+			"chargedMoves": []any{move("BODY_SLAM", "charged")},
+		}
+	}
+	body, err := json.Marshal(map[string]any{
+		"mechanics":      "pvpoke-legacy",
+		"fighters":       []any{fighter("one"), fighter("two")},
+		"shields":        []int{1, 1},
+		"startingEnergy": []int{0, 0},
+		"recordTimeline": true,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	req := httptest.NewRequest(http.MethodPost, "/pokemon/pvp-battle", bytes.NewReader(body))
+	req.Header.Set("Content-Type", "application/json")
+	rr := httptest.NewRecorder()
+	r.ServeHTTP(rr, req)
+
+	if rr.Code != http.StatusOK {
+		t.Fatalf("status=%d body=%s", rr.Code, rr.Body.String())
+	}
+	var response struct {
+		Mechanics string           `json:"mechanics"`
+		Winner    int              `json:"winner"`
+		Ratings   [2]int           `json:"ratings"`
+		Timeline  []map[string]any `json:"timeline"`
+	}
+	if err := json.Unmarshal(rr.Body.Bytes(), &response); err != nil {
+		t.Fatalf("decode response: %v", err)
+	}
+	if response.Mechanics != "pvpoke-legacy" {
+		t.Fatalf("mechanics=%q", response.Mechanics)
+	}
+	if response.Winner != 0 {
+		t.Fatalf("expected deterministic first-fighter tie break, got winner=%d", response.Winner)
+	}
+	if response.Ratings[0] <= response.Ratings[1] || response.Ratings[0]+response.Ratings[1] != 999 {
+		t.Fatalf("unexpected PvPoke ratings: %v", response.Ratings)
+	}
+	if len(response.Timeline) == 0 {
+		t.Fatal("expected recorded battle timeline")
+	}
+}
+
+func TestPokemonPvPBattleEndpoint_RejectsUnsupportedMechanics(t *testing.T) {
+	r := newTestRouter(t)
+	body := bytes.NewBufferString(`{"mechanics":"current-2026"}`)
+	req := httptest.NewRequest(http.MethodPost, "/pokemon/pvp-battle", body)
+	req.Header.Set("Content-Type", "application/json")
+	rr := httptest.NewRecorder()
+	r.ServeHTTP(rr, req)
+
+	if rr.Code != http.StatusUnprocessableEntity {
+		t.Fatalf("status=%d body=%s", rr.Code, rr.Body.String())
+	}
+	if !strings.Contains(rr.Body.String(), "pvpoke-legacy") {
+		t.Fatalf("unexpected error body: %s", rr.Body.String())
 	}
 }
 

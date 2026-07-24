@@ -42,6 +42,19 @@ export interface PokemonPvPRankingMove {
   name: string;
   type: string;
   kind: 'fast' | 'charged';
+  power?: number;
+  energyGain?: number;
+  energyCost?: number;
+  turns?: number;
+  buff?: PokemonPvPMoveBuff;
+}
+
+export interface PokemonPvPMoveBuff {
+  attackerAttack: number;
+  attackerDefense: number;
+  targetAttack: number;
+  targetDefense: number;
+  chance: number;
 }
 
 export interface PokemonPvPRankingMatchup {
@@ -97,6 +110,60 @@ export interface PokemonPvPRankingsPayload {
     metadata: Record<string, unknown>;
   } | null;
   leagues: Record<PokemonPvPLeagueKey, PokemonPvPLeague>;
+}
+
+export interface PokemonPvPBattleFighter {
+  id: string;
+  name: string;
+  types: string[];
+  attack: number;
+  defense: number;
+  hp: number;
+  shadow: boolean;
+  fastMove: PokemonPvPRankingMove;
+  chargedMoves: PokemonPvPRankingMove[];
+}
+
+export interface PokemonPvPBattleRequest {
+  mechanics: 'pvpoke-legacy';
+  fighters: [PokemonPvPBattleFighter, PokemonPvPBattleFighter];
+  shields: [number, number];
+  startingEnergy: [number, number];
+  recordTimeline?: boolean;
+}
+
+export interface PokemonPvPBattleCombatantResult {
+  hp: number;
+  maxHp: number;
+  energy: number;
+  shields: number;
+  startShields: number;
+  attackStage: number;
+  defenseStage: number;
+}
+
+export interface PokemonPvPBattleEvent {
+  turn: number;
+  actor: number;
+  kind: 'fast' | 'charged' | 'wait';
+  moveId: string;
+  damage: number;
+  shielded: boolean;
+  buffed: boolean;
+}
+
+export interface PokemonPvPBattleResponse {
+  mechanics: 'pvpoke-legacy';
+  winner: number;
+  turns: number;
+  timeMs: number;
+  ratings: [number, number];
+  adjustedRatings: [number, number];
+  fighters: [
+    PokemonPvPBattleCombatantResult,
+    PokemonPvPBattleCombatantResult,
+  ];
+  timeline: PokemonPvPBattleEvent[];
 }
 
 export interface PokemonMovesChunkEntry {
@@ -295,6 +362,11 @@ export interface Move {
   pvp_energy: number;
   raid_cooldown: number;
   pvp_turns: number;
+  pvp_attacker_attack_stage_change?: number;
+  pvp_attacker_defense_stage_change?: number;
+  pvp_target_attack_stage_change?: number;
+  pvp_target_defense_stage_change?: number;
+  pvp_buff_activation_chance?: number;
   is_fast: number;
   type_name: string;
   legacy: boolean;

@@ -8,6 +8,7 @@ from import_pvpoke_rankings import (
     LocalPokemon,
     build_rows,
     structured_matchups,
+    structured_move,
     structured_move_usage,
 )
 
@@ -35,29 +36,56 @@ class ImportPvPokeRankingsTest(unittest.TestCase):
             }
         }
         moves = {
-            "COUNTER": {"name": "Counter", "type": "fighting"},
-            "CLOSE_COMBAT": {"name": "Close Combat", "type": "fighting"},
+            "COUNTER": {
+                "name": "Counter",
+                "type": "fighting",
+                "power": 8,
+                "energyGain": 6,
+                "turns": 2,
+            },
+            "CLOSE_COMBAT": {
+                "name": "Close Combat",
+                "type": "fighting",
+                "power": 100,
+                "energy": 45,
+                "buffs": [-1, -1],
+                "buffTarget": "self",
+                "buffApplyChance": "1",
+            },
         }
 
-        self.assertEqual(
-            structured_move_usage(ranking, moves),
-            [
-                {
-                    "id": "COUNTER",
-                    "name": "Counter",
-                    "type": "fighting",
-                    "kind": "fast",
-                    "uses": 120,
-                },
-                {
-                    "id": "CLOSE_COMBAT",
-                    "name": "Close Combat",
-                    "type": "fighting",
-                    "kind": "charged",
-                    "uses": 84,
-                },
-            ],
+        usage = structured_move_usage(ranking, moves)
+        self.assertEqual(usage[0]["uses"], 120)
+        self.assertEqual(usage[0]["power"], 8)
+        self.assertEqual(usage[0]["energyGain"], 6)
+        self.assertEqual(usage[0]["turns"], 2)
+        self.assertEqual(usage[1]["uses"], 84)
+        self.assertEqual(usage[1]["power"], 100)
+        self.assertEqual(usage[1]["energyCost"], 45)
+        self.assertEqual(usage[1]["buff"]["attackerAttack"], -1)
+        self.assertEqual(usage[1]["buff"]["attackerDefense"], -1)
+        self.assertEqual(usage[1]["buff"]["chance"], 1.0)
+
+    def test_structures_complete_simulation_move_contract(self) -> None:
+        move = structured_move(
+            "ACID_SPRAY",
+            {
+                "name": "Acid Spray",
+                "type": "poison",
+                "power": 20,
+                "energy": 45,
+                "turns": 1,
+                "buffs": [0, -2],
+                "buffTarget": "opponent",
+                "buffApplyChance": "1",
+            },
+            "charged",
         )
+
+        self.assertEqual(move["energyGain"], 0)
+        self.assertEqual(move["energyCost"], 45)
+        self.assertEqual(move["buff"]["targetDefense"], -2)
+        self.assertEqual(move["buff"]["chance"], 1.0)
 
     def test_build_rows_keeps_ranking_evidence_with_catalog_match(self) -> None:
         ranking = {
