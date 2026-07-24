@@ -2,6 +2,7 @@ import { resolveRaidRosterFormProjections } from '@/pages/Raid/utils/raidRosterF
 import type { InstancesMap, PokemonInstance } from '@/types/pokemonInstance';
 import type { Move } from '@/types/pokemonSubTypes';
 import type { PokemonVariant } from '@/types/pokemonVariants';
+import { cpMultipliers } from '@/utils/constants';
 import type {
   PokemonPvPRankingEntry,
   PokemonPvPRankingMove,
@@ -54,6 +55,23 @@ const toRankingMove = (
   name: move.name,
   type: move.type_name || move.type || 'normal',
   kind,
+  power: Math.max(0, Number(move.pvp_power) || 0),
+  energyGain: kind === 'fast'
+    ? Math.max(0, Number(move.pvp_energy) || 0)
+    : 0,
+  energyCost: kind === 'charged'
+    ? Math.abs(Number(move.pvp_energy) || 0)
+    : 0,
+  turns: kind === 'fast'
+    ? Math.max(1, Number(move.pvp_turns) || 1)
+    : 1,
+  buff: {
+    attackerAttack: Number(move.pvp_attacker_attack_stage_change) || 0,
+    attackerDefense: Number(move.pvp_attacker_defense_stage_change) || 0,
+    targetAttack: Number(move.pvp_target_attack_stage_change) || 0,
+    targetDefense: Number(move.pvp_target_defense_stage_change) || 0,
+    chance: Number(move.pvp_buff_activation_chance) || 0,
+  },
 });
 
 const recordedMoveset = (
@@ -115,6 +133,42 @@ const matchRanking = (
 const instanceId = (key: string, instance: PokemonInstance): string =>
   String(instance.instance_id || key);
 
+const battleStats = (
+  variant: PokemonVariant,
+  instance: PokemonInstance,
+): Pick<
+  PokemonPvPRankingEntry,
+  'battleAttack' | 'battleDefense' | 'battleHp' | 'statProduct'
+> | null => {
+  const multiplier = (cpMultipliers as Record<string, number>)[
+    String(Number(instance.level))
+  ];
+  const attack = (Number(variant.attack) + Number(instance.attack_iv)) * multiplier;
+  const defense =
+    (Number(variant.defense) + Number(instance.defense_iv)) * multiplier;
+  const hp = Math.max(
+    10,
+    Math.floor(
+      (Number(variant.stamina) + Number(instance.stamina_iv)) * multiplier,
+    ),
+  );
+  if (
+    !Number.isFinite(multiplier) ||
+    !Number.isFinite(attack) ||
+    !Number.isFinite(defense) ||
+    !Number.isFinite(hp)
+  ) {
+    return null;
+  }
+
+  return {
+    battleAttack: attack,
+    battleDefense: defense,
+    battleHp: hp,
+    statProduct: attack * defense * hp,
+  };
+};
+
 export const buildOwnedPvPRoster = (
   rankings: PokemonPvPRankingEntry[],
   variants: PokemonVariant[],
@@ -171,6 +225,11 @@ export const buildOwnedPvPRoster = (
       continue;
     }
 
+    const stats = battleStats(projection.variant, instance);
+    if (!stats) {
+      result.incompleteCount += 1;
+      continue;
+    }
     const moveset = recordedMoveset(projection.variant, instance);
     if (!moveset) {
       result.incompleteCount += 1;
@@ -196,6 +255,7 @@ export const buildOwnedPvPRoster = (
         attackIv: Number(instance.attack_iv),
         defenseIv: Number(instance.defense_iv),
         staminaIv: Number(instance.stamina_iv),
+        ...stats,
       },
       instanceId: instanceId(key, instance),
       nickname: instance.nickname,

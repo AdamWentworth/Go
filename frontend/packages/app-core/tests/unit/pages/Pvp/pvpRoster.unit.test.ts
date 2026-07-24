@@ -59,6 +59,9 @@ const variant = {
   pokedex_number: 1,
   name: 'Bulbasaur',
   species_name: 'Bulbasaur',
+  attack: 118,
+  defense: 111,
+  stamina: 128,
   variantType: 'default',
   currentImage: '/images/bulbasaur.png',
   moves,
@@ -131,13 +134,29 @@ describe('buildOwnedPvPRoster', () => {
         defenseIv: 14,
         staminaIv: 15,
         imageUrl: '/images/bulbasaur.png',
+        battleHp: 106,
       },
     });
+    expect(roster.entries[0].entry.battleAttack).toBeCloseTo(91.1073, 4);
+    expect(roster.entries[0].entry.battleDefense).toBeCloseTo(93.3477, 4);
+    expect(roster.entries[0].entry.statProduct).toBeCloseTo(901_493.2, 0);
     expect(roster.entries[0].entry.moveset.map((move) => move.name)).toEqual([
       'Vine Whip',
       'Power Whip',
       'Sludge Bomb',
     ]);
+    expect(roster.entries[0].entry.moveset[0]).toMatchObject({
+      power: 5,
+      energyGain: 8,
+      energyCost: 0,
+      turns: 2,
+    });
+    expect(roster.entries[0].entry.moveset[1]).toMatchObject({
+      power: 90,
+      energyGain: 0,
+      energyCost: 50,
+      turns: 1,
+    });
   });
 
   it('separates over-cap, incomplete, and unmatched caught copies', () => {
@@ -158,6 +177,21 @@ describe('buildOwnedPvPRoster', () => {
       overCapCount: 1,
       incompleteCount: 1,
       unmatchedCount: 1,
+    });
+  });
+
+  it('does not substitute a recommendation build for an unsupported level', () => {
+    const roster = buildOwnedPvPRoster(
+      [ranking],
+      [variant],
+      { unsupported: instance({ level: 99 }) },
+      1_500,
+    );
+
+    expect(roster).toMatchObject({
+      caughtCount: 1,
+      eligibleCount: 0,
+      incompleteCount: 1,
     });
   });
 });
