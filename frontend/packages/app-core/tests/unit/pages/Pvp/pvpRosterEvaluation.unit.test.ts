@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import {
+  PVP_LOCAL_EVALUATION_MODEL_VERSION,
   applyPvPRosterEvaluation,
   buildPvPRosterEvaluationPlan,
 } from '@/pages/Pvp/utils/pvpRosterEvaluation';
@@ -108,6 +109,9 @@ describe('PvP roster evaluation planning', () => {
     ]);
     expect(plan!.request.opponents).toHaveLength(12);
     expect(plan!.request.opponents[0].fighter.id).toBe('meta:meta-18');
+    expect(plan!.cacheKey).toMatch(
+      new RegExp(`^v${PVP_LOCAL_EVALUATION_MODEL_VERSION}:great:`),
+    );
   });
 
   it('applies evaluated scores to the matching copy without mutating others', () => {

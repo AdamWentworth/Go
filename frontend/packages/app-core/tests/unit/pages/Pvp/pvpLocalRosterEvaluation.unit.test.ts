@@ -45,6 +45,58 @@ const chargedMove: PokemonPvPRankingMove = {
   buff,
 };
 
+const riskyCoverageMove: PokemonPvPRankingMove = {
+  id: 'RISKY_COVERAGE',
+  name: 'Risky Coverage',
+  type: 'ice',
+  kind: 'charged',
+  power: 65,
+  energyGain: 0,
+  energyCost: 35,
+  turns: 1,
+  buff: {
+    ...buff,
+    attackerAttack: -2,
+    chance: 1,
+  },
+};
+
+const mudShot: PokemonPvPRankingMove = {
+  id: 'MUD_SHOT',
+  name: 'Mud Shot',
+  type: 'ground',
+  kind: 'fast',
+  power: 3,
+  energyGain: 9,
+  energyCost: 0,
+  turns: 2,
+  buff,
+};
+
+const precipiceBlades: PokemonPvPRankingMove = {
+  id: 'PRECIPICE_BLADES',
+  name: 'Precipice Blades',
+  type: 'ground',
+  kind: 'charged',
+  power: 130,
+  energyGain: 0,
+  energyCost: 60,
+  turns: 1,
+  buff,
+};
+
+const firePunch: PokemonPvPRankingMove = {
+  id: 'FIRE_PUNCH',
+  name: 'Fire Punch',
+  type: 'fire',
+  kind: 'charged',
+  power: 55,
+  energyGain: 0,
+  energyCost: 40,
+  turns: 1,
+  buff,
+};
+
 const fighter = (
   id: string,
   attack: number,
@@ -134,6 +186,108 @@ describe('local personal PvP evaluation', () => {
     expect(scores.get('lugia-level-50')).toBe(91);
     expect(scores.get('kyurem-level-40')).toBeLessThan(94.8);
     expect(scores.get('kyurem-level-40')).not.toBe(94.8);
+  });
+
+  it('never lowers a build because it has an additional charged move', () => {
+    const reference = fighter('reference', 210, 190, 190);
+    const singleMove = {
+      ...reference,
+      id: 'single-move',
+    };
+    const twoMoves = {
+      ...reference,
+      id: 'two-moves',
+      chargedMoves: [chargedMove, riskyCoverageMove],
+    };
+    const result = evaluatePvPRosterLocally({
+      kind: 'evaluate',
+      candidates: [
+        {
+          fighter: singleMove,
+          referenceFighter: reference,
+          sourceScore: 90,
+          sourceCategoryScores: [90, 90, 90, 90, 90, 90],
+        },
+        {
+          fighter: twoMoves,
+          referenceFighter: reference,
+          sourceScore: 90,
+          sourceCategoryScores: [90, 90, 90, 90, 90, 90],
+        },
+      ],
+      opponents,
+    });
+    const scores = new Map(
+      result.results.map((entry) => [entry.fighterId, entry]),
+    );
+
+    expect(scores.get('two-moves')!.score)
+      .toBeGreaterThanOrEqual(scores.get('single-move')!.score);
+    scores.get('two-moves')!.categoryScores.forEach((score, index) => {
+      expect(score).toBeGreaterThanOrEqual(
+        scores.get('single-move')!.categoryScores[index],
+      );
+    });
+  });
+
+  it('does not rank a weaker one-move Groudon over a stronger two-move Groudon', () => {
+    const groudon = (
+      id: string,
+      attack: number,
+      defense: number,
+      hp: number,
+      chargedMoves: PokemonPvPRankingMove[],
+    ): PokemonPvPBattleFighter => ({
+      id,
+      name: 'Groudon',
+      types: ['ground'],
+      attack,
+      defense,
+      hp,
+      shadow: false,
+      fastMove: mudShot,
+      chargedMoves,
+    });
+    const reference = groudon(
+      'groudon-reference',
+      226,
+      196,
+      184,
+      [precipiceBlades, firePunch],
+    );
+    const result = evaluatePvPRosterLocally({
+      kind: 'evaluate',
+      candidates: [
+        {
+          fighter: groudon(
+            'lower-cp-single-move',
+            215,
+            187,
+            176,
+            [precipiceBlades],
+          ),
+          referenceFighter: reference,
+          sourceScore: 78,
+          sourceCategoryScores: [78, 78, 78, 78, 78, 78],
+        },
+        {
+          fighter: {
+            ...reference,
+            id: 'higher-cp-two-moves',
+          },
+          referenceFighter: reference,
+          sourceScore: 78,
+          sourceCategoryScores: [78, 78, 78, 78, 78, 78],
+        },
+      ],
+      opponents,
+    });
+    const scores = new Map(
+      result.results.map((entry) => [entry.fighterId, entry.score]),
+    );
+
+    expect(scores.get('higher-cp-two-moves'))
+      .toBeGreaterThan(scores.get('lower-cp-single-move')!);
   });
 
   it('falls back to the same local evaluator when Worker is unavailable', async () => {

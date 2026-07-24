@@ -566,6 +566,41 @@ const ratingCurve = (input: number): number => {
   return value;
 };
 
+const chargedMoveStrategies = (
+  fighter: PokemonPvPBattleFighter,
+): PokemonPvPBattleFighter[] => {
+  if (fighter.chargedMoves.length < 2) return [fighter];
+
+  return [
+    fighter,
+    ...fighter.chargedMoves.map((move) => ({
+      ...fighter,
+      chargedMoves: [move],
+    })),
+  ];
+};
+
+const evaluateMatchup = (
+  fighter: PokemonPvPBattleFighter,
+  opponent: PokemonPvPBattleFighter,
+  scenario: Scenario,
+): number => {
+  const startingEnergy: [number, number] = [
+    fastEnergyAfterTurns(fighter.fastMove, scenario.energyTurns[0]),
+    fastEnergyAfterTurns(opponent.fastMove, scenario.energyTurns[1]),
+  ];
+
+  return Math.max(
+    ...chargedMoveStrategies(fighter).map((strategy) => {
+      const battle = simulateBattle(strategy, opponent, {
+        shields: scenario.shields,
+        startingEnergy,
+      });
+      return ratingCurve(adjustedRating(battle, 0));
+    }),
+  );
+};
+
 const evaluateScenario = (
   fighter: PokemonPvPBattleFighter,
   opponents: readonly PokemonPvPRosterEvaluationOpponent[],
@@ -574,17 +609,8 @@ const evaluateScenario = (
   let weightedTotal = 0;
   let weightTotal = 0;
   for (const opponent of opponents) {
-    const battle = simulateBattle(fighter, opponent.fighter, {
-      shields: scenario.shields,
-      startingEnergy: [
-        fastEnergyAfterTurns(fighter.fastMove, scenario.energyTurns[0]),
-        fastEnergyAfterTurns(
-          opponent.fighter.fastMove,
-          scenario.energyTurns[1],
-        ),
-      ],
-    });
-    weightedTotal += ratingCurve(adjustedRating(battle, 0)) * opponent.weight;
+    weightedTotal +=
+      evaluateMatchup(fighter, opponent.fighter, scenario) * opponent.weight;
     weightTotal += opponent.weight;
   }
   return weightTotal > 0 ? weightedTotal / weightTotal : 0;

@@ -210,6 +210,13 @@ const PvpMethodology = () => {
               list.
             </p>
             <p>
+              Move decisions include STAB and the opponent&apos;s type
+              effectiveness. When a caught Pokémon has two Charged Moves, each
+              matchup retains the strongest legal strategy available from
+              those moves, so unlocking an additional move can improve or
+              preserve a result but never penalize it.
+            </p>
+            <p>
               Entries over the format&apos;s CP cap, missing required battle
               details, or unavailable in the selected ranking snapshot are
               reported and omitted rather than guessed. If personal evaluation

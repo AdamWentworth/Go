@@ -12,7 +12,7 @@ import { buildPvPBattleFighter, buildPvPEntryFighter } from './pvpBattleLab';
 import type { PvPRosterWorkerRequest } from './pvpWorkerProtocol';
 
 export const PVP_REFERENCE_FIELD_SIZE = 12;
-export const PVP_LOCAL_EVALUATION_MODEL_VERSION = 1;
+export const PVP_LOCAL_EVALUATION_MODEL_VERSION = 2;
 
 export type PvPRosterEvaluationPlan = {
   request: PvPRosterWorkerRequest;
