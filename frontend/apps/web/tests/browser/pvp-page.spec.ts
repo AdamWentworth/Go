@@ -189,5 +189,24 @@ test.describe('PvP rankings page', () => {
     expect(Date.now() - rosterStartedAt).toBeLessThan(8_000);
     await expect(page.getByText('1 ready')).toBeVisible();
     await expect(page.getByText(/Loading .*Pokémon/)).toHaveCount(0);
+
+    await page.getByRole('button', { name: 'IV Rank' }).click();
+    await expect(page.getByText('1 with complete IVs')).toBeVisible();
+    const ivSearch = page.getByRole('searchbox', { name: 'Search IV Rank Pokémon' });
+    await ivSearch.fill('Bulbasaur');
+    await page.getByRole('button', {
+      name: 'Select #0001 Bulbasaur',
+    }).click();
+    await expect(page.getByRole('region', { name: 'Your Bulbasaur' })).toBeVisible();
+    await expect(page.getByRole('button', {
+      name: /View Sprout, IV Rank/,
+    })).toBeVisible();
+    await expect(page.getByRole('region', { name: 'IV Rank result' }))
+      .toContainText('Sprout');
+    const viewport = await page.evaluate(() => ({
+      documentWidth: document.documentElement.scrollWidth,
+      viewportWidth: window.innerWidth,
+    }));
+    expect(viewport.documentWidth).toBeLessThanOrEqual(viewport.viewportWidth);
   });
 });

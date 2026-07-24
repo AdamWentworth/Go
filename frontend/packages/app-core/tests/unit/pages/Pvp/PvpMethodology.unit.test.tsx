@@ -22,6 +22,8 @@ describe('PvP methodology page', () => {
     })).toBeInTheDocument();
     expect(screen.getByText(/compares all 4,096 possible/))
       .toBeInTheDocument();
+    expect(screen.getByText(/groups caught copies of the selected species/))
+      .toBeInTheDocument();
     expect(screen.getByRole('heading', { name: 'My Pokémon keeps the build honest' }))
       .toBeInTheDocument();
     expect(screen.getByRole('heading', { name: 'Separate formats, not client-side filters' }))

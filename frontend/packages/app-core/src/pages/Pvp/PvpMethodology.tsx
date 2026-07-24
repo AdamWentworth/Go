@@ -146,6 +146,12 @@ const PvpMethodology = () => {
               selected league&apos;s CP cap, up to level 50 or Best Buddy level
               51.
             </p>
+            <p>
+              My Pokémon groups caught copies of the selected species, applies
+              each copy&apos;s recorded IVs, and sorts eligible copies best-first.
+              Current CP and level identify the exact copy; entries already
+              above the league cap remain visible but are marked ineligible.
+            </p>
             <ol className="pvp-methodology-steps">
               <li>
                 <strong>Calculate the legal level and CP.</strong>

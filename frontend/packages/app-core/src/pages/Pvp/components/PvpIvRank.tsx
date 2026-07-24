@@ -1,15 +1,18 @@
 import { useMemo, useState } from 'react';
 import {
+  FaBookOpen,
   FaCheck,
   FaMinus,
   FaPlus,
   FaSearch,
   FaStar,
   FaTimes,
+  FaUser,
 } from 'react-icons/fa';
 import type { PokemonPvPLeagueKey } from '@shared-contracts/pokemon';
 
 import type { PokemonVariant } from '@/types/pokemonVariants';
+import type { InstancesMap } from '@/types/pokemonInstance';
 import { resolveAssetUrl } from '@/utils/assetUrl';
 import { getTypeIconPath } from '@/utils/imageHelpers';
 
@@ -22,6 +25,11 @@ import {
   buildPvPIvPokemonOptions,
   type PvPIvPokemonOption,
 } from '../utils/pvpIvPokemon';
+import {
+  buildOwnedPvPIvRoster,
+  type OwnedPvPIvEntry,
+} from '../utils/pvpIvRoster';
+import type { PvPRosterScope } from '../utils/pvpRoster';
 import './PvpIvRank.css';
 
 type IvField = keyof PvPIvValues;
@@ -30,6 +38,12 @@ const LEAGUE_LABELS: Record<PokemonPvPLeagueKey, string> = {
   great: 'Great League',
   ultra: 'Ultra League',
   master: 'Master League',
+};
+
+const LEAGUE_CP_CAPS: Record<PokemonPvPLeagueKey, number | null> = {
+  great: 1_500,
+  ultra: 2_500,
+  master: null,
 };
 
 const clampIv = (value: number): number =>
@@ -43,6 +57,14 @@ const formatTopPercent = (rank: number, total: number): string => {
   if (percent < 0.1) return 'Top 0.1%';
   if (percent < 1) return `Top ${percent.toFixed(1)}%`;
   return `Top ${Math.ceil(percent)}%`;
+};
+
+const formatCurrentDetails = (entry: OwnedPvPIvEntry): string => {
+  const details = [
+    entry.cp != null ? `CP ${entry.cp.toLocaleString()}` : '',
+    entry.level != null ? `Level ${formatLevel(entry.level)}` : '',
+  ].filter(Boolean);
+  return details.length > 0 ? details.join(' · ') : 'Current level not recorded';
 };
 
 function TypeIcons({ types }: { types: string[] }) {
@@ -131,10 +153,20 @@ function SpreadRow({
 const PvpIvRank = ({
   variants,
   variantsLoading,
+  instances,
+  instancesLoading,
+  isLoggedIn,
+  scope,
+  onScopeChange,
   league,
 }: {
   variants: PokemonVariant[];
   variantsLoading: boolean;
+  instances: InstancesMap;
+  instancesLoading: boolean;
+  isLoggedIn: boolean;
+  scope: PvPRosterScope;
+  onScopeChange: (scope: PvPRosterScope) => void;
   league: PokemonPvPLeagueKey;
 }) => {
   const [query, setQuery] = useState('');
@@ -150,20 +182,51 @@ const PvpIvRank = ({
     () => buildPvPIvPokemonOptions(variants),
     [variants],
   );
-  const selectedPokemon = useMemo(
-    () => options.find((option) => option.id === selectedId) ?? null,
-    [options, selectedId],
+  const ownedRoster = useMemo(
+    () => buildOwnedPvPIvRoster(options, variants, instances),
+    [instances, options, variants],
   );
+  const ownedOptions = useMemo(() => {
+    const unique = new Map<string, PvPIvPokemonOption>();
+    ownedRoster.entries.forEach((entry) => {
+      unique.set(entry.pokemon.id, entry.pokemon);
+    });
+    return Array.from(unique.values());
+  }, [ownedRoster.entries]);
+  const availableOptions = scope === 'owned' ? ownedOptions : options;
+  const selectedPokemon = useMemo(
+    () => availableOptions.find((option) => option.id === selectedId) ?? null,
+    [availableOptions, selectedId],
+  );
+  const ownedCounts = useMemo(() => {
+    const counts = new Map<string, number>();
+    ownedRoster.entries.forEach((entry) => {
+      counts.set(entry.pokemon.id, (counts.get(entry.pokemon.id) ?? 0) + 1);
+    });
+    return counts;
+  }, [ownedRoster.entries]);
+  const ownedSearchTerms = useMemo(() => {
+    const terms = new Map<string, string>();
+    ownedRoster.entries.forEach((entry) => {
+      const current = terms.get(entry.pokemon.id) ?? '';
+      terms.set(
+        entry.pokemon.id,
+        `${current} ${entry.nickname ?? ''}`.trim().toLowerCase(),
+      );
+    });
+    return terms;
+  }, [ownedRoster.entries]);
   const matchingOptions = useMemo(() => {
     const normalized = query.trim().toLowerCase();
-    if (!normalized) return selectedPokemon ? [] : options.slice(0, 18);
-    return options
+    if (!normalized) return selectedPokemon ? [] : availableOptions.slice(0, 18);
+    return availableOptions
       .filter((option) => (
         option.name.toLowerCase().includes(normalized) ||
-        String(option.pokedexNumber).includes(normalized)
+        String(option.pokedexNumber).includes(normalized) ||
+        (ownedSearchTerms.get(option.id) ?? '').includes(normalized)
       ))
       .slice(0, 24);
-  }, [options, query, selectedPokemon]);
+  }, [availableOptions, ownedSearchTerms, query, selectedPokemon]);
   const rankings = useMemo(
     () => selectedPokemon
       ? buildPvPIvRankings(
@@ -178,9 +241,39 @@ const PvpIvRank = ({
       : [],
     [bestBuddy, league, selectedPokemon],
   );
+  const rankedOwnedCopies = useMemo(() => {
+    if (!selectedPokemon || scope !== 'owned') return [];
+    const cpCap = LEAGUE_CP_CAPS[league];
+    return ownedRoster.entries
+      .filter((entry) => entry.pokemon.id === selectedPokemon.id)
+      .map((entry) => ({
+        entry,
+        result: rankPvPIvSpread(rankings, entry.ivs),
+        overCap: cpCap != null && entry.cp != null && entry.cp > cpCap,
+      }))
+      .filter((item): item is {
+        entry: OwnedPvPIvEntry;
+        result: NonNullable<ReturnType<typeof rankPvPIvSpread>>;
+        overCap: boolean;
+      } => item.result != null)
+      .sort((left, right) => (
+        Number(left.overCap) - Number(right.overCap) ||
+        left.result.selected.rank - right.result.selected.rank ||
+        left.entry.instanceId.localeCompare(right.entry.instanceId)
+      ));
+  }, [league, ownedRoster.entries, rankings, scope, selectedPokemon]);
+  const [selectedOwnedId, setSelectedOwnedId] = useState<string | null>(null);
+  const selectedOwnedCopy =
+    rankedOwnedCopies.find((item) => item.entry.instanceId === selectedOwnedId) ??
+    rankedOwnedCopies[0] ??
+    null;
+  const evaluatedIvs =
+    scope === 'owned' && selectedOwnedCopy
+      ? selectedOwnedCopy.entry.ivs
+      : ivs;
   const result = useMemo(
-    () => rankPvPIvSpread(rankings, ivs),
-    [ivs, rankings],
+    () => rankPvPIvSpread(rankings, evaluatedIvs),
+    [evaluatedIvs, rankings],
   );
 
   const updateIv = (field: IvField, value: number) => {
@@ -189,7 +282,16 @@ const PvpIvRank = ({
 
   const choosePokemon = (option: PvPIvPokemonOption) => {
     setSelectedId(option.id);
+    setSelectedOwnedId(null);
     setQuery(option.name);
+  };
+
+  const changeScope = (nextScope: PvPRosterScope) => {
+    if (nextScope === scope) return;
+    onScopeChange(nextScope);
+    setSelectedId(null);
+    setSelectedOwnedId(null);
+    setQuery('');
   };
 
   return (
@@ -201,6 +303,43 @@ const PvpIvRank = ({
         </div>
         <strong>{LEAGUE_LABELS[league]}</strong>
       </header>
+
+      <div className="pvp-iv-scope" role="group" aria-label="IV Rank Pokémon source">
+        <button
+          type="button"
+          className={scope === 'catalog' ? 'active' : ''}
+          aria-pressed={scope === 'catalog'}
+          onClick={() => changeScope('catalog')}
+        >
+          <FaBookOpen aria-hidden="true" />
+          All Pokémon
+        </button>
+        <button
+          type="button"
+          className={scope === 'owned' ? 'active' : ''}
+          aria-pressed={scope === 'owned'}
+          disabled={!isLoggedIn}
+          title={!isLoggedIn ? 'Log in to rank your caught Pokémon' : undefined}
+          onClick={() => changeScope('owned')}
+        >
+          <FaUser aria-hidden="true" />
+          My Pokémon
+          {isLoggedIn && !instancesLoading && (
+            <strong>{ownedRoster.completeCount}</strong>
+          )}
+        </button>
+        {scope === 'owned' && (
+          <span role="status">
+            {instancesLoading && Object.keys(instances).length === 0
+              ? 'Loading your caught Pokémon...'
+              : `${ownedRoster.completeCount} with complete IVs${
+                ownedRoster.incompleteCount > 0
+                  ? ` · ${ownedRoster.incompleteCount} need appraisal IVs`
+                  : ''
+              }`}
+          </span>
+        )}
+      </div>
 
       <div className="pvp-iv-workbench">
         <section className="pvp-iv-controls">
@@ -240,6 +379,12 @@ const PvpIvRank = ({
             <div className="pvp-iv-search-results" aria-live="polite">
               {variantsLoading && variants.length === 0 ? (
                 <span role="status">Loading the Pokémon catalog...</span>
+              ) : (
+                scope === 'owned' &&
+                instancesLoading &&
+                Object.keys(instances).length === 0
+              ) ? (
+                <span role="status">Loading your caught Pokémon...</span>
               ) : matchingOptions.length > 0 ? (
                 matchingOptions.map((option) => (
                   <button
@@ -257,12 +402,22 @@ const PvpIvRank = ({
                     <span>
                       <small>#{String(option.pokedexNumber).padStart(4, '0')}</small>
                       <strong>{option.name}</strong>
+                      {scope === 'owned' && (
+                        <em>
+                          {ownedCounts.get(option.id) ?? 0}{' '}
+                          {(ownedCounts.get(option.id) ?? 0) === 1 ? 'copy' : 'copies'}
+                        </em>
+                      )}
                     </span>
                     <TypeIcons types={option.types} />
                   </button>
                 ))
               ) : (
-                <span>No Pokémon match that search.</span>
+                <span>
+                  {scope === 'owned'
+                    ? 'No caught Pokémon with complete IVs match that search.'
+                    : 'No Pokémon match that search.'}
+                </span>
               )}
             </div>
           )}
@@ -270,7 +425,9 @@ const PvpIvRank = ({
           {selectedPokemon && (
             <article className="pvp-iv-selected-pokemon">
               <img
-                src={resolveAssetUrl(selectedPokemon.imageUrl)}
+                src={resolveAssetUrl(
+                  selectedOwnedCopy?.entry.imageUrl ?? selectedPokemon.imageUrl,
+                )}
                 alt=""
                 draggable={false}
               />
@@ -282,37 +439,98 @@ const PvpIvRank = ({
                 <TypeIcons types={selectedPokemon.types} />
               </div>
               <span>
-                {selectedPokemon.attack} ATK · {selectedPokemon.defense} DEF ·{' '}
-                {selectedPokemon.stamina} STA
+                {scope === 'owned'
+                  ? `${rankedOwnedCopies.length} ${
+                    rankedOwnedCopies.length === 1 ? 'caught copy' : 'caught copies'
+                  } with complete IVs`
+                  : `${selectedPokemon.attack} ATK · ${selectedPokemon.defense} DEF · ${
+                    selectedPokemon.stamina
+                  } STA`}
               </span>
             </article>
           )}
 
-          <div
-            className="pvp-iv-inputs"
-            role="group"
-            aria-labelledby="pvp-iv-inputs-label"
-          >
-            <span id="pvp-iv-inputs-label">Appraisal IVs</span>
-            <IvStepper
-              label="Attack"
-              value={ivs.attack}
-              disabled={!selectedPokemon}
-              onChange={(value) => updateIv('attack', value)}
-            />
-            <IvStepper
-              label="Defense"
-              value={ivs.defense}
-              disabled={!selectedPokemon}
-              onChange={(value) => updateIv('defense', value)}
-            />
-            <IvStepper
-              label="HP"
-              value={ivs.stamina}
-              disabled={!selectedPokemon}
-              onChange={(value) => updateIv('stamina', value)}
-            />
-          </div>
+          {scope === 'catalog' ? (
+            <div
+              className="pvp-iv-inputs"
+              role="group"
+              aria-labelledby="pvp-iv-inputs-label"
+            >
+              <span id="pvp-iv-inputs-label">Appraisal IVs</span>
+              <IvStepper
+                label="Attack"
+                value={ivs.attack}
+                disabled={!selectedPokemon}
+                onChange={(value) => updateIv('attack', value)}
+              />
+              <IvStepper
+                label="Defense"
+                value={ivs.defense}
+                disabled={!selectedPokemon}
+                onChange={(value) => updateIv('defense', value)}
+              />
+              <IvStepper
+                label="HP"
+                value={ivs.stamina}
+                disabled={!selectedPokemon}
+                onChange={(value) => updateIv('stamina', value)}
+              />
+            </div>
+          ) : selectedPokemon && (
+            <section
+              className="pvp-iv-owned-copies"
+              aria-label={`Your ${selectedPokemon.name}`}
+            >
+              <header>
+                <strong>Your copies</strong>
+                <span>Best IV rank first</span>
+              </header>
+              <div>
+                {rankedOwnedCopies.map(({
+                  entry,
+                  result: copyResult,
+                  overCap,
+                }) => {
+                  const active =
+                    selectedOwnedCopy?.entry.instanceId === entry.instanceId;
+                  const label = entry.nickname || entry.pokemon.name;
+                  return (
+                    <button
+                      type="button"
+                      key={entry.instanceId}
+                      className={active ? 'active' : ''}
+                      aria-pressed={active}
+                      aria-label={`View ${label}, IV Rank ${
+                        copyResult.selected.rank
+                      }${overCap ? ', over league cap' : ''}`}
+                      onClick={() => setSelectedOwnedId(entry.instanceId)}
+                    >
+                      <img
+                        src={resolveAssetUrl(entry.imageUrl)}
+                        alt=""
+                        loading="lazy"
+                        draggable={false}
+                      />
+                      <span>
+                        <strong>
+                          {label}
+                          {entry.favorite && <FaStar aria-label="Favorite" />}
+                        </strong>
+                        <small>{formatCurrentDetails(entry)}</small>
+                        <em>
+                          {entry.ivs.attack}/{entry.ivs.defense}/{entry.ivs.stamina} IV
+                        </em>
+                      </span>
+                      <b className={overCap ? 'over-cap' : ''}>
+                        <span>#{copyResult.selected.rank}</span>
+                        {overCap && <small>Over cap</small>}
+                      </b>
+                    </button>
+                  );
+                })}
+              </div>
+            </section>
+          )}
 
           <div className="pvp-iv-level-cap" role="group" aria-label="Level ceiling">
             <button
@@ -337,7 +555,11 @@ const PvpIvRank = ({
           </div>
         </section>
 
-        <section className="pvp-iv-result" aria-live="polite">
+        <section
+          className="pvp-iv-result"
+          aria-label="IV Rank result"
+          aria-live="polite"
+        >
           {!result || !selectedPokemon ? (
             <div className="pvp-iv-empty">
               <strong>Select a Pokémon</strong>
@@ -347,6 +569,23 @@ const PvpIvRank = ({
             </div>
           ) : (
             <>
+              {scope === 'owned' && selectedOwnedCopy && (
+                <div className="pvp-iv-result-context">
+                  <div>
+                    <strong>
+                      {selectedOwnedCopy.entry.nickname ||
+                        selectedOwnedCopy.entry.pokemon.name}
+                    </strong>
+                    {selectedOwnedCopy.overCap && <em>Over league cap</em>}
+                  </div>
+                  <span>
+                    {selectedOwnedCopy.entry.ivs.attack}/
+                    {selectedOwnedCopy.entry.ivs.defense}/
+                    {selectedOwnedCopy.entry.ivs.stamina} IV ·{' '}
+                    {formatCurrentDetails(selectedOwnedCopy.entry)}
+                  </span>
+                </div>
+              )}
               <header>
                 <div>
                   <small>{formatTopPercent(result.selected.rank, result.total)}</small>

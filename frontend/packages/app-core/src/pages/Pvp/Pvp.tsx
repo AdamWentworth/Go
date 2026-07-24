@@ -376,6 +376,8 @@ const Pvp = () => {
   const [expandedKey, setExpandedKey] = useState<string | null>(null);
   const ownedRosterRequested = rosterScope === 'owned';
   const ivRankRequested = workspace === 'iv-rank';
+  const ownedRankingRequested =
+    rosterScope === 'owned' && workspace !== 'iv-rank';
 
   // PvP rankings use their own lightweight payload. Load the much larger
   // catalog only for personal rosters or IV Rank, and load Trainer instances
@@ -410,10 +412,10 @@ const Pvp = () => {
     [entries],
   );
   const ownedRoster = useMemo(
-    () => rosterScope === 'owned'
+    () => ownedRankingRequested
       ? buildOwnedPvPRoster(entries, variants, instances, cpLimit)
       : EMPTY_OWNED_ROSTER,
-    [cpLimit, entries, instances, rosterScope, variants],
+    [cpLimit, entries, instances, ownedRankingRequested, variants],
   );
   const scopedEntries = useMemo(
     () => rosterScope === 'owned'
@@ -480,7 +482,7 @@ const Pvp = () => {
     [variants],
   );
   const ownedLoading =
-    rosterScope === 'owned' &&
+    ownedRankingRequested &&
     (
       (variantsLoading && variants.length === 0) ||
       (movesLoading && !cachedMovesAvailable) ||
@@ -769,6 +771,11 @@ const Pvp = () => {
           <PvpIvRank
             variants={variants}
             variantsLoading={variantsLoading}
+            instances={instances}
+            instancesLoading={instancesLoading}
+            isLoggedIn={isLoggedIn}
+            scope={rosterScope}
+            onScopeChange={setRosterScope}
             league={activeLeagueKey}
           />
         ) : workspace === 'team' ? (

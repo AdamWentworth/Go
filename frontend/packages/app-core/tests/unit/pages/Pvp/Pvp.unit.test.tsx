@@ -312,6 +312,95 @@ describe('PvP rankings page', () => {
     expect(screen.getByRole('spinbutton', { name: 'HP IV' })).toHaveValue(15);
   });
 
+  it('compares caught copies by IV rank without requiring move details', () => {
+    useAuthStore.setState({ isLoggedIn: true });
+    useVariantsStore.setState({
+      variants: [{
+        variant_id: '0001-default',
+        pokemon_id: 1,
+        pokedex_number: 1,
+        name: 'Bulbasaur',
+        species_name: 'Bulbasaur',
+        variantType: 'default',
+        currentImage: '/images/bulbasaur.png',
+        image_url: '/images/bulbasaur.png',
+        attack: 118,
+        defense: 111,
+        stamina: 128,
+        type1_name: 'Grass',
+        type2_name: 'Poison',
+        crownForms: [],
+      } as unknown as PokemonVariant],
+      variantsLoading: false,
+    });
+    useInstancesStore.setState({
+      instances: {
+        perfect: {
+          instance_id: 'perfect',
+          variant_id: '0001-default',
+          pokemon_id: 1,
+          nickname: 'Perfect',
+          is_caught: true,
+          disabled: false,
+          cp: 1_600,
+          level: 50,
+          attack_iv: 15,
+          defense_iv: 15,
+          stamina_iv: 15,
+          favorite: true,
+        } as PokemonInstance,
+        sprout: {
+          instance_id: 'sprout',
+          variant_id: '0001-default',
+          pokemon_id: 1,
+          nickname: 'Sprout',
+          is_caught: true,
+          disabled: false,
+          cp: 1_118,
+          level: 50,
+          attack_iv: 0,
+          defense_iv: 15,
+          stamina_iv: 15,
+        } as PokemonInstance,
+      },
+      instancesLoading: false,
+    });
+
+    renderPvp();
+    fireEvent.click(screen.getByRole('button', { name: 'IV Rank' }));
+    fireEvent.click(screen.getByRole('button', { name: /My Pokémon/ }));
+
+    expect(bootstrapHooks.instances).toHaveBeenLastCalledWith(true);
+    expect(screen.getByText('2 with complete IVs')).toBeInTheDocument();
+
+    fireEvent.change(screen.getByRole('searchbox', {
+      name: 'Search IV Rank Pokémon',
+    }), {
+      target: { value: 'bulba' },
+    });
+    fireEvent.click(screen.getByRole('button', {
+      name: 'Select #0001 Bulbasaur',
+    }));
+
+    const copies = screen.getByRole('region', { name: 'Your Bulbasaur' });
+    expect(copies).toBeInTheDocument();
+    expect(screen.getByRole('button', {
+      name: 'View Perfect, IV Rank 1, over league cap',
+    }))
+      .toBeInTheDocument();
+    const sprout = screen.getByRole('button', {
+      name: 'View Sprout, IV Rank 770',
+    });
+    expect(sprout).toBeInTheDocument();
+    expect(within(copies).getAllByRole('button')[0]).toBe(sprout);
+
+    fireEvent.click(sprout);
+    const result = screen.getByRole('region', { name: 'IV Rank result' });
+    expect(within(result).getByText('Sprout')).toBeInTheDocument();
+    expect(within(result).getAllByText('#770')).toHaveLength(2);
+    expect(within(result).getByText(/CP 1,118 · Level 50/)).toBeInTheDocument();
+  });
+
   it('shows only legal, fully recorded caught builds in My Pokemon', () => {
     const moves = [
       {
