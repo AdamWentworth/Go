@@ -146,3 +146,50 @@ and prewarm the API cache on success, and leave source version and license
 metadata in the published `/pokemon/pvp-data` payload. The importer filters
 unreleased or locally unsupported forms instead of publishing entries the app
 cannot display.
+
+### PvP simulator parity
+
+`internal/pvp` is PokeGoNexus's deterministic Go implementation of the
+PvPoke ranking simulation used by the active snapshot. It covers:
+
+- legacy turn resolution, CMP, fast-move interruption, shields, damage, and
+  deterministic move effects;
+- charged-move selection, baiting, farming, move timing, and self-debuff
+  handling;
+- lead, closer, switch, charger, and attacker ranking scenarios;
+- matchup weighting, score normalization, moveset consistency, and overall
+  aggregation.
+
+Production continues to serve the imported snapshot as the fallback until the
+local generator is validated over complete Great, Ultra, and Master League
+rosters. The current engine ranks a supplied fixed moveset, matching PvPoke's
+published `force` workflow. Automatic discovery of a new optimal moveset is not
+part of this implementation.
+
+The differential fixture is pinned to PvPoke commit
+`f59fc0a2c78ace0b4d3b1bdcd161880e3287e4e0`. It contains more than 400 exact
+published matchup ratings and 100 exact overall-score cases. Regenerate it only
+from a checkout at that commit:
+
+```bash
+python3 scripts/generate_pvpoke_parity_fixture.py \
+  --pvpoke-dir /path/to/pvpoke \
+  --output internal/pvp/testdata/pvpoke-ranking-matchups-v1.json
+go test ./internal/pvp -count=1
+```
+
+For a single failing matchup, run the pinned JavaScript engine locally and
+compare its timeline with the Go test:
+
+```bash
+node scripts/run_pvpoke_matchup_oracle.js \
+  /path/to/pvpoke 1500 chargers malamar_shadow tinkaton
+```
+
+The oracle script is a development tool. It is never called by the API or
+shipped in the service image.
+
+The parity target deliberately excludes species that use PvPoke's dynamic form
+change or native stat-buff extensions. `MechanicsCurrent` also fails closed:
+the June 2026 Trainer Battle timing changes require their own validated model
+and must not silently reuse the pinned legacy rules.
