@@ -91,6 +91,17 @@ const makePayload = (): PokemonPvPRankingsPayload => {
       ultra: { key: 'ultra', label: 'Ultra League', cpLimit: 2500, entries: entries.ultra },
       master: { key: 'master', label: 'Master League', cpLimit: null, entries: entries.master },
     },
+    formats: [
+      {
+        key: 'retro-1500',
+        label: 'Retro Cup',
+        league: 'great',
+        cup: 'retro',
+        cpLimit: 1500,
+        rules: ['Dark-, Steel-, and Fairy-type Pokémon are not eligible.'],
+        entries: [makeEntry(1, 'diggersby', 'Diggersby', 'normal')],
+      },
+    ],
   };
 };
 
@@ -130,6 +141,26 @@ describe('PvP rankings page', () => {
     expect(screen.getByText('Feraligatr')).toBeInTheDocument();
     expect(screen.queryByText('Clodsire')).not.toBeInTheDocument();
     expect(screen.getByText('1 ranked')).toBeInTheDocument();
+  });
+
+  it('switches the entire workspace to a source-ranked current cup', () => {
+    render(<Pvp />);
+
+    fireEvent.change(screen.getByRole('combobox', { name: 'Current PvP cup' }), {
+      target: { value: 'retro-1500' },
+    });
+
+    expect(screen.getByText('Diggersby')).toBeInTheDocument();
+    expect(screen.queryByText('Clodsire')).not.toBeInTheDocument();
+    expect(screen.getByRole('region', { name: 'Retro Cup rankings' }))
+      .toBeInTheDocument();
+    fireEvent.click(screen.getByText('Format rules'));
+    expect(screen.getByText(/Dark-, Steel-, and Fairy-type/)).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Team Builder' }));
+    expect(screen.getAllByText('Choose Pokémon')).toHaveLength(3);
+    expect(screen.getByRole('button', { name: 'Select Diggersby' }))
+      .toBeInTheDocument();
   });
 
   it('re-ranks the current league by the selected battle role', () => {

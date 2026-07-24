@@ -89,12 +89,21 @@ func TestPokemonPayloadChunks_KeepCatalogLeanAndAddressable(t *testing.T) {
 		Leagues map[string]struct {
 			Entries []map[string]any `json:"entries"`
 		} `json:"leagues"`
+		Formats []struct {
+			Key     string           `json:"key"`
+			Label   string           `json:"label"`
+			Rules   []string         `json:"rules"`
+			Entries []map[string]any `json:"entries"`
+		} `json:"formats"`
 	}
 	if err := json.Unmarshal(pvpRaw, &pvp); err != nil {
 		t.Fatalf("decode PvP data: %v", err)
 	}
 	if pvp.Source == nil || pvp.Source.Name != "PvPoke" {
 		t.Fatalf("PvP snapshot source missing: %#v", pvp.Source)
+	}
+	if pvp.Formats == nil {
+		t.Fatal("PvP formats must serialize as an array")
 	}
 	for _, league := range []string{"great", "ultra", "master"} {
 		if len(pvp.Leagues[league].Entries) == 0 {

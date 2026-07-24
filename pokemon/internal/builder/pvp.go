@@ -81,15 +81,27 @@ type pvpLeaguePayload struct {
 	Entries []pvpRankingEntry `json:"entries"`
 }
 
+type pvpFormatPayload struct {
+	Key     string            `json:"key"`
+	Label   string            `json:"label"`
+	League  string            `json:"league"`
+	Cup     string            `json:"cup"`
+	CPLimit *int              `json:"cpLimit"`
+	Rules   []string          `json:"rules"`
+	Entries []pvpRankingEntry `json:"entries"`
+}
+
 type pvpRankingsPayload struct {
 	Source  *pvpRankingSource           `json:"source"`
 	Leagues map[string]pvpLeaguePayload `json:"leagues"`
+	Formats []pvpFormatPayload          `json:"formats"`
 }
 
 func emptyPvPRankingsPayload() pvpRankingsPayload {
 	greatLimit := 1500
 	ultraLimit := 2500
 	return pvpRankingsPayload{
+		Formats: []pvpFormatPayload{},
 		Leagues: map[string]pvpLeaguePayload{
 			"great": {
 				Key:     "great",
@@ -161,11 +173,66 @@ func (b *Builder) BuildPvPRankingsPayload(ctx context.Context) (any, error) {
 	}
 	payload.Source = &source
 
+	formatRows, err := b.db.QueryContext(
+		ctx,
+		`
+		SELECT format_key, league, title, cup, cp_limit, rules
+		FROM pokemon_catalog.pvp_ranking_formats
+		WHERE snapshot_id = $1
+		  AND is_cup IS TRUE
+		ORDER BY sort_order, title, format_key
+		`,
+		snapshotID,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("load PvP ranking formats: %w", err)
+	}
+	formatIndexes := make(map[string]int)
+	for formatRows.Next() {
+		var (
+			format  pvpFormatPayload
+			cpLimit sql.NullInt64
+			rules   []byte
+		)
+		if err := formatRows.Scan(
+			&format.Key,
+			&format.League,
+			&format.Label,
+			&format.Cup,
+			&cpLimit,
+			&rules,
+		); err != nil {
+			_ = formatRows.Close()
+			return nil, fmt.Errorf("scan PvP ranking format: %w", err)
+		}
+		if cpLimit.Valid {
+			value := int(cpLimit.Int64)
+			format.CPLimit = &value
+		}
+		if err := json.Unmarshal(rules, &format.Rules); err != nil {
+			_ = formatRows.Close()
+			return nil, fmt.Errorf("decode PvP ranking rules for %s: %w", format.Key, err)
+		}
+		if format.Rules == nil {
+			format.Rules = []string{}
+		}
+		format.Entries = []pvpRankingEntry{}
+		formatIndexes[format.Key] = len(payload.Formats)
+		payload.Formats = append(payload.Formats, format)
+	}
+	if err := formatRows.Err(); err != nil {
+		_ = formatRows.Close()
+		return nil, fmt.Errorf("iterate PvP ranking formats: %w", err)
+	}
+	if err := formatRows.Close(); err != nil {
+		return nil, fmt.Errorf("close PvP ranking formats: %w", err)
+	}
+
 	rows, err := b.db.QueryContext(
 		ctx,
 		`
 		SELECT
-		  league,
+		  ranking.format_key,
 		  rank,
 		  source_rank,
 		  species_id,
@@ -190,15 +257,14 @@ func (b *Builder) BuildPvPRankingsPayload(ctx context.Context) (any, error) {
 		  battle_attack,
 		  battle_defense,
 		  battle_hp
-		FROM pokemon_catalog.pvp_rankings
-		WHERE snapshot_id = $1
+		FROM pokemon_catalog.pvp_rankings AS ranking
+		JOIN pokemon_catalog.pvp_ranking_formats AS format
+		  ON format.snapshot_id = ranking.snapshot_id
+		 AND format.format_key = ranking.format_key
+		WHERE ranking.snapshot_id = $1
 		ORDER BY
-		  CASE league
-		    WHEN 'great' THEN 1
-		    WHEN 'ultra' THEN 2
-		    ELSE 3
-		  END,
-		  rank
+		  format.sort_order,
+		  ranking.rank
 		`,
 		snapshotID,
 	)
@@ -209,7 +275,7 @@ func (b *Builder) BuildPvPRankingsPayload(ctx context.Context) (any, error) {
 
 	for rows.Next() {
 		var (
-			league        string
+			formatKey     string
 			entry         pvpRankingEntry
 			typesJSON     []byte
 			movesetJSON   []byte
@@ -225,7 +291,7 @@ func (b *Builder) BuildPvPRankingsPayload(ctx context.Context) (any, error) {
 			battleHP      sql.NullInt64
 		)
 		if err := rows.Scan(
-			&league,
+			&formatKey,
 			&entry.Rank,
 			&entry.SourceRank,
 			&entry.SpeciesID,
@@ -293,12 +359,19 @@ func (b *Builder) BuildPvPRankingsPayload(ctx context.Context) (any, error) {
 			entry.BattleHP = &value
 		}
 
-		leaguePayload, ok := payload.Leagues[league]
+		if leaguePayload, ok := payload.Leagues[formatKey]; ok {
+			leaguePayload.Entries = append(leaguePayload.Entries, entry)
+			payload.Leagues[formatKey] = leaguePayload
+			continue
+		}
+		formatIndex, ok := formatIndexes[formatKey]
 		if !ok {
 			continue
 		}
-		leaguePayload.Entries = append(leaguePayload.Entries, entry)
-		payload.Leagues[league] = leaguePayload
+		payload.Formats[formatIndex].Entries = append(
+			payload.Formats[formatIndex].Entries,
+			entry,
+		)
 	}
 	if err := rows.Err(); err != nil {
 		return nil, fmt.Errorf("iterate PvP rankings: %w", err)

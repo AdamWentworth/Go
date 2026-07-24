@@ -13,6 +13,7 @@ import json
 import re
 import subprocess
 import sys
+import urllib.error
 import urllib.request
 from dataclasses import dataclass
 from pathlib import Path
@@ -33,6 +34,12 @@ LEAGUES = {
     "great": ("1500", "cp1500"),
     "ultra": ("2500", "cp2500"),
     "master": ("10000", None),
+}
+CP_LEAGUES = {
+    500: ("little", "cp500"),
+    1500: ("great", "cp1500"),
+    2500: ("ultra", "cp2500"),
+    10000: ("master", None),
 }
 
 
@@ -59,6 +66,19 @@ class LocalMatch:
     pokemon_id: int | None
     fusion_id: int | None
     image_url: str
+
+
+@dataclass(frozen=True)
+class RankingFormat:
+    key: str
+    league: str
+    title: str
+    cup: str
+    cp_limit: int | None
+    iv_key: str | None
+    rules: tuple[str, ...]
+    sort_order: int
+    is_cup: bool
 
 
 def normalize_token(value: Any) -> str:
@@ -155,6 +175,61 @@ def fetch_json(url: str) -> Any:
     request = urllib.request.Request(url, headers={"User-Agent": "PokeGoNexus PvP importer"})
     with urllib.request.urlopen(request, timeout=60) as response:
         return json.loads(response.read().decode("utf-8"))
+
+
+def ranking_formats(source_formats: list[dict[str, Any]]) -> list[RankingFormat]:
+    formats = [
+        RankingFormat(
+            key=league,
+            league=league,
+            title=f"{league.title()} League",
+            cup="all",
+            cp_limit=int(cp) if league != "master" else None,
+            iv_key=iv_key,
+            rules=(),
+            sort_order=index,
+            is_cup=False,
+        )
+        for index, (league, (cp, iv_key)) in enumerate(LEAGUES.items())
+    ]
+    seen = {item.key for item in formats}
+    for source in source_formats:
+        if (
+            source.get("showCup") is not True
+            or source.get("showFormat") is not True
+            or source.get("hideRankings") is True
+            or normalize_token(source.get("cup")) == "custom"
+        ):
+            continue
+        cup = normalize_token(source.get("cup"))
+        cp = int(source.get("cp") or 0)
+        league_details = CP_LEAGUES.get(cp)
+        if not cup or not league_details:
+            continue
+        key = f"{cup}-{cp}"
+        if key in seen:
+            continue
+        league, iv_key = league_details
+        rules = tuple(
+            str(rule).strip()
+            for rule in source.get("rules") or []
+            if str(rule).strip()
+        )
+        formats.append(
+            RankingFormat(
+                key=key,
+                league=league,
+                title=str(source.get("title") or cup.replace("_", " ").title()),
+                cup=cup,
+                cp_limit=None if cp >= 10000 else cp,
+                iv_key=iv_key,
+                rules=rules,
+                sort_order=len(formats),
+                is_cup=True,
+            )
+        )
+        seen.add(key)
+    return formats
 
 
 def resolve_source_version(repository: str, requested_ref: str) -> str:
@@ -313,14 +388,13 @@ def structured_move_usage(
 
 
 def build_rows(
-    league: str,
+    ranking_format: RankingFormat,
     rankings: list[dict[str, Any]],
     species_by_id: dict[str, dict[str, Any]],
     moves_by_id: dict[str, dict[str, Any]],
     pokemon_by_dex: dict[int, list[LocalPokemon]],
     fusions: list[LocalFusion],
 ) -> tuple[list[tuple[Any, ...]], int]:
-    _cp, iv_key = LEAGUES[league]
     rows: list[tuple[Any, ...]] = []
     skipped = 0
     for source_rank, ranking in enumerate(rankings, start=1):
@@ -338,11 +412,15 @@ def build_rows(
             skipped += 1
             continue
 
-        level, attack_iv, defense_iv, stamina_iv = recommended_ivs(species, iv_key)
+        level, attack_iv, defense_iv, stamina_iv = recommended_ivs(
+            species,
+            ranking_format.iv_key,
+        )
         stats = ranking.get("stats") or {}
         rows.append(
             (
-                league,
+                ranking_format.key,
+                ranking_format.league,
                 len(rows) + 1,
                 source_rank,
                 species_id,
@@ -383,16 +461,29 @@ def import_snapshot(
     species_by_id = {str(item["speciesId"]): item for item in species_list}
     moves_by_id = {str(item["moveId"]): item for item in move_list}
     pokemon_by_dex, fusions = load_local_catalog(connection)
+    source_formats = fetch_json(f"{source_base}/gamemaster/formats.json")
+    formats = ranking_formats(source_formats)
 
     all_rows: list[tuple[Any, ...]] = []
     imported_counts: dict[str, int] = {}
     skipped_counts: dict[str, int] = {}
-    for league, (cp, _iv_key) in LEAGUES.items():
-        rankings = fetch_json(
-            f"{source_base}/rankings/all/overall/rankings-{cp}.json"
+    imported_formats: list[RankingFormat] = []
+    for ranking_format in formats:
+        cp = (
+            str(ranking_format.cp_limit)
+            if ranking_format.cp_limit is not None
+            else "10000"
         )
+        try:
+            rankings = fetch_json(
+                f"{source_base}/rankings/{ranking_format.cup}/overall/rankings-{cp}.json"
+            )
+        except urllib.error.HTTPError as error:
+            if not ranking_format.is_cup or error.code != 404:
+                raise
+            continue
         rows, skipped = build_rows(
-            league,
+            ranking_format,
             rankings,
             species_by_id,
             moves_by_id,
@@ -400,14 +491,16 @@ def import_snapshot(
             fusions,
         )
         all_rows.extend(rows)
-        imported_counts[league] = len(rows)
-        skipped_counts[league] = skipped
+        imported_counts[ranking_format.key] = len(rows)
+        skipped_counts[ranking_format.key] = skipped
+        imported_formats.append(ranking_format)
 
     snapshot_id = f"pvpoke-{source_version}"
     metadata = {
         "importedCounts": imported_counts,
         "skippedCounts": skipped_counts,
-        "method": "PvPoke all/overall battle-simulation rankings filtered to the PokeGoNexus catalog",
+        "method": "PvPoke overall battle-simulation rankings for open leagues and current source formats, filtered to the PokeGoNexus catalog",
+        "formats": [ranking_format.key for ranking_format in imported_formats],
     }
     cursor = connection.cursor()
     cursor.execute("UPDATE pvp_ranking_snapshots SET is_active = FALSE WHERE is_active = TRUE")
@@ -435,17 +528,43 @@ def import_snapshot(
         ),
     )
     cursor.execute("DELETE FROM pvp_rankings WHERE snapshot_id = ?", (snapshot_id,))
+    cursor.execute(
+        "DELETE FROM pvp_ranking_formats WHERE snapshot_id = ?",
+        (snapshot_id,),
+    )
+    cursor.executemany(
+        """
+        INSERT INTO pvp_ranking_formats (
+          snapshot_id, format_key, league, title, cup, cp_limit, rules,
+          sort_order, is_cup
+        ) VALUES (?, ?, ?, ?, ?, ?, ?::JSONB, ?, ?)
+        """,
+        [
+            (
+                snapshot_id,
+                ranking_format.key,
+                ranking_format.league,
+                ranking_format.title,
+                ranking_format.cup,
+                ranking_format.cp_limit,
+                json.dumps(ranking_format.rules),
+                ranking_format.sort_order,
+                ranking_format.is_cup,
+            )
+            for ranking_format in imported_formats
+        ],
+    )
     cursor.executemany(
         """
         INSERT INTO pvp_rankings (
-          snapshot_id, league, rank, source_rank, species_id, species_name,
+          snapshot_id, format_key, league, rank, source_rank, species_id, species_name,
           pokemon_id, fusion_id, variant_kind, image_url, types, moveset,
           score, rating, category_scores, matchups, counters, move_usage,
           recommended_level, attack_iv, defense_iv, stamina_iv, stat_product,
           battle_attack, battle_defense, battle_hp
         ) VALUES (
-          ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?::JSONB, ?::JSONB, ?, ?, ?::JSONB,
-          ?::JSONB, ?::JSONB, ?::JSONB, ?, ?, ?, ?, ?, ?, ?, ?
+          ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?::JSONB, ?::JSONB, ?, ?,
+          ?::JSONB, ?::JSONB, ?::JSONB, ?::JSONB, ?, ?, ?, ?, ?, ?, ?, ?
         )
         """,
         [(snapshot_id, *row) for row in all_rows],
@@ -470,10 +589,10 @@ def main() -> int:
     with open_catalog_authoring_connection(args.database_url) as connection:
         metadata = import_snapshot(connection, source_version, args.raw_root)
     print(f"Imported PvPoke snapshot {source_version}.")
-    for league in LEAGUES:
+    for format_key in metadata["formats"]:
         print(
-            f"{league}: {metadata['importedCounts'][league]} imported, "
-            f"{metadata['skippedCounts'][league]} omitted"
+            f"{format_key}: {metadata['importedCounts'][format_key]} imported, "
+            f"{metadata['skippedCounts'][format_key]} omitted"
         )
     return 0
 

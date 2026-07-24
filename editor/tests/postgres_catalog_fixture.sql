@@ -215,28 +215,35 @@ INSERT INTO pvp_ranking_snapshots (
   '{"importedCounts":{"great":1,"ultra":1,"master":1}}'
 );
 
+INSERT INTO pvp_ranking_formats (
+  snapshot_id, format_key, league, title, cup, cp_limit, rules, sort_order, is_cup
+) VALUES
+  ('pvpoke-fixture', 'great', 'great', 'Great League', 'all', 1500, '[]', 0, FALSE),
+  ('pvpoke-fixture', 'ultra', 'ultra', 'Ultra League', 'all', 2500, '[]', 1, FALSE),
+  ('pvpoke-fixture', 'master', 'master', 'Master League', 'all', NULL, '[]', 2, FALSE);
+
 INSERT INTO pvp_rankings (
-  snapshot_id, league, rank, source_rank, species_id, species_name,
+  snapshot_id, format_key, league, rank, source_rank, species_id, species_name,
   pokemon_id, fusion_id, variant_kind, image_url, types, moveset,
   score, rating, category_scores, recommended_level, attack_iv, defense_iv,
   stamina_iv, stat_product, battle_attack, battle_defense, battle_hp
 ) VALUES
   (
-    'pvpoke-fixture', 'great', 1, 1, 'bulbasaur', 'Bulbasaur',
+    'pvpoke-fixture', 'great', 'great', 1, 1, 'bulbasaur', 'Bulbasaur',
     1, NULL, 'pokemon', '/images/default/pokemon_1.png',
     '["grass","poison"]',
     '[{"id":"VINE_WHIP","name":"Vine Whip","type":"grass","kind":"fast"},{"id":"POWER_WHIP","name":"Power Whip","type":"grass","kind":"charged"}]',
     91.2, 700, '[90,92,88]', 50, 15, 15, 15, 1800, 110.2, 115.3, 130
   ),
   (
-    'pvpoke-fixture', 'ultra', 1, 1, 'ivysaur', 'Ivysaur',
+    'pvpoke-fixture', 'ultra', 'ultra', 1, 1, 'ivysaur', 'Ivysaur',
     2, NULL, 'pokemon', '/images/default/pokemon_2.png',
     '["grass","poison"]',
     '[{"id":"VINE_WHIP","name":"Vine Whip","type":"grass","kind":"fast"},{"id":"POWER_WHIP","name":"Power Whip","type":"grass","kind":"charged"}]',
     89.4, 680, '[89,91,87]', 50, 15, 15, 15, 2400, 140.2, 145.3, 155
   ),
   (
-    'pvpoke-fixture', 'master', 1, 1, 'mewtwo', 'Mewtwo',
+    'pvpoke-fixture', 'master', 'master', 1, 1, 'mewtwo', 'Mewtwo',
     150, NULL, 'pokemon', '/images/default/pokemon_150.png',
     '["psychic"]',
     '[{"id":"COUNTER","name":"Counter","type":"fighting","kind":"fast"},{"id":"PSYSTRIKE","name":"Psystrike","type":"psychic","kind":"charged"}]',

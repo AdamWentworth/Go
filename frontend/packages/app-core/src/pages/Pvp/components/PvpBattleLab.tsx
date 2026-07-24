@@ -19,7 +19,6 @@ import { resolveAssetUrl } from '@/utils/assetUrl';
 import { getTypeIconPath } from '@/utils/imageHelpers';
 import type {
   PokemonPvPBattleResponse,
-  PokemonPvPLeagueKey,
 } from '@shared-contracts/pokemon';
 
 import {
@@ -278,10 +277,10 @@ function BattleResult({
 
 const PvpBattleLab = ({
   candidates,
-  league,
+  formatLabel,
 }: {
   candidates: PvPTeamCandidate[];
-  league: PokemonPvPLeagueKey;
+  formatLabel: string;
 }) => {
   const readyCandidates = useMemo(
     () => candidates.filter(isPvPBattleCandidateReady),
@@ -369,7 +368,7 @@ const PvpBattleLab = ({
           <FaFlask aria-hidden="true" />
           <strong>Battle Lab</strong>
         </span>
-        <small>{league.charAt(0).toUpperCase() + league.slice(1)} League · pinned PvPoke mechanics</small>
+        <small>{formatLabel} · pinned PvPoke mechanics</small>
       </header>
 
       {readyCandidates.length < candidates.length && (

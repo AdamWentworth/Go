@@ -11,6 +11,7 @@ import {
   FaFlask,
   FaListOl,
   FaSearch,
+  FaTrophy,
   FaUser,
   FaUsers,
 } from 'react-icons/fa';
@@ -22,6 +23,7 @@ import { useAuthStore } from '@/stores/useAuthStore';
 import { getTypeIconPath } from '@/utils/imageHelpers';
 import { resolveAssetUrl } from '@/utils/assetUrl';
 import type {
+  PokemonPvPFormat,
   PokemonPvPLeagueKey,
   PokemonPvPRankingEntry,
 } from '@shared-contracts/pokemon';
@@ -48,6 +50,9 @@ const LEAGUES: Array<{
 ];
 
 const INITIAL_LIMIT = 50;
+
+const isLeagueKey = (value: string): value is PokemonPvPLeagueKey =>
+  value === 'great' || value === 'ultra' || value === 'master';
 
 type PvPRoleKey =
   | 'overall'
@@ -348,7 +353,7 @@ const Pvp = () => {
   const instances = useInstancesStore((state) => state.instances);
   const instancesLoading = useInstancesStore((state) => state.instancesLoading);
   const isLoggedIn = useAuthStore((state) => state.isLoggedIn);
-  const [league, setLeague] = useState<PokemonPvPLeagueKey>('great');
+  const [formatKey, setFormatKey] = useState<string>('great');
   const [workspace, setWorkspace] = useState<PvPWorkspace>('rankings');
   const [roleKey, setRoleKey] = useState<PvPRoleKey>('overall');
   const [rosterScope, setRosterScope] = useState<PvPRosterScope>('catalog');
@@ -364,11 +369,24 @@ const Pvp = () => {
     if (!isLoggedIn) setRosterScope('catalog');
   }, [isLoggedIn]);
 
-  const entries = useMemo(
-    () => data?.leagues[league]?.entries ?? [],
-    [data, league],
+  const cupFormats = useMemo(() => data?.formats ?? [], [data?.formats]);
+  const activeCup = useMemo(
+    () => cupFormats.find((format) => format.key === formatKey),
+    [cupFormats, formatKey],
   );
-  const cpLimit = data?.leagues[league]?.cpLimit ?? null;
+  const activeLeagueKey: PokemonPvPLeagueKey = activeCup?.league === 'little'
+    ? 'great'
+    : activeCup?.league ?? (isLeagueKey(formatKey) ? formatKey : 'great');
+  const activeLeague = LEAGUES.find((item) => item.key === activeLeagueKey) ?? LEAGUES[0];
+  const activeFormatLabel =
+    activeCup?.label ??
+    data?.leagues[activeLeagueKey]?.label ??
+    `${activeLeague.label} League`;
+  const entries = useMemo(
+    () => activeCup?.entries ?? data?.leagues[activeLeagueKey]?.entries ?? [],
+    [activeCup, activeLeagueKey, data],
+  );
+  const cpLimit = activeCup?.cpLimit ?? data?.leagues[activeLeagueKey]?.cpLimit ?? null;
   const entriesBySpeciesId = useMemo(
     () => new Map(entries.map((entry) => [entry.speciesId, entry])),
     [entries],
@@ -428,9 +446,14 @@ const Pvp = () => {
   useEffect(() => {
     setVisibleLimit(INITIAL_LIMIT);
     setExpandedKey(null);
-  }, [league, roleKey, rosterScope, search, workspace]);
+  }, [formatKey, roleKey, rosterScope, search, workspace]);
 
-  const activeLeague = LEAGUES.find((item) => item.key === league) ?? LEAGUES[0];
+  useEffect(() => {
+    if (data && !isLeagueKey(formatKey) && !activeCup) {
+      setFormatKey('great');
+    }
+  }, [activeCup, data, formatKey]);
+
   const visibleEntries = rankedEntries.slice(0, visibleLimit);
   const ownedLoading =
     rosterScope === 'owned' &&
@@ -439,13 +462,13 @@ const Pvp = () => {
   const rosterDetails = [
     `${ownedRoster.eligibleCount} PvP-ready from ${ownedRoster.caughtCount} caught`,
     ownedRoster.overCapCount > 0
-      ? `${ownedRoster.overCapCount} over the league cap`
+      ? `${ownedRoster.overCapCount} over the format cap`
       : '',
     ownedRoster.incompleteCount > 0
       ? `${ownedRoster.incompleteCount} need level, IV, CP, or move details`
       : '',
     ownedRoster.unmatchedCount > 0
-      ? `${ownedRoster.unmatchedCount} unavailable in this league ranking`
+      ? `${ownedRoster.unmatchedCount} unavailable in this format ranking`
       : '',
   ].filter(Boolean).join(' · ');
 
@@ -501,20 +524,54 @@ const Pvp = () => {
           </button>
         </nav>
 
-        <nav className="pvp-league-tabs" aria-label="PvP league">
-          {LEAGUES.map((item) => (
-            <button
-              type="button"
-              key={item.key}
-              className={league === item.key ? 'active' : ''}
-              aria-pressed={league === item.key}
-              onClick={() => setLeague(item.key)}
-            >
-              <span>{item.label}</span>
-              <small>{item.detail}</small>
-            </button>
-          ))}
-        </nav>
+        <section className="pvp-format-controls">
+          <nav className="pvp-league-tabs" aria-label="PvP league">
+            {LEAGUES.map((item) => (
+              <button
+                type="button"
+                key={item.key}
+                className={formatKey === item.key ? 'active' : ''}
+                aria-pressed={formatKey === item.key}
+                onClick={() => setFormatKey(item.key)}
+              >
+                <span>{item.label}</span>
+                <small>{item.detail}</small>
+              </button>
+            ))}
+          </nav>
+          <label className="pvp-cup-picker">
+            <FaTrophy aria-hidden="true" />
+            <span>
+              <small>Current cups</small>
+              <select
+                value={activeCup?.key ?? ''}
+                onChange={(event) => {
+                  if (event.target.value) setFormatKey(event.target.value);
+                }}
+                disabled={cupFormats.length === 0}
+                aria-label="Current PvP cup"
+              >
+                <option value="">
+                  {cupFormats.length > 0 ? 'Choose a cup' : 'No cups available'}
+                </option>
+                {cupFormats.map((format: PokemonPvPFormat) => (
+                  <option value={format.key} key={format.key}>
+                    {format.label}
+                  </option>
+                ))}
+              </select>
+            </span>
+          </label>
+        </section>
+
+        {activeCup && activeCup.rules.length > 0 && (
+          <details className="pvp-format-rules">
+            <summary>Format rules</summary>
+            <ul>
+              {activeCup.rules.map((rule) => <li key={rule}>{rule}</li>)}
+            </ul>
+          </details>
+        )}
 
         <section className="pvp-roster-scope" aria-label="PvP roster">
           <div role="group" aria-label="Pokemon source">
@@ -569,10 +626,10 @@ const Pvp = () => {
               })}
             </nav>
 
-            <section className="pvp-toolbar" aria-label={`${activeLeague.label} League rankings`}>
+            <section className="pvp-toolbar" aria-label={`${activeFormatLabel} rankings`}>
               <div>
                 <span>{activeRole.label} rankings</span>
-                <strong>{activeLeague.label} League</strong>
+                <strong>{activeFormatLabel}</strong>
               </div>
               <label className="pvp-search">
                 <FaSearch aria-hidden="true" />
@@ -601,7 +658,7 @@ const Pvp = () => {
             {!pageLoading && !error && visibleEntries.length === 0 && (
               <div className="pvp-status">
                 {rosterScope === 'owned' && !search
-                  ? 'No caught Pokémon are ready for this league. Add CP, level, IVs, one Fast Move, and two Charged Moves to a legal build.'
+                  ? 'No caught Pokémon are ready for this format. Add CP, level, IVs, one Fast Move, and two Charged Moves to a legal build.'
                   : 'No rankings match that search.'}
               </div>
             )}
@@ -663,10 +720,10 @@ const Pvp = () => {
             )}
             {!pageLoading && !error && scopedEntries.length > 0 && (
               <PvpTeamBuilder
-                key={`${league}-${rosterScope}`}
+                key={`${formatKey}-${rosterScope}`}
                 candidates={scopedEntries}
                 entriesBySpeciesId={entriesBySpeciesId}
-                storageKey={`${league}:${rosterScope}`}
+                storageKey={`${formatKey}:${rosterScope}`}
               />
             )}
           </>
@@ -689,9 +746,9 @@ const Pvp = () => {
             )}
             {!pageLoading && !error && scopedEntries.length > 0 && (
               <PvpBattleLab
-                key={`${league}-${rosterScope}`}
+                key={`${formatKey}-${rosterScope}`}
                 candidates={scopedEntries}
-                league={league}
+                formatLabel={activeFormatLabel}
               />
             )}
           </>
@@ -709,7 +766,7 @@ const Pvp = () => {
             <small>
               {rosterScope === 'owned'
                 ? 'My Pokémon shows each caught copy’s recorded build and sorts it by that species’ simulated matchup score.'
-                : 'Recommended IVs maximize performance for the selected league, not rarity.'}
+                : 'Recommended IVs maximize performance for the selected format, not rarity.'}
             </small>
           </footer>
         )}

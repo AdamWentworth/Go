@@ -99,11 +99,17 @@
   background: var(--pvp-teal);
 }
 
+.pvp-format-controls {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(15rem, 19rem);
+  gap: 0.4rem;
+  margin: 0.7rem 0;
+}
+
 .pvp-league-tabs {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 0.4rem;
-  margin: 0.7rem 0;
   padding: 0.35rem;
   border: 1px solid var(--pvp-line);
   border-radius: 8px;
@@ -135,6 +141,85 @@
 
 .pvp-league-tabs button.active small {
   color: #123c39;
+}
+
+.pvp-cup-picker {
+  display: grid;
+  grid-template-columns: 1.9rem minmax(0, 1fr);
+  gap: 0.4rem;
+  align-items: center;
+  min-width: 0;
+  padding: 0.35rem 0.55rem;
+  border: 1px solid var(--pvp-line);
+  border-radius: 8px;
+  color: var(--pvp-teal);
+  background: #101516;
+  text-align: left;
+}
+
+.pvp-cup-picker > span {
+  display: grid;
+  min-width: 0;
+}
+
+.pvp-cup-picker small {
+  color: #8fc6cb;
+  font-size: 0.62rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.pvp-cup-picker select {
+  width: 100%;
+  min-width: 0;
+  min-height: 1.85rem;
+  padding: 0 1.8rem 0 0;
+  border: 0;
+  outline: 0;
+  color: var(--pvp-text);
+  background: transparent;
+  font-size: 0.78rem;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.pvp-cup-picker:focus-within {
+  border-color: var(--pvp-teal);
+  box-shadow: 0 0 0 2px rgba(66, 213, 194, 0.14);
+}
+
+.pvp-cup-picker select:disabled {
+  color: var(--pvp-muted);
+  cursor: not-allowed;
+}
+
+.pvp-cup-picker option {
+  color: var(--pvp-text);
+  background: var(--pvp-panel);
+}
+
+.pvp-format-rules {
+  margin: -0.3rem 0 0.7rem;
+  padding: 0.45rem 0.65rem;
+  border: 1px solid var(--pvp-line);
+  border-radius: 6px;
+  color: var(--pvp-muted);
+  background: var(--pvp-panel);
+  font-size: 0.7rem;
+  text-align: left;
+}
+
+.pvp-format-rules summary {
+  color: var(--pvp-teal);
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.pvp-format-rules ul {
+  display: grid;
+  gap: 0.2rem;
+  margin: 0.45rem 0 0;
+  padding-left: 1.1rem;
 }
 
 .pvp-roster-scope {
@@ -1630,6 +1715,7 @@
 
 :root[data-theme='light'] .pvp-league-tabs,
 :root[data-theme='light'] .pvp-workspace-tabs,
+:root[data-theme='light'] .pvp-cup-picker,
 :root[data-theme='light'] .pvp-search,
 :root[data-theme='light'] .pvp-roster-scope,
 :root[data-theme='light'] .pvp-ranking-details,
@@ -1679,8 +1765,23 @@
 
   .pvp-league-tabs {
     gap: 0.25rem;
-    margin-block: 0.45rem;
     padding: 0.25rem;
+  }
+
+  .pvp-format-controls {
+    grid-template-columns: 1fr;
+    gap: 0.3rem;
+    margin-block: 0.45rem;
+  }
+
+  .pvp-cup-picker {
+    grid-template-columns: 1.6rem minmax(0, 1fr);
+    min-height: 2.6rem;
+    padding-block: 0.25rem;
+  }
+
+  .pvp-format-rules {
+    margin-top: -0.15rem;
   }
 
   .pvp-workspace-tabs {

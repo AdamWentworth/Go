@@ -101,6 +101,16 @@ export interface PokemonPvPLeague {
   entries: PokemonPvPRankingEntry[];
 }
 
+export interface PokemonPvPFormat {
+  key: string;
+  label: string;
+  league: 'little' | PokemonPvPLeagueKey;
+  cup: string;
+  cpLimit: number | null;
+  rules: string[];
+  entries: PokemonPvPRankingEntry[];
+}
+
 export interface PokemonPvPRankingsPayload {
   source: {
     name: string;
@@ -111,6 +121,7 @@ export interface PokemonPvPRankingsPayload {
     metadata: Record<string, unknown>;
   } | null;
   leagues: Record<PokemonPvPLeagueKey, PokemonPvPLeague>;
+  formats?: PokemonPvPFormat[];
 }
 
 export interface PokemonPvPBattleFighter {

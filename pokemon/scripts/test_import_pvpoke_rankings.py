@@ -6,7 +6,9 @@ import json
 
 from import_pvpoke_rankings import (
     LocalPokemon,
+    RankingFormat,
     build_rows,
+    ranking_formats,
     structured_matchups,
     structured_move,
     structured_move_usage,
@@ -14,6 +16,52 @@ from import_pvpoke_rankings import (
 
 
 class ImportPvPokeRankingsTest(unittest.TestCase):
+    def test_selects_only_visible_rankable_source_cups(self) -> None:
+        formats = ranking_formats(
+            [
+                {
+                    "title": "Retro Cup",
+                    "cup": "retro",
+                    "cp": 1500,
+                    "showCup": True,
+                    "showFormat": True,
+                    "rules": ["No Dark, Steel, or Fairy types"],
+                },
+                {
+                    "title": "Hidden Cup",
+                    "cup": "hidden",
+                    "cp": 1500,
+                    "showCup": False,
+                    "showFormat": True,
+                },
+                {
+                    "title": "Unranked Cup",
+                    "cup": "unranked",
+                    "cp": 1500,
+                    "showCup": True,
+                    "showFormat": True,
+                    "hideRankings": True,
+                },
+                {
+                    "title": "Custom",
+                    "cup": "custom",
+                    "cp": 1500,
+                    "showCup": True,
+                    "showFormat": True,
+                },
+            ]
+        )
+
+        self.assertEqual(
+            [ranking_format.key for ranking_format in formats],
+            ["great", "ultra", "master", "retro-1500"],
+        )
+        retro = formats[-1]
+        self.assertEqual(retro.league, "great")
+        self.assertEqual(retro.iv_key, "cp1500")
+        self.assertEqual(retro.rules, ("No Dark, Steel, or Fairy types",))
+        self.assertTrue(retro.is_cup)
+
     def test_structures_matchups_without_copying_editorial_content(self) -> None:
         ranking = {
             "matchups": [
@@ -118,7 +166,17 @@ class ImportPvPokeRankingsTest(unittest.TestCase):
         pokemon = LocalPokemon(1, 1, "Bulbasaur", "", "/bulbasaur.png", None)
 
         rows, skipped = build_rows(
-            "great",
+            RankingFormat(
+                key="great",
+                league="great",
+                title="Great League",
+                cup="all",
+                cp_limit=1500,
+                iv_key="cp1500",
+                rules=(),
+                sort_order=0,
+                is_cup=False,
+            ),
             [ranking],
             {"bulbasaur": species},
             moves,
@@ -127,10 +185,11 @@ class ImportPvPokeRankingsTest(unittest.TestCase):
         )
 
         self.assertEqual(skipped, 0)
-        self.assertEqual(len(rows[0]), 25)
-        self.assertEqual(json.loads(rows[0][14]), [{"speciesId": "lanturn", "rating": 722.0}])
-        self.assertEqual(json.loads(rows[0][15]), [{"speciesId": "talonflame", "rating": 280.0}])
-        self.assertEqual(json.loads(rows[0][16])[0]["name"], "Vine Whip")
+        self.assertEqual(len(rows[0]), 26)
+        self.assertEqual(rows[0][0:2], ("great", "great"))
+        self.assertEqual(json.loads(rows[0][15]), [{"speciesId": "lanturn", "rating": 722.0}])
+        self.assertEqual(json.loads(rows[0][16]), [{"speciesId": "talonflame", "rating": 280.0}])
+        self.assertEqual(json.loads(rows[0][17])[0]["name"], "Vine Whip")
 
 
 if __name__ == "__main__":
