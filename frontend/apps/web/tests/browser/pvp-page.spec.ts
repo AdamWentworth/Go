@@ -1,7 +1,71 @@
-import { expect, test } from '@playwright/test';
+import { expect, test, type Page } from '@playwright/test';
 
 import { attachBrowserDiagnostics } from './support/diagnostics';
 import { installE2eRoutes } from './support/e2eRoutes';
+
+const pvpUser = {
+  user_id: 'pvp-user',
+  username: 'PvPTrainer',
+  email: 'pvp@pokegonexus.local',
+  accessTokenExpiry: '2099-01-01T00:00:00.000Z',
+  refreshTokenExpiry: '2099-01-02T00:00:00.000Z',
+};
+
+const caughtBulbasaur = {
+  instance_id: 'pvp-bulbasaur',
+  variant_id: '0001-default',
+  pokemon_id: 1,
+  nickname: 'Sprout',
+  is_caught: true,
+  disabled: false,
+  registered: true,
+  cp: 1_200,
+  level: 30,
+  attack_iv: 4,
+  defense_iv: 14,
+  stamina_iv: 15,
+  fast_move_id: 15,
+  charged_move1_id: 108,
+  charged_move2_id: 133,
+};
+
+async function seedPvPRoster(page: Page) {
+  await page.goto('/login', { waitUntil: 'domcontentloaded' });
+  await page.evaluate(
+    ({ user, caught }) =>
+      new Promise<void>((resolve, reject) => {
+        localStorage.setItem('user', JSON.stringify(user));
+        localStorage.setItem('ownershipTimestamp', String(Date.now()));
+
+        const request = indexedDB.open('instancesDB', 2);
+        request.onupgradeneeded = () => {
+          const database = request.result;
+          if (!database.objectStoreNames.contains('instances')) {
+            database.createObjectStore('instances', {
+              keyPath: 'instance_id',
+            });
+          }
+        };
+        request.onerror = () => reject(request.error);
+        request.onsuccess = () => {
+          const database = request.result;
+          const transaction = database.transaction('instances', 'readwrite');
+          const store = transaction.objectStore('instances');
+          store.clear();
+          store.put(caught);
+          transaction.oncomplete = () => {
+            database.close();
+            resolve();
+          };
+          transaction.onerror = () => {
+            database.close();
+            reject(transaction.error);
+          };
+        };
+      }),
+    { user: pvpUser, caught: caughtBulbasaur },
+  );
+}
 
 test.describe('PvP rankings page', () => {
   test('supports league rankings and search without horizontal overflow', async ({
@@ -29,7 +93,8 @@ test.describe('PvP rankings page', () => {
       await expect(page.locator('.pvp-rank--silver')).toHaveText('2');
 
       await page.getByRole('button', { name: 'Team Builder' }).click();
-      await expect(page.getByRole('heading', { name: 'Team Builder' })).toBeVisible();
+      await expect(page.getByRole('heading', { name: 'Team Builder', exact: true }))
+        .toBeVisible();
       await page.getByRole('button', { name: 'Select Clodsire' }).click();
       await page.getByRole('button', { name: 'Select Azumarill' }).click();
       await expect(page.getByText('2 / 3')).toBeVisible();
@@ -77,5 +142,38 @@ test.describe('PvP rankings page', () => {
     }
 
     expect(diagnostics.blockingErrors()).toEqual([]);
+  });
+
+  test('opens a logged-in Trainer roster without an indefinite loading state', async ({
+    page,
+  }) => {
+    await installE2eRoutes(page, {
+      userInstances: {
+        username: pvpUser.username,
+        instances: {
+          [caughtBulbasaur.instance_id]: caughtBulbasaur,
+        },
+      },
+    });
+    const manifestLoaded = page.waitForResponse((response) =>
+      /\/(?:api|__e2e)\/pokemon\/manifest$/.test(response.url()),
+    );
+    const pvpDataLoaded = page.waitForResponse((response) =>
+      /\/(?:api|__e2e)\/pokemon\/pvp-data$/.test(response.url()),
+    );
+    await seedPvPRoster(page);
+    await page.goto('/pvp', { waitUntil: 'domcontentloaded' });
+    await Promise.all([manifestLoaded, pvpDataLoaded]);
+
+    const myPokemon = page.getByRole('button', { name: 'My Pokémon' });
+    await expect(myPokemon).toBeEnabled();
+    const rosterStartedAt = Date.now();
+    await myPokemon.click();
+
+    await expect(myPokemon).toHaveAttribute('aria-pressed', 'true');
+    await expect(page.getByText('Sprout')).toBeVisible({ timeout: 8_000 });
+    expect(Date.now() - rosterStartedAt).toBeLessThan(8_000);
+    await expect(page.getByText('1 ready')).toBeVisible();
+    await expect(page.getByText(/Loading .*Pokémon/)).toHaveCount(0);
   });
 });

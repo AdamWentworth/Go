@@ -20,7 +20,10 @@ import type { IconType } from 'react-icons';
 import { Link } from 'react-router-dom';
 
 import { useInstancesStore } from '@/features/instances/store/useInstancesStore';
+import { useBootstrapInstances } from '@/features/instances/hooks/useBootstrapInstances';
+import { useBootstrapVariants } from '@/features/variants/hooks/useBootstrapVariants';
 import { useVariantsStore } from '@/features/variants/store/useVariantsStore';
+import { hasHydratedMoves } from '@/features/variants/utils/prepareVariantChunkHydration';
 import { useAuthStore } from '@/stores/useAuthStore';
 import { getTypeIconPath } from '@/utils/imageHelpers';
 import { resolveAssetUrl } from '@/utils/assetUrl';
@@ -52,6 +55,14 @@ const LEAGUES: Array<{
 ];
 
 const INITIAL_LIMIT = 50;
+const EMPTY_OWNED_ROSTER = {
+  entries: [],
+  caughtCount: 0,
+  eligibleCount: 0,
+  incompleteCount: 0,
+  overCapCount: 0,
+  unmatchedCount: 0,
+} as const;
 
 const isLeagueKey = (value: string): value is PokemonPvPLeagueKey =>
   value === 'great' || value === 'ultra' || value === 'master';
@@ -351,7 +362,6 @@ const Pvp = () => {
   const variants = useVariantsStore((state) => state.variants);
   const variantsLoading = useVariantsStore((state) => state.variantsLoading);
   const movesLoading = useVariantsStore((state) => state.isMovesLoading);
-  const ensureMoves = useVariantsStore((state) => state.ensureMoves);
   const instances = useInstancesStore((state) => state.instances);
   const instancesLoading = useInstancesStore((state) => state.instancesLoading);
   const isLoggedIn = useAuthStore((state) => state.isLoggedIn);
@@ -362,10 +372,12 @@ const Pvp = () => {
   const [search, setSearch] = useState('');
   const [visibleLimit, setVisibleLimit] = useState(INITIAL_LIMIT);
   const [expandedKey, setExpandedKey] = useState<string | null>(null);
+  const ownedRosterRequested = rosterScope === 'owned';
 
-  useEffect(() => {
-    void ensureMoves();
-  }, [ensureMoves]);
+  // PvP rankings use their own lightweight payload. Load the much larger
+  // catalog and Trainer instance cache only when the personal roster is opened.
+  useBootstrapVariants(ownedRosterRequested);
+  useBootstrapInstances(ownedRosterRequested);
 
   useEffect(() => {
     if (!isLoggedIn) setRosterScope('catalog');
@@ -394,8 +406,10 @@ const Pvp = () => {
     [entries],
   );
   const ownedRoster = useMemo(
-    () => buildOwnedPvPRoster(entries, variants, instances, cpLimit),
-    [cpLimit, entries, instances, variants],
+    () => rosterScope === 'owned'
+      ? buildOwnedPvPRoster(entries, variants, instances, cpLimit)
+      : EMPTY_OWNED_ROSTER,
+    [cpLimit, entries, instances, rosterScope, variants],
   );
   const scopedEntries = useMemo(
     () => rosterScope === 'owned'
@@ -457,10 +471,24 @@ const Pvp = () => {
   }, [activeCup, data, formatKey]);
 
   const visibleEntries = rankedEntries.slice(0, visibleLimit);
+  const cachedMovesAvailable = useMemo(
+    () => hasHydratedMoves(variants),
+    [variants],
+  );
   const ownedLoading =
     rosterScope === 'owned' &&
-    (variantsLoading || movesLoading || instancesLoading);
+    (
+      (variantsLoading && variants.length === 0) ||
+      (movesLoading && !cachedMovesAvailable) ||
+      (instancesLoading && Object.keys(instances).length === 0)
+    );
   const pageLoading = loading || ownedLoading;
+  const ownedLoadingMessage =
+    variantsLoading && variants.length === 0
+      ? 'Loading the Pokémon catalog...'
+      : instancesLoading && Object.keys(instances).length === 0
+        ? 'Loading your caught Pokémon...'
+        : 'Loading move data for your caught Pokémon...';
   const rosterDetails = [
     `${ownedRoster.eligibleCount} PvP-ready from ${ownedRoster.caughtCount} caught`,
     ownedRoster.overCapCount > 0
@@ -609,7 +637,7 @@ const Pvp = () => {
           </div>
           {rosterScope === 'owned' && (
             <span role="status">
-              {ownedLoading ? 'Loading your PvP roster' : rosterDetails}
+              {ownedLoading ? ownedLoadingMessage : rosterDetails}
             </span>
           )}
         </section>
@@ -654,7 +682,7 @@ const Pvp = () => {
             {pageLoading && (
               <div className="pvp-status" role="status">
                 {rosterScope === 'owned'
-                  ? 'Loading your PvP-ready Pokémon...'
+                  ? ownedLoadingMessage
                   : 'Loading current rankings...'}
               </div>
             )}

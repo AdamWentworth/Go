@@ -41,8 +41,6 @@ describe('🪝 useBootstrapVariants', () => {
       isRefreshing: false,
       isMovesLoading: false,
       isRaidDataLoading: false,
-      movesHydrationPending: false,
-      raidDataHydrationPending: false,
       raidDataRequested: false,
       ensureMoves: mockEnsureMoves,
       ensureRaidData: mockEnsureRaidData,

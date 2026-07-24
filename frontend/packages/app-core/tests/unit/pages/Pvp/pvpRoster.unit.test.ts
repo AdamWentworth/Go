@@ -194,4 +194,32 @@ describe('buildOwnedPvPRoster', () => {
       incompleteCount: 1,
     });
   });
+
+  it('indexes large caught rosters instead of rescanning every ranking per copy', () => {
+    const irrelevantRankings = Array.from({ length: 5_000 }, (_, index) => ({
+      ...ranking,
+      speciesId: `species-${index + 10}`,
+      name: `Species ${index + 10}`,
+      pokemonId: index + 10,
+      rank: index + 2,
+      sourceRank: index + 2,
+    }));
+    const caught = Object.fromEntries(
+      Array.from({ length: 10_000 }, (_, index) => [
+        `caught-${index}`,
+        instance({ instance_id: `caught-${index}` }),
+      ]),
+    );
+    const startedAt = performance.now();
+
+    const roster = buildOwnedPvPRoster(
+      [...irrelevantRankings, ranking],
+      [variant],
+      caught,
+      1_500,
+    );
+
+    expect(roster.eligibleCount).toBe(10_000);
+    expect(performance.now() - startedAt).toBeLessThan(1_000);
+  }, 5_000);
 });

@@ -28,8 +28,6 @@ interface VariantsState {
   isRefreshing: boolean;
   isMovesLoading: boolean;
   isRaidDataLoading: boolean;
-  movesHydrationPending: boolean;
-  raidDataHydrationPending: boolean;
   raidDataRequested: boolean;
   hydrateFromCache(): Promise<void>;
   refreshVariants(): Promise<void>;
@@ -38,6 +36,8 @@ interface VariantsState {
 }
 
 const log = createScopedLogger('VariantsStore');
+let movesHydrationRequest: Promise<void> | null = null;
+let raidDataHydrationRequest: Promise<void> | null = null;
 
 export const useVariantsStore = create<VariantsState>((set, get) => ({
   variants: [],
@@ -46,8 +46,6 @@ export const useVariantsStore = create<VariantsState>((set, get) => ({
   isRefreshing: false,
   isMovesLoading: false,
   isRaidDataLoading: false,
-  movesHydrationPending: false,
-  raidDataHydrationPending: false,
   raidDataRequested: false,
 
   async hydrateFromCache() {
@@ -108,76 +106,82 @@ export const useVariantsStore = create<VariantsState>((set, get) => ({
     }
   },
 
-  async ensureMoves() {
-    if (get().variants.length === 0) return;
-    if (get().isMovesLoading) {
-      set({ movesHydrationPending: true });
-      return;
-    }
-    set({ isMovesLoading: true, movesHydrationPending: false });
+  ensureMoves() {
+    if (get().variants.length === 0) return Promise.resolve();
+    if (movesHydrationRequest) return movesHydrationRequest;
 
-    try {
-      const manifest = await getPokemonCatalogManifest();
-      const update = await prepareVariantChunkHydration({
-        manifest,
-        chunkName: 'moves',
-        storedVersion: getStorageString(STORAGE_KEYS.pokemonMovesVersion),
-        getVariants: () => get().variants,
-        hasHydratedData: hasHydratedMoves,
-        fetchChunk: getPokemonMovesChunk,
-      });
-      if (!update) return;
+    set({ isMovesLoading: true });
+    const request = (async () => {
+      try {
+        const manifest = await getPokemonCatalogManifest();
+        const update = await prepareVariantChunkHydration({
+          manifest,
+          chunkName: 'moves',
+          storedVersion: getStorageString(STORAGE_KEYS.pokemonMovesVersion),
+          getVariants: () => get().variants,
+          hasHydratedData: hasHydratedMoves,
+          fetchChunk: getPokemonMovesChunk,
+        });
+        if (!update) return;
 
-      // Merge and commit synchronously against the latest snapshot so another
-      // lazy chunk cannot overwrite data that finished hydrating first.
-      const variants = mergePokemonMovesChunk(get().variants, update.chunk);
-      set({ variants });
-      queueVariantsPersist(variants, Date.now(), undefined, update.catalogVersion);
-      setStorageString(STORAGE_KEYS.pokemonMovesVersion, update.chunkVersion);
-    } catch (error) {
-      log.warn('ensureMoves failed; retaining the current catalog cache', error);
-    } finally {
-      const retry = get().movesHydrationPending;
-      set({ isMovesLoading: false, movesHydrationPending: false });
-      if (retry) {
-        void get().ensureMoves();
+        // Merge against the latest snapshot so catalog refreshes and other
+        // lazy chunks cannot overwrite data while this request is in flight.
+        const variants = mergePokemonMovesChunk(get().variants, update.chunk);
+        set({ variants });
+        queueVariantsPersist(variants, Date.now(), undefined, update.catalogVersion);
+        setStorageString(STORAGE_KEYS.pokemonMovesVersion, update.chunkVersion);
+      } catch (error) {
+        log.warn('ensureMoves failed; retaining the current catalog cache', error);
+      } finally {
+        set({ isMovesLoading: false });
       }
-    }
+    })();
+
+    const trackedRequest = request.finally(() => {
+      if (movesHydrationRequest === trackedRequest) {
+        movesHydrationRequest = null;
+      }
+    });
+    movesHydrationRequest = trackedRequest;
+    return trackedRequest;
   },
 
-  async ensureRaidData() {
+  ensureRaidData() {
     set({ raidDataRequested: true });
-    if (get().variants.length === 0) return;
-    if (get().isRaidDataLoading) {
-      set({ raidDataHydrationPending: true });
-      return;
-    }
-    set({ isRaidDataLoading: true, raidDataHydrationPending: false });
+    if (get().variants.length === 0) return Promise.resolve();
+    if (raidDataHydrationRequest) return raidDataHydrationRequest;
 
-    try {
-      const manifest = await getPokemonCatalogManifest();
-      const update = await prepareVariantChunkHydration({
-        manifest,
-        chunkName: 'raidData',
-        storedVersion: getStorageString(STORAGE_KEYS.pokemonRaidDataVersion),
-        getVariants: () => get().variants,
-        hasHydratedData: hasHydratedRaidData,
-        fetchChunk: getPokemonRaidDataChunk,
-      });
-      if (!update) return;
+    set({ isRaidDataLoading: true });
+    const request = (async () => {
+      try {
+        const manifest = await getPokemonCatalogManifest();
+        const update = await prepareVariantChunkHydration({
+          manifest,
+          chunkName: 'raidData',
+          storedVersion: getStorageString(STORAGE_KEYS.pokemonRaidDataVersion),
+          getVariants: () => get().variants,
+          hasHydratedData: hasHydratedRaidData,
+          fetchChunk: getPokemonRaidDataChunk,
+        });
+        if (!update) return;
 
-      const variants = mergePokemonRaidDataChunk(get().variants, update.chunk);
-      set({ variants });
-      queueVariantsPersist(variants, Date.now(), undefined, update.catalogVersion);
-      setStorageString(STORAGE_KEYS.pokemonRaidDataVersion, update.chunkVersion);
-    } catch (error) {
-      log.warn('ensureRaidData failed; retaining the current catalog cache', error);
-    } finally {
-      const retry = get().raidDataHydrationPending;
-      set({ isRaidDataLoading: false, raidDataHydrationPending: false });
-      if (retry) {
-        void get().ensureRaidData();
+        const variants = mergePokemonRaidDataChunk(get().variants, update.chunk);
+        set({ variants });
+        queueVariantsPersist(variants, Date.now(), undefined, update.catalogVersion);
+        setStorageString(STORAGE_KEYS.pokemonRaidDataVersion, update.chunkVersion);
+      } catch (error) {
+        log.warn('ensureRaidData failed; retaining the current catalog cache', error);
+      } finally {
+        set({ isRaidDataLoading: false });
       }
-    }
+    })();
+
+    const trackedRequest = request.finally(() => {
+      if (raidDataHydrationRequest === trackedRequest) {
+        raidDataHydrationRequest = null;
+      }
+    });
+    raidDataHydrationRequest = trackedRequest;
+    return trackedRequest;
   },
 }));

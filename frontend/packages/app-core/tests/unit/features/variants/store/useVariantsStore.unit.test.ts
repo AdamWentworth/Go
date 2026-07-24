@@ -69,8 +69,6 @@ describe.sequential('useVariantsStore (unit)', () => {
       isRefreshing: false,
       isMovesLoading: false,
       isRaidDataLoading: false,
-      movesHydrationPending: false,
-      raidDataHydrationPending: false,
       raidDataRequested: false,
     });
 
@@ -236,7 +234,7 @@ describe.sequential('useVariantsStore (unit)', () => {
     expect(useVariantsStore.getState().variants[0]?.moves.map((move) => move.name)).toEqual(['Tackle']);
   });
 
-  it('coalesces overlapping move hydration requests and retries against the final state', async () => {
+  it('coalesces overlapping move hydration requests without scheduling a duplicate retry', async () => {
     const variant = {
       ...(cachedVariants[0] as PokemonVariant),
       pokemon_id: 1,
@@ -264,21 +262,21 @@ describe.sequential('useVariantsStore (unit)', () => {
     const firstHydration = useVariantsStore.getState().ensureMoves();
     await vi.waitFor(() => expect(useVariantsStore.getState().isMovesLoading).toBe(true));
 
-    await useVariantsStore.getState().ensureMoves();
-    expect(useVariantsStore.getState().movesHydrationPending).toBe(true);
+    const overlappingHydration = useVariantsStore.getState().ensureMoves();
+    expect(overlappingHydration).toBe(firstHydration);
 
     resolveChunk!([
       { pokemon_id: 1, moves: [{ move_id: 1, name: 'Tackle' }], fusion: [], crownForms: [] },
     ]);
-    await firstHydration;
+    await Promise.all([firstHydration, overlappingHydration]);
 
     await vi.waitFor(() => {
       expect(useVariantsStore.getState()).toMatchObject({
         isMovesLoading: false,
-        movesHydrationPending: false,
       });
     });
     expect(useVariantsStore.getState().variants[0]?.moves.map((move) => move.name)).toEqual(['Tackle']);
+    expect(getPokemonCatalogManifest).toHaveBeenCalledOnce();
     expect(getPokemonMovesChunk).toHaveBeenCalledOnce();
   });
 

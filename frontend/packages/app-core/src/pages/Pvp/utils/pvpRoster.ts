@@ -38,14 +38,59 @@ const hasFiniteNumber = (value: unknown): boolean =>
 const moveIsFast = (move: Move): boolean =>
   Number(move.is_fast) === 1;
 
+type RankingLookup = {
+  byFusionId: Map<number, PokemonPvPRankingEntry>;
+  byPokemonKind: Map<string, PokemonPvPRankingEntry[]>;
+};
+
+const pokemonKindKey = (
+  pokemonId: number,
+  variantKind: PokemonPvPRankingEntry['variantKind'],
+): string => `${pokemonId}:${variantKind}`;
+
+const buildRankingLookup = (
+  rankings: PokemonPvPRankingEntry[],
+): RankingLookup => {
+  const lookup: RankingLookup = {
+    byFusionId: new Map(),
+    byPokemonKind: new Map(),
+  };
+
+  for (const ranking of rankings) {
+    if (ranking.fusionId != null) {
+      lookup.byFusionId.set(ranking.fusionId, ranking);
+    }
+    if (ranking.pokemonId == null) continue;
+
+    const key = pokemonKindKey(ranking.pokemonId, ranking.variantKind);
+    const candidates = lookup.byPokemonKind.get(key);
+    if (candidates) {
+      candidates.push(ranking);
+    } else {
+      lookup.byPokemonKind.set(key, [ranking]);
+    }
+  }
+
+  return lookup;
+};
+
+const buildMoveLookup = (variant: PokemonVariant): Map<number, Move> => {
+  const lookup = new Map<number, Move>();
+  for (const move of variant.moves ?? []) {
+    lookup.set(move.move_id, move);
+  }
+  return lookup;
+};
+
 const findMove = (
-  moves: Move[],
+  moves: Map<number, Move>,
   moveId: number | null,
   fast: boolean,
-): Move | undefined =>
-  moveId == null
-    ? undefined
-    : moves.find((move) => move.move_id === moveId && moveIsFast(move) === fast);
+): Move | undefined => {
+  if (moveId == null) return undefined;
+  const move = moves.get(moveId);
+  return move && moveIsFast(move) === fast ? move : undefined;
+};
 
 const toRankingMove = (
   move: Move,
@@ -77,8 +122,13 @@ const toRankingMove = (
 const recordedMoveset = (
   variant: PokemonVariant,
   instance: PokemonInstance,
+  moveLookups: Map<PokemonVariant, Map<number, Move>>,
 ): PokemonPvPRankingMove[] | null => {
-  const moves = Array.isArray(variant.moves) ? variant.moves : [];
+  let moves = moveLookups.get(variant);
+  if (!moves) {
+    moves = buildMoveLookup(variant);
+    moveLookups.set(variant, moves);
+  }
   const fast = findMove(moves, instance.fast_move_id, true);
   const charged = [
     findMove(moves, instance.charged_move1_id, false),
@@ -108,13 +158,13 @@ const exactNameMatch = (
 };
 
 const matchRanking = (
-  entries: PokemonPvPRankingEntry[],
+  lookup: RankingLookup,
   variant: PokemonVariant,
   formSource: 'base' | 'fusion' | 'crown',
   instance: PokemonInstance,
 ): PokemonPvPRankingEntry | undefined => {
   if (formSource === 'fusion' && variant.fusion_id != null) {
-    return entries.find((entry) => entry.fusionId === variant.fusion_id);
+    return lookup.byFusionId.get(variant.fusion_id);
   }
 
   const expectedKind = formSource === 'crown'
@@ -122,11 +172,10 @@ const matchRanking = (
     : instance.shadow
       ? 'shadow'
       : 'pokemon';
-  const candidates = entries.filter(
-    (entry) =>
-      entry.variantKind === expectedKind &&
-      entry.pokemonId === variant.pokemon_id,
-  );
+  const candidates =
+    lookup.byPokemonKind.get(
+      pokemonKindKey(variant.pokemon_id, expectedKind),
+    ) ?? [];
   return candidates.find((entry) => exactNameMatch(entry, variant)) ?? candidates[0];
 };
 
@@ -178,6 +227,8 @@ export const buildOwnedPvPRoster = (
   const variantsById = new Map(
     variants.map((variant) => [String(variant.variant_id), variant]),
   );
+  const rankingLookup = buildRankingLookup(rankings);
+  const moveLookups = new Map<PokemonVariant, Map<number, Move>>();
   const caught = Object.entries(instances).filter(
     ([, instance]) => instance.is_caught && !instance.disabled,
   );
@@ -215,11 +266,14 @@ export const buildOwnedPvPRoster = (
       result.unmatchedCount += 1;
       continue;
     }
-    const projection = resolveRaidRosterFormProjections(
-      variants,
-      base,
-      instance,
-    ).find(({ formSource }) => formSource !== 'mega');
+    const projection =
+      instance.is_fused || instance.crown
+        ? resolveRaidRosterFormProjections(variants, base, instance)[0]
+        : {
+          variant: base,
+          formSource: 'base' as const,
+          useRecordedCp: true,
+        };
     if (!projection || projection.formSource === 'mega') {
       result.unmatchedCount += 1;
       continue;
@@ -230,13 +284,17 @@ export const buildOwnedPvPRoster = (
       result.incompleteCount += 1;
       continue;
     }
-    const moveset = recordedMoveset(projection.variant, instance);
+    const moveset = recordedMoveset(
+      projection.variant,
+      instance,
+      moveLookups,
+    );
     if (!moveset) {
       result.incompleteCount += 1;
       continue;
     }
     const ranking = matchRanking(
-      rankings,
+      rankingLookup,
       projection.variant,
       projection.formSource,
       instance,

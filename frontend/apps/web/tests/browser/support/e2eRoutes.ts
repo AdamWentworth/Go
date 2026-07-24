@@ -72,12 +72,13 @@ const makePvPEntry = (
   name: string,
   type: string,
   moveName: string,
+  pokemonId = rank,
 ) => ({
   rank,
   sourceRank: rank,
   speciesId,
   name,
-  pokemonId: rank,
+  pokemonId,
   variantKind: 'pokemon',
   imageUrl: `/images/pokemon/${rank}.png`,
   types: [type],
@@ -138,6 +139,7 @@ const pvpDataFixture = {
       entries: [
         makePvPEntry(1, 'clodsire', 'Clodsire', 'poison', 'Earthquake'),
         makePvPEntry(2, 'azumarill', 'Azumarill', 'water', 'Play Rough'),
+        makePvPEntry(3, 'bulbasaur', 'Bulbasaur', 'grass', 'Seed Bomb', 1),
       ],
     },
     ultra: {

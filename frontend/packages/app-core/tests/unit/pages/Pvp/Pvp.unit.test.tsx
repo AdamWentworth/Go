@@ -19,9 +19,19 @@ const hookState = vi.hoisted(() => ({
   loading: false,
   error: null as string | null,
 }));
+const bootstrapHooks = vi.hoisted(() => ({
+  variants: vi.fn(),
+  instances: vi.fn(),
+}));
 
 vi.mock('@/pages/Pvp/hooks/usePvPRankings', () => ({
   usePvPRankings: () => hookState,
+}));
+vi.mock('@/features/variants/hooks/useBootstrapVariants', () => ({
+  useBootstrapVariants: bootstrapHooks.variants,
+}));
+vi.mock('@/features/instances/hooks/useBootstrapInstances', () => ({
+  useBootstrapInstances: bootstrapHooks.instances,
 }));
 
 const renderPvp = () => render(<Pvp />, { wrapper: MemoryRouter });
@@ -114,6 +124,8 @@ describe('PvP rankings page', () => {
     hookState.data = makePayload();
     hookState.loading = false;
     hookState.error = null;
+    bootstrapHooks.variants.mockClear();
+    bootstrapHooks.instances.mockClear();
     useAuthStore.setState({ isLoggedIn: false, user: null });
     useVariantsStore.setState({
       variants: [],
@@ -130,6 +142,9 @@ describe('PvP rankings page', () => {
   it('starts with Great League and renders its ranked team and build', () => {
     const { container } = renderPvp();
 
+    expect(bootstrapHooks.variants).toHaveBeenLastCalledWith(false);
+    expect(bootstrapHooks.instances).toHaveBeenLastCalledWith(false);
+    expect(useVariantsStore.getState().ensureMoves).not.toHaveBeenCalled();
     expect(screen.getByRole('heading', { name: 'PvP Rankings' })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Method' }))
       .toHaveAttribute('href', '/pvp/methodology');
@@ -345,11 +360,100 @@ describe('PvP rankings page', () => {
     renderPvp();
     fireEvent.click(screen.getByRole('button', { name: 'My Pokémon' }));
 
+    expect(bootstrapHooks.variants).toHaveBeenLastCalledWith(true);
+    expect(bootstrapHooks.instances).toHaveBeenLastCalledWith(true);
+    expect(useVariantsStore.getState().ensureMoves).not.toHaveBeenCalled();
     expect(screen.getByText('Blue')).toBeInTheDocument();
     expect(screen.getByText('CP 1,498')).toBeInTheDocument();
     expect(screen.getByText('Level 39.5')).toBeInTheDocument();
     expect(screen.getByText('1 ready')).toBeInTheDocument();
     expect(screen.queryByText('Clodsire')).not.toBeInTheDocument();
+  });
+
+  it('uses cached move data while a background move refresh is still running', () => {
+    useAuthStore.setState({ isLoggedIn: true });
+    useVariantsStore.setState({
+      variants: [{
+        variant_id: '0002-default',
+        pokemon_id: 2,
+        pokedex_number: 184,
+        name: 'Azumarill',
+        species_name: 'Azumarill',
+        variantType: 'default',
+        currentImage: '/images/my-azumarill.png',
+        attack: 112,
+        defense: 152,
+        stamina: 225,
+        moves: [
+          {
+            move_id: 1,
+            name: 'Bubble',
+            is_fast: 1,
+            type_name: 'water',
+            type: 'water',
+            pvp_power: 8,
+            pvp_energy: 11,
+            pvp_turns: 3,
+          },
+          {
+            move_id: 2,
+            name: 'Play Rough',
+            is_fast: 0,
+            type_name: 'fairy',
+            type: 'fairy',
+            pvp_power: 90,
+            pvp_energy: -60,
+          },
+          {
+            move_id: 3,
+            name: 'Ice Beam',
+            is_fast: 0,
+            type_name: 'ice',
+            type: 'ice',
+            pvp_power: 90,
+            pvp_energy: -55,
+          },
+        ],
+        fusion: [],
+        crownForms: [],
+        megaEvolutions: [],
+      } as unknown as PokemonVariant],
+      isMovesLoading: true,
+    });
+    useInstancesStore.setState({
+      instances: {
+        azu: {
+          instance_id: 'azu',
+          variant_id: '0002-default',
+          pokemon_id: 2,
+          nickname: 'Cached Blue',
+          cp: 1_498,
+          level: 39.5,
+          attack_iv: 0,
+          defense_iv: 15,
+          stamina_iv: 15,
+          fast_move_id: 1,
+          charged_move1_id: 2,
+          charged_move2_id: 3,
+          is_caught: true,
+          disabled: false,
+          shadow: false,
+          is_fused: false,
+          crown: false,
+          mega: false,
+          is_mega: false,
+          shiny: false,
+        } as PokemonInstance,
+      },
+    });
+
+    renderPvp();
+    fireEvent.click(screen.getByRole('button', { name: 'My Pokémon' }));
+
+    expect(screen.queryByText('Loading move data for your caught Pokémon...'))
+      .not.toBeInTheDocument();
+    expect(screen.getByText('Cached Blue')).toBeInTheDocument();
+    expect(screen.getByText('1 ready')).toBeInTheDocument();
   });
 
   it('shows loading and source failure states without rendering stale rankings', () => {
