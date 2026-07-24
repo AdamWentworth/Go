@@ -28,6 +28,20 @@ test.describe('PvP rankings page', () => {
       await expect(page.locator('.pvp-rank--gold')).toHaveText('1');
       await expect(page.locator('.pvp-rank--silver')).toHaveText('2');
 
+      await page.getByRole('button', { name: 'Team Builder' }).click();
+      await expect(page.getByRole('heading', { name: 'Team Builder' })).toBeVisible();
+      await page.getByRole('button', { name: 'Select Clodsire' }).click();
+      await page.getByRole('button', { name: 'Select Azumarill' }).click();
+      await expect(page.getByText('2 / 3')).toBeVisible();
+      await expect(page.getByText('Threatens 2 · Open')).toBeVisible();
+
+      const teamLayout = await page.locator('.pvp-page').evaluate(() => ({
+        viewportWidth: window.innerWidth,
+        documentWidth: document.documentElement.scrollWidth,
+      }));
+      expect(teamLayout.documentWidth).toBeLessThanOrEqual(teamLayout.viewportWidth);
+
+      await page.getByRole('button', { name: 'Rankings' }).click();
       await page.getByRole('button', { name: 'Show details for Clodsire' }).click();
       await expect(page.getByRole('heading', { name: 'Strong matchups' })).toBeVisible();
       await expect(page.getByText('Talonflame')).toBeVisible();

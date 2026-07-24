@@ -19,6 +19,7 @@ export const STORAGE_KEYS = {
   pokemonMovesVersion: 'pokemonMovesVersion',
   pokemonRaidDataVersion: 'pokemonRaidDataVersion',
   raidCalibrationObservations: 'raidCalibrationObservations',
+  pvpTeams: 'pvpTeams',
   pokedexListsTimestamp: 'pokedexListsTimestamp',
   pokedexListsCatalogVersion: 'pokedexListsCatalogVersion',
   tagsTimestamp: 'tagsTimestamp',

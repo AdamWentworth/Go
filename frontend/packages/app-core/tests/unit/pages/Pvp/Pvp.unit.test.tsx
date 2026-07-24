@@ -96,6 +96,7 @@ const makePayload = (): PokemonPvPRankingsPayload => {
 
 describe('PvP rankings page', () => {
   beforeEach(() => {
+    window.localStorage.removeItem('pvpTeams');
     hookState.data = makePayload();
     hookState.loading = false;
     hookState.error = null;
@@ -175,6 +176,27 @@ describe('PvP rankings page', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Hide details for Clodsire' }));
     expect(screen.queryByRole('heading', { name: 'Strong matchups' })).not.toBeInTheDocument();
+  });
+
+  it('builds and preserves a three-Pokemon team with threat evidence', () => {
+    const { unmount } = render(<Pvp />);
+    fireEvent.click(screen.getByRole('button', { name: 'Team Builder' }));
+
+    expect(screen.getByRole('heading', { name: 'Team Builder' })).toBeInTheDocument();
+    expect(screen.getAllByText('Choose Pokémon')).toHaveLength(3);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Select Clodsire' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Select Azumarill' }));
+
+    expect(screen.getByText('2 / 3')).toBeInTheDocument();
+    expect(screen.getByText('Threatens 2 · Open')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Remove Clodsire from team' }))
+      .toBeInTheDocument();
+
+    unmount();
+    render(<Pvp />);
+    fireEvent.click(screen.getByRole('button', { name: 'Team Builder' }));
+    expect(screen.getByText('2 / 3')).toBeInTheDocument();
   });
 
   it('shows only legal, fully recorded caught builds in My Pokemon', () => {

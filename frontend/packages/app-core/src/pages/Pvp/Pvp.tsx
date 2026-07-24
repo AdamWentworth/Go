@@ -8,8 +8,10 @@ import {
   FaExchangeAlt,
   FaFistRaised,
   FaFlag,
+  FaListOl,
   FaSearch,
   FaUser,
+  FaUsers,
 } from 'react-icons/fa';
 import type { IconType } from 'react-icons';
 
@@ -24,10 +26,12 @@ import type {
 } from '@shared-contracts/pokemon';
 
 import { usePvPRankings } from './hooks/usePvPRankings';
+import PvpTeamBuilder from './components/PvpTeamBuilder';
 import {
   buildOwnedPvPRoster,
   type PvPRosterScope,
 } from './utils/pvpRoster';
+import { formatPvPSpeciesName } from './utils/pvpTeamBuilder';
 import './Pvp.css';
 
 
@@ -51,6 +55,8 @@ type PvPRoleKey =
   | 'charger'
   | 'attacker'
   | 'consistency';
+
+type PvPWorkspace = 'rankings' | 'team';
 
 const ROLES: Array<{
   key: PvPRoleKey;
@@ -117,14 +123,6 @@ function scoreForRole(
   return entry.categoryScores[role.scoreIndex] ?? entry.score;
 }
 
-const humanizeSpeciesId = (speciesId: string): string =>
-  speciesId
-    .replace(/_shadow$/, ' Shadow')
-    .split('_')
-    .filter(Boolean)
-    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
-    .join(' ');
-
 function MatchupList({
   title,
   items,
@@ -155,7 +153,7 @@ function MatchupList({
                 )}
                 <span>
                   <strong>
-                    {opponent?.name ?? humanizeSpeciesId(matchup.speciesId)}
+                    {opponent?.name ?? formatPvPSpeciesName(matchup.speciesId)}
                   </strong>
                   <small>{matchup.rating.toFixed(0)} battle rating</small>
                 </span>
@@ -349,6 +347,7 @@ const Pvp = () => {
   const instancesLoading = useInstancesStore((state) => state.instancesLoading);
   const isLoggedIn = useAuthStore((state) => state.isLoggedIn);
   const [league, setLeague] = useState<PokemonPvPLeagueKey>('great');
+  const [workspace, setWorkspace] = useState<PvPWorkspace>('rankings');
   const [roleKey, setRoleKey] = useState<PvPRoleKey>('overall');
   const [rosterScope, setRosterScope] = useState<PvPRosterScope>('catalog');
   const [search, setSearch] = useState('');
@@ -427,7 +426,7 @@ const Pvp = () => {
   useEffect(() => {
     setVisibleLimit(INITIAL_LIMIT);
     setExpandedKey(null);
-  }, [league, roleKey, rosterScope, search]);
+  }, [league, roleKey, rosterScope, search, workspace]);
 
   const activeLeague = LEAGUES.find((item) => item.key === league) ?? LEAGUES[0];
   const visibleEntries = rankedEntries.slice(0, visibleLimit);
@@ -463,6 +462,27 @@ const Pvp = () => {
               : `${entries.length || '---'} ranked`}
           </strong>
         </header>
+
+        <nav className="pvp-workspace-tabs" aria-label="PvP workspace">
+          <button
+            type="button"
+            className={workspace === 'rankings' ? 'active' : ''}
+            aria-pressed={workspace === 'rankings'}
+            onClick={() => setWorkspace('rankings')}
+          >
+            <FaListOl aria-hidden="true" />
+            Rankings
+          </button>
+          <button
+            type="button"
+            className={workspace === 'team' ? 'active' : ''}
+            aria-pressed={workspace === 'team'}
+            onClick={() => setWorkspace('team')}
+          >
+            <FaUsers aria-hidden="true" />
+            Team Builder
+          </button>
+        </nav>
 
         <nav className="pvp-league-tabs" aria-label="PvP league">
           {LEAGUES.map((item) => (
@@ -512,97 +532,127 @@ const Pvp = () => {
           )}
         </section>
 
-        <nav className="pvp-role-tabs" aria-label="Ranking role">
-          {ROLES.map((role) => {
-            const Icon = role.icon;
-            return (
+        {workspace === 'rankings' ? (
+          <>
+            <nav className="pvp-role-tabs" aria-label="Ranking role">
+              {ROLES.map((role) => {
+                const Icon = role.icon;
+                return (
+                  <button
+                    type="button"
+                    key={role.key}
+                    className={roleKey === role.key ? 'active' : ''}
+                    aria-pressed={roleKey === role.key}
+                    onClick={() => setRoleKey(role.key)}
+                  >
+                    <Icon aria-hidden="true" />
+                    <span>{role.label}</span>
+                  </button>
+                );
+              })}
+            </nav>
+
+            <section className="pvp-toolbar" aria-label={`${activeLeague.label} League rankings`}>
+              <div>
+                <span>{activeRole.label} rankings</span>
+                <strong>{activeLeague.label} League</strong>
+              </div>
+              <label className="pvp-search">
+                <FaSearch aria-hidden="true" />
+                <input
+                  type="search"
+                  value={search}
+                  onChange={(event) => setSearch(event.target.value)}
+                  placeholder="Pokemon, type, or move"
+                  aria-label="Search PvP rankings"
+                />
+              </label>
+            </section>
+
+            {pageLoading && (
+              <div className="pvp-status" role="status">
+                {rosterScope === 'owned'
+                  ? 'Loading your PvP-ready Pokémon...'
+                  : 'Loading current rankings...'}
+              </div>
+            )}
+            {error && (
+              <div className="pvp-status pvp-status--error" role="alert">
+                {error}
+              </div>
+            )}
+            {!pageLoading && !error && visibleEntries.length === 0 && (
+              <div className="pvp-status">
+                {rosterScope === 'owned' && !search
+                  ? 'No caught Pokémon are ready for this league. Add CP, level, IVs, one Fast Move, and two Charged Moves to a legal build.'
+                  : 'No rankings match that search.'}
+              </div>
+            )}
+
+            {!pageLoading && !error && visibleEntries.length > 0 && (
+              <>
+                <div className="pvp-ranking-head" aria-hidden="true">
+                  <span>Rank</span>
+                  <span>Pokemon</span>
+                  <span>Recommended team</span>
+                  <span>{activeRole.label}</span>
+                  <span>Build</span>
+                </div>
+                <section className="pvp-rankings" aria-live="polite">
+                  {visibleEntries.map(({ entry, rank, score, key, cp, nickname }) => (
+                    <RankingRow
+                      key={key}
+                      entry={entry}
+                      rank={rank}
+                      score={score}
+                      scoreLabel={activeRole.label}
+                      cp={cp}
+                      nickname={nickname}
+                      expanded={expandedKey === key}
+                      onToggle={() => setExpandedKey((current) => current === key ? null : key)}
+                      entriesBySpeciesId={entriesBySpeciesId}
+                    />
+                  ))}
+                </section>
+              </>
+            )}
+
+            {visibleLimit < rankedEntries.length && (
               <button
                 type="button"
-                key={role.key}
-                className={roleKey === role.key ? 'active' : ''}
-                aria-pressed={roleKey === role.key}
-                onClick={() => setRoleKey(role.key)}
+                className="pvp-show-more"
+                onClick={() => setVisibleLimit((current) => current + INITIAL_LIMIT)}
               >
-                <Icon aria-hidden="true" />
-                <span>{role.label}</span>
+                Show next {Math.min(INITIAL_LIMIT, rankedEntries.length - visibleLimit)}
               </button>
-            );
-          })}
-        </nav>
-
-        <section className="pvp-toolbar" aria-label={`${activeLeague.label} League rankings`}>
-          <div>
-            <span>{activeRole.label} rankings</span>
-            <strong>{activeLeague.label} League</strong>
-          </div>
-          <label className="pvp-search">
-            <FaSearch aria-hidden="true" />
-            <input
-              type="search"
-              value={search}
-              onChange={(event) => setSearch(event.target.value)}
-              placeholder="Pokemon, type, or move"
-              aria-label="Search PvP rankings"
-            />
-          </label>
-        </section>
-
-        {pageLoading && (
-          <div className="pvp-status" role="status">
-            {rosterScope === 'owned'
-              ? 'Loading your PvP-ready Pokémon...'
-              : 'Loading current rankings...'}
-          </div>
-        )}
-        {error && (
-          <div className="pvp-status pvp-status--error" role="alert">
-            {error}
-          </div>
-        )}
-        {!pageLoading && !error && visibleEntries.length === 0 && (
-          <div className="pvp-status">
-            {rosterScope === 'owned' && !search
-              ? 'No caught Pokémon are ready for this league. Add CP, level, IVs, one Fast Move, and two Charged Moves to a legal build.'
-              : 'No rankings match that search.'}
-          </div>
-        )}
-
-        {!pageLoading && !error && visibleEntries.length > 0 && (
-          <>
-            <div className="pvp-ranking-head" aria-hidden="true">
-              <span>Rank</span>
-              <span>Pokemon</span>
-              <span>Recommended team</span>
-              <span>{activeRole.label}</span>
-              <span>Build</span>
-            </div>
-            <section className="pvp-rankings" aria-live="polite">
-              {visibleEntries.map(({ entry, rank, score, key, cp, nickname }) => (
-                <RankingRow
-                  key={key}
-                  entry={entry}
-                  rank={rank}
-                  score={score}
-                  scoreLabel={activeRole.label}
-                  cp={cp}
-                  nickname={nickname}
-                  expanded={expandedKey === key}
-                  onToggle={() => setExpandedKey((current) => current === key ? null : key)}
-                  entriesBySpeciesId={entriesBySpeciesId}
-                />
-              ))}
-            </section>
+            )}
           </>
-        )}
-
-        {visibleLimit < rankedEntries.length && (
-          <button
-            type="button"
-            className="pvp-show-more"
-            onClick={() => setVisibleLimit((current) => current + INITIAL_LIMIT)}
-          >
-            Show next {Math.min(INITIAL_LIMIT, rankedEntries.length - visibleLimit)}
-          </button>
+        ) : (
+          <>
+            {pageLoading && (
+              <div className="pvp-status" role="status">
+                Loading Team Builder...
+              </div>
+            )}
+            {error && (
+              <div className="pvp-status pvp-status--error" role="alert">
+                {error}
+              </div>
+            )}
+            {!pageLoading && !error && scopedEntries.length === 0 && (
+              <div className="pvp-status">
+                No Pokémon are available for this team.
+              </div>
+            )}
+            {!pageLoading && !error && scopedEntries.length > 0 && (
+              <PvpTeamBuilder
+                key={`${league}-${rosterScope}`}
+                candidates={scopedEntries}
+                entriesBySpeciesId={entriesBySpeciesId}
+                storageKey={`${league}:${rosterScope}`}
+              />
+            )}
+          </>
         )}
 
         {data?.source && (
