@@ -13,8 +13,6 @@ import {
   pokemonContract,
   type PokemonCatalogManifest,
   type PokemonMovesChunk,
-  type PokemonPvPBattleRequest,
-  type PokemonPvPBattleResponse,
   type PokemonPvPRankingsPayload,
   type PokemonRaidDataChunk,
 } from '@shared-contracts/pokemon';
@@ -283,46 +281,6 @@ export const getPokemonPvPDataChunk = async (
     return await getPokemonObjectChunk<PokemonPvPRankingsPayload>(manifest, 'pvpData');
   } catch (error: unknown) {
     log.error('Error fetching the Pokemon PvP rankings chunk', error);
-    throw error;
-  }
-};
-
-export const simulatePokemonPvPBattle = async (
-  request: PokemonPvPBattleRequest,
-): Promise<PokemonPvPBattleResponse> => {
-  try {
-    const response = await requestWithPolicy(
-      buildUrl(BASE_URL, pokemonContract.endpoints.pvpBattle),
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(request),
-      },
-    );
-    const payload = await parseJsonSafe<unknown>(response);
-    if (!response.ok) {
-      const message =
-        payload &&
-        typeof payload === 'object' &&
-        typeof (payload as { error?: unknown }).error === 'string'
-          ? (payload as { error: string }).error
-          : 'Battle simulation failed.';
-      throw toHttpError(response.status, payload, message);
-    }
-    if (
-      !payload ||
-      typeof payload !== 'object' ||
-      Array.isArray(payload) ||
-      !Array.isArray((payload as { fighters?: unknown }).fighters) ||
-      !Array.isArray((payload as { ratings?: unknown }).ratings)
-    ) {
-      throw new Error(
-        '[pokemonDataService] invalid PvP battle response shape',
-      );
-    }
-    return payload as PokemonPvPBattleResponse;
-  } catch (error: unknown) {
-    log.error('Error simulating the PvP battle', error);
     throw error;
   }
 };

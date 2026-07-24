@@ -30,7 +30,7 @@ describe('PvP methodology page', () => {
       .toBeInTheDocument();
     expect(screen.getByRole('heading', { name: 'Separate formats, not client-side filters' }))
       .toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: 'Exact builds in a controlled 1v1' }))
+    expect(screen.getByRole('heading', { name: 'Recorded builds in a controlled 1v1' }))
       .toBeInTheDocument();
     expect(screen.getByText(/Team Builder analyzes published matchup evidence/))
       .toBeInTheDocument();

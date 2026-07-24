@@ -150,7 +150,13 @@ cannot display.
 ### PvP simulator parity
 
 `internal/pvp` is PokeGoNexus's deterministic Go implementation of the
-PvPoke ranking simulation used by the active snapshot. It covers:
+PvPoke ranking simulation used to validate the active snapshot. It is an
+offline reference package: the production API executable does not import it
+and exposes no battle or personal-roster simulation endpoint. Browser workers
+perform those interactive calculations from versioned data fetched from the
+service.
+
+The reference package covers:
 
 - legacy turn resolution, CMP, fast-move interruption, shields, damage, and
   deterministic move effects;

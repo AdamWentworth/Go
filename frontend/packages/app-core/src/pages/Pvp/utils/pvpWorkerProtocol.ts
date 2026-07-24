@@ -1,5 +1,7 @@
 import type {
   PokemonPvPBattleFighter,
+  PokemonPvPBattleRequest,
+  PokemonPvPBattleResponse,
   PokemonPvPRosterEvaluationOpponent,
   PokemonPvPRosterEvaluationResponse,
 } from '@shared-contracts/pokemon';
@@ -17,10 +19,21 @@ export type PvPRosterWorkerRequest = {
   opponents: PokemonPvPRosterEvaluationOpponent[];
 };
 
-export type PvPRosterWorkerResponse =
+export type PvPBattleWorkerRequest = {
+  kind: 'battle';
+  request: PokemonPvPBattleRequest;
+};
+
+export type PvPWorkerRequest = PvPRosterWorkerRequest | PvPBattleWorkerRequest;
+
+export type PvPWorkerResponse =
   | {
     kind: 'evaluation';
     response: PokemonPvPRosterEvaluationResponse;
+  }
+  | {
+    kind: 'battle';
+    response: PokemonPvPBattleResponse;
   }
   | {
     error: string;

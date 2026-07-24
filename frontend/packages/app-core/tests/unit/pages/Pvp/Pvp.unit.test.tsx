@@ -256,7 +256,7 @@ describe('PvP rankings page', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Battle Lab' }));
 
-    expect(screen.getByText('Great League · pinned PvPoke mechanics'))
+    expect(screen.getByText('Great League · local pinned mechanics'))
       .toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Swap battle sides' }))
       .toBeInTheDocument();

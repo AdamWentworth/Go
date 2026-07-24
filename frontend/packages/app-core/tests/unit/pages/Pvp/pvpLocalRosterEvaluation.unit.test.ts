@@ -1,7 +1,13 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 
-import { evaluatePvPRosterLocally } from '@/pages/Pvp/utils/pvpLocalRosterEvaluation';
-import { evaluatePvPRosterAsync } from '@/pages/Pvp/utils/pvpRosterWorkers';
+import {
+  evaluatePvPRosterLocally,
+  simulatePvPBattleLocally,
+} from '@/pages/Pvp/utils/pvpLocalRosterEvaluation';
+import {
+  evaluatePvPRosterAsync,
+  simulatePvPBattleAsync,
+} from '@/pages/Pvp/utils/pvpWorkers';
 import type {
   PokemonPvPBattleFighter,
   PokemonPvPRankingMove,
@@ -137,5 +143,53 @@ describe('local personal PvP evaluation', () => {
     );
 
     expect(result.results[0].fighterId).toBe('caught');
+  });
+});
+
+describe('local PvP Battle Lab simulation', () => {
+  const battleRequest = {
+    mechanics: 'pvpoke-legacy' as const,
+    fighters: [
+      fighter('strong', 230, 220, 210),
+      fighter('weak', 150, 150, 150),
+    ] as [PokemonPvPBattleFighter, PokemonPvPBattleFighter],
+    shields: [1, 1] as [number, number],
+    startingEnergy: [100, 0] as [number, number],
+    recordTimeline: true,
+  };
+
+  it('returns a detailed deterministic result without an API request', async () => {
+    const fetchSpy = vi.spyOn(global, 'fetch');
+    const result = await simulatePvPBattleAsync(battleRequest);
+
+    expect(result.mechanics).toBe('pvpoke-legacy');
+    expect(result.winner).toBe(0);
+    expect(result.fighters[0].maxHp).toBe(210);
+    expect(result.timeline.length).toBeGreaterThan(0);
+    expect(result.timeline.some((event) => event.kind === 'charged')).toBe(true);
+    expect(fetchSpy).not.toHaveBeenCalled();
+    fetchSpy.mockRestore();
+  });
+
+  it('honors shields, starting energy, and timeline controls', () => {
+    const result = simulatePvPBattleLocally({
+      ...battleRequest,
+      shields: [0, 2],
+      startingEnergy: [100, 0],
+      recordTimeline: false,
+    });
+
+    expect(result.fighters[0].startShields).toBe(0);
+    expect(result.fighters[1].startShields).toBe(2);
+    expect(result.timeline).toEqual([]);
+  });
+
+  it('rejects unsupported mechanics before starting work', () => {
+    expect(() => simulatePvPBattleLocally({
+      ...battleRequest,
+      mechanics: 'current-2026',
+    } as unknown as typeof battleRequest)).toThrow(
+      'pinned PvPoke mechanics',
+    );
   });
 });

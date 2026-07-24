@@ -172,10 +172,13 @@ test.describe('PvP rankings page', () => {
   test('opens a logged-in Trainer roster without an indefinite loading state', async ({
     page,
   }) => {
-    const rosterEvaluationRequests: string[] = [];
+    const pvpComputeRequests: string[] = [];
     page.on('request', (request) => {
-      if (request.url().includes('/pokemon/pvp-roster-evaluation')) {
-        rosterEvaluationRequests.push(request.url());
+      if (
+        request.url().includes('/pokemon/pvp-roster-evaluation') ||
+        request.url().includes('/pokemon/pvp-battle')
+      ) {
+        pvpComputeRequests.push(request.url());
       }
     });
     await installE2eRoutes(page, {
@@ -235,6 +238,6 @@ test.describe('PvP rankings page', () => {
       viewportWidth: window.innerWidth,
     }));
     expect(viewport.documentWidth).toBeLessThanOrEqual(viewport.viewportWidth);
-    expect(rosterEvaluationRequests).toEqual([]);
+    expect(pvpComputeRequests).toEqual([]);
   });
 });

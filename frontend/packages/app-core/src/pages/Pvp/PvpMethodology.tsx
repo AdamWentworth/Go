@@ -230,14 +230,15 @@ const PvpMethodology = () => {
           </section>
 
           <section id="battle-lab" className="pvp-methodology-section">
-            <p className="pvp-methodology-kicker">Direct simulation</p>
-            <h2>Exact builds in a controlled 1v1</h2>
+            <p className="pvp-methodology-kicker">Local simulation</p>
+            <h2>Recorded builds in a controlled 1v1</h2>
             <p>
               Battle Lab uses the pinned <code>pvpoke-legacy</code> mechanics
-              implemented by the PokeGo Nexus Pokémon service. It models move
-              turns, damage, energy, shields, Charged Move decisions, stat
-              stages, and deterministic buff activation for the two selected
-              fighters.
+              in the same browser worker as My Pokémon rankings. It models move
+              turns, damage, energy, shields, Charged Move decisions, stat stages,
+              and deterministic buff activation for the two selected fighters.
+              The Pokémon service only supplies the versioned data used to build
+              them.
             </p>
             <div className="pvp-methodology-facts" aria-label="Battle Lab inputs">
               <span>
@@ -288,7 +289,7 @@ const PvpMethodology = () => {
             </ul>
             <p className="pvp-methodology-validation">
               Import validation, source-format tests, catalog matching tests,
-              battle parity fixtures, API contract tests, and responsive
+              local battle fixtures, data-only API boundary tests, and responsive
               browser checks guard this workflow.
             </p>
           </section>

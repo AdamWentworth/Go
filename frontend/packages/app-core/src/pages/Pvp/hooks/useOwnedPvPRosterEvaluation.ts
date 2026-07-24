@@ -14,7 +14,7 @@ import {
   getCachedPvPRosterEvaluation,
   setCachedPvPRosterEvaluation,
 } from '../utils/pvpRosterEvaluationCache';
-import { evaluatePvPRosterAsync } from '../utils/pvpRosterWorkers';
+import { evaluatePvPRosterAsync } from '../utils/pvpWorkers';
 
 type OwnedPvPRosterEvaluationState = {
   response: PokemonPvPRosterEvaluationResponse | null;

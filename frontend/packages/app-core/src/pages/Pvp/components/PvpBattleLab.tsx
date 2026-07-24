@@ -14,7 +14,6 @@ import {
   FaShieldAlt,
 } from 'react-icons/fa';
 
-import { simulatePokemonPvPBattle } from '@/services/pokemonDataService';
 import { resolveAssetUrl } from '@/utils/assetUrl';
 import { getTypeIconPath } from '@/utils/imageHelpers';
 import type {
@@ -26,6 +25,7 @@ import {
   getPvPBattleCandidateLabel,
   isPvPBattleCandidateReady,
 } from '../utils/pvpBattleLab';
+import { simulatePvPBattleAsync } from '../utils/pvpWorkers';
 import type { PvPTeamCandidate } from '../utils/pvpTeamBuilder';
 
 const PICK_LIMIT = 12;
@@ -342,7 +342,7 @@ const PvpBattleLab = ({
     setResult(null);
     setError('');
     try {
-      const next = await simulatePokemonPvPBattle({
+      const next = await simulatePvPBattleAsync({
         mechanics: 'pvpoke-legacy',
         fighters: [fighters[0], fighters[1]],
         shields,
@@ -368,7 +368,7 @@ const PvpBattleLab = ({
           <FaFlask aria-hidden="true" />
           <strong>Battle Lab</strong>
         </span>
-        <small>{formatLabel} · pinned PvPoke mechanics</small>
+        <small>{formatLabel} · local pinned mechanics</small>
       </header>
 
       {readyCandidates.length < candidates.length && (
@@ -455,7 +455,8 @@ const PvpBattleLab = ({
       )}
       <footer>
         <FaHeartbeat aria-hidden="true" />
-        Results use the selected builds, shield counts, starting energy, and deterministic pinned mechanics.
+        Results are calculated on this device from the selected builds, shield
+        counts, starting energy, and deterministic pinned mechanics.
       </footer>
     </section>
   );

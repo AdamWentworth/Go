@@ -1,5 +1,8 @@
 import type {
+  PokemonPvPBattleEvent,
   PokemonPvPBattleFighter,
+  PokemonPvPBattleRequest,
+  PokemonPvPBattleResponse,
   PokemonPvPMoveBuff,
   PokemonPvPRankingMove,
   PokemonPvPRosterEvaluationOpponent,
@@ -9,7 +12,7 @@ import type {
 import type {
   PvPRosterEvaluationCandidate,
   PvPRosterWorkerRequest,
-} from './pvpRosterWorkerProtocol';
+} from './pvpWorkerProtocol';
 
 const ENERGY_CAP = 100;
 const MAX_TURNS = 480;
@@ -148,9 +151,34 @@ type Combatant = {
 
 type BattleResult = {
   fighters: [
-    { hp: number; maxHp: number; shields: number; startShields: number },
-    { hp: number; maxHp: number; shields: number; startShields: number },
+    {
+      hp: number;
+      maxHp: number;
+      energy: number;
+      shields: number;
+      startShields: number;
+      attackStage: number;
+      defenseStage: number;
+    },
+    {
+      hp: number;
+      maxHp: number;
+      energy: number;
+      shields: number;
+      startShields: number;
+      attackStage: number;
+      defenseStage: number;
+    },
   ];
+  turns: number;
+  timeMs: number;
+  timeline: PokemonPvPBattleEvent[];
+};
+
+type BattleConditions = {
+  shields: [number, number];
+  startingEnergy: [number, number];
+  recordTimeline?: boolean;
 };
 
 const clamp = (value: number, minimum: number, maximum: number): number =>
@@ -334,44 +362,65 @@ const chooseChargedMove = (
   return ordered[0];
 };
 
-const resolveFast = (attacker: Combatant, defender: Combatant): void => {
+const resolveFast = (attacker: Combatant, defender: Combatant): number => {
   const move = attacker.model.fastMove;
-  defender.hp = Math.max(0, defender.hp - damage(attacker, defender, move));
+  const dealt = damage(attacker, defender, move);
+  defender.hp = Math.max(0, defender.hp - dealt);
   attacker.energy = Math.min(
     ENERGY_CAP,
     attacker.energy + Number(move.energyGain ?? 0),
   );
+  return dealt;
 };
 
 const resolveCharged = (
   attacker: Combatant,
   defender: Combatant,
   move: PokemonPvPRankingMove,
-): void => {
+): { damage: number; shielded: boolean; buffed: boolean } => {
   attacker.energy -= Number(move.energyCost ?? 0);
-  const dealt = defender.shields > 0 ? 1 : damage(attacker, defender, move);
-  if (defender.shields > 0) defender.shields -= 1;
+  const shielded = defender.shields > 0;
+  const dealt = shielded ? 1 : damage(attacker, defender, move);
+  if (shielded) defender.shields -= 1;
   defender.hp = Math.max(0, defender.hp - dealt);
+  const stagesBefore = [
+    attacker.attackStage,
+    attacker.defenseStage,
+    defender.attackStage,
+    defender.defenseStage,
+  ];
   applyBuff(attacker, defender, move);
+  return {
+    damage: dealt,
+    shielded,
+    buffed:
+      stagesBefore[0] !== attacker.attackStage ||
+      stagesBefore[1] !== attacker.defenseStage ||
+      stagesBefore[2] !== defender.attackStage ||
+      stagesBefore[3] !== defender.defenseStage,
+  };
 };
 
 const simulateBattle = (
   first: PokemonPvPBattleFighter,
   second: PokemonPvPBattleFighter,
-  scenario: Scenario,
+  conditions: BattleConditions,
 ): BattleResult => {
   const fighters: [Combatant, Combatant] = [
     newCombatant(
       first,
-      scenario.shields[0],
-      fastEnergyAfterTurns(first.fastMove, scenario.energyTurns[0]),
+      conditions.shields[0],
+      conditions.startingEnergy[0],
     ),
     newCombatant(
       second,
-      scenario.shields[1],
-      fastEnergyAfterTurns(second.fastMove, scenario.energyTurns[1]),
+      conditions.shields[1],
+      conditions.startingEnergy[1],
     ),
   ];
+  const timeline: PokemonPvPBattleEvent[] = [];
+  let turns = 0;
+  let timeMs = 0;
 
   for (
     let turn = 0;
@@ -391,7 +440,18 @@ const simulateBattle = (
         defender.hp > 0
       ) {
         attacker.pendingFast = false;
-        resolveFast(attacker, defender);
+        const dealt = resolveFast(attacker, defender);
+        if (conditions.recordTimeline) {
+          timeline.push({
+            turn: turn + 1,
+            actor,
+            kind: 'fast',
+            moveId: attacker.model.fastMove.id,
+            damage: dealt,
+            shielded: false,
+            buffed: false,
+          });
+        }
       }
     }
     if (fighters[0].hp <= 0 || fighters[1].hp <= 0) break;
@@ -414,19 +474,35 @@ const simulateBattle = (
             fighters[left.actor].model.attack ||
           left.actor - right.actor,
       );
+    let chargedCount = 0;
     for (const action of charged) {
       const attacker = fighters[action.actor];
       const defender = fighters[1 - action.actor];
       if (attacker.hp <= 0 || defender.hp <= 0) continue;
       if (attacker.energy < Number(action.move.energyCost ?? 0)) continue;
-      resolveCharged(attacker, defender, action.move);
+      const outcome = resolveCharged(attacker, defender, action.move);
+      chargedCount += 1;
+      if (conditions.recordTimeline) {
+        timeline.push({
+          turn: turn + 1,
+          actor: action.actor,
+          kind: 'charged',
+          moveId: action.move.id,
+          damage: outcome.damage,
+          shielded: outcome.shielded,
+          buffed: outcome.buffed,
+        });
+      }
     }
-    if (charged.length > 0) {
+    turns = turn + 1;
+    if (chargedCount > 0) {
+      timeMs += chargedCount * 10_000;
       fighters.forEach((fighter) => {
         fighter.cooldown = 0;
       });
       continue;
     }
+    timeMs += 500;
 
     fighters.forEach((fighter) => {
       if (fighter.hp <= 0 || fighter.cooldown !== 0) return;
@@ -440,16 +516,25 @@ const simulateBattle = (
       {
         hp: fighters[0].hp,
         maxHp: fighters[0].model.hp,
+        energy: fighters[0].energy,
         shields: fighters[0].shields,
         startShields: fighters[0].startShields,
+        attackStage: fighters[0].attackStage,
+        defenseStage: fighters[0].defenseStage,
       },
       {
         hp: fighters[1].hp,
         maxHp: fighters[1].model.hp,
+        energy: fighters[1].energy,
         shields: fighters[1].shields,
         startShields: fighters[1].startShields,
+        attackStage: fighters[1].attackStage,
+        defenseStage: fighters[1].defenseStage,
       },
     ],
+    turns,
+    timeMs,
+    timeline,
   };
 };
 
@@ -489,7 +574,16 @@ const evaluateScenario = (
   let weightedTotal = 0;
   let weightTotal = 0;
   for (const opponent of opponents) {
-    const battle = simulateBattle(fighter, opponent.fighter, scenario);
+    const battle = simulateBattle(fighter, opponent.fighter, {
+      shields: scenario.shields,
+      startingEnergy: [
+        fastEnergyAfterTurns(fighter.fastMove, scenario.energyTurns[0]),
+        fastEnergyAfterTurns(
+          opponent.fighter.fastMove,
+          scenario.energyTurns[1],
+        ),
+      ],
+    });
     weightedTotal += ratingCurve(adjustedRating(battle, 0)) * opponent.weight;
     weightTotal += opponent.weight;
   }
@@ -535,6 +629,83 @@ const overallScore = (
     value = (value ** 14 * scores[4] * scores[5]) ** (1 / 16);
   }
   return Math.floor(value * 10) / 10;
+};
+
+const assertBattleRequest = (request: PokemonPvPBattleRequest): void => {
+  if (request.mechanics !== 'pvpoke-legacy') {
+    throw new Error('Battle Lab supports the pinned PvPoke mechanics only.');
+  }
+  request.fighters.forEach((fighter, index) => {
+    if (
+      !Number.isFinite(fighter.attack) ||
+      fighter.attack <= 0 ||
+      !Number.isFinite(fighter.defense) ||
+      fighter.defense <= 0 ||
+      !Number.isFinite(fighter.hp) ||
+      fighter.hp <= 0
+    ) {
+      throw new Error(`Side ${index === 0 ? 'A' : 'B'} has invalid battle stats.`);
+    }
+    if (
+      !Number.isFinite(fighter.fastMove.power) ||
+      !Number.isFinite(fighter.fastMove.energyGain) ||
+      !Number.isFinite(fighter.fastMove.turns) ||
+      fighter.chargedMoves.length < 1 ||
+      fighter.chargedMoves.length > 2 ||
+      fighter.chargedMoves.some(
+        (move) =>
+          !Number.isFinite(move.power) ||
+          !Number.isFinite(move.energyCost) ||
+          Number(move.energyCost) <= 0,
+      )
+    ) {
+      throw new Error(`Side ${index === 0 ? 'A' : 'B'} has incomplete move data.`);
+    }
+  });
+  request.shields.forEach((shields) => {
+    if (!Number.isInteger(shields) || shields < 0 || shields > 2) {
+      throw new Error('Battle Lab shields must be between 0 and 2.');
+    }
+  });
+  request.startingEnergy.forEach((energy) => {
+    if (!Number.isFinite(energy) || energy < 0 || energy > ENERGY_CAP) {
+      throw new Error('Battle Lab starting energy must be between 0 and 100.');
+    }
+  });
+};
+
+export const simulatePvPBattleLocally = (
+  request: PokemonPvPBattleRequest,
+): PokemonPvPBattleResponse => {
+  assertBattleRequest(request);
+  const battle = simulateBattle(request.fighters[0], request.fighters[1], {
+    shields: request.shields,
+    startingEnergy: request.startingEnergy,
+    recordTimeline: request.recordTimeline,
+  });
+  const ratings: [number, number] = [
+    rating(battle, 0),
+    rating(battle, 1),
+  ];
+  const adjustedRatings: [number, number] = [
+    adjustedRating(battle, 0),
+    adjustedRating(battle, 1),
+  ];
+  return {
+    mechanics: 'pvpoke-legacy',
+    winner:
+      ratings[0] > ratings[1]
+        ? 0
+        : ratings[1] > ratings[0]
+          ? 1
+          : -1,
+    turns: battle.turns,
+    timeMs: battle.timeMs,
+    ratings,
+    adjustedRatings,
+    fighters: battle.fighters,
+    timeline: battle.timeline,
+  };
 };
 
 export const evaluatePvPRosterLocally = (
