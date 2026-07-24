@@ -18,10 +18,23 @@ type pvpRankingSource struct {
 }
 
 type pvpRankingMove struct {
-	ID   string `json:"id"`
-	Name string `json:"name"`
-	Type string `json:"type"`
-	Kind string `json:"kind"`
+	ID         string             `json:"id"`
+	Name       string             `json:"name"`
+	Type       string             `json:"type"`
+	Kind       string             `json:"kind"`
+	Power      int                `json:"power"`
+	EnergyGain int                `json:"energyGain"`
+	EnergyCost int                `json:"energyCost"`
+	Turns      int                `json:"turns"`
+	Buff       pvpRankingMoveBuff `json:"buff"`
+}
+
+type pvpRankingMoveBuff struct {
+	AttackerAttack  int     `json:"attackerAttack"`
+	AttackerDefense int     `json:"attackerDefense"`
+	TargetAttack    int     `json:"targetAttack"`
+	TargetDefense   int     `json:"targetDefense"`
+	Chance          float64 `json:"chance"`
 }
 
 type pvpRankingMatchup struct {
@@ -30,11 +43,8 @@ type pvpRankingMatchup struct {
 }
 
 type pvpRankingMoveUsage struct {
-	ID   string `json:"id"`
-	Name string `json:"name"`
-	Type string `json:"type"`
-	Kind string `json:"kind"`
-	Uses int    `json:"uses"`
+	pvpRankingMove
+	Uses int `json:"uses"`
 }
 
 type pvpRankingEntry struct {
