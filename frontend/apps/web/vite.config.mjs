@@ -98,8 +98,66 @@ const sharedMediaAssetsPlugin = () => ({
   },
 });
 
+const serveE2eEvents = (req, res, next) => {
+  if (!req.url || req.method !== 'GET') {
+    next();
+    return;
+  }
+
+  const { pathname } = new URL(req.url, 'http://localhost');
+  if (pathname === '/__e2e/events/getUpdates') {
+    res.statusCode = 200;
+    res.setHeader('Content-Type', 'application/json');
+    res.setHeader('Cache-Control', 'no-store');
+    res.end('{}');
+    return;
+  }
+
+  if (pathname !== '/__e2e/events/sse') {
+    next();
+    return;
+  }
+
+  res.statusCode = 200;
+  res.setHeader('Content-Type', 'text/event-stream');
+  res.setHeader('Cache-Control', 'no-cache, no-transform');
+  res.setHeader('Connection', 'keep-alive');
+  res.flushHeaders?.();
+  res.write(': connected\n\n');
+
+  const heartbeat = setInterval(() => {
+    if (!res.writableEnded) {
+      res.write(': heartbeat\n\n');
+    }
+  }, 15_000);
+
+  req.on('close', () => {
+    clearInterval(heartbeat);
+    if (!res.writableEnded) {
+      res.end();
+    }
+  });
+};
+
+const e2eEventsPlugin = (enabled) => ({
+  name: 'go-e2e-events',
+  configureServer(server) {
+    if (enabled) {
+      server.middlewares.use(serveE2eEvents);
+    }
+  },
+  configurePreviewServer(server) {
+    if (enabled) {
+      server.middlewares.use(serveE2eEvents);
+    }
+  },
+});
+
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, webRoot, '');
+  const isE2e =
+    mode === 'e2e' ||
+    process.env.VITE_EVENTS_API_URL?.includes('/__e2e/events') === true;
   const assetOrigin = (env.VITE_ASSET_ORIGIN || 'https://pokegonexus.com').replace(/\/+$/, '');
   const devProxyTarget = env.DEV_PROXY_TARGET?.trim().replace(/\/+$/, '');
   const devProxyHost = env.DEV_PROXY_HOST?.trim();
@@ -122,7 +180,7 @@ export default defineConfig(({ mode }) => {
   return {
     root: appCoreRoot,
     envDir: webRoot,
-    plugins: [sharedMediaAssetsPlugin(), react()],
+    plugins: [sharedMediaAssetsPlugin(), e2eEventsPlugin(isE2e), react()],
     resolve: {
       alias: {
         '@': path.resolve(appCoreRoot, 'src'),
