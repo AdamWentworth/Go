@@ -93,23 +93,11 @@ func startKafkaConsumer() {
 				userID, username, deviceID)
 
 			// ---------------------------------------------------------
-			// 1) Transform "pokemonUpdates" into a nested map (if any)
+			// 1) Transform "pokemonUpdates" into an instance-keyed map
 			// ---------------------------------------------------------
 			transformed := make(map[string]interface{})
-			var pokemonMap map[string]interface{}
-			{
-				pokemonMap = make(map[string]interface{})
-				if pUpdates, ok := data["pokemonUpdates"].([]interface{}); ok && len(pUpdates) > 0 {
-					for _, raw := range pUpdates {
-						if item, castOk := raw.(map[string]interface{}); castOk {
-							if pk, pkOk := item["key"].(string); pkOk && pk != "" {
-								pokemonMap[pk] = item
-							}
-						}
-					}
-				}
-				transformed["pokemon"] = pokemonMap
-			}
+			pokemonMap := transformPokemonUpdates(data["pokemonUpdates"])
+			transformed["pokemon"] = pokemonMap
 
 			// ---------------------------------------------
 			// 2) Process tradeUpdates from nested tradeData
@@ -250,6 +238,43 @@ func startKafkaConsumer() {
 			kafkaMessagesTotal.WithLabelValues("processed").Inc()
 		}
 	}()
+}
+
+func transformPokemonUpdates(rawUpdates interface{}) map[string]interface{} {
+	pokemonMap := make(map[string]interface{})
+	updates, ok := rawUpdates.([]interface{})
+	if !ok {
+		return pokemonMap
+	}
+
+	for _, raw := range updates {
+		item, ok := raw.(map[string]interface{})
+		if !ok {
+			continue
+		}
+
+		// Current receiver contract: each update is the instance snapshot itself.
+		if instanceID, ok := item["instance_id"].(string); ok && instanceID != "" {
+			pokemonMap[instanceID] = item
+			continue
+		}
+
+		// Retain compatibility with updates queued by older frontend builds.
+		key, ok := item["key"].(string)
+		if !ok || key == "" {
+			continue
+		}
+		if nested, ok := item["pokemonData"].(map[string]interface{}); ok {
+			if _, exists := nested["instance_id"]; !exists {
+				nested["instance_id"] = key
+			}
+			pokemonMap[key] = nested
+			continue
+		}
+		pokemonMap[key] = item
+	}
+
+	return pokemonMap
 }
 
 // doCompletedTradeSwap is the "new logic" that handles trade_status="completed"
