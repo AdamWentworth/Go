@@ -3,6 +3,7 @@ package main
 
 import (
 	"errors"
+	"sort"
 	"time"
 
 	"github.com/sirupsen/logrus"
@@ -13,7 +14,31 @@ import (
 // POKEMON
 // ---------------------
 
-func parseAndUpsertPokemon(data map[string]interface{}, userID string, messageTraceID string) (createdCount, updatedCount, deletedCount int, err error) {
+func parseAndUpsertPokemon(
+	data map[string]interface{},
+	userID string,
+	messageTraceID string,
+) (
+	createdCount int,
+	updatedCount int,
+	deletedCount int,
+	affectedVariantIDs []string,
+	err error,
+) {
+	affectedVariants := make(map[string]struct{})
+	addAffectedVariant := func(variantID string) {
+		if normalized := normalizeOptionalString(&variantID); normalized != "" {
+			affectedVariants[normalized] = struct{}{}
+		}
+	}
+	defer func() {
+		affectedVariantIDs = make([]string, 0, len(affectedVariants))
+		for variantID := range affectedVariants {
+			affectedVariantIDs = append(affectedVariantIDs, variantID)
+		}
+		sort.Strings(affectedVariantIDs)
+	}()
+
 	pokemonUpdates, _ := data["pokemonUpdates"].([]interface{})
 	for _, p := range pokemonUpdates {
 		pm, ok := p.(map[string]interface{})
@@ -88,6 +113,7 @@ func parseAndUpsertPokemon(data map[string]interface{}, userID string, messageTr
 				logrus.Warnf("Failed to delete instance_id %s: %v", instanceID, errDel)
 			} else {
 				deletedCount++
+				addAffectedVariant(variantForRegistration)
 				if errRel := cleanupInstanceTags(DB, instanceID); errRel != nil {
 					logrus.Warnf("Failed to clean instance_tags for deleted instance %s: %v", instanceID, errRel)
 				}
@@ -281,6 +307,7 @@ func parseAndUpsertPokemon(data map[string]interface{}, userID string, messageTr
 				continue
 			}
 			createdCount++
+			addAffectedVariant(variantForRegistration)
 		} else if tx.Error == nil {
 			// UPDATE using map to include zero values
 			if errUpdate := DB.Model(&existingInstance).Updates(updates).Error; errUpdate != nil {
@@ -288,6 +315,8 @@ func parseAndUpsertPokemon(data map[string]interface{}, userID string, messageTr
 				continue
 			}
 			updatedCount++
+			addAffectedVariant(existingVariantID)
+			addAffectedVariant(variantForRegistration)
 		}
 
 		if errReg := syncRegistrationForVariant(DB, userID, variantForRegistration); errReg != nil {

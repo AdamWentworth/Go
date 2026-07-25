@@ -18,6 +18,21 @@ permissions:
 jobs:
   quality-gates:
     runs-on: ubuntu-latest
+    services:
+      mysql:
+        image: mysql:8.3
+        env:
+          MYSQL_ROOT_PASSWORD: root-test-password
+          MYSQL_DATABASE: storage_test
+          MYSQL_USER: storage_test
+          MYSQL_PASSWORD: storage-test-password
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -ustorage_test -pstorage-test-password --silent"
+          --health-interval=5s
+          --health-timeout=3s
+          --health-retries=20
     defaults:
       run:
         working-directory: storage
@@ -36,6 +51,8 @@ jobs:
 
       - name: Test
         run: go test ./...
+        env:
+          STORAGE_TEST_MYSQL_DSN: storage_test:storage-test-password@tcp(127.0.0.1:3306)/storage_test?charset=utf8mb4&parseTime=true&loc=UTC
 
       - name: Test Race
         run: go test -race ./...

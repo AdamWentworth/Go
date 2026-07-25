@@ -8,6 +8,8 @@ Consumes batched updates from Kafka, applies ownership/trade mutations, and pers
 - Upsert/delete logic for Pokemon instances
 - Trade upsert + conflict handling
 - Auto-sync for `registrations` and `instance_tags`
+- Precomputed anonymous community ranking totals by `variant_id`
+- Versioned MySQL migrations through the one-shot `storage_migrate` command
 - Retry file for failed poison messages
 - In-app daily backup schedule at midnight (enabled by default)
 - Health/readiness/metrics HTTP server (`:3004` by default)
@@ -26,6 +28,7 @@ Consumes batched updates from Kafka, applies ownership/trade mutations, and pers
 flowchart LR
   Receiver[receiver_service] -->|Kafka: batchedUpdates| Storage[storage_service]
   Storage --> MySQL[(mysql_storage)]
+  Storage --> Rankings[(pokemon_variant_rankings)]
   Storage --> RetryFile[(failed_messages.jsonl)]
   Prometheus[prometheus] -->|Scrape /metrics| Storage
 ```
@@ -43,6 +46,7 @@ sequenceDiagram
   S->>S: Decompress + unmarshal payload
   S->>D: Upsert user/location
   S->>D: Upsert/delete pokemon instances
+  S->>D: Refresh affected variant rankings
   S->>D: Upsert trades
 
   alt success
@@ -235,6 +239,31 @@ Behavior notes:
 - Unknown columns are filtered out at runtime via live `instances` schema inspection.
 - JSON object fields default to `{}` when missing/invalid.
 - JSON array tag fields default to `[]` when missing/invalid.
+
+### Community Rankings Read Model
+
+Storage owns the write side of community rankings:
+
+- `pokemon_variant_rankings` stores caught, wanted, and most-wanted counts per
+  `variant_id`.
+- Every metric counts distinct `user_id` values. Multiple copies owned or
+  wanted by one trainer count once.
+- Disabled rows do not count.
+- Variants with zero caught trainers are omitted from the rarest API rather
+  than being presented as rare.
+- Successful instance writes refresh only their affected variants.
+- A full startup refresh plus hourly reconciliation repairs any missed
+  incremental refresh.
+- `pokemon_rankings_snapshot` records anonymous collector/wishlist population
+  totals and the snapshot timestamp.
+
+The migration runner is built into the storage image. Compose runs it before
+the worker:
+
+```bash
+docker compose run --rm storage_migrate
+docker compose up -d storage_service
+```
 
 Fields that may appear from clients but are currently ignored by storage include:
 none in the current canonical payload surface.

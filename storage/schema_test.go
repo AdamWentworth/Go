@@ -24,6 +24,7 @@ func TestRequiredMissingInstanceColumns(t *testing.T) {
 		"trade_filters":   true,
 		"wanted_filters":  true,
 		"fusion":          true,
+		"disabled":        true,
 		"last_update":     true,
 		"date_added":      true,
 	}
@@ -80,6 +81,7 @@ func TestRequiredMissingInstanceColumnsDetectsIsCaught(t *testing.T) {
 		"trade_filters":   true,
 		"wanted_filters":  true,
 		"fusion":          true,
+		"disabled":        true,
 		"last_update":     true,
 		"date_added":      true,
 	}

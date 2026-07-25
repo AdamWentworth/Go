@@ -31,6 +31,9 @@ func main() {
 	if err := resolveInstanceSchema(); err != nil {
 		logrus.Fatalf("Failed to validate instances schema: %v", err)
 	}
+	if err := refreshAllRankings(DB); err != nil {
+		logrus.Fatalf("Failed to build Pokemon rankings read model: %v", err)
+	}
 
 	// 4) Start observability server + Kafka Consumer
 	ctx, cancel := context.WithCancel(context.Background())
@@ -55,6 +58,14 @@ func main() {
 	_, err = c.AddFunc("@every 5m", ReprocessFailedMessages)
 	if err != nil {
 		logrus.Fatalf("Failed to schedule ReprocessFailedMessages: %v", err)
+	}
+	_, err = c.AddFunc("@every 1h", func() {
+		if refreshErr := refreshAllRankings(DB); refreshErr != nil {
+			logrus.Errorf("Failed to reconcile Pokemon rankings read model: %v", refreshErr)
+		}
+	})
+	if err != nil {
+		logrus.Fatalf("Failed to schedule Pokemon rankings reconciliation: %v", err)
 	}
 	c.Start()
 

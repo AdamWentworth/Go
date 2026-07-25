@@ -1,4 +1,19 @@
 services:
+  storage_migrate:
+    image: ${STORAGE_IMAGE:-adamwentworth/storage_service:latest}
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command: ["storage_migrate"]
+    depends_on:
+      mysql_storage:
+        condition: service_healthy
+    env_file:
+      - .env
+    networks:
+      - kafka_default
+    restart: "no"
+
   storage_service:
     image: ${STORAGE_IMAGE:-adamwentworth/storage_service:latest}
     container_name: storage_service
@@ -8,6 +23,8 @@ services:
     depends_on:
       mysql_storage:
         condition: service_healthy
+      storage_migrate:
+        condition: service_completed_successfully
     env_file:
       - .env
     volumes:

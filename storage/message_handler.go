@@ -54,9 +54,20 @@ func HandleMessage(data map[string]interface{}) error {
 	}
 
 	// 2) Process Pokemon updates with messageTraceID
-	createdCount, updatedCount, deletedCount, err := parseAndUpsertPokemon(data, userID, messageTraceID)
+	createdCount, updatedCount, deletedCount, affectedVariantIDs, err := parseAndUpsertPokemon(data, userID, messageTraceID)
 	if err != nil {
 		logrus.Errorf("Failed parsing/upserting Pokémon for user %s: %v", userID, err)
+	}
+	if len(affectedVariantIDs) > 0 {
+		if refreshErr := refreshRankingsForVariants(DB, affectedVariantIDs); refreshErr != nil {
+			// The hourly full reconciliation repairs transient aggregation failures
+			// without replaying an otherwise successfully persisted user update.
+			logrus.Errorf(
+				"Failed refreshing Pokemon rankings for %d variants: %v",
+				len(affectedVariantIDs),
+				refreshErr,
+			)
+		}
 	}
 
 	// 3) Process Trades

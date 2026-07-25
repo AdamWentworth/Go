@@ -122,6 +122,13 @@ jobs:
           fi
 
           echo "Deploying ${SERVICE_NAME} with image ${DEPLOY_IMAGE}"
+          echo "Applying storage MySQL migrations with ${DEPLOY_IMAGE}"
+          STORAGE_IMAGE="${DEPLOY_IMAGE}" docker compose \
+            --project-directory "${SERVICE_DEPLOY_DIR}" \
+            -f "${COMPOSE_FILE}" \
+            --env-file "${ENV_FILE}" \
+            run --rm --no-deps storage_migrate
+
           STORAGE_IMAGE="${DEPLOY_IMAGE}" docker compose \
             --project-directory "${SERVICE_DEPLOY_DIR}" \
             -f "${COMPOSE_FILE}" \
