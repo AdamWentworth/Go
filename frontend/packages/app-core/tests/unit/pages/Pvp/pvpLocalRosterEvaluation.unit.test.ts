@@ -165,6 +165,7 @@ const request = (
   sourceScore = 94.8,
 ) => ({
   kind: 'evaluate' as const,
+  mechanics: 'current-2026' as const,
   candidates: [{
     fighter: exact,
     referenceFighter: reference,
@@ -203,6 +204,7 @@ describe('local personal PvP evaluation', () => {
     const lugiaReference = fighter('lugia-reference', 190, 250, 235);
     const response = evaluatePvPRosterLocally({
       kind: 'evaluate',
+      mechanics: 'current-2026',
       candidates: [
         {
           fighter: fighter('kyurem-level-40', 235, 179, 197),
@@ -241,6 +243,7 @@ describe('local personal PvP evaluation', () => {
     };
     const result = evaluatePvPRosterLocally({
       kind: 'evaluate',
+      mechanics: 'current-2026',
       candidates: [
         {
           fighter: singleMove,
@@ -297,6 +300,7 @@ describe('local personal PvP evaluation', () => {
     );
     const result = evaluatePvPRosterLocally({
       kind: 'evaluate',
+      mechanics: 'current-2026',
       candidates: [
         {
           fighter: groudon(
@@ -378,19 +382,141 @@ describe('local PvP Battle Lab simulation', () => {
     expect(result.timeline).toEqual([]);
   });
 
-  it('rejects unsupported mechanics before starting work', () => {
+  it('rejects unknown mechanics before starting work', () => {
     expect(() => simulatePvPBattleLocally({
       ...battleRequest,
-      mechanics: 'current-2026',
+      mechanics: 'unknown',
     } as unknown as typeof battleRequest)).toThrow(
-      'pinned PvPoke mechanics',
+      'unsupported PvP mechanics',
     );
+  });
+
+  it('resolves one-turn Fast Attack damage simultaneously under June 2026 rules', () => {
+    const oneTurnFast = {
+      ...fastMove,
+      id: 'ONE_TURN_FAST',
+      power: 100,
+      energyGain: 5,
+      turns: 1,
+    };
+    const left = {
+      ...fighter('left', 180, 180, 40),
+      fastMove: oneTurnFast,
+    };
+    const right = {
+      ...fighter('right', 180, 180, 40),
+      fastMove: oneTurnFast,
+    };
+
+    const current = simulatePvPBattleLocally({
+      mechanics: 'current-2026',
+      fighters: [left, right],
+      shields: [0, 0],
+      startingEnergy: [0, 0],
+      recordTimeline: true,
+    });
+    const legacy = simulatePvPBattleLocally({
+      mechanics: 'pvpoke-legacy',
+      fighters: [left, right],
+      shields: [0, 0],
+      startingEnergy: [0, 0],
+    });
+
+    expect(current.winner).toBe(-1);
+    expect(current.fighters.map(({ hp }) => hp)).toEqual([0, 0]);
+    expect(current.timeline.filter(({ kind }) => kind === 'fast'))
+      .toEqual([
+        expect.objectContaining({ actor: 0, turn: 1 }),
+        expect.objectContaining({ actor: 1, turn: 1 }),
+      ]);
+    expect(legacy.winner).toBe(0);
+  });
+
+  it('starts a triggered Charged Attack next turn and preserves it through lethal Fast damage', () => {
+    const lethalFast = {
+      ...fastMove,
+      id: 'LETHAL_FAST',
+      power: 100,
+      turns: 1,
+    };
+    const lethalCharged = {
+      ...chargedMove,
+      id: 'LETHAL_CHARGED',
+      power: 200,
+      energyCost: 35,
+    };
+    const left = {
+      ...fighter('charged-user', 180, 180, 40),
+      chargedMoves: [lethalCharged],
+    };
+    const right = {
+      ...fighter('fast-user', 180, 180, 40),
+      fastMove: lethalFast,
+    };
+
+    const result = simulatePvPBattleLocally({
+      mechanics: 'current-2026',
+      fighters: [left, right],
+      shields: [0, 0],
+      startingEnergy: [35, 0],
+      recordTimeline: true,
+    });
+
+    expect(result.winner).toBe(-1);
+    expect(result.timeline).toEqual([
+      expect.objectContaining({
+        actor: 1,
+        kind: 'fast',
+        turn: 1,
+      }),
+      expect.objectContaining({
+        actor: 0,
+        kind: 'charged',
+        turn: 2,
+      }),
+    ]);
+  });
+
+  it('does not let a CMP loser attack after the winning Charged Attack knocks it out', () => {
+    const knockoutMove = {
+      ...chargedMove,
+      id: 'CMP_KNOCKOUT',
+      power: 200,
+      energyCost: 35,
+    };
+    const result = simulatePvPBattleLocally({
+      mechanics: 'current-2026',
+      fighters: [
+        {
+          ...fighter('cmp-winner', 220, 180, 40),
+          chargedMoves: [knockoutMove],
+        },
+        {
+          ...fighter('cmp-loser', 180, 180, 40),
+          chargedMoves: [knockoutMove],
+        },
+      ],
+      shields: [0, 0],
+      startingEnergy: [35, 35],
+      recordTimeline: true,
+    });
+
+    expect(result.winner).toBe(0);
+    expect(result.timeline.filter(({ kind }) => kind === 'charged'))
+      .toEqual([
+        expect.objectContaining({
+          actor: 0,
+          kind: 'charged',
+          turn: 2,
+        }),
+      ]);
   });
 });
 
 describe('local PvP Team Builder evaluation', () => {
   const teamRequest = {
     kind: 'team' as const,
+    mechanics: 'current-2026' as const,
     members: [
       { fighter: fighter('lead', 250, 230, 220), role: 'lead' as const },
       { fighter: fighter('switch', 225, 220, 215), role: 'switch' as const },
@@ -425,7 +551,7 @@ describe('local PvP Team Builder evaluation', () => {
     const fetchSpy = vi.spyOn(global, 'fetch');
     const result = await evaluatePvPTeamAsync(teamRequest);
 
-    expect(result.mechanics).toBe('pvpoke-legacy');
+    expect(result.mechanics).toBe('current-2026');
     expect(result.members).toHaveLength(3);
     expect(fetchSpy).not.toHaveBeenCalled();
     fetchSpy.mockRestore();
@@ -534,6 +660,89 @@ describe('local 3v3 PvP sequencing', () => {
       }),
     ]));
     expect(result.matchups[0].fighterIds[0]).not.toBe('fire-lead');
+  });
+
+  it('charges one turn for a voluntary swap under June 2026 rules', () => {
+    const result = simulatePvPTeamBattleLocally({
+      kind: 'team-battle',
+      mechanics: 'current-2026',
+      teams: [
+        [
+          elementalFighter('fire-lead-current', 'fire'),
+          elementalFighter('electric-switch-current', 'electric'),
+          elementalFighter('grass-closer-current', 'grass'),
+        ],
+        [
+          elementalFighter('water-lead-current', 'water'),
+          elementalFighter('flying-switch-current', 'flying'),
+          elementalFighter('ice-closer-current', 'ice'),
+        ],
+      ],
+      shields: [2, 2],
+      startingEnergy: [0, 0],
+      switchPolicy: 'adaptive',
+    });
+
+    expect(result.switches[0]).toEqual(expect.objectContaining({
+      side: 0,
+      reason: 'adaptive',
+      atMs: 0,
+    }));
+    const openingSwaps = result.switches.filter(
+      ({ reason, atMs }) => reason === 'adaptive' && atMs < result.matchups[0].startedAtMs,
+    );
+    expect(openingSwaps.length).toBeGreaterThan(0);
+    expect(result.matchups[0].startedAtMs).toBe(openingSwaps.length * 500);
+  });
+
+  it('preserves an unfinished Fast Attack across adaptive team evaluation windows', () => {
+    const slowFighter = (id: string): PokemonPvPBattleFighter => ({
+      ...fighter(id, 180, 180, 400),
+      fastMove: {
+        ...fastMove,
+        id: `${id}-slow-fast`,
+        power: 30,
+        energyGain: 0,
+        turns: 30,
+      },
+      chargedMoves: [{
+        ...chargedMove,
+        id: `${id}-unavailable-charged`,
+        energyCost: 100,
+      }],
+    });
+    const sharedRequest = {
+      kind: 'team-battle',
+      mechanics: 'current-2026',
+      teams: [
+        [
+          slowFighter('slow-left-one'),
+          slowFighter('slow-left-two'),
+          slowFighter('slow-left-three'),
+        ],
+        [
+          slowFighter('slow-right-one'),
+          slowFighter('slow-right-two'),
+          slowFighter('slow-right-three'),
+        ],
+      ],
+      shields: [0, 0],
+      startingEnergy: [0, 0],
+    } satisfies Omit<PvPTeamBattleRequest, 'switchPolicy'>;
+    const result = simulatePvPTeamBattleLocally({
+      ...sharedRequest,
+      switchPolicy: 'adaptive',
+    });
+    const uninterrupted = simulatePvPTeamBattleLocally({
+      ...sharedRequest,
+      switchPolicy: 'fixed',
+    });
+
+    expect(result.matchups[0].timeMs).toBeGreaterThan(10_000);
+    expect(result.matchups[0].hpAfter[0]).toBeLessThan(400);
+    expect(result.matchups[0].hpAfter[1]).toBeLessThan(400);
+    expect(result.teams).toEqual(uninterrupted.teams);
+    expect(result.timeMs).toBe(uninterrupted.timeMs);
   });
 
   it('keeps fixed order available as a transparent comparison model', () => {

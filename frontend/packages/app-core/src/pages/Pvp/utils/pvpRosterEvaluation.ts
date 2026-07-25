@@ -1,5 +1,6 @@
 import type {
   PokemonPvPRankingEntry,
+  PokemonPvPBattleMechanics,
   PokemonPvPRosterEvaluationResponse,
 } from '@shared-contracts/pokemon';
 import type { PokemonVariant } from '@/types/pokemonVariants';
@@ -13,7 +14,7 @@ import {
 import type { PvPRosterWorkerRequest } from './pvpWorkerProtocol';
 
 export const PVP_REFERENCE_FIELD_SIZE = 12;
-export const PVP_LOCAL_EVALUATION_MODEL_VERSION = 2;
+export const PVP_LOCAL_EVALUATION_MODEL_VERSION = 3;
 
 export type PvPRosterEvaluationPlan = {
   request: PvPRosterWorkerRequest;
@@ -42,6 +43,7 @@ export const buildPvPRosterEvaluationPlan = (
   rankings: readonly PokemonPvPRankingEntry[],
   variants: readonly PokemonVariant[],
   formatKey: string,
+  mechanics: PokemonPvPBattleMechanics,
 ): PvPRosterEvaluationPlan | null => {
   const moveLookup = buildPvPMoveMechanicsLookupFromVariants(variants);
   const candidates = owned.flatMap((item) => {
@@ -94,6 +96,7 @@ export const buildPvPRosterEvaluationPlan = (
 
   const request: PvPRosterWorkerRequest = {
     kind: 'evaluate',
+    mechanics,
     candidates,
     opponents,
   };

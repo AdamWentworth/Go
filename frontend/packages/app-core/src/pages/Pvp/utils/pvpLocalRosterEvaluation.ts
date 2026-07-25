@@ -1,6 +1,7 @@
 import type {
   PokemonPvPBattleEvent,
   PokemonPvPBattleFighter,
+  PokemonPvPBattleMechanics,
   PokemonPvPBattleRequest,
   PokemonPvPBattleResponse,
   PokemonPvPMoveBuff,
@@ -165,6 +166,7 @@ type Combatant = {
   defenseStage: number;
   cooldown: number;
   pendingFast: boolean;
+  queuedCharged: PokemonPvPRankingMove | null;
   buffMeters: Map<string, number>;
 };
 
@@ -192,13 +194,23 @@ type BattleResult = {
   turns: number;
   timeMs: number;
   timeline: PokemonPvPBattleEvent[];
+  actionStates: [BattleActionState, BattleActionState];
+};
+
+type BattleActionState = {
+  cooldown: number;
+  pendingFast: boolean;
+  queuedCharged: PokemonPvPRankingMove | null;
+  buffMeters: Map<string, number>;
 };
 
 type BattleConditions = {
+  mechanics: PokemonPvPBattleMechanics;
   shields: [number, number];
   startingEnergy: [number, number];
   startingHp?: [number, number];
   startingStages?: [[number, number], [number, number]];
+  startingActionStates?: [BattleActionState, BattleActionState];
   maxTimeMs?: number;
   recordTimeline?: boolean;
 };
@@ -270,6 +282,12 @@ const newCombatant = (
   energy: number,
   hp = model.hp,
   stages: [number, number] = [0, 0],
+  actionState: BattleActionState = {
+    cooldown: 0,
+    pendingFast: false,
+    queuedCharged: null,
+    buffMeters: new Map(),
+  },
 ): Combatant => ({
   model,
   hp: clamp(hp, 0, model.hp),
@@ -278,9 +296,10 @@ const newCombatant = (
   startShields: Math.max(0, shields),
   attackStage: clamp(stages[0], -MAX_STAGE, MAX_STAGE),
   defenseStage: clamp(stages[1], -MAX_STAGE, MAX_STAGE),
-  cooldown: 0,
-  pendingFast: false,
-  buffMeters: new Map(),
+  cooldown: actionState.cooldown,
+  pendingFast: actionState.pendingFast,
+  queuedCharged: actionState.queuedCharged,
+  buffMeters: new Map(actionState.buffMeters),
 });
 
 const buffEmpty = (buff: PokemonPvPMoveBuff | undefined): boolean =>
@@ -425,7 +444,7 @@ const resolveCharged = (
   };
 };
 
-const simulateBattle = (
+const simulateLegacyBattle = (
   first: PokemonPvPBattleFighter,
   second: PokemonPvPBattleFighter,
   conditions: BattleConditions,
@@ -437,6 +456,7 @@ const simulateBattle = (
       conditions.startingEnergy[0],
       conditions.startingHp?.[0],
       conditions.startingStages?.[0],
+      conditions.startingActionStates?.[0],
     ),
     newCombatant(
       second,
@@ -444,6 +464,7 @@ const simulateBattle = (
       conditions.startingEnergy[1],
       conditions.startingHp?.[1],
       conditions.startingStages?.[1],
+      conditions.startingActionStates?.[1],
     ),
   ];
   const timeline: PokemonPvPBattleEvent[] = [];
@@ -566,8 +587,211 @@ const simulateBattle = (
     turns,
     timeMs,
     timeline,
+    actionStates: fighters.map((fighter) => ({
+      cooldown: fighter.cooldown,
+      pendingFast: fighter.pendingFast,
+      queuedCharged: fighter.queuedCharged,
+      buffMeters: new Map(fighter.buffMeters),
+    })) as [BattleActionState, BattleActionState],
   };
 };
+
+const simulateCurrentBattle = (
+  first: PokemonPvPBattleFighter,
+  second: PokemonPvPBattleFighter,
+  conditions: BattleConditions,
+): BattleResult => {
+  const fighters: [Combatant, Combatant] = [
+    newCombatant(
+      first,
+      conditions.shields[0],
+      conditions.startingEnergy[0],
+      conditions.startingHp?.[0],
+      conditions.startingStages?.[0],
+      conditions.startingActionStates?.[0],
+    ),
+    newCombatant(
+      second,
+      conditions.shields[1],
+      conditions.startingEnergy[1],
+      conditions.startingHp?.[1],
+      conditions.startingStages?.[1],
+      conditions.startingActionStates?.[1],
+    ),
+  ];
+  const timeline: PokemonPvPBattleEvent[] = [];
+  let turns = 0;
+  let timeMs = 0;
+
+  const canContinue = () =>
+    (fighters[0].hp > 0 && fighters[1].hp > 0) ||
+    (
+      fighters[0].queuedCharged != null &&
+      fighters[1].hp > 0
+    ) ||
+    (
+      fighters[1].queuedCharged != null &&
+      fighters[0].hp > 0
+    );
+
+  for (
+    let turn = 1;
+    turn <= MAX_TURNS &&
+      canContinue() &&
+      (conditions.maxTimeMs == null || timeMs < conditions.maxTimeMs);
+    turn += 1
+  ) {
+    const charged = ([0, 1] as const)
+      .flatMap((actor) => {
+        const move = fighters[actor].queuedCharged;
+        return move ? [{ actor, move }] : [];
+      })
+      .sort(
+        (left, right) =>
+          fighters[right.actor].model.attack -
+            fighters[left.actor].model.attack ||
+          left.actor - right.actor,
+      );
+    const hpAtTurnStart: [number, number] = [
+      fighters[0].hp,
+      fighters[1].hp,
+    ];
+    fighters.forEach((fighter) => {
+      fighter.queuedCharged = null;
+    });
+
+    let chargedCount = 0;
+    const chargedActors = new Set<number>();
+    for (const action of charged) {
+      const attacker = fighters[action.actor];
+      const defender = fighters[1 - action.actor];
+      if (defender.hp <= 0) continue;
+      if (attacker.hp <= 0 && hpAtTurnStart[action.actor] > 0) continue;
+      if (attacker.energy < Number(action.move.energyCost ?? 0)) continue;
+
+      const outcome = resolveCharged(attacker, defender, action.move);
+      chargedActors.add(action.actor);
+      chargedCount += 1;
+      if (conditions.recordTimeline) {
+        timeline.push({
+          turn,
+          actor: action.actor,
+          kind: 'charged',
+          moveId: action.move.id,
+          damage: outcome.damage,
+          shielded: outcome.shielded,
+          buffed: outcome.buffed,
+        });
+      }
+    }
+
+    for (const actor of [0, 1] as const) {
+      const fighter = fighters[actor];
+      const opponent = fighters[1 - actor];
+      if (
+        fighter.hp <= 0 ||
+        opponent.hp <= 0 ||
+        chargedActors.has(actor) ||
+        fighter.pendingFast
+      ) {
+        continue;
+      }
+
+      const chargedMove = chooseChargedMove(fighter, fighters[1 - actor]);
+      if (chargedMove) {
+        fighter.queuedCharged = chargedMove;
+      } else {
+        fighter.pendingFast = true;
+        fighter.cooldown = Math.max(
+          1,
+          Number(fighter.model.fastMove.turns ?? 1),
+        );
+      }
+    }
+
+    const completingFastActors = ([0, 1] as const).filter((actor) => {
+      const fighter = fighters[actor];
+      if (!fighter.pendingFast) return false;
+      fighter.cooldown = Math.max(0, fighter.cooldown - 1);
+      return fighter.cooldown === 0;
+    });
+    const fastOutcomes = completingFastActors.map((actor) => {
+      const attacker = fighters[actor];
+      const defender = fighters[1 - actor];
+      return {
+        actor,
+        damage: damage(attacker, defender, attacker.model.fastMove),
+        energy: Number(attacker.model.fastMove.energyGain ?? 0),
+      };
+    });
+
+    for (const outcome of fastOutcomes) {
+      const attacker = fighters[outcome.actor];
+      const defender = fighters[1 - outcome.actor];
+      attacker.pendingFast = false;
+      defender.hp = Math.max(0, defender.hp - outcome.damage);
+      attacker.energy = Math.min(
+        ENERGY_CAP,
+        attacker.energy + outcome.energy,
+      );
+      if (conditions.recordTimeline) {
+        timeline.push({
+          turn,
+          actor: outcome.actor,
+          kind: 'fast',
+          moveId: attacker.model.fastMove.id,
+          damage: outcome.damage,
+          shielded: false,
+          buffed: false,
+        });
+      }
+    }
+
+    turns = turn;
+    timeMs += 500 + chargedCount * 10_000;
+  }
+
+  return {
+    fighters: [
+      {
+        hp: fighters[0].hp,
+        maxHp: fighters[0].model.hp,
+        energy: fighters[0].energy,
+        shields: fighters[0].shields,
+        startShields: fighters[0].startShields,
+        attackStage: fighters[0].attackStage,
+        defenseStage: fighters[0].defenseStage,
+      },
+      {
+        hp: fighters[1].hp,
+        maxHp: fighters[1].model.hp,
+        energy: fighters[1].energy,
+        shields: fighters[1].shields,
+        startShields: fighters[1].startShields,
+        attackStage: fighters[1].attackStage,
+        defenseStage: fighters[1].defenseStage,
+      },
+    ],
+    turns,
+    timeMs,
+    timeline,
+    actionStates: fighters.map((fighter) => ({
+      cooldown: fighter.cooldown,
+      pendingFast: fighter.pendingFast,
+      queuedCharged: fighter.queuedCharged,
+      buffMeters: new Map(fighter.buffMeters),
+    })) as [BattleActionState, BattleActionState],
+  };
+};
+
+const simulateBattle = (
+  first: PokemonPvPBattleFighter,
+  second: PokemonPvPBattleFighter,
+  conditions: BattleConditions,
+): BattleResult =>
+  conditions.mechanics === 'current-2026'
+    ? simulateCurrentBattle(first, second, conditions)
+    : simulateLegacyBattle(first, second, conditions);
 
 const rating = (battle: BattleResult, index: 0 | 1): number => {
   const self = battle.fighters[index];
@@ -615,6 +839,7 @@ const evaluateMatchup = (
   fighter: PokemonPvPBattleFighter,
   opponent: PokemonPvPBattleFighter,
   scenario: Scenario,
+  mechanics: PokemonPvPBattleMechanics,
 ): number => {
   const startingEnergy: [number, number] = [
     fastEnergyAfterTurns(fighter.fastMove, scenario.energyTurns[0]),
@@ -624,6 +849,7 @@ const evaluateMatchup = (
   return Math.max(
     ...chargedMoveStrategies(fighter).map((strategy) => {
       const battle = simulateBattle(strategy, opponent, {
+        mechanics,
         shields: scenario.shields,
         startingEnergy,
       });
@@ -636,12 +862,18 @@ const evaluateScenario = (
   fighter: PokemonPvPBattleFighter,
   opponents: readonly PokemonPvPRosterEvaluationOpponent[],
   scenario: Scenario,
+  mechanics: PokemonPvPBattleMechanics,
 ): number => {
   let weightedTotal = 0;
   let weightTotal = 0;
   for (const opponent of opponents) {
     weightedTotal +=
-      evaluateMatchup(fighter, opponent.fighter, scenario) * opponent.weight;
+      evaluateMatchup(
+        fighter,
+        opponent.fighter,
+        scenario,
+        mechanics,
+      ) * opponent.weight;
     weightTotal += opponent.weight;
   }
   return weightTotal > 0 ? weightedTotal / weightTotal : 0;
@@ -650,13 +882,20 @@ const evaluateScenario = (
 const adjustedCategoryScores = (
   candidate: PvPRosterEvaluationCandidate,
   opponents: readonly PokemonPvPRosterEvaluationOpponent[],
+  mechanics: PokemonPvPBattleMechanics,
 ): [number, number, number, number, number, number] => {
   const scores = STANDARD_SCENARIOS.map((scenario, index) => {
-    const personal = evaluateScenario(candidate.fighter, opponents, scenario);
+    const personal = evaluateScenario(
+      candidate.fighter,
+      opponents,
+      scenario,
+      mechanics,
+    );
     const reference = evaluateScenario(
       candidate.referenceFighter,
       opponents,
       scenario,
+      mechanics,
     );
     const source = candidate.sourceCategoryScores[index] ?? candidate.sourceScore;
     if (reference <= 0) return source;
@@ -689,8 +928,11 @@ const overallScore = (
 };
 
 const assertBattleRequest = (request: PokemonPvPBattleRequest): void => {
-  if (request.mechanics !== 'pvpoke-legacy') {
-    throw new Error('Battle Lab supports the pinned PvPoke mechanics only.');
+  if (
+    request.mechanics !== 'pvpoke-legacy' &&
+    request.mechanics !== 'current-2026'
+  ) {
+    throw new Error('Battle Lab received unsupported PvP mechanics.');
   }
   request.fighters.forEach((fighter, index) => {
     if (
@@ -732,8 +974,11 @@ const assertBattleRequest = (request: PokemonPvPBattleRequest): void => {
 };
 
 const assertTeamBattleRequest = (request: PvPTeamBattleRequest): void => {
-  if (request.mechanics !== 'pvpoke-legacy') {
-    throw new Error('Team Battle Lab supports the pinned PvPoke mechanics only.');
+  if (
+    request.mechanics !== 'pvpoke-legacy' &&
+    request.mechanics !== 'current-2026'
+  ) {
+    throw new Error('Team Battle Lab received unsupported PvP mechanics.');
   }
   request.teams.forEach((team, side) => {
     if (team.length !== 3) {
@@ -768,6 +1013,7 @@ export const simulatePvPBattleLocally = (
 ): PokemonPvPBattleResponse => {
   assertBattleRequest(request);
   const battle = simulateBattle(request.fighters[0], request.fighters[1], {
+    mechanics: request.mechanics,
     shields: request.shields,
     startingEnergy: request.startingEnergy,
     recordTimeline: request.recordTimeline,
@@ -781,7 +1027,7 @@ export const simulatePvPBattleLocally = (
     adjustedRating(battle, 1),
   ];
   return {
-    mechanics: 'pvpoke-legacy',
+    mechanics: request.mechanics,
     winner:
       ratings[0] > ratings[1]
         ? 0
@@ -803,6 +1049,7 @@ type TeamBattleMemberState = {
   energy: number;
   attackStage: number;
   defenseStage: number;
+  actionState: BattleActionState;
   knockouts: number;
   switches: number;
 };
@@ -811,8 +1058,10 @@ const teamMatchupRating = (
   member: TeamBattleMemberState,
   opponent: TeamBattleMemberState,
   shields: [number, number],
+  mechanics: PokemonPvPBattleMechanics,
 ): number => {
   const projection = simulateBattle(member.fighter, opponent.fighter, {
+    mechanics,
     shields,
     startingEnergy: [member.energy, opponent.energy],
     startingHp: [member.hp, opponent.hp],
@@ -820,6 +1069,7 @@ const teamMatchupRating = (
       [member.attackStage, member.defenseStage],
       [opponent.attackStage, opponent.defenseStage],
     ],
+    startingActionStates: [member.actionState, opponent.actionState],
   });
   return rating(projection, 0);
 };
@@ -829,9 +1079,15 @@ const chooseAdaptiveSwitch = (
   activeIndex: number,
   opponent: TeamBattleMemberState,
   shields: [number, number],
+  mechanics: PokemonPvPBattleMechanics,
 ): { index: number; currentRating: number; nextRating: number } | null => {
   const activeMember = team[activeIndex];
-  const currentRating = teamMatchupRating(activeMember, opponent, shields);
+  const currentRating = teamMatchupRating(
+    activeMember,
+    opponent,
+    shields,
+    mechanics,
+  );
   if (currentRating > ADAPTIVE_SWITCH_MAX_RATING) return null;
 
   const alternatives = team
@@ -839,7 +1095,7 @@ const chooseAdaptiveSwitch = (
       index,
       rating: index === activeIndex || member.hp <= 0
         ? Number.NEGATIVE_INFINITY
-        : teamMatchupRating(member, opponent, shields),
+        : teamMatchupRating(member, opponent, shields, mechanics),
     }))
     .sort((left, right) => right.rating - left.rating || left.index - right.index);
   const best = alternatives[0];
@@ -887,6 +1143,12 @@ export const simulatePvPTeamBattleLocally = (
       energy: index === 0 ? request.startingEnergy[side] : 0,
       attackStage: 0,
       defenseStage: 0,
+      actionState: {
+        cooldown: 0,
+        pendingFast: false,
+        queuedCharged: null,
+        buffMeters: new Map(),
+      },
       knockouts: 0,
       switches: 0,
     }))) as [
@@ -921,6 +1183,12 @@ export const simulatePvPTeamBattleLocally = (
       switchReadyAtMs[side] = timeMs + PVP_SWITCH_CLOCK_MS;
       switchedAtCurrentTime[side] = true;
     }
+    from.actionState = {
+      cooldown: 0,
+      pendingFast: false,
+      queuedCharged: null,
+      buffMeters: new Map(),
+    };
     active[side] = toIndex;
     switches.push({
       index: switches.length,
@@ -931,6 +1199,10 @@ export const simulatePvPTeamBattleLocally = (
       reason,
       switchReadyAtMs: switchReadyAtMs[side],
     });
+    if (reason === 'adaptive' && request.mechanics === 'current-2026') {
+      turns += 1;
+      timeMs += 500;
+    }
   };
 
   const hasLivingTeam = (side: 0 | 1) =>
@@ -965,6 +1237,7 @@ export const simulatePvPTeamBattleLocally = (
             active[side],
             teamState[opponentSide][active[opponentSide]],
             [shields[side], shields[opponentSide]],
+            request.mechanics,
           );
           return proposal ? { side, ...proposal } : null;
         })
@@ -1004,6 +1277,7 @@ export const simulatePvPTeamBattleLocally = (
       }
     }
     const battle = simulateBattle(first.fighter, second.fighter, {
+      mechanics: request.mechanics,
       shields: [...shields],
       startingEnergy: [first.energy, second.energy],
       startingHp: [first.hp, second.hp],
@@ -1011,6 +1285,7 @@ export const simulatePvPTeamBattleLocally = (
         [first.attackStage, first.defenseStage],
         [second.attackStage, second.defenseStage],
       ],
+      startingActionStates: [first.actionState, second.actionState],
       maxTimeMs: segmentLimitMs,
     });
     const ratings: [number, number] = [
@@ -1028,10 +1303,12 @@ export const simulatePvPTeamBattleLocally = (
     first.energy = battle.fighters[0].energy;
     first.attackStage = battle.fighters[0].attackStage;
     first.defenseStage = battle.fighters[0].defenseStage;
+    first.actionState = battle.actionStates[0];
     second.hp = battle.fighters[1].hp;
     second.energy = battle.fighters[1].energy;
     second.attackStage = battle.fighters[1].attackStage;
     second.defenseStage = battle.fighters[1].defenseStage;
+    second.actionState = battle.actionStates[1];
     shields[0] = battle.fighters[0].shields;
     shields[1] = battle.fighters[1].shields;
     if (matchupWinner === 0) first.knockouts += 1;
@@ -1116,7 +1393,7 @@ export const simulatePvPTeamBattleLocally = (
     }))) as PvPTeamBattleResponse['teams'];
 
   return {
-    mechanics: 'pvpoke-legacy',
+    mechanics: request.mechanics,
     switchPolicy,
     switchClockMs: PVP_SWITCH_CLOCK_MS,
     winner,
@@ -1149,7 +1426,7 @@ export const simulatePvPTeamGauntletLocally = (
     }),
   }));
   return {
-    mechanics: 'pvpoke-legacy',
+    mechanics: request.mechanics,
     switchPolicy: request.switchPolicy,
     wins: results.filter(({ result }) => result.winner === 0).length,
     draws: results.filter(({ result }) => result.winner < 0).length,
@@ -1165,12 +1442,13 @@ export const evaluatePvPRosterLocally = (
     throw new Error('Personal PvP evaluation needs a battle-ready meta field.');
   }
   return {
-    mechanics: 'pvpoke-legacy',
+    mechanics: request.mechanics,
     fieldSize: request.opponents.length,
     results: request.candidates.map((candidate) => {
       const categoryScores = adjustedCategoryScores(
         candidate,
         request.opponents,
+        request.mechanics,
       );
       const sourceCategories = [
         ...candidate.sourceCategoryScores.slice(0, 6),
@@ -1225,6 +1503,7 @@ export const evaluatePvPTeamLocally = (
         member.fighter,
         opponent.fighter,
         TEAM_ROLE_SCENARIOS[member.role],
+        request.mechanics,
       ));
     const bestRating = Math.max(...memberRatings);
     const bestMemberIndex = memberRatings.indexOf(bestRating);
@@ -1268,7 +1547,7 @@ export const evaluatePvPTeamLocally = (
   });
 
   return {
-    mechanics: 'pvpoke-legacy',
+    mechanics: request.mechanics,
     fieldSize: request.opponents.length,
     coverageCount: opponentResults.filter((opponent) => opponent.covered).length,
     members,

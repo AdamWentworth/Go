@@ -19,7 +19,10 @@ import {
   setStorageJson,
   STORAGE_KEYS,
 } from '@/utils/storage';
-import type { PokemonPvPRankingEntry } from '@shared-contracts/pokemon';
+import type {
+  PokemonPvPBattleMechanics,
+  PokemonPvPRankingEntry,
+} from '@shared-contracts/pokemon';
 
 import {
   analyzePvPTeam,
@@ -181,12 +184,14 @@ const PvpTeamBuilder = ({
   fieldCandidates,
   entriesBySpeciesId,
   storageKey,
+  mechanics,
   onTestMatchup,
 }: {
   candidates: PvPTeamCandidate[];
   fieldCandidates: PvPTeamCandidate[];
   entriesBySpeciesId: Map<string, PokemonPvPRankingEntry>;
   storageKey: string;
+  mechanics: PokemonPvPBattleMechanics;
   onTestMatchup: (memberKeys: string[], opponentKey: string) => void;
 }) => {
   const [selectedKeys, setSelectedKeys] = useState<TeamSlots>(
@@ -255,8 +260,8 @@ const PvpTeamBuilder = ({
           : [];
       });
     if (members.length !== TEAM_SIZE || opponents.length === 0) return null;
-    return { kind: 'team', members, opponents };
-  }, [fieldCandidates, teamMembers]);
+    return { kind: 'team', mechanics, members, opponents };
+  }, [fieldCandidates, mechanics, teamMembers]);
   const [teamEvaluation, setTeamEvaluation] =
     useState<PvPTeamEvaluationResponse | null>(null);
   const [teamEvaluationLoading, setTeamEvaluationLoading] = useState(false);

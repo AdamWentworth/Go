@@ -96,6 +96,7 @@ describe('PvP roster evaluation planning', () => {
       meta,
       [],
       'great',
+      'current-2026',
     );
 
     expect(plan).not.toBeNull();
@@ -174,6 +175,7 @@ describe('PvP roster evaluation planning', () => {
       [source],
       [variant],
       'great',
+      'current-2026',
     );
 
     expect(plan).not.toBeNull();

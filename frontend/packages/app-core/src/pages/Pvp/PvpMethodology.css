@@ -302,6 +302,15 @@
   text-align: right;
 }
 
+.pvp-methodology-footer p a {
+  color: rgba(122, 224, 215, 0.78);
+  text-underline-offset: 0.14em;
+}
+
+:root[data-theme='light'] .pvp-methodology-footer p a {
+  color: #087d91;
+}
+
 :root[data-theme='light'] .pvp-methodology-page {
   color: #102a32;
   background:

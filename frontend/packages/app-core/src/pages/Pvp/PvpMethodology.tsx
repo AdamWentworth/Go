@@ -241,16 +241,23 @@ const PvpMethodology = () => {
             <p className="pvp-methodology-kicker">Local simulation</p>
             <h2>Focused matchups and switch-aware 3v3 battles</h2>
             <p>
-              Battle Lab uses the pinned <code>pvpoke-legacy</code> mechanics
-              in the same browser worker as My Pokémon rankings. It models move
-              turns, damage, energy, shields, Charged Move decisions, stat stages,
-              and deterministic buff activation. Team Battle carries shared shields
-              and each survivor&apos;s HP and energy, resets temporary stat changes
-              when a Pokémon leaves battle, and enforces the current 45-second
-              switch clock. Adaptive mode can leave a clearly losing matchup and
-              counter-switch when legal; fixed order remains available as a
-              comparison. The Pokémon service only supplies the versioned data used
-              to build the fighters.
+              Open leagues and ordinary cups use the June 2026 rules in the
+              same browser worker as My Pokémon rankings. Damage and energy
+              resolve together at the end of a turn, one-turn Fast Attacks can
+              tie, triggered Charged Attacks start on the following turn, and
+              voluntary swaps cost one turn. Competitors Cup remains an explicit
+              championship-rules exception through its announced transition
+              window.
+            </p>
+            <p>
+              The simulator models move turns, damage, energy, shields, Charged
+              Move decisions, stat stages, and deterministic buff activation.
+              Team Battle carries shared shields and each survivor&apos;s HP and
+              energy, resets temporary stat changes when a Pokémon leaves battle,
+              and enforces the 45-second switch clock. Adaptive mode can leave a
+              clearly losing matchup and counter-switch when legal; fixed order
+              remains available as a comparison. The Pokémon service only supplies
+              the versioned data used to build the fighters.
             </p>
             <div className="pvp-methodology-facts" aria-label="Battle Lab inputs">
               <span>
@@ -328,7 +335,24 @@ const PvpMethodology = () => {
           <p>
             Ranking data is attributed to PvPoke under its published license.
             IV Rank follows the established same-species stat-product model
-            used by tools such as Stadium Gaming.
+            used by tools such as Stadium Gaming. Local timing follows the
+            official{' '}
+            <a
+              href="https://pokemongo.com/news/pvp-updates2026?hl=en"
+              target="_blank"
+              rel="noreferrer"
+            >
+              June 2026 Trainer Battle update
+            </a>
+            , including the published{' '}
+            <a
+              href="https://pokemongo.com/en/news/pvp-updates-competitors-cup-2026"
+              target="_blank"
+              rel="noreferrer"
+            >
+              Competitors Cup transition
+            </a>
+            .{' '}
             Pokémon and Pokémon GO are trademarks of their respective owners.
           </p>
         </footer>

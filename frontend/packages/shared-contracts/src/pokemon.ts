@@ -100,6 +100,10 @@ export interface PokemonPvPLeague {
   entries: PokemonPvPRankingEntry[];
 }
 
+export type PokemonPvPBattleMechanics =
+  | 'pvpoke-legacy'
+  | 'current-2026';
+
 export interface PokemonPvPFormat {
   key: string;
   label: string;
@@ -107,6 +111,7 @@ export interface PokemonPvPFormat {
   cup: string;
   cpLimit: number | null;
   rules: string[];
+  mechanics?: PokemonPvPBattleMechanics;
   entries: PokemonPvPRankingEntry[];
 }
 
@@ -136,7 +141,7 @@ export interface PokemonPvPBattleFighter {
 }
 
 export interface PokemonPvPBattleRequest {
-  mechanics: 'pvpoke-legacy';
+  mechanics: PokemonPvPBattleMechanics;
   fighters: [PokemonPvPBattleFighter, PokemonPvPBattleFighter];
   shields: [number, number];
   startingEnergy: [number, number];
@@ -164,7 +169,7 @@ export interface PokemonPvPBattleEvent {
 }
 
 export interface PokemonPvPBattleResponse {
-  mechanics: 'pvpoke-legacy';
+  mechanics: PokemonPvPBattleMechanics;
   winner: number;
   turns: number;
   timeMs: number;
@@ -183,7 +188,7 @@ export interface PokemonPvPRosterEvaluationOpponent {
 }
 
 export interface PokemonPvPRosterEvaluationRequest {
-  mechanics: 'pvpoke-legacy';
+  mechanics: PokemonPvPBattleMechanics;
   candidates: PokemonPvPBattleFighter[];
   opponents: PokemonPvPRosterEvaluationOpponent[];
 }
@@ -202,7 +207,7 @@ export interface PokemonPvPRosterEvaluationResult {
 }
 
 export interface PokemonPvPRosterEvaluationResponse {
-  mechanics: 'pvpoke-legacy';
+  mechanics: PokemonPvPBattleMechanics;
   fieldSize: number;
   results: PokemonPvPRosterEvaluationResult[];
 }

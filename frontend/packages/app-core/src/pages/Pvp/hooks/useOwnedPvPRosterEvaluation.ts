@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from 'react';
 import type { PokemonVariant } from '@/types/pokemonVariants';
 import type {
   PokemonPvPRankingEntry,
+  PokemonPvPBattleMechanics,
   PokemonPvPRosterEvaluationResponse,
 } from '@shared-contracts/pokemon';
 
@@ -28,12 +29,19 @@ export const useOwnedPvPRosterEvaluation = (
   rankings: readonly PokemonPvPRankingEntry[],
   variants: readonly PokemonVariant[],
   formatKey: string,
+  mechanics: PokemonPvPBattleMechanics,
 ): OwnedPvPRosterEvaluationState => {
   const plan = useMemo(
     () => enabled
-      ? buildPvPRosterEvaluationPlan(owned, rankings, variants, formatKey)
+      ? buildPvPRosterEvaluationPlan(
+        owned,
+        rankings,
+        variants,
+        formatKey,
+        mechanics,
+      )
       : null,
-    [enabled, formatKey, owned, rankings, variants],
+    [enabled, formatKey, mechanics, owned, rankings, variants],
   );
   const [state, setState] = useState<OwnedPvPRosterEvaluationState>({
     response: null,

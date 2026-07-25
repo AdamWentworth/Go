@@ -40,6 +40,16 @@ describe('PvP methodology page', () => {
       .toBeInTheDocument();
     expect(screen.getByText(/not claimed historical player teams/))
       .toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'June 2026 Trainer Battle update' }))
+      .toHaveAttribute(
+        'href',
+        'https://pokemongo.com/news/pvp-updates2026?hl=en',
+      );
+    expect(screen.getByRole('link', { name: 'Competitors Cup transition' }))
+      .toHaveAttribute(
+        'href',
+        'https://pokemongo.com/en/news/pvp-updates-competitors-cup-2026',
+      );
   });
 
   it('returns to the PvP workspace without exposing internal version hashes', () => {

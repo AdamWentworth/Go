@@ -1,5 +1,6 @@
 import type {
   PokemonPvPBattleFighter,
+  PokemonPvPBattleMechanics,
   PokemonPvPBattleRequest,
   PokemonPvPBattleResponse,
   PokemonPvPRosterEvaluationOpponent,
@@ -15,6 +16,7 @@ export type PvPRosterEvaluationCandidate = {
 
 export type PvPRosterWorkerRequest = {
   kind: 'evaluate';
+  mechanics: PokemonPvPBattleMechanics;
   candidates: PvPRosterEvaluationCandidate[];
   opponents: PokemonPvPRosterEvaluationOpponent[];
 };
@@ -49,7 +51,7 @@ export type PvPTeamEvaluationOpponentResult = {
 };
 
 export type PvPTeamEvaluationResponse = {
-  mechanics: 'pvpoke-legacy';
+  mechanics: PokemonPvPBattleMechanics;
   fieldSize: number;
   coverageCount: number;
   members: PvPTeamEvaluationMemberResult[];
@@ -58,6 +60,7 @@ export type PvPTeamEvaluationResponse = {
 
 export type PvPTeamWorkerRequest = {
   kind: 'team';
+  mechanics: PokemonPvPBattleMechanics;
   members: PvPTeamEvaluationMember[];
   opponents: PokemonPvPRosterEvaluationOpponent[];
 };
@@ -66,7 +69,7 @@ export type PvPTeamSwitchPolicy = 'fixed' | 'adaptive';
 
 export type PvPTeamBattleRequest = {
   kind: 'team-battle';
-  mechanics: 'pvpoke-legacy';
+  mechanics: PokemonPvPBattleMechanics;
   teams: [
     [
       PokemonPvPBattleFighter,
@@ -120,7 +123,7 @@ export type PvPTeamBattleSwitchEvent = {
 };
 
 export type PvPTeamBattleResponse = {
-  mechanics: 'pvpoke-legacy';
+  mechanics: PokemonPvPBattleMechanics;
   switchPolicy: PvPTeamSwitchPolicy;
   switchClockMs: number;
   winner: number;
@@ -156,7 +159,7 @@ export type PvPTeamGauntletOpponent = {
 
 export type PvPTeamGauntletRequest = {
   kind: 'team-gauntlet';
-  mechanics: 'pvpoke-legacy';
+  mechanics: PokemonPvPBattleMechanics;
   team: [
     PokemonPvPBattleFighter,
     PokemonPvPBattleFighter,
@@ -174,7 +177,7 @@ export type PvPTeamGauntletResult = {
 };
 
 export type PvPTeamGauntletResponse = {
-  mechanics: 'pvpoke-legacy';
+  mechanics: PokemonPvPBattleMechanics;
   switchPolicy: PvPTeamSwitchPolicy;
   wins: number;
   draws: number;

@@ -23,6 +23,7 @@ import {
 import { resolveAssetUrl } from '@/utils/assetUrl';
 import { getTypeIconPath } from '@/utils/imageHelpers';
 import type {
+  PokemonPvPBattleMechanics,
   PokemonPvPBattleResponse,
 } from '@shared-contracts/pokemon';
 
@@ -41,6 +42,7 @@ import {
   simulatePvPTeamBattleAsync,
   simulatePvPTeamGauntletAsync,
 } from '../utils/pvpWorkers';
+import { pvpBattleMechanicsLabel } from '../utils/pvpBattleMechanics';
 import type {
   PvPTeamBattleResponse,
   PvPTeamGauntletResponse,
@@ -691,12 +693,14 @@ const PvpBattleLab = ({
   candidates,
   opponentCandidates = candidates,
   formatLabel,
+  mechanics,
   initialSelection = null,
   playerSideLabel = 'Side A',
 }: {
   candidates: PvPTeamCandidate[];
   opponentCandidates?: PvPTeamCandidate[];
   formatLabel: string;
+  mechanics: PokemonPvPBattleMechanics;
   initialSelection?: {
     mode?: BattleMode;
     leftKey: string;
@@ -855,7 +859,7 @@ const PvpBattleLab = ({
     setError('');
     try {
       const next = await simulatePvPBattleAsync({
-        mechanics: 'pvpoke-legacy',
+        mechanics,
         fighters: [fighters[0], fighters[1]],
         shields,
         startingEnergy: energy,
@@ -900,7 +904,7 @@ const PvpBattleLab = ({
     try {
       const next = await simulatePvPTeamBattleAsync({
         kind: 'team-battle',
-        mechanics: 'pvpoke-legacy',
+        mechanics,
         teams: [
           [
             leftFighters[0]!,
@@ -955,7 +959,7 @@ const PvpBattleLab = ({
     try {
       const next = await simulatePvPTeamGauntletAsync({
         kind: 'team-gauntlet',
-        mechanics: 'pvpoke-legacy',
+        mechanics,
         team: [
           leftFighters[0]!,
           leftFighters[1]!,
@@ -996,7 +1000,7 @@ const PvpBattleLab = ({
           {formatLabel} · {mode === 'team'
             ? switchPolicy === 'adaptive' ? 'switch-aware 3v3' : 'fixed-order 3v3'
             : 'focused 1v1'} ·
-          local mechanics
+          {' '}{pvpBattleMechanicsLabel(mechanics)}
         </small>
       </header>
 

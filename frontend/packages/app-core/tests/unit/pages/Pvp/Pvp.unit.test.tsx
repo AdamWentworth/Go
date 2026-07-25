@@ -305,7 +305,7 @@ describe('PvP rankings page', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Battle Lab' }));
 
-    expect(screen.getByText('Great League · focused 1v1 · local mechanics'))
+    expect(screen.getByText('Great League · focused 1v1 · June 2026 rules'))
       .toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Swap battle sides' }))
       .toBeInTheDocument();

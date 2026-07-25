@@ -49,6 +49,7 @@ import {
 import { useOwnedPvPRosterEvaluation } from './hooks/useOwnedPvPRosterEvaluation';
 import { formatPvPSpeciesName } from './utils/pvpTeamBuilder';
 import { hydratePvPRankingEntry } from './utils/pvpMoveHydration';
+import { resolvePvPBattleMechanics } from './utils/pvpBattleMechanics';
 import './Pvp.css';
 
 
@@ -421,6 +422,10 @@ const Pvp = () => {
     () => cupFormats.find((format) => format.key === formatKey),
     [cupFormats, formatKey],
   );
+  const battleMechanics = useMemo(
+    () => resolvePvPBattleMechanics(formatKey, activeCup),
+    [activeCup, formatKey],
+  );
   const activeLeagueKey: PokemonPvPLeagueKey = activeCup?.league === 'little'
     ? 'great'
     : activeCup?.league ?? (isLeagueKey(formatKey) ? formatKey : 'great');
@@ -450,6 +455,7 @@ const Pvp = () => {
     entries,
     variants,
     formatKey,
+    battleMechanics,
   );
   const evaluatedOwnedEntries = useMemo(
     () => applyPvPRosterEvaluation(
@@ -911,6 +917,7 @@ const Pvp = () => {
                 fieldCandidates={battleToolFieldCandidates}
                 entriesBySpeciesId={entriesBySpeciesId}
                 storageKey={`${formatKey}:${rosterScope}`}
+                mechanics={battleMechanics}
                 onTestMatchup={(memberKeys, opponentKey) => {
                   setBattleSeed({
                     mode: 'team',
@@ -963,6 +970,7 @@ const Pvp = () => {
                     : battleToolEntries
                 }
                 formatLabel={activeFormatLabel}
+                mechanics={battleMechanics}
                 initialSelection={battleSeed}
                 playerSideLabel={
                   rosterScope === 'owned' ? 'Your team' : 'Side A'

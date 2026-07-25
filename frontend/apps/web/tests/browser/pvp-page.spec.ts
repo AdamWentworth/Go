@@ -140,6 +140,9 @@ test.describe('PvP rankings page', () => {
 
       await page.getByRole('button', { name: /Great/ }).click();
       await page.getByRole('button', { name: 'Battle Lab' }).click();
+      await expect(
+        page.getByText('Great League · focused 1v1 · June 2026 rules'),
+      ).toBeVisible();
       await page.getByRole('button', { name: 'Team battle' }).click();
       await expect(page.getByRole('button', { name: /Edit Side A Lead/ }))
         .toBeVisible();
