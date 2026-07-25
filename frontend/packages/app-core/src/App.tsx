@@ -26,6 +26,7 @@ const RaidMethodology = lazy(() => import('./pages/Raid/RaidMethodology'));
 const Max = lazy(() => import('./pages/Max/Max'));
 const Pvp = lazy(() => import('./pages/Pvp/Pvp'));
 const PvpMethodology = lazy(() => import('./pages/Pvp/PvpMethodology'));
+const Rankings = lazy(() => import('./pages/Rankings/Rankings'));
 const Login = lazy(() => import('./pages/Authentication/Login'));
 const Register = lazy(() => import('./pages/Authentication/Register'));
 const Account = lazy(() => import('./pages/Authentication/Account'));
@@ -49,6 +50,7 @@ const AppContent: React.FC = () => (
           <Route path="/max"          element={<Max />} />
           <Route path="/pvp"          element={<Pvp />} />
           <Route path="/pvp/methodology" element={<PvpMethodology />} />
+          <Route path="/rankings"     element={<Rankings />} />
           <Route path="/trades"       element={<Trades />} />
           <Route path="/login"        element={<Login />} />
           <Route path="/register"     element={<Register />} />

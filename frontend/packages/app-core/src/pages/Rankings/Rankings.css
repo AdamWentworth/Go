@@ -1,0 +1,488 @@
+.community-rankings-page {
+  --ranking-bg: #0c1112;
+  --ranking-panel: #141a1b;
+  --ranking-panel-raised: #1b2324;
+  --ranking-line: rgba(90, 210, 198, 0.3);
+  --ranking-text: #f4ffff;
+  --ranking-muted: #9eb9bb;
+  --ranking-teal: #42d7c4;
+  --ranking-gold: #f5cd59;
+  min-height: 100vh;
+  padding: clamp(0.65rem, 2vw, 1.3rem) clamp(0.55rem, 2vw, 1.3rem) 7rem;
+  color: var(--ranking-text);
+  background: var(--ranking-bg);
+}
+
+.community-rankings-inner {
+  width: min(1040px, 100%);
+  margin-inline: auto;
+}
+
+.community-rankings-page button,
+.community-rankings-page input {
+  font: inherit;
+  letter-spacing: 0;
+}
+
+.community-rankings-header {
+  display: grid;
+  grid-template-columns: 3.2rem minmax(0, 1fr) auto;
+  gap: 0.75rem;
+  align-items: center;
+  min-height: 4.4rem;
+  padding: 0.55rem 0.7rem 0.7rem;
+  border-bottom: 1px solid var(--ranking-line);
+}
+
+.community-rankings-header > img {
+  width: 3.2rem;
+  height: 3.2rem;
+  object-fit: contain;
+}
+
+.community-rankings-header span,
+.community-rankings-context strong {
+  color: #8ec5c9;
+  font-size: 0.7rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.community-rankings-header h1 {
+  margin: 0.08rem 0 0;
+  font-size: clamp(1.45rem, 4vw, 2rem);
+  line-height: 1;
+}
+
+.community-rankings-population {
+  display: grid;
+  grid-template-columns: auto auto;
+  gap: 0 0.35rem;
+  align-items: center;
+  min-width: 5.8rem;
+  padding: 0.45rem 0.65rem;
+  border: 1px solid var(--ranking-line);
+  border-radius: 7px;
+  color: var(--ranking-teal);
+  background: rgba(66, 215, 196, 0.07);
+}
+
+.community-rankings-population svg {
+  grid-row: 1 / 3;
+}
+
+.community-rankings-population strong {
+  color: var(--ranking-text);
+  font-size: 1rem;
+  line-height: 1;
+}
+
+.community-rankings-population small {
+  color: var(--ranking-muted);
+  font-size: 0.62rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.community-ranking-controls {
+  display: grid;
+  grid-template-columns: minmax(18rem, 0.8fr) minmax(16rem, 1.2fr);
+  gap: 0.6rem;
+  margin-top: 0.75rem;
+}
+
+.community-ranking-tabs {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.35rem;
+  padding: 0.3rem;
+  border: 1px solid var(--ranking-line);
+  border-radius: 8px;
+  background: #101617;
+}
+
+.community-ranking-tabs button {
+  display: inline-flex;
+  gap: 0.4rem;
+  align-items: center;
+  justify-content: center;
+  min-height: 2.7rem;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  color: var(--ranking-muted);
+  background: transparent;
+  font-size: 0.78rem;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.community-ranking-tabs button.active {
+  border-color: var(--ranking-teal);
+  color: #071312;
+  background: var(--ranking-teal);
+}
+
+.community-ranking-search {
+  display: flex;
+  gap: 0.6rem;
+  align-items: center;
+  min-height: 3.3rem;
+  padding: 0 0.9rem;
+  border: 1px solid rgba(157, 190, 193, 0.42);
+  border-radius: 7px;
+  color: var(--ranking-muted);
+  background: #111718;
+}
+
+.community-ranking-search:focus-within {
+  border-color: var(--ranking-teal);
+  box-shadow: 0 0 0 2px rgba(66, 215, 196, 0.13);
+}
+
+.community-ranking-search input {
+  width: 100%;
+  min-width: 0;
+  border: 0;
+  outline: 0;
+  color: var(--ranking-text);
+  background: transparent;
+}
+
+.community-rankings-context {
+  display: flex;
+  gap: 0.8rem;
+  align-items: center;
+  justify-content: space-between;
+  margin: 0.7rem 0 0.45rem;
+  padding: 0.4rem 0.25rem;
+}
+
+.community-rankings-context > span {
+  display: flex;
+  gap: 0.65rem;
+  align-items: baseline;
+  color: var(--ranking-text);
+  font-size: 0.8rem;
+  font-weight: 800;
+}
+
+.community-rankings-context small {
+  color: var(--ranking-muted);
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-align: right;
+}
+
+.community-ranking-results {
+  overflow: hidden;
+  border: 1px solid var(--ranking-line);
+  border-radius: 8px;
+  background: var(--ranking-panel);
+}
+
+.community-ranking-row {
+  display: grid;
+  grid-template-columns: 3.2rem minmax(16rem, 1.15fr) minmax(15rem, 0.85fr);
+  gap: 0.8rem;
+  align-items: center;
+  min-height: 6rem;
+  padding: 0.55rem 0.8rem;
+  border-bottom: 1px solid rgba(159, 191, 193, 0.13);
+}
+
+.community-ranking-row:last-child {
+  border-bottom: 0;
+}
+
+.community-ranking-row:nth-child(even) {
+  background: rgba(255, 255, 255, 0.025);
+}
+
+.community-ranking-position {
+  position: relative;
+  display: grid;
+  width: 2.45rem;
+  height: 2.45rem;
+  place-items: center;
+  border: 1px solid var(--ranking-line);
+  border-radius: 50%;
+  color: var(--ranking-teal);
+}
+
+.community-ranking-position svg {
+  position: absolute;
+  inset: -0.3rem auto auto -0.3rem;
+  color: var(--ranking-gold);
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.4));
+}
+
+.community-ranking-row--rank-1 .community-ranking-position {
+  border-color: #f7cf58;
+  color: #17130a;
+  background: #f7cf58;
+}
+
+.community-ranking-row--rank-2 .community-ranking-position {
+  border-color: #dbe9ed;
+  color: #101617;
+  background: #dbe9ed;
+}
+
+.community-ranking-row--rank-3 .community-ranking-position {
+  border-color: #d99455;
+  color: #17100a;
+  background: #d99455;
+}
+
+.community-ranking-pokemon {
+  display: grid;
+  grid-template-columns: 4.5rem minmax(0, 1fr);
+  gap: 0.75rem;
+  align-items: center;
+  min-width: 0;
+}
+
+.community-ranking-pokemon img {
+  width: 4.5rem;
+  height: 4.5rem;
+  object-fit: contain;
+}
+
+.community-ranking-pokemon > span,
+.community-ranking-count {
+  display: grid;
+  min-width: 0;
+}
+
+.community-ranking-pokemon strong {
+  overflow: hidden;
+  color: var(--ranking-text);
+  font-size: 1.05rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.community-ranking-pokemon small,
+.community-ranking-count small {
+  color: var(--ranking-muted);
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
+.community-ranking-count {
+  gap: 0.22rem;
+}
+
+.community-ranking-count > strong {
+  font-size: 0.87rem;
+}
+
+.community-ranking-count > span {
+  display: block;
+  width: 100%;
+  height: 0.3rem;
+  margin-top: 0.2rem;
+  overflow: hidden;
+  border-radius: 3px;
+  background: rgba(159, 191, 193, 0.14);
+}
+
+.community-ranking-count i {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #42d7c4, #f2cf62);
+}
+
+.community-rankings-state {
+  display: grid;
+  justify-items: center;
+  width: min(34rem, 100%);
+  margin: 3rem auto;
+  padding: 2rem;
+  border: 1px solid var(--ranking-line);
+  border-radius: 8px;
+  text-align: center;
+  background: var(--ranking-panel);
+}
+
+.community-rankings-state > svg {
+  color: var(--ranking-teal);
+  font-size: 1.7rem;
+}
+
+.community-rankings-state h2 {
+  margin: 0.7rem 0 0;
+}
+
+.community-rankings-state p {
+  max-width: 28rem;
+  margin: 0.55rem 0 1rem;
+  color: var(--ranking-muted);
+}
+
+.community-rankings-state a,
+.community-rankings-state button,
+.community-rankings-more {
+  min-height: 2.65rem;
+  padding: 0.55rem 1rem;
+  border: 1px solid var(--ranking-teal);
+  border-radius: 6px;
+  color: #071312;
+  background: var(--ranking-teal);
+  font-weight: 900;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.community-ranking-loader {
+  width: 2rem;
+  height: 2rem;
+  border: 3px solid rgba(66, 215, 196, 0.2);
+  border-top-color: var(--ranking-teal);
+  border-radius: 50%;
+  animation: community-ranking-spin 0.75s linear infinite;
+}
+
+.community-rankings-empty {
+  padding: 3rem 1rem;
+  color: var(--ranking-muted);
+  text-align: center;
+}
+
+.community-rankings-more {
+  display: block;
+  margin: 0.8rem auto 0;
+}
+
+.community-rankings-footer {
+  display: flex;
+  gap: 1rem;
+  justify-content: space-between;
+  padding: 0.75rem 0.25rem;
+  color: var(--ranking-muted);
+  font-size: 0.68rem;
+  font-weight: 700;
+}
+
+@keyframes community-ranking-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (max-width: 680px) {
+  .community-rankings-page {
+    padding-inline: 0.45rem;
+  }
+
+  .community-rankings-header {
+    grid-template-columns: 2.75rem minmax(0, 1fr) auto;
+    gap: 0.55rem;
+    padding-inline: 0.35rem;
+  }
+
+  .community-rankings-header > img {
+    width: 2.75rem;
+    height: 2.75rem;
+  }
+
+  .community-rankings-population {
+    min-width: 0;
+    padding: 0.4rem 0.5rem;
+  }
+
+  .community-rankings-population small {
+    display: none;
+  }
+
+  .community-ranking-controls {
+    grid-template-columns: 1fr;
+  }
+
+  .community-rankings-context {
+    align-items: flex-start;
+  }
+
+  .community-rankings-context > span {
+    display: grid;
+    gap: 0.1rem;
+  }
+
+  .community-rankings-context small {
+    max-width: 10rem;
+  }
+
+  .community-ranking-row {
+    grid-template-columns: 2.5rem minmax(0, 1fr);
+    gap: 0.45rem;
+    min-height: 7rem;
+    padding: 0.5rem;
+  }
+
+  .community-ranking-position {
+    width: 2.2rem;
+    height: 2.2rem;
+  }
+
+  .community-ranking-pokemon {
+    grid-template-columns: 3.8rem minmax(0, 1fr);
+    gap: 0.55rem;
+  }
+
+  .community-ranking-pokemon img {
+    width: 3.8rem;
+    height: 3.8rem;
+  }
+
+  .community-ranking-count {
+    grid-column: 2;
+    margin-top: -0.65rem;
+  }
+
+  .community-ranking-count > strong {
+    font-size: 0.78rem;
+  }
+
+  .community-rankings-footer {
+    display: grid;
+  }
+}
+
+@media (max-width: 390px) {
+  .community-ranking-tabs button {
+    gap: 0.25rem;
+    padding-inline: 0.25rem;
+    font-size: 0.7rem;
+  }
+
+  .community-rankings-context small {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .community-ranking-loader {
+    animation: none;
+  }
+}
+
+:root[data-theme='light'] .community-rankings-page {
+  --ranking-bg: #f5f2e9;
+  --ranking-panel: #fffdf7;
+  --ranking-panel-raised: #f0eee7;
+  --ranking-line: rgba(21, 117, 119, 0.3);
+  --ranking-text: #132d32;
+  --ranking-muted: #567176;
+  --ranking-teal: #1bb9ad;
+  background: #f5f2e9;
+}
+
+:root[data-theme='light'] .community-ranking-tabs,
+:root[data-theme='light'] .community-ranking-search {
+  background: #fffdf7;
+}
+
+:root[data-theme='light'] .community-ranking-row:nth-child(even) {
+  background: rgba(27, 185, 173, 0.045);
+}

@@ -6,6 +6,7 @@ import type { Page, Route } from '@playwright/test';
 export type E2eRouteOptions = {
   mockImages?: boolean;
   searchResults?: unknown[];
+  communityRankings?: unknown;
   locationSuggestions?: unknown[];
   trainerSuggestions?: unknown[];
   userInstances?: unknown;
@@ -341,6 +342,22 @@ export async function installE2eRoutes(page: Page, options: E2eRouteOptions = {}
 
   await page.route('**/__e2e/search/searchPokemon**', async (route) => {
     await fulfillJson(route, options.searchResults ?? []);
+  });
+
+  const rankings = options.communityRankings ?? {
+    snapshot: {
+      collector_users: 0,
+      wishlist_users: 0,
+      updated_at: '2026-07-25T12:00:00Z',
+    },
+    most_wanted: [],
+    rarest: [],
+  };
+  await page.route('**/api/search/rankings**', async (route) => {
+    await fulfillJson(route, rankings);
+  });
+  await page.route('**/__e2e/search/rankings**', async (route) => {
+    await fulfillJson(route, rankings);
   });
 
   await page.route('**/api/location/autocomplete**', async (route) => {

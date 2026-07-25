@@ -76,6 +76,19 @@ describe('ActionMenu', () => {
     expect(screen.getByTestId('location')).toHaveTextContent('/pvp');
   });
 
+  it('navigates to community rankings instead of opening a placeholder', () => {
+    render(
+      <MemoryRouter initialEntries={['/pokemon']}>
+        <ActionMenu />
+        <LocationProbe />
+      </MemoryRouter>,
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Action Menu' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Rankings' }));
+    expect(screen.getByTestId('location')).toHaveTextContent('/rankings');
+  });
+
   it('keeps the close control disabled until the opening gesture has settled', () => {
     vi.useFakeTimers();
 

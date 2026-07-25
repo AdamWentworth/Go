@@ -241,7 +241,7 @@ const ActionMenu: React.FC = () => {
 
             <button
               className="action-menu-item button-rankings"
-              onClick={() => alert("Rankings page is not implemented yet!")}
+              onClick={() => handleNavigation('/rankings')}
             >
               <div className="button-content">
                 <img src="/images/btn_rankings.png" alt="" className="button-icon" />
