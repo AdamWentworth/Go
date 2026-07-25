@@ -5,6 +5,7 @@ import {
   toHttpError,
 } from './httpClient';
 import type {
+  PokemonCommunityRankingsPayload,
   SearchQueryParams,
   SearchResultRow,
 } from '@shared-contracts/search';
@@ -36,4 +37,22 @@ export async function searchPokemon(
   }
 
   return Array.isArray(payload) ? payload : Object.values(payload);
+}
+
+export async function getPokemonCommunityRankings(
+  limit = 100,
+): Promise<PokemonCommunityRankingsPayload> {
+  const response = await requestWithPolicy(
+    buildUrl(SEARCH_API_URL, searchContract.endpoints.rankings, { limit }),
+    { method: 'GET' },
+  );
+  const payload = await parseJsonSafe<PokemonCommunityRankingsPayload>(response);
+  if (!response.ok || !payload) {
+    throw toHttpError(
+      response.status,
+      payload,
+      'Community rankings are temporarily unavailable.',
+    );
+  }
+  return payload;
 }

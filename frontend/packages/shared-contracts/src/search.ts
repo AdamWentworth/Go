@@ -10,6 +10,23 @@ export type SearchResultRow = {
   [key: string]: unknown;
 };
 
+export interface PokemonCommunityRanking {
+  variant_id: string;
+  wanted_users: number;
+  most_wanted_users: number;
+  caught_users: number;
+}
+
+export interface PokemonCommunityRankingsPayload {
+  snapshot: {
+    collector_users: number;
+    wishlist_users: number;
+    updated_at: string;
+  };
+  most_wanted: PokemonCommunityRanking[];
+  rarest: PokemonCommunityRanking[];
+}
+
 export interface PokemonSearchQueryParams extends SearchQueryParams {
   pokemon_id: number;
   shiny: boolean;
@@ -40,5 +57,6 @@ export interface PokemonSearchQueryParams extends SearchQueryParams {
 export const searchContract = {
   endpoints: {
     searchPokemon: '/searchPokemon',
+    rankings: '/rankings',
   },
 } as const;

@@ -24,11 +24,21 @@ Fiber is still a good fit for this service right now:
 
 - `GET /api/searchPokemon`
 - `GET /api/searchPokemon/`
+- `GET /api/rankings?limit=50`
 - `GET /healthz`
 - `GET /readyz`
 - `GET /metrics`
 
 All search endpoints are JWT-protected (`accessToken` cookie).
+
+`/api/rankings` reads the storage-owned aggregate tables; it never scans raw
+instance rows. It returns:
+
+- `most_wanted`, ordered by distinct wishlist trainers
+- `rarest`, ordered by the fewest distinct caught trainers (minimum one)
+- anonymous collector/wishlist population totals and snapshot time
+
+Responses are private-cacheable for 60 seconds and include an `ETag`.
 
 ## 🛡️ Runtime Guards
 
@@ -99,4 +109,3 @@ cd reader/search
 docker compose up -d search_service
 docker compose logs -f search_service
 ```
-

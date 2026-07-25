@@ -1,6 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { searchPokemon } from '@/services/searchService';
+import {
+  getPokemonCommunityRankings,
+  searchPokemon,
+} from '@/services/searchService';
 
 describe('searchService.searchPokemon', () => {
   beforeEach(() => {
@@ -53,5 +56,54 @@ describe('searchService.searchPokemon', () => {
         data: { message: 'Forbidden' },
       },
     });
+  });
+});
+
+describe('searchService.getPokemonCommunityRankings', () => {
+  beforeEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it('requests and returns the precomputed community snapshot', async () => {
+    const payload = {
+      snapshot: {
+        collector_users: 12,
+        wishlist_users: 9,
+        updated_at: '2026-07-25T12:00:00Z',
+      },
+      most_wanted: [
+        {
+          variant_id: '25-default',
+          wanted_users: 7,
+          most_wanted_users: 2,
+          caught_users: 4,
+        },
+      ],
+      rarest: [],
+    };
+    const fetchMock = vi
+      .spyOn(global, 'fetch')
+      .mockResolvedValueOnce(
+        new Response(JSON.stringify(payload), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' },
+        }),
+      );
+
+    await expect(getPokemonCommunityRankings(40)).resolves.toEqual(payload);
+    expect(fetchMock).toHaveBeenCalledWith(
+      expect.stringContaining('/rankings?limit=40'),
+      expect.objectContaining({ credentials: 'include', method: 'GET' }),
+    );
+  });
+
+  it('rejects unavailable snapshots with a user-facing message', async () => {
+    vi.spyOn(global, 'fetch').mockResolvedValueOnce(
+      new Response(JSON.stringify({ error: 'not ready' }), { status: 503 }),
+    );
+
+    await expect(getPokemonCommunityRankings()).rejects.toThrow(
+      'Community rankings are temporarily unavailable.',
+    );
   });
 });
