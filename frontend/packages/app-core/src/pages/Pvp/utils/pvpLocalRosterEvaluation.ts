@@ -207,6 +207,7 @@ type BattleActionState = {
 type BattleConditions = {
   mechanics: PokemonPvPBattleMechanics;
   shields: [number, number];
+  shieldPolicy?: 'committed' | 'strategic' | 'adaptive';
   startingEnergy: [number, number];
   startingHp?: [number, number];
   startingStages?: [[number, number], [number, number]];
@@ -360,13 +361,63 @@ const chargedMoveValue = (
   const buff = move.buff;
   if (buff?.chance) {
     const stageValue =
-      buff.attackerAttack -
+      buff.attackerAttack +
       buff.attackerDefense -
       buff.targetAttack -
       buff.targetDefense;
-    value *= 1 + stageValue * buff.chance * 0.04;
+    value *= 1 + stageValue * buff.chance * 0.25;
   }
   return value;
+};
+
+const isSelfDebuffingMove = (move: PokemonPvPRankingMove): boolean =>
+  Boolean(
+    move.buff &&
+    move.buff.chance > 0 &&
+    (
+      move.buff.attackerAttack < 0 ||
+      move.buff.attackerDefense < 0
+    ),
+  );
+
+const isSelfBuffingMove = (move: PokemonPvPRankingMove): boolean =>
+  Boolean(
+    move.buff &&
+    move.buff.chance > 0 &&
+    (
+      move.buff.attackerAttack > 0 ||
+      move.buff.attackerDefense > 0
+    ),
+  );
+
+const canSafelyBankForMove = (
+  attacker: Combatant,
+  defender: Combatant,
+  move: PokemonPvPRankingMove,
+): boolean => {
+  const energyGain = Number(attacker.model.fastMove.energyGain ?? 0);
+  if (energyGain <= 0) return false;
+  const energyNeeded = Math.max(
+    0,
+    Number(move.energyCost ?? ENERGY_CAP) - attacker.energy,
+  );
+  const fastMovesNeeded = Math.ceil(energyNeeded / energyGain);
+  if (fastMovesNeeded < 1) return true;
+  if (attacker.energy + fastMovesNeeded * energyGain > ENERGY_CAP) return false;
+
+  const attackerTurns =
+    fastMovesNeeded * Math.max(1, Number(attacker.model.fastMove.turns ?? 1));
+  const defenderTurns = Math.max(
+    1,
+    Number(defender.model.fastMove.turns ?? 1),
+  );
+  // Only completed opposing Fast Attacks can land before the banked move.
+  // Rounding up here falsely treats a partially elapsed animation as another
+  // full hit and makes low-HP fighters panic-throw inferior Charged Attacks.
+  const incomingFastMoves = Math.floor(attackerTurns / defenderTurns);
+  const incomingFastDamage =
+    incomingFastMoves * damage(defender, attacker, defender.model.fastMove);
+  return attacker.hp > incomingFastDamage;
 };
 
 const chooseChargedMove = (
@@ -383,26 +434,52 @@ const chooseChargedMove = (
     .sort((left, right) => Number(left.energyCost) - Number(right.energyCost))[0];
   if (lethal) return lethal;
 
-  const ordered = [...available].sort(
-    (left, right) =>
-      chargedMoveValue(attacker, defender, right) -
-        chargedMoveValue(attacker, defender, left) ||
-      Number(left.energyCost) - Number(right.energyCost),
-  );
+  const byValue = (
+    left: PokemonPvPRankingMove,
+    right: PokemonPvPRankingMove,
+  ) =>
+    chargedMoveValue(attacker, defender, right) -
+      chargedMoveValue(attacker, defender, left) ||
+    Number(left.energyCost) - Number(right.energyCost);
+  const ordered = [...available].sort(byValue);
+  const allOrdered = [...attacker.model.chargedMoves].sort(byValue);
+  const bestAvailable = ordered[0];
+  const bestOverall = allOrdered[0];
+  if (
+    bestOverall &&
+    !available.includes(bestOverall) &&
+    !available.some(isSelfBuffingMove) &&
+    chargedMoveValue(attacker, defender, bestOverall) >=
+      chargedMoveValue(attacker, defender, bestAvailable) * 1.25 &&
+    canSafelyBankForMove(attacker, defender, bestOverall)
+  ) {
+    return null;
+  }
+
   if (defender.shields > 0 && ordered.length > 1) {
-    const cheapest = [...ordered].sort(
-      (left, right) => Number(left.energyCost) - Number(right.energyCost),
-    )[0];
-    const best = ordered[0];
+    const setupMove = ordered.find(
+      (move) => isSelfBuffingMove(move) && !isSelfDebuffingMove(move),
+    );
+    if (setupMove && isSelfDebuffingMove(bestAvailable)) {
+      return setupMove;
+    }
+
+    const cheapest = [...ordered]
+      .filter((move) => !isSelfDebuffingMove(move))
+      .sort(
+        (left, right) => Number(left.energyCost) - Number(right.energyCost),
+      )[0];
     if (
-      Number(cheapest.energyCost) <= Number(best.energyCost) - 10 &&
-      chargedMoveValue(attacker, defender, cheapest) >=
-        chargedMoveValue(attacker, defender, best) * 0.68
+      cheapest &&
+      Number(cheapest.energyCost) <=
+        Number(bestAvailable.energyCost) - 5 &&
+      attacker.energy >= Number(bestAvailable.energyCost) &&
+      damage(attacker, defender, cheapest) >= defender.model.hp * 0.2
     ) {
       return cheapest;
     }
   }
-  return ordered[0];
+  return bestAvailable;
 };
 
 const resolveFast = (attacker: Combatant, defender: Combatant): number => {
@@ -420,10 +497,37 @@ const resolveCharged = (
   attacker: Combatant,
   defender: Combatant,
   move: PokemonPvPRankingMove,
+  shieldPolicy: BattleConditions['shieldPolicy'] = 'strategic',
 ): { damage: number; shielded: boolean; buffed: boolean } => {
   attacker.energy -= Number(move.energyCost ?? 0);
-  const shielded = defender.shields > 0;
-  const dealt = shielded ? 1 : damage(attacker, defender, move);
+  const unshieldedDamage = damage(attacker, defender, move);
+  const strategicShield =
+    shieldPolicy === 'strategic' &&
+    (
+      !isSelfBuffingMove(move) ||
+      attacker.attackStage > 0 ||
+      unshieldedDamage >= defender.hp
+    );
+  const adaptiveShield =
+    shieldPolicy === 'adaptive' &&
+    (
+      unshieldedDamage >= defender.hp ||
+      unshieldedDamage >= defender.model.hp * 0.24 ||
+      (
+        attacker.attackStage > 0 &&
+        unshieldedDamage >= defender.model.hp * 0.18
+      ) ||
+      defender.hp - unshieldedDamage <=
+        damage(attacker, defender, attacker.model.fastMove) * 2
+    );
+  const shielded =
+    defender.shields > 0 &&
+    (
+      shieldPolicy === 'committed' ||
+      strategicShield ||
+      adaptiveShield
+    );
+  const dealt = shielded ? 1 : unshieldedDamage;
   if (shielded) defender.shields -= 1;
   defender.hp = Math.max(0, defender.hp - dealt);
   const stagesBefore = [
@@ -532,7 +636,12 @@ const simulateLegacyBattle = (
       const defender = fighters[1 - action.actor];
       if (attacker.hp <= 0 || defender.hp <= 0) continue;
       if (attacker.energy < Number(action.move.energyCost ?? 0)) continue;
-      const outcome = resolveCharged(attacker, defender, action.move);
+      const outcome = resolveCharged(
+        attacker,
+        defender,
+        action.move,
+        conditions.shieldPolicy,
+      );
       chargedCount += 1;
       if (conditions.recordTimeline) {
         timeline.push({
@@ -669,7 +778,12 @@ const simulateCurrentBattle = (
       if (attacker.hp <= 0 && hpAtTurnStart[action.actor] > 0) continue;
       if (attacker.energy < Number(action.move.energyCost ?? 0)) continue;
 
-      const outcome = resolveCharged(attacker, defender, action.move);
+      const outcome = resolveCharged(
+        attacker,
+        defender,
+        action.move,
+        conditions.shieldPolicy,
+      );
       chargedActors.add(action.actor);
       chargedCount += 1;
       if (conditions.recordTimeline) {
@@ -1279,6 +1393,7 @@ export const simulatePvPTeamBattleLocally = (
     const battle = simulateBattle(first.fighter, second.fighter, {
       mechanics: request.mechanics,
       shields: [...shields],
+      shieldPolicy: 'adaptive',
       startingEnergy: [first.energy, second.energy],
       startingHp: [first.hp, second.hp],
       startingStages: [

@@ -21,6 +21,9 @@ import type {
   PokemonPvPBattleFighter,
   PokemonPvPRankingMove,
 } from '@shared-contracts/pokemon';
+import {
+  PVP_BATTLE_GOLDEN_FIXTURES,
+} from '../../../fixtures/pvpBattleGoldenFixtures';
 
 const buff = {
   attackerAttack: 0,
@@ -510,6 +513,74 @@ describe('local PvP Battle Lab simulation', () => {
           turn: 2,
         }),
       ]);
+  });
+
+  it.each(PVP_BATTLE_GOLDEN_FIXTURES)(
+    'matches the pinned PvPoke outcome for $id',
+    (fixture) => {
+      const result = simulatePvPBattleLocally({
+        mechanics: 'pvpoke-legacy',
+        fighters: fixture.fighters,
+        shields: fixture.shields,
+        startingEnergy: [0, 0],
+        recordTimeline: true,
+      });
+
+      expect(result.winner).toBe(fixture.expectedWinner);
+      expect(
+        Math.abs(result.ratings[0] - fixture.expectedRating),
+        fixture.sourceUrl,
+      ).toBeLessThanOrEqual(fixture.ratingTolerance);
+    },
+  );
+
+  it('uses meaningful shield bait instead of a trivial resisted attack', () => {
+    const fixture = PVP_BATTLE_GOLDEN_FIXTURES.find(
+      ({ id }) => id === 'skarmory-vs-whiscash-11',
+    );
+    expect(fixture).toBeDefined();
+
+    const result = simulatePvPBattleLocally({
+      mechanics: 'pvpoke-legacy',
+      fighters: fixture!.fighters,
+      shields: fixture!.shields,
+      startingEnergy: [0, 0],
+      recordTimeline: true,
+    });
+    const firstChargedBySide = ([0, 1] as const).map(
+      (side) => result.timeline.find(
+        ({ actor, kind }) => actor === side && kind === 'charged',
+      )?.moveId,
+    );
+
+    expect(firstChargedBySide).toEqual(['SKY_ATTACK', 'BLIZZARD']);
+  });
+
+  it('uses a setup attack before exposing a self-debuffing finisher', () => {
+    const fixture = PVP_BATTLE_GOLDEN_FIXTURES.find(
+      ({ id }) => id === 'lanturn-vs-talonflame-11',
+    );
+    expect(fixture).toBeDefined();
+
+    const result = simulatePvPBattleLocally({
+      mechanics: 'pvpoke-legacy',
+      fighters: fixture!.fighters,
+      shields: fixture!.shields,
+      startingEnergy: [0, 0],
+      recordTimeline: true,
+    });
+    const talonflameMoves = result.timeline.filter(
+      ({ actor, kind }) => actor === 1 && kind === 'charged',
+    );
+
+    expect(talonflameMoves[0]).toEqual(expect.objectContaining({
+      moveId: 'FLAME_CHARGE',
+      shielded: false,
+    }));
+    expect(talonflameMoves[1]).toEqual(expect.objectContaining({
+      moveId: 'FLAME_CHARGE',
+      shielded: true,
+    }));
   });
 });
 
