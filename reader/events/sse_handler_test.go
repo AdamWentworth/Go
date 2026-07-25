@@ -88,3 +88,117 @@ func TestHandleClientDisconnect_Idempotent(t *testing.T) {
 		}
 	}
 }
+
+func TestRegisterClient_ReplacesSameDeviceWithoutDeletingReplacement(t *testing.T) {
+	origClients := clients
+	clients = make(map[string]*Client)
+	defer func() {
+		clients = origClients
+		sseActiveClients.Set(float64(len(origClients)))
+	}()
+
+	first := &Client{
+		UserID:    "u-1",
+		DeviceID:  "d-1",
+		Channel:   make(chan []byte, clientChannelBuffer),
+		Connected: true,
+	}
+	second := &Client{
+		UserID:    "u-1",
+		DeviceID:  "d-1",
+		Channel:   make(chan []byte, clientChannelBuffer),
+		Connected: true,
+	}
+
+	replaced, active := registerClient("u-1:d-1", first)
+	if replaced || active != 1 {
+		t.Fatalf("expected first registration with one active client, replaced=%t active=%d", replaced, active)
+	}
+
+	replaced, active = registerClient("u-1:d-1", second)
+	if !replaced || active != 1 {
+		t.Fatalf("expected replacement with one active client, replaced=%t active=%d", replaced, active)
+	}
+	if first.Connected {
+		t.Fatal("expected replaced client to be disconnected")
+	}
+	if _, ok := <-first.Channel; ok {
+		t.Fatal("expected replaced client channel to be closed")
+	}
+
+	handleClientDisconnect("u-1:d-1", first)
+	if current := clients["u-1:d-1"]; current != second {
+		t.Fatal("disconnecting the stale stream removed its replacement")
+	}
+
+	handleClientDisconnect("u-1:d-1", second)
+	if len(clients) != 0 {
+		t.Fatalf("expected no active clients, got %d", len(clients))
+	}
+}
+
+func TestBroadcastToClients_RoutesOnlyToOtherEligibleDevices(t *testing.T) {
+	origClients := clients
+	clients = map[string]*Client{
+		"u-1:origin": {
+			UserID:    "u-1",
+			DeviceID:  "origin",
+			Channel:   make(chan []byte, 1),
+			Connected: true,
+		},
+		"u-1:other": {
+			UserID:    "u-1",
+			DeviceID:  "other",
+			Channel:   make(chan []byte, 1),
+			Connected: true,
+		},
+		"u-2:other": {
+			UserID:    "u-2",
+			DeviceID:  "other-user-device",
+			Channel:   make(chan []byte, 1),
+			Connected: true,
+		},
+	}
+	defer func() { clients = origClients }()
+
+	payload := []byte(`{"pokemon":{"instance-1":{"is_caught":true}}}`)
+	sent, dropped := broadcastToClients(map[string]bool{"u-1": true}, "origin", payload)
+	if sent != 1 || dropped != 0 {
+		t.Fatalf("expected one delivery and no drops, sent=%d dropped=%d", sent, dropped)
+	}
+
+	if got := <-clients["u-1:other"].Channel; string(got) != string(payload) {
+		t.Fatalf("unexpected payload: %s", got)
+	}
+
+	select {
+	case <-clients["u-1:origin"].Channel:
+		t.Fatal("originating device received its own update")
+	default:
+	}
+	select {
+	case <-clients["u-2:other"].Channel:
+		t.Fatal("unrelated user received the update")
+	default:
+	}
+}
+
+func TestBroadcastToClients_ReportsSaturatedClient(t *testing.T) {
+	origClients := clients
+	fullChannel := make(chan []byte, 1)
+	fullChannel <- []byte("already queued")
+	clients = map[string]*Client{
+		"u-1:other": {
+			UserID:    "u-1",
+			DeviceID:  "other",
+			Channel:   fullChannel,
+			Connected: true,
+		},
+	}
+	defer func() { clients = origClients }()
+
+	sent, dropped := broadcastToClients(map[string]bool{"u-1": true}, "origin", []byte("next"))
+	if sent != 0 || dropped != 1 {
+		t.Fatalf("expected a saturated client drop, sent=%d dropped=%d", sent, dropped)
+	}
+}

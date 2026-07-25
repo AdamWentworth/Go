@@ -34,6 +34,7 @@ func startKafkaConsumer() {
 			m, err := r.FetchMessage(context.Background())
 			if err != nil {
 				logrus.Errorf("Error fetching message from Kafka: %v", err)
+				kafkaMessagesTotal.WithLabelValues("fetch_error").Inc()
 				retryCount++
 				if retryCount > config.Events.MaxRetries {
 					logrus.Errorf("Max retries reached while reading from Kafka; continuing retry loop")
@@ -49,12 +50,14 @@ func startKafkaConsumer() {
 			decompressedValue, err := decompressData(m.Value)
 			if err != nil {
 				logrus.Errorf("Error decompressing Kafka message: %v", err)
+				kafkaMessagesTotal.WithLabelValues("invalid_payload").Inc()
 				continue
 			}
 
 			var data map[string]interface{}
 			if err := json.Unmarshal(decompressedValue, &data); err != nil {
 				logrus.Errorf("Error unmarshalling Kafka message: %v", err)
+				kafkaMessagesTotal.WithLabelValues("invalid_payload").Inc()
 				continue
 			}
 
@@ -62,6 +65,7 @@ func startKafkaConsumer() {
 			userID, userIDExists := data["user_id"].(string)
 			if !userIDExists {
 				logrus.Errorf("user_id not found or not a string in Kafka message")
+				kafkaMessagesTotal.WithLabelValues("invalid_payload").Inc()
 				continue
 			}
 
@@ -69,6 +73,7 @@ func startKafkaConsumer() {
 			deviceIDInterface, deviceIDExists := data["device_id"]
 			if !deviceIDExists {
 				logrus.Errorf("device_id not found in Kafka message")
+				kafkaMessagesTotal.WithLabelValues("invalid_payload").Inc()
 				continue
 			}
 			deviceID, ok := deviceIDInterface.(string)
@@ -80,6 +85,7 @@ func startKafkaConsumer() {
 			username, err := getUsernameByUserID(userID)
 			if err != nil {
 				logrus.Errorf("Failed to fetch username for user_id %s: %v", userID, err)
+				kafkaMessagesTotal.WithLabelValues("lookup_error").Inc()
 				continue
 			}
 
@@ -222,23 +228,26 @@ func startKafkaConsumer() {
 			// 5) Broadcast to all userIDs in "broadcastUserIDs"
 			//    except the same deviceID that triggered the update
 			// -------------------------------------------------------------------
-			clientsMutex.Lock()
-			for _, client := range clients {
-				if broadcastUserIDs[client.UserID] && client.DeviceID != deviceID && client.Connected {
-					select {
-					case client.Channel <- messageBytes:
-						logrus.Infof("Sent update to user=%s device=%s", client.UserID, client.DeviceID)
-					default:
-						logrus.Warnf("Client channel full for user=%s device=%s", client.UserID, client.DeviceID)
-					}
-				}
+			sentCount, droppedCount := broadcastToClients(broadcastUserIDs, deviceID, messageBytes)
+			if sentCount == 0 && droppedCount == 0 {
+				sseBroadcastsTotal.WithLabelValues("no_recipient").Inc()
 			}
-			clientsMutex.Unlock()
+			if sentCount > 0 {
+				sseBroadcastsTotal.WithLabelValues("sent").Add(float64(sentCount))
+				logrus.Infof("Sent update to %d connected client(s)", sentCount)
+			}
+			if droppedCount > 0 {
+				sseBroadcastsTotal.WithLabelValues("dropped").Add(float64(droppedCount))
+				logrus.Warnf("Dropped update for %d saturated client channel(s)", droppedCount)
+			}
 
 			// Manually commit the message after successful processing
 			if err := r.CommitMessages(context.Background(), m); err != nil {
 				logrus.Errorf("Failed to commit message: %v", err)
+				kafkaMessagesTotal.WithLabelValues("commit_error").Inc()
+				continue
 			}
+			kafkaMessagesTotal.WithLabelValues("processed").Inc()
 		}
 	}()
 }

@@ -28,6 +28,22 @@ It:
 | GET | `/api/sse?device_id=<id>` | Yes | Open SSE stream |
 | GET | `/api/getUpdates?timestamp=<ms>&device_id=<id>` | Yes | Pull updates since timestamp |
 
+## Live Delivery Observability
+
+`GET /metrics` exposes the delivery path separately from basic service health:
+
+| Metric | Meaning |
+| --- | --- |
+| `events_sse_active_clients` | Authenticated browser or mobile streams currently connected |
+| `events_kafka_messages_total{result="processed"}` | Kafka updates transformed and committed successfully |
+| `events_sse_broadcasts_total{result="sent"}` | Updates delivered to another connected device |
+| `events_sse_broadcasts_total{result="no_recipient"}` | Valid updates with no other session connected |
+| `events_sse_broadcasts_total{result="dropped"}` | Updates not queued because a client stopped consuming |
+
+The originating `device_id` is intentionally excluded from each broadcast because that
+session already applied its own mutation. A cross-device test therefore needs two
+authenticated sessions with different device IDs.
+
 ## 🧭 Service Context (Mermaid)
 
 ```mermaid

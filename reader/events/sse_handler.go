@@ -5,7 +5,6 @@ package main
 import (
 	"bufio"
 	"fmt"
-	"sync"
 	"time"
 
 	"github.com/gofiber/fiber/v3"
@@ -37,14 +36,18 @@ func sseHandler(c fiber.Ctx) error {
 	client := &Client{
 		UserID:    userID,
 		DeviceID:  deviceID,
-		Channel:   make(chan []byte),
+		Channel:   make(chan []byte, clientChannelBuffer),
 		Connected: true,
 	}
 
-	// Add client to the clients map
-	clientsMutex.Lock()
-	clients[clientID] = client
-	clientsMutex.Unlock()
+	replaced, active := registerClient(clientID, client)
+	logrus.Infof(
+		"Client connected: UserID=%s, DeviceID=%s, ActiveClients=%d, Replaced=%t",
+		client.UserID,
+		client.DeviceID,
+		active,
+		replaced,
+	)
 
 	// Set necessary headers for SSE
 	c.Set("Content-Type", "text/event-stream")
@@ -53,62 +56,38 @@ func sseHandler(c fiber.Ctx) error {
 
 	// Use SetBodyStreamWriter for streaming
 	c.RequestCtx().SetBodyStreamWriter(func(w *bufio.Writer) {
+		defer handleClientDisconnect(clientID, client)
+
 		// Send initial event to confirm connection
 		if _, err := fmt.Fprintf(w, "event: connected\ndata: Connected to SSE stream\n\n"); err != nil {
-			handleClientDisconnect(clientID, client)
 			return
 		}
 		if err := w.Flush(); err != nil {
-			handleClientDisconnect(clientID, client)
 			return
 		}
 
-		// Start the heartbeat goroutine to keep the connection alive
-		heartbeatDone := make(chan struct{})
-		var hbOnce sync.Once
-		closeHeartbeat := func() {
-			hbOnce.Do(func() {
-				close(heartbeatDone)
-			})
-		}
+		ticker := time.NewTicker(30 * time.Second)
+		defer ticker.Stop()
 
-		go func() {
-			ticker := time.NewTicker(30 * time.Second)
-			defer ticker.Stop()
-			for {
-				select {
-				case <-ticker.C:
-					// Send a heartbeat comment (SSE comments start with ':')
-					if _, err := fmt.Fprintf(w, ": heartbeat\n\n"); err != nil {
-						closeHeartbeat()
-						return
-					}
-					if err := w.Flush(); err != nil {
-						closeHeartbeat()
-						return
-					}
-				case <-heartbeatDone:
+		for {
+			select {
+			case msg, ok := <-client.Channel:
+				if !ok {
+					return
+				}
+				if _, err := fmt.Fprintf(w, "data: %s\n\n", msg); err != nil {
+					return
+				}
+			case <-ticker.C:
+				if _, err := fmt.Fprint(w, ": heartbeat\n\n"); err != nil {
 					return
 				}
 			}
-		}()
 
-		// Listen for messages from the client channel
-		for msg := range client.Channel {
-			if _, err := fmt.Fprintf(w, "data: %s\n\n", msg); err != nil {
-				handleClientDisconnect(clientID, client)
-				closeHeartbeat()
-				return
-			}
 			if err := w.Flush(); err != nil {
-				handleClientDisconnect(clientID, client)
-				closeHeartbeat()
 				return
 			}
 		}
-
-		// When the channel is closed, signal the heartbeat goroutine to stop
-		closeHeartbeat()
 	})
 
 	// Return nil to keep the connection open
@@ -117,9 +96,11 @@ func sseHandler(c fiber.Ctx) error {
 
 func handleClientDisconnect(clientID string, client *Client) {
 	clientsMutex.Lock()
-	// Mark client as disconnected and remove from the clients map
 	client.Connected = false
-	delete(clients, clientID)
+	if current, ok := clients[clientID]; ok && current == client {
+		delete(clients, clientID)
+	}
+	sseActiveClients.Set(float64(len(clients)))
 	clientsMutex.Unlock()
 
 	// Close the client channel only once using sync.Once

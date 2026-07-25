@@ -31,12 +31,38 @@ var (
 		},
 		[]string{"method", "route", "status"},
 	)
+
+	sseActiveClients = prometheus.NewGauge(
+		prometheus.GaugeOpts{
+			Name: "events_sse_active_clients",
+			Help: "Current number of authenticated SSE client connections.",
+		},
+	)
+
+	sseBroadcastsTotal = prometheus.NewCounterVec(
+		prometheus.CounterOpts{
+			Name: "events_sse_broadcasts_total",
+			Help: "Total SSE broadcast delivery attempts by result.",
+		},
+		[]string{"result"},
+	)
+
+	kafkaMessagesTotal = prometheus.NewCounterVec(
+		prometheus.CounterOpts{
+			Name: "events_kafka_messages_total",
+			Help: "Total Kafka messages handled by the events consumer by result.",
+		},
+		[]string{"result"},
+	)
 )
 
 func registerMetrics() {
 	metricsOnce.Do(func() {
 		tryRegister(httpRequestsTotal)
 		tryRegister(httpRequestDurationSeconds)
+		tryRegister(sseActiveClients)
+		tryRegister(sseBroadcastsTotal)
+		tryRegister(kafkaMessagesTotal)
 	})
 }
 
