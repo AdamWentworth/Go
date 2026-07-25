@@ -4,12 +4,17 @@ import {
   evaluatePvPTeamLocally,
   evaluatePvPRosterLocally,
   simulatePvPBattleLocally,
+  simulatePvPTeamBattleLocally,
 } from '@/pages/Pvp/utils/pvpLocalRosterEvaluation';
 import {
   evaluatePvPTeamAsync,
   evaluatePvPRosterAsync,
   simulatePvPBattleAsync,
+  simulatePvPTeamBattleAsync,
 } from '@/pages/Pvp/utils/pvpWorkers';
+import type {
+  PvPTeamBattleRequest,
+} from '@/pages/Pvp/utils/pvpWorkerProtocol';
 import type {
   PokemonPvPBattleFighter,
   PokemonPvPRankingMove,
@@ -398,5 +403,67 @@ describe('local PvP Team Builder evaluation', () => {
       ...teamRequest,
       opponents: [],
     })).toThrow('battle-ready meta field');
+  });
+});
+
+describe('local 3v3 PvP sequencing', () => {
+  const teamBattleRequest: PvPTeamBattleRequest = {
+    kind: 'team-battle' as const,
+    mechanics: 'pvpoke-legacy' as const,
+    teams: [
+      [
+        fighter('player-lead', 260, 240, 230),
+        fighter('player-switch', 220, 215, 210),
+        fighter('player-closer', 210, 205, 200),
+      ],
+      [
+        fighter('opponent-lead', 145, 145, 145),
+        fighter('opponent-switch', 150, 150, 150),
+        fighter('opponent-closer', 155, 155, 155),
+      ],
+    ],
+    shields: [2, 2] as [number, number],
+    startingEnergy: [0, 0] as [number, number],
+  };
+
+  it('carries survivor HP, energy, and shared shields through replacements', () => {
+    const result = simulatePvPTeamBattleLocally(teamBattleRequest);
+
+    expect(result.winner).toBe(0);
+    expect(result.matchups).toHaveLength(3);
+    expect(result.matchups.map((matchup) => matchup.fighterIds[0]))
+      .toEqual(['player-lead', 'player-lead', 'player-lead']);
+    expect(result.teams[0][0].knockouts).toBe(3);
+    expect(result.teams[0][0].hp).toBeLessThan(result.teams[0][0].maxHp);
+    expect(result.teams[0][1].hp).toBe(result.teams[0][1].maxHp);
+    expect(result.matchups[1].energyAfter[0])
+      .not.toBe(teamBattleRequest.startingEnergy[0]);
+    expect(result.shields[0]).toBeLessThanOrEqual(2);
+    expect(result.shields[1]).toBeLessThanOrEqual(2);
+  });
+
+  it('runs the full sequence in the browser-worker fallback without fetch', async () => {
+    const fetchSpy = vi.spyOn(global, 'fetch');
+    const result = await simulatePvPTeamBattleAsync(teamBattleRequest);
+
+    expect(result.mechanics).toBe('pvpoke-legacy');
+    expect(result.teams.flat()).toHaveLength(6);
+    expect(result.timeMs).toBeGreaterThan(0);
+    expect(fetchSpy).not.toHaveBeenCalled();
+    fetchSpy.mockRestore();
+  });
+
+  it('requires three unique battle-ready Pokémon on each side', () => {
+    expect(() => simulatePvPTeamBattleLocally({
+      ...teamBattleRequest,
+      teams: [
+        [
+          teamBattleRequest.teams[0][0],
+          teamBattleRequest.teams[0][0],
+          teamBattleRequest.teams[0][2],
+        ],
+        [...teamBattleRequest.teams[1]],
+      ],
+    })).toThrow('cannot repeat');
   });
 });

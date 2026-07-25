@@ -89,8 +89,11 @@ type PvPRoleKey =
 
 type PvPWorkspace = 'rankings' | 'team' | 'battle' | 'iv-rank';
 type PvPBattleSeed = {
+  mode?: 'single' | 'team';
   leftKey: string;
   rightKey: string;
+  leftTeamKeys?: string[];
+  rightTeamKeys?: string[];
 };
 
 const ROLES: Array<{
@@ -908,10 +911,13 @@ const Pvp = () => {
                 fieldCandidates={battleToolFieldCandidates}
                 entriesBySpeciesId={entriesBySpeciesId}
                 storageKey={`${formatKey}:${rosterScope}`}
-                onTestMatchup={(memberKey, opponentKey) => {
+                onTestMatchup={(memberKeys, opponentKey) => {
                   setBattleSeed({
-                    leftKey: memberKey,
+                    mode: 'team',
+                    leftKey: memberKeys[0],
                     rightKey: opponentKey,
+                    leftTeamKeys: memberKeys,
+                    rightTeamKeys: [opponentKey],
                   });
                   setWorkspace('battle');
                 }}
@@ -943,7 +949,13 @@ const Pvp = () => {
               !battleToolsError &&
               battleToolEntries.length > 0 && (
               <PvpBattleLab
-                key={`${formatKey}-${rosterScope}-${battleSeed?.leftKey ?? ''}-${battleSeed?.rightKey ?? ''}`}
+                key={[
+                  formatKey,
+                  rosterScope,
+                  battleSeed?.mode ?? 'single',
+                  battleSeed?.leftTeamKeys?.join(',') ?? battleSeed?.leftKey ?? '',
+                  battleSeed?.rightTeamKeys?.join(',') ?? battleSeed?.rightKey ?? '',
+                ].join('-')}
                 candidates={battleToolEntries}
                 opponentCandidates={
                   rosterScope === 'owned'
@@ -952,6 +964,9 @@ const Pvp = () => {
                 }
                 formatLabel={activeFormatLabel}
                 initialSelection={battleSeed}
+                playerSideLabel={
+                  rosterScope === 'owned' ? 'Your team' : 'Side A'
+                }
               />
             )}
           </>

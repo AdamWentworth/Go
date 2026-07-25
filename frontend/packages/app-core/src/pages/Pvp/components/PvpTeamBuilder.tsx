@@ -187,7 +187,7 @@ const PvpTeamBuilder = ({
   fieldCandidates: PvPTeamCandidate[];
   entriesBySpeciesId: Map<string, PokemonPvPRankingEntry>;
   storageKey: string;
-  onTestMatchup: (memberKey: string, opponentKey: string) => void;
+  onTestMatchup: (memberKeys: string[], opponentKey: string) => void;
 }) => {
   const [selectedKeys, setSelectedKeys] = useState<TeamSlots>(
     () => loadSavedTeam(storageKey),
@@ -451,7 +451,10 @@ const PvpTeamBuilder = ({
                           type="button"
                           key={opponent.fighterId}
                           onClick={() =>
-                            onTestMatchup(bestMember.key, candidate.key)}
+                            onTestMatchup(
+                              team.map((member) => member.key),
+                              candidate.key,
+                            )}
                         >
                           <img
                             src={resolveAssetUrl(candidate.entry.imageUrl)}
@@ -579,7 +582,10 @@ const PvpTeamBuilder = ({
                           type="button"
                           aria-label={`Test ${threatName(threat.speciesId)} in Battle Lab`}
                           onClick={() =>
-                            onTestMatchup(testMemberKey, opponent.speciesId)}
+                            onTestMatchup(
+                              team.map((member) => member.key),
+                              opponent.speciesId,
+                            )}
                         >
                           <FaFlask aria-hidden="true" />
                         </button>

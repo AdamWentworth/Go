@@ -106,9 +106,14 @@ test.describe('PvP rankings page', () => {
       await page.getByRole('button', { name: 'Team Builder' }).click();
       await expect(page.getByRole('heading', { name: 'Team Builder', exact: true }))
         .toBeVisible();
-      await page.getByRole('button', { name: 'Select Clodsire' }).click();
-      await page.getByRole('button', { name: 'Select Azumarill' }).click();
+      await page.getByRole('button', {
+        name: 'Select Lead with Clodsire',
+      }).click();
+      await page.getByRole('button', {
+        name: 'Select Safe Swap with Azumarill',
+      }).click();
       await expect(page.getByText('2 / 3')).toBeVisible();
+      await page.getByText('Published matchup evidence').click();
       await expect(page.getByText('Threatens 2 · Open')).toBeVisible();
 
       const teamLayout = await page.locator('.pvp-page').evaluate(() => ({
@@ -134,6 +139,25 @@ test.describe('PvP rankings page', () => {
       await expect(page.getByText('1 ranked')).toBeVisible();
 
       await page.getByRole('button', { name: /Great/ }).click();
+      await page.getByRole('button', { name: 'Battle Lab' }).click();
+      await page.getByRole('button', { name: 'Team battle' }).click();
+      await expect(page.getByRole('button', { name: /Edit Side A Lead/ }))
+        .toBeVisible();
+      await expect(page.getByRole('button', { name: /Edit Side A Safe Swap/ }))
+        .toBeVisible();
+      await expect(page.getByRole('button', { name: /Edit Side A Closer/ }))
+        .toBeVisible();
+      await page.getByRole('button', { name: 'Run team battle' }).click();
+      await expect(page.getByText('Ordered 3v3 result')).toBeVisible();
+      const battleLayout = await page.locator('.pvp-page').evaluate(() => ({
+        viewportWidth: window.innerWidth,
+        documentWidth: document.documentElement.scrollWidth,
+      }));
+      expect(battleLayout.documentWidth).toBeLessThanOrEqual(
+        battleLayout.viewportWidth,
+      );
+
+      await page.getByRole('button', { name: 'Rankings' }).click();
       const search = page.getByRole('searchbox', { name: 'Search PvP rankings' });
       await search.fill('play rough');
       await expect(page.getByText('Azumarill')).toBeVisible();

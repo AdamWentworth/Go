@@ -305,7 +305,7 @@ describe('PvP rankings page', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Battle Lab' }));
 
-    expect(screen.getByText('Great League · local pinned mechanics'))
+    expect(screen.getByText('Great League · focused 1v1 · local mechanics'))
       .toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Swap battle sides' }))
       .toBeInTheDocument();
@@ -342,7 +342,15 @@ describe('PvP rankings page', () => {
       .toBeInTheDocument();
     expect(screen.getAllByText('Clodsire').length).toBeGreaterThan(0);
     expect(screen.getAllByText('Lanturn').length).toBeGreaterThan(0);
-    expect(screen.getByRole('button', { name: 'Run battle' })).toBeEnabled();
+    expect(screen.getByRole('button', { name: 'Team battle' }))
+      .toHaveAttribute('aria-pressed', 'true');
+    expect(screen.getByRole('button', { name: /Edit Side A Lead: Clodsire/ }))
+      .toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Edit Side A Safe Swap: Azumarill/ }))
+      .toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Edit Side A Closer: Lanturn/ }))
+      .toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Run team battle' })).toBeEnabled();
   });
 
   it('opens IV Rank with a catalog-only lazy load and calculates a spread', () => {

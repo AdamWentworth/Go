@@ -12,6 +12,8 @@ import type {
 import type {
   PvPRosterEvaluationCandidate,
   PvPRosterWorkerRequest,
+  PvPTeamBattleRequest,
+  PvPTeamBattleResponse,
   PvPTeamEvaluationResponse,
   PvPTeamRole,
   PvPTeamWorkerRequest,
@@ -187,6 +189,7 @@ type BattleResult = {
 type BattleConditions = {
   shields: [number, number];
   startingEnergy: [number, number];
+  startingHp?: [number, number];
   recordTimeline?: boolean;
 };
 
@@ -255,9 +258,10 @@ const newCombatant = (
   model: PokemonPvPBattleFighter,
   shields: number,
   energy: number,
+  hp = model.hp,
 ): Combatant => ({
   model,
-  hp: model.hp,
+  hp: clamp(hp, 0, model.hp),
   energy: clamp(energy, 0, ENERGY_CAP),
   shields: Math.max(0, shields),
   startShields: Math.max(0, shields),
@@ -420,11 +424,13 @@ const simulateBattle = (
       first,
       conditions.shields[0],
       conditions.startingEnergy[0],
+      conditions.startingHp?.[0],
     ),
     newCombatant(
       second,
       conditions.shields[1],
       conditions.startingEnergy[1],
+      conditions.startingHp?.[1],
     ),
   ];
   const timeline: PokemonPvPBattleEvent[] = [];
@@ -709,6 +715,38 @@ const assertBattleRequest = (request: PokemonPvPBattleRequest): void => {
   });
 };
 
+const assertTeamBattleRequest = (request: PvPTeamBattleRequest): void => {
+  if (request.mechanics !== 'pvpoke-legacy') {
+    throw new Error('Team Battle Lab supports the pinned PvPoke mechanics only.');
+  }
+  request.teams.forEach((team, side) => {
+    if (team.length !== 3) {
+      throw new Error(`Side ${side === 0 ? 'A' : 'B'} needs exactly three Pokémon.`);
+    }
+    if (new Set(team.map((fighter) => fighter.id)).size !== team.length) {
+      throw new Error(`Side ${side === 0 ? 'A' : 'B'} cannot repeat a Pokémon.`);
+    }
+    team.forEach((fighter) => {
+      assertBattleRequest({
+        mechanics: request.mechanics,
+        fighters: [fighter, fighter],
+        shields: [0, 0],
+        startingEnergy: [0, 0],
+      });
+    });
+  });
+  request.shields.forEach((shields) => {
+    if (!Number.isInteger(shields) || shields < 0 || shields > 2) {
+      throw new Error('Team Battle Lab shields must be between 0 and 2.');
+    }
+  });
+  request.startingEnergy.forEach((energy) => {
+    if (!Number.isFinite(energy) || energy < 0 || energy > ENERGY_CAP) {
+      throw new Error('Team Battle Lab starting energy must be between 0 and 100.');
+    }
+  });
+};
+
 export const simulatePvPBattleLocally = (
   request: PokemonPvPBattleRequest,
 ): PokemonPvPBattleResponse => {
@@ -740,6 +778,118 @@ export const simulatePvPBattleLocally = (
     adjustedRatings,
     fighters: battle.fighters,
     timeline: battle.timeline,
+  };
+};
+
+export const simulatePvPTeamBattleLocally = (
+  request: PvPTeamBattleRequest,
+): PvPTeamBattleResponse => {
+  assertTeamBattleRequest(request);
+
+  const teamState = request.teams.map((team, side) =>
+    team.map((fighter, index) => ({
+      fighter,
+      hp: fighter.hp,
+      energy: index === 0 ? request.startingEnergy[side] : 0,
+      knockouts: 0,
+    }))) as [
+    Array<{
+      fighter: PokemonPvPBattleFighter;
+      hp: number;
+      energy: number;
+      knockouts: number;
+    }>,
+    Array<{
+      fighter: PokemonPvPBattleFighter;
+      hp: number;
+      energy: number;
+      knockouts: number;
+    }>,
+  ];
+
+  const active: [number, number] = [0, 0];
+  const shields: [number, number] = [...request.shields];
+  const matchups: PvPTeamBattleResponse['matchups'] = [];
+  let turns = 0;
+  let timeMs = 0;
+  let stalled = false;
+
+  while (active[0] < 3 && active[1] < 3) {
+    const first = teamState[0][active[0]];
+    const second = teamState[1][active[1]];
+    const battle = simulateBattle(first.fighter, second.fighter, {
+      shields: [...shields],
+      startingEnergy: [first.energy, second.energy],
+      startingHp: [first.hp, second.hp],
+    });
+    const ratings: [number, number] = [
+      rating(battle, 0),
+      rating(battle, 1),
+    ];
+    const matchupWinner =
+      battle.fighters[0].hp > 0 && battle.fighters[1].hp <= 0
+        ? 0
+        : battle.fighters[1].hp > 0 && battle.fighters[0].hp <= 0
+          ? 1
+          : -1;
+
+    first.hp = battle.fighters[0].hp;
+    first.energy = battle.fighters[0].energy;
+    second.hp = battle.fighters[1].hp;
+    second.energy = battle.fighters[1].energy;
+    shields[0] = battle.fighters[0].shields;
+    shields[1] = battle.fighters[1].shields;
+    if (matchupWinner === 0) first.knockouts += 1;
+    if (matchupWinner === 1) second.knockouts += 1;
+    turns += battle.turns;
+    timeMs += battle.timeMs;
+
+    matchups.push({
+      index: matchups.length,
+      fighterIds: [first.fighter.id, second.fighter.id],
+      winner: matchupWinner,
+      turns: battle.turns,
+      timeMs: battle.timeMs,
+      ratings,
+      hpAfter: [first.hp, second.hp],
+      energyAfter: [first.energy, second.energy],
+      shieldsAfter: [...shields],
+    });
+
+    if (first.hp <= 0) active[0] += 1;
+    if (second.hp <= 0) active[1] += 1;
+    if (first.hp > 0 && second.hp > 0) {
+      stalled = true;
+      break;
+    }
+  }
+
+  const winner =
+    stalled || (active[0] >= 3 && active[1] >= 3)
+      ? -1
+      : active[1] >= 3
+        ? 0
+        : active[0] >= 3
+          ? 1
+          : -1;
+  const resultTeams = teamState.map((team) =>
+    team.map((member) => ({
+      fighterId: member.fighter.id,
+      hp: member.hp,
+      maxHp: member.fighter.hp,
+      energy: member.energy,
+      fainted: member.hp <= 0,
+      knockouts: member.knockouts,
+    }))) as PvPTeamBattleResponse['teams'];
+
+  return {
+    mechanics: 'pvpoke-legacy',
+    winner,
+    turns,
+    timeMs,
+    shields,
+    teams: resultTeams,
+    matchups,
   };
 };
 

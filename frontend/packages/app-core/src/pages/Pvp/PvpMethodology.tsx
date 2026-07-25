@@ -239,14 +239,16 @@ const PvpMethodology = () => {
 
           <section id="battle-lab" className="pvp-methodology-section">
             <p className="pvp-methodology-kicker">Local simulation</p>
-            <h2>Recorded builds in a controlled 1v1</h2>
+            <h2>Focused matchups and ordered 3v3 battles</h2>
             <p>
               Battle Lab uses the pinned <code>pvpoke-legacy</code> mechanics
               in the same browser worker as My Pokémon rankings. It models move
               turns, damage, energy, shields, Charged Move decisions, stat stages,
-              and deterministic buff activation for the two selected fighters.
+              and deterministic buff activation. Team Battle also carries shared
+              shields and each survivor&apos;s HP and energy through automatic
+              replacements in the selected Lead, Safe Swap, and Closer order.
               The Pokémon service only supplies the versioned data used to build
-              them.
+              the fighters.
             </p>
             <div className="pvp-methodology-facts" aria-label="Battle Lab inputs">
               <span>
@@ -258,8 +260,8 @@ const PvpMethodology = () => {
                 Starting energy
               </span>
               <span>
-                <strong>1v1</strong>
-                Focused matchup
+                <strong>1v1 / 3v3</strong>
+                Focused or ordered team battle
               </span>
             </div>
           </section>
@@ -275,12 +277,13 @@ const PvpMethodology = () => {
               <li>
                 Team Builder tests each assigned role against the current local
                 meta field and supplements it with published matchup evidence.
-                It does not yet simulate full-team switches, alignment, energy
-                carryover between opponents, or an entire three-Pokémon battle.
+                A complete team can be handed directly to Team Battle for an
+                ordered three-Pokémon result.
               </li>
               <li>
-                Battle Lab is a deterministic 1v1. It does not yet model team
-                swaps, switch timers, team sequencing, or live human latency.
+                Team Battle uses a fixed order with automatic replacements. It
+                does not yet choose proactive swaps, model switch timers, or
+                predict live human decisions and latency.
               </li>
               <li>
                 Rankings and current cups change only when the pinned source

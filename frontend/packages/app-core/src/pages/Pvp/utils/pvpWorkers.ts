@@ -8,12 +8,15 @@ import {
   evaluatePvPTeamLocally,
   evaluatePvPRosterLocally,
   simulatePvPBattleLocally,
+  simulatePvPTeamBattleLocally,
 } from './pvpLocalRosterEvaluation';
 import type {
   PvPWorkerRequest,
   PvPWorkerResponse,
   PvPRosterWorkerRequest,
   PvPTeamEvaluationResponse,
+  PvPTeamBattleRequest,
+  PvPTeamBattleResponse,
   PvPTeamWorkerRequest,
 } from './pvpWorkerProtocol';
 
@@ -33,10 +36,15 @@ const runPvPWorker = (
             kind: 'team',
             response: evaluatePvPTeamLocally(request),
           }
-          : {
-          kind: 'evaluation',
-          response: evaluatePvPRosterLocally(request),
-          },
+          : request.kind === 'team-battle'
+            ? {
+              kind: 'team-battle',
+              response: simulatePvPTeamBattleLocally(request),
+            }
+            : {
+              kind: 'evaluation',
+              response: evaluatePvPRosterLocally(request),
+            },
     );
   }
 
@@ -104,6 +112,17 @@ export const evaluatePvPTeamAsync = async (
   const result = await runPvPWorker(request, signal);
   if ('error' in result || result.kind !== 'team') {
     throw new Error('PvP team worker returned an unexpected result');
+  }
+  return result.response;
+};
+
+export const simulatePvPTeamBattleAsync = async (
+  request: PvPTeamBattleRequest,
+  signal?: AbortSignal,
+): Promise<PvPTeamBattleResponse> => {
+  const result = await runPvPWorker(request, signal);
+  if ('error' in result || result.kind !== 'team-battle') {
+    throw new Error('Team Battle Lab worker returned an unexpected result');
   }
   return result.response;
 };

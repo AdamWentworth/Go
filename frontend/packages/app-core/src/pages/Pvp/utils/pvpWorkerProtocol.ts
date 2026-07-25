@@ -62,10 +62,72 @@ export type PvPTeamWorkerRequest = {
   opponents: PokemonPvPRosterEvaluationOpponent[];
 };
 
+export type PvPTeamBattleRequest = {
+  kind: 'team-battle';
+  mechanics: 'pvpoke-legacy';
+  teams: [
+    [
+      PokemonPvPBattleFighter,
+      PokemonPvPBattleFighter,
+      PokemonPvPBattleFighter,
+    ],
+    [
+      PokemonPvPBattleFighter,
+      PokemonPvPBattleFighter,
+      PokemonPvPBattleFighter,
+    ],
+  ];
+  shields: [number, number];
+  startingEnergy: [number, number];
+};
+
+export type PvPTeamBattleMemberResult = {
+  fighterId: string;
+  hp: number;
+  maxHp: number;
+  energy: number;
+  fainted: boolean;
+  knockouts: number;
+};
+
+export type PvPTeamBattleMatchupResult = {
+  index: number;
+  fighterIds: [string, string];
+  winner: number;
+  turns: number;
+  timeMs: number;
+  ratings: [number, number];
+  hpAfter: [number, number];
+  energyAfter: [number, number];
+  shieldsAfter: [number, number];
+};
+
+export type PvPTeamBattleResponse = {
+  mechanics: 'pvpoke-legacy';
+  winner: number;
+  turns: number;
+  timeMs: number;
+  shields: [number, number];
+  teams: [
+    [
+      PvPTeamBattleMemberResult,
+      PvPTeamBattleMemberResult,
+      PvPTeamBattleMemberResult,
+    ],
+    [
+      PvPTeamBattleMemberResult,
+      PvPTeamBattleMemberResult,
+      PvPTeamBattleMemberResult,
+    ],
+  ];
+  matchups: PvPTeamBattleMatchupResult[];
+};
+
 export type PvPWorkerRequest =
   | PvPRosterWorkerRequest
   | PvPBattleWorkerRequest
-  | PvPTeamWorkerRequest;
+  | PvPTeamWorkerRequest
+  | PvPTeamBattleRequest;
 
 export type PvPWorkerResponse =
   | {
@@ -79,6 +141,10 @@ export type PvPWorkerResponse =
   | {
     kind: 'team';
     response: PvPTeamEvaluationResponse;
+  }
+  | {
+    kind: 'team-battle';
+    response: PvPTeamBattleResponse;
   }
   | {
     error: string;

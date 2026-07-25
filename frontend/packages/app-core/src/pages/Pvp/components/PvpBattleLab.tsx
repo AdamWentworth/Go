@@ -12,6 +12,7 @@ import {
   FaPlay,
   FaSearch,
   FaShieldAlt,
+  FaUsers,
 } from 'react-icons/fa';
 
 import { resolveAssetUrl } from '@/utils/assetUrl';
@@ -25,10 +26,35 @@ import {
   getPvPBattleCandidateLabel,
   isPvPBattleCandidateReady,
 } from '../utils/pvpBattleLab';
-import { simulatePvPBattleAsync } from '../utils/pvpWorkers';
+import {
+  simulatePvPBattleAsync,
+  simulatePvPTeamBattleAsync,
+} from '../utils/pvpWorkers';
+import type {
+  PvPTeamBattleResponse,
+} from '../utils/pvpWorkerProtocol';
 import type { PvPTeamCandidate } from '../utils/pvpTeamBuilder';
 
 const PICK_LIMIT = 12;
+const TEAM_SLOT_LABELS = ['Lead', 'Safe Swap', 'Closer'] as const;
+
+type BattleMode = 'single' | 'team';
+type TeamKeys = [string, string, string];
+
+const buildInitialTeamKeys = (
+  candidates: PvPTeamCandidate[],
+  preferred: readonly string[] = [],
+): TeamKeys => {
+  const available = new Set(candidates.map((candidate) => candidate.key));
+  const keys = [...preferred, ...candidates.map((candidate) => candidate.key)]
+    .filter((key, index, allKeys) =>
+      Boolean(key) &&
+      available.has(key) &&
+      allKeys.indexOf(key) === index)
+    .slice(0, 3);
+  while (keys.length < 3) keys.push('');
+  return keys as TeamKeys;
+};
 
 const searchableText = (candidate: PvPTeamCandidate): string =>
   [
@@ -107,6 +133,81 @@ function CandidatePicker({
         })}
       </div>
       {matches.length === 0 && <small>No Pokemon match that search.</small>}
+    </section>
+  );
+}
+
+function TeamLineupEditor({
+  side,
+  candidates,
+  selectedKeys,
+  candidateByKey,
+  onChange,
+}: {
+  side: string;
+  candidates: PvPTeamCandidate[];
+  selectedKeys: TeamKeys;
+  candidateByKey: Map<string, PvPTeamCandidate>;
+  onChange: (index: number, candidate: PvPTeamCandidate) => void;
+}) {
+  const [activeSlot, setActiveSlot] = useState(0);
+  const selected = selectedKeys.map((key) => candidateByKey.get(key));
+  const unavailableKeys = new Set(
+    selectedKeys.filter((_, index) => index !== activeSlot),
+  );
+  const pickerCandidates = candidates.filter(
+    (candidate) =>
+      candidate.key === selectedKeys[activeSlot] ||
+      !unavailableKeys.has(candidate.key),
+  );
+
+  return (
+    <section className="pvp-team-lineup-editor">
+      <header>
+        <FaUsers aria-hidden="true" />
+        <span>
+          <strong>{side}</strong>
+          <small>Fixed battle order</small>
+        </span>
+      </header>
+      <div className="pvp-team-lineup-slots">
+        {TEAM_SLOT_LABELS.map((label, index) => {
+          const candidate = selected[index];
+          const active = activeSlot === index;
+          return (
+            <button
+              type="button"
+              key={label}
+              className={active ? 'active' : ''}
+              aria-pressed={active}
+              aria-label={`Edit ${side} ${label}${candidate
+                ? `: ${getPvPBattleCandidateLabel(candidate)}`
+                : ''}`}
+              onClick={() => setActiveSlot(index)}
+            >
+              <small>{label}</small>
+              {candidate ? (
+                <>
+                  <img
+                    src={resolveAssetUrl(candidate.entry.imageUrl)}
+                    alt=""
+                    draggable={false}
+                  />
+                  <strong>{getPvPBattleCandidateLabel(candidate)}</strong>
+                </>
+              ) : (
+                <span>Choose</span>
+              )}
+            </button>
+          );
+        })}
+      </div>
+      <CandidatePicker
+        side={`Choose ${TEAM_SLOT_LABELS[activeSlot]}`}
+        candidates={pickerCandidates}
+        selected={selected[activeSlot]}
+        onSelect={(candidate) => onChange(activeSlot, candidate)}
+      />
     </section>
   );
 }
@@ -275,19 +376,147 @@ function BattleResult({
   );
 }
 
+function TeamBattleResult({
+  result,
+  teams,
+  sideLabels,
+}: {
+  result: PvPTeamBattleResponse;
+  teams: [
+    [PvPTeamCandidate, PvPTeamCandidate, PvPTeamCandidate],
+    [PvPTeamCandidate, PvPTeamCandidate, PvPTeamCandidate],
+  ];
+  sideLabels: [string, string];
+}) {
+  const winnerLabel = result.winner < 0 ? null : sideLabels[result.winner];
+  const firstMatchup = result.matchups[0];
+  const surviving = result.teams.map(
+    (team) => team.filter((member) => !member.fainted).length,
+  );
+  const candidateByFighterId = new Map(
+    teams.flat().map((candidate) => [candidate.key, candidate]),
+  );
+  const summary = result.winner < 0
+    ? 'Neither ordered lineup finished the other.'
+    : firstMatchup?.winner === result.winner
+      ? `${winnerLabel} held its lead advantage through the lineup.`
+      : firstMatchup?.winner >= 0
+        ? `${winnerLabel} recovered after losing the opening matchup.`
+        : `${winnerLabel} won through its back-line depth.`;
+
+  return (
+    <section className="pvp-team-battle-result" aria-live="polite">
+      <header>
+        <FaUsers aria-hidden="true" />
+        <span>
+          <small>Ordered 3v3 result</small>
+          <h2>{winnerLabel ? `${winnerLabel} wins` : 'Team battle ends in a draw'}</h2>
+          <p>{summary}</p>
+        </span>
+        <strong>{(result.timeMs / 1000).toFixed(1)}s</strong>
+      </header>
+
+      <div className="pvp-team-battle-summary">
+        {sideLabels.map((label, side) => (
+          <span key={label}>
+            <small>{label}</small>
+            <strong>{surviving[side]} standing</strong>
+            <b>{result.shields[side]} shields left</b>
+          </span>
+        ))}
+      </div>
+
+      <div className="pvp-team-battle-sides">
+        {teams.map((team, side) => (
+          <section key={sideLabels[side]}>
+            <header>{sideLabels[side]}</header>
+            {team.map((candidate, index) => {
+              const member = result.teams[side][index];
+              const hpPercent = member.maxHp > 0
+                ? Math.max(0, (member.hp / member.maxHp) * 100)
+                : 0;
+              return (
+                <article
+                  key={candidate.key}
+                  className={member.fainted ? 'fainted' : ''}
+                >
+                  <span>{index + 1}</span>
+                  <img
+                    src={resolveAssetUrl(candidate.entry.imageUrl)}
+                    alt=""
+                    draggable={false}
+                  />
+                  <div>
+                    <strong>{getPvPBattleCandidateLabel(candidate)}</strong>
+                    <i><b style={{ width: `${hpPercent}%` }} /></i>
+                    <small>
+                      {member.hp} / {member.maxHp} HP · {member.energy} energy
+                    </small>
+                  </div>
+                  <span>
+                    <strong>{member.knockouts}</strong>
+                    <small>KOs</small>
+                  </span>
+                </article>
+              );
+            })}
+          </section>
+        ))}
+      </div>
+
+      <div className="pvp-team-battle-sequence">
+        <strong>Battle sequence</strong>
+        <ol>
+          {result.matchups.map((matchup) => {
+            const first = candidateByFighterId.get(matchup.fighterIds[0]);
+            const second = candidateByFighterId.get(matchup.fighterIds[1]);
+            const matchupWinner = matchup.winner < 0
+              ? null
+              : matchup.winner === 0 ? first : second;
+            const matchupLoser = matchup.winner < 0
+              ? null
+              : matchup.winner === 0 ? second : first;
+            return (
+              <li key={`${matchup.index}-${matchup.fighterIds.join('-')}`}>
+                <span>{matchup.index + 1}</span>
+                <div>
+                  <strong>
+                    {matchupWinner && matchupLoser
+                      ? `${getPvPBattleCandidateLabel(matchupWinner)} defeats ${getPvPBattleCandidateLabel(matchupLoser)}`
+                      : `${first ? getPvPBattleCandidateLabel(first) : 'Side A'} and ${second ? getPvPBattleCandidateLabel(second) : 'Side B'} draw`}
+                  </strong>
+                  <small>
+                    {(matchup.timeMs / 1000).toFixed(1)}s ·{' '}
+                    {matchup.shieldsAfter[0]}-{matchup.shieldsAfter[1]} shields
+                  </small>
+                </div>
+              </li>
+            );
+          })}
+        </ol>
+      </div>
+    </section>
+  );
+}
+
 const PvpBattleLab = ({
   candidates,
   opponentCandidates = candidates,
   formatLabel,
   initialSelection = null,
+  playerSideLabel = 'Side A',
 }: {
   candidates: PvPTeamCandidate[];
   opponentCandidates?: PvPTeamCandidate[];
   formatLabel: string;
   initialSelection?: {
+    mode?: BattleMode;
     leftKey: string;
     rightKey: string;
+    leftTeamKeys?: string[];
+    rightTeamKeys?: string[];
   } | null;
+  playerSideLabel?: string;
 }) => {
   const readyCandidates = useMemo(
     () => candidates.filter(isPvPBattleCandidateReady),
@@ -296,6 +525,9 @@ const PvpBattleLab = ({
   const readyOpponents = useMemo(
     () => opponentCandidates.filter(isPvPBattleCandidateReady),
     [opponentCandidates],
+  );
+  const [mode, setMode] = useState<BattleMode>(
+    initialSelection?.mode ?? 'single',
   );
   const [selectedKeys, setSelectedKeys] = useState<[string, string]>(() => {
     const left =
@@ -307,9 +539,23 @@ const PvpBattleLab = ({
       readyOpponents[0];
     return [left?.key ?? '', right?.key ?? ''];
   });
+  const [teamKeys, setTeamKeys] = useState<[TeamKeys, TeamKeys]>(() => [
+    buildInitialTeamKeys(
+      readyCandidates,
+      initialSelection?.leftTeamKeys ?? [initialSelection?.leftKey ?? ''],
+    ),
+    buildInitialTeamKeys(
+      readyOpponents,
+      initialSelection?.rightTeamKeys ?? [initialSelection?.rightKey ?? ''],
+    ),
+  ]);
   const [shields, setShields] = useState<[number, number]>([1, 1]);
   const [energy, setEnergy] = useState<[number, number]>([0, 0]);
+  const [teamShields, setTeamShields] = useState<[number, number]>([2, 2]);
+  const [teamEnergy, setTeamEnergy] = useState<[number, number]>([0, 0]);
   const [result, setResult] = useState<PokemonPvPBattleResponse | null>(null);
+  const [teamResult, setTeamResult] =
+    useState<PvPTeamBattleResponse | null>(null);
   const [error, setError] = useState('');
   const [simulating, setSimulating] = useState(false);
   const leftCandidateByKey = useMemo(
@@ -329,6 +575,17 @@ const PvpBattleLab = ({
     leftCandidateByKey.get(selectedKeys[0]),
     rightCandidateByKey.get(selectedKeys[1]),
   ];
+  const selectedTeams: [
+    Array<PvPTeamCandidate | undefined>,
+    Array<PvPTeamCandidate | undefined>,
+  ] = [
+    teamKeys[0].map((key) => leftCandidateByKey.get(key)),
+    teamKeys[1].map((key) => rightCandidateByKey.get(key)),
+  ];
+  const completeTeams = selectedTeams.every(
+    (team) => team.length === 3 && team.every(Boolean),
+  );
+  const sideLabels: [string, string] = [playerSideLabel, 'Opponent'];
   const canSwap =
     selected[0] != null &&
     selected[1] != null &&
@@ -342,6 +599,23 @@ const PvpBattleLab = ({
       return next;
     });
     setResult(null);
+    setTeamResult(null);
+    setError('');
+  };
+  const changeTeamSelection = (
+    side: number,
+    index: number,
+    candidate: PvPTeamCandidate,
+  ) => {
+    setTeamKeys((current) => {
+      const next: [TeamKeys, TeamKeys] = [
+        [...current[0]] as TeamKeys,
+        [...current[1]] as TeamKeys,
+      ];
+      next[side][index] = candidate.key;
+      return next;
+    });
+    setTeamResult(null);
     setError('');
   };
   const changePair = (
@@ -355,6 +629,7 @@ const PvpBattleLab = ({
       return next;
     });
     setResult(null);
+    setTeamResult(null);
     setError('');
   };
 
@@ -392,6 +667,60 @@ const PvpBattleLab = ({
     }
   };
 
+  const simulateTeam = async () => {
+    if (!completeTeams) return;
+    const leftTeam = selectedTeams[0] as [
+      PvPTeamCandidate,
+      PvPTeamCandidate,
+      PvPTeamCandidate,
+    ];
+    const rightTeam = selectedTeams[1] as [
+      PvPTeamCandidate,
+      PvPTeamCandidate,
+      PvPTeamCandidate,
+    ];
+    const leftFighters = leftTeam.map(buildPvPBattleFighter);
+    const rightFighters = rightTeam.map(buildPvPBattleFighter);
+    if (leftFighters.some((fighter) => !fighter) ||
+      rightFighters.some((fighter) => !fighter)) {
+      setError('Every team member needs complete stats and PvP move data.');
+      return;
+    }
+
+    setSimulating(true);
+    setTeamResult(null);
+    setError('');
+    try {
+      const next = await simulatePvPTeamBattleAsync({
+        kind: 'team-battle',
+        mechanics: 'pvpoke-legacy',
+        teams: [
+          [
+            leftFighters[0]!,
+            leftFighters[1]!,
+            leftFighters[2]!,
+          ],
+          [
+            rightFighters[0]!,
+            rightFighters[1]!,
+            rightFighters[2]!,
+          ],
+        ],
+        shields: teamShields,
+        startingEnergy: teamEnergy,
+      });
+      setTeamResult(next);
+    } catch (simulationError) {
+      setError(
+        simulationError instanceof Error
+          ? simulationError.message
+          : 'The team battle could not be simulated.',
+      );
+    } finally {
+      setSimulating(false);
+    }
+  };
+
   return (
     <section className="pvp-battle-lab">
       <header>
@@ -399,7 +728,10 @@ const PvpBattleLab = ({
           <FaFlask aria-hidden="true" />
           <strong>Battle Lab</strong>
         </span>
-        <small>{formatLabel} · local pinned mechanics</small>
+        <small>
+          {formatLabel} · {mode === 'team' ? 'ordered 3v3' : 'focused 1v1'} ·
+          local mechanics
+        </small>
       </header>
 
       {(readyCandidates.length < candidates.length ||
@@ -410,80 +742,186 @@ const PvpBattleLab = ({
         </p>
       )}
 
-      <div className="pvp-battle-pickers">
-        <CandidatePicker
-          side="Side A"
-          candidates={readyCandidates}
-          selected={selected[0]}
-          onSelect={(candidate) => changeSelection(0, candidate)}
-        />
+      <div className="pvp-battle-mode" role="group" aria-label="Battle Lab mode">
         <button
           type="button"
-          className="pvp-battle-swap"
-          aria-label="Swap battle sides"
-          disabled={!canSwap}
+          className={mode === 'single' ? 'active' : ''}
+          aria-pressed={mode === 'single'}
           onClick={() => {
-            if (!canSwap) return;
-            setSelectedKeys(([left, right]) => [right, left]);
-            setResult(null);
+            setMode('single');
+            setTeamResult(null);
+            setError('');
           }}
         >
-          <FaExchangeAlt aria-hidden="true" />
+          <FaFlask aria-hidden="true" />
+          Focused 1v1
         </button>
-        <CandidatePicker
-          side="Side B"
-          candidates={readyOpponents}
-          selected={selected[1]}
-          onSelect={(candidate) => changeSelection(1, candidate)}
-        />
+        <button
+          type="button"
+          className={mode === 'team' ? 'active' : ''}
+          aria-pressed={mode === 'team'}
+          onClick={() => {
+            setMode('team');
+            setResult(null);
+            setError('');
+          }}
+        >
+          <FaUsers aria-hidden="true" />
+          Team battle
+        </button>
       </div>
 
-      <div className="pvp-battle-builds">
-        <BattleBuild candidate={selected[0]} />
-        <BattleBuild candidate={selected[1]} />
-      </div>
+      {mode === 'single' ? (
+        <>
+          <div className="pvp-battle-pickers">
+            <CandidatePicker
+              side={sideLabels[0]}
+              candidates={readyCandidates}
+              selected={selected[0]}
+              onSelect={(candidate) => changeSelection(0, candidate)}
+            />
+            <button
+              type="button"
+              className="pvp-battle-swap"
+              aria-label="Swap battle sides"
+              disabled={!canSwap}
+              onClick={() => {
+                if (!canSwap) return;
+                setSelectedKeys(([left, right]) => [right, left]);
+                setResult(null);
+              }}
+            >
+              <FaExchangeAlt aria-hidden="true" />
+            </button>
+            <CandidatePicker
+              side={sideLabels[1]}
+              candidates={readyOpponents}
+              selected={selected[1]}
+              onSelect={(candidate) => changeSelection(1, candidate)}
+            />
+          </div>
 
-      <section className="pvp-battle-controls" aria-label="Battle conditions">
-        <div>
-          <ShieldControl
-            label="Side A"
-            value={shields[0]}
-            onChange={(value) => changePair(setShields, 0, value)}
-          />
-          <EnergyControl
-            label="Side A"
-            value={energy[0]}
-            onChange={(value) => changePair(setEnergy, 0, value)}
-          />
-        </div>
-        <div>
-          <ShieldControl
-            label="Side B"
-            value={shields[1]}
-            onChange={(value) => changePair(setShields, 1, value)}
-          />
-          <EnergyControl
-            label="Side B"
-            value={energy[1]}
-            onChange={(value) => changePair(setEnergy, 1, value)}
-          />
-        </div>
-      </section>
+          <div className="pvp-battle-builds">
+            <BattleBuild candidate={selected[0]} />
+            <BattleBuild candidate={selected[1]} />
+          </div>
 
-      <button
-        type="button"
-        className="pvp-battle-run"
-        disabled={simulating || !selected[0] || !selected[1]}
-        onClick={() => void simulate()}
-      >
-        <FaPlay aria-hidden="true" />
-        {simulating ? 'Simulating...' : 'Run battle'}
-      </button>
-      {error && <div className="pvp-status pvp-status--error" role="alert">{error}</div>}
-      {result && selected[0] && selected[1] && (
-        <BattleResult result={result} candidates={[selected[0], selected[1]]} />
+          <section className="pvp-battle-controls" aria-label="Battle conditions">
+            <div>
+              <ShieldControl
+                label={sideLabels[0]}
+                value={shields[0]}
+                onChange={(value) => changePair(setShields, 0, value)}
+              />
+              <EnergyControl
+                label={sideLabels[0]}
+                value={energy[0]}
+                onChange={(value) => changePair(setEnergy, 0, value)}
+              />
+            </div>
+            <div>
+              <ShieldControl
+                label={sideLabels[1]}
+                value={shields[1]}
+                onChange={(value) => changePair(setShields, 1, value)}
+              />
+              <EnergyControl
+                label={sideLabels[1]}
+                value={energy[1]}
+                onChange={(value) => changePair(setEnergy, 1, value)}
+              />
+            </div>
+          </section>
+
+          <button
+            type="button"
+            className="pvp-battle-run"
+            disabled={simulating || !selected[0] || !selected[1]}
+            onClick={() => void simulate()}
+          >
+            <FaPlay aria-hidden="true" />
+            {simulating ? 'Simulating...' : 'Run battle'}
+          </button>
+          {result && selected[0] && selected[1] && (
+            <BattleResult result={result} candidates={[selected[0], selected[1]]} />
+          )}
+        </>
+      ) : (
+        <>
+          <div className="pvp-team-battle-lineups">
+            <TeamLineupEditor
+              side={sideLabels[0]}
+              candidates={readyCandidates}
+              selectedKeys={teamKeys[0]}
+              candidateByKey={leftCandidateByKey}
+              onChange={(index, candidate) =>
+                changeTeamSelection(0, index, candidate)}
+            />
+            <TeamLineupEditor
+              side={sideLabels[1]}
+              candidates={readyOpponents}
+              selectedKeys={teamKeys[1]}
+              candidateByKey={rightCandidateByKey}
+              onChange={(index, candidate) =>
+                changeTeamSelection(1, index, candidate)}
+            />
+          </div>
+
+          <section
+            className="pvp-battle-controls pvp-team-battle-controls"
+            aria-label="Team battle conditions"
+          >
+            <div>
+              <ShieldControl
+                label={sideLabels[0]}
+                value={teamShields[0]}
+                onChange={(value) => changePair(setTeamShields, 0, value)}
+              />
+              <EnergyControl
+                label={`${sideLabels[0]} lead`}
+                value={teamEnergy[0]}
+                onChange={(value) => changePair(setTeamEnergy, 0, value)}
+              />
+            </div>
+            <div>
+              <ShieldControl
+                label={sideLabels[1]}
+                value={teamShields[1]}
+                onChange={(value) => changePair(setTeamShields, 1, value)}
+              />
+              <EnergyControl
+                label={`${sideLabels[1]} lead`}
+                value={teamEnergy[1]}
+                onChange={(value) => changePair(setTeamEnergy, 1, value)}
+              />
+            </div>
+          </section>
+
+          <button
+            type="button"
+            className="pvp-battle-run"
+            disabled={simulating || !completeTeams}
+            onClick={() => void simulateTeam()}
+          >
+            <FaPlay aria-hidden="true" />
+            {simulating ? 'Simulating team...' : 'Run team battle'}
+          </button>
+          {teamResult && completeTeams && (
+            <TeamBattleResult
+              result={teamResult}
+              teams={selectedTeams as [
+                [PvPTeamCandidate, PvPTeamCandidate, PvPTeamCandidate],
+                [PvPTeamCandidate, PvPTeamCandidate, PvPTeamCandidate],
+              ]}
+              sideLabels={sideLabels}
+            />
+          )}
+        </>
       )}
-      {!result &&
+
+      {error && <div className="pvp-status pvp-status--error" role="alert">{error}</div>}
+      {mode === 'single' &&
+        !result &&
         !error &&
         (readyCandidates.length < 1 || readyOpponents.length < 1) && (
         <div className="pvp-status">
@@ -491,10 +929,16 @@ const PvpBattleLab = ({
           PvP move data.
         </div>
       )}
+      {mode === 'team' && !teamResult && !error && !completeTeams && (
+        <div className="pvp-status">
+          Team Battle needs three unique, battle-ready Pokémon on each side.
+        </div>
+      )}
       <footer>
         <FaHeartbeat aria-hidden="true" />
-        Results are calculated on this device from the selected builds, shield
-        counts, starting energy, and deterministic pinned mechanics.
+        {mode === 'team'
+          ? 'The fixed order resolves locally with shared shields, replacements, and surviving HP and energy carried into the next matchup.'
+          : 'Results are calculated on this device from the selected builds, shield counts, starting energy, and deterministic pinned mechanics.'}
       </footer>
     </section>
   );
