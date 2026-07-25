@@ -5,6 +5,7 @@ import {
   evaluatePvPRosterLocally,
   simulatePvPBattleLocally,
   simulatePvPTeamBattleLocally,
+  simulatePvPTeamGauntletLocally,
 } from '../utils/pvpLocalRosterEvaluation';
 import type {
   PvPWorkerRequest,
@@ -33,6 +34,13 @@ workerScope.onmessage = (event: MessageEvent<PvPWorkerRequest>) => {
       workerScope.postMessage({
         kind: 'team-battle',
         response: simulatePvPTeamBattleLocally(event.data),
+      } satisfies PvPWorkerResponse);
+      return;
+    }
+    if (event.data.kind === 'team-gauntlet') {
+      workerScope.postMessage({
+        kind: 'team-gauntlet',
+        response: simulatePvPTeamGauntletLocally(event.data),
       } satisfies PvPWorkerResponse);
       return;
     }

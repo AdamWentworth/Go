@@ -9,6 +9,7 @@
   --pvp-teal: #42d5c2;
   --pvp-blue: #54a9ef;
   --pvp-pink: #ed6fa5;
+  --pvp-gold: #f2ca58;
   min-height: 100vh;
   padding: clamp(0.65rem, 2vw, 1.3rem) clamp(0.55rem, 2vw, 1.3rem) 7rem;
   color: var(--pvp-text);
@@ -1750,6 +1751,86 @@
   max-height: 9rem;
 }
 
+.pvp-team-switch-policy {
+  display: grid;
+  grid-template-columns: minmax(10rem, 0.7fr) minmax(0, 1.3fr);
+  gap: 0.55rem;
+  align-items: center;
+  padding: 0.55rem;
+  border: 1px solid var(--pvp-line-strong);
+  border-radius: 8px;
+  background: var(--pvp-panel);
+}
+
+.pvp-team-switch-policy > header {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  min-width: 0;
+  text-align: left;
+}
+
+.pvp-team-switch-policy > header svg {
+  flex: 0 0 auto;
+  color: var(--pvp-teal);
+}
+
+.pvp-team-switch-policy > header span,
+.pvp-team-switch-policy button span {
+  display: grid;
+  min-width: 0;
+}
+
+.pvp-team-switch-policy small {
+  color: var(--pvp-muted);
+  font-size: 0.57rem;
+  font-weight: 750;
+}
+
+.pvp-team-switch-policy > div {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.28rem;
+  padding: 0.24rem;
+  border: 1px solid var(--pvp-line);
+  border-radius: 7px;
+  background: #101516;
+}
+
+.pvp-team-switch-policy button {
+  display: flex;
+  gap: 0.4rem;
+  align-items: center;
+  min-width: 0;
+  min-height: 2.65rem;
+  padding: 0.35rem 0.55rem;
+  border: 1px solid transparent;
+  border-radius: 5px;
+  color: var(--pvp-muted);
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+}
+
+.pvp-team-switch-policy button > svg {
+  flex: 0 0 auto;
+}
+
+.pvp-team-switch-policy button strong {
+  color: inherit;
+  font-size: 0.68rem;
+}
+
+.pvp-team-switch-policy button.active {
+  border-color: var(--pvp-teal);
+  color: #071313;
+  background: var(--pvp-teal);
+}
+
+.pvp-team-switch-policy button.active small {
+  color: rgba(7, 19, 19, 0.72);
+}
+
 .pvp-battle-builds,
 .pvp-battle-controls {
   display: grid;
@@ -1911,6 +1992,32 @@
 }
 
 .pvp-battle-run:disabled {
+  opacity: 0.48;
+  cursor: not-allowed;
+}
+
+.pvp-team-battle-actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.45rem;
+}
+
+.pvp-meta-gauntlet-run {
+  display: inline-flex;
+  gap: 0.45rem;
+  align-items: center;
+  justify-content: center;
+  min-height: 2.8rem;
+  padding-inline: 0.7rem;
+  border: 1px solid var(--pvp-teal);
+  border-radius: 7px;
+  color: var(--pvp-teal);
+  background: transparent;
+  font-weight: 950;
+  cursor: pointer;
+}
+
+.pvp-meta-gauntlet-run:disabled {
   opacity: 0.48;
   cursor: not-allowed;
 }
@@ -2255,6 +2362,15 @@
   text-align: center;
 }
 
+.pvp-team-battle-sequence li.pvp-team-sequence-switch {
+  border-left-color: var(--pvp-gold);
+  background: rgba(242, 202, 88, 0.08);
+}
+
+.pvp-team-battle-sequence li.pvp-team-sequence-switch > span {
+  color: var(--pvp-gold);
+}
+
 .pvp-team-battle-sequence li > div {
   display: grid;
 }
@@ -2263,6 +2379,141 @@
   color: var(--pvp-muted);
   font-size: 0.58rem;
   font-weight: 750;
+}
+
+.pvp-meta-gauntlet-result {
+  display: grid;
+  gap: 0.65rem;
+  padding: 0.75rem;
+  border: 1px solid var(--pvp-line-strong);
+  border-radius: 8px;
+  background: #101516;
+}
+
+.pvp-meta-gauntlet-result > header {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 0.55rem;
+  align-items: center;
+  text-align: left;
+}
+
+.pvp-meta-gauntlet-result > header > svg {
+  color: var(--pvp-gold);
+  font-size: 1.25rem;
+}
+
+.pvp-meta-gauntlet-result > header > span {
+  display: grid;
+  gap: 0.08rem;
+}
+
+.pvp-meta-gauntlet-result h2,
+.pvp-meta-gauntlet-result p {
+  margin: 0;
+}
+
+.pvp-meta-gauntlet-result h2 {
+  font-size: 1.25rem;
+}
+
+.pvp-meta-gauntlet-result > header small,
+.pvp-meta-gauntlet-result p,
+.pvp-meta-gauntlet-result > footer {
+  color: var(--pvp-muted);
+  font-size: 0.6rem;
+  font-weight: 750;
+}
+
+.pvp-meta-gauntlet-result > div {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.35rem;
+}
+
+.pvp-meta-gauntlet-result article {
+  display: grid;
+  grid-template-columns: 1.2rem 5.4rem minmax(0, 1fr);
+  gap: 0.45rem;
+  align-items: center;
+  min-width: 0;
+  padding: 0.42rem 0.5rem;
+  border: 1px solid var(--pvp-line);
+  border-left: 3px solid var(--pvp-muted);
+  border-radius: 6px;
+  background: var(--pvp-panel);
+  text-align: left;
+}
+
+.pvp-meta-gauntlet-result article.win {
+  border-left-color: var(--pvp-teal);
+}
+
+.pvp-meta-gauntlet-result article.loss {
+  border-left-color: #ed6f7d;
+}
+
+.pvp-meta-gauntlet-result article.draw {
+  border-left-color: var(--pvp-gold);
+}
+
+.pvp-meta-gauntlet-result article > svg {
+  color: var(--pvp-muted);
+}
+
+.pvp-meta-gauntlet-result article.win > svg {
+  color: var(--pvp-teal);
+}
+
+.pvp-meta-gauntlet-result article.loss > svg {
+  color: #ed6f7d;
+}
+
+.pvp-meta-gauntlet-result article.draw > svg {
+  color: var(--pvp-gold);
+}
+
+.pvp-meta-gauntlet-team {
+  display: flex;
+  align-items: center;
+  width: 5.4rem;
+}
+
+.pvp-meta-gauntlet-team img {
+  width: 2.4rem;
+  height: 2.4rem;
+  margin-left: -0.55rem;
+  object-fit: contain;
+}
+
+.pvp-meta-gauntlet-team img:first-child {
+  margin-left: 0;
+}
+
+.pvp-meta-gauntlet-result article > span {
+  display: grid;
+  min-width: 0;
+}
+
+.pvp-meta-gauntlet-result article strong,
+.pvp-meta-gauntlet-result article small {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pvp-meta-gauntlet-result article strong {
+  font-size: 0.68rem;
+}
+
+.pvp-meta-gauntlet-result article small {
+  color: var(--pvp-muted);
+  font-size: 0.55rem;
+  font-weight: 750;
+}
+
+.pvp-meta-gauntlet-result > footer {
+  text-align: center;
 }
 
 .pvp-battle-lab > footer {
@@ -2346,8 +2597,14 @@
 :root[data-theme='light'] .pvp-team-lineup-editor,
 :root[data-theme='light'] .pvp-team-lineup-slots button,
 :root[data-theme='light'] .pvp-team-lineup-editor > .pvp-battle-picker,
-:root[data-theme='light'] .pvp-team-battle-result {
+:root[data-theme='light'] .pvp-team-battle-result,
+:root[data-theme='light'] .pvp-team-switch-policy,
+:root[data-theme='light'] .pvp-meta-gauntlet-result {
   background: #f7fbfb;
+}
+
+:root[data-theme='light'] .pvp-team-switch-policy > div {
+  background: #e7f0f0;
 }
 
 :root[data-theme='light'] .pvp-header-actions > strong {
@@ -2662,6 +2919,14 @@
     grid-template-columns: 3rem minmax(0, 1fr) repeat(3, minmax(2.65rem, auto));
   }
 
+  .pvp-team-switch-policy {
+    grid-template-columns: 1fr;
+  }
+
+  .pvp-meta-gauntlet-result > div {
+    grid-template-columns: 1fr;
+  }
+
   .pvp-team-lineup-editor > .pvp-battle-picker > div {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
@@ -2746,6 +3011,46 @@
 
   .pvp-battle-controls > div {
     grid-template-columns: 1fr;
+  }
+
+  .pvp-team-battle-actions {
+    grid-template-columns: 1fr;
+  }
+
+  .pvp-team-switch-policy {
+    padding: 0.45rem;
+  }
+
+  .pvp-team-switch-policy > header {
+    padding-inline: 0.15rem;
+  }
+
+  .pvp-team-switch-policy button {
+    justify-content: center;
+    padding-inline: 0.35rem;
+    text-align: center;
+  }
+
+  .pvp-team-switch-policy button > svg {
+    display: none;
+  }
+
+  .pvp-meta-gauntlet-result {
+    padding: 0.55rem;
+  }
+
+  .pvp-meta-gauntlet-result article {
+    grid-template-columns: 1.1rem 4.7rem minmax(0, 1fr);
+    padding-inline: 0.35rem;
+  }
+
+  .pvp-meta-gauntlet-team {
+    width: 4.7rem;
+  }
+
+  .pvp-meta-gauntlet-team img {
+    width: 2.1rem;
+    height: 2.1rem;
   }
 
   .pvp-battle-result-sides article {

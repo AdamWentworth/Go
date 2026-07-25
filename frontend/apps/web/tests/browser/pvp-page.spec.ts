@@ -147,8 +147,15 @@ test.describe('PvP rankings page', () => {
         .toBeVisible();
       await expect(page.getByRole('button', { name: /Edit Side A Closer/ }))
         .toBeVisible();
+      await expect(page.getByRole('button', { name: /Adaptive/ }))
+        .toHaveAttribute('aria-pressed', 'true');
+      await expect(page.getByText('Current 45-second battle clock')).toBeVisible();
       await page.getByRole('button', { name: 'Run team battle' }).click();
-      await expect(page.getByText('Ordered 3v3 result')).toBeVisible();
+      await expect(page.getByText('Switch-aware 3v3 result')).toBeVisible();
+      await page.getByRole('button', { name: /Test 3 meta teams/ }).click();
+      await expect(page.getByText(
+        'Wins, losses, and draws against current top role combinations.',
+      )).toBeVisible();
       const battleLayout = await page.locator('.pvp-page').evaluate(() => ({
         viewportWidth: window.innerWidth,
         documentWidth: document.documentElement.scrollWidth,

@@ -5,12 +5,14 @@ import {
   evaluatePvPRosterLocally,
   simulatePvPBattleLocally,
   simulatePvPTeamBattleLocally,
+  simulatePvPTeamGauntletLocally,
 } from '@/pages/Pvp/utils/pvpLocalRosterEvaluation';
 import {
   evaluatePvPTeamAsync,
   evaluatePvPRosterAsync,
   simulatePvPBattleAsync,
   simulatePvPTeamBattleAsync,
+  simulatePvPTeamGauntletAsync,
 } from '@/pages/Pvp/utils/pvpWorkers';
 import type {
   PvPTeamBattleRequest,
@@ -119,6 +121,37 @@ const fighter = (
   shadow: false,
   fastMove,
   chargedMoves: [chargedMove],
+});
+
+const elementalFighter = (
+  id: string,
+  type: string,
+  hp = 200,
+): PokemonPvPBattleFighter => ({
+  id,
+  name: id,
+  types: [type],
+  attack: 180,
+  defense: 180,
+  hp,
+  shadow: false,
+  fastMove: {
+    ...fastMove,
+    id: `${type.toUpperCase()}_FAST`,
+    name: `${type} fast`,
+    type,
+    power: 8,
+    energyGain: 8,
+    turns: 2,
+  },
+  chargedMoves: [{
+    ...chargedMove,
+    id: `${type.toUpperCase()}_CHARGED`,
+    name: `${type} charged`,
+    type,
+    power: 80,
+    energyCost: 40,
+  }],
 });
 
 const opponents = [
@@ -424,6 +457,7 @@ describe('local 3v3 PvP sequencing', () => {
     ],
     shields: [2, 2] as [number, number],
     startingEnergy: [0, 0] as [number, number],
+    switchPolicy: 'fixed' as const,
   };
 
   it('carries survivor HP, energy, and shared shields through replacements', () => {
@@ -465,5 +499,79 @@ describe('local 3v3 PvP sequencing', () => {
         [...teamBattleRequest.teams[1]],
       ],
     })).toThrow('cannot repeat');
+  });
+
+  it('safe-swaps out of a clear lead loss and applies the current switch clock', () => {
+    const result = simulatePvPTeamBattleLocally({
+      kind: 'team-battle',
+      mechanics: 'pvpoke-legacy',
+      teams: [
+        [
+          elementalFighter('fire-lead', 'fire'),
+          elementalFighter('electric-switch', 'electric'),
+          elementalFighter('grass-closer', 'grass'),
+        ],
+        [
+          elementalFighter('water-lead', 'water'),
+          elementalFighter('flying-switch', 'flying'),
+          elementalFighter('ice-closer', 'ice'),
+        ],
+      ],
+      shields: [2, 2],
+      startingEnergy: [0, 0],
+      switchPolicy: 'adaptive',
+    });
+
+    expect(result.switchPolicy).toBe('adaptive');
+    expect(result.switchClockMs).toBe(45_000);
+    expect(result.switches).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        side: 0,
+        atMs: 0,
+        fromFighterId: 'fire-lead',
+        reason: 'adaptive',
+        switchReadyAtMs: 45_000,
+      }),
+    ]));
+    expect(result.matchups[0].fighterIds[0]).not.toBe('fire-lead');
+  });
+
+  it('keeps fixed order available as a transparent comparison model', () => {
+    const result = simulatePvPTeamBattleLocally({
+      ...teamBattleRequest,
+      switchPolicy: 'fixed',
+    });
+
+    expect(result.switchPolicy).toBe('fixed');
+    expect(result.switches.every((event) => event.reason === 'forced')).toBe(true);
+    expect(result.matchups[0].fighterIds).toEqual([
+      'player-lead',
+      'opponent-lead',
+    ]);
+  });
+
+  it('runs a representative team gauntlet locally without API work', async () => {
+    const fetchSpy = vi.spyOn(global, 'fetch');
+    const request = {
+      kind: 'team-gauntlet' as const,
+      mechanics: 'pvpoke-legacy' as const,
+      team: teamBattleRequest.teams[0],
+      opponents: [{
+        id: 'field-one',
+        label: 'Field one',
+        team: teamBattleRequest.teams[1],
+      }],
+      shields: 2,
+      switchPolicy: 'adaptive' as const,
+    };
+
+    const direct = simulatePvPTeamGauntletLocally(request);
+    const worker = await simulatePvPTeamGauntletAsync(request);
+
+    expect(direct.results).toHaveLength(1);
+    expect(direct.wins + direct.draws + direct.losses).toBe(1);
+    expect(worker.results).toHaveLength(1);
+    expect(fetchSpy).not.toHaveBeenCalled();
+    fetchSpy.mockRestore();
   });
 });

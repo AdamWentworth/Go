@@ -30,11 +30,15 @@ describe('PvP methodology page', () => {
       .toBeInTheDocument();
     expect(screen.getByRole('heading', { name: 'Separate formats, not client-side filters' }))
       .toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: 'Focused matchups and ordered 3v3 battles' }))
+    expect(screen.getByRole('heading', {
+      name: 'Focused matchups and switch-aware 3v3 battles',
+    }))
       .toBeInTheDocument();
     expect(screen.getByText(/Team Builder tests each assigned role/))
       .toBeInTheDocument();
-    expect(screen.getByText(/does not yet choose proactive swaps/))
+    expect(screen.getByText(/deterministic matchup heuristic/))
+      .toBeInTheDocument();
+    expect(screen.getByText(/not claimed historical player teams/))
       .toBeInTheDocument();
   });
 

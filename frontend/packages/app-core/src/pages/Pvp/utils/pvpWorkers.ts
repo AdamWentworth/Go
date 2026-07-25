@@ -9,6 +9,7 @@ import {
   evaluatePvPRosterLocally,
   simulatePvPBattleLocally,
   simulatePvPTeamBattleLocally,
+  simulatePvPTeamGauntletLocally,
 } from './pvpLocalRosterEvaluation';
 import type {
   PvPWorkerRequest,
@@ -17,6 +18,8 @@ import type {
   PvPTeamEvaluationResponse,
   PvPTeamBattleRequest,
   PvPTeamBattleResponse,
+  PvPTeamGauntletRequest,
+  PvPTeamGauntletResponse,
   PvPTeamWorkerRequest,
 } from './pvpWorkerProtocol';
 
@@ -41,10 +44,15 @@ const runPvPWorker = (
               kind: 'team-battle',
               response: simulatePvPTeamBattleLocally(request),
             }
-            : {
-              kind: 'evaluation',
-              response: evaluatePvPRosterLocally(request),
-            },
+            : request.kind === 'team-gauntlet'
+              ? {
+                kind: 'team-gauntlet',
+                response: simulatePvPTeamGauntletLocally(request),
+              }
+              : {
+                kind: 'evaluation',
+                response: evaluatePvPRosterLocally(request),
+              },
     );
   }
 
@@ -123,6 +131,17 @@ export const simulatePvPTeamBattleAsync = async (
   const result = await runPvPWorker(request, signal);
   if ('error' in result || result.kind !== 'team-battle') {
     throw new Error('Team Battle Lab worker returned an unexpected result');
+  }
+  return result.response;
+};
+
+export const simulatePvPTeamGauntletAsync = async (
+  request: PvPTeamGauntletRequest,
+  signal?: AbortSignal,
+): Promise<PvPTeamGauntletResponse> => {
+  const result = await runPvPWorker(request, signal);
+  if ('error' in result || result.kind !== 'team-gauntlet') {
+    throw new Error('PvP meta gauntlet worker returned an unexpected result');
   }
   return result.response;
 };

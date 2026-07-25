@@ -350,7 +350,24 @@ describe('PvP rankings page', () => {
       .toBeInTheDocument();
     expect(screen.getByRole('button', { name: /Edit Side A Closer: Lanturn/ }))
       .toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Adaptive/ }))
+      .toHaveAttribute('aria-pressed', 'true');
+    expect(screen.getByText('Current 45-second battle clock'))
+      .toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Run team battle' })).toBeEnabled();
+    fireEvent.click(screen.getByRole('button', { name: 'Run team battle' }));
+    expect(await screen.findByText('Switch-aware 3v3 result'))
+      .toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: /Test 3 meta teams/ }));
+    expect(await screen.findByText(
+      'Wins, losses, and draws against current top role combinations.',
+    )).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: /Fixed order/ }));
+    expect(screen.getByRole('button', { name: /Fixed order/ }))
+      .toHaveAttribute('aria-pressed', 'true');
+    expect(screen.queryByText('Switch-aware 3v3 result')).not.toBeInTheDocument();
   });
 
   it('opens IV Rank with a catalog-only lazy load and calculates a spread', () => {

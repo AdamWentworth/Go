@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import {
   analyzePvPTeam,
+  buildRepresentativePvPMetaTeams,
   rankPvPTeamCandidates,
   type PvPTeamCandidate,
 } from '@/pages/Pvp/utils/pvpTeamBuilder';
@@ -53,6 +54,28 @@ describe('analyzePvPTeam', () => {
       'highest',
       'middle',
     ]);
+  });
+
+  it('builds unique role-balanced trios from the current ranking field', () => {
+    const field = Array.from({ length: 12 }, (_, index) => {
+      const item = candidate(`meta-${index}`, [], [], 90 - index);
+      item.entry.categoryScores = [
+        100 - index,
+        80 + index,
+        90 - Math.abs(5 - index),
+      ];
+      return item;
+    });
+
+    const teams = buildRepresentativePvPMetaTeams(field, 6);
+
+    expect(teams).toHaveLength(6);
+    expect(new Set(teams.map((team) => team.id)).size).toBe(6);
+    teams.forEach((team) => {
+      expect(team.members).toHaveLength(3);
+      expect(new Set(team.members.map((member) => member.key)).size).toBe(3);
+      expect(team.label).toContain('/');
+    });
   });
 
   it('separates covered and uncovered threats from source matchups', () => {

@@ -33,6 +33,12 @@ export type PvPTeamAnalysis = {
   replacements: PvPTeamReplacement[];
 };
 
+export type PvPRepresentativeMetaTeam = {
+  id: string;
+  label: string;
+  members: [PvPTeamCandidate, PvPTeamCandidate, PvPTeamCandidate];
+};
+
 const matchupSpecies = (
   entry: PokemonPvPRankingEntry,
   kind: 'matchups' | 'counters',
@@ -100,6 +106,65 @@ export const rankPvPTeamCandidates = (
     left.entry.name.localeCompare(right.entry.name) ||
     left.key.localeCompare(right.key)
   ));
+
+const scoreForTeamRole = (
+  candidate: PvPTeamCandidate,
+  scoreIndex: number,
+): number =>
+  candidate.entry.categoryScores[scoreIndex] ?? candidate.entry.score;
+
+const roleRankedCandidates = (
+  candidates: readonly PvPTeamCandidate[],
+  scoreIndex: number,
+): PvPTeamCandidate[] =>
+  [...candidates].sort((left, right) =>
+    scoreForTeamRole(right, scoreIndex) - scoreForTeamRole(left, scoreIndex) ||
+    right.entry.score - left.entry.score ||
+    left.entry.rank - right.entry.rank ||
+    left.key.localeCompare(right.key));
+
+export const buildRepresentativePvPMetaTeams = (
+  candidates: readonly PvPTeamCandidate[],
+  limit = 6,
+): PvPRepresentativeMetaTeam[] => {
+  if (candidates.length < 3 || limit < 1) return [];
+  const rolePools = [
+    roleRankedCandidates(candidates, 0),
+    roleRankedCandidates(candidates, 2),
+    roleRankedCandidates(candidates, 1),
+  ];
+  const results: PvPRepresentativeMetaTeam[] = [];
+  const seen = new Set<string>();
+  const poolLimit = Math.min(candidates.length, Math.max(limit * 3, 12));
+
+  for (let seed = 0; seed < poolLimit && results.length < limit; seed += 1) {
+    const picked: PvPTeamCandidate[] = [];
+    for (let role = 0; role < rolePools.length; role += 1) {
+      const pool = rolePools[role].slice(0, poolLimit);
+      const offset = (seed * (role + 1) + role * limit) % pool.length;
+      const candidate = Array.from(
+        { length: pool.length },
+        (_, step) => pool[(offset + step) % pool.length],
+      ).find((entry) => !picked.some((current) => current.key === entry.key));
+      if (candidate) picked.push(candidate);
+    }
+    if (picked.length !== 3) continue;
+    const id = picked.map((candidate) => candidate.key).join('|');
+    if (seen.has(id)) continue;
+    seen.add(id);
+    results.push({
+      id,
+      label: picked.map((candidate) => candidate.entry.name).join(' / '),
+      members: picked as [
+        PvPTeamCandidate,
+        PvPTeamCandidate,
+        PvPTeamCandidate,
+      ],
+    });
+  }
+
+  return results;
+};
 
 export const analyzePvPTeam = (
   team: PvPTeamCandidate[],

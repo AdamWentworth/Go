@@ -62,6 +62,8 @@ export type PvPTeamWorkerRequest = {
   opponents: PokemonPvPRosterEvaluationOpponent[];
 };
 
+export type PvPTeamSwitchPolicy = 'fixed' | 'adaptive';
+
 export type PvPTeamBattleRequest = {
   kind: 'team-battle';
   mechanics: 'pvpoke-legacy';
@@ -79,6 +81,7 @@ export type PvPTeamBattleRequest = {
   ];
   shields: [number, number];
   startingEnergy: [number, number];
+  switchPolicy?: PvPTeamSwitchPolicy;
 };
 
 export type PvPTeamBattleMemberResult = {
@@ -88,6 +91,7 @@ export type PvPTeamBattleMemberResult = {
   energy: number;
   fainted: boolean;
   knockouts: number;
+  switches: number;
 };
 
 export type PvPTeamBattleMatchupResult = {
@@ -100,13 +104,29 @@ export type PvPTeamBattleMatchupResult = {
   hpAfter: [number, number];
   energyAfter: [number, number];
   shieldsAfter: [number, number];
+  startedAtMs: number;
+  endedAtMs: number;
+  endedBy: 'knockout' | 'switch' | 'timeout' | 'stall';
+};
+
+export type PvPTeamBattleSwitchEvent = {
+  index: number;
+  side: number;
+  atMs: number;
+  fromFighterId: string;
+  toFighterId: string;
+  reason: 'adaptive' | 'forced';
+  switchReadyAtMs: number;
 };
 
 export type PvPTeamBattleResponse = {
   mechanics: 'pvpoke-legacy';
+  switchPolicy: PvPTeamSwitchPolicy;
+  switchClockMs: number;
   winner: number;
   turns: number;
   timeMs: number;
+  endReason: 'knockout' | 'timeout' | 'stall';
   shields: [number, number];
   teams: [
     [
@@ -121,13 +141,53 @@ export type PvPTeamBattleResponse = {
     ],
   ];
   matchups: PvPTeamBattleMatchupResult[];
+  switches: PvPTeamBattleSwitchEvent[];
+};
+
+export type PvPTeamGauntletOpponent = {
+  id: string;
+  label: string;
+  team: [
+    PokemonPvPBattleFighter,
+    PokemonPvPBattleFighter,
+    PokemonPvPBattleFighter,
+  ];
+};
+
+export type PvPTeamGauntletRequest = {
+  kind: 'team-gauntlet';
+  mechanics: 'pvpoke-legacy';
+  team: [
+    PokemonPvPBattleFighter,
+    PokemonPvPBattleFighter,
+    PokemonPvPBattleFighter,
+  ];
+  opponents: PvPTeamGauntletOpponent[];
+  shields: number;
+  switchPolicy: PvPTeamSwitchPolicy;
+};
+
+export type PvPTeamGauntletResult = {
+  opponentId: string;
+  opponentLabel: string;
+  result: PvPTeamBattleResponse;
+};
+
+export type PvPTeamGauntletResponse = {
+  mechanics: 'pvpoke-legacy';
+  switchPolicy: PvPTeamSwitchPolicy;
+  wins: number;
+  draws: number;
+  losses: number;
+  results: PvPTeamGauntletResult[];
 };
 
 export type PvPWorkerRequest =
   | PvPRosterWorkerRequest
   | PvPBattleWorkerRequest
   | PvPTeamWorkerRequest
-  | PvPTeamBattleRequest;
+  | PvPTeamBattleRequest
+  | PvPTeamGauntletRequest;
 
 export type PvPWorkerResponse =
   | {
@@ -145,6 +205,10 @@ export type PvPWorkerResponse =
   | {
     kind: 'team-battle';
     response: PvPTeamBattleResponse;
+  }
+  | {
+    kind: 'team-gauntlet';
+    response: PvPTeamGauntletResponse;
   }
   | {
     error: string;

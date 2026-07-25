@@ -36,9 +36,9 @@ const rankingViews = [
   },
   {
     title: 'Battle Lab',
-    summary: 'A deterministic 1v1 test with configurable battle conditions.',
+    summary: 'Deterministic focused and switch-aware team simulations.',
     detail:
-      'The lab runs the selected builds through PokeGo Nexus simulation code with chosen shields and starting energy. It is a focused matchup test, not a full team battle.',
+      'The lab runs selected builds through local 1v1 or 3v3 simulation with configurable shields and energy. Team Battle can model legal adaptive swaps and test a lineup against representative field teams.',
     icon: FaFlask,
   },
 ];
@@ -239,16 +239,18 @@ const PvpMethodology = () => {
 
           <section id="battle-lab" className="pvp-methodology-section">
             <p className="pvp-methodology-kicker">Local simulation</p>
-            <h2>Focused matchups and ordered 3v3 battles</h2>
+            <h2>Focused matchups and switch-aware 3v3 battles</h2>
             <p>
               Battle Lab uses the pinned <code>pvpoke-legacy</code> mechanics
               in the same browser worker as My Pokémon rankings. It models move
               turns, damage, energy, shields, Charged Move decisions, stat stages,
-              and deterministic buff activation. Team Battle also carries shared
-              shields and each survivor&apos;s HP and energy through automatic
-              replacements in the selected Lead, Safe Swap, and Closer order.
-              The Pokémon service only supplies the versioned data used to build
-              the fighters.
+              and deterministic buff activation. Team Battle carries shared shields
+              and each survivor&apos;s HP and energy, resets temporary stat changes
+              when a Pokémon leaves battle, and enforces the current 45-second
+              switch clock. Adaptive mode can leave a clearly losing matchup and
+              counter-switch when legal; fixed order remains available as a
+              comparison. The Pokémon service only supplies the versioned data used
+              to build the fighters.
             </p>
             <div className="pvp-methodology-facts" aria-label="Battle Lab inputs">
               <span>
@@ -260,8 +262,12 @@ const PvpMethodology = () => {
                 Starting energy
               </span>
               <span>
+                <strong>45s</strong>
+                Switch clock
+              </span>
+              <span>
                 <strong>1v1 / 3v3</strong>
-                Focused or ordered team battle
+                Focused or team battle
               </span>
             </div>
           </section>
@@ -278,12 +284,19 @@ const PvpMethodology = () => {
                 Team Builder tests each assigned role against the current local
                 meta field and supplements it with published matchup evidence.
                 A complete team can be handed directly to Team Battle for an
-                ordered three-Pokémon result.
+                adaptive or fixed-order three-Pokémon result.
               </li>
               <li>
-                Team Battle uses a fixed order with automatic replacements. It
-                does not yet choose proactive swaps, model switch timers, or
-                predict live human decisions and latency.
+                Adaptive switching is a deterministic matchup heuristic evaluated
+                at legal decision windows. It does not predict a human player&apos;s
+                bait reads, timing mistakes, latency, or every possible future
+                decision tree.
+              </li>
+              <li>
+                The meta gauntlet builds representative Lead, Safe Swap, and Closer
+                combinations from the current ranking snapshot. They are useful
+                repeatable test fixtures, not claimed historical player teams or a
+                measured usage report.
               </li>
               <li>
                 Rankings and current cups change only when the pinned source

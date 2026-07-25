@@ -14,13 +14,21 @@ import type {
   PvPRosterWorkerRequest,
   PvPTeamBattleRequest,
   PvPTeamBattleResponse,
+  PvPTeamGauntletRequest,
+  PvPTeamGauntletResponse,
   PvPTeamEvaluationResponse,
   PvPTeamRole,
+  PvPTeamSwitchPolicy,
   PvPTeamWorkerRequest,
 } from './pvpWorkerProtocol';
 
 const ENERGY_CAP = 100;
 const MAX_TURNS = 480;
+const TEAM_BATTLE_LIMIT_MS = 270_000;
+export const PVP_SWITCH_CLOCK_MS = 45_000;
+const SWITCH_REEVALUATION_MS = 10_000;
+const ADAPTIVE_SWITCH_MAX_RATING = 450;
+const ADAPTIVE_SWITCH_MIN_IMPROVEMENT = 80;
 const MAX_STAGE = 4;
 const DAMAGE_BONUS = 1.2999999523162841796875;
 const SUPER_EFFECTIVE = 1.60000002384185791015625;
@@ -190,6 +198,8 @@ type BattleConditions = {
   shields: [number, number];
   startingEnergy: [number, number];
   startingHp?: [number, number];
+  startingStages?: [[number, number], [number, number]];
+  maxTimeMs?: number;
   recordTimeline?: boolean;
 };
 
@@ -259,14 +269,15 @@ const newCombatant = (
   shields: number,
   energy: number,
   hp = model.hp,
+  stages: [number, number] = [0, 0],
 ): Combatant => ({
   model,
   hp: clamp(hp, 0, model.hp),
   energy: clamp(energy, 0, ENERGY_CAP),
   shields: Math.max(0, shields),
   startShields: Math.max(0, shields),
-  attackStage: 0,
-  defenseStage: 0,
+  attackStage: clamp(stages[0], -MAX_STAGE, MAX_STAGE),
+  defenseStage: clamp(stages[1], -MAX_STAGE, MAX_STAGE),
   cooldown: 0,
   pendingFast: false,
   buffMeters: new Map(),
@@ -425,12 +436,14 @@ const simulateBattle = (
       conditions.shields[0],
       conditions.startingEnergy[0],
       conditions.startingHp?.[0],
+      conditions.startingStages?.[0],
     ),
     newCombatant(
       second,
       conditions.shields[1],
       conditions.startingEnergy[1],
       conditions.startingHp?.[1],
+      conditions.startingStages?.[1],
     ),
   ];
   const timeline: PokemonPvPBattleEvent[] = [];
@@ -439,7 +452,10 @@ const simulateBattle = (
 
   for (
     let turn = 0;
-    turn < MAX_TURNS && fighters[0].hp > 0 && fighters[1].hp > 0;
+    turn < MAX_TURNS &&
+      fighters[0].hp > 0 &&
+      fighters[1].hp > 0 &&
+      (conditions.maxTimeMs == null || timeMs < conditions.maxTimeMs);
     turn += 1
   ) {
     for (const fighter of fighters) {
@@ -781,46 +797,221 @@ export const simulatePvPBattleLocally = (
   };
 };
 
+type TeamBattleMemberState = {
+  fighter: PokemonPvPBattleFighter;
+  hp: number;
+  energy: number;
+  attackStage: number;
+  defenseStage: number;
+  knockouts: number;
+  switches: number;
+};
+
+const teamMatchupRating = (
+  member: TeamBattleMemberState,
+  opponent: TeamBattleMemberState,
+  shields: [number, number],
+): number => {
+  const projection = simulateBattle(member.fighter, opponent.fighter, {
+    shields,
+    startingEnergy: [member.energy, opponent.energy],
+    startingHp: [member.hp, opponent.hp],
+    startingStages: [
+      [member.attackStage, member.defenseStage],
+      [opponent.attackStage, opponent.defenseStage],
+    ],
+  });
+  return rating(projection, 0);
+};
+
+const chooseAdaptiveSwitch = (
+  team: TeamBattleMemberState[],
+  activeIndex: number,
+  opponent: TeamBattleMemberState,
+  shields: [number, number],
+): { index: number; currentRating: number; nextRating: number } | null => {
+  const activeMember = team[activeIndex];
+  const currentRating = teamMatchupRating(activeMember, opponent, shields);
+  if (currentRating > ADAPTIVE_SWITCH_MAX_RATING) return null;
+
+  const alternatives = team
+    .map((member, index) => ({
+      index,
+      rating: index === activeIndex || member.hp <= 0
+        ? Number.NEGATIVE_INFINITY
+        : teamMatchupRating(member, opponent, shields),
+    }))
+    .sort((left, right) => right.rating - left.rating || left.index - right.index);
+  const best = alternatives[0];
+  if (
+    !best ||
+    !Number.isFinite(best.rating) ||
+    best.rating < 500 ||
+    best.rating - currentRating < ADAPTIVE_SWITCH_MIN_IMPROVEMENT
+  ) {
+    return null;
+  }
+
+  return {
+    index: best.index,
+    currentRating,
+    nextRating: best.rating,
+  };
+};
+
+const nextAliveMember = (
+  team: TeamBattleMemberState[],
+  activeIndex: number,
+): number =>
+  team.findIndex((member, index) => index !== activeIndex && member.hp > 0);
+
+const teamTimeoutScore = (team: TeamBattleMemberState[]): number => {
+  const standing = team.filter((member) => member.hp > 0).length;
+  const hpShare = team.reduce(
+    (total, member) => total + member.hp / member.fighter.hp,
+    0,
+  );
+  return standing * 10 + hpShare;
+};
+
 export const simulatePvPTeamBattleLocally = (
   request: PvPTeamBattleRequest,
 ): PvPTeamBattleResponse => {
   assertTeamBattleRequest(request);
+  const switchPolicy: PvPTeamSwitchPolicy = request.switchPolicy ?? 'adaptive';
 
   const teamState = request.teams.map((team, side) =>
     team.map((fighter, index) => ({
       fighter,
       hp: fighter.hp,
       energy: index === 0 ? request.startingEnergy[side] : 0,
+      attackStage: 0,
+      defenseStage: 0,
       knockouts: 0,
+      switches: 0,
     }))) as [
-    Array<{
-      fighter: PokemonPvPBattleFighter;
-      hp: number;
-      energy: number;
-      knockouts: number;
-    }>,
-    Array<{
-      fighter: PokemonPvPBattleFighter;
-      hp: number;
-      energy: number;
-      knockouts: number;
-    }>,
+    TeamBattleMemberState[],
+    TeamBattleMemberState[],
   ];
 
   const active: [number, number] = [0, 0];
   const shields: [number, number] = [...request.shields];
   const matchups: PvPTeamBattleResponse['matchups'] = [];
+  const switches: PvPTeamBattleResponse['switches'] = [];
+  const switchReadyAtMs: [number, number] = [0, 0];
+  let switchedAtCurrentTime: [boolean, boolean] = [false, false];
   let turns = 0;
   let timeMs = 0;
   let stalled = false;
 
-  while (active[0] < 3 && active[1] < 3) {
+  const recordSwitch = (
+    side: 0 | 1,
+    toIndex: number,
+    reason: 'adaptive' | 'forced',
+  ) => {
+    const fromIndex = active[side];
+    const from = teamState[side][fromIndex];
+    const to = teamState[side][toIndex];
+    if (reason === 'adaptive') {
+      from.attackStage = 0;
+      from.defenseStage = 0;
+      to.attackStage = 0;
+      to.defenseStage = 0;
+      to.switches += 1;
+      switchReadyAtMs[side] = timeMs + PVP_SWITCH_CLOCK_MS;
+      switchedAtCurrentTime[side] = true;
+    }
+    active[side] = toIndex;
+    switches.push({
+      index: switches.length,
+      side,
+      atMs: timeMs,
+      fromFighterId: from.fighter.id,
+      toFighterId: to.fighter.id,
+      reason,
+      switchReadyAtMs: switchReadyAtMs[side],
+    });
+  };
+
+  const hasLivingTeam = (side: 0 | 1) =>
+    teamState[side].some((member) => member.hp > 0);
+
+  while (
+    hasLivingTeam(0) &&
+    hasLivingTeam(1) &&
+    timeMs < TEAM_BATTLE_LIMIT_MS
+  ) {
+    if (teamState[0][active[0]].hp <= 0) {
+      const replacement = nextAliveMember(teamState[0], active[0]);
+      if (replacement >= 0) recordSwitch(0, replacement, 'forced');
+    }
+    if (teamState[1][active[1]].hp <= 0) {
+      const replacement = nextAliveMember(teamState[1], active[1]);
+      if (replacement >= 0) recordSwitch(1, replacement, 'forced');
+    }
+    if (!hasLivingTeam(0) || !hasLivingTeam(1)) break;
+
+    if (switchPolicy === 'adaptive') {
+      const proposals = ([0, 1] as const)
+        .filter(
+          (side) =>
+            !switchedAtCurrentTime[side] &&
+            switchReadyAtMs[side] <= timeMs,
+        )
+        .map((side) => {
+          const opponentSide = side === 0 ? 1 : 0;
+          const proposal = chooseAdaptiveSwitch(
+            teamState[side],
+            active[side],
+            teamState[opponentSide][active[opponentSide]],
+            [shields[side], shields[opponentSide]],
+          );
+          return proposal ? { side, ...proposal } : null;
+        })
+        .filter(
+          (
+            proposal,
+          ): proposal is {
+            side: 0 | 1;
+            index: number;
+            currentRating: number;
+            nextRating: number;
+          } => proposal != null,
+        )
+        .sort(
+          (left, right) =>
+            left.currentRating - right.currentRating ||
+            right.nextRating - left.nextRating ||
+            left.side - right.side,
+        );
+      if (proposals[0]) {
+        recordSwitch(proposals[0].side, proposals[0].index, 'adaptive');
+        continue;
+      }
+    }
+
     const first = teamState[0][active[0]];
     const second = teamState[1][active[1]];
+    const startedAtMs = timeMs;
+    const remainingBattleMs = TEAM_BATTLE_LIMIT_MS - timeMs;
+    let segmentLimitMs = remainingBattleMs;
+    if (switchPolicy === 'adaptive') {
+      segmentLimitMs = Math.min(segmentLimitMs, SWITCH_REEVALUATION_MS);
+      for (const readyAt of switchReadyAtMs) {
+        if (readyAt > timeMs) {
+          segmentLimitMs = Math.min(segmentLimitMs, readyAt - timeMs);
+        }
+      }
+    }
     const battle = simulateBattle(first.fighter, second.fighter, {
       shields: [...shields],
       startingEnergy: [first.energy, second.energy],
       startingHp: [first.hp, second.hp],
+      startingStages: [
+        [first.attackStage, first.defenseStage],
+        [second.attackStage, second.defenseStage],
+      ],
+      maxTimeMs: segmentLimitMs,
     });
     const ratings: [number, number] = [
       rating(battle, 0),
@@ -835,43 +1026,84 @@ export const simulatePvPTeamBattleLocally = (
 
     first.hp = battle.fighters[0].hp;
     first.energy = battle.fighters[0].energy;
+    first.attackStage = battle.fighters[0].attackStage;
+    first.defenseStage = battle.fighters[0].defenseStage;
     second.hp = battle.fighters[1].hp;
     second.energy = battle.fighters[1].energy;
+    second.attackStage = battle.fighters[1].attackStage;
+    second.defenseStage = battle.fighters[1].defenseStage;
     shields[0] = battle.fighters[0].shields;
     shields[1] = battle.fighters[1].shields;
     if (matchupWinner === 0) first.knockouts += 1;
     if (matchupWinner === 1) second.knockouts += 1;
     turns += battle.turns;
     timeMs += battle.timeMs;
+    const endedBy =
+      matchupWinner >= 0
+        ? 'knockout'
+        : timeMs >= TEAM_BATTLE_LIMIT_MS
+          ? 'timeout'
+          : battle.timeMs <= 0
+            ? 'stall'
+            : 'switch';
+    const previous = matchups[matchups.length - 1];
+    if (
+      previous &&
+      previous.fighterIds[0] === first.fighter.id &&
+      previous.fighterIds[1] === second.fighter.id
+    ) {
+      previous.winner = matchupWinner;
+      previous.turns += battle.turns;
+      previous.timeMs += battle.timeMs;
+      previous.ratings = ratings;
+      previous.hpAfter = [first.hp, second.hp];
+      previous.energyAfter = [first.energy, second.energy];
+      previous.shieldsAfter = [...shields];
+      previous.endedAtMs = timeMs;
+      previous.endedBy = endedBy;
+    } else {
+      matchups.push({
+        index: matchups.length,
+        fighterIds: [first.fighter.id, second.fighter.id],
+        winner: matchupWinner,
+        turns: battle.turns,
+        timeMs: battle.timeMs,
+        ratings,
+        hpAfter: [first.hp, second.hp],
+        energyAfter: [first.energy, second.energy],
+        shieldsAfter: [...shields],
+        startedAtMs,
+        endedAtMs: timeMs,
+        endedBy,
+      });
+    }
+    switchedAtCurrentTime = [false, false];
 
-    matchups.push({
-      index: matchups.length,
-      fighterIds: [first.fighter.id, second.fighter.id],
-      winner: matchupWinner,
-      turns: battle.turns,
-      timeMs: battle.timeMs,
-      ratings,
-      hpAfter: [first.hp, second.hp],
-      energyAfter: [first.energy, second.energy],
-      shieldsAfter: [...shields],
-    });
-
-    if (first.hp <= 0) active[0] += 1;
-    if (second.hp <= 0) active[1] += 1;
-    if (first.hp > 0 && second.hp > 0) {
+    if (first.hp > 0 && second.hp > 0 && battle.timeMs <= 0) {
       stalled = true;
       break;
     }
   }
 
+  const firstAlive = hasLivingTeam(0);
+  const secondAlive = hasLivingTeam(1);
+  const timeout = timeMs >= TEAM_BATTLE_LIMIT_MS && firstAlive && secondAlive;
+  const timeoutScores: [number, number] = [
+    teamTimeoutScore(teamState[0]),
+    teamTimeoutScore(teamState[1]),
+  ];
   const winner =
-    stalled || (active[0] >= 3 && active[1] >= 3)
+    stalled || (!firstAlive && !secondAlive)
       ? -1
-      : active[1] >= 3
+      : !secondAlive
         ? 0
-        : active[0] >= 3
+        : !firstAlive
           ? 1
-          : -1;
+          : timeoutScores[0] > timeoutScores[1]
+            ? 0
+            : timeoutScores[1] > timeoutScores[0]
+              ? 1
+              : -1;
   const resultTeams = teamState.map((team) =>
     team.map((member) => ({
       fighterId: member.fighter.id,
@@ -880,16 +1112,49 @@ export const simulatePvPTeamBattleLocally = (
       energy: member.energy,
       fainted: member.hp <= 0,
       knockouts: member.knockouts,
+      switches: member.switches,
     }))) as PvPTeamBattleResponse['teams'];
 
   return {
     mechanics: 'pvpoke-legacy',
+    switchPolicy,
+    switchClockMs: PVP_SWITCH_CLOCK_MS,
     winner,
     turns,
     timeMs,
+    endReason: stalled ? 'stall' : timeout ? 'timeout' : 'knockout',
     shields,
     teams: resultTeams,
     matchups,
+    switches,
+  };
+};
+
+export const simulatePvPTeamGauntletLocally = (
+  request: PvPTeamGauntletRequest,
+): PvPTeamGauntletResponse => {
+  if (request.opponents.length < 1) {
+    throw new Error('Meta gauntlet needs at least one representative team.');
+  }
+  const results = request.opponents.map((opponent) => ({
+    opponentId: opponent.id,
+    opponentLabel: opponent.label,
+    result: simulatePvPTeamBattleLocally({
+      kind: 'team-battle',
+      mechanics: request.mechanics,
+      teams: [request.team, opponent.team],
+      shields: [request.shields, request.shields],
+      startingEnergy: [0, 0],
+      switchPolicy: request.switchPolicy,
+    }),
+  }));
+  return {
+    mechanics: 'pvpoke-legacy',
+    switchPolicy: request.switchPolicy,
+    wins: results.filter(({ result }) => result.winner === 0).length,
+    draws: results.filter(({ result }) => result.winner < 0).length,
+    losses: results.filter(({ result }) => result.winner === 1).length,
+    results,
   };
 };
 
