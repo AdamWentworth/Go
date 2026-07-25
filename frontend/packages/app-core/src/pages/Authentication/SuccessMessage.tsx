@@ -1,7 +1,7 @@
 // SuccessMessage.tsx
 
 import { useEffect, FC } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router';
 import './SuccessMessage.css'; // Ensure the CSS file is created
 
 interface SuccessMessageProps {

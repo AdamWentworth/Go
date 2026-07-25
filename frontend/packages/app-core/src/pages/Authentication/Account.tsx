@@ -4,7 +4,7 @@ import { useState, useRef, FC } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useAuthStore } from '@/stores/useAuthStore';
 import { useModal } from '@/contexts/ModalContext';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router';
 import AccountForm from './FormComponents/AccountForm';
 import './Account.css';
 import { toast } from 'react-toastify';

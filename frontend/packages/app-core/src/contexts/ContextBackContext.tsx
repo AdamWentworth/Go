@@ -13,7 +13,7 @@ import {
   useNavigate,
   useNavigationType,
   type Location,
-} from 'react-router-dom';
+} from 'react-router';
 
 type ContextBackHandler = () => boolean | void;
 

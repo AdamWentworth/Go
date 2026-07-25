@@ -5,7 +5,7 @@
 //--------------------------------------------------
 
 import { useEffect, useState } from 'react';
-import type { NavigateFunction } from 'react-router-dom';
+import type { NavigateFunction } from 'react-router';
 
 import { useUserSearchStore } from '@/stores/useUserSearchStore';
 import { getEntityKeyFrom } from '@/utils/PokemonIDUtils';

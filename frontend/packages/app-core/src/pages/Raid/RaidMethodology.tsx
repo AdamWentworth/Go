@@ -1,6 +1,6 @@
 import { useCallback } from "react";
 import { FaArrowLeft } from "react-icons/fa6";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router";
 
 import { useContextBackHandler } from "@/contexts/ContextBackContext";
 import "./RaidMethodology.css";

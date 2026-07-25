@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { FaChartBar, FaChevronDown, FaCrosshairs, FaSearch } from 'react-icons/fa';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams } from 'react-router';
 
 import { AppLoadingFallback } from '@/contexts/AppLoadingContext';
 import { useAuthStore } from '@/stores/useAuthStore';

@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useRef } from 'react';
 import { createRoot } from 'react-dom/client';
 import type { Root } from 'react-dom/client';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router';
 import 'ol/ol.css';
 import Map from 'ol/Map';
 import View from 'ol/View';

@@ -1,7 +1,7 @@
 // AuthButtons.tsx
 
 import React from 'react';
-import { Link } from 'react-router-dom';
+import { Link } from 'react-router';
 import { useAuth } from '../contexts/AuthContext';
 import './AuthButtons.css';
 

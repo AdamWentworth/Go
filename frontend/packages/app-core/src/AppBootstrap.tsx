@@ -1,6 +1,6 @@
 // AppBootstrap.tsx
 
-import { useLocation } from 'react-router-dom';
+import { useLocation } from 'react-router';
 
 import { useBootstrapInstances } from '@/features/instances/hooks/useBootstrapInstances';
 import { useBootstrapVariants } from '@/features/variants/hooks/useBootstrapVariants';

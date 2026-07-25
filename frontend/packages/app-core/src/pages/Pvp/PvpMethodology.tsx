@@ -7,7 +7,7 @@ import {
   FaShieldAlt,
   FaUsers,
 } from 'react-icons/fa';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router';
 
 import { useContextBackHandler } from '@/contexts/ContextBackContext';
 import './PvpMethodology.css';

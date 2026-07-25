@@ -18,7 +18,7 @@ import {
   FaUsers,
 } from 'react-icons/fa';
 import type { IconType } from 'react-icons';
-import { Link } from 'react-router-dom';
+import { Link } from 'react-router';
 
 import { useInstancesStore } from '@/features/instances/store/useInstancesStore';
 import { useBootstrapInstances } from '@/features/instances/hooks/useBootstrapInstances';

@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import type { Location, NavigateFunction } from 'react-router-dom';
+import type { Location, NavigateFunction } from 'react-router';
 
 import { useVariantsStore } from '@/features/variants/store/useVariantsStore';
 import { useInstancesStore } from '@/features/instances/store/useInstancesStore';
