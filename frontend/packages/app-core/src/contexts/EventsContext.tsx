@@ -60,6 +60,7 @@ export const EventsProvider: React.FC<EventsProviderProps> = ({ children }) => {
   const updateTradeData = useTradeStore((s) => s.updateTradeData);
   const { isLoggedIn }                            = useAuthStore();
   const lastUpdateTimestamp = useSessionStore(s => s.lastUpdateTimestamp);
+  const initSession        = useSessionStore(s => s.initSession);
   const updateTimestamp     = useSessionStore.getState().updateTimestamp;
   const isSessionNew        = useSessionStore(s => s.isSessionNew);
 
@@ -126,6 +127,11 @@ export const EventsProvider: React.FC<EventsProviderProps> = ({ children }) => {
       log.error('failed to establish connection', err);
     }
   }, [closeSSE, handleIncomingUpdate, user]);
+
+  /* ──────────────────── session clock bootstrap ──────────────────── */
+  useEffect(() => {
+    initSession();
+  }, [initSession]);
 
   /* ──────────────────── first‑time init ──────────────────── */
   useEffect(() => {
