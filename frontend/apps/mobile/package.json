@@ -35,6 +35,10 @@
   },
   "jest": {
     "preset": "jest-expo",
+    "moduleNameMapper": {
+      "^react$": "<rootDir>/node_modules/react",
+      "^react/(.*)$": "<rootDir>/node_modules/react/$1"
+    },
     "roots": [
       "<rootDir>/tests"
     ],
