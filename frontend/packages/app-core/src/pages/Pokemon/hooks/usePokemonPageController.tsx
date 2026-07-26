@@ -34,6 +34,7 @@ import {
   type ActiveView,
   type LastMenu,
 } from '../utils/pokemonPageHelpers';
+import { readPokemonCatalogFilter } from '../utils/pokemonCatalogNavigation';
 import { createScopedLogger } from '@/utils/logger';
 
 const log = createScopedLogger('PokemonPage');
@@ -127,13 +128,16 @@ export default function usePokemonPageController({
 
   const tags = useTagsStore((s) => s.tags);
   const foreignTags = useTagsStore((s) => s.foreignTags);
+  const requestedTagFilter = readPokemonCatalogFilter(location.search ?? '');
 
   const instances = (isOwnCollection
     ? contextInstanceData
     : foreignInstances || contextInstanceData) as Instances;
 
-  const [tagFilter, setTagFilter] = useState<string>('');
-  const [sidePanelTagFilter, setSidePanelTagFilter] = useState<string>('');
+  const [tagFilter, setTagFilter] = useState<string>(requestedTagFilter ?? '');
+  const [sidePanelTagFilter, setSidePanelTagFilter] = useState<string>(
+    requestedTagFilter ?? '',
+  );
   const [selectedPokemon, setSelectedPokemon] = useState<PokemonOverlaySelection>(null);
   const [hasProcessedInstanceId, setHasProcessedInstanceId] = useState<boolean>(false);
   const [isUpdating, setIsUpdating] = useState<boolean>(false);
@@ -204,10 +208,30 @@ export default function usePokemonPageController({
   useEffect(() => {
     if (!isUsernamePath || !urlUsername) return;
     void loadForeignProfile(urlUsername, () => {
-      setTagFilter('Caught');
-      syncSidePanelTagFilter('Caught', false);
+      const initialFilter = requestedTagFilter ?? 'Caught';
+      setTagFilter(initialFilter);
+      syncSidePanelTagFilter(initialFilter, false);
     });
-  }, [isUsernamePath, urlUsername, loadForeignProfile, syncSidePanelTagFilter]);
+  }, [
+    isUsernamePath,
+    urlUsername,
+    loadForeignProfile,
+    requestedTagFilter,
+    syncSidePanelTagFilter,
+  ]);
+
+  useEffect(() => {
+    if (!requestedTagFilter) return;
+    setHighlightedCards(new Set());
+    setTagFilter(requestedTagFilter);
+    setLastMenu('ownership');
+    setActiveView('pokemon');
+    syncSidePanelTagFilter(requestedTagFilter, false);
+  }, [
+    requestedTagFilter,
+    setHighlightedCards,
+    syncSidePanelTagFilter,
+  ]);
 
   const activeTags: TagBuckets = (
     isUsernamePath ? foreignTags ?? (emptyTagBuckets as TagBuckets) : tags

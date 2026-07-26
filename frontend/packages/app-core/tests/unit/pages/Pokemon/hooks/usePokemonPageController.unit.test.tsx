@@ -177,6 +177,34 @@ describe('usePokemonPageController', () => {
     expect(result.current.activeStatusFilter).toBeNull();
   });
 
+  it('opens directly into a catalog filter supplied by the URL', async () => {
+    const navigate = vi.fn() as unknown as NavigateFunction;
+    const location = {
+      pathname: '/pokemon',
+      search: '?filter=favorites',
+      state: null,
+    } as any;
+
+    const { result } = renderHook(() =>
+      usePokemonPageController({
+        isOwnCollection: true,
+        location,
+        navigate,
+      }),
+    );
+
+    await waitFor(() => {
+      expect(result.current.tagFilter).toBe('Favorites');
+    });
+
+    expect(result.current.sidePanelTagFilter).toBe('Favorites');
+    expect(result.current.activeView).toBe('pokemon');
+    const latestCall = usePokemonProcessingMock.mock.calls.at(-1) as
+      | UsePokemonProcessingArgs
+      | undefined;
+    expect(latestCall?.[2]).toBe('Favorites');
+  });
+
   it('loads foreign profile for username routes and exits loading state', async () => {
     const navigate = vi.fn() as unknown as NavigateFunction;
     const location = { pathname: '/pokemon/ash', state: null } as any;
@@ -196,6 +224,38 @@ describe('usePokemonPageController', () => {
 
     expect(result.current.isUsernamePath).toBe(true);
     expect(loadForeignProfileMock).toHaveBeenCalledWith('ash', expect.any(Function));
+  });
+
+  it('preserves a requested filter after loading a foreign collection', async () => {
+    const navigate = vi.fn() as unknown as NavigateFunction;
+    const location = {
+      pathname: '/pokemon/ash',
+      search: '?filter=trade',
+      state: null,
+    } as any;
+
+    const { result } = renderHook(() =>
+      usePokemonPageController({
+        isOwnCollection: false,
+        urlUsername: 'ash',
+        location,
+        navigate,
+      }),
+    );
+
+    await waitFor(() => {
+      expect(loadForeignProfileMock).toHaveBeenCalledWith('ash', expect.any(Function));
+    });
+
+    const callback = loadForeignProfileMock.mock.calls.at(-1)?.[1] as
+      | (() => void)
+      | undefined;
+    act(() => {
+      callback?.();
+    });
+
+    expect(result.current.tagFilter).toBe('Trade');
+    expect(result.current.sidePanelTagFilter).toBe('Trade');
   });
 
   it('select-all action sends computed ids to highlighted state and enables fast-select', async () => {

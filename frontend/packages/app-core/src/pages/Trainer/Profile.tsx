@@ -9,11 +9,14 @@ import { createPortal } from "react-dom";
 import type { IconType } from "react-icons";
 import {
   FaBan,
+  FaBookOpen,
   FaCalendarAlt,
   FaCheck,
+  FaCheckCircle,
   FaEdit,
   FaExchangeAlt,
   FaGripVertical,
+  FaHeart,
   FaIdCard,
   FaMapMarkerAlt,
   FaMedal,
@@ -63,6 +66,10 @@ import {
   reorderTrainerShowcaseSlots,
   TRAINER_SHOWCASE_SLOT_COUNT,
 } from "./trainerShowcaseSlots";
+import {
+  buildPokemonCatalogPath,
+  type PokemonCatalogFilter,
+} from "@/pages/Pokemon/utils/pokemonCatalogNavigation";
 
 type ProfileForm = {
   trainerTitles: TrainerTitle[];
@@ -1126,18 +1133,91 @@ const Profile = () => {
                 className="trainer-card-collection"
                 aria-label="Collection summary"
               >
-                {[
-                  { label: "Caught", value: profile.stats.caught },
-                  { label: "Registered", value: profile.stats.registered },
-                  { label: "For trade", value: profile.stats.for_trade },
-                  { label: "Wanted", value: profile.stats.wanted },
-                  { label: "Favorites", value: profile.stats.favorites },
-                ].map(({ label, value }) => (
-                  <div key={label}>
-                    <span>{label}</span>
-                    <strong>{formatNumber(value)}</strong>
-                  </div>
-                ))}
+                {([
+                  {
+                    label: "Caught",
+                    value: profile.stats.caught,
+                    icon: FaCheckCircle,
+                    filter: "Caught",
+                  },
+                  {
+                    label: "Registered",
+                    value: profile.stats.registered,
+                    icon: FaBookOpen,
+                  },
+                  {
+                    label: "For trade",
+                    value: profile.stats.for_trade,
+                    icon: FaExchangeAlt,
+                    filter: "Trade",
+                  },
+                  {
+                    label: "Wanted",
+                    value: profile.stats.wanted,
+                    icon: FaHeart,
+                    filter: "Wanted",
+                  },
+                  {
+                    label: "Favorites",
+                    value: profile.stats.favorites,
+                    icon: FaStar,
+                    filter: "Favorites",
+                  },
+                ] as Array<{
+                  label: string;
+                  value?: number | null;
+                  icon: IconType;
+                  filter?: PokemonCatalogFilter;
+                }>).map(({ label, value, icon: Icon, filter }) => {
+                  const canOpenCollection =
+                    filter !== undefined &&
+                    profile.viewer.can_view_collection &&
+                    !editing;
+                  const content = (
+                    <>
+                      <Icon aria-hidden="true" />
+                      <span>{label}</span>
+                      <strong>{formatNumber(value)}</strong>
+                    </>
+                  );
+
+                  return canOpenCollection && filter ? (
+                    <button
+                      type="button"
+                      className="trainer-card-collection-item trainer-card-collection-link"
+                      key={label}
+                      aria-label={`View ${
+                        isOwner
+                          ? "your"
+                          : `${profile.user.username}'s`
+                      } ${label.toLowerCase()} Pokemon`}
+                      onClick={() =>
+                        navigate(
+                          buildPokemonCatalogPath({
+                            username: isOwner
+                              ? undefined
+                              : profile.user.username,
+                            filter,
+                          }),
+                          {
+                            state: {
+                              contextBackTo: currentProfilePath,
+                            },
+                          },
+                        )
+                      }
+                    >
+                      {content}
+                    </button>
+                  ) : (
+                    <div
+                      className="trainer-card-collection-item"
+                      key={label}
+                    >
+                      {content}
+                    </div>
+                  );
+                })}
               </div>
 
               <footer className="trainer-card-footer">

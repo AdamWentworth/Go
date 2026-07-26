@@ -5,7 +5,12 @@ import {
   waitFor,
   within,
 } from "@testing-library/react";
-import { MemoryRouter, Route, Routes } from "react-router";
+import {
+  MemoryRouter,
+  Route,
+  Routes,
+  useLocation,
+} from "react-router";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import Profile from "@/pages/Trainer/Profile";
@@ -146,6 +151,11 @@ const profile = {
   },
 } as const;
 
+const CatalogLocation = () => {
+  const location = useLocation();
+  return <div>{`${location.pathname}${location.search}`}</div>;
+};
+
 describe("Trainer Profile", () => {
   beforeEach(() => {
     mocks.fetchProfile.mockResolvedValue(profile);
@@ -194,6 +204,73 @@ describe("Trainer Profile", () => {
 
     fireEvent.click(screen.getByRole("button", { name: /view pokemon/i }));
     expect(screen.getByText("Public collection")).toBeInTheDocument();
+  });
+
+  it.each([
+    ["caught", "/pokemon/Misty?filter=caught"],
+    ["for trade", "/pokemon/Misty?filter=trade"],
+    ["wanted", "/pokemon/Misty?filter=wanted"],
+    ["favorites", "/pokemon/Misty?filter=favorites"],
+  ])(
+    "links the %s summary to that public collection filter",
+    async (summary, expectedLocation) => {
+      render(
+        <MemoryRouter initialEntries={["/profile/misty"]}>
+          <Routes>
+            <Route path="/profile/:username" element={<Profile />} />
+            <Route path="/pokemon/:username" element={<CatalogLocation />} />
+          </Routes>
+        </MemoryRouter>,
+      );
+
+      fireEvent.click(
+        await screen.findByRole("button", {
+          name: new RegExp(`view misty's ${summary} pokemon`, "i"),
+        }),
+      );
+
+      expect(screen.getByText(expectedLocation)).toBeInTheDocument();
+    },
+  );
+
+  it("keeps Registered informational because it has no catalog destination", async () => {
+    render(
+      <MemoryRouter initialEntries={["/profile/misty"]}>
+        <Routes>
+          <Route path="/profile/:username" element={<Profile />} />
+        </Routes>
+      </MemoryRouter>,
+    );
+
+    const summary = await screen.findByLabelText(/collection summary/i);
+    expect(within(summary).getByText("Registered")).toBeInTheDocument();
+    expect(
+      within(summary).queryByRole("button", { name: /registered/i }),
+    ).not.toBeInTheDocument();
+  });
+
+  it("keeps collection metrics informational when the collection is private", async () => {
+    mocks.fetchProfile.mockResolvedValue({
+      ...profile,
+      viewer: {
+        ...profile.viewer,
+        can_view_collection: false,
+      },
+    });
+
+    render(
+      <MemoryRouter initialEntries={["/profile/misty"]}>
+        <Routes>
+          <Route path="/profile/:username" element={<Profile />} />
+        </Routes>
+      </MemoryRouter>,
+    );
+
+    const summary = await screen.findByLabelText(/collection summary/i);
+    expect(within(summary).queryAllByRole("button")).toHaveLength(0);
+    expect(
+      screen.queryByRole("button", { name: /view pokemon/i }),
+    ).not.toBeInTheDocument();
   });
 
   it("sends a friend request from a public profile action", async () => {
