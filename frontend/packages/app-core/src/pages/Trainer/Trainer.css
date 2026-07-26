@@ -482,11 +482,52 @@
 .trainer-card-highlight-editable.dragging {
   z-index: 2;
   cursor: grabbing;
-  opacity: 0.82;
+  opacity: 0.18;
   transform: scale(0.96);
+  box-shadow: inset 0 0 0 2px
+    color-mix(in srgb, var(--trainer-team) 72%, transparent);
+}
+
+.trainer-card-highlight-drag-preview {
+  --trainer-team: #42d7c6;
+  --trainer-surface: #171c1d;
+  --trainer-border: #315052;
+  --trainer-text: #f7fbfa;
+  --trainer-muted: #9db5b4;
+  position: fixed;
+  z-index: 10000;
+  overflow: hidden;
+  margin: 0;
+  border: 1px solid var(--trainer-team);
+  border-radius: 8px;
+  background:
+    linear-gradient(
+      145deg,
+      color-mix(in srgb, var(--trainer-team) 20%, transparent),
+      transparent 60%
+    ),
+    var(--trainer-surface);
+  color: var(--trainer-text);
+  pointer-events: none;
+  opacity: 0.98;
+  transform: scale(1.04) rotate(-1deg);
   box-shadow:
-    inset 0 0 0 2px var(--trainer-team),
-    0 8px 18px rgb(0 0 0 / 24%);
+    0 18px 38px rgb(0 0 0 / 38%),
+    0 0 0 2px color-mix(in srgb, var(--trainer-team) 24%, transparent);
+  cursor: grabbing;
+  will-change: left, top, transform;
+}
+
+.trainer-card-highlight-drag-preview.trainer-team-mystic {
+  --trainer-team: #5eb1f4;
+}
+
+.trainer-card-highlight-drag-preview.trainer-team-valor {
+  --trainer-team: #ff6f74;
+}
+
+.trainer-card-highlight-drag-preview.trainer-team-instinct {
+  --trainer-team: #f2c94c;
 }
 
 .trainer-card-highlight-edit-cue {
@@ -1206,6 +1247,13 @@
 :root[data-theme="light"] .trainer-page {
   --trainer-surface: #f3faf5;
   --trainer-surface-raised: #e3efe8;
+  --trainer-border: #9bb8b1;
+  --trainer-text: #2f4744;
+  --trainer-muted: #687f7b;
+}
+
+:root[data-theme="light"] .trainer-card-highlight-drag-preview {
+  --trainer-surface: #f3faf5;
   --trainer-border: #9bb8b1;
   --trainer-text: #2f4744;
   --trainer-muted: #687f7b;

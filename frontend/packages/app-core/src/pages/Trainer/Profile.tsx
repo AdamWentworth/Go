@@ -5,6 +5,7 @@ import {
   useRef,
   useState,
 } from "react";
+import { createPortal } from "react-dom";
 import {
   FaBan,
   FaCalendarAlt,
@@ -87,9 +88,22 @@ const SHOWCASE_DRAG_THRESHOLD_PX = 7;
 type ShowcasePointerDrag = {
   pointerId: number;
   currentIndex: number;
+  instanceId: string;
   startX: number;
   startY: number;
+  offsetX: number;
+  offsetY: number;
+  width: number;
+  height: number;
   activated: boolean;
+};
+
+type ShowcaseDragPreview = {
+  instanceId: string;
+  left: number;
+  top: number;
+  width: number;
+  height: number;
 };
 
 const toDateInput = (value?: string | null) =>
@@ -216,6 +230,8 @@ const Profile = () => {
   const [draggingHighlightSlot, setDraggingHighlightSlot] = useState<
     number | null
   >(null);
+  const [showcaseDragPreview, setShowcaseDragPreview] =
+    useState<ShowcaseDragPreview | null>(null);
   const showcasePointerDrag = useRef<ShowcasePointerDrag | null>(null);
   const suppressShowcaseClick = useRef(false);
   const [error, setError] = useState("");
@@ -313,6 +329,9 @@ const Profile = () => {
       profile?.highlights,
     ],
   );
+  const draggedHighlight = showcaseDragPreview
+    ? highlightCandidateByID.get(showcaseDragPreview.instanceId)
+    : undefined;
   const cardTeam = (
     (editing ? form.team : profile?.user.team) || "neutral"
   ).toLowerCase();
@@ -369,15 +388,22 @@ const Profile = () => {
     event: React.PointerEvent<HTMLButtonElement>,
     index: number,
   ) => {
-    if (!cardHighlights[index] || !event.isPrimary || event.button !== 0) {
+    const instanceId = cardHighlights[index]?.instance_id;
+    if (!instanceId || !event.isPrimary || event.button !== 0) {
       return;
     }
+    const bounds = event.currentTarget.getBoundingClientRect();
     suppressShowcaseClick.current = false;
     showcasePointerDrag.current = {
       pointerId: event.pointerId,
       currentIndex: index,
+      instanceId,
       startX: event.clientX,
       startY: event.clientY,
+      offsetX: event.clientX - bounds.left,
+      offsetY: event.clientY - bounds.top,
+      width: bounds.width,
+      height: bounds.height,
       activated: false,
     };
     event.currentTarget.setPointerCapture?.(event.pointerId);
@@ -402,6 +428,13 @@ const Profile = () => {
     }
 
     event.preventDefault();
+    setShowcaseDragPreview({
+      instanceId: drag.instanceId,
+      left: event.clientX - drag.offsetX,
+      top: event.clientY - drag.offsetY,
+      width: drag.width,
+      height: drag.height,
+    });
     const slot = document
       .elementFromPoint(event.clientX, event.clientY)
       ?.closest<HTMLElement>("[data-showcase-slot]");
@@ -431,6 +464,7 @@ const Profile = () => {
     }
     showcasePointerDrag.current = null;
     setDraggingHighlightSlot(null);
+    setShowcaseDragPreview(null);
 
     if (drag.activated) {
       window.setTimeout(() => {
@@ -475,6 +509,7 @@ const Profile = () => {
     }
     setEditingHighlightSlot(null);
     setDraggingHighlightSlot(null);
+    setShowcaseDragPreview(null);
     showcasePointerDrag.current = null;
     setEditing((value) => !value);
   };
@@ -520,6 +555,7 @@ const Profile = () => {
       await updateTrainerProfile(request);
       toast.success("Profile updated");
       setEditingHighlightSlot(null);
+      setShowcaseDragPreview(null);
       setEditing(false);
       await loadProfile();
     } catch (saveError) {
@@ -1073,6 +1109,35 @@ const Profile = () => {
               ) : null}
             </div>
           </section>
+          {editing &&
+          showcaseDragPreview &&
+          draggedHighlight &&
+          typeof document !== "undefined"
+            ? createPortal(
+                <div
+                  className={`trainer-card-highlight trainer-card-highlight-drag-preview trainer-team-${cardTeam}`}
+                  style={{
+                    left: showcaseDragPreview.left,
+                    top: showcaseDragPreview.top,
+                    width: showcaseDragPreview.width,
+                    height: showcaseDragPreview.height,
+                  }}
+                  aria-hidden="true"
+                >
+                  <HighlightCardContent
+                    instance={draggedHighlight}
+                    variant={variantByID.get(
+                      draggedHighlight.variant_id,
+                    )}
+                  />
+                  <span className="trainer-card-highlight-edit-cue">
+                    <FaGripVertical aria-hidden="true" />
+                    Moving
+                  </span>
+                </div>,
+                document.body,
+              )
+            : null}
         </>
       ) : null}
     </TrainerPageShell>

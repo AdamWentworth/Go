@@ -102,10 +102,23 @@ async function dragShowcaseSlot(
       type: "touchMove",
       touchPoints: [{ ...end, id: 1 }],
     });
+    const preview = page.locator(".trainer-card-highlight-drag-preview");
+    await expect(preview).toBeVisible();
+    const previewBox = await preview.boundingBox();
+    expect(previewBox).not.toBeNull();
+    if (previewBox) {
+      expect(
+        Math.abs(previewBox.x + previewBox.width / 2 - end.x),
+      ).toBeLessThan(20);
+      expect(
+        Math.abs(previewBox.y + previewBox.height / 2 - end.y),
+      ).toBeLessThan(20);
+    }
     await session.send("Input.dispatchTouchEvent", {
       type: "touchEnd",
       touchPoints: [],
     });
+    await expect(preview).toHaveCount(0);
     await session.detach();
     return;
   }
@@ -113,7 +126,20 @@ async function dragShowcaseSlot(
   await page.mouse.move(start.x, start.y);
   await page.mouse.down();
   await page.mouse.move(end.x, end.y, { steps: 8 });
+  const preview = page.locator(".trainer-card-highlight-drag-preview");
+  await expect(preview).toBeVisible();
+  const previewBox = await preview.boundingBox();
+  expect(previewBox).not.toBeNull();
+  if (previewBox) {
+    expect(
+      Math.abs(previewBox.x + previewBox.width / 2 - end.x),
+    ).toBeLessThan(20);
+    expect(
+      Math.abs(previewBox.y + previewBox.height / 2 - end.y),
+    ).toBeLessThan(20);
+  }
   await page.mouse.up();
+  await expect(preview).toHaveCount(0);
 }
 
 test.describe("Trainer profile card", () => {
