@@ -36,7 +36,7 @@
 .trainer-field > span,
 .trainer-card-label,
 .trainer-card-heading span,
-.trainer-card-bio > span,
+.trainer-card-titles-heading > span,
 .trainer-card-setup > div > span {
   color: #92c7cc;
   font-size: 0.75rem;
@@ -319,8 +319,7 @@
 .trainer-card-edit-input,
 .trainer-card-team select,
 .trainer-card-team input,
-.trainer-card-facts input,
-.trainer-card-bio textarea {
+.trainer-card-facts input {
   box-sizing: border-box;
   width: 100%;
   border: 1px solid
@@ -335,8 +334,7 @@
 .trainer-card-edit-input:focus,
 .trainer-card-team select:focus,
 .trainer-card-team input:focus,
-.trainer-card-facts input:focus,
-.trainer-card-bio textarea:focus {
+.trainer-card-facts input:focus {
   border-color: var(--trainer-team);
   box-shadow: 0 0 0 2px
     color-mix(in srgb, var(--trainer-team) 22%, transparent);
@@ -677,38 +675,223 @@
 .trainer-card-footer {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
-  align-items: center;
+  align-items: end;
   gap: 14px;
   padding-top: 13px;
 }
 
-.trainer-card-bio {
+.trainer-profile-card-editing .trainer-card-footer {
+  grid-template-columns: minmax(0, 1fr);
+  gap: 10px;
+}
+
+.trainer-profile-card-editing .trainer-profile-commands {
+  justify-content: flex-end;
+}
+
+.trainer-card-titles {
   min-width: 0;
 }
 
-.trainer-card-bio p {
-  overflow: hidden;
-  margin: 3px 0 0;
-  color: #d6e3e1;
-  font-size: 0.82rem;
-  line-height: 1.4;
-  text-overflow: ellipsis;
+.trainer-card-titles-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
 }
 
-.trainer-card-bio textarea {
-  min-height: 72px;
-  margin-top: 5px;
-  padding: 8px 9px;
-  resize: vertical;
-  line-height: 1.35;
-}
-
-.trainer-card-bio small {
-  display: block;
-  margin-top: 3px;
+.trainer-card-titles-heading small {
   color: var(--trainer-muted);
   font-size: 0.68rem;
-  text-align: right;
+  font-weight: 800;
+}
+
+.trainer-title-picker {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(118px, 1fr));
+  gap: 4px;
+  margin-top: 5px;
+}
+
+.trainer-title-choice {
+  display: grid;
+  min-width: 0;
+  min-height: 38px;
+  grid-template-columns: 21px minmax(0, 1fr);
+  align-items: center;
+  gap: 6px;
+  padding: 4px 7px;
+  border: 1px solid var(--trainer-border);
+  border-radius: 6px;
+  outline: 0;
+  background: var(--trainer-surface-raised);
+  color: var(--trainer-text);
+  text-align: left;
+  cursor: pointer;
+}
+
+.trainer-title-choice > strong {
+  min-width: 0;
+  font-size: 0.68rem;
+  line-height: 1.15;
+  overflow-wrap: anywhere;
+}
+
+.trainer-title-choice .trainer-title-visual {
+  width: 21px;
+  height: 21px;
+  flex-basis: 21px;
+}
+
+.trainer-title-choice .trainer-title-visual > img,
+.trainer-title-choice .trainer-title-native-mask {
+  width: 19px;
+  height: 19px;
+  flex-basis: 19px;
+}
+
+.trainer-title-choice:hover:not(:disabled),
+.trainer-title-choice:focus-visible {
+  border-color: var(--trainer-team);
+  box-shadow: 0 0 0 2px
+    color-mix(in srgb, var(--trainer-team) 18%, transparent);
+}
+
+.trainer-title-choice.selected {
+  border-color: var(--trainer-team);
+  background: color-mix(
+    in srgb,
+    var(--trainer-team) 18%,
+    var(--trainer-surface-raised)
+  );
+}
+
+.trainer-title-choice:disabled {
+  cursor: not-allowed;
+  opacity: 0.42;
+}
+
+.trainer-title-visual {
+  position: relative;
+  display: inline-flex;
+  width: 25px;
+  height: 25px;
+  flex: 0 0 25px;
+  align-items: center;
+  justify-content: center;
+  justify-self: center;
+  overflow: visible;
+}
+
+.trainer-title-visual > img {
+  display: block;
+  width: 23px;
+  height: 23px;
+  object-fit: contain;
+}
+
+.trainer-title-native-mask {
+  display: block;
+  width: 23px;
+  height: 23px;
+  flex: 0 0 23px;
+  background: var(--trainer-team);
+  mask-position: center;
+  mask-repeat: no-repeat;
+  mask-size: contain;
+  -webkit-mask-position: center;
+  -webkit-mask-repeat: no-repeat;
+  -webkit-mask-size: contain;
+}
+
+.trainer-title-visual-fallback {
+  justify-self: center;
+  color: var(--trainer-team);
+  font-size: 1rem;
+}
+
+.trainer-title-visual-fallback > svg {
+  width: 1em;
+  height: 1em;
+}
+
+.trainer-title-visual-pair > img,
+.trainer-title-visual-pair > .trainer-title-native-mask {
+  position: relative;
+  width: 17px;
+  height: 17px;
+  flex-basis: 17px;
+}
+
+.trainer-title-visual-pair > img + img,
+.trainer-title-visual-pair
+  > .trainer-title-native-mask
+  + .trainer-title-native-mask {
+  margin-left: -7px;
+}
+
+.trainer-title-list {
+  display: flex;
+  min-height: 34px;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin-top: 5px;
+}
+
+.trainer-title-badge {
+  display: inline-flex;
+  min-height: 30px;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 9px;
+  border: 1px solid
+    color-mix(in srgb, var(--trainer-team) 62%, var(--trainer-border));
+  border-radius: 6px;
+  background: color-mix(
+    in srgb,
+    var(--trainer-team) 15%,
+    var(--trainer-surface-raised)
+  );
+  color: var(--trainer-text);
+  font-size: 0.72rem;
+  font-weight: 900;
+}
+
+.trainer-title-badge .trainer-title-visual-fallback {
+  color: var(--trainer-team);
+}
+
+.trainer-title-badge .trainer-title-visual {
+  width: 20px;
+  height: 20px;
+  flex-basis: 20px;
+}
+
+.trainer-title-badge .trainer-title-visual > img {
+  width: 19px;
+  height: 19px;
+}
+
+.trainer-title-badge .trainer-title-native-mask {
+  width: 19px;
+  height: 19px;
+  flex-basis: 19px;
+}
+
+.trainer-title-badge .trainer-title-visual-pair > img,
+.trainer-title-badge
+  .trainer-title-visual-pair
+  > .trainer-title-native-mask {
+  width: 14px;
+  height: 14px;
+  flex-basis: 14px;
+}
+
+.trainer-title-empty {
+  color: var(--trainer-muted);
+  font-size: 0.76rem;
+  font-weight: 700;
 }
 
 .trainer-card-showcase-editor {
@@ -1284,10 +1467,6 @@
   border-color: var(--trainer-surface);
 }
 
-:root[data-theme="light"] .trainer-card-bio p {
-  color: var(--trainer-text);
-}
-
 :root[data-theme="light"] .trainer-field input,
 :root[data-theme="light"] .trainer-field select,
 :root[data-theme="light"] .trainer-field textarea,
@@ -1300,8 +1479,7 @@
 :root[data-theme="light"] .trainer-card-edit-input,
 :root[data-theme="light"] .trainer-card-team select,
 :root[data-theme="light"] .trainer-card-team input,
-:root[data-theme="light"] .trainer-card-facts input,
-:root[data-theme="light"] .trainer-card-bio textarea {
+:root[data-theme="light"] .trainer-card-facts input {
   background: rgba(249, 255, 250, 0.9);
   color: var(--trainer-text);
 }

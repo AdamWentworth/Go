@@ -130,7 +130,7 @@ const profile = {
     pogo_started_on: "2016-07-06T00:00:00Z",
     app_joined_at: "2026-01-01T00:00:00Z",
   },
-  bio: "Water-type trainer",
+  trainer_titles: ["raid-regular", "shiny-hunter"],
   stats: {
     caught: 12,
     for_trade: 3,
@@ -172,6 +172,20 @@ describe("Trainer Profile", () => {
     ).toBeInTheDocument();
     expect(screen.getByText("88,000,000 XP")).toBeInTheDocument();
     expect(screen.getByText("Jul 6, 2016")).toBeInTheDocument();
+    expect(screen.getByText("Raid Regular")).toBeInTheDocument();
+    expect(screen.getByText("Shiny Hunter")).toBeInTheDocument();
+    expect(
+      screen
+        .getByText("Raid Regular")
+        .closest(".trainer-title-badge")
+        ?.querySelector('[data-title-asset="/images/raid_face.png"]'),
+    ).toBeInTheDocument();
+    expect(
+      screen
+        .getByText("Shiny Hunter")
+        .closest(".trainer-title-badge")
+        ?.querySelector('[data-title-asset="/images/shiny_search.png"]'),
+    ).toBeInTheDocument();
     expect(
       screen.getAllByLabelText(/empty featured pokemon slot/i),
     ).toHaveLength(6);
@@ -232,6 +246,63 @@ describe("Trainer Profile", () => {
     expect(
       screen.queryByRole("heading", { name: /edit profile/i }),
     ).not.toBeInTheDocument();
+    const titlePicker = within(card).getByRole("group", {
+      name: /trainer titles/i,
+    });
+    ([
+      ["Raid Regular", ["/images/raid_face.png"]],
+      ["Shadow Raider", ["/images/shadow_search.png"]],
+      ["Super Mega Raider", ["/images/pokemon_details_cp_mega.png"]],
+      ["Max Battler", ["/images/gigantamax_title_mask.png"]],
+      ["Battle League Trainer", ["/images/pvp_title_mask.png"]],
+      ["Rocket Hunter", ["/images/teamrocket_r_full.png"]],
+      ["Shiny Hunter", ["/images/shiny_search.png"]],
+      ["Pokedex Collector", ["/images/kanto_search.png"]],
+      ["Costume Collector", ["/images/costume_search.png"]],
+      ["Hundo Hunter", ["/images/appraisal_04.png"]],
+      ["Lucky Trader", ["/images/lucky-icon.png"]],
+      ["Egg Hatcher", ["/images/ic_egg_inv.png"]],
+      ["Route Explorer", ["/images/route_icon.png"]],
+    ] satisfies Array<[string, string[]]>).forEach(([label, assets]) => {
+      const choice = within(titlePicker).getByRole("button", {
+        name: new RegExp(`^${label}`, "i"),
+      });
+      assets.forEach((asset) => {
+        expect(
+          choice.querySelector(`[data-title-asset="${asset}"]`),
+        ).toBeInTheDocument();
+      });
+    });
+    expect(
+      within(titlePicker)
+        .getByRole("button", { name: /^size collector/i })
+        .querySelector(".trainer-title-visual-fallback svg"),
+    ).toBeInTheDocument();
+    fireEvent.click(
+      within(titlePicker).getByRole("button", {
+        name: /egg hatcher/i,
+      }),
+    );
+    expect(
+      within(titlePicker).getByRole("button", {
+        name: /party player/i,
+      }),
+    ).toBeDisabled();
+    fireEvent.click(
+      within(titlePicker).getByRole("button", {
+        name: /shiny hunter/i,
+      }),
+    );
+    expect(
+      within(titlePicker).getByRole("button", {
+        name: /party player/i,
+      }),
+    ).toBeEnabled();
+    fireEvent.click(
+      within(titlePicker).getByRole("button", {
+        name: /max battler/i,
+      }),
+    );
     expect(
       within(card).queryByLabelText(/choose pokemon for featured slot/i),
     ).not.toBeInTheDocument();
@@ -269,6 +340,11 @@ describe("Trainer Profile", () => {
       expect(mocks.updateProfile).toHaveBeenCalledWith(
         expect.objectContaining({
           highlight_instance_ids: ["instance-lucario"],
+          trainer_titles: [
+            "raid-regular",
+            "egg-hatcher",
+            "max-battler",
+          ],
         }),
       ),
     );
@@ -368,7 +444,7 @@ describe("Trainer Profile", () => {
         username: "Adam",
         app_joined_at: "2026-01-01T00:00:00Z",
       },
-      bio: null,
+      trainer_titles: [],
       location: null,
       trainer_code: null,
       stats: {
@@ -416,7 +492,9 @@ describe("Trainer Profile", () => {
     expect(
       within(card).getByLabelText("Trainer level", { exact: true }),
     ).toBeInTheDocument();
-    expect(within(card).getByLabelText(/trainer notes/i)).toBeInTheDocument();
+    expect(
+      within(card).getByRole("group", { name: /trainer titles/i }),
+    ).toBeInTheDocument();
     expect(
       screen.queryByRole("heading", { name: /edit profile/i }),
     ).not.toBeInTheDocument();

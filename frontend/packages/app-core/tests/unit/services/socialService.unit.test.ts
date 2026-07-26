@@ -109,7 +109,9 @@ describe.sequential('socialService', () => {
         }),
       );
 
-    await updateTrainerProfile({ bio: 'Water-type trainer' });
+    await updateTrainerProfile({
+      trainer_titles: ['raid-regular', 'egg-hatcher'],
+    });
     await updateTrainerPreferences({
       profile_visibility: 'friends',
       collection_visibility: 'friends',
@@ -122,7 +124,9 @@ describe.sequential('socialService', () => {
     expect(fetchMock.mock.calls[0][0]).toBe(`${USERS_API_URL}/profile`);
     expect(fetchMock.mock.calls[0][1]).toMatchObject({
       method: 'PUT',
-      body: JSON.stringify({ bio: 'Water-type trainer' }),
+      body: JSON.stringify({
+        trainer_titles: ['raid-regular', 'egg-hatcher'],
+      }),
     });
     expect(fetchMock.mock.calls[1][0]).toBe(`${USERS_API_URL}/preferences`);
     expect(fetchMock.mock.calls[1][1]).toMatchObject({ method: 'PUT' });

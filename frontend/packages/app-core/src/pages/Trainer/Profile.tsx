@@ -6,6 +6,7 @@ import {
   useState,
 } from "react";
 import { createPortal } from "react-dom";
+import type { IconType } from "react-icons";
 import {
   FaBan,
   FaCalendarAlt,
@@ -15,11 +16,14 @@ import {
   FaGripVertical,
   FaIdCard,
   FaMapMarkerAlt,
+  FaMedal,
+  FaRulerCombined,
   FaStar,
   FaTimes,
   FaUserCheck,
   FaUserClock,
   FaUserPlus,
+  FaUsers,
 } from "react-icons/fa";
 import { useNavigate, useParams } from "react-router";
 import { toast } from "react-toastify";
@@ -47,8 +51,10 @@ import type { PokemonInstance } from "@/types/pokemonInstance";
 import type { PokemonVariant } from "@/types/pokemonVariants";
 import type {
   TrainerProfile,
+  TrainerTitle,
   UpdateTrainerProfileRequest,
 } from "@shared-contracts/users";
+import { TRAINER_TITLE_OPTIONS } from "@shared-contracts/users";
 
 import TrainerPageShell from "./TrainerPageShell";
 import TrainerShowcasePicker from "./TrainerShowcasePicker";
@@ -59,7 +65,7 @@ import {
 } from "./trainerShowcaseSlots";
 
 type ProfileForm = {
-  bio: string;
+  trainerTitles: TrainerTitle[];
   pokemonGoName: string;
   trainerCode: string;
   team: string;
@@ -69,8 +75,10 @@ type ProfileForm = {
   location: string;
 };
 
+type TextProfileField = Exclude<keyof ProfileForm, "trainerTitles">;
+
 const emptyForm: ProfileForm = {
-  bio: "",
+  trainerTitles: [],
   pokemonGoName: "",
   trainerCode: "",
   team: "",
@@ -84,6 +92,104 @@ const emptyHighlightSlots = () =>
   Array<string>(TRAINER_SHOWCASE_SLOT_COUNT).fill("");
 
 const SHOWCASE_DRAG_THRESHOLD_PX = 7;
+
+const trainerTitleOptionByID = new Map(
+  TRAINER_TITLE_OPTIONS.map((option) => [option.id, option]),
+);
+
+type TrainerTitleVisualConfig =
+  | {
+      assets: string[];
+    }
+  | {
+      masks: string[];
+    }
+  | {
+      icon: IconType;
+    };
+
+const trainerTitleVisualByID: Record<
+  TrainerTitle,
+  TrainerTitleVisualConfig
+> = {
+  "raid-regular": {
+    masks: ["/images/raid_face.png"],
+  },
+  "shadow-raider": { masks: ["/images/shadow_search.png"] },
+  "super-mega-raider": {
+    masks: ["/images/pokemon_details_cp_mega.png"],
+  },
+  "max-battler": { masks: ["/images/gigantamax_title_mask.png"] },
+  "battle-league-trainer": {
+    masks: ["/images/pvp_title_mask.png"],
+  },
+  "rocket-hunter": { masks: ["/images/teamrocket_r_full.png"] },
+  "shiny-hunter": { masks: ["/images/shiny_search.png"] },
+  "pokedex-collector": { masks: ["/images/kanto_search.png"] },
+  "costume-collector": { masks: ["/images/costume_search.png"] },
+  "hundo-hunter": { masks: ["/images/appraisal_04.png"] },
+  "size-collector": { icon: FaRulerCombined },
+  "lucky-trader": { masks: ["/images/lucky-icon.png"] },
+  "egg-hatcher": { masks: ["/images/ic_egg_inv.png"] },
+  "route-explorer": { masks: ["/images/route_icon.png"] },
+  "showcase-star": { icon: FaMedal },
+  "party-player": { icon: FaUsers },
+};
+
+const TrainerTitleVisual = ({ title }: { title: TrainerTitle }) => {
+  const visual = trainerTitleVisualByID[title];
+
+  if ("masks" in visual) {
+    return (
+      <span
+        className={`trainer-title-visual ${
+          visual.masks.length > 1 ? "trainer-title-visual-pair" : ""
+        }`}
+        aria-hidden="true"
+      >
+        {visual.masks.map((mask) => (
+          <span
+            className="trainer-title-native-mask"
+            data-title-asset={mask}
+            style={{
+              WebkitMaskImage: `url("${mask}")`,
+              maskImage: `url("${mask}")`,
+            }}
+            key={mask}
+          />
+        ))}
+      </span>
+    );
+  }
+
+  if ("icon" in visual) {
+    const Icon = visual.icon;
+    return (
+      <span className="trainer-title-visual trainer-title-visual-fallback">
+        <Icon aria-hidden="true" />
+      </span>
+    );
+  }
+
+  return (
+    <span
+      className={`trainer-title-visual ${
+        visual.assets.length > 1 ? "trainer-title-visual-pair" : ""
+      }`}
+      aria-hidden="true"
+    >
+      {visual.assets.map((asset) => (
+        <img
+          src={asset}
+          alt=""
+          draggable={false}
+          data-title-asset={asset}
+          key={asset}
+        />
+      ))}
+    </span>
+  );
+};
 
 type ShowcasePointerDrag = {
   pointerId: number;
@@ -147,7 +253,7 @@ const formatTrainerCode = (value?: string | null) =>
 const profileToForm = (
   profile: TrainerProfile<PokemonInstance>,
 ): ProfileForm => ({
-  bio: profile.bio ?? "",
+  trainerTitles: profile.trainer_titles ?? [],
   pokemonGoName: profile.user.pokemonGoName ?? "",
   trainerCode: profile.trainer_code ?? "",
   team: profile.user.team ?? "",
@@ -344,7 +450,7 @@ const Profile = () => {
   const needsProfileSetup =
     isOwner &&
     profile !== null &&
-    !profile.bio &&
+    (profile.trainer_titles?.length ?? 0) === 0 &&
     !profile.user.team &&
     !profile.user.trainer_level &&
     !profile.user.total_xp &&
@@ -353,8 +459,26 @@ const Profile = () => {
     !profile.trainer_code &&
     profile.highlights.length === 0;
 
-  const updateField = (field: keyof ProfileForm, value: string) => {
+  const updateField = (field: TextProfileField, value: string) => {
     setForm((current) => ({ ...current, [field]: value }));
+  };
+
+  const toggleTrainerTitle = (title: TrainerTitle) => {
+    setForm((current) => {
+      if (current.trainerTitles.includes(title)) {
+        return {
+          ...current,
+          trainerTitles: current.trainerTitles.filter(
+            (candidate) => candidate !== title,
+          ),
+        };
+      }
+      if (current.trainerTitles.length >= 3) return current;
+      return {
+        ...current,
+        trainerTitles: [...current.trainerTitles, title],
+      };
+    });
   };
 
   const selectHighlightForSlot = (instanceID: string) => {
@@ -540,7 +664,7 @@ const Profile = () => {
       }
 
       const request: UpdateTrainerProfileRequest = {
-        bio: form.bio,
+        trainer_titles: form.trainerTitles,
         pokemonGoName: form.pokemonGoName,
         trainer_code: normalizedTrainerCode,
         team: form.team,
@@ -1017,22 +1141,72 @@ const Profile = () => {
               </div>
 
               <footer className="trainer-card-footer">
-                <div className="trainer-card-bio">
-                  <span>Trainer notes</span>
+                <div className="trainer-card-titles">
+                  <div className="trainer-card-titles-heading">
+                    <span>Play styles</span>
+                    {editing ? (
+                      <small>{form.trainerTitles.length}/3 selected</small>
+                    ) : null}
+                  </div>
                   {editing ? (
-                    <>
-                      <textarea
-                        aria-label="Trainer notes"
-                        maxLength={280}
-                        value={form.bio}
-                        onChange={(event) =>
-                          updateField("bio", event.target.value)
-                        }
-                      />
-                      <small>{form.bio.length}/280</small>
-                    </>
+                    <div
+                      className="trainer-title-picker"
+                      role="group"
+                      aria-label="Trainer titles"
+                    >
+                      {TRAINER_TITLE_OPTIONS.map((option) => {
+                        const selected = form.trainerTitles.includes(
+                          option.id,
+                        );
+                        return (
+                          <button
+                            type="button"
+                            className={`trainer-title-choice ${
+                              selected ? "selected" : ""
+                            }`}
+                            key={option.id}
+                            aria-pressed={selected}
+                            aria-label={`${option.label}. ${option.description}`}
+                            title={option.description}
+                            disabled={
+                              !selected &&
+                              form.trainerTitles.length >= 3
+                            }
+                            onClick={() =>
+                              toggleTrainerTitle(option.id)
+                            }
+                          >
+                            <TrainerTitleVisual title={option.id} />
+                            <strong>{option.label}</strong>
+                          </button>
+                        );
+                      })}
+                    </div>
                   ) : (
-                    <p>{profile.bio || "No trainer bio yet."}</p>
+                    <div
+                      className="trainer-title-list"
+                      aria-label="Play styles"
+                    >
+                      {(profile.trainer_titles ?? []).length > 0 ? (
+                        (profile.trainer_titles ?? []).map((title) => {
+                          const option = trainerTitleOptionByID.get(title);
+                          if (!option) return null;
+                          return (
+                            <span
+                              className="trainer-title-badge"
+                              key={title}
+                            >
+                              <TrainerTitleVisual title={title} />
+                              {option.label}
+                            </span>
+                          );
+                        })
+                      ) : (
+                        <span className="trainer-title-empty">
+                          No play styles selected
+                        </span>
+                      )}
+                    </div>
                   )}
                 </div>
                 <div className="trainer-profile-commands">

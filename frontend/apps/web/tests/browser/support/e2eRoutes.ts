@@ -270,6 +270,34 @@ const defaultUserOverview = {
 };
 
 export async function installE2eRoutes(page: Page, options: E2eRouteOptions = {}) {
+  let trainerProfileState = JSON.parse(
+    JSON.stringify(
+      options.trainerProfile ?? {
+        user: {
+          user_id: 'e2e-user',
+          username: 'e2e',
+          app_joined_at: '2026-01-01T00:00:00Z',
+        },
+        trainer_titles: [],
+        location: null,
+        trainer_code: null,
+        stats: {
+          caught: 0,
+          for_trade: 0,
+          wanted: 0,
+          favorites: 0,
+          registered: 0,
+        },
+        highlights: [],
+        viewer: {
+          relationship: 'self',
+          can_view_profile: true,
+          can_view_collection: true,
+        },
+      },
+    ),
+  ) as Record<string, unknown>;
+
   if (options.mockImages ?? true) {
     await page.route('**/images/**', async (route) => {
       await route.fulfill({
@@ -387,32 +415,18 @@ export async function installE2eRoutes(page: Page, options: E2eRouteOptions = {}
 
   for (const pathPattern of ['**/api/users/profile', '**/__e2e/users/profile']) {
     await page.route(pathPattern, async (route) => {
-      await fulfillJson(
-        route,
-        options.trainerProfile ?? {
-          user: {
-            user_id: 'e2e-user',
-            username: 'e2e',
-            app_joined_at: '2026-01-01T00:00:00Z',
-          },
-          bio: null,
-          location: null,
-          trainer_code: null,
-          stats: {
-            caught: 0,
-            for_trade: 0,
-            wanted: 0,
-            favorites: 0,
-            registered: 0,
-          },
-          highlights: [],
-          viewer: {
-            relationship: 'self',
-            can_view_profile: true,
-            can_view_collection: true,
-          },
-        },
-      );
+      if (route.request().method() === 'PUT') {
+        const update = route.request().postDataJSON() as Record<string, unknown>;
+        if (Array.isArray(update.trainer_titles)) {
+          trainerProfileState = {
+            ...trainerProfileState,
+            trainer_titles: [...update.trainer_titles],
+          };
+        }
+        await fulfillJson(route, { success: true });
+        return;
+      }
+      await fulfillJson(route, trainerProfileState);
     });
   }
 

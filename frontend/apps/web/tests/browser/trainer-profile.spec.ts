@@ -12,6 +12,9 @@ const trainerUser = {
   user_id: "trainer-card-user",
   username: "TrainerCard",
   email: "trainer-card@pokegonexus.local",
+  pokemonGoName: "NexusTrainer",
+  trainerCode: "123456789012",
+  location: "Vancouver, BC",
   accessTokenExpiry: "2099-01-01T00:00:00.000Z",
   refreshTokenExpiry: "2099-01-02T00:00:00.000Z",
 };
@@ -27,7 +30,7 @@ const trainerProfile = {
     pogo_started_on: "2016-07-06T00:00:00Z",
     app_joined_at: "2026-01-01T00:00:00Z",
   },
-  bio: "Collector, raider, and trade day regular.",
+  trainer_titles: ["raid-regular", "shiny-hunter", "egg-hatcher"],
   location: "Vancouver, BC",
   trainer_code: "123456789012",
   stats: {
@@ -162,6 +165,18 @@ test.describe("Trainer profile card", () => {
       ).toBeVisible();
       await expect(card.getByText("88,000,000 XP")).toBeVisible();
       await expect(card.getByText("Jul 6, 2016")).toBeVisible();
+      await expect(card.getByText("Raid Regular")).toBeVisible();
+      await expect(card.getByText("Shiny Hunter")).toBeVisible();
+      await expect(card.getByText("Egg Hatcher")).toBeVisible();
+      const raidTitleIcon = card.locator(
+        '[data-title-asset="/images/raid_face.png"]',
+      );
+      await expect(raidTitleIcon).toBeVisible();
+      expect(
+        await raidTitleIcon.evaluate(
+          (element) => window.getComputedStyle(element).backgroundColor,
+        ),
+      ).toBe("rgb(94, 177, 244)");
       await expect(
         card.getByLabel("Featured Pokemon", { exact: true }),
       ).toBeVisible();
@@ -225,6 +240,19 @@ test.describe("Trainer profile card", () => {
       await expect(
         card.getByLabel(/choose pokemon for featured slot/i),
       ).toHaveCount(0);
+      const titlePicker = card.getByRole("group", {
+        name: "Trainer titles",
+      });
+      await expect(titlePicker).toBeVisible();
+      await expect(
+        titlePicker.getByRole("button", { name: /raid regular/i }),
+      ).toHaveAttribute("aria-pressed", "true");
+      await titlePicker
+        .getByRole("button", { name: /raid regular/i })
+        .click();
+      await titlePicker
+        .getByRole("button", { name: /max battler/i })
+        .click();
       await card
         .getByRole("button", {
           name: "Change featured Pokemon in slot 1, currently Buddy",
@@ -240,7 +268,7 @@ test.describe("Trainer profile card", () => {
       ).toHaveAttribute("aria-pressed", "true");
       await expect(
         picker.getByRole("button", {
-          name: "Pokemon #4 is already in featured slot 2",
+          name: /already in featured slot 2/i,
         }),
       ).toBeDisabled();
 
@@ -313,6 +341,31 @@ test.describe("Trainer profile card", () => {
       ).toBeVisible();
       await expect(
         card.getByLabel(/choose pokemon for featured slot/i),
+      ).toHaveCount(0);
+      await card.getByRole("button", { name: "Save profile" }).click();
+      await expect(
+        page.getByRole("button", { name: "Edit", exact: true }),
+      ).toBeVisible();
+      await expect(card.getByText("Max Battler", { exact: true })).toBeVisible();
+      await expect(
+        card.getByText("Shiny Hunter", { exact: true }),
+      ).toBeVisible();
+      await expect(
+        card.getByText("Egg Hatcher", { exact: true }),
+      ).toBeVisible();
+      await expect(
+        card.getByText("Raid Regular", { exact: true }),
+      ).toHaveCount(0);
+
+      await page.reload({ waitUntil: "domcontentloaded" });
+      const reloadedCard = page.getByRole("region", {
+        name: `${trainerUser.username}'s trainer card`,
+      });
+      await expect(
+        reloadedCard.getByText("Max Battler", { exact: true }),
+      ).toBeVisible();
+      await expect(
+        reloadedCard.getByText("Raid Regular", { exact: true }),
       ).toHaveCount(0);
     } finally {
       await diagnostics.flush();
