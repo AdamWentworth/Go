@@ -172,6 +172,12 @@
     var(--trainer-surface);
 }
 
+.trainer-profile-card-editing {
+  box-shadow:
+    0 0 0 2px color-mix(in srgb, var(--trainer-team) 30%, transparent),
+    0 16px 40px rgba(0, 0, 0, 0.22);
+}
+
 .trainer-team-mystic {
   --trainer-team: #5eb1f4;
   --trainer-team-soft: rgba(60, 139, 207, 0.24);
@@ -267,6 +273,26 @@
   line-height: 1.05;
 }
 
+.trainer-card-level input {
+  width: 42px;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: #071516;
+  font: inherit;
+  font-size: 1.15rem;
+  font-weight: 900;
+  line-height: 1;
+  text-align: center;
+  appearance: textfield;
+}
+
+.trainer-card-level input::-webkit-inner-spin-button,
+.trainer-card-level input::-webkit-outer-spin-button {
+  margin: 0;
+  appearance: none;
+}
+
 .trainer-card-name {
   min-width: 0;
   text-align: center;
@@ -290,12 +316,63 @@
   white-space: nowrap;
 }
 
+.trainer-card-edit-input,
+.trainer-card-team select,
+.trainer-card-team input,
+.trainer-card-facts input,
+.trainer-card-bio textarea {
+  box-sizing: border-box;
+  width: 100%;
+  border: 1px solid
+    color-mix(in srgb, var(--trainer-team) 52%, var(--trainer-border));
+  border-radius: 6px;
+  outline: 0;
+  background: rgba(8, 20, 21, 0.76);
+  color: var(--trainer-text);
+  font: inherit;
+}
+
+.trainer-card-edit-input:focus,
+.trainer-card-team select:focus,
+.trainer-card-team input:focus,
+.trainer-card-facts input:focus,
+.trainer-card-bio textarea:focus {
+  border-color: var(--trainer-team);
+  box-shadow: 0 0 0 2px
+    color-mix(in srgb, var(--trainer-team) 22%, transparent);
+}
+
+.trainer-card-edit-input {
+  min-height: 38px;
+  padding: 6px 8px;
+  font-size: 1rem;
+  font-weight: 800;
+  text-align: center;
+}
+
 .trainer-card-team {
   display: grid;
   gap: 4px;
   margin-top: auto;
   padding-top: 18px;
   text-align: center;
+}
+
+.trainer-card-team select,
+.trainer-card-team input {
+  min-height: 36px;
+  padding: 6px 8px;
+  text-align: center;
+}
+
+.trainer-card-team label {
+  display: grid;
+  gap: 4px;
+}
+
+.trainer-card-team label > span {
+  color: var(--trainer-muted);
+  font-size: 0.64rem;
 }
 
 .trainer-card-team span {
@@ -463,6 +540,14 @@
   white-space: nowrap;
 }
 
+.trainer-card-facts input {
+  min-width: 0;
+  min-height: 32px;
+  padding: 4px 6px;
+  font-size: 0.76rem;
+  font-weight: 800;
+}
+
 .trainer-card-collection {
   display: grid;
   grid-template-columns: repeat(5, minmax(0, 1fr));
@@ -507,6 +592,30 @@
   font-size: 0.82rem;
   line-height: 1.4;
   text-overflow: ellipsis;
+}
+
+.trainer-card-bio textarea {
+  min-height: 72px;
+  margin-top: 5px;
+  padding: 8px 9px;
+  resize: vertical;
+  line-height: 1.35;
+}
+
+.trainer-card-bio small {
+  display: block;
+  margin-top: 3px;
+  color: var(--trainer-muted);
+  font-size: 0.68rem;
+  text-align: right;
+}
+
+.trainer-card-showcase-editor {
+  min-width: 0;
+}
+
+.trainer-card-showcase-editor .trainer-showcase-picker {
+  margin-top: 14px;
 }
 
 .trainer-card-setup {
@@ -1069,6 +1178,15 @@
 :root[data-theme="light"] .trainer-search input,
 :root[data-theme="light"] .trainer-showcase-search {
   background: #f9fffa;
+  color: var(--trainer-text);
+}
+
+:root[data-theme="light"] .trainer-card-edit-input,
+:root[data-theme="light"] .trainer-card-team select,
+:root[data-theme="light"] .trainer-card-team input,
+:root[data-theme="light"] .trainer-card-facts input,
+:root[data-theme="light"] .trainer-card-bio textarea {
+  background: rgba(249, 255, 250, 0.9);
   color: var(--trainer-text);
 }
 

@@ -135,15 +135,34 @@ test.describe("Trainer profile card", () => {
       await page.goto("/profile", { waitUntil: "domcontentloaded" });
       await page.getByRole("button", { name: "Edit" }).click();
 
-      const picker = page.getByLabel("Choose featured Pokemon");
+      const card = page.getByRole("region", {
+        name: `${trainerUser.username}'s trainer card`,
+      });
+      await expect(card).toHaveCount(1);
+      await expect(card.getByLabel("Pokemon GO name")).toHaveValue(
+        "NexusTrainer",
+      );
+      await expect(
+        card.getByLabel("Trainer level", { exact: true }),
+      ).toHaveValue("50");
+
+      const picker = card.getByLabel("Choose featured Pokemon");
       await expect(picker).toBeVisible();
       await expect(
         picker.getByLabel("2 of 6 Pokemon selected"),
       ).toBeVisible();
 
-      const screenshotPath = testInfo.outputPath("trainer-showcase-picker.png");
-      await picker.screenshot({ path: screenshotPath });
-      await testInfo.attach("trainer showcase picker", {
+      const layout = await page.locator(".trainer-page").evaluate(() => ({
+        viewportWidth: window.innerWidth,
+        documentWidth: document.documentElement.scrollWidth,
+      }));
+      expect(layout.documentWidth).toBeLessThanOrEqual(layout.viewportWidth);
+
+      const screenshotPath = testInfo.outputPath(
+        "trainer-card-inline-editor.png",
+      );
+      await card.screenshot({ path: screenshotPath });
+      await testInfo.attach("trainer card inline editor", {
         path: screenshotPath,
         contentType: "image/png",
       });

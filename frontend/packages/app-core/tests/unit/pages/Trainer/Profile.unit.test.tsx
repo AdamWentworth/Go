@@ -1,4 +1,10 @@
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import {
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+  within,
+} from "@testing-library/react";
 import { MemoryRouter, Route, Routes } from "react-router";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -219,23 +225,32 @@ describe("Trainer Profile", () => {
     );
 
     fireEvent.click(await screen.findByRole("button", { name: /^edit$/i }));
+    const card = screen.getByRole("region", {
+      name: /adam's trainer card/i,
+    });
+    expect(within(card).getByLabelText(/pokemon go name/i)).toHaveValue("Adam");
     expect(
-      screen.getByRole("heading", { name: /featured pokemon/i }),
+      within(card).getByRole("heading", { name: /featured pokemon/i }),
     ).toBeInTheDocument();
+    expect(
+      screen.queryByRole("heading", { name: /edit profile/i }),
+    ).not.toBeInTheDocument();
     fireEvent.click(
-      screen.getByRole("button", {
+      within(card).getByRole("button", {
         name: /select lucario for trainer card/i,
       }),
     );
     expect(
-      screen.getByRole("button", {
+      within(card).getByRole("button", {
         name: /remove lucario from trainer card/i,
       }),
     ).toHaveAttribute("aria-pressed", "true");
     expect(
-      screen.getByLabelText(/1 of 6 pokemon selected/i),
+      within(card).getByLabelText(/1 of 6 pokemon selected/i),
     ).toBeInTheDocument();
-    fireEvent.click(screen.getByRole("button", { name: /save profile/i }));
+    fireEvent.click(
+      within(card).getByRole("button", { name: /save profile/i }),
+    );
 
     await waitFor(() =>
       expect(mocks.updateProfile).toHaveBeenCalledWith(
@@ -295,9 +310,62 @@ describe("Trainer Profile", () => {
       }),
     ).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: /customize profile/i }));
+    const card = screen.getByRole("region", {
+      name: /adam's trainer card/i,
+    });
+    expect(within(card).getByLabelText(/pokemon go name/i)).toBeInTheDocument();
     expect(
-      screen.getByRole("heading", { name: /edit profile/i }),
+      within(card).getByLabelText("Trainer level", { exact: true }),
     ).toBeInTheDocument();
+    expect(within(card).getByLabelText(/trainer notes/i)).toBeInTheDocument();
+    expect(
+      screen.queryByRole("heading", { name: /edit profile/i }),
+    ).not.toBeInTheDocument();
     expect(mocks.fetchProfile).not.toHaveBeenCalled();
+  });
+
+  it("cancels inline edits and restores the saved trainer card", async () => {
+    const ownProfile = {
+      ...profile,
+      user: {
+        ...profile.user,
+        user_id: "user-adam",
+        username: "Adam",
+        pokemonGoName: "Adam",
+      },
+      viewer: {
+        relationship: "self",
+        can_view_profile: true,
+        can_view_collection: true,
+      },
+    };
+    mocks.fetchOwnProfile.mockResolvedValue(ownProfile);
+
+    render(
+      <MemoryRouter initialEntries={["/profile"]}>
+        <Routes>
+          <Route path="/profile" element={<Profile />} />
+        </Routes>
+      </MemoryRouter>,
+    );
+
+    fireEvent.click(await screen.findByRole("button", { name: /^edit$/i }));
+    const card = screen.getByRole("region", {
+      name: /adam's trainer card/i,
+    });
+    fireEvent.change(within(card).getByLabelText(/pokemon go name/i), {
+      target: { value: "Unsaved name" },
+    });
+    expect(within(card).getByLabelText(/pokemon go name/i)).toHaveValue(
+      "Unsaved name",
+    );
+
+    fireEvent.click(within(card).getByRole("button", { name: /cancel/i }));
+
+    expect(
+      within(card).queryByLabelText(/pokemon go name/i),
+    ).not.toBeInTheDocument();
+    expect(within(card).getByRole("heading", { name: "Adam" })).toBeVisible();
+    expect(mocks.updateProfile).not.toHaveBeenCalled();
   });
 });

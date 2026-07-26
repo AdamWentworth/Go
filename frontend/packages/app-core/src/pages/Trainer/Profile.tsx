@@ -257,6 +257,38 @@ const Profile = () => {
       );
     });
   }, [instances, profile?.highlights, variantByID]);
+  const highlightCandidateByID = useMemo(
+    () =>
+      new Map(
+        highlightCandidates
+          .filter((instance) => Boolean(instance.instance_id))
+          .map((instance) => [instance.instance_id || "", instance]),
+      ),
+    [highlightCandidates],
+  );
+  const cardHighlights = useMemo(
+    () =>
+      editing
+        ? highlightIds
+            .filter(Boolean)
+            .map((instanceID) => highlightCandidateByID.get(instanceID))
+            .filter((instance): instance is PokemonInstance =>
+              Boolean(instance),
+            )
+        : (profile?.highlights ?? []),
+    [
+      editing,
+      highlightCandidateByID,
+      highlightIds,
+      profile?.highlights,
+    ],
+  );
+  const cardTeam = (
+    (editing ? form.team : profile?.user.team) || "neutral"
+  ).toLowerCase();
+  const cardTrainerLevel = editing
+    ? Number(form.trainerLevel) || null
+    : profile?.user.trainer_level ?? null;
   const currentProfilePath = routeUsername
     ? `/profile/${encodeURIComponent(routeUsername)}`
     : "/profile";
@@ -455,14 +487,16 @@ const Profile = () => {
       title={profile?.user.username || username || "Profile"}
       actions={
         isOwner && profile ? (
-          <button
-            type="button"
-            className="trainer-button trainer-button-secondary"
-            onClick={toggleEditing}
-          >
-            {editing ? <FaTimes /> : <FaEdit />}
-            {editing ? "Cancel" : "Edit"}
-          </button>
+          !editing ? (
+            <button
+              type="button"
+              className="trainer-button trainer-button-secondary"
+              onClick={toggleEditing}
+            >
+              <FaEdit />
+              Edit
+            </button>
+          ) : null
         ) : (
           relationshipButton()
         )
@@ -478,9 +512,9 @@ const Profile = () => {
       {!loading && profile ? (
         <>
           <section
-            className={`trainer-profile-card trainer-team-${(
-              profile.user.team || "neutral"
-            ).toLowerCase()}`}
+            className={`trainer-profile-card trainer-team-${cardTeam} ${
+              editing ? "trainer-profile-card-editing" : ""
+            }`}
             aria-label={`${profile.user.username}'s trainer card`}
           >
             <aside className="trainer-card-identity">
@@ -491,26 +525,84 @@ const Profile = () => {
                 </div>
                 <div className="trainer-card-level">
                   <span>Level</span>
-                  <strong>{profile.user.trainer_level || "-"}</strong>
+                  {editing ? (
+                    <input
+                      type="number"
+                      min="1"
+                      max="80"
+                      aria-label="Trainer level"
+                      value={form.trainerLevel}
+                      onChange={(event) =>
+                        updateField("trainerLevel", event.target.value)
+                      }
+                    />
+                  ) : (
+                    <strong>{profile.user.trainer_level || "-"}</strong>
+                  )}
                 </div>
               </div>
               <div className="trainer-card-name">
-                <h2>{profile.user.pokemonGoName || profile.user.username}</h2>
+                {editing ? (
+                  <input
+                    className="trainer-card-edit-input"
+                    aria-label="Pokemon GO name"
+                    placeholder={profile.user.username}
+                    value={form.pokemonGoName}
+                    onChange={(event) =>
+                      updateField("pokemonGoName", event.target.value)
+                    }
+                  />
+                ) : (
+                  <h2>
+                    {profile.user.pokemonGoName || profile.user.username}
+                  </h2>
+                )}
                 <span>@{profile.user.username}</span>
               </div>
               <div className="trainer-card-team">
-                <span>{profile.user.team || "Unaffiliated"}</span>
-                <strong>
-                  {typeof profile.user.total_xp === "number"
-                    ? `${formatNumber(profile.user.total_xp)} XP`
-                    : "XP not shared"}
-                </strong>
+                {editing ? (
+                  <>
+                    <select
+                      aria-label="Team"
+                      value={form.team}
+                      onChange={(event) =>
+                        updateField("team", event.target.value)
+                      }
+                    >
+                      <option value="">Unaffiliated</option>
+                      <option value="Mystic">Mystic</option>
+                      <option value="Valor">Valor</option>
+                      <option value="Instinct">Instinct</option>
+                    </select>
+                    <label>
+                      <span>Total XP</span>
+                      <input
+                        type="number"
+                        min="0"
+                        aria-label="Total XP"
+                        value={form.totalXp}
+                        onChange={(event) =>
+                          updateField("totalXp", event.target.value)
+                        }
+                      />
+                    </label>
+                  </>
+                ) : (
+                  <>
+                    <span>{profile.user.team || "Unaffiliated"}</span>
+                    <strong>
+                      {typeof profile.user.total_xp === "number"
+                        ? `${formatNumber(profile.user.total_xp)} XP`
+                        : "XP not shared"}
+                    </strong>
+                  </>
+                )}
               </div>
               <div
                 className="trainer-card-level-track"
                 aria-label={
-                  profile.user.trainer_level
-                    ? `Trainer level ${profile.user.trainer_level}`
+                  cardTrainerLevel
+                    ? `Trainer level ${cardTrainerLevel}`
                     : "Trainer level not shared"
                 }
               >
@@ -520,7 +612,7 @@ const Profile = () => {
                       100,
                       Math.max(
                         0,
-                        ((profile.user.trainer_level || 0) / 80) * 100,
+                        ((cardTrainerLevel || 0) / 80) * 100,
                       ),
                     )}%`,
                   }}
@@ -545,7 +637,7 @@ const Profile = () => {
                 aria-label="Featured Pokemon"
               >
                 {Array.from({ length: 6 }, (_, index) => {
-                  const instance = profile.highlights[index];
+                  const instance = cardHighlights[index];
                   return instance ? (
                     <HighlightCard
                       key={
@@ -572,17 +664,56 @@ const Profile = () => {
                 <div>
                   <FaCalendarAlt aria-hidden="true" />
                   <dt>Started</dt>
-                  <dd>{formatCalendarDate(profile.user.pogo_started_on)}</dd>
+                  <dd>
+                    {editing ? (
+                      <input
+                        type="date"
+                        aria-label="Started playing"
+                        value={form.startedOn}
+                        onChange={(event) =>
+                          updateField("startedOn", event.target.value)
+                        }
+                      />
+                    ) : (
+                      formatCalendarDate(profile.user.pogo_started_on)
+                    )}
+                  </dd>
                 </div>
                 <div>
                   <FaMapMarkerAlt aria-hidden="true" />
                   <dt>Location</dt>
-                  <dd>{profile.location || "Not shared"}</dd>
+                  <dd>
+                    {editing ? (
+                      <input
+                        aria-label="Location"
+                        value={form.location}
+                        onChange={(event) =>
+                          updateField("location", event.target.value)
+                        }
+                      />
+                    ) : (
+                      profile.location || "Not shared"
+                    )}
+                  </dd>
                 </div>
                 <div>
                   <FaIdCard aria-hidden="true" />
                   <dt>Trainer code</dt>
-                  <dd>{formatTrainerCode(profile.trainer_code)}</dd>
+                  <dd>
+                    {editing ? (
+                      <input
+                        inputMode="numeric"
+                        maxLength={14}
+                        aria-label="Trainer code"
+                        value={form.trainerCode}
+                        onChange={(event) =>
+                          updateField("trainerCode", event.target.value)
+                        }
+                      />
+                    ) : (
+                      formatTrainerCode(profile.trainer_code)
+                    )}
+                  </dd>
                 </div>
               </dl>
 
@@ -607,10 +738,44 @@ const Profile = () => {
               <footer className="trainer-card-footer">
                 <div className="trainer-card-bio">
                   <span>Trainer notes</span>
-                  <p>{profile.bio || "No trainer bio yet."}</p>
+                  {editing ? (
+                    <>
+                      <textarea
+                        aria-label="Trainer notes"
+                        maxLength={280}
+                        value={form.bio}
+                        onChange={(event) =>
+                          updateField("bio", event.target.value)
+                        }
+                      />
+                      <small>{form.bio.length}/280</small>
+                    </>
+                  ) : (
+                    <p>{profile.bio || "No trainer bio yet."}</p>
+                  )}
                 </div>
                 <div className="trainer-profile-commands">
-                  {profile.viewer.can_view_collection ? (
+                  {editing ? (
+                    <>
+                      <button
+                        type="button"
+                        className="trainer-button trainer-button-secondary"
+                        onClick={toggleEditing}
+                      >
+                        <FaTimes />
+                        Cancel
+                      </button>
+                      <button
+                        type="button"
+                        className="trainer-button trainer-button-primary"
+                        disabled={saving}
+                        onClick={() => void saveProfile()}
+                      >
+                        <FaCheck />
+                        {saving ? "Saving..." : "Save profile"}
+                      </button>
+                    </>
+                  ) : profile.viewer.can_view_collection ? (
                     <button
                       type="button"
                       className="trainer-button trainer-button-primary"
@@ -627,7 +792,7 @@ const Profile = () => {
                       View Pokemon
                     </button>
                   ) : null}
-                  {!isOwner && authUser ? (
+                  {!editing && !isOwner && authUser ? (
                     <button
                       type="button"
                       className="trainer-icon-button trainer-danger-icon"
@@ -640,6 +805,17 @@ const Profile = () => {
                   ) : null}
                 </div>
               </footer>
+
+              {editing ? (
+                <div className="trainer-card-showcase-editor">
+                  <TrainerShowcasePicker
+                    candidates={highlightCandidates}
+                    selectedIds={highlightIds}
+                    variantById={variantByID}
+                    onToggle={toggleHighlight}
+                  />
+                </div>
+              ) : null}
 
               {needsProfileSetup && !editing ? (
                 <div className="trainer-card-setup">
@@ -663,121 +839,6 @@ const Profile = () => {
               ) : null}
             </div>
           </section>
-
-          {editing ? (
-            <section className="trainer-section">
-              <header>
-                <div>
-                  <span>Public identity</span>
-                  <h2>Edit profile</h2>
-                </div>
-              </header>
-              <div className="trainer-form-grid">
-                <label className="trainer-field trainer-field-wide">
-                  <span>Bio</span>
-                  <textarea
-                    maxLength={280}
-                    value={form.bio}
-                    onChange={(event) => updateField("bio", event.target.value)}
-                  />
-                  <small>{form.bio.length}/280</small>
-                </label>
-                <label className="trainer-field">
-                  <span>Pokemon GO name</span>
-                  <input
-                    value={form.pokemonGoName}
-                    onChange={(event) =>
-                      updateField("pokemonGoName", event.target.value)
-                    }
-                  />
-                </label>
-                <label className="trainer-field">
-                  <span>Trainer code</span>
-                  <input
-                    inputMode="numeric"
-                    maxLength={14}
-                    value={form.trainerCode}
-                    onChange={(event) =>
-                      updateField("trainerCode", event.target.value)
-                    }
-                  />
-                </label>
-                <label className="trainer-field">
-                  <span>Team</span>
-                  <select
-                    value={form.team}
-                    onChange={(event) =>
-                      updateField("team", event.target.value)
-                    }
-                  >
-                    <option value="">Unaffiliated</option>
-                    <option value="Mystic">Mystic</option>
-                    <option value="Valor">Valor</option>
-                    <option value="Instinct">Instinct</option>
-                  </select>
-                </label>
-                <label className="trainer-field">
-                  <span>Trainer level</span>
-                  <input
-                    type="number"
-                    min="1"
-                    max="80"
-                    value={form.trainerLevel}
-                    onChange={(event) =>
-                      updateField("trainerLevel", event.target.value)
-                    }
-                  />
-                </label>
-                <label className="trainer-field">
-                  <span>Total XP</span>
-                  <input
-                    type="number"
-                    min="0"
-                    value={form.totalXp}
-                    onChange={(event) =>
-                      updateField("totalXp", event.target.value)
-                    }
-                  />
-                </label>
-                <label className="trainer-field">
-                  <span>Started playing</span>
-                  <input
-                    type="date"
-                    value={form.startedOn}
-                    onChange={(event) =>
-                      updateField("startedOn", event.target.value)
-                    }
-                  />
-                </label>
-                <label className="trainer-field trainer-field-wide">
-                  <span>Location</span>
-                  <input
-                    value={form.location}
-                    onChange={(event) =>
-                      updateField("location", event.target.value)
-                    }
-                  />
-                </label>
-              </div>
-              <TrainerShowcasePicker
-                candidates={highlightCandidates}
-                selectedIds={highlightIds}
-                variantById={variantByID}
-                onToggle={toggleHighlight}
-              />
-              <div className="trainer-form-actions">
-                <button
-                  type="button"
-                  className="trainer-button trainer-button-primary"
-                  disabled={saving}
-                  onClick={() => void saveProfile()}
-                >
-                  <FaCheck />
-                  {saving ? "Saving..." : "Save profile"}
-                </button>
-              </div>
-            </section>
-          ) : null}
         </>
       ) : null}
     </TrainerPageShell>
