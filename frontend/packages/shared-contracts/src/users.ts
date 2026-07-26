@@ -43,6 +43,92 @@ export type TrainerRelationship =
   | 'outgoing'
   | 'blocked';
 
+export const TRAINER_TITLE_OPTIONS = [
+  {
+    id: 'raid-regular',
+    label: 'Raid Regular',
+    description: 'Legendary and Mega raids',
+  },
+  {
+    id: 'shadow-raider',
+    label: 'Shadow Raider',
+    description: 'Shadow Raids and Rocket battles',
+  },
+  {
+    id: 'super-mega-raider',
+    label: 'Super Mega Raider',
+    description: 'Coordinated Super Mega raids',
+  },
+  {
+    id: 'max-battler',
+    label: 'Max Battler',
+    description: 'Dynamax and Gigantamax battles',
+  },
+  {
+    id: 'battle-league-trainer',
+    label: 'Battle League Trainer',
+    description: 'Great, Ultra, and Master League',
+  },
+  {
+    id: 'rocket-hunter',
+    label: 'Rocket Hunter',
+    description: 'Grunts, Leaders, and Giovanni',
+  },
+  {
+    id: 'shiny-hunter',
+    label: 'Shiny Hunter',
+    description: 'Hunting shiny Pokemon',
+  },
+  {
+    id: 'pokedex-collector',
+    label: 'Pokedex Collector',
+    description: 'Completing every registration',
+  },
+  {
+    id: 'costume-collector',
+    label: 'Costume Collector',
+    description: 'Collecting event costumes',
+  },
+  {
+    id: 'hundo-hunter',
+    label: 'Hundo Hunter',
+    description: 'Perfect-IV Pokemon',
+  },
+  {
+    id: 'size-collector',
+    label: 'Size Collector',
+    description: 'XXS, XXL, and showcase catches',
+  },
+  {
+    id: 'lucky-trader',
+    label: 'Lucky Trader',
+    description: 'Trading and Lucky Pokemon',
+  },
+  {
+    id: 'egg-hatcher',
+    label: 'Egg Hatcher',
+    description: 'Walking and hatching Eggs',
+  },
+  {
+    id: 'route-explorer',
+    label: 'Route Explorer',
+    description: 'Routes and exploration',
+  },
+  {
+    id: 'showcase-star',
+    label: 'Showcase Star',
+    description: 'PokeStop Showcases',
+  },
+  {
+    id: 'party-player',
+    label: 'Party Player',
+    description: 'Local group play',
+  },
+] as const;
+
+export type TrainerTitle =
+  (typeof TRAINER_TITLE_OPTIONS)[number]['id'];
+
 export interface TrainerPreferences {
   user_id: string;
   bio?: string | null;
@@ -76,7 +162,7 @@ export interface TrainerProfileStats {
 
 export interface TrainerProfile<TInstance = Record<string, unknown>> {
   user: TrainerProfileUser;
-  bio?: string | null;
+  trainer_titles: TrainerTitle[];
   location?: string | null;
   trainer_code?: string | null;
   stats: TrainerProfileStats;
@@ -117,7 +203,7 @@ export interface UpdateTrainerProfileRequest {
   location?: string;
   latitude?: number;
   longitude?: number;
-  bio?: string;
+  trainer_titles?: TrainerTitle[];
   highlight_instance_ids?: string[];
 }
 

@@ -51,3 +51,28 @@ func TestNormalizeHighlightIDs(t *testing.T) {
 		t.Fatal("more than six highlights must be rejected")
 	}
 }
+
+func TestNormalizeTrainerTitles(t *testing.T) {
+	normalized, ok := normalizeTrainerTitles([]string{
+		" raid-regular ",
+		"egg-hatcher",
+		"route-explorer",
+	})
+	if !ok || len(normalized) != 3 ||
+		normalized[0] != "raid-regular" ||
+		normalized[1] != "egg-hatcher" ||
+		normalized[2] != "route-explorer" {
+		t.Fatalf("unexpected normalized trainer titles: %#v, valid=%t", normalized, ok)
+	}
+
+	invalidSets := [][]string{
+		{"raid-regular", "raid-regular"},
+		{"not-a-real-title"},
+		{"raid-regular", "egg-hatcher", "route-explorer", "party-player"},
+	}
+	for _, values := range invalidSets {
+		if _, valid := normalizeTrainerTitles(values); valid {
+			t.Fatalf("invalid trainer titles were accepted: %#v", values)
+		}
+	}
+}

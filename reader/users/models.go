@@ -42,6 +42,43 @@ func (j *JSON) Scan(src interface{}) error {
 	return nil
 }
 
+type TrainerTitleList []string
+
+func (titles TrainerTitleList) Value() (driver.Value, error) {
+	if titles == nil {
+		return "[]", nil
+	}
+	bytes, err := json.Marshal(titles)
+	if err != nil {
+		return nil, err
+	}
+	return string(bytes), nil
+}
+
+func (titles *TrainerTitleList) Scan(src interface{}) error {
+	if src == nil {
+		*titles = TrainerTitleList{}
+		return nil
+	}
+	var bytes []byte
+	switch value := src.(type) {
+	case []byte:
+		bytes = value
+	case string:
+		bytes = []byte(value)
+	default:
+		return fmt.Errorf("unsupported trainer title list type: %T", src)
+	}
+	if len(bytes) == 0 {
+		*titles = TrainerTitleList{}
+		return nil
+	}
+	if err := json.Unmarshal(bytes, titles); err != nil {
+		return fmt.Errorf("failed to unmarshal trainer titles: %w", err)
+	}
+	return nil
+}
+
 // ---------------- users ----------------
 
 type User struct {
@@ -94,15 +131,16 @@ type PublicUser struct {
 // ---------------- profiles & social relationships ----------------
 
 type UserProfile struct {
-	UserID                  string    `gorm:"column:user_id;primaryKey" json:"user_id"`
-	Bio                     *string   `gorm:"column:bio" json:"bio,omitempty"`
-	ProfileVisibility       string    `gorm:"column:profile_visibility" json:"profile_visibility"`
-	CollectionVisibility    string    `gorm:"column:collection_visibility" json:"collection_visibility"`
-	FriendRequestPermission string    `gorm:"column:friend_request_permission" json:"friend_request_permission"`
-	TrainerCodeVisibility   string    `gorm:"column:trainer_code_visibility" json:"trainer_code_visibility"`
-	ShowLocation            bool      `gorm:"column:show_location" json:"show_location"`
-	ShowPokemonGoName       bool      `gorm:"column:show_pokemon_go_name" json:"show_pokemon_go_name"`
-	UpdatedAt               time.Time `gorm:"column:updated_at" json:"updated_at"`
+	UserID                  string           `gorm:"column:user_id;primaryKey" json:"user_id"`
+	Bio                     *string          `gorm:"column:bio" json:"bio,omitempty"`
+	TrainerTitles           TrainerTitleList `gorm:"column:trainer_titles;type:json" json:"trainer_titles"`
+	ProfileVisibility       string           `gorm:"column:profile_visibility" json:"profile_visibility"`
+	CollectionVisibility    string           `gorm:"column:collection_visibility" json:"collection_visibility"`
+	FriendRequestPermission string           `gorm:"column:friend_request_permission" json:"friend_request_permission"`
+	TrainerCodeVisibility   string           `gorm:"column:trainer_code_visibility" json:"trainer_code_visibility"`
+	ShowLocation            bool             `gorm:"column:show_location" json:"show_location"`
+	ShowPokemonGoName       bool             `gorm:"column:show_pokemon_go_name" json:"show_pokemon_go_name"`
+	UpdatedAt               time.Time        `gorm:"column:updated_at" json:"updated_at"`
 }
 
 func (UserProfile) TableName() string { return "user_profiles" }

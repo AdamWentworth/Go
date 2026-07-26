@@ -13,6 +13,27 @@ import (
 
 var trainerCodePattern = regexp.MustCompile(`^\d{12}$`)
 
+const maxTrainerTitles = 3
+
+var allowedTrainerTitles = map[string]struct{}{
+	"raid-regular":          {},
+	"shadow-raider":         {},
+	"super-mega-raider":     {},
+	"max-battler":           {},
+	"battle-league-trainer": {},
+	"rocket-hunter":         {},
+	"shiny-hunter":          {},
+	"pokedex-collector":     {},
+	"costume-collector":     {},
+	"hundo-hunter":          {},
+	"size-collector":        {},
+	"lucky-trader":          {},
+	"egg-hatcher":           {},
+	"route-explorer":        {},
+	"showcase-star":         {},
+	"party-player":          {},
+}
+
 type ProfileStats struct {
 	Caught     int64 `json:"caught" gorm:"column:caught"`
 	ForTrade   int64 `json:"for_trade" gorm:"column:for_trade"`
@@ -29,14 +50,14 @@ type ProfileViewerState struct {
 }
 
 type ProfileResponse struct {
-	User        PublicUser         `json:"user"`
-	Bio         *string            `json:"bio,omitempty"`
-	Location    *string            `json:"location,omitempty"`
-	TrainerCode *string            `json:"trainer_code,omitempty"`
-	Stats       ProfileStats       `json:"stats"`
-	Highlights  []PokemonInstance  `json:"highlights"`
-	Preferences *UserProfile       `json:"preferences,omitempty"`
-	Viewer      ProfileViewerState `json:"viewer"`
+	User          PublicUser         `json:"user"`
+	TrainerTitles TrainerTitleList   `json:"trainer_titles"`
+	Location      *string            `json:"location,omitempty"`
+	TrainerCode   *string            `json:"trainer_code,omitempty"`
+	Stats         ProfileStats       `json:"stats"`
+	Highlights    []PokemonInstance  `json:"highlights"`
+	Preferences   *UserProfile       `json:"preferences,omitempty"`
+	Viewer        ProfileViewerState `json:"viewer"`
 }
 
 func viewerID(c fiber.Ctx) string {
@@ -157,10 +178,10 @@ func sendProfileResponse(
 		friendshipID = &value
 	}
 	response := ProfileResponse{
-		User:       publicUserFromUser(user, profile, relationship),
-		Bio:        userProfileBio(profile),
-		Stats:      stats,
-		Highlights: highlights,
+		User:          publicUserFromUser(user, profile, relationship),
+		TrainerTitles: profile.TrainerTitles,
+		Stats:         stats,
+		Highlights:    highlights,
 		Viewer: ProfileViewerState{
 			Relationship: relationship, FriendshipID: friendshipID,
 			CanViewProfile: canViewProfile, CanViewCollection: canViewCollection,
@@ -209,10 +230,6 @@ func GetOwnProfileHandler(c fiber.Ctx) error {
 	return sendProfileResponse(c, user, relationshipSelf, nil)
 }
 
-func userProfileBio(profile UserProfile) *string {
-	return profile.Bio
-}
-
 func normalizeHighlightIDs(values []string) ([]string, bool) {
 	normalized := make([]string, 0, len(values))
 	seen := make(map[string]struct{}, len(values))
@@ -230,6 +247,26 @@ func normalizeHighlightIDs(values []string) ([]string, bool) {
 	return normalized, len(normalized) <= 6
 }
 
+func normalizeTrainerTitles(values []string) (TrainerTitleList, bool) {
+	if len(values) > maxTrainerTitles {
+		return nil, false
+	}
+	normalized := make(TrainerTitleList, 0, len(values))
+	seen := make(map[string]struct{}, len(values))
+	for _, value := range values {
+		title := strings.TrimSpace(value)
+		if _, allowed := allowedTrainerTitles[title]; !allowed {
+			return nil, false
+		}
+		if _, duplicate := seen[title]; duplicate {
+			return nil, false
+		}
+		seen[title] = struct{}{}
+		normalized = append(normalized, title)
+	}
+	return normalized, true
+}
+
 type UpdateProfileRequest struct {
 	PokemonGoName *string  `json:"pokemonGoName"`
 	TrainerCode   *string  `json:"trainer_code"`
@@ -240,7 +277,7 @@ type UpdateProfileRequest struct {
 	Location      *string  `json:"location"`
 	Latitude      *float64 `json:"latitude"`
 	Longitude     *float64 `json:"longitude"`
-	Bio           *string  `json:"bio"`
+	TrainerTitles []string `json:"trainer_titles"`
 	HighlightIDs  []string `json:"highlight_instance_ids"`
 }
 
@@ -249,9 +286,6 @@ func UpdateProfileHandler(c fiber.Ctx) error {
 	var request UpdateProfileRequest
 	if err := c.Bind().Body(&request); err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"message": "Invalid profile"})
-	}
-	if request.Bio != nil && len([]rune(strings.TrimSpace(*request.Bio))) > 280 {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"message": "Bio must be 280 characters or fewer"})
 	}
 	if request.Team != nil && *request.Team != "" && *request.Team != "Mystic" && *request.Team != "Valor" && *request.Team != "Instinct" {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"message": "Invalid team"})
@@ -262,6 +296,10 @@ func UpdateProfileHandler(c fiber.Ctx) error {
 	highlightIDs, validHighlights := normalizeHighlightIDs(request.HighlightIDs)
 	if !validHighlights {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"message": "Choose up to six unique highlights"})
+	}
+	trainerTitles, validTrainerTitles := normalizeTrainerTitles(request.TrainerTitles)
+	if request.TrainerTitles != nil && !validTrainerTitles {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"message": "Choose up to three valid trainer titles"})
 	}
 	if request.HighlightIDs != nil && len(highlightIDs) > 0 {
 		var ownedCount int64
@@ -331,14 +369,13 @@ func UpdateProfileHandler(c fiber.Ctx) error {
 			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"message": "Could not save profile"})
 		}
 	}
-	if request.Bio != nil {
-		bio := strings.TrimSpace(*request.Bio)
+	if request.TrainerTitles != nil {
 		profile := defaultUserProfile(userID)
-		profile.Bio = &bio
+		profile.TrainerTitles = trainerTitles
 		if err := db.Where("user_id = ?", userID).
-			Assign(map[string]interface{}{"bio": bio}).
+			Assign(map[string]interface{}{"trainer_titles": trainerTitles}).
 			FirstOrCreate(&profile).Error; err != nil {
-			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"message": "Could not save profile bio"})
+			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"message": "Could not save trainer titles"})
 		}
 	}
 	return c.JSON(fiber.Map{"success": true})

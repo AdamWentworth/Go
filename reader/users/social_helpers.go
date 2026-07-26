@@ -19,6 +19,7 @@ const (
 func defaultUserProfile(userID string) UserProfile {
 	return UserProfile{
 		UserID:                  userID,
+		TrainerTitles:           TrainerTitleList{},
 		ProfileVisibility:       "public",
 		CollectionVisibility:    "public",
 		FriendRequestPermission: "everyone",

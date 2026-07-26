@@ -347,7 +347,9 @@ func TestGetProfileHandler_ReturnsPublicTrainerCardWithDefaultPrivacy(t *testing
 
 	mock.ExpectQuery(regexp.QuoteMeta("SELECT * FROM `user_profiles` WHERE user_id = ? ORDER BY `user_profiles`.`user_id` LIMIT ?")).
 		WithArgs("user-misty", 1).
-		WillReturnRows(sqlmock.NewRows([]string{"user_id"}))
+		WillReturnRows(sqlmock.NewRows([]string{
+			"user_id", "trainer_titles",
+		}).AddRow("user-misty", `["raid-regular","egg-hatcher"]`))
 
 	mock.ExpectQuery("(?s)SELECT.*AS caught.*FROM `instances` WHERE user_id = \\?").
 		WithArgs("user-misty").
@@ -373,6 +375,11 @@ func TestGetProfileHandler_ReturnsPublicTrainerCardWithDefaultPrivacy(t *testing
 	}
 	if body.User.Username != "Misty" || body.Stats.Caught != 12 {
 		t.Fatalf("unexpected profile response: %#v", body)
+	}
+	if len(body.TrainerTitles) != 2 ||
+		body.TrainerTitles[0] != "raid-regular" ||
+		body.TrainerTitles[1] != "egg-hatcher" {
+		t.Fatalf("unexpected trainer titles: %#v", body.TrainerTitles)
 	}
 	if body.Preferences != nil {
 		t.Fatalf("public profile must not expose private preference record")
@@ -490,6 +497,125 @@ func TestUpdateProfileHandler_RejectsNonNumericTrainerCode(t *testing.T) {
 	}
 	if resp.StatusCode != http.StatusBadRequest {
 		t.Fatalf("unexpected status: got %d, want %d", resp.StatusCode, http.StatusBadRequest)
+	}
+}
+
+func TestUpdateProfileHandler_RejectsInvalidTrainerTitles(t *testing.T) {
+	app := newHandlerTestApp("user-1")
+	testCases := []struct {
+		name   string
+		titles []string
+	}{
+		{
+			name:   "unknown title",
+			titles: []string{"explicit-free-text"},
+		},
+		{
+			name: "more than three",
+			titles: []string{
+				"raid-regular",
+				"egg-hatcher",
+				"route-explorer",
+				"party-player",
+			},
+		},
+		{
+			name:   "duplicate",
+			titles: []string{"raid-regular", "raid-regular"},
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.name, func(t *testing.T) {
+			req := makeJSONRequest(t, http.MethodPut, "/api/profile", map[string]any{
+				"trainer_titles": testCase.titles,
+			})
+			resp, err := app.Test(req, fiber.TestConfig{Timeout: 0})
+			if err != nil {
+				t.Fatalf("request failed: %v", err)
+			}
+			if resp.StatusCode != http.StatusBadRequest {
+				t.Fatalf("unexpected status: got %d, want %d", resp.StatusCode, http.StatusBadRequest)
+			}
+		})
+	}
+}
+
+func TestUpdateProfileHandler_SavesTrainerTitles(t *testing.T) {
+	mock, cleanup := setupMockDB(t)
+	defer cleanup()
+
+	app := newHandlerTestApp("user-1")
+	mock.ExpectQuery(regexp.QuoteMeta("SELECT * FROM `user_profiles` WHERE user_id = ? AND `user_profiles`.`user_id` = ? ORDER BY `user_profiles`.`user_id` LIMIT ?")).
+		WithArgs("user-1", "user-1", 1).
+		WillReturnRows(sqlmock.NewRows([]string{
+			"user_id", "trainer_titles",
+		}).AddRow("user-1", `["raid-regular"]`))
+	mock.ExpectBegin()
+	mock.ExpectExec("UPDATE `user_profiles` SET `trainer_titles`=\\?,`updated_at`=\\? WHERE user_id = \\? AND `user_id` = \\?").
+		WithArgs(
+			`["raid-regular","egg-hatcher","route-explorer"]`,
+			sqlmock.AnyArg(),
+			"user-1",
+			"user-1",
+		).
+		WillReturnResult(sqlmock.NewResult(0, 1))
+	mock.ExpectCommit()
+
+	req := makeJSONRequest(t, http.MethodPut, "/api/profile", map[string]any{
+		"trainer_titles": []string{
+			"raid-regular",
+			"egg-hatcher",
+			"route-explorer",
+		},
+	})
+	resp, err := app.Test(req, fiber.TestConfig{Timeout: 0})
+	if err != nil {
+		t.Fatalf("request failed: %v", err)
+	}
+	if resp.StatusCode != http.StatusOK {
+		t.Fatalf("unexpected status: got %d, want %d", resp.StatusCode, http.StatusOK)
+	}
+
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Fatalf("unmet sqlmock expectations: %v", err)
+	}
+}
+
+func TestUpdateProfileHandler_ClearsTrainerTitles(t *testing.T) {
+	mock, cleanup := setupMockDB(t)
+	defer cleanup()
+
+	app := newHandlerTestApp("user-1")
+	mock.ExpectQuery(regexp.QuoteMeta("SELECT * FROM `user_profiles` WHERE user_id = ? AND `user_profiles`.`user_id` = ? ORDER BY `user_profiles`.`user_id` LIMIT ?")).
+		WithArgs("user-1", "user-1", 1).
+		WillReturnRows(sqlmock.NewRows([]string{
+			"user_id", "trainer_titles",
+		}).AddRow("user-1", `["raid-regular"]`))
+	mock.ExpectBegin()
+	mock.ExpectExec("UPDATE `user_profiles` SET `trainer_titles`=\\?,`updated_at`=\\? WHERE user_id = \\? AND `user_id` = \\?").
+		WithArgs(
+			"[]",
+			sqlmock.AnyArg(),
+			"user-1",
+			"user-1",
+		).
+		WillReturnResult(sqlmock.NewResult(0, 1))
+	mock.ExpectCommit()
+
+	req := makeJSONRequest(t, http.MethodPut, "/api/profile", map[string]any{
+		"trainer_titles": []string{},
+	})
+	resp, err := app.Test(req, fiber.TestConfig{Timeout: 0})
+	if err != nil {
+		t.Fatalf("request failed: %v", err)
+	}
+	if resp.StatusCode != http.StatusOK {
+		t.Fatalf("unexpected status: got %d, want %d", resp.StatusCode, http.StatusOK)
+	}
+
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Fatalf("unmet sqlmock expectations: %v", err)
 	}
 }
 
