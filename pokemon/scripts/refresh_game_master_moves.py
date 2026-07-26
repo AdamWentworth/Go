@@ -64,7 +64,10 @@ class GameMasterPool:
 
 
 def normalize_key(value: Any) -> str:
-    return re.sub(r"[^a-z0-9]+", "", str(value or "").lower())
+    # Preserve Apex move suffixes. Treating "+" as punctuation collapses
+    # Aeroblast, Aeroblast+, and Aeroblast++ onto the same catalog key.
+    expanded = str(value or "").lower().replace("+", " plus ")
+    return re.sub(r"[^a-z0-9]+", "", expanded)
 
 
 def normalize_type(value: Any) -> str:
@@ -297,29 +300,42 @@ def get_type_ids(conn: CatalogConnection) -> dict[str, int]:
     }
 
 
-def get_local_moves(conn: CatalogConnection) -> tuple[dict[str, Any], dict[str, Any]]:
+def get_local_move_groups(
+    conn: CatalogConnection,
+) -> tuple[dict[str, list[Any]], dict[str, list[Any]]]:
     rows = list(
         conn.execute(
             """
             SELECT m.*, lower(t.name) AS type_name
             FROM moves m
             JOIN types t ON t.type_id = m.type_id
+            ORDER BY m.move_id
             """
         )
     )
-    by_key: dict[str, Any] = {}
-    by_typed_key: dict[str, Any] = {}
-    key_counts: dict[str, int] = {}
-    for row in rows:
-        key = normalize_key(row["name"])
-        key_counts[key] = key_counts.get(key, 0) + 1
-
+    by_key: dict[str, list[Any]] = {}
+    by_typed_key: dict[str, list[Any]] = {}
     for row in rows:
         key = normalize_key(row["name"])
         typed_key = f"{key}:{normalize_type(row['type_name'])}"
-        by_typed_key[typed_key] = row
-        if key_counts[key] == 1:
-            by_key[key] = row
+        by_key.setdefault(key, []).append(row)
+        by_typed_key.setdefault(typed_key, []).append(row)
+    return by_key, by_typed_key
+
+
+def get_local_moves(conn: CatalogConnection) -> tuple[dict[str, Any], dict[str, Any]]:
+    grouped_by_key, grouped_by_typed_key = get_local_move_groups(conn)
+    by_key = {
+        key: rows[0]
+        for key, rows in grouped_by_key.items()
+        if len(rows) == 1
+    }
+    # Prefer the established lowest move ID when duplicate rows represent the
+    # same typed move. Existing Pokemon assignments use those stable IDs.
+    by_typed_key = {
+        typed_key: rows[0]
+        for typed_key, rows in grouped_by_typed_key.items()
+    }
     return by_key, by_typed_key
 
 
@@ -329,106 +345,110 @@ def ensure_moves(
     apply: bool,
 ) -> tuple[int, int]:
     type_ids = get_type_ids(conn)
-    by_key, by_typed_key = get_local_moves(conn)
+    grouped_by_key, grouped_by_typed_key = get_local_move_groups(conn)
     updates = 0
     inserts = 0
     next_move_id = int(conn.execute("SELECT COALESCE(MAX(move_id), 0) + 1 FROM moves").fetchone()[0])
 
     for gm_move in sorted(gm_moves.values(), key=lambda move: (move.name, move.type_name)):
-        local = by_typed_key.get(gm_move.typed_key) or by_key.get(gm_move.key)
+        local_rows = grouped_by_typed_key.get(gm_move.typed_key, [])
+        if not local_rows:
+            untyped_rows = grouped_by_key.get(gm_move.key, [])
+            local_rows = untyped_rows if len(untyped_rows) == 1 else []
         type_id = type_ids.get(gm_move.type_name)
         if type_id is None:
             continue
 
-        if local:
-            local_pvp_power = (
-                None if local["pvp_power"] is None else int(local["pvp_power"])
-            )
-            local_pvp_energy = (
-                None if local["pvp_energy"] is None else int(local["pvp_energy"])
-            )
-            local_pvp_turns = (
-                None if local["pvp_turns"] is None else int(local["pvp_turns"])
-            )
-            local_attacker_attack = int(
-                local["pvp_attacker_attack_stage_change"] or 0
-            )
-            local_attacker_defense = int(
-                local["pvp_attacker_defense_stage_change"] or 0
-            )
-            local_target_attack = int(local["pvp_target_attack_stage_change"] or 0)
-            local_target_defense = int(
-                local["pvp_target_defense_stage_change"] or 0
-            )
-            local_buff_chance = float(local["pvp_buff_activation_chance"] or 0)
-            changed = (
-                int(local["type_id"]) != type_id
-                or int(local["is_fast"] or 0) != gm_move.is_fast
-                or int(local["raid_power"] or 0) != gm_move.raid_power
-                or int(local["raid_energy"] or 0) != gm_move.raid_energy
-                or int(local["raid_cooldown"] or 0) != gm_move.raid_cooldown
-                or (
-                    gm_move.pvp_power is not None
-                    and local_pvp_power != gm_move.pvp_power
+        if local_rows:
+            for local in local_rows:
+                local_pvp_power = (
+                    None if local["pvp_power"] is None else int(local["pvp_power"])
                 )
-                or (
-                    gm_move.pvp_energy is not None
-                    and local_pvp_energy != gm_move.pvp_energy
+                local_pvp_energy = (
+                    None if local["pvp_energy"] is None else int(local["pvp_energy"])
                 )
-                or (
-                    gm_move.pvp_turns is not None
-                    and local_pvp_turns != gm_move.pvp_turns
+                local_pvp_turns = (
+                    None if local["pvp_turns"] is None else int(local["pvp_turns"])
                 )
-                or local_attacker_attack
-                != gm_move.pvp_attacker_attack_stage_change
-                or local_attacker_defense
-                != gm_move.pvp_attacker_defense_stage_change
-                or local_target_attack != gm_move.pvp_target_attack_stage_change
-                or local_target_defense
-                != gm_move.pvp_target_defense_stage_change
-                or abs(
-                    local_buff_chance - gm_move.pvp_buff_activation_chance
+                local_attacker_attack = int(
+                    local["pvp_attacker_attack_stage_change"] or 0
                 )
-                > 1e-9
-            )
-            if changed:
-                updates += 1
-                if apply:
-                    conn.execute(
-                        """
-                        UPDATE moves
-                        SET type_id = ?,
-                            is_fast = ?,
-                            raid_power = ?,
-                            raid_energy = ?,
-                            raid_cooldown = ?,
-                            pvp_power = COALESCE(?, pvp_power),
-                            pvp_energy = COALESCE(?, pvp_energy),
-                            pvp_turns = COALESCE(?, pvp_turns),
-                            pvp_attacker_attack_stage_change = ?,
-                            pvp_attacker_defense_stage_change = ?,
-                            pvp_target_attack_stage_change = ?,
-                            pvp_target_defense_stage_change = ?,
-                            pvp_buff_activation_chance = ?
-                        WHERE move_id = ?
-                        """,
-                        (
-                            type_id,
-                            bool(gm_move.is_fast),
-                            gm_move.raid_power,
-                            gm_move.raid_energy,
-                            gm_move.raid_cooldown,
-                            gm_move.pvp_power,
-                            gm_move.pvp_energy,
-                            gm_move.pvp_turns,
-                            gm_move.pvp_attacker_attack_stage_change,
-                            gm_move.pvp_attacker_defense_stage_change,
-                            gm_move.pvp_target_attack_stage_change,
-                            gm_move.pvp_target_defense_stage_change,
-                            gm_move.pvp_buff_activation_chance,
-                            local["move_id"],
-                        ),
+                local_attacker_defense = int(
+                    local["pvp_attacker_defense_stage_change"] or 0
+                )
+                local_target_attack = int(local["pvp_target_attack_stage_change"] or 0)
+                local_target_defense = int(
+                    local["pvp_target_defense_stage_change"] or 0
+                )
+                local_buff_chance = float(local["pvp_buff_activation_chance"] or 0)
+                changed = (
+                    int(local["type_id"]) != type_id
+                    or int(local["is_fast"] or 0) != gm_move.is_fast
+                    or int(local["raid_power"] or 0) != gm_move.raid_power
+                    or int(local["raid_energy"] or 0) != gm_move.raid_energy
+                    or int(local["raid_cooldown"] or 0) != gm_move.raid_cooldown
+                    or (
+                        gm_move.pvp_power is not None
+                        and local_pvp_power != gm_move.pvp_power
                     )
+                    or (
+                        gm_move.pvp_energy is not None
+                        and local_pvp_energy != gm_move.pvp_energy
+                    )
+                    or (
+                        gm_move.pvp_turns is not None
+                        and local_pvp_turns != gm_move.pvp_turns
+                    )
+                    or local_attacker_attack
+                    != gm_move.pvp_attacker_attack_stage_change
+                    or local_attacker_defense
+                    != gm_move.pvp_attacker_defense_stage_change
+                    or local_target_attack != gm_move.pvp_target_attack_stage_change
+                    or local_target_defense
+                    != gm_move.pvp_target_defense_stage_change
+                    or abs(
+                        local_buff_chance - gm_move.pvp_buff_activation_chance
+                    )
+                    > 1e-9
+                )
+                if changed:
+                    updates += 1
+                    if apply:
+                        conn.execute(
+                            """
+                            UPDATE moves
+                            SET type_id = ?,
+                                is_fast = ?,
+                                raid_power = ?,
+                                raid_energy = ?,
+                                raid_cooldown = ?,
+                                pvp_power = COALESCE(?, pvp_power),
+                                pvp_energy = COALESCE(?, pvp_energy),
+                                pvp_turns = COALESCE(?, pvp_turns),
+                                pvp_attacker_attack_stage_change = ?,
+                                pvp_attacker_defense_stage_change = ?,
+                                pvp_target_attack_stage_change = ?,
+                                pvp_target_defense_stage_change = ?,
+                                pvp_buff_activation_chance = ?
+                            WHERE move_id = ?
+                            """,
+                            (
+                                type_id,
+                                bool(gm_move.is_fast),
+                                gm_move.raid_power,
+                                gm_move.raid_energy,
+                                gm_move.raid_cooldown,
+                                gm_move.pvp_power,
+                                gm_move.pvp_energy,
+                                gm_move.pvp_turns,
+                                gm_move.pvp_attacker_attack_stage_change,
+                                gm_move.pvp_attacker_defense_stage_change,
+                                gm_move.pvp_target_attack_stage_change,
+                                gm_move.pvp_target_defense_stage_change,
+                                gm_move.pvp_buff_activation_chance,
+                                local["move_id"],
+                            ),
+                        )
         else:
             inserts += 1
             if apply:
@@ -467,15 +487,6 @@ def ensure_moves(
                         gm_move.pvp_buff_activation_chance,
                     ),
                 )
-                by_typed_key[gm_move.typed_key] = conn.execute(
-                    """
-                    SELECT m.*, lower(t.name) AS type_name
-                    FROM moves m
-                    JOIN types t ON t.type_id = m.type_id
-                    WHERE m.move_id = ?
-                    """,
-                    (next_move_id,),
-                ).fetchone()
                 next_move_id += 1
 
     return updates, inserts

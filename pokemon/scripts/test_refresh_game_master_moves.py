@@ -2,7 +2,22 @@ from __future__ import annotations
 
 import unittest
 
-from refresh_game_master_moves import build_game_master_moves
+from refresh_game_master_moves import (
+    build_game_master_moves,
+    get_local_move_groups,
+    get_local_moves,
+    normalize_key,
+)
+
+
+class FakeConnection:
+    def __init__(self, rows: list[dict]) -> None:
+        self.rows = rows
+
+    def execute(self, query: str):
+        if "ORDER BY m.move_id" not in query:
+            raise AssertionError("Move lookup must retain deterministic ID ordering.")
+        return iter(self.rows)
 
 
 def move_entry(
@@ -54,6 +69,45 @@ def combat_entry(
 
 
 class BuildGameMasterMovesTest(unittest.TestCase):
+    def test_apex_suffixes_do_not_collapse_onto_base_move_key(self) -> None:
+        self.assertEqual(normalize_key("Aeroblast"), "aeroblast")
+        self.assertEqual(normalize_key("Aeroblast+"), "aeroblastplus")
+        self.assertEqual(normalize_key("Aeroblast++"), "aeroblastplusplus")
+        self.assertEqual(normalize_key("Aeroblast Plus"), "aeroblastplus")
+        self.assertEqual(
+            normalize_key("Aeroblast Plus Plus"),
+            "aeroblastplusplus",
+        )
+
+    def test_duplicate_typed_moves_keep_all_rows_and_choose_stable_assignment_id(
+        self,
+    ) -> None:
+        connection = FakeConnection(
+            [
+                {
+                    "move_id": 100,
+                    "name": "Aeroblast+",
+                    "type_name": "flying",
+                },
+                {
+                    "move_id": 101,
+                    "name": "Aeroblast+",
+                    "type_name": "flying",
+                },
+            ]
+        )
+
+        grouped_by_key, grouped_by_type = get_local_move_groups(connection)
+        by_key, by_type = get_local_moves(connection)
+
+        self.assertEqual(
+            [row["move_id"] for row in grouped_by_type["aeroblastplus:flying"]],
+            [100, 101],
+        )
+        self.assertEqual(len(grouped_by_key["aeroblastplus"]), 2)
+        self.assertNotIn("aeroblastplus", by_key)
+        self.assertEqual(by_type["aeroblastplus:flying"]["move_id"], 100)
+
     def test_reads_pvp_timing_and_all_buff_targets(self) -> None:
         game_master = [
             move_entry(
