@@ -29,6 +29,13 @@ func buildSmallCatalogPayload(ctx context.Context) (any, error) {
 	}, nil
 }
 
+func buildSmallPokedexPayload(ctx context.Context) (any, error) {
+	return []any{
+		map[string]any{"pokemon_id": 1, "name": "Bulbasaur", "pokedex_number": 1, "generation": 1, "available": true},
+		map[string]any{"pokemon_id": 151, "name": "Unreleased Kanto Species", "pokedex_number": 151, "generation": 1, "available": false},
+	}, nil
+}
+
 func buildSmallMovesPayload(ctx context.Context) (any, error) {
 	return []any{
 		map[string]any{"pokemon_id": 1, "moves": []any{}, "fusion": []any{}, "crownForms": []any{}},
@@ -79,6 +86,7 @@ func newTestRouter(t *testing.T) http.Handler {
 
 	fullCache := newTestCache("/pokemon/pokemons", buildSmallPayload)
 	catalogCache := newTestCache("/pokemon/catalog", buildSmallCatalogPayload)
+	pokedexCache := newTestCache("/pokemon/pokedex", buildSmallPokedexPayload)
 	movesCache := newTestCache("/pokemon/moves", buildSmallMovesPayload)
 	raidDataCache := newTestCache("/pokemon/raid-data", buildSmallRaidDataPayload)
 	pvpDataCache := newTestCache("/pokemon/pvp-data", buildSmallPvPDataPayload)
@@ -88,10 +96,39 @@ func newTestRouter(t *testing.T) http.Handler {
 		Logger:        nil,
 		PayloadCache:  fullCache,
 		CatalogCache:  catalogCache,
+		PokedexCache:  pokedexCache,
 		MovesCache:    movesCache,
 		RaidDataCache: raidDataCache,
 		PvPDataCache:  pvpDataCache,
 	})
+}
+
+func TestPokemonPokedex_IncludesUnreleasedSpecies(t *testing.T) {
+	r := newTestRouter(t)
+
+	req := httptest.NewRequest(http.MethodGet, "/pokemon/pokedex", nil)
+	req.Header.Set("Origin", "http://localhost:3000")
+	rr := httptest.NewRecorder()
+
+	r.ServeHTTP(rr, req)
+
+	if rr.Code != http.StatusOK {
+		t.Fatalf("status=%d body=%s", rr.Code, rr.Body.String())
+	}
+
+	var payload []struct {
+		PokemonID int  `json:"pokemon_id"`
+		Available bool `json:"available"`
+	}
+	if err := json.Unmarshal(rr.Body.Bytes(), &payload); err != nil {
+		t.Fatalf("pokedex json: %v", err)
+	}
+	if len(payload) != 2 {
+		t.Fatalf("pokedex species=%d, want 2", len(payload))
+	}
+	if payload[1].PokemonID != 151 || payload[1].Available {
+		t.Fatalf("expected unavailable species in Pokedex payload, got %#v", payload[1])
+	}
 }
 
 func TestPokemonPokemons_OK_JSON(t *testing.T) {
@@ -228,6 +265,7 @@ func TestPokemonManifest_OK(t *testing.T) {
 	wantChunks := map[string]string{
 		"pokemonFull": "/pokemons",
 		"catalog":     "/catalog",
+		"pokedex":     "/pokedex",
 		"moves":       "/moves",
 		"raidData":    "/raid-data",
 		"maxData":     "/max-data",

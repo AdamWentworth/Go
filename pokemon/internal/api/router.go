@@ -28,6 +28,7 @@ type RouterDeps struct {
 	DB                      *sql.DB
 	PayloadCache            *cache.JSONGzipCache // Legacy /pokemon/pokemons response.
 	CatalogCache            *cache.JSONGzipCache
+	PokedexCache            *cache.JSONGzipCache
 	MovesCache              *cache.JSONGzipCache
 	RaidDataCache           *cache.JSONGzipCache
 	MaxDataCache            *cache.JSONGzipCache
@@ -58,12 +59,16 @@ func NewRouter(deps RouterDeps) http.Handler {
 	prettyJSON := deps.Cfg.JSONPretty
 	fullCache := deps.PayloadCache
 	catalogCache := deps.CatalogCache
+	pokedexCache := deps.PokedexCache
 	movesCache := deps.MovesCache
 	raidDataCache := deps.RaidDataCache
 	maxDataCache := deps.MaxDataCache
 	pvpDataCache := deps.PvPDataCache
 	if catalogCache == nil {
 		catalogCache = fullCache
+	}
+	if pokedexCache == nil {
+		pokedexCache = catalogCache
 	}
 	if maxDataCache == nil {
 		maxDataCache = fullCache
@@ -123,7 +128,7 @@ func NewRouter(deps RouterDeps) http.Handler {
 				MountPprof(ir)
 
 				ir.Get("/internal/cache/stats", func(w http.ResponseWriter, r *http.Request) {
-					writeJSON(w, pokemonCacheStats(fullCache, catalogCache, movesCache, raidDataCache, maxDataCache, pvpDataCache))
+					writeJSON(w, pokemonCacheStats(fullCache, catalogCache, pokedexCache, movesCache, raidDataCache, maxDataCache, pvpDataCache))
 				})
 
 				ir.Post("/internal/cache/refresh", func(w http.ResponseWriter, r *http.Request) {
@@ -133,7 +138,7 @@ func NewRouter(deps RouterDeps) http.Handler {
 							return
 						}
 					}
-					invalidatePokemonCaches(fullCache, catalogCache, movesCache, raidDataCache, maxDataCache, pvpDataCache, deps.InvalidatePayloadBundle)
+					invalidatePokemonCaches(fullCache, catalogCache, pokedexCache, movesCache, raidDataCache, maxDataCache, pvpDataCache, deps.InvalidatePayloadBundle)
 					w.WriteHeader(http.StatusNoContent)
 				})
 			})
@@ -143,7 +148,7 @@ func NewRouter(deps RouterDeps) http.Handler {
 		MountPprof(r)
 
 		r.Get("/internal/cache/stats", func(w http.ResponseWriter, r *http.Request) {
-			writeJSON(w, pokemonCacheStats(fullCache, catalogCache, movesCache, raidDataCache, maxDataCache, pvpDataCache))
+			writeJSON(w, pokemonCacheStats(fullCache, catalogCache, pokedexCache, movesCache, raidDataCache, maxDataCache, pvpDataCache))
 		})
 
 		r.Post("/internal/cache/refresh", func(w http.ResponseWriter, r *http.Request) {
@@ -153,7 +158,7 @@ func NewRouter(deps RouterDeps) http.Handler {
 					return
 				}
 			}
-			invalidatePokemonCaches(fullCache, catalogCache, movesCache, raidDataCache, maxDataCache, pvpDataCache, deps.InvalidatePayloadBundle)
+			invalidatePokemonCaches(fullCache, catalogCache, pokedexCache, movesCache, raidDataCache, maxDataCache, pvpDataCache, deps.InvalidatePayloadBundle)
 			w.WriteHeader(http.StatusNoContent)
 		})
 	}
@@ -229,6 +234,7 @@ func NewRouter(deps RouterDeps) http.Handler {
 
 	pokemonHandler := newPokemonPayloadHandler("pokemonFull", fullCache)
 	catalogHandler := newPokemonPayloadHandler("catalog", catalogCache)
+	pokedexHandler := newPokemonPayloadHandler("pokedex", pokedexCache)
 	movesHandler := newPokemonPayloadHandler("moves", movesCache)
 	raidDataHandler := newPokemonPayloadHandler("raidData", raidDataCache)
 	maxDataHandler := newPokemonPayloadHandler("maxData", maxDataCache)
@@ -241,6 +247,7 @@ func NewRouter(deps RouterDeps) http.Handler {
 		for name, payloadCache := range map[string]*cache.JSONGzipCache{
 			"pokemonFull": fullCache,
 			"catalog":     catalogCache,
+			"pokedex":     pokedexCache,
 			"moves":       movesCache,
 			"raidData":    raidDataCache,
 			"maxData":     maxDataCache,
@@ -260,6 +267,7 @@ func NewRouter(deps RouterDeps) http.Handler {
 
 		fullStats := fullCache.Stats()
 		catalogStats := catalogCache.Stats()
+		pokedexStats := pokedexCache.Stats()
 		movesStats := movesCache.Stats()
 		raidDataStats := raidDataCache.Stats()
 		maxDataStats := maxDataCache.Stats()
@@ -268,10 +276,11 @@ func NewRouter(deps RouterDeps) http.Handler {
 		manifest := pokemonCatalogManifest{
 			SchemaVersion:  3,
 			CatalogVersion: catalogVersion,
-			GeneratedAt:    latestCacheBuildAt(fullStats, catalogStats, movesStats, raidDataStats, maxDataStats, pvpDataStats),
+			GeneratedAt:    latestCacheBuildAt(fullStats, catalogStats, pokedexStats, movesStats, raidDataStats, maxDataStats, pvpDataStats),
 			Chunks: map[string]pokemonCatalogChunk{
 				"pokemonFull": newPokemonCatalogChunk("pokemonFull", "/pokemons", fullStats),
 				"catalog":     newPokemonCatalogChunk("catalog", "/catalog", catalogStats),
+				"pokedex":     newPokemonCatalogChunk("pokedex", "/pokedex", pokedexStats),
 				"moves":       newPokemonCatalogChunk("moves", "/moves", movesStats),
 				"raidData":    newPokemonCatalogChunk("raidData", "/raid-data", raidDataStats),
 				"maxData":     newPokemonCatalogChunk("maxData", "/max-data", maxDataStats),
@@ -286,6 +295,7 @@ func NewRouter(deps RouterDeps) http.Handler {
 		lim := NewIPRateLimiter(deps.Cfg.RateLimitRPS, deps.Cfg.RateLimitBurst, 5*time.Minute)
 		pokemonHandler = RateLimitMiddleware(baseCtx, lim, ipr.ClientIP)(pokemonHandler)
 		catalogHandler = RateLimitMiddleware(baseCtx, lim, ipr.ClientIP)(catalogHandler)
+		pokedexHandler = RateLimitMiddleware(baseCtx, lim, ipr.ClientIP)(pokedexHandler)
 		movesHandler = RateLimitMiddleware(baseCtx, lim, ipr.ClientIP)(movesHandler)
 		raidDataHandler = RateLimitMiddleware(baseCtx, lim, ipr.ClientIP)(raidDataHandler)
 		maxDataHandler = RateLimitMiddleware(baseCtx, lim, ipr.ClientIP)(maxDataHandler)
@@ -295,6 +305,7 @@ func NewRouter(deps RouterDeps) http.Handler {
 	r.Method(http.MethodGet, "/pokemon/manifest", manifestHandler)
 	r.Method(http.MethodGet, "/pokemon/pokemons", pokemonHandler)
 	r.Method(http.MethodGet, "/pokemon/catalog", catalogHandler)
+	r.Method(http.MethodGet, "/pokemon/pokedex", pokedexHandler)
 	r.Method(http.MethodGet, "/pokemon/moves", movesHandler)
 	r.Method(http.MethodGet, "/pokemon/raid-data", raidDataHandler)
 	r.Method(http.MethodGet, "/pokemon/max-data", maxDataHandler)
@@ -325,11 +336,12 @@ func latestCacheBuildAt(stats ...cache.Stats) time.Time {
 	return latest.UTC()
 }
 
-func pokemonCacheStats(full, catalog, moves, raidData, maxData, pvpData *cache.JSONGzipCache) map[string]cache.Stats {
+func pokemonCacheStats(full, catalog, pokedex, moves, raidData, maxData, pvpData *cache.JSONGzipCache) map[string]cache.Stats {
 	stats := map[string]cache.Stats{}
 	for name, payloadCache := range map[string]*cache.JSONGzipCache{
 		"pokemonFull": full,
 		"catalog":     catalog,
+		"pokedex":     pokedex,
 		"moves":       moves,
 		"raidData":    raidData,
 		"maxData":     maxData,
@@ -342,12 +354,12 @@ func pokemonCacheStats(full, catalog, moves, raidData, maxData, pvpData *cache.J
 	return stats
 }
 
-func invalidatePokemonCaches(full, catalog, moves, raidData, maxData, pvpData *cache.JSONGzipCache, invalidateBundle func()) {
+func invalidatePokemonCaches(full, catalog, pokedex, moves, raidData, maxData, pvpData *cache.JSONGzipCache, invalidateBundle func()) {
 	if invalidateBundle != nil {
 		invalidateBundle()
 	}
 	seen := map[*cache.JSONGzipCache]struct{}{}
-	for _, payloadCache := range []*cache.JSONGzipCache{full, catalog, moves, raidData, maxData, pvpData} {
+	for _, payloadCache := range []*cache.JSONGzipCache{full, catalog, pokedex, moves, raidData, maxData, pvpData} {
 		if payloadCache == nil {
 			continue
 		}

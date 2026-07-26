@@ -47,7 +47,8 @@ INSERT INTO pokemon (
   (861, 'Grimmsnarl', 861, '/images/pokemon_861.png', NULL, NULL, 227, 139, 216, 14, 16, '100M_0F_0GL', 'Standard', NULL, 8, FALSE, FALSE, NULL, NULL, NULL, FALSE),
   (884, 'Duraludon', 884, '/images/pokemon_884.png', NULL, NULL, 239, 185, 172, 15, 4, '50M_50F_0GL', 'Standard', NULL, 8, FALSE, FALSE, NULL, NULL, NULL, FALSE),
   (999001, 'Fixture Alpha', 999001, '/images/pokemon_fixture_alpha.png', '/images/shiny_pokemon_fixture_alpha.png', '/sprites/fixture_alpha.png', 100, 100, 100, 1, NULL, 'Genderless', 'Test', NULL, 9, TRUE, FALSE, NULL, '2026-01-01', NULL, FALSE),
-  (999002, 'Fixture Beta', 999002, '/images/pokemon_fixture_beta.png', '/images/shiny_pokemon_fixture_beta.png', '/sprites/fixture_beta.png', 100, 100, 100, 1, NULL, 'Genderless', 'Test', NULL, 9, TRUE, FALSE, NULL, '2026-01-01', NULL, FALSE);
+  (999002, 'Fixture Beta', 999002, '/images/pokemon_fixture_beta.png', '/images/shiny_pokemon_fixture_beta.png', '/sprites/fixture_beta.png', 100, 100, 100, 1, NULL, 'Genderless', 'Test', NULL, 9, TRUE, FALSE, NULL, '2026-01-01', NULL, FALSE),
+  (999003, 'Fixture Unreleased', 999003, NULL, NULL, NULL, 100, 100, 100, 1, NULL, 'Genderless', 'Test', NULL, 10, FALSE, FALSE, NULL, NULL, NULL, FALSE);
 
 INSERT INTO backgrounds (background_id, name, location, image_url, date)
 SELECT value, 'Fixture Background ' || value, 'Test Location', '/images/backgrounds/fixture_' || value || '.png', '2026-01-' || LPAD(value::TEXT, 2, '0')

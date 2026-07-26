@@ -4,6 +4,7 @@ import {
   getPokemonCatalogManifest,
   getPokemonMaxDataChunk,
   getPokemonMovesChunk,
+  getPokemonPokedexSpeciesChunk,
   getPokemonPvPDataChunk,
   getPokemonRaidDataChunk,
   getPokemons,
@@ -37,6 +38,15 @@ describe('pokemonDataService', () => {
         version: 'catalog-bootstrap-v1',
         bytesJson: 111,
         bytesGzip: 42,
+      },
+      pokedex: {
+        name: 'pokedex',
+        endpoint: '/pokedex',
+        contentType: 'application/json',
+        etag: '"pokedex-v1"',
+        version: 'pokedex-v1',
+        bytesJson: 80,
+        bytesGzip: 30,
       },
       moves: {
         name: 'moves',
@@ -164,6 +174,42 @@ describe('pokemonDataService', () => {
     expect(fetchSpy).toHaveBeenNthCalledWith(
       2,
       expect.stringContaining('/catalog/raid-data'),
+      expect.objectContaining({ method: 'GET' }),
+    );
+  });
+
+  it('fetches the complete Pokedex species chunk, including unreleased entries', async () => {
+    const pokedexSpecies = [
+      {
+        pokemon_id: 1,
+        name: 'Bulbasaur',
+        pokedex_number: 1,
+        image_url: '/images/default/pokemon_1.png',
+        gender_rate: 'M/F',
+        form: null,
+        generation: 1,
+        available: true,
+      },
+      {
+        pokemon_id: 151,
+        name: 'Mew',
+        pokedex_number: 151,
+        image_url: null,
+        gender_rate: 'Genderless',
+        form: null,
+        generation: 1,
+        available: false,
+      },
+    ];
+    const fetchSpy = vi.spyOn(global, 'fetch').mockResolvedValueOnce(
+      new Response(JSON.stringify(pokedexSpecies), { status: 200 }),
+    );
+
+    await expect(getPokemonPokedexSpeciesChunk(manifest)).resolves.toEqual(
+      normalizeAssetUrlsDeep(pokedexSpecies),
+    );
+    expect(fetchSpy).toHaveBeenCalledWith(
+      expect.stringContaining('/pokedex'),
       expect.objectContaining({ method: 'GET' }),
     );
   });

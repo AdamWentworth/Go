@@ -75,6 +75,7 @@ func main() {
 
 	payloadCache := newPayloadCache("/pokemon/pokemons", payloadBuilder.BuildFullPokemonPayload)
 	catalogCache := newPayloadCache("/pokemon/catalog", payloadBuilder.BuildCatalogPayload)
+	pokedexCache := newPayloadCache("/pokemon/pokedex", payloadBuilder.BuildPokedexSpeciesPayload)
 	movesCache := newPayloadCache("/pokemon/moves", payloadBuilder.BuildMovesPayload)
 	raidDataCache := newPayloadCache("/pokemon/raid-data", payloadBuilder.BuildRaidDataPayload)
 	maxDataCache := newPayloadCache("/pokemon/max-data", payloadBuilder.BuildMaxBattlePayload)
@@ -90,6 +91,7 @@ func main() {
 		DB:                      sqlDB,
 		PayloadCache:            payloadCache,
 		CatalogCache:            catalogCache,
+		PokedexCache:            pokedexCache,
 		MovesCache:              movesCache,
 		RaidDataCache:           raidDataCache,
 		MaxDataCache:            maxDataCache,
@@ -119,6 +121,7 @@ func main() {
 			}{
 				{name: "/pokemon/pokemons", cache: payloadCache},
 				{name: "/pokemon/catalog", cache: catalogCache},
+				{name: "/pokemon/pokedex", cache: pokedexCache},
 				{name: "/pokemon/moves", cache: movesCache},
 				{name: "/pokemon/raid-data", cache: raidDataCache},
 				{name: "/pokemon/max-data", cache: maxDataCache},

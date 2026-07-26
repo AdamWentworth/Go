@@ -3,6 +3,7 @@ export const pokemonContract = {
     manifest: '/manifest',
     pokemons: '/pokemons',
     catalog: '/catalog',
+    pokedex: '/pokedex',
     moves: '/moves',
     raidData: '/raid-data',
     maxData: '/max-data',
@@ -27,6 +28,7 @@ export interface PokemonCatalogManifest {
   chunks: {
     pokemonFull: PokemonCatalogChunkManifest;
     catalog?: PokemonCatalogChunkManifest;
+    pokedex?: PokemonCatalogChunkManifest;
     moves?: PokemonCatalogChunkManifest;
     raidData?: PokemonCatalogChunkManifest;
     maxData?: PokemonCatalogChunkManifest;
@@ -34,6 +36,19 @@ export interface PokemonCatalogManifest {
     [key: string]: PokemonCatalogChunkManifest | undefined;
   };
 }
+
+export interface PokemonPokedexSpecies {
+  pokemon_id: number;
+  name: string;
+  pokedex_number: number;
+  image_url: string | null;
+  gender_rate: string | null;
+  form: string | null;
+  generation: number;
+  available: boolean | number;
+}
+
+export type PokemonPokedexSpeciesChunk = PokemonPokedexSpecies[];
 
 export type PokemonPvPLeagueKey = 'great' | 'ultra' | 'master';
 

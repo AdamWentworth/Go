@@ -13,6 +13,7 @@ import {
   pokemonContract,
   type PokemonCatalogManifest,
   type PokemonMovesChunk,
+  type PokemonPokedexSpeciesChunk,
   type PokemonPvPRankingsPayload,
   type PokemonRaidDataChunk,
 } from '@shared-contracts/pokemon';
@@ -37,6 +38,7 @@ function clearStaleLocalStorageCache(): void {
 type PokemonChunkName =
   | 'pokemonFull'
   | 'catalog'
+  | 'pokedex'
   | 'moves'
   | 'raidData'
   | 'maxData'
@@ -248,6 +250,17 @@ export const getPokemonMovesChunk = async (
     return await getPokemonChunk<PokemonMovesChunk>(manifest, 'moves');
   } catch (error: unknown) {
     log.error('Error fetching the Pokemon moves chunk', error);
+    throw error;
+  }
+};
+
+export const getPokemonPokedexSpeciesChunk = async (
+  manifest: PokemonCatalogManifest,
+): Promise<PokemonPokedexSpeciesChunk | null> => {
+  try {
+    return await getPokemonChunk<PokemonPokedexSpeciesChunk>(manifest, 'pokedex');
+  } catch (error: unknown) {
+    log.error('Error fetching the Pokemon Pokedex species chunk', error);
     throw error;
   }
 };

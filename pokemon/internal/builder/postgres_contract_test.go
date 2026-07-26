@@ -50,6 +50,39 @@ func TestPostgresPayloadContract(t *testing.T) {
 	}
 }
 
+func TestPostgresPokedexPayloadIncludesUnreleasedSpecies(t *testing.T) {
+	sqlDB := openIntegrationPostgres(t)
+	defer sqlDB.Close()
+
+	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
+	defer cancel()
+
+	payload, err := builder.New(sqlDB, nil).BuildPokedexSpeciesPayload(ctx)
+	if err != nil {
+		t.Fatalf("build PostgreSQL Pokedex payload: %v", err)
+	}
+	raw, err := json.Marshal(payload)
+	if err != nil {
+		t.Fatalf("marshal PostgreSQL Pokedex payload: %v", err)
+	}
+	var entries []map[string]any
+	if err := json.Unmarshal(raw, &entries); err != nil {
+		t.Fatalf("decode PostgreSQL Pokedex payload: %v", err)
+	}
+
+	for _, entry := range entries {
+		if entry["pokemon_id"] != float64(999003) {
+			continue
+		}
+		if entry["name"] != "Fixture Unreleased" || entry["available"] != float64(0) {
+			t.Fatalf("unexpected unreleased Pokedex row: %#v", entry)
+		}
+		return
+	}
+
+	t.Fatal("unreleased fixture species missing from PostgreSQL Pokedex payload")
+}
+
 func TestPostgresPayloadInvalidationRebuildsDeterministically(t *testing.T) {
 	sqlDB := openIntegrationPostgres(t)
 	defer sqlDB.Close()
