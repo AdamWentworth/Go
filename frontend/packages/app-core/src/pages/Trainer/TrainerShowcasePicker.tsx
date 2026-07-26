@@ -1,5 +1,11 @@
 import { useDeferredValue, useEffect, useMemo, useState } from "react";
-import { FaCheck, FaSearch, FaStar } from "react-icons/fa";
+import {
+  FaCheck,
+  FaSearch,
+  FaStar,
+  FaTimes,
+  FaTrash,
+} from "react-icons/fa";
 
 import {
   resolvePokemonDisplayAttributes,
@@ -65,28 +71,37 @@ const CandidateImage = ({
 type TrainerShowcasePickerProps = {
   candidates: PokemonInstance[];
   selectedIds: string[];
+  slotIndex: number;
   variantById: Map<string, PokemonVariant>;
-  onToggle: (instanceId: string) => void;
+  onSelect: (instanceId: string) => void;
+  onClear: () => void;
+  onClose: () => void;
 };
 
 const TrainerShowcasePicker = ({
   candidates,
   selectedIds,
+  slotIndex,
   variantById,
-  onToggle,
+  onSelect,
+  onClear,
+  onClose,
 }: TrainerShowcasePickerProps) => {
   const [query, setQuery] = useState("");
   const [visibleCount, setVisibleCount] = useState(
     INITIAL_VISIBLE_CANDIDATES,
   );
   const deferredQuery = useDeferredValue(query.trim().toLowerCase());
-  const selected = useMemo(
-    () => selectedIds.filter(Boolean).slice(0, 6),
-    [selectedIds],
-  );
+  const currentInstanceId = selectedIds[slotIndex] || "";
   const selectedSlots = useMemo(
-    () => new Map(selected.map((instanceId, index) => [instanceId, index + 1])),
-    [selected],
+    () =>
+      new Map(
+        selectedIds
+          .slice(0, 6)
+          .map((instanceId, index) => [instanceId, index + 1] as const)
+          .filter(([instanceId]) => Boolean(instanceId)),
+      ),
+    [selectedIds],
   );
 
   useEffect(() => {
@@ -107,16 +122,34 @@ const TrainerShowcasePicker = ({
   return (
     <div
       className="trainer-showcase-picker"
-      aria-label="Choose featured Pokemon"
+      aria-label={`Choose Pokemon for featured slot ${slotIndex + 1}`}
     >
       <header>
         <div>
-          <span>Trainer card</span>
-          <h3>Featured Pokemon</h3>
+          <span>Featured slot {slotIndex + 1}</span>
+          <h3>Choose one Pokemon</h3>
         </div>
-        <strong aria-label={`${selected.length} of 6 Pokemon selected`}>
-          {selected.length} / 6
-        </strong>
+        <div className="trainer-showcase-picker-actions">
+          {currentInstanceId ? (
+            <button
+              type="button"
+              className="trainer-button trainer-button-secondary"
+              onClick={onClear}
+            >
+              <FaTrash aria-hidden="true" />
+              Clear slot
+            </button>
+          ) : null}
+          <button
+            type="button"
+            className="trainer-icon-button"
+            aria-label="Close Pokemon picker"
+            title="Close Pokemon picker"
+            onClick={onClose}
+          >
+            <FaTimes aria-hidden="true" />
+          </button>
+        </div>
       </header>
 
       <label className="trainer-showcase-search">
@@ -138,31 +171,36 @@ const TrainerShowcasePicker = ({
             const variant = variantById.get(instance.variant_id);
             const name = candidateName(instance, variant);
             const selectedSlot = selectedSlots.get(instanceId);
-            const isSelected = selectedSlot !== undefined;
-            const selectionFull = selected.length >= 6 && !isSelected;
+            const isCurrent = instanceId === currentInstanceId;
+            const isAssignedElsewhere =
+              selectedSlot !== undefined && selectedSlot !== slotIndex + 1;
 
             return (
               <button
                 type="button"
                 className={`trainer-showcase-candidate ${
-                  isSelected ? "selected" : ""
+                  isCurrent ? "selected" : ""
                 }`}
                 key={instanceId}
                 aria-label={
-                  isSelected
-                    ? `Remove ${name} from trainer card`
-                    : `Select ${name} for trainer card`
+                  isCurrent
+                    ? `Keep ${name} in featured slot ${slotIndex + 1}`
+                    : isAssignedElsewhere
+                      ? `${name} is already in featured slot ${selectedSlot}`
+                    : `Choose ${name} for featured slot ${slotIndex + 1}`
                 }
-                aria-pressed={isSelected}
-                disabled={selectionFull}
-                onClick={() => onToggle(instanceId)}
+                aria-pressed={isCurrent}
+                disabled={isAssignedElsewhere}
+                onClick={() => onSelect(instanceId)}
               >
                 <span className="trainer-showcase-selection" aria-hidden="true">
-                  {isSelected ? (
+                  {isCurrent ? (
                     <>
                       <FaCheck />
-                      {selectedSlot}
+                      Current
                     </>
+                  ) : isAssignedElsewhere ? (
+                    `Slot ${selectedSlot}`
                   ) : (
                     "+"
                   )}

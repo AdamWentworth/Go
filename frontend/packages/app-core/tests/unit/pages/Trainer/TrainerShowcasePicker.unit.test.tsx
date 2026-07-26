@@ -1,6 +1,5 @@
 import { fireEvent, render, screen } from "@testing-library/react";
-import { useState } from "react";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import TrainerShowcasePicker from "@/pages/Trainer/TrainerShowcasePicker";
 import type { PokemonInstance } from "@/types/pokemonInstance";
@@ -20,54 +19,51 @@ const candidates = Array.from({ length: 7 }, (_, index) => {
   } as PokemonInstance;
 });
 
-const PickerHarness = () => {
-  const [selectedIds, setSelectedIds] = useState<string[]>([]);
-
-  return (
-    <TrainerShowcasePicker
-      candidates={candidates}
-      selectedIds={selectedIds}
-      variantById={new Map<string, PokemonVariant>()}
-      onToggle={(instanceId) =>
-        setSelectedIds((current) =>
-          current.includes(instanceId)
-            ? current.filter((value) => value !== instanceId)
-            : [...current, instanceId].slice(0, 6),
-        )
-      }
-    />
-  );
-};
-
 describe("TrainerShowcasePicker", () => {
-  it("numbers selections, caps the trainer card at six, and reopens a slot", () => {
-    render(<PickerHarness />);
+  it("edits one showcase slot while protecting Pokemon assigned elsewhere", () => {
+    const onSelect = vi.fn();
+    const onClear = vi.fn();
+    const onClose = vi.fn();
 
-    for (let pokemonId = 1; pokemonId <= 6; pokemonId += 1) {
-      fireEvent.click(
-        screen.getByRole("button", {
-          name: `Select Pokemon #${pokemonId} for trainer card`,
-        }),
-      );
-    }
+    render(
+      <TrainerShowcasePicker
+        candidates={candidates}
+        selectedIds={["instance-1", "instance-2", "", "", "", ""]}
+        slotIndex={0}
+        variantById={new Map<string, PokemonVariant>()}
+        onSelect={onSelect}
+        onClear={onClear}
+        onClose={onClose}
+      />,
+    );
 
-    expect(screen.getByLabelText("6 of 6 Pokemon selected")).toBeInTheDocument();
     expect(
       screen.getByRole("button", {
-        name: "Select Pokemon #7 for trainer card",
+        name: "Keep Pokemon #1 in featured slot 1",
+      }),
+    ).toHaveAttribute("aria-pressed", "true");
+    expect(
+      screen.getByRole("button", {
+        name: "Pokemon #2 is already in featured slot 2",
       }),
     ).toBeDisabled();
 
     fireEvent.click(
       screen.getByRole("button", {
-        name: "Remove Pokemon #3 from trainer card",
+        name: "Choose Pokemon #3 for featured slot 1",
       }),
     );
+    expect(onSelect).toHaveBeenCalledWith("instance-3");
+
+    fireEvent.click(screen.getByRole("button", { name: "Clear slot" }));
+    expect(onClear).toHaveBeenCalledOnce();
+
+    fireEvent.click(
+      screen.getByRole("button", { name: "Close Pokemon picker" }),
+    );
     expect(
-      screen.getByRole("button", {
-        name: "Select Pokemon #7 for trainer card",
-      }),
-    ).toBeEnabled();
-    expect(screen.getByLabelText("5 of 6 Pokemon selected")).toBeInTheDocument();
+      screen.getByLabelText("Choose Pokemon for featured slot 1"),
+    ).toBeInTheDocument();
+    expect(onClose).toHaveBeenCalledOnce();
   });
 });

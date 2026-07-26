@@ -120,7 +120,7 @@ const profileToForm = (
   location: profile.location ?? "",
 });
 
-const HighlightCard = ({
+const HighlightCardContent = ({
   instance,
   variant,
 }: {
@@ -129,7 +129,7 @@ const HighlightCard = ({
 }) => {
   if (!variant) {
     return (
-      <article className="trainer-card-highlight">
+      <>
         <div className="trainer-card-highlight-placeholder">
           #{instance.pokemon_id}
         </div>
@@ -139,7 +139,7 @@ const HighlightCard = ({
           </strong>
           <span>Featured Pokemon</span>
         </div>
-      </article>
+      </>
     );
   }
 
@@ -150,7 +150,7 @@ const HighlightCard = ({
   });
 
   return (
-    <article className="trainer-card-highlight">
+    <>
       <img src={image} alt="" />
       <div>
         <strong>{instance.nickname || variant.species_name}</strong>
@@ -160,7 +160,7 @@ const HighlightCard = ({
             : "Featured Pokemon"}
         </span>
       </div>
-    </article>
+    </>
   );
 };
 
@@ -187,6 +187,9 @@ const Profile = () => {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [editing, setEditing] = useState(false);
+  const [editingHighlightSlot, setEditingHighlightSlot] = useState<
+    number | null
+  >(null);
   const [error, setError] = useState("");
 
   const loadProfile = useCallback(async () => {
@@ -308,17 +311,25 @@ const Profile = () => {
     setForm((current) => ({ ...current, [field]: value }));
   };
 
-  const toggleHighlight = (instanceID: string) => {
+  const selectHighlightForSlot = (instanceID: string) => {
+    if (editingHighlightSlot === null) return;
     setHighlightIds((current) => {
-      const selected = current.filter(Boolean);
-      const existingIndex = selected.indexOf(instanceID);
-      if (existingIndex >= 0) {
-        selected.splice(existingIndex, 1);
-      } else if (selected.length < 6) {
-        selected.push(instanceID);
-      }
+      const next = [...current, ...emptyHighlightSlots()].slice(0, 6);
+      next[editingHighlightSlot] = instanceID;
+      return next;
+    });
+    setEditingHighlightSlot(null);
+  };
+
+  const clearHighlightSlot = () => {
+    if (editingHighlightSlot === null) return;
+    setHighlightIds((current) => {
+      const selected = current.filter(
+        (instanceID, index) => index !== editingHighlightSlot && instanceID,
+      );
       return [...selected, ...emptyHighlightSlots()].slice(0, 6);
     });
+    setEditingHighlightSlot(null);
   };
 
   const toggleEditing = () => {
@@ -333,6 +344,7 @@ const Profile = () => {
         ].slice(0, 6),
       );
     }
+    setEditingHighlightSlot(null);
     setEditing((value) => !value);
   };
 
@@ -376,6 +388,7 @@ const Profile = () => {
       };
       await updateTrainerProfile(request);
       toast.success("Profile updated");
+      setEditingHighlightSlot(null);
       setEditing(false);
       await loadProfile();
     } catch (saveError) {
@@ -638,15 +651,60 @@ const Profile = () => {
               >
                 {Array.from({ length: 6 }, (_, index) => {
                   const instance = cardHighlights[index];
+                  if (editing) {
+                    const name = instance
+                      ? instance.nickname ||
+                        variantByID.get(instance.variant_id)?.species_name ||
+                        `Pokemon #${instance.pokemon_id}`
+                      : null;
+                    return (
+                      <button
+                        type="button"
+                        className={`trainer-card-highlight trainer-card-highlight-editable ${
+                          editingHighlightSlot === index ? "active" : ""
+                        } ${
+                          instance ? "" : "trainer-card-highlight-empty"
+                        }`}
+                        key={`edit-highlight-${index + 1}`}
+                        aria-label={
+                          name
+                            ? `Change featured Pokemon in slot ${index + 1}, currently ${name}`
+                            : `Choose featured Pokemon for slot ${index + 1}`
+                        }
+                        aria-pressed={editingHighlightSlot === index}
+                        onClick={() => setEditingHighlightSlot(index)}
+                      >
+                        {instance ? (
+                          <HighlightCardContent
+                            instance={instance}
+                            variant={variantByID.get(instance.variant_id)}
+                          />
+                        ) : (
+                          <>
+                            <FaStar aria-hidden="true" />
+                            <span>Choose Pokemon</span>
+                          </>
+                        )}
+                        <span className="trainer-card-highlight-edit-cue">
+                          <FaEdit aria-hidden="true" />
+                          Slot {index + 1}
+                        </span>
+                      </button>
+                    );
+                  }
                   return instance ? (
-                    <HighlightCard
+                    <article
                       key={
                         instance.instance_id ||
                         `${instance.variant_id}-${index}`
                       }
-                      instance={instance}
-                      variant={variantByID.get(instance.variant_id)}
-                    />
+                      className="trainer-card-highlight"
+                    >
+                      <HighlightCardContent
+                        instance={instance}
+                        variant={variantByID.get(instance.variant_id)}
+                      />
+                    </article>
                   ) : (
                     <div
                       className="trainer-card-highlight trainer-card-highlight-empty"
@@ -659,6 +717,20 @@ const Profile = () => {
                   );
                 })}
               </div>
+
+              {editing && editingHighlightSlot !== null ? (
+                <div className="trainer-card-showcase-editor">
+                  <TrainerShowcasePicker
+                    candidates={highlightCandidates}
+                    selectedIds={highlightIds}
+                    slotIndex={editingHighlightSlot}
+                    variantById={variantByID}
+                    onSelect={selectHighlightForSlot}
+                    onClear={clearHighlightSlot}
+                    onClose={() => setEditingHighlightSlot(null)}
+                  />
+                </div>
+              ) : null}
 
               <dl className="trainer-card-facts">
                 <div>
@@ -805,17 +877,6 @@ const Profile = () => {
                   ) : null}
                 </div>
               </footer>
-
-              {editing ? (
-                <div className="trainer-card-showcase-editor">
-                  <TrainerShowcasePicker
-                    candidates={highlightCandidates}
-                    selectedIds={highlightIds}
-                    variantById={variantByID}
-                    onToggle={toggleHighlight}
-                  />
-                </div>
-              ) : null}
 
               {needsProfileSetup && !editing ? (
                 <div className="trainer-card-setup">

@@ -230,24 +230,37 @@ describe("Trainer Profile", () => {
     });
     expect(within(card).getByLabelText(/pokemon go name/i)).toHaveValue("Adam");
     expect(
-      within(card).getByRole("heading", { name: /featured pokemon/i }),
-    ).toBeInTheDocument();
-    expect(
       screen.queryByRole("heading", { name: /edit profile/i }),
+    ).not.toBeInTheDocument();
+    expect(
+      within(card).queryByLabelText(/choose pokemon for featured slot/i),
     ).not.toBeInTheDocument();
     fireEvent.click(
       within(card).getByRole("button", {
-        name: /select lucario for trainer card/i,
+        name: /choose featured pokemon for slot 1/i,
+      }),
+    );
+    const picker = within(card).getByLabelText(
+      /choose pokemon for featured slot 1/i,
+    );
+    expect(
+      within(picker).getByRole("button", {
+        name: /choose lucario for featured slot 1/i,
+      }),
+    ).toBeEnabled();
+    fireEvent.click(
+      within(picker).getByRole("button", {
+        name: /choose lucario for featured slot 1/i,
       }),
     );
     expect(
-      within(card).getByRole("button", {
-        name: /remove lucario from trainer card/i,
-      }),
-    ).toHaveAttribute("aria-pressed", "true");
+      within(card).queryByLabelText(/choose pokemon for featured slot/i),
+    ).not.toBeInTheDocument();
     expect(
-      within(card).getByLabelText(/1 of 6 pokemon selected/i),
-    ).toBeInTheDocument();
+      within(card).getByRole("button", {
+        name: /change featured pokemon in slot 1, currently lucario/i,
+      }),
+    ).toBeVisible();
     fireEvent.click(
       within(card).getByRole("button", { name: /save profile/i }),
     );

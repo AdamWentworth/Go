@@ -124,7 +124,7 @@ test.describe("Trainer profile card", () => {
     expect(diagnostics.blockingErrors()).toEqual([]);
   });
 
-  test("selects featured Pokemon from a visual six-card picker", async ({
+  test("edits one featured Pokemon slot at a time", async ({
     page,
   }, testInfo) => {
     const diagnostics = attachBrowserDiagnostics(page, testInfo);
@@ -146,11 +146,27 @@ test.describe("Trainer profile card", () => {
         card.getByLabel("Trainer level", { exact: true }),
       ).toHaveValue("50");
 
-      const picker = card.getByLabel("Choose featured Pokemon");
+      await expect(
+        card.getByLabel(/choose pokemon for featured slot/i),
+      ).toHaveCount(0);
+      await card
+        .getByRole("button", {
+          name: "Change featured Pokemon in slot 1, currently Buddy",
+        })
+        .click();
+
+      const picker = card.getByLabel("Choose Pokemon for featured slot 1");
       await expect(picker).toBeVisible();
       await expect(
-        picker.getByLabel("2 of 6 Pokemon selected"),
-      ).toBeVisible();
+        picker.getByRole("button", {
+          name: "Keep Buddy in featured slot 1",
+        }),
+      ).toHaveAttribute("aria-pressed", "true");
+      await expect(
+        picker.getByRole("button", {
+          name: "Pokemon #4 is already in featured slot 2",
+        }),
+      ).toBeDisabled();
 
       const layout = await page.locator(".trainer-page").evaluate(() => ({
         viewportWidth: window.innerWidth,
@@ -167,16 +183,32 @@ test.describe("Trainer profile card", () => {
         contentType: "image/png",
       });
 
-      const buddy = picker.getByRole("button", {
-        name: "Remove Buddy from trainer card",
-      });
-      await buddy.click();
+      await picker.getByRole("button", { name: "Clear slot" }).click();
       await expect(
-        picker.getByLabel("1 of 6 Pokemon selected"),
+        card.getByLabel("Choose Pokemon for featured slot 1"),
+      ).toHaveCount(0);
+      await expect(
+        card.getByRole("button", {
+          name: "Change featured Pokemon in slot 1, currently Charmander",
+        }),
       ).toBeVisible();
+      await card
+        .getByRole("button", {
+          name: "Choose featured Pokemon for slot 2",
+        })
+        .click();
+      await card
+        .getByLabel("Choose Pokemon for featured slot 2")
+        .getByRole("button", {
+          name: "Choose Buddy for featured slot 2",
+        })
+        .click();
       await expect(
-        picker.getByRole("button", {
-          name: "Select Buddy for trainer card",
+        card.getByLabel("Choose Pokemon for featured slot 2"),
+      ).toHaveCount(0);
+      await expect(
+        card.getByRole("button", {
+          name: "Change featured Pokemon in slot 2, currently Buddy",
         }),
       ).toBeVisible();
     } finally {
