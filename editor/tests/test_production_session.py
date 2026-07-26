@@ -15,6 +15,7 @@ from production_session import (
     REMOTE_READ_TIMEOUT_SECONDS,
     REMOTE_SCRIPT_TIMEOUT_SECONDS,
     SSH_CONNECT_TIMEOUT_SECONDS,
+    TUNNEL_READY_TIMEOUT_SECONDS,
     ProductionCatalogSession,
 )
 
@@ -68,6 +69,39 @@ class ProductionCatalogSessionTests(unittest.TestCase):
 
         self.assertEqual(run.call_args.kwargs["timeout"], REMOTE_SCRIPT_TIMEOUT_SECONDS)
 
+    def test_waits_until_the_postgres_tunnel_accepts_connections(self):
+        session = ProductionCatalogSession(self.settings)
+        session.tunnel = Mock()
+        session.tunnel.poll.return_value = None
+        connection = Mock()
+        connection.__enter__ = Mock(return_value=connection)
+        connection.__exit__ = Mock(return_value=None)
+
+        with patch(
+            "production_session.socket.create_connection",
+            side_effect=[ConnectionRefusedError(), connection],
+        ) as create_connection, patch("production_session.time.sleep") as sleep:
+            session._wait_for_tunnel()
+
+        self.assertEqual(create_connection.call_count, 2)
+        create_connection.assert_called_with(("127.0.0.1", 5433), timeout=1)
+        sleep.assert_called_once()
+
+    def test_tunnel_readiness_timeout_is_reported_clearly(self):
+        session = ProductionCatalogSession(self.settings)
+        session.tunnel = Mock()
+        session.tunnel.poll.return_value = None
+
+        with patch(
+            "production_session.socket.create_connection",
+            side_effect=ConnectionRefusedError(),
+        ), patch(
+            "production_session.time.monotonic",
+            side_effect=[0, 0, TUNNEL_READY_TIMEOUT_SECONDS],
+        ), patch("production_session.time.sleep"):
+            with self.assertRaisesRegex(RuntimeError, "did not become ready"):
+                session._wait_for_tunnel()
+
     def test_clean_exit_refreshes_cache_and_restores_environment(self):
         session = ProductionCatalogSession(self.settings)
         tunnel = Mock()
@@ -79,13 +113,16 @@ class ProductionCatalogSessionTests(unittest.TestCase):
                 session, "_read_publisher_database_url", return_value="postgresql://publisher@127.0.0.1/catalog"
             ), patch.object(
                 session, "_validate_live_rankings"
-            ) as validate_rankings, patch("production_session.subprocess.Popen", return_value=tunnel), patch(
-                "production_session.time.sleep"
+            ) as validate_rankings, patch.object(
+                session, "_wait_for_tunnel"
+            ) as wait_for_tunnel, patch(
+                "production_session.subprocess.Popen", return_value=tunnel
             ):
                 with session:
                     self.assertEqual(os.environ["POKEGO_EDITOR_DATABASE_LABEL"], "PRODUCTION PostgreSQL catalog")
 
             self.assertEqual(remote_script.call_count, 2)
+            wait_for_tunnel.assert_called_once_with()
             validate_rankings.assert_called_once_with()
             tunnel.terminate.assert_called_once()
             tunnel.wait.assert_called_once_with(timeout=5)
@@ -107,9 +144,9 @@ class ProductionCatalogSessionTests(unittest.TestCase):
             session, "_read_publisher_database_url", return_value="postgresql://publisher@127.0.0.1/catalog"
         ), patch.object(
             session, "_validate_live_rankings"
-        ) as validate_rankings, patch("production_session.subprocess.Popen", return_value=tunnel), patch(
-            "production_session.time.sleep"
-        ):
+        ) as validate_rankings, patch.object(
+            session, "_wait_for_tunnel"
+        ), patch("production_session.subprocess.Popen", return_value=tunnel):
             with self.assertRaisesRegex(RuntimeError, "editor failed"):
                 with session:
                     raise RuntimeError("editor failed")
@@ -126,9 +163,9 @@ class ProductionCatalogSessionTests(unittest.TestCase):
             session, "_read_publisher_database_url", return_value="postgresql://publisher@127.0.0.1/catalog"
         ), patch.object(
             session, "_validate_live_rankings"
-        ) as validate_rankings, patch("production_session.subprocess.Popen", return_value=tunnel), patch(
-            "production_session.time.sleep"
-        ):
+        ) as validate_rankings, patch.object(
+            session, "_wait_for_tunnel"
+        ), patch("production_session.subprocess.Popen", return_value=tunnel):
             with session:
                 pass
 

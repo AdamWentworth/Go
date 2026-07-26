@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import os
 import shlex
+import socket
 import subprocess
 import time
 from pathlib import Path
@@ -18,6 +19,8 @@ FRONTEND_DIR = REPO_ROOT / "frontend"
 SSH_CONNECT_TIMEOUT_SECONDS = 10
 REMOTE_SCRIPT_TIMEOUT_SECONDS = 120
 REMOTE_READ_TIMEOUT_SECONDS = 30
+TUNNEL_READY_TIMEOUT_SECONDS = 10
+TUNNEL_READY_RETRY_SECONDS = 0.1
 
 
 class ProductionCatalogSession:
@@ -117,6 +120,26 @@ class ProductionCatalogSession:
             check=True,
         )
 
+    def _wait_for_tunnel(self) -> None:
+        deadline = time.monotonic() + TUNNEL_READY_TIMEOUT_SECONDS
+        last_error: OSError | None = None
+        while time.monotonic() < deadline:
+            if self.tunnel is None or self.tunnel.poll() is not None:
+                raise RuntimeError("Production PostgreSQL SSH tunnel failed to start.")
+            try:
+                with socket.create_connection(
+                    ("127.0.0.1", int(self.local_port)),
+                    timeout=1,
+                ):
+                    return
+            except OSError as error:
+                last_error = error
+                time.sleep(TUNNEL_READY_RETRY_SECONDS)
+        raise RuntimeError(
+            "Production PostgreSQL SSH tunnel did not become ready within "
+            f"{TUNNEL_READY_TIMEOUT_SECONDS} seconds."
+        ) from last_error
+
     def __enter__(self):
         print("Creating production catalog safety backup...", flush=True)
         self._run_remote_script(BACKUP_SCRIPT)
@@ -132,9 +155,7 @@ class ProductionCatalogSession:
                 self.host,
             ]
         )
-        time.sleep(1)
-        if self.tunnel.poll() is not None:
-            raise RuntimeError("Production PostgreSQL SSH tunnel failed to start.")
+        self._wait_for_tunnel()
 
         self.previous_database_url = os.environ.get("POKEGO_EDITOR_DATABASE_URL")
         self.previous_database_label = os.environ.get("POKEGO_EDITOR_DATABASE_LABEL")
