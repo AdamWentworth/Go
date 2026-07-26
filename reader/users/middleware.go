@@ -34,7 +34,7 @@ func corsMiddleware(c fiber.Ctx) error {
 		}
 	}
 
-	c.Set("Access-Control-Allow-Methods", "GET, POST, PUT, OPTIONS")
+	c.Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
 	c.Set("Access-Control-Allow-Headers", "Content-Type, Authorization, Accept, Cache-Control")
 	c.Set("Access-Control-Allow-Credentials", "true")
 	c.Set("Cache-Control", "no-cache")

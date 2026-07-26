@@ -31,6 +31,14 @@ func GetInstancesByUsername(c fiber.Ctx) error {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Failed to retrieve user"})
 	}
 
+	allowed, _, err := collectionAccessForUser(viewerID(c), user.UserID)
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Failed to check collection privacy"})
+	}
+	if !allowed {
+		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{"error": "This trainer's collection is private"})
+	}
+
 	var instances []PokemonInstance
 	if err := db.Where("user_id = ?", user.UserID).Find(&instances).Error; err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Failed to retrieve instances"})

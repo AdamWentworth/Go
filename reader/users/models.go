@@ -91,6 +91,43 @@ type PublicUser struct {
 	Highlight6 *string `json:"highlight6_instance_id,omitempty"`
 }
 
+// ---------------- profiles & social relationships ----------------
+
+type UserProfile struct {
+	UserID                  string    `gorm:"column:user_id;primaryKey" json:"user_id"`
+	Bio                     *string   `gorm:"column:bio" json:"bio,omitempty"`
+	ProfileVisibility       string    `gorm:"column:profile_visibility" json:"profile_visibility"`
+	CollectionVisibility    string    `gorm:"column:collection_visibility" json:"collection_visibility"`
+	FriendRequestPermission string    `gorm:"column:friend_request_permission" json:"friend_request_permission"`
+	TrainerCodeVisibility   string    `gorm:"column:trainer_code_visibility" json:"trainer_code_visibility"`
+	ShowLocation            bool      `gorm:"column:show_location" json:"show_location"`
+	ShowPokemonGoName       bool      `gorm:"column:show_pokemon_go_name" json:"show_pokemon_go_name"`
+	UpdatedAt               time.Time `gorm:"column:updated_at" json:"updated_at"`
+}
+
+func (UserProfile) TableName() string { return "user_profiles" }
+
+type Friendship struct {
+	FriendshipID string     `gorm:"column:friendship_id;primaryKey" json:"friendship_id"`
+	UserIDLow    string     `gorm:"column:user_id_low" json:"user_id_low"`
+	UserIDHigh   string     `gorm:"column:user_id_high" json:"user_id_high"`
+	RequestedBy  string     `gorm:"column:requested_by_user_id" json:"requested_by_user_id"`
+	Status       string     `gorm:"column:status" json:"status"`
+	CreatedAt    time.Time  `gorm:"column:created_at" json:"created_at"`
+	UpdatedAt    time.Time  `gorm:"column:updated_at" json:"updated_at"`
+	AcceptedAt   *time.Time `gorm:"column:accepted_at" json:"accepted_at,omitempty"`
+}
+
+func (Friendship) TableName() string { return "friendships" }
+
+type UserBlock struct {
+	BlockerUserID string    `gorm:"column:blocker_user_id;primaryKey" json:"blocker_user_id"`
+	BlockedUserID string    `gorm:"column:blocked_user_id;primaryKey" json:"blocked_user_id"`
+	CreatedAt     time.Time `gorm:"column:created_at" json:"created_at"`
+}
+
+func (UserBlock) TableName() string { return "user_blocks" }
+
 // ---------------- instances ----------------
 
 type PokemonInstance struct {

@@ -1,6 +1,7 @@
 package migrations
 
 import (
+	"slices"
 	"testing"
 	"testing/fstest"
 )
@@ -18,6 +19,16 @@ func TestNamesReturnsOnlySQLFilesInLexicalOrder(t *testing.T) {
 	}
 	if len(names) != 2 || names[0] != "0001_first.sql" || names[1] != "0002_second.sql" {
 		t.Fatalf("unexpected names: %#v", names)
+	}
+}
+
+func TestEmbeddedMigrationsIncludeSocialProfileSchema(t *testing.T) {
+	names, err := Names(Files)
+	if err != nil {
+		t.Fatalf("Names(Files): %v", err)
+	}
+	if !slices.Contains(names, "0002_social_profiles.sql") {
+		t.Fatalf("social profile migration missing from embedded files: %#v", names)
 	}
 }
 

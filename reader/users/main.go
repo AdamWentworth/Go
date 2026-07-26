@@ -90,28 +90,41 @@ func newApp() *fiber.App {
 
 	// Unprotected routes
 	// Canonical route.
-	app.Get("/api/public/users/:username", GetPublicSnapshotByUsername)
+	app.Get("/api/public/users/:username", optionalJWT, GetPublicSnapshotByUsername)
 	// Compatibility route for /api/users/ prefix + nginx rewrite behavior.
-	app.Get("/api/users/public/users/:username", GetPublicSnapshotByUsername)
-	app.Get("/api/autocomplete-trainers", AutocompleteTrainersHandler)
+	app.Get("/api/users/public/users/:username", optionalJWT, GetPublicSnapshotByUsername)
+	publicRead := app.Group("/", newRateLimiter())
+	publicRead.Get("/api/profiles/:username", optionalJWT, GetProfileHandler)
+	publicRead.Get("/api/users/profiles/:username", optionalJWT, GetProfileHandler)
+	publicRead.Get("/api/autocomplete-trainers", optionalJWT, AutocompleteTrainersHandler)
 
 	// Public read-only profile instance lookups (used by search/foreign profile pages).
 	// Keep these outside JWT middleware so users can browse profiles while logged out.
-	publicRead := app.Group("/", newRateLimiter())
-	publicRead.Get("/api/instances/by-username/:username", GetInstancesByUsername)
+	publicRead.Get("/api/instances/by-username/:username", optionalJWT, GetInstancesByUsername)
 	// Compatibility paths for /api/users prefix + nginx rewrite behavior.
-	publicRead.Get("/api/users/instances/by-username/:username", GetInstancesByUsername)
+	publicRead.Get("/api/users/instances/by-username/:username", optionalJWT, GetInstancesByUsername)
 
 	// Protected routes (explicit auth binding so public routes never require JWT).
 	protectedLimiter := newRateLimiter()
 	// Canonical paths.
 	app.Get("/api/users/:user_id/overview", verifyJWT, protectedLimiter, GetUserOverviewHandler)
 	app.Put("/api/users/:user_id", verifyJWT, protectedLimiter, UpdateUserHandler)
-	// Compatibility paths for current frontend/nginx behavior.
-	app.Get("/api/:user_id/overview", verifyJWT, protectedLimiter, GetUserOverviewHandler)
-	app.Put("/api/:user_id", verifyJWT, protectedLimiter, UpdateUserHandler)
 	app.Put("/api/update-user/:user_id", verifyJWT, protectedLimiter, UpdateUserHandler)
 	app.Put("/api/users/update-user/:user_id", verifyJWT, protectedLimiter, UpdateUserHandler)
+	app.Put("/api/profile", verifyJWT, protectedLimiter, UpdateProfileHandler)
+	app.Get("/api/preferences", verifyJWT, protectedLimiter, GetPreferencesHandler)
+	app.Put("/api/preferences", verifyJWT, protectedLimiter, UpdatePreferencesHandler)
+	app.Get("/api/friends", verifyJWT, protectedLimiter, GetFriendsHandler)
+	app.Post("/api/friends/requests", verifyJWT, protectedLimiter, CreateFriendRequestHandler)
+	app.Post("/api/friends/requests/:friendship_id/accept", verifyJWT, protectedLimiter, AcceptFriendRequestHandler)
+	app.Delete("/api/friends/requests/:friendship_id", verifyJWT, protectedLimiter, DeleteFriendRequestHandler)
+	app.Delete("/api/friends/:user_id", verifyJWT, protectedLimiter, RemoveFriendHandler)
+	app.Post("/api/friends/blocks", verifyJWT, protectedLimiter, BlockUserHandler)
+	app.Delete("/api/friends/blocks/:user_id", verifyJWT, protectedLimiter, UnblockUserHandler)
+	// Compatibility paths for older clients. Keep generic parameters after every
+	// named route so values such as "profile" cannot shadow a real endpoint.
+	app.Get("/api/:user_id/overview", verifyJWT, protectedLimiter, GetUserOverviewHandler)
+	app.Put("/api/:user_id", verifyJWT, protectedLimiter, UpdateUserHandler)
 
 	return app
 }
