@@ -1,137 +1,261 @@
-// useInitLocation.ts
-
 import { useCallback, useEffect, useRef } from 'react';
 import { toast } from 'react-toastify';
 
 import { useAuth } from '@/contexts/AuthContext';
-import { useAuthStore } from '@/stores/useAuthStore';
 import { useLocationStore } from '@/features/location/store/useLocationStore';
+import { useAuthStore } from '@/stores/useAuthStore';
 import { createScopedLogger } from '@/utils/logger';
-import { removeStorageKey, setStoredLocation, STORAGE_KEYS } from '@/utils/storage';
+import {
+  getStoredLocation,
+  removeStorageKey,
+  setStoredLocation,
+  STORAGE_KEYS,
+} from '@/utils/storage';
 
 const log = createScopedLogger('useInitLocation');
 
-/**
- * Bootstraps geolocation logic on app startup.
- * Mount once from App bootstrap.
- */
+const LOCATION_REFRESH_INTERVAL_MS = 60 * 60 * 1_000;
+const LOCATION_PERMISSION_NOTICE_KEY = 'pokegonexus-location-permission-notice';
+const LOCATION_PERMISSION_TOAST_ID = 'location-permission-unavailable';
+
+export const GEOLOCATION_OPTIONS: PositionOptions = {
+  enableHighAccuracy: false,
+  maximumAge: 5 * 60 * 1_000,
+  timeout: 15_000,
+};
+
+type AvailableCoordinates = {
+  latitude: number;
+  longitude: number;
+};
+
+const toAvailableCoordinates = (
+  value:
+    | {
+        latitude?: unknown;
+        longitude?: unknown;
+      }
+    | null
+    | undefined,
+): AvailableCoordinates | null => {
+  const latitude = Number(value?.latitude);
+  const longitude = Number(value?.longitude);
+
+  if (
+    !Number.isFinite(latitude) ||
+    !Number.isFinite(longitude) ||
+    latitude < -90 ||
+    latitude > 90 ||
+    longitude < -180 ||
+    longitude > 180
+  ) {
+    return null;
+  }
+
+  return { latitude, longitude };
+};
+
+const hasShownPermissionNotice = (): boolean => {
+  try {
+    return (
+      window.sessionStorage.getItem(LOCATION_PERMISSION_NOTICE_KEY) === 'true'
+    );
+  } catch {
+    return false;
+  }
+};
+
+const rememberPermissionNotice = (): void => {
+  try {
+    window.sessionStorage.setItem(LOCATION_PERMISSION_NOTICE_KEY, 'true');
+  } catch {
+    // Toast IDs still prevent duplicates while the current app is mounted.
+  }
+};
+
+/** Bootstraps device geolocation once and refreshes it hourly while enabled. */
 export function useInitLocation(enabled = true) {
   const { isLoading: authLoading, updateUserDetails } = useAuth();
-  const user = useAuthStore((s) => s.user);
-  const setLocation = useLocationStore((s) => s.setLocation);
-  const setStatus = useLocationStore((s) => s.setStatus);
+  const user = useAuthStore((state) => state.user);
+  const setLocation = useLocationStore((state) => state.setLocation);
+  const setStatus = useLocationStore((state) => state.setStatus);
 
-  const didInitialRef = useRef(false);
-  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const userRef = useRef(user);
+  const updateUserDetailsRef = useRef(updateUserDetails);
+  userRef.current = user;
+  updateUserDetailsRef.current = updateUserDetails;
 
-  const storeAndLogCoords = useCallback((coords: { latitude: number; longitude: number }) => {
-    setLocation(coords);
-    setStatus('available');
-    setStoredLocation(coords);
-    log.debug(
-      `Location acquired and stored. Latitude: ${coords.latitude}, Longitude: ${coords.longitude}`,
-    );
-  }, [setLocation, setStatus]);
+  const storeCoordinates = useCallback(
+    (coordinates: AvailableCoordinates) => {
+      setLocation(coordinates);
+      setStatus('available');
+      setStoredLocation(coordinates);
+      log.debug('Location acquired and stored.', coordinates);
+    },
+    [setLocation, setStatus],
+  );
+
+  const applySavedCoordinates = useCallback(
+    (
+      currentUser: typeof user,
+      reason: 'manual' | 'permission' | 'temporary',
+    ): boolean => {
+      const fallback =
+        toAvailableCoordinates(currentUser?.coordinates) ??
+        toAvailableCoordinates(getStoredLocation());
+
+      if (!fallback) return false;
+
+      storeCoordinates(fallback);
+      log.debug(`Using saved coordinates after ${reason} location handling.`);
+      return true;
+    },
+    [storeCoordinates],
+  );
 
   useEffect(() => {
-    if (!enabled) return;
+    if (!enabled || authLoading) return;
 
-    const fetchLocation = () => {
-      // 1) auth still loading.
-      if (authLoading) {
-        log.debug('Still loading user info, skipping location fetching.');
-        return;
-      }
+    let active = true;
+    let refreshInterval: ReturnType<typeof setInterval> | null = null;
 
-      // 2) no user.
-      if (!user) {
-        log.debug('User not logged in. Skipping location fetching.');
-        setStatus('unavailable');
-        setLocation(null);
-        removeStorageKey(STORAGE_KEYS.location);
-        return;
-      }
-
-      // 3) automatic geo allowed.
-      if (user.allowLocation) {
-        log.debug('User has allowed automatic location acquisition.');
-
-        navigator.geolocation.getCurrentPosition(
-          async (pos) => {
-            const coords = {
-              latitude: pos.coords.latitude,
-              longitude: pos.coords.longitude,
-            };
-
-            storeAndLogCoords(coords);
-
-            const changed =
-              user.coordinates?.latitude !== coords.latitude ||
-              user.coordinates?.longitude !== coords.longitude;
-
-            if (changed) {
-              log.debug('Coordinates changed; updating user in DB.');
-              const res = await updateUserDetails(user.user_id, { coordinates: coords });
-
-              if (!res.success) {
-                log.error('Failed to update user coordinates in DB', res.error);
-                toast.error('Failed to update your coordinates in the DB.');
-              } else {
-                log.debug('Coordinates updated in main & secondary DB.');
-              }
-            }
-          },
-          (error) => {
-            log.error('Error acquiring location', error);
-            toast.error(
-              'Location services are disabled or unavailable. Please enable location services in your browser.',
-            );
-            setStatus('unavailable');
-            setLocation(null);
-            removeStorageKey(STORAGE_KEYS.location);
-          },
-        );
-        return;
-      }
-
-      // 4) auto disallowed, use manual coords.
-      log.debug('User has disabled automatic location acquisition. Using manual coordinates if available.');
-
-      if (
-        user.coordinates &&
-        typeof user.coordinates.latitude === 'number' &&
-        typeof user.coordinates.longitude === 'number'
-      ) {
-        const manual = {
-          latitude: user.coordinates.latitude,
-          longitude: user.coordinates.longitude,
-        };
-        setLocation(manual);
-        setStatus('available');
-        setStoredLocation(manual);
-        log.debug(
-          `Manual location set. Latitude: ${manual.latitude}, Longitude: ${manual.longitude}`,
-        );
-      } else {
-        log.debug('No manual coordinates provided by user.');
-        setStatus('unavailable');
-        setLocation(null);
-        removeStorageKey(STORAGE_KEYS.location);
-      }
+    const markUnavailable = () => {
+      setLocation(null);
+      setStatus('unavailable');
     };
 
-    // Initial + hourly refresh.
-    if (!authLoading && user && !didInitialRef.current) {
-      fetchLocation();
-      didInitialRef.current = true;
-      intervalRef.current = setInterval(() => {
-        log.debug('Refreshing location...');
-        fetchLocation();
-      }, 60 * 60 * 1_000);
+    const showPermissionNotice = () => {
+      if (hasShownPermissionNotice()) return;
+
+      toast.warn(
+        'Location access is blocked on this device. Allow it in your browser settings or choose a saved location.',
+        { toastId: LOCATION_PERMISSION_TOAST_ID },
+      );
+      rememberPermissionNotice();
+    };
+
+    const handleLocationFailure = (
+      currentUser: typeof user,
+      error?: GeolocationPositionError,
+    ) => {
+      if (!active) return;
+
+      const permissionDenied = error?.code === 1;
+      const reason = permissionDenied ? 'permission' : 'temporary';
+      const hasFallback = applySavedCoordinates(currentUser, reason);
+
+      if (permissionDenied) {
+        log.warn('Browser location permission is blocked.', {
+          code: error.code,
+          message: error.message,
+        });
+        if (!hasFallback) showPermissionNotice();
+      } else {
+        log.warn('Current device location could not be determined.', {
+          code: error?.code,
+          message: error?.message,
+        });
+      }
+
+      if (!hasFallback) markUnavailable();
+    };
+
+    const fetchLocation = () => {
+      const currentUser = userRef.current;
+
+      if (!currentUser) {
+        markUnavailable();
+        removeStorageKey(STORAGE_KEYS.location);
+        return;
+      }
+
+      if (!currentUser.allowLocation) {
+        if (!applySavedCoordinates(currentUser, 'manual')) {
+          markUnavailable();
+          removeStorageKey(STORAGE_KEYS.location);
+        }
+        return;
+      }
+
+      if (
+        !navigator.geolocation ||
+        typeof navigator.geolocation.getCurrentPosition !== 'function'
+      ) {
+        const hasFallback = applySavedCoordinates(currentUser, 'permission');
+        log.warn('Geolocation is not supported by this browser.');
+        if (!hasFallback) {
+          markUnavailable();
+          showPermissionNotice();
+        }
+        return;
+      }
+
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          if (!active) return;
+
+          const coordinates = {
+            latitude: position.coords.latitude,
+            longitude: position.coords.longitude,
+          };
+          storeCoordinates(coordinates);
+
+          const latestUser = userRef.current;
+          if (!latestUser || latestUser.user_id !== currentUser.user_id) return;
+
+          const previousCoordinates = toAvailableCoordinates(
+            latestUser.coordinates,
+          );
+          const changed =
+            !previousCoordinates ||
+            previousCoordinates.latitude !== coordinates.latitude ||
+            previousCoordinates.longitude !== coordinates.longitude;
+
+          if (!changed) return;
+
+          void updateUserDetailsRef
+            .current(latestUser.user_id, { coordinates })
+            .then((result) => {
+              if (!result.success) {
+                log.error(
+                  'Failed to sync updated coordinates to the user account.',
+                  result.error,
+                );
+              }
+            })
+            .catch((error: unknown) => {
+              log.error(
+                'Failed to sync updated coordinates to the user account.',
+                error,
+              );
+            });
+        },
+        (error) => handleLocationFailure(currentUser, error),
+        GEOLOCATION_OPTIONS,
+      );
+    };
+
+    fetchLocation();
+
+    if (user?.allowLocation) {
+      refreshInterval = setInterval(
+        fetchLocation,
+        LOCATION_REFRESH_INTERVAL_MS,
+      );
     }
 
     return () => {
-      if (intervalRef.current) clearInterval(intervalRef.current);
+      active = false;
+      if (refreshInterval) clearInterval(refreshInterval);
     };
-  }, [enabled, authLoading, storeAndLogCoords, updateUserDetails, user, setLocation, setStatus]);
+  }, [
+    authLoading,
+    enabled,
+    setLocation,
+    setStatus,
+    applySavedCoordinates,
+    storeCoordinates,
+    user?.allowLocation,
+    user?.user_id,
+  ]);
 }
