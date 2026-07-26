@@ -15,6 +15,9 @@ REPO_ROOT = EDITOR_DIR.parent
 BACKUP_SCRIPT = REPO_ROOT / "ops" / "pokemon-catalog" / "backup-editor-session-prod.sh"
 CACHE_REFRESH_SCRIPT = REPO_ROOT / "ops" / "pokemon-catalog" / "refresh-api-cache-prod.sh"
 FRONTEND_DIR = REPO_ROOT / "frontend"
+SSH_CONNECT_TIMEOUT_SECONDS = 10
+REMOTE_SCRIPT_TIMEOUT_SECONDS = 120
+REMOTE_READ_TIMEOUT_SECONDS = 30
 
 
 class ProductionCatalogSession:
@@ -40,6 +43,12 @@ class ProductionCatalogSession:
         args = [
             "ssh",
             "-o",
+            "BatchMode=yes",
+            "-o",
+            f"ConnectTimeout={SSH_CONNECT_TIMEOUT_SECONDS}",
+            "-o",
+            "ConnectionAttempts=1",
+            "-o",
             "ExitOnForwardFailure=yes",
             "-o",
             "ServerAliveInterval=30",
@@ -56,27 +65,42 @@ class ProductionCatalogSession:
     def _run_remote_script(self, script_path: Path) -> None:
         if not script_path.is_file():
             raise RuntimeError(f"Required production helper is missing: {script_path}")
-        subprocess.run(
-            [
-                *self._ssh_args(),
-                self.host,
-                f"bash -s -- {shlex.quote(self.deploy_root)}",
-            ],
-            input=script_path.read_bytes(),
-            check=True,
-        )
+        try:
+            subprocess.run(
+                [
+                    *self._ssh_args(),
+                    self.host,
+                    f"bash -s -- {shlex.quote(self.deploy_root)}",
+                ],
+                input=script_path.read_bytes(),
+                check=True,
+                timeout=REMOTE_SCRIPT_TIMEOUT_SECONDS,
+            )
+        except subprocess.TimeoutExpired as error:
+            raise RuntimeError(
+                f"Production helper {script_path.name} timed out after "
+                f"{REMOTE_SCRIPT_TIMEOUT_SECONDS} seconds. Check the server connection "
+                "and retry."
+            ) from error
 
     def _read_publisher_database_url(self) -> str:
         command = (
             f"set -a; . {shlex.quote(self.publisher_env)}; "
             "printf '%s' \"$CATALOG_PUBLISHER_DATABASE_URL\""
         )
-        completed = subprocess.run(
-            [*self._ssh_args(), self.host, command],
-            check=True,
-            stdout=subprocess.PIPE,
-            text=True,
-        )
+        try:
+            completed = subprocess.run(
+                [*self._ssh_args(), self.host, command],
+                check=True,
+                stdout=subprocess.PIPE,
+                text=True,
+                timeout=REMOTE_READ_TIMEOUT_SECONDS,
+            )
+        except subprocess.TimeoutExpired as error:
+            raise RuntimeError(
+                "Reading production catalog settings timed out. Check the server "
+                "connection and retry."
+            ) from error
         database_url = completed.stdout.strip()
         if not database_url.startswith(("postgres://", "postgresql://")):
             raise RuntimeError("Production publisher settings did not provide a PostgreSQL URL.")
@@ -94,7 +118,9 @@ class ProductionCatalogSession:
         )
 
     def __enter__(self):
+        print("Creating production catalog safety backup...", flush=True)
         self._run_remote_script(BACKUP_SCRIPT)
+        print("Opening secure production catalog connection...", flush=True)
         database_url = self._read_publisher_database_url()
 
         self.tunnel = subprocess.Popen(

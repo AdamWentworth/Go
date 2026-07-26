@@ -1,4 +1,5 @@
 import os
+import subprocess
 import sys
 import unittest
 from pathlib import Path
@@ -9,7 +10,13 @@ EDITOR_DIR = Path(__file__).resolve().parents[1]
 if str(EDITOR_DIR) not in sys.path:
     sys.path.insert(0, str(EDITOR_DIR))
 
-from production_session import ProductionCatalogSession
+from production_session import (
+    BACKUP_SCRIPT,
+    REMOTE_READ_TIMEOUT_SECONDS,
+    REMOTE_SCRIPT_TIMEOUT_SECONDS,
+    SSH_CONNECT_TIMEOUT_SECONDS,
+    ProductionCatalogSession,
+)
 
 
 class ProductionCatalogSessionTests(unittest.TestCase):
@@ -33,6 +40,33 @@ class ProductionCatalogSessionTests(unittest.TestCase):
         command = run.call_args.args[0]
         self.assertNotIn(publisher_url, command)
         self.assertIn("catalog-publisher.env", command[-1])
+        self.assertEqual(run.call_args.kwargs["timeout"], REMOTE_READ_TIMEOUT_SECONDS)
+
+    def test_ssh_is_noninteractive_and_has_bounded_connection_attempts(self):
+        session = ProductionCatalogSession(self.settings)
+
+        args = session._ssh_args()
+
+        self.assertIn("BatchMode=yes", args)
+        self.assertIn(f"ConnectTimeout={SSH_CONNECT_TIMEOUT_SECONDS}", args)
+        self.assertIn("ConnectionAttempts=1", args)
+
+    def test_remote_helper_has_timeout_and_reports_timeout_clearly(self):
+        session = ProductionCatalogSession(self.settings)
+        with patch(
+            "production_session.subprocess.run",
+            side_effect=subprocess.TimeoutExpired(
+                cmd=["ssh"],
+                timeout=REMOTE_SCRIPT_TIMEOUT_SECONDS,
+            ),
+        ) as run:
+            with self.assertRaisesRegex(
+                RuntimeError,
+                rf"timed out after {REMOTE_SCRIPT_TIMEOUT_SECONDS} seconds",
+            ):
+                session._run_remote_script(BACKUP_SCRIPT)
+
+        self.assertEqual(run.call_args.kwargs["timeout"], REMOTE_SCRIPT_TIMEOUT_SECONDS)
 
     def test_clean_exit_refreshes_cache_and_restores_environment(self):
         session = ProductionCatalogSession(self.settings)

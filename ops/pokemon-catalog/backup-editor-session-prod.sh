@@ -5,6 +5,7 @@ deploy_root="${1:-/srv/pokegonexus}"
 pokemon_dir="${deploy_root}/pokemon"
 publisher_env_file="${CATALOG_PUBLISHER_ENV_FILE:-${pokemon_dir}/catalog-publisher.env}"
 backup_keep="${CATALOG_EDITOR_BACKUP_KEEP:-8}"
+backup_timeout="${CATALOG_EDITOR_BACKUP_TIMEOUT_SECONDS:-120}"
 
 fail() {
   echo "pokemon catalog editor backup error: $*" >&2
@@ -13,6 +14,7 @@ fail() {
 
 [[ -f "${publisher_env_file}" ]] || fail "publisher credentials not found: ${publisher_env_file}"
 [[ "${backup_keep}" =~ ^[1-9][0-9]*$ ]] || fail "CATALOG_EDITOR_BACKUP_KEEP must be a positive integer"
+[[ "${backup_timeout}" =~ ^[1-9][0-9]*$ ]] || fail "CATALOG_EDITOR_BACKUP_TIMEOUT_SECONDS must be a positive integer"
 
 set -a
 # shellcheck disable=SC1090
@@ -32,7 +34,9 @@ backup_tmp="${backup_path}.tmp"
 mkdir -p "${backup_dir}"
 trap 'rm -f "${backup_tmp}"' EXIT
 
-docker exec -e PGPASSWORD="${CATALOG_PUBLISHER_PASSWORD}" "${CATALOG_DB_CONTAINER}" \
+echo "Backing up the production Pokemon catalog..."
+timeout --foreground "${backup_timeout}s" \
+  docker exec -e PGPASSWORD="${CATALOG_PUBLISHER_PASSWORD}" "${CATALOG_DB_CONTAINER}" \
   pg_dump -U "${CATALOG_PUBLISHER_USER}" -d "${CATALOG_DATABASE_NAME}" -Fc -n pokemon_catalog > "${backup_tmp}"
 [[ -s "${backup_tmp}" ]] || fail "PostgreSQL catalog backup is empty"
 mv "${backup_tmp}" "${backup_path}"
