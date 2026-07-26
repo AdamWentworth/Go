@@ -1,4 +1,9 @@
-import { expect, test, type Page } from "@playwright/test";
+import {
+  expect,
+  test,
+  type Locator,
+  type Page,
+} from "@playwright/test";
 
 import { attachBrowserDiagnostics } from "./support/diagnostics";
 import { installE2eRoutes } from "./support/e2eRoutes";
@@ -66,6 +71,51 @@ async function seedTrainerLogin(page: Page) {
   }, trainerUser);
 }
 
+async function dragShowcaseSlot(
+  page: Page,
+  source: Locator,
+  destination: Locator,
+  useTouch: boolean,
+) {
+  const sourceBox = await source.boundingBox();
+  const destinationBox = await destination.boundingBox();
+  expect(sourceBox).not.toBeNull();
+  expect(destinationBox).not.toBeNull();
+  if (!sourceBox || !destinationBox) return;
+
+  const start = {
+    x: sourceBox.x + sourceBox.width / 2,
+    y: sourceBox.y + sourceBox.height / 2,
+  };
+  const end = {
+    x: destinationBox.x + destinationBox.width / 2,
+    y: destinationBox.y + destinationBox.height / 2,
+  };
+
+  if (useTouch) {
+    const session = await page.context().newCDPSession(page);
+    await session.send("Input.dispatchTouchEvent", {
+      type: "touchStart",
+      touchPoints: [{ ...start, id: 1 }],
+    });
+    await session.send("Input.dispatchTouchEvent", {
+      type: "touchMove",
+      touchPoints: [{ ...end, id: 1 }],
+    });
+    await session.send("Input.dispatchTouchEvent", {
+      type: "touchEnd",
+      touchPoints: [],
+    });
+    await session.detach();
+    return;
+  }
+
+  await page.mouse.move(start.x, start.y);
+  await page.mouse.down();
+  await page.mouse.move(end.x, end.y, { steps: 8 });
+  await page.mouse.up();
+}
+
 test.describe("Trainer profile card", () => {
   test("keeps trainer identity, showcase, and collection facts visible without horizontal overflow", async ({
     page,
@@ -124,7 +174,7 @@ test.describe("Trainer profile card", () => {
     expect(diagnostics.blockingErrors()).toEqual([]);
   });
 
-  test("edits one featured Pokemon slot at a time", async ({
+  test("edits and reorders featured Pokemon slots", async ({
     page,
   }, testInfo) => {
     const diagnostics = attachBrowserDiagnostics(page, testInfo);
@@ -211,6 +261,33 @@ test.describe("Trainer profile card", () => {
           name: "Change featured Pokemon in slot 2, currently Buddy",
         }),
       ).toBeVisible();
+
+      const buddySlot = card.getByRole("button", {
+        name: "Change featured Pokemon in slot 2, currently Buddy",
+      });
+      const charmanderSlot = card.getByRole("button", {
+        name: "Change featured Pokemon in slot 1, currently Charmander",
+      });
+      await dragShowcaseSlot(
+        page,
+        buddySlot,
+        charmanderSlot,
+        testInfo.project.name === "mobile-chrome",
+      );
+
+      await expect(
+        card.getByRole("button", {
+          name: "Change featured Pokemon in slot 1, currently Buddy",
+        }),
+      ).toBeVisible();
+      await expect(
+        card.getByRole("button", {
+          name: "Change featured Pokemon in slot 2, currently Charmander",
+        }),
+      ).toBeVisible();
+      await expect(
+        card.getByLabel(/choose pokemon for featured slot/i),
+      ).toHaveCount(0);
     } finally {
       await diagnostics.flush();
     }

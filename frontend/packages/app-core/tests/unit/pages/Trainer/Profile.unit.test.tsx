@@ -274,6 +274,92 @@ describe("Trainer Profile", () => {
     );
   });
 
+  it("reorders featured Pokemon with the accessible keyboard gesture", async () => {
+    const ownProfile = {
+      ...profile,
+      user: {
+        ...profile.user,
+        user_id: "user-adam",
+        username: "Adam",
+        pokemonGoName: "Adam",
+      },
+      highlights: [
+        {
+          instance_id: "featured-bulbasaur",
+          variant_id: "0001-default",
+          pokemon_id: 1,
+          nickname: "Buddy",
+          cp: 1115,
+          is_caught: true,
+          disabled: false,
+        },
+        {
+          instance_id: "featured-charmander",
+          variant_id: "0004-default",
+          pokemon_id: 4,
+          nickname: "Blaze",
+          cp: 980,
+          is_caught: true,
+          disabled: false,
+        },
+      ],
+      viewer: {
+        relationship: "self",
+        can_view_profile: true,
+        can_view_collection: true,
+      },
+    };
+    mocks.fetchOwnProfile.mockResolvedValue(ownProfile);
+    mocks.updateProfile.mockResolvedValue({ success: true });
+    mocks.updateUserDetails.mockResolvedValue({ success: true });
+
+    render(
+      <MemoryRouter initialEntries={["/profile"]}>
+        <Routes>
+          <Route path="/profile" element={<Profile />} />
+        </Routes>
+      </MemoryRouter>,
+    );
+
+    fireEvent.click(await screen.findByRole("button", { name: /^edit$/i }));
+    const card = screen.getByRole("region", {
+      name: /adam's trainer card/i,
+    });
+    const buddySlot = within(card).getByRole("button", {
+      name: /change featured pokemon in slot 1, currently buddy/i,
+    });
+
+    fireEvent.keyDown(buddySlot, {
+      key: "ArrowRight",
+      altKey: true,
+    });
+
+    expect(
+      within(card).getByRole("button", {
+        name: /change featured pokemon in slot 1, currently blaze/i,
+      }),
+    ).toBeVisible();
+    expect(
+      within(card).getByRole("button", {
+        name: /change featured pokemon in slot 2, currently buddy/i,
+      }),
+    ).toBeVisible();
+
+    fireEvent.click(
+      within(card).getByRole("button", { name: /save profile/i }),
+    );
+    await waitFor(() =>
+      expect(mocks.updateProfile).toHaveBeenCalledWith(
+        expect.objectContaining({
+          highlight_instance_ids: [
+            "featured-charmander",
+            "featured-bulbasaur",
+          ],
+        }),
+      ),
+    );
+  });
+
   it("offers profile setup when the signed-in trainer has never customized it", async () => {
     mocks.fetchOwnProfile.mockResolvedValue({
       ...profile,

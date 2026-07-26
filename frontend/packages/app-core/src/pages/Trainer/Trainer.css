@@ -458,10 +458,14 @@
   background: transparent;
   color: var(--trainer-text);
   font: inherit;
-  cursor: pointer;
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
   transition:
     background-color 160ms ease,
-    box-shadow 160ms ease;
+    box-shadow 160ms ease,
+    opacity 160ms ease,
+    transform 160ms ease;
 }
 
 .trainer-card-highlight-editable:hover,
@@ -469,6 +473,20 @@
   background: color-mix(in srgb, var(--trainer-team) 14%, transparent);
   box-shadow: inset 0 0 0 1px
     color-mix(in srgb, var(--trainer-team) 58%, transparent);
+}
+
+.trainer-card-highlight-editable:active {
+  cursor: grabbing;
+}
+
+.trainer-card-highlight-editable.dragging {
+  z-index: 2;
+  cursor: grabbing;
+  opacity: 0.82;
+  transform: scale(0.96);
+  box-shadow:
+    inset 0 0 0 2px var(--trainer-team),
+    0 8px 18px rgb(0 0 0 / 24%);
 }
 
 .trainer-card-highlight-edit-cue {

@@ -1,10 +1,17 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import {
   FaBan,
   FaCalendarAlt,
   FaCheck,
   FaEdit,
   FaExchangeAlt,
+  FaGripVertical,
   FaIdCard,
   FaMapMarkerAlt,
   FaStar,
@@ -44,6 +51,11 @@ import type {
 
 import TrainerPageShell from "./TrainerPageShell";
 import TrainerShowcasePicker from "./TrainerShowcasePicker";
+import {
+  normalizeTrainerShowcaseSlots,
+  reorderTrainerShowcaseSlots,
+  TRAINER_SHOWCASE_SLOT_COUNT,
+} from "./trainerShowcaseSlots";
 
 type ProfileForm = {
   bio: string;
@@ -67,7 +79,18 @@ const emptyForm: ProfileForm = {
   location: "",
 };
 
-const emptyHighlightSlots = () => Array<string>(6).fill("");
+const emptyHighlightSlots = () =>
+  Array<string>(TRAINER_SHOWCASE_SLOT_COUNT).fill("");
+
+const SHOWCASE_DRAG_THRESHOLD_PX = 7;
+
+type ShowcasePointerDrag = {
+  pointerId: number;
+  currentIndex: number;
+  startX: number;
+  startY: number;
+  activated: boolean;
+};
 
 const toDateInput = (value?: string | null) =>
   value ? value.slice(0, 10) : "";
@@ -151,7 +174,7 @@ const HighlightCardContent = ({
 
   return (
     <>
-      <img src={image} alt="" />
+      <img src={image} alt="" draggable={false} />
       <div>
         <strong>{instance.nickname || variant.species_name}</strong>
         <span>
@@ -190,6 +213,11 @@ const Profile = () => {
   const [editingHighlightSlot, setEditingHighlightSlot] = useState<
     number | null
   >(null);
+  const [draggingHighlightSlot, setDraggingHighlightSlot] = useState<
+    number | null
+  >(null);
+  const showcasePointerDrag = useRef<ShowcasePointerDrag | null>(null);
+  const suppressShowcaseClick = useRef(false);
   const [error, setError] = useState("");
 
   const loadProfile = useCallback(async () => {
@@ -206,12 +234,11 @@ const Profile = () => {
       setProfile(nextProfile);
       setForm(profileToForm(nextProfile));
       setHighlightIds(
-        [
-          ...nextProfile.highlights
-            .map((entry) => entry.instance_id || "")
-            .filter(Boolean),
-          ...emptyHighlightSlots(),
-        ].slice(0, 6),
+        normalizeTrainerShowcaseSlots(
+          nextProfile.highlights.map(
+            (entry) => entry.instance_id || "",
+          ),
+        ),
       );
     } catch (loadError) {
       setError(
@@ -332,19 +359,123 @@ const Profile = () => {
     setEditingHighlightSlot(null);
   };
 
+  const reorderHighlights = (fromIndex: number, toIndex: number) => {
+    setHighlightIds((current) =>
+      reorderTrainerShowcaseSlots(current, fromIndex, toIndex),
+    );
+  };
+
+  const beginHighlightDrag = (
+    event: React.PointerEvent<HTMLButtonElement>,
+    index: number,
+  ) => {
+    if (!cardHighlights[index] || !event.isPrimary || event.button !== 0) {
+      return;
+    }
+    suppressShowcaseClick.current = false;
+    showcasePointerDrag.current = {
+      pointerId: event.pointerId,
+      currentIndex: index,
+      startX: event.clientX,
+      startY: event.clientY,
+      activated: false,
+    };
+    event.currentTarget.setPointerCapture?.(event.pointerId);
+  };
+
+  const moveHighlightDrag = (
+    event: React.PointerEvent<HTMLButtonElement>,
+  ) => {
+    const drag = showcasePointerDrag.current;
+    if (!drag || drag.pointerId !== event.pointerId) return;
+
+    if (!drag.activated) {
+      const distance = Math.hypot(
+        event.clientX - drag.startX,
+        event.clientY - drag.startY,
+      );
+      if (distance < SHOWCASE_DRAG_THRESHOLD_PX) return;
+      drag.activated = true;
+      suppressShowcaseClick.current = true;
+      setEditingHighlightSlot(null);
+      setDraggingHighlightSlot(drag.currentIndex);
+    }
+
+    event.preventDefault();
+    const slot = document
+      .elementFromPoint(event.clientX, event.clientY)
+      ?.closest<HTMLElement>("[data-showcase-slot]");
+    const targetIndex = Number(slot?.dataset.showcaseSlot);
+    if (!Number.isInteger(targetIndex)) return;
+
+    const selectedCount = highlightIds.filter(Boolean).length;
+    const destinationIndex = Math.min(
+      targetIndex,
+      Math.max(0, selectedCount - 1),
+    );
+    if (destinationIndex === drag.currentIndex) return;
+
+    reorderHighlights(drag.currentIndex, destinationIndex);
+    drag.currentIndex = destinationIndex;
+    setDraggingHighlightSlot(destinationIndex);
+  };
+
+  const finishHighlightDrag = (
+    event: React.PointerEvent<HTMLButtonElement>,
+  ) => {
+    const drag = showcasePointerDrag.current;
+    if (!drag || drag.pointerId !== event.pointerId) return;
+
+    if (event.currentTarget.hasPointerCapture?.(event.pointerId)) {
+      event.currentTarget.releasePointerCapture(event.pointerId);
+    }
+    showcasePointerDrag.current = null;
+    setDraggingHighlightSlot(null);
+
+    if (drag.activated) {
+      window.setTimeout(() => {
+        suppressShowcaseClick.current = false;
+      }, 0);
+    }
+  };
+
+  const moveHighlightWithKeyboard = (
+    event: React.KeyboardEvent<HTMLButtonElement>,
+    index: number,
+  ) => {
+    if (!event.altKey) return;
+    const direction =
+      event.key === "ArrowLeft"
+        ? -1
+        : event.key === "ArrowRight"
+          ? 1
+          : 0;
+    if (!direction) return;
+
+    const selectedCount = highlightIds.filter(Boolean).length;
+    const destinationIndex = Math.max(
+      0,
+      Math.min(index + direction, selectedCount - 1),
+    );
+    if (destinationIndex === index) return;
+
+    event.preventDefault();
+    setEditingHighlightSlot(null);
+    reorderHighlights(index, destinationIndex);
+  };
+
   const toggleEditing = () => {
     if (editing && profile) {
       setForm(profileToForm(profile));
       setHighlightIds(
-        [
-          ...profile.highlights
-            .map((entry) => entry.instance_id || "")
-            .filter(Boolean),
-          ...emptyHighlightSlots(),
-        ].slice(0, 6),
+        normalizeTrainerShowcaseSlots(
+          profile.highlights.map((entry) => entry.instance_id || ""),
+        ),
       );
     }
     setEditingHighlightSlot(null);
+    setDraggingHighlightSlot(null);
+    showcasePointerDrag.current = null;
     setEditing((value) => !value);
   };
 
@@ -649,73 +780,115 @@ const Profile = () => {
                 className="trainer-card-highlights"
                 aria-label="Featured Pokemon"
               >
-                {Array.from({ length: 6 }, (_, index) => {
-                  const instance = cardHighlights[index];
-                  if (editing) {
-                    const name = instance
-                      ? instance.nickname ||
-                        variantByID.get(instance.variant_id)?.species_name ||
-                        `Pokemon #${instance.pokemon_id}`
-                      : null;
-                    return (
-                      <button
-                        type="button"
-                        className={`trainer-card-highlight trainer-card-highlight-editable ${
-                          editingHighlightSlot === index ? "active" : ""
-                        } ${
-                          instance ? "" : "trainer-card-highlight-empty"
-                        }`}
-                        key={`edit-highlight-${index + 1}`}
-                        aria-label={
-                          name
-                            ? `Change featured Pokemon in slot ${index + 1}, currently ${name}`
-                            : `Choose featured Pokemon for slot ${index + 1}`
+                {Array.from(
+                  { length: TRAINER_SHOWCASE_SLOT_COUNT },
+                  (_, index) => {
+                    const instance = cardHighlights[index];
+                    if (editing) {
+                      const name = instance
+                        ? instance.nickname ||
+                          variantByID.get(instance.variant_id)
+                            ?.species_name ||
+                          `Pokemon #${instance.pokemon_id}`
+                        : null;
+                      return (
+                        <button
+                          type="button"
+                          className={`trainer-card-highlight trainer-card-highlight-editable ${
+                            editingHighlightSlot === index ? "active" : ""
+                          } ${
+                            draggingHighlightSlot === index
+                              ? "dragging"
+                              : ""
+                          } ${
+                            instance
+                              ? ""
+                              : "trainer-card-highlight-empty"
+                          }`}
+                          key={`edit-highlight-${index + 1}`}
+                          data-showcase-slot={index}
+                          aria-label={
+                            name
+                              ? `Change featured Pokemon in slot ${index + 1}, currently ${name}`
+                              : `Choose featured Pokemon for slot ${index + 1}`
+                          }
+                          aria-pressed={editingHighlightSlot === index}
+                          aria-keyshortcuts={
+                            instance
+                              ? "Alt+ArrowLeft Alt+ArrowRight"
+                              : undefined
+                          }
+                          title={
+                            instance
+                              ? "Drag to reorder; click to replace"
+                              : "Click to choose a Pokemon"
+                          }
+                          onClick={() => {
+                            if (suppressShowcaseClick.current) {
+                              suppressShowcaseClick.current = false;
+                              return;
+                            }
+                            setEditingHighlightSlot(index);
+                          }}
+                          onKeyDown={(event) =>
+                            moveHighlightWithKeyboard(event, index)
+                          }
+                          onPointerDown={(event) =>
+                            beginHighlightDrag(event, index)
+                          }
+                          onPointerMove={moveHighlightDrag}
+                          onPointerUp={finishHighlightDrag}
+                          onPointerCancel={finishHighlightDrag}
+                        >
+                          {instance ? (
+                            <HighlightCardContent
+                              instance={instance}
+                              variant={variantByID.get(
+                                instance.variant_id,
+                              )}
+                            />
+                          ) : (
+                            <>
+                              <FaStar aria-hidden="true" />
+                              <span>Choose Pokemon</span>
+                            </>
+                          )}
+                          <span className="trainer-card-highlight-edit-cue">
+                            {instance ? (
+                              <FaGripVertical aria-hidden="true" />
+                            ) : (
+                              <FaEdit aria-hidden="true" />
+                            )}
+                            Slot {index + 1}
+                          </span>
+                        </button>
+                      );
+                    }
+                    return instance ? (
+                      <article
+                        key={
+                          instance.instance_id ||
+                          `${instance.variant_id}-${index}`
                         }
-                        aria-pressed={editingHighlightSlot === index}
-                        onClick={() => setEditingHighlightSlot(index)}
+                        className="trainer-card-highlight"
                       >
-                        {instance ? (
-                          <HighlightCardContent
-                            instance={instance}
-                            variant={variantByID.get(instance.variant_id)}
-                          />
-                        ) : (
-                          <>
-                            <FaStar aria-hidden="true" />
-                            <span>Choose Pokemon</span>
-                          </>
-                        )}
-                        <span className="trainer-card-highlight-edit-cue">
-                          <FaEdit aria-hidden="true" />
-                          Slot {index + 1}
-                        </span>
-                      </button>
+                        <HighlightCardContent
+                          instance={instance}
+                          variant={variantByID.get(instance.variant_id)}
+                        />
+                      </article>
+                    ) : (
+                      <div
+                        className="trainer-card-highlight trainer-card-highlight-empty"
+                        key={`empty-highlight-${index + 1}`}
+                        aria-label={`Empty featured Pokemon slot ${index + 1}`}
+                      >
+                        <FaStar aria-hidden="true" />
+                        <span>Open slot</span>
+                      </div>
                     );
-                  }
-                  return instance ? (
-                    <article
-                      key={
-                        instance.instance_id ||
-                        `${instance.variant_id}-${index}`
-                      }
-                      className="trainer-card-highlight"
-                    >
-                      <HighlightCardContent
-                        instance={instance}
-                        variant={variantByID.get(instance.variant_id)}
-                      />
-                    </article>
-                  ) : (
-                    <div
-                      className="trainer-card-highlight trainer-card-highlight-empty"
-                      key={`empty-highlight-${index + 1}`}
-                      aria-label={`Empty featured Pokemon slot ${index + 1}`}
-                    >
-                      <FaStar aria-hidden="true" />
-                      <span>Open slot</span>
-                    </div>
-                  );
-                })}
+                  },
+                )}
               </div>
 
               {editing && editingHighlightSlot !== null ? (
