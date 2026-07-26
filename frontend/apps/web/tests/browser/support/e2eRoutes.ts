@@ -9,6 +9,7 @@ export type E2eRouteOptions = {
   communityRankings?: unknown;
   locationSuggestions?: unknown[];
   trainerSuggestions?: unknown[];
+  trainerProfile?: unknown;
   userInstances?: unknown;
   publicUser?: unknown;
   userOverview?: unknown;
@@ -383,6 +384,37 @@ export async function installE2eRoutes(page: Page, options: E2eRouteOptions = {}
   await page.route('**/__e2e/users/autocomplete-trainers**', async (route) => {
     await fulfillJson(route, options.trainerSuggestions ?? []);
   });
+
+  for (const pathPattern of ['**/api/users/profile', '**/__e2e/users/profile']) {
+    await page.route(pathPattern, async (route) => {
+      await fulfillJson(
+        route,
+        options.trainerProfile ?? {
+          user: {
+            user_id: 'e2e-user',
+            username: 'e2e',
+            app_joined_at: '2026-01-01T00:00:00Z',
+          },
+          bio: null,
+          location: null,
+          trainer_code: null,
+          stats: {
+            caught: 0,
+            for_trade: 0,
+            wanted: 0,
+            favorites: 0,
+            registered: 0,
+          },
+          highlights: [],
+          viewer: {
+            relationship: 'self',
+            can_view_profile: true,
+            can_view_collection: true,
+          },
+        },
+      );
+    });
+  }
 
   await page.route('**/api/users/instances/by-username/**', async (route) => {
     await fulfillJson(route, options.userInstances ?? defaultUserInstances);

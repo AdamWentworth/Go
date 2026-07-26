@@ -34,8 +34,10 @@
 .trainer-page-heading span,
 .trainer-section header span,
 .trainer-field > span,
-.trainer-stat-strip span,
-.trainer-profile-identity > span {
+.trainer-card-label,
+.trainer-card-heading span,
+.trainer-card-bio > span,
+.trainer-card-setup > div > span {
   color: #92c7cc;
   font-size: 0.75rem;
   font-weight: 800;
@@ -157,58 +159,37 @@
   color: #ff9da7;
 }
 
-.trainer-profile-setup {
-  align-items: center;
-  display: flex;
-  justify-content: space-between;
-}
-
-.trainer-profile-setup h2,
-.trainer-profile-setup p {
-  margin: 0;
-}
-
-.trainer-profile-setup p {
-  color: var(--trainer-muted);
-  margin-top: 0.35rem;
-}
-
-.trainer-profile-band {
+.trainer-profile-card {
+  --trainer-team: #42d7c6;
+  --trainer-team-soft: rgba(66, 215, 198, 0.18);
   display: grid;
-  grid-template-columns: 104px minmax(0, 1fr) auto;
-  align-items: center;
-  gap: 20px;
+  grid-template-columns: minmax(205px, 0.27fr) minmax(0, 0.73fr);
   overflow: hidden;
-  padding: 24px;
   border: 1px solid var(--trainer-border);
   border-radius: 8px;
   background:
-    linear-gradient(115deg, rgba(48, 211, 199, 0.17), transparent 55%),
+    linear-gradient(135deg, var(--trainer-team-soft), transparent 48%),
     var(--trainer-surface);
 }
 
 .trainer-team-mystic {
+  --trainer-team: #5eb1f4;
+  --trainer-team-soft: rgba(60, 139, 207, 0.24);
   border-color: #4388c4;
-  background:
-    linear-gradient(115deg, rgba(60, 139, 207, 0.28), transparent 55%),
-    var(--trainer-surface);
 }
 
 .trainer-team-valor {
+  --trainer-team: #ff6f74;
+  --trainer-team-soft: rgba(212, 66, 74, 0.22);
   border-color: #bf4a50;
-  background:
-    linear-gradient(115deg, rgba(212, 66, 74, 0.25), transparent 55%),
-    var(--trainer-surface);
 }
 
 .trainer-team-instinct {
+  --trainer-team: #f2c94c;
+  --trainer-team-soft: rgba(233, 190, 54, 0.2);
   border-color: #c99e2d;
-  background:
-    linear-gradient(115deg, rgba(233, 190, 54, 0.22), transparent 55%),
-    var(--trainer-surface);
 }
 
-.trainer-profile-mark,
 .trainer-avatar {
   display: grid;
   aspect-ratio: 1;
@@ -220,70 +201,347 @@
   font-weight: 900;
 }
 
-.trainer-profile-mark {
-  width: 104px;
-  font-size: 2.5rem;
-}
-
-.trainer-profile-identity h2 {
-  margin: 3px 0 6px;
-  font-size: clamp(1.6rem, 4vw, 2.55rem);
-}
-
-.trainer-profile-identity p {
-  max-width: 680px;
-  margin: 0;
-  color: #d6e3e1;
-  line-height: 1.45;
-}
-
-.trainer-profile-meta {
+.trainer-card-identity {
   display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  margin-top: 13px;
+  min-width: 0;
+  flex-direction: column;
+  padding: 22px 18px 18px;
+  border-right: 1px solid
+    color-mix(in srgb, var(--trainer-team) 45%, transparent);
+  background: color-mix(in srgb, var(--trainer-team) 12%, transparent);
 }
 
-.trainer-profile-meta span,
-.trainer-count-badge {
-  padding: 5px 9px;
-  border: 1px solid rgba(88, 212, 200, 0.38);
-  border-radius: 999px;
-  background: rgba(12, 25, 26, 0.72);
-  color: #c8dfdd;
-  font-size: 0.8rem;
+.trainer-card-label {
+  color: var(--trainer-team);
+}
+
+.trainer-card-portrait {
+  position: relative;
+  width: min(148px, 84%);
+  margin: 16px auto 14px;
+}
+
+.trainer-card-monogram {
+  display: grid;
+  width: 100%;
+  aspect-ratio: 1;
+  place-items: center;
+  border: 3px solid var(--trainer-team);
+  border-radius: 50%;
+  background:
+    radial-gradient(
+      circle at 35% 28%,
+      rgba(255, 255, 255, 0.22),
+      transparent 28%
+    ),
+    #173436;
+  color: #fff;
+  font-size: clamp(3.5rem, 8vw, 5rem);
+  font-weight: 900;
+}
+
+.trainer-card-level {
+  position: absolute;
+  right: -8px;
+  bottom: 0;
+  display: grid;
+  min-width: 58px;
+  min-height: 58px;
+  place-content: center;
+  border: 3px solid var(--trainer-surface);
+  border-radius: 50%;
+  background: var(--trainer-team);
+  color: #071516;
+  text-align: center;
+}
+
+.trainer-card-level span {
+  font-size: 0.58rem;
   font-weight: 800;
+  line-height: 1;
+  text-transform: uppercase;
+}
+
+.trainer-card-level strong {
+  font-size: 1.3rem;
+  line-height: 1.05;
+}
+
+.trainer-card-name {
+  min-width: 0;
+  text-align: center;
+}
+
+.trainer-card-name h2 {
+  overflow: hidden;
+  margin: 0;
+  font-size: clamp(1.25rem, 3vw, 1.75rem);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.trainer-card-name > span {
+  display: block;
+  overflow: hidden;
+  margin-top: 3px;
+  color: var(--trainer-muted);
+  font-size: 0.82rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.trainer-card-team {
+  display: grid;
+  gap: 4px;
+  margin-top: auto;
+  padding-top: 18px;
+  text-align: center;
+}
+
+.trainer-card-team span {
+  color: var(--trainer-team);
+  font-size: 0.82rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.trainer-card-team strong {
+  font-size: 0.82rem;
+}
+
+.trainer-card-level-track {
+  height: 6px;
+  overflow: hidden;
+  margin-top: 9px;
+  border-radius: 3px;
+  background: rgba(133, 164, 163, 0.25);
+}
+
+.trainer-card-level-track > span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--trainer-team);
+}
+
+.trainer-card-body {
+  display: grid;
+  min-width: 0;
+  align-content: start;
+  padding: 18px;
+}
+
+.trainer-card-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--trainer-border);
+}
+
+.trainer-card-heading h2 {
+  margin: 2px 0 0;
+  font-size: clamp(1.25rem, 3vw, 1.65rem);
+}
+
+.trainer-card-number {
+  display: grid;
+  gap: 3px;
+  text-align: right;
+}
+
+.trainer-card-number strong {
+  font-size: 0.84rem;
+}
+
+.trainer-card-highlights {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  min-height: 112px;
+  border-bottom: 1px solid var(--trainer-border);
+}
+
+.trainer-card-highlight {
+  display: grid;
+  min-width: 0;
+  align-content: center;
+  justify-items: center;
+  gap: 3px;
+  padding: 9px 5px;
+  border-right: 1px solid var(--trainer-border);
+  text-align: center;
+}
+
+.trainer-card-highlight:last-child {
+  border-right: 0;
+}
+
+.trainer-card-highlight img,
+.trainer-card-highlight-placeholder {
+  width: min(74px, 100%);
+  height: 64px;
+  object-fit: contain;
+}
+
+.trainer-card-highlight-placeholder {
+  display: grid;
+  place-items: center;
+  color: var(--trainer-muted);
+  font-size: 0.8rem;
+}
+
+.trainer-card-highlight > div {
+  display: grid;
+  min-width: 0;
+  gap: 2px;
+}
+
+.trainer-card-highlight strong,
+.trainer-card-highlight span {
+  overflow: hidden;
+  max-width: 100%;
+  font-size: 0.72rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.trainer-card-highlight span {
+  color: var(--trainer-muted);
+  font-size: 0.66rem;
+}
+
+.trainer-card-highlight-empty {
+  color: color-mix(in srgb, var(--trainer-team) 55%, var(--trainer-muted));
+}
+
+.trainer-card-highlight-empty svg {
+  font-size: 1.1rem;
+  opacity: 0.58;
+}
+
+.trainer-card-facts {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  margin: 0;
+  border-bottom: 1px solid var(--trainer-border);
+}
+
+.trainer-card-facts > div {
+  display: grid;
+  grid-template-columns: 26px minmax(0, 1fr);
+  grid-template-rows: auto auto;
+  column-gap: 8px;
+  padding: 13px 10px;
+  border-right: 1px solid var(--trainer-border);
+}
+
+.trainer-card-facts > div:last-child {
+  border-right: 0;
+}
+
+.trainer-card-facts svg {
+  grid-row: 1 / 3;
+  align-self: center;
+  color: var(--trainer-team);
+  font-size: 1rem;
+}
+
+.trainer-card-facts dt {
+  color: var(--trainer-muted);
+  font-size: 0.66rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.trainer-card-facts dd {
+  overflow: hidden;
+  margin: 2px 0 0;
+  font-size: 0.78rem;
+  font-weight: 800;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.trainer-card-collection {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  border-bottom: 1px solid var(--trainer-border);
+}
+
+.trainer-card-collection > div {
+  display: grid;
+  gap: 2px;
+  padding: 12px 6px;
+  text-align: center;
+}
+
+.trainer-card-collection span {
+  color: var(--trainer-muted);
+  font-size: 0.65rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.trainer-card-collection strong {
+  color: var(--trainer-team);
+  font-size: 1.18rem;
+}
+
+.trainer-card-footer {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 14px;
+  padding-top: 13px;
+}
+
+.trainer-card-bio {
+  min-width: 0;
+}
+
+.trainer-card-bio p {
+  overflow: hidden;
+  margin: 3px 0 0;
+  color: #d6e3e1;
+  font-size: 0.82rem;
+  line-height: 1.4;
+  text-overflow: ellipsis;
+}
+
+.trainer-card-setup {
+  display: flex;
+  grid-column: 1 / -1;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-top: 14px;
+  padding: 14px;
+  border: 1px dashed color-mix(in srgb, var(--trainer-team) 60%, transparent);
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--trainer-team) 7%, transparent);
+}
+
+.trainer-card-setup h2,
+.trainer-card-setup p {
+  margin: 0;
+}
+
+.trainer-card-setup h2 {
+  margin-top: 2px;
+  font-size: 1rem;
+}
+
+.trainer-card-setup p {
+  margin-top: 3px;
+  color: var(--trainer-muted);
+  font-size: 0.8rem;
 }
 
 .trainer-profile-commands {
   display: flex;
   align-items: center;
   gap: 8px;
-}
-
-.trainer-stat-strip {
-  display: grid;
-  grid-template-columns: repeat(5, 1fr);
-  overflow: hidden;
-  border: 1px solid var(--trainer-border);
-  border-radius: 8px;
-  background: var(--trainer-surface);
-}
-
-.trainer-stat-strip div {
-  display: grid;
-  gap: 4px;
-  padding: 15px;
-  border-right: 1px solid var(--trainer-border);
-  text-align: center;
-}
-
-.trainer-stat-strip div:last-child {
-  border-right: 0;
-}
-
-.trainer-stat-strip strong {
-  font-size: 1.35rem;
 }
 
 .trainer-section {
@@ -315,56 +573,6 @@
 .trainer-section-stack {
   display: grid;
   gap: 14px;
-}
-
-.trainer-highlights {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 10px;
-  padding-top: 14px;
-}
-
-.trainer-highlight {
-  display: grid;
-  grid-template-columns: 76px minmax(0, 1fr);
-  align-items: center;
-  gap: 9px;
-  min-width: 0;
-  padding: 9px;
-  border: 1px solid #334344;
-  border-radius: 8px;
-  background: var(--trainer-surface-raised);
-}
-
-.trainer-highlight img,
-.trainer-highlight-placeholder {
-  width: 76px;
-  height: 76px;
-  object-fit: contain;
-}
-
-.trainer-highlight-placeholder {
-  display: grid;
-  place-items: center;
-  color: var(--trainer-muted);
-}
-
-.trainer-highlight div {
-  display: grid;
-  min-width: 0;
-  gap: 4px;
-}
-
-.trainer-highlight strong,
-.trainer-highlight span {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.trainer-highlight span {
-  color: var(--trainer-muted);
-  font-size: 0.8rem;
 }
 
 .trainer-form-grid,
@@ -654,14 +862,26 @@
   background: #e7f3eb;
 }
 
-:root[data-theme="light"] .trainer-profile-band {
-  background:
-    linear-gradient(115deg, rgba(48, 181, 171, 0.17), transparent 55%),
-    var(--trainer-surface);
+:root[data-theme="light"] .trainer-page p {
+  color: var(--trainer-text);
 }
 
-:root[data-theme="light"] .trainer-profile-identity p,
-:root[data-theme="light"] .trainer-page p {
+:root[data-theme="light"] .trainer-card-monogram {
+  background:
+    radial-gradient(
+      circle at 35% 28%,
+      rgba(255, 255, 255, 0.7),
+      transparent 28%
+    ),
+    #d8ebe6;
+  color: #284743;
+}
+
+:root[data-theme="light"] .trainer-card-level {
+  border-color: var(--trainer-surface);
+}
+
+:root[data-theme="light"] .trainer-card-bio p {
   color: var(--trainer-text);
 }
 
@@ -686,19 +906,146 @@
     padding-inline: 10px;
   }
 
-  .trainer-profile-band {
-    grid-template-columns: 72px minmax(0, 1fr);
-    gap: 12px;
-    padding: 16px;
+  .trainer-profile-card {
+    grid-template-columns: 1fr;
   }
 
-  .trainer-profile-mark {
-    width: 72px;
-    font-size: 1.8rem;
+  .trainer-card-identity {
+    display: grid;
+    grid-template-columns: 84px minmax(0, 1fr);
+    grid-template-areas:
+      "label label"
+      "portrait name"
+      "portrait team"
+      "track track";
+    column-gap: 13px;
+    padding: 14px;
+    border-right: 0;
+    border-bottom: 1px solid
+      color-mix(in srgb, var(--trainer-team) 45%, transparent);
+  }
+
+  .trainer-card-label {
+    grid-area: label;
+  }
+
+  .trainer-card-portrait {
+    grid-area: portrait;
+    width: 76px;
+    margin: 10px 0 4px;
+  }
+
+  .trainer-card-monogram {
+    font-size: 2.45rem;
+  }
+
+  .trainer-card-level {
+    right: -5px;
+    min-width: 42px;
+    min-height: 42px;
+    border-width: 2px;
+  }
+
+  .trainer-card-level span {
+    font-size: 0.48rem;
+  }
+
+  .trainer-card-level strong {
+    font-size: 1rem;
+  }
+
+  .trainer-card-name {
+    grid-area: name;
+    align-self: end;
+    text-align: left;
+  }
+
+  .trainer-card-name h2 {
+    font-size: 1.35rem;
+  }
+
+  .trainer-card-team {
+    grid-area: team;
+    align-self: start;
+    margin-top: 0;
+    padding-top: 6px;
+    text-align: left;
+  }
+
+  .trainer-card-level-track {
+    grid-area: track;
+    margin-top: 9px;
+  }
+
+  .trainer-card-body {
+    padding: 12px;
+  }
+
+  .trainer-card-heading {
+    gap: 10px;
+    padding-bottom: 10px;
+  }
+
+  .trainer-card-heading h2 {
+    font-size: 1.2rem;
+  }
+
+  .trainer-card-number {
+    max-width: 46%;
+  }
+
+  .trainer-card-number strong {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .trainer-card-highlights {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .trainer-card-highlight {
+    border-bottom: 1px solid var(--trainer-border);
+  }
+
+  .trainer-card-highlight:nth-child(3n) {
+    border-right: 0;
+  }
+
+  .trainer-card-highlight:nth-last-child(-n + 3) {
+    border-bottom: 0;
+  }
+
+  .trainer-card-facts {
+    grid-template-columns: 1fr;
+  }
+
+  .trainer-card-facts > div {
+    border-right: 0;
+    border-bottom: 1px solid var(--trainer-border);
+  }
+
+  .trainer-card-facts > div:last-child {
+    border-bottom: 0;
+  }
+
+  .trainer-card-collection {
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+  }
+
+  .trainer-card-collection > div {
+    grid-column: span 2;
+  }
+
+  .trainer-card-collection > div:nth-last-child(-n + 2) {
+    grid-column: span 3;
+  }
+
+  .trainer-card-footer {
+    grid-template-columns: 1fr;
   }
 
   .trainer-profile-commands {
-    grid-column: 1 / -1;
     justify-content: stretch;
   }
 
@@ -706,46 +1053,14 @@
     flex: 1;
   }
 
-  .trainer-profile-setup {
+  .trainer-card-setup {
     align-items: stretch;
     flex-direction: column;
-    gap: 14px;
   }
 
-  .trainer-profile-setup .trainer-button {
+  .trainer-card-setup .trainer-button {
     justify-content: center;
     width: 100%;
-  }
-
-  .trainer-stat-strip {
-    grid-template-columns: repeat(3, 1fr);
-  }
-
-  .trainer-stat-strip div {
-    border-bottom: 1px solid var(--trainer-border);
-  }
-
-  .trainer-stat-strip div:nth-child(3),
-  .trainer-stat-strip div:last-child {
-    border-right: 0;
-  }
-
-  .trainer-stat-strip div:nth-last-child(-n + 2) {
-    border-bottom: 0;
-  }
-
-  .trainer-highlights {
-    grid-template-columns: 1fr 1fr;
-  }
-
-  .trainer-highlight {
-    grid-template-columns: 58px minmax(0, 1fr);
-  }
-
-  .trainer-highlight img,
-  .trainer-highlight-placeholder {
-    width: 58px;
-    height: 58px;
   }
 
   .trainer-form-grid,
@@ -799,10 +1114,6 @@
     flex-direction: column;
     gap: 2px;
     font-size: 0.72rem;
-  }
-
-  .trainer-highlights {
-    grid-template-columns: 1fr;
   }
 
   .trainer-section {

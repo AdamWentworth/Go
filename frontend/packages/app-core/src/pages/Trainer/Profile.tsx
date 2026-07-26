@@ -1,9 +1,12 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   FaBan,
+  FaCalendarAlt,
   FaCheck,
   FaEdit,
   FaExchangeAlt,
+  FaIdCard,
+  FaMapMarkerAlt,
   FaStar,
   FaTimes,
   FaUserCheck,
@@ -71,6 +74,20 @@ const toDateInput = (value?: string | null) =>
 const formatNumber = (value?: number | null) =>
   typeof value === "number" ? value.toLocaleString() : "-";
 
+const formatDate = (value?: string | null) => {
+  if (!value) return "Not shared";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "Not shared";
+  return new Intl.DateTimeFormat(undefined, {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  }).format(date);
+};
+
+const formatTrainerCode = (value?: string | null) =>
+  value ? value.replace(/(\d{4})(?=\d)/g, "$1 ") : "Not shared";
+
 const profileToForm = (
   profile: TrainerProfile<PokemonInstance>,
 ): ProfileForm => ({
@@ -93,13 +110,16 @@ const HighlightCard = ({
 }) => {
   if (!variant) {
     return (
-      <article className="trainer-highlight">
-        <div className="trainer-highlight-placeholder">
+      <article className="trainer-card-highlight">
+        <div className="trainer-card-highlight-placeholder">
           #{instance.pokemon_id}
         </div>
-        <strong>
-          {instance.nickname || `Pokemon #${instance.pokemon_id}`}
-        </strong>
+        <div>
+          <strong>
+            {instance.nickname || `Pokemon #${instance.pokemon_id}`}
+          </strong>
+          <span>Featured Pokemon</span>
+        </div>
       </article>
     );
   }
@@ -111,7 +131,7 @@ const HighlightCard = ({
   });
 
   return (
-    <article className="trainer-highlight">
+    <article className="trainer-card-highlight">
       <img src={image} alt="" />
       <div>
         <strong>{instance.nickname || variant.species_name}</strong>
@@ -430,81 +450,191 @@ const Profile = () => {
       {!loading && profile ? (
         <>
           <section
-            className={`trainer-profile-band trainer-team-${(
+            className={`trainer-profile-card trainer-team-${(
               profile.user.team || "neutral"
             ).toLowerCase()}`}
+            aria-label={`${profile.user.username}'s trainer card`}
           >
-            <div className="trainer-profile-mark" aria-hidden="true">
-              {profile.user.username.slice(0, 1).toUpperCase()}
-            </div>
-            <div className="trainer-profile-identity">
-              <span>{profile.user.team || "Unaffiliated trainer"}</span>
-              <h2>{profile.user.pokemonGoName || profile.user.username}</h2>
-              <p>{profile.bio || "No trainer bio yet."}</p>
-              <div className="trainer-profile-meta">
-                {profile.user.trainer_level ? (
-                  <span>Level {profile.user.trainer_level}</span>
-                ) : null}
-                {profile.location ? <span>{profile.location}</span> : null}
-                {profile.trainer_code ? (
-                  <span>
-                    {profile.trainer_code.replace(/(\d{4})(?=\d)/g, "$1 ")}
-                  </span>
-                ) : null}
+            <aside className="trainer-card-identity">
+              <span className="trainer-card-label">Trainer card</span>
+              <div className="trainer-card-portrait">
+                <div className="trainer-card-monogram" aria-hidden="true">
+                  {profile.user.username.slice(0, 1).toUpperCase()}
+                </div>
+                <div className="trainer-card-level">
+                  <span>Level</span>
+                  <strong>{profile.user.trainer_level || "-"}</strong>
+                </div>
               </div>
-            </div>
-            <div className="trainer-profile-commands">
-              {profile.viewer.can_view_collection ? (
-                <button
-                  type="button"
-                  className="trainer-button trainer-button-primary"
-                  onClick={() =>
-                    navigate(
-                      isOwner
-                        ? "/pokemon"
-                        : `/pokemon/${encodeURIComponent(profile.user.username)}`,
-                      { state: { contextBackTo: currentProfilePath } },
-                    )
-                  }
-                >
-                  <FaExchangeAlt />
-                  View Pokemon
-                </button>
-              ) : null}
-              {!isOwner && authUser ? (
-                <button
-                  type="button"
-                  className="trainer-icon-button trainer-danger-icon"
-                  aria-label="Block trainer"
-                  title="Block trainer"
-                  onClick={() => void handleBlock()}
-                >
-                  <FaBan />
-                </button>
+              <div className="trainer-card-name">
+                <h2>{profile.user.pokemonGoName || profile.user.username}</h2>
+                <span>@{profile.user.username}</span>
+              </div>
+              <div className="trainer-card-team">
+                <span>{profile.user.team || "Unaffiliated"}</span>
+                <strong>
+                  {typeof profile.user.total_xp === "number"
+                    ? `${formatNumber(profile.user.total_xp)} XP`
+                    : "XP not shared"}
+                </strong>
+              </div>
+              <div
+                className="trainer-card-level-track"
+                aria-label={
+                  profile.user.trainer_level
+                    ? `Trainer level ${profile.user.trainer_level}`
+                    : "Trainer level not shared"
+                }
+              >
+                <span
+                  style={{
+                    width: `${Math.min(
+                      100,
+                      Math.max(
+                        0,
+                        ((profile.user.trainer_level || 0) / 80) * 100,
+                      ),
+                    )}%`,
+                  }}
+                />
+              </div>
+            </aside>
+
+            <div className="trainer-card-body">
+              <header className="trainer-card-heading">
+                <div>
+                  <span>PokeGoNexus</span>
+                  <h2>Trainer showcase</h2>
+                </div>
+                <div className="trainer-card-number">
+                  <span>Member since</span>
+                  <strong>{formatDate(profile.user.app_joined_at)}</strong>
+                </div>
+              </header>
+
+              <div
+                className="trainer-card-highlights"
+                aria-label="Featured Pokemon"
+              >
+                {Array.from({ length: 6 }, (_, index) => {
+                  const instance = profile.highlights[index];
+                  return instance ? (
+                    <HighlightCard
+                      key={
+                        instance.instance_id ||
+                        `${instance.variant_id}-${index}`
+                      }
+                      instance={instance}
+                      variant={variantByID.get(instance.variant_id)}
+                    />
+                  ) : (
+                    <div
+                      className="trainer-card-highlight trainer-card-highlight-empty"
+                      key={`empty-highlight-${index + 1}`}
+                      aria-label={`Empty featured Pokemon slot ${index + 1}`}
+                    >
+                      <FaStar aria-hidden="true" />
+                      <span>Open slot</span>
+                    </div>
+                  );
+                })}
+              </div>
+
+              <dl className="trainer-card-facts">
+                <div>
+                  <FaCalendarAlt aria-hidden="true" />
+                  <dt>Started</dt>
+                  <dd>{formatDate(profile.user.pogo_started_on)}</dd>
+                </div>
+                <div>
+                  <FaMapMarkerAlt aria-hidden="true" />
+                  <dt>Location</dt>
+                  <dd>{profile.location || "Not shared"}</dd>
+                </div>
+                <div>
+                  <FaIdCard aria-hidden="true" />
+                  <dt>Trainer code</dt>
+                  <dd>{formatTrainerCode(profile.trainer_code)}</dd>
+                </div>
+              </dl>
+
+              <div
+                className="trainer-card-collection"
+                aria-label="Collection summary"
+              >
+                {[
+                  { label: "Caught", value: profile.stats.caught },
+                  { label: "Registered", value: profile.stats.registered },
+                  { label: "For trade", value: profile.stats.for_trade },
+                  { label: "Wanted", value: profile.stats.wanted },
+                  { label: "Favorites", value: profile.stats.favorites },
+                ].map(({ label, value }) => (
+                  <div key={label}>
+                    <span>{label}</span>
+                    <strong>{formatNumber(value)}</strong>
+                  </div>
+                ))}
+              </div>
+
+              <footer className="trainer-card-footer">
+                <div className="trainer-card-bio">
+                  <span>Trainer notes</span>
+                  <p>{profile.bio || "No trainer bio yet."}</p>
+                </div>
+                <div className="trainer-profile-commands">
+                  {profile.viewer.can_view_collection ? (
+                    <button
+                      type="button"
+                      className="trainer-button trainer-button-primary"
+                      onClick={() =>
+                        navigate(
+                          isOwner
+                            ? "/pokemon"
+                            : `/pokemon/${encodeURIComponent(profile.user.username)}`,
+                          { state: { contextBackTo: currentProfilePath } },
+                        )
+                      }
+                    >
+                      <FaExchangeAlt />
+                      View Pokemon
+                    </button>
+                  ) : null}
+                  {!isOwner && authUser ? (
+                    <button
+                      type="button"
+                      className="trainer-icon-button trainer-danger-icon"
+                      aria-label="Block trainer"
+                      title="Block trainer"
+                      onClick={() => void handleBlock()}
+                    >
+                      <FaBan />
+                    </button>
+                  ) : null}
+                </div>
+              </footer>
+
+              {needsProfileSetup && !editing ? (
+                <div className="trainer-card-setup">
+                  <div>
+                    <span>Start here</span>
+                    <h2>Make this trainer profile yours</h2>
+                    <p>
+                      Add your trainer details and choose Pokemon from your
+                      collection to feature.
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    className="trainer-button trainer-button-primary"
+                    onClick={toggleEditing}
+                  >
+                    <FaEdit />
+                    Customize profile
+                  </button>
+                </div>
               ) : null}
             </div>
           </section>
-
-          {needsProfileSetup && !editing ? (
-            <section className="trainer-section trainer-profile-setup">
-              <div>
-                <span>Start here</span>
-                <h2>Make this trainer profile yours</h2>
-                <p>
-                  Add your trainer details and choose Pokemon from your
-                  collection to feature.
-                </p>
-              </div>
-              <button
-                type="button"
-                className="trainer-button trainer-button-primary"
-                onClick={toggleEditing}
-              >
-                <FaEdit />
-                Customize profile
-              </button>
-            </section>
-          ) : null}
 
           {editing ? (
             <section className="trainer-section">
@@ -663,59 +793,6 @@ const Profile = () => {
               </div>
             </section>
           ) : null}
-
-          <section
-            className="trainer-stat-strip"
-            aria-label="Collection summary"
-          >
-            <div>
-              <span>Caught</span>
-              <strong>{formatNumber(profile.stats.caught)}</strong>
-            </div>
-            <div>
-              <span>Registered</span>
-              <strong>{formatNumber(profile.stats.registered)}</strong>
-            </div>
-            <div>
-              <span>For trade</span>
-              <strong>{formatNumber(profile.stats.for_trade)}</strong>
-            </div>
-            <div>
-              <span>Wanted</span>
-              <strong>{formatNumber(profile.stats.wanted)}</strong>
-            </div>
-            <div>
-              <span>Favorites</span>
-              <strong>{formatNumber(profile.stats.favorites)}</strong>
-            </div>
-          </section>
-
-          <section className="trainer-section">
-            <header>
-              <div>
-                <span>Trainer showcase</span>
-                <h2>Pokemon highlights</h2>
-              </div>
-              <FaStar />
-            </header>
-            {profile.highlights.length ? (
-              <div className="trainer-highlights">
-                {profile.highlights.map((instance) => (
-                  <HighlightCard
-                    key={instance.instance_id || instance.variant_id}
-                    instance={instance}
-                    variant={variantByID.get(instance.variant_id)}
-                  />
-                ))}
-              </div>
-            ) : (
-              <p className="trainer-empty">
-                {isOwner
-                  ? "Your selected Pokemon highlights will appear here."
-                  : "This trainer has not selected any Pokemon highlights."}
-              </p>
-            )}
-          </section>
         </>
       ) : null}
     </TrainerPageShell>

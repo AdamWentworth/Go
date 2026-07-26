@@ -109,6 +109,8 @@ const profile = {
     pokemonGoName: "CeruleanLeader",
     team: "Mystic",
     trainer_level: 50,
+    total_xp: 88_000_000,
+    pogo_started_on: "2016-07-06T00:00:00Z",
     app_joined_at: "2026-01-01T00:00:00Z",
   },
   bio: "Water-type trainer",
@@ -148,6 +150,14 @@ describe("Trainer Profile", () => {
     );
 
     expect(await screen.findByText("CeruleanLeader")).toBeInTheDocument();
+    expect(
+      screen.getByRole("region", { name: /misty's trainer card/i }),
+    ).toBeInTheDocument();
+    expect(screen.getByText("88,000,000 XP")).toBeInTheDocument();
+    expect(
+      screen.getAllByLabelText(/empty featured pokemon slot/i),
+    ).toHaveLength(6);
+    expect(screen.getByLabelText(/collection summary/i)).toBeInTheDocument();
     expect(screen.getByText("12")).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole("button", { name: /view pokemon/i }));
