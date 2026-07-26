@@ -982,6 +982,35 @@
   opacity: 0.86;
 }
 
+.pokedex-region-grid__cell.is-unreleased {
+  border-style: dashed;
+  border-color: color-mix(in srgb, var(--pokedex-muted), transparent 38%);
+  background: color-mix(in srgb, var(--pokedex-surface-raised), transparent 28%);
+  box-shadow: none;
+}
+
+.pokedex-region-grid__cell.is-unreleased:hover,
+.pokedex-region-grid__cell.is-unreleased:focus-within {
+  border-color: color-mix(in srgb, var(--pokedex-muted), transparent 20%);
+  background: color-mix(in srgb, var(--pokedex-surface-raised), transparent 28%);
+  transform: none;
+}
+
+.pokedex-region-grid__cell.is-unreleased .pokedex-region-grid__open {
+  cursor: default;
+}
+
+.pokedex-region-grid__cell.is-unreleased .pokedex-region-grid__image {
+  filter: grayscale(1);
+  opacity: 0.42;
+}
+
+.pokedex-region-grid__cell.is-unreleased .pokedex-region-grid__number,
+.pokedex-region-grid__cell.is-unreleased .pokedex-region-grid__name,
+.pokedex-region-grid__cell.is-unreleased .pokedex-region-grid__state {
+  color: var(--pokedex-muted);
+}
+
 .pokedex-region-grid__registration-toggle {
   position: absolute;
   top: 8px;

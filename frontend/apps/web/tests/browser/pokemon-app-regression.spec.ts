@@ -1027,6 +1027,39 @@ test.describe('pokemon app browser regressions', () => {
     ).toEqual([]);
   });
 
+  test('opens Pokedex detail at the region selected from the folder view', async ({
+    page,
+  }, testInfo) => {
+    const diagnostics = attachBrowserDiagnostics(page, testInfo);
+
+    try {
+      await installE2eRoutes(page);
+      const response = await page.goto('/pokedex', { waitUntil: 'domcontentloaded' });
+      expect(response?.ok(), '/pokedex document response should be OK').toBe(true);
+
+      const pokemonRegions = page.getByLabel('Pokemon regions', { exact: true });
+      const johtoRegion = pokemonRegions.getByRole('button', { name: /Johto/i });
+      await expect(johtoRegion).toBeVisible({ timeout: 30_000 });
+      await johtoRegion.click();
+
+      const selectedRegion = page.locator(
+        '.pokedex-category-panel[aria-hidden="false"] .pokedex-region-detail__section.is-current',
+      );
+      await expect(selectedRegion).toContainText('Johto');
+      await expect
+        .poll(() => selectedRegion.evaluate((element) => element.getBoundingClientRect().top))
+        .toBeLessThan(100);
+    } finally {
+      await diagnostics.flush();
+    }
+
+    const blockingErrors = diagnostics.blockingErrors();
+    expect(
+      blockingErrors,
+      `browser diagnostics should not include runtime errors:\n${JSON.stringify(blockingErrors, null, 2)}`,
+    ).toEqual([]);
+  });
+
   test('keeps Pokedex region scroll position when closing a Pokemon detail view', async ({
     page,
   }, testInfo) => {

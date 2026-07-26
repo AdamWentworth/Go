@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 
 import { useInstancesStore } from '@/features/instances/store/useInstancesStore';
 import {
@@ -16,12 +16,19 @@ import { useContextBackHandler } from '@/contexts/ContextBackContext';
 import { useModal } from '@/contexts/ModalContext';
 import CloseButton from '@/components/CloseButton';
 import { determineImageUrl } from '@/utils/imageHelpers';
+import {
+  getPokemonCatalogManifest,
+  getPokemonPokedexSpeciesChunk,
+} from '@/services/pokemonDataService';
+import { createScopedLogger } from '@/utils/logger';
 
 import type { PokemonVariant } from '@/types/pokemonVariants';
+import type { PokemonPokedexSpecies } from '@shared-contracts/pokemon';
 
 import './Pokedex.css';
 import PokedexPokemonDetail from './PokedexPokemonDetail';
 import { schedulePokedexScrollRestore } from './pokedexScrollRestoration';
+import { isPokedexPokemonReleased, mergePokedexSpecies } from './pokedexSpecies';
 
 type PokedexViewMode = 'regions' | 'detail';
 type PokedexGenderValue = 'Male' | 'Female';
@@ -59,6 +66,7 @@ type SelectedPokemon =
   | null;
 
 const DEFAULT_POKEMON_IMAGE_URL = '/images/default_pokemon.png';
+const log = createScopedLogger('Pokedex');
 
 interface RegionDefinition {
   key: string;
@@ -969,6 +977,8 @@ function Pokedex() {
   const [selectedPokemon, setSelectedPokemon] = useState<SelectedPokemon>(null);
   const [regionSearchTerm, setRegionSearchTerm] = useState('');
   const [pendingScrollRegionKey, setPendingScrollRegionKey] = useState<string | null>(null);
+  const [pokedexSpecies, setPokedexSpecies] = useState<PokemonPokedexSpecies[]>([]);
+  const [pokedexSpeciesLoading, setPokedexSpeciesLoading] = useState(true);
   const [collapsedRegionSectionKeys, setCollapsedRegionSectionKeys] = useState<Set<string>>(
     () => new Set(),
   );
@@ -980,10 +990,14 @@ function Pokedex() {
     () => projectPokedexRegistrations(variants, instances, manualRegistrations),
     [instances, manualRegistrations, variants],
   );
+  const pokedexVariants = useMemo(
+    () => mergePokedexSpecies(variants, pokedexSpecies),
+    [pokedexSpecies, variants],
+  );
 
   const regionSummaries = useMemo<RegionSummary[]>(() => {
     return REGION_DEFINITIONS.map((region) => {
-      const species = getRegionBaseSpecies(variants, region.generation);
+      const species = getRegionBaseSpecies(pokedexVariants, region.generation);
       const regionDexNumbers = new Set(
         species
           .map((pokemon) => getDexNumber(pokemon))
@@ -1014,7 +1028,7 @@ function Pokedex() {
         ),
       };
     }).filter((region) => region.totalCount > 0);
-  }, [registrations, variants]);
+  }, [pokedexVariants, registrations]);
 
   const activeCategory = useMemo(
     () =>
@@ -1130,6 +1144,30 @@ function Pokedex() {
     void hydrateManualRegistrations();
   }, [hydrateManualRegistrations]);
 
+  useEffect(() => {
+    let cancelled = false;
+
+    void (async () => {
+      try {
+        const manifest = await getPokemonCatalogManifest();
+        const species = await getPokemonPokedexSpeciesChunk(manifest);
+        if (!cancelled && species) {
+          setPokedexSpecies(species);
+        }
+      } catch (error) {
+        log.warn('Unreleased Pokedex species are unavailable; using the released catalog.', error);
+      } finally {
+        if (!cancelled) {
+          setPokedexSpeciesLoading(false);
+        }
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   const activeRegistrationSummary = useMemo(() => {
     const categorySummaries = regionCategorySummariesByKey.get(selectedCategoryKey);
     if (!categorySummaries) {
@@ -1169,6 +1207,7 @@ function Pokedex() {
       );
 
       for (const pokemon of visibleSpecies) {
+        if (!isPokedexPokemonReleased(pokemon)) continue;
         const entry = createManualPokedexRegistration(pokemon, advancedFacets, registeredAt);
         byRegistrationId.set(entry.registration_id, entry);
       }
@@ -1253,21 +1292,17 @@ function Pokedex() {
     visibleVariantCategories,
   ]);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (viewMode !== 'detail' || !pendingScrollRegionKey) return;
-    const timeoutId = window.setTimeout(() => {
-      const sectionRefKey = getRegionSectionRefKey(selectedCategoryKey, pendingScrollRegionKey);
-      const targetSection = regionSectionRefs.current[sectionRefKey];
-      if (typeof targetSection?.scrollIntoView === 'function') {
-        targetSection.scrollIntoView({
-          block: 'start',
-          behavior: 'smooth',
-        });
-      }
-      setPendingScrollRegionKey(null);
-    }, 50);
+    const sectionRefKey = getRegionSectionRefKey(selectedCategoryKey, pendingScrollRegionKey);
+    const targetSection = regionSectionRefs.current[sectionRefKey];
+    if (typeof targetSection?.scrollIntoView !== 'function') return;
 
-    return () => window.clearTimeout(timeoutId);
+    targetSection.scrollIntoView({
+      block: 'start',
+      behavior: 'auto',
+    });
+    setPendingScrollRegionKey(null);
   }, [pendingScrollRegionKey, selectedCategoryKey, viewMode]);
 
   useEffect(() => {
@@ -1446,7 +1481,7 @@ function Pokedex() {
     'pokedex-context',
   );
 
-  if (loading && variants.length === 0) {
+  if ((loading && variants.length === 0) || pokedexSpeciesLoading) {
     return <AppLoadingFallback source="pokedex-page" />;
   }
 
@@ -1833,6 +1868,7 @@ function Pokedex() {
                                       aria-label={`${region.label} ${categoryLabel}`}
                                     >
                                   {visibleSpecies.map((pokemon) => {
+                                    const isReleased = isPokedexPokemonReleased(pokemon);
                                     const registrationKey = getPokemonRegistrationKey(pokemon, {
                                       selectedFacets: advancedFacets,
                                       useDexRegistration: shouldCollapseCategoryByDex(category.key),
@@ -1843,21 +1879,25 @@ function Pokedex() {
                                       ...getVariantBadgeIcons(pokemon),
                                       ...getActiveFacetBadgeIcons(advancedSelection),
                                     ];
-                                    const manualRegistrationEntry = createManualPokedexRegistration(
-                                      pokemon,
-                                      advancedFacets,
-                                    );
+                                    const manualRegistrationEntry = isReleased
+                                      ? createManualPokedexRegistration(pokemon, advancedFacets)
+                                      : null;
 
                                     return (
                                       <article
                                         className={`pokedex-region-grid__cell ${
-                                          isRegistered ? 'is-registered' : 'is-missing'
+                                          !isReleased
+                                            ? 'is-unreleased'
+                                            : isRegistered
+                                              ? 'is-registered'
+                                              : 'is-missing'
                                         }`}
                                         key={pokemon.variant_id}
                                       >
                                         <button
                                           className="pokedex-region-grid__open"
                                           type="button"
+                                          disabled={!isReleased}
                                           tabIndex={category.key === selectedCategoryKey && !isCollapsed ? 0 : -1}
                                           onClick={() => handleOpenPokemonDetail(pokemon)}
                                         >
@@ -1886,24 +1926,30 @@ function Pokedex() {
                                           <span className="pokedex-region-grid__number">{formatDexNumber(pokemon)}</span>
                                           <span className="pokedex-region-grid__name">{getDisplayName(pokemon)}</span>
                                           <span className="pokedex-region-grid__state">
-                                            {isRegistered ? 'Registered' : 'Missing'}
+                                            {!isReleased
+                                              ? 'Unreleased'
+                                              : isRegistered
+                                                ? 'Registered'
+                                                : 'Missing'}
                                           </span>
                                         </button>
-                                        <button
-                                          className="pokedex-region-grid__registration-toggle"
-                                          type="button"
-                                          aria-label={`${isRegistered ? 'Clear' : 'Register'} ${getDisplayName(pokemon)}`}
-                                          aria-pressed={isRegistered}
-                                          tabIndex={category.key === selectedCategoryKey && !isCollapsed ? 0 : -1}
-                                          onClick={() =>
-                                            handleToggleRegionRegistration(
-                                              manualRegistrationEntry,
-                                              isRegistered,
-                                            )
-                                          }
-                                        >
-                                          {isRegistered ? '✓' : '+'}
-                                        </button>
+                                        {manualRegistrationEntry ? (
+                                          <button
+                                            className="pokedex-region-grid__registration-toggle"
+                                            type="button"
+                                            aria-label={`${isRegistered ? 'Clear' : 'Register'} ${getDisplayName(pokemon)}`}
+                                            aria-pressed={isRegistered}
+                                            tabIndex={category.key === selectedCategoryKey && !isCollapsed ? 0 : -1}
+                                            onClick={() =>
+                                              handleToggleRegionRegistration(
+                                                manualRegistrationEntry,
+                                                isRegistered,
+                                              )
+                                            }
+                                          >
+                                            {isRegistered ? '✓' : '+'}
+                                          </button>
+                                        ) : null}
                                       </article>
                                     );
                                   })}

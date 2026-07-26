@@ -13,6 +13,7 @@ export type E2eRouteOptions = {
   userInstances?: unknown;
   publicUser?: unknown;
   userOverview?: unknown;
+  pokedexSpecies?: unknown[];
   raidDataDelayMs?: number;
 };
 
@@ -61,6 +62,17 @@ const movesFixture = pokemonFixture.map((pokemon) => ({
 const raidDataFixture = pokemonFixture.map((pokemon) => ({
   pokemon_id: pokemon.pokemon_id,
   raid_boss: Array.isArray(pokemon.raid_boss) ? pokemon.raid_boss : [],
+}));
+
+const pokedexSpeciesFixture = pokemonFixture.map((pokemon) => ({
+  pokemon_id: pokemon.pokemon_id,
+  name: pokemon.name,
+  pokedex_number: pokemon.pokedex_number,
+  image_url: pokemon.image_url,
+  gender_rate: pokemon.gender_rate,
+  form: pokemon.form,
+  generation: pokemon.generation,
+  available: pokemon.available,
 }));
 
 const maxDataFixture = pokemonFixture.filter((pokemon) => {
@@ -212,6 +224,15 @@ const pokemonManifestFixture = {
       bytesJson: 1,
       bytesGzip: 1,
     },
+    pokedex: {
+      name: 'pokedex',
+      endpoint: '/pokedex',
+      contentType: 'application/json',
+      etag: '"e2e-pokedex-v1"',
+      version: 'e2e-pokedex-v1',
+      bytesJson: 1,
+      bytesGzip: 1,
+    },
     moves: {
       name: 'moves',
       endpoint: '/moves',
@@ -335,6 +356,12 @@ export async function installE2eRoutes(page: Page, options: E2eRouteOptions = {}
   for (const pathPattern of ['**/api/pokemon/catalog', '**/__e2e/pokemon/catalog']) {
     await page.route(pathPattern, async (route) => {
       await fulfillJson(route, catalogFixture);
+    });
+  }
+
+  for (const pathPattern of ['**/api/pokemon/pokedex', '**/__e2e/pokemon/pokedex']) {
+    await page.route(pathPattern, async (route) => {
+      await fulfillJson(route, options.pokedexSpecies ?? pokedexSpeciesFixture);
     });
   }
 

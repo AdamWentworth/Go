@@ -5,10 +5,16 @@ import Pokedex from '@/pages/Pokedex/Pokedex';
 
 import type { PokemonInstance } from '@/types/pokemonInstance';
 import type { PokemonVariant } from '@/types/pokemonVariants';
+import type { PokemonPokedexSpecies } from '@shared-contracts/pokemon';
 import {
   createManualPokedexRegistration,
   type PokedexRegistrationEntry,
 } from '@/features/pokedex/registrationProjection';
+
+const serviceMocks = vi.hoisted(() => ({
+  getCatalogManifest: vi.fn(),
+  getPokedexSpecies: vi.fn(),
+}));
 
 const storeMocks = vi.hoisted(() => ({
   variantsState: {
@@ -29,6 +35,11 @@ const storeMocks = vi.hoisted(() => ({
   modalState: {
     confirm: vi.fn(async () => true),
   },
+}));
+
+vi.mock('@/services/pokemonDataService', () => ({
+  getPokemonCatalogManifest: serviceMocks.getCatalogManifest,
+  getPokemonPokedexSpeciesChunk: serviceMocks.getPokedexSpecies,
 }));
 
 vi.mock('@/features/variants/store/useVariantsStore', () => ({
@@ -175,6 +186,13 @@ function seedPokedexStores() {
     name: 'Squirtle',
     species_name: 'Squirtle',
   });
+  const pikachu = makeVariant({
+    variant_id: '0025-default',
+    pokemon_id: 25,
+    pokedex_number: 25,
+    name: 'Pikachu',
+    species_name: 'Pikachu',
+  });
   const shinyBulbasaur = makeVariant({
     variant_id: '0001-shiny',
     pokemon_id: 1,
@@ -220,6 +238,7 @@ function seedPokedexStores() {
     ivysaur,
     venusaur,
     squirtle,
+    pikachu,
     shinyBulbasaur,
     shadowBulbasaur,
     costumePikachu,
@@ -240,15 +259,55 @@ function seedPokedexStores() {
   storeMocks.modalState.confirm.mockResolvedValue(true);
 }
 
+function makePokedexSpecies(
+  overrides: Partial<PokemonPokedexSpecies> = {},
+): PokemonPokedexSpecies {
+  const pokemonId = Number(overrides.pokemon_id ?? 1);
+  const pokedexNumber = Number(overrides.pokedex_number ?? pokemonId);
+  return {
+    pokemon_id: pokemonId,
+    name: String(overrides.name ?? 'Bulbasaur'),
+    pokedex_number: pokedexNumber,
+    image_url: overrides.image_url ?? `/images/default/pokemon_${pokemonId}.png`,
+    gender_rate: overrides.gender_rate ?? 'M/F',
+    form: overrides.form ?? null,
+    generation: Number(overrides.generation ?? 1),
+    available: overrides.available ?? 1,
+  };
+}
+
+function makeKantoSpeciesCatalog(): PokemonPokedexSpecies[] {
+  return [
+    makePokedexSpecies(),
+    makePokedexSpecies({ pokemon_id: 2, pokedex_number: 2, name: 'Ivysaur' }),
+    makePokedexSpecies({ pokemon_id: 3, pokedex_number: 3, name: 'Venusaur' }),
+    makePokedexSpecies({ pokemon_id: 7, pokedex_number: 7, name: 'Squirtle' }),
+    makePokedexSpecies({ pokemon_id: 25, pokedex_number: 25, name: 'Pikachu' }),
+  ];
+}
+
 describe('Pokedex page', () => {
   beforeEach(() => {
     seedPokedexStores();
+    serviceMocks.getCatalogManifest.mockReset();
+    serviceMocks.getCatalogManifest.mockResolvedValue({
+      schemaVersion: 3,
+      catalogVersion: 'test',
+      generatedAt: '2026-07-26T00:00:00Z',
+      chunks: {},
+    });
+    serviceMocks.getPokedexSpecies.mockReset();
+    serviceMocks.getPokedexSpecies.mockResolvedValue([]);
+    Object.defineProperty(HTMLElement.prototype, 'scrollIntoView', {
+      configurable: true,
+      value: vi.fn(),
+    });
   });
 
   it('guards category navigation, advanced qualities, region detail search, and Pokemon drill-in', async () => {
     render(<Pokedex />);
 
-    expect(screen.getByRole('heading', { name: 'Pokedex' })).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { name: 'Pokedex' })).toBeInTheDocument();
     expect(screen.getByRole('switch', { name: /Advanced/i })).toHaveAttribute(
       'aria-checked',
       'false',
@@ -336,7 +395,7 @@ describe('Pokedex page', () => {
     expect(screen.getByRole('heading', { name: 'Bulbasaur' })).toBeInTheDocument();
   });
 
-  it('counts matching region registrations by visible card instead of raw registration rows', () => {
+  it('counts matching region registrations by visible card instead of raw registration rows', async () => {
     const shinyBulbasaur = storeMocks.variantsState.variants.find(
       (variant) => variant.variant_id === '0001-shiny',
     ) as PokemonVariant;
@@ -350,9 +409,73 @@ describe('Pokedex page', () => {
 
     render(<Pokedex />);
 
+    await screen.findByRole('heading', { name: 'Pokedex' });
     fireEvent.click(screen.getByRole('tab', { name: /^Shiny$/i }));
     fireEvent.click(screen.getByRole('button', { name: /^100%$/i }));
 
     expect(screen.getByRole('button', { name: /Kanto.*1 \/ 1/i })).toBeInTheDocument();
+  });
+
+  it('includes unreleased species in regional totals without allowing registration', async () => {
+    serviceMocks.getPokedexSpecies.mockResolvedValue([
+      ...makeKantoSpeciesCatalog(),
+      makePokedexSpecies({
+        pokemon_id: 151,
+        pokedex_number: 151,
+        name: 'Unreleased Kanto Species',
+        available: 0,
+      }),
+    ]);
+
+    render(<Pokedex />);
+
+    fireEvent.click(await screen.findByRole('button', { name: /Kanto.*1 \/ 6/i }));
+
+    const unreleasedPokemon = screen.getByRole('button', {
+      name: /Unreleased Kanto Species.*Unreleased/i,
+    });
+    expect(unreleasedPokemon).toBeDisabled();
+    expect(
+      screen.queryByRole('button', { name: /Register Unreleased Kanto Species/i }),
+    ).not.toBeInTheDocument();
+
+    const visibleActions = screen.getByLabelText('Visible registration actions');
+    expect(within(visibleActions).getByText('5')).toBeInTheDocument();
+
+    fireEvent.click(within(visibleActions).getByRole('button', { name: /^Register all$/i }));
+    await waitFor(() => {
+      expect(storeMocks.manualRegistrationState.register).toHaveBeenCalledWith([
+        expect.objectContaining({ pokemon_id: 1 }),
+        expect.objectContaining({ pokemon_id: 2 }),
+        expect.objectContaining({ pokemon_id: 3 }),
+        expect.objectContaining({ pokemon_id: 7 }),
+        expect.objectContaining({ pokemon_id: 25 }),
+      ]);
+    });
+  });
+
+  it('jumps directly to the selected region after opening the detail view', async () => {
+    serviceMocks.getPokedexSpecies.mockResolvedValue([
+      ...makeKantoSpeciesCatalog(),
+      makePokedexSpecies({
+        pokemon_id: 152,
+        pokedex_number: 152,
+        name: 'Chikorita',
+        generation: 2,
+      }),
+    ]);
+    const scrollIntoView = HTMLElement.prototype.scrollIntoView as ReturnType<typeof vi.fn>;
+
+    render(<Pokedex />);
+
+    fireEvent.click(await screen.findByRole('button', { name: /Johto.*0 \/ 1/i }));
+
+    await waitFor(() => {
+      expect(scrollIntoView).toHaveBeenCalledWith({
+        block: 'start',
+        behavior: 'auto',
+      });
+    });
+    expect(scrollIntoView.mock.instances.at(-1)).toHaveTextContent('Johto');
   });
 });
