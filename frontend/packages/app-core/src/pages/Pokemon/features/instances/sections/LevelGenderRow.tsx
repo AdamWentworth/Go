@@ -33,12 +33,8 @@ const LevelGenderRow: React.FC<LevelGenderRowProps> = ({
   gender,
   onGenderChange,
 }) => {
-  const hasDefinedLevel = level !== null;
   const hasDefinedGender = gender !== null && gender !== '';
   const showGender = hasDefinedGender || isGenderlessRate(pokemon.gender_rate);
-  const hasVisibleContent = hasDefinedLevel || showGender;
-
-  if (!hasVisibleContent) return null;
 
   return (
     <div className="level-gender-row">
@@ -61,4 +57,3 @@ const LevelGenderRow: React.FC<LevelGenderRowProps> = ({
 };
 
 export default LevelGenderRow;
-

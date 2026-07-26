@@ -635,6 +635,9 @@ test.describe('pokemon app browser regressions', () => {
       await expect(overlay).toBeVisible();
       await expect(page.locator('.caught-scroll')).toBeVisible();
       await expect(page.locator('.caught-instance')).toBeVisible();
+      await expect(
+        overlay.locator('.level-component'),
+      ).toContainText(/Level:\s*N\/A/i);
       await expect(page.locator('.app-loading-overlay')).toHaveCount(0);
 
       const metrics = await page.evaluate(() => {

@@ -315,11 +315,11 @@ describe('instances section components', () => {
     expect(screen.getByText('gender')).toBeInTheDocument();
   });
 
-  it('LevelGenderRow renders nothing when both level and gender content are absent', () => {
-    const { container } = render(
+  it('LevelGenderRow keeps the level control mounted when its value is absent', () => {
+    render(
       <LevelGenderRow
         pokemon={{}}
-        editMode={true}
+        editMode={false}
         level={null}
         onLevelChange={vi.fn()}
         gender={null}
@@ -327,7 +327,8 @@ describe('instances section components', () => {
       />,
     );
 
-    expect(container.firstChild).toBeNull();
+    expect(screen.getByText('level-')).toBeInTheDocument();
+    expect(screen.queryByText('gender')).not.toBeInTheDocument();
   });
 
   it('MetaPanel renders location/date/ball controls', () => {
