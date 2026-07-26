@@ -80,7 +80,7 @@ const AccountSecurity = () => {
   };
 
   return (
-    <TrainerPageShell eyebrow="Settings" title="Account & security">
+    <TrainerPageShell workspace="settings" title="Account">
       <section className="trainer-section">
         <header>
           <div>

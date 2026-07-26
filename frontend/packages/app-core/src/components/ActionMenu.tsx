@@ -1,7 +1,6 @@
 // ActionMenu.tsx
 
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { FaUserFriends } from 'react-icons/fa';
 import { useNavigate, useLocation } from 'react-router';
 import ActionMenuButton from './ActionMenuButton';
 import CloseButton from './CloseButton';
@@ -151,35 +150,25 @@ const ActionMenu: React.FC = () => {
 
           <div className="auth-button-container">
             {isLoggedIn ? (
-              <div className="auth-button-personal">
-                <button
-                  className="auth-button"
-                  type="button"
-                  onClick={() => handleNavigation('/profile')}
-                >
-                  <span className="auth-button-text">Profile</span>
+              <button
+                className="auth-button"
+                type="button"
+                onClick={() => handleNavigation('/profile')}
+              >
+                <span className="auth-button-text">Profile</span>
+                <span className="auth-button-icon-wrap">
                   <img
                     className="auth-button-icon"
                     src="/images/profile-icon.png"
                     alt=""
                   />
-                </button>
-                <button
-                  className="auth-button auth-button-friends"
-                  type="button"
-                  onClick={() => handleNavigation('/friends')}
-                >
-                  <span className="auth-button-text">Friends</span>
-                  <span className="auth-button-icon auth-button-icon-vector">
-                    <FaUserFriends />
-                    {pendingFriendCount > 0 ? (
-                      <span className="action-menu-notification">
-                        {pendingFriendCount > 9 ? '9+' : pendingFriendCount}
-                      </span>
-                    ) : null}
-                  </span>
-                </button>
-              </div>
+                  {pendingFriendCount > 0 ? (
+                    <span className="action-menu-notification">
+                      {pendingFriendCount > 9 ? '9+' : pendingFriendCount}
+                    </span>
+                  ) : null}
+                </span>
+              </button>
             ) : (
               <div className="auth-button-stacked">
                 <button

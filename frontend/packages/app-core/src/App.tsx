@@ -63,8 +63,12 @@ const AppContent: React.FC = () => (
           <Route path="/login"        element={<Login />} />
           <Route path="/register"     element={<Register />} />
           <Route path="/profile"      element={<Profile />} />
+          <Route path="/profile/friends" element={<Friends />} />
           <Route path="/profile/:username" element={<Profile />} />
-          <Route path="/friends"      element={<Friends />} />
+          <Route
+            path="/friends"
+            element={<Navigate to="/profile/friends" replace />}
+          />
           <Route path="/settings"     element={<Settings />} />
           <Route path="/settings/account" element={<AccountSecurity />} />
           <Route path="/account"      element={<Navigate to="/settings/account" replace />} />

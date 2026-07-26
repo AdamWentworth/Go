@@ -110,18 +110,9 @@
   align-items: flex-start;
 }
 
-.auth-button-personal {
-  display: flex;
-  align-items: center;
-  gap: 18px;
-}
-
-.auth-button-icon-vector {
+.auth-button-icon-wrap {
   position: relative;
-  display: grid;
-  place-items: center;
-  color: #fff;
-  font-size: clamp(1.7rem, 4vw, 2.25rem);
+  display: inline-flex;
 }
 
 .action-menu-notification {
@@ -355,12 +346,6 @@
 }
 
 @media (max-width: 540px) {
-  .auth-button-personal {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 8px;
-  }
-
   .auth-button-container {
     margin-bottom: 10px;
     margin-left: 8px;

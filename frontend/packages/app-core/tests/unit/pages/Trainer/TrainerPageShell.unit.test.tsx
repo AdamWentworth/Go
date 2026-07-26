@@ -21,7 +21,11 @@ describe('TrainerPageShell', () => {
           <Route
             path="/profile"
             element={
-              <TrainerPageShell eyebrow="Trainer" title="Profile">
+              <TrainerPageShell
+                workspace="profile"
+                eyebrow="Trainer"
+                title="Profile"
+              >
                 Profile content
               </TrainerPageShell>
             }
@@ -43,7 +47,11 @@ describe('TrainerPageShell', () => {
           <Route
             path="/settings"
             element={
-              <TrainerPageShell eyebrow="Preferences" title="Settings">
+              <TrainerPageShell
+                workspace="settings"
+                eyebrow="App"
+                title="Settings"
+              >
                 Settings content
               </TrainerPageShell>
             }
@@ -56,5 +64,51 @@ describe('TrainerPageShell', () => {
     fireEvent.click(screen.getByRole('button', { name: /go back/i }));
 
     expect(screen.getByText('Home screen')).toBeInTheDocument();
+  });
+
+  it('groups Friends under Profile without showing Settings as a peer', () => {
+    render(
+      <MemoryRouter initialEntries={['/profile']}>
+        <TrainerPageShell
+          workspace="profile"
+          eyebrow="Trainer"
+          title="Profile"
+        >
+          Profile content
+        </TrainerPageShell>
+      </MemoryRouter>,
+    );
+
+    const navigation = screen.getByRole('navigation', {
+      name: /profile pages/i,
+    });
+    expect(navigation).toHaveTextContent('Profile');
+    expect(navigation).toHaveTextContent('Friends');
+    expect(navigation).not.toHaveTextContent('Settings');
+    expect(screen.getByRole('link', { name: /friends/i })).toHaveAttribute(
+      'href',
+      '/profile/friends',
+    );
+  });
+
+  it('groups Account under Settings with simple labels', () => {
+    render(
+      <MemoryRouter initialEntries={['/settings']}>
+        <TrainerPageShell workspace="settings" eyebrow="App" title="Settings">
+          Settings content
+        </TrainerPageShell>
+      </MemoryRouter>,
+    );
+
+    const navigation = screen.getByRole('navigation', {
+      name: /settings pages/i,
+    });
+    expect(navigation).toHaveTextContent('Settings');
+    expect(navigation).toHaveTextContent('Account');
+    expect(navigation).not.toHaveTextContent('Friends');
+    expect(screen.getByRole('link', { name: /account/i })).toHaveAttribute(
+      'href',
+      '/settings/account',
+    );
   });
 });

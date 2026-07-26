@@ -1,8 +1,13 @@
-import { act, fireEvent, render, screen } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { MemoryRouter, useLocation } from 'react-router';
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import ActionMenu from '@/components/ActionMenu';
+
+const mocks = vi.hoisted(() => ({
+  auth: { isLoggedIn: false },
+  fetchFriendsOverview: vi.fn(),
+}));
 
 vi.mock('@/components/ActionMenuButton', () => ({
   default: ({ onClick }: { onClick: () => void }) => (
@@ -29,7 +34,11 @@ vi.mock('@/contexts/ModalContext', () => ({
 }));
 
 vi.mock('@/contexts/AuthContext', () => ({
-  useAuth: () => ({ isLoggedIn: false }),
+  useAuth: () => mocks.auth,
+}));
+
+vi.mock('@/services/socialService', () => ({
+  fetchFriendsOverview: mocks.fetchFriendsOverview,
 }));
 
 vi.mock('@/contexts/ThemeContext', () => ({
@@ -46,6 +55,11 @@ const LocationProbe = () => {
 };
 
 describe('ActionMenu', () => {
+  beforeEach(() => {
+    mocks.auth.isLoggedIn = false;
+    mocks.fetchFriendsOverview.mockReset();
+  });
+
   it('keeps Home centered among nine destinations and navigates to Max Battles', () => {
     const { container } = render(
       <MemoryRouter initialEntries={['/pokemon']}>
@@ -100,6 +114,34 @@ describe('ActionMenu', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Action Menu' }));
     fireEvent.click(screen.getByRole('button', { name: /settings/i }));
     expect(screen.getByTestId('location')).toHaveTextContent('/settings');
+  });
+
+  it('uses Profile as the single social destination and surfaces requests there', async () => {
+    mocks.auth.isLoggedIn = true;
+    mocks.fetchFriendsOverview.mockResolvedValue({
+      friends: [],
+      incoming: [{ friendship_id: 'friend-1' }],
+      outgoing: [],
+      blocked: [],
+    });
+
+    render(
+      <MemoryRouter initialEntries={['/pokemon']}>
+        <ActionMenu />
+        <LocationProbe />
+      </MemoryRouter>,
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Action Menu' }));
+
+    await waitFor(() => expect(mocks.fetchFriendsOverview).toHaveBeenCalled());
+    expect(
+      screen.queryByRole('button', { name: /friends/i }),
+    ).not.toBeInTheDocument();
+    expect(screen.getByText('1')).toHaveClass('action-menu-notification');
+
+    fireEvent.click(screen.getByRole('button', { name: /profile/i }));
+    expect(screen.getByTestId('location')).toHaveTextContent('/profile');
   });
 
   it('keeps the close control disabled until the opening gesture has settled', () => {

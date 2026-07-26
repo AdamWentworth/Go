@@ -1,14 +1,11 @@
 import { useEffect, useState } from 'react';
 import {
-  FaChevronRight,
   FaEye,
   FaLock,
   FaMoon,
   FaSave,
   FaShieldAlt,
-  FaUserCog,
 } from 'react-icons/fa';
-import { useNavigate } from 'react-router';
 import { toast } from 'react-toastify';
 
 import ThemeSwitch from '@/components/ThemeSwitch';
@@ -27,7 +24,6 @@ import TrainerPageShell from './TrainerPageShell';
 const REDUCED_MOTION_KEY = 'pokegonexus-reduced-motion';
 
 const Settings = () => {
-  const navigate = useNavigate();
   const user = useAuthStore((state) => state.user);
   const [preferences, setPreferences] = useState<TrainerPreferences | null>(null);
   const [loading, setLoading] = useState(true);
@@ -93,7 +89,7 @@ const Settings = () => {
   };
 
   return (
-    <TrainerPageShell eyebrow="Preferences" title="Settings">
+    <TrainerPageShell workspace="settings" title="Settings">
       {loading ? <div className="trainer-status">Loading settings...</div> : null}
 
       {!loading && preferences ? (
@@ -216,25 +212,6 @@ const Settings = () => {
               </button>
             </div>
           </section>
-
-          <button
-            type="button"
-            className="trainer-settings-link"
-            onClick={() =>
-              navigate('/settings/account', {
-                state: { contextBackTo: '/settings' },
-              })
-            }
-          >
-            <span className="trainer-settings-link-icon">
-              <FaUserCog />
-            </span>
-            <span>
-              <strong>Account &amp; security</strong>
-              <small>Username, email, password, sign out, and deletion</small>
-            </span>
-            <FaChevronRight />
-          </button>
 
           <div className="trainer-privacy-note">
             <FaLock />

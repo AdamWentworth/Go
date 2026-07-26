@@ -167,11 +167,12 @@ const Friends = () => {
 
   const openProfile = (username: string) =>
     navigate(`/profile/${encodeURIComponent(username)}`, {
-      state: { contextBackTo: "/friends" },
+      state: { contextBackTo: "/profile/friends" },
     });
 
   return (
     <TrainerPageShell
+      workspace="profile"
       eyebrow="Trainer network"
       title="Friends"
       actions={

@@ -342,7 +342,7 @@ const Profile = () => {
     try {
       await blockTrainer(profile.user.user_id);
       toast.info("Trainer blocked");
-      navigate("/friends", {
+      navigate("/profile/friends", {
         state: { contextBackTo: currentProfilePath },
       });
     } catch (blockError) {
@@ -388,6 +388,7 @@ const Profile = () => {
 
   return (
     <TrainerPageShell
+      workspace="profile"
       eyebrow={isOwner ? "Your trainer card" : "Trainer profile"}
       title={profile?.user.username || username || "Profile"}
       actions={

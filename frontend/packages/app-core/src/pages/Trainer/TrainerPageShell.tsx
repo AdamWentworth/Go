@@ -6,13 +6,15 @@ import { useContextBackHandler } from '@/contexts/ContextBackContext';
 import './Trainer.css';
 
 type TrainerPageShellProps = {
-  eyebrow: string;
+  workspace: 'profile' | 'settings';
+  eyebrow?: string;
   title: string;
   children: ReactNode;
   actions?: ReactNode;
 };
 
 const TrainerPageShell = ({
+  workspace,
   eyebrow,
   title,
   children,
@@ -34,6 +36,28 @@ const TrainerPageShell = ({
   useContextBackHandler(true, goBack, 'trainer-page');
 
   const navigationState = { contextBackTo: currentPath };
+  const navigation =
+    workspace === 'profile'
+      ? [
+          { to: '/profile', label: 'Profile', icon: <FaUser /> },
+          {
+            to: '/profile/friends',
+            label: 'Friends',
+            icon: <FaUserFriends />,
+          },
+        ]
+      : [
+          { to: '/settings', label: 'Settings', icon: <FaCog /> },
+          { to: '/settings/account', label: 'Account', icon: <FaUser /> },
+        ];
+  const activePath =
+    workspace === 'profile'
+      ? location.pathname === '/profile/friends'
+        ? '/profile/friends'
+        : '/profile'
+      : location.pathname === '/settings/account'
+        ? '/settings/account'
+        : '/settings';
 
   return (
     <div className="trainer-page">
@@ -48,25 +72,27 @@ const TrainerPageShell = ({
           <FaArrowLeft />
         </button>
         <div className="trainer-page-heading">
-          <span>{eyebrow}</span>
+          {eyebrow ? <span>{eyebrow}</span> : null}
           <h1>{title}</h1>
         </div>
         <div className="trainer-page-actions">{actions}</div>
       </header>
 
-      <nav className="trainer-section-nav" aria-label="Trainer pages">
-        <NavLink to="/profile" state={navigationState}>
-          <FaUser />
-          <span>Profile</span>
-        </NavLink>
-        <NavLink to="/friends" state={navigationState}>
-          <FaUserFriends />
-          <span>Friends</span>
-        </NavLink>
-        <NavLink to="/settings" state={navigationState}>
-          <FaCog />
-          <span>Settings</span>
-        </NavLink>
+      <nav
+        className="trainer-section-nav"
+        aria-label={workspace === 'profile' ? 'Profile pages' : 'Settings pages'}
+      >
+        {navigation.map((item) => (
+          <NavLink
+            key={item.to}
+            to={item.to}
+            state={navigationState}
+            className={item.to === activePath ? 'active' : undefined}
+          >
+            {item.icon}
+            <span>{item.label}</span>
+          </NavLink>
+        ))}
       </nav>
 
       <main className="trainer-page-content">{children}</main>
