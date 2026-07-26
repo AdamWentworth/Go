@@ -85,6 +85,7 @@ test.describe("Trainer profile card", () => {
         card.getByRole("heading", { name: "NexusTrainer" }),
       ).toBeVisible();
       await expect(card.getByText("88,000,000 XP")).toBeVisible();
+      await expect(card.getByText("Jul 6, 2016")).toBeVisible();
       await expect(
         card.getByLabel("Featured Pokemon", { exact: true }),
       ).toBeVisible();
@@ -116,6 +117,49 @@ test.describe("Trainer profile card", () => {
       });
       await collectionButton.scrollIntoViewIfNeeded();
       await expect(collectionButton).toBeVisible();
+    } finally {
+      await diagnostics.flush();
+    }
+
+    expect(diagnostics.blockingErrors()).toEqual([]);
+  });
+
+  test("selects featured Pokemon from a visual six-card picker", async ({
+    page,
+  }, testInfo) => {
+    const diagnostics = attachBrowserDiagnostics(page, testInfo);
+
+    try {
+      await installE2eRoutes(page, { trainerProfile });
+      await seedTrainerLogin(page);
+      await page.goto("/profile", { waitUntil: "domcontentloaded" });
+      await page.getByRole("button", { name: "Edit" }).click();
+
+      const picker = page.getByLabel("Choose featured Pokemon");
+      await expect(picker).toBeVisible();
+      await expect(
+        picker.getByLabel("2 of 6 Pokemon selected"),
+      ).toBeVisible();
+
+      const screenshotPath = testInfo.outputPath("trainer-showcase-picker.png");
+      await picker.screenshot({ path: screenshotPath });
+      await testInfo.attach("trainer showcase picker", {
+        path: screenshotPath,
+        contentType: "image/png",
+      });
+
+      const buddy = picker.getByRole("button", {
+        name: "Remove Buddy from trainer card",
+      });
+      await buddy.click();
+      await expect(
+        picker.getByLabel("1 of 6 Pokemon selected"),
+      ).toBeVisible();
+      await expect(
+        picker.getByRole("button", {
+          name: "Select Buddy for trainer card",
+        }),
+      ).toBeVisible();
     } finally {
       await diagnostics.flush();
     }

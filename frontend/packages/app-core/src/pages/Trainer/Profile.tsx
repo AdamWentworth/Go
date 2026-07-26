@@ -43,6 +43,7 @@ import type {
 } from "@shared-contracts/users";
 
 import TrainerPageShell from "./TrainerPageShell";
+import TrainerShowcasePicker from "./TrainerShowcasePicker";
 
 type ProfileForm = {
   bio: string;
@@ -83,6 +84,24 @@ const formatDate = (value?: string | null) => {
     day: "numeric",
     year: "numeric",
   }).format(date);
+};
+
+const formatCalendarDate = (value?: string | null) => {
+  if (!value) return "Not shared";
+  const dateParts = /^(\d{4})-(\d{2})-(\d{2})/.exec(value);
+  if (!dateParts) return formatDate(value);
+
+  return new Intl.DateTimeFormat(undefined, {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  }).format(
+    new Date(
+      Number(dateParts[1]),
+      Number(dateParts[2]) - 1,
+      Number(dateParts[3]),
+    ),
+  );
 };
 
 const formatTrainerCode = (value?: string | null) =>
@@ -232,7 +251,9 @@ const Profile = () => {
         variantByID.get(right.variant_id)?.species_name ||
         `Pokemon #${right.pokemon_id}`;
       return (
-        leftName.localeCompare(rightName) || (right.cp ?? 0) - (left.cp ?? 0)
+        Number(Boolean(right.favorite)) - Number(Boolean(left.favorite)) ||
+        (right.cp ?? 0) - (left.cp ?? 0) ||
+        leftName.localeCompare(rightName)
       );
     });
   }, [instances, profile?.highlights, variantByID]);
@@ -255,10 +276,17 @@ const Profile = () => {
     setForm((current) => ({ ...current, [field]: value }));
   };
 
-  const updateHighlight = (index: number, instanceID: string) => {
-    setHighlightIds((current) =>
-      current.map((value, slot) => (slot === index ? instanceID : value)),
-    );
+  const toggleHighlight = (instanceID: string) => {
+    setHighlightIds((current) => {
+      const selected = current.filter(Boolean);
+      const existingIndex = selected.indexOf(instanceID);
+      if (existingIndex >= 0) {
+        selected.splice(existingIndex, 1);
+      } else if (selected.length < 6) {
+        selected.push(instanceID);
+      }
+      return [...selected, ...emptyHighlightSlots()].slice(0, 6);
+    });
   };
 
   const toggleEditing = () => {
@@ -504,7 +532,7 @@ const Profile = () => {
               <header className="trainer-card-heading">
                 <div>
                   <span>PokeGoNexus</span>
-                  <h2>Trainer showcase</h2>
+                  <h2>Trainer card</h2>
                 </div>
                 <div className="trainer-card-number">
                   <span>Member since</span>
@@ -544,7 +572,7 @@ const Profile = () => {
                 <div>
                   <FaCalendarAlt aria-hidden="true" />
                   <dt>Started</dt>
-                  <dd>{formatDate(profile.user.pogo_started_on)}</dd>
+                  <dd>{formatCalendarDate(profile.user.pogo_started_on)}</dd>
                 </div>
                 <div>
                   <FaMapMarkerAlt aria-hidden="true" />
@@ -731,55 +759,12 @@ const Profile = () => {
                   />
                 </label>
               </div>
-              <div className="trainer-highlight-editor">
-                <div>
-                  <span>Trainer showcase</span>
-                  <h3>Pokemon highlights</h3>
-                  <p>Choose up to six caught Pokemon for your profile.</p>
-                </div>
-                <div className="trainer-highlight-selects">
-                  {highlightIds.map((selectedID, index) => (
-                    <label
-                      className="trainer-field"
-                      key={`highlight-slot-${index + 1}`}
-                    >
-                      <span>Showcase slot {index + 1}</span>
-                      <select
-                        aria-label={`Showcase slot ${index + 1}`}
-                        value={selectedID}
-                        onChange={(event) =>
-                          updateHighlight(index, event.target.value)
-                        }
-                      >
-                        <option value="">Empty</option>
-                        {highlightCandidates.map((instance) => {
-                          const instanceID = instance.instance_id || "";
-                          const variant = variantByID.get(instance.variant_id);
-                          const name =
-                            instance.nickname ||
-                            variant?.species_name ||
-                            `Pokemon #${instance.pokemon_id}`;
-                          return (
-                            <option
-                              key={instanceID}
-                              value={instanceID}
-                              disabled={
-                                instanceID !== selectedID &&
-                                highlightIds.includes(instanceID)
-                              }
-                            >
-                              {name}
-                              {instance.cp
-                                ? ` - CP ${instance.cp.toLocaleString()}`
-                                : ""}
-                            </option>
-                          );
-                        })}
-                      </select>
-                    </label>
-                  ))}
-                </div>
-              </div>
+              <TrainerShowcasePicker
+                candidates={highlightCandidates}
+                selectedIds={highlightIds}
+                variantById={variantByID}
+                onToggle={toggleHighlight}
+              />
               <div className="trainer-form-actions">
                 <button
                   type="button"

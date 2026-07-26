@@ -64,11 +64,22 @@ vi.mock("@/features/variants/store/useVariantsStore", () => ({
       variants: Array<{
         variant_id: string;
         species_name: string;
+        variantType: "default";
+        currentImage: string;
+        image_url: string;
       }>;
     }) => unknown,
   ) =>
     selector({
-      variants: [{ variant_id: "v-lucario", species_name: "Lucario" }],
+      variants: [
+        {
+          variant_id: "v-lucario",
+          species_name: "Lucario",
+          variantType: "default",
+          currentImage: "/images/pokemon/lucario.png",
+          image_url: "/images/pokemon/lucario.png",
+        },
+      ],
     }),
 }));
 
@@ -154,6 +165,7 @@ describe("Trainer Profile", () => {
       screen.getByRole("region", { name: /misty's trainer card/i }),
     ).toBeInTheDocument();
     expect(screen.getByText("88,000,000 XP")).toBeInTheDocument();
+    expect(screen.getByText("Jul 6, 2016")).toBeInTheDocument();
     expect(
       screen.getAllByLabelText(/empty featured pokemon slot/i),
     ).toHaveLength(6);
@@ -207,12 +219,22 @@ describe("Trainer Profile", () => {
     );
 
     fireEvent.click(await screen.findByRole("button", { name: /^edit$/i }));
-    fireEvent.change(screen.getByLabelText(/showcase slot 1/i), {
-      target: { value: "instance-lucario" },
-    });
     expect(
-      screen.queryByRole("option", { name: /mewtwo/i }),
-    ).not.toBeInTheDocument();
+      screen.getByRole("heading", { name: /featured pokemon/i }),
+    ).toBeInTheDocument();
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: /select lucario for trainer card/i,
+      }),
+    );
+    expect(
+      screen.getByRole("button", {
+        name: /remove lucario from trainer card/i,
+      }),
+    ).toHaveAttribute("aria-pressed", "true");
+    expect(
+      screen.getByLabelText(/1 of 6 pokemon selected/i),
+    ).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: /save profile/i }));
 
     await waitFor(() =>
