@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"reflect"
 	"testing"
 )
@@ -25,5 +26,15 @@ func TestTrainerTitleListDatabaseRoundTrip(t *testing.T) {
 	}
 	if output == nil || len(output) != 0 {
 		t.Fatalf("nil database value must become an empty title list: %#v", output)
+	}
+}
+
+func TestTrainerTitleListMarshalsNilAsEmptyArray(t *testing.T) {
+	bytes, err := json.Marshal(TrainerTitleList(nil))
+	if err != nil {
+		t.Fatalf("Marshal: %v", err)
+	}
+	if string(bytes) != "[]" {
+		t.Fatalf("nil trainer titles marshaled as %s, want []", bytes)
 	}
 }

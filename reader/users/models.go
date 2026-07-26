@@ -44,6 +44,13 @@ func (j *JSON) Scan(src interface{}) error {
 
 type TrainerTitleList []string
 
+func (titles TrainerTitleList) MarshalJSON() ([]byte, error) {
+	if titles == nil {
+		return []byte("[]"), nil
+	}
+	return json.Marshal([]string(titles))
+}
+
 func (titles TrainerTitleList) Value() (driver.Value, error) {
 	if titles == nil {
 		return "[]", nil
