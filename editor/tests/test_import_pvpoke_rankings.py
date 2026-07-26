@@ -6,11 +6,12 @@ from pathlib import Path
 
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
-sys.path.insert(0, str(REPO_ROOT / "pokemon" / "scripts"))
+sys.path.append(str(REPO_ROOT / "pokemon" / "scripts"))
 
 from import_pvpoke_rankings import (  # noqa: E402
     LocalFusion,
     LocalPokemon,
+    RankingFormat,
     build_rows,
     match_local_species,
 )
@@ -116,7 +117,17 @@ class PvPokeRankingImportTests(unittest.TestCase):
             "DAZZLING_GLEAM": {"name": "Dazzling Gleam", "type": "fairy"},
         }
         rows, skipped = build_rows(
-            "great",
+            RankingFormat(
+                key="great",
+                league="great",
+                title="Great League",
+                cup="all",
+                cp_limit=1500,
+                iv_key="cp1500",
+                rules=(),
+                sort_order=0,
+                is_cup=False,
+            ),
             rankings,
             species,
             moves,
@@ -125,9 +136,8 @@ class PvPokeRankingImportTests(unittest.TestCase):
         )
         self.assertEqual(skipped, 1)
         self.assertEqual(len(rows), 1)
-        self.assertEqual(rows[0][1], 1)
-        self.assertEqual(rows[0][2], 2)
-        self.assertEqual(rows[0][14:18], (24.0, 5, 15, 15))
+        self.assertEqual(rows[0][0:4], ("great", "great", 1, 2))
+        self.assertEqual(rows[0][18:22], (24.0, 5, 15, 15))
 
 
 if __name__ == "__main__":

@@ -105,6 +105,17 @@ func TestPokemonPayloadChunks_KeepCatalogLeanAndAddressable(t *testing.T) {
 	if pvp.Formats == nil {
 		t.Fatal("PvP formats must serialize as an array")
 	}
+	if len(pvp.Formats) != 1 {
+		t.Fatalf("expected one fixture PvP cup, got %#v", pvp.Formats)
+	}
+	fixtureCup := pvp.Formats[0]
+	if fixtureCup.Key != "great-fixture-cup" ||
+		fixtureCup.Label != "Fixture Cup" ||
+		len(fixtureCup.Rules) != 1 ||
+		fixtureCup.Rules[0] != "electric" ||
+		len(fixtureCup.Entries) != 1 {
+		t.Fatalf("PvP cup contract was not preserved: %#v", fixtureCup)
+	}
 	for _, league := range []string{"great", "ultra", "master"} {
 		if len(pvp.Leagues[league].Entries) == 0 {
 			t.Fatalf("%s PvP league has no fixture entries", league)

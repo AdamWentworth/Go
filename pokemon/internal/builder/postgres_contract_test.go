@@ -7,6 +7,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"reflect"
 	"testing"
 	"time"
 
@@ -46,6 +47,47 @@ func TestPostgresPayloadContract(t *testing.T) {
 	}
 	if !bytes.Equal(firstJSON, secondJSON) {
 		t.Fatal("PostgreSQL catalog payload changed between identical reads")
+	}
+}
+
+func TestPostgresPayloadInvalidationRebuildsDeterministically(t *testing.T) {
+	sqlDB := openIntegrationPostgres(t)
+	defer sqlDB.Close()
+
+	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
+	defer cancel()
+
+	b := builder.New(sqlDB, nil)
+	first, err := b.BuildFullPokemonPayload(ctx)
+	if err != nil {
+		t.Fatalf("build cached PostgreSQL payload: %v", err)
+	}
+	firstValue := reflect.ValueOf(first)
+	if firstValue.Kind() != reflect.Slice || firstValue.Len() == 0 {
+		t.Fatalf("expected non-empty slice payload, got %T", first)
+	}
+
+	b.InvalidatePokemonPayloadBundle()
+
+	second, err := b.BuildFullPokemonPayload(ctx)
+	if err != nil {
+		t.Fatalf("rebuild invalidated PostgreSQL payload: %v", err)
+	}
+	secondValue := reflect.ValueOf(second)
+	if firstValue.Pointer() == secondValue.Pointer() {
+		t.Fatal("catalog invalidation reused the previous payload allocation")
+	}
+
+	firstJSON, err := json.Marshal(first)
+	if err != nil {
+		t.Fatalf("marshal cached PostgreSQL payload: %v", err)
+	}
+	secondJSON, err := json.Marshal(second)
+	if err != nil {
+		t.Fatalf("marshal rebuilt PostgreSQL payload: %v", err)
+	}
+	if !bytes.Equal(firstJSON, secondJSON) {
+		t.Fatal("catalog invalidation changed the PostgreSQL wire payload")
 	}
 }
 

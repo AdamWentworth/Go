@@ -23,9 +23,12 @@ REPO_ROOT = EDITOR_DIR.parent
 ASSET_ROOT = REPO_ROOT / "assets" / "images"
 POKEMON_SCRIPTS_DIR = REPO_ROOT / "pokemon" / "scripts"
 
-for path in (EDITOR_DIR, POKEMON_SCRIPTS_DIR):
-    if str(path) not in sys.path:
-        sys.path.insert(0, str(path))
+if str(EDITOR_DIR) not in sys.path:
+    sys.path.insert(0, str(EDITOR_DIR))
+if str(POKEMON_SCRIPTS_DIR) not in sys.path:
+    # Keep unittest discovery's test directory ahead of the Pokemon scripts.
+    # Both trees intentionally contain similarly named test modules.
+    sys.path.append(str(POKEMON_SCRIPTS_DIR))
 
 from config import load_editor_environment, production_editor_settings  # noqa: E402
 from production_session import ProductionCatalogSession  # noqa: E402

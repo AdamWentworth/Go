@@ -220,7 +220,18 @@ INSERT INTO pvp_ranking_formats (
 ) VALUES
   ('pvpoke-fixture', 'great', 'great', 'Great League', 'all', 1500, '[]', 0, FALSE),
   ('pvpoke-fixture', 'ultra', 'ultra', 'Ultra League', 'all', 2500, '[]', 1, FALSE),
-  ('pvpoke-fixture', 'master', 'master', 'Master League', 'all', NULL, '[]', 2, FALSE);
+  ('pvpoke-fixture', 'master', 'master', 'Master League', 'all', NULL, '[]', 2, FALSE),
+  (
+    'pvpoke-fixture',
+    'great-fixture-cup',
+    'great',
+    'Fixture Cup',
+    'fixture',
+    1500,
+    '["electric"]',
+    3,
+    TRUE
+  );
 
 INSERT INTO pvp_rankings (
   snapshot_id, format_key, league, rank, source_rank, species_id, species_name,
@@ -248,6 +259,13 @@ INSERT INTO pvp_rankings (
     '["psychic"]',
     '[{"id":"COUNTER","name":"Counter","type":"fighting","kind":"fast"},{"id":"PSYSTRIKE","name":"Psystrike","type":"psychic","kind":"charged"}]',
     96.8, 820, '[97,95,96]', 50, 15, 15, 15, 7200, 250.2, 180.3, 190
+  ),
+  (
+    'pvpoke-fixture', 'great-fixture-cup', 'great', 1, 1, 'bulbasaur', 'Bulbasaur',
+    1, NULL, 'pokemon', '/images/default/pokemon_1.png',
+    '["grass","poison"]',
+    '[{"id":"VINE_WHIP","name":"Vine Whip","type":"grass","kind":"fast"},{"id":"POWER_WHIP","name":"Power Whip","type":"grass","kind":"charged"}]',
+    88.5, 675, '[87,89,86]', 50, 15, 15, 15, 1800, 110.2, 115.3, 130
   );
 
 SELECT setval('pokemon_catalog.pokemon_backgrounds_id_seq', 2, TRUE);
