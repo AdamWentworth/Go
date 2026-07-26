@@ -201,6 +201,37 @@ describe("Trainer Profile", () => {
     ).toHaveLength(6);
     expect(screen.getByLabelText(/collection summary/i)).toBeInTheDocument();
     expect(screen.getByText("12")).toBeInTheDocument();
+    const collectionSummary = screen.getByLabelText(/collection summary/i);
+    expect(
+      Array.from(
+        collectionSummary.querySelectorAll(
+          ".trainer-card-collection-label",
+        ),
+      ).map((label) => label.textContent),
+    ).toEqual([
+      "Registered",
+      "Caught",
+      "For trade",
+      "Wanted",
+      "Favorites",
+    ]);
+    expect(
+      collectionSummary.querySelector(
+        '[data-collection-icon="registered"]',
+      ),
+    ).toHaveStyle({
+      maskImage: 'url("/images/kanto_search.png")',
+    });
+    expect(
+      collectionSummary.querySelector('[data-collection-icon="caught"] svg'),
+    ).toBeInTheDocument();
+    expect(
+      collectionSummary.querySelector(
+        '[data-collection-icon="for-trade"]',
+      ),
+    ).toHaveStyle({
+      maskImage: 'url("/images/pogo_trade_icon.png")',
+    });
 
     fireEvent.click(screen.getByRole("button", { name: /view pokemon/i }));
     expect(screen.getByText("Public collection")).toBeInTheDocument();

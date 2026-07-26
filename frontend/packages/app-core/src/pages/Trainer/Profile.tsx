@@ -9,10 +9,8 @@ import { createPortal } from "react-dom";
 import type { IconType } from "react-icons";
 import {
   FaBan,
-  FaBookOpen,
   FaCalendarAlt,
   FaCheck,
-  FaCheckCircle,
   FaEdit,
   FaExchangeAlt,
   FaGripVertical,
@@ -28,6 +26,7 @@ import {
   FaUserPlus,
   FaUsers,
 } from "react-icons/fa";
+import { MdCatchingPokemon } from "react-icons/md";
 import { useNavigate, useParams } from "react-router";
 import { toast } from "react-toastify";
 
@@ -114,6 +113,54 @@ type TrainerTitleVisualConfig =
   | {
       icon: IconType;
     };
+
+type TrainerCollectionVisual =
+  | {
+      icon: IconType;
+    }
+  | {
+      mask: string;
+    };
+
+type TrainerCollectionItem = {
+  label: string;
+  value?: number | null;
+  visual: TrainerCollectionVisual;
+  filter?: PokemonCatalogFilter;
+};
+
+const TrainerCollectionIcon = ({
+  label,
+  visual,
+}: {
+  label: string;
+  visual: TrainerCollectionVisual;
+}) => {
+  if ("mask" in visual) {
+    return (
+      <span
+        aria-hidden="true"
+        className="trainer-card-collection-icon trainer-card-collection-mask"
+        data-collection-icon={label.toLowerCase().replaceAll(" ", "-")}
+        style={{
+          WebkitMaskImage: `url("${visual.mask}")`,
+          maskImage: `url("${visual.mask}")`,
+        }}
+      />
+    );
+  }
+
+  const Icon = visual.icon;
+  return (
+    <span
+      aria-hidden="true"
+      className="trainer-card-collection-icon"
+      data-collection-icon={label.toLowerCase().replaceAll(" ", "-")}
+    >
+      <Icon />
+    </span>
+  );
+};
 
 const trainerTitleVisualByID: Record<
   TrainerTitle,
@@ -1135,89 +1182,93 @@ const Profile = () => {
               >
                 {([
                   {
-                    label: "Caught",
-                    value: profile.stats.caught,
-                    icon: FaCheckCircle,
-                    filter: "Caught",
-                  },
-                  {
                     label: "Registered",
                     value: profile.stats.registered,
-                    icon: FaBookOpen,
+                    visual: { mask: "/images/kanto_search.png" },
+                  },
+                  {
+                    label: "Caught",
+                    value: profile.stats.caught,
+                    visual: { icon: MdCatchingPokemon },
+                    filter: "Caught",
                   },
                   {
                     label: "For trade",
                     value: profile.stats.for_trade,
-                    icon: FaExchangeAlt,
+                    visual: { mask: "/images/pogo_trade_icon.png" },
                     filter: "Trade",
                   },
                   {
                     label: "Wanted",
                     value: profile.stats.wanted,
-                    icon: FaHeart,
+                    visual: { icon: FaHeart },
                     filter: "Wanted",
                   },
                   {
                     label: "Favorites",
                     value: profile.stats.favorites,
-                    icon: FaStar,
+                    visual: { icon: FaStar },
                     filter: "Favorites",
                   },
-                ] as Array<{
-                  label: string;
-                  value?: number | null;
-                  icon: IconType;
-                  filter?: PokemonCatalogFilter;
-                }>).map(({ label, value, icon: Icon, filter }) => {
-                  const canOpenCollection =
-                    filter !== undefined &&
-                    profile.viewer.can_view_collection &&
-                    !editing;
-                  const content = (
-                    <>
-                      <Icon aria-hidden="true" />
-                      <span>{label}</span>
-                      <strong>{formatNumber(value)}</strong>
-                    </>
-                  );
+                ] as TrainerCollectionItem[]).map(
+                  ({ label, value, visual, filter }) => {
+                    const canOpenCollection =
+                      filter !== undefined &&
+                      profile.viewer.can_view_collection &&
+                      !editing;
+                    const content = (
+                      <>
+                        <TrainerCollectionIcon
+                          label={label}
+                          visual={visual}
+                        />
+                        <span className="trainer-card-collection-label">
+                          {label}
+                        </span>
+                        <strong className="trainer-card-collection-count">
+                          {formatNumber(value)}
+                        </strong>
+                      </>
+                    );
 
-                  return canOpenCollection && filter ? (
-                    <button
-                      type="button"
-                      className="trainer-card-collection-item trainer-card-collection-link"
-                      key={label}
-                      aria-label={`View ${
-                        isOwner
-                          ? "your"
-                          : `${profile.user.username}'s`
-                      } ${label.toLowerCase()} Pokemon`}
-                      onClick={() =>
-                        navigate(
-                          buildPokemonCatalogPath({
-                            username: isOwner
-                              ? undefined
-                              : profile.user.username,
-                            filter,
-                          }),
-                          {
-                            state: {
-                              contextBackTo: currentProfilePath,
+                    return canOpenCollection && filter ? (
+                      <button
+                        type="button"
+                        className="trainer-card-collection-item trainer-card-collection-link"
+                        key={label}
+                        aria-label={`View ${
+                          isOwner
+                            ? "your"
+                            : `${profile.user.username}'s`
+                        } ${label.toLowerCase()} Pokemon`}
+                        onClick={() =>
+                          navigate(
+                            buildPokemonCatalogPath({
+                              username: isOwner
+                                ? undefined
+                                : profile.user.username,
+                              filter,
+                            }),
+                            {
+                              state: {
+                                contextBackTo: currentProfilePath,
+                              },
                             },
-                          },
-                        )
-                      }
-                    >
-                      {content}
-                    </button>
-                  ) : (
-                    <div
-                      className="trainer-card-collection-item"
-                      key={label}
-                    >
-                      {content}
-                    </div>
-                  );
-                })}
+                          )
+                        }
+                      >
+                        {content}
+                      </button>
+                    ) : (
+                      <div
+                        className="trainer-card-collection-item"
+                        key={label}
+                      >
+                        {content}
+                      </div>
+                    );
+                  },
+                )}
               </div>
 
               <footer className="trainer-card-footer">
