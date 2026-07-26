@@ -223,8 +223,10 @@ describe("Trainer Profile", () => {
       maskImage: 'url("/images/kanto_search.png")',
     });
     expect(
-      collectionSummary.querySelector('[data-collection-icon="caught"] svg'),
-    ).toBeInTheDocument();
+      collectionSummary.querySelector('[data-collection-icon="caught"]'),
+    ).toHaveStyle({
+      maskImage: 'url("/images/pokeball-solid-mask.svg")',
+    });
     expect(
       collectionSummary.querySelector(
         '[data-collection-icon="for-trade"]',

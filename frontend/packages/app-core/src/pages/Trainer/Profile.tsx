@@ -26,7 +26,6 @@ import {
   FaUserPlus,
   FaUsers,
 } from "react-icons/fa";
-import { MdCatchingPokemon } from "react-icons/md";
 import { useNavigate, useParams } from "react-router";
 import { toast } from "react-toastify";
 
@@ -1189,7 +1188,7 @@ const Profile = () => {
                   {
                     label: "Caught",
                     value: profile.stats.caught,
-                    visual: { icon: MdCatchingPokemon },
+                    visual: { mask: "/images/pokeball-solid-mask.svg" },
                     filter: "Caught",
                   },
                   {
