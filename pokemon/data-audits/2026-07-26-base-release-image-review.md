@@ -1,4 +1,4 @@
-# Base Release Image Review - 2026-07-22
+# Base Release Image Review - 2026-07-26
 
 This batch covers 44 released species missing from the public PokeGo Nexus
 catalog, represented by 55 catalog rows where Pokémon GO exposes distinct
@@ -12,7 +12,11 @@ Run the live checklist from the repository root:
 editor/.venv/bin/python editor/scripts/apply_base_release_roster.py --report-images
 ```
 
-The final publisher refuses `--publish` while any normal image below is absent.
+Release metadata and dates may be published while normal artwork is pending.
+The frontend uses its standard Pokémon fallback image for those entries, while
+this report remains the checklist for replacing each fallback with reviewed
+artwork. Artwork readiness must never cause a released Pokémon to be labeled
+unreleased.
 
 ## Existing Normal Images To Review
 

@@ -2,6 +2,7 @@ import sys
 import tempfile
 import unittest
 from contextlib import redirect_stdout
+from datetime import date
 from io import StringIO
 from pathlib import Path
 from unittest.mock import patch
@@ -46,6 +47,30 @@ class BaseReleaseRosterTests(unittest.TestCase):
         self.assertEqual(generation_for_dex(807), 7)
         self.assertEqual(generation_for_dex(876), 8)
         self.assertEqual(generation_for_dex(931), 10)
+
+    def test_roster_preserves_confirmed_honedge_line_release_date(self):
+        release_dates = {
+            entry.pokedex_number: entry.released_on
+            for entry in BASE_RELEASE_FORMS
+            if entry.pokedex_number in {679, 680, 681}
+        }
+
+        self.assertEqual(
+            release_dates,
+            {
+                679: "2025-07-22",
+                680: "2025-07-22",
+                681: "2025-07-22",
+            },
+        )
+
+    def test_roster_contains_no_future_release_dates_at_audit_cutoff(self):
+        cutoff = date.fromisoformat("2026-07-26")
+
+        self.assertTrue(
+            all(date.fromisoformat(entry.released_on) <= cutoff for entry in BASE_RELEASE_FORMS)
+        )
+        self.assertEqual(max(entry.released_on for entry in BASE_RELEASE_FORMS), "2026-06-23")
 
     def test_game_master_indexes_default_and_explicit_forms(self):
         game_master = [
@@ -118,6 +143,33 @@ class BaseReleaseRosterTests(unittest.TestCase):
 
         self.assertEqual(result, 0)
         load_game_master.assert_not_called()
+
+    def test_publish_reports_missing_artwork_without_blocking_release_metadata(self):
+        with tempfile.TemporaryDirectory() as temp_dir, patch(
+            "scripts.apply_base_release_roster.load_game_master",
+            return_value=[],
+        ), patch(
+            "scripts.apply_base_release_roster.open_catalog_connection",
+        ) as open_connection, patch(
+            "scripts.apply_base_release_roster.apply_roster",
+        ) as apply_roster:
+            open_connection.return_value.__enter__.return_value = object()
+            output = StringIO()
+
+            with redirect_stdout(output):
+                result = main(
+                    [
+                        "--publish",
+                        "--asset-root",
+                        temp_dir,
+                        "--database-url",
+                        "postgresql://catalog.invalid/pokemon",
+                    ]
+                )
+
+        self.assertEqual(result, 0)
+        self.assertIn("frontend will use its standard Pokemon fallback image", output.getvalue())
+        apply_roster.assert_called_once()
 
 
 if __name__ == "__main__":

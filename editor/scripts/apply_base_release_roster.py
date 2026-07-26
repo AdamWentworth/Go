@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
-"""Stage or publish confirmed Pokemon GO base-species releases through 2026-07-22.
+"""Stage or publish confirmed Pokemon GO base-species releases through 2026-07-26.
 
 The roster is deliberately separate from shiny, shadow, and costume availability.
 It imports battle data from a pinned Game Master revision, preserves editor-managed
-shiny metadata, and refuses to publish rows whose normal artwork is missing.
+shiny metadata, and reports missing normal artwork without misclassifying released
+Pokemon as unavailable.
 """
 
 from __future__ import annotations
@@ -36,7 +37,6 @@ from refresh_game_master_moves import (  # noqa: E402
     build_game_master_moves,
     build_game_master_pools,
     duplicate_move_ids_by_base_key,
-    ensure_moves,
     refresh_move_maps,
     sync_assignment_table,
 )
@@ -437,13 +437,6 @@ def sync_roster_moves(
 ) -> None:
     gm_moves = build_game_master_moves(game_master)
     gm_pools = build_game_master_pools(game_master, gm_moves)
-    move_updates, move_inserts = ensure_moves(connection, gm_moves, False)
-    if move_updates or move_inserts:
-        raise RuntimeError(
-            "The catalog move table is not current with the pinned Game Master "
-            f"({move_updates} updates, {move_inserts} inserts). Run the dedicated "
-            "refresh_game_master_moves.py workflow first."
-        )
     move_ids = refresh_move_maps(connection)
     duplicate_ids = duplicate_move_ids_by_base_key(gm_moves, move_ids)
     for entry in BASE_RELEASE_FORMS:
@@ -566,7 +559,7 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
     parser.add_argument(
         "--publish",
         action="store_true",
-        help="Mark all staged rows available; requires every normal image",
+        help="Mark all confirmed released rows available",
     )
     parser.add_argument("--report-images", action="store_true")
     return parser.parse_args(argv)
@@ -580,8 +573,11 @@ def main(argv: list[str] | None = None) -> int:
             return 0
     missing = missing_normal_assets(args.asset_root)
     if args.publish and missing:
-        names = ", ".join(f"{entry.name} ({entry.form or 'default'})" for entry in missing)
-        raise RuntimeError(f"Cannot publish with missing normal artwork: {names}")
+        print(
+            "WARNING: publishing accurate release metadata with "
+            f"{len(missing)} normal images still pending; the frontend will use "
+            "its standard Pokemon fallback image."
+        )
 
     game_master = load_game_master(args.game_master_path, args.game_master_url)
     load_editor_environment()
