@@ -60,6 +60,20 @@ func newRateLimiter() fiber.Handler {
 	})
 }
 
+func registerProtectedSocialRoutes(app *fiber.App, prefix string, rateLimit fiber.Handler) {
+	app.Get(prefix+"/profile", verifyJWT, rateLimit, GetOwnProfileHandler)
+	app.Put(prefix+"/profile", verifyJWT, rateLimit, UpdateProfileHandler)
+	app.Get(prefix+"/preferences", verifyJWT, rateLimit, GetPreferencesHandler)
+	app.Put(prefix+"/preferences", verifyJWT, rateLimit, UpdatePreferencesHandler)
+	app.Get(prefix+"/friends", verifyJWT, rateLimit, GetFriendsHandler)
+	app.Post(prefix+"/friends/requests", verifyJWT, rateLimit, CreateFriendRequestHandler)
+	app.Post(prefix+"/friends/requests/:friendship_id/accept", verifyJWT, rateLimit, AcceptFriendRequestHandler)
+	app.Delete(prefix+"/friends/requests/:friendship_id", verifyJWT, rateLimit, DeleteFriendRequestHandler)
+	app.Delete(prefix+"/friends/:user_id", verifyJWT, rateLimit, RemoveFriendHandler)
+	app.Post(prefix+"/friends/blocks", verifyJWT, rateLimit, BlockUserHandler)
+	app.Delete(prefix+"/friends/blocks/:user_id", verifyJWT, rateLimit, UnblockUserHandler)
+}
+
 func newApp() *fiber.App {
 	bodyLimit := readEnvInt("MAX_BODY_BYTES", 1*1024*1024)
 
@@ -108,21 +122,13 @@ func newApp() *fiber.App {
 	protectedLimiter := newRateLimiter()
 	// Canonical paths.
 	app.Get("/api/users/:user_id/overview", verifyJWT, protectedLimiter, GetUserOverviewHandler)
-	app.Put("/api/users/:user_id", verifyJWT, protectedLimiter, UpdateUserHandler)
 	app.Put("/api/update-user/:user_id", verifyJWT, protectedLimiter, UpdateUserHandler)
 	app.Put("/api/users/update-user/:user_id", verifyJWT, protectedLimiter, UpdateUserHandler)
-	app.Put("/api/profile", verifyJWT, protectedLimiter, UpdateProfileHandler)
-	app.Get("/api/preferences", verifyJWT, protectedLimiter, GetPreferencesHandler)
-	app.Put("/api/preferences", verifyJWT, protectedLimiter, UpdatePreferencesHandler)
-	app.Get("/api/friends", verifyJWT, protectedLimiter, GetFriendsHandler)
-	app.Post("/api/friends/requests", verifyJWT, protectedLimiter, CreateFriendRequestHandler)
-	app.Post("/api/friends/requests/:friendship_id/accept", verifyJWT, protectedLimiter, AcceptFriendRequestHandler)
-	app.Delete("/api/friends/requests/:friendship_id", verifyJWT, protectedLimiter, DeleteFriendRequestHandler)
-	app.Delete("/api/friends/:user_id", verifyJWT, protectedLimiter, RemoveFriendHandler)
-	app.Post("/api/friends/blocks", verifyJWT, protectedLimiter, BlockUserHandler)
-	app.Delete("/api/friends/blocks/:user_id", verifyJWT, protectedLimiter, UnblockUserHandler)
+	registerProtectedSocialRoutes(app, "/api", protectedLimiter)
+	registerProtectedSocialRoutes(app, "/api/users", protectedLimiter)
 	// Compatibility paths for older clients. Keep generic parameters after every
 	// named route so values such as "profile" cannot shadow a real endpoint.
+	app.Put("/api/users/:user_id", verifyJWT, protectedLimiter, UpdateUserHandler)
 	app.Get("/api/:user_id/overview", verifyJWT, protectedLimiter, GetUserOverviewHandler)
 	app.Put("/api/:user_id", verifyJWT, protectedLimiter, UpdateUserHandler)
 

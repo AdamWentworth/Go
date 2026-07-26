@@ -38,6 +38,9 @@ export const fetchTrainerProfile = (username: string) =>
     usersContract.endpoints.profileByUsername(username),
   );
 
+export const fetchOwnTrainerProfile = () =>
+  requestJson<TrainerProfile<PokemonInstance>>(usersContract.endpoints.profile);
+
 export const updateTrainerProfile = (profile: UpdateTrainerProfileRequest) =>
   requestJson<{ success: boolean }>(usersContract.endpoints.profile, {
     method: 'PUT',

@@ -59,6 +59,7 @@ func newHandlerTestApp(authUserID string) *fiber.App {
 	app.Get("/api/instances/by-username/:username", GetInstancesByUsername)
 	app.Get("/api/users/instances/by-username/:username", GetInstancesByUsername)
 	app.Get("/api/profiles/:username", GetProfileHandler)
+	app.Get("/api/profile", GetOwnProfileHandler)
 	app.Put("/api/profile", UpdateProfileHandler)
 	app.Get("/api/preferences", GetPreferencesHandler)
 	app.Put("/api/preferences", UpdatePreferencesHandler)
@@ -378,6 +379,98 @@ func TestGetProfileHandler_ReturnsPublicTrainerCardWithDefaultPrivacy(t *testing
 	}
 	if !body.Viewer.CanViewProfile || !body.Viewer.CanViewCollection {
 		t.Fatalf("default public profile should be visible: %#v", body.Viewer)
+	}
+
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Fatalf("unmet sqlmock expectations: %v", err)
+	}
+}
+
+func TestGetOwnProfileHandler_ReturnsEditableDefaultsBeforeFirstSave(t *testing.T) {
+	mock, cleanup := setupMockDB(t)
+	defer cleanup()
+
+	app := newHandlerTestApp("user-adam")
+	joinedAt := time.Now().UTC()
+
+	mock.ExpectQuery(regexp.QuoteMeta("SELECT * FROM `users` WHERE user_id = ? ORDER BY `users`.`user_id` LIMIT ?")).
+		WithArgs("user-adam", 1).
+		WillReturnRows(sqlmock.NewRows([]string{
+			"user_id", "username", "app_joined_at",
+		}).AddRow("user-adam", "Adam", joinedAt))
+	mock.ExpectQuery(regexp.QuoteMeta("SELECT * FROM `user_profiles` WHERE user_id = ? ORDER BY `user_profiles`.`user_id` LIMIT ?")).
+		WithArgs("user-adam", 1).
+		WillReturnRows(sqlmock.NewRows([]string{"user_id"}))
+	mock.ExpectQuery("(?s)SELECT.*AS caught.*FROM `instances` WHERE user_id = \\?").
+		WithArgs("user-adam").
+		WillReturnRows(sqlmock.NewRows([]string{"caught", "for_trade", "wanted", "favorites"}).
+			AddRow(0, 0, 0, 0))
+	mock.ExpectQuery(regexp.QuoteMeta("SELECT count(*) FROM `registrations` WHERE user_id = ?")).
+		WithArgs("user-adam").
+		WillReturnRows(sqlmock.NewRows([]string{"count(*)"}).AddRow(0))
+
+	req := makeJSONRequest(t, http.MethodGet, "/api/profile", nil)
+	resp, err := app.Test(req, fiber.TestConfig{Timeout: 0})
+	if err != nil {
+		t.Fatalf("request failed: %v", err)
+	}
+	if resp.StatusCode != http.StatusOK {
+		t.Fatalf("unexpected status: got %d, want %d", resp.StatusCode, http.StatusOK)
+	}
+
+	var body ProfileResponse
+	if err := json.NewDecoder(resp.Body).Decode(&body); err != nil {
+		t.Fatalf("decode body failed: %v", err)
+	}
+	if body.User.Username != "Adam" || body.Viewer.Relationship != relationshipSelf {
+		t.Fatalf("unexpected own profile response: %#v", body)
+	}
+	if body.Preferences == nil ||
+		body.Preferences.ProfileVisibility != "public" ||
+		body.Preferences.CollectionVisibility != "public" {
+		t.Fatalf("first-use profile should include editable defaults: %#v", body.Preferences)
+	}
+	if body.Highlights == nil || len(body.Highlights) != 0 {
+		t.Fatalf("first-use highlights should be an empty array: %#v", body.Highlights)
+	}
+
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Fatalf("unmet sqlmock expectations: %v", err)
+	}
+}
+
+func TestGetFriendsHandler_ReturnsEmptyArraysBeforeFirstFriend(t *testing.T) {
+	mock, cleanup := setupMockDB(t)
+	defer cleanup()
+
+	app := newHandlerTestApp("user-adam")
+	mock.ExpectQuery("SELECT \\* FROM `friendships` WHERE user_id_low = \\? OR user_id_high = \\? ORDER BY updated_at DESC").
+		WithArgs("user-adam", "user-adam").
+		WillReturnRows(sqlmock.NewRows([]string{
+			"friendship_id", "user_id_low", "user_id_high", "requested_by_user_id", "status",
+		}))
+	mock.ExpectQuery("SELECT \\* FROM `user_blocks` WHERE blocker_user_id = \\?").
+		WithArgs("user-adam").
+		WillReturnRows(sqlmock.NewRows([]string{"blocker_user_id", "blocked_user_id"}))
+
+	req := makeJSONRequest(t, http.MethodGet, "/api/friends", nil)
+	resp, err := app.Test(req, fiber.TestConfig{Timeout: 0})
+	if err != nil {
+		t.Fatalf("request failed: %v", err)
+	}
+	if resp.StatusCode != http.StatusOK {
+		t.Fatalf("unexpected status: got %d, want %d", resp.StatusCode, http.StatusOK)
+	}
+
+	var body FriendsResponse
+	if err := json.NewDecoder(resp.Body).Decode(&body); err != nil {
+		t.Fatalf("decode body failed: %v", err)
+	}
+	if body.Friends == nil || body.Incoming == nil || body.Outgoing == nil || body.Blocked == nil {
+		t.Fatalf("first-use friends response must use empty arrays: %#v", body)
+	}
+	if len(body.Friends)+len(body.Incoming)+len(body.Outgoing)+len(body.Blocked) != 0 {
+		t.Fatalf("unexpected first-use friends: %#v", body)
 	}
 
 	if err := mock.ExpectationsWereMet(); err != nil {

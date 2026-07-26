@@ -50,6 +50,12 @@ func findUserByUsername(username string) (User, error) {
 	return user, err
 }
 
+func findUserByID(userID string) (User, error) {
+	var user User
+	err := db.Where("user_id = ?", userID).First(&user).Error
+	return user, err
+}
+
 func loadProfileStats(userID string) (ProfileStats, error) {
 	var stats ProfileStats
 	err := db.Table("instances").
@@ -120,22 +126,15 @@ func publicUserFromUser(user User, profile UserProfile, relationship string) Pub
 	return out
 }
 
-func GetProfileHandler(c fiber.Ctx) error {
-	user, err := findUserByUsername(c.Params("username"))
-	if errors.Is(err, gorm.ErrRecordNotFound) {
-		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"message": "Trainer not found"})
-	}
-	if err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"message": "Could not load profile"})
-	}
-
+func sendProfileResponse(
+	c fiber.Ctx,
+	user User,
+	relationship string,
+	friendship *Friendship,
+) error {
 	profile, err := loadUserProfile(user.UserID)
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"message": "Could not load profile settings"})
-	}
-	relationship, friendship, err := relationshipForUsers(viewerID(c), user.UserID)
-	if err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"message": "Could not load relationship"})
 	}
 	canViewProfile := visibilityAllows(profile.ProfileVisibility, relationship)
 	canViewCollection := visibilityAllows(profile.CollectionVisibility, relationship)
@@ -179,6 +178,35 @@ func GetProfileHandler(c fiber.Ctx) error {
 		response.TrainerCode = user.TrainerCode
 	}
 	return c.JSON(response)
+}
+
+func GetProfileHandler(c fiber.Ctx) error {
+	user, err := findUserByUsername(c.Params("username"))
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"message": "Trainer not found"})
+	}
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"message": "Could not load profile"})
+	}
+
+	relationship, friendship, err := relationshipForUsers(viewerID(c), user.UserID)
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"message": "Could not load relationship"})
+	}
+	return sendProfileResponse(c, user, relationship, friendship)
+}
+
+func GetOwnProfileHandler(c fiber.Ctx) error {
+	user, err := findUserByID(viewerID(c))
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
+			"message": "Your trainer account has not finished syncing. Please sign out and back in.",
+		})
+	}
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"message": "Could not load your profile"})
+	}
+	return sendProfileResponse(c, user, relationshipSelf, nil)
 }
 
 func userProfileBio(profile UserProfile) *string {

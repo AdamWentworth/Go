@@ -6,6 +6,7 @@ import Profile from "@/pages/Trainer/Profile";
 
 const mocks = vi.hoisted(() => ({
   fetchProfile: vi.fn(),
+  fetchOwnProfile: vi.fn(),
   sendRequest: vi.fn(),
   acceptRequest: vi.fn(),
   deleteRequest: vi.fn(),
@@ -17,6 +18,7 @@ const mocks = vi.hoisted(() => ({
 
 vi.mock("@/services/socialService", () => ({
   fetchTrainerProfile: mocks.fetchProfile,
+  fetchOwnTrainerProfile: mocks.fetchOwnProfile,
   sendFriendRequest: mocks.sendRequest,
   acceptFriendRequest: mocks.acceptRequest,
   deleteFriendRequest: mocks.deleteRequest,
@@ -128,6 +130,7 @@ const profile = {
 describe("Trainer Profile", () => {
   beforeEach(() => {
     mocks.fetchProfile.mockResolvedValue(profile);
+    mocks.fetchOwnProfile.mockResolvedValue(profile);
     mocks.sendRequest.mockResolvedValue({ friendship_id: "friend-1" });
   });
 
@@ -181,7 +184,7 @@ describe("Trainer Profile", () => {
         can_view_collection: true,
       },
     };
-    mocks.fetchProfile.mockResolvedValue(ownProfile);
+    mocks.fetchOwnProfile.mockResolvedValue(ownProfile);
     mocks.updateProfile.mockResolvedValue({ success: true });
     mocks.updateUserDetails.mockResolvedValue({ success: true });
 
@@ -209,5 +212,60 @@ describe("Trainer Profile", () => {
         }),
       ),
     );
+  });
+
+  it("offers profile setup when the signed-in trainer has never customized it", async () => {
+    mocks.fetchOwnProfile.mockResolvedValue({
+      ...profile,
+      user: {
+        user_id: "user-adam",
+        username: "Adam",
+        app_joined_at: "2026-01-01T00:00:00Z",
+      },
+      bio: null,
+      location: null,
+      trainer_code: null,
+      stats: {
+        caught: 0,
+        for_trade: 0,
+        wanted: 0,
+        favorites: 0,
+        registered: 0,
+      },
+      highlights: [],
+      preferences: {
+        user_id: "user-adam",
+        profile_visibility: "public",
+        collection_visibility: "public",
+        friend_request_permission: "everyone",
+        trainer_code_visibility: "friends",
+        show_location: false,
+        show_pokemon_go_name: true,
+      },
+      viewer: {
+        relationship: "self",
+        can_view_profile: true,
+        can_view_collection: true,
+      },
+    });
+
+    render(
+      <MemoryRouter initialEntries={["/profile"]}>
+        <Routes>
+          <Route path="/profile" element={<Profile />} />
+        </Routes>
+      </MemoryRouter>,
+    );
+
+    expect(
+      await screen.findByRole("heading", {
+        name: /make this trainer profile yours/i,
+      }),
+    ).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: /customize profile/i }));
+    expect(
+      screen.getByRole("heading", { name: /edit profile/i }),
+    ).toBeInTheDocument();
+    expect(mocks.fetchProfile).not.toHaveBeenCalled();
   });
 });

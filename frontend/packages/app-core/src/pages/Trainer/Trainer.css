@@ -157,6 +157,22 @@
   color: #ff9da7;
 }
 
+.trainer-profile-setup {
+  align-items: center;
+  display: flex;
+  justify-content: space-between;
+}
+
+.trainer-profile-setup h2,
+.trainer-profile-setup p {
+  margin: 0;
+}
+
+.trainer-profile-setup p {
+  color: var(--trainer-muted);
+  margin-top: 0.35rem;
+}
+
 .trainer-profile-band {
   display: grid;
   grid-template-columns: 104px minmax(0, 1fr) auto;
@@ -688,6 +704,17 @@
 
   .trainer-profile-commands .trainer-button {
     flex: 1;
+  }
+
+  .trainer-profile-setup {
+    align-items: stretch;
+    flex-direction: column;
+    gap: 14px;
+  }
+
+  .trainer-profile-setup .trainer-button {
+    justify-content: center;
+    width: 100%;
   }
 
   .trainer-stat-strip {

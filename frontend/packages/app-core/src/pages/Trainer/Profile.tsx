@@ -19,6 +19,7 @@ import {
   acceptFriendRequest,
   blockTrainer,
   deleteFriendRequest,
+  fetchOwnTrainerProfile,
   fetchTrainerProfile,
   removeFriend,
   sendFriendRequest,
@@ -157,7 +158,9 @@ const Profile = () => {
     setLoading(true);
     setError("");
     try {
-      const nextProfile = await fetchTrainerProfile(username);
+      const nextProfile = isOwner
+        ? await fetchOwnTrainerProfile()
+        : await fetchTrainerProfile(username);
       setProfile(nextProfile);
       setForm(profileToForm(nextProfile));
       setHighlightIds(
@@ -177,7 +180,7 @@ const Profile = () => {
     } finally {
       setLoading(false);
     }
-  }, [navigate, username]);
+  }, [isOwner, navigate, username]);
 
   useEffect(() => {
     void loadProfile();
@@ -216,6 +219,17 @@ const Profile = () => {
   const currentProfilePath = routeUsername
     ? `/profile/${encodeURIComponent(routeUsername)}`
     : "/profile";
+  const needsProfileSetup =
+    isOwner &&
+    profile !== null &&
+    !profile.bio &&
+    !profile.user.team &&
+    !profile.user.trainer_level &&
+    !profile.user.total_xp &&
+    !profile.user.pogo_started_on &&
+    !profile.location &&
+    !profile.trainer_code &&
+    profile.highlights.length === 0;
 
   const updateField = (field: keyof ProfileForm, value: string) => {
     setForm((current) => ({ ...current, [field]: value }));
@@ -470,6 +484,27 @@ const Profile = () => {
               ) : null}
             </div>
           </section>
+
+          {needsProfileSetup && !editing ? (
+            <section className="trainer-section trainer-profile-setup">
+              <div>
+                <span>Start here</span>
+                <h2>Make this trainer profile yours</h2>
+                <p>
+                  Add your trainer details and choose Pokemon from your
+                  collection to feature.
+                </p>
+              </div>
+              <button
+                type="button"
+                className="trainer-button trainer-button-primary"
+                onClick={toggleEditing}
+              >
+                <FaEdit />
+                Customize profile
+              </button>
+            </section>
+          ) : null}
 
           {editing ? (
             <section className="trainer-section">

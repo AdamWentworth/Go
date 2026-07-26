@@ -4,6 +4,7 @@ import {
   acceptFriendRequest,
   deleteFriendRequest,
   fetchFriendsOverview,
+  fetchOwnTrainerProfile,
   fetchTrainerPreferences,
   fetchTrainerProfile,
   removeFriend,
@@ -60,6 +61,36 @@ describe.sequential('socialService', () => {
     expect(fetchMock.mock.calls[0][1]).toMatchObject({
       credentials: 'include',
       headers: { 'Content-Type': 'application/json' },
+    });
+  });
+
+  it('loads the signed-in trainer profile without requiring a public username lookup', async () => {
+    const profile = {
+      user: {
+        user_id: 'u-1',
+        username: 'Adam',
+        app_joined_at: '2026-01-01T00:00:00Z',
+      },
+      stats: {
+        caught: 0,
+        for_trade: 0,
+        wanted: 0,
+        favorites: 0,
+        registered: 0,
+      },
+      highlights: [],
+      viewer: {
+        relationship: 'self',
+        can_view_profile: true,
+        can_view_collection: true,
+      },
+    };
+    fetchMock.mockResolvedValueOnce(jsonResponse(200, profile));
+
+    await expect(fetchOwnTrainerProfile()).resolves.toEqual(profile);
+    expect(fetchMock.mock.calls[0][0]).toBe(`${USERS_API_URL}/profile`);
+    expect(fetchMock.mock.calls[0][1]).toMatchObject({
+      credentials: 'include',
     });
   });
 
@@ -133,10 +164,12 @@ describe.sequential('socialService', () => {
     await deleteFriendRequest('f-1');
     await removeFriend('u-2');
 
-    expect(fetchMock.mock.calls.map(([url, init]) => [
-      url,
-      (init as RequestInit).method,
-    ])).toEqual([
+    expect(
+      fetchMock.mock.calls.map(([url, init]) => [
+        url,
+        (init as RequestInit).method,
+      ]),
+    ).toEqual([
       [`${USERS_API_URL}/friends/requests`, 'POST'],
       [`${USERS_API_URL}/friends/requests/f-1/accept`, 'POST'],
       [`${USERS_API_URL}/friends/requests/f-1`, 'DELETE'],
