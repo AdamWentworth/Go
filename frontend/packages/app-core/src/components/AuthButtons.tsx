@@ -11,16 +11,16 @@ const AuthButtons: React.FC = () => {
   return (
     <div className="auth-buttons">
       {isLoggedIn ? (
-        <Link to="/account" className="auth-link">
-          <button className="auth-button">Account</button>
+        <Link to="/profile" className="auth-link">
+          <span className="auth-button">Profile</span>
         </Link>
       ) : (
         <>
           <Link to="/login" className="auth-link">
-            <button className="auth-button">Login</button>
+            <span className="auth-button">Login</span>
           </Link>
           <Link to="/register" className="auth-link">
-            <button className="auth-button">Register</button>
+            <span className="auth-button">Register</span>
           </Link>
         </>
       )}

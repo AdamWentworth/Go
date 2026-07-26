@@ -110,6 +110,37 @@
   align-items: flex-start;
 }
 
+.auth-button-personal {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+}
+
+.auth-button-icon-vector {
+  position: relative;
+  display: grid;
+  place-items: center;
+  color: #fff;
+  font-size: clamp(1.7rem, 4vw, 2.25rem);
+}
+
+.action-menu-notification {
+  position: absolute;
+  top: -7px;
+  right: -9px;
+  display: grid;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 4px;
+  place-items: center;
+  border: 2px solid #173435;
+  border-radius: 999px;
+  background: #ff5965;
+  color: #fff;
+  font-size: 0.65rem;
+  font-weight: 900;
+}
+
 /* Central animated buttons */
 .action-menu-buttons-container {
   width: 100vw;
@@ -321,4 +352,17 @@
     var(--light-surface-muted),
     var(--light-gradient-accent)
   );
+}
+
+@media (max-width: 540px) {
+  .auth-button-personal {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  .auth-button-container {
+    margin-bottom: 10px;
+    margin-left: 8px;
+  }
 }

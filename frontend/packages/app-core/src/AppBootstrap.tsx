@@ -1,5 +1,6 @@
 // AppBootstrap.tsx
 
+import { useEffect } from 'react';
 import { useLocation } from 'react-router';
 
 import { useBootstrapInstances } from '@/features/instances/hooks/useBootstrapInstances';
@@ -22,6 +23,12 @@ const AppBootstrap = () => {
   useBootstrapTags(enabled);
   useBootstrapTrades(enabled);
   useInitLocation(enabled);
+
+  useEffect(() => {
+    document.documentElement.dataset.reducedMotion = String(
+      localStorage.getItem('pokegonexus-reduced-motion') === 'true',
+    );
+  }, []);
 
   return null;
 };

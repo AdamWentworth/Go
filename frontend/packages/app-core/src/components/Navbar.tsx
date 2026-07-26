@@ -55,8 +55,12 @@ const Navbar: React.FC = () => {
             <div className="mobile-dropdown right-dropdown">
               {isLoggedIn ? (
                 <>
-                  <Link to="/account" onClick={() => setSettingsOpen(false)}>Account</Link>
+                  <Link to="/profile" onClick={() => setSettingsOpen(false)}>Profile</Link>
+                  <Link to="/friends" onClick={() => setSettingsOpen(false)}>Friends</Link>
                   <Link to="/settings" onClick={() => setSettingsOpen(false)}>Settings</Link>
+                  <Link to="/settings/account" onClick={() => setSettingsOpen(false)}>
+                    Account &amp; Security
+                  </Link>
                 </>
               ) : (
                 <>

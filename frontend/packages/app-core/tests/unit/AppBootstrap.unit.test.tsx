@@ -43,6 +43,8 @@ function renderAt(pathname: string) {
 describe('AppBootstrap', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    localStorage.clear();
+    delete document.documentElement.dataset.reducedMotion;
   });
 
   it('disables heavy bootstrap on auth routes', () => {
@@ -77,4 +79,12 @@ describe('AppBootstrap', () => {
       expect(mockHooks.location).toHaveBeenCalledWith(false);
     },
   );
+
+  it('restores the device motion preference during application bootstrap', () => {
+    localStorage.setItem('pokegonexus-reduced-motion', 'true');
+
+    renderAt('/');
+
+    expect(document.documentElement.dataset.reducedMotion).toBe('true');
+  });
 });

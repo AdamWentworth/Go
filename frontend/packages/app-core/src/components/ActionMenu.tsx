@@ -1,13 +1,14 @@
 // ActionMenu.tsx
 
 import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { FaUserFriends } from 'react-icons/fa';
 import { useNavigate, useLocation } from 'react-router';
 import ActionMenuButton from './ActionMenuButton';
 import CloseButton from './CloseButton';
-import { useModal } from '../contexts/ModalContext';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
 import { useContextBackHandler } from '../contexts/ContextBackContext';
+import { fetchFriendsOverview } from '../services/socialService';
 import ThemeSwitch from './ThemeSwitch';
 import './ActionMenu.css';
 
@@ -21,8 +22,8 @@ const ActionMenu: React.FC = () => {
   const closeEnableTimeoutRef = useRef<number | null>(null);
   const navigate = useNavigate();
   const location = useLocation();
-  const { alert } = useModal();
   const { isLoggedIn } = useAuth() ?? {};
+  const [pendingFriendCount, setPendingFriendCount] = useState(0);
   useTheme();
 
   const cancelPendingOpenAnimation = useCallback(() => {
@@ -55,6 +56,26 @@ const ActionMenu: React.FC = () => {
       cancelPendingCloseEnable();
     };
   }, [cancelPendingCloseEnable, cancelPendingOpenAnimation]);
+
+  useEffect(() => {
+    if (!isOpen || !isLoggedIn) {
+      if (!isLoggedIn) setPendingFriendCount(0);
+      return;
+    }
+
+    let active = true;
+    void fetchFriendsOverview()
+      .then((overview) => {
+        if (active) setPendingFriendCount(overview.incoming.length);
+      })
+      .catch(() => {
+        if (active) setPendingFriendCount(0);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [isLoggedIn, isOpen]);
 
   const openMenu = useCallback(() => {
     cancelPendingOpenAnimation();
@@ -90,7 +111,11 @@ const ActionMenu: React.FC = () => {
 
   const handleNavigation = (path: string) => {
     if (location.pathname !== path) {
-      navigate(path);
+      navigate(path, {
+        state: {
+          contextBackTo: `${location.pathname}${location.search}${location.hash}`,
+        },
+      });
     }
     closeMenu();
   };
@@ -108,7 +133,7 @@ const ActionMenu: React.FC = () => {
 
           <button
             className="settings-button"
-            onClick={() => alert("Settings page is not implemented yet!")}
+            onClick={() => handleNavigation('/settings')}
           >
             <span className="settings-text">Settings</span>
             <img
@@ -126,18 +151,35 @@ const ActionMenu: React.FC = () => {
 
           <div className="auth-button-container">
             {isLoggedIn ? (
-              <button
-                className="auth-button"
-                type="button"
-                onClick={() => handleNavigation('/account')}
-              >
-                <span className="auth-button-text">Account</span>
-                <img
-                  className="auth-button-icon"
-                  src="/images/profile-icon.png"
-                  alt="Account"
-                />
-              </button>
+              <div className="auth-button-personal">
+                <button
+                  className="auth-button"
+                  type="button"
+                  onClick={() => handleNavigation('/profile')}
+                >
+                  <span className="auth-button-text">Profile</span>
+                  <img
+                    className="auth-button-icon"
+                    src="/images/profile-icon.png"
+                    alt=""
+                  />
+                </button>
+                <button
+                  className="auth-button auth-button-friends"
+                  type="button"
+                  onClick={() => handleNavigation('/friends')}
+                >
+                  <span className="auth-button-text">Friends</span>
+                  <span className="auth-button-icon auth-button-icon-vector">
+                    <FaUserFriends />
+                    {pendingFriendCount > 0 ? (
+                      <span className="action-menu-notification">
+                        {pendingFriendCount > 9 ? '9+' : pendingFriendCount}
+                      </span>
+                    ) : null}
+                  </span>
+                </button>
+              </div>
             ) : (
               <div className="auth-button-stacked">
                 <button

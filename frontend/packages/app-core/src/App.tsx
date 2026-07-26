@@ -1,7 +1,12 @@
 // src/App.tsx
 
 import React, { Suspense, lazy } from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router';
+import {
+  BrowserRouter as Router,
+  Navigate,
+  Routes,
+  Route,
+} from 'react-router';
 
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
@@ -29,7 +34,10 @@ const PvpMethodology = lazy(() => import('./pages/Pvp/PvpMethodology'));
 const Rankings = lazy(() => import('./pages/Rankings/Rankings'));
 const Login = lazy(() => import('./pages/Authentication/Login'));
 const Register = lazy(() => import('./pages/Authentication/Register'));
-const Account = lazy(() => import('./pages/Authentication/Account'));
+const Profile = lazy(() => import('./pages/Trainer/Profile'));
+const Friends = lazy(() => import('./pages/Trainer/Friends'));
+const Settings = lazy(() => import('./pages/Trainer/Settings'));
+const AccountSecurity = lazy(() => import('./pages/Trainer/AccountSecurity'));
 const Search = lazy(() => import('./pages/Search/Search'));
 const Trades = lazy(() => import('./pages/Trades/Trades'));
 
@@ -54,7 +62,12 @@ const AppContent: React.FC = () => (
           <Route path="/trades"       element={<Trades />} />
           <Route path="/login"        element={<Login />} />
           <Route path="/register"     element={<Register />} />
-          <Route path="/account"      element={<Account />} />
+          <Route path="/profile"      element={<Profile />} />
+          <Route path="/profile/:username" element={<Profile />} />
+          <Route path="/friends"      element={<Friends />} />
+          <Route path="/settings"     element={<Settings />} />
+          <Route path="/settings/account" element={<AccountSecurity />} />
+          <Route path="/account"      element={<Navigate to="/settings/account" replace />} />
           <Route path="/search"       element={<Search />} />
           <Route path="/pokemon/:username" element={<Pokemon isOwnCollection={false} />} />
         </Routes>

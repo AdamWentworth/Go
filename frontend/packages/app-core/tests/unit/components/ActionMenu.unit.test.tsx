@@ -89,6 +89,19 @@ describe('ActionMenu', () => {
     expect(screen.getByTestId('location')).toHaveTextContent('/rankings');
   });
 
+  it('opens the real settings page instead of a placeholder modal', () => {
+    render(
+      <MemoryRouter initialEntries={['/pokemon']}>
+        <ActionMenu />
+        <LocationProbe />
+      </MemoryRouter>,
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Action Menu' }));
+    fireEvent.click(screen.getByRole('button', { name: /settings/i }));
+    expect(screen.getByTestId('location')).toHaveTextContent('/settings');
+  });
+
   it('keeps the close control disabled until the opening gesture has settled', () => {
     vi.useFakeTimers();
 
