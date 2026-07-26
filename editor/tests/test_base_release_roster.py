@@ -5,7 +5,7 @@ from contextlib import redirect_stdout
 from datetime import date
 from io import StringIO
 from pathlib import Path
-from unittest.mock import patch
+from unittest.mock import Mock, call, patch
 
 
 ROOT_DIR = Path(__file__).resolve().parents[2]
@@ -16,9 +16,11 @@ if str(EDITOR_DIR) not in sys.path:
 from scripts.apply_base_release_roster import (  # noqa: E402
     BASE_RELEASE_FORMS,
     GAME_MASTER_REVISION,
+    NON_COLLECTIBLE_BATTLE_STATE_IDS,
     gender_rates_by_key,
     generation_for_dex,
     missing_normal_assets,
+    remove_non_collectible_battle_states,
     main,
     pokemon_settings_by_key,
 )
@@ -30,7 +32,7 @@ class BaseReleaseRosterTests(unittest.TestCase):
         pokemon_ids = [entry.pokemon_id for entry in BASE_RELEASE_FORMS]
 
         self.assertEqual(len(dex_numbers), 44)
-        self.assertEqual(len(BASE_RELEASE_FORMS), 55)
+        self.assertEqual(len(BASE_RELEASE_FORMS), 53)
         self.assertEqual(len(pokemon_ids), len(set(pokemon_ids)))
         self.assertSetEqual(
             dex_numbers,
@@ -40,6 +42,41 @@ class BaseReleaseRosterTests(unittest.TestCase):
                 931, 932, 933, 934, 940, 941, 948, 949, 950, 955, 956,
                 968, 969, 970, 973, 977, 978, 982, 1011, 1012, 1013, 1019,
             },
+        )
+
+    def test_battle_only_states_are_not_collectible_catalog_forms(self):
+        entries_by_dex = {
+            dex: [entry for entry in BASE_RELEASE_FORMS if entry.pokedex_number == dex]
+            for dex in (681, 778)
+        }
+
+        self.assertEqual(
+            [(entry.pokemon_id, entry.form, entry.game_master_form) for entry in entries_by_dex[681]],
+            [(681, None, "shield")],
+        )
+        self.assertEqual(
+            [(entry.pokemon_id, entry.form, entry.game_master_form) for entry in entries_by_dex[778]],
+            [(778, None, "disguised")],
+        )
+        self.assertTrue(
+            set(NON_COLLECTIBLE_BATTLE_STATE_IDS).isdisjoint(
+                entry.pokemon_id for entry in BASE_RELEASE_FORMS
+            )
+        )
+
+    def test_battle_only_cleanup_removes_derived_and_catalog_rows(self):
+        connection = Mock()
+
+        remove_non_collectible_battle_states(connection)
+
+        ids = list(NON_COLLECTIBLE_BATTLE_STATE_IDS)
+        connection.execute.assert_has_calls(
+            [
+                call("DELETE FROM pokemon_cp_stats WHERE pokemon_id = ANY(?)", (ids,)),
+                call("DELETE FROM pokemon_moves WHERE pokemon_id = ANY(?)", (ids,)),
+                call("DELETE FROM pokemon_sizes WHERE pokemon_id = ANY(?)", (ids,)),
+                call("DELETE FROM pokemon WHERE pokemon_id = ANY(?)", (ids,)),
+            ]
         )
 
     def test_roster_uses_pinned_game_master_and_expected_generation_mapping(self):

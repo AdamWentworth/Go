@@ -99,13 +99,15 @@ def form(
 
 # Alternate-form IDs continue the catalog's established authored-ID range.
 # National Dex IDs remain the primary row for each species.
+NON_COLLECTIBLE_BATTLE_STATE_IDS = (2269, 2345)
+
 BASE_RELEASE_FORMS = (
     form(679, 679, "Honedge", "2025-07-22"),
     form(680, 680, "Doublade", "2025-07-22"),
-    form(681, 681, "Aegislash", "2025-07-22", "Shield", "shield"),
-    form(2345, 681, "Aegislash", "2025-07-22", "Blade", "blade"),
-    form(778, 778, "Mimikyu", "2026-04-01", "Busted", "busted"),
-    form(2269, 778, "Mimikyu", "2026-04-01", "Disguised", "disguised"),
+    # Shield Aegislash and Disguised Mimikyu are their storage states. Their
+    # alternate appearances exist only during battle and are not collectibles.
+    form(681, 681, "Aegislash", "2025-07-22", game_master_form="shield"),
+    form(778, 778, "Mimikyu", "2026-04-01", game_master_form="disguised"),
     form(807, 807, "Zeraora", "2026-05-29", rarity="Mythical"),
     form(824, 824, "Blipbug", "2026-03-17"),
     form(825, 825, "Dottler", "2026-03-17"),
@@ -431,6 +433,19 @@ def upsert_forms(
         )
 
 
+def remove_non_collectible_battle_states(connection: CatalogConnection) -> None:
+    ids = list(NON_COLLECTIBLE_BATTLE_STATE_IDS)
+    for table in ("pokemon_cp_stats", "pokemon_moves", "pokemon_sizes"):
+        connection.execute(
+            f"DELETE FROM {table} WHERE pokemon_id = ANY(?)",
+            (ids,),
+        )
+    connection.execute(
+        "DELETE FROM pokemon WHERE pokemon_id = ANY(?)",
+        (ids,),
+    )
+
+
 def sync_roster_moves(
     connection: CatalogConnection,
     game_master: list[dict[str, Any]],
@@ -524,6 +539,12 @@ def validate_staged_catalog(connection: CatalogConnection, publish: bool) -> Non
             (row["pokemon_id"],),
         ).fetchone()[0] == 0:
             raise RuntimeError(f"Pokemon {row['pokemon_id']} has no move pool.")
+    battle_state_count = connection.execute(
+        "SELECT COUNT(*) FROM pokemon WHERE pokemon_id = ANY(?)",
+        (list(NON_COLLECTIBLE_BATTLE_STATE_IDS),),
+    ).fetchone()[0]
+    if battle_state_count:
+        raise RuntimeError("Non-collectible battle states remain in the Pokemon catalog.")
 
 
 def apply_roster(
@@ -537,6 +558,7 @@ def apply_roster(
     connection.execute("BEGIN")
     try:
         upsert_forms(connection, settings, genders, publish)
+        remove_non_collectible_battle_states(connection)
         sync_roster_moves(connection, game_master)
         upsert_evolutions(connection)
         validate_staged_catalog(connection, publish)

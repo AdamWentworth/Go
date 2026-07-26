@@ -1,7 +1,7 @@
 # Base Release Image Review - 2026-07-26
 
 This batch covers 44 released species missing from the public PokeGo Nexus
-catalog, represented by 55 catalog rows where Pokémon GO exposes distinct
+catalog, represented by 53 catalog rows where Pokémon GO exposes distinct
 forms. It deliberately does not change shiny, shadow, or costume availability.
 The audit is cut off at July 22, 2026; announced August 18 releases such as
 Cramorant, Arrokuda, and Barraskewda are intentionally excluded.
@@ -22,8 +22,8 @@ unreleased.
 
 - `pokemon_679.png` - Honedge
 - `pokemon_680.png` - Doublade
-- `pokemon_681.png` - Aegislash (Shield)
-- `pokemon_778.png` - Mimikyu (Busted)
+- `pokemon_681.png` - Aegislash
+- `pokemon_778.png` - Mimikyu (must show its Disguised storage state)
 - `pokemon_807.png` - Zeraora
 - `pokemon_824.png` - Blipbug
 - `pokemon_825.png` - Dottler
@@ -43,8 +43,6 @@ unreleased.
 
 ## Missing Normal Images To Add
 
-- `pokemon_2345.png` - Aegislash (Blade)
-- `pokemon_2269.png` - Mimikyu (Disguised)
 - `pokemon_2286.png` - Indeedee (Male)
 - `pokemon_917.png` - Tarountula
 - `pokemon_918.png` - Spidops

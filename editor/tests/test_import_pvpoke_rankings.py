@@ -10,6 +10,7 @@ sys.path.append(str(REPO_ROOT / "pokemon" / "scripts"))
 
 from import_pvpoke_rankings import (  # noqa: E402
     LocalFusion,
+    LocalMatch,
     LocalPokemon,
     RankingFormat,
     build_rows,
@@ -25,8 +26,7 @@ class PvPokeRankingImportTests(unittest.TestCase):
                 LocalPokemon(2017, 38, "Ninetales", "Alolan", "/2017.png", "/shadow-2017.png"),
             ],
             778: [
-                LocalPokemon(778, 778, "Mimikyu", "Busted", "/778.png", None),
-                LocalPokemon(2269, 778, "Mimikyu", "Disguised", "/2269.png", None),
+                LocalPokemon(778, 778, "Mimikyu", "", "/778.png", None),
             ],
             888: [
                 LocalPokemon(888, 888, "Zacian", "Crowned_sword", "/888.png", None),
@@ -64,7 +64,7 @@ class PvPokeRankingImportTests(unittest.TestCase):
             self.pokemon_by_dex,
             self.fusions,
         )
-        self.assertEqual(mimikyu.pokemon_id, 778)
+        self.assertEqual(mimikyu, LocalMatch("pokemon", 778, None, "/778.png"))
         self.assertEqual(zacian.variant_kind, "crown")
         self.assertEqual(zacian.pokemon_id, 888)
 
