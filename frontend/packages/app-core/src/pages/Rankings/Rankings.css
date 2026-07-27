@@ -236,15 +236,15 @@
 
 .community-ranking-pokemon {
   display: grid;
-  grid-template-columns: 4.5rem minmax(0, 1fr);
+  grid-template-columns: 5.4rem minmax(0, 1fr);
   gap: 0.75rem;
   align-items: center;
   min-width: 0;
 }
 
 .community-ranking-pokemon img {
-  width: 4.5rem;
-  height: 4.5rem;
+  width: 5.4rem;
+  height: 5.4rem;
   object-fit: contain;
 }
 
@@ -426,13 +426,13 @@
   }
 
   .community-ranking-pokemon {
-    grid-template-columns: 3.8rem minmax(0, 1fr);
+    grid-template-columns: 4.6rem minmax(0, 1fr);
     gap: 0.55rem;
   }
 
   .community-ranking-pokemon img {
-    width: 3.8rem;
-    height: 3.8rem;
+    width: 4.6rem;
+    height: 4.6rem;
   }
 
   .community-ranking-count {

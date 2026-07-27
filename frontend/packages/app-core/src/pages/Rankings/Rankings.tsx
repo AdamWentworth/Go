@@ -39,8 +39,25 @@ function formatVariantLabel(variant: PokemonVariant): string {
     .replace(/\b\w/g, (letter) => letter.toUpperCase());
 }
 
-function getDisplayName(variant: PokemonVariant): string {
-  return variant.name || variant.species_name;
+function formatFormName(value: string): string {
+  return value
+    .replace(/_/g, ' ')
+    .replace(/\b\w/g, (letter) => letter.toUpperCase());
+}
+
+export function getRankingDisplayName(variant: PokemonVariant): string {
+  const name = variant.name || variant.species_name;
+  const form = String(variant.form || '').trim();
+  if (!form) return name;
+
+  const escapedForm = form.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const formAlreadyNamed = new RegExp(
+    `(?:^|[\\s(_-])${escapedForm}(?:$|[\\s)_-])`,
+    'i',
+  ).test(name);
+  if (formAlreadyNamed) return name;
+
+  return `${name} (${formatFormName(form)})`;
 }
 
 function formatSnapshotTime(value: string): string {
@@ -107,7 +124,7 @@ function RankingRow({
           }}
         />
         <span>
-          <strong>{getDisplayName(entry.variant)}</strong>
+          <strong>{getRankingDisplayName(entry.variant)}</strong>
           <small>
             #{formatDexNumber(entry.variant.pokedex_number)} ·{' '}
             {formatVariantLabel(entry.variant)}

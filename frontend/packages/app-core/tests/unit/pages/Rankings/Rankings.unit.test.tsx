@@ -1,6 +1,6 @@
 import { fireEvent, render, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import Rankings from '@/pages/Rankings/Rankings';
+import Rankings, { getRankingDisplayName } from '@/pages/Rankings/Rankings';
 import { useAuthStore } from '@/stores/useAuthStore';
 import { useVariantsStore } from '@/features/variants/store/useVariantsStore';
 import type { PokemonVariant } from '@/types/pokemonVariants';
@@ -58,6 +58,7 @@ const makeVariant = (
   pokemonID: number,
   name: string,
   variantType: PokemonVariant['variantType'],
+  form: string | null = null,
 ): PokemonVariant =>
   ({
     variant_id: variantID,
@@ -65,12 +66,22 @@ const makeVariant = (
     pokedex_number: pokemonID,
     name,
     species_name: name,
+    form,
     variantType,
     currentImage: `/images/${variantID}.png`,
     image_url: `/images/${variantID}.png`,
   }) as PokemonVariant;
 
 describe('Community Rankings page', () => {
+  it('includes collectible forms without duplicating names that already contain them', () => {
+    expect(getRankingDisplayName(
+      makeVariant('unown-c-shiny', 2306, 'Unown', 'shiny', 'C'),
+    )).toBe('Unown (C)');
+    expect(getRankingDisplayName(
+      makeVariant('dialga-origin', 2059, 'Origin Dialga', 'default', 'Origin'),
+    )).toBe('Origin Dialga');
+  });
+
   beforeEach(() => {
     rankingState.error = null;
     rankingState.loading = false;
