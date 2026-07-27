@@ -30,7 +30,7 @@ export function useCommunityRankings(enabled: boolean): CommunityRankingsState {
     setLoading(true);
     setError(null);
 
-    void getPokemonCommunityRankings(100)
+    void getPokemonCommunityRankings()
       .then((payload) => {
         if (!active) return;
         setData(payload);

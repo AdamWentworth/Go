@@ -160,6 +160,9 @@ export default defineConfig(({ mode }) => {
     process.env.VITE_EVENTS_API_URL?.includes('/__e2e/events') === true;
   const assetOrigin = (env.VITE_ASSET_ORIGIN || 'https://pokegonexus.com').replace(/\/+$/, '');
   const devProxyTarget = env.DEV_PROXY_TARGET?.trim().replace(/\/+$/, '');
+  const devSearchProxyTarget = env.DEV_SEARCH_PROXY_TARGET
+    ?.trim()
+    .replace(/\/+$/, '');
   const devProxyHost = env.DEV_PROXY_HOST?.trim();
   const devProxySecure = env.DEV_PROXY_SECURE !== 'false';
   const assetProxyTarget = devProxyTarget || assetOrigin;
@@ -200,6 +203,16 @@ export default defineConfig(({ mode }) => {
           secure: devProxySecure,
           ...(devProxyHost ? { headers: { host: devProxyHost } } : {}),
         },
+        ...(devSearchProxyTarget
+          ? {
+              '/api/search': {
+                target: devSearchProxyTarget,
+                changeOrigin: true,
+                secure: false,
+                rewrite: (path) => path.replace(/^\/api\/search/, '/api'),
+              },
+            }
+          : {}),
         '/api': {
           target: apiProxyTarget,
           changeOrigin: true,

@@ -1,7 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import {
   FaHeart,
-  FaLock,
   FaMedal,
   FaSearch,
   FaUsers,
@@ -9,7 +8,6 @@ import {
 import type { PokemonCommunityRanking } from '@shared-contracts/search';
 import { useBootstrapVariants } from '@/features/variants/hooks/useBootstrapVariants';
 import { useVariantsStore } from '@/features/variants/store/useVariantsStore';
-import { useAuthStore } from '@/stores/useAuthStore';
 import type { PokemonVariant } from '@/types/pokemonVariants';
 import { resolveAssetUrl } from '@/utils/assetUrl';
 import { useCommunityRankings } from './hooks/useCommunityRankings';
@@ -21,23 +19,13 @@ interface JoinedRanking extends PokemonCommunityRanking {
   variant: PokemonVariant;
 }
 
+type RankingWithVariant = PokemonCommunityRanking & {
+  variant: PokemonVariant;
+};
+
 const INITIAL_RESULT_COUNT = 30;
 const RESULT_INCREMENT = 30;
 const FALLBACK_IMAGE = '/images/default_pokemon.png';
-
-function formatDexNumber(value: number): string {
-  return String(value).padStart(4, '0');
-}
-
-function formatVariantLabel(variant: PokemonVariant): string {
-  const raw = String(variant.variantType || 'default');
-  if (raw === 'default') return 'Pokémon';
-  return raw
-    .replace(/^costume_/, 'Costume ')
-    .replace(/^fusion_/, 'Fusion ')
-    .replace(/_/g, ' ')
-    .replace(/\b\w/g, (letter) => letter.toUpperCase());
-}
 
 function formatFormName(value: string): string {
   return value
@@ -57,7 +45,122 @@ export function getRankingDisplayName(variant: PokemonVariant): string {
   ).test(name);
   if (formAlreadyNamed) return name;
 
-  return `${name} (${formatFormName(form)})`;
+  return `${name} ${formatFormName(form)}`;
+}
+
+function getEvolutionIds(
+  variant: PokemonVariant,
+  key: 'evolves_from' | 'evolves_to',
+): number[] {
+  const source = variant as PokemonVariant & {
+    evolutionData?: { evolves_from?: unknown; evolves_to?: unknown };
+  };
+  const values = source.evolutionData?.[key];
+  if (!Array.isArray(values)) return [];
+  return values.map(Number).filter(Number.isFinite);
+}
+
+export function collapseEvolutionFamilyRankings<T extends RankingWithVariant>(
+  rows: T[],
+  variants: PokemonVariant[],
+): T[] {
+  const speciesByID = new Map<number, PokemonVariant>();
+  for (const variant of variants) {
+    const pokemonID = Number(variant.pokemon_id);
+    if (Number.isFinite(pokemonID) && !speciesByID.has(pokemonID)) {
+      speciesByID.set(pokemonID, variant);
+    }
+  }
+
+  const adjacency = new Map<number, Set<number>>();
+  const connect = (left: number, right: number) => {
+    if (!speciesByID.has(left) || !speciesByID.has(right)) return;
+    if (!adjacency.has(left)) adjacency.set(left, new Set());
+    if (!adjacency.has(right)) adjacency.set(right, new Set());
+    adjacency.get(left)?.add(right);
+    adjacency.get(right)?.add(left);
+  };
+  for (const [pokemonID, variant] of speciesByID) {
+    for (const linkedID of [
+      ...getEvolutionIds(variant, 'evolves_from'),
+      ...getEvolutionIds(variant, 'evolves_to'),
+    ]) {
+      connect(pokemonID, linkedID);
+    }
+  }
+
+  const familyKeyByID = new Map<number, number>();
+  for (const pokemonID of speciesByID.keys()) {
+    if (familyKeyByID.has(pokemonID)) continue;
+    const family = new Set<number>();
+    const pending = [pokemonID];
+    while (pending.length > 0) {
+      const current = pending.pop() as number;
+      if (family.has(current)) continue;
+      family.add(current);
+      adjacency.get(current)?.forEach((linkedID) => pending.push(linkedID));
+    }
+    const familyKey = Math.min(...family);
+    family.forEach((memberID) => familyKeyByID.set(memberID, familyKey));
+  }
+
+  const depthByID = new Map<number, number>();
+  const getDepth = (pokemonID: number, trail = new Set<number>()): number => {
+    const cached = depthByID.get(pokemonID);
+    if (cached !== undefined) return cached;
+    const variant = speciesByID.get(pokemonID);
+    const parents = variant
+      ? getEvolutionIds(variant, 'evolves_from').filter(
+          (parentID) => speciesByID.has(parentID) && !trail.has(parentID),
+        )
+      : [];
+    if (parents.length === 0) {
+      depthByID.set(pokemonID, 0);
+      return 0;
+    }
+    const nextTrail = new Set(trail);
+    nextTrail.add(pokemonID);
+    const depth =
+      1 + Math.min(...parents.map((parentID) => getDepth(parentID, nextTrail)));
+    depthByID.set(pokemonID, depth);
+    return depth;
+  };
+
+  const selectedByGroup = new Map<string, T>();
+  for (const row of rows) {
+    const variantType = String(row.variant.variantType || 'default');
+    if (variantType.includes('costume')) {
+      selectedByGroup.set(`variant:${row.variant_id}`, row);
+      continue;
+    }
+
+    const pokemonID = Number(row.variant.pokemon_id);
+    const familyKey = familyKeyByID.get(pokemonID) ?? pokemonID;
+    const form = String(row.variant.form || '').trim().toLowerCase();
+    const groupKey = `${familyKey}:${variantType}:${form}`;
+    const selected = selectedByGroup.get(groupKey);
+    if (
+      !selected ||
+      getDepth(pokemonID) < getDepth(Number(selected.variant.pokemon_id))
+    ) {
+      selectedByGroup.set(groupKey, row);
+    }
+  }
+
+  const selectedIDs = new Set(
+    [...selectedByGroup.values()].map((row) => row.variant_id),
+  );
+  return rows.filter((row) => selectedIDs.has(row.variant_id));
+}
+
+export function prepareRankingsForMode<T extends RankingWithVariant>(
+  mode: RankingMode,
+  rows: T[],
+  variants: PokemonVariant[],
+): T[] {
+  return mode === 'rarest'
+    ? collapseEvolutionFamilyRankings(rows, variants)
+    : rows;
 }
 
 function formatSnapshotTime(value: string): string {
@@ -71,69 +174,92 @@ function formatSnapshotTime(value: string): string {
 
 function RankingRow({
   entry,
-  index,
+  rank,
   mode,
   scaleMaximum,
+  privacyThreshold,
 }: {
   entry: JoinedRanking;
-  index: number;
+  rank: number;
   mode: RankingMode;
   scaleMaximum: number;
+  privacyThreshold: number;
 }) {
   const primaryCount =
     mode === 'wanted' ? entry.wanted_users : entry.caught_users;
+  const primaryScaleCount = primaryCount ?? 0;
   const progress = Math.max(
     4,
-    Math.round((primaryCount / Math.max(scaleMaximum, 1)) * 100),
+    Math.round((primaryScaleCount / Math.max(scaleMaximum, 1)) * 100),
   );
   const image =
     entry.variant.currentImage || entry.variant.image_url || FALLBACK_IMAGE;
   const primaryLabel =
-    mode === 'wanted'
-      ? `${primaryCount.toLocaleString()} ${
-          primaryCount === 1 ? 'trainer wants' : 'trainers want'
-        } this`
-      : `Caught by ${primaryCount.toLocaleString()} ${
+    primaryCount == null
+      ? `Fewer than ${privacyThreshold} trainers want this`
+      : mode === 'wanted'
+      ? primaryCount === 0
+        ? 'No trainers want this'
+        : `${primaryCount.toLocaleString()} ${
+            primaryCount === 1 ? 'trainer wants' : 'trainers want'
+          } this`
+      : `Owned by ${primaryCount.toLocaleString()} ${
           primaryCount === 1 ? 'trainer' : 'trainers'
         }`;
   const secondaryLabel =
     mode === 'wanted'
-      ? `Caught by ${entry.caught_users.toLocaleString()} trainers`
-      : `${entry.wanted_users.toLocaleString()} trainers want this`;
+      ? `Owned by ${entry.caught_users.toLocaleString()} ${
+          entry.caught_users === 1 ? 'trainer' : 'trainers'
+        }`
+      : null;
 
   return (
     <article
       className={`community-ranking-row community-ranking-row--rank-${Math.min(
-        index + 1,
+        rank,
         4,
       )}`}
     >
-      <div className="community-ranking-position" aria-label={`Rank ${index + 1}`}>
-        {index < 3 && <FaMedal aria-hidden="true" />}
-        <strong>{index + 1}</strong>
+      <div className="community-ranking-position" aria-label={`Rank ${rank}`}>
+        {rank <= 3 && <FaMedal aria-hidden="true" />}
+        <strong>{rank}</strong>
       </div>
       <div className="community-ranking-pokemon">
-        <img
-          src={resolveAssetUrl(image)}
-          alt=""
-          loading="lazy"
-          decoding="async"
-          draggable={false}
-          onError={(event) => {
-            event.currentTarget.src = FALLBACK_IMAGE;
-          }}
-        />
+        <div className="community-ranking-artwork">
+          <img
+            className="community-ranking-artwork-pokemon"
+            src={resolveAssetUrl(image)}
+            alt=""
+            loading="lazy"
+            decoding="async"
+            draggable={false}
+            onError={(event) => {
+              event.currentTarget.src = FALLBACK_IMAGE;
+            }}
+          />
+          {entry.variant.variantType.includes('gigantamax') && (
+            <img
+              className="community-ranking-form-icon"
+              src="/images/gigantamax.png"
+              alt="Gigantamax"
+            />
+          )}
+          {!entry.variant.variantType.includes('gigantamax') &&
+            entry.variant.variantType.includes('dynamax') && (
+              <img
+                className="community-ranking-form-icon"
+                src="/images/dynamax.png"
+                alt="Dynamax"
+              />
+            )}
+        </div>
         <span>
           <strong>{getRankingDisplayName(entry.variant)}</strong>
-          <small>
-            #{formatDexNumber(entry.variant.pokedex_number)} ·{' '}
-            {formatVariantLabel(entry.variant)}
-          </small>
         </span>
       </div>
       <div className="community-ranking-count">
         <strong>{primaryLabel}</strong>
-        <small>{secondaryLabel}</small>
+        {secondaryLabel && <small>{secondaryLabel}</small>}
         <span aria-hidden="true">
           <i style={{ width: `${progress}%` }} />
         </span>
@@ -143,13 +269,12 @@ function RankingRow({
 }
 
 const Rankings: React.FC = () => {
-  const isLoggedIn = useAuthStore((state) => state.isLoggedIn);
   const variants = useVariantsStore((state) => state.variants);
   const variantsLoading = useVariantsStore((state) => state.variantsLoading);
   const [mode, setMode] = useState<RankingMode>('wanted');
   const [query, setQuery] = useState('');
   const [visibleCount, setVisibleCount] = useState(INITIAL_RESULT_COUNT);
-  const { data, error, loading, refresh } = useCommunityRankings(isLoggedIn);
+  const { data, error, loading, refresh } = useCommunityRankings(true);
 
   useBootstrapVariants();
 
@@ -161,13 +286,17 @@ const Rankings: React.FC = () => {
     () => (mode === 'wanted' ? data?.most_wanted ?? [] : data?.rarest ?? []),
     [data, mode],
   );
-  const joinedRows = useMemo(
+  const matchedRows = useMemo(
     () =>
       sourceRows.flatMap<JoinedRanking>((entry) => {
         const variant = variantsByID.get(entry.variant_id);
         return variant ? [{ ...entry, variant }] : [];
       }),
     [sourceRows, variantsByID],
+  );
+  const joinedRows = useMemo(
+    () => prepareRankingsForMode(mode, matchedRows, variants),
+    [matchedRows, mode, variants],
   );
   const normalizedQuery = query.trim().toLowerCase();
   const filteredRows = useMemo(
@@ -184,12 +313,19 @@ const Rankings: React.FC = () => {
     [joinedRows, normalizedQuery],
   );
   const visibleRows = filteredRows.slice(0, visibleCount);
-  const unmatchedCount = sourceRows.length - joinedRows.length;
+  const rankByVariantID = useMemo(
+    () =>
+      new Map(
+        joinedRows.map((entry, index) => [entry.variant_id, index + 1]),
+      ),
+    [joinedRows],
+  );
+  const unmatchedCount = sourceRows.length - matchedRows.length;
   const scaleMaximum = filteredRows.reduce(
     (maximum, entry) =>
       Math.max(
         maximum,
-        mode === 'wanted' ? entry.wanted_users : entry.caught_users,
+        (mode === 'wanted' ? entry.wanted_users : entry.caught_users) ?? 0,
       ),
     0,
   );
@@ -222,18 +358,7 @@ const Rankings: React.FC = () => {
           )}
         </header>
 
-        {!isLoggedIn ? (
-          <section className="community-rankings-state">
-            <FaLock aria-hidden="true" />
-            <h2>Sign in to view community rankings</h2>
-            <p>
-              Rankings use anonymous collection totals. Trainer names and
-              individual collections are never shown.
-            </p>
-            <a href="/login">Log in</a>
-          </section>
-        ) : (
-          <>
+        <>
             <section className="community-ranking-controls">
               <div
                 className="community-ranking-tabs"
@@ -258,7 +383,7 @@ const Rankings: React.FC = () => {
                   onClick={() => selectMode('rarest')}
                 >
                   <FaMedal aria-hidden="true" />
-                  Rarest caught
+                  Rarest owned
                 </button>
               </div>
 
@@ -279,10 +404,10 @@ const Rankings: React.FC = () => {
 
             <div className="community-rankings-context">
               <span>
-                <strong>{mode === 'wanted' ? 'Most wanted' : 'Rarest caught'}</strong>
+                <strong>{mode === 'wanted' ? 'Most wanted' : 'Rarest owned'}</strong>
                 {mode === 'wanted'
                   ? 'Ranked by distinct trainer wishlists'
-                  : 'Fewest distinct trainers with a caught copy'}
+                  : 'Fewest trainers with a caught copy or Pokédex registration'}
               </span>
               <small>One vote per trainer. Duplicate copies count once.</small>
             </div>
@@ -311,16 +436,17 @@ const Rankings: React.FC = () => {
                   aria-label={
                     mode === 'wanted'
                       ? 'Most wanted Pokémon'
-                      : 'Rarest caught Pokémon'
+                      : 'Rarest owned Pokémon'
                   }
                 >
-                  {visibleRows.map((entry, index) => (
+                  {visibleRows.map((entry) => (
                     <RankingRow
                       key={entry.variant_id}
                       entry={entry}
-                      index={index}
+                      rank={rankByVariantID.get(entry.variant_id) ?? 0}
                       mode={mode}
                       scaleMaximum={scaleMaximum}
+                      privacyThreshold={data.privacy_threshold}
                     />
                   ))}
                   {visibleRows.length === 0 && (
@@ -352,8 +478,7 @@ const Rankings: React.FC = () => {
                 </footer>
               </>
             )}
-          </>
-        )}
+        </>
       </div>
     </div>
   );

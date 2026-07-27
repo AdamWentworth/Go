@@ -40,11 +40,11 @@ export async function searchPokemon(
 }
 
 export async function getPokemonCommunityRankings(
-  limit = 100,
+  limit = 10000,
 ): Promise<PokemonCommunityRankingsPayload> {
   const response = await requestWithPolicy(
     buildUrl(SEARCH_API_URL, searchContract.endpoints.rankings, { limit }),
-    { method: 'GET', cache: 'no-store' },
+    { method: 'GET', cache: 'no-cache' },
   );
   const payload = await parseJsonSafe<PokemonCommunityRankingsPayload>(response);
   if (!response.ok || !payload) {

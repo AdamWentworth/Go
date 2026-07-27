@@ -11,6 +11,7 @@ const rankingsUser = {
 };
 
 const rankings = {
+  privacy_threshold: 5,
   snapshot: {
     collector_users: 18,
     wishlist_users: 15,
@@ -34,7 +35,7 @@ const rankings = {
     {
       variant_id: '0004-default',
       wanted_users: 8,
-      most_wanted_users: 2,
+      most_wanted_users: null,
       caught_users: 2,
     },
     {
@@ -72,8 +73,9 @@ test.describe('Community rankings page', () => {
         page.getByText('One vote per trainer. Duplicate copies count once.'),
       ).toBeVisible();
 
-      await page.getByRole('tab', { name: 'Rarest caught' }).click();
-      await expect(page.getByText('Caught by 2 trainers')).toBeVisible();
+      await page.getByRole('tab', { name: 'Rarest owned' }).click();
+      await expect(page.getByText('Owned by 2 trainers')).toBeVisible();
+      await expect(page.getByText('8 trainers want this')).toHaveCount(0);
 
       const search = page.getByRole('searchbox', { name: 'Search rankings' });
       await search.fill('Charmander');
@@ -90,6 +92,27 @@ test.describe('Community rankings page', () => {
       expect(layout.documentWidth).toBeLessThanOrEqual(layout.viewportWidth);
       expect(layout.rowWidths.every((width) => width <= layout.viewportWidth))
         .toBe(true);
+    } finally {
+      await diagnostics.flush();
+    }
+
+    expect(diagnostics.blockingErrors()).toEqual([]);
+  });
+
+  test('is available while signed out', async ({ page }, testInfo) => {
+    const diagnostics = attachBrowserDiagnostics(page, testInfo);
+
+    try {
+      await installE2eRoutes(page, { communityRankings: rankings });
+      await page.goto('/rankings', { waitUntil: 'domcontentloaded' });
+
+      await expect(
+        page.getByRole('heading', { name: 'Community Rankings' }),
+      ).toBeVisible();
+      await expect(page.getByText('12 trainers want this')).toBeVisible();
+      await expect(
+        page.getByText('Sign in to view community rankings'),
+      ).toHaveCount(0);
     } finally {
       await diagnostics.flush();
     }

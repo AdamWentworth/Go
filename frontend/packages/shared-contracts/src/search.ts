@@ -12,12 +12,13 @@ export type SearchResultRow = {
 
 export interface PokemonCommunityRanking {
   variant_id: string;
-  wanted_users: number;
-  most_wanted_users: number;
+  wanted_users: number | null;
+  most_wanted_users: number | null;
   caught_users: number;
 }
 
 export interface PokemonCommunityRankingsPayload {
+  privacy_threshold: number;
   snapshot: {
     collector_users: number;
     wishlist_users: number;

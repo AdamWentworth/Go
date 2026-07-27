@@ -242,10 +242,28 @@
   min-width: 0;
 }
 
-.community-ranking-pokemon img {
+.community-ranking-artwork {
+  position: relative;
+  display: grid;
+  width: 5.4rem;
+  height: 5.4rem;
+  place-items: center;
+}
+
+.community-ranking-artwork-pokemon {
   width: 5.4rem;
   height: 5.4rem;
   object-fit: contain;
+}
+
+.community-ranking-artwork .community-ranking-form-icon {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 1.35rem;
+  height: 1.35rem;
+  object-fit: contain;
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.72));
 }
 
 .community-ranking-pokemon > span,
@@ -262,7 +280,6 @@
   white-space: nowrap;
 }
 
-.community-ranking-pokemon small,
 .community-ranking-count small {
   color: var(--ranking-muted);
   font-size: 0.72rem;
@@ -430,7 +447,8 @@
     gap: 0.55rem;
   }
 
-  .community-ranking-pokemon img {
+  .community-ranking-artwork,
+  .community-ranking-artwork-pokemon {
     width: 4.6rem;
     height: 4.6rem;
   }

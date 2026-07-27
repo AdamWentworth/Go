@@ -401,6 +401,7 @@ export async function installE2eRoutes(page: Page, options: E2eRouteOptions = {}
   });
 
   const rankings = options.communityRankings ?? {
+    privacy_threshold: 5,
     snapshot: {
       collector_users: 0,
       wishlist_users: 0,

@@ -1,12 +1,16 @@
 import { fireEvent, render, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import Rankings, { getRankingDisplayName } from '@/pages/Rankings/Rankings';
-import { useAuthStore } from '@/stores/useAuthStore';
+import Rankings, {
+  collapseEvolutionFamilyRankings,
+  getRankingDisplayName,
+  prepareRankingsForMode,
+} from '@/pages/Rankings/Rankings';
 import { useVariantsStore } from '@/features/variants/store/useVariantsStore';
 import type { PokemonVariant } from '@/types/pokemonVariants';
 
 const rankingState = vi.hoisted(() => ({
   data: {
+    privacy_threshold: 5,
     snapshot: {
       collector_users: 8,
       wishlist_users: 6,
@@ -21,23 +25,47 @@ const rankingState = vi.hoisted(() => ({
       },
       {
         variant_id: 'bulbasaur-default',
-        wanted_users: 3,
-        most_wanted_users: 0,
+        wanted_users: null,
+        most_wanted_users: null,
         caught_users: 8,
+      },
+      {
+        variant_id: 'charizard-dynamax',
+        wanted_users: 3,
+        most_wanted_users: 1,
+        caught_users: 5,
+      },
+      {
+        variant_id: 'charizard-gigantamax',
+        wanted_users: 2,
+        most_wanted_users: 1,
+        caught_users: 3,
       },
     ],
     rarest: [
       {
         variant_id: 'pikachu-shiny',
         wanted_users: 6,
-        most_wanted_users: 2,
+        most_wanted_users: null,
         caught_users: 4,
       },
       {
         variant_id: 'bulbasaur-default',
-        wanted_users: 3,
-        most_wanted_users: 0,
+        wanted_users: null,
+        most_wanted_users: null,
         caught_users: 8,
+      },
+      {
+        variant_id: 'charizard-dynamax',
+        wanted_users: 3,
+        most_wanted_users: null,
+        caught_users: 5,
+      },
+      {
+        variant_id: 'charizard-gigantamax',
+        wanted_users: 2,
+        most_wanted_users: null,
+        caught_users: 3,
       },
     ],
   },
@@ -76,21 +104,76 @@ describe('Community Rankings page', () => {
   it('includes collectible forms without duplicating names that already contain them', () => {
     expect(getRankingDisplayName(
       makeVariant('unown-c-shiny', 2306, 'Unown', 'shiny', 'C'),
-    )).toBe('Unown (C)');
+    )).toBe('Unown C');
     expect(getRankingDisplayName(
       makeVariant('dialga-origin', 2059, 'Origin Dialga', 'default', 'Origin'),
     )).toBe('Origin Dialga');
+  });
+
+  it('collapses ordinary evolution families while preserving costumes', () => {
+    const meowth = {
+      ...makeVariant('0052-shiny_shadow', 52, 'Meowth', 'shiny_shadow'),
+      evolutionData: { evolves_to: [53] },
+    } as PokemonVariant;
+    const persian = {
+      ...makeVariant('0053-shiny_shadow', 53, 'Persian', 'shiny_shadow'),
+      evolutionData: { evolves_from: [52] },
+    } as PokemonVariant;
+    const costumePersian = {
+      ...persian,
+      variant_id: '0053-party_costume',
+      variantType: 'costume_party',
+    } as PokemonVariant;
+    const ranking = (variant: PokemonVariant) => ({
+      variant_id: variant.variant_id,
+      wanted_users: 10,
+      most_wanted_users: 5,
+      caught_users: 2,
+      variant,
+    });
+
+    expect(
+      collapseEvolutionFamilyRankings(
+        [ranking(persian), ranking(meowth), ranking(costumePersian)],
+        [meowth, persian, costumePersian],
+      ).map((entry) => entry.variant_id),
+    ).toEqual(['0052-shiny_shadow', '0053-party_costume']);
+  });
+
+  it('collapses evolution families only for rarest caught rankings', () => {
+    const meowth = {
+      ...makeVariant('0052-shiny_shadow', 52, 'Meowth', 'shiny_shadow'),
+      evolutionData: { evolves_to: [53] },
+    } as PokemonVariant;
+    const persian = {
+      ...makeVariant('0053-shiny_shadow', 53, 'Persian', 'shiny_shadow'),
+      evolutionData: { evolves_from: [52] },
+    } as PokemonVariant;
+    const ranking = (variant: PokemonVariant) => ({
+      variant_id: variant.variant_id,
+      wanted_users: 0,
+      most_wanted_users: 0,
+      caught_users: 27,
+      variant,
+    });
+    const rows = [ranking(meowth), ranking(persian)];
+
+    expect(prepareRankingsForMode('wanted', rows, [meowth, persian]))
+      .toHaveLength(2);
+    expect(prepareRankingsForMode('rarest', rows, [meowth, persian]))
+      .toHaveLength(1);
   });
 
   beforeEach(() => {
     rankingState.error = null;
     rankingState.loading = false;
     rankingState.refresh.mockClear();
-    useAuthStore.setState({ isLoggedIn: true, user: null });
     useVariantsStore.setState({
       variants: [
         makeVariant('pikachu-shiny', 25, 'Pikachu', 'shiny'),
         makeVariant('bulbasaur-default', 1, 'Bulbasaur', 'default'),
+        makeVariant('charizard-dynamax', 6, 'Charizard', 'dynamax'),
+        makeVariant('charizard-gigantamax', 6, 'Charizard', 'gigantamax'),
       ],
       variantsLoading: false,
     });
@@ -107,8 +190,9 @@ describe('Community Rankings page', () => {
     expect(container.querySelector('.community-ranking-row--rank-1'))
       .toHaveTextContent('Pikachu');
 
-    fireEvent.click(screen.getByRole('tab', { name: 'Rarest caught' }));
-    expect(screen.getByText('Caught by 4 trainers')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('tab', { name: 'Rarest owned' }));
+    expect(screen.getByText('Owned by 4 trainers')).toBeInTheDocument();
+    expect(screen.queryByText('6 trainers want this')).not.toBeInTheDocument();
   });
 
   it('filters the joined catalog without changing the server snapshot', () => {
@@ -120,15 +204,29 @@ describe('Community Rankings page', () => {
 
     expect(screen.getByText('Bulbasaur')).toBeInTheDocument();
     expect(screen.queryByText('Pikachu')).not.toBeInTheDocument();
+    expect(screen.getByLabelText('Rank 2')).toBeInTheDocument();
   });
 
-  it('does not request-facing content for signed-out users', () => {
-    useAuthStore.setState({ isLoggedIn: false, user: null });
+  it('uses the same Dynamax and Gigantamax badges as Pokémon cards', () => {
     render(<Rankings />);
 
-    expect(screen.getByText('Sign in to view community rankings'))
+    expect(screen.getByAltText('Dynamax')).toHaveAttribute(
+      'src',
+      '/images/dynamax.png',
+    );
+    expect(screen.getByAltText('Gigantamax')).toHaveAttribute(
+      'src',
+      '/images/gigantamax.png',
+    );
+  });
+
+  it('shows public rankings without requiring a signed-in user', () => {
+    render(<Rankings />);
+
+    expect(screen.getByRole('heading', { name: 'Community Rankings' }))
       .toBeInTheDocument();
-    expect(screen.getByRole('link', { name: 'Log in' }))
-      .toHaveAttribute('href', '/login');
+    expect(screen.getByText('6 trainers want this')).toBeInTheDocument();
+    expect(screen.queryByText('Sign in to view community rankings'))
+      .not.toBeInTheDocument();
   });
 });

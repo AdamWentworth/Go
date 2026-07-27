@@ -66,6 +66,7 @@ describe('searchService.getPokemonCommunityRankings', () => {
 
   it('requests and returns the precomputed community snapshot', async () => {
     const payload = {
+      privacy_threshold: 5,
       snapshot: {
         collector_users: 12,
         wishlist_users: 9,
@@ -96,7 +97,7 @@ describe('searchService.getPokemonCommunityRankings', () => {
       expect.objectContaining({
         credentials: 'include',
         method: 'GET',
-        cache: 'no-store',
+        cache: 'no-cache',
       }),
     );
   });

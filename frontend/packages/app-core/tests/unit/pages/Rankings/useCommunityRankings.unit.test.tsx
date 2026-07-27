@@ -11,6 +11,7 @@ vi.mock('@/services/searchService', () => ({
 }));
 
 const payload = {
+  privacy_threshold: 5,
   snapshot: {
     collector_users: 5,
     wishlist_users: 4,
@@ -38,6 +39,7 @@ describe('useCommunityRankings', () => {
 
     await waitFor(() => expect(result.current.data).toEqual(payload));
     expect(serviceMocks.getRankings).toHaveBeenCalledTimes(1);
+    expect(serviceMocks.getRankings).toHaveBeenLastCalledWith();
 
     act(() => result.current.refresh());
     await waitFor(() => expect(serviceMocks.getRankings).toHaveBeenCalledTimes(2));
