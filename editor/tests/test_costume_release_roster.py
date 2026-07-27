@@ -41,7 +41,7 @@ class CostumeReleaseRosterTests(unittest.TestCase):
                 (132, "pokopia_hat"),
                 (132, "pokopia_cap"),
                 (25, "baseball_shirt"),
-                (222, "pink_sunglasses"),
+                (2041, "pink_sunglasses"),
                 (25, "marathon_visor"),
                 (25, "excavator"),
                 (10, "poke_ball_hat"),
@@ -109,6 +109,7 @@ class CostumeReleaseCatalogTests(TempDBTestCase):
                 (
                     (132, "Ditto", 132),
                     (222, "Corsola", 222),
+                    (2041, "Corsola", 222),
                     (999, "Gimmighoul", 999),
                 ),
             )
@@ -144,6 +145,7 @@ class CostumeReleaseCatalogTests(TempDBTestCase):
                 """,
                 (
                     (72, 25, "spring_hat"),
+                    (324, 222, "pink_sunglasses"),
                     (302, 999, "9th_anniversary_coin"),
                 ),
             )
@@ -342,6 +344,27 @@ class CostumeReleaseCatalogTests(TempDBTestCase):
                 """
             ),
             72,
+        )
+        self.assertEqual(
+            self.scalar(
+                """
+                SELECT pokemon_id
+                FROM costume_pokemon
+                WHERE costume_id = 324
+                """
+            ),
+            2041,
+        )
+        self.assertEqual(
+            self.scalar(
+                """
+                SELECT COUNT(*)
+                FROM costume_pokemon
+                WHERE pokemon_id = 222
+                  AND lower(costume_name) = 'pink_sunglasses'
+                """
+            ),
+            0,
         )
         self.assertEqual(
             self.scalar(

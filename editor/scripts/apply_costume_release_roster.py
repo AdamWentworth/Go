@@ -110,7 +110,7 @@ COSTUME_RELEASES = (
     CostumeRelease(132, "Ditto", "pokopia_hat", "2026-03-10"),
     CostumeRelease(132, "Ditto", "pokopia_cap", "2026-03-10"),
     CostumeRelease(25, "Pikachu", "baseball_shirt", "2026-04-03"),
-    CostumeRelease(222, "Corsola", "pink_sunglasses", "2026-04-14"),
+    CostumeRelease(2041, "Corsola", "pink_sunglasses", "2026-04-14"),
     CostumeRelease(25, "Pikachu", "marathon_visor", "2026-05-12"),
     CostumeRelease(25, "Pikachu", "excavator", "2026-05-22"),
     CostumeRelease(10, "Caterpie", "poke_ball_hat", "2026-05-24"),
@@ -125,6 +125,10 @@ COSTUME_RELEASES = (
         "2026-07-21",
     ),
 )
+
+COSTUME_LEGACY_POKEMON_IDS = {
+    (2041, "pink_sunglasses"): (222,),
+}
 
 BASEBALL_BACKGROUND_IDS = tuple(range(202, 211))
 PROFESSOR_BACKGROUNDS = (
@@ -211,18 +215,31 @@ def ensure_costume(
         )
 
     female_unique = bool(pokemon[1])
-    row = connection.execute(
-        """
-        SELECT costume_id, shiny_available, date_available,
-               date_shiny_available, image_url_costume,
-               image_url_shiny_costume, image_url_costume_female,
-               image_url_shiny_costume_female
-        FROM costume_pokemon
-        WHERE pokemon_id = ? AND lower(costume_name) = ?
-        ORDER BY costume_id
-        """,
-        (release.pokemon_id, release.costume_name.lower()),
-    ).fetchone()
+    def find_existing_costume(pokemon_id: int):
+        return connection.execute(
+            """
+            SELECT costume_id, shiny_available, date_available,
+                   date_shiny_available, image_url_costume,
+                   image_url_shiny_costume, image_url_costume_female,
+                   image_url_shiny_costume_female
+            FROM costume_pokemon
+            WHERE pokemon_id = ? AND lower(costume_name) = ?
+            ORDER BY costume_id
+            """,
+            (pokemon_id, release.costume_name.lower()),
+        ).fetchone()
+
+    row = find_existing_costume(release.pokemon_id)
+    needs_rehome = False
+    if row is None:
+        for legacy_pokemon_id in COSTUME_LEGACY_POKEMON_IDS.get(
+            (release.pokemon_id, release.costume_name),
+            (),
+        ):
+            row = find_existing_costume(legacy_pokemon_id)
+            if row is not None:
+                needs_rehome = True
+                break
     desired = (
         True,
         release.released_on,
@@ -266,13 +283,14 @@ def ensure_costume(
         row[6],
         row[7],
     )
-    if current != desired:
+    if current != desired or needs_rehome:
         stats.costumes_updated += 1
         if write:
             connection.execute(
                 """
                 UPDATE costume_pokemon
-                SET shiny_available = ?,
+                SET pokemon_id = ?,
+                    shiny_available = ?,
                     date_available = ?,
                     date_shiny_available = ?,
                     image_url_costume = ?,
@@ -281,7 +299,7 @@ def ensure_costume(
                     image_url_shiny_costume_female = ?
                 WHERE costume_id = ?
                 """,
-                (*desired, costume_id),
+                (release.pokemon_id, *desired, costume_id),
             )
     return costume_id
 

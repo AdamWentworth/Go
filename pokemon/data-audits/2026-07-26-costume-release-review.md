@@ -20,7 +20,7 @@ metadata migration.
 | `321` | 2026-03-10 | Ditto | Pokopia Hat | `pokemon_132_pokopia_hat_default.png` | `pokemon_132_pokopia_hat_shiny.png` |
 | `322` | 2026-03-10 | Ditto | Pokopia Cap | `pokemon_132_pokopia_cap_default.png` | `pokemon_132_pokopia_cap_shiny.png` |
 | `323` | 2026-04-03 | Pikachu | Baseball Shirt | `pokemon_25_baseball_shirt_default.png` | `pokemon_25_baseball_shirt_shiny.png` |
-| `324` | 2026-04-14 | Corsola | Pink Sunglasses | `pokemon_222_pink_sunglasses_default.png` | `pokemon_222_pink_sunglasses_shiny.png` |
+| `324` | 2026-04-14 | Galarian Corsola | Pink Sunglasses | `pokemon_2041_pink_sunglasses_default.png` | `pokemon_2041_pink_sunglasses_shiny.png` |
 | `325` | 2026-05-12 | Pikachu | Marathon Visor | `pokemon_25_marathon_visor_default.png` | `pokemon_25_marathon_visor_shiny.png` |
 | `326` | 2026-05-22 | Pikachu | Excavator | `pokemon_25_excavator_default.png` | `pokemon_25_excavator_shiny.png` |
 | `327` | 2026-05-24 | Caterpie | Poké Ball Hat | `pokemon_10_poke_ball_hat_default.png` | `pokemon_10_poke_ball_hat_shiny.png` |
