@@ -1,5 +1,11 @@
 package main
 
+import "strings"
+
+func isShadowVariantID(variantID string) bool {
+	return strings.Contains(strings.ToLower(strings.TrimSpace(variantID)), "shadow")
+}
+
 // normalizeOwnershipState enforces canonical invariants for instance ownership
 // and intent flags.
 func normalizeOwnershipState(
@@ -38,5 +44,28 @@ func normalizeOwnershipState(
 		mostWanted = false
 	}
 
+	return isCaught, isWanted, isForTrade, registered, mostWanted
+}
+
+func normalizeVariantOwnershipState(
+	variantID string,
+	isCaught bool,
+	isWanted bool,
+	isForTrade bool,
+	registered bool,
+	mostWanted bool,
+) (bool, bool, bool, bool, bool) {
+	isCaught, isWanted, isForTrade, registered, mostWanted = normalizeOwnershipState(
+		isCaught,
+		isWanted,
+		isForTrade,
+		registered,
+		mostWanted,
+	)
+	if isShadowVariantID(variantID) {
+		isWanted = false
+		isForTrade = false
+		mostWanted = false
+	}
 	return isCaught, isWanted, isForTrade, registered, mostWanted
 }

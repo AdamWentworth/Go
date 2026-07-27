@@ -77,7 +77,8 @@ func parseAndUpsertPokemon(
 		origRegistered := registered
 		origMostWanted := mostWanted
 
-		isCaught, isWanted, isForTrade, registered, mostWanted = normalizeOwnershipState(
+		isCaught, isWanted, isForTrade, registered, mostWanted = normalizeVariantOwnershipState(
+			normalizeOptionalString(variantID),
 			isCaught,
 			isWanted,
 			isForTrade,

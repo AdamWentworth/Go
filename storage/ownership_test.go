@@ -88,3 +88,19 @@ func TestNormalizeOwnershipState_MostWantedRequiresWanted(t *testing.T) {
 		t.Fatalf("expected most_wanted=false when is_wanted=false")
 	}
 }
+
+func TestNormalizeVariantOwnershipState_ShadowCannotBeWantedOrTraded(t *testing.T) {
+	isCaught, isWanted, isForTrade, registered, mostWanted := normalizeVariantOwnershipState(
+		"0243-shiny_shadow",
+		true, true, true, true, true,
+	)
+	if !isCaught || !registered {
+		t.Fatalf("expected caught shadow registration to be preserved")
+	}
+	if isWanted || isForTrade || mostWanted {
+		t.Fatalf(
+			"expected shadow trade intent removed, got wanted=%t trade=%t mostWanted=%t",
+			isWanted, isForTrade, mostWanted,
+		)
+	}
+}
