@@ -145,6 +145,8 @@ class CostumeReleaseCatalogTests(TempDBTestCase):
                 """,
                 (
                     (72, 25, "spring_hat"),
+                    (317, 25, "red_hat"),
+                    (318, 25, "leaf_hat"),
                     (324, 222, "pink_sunglasses"),
                     (302, 999, "9th_anniversary_coin"),
                 ),
@@ -392,6 +394,36 @@ class CostumeReleaseCatalogTests(TempDBTestCase):
                   AND pb.costume_id = ?
                 """,
                 (costume_ids["professor_willows_assistant"],),
+            ),
+            3,
+        )
+        self.assertEqual(
+            self.scalar(
+                """
+                SELECT COUNT(*)
+                FROM backgrounds b
+                JOIN pokemon_backgrounds pb
+                  ON pb.background_id = b.background_id
+                WHERE b.name LIKE 'Professor Willow%%'
+                  AND b.date = '2026-07-21'
+                  AND pb.pokemon_id = 25
+                  AND pb.costume_id = 318
+                """
+            ),
+            3,
+        )
+        self.assertEqual(
+            self.scalar(
+                """
+                SELECT COUNT(*)
+                FROM backgrounds b
+                JOIN pokemon_backgrounds pb
+                  ON pb.background_id = b.background_id
+                WHERE b.name LIKE 'Professor Willow%%'
+                  AND b.date = '2026-07-21'
+                  AND pb.pokemon_id = 25
+                  AND pb.costume_id = 317
+                """
             ),
             3,
         )

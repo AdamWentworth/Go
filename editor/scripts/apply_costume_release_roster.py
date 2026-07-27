@@ -487,6 +487,8 @@ def apply_release_roster(
 
         spring_hat_id = find_costume_id(connection, 25, "spring_hat")
         if write:
+            red_hat_id = find_costume_id(connection, 25, "red_hat")
+            leaf_hat_id = find_costume_id(connection, 25, "leaf_hat")
             pokopia_ids = [
                 int(costume_ids["pokopia_hat"]),
                 int(costume_ids["pokopia_cap"]),
@@ -539,7 +541,7 @@ def apply_release_roster(
                     connection,
                     pokemon_id=25,
                     background_id=int(background_id),
-                    desired_costume_ids=[professor_id],
+                    desired_costume_ids=[red_hat_id, leaf_hat_id, professor_id],
                     write=True,
                     stats=stats,
                 )
@@ -587,7 +589,9 @@ def validate_applied_catalog(
         if row is None:
             raise RuntimeError(f"Missing applied background {background.name}.")
         expected_links[(25, int(row[0]))] = {
-            int(costume_ids["professor_willows_assistant"])
+            find_costume_id(connection, 25, "red_hat"),
+            find_costume_id(connection, 25, "leaf_hat"),
+            int(costume_ids["professor_willows_assistant"]),
         }
 
     for (pokemon_id, background_id), expected_costumes in expected_links.items():

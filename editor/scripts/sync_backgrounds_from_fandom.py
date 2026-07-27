@@ -10,12 +10,13 @@ import argparse
 import os
 import re
 import sys
+import unicodedata
 from dataclasses import dataclass, field
 from datetime import datetime
 from io import BytesIO
 from pathlib import Path
 from typing import Dict, Iterable, List, Optional, Sequence, Set, Tuple
-from urllib.parse import urlparse
+from urllib.parse import unquote, urlparse
 
 import requests
 from PIL import Image
@@ -65,9 +66,15 @@ MONTH_NAME_PATTERN = re.compile(
 
 
 MULTI_COSTUME_BACKGROUND_FILENAMES = {
+    "special_background_pokopia.png",
     "special_background_valor.png",
     "special_background_mystic.png",
     "special_background_instinct.png",
+}
+
+COSTUME_IMAGE_NAME_ALIASES = {
+    "pikachu_red": "red_hat",
+    "pikachu_willow": "professor_willows_assistant",
 }
 
 
@@ -163,7 +170,12 @@ def extract_filename(value: str) -> Optional[str]:
 
 
 def normalize_match_token_text(value: Optional[str]) -> str:
-    normalized = normalize_space(value or "").lower()
+    normalized = unquote(normalize_space(value or "")).lower()
+    normalized = "".join(
+        character
+        for character in unicodedata.normalize("NFKD", normalized)
+        if not unicodedata.combining(character)
+    )
     normalized = normalized.replace("&", " and ")
     normalized = re.sub(r"\bmlb\b", "", normalized)
     normalized = re.sub(r"[\-_/]+", " ", normalized)
@@ -702,6 +714,25 @@ def resolve_costume_id_for_ref(
     costume_lookup: Dict[int, List[CostumeRecord]],
 ) -> Tuple[Optional[int], bool, str, List[int], Set[str]]:
     costumes = costume_lookup.get(pokemon_id, [])
+    filename = extract_filename(image_key or "") or image_key or ""
+    alias_name = COSTUME_IMAGE_NAME_ALIASES.get(Path(filename).stem.lower())
+    if alias_name is not None:
+        alias_tokens = set(tokenize_for_matching(alias_name))
+        exact_matches = [
+            costume
+            for costume in costumes
+            if normalize_space(costume.costume_name).lower() == alias_name
+        ]
+        if len(exact_matches) == 1:
+            return exact_matches[0].costume_id, True, "matched", [], alias_tokens
+        return (
+            None,
+            True,
+            "no_candidate" if not exact_matches else "ambiguous",
+            sorted(costume.costume_id for costume in exact_matches),
+            alias_tokens,
+        )
+
     hint_tokens = infer_costume_hint_tokens(title, image_key)
     if not hint_tokens or not costumes:
         return None, False, "not_costume", [], hint_tokens

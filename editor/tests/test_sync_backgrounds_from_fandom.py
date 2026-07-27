@@ -14,6 +14,7 @@ from scripts.sync_backgrounds_from_fandom import (  # noqa: E402
     CostumeRecord,
     SyncStats,
     add_missing_links,
+    allows_multiple_costume_rows_for_background,
     build_background_equivalence_key,
     build_costume_match_tokens,
     collapse_equivalent_background_records,
@@ -30,6 +31,17 @@ from test_base import TempDBTestCase  # noqa: E402
 
 
 class SyncBackgroundsFromFandomTests(unittest.TestCase):
+    def test_known_multi_costume_backgrounds_preserve_each_costume_link(self):
+        for filename in (
+            "Special_Background_Pokopia.png",
+            "Special_Background_Valor.png",
+            "Special_Background_Mystic.png",
+            "Special_Background_Instinct.png",
+        ):
+            self.assertTrue(
+                allows_multiple_costume_rows_for_background(filename)
+            )
+
     def test_parse_start_date_extracts_first_date(self):
         event = "PokAmon GO Fest 2026: Global July 13th - 14th"
         self.assertEqual(parse_start_date(event), "2026-07-13")
@@ -185,6 +197,42 @@ class SyncBackgroundsFromFandomTests(unittest.TestCase):
         self.assertEqual(candidates, [])
         self.assertIn("winter", hints)
 
+    def test_resolve_team_background_costume_aliases(self):
+        red_hat = CostumeRecord(
+            costume_id=317,
+            pokemon_id=25,
+            costume_name="red_hat",
+            image_urls=(),
+            match_tokens=build_costume_match_tokens("red_hat", []),
+        )
+        willow = CostumeRecord(
+            costume_id=332,
+            pokemon_id=25,
+            costume_name="professor_willows_assistant",
+            image_urls=(),
+            match_tokens=build_costume_match_tokens(
+                "professor_willows_assistant",
+                [],
+            ),
+        )
+        lookup = {25: [red_hat, willow]}
+
+        red_match = resolve_costume_id_for_ref(
+            pokemon_id=25,
+            title="Pikachu",
+            image_key="Pikachu_red.png",
+            costume_lookup=lookup,
+        )
+        willow_match = resolve_costume_id_for_ref(
+            pokemon_id=25,
+            title="Pikachu",
+            image_key="Pikachu_willow.png",
+            costume_lookup=lookup,
+        )
+
+        self.assertEqual(red_match[:4], (317, True, "matched", []))
+        self.assertEqual(willow_match[:4], (332, True, "matched", []))
+
     def test_normalize_desired_links_drops_generic_when_costume_present(self):
         links = {(25, None), (25, 78), (133, None)}
         normalized = normalize_desired_links(links)
@@ -202,6 +250,20 @@ class SyncBackgroundsFromFandomTests(unittest.TestCase):
             date="2024-09-13",
         )
         self.assertEqual(key_a, key_b)
+
+    def test_build_background_equivalence_key_normalizes_encoded_unicode(self):
+        canonical = build_background_equivalence_key(
+            name="São Paulo",
+            location="São Paulo - Brazil",
+            date="2024-12-07",
+        )
+        encoded = build_background_equivalence_key(
+            name="S%C3%A3o Paulo",
+            location="São Paulo, Brazil",
+            date="2024-12-07",
+        )
+        self.assertEqual(canonical, encoded)
+
 
 class BackgroundCatalogSyncTests(TempDBTestCase):
     def reset_background_tables(self):
