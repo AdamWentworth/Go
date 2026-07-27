@@ -114,7 +114,7 @@ function buildCatalogRarityVariants(catalog, now = Date.now()) {
     }
 
     for (const max of pokemon.max || []) {
-      if (max.dynamax) {
+      if (max.dynamax && released(max.dynamax_release_date, now)) {
         variants.push(variantRecord(pokemon, `${base}-dynamax`, `Dynamax ${formLabel}`, 'dynamax', max.dynamax_release_date, {
           dynamax: true,
         }));
@@ -125,7 +125,7 @@ function buildCatalogRarityVariants(catalog, now = Date.now()) {
           ));
         }
       }
-      if (max.gigantamax) {
+      if (max.gigantamax && released(max.gigantamax_release_date, now)) {
         variants.push(variantRecord(
           pokemon, `${base}-gigantamax`, `Gigantamax ${formLabel}`, 'gigantamax', max.gigantamax_release_date,
           { dynamax: true, gigantamax: true }

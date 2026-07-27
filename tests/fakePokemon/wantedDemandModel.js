@@ -101,6 +101,18 @@ const TOP_DEMAND = [
   ['0996-shiny', 996, 'Shiny Frigibax', 3, { communityDay: true }],
 ];
 
+const TRADE_INELIGIBLE_POKEMON_IDS = new Set([
+  151, 251, 385, 386, 489, 490, 491, 492, 494, 647, 648, 719, 720, 721, 801,
+  802, 807, 808, 809, 893,
+]);
+
+const MAX_DEMAND_FLOORS = {
+  dynamax: 2,
+  shiny_dynamax: 30,
+  gigantamax: 45,
+  shiny_gigantamax: 120,
+};
+
 function normalizeTarget([variantId, pokemonId, label, wantedUsers, options = {}], index) {
   const shiny = variantId.includes('shiny');
   return {
@@ -139,4 +151,52 @@ function normalizeTarget([variantId, pokemonId, label, wantedUsers, options = {}
 
 const wantedDemandModel = TOP_DEMAND.map(normalizeTarget);
 
-module.exports = { wantedDemandModel };
+function maxDemandTarget(variant) {
+  const wantedUsers = MAX_DEMAND_FLOORS[variant.kind];
+  if (
+    wantedUsers == null ||
+    variant.shadow ||
+    TRADE_INELIGIBLE_POKEMON_IDS.has(variant.pokemonId)
+  ) {
+    return null;
+  }
+  return normalizeTarget([
+    variant.variantId,
+    variant.pokemonId,
+    variant.label,
+    wantedUsers,
+    {
+      dynamax: true,
+      gigantamax: variant.gigantamax,
+    },
+  ], 0);
+}
+
+function buildWantedDemandModel(catalog, now = Date.now()) {
+  const { buildCatalogRarityVariants } = require('./catalogRarityVariants');
+  const targets = new Map(wantedDemandModel.map((target) => [target.variantId, target]));
+
+  for (const variant of buildCatalogRarityVariants(catalog, now)) {
+    const baseline = maxDemandTarget(variant);
+    if (!baseline) continue;
+    const existing = targets.get(baseline.variantId);
+    if (!existing || baseline.wantedUsers > existing.wantedUsers) {
+      targets.set(baseline.variantId, baseline);
+    }
+  }
+
+  return [...targets.values()]
+    .sort((left, right) => (
+      right.wantedUsers - left.wantedUsers ||
+      right.mostWantedUsers - left.mostWantedUsers ||
+      left.variantId.localeCompare(right.variantId)
+    ))
+    .map((target, index) => ({ ...target, rank: index + 1 }));
+}
+
+module.exports = {
+  MAX_DEMAND_FLOORS,
+  TRADE_INELIGIBLE_POKEMON_IDS,
+  buildWantedDemandModel,
+  wantedDemandModel,
+};

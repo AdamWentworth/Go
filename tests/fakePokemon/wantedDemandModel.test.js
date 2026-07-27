@@ -1,7 +1,11 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 
-const { wantedDemandModel } = require('./wantedDemandModel');
+const {
+  MAX_DEMAND_FLOORS,
+  buildWantedDemandModel,
+  wantedDemandModel,
+} = require('./wantedDemandModel');
 const { buildDemandRows, demandInstanceId } = require('./wantedDemandSql');
 
 test('defines exactly 100 unique demand targets in descending order', () => {
@@ -113,4 +117,80 @@ test('assigns deterministic unique fake-user demand rows', () => {
     demandInstanceId(rowsA[0].variantId, rowsA[0].userId),
     rowsA[0].instanceId
   );
+});
+
+test('adds catalog-wide demand floors for released Max collectibles', () => {
+  const catalog = [{
+    pokemon_id: 6,
+    pokedex_number: 6,
+    name: 'Charizard',
+    available: true,
+    shiny_available: true,
+    date_available: '2016-07-06',
+    date_shiny_available: '2018-05-19',
+    max: [{
+      dynamax: true,
+      gigantamax: true,
+      dynamax_release_date: '2024-09-10',
+      gigantamax_release_date: '2024-10-26',
+      shiny_gigantamax_image_url: '/charizard-gmax-shiny.png',
+    }],
+  }, {
+    pokemon_id: 25,
+    pokedex_number: 25,
+    name: 'Pikachu',
+    available: true,
+    shiny_available: true,
+    date_available: '2016-07-06',
+    date_shiny_available: '2017-08-09',
+    max: [{
+      dynamax: true,
+      gigantamax: true,
+      dynamax_release_date: '2024-09-10',
+      gigantamax_release_date: '2024-10-26',
+      shiny_gigantamax_image_url: '/pikachu-gmax-shiny.png',
+    }],
+  }];
+
+  const model = buildWantedDemandModel(catalog, Date.parse('2026-07-27'));
+  const byId = new Map(model.map((target) => [target.variantId, target]));
+
+  // Curated leaders keep their stronger observed demand.
+  assert.equal(byId.get('0006-shiny_gigantamax').wantedUsers, 365);
+  assert.equal(byId.get('0025-shiny_gigantamax').wantedUsers, MAX_DEMAND_FLOORS.shiny_gigantamax);
+  assert.equal(byId.get('0025-gigantamax').wantedUsers, MAX_DEMAND_FLOORS.gigantamax);
+  assert.equal(byId.get('0025-shiny_dynamax').wantedUsers, MAX_DEMAND_FLOORS.shiny_dynamax);
+  assert.equal(byId.get('0025-dynamax').wantedUsers, MAX_DEMAND_FLOORS.dynamax);
+});
+
+test('does not create Max demand for unreleased or untradeable forms', () => {
+  const catalog = [{
+    pokemon_id: 151,
+    pokedex_number: 151,
+    name: 'Mew',
+    available: true,
+    shiny_available: true,
+    max: [{
+      dynamax: true,
+      gigantamax: false,
+      dynamax_release_date: '2025-01-01',
+    }],
+  }, {
+    pokemon_id: 52,
+    pokedex_number: 52,
+    name: 'Meowth',
+    available: true,
+    shiny_available: true,
+    max: [{
+      dynamax: true,
+      gigantamax: true,
+      dynamax_release_date: '2027-01-01',
+      gigantamax_release_date: '2027-01-01',
+      shiny_gigantamax_image_url: '/meowth-gmax-shiny.png',
+    }],
+  }];
+
+  const model = buildWantedDemandModel(catalog, Date.parse('2026-07-27'));
+  assert.equal(model.some((target) => target.pokemonId === 151), false);
+  assert.equal(model.some((target) => target.pokemonId === 52), false);
 });

@@ -1,11 +1,13 @@
 require('dotenv').config();
 
+const fs = require('node:fs');
 const mysql = require('mysql2/promise');
-const { wantedDemandModel } = require('./fakePokemon/wantedDemandModel');
+const { buildWantedDemandModel } = require('./fakePokemon/wantedDemandModel');
 const { buildDemandRows, buildInsertSql } = require('./fakePokemon/wantedDemandSql');
 
 const FAKE_USERNAME_PATTERN = /^fakeUser\d{4}$/;
 const EXPECTED_FAKE_USERS = Number(process.env.EXPECTED_FAKE_USERS || 1000);
+const CATALOG_PATH = process.env.POKEMON_CATALOG_PATH || '/tmp/pgn-pokemon-catalog.json';
 
 function connectionConfig() {
   return {
@@ -40,8 +42,8 @@ INSERT INTO pokemon_variant_rankings (
 )
 SELECT
   variant_id,
-  COUNT(DISTINCT CASE WHEN is_wanted = 1 THEN user_id END),
-  COUNT(DISTINCT CASE WHEN is_wanted = 1 AND most_wanted = 1 THEN user_id END),
+  COUNT(DISTINCT CASE WHEN is_wanted = 1 AND LOWER(variant_id) NOT LIKE '%shadow%' THEN user_id END),
+  COUNT(DISTINCT CASE WHEN is_wanted = 1 AND most_wanted = 1 AND LOWER(variant_id) NOT LIKE '%shadow%' THEN user_id END),
   COUNT(DISTINCT CASE WHEN is_caught = 1 OR registered = 1 THEN user_id END),
   UTC_TIMESTAMP(6)
 FROM instances
@@ -54,7 +56,7 @@ INSERT INTO pokemon_rankings_snapshot (
 SELECT
   1,
   COUNT(DISTINCT CASE WHEN (is_caught = 1 OR registered = 1) AND disabled = 0 THEN user_id END),
-  COUNT(DISTINCT CASE WHEN is_wanted = 1 AND disabled = 0 THEN user_id END),
+  COUNT(DISTINCT CASE WHEN is_wanted = 1 AND disabled = 0 AND LOWER(variant_id) NOT LIKE '%shadow%' THEN user_id END),
   UTC_TIMESTAMP(6)
 FROM instances
 ON DUPLICATE KEY UPDATE
@@ -65,6 +67,8 @@ ON DUPLICATE KEY UPDATE
 
 async function main() {
   const apply = process.argv.includes('--apply');
+  const catalog = JSON.parse(fs.readFileSync(CATALOG_PATH, 'utf8'));
+  const wantedDemandModel = buildWantedDemandModel(catalog);
   const connection = await mysql.createConnection(connectionConfig());
   try {
     const [fakeUsers] = await connection.query(
