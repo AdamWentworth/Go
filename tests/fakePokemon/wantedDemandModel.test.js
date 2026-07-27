@@ -53,6 +53,15 @@ test('does not advertise untradeable active Crowned forms', () => {
   assert.equal(wantedDemandModel.find((target) => target.pokemonId === 2292).crown, true);
 });
 
+test('does not advertise temporary Mega, Primal, or fused forms', () => {
+  assert.deepEqual(
+    wantedDemandModel.filter(
+      (target) => target.mega || target.isFused || target.variantId.includes('primal')
+    ),
+    []
+  );
+});
+
 test('excludes Mythical Pokemon that cannot be traded', () => {
   const tradeIneligiblePokemonIds = new Set([
     151, 251, 385, 386, 489, 490, 491, 492, 494, 647, 648, 719, 720, 721, 801,
