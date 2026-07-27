@@ -329,6 +329,42 @@ export async function installE2eRoutes(page: Page, options: E2eRouteOptions = {}
     });
   }
 
+  await page.addInitScript(() => {
+    class MockEventSource extends EventTarget {
+      static readonly CONNECTING = 0;
+      static readonly OPEN = 1;
+      static readonly CLOSED = 2;
+
+      readonly CONNECTING = MockEventSource.CONNECTING;
+      readonly OPEN = MockEventSource.OPEN;
+      readonly CLOSED = MockEventSource.CLOSED;
+      readonly url: string;
+      readonly withCredentials = false;
+      readyState = MockEventSource.CONNECTING;
+      onopen: ((event: Event) => void) | null = null;
+      onmessage: ((event: MessageEvent) => void) | null = null;
+      onerror: ((event: Event) => void) | null = null;
+
+      constructor(url: string | URL) {
+        super();
+        this.url = String(url);
+        queueMicrotask(() => {
+          if (this.readyState === MockEventSource.CLOSED) return;
+          this.readyState = MockEventSource.OPEN;
+          const event = new Event('open');
+          this.dispatchEvent(event);
+          this.onopen?.(event);
+        });
+      }
+
+      close() {
+        this.readyState = MockEventSource.CLOSED;
+      }
+    }
+
+    window.EventSource = MockEventSource as typeof EventSource;
+  });
+
   await page.route('**/api/pokemon/pokemons', async (route) => {
     await route.fulfill({
       status: 200,
