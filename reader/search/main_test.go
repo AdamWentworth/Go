@@ -41,6 +41,27 @@ func TestHealthzReadyzAndMetrics(t *testing.T) {
 	if metricsResp.StatusCode != 200 {
 		t.Fatalf("metrics expected 200, got %d", metricsResp.StatusCode)
 	}
+
+	previousRankingsLoader := loadPokemonRankingsFn
+	loadPokemonRankingsFn = func(int) (pokemonRankingsResponse, error) {
+		return pokemonRankingsResponse{}, nil
+	}
+	t.Cleanup(func() {
+		loadPokemonRankingsFn = previousRankingsLoader
+	})
+
+	rankingsReq := httptest.NewRequest("GET", "/api/rankings", nil)
+	rankingsResp, err := app.Test(rankingsReq)
+	if err != nil {
+		t.Fatalf("rankings app.Test: %v", err)
+	}
+	defer rankingsResp.Body.Close()
+	if rankingsResp.StatusCode != 200 {
+		t.Fatalf(
+			"public rankings expected 200 without credentials, got %d",
+			rankingsResp.StatusCode,
+		)
+	}
 }
 
 // Sanity check for dbReady helper when db is nil.

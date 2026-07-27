@@ -70,7 +70,7 @@ func refreshPokemonRankings(db *gorm.DB, variantIDs []string) error {
 variant_id,
 COUNT(DISTINCT CASE WHEN is_wanted = 1 THEN user_id END) AS wanted_user_count,
 COUNT(DISTINCT CASE WHEN is_wanted = 1 AND most_wanted = 1 THEN user_id END) AS most_wanted_user_count,
-COUNT(DISTINCT CASE WHEN is_caught = 1 THEN user_id END) AS caught_user_count`).
+COUNT(DISTINCT CASE WHEN is_caught = 1 OR registered = 1 THEN user_id END) AS caught_user_count`).
 			Where("variant_id IS NOT NULL AND variant_id <> '' AND disabled = 0")
 		if len(variantIDs) > 0 {
 			query = query.Where("variant_id IN ?", variantIDs)
@@ -109,7 +109,7 @@ COUNT(DISTINCT CASE WHEN is_caught = 1 THEN user_id END) AS caught_user_count`).
 		if err := tx.
 			Table((PokemonInstance{}).TableName()).
 			Select(`
-COUNT(DISTINCT CASE WHEN is_caught = 1 AND disabled = 0 THEN user_id END) AS collector_user_count,
+COUNT(DISTINCT CASE WHEN (is_caught = 1 OR registered = 1) AND disabled = 0 THEN user_id END) AS collector_user_count,
 COUNT(DISTINCT CASE WHEN is_wanted = 1 AND disabled = 0 THEN user_id END) AS wishlist_user_count`).
 			Scan(&population).
 			Error; err != nil {

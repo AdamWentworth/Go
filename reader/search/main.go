@@ -84,11 +84,11 @@ func newApp() *fiber.App {
 		return c.Status(fiber.StatusOK).JSON(fiber.Map{"ok": true})
 	})
 	app.Get("/metrics", metricsHandler())
+	app.Get("/api/rankings", newRateLimiter(), PokemonRankings)
 
 	protected := app.Group("/", verifyJWT, newRateLimiter())
 	protected.Get("/api/searchPokemon", SearchPokemonInstances)
 	protected.Get("/api/searchPokemon/", SearchPokemonInstances)
-	protected.Get("/api/rankings", PokemonRankings)
 
 	return app
 }

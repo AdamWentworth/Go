@@ -11,8 +11,10 @@ import (
 )
 
 const (
-	defaultRankingsLimit = 50
-	maxRankingsLimit     = 100
+	defaultRankingsLimit     = 50
+	maxRankingsLimit         = 10000
+	rankingsPrivacyThreshold = 5
+	rankingsResponseVersion  = 2
 )
 
 type pokemonRankingRow struct {
@@ -34,7 +36,46 @@ type pokemonRankingsResponse struct {
 	Rarest     []pokemonRankingRow     `json:"rarest"`
 }
 
+type publicPokemonRankingRow struct {
+	VariantID       string  `json:"variant_id"`
+	WantedUsers     *uint64 `json:"wanted_users"`
+	MostWantedUsers *uint64 `json:"most_wanted_users"`
+	CaughtUsers     uint64  `json:"caught_users"`
+}
+
+type publicPokemonRankingsResponse struct {
+	Snapshot         pokemonRankingsSnapshot   `json:"snapshot"`
+	PrivacyThreshold uint64                    `json:"privacy_threshold"`
+	MostWanted       []publicPokemonRankingRow `json:"most_wanted"`
+	Rarest           []publicPokemonRankingRow `json:"rarest"`
+}
+
 var loadPokemonRankingsFn = loadPokemonRankings
+
+func publicRankingCount(count uint64) *uint64 {
+	if count == 0 {
+		value := count
+		return &value
+	}
+	if count < rankingsPrivacyThreshold {
+		return nil
+	}
+	value := count
+	return &value
+}
+
+func publicRankingRows(rows []pokemonRankingRow) []publicPokemonRankingRow {
+	publicRows := make([]publicPokemonRankingRow, 0, len(rows))
+	for _, row := range rows {
+		publicRows = append(publicRows, publicPokemonRankingRow{
+			VariantID:       row.VariantID,
+			WantedUsers:     publicRankingCount(row.WantedUsers),
+			MostWantedUsers: publicRankingCount(row.MostWantedUsers),
+			CaughtUsers:     row.CaughtUsers,
+		})
+	}
+	return publicRows
+}
 
 func loadPokemonRankings(limit int) (pokemonRankingsResponse, error) {
 	var response pokemonRankingsResponse
@@ -50,7 +91,6 @@ func loadPokemonRankings(limit int) (pokemonRankingsResponse, error) {
 	if err := db.
 		Table("pokemon_variant_rankings").
 		Select("variant_id, wanted_user_count, most_wanted_user_count, caught_user_count").
-		Where("wanted_user_count > 0").
 		Order("wanted_user_count DESC").
 		Order("most_wanted_user_count DESC").
 		Order("caught_user_count ASC").
@@ -98,16 +138,22 @@ func PokemonRankings(c fiber.Ctx) error {
 	}
 
 	etag := fmt.Sprintf(
-		`W/"rankings-%d-%d-%d-%d"`,
+		`W/"rankings-v%d-%d-%d-%d-%d"`,
+		rankingsResponseVersion,
 		response.Snapshot.UpdatedAt.UnixMilli(),
 		response.Snapshot.CollectorUsers,
 		response.Snapshot.WishlistUsers,
 		limit,
 	)
 	c.Set("ETag", etag)
-	c.Set("Cache-Control", "private, no-store")
+	c.Set("Cache-Control", "public, max-age=30, stale-while-revalidate=30")
 	if c.Get("If-None-Match") == etag {
 		return c.Status(fiber.StatusNotModified).Send(nil)
 	}
-	return c.JSON(response)
+	return c.JSON(publicPokemonRankingsResponse{
+		Snapshot:         response.Snapshot,
+		PrivacyThreshold: rankingsPrivacyThreshold,
+		MostWanted:       publicRankingRows(response.MostWanted),
+		Rarest:           publicRankingRows(response.Rarest),
+	})
 }

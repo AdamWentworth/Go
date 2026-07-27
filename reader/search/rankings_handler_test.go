@@ -30,6 +30,16 @@ func rankingsTestApp() *fiber.App {
 	return app
 }
 
+func TestPublicRankingCountExposesZeroWithoutExposingSmallCohorts(t *testing.T) {
+	zero := publicRankingCount(0)
+	if zero == nil || *zero != 0 {
+		t.Fatalf("zero count = %#v, want public 0", zero)
+	}
+	if count := publicRankingCount(rankingsPrivacyThreshold - 1); count != nil {
+		t.Fatalf("small nonzero count = %#v, want redacted", count)
+	}
+}
+
 func TestPokemonRankingsReturnsSnapshotAndCacheValidators(t *testing.T) {
 	updatedAt := time.Date(2026, time.July, 25, 12, 0, 0, 0, time.UTC)
 	var receivedLimit int
@@ -72,14 +82,14 @@ func TestPokemonRankingsReturnsSnapshotAndCacheValidators(t *testing.T) {
 	if receivedLimit != 25 {
 		t.Fatalf("loader limit = %d, want 25", receivedLimit)
 	}
-	if got := response.Header.Get("Cache-Control"); got != "private, no-store" {
+	if got := response.Header.Get("Cache-Control"); got != "public, max-age=30, stale-while-revalidate=30" {
 		t.Fatalf("Cache-Control = %q", got)
 	}
 	if response.Header.Get("ETag") == "" {
 		t.Fatal("ETag is empty")
 	}
 
-	var payload pokemonRankingsResponse
+	var payload publicPokemonRankingsResponse
 	if err := json.NewDecoder(response.Body).Decode(&payload); err != nil {
 		t.Fatalf("decode response: %v", err)
 	}
@@ -88,6 +98,35 @@ func TestPokemonRankingsReturnsSnapshotAndCacheValidators(t *testing.T) {
 	}
 	if payload.Snapshot.CollectorUsers != 12 {
 		t.Fatalf("collector users = %d, want 12", payload.Snapshot.CollectorUsers)
+	}
+	if payload.PrivacyThreshold != rankingsPrivacyThreshold {
+		t.Fatalf(
+			"privacy threshold = %d, want %d",
+			payload.PrivacyThreshold,
+			rankingsPrivacyThreshold,
+		)
+	}
+	if payload.MostWanted[0].WantedUsers == nil ||
+		*payload.MostWanted[0].WantedUsers != 7 {
+		t.Fatalf("wanted users = %#v, want 7", payload.MostWanted[0].WantedUsers)
+	}
+	if payload.MostWanted[0].MostWantedUsers != nil {
+		t.Fatalf(
+			"most wanted users = %#v, want redacted",
+			payload.MostWanted[0].MostWantedUsers,
+		)
+	}
+	if payload.MostWanted[0].CaughtUsers != 4 {
+		t.Fatalf("caught users = %d, want 4", payload.MostWanted[0].CaughtUsers)
+	}
+	if payload.Rarest[0].WantedUsers != nil {
+		t.Fatalf("rarest low wanted count was not redacted: %#v", payload.Rarest[0])
+	}
+	if payload.Rarest[0].CaughtUsers != 1 {
+		t.Fatalf(
+			"rarest caught users = %d, want exact count 1",
+			payload.Rarest[0].CaughtUsers,
+		)
 	}
 }
 
@@ -129,7 +168,7 @@ func TestPokemonRankingsRejectsInvalidLimit(t *testing.T) {
 	app := rankingsTestApp()
 	for _, target := range []string{
 		"/api/rankings?limit=0",
-		"/api/rankings?limit=101",
+		"/api/rankings?limit=10001",
 		"/api/rankings?limit=nope",
 	} {
 		response, err := app.Test(httptest.NewRequest("GET", target, nil))

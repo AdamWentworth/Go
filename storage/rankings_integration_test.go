@@ -35,6 +35,7 @@ func TestRankingsAggregationCountsDistinctUsers(t *testing.T) {
 			is_wanted BOOLEAN NOT NULL DEFAULT FALSE,
 			most_wanted BOOLEAN NOT NULL DEFAULT FALSE,
 			is_caught BOOLEAN NOT NULL DEFAULT FALSE,
+			registered BOOLEAN NOT NULL DEFAULT FALSE,
 			disabled BOOLEAN NOT NULL DEFAULT FALSE
 		) ENGINE=InnoDB`,
 	} {
@@ -68,26 +69,28 @@ func TestRankingsAggregationCountsDistinctUsers(t *testing.T) {
 		wanted     bool
 		mostWanted bool
 		caught     bool
+		registered bool
 		disabled   bool
 	}{
-		{"a-1", "trainer-a", "pikachu-shiny", true, true, true, false},
-		{"a-2", "trainer-a", "pikachu-shiny", true, true, true, false},
-		{"b-1", "trainer-b", "pikachu-shiny", true, false, false, false},
-		{"c-1", "trainer-c", "bulbasaur-default", true, false, true, false},
-		{"d-1", "trainer-d", "bulbasaur-default", false, false, true, false},
-		{"hidden", "trainer-e", "pikachu-shiny", true, true, true, true},
+		{"a-1", "trainer-a", "pikachu-shiny", true, true, true, true, false},
+		{"a-2", "trainer-a", "pikachu-shiny", true, true, true, true, false},
+		{"b-1", "trainer-b", "pikachu-shiny", true, false, false, true, false},
+		{"c-1", "trainer-c", "bulbasaur-default", true, false, true, true, false},
+		{"d-1", "trainer-d", "bulbasaur-default", false, false, true, true, false},
+		{"hidden", "trainer-e", "pikachu-shiny", true, true, true, true, true},
 	}
 	for _, row := range rows {
 		if err := gormDB.Exec(
 			`INSERT INTO instances
-				(instance_id, user_id, variant_id, is_wanted, most_wanted, is_caught, disabled)
-			 VALUES (?, ?, ?, ?, ?, ?, ?)`,
+				(instance_id, user_id, variant_id, is_wanted, most_wanted, is_caught, registered, disabled)
+			 VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
 			row.instanceID,
 			row.userID,
 			row.variantID,
 			row.wanted,
 			row.mostWanted,
 			row.caught,
+			row.registered,
 			row.disabled,
 		).Error; err != nil {
 			t.Fatalf("insert %s: %v", row.instanceID, err)
@@ -102,7 +105,7 @@ func TestRankingsAggregationCountsDistinctUsers(t *testing.T) {
 	if err := gormDB.First(&pikachu, "variant_id = ?", "pikachu-shiny").Error; err != nil {
 		t.Fatalf("load Pikachu aggregate: %v", err)
 	}
-	if pikachu.CaughtUserCount != 1 ||
+	if pikachu.CaughtUserCount != 2 ||
 		pikachu.WantedUserCount != 2 ||
 		pikachu.MostWantedUserCount != 1 {
 		t.Fatalf("Pikachu aggregate counts duplicate/disabled rows incorrectly: %#v", pikachu)
@@ -125,7 +128,7 @@ func TestRankingsAggregationCountsDistinctUsers(t *testing.T) {
 	}
 
 	if err := gormDB.Exec(
-		"UPDATE instances SET is_caught = FALSE, is_wanted = FALSE WHERE variant_id = ?",
+		"UPDATE instances SET is_caught = FALSE, registered = FALSE, is_wanted = FALSE WHERE variant_id = ?",
 		"bulbasaur-default",
 	).Error; err != nil {
 		t.Fatalf("clear Bulbasaur ownership: %v", err)
