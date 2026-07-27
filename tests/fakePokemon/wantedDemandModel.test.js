@@ -1,0 +1,81 @@
+const test = require('node:test');
+const assert = require('node:assert/strict');
+
+const { wantedDemandModel } = require('./wantedDemandModel');
+const { buildDemandRows, demandInstanceId } = require('./wantedDemandSql');
+
+test('defines exactly 100 unique demand targets in descending order', () => {
+  assert.equal(wantedDemandModel.length, 100);
+  assert.equal(new Set(wantedDemandModel.map((target) => target.variantId)).size, 100);
+  for (let index = 0; index < wantedDemandModel.length; index += 1) {
+    assert.equal(wantedDemandModel[index].rank, index + 1);
+    if (index > 0) {
+      assert.ok(wantedDemandModel[index - 1].wantedUsers > wantedDemandModel[index].wantedUsers);
+    }
+  }
+});
+
+test('preserves the externally observed top demand order', () => {
+  assert.deepEqual(
+    wantedDemandModel.slice(0, 10).map((target) => target.label),
+    [
+      'Shiny Rayquaza',
+      'Shiny Necrozma',
+      'Shiny Kyurem',
+      'Shiny Mewtwo',
+      'Shiny Zacian (Crown Unlocked)',
+      'Armored Mewtwo',
+      'Shiny Groudon',
+      'Shiny Zamazenta (Crown Unlocked)',
+      'Shiny Kyogre',
+      'Shiny Origin Forme Dialga',
+    ]
+  );
+});
+
+test('encodes high-value qualities without changing variant identity', () => {
+  const dialga = wantedDemandModel.find((target) => target.variantId === '2336-shiny');
+  assert.equal(dialga.locationCard, '28');
+  assert.equal(dialga.chargedMove1Id, 288);
+  assert.deepEqual(dialga.wantedFilters, { background: true, signature_move: true });
+
+  const charizard = wantedDemandModel.find((target) => target.variantId === '0006-shiny_gigantamax');
+  assert.equal(charizard.gigantamax, true);
+  assert.equal(charizard.dynamax, true);
+});
+
+test('does not advertise untradeable active Crowned forms', () => {
+  assert.equal(
+    wantedDemandModel.some((target) => target.pokemonId === 888 || target.pokemonId === 889),
+    false
+  );
+  assert.equal(wantedDemandModel.find((target) => target.pokemonId === 2290).crown, true);
+  assert.equal(wantedDemandModel.find((target) => target.pokemonId === 2292).crown, true);
+});
+
+test('excludes Mythical Pokemon that cannot be traded', () => {
+  const tradeIneligiblePokemonIds = new Set([
+    151, 251, 385, 386, 489, 490, 491, 492, 494, 647, 648, 719, 720, 721, 801,
+    802, 807, 808, 809, 893,
+  ]);
+  assert.deepEqual(
+    wantedDemandModel.filter((target) => tradeIneligiblePokemonIds.has(target.pokemonId)),
+    []
+  );
+});
+
+test('assigns deterministic unique fake-user demand rows', () => {
+  const users = Array.from({ length: 1000 }, (_, index) => ({
+    user_id: `fake-${index}`,
+    username: `fakeUser${String(index).padStart(4, '0')}`,
+  }));
+  const rowsA = buildDemandRows(wantedDemandModel.slice(0, 2), users);
+  const rowsB = buildDemandRows(wantedDemandModel.slice(0, 2), [...users].reverse());
+  assert.deepEqual(rowsA, rowsB);
+  assert.equal(rowsA.length, wantedDemandModel[0].wantedUsers + wantedDemandModel[1].wantedUsers);
+  assert.equal(new Set(rowsA.map((row) => row.instanceId)).size, rowsA.length);
+  assert.equal(
+    demandInstanceId(rowsA[0].variantId, rowsA[0].userId),
+    rowsA[0].instanceId
+  );
+});
