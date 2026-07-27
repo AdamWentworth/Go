@@ -1,19 +1,33 @@
 import React, { useMemo, useState } from 'react';
 import {
+  FaBoxOpen,
+  FaCheckCircle,
+  FaExchangeAlt,
   FaHeart,
   FaMedal,
   FaSearch,
+  FaTag,
   FaUsers,
 } from 'react-icons/fa';
 import type { PokemonCommunityRanking } from '@shared-contracts/search';
+import { useInstancesStore } from '@/features/instances/store/useInstancesStore';
 import { useBootstrapVariants } from '@/features/variants/hooks/useBootstrapVariants';
 import { useVariantsStore } from '@/features/variants/store/useVariantsStore';
+import { useAuthStore } from '@/stores/useAuthStore';
 import type { PokemonVariant } from '@/types/pokemonVariants';
 import { resolveAssetUrl } from '@/utils/assetUrl';
 import { useCommunityRankings } from './hooks/useCommunityRankings';
+import {
+  buildPersonalRankingStatuses,
+  isWantedEligibleVariant,
+  matchesPersonalRankingFilter,
+  type PersonalRankingFilter,
+  type PersonalRankingStatus,
+} from './utils/personalRankingStatus';
 import './Rankings.css';
 
 type RankingMode = 'wanted' | 'rarest';
+type RankingCategory = 'all' | 'shiny' | 'costume' | 'shadow' | 'max';
 
 interface JoinedRanking extends PokemonCommunityRanking {
   variant: PokemonVariant;
@@ -178,12 +192,16 @@ function RankingRow({
   mode,
   scaleMaximum,
   privacyThreshold,
+  personalStatus,
+  showPersonalStatus,
 }: {
   entry: JoinedRanking;
   rank: number;
   mode: RankingMode;
   scaleMaximum: number;
   privacyThreshold: number;
+  personalStatus?: PersonalRankingStatus;
+  showPersonalStatus: boolean;
 }) {
   const primaryCount =
     mode === 'wanted' ? entry.wanted_users : entry.caught_users;
@@ -206,13 +224,6 @@ function RankingRow({
       : `Owned by ${primaryCount.toLocaleString()} ${
           primaryCount === 1 ? 'trainer' : 'trainers'
         }`;
-  const secondaryLabel =
-    mode === 'wanted'
-      ? `Owned by ${entry.caught_users.toLocaleString()} ${
-          entry.caught_users === 1 ? 'trainer' : 'trainers'
-        }`
-      : null;
-
   return (
     <article
       className={`community-ranking-row community-ranking-row--rank-${Math.min(
@@ -255,11 +266,43 @@ function RankingRow({
         </div>
         <span>
           <strong>{getRankingDisplayName(entry.variant)}</strong>
+          {showPersonalStatus && (
+            <span className="community-ranking-personal">
+              {personalStatus?.caughtCount ? (
+                <span title="Caught copies">
+                  <FaCheckCircle aria-hidden="true" />
+                  {personalStatus.caughtCount} caught
+                </span>
+              ) : personalStatus?.registered ? (
+                <span title="Registered in your Pokédex">
+                  <FaCheckCircle aria-hidden="true" />
+                  Registered
+                </span>
+              ) : null}
+              {personalStatus?.availableCount ? (
+                <span title="Caught copies not currently listed for trade">
+                  <FaBoxOpen aria-hidden="true" />
+                  {personalStatus.availableCount} available
+                </span>
+              ) : null}
+              {personalStatus?.tradeCount ? (
+                <span title="Copies currently listed for trade">
+                  <FaExchangeAlt aria-hidden="true" />
+                  {personalStatus.tradeCount} for trade
+                </span>
+              ) : null}
+              {personalStatus?.wanted ? (
+                <span title="On your wanted list">
+                  <FaHeart aria-hidden="true" />
+                  Wanted
+                </span>
+              ) : null}
+            </span>
+          )}
         </span>
       </div>
       <div className="community-ranking-count">
         <strong>{primaryLabel}</strong>
-        {secondaryLabel && <small>{secondaryLabel}</small>}
         <span aria-hidden="true">
           <i style={{ width: `${progress}%` }} />
         </span>
@@ -271,8 +314,14 @@ function RankingRow({
 const Rankings: React.FC = () => {
   const variants = useVariantsStore((state) => state.variants);
   const variantsLoading = useVariantsStore((state) => state.variantsLoading);
+  const instances = useInstancesStore((state) => state.instances);
+  const instancesLoading = useInstancesStore((state) => state.instancesLoading);
+  const isLoggedIn = useAuthStore((state) => state.isLoggedIn);
   const [mode, setMode] = useState<RankingMode>('wanted');
   const [query, setQuery] = useState('');
+  const [category, setCategory] = useState<RankingCategory>('all');
+  const [personalFilter, setPersonalFilter] =
+    useState<PersonalRankingFilter>('all');
   const [visibleCount, setVisibleCount] = useState(INITIAL_RESULT_COUNT);
   const { data, error, loading, refresh } = useCommunityRankings(true);
 
@@ -295,22 +344,58 @@ const Rankings: React.FC = () => {
     [sourceRows, variantsByID],
   );
   const joinedRows = useMemo(
-    () => prepareRankingsForMode(mode, matchedRows, variants),
+    () =>
+      prepareRankingsForMode(mode, matchedRows, variants).filter(
+        (entry) =>
+          mode !== 'wanted' || isWantedEligibleVariant(entry.variant_id),
+      ),
     [matchedRows, mode, variants],
+  );
+  const personalStatuses = useMemo(
+    () => buildPersonalRankingStatuses(instances),
+    [instances],
   );
   const normalizedQuery = query.trim().toLowerCase();
   const filteredRows = useMemo(
     () =>
       joinedRows.filter(({ variant }) => {
+        const variantType = String(variant.variantType || '').toLowerCase();
+        const matchesCategory =
+          category === 'all' ||
+          (category === 'shiny' && variantType.includes('shiny')) ||
+          (category === 'costume' && variantType.includes('costume')) ||
+          (category === 'shadow' && variantType.includes('shadow')) ||
+          (category === 'max' &&
+            (variantType.includes('dynamax') ||
+              variantType.includes('gigantamax')));
+        if (!matchesCategory) return false;
+        if (
+          isLoggedIn &&
+          !matchesPersonalRankingFilter(
+            personalStatuses.get(variant.variant_id),
+            personalFilter,
+          )
+        ) {
+          return false;
+        }
         if (!normalizedQuery) return true;
         return [
           variant.name,
           variant.species_name,
           variant.variantType,
           String(variant.pokedex_number),
-        ].some((value) => String(value || '').toLowerCase().includes(normalizedQuery));
+        ].some((value) =>
+          String(value || '').toLowerCase().includes(normalizedQuery),
+        );
       }),
-    [joinedRows, normalizedQuery],
+    [
+      category,
+      isLoggedIn,
+      joinedRows,
+      normalizedQuery,
+      personalFilter,
+      personalStatuses,
+    ],
   );
   const visibleRows = filteredRows.slice(0, visibleCount);
   const rankByVariantID = useMemo(
@@ -412,14 +497,76 @@ const Rankings: React.FC = () => {
               <small>One vote per trainer. Duplicate copies count once.</small>
             </div>
 
-            {(loading || variantsLoading) && (
+            <section
+              className="community-ranking-filters"
+              aria-label="Ranking filters"
+            >
+              <div>
+                {([
+                    ['all', 'All'],
+                    ['shiny', 'Shiny'],
+                    ['costume', 'Costume'],
+                    ...(mode === 'rarest'
+                      ? ([['shadow', 'Shadow']] as const)
+                      : []),
+                    ['max', 'Max'],
+                  ] as ReadonlyArray<readonly [RankingCategory, string]>
+                ).map(([value, label]) => (
+                  <button
+                    key={value}
+                    type="button"
+                    aria-pressed={category === value}
+                    className={category === value ? 'active' : ''}
+                    onClick={() => {
+                      setCategory(value);
+                      setVisibleCount(INITIAL_RESULT_COUNT);
+                    }}
+                  >
+                    <FaTag aria-hidden="true" />
+                    {label}
+                  </button>
+                ))}
+              </div>
+              {isLoggedIn && (
+                <div aria-label="My collection">
+                  {(
+                    [
+                      ['all', 'Everyone'],
+                      ['owned', 'Mine'],
+                      ['available', 'Available'],
+                      ['trade', 'For trade'],
+                      ['wanted', 'Wanted'],
+                      ['missing', 'Missing'],
+                    ] as const
+                  ).map(([value, label]) => (
+                    <button
+                      key={value}
+                      type="button"
+                      aria-pressed={personalFilter === value}
+                      className={personalFilter === value ? 'active personal' : ''}
+                      onClick={() => {
+                        setPersonalFilter(value);
+                        setVisibleCount(INITIAL_RESULT_COUNT);
+                      }}
+                    >
+                      {label}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </section>
+
+            {(loading || variantsLoading || (isLoggedIn && instancesLoading)) && (
               <section className="community-rankings-state" aria-live="polite">
                 <div className="community-ranking-loader" aria-hidden="true" />
                 <h2>Loading community snapshot</h2>
               </section>
             )}
 
-            {!loading && !variantsLoading && error && (
+            {!loading &&
+              !variantsLoading &&
+              (!isLoggedIn || !instancesLoading) &&
+              error && (
               <section className="community-rankings-state">
                 <h2>Rankings are unavailable</h2>
                 <p>{error}</p>
@@ -429,7 +576,11 @@ const Rankings: React.FC = () => {
               </section>
             )}
 
-            {!loading && !variantsLoading && !error && data && (
+            {!loading &&
+              !variantsLoading &&
+              (!isLoggedIn || !instancesLoading) &&
+              !error &&
+              data && (
               <>
                 <section
                   className="community-ranking-results"
@@ -447,6 +598,8 @@ const Rankings: React.FC = () => {
                       mode={mode}
                       scaleMaximum={scaleMaximum}
                       privacyThreshold={data.privacy_threshold}
+                      personalStatus={personalStatuses.get(entry.variant_id)}
+                      showPersonalStatus={isLoggedIn}
                     />
                   ))}
                   {visibleRows.length === 0 && (

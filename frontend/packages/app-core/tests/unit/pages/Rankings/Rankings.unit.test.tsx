@@ -6,6 +6,8 @@ import Rankings, {
   prepareRankingsForMode,
 } from '@/pages/Rankings/Rankings';
 import { useVariantsStore } from '@/features/variants/store/useVariantsStore';
+import { useInstancesStore } from '@/features/instances/store/useInstancesStore';
+import { useAuthStore } from '@/stores/useAuthStore';
 import type { PokemonVariant } from '@/types/pokemonVariants';
 
 const rankingState = vi.hoisted(() => ({
@@ -177,6 +179,8 @@ describe('Community Rankings page', () => {
       ],
       variantsLoading: false,
     });
+    useAuthStore.setState({ isLoggedIn: false, user: null });
+    useInstancesStore.setState({ instances: {}, instancesLoading: false });
   });
 
   it('shows exact distinct-trainer counts and switches ranking modes', () => {
@@ -185,6 +189,7 @@ describe('Community Rankings page', () => {
     expect(screen.getByRole('heading', { name: 'Community Rankings' }))
       .toBeInTheDocument();
     expect(screen.getByText('6 trainers want this')).toBeInTheDocument();
+    expect(screen.queryByText('Owned by 4 trainers')).not.toBeInTheDocument();
     expect(screen.getByText('One vote per trainer. Duplicate copies count once.'))
       .toBeInTheDocument();
     expect(container.querySelector('.community-ranking-row--rank-1'))
@@ -228,5 +233,35 @@ describe('Community Rankings page', () => {
     expect(screen.getByText('6 trainers want this')).toBeInTheDocument();
     expect(screen.queryByText('Sign in to view community rankings'))
       .not.toBeInTheDocument();
+  });
+
+  it('layers personal collection status and filters over community ranks', () => {
+    useAuthStore.setState({ isLoggedIn: true });
+    useInstancesStore.setState({
+      instances: {
+        pikachu: {
+          variant_id: 'pikachu-shiny',
+          is_caught: true,
+          is_for_trade: false,
+          is_wanted: false,
+          registered: true,
+          disabled: false,
+        },
+      } as never,
+      instancesLoading: false,
+    });
+
+    render(<Rankings />);
+
+    expect(screen.getByText('1 caught')).toBeInTheDocument();
+    expect(screen.getByText('1 available')).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Mine' }));
+    expect(screen.getByText('Pikachu')).toBeInTheDocument();
+    expect(screen.queryByText('Bulbasaur')).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Missing' }));
+    expect(screen.queryByText('Pikachu')).not.toBeInTheDocument();
+    expect(screen.getByText('Bulbasaur')).toBeInTheDocument();
   });
 });
