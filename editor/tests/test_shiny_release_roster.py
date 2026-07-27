@@ -23,6 +23,17 @@ class ShinyReleaseRosterTest(unittest.TestCase):
         self.assertNotIn(827, target_ids)  # Nickit: 2026-08-16
         self.assertEqual(SOURCE_REVISION, 4594301)
 
+    def test_repaired_2025_releases_keep_form_specific_targets(self) -> None:
+        dates = {target.pokemon_id: target.released_on for target in TARGETS}
+        self.assertEqual(dates[2314], "2025-11-07")  # Unown K
+        self.assertEqual(dates[2326], "2025-11-07")  # Unown W
+        self.assertEqual(dates[2286], "2025-09-16")  # Male Indeedee
+        self.assertEqual(dates[2333], "2025-08-06")  # Family of Three Maushold
+        self.assertEqual(dates[647], "2025-11-25")  # Shiny Keldeo
+        self.assertEqual(dates[960], "2025-07-29")  # Wiglett
+        self.assertEqual(dates[961], "2025-07-29")  # Wugtrio
+        self.assertEqual(dates[884], "2025-09-30")  # Duraludon
+
     def test_form_specific_paldean_tauros_dates_are_preserved(self) -> None:
         dates = {
             target.pokemon_id: target.released_on

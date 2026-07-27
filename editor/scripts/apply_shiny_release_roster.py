@@ -4,6 +4,8 @@
 The release roster is deliberately explicit and pinned to a reviewed source
 revision. It only changes ordinary Shiny availability; Shadow, costume, Mega,
 Max, and base-species availability remain owned by their dedicated updaters.
+The roster also repairs asset-backed 2025 releases that predated this updater
+but were never reflected in the PostgreSQL catalog.
 """
 
 from __future__ import annotations
@@ -36,8 +38,8 @@ SOURCE_URL = (
     "?title=List_of_Shiny_Pok%C3%A9mon_in_Pok%C3%A9mon_GO"
     f"&oldid={SOURCE_REVISION}"
 )
-EXPECTED_TARGETS = 31
-EXPECTED_RELEASED_SHINY_FORMS = 1055
+EXPECTED_TARGETS = 65
+EXPECTED_RELEASED_SHINY_FORMS = 1089
 
 
 @dataclass(frozen=True)
@@ -56,6 +58,37 @@ class ShinyTarget:
 
 
 TARGETS = (
+    ShinyTarget(912, "Quaxly", "2025-07-20"),
+    ShinyTarget(913, "Quaxwell", "2025-07-20"),
+    ShinyTarget(914, "Quaquaval", "2025-07-20"),
+    ShinyTarget(924, "Tandemaus", "2025-08-06"),
+    ShinyTarget(925, "Maushold", "2025-08-06"),
+    ShinyTarget(2333, "Maushold", "2025-08-06"),
+    ShinyTarget(757, "Salandit", "2025-08-11"),
+    ShinyTarget(758, "Salazzle", "2025-08-11"),
+    ShinyTarget(977, "Dondozo", "2025-08-25"),
+    ShinyTarget(960, "Wiglett", "2025-07-29"),
+    ShinyTarget(961, "Wugtrio", "2025-07-29"),
+    ShinyTarget(876, "Indeedee", "2025-09-16"),
+    ShinyTarget(2286, "Indeedee", "2025-09-16"),
+    ShinyTarget(884, "Duraludon", "2025-09-30"),
+    ShinyTarget(854, "Sinistea", "2025-10-21"),
+    ShinyTarget(2277, "Sinistea", "2025-10-21"),
+    ShinyTarget(855, "Polteageist", "2025-10-21"),
+    ShinyTarget(2279, "Polteageist", "2025-10-21"),
+    ShinyTarget(856, "Hatenna", "2025-11-07"),
+    ShinyTarget(857, "Hattrem", "2025-11-07"),
+    ShinyTarget(858, "Hatterene", "2025-11-07"),
+    ShinyTarget(859, "Impidimp", "2025-11-07"),
+    ShinyTarget(860, "Morgrem", "2025-11-07"),
+    ShinyTarget(861, "Grimmsnarl", "2025-11-07"),
+    ShinyTarget(2314, "Unown", "2025-11-07"),
+    ShinyTarget(2326, "Unown", "2025-11-07"),
+    ShinyTarget(877, "Morpeko", "2025-11-18"),
+    ShinyTarget(647, "Keldeo", "2025-11-25"),
+    ShinyTarget(731, "Pikipek", "2025-11-30"),
+    ShinyTarget(732, "Trumbeak", "2025-11-30"),
+    ShinyTarget(733, "Toucannon", "2025-11-30"),
     ShinyTarget(781, "Dhelmise", "2026-01-06"),
     ShinyTarget(938, "Tadbulb", "2026-01-13"),
     ShinyTarget(939, "Bellibolt", "2026-01-13"),
@@ -75,6 +108,9 @@ TARGETS = (
     ShinyTarget(815, "Cinderace", "2026-03-14"),
     ShinyTarget(850, "Sizzlipede", "2026-03-17"),
     ShinyTarget(851, "Centiskorch", "2026-03-17"),
+    ShinyTarget(957, "Tinkatink", "2026-04-11"),
+    ShinyTarget(958, "Tinkatuff", "2026-04-11"),
+    ShinyTarget(959, "Tinkaton", "2026-04-11"),
     ShinyTarget(948, "Toedscool", "2026-04-14"),
     ShinyTarget(949, "Toedscruel", "2026-04-14"),
     ShinyTarget(968, "Orthworm", "2026-04-28"),
