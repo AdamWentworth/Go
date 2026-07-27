@@ -104,6 +104,34 @@ test('does not spread named costume surveys onto ordinary evolution-family membe
   }
 });
 
+test('applies family survey evidence only to the exact named collectible', () => {
+  const { targets } = buildCaughtRarityModel(catalog);
+  const byId = new Map(targets.map((target) => [target.variantId, target]));
+
+  assert.equal(byId.get('0960-shiny').sourceName, 'Wiglett');
+  assert.equal(byId.get('0961-shiny').sourceName, null);
+  assert.equal(byId.get('0650-shiny_shadow').sourceName, 'Shadow Chespin');
+  assert.equal(byId.get('0651-shiny_shadow').sourceName, null);
+  assert.equal(byId.get('0652-shiny_shadow').sourceName, null);
+  assert.equal(byId.get('0032-shiny_shadow').sourceName.trim(), 'Shadow Male Nidoran');
+  assert.equal(byId.get('0033-shiny_shadow').sourceName, null);
+  assert.equal(byId.get('0034-shiny_shadow').sourceName, null);
+
+  assert.equal(byId.get('0033-party_hat_shiny').sourceName, 'Pokemon Day Nidorino');
+});
+
+test('models every released shadow costume above top-tier rarity', () => {
+  const { targets } = buildCaughtRarityModel(catalog);
+  const shadowCostumes = targets.filter((target) => (
+    target.kind === 'shadow_costume' || target.kind === 'shiny_shadow_costume'
+  ));
+
+  assert.equal(shadowCostumes.length, 18);
+  assert.equal(shadowCostumes.every((target) => target.targetOwners >= 90), true);
+  assert.ok(shadowCostumes.some((target) => target.variantId === '0033-shadow_party_hat_default'));
+  assert.ok(shadowCostumes.some((target) => target.variantId === '0033-shadow_party_hat_shiny'));
+});
+
 test('never makes a shiny counterpart more common than its non-shiny equivalent', () => {
   const { targets } = buildCaughtRarityModel(catalog);
   const byId = new Map(targets.map((target) => [target.variantId, target]));

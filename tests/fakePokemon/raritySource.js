@@ -56,6 +56,8 @@ const NAME_ALIASES = new Map([
   ['beanie pichu', { pokemonId: 172, costume: 'beanie' }],
   ['bowtie dragonite', { pokemonId: 149, costume: 'bow' }],
   ['pokemon day nidorino', { pokemonId: 33, costume: 'party_hat' }],
+  ['shadow male nidoran', { pokemonId: 32, shadow: true }],
+  ['shadow female nidoran', { pokemonId: 29, shadow: true }],
   ['pa u oricorio', { pokemonId: 2236 }],
   ['baile oricorio', { pokemonId: 741 }],
   ['pom pom oricorio', { pokemonId: 2237 }],

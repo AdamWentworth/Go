@@ -67,6 +67,38 @@ function buildCatalogRarityVariants(catalog, now = Date.now()) {
           { shiny: true, costumeId: costume.costume_id, costumeName: costume.name }
         ));
       }
+      const shadowCostume = costume.shadow_costume;
+      if (
+        shadowCostume?.image_url_shadow_costume &&
+        released(shadowCostume.date_available, now)
+      ) {
+        variants.push(variantRecord(
+          pokemon,
+          `${base}-shadow_${costume.name}_default`,
+          `Shadow ${costume.name} ${formLabel}`,
+          'shadow_costume',
+          shadowCostume.date_available,
+          { shadow: true, costumeId: costume.costume_id, costumeName: costume.name }
+        ));
+      }
+      if (
+        shadowCostume?.image_url_shiny_shadow_costume &&
+        released(shadowCostume.date_shiny_available, now)
+      ) {
+        variants.push(variantRecord(
+          pokemon,
+          `${base}-shadow_${costume.name}_shiny`,
+          `Shiny Shadow ${costume.name} ${formLabel}`,
+          'shiny_shadow_costume',
+          shadowCostume.date_shiny_available,
+          {
+            shiny: true,
+            shadow: true,
+            costumeId: costume.costume_id,
+            costumeName: costume.name,
+          }
+        ));
+      }
     }
 
     for (const max of pokemon.max || []) {
@@ -110,6 +142,8 @@ function matchSourceEntry(entry, variants) {
   }
   if (hint.shadow) {
     candidates = candidates.filter((variant) => variant.kind === 'shiny_shadow');
+  } else {
+    candidates = candidates.filter((variant) => !variant.shadow);
   }
   if (hint.costume) {
     candidates = candidates.filter(
@@ -159,6 +193,14 @@ function matchSourceEntries(entry, variants) {
     }
   } else {
     candidates = candidates.filter((variant) => variant.kind === 'shiny');
+  }
+
+  const exactSpecies = candidates.filter(
+    (variant) => normalizeName(variant.speciesName) === normalizeName(hint.speciesName)
+  );
+  if (exactSpecies.length > 0) {
+    candidates = exactSpecies;
+  } else if (!hint.shadow) {
     const namesAnExactCollectible = !candidates.some(
       (variant) => normalizeName(variant.speciesName) === entry.normalizedName
     );

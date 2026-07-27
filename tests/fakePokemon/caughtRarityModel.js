@@ -21,6 +21,8 @@ function genericOwners(variant, now = Date.now()) {
     gigantamax: [15, 80],
     shiny: [40, 150],
     shiny_shadow: [55, 110],
+    shadow_costume: [120, 220],
+    shiny_shadow_costume: [90, 170],
     shiny_costume: [45, 100],
     shiny_dynamax: [35, 100],
     shiny_gigantamax: [30, 80],
@@ -35,6 +37,7 @@ function empiricalOwners(percent) {
 
 function unknownZeroOwners(variant) {
   if (variant.kind === 'shiny_costume') return 50;
+  if (variant.kind === 'shiny_shadow_costume') return 110;
   if (variant.kind === 'shiny_shadow') return 60;
   if (variant.kind === 'shiny_gigantamax') return 50;
   if (variant.shiny) return 65;
