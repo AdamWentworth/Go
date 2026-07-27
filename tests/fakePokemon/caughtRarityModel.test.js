@@ -3,7 +3,12 @@ const path = require('node:path');
 const test = require('node:test');
 const assert = require('node:assert/strict');
 
-const { buildCaughtRarityModel, empiricalOwners } = require('./caughtRarityModel');
+const {
+  buildCaughtRarityModel,
+  empiricalOwners,
+  MIN_SHINY_OWNER_GAP,
+  NON_SHINY_OWNER_FLOORS,
+} = require('./caughtRarityModel');
 const { readRaritySource } = require('./raritySource');
 
 const catalog = JSON.parse(fs.readFileSync(
@@ -132,7 +137,7 @@ test('models every released shadow costume above top-tier rarity', () => {
   assert.ok(shadowCostumes.some((target) => target.variantId === '0033-shadow_party_hat_shiny'));
 });
 
-test('never makes a shiny counterpart more common than its non-shiny equivalent', () => {
+test('keeps shiny counterparts materially rarer than non-shiny equivalents', () => {
   const { targets } = buildCaughtRarityModel(catalog);
   const byId = new Map(targets.map((target) => [target.variantId, target]));
   for (const target of targets.filter((candidate) => candidate.shiny)) {
@@ -143,11 +148,51 @@ test('never makes a shiny counterpart more common than its non-shiny equivalent'
     const nonShiny = byId.get(nonShinyId);
     if (nonShiny) {
       assert.ok(
-        target.targetOwners < nonShiny.targetOwners,
-        `${target.variantId} (${target.targetOwners}) should be rarer than ${nonShinyId} (${nonShiny.targetOwners})`
+        nonShiny.targetOwners - target.targetOwners >= MIN_SHINY_OWNER_GAP,
+        `${target.variantId} (${target.targetOwners}) should be materially rarer than ${nonShinyId} (${nonShiny.targetOwners})`
       );
     }
   }
+});
+
+test('keeps ordinary collectible categories out of artificial top rarity', () => {
+  const { targets } = buildCaughtRarityModel(catalog);
+  for (const target of targets.filter((candidate) => !candidate.shiny)) {
+    const floor = NON_SHINY_OWNER_FLOORS[target.kind];
+    if (floor === undefined) continue;
+    assert.ok(
+      target.targetOwners >= floor,
+      `${target.variantId} has ${target.targetOwners} owners, below its ${target.kind} floor ${floor}`
+    );
+  }
+});
+
+test('treats ordinary costumes and historically boosted shinies as common', () => {
+  const { targets } = buildCaughtRarityModel(catalog, {
+    now: Date.parse('2026-07-27T12:00:00Z'),
+  });
+  const byId = new Map(targets.map((target) => [target.variantId, target]));
+
+  assert.ok(byId.get('0025-team_instinct_hat_default').targetOwners >= 700);
+  assert.ok(byId.get('0302-shiny').targetOwners >= 250);
+  assert.ok(
+    byId.get('0025-team_instinct_hat_default').targetOwners >
+      byId.get('0884-shiny_dynamax').targetOwners,
+  );
+});
+
+test('does not infer shiny Gigantamax availability from species shininess', () => {
+  const { targets } = buildCaughtRarityModel(catalog, {
+    now: Date.parse('2026-07-27T12:00:00Z'),
+  });
+  const ids = new Set(targets.map((target) => target.variantId));
+
+  assert.equal(ids.has('0812-shiny_gigantamax'), false);
+  assert.equal(ids.has('0815-shiny_gigantamax'), false);
+  assert.equal(ids.has('0818-shiny_gigantamax'), false);
+  assert.equal(ids.has('0812-gigantamax'), true);
+  assert.equal(ids.has('0815-gigantamax'), true);
+  assert.equal(ids.has('0818-gigantamax'), true);
 });
 
 test('preserves empirical shiny ownership and raises underestimated non-shiny baselines', () => {

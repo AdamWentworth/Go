@@ -33,6 +33,32 @@ test('preserves the externally observed top demand order', () => {
   );
 });
 
+test('demotes Community Day shinies below scarce regional targets', () => {
+  const jangmo = wantedDemandModel.find((target) => target.variantId === '0782-shiny');
+  const frigibax = wantedDemandModel.find((target) => target.variantId === '0996-shiny');
+
+  assert.equal(jangmo.communityDay, true);
+  assert.equal(frigibax.communityDay, true);
+  assert.ok(jangmo.wantedUsers <= 4);
+  assert.ok(frigibax.wantedUsers <= 4);
+  assert.ok(
+    wantedDemandModel.every(
+      (target) => target.mostWantedUsers <= target.wantedUsers
+    )
+  );
+});
+
+test('includes only released shiny Gigantamax targets', () => {
+  const ids = new Set(wantedDemandModel.map((target) => target.variantId));
+
+  assert.equal(ids.has('0812-shiny_gigantamax'), false);
+  assert.equal(ids.has('0815-shiny_gigantamax'), false);
+  assert.equal(ids.has('0818-shiny_gigantamax'), false);
+  assert.equal(ids.has('0012-shiny_gigantamax'), true);
+  assert.equal(ids.has('0099-shiny_gigantamax'), true);
+  assert.equal(ids.has('0861-shiny_gigantamax'), true);
+});
+
 test('encodes high-value qualities without changing variant identity', () => {
   const dialga = wantedDemandModel.find((target) => target.variantId === '2336-shiny');
   assert.equal(dialga.locationCard, '28');

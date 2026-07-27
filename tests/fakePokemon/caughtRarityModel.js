@@ -3,6 +3,18 @@ const { readRaritySource } = require('./raritySource');
 
 const POPULATION = 1000;
 const MIN_OWNERS = 2;
+const MIN_SHINY_OWNER_GAP = 100;
+const BOOSTED_SHINY_OWNER_FLOORS = new Map([
+  [302, 250],
+]);
+const NON_SHINY_OWNER_FLOORS = {
+  default: 750,
+  shadow: 650,
+  costume: 700,
+  shadow_costume: 650,
+  dynamax: 500,
+  gigantamax: 350,
+};
 
 function ageYears(date, now = Date.now()) {
   const timestamp = Date.parse(date || '');
@@ -14,25 +26,28 @@ function genericOwners(variant, now = Date.now()) {
   const age = ageYears(variant.dateAvailable, now);
   const ageFactor = Math.min(1, 0.2 + age / 5);
   const ranges = {
-    default: [50, 320],
-    shadow: [30, 180],
-    costume: [20, 140],
-    dynamax: [30, 150],
-    gigantamax: [15, 80],
-    shiny: [40, 150],
-    shiny_shadow: [55, 110],
-    shadow_costume: [120, 220],
+    default: [750, 950],
+    shadow: [650, 900],
+    costume: [450, 850],
+    dynamax: [500, 850],
+    gigantamax: [350, 700],
+    shiny: [35, 160],
+    shiny_shadow: [15, 100],
+    shadow_costume: [450, 750],
     shiny_shadow_costume: [90, 170],
-    shiny_costume: [45, 100],
-    shiny_dynamax: [35, 100],
-    shiny_gigantamax: [30, 80],
+    shiny_costume: [25, 120],
+    shiny_dynamax: [30, 120],
+    shiny_gigantamax: [20, 90],
   };
   const [minimum, maximum] = ranges[variant.kind] || (variant.shiny ? [12, 120] : [100, 600]);
   return Math.round(minimum + (maximum - minimum) * ageFactor);
 }
 
 function empiricalOwners(percent) {
-  return Math.max(MIN_OWNERS, Math.round((percent / 100) * POPULATION));
+  return Math.min(
+    POPULATION - MIN_SHINY_OWNER_GAP,
+    Math.max(MIN_OWNERS, Math.round((percent / 100) * POPULATION)),
+  );
 }
 
 function unknownZeroOwners(variant) {
@@ -58,7 +73,35 @@ function enforceShinyRarity(targets) {
     if (nonShiny.length === 0 || shiny.length === 0) continue;
     const shinyCeiling = Math.max(...shiny.map((target) => target.targetOwners));
     for (const target of nonShiny) {
-      target.targetOwners = Math.max(target.targetOwners, shinyCeiling + 1);
+      target.targetOwners = Math.min(
+        POPULATION,
+        Math.max(
+          target.targetOwners,
+          NON_SHINY_OWNER_FLOORS[target.kind] || 0,
+          shinyCeiling + MIN_SHINY_OWNER_GAP,
+          shinyCeiling * 2,
+        ),
+      );
+    }
+  }
+}
+
+function enforceNonShinyFloors(targets) {
+  for (const target of targets) {
+    if (target.shiny) continue;
+    target.targetOwners = Math.max(
+      target.targetOwners,
+      NON_SHINY_OWNER_FLOORS[target.kind] || 0,
+    );
+  }
+}
+
+function enforceBoostedShinyFloors(targets) {
+  for (const target of targets) {
+    if (target.kind !== 'shiny') continue;
+    const floor = BOOSTED_SHINY_OWNER_FLOORS.get(target.pokemonId);
+    if (floor !== undefined) {
+      target.targetOwners = Math.max(target.targetOwners, floor);
     }
   }
 }
@@ -104,6 +147,8 @@ function buildCaughtRarityModel(catalog, options = {}) {
       sourceName: sourceEntry?.name ?? zeroEntry?.name ?? null,
     };
   });
+  enforceNonShinyFloors(targets);
+  enforceBoostedShinyFloors(targets);
   enforceShinyRarity(targets);
   targets.sort((left, right) => (
     left.targetOwners - right.targetOwners ||
@@ -114,7 +159,10 @@ function buildCaughtRarityModel(catalog, options = {}) {
 }
 
 module.exports = {
+  BOOSTED_SHINY_OWNER_FLOORS,
   MIN_OWNERS,
+  MIN_SHINY_OWNER_GAP,
+  NON_SHINY_OWNER_FLOORS,
   POPULATION,
   buildCaughtRarityModel,
   empiricalOwners,

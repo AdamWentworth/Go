@@ -2,10 +2,22 @@ const { normalizeName, sourceHint } = require('./raritySource');
 
 const pad = (pokemonId) => String(pokemonId).padStart(4, '0');
 
+const SHINY_GIGANTAMAX_RELEASE_OVERRIDES = new Map([
+  [812, '2026-08-01'],
+  [815, null],
+  [818, null],
+]);
+
 function released(date, now = Date.now()) {
   if (!date) return true;
   const timestamp = Date.parse(date);
   return Number.isNaN(timestamp) || timestamp <= now;
+}
+
+function shinyGigantamaxReleased(pokemon, now) {
+  if (!SHINY_GIGANTAMAX_RELEASE_OVERRIDES.has(pokemon.pokemon_id)) return true;
+  const releaseDate = SHINY_GIGANTAMAX_RELEASE_OVERRIDES.get(pokemon.pokemon_id);
+  return releaseDate != null && released(releaseDate, now);
 }
 
 function variantRecord(pokemon, variantId, label, kind, dateAvailable, extra = {}) {
@@ -103,25 +115,32 @@ function buildCatalogRarityVariants(catalog, now = Date.now()) {
 
     for (const max of pokemon.max || []) {
       if (max.dynamax) {
-        variants.push(variantRecord(pokemon, `${base}-dynamax`, `Dynamax ${formLabel}`, 'dynamax', max.date_available, {
+        variants.push(variantRecord(pokemon, `${base}-dynamax`, `Dynamax ${formLabel}`, 'dynamax', max.dynamax_release_date, {
           dynamax: true,
         }));
         if (pokemon.shiny_available) {
           variants.push(variantRecord(
             pokemon, `${base}-shiny_dynamax`, `Shiny Dynamax ${formLabel}`, 'shiny_dynamax',
-            pokemon.date_shiny_available, { shiny: true, dynamax: true }
+            pokemon.date_shiny_available || max.dynamax_release_date, { shiny: true, dynamax: true }
           ));
         }
       }
       if (max.gigantamax) {
         variants.push(variantRecord(
-          pokemon, `${base}-gigantamax`, `Gigantamax ${formLabel}`, 'gigantamax', max.date_available,
+          pokemon, `${base}-gigantamax`, `Gigantamax ${formLabel}`, 'gigantamax', max.gigantamax_release_date,
           { dynamax: true, gigantamax: true }
         ));
-        if (pokemon.shiny_available && max.shiny_gigantamax_image_url) {
+        if (
+          pokemon.shiny_available &&
+          max.shiny_gigantamax_image_url &&
+          shinyGigantamaxReleased(pokemon, now)
+        ) {
           variants.push(variantRecord(
             pokemon, `${base}-shiny_gigantamax`, `Shiny Gigantamax ${formLabel}`, 'shiny_gigantamax',
-            pokemon.date_shiny_available, { shiny: true, dynamax: true, gigantamax: true }
+            SHINY_GIGANTAMAX_RELEASE_OVERRIDES.get(pokemon.pokemon_id) ||
+              pokemon.date_shiny_available ||
+              max.gigantamax_release_date,
+            { shiny: true, dynamax: true, gigantamax: true }
           ));
         }
       }
@@ -212,4 +231,10 @@ function matchSourceEntries(entry, variants) {
   return candidates.length > 0 ? candidates : [matchSourceEntry(entry, variants)].filter(Boolean);
 }
 
-module.exports = { buildCatalogRarityVariants, matchSourceEntries, matchSourceEntry, released };
+module.exports = {
+  SHINY_GIGANTAMAX_RELEASE_OVERRIDES,
+  buildCatalogRarityVariants,
+  matchSourceEntries,
+  matchSourceEntry,
+  released,
+};

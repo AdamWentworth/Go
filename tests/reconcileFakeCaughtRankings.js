@@ -32,7 +32,8 @@ function connectionConfig() {
   };
 }
 
-async function realDataFingerprint(connection) {
+async function realDataFingerprint(connection, realUserIds) {
+  if (realUserIds.length === 0) return { rowCount: '0', checksum: '0' };
   const [rows] = await connection.query(`
 SELECT
   COUNT(*) AS row_count,
@@ -41,28 +42,25 @@ SELECT
     i.most_wanted, i.is_caught, i.is_for_trade, i.last_update
   ))), 0) AS checksum
 FROM instances i
-JOIN users u ON u.user_id = i.user_id
-WHERE u.username NOT REGEXP '^fakeUser[0-9]{4}$'`);
+WHERE i.user_id IN (?)`, [realUserIds]);
   return { rowCount: String(rows[0].row_count), checksum: String(rows[0].checksum) };
 }
 
-async function currentCounts(connection) {
+async function currentCounts(connection, fakeUserIds, realUserIds) {
   const [tradeRows] = await connection.query(`
 SELECT i.variant_id, COUNT(DISTINCT i.user_id) AS owners
 FROM instances i
-JOIN users u ON u.user_id = i.user_id
-WHERE u.username REGEXP '^fakeUser[0-9]{4}$'
+WHERE i.user_id IN (?)
   AND i.is_for_trade = 1
   AND i.disabled = 0
-GROUP BY i.variant_id`);
-  const [realRows] = await connection.query(`
+GROUP BY i.variant_id`, [fakeUserIds]);
+  const [realRows] = realUserIds.length === 0 ? [[]] : await connection.query(`
 SELECT i.variant_id, COUNT(DISTINCT i.user_id) AS owners
 FROM instances i
-JOIN users u ON u.user_id = i.user_id
-WHERE u.username NOT REGEXP '^fakeUser[0-9]{4}$'
-  AND i.is_caught = 1
+WHERE i.user_id IN (?)
+  AND (i.is_caught = 1 OR i.registered = 1)
   AND i.disabled = 0
-GROUP BY i.variant_id`);
+GROUP BY i.variant_id`, [realUserIds]);
   return {
     fakeTrade: new Map(tradeRows.map((row) => [row.variant_id, Number(row.owners)])),
     realCaught: new Map(realRows.map((row) => [row.variant_id, Number(row.owners)])),
@@ -133,13 +131,18 @@ async function main() {
   const { targets, unmatched, ignoredZeroes } = buildCaughtRarityModel(catalog);
   const connection = await mysql.createConnection(connectionConfig());
   try {
-    const [fakeUsers] = await connection.query(
-      `SELECT user_id, username FROM users WHERE username REGEXP '^fakeUser[0-9]{4}$' ORDER BY username`
+    const [allUsers] = await connection.query(
+      'SELECT user_id, username FROM users ORDER BY username'
     );
+    const fakeUsers = allUsers.filter((user) => FAKE_USERNAME_PATTERN.test(user.username));
+    const realUserIds = allUsers
+      .filter((user) => !FAKE_USERNAME_PATTERN.test(user.username))
+      .map((user) => user.user_id);
     if (fakeUsers.length !== EXPECTED_FAKE_USERS || fakeUsers.some((user) => !FAKE_USERNAME_PATTERN.test(user.username))) {
       throw new Error(`Safety check failed: expected ${EXPECTED_FAKE_USERS} canonical fake users; found ${fakeUsers.length}`);
     }
-    const counts = await currentCounts(connection);
+    const fakeUserIds = fakeUsers.map((user) => user.user_id);
+    const counts = await currentCounts(connection, fakeUserIds, realUserIds);
     const rowCount = targets.reduce((sum, target) => sum + target.targetOwners, 0);
     console.log(`${apply ? 'Applying' : 'Dry run:'} ${rowCount.toLocaleString()} deterministic fake ownership rows.`);
     console.log(`${ignoredZeroes.length} source zeroes treated as unknown; ${unmatched.length} nonzero rows unmatched.`);
@@ -149,15 +152,15 @@ async function main() {
       return;
     }
 
-    const before = await realDataFingerprint(connection);
+    const before = await realDataFingerprint(connection, realUserIds);
     await connection.beginTransaction();
     try {
       await connection.query(`
 DELETE i
 FROM instances i
-JOIN users u ON u.user_id = i.user_id
-WHERE u.username REGEXP '^fakeUser[0-9]{4}$'
-  AND (i.is_caught = 1 OR i.is_for_trade = 1 OR i.instance_id LIKE 'fake-caught-v2-%')`);
+WHERE i.user_id IN (?)
+  AND (i.is_caught = 1 OR i.is_for_trade = 1 OR i.instance_id LIKE 'fake-caught-v2-%')`,
+      [fakeUserIds]);
       let inserted = 0;
       for (const target of targets) {
         const rows = buildCaughtRows([target], fakeUsers, counts.fakeTrade);
@@ -168,7 +171,7 @@ WHERE u.username REGEXP '^fakeUser[0-9]{4}$'
         }
       }
       await refreshRankings(connection);
-      const after = await realDataFingerprint(connection);
+      const after = await realDataFingerprint(connection, realUserIds);
       if (before.rowCount !== after.rowCount || before.checksum !== after.checksum) {
         throw new Error(`Real-user fingerprint changed (${JSON.stringify(before)} -> ${JSON.stringify(after)})`);
       }

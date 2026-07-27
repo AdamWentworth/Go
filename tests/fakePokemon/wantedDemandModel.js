@@ -31,9 +31,9 @@ const TOP_DEMAND = [
   ['0131-shiny_gigantamax', 131, 'Shiny Gigantamax Lapras', 214, { dynamax: true, gigantamax: true }],
   ['0143-shiny_gigantamax', 143, 'Shiny Gigantamax Snorlax', 210, { dynamax: true, gigantamax: true }],
   ['0849-shiny_gigantamax', 849, 'Shiny Gigantamax Toxtricity', 206, { dynamax: true, gigantamax: true }],
-  ['0818-shiny_gigantamax', 818, 'Shiny Gigantamax Inteleon', 202, { dynamax: true, gigantamax: true }],
-  ['0815-shiny_gigantamax', 815, 'Shiny Gigantamax Cinderace', 198, { dynamax: true, gigantamax: true }],
-  ['0812-shiny_gigantamax', 812, 'Shiny Gigantamax Rillaboom', 194, { dynamax: true, gigantamax: true }],
+  ['0012-shiny_gigantamax', 12, 'Shiny Gigantamax Butterfree', 202, { dynamax: true, gigantamax: true }],
+  ['0099-shiny_gigantamax', 99, 'Shiny Gigantamax Kingler', 198, { dynamax: true, gigantamax: true }],
+  ['0861-shiny_gigantamax', 861, 'Shiny Gigantamax Grimmsnarl', 194, { dynamax: true, gigantamax: true }],
   ['0025-rock_shiny', 25, 'Shiny Rock Star Pikachu', 190, { costume: 44 }],
   ['0025-pop_shiny', 25, 'Shiny Pop Star Pikachu', 187, { costume: 43 }],
   ['0025-fragment_shiny', 25, 'Shiny Fragment Hat Pikachu', 184, { costume: 52 }],
@@ -97,8 +97,8 @@ const TOP_DEMAND = [
   ['0338-shiny', 338, 'Shiny Solrock', 17],
   ['0636-shiny', 636, 'Shiny Larvesta', 16],
   ['0637-shiny', 637, 'Shiny Volcarona', 15],
-  ['0782-shiny', 782, 'Shiny Jangmo-o', 14],
-  ['0996-shiny', 996, 'Shiny Frigibax', 13],
+  ['0782-shiny', 782, 'Shiny Jangmo-o', 4, { communityDay: true }],
+  ['0996-shiny', 996, 'Shiny Frigibax', 3, { communityDay: true }],
 ];
 
 function normalizeTarget([variantId, pokemonId, label, wantedUsers, options = {}], index) {
@@ -109,7 +109,13 @@ function normalizeTarget([variantId, pokemonId, label, wantedUsers, options = {}
     pokemonId,
     label,
     wantedUsers,
-    mostWantedUsers: Math.max(8, Math.round(wantedUsers * (0.42 - Math.min(index, 60) * 0.003))),
+    mostWantedUsers: Math.min(
+      wantedUsers,
+      Math.max(
+        1,
+        Math.round(wantedUsers * (0.42 - Math.min(index, 60) * 0.003)),
+      ),
+    ),
     shiny,
     costumeId: options.costume ?? null,
     locationCard: options.background == null ? null : String(options.background),
@@ -123,6 +129,7 @@ function normalizeTarget([variantId, pokemonId, label, wantedUsers, options = {}
     dynamax: Boolean(options.dynamax),
     gigantamax: Boolean(options.gigantamax),
     crown: Boolean(options.crown),
+    communityDay: Boolean(options.communityDay),
     wantedFilters: {
       background: options.background != null,
       signature_move: options.chargedMove != null,

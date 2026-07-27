@@ -34,5 +34,10 @@ test('refreshes rankings with individual statements compatible with production M
   assert.equal(statements.length, 2);
   assert.match(statements[0], /^DELETE FROM pokemon_variant_rankings$/);
   assert.match(statements[1], /^INSERT INTO pokemon_variant_rankings/);
+  assert.match(
+    statements[1],
+    /is_caught = 1 OR registered = 1/,
+    'Pokédex registrations should count as ownership',
+  );
   assert.equal(statements.some((statement) => statement.includes(';')), false);
 });

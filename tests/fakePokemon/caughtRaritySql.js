@@ -39,7 +39,7 @@ SELECT
   variant_id,
   COUNT(DISTINCT CASE WHEN is_wanted = 1 THEN user_id END),
   COUNT(DISTINCT CASE WHEN is_wanted = 1 AND most_wanted = 1 THEN user_id END),
-  COUNT(DISTINCT CASE WHEN is_caught = 1 THEN user_id END),
+  COUNT(DISTINCT CASE WHEN is_caught = 1 OR registered = 1 THEN user_id END),
   UTC_TIMESTAMP(6)
 FROM instances
 WHERE variant_id IS NOT NULL AND variant_id <> '' AND disabled = 0
