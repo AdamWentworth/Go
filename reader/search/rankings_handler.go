@@ -105,7 +105,7 @@ func PokemonRankings(c fiber.Ctx) error {
 		limit,
 	)
 	c.Set("ETag", etag)
-	c.Set("Cache-Control", "private, max-age=60")
+	c.Set("Cache-Control", "private, no-store")
 	if c.Get("If-None-Match") == etag {
 		return c.Status(fiber.StatusNotModified).Send(nil)
 	}

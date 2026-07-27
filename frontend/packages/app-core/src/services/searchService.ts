@@ -44,7 +44,7 @@ export async function getPokemonCommunityRankings(
 ): Promise<PokemonCommunityRankingsPayload> {
   const response = await requestWithPolicy(
     buildUrl(SEARCH_API_URL, searchContract.endpoints.rankings, { limit }),
-    { method: 'GET' },
+    { method: 'GET', cache: 'no-store' },
   );
   const payload = await parseJsonSafe<PokemonCommunityRankingsPayload>(response);
   if (!response.ok || !payload) {

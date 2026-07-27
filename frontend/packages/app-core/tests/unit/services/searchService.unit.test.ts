@@ -93,7 +93,11 @@ describe('searchService.getPokemonCommunityRankings', () => {
     await expect(getPokemonCommunityRankings(40)).resolves.toEqual(payload);
     expect(fetchMock).toHaveBeenCalledWith(
       expect.stringContaining('/rankings?limit=40'),
-      expect.objectContaining({ credentials: 'include', method: 'GET' }),
+      expect.objectContaining({
+        credentials: 'include',
+        method: 'GET',
+        cache: 'no-store',
+      }),
     );
   });
 

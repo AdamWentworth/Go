@@ -72,7 +72,7 @@ func TestPokemonRankingsReturnsSnapshotAndCacheValidators(t *testing.T) {
 	if receivedLimit != 25 {
 		t.Fatalf("loader limit = %d, want 25", receivedLimit)
 	}
-	if got := response.Header.Get("Cache-Control"); got != "private, max-age=60" {
+	if got := response.Header.Get("Cache-Control"); got != "private, no-store" {
 		t.Fatalf("Cache-Control = %q", got)
 	}
 	if response.Header.Get("ETag") == "" {
