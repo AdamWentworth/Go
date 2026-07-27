@@ -8,6 +8,8 @@
     "seed:pokemon": "node generateFakePokemon.js",
     "seed:delete-users": "node deleteFakeUsers.js",
     "seed:wanted-demand": "node reconcileFakeWantedRankings.js",
+    "preview:caught-rarity": "node previewFakeCaughtRankings.js",
+    "seed:caught-rarity": "node reconcileFakeCaughtRankings.js",
     "test": "node --test fakePokemon/*.test.js"
   },
   "keywords": [],
