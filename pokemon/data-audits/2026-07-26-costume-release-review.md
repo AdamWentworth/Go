@@ -34,6 +34,18 @@ Normal assets belong in `assets/images/costumes/`. Shiny assets belong in
 `assets/images/costumes_shiny/`. The reviewed source marks all twelve costumes
 as Shiny-eligible.
 
+Female-specific Pikachu assets belong in `assets/images/female/costumes/` and
+`assets/images/female/costumes_shiny/`. The catalog records for costume IDs
+`323`, `325`, `326`, `328`, `329`, `330`, and `332` include these stable image
+targets:
+
+- `female_pokemon_25_<costume>_default.png`
+- `female_pokemon_25_<costume>_shiny.png`
+
+The authoring script derives this behavior from the species `female_unique`
+flag, so future costumes for any species with distinct female artwork receive
+the same complete set of image URLs automatically.
+
 ## Background links
 
 - Background `239` (Pokopia) links Ditto to costume IDs `321` and `322`.

@@ -63,6 +63,17 @@ class CostumeReleaseRosterTests(unittest.TestCase):
                 f"/images/costumes_shiny/pokemon_{release.pokemon_id}_"
                 f"{release.costume_name}_shiny.png",
             )
+            self.assertEqual(
+                release.female_image_url,
+                f"/images/female/costumes/female_pokemon_{release.pokemon_id}_"
+                f"{release.costume_name}_default.png",
+            )
+            self.assertEqual(
+                release.shiny_female_image_url,
+                f"/images/female/costumes_shiny/"
+                f"female_pokemon_{release.pokemon_id}_"
+                f"{release.costume_name}_shiny.png",
+            )
 
     def test_background_roster_covers_each_known_costume_event(self) -> None:
         self.assertEqual(BASEBALL_BACKGROUND_IDS, tuple(range(202, 211)))
@@ -86,6 +97,10 @@ class CostumeReleaseCatalogTests(TempDBTestCase):
             return
         cursor = self.db_connection.get_cursor()
         try:
+            cursor.execute(
+                "UPDATE pokemon SET female_unique = TRUE WHERE pokemon_id = ?",
+                (25,),
+            )
             cursor.executemany(
                 """
                 INSERT INTO pokemon (pokemon_id, name, pokedex_number)
@@ -182,7 +197,8 @@ class CostumeReleaseCatalogTests(TempDBTestCase):
                 """
                 SELECT shiny_available, date_available,
                        date_shiny_available, image_url_costume,
-                       image_url_shiny_costume
+                       image_url_shiny_costume, image_url_costume_female,
+                       image_url_shiny_costume_female
                 FROM costume_pokemon
                 WHERE costume_id = ?
                 """,
@@ -194,7 +210,36 @@ class CostumeReleaseCatalogTests(TempDBTestCase):
                 "2026-07-26",
                 "/images/costumes/pokemon_25_test_costume_default.png",
                 "/images/costumes_shiny/pokemon_25_test_costume_shiny.png",
+                "/images/female/costumes/"
+                "female_pokemon_25_test_costume_default.png",
+                "/images/female/costumes_shiny/"
+                "female_pokemon_25_test_costume_shiny.png",
             ),
+        )
+
+    def test_costume_upsert_omits_female_urls_for_species_without_unique_art(self) -> None:
+        connection = self._catalog_connection()
+        release = CostumeRelease(132, "Ditto", "test_costume", "2026-07-26")
+
+        costume_id = ensure_costume(
+            connection,
+            release,
+            write=True,
+            stats=ApplyStats(),
+        )
+        connection.commit()
+
+        self.assertEqual(
+            self.row(
+                """
+                SELECT image_url_costume_female,
+                       image_url_shiny_costume_female
+                FROM costume_pokemon
+                WHERE costume_id = ?
+                """,
+                (costume_id,),
+            ),
+            (None, None),
         )
 
     def test_link_reconciliation_supports_two_costumes_without_touching_other_pokemon(self) -> None:

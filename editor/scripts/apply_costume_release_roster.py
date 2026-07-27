@@ -58,6 +58,20 @@ class CostumeRelease:
             f"{self.costume_name}_shiny.png"
         )
 
+    @property
+    def female_image_url(self) -> str:
+        return (
+            f"/images/female/costumes/female_pokemon_{self.pokemon_id}_"
+            f"{self.costume_name}_default.png"
+        )
+
+    @property
+    def shiny_female_image_url(self) -> str:
+        return (
+            f"/images/female/costumes_shiny/female_pokemon_{self.pokemon_id}_"
+            f"{self.costume_name}_shiny.png"
+        )
+
 
 @dataclass(frozen=True)
 class EventBackground:
@@ -156,6 +170,14 @@ def validate_roster() -> None:
             raise RuntimeError(f"Invalid normal image target for {release.costume_name}.")
         if not release.shiny_image_url.startswith("/images/costumes_shiny/"):
             raise RuntimeError(f"Invalid Shiny image target for {release.costume_name}.")
+        if not release.female_image_url.startswith("/images/female/costumes/"):
+            raise RuntimeError(f"Invalid female image target for {release.costume_name}.")
+        if not release.shiny_female_image_url.startswith(
+            "/images/female/costumes_shiny/"
+        ):
+            raise RuntimeError(
+                f"Invalid Shiny female image target for {release.costume_name}."
+            )
 
     if BASEBALL_BACKGROUND_IDS != tuple(range(202, 211)):
         raise RuntimeError("The reviewed NPB background range has changed.")
@@ -175,7 +197,7 @@ def ensure_costume(
     stats: ApplyStats,
 ) -> int | None:
     pokemon = connection.execute(
-        "SELECT name FROM pokemon WHERE pokemon_id = ?",
+        "SELECT name, female_unique FROM pokemon WHERE pokemon_id = ?",
         (release.pokemon_id,),
     ).fetchone()
     if pokemon is None:
@@ -188,6 +210,7 @@ def ensure_costume(
             f"expected {release.pokemon_name}."
         )
 
+    female_unique = bool(pokemon[1])
     row = connection.execute(
         """
         SELECT costume_id, shiny_available, date_available,
@@ -206,8 +229,8 @@ def ensure_costume(
         release.released_on,
         release.normal_image_url,
         release.shiny_image_url,
-        None,
-        None,
+        release.female_image_url if female_unique else None,
+        release.shiny_female_image_url if female_unique else None,
     )
 
     if row is None:
