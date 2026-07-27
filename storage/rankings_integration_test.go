@@ -123,8 +123,11 @@ func TestRankingsAggregationCountsDistinctUsers(t *testing.T) {
 	if err := gormDB.First(&snapshot, "snapshot_key = 1").Error; err != nil {
 		t.Fatalf("load rankings snapshot: %v", err)
 	}
-	if snapshot.CollectorUserCount != 3 || snapshot.WishlistUserCount != 3 {
-		t.Fatalf("unexpected snapshot population: %#v", snapshot)
+	if snapshot.CollectorUserCount != 4 || snapshot.WishlistUserCount != 3 {
+		t.Fatalf(
+			"snapshot should count caught or registered collectors and wanted users distinctly: %#v",
+			snapshot,
+		)
 	}
 
 	if err := gormDB.Exec(
