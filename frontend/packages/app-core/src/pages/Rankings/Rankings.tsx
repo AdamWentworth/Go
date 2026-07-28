@@ -540,6 +540,8 @@ const Rankings: React.FC = () => {
   const [visibleCount, setVisibleCount] = useState(INITIAL_RESULT_COUNT);
   const [showQuickControls, setShowQuickControls] = useState(false);
   const filterSummaryRef = useRef<HTMLDivElement | null>(null);
+  const wantedTabRef = useRef<HTMLButtonElement | null>(null);
+  const rarestTabRef = useRef<HTMLButtonElement | null>(null);
   const { data, error, loading, refresh } = useCommunityRankings(true);
   const mode: RankingMode =
     searchParams.get('view') === 'rarest' ? 'rarest' : 'wanted';
@@ -711,6 +713,23 @@ const Rankings: React.FC = () => {
     });
     setVisibleCount(INITIAL_RESULT_COUNT);
   };
+  const handleModeTabKeyDown = (
+    event: React.KeyboardEvent<HTMLButtonElement>,
+  ) => {
+    let nextMode: RankingMode | null = null;
+    if (event.key === 'ArrowRight' || event.key === 'ArrowLeft') {
+      nextMode = mode === 'wanted' ? 'rarest' : 'wanted';
+    } else if (event.key === 'Home') {
+      nextMode = 'wanted';
+    } else if (event.key === 'End') {
+      nextMode = 'rarest';
+    }
+    if (!nextMode) return;
+
+    event.preventDefault();
+    selectMode(nextMode);
+    (nextMode === 'wanted' ? wantedTabRef : rarestTabRef).current?.focus();
+  };
   const hasActiveFilters =
     category !== 'all' ||
     personalFilter !== 'all' ||
@@ -763,23 +782,29 @@ const Rankings: React.FC = () => {
                 aria-label="Community ranking"
               >
                 <button
+                  ref={wantedTabRef}
                   type="button"
                   role="tab"
                   aria-selected={mode === 'wanted'}
                   aria-controls="community-ranking-results"
+                  tabIndex={mode === 'wanted' ? 0 : -1}
                   className={mode === 'wanted' ? 'active' : ''}
                   onClick={() => selectMode('wanted')}
+                  onKeyDown={handleModeTabKeyDown}
                 >
                   <FaHeart aria-hidden="true" />
                   Most wanted
                 </button>
                 <button
+                  ref={rarestTabRef}
                   type="button"
                   role="tab"
                   aria-selected={mode === 'rarest'}
                   aria-controls="community-ranking-results"
+                  tabIndex={mode === 'rarest' ? 0 : -1}
                   className={mode === 'rarest' ? 'active' : ''}
                   onClick={() => selectMode('rarest')}
+                  onKeyDown={handleModeTabKeyDown}
                 >
                   <FaMedal aria-hidden="true" />
                   Rarest owned

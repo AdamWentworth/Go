@@ -119,4 +119,74 @@ test.describe('Community rankings page', () => {
 
     expect(diagnostics.blockingErrors()).toEqual([]);
   });
+
+  test('supports keyboard tabs, reduced motion, and responsive controls', async ({
+    page,
+  }, testInfo) => {
+    const diagnostics = attachBrowserDiagnostics(page, testInfo);
+
+    try {
+      await page.emulateMedia({ reducedMotion: 'reduce' });
+      await installE2eRoutes(page, { communityRankings: rankings });
+      await seedRankingsLogin(page);
+      await page.goto('/rankings', { waitUntil: 'domcontentloaded' });
+
+      const wantedTab = page.getByRole('tab', { name: 'Most wanted' });
+      const rarestTab = page.getByRole('tab', { name: 'Rarest owned' });
+      await wantedTab.focus();
+      await page.keyboard.press('ArrowRight');
+      await expect(rarestTab).toBeFocused();
+      await expect(rarestTab).toHaveAttribute('aria-selected', 'true');
+
+      const reducedMotionAnimation = await page.evaluate(() => {
+        const probe = document.createElement('nav');
+        probe.className = 'community-ranking-quick-controls';
+        probe.hidden = true;
+        document.body.append(probe);
+        const animationName = getComputedStyle(probe).animationName;
+        probe.remove();
+        return animationName;
+      });
+      expect(reducedMotionAnimation).toBe('none');
+
+      const controlMetrics = await page
+        .locator('.community-ranking-filters button')
+        .evaluateAll((controls) => ({
+          minimumHeight: Math.min(
+            ...controls.map((control) => control.getBoundingClientRect().height),
+          ),
+          overflow:
+            document.documentElement.scrollWidth >
+            document.documentElement.clientWidth,
+        }));
+      expect(controlMetrics.minimumHeight).toBeGreaterThanOrEqual(
+        testInfo.project.name.startsWith('mobile') ? 40 : 24,
+      );
+      expect(controlMetrics.overflow).toBe(false);
+    } finally {
+      await diagnostics.flush();
+    }
+
+    expect(diagnostics.blockingErrors()).toEqual([]);
+  });
+
+  test('matches the public responsive visual baseline', async ({
+    page,
+  }, testInfo) => {
+    test.skip(
+      !['chromium-desktop', 'mobile-chrome'].includes(testInfo.project.name),
+      'Visual baselines are maintained for representative desktop and mobile Chromium.',
+    );
+    await installE2eRoutes(page, { communityRankings: rankings });
+    await page.goto('/rankings', { waitUntil: 'domcontentloaded' });
+    await expect(
+      page.getByRole('heading', { name: 'Community Rankings' }),
+    ).toBeVisible();
+
+    await expect(page).toHaveScreenshot('community-rankings-public.png', {
+      animations: 'disabled',
+      fullPage: true,
+      mask: [page.locator('.community-rankings-updated')],
+    });
+  });
 });

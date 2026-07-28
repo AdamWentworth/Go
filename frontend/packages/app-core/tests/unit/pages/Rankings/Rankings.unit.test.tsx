@@ -253,6 +253,32 @@ describe('Community Rankings page', () => {
     expect(screen.queryByText('6 trainers want this')).not.toBeInTheDocument();
   });
 
+  it('supports complete keyboard navigation between ranking tabs', () => {
+    renderRankings();
+    const wantedTab = screen.getByRole('tab', { name: 'Most wanted' });
+    const rarestTab = screen.getByRole('tab', { name: 'Rarest owned' });
+
+    wantedTab.focus();
+    fireEvent.keyDown(wantedTab, { key: 'ArrowRight' });
+    expect(rarestTab).toHaveFocus();
+    expect(rarestTab).toHaveAttribute('aria-selected', 'true');
+    expect(wantedTab).toHaveAttribute('tabindex', '-1');
+
+    fireEvent.keyDown(rarestTab, { key: 'Home' });
+    expect(wantedTab).toHaveFocus();
+    expect(wantedTab).toHaveAttribute('aria-selected', 'true');
+
+    fireEvent.keyDown(wantedTab, { key: 'End' });
+    expect(rarestTab).toHaveFocus();
+    expect(rarestTab).toHaveAttribute('aria-selected', 'true');
+  });
+
+  it('has no automated accessibility violations in the public view', async () => {
+    const { container } = renderRankings();
+
+    await expect(container).toHaveNoViolations();
+  });
+
   it('refreshes the snapshot from the timestamp control', () => {
     renderRankings();
 
