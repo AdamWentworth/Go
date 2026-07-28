@@ -6,6 +6,7 @@ import {
   FaCheck,
   FaEnvelope,
   FaDiscord,
+  FaFacebookF,
   FaGamepad,
   FaLock,
   FaMapMarkerAlt,
@@ -43,9 +44,10 @@ interface RegisterFormProps {
   showOptionsOverlay: boolean;
   setShowOptionsOverlay: (show: boolean) => void;
   locationOptions: LocationSuggestion[];
-  oauthProvider?: 'google' | 'discord';
+  oauthProvider?: 'google' | 'discord' | 'facebook';
   onGoogleClick?: () => void;
   onDiscordClick?: () => void;
+  onFacebookClick?: () => void;
 }
 
 const emailSteps = [
@@ -83,9 +85,12 @@ const RegisterForm: FC<RegisterFormProps> = ({
   oauthProvider,
   onGoogleClick,
   onDiscordClick,
+  onFacebookClick,
 }) => {
   const [step, setStep] = useState(0);
-  const [authMethod, setAuthMethod] = useState<'email' | 'google' | 'discord' | null>(
+  const [authMethod, setAuthMethod] = useState<
+    'email' | 'google' | 'discord' | 'facebook' | null
+  >(
     oauthProvider || null,
   );
   const steps = oauthProvider ? googleSteps : emailSteps;
@@ -176,7 +181,7 @@ const RegisterForm: FC<RegisterFormProps> = ({
                 <div className="register-method-intro">
                   <span>Choose a sign-up method</span>
                   <h2>Start your trainer account</h2>
-                  <p>Use Google, Discord, or your email address.</p>
+                  <p>Use a trusted provider or your email address.</p>
                 </div>
                 <div className="register-method-grid">
                   <button type="button" className="google-auth-button" onClick={onGoogleClick}>
@@ -186,6 +191,10 @@ const RegisterForm: FC<RegisterFormProps> = ({
                   <button type="button" className="discord-auth-button" onClick={onDiscordClick}>
                     <FaDiscord aria-hidden="true" />
                     Sign up with Discord
+                  </button>
+                  <button type="button" className="facebook-auth-button" onClick={onFacebookClick}>
+                    <FaFacebookF aria-hidden="true" />
+                    Sign up with Facebook
                   </button>
                   <button
                     type="button"
@@ -465,7 +474,8 @@ const RegisterForm: FC<RegisterFormProps> = ({
                   </button>
                 </div>
                 <p className="register-agreement">
-                  By creating an account, you agree to use PokeGoNexus respectfully and keep trainer information accurate.
+                  By creating an account, you agree to the <Link to="/terms">Terms</Link>
+                  {' '}and acknowledge the <Link to="/privacy">Privacy Policy</Link>.
                 </p>
               </>
             )}

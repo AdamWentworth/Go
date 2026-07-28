@@ -211,14 +211,15 @@
 
 .register-method-grid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(2, 1fr);
   gap: 14px;
   margin-top: 8px;
 }
 
 .register-email-method,
 .google-auth-button,
-.discord-auth-button {
+.discord-auth-button,
+.facebook-auth-button {
   display: flex;
   min-height: 76px;
   align-items: center;
@@ -240,7 +241,8 @@
 
 .register-email-method:hover,
 .google-auth-button:hover,
-.discord-auth-button:hover {
+.discord-auth-button:hover,
+.facebook-auth-button:hover {
   transform: translateY(-2px);
   border-color: var(--color-accent-primary);
   box-shadow: 0 12px 28px rgb(0 0 0 / 20%);
@@ -268,6 +270,17 @@
 .discord-auth-button > svg {
   width: 24px;
   height: 24px;
+}
+
+.facebook-auth-button {
+  color: #fff;
+  background: #1877f2;
+  border: 1px solid #4d96f5;
+}
+
+.facebook-auth-button > svg {
+  width: 22px;
+  height: 22px;
 }
 
 .google-auth-button > svg {

@@ -21,6 +21,16 @@ jest.mock('../services/discordOAuthService', () => ({
   }))
 }));
 
+jest.mock('../services/facebookOAuthService', () => ({
+  createAuthorizationUrl: jest.fn(({ state }) =>
+    `https://facebook.test/dialog/oauth?state=${encodeURIComponent(state)}`),
+  exchangeCode: jest.fn(async () => ({
+    subject: 'facebook-subject-789',
+    email: 'facebook.user@example.com',
+    emailVerified: true
+  }))
+}));
+
 jest.setTimeout(120000);
 
 let mongoServer;
@@ -547,6 +557,96 @@ describe('authentication service integration', () => {
       'http://localhost:3000/login?oauth=account-exists'
     );
     const existing = await User.findOne({ email: 'discord.user@example.com' }).lean();
+    expect(existing.identities).toHaveLength(0);
+  });
+
+  test('Facebook OAuth creates and completes a pending registration', async () => {
+    const start = await request(app)
+      .get('/auth/facebook')
+      .query({
+        device_id: validDeviceId,
+        return_to: 'http://localhost:3000',
+        intent: 'register'
+      });
+    const stateCookie = start.headers['set-cookie'].find((cookie) =>
+      cookie.startsWith('facebookOAuthState='));
+    const state = new URL(start.headers.location).searchParams.get('state');
+    const callback = await request(app)
+      .get('/auth/facebook/callback')
+      .set('Cookie', stateCookie)
+      .query({ code: 'facebook-code', state });
+
+    expect(callback.headers.location).toBe(
+      'http://localhost:3000/register?oauth=facebook'
+    );
+    const pendingCookie = callback.headers['set-cookie'].find((cookie) =>
+      cookie.startsWith('facebookOAuthPending='));
+    const completed = await request(app)
+      .post('/auth/facebook/complete-registration')
+      .set('Origin', 'http://localhost:3000')
+      .set('Cookie', pendingCookie)
+      .send({ username: 'facebook_user' });
+
+    expect(completed.status).toBe(201);
+    const user = await User.findOne({ username: 'facebook_user' }).lean();
+    expect(user.identities).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        provider: 'facebook',
+        subject: 'facebook-subject-789'
+      })
+    ]));
+  });
+
+  test('Facebook login unifies a matching email account', async () => {
+    await registerUser({ email: 'facebook.user@example.com' });
+    const existing = await User.findOne({ email: 'facebook.user@example.com' }).lean();
+    const start = await request(app)
+      .get('/auth/facebook')
+      .query({ device_id: validDeviceId, return_to: 'http://localhost:3000' });
+    const stateCookie = start.headers['set-cookie'].find((cookie) =>
+      cookie.startsWith('facebookOAuthState='));
+    const state = new URL(start.headers.location).searchParams.get('state');
+    const callback = await request(app)
+      .get('/auth/facebook/callback')
+      .set('Cookie', stateCookie)
+      .query({ code: 'facebook-code', state });
+
+    expect(callback.headers.location).toBe('http://localhost:3000/login?oauth=success');
+    const linked = await User.findOne({ email: 'facebook.user@example.com' }).lean();
+    expect(linked._id.toString()).toBe(existing._id.toString());
+    expect(linked.identities).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        provider: 'facebook',
+        subject: 'facebook-subject-789'
+      })
+    ]));
+  });
+
+  test('Facebook registration rejects an email that already has an account', async () => {
+    await User.create({
+      username: validLoginId,
+      email: 'facebook.user@example.com',
+      password: 'existing-password-hash'
+    });
+    const start = await request(app)
+      .get('/auth/facebook')
+      .query({
+        device_id: validDeviceId,
+        return_to: 'http://localhost:3000',
+        intent: 'register'
+      });
+    const stateCookie = start.headers['set-cookie'].find((cookie) =>
+      cookie.startsWith('facebookOAuthState='));
+    const state = new URL(start.headers.location).searchParams.get('state');
+    const callback = await request(app)
+      .get('/auth/facebook/callback')
+      .set('Cookie', stateCookie)
+      .query({ code: 'facebook-code', state });
+
+    expect(callback.headers.location).toBe(
+      'http://localhost:3000/login?oauth=account-exists'
+    );
+    const existing = await User.findOne({ email: 'facebook.user@example.com' }).lean();
     expect(existing.identities).toHaveLength(0);
   });
 });

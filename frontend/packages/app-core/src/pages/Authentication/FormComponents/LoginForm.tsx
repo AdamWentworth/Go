@@ -11,7 +11,8 @@ import type { LoginFormValues } from '../../../types/auth';
 import type { FormErrors } from '../../../types/auth';
 import { startGoogleAuthentication } from '@/services/authService';
 import { startDiscordAuthentication } from '@/services/authService';
-import { FaDiscord } from 'react-icons/fa';
+import { startFacebookAuthentication } from '@/services/authService';
+import { FaDiscord, FaFacebookF } from 'react-icons/fa';
 
 interface LoginFormProps {
   values: LoginFormValues;
@@ -79,6 +80,14 @@ const LoginForm: FC<LoginFormProps> = ({
             >
               <FaDiscord aria-hidden="true" />
               Login with Discord
+            </button>
+            <button
+              type="button"
+              className="facebook-login-button"
+              onClick={() => startFacebookAuthentication('login')}
+            >
+              <FaFacebookF aria-hidden="true" />
+              Login with Facebook
             </button>
           </div>
         </form>

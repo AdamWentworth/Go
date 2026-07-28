@@ -26,7 +26,7 @@ const AUTH_API_URL = import.meta.env.VITE_AUTH_API_URL;
 const USERS_API_URL = import.meta.env.VITE_USERS_API_URL;
 
 export interface GoogleRegistration {
-  provider: 'google' | 'discord';
+  provider: 'google' | 'discord' | 'facebook';
   email: string;
   emailVerified: true;
 }
@@ -45,6 +45,16 @@ export const startDiscordAuthentication = (
   intent: 'login' | 'register' = 'login',
 ): void => {
   const url = new URL(buildUrl(AUTH_API_URL, authContract.endpoints.discordStart));
+  url.searchParams.set('device_id', getDeviceId());
+  url.searchParams.set('return_to', window.location.origin);
+  url.searchParams.set('intent', intent);
+  window.location.assign(url.toString());
+};
+
+export const startFacebookAuthentication = (
+  intent: 'login' | 'register' = 'login',
+): void => {
+  const url = new URL(buildUrl(AUTH_API_URL, authContract.endpoints.facebookStart));
   url.searchParams.set('device_id', getDeviceId());
   url.searchParams.set('return_to', window.location.origin);
   url.searchParams.set('intent', intent);
@@ -81,6 +91,23 @@ export const completeDiscordRegistration = async (
   requestJson<LoginResponse>(
     AUTH_API_URL,
     authContract.endpoints.discordCompleteRegistration,
+    'POST',
+    userData,
+  );
+
+export const getPendingFacebookRegistration = async (): Promise<GoogleRegistration> =>
+  requestJson<GoogleRegistration>(
+    AUTH_API_URL,
+    authContract.endpoints.facebookPending,
+    'GET',
+  );
+
+export const completeFacebookRegistration = async (
+  userData: AuthRequestPayload,
+): Promise<LoginResponse> =>
+  requestJson<LoginResponse>(
+    AUTH_API_URL,
+    authContract.endpoints.facebookCompleteRegistration,
     'POST',
     userData,
   );

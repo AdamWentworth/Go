@@ -8,12 +8,15 @@ import useRegisterForm from './hooks/useRegisterForm';
 import {
   completeGoogleRegistration,
   completeDiscordRegistration,
+  completeFacebookRegistration,
   getPendingGoogleRegistration,
   getPendingDiscordRegistration,
+  getPendingFacebookRegistration,
   registerUser,
   loginUser,
   startGoogleAuthentication,
   startDiscordAuthentication,
+  startFacebookAuthentication,
 } from '../../services/authService';
 import './Register.css';
 import { useAuth } from '../../contexts/AuthContext';
@@ -33,7 +36,14 @@ const Register: FC = () => {
   const [searchParams] = useSearchParams();
   const isGoogleReturn = searchParams.get('oauth') === 'google';
   const isDiscordReturn = searchParams.get('oauth') === 'discord';
-  const oauthProvider = isGoogleReturn ? 'google' : isDiscordReturn ? 'discord' : null;
+  const isFacebookReturn = searchParams.get('oauth') === 'facebook';
+  const oauthProvider = isGoogleReturn
+    ? 'google'
+    : isDiscordReturn
+      ? 'discord'
+      : isFacebookReturn
+        ? 'facebook'
+        : null;
   const [oauthEmail, setOauthEmail] = useState('');
   const [oauthLoading, setOauthLoading] = useState(Boolean(oauthProvider));
   // useRegisterForm provides all the state and handlers for our register form.
@@ -71,11 +81,13 @@ const Register: FC = () => {
     if (!oauthProvider) return;
     const getPending = oauthProvider === 'google'
       ? getPendingGoogleRegistration
-      : getPendingDiscordRegistration;
+      : oauthProvider === 'discord'
+        ? getPendingDiscordRegistration
+        : getPendingFacebookRegistration;
     getPending()
       .then((pending) => setOauthEmail(pending.email))
       .catch(() => toast.error(
-        `${oauthProvider === 'google' ? 'Google' : 'Discord'} registration expired. Please try again.`,
+        `${oauthProvider === 'google' ? 'Google' : oauthProvider === 'discord' ? 'Discord' : 'Facebook'} registration expired. Please try again.`,
       ))
       .finally(() => setOauthLoading(false));
   }, [oauthProvider]);
@@ -122,7 +134,9 @@ const Register: FC = () => {
       if (oauthEmail && oauthProvider) {
         const completeRegistration = oauthProvider === 'google'
           ? completeGoogleRegistration
-          : completeDiscordRegistration;
+          : oauthProvider === 'discord'
+            ? completeDiscordRegistration
+            : completeFacebookRegistration;
         const response = await completeRegistration(sanitizedFormValues);
         finishLogin(response, sanitizedFormValues);
         setIsLoading(false);
@@ -209,6 +223,7 @@ const Register: FC = () => {
           oauthProvider={oauthEmail && oauthProvider ? oauthProvider : undefined}
           onGoogleClick={() => startGoogleAuthentication('register')}
           onDiscordClick={() => startDiscordAuthentication('register')}
+          onFacebookClick={() => startFacebookAuthentication('register')}
         />
       )}
       <ToastContainer />
