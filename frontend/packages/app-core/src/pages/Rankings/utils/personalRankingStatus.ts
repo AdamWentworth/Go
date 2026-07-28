@@ -3,7 +3,6 @@ import type { Instances } from '@/types/instances';
 export type PersonalRankingFilter =
   | 'all'
   | 'owned'
-  | 'available'
   | 'trade'
   | 'wanted'
   | 'missing';
@@ -84,8 +83,6 @@ export function matchesPersonalRankingFilter(
   switch (filter) {
     case 'owned':
       return Boolean(status?.registered);
-    case 'available':
-      return Boolean(status?.availableCount);
     case 'trade':
       return Boolean(status?.tradeCount);
     case 'wanted':

@@ -6,7 +6,6 @@ import {
   FaHeart,
   FaMedal,
   FaSearch,
-  FaTag,
   FaUsers,
 } from 'react-icons/fa';
 import type { PokemonCommunityRanking } from '@shared-contracts/search';
@@ -36,6 +35,28 @@ interface JoinedRanking extends PokemonCommunityRanking {
 type RankingWithVariant = PokemonCommunityRanking & {
   variant: PokemonVariant;
 };
+
+const CATEGORY_FILTERS: ReadonlyArray<{
+  value: RankingCategory;
+  label: string;
+  mask?: string;
+  rarestOnly?: boolean;
+}> = [
+  { value: 'all', label: 'All' },
+  { value: 'shiny', label: 'Shiny', mask: '/images/shiny_search.png' },
+  { value: 'costume', label: 'Costume', mask: '/images/costume_search.png' },
+  {
+    value: 'shadow',
+    label: 'Shadow',
+    mask: '/images/shadow_search.png',
+    rarestOnly: true,
+  },
+  {
+    value: 'max',
+    label: 'Max',
+    mask: '/images/gigantamax_title_mask.png',
+  },
+];
 
 const INITIAL_RESULT_COUNT = 30;
 const RESULT_INCREMENT = 30;
@@ -501,17 +522,10 @@ const Rankings: React.FC = () => {
               className="community-ranking-filters"
               aria-label="Ranking filters"
             >
-              <div>
-                {([
-                    ['all', 'All'],
-                    ['shiny', 'Shiny'],
-                    ['costume', 'Costume'],
-                    ...(mode === 'rarest'
-                      ? ([['shadow', 'Shadow']] as const)
-                      : []),
-                    ['max', 'Max'],
-                  ] as ReadonlyArray<readonly [RankingCategory, string]>
-                ).map(([value, label]) => (
+              <div className="community-ranking-filter-row community-ranking-filter-row--category">
+                {CATEGORY_FILTERS
+                  .filter(({ rarestOnly }) => !rarestOnly || mode === 'rarest')
+                  .map(({ value, label, mask }) => (
                   <button
                     key={value}
                     type="button"
@@ -522,20 +536,32 @@ const Rankings: React.FC = () => {
                       setVisibleCount(INITIAL_RESULT_COUNT);
                     }}
                   >
-                    <FaTag aria-hidden="true" />
+                    {mask && (
+                      <span
+                        className="community-ranking-filter-mask"
+                        data-ranking-filter-asset={mask}
+                        aria-hidden="true"
+                        style={{
+                          WebkitMaskImage: `url("${resolveAssetUrl(mask)}")`,
+                          maskImage: `url("${resolveAssetUrl(mask)}")`,
+                        }}
+                      />
+                    )}
                     {label}
                   </button>
                 ))}
               </div>
               {isLoggedIn && (
-                <div aria-label="My collection">
+                <div
+                  className="community-ranking-filter-row community-ranking-filter-row--personal"
+                  aria-label="My collection"
+                >
                   {(
                     [
-                      ['all', 'Everyone'],
-                      ['owned', 'Mine'],
-                      ['available', 'Available'],
+                      ['all', 'All rankings'],
+                      ['owned', 'My collection'],
                       ['trade', 'For trade'],
-                      ['wanted', 'Wanted'],
+                      ['wanted', 'Wishlist'],
                       ['missing', 'Missing'],
                     ] as const
                   ).map(([value, label]) => (

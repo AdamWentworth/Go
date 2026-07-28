@@ -57,7 +57,6 @@ describe('personal ranking status', () => {
     const wanted = statuses.get('mewtwo-armored');
 
     expect(matchesPersonalRankingFilter(owned, 'owned')).toBe(true);
-    expect(matchesPersonalRankingFilter(owned, 'available')).toBe(true);
     expect(matchesPersonalRankingFilter(owned, 'trade')).toBe(true);
     expect(matchesPersonalRankingFilter(wanted, 'wanted')).toBe(true);
     expect(matchesPersonalRankingFilter(undefined, 'missing')).toBe(true);

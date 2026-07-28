@@ -225,6 +225,36 @@ describe('Community Rankings page', () => {
     );
   });
 
+  it('uses profile playstyle artwork in the compact ranking filters', () => {
+    render(<Rankings />);
+
+    const allButton = screen.getByRole('button', { name: 'All' });
+    const shinyButton = screen.getByRole('button', { name: 'Shiny' });
+    const costumeButton = screen.getByRole('button', { name: 'Costume' });
+    const maxButton = screen.getByRole('button', { name: 'Max' });
+
+    expect(allButton.querySelector('[data-ranking-filter-asset]')).toBeNull();
+    expect(shinyButton.querySelector('[data-ranking-filter-asset]'))
+      .toHaveAttribute('data-ranking-filter-asset', '/images/shiny_search.png');
+    expect(costumeButton.querySelector('[data-ranking-filter-asset]'))
+      .toHaveAttribute('data-ranking-filter-asset', '/images/costume_search.png');
+    expect(maxButton.querySelector('[data-ranking-filter-asset]'))
+      .toHaveAttribute(
+        'data-ranking-filter-asset',
+        '/images/gigantamax_title_mask.png',
+      );
+
+    fireEvent.click(screen.getByRole('tab', { name: 'Rarest owned' }));
+    expect(
+      screen
+        .getByRole('button', { name: 'Shadow' })
+        .querySelector('[data-ranking-filter-asset]'),
+    ).toHaveAttribute(
+      'data-ranking-filter-asset',
+      '/images/shadow_search.png',
+    );
+  });
+
   it('shows public rankings without requiring a signed-in user', () => {
     render(<Rankings />);
 
@@ -256,7 +286,10 @@ describe('Community Rankings page', () => {
     expect(screen.getByText('1 caught')).toBeInTheDocument();
     expect(screen.getByText('1 available')).toBeInTheDocument();
 
-    fireEvent.click(screen.getByRole('button', { name: 'Mine' }));
+    expect(screen.queryByRole('button', { name: 'Available' }))
+      .not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'My collection' }));
     expect(screen.getByText('Pikachu')).toBeInTheDocument();
     expect(screen.queryByText('Bulbasaur')).not.toBeInTheDocument();
 
