@@ -1,6 +1,6 @@
 // src/components/Login.tsx
 
-import React, { useEffect, useRef, useState, FC } from 'react';
+import React, { useCallback, useEffect, useRef, useState, FC } from 'react';
 import { useSearchParams } from 'react-router';
 import LoginForm from './FormComponents/LoginForm';
 import SuccessMessage from './SuccessMessage';
@@ -48,6 +48,45 @@ const Login: FC = () => {
   const [isResetPasswordOpen, setIsResetPasswordOpen] = useState<boolean>(false);
   const handledOAuthStatus = useRef<string | null>(null);
 
+  const hydrateUserOverview = useCallback(async (userId: string) => {
+    const overview = (await fetchUserOverview(userId)) as UserOverview;
+
+    log.debug('Fetched user overview:', overview);
+
+    setInstances(overview.pokemon_instances);
+    const normalizedTrades = Object.entries(overview.trades ?? {}).reduce<
+      Record<string, TradeStoreTrade>
+    >((acc, [tradeId, trade]) => {
+      if (!trade) return acc;
+      const parsedLastUpdate =
+        typeof trade.last_update === 'number'
+          ? trade.last_update
+          : typeof trade.last_update === 'string'
+          ? new Date(trade.last_update).getTime()
+          : undefined;
+      acc[tradeId] = {
+        ...trade,
+        trade_id: String(trade.trade_id ?? tradeId),
+        trade_status: String(trade.trade_status ?? ''),
+        last_update: Number.isFinite(parsedLastUpdate) ? parsedLastUpdate : undefined,
+      };
+      return acc;
+    }, {});
+    const normalizedRelatedInstances = Object.entries(
+      overview.related_instances ?? {},
+    ).reduce<Record<string, RelatedInstance>>((acc, [instanceId, instance]) => {
+      if (!instance) return acc;
+      acc[instanceId] = {
+        ...instance,
+        instance_id: String(instance.instance_id ?? instanceId),
+      };
+      return acc;
+    }, {});
+
+    setTradeData(normalizedTrades);
+    setRelatedInstances(normalizedRelatedInstances);
+  }, [setInstances, setRelatedInstances, setTradeData]);
+
   useEffect(() => {
     const oauthStatus = searchParams.get('oauth');
     if (!oauthStatus) return;
@@ -68,7 +107,7 @@ const Login: FC = () => {
 
     setIsLoading(true);
     loadOAuthSession()
-      .then((response) => {
+      .then(async (response) => {
         login({
           user_id: response.user_id,
           username: response.username,
@@ -81,12 +120,13 @@ const Login: FC = () => {
           accessTokenExpiry: response.accessTokenExpiry,
           refreshTokenExpiry: response.refreshTokenExpiry,
         });
+        await hydrateUserOverview(response.user_id);
         setFeedback('Successfully Logged in with Google');
         setIsSuccessful(true);
       })
-      .catch(() => toast.error('Google login succeeded, but the app session could not be loaded.'))
+      .catch(() => toast.error('Login succeeded, but your account data could not be loaded. Please try again.'))
       .finally(() => setIsLoading(false));
-  }, [login, searchParams]);
+  }, [hydrateUserOverview, login, searchParams]);
 
   /* ---------------------------------------------------------------------- */
   /*  onSubmit                                                              */
@@ -125,43 +165,7 @@ const Login: FC = () => {
 
       login({ ...user, token });
 
-      /* ----------------------------- fetch overview --------------------- */
-      const overview = (await fetchUserOverview(user.user_id)) as UserOverview;
-
-      log.debug('Fetched user overview:', overview);
-
-      setInstances(overview.pokemon_instances);
-      const normalizedTrades = Object.entries(overview.trades ?? {}).reduce<
-        Record<string, TradeStoreTrade>
-      >((acc, [tradeId, trade]) => {
-        if (!trade) return acc;
-        const parsedLastUpdate =
-          typeof trade.last_update === 'number'
-            ? trade.last_update
-            : typeof trade.last_update === 'string'
-            ? new Date(trade.last_update).getTime()
-            : undefined;
-        acc[tradeId] = {
-          ...trade,
-          trade_id: String(trade.trade_id ?? tradeId),
-          trade_status: String(trade.trade_status ?? ''),
-          last_update: Number.isFinite(parsedLastUpdate) ? parsedLastUpdate : undefined,
-        };
-        return acc;
-      }, {});
-      const normalizedRelatedInstances = Object.entries(
-        overview.related_instances ?? {},
-      ).reduce<Record<string, RelatedInstance>>((acc, [instanceId, instance]) => {
-        if (!instance) return acc;
-        acc[instanceId] = {
-          ...instance,
-          instance_id: String(instance.instance_id ?? instanceId),
-        };
-        return acc;
-      }, {});
-
-      setTradeData(normalizedTrades);
-      setRelatedInstances(normalizedRelatedInstances);
+      await hydrateUserOverview(user.user_id);
 
       setIsSuccessful(true);
       setFeedback('Successfully Logged in');
