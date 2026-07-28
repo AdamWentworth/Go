@@ -103,7 +103,21 @@ router.get('/google/callback', async (req, res) => {
 
     const emailOwner = await User.findOne({ email: googleIdentity.email });
     if (emailOwner) {
-      return redirectWithStatus(res, flow.returnOrigin, '/login', 'link-required');
+      emailOwner.googleId = googleIdentity.subject;
+      emailOwner.identities.push({
+        provider: 'google',
+        subject: googleIdentity.subject,
+        email: googleIdentity.email,
+        emailVerified: true
+      });
+      await emailOwner.save({ writeConcern: { w: 'majority' } });
+
+      const tokens = await createSession(User, emailOwner, flow.deviceId);
+      req.accessToken = tokens.accessToken;
+      req.refreshToken = tokens.refreshToken;
+      return setCookies(req, res, () =>
+        redirectWithStatus(res, flow.returnOrigin, '/login', 'success')
+      );
     }
 
     res.cookie(PENDING_COOKIE, signFlow({

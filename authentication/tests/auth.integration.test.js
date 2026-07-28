@@ -380,8 +380,9 @@ describe('authentication service integration', () => {
     expect(callback.headers['set-cookie'].some((cookie) => cookie.startsWith('refreshToken='))).toBe(true);
   });
 
-  test('Google OAuth does not silently merge an existing password account by email', async () => {
+  test('Google OAuth links a verified matching email to the existing password account', async () => {
     await registerUser({ email: 'google.user@example.com' });
+    const existingUser = await User.findOne({ email: 'google.user@example.com' }).lean();
     const start = await request(app)
       .get('/auth/google')
       .query({ device_id: validDeviceId, return_to: 'http://localhost:3000' });
@@ -394,6 +395,25 @@ describe('authentication service integration', () => {
       .query({ code: 'google-code', state });
 
     expect(callback.status).toBe(302);
-    expect(callback.headers.location).toBe('http://localhost:3000/login?oauth=link-required');
+    expect(callback.headers.location).toBe('http://localhost:3000/login?oauth=success');
+    expect(callback.headers['set-cookie'].some((cookie) => cookie.startsWith('refreshToken='))).toBe(true);
+
+    const linkedUser = await User.findOne({ email: 'google.user@example.com' }).lean();
+    expect(linkedUser._id.toString()).toBe(existingUser._id.toString());
+    expect(linkedUser.identities).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        provider: 'google',
+        subject: 'google-subject-123',
+        email: 'google.user@example.com',
+        emailVerified: true
+      })
+    ]));
+
+    const passwordLogin = await request(app).post('/auth/login').send({
+      username: 'google.user@example.com',
+      password: validPassphrase,
+      device_id: `${validDeviceId}-password`
+    });
+    expect(passwordLogin.status).toBe(200);
   });
 });
