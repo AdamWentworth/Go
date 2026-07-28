@@ -695,7 +695,6 @@ const Rankings: React.FC = () => {
     [joinedRows],
   );
   const visibleRows = filteredRows.slice(0, visibleCount);
-  const unmatchedCount = sourceRows.length - matchedRows.length;
   const scaleMaximum = filteredRows.reduce(
     (maximum, entry) =>
       Math.max(
@@ -1103,13 +1102,6 @@ const Rankings: React.FC = () => {
                       <FaSyncAlt aria-hidden="true" />
                     </button>
                   </span>
-                  {unmatchedCount > 0 && (
-                    <span>
-                      {unmatchedCount} newer catalog{' '}
-                      {unmatchedCount === 1 ? 'entry is' : 'entries are'} waiting
-                      for this device to refresh.
-                    </span>
-                  )}
                 </footer>
                 <details className="community-rankings-method">
                   <summary>

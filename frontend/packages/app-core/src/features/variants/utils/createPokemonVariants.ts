@@ -122,6 +122,17 @@ const createPokemonVariants = (pokemons: BasePokemon[]): PokemonVariant[] => {
           variantType: `shadow_costume_${costume.costume_id}` as VariantKind,
         };
         addVariant(shadowCostumeVariant);
+
+        if (costume.shadow_costume.image_url_shiny_shadow_costume) {
+          const shinyShadowCostumeVariant: PokemonVariant = {
+            ...defaultVariant,
+            currentImage:
+              costume.shadow_costume.image_url_shiny_shadow_costume,
+            variantType:
+              `shiny_shadow_costume_${costume.costume_id}` as VariantKind,
+          };
+          addVariant(shinyShadowCostumeVariant);
+        }
       }
     });
 

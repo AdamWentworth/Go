@@ -31,7 +31,7 @@ const useRecentPokemons = (
           }
         }
 
-        if (pokemon.variantType.startsWith('shadow_costume')) {
+        if (pokemon.variantType.includes('shadow_costume')) {
           const costumeId = parseInt(pokemon.variantType.match(/\d+/)?.[0] || '0', 10);
           const costumeData = pokemon.costumes.find(c => c.costume_id === costumeId);
           if (costumeData?.shadow_costume?.date_available) {

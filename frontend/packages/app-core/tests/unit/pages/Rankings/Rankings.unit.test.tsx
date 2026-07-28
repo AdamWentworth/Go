@@ -289,6 +289,20 @@ describe('Community Rankings page', () => {
     expect(rankingState.refresh).toHaveBeenCalledTimes(1);
   });
 
+  it('silently omits archived snapshot rows that users cannot act on', () => {
+    useVariantsStore.setState({
+      variants: useVariantsStore
+        .getState()
+        .variants.filter((variant) => variant.variant_id !== 'pikachu-shiny'),
+    });
+
+    renderRankings();
+
+    expect(screen.queryByText('Pikachu')).not.toBeInTheDocument();
+    expect(screen.queryByText(/archived ranking/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/waiting for this device/i)).not.toBeInTheDocument();
+  });
+
   it('uses the global loading overlay until ranking dependencies are ready', () => {
     rankingState.loading = true;
     useVariantsStore.setState({ variantsLoading: true });

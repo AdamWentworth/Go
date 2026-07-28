@@ -16,6 +16,7 @@ export type VariantKind =
   | `costume_${string}`
   | `costume_${string}_shiny`
   | `shadow_costume_${string}`
+  | `shiny_shadow_costume_${string}`
   | `mega${string}`
   | `shiny_mega${string}`
   | `fusion_${string}`

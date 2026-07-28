@@ -75,6 +75,49 @@ describe('createPokemonVariants (unit)', () => {
     }
   });
 
+  it('creates shiny shadow costume variants from catalog image records', () => {
+    const sample = samplePokemons[0];
+    const pokemon: BasePokemon = {
+      ...sample,
+      pokemon_id: 20,
+      name: 'Raticate',
+      costumes: [
+        {
+          costume_id: 42,
+          name: 'party',
+          image_url: 'https://example.com/raticate-party.png',
+          image_url_shiny: 'https://example.com/raticate-party-shiny.png',
+          shiny_available: 1,
+          date_available: '2020-02-25',
+          date_shiny_available: '2020-02-25',
+          shadow_costume: {
+            date_available: '2022-12-31',
+            date_shiny_available: '2026-03-03',
+            image_url_shadow_costume:
+              'https://example.com/raticate-shadow-party.png',
+            image_url_shiny_shadow_costume:
+              'https://example.com/raticate-shiny-shadow-party.png',
+          },
+        },
+      ],
+      fusion: [],
+      megaEvolutions: [],
+      max: [],
+      raid_boss: [],
+    };
+
+    const variants = createPokemonVariants([pokemon]);
+    const shinyShadowCostume = variants.find(
+      (variant) => variant.variantType === 'shiny_shadow_costume_42',
+    );
+
+    expect(shinyShadowCostume).toMatchObject({
+      variant_id: '0020-shadow_party_shiny',
+      name: 'Shiny Shadow Party Raticate',
+      currentImage: 'https://example.com/raticate-shiny-shadow-party.png',
+    });
+  });
+
   it('uses fusion-specific backgrounds for fusion variants when provided', () => {
     const baseBackgrounds = [
       {

@@ -41,13 +41,17 @@ export function getDisplayName(pokemon: PokemonVariant): string {
     }
   }
 
-  // Shadow costume variant
-  if (pokemon.variantType.startsWith('shadow_costume_')) {
-    const costumeId = pokemon.variantType.split('_')[2];
+  // Shadow costume variants
+  if (
+    pokemon.variantType.startsWith('shadow_costume_') ||
+    pokemon.variantType.startsWith('shiny_shadow_costume_')
+  ) {
+    const isShiny = pokemon.variantType.startsWith('shiny_');
+    const costumeId = pokemon.variantType.match(/costume_(.+)$/)?.[1];
     const costume = pokemon.costumes?.find(c => c.costume_id.toString() === costumeId);
     if (costume) {
       const formatted = formatCostumeName(costume.name);
-      return `Shadow ${formatted} ${baseName}`;
+      return `${isShiny ? 'Shiny ' : ''}Shadow ${formatted} ${baseName}`;
     }
   }
 

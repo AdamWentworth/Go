@@ -353,6 +353,20 @@ function getParentVariantTypes(variantType: string): string[] {
     return Array.from(parents);
   }
 
+  const shinyShadowCostumeMatch = normalized.match(
+    /^shiny_shadow_costume_(.+)$/,
+  );
+  if (shinyShadowCostumeMatch) {
+    add(`shadow_costume_${shinyShadowCostumeMatch[1]}`);
+    add(`costume_${shinyShadowCostumeMatch[1]}_shiny`);
+    add(`costume_${shinyShadowCostumeMatch[1]}`);
+    add('shiny_shadow');
+    add('shadow');
+    add('shiny');
+    add('default');
+    return Array.from(parents);
+  }
+
   if (normalized.startsWith('costume_')) {
     add('default');
     return Array.from(parents);
