@@ -1,13 +1,29 @@
 .register-form {
+  position: relative;
+  overflow: hidden;
   box-sizing: border-box;
-  width: min(760px, 100%);
+  width: min(820px, 100%);
   min-height: min(720px, calc(100dvh - 32px));
   padding: clamp(20px, 4vw, 36px);
   color: var(--color-text-primary);
-  background: var(--color-auth-card-surface);
-  border: 1px solid var(--color-border-muted);
-  border-radius: 8px;
-  box-shadow: 0 20px 60px rgb(0 0 0 / 24%);
+  background:
+    radial-gradient(circle at 100% 0%, color-mix(in srgb, var(--color-accent-primary) 16%, transparent), transparent 38%),
+    var(--color-auth-card-surface);
+  border: 1px solid color-mix(in srgb, var(--color-accent-primary) 35%, var(--color-border-muted));
+  border-radius: 22px;
+  box-shadow: 0 28px 80px rgb(0 0 0 / 34%);
+}
+
+.register-form::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto;
+  height: 4px;
+  background: linear-gradient(90deg, var(--color-accent-primary), #55b7ff 62%, transparent);
+}
+
+.register-form--method {
+  min-height: auto;
 }
 
 .register-header {
@@ -24,7 +40,8 @@
   color: var(--color-accent-primary);
   font-size: 0.72rem;
   font-weight: 900;
-  letter-spacing: 0;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
 }
 
 .register-header h1,
@@ -35,7 +52,8 @@
 }
 
 .register-header h1 {
-  font-size: clamp(1.65rem, 4vw, 2.35rem);
+  font-size: clamp(1.8rem, 4vw, 2.55rem);
+  letter-spacing: -0.035em;
 }
 
 .register-header p,
@@ -49,7 +67,8 @@
   flex: 0 0 auto;
   padding: 9px 15px;
   color: var(--color-text-primary);
-  border: 1px solid var(--color-border-muted);
+  background: color-mix(in srgb, var(--color-surface-1) 82%, transparent);
+  border: 1px solid color-mix(in srgb, var(--color-text-primary) 38%, transparent);
   border-radius: 999px;
   font-weight: 800;
   text-decoration: none;
@@ -137,14 +156,18 @@
   display: flex;
   align-items: center;
   gap: 16px;
-  padding-bottom: 15px;
-  border-bottom: 1px solid var(--color-border-muted);
+  padding: 18px;
+  background: color-mix(in srgb, var(--color-surface-1) 72%, transparent);
+  border: 1px solid var(--color-border-muted);
+  border-radius: 16px;
 }
 
 .register-step-heading > svg {
+  box-sizing: content-box;
+  flex: 0 0 auto;
   width: 36px;
   height: 36px;
-  padding: 9px;
+  padding: 11px;
   color: var(--color-text-inverse);
   border-radius: 50%;
   background: var(--color-accent-primary);
@@ -160,27 +183,37 @@
 
 .register-method-grid {
   display: grid;
-  gap: 12px;
-  margin-top: 24px;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+  margin-top: 8px;
 }
 
-.register-email-method {
+.register-email-method,
+.google-auth-button {
   display: flex;
-  min-height: 50px;
+  min-height: 76px;
   align-items: center;
   justify-content: center;
   gap: 12px;
+  padding: 0 20px;
+  border-radius: 14px;
+  font-size: 1rem;
+  font-weight: 850;
+  cursor: pointer;
+  transition: transform 150ms ease, border-color 150ms ease, box-shadow 150ms ease;
+}
+
+.register-email-method {
   color: var(--color-text-primary);
   background: var(--color-surface-1);
   border: 1px solid var(--color-border-muted);
-  border-radius: 6px;
-  font-size: 1rem;
-  font-weight: 800;
-  cursor: pointer;
 }
 
-.register-email-method:hover {
+.register-email-method:hover,
+.google-auth-button:hover {
+  transform: translateY(-2px);
   border-color: var(--color-accent-primary);
+  box-shadow: 0 12px 28px rgb(0 0 0 / 20%);
 }
 
 .register-method-note {
@@ -191,18 +224,9 @@
 }
 
 .google-auth-button {
-  display: flex;
-  min-height: 50px;
-  align-items: center;
-  justify-content: center;
-  gap: 12px;
   color: #202124;
   background: #fff;
   border: 1px solid #dadce0;
-  border-radius: 6px;
-  font-size: 1rem;
-  font-weight: 800;
-  cursor: pointer;
 }
 
 .google-auth-button > svg {
@@ -219,7 +243,7 @@
   color: var(--color-text-primary);
   background: var(--color-surface-1);
   border: 1px solid var(--color-border-muted);
-  border-radius: 6px;
+  border-radius: 12px;
   font: inherit;
   font-size: 1rem;
 }
@@ -295,7 +319,7 @@
   cursor: pointer;
   background: var(--color-surface-1);
   border: 1px solid var(--color-border-muted);
-  border-radius: 6px;
+  border-radius: 12px;
 }
 
 .register-choice input {
@@ -322,7 +346,7 @@
   color: var(--color-text-primary);
   background: transparent;
   border: 1px solid var(--color-accent-primary);
-  border-radius: 6px;
+  border-radius: 12px;
   font-weight: 900;
   cursor: pointer;
 }
@@ -389,7 +413,7 @@
   color: var(--color-text-primary);
   background: var(--color-surface-1);
   border: 1px solid var(--color-border-muted);
-  border-radius: 6px;
+  border-radius: 12px;
   cursor: pointer;
 }
 
@@ -444,7 +468,7 @@
   justify-content: center;
   gap: 9px;
   padding: 0 21px;
-  border-radius: 6px;
+  border-radius: 12px;
   font-weight: 900;
   cursor: pointer;
 }
@@ -480,6 +504,10 @@
     box-shadow: none;
   }
 
+  .register-form--method {
+    min-height: 100dvh;
+  }
+
   .register-header {
     align-items: center;
   }
@@ -513,6 +541,10 @@
   .register-step-heading > svg {
     width: 32px;
     height: 32px;
+  }
+
+  .register-method-grid {
+    grid-template-columns: 1fr;
   }
 
   .password-requirements,

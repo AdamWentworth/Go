@@ -133,7 +133,10 @@ const RegisterForm: FC<RegisterFormProps> = ({
 
   return (
     <main className="register-page">
-      <section className="register-form" aria-labelledby="register-title">
+      <section
+        className={`register-form ${!authMethod ? 'register-form--method' : ''}`}
+        aria-labelledby="register-title"
+      >
         <header className="register-header">
           <div>
             <span className="register-eyebrow">TRAINER REGISTRATION</span>
