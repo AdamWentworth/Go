@@ -186,6 +186,7 @@ test('gives every released tradeable shiny a nonzero demand floor', () => {
   const byId = new Map(model.map((target) => [target.variantId, target]));
 
   assert.equal(byId.get('0019-shiny').wantedUsers, CATALOG_DEMAND_FLOORS.shiny);
+  assert.ok(byId.get('0019-shiny').wantedUsers >= 5);
   assert.equal(
     byId.get('0019-party_hat_shiny').wantedUsers,
     CATALOG_DEMAND_FLOORS.shiny_costume,

@@ -107,7 +107,7 @@ const TRADE_INELIGIBLE_POKEMON_IDS = new Set([
 ]);
 
 const CATALOG_DEMAND_FLOORS = {
-  shiny: 2,
+  shiny: 5,
   shiny_costume: 12,
   dynamax: 2,
   shiny_dynamax: 30,
