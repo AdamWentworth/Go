@@ -210,10 +210,28 @@ export const getPokemons = async (options: GetPokemonsOptions = {}): Promise<Pok
 
 export const getPokemonCatalogManifest = async (): Promise<PokemonCatalogManifest> => {
   try {
-    const response = await requestWithPolicy(buildUrl(BASE_URL, pokemonContract.endpoints.manifest), {
-      method: 'GET',
-      headers: {},
-    });
+    const requestUrl = buildUrl(BASE_URL, pokemonContract.endpoints.manifest);
+    let response: Response | undefined;
+
+    for (let attempt = 1; attempt <= POKEMON_CHUNK_REQUEST_ATTEMPTS; attempt += 1) {
+      try {
+        response = await requestWithPolicy(requestUrl, {
+          method: 'GET',
+          headers: {},
+        });
+      } catch (error) {
+        if (attempt < POKEMON_CHUNK_REQUEST_ATTEMPTS) continue;
+        throw error;
+      }
+
+      const canRetry =
+        response.status === 408 || response.status === 429 || response.status >= 500;
+      if (!canRetry || attempt === POKEMON_CHUNK_REQUEST_ATTEMPTS) break;
+    }
+
+    if (!response) {
+      throw new Error('[pokemonDataService] manifest request did not return a response');
+    }
 
     const payload = await parseJsonSafe<unknown>(response);
     if (!response.ok) {

@@ -298,6 +298,20 @@ describe('pokemonDataService', () => {
     );
   });
 
+  it('retries the pokemon catalog manifest after a transient browser load failure', async () => {
+    const fetchSpy = vi.spyOn(global, 'fetch')
+      .mockRejectedValueOnce(new TypeError('Failed to fetch'))
+      .mockResolvedValueOnce(
+        new Response(JSON.stringify(manifest), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' },
+        }),
+      );
+
+    await expect(getPokemonCatalogManifest()).resolves.toEqual(manifest);
+    expect(fetchSpy).toHaveBeenCalledTimes(2);
+  });
+
   it('rejects invalid pokemon catalog manifests', async () => {
     vi.spyOn(global, 'fetch').mockResolvedValueOnce(
       new Response(JSON.stringify({ schemaVersion: 1 }), {
