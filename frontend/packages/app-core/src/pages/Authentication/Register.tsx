@@ -25,6 +25,7 @@ const Register: FC = () => {
     values, 
     errors, 
     handleSubmit, 
+    validateFields,
     handleInputChange,
     handleCheckboxChange,
     handleAllowLocationChange,
@@ -160,6 +161,7 @@ const Register: FC = () => {
           onSubmit={handleSubmit} 
           errors={errors} 
           values={values}
+          validateFields={validateFields}
           handleInputChange={handleInputChange}
           handleCheckboxChange={handleCheckboxChange}
           handleAllowLocationChange={handleAllowLocationChange}

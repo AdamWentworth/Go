@@ -103,6 +103,25 @@ const useRegisterForm = (
     return tempErrors;
   };
 
+  const validateFields = (fieldNames: Array<keyof RegisterFormValues>) => {
+    const validationErrors = validate(values);
+    const fieldErrors = fieldNames.reduce<RegisterFormErrors>((next, fieldName) => {
+      const error = validationErrors[fieldName];
+      if (error) next[fieldName] = error;
+      return next;
+    }, {});
+
+    setErrors((current) => ({
+      ...current,
+      ...fieldNames.reduce<RegisterFormErrors>((next, fieldName) => {
+        next[fieldName] = validationErrors[fieldName] || '';
+        return next;
+      }, {}),
+    }));
+
+    return Object.keys(fieldErrors).length === 0;
+  };
+
   const handleInputChange = async (event: ChangeEvent<HTMLInputElement>) => {
     const { name, value, type, checked } = event.target;
     // Trim username input
@@ -264,6 +283,7 @@ const useRegisterForm = (
   return {
     values,
     errors,
+    validateFields,
     handleSubmit,
     handleInputChange,
     handleCheckboxChange,

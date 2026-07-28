@@ -1,117 +1,37 @@
-/* Register.css */
-
 .register-page {
-    height: calc(100vh);
-    width: 100vw;
-    overflow: hidden;
-    display: flex;
-    justify-content: center;
-    align-items: center;
+  box-sizing: border-box;
+  min-height: 100dvh;
+  width: 100%;
+  display: grid;
+  place-items: center;
+  padding: clamp(16px, 4vw, 48px);
+  background:
+    linear-gradient(135deg, color-mix(in srgb, var(--color-accent-primary) 10%, transparent), transparent 42%),
+    var(--color-auth-page-surface);
+}
+
+@media (max-width: 600px) {
+  .register-page {
+    display: block;
     padding: 0;
-    background-color: var(--color-auth-page-surface);
+  }
 }
 
 .feedback-message {
-    padding: 1rem;
-    margin: 1rem 0;
-    border-radius: 4px;
-    text-align: center;
-  }
-  
-  .feedback-message.success {
-    background-color: #d4edda;
-    color: #155724;
-    border: 1px solid #c3e6cb;
-  }
-  
-  .feedback-message.error {
-    background-color: #f8d7da;
-    color: #721c24;
-    border: 1px solid #f5c6cb;
-  }
-
-@media (max-width: 480px) {
-    .register-page .register-form {
-        transform: scale(.9);
-        font-size: 0.6em;
-    }
-    .register-form input, .location-warning {
-        font-size: 0.6rem;
-    }
-    .register-form input[type="checkbox"] {
-        margin-top: 10px; 
-        display: block;
-    }
-
-    .register-form button[type="button"] {
-        font-size: 0.6rem;
-        height: 35px;
-    }
+  padding: 1rem;
+  margin: 1rem 0;
+  border-radius: 4px;
+  text-align: center;
 }
 
-@media (min-width: 481px) and (max-width: 767px) {
-    .register-page .register-form {
-        transform: scale(.85);
-        font-size: 0.8em;
-    }
-    .register-form input, .location-warning {
-        font-size: 0.75rem;
-    }
-    .register-form input[type="checkbox"] {
-        margin-top: 10px; 
-        display: block;
-    }
-    .register-form button[type="button"] {
-        font-size: 0.7rem;
-        height: 37px;
-    }
+.feedback-message.success {
+  background-color: #d4edda;
+  color: #155724;
+  border: 1px solid #c3e6cb;
 }
 
-@media (min-width: 768px) and (max-width: 1023px) {
-    .register-page .register-form {
-        transform: scale(.85);
-        font-size: 0.9em;
-    }
-    .register-form input, .location-warning {
-        font-size: 0.85rem;
-    }
-    .register-form input[type="checkbox"] {
-        display: block;
-    }
-    .register-form button[type="button"] {
-        font-size: 0.8rem;
-    }
-}
-
-@media (min-width: 1024px) and (max-width: 1439px) {
-    .register-page .register-form {
-        transform: scale(0.75);
-        font-size: 1em;
-    }
-    .register-form input, .location-warning {
-        font-size: 0.85rem;
-    }
-    .register-form input[type="checkbox"] {
-        display: block;
-    }
-    .register-form button[type="button"] {
-        font-size: 0.8rem;
-    }
-}
-
-@media (min-width: 1440px) {
-
-    .register-page .register-form {
-        transform: scale(1);
-        font-size: 1em;
-    }
-    .register-form input, .location-warning {
-        font-size: 0.85rem;
-    }
-    .register-form input[type="checkbox"] {
-        display: block;
-    }
-    .register-form button[type="button"] {
-        font-size: 0.8rem;
-    }
+.feedback-message.error {
+  background-color: #f8d7da;
+  color: #721c24;
+  border: 1px solid #f5c6cb;
 }

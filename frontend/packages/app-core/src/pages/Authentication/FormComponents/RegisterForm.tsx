@@ -1,7 +1,18 @@
-// RegisterForm.tsx
+import React, { FC, useMemo, useState } from 'react';
+import { Link } from 'react-router';
+import {
+  FaArrowLeft,
+  FaArrowRight,
+  FaCheck,
+  FaEnvelope,
+  FaGamepad,
+  FaLock,
+  FaMapMarkerAlt,
+  FaPen,
+  FaShieldAlt,
+  FaUser,
+} from 'react-icons/fa';
 
-import React, { FC } from 'react';
-import RegisterSocialButtons from '../Auth0Components/RegisterSocialButtons';
 import CoordinateSelector from '../CoordinateSelector';
 import LocationOptionsOverlay from '../LocationOptionsOverlay';
 import './RegisterForm.css';
@@ -12,6 +23,7 @@ interface RegisterFormProps {
   onSubmit: (e: React.FormEvent<HTMLFormElement>) => void;
   errors: RegisterFormErrors;
   values: RegisterFormValues;
+  validateFields: (fieldNames: Array<keyof RegisterFormValues>) => boolean;
   handleInputChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   handleCheckboxChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   handleAllowLocationChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
@@ -31,10 +43,19 @@ interface RegisterFormProps {
   locationOptions: LocationSuggestion[];
 }
 
+const steps = [
+  { label: 'Account', icon: FaUser },
+  { label: 'Security', icon: FaLock },
+  { label: 'Trainer', icon: FaGamepad },
+  { label: 'Location', icon: FaMapMarkerAlt },
+  { label: 'Review', icon: FaCheck },
+] as const;
+
 const RegisterForm: FC<RegisterFormProps> = ({
   onSubmit,
   errors,
   values,
+  validateFields,
   handleInputChange,
   handleCheckboxChange,
   handleAllowLocationChange,
@@ -53,173 +74,369 @@ const RegisterForm: FC<RegisterFormProps> = ({
   setShowOptionsOverlay,
   locationOptions,
 }) => {
+  const [step, setStep] = useState(0);
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [confirmPasswordError, setConfirmPasswordError] = useState('');
+
+  const trainerName = values.pokemonGoNameDisabled
+    ? values.username
+    : values.pokemonGoName.trim();
+  const cleanTrainerCode = values.trainerCode.replace(/\s+/g, '');
+  const locationSummary = values.locationInput.trim()
+    || (selectedCoordinates
+      ? `${selectedCoordinates.latitude.toFixed(3)}, ${selectedCoordinates.longitude.toFixed(3)}`
+      : 'Not shared');
+
+  const passwordRules = useMemo(() => [
+    { label: '8+ characters', met: values.password.length >= 8 },
+    { label: 'Upper and lowercase', met: /[A-Z]/.test(values.password) && /[a-z]/.test(values.password) },
+    { label: 'Number', met: /\d/.test(values.password) },
+    { label: 'Special character', met: /[!@#$%^&*(),.?":{}|<>]/.test(values.password) },
+  ], [values.password]);
+
+  const moveForward = () => {
+    if (step === 0 && !validateFields(['username', 'email'])) return;
+    if (step === 1) {
+      if (!validateFields(['password'])) return;
+      if (confirmPassword !== values.password) {
+        setConfirmPasswordError('Passwords do not match');
+        return;
+      }
+      setConfirmPasswordError('');
+    }
+    if (step === 2 && !validateFields(['pokemonGoName', 'trainerCode'])) return;
+    setStep((current) => Math.min(current + 1, steps.length - 1));
+  };
+
+  const handleFormSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (step < steps.length - 1) {
+      moveForward();
+      return;
+    }
+    onSubmit(event);
+  };
+
   return (
-    <div className="register-page">
-      <div className="register-form">
-        <form
-          onSubmit={(e) => {
-            e.preventDefault(); // Prevent default form submission
-            onSubmit(e); // Trigger the centralized handleSubmit
-          }}
-          noValidate // Disable built-in browser validation
-        >
-          {/* Left Form Section */}
-          <div className="form-left">
-            <div className="form-group">
-              <input
-                type="text"
-                name="username"
-                value={values.username}
-                onChange={handleInputChange}
-                placeholder="Username (must be unique)"
-              />
-              {errors.username && (
-                <div style={{ color: 'red', marginTop: '4px' }}>{errors.username}</div>
-              )}
-            </div>
-
-            <div className="checkbox-inline">
-              <input
-                id="pokemonGoNameDisabled"
-                type="checkbox"
-                name="pokemonGoNameDisabled"
-                checked={values.pokemonGoNameDisabled}
-                onChange={handleCheckboxChange}
-              />
-              <label htmlFor="pokemonGoNameDisabled">
-                Username matches my Pokémon GO account name
-              </label>
-            </div>
-
-            <div className="form-group">
-              <input
-                type="email"
-                name="email"
-                value={values.email}
-                onChange={handleInputChange}
-                placeholder="Email (must be unique)"
-                required
-              />
-              {errors.email && (
-                <div style={{ color: 'red', marginTop: '4px' }}>{errors.email}</div>
-              )}
-            </div>
-
-            <div className="form-group">
-              <input
-                type="password"
-                name="password"
-                value={values.password}
-                onChange={handleInputChange}
-                placeholder="Password"
-                required
-              />
-              {errors.password && (
-                <div style={{ color: 'red', marginTop: '4px' }}>{errors.password}</div>
-              )}
-            </div>
+    <main className="register-page">
+      <section className="register-form" aria-labelledby="register-title">
+        <header className="register-header">
+          <div>
+            <span className="register-eyebrow">TRAINER REGISTRATION</span>
+            <h1 id="register-title">Create your account</h1>
+            <p>{step < 4 ? 'A few quick steps, then your trainer journey begins.' : 'Make sure everything looks right.'}</p>
           </div>
+          <Link to="/login" className="register-login-link">Sign in</Link>
+        </header>
 
-          {/* Right Form Section */}
-          <div className="form-right">
-            <div className="form-group">
-              <input
-                type="text"
-                name="pokemonGoName"
-                value={values.pokemonGoName}
-                onChange={handleInputChange}
-                placeholder="Pokémon GO name (optional)"
-                disabled={values.pokemonGoNameDisabled}
-                aria-label="Pokémon GO Name"
-              />
-              {errors.pokemonGoName && (
-                <div style={{ color: 'red', marginTop: '4px' }}>{errors.pokemonGoName}</div>
-              )}
-            </div>
+        <ol className="register-progress" aria-label="Registration progress">
+          {steps.map((item, index) => {
+            const Icon = item.icon;
+            const isActive = index === step;
+            const isComplete = index < step;
+            return (
+              <li
+                key={item.label}
+                className={`${isActive ? 'is-active' : ''} ${isComplete ? 'is-complete' : ''}`}
+                aria-current={isActive ? 'step' : undefined}
+              >
+                <span className="register-progress-icon">
+                  {isComplete ? <FaCheck /> : <Icon />}
+                </span>
+                <span>{item.label}</span>
+              </li>
+            );
+          })}
+        </ol>
 
-            <div className="form-group">
-              <input
-                type="text"
-                name="trainerCode"
-                value={values.trainerCode}
-                onChange={handleInputChange}
-                placeholder="Trainer Code (optional)"
-                data-testid="trainer-code-input"
-              />
-              {errors.trainerCode && (
-                <div style={{ color: 'red', marginTop: '4px' }}>{errors.trainerCode}</div>
-              )}
-            </div>
-
-            <div className="checkbox-inline">
-              <input
-                id="allowLocation"
-                type="checkbox"
-                name="allowLocation"
-                checked={values.allowLocation}
-                onChange={handleAllowLocationChange}
-              />
-              <label htmlFor="allowLocation">
-                Enable collection of your device's GPS location data
-              </label>
-            </div>
-
-            <button
-              type="button"
-              className="set-coordinates-button"
-              onClick={() => setIsMapVisible(true)}
-              disabled={values.allowLocation}
-            >
-              {selectedCoordinates
-                ? `Coordinates Set: (${selectedCoordinates.latitude}, ${selectedCoordinates.longitude})`
-                : 'Set Coordinates'}
-            </button>
-          </div>
-
-          {/* Location Input Section */}
-          <div className="form-location" style={{ position: 'relative' }}>
-            <input
-              type="text"
-              name="locationInput"
-              value={values.locationInput}
-              onFocus={handleLocationInputFocus}
-              onBlur={handleLocationInputBlur}
-              onChange={handleInputChange}
-              placeholder="City / Place, State / Province / Region, Country (optional)"
-            />
-            {showLocationWarning && (
-              <div className="location-warning">
-                Modifying this resets coordinates and permissions.
-              </div>
-            )}
-            {suggestions.length > 0 && (
-              <div className="suggestions-dropdown">
-                {suggestions.map((suggestion, index) => (
-                  <div
-                    key={index}
-                    className="suggestion-item"
-                    onClick={() => selectSuggestion(suggestion)}
-                  >
-                    {suggestion.displayName}
+        <form onSubmit={handleFormSubmit} noValidate>
+          <div className="register-step" key={step}>
+            {step === 0 && (
+              <>
+                <div className="register-step-heading">
+                  <FaUser />
+                  <div>
+                    <span>STEP 1 OF 5</span>
+                    <h2>Your account</h2>
+                    <p>Choose how other trainers will know you here.</p>
                   </div>
-                ))}
-              </div>
+                </div>
+                <div className="register-field">
+                  <label htmlFor="register-username">Username</label>
+                  <div className="register-input-shell">
+                    <FaUser />
+                    <input
+                      id="register-username"
+                      autoFocus
+                      autoComplete="username"
+                      type="text"
+                      name="username"
+                      value={values.username}
+                      onChange={handleInputChange}
+                      placeholder="Choose a unique username"
+                      aria-invalid={Boolean(errors.username)}
+                    />
+                  </div>
+                  <small>3-15 letters, numbers, or underscores.</small>
+                  {errors.username && <strong className="register-error">{errors.username}</strong>}
+                </div>
+                <div className="register-field">
+                  <label htmlFor="register-email">Email</label>
+                  <div className="register-input-shell">
+                    <FaEnvelope />
+                    <input
+                      id="register-email"
+                      autoComplete="email"
+                      type="email"
+                      name="email"
+                      value={values.email}
+                      onChange={handleInputChange}
+                      placeholder="you@example.com"
+                      aria-invalid={Boolean(errors.email)}
+                    />
+                  </div>
+                  {errors.email && <strong className="register-error">{errors.email}</strong>}
+                </div>
+              </>
+            )}
+
+            {step === 1 && (
+              <>
+                <div className="register-step-heading">
+                  <FaShieldAlt />
+                  <div>
+                    <span>STEP 2 OF 5</span>
+                    <h2>Protect your account</h2>
+                    <p>Use a strong password you do not use elsewhere.</p>
+                  </div>
+                </div>
+                <div className="register-field">
+                  <label htmlFor="register-password">Password</label>
+                  <div className="register-input-shell">
+                    <FaLock />
+                    <input
+                      id="register-password"
+                      autoFocus
+                      autoComplete="new-password"
+                      type="password"
+                      name="password"
+                      value={values.password}
+                      onChange={handleInputChange}
+                      placeholder="Create a password"
+                      aria-invalid={Boolean(errors.password)}
+                    />
+                  </div>
+                  {errors.password && <strong className="register-error">{errors.password}</strong>}
+                </div>
+                <div className="register-field">
+                  <label htmlFor="register-confirm-password">Confirm password</label>
+                  <div className="register-input-shell">
+                    <FaLock />
+                    <input
+                      id="register-confirm-password"
+                      autoComplete="new-password"
+                      type="password"
+                      value={confirmPassword}
+                      onChange={(event) => {
+                        setConfirmPassword(event.target.value);
+                        setConfirmPasswordError('');
+                      }}
+                      placeholder="Enter it again"
+                      aria-invalid={Boolean(confirmPasswordError)}
+                    />
+                  </div>
+                  {confirmPasswordError && <strong className="register-error">{confirmPasswordError}</strong>}
+                </div>
+                <div className="password-requirements" aria-label="Password requirements">
+                  {passwordRules.map((rule) => (
+                    <span key={rule.label} className={rule.met ? 'is-met' : ''}>
+                      <FaCheck /> {rule.label}
+                    </span>
+                  ))}
+                </div>
+              </>
+            )}
+
+            {step === 2 && (
+              <>
+                <div className="register-step-heading">
+                  <FaGamepad />
+                  <div>
+                    <span>STEP 3 OF 5 · OPTIONAL</span>
+                    <h2>Your Pokémon GO identity</h2>
+                    <p>Help friends recognize you. You can change this later.</p>
+                  </div>
+                </div>
+                <label className="register-choice">
+                  <input
+                    type="checkbox"
+                    name="pokemonGoNameDisabled"
+                    checked={values.pokemonGoNameDisabled}
+                    onChange={handleCheckboxChange}
+                  />
+                  <span>
+                    <strong>Use {values.username || 'my username'} as my Pokémon GO name</strong>
+                    <small>One name across PokeGoNexus and Pokémon GO.</small>
+                  </span>
+                </label>
+                <div className="register-field">
+                  <label htmlFor="register-pokemon-go-name">Pokémon GO name</label>
+                  <input
+                    id="register-pokemon-go-name"
+                    autoFocus={!values.pokemonGoNameDisabled}
+                    type="text"
+                    name="pokemonGoName"
+                    value={values.pokemonGoName}
+                    onChange={handleInputChange}
+                    placeholder="Optional"
+                    disabled={values.pokemonGoNameDisabled}
+                    aria-invalid={Boolean(errors.pokemonGoName)}
+                  />
+                  {errors.pokemonGoName && <strong className="register-error">{errors.pokemonGoName}</strong>}
+                </div>
+                <div className="register-field">
+                  <label htmlFor="register-trainer-code">Trainer code</label>
+                  <input
+                    id="register-trainer-code"
+                    inputMode="numeric"
+                    type="text"
+                    name="trainerCode"
+                    value={values.trainerCode}
+                    onChange={handleInputChange}
+                    placeholder="0000 0000 0000"
+                    data-testid="trainer-code-input"
+                    aria-invalid={Boolean(errors.trainerCode)}
+                  />
+                  {errors.trainerCode && <strong className="register-error">{errors.trainerCode}</strong>}
+                </div>
+              </>
+            )}
+
+            {step === 3 && (
+              <>
+                <div className="register-step-heading">
+                  <FaMapMarkerAlt />
+                  <div>
+                    <span>STEP 4 OF 5 · OPTIONAL</span>
+                    <h2>Your area</h2>
+                    <p>Location helps find nearby trainers and trades. Exact coordinates stay optional.</p>
+                  </div>
+                </div>
+                <div className="register-location-field">
+                  <div className="register-field">
+                    <label htmlFor="register-location">City or place</label>
+                    <input
+                      id="register-location"
+                      autoFocus
+                      type="text"
+                      name="locationInput"
+                      value={values.locationInput}
+                      onFocus={handleLocationInputFocus}
+                      onBlur={handleLocationInputBlur}
+                      onChange={handleInputChange}
+                      placeholder="City, region, country"
+                    />
+                  </div>
+                  {showLocationWarning && (
+                    <div className="location-warning">Changing this resets saved coordinates.</div>
+                  )}
+                  {suggestions.length > 0 && (
+                    <div className="suggestions-dropdown">
+                      {suggestions.map((suggestion, index) => (
+                        <button
+                          key={`${suggestion.displayName}-${index}`}
+                          type="button"
+                          className="suggestion-item"
+                          onMouseDown={(event) => event.preventDefault()}
+                          onClick={() => selectSuggestion(suggestion)}
+                        >
+                          {suggestion.displayName}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+                <label className="register-choice">
+                  <input
+                    id="allowLocation"
+                    type="checkbox"
+                    name="allowLocation"
+                    checked={values.allowLocation}
+                    onChange={handleAllowLocationChange}
+                  />
+                  <span>
+                    <strong>Use this device’s location</strong>
+                    <small>Ask the browser for coordinates now.</small>
+                  </span>
+                </label>
+                <button
+                  type="button"
+                  className="register-secondary-action"
+                  onClick={() => setIsMapVisible(true)}
+                  disabled={values.allowLocation}
+                >
+                  <FaMapMarkerAlt />
+                  {selectedCoordinates ? 'Adjust map position' : 'Choose on map'}
+                </button>
+              </>
+            )}
+
+            {step === 4 && (
+              <>
+                <div className="register-step-heading">
+                  <FaCheck />
+                  <div>
+                    <span>STEP 5 OF 5</span>
+                    <h2>Ready to join</h2>
+                    <p>Your optional trainer details can be edited from your profile.</p>
+                  </div>
+                </div>
+                <div className="register-review">
+                  <button type="button" onClick={() => setStep(0)}>
+                    <span><FaUser /><small>ACCOUNT</small><strong>{values.username}</strong></span>
+                    <FaPen />
+                  </button>
+                  <button type="button" onClick={() => setStep(0)}>
+                    <span><FaEnvelope /><small>EMAIL</small><strong>{values.email}</strong></span>
+                    <FaPen />
+                  </button>
+                  <button type="button" onClick={() => setStep(2)}>
+                    <span><FaGamepad /><small>TRAINER</small><strong>{trainerName || 'Add later'}</strong></span>
+                    <FaPen />
+                  </button>
+                  <button type="button" onClick={() => setStep(2)}>
+                    <span><FaGamepad /><small>TRAINER CODE</small><strong>{cleanTrainerCode || 'Add later'}</strong></span>
+                    <FaPen />
+                  </button>
+                  <button type="button" onClick={() => setStep(3)}>
+                    <span><FaMapMarkerAlt /><small>AREA</small><strong>{locationSummary}</strong></span>
+                    <FaPen />
+                  </button>
+                </div>
+                <p className="register-agreement">
+                  By creating an account, you agree to use PokeGoNexus respectfully and keep trainer information accurate.
+                </p>
+              </>
             )}
           </div>
 
-          {/* Submit Button */}
-          <div className="form-submit">
-            <button className="submit-button" type="submit" data-testid="register-button">
-              Register
+          <footer className="register-actions">
+            {step > 0 ? (
+              <button type="button" className="register-back" onClick={() => setStep((current) => current - 1)}>
+                <FaArrowLeft /> Back
+              </button>
+            ) : <span />}
+            <button className="register-continue" type="submit" data-testid="register-button">
+              {step === steps.length - 1 ? (
+                <>Create account <FaCheck /></>
+              ) : (
+                <>Continue <FaArrowRight /></>
+              )}
             </button>
-          </div>
-
-          {/* Social Buttons */}
-          <RegisterSocialButtons />
+          </footer>
         </form>
-      </div>
+      </section>
 
-      {/* Coordinate Selector */}
       {isMapVisible && (
         <CoordinateSelector
           onCoordinatesSelect={handleCoordinatesSelect}
@@ -234,7 +451,7 @@ const RegisterForm: FC<RegisterFormProps> = ({
           onDismiss={() => setShowOptionsOverlay(false)}
         />
       )}
-    </div>
+    </main>
   );
 };
 

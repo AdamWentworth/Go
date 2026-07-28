@@ -1674,22 +1674,30 @@ async function cleanupDisposableAuthAccountFromPage(
 }
 
 async function fillRegisterFormForVideo(page: Page, account: DisposableAuthAccount) {
-  const usernameInput = page.getByPlaceholder('Username (must be unique)');
+  const usernameInput = page.getByPlaceholder('Choose a unique username');
   await clickForVideo(usernameInput, 10_000);
   await usernameInput.fill(account.username);
   await page.waitForTimeout(authVideoActionPauseMs);
 
-  const emailInput = page.getByPlaceholder('Email (must be unique)');
+  const emailInput = page.getByPlaceholder('you@example.com');
   await clickForVideo(emailInput, 10_000);
   await emailInput.fill(account.email);
   await page.waitForTimeout(authVideoActionPauseMs);
 
-  const passwordInput = page.getByPlaceholder('Password');
+  await clickForVideo(page.getByTestId('register-button'), 10_000);
+
+  const passwordInput = page.getByPlaceholder('Create a password');
   await clickForVideo(passwordInput, 10_000);
   await passwordInput.fill(account.password);
   await page.waitForTimeout(authVideoActionPauseMs);
 
-  const pokemonGoNameInput = page.getByLabel('Pokémon GO Name');
+  const confirmPasswordInput = page.getByPlaceholder('Enter it again');
+  await clickForVideo(confirmPasswordInput, 10_000);
+  await confirmPasswordInput.fill(account.password);
+  await page.waitForTimeout(authVideoActionPauseMs);
+  await clickForVideo(page.getByTestId('register-button'), 10_000);
+
+  const pokemonGoNameInput = page.getByLabel('Pokémon GO name');
   await clickForVideo(pokemonGoNameInput, 10_000);
   await pokemonGoNameInput.fill(account.pokemonGoName);
   await page.waitForTimeout(authVideoActionPauseMs);
@@ -1698,13 +1706,12 @@ async function fillRegisterFormForVideo(page: Page, account: DisposableAuthAccou
   await clickForVideo(trainerCodeInput, 10_000);
   await trainerCodeInput.fill(account.trainerCode);
   await page.waitForTimeout(authVideoActionPauseMs);
+  await clickForVideo(page.getByTestId('register-button'), 10_000);
 
-  const locationInput = page.getByPlaceholder(
-    'City / Place, State / Province / Region, Country (optional)',
-  );
+  const locationInput = page.getByPlaceholder('City, region, country');
   await clickForVideo(locationInput, 10_000);
   await locationInput.fill(account.location);
-  const firstLocationSuggestion = page.locator('.form-location .suggestion-item').first();
+  const firstLocationSuggestion = page.locator('.register-location-field .suggestion-item').first();
   const hasSuggestion = await firstLocationSuggestion
     .waitFor({ state: 'visible', timeout: 10_000 })
     .then(() => true)
@@ -1712,17 +1719,19 @@ async function fillRegisterFormForVideo(page: Page, account: DisposableAuthAccou
 
   if (hasSuggestion) {
     await clickForVideo(firstLocationSuggestion, 10_000);
-    await expect(page.locator('.form-location .suggestions-dropdown')).toHaveCount(0, {
+    await expect(page.locator('.register-location-field .suggestions-dropdown')).toHaveCount(0, {
       timeout: 10_000,
     });
   } else {
     await page.keyboard.press('Tab');
-    await expect(page.locator('.form-location .suggestions-dropdown')).toHaveCount(0, {
+    await expect(page.locator('.register-location-field .suggestions-dropdown')).toHaveCount(0, {
       timeout: 10_000,
     });
   }
 
   await page.waitForTimeout(authVideoActionPauseMs);
+  await clickForVideo(page.getByTestId('register-button'), 10_000);
+  await expect(page.getByRole('heading', { name: 'Ready to join' })).toBeVisible();
 }
 
 async function fillLoginFormForVideo(page: Page, account: DisposableAuthAccount) {
