@@ -2,6 +2,7 @@ import { fireEvent, render, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import Rankings, {
   collapseEvolutionFamilyRankings,
+  getRankingCatalogSearch,
   getRankingDisplayName,
   prepareRankingsForMode,
 } from '@/pages/Rankings/Rankings';
@@ -110,6 +111,24 @@ describe('Community Rankings page', () => {
     expect(getRankingDisplayName(
       makeVariant('dialga-origin', 2059, 'Origin Dialga', 'default', 'Origin'),
     )).toBe('Origin Dialga');
+  });
+
+  it('builds catalog searches from the species and collectible qualities', () => {
+    expect(
+      getRankingCatalogSearch(
+        makeVariant('rayquaza-shiny', 384, 'Rayquaza', 'shiny'),
+      ),
+    ).toBe('rayquaza&shiny');
+    expect(
+      getRankingCatalogSearch(
+        makeVariant(
+          'charizard-shiny-gigantamax',
+          6,
+          'Charizard',
+          'shiny_gigantamax',
+        ),
+      ),
+    ).toBe('charizard&shiny&gigantamax');
   });
 
   it('collapses ordinary evolution families while preserving costumes', () => {
@@ -345,7 +364,10 @@ describe('Community Rankings page', () => {
     expect(screen.getByText('1 caught')).toBeInTheDocument();
     expect(screen.getByText('1 not listed')).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'View collection' }))
-      .toHaveAttribute('href', '/pokemon?filter=caught');
+      .toHaveAttribute(
+        'href',
+        '/pokemon?filter=caught&search=pikachu%26shiny',
+      );
 
     expect(screen.queryByRole('button', { name: 'Available' }))
       .not.toBeInTheDocument();

@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
   buildPokemonCatalogPath,
   readPokemonCatalogFilter,
+  readPokemonCatalogSearch,
 } from "@/pages/Pokemon/utils/pokemonCatalogNavigation";
 
 describe("pokemonCatalogNavigation", () => {
@@ -16,8 +17,11 @@ describe("pokemonCatalogNavigation", () => {
       buildPokemonCatalogPath({
         username: "Misty Trainer",
         filter: "Favorites",
+        search: "rayquaza&shiny",
       }),
-    ).toBe("/pokemon/Misty%20Trainer?filter=favorites");
+    ).toBe(
+      "/pokemon/Misty%20Trainer?filter=favorites&search=rayquaza%26shiny",
+    );
   });
 
   it.each([
@@ -32,5 +36,12 @@ describe("pokemonCatalogNavigation", () => {
   it("ignores absent and unsupported filters", () => {
     expect(readPokemonCatalogFilter("")).toBeNull();
     expect(readPokemonCatalogFilter("?filter=registered")).toBeNull();
+  });
+
+  it("reads a catalog search expression from the URL", () => {
+    expect(
+      readPokemonCatalogSearch("?filter=caught&search=rayquaza%26shiny"),
+    ).toBe("rayquaza&shiny");
+    expect(readPokemonCatalogSearch("?filter=caught")).toBe("");
   });
 });

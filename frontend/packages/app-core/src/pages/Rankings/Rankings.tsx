@@ -141,6 +141,22 @@ export function getRankingDisplayName(variant: PokemonVariant): string {
   return `${name} ${formatFormName(form)}`;
 }
 
+export function getRankingCatalogSearch(variant: PokemonVariant): string {
+  const terms = [variant.species_name || variant.name];
+  const variantType = String(variant.variantType || '').toLowerCase();
+
+  if (variantType.includes('shiny')) terms.push('shiny');
+  if (variantType.includes('shadow')) terms.push('shadow');
+  if (variantType.includes('costume')) terms.push('costume');
+  if (variantType.includes('gigantamax')) terms.push('gigantamax');
+  else if (variantType.includes('dynamax')) terms.push('dynamax');
+
+  return terms
+    .map((term) => String(term || '').trim().toLowerCase())
+    .filter(Boolean)
+    .join('&');
+}
+
 function getEvolutionIds(
   variant: PokemonVariant,
   key: 'evolves_from' | 'evolves_to',
@@ -308,17 +324,26 @@ function RankingRow({
     : personalStatus?.tradeCount
       ? {
           label: 'View trade copies',
-          path: buildPokemonCatalogPath({ filter: 'Trade' }),
+          path: buildPokemonCatalogPath({
+            filter: 'Trade',
+            search: getRankingCatalogSearch(entry.variant),
+          }),
         }
       : personalStatus?.wanted
         ? {
             label: 'View wishlist',
-            path: buildPokemonCatalogPath({ filter: 'Wanted' }),
+            path: buildPokemonCatalogPath({
+              filter: 'Wanted',
+              search: getRankingCatalogSearch(entry.variant),
+            }),
           }
         : personalStatus?.registered
           ? {
               label: 'View collection',
-              path: buildPokemonCatalogPath({ filter: 'Caught' }),
+              path: buildPokemonCatalogPath({
+                filter: 'Caught',
+                search: getRankingCatalogSearch(entry.variant),
+              }),
             }
           : {
               label: 'Browse Pokémon',

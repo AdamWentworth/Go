@@ -19,12 +19,17 @@ export const readPokemonCatalogFilter = (
   return catalogFilterByQueryValue[value.trim().toLowerCase()] ?? null;
 };
 
+export const readPokemonCatalogSearch = (search: string): string =>
+  new URLSearchParams(search).get("search")?.trim() ?? "";
+
 export const buildPokemonCatalogPath = ({
   username,
   filter,
+  search,
 }: {
   username?: string;
   filter: PokemonCatalogFilter;
+  search?: string;
 }): string => {
   const pathname = username
     ? `/pokemon/${encodeURIComponent(username)}`
@@ -32,6 +37,7 @@ export const buildPokemonCatalogPath = ({
   const query = new URLSearchParams({
     filter: filter.toLowerCase(),
   });
+  if (search?.trim()) query.set("search", search.trim());
 
   return `${pathname}?${query.toString()}`;
 };

@@ -181,7 +181,7 @@ describe('usePokemonPageController', () => {
     const navigate = vi.fn() as unknown as NavigateFunction;
     const location = {
       pathname: '/pokemon',
-      search: '?filter=favorites',
+      search: '?filter=favorites&search=rayquaza%26shiny',
       state: null,
     } as any;
 
@@ -203,6 +203,8 @@ describe('usePokemonPageController', () => {
       | UsePokemonProcessingArgs
       | undefined;
     expect(latestCall?.[2]).toBe('Favorites');
+    expect(latestCall?.[4]).toBe('rayquaza&shiny');
+    expect(result.current.searchTerm).toBe('rayquaza&shiny');
   });
 
   it('loads foreign profile for username routes and exits loading state', async () => {

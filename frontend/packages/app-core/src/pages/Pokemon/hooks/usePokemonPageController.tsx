@@ -34,7 +34,10 @@ import {
   type ActiveView,
   type LastMenu,
 } from '../utils/pokemonPageHelpers';
-import { readPokemonCatalogFilter } from '../utils/pokemonCatalogNavigation';
+import {
+  readPokemonCatalogFilter,
+  readPokemonCatalogSearch,
+} from '../utils/pokemonCatalogNavigation';
 import { createScopedLogger } from '@/utils/logger';
 
 const log = createScopedLogger('PokemonPage');
@@ -129,6 +132,7 @@ export default function usePokemonPageController({
   const tags = useTagsStore((s) => s.tags);
   const foreignTags = useTagsStore((s) => s.foreignTags);
   const requestedTagFilter = readPokemonCatalogFilter(location.search ?? '');
+  const requestedSearchTerm = readPokemonCatalogSearch(location.search ?? '');
 
   const instances = (isOwnCollection
     ? contextInstanceData
@@ -142,7 +146,7 @@ export default function usePokemonPageController({
   const [hasProcessedInstanceId, setHasProcessedInstanceId] = useState<boolean>(false);
   const [isUpdating, setIsUpdating] = useState<boolean>(false);
   const [lastMenu, setLastMenu] = useState<LastMenu>('ownership');
-  const [searchTerm, setSearchTerm] = useState<string>('');
+  const [searchTerm, setSearchTerm] = useState<string>(requestedSearchTerm);
   const [activeView, setActiveView] = useState<ActiveView>('pokemon');
   const [dragOffset, setDragOffset] = useState<number>(0);
   const [isDragging, setIsDragging] = useState<boolean>(false);
@@ -174,6 +178,10 @@ export default function usePokemonPageController({
     },
     [],
   );
+
+  useEffect(() => {
+    setSearchTerm(requestedSearchTerm);
+  }, [requestedSearchTerm]);
 
   const {
     showEvolutionaryLine,
