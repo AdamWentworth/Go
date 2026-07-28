@@ -58,7 +58,35 @@ export const startFacebookAuthentication = (
   url.searchParams.set('device_id', getDeviceId());
   url.searchParams.set('return_to', window.location.origin);
   url.searchParams.set('intent', intent);
+
+  // A redirect that begins inside an installed Android PWA can remain trapped in
+  // the standalone window when Facebook is the eventual cross-origin target.
+  // Resolve the signed authorization URL first so the browser sees Facebook as
+  // the direct navigation destination and hands it off to a regular browser tab.
+  if (window.matchMedia?.('(display-mode: standalone)').matches) {
+    url.searchParams.set('response_mode', 'json');
+    void resolveFacebookAuthorizationUrl(url)
+      .then((authorizationUrl) => window.location.assign(authorizationUrl))
+      .catch(() => {
+        url.searchParams.delete('response_mode');
+        window.location.assign(url.toString());
+      });
+    return;
+  }
+
   window.location.assign(url.toString());
+};
+
+export const resolveFacebookAuthorizationUrl = async (url: URL): Promise<string> => {
+  const response = await fetch(url.toString(), { credentials: 'include' });
+  if (!response.ok) {
+    throw new Error('Unable to start Facebook authentication.');
+  }
+  const payload = await response.json() as { authorizationUrl?: unknown };
+  if (typeof payload.authorizationUrl !== 'string') {
+    throw new Error('Facebook authorization URL was not provided.');
+  }
+  return payload.authorizationUrl;
 };
 
 export const getPendingGoogleRegistration = async (): Promise<GoogleRegistration> =>

@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   loginUser,
   refreshTokenService,
+  resolveFacebookAuthorizationUrl,
   updateUserInSecondaryDB,
   updateUserDetails,
 } from '@/services/authService';
@@ -108,5 +109,37 @@ describe('authService', () => {
       latitude: 12.34,
       longitude: 56.78,
     });
+  });
+
+  it('resolves Facebook direct navigation for an installed PWA with credentials', async () => {
+    const fetchSpy = vi.spyOn(global, 'fetch').mockResolvedValueOnce(
+      new Response(JSON.stringify({
+        authorizationUrl: 'https://www.facebook.com/dialog/oauth?state=signed-state',
+      }), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' },
+      }),
+    );
+    const startUrl = new URL('https://pokegonexus.com/api/auth/facebook?response_mode=json');
+
+    await expect(resolveFacebookAuthorizationUrl(startUrl)).resolves.toBe(
+      'https://www.facebook.com/dialog/oauth?state=signed-state',
+    );
+    expect(fetchSpy).toHaveBeenCalledWith(startUrl.toString(), {
+      credentials: 'include',
+    });
+  });
+
+  it('rejects an invalid Facebook direct-navigation response', async () => {
+    vi.spyOn(global, 'fetch').mockResolvedValueOnce(
+      new Response(JSON.stringify({}), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' },
+      }),
+    );
+
+    await expect(resolveFacebookAuthorizationUrl(
+      new URL('https://pokegonexus.com/api/auth/facebook?response_mode=json'),
+    )).rejects.toThrow('Facebook authorization URL was not provided.');
   });
 });

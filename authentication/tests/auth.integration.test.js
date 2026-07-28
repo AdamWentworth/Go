@@ -695,6 +695,23 @@ describe('authentication service integration', () => {
     ]));
   });
 
+  test('Facebook OAuth can return a direct authorization URL for standalone PWAs', async () => {
+    const start = await request(app)
+      .get('/auth/facebook')
+      .query({
+        device_id: validDeviceId,
+        return_to: 'http://localhost:3000',
+        intent: 'register',
+        response_mode: 'json'
+      });
+
+    expect(start.status).toBe(200);
+    expect(start.body.authorizationUrl).toMatch(/^https:\/\/facebook\.test\/dialog\/oauth\?/);
+    expect(new URL(start.body.authorizationUrl).searchParams.get('state')).toBeTruthy();
+    expect(start.headers['set-cookie'].some((cookie) =>
+      cookie.startsWith('facebookOAuthState='))).toBe(true);
+  });
+
   test('Facebook login unifies a matching email account', async () => {
     await registerUser({ email: 'facebook.user@example.com' });
     const existing = await User.findOne({ email: 'facebook.user@example.com' }).lean();

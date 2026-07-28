@@ -508,7 +508,11 @@ router.get('/facebook', (req, res) => {
       nonce: crypto.randomBytes(24).toString('base64url')
     });
     res.cookie(FACEBOOK_STATE_COOKIE, state, facebookCookieOptions);
-    return res.redirect(302, facebookOAuth.createAuthorizationUrl({ state }));
+    const authorizationUrl = facebookOAuth.createAuthorizationUrl({ state });
+    if (req.query.response_mode === 'json') {
+      return res.json({ authorizationUrl });
+    }
+    return res.redirect(302, authorizationUrl);
   } catch (error) {
     return res.status(error.status || 500).json({
       message: error.message || 'Unable to start Facebook login.'
