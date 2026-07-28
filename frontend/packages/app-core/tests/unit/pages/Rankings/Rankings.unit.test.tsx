@@ -5,6 +5,7 @@ import Rankings, {
   collapseEvolutionFamilyRankings,
   getRankingCatalogSearch,
   getRankingDisplayName,
+  getRankingsErrorMessage,
   prepareRankingsForMode,
 } from '@/pages/Rankings/Rankings';
 import { useVariantsStore } from '@/features/variants/store/useVariantsStore';
@@ -119,6 +120,17 @@ const makeVariant = (
   }) as PokemonVariant;
 
 describe('Community Rankings page', () => {
+  it('turns technical ranking failures into actionable messages', () => {
+    expect(getRankingsErrorMessage('Request timed out after 10000ms', true))
+      .toContain('took too long');
+    expect(getRankingsErrorMessage('503 Service Unavailable', true))
+      .toContain('temporarily unavailable');
+    expect(getRankingsErrorMessage('Failed to fetch', false))
+      .toContain('offline');
+    expect(getRankingsErrorMessage('opaque network failure', true))
+      .toContain('could not be refreshed');
+  });
+
   it('includes collectible forms without duplicating names that already contain them', () => {
     expect(getRankingDisplayName(
       makeVariant('unown-c-shiny', 2306, 'Unown', 'shiny', 'C'),
@@ -229,10 +241,26 @@ describe('Community Rankings page', () => {
       .toBeInTheDocument();
     expect(container.querySelector('.community-ranking-row--rank-1'))
       .toHaveTextContent('Pikachu');
+    expect(screen.getByRole('tabpanel', { name: 'Most wanted Pokémon' }))
+      .toHaveAttribute('aria-live', 'polite');
+    expect(container.querySelector('.community-ranking-filter-summary [role="status"]'))
+      .toHaveTextContent('4 results');
+    expect(screen.getByRole('tab', { name: 'Most wanted' }))
+      .toHaveAttribute('aria-controls', 'community-ranking-results');
 
     fireEvent.click(screen.getByRole('tab', { name: 'Rarest owned' }));
     expect(screen.getByText('Owned by 4 trainers')).toBeInTheDocument();
     expect(screen.queryByText('6 trainers want this')).not.toBeInTheDocument();
+  });
+
+  it('refreshes the snapshot from the timestamp control', () => {
+    renderRankings();
+
+    fireEvent.click(
+      screen.getByRole('button', { name: 'Refresh community rankings' }),
+    );
+
+    expect(rankingState.refresh).toHaveBeenCalledTimes(1);
   });
 
   it('uses the global loading overlay until ranking dependencies are ready', () => {

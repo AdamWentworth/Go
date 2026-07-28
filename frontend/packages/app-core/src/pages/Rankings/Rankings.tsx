@@ -15,6 +15,7 @@ import {
   FaInfoCircle,
   FaMedal,
   FaSearch,
+  FaSyncAlt,
   FaUsers,
 } from 'react-icons/fa';
 import type { PokemonCommunityRanking } from '@shared-contracts/search';
@@ -248,6 +249,29 @@ function formatSnapshotTime(value: string): string {
     dateStyle: 'medium',
     timeStyle: 'short',
   }).format(date)}`;
+}
+
+export function getRankingsErrorMessage(
+  error: string,
+  online = typeof navigator === 'undefined' ? true : navigator.onLine,
+): string {
+  if (!online) {
+    return 'You appear to be offline. Check your connection and try again.';
+  }
+
+  const normalized = error.toLowerCase();
+  if (normalized.includes('timeout') || normalized.includes('timed out')) {
+    return 'The rankings service took too long to respond. Try again in a moment.';
+  }
+  if (
+    normalized.includes('503') ||
+    normalized.includes('502') ||
+    normalized.includes('service unavailable')
+  ) {
+    return 'The community rankings service is temporarily unavailable.';
+  }
+
+  return 'Community rankings could not be refreshed. Try again in a moment.';
 }
 
 function RankingRow({
@@ -742,6 +766,7 @@ const Rankings: React.FC = () => {
                   type="button"
                   role="tab"
                   aria-selected={mode === 'wanted'}
+                  aria-controls="community-ranking-results"
                   className={mode === 'wanted' ? 'active' : ''}
                   onClick={() => selectMode('wanted')}
                 >
@@ -752,6 +777,7 @@ const Rankings: React.FC = () => {
                   type="button"
                   role="tab"
                   aria-selected={mode === 'rarest'}
+                  aria-controls="community-ranking-results"
                   className={mode === 'rarest' ? 'active' : ''}
                   onClick={() => selectMode('rarest')}
                 >
@@ -762,9 +788,9 @@ const Rankings: React.FC = () => {
 
               <label className="community-ranking-search">
                 <FaSearch aria-hidden="true" />
-                <span className="sr-only">Search rankings</span>
                 <input
                   type="search"
+                  aria-label="Search rankings"
                   value={query}
                   placeholder="Pokémon, number, or form"
                   onChange={(event) => {
@@ -871,7 +897,7 @@ const Rankings: React.FC = () => {
               className="community-ranking-filter-summary"
               ref={filterSummaryRef}
             >
-              <span>
+              <span role="status" aria-live="polite" aria-atomic="true">
                 <strong>{filteredRows.length.toLocaleString()}</strong> results
                 <i aria-hidden="true">·</i>
                 {CATEGORY_LABELS[category]}
@@ -948,9 +974,9 @@ const Rankings: React.FC = () => {
                 )}
                 <label>
                   <FaSearch aria-hidden="true" />
-                  <span className="sr-only">Search rankings</span>
                   <input
                     type="search"
+                    aria-label="Search rankings"
                     value={query}
                     placeholder="Search"
                     onChange={(event) => {
@@ -966,9 +992,9 @@ const Rankings: React.FC = () => {
             )}
 
             {error && !data && (
-              <section className="community-rankings-state">
+              <section className="community-rankings-state" role="alert">
                 <h2>Rankings are unavailable</h2>
-                <p>{error}</p>
+                <p>{getRankingsErrorMessage(error)}</p>
                 <button type="button" onClick={refresh}>
                   Try again
                 </button>
@@ -990,7 +1016,11 @@ const Rankings: React.FC = () => {
             {data && (
               <>
                 <section
+                  id="community-ranking-results"
                   className="community-ranking-results"
+                  role="tabpanel"
+                  aria-live="polite"
+                  aria-busy={loading}
                   aria-label={
                     mode === 'wanted'
                       ? 'Most wanted Pokémon'
@@ -1036,7 +1066,18 @@ const Rankings: React.FC = () => {
                   </button>
                 )}
                 <footer className="community-rankings-footer">
-                  <span>{formatSnapshotTime(data.snapshot.updated_at)}</span>
+                  <span className="community-rankings-updated">
+                    {formatSnapshotTime(data.snapshot.updated_at)}
+                    <button
+                      type="button"
+                      onClick={refresh}
+                      disabled={loading}
+                      aria-label="Refresh community rankings"
+                      title="Refresh community rankings"
+                    >
+                      <FaSyncAlt aria-hidden="true" />
+                    </button>
+                  </span>
                   {unmatchedCount > 0 && (
                     <span>
                       {unmatchedCount} newer catalog{' '}

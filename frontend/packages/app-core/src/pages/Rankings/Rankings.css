@@ -24,6 +24,15 @@
   letter-spacing: 0;
 }
 
+.community-rankings-page button:focus-visible,
+.community-rankings-page a:focus-visible,
+.community-rankings-page input:focus-visible,
+.community-rankings-page select:focus-visible,
+.community-rankings-page summary:focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--ranking-teal) 48%, transparent);
+  outline-offset: 2px;
+}
+
 .community-rankings-header {
   display: grid;
   grid-template-columns: 3.2rem minmax(0, 1fr) auto;
@@ -226,7 +235,7 @@
   align-items: center;
   justify-content: center;
   min-width: 0;
-  min-height: 1.9rem;
+  min-height: 2.35rem;
   padding: 0.25rem 0.4rem;
   border: 1px solid rgba(157, 190, 193, 0.38);
   border-radius: 5px;
@@ -313,7 +322,7 @@
 
 .community-ranking-filter-summary > button {
   margin-left: auto;
-  min-height: 1.9rem;
+  min-height: 2.35rem;
   padding: 0.2rem 0.6rem;
   border: 1px solid var(--ranking-teal);
   border-radius: 5px;
@@ -676,6 +685,30 @@
   font-weight: 700;
 }
 
+.community-rankings-updated {
+  display: inline-flex;
+  gap: 0.4rem;
+  align-items: center;
+}
+
+.community-rankings-updated button {
+  display: inline-grid;
+  width: 2.35rem;
+  height: 2.35rem;
+  padding: 0;
+  place-items: center;
+  border: 1px solid var(--ranking-line);
+  border-radius: 5px;
+  color: var(--ranking-teal);
+  background: transparent;
+  cursor: pointer;
+}
+
+.community-rankings-updated button:disabled {
+  cursor: wait;
+  opacity: 0.55;
+}
+
 .community-rankings-stale {
   display: flex;
   gap: 0.75rem;
@@ -812,7 +845,7 @@
 
   .community-ranking-filters button {
     min-width: 0;
-    min-height: 1.85rem;
+    min-height: 2.65rem;
     padding-inline: 0.2rem;
     font-size: 0.64rem;
   }
@@ -860,7 +893,7 @@
 
   .community-ranking-quick-controls select,
   .community-ranking-quick-controls label {
-    min-height: 2.1rem;
+    min-height: 2.65rem;
     font-size: 0.6rem;
   }
 
