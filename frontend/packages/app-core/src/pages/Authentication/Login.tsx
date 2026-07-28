@@ -53,6 +53,10 @@ const Login: FC = () => {
     if (!oauthStatus) return;
     if (handledOAuthStatus.current === oauthStatus) return;
     handledOAuthStatus.current = oauthStatus;
+    if (oauthStatus === 'account-exists') {
+      toast.info('An account already exists for that email. Log in with Google or your password.');
+      return;
+    }
     if (oauthStatus === 'link-required') {
       toast.info('That email already has a password account. Sign in normally before linking Google.');
       return;

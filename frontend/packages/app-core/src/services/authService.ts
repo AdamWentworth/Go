@@ -31,10 +31,13 @@ export interface GoogleRegistration {
   emailVerified: true;
 }
 
-export const startGoogleAuthentication = (): void => {
+export const startGoogleAuthentication = (
+  intent: 'login' | 'register' = 'login',
+): void => {
   const url = new URL(buildUrl(AUTH_API_URL, authContract.endpoints.googleStart));
   url.searchParams.set('device_id', getDeviceId());
   url.searchParams.set('return_to', window.location.origin);
+  url.searchParams.set('intent', intent);
   window.location.assign(url.toString());
 };
 

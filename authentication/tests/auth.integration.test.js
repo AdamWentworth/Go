@@ -416,4 +416,30 @@ describe('authentication service integration', () => {
     });
     expect(passwordLogin.status).toBe(200);
   });
+
+  test('Google registration rejects a verified email that already has an account', async () => {
+    await registerUser({ email: 'google.user@example.com' });
+    const start = await request(app)
+      .get('/auth/google')
+      .query({
+        device_id: validDeviceId,
+        return_to: 'http://localhost:3000',
+        intent: 'register'
+      });
+    const stateCookie = start.headers['set-cookie'].find((cookie) => cookie.startsWith('googleOAuthState='));
+    const state = new URL(start.headers.location).searchParams.get('state');
+
+    const callback = await request(app)
+      .get('/auth/google/callback')
+      .set('Cookie', stateCookie)
+      .query({ code: 'google-code', state });
+
+    expect(callback.status).toBe(302);
+    expect(callback.headers.location).toBe('http://localhost:3000/login?oauth=account-exists');
+    expect(callback.headers['set-cookie']?.some((cookie) => cookie.startsWith('refreshToken='))).not.toBe(true);
+
+    const existingUser = await User.findOne({ email: 'google.user@example.com' }).lean();
+    expect(existingUser.identities).toHaveLength(0);
+    expect(await User.countDocuments({ email: 'google.user@example.com' })).toBe(1);
+  });
 });

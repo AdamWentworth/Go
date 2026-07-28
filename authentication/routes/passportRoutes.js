@@ -63,13 +63,14 @@ const parseCoordinates = (value) => {
 router.get('/google', (req, res) => {
   try {
     const deviceId = typeof req.query.device_id === 'string' ? req.query.device_id.trim() : '';
+    const intent = req.query.intent === 'register' ? 'register' : 'login';
     if (deviceId.length < 3 || deviceId.length > 128) {
       return res.status(400).json({ message: 'Invalid device_id' });
     }
 
     const returnOrigin = safeFrontendOrigin(req.query.return_to);
     const nonce = crypto.randomBytes(24).toString('base64url');
-    const state = signFlow({ nonce, deviceId, returnOrigin });
+    const state = signFlow({ nonce, deviceId, returnOrigin, intent });
     res.cookie(STATE_COOKIE, state, cookieOptions);
     return res.redirect(302, googleOAuth.createAuthorizationUrl({ state, nonce }));
   } catch (error) {
@@ -103,6 +104,10 @@ router.get('/google/callback', async (req, res) => {
 
     const emailOwner = await User.findOne({ email: googleIdentity.email });
     if (emailOwner) {
+      if (flow.intent === 'register') {
+        return redirectWithStatus(res, flow.returnOrigin, '/login', 'account-exists');
+      }
+
       emailOwner.googleId = googleIdentity.subject;
       emailOwner.identities.push({
         provider: 'google',

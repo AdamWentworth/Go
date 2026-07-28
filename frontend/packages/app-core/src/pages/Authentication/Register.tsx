@@ -194,7 +194,7 @@ const Register: FC = () => {
           setShowOptionsOverlay={setShowOptionsOverlay}
           locationOptions={locationOptions}
           oauthProvider={googleEmail ? 'google' : undefined}
-          onGoogleClick={startGoogleAuthentication}
+          onGoogleClick={() => startGoogleAuthentication('register')}
         />
       )}
       <ToastContainer />
