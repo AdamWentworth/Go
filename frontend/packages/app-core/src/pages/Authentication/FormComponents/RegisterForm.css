@@ -517,6 +517,19 @@
   background: var(--color-accent-primary-hover);
 }
 
+:root[data-theme='light'] .register-header h1,
+:root[data-theme='light'] .register-step-heading h2,
+:root[data-theme='light'] .register-method-intro h2 {
+  color: var(--light-text-heading);
+}
+
+:root[data-theme='light'] .register-progress .is-active,
+:root[data-theme='light'] .register-progress .is-complete,
+:root[data-theme='light'] .register-field,
+:root[data-theme='light'] .register-review button {
+  color: var(--light-text-primary);
+}
+
 @media (prefers-reduced-motion: reduce) {
   .register-step {
     animation: none;
