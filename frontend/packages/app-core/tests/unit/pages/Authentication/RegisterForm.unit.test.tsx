@@ -92,7 +92,7 @@ describe('RegisterForm', () => {
     const validateFields = vi.fn(() => true);
     render(<Harness onSubmit={onSubmit} validateFields={validateFields} />);
 
-    expect(screen.getByRole('heading', { name: 'How would you like to join?' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Start your trainer account' })).toBeInTheDocument();
     completeAccountStep();
     expect(validateFields).toHaveBeenCalledWith(['username', 'email']);
 
