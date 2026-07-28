@@ -1,5 +1,6 @@
 import { fireEvent, render, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { MemoryRouter, useLocation } from 'react-router';
 import Rankings, {
   collapseEvolutionFamilyRankings,
   getRankingCatalogSearch,
@@ -84,6 +85,19 @@ vi.mock('@/pages/Rankings/hooks/useCommunityRankings', () => ({
 vi.mock('@/features/variants/hooks/useBootstrapVariants', () => ({
   useBootstrapVariants: vi.fn(),
 }));
+
+const RankingLocation = () => {
+  const location = useLocation();
+  return <output data-testid="ranking-location">{location.search}</output>;
+};
+
+const renderRankings = (initialEntry = '/rankings') =>
+  render(
+    <MemoryRouter initialEntries={[initialEntry]}>
+      <Rankings />
+      <RankingLocation />
+    </MemoryRouter>,
+  );
 
 const makeVariant = (
   variantID: string,
@@ -205,7 +219,7 @@ describe('Community Rankings page', () => {
   });
 
   it('shows exact distinct-trainer counts and switches ranking modes', () => {
-    const { container } = render(<Rankings />);
+    const { container } = renderRankings();
 
     expect(screen.getByRole('heading', { name: 'Community Rankings' }))
       .toBeInTheDocument();
@@ -225,9 +239,11 @@ describe('Community Rankings page', () => {
     rankingState.loading = true;
 
     const { container } = render(
-      <AppLoadingProvider>
-        <Rankings />
-      </AppLoadingProvider>,
+      <MemoryRouter initialEntries={['/rankings']}>
+        <AppLoadingProvider>
+          <Rankings />
+        </AppLoadingProvider>
+      </MemoryRouter>,
     );
 
     expect(container.querySelector('.app-loading-overlay')).toBeInTheDocument();
@@ -237,7 +253,7 @@ describe('Community Rankings page', () => {
   });
 
   it('filters the joined catalog without changing the server snapshot', () => {
-    render(<Rankings />);
+    renderRankings();
 
     fireEvent.change(screen.getByRole('searchbox', { name: 'Search rankings' }), {
       target: { value: 'bulba' },
@@ -249,7 +265,7 @@ describe('Community Rankings page', () => {
   });
 
   it('offers a useful recovery action when search has no matches', () => {
-    render(<Rankings />);
+    renderRankings();
 
     fireEvent.change(screen.getByRole('searchbox', { name: 'Search rankings' }), {
       target: { value: 'missingno' },
@@ -266,7 +282,7 @@ describe('Community Rankings page', () => {
 
   it('explains empty personal views and links to the relevant workflow', () => {
     useAuthStore.setState({ isLoggedIn: true });
-    render(<Rankings />);
+    renderRankings();
 
     fireEvent.click(screen.getByRole('button', { name: 'For trade' }));
 
@@ -276,7 +292,7 @@ describe('Community Rankings page', () => {
   });
 
   it('summarizes active filters while preserving community ranks', () => {
-    const { container } = render(<Rankings />);
+    const { container } = renderRankings();
 
     const rows = Array.from(
       container.querySelectorAll('.community-ranking-row'),
@@ -292,14 +308,17 @@ describe('Community Rankings page', () => {
     expect(screen.getByRole('button', { name: 'Clear' })).toBeInTheDocument();
   });
 
-  it('restores ranking view controls within the browser session', () => {
-    const first = render(<Rankings />);
+  it('stores ranking view controls in a shareable URL', () => {
+    const first = renderRankings();
 
     fireEvent.click(screen.getByRole('tab', { name: 'Rarest owned' }));
     fireEvent.click(screen.getByRole('button', { name: 'Shadow' }));
+    expect(screen.getByTestId('ranking-location')).toHaveTextContent(
+      '?view=rarest&category=shadow',
+    );
     first.unmount();
 
-    render(<Rankings />);
+    renderRankings('/rankings?view=rarest&category=shadow');
     expect(screen.getByRole('tab', { name: 'Rarest owned' }))
       .toHaveAttribute('aria-selected', 'true');
     expect(screen.getByRole('button', { name: 'Shadow' }))
@@ -307,7 +326,7 @@ describe('Community Rankings page', () => {
   });
 
   it('uses the same Dynamax and Gigantamax badges as Pokémon cards', () => {
-    render(<Rankings />);
+    renderRankings();
 
     expect(screen.getByAltText('Dynamax')).toHaveAttribute(
       'src',
@@ -320,7 +339,7 @@ describe('Community Rankings page', () => {
   });
 
   it('uses profile playstyle artwork in the compact ranking filters', () => {
-    render(<Rankings />);
+    renderRankings();
 
     const allButton = screen.getByRole('button', { name: 'All' });
     const shinyButton = screen.getByRole('button', { name: 'Shiny' });
@@ -350,7 +369,7 @@ describe('Community Rankings page', () => {
   });
 
   it('shows public rankings without requiring a signed-in user', () => {
-    render(<Rankings />);
+    renderRankings();
 
     expect(screen.getByRole('heading', { name: 'Community Rankings' }))
       .toBeInTheDocument();
@@ -375,7 +394,7 @@ describe('Community Rankings page', () => {
       instancesLoading: false,
     });
 
-    render(<Rankings />);
+    renderRankings();
 
     expect(screen.getByText('1 caught')).toBeInTheDocument();
     expect(screen.queryByText('1 not listed')).not.toBeInTheDocument();

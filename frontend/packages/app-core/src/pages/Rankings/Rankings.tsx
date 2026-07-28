@@ -1,4 +1,5 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { useSearchParams } from 'react-router';
 import {
   FaArrowRight,
   FaBoxOpen,
@@ -64,7 +65,6 @@ const CATEGORY_FILTERS: ReadonlyArray<{
 const INITIAL_RESULT_COUNT = 30;
 const RESULT_INCREMENT = 30;
 const FALLBACK_IMAGE = '/images/default_pokemon.png';
-const RANKINGS_VIEW_STORAGE_KEY = 'pokegonexus:rankings-view:v1';
 
 const CATEGORY_LABELS: Record<RankingCategory, string> = {
   all: 'All Pokémon',
@@ -81,45 +81,6 @@ const PERSONAL_FILTER_LABELS: Record<PersonalRankingFilter, string> = {
   wanted: 'I want',
   missing: 'Missing',
 };
-
-interface RankingsViewState {
-  mode: RankingMode;
-  category: RankingCategory;
-  personalFilter: PersonalRankingFilter;
-  query: string;
-}
-
-function loadRankingsView(): RankingsViewState {
-  const fallback: RankingsViewState = {
-    mode: 'wanted',
-    category: 'all',
-    personalFilter: 'all',
-    query: '',
-  };
-  if (typeof window === 'undefined') return fallback;
-
-  try {
-    const stored = JSON.parse(
-      window.sessionStorage.getItem(RANKINGS_VIEW_STORAGE_KEY) || '{}',
-    ) as Partial<RankingsViewState>;
-    return {
-      mode: stored.mode === 'rarest' ? 'rarest' : 'wanted',
-      category: ['all', 'shiny', 'costume', 'shadow', 'max'].includes(
-        String(stored.category),
-      )
-        ? (stored.category as RankingCategory)
-        : 'all',
-      personalFilter: ['all', 'owned', 'trade', 'wanted', 'missing'].includes(
-        String(stored.personalFilter),
-      )
-        ? (stored.personalFilter as PersonalRankingFilter)
-        : 'all',
-      query: typeof stored.query === 'string' ? stored.query : '',
-    };
-  } catch {
-    return fallback;
-  }
-}
 
 function formatFormName(value: string): string {
   return value
@@ -544,28 +505,45 @@ const Rankings: React.FC = () => {
   const instances = useInstancesStore((state) => state.instances);
   const instancesLoading = useInstancesStore((state) => state.instancesLoading);
   const isLoggedIn = useAuthStore((state) => state.isLoggedIn);
-  const [initialView] = useState(loadRankingsView);
-  const [mode, setMode] = useState<RankingMode>(initialView.mode);
-  const [query, setQuery] = useState(initialView.query);
-  const [category, setCategory] =
-    useState<RankingCategory>(initialView.category);
-  const [personalFilter, setPersonalFilter] =
-    useState<PersonalRankingFilter>(initialView.personalFilter);
+  const [searchParams, setSearchParams] = useSearchParams();
   const [visibleCount, setVisibleCount] = useState(INITIAL_RESULT_COUNT);
   const { data, error, loading, refresh } = useCommunityRankings(true);
+  const mode: RankingMode =
+    searchParams.get('view') === 'rarest' ? 'rarest' : 'wanted';
+  const requestedCategory = searchParams.get('category');
+  const category: RankingCategory =
+    requestedCategory &&
+    ['shiny', 'costume', 'shadow', 'max'].includes(requestedCategory)
+      ? (requestedCategory as RankingCategory)
+      : 'all';
+  const requestedPersonalFilter = searchParams.get('collection');
+  const personalFilter: PersonalRankingFilter =
+    isLoggedIn &&
+    requestedPersonalFilter &&
+    ['owned', 'trade', 'wanted', 'missing'].includes(requestedPersonalFilter)
+      ? (requestedPersonalFilter as PersonalRankingFilter)
+      : 'all';
+  const query = searchParams.get('search') ?? '';
 
   useBootstrapVariants();
 
-  useEffect(() => {
-    window.sessionStorage.setItem(
-      RANKINGS_VIEW_STORAGE_KEY,
-      JSON.stringify({ mode, category, personalFilter, query }),
-    );
-  }, [category, mode, personalFilter, query]);
+  const updateSearchParams = useCallback(
+    (updates: Record<string, string | null>, replace = false) => {
+      const next = new URLSearchParams(searchParams);
+      Object.entries(updates).forEach(([key, value]) => {
+        if (value) next.set(key, value);
+        else next.delete(key);
+      });
+      setSearchParams(next, { replace });
+    },
+    [searchParams, setSearchParams],
+  );
 
   useEffect(() => {
-    if (mode === 'wanted' && category === 'shadow') setCategory('all');
-  }, [category, mode]);
+    if (mode === 'wanted' && category === 'shadow') {
+      updateSearchParams({ category: null }, true);
+    }
+  }, [category, mode, updateSearchParams]);
 
   const variantsByID = useMemo(
     () => new Map(variants.map((variant) => [variant.variant_id, variant])),
@@ -680,7 +658,11 @@ const Rankings: React.FC = () => {
   );
 
   const selectMode = (nextMode: RankingMode) => {
-    setMode(nextMode);
+    updateSearchParams({
+      view: nextMode === 'wanted' ? null : nextMode,
+      category:
+        nextMode === 'wanted' && category === 'shadow' ? null : category,
+    });
     setVisibleCount(INITIAL_RESULT_COUNT);
   };
   const hasActiveFilters =
@@ -688,9 +670,11 @@ const Rankings: React.FC = () => {
     personalFilter !== 'all' ||
     normalizedQuery.length > 0;
   const clearFilters = () => {
-    setCategory('all');
-    setPersonalFilter('all');
-    setQuery('');
+    updateSearchParams({
+      category: null,
+      collection: null,
+      search: null,
+    });
     setVisibleCount(INITIAL_RESULT_COUNT);
   };
   const pageLoading =
@@ -760,7 +744,10 @@ const Rankings: React.FC = () => {
                   value={query}
                   placeholder="Pokémon, number, or form"
                   onChange={(event) => {
-                    setQuery(event.target.value);
+                    updateSearchParams(
+                      { search: event.target.value || null },
+                      true,
+                    );
                     setVisibleCount(INITIAL_RESULT_COUNT);
                   }}
                 />
@@ -796,7 +783,9 @@ const Rankings: React.FC = () => {
                       aria-pressed={category === value}
                       className={category === value ? 'active' : ''}
                       onClick={() => {
-                        setCategory(value);
+                        updateSearchParams({
+                          category: value === 'all' ? null : value,
+                        });
                         setVisibleCount(INITIAL_RESULT_COUNT);
                       }}
                     >
@@ -838,7 +827,9 @@ const Rankings: React.FC = () => {
                         aria-pressed={personalFilter === value}
                         className={personalFilter === value ? 'active personal' : ''}
                         onClick={() => {
-                          setPersonalFilter(value);
+                          updateSearchParams({
+                            collection: value === 'all' ? null : value,
+                          });
                           setVisibleCount(INITIAL_RESULT_COUNT);
                         }}
                       >
@@ -909,8 +900,12 @@ const Rankings: React.FC = () => {
                       personalFilter={personalFilter}
                       query={query}
                       onClearAll={clearFilters}
-                      onClearCategory={() => setCategory('all')}
-                      onClearQuery={() => setQuery('')}
+                      onClearCategory={() =>
+                        updateSearchParams({ category: null })
+                      }
+                      onClearQuery={() =>
+                        updateSearchParams({ search: null }, true)
+                      }
                     />
                   )}
                 </section>
