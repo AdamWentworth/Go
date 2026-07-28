@@ -42,7 +42,7 @@ const cookieOptions = {
   secure: process.env.NODE_ENV !== 'test',
   sameSite: 'lax',
   maxAge: 10 * 60 * 1000,
-  path: '/auth/google'
+  path: '/'
 };
 
 const secret = () => process.env.OAUTH_STATE_SECRET || process.env.JWT_SECRET;
@@ -65,8 +65,7 @@ const verifyDiscordFlow = (token) => jwt.verify(token, secret(), {
   issuer: 'pokemongonexus-discord-oauth'
 });
 const discordCookieOptions = {
-  ...cookieOptions,
-  path: '/auth/discord'
+  ...cookieOptions
 };
 const signFacebookFlow = (payload) => jwt.sign(payload, secret(), {
   expiresIn: FLOW_TTL,
@@ -78,8 +77,7 @@ const verifyFacebookFlow = (token) => jwt.verify(token, secret(), {
   issuer: 'pokemongonexus-facebook-oauth'
 });
 const facebookCookieOptions = {
-  ...cookieOptions,
-  path: '/auth/facebook'
+  ...cookieOptions
 };
 const safeFrontendOrigin = (candidate) =>
   allowedFrontendOrigins.has(candidate) ? candidate : fallbackFrontendOrigin;

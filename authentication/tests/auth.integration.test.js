@@ -329,6 +329,8 @@ describe('authentication service integration', () => {
     expect(res.status).toBe(302);
     expect(res.headers.location).toContain('https://accounts.google.test/authorize');
     expect(res.headers['set-cookie'].some((cookie) => cookie.startsWith('googleOAuthState='))).toBe(true);
+    expect(res.headers['set-cookie'].find((cookie) =>
+      cookie.startsWith('googleOAuthState='))).toContain('Path=/');
   });
 
   test('Google OAuth creates a pending registration and completes it without a password', async () => {
@@ -473,6 +475,7 @@ describe('authentication service integration', () => {
       });
     const stateCookie = start.headers['set-cookie'].find((cookie) =>
       cookie.startsWith('discordOAuthState='));
+    expect(stateCookie).toContain('Path=/');
     const state = new URL(start.headers.location).searchParams.get('state');
 
     const callback = await request(app)
@@ -570,6 +573,7 @@ describe('authentication service integration', () => {
       });
     const stateCookie = start.headers['set-cookie'].find((cookie) =>
       cookie.startsWith('facebookOAuthState='));
+    expect(stateCookie).toContain('Path=/');
     const state = new URL(start.headers.location).searchParams.get('state');
     const callback = await request(app)
       .get('/auth/facebook/callback')
