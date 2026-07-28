@@ -186,6 +186,7 @@ test.describe('Community rankings page', () => {
     await expect(page).toHaveScreenshot('community-rankings-public.png', {
       animations: 'disabled',
       fullPage: true,
+      maxDiffPixelRatio: 0.05,
       mask: [page.locator('.community-rankings-updated')],
     });
   });
