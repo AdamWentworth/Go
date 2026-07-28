@@ -534,9 +534,50 @@
 }
 
 .community-rankings-empty {
-  padding: 3rem 1rem;
+  display: grid;
+  gap: 0.45rem;
+  justify-items: center;
+  padding: 2.5rem 1rem;
   color: var(--ranking-muted);
   text-align: center;
+}
+
+.community-rankings-empty > svg {
+  margin-bottom: 0.2rem;
+  color: var(--ranking-teal);
+  font-size: 1.45rem;
+}
+
+.community-rankings-empty > strong {
+  color: var(--ranking-text);
+  font-size: 1rem;
+}
+
+.community-rankings-empty > span {
+  max-width: 28rem;
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.community-rankings-empty > a,
+.community-rankings-empty > button {
+  min-height: 2.5rem;
+  margin-top: 0.45rem;
+  padding: 0.5rem 0.85rem;
+  border: 1px solid var(--ranking-teal);
+  border-radius: 6px;
+  color: #071312;
+  background: var(--ranking-teal);
+  font-size: 0.76rem;
+  font-weight: 900;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.community-rankings-empty > a:focus-visible,
+.community-rankings-empty > button:focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--ranking-teal) 42%, transparent);
+  outline-offset: 3px;
 }
 
 .community-rankings-more {

@@ -213,6 +213,33 @@ describe('Community Rankings page', () => {
     expect(screen.getByLabelText('Rank 2')).toBeInTheDocument();
   });
 
+  it('offers a useful recovery action when search has no matches', () => {
+    render(<Rankings />);
+
+    fireEvent.change(screen.getByRole('searchbox', { name: 'Search rankings' }), {
+      target: { value: 'missingno' },
+    });
+
+    expect(screen.getByText('No matching Pokémon')).toBeInTheDocument();
+    expect(
+      screen.getByText('Try another name, form, or Pokédex number.'),
+    ).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Clear search' }));
+    expect(screen.getByText('Pikachu')).toBeInTheDocument();
+  });
+
+  it('explains empty personal views and links to the relevant workflow', () => {
+    useAuthStore.setState({ isLoggedIn: true });
+    render(<Rankings />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'For trade' }));
+
+    expect(screen.getByText('Nothing is listed for trade')).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'View my Pokémon' }))
+      .toHaveAttribute('href', '/pokemon?filter=caught');
+  });
+
   it('summarizes active filters while preserving community ranks', () => {
     const { container } = render(<Rankings />);
 

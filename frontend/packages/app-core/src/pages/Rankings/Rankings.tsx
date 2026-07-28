@@ -420,6 +420,104 @@ function RankingRow({
   );
 }
 
+function EmptyRankingState({
+  category,
+  personalFilter,
+  query,
+  onClearAll,
+  onClearCategory,
+  onClearQuery,
+}: {
+  category: RankingCategory;
+  personalFilter: PersonalRankingFilter;
+  query: string;
+  onClearAll: () => void;
+  onClearCategory: () => void;
+  onClearQuery: () => void;
+}) {
+  if (query.trim()) {
+    return (
+      <div className="community-rankings-empty" role="status">
+        <FaSearch aria-hidden="true" />
+        <strong>No matching Pokémon</strong>
+        <span>Try another name, form, or Pokédex number.</span>
+        <button type="button" onClick={onClearQuery}>
+          Clear search
+        </button>
+      </div>
+    );
+  }
+
+  if (personalFilter === 'owned') {
+    return (
+      <div className="community-rankings-empty" role="status">
+        <FaBoxOpen aria-hidden="true" />
+        <strong>None of these are in your collection</strong>
+        <span>Caught Pokémon and Pokédex registrations appear here.</span>
+        <a href="/pokemon">Browse Pokémon</a>
+      </div>
+    );
+  }
+
+  if (personalFilter === 'trade') {
+    return (
+      <div className="community-rankings-empty" role="status">
+        <FaExchangeAlt aria-hidden="true" />
+        <strong>Nothing is listed for trade</strong>
+        <span>Mark a caught copy for trade to see it in this ranking.</span>
+        <a href={buildPokemonCatalogPath({ filter: 'Caught' })}>
+          View my Pokémon
+        </a>
+      </div>
+    );
+  }
+
+  if (personalFilter === 'wanted') {
+    return (
+      <div className="community-rankings-empty" role="status">
+        <FaHeart aria-hidden="true" />
+        <strong>Nothing here is on your wishlist</strong>
+        <span>Add Pokémon to your wishlist to compare them here.</span>
+        <a href="/pokemon">Browse Pokémon</a>
+      </div>
+    );
+  }
+
+  if (personalFilter === 'missing') {
+    return (
+      <div className="community-rankings-empty" role="status">
+        <FaCheckCircle aria-hidden="true" />
+        <strong>Nothing is missing</strong>
+        <span>You have every Pokémon in this view registered or caught.</span>
+        <button type="button" onClick={onClearAll}>
+          Show all rankings
+        </button>
+      </div>
+    );
+  }
+
+  if (category !== 'all') {
+    return (
+      <div className="community-rankings-empty" role="status">
+        <FaSearch aria-hidden="true" />
+        <strong>No {CATEGORY_LABELS[category].toLowerCase()} entries</strong>
+        <span>This community snapshot has no results in that category.</span>
+        <button type="button" onClick={onClearCategory}>
+          Show all categories
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="community-rankings-empty" role="status">
+      <FaSearch aria-hidden="true" />
+      <strong>No community entries yet</strong>
+      <span>Rankings will appear after the next community snapshot.</span>
+    </div>
+  );
+}
+
 const Rankings: React.FC = () => {
   const variants = useVariantsStore((state) => state.variants);
   const variantsLoading = useVariantsStore((state) => state.variantsLoading);
@@ -635,7 +733,10 @@ const Rankings: React.FC = () => {
             >
               <div className="community-ranking-filter-group">
                 <span>Category</span>
-                <div className="community-ranking-filter-row community-ranking-filter-row--category">
+                <div
+                  className="community-ranking-filter-row community-ranking-filter-row--category"
+                  aria-label="Pokémon category"
+                >
                   {CATEGORY_FILTERS
                     .filter(({ rarestOnly }) => !rarestOnly || mode === 'rarest')
                     .map(({ value, label, mask }) => (
@@ -764,9 +865,14 @@ const Rankings: React.FC = () => {
                     />
                   ))}
                   {visibleRows.length === 0 && (
-                    <div className="community-rankings-empty">
-                      No Pokémon match this search.
-                    </div>
+                    <EmptyRankingState
+                      category={category}
+                      personalFilter={personalFilter}
+                      query={query}
+                      onClearAll={clearFilters}
+                      onClearCategory={() => setCategory('all')}
+                      onClearQuery={() => setQuery('')}
+                    />
                   )}
                 </section>
                 {visibleRows.length < filteredRows.length && (
