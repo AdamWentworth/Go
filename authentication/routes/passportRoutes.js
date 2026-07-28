@@ -19,10 +19,20 @@ const DISCORD_PENDING_COOKIE = 'discordOAuthPending';
 const FACEBOOK_STATE_COOKIE = 'facebookOAuthState';
 const FACEBOOK_PENDING_COOKIE = 'facebookOAuthPending';
 const TRAINER_CODE_RE = /^\d{12}$/;
-const allowedFrontendOrigins = new Set([
-  process.env.FRONTEND_URL,
+const localFrontendOrigins = new Set([
   'http://localhost:3000',
-  'http://127.0.0.1:3000',
+  'http://127.0.0.1:3000'
+]);
+const configuredFrontendOrigin = process.env.FRONTEND_URL;
+const fallbackFrontendOrigin =
+  process.env.NODE_ENV === 'production' && localFrontendOrigins.has(configuredFrontendOrigin)
+    ? 'https://pokegonexus.com'
+    : (configuredFrontendOrigin || (
+      process.env.NODE_ENV === 'production' ? 'https://pokegonexus.com' : 'http://localhost:3000'
+    ));
+const allowedFrontendOrigins = new Set([
+  configuredFrontendOrigin,
+  ...localFrontendOrigins,
   'https://pokegonexus.com',
   'https://www.pokegonexus.com'
 ].filter(Boolean));
@@ -72,7 +82,7 @@ const facebookCookieOptions = {
   path: '/auth/facebook'
 };
 const safeFrontendOrigin = (candidate) =>
-  allowedFrontendOrigins.has(candidate) ? candidate : (process.env.FRONTEND_URL || 'http://localhost:3000');
+  allowedFrontendOrigins.has(candidate) ? candidate : fallbackFrontendOrigin;
 const redirectWithStatus = (res, origin, path, status) =>
   res.redirect(302, `${origin}${path}${path.includes('?') ? '&' : '?'}oauth=${encodeURIComponent(status)}`);
 const optionalString = (value, max) => {
