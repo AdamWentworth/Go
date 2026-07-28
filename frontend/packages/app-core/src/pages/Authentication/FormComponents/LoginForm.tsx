@@ -1,6 +1,6 @@
 // LoginForm.tsx
 
-import React, { FC } from 'react';
+import React, { FC, useEffect, useState } from 'react';
 import {
   GoogleLoginButton,
 } from 'react-social-login-buttons';
@@ -12,6 +12,10 @@ import type { FormErrors } from '../../../types/auth';
 import { startGoogleAuthentication } from '@/services/authService';
 import { startDiscordAuthentication } from '@/services/authService';
 import { startFacebookAuthentication } from '@/services/authService';
+import {
+  isStandalonePwa,
+  prepareFacebookAuthentication,
+} from '@/services/authService';
 import { FaDiscord, FaFacebookF } from 'react-icons/fa';
 
 interface LoginFormProps {
@@ -30,6 +34,21 @@ const LoginForm: FC<LoginFormProps> = ({
   onResetPassword,
 }) => {
   const { alert } = useModal();
+  const [usesFacebookExternalHandoff] = useState(isStandalonePwa);
+  const [facebookAuthorizationUrl, setFacebookAuthorizationUrl] = useState<string>();
+
+  useEffect(() => {
+    if (!usesFacebookExternalHandoff) return;
+    let active = true;
+    prepareFacebookAuthentication('login')
+      .then((authorizationUrl) => {
+        if (active) setFacebookAuthorizationUrl(authorizationUrl);
+      })
+      .catch(() => undefined);
+    return () => {
+      active = false;
+    };
+  }, [usesFacebookExternalHandoff]);
 
   const handleResetPassword = () => {
     if (onResetPassword) {
@@ -81,14 +100,27 @@ const LoginForm: FC<LoginFormProps> = ({
               <FaDiscord aria-hidden="true" />
               Login with Discord
             </button>
-            <button
-              type="button"
-              className="facebook-login-button"
-              onClick={() => startFacebookAuthentication('login')}
-            >
-              <FaFacebookF aria-hidden="true" />
-              Login with Facebook
-            </button>
+            {facebookAuthorizationUrl ? (
+              <a
+                className="facebook-login-button"
+                href={facebookAuthorizationUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                <FaFacebookF aria-hidden="true" />
+                Login with Facebook
+              </a>
+            ) : (
+              <button
+                type="button"
+                className="facebook-login-button"
+                onClick={() => startFacebookAuthentication('login')}
+                disabled={usesFacebookExternalHandoff}
+              >
+                <FaFacebookF aria-hidden="true" />
+                {usesFacebookExternalHandoff ? 'Preparing Facebook…' : 'Login with Facebook'}
+              </button>
+            )}
           </div>
         </form>
       </div>

@@ -17,6 +17,8 @@ import {
   startGoogleAuthentication,
   startDiscordAuthentication,
   startFacebookAuthentication,
+  isStandalonePwa,
+  prepareFacebookAuthentication,
 } from '../../services/authService';
 import './Register.css';
 import { useAuth } from '../../contexts/AuthContext';
@@ -76,7 +78,22 @@ const Register: FC = () => {
   const [feedback, setFeedback] = useState<string>('');
   const [isRegistered, setIsRegistered] = useState<boolean>(false);
   const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [usesFacebookExternalHandoff] = useState(isStandalonePwa);
+  const [facebookAuthorizationUrl, setFacebookAuthorizationUrl] = useState<string>();
   const { login } = useAuth();
+
+  useEffect(() => {
+    if (!usesFacebookExternalHandoff || oauthProvider) return;
+    let active = true;
+    prepareFacebookAuthentication('register')
+      .then((authorizationUrl) => {
+        if (active) setFacebookAuthorizationUrl(authorizationUrl);
+      })
+      .catch((error) => log.error('Unable to prepare Facebook registration', error));
+    return () => {
+      active = false;
+    };
+  }, [oauthProvider, usesFacebookExternalHandoff]);
 
   useEffect(() => {
     if (oauthStatus === 'account-not-found') {
@@ -231,6 +248,8 @@ const Register: FC = () => {
           onGoogleClick={() => startGoogleAuthentication('register')}
           onDiscordClick={() => startDiscordAuthentication('register')}
           onFacebookClick={() => startFacebookAuthentication('register')}
+          facebookAuthorizationUrl={facebookAuthorizationUrl}
+          facebookExternalHandoff={usesFacebookExternalHandoff}
         />
       )}
       <ToastContainer />
