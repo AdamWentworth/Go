@@ -40,7 +40,7 @@ jobs:
       compose_project_name: authentication
       health_url: http://127.0.0.1:3002/readyz
       health_label: auth
-      required_env_keys: DATABASE_URL JWT_SECRET GOOGLE_CLIENT_ID GOOGLE_CLIENT_SECRET GOOGLE_CALLBACK_URL
+      required_env_keys: DATABASE_URL JWT_SECRET GOOGLE_CLIENT_ID GOOGLE_CLIENT_SECRET GOOGLE_CALLBACK_URL DISCORD_CLIENT_ID DISCORD_CLIENT_SECRET DISCORD_CALLBACK_URL
       kafka_network_mode: create
       dependency_container: mongo_auth
       dependency_service: mongo_auth
