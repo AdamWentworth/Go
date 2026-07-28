@@ -34,9 +34,10 @@ const log = createScopedLogger('Register');
 
 const Register: FC = () => {
   const [searchParams] = useSearchParams();
-  const isGoogleReturn = searchParams.get('oauth') === 'google';
-  const isDiscordReturn = searchParams.get('oauth') === 'discord';
-  const isFacebookReturn = searchParams.get('oauth') === 'facebook';
+  const oauthStatus = searchParams.get('oauth');
+  const isGoogleReturn = oauthStatus === 'google';
+  const isDiscordReturn = oauthStatus === 'discord';
+  const isFacebookReturn = oauthStatus === 'facebook';
   const oauthProvider = isGoogleReturn
     ? 'google'
     : isDiscordReturn
@@ -76,6 +77,12 @@ const Register: FC = () => {
   const [isRegistered, setIsRegistered] = useState<boolean>(false);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const { login } = useAuth();
+
+  useEffect(() => {
+    if (oauthStatus === 'account-not-found') {
+      toast.info('No account exists for that provider email yet. Choose a sign-up method to register.');
+    }
+  }, [oauthStatus]);
 
   useEffect(() => {
     if (!oauthProvider) return;

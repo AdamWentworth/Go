@@ -134,6 +134,9 @@ router.get('/google/callback', async (req, res) => {
     const user = await User.findOne(identityQuery);
 
     if (user) {
+      if (flow.intent === 'register') {
+        return redirectWithStatus(res, flow.returnOrigin, '/login', 'account-exists');
+      }
       const tokens = await createSession(User, user, flow.deviceId);
       req.accessToken = tokens.accessToken;
       req.refreshToken = tokens.refreshToken;
@@ -163,6 +166,10 @@ router.get('/google/callback', async (req, res) => {
       return setCookies(req, res, () =>
         redirectWithStatus(res, flow.returnOrigin, '/login', 'success')
       );
+    }
+
+    if (flow.intent === 'login') {
+      return redirectWithStatus(res, flow.returnOrigin, '/register', 'account-not-found');
     }
 
     res.cookie(PENDING_COOKIE, signFlow({
@@ -320,6 +327,9 @@ router.get('/discord/callback', async (req, res) => {
     });
 
     if (user) {
+      if (flow.intent === 'register') {
+        return redirectWithStatus(res, flow.returnOrigin, '/login', 'account-exists');
+      }
       const tokens = await createSession(User, user, flow.deviceId);
       req.accessToken = tokens.accessToken;
       req.refreshToken = tokens.refreshToken;
@@ -349,6 +359,10 @@ router.get('/discord/callback', async (req, res) => {
       return setCookies(req, res, () =>
         redirectWithStatus(res, flow.returnOrigin, '/login', 'success')
       );
+    }
+
+    if (flow.intent === 'login') {
+      return redirectWithStatus(res, flow.returnOrigin, '/register', 'account-not-found');
     }
 
     res.cookie(DISCORD_PENDING_COOKIE, signDiscordFlow({
@@ -526,6 +540,9 @@ router.get('/facebook/callback', async (req, res) => {
     });
 
     if (user) {
+      if (flow.intent === 'register') {
+        return redirectWithStatus(res, flow.returnOrigin, '/login', 'account-exists');
+      }
       const tokens = await createSession(User, user, flow.deviceId);
       req.accessToken = tokens.accessToken;
       req.refreshToken = tokens.refreshToken;
@@ -555,6 +572,10 @@ router.get('/facebook/callback', async (req, res) => {
       return setCookies(req, res, () =>
         redirectWithStatus(res, flow.returnOrigin, '/login', 'success')
       );
+    }
+
+    if (flow.intent === 'login') {
+      return redirectWithStatus(res, flow.returnOrigin, '/register', 'account-not-found');
     }
 
     res.cookie(FACEBOOK_PENDING_COOKIE, signFacebookFlow({

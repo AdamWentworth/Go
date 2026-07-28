@@ -93,15 +93,15 @@ const Login: FC = () => {
     if (handledOAuthStatus.current === oauthStatus) return;
     handledOAuthStatus.current = oauthStatus;
     if (oauthStatus === 'account-exists') {
-      toast.info('An account already exists for that email. Log in with Google or your password.');
+      toast.info('An account already exists for that email. Sign in with the provider or your password.');
       return;
     }
     if (oauthStatus === 'link-required') {
-      toast.info('That email already has a password account. Sign in normally before linking Google.');
+      toast.info('That email already has a password account. Sign in normally before linking a provider.');
       return;
     }
     if (oauthStatus !== 'success') {
-      toast.error('Google login was not completed. Please try again.');
+      toast.error('Provider login could not be completed securely. Please try again.');
       return;
     }
 
@@ -121,7 +121,7 @@ const Login: FC = () => {
           refreshTokenExpiry: response.refreshTokenExpiry,
         });
         await hydrateUserOverview(response.user_id);
-        setFeedback('Successfully Logged in with Google');
+        setFeedback('Successfully logged in');
         setIsSuccessful(true);
       })
       .catch(() => toast.error('Login succeeded, but your account data could not be loaded. Please try again.'))

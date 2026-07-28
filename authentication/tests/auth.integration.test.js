@@ -336,7 +336,11 @@ describe('authentication service integration', () => {
   test('Google OAuth creates a pending registration and completes it without a password', async () => {
     const start = await request(app)
       .get('/auth/google')
-      .query({ device_id: validDeviceId, return_to: 'http://localhost:3000' });
+      .query({
+        device_id: validDeviceId,
+        return_to: 'http://localhost:3000',
+        intent: 'register'
+      });
     const stateCookie = start.headers['set-cookie'].find((cookie) => cookie.startsWith('googleOAuthState='));
     const state = new URL(start.headers.location).searchParams.get('state');
 
@@ -400,6 +404,52 @@ describe('authentication service integration', () => {
     expect(callback.status).toBe(302);
     expect(callback.headers.location).toBe('http://localhost:3000/login?oauth=success');
     expect(callback.headers['set-cookie'].some((cookie) => cookie.startsWith('refreshToken='))).toBe(true);
+  });
+
+  test('Google registration rejects an already-linked identity without logging it in', async () => {
+    await User.create({
+      username: validLoginId,
+      email: 'google.user@example.com',
+      identities: [{
+        provider: 'google',
+        subject: 'google-subject-123',
+        email: 'google.user@example.com',
+        emailVerified: true
+      }]
+    });
+    const start = await request(app).get('/auth/google').query({
+      device_id: validDeviceId,
+      return_to: 'http://localhost:3000',
+      intent: 'register'
+    });
+    const stateCookie = start.headers['set-cookie'].find((cookie) =>
+      cookie.startsWith('googleOAuthState='));
+    const state = new URL(start.headers.location).searchParams.get('state');
+    const callback = await request(app).get('/auth/google/callback')
+      .set('Cookie', stateCookie)
+      .query({ code: 'google-code', state });
+
+    expect(callback.headers.location).toBe('http://localhost:3000/login?oauth=account-exists');
+    expect(callback.headers['set-cookie']?.some((cookie) =>
+      cookie.startsWith('refreshToken='))).not.toBe(true);
+  });
+
+  test('Google login directs an unknown account to registration without creating pending state', async () => {
+    const start = await request(app).get('/auth/google').query({
+      device_id: validDeviceId,
+      return_to: 'http://localhost:3000',
+      intent: 'login'
+    });
+    const stateCookie = start.headers['set-cookie'].find((cookie) =>
+      cookie.startsWith('googleOAuthState='));
+    const state = new URL(start.headers.location).searchParams.get('state');
+    const callback = await request(app).get('/auth/google/callback')
+      .set('Cookie', stateCookie)
+      .query({ code: 'google-code', state });
+
+    expect(callback.headers.location).toBe('http://localhost:3000/register?oauth=account-not-found');
+    expect(callback.headers['set-cookie']?.some((cookie) =>
+      cookie.startsWith('googleOAuthPending='))).not.toBe(true);
   });
 
   test('Google OAuth links a verified matching email to the existing password account', async () => {
@@ -563,6 +613,50 @@ describe('authentication service integration', () => {
     expect(existing.identities).toHaveLength(0);
   });
 
+  test('Discord registration rejects an already-linked identity without logging it in', async () => {
+    await User.create({
+      username: validLoginId,
+      email: 'discord.user@example.com',
+      identities: [{
+        provider: 'discord',
+        subject: 'discord-subject-456',
+        email: 'discord.user@example.com',
+        emailVerified: true
+      }]
+    });
+    const start = await request(app).get('/auth/discord').query({
+      device_id: validDeviceId,
+      return_to: 'http://localhost:3000',
+      intent: 'register'
+    });
+    const stateCookie = start.headers['set-cookie'].find((cookie) =>
+      cookie.startsWith('discordOAuthState='));
+    const state = new URL(start.headers.location).searchParams.get('state');
+    const callback = await request(app).get('/auth/discord/callback')
+      .set('Cookie', stateCookie)
+      .query({ code: 'discord-code', state });
+
+    expect(callback.headers.location).toBe('http://localhost:3000/login?oauth=account-exists');
+    expect(callback.headers['set-cookie']?.some((cookie) =>
+      cookie.startsWith('refreshToken='))).not.toBe(true);
+  });
+
+  test('Discord login directs an unknown account to registration', async () => {
+    const start = await request(app).get('/auth/discord').query({
+      device_id: validDeviceId,
+      return_to: 'http://localhost:3000',
+      intent: 'login'
+    });
+    const stateCookie = start.headers['set-cookie'].find((cookie) =>
+      cookie.startsWith('discordOAuthState='));
+    const state = new URL(start.headers.location).searchParams.get('state');
+    const callback = await request(app).get('/auth/discord/callback')
+      .set('Cookie', stateCookie)
+      .query({ code: 'discord-code', state });
+
+    expect(callback.headers.location).toBe('http://localhost:3000/register?oauth=account-not-found');
+  });
+
   test('Facebook OAuth creates and completes a pending registration', async () => {
     const start = await request(app)
       .get('/auth/facebook')
@@ -652,5 +746,49 @@ describe('authentication service integration', () => {
     );
     const existing = await User.findOne({ email: 'facebook.user@example.com' }).lean();
     expect(existing.identities).toHaveLength(0);
+  });
+
+  test('Facebook registration rejects an already-linked identity without logging it in', async () => {
+    await User.create({
+      username: validLoginId,
+      email: 'facebook.user@example.com',
+      identities: [{
+        provider: 'facebook',
+        subject: 'facebook-subject-789',
+        email: 'facebook.user@example.com',
+        emailVerified: true
+      }]
+    });
+    const start = await request(app).get('/auth/facebook').query({
+      device_id: validDeviceId,
+      return_to: 'http://localhost:3000',
+      intent: 'register'
+    });
+    const stateCookie = start.headers['set-cookie'].find((cookie) =>
+      cookie.startsWith('facebookOAuthState='));
+    const state = new URL(start.headers.location).searchParams.get('state');
+    const callback = await request(app).get('/auth/facebook/callback')
+      .set('Cookie', stateCookie)
+      .query({ code: 'facebook-code', state });
+
+    expect(callback.headers.location).toBe('http://localhost:3000/login?oauth=account-exists');
+    expect(callback.headers['set-cookie']?.some((cookie) =>
+      cookie.startsWith('refreshToken='))).not.toBe(true);
+  });
+
+  test('Facebook login directs an unknown account to registration', async () => {
+    const start = await request(app).get('/auth/facebook').query({
+      device_id: validDeviceId,
+      return_to: 'http://localhost:3000',
+      intent: 'login'
+    });
+    const stateCookie = start.headers['set-cookie'].find((cookie) =>
+      cookie.startsWith('facebookOAuthState='));
+    const state = new URL(start.headers.location).searchParams.get('state');
+    const callback = await request(app).get('/auth/facebook/callback')
+      .set('Cookie', stateCookie)
+      .query({ code: 'facebook-code', state });
+
+    expect(callback.headers.location).toBe('http://localhost:3000/register?oauth=account-not-found');
   });
 });
