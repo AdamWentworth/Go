@@ -524,15 +524,6 @@
   cursor: pointer;
 }
 
-.community-ranking-loader {
-  width: 2rem;
-  height: 2rem;
-  border: 3px solid rgba(66, 215, 196, 0.2);
-  border-top-color: var(--ranking-teal);
-  border-radius: 50%;
-  animation: community-ranking-spin 0.75s linear infinite;
-}
-
 .community-rankings-empty {
   display: grid;
   gap: 0.45rem;
@@ -593,12 +584,6 @@
   color: var(--ranking-muted);
   font-size: 0.68rem;
   font-weight: 700;
-}
-
-@keyframes community-ranking-spin {
-  to {
-    transform: rotate(360deg);
-  }
 }
 
 @media (max-width: 680px) {
@@ -746,12 +731,6 @@
 
   .community-rankings-context small {
     display: none;
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .community-ranking-loader {
-    animation: none;
   }
 }
 

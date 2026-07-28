@@ -10,6 +10,7 @@ import { useVariantsStore } from '@/features/variants/store/useVariantsStore';
 import { useInstancesStore } from '@/features/instances/store/useInstancesStore';
 import { useAuthStore } from '@/stores/useAuthStore';
 import type { PokemonVariant } from '@/types/pokemonVariants';
+import { AppLoadingProvider } from '@/contexts/AppLoadingContext';
 
 const rankingState = vi.hoisted(() => ({
   data: {
@@ -218,6 +219,21 @@ describe('Community Rankings page', () => {
     fireEvent.click(screen.getByRole('tab', { name: 'Rarest owned' }));
     expect(screen.getByText('Owned by 4 trainers')).toBeInTheDocument();
     expect(screen.queryByText('6 trainers want this')).not.toBeInTheDocument();
+  });
+
+  it('uses the global loading overlay until ranking dependencies are ready', () => {
+    rankingState.loading = true;
+
+    const { container } = render(
+      <AppLoadingProvider>
+        <Rankings />
+      </AppLoadingProvider>,
+    );
+
+    expect(container.querySelector('.app-loading-overlay')).toBeInTheDocument();
+    expect(
+      screen.queryByRole('heading', { name: 'Community Rankings' }),
+    ).not.toBeInTheDocument();
   });
 
   it('filters the joined catalog without changing the server snapshot', () => {

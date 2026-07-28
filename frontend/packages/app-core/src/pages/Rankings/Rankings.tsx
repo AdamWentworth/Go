@@ -17,6 +17,7 @@ import { useAuthStore } from '@/stores/useAuthStore';
 import type { PokemonVariant } from '@/types/pokemonVariants';
 import { resolveAssetUrl } from '@/utils/assetUrl';
 import { buildPokemonCatalogPath } from '@/pages/Pokemon/utils/pokemonCatalogNavigation';
+import { AppLoadingFallback } from '@/contexts/AppLoadingContext';
 import { useCommunityRankings } from './hooks/useCommunityRankings';
 import {
   buildPersonalRankingStatuses,
@@ -674,6 +675,12 @@ const Rankings: React.FC = () => {
     setQuery('');
     setVisibleCount(INITIAL_RESULT_COUNT);
   };
+  const pageLoading =
+    loading || variantsLoading || (isLoggedIn && instancesLoading);
+
+  if (pageLoading) {
+    return <AppLoadingFallback source="community-rankings" />;
+  }
 
   return (
     <div className="community-rankings-page">
@@ -843,17 +850,7 @@ const Rankings: React.FC = () => {
               )}
             </div>
 
-            {(loading || variantsLoading || (isLoggedIn && instancesLoading)) && (
-              <section className="community-rankings-state" aria-live="polite">
-                <div className="community-ranking-loader" aria-hidden="true" />
-                <h2>Loading community snapshot</h2>
-              </section>
-            )}
-
-            {!loading &&
-              !variantsLoading &&
-              (!isLoggedIn || !instancesLoading) &&
-              error && (
+            {error && (
               <section className="community-rankings-state">
                 <h2>Rankings are unavailable</h2>
                 <p>{error}</p>
@@ -863,11 +860,7 @@ const Rankings: React.FC = () => {
               </section>
             )}
 
-            {!loading &&
-              !variantsLoading &&
-              (!isLoggedIn || !instancesLoading) &&
-              !error &&
-              data && (
+            {!error && data && (
               <>
                 <section
                   className="community-ranking-results"
