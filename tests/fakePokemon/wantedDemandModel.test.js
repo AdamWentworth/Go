@@ -2,7 +2,7 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 
 const {
-  MAX_DEMAND_FLOORS,
+  CATALOG_DEMAND_FLOORS,
   buildWantedDemandModel,
   wantedDemandModel,
 } = require('./wantedDemandModel');
@@ -157,10 +157,40 @@ test('adds catalog-wide demand floors for released Max collectibles', () => {
 
   // Curated leaders keep their stronger observed demand.
   assert.equal(byId.get('0006-shiny_gigantamax').wantedUsers, 365);
-  assert.equal(byId.get('0025-shiny_gigantamax').wantedUsers, MAX_DEMAND_FLOORS.shiny_gigantamax);
-  assert.equal(byId.get('0025-gigantamax').wantedUsers, MAX_DEMAND_FLOORS.gigantamax);
-  assert.equal(byId.get('0025-shiny_dynamax').wantedUsers, MAX_DEMAND_FLOORS.shiny_dynamax);
-  assert.equal(byId.get('0025-dynamax').wantedUsers, MAX_DEMAND_FLOORS.dynamax);
+  assert.equal(byId.get('0025-shiny_gigantamax').wantedUsers, CATALOG_DEMAND_FLOORS.shiny_gigantamax);
+  assert.equal(byId.get('0025-gigantamax').wantedUsers, CATALOG_DEMAND_FLOORS.gigantamax);
+  assert.equal(byId.get('0025-shiny_dynamax').wantedUsers, CATALOG_DEMAND_FLOORS.shiny_dynamax);
+  assert.equal(byId.get('0025-dynamax').wantedUsers, CATALOG_DEMAND_FLOORS.dynamax);
+});
+
+test('gives every released tradeable shiny a nonzero demand floor', () => {
+  const catalog = [{
+    pokemon_id: 19,
+    pokedex_number: 19,
+    name: 'Rattata',
+    available: true,
+    shiny_available: true,
+    date_available: '2016-07-06',
+    date_shiny_available: '2019-02-26',
+    costumes: [{
+      costume_id: 901,
+      name: 'party_hat',
+      date_available: '2020-01-01',
+      shiny_available: true,
+      date_shiny_available: '2020-01-01',
+      image_url_shiny: '/rattata-party-shiny.png',
+    }],
+  }];
+
+  const model = buildWantedDemandModel(catalog, Date.parse('2026-07-27'));
+  const byId = new Map(model.map((target) => [target.variantId, target]));
+
+  assert.equal(byId.get('0019-shiny').wantedUsers, CATALOG_DEMAND_FLOORS.shiny);
+  assert.equal(
+    byId.get('0019-party_hat_shiny').wantedUsers,
+    CATALOG_DEMAND_FLOORS.shiny_costume,
+  );
+  assert.equal(byId.get('0019-party_hat_shiny').costumeId, 901);
 });
 
 test('does not create Max demand for unreleased or untradeable forms', () => {
@@ -192,5 +222,13 @@ test('does not create Max demand for unreleased or untradeable forms', () => {
 
   const model = buildWantedDemandModel(catalog, Date.parse('2026-07-27'));
   assert.equal(model.some((target) => target.pokemonId === 151), false);
-  assert.equal(model.some((target) => target.pokemonId === 52), false);
+  assert.equal(
+    model.some(
+      (target) =>
+        target.pokemonId === 52 &&
+        (target.dynamax || target.gigantamax),
+    ),
+    false,
+  );
+  assert.equal(model.some((target) => target.variantId === '0052-shiny'), true);
 });

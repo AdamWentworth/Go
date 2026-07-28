@@ -106,7 +106,9 @@ const TRADE_INELIGIBLE_POKEMON_IDS = new Set([
   802, 807, 808, 809, 893,
 ]);
 
-const MAX_DEMAND_FLOORS = {
+const CATALOG_DEMAND_FLOORS = {
+  shiny: 2,
+  shiny_costume: 12,
   dynamax: 2,
   shiny_dynamax: 30,
   gigantamax: 45,
@@ -151,8 +153,8 @@ function normalizeTarget([variantId, pokemonId, label, wantedUsers, options = {}
 
 const wantedDemandModel = TOP_DEMAND.map(normalizeTarget);
 
-function maxDemandTarget(variant) {
-  const wantedUsers = MAX_DEMAND_FLOORS[variant.kind];
+function catalogDemandTarget(variant) {
+  const wantedUsers = CATALOG_DEMAND_FLOORS[variant.kind];
   if (
     wantedUsers == null ||
     variant.shadow ||
@@ -166,7 +168,8 @@ function maxDemandTarget(variant) {
     variant.label,
     wantedUsers,
     {
-      dynamax: true,
+      costume: variant.costumeId,
+      dynamax: variant.dynamax,
       gigantamax: variant.gigantamax,
     },
   ], 0);
@@ -177,7 +180,7 @@ function buildWantedDemandModel(catalog, now = Date.now()) {
   const targets = new Map(wantedDemandModel.map((target) => [target.variantId, target]));
 
   for (const variant of buildCatalogRarityVariants(catalog, now)) {
-    const baseline = maxDemandTarget(variant);
+    const baseline = catalogDemandTarget(variant);
     if (!baseline) continue;
     const existing = targets.get(baseline.variantId);
     if (!existing || baseline.wantedUsers > existing.wantedUsers) {
@@ -195,7 +198,7 @@ function buildWantedDemandModel(catalog, now = Date.now()) {
 }
 
 module.exports = {
-  MAX_DEMAND_FLOORS,
+  CATALOG_DEMAND_FLOORS,
   TRADE_INELIGIBLE_POKEMON_IDS,
   buildWantedDemandModel,
   wantedDemandModel,
