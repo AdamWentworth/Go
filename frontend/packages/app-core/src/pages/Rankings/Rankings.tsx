@@ -6,6 +6,7 @@ import {
   FaCheckCircle,
   FaExchangeAlt,
   FaHeart,
+  FaInfoCircle,
   FaMedal,
   FaSearch,
   FaUsers,
@@ -678,7 +679,9 @@ const Rankings: React.FC = () => {
     setVisibleCount(INITIAL_RESULT_COUNT);
   };
   const pageLoading =
-    loading || variantsLoading || (isLoggedIn && instancesLoading);
+    (loading && !data) ||
+    variantsLoading ||
+    (isLoggedIn && instancesLoading);
 
   if (pageLoading) {
     return <AppLoadingFallback source="community-rankings" />;
@@ -862,7 +865,7 @@ const Rankings: React.FC = () => {
               )}
             </div>
 
-            {error && (
+            {error && !data && (
               <section className="community-rankings-state">
                 <h2>Rankings are unavailable</h2>
                 <p>{error}</p>
@@ -872,7 +875,19 @@ const Rankings: React.FC = () => {
               </section>
             )}
 
-            {!error && data && (
+            {error && data && (
+              <aside className="community-rankings-stale" role="status">
+                <span>
+                  Showing the last community snapshot. Refresh is temporarily
+                  unavailable.
+                </span>
+                <button type="button" onClick={refresh}>
+                  Try again
+                </button>
+              </aside>
+            )}
+
+            {data && (
               <>
                 <section
                   className="community-ranking-results"
@@ -930,6 +945,28 @@ const Rankings: React.FC = () => {
                     </span>
                   )}
                 </footer>
+                <details className="community-rankings-method">
+                  <summary>
+                    <FaInfoCircle aria-hidden="true" />
+                    How these rankings work
+                  </summary>
+                  <div>
+                    <p>
+                      <strong>Most wanted</strong> counts distinct trainer
+                      wishlists. Duplicate wanted copies do not add votes.
+                    </p>
+                    <p>
+                      <strong>Rarest owned</strong> counts trainers with a
+                      caught copy or Pokédex registration. Duplicate copies
+                      count once.
+                    </p>
+                    <p>
+                      Ordinary evolution families are collapsed in rarity
+                      results, while collectible costumes remain separate.
+                      Small totals may be withheld to protect trainer privacy.
+                    </p>
+                  </div>
+                </details>
               </>
             )}
         </>

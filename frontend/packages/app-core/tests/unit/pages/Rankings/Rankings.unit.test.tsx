@@ -237,6 +237,7 @@ describe('Community Rankings page', () => {
 
   it('uses the global loading overlay until ranking dependencies are ready', () => {
     rankingState.loading = true;
+    useVariantsStore.setState({ variantsLoading: true });
 
     const { container } = render(
       <MemoryRouter initialEntries={['/rankings']}>
@@ -250,6 +251,43 @@ describe('Community Rankings page', () => {
     expect(
       screen.queryByRole('heading', { name: 'Community Rankings' }),
     ).not.toBeInTheDocument();
+  });
+
+  it('keeps the last snapshot visible when a refresh fails', () => {
+    rankingState.loading = true;
+    rankingState.error = 'Network unavailable';
+
+    const { container } = render(
+      <MemoryRouter initialEntries={['/rankings']}>
+        <AppLoadingProvider>
+          <Rankings />
+        </AppLoadingProvider>
+      </MemoryRouter>,
+    );
+
+    expect(container.querySelector('.app-loading-overlay')).not.toBeInTheDocument();
+    expect(screen.getByText('Pikachu')).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        'Showing the last community snapshot. Refresh is temporarily unavailable.',
+      ),
+    ).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Try again' }));
+    expect(rankingState.refresh).toHaveBeenCalledOnce();
+  });
+
+  it('explains the public ranking method without crowding the results', () => {
+    renderRankings();
+
+    const method = screen.getByText('How these rankings work').closest('details');
+    expect(method).not.toHaveAttribute('open');
+    fireEvent.click(screen.getByText('How these rankings work'));
+    expect(method).toHaveTextContent(
+      'Most wanted counts distinct trainer wishlists',
+    );
+    expect(method).toHaveTextContent(
+      'Rarest owned counts trainers with a caught copy',
+    );
   });
 
   it('filters the joined catalog without changing the server snapshot', () => {

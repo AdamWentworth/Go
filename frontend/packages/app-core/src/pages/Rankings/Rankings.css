@@ -609,6 +609,84 @@
   font-weight: 700;
 }
 
+.community-rankings-stale {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.65rem;
+  padding: 0.6rem 0.75rem;
+  border: 1px solid rgba(242, 207, 98, 0.48);
+  border-radius: 6px;
+  color: var(--ranking-muted);
+  background: rgba(242, 207, 98, 0.08);
+  font-size: 0.72rem;
+  font-weight: 750;
+}
+
+.community-rankings-stale button {
+  flex: 0 0 auto;
+  min-height: 2rem;
+  padding: 0.35rem 0.65rem;
+  border: 1px solid var(--ranking-gold);
+  border-radius: 5px;
+  color: var(--ranking-text);
+  background: transparent;
+  font-size: 0.68rem;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.community-rankings-method {
+  margin-top: 0.2rem;
+  border: 1px solid var(--ranking-line);
+  border-radius: 7px;
+  background: var(--ranking-panel);
+}
+
+.community-rankings-method summary {
+  display: flex;
+  gap: 0.45rem;
+  align-items: center;
+  min-height: 2.7rem;
+  padding: 0.55rem 0.75rem;
+  color: var(--ranking-muted);
+  font-size: 0.74rem;
+  font-weight: 900;
+  cursor: pointer;
+  list-style: none;
+}
+
+.community-rankings-method summary::-webkit-details-marker {
+  display: none;
+}
+
+.community-rankings-method summary svg {
+  color: var(--ranking-teal);
+}
+
+.community-rankings-method[open] summary {
+  border-bottom: 1px solid var(--ranking-line);
+  color: var(--ranking-text);
+}
+
+.community-rankings-method > div {
+  display: grid;
+  gap: 0.55rem;
+  padding: 0.75rem;
+}
+
+.community-rankings-method p {
+  margin: 0;
+  color: var(--ranking-muted);
+  font-size: 0.72rem;
+  line-height: 1.45;
+}
+
+.community-rankings-method p strong {
+  color: var(--ranking-text);
+}
+
 @media (max-width: 680px) {
   .community-rankings-page {
     padding-inline: 0.45rem;
@@ -753,6 +831,10 @@
 
   .community-rankings-footer {
     display: grid;
+  }
+
+  .community-rankings-stale {
+    align-items: flex-start;
   }
 }
 
