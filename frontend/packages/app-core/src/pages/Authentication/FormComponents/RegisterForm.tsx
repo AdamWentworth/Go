@@ -9,7 +9,6 @@ import {
   FaLock,
   FaMapMarkerAlt,
   FaPen,
-  FaShieldAlt,
   FaUser,
 } from 'react-icons/fa';
 import { FcGoogle } from 'react-icons/fc';
@@ -170,13 +169,10 @@ const RegisterForm: FC<RegisterFormProps> = ({
           <div className="register-step" key={step}>
             {!authMethod && (
               <>
-                <div className="register-step-heading">
-                  <FaShieldAlt />
-                  <div>
-                    <span>CHOOSE A SIGN-UP METHOD</span>
-                    <h2>How would you like to join?</h2>
-                    <p>Use Google for a quicker setup, or create an account with email.</p>
-                  </div>
+                <div className="register-method-intro">
+                  <span>Choose a sign-up method</span>
+                  <h2>Start your trainer account</h2>
+                  <p>Sign up with Google or use your email address.</p>
                 </div>
                 <div className="register-method-grid">
                   <button type="button" className="google-auth-button" onClick={onGoogleClick}>

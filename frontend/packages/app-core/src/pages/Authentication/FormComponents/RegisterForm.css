@@ -162,6 +162,34 @@
   border-radius: 16px;
 }
 
+.register-method-intro {
+  display: grid;
+  max-width: 560px;
+  gap: 6px;
+  margin-top: 12px;
+}
+
+.register-method-intro span {
+  color: var(--color-accent-primary);
+  font-size: 0.72rem;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.register-method-intro h2 {
+  margin: 0;
+  color: var(--color-text-primary);
+  font-size: clamp(1.45rem, 3vw, 2rem);
+  letter-spacing: -0.025em;
+}
+
+.register-method-intro p {
+  margin: 0;
+  color: var(--color-text-secondary);
+  font-weight: 600;
+}
+
 .register-step-heading > svg {
   box-sizing: content-box;
   flex: 0 0 auto;
