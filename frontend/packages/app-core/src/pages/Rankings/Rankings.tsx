@@ -1,4 +1,10 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import { useSearchParams } from 'react-router';
 import {
   FaArrowRight,
@@ -508,6 +514,8 @@ const Rankings: React.FC = () => {
   const isLoggedIn = useAuthStore((state) => state.isLoggedIn);
   const [searchParams, setSearchParams] = useSearchParams();
   const [visibleCount, setVisibleCount] = useState(INITIAL_RESULT_COUNT);
+  const [showQuickControls, setShowQuickControls] = useState(false);
+  const filterSummaryRef = useRef<HTMLDivElement | null>(null);
   const { data, error, loading, refresh } = useCommunityRankings(true);
   const mode: RankingMode =
     searchParams.get('view') === 'rarest' ? 'rarest' : 'wanted';
@@ -545,6 +553,19 @@ const Rankings: React.FC = () => {
       updateSearchParams({ category: null }, true);
     }
   }, [category, mode, updateSearchParams]);
+
+  useEffect(() => {
+    const summary = filterSummaryRef.current;
+    if (!summary || typeof IntersectionObserver === 'undefined') return;
+
+    const observer = new IntersectionObserver(([entry]) => {
+      setShowQuickControls(
+        !entry.isIntersecting && entry.boundingClientRect.bottom < 0,
+      );
+    });
+    observer.observe(summary);
+    return () => observer.disconnect();
+  }, [data, instancesLoading, isLoggedIn, loading, variantsLoading]);
 
   const variantsByID = useMemo(
     () => new Map(variants.map((variant) => [variant.variant_id, variant])),
@@ -846,7 +867,10 @@ const Rankings: React.FC = () => {
                 </div>
               )}
             </section>
-            <div className="community-ranking-filter-summary">
+            <div
+              className="community-ranking-filter-summary"
+              ref={filterSummaryRef}
+            >
               <span>
                 <strong>{filteredRows.length.toLocaleString()}</strong> results
                 <i aria-hidden="true">·</i>
@@ -864,6 +888,82 @@ const Rankings: React.FC = () => {
                 </button>
               )}
             </div>
+            {showQuickControls && (
+              <nav
+                className={`community-ranking-quick-controls${
+                  isLoggedIn ? '' : ' community-ranking-quick-controls--public'
+                }`}
+                aria-label="Quick ranking controls"
+              >
+                <select
+                  aria-label="Ranking view"
+                  value={mode}
+                  onChange={(event) =>
+                    selectMode(event.target.value as RankingMode)
+                  }
+                >
+                  <option value="wanted">Most wanted</option>
+                  <option value="rarest">Rarest owned</option>
+                </select>
+                <select
+                  aria-label="Pokémon category"
+                  value={category}
+                  onChange={(event) => {
+                    const value = event.target.value as RankingCategory;
+                    updateSearchParams({
+                      category: value === 'all' ? null : value,
+                    });
+                    setVisibleCount(INITIAL_RESULT_COUNT);
+                  }}
+                >
+                  {CATEGORY_FILTERS
+                    .filter(({ rarestOnly }) => !rarestOnly || mode === 'rarest')
+                    .map(({ value, label }) => (
+                      <option key={value} value={value}>
+                        {label}
+                      </option>
+                    ))}
+                </select>
+                {isLoggedIn && (
+                  <select
+                    aria-label="Compared with yours"
+                    value={personalFilter}
+                    onChange={(event) => {
+                      const value = event.target.value as PersonalRankingFilter;
+                      updateSearchParams({
+                        collection: value === 'all' ? null : value,
+                      });
+                      setVisibleCount(INITIAL_RESULT_COUNT);
+                    }}
+                  >
+                    {(
+                      ['all', 'owned', 'trade', 'wanted', 'missing'] as const
+                    ).map((value) => (
+                      <option key={value} value={value}>
+                        {PERSONAL_FILTER_LABELS[value]} (
+                        {personalFilterCounts.get(value)?.toLocaleString() ?? 0})
+                      </option>
+                    ))}
+                  </select>
+                )}
+                <label>
+                  <FaSearch aria-hidden="true" />
+                  <span className="sr-only">Search rankings</span>
+                  <input
+                    type="search"
+                    value={query}
+                    placeholder="Search"
+                    onChange={(event) => {
+                      updateSearchParams(
+                        { search: event.target.value || null },
+                        true,
+                      );
+                      setVisibleCount(INITIAL_RESULT_COUNT);
+                    }}
+                  />
+                </label>
+              </nav>
+            )}
 
             {error && !data && (
               <section className="community-rankings-state">

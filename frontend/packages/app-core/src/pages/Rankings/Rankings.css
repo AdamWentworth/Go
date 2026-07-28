@@ -324,6 +324,73 @@
   cursor: pointer;
 }
 
+.community-ranking-quick-controls {
+  position: fixed;
+  z-index: 60;
+  top: 0.55rem;
+  left: 50%;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(7.5rem, auto)) minmax(10rem, 1fr);
+  gap: 0.35rem;
+  width: min(58rem, calc(100vw - 1rem));
+  padding: 0.4rem;
+  border: 1px solid var(--ranking-line);
+  border-radius: 7px;
+  background: color-mix(in srgb, var(--ranking-panel) 94%, transparent);
+  box-shadow: 0 0.45rem 1.2rem rgba(0, 0, 0, 0.3);
+  transform: translateX(-50%);
+  backdrop-filter: blur(12px);
+}
+
+.community-ranking-quick-controls--public {
+  grid-template-columns: repeat(2, minmax(8rem, auto)) minmax(12rem, 1fr);
+}
+
+.community-ranking-quick-controls select,
+.community-ranking-quick-controls label {
+  min-width: 0;
+  min-height: 2.35rem;
+  border: 1px solid var(--ranking-line);
+  border-radius: 5px;
+  color: var(--ranking-text);
+  background: var(--ranking-panel-raised);
+  font-size: 0.7rem;
+  font-weight: 850;
+}
+
+.community-ranking-quick-controls select {
+  padding: 0.35rem 1.7rem 0.35rem 0.55rem;
+  cursor: pointer;
+}
+
+.community-ranking-quick-controls label {
+  display: flex;
+  gap: 0.4rem;
+  align-items: center;
+  padding-inline: 0.55rem;
+}
+
+.community-ranking-quick-controls label svg {
+  flex: 0 0 auto;
+  color: var(--ranking-teal);
+}
+
+.community-ranking-quick-controls input {
+  width: 100%;
+  min-width: 0;
+  border: 0;
+  outline: 0;
+  color: inherit;
+  background: transparent;
+  font: inherit;
+}
+
+.community-ranking-quick-controls select:focus-visible,
+.community-ranking-quick-controls label:focus-within {
+  outline: 3px solid color-mix(in srgb, var(--ranking-teal) 35%, transparent);
+  outline-offset: 1px;
+}
+
 .community-ranking-results {
   overflow: hidden;
   border: 1px solid var(--ranking-line);
@@ -777,6 +844,33 @@
 
   .community-ranking-filter-summary > span {
     flex: 1;
+  }
+
+  .community-ranking-quick-controls {
+    grid-template-columns: repeat(3, minmax(0, 1fr)) 2.4fr;
+    gap: 0.2rem;
+    top: 0.3rem;
+    width: calc(100vw - 0.6rem);
+    padding: 0.25rem;
+  }
+
+  .community-ranking-quick-controls--public {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) 2.4fr;
+  }
+
+  .community-ranking-quick-controls select,
+  .community-ranking-quick-controls label {
+    min-height: 2.1rem;
+    font-size: 0.6rem;
+  }
+
+  .community-ranking-quick-controls select {
+    padding-inline: 0.3rem;
+  }
+
+  .community-ranking-quick-controls label {
+    gap: 0.25rem;
+    padding-inline: 0.35rem;
   }
 
   .community-ranking-action {

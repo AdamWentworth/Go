@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from '@testing-library/react';
+import { act, fireEvent, render, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { MemoryRouter, useLocation } from 'react-router';
 import Rankings, {
@@ -361,6 +361,46 @@ describe('Community Rankings page', () => {
       .toHaveAttribute('aria-selected', 'true');
     expect(screen.getByRole('button', { name: 'Shadow' }))
       .toHaveAttribute('aria-pressed', 'true');
+  });
+
+  it('reveals compact controls after the primary filters scroll away', () => {
+    let notify:
+      | ((entries: Array<Partial<IntersectionObserverEntry>>) => void)
+      | undefined;
+    const disconnect = vi.fn();
+    vi.stubGlobal(
+      'IntersectionObserver',
+      class {
+        constructor(callback: IntersectionObserverCallback) {
+          notify = callback as typeof notify;
+        }
+
+        observe() {}
+
+        disconnect() {
+          disconnect();
+        }
+      },
+    );
+
+    renderRankings();
+    act(() => {
+      notify?.([
+        {
+          isIntersecting: false,
+          boundingClientRect: { bottom: -1 } as DOMRectReadOnly,
+        },
+      ]);
+    });
+
+    expect(
+      screen.getByRole('navigation', { name: 'Quick ranking controls' }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole('combobox', { name: 'Ranking view' }),
+    ).toHaveValue('wanted');
+
+    vi.unstubAllGlobals();
   });
 
   it('uses the same Dynamax and Gigantamax badges as Pokémon cards', () => {
