@@ -141,9 +141,11 @@ const registerLimiter = rateLimit({
 app.use('/auth', limiter);
 app.use('/auth/login', loginLimiter);
 app.use('/auth/register', registerLimiter);
+app.use('/auth/google/complete-registration', registerLimiter);
 app.use('/auth', csrfOriginGuard(allowedOrigins));
 
 app.use('/auth', require('./routes/authRoute'));
+app.use('/auth', require('./routes/passportRoutes'));
 app.use('/auth', require('./routes/tradeRevealRoute'));
 
 function startServer() {

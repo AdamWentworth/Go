@@ -2,6 +2,15 @@ const request = require('supertest');
 const mongoose = require('mongoose');
 const { MongoMemoryServer } = require('mongodb-memory-server');
 
+jest.mock('../services/googleOAuthService', () => ({
+  createAuthorizationUrl: jest.fn(({ state }) => `https://accounts.google.test/authorize?state=${encodeURIComponent(state)}`),
+  exchangeCode: jest.fn(async () => ({
+    subject: 'google-subject-123',
+    email: 'google.user@example.com',
+    emailVerified: true
+  }))
+}));
+
 jest.setTimeout(120000);
 
 let mongoServer;
@@ -287,5 +296,104 @@ describe('authentication service integration', () => {
     expect(res.headers['content-type']).toContain('text/plain');
     expect(res.text).toContain('http_requests_total');
     expect(res.text).toContain('http_request_duration_seconds');
+  });
+
+  test('Google OAuth starts with a state cookie and authorization redirect', async () => {
+    const res = await request(app)
+      .get('/auth/google')
+      .query({
+        device_id: validDeviceId,
+        return_to: 'http://localhost:3000'
+      });
+
+    expect(res.status).toBe(302);
+    expect(res.headers.location).toContain('https://accounts.google.test/authorize');
+    expect(res.headers['set-cookie'].some((cookie) => cookie.startsWith('googleOAuthState='))).toBe(true);
+  });
+
+  test('Google OAuth creates a pending registration and completes it without a password', async () => {
+    const start = await request(app)
+      .get('/auth/google')
+      .query({ device_id: validDeviceId, return_to: 'http://localhost:3000' });
+    const stateCookie = start.headers['set-cookie'].find((cookie) => cookie.startsWith('googleOAuthState='));
+    const state = new URL(start.headers.location).searchParams.get('state');
+
+    const callback = await request(app)
+      .get('/auth/google/callback')
+      .set('Cookie', stateCookie)
+      .query({ code: 'google-code', state });
+
+    expect(callback.status).toBe(302);
+    expect(callback.headers.location).toBe('http://localhost:3000/register?oauth=google');
+    const pendingCookie = callback.headers['set-cookie'].find((cookie) => cookie.startsWith('googleOAuthPending='));
+    expect(pendingCookie).toBeDefined();
+
+    const pending = await request(app)
+      .get('/auth/google/pending')
+      .set('Cookie', pendingCookie);
+    expect(pending.status).toBe(200);
+    expect(pending.body).toEqual({
+      provider: 'google',
+      email: 'google.user@example.com',
+      emailVerified: true
+    });
+
+    const completed = await request(app)
+      .post('/auth/google/complete-registration')
+      .set('Origin', 'http://localhost:3000')
+      .set('Cookie', pendingCookie)
+      .send({ username: 'google_user' });
+
+    expect(completed.status).toBe(201);
+    expect(completed.headers['set-cookie'].some((cookie) => cookie.startsWith('accessToken='))).toBe(true);
+    const user = await User.findOne({ username: 'google_user' }).lean();
+    expect(user.password).toBeFalsy();
+    expect(user.identities).toEqual(expect.arrayContaining([
+      expect.objectContaining({ provider: 'google', subject: 'google-subject-123' })
+    ]));
+  });
+
+  test('Google OAuth logs in an existing linked identity', async () => {
+    await User.create({
+      username: validLoginId,
+      email: 'google.user@example.com',
+      identities: [{
+        provider: 'google',
+        subject: 'google-subject-123',
+        email: 'google.user@example.com',
+        emailVerified: true
+      }]
+    });
+    const start = await request(app)
+      .get('/auth/google')
+      .query({ device_id: validDeviceId, return_to: 'http://localhost:3000' });
+    const stateCookie = start.headers['set-cookie'].find((cookie) => cookie.startsWith('googleOAuthState='));
+    const state = new URL(start.headers.location).searchParams.get('state');
+
+    const callback = await request(app)
+      .get('/auth/google/callback')
+      .set('Cookie', stateCookie)
+      .query({ code: 'google-code', state });
+
+    expect(callback.status).toBe(302);
+    expect(callback.headers.location).toBe('http://localhost:3000/login?oauth=success');
+    expect(callback.headers['set-cookie'].some((cookie) => cookie.startsWith('refreshToken='))).toBe(true);
+  });
+
+  test('Google OAuth does not silently merge an existing password account by email', async () => {
+    await registerUser({ email: 'google.user@example.com' });
+    const start = await request(app)
+      .get('/auth/google')
+      .query({ device_id: validDeviceId, return_to: 'http://localhost:3000' });
+    const stateCookie = start.headers['set-cookie'].find((cookie) => cookie.startsWith('googleOAuthState='));
+    const state = new URL(start.headers.location).searchParams.get('state');
+
+    const callback = await request(app)
+      .get('/auth/google/callback')
+      .set('Cookie', stateCookie)
+      .query({ code: 'google-code', state });
+
+    expect(callback.status).toBe(302);
+    expect(callback.headers.location).toBe('http://localhost:3000/login?oauth=link-required');
   });
 });

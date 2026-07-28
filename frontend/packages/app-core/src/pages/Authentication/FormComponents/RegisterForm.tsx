@@ -12,6 +12,7 @@ import {
   FaShieldAlt,
   FaUser,
 } from 'react-icons/fa';
+import { FcGoogle } from 'react-icons/fc';
 
 import CoordinateSelector from '../CoordinateSelector';
 import LocationOptionsOverlay from '../LocationOptionsOverlay';
@@ -41,15 +42,19 @@ interface RegisterFormProps {
   showOptionsOverlay: boolean;
   setShowOptionsOverlay: (show: boolean) => void;
   locationOptions: LocationSuggestion[];
+  oauthProvider?: 'google';
+  onGoogleClick?: () => void;
 }
 
-const steps = [
+const emailSteps = [
   { label: 'Account', icon: FaUser },
   { label: 'Security', icon: FaLock },
   { label: 'Trainer', icon: FaGamepad },
   { label: 'Location', icon: FaMapMarkerAlt },
   { label: 'Review', icon: FaCheck },
 ] as const;
+
+const googleSteps = emailSteps.filter((step) => step.label !== 'Security');
 
 const RegisterForm: FC<RegisterFormProps> = ({
   onSubmit,
@@ -73,8 +78,16 @@ const RegisterForm: FC<RegisterFormProps> = ({
   showOptionsOverlay,
   setShowOptionsOverlay,
   locationOptions,
+  oauthProvider,
+  onGoogleClick,
 }) => {
   const [step, setStep] = useState(0);
+  const [authMethod, setAuthMethod] = useState<'email' | 'google' | null>(
+    oauthProvider || null,
+  );
+  const steps = oauthProvider ? googleSteps : emailSteps;
+  const stepLabel = (optional = false) =>
+    `STEP ${step + 1} OF ${steps.length}${optional ? ' · OPTIONAL' : ''}`;
   const [confirmPassword, setConfirmPassword] = useState('');
   const [confirmPasswordError, setConfirmPasswordError] = useState('');
 
@@ -96,7 +109,7 @@ const RegisterForm: FC<RegisterFormProps> = ({
 
   const moveForward = () => {
     if (step === 0 && !validateFields(['username', 'email'])) return;
-    if (step === 1) {
+    if (!oauthProvider && step === 1) {
       if (!validateFields(['password'])) return;
       if (confirmPassword !== values.password) {
         setConfirmPasswordError('Passwords do not match');
@@ -104,7 +117,8 @@ const RegisterForm: FC<RegisterFormProps> = ({
       }
       setConfirmPasswordError('');
     }
-    if (step === 2 && !validateFields(['pokemonGoName', 'trainerCode'])) return;
+    const trainerStep = oauthProvider ? 1 : 2;
+    if (step === trainerStep && !validateFields(['pokemonGoName', 'trainerCode'])) return;
     setStep((current) => Math.min(current + 1, steps.length - 1));
   };
 
@@ -124,12 +138,12 @@ const RegisterForm: FC<RegisterFormProps> = ({
           <div>
             <span className="register-eyebrow">TRAINER REGISTRATION</span>
             <h1 id="register-title">Create your account</h1>
-            <p>{step < 4 ? 'A few quick steps, then your trainer journey begins.' : 'Make sure everything looks right.'}</p>
+            <p>{step < steps.length - 1 ? 'A few quick steps, then your trainer journey begins.' : 'Make sure everything looks right.'}</p>
           </div>
           <Link to="/login" className="register-login-link">Sign in</Link>
         </header>
 
-        <ol className="register-progress" aria-label="Registration progress">
+        {authMethod && <ol className="register-progress" aria-label="Registration progress">
           {steps.map((item, index) => {
             const Icon = item.icon;
             const isActive = index === step;
@@ -147,16 +161,45 @@ const RegisterForm: FC<RegisterFormProps> = ({
               </li>
             );
           })}
-        </ol>
+        </ol>}
 
         <form onSubmit={handleFormSubmit} noValidate>
           <div className="register-step" key={step}>
-            {step === 0 && (
+            {!authMethod && (
+              <>
+                <div className="register-step-heading">
+                  <FaShieldAlt />
+                  <div>
+                    <span>CHOOSE A SIGN-UP METHOD</span>
+                    <h2>How would you like to join?</h2>
+                    <p>Use Google for a quicker setup, or create an account with email.</p>
+                  </div>
+                </div>
+                <div className="register-method-grid">
+                  <button type="button" className="google-auth-button" onClick={onGoogleClick}>
+                    <FcGoogle aria-hidden="true" />
+                    Sign up with Google
+                  </button>
+                  <button
+                    type="button"
+                    className="register-email-method"
+                    onClick={() => setAuthMethod('email')}
+                  >
+                    <FaEnvelope aria-hidden="true" />
+                    Continue with email
+                  </button>
+                </div>
+                <p className="register-method-note">
+                  Google verifies your email. You will still choose a PokeGoNexus username.
+                </p>
+              </>
+            )}
+            {authMethod && step === 0 && (
               <>
                 <div className="register-step-heading">
                   <FaUser />
                   <div>
-                    <span>STEP 1 OF 5</span>
+                    <span>{stepLabel()}</span>
                     <h2>Your account</h2>
                     <p>Choose how other trainers will know you here.</p>
                   </div>
@@ -191,6 +234,7 @@ const RegisterForm: FC<RegisterFormProps> = ({
                       name="email"
                       value={values.email}
                       onChange={handleInputChange}
+                      disabled={Boolean(oauthProvider)}
                       placeholder="you@example.com"
                       aria-invalid={Boolean(errors.email)}
                     />
@@ -200,12 +244,12 @@ const RegisterForm: FC<RegisterFormProps> = ({
               </>
             )}
 
-            {step === 1 && (
+            {!oauthProvider && step === 1 && (
               <>
                 <div className="register-step-heading">
                   <FaShieldAlt />
                   <div>
-                    <span>STEP 2 OF 5</span>
+                    <span>{stepLabel()}</span>
                     <h2>Protect your account</h2>
                     <p>Use a strong password you do not use elsewhere.</p>
                   </div>
@@ -257,12 +301,12 @@ const RegisterForm: FC<RegisterFormProps> = ({
               </>
             )}
 
-            {step === 2 && (
+            {step === (oauthProvider ? 1 : 2) && (
               <>
                 <div className="register-step-heading">
                   <FaGamepad />
                   <div>
-                    <span>STEP 3 OF 5 · OPTIONAL</span>
+                    <span>{stepLabel(true)}</span>
                     <h2>Your Pokémon GO identity</h2>
                     <p>Help friends recognize you. You can change this later.</p>
                   </div>
@@ -312,12 +356,12 @@ const RegisterForm: FC<RegisterFormProps> = ({
               </>
             )}
 
-            {step === 3 && (
+            {step === (oauthProvider ? 2 : 3) && (
               <>
                 <div className="register-step-heading">
                   <FaMapMarkerAlt />
                   <div>
-                    <span>STEP 4 OF 5 · OPTIONAL</span>
+                    <span>{stepLabel(true)}</span>
                     <h2>Your area</h2>
                     <p>Location helps find nearby trainers and trades. Exact coordinates stay optional.</p>
                   </div>
@@ -381,12 +425,12 @@ const RegisterForm: FC<RegisterFormProps> = ({
               </>
             )}
 
-            {step === 4 && (
+            {step === steps.length - 1 && (
               <>
                 <div className="register-step-heading">
                   <FaCheck />
                   <div>
-                    <span>STEP 5 OF 5</span>
+                    <span>{stepLabel()}</span>
                     <h2>Ready to join</h2>
                     <p>Your optional trainer details can be edited from your profile.</p>
                   </div>
@@ -400,15 +444,15 @@ const RegisterForm: FC<RegisterFormProps> = ({
                     <span><FaEnvelope /><small>EMAIL</small><strong>{values.email}</strong></span>
                     <FaPen />
                   </button>
-                  <button type="button" onClick={() => setStep(2)}>
+                  <button type="button" onClick={() => setStep(oauthProvider ? 1 : 2)}>
                     <span><FaGamepad /><small>TRAINER</small><strong>{trainerName || 'Add later'}</strong></span>
                     <FaPen />
                   </button>
-                  <button type="button" onClick={() => setStep(2)}>
+                  <button type="button" onClick={() => setStep(oauthProvider ? 1 : 2)}>
                     <span><FaGamepad /><small>TRAINER CODE</small><strong>{cleanTrainerCode || 'Add later'}</strong></span>
                     <FaPen />
                   </button>
-                  <button type="button" onClick={() => setStep(3)}>
+                  <button type="button" onClick={() => setStep(oauthProvider ? 2 : 3)}>
                     <span><FaMapMarkerAlt /><small>AREA</small><strong>{locationSummary}</strong></span>
                     <FaPen />
                   </button>
@@ -420,7 +464,7 @@ const RegisterForm: FC<RegisterFormProps> = ({
             )}
           </div>
 
-          <footer className="register-actions">
+          {authMethod && <footer className="register-actions">
             {step > 0 ? (
               <button type="button" className="register-back" onClick={() => setStep((current) => current - 1)}>
                 <FaArrowLeft /> Back
@@ -433,7 +477,7 @@ const RegisterForm: FC<RegisterFormProps> = ({
                 <>Continue <FaArrowRight /></>
               )}
             </button>
-          </footer>
+          </footer>}
         </form>
       </section>
 

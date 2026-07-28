@@ -1,10 +1,17 @@
 // src/components/Register.tsx
 
-import { useState, FC } from 'react';
+import { useEffect, useState, FC } from 'react';
+import { useSearchParams } from 'react-router';
 import RegisterForm from './FormComponents/RegisterForm';
 import SuccessMessage from './SuccessMessage';
 import useRegisterForm from './hooks/useRegisterForm';
-import { registerUser, loginUser } from '../../services/authService';
+import {
+  completeGoogleRegistration,
+  getPendingGoogleRegistration,
+  registerUser,
+  loginUser,
+  startGoogleAuthentication,
+} from '../../services/authService';
 import './Register.css';
 import { useAuth } from '../../contexts/AuthContext';
 import { ToastContainer, toast } from 'react-toastify';
@@ -20,6 +27,10 @@ import type { RegisterFormValues, User, LoginResponse } from '../../types/auth';
 const log = createScopedLogger('Register');
 
 const Register: FC = () => {
+  const [searchParams] = useSearchParams();
+  const isGoogleReturn = searchParams.get('oauth') === 'google';
+  const [googleEmail, setGoogleEmail] = useState('');
+  const [oauthLoading, setOauthLoading] = useState(isGoogleReturn);
   // useRegisterForm provides all the state and handlers for our register form.
   const {
     values, 
@@ -44,12 +55,44 @@ const Register: FC = () => {
     setShowOptionsOverlay,
     locationOptions,
     setErrors
-  } = useRegisterForm(onSubmit);
+  } = useRegisterForm(onSubmit, { oauthEmail: googleEmail || undefined });
 
   const [feedback, setFeedback] = useState<string>('');
   const [isRegistered, setIsRegistered] = useState<boolean>(false);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const { login } = useAuth();
+
+  useEffect(() => {
+    if (!isGoogleReturn) return;
+    getPendingGoogleRegistration()
+      .then((pending) => setGoogleEmail(pending.email))
+      .catch(() => toast.error('Google registration expired. Please continue with Google again.'))
+      .finally(() => setOauthLoading(false));
+  }, [isGoogleReturn]);
+
+  const finishLogin = (loginResponse: LoginResponse, formValues: RegisterFormValues) => {
+    const user: User = {
+      user_id: loginResponse.user_id,
+      email: loginResponse.email,
+      username: loginResponse.username,
+      pokemonGoName: loginResponse.pokemonGoName,
+      trainerCode: loginResponse.trainerCode,
+      allowLocation: loginResponse.allowLocation,
+      location: loginResponse.location,
+      coordinates: loginResponse.coordinates,
+      accessTokenExpiry: loginResponse.accessTokenExpiry,
+      refreshTokenExpiry: loginResponse.refreshTokenExpiry,
+    };
+    login(user);
+    const coords = formValues.coordinates;
+    void updateUserInSecondaryDB(user.user_id, {
+      username: user.username,
+      ...(coords && { latitude: coords.latitude, longitude: coords.longitude }),
+      ...(formValues.pokemonGoName && { pokemonGoName: formValues.pokemonGoName }),
+    });
+    setIsRegistered(true);
+    setFeedback('Successfully Registered and Logged in');
+  };
 
   // The onSubmit callback invoked when the registration form is submitted.
   async function onSubmit(formValues: RegisterFormValues): Promise<void> {
@@ -66,6 +109,13 @@ const Register: FC = () => {
     setIsLoading(true);
 
     try {
+      if (googleEmail) {
+        const response = await completeGoogleRegistration(sanitizedFormValues);
+        finishLogin(response, sanitizedFormValues);
+        setIsLoading(false);
+        return;
+      }
+
       // Register the user.
       await registerUser(sanitizedFormValues);
       log.info('Registration successful.');
@@ -80,43 +130,7 @@ const Register: FC = () => {
           });
           log.info('Login successful.');
 
-          // Construct a User object matching our centralized User type.
-          const user: User = {
-            user_id: loginResponse.user_id,
-            email: loginResponse.email,
-            username: loginResponse.username,
-            pokemonGoName: loginResponse.pokemonGoName,
-            trainerCode: loginResponse.trainerCode,
-            allowLocation: loginResponse.allowLocation,
-            location: loginResponse.location,
-            coordinates: loginResponse.coordinates,
-            accessTokenExpiry: loginResponse.accessTokenExpiry,
-            refreshTokenExpiry: loginResponse.refreshTokenExpiry,
-          };
-
-          if (user) {
-            // Call login from AuthContext. Adjust the login function's signature
-            // in AuthContext so that it accepts the user object as needed.
-            login(user);
-
-            // ──► NEW: seed MySQL immediately
-           const coords = formValues.coordinates;
-           void updateUserInSecondaryDB(user.user_id, {
-             username: user.username,
-             ...(coords && {
-               latitude: coords.latitude,
-               longitude: coords.longitude
-             }),
-             ...(formValues.pokemonGoName && {
-               pokemonGoName: formValues.pokemonGoName
-             })
-           });
-
-            setIsRegistered(true);
-            setFeedback('Successfully Registered and Logged in');
-          } else {
-            toast.error('Login successful but user details are incorrect.');
-          }
+          finishLogin(loginResponse, sanitizedFormValues);
         } catch (loginError) {
           log.error('Login error:', loginError);
           toast.error('Registration successful, but login failed. Please try to log in.');
@@ -149,7 +163,7 @@ const Register: FC = () => {
 
   return (
     <div>
-      {isLoading ? (
+      {isLoading || oauthLoading ? (
         <LoadingSpinner />
       ) : isRegistered ? (
         <SuccessMessage 
@@ -179,6 +193,8 @@ const Register: FC = () => {
           showOptionsOverlay={showOptionsOverlay}
           setShowOptionsOverlay={setShowOptionsOverlay}
           locationOptions={locationOptions}
+          oauthProvider={googleEmail ? 'google' : undefined}
+          onGoogleClick={startGoogleAuthentication}
         />
       )}
       <ToastContainer />

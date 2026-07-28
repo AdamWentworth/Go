@@ -1,11 +1,12 @@
 // src/components/Login.tsx
 
-import React, { useState, FC } from 'react';
+import React, { useEffect, useRef, useState, FC } from 'react';
+import { useSearchParams } from 'react-router';
 import LoginForm from './FormComponents/LoginForm';
 import SuccessMessage from './SuccessMessage';
 import LoadingSpinner from '../../components/LoadingSpinner';
 import useLoginForm from './hooks/useLoginForm';
-import { loginUser } from '@/services/authService';
+import { loginUser, loadOAuthSession } from '@/services/authService';
 import { fetchUserOverview } from '@/services/userService';
 import './Login.css';
 import { useAuth } from '@/contexts/AuthContext';
@@ -26,6 +27,7 @@ import type { Trade as TradeStoreTrade, RelatedInstance } from '@/features/trade
 const log = createScopedLogger('Login');
 
 const Login: FC = () => {
+  const [searchParams] = useSearchParams();
   /* -------------------------------- form state ------------------------- */
   const initialFormValues: LoginFormValues = { username: '', password: '' };
   const { values, errors, handleChange, handleSubmit } = useLoginForm(
@@ -44,6 +46,43 @@ const Login: FC = () => {
   const [isSuccessful, setIsSuccessful] = useState<boolean>(false);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [isResetPasswordOpen, setIsResetPasswordOpen] = useState<boolean>(false);
+  const handledOAuthStatus = useRef<string | null>(null);
+
+  useEffect(() => {
+    const oauthStatus = searchParams.get('oauth');
+    if (!oauthStatus) return;
+    if (handledOAuthStatus.current === oauthStatus) return;
+    handledOAuthStatus.current = oauthStatus;
+    if (oauthStatus === 'link-required') {
+      toast.info('That email already has a password account. Sign in normally before linking Google.');
+      return;
+    }
+    if (oauthStatus !== 'success') {
+      toast.error('Google login was not completed. Please try again.');
+      return;
+    }
+
+    setIsLoading(true);
+    loadOAuthSession()
+      .then((response) => {
+        login({
+          user_id: response.user_id,
+          username: response.username,
+          email: response.email,
+          pokemonGoName: response.pokemonGoName || '',
+          trainerCode: response.trainerCode || '',
+          allowLocation: response.allowLocation || false,
+          location: response.location || '',
+          coordinates: response.coordinates || null,
+          accessTokenExpiry: response.accessTokenExpiry,
+          refreshTokenExpiry: response.refreshTokenExpiry,
+        });
+        setFeedback('Successfully Logged in with Google');
+        setIsSuccessful(true);
+      })
+      .catch(() => toast.error('Google login succeeded, but the app session could not be loaded.'))
+      .finally(() => setIsLoading(false));
+  }, [login, searchParams]);
 
   /* ---------------------------------------------------------------------- */
   /*  onSubmit                                                              */

@@ -158,6 +158,59 @@
   font-weight: 900;
 }
 
+.register-method-grid {
+  display: grid;
+  gap: 12px;
+  margin-top: 24px;
+}
+
+.register-email-method {
+  display: flex;
+  min-height: 50px;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  color: var(--color-text-primary);
+  background: var(--color-surface-1);
+  border: 1px solid var(--color-border-muted);
+  border-radius: 6px;
+  font-size: 1rem;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.register-email-method:hover {
+  border-color: var(--color-accent-primary);
+}
+
+.register-method-note {
+  color: var(--color-text-secondary);
+  font-size: 0.8rem;
+  font-weight: 700;
+  text-align: center;
+}
+
+.google-auth-button {
+  display: flex;
+  min-height: 50px;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  color: #202124;
+  background: #fff;
+  border: 1px solid #dadce0;
+  border-radius: 6px;
+  font-size: 1rem;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.google-auth-button > svg {
+  display: grid;
+  width: 24px;
+  height: 24px;
+}
+
 .register-field input {
   box-sizing: border-box;
   width: 100%;

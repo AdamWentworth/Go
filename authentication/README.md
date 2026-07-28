@@ -60,6 +60,26 @@ Other routes:
 - `JWT_ISSUER` optional JWT issuer (default `pokemongonexus-auth`)
 - `JWT_AUDIENCE` optional JWT audience (default `pokemongonexus-clients`)
 
+### Google OAuth
+
+Google login remains unavailable until all three values are configured:
+
+- `GOOGLE_CLIENT_ID` OAuth 2.0 web client ID
+- `GOOGLE_CLIENT_SECRET` OAuth 2.0 web client secret
+- `GOOGLE_CALLBACK_URL` public callback URL, normally
+  `https://pokegonexus.com/api/auth/google/callback`
+- `OAUTH_STATE_SECRET` optional dedicated secret for short-lived OAuth state and
+  onboarding cookies; falls back to `JWT_SECRET`
+
+Register this exact authorized redirect URI in Google Cloud. Local frontend
+sessions may use the production HTTPS auth callback; the signed OAuth state
+returns them only to an allow-listed frontend origin.
+
+Google supplies and verifies the account email. New users still choose a
+PokeGoNexus username and may add trainer/location details, but they do not
+create a password. Existing password accounts are never silently linked by
+matching email.
+
 ## 🏗 Architecture (Mermaid)
 
 ### Service Context

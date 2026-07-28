@@ -15,6 +15,17 @@ const userSchema = new mongoose.Schema({
     twitterId: { type: String, default: "" },
     nintendoId: { type: String, default: "" },
     discordId: { type: String, default: "" },
+    identities: [{
+        provider: {
+            type: String,
+            enum: ['google', 'apple', 'discord', 'facebook'],
+            required: true
+        },
+        subject: { type: String, required: true },
+        email: { type: String, default: null },
+        emailVerified: { type: Boolean, default: false },
+        linkedAt: { type: Date, default: Date.now }
+    }],
     refreshToken: [{
         tokenHash: String,
         expires: Date,
@@ -37,6 +48,10 @@ userSchema.index({ trainerCode: 1 }, {
     unique: true,
     partialFilterExpression: { trainerCode: { $type: "string", $exists: true, $ne: null } }
 });
+userSchema.index(
+    { 'identities.provider': 1, 'identities.subject': 1 },
+    { unique: true, sparse: true }
+);
 
 // Pre-save middleware to handle empty strings for all string fields
 userSchema.pre('save', function() {

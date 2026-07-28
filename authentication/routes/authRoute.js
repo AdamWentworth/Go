@@ -267,7 +267,7 @@ router.post('/login', async (req, res, next) => {
             return res.status(401).json({ message: 'Invalid credentials' });
         }
 
-        const validPassword = await bcrypt.compare(password, user.password);
+        const validPassword = Boolean(user.password) && await bcrypt.compare(password, user.password);
         if (!validPassword) {
             logger.warn('Login failed: Invalid credentials');
             return res.status(401).json({ message: 'Invalid credentials' });
@@ -398,8 +398,8 @@ router.post('/refresh', async (req, res, next) => {
         pokemonGoName: user.pokemonGoName,
         trainerCode: user.trainerCode,
         allowLocation: user.allowLocation,
-        country: user.country,
-        city: user.city,
+        location: user.location,
+        coordinates: user.coordinates,
         accessTokenExpiry: tokens.accessTokenExpiry.toISOString(),
         refreshTokenExpiry: user.refreshToken[req.tokenIndex].expires.toISOString() // Now using req.tokenIndex
     });

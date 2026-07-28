@@ -21,11 +21,16 @@ const initialValues: RegisterFormValues = {
 function Harness({
   onSubmit = vi.fn(),
   validateFields = vi.fn(() => true),
+  oauthProvider,
 }: {
   onSubmit?: (event: FormEvent<HTMLFormElement>) => void;
   validateFields?: (fieldNames: Array<keyof RegisterFormValues>) => boolean;
+  oauthProvider?: 'google';
 }) {
-  const [values, setValues] = useState(initialValues);
+  const [values, setValues] = useState({
+    ...initialValues,
+    ...(oauthProvider ? { email: 'verified@example.com' } : {}),
+  });
 
   return (
     <MemoryRouter>
@@ -63,12 +68,15 @@ function Harness({
         showOptionsOverlay={false}
         setShowOptionsOverlay={vi.fn()}
         locationOptions={[]}
+        oauthProvider={oauthProvider}
+        onGoogleClick={vi.fn()}
       />
     </MemoryRouter>
   );
 }
 
 function completeAccountStep() {
+  fireEvent.click(screen.getByRole('button', { name: /continue with email/i }));
   fireEvent.change(screen.getByLabelText('Username'), {
     target: { name: 'username', value: 'Ash_Ketchum' },
   });
@@ -84,7 +92,7 @@ describe('RegisterForm', () => {
     const validateFields = vi.fn(() => true);
     render(<Harness onSubmit={onSubmit} validateFields={validateFields} />);
 
-    expect(screen.getByRole('heading', { name: 'Your account' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'How would you like to join?' })).toBeInTheDocument();
     completeAccountStep();
     expect(validateFields).toHaveBeenCalledWith(['username', 'email']);
 
@@ -129,9 +137,23 @@ describe('RegisterForm', () => {
     const validateFields = vi.fn(() => false);
     render(<Harness validateFields={validateFields} />);
 
-    fireEvent.click(screen.getByRole('button', { name: /continue/i }));
+    fireEvent.click(screen.getByRole('button', { name: /continue with email/i }));
+    fireEvent.click(screen.getByTestId('register-button'));
 
     expect(screen.getByRole('heading', { name: 'Your account' })).toBeInTheDocument();
     expect(validateFields).toHaveBeenCalledWith(['username', 'email']);
+  });
+
+  it('skips password creation after Google verifies the email', () => {
+    render(<Harness oauthProvider="google" />);
+
+    fireEvent.change(screen.getByLabelText('Username'), {
+      target: { name: 'username', value: 'GoogleTrainer' },
+    });
+    expect(screen.getByLabelText('Email')).toBeDisabled();
+    fireEvent.click(screen.getByRole('button', { name: /continue/i }));
+
+    expect(screen.queryByRole('heading', { name: 'Protect your account' })).not.toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Your Pokémon GO identity' })).toBeInTheDocument();
   });
 });

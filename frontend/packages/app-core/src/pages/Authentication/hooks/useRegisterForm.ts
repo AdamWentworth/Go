@@ -1,6 +1,6 @@
 // useRegisterForm.ts
 
-import { useState, useCallback, ChangeEvent, FocusEvent } from 'react';
+import { useState, useCallback, useEffect, ChangeEvent, FocusEvent } from 'react';
 import { useModal } from '@/contexts/ModalContext';
 import { fetchSuggestions, fetchLocationOptions } from '../../../services/locationServices';
 import type { Coordinates, LocationSuggestion } from '../../../types/location';
@@ -10,12 +10,13 @@ import { createScopedLogger } from '@/utils/logger';
 const log = createScopedLogger('useRegisterForm');
 
 const useRegisterForm = (
-  onSubmit: (values: RegisterFormValues & { location: string }) => void
+  onSubmit: (values: RegisterFormValues & { location: string }) => void,
+  options: { oauthEmail?: string } = {},
 ) => {
   const { alert } = useModal();
   const [values, setValues] = useState<RegisterFormValues>({
     username: '',
-    email: '',
+    email: options.oauthEmail || '',
     password: '',
     trainerCode: '',
     pokemonGoName: '',
@@ -33,6 +34,15 @@ const useRegisterForm = (
   const [showOptionsOverlay, setShowOptionsOverlay] = useState<boolean>(false);
   const [locationOptions, setLocationOptions] = useState<LocationSuggestion[]>([]);
   const [hasSubmitted, setHasSubmitted] = useState<boolean>(false);
+
+  useEffect(() => {
+    if (!options.oauthEmail) return;
+    setValues((current) => (
+      current.email === options.oauthEmail
+        ? current
+        : { ...current, email: options.oauthEmail || '' }
+    ));
+  }, [options.oauthEmail]);
 
   const validate = (values: RegisterFormValues): RegisterFormErrors => {
     const tempErrors: RegisterFormErrors = {};
@@ -52,7 +62,9 @@ const useRegisterForm = (
     tempErrors.email = emailRegex.test(values.email) ? '' : 'Email is not valid';
 
     const password = values.password;
-    if (!password) {
+    if (options.oauthEmail) {
+      tempErrors.password = '';
+    } else if (!password) {
       tempErrors.password = 'Password is required';
     } else if (password.length < 8) {
       tempErrors.password = 'Password must be at least 8 characters long';

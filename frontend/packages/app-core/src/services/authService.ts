@@ -15,6 +15,7 @@ import { usersContract } from '@shared-contracts/users';
 import type {
   AuthRequestPayload,
   LoginResponse,
+  OAuthSessionResponse,
   RefreshTokenResponse,
   ResetPasswordRequest,
 } from '@shared-contracts/auth';
@@ -23,6 +24,36 @@ import type { SecondaryUserUpdateRequest } from '@shared-contracts/users';
 const log = createScopedLogger('authService');
 const AUTH_API_URL = import.meta.env.VITE_AUTH_API_URL;
 const USERS_API_URL = import.meta.env.VITE_USERS_API_URL;
+
+export interface GoogleRegistration {
+  provider: 'google';
+  email: string;
+  emailVerified: true;
+}
+
+export const startGoogleAuthentication = (): void => {
+  const url = new URL(buildUrl(AUTH_API_URL, authContract.endpoints.googleStart));
+  url.searchParams.set('device_id', getDeviceId());
+  url.searchParams.set('return_to', window.location.origin);
+  window.location.assign(url.toString());
+};
+
+export const getPendingGoogleRegistration = async (): Promise<GoogleRegistration> =>
+  requestJson<GoogleRegistration>(
+    AUTH_API_URL,
+    authContract.endpoints.googlePending,
+    'GET',
+  );
+
+export const completeGoogleRegistration = async (
+  userData: AuthRequestPayload,
+): Promise<LoginResponse> =>
+  requestJson<LoginResponse>(
+    AUTH_API_URL,
+    authContract.endpoints.googleCompleteRegistration,
+    'POST',
+    userData,
+  );
 
 type RequestPayload = AuthRequestPayload | null;
 
@@ -200,6 +231,14 @@ export const refreshTokenService = async (): Promise<RefreshTokenResponse> => {
     throw error;
   }
 };
+
+export const loadOAuthSession = async (): Promise<OAuthSessionResponse> =>
+  requestJson<OAuthSessionResponse>(
+    AUTH_API_URL,
+    authContract.endpoints.refresh,
+    'POST',
+    {},
+  );
 
 // ==========================
 // resetPassword

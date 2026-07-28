@@ -7,6 +7,9 @@ export const authContract = {
     logout: '/logout',
     refresh: '/refresh',
     resetPassword: '/reset-password',
+    googleStart: '/google',
+    googlePending: '/google/pending',
+    googleCompleteRegistration: '/google/complete-registration',
     updateUser: (userId: string) => `/update/${encodeURIComponent(userId)}`,
     deleteUser: (userId: string) => `/delete/${encodeURIComponent(userId)}`,
   },
@@ -36,6 +39,8 @@ export interface RefreshTokenResponse {
   accessTokenExpiry: string;
   refreshTokenExpiry: string;
 }
+
+export type OAuthSessionResponse = AuthUser;
 
 export interface ResetPasswordRequest {
   identifier: string;

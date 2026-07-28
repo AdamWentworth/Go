@@ -117,70 +117,33 @@ paths:
       responses:
         '302':
           description: Redirect to Google's OAuth 2.0 login page.
+        '503':
+          description: Google OAuth has not been configured.
 
-  /auth/google/redirect:
+  /auth/google/callback:
     get:
-      summary: Google OAuth callback URL
-      description: Handles the callback from Google after authentication. Google returns the user to this endpoint with an authorization code.
-      responses:
-        '200':
-          description: User successfully authenticated and redirected to the profile page.
-        '401':
-          description: Authentication failed.
-
-  /auth/facebook:
-    get:
-      summary: Redirect to Facebook for authentication
-      description: Redirects the user to Facebook for OAuth authentication. No request body required.
+      summary: Verify Google's response and continue login or registration
       responses:
         '302':
-          description: Redirect to Facebook's OAuth login page.
+          description: Redirect to the allow-listed frontend login or registration flow.
 
-  /auth/facebook/redirect:
+  /auth/google/pending:
     get:
-      summary: Facebook OAuth callback URL
-      description: Handles the callback from Facebook after authentication. Facebook returns the user to this endpoint with an authorization code.
+      summary: Read the verified email for a pending Google registration
       responses:
         '200':
-          description: User successfully authenticated and redirected to the profile page.
+          description: Pending Google identity
         '401':
-          description: Authentication failed.
+          description: Pending registration expired or invalid
 
-  /auth/twitter:
-    get:
-      summary: Redirect to Twitter for authentication
-      description: Redirects the user to Twitter for OAuth authentication. No request body required.
+  /auth/google/complete-registration:
+    post:
+      summary: Create an account from a verified pending Google identity
       responses:
-        '302':
-          description: Redirect to Twitter's OAuth login page.
-
-  /auth/twitter/redirect:
-    get:
-      summary: Twitter OAuth callback URL
-      description: Handles the callback from Twitter after authentication. Twitter returns the user to this endpoint with an authorization code.
-      responses:
-        '200':
-          description: User successfully authenticated and redirected to the profile page.
-        '401':
-          description: Authentication failed.
-
-  /auth/discord:
-    get:
-      summary: Redirect to Discord for authentication
-      description: Redirects the user to Discord for OAuth authentication. No request body required.
-      responses:
-        '302':
-          description: Redirect to Discord's OAuth login page.
-
-  /auth/discord/redirect:
-    get:
-      summary: Discord OAuth callback URL
-      description: Handles the callback from Discord after authentication. Discord returns the user to this endpoint with an authorization code.
-      responses:
-        '200':
-          description: User successfully authenticated and redirected to the profile page.
-        '401':
-          description: Authentication failed.
+        '201':
+          description: Google account created and session cookies issued
+        '409':
+          description: Username, email, trainer name, or trainer code already exists
 
 components:
   securitySchemes:

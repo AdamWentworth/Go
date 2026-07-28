@@ -3,15 +3,13 @@
 import React, { FC } from 'react';
 import {
   GoogleLoginButton,
-  FacebookLoginButton,
-  TwitterLoginButton,
-  DiscordLoginButton,
 } from 'react-social-login-buttons';
 import './LoginForm.css';
 
 import { useModal } from '../../../contexts/ModalContext';
 import type { LoginFormValues } from '../../../types/auth';
 import type { FormErrors } from '../../../types/auth';
+import { startGoogleAuthentication } from '@/services/authService';
 
 interface LoginFormProps {
   values: LoginFormValues;
@@ -69,18 +67,9 @@ const LoginForm: FC<LoginFormProps> = ({
             Reset Password
           </button>
           <div className="social-login-buttons">
-            <GoogleLoginButton onClick={() => alert('Google login is not yet implemented.')}>
+            <GoogleLoginButton onClick={startGoogleAuthentication}>
               Login with Google
             </GoogleLoginButton>
-            <FacebookLoginButton onClick={() => alert('Facebook login is not yet implemented.')}>
-              Login with Facebook
-            </FacebookLoginButton>
-            <TwitterLoginButton onClick={() => alert('Twitter login is not yet implemented.')}>
-              Login with Twitter
-            </TwitterLoginButton>
-            <DiscordLoginButton onClick={() => alert('Discord login is not yet implemented.')}>
-              Login with Discord
-            </DiscordLoginButton>
           </div>
         </form>
       </div>
