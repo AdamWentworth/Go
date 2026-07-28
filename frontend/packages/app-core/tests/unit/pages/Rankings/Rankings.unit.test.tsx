@@ -378,7 +378,7 @@ describe('Community Rankings page', () => {
     render(<Rankings />);
 
     expect(screen.getByText('1 caught')).toBeInTheDocument();
-    expect(screen.getByText('1 not listed')).toBeInTheDocument();
+    expect(screen.queryByText('1 not listed')).not.toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'View collection' }))
       .toHaveAttribute(
         'href',
@@ -387,6 +387,15 @@ describe('Community Rankings page', () => {
 
     expect(screen.queryByRole('button', { name: 'Available' }))
       .not.toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: 'I have' }),
+    ).toHaveTextContent('I have1');
+    expect(
+      screen.getByRole('button', { name: 'For trade' }),
+    ).toHaveTextContent('For trade0');
+    expect(
+      screen.getByRole('button', { name: 'Missing' }),
+    ).toHaveTextContent('Missing3');
 
     fireEvent.click(screen.getByRole('button', { name: 'I have' }));
     expect(screen.getByText('Pikachu')).toBeInTheDocument();

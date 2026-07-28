@@ -237,6 +237,29 @@
   cursor: pointer;
 }
 
+.community-ranking-filter-row--personal button {
+  gap: 0.45rem;
+  justify-content: space-between;
+}
+
+.community-ranking-filter-row--personal button small {
+  display: grid;
+  min-width: 1.45rem;
+  min-height: 1.45rem;
+  padding-inline: 0.3rem;
+  place-items: center;
+  border-radius: 4px;
+  color: var(--ranking-muted);
+  background: rgba(159, 191, 193, 0.1);
+  font-size: 0.64rem;
+  font-weight: 900;
+}
+
+.community-ranking-filter-row--personal button.active small {
+  color: #071312;
+  background: rgba(7, 19, 18, 0.14);
+}
+
 .community-ranking-filter-mask {
   display: inline-block;
   flex: 0 0 auto;
@@ -651,6 +674,17 @@
 
   .community-ranking-filter-row {
     gap: 0.2rem;
+  }
+
+  .community-ranking-filter-row--personal button {
+    gap: 0.15rem;
+  }
+
+  .community-ranking-filter-row--personal button small {
+    min-width: 1.1rem;
+    min-height: 1.1rem;
+    padding-inline: 0.16rem;
+    font-size: 0.55rem;
   }
 
   .community-ranking-filter-mask {

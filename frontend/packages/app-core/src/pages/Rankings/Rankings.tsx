@@ -405,12 +405,6 @@ function RankingRow({
                   Registered
                 </span>
               ) : null}
-              {personalStatus?.availableCount ? (
-                <span title="Caught copies not currently listed for trade">
-                  <FaBoxOpen aria-hidden="true" />
-                  {personalStatus.availableCount} not listed
-                </span>
-              ) : null}
               {personalStatus?.tradeCount ? (
                 <span title="Copies currently listed for trade">
                   <FaExchangeAlt aria-hidden="true" />
@@ -602,7 +596,7 @@ const Rankings: React.FC = () => {
     [instances],
   );
   const normalizedQuery = query.trim().toLowerCase();
-  const filteredRows = useMemo(
+  const categoryAndSearchRows = useMemo(
     () =>
       joinedRows.filter(({ variant }) => {
         const variantType = String(variant.variantType || '').toLowerCase();
@@ -615,15 +609,6 @@ const Rankings: React.FC = () => {
             (variantType.includes('dynamax') ||
               variantType.includes('gigantamax')));
         if (!matchesCategory) return false;
-        if (
-          isLoggedIn &&
-          !matchesPersonalRankingFilter(
-            personalStatuses.get(variant.variant_id),
-            personalFilter,
-          )
-        ) {
-          return false;
-        }
         if (!normalizedQuery) return true;
         return [
           variant.name,
@@ -636,9 +621,42 @@ const Rankings: React.FC = () => {
       }),
     [
       category,
-      isLoggedIn,
       joinedRows,
       normalizedQuery,
+    ],
+  );
+  const personalFilterCounts = useMemo(
+    () =>
+      new Map<PersonalRankingFilter, number>(
+        (['all', 'owned', 'trade', 'wanted', 'missing'] as const).map(
+          (filter) => [
+            filter,
+            filter === 'all'
+              ? categoryAndSearchRows.length
+              : categoryAndSearchRows.filter(({ variant }) =>
+                  matchesPersonalRankingFilter(
+                    personalStatuses.get(variant.variant_id),
+                    filter,
+                  ),
+                ).length,
+          ],
+        ),
+      ),
+    [categoryAndSearchRows, personalStatuses],
+  );
+  const filteredRows = useMemo(
+    () =>
+      !isLoggedIn || personalFilter === 'all'
+        ? categoryAndSearchRows
+        : categoryAndSearchRows.filter(({ variant }) =>
+            matchesPersonalRankingFilter(
+              personalStatuses.get(variant.variant_id),
+              personalFilter,
+            ),
+          ),
+    [
+      categoryAndSearchRows,
+      isLoggedIn,
       personalFilter,
       personalStatuses,
     ],
@@ -824,7 +842,10 @@ const Rankings: React.FC = () => {
                           setVisibleCount(INITIAL_RESULT_COUNT);
                         }}
                       >
-                        {label}
+                        <span>{label}</span>
+                        <small aria-hidden="true">
+                          {personalFilterCounts.get(value)?.toLocaleString() ?? 0}
+                        </small>
                       </button>
                     ))}
                   </div>
