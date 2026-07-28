@@ -167,6 +167,7 @@ describe('Community Rankings page', () => {
   });
 
   beforeEach(() => {
+    window.sessionStorage.clear();
     rankingState.error = null;
     rankingState.loading = false;
     rankingState.refresh.mockClear();
@@ -210,6 +211,37 @@ describe('Community Rankings page', () => {
     expect(screen.getByText('Bulbasaur')).toBeInTheDocument();
     expect(screen.queryByText('Pikachu')).not.toBeInTheDocument();
     expect(screen.getByLabelText('Rank 2')).toBeInTheDocument();
+  });
+
+  it('summarizes active filters while preserving community ranks', () => {
+    const { container } = render(<Rankings />);
+
+    const rows = Array.from(
+      container.querySelectorAll('.community-ranking-row'),
+    );
+    expect(rows[0]).toHaveTextContent('Pikachu');
+    expect(rows[0]).toHaveTextContent('1');
+    expect(container.querySelector('.community-ranking-filter-summary'))
+      .toHaveTextContent('All Pokémon');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Shiny' }));
+    expect(container.querySelector('.community-ranking-filter-summary'))
+      .toHaveTextContent(/1 results.*Shiny/);
+    expect(screen.getByRole('button', { name: 'Clear' })).toBeInTheDocument();
+  });
+
+  it('restores ranking view controls within the browser session', () => {
+    const first = render(<Rankings />);
+
+    fireEvent.click(screen.getByRole('tab', { name: 'Rarest owned' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Shadow' }));
+    first.unmount();
+
+    render(<Rankings />);
+    expect(screen.getByRole('tab', { name: 'Rarest owned' }))
+      .toHaveAttribute('aria-selected', 'true');
+    expect(screen.getByRole('button', { name: 'Shadow' }))
+      .toHaveAttribute('aria-pressed', 'true');
   });
 
   it('uses the same Dynamax and Gigantamax badges as Pokémon cards', () => {
@@ -284,12 +316,14 @@ describe('Community Rankings page', () => {
     render(<Rankings />);
 
     expect(screen.getByText('1 caught')).toBeInTheDocument();
-    expect(screen.getByText('1 available')).toBeInTheDocument();
+    expect(screen.getByText('1 not listed')).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'View collection' }))
+      .toHaveAttribute('href', '/pokemon?filter=caught');
 
     expect(screen.queryByRole('button', { name: 'Available' }))
       .not.toBeInTheDocument();
 
-    fireEvent.click(screen.getByRole('button', { name: 'My collection' }));
+    fireEvent.click(screen.getByRole('button', { name: 'I have' }));
     expect(screen.getByText('Pikachu')).toBeInTheDocument();
     expect(screen.queryByText('Bulbasaur')).not.toBeInTheDocument();
 

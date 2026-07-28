@@ -200,7 +200,22 @@
   grid-template-columns: repeat(5, minmax(0, 1fr));
 }
 
-.community-ranking-filters > div + div {
+.community-ranking-filter-group {
+  display: grid;
+  grid-template-columns: 5.4rem minmax(0, 1fr);
+  gap: 0.4rem;
+  align-items: center;
+}
+
+.community-ranking-filter-group > span {
+  color: var(--ranking-muted);
+  font-size: 0.62rem;
+  font-weight: 900;
+  text-align: center;
+  text-transform: uppercase;
+}
+
+.community-ranking-filter-group + .community-ranking-filter-group {
   padding-top: 0.3rem;
   border-top: 1px solid rgba(159, 191, 193, 0.13);
 }
@@ -243,6 +258,47 @@
   border-color: var(--ranking-teal);
   color: #071312;
   background: var(--ranking-teal);
+}
+
+.community-ranking-filter-summary {
+  display: flex;
+  gap: 0.55rem;
+  align-items: center;
+  min-height: 2.3rem;
+  margin: -0.15rem 0 0.55rem;
+  padding: 0 0.25rem;
+  color: var(--ranking-muted);
+  font-size: 0.68rem;
+  font-weight: 800;
+}
+
+.community-ranking-filter-summary > span {
+  display: inline-flex;
+  gap: 0.35rem;
+  align-items: center;
+  min-width: 0;
+}
+
+.community-ranking-filter-summary > span strong {
+  color: var(--ranking-text);
+}
+
+.community-ranking-filter-summary > span i {
+  color: rgba(158, 185, 187, 0.55);
+  font-style: normal;
+}
+
+.community-ranking-filter-summary > button {
+  margin-left: auto;
+  min-height: 1.9rem;
+  padding: 0.2rem 0.6rem;
+  border: 1px solid var(--ranking-teal);
+  border-radius: 5px;
+  color: var(--ranking-teal);
+  background: transparent;
+  font-size: 0.66rem;
+  font-weight: 900;
+  cursor: pointer;
 }
 
 .community-ranking-results {
@@ -386,6 +442,24 @@
 
 .community-ranking-count {
   gap: 0.22rem;
+}
+
+.community-ranking-action {
+  display: inline-flex;
+  gap: 0.35rem;
+  align-items: center;
+  justify-content: flex-end;
+  justify-self: end;
+  margin-top: 0.18rem;
+  color: var(--ranking-teal);
+  font-size: 0.66rem;
+  font-weight: 900;
+  text-decoration: none;
+}
+
+.community-ranking-action:hover,
+.community-ranking-action:focus-visible {
+  text-decoration: underline;
 }
 
 .community-ranking-count > strong {
@@ -532,6 +606,16 @@
     padding: 0.3rem;
   }
 
+  .community-ranking-filter-group {
+    grid-template-columns: 1fr;
+    gap: 0.2rem;
+  }
+
+  .community-ranking-filter-group > span {
+    padding-left: 0.1rem;
+    text-align: left;
+  }
+
   .community-ranking-filters button {
     min-width: 0;
     min-height: 1.85rem;
@@ -546,6 +630,19 @@
   .community-ranking-filter-mask {
     width: 0.9rem;
     height: 0.9rem;
+  }
+
+  .community-ranking-filter-summary {
+    display: flex;
+    gap: 0.3rem;
+  }
+
+  .community-ranking-filter-summary > span {
+    flex: 1;
+  }
+
+  .community-ranking-action {
+    justify-self: start;
   }
 
   .community-ranking-row {

@@ -1,5 +1,6 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import {
+  FaArrowRight,
   FaBoxOpen,
   FaCheckCircle,
   FaExchangeAlt,
@@ -15,6 +16,7 @@ import { useVariantsStore } from '@/features/variants/store/useVariantsStore';
 import { useAuthStore } from '@/stores/useAuthStore';
 import type { PokemonVariant } from '@/types/pokemonVariants';
 import { resolveAssetUrl } from '@/utils/assetUrl';
+import { buildPokemonCatalogPath } from '@/pages/Pokemon/utils/pokemonCatalogNavigation';
 import { useCommunityRankings } from './hooks/useCommunityRankings';
 import {
   buildPersonalRankingStatuses,
@@ -61,6 +63,62 @@ const CATEGORY_FILTERS: ReadonlyArray<{
 const INITIAL_RESULT_COUNT = 30;
 const RESULT_INCREMENT = 30;
 const FALLBACK_IMAGE = '/images/default_pokemon.png';
+const RANKINGS_VIEW_STORAGE_KEY = 'pokegonexus:rankings-view:v1';
+
+const CATEGORY_LABELS: Record<RankingCategory, string> = {
+  all: 'All Pokémon',
+  shiny: 'Shiny',
+  costume: 'Costume',
+  shadow: 'Shadow',
+  max: 'Max',
+};
+
+const PERSONAL_FILTER_LABELS: Record<PersonalRankingFilter, string> = {
+  all: 'All',
+  owned: 'I have',
+  trade: 'For trade',
+  wanted: 'I want',
+  missing: 'Missing',
+};
+
+interface RankingsViewState {
+  mode: RankingMode;
+  category: RankingCategory;
+  personalFilter: PersonalRankingFilter;
+  query: string;
+}
+
+function loadRankingsView(): RankingsViewState {
+  const fallback: RankingsViewState = {
+    mode: 'wanted',
+    category: 'all',
+    personalFilter: 'all',
+    query: '',
+  };
+  if (typeof window === 'undefined') return fallback;
+
+  try {
+    const stored = JSON.parse(
+      window.sessionStorage.getItem(RANKINGS_VIEW_STORAGE_KEY) || '{}',
+    ) as Partial<RankingsViewState>;
+    return {
+      mode: stored.mode === 'rarest' ? 'rarest' : 'wanted',
+      category: ['all', 'shiny', 'costume', 'shadow', 'max'].includes(
+        String(stored.category),
+      )
+        ? (stored.category as RankingCategory)
+        : 'all',
+      personalFilter: ['all', 'owned', 'trade', 'wanted', 'missing'].includes(
+        String(stored.personalFilter),
+      )
+        ? (stored.personalFilter as PersonalRankingFilter)
+        : 'all',
+      query: typeof stored.query === 'string' ? stored.query : '',
+    };
+  } catch {
+    return fallback;
+  }
+}
 
 function formatFormName(value: string): string {
   return value
@@ -245,6 +303,27 @@ function RankingRow({
       : `Owned by ${primaryCount.toLocaleString()} ${
           primaryCount === 1 ? 'trainer' : 'trainers'
         }`;
+  const collectionAction = !showPersonalStatus
+    ? null
+    : personalStatus?.tradeCount
+      ? {
+          label: 'View trade copies',
+          path: buildPokemonCatalogPath({ filter: 'Trade' }),
+        }
+      : personalStatus?.wanted
+        ? {
+            label: 'View wishlist',
+            path: buildPokemonCatalogPath({ filter: 'Wanted' }),
+          }
+        : personalStatus?.registered
+          ? {
+              label: 'View collection',
+              path: buildPokemonCatalogPath({ filter: 'Caught' }),
+            }
+          : {
+              label: 'Browse Pokémon',
+              path: '/pokemon',
+            };
   return (
     <article
       className={`community-ranking-row community-ranking-row--rank-${Math.min(
@@ -303,7 +382,7 @@ function RankingRow({
               {personalStatus?.availableCount ? (
                 <span title="Caught copies not currently listed for trade">
                   <FaBoxOpen aria-hidden="true" />
-                  {personalStatus.availableCount} available
+                  {personalStatus.availableCount} not listed
                 </span>
               ) : null}
               {personalStatus?.tradeCount ? (
@@ -327,6 +406,15 @@ function RankingRow({
         <span aria-hidden="true">
           <i style={{ width: `${progress}%` }} />
         </span>
+        {collectionAction && (
+          <a
+            className="community-ranking-action"
+            href={collectionAction.path}
+          >
+            {collectionAction.label}
+            <FaArrowRight aria-hidden="true" />
+          </a>
+        )}
       </div>
     </article>
   );
@@ -338,15 +426,28 @@ const Rankings: React.FC = () => {
   const instances = useInstancesStore((state) => state.instances);
   const instancesLoading = useInstancesStore((state) => state.instancesLoading);
   const isLoggedIn = useAuthStore((state) => state.isLoggedIn);
-  const [mode, setMode] = useState<RankingMode>('wanted');
-  const [query, setQuery] = useState('');
-  const [category, setCategory] = useState<RankingCategory>('all');
+  const [initialView] = useState(loadRankingsView);
+  const [mode, setMode] = useState<RankingMode>(initialView.mode);
+  const [query, setQuery] = useState(initialView.query);
+  const [category, setCategory] =
+    useState<RankingCategory>(initialView.category);
   const [personalFilter, setPersonalFilter] =
-    useState<PersonalRankingFilter>('all');
+    useState<PersonalRankingFilter>(initialView.personalFilter);
   const [visibleCount, setVisibleCount] = useState(INITIAL_RESULT_COUNT);
   const { data, error, loading, refresh } = useCommunityRankings(true);
 
   useBootstrapVariants();
+
+  useEffect(() => {
+    window.sessionStorage.setItem(
+      RANKINGS_VIEW_STORAGE_KEY,
+      JSON.stringify({ mode, category, personalFilter, query }),
+    );
+  }, [category, mode, personalFilter, query]);
+
+  useEffect(() => {
+    if (mode === 'wanted' && category === 'shadow') setCategory('all');
+  }, [category, mode]);
 
   const variantsByID = useMemo(
     () => new Map(variants.map((variant) => [variant.variant_id, variant])),
@@ -418,14 +519,14 @@ const Rankings: React.FC = () => {
       personalStatuses,
     ],
   );
-  const visibleRows = filteredRows.slice(0, visibleCount);
   const rankByVariantID = useMemo(
     () =>
       new Map(
         joinedRows.map((entry, index) => [entry.variant_id, index + 1]),
-      ),
+    ),
     [joinedRows],
   );
+  const visibleRows = filteredRows.slice(0, visibleCount);
   const unmatchedCount = sourceRows.length - matchedRows.length;
   const scaleMaximum = filteredRows.reduce(
     (maximum, entry) =>
@@ -438,6 +539,16 @@ const Rankings: React.FC = () => {
 
   const selectMode = (nextMode: RankingMode) => {
     setMode(nextMode);
+    setVisibleCount(INITIAL_RESULT_COUNT);
+  };
+  const hasActiveFilters =
+    category !== 'all' ||
+    personalFilter !== 'all' ||
+    normalizedQuery.length > 0;
+  const clearFilters = () => {
+    setCategory('all');
+    setPersonalFilter('all');
+    setQuery('');
     setVisibleCount(INITIAL_RESULT_COUNT);
   };
 
@@ -522,65 +633,89 @@ const Rankings: React.FC = () => {
               className="community-ranking-filters"
               aria-label="Ranking filters"
             >
-              <div className="community-ranking-filter-row community-ranking-filter-row--category">
-                {CATEGORY_FILTERS
-                  .filter(({ rarestOnly }) => !rarestOnly || mode === 'rarest')
-                  .map(({ value, label, mask }) => (
-                  <button
-                    key={value}
-                    type="button"
-                    aria-pressed={category === value}
-                    className={category === value ? 'active' : ''}
-                    onClick={() => {
-                      setCategory(value);
-                      setVisibleCount(INITIAL_RESULT_COUNT);
-                    }}
-                  >
-                    {mask && (
-                      <span
-                        className="community-ranking-filter-mask"
-                        data-ranking-filter-asset={mask}
-                        aria-hidden="true"
-                        style={{
-                          WebkitMaskImage: `url("${resolveAssetUrl(mask)}")`,
-                          maskImage: `url("${resolveAssetUrl(mask)}")`,
-                        }}
-                      />
-                    )}
-                    {label}
-                  </button>
-                ))}
-              </div>
-              {isLoggedIn && (
-                <div
-                  className="community-ranking-filter-row community-ranking-filter-row--personal"
-                  aria-label="My collection"
-                >
-                  {(
-                    [
-                      ['all', 'All rankings'],
-                      ['owned', 'My collection'],
-                      ['trade', 'For trade'],
-                      ['wanted', 'Wishlist'],
-                      ['missing', 'Missing'],
-                    ] as const
-                  ).map(([value, label]) => (
+              <div className="community-ranking-filter-group">
+                <span>Category</span>
+                <div className="community-ranking-filter-row community-ranking-filter-row--category">
+                  {CATEGORY_FILTERS
+                    .filter(({ rarestOnly }) => !rarestOnly || mode === 'rarest')
+                    .map(({ value, label, mask }) => (
                     <button
                       key={value}
                       type="button"
-                      aria-pressed={personalFilter === value}
-                      className={personalFilter === value ? 'active personal' : ''}
+                      aria-pressed={category === value}
+                      className={category === value ? 'active' : ''}
                       onClick={() => {
-                        setPersonalFilter(value);
+                        setCategory(value);
                         setVisibleCount(INITIAL_RESULT_COUNT);
                       }}
                     >
+                      {mask && (
+                        <span
+                          className="community-ranking-filter-mask"
+                          data-ranking-filter-asset={mask}
+                          aria-hidden="true"
+                          style={{
+                            WebkitMaskImage: `url("${resolveAssetUrl(mask)}")`,
+                            maskImage: `url("${resolveAssetUrl(mask)}")`,
+                          }}
+                        />
+                      )}
                       {label}
                     </button>
                   ))}
                 </div>
+              </div>
+              {isLoggedIn && (
+                <div className="community-ranking-filter-group">
+                  <span>Compared with yours</span>
+                  <div
+                    className="community-ranking-filter-row community-ranking-filter-row--personal"
+                    aria-label="Compared with yours"
+                  >
+                    {(
+                      [
+                        ['all', 'All'],
+                        ['owned', 'I have'],
+                        ['trade', 'For trade'],
+                        ['wanted', 'I want'],
+                        ['missing', 'Missing'],
+                      ] as const
+                    ).map(([value, label]) => (
+                      <button
+                        key={value}
+                        type="button"
+                        aria-pressed={personalFilter === value}
+                        className={personalFilter === value ? 'active personal' : ''}
+                        onClick={() => {
+                          setPersonalFilter(value);
+                          setVisibleCount(INITIAL_RESULT_COUNT);
+                        }}
+                      >
+                        {label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
               )}
             </section>
+            <div className="community-ranking-filter-summary">
+              <span>
+                <strong>{filteredRows.length.toLocaleString()}</strong> results
+                <i aria-hidden="true">·</i>
+                {CATEGORY_LABELS[category]}
+                {isLoggedIn && (
+                  <>
+                    <i aria-hidden="true">·</i>
+                    {PERSONAL_FILTER_LABELS[personalFilter]}
+                  </>
+                )}
+              </span>
+              {hasActiveFilters && (
+                <button type="button" onClick={clearFilters}>
+                  Clear
+                </button>
+              )}
+            </div>
 
             {(loading || variantsLoading || (isLoggedIn && instancesLoading)) && (
               <section className="community-rankings-state" aria-live="polite">
