@@ -7,10 +7,13 @@ import SuccessMessage from './SuccessMessage';
 import useRegisterForm from './hooks/useRegisterForm';
 import {
   completeGoogleRegistration,
+  completeDiscordRegistration,
   getPendingGoogleRegistration,
+  getPendingDiscordRegistration,
   registerUser,
   loginUser,
   startGoogleAuthentication,
+  startDiscordAuthentication,
 } from '../../services/authService';
 import './Register.css';
 import { useAuth } from '../../contexts/AuthContext';
@@ -29,8 +32,10 @@ const log = createScopedLogger('Register');
 const Register: FC = () => {
   const [searchParams] = useSearchParams();
   const isGoogleReturn = searchParams.get('oauth') === 'google';
-  const [googleEmail, setGoogleEmail] = useState('');
-  const [oauthLoading, setOauthLoading] = useState(isGoogleReturn);
+  const isDiscordReturn = searchParams.get('oauth') === 'discord';
+  const oauthProvider = isGoogleReturn ? 'google' : isDiscordReturn ? 'discord' : null;
+  const [oauthEmail, setOauthEmail] = useState('');
+  const [oauthLoading, setOauthLoading] = useState(Boolean(oauthProvider));
   // useRegisterForm provides all the state and handlers for our register form.
   const {
     values, 
@@ -55,7 +60,7 @@ const Register: FC = () => {
     setShowOptionsOverlay,
     locationOptions,
     setErrors
-  } = useRegisterForm(onSubmit, { oauthEmail: googleEmail || undefined });
+  } = useRegisterForm(onSubmit, { oauthEmail: oauthEmail || undefined });
 
   const [feedback, setFeedback] = useState<string>('');
   const [isRegistered, setIsRegistered] = useState<boolean>(false);
@@ -63,12 +68,17 @@ const Register: FC = () => {
   const { login } = useAuth();
 
   useEffect(() => {
-    if (!isGoogleReturn) return;
-    getPendingGoogleRegistration()
-      .then((pending) => setGoogleEmail(pending.email))
-      .catch(() => toast.error('Google registration expired. Please continue with Google again.'))
+    if (!oauthProvider) return;
+    const getPending = oauthProvider === 'google'
+      ? getPendingGoogleRegistration
+      : getPendingDiscordRegistration;
+    getPending()
+      .then((pending) => setOauthEmail(pending.email))
+      .catch(() => toast.error(
+        `${oauthProvider === 'google' ? 'Google' : 'Discord'} registration expired. Please try again.`,
+      ))
       .finally(() => setOauthLoading(false));
-  }, [isGoogleReturn]);
+  }, [oauthProvider]);
 
   const finishLogin = (loginResponse: LoginResponse, formValues: RegisterFormValues) => {
     const user: User = {
@@ -109,8 +119,11 @@ const Register: FC = () => {
     setIsLoading(true);
 
     try {
-      if (googleEmail) {
-        const response = await completeGoogleRegistration(sanitizedFormValues);
+      if (oauthEmail && oauthProvider) {
+        const completeRegistration = oauthProvider === 'google'
+          ? completeGoogleRegistration
+          : completeDiscordRegistration;
+        const response = await completeRegistration(sanitizedFormValues);
         finishLogin(response, sanitizedFormValues);
         setIsLoading(false);
         return;
@@ -193,8 +206,9 @@ const Register: FC = () => {
           showOptionsOverlay={showOptionsOverlay}
           setShowOptionsOverlay={setShowOptionsOverlay}
           locationOptions={locationOptions}
-          oauthProvider={googleEmail ? 'google' : undefined}
+          oauthProvider={oauthEmail && oauthProvider ? oauthProvider : undefined}
           onGoogleClick={() => startGoogleAuthentication('register')}
+          onDiscordClick={() => startDiscordAuthentication('register')}
         />
       )}
       <ToastContainer />

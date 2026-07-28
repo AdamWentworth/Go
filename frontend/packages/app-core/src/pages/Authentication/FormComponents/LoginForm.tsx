@@ -10,6 +10,8 @@ import { useModal } from '../../../contexts/ModalContext';
 import type { LoginFormValues } from '../../../types/auth';
 import type { FormErrors } from '../../../types/auth';
 import { startGoogleAuthentication } from '@/services/authService';
+import { startDiscordAuthentication } from '@/services/authService';
+import { FaDiscord } from 'react-icons/fa';
 
 interface LoginFormProps {
   values: LoginFormValues;
@@ -70,6 +72,14 @@ const LoginForm: FC<LoginFormProps> = ({
             <GoogleLoginButton onClick={startGoogleAuthentication}>
               Login with Google
             </GoogleLoginButton>
+            <button
+              type="button"
+              className="discord-login-button"
+              onClick={() => startDiscordAuthentication('login')}
+            >
+              <FaDiscord aria-hidden="true" />
+              Login with Discord
+            </button>
           </div>
         </form>
       </div>

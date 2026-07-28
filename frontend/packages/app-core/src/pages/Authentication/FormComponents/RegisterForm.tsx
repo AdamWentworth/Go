@@ -5,10 +5,12 @@ import {
   FaArrowRight,
   FaCheck,
   FaEnvelope,
+  FaDiscord,
   FaGamepad,
   FaLock,
   FaMapMarkerAlt,
   FaPen,
+  FaShieldAlt,
   FaUser,
 } from 'react-icons/fa';
 import { FcGoogle } from 'react-icons/fc';
@@ -41,8 +43,9 @@ interface RegisterFormProps {
   showOptionsOverlay: boolean;
   setShowOptionsOverlay: (show: boolean) => void;
   locationOptions: LocationSuggestion[];
-  oauthProvider?: 'google';
+  oauthProvider?: 'google' | 'discord';
   onGoogleClick?: () => void;
+  onDiscordClick?: () => void;
 }
 
 const emailSteps = [
@@ -79,9 +82,10 @@ const RegisterForm: FC<RegisterFormProps> = ({
   locationOptions,
   oauthProvider,
   onGoogleClick,
+  onDiscordClick,
 }) => {
   const [step, setStep] = useState(0);
-  const [authMethod, setAuthMethod] = useState<'email' | 'google' | null>(
+  const [authMethod, setAuthMethod] = useState<'email' | 'google' | 'discord' | null>(
     oauthProvider || null,
   );
   const steps = oauthProvider ? googleSteps : emailSteps;
@@ -172,12 +176,16 @@ const RegisterForm: FC<RegisterFormProps> = ({
                 <div className="register-method-intro">
                   <span>Choose a sign-up method</span>
                   <h2>Start your trainer account</h2>
-                  <p>Sign up with Google or use your email address.</p>
+                  <p>Use Google, Discord, or your email address.</p>
                 </div>
                 <div className="register-method-grid">
                   <button type="button" className="google-auth-button" onClick={onGoogleClick}>
                     <FcGoogle aria-hidden="true" />
                     Sign up with Google
+                  </button>
+                  <button type="button" className="discord-auth-button" onClick={onDiscordClick}>
+                    <FaDiscord aria-hidden="true" />
+                    Sign up with Discord
                   </button>
                   <button
                     type="button"
@@ -189,7 +197,7 @@ const RegisterForm: FC<RegisterFormProps> = ({
                   </button>
                 </div>
                 <p className="register-method-note">
-                  Google verifies your email. You will still choose a PokeGoNexus username.
+                  Your provider verifies your email. You will still choose a PokeGoNexus username.
                 </p>
               </>
             )}

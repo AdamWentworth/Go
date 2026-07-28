@@ -26,7 +26,7 @@ const AUTH_API_URL = import.meta.env.VITE_AUTH_API_URL;
 const USERS_API_URL = import.meta.env.VITE_USERS_API_URL;
 
 export interface GoogleRegistration {
-  provider: 'google';
+  provider: 'google' | 'discord';
   email: string;
   emailVerified: true;
 }
@@ -35,6 +35,16 @@ export const startGoogleAuthentication = (
   intent: 'login' | 'register' = 'login',
 ): void => {
   const url = new URL(buildUrl(AUTH_API_URL, authContract.endpoints.googleStart));
+  url.searchParams.set('device_id', getDeviceId());
+  url.searchParams.set('return_to', window.location.origin);
+  url.searchParams.set('intent', intent);
+  window.location.assign(url.toString());
+};
+
+export const startDiscordAuthentication = (
+  intent: 'login' | 'register' = 'login',
+): void => {
+  const url = new URL(buildUrl(AUTH_API_URL, authContract.endpoints.discordStart));
   url.searchParams.set('device_id', getDeviceId());
   url.searchParams.set('return_to', window.location.origin);
   url.searchParams.set('intent', intent);
@@ -54,6 +64,23 @@ export const completeGoogleRegistration = async (
   requestJson<LoginResponse>(
     AUTH_API_URL,
     authContract.endpoints.googleCompleteRegistration,
+    'POST',
+    userData,
+  );
+
+export const getPendingDiscordRegistration = async (): Promise<GoogleRegistration> =>
+  requestJson<GoogleRegistration>(
+    AUTH_API_URL,
+    authContract.endpoints.discordPending,
+    'GET',
+  );
+
+export const completeDiscordRegistration = async (
+  userData: AuthRequestPayload,
+): Promise<LoginResponse> =>
+  requestJson<LoginResponse>(
+    AUTH_API_URL,
+    authContract.endpoints.discordCompleteRegistration,
     'POST',
     userData,
   );

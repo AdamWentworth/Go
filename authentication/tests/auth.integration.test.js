@@ -11,6 +11,16 @@ jest.mock('../services/googleOAuthService', () => ({
   }))
 }));
 
+jest.mock('../services/discordOAuthService', () => ({
+  createAuthorizationUrl: jest.fn(({ state }) =>
+    `https://discord.test/oauth2/authorize?state=${encodeURIComponent(state)}`),
+  exchangeCode: jest.fn(async () => ({
+    subject: 'discord-subject-456',
+    email: 'discord.user@example.com',
+    emailVerified: true
+  }))
+}));
+
 jest.setTimeout(120000);
 
 let mongoServer;
@@ -441,5 +451,102 @@ describe('authentication service integration', () => {
     const existingUser = await User.findOne({ email: 'google.user@example.com' }).lean();
     expect(existingUser.identities).toHaveLength(0);
     expect(await User.countDocuments({ email: 'google.user@example.com' })).toBe(1);
+  });
+
+  test('Discord OAuth creates and completes a pending registration', async () => {
+    const start = await request(app)
+      .get('/auth/discord')
+      .query({
+        device_id: validDeviceId,
+        return_to: 'http://localhost:3000',
+        intent: 'register'
+      });
+    const stateCookie = start.headers['set-cookie'].find((cookie) =>
+      cookie.startsWith('discordOAuthState='));
+    const state = new URL(start.headers.location).searchParams.get('state');
+
+    const callback = await request(app)
+      .get('/auth/discord/callback')
+      .set('Cookie', stateCookie)
+      .query({ code: 'discord-code', state });
+
+    expect(callback.status).toBe(302);
+    expect(callback.headers.location).toBe('http://localhost:3000/register?oauth=discord');
+    const pendingCookie = callback.headers['set-cookie'].find((cookie) =>
+      cookie.startsWith('discordOAuthPending='));
+
+    const pending = await request(app)
+      .get('/auth/discord/pending')
+      .set('Cookie', pendingCookie);
+    expect(pending.body).toEqual({
+      provider: 'discord',
+      email: 'discord.user@example.com',
+      emailVerified: true
+    });
+
+    const completed = await request(app)
+      .post('/auth/discord/complete-registration')
+      .set('Origin', 'http://localhost:3000')
+      .set('Cookie', pendingCookie)
+      .send({ username: 'discord_user' });
+    expect(completed.status).toBe(201);
+    const user = await User.findOne({ username: 'discord_user' }).lean();
+    expect(user.identities).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        provider: 'discord',
+        subject: 'discord-subject-456'
+      })
+    ]));
+  });
+
+  test('Discord login unifies a verified matching email account', async () => {
+    await registerUser({ email: 'discord.user@example.com' });
+    const existing = await User.findOne({ email: 'discord.user@example.com' }).lean();
+    const start = await request(app)
+      .get('/auth/discord')
+      .query({ device_id: validDeviceId, return_to: 'http://localhost:3000' });
+    const stateCookie = start.headers['set-cookie'].find((cookie) =>
+      cookie.startsWith('discordOAuthState='));
+    const state = new URL(start.headers.location).searchParams.get('state');
+
+    const callback = await request(app)
+      .get('/auth/discord/callback')
+      .set('Cookie', stateCookie)
+      .query({ code: 'discord-code', state });
+
+    expect(callback.headers.location).toBe('http://localhost:3000/login?oauth=success');
+    const linked = await User.findOne({ email: 'discord.user@example.com' }).lean();
+    expect(linked._id.toString()).toBe(existing._id.toString());
+    expect(linked.identities).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        provider: 'discord',
+        subject: 'discord-subject-456'
+      })
+    ]));
+  });
+
+  test('Discord registration rejects an email that already has an account', async () => {
+    await registerUser({ email: 'discord.user@example.com' });
+    const start = await request(app)
+      .get('/auth/discord')
+      .query({
+        device_id: validDeviceId,
+        return_to: 'http://localhost:3000',
+        intent: 'register'
+      });
+    const stateCookie = start.headers['set-cookie'].find((cookie) =>
+      cookie.startsWith('discordOAuthState='));
+    const state = new URL(start.headers.location).searchParams.get('state');
+
+    const callback = await request(app)
+      .get('/auth/discord/callback')
+      .set('Cookie', stateCookie)
+      .query({ code: 'discord-code', state });
+
+    expect(callback.headers.location).toBe(
+      'http://localhost:3000/login?oauth=account-exists'
+    );
+    const existing = await User.findOne({ email: 'discord.user@example.com' }).lean();
+    expect(existing.identities).toHaveLength(0);
   });
 });
