@@ -22,12 +22,10 @@ function Harness({
   onSubmit = vi.fn(),
   validateFields = vi.fn(() => true),
   oauthProvider,
-  facebookAuthorizationUrl,
 }: {
   onSubmit?: (event: FormEvent<HTMLFormElement>) => void;
   validateFields?: (fieldNames: Array<keyof RegisterFormValues>) => boolean;
   oauthProvider?: 'google';
-  facebookAuthorizationUrl?: string;
 }) {
   const [values, setValues] = useState({
     ...initialValues,
@@ -72,8 +70,6 @@ function Harness({
         locationOptions={[]}
         oauthProvider={oauthProvider}
         onGoogleClick={vi.fn()}
-        facebookAuthorizationUrl={facebookAuthorizationUrl}
-        facebookExternalHandoff={Boolean(facebookAuthorizationUrl)}
       />
     </MemoryRouter>
   );
@@ -91,16 +87,6 @@ function completeAccountStep() {
 }
 
 describe('RegisterForm', () => {
-  it('renders a native external Facebook link when the PWA handoff is prepared', () => {
-    const authorizationUrl = 'https://www.facebook.com/dialog/oauth?state=prepared-state';
-    render(<Harness facebookAuthorizationUrl={authorizationUrl} />);
-
-    const link = screen.getByRole('link', { name: /sign up with facebook/i });
-    expect(link).toHaveAttribute('href', authorizationUrl);
-    expect(link).toHaveAttribute('target', '_blank');
-    expect(screen.queryByRole('button', { name: /sign up with facebook/i })).not.toBeInTheDocument();
-  });
-
   it('guides a trainer through every step and submits from review', () => {
     const onSubmit = vi.fn();
     const validateFields = vi.fn(() => true);

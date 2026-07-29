@@ -122,7 +122,6 @@
 }
 
 .social-login-buttons .facebook-login-button {
-    box-sizing: border-box;
     display: flex;
     min-height: 50px;
     align-items: center;
@@ -136,7 +135,6 @@
     cursor: pointer;
     font-size: 1rem;
     font-weight: 700;
-    text-decoration: none;
 }
 
 .facebook-login-button svg {

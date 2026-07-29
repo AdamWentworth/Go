@@ -48,8 +48,6 @@ interface RegisterFormProps {
   onGoogleClick?: () => void;
   onDiscordClick?: () => void;
   onFacebookClick?: () => void;
-  facebookAuthorizationUrl?: string;
-  facebookExternalHandoff?: boolean;
 }
 
 const emailSteps = [
@@ -88,8 +86,6 @@ const RegisterForm: FC<RegisterFormProps> = ({
   onGoogleClick,
   onDiscordClick,
   onFacebookClick,
-  facebookAuthorizationUrl,
-  facebookExternalHandoff,
 }) => {
   const [step, setStep] = useState(0);
   const [authMethod, setAuthMethod] = useState<
@@ -196,27 +192,10 @@ const RegisterForm: FC<RegisterFormProps> = ({
                     <FaDiscord aria-hidden="true" />
                     Sign up with Discord
                   </button>
-                  {facebookAuthorizationUrl ? (
-                    <a
-                      className="facebook-auth-button"
-                      href={facebookAuthorizationUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                    >
-                      <FaFacebookF aria-hidden="true" />
-                      Sign up with Facebook
-                    </a>
-                  ) : (
-                    <button
-                      type="button"
-                      className="facebook-auth-button"
-                      onClick={onFacebookClick}
-                      disabled={facebookExternalHandoff}
-                    >
-                      <FaFacebookF aria-hidden="true" />
-                      {facebookExternalHandoff ? 'Preparing Facebook…' : 'Sign up with Facebook'}
-                    </button>
-                  )}
+                  <button type="button" className="facebook-auth-button" onClick={onFacebookClick}>
+                    <FaFacebookF aria-hidden="true" />
+                    Sign up with Facebook
+                  </button>
                   <button
                     type="button"
                     className="register-email-method"

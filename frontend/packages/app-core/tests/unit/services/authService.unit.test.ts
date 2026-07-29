@@ -2,7 +2,6 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import {
   loginUser,
-  prepareFacebookAuthentication,
   refreshTokenService,
   resolveFacebookAuthorizationUrl,
   updateUserInSecondaryDB,
@@ -129,25 +128,6 @@ describe('authService', () => {
     expect(fetchSpy).toHaveBeenCalledWith(startUrl.toString(), {
       credentials: 'include',
     });
-  });
-
-  it('prepares Facebook registration before the PWA user gesture', async () => {
-    const fetchSpy = vi.spyOn(global, 'fetch').mockResolvedValueOnce(
-      new Response(JSON.stringify({
-        authorizationUrl: 'https://www.facebook.com/dialog/oauth?state=prepared-state',
-      }), {
-        status: 200,
-        headers: { 'Content-Type': 'application/json' },
-      }),
-    );
-
-    await expect(prepareFacebookAuthentication('register')).resolves.toContain(
-      'state=prepared-state',
-    );
-    const requestUrl = new URL(String(fetchSpy.mock.calls[0]?.[0]));
-    expect(requestUrl.searchParams.get('intent')).toBe('register');
-    expect(requestUrl.searchParams.get('response_mode')).toBe('json');
-    expect(requestUrl.searchParams.get('device_id')).toBe('device-123');
   });
 
   it('rejects an invalid Facebook direct-navigation response', async () => {

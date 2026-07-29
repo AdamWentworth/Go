@@ -77,20 +77,6 @@ export const startFacebookAuthentication = (
   window.location.assign(url.toString());
 };
 
-export const isStandalonePwa = (): boolean =>
-  window.matchMedia?.('(display-mode: standalone)').matches === true;
-
-export const prepareFacebookAuthentication = (
-  intent: 'login' | 'register' = 'login',
-): Promise<string> => {
-  const url = new URL(buildUrl(AUTH_API_URL, authContract.endpoints.facebookStart));
-  url.searchParams.set('device_id', getDeviceId());
-  url.searchParams.set('return_to', window.location.origin);
-  url.searchParams.set('intent', intent);
-  url.searchParams.set('response_mode', 'json');
-  return resolveFacebookAuthorizationUrl(url);
-};
-
 export const resolveFacebookAuthorizationUrl = async (url: URL): Promise<string> => {
   const response = await fetch(url.toString(), { credentials: 'include' });
   if (!response.ok) {
