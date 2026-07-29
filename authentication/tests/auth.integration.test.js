@@ -31,6 +31,10 @@ jest.mock('../services/facebookOAuthService', () => ({
   }))
 }));
 
+jest.mock('../services/passwordResetEmailService', () => ({
+  sendPasswordResetEmail: jest.fn(async () => undefined)
+}));
+
 jest.setTimeout(120000);
 
 let mongoServer;
@@ -297,14 +301,34 @@ describe('authentication service integration', () => {
     expect(refreshNoOrigin.body.message).toBe('CSRF origin check failed');
   });
 
-  test('reset-password endpoint remains intentionally disabled', async () => {
-    const res = await request(app).post('/auth/reset-password/').send({
-      token: 'unused',
-      newPassword: 'unused-password'
-    });
+  test('password reset is one-time and revokes existing sessions', async () => {
+    const registration = await registerUser();
+    const requested = await request(app).post('/auth/reset-password').send({ identifier: validEmail });
+    expect(requested.status).toBe(202);
+    const user = await User.findOne({ email: validEmail });
+    expect(user.resetPasswordToken).toMatch(/^[a-f0-9]{64}$/);
+    const mailer = require('../services/passwordResetEmailService');
+    const resetUrl = mailer.sendPasswordResetEmail.mock.calls.at(-1)[0].resetUrl;
+    const token = new URL(resetUrl).searchParams.get('token');
+    expect(user.resetPasswordToken).not.toBe(token);
 
-    expect(res.status).toBe(501);
-    expect(res.body.message).toBe('Password reset is not enabled for this environment.');
+    const newPassword = 'New_secure_password_42!';
+    expect((await request(app).post('/auth/reset-password/confirm')
+      .send({ token, password: newPassword })).status).toBe(200);
+    expect((await request(app).post('/auth/reset-password/confirm')
+      .send({ token, password: 'Another_secure_password_43!' })).status).toBe(400);
+    expect((await request(app).post('/auth/refresh').set('Origin', 'http://localhost:3000')
+      .set('Cookie', registration.headers['set-cookie']).send({})).status).toBe(401);
+    expect((await request(app).post('/auth/login').send({
+      username: validEmail, password: newPassword, device_id: `${validDeviceId}-reset`
+    })).status).toBe(200);
+  });
+
+  test('password reset does not reveal whether an account exists', async () => {
+    const response = await request(app).post('/auth/reset-password')
+      .send({ identifier: 'missing@example.invalid' });
+    expect(response.status).toBe(202);
+    expect(response.body.message).toMatch(/If an account matches/);
   });
 
   test('metrics endpoint exposes Prometheus metrics', async () => {

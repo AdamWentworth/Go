@@ -10,6 +10,8 @@ const setCookies = require('../middlewares/setCookies'); // Adjust the path as n
 const requireAuth = require('../middlewares/requireAuth');
 const { hashRefreshToken } = require('../utils/refreshTokenHash');
 const sanitizeForLogging = require('../utils/sanitizeLogging');
+const crypto = require('crypto');
+const { sendPasswordResetEmail } = require('../services/passwordResetEmailService');
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const TRAINER_CODE_RE = /^\d{12}$/;
@@ -578,9 +580,57 @@ router.post('/logout', async (req, res) => {
     }
 });
 
-// Password reset flow is intentionally disabled in this environment.
-router.post('/reset-password/', async (req, res) => {
-    return res.status(501).json({ message: 'Password reset is not enabled for this environment.' });
+router.post('/reset-password', async (req, res) => {
+    const genericMessage = 'If an account matches that information, a password reset email has been sent.';
+    const identifier = typeof req.body?.identifier === 'string' ? req.body.identifier.trim() : '';
+    if (!isNonEmptyString(identifier, 3, 255)) return res.status(202).json({ message: genericMessage });
+
+    try {
+        const user = await User.findOne({
+            $or: [{ username: identifier }, { email: identifier.toLowerCase() }]
+        });
+        if (user?.email) {
+            const token = crypto.randomBytes(32).toString('hex');
+            user.resetPasswordToken = crypto.createHash('sha256').update(token).digest('hex');
+            user.resetPasswordExpires = new Date(Date.now() + 30 * 60 * 1000);
+            await user.save({ validateModifiedOnly: true });
+            const frontendOrigin = process.env.FRONTEND_URL || 'https://pokegonexus.com';
+            await sendPasswordResetEmail({
+                email: user.email,
+                username: user.username,
+                resetUrl: `${frontendOrigin}/reset-password?token=${encodeURIComponent(token)}`
+            });
+        }
+    } catch (error) {
+        logger.error(`Password reset request failed: ${error.message}`);
+    }
+    return res.status(202).json({ message: genericMessage });
+});
+
+router.post('/reset-password/confirm', async (req, res) => {
+    const token = typeof req.body?.token === 'string' ? req.body.token : '';
+    const password = typeof req.body?.password === 'string' ? req.body.password : '';
+    if (!/^[a-f0-9]{64}$/.test(token) ||
+        password.length < 8 || password.length > 128 ||
+        !/[a-z]/.test(password) || !/[A-Z]/.test(password) ||
+        !/\d/.test(password) || !/[^A-Za-z\d]/.test(password)) {
+        return res.status(400).json({ message: 'Invalid or expired reset link, or password does not meet requirements.' });
+    }
+    const tokenHash = crypto.createHash('sha256').update(token).digest('hex');
+    const user = await User.findOne({
+        resetPasswordToken: tokenHash,
+        resetPasswordExpires: { $gt: new Date() }
+    });
+    if (!user) return res.status(400).json({ message: 'This password reset link is invalid or has expired.' });
+
+    user.password = await bcrypt.hash(password, 10);
+    user.resetPasswordToken = null;
+    user.resetPasswordExpires = null;
+    user.refreshToken = [];
+    await user.save({ validateModifiedOnly: true });
+    res.clearCookie('accessToken');
+    res.clearCookie('refreshToken');
+    return res.status(200).json({ message: 'Password updated. Please sign in with your new password.' });
 });
 
 module.exports = router;

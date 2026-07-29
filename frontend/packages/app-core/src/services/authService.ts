@@ -18,6 +18,7 @@ import type {
   OAuthSessionResponse,
   RefreshTokenResponse,
   ResetPasswordRequest,
+  ConfirmPasswordResetRequest,
 } from '@shared-contracts/auth';
 import type { SecondaryUserUpdateRequest } from '@shared-contracts/users';
 
@@ -140,7 +141,7 @@ export const completeFacebookRegistration = async (
     userData,
   );
 
-type RequestPayload = AuthRequestPayload | null;
+type RequestPayload = AuthRequestPayload | ConfirmPasswordResetRequest | null;
 
 const JSON_HEADERS = {
   'Content-Type': 'application/json',
@@ -345,3 +346,13 @@ export const resetPassword = async ({
     throw error;
   }
 };
+
+export const confirmPasswordReset = async (
+  payload: ConfirmPasswordResetRequest,
+): Promise<{ message: string }> =>
+  requestJson<{ message: string }>(
+    AUTH_API_URL,
+    authContract.endpoints.confirmPasswordReset,
+    'POST',
+    payload,
+  );

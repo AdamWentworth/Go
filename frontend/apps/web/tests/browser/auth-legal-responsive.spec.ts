@@ -2,7 +2,14 @@ import { expect, test } from '@playwright/test';
 
 import { installE2eRoutes } from './support/e2eRoutes';
 
-const routes = ['/login', '/register', '/terms', '/privacy', '/data-deletion'];
+const routes = [
+  '/login',
+  '/register',
+  '/reset-password?token=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
+  '/terms',
+  '/privacy',
+  '/data-deletion',
+];
 
 for (const route of routes) {
   test(`${route} fits the viewport without horizontal overflow`, async ({ page }) => {

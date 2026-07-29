@@ -7,6 +7,7 @@ export const authContract = {
     logout: '/logout',
     refresh: '/refresh',
     resetPassword: '/reset-password',
+    confirmPasswordReset: '/reset-password/confirm',
     googleStart: '/google',
     googlePending: '/google/pending',
     googleCompleteRegistration: '/google/complete-registration',
@@ -50,6 +51,11 @@ export type OAuthSessionResponse = AuthUser;
 
 export interface ResetPasswordRequest {
   identifier: string;
+}
+
+export interface ConfirmPasswordResetRequest {
+  token: string;
+  password: string;
 }
 
 export type AuthRequestPayload = Record<string, unknown>;

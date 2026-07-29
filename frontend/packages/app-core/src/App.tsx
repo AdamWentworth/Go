@@ -35,6 +35,7 @@ const PvpMethodology = lazy(() => import('./pages/Pvp/PvpMethodology'));
 const Rankings = lazy(() => import('./pages/Rankings/Rankings'));
 const Login = lazy(() => import('./pages/Authentication/Login'));
 const Register = lazy(() => import('./pages/Authentication/Register'));
+const ResetPassword = lazy(() => import('./pages/Authentication/ResetPassword'));
 const Profile = lazy(() => import('./pages/Trainer/Profile'));
 const Friends = lazy(() => import('./pages/Trainer/Friends'));
 const Settings = lazy(() => import('./pages/Trainer/Settings'));
@@ -72,6 +73,7 @@ const AppContent: React.FC = () => {
           <Route path="/trades"       element={<Trades />} />
           <Route path="/login"        element={<Login />} />
           <Route path="/register"     element={<Register />} />
+          <Route path="/reset-password" element={<ResetPassword />} />
           <Route path="/profile"      element={<Profile />} />
           <Route path="/profile/friends" element={<Friends />} />
           <Route path="/profile/:username" element={<Profile />} />
