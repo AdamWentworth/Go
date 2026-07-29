@@ -1,9 +1,6 @@
 // LoginForm.tsx
 
 import React, { FC } from 'react';
-import {
-  GoogleLoginButton,
-} from 'react-social-login-buttons';
 import './LoginForm.css';
 
 import { useModal } from '../../../contexts/ModalContext';
@@ -13,6 +10,7 @@ import { startGoogleAuthentication } from '@/services/authService';
 import { startDiscordAuthentication } from '@/services/authService';
 import { startFacebookAuthentication } from '@/services/authService';
 import { FaDiscord, FaFacebookF } from 'react-icons/fa';
+import { FcGoogle } from 'react-icons/fc';
 
 interface LoginFormProps {
   values: LoginFormValues;
@@ -70,12 +68,17 @@ const LoginForm: FC<LoginFormProps> = ({
             Reset Password
           </button>
           <div className="social-login-buttons">
-            <GoogleLoginButton onClick={startGoogleAuthentication}>
-              Login with Google
-            </GoogleLoginButton>
             <button
               type="button"
-              className="discord-login-button"
+              className="oauth-login-button oauth-login-button--google"
+              onClick={() => startGoogleAuthentication('login')}
+            >
+              <FcGoogle aria-hidden="true" />
+              Login with Google
+            </button>
+            <button
+              type="button"
+              className="oauth-login-button oauth-login-button--discord"
               onClick={() => startDiscordAuthentication('login')}
             >
               <FaDiscord aria-hidden="true" />
@@ -83,7 +86,7 @@ const LoginForm: FC<LoginFormProps> = ({
             </button>
             <button
               type="button"
-              className="facebook-login-button"
+              className="oauth-login-button oauth-login-button--facebook"
               onClick={() => startFacebookAuthentication('login')}
             >
               <FaFacebookF aria-hidden="true" />
