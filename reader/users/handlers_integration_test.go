@@ -221,6 +221,8 @@ func TestCompleteTradeHandler_AtomicallyTransfersBothPokemon(t *testing.T) {
 		WillReturnResult(sqlmock.NewResult(0, 1))
 	mock.ExpectExec("UPDATE `trades` SET").
 		WillReturnResult(sqlmock.NewResult(0, 1))
+	mock.ExpectExec("INSERT INTO `application_outbox`").
+		WillReturnResult(sqlmock.NewResult(1, 1))
 	mock.ExpectCommit()
 
 	app := newHandlerTestApp("user-1")

@@ -36,7 +36,8 @@ type RelatedInstanceUpdateData = Record<string, RelatedInstanceRecord>;
 type IncomingUpdateData = IncomingUpdateEnvelope<
   PokemonUpdateData,
   TradeUpdateData,
-  RelatedInstanceUpdateData
+  RelatedInstanceUpdateData,
+  PokemonUpdateData
 >;
 
 type EventsContextType = Record<string, never>;
@@ -56,6 +57,9 @@ export const EventsProvider: React.FC<EventsProviderProps> = ({ children }) => {
   const user = useAuthStore((s) => s.user);
   const variantsLoading = useVariantsStore((s) => s.variantsLoading);
   const setInstances = useInstancesStore((s) => s.setInstances);
+  const applyAuthoritativeInstanceChanges = useInstancesStore(
+    (s) => s.applyAuthoritativeInstanceChanges,
+  );
   const ownershipLoading = useInstancesStore((s) => s.instancesLoading);
   const updateTradeData = useTradeStore((s) => s.updateTradeData);
   const { isLoggedIn }                            = useAuthStore();
@@ -84,8 +88,12 @@ export const EventsProvider: React.FC<EventsProviderProps> = ({ children }) => {
       if (data.trade || data.relatedInstance) {
         updateTradeData(data.trade, data.relatedInstance);
       }
+      if (data.affectedInstances) {
+        void applyAuthoritativeInstanceChanges(data.affectedInstances);
+        updateTimestamp(new Date());
+      }
     },
-    [setInstances, updateTimestamp, updateTradeData],
+    [applyAuthoritativeInstanceChanges, setInstances, updateTimestamp, updateTradeData],
   );
 
   const closeSSE = useCallback(() => {

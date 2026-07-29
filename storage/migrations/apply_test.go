@@ -33,6 +33,9 @@ func TestEmbeddedMigrationsIncludeSocialProfileSchema(t *testing.T) {
 	if !slices.Contains(names, "0003_trainer_titles.sql") {
 		t.Fatalf("trainer titles migration missing from embedded files: %#v", names)
 	}
+	if !slices.Contains(names, "0004_application_outbox.sql") {
+		t.Fatalf("application outbox migration missing from embedded files: %#v", names)
+	}
 }
 
 func TestWithMultiStatementsPreservesExistingQuery(t *testing.T) {

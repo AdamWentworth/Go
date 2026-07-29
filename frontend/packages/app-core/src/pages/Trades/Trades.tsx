@@ -17,7 +17,7 @@ function Trades() {
   const variantsLoading = useVariantsStore((state) => state.variantsLoading);
 
   const instances = useInstancesStore((state) => state.instances);
-  const setInstances = useInstancesStore((state) => state.setInstances);
+  const setInstances = useInstancesStore((state) => state.applyAuthoritativeInstanceChanges);
   const periodicUpdates = useInstancesStore((state) => state.periodicUpdates);
 
   const [selectedStatus, setSelectedStatus] = useState<TradeStatusFilter>('Pending');

@@ -1,10 +1,11 @@
-# 📡 Events Service (SSE + Kafka Reader)
+# 📡 Events Service (SSE + Kafka/Outbox Reader)
 
 Real-time reader service for client sync and live updates.
 
 It:
 
 - consumes `batchedUpdates` from Kafka
+- dispatches committed social/trade events from the MySQL application outbox
 - streams live deltas to connected clients over SSE
 - serves pull-based updates for reconnect/sync flows
 
@@ -15,7 +16,7 @@ It:
 - ❤️ Exposes `GET /healthz`, `GET /readyz`, and `GET /metrics`
 - 📥 Consumes Kafka updates from topic `batchedUpdates`
 - 📤 Broadcasts transformed updates to active SSE clients
-- 🧠 Applies in-memory trade completion swap projection for SSE output
+- ⚡ Polls the transactional application outbox every 200ms by default
 - 🐳 Runs as a loopback-bound container (`127.0.0.1:3008`)
 
 ## 🛣️ API Endpoints
@@ -41,8 +42,8 @@ It:
 | `events_sse_broadcasts_total{result="dropped"}` | Updates not queued because a client stopped consuming |
 
 The originating `device_id` is intentionally excluded from each broadcast because that
-session already applied its own mutation. A cross-device test therefore needs two
-authenticated sessions with different device IDs.
+session already applied its canonical HTTP response. Other devices belonging to the
+actor, plus all connected devices belonging to the counterpart, receive the event.
 
 ## 🧭 Service Context (Mermaid)
 
@@ -53,6 +54,7 @@ flowchart LR
   Events[events_service]
   Receiver[receiver_service]
   Kafka[(Kafka topic batchedUpdates)]
+  Outbox[(MySQL application_outbox)]
   MySQL[(MySQL user_pokemon_management)]
 
   Client -->|GET /api/sse| Nginx
@@ -61,7 +63,9 @@ flowchart LR
 
   Receiver -->|produce updates| Kafka
   Kafka -->|consume as sse_consumer_group| Events
-  Events -->|read users, instances, trades| MySQL
+  Outbox -.->|table in| MySQL
+  Outbox -->|poll committed trade events| Events
+  Events -->|read deltas and mark outbox delivery| MySQL
   Events -->|SSE data| Client
 ```
 
@@ -75,6 +79,7 @@ sequenceDiagram
   participant K as Kafka
   participant R as receiver_service
   participant D as MySQL
+  participant U as Users service
 
   C->>N: GET /api/sse?device_id=...
   N->>E: Forward request with JWT cookie
@@ -83,13 +88,18 @@ sequenceDiagram
   R->>K: Produce batchedUpdates (gzip payload)
   K-->>E: FetchMessage
   E->>E: Decompress + transform message
-  E->>D: Query users/instances/trades as needed
+  E->>D: Query Pokémon deltas as needed
   E-->>C: SSE data event (excluding same device_id)
+
+  U->>D: Commit trade command + outbox event atomically
+  E->>D: Poll unprocessed outbox events
+  E-->>C: Canonical trade event for both participants
+  E->>D: Mark outbox event processed
 
   C->>N: GET /api/getUpdates?timestamp=...
   N->>E: Forward request
   E->>D: Query deltas by user_id and last_update
-  E-->>C: JSON response with pokemon, trade, relatedInstances
+  E-->>C: JSON response with pokemon, trade, relatedInstance
 ```
 
 ## 🧱 Domain Model (UML Class)

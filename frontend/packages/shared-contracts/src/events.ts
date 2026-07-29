@@ -28,9 +28,11 @@ export interface IncomingUpdateEnvelope<
   TPokemon = Record<string, unknown>,
   TTrade = Record<string, unknown>,
   TRelatedInstance = Record<string, unknown>,
+  TAffectedInstance = Record<string, unknown>,
 > {
   pokemon?: TPokemon;
   trade?: TTrade;
   relatedInstance?: TRelatedInstance;
+  affectedInstances?: TAffectedInstance;
   [key: string]: unknown;
 }

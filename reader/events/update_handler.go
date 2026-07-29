@@ -163,9 +163,9 @@ func GetUpdates(c fiber.Ctx) error {
 	}
 
 	response := map[string]interface{}{
-		"pokemon":          pokemonData,
-		"trade":            tradeMap,
-		"relatedInstances": relatedInstances,
+		"pokemon":         pokemonData,
+		"trade":           tradeMap,
+		"relatedInstance": relatedInstances,
 	}
 
 	logrus.Infof("User %s retrieved %d Pokemon updates, %d trades, and %d related instances",

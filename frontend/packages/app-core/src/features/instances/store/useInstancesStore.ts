@@ -28,6 +28,7 @@ interface InstancesStore {
   resetInstances(): void;
   hydrateInstances(data: Instances): void;
   setInstances(data: Instances): void;
+  applyAuthoritativeInstanceChanges(data: Instances): Promise<void>;
   updateInstanceStatus(
     instanceIds: string | string[],
     newStatus: InstanceStatus,
@@ -104,6 +105,33 @@ export const useInstancesStore = create<InstancesStore>()((set, get) => {
         await replaceInstancesData(merged, ts);
       } catch (error) {
         log.warn('Failed to persist merged snapshot', error);
+      }
+    },
+
+    async applyAuthoritativeInstanceChanges(incoming) {
+      if (!incoming || !Object.keys(incoming).length) return;
+
+      const currentUserID = useAuthStore.getState().user?.user_id;
+      if (!currentUserID) {
+        log.warn('Cannot apply authoritative ownership changes without a current user');
+        return;
+      }
+
+      const next = { ...get().instances };
+      for (const [instanceID, instance] of Object.entries(incoming)) {
+        if (instance.user_id === currentUserID) {
+          next[instanceID] = { ...next[instanceID], ...instance, instance_id: instanceID };
+        } else {
+          delete next[instanceID];
+        }
+      }
+
+      const ts = Date.now();
+      set({ instances: next });
+      try {
+        await replaceInstancesData(next, ts);
+      } catch (error) {
+        log.warn('Failed to persist authoritative ownership changes', error);
       }
     },
 

@@ -247,7 +247,7 @@ func CreateTradeHandler(c fiber.Ctx) error {
 			return createErr
 		}
 		instances = []PokemonInstance{proposed, accepting}
-		return nil
+		return enqueueTradeEvent(tx, c, created, instances...)
 	})
 	if err != nil {
 		return tradeError(c, err, "Could not create trade")
@@ -300,6 +300,15 @@ func AcceptTradeHandler(c fiber.Ctx) error {
 		if err = tx.Save(&trade).Error; err != nil {
 			return err
 		}
+		var retired []Trade
+		if err = tx.Where(
+			"trade_id <> ? AND trade_status = ? AND (pokemon_instance_id_user_proposed IN ? OR pokemon_instance_id_user_accepting IN ?)",
+			trade.TradeID, "proposed",
+			[]string{trade.PokemonInstanceIDUserProposed, trade.PokemonInstanceIDUserAccepting},
+			[]string{trade.PokemonInstanceIDUserProposed, trade.PokemonInstanceIDUserAccepting},
+		).Find(&retired).Error; err != nil {
+			return err
+		}
 		if err = tx.Model(&Trade{}).
 			Where(
 				"trade_id <> ? AND trade_status = ? AND (pokemon_instance_id_user_proposed IN ? OR pokemon_instance_id_user_accepting IN ?)",
@@ -310,8 +319,15 @@ func AcceptTradeHandler(c fiber.Ctx) error {
 			Updates(map[string]interface{}{"trade_status": "deleted", "last_update": lastUpdate}).Error; err != nil {
 			return err
 		}
+		for _, retiredTrade := range retired {
+			retiredTrade.TradeStatus = "deleted"
+			retiredTrade.LastUpdate = &lastUpdate
+			if err = enqueueTradeEvent(tx, c, retiredTrade); err != nil {
+				return err
+			}
+		}
 		updated = trade
-		return nil
+		return enqueueTradeEvent(tx, c, updated, proposed, accepting)
 	})
 	if err != nil {
 		return tradeError(c, err, "Could not accept trade")
@@ -356,7 +372,7 @@ func transitionTrade(c fiber.Ctx, from, to string, accepterOnly bool) error {
 			return err
 		}
 		updated = trade
-		return nil
+		return enqueueTradeEvent(tx, c, updated)
 	})
 	if err != nil {
 		return tradeError(c, err, "Could not update trade")
@@ -421,7 +437,7 @@ func CompleteTradeHandler(c fiber.Ctx) error {
 			return err
 		}
 		updated = trade
-		return nil
+		return enqueueTradeEventWithAffected(tx, c, updated, instances, instances)
 	})
 	if err != nil {
 		return tradeError(c, err, "Could not confirm trade completion")
@@ -485,7 +501,7 @@ func ReproposeTradeHandler(c fiber.Ctx) error {
 			return err
 		}
 		updated = trade
-		return nil
+		return enqueueTradeEvent(tx, c, updated, proposed, accepting)
 	})
 	if err != nil {
 		return tradeError(c, err, "Could not repropose trade")
@@ -519,7 +535,7 @@ func UpdateTradeSatisfactionHandler(c fiber.Ctx) error {
 			return err
 		}
 		updated = trade
-		return nil
+		return enqueueTradeEvent(tx, c, updated)
 	})
 	if err != nil {
 		return tradeError(c, err, "Could not update satisfaction")
@@ -535,6 +551,12 @@ func DeleteTradeHandler(c fiber.Ctx) error {
 		}
 		if trade.TradeStatus != "denied" && trade.TradeStatus != "cancelled" && trade.TradeStatus != "completed" {
 			return errTradeConflict
+		}
+		now := time.Now().UnixMilli()
+		trade.TradeStatus = "deleted"
+		trade.LastUpdate = &now
+		if err = enqueueTradeEvent(tx, c, trade); err != nil {
+			return err
 		}
 		return tx.Delete(&trade).Error
 	})

@@ -14,6 +14,7 @@ const mocks = vi.hoisted(() => ({
     },
   },
   setInstances: vi.fn(),
+  applyAuthoritativeInstanceChanges: vi.fn(),
   updateTradeData: vi.fn(),
 }));
 
@@ -36,11 +37,13 @@ vi.mock('@/features/instances/store/useInstancesStore', () => ({
     selector: (state: {
       instancesLoading: boolean;
       setInstances: typeof mocks.setInstances;
+      applyAuthoritativeInstanceChanges: typeof mocks.applyAuthoritativeInstanceChanges;
     }) => unknown,
   ) =>
     selector({
       instancesLoading: false,
       setInstances: mocks.setInstances,
+      applyAuthoritativeInstanceChanges: mocks.applyAuthoritativeInstanceChanges,
     }),
 }));
 
@@ -137,16 +140,23 @@ describe('EventsContext', () => {
         pokemon_id: 133,
       },
     };
+    const affectedInstances = {
+      'instance-3': {
+        pokemon_id: 7,
+        user_id: 'user-1',
+      },
+    };
 
     act(() => {
       EventSourceMock.instances[0].onmessage?.(
         new MessageEvent('message', {
-          data: JSON.stringify({ pokemon, trade, relatedInstance }),
+          data: JSON.stringify({ pokemon, trade, relatedInstance, affectedInstances }),
         }),
       );
     });
 
     expect(mocks.setInstances).toHaveBeenCalledWith(pokemon);
     expect(mocks.updateTradeData).toHaveBeenCalledWith(trade, relatedInstance);
+    expect(mocks.applyAuthoritativeInstanceChanges).toHaveBeenCalledWith(affectedInstances);
   });
 });

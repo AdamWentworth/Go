@@ -152,6 +152,28 @@ describe('useInstancesStore', () => {
     expect(mocks.replaceInstancesData.mock.calls.length).toBe(beforeReplaceCalls);
   });
 
+  it('applies authoritative ownership transfers by adding incoming and removing outgoing instances', async () => {
+    useAuthStore.setState({ user: { user_id: 'user-1', username: 'ash' } } as any);
+    useInstancesStore.getState().hydrateInstances({
+      outgoing: { variant_id: '0001-default', pokemon_id: 1, user_id: 'user-1' } as any,
+      retained: { variant_id: '0004-default', pokemon_id: 4, user_id: 'user-1' } as any,
+    });
+
+    await useInstancesStore.getState().applyAuthoritativeInstanceChanges({
+      outgoing: { variant_id: '0001-default', pokemon_id: 1, user_id: 'user-2' } as any,
+      incoming: { variant_id: '0007-default', pokemon_id: 7, user_id: 'user-1' } as any,
+    });
+
+    expect(useInstancesStore.getState().instances).toEqual({
+      retained: expect.objectContaining({ pokemon_id: 4 }),
+      incoming: expect.objectContaining({ pokemon_id: 7, user_id: 'user-1' }),
+    });
+    expect(mocks.replaceInstancesData).toHaveBeenCalledWith(
+      expect.not.objectContaining({ outgoing: expect.anything() }),
+      expect.any(Number),
+    );
+  });
+
   it('updateInstanceStatus delegates to action factory and triggers periodic sync', async () => {
     useVariantsStore.setState({
       variants: [{ variant_id: '0001-default', pokemon_id: 1 } as any],

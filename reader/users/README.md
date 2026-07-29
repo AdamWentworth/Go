@@ -11,6 +11,8 @@ trainer snapshots.
 - Manage privacy preferences, friendships, requests, and blocks.
 - Validate and execute trade proposals and state transitions.
 - Atomically transfer Pokémon only after both trade participants confirm.
+- Write participant-targeted trade events to a transactional MySQL outbox in
+  the same commit as each command.
 - Reveal trade-partner details according to relationship/privacy rules.
 - Serve public trainer snapshot data by username.
 - Provide autocomplete suggestions for trainer search.
@@ -19,6 +21,8 @@ trainer snapshots.
 Receiver/Kafka remains responsible for bulk Pokémon synchronization. Interactive
 profile, social, and trade commands write directly through this service because
 callers require immediate authorization, conflict, and transaction results.
+The events service dispatches committed outbox rows over SSE; trade state never
+depends on live delivery, and reconnect reads remain authoritative.
 
 ## Trade command routes
 

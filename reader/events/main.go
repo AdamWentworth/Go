@@ -58,6 +58,7 @@ func main() {
 	protected.Get("/api/sse-token", issueSSEToken)
 
 	startKafkaConsumer()
+	startOutboxDispatcher()
 
 	port := os.Getenv("PORT")
 	if port == "" {
