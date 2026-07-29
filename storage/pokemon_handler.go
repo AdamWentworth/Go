@@ -14,6 +14,10 @@ import (
 // POKEMON
 // ---------------------
 
+func shouldApplyInstanceMutation(existingLastUpdate, incomingLastUpdate int64) bool {
+	return incomingLastUpdate > existingLastUpdate
+}
+
 func parseAndUpsertPokemon(
 	data map[string]interface{},
 	userID string,
@@ -103,16 +107,36 @@ func parseAndUpsertPokemon(
 
 		// Canonical deletion path: explicitly uncaught, and not tracked for trade/wanted.
 		if !isCaught && !isWanted && !isForTrade {
-			if variantForRegistration == "" {
-				if resolvedVariant, errLookup := lookupInstanceVariantID(DB, instanceID); errLookup != nil {
-					logrus.Warnf("Failed to resolve variant_id for deleted instance %s: %v", instanceID, errLookup)
-				} else {
-					variantForRegistration = resolvedVariant
+			msgLastUpdate := int64(safeFloat(pm["last_update"], 0))
+			var existing PokemonInstance
+			lookup := DB.Where("instance_id = ?", instanceID).First(&existing)
+			if lookup.Error == nil {
+				if existing.UserID != userID {
+					logrus.Warnf("Unauthorized delete attempt by user %s for instance %s owned by %s",
+						userID, instanceID, existing.UserID)
+					continue
 				}
-			}
-			if errDel := DB.Delete(&PokemonInstance{}, "instance_id = ?", instanceID).Error; errDel != nil {
-				logrus.Warnf("Failed to delete instance_id %s: %v", instanceID, errDel)
+				if !shouldApplyInstanceMutation(existing.LastUpdate, msgLastUpdate) {
+					logrus.Infof("Ignored older or same deletion for instance %s", instanceID)
+					continue
+				}
+			} else if errors.Is(lookup.Error, gorm.ErrRecordNotFound) {
+				// Replayed deletion of an already absent instance is idempotent.
+				continue
 			} else {
+				logrus.Warnf("Failed to check deletion conflict for instance %s: %v", instanceID, lookup.Error)
+				continue
+			}
+			if variantForRegistration == "" {
+				variantForRegistration = normalizeOptionalString(existing.VariantID)
+			}
+			deleteResult := DB.Where(
+				"instance_id = ? AND user_id = ? AND last_update < ?",
+				instanceID, userID, msgLastUpdate,
+			).Delete(&PokemonInstance{})
+			if errDel := deleteResult.Error; errDel != nil {
+				logrus.Warnf("Failed to delete instance_id %s: %v", instanceID, errDel)
+			} else if deleteResult.RowsAffected == 1 {
 				deletedCount++
 				addAffectedVariant(variantForRegistration)
 				if errRel := cleanupInstanceTags(DB, instanceID); errRel != nil {
@@ -121,6 +145,8 @@ func parseAndUpsertPokemon(
 				if errReg := syncRegistrationForVariant(DB, userID, variantForRegistration); errReg != nil {
 					logrus.Warnf("Failed to sync registration after delete for user %s variant %s: %v", userID, variantForRegistration, errReg)
 				}
+			} else {
+				logrus.Infof("Deletion lost a concurrent update race for instance %s", instanceID)
 			}
 			continue
 		}
@@ -137,7 +163,7 @@ func parseAndUpsertPokemon(
 					userID, instanceID, existingInstance.UserID)
 				continue
 			}
-			if existingInstance.LastUpdate >= msgLastUpdate {
+			if !shouldApplyInstanceMutation(existingInstance.LastUpdate, msgLastUpdate) {
 				logrus.Infof("Ignored older or same update for instance %s", instanceID)
 				continue
 			}

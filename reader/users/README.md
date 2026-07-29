@@ -7,6 +7,8 @@ trainer snapshots.
 ## 🎯 Responsibilities
 
 - Serve authenticated user overview payloads (`user`, `pokemon_instances`, `trades`, `registrations`).
+- Serve checkpoint-based canonical Pokémon snapshot reconciliation at
+  `GET /api/instances/sync`.
 - Upsert user profile fields in MySQL.
 - Manage privacy preferences, friendships, requests, and blocks.
 - Validate and execute trade proposals and state transitions.

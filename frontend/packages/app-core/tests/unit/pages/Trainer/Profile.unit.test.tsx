@@ -1,10 +1,11 @@
 import {
   fireEvent,
-  render,
+  render as rtlRender,
   screen,
   waitFor,
   within,
 } from "@testing-library/react";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import {
   MemoryRouter,
   Route,
@@ -14,6 +15,11 @@ import {
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import Profile from "@/pages/Trainer/Profile";
+
+const render = (ui: React.ReactElement) => {
+  const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+  return rtlRender(<QueryClientProvider client={client}>{ui}</QueryClientProvider>);
+};
 
 const mocks = vi.hoisted(() => ({
   fetchProfile: vi.fn(),

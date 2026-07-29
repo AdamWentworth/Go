@@ -132,6 +132,8 @@ func newApp() *fiber.App {
 	protectedLimiter := newRateLimiter()
 	// Canonical paths.
 	app.Get("/api/users/:user_id/overview", verifyJWT, protectedLimiter, GetUserOverviewHandler)
+	app.Get("/api/instances/sync", verifyJWT, protectedLimiter, GetOwnInstanceSyncHandler)
+	app.Get("/api/users/instances/sync", verifyJWT, protectedLimiter, GetOwnInstanceSyncHandler)
 	app.Put("/api/update-user/:user_id", verifyJWT, protectedLimiter, UpdateUserHandler)
 	app.Put("/api/users/update-user/:user_id", verifyJWT, protectedLimiter, UpdateUserHandler)
 	registerProtectedSocialRoutes(app, "/api", protectedLimiter)

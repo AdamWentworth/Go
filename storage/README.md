@@ -6,6 +6,7 @@ Trades are written synchronously by the users service.
 ## ✅ Current Production Scope
 
 - Kafka consumer for `batchedUpdates`
+- Idempotent batch processing through `processed_sync_batches`
 - Upsert/delete logic for Pokemon instances
 - Auto-sync for `registrations` and `instance_tags`
 - Precomputed anonymous community ranking totals by `variant_id`
@@ -244,6 +245,9 @@ Storage owns the write side of community rankings:
 - Successful instance writes refresh only their affected variants.
 - A full startup refresh plus hourly reconciliation repairs any missed
   incremental refresh.
+- Instance conflicts use `last_update`; older or equal writes and deletions are
+  ignored. Processed `sync_batch_id` rows are retained for 30 days and pruned
+  daily so HTTP/Kafka retries remain safe without unbounded growth.
 - `pokemon_rankings_snapshot` records anonymous collector/wishlist population
   totals and the snapshot timestamp.
 

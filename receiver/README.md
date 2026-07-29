@@ -3,6 +3,10 @@
 Receives high-volume, offline-tolerant Pokémon updates and publishes them to
 Kafka topic `batchedUpdates`.
 
+Each frontend batch carries a deterministic `sync_batch_id`. Receiver preserves
+that identifier in Kafka so Storage can safely ignore a replay after a timeout
+or retry.
+
 Receiver is not the general application command API. Profiles, privacy,
 friendships, blocks, and trades use synchronous, authoritative endpoints in the
 users service.

@@ -8,6 +8,7 @@ import (
 	"os/signal"
 	"strings"
 	"syscall"
+	"time"
 
 	"github.com/robfig/cron/v3"
 	"github.com/sirupsen/logrus"
@@ -66,6 +67,16 @@ func main() {
 	})
 	if err != nil {
 		logrus.Fatalf("Failed to schedule Pokemon rankings reconciliation: %v", err)
+	}
+	_, err = c.AddFunc("30 0 * * *", func() {
+		cutoff := time.Now().UTC().Add(-30 * 24 * time.Hour)
+		if cleanupErr := DB.Where("processed_at < ?", cutoff).
+			Delete(&ProcessedSyncBatch{}).Error; cleanupErr != nil {
+			logrus.Errorf("Failed to prune processed sync batches: %v", cleanupErr)
+		}
+	})
+	if err != nil {
+		logrus.Fatalf("Failed to schedule processed sync batch cleanup: %v", err)
 	}
 	c.Start()
 

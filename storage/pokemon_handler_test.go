@@ -2,6 +2,18 @@ package main
 
 import "testing"
 
+func TestShouldApplyInstanceMutationUsesStrictlyNewerTimestamp(t *testing.T) {
+	if shouldApplyInstanceMutation(20, 20) {
+		t.Fatal("equal timestamp must be idempotently ignored")
+	}
+	if shouldApplyInstanceMutation(20, 19) {
+		t.Fatal("stale mutation must be ignored")
+	}
+	if !shouldApplyInstanceMutation(20, 21) {
+		t.Fatal("strictly newer mutation should be applied")
+	}
+}
+
 func TestResolveTrackedVariantIDUsesIncomingVariant(t *testing.T) {
 	incomingValue := "0025-default"
 

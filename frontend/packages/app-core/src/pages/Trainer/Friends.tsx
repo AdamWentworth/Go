@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   FaBan,
   FaCheck,
@@ -24,6 +25,7 @@ import {
 } from "@/services/socialService";
 import { fetchTrainerAutocomplete } from "@/services/userSearchService";
 import { useAuthStore } from "@/stores/useAuthStore";
+import { socialQueryKeys } from "@/services/queryClient";
 import type {
   FriendSummary,
   FriendsOverview,
@@ -94,34 +96,33 @@ const TrainerRow = ({
 const Friends = () => {
   const navigate = useNavigate();
   const { confirm } = useModal();
+  const queryClient = useQueryClient();
   const user = useAuthStore((state) => state.user);
   const [tab, setTab] = useState<FriendsTab>("friends");
-  const [overview, setOverview] = useState<FriendsOverview>(emptyOverview);
-  const [loading, setLoading] = useState(true);
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<TrainerAutocompleteEntry[]>([]);
   const [searching, setSearching] = useState(false);
 
-  const loadFriends = useCallback(async () => {
-    if (!user) {
-      navigate("/login", { replace: true });
-      return;
-    }
-    setLoading(true);
-    try {
-      setOverview(await fetchFriendsOverview());
-    } catch (error) {
-      toast.error(
-        error instanceof Error ? error.message : "Could not load friends.",
-      );
-    } finally {
-      setLoading(false);
-    }
-  }, [navigate, user]);
+  const friendsQuery = useQuery({
+    queryKey: socialQueryKeys.friends,
+    queryFn: fetchFriendsOverview,
+    enabled: Boolean(user),
+  });
+  const overview = friendsQuery.data ?? emptyOverview;
+  const loading = friendsQuery.isLoading;
 
   useEffect(() => {
-    void loadFriends();
-  }, [loadFriends]);
+    if (!user) navigate("/login", { replace: true });
+  }, [navigate, user]);
+  useEffect(() => {
+    if (friendsQuery.error) {
+      toast.error(
+        friendsQuery.error instanceof Error
+          ? friendsQuery.error.message
+          : "Could not load friends.",
+      );
+    }
+  }, [friendsQuery.error]);
 
   const runSearch = async () => {
     if (query.trim().length < 2) {
@@ -151,7 +152,7 @@ const Friends = () => {
     try {
       await action();
       toast.success(successMessage);
-      await loadFriends();
+      await queryClient.invalidateQueries({ queryKey: socialQueryKeys.friends });
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Action failed.");
     }

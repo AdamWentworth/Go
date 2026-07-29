@@ -1,10 +1,12 @@
 import { useEffect, useState } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   FaEye,
   FaLock,
   FaMoon,
   FaSave,
   FaShieldAlt,
+  FaSyncAlt,
 } from 'react-icons/fa';
 import { toast } from 'react-toastify';
 
@@ -14,6 +16,9 @@ import {
   updateTrainerPreferences,
 } from '@/services/socialService';
 import { useAuthStore } from '@/stores/useAuthStore';
+import { useInstancesStore } from '@/features/instances/store/useInstancesStore';
+import { usePokemonSyncStore } from '@/stores/usePokemonSyncStore';
+import { socialQueryKeys } from '@/services/queryClient';
 import type {
   TrainerPreferences,
   UpdateTrainerPreferencesRequest,
@@ -25,8 +30,10 @@ const REDUCED_MOTION_KEY = 'pokegonexus-reduced-motion';
 
 const Settings = () => {
   const user = useAuthStore((state) => state.user);
+  const queryClient = useQueryClient();
+  const sync = usePokemonSyncStore();
+  const retryPokemonSync = useInstancesStore((state) => state.periodicUpdates);
   const [preferences, setPreferences] = useState<TrainerPreferences | null>(null);
-  const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [reducedMotion, setReducedMotion] = useState(
     () => localStorage.getItem(REDUCED_MOTION_KEY) === 'true',
@@ -36,20 +43,25 @@ const Settings = () => {
     document.documentElement.dataset.reducedMotion = String(reducedMotion);
   }, [reducedMotion]);
 
+  const preferencesQuery = useQuery({
+    queryKey: socialQueryKeys.preferences,
+    queryFn: fetchTrainerPreferences,
+    enabled: Boolean(user),
+  });
+  const loading = preferencesQuery.isLoading;
+
   useEffect(() => {
-    if (!user) {
-      setLoading(false);
-      return;
+    if (preferencesQuery.data) setPreferences(preferencesQuery.data);
+  }, [preferencesQuery.data]);
+  useEffect(() => {
+    if (preferencesQuery.error) {
+      toast.error(
+        preferencesQuery.error instanceof Error
+          ? preferencesQuery.error.message
+          : 'Could not load settings.',
+      );
     }
-    void fetchTrainerPreferences()
-      .then(setPreferences)
-      .catch((error) =>
-        toast.error(
-          error instanceof Error ? error.message : 'Could not load settings.',
-        ),
-      )
-      .finally(() => setLoading(false));
-  }, [user]);
+  }, [preferencesQuery.error]);
 
   const updatePreference = <K extends keyof TrainerPreferences>(
     key: K,
@@ -72,7 +84,10 @@ const Settings = () => {
       show_pokemon_go_name: preferences.show_pokemon_go_name,
     };
     try {
-      setPreferences(await updateTrainerPreferences(request));
+      const updated = await updateTrainerPreferences(request);
+      setPreferences(updated);
+      queryClient.setQueryData(socialQueryKeys.preferences, updated);
+      await queryClient.invalidateQueries({ queryKey: ['social', 'profile'] });
       toast.success('Privacy settings saved');
     } catch (error) {
       toast.error(
@@ -86,6 +101,11 @@ const Settings = () => {
   const changeReducedMotion = (enabled: boolean) => {
     setReducedMotion(enabled);
     localStorage.setItem(REDUCED_MOTION_KEY, String(enabled));
+  };
+
+  const retrySync = () => {
+    retryPokemonSync();
+    window.dispatchEvent(new Event('pokemon-sync-reconcile-requested'));
   };
 
   return (
@@ -244,6 +264,48 @@ const Settings = () => {
               onChange={(event) => changeReducedMotion(event.target.checked)}
             />
           </label>
+        </div>
+      </section>
+
+      <section className="trainer-section">
+        <header>
+          <div>
+            <span>This device</span>
+            <h2>Pokémon synchronization</h2>
+          </div>
+          <FaSyncAlt />
+        </header>
+        <div className="trainer-device-settings">
+          <div>
+            <span>
+              <strong>
+                {sync.status === 'error'
+                  ? 'Needs attention'
+                  : sync.status === 'sending'
+                    ? 'Sending changes'
+                    : sync.status === 'reconciling'
+                      ? 'Checking server data'
+                      : 'Up to date'}
+              </strong>
+              <small>
+                {sync.pendingCount
+                  ? `${sync.pendingCount} local change${sync.pendingCount === 1 ? '' : 's'} waiting to sync.`
+                  : sync.lastSuccessfulSync
+                    ? `Last checked ${new Date(sync.lastSuccessfulSync).toLocaleTimeString()}.`
+                    : 'Waiting for the first server check.'}
+              </small>
+              {sync.error ? <small>{sync.error}</small> : null}
+            </span>
+            <button
+              type="button"
+              className="trainer-button"
+              onClick={retrySync}
+              disabled={sync.status === 'sending'}
+            >
+              <FaSyncAlt />
+              Retry now
+            </button>
+          </div>
         </div>
       </section>
     </TrainerPageShell>

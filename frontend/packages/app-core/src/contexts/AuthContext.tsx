@@ -29,10 +29,13 @@ import {
   setStoredUser,
   STORAGE_KEYS,
 } from '@/utils/storage';
+import { queryClient } from '@/services/queryClient';
 import {
   clearInstancesStore,
   clearTradesStore,
   clearAllTagsDB,
+  clearAcknowledgedPokemonUpdates,
+  clearBatchedPokemonUpdates,
   POKEMON_TRADES_STORE,
   RELATED_INSTANCES_STORE,
 } from '../db/indexedDB';
@@ -86,11 +89,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       STORAGE_KEYS.user,
       STORAGE_KEYS.pokemonOwnership,
       STORAGE_KEYS.ownershipTimestamp,
+      STORAGE_KEYS.ownershipCheckpoint,
       STORAGE_KEYS.listsTimestamp,
     ]);
 
     setIsLoggedIn(false);
     setUser(null);
+    queryClient.clear();
     userRef.current = null;
 
     resetInstances();
@@ -104,6 +109,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       await clearAllTagsDB();
       await clearTradesStore(POKEMON_TRADES_STORE);
       await clearTradesStore(RELATED_INSTANCES_STORE);
+      await clearBatchedPokemonUpdates();
+      await clearAcknowledgedPokemonUpdates();
     } catch (err) {
       log.error('Error clearing IndexedDB data:', err);
     }

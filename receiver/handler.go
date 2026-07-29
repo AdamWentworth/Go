@@ -6,6 +6,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"io"
+	"regexp"
 
 	"github.com/gofiber/fiber/v3"
 	"github.com/google/uuid"
@@ -13,9 +14,12 @@ import (
 
 const maxUpdatesPerRequest = 5000
 
+var syncBatchIDPattern = regexp.MustCompile(`^[A-Za-z0-9_-]{1,64}$`)
+
 var kafkaProducerFunc = produceToKafka
 
 type BatchedUpdatesRequest struct {
+	SyncBatchID    string         `json:"sync_batch_id"`
 	Location       map[string]any `json:"location"`
 	PokemonUpdates []any          `json:"pokemonUpdates"`
 }
@@ -66,6 +70,10 @@ func handleBatchedUpdates(c fiber.Ctx) error {
 	if requestData.PokemonUpdates == nil {
 		requestData.PokemonUpdates = []any{}
 	}
+	if requestData.SyncBatchID != "" && !syncBatchIDPattern.MatchString(requestData.SyncBatchID) {
+		return c.Status(fiber.StatusBadRequest).
+			JSON(fiber.Map{"message": "Invalid sync_batch_id"})
+	}
 	if len(requestData.PokemonUpdates) > maxUpdatesPerRequest {
 		logger.WithFields(map[string]interface{}{
 			"trace_id": traceID,
@@ -77,6 +85,7 @@ func handleBatchedUpdates(c fiber.Ctx) error {
 
 	// Prepare data to send to Kafka
 	data := map[string]interface{}{
+		"sync_batch_id":  requestData.SyncBatchID,
 		"user_id":        userID,
 		"username":       username,
 		"device_id":      deviceID,

@@ -5,6 +5,7 @@ import {
   useRef,
   useState,
 } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { createPortal } from "react-dom";
 import type { IconType } from "react-icons";
 import {
@@ -42,6 +43,7 @@ import {
   updateTrainerProfile,
 } from "@/services/socialService";
 import { useAuthStore } from "@/stores/useAuthStore";
+import { socialQueryKeys } from "@/services/queryClient";
 import { useInstancesStore } from "@/features/instances/store/useInstancesStore";
 import { useVariantsStore } from "@/features/variants/store/useVariantsStore";
 import {
@@ -364,6 +366,7 @@ const Profile = () => {
   const { username: routeUsername } = useParams();
   const navigate = useNavigate();
   const { confirm } = useModal();
+  const queryClient = useQueryClient();
   const { updateUserDetails } = useAuth();
   const authUser = useAuthStore((state) => state.user);
   const variants = useVariantsStore((state) => state.variants);
@@ -380,7 +383,6 @@ const Profile = () => {
   const [form, setForm] = useState<ProfileForm>(emptyForm);
   const [highlightIds, setHighlightIds] =
     useState<string[]>(emptyHighlightSlots);
-  const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [editing, setEditing] = useState(false);
   const [editingHighlightSlot, setEditingHighlightSlot] = useState<
@@ -395,17 +397,28 @@ const Profile = () => {
   const suppressShowcaseClick = useRef(false);
   const [error, setError] = useState("");
 
+  const profileQuery = useQuery({
+    queryKey: socialQueryKeys.profile(username),
+    queryFn: () =>
+      isOwner ? fetchOwnTrainerProfile() : fetchTrainerProfile(username),
+    enabled: Boolean(username),
+    staleTime: isOwner ? 60_000 : 30_000,
+  });
+  const loading = profileQuery.isLoading;
+
   const loadProfile = useCallback(async () => {
     if (!username) {
       navigate("/login", { replace: true });
       return;
     }
-    setLoading(true);
     setError("");
     try {
-      const nextProfile = isOwner
-        ? await fetchOwnTrainerProfile()
-        : await fetchTrainerProfile(username);
+      const nextProfile = await queryClient.fetchQuery({
+        queryKey: socialQueryKeys.profile(username),
+        queryFn: () =>
+          isOwner ? fetchOwnTrainerProfile() : fetchTrainerProfile(username),
+        staleTime: 0,
+      });
       setProfile(nextProfile);
       setForm(profileToForm(nextProfile));
       setHighlightIds(
@@ -421,14 +434,31 @@ const Profile = () => {
           ? loadError.message
           : "Could not load this trainer.",
       );
-    } finally {
-      setLoading(false);
     }
-  }, [isOwner, navigate, username]);
+  }, [isOwner, navigate, queryClient, username]);
 
   useEffect(() => {
-    void loadProfile();
-  }, [loadProfile]);
+    if (!username) {
+      navigate("/login", { replace: true });
+      return;
+    }
+    if (profileQuery.data && !editing) {
+      setProfile(profileQuery.data);
+      setForm(profileToForm(profileQuery.data));
+      setHighlightIds(
+        normalizeTrainerShowcaseSlots(
+          profileQuery.data.highlights.map((entry) => entry.instance_id || ""),
+        ),
+      );
+    }
+    if (profileQuery.error) {
+      setError(
+        profileQuery.error instanceof Error
+          ? profileQuery.error.message
+          : "Could not load this trainer.",
+      );
+    }
+  }, [editing, navigate, profileQuery.data, profileQuery.error, username]);
 
   const variantByID = useMemo(
     () => new Map(variants.map((variant) => [variant.variant_id, variant])),
@@ -774,6 +804,7 @@ const Profile = () => {
         default:
           return;
       }
+      await queryClient.invalidateQueries({ queryKey: socialQueryKeys.friends });
       await loadProfile();
     } catch (relationshipError) {
       toast.error(
@@ -792,6 +823,10 @@ const Profile = () => {
     if (!shouldBlock) return;
     try {
       await blockTrainer(profile.user.user_id);
+      await queryClient.invalidateQueries({ queryKey: socialQueryKeys.friends });
+      await queryClient.invalidateQueries({
+        queryKey: socialQueryKeys.profile(profile.user.username),
+      });
       toast.info("Trainer blocked");
       navigate("/profile/friends", {
         state: { contextBackTo: currentProfilePath },

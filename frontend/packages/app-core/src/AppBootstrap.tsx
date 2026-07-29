@@ -4,6 +4,7 @@ import { useEffect } from 'react';
 import { useLocation } from 'react-router';
 
 import { useBootstrapInstances } from '@/features/instances/hooks/useBootstrapInstances';
+import { useInstanceReconciliation } from '@/features/instances/hooks/useInstanceReconciliation';
 import { useBootstrapVariants } from '@/features/variants/hooks/useBootstrapVariants';
 import { useBootstrapTags } from '@/features/tags/hooks/useBootstrapTags';
 import { useBootstrapTrades } from '@/features/trades/hooks/useBootstrapTrades';
@@ -20,6 +21,7 @@ const AppBootstrap = () => {
 
   useBootstrapVariants(enabled);
   useBootstrapInstances(enabled);
+  useInstanceReconciliation(enabled);
   useBootstrapTags(enabled);
   useBootstrapTrades(enabled);
   useInitLocation(enabled);

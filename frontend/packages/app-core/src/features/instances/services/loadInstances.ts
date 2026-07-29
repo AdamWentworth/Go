@@ -17,9 +17,7 @@ export async function loadInstances(
     const { data: cached } = await getInstancesData();
     const hasCache = !!cached && Object.keys(cached).length > 0;
     if (hasCache) {
-      // Optionally (non-blocking) reconcile in the background
-      // void initializeOrUpdateInstancesData(variants.map(v => v.variant_id).filter(Boolean) as string[], variants)
-      //   .catch(err => log.error('BG reconcile failed:', err));
+      // AppBootstrap starts checkpoint reconciliation after this fast hydrate.
       return cached;
     }
 

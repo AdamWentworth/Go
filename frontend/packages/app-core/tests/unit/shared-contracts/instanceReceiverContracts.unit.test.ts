@@ -92,6 +92,7 @@ describe('instance and receiver shared contracts', () => {
     } satisfies ReceiverPokemonUpdate;
 
     const payload = {
+      sync_batch_id: 'batch-1',
       location: null,
       pokemonUpdates: [update],
     } satisfies ReceiverBatchedUpdatesPayload;

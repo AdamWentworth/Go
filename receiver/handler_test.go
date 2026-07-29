@@ -150,3 +150,33 @@ func TestHandleBatchedUpdates_RejectsHugeBatch(t *testing.T) {
 		t.Fatal("kafka producer should not be called on oversized batch")
 	}
 }
+
+func TestHandleBatchedUpdates_RejectsInvalidSyncBatchID(t *testing.T) {
+	jwtSecret = "test-secret"
+	token := newAccessTokenForTest(t, jwt.SigningMethodHS256, AccessTokenClaims{
+		UserID:   "user-1",
+		Username: "adam",
+		DeviceID: "device-1",
+		RegisteredClaims: jwt.RegisteredClaims{
+			ExpiresAt: jwt.NewNumericDate(time.Now().Add(time.Hour)),
+		},
+	})
+
+	app := fiber.New()
+	app.Post("/api/batchedUpdates", handleBatchedUpdates)
+	req := httptest.NewRequest(
+		http.MethodPost,
+		"/api/batchedUpdates",
+		strings.NewReader(`{"sync_batch_id":"invalid batch id","pokemonUpdates":[]}`),
+	)
+	req.Header.Set("Content-Type", "application/json")
+	req.AddCookie(&http.Cookie{Name: "accessToken", Value: token})
+
+	resp, err := app.Test(req)
+	if err != nil {
+		t.Fatalf("app.Test: %v", err)
+	}
+	if resp.StatusCode != fiber.StatusBadRequest {
+		t.Fatalf("expected 400, got %d", resp.StatusCode)
+	}
+}

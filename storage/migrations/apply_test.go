@@ -36,6 +36,9 @@ func TestEmbeddedMigrationsIncludeSocialProfileSchema(t *testing.T) {
 	if !slices.Contains(names, "0004_application_outbox.sql") {
 		t.Fatalf("application outbox migration missing from embedded files: %#v", names)
 	}
+	if !slices.Contains(names, "0005_processed_sync_batches.sql") {
+		t.Fatalf("processed sync batches migration missing from embedded files: %#v", names)
+	}
 }
 
 func TestWithMultiStatementsPreservesExistingQuery(t *testing.T) {

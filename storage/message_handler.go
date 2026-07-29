@@ -23,6 +23,19 @@ func HandleMessage(data map[string]interface{}) error {
 
 	// 1) Upsert / verify user
 	userID, username, lat, lng := parseUserData(data)
+	syncBatchID := strings.TrimSpace(fmt.Sprintf("%v", data["sync_batch_id"]))
+	if syncBatchID != "" && syncBatchID != "<nil>" {
+		var count int64
+		if err := DB.Model(&ProcessedSyncBatch{}).
+			Where("sync_batch_id = ? AND user_id = ?", syncBatchID, userID).
+			Count(&count).Error; err != nil {
+			return fmt.Errorf("check sync batch idempotency: %w", err)
+		}
+		if count > 0 {
+			logrus.Infof("Ignoring already processed sync batch %s for user %s", syncBatchID, userID)
+			return nil
+		}
+	}
 	var existingUser User
 	tx := DB.Where("user_id = ?", userID).First(&existingUser)
 	if errors.Is(tx.Error, gorm.ErrRecordNotFound) {
@@ -56,7 +69,7 @@ func HandleMessage(data map[string]interface{}) error {
 	// 2) Process Pokemon updates with messageTraceID
 	createdCount, updatedCount, deletedCount, affectedVariantIDs, err := parseAndUpsertPokemon(data, userID, messageTraceID)
 	if err != nil {
-		logrus.Errorf("Failed parsing/upserting Pokémon for user %s: %v", userID, err)
+		return fmt.Errorf("failed parsing/upserting Pokémon for user %s: %w", userID, err)
 	}
 	if len(affectedVariantIDs) > 0 {
 		if refreshErr := refreshRankingsForVariants(DB, affectedVariantIDs); refreshErr != nil {
@@ -87,6 +100,14 @@ func HandleMessage(data map[string]interface{}) error {
 		summary = strings.Join(actions, ", ")
 	}
 	logrus.Infof("User %s %s with status 200", username, summary)
+	if syncBatchID != "" && syncBatchID != "<nil>" {
+		if err := DB.Create(&ProcessedSyncBatch{
+			SyncBatchID: syncBatchID,
+			UserID:      userID,
+		}).Error; err != nil {
+			return fmt.Errorf("record processed sync batch: %w", err)
+		}
+	}
 	return nil
 }
 

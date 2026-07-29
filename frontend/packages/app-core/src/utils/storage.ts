@@ -11,6 +11,7 @@ export const STORAGE_KEYS = {
   isLightMode: 'isLightMode',
   lastActivityTime: 'lastActivityTime',
   ownershipTimestamp: 'ownershipTimestamp',
+  ownershipCheckpoint: 'ownershipCheckpoint',
   listsTimestamp: 'listsTimestamp',
   pokemonOwnership: 'pokemonOwnership',
   variantsTimestamp: 'variantsTimestamp',

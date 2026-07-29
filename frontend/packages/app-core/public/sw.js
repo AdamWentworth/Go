@@ -134,6 +134,7 @@ function openUpdatesDB() {
       };
 
       ensureStore('batchedPokemonUpdates', 'instance_id');
+      ensureStore('acknowledgedPokemonUpdates', 'instance_id');
     };
     req.onsuccess = () => {
       req.result.onversionchange = () => req.result.close();
@@ -155,15 +156,45 @@ async function getAllFromStore(db, storeName) {
   return result;
 }
 
-async function clearStore(db, storeName) {
-  const tx = db.transaction([storeName], 'readwrite');
-  const store = tx.objectStore(storeName);
-  const req = store.clear();
-  await new Promise((resolve, reject) => {
-    req.onsuccess = resolve;
-    req.onerror = () => reject(req.error);
-  });
+async function deleteSentUpdates(db, sentUpdates) {
+  const tx = db.transaction(
+    ['batchedPokemonUpdates', 'acknowledgedPokemonUpdates'],
+    'readwrite',
+  );
+  const store = tx.objectStore('batchedPokemonUpdates');
+  const acknowledged = tx.objectStore('acknowledgedPokemonUpdates');
+  for (const sent of sentUpdates) {
+    const current = await new Promise((resolve, reject) => {
+      const req = store.get(sent.instance_id);
+      req.onsuccess = () => resolve(req.result);
+      req.onerror = () => reject(req.error);
+    });
+    if (Number(current?.last_update ?? 0) === Number(sent.last_update ?? 0)) {
+      acknowledged.put(sent);
+      store.delete(sent.instance_id);
+    }
+  }
   await txDone(tx);
+}
+
+async function batchIDFor(updates) {
+  const signature = updates
+    .map((update) => `${update.instance_id}:${Number(update.last_update ?? 0)}`)
+    .sort()
+    .join('|');
+  const digest = await crypto.subtle.digest(
+    'SHA-256',
+    new TextEncoder().encode(signature),
+  );
+  return Array.from(new Uint8Array(digest), (byte) =>
+    byte.toString(16).padStart(2, '0')).join('');
+}
+
+function reportSyncStatus(pendingCount, status, error) {
+  sendMessageToClients({
+    type: 'POKEMON_SYNC_STATUS',
+    payload: { pendingCount, status, error: error || null },
+  });
 }
 
 function normalizeBatchedUpdateRequest(data) {
@@ -229,9 +260,11 @@ async function sendBatchedUpdatesToBackend(data) {
     }
 
     const payload = {
+      sync_batch_id: await batchIDFor(pokemonUpdates),
       location: request.location || null,
       pokemonUpdates,
     };
+    reportSyncStatus(pokemonUpdates.length, 'sending');
     log('batchedUpdates:POST', { payload });
 
     const targetPath = RECEIVER_BATCHED_UPDATES_PATH.startsWith('/')
@@ -245,9 +278,23 @@ async function sendBatchedUpdatesToBackend(data) {
     });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
 
-    await clearStore(db, 'batchedPokemonUpdates');
-    log('batchedUpdates:cleared', {});
+    await deleteSentUpdates(db, pokemonUpdates);
+    const remaining = await getAllFromStore(db, 'batchedPokemonUpdates');
+    const awaitingCommit = await getAllFromStore(db, 'acknowledgedPokemonUpdates');
+    reportSyncStatus(remaining.length + awaitingCommit.length, 'reconciling');
+    log('batchedUpdates:acknowledged', {
+      sent: pokemonUpdates.length,
+      remaining: remaining.length,
+      awaitingCommit: awaitingCommit.length,
+    });
   } catch (err) {
+    let pendingCount = 0;
+    if (db) {
+      try {
+        pendingCount = (await getAllFromStore(db, 'batchedPokemonUpdates')).length;
+      } catch {}
+    }
+    reportSyncStatus(pendingCount, 'error', err?.message || String(err));
     console.error('[SW] sendBatchedUpdatesToBackend failed:', err);
   } finally {
     db?.close();

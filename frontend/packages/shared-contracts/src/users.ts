@@ -6,6 +6,12 @@ export type UserInstancesEnvelope<TInstances = Record<string, unknown>> = {
   instances?: TInstances;
 };
 
+export interface InstanceSyncEnvelope<TInstance = Record<string, unknown>> {
+  checkpoint: string;
+  not_modified: boolean;
+  instances?: Record<string, TInstance>;
+}
+
 export interface UserOverviewUser {
   user_id: string;
   username: string;
@@ -257,6 +263,7 @@ export const usersContract = {
       `/update-user/${encodeURIComponent(userId)}`,
     userOverview: (userId: string) =>
       `/users/${encodeURIComponent(userId)}/overview`,
+    instanceSync: '/instances/sync',
     profile: '/profile',
     preferences: '/preferences',
     friends: '/friends',

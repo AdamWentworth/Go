@@ -32,4 +32,12 @@ describe('service worker update queue compatibility', () => {
     expect(workerSource).not.toContain('batchedTradeUpdates');
     expect(workerSource).not.toContain('tradeUpdates');
   });
+
+  it('uses an idempotency key and only acknowledges unchanged sent records', () => {
+    expect(workerSource).toContain('sync_batch_id: await batchIDFor(pokemonUpdates)');
+    expect(workerSource).toContain('deleteSentUpdates(db, pokemonUpdates)');
+    expect(workerSource).toContain("'acknowledgedPokemonUpdates'");
+    expect(workerSource).toContain('current?.last_update');
+    expect(workerSource).not.toContain("store.clear()");
+  });
 });

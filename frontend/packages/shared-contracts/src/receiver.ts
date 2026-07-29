@@ -14,6 +14,7 @@ export type ReceiverPokemonUpdate = Omit<Partial<PokemonInstance>, 'variant_id'>
 export interface ReceiverBatchedUpdatesPayload<
   TPokemonUpdate = ReceiverPokemonUpdate,
 > {
+  sync_batch_id: string;
   location: unknown | null;
   pokemonUpdates: TPokemonUpdate[];
 }

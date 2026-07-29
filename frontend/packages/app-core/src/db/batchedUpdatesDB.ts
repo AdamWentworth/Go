@@ -1,7 +1,10 @@
 // db/batchedUpdatesDB.ts
 
 import { initUpdatesDB } from './init';
-import { BATCHED_POKEMON_UPDATES_STORE } from './constants';
+import {
+  ACKNOWLEDGED_POKEMON_UPDATES_STORE,
+  BATCHED_POKEMON_UPDATES_STORE,
+} from './constants';
 import type { ReceiverPokemonUpdate } from '@shared-contracts/receiver';
 
 type PokemonUpdateData = Partial<ReceiverPokemonUpdate>;
@@ -22,10 +25,37 @@ export async function putBatchedPokemonUpdates(
     ...updateData,
     instance_id: updateData.instance_id ?? instanceId,
   });
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new Event('pokemon-sync-queue-changed'));
+  }
 }
 
 export async function clearBatchedPokemonUpdates(): Promise<void> {
   const db = await initUpdatesDB();
   if (!db) return;
   await db.clear(BATCHED_POKEMON_UPDATES_STORE);
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new Event('pokemon-sync-queue-changed'));
+  }
+}
+
+export async function clearAcknowledgedPokemonUpdates(): Promise<void> {
+  const db = await initUpdatesDB();
+  if (!db) return;
+  await db.clear(ACKNOWLEDGED_POKEMON_UPDATES_STORE);
+}
+
+export async function getAcknowledgedPokemonUpdates(): Promise<ReceiverPokemonUpdate[]> {
+  const db = await initUpdatesDB();
+  if (!db) return [];
+  return db.getAll(ACKNOWLEDGED_POKEMON_UPDATES_STORE);
+}
+
+export async function deleteAcknowledgedPokemonUpdates(instanceIds: string[]): Promise<void> {
+  if (!instanceIds.length) return;
+  const db = await initUpdatesDB();
+  if (!db) return;
+  const tx = db.transaction(ACKNOWLEDGED_POKEMON_UPDATES_STORE, 'readwrite');
+  await Promise.all(instanceIds.map((instanceId) => tx.store.delete(instanceId)));
+  await tx.done;
 }

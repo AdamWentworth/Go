@@ -28,6 +28,7 @@ interface InstancesStore {
   resetInstances(): void;
   hydrateInstances(data: Instances): void;
   setInstances(data: Instances): void;
+  replaceInstances(data: Instances): Promise<void>;
   applyAuthoritativeInstanceChanges(data: Instances): Promise<void>;
   updateInstanceStatus(
     instanceIds: string | string[],
@@ -106,6 +107,12 @@ export const useInstancesStore = create<InstancesStore>()((set, get) => {
       } catch (error) {
         log.warn('Failed to persist merged snapshot', error);
       }
+    },
+
+    async replaceInstances(data) {
+      const ts = Date.now();
+      set({ instances: data, instancesLoading: false });
+      await replaceInstancesData(data, ts);
     },
 
     async applyAuthoritativeInstanceChanges(incoming) {

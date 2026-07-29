@@ -18,6 +18,14 @@ func (User) TableName() string {
 	return "users"
 }
 
+type ProcessedSyncBatch struct {
+	SyncBatchID string    `gorm:"column:sync_batch_id;primaryKey"`
+	UserID      string    `gorm:"column:user_id;primaryKey"`
+	ProcessedAt time.Time `gorm:"column:processed_at;autoCreateTime"`
+}
+
+func (ProcessedSyncBatch) TableName() string { return "processed_sync_batches" }
+
 // PokemonInstance mirrors the "instances" table.
 type PokemonInstance struct {
 	InstanceID          string     `gorm:"primaryKey;column:instance_id"`
