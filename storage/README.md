@@ -1,12 +1,12 @@
 # Storage Service (Go Worker + Observability) 🗃️
 
-Consumes batched updates from Kafka, applies ownership/trade mutations, and persists to MySQL.
+Consumes batched Pokémon updates from Kafka and persists them to MySQL.
+Trades are written synchronously by the users service.
 
 ## ✅ Current Production Scope
 
 - Kafka consumer for `batchedUpdates`
 - Upsert/delete logic for Pokemon instances
-- Trade upsert + conflict handling
 - Auto-sync for `registrations` and `instance_tags`
 - Precomputed anonymous community ranking totals by `variant_id`
 - Versioned MySQL migrations through the one-shot `storage_migrate` command
@@ -47,7 +47,6 @@ sequenceDiagram
   S->>D: Upsert user/location
   S->>D: Upsert/delete pokemon instances
   S->>D: Refresh affected variant rankings
-  S->>D: Upsert trades
 
   alt success
     S->>K: Commit offset
@@ -95,7 +94,6 @@ classDiagram
   class MessageHandler {
     +HandleMessage(data)
     +parseAndUpsertPokemon()
-    +parseAndUpsertTrades()
   }
 
   class Database {
@@ -133,7 +131,6 @@ classDiagram
     +trace_id: string
     +location: Location optional
     +pokemonUpdates: PokemonUpdate[]
-    +tradeUpdates: TradeUpdate[]
   }
 
   class Location {
@@ -196,15 +193,8 @@ classDiagram
     +fusion: json_object
   }
 
-  class TradeUpdate {
-    +trade_id: string
-    +trade_status: string
-    +last_update: number
-  }
-
   BatchedMessage --> Location
   BatchedMessage --> PokemonUpdate
-  BatchedMessage --> TradeUpdate
 ```
 
 ### Pokemon Instance Write Contract (Storage Parse Surface)

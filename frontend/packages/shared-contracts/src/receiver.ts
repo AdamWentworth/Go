@@ -1,5 +1,4 @@
 import type { PokemonInstance } from './instances';
-import type { TradeRecord } from './trades';
 
 export const receiverContract = {
   endpoints: {
@@ -12,18 +11,9 @@ export type ReceiverPokemonUpdate = Omit<Partial<PokemonInstance>, 'variant_id'>
   variant_id?: string;
 };
 
-export type ReceiverTradeUpdate = Partial<TradeRecord> & {
-  trade_id: string;
-  operation?: string;
-  tradeData?: TradeRecord;
-};
-
 export interface ReceiverBatchedUpdatesPayload<
   TPokemonUpdate = ReceiverPokemonUpdate,
-  TTradeUpdate = ReceiverTradeUpdate,
 > {
   location: unknown | null;
   pokemonUpdates: TPokemonUpdate[];
-  /** @deprecated Legacy installed-PWA compatibility only. */
-  tradeUpdates?: TTradeUpdate[];
 }

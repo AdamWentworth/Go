@@ -36,7 +36,7 @@ func TestHandleBatchedUpdates_Success(t *testing.T) {
 	app := fiber.New(fiber.Config{ErrorHandler: errorHandler})
 	app.Post("/api/batchedUpdates", handleBatchedUpdates)
 
-	reqBody := `{"location":{"latitude":1.23,"longitude":4.56},"pokemonUpdates":[{"id":"p1"}],"tradeUpdates":[{"id":"t1"}]}`
+	reqBody := `{"location":{"latitude":1.23,"longitude":4.56},"pokemonUpdates":[{"id":"p1"}]}`
 	req := httptest.NewRequest(http.MethodPost, "/api/batchedUpdates", strings.NewReader(reqBody))
 	req.Header.Set("Content-Type", "application/json")
 	req.AddCookie(&http.Cookie{Name: "accessToken", Value: token})
@@ -58,6 +58,9 @@ func TestHandleBatchedUpdates_Success(t *testing.T) {
 	}
 	if got["user_id"] != "user-1" {
 		t.Fatalf("expected user_id=user-1, got %v", got["user_id"])
+	}
+	if _, exists := got["tradeUpdates"]; exists {
+		t.Fatal("receiver payload must not include tradeUpdates")
 	}
 }
 

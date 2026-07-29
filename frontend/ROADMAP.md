@@ -122,7 +122,7 @@ Done:
 6. Mobile trade mutation baseline shipped:
    - trade mutation adapters for accept/deny/cancel/complete/re-propose/delete
    - optimistic in-screen mutation updates + status reaggregation
-   - receiver batched update service adapter for trade update sync
+   - legacy receiver trade sync adapter (removed after authoritative users-service migration)
    - post-mutation server refresh for reconciliation after optimistic updates
    - unit coverage for trade mutation business rules
    - screen-level coverage for trade action + sync behavior
@@ -567,4 +567,3 @@ Objective: move from MVP to near-full parity with explicit tradeoffs documented.
    - resilience baseline shipped (timeouts/retries + policy-based transport + app-wide offline banner/retry UX)
    - observability bootstrap + baseline crash reporting pipeline shipped; optional: Sentry/Crashlytics provider integration
    - hybrid realtime transport + dedupe/reload-throttle reconciliation + stream-token auth hardening shipped
-

@@ -2,12 +2,10 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const dbMocks = vi.hoisted(() => ({
   getBatchedPokemonUpdates: vi.fn(),
-  getBatchedTradeUpdates: vi.fn(),
 }));
 
 vi.mock('@/db/indexedDB', () => ({
   getBatchedPokemonUpdates: dbMocks.getBatchedPokemonUpdates,
-  getBatchedTradeUpdates: dbMocks.getBatchedTradeUpdates,
 }));
 
 import { periodicUpdates } from '@/stores/BatchedUpdates/periodicUpdates';
@@ -66,7 +64,6 @@ describe('periodicUpdates', () => {
   it('sends endpoint config with every request so a restarted mobile worker can sync', async () => {
     setLoggedIn();
     dbMocks.getBatchedPokemonUpdates.mockResolvedValue([]);
-    dbMocks.getBatchedTradeUpdates.mockResolvedValue([]);
 
     const run = periodicUpdates(scheduledRef, timerRef);
     run();
@@ -90,7 +87,6 @@ describe('periodicUpdates', () => {
   it('stops periodic loop when no batched updates remain', async () => {
     setLoggedIn();
     dbMocks.getBatchedPokemonUpdates.mockResolvedValue([]);
-    dbMocks.getBatchedTradeUpdates.mockResolvedValue([]);
 
     const run = periodicUpdates(scheduledRef, timerRef);
     run();
@@ -99,7 +95,6 @@ describe('periodicUpdates', () => {
     await vi.advanceTimersByTimeAsync(60_000);
 
     expect(dbMocks.getBatchedPokemonUpdates).toHaveBeenCalledTimes(1);
-    expect(dbMocks.getBatchedTradeUpdates).toHaveBeenCalledTimes(1);
     expect(postMessage).toHaveBeenCalledTimes(1);
     expect(scheduledRef.current).toBeNull();
     expect(timerRef.current).toBeNull();
@@ -108,7 +103,6 @@ describe('periodicUpdates', () => {
   it('reschedules and sends when batched updates still exist and user is logged in', async () => {
     setLoggedIn();
     dbMocks.getBatchedPokemonUpdates.mockResolvedValue([{ instance_id: 'pokemon-1' }]);
-    dbMocks.getBatchedTradeUpdates.mockResolvedValue([]);
 
     const run = periodicUpdates(scheduledRef, timerRef);
     run();
@@ -125,7 +119,6 @@ describe('periodicUpdates', () => {
   it('sends newly queued updates immediately while the retry timer is already active', async () => {
     setLoggedIn();
     dbMocks.getBatchedPokemonUpdates.mockResolvedValue([{ instance_id: 'pokemon-1' }]);
-    dbMocks.getBatchedTradeUpdates.mockResolvedValue([]);
 
     const run = periodicUpdates(scheduledRef, timerRef);
     run();
@@ -142,7 +135,6 @@ describe('periodicUpdates', () => {
   it('pauses periodic loop when updates exist but user logs out before timer fires', async () => {
     setLoggedIn();
     dbMocks.getBatchedPokemonUpdates.mockResolvedValue([{ instance_id: 'pokemon-1' }]);
-    dbMocks.getBatchedTradeUpdates.mockResolvedValue([]);
 
     const run = periodicUpdates(scheduledRef, timerRef);
     run();

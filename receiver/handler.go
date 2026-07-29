@@ -18,7 +18,6 @@ var kafkaProducerFunc = produceToKafka
 type BatchedUpdatesRequest struct {
 	Location       map[string]any `json:"location"`
 	PokemonUpdates []any          `json:"pokemonUpdates"`
-	TradeUpdates   []any          `json:"tradeUpdates"`
 }
 
 func handleBatchedUpdates(c fiber.Ctx) error {
@@ -67,16 +66,11 @@ func handleBatchedUpdates(c fiber.Ctx) error {
 	if requestData.PokemonUpdates == nil {
 		requestData.PokemonUpdates = []any{}
 	}
-	if requestData.TradeUpdates == nil {
-		requestData.TradeUpdates = []any{}
-	}
-
-	if len(requestData.PokemonUpdates) > maxUpdatesPerRequest || len(requestData.TradeUpdates) > maxUpdatesPerRequest {
+	if len(requestData.PokemonUpdates) > maxUpdatesPerRequest {
 		logger.WithFields(map[string]interface{}{
 			"trace_id": traceID,
 			"user_id":  userID,
 			"pokemon":  len(requestData.PokemonUpdates),
-			"trade":    len(requestData.TradeUpdates),
 		}).Warn("Rejected oversized updates batch")
 		return c.Status(fiber.StatusRequestEntityTooLarge).JSON(fiber.Map{"message": "Too many updates in a single request"})
 	}
@@ -89,7 +83,6 @@ func handleBatchedUpdates(c fiber.Ctx) error {
 		"trace_id":       traceID,
 		"location":       requestData.Location,
 		"pokemonUpdates": requestData.PokemonUpdates,
-		"tradeUpdates":   requestData.TradeUpdates,
 	}
 
 	message, err := json.Marshal(data)
@@ -120,11 +113,10 @@ func handleBatchedUpdates(c fiber.Ctx) error {
 		"user_id":        userID,
 		"device_id":      deviceID,
 		"pokemonUpdates": requestData.PokemonUpdates,
-		"tradeUpdates":   requestData.TradeUpdates,
 		"has_location":   requestData.Location != nil,
 	}).Infof(
-		"User %s sent %d Pokemon updates + %d Trade updates to Kafka",
-		username, len(requestData.PokemonUpdates), len(requestData.TradeUpdates),
+		"User %s sent %d Pokemon updates to Kafka",
+		username, len(requestData.PokemonUpdates),
 	)
 
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{"message": "Batched updates successfully processed"})

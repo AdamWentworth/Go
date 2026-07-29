@@ -70,13 +70,7 @@ func HandleMessage(data map[string]interface{}) error {
 		}
 	}
 
-	// 3) Process Trades
-	createdTrades, updatedTrades, droppedTrades, errTrades := parseAndUpsertTrades(data)
-	if errTrades != nil {
-		logrus.Errorf("Failed parsing/upserting Trades: %v", errTrades)
-	}
-
-	// 4) Log summary
+	// 3) Log summary
 	actions := []string{}
 	if createdCount > 0 {
 		actions = append(actions, fmt.Sprintf("created %d Pokémon", createdCount))
@@ -86,16 +80,6 @@ func HandleMessage(data map[string]interface{}) error {
 	}
 	if deletedCount > 0 {
 		actions = append(actions, fmt.Sprintf("dropped %d Pokémon", deletedCount))
-	}
-
-	if createdTrades > 0 {
-		actions = append(actions, fmt.Sprintf("created %d trades", createdTrades))
-	}
-	if updatedTrades > 0 {
-		actions = append(actions, fmt.Sprintf("updated %d trades", updatedTrades))
-	}
-	if droppedTrades > 0 {
-		actions = append(actions, fmt.Sprintf("dropped %d trades", droppedTrades))
 	}
 
 	summary := "no changes"
@@ -115,17 +99,4 @@ func parseUserData(data map[string]interface{}) (userID, username string, lat, l
 		lng, _ = location["longitude"].(float64)
 	}
 	return
-}
-
-// getUserIdForUsername returns empty if not found
-func getUserIdForUsername(username string) string {
-	if strings.TrimSpace(username) == "" {
-		return ""
-	}
-	var user User
-	if err := DB.Where("username = ?", username).First(&user).Error; err != nil {
-		logrus.Warnf("No user found for username='%s', storing empty user_id.", username)
-		return ""
-	}
-	return user.UserID
 }

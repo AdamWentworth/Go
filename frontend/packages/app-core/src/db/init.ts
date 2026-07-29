@@ -14,7 +14,7 @@ import {
   VARIANTS_STORE, INSTANCES_STORE,
   POKEMON_TRADES_STORE, RELATED_INSTANCES_STORE,
   REGISTRATIONS_STORE, MANUAL_POKEDEX_REGISTRATIONS_STORE,
-  BATCHED_POKEMON_UPDATES_STORE, BATCHED_TRADE_UPDATES_STORE,
+  BATCHED_POKEMON_UPDATES_STORE,
   POKEDEX_STORES,
   TAG_DEFS_STORE, INSTANCE_TAGS_STORE,
   SYSTEM_CHILDREN_STORE,
@@ -141,7 +141,9 @@ export const initUpdatesDB = makeInit(UPDATES_DB_NAME, (db, _oldV, _newV, tx) =>
   };
 
   ensureStore(BATCHED_POKEMON_UPDATES_STORE, 'instance_id');
-  ensureStore(BATCHED_TRADE_UPDATES_STORE, 'trade_id');
+  if (db.objectStoreNames.contains('batchedTradeUpdates')) {
+    db.deleteObjectStore('batchedTradeUpdates');
+  }
 });
 
 export const initPokedexDB = makeInit(POKEDEX_DB_NAME, (db) => {

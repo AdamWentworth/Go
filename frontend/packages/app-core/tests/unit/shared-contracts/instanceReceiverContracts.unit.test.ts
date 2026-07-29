@@ -94,7 +94,6 @@ describe('instance and receiver shared contracts', () => {
     const payload = {
       location: null,
       pokemonUpdates: [update],
-      tradeUpdates: [],
     } satisfies ReceiverBatchedUpdatesPayload;
 
     expect(receiverVariantIdRejectsNull).toBe(true);

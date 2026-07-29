@@ -1,5 +1,5 @@
 // periodicUpdates.ts
-import { getBatchedPokemonUpdates, getBatchedTradeUpdates } from '../../db/indexedDB';
+import { getBatchedPokemonUpdates } from '../../db/indexedDB';
 import { createScopedLogger } from '@/utils/logger';
 import { getStoredLocation, hasActiveStoredSession } from '@/utils/storage';
 import { receiverContract } from '@shared-contracts/receiver';
@@ -57,17 +57,11 @@ export const periodicUpdates = (
         timerRef.current = setTimeout(async function sendUpdates() {
           log.debug('Timer expired: checking for batched updates in IndexedDB.');
 
-          const [pokemonBatchedUpdates, tradeBatchedUpdates] = await Promise.all([
-            getBatchedPokemonUpdates(),
-            getBatchedTradeUpdates(),
-          ]);
-
+          const pokemonBatchedUpdates = await getBatchedPokemonUpdates();
           const hasPokemonUpdates =
             Array.isArray(pokemonBatchedUpdates) && pokemonBatchedUpdates.length > 0;
-          const hasTradeUpdates =
-            Array.isArray(tradeBatchedUpdates) && tradeBatchedUpdates.length > 0;
 
-          if (!hasPokemonUpdates && !hasTradeUpdates) {
+          if (!hasPokemonUpdates) {
             log.debug('No updates in IndexedDB: stopping periodic updates.');
             scheduledSyncRef.current = null;
             timerRef.current = null;

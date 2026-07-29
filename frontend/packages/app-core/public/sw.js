@@ -134,7 +134,6 @@ function openUpdatesDB() {
       };
 
       ensureStore('batchedPokemonUpdates', 'instance_id');
-      ensureStore('batchedTradeUpdates', 'trade_id');
     };
     req.onsuccess = () => {
       req.result.onversionchange = () => req.result.close();
@@ -215,15 +214,11 @@ async function sendBatchedUpdatesToBackend(data) {
     }
 
     db = await openUpdatesDB();
-    const [pokemonUpdates, tradeUpdates] = await Promise.all([
-      getAllFromStore(db, 'batchedPokemonUpdates'),
-      getAllFromStore(db, 'batchedTradeUpdates'),
-    ]);
+    const pokemonUpdates = await getAllFromStore(db, 'batchedPokemonUpdates');
 
     const hasPokemon = Array.isArray(pokemonUpdates) && pokemonUpdates.length > 0;
-    const hasTrades = Array.isArray(tradeUpdates) && tradeUpdates.length > 0;
 
-    if (!hasPokemon && !hasTrades) {
+    if (!hasPokemon) {
       log('batchedUpdates:none', {});
       return;
     }
@@ -236,7 +231,6 @@ async function sendBatchedUpdatesToBackend(data) {
     const payload = {
       location: request.location || null,
       pokemonUpdates,
-      tradeUpdates,
     };
     log('batchedUpdates:POST', { payload });
 
@@ -251,10 +245,7 @@ async function sendBatchedUpdatesToBackend(data) {
     });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
 
-    await Promise.all([
-      clearStore(db, 'batchedPokemonUpdates'),
-      clearStore(db, 'batchedTradeUpdates'),
-    ]);
+    await clearStore(db, 'batchedPokemonUpdates');
     log('batchedUpdates:cleared', {});
   } catch (err) {
     console.error('[SW] sendBatchedUpdatesToBackend failed:', err);

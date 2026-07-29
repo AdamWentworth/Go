@@ -26,4 +26,10 @@ describe('service worker update queue compatibility', () => {
     expect(workerSource).toContain('event.waitUntil(operation)');
     expect(workerSource).toContain('db?.close()');
   });
+
+  it('only reads and sends the Pokémon update queue', () => {
+    expect(workerSource).toContain("'batchedPokemonUpdates'");
+    expect(workerSource).not.toContain('batchedTradeUpdates');
+    expect(workerSource).not.toContain('tradeUpdates');
+  });
 });

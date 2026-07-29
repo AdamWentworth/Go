@@ -5,8 +5,7 @@ Kafka topic `batchedUpdates`.
 
 Receiver is not the general application command API. Profiles, privacy,
 friendships, blocks, and trades use synchronous, authoritative endpoints in the
-users service. Legacy `tradeUpdates` remain accepted temporarily for installed
-PWA compatibility but new clients do not create them.
+users service.
 
 ## ✅ Current Production Posture
 
@@ -110,7 +109,6 @@ classDiagram
   class BatchedRequest {
     +location: Location optional
     +pokemonUpdates: PokemonUpdate[] optional
-    +tradeUpdates: TradeUpdate[] deprecated
   }
 
   class Location {
@@ -123,14 +121,8 @@ classDiagram
     +pokemonData: object
   }
 
-  class TradeUpdate {
-    +operation: string
-    +tradeData: object
-  }
-
   BatchedRequest --> Location
   BatchedRequest --> PokemonUpdate
-  BatchedRequest --> TradeUpdate
 ```
 
 ## 🔌 Endpoints
@@ -155,18 +147,15 @@ Invalid tokens return `401 Unauthorized`.
 ```json
 {
   "location": { "latitude": 0, "longitude": 0 },
-  "pokemonUpdates": [],
-  "tradeUpdates": []
+  "pokemonUpdates": []
 }
 ```
 
 Notes:
 
-- `location` and `pokemonUpdates` are the active contract.
-- `tradeUpdates` is a temporary legacy compatibility field and must not be used
-  for users-service UUID trades.
+- `location` and `pokemonUpdates` are the complete contract.
 - Missing update arrays are normalized to empty arrays.
-- Requests with >`5000` entries in either update array are rejected (`413`).
+- Requests with >`5000` Pokémon updates are rejected (`413`).
 
 ## ⚙️ Configuration
 
