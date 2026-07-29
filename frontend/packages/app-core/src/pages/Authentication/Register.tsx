@@ -19,6 +19,7 @@ import {
   startFacebookAuthentication,
   isStandalonePwa,
   prepareFacebookAuthentication,
+  getFacebookExternalHref,
 } from '../../services/authService';
 import './Register.css';
 import { useAuth } from '../../contexts/AuthContext';
@@ -87,7 +88,9 @@ const Register: FC = () => {
     let active = true;
     prepareFacebookAuthentication('register')
       .then((authorizationUrl) => {
-        if (active) setFacebookAuthorizationUrl(authorizationUrl);
+        if (active) {
+          setFacebookAuthorizationUrl(getFacebookExternalHref(authorizationUrl));
+        }
       })
       .catch((error) => log.error('Unable to prepare Facebook registration', error));
     return () => {
