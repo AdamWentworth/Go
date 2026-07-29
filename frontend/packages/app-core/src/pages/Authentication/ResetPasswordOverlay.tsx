@@ -1,6 +1,7 @@
 // ResetPasswordOverlay.tsx
 
 import { useState, FC, ChangeEvent, FormEvent } from 'react';
+import { FaEnvelope, FaKey } from 'react-icons/fa';
 import './ResetPasswordOverlay.css';
 import { resetPassword } from '../../services/authService';
 import { toast } from 'react-toastify';
@@ -28,7 +29,7 @@ const ResetPasswordOverlay: FC<ResetPasswordOverlayProps> = ({ onClose }) => {
     setIsSubmitting(true);
     try {
       await resetPassword({ identifier: input });
-      toast.success('Password reset instructions have been sent to your email.');
+      toast.success('If that account exists, reset instructions are on the way.');
       onClose();
     } catch (error: unknown) {
       let errorMessage = 'Failed to reset password. Please try again.';
@@ -44,26 +45,47 @@ const ResetPasswordOverlay: FC<ResetPasswordOverlayProps> = ({ onClose }) => {
   };
 
   return (
-    <div className="reset-password-overlay">
-      <div className="overlay-content">
-        <button className="close-button" onClick={onClose}>
+    <div className="reset-password-overlay" role="presentation" onMouseDown={onClose}>
+      <section
+        className="overlay-content"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="reset-password-title"
+        onMouseDown={(event) => event.stopPropagation()}
+      >
+        <button type="button" className="close-button" aria-label="Close password reset" onClick={onClose}>
           &times;
         </button>
-        <h2>Reset Password</h2>
+        <div className="reset-password-overlay__icon"><FaKey /></div>
+        <span className="reset-password-overlay__eyebrow">Account recovery</span>
+        <h2 id="reset-password-title">Reset your password</h2>
+        <p>
+          Enter the username or email attached to your account. We’ll email a
+          secure, single-use link that expires after 30 minutes.
+        </p>
         <form onSubmit={handleSubmit}>
-          <input
-            type="text"
-            name="identifier"
-            value={input}
-            onChange={handleChange}
-            placeholder="Username or Email"
-            required
-          />
+          <label>
+            <span><FaEnvelope /> Username or email</span>
+            <input
+              autoFocus
+              type="text"
+              name="identifier"
+              value={input}
+              onChange={handleChange}
+              autoComplete="username"
+              placeholder="you@example.com"
+              required
+            />
+          </label>
           <button type="submit" disabled={isSubmitting}>
-            {isSubmitting ? 'Submitting...' : 'Reset Password'}
+            {isSubmitting ? 'Sending…' : 'Email reset link'}
           </button>
         </form>
-      </div>
+        <small>
+          For your privacy, we show the same confirmation whether or not an
+          account matches what you entered.
+        </small>
+      </section>
     </div>
   );
 };

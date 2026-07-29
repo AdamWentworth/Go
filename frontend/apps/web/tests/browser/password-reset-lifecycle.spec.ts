@@ -66,8 +66,9 @@ test('requests a reset, changes the password, and logs in with it', async ({ pag
     await perfTelemetryButton.evaluate((button) => button.parentElement?.remove());
   }
   await page.getByRole('button', { name: 'Reset Password' }).click();
-  await page.getByPlaceholder('Username or Email').last().fill('trainer@example.com');
-  await page.getByRole('button', { name: 'Reset Password' }).last().click();
+  const resetDialog = page.getByRole('dialog', { name: 'Reset your password' });
+  await resetDialog.getByPlaceholder('you@example.com').fill('trainer@example.com');
+  await resetDialog.getByRole('button', { name: 'Email reset link' }).click();
   await expect.poll(() => state.requested).toBe(true);
 
   await page.goto(`/reset-password?token=${token}`);

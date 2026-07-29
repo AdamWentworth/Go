@@ -19,6 +19,8 @@ import type {
   RefreshTokenResponse,
   ResetPasswordRequest,
   ConfirmPasswordResetRequest,
+  AccountSecuritySummary,
+  OAuthProvider,
 } from '@shared-contracts/auth';
 import type { SecondaryUserUpdateRequest } from '@shared-contracts/users';
 
@@ -33,7 +35,7 @@ export interface GoogleRegistration {
 }
 
 export const startGoogleAuthentication = (
-  intent: 'login' | 'register' = 'login',
+  intent: 'login' | 'register' | 'link' = 'login',
 ): void => {
   const url = new URL(buildUrl(AUTH_API_URL, authContract.endpoints.googleStart));
   url.searchParams.set('device_id', getDeviceId());
@@ -43,7 +45,7 @@ export const startGoogleAuthentication = (
 };
 
 export const startDiscordAuthentication = (
-  intent: 'login' | 'register' = 'login',
+  intent: 'login' | 'register' | 'link' = 'login',
 ): void => {
   const url = new URL(buildUrl(AUTH_API_URL, authContract.endpoints.discordStart));
   url.searchParams.set('device_id', getDeviceId());
@@ -53,7 +55,7 @@ export const startDiscordAuthentication = (
 };
 
 export const startFacebookAuthentication = (
-  intent: 'login' | 'register' = 'login',
+  intent: 'login' | 'register' | 'link' = 'login',
 ): void => {
   const url = new URL(buildUrl(AUTH_API_URL, authContract.endpoints.facebookStart));
   url.searchParams.set('device_id', getDeviceId());
@@ -288,17 +290,81 @@ export const updateUserInSecondaryDB = async (
 // ==========================
 // deleteAccount
 // ==========================
-export const deleteAccount = async (userId: string): Promise<AuthRequestPayload> => {
+export const deleteAccount = async (
+  userId: string,
+  currentPassword?: string,
+): Promise<AuthRequestPayload> => {
   try {
     return await requestJson<AuthRequestPayload>(
       AUTH_API_URL,
       authContract.endpoints.deleteUser(userId),
       'DELETE',
+      currentPassword ? { currentPassword } : {},
     );
   } catch (error: unknown) {
     log.error('Error deleting account:', error);
     throw error;
   }
+};
+
+export const deleteUserData = async (userId: string): Promise<void> => {
+  await requestJson(
+    USERS_API_URL,
+    `/${encodeURIComponent(userId)}`,
+    'DELETE',
+    {},
+  );
+};
+
+export const fetchAccountSecurity = async (): Promise<AccountSecuritySummary> =>
+  requestJson<AccountSecuritySummary>(
+    AUTH_API_URL,
+    authContract.endpoints.accountSecurity,
+    'GET',
+  );
+
+export const revokeAllSessions = async (
+  currentPassword?: string,
+): Promise<void> => {
+  await requestJson(
+    AUTH_API_URL,
+    authContract.endpoints.revokeAllSessions,
+    'POST',
+    currentPassword ? { currentPassword } : {},
+  );
+};
+
+export const requestEmailChange = async (
+  email: string,
+  currentPassword?: string,
+): Promise<void> => {
+  await requestJson(
+    AUTH_API_URL,
+    authContract.endpoints.requestEmailChange,
+    'POST',
+    { email, ...(currentPassword ? { currentPassword } : {}) },
+  );
+};
+
+export const confirmEmailChange = async (token: string): Promise<void> => {
+  await requestJson(
+    AUTH_API_URL,
+    authContract.endpoints.confirmEmailChange,
+    'POST',
+    { token },
+  );
+};
+
+export const unlinkProvider = async (
+  provider: OAuthProvider,
+  currentPassword?: string,
+): Promise<void> => {
+  await requestJson(
+    AUTH_API_URL,
+    authContract.endpoints.unlinkProvider(provider),
+    'DELETE',
+    currentPassword ? { currentPassword } : {},
+  );
 };
 
 // ==========================

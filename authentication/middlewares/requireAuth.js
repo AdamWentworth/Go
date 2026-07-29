@@ -13,7 +13,9 @@ module.exports = (req, res, next) => {
 
   req.auth = {
     userId: String(decoded.user_id),
-    username: decoded.username || ''
+    username: decoded.username || '',
+    issuedAt: Number(decoded.iat || 0),
+    deviceId: decoded.device_id || ''
   };
 
   next();

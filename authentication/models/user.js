@@ -37,6 +37,9 @@ const userSchema = new mongoose.Schema({
     },
     resetPasswordToken: { type: String, default: null },
     resetPasswordExpires: { type: Date, default: null },
+    pendingEmail: { type: String, default: null },
+    emailChangeToken: { type: String, default: null },
+    emailChangeExpires: { type: Date, default: null },
 });
 
 // Apply a unique index with a correct partial filter expression

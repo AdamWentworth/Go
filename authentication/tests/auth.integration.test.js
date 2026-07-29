@@ -1,4 +1,5 @@
 const request = require('supertest');
+const crypto = require('crypto');
 const mongoose = require('mongoose');
 const { MongoMemoryServer } = require('mongodb-memory-server');
 
@@ -33,6 +34,10 @@ jest.mock('../services/facebookOAuthService', () => ({
 
 jest.mock('../services/passwordResetEmailService', () => ({
   sendPasswordResetEmail: jest.fn(async () => undefined)
+}));
+
+jest.mock('../services/emailChangeService', () => ({
+  sendEmailChangeVerification: jest.fn(async () => undefined)
 }));
 
 jest.setTimeout(120000);
@@ -280,6 +285,183 @@ describe('authentication service integration', () => {
 
     expect(deletion.status).toBe(403);
     expect(deletion.body.message).toBe('Forbidden');
+  });
+
+  test('security summary exposes connected providers and active sessions', async () => {
+    await registerUser();
+    const login = await request(app).post('/auth/login').send({
+      username: validLoginId,
+      password: validPassphrase,
+      device_id: validDeviceId
+    });
+
+    const response = await request(app)
+      .get('/auth/account/security')
+      .set('Cookie', login.headers['set-cookie']);
+
+    expect(response.status).toBe(200);
+    expect(response.body).toMatchObject({
+      email: validEmail,
+      hasPassword: true,
+      providers: []
+    });
+    expect(response.body.activeSessions).toBeGreaterThanOrEqual(1);
+  });
+
+  test('password changes require the current password', async () => {
+    await registerUser();
+    const user = await User.findOne({ username: validLoginId }).lean();
+    const login = await request(app).post('/auth/login').send({
+      username: validLoginId,
+      password: validPassphrase,
+      device_id: validDeviceId
+    });
+    const cookies = login.headers['set-cookie'];
+
+    const rejected = await request(app)
+      .put(`/auth/update/${user._id}`)
+      .set('Origin', 'http://localhost:3000')
+      .set('Cookie', cookies)
+      .send({ password: 'Different_valid_42!' });
+    expect(rejected.status).toBe(401);
+
+    const accepted = await request(app)
+      .put(`/auth/update/${user._id}`)
+      .set('Origin', 'http://localhost:3000')
+      .set('Cookie', cookies)
+      .send({
+        password: 'Different_valid_42!',
+        currentPassword: validPassphrase
+      });
+    expect(accepted.status).toBe(200);
+  });
+
+  test('email changes require proof and a one-time verification link', async () => {
+    await registerUser();
+    const user = await User.findOne({ username: validLoginId }).lean();
+    const login = await request(app).post('/auth/login').send({
+      username: validLoginId,
+      password: validPassphrase,
+      device_id: validDeviceId
+    });
+    const cookies = login.headers['set-cookie'];
+    const newEmail = `verified_${Date.now().toString(36)}@example.invalid`;
+
+    expect((await request(app)
+      .post('/auth/email-change')
+      .set('Origin', 'http://localhost:3000')
+      .set('Cookie', cookies)
+      .send({ email: newEmail })).status).toBe(401);
+
+    const requested = await request(app)
+      .post('/auth/email-change')
+      .set('Origin', 'http://localhost:3000')
+      .set('Cookie', cookies)
+      .send({ email: newEmail, currentPassword: validPassphrase });
+    expect(requested.status).toBe(202);
+
+    const pending = await User.findById(user._id).lean();
+    expect(pending.email).toBe(validEmail);
+    expect(pending.pendingEmail).toBe(newEmail);
+
+    const rawToken = 'a'.repeat(64);
+    await User.updateOne({ _id: user._id }, {
+      $set: {
+        emailChangeToken: crypto.createHash('sha256').update(rawToken).digest('hex')
+      }
+    });
+    const confirmed = await request(app)
+      .post('/auth/email-change/confirm')
+      .send({ token: rawToken });
+    expect(confirmed.status).toBe(200);
+    expect((await User.findById(user._id)).email).toBe(newEmail);
+
+    const reused = await request(app)
+      .post('/auth/email-change/confirm')
+      .send({ token: rawToken });
+    expect(reused.status).toBe(400);
+  });
+
+  test('an authenticated user can explicitly connect and disconnect an OAuth provider', async () => {
+    await registerUser();
+    const user = await User.findOne({ username: validLoginId }).lean();
+    const login = await request(app).post('/auth/login').send({
+      username: validLoginId,
+      password: validPassphrase,
+      device_id: validDeviceId
+    });
+    const cookies = login.headers['set-cookie'];
+
+    const start = await request(app)
+      .get('/auth/google')
+      .set('Cookie', cookies)
+      .query({
+        device_id: validDeviceId,
+        return_to: 'http://localhost:3000',
+        intent: 'link'
+      });
+    expect(start.status).toBe(302);
+    const stateCookie = start.headers['set-cookie'].find((cookie) =>
+      cookie.startsWith('googleOAuthState='));
+    const state = new URL(start.headers.location).searchParams.get('state');
+    const callback = await request(app)
+      .get('/auth/google/callback')
+      .set('Cookie', [...cookies, stateCookie])
+      .query({ code: 'google-code', state });
+    expect(callback.headers.location).toBe(
+      'http://localhost:3000/settings/account?oauth=linked'
+    );
+    expect((await User.findById(user._id)).identities).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ provider: 'google', subject: 'google-subject-123' })
+      ])
+    );
+
+    const disconnected = await request(app)
+      .delete('/auth/account/identities/google')
+      .set('Origin', 'http://localhost:3000')
+      .set('Cookie', cookies)
+      .send({ currentPassword: validPassphrase });
+    expect(disconnected.status).toBe(200);
+    expect((await User.findById(user._id)).identities).toHaveLength(0);
+  });
+
+  test('deletion and all-session revocation require recent authentication proof', async () => {
+    await registerUser();
+    const user = await User.findOne({ username: validLoginId }).lean();
+    const login = await request(app).post('/auth/login').send({
+      username: validLoginId,
+      password: validPassphrase,
+      device_id: validDeviceId
+    });
+    const cookies = login.headers['set-cookie'];
+
+    const rejected = await request(app)
+      .post('/auth/sessions/revoke-all')
+      .set('Origin', 'http://localhost:3000')
+      .set('Cookie', cookies)
+      .send({});
+    expect(rejected.status).toBe(401);
+
+    const revoked = await request(app)
+      .post('/auth/sessions/revoke-all')
+      .set('Origin', 'http://localhost:3000')
+      .set('Cookie', cookies)
+      .send({ currentPassword: validPassphrase });
+    expect(revoked.status).toBe(200);
+    expect((await User.findById(user._id)).refreshToken).toHaveLength(0);
+
+    const relogin = await request(app).post('/auth/login').send({
+      username: validLoginId,
+      password: validPassphrase,
+      device_id: validDeviceId
+    });
+    const deletion = await request(app)
+      .delete(`/auth/delete/${user._id}`)
+      .set('Origin', 'http://localhost:3000')
+      .set('Cookie', relogin.headers['set-cookie'])
+      .send({ currentPassword: validPassphrase });
+    expect(deletion.status).toBe(200);
   });
 
   test('csrf origin guard blocks mutating auth-cookie request without origin', async () => {

@@ -53,6 +53,7 @@ func newHandlerTestApp(authUserID string) *fiber.App {
 
 	// Protected endpoints used in tests.
 	app.Put("/api/users/:user_id", UpdateUserHandler)
+	app.Delete("/api/users/:user_id", DeleteUserHandler)
 	app.Put("/api/update-user/:user_id", UpdateUserHandler)
 	app.Put("/api/users/update-user/:user_id", UpdateUserHandler)
 	app.Get("/api/users/:user_id/overview", GetUserOverviewHandler)
@@ -77,6 +78,43 @@ func newHandlerTestApp(authUserID string) *fiber.App {
 	app.Get("/api/users/public/users/:username", GetPublicSnapshotByUsername)
 
 	return app
+}
+
+func TestDeleteUserHandler_DeletesAccountGraphInTransaction(t *testing.T) {
+	mock, cleanup := setupMockDB(t)
+	defer cleanup()
+
+	mock.ExpectBegin()
+	mock.ExpectExec("DELETE FROM `trades` WHERE user_id_proposed = \\? OR user_id_accepting = \\?").
+		WithArgs("user-123", "user-123").WillReturnResult(sqlmock.NewResult(0, 2))
+	mock.ExpectExec("DELETE FROM `friendships` WHERE user_id_low = \\? OR user_id_high = \\?").
+		WithArgs("user-123", "user-123").WillReturnResult(sqlmock.NewResult(0, 1))
+	mock.ExpectExec("DELETE FROM `user_blocks` WHERE blocker_user_id = \\? OR blocked_user_id = \\?").
+		WithArgs("user-123", "user-123").WillReturnResult(sqlmock.NewResult(0, 1))
+	mock.ExpectExec("DELETE FROM `registrations` WHERE user_id = \\?").
+		WithArgs("user-123").WillReturnResult(sqlmock.NewResult(0, 3))
+	mock.ExpectExec("DELETE FROM `instances` WHERE user_id = \\?").
+		WithArgs("user-123").WillReturnResult(sqlmock.NewResult(0, 4))
+	mock.ExpectExec("DELETE FROM `user_profiles` WHERE user_id = \\?").
+		WithArgs("user-123").WillReturnResult(sqlmock.NewResult(0, 1))
+	mock.ExpectExec("DELETE FROM `users` WHERE user_id = \\?").
+		WithArgs("user-123").WillReturnResult(sqlmock.NewResult(0, 1))
+	mock.ExpectCommit()
+
+	app := newHandlerTestApp("user-123")
+	resp, err := app.Test(
+		makeJSONRequest(t, http.MethodDelete, "/api/users/user-123", nil),
+		fiber.TestConfig{Timeout: 0},
+	)
+	if err != nil {
+		t.Fatalf("request failed: %v", err)
+	}
+	if resp.StatusCode != http.StatusOK {
+		t.Fatalf("unexpected status: got %d, want %d", resp.StatusCode, http.StatusOK)
+	}
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Fatalf("unmet DB expectations: %v", err)
+	}
 }
 
 func makeJSONRequest(t *testing.T, method, path string, body any) *http.Request {

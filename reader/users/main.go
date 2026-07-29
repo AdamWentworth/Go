@@ -129,6 +129,7 @@ func newApp() *fiber.App {
 	// Compatibility paths for older clients. Keep generic parameters after every
 	// named route so values such as "profile" cannot shadow a real endpoint.
 	app.Put("/api/users/:user_id", verifyJWT, protectedLimiter, UpdateUserHandler)
+	app.Delete("/api/users/:user_id", verifyJWT, protectedLimiter, DeleteUserHandler)
 	app.Get("/api/:user_id/overview", verifyJWT, protectedLimiter, GetUserOverviewHandler)
 	app.Put("/api/:user_id", verifyJWT, protectedLimiter, UpdateUserHandler)
 

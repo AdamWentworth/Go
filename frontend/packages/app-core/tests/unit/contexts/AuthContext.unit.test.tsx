@@ -38,6 +38,7 @@ vi.mock('@/services/authService', async () => {
     logoutUser: vi.fn(),
     updateUserDetails: vi.fn(),
     deleteAccount: vi.fn(),
+    deleteUserData: vi.fn(),
     refreshTokenService: vi.fn(),
     updateUserInSecondaryDB: vi.fn(),
   };

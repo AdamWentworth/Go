@@ -1,22 +1,37 @@
 import { useEffect, useState } from "react";
 import {
+  FaDiscord,
   FaEnvelope,
+  FaFacebook,
+  FaGoogle,
   FaKey,
+  FaLaptop,
   FaSignOutAlt,
   FaTrash,
   FaUser,
 } from "react-icons/fa";
-import { useNavigate } from "react-router";
+import { useNavigate, useSearchParams } from "react-router";
 import { toast } from "react-toastify";
 
 import { useAuth } from "@/contexts/AuthContext";
 import { useModal } from "@/contexts/ModalContext";
 import { useAuthStore } from "@/stores/useAuthStore";
+import {
+  fetchAccountSecurity,
+  requestEmailChange,
+  revokeAllSessions,
+  startDiscordAuthentication,
+  startFacebookAuthentication,
+  startGoogleAuthentication,
+  unlinkProvider,
+} from "@/services/authService";
+import type { AccountSecuritySummary, OAuthProvider } from "@shared-contracts/auth";
 
 import TrainerPageShell from "./TrainerPageShell";
 
 const AccountSecurity = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { confirm } = useModal();
   const { updateUserDetails, logout, deleteAccount } = useAuth();
   const user = useAuthStore((state) => state.user);
@@ -24,13 +39,32 @@ const AccountSecurity = () => {
   const [email, setEmail] = useState(user?.email ?? "");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [security, setSecurity] = useState<AccountSecuritySummary | null>(null);
   const [saving, setSaving] = useState(false);
+  const [revoking, setRevoking] = useState(false);
+  const [providerWorking, setProviderWorking] = useState<OAuthProvider | null>(null);
 
   useEffect(() => {
     if (!user) {
       navigate("/login", { replace: true });
     }
   }, [navigate, user]);
+
+  useEffect(() => {
+    if (!user) return;
+    void fetchAccountSecurity()
+      .then(setSecurity)
+      .catch(() => toast.error("Could not load account security details."));
+  }, [user]);
+
+  useEffect(() => {
+    const oauth = searchParams.get("oauth");
+    if (oauth === "linked") toast.success("Sign-in method connected");
+    if (oauth === "link-conflict") {
+      toast.error("That provider account is already connected elsewhere.");
+    }
+  }, [searchParams]);
 
   if (!user) return null;
 
@@ -39,14 +73,19 @@ const AccountSecurity = () => {
       toast.error("Passwords do not match.");
       return;
     }
+    const requestedEmail = email.trim().toLowerCase();
+    const emailChanged = requestedEmail !== user.email.toLowerCase();
     setSaving(true);
     const result = await updateUserDetails(user.user_id, {
       username: username.trim(),
-      email: email.trim(),
+      email: user.email,
       ...(password ? { password } : {}),
+      ...(password && currentPassword
+        ? { currentPassword }
+        : {}),
     });
-    setSaving(false);
     if (!result.success) {
+      setSaving(false);
       toast.error(
         typeof result.error === "string"
           ? result.error
@@ -54,9 +93,25 @@ const AccountSecurity = () => {
       );
       return;
     }
+    if (emailChanged) {
+      try {
+        await requestEmailChange(requestedEmail, currentPassword || undefined);
+        toast.success(`Verification sent to ${requestedEmail}`);
+      } catch (error) {
+        setSaving(false);
+        toast.error(
+          error instanceof Error
+            ? error.message
+            : "Could not send email verification.",
+        );
+        return;
+      }
+    }
+    setSaving(false);
     setPassword("");
     setConfirmPassword("");
-    toast.success("Account updated");
+    setCurrentPassword("");
+    if (!emailChanged) toast.success("Account updated");
   };
 
   const signOut = async () => {
@@ -66,16 +121,67 @@ const AccountSecurity = () => {
 
   const removeAccount = async () => {
     const approved = await confirm(
-      "Delete your sign-in account? This cannot be undone.",
+      "Permanently delete your account, catalog, profile, trades, and social data? This cannot be undone.",
     );
     if (!approved) return;
     try {
-      await deleteAccount(user.user_id);
+      await deleteAccount(user.user_id, currentPassword || undefined);
       toast.success("Account deleted");
     } catch (error) {
       toast.error(
         error instanceof Error ? error.message : "Could not delete account.",
       );
+    }
+  };
+
+  const signOutEverywhere = async () => {
+    const approved = await confirm(
+      "Sign out every device currently connected to this account?",
+    );
+    if (!approved) return;
+    setRevoking(true);
+    try {
+      await revokeAllSessions(currentPassword || undefined);
+      toast.success("All devices signed out");
+      await logout();
+      navigate("/login", { replace: true });
+    } catch (error) {
+      toast.error(
+        error instanceof Error ? error.message : "Could not revoke sessions.",
+      );
+    } finally {
+      setRevoking(false);
+    }
+  };
+
+  const providerIcon = (provider: OAuthProvider) => {
+    if (provider === "google") return <FaGoogle />;
+    if (provider === "discord") return <FaDiscord />;
+    return <FaFacebook />;
+  };
+
+  const connectProvider = (provider: OAuthProvider) => {
+    if (provider === "google") startGoogleAuthentication("link");
+    if (provider === "discord") startDiscordAuthentication("link");
+    if (provider === "facebook") startFacebookAuthentication("link");
+  };
+
+  const disconnectProvider = async (provider: OAuthProvider) => {
+    const approved = await confirm(
+      `Disconnect ${provider}? You will no longer be able to use it to sign in.`,
+    );
+    if (!approved) return;
+    setProviderWorking(provider);
+    try {
+      await unlinkProvider(provider, currentPassword || undefined);
+      setSecurity(await fetchAccountSecurity());
+      toast.success(`${provider[0].toUpperCase() + provider.slice(1)} disconnected`);
+    } catch (error) {
+      toast.error(
+        error instanceof Error ? error.message : "Could not disconnect provider.",
+      );
+    } finally {
+      setProviderWorking(null);
     }
   };
 
@@ -100,6 +206,22 @@ const AccountSecurity = () => {
               onChange={(event) => setUsername(event.target.value)}
             />
           </label>
+          {security?.hasPassword ? (
+            <label className="trainer-field">
+              <span>Current password</span>
+              <input
+                type="password"
+                autoComplete="current-password"
+                value={currentPassword}
+                placeholder="Required for security changes"
+                onChange={(event) => setCurrentPassword(event.target.value)}
+              />
+              <small>
+                Required when changing your email or password, signing out every
+                device, or deleting your account.
+              </small>
+            </label>
+          ) : null}
           <label className="trainer-field">
             <span>
               <FaEnvelope /> Email
@@ -147,6 +269,59 @@ const AccountSecurity = () => {
       <section className="trainer-section">
         <header>
           <div>
+            <span>Sign-in methods</span>
+            <h2>Connected accounts</h2>
+          </div>
+          <FaKey />
+        </header>
+        <p className="trainer-section-copy">
+          These verified providers currently open this same PokeGoNexus account.
+        </p>
+        <div className="trainer-connected-accounts">
+          {(["google", "discord", "facebook"] as OAuthProvider[]).map(
+            (provider) => {
+              const identity = security?.providers.find(
+                (candidate) => candidate.provider === provider,
+              );
+              return (
+                <div key={provider} className="trainer-connected-account">
+                  {providerIcon(provider)}
+                  <span>
+                    <strong>
+                      {provider[0].toUpperCase() + provider.slice(1)}
+                    </strong>
+                    <small>
+                      {identity
+                        ? identity.email || "Verified provider identity"
+                        : "Not connected"}
+                    </small>
+                  </span>
+                  <button
+                    type="button"
+                    className="trainer-provider-action"
+                    disabled={providerWorking === provider}
+                    onClick={() =>
+                      identity
+                        ? void disconnectProvider(provider)
+                        : connectProvider(provider)
+                    }
+                  >
+                    {providerWorking === provider
+                      ? "Working…"
+                      : identity
+                        ? "Disconnect"
+                        : "Connect"}
+                  </button>
+                </div>
+              );
+            },
+          )}
+        </div>
+      </section>
+
+      <section className="trainer-section">
+        <header>
+          <div>
             <span>Session</span>
             <h2>Sign out</h2>
           </div>
@@ -164,6 +339,22 @@ const AccountSecurity = () => {
           <FaSignOutAlt />
           Sign out
         </button>
+        <div className="trainer-session-summary">
+          <FaLaptop />
+          <span>
+            <strong>{security?.activeSessions ?? "—"} active sessions</strong>
+            <small>Includes this browser when its session is active.</small>
+          </span>
+        </div>
+        <button
+          type="button"
+          className="trainer-button trainer-button-secondary"
+          disabled={revoking}
+          onClick={() => void signOutEverywhere()}
+        >
+          <FaLaptop />
+          {revoking ? "Signing out…" : "Sign out every device"}
+        </button>
       </section>
 
       <section className="trainer-section trainer-danger-section">
@@ -175,7 +366,8 @@ const AccountSecurity = () => {
           <FaTrash />
         </header>
         <p className="trainer-section-copy">
-          Permanently remove your sign-in account and end access to it.
+          Permanently remove your sign-in account, Pokemon catalog, profile,
+          trades, friendships, privacy preferences, and active sessions.
         </p>
         <button
           type="button"

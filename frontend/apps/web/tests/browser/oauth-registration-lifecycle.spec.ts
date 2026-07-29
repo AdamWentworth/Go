@@ -107,6 +107,10 @@ async function installOAuthLifecycle(
   await page.route(`**/__e2e/users/update-user/${account.id}`, async (route) => {
     await fulfillJson(route, { success: true });
   });
+  await page.route(`**/__e2e/users/${account.id}`, async (route) => {
+    expect(route.request().method()).toBe('DELETE');
+    await fulfillJson(route, { message: 'Account data deleted' });
+  });
 
   return state;
 }

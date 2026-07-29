@@ -9,6 +9,7 @@ const googleOAuth = require('../services/googleOAuthService');
 const discordOAuth = require('../services/discordOAuthService');
 const facebookOAuth = require('../services/facebookOAuthService');
 const { createSession } = require('../services/sessionService');
+const tokenService = require('../services/tokenService');
 
 const router = express.Router();
 const FLOW_TTL = '10m';
@@ -99,18 +100,59 @@ const parseCoordinates = (value) => {
   if (latitude < -90 || latitude > 90 || longitude < -180 || longitude > 180) return { ok: false };
   return { ok: true, value: { latitude, longitude } };
 };
+const buildFlowIdentity = (req) => {
+  const requestedIntent = ['login', 'register', 'link'].includes(req.query.intent)
+    ? req.query.intent
+    : 'login';
+  if (requestedIntent !== 'link') return { intent: requestedIntent };
+  const decoded = tokenService.verifyAccessToken(req.cookies?.accessToken);
+  if (!decoded?.user_id) {
+    const error = new Error('Sign in again before connecting an account.');
+    error.status = 401;
+    throw error;
+  }
+  const ageSeconds = Math.floor(Date.now() / 1000) - Number(decoded.iat || 0);
+  if (ageSeconds < 0 || ageSeconds > 15 * 60) {
+    const error = new Error('Sign in again before connecting an account.');
+    error.status = 401;
+    throw error;
+  }
+  return { intent: 'link', linkUserId: String(decoded.user_id) };
+};
+
+const linkProviderIdentity = async ({ provider, identity, flow }) => {
+  const existingOwner = await User.findOne({
+    identities: { $elemMatch: { provider, subject: identity.subject } }
+  });
+  if (existingOwner) {
+    return String(existingOwner._id) === flow.linkUserId
+      ? { status: 'linked' }
+      : { status: 'link-conflict' };
+  }
+  const user = await User.findById(flow.linkUserId);
+  if (!user) return { status: 'failed' };
+  user.identities.push({
+    provider,
+    subject: identity.subject,
+    email: identity.email,
+    emailVerified: identity.emailVerified === true
+  });
+  user[`${provider}Id`] = identity.subject;
+  await user.save({ writeConcern: { w: 'majority' } });
+  return { status: 'linked' };
+};
 
 router.get('/google', (req, res) => {
   try {
     const deviceId = typeof req.query.device_id === 'string' ? req.query.device_id.trim() : '';
-    const intent = req.query.intent === 'register' ? 'register' : 'login';
+    const flowIdentity = buildFlowIdentity(req);
     if (deviceId.length < 3 || deviceId.length > 128) {
       return res.status(400).json({ message: 'Invalid device_id' });
     }
 
     const returnOrigin = safeFrontendOrigin(req.query.return_to);
     const nonce = crypto.randomBytes(24).toString('base64url');
-    const state = signFlow({ nonce, deviceId, returnOrigin, intent });
+    const state = signFlow({ nonce, deviceId, returnOrigin, ...flowIdentity });
     res.cookie(STATE_COOKIE, state, cookieOptions);
     return res.redirect(302, googleOAuth.createAuthorizationUrl({ state, nonce }));
   } catch (error) {
@@ -128,6 +170,14 @@ router.get('/google/callback', async (req, res) => {
 
     if (typeof req.query.code !== 'string') throw new Error('Google authorization was not completed.');
     const googleIdentity = await googleOAuth.exchangeCode(req.query.code, flow.nonce);
+    if (flow.intent === 'link') {
+      const linked = await linkProviderIdentity({
+        provider: 'google',
+        identity: googleIdentity,
+        flow
+      });
+      return redirectWithStatus(res, flow.returnOrigin, '/settings/account', linked.status);
+    }
     const identityQuery = {
       identities: { $elemMatch: { provider: 'google', subject: googleIdentity.subject } }
     };
@@ -285,7 +335,7 @@ router.post('/google/complete-registration', async (req, res, next) => {
 router.get('/discord', (req, res) => {
   try {
     const deviceId = typeof req.query.device_id === 'string' ? req.query.device_id.trim() : '';
-    const intent = req.query.intent === 'register' ? 'register' : 'login';
+    const flowIdentity = buildFlowIdentity(req);
     if (deviceId.length < 3 || deviceId.length > 128) {
       return res.status(400).json({ message: 'Invalid device_id' });
     }
@@ -294,7 +344,7 @@ router.get('/discord', (req, res) => {
     const state = signDiscordFlow({
       deviceId,
       returnOrigin,
-      intent,
+      ...flowIdentity,
       nonce: crypto.randomBytes(24).toString('base64url')
     });
     res.cookie(DISCORD_STATE_COOKIE, state, discordCookieOptions);
@@ -320,6 +370,14 @@ router.get('/discord/callback', async (req, res) => {
       throw new Error('Discord authorization was not completed.');
     }
     const discordIdentity = await discordOAuth.exchangeCode(req.query.code);
+    if (flow.intent === 'link') {
+      const linked = await linkProviderIdentity({
+        provider: 'discord',
+        identity: discordIdentity,
+        flow
+      });
+      return redirectWithStatus(res, flow.returnOrigin, '/settings/account', linked.status);
+    }
     const user = await User.findOne({
       identities: {
         $elemMatch: { provider: 'discord', subject: discordIdentity.subject }
@@ -495,7 +553,7 @@ router.post('/discord/complete-registration', async (req, res, next) => {
 router.get('/facebook', (req, res) => {
   try {
     const deviceId = typeof req.query.device_id === 'string' ? req.query.device_id.trim() : '';
-    const intent = req.query.intent === 'register' ? 'register' : 'login';
+    const flowIdentity = buildFlowIdentity(req);
     if (deviceId.length < 3 || deviceId.length > 128) {
       return res.status(400).json({ message: 'Invalid device_id' });
     }
@@ -504,7 +562,7 @@ router.get('/facebook', (req, res) => {
     const state = signFacebookFlow({
       deviceId,
       returnOrigin,
-      intent,
+      ...flowIdentity,
       nonce: crypto.randomBytes(24).toString('base64url')
     });
     res.cookie(FACEBOOK_STATE_COOKIE, state, facebookCookieOptions);
@@ -537,6 +595,14 @@ router.get('/facebook/callback', async (req, res) => {
       throw new Error('Facebook authorization was not completed.');
     }
     const identity = await facebookOAuth.exchangeCode(req.query.code);
+    if (flow.intent === 'link') {
+      const linked = await linkProviderIdentity({
+        provider: 'facebook',
+        identity,
+        flow
+      });
+      return redirectWithStatus(res, flow.returnOrigin, '/settings/account', linked.status);
+    }
     const user = await User.findOne({
       identities: {
         $elemMatch: { provider: 'facebook', subject: identity.subject }

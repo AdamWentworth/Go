@@ -12,9 +12,12 @@ const { hashRefreshToken } = require('../utils/refreshTokenHash');
 const sanitizeForLogging = require('../utils/sanitizeLogging');
 const crypto = require('crypto');
 const { sendPasswordResetEmail } = require('../services/passwordResetEmailService');
+const { sendEmailChangeVerification } = require('../services/emailChangeService');
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const TRAINER_CODE_RE = /^\d{12}$/;
+const PASSWORD_RE = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z\d]).{8,128}$/;
+const RECENT_AUTH_SECONDS = 15 * 60;
 
 const isNonEmptyString = (value, min = 1, max = 255) => {
     if (typeof value !== 'string') return false;
@@ -79,7 +82,9 @@ const buildSafeUpdatePayload = (input) => {
     }
 
     if (Object.prototype.hasOwnProperty.call(input, 'password')) {
-        if (!isNonEmptyString(input.password, 6, 128)) return { ok: false, message: 'Invalid password' };
+        if (typeof input.password !== 'string' || !PASSWORD_RE.test(input.password)) {
+            return { ok: false, message: 'Password must contain 8+ characters, uppercase, lowercase, a number, and a symbol' };
+        }
         updates.password = input.password;
     }
 
@@ -103,6 +108,34 @@ const buildSafeUpdatePayload = (input) => {
     }
 
     return { ok: true, updates };
+};
+
+const verifySensitiveAction = async (req, user) => {
+    if (user.password) {
+        const currentPassword = typeof req.body?.currentPassword === 'string'
+            ? req.body.currentPassword
+            : '';
+        if (!currentPassword || !await bcrypt.compare(currentPassword, user.password)) {
+            return { ok: false, status: 401, message: 'Current password is required' };
+        }
+        return { ok: true };
+    }
+
+    const ageSeconds = Math.floor(Date.now() / 1000) - Number(req.auth?.issuedAt || 0);
+    if (ageSeconds < 0 || ageSeconds > RECENT_AUTH_SECONDS) {
+        return {
+            ok: false,
+            status: 401,
+            message: 'Please sign in again before making this security change'
+        };
+    }
+    return { ok: true };
+};
+
+const clearAuthCookies = (res) => {
+    const options = { httpOnly: true, secure: true, sameSite: 'None' };
+    res.clearCookie('accessToken', options);
+    res.clearCookie('refreshToken', options);
 };
 
 // Function to handle token response more dynamically
@@ -408,6 +441,167 @@ router.post('/refresh', async (req, res, next) => {
     logger.info(`User ${user.username} refreshed token successfully with status ${200}`);
 });
 
+router.get('/account/security', requireAuth, async (req, res) => {
+    try {
+        const user = await User.findById(req.auth.userId).lean();
+        if (!user) return res.status(404).json({ message: 'User not found' });
+
+        const providers = (user.identities || []).map((identity) => ({
+            provider: identity.provider,
+            email: identity.email || null,
+            emailVerified: identity.emailVerified === true,
+            linkedAt: identity.linkedAt || null
+        }));
+        return res.status(200).json({
+            email: user.email,
+            hasPassword: Boolean(user.password),
+            providers,
+            activeSessions: (user.refreshToken || []).filter(
+                (session) => session.expires && new Date(session.expires) > new Date()
+            ).length
+        });
+    } catch (err) {
+        logger.error(`Account security lookup failed: ${err.message}`);
+        return res.status(500).json({ message: 'Internal Server Error' });
+    }
+});
+
+router.post('/email-change', requireAuth, async (req, res) => {
+    try {
+        const email = typeof req.body?.email === 'string'
+            ? req.body.email.trim().toLowerCase()
+            : '';
+        if (!EMAIL_RE.test(email) || email.length > 255) {
+            return res.status(400).json({ message: 'Invalid email' });
+        }
+        const user = await User.findById(req.auth.userId);
+        if (!user) return res.status(404).json({ message: 'User not found' });
+        if (email === user.email) {
+            return res.status(400).json({ message: 'That is already your account email' });
+        }
+        const verification = await verifySensitiveAction(req, user);
+        if (!verification.ok) {
+            return res.status(verification.status).json({ message: verification.message });
+        }
+        if (await User.exists({ email, _id: { $ne: user._id } })) {
+            return res.status(409).json({ message: 'Email already exists' });
+        }
+
+        const token = crypto.randomBytes(32).toString('hex');
+        user.pendingEmail = email;
+        user.emailChangeToken = crypto.createHash('sha256').update(token).digest('hex');
+        user.emailChangeExpires = new Date(Date.now() + 30 * 60 * 1000);
+        await user.save();
+
+        const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
+        const verifyUrl = `${frontendUrl.replace(/\/$/, '')}/verify-email-change?token=${encodeURIComponent(token)}`;
+        try {
+            await sendEmailChangeVerification({
+                email,
+                username: user.username,
+                verifyUrl
+            });
+        } catch (emailError) {
+            logger.error(`Email change delivery failed: ${emailError.message}`);
+            user.pendingEmail = null;
+            user.emailChangeToken = null;
+            user.emailChangeExpires = null;
+            await user.save();
+            return res.status(503).json({ message: 'Could not send verification email' });
+        }
+        return res.status(202).json({ message: 'Verification email sent' });
+    } catch (err) {
+        logger.error(`Email change request failed: ${err.message}`);
+        return res.status(500).json({ message: 'Internal Server Error' });
+    }
+});
+
+router.post('/email-change/confirm', async (req, res) => {
+    try {
+        const token = typeof req.body?.token === 'string' ? req.body.token : '';
+        if (!/^[a-f0-9]{64}$/.test(token)) {
+            return res.status(400).json({ message: 'Invalid or expired verification link' });
+        }
+        const tokenHash = crypto.createHash('sha256').update(token).digest('hex');
+        const user = await User.findOne({
+            emailChangeToken: tokenHash,
+            emailChangeExpires: { $gt: new Date() },
+            pendingEmail: { $type: 'string' }
+        });
+        if (!user) {
+            return res.status(400).json({ message: 'Invalid or expired verification link' });
+        }
+        if (await User.exists({ email: user.pendingEmail, _id: { $ne: user._id } })) {
+            return res.status(409).json({ message: 'Email already exists' });
+        }
+        user.email = user.pendingEmail;
+        user.pendingEmail = null;
+        user.emailChangeToken = null;
+        user.emailChangeExpires = null;
+        user.refreshToken = [];
+        await user.save();
+        clearAuthCookies(res);
+        return res.status(200).json({
+            message: 'Email updated. Please sign in again with your new email.'
+        });
+    } catch (err) {
+        logger.error(`Email change confirmation failed: ${err.message}`);
+        return res.status(500).json({ message: 'Internal Server Error' });
+    }
+});
+
+router.post('/sessions/revoke-all', requireAuth, async (req, res) => {
+    try {
+        const user = await User.findById(req.auth.userId);
+        if (!user) return res.status(404).json({ message: 'User not found' });
+        const verification = await verifySensitiveAction(req, user);
+        if (!verification.ok) {
+            return res.status(verification.status).json({ message: verification.message });
+        }
+        user.refreshToken = [];
+        await user.save();
+        clearAuthCookies(res);
+        return res.status(200).json({ message: 'All sessions have been signed out' });
+    } catch (err) {
+        logger.error(`Session revocation failed: ${err.message}`);
+        return res.status(500).json({ message: 'Internal Server Error' });
+    }
+});
+
+router.delete('/account/identities/:provider', requireAuth, async (req, res) => {
+    try {
+        const provider = req.params.provider;
+        if (!['google', 'discord', 'facebook'].includes(provider)) {
+            return res.status(400).json({ message: 'Unsupported provider' });
+        }
+        const user = await User.findById(req.auth.userId);
+        if (!user) return res.status(404).json({ message: 'User not found' });
+        const verification = await verifySensitiveAction(req, user);
+        if (!verification.ok) {
+            return res.status(verification.status).json({ message: verification.message });
+        }
+        const identityCount = user.identities?.length || 0;
+        if (!user.password && identityCount <= 1) {
+            return res.status(409).json({
+                message: 'Add another sign-in method before disconnecting this account'
+            });
+        }
+        const before = identityCount;
+        user.identities = user.identities.filter(
+            (identity) => identity.provider !== provider
+        );
+        if (user.identities.length === before) {
+            return res.status(404).json({ message: 'Provider is not connected' });
+        }
+        user[`${provider}Id`] = null;
+        await user.save();
+        return res.status(200).json({ message: `${provider} disconnected` });
+    } catch (err) {
+        logger.error(`Provider unlink failed: ${err.message}`);
+        return res.status(500).json({ message: 'Internal Server Error' });
+    }
+});
+
 // Update user details
 router.put('/update/:id', requireAuth, async (req, res) => {
     const { id } = req.params;
@@ -438,13 +632,32 @@ router.put('/update/:id', requireAuth, async (req, res) => {
         if (Object.keys(updates).length === 0) {
             return res.status(400).json({ success: false, message: 'No valid fields to update' });
         }
+        if (updates.email && updates.email !== currentUser.email) {
+            return res.status(400).json({
+                success: false,
+                message: 'Email changes must be verified using the email-change flow'
+            });
+        }
+
+        const changesSensitiveIdentity =
+            Boolean(updates.password);
+        if (changesSensitiveIdentity) {
+            const verification = await verifySensitiveAction(req, currentUser);
+            if (!verification.ok) {
+                return res.status(verification.status).json({
+                    success: false,
+                    message: verification.message
+                });
+            }
+        }
 
         // Initialize password update flag
         let passwordUpdated = false;
 
         // Handle password update
         if (updates.password && updates.password.trim() !== "") {
-            const isSamePassword = await bcrypt.compare(updates.password, currentUser.password);
+            const isSamePassword = Boolean(currentUser.password) &&
+                await bcrypt.compare(updates.password, currentUser.password);
             if (isSamePassword) {
                 // Password is identical; do not update
                 logger.info('New password is identical to the current password. Skipping password update.');
@@ -524,11 +737,21 @@ router.delete('/delete/:id', requireAuth, async (req, res) => {
     }
 
     try {
+        const currentUser = await User.findById(id);
+        if (!currentUser) {
+            logger.error(`Delete failed: User not found with ID: ${id}`);
+            return res.status(404).json({ message: 'User not found' });
+        }
+        const verification = await verifySensitiveAction(req, currentUser);
+        if (!verification.ok) {
+            return res.status(verification.status).json({ message: verification.message });
+        }
         const user = await User.findByIdAndDelete(id);
         if (!user) {
             logger.error(`Delete failed: User not found with ID: ${id}`);
             return res.status(404).json({ message: 'User not found' });
         }
+        clearAuthCookies(res);
         logger.info(`User ${user.username} with ID ${id} deleted successfully with status ${200}`);
         res.status(200).json({ message: 'User deleted successfully' });
     } catch (err) {

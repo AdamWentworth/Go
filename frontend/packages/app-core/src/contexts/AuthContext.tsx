@@ -13,6 +13,7 @@ import {
   logoutUser,
   updateUserDetails as updateUserService,
   deleteAccount as deleteAccountService,
+  deleteUserData,
   refreshTokenService,
   updateUserInSecondaryDB,
 } from '../services/authService';
@@ -311,8 +312,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  const deleteAccount = async (userId: string) => {
-    await deleteAccountService(userId);
+  const deleteAccount = async (userId: string, currentPassword?: string) => {
+    // Delete the SQL-backed catalog/profile graph first. The authentication
+    // record remains available for a safe retry if that transactional delete
+    // fails; auth is removed only after all application data is gone.
+    await deleteUserData(userId);
+    await deleteAccountService(userId, currentPassword);
     await clearSession(false);
   };
 

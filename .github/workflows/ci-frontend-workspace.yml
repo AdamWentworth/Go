@@ -3,12 +3,20 @@ name: ci-frontend-workspace
 on:
   pull_request:
     paths:
-      - "frontend/**"
+      - "frontend/packages/app-core/**"
+      - "frontend/packages/shared-contracts/**"
+      - "frontend/packages/shared-ui-tokens/**"
+      - "frontend/package.json"
+      - "frontend/package-lock.json"
       - ".github/workflows/ci-frontend-workspace.yml"
   push:
     branches: ["main", "master"]
     paths:
-      - "frontend/**"
+      - "frontend/packages/app-core/**"
+      - "frontend/packages/shared-contracts/**"
+      - "frontend/packages/shared-ui-tokens/**"
+      - "frontend/package.json"
+      - "frontend/package-lock.json"
       - ".github/workflows/ci-frontend-workspace.yml"
   workflow_dispatch: {}
 
@@ -42,14 +50,17 @@ jobs:
         run: npm ci
         working-directory: frontend
 
-      - name: Workspace Lint
-        run: npm run lint
+      # ci-frontend already runs the complete web lint/typecheck/test suite.
+      # This workflow protects the mobile consumer of shared packages without
+      # repeating the 1,400+ web tests.
+      - name: Shared Code Mobile Lint
+        run: npm run lint:mobile
         working-directory: frontend
 
-      - name: Workspace Typecheck
-        run: npm run typecheck
+      - name: Shared Code Mobile Typecheck
+        run: npm run typecheck:mobile
         working-directory: frontend
 
-      - name: Workspace Test
-        run: npm run test
+      - name: Shared Code Mobile Test
+        run: npm run test:mobile
         working-directory: frontend

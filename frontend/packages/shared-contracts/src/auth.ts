@@ -8,6 +8,12 @@ export const authContract = {
     refresh: '/refresh',
     resetPassword: '/reset-password',
     confirmPasswordReset: '/reset-password/confirm',
+    accountSecurity: '/account/security',
+    revokeAllSessions: '/sessions/revoke-all',
+    requestEmailChange: '/email-change',
+    confirmEmailChange: '/email-change/confirm',
+    unlinkProvider: (provider: OAuthProvider) =>
+      `/account/identities/${encodeURIComponent(provider)}`,
     googleStart: '/google',
     googlePending: '/google/pending',
     googleCompleteRegistration: '/google/complete-registration',
@@ -56,6 +62,20 @@ export interface ResetPasswordRequest {
 export interface ConfirmPasswordResetRequest {
   token: string;
   password: string;
+}
+
+export type OAuthProvider = 'google' | 'discord' | 'facebook';
+
+export interface AccountSecuritySummary {
+  email: string;
+  hasPassword: boolean;
+  providers: Array<{
+    provider: OAuthProvider;
+    email: string | null;
+    emailVerified: boolean;
+    linkedAt: string | null;
+  }>;
+  activeSessions: number;
 }
 
 export type AuthRequestPayload = Record<string, unknown>;

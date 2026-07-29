@@ -40,6 +40,13 @@ describe('shared contracts', () => {
     expect(authContract.endpoints.resetPassword).toBe('/reset-password');
     expect(authContract.endpoints.updateUser('u/1')).toBe('/update/u%2F1');
     expect(authContract.endpoints.deleteUser('u/1')).toBe('/delete/u%2F1');
+    expect(authContract.endpoints.accountSecurity).toBe('/account/security');
+    expect(authContract.endpoints.revokeAllSessions).toBe('/sessions/revoke-all');
+    expect(authContract.endpoints.requestEmailChange).toBe('/email-change');
+    expect(authContract.endpoints.confirmEmailChange).toBe('/email-change/confirm');
+    expect(authContract.endpoints.unlinkProvider('discord')).toBe(
+      '/account/identities/discord',
+    );
   });
 
   it('exposes stable trades/location/events/pokemon endpoints', () => {

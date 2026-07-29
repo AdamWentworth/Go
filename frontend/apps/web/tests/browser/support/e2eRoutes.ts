@@ -401,7 +401,7 @@ export async function installE2eRoutes(page: Page, options: E2eRouteOptions = {}
     });
   }
 
-  for (const pathPattern of ['**/api/pokemon/moves', '**/__e2e/pokemon/moves']) {
+  for (const pathPattern of ['**/api/pokemon/moves**', '**/__e2e/pokemon/moves**']) {
     await page.route(pathPattern, async (route) => {
       await fulfillJson(route, movesFixture);
     });

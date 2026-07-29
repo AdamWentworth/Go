@@ -16,6 +16,10 @@ on:
       - "nginx/**"
       - ".github/workflows/ci-frontend.yml"
       - ".github/workflows/deploy-frontend-prod.yml"
+  schedule:
+    # Full Firefox/WebKit/Safari proofing runs nightly; pushes keep the two
+    # Chromium viewports that catch application and responsive regressions.
+    - cron: "27 9 * * *"
   workflow_dispatch: {}
 
 permissions:
@@ -74,16 +78,32 @@ jobs:
         run: npm run test:coverage
 
       - name: Install Browser Runtimes
-        run: npx playwright install --with-deps chromium firefox webkit
+        shell: bash
+        run: |
+          if [[ "${{ github.event_name }}" == "schedule" || "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            npx playwright install --with-deps chromium firefox webkit
+          else
+            npx playwright install --with-deps chromium
+          fi
 
       - name: Validate Raid Route Performance Budgets
         run: >-
           npm run test:browsers:ci --
           --grep '@performance'
+          --project chromium-desktop
           --workers 1
 
       - name: Cross-Browser Smoke
-        run: npm run test:browsers:ci -- --grep-invert '@performance'
+        shell: bash
+        run: |
+          if [[ "${{ github.event_name }}" == "schedule" || "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            npm run test:browsers:ci -- --grep-invert '@performance'
+          else
+            npm run test:browsers:ci -- \
+              --grep-invert '@performance' \
+              --project chromium-desktop \
+              --project mobile-chrome
+          fi
 
       - name: Build
         run: npm run build

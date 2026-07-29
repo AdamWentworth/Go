@@ -13,5 +13,5 @@ export interface AuthContextType {
     userId: string,
     newDetails: Partial<User>
   ) => Promise<ApiResponse<User>>;
-  deleteAccount: (userId: string) => Promise<void>;
+  deleteAccount: (userId: string, currentPassword?: string) => Promise<void>;
 }

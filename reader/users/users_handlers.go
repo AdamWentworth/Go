@@ -40,6 +40,45 @@ type UpdateUserResponse struct {
 	User    *User  `json:"user,omitempty"`
 }
 
+func DeleteUserHandler(c fiber.Ctx) error {
+	userID := c.Params("user_id")
+	if userID == "" {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"message": "Missing user_id in URL"})
+	}
+	if authID, _ := c.Locals("user_id").(string); authID != userID {
+		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{"message": "Not authorised for that user"})
+	}
+
+	err := db.Transaction(func(tx *gorm.DB) error {
+		operations := []struct {
+			query string
+			args  []interface{}
+			model interface{}
+		}{
+			{"user_id_proposed = ? OR user_id_accepting = ?", []interface{}{userID, userID}, &Trade{}},
+			{"user_id_low = ? OR user_id_high = ?", []interface{}{userID, userID}, &Friendship{}},
+			{"blocker_user_id = ? OR blocked_user_id = ?", []interface{}{userID, userID}, &UserBlock{}},
+			{"user_id = ?", []interface{}{userID}, &Registration{}},
+			{"user_id = ?", []interface{}{userID}, &PokemonInstance{}},
+			{"user_id = ?", []interface{}{userID}, &UserProfile{}},
+			{"user_id = ?", []interface{}{userID}, &User{}},
+		}
+		for _, operation := range operations {
+			if err := tx.Where(operation.query, operation.args...).Delete(operation.model).Error; err != nil {
+				return err
+			}
+		}
+		return nil
+	})
+	if err != nil {
+		logrus.Errorf("delete user data for %s: %v", userID, err)
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"message": "Could not delete all account data",
+		})
+	}
+	return c.JSON(fiber.Map{"message": "Account data deleted"})
+}
+
 // ---------- handler ----------
 
 func UpdateUserHandler(c fiber.Ctx) error {

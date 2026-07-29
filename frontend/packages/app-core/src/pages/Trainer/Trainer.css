@@ -1431,6 +1431,77 @@
   padding-top: 14px;
 }
 
+.trainer-connected-accounts {
+  display: grid;
+  gap: 10px;
+}
+
+.trainer-connected-account,
+.trainer-session-summary {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px;
+  color: var(--color-text-primary);
+  background: color-mix(in srgb, var(--color-auth-card-surface) 86%, transparent);
+  border: 1px solid color-mix(in srgb, var(--color-text-primary) 14%, transparent);
+  border-radius: 12px;
+}
+
+.trainer-connected-account > svg,
+.trainer-session-summary > svg {
+  flex: 0 0 auto;
+  font-size: 1.25rem;
+}
+
+.trainer-connected-account > span:first-of-type,
+.trainer-session-summary > span {
+  display: grid;
+  min-width: 0;
+  gap: 3px;
+}
+
+.trainer-connected-account small,
+.trainer-session-summary small {
+  overflow: hidden;
+  color: var(--color-text-secondary);
+  text-overflow: ellipsis;
+}
+
+.trainer-provider-action {
+  margin-left: auto;
+  padding: 8px 11px;
+  color: var(--color-text-primary);
+  font-size: 0.82rem;
+  font-weight: 700;
+  background: transparent;
+  border: 1px solid color-mix(in srgb, var(--color-text-primary) 20%, transparent);
+  border-radius: 8px;
+  cursor: pointer;
+  text-align: right;
+}
+
+.trainer-provider-action:hover {
+  background: color-mix(in srgb, var(--color-text-primary) 8%, transparent);
+}
+
+.trainer-session-summary {
+  margin: 18px 0 12px;
+}
+
+@media (max-width: 520px) {
+  .trainer-connected-account {
+    align-items: flex-start;
+    flex-wrap: wrap;
+  }
+
+  .trainer-provider-action {
+    width: 100%;
+    margin-left: 32px;
+    text-align: left;
+  }
+}
+
 .trainer-setting-toggles label,
 .trainer-device-settings > div,
 .trainer-device-settings > label {
