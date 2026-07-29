@@ -34,12 +34,12 @@ async function installOAuthLifecycle(
 
     if (request.method() === 'GET' && path === `/${provider}`) {
       expect(url.searchParams.get('intent')).toBe('register');
+      const registrationUrl = `/register?oauth=${provider}`;
       await route.fulfill({
-        status: 302,
-        headers: {
-          location: `${url.origin}/register?oauth=${provider}`,
-          'cache-control': 'no-store',
-        },
+        status: 200,
+        contentType: 'text/html',
+        headers: { 'cache-control': 'no-store' },
+        body: `<!doctype html><script>window.location.replace(${JSON.stringify(registrationUrl)})</script>`,
       });
       return;
     }
