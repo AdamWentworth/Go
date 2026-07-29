@@ -331,6 +331,48 @@ describe('authentication service integration', () => {
     expect(response.body.message).toMatch(/If an account matches/);
   });
 
+  test('a newer password reset request invalidates the previous link', async () => {
+    await registerUser();
+    const mailer = require('../services/passwordResetEmailService');
+    await request(app).post('/auth/reset-password').send({ identifier: validEmail });
+    const firstToken = new URL(mailer.sendPasswordResetEmail.mock.calls.at(-1)[0].resetUrl)
+      .searchParams.get('token');
+    await request(app).post('/auth/reset-password').send({ identifier: validEmail });
+    const secondToken = new URL(mailer.sendPasswordResetEmail.mock.calls.at(-1)[0].resetUrl)
+      .searchParams.get('token');
+
+    expect(firstToken).not.toBe(secondToken);
+    expect((await request(app).post('/auth/reset-password/confirm')
+      .send({ token: firstToken, password: 'Valid_password_42!' })).status).toBe(400);
+    expect((await request(app).post('/auth/reset-password/confirm')
+      .send({ token: secondToken, password: 'Valid_password_42!' })).status).toBe(200);
+  });
+
+  test('expired password reset links are rejected', async () => {
+    await registerUser();
+    const mailer = require('../services/passwordResetEmailService');
+    await request(app).post('/auth/reset-password').send({ identifier: validEmail });
+    const token = new URL(mailer.sendPasswordResetEmail.mock.calls.at(-1)[0].resetUrl)
+      .searchParams.get('token');
+    await User.updateOne({ email: validEmail }, {
+      $set: { resetPasswordExpires: new Date(Date.now() - 1000) }
+    });
+
+    const response = await request(app).post('/auth/reset-password/confirm')
+      .send({ token, password: 'Valid_password_42!' });
+    expect(response.status).toBe(400);
+  });
+
+  test.each([
+    ['malformed token', { token: 'not-a-token', password: 'Valid_password_42!' }],
+    ['short password', { token: 'a'.repeat(64), password: 'Short1!' }],
+    ['password without uppercase', { token: 'a'.repeat(64), password: 'lowercase_42!' }],
+    ['password without number', { token: 'a'.repeat(64), password: 'No_number_here!' }],
+    ['password without symbol', { token: 'a'.repeat(64), password: 'NoSymbolHere42' }]
+  ])('password reset rejects %s', async (_name, payload) => {
+    expect((await request(app).post('/auth/reset-password/confirm').send(payload)).status).toBe(400);
+  });
+
   test('metrics endpoint exposes Prometheus metrics', async () => {
     await registerUser();
 
