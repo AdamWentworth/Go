@@ -808,4 +808,50 @@ describe('authentication service integration', () => {
 
     expect(callback.headers.location).toBe('http://localhost:3000/register?oauth=account-not-found');
   });
+
+  for (const provider of ['google', 'discord', 'facebook']) {
+    test(`${provider} OAuth registration can immediately delete its own account`, async () => {
+      const start = await request(app)
+        .get(`/auth/${provider}`)
+        .query({
+          device_id: validDeviceId,
+          return_to: 'http://localhost:3000',
+          intent: 'register'
+        });
+      const stateCookie = start.headers['set-cookie'].find((cookie) =>
+        cookie.startsWith(`${provider}OAuthState=`));
+      const state = new URL(start.headers.location).searchParams.get('state');
+      const callback = await request(app)
+        .get(`/auth/${provider}/callback`)
+        .set('Cookie', stateCookie)
+        .query({ code: `${provider}-code`, state });
+      const pendingCookie = callback.headers['set-cookie'].find((cookie) =>
+        cookie.startsWith(`${provider}OAuthPending=`));
+
+      const completed = await request(app)
+        .post(`/auth/${provider}/complete-registration`)
+        .set('Origin', 'http://localhost:3000')
+        .set('Cookie', pendingCookie)
+        .send({ username: `delete_${provider}` });
+
+      expect(completed.status).toBe(201);
+      const user = await User.findOne({ username: `delete_${provider}` }).lean();
+      expect(user).toBeTruthy();
+
+      const deletion = await request(app)
+        .delete(`/auth/delete/${user._id}`)
+        .set('Origin', 'http://localhost:3000')
+        .set('Cookie', completed.headers['set-cookie']);
+
+      expect(deletion.status).toBe(200);
+      expect(await User.findById(user._id)).toBeNull();
+
+      const refresh = await request(app)
+        .post('/auth/refresh')
+        .set('Origin', 'http://localhost:3000')
+        .set('Cookie', completed.headers['set-cookie'])
+        .send({});
+      expect(refresh.status).toBe(401);
+    });
+  }
 });

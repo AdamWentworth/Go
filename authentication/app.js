@@ -134,7 +134,7 @@ const loginLimiter = rateLimit({
 });
 const registerLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 20,
+  max: process.env.NODE_ENV === 'test' ? 1000 : 20,
   standardHeaders: true,
   legacyHeaders: false
 });
@@ -142,6 +142,8 @@ app.use('/auth', limiter);
 app.use('/auth/login', loginLimiter);
 app.use('/auth/register', registerLimiter);
 app.use('/auth/google/complete-registration', registerLimiter);
+app.use('/auth/discord/complete-registration', registerLimiter);
+app.use('/auth/facebook/complete-registration', registerLimiter);
 app.use('/auth', csrfOriginGuard(allowedOrigins));
 
 app.use('/auth', require('./routes/authRoute'));
