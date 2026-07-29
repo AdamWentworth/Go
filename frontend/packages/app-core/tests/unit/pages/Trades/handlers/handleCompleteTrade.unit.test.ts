@@ -2,8 +2,11 @@ import { describe, expect, it, vi, beforeEach } from 'vitest';
 
 import { handleCompleteTrade } from '@/pages/Trades/handlers/handleCompleteTrade';
 
-vi.mock('@/db/indexedDB', () => ({
-  putBatchedTradeUpdates: vi.fn(async () => undefined),
+const { confirmTradeComplete } = vi.hoisted(() => ({
+  confirmTradeComplete: vi.fn(),
+}));
+vi.mock('@/services/tradeService', () => ({
+  confirmTradeComplete,
 }));
 
 const baseTrade = {
@@ -21,6 +24,17 @@ const baseTrade = {
 describe('handleCompleteTrade', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    confirmTradeComplete.mockResolvedValue({
+      trade: {
+        ...baseTrade,
+        trade_status: 'completed',
+        user_proposed_completion_confirmed: true,
+      },
+      affected_instances: {
+        'inst-proposed': { instance_id: 'inst-proposed', username: 'misty' },
+        'inst-accepting': { instance_id: 'inst-accepting', username: 'ash' },
+      },
+    });
   });
 
   it('uses canonical instances + setInstances fields and swaps usernames on completion', async () => {
@@ -46,8 +60,8 @@ describe('handleCompleteTrade', () => {
 
     expect(result.trade_status).toBe('completed');
     expect(setInstances).toHaveBeenCalledWith({
-      'inst-proposed': { username: 'misty' },
-      'inst-accepting': { username: 'ash' },
+      'inst-proposed': { instance_id: 'inst-proposed', username: 'misty' },
+      'inst-accepting': { instance_id: 'inst-accepting', username: 'ash' },
     });
     expect(setTradeData).toHaveBeenCalledTimes(1);
     expect(periodicUpdates).toHaveBeenCalledTimes(1);
@@ -79,8 +93,8 @@ describe('handleCompleteTrade', () => {
     });
 
     expect(setInstances).toHaveBeenCalledWith({
-      'inst-proposed': { username: 'misty' },
-      'inst-accepting': { username: 'ash' },
+      'inst-proposed': { instance_id: 'inst-proposed', username: 'misty' },
+      'inst-accepting': { instance_id: 'inst-accepting', username: 'ash' },
     });
     expect(setTradeData).toHaveBeenCalledTimes(1);
     expect(periodicUpdates).toHaveBeenCalledTimes(1);

@@ -155,7 +155,6 @@ app.use('/auth', csrfOriginGuard(allowedOrigins));
 
 app.use('/auth', require('./routes/authRoute'));
 app.use('/auth', require('./routes/passportRoutes'));
-app.use('/auth', require('./routes/tradeRevealRoute'));
 
 function startServer() {
   const port = appConfig.app?.port || 3002;

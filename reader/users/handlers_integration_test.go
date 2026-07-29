@@ -72,6 +72,16 @@ func newHandlerTestApp(authUserID string) *fiber.App {
 	app.Delete("/api/friends/:user_id", RemoveFriendHandler)
 	app.Post("/api/friends/blocks", BlockUserHandler)
 	app.Delete("/api/friends/blocks/:user_id", UnblockUserHandler)
+	app.Get("/api/trades", GetTradesHandler)
+	app.Post("/api/trades", CreateTradeHandler)
+	app.Post("/api/trades/:trade_id/accept", AcceptTradeHandler)
+	app.Post("/api/trades/:trade_id/deny", DenyTradeHandler)
+	app.Post("/api/trades/:trade_id/cancel", CancelTradeHandler)
+	app.Post("/api/trades/:trade_id/complete-confirmation", CompleteTradeHandler)
+	app.Post("/api/trades/:trade_id/repropose", ReproposeTradeHandler)
+	app.Put("/api/trades/:trade_id/satisfaction", UpdateTradeSatisfactionHandler)
+	app.Delete("/api/trades/:trade_id", DeleteTradeHandler)
+	app.Get("/api/trades/:trade_id/partner", RevealTradePartnerHandler)
 
 	// Public endpoints used in tests.
 	app.Get("/api/public/users/:username", GetPublicSnapshotByUsername)
@@ -114,6 +124,187 @@ func TestDeleteUserHandler_DeletesAccountGraphInTransaction(t *testing.T) {
 	}
 	if err := mock.ExpectationsWereMet(); err != nil {
 		t.Fatalf("unmet DB expectations: %v", err)
+	}
+}
+
+func tradeMockRows(status string, proposedConfirmed, acceptingConfirmed bool) *sqlmock.Rows {
+	return sqlmock.NewRows([]string{
+		"trade_id", "user_id_proposed", "username_proposed",
+		"user_id_accepting", "username_accepting",
+		"pokemon_instance_id_user_proposed",
+		"pokemon_instance_id_user_accepting", "trade_status",
+		"user_proposed_completion_confirmed",
+		"user_accepting_completion_confirmed", "last_update",
+	}).AddRow(
+		"trade-1", "user-1", "ash", "user-2", "misty",
+		"instance-1", "instance-2", status,
+		proposedConfirmed, acceptingConfirmed, int64(100),
+	)
+}
+
+func instanceMockRows(instanceID, userID string) *sqlmock.Rows {
+	return sqlmock.NewRows([]string{
+		"instance_id", "user_id", "is_caught", "is_for_trade",
+		"is_wanted", "disabled", "last_update",
+	}).AddRow(instanceID, userID, true, true, false, false, int64(100))
+}
+
+func TestAcceptTradeHandler_RejectsNonAcceptingParticipant(t *testing.T) {
+	mock, cleanup := setupMockDB(t)
+	defer cleanup()
+
+	mock.ExpectBegin()
+	mock.ExpectQuery("SELECT \\* FROM `trades` WHERE trade_id = \\?").
+		WithArgs("trade-1", 1).
+		WillReturnRows(tradeMockRows("proposed", false, false))
+	mock.ExpectRollback()
+
+	app := newHandlerTestApp("user-1")
+	resp, err := app.Test(
+		makeJSONRequest(t, http.MethodPost, "/api/trades/trade-1/accept", nil),
+		fiber.TestConfig{Timeout: 0},
+	)
+	if err != nil {
+		t.Fatalf("request failed: %v", err)
+	}
+	if resp.StatusCode != http.StatusForbidden {
+		t.Fatalf("unexpected status: got %d, want %d", resp.StatusCode, http.StatusForbidden)
+	}
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Fatalf("unmet DB expectations: %v", err)
+	}
+}
+
+func TestAcceptTradeHandler_RejectsDuplicateTransition(t *testing.T) {
+	mock, cleanup := setupMockDB(t)
+	defer cleanup()
+
+	mock.ExpectBegin()
+	mock.ExpectQuery("SELECT \\* FROM `trades` WHERE trade_id = \\?").
+		WithArgs("trade-1", 1).
+		WillReturnRows(tradeMockRows("pending", false, false))
+	mock.ExpectRollback()
+
+	app := newHandlerTestApp("user-2")
+	resp, err := app.Test(
+		makeJSONRequest(t, http.MethodPost, "/api/trades/trade-1/accept", nil),
+		fiber.TestConfig{Timeout: 0},
+	)
+	if err != nil {
+		t.Fatalf("request failed: %v", err)
+	}
+	if resp.StatusCode != http.StatusConflict {
+		t.Fatalf("unexpected status: got %d, want %d", resp.StatusCode, http.StatusConflict)
+	}
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Fatalf("unmet DB expectations: %v", err)
+	}
+}
+
+func TestCompleteTradeHandler_AtomicallyTransfersBothPokemon(t *testing.T) {
+	mock, cleanup := setupMockDB(t)
+	defer cleanup()
+
+	mock.ExpectBegin()
+	mock.ExpectQuery("SELECT \\* FROM `trades` WHERE trade_id = \\?").
+		WithArgs("trade-1", 1).
+		WillReturnRows(tradeMockRows("pending", false, true))
+	mock.ExpectQuery("SELECT \\* FROM `instances` WHERE instance_id = \\?").
+		WithArgs("instance-1", 1).
+		WillReturnRows(instanceMockRows("instance-1", "user-1"))
+	mock.ExpectQuery("SELECT \\* FROM `instances` WHERE instance_id = \\?").
+		WithArgs("instance-2", 1).
+		WillReturnRows(instanceMockRows("instance-2", "user-2"))
+	mock.ExpectExec("UPDATE `instances` SET").
+		WillReturnResult(sqlmock.NewResult(0, 1))
+	mock.ExpectExec("UPDATE `instances` SET").
+		WillReturnResult(sqlmock.NewResult(0, 1))
+	mock.ExpectExec("UPDATE `trades` SET").
+		WillReturnResult(sqlmock.NewResult(0, 1))
+	mock.ExpectCommit()
+
+	app := newHandlerTestApp("user-1")
+	resp, err := app.Test(
+		makeJSONRequest(t, http.MethodPost, "/api/trades/trade-1/complete-confirmation", nil),
+		fiber.TestConfig{Timeout: 0},
+	)
+	if err != nil {
+		t.Fatalf("request failed: %v", err)
+	}
+	if resp.StatusCode != http.StatusOK {
+		t.Fatalf("unexpected status: got %d, want %d", resp.StatusCode, http.StatusOK)
+	}
+	var body TradeEnvelope
+	if err := json.NewDecoder(resp.Body).Decode(&body); err != nil {
+		t.Fatalf("decode response: %v", err)
+	}
+	if body.Trade.TradeStatus != "completed" ||
+		body.AffectedInstances["instance-1"].UserID != "user-2" ||
+		body.AffectedInstances["instance-2"].UserID != "user-1" {
+		t.Fatalf("unexpected completed trade response: %#v", body)
+	}
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Fatalf("unmet DB expectations: %v", err)
+	}
+}
+
+func TestCompleteTradeHandler_RollsBackWhenSecondPokemonUpdateFails(t *testing.T) {
+	mock, cleanup := setupMockDB(t)
+	defer cleanup()
+
+	mock.ExpectBegin()
+	mock.ExpectQuery("SELECT \\* FROM `trades` WHERE trade_id = \\?").
+		WithArgs("trade-1", 1).
+		WillReturnRows(tradeMockRows("pending", false, true))
+	mock.ExpectQuery("SELECT \\* FROM `instances` WHERE instance_id = \\?").
+		WithArgs("instance-1", 1).
+		WillReturnRows(instanceMockRows("instance-1", "user-1"))
+	mock.ExpectQuery("SELECT \\* FROM `instances` WHERE instance_id = \\?").
+		WithArgs("instance-2", 1).
+		WillReturnRows(instanceMockRows("instance-2", "user-2"))
+	mock.ExpectExec("UPDATE `instances` SET").
+		WillReturnResult(sqlmock.NewResult(0, 1))
+	mock.ExpectExec("UPDATE `instances` SET").
+		WillReturnError(assertionError("forced second Pokémon update failure"))
+	mock.ExpectRollback()
+
+	app := newHandlerTestApp("user-1")
+	resp, err := app.Test(
+		makeJSONRequest(t, http.MethodPost, "/api/trades/trade-1/complete-confirmation", nil),
+		fiber.TestConfig{Timeout: 0},
+	)
+	if err != nil {
+		t.Fatalf("request failed: %v", err)
+	}
+	if resp.StatusCode != http.StatusInternalServerError {
+		t.Fatalf("unexpected status: got %d, want %d", resp.StatusCode, http.StatusInternalServerError)
+	}
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Fatalf("unmet DB expectations: %v", err)
+	}
+}
+
+type assertionError string
+
+func (e assertionError) Error() string { return string(e) }
+
+func TestCreateTradeHandler_RejectsMalformedProposalBeforeDatabaseWrite(t *testing.T) {
+	_, cleanup := setupMockDB(t)
+	defer cleanup()
+
+	app := newHandlerTestApp("user-1")
+	resp, err := app.Test(
+		makeJSONRequest(t, http.MethodPost, "/api/trades", map[string]any{
+			"username_accepting":     "",
+			"trade_friendship_level": 9,
+		}),
+		fiber.TestConfig{Timeout: 0},
+	)
+	if err != nil {
+		t.Fatalf("request failed: %v", err)
+	}
+	if resp.StatusCode != http.StatusBadRequest {
+		t.Fatalf("unexpected status: got %d, want %d", resp.StatusCode, http.StatusBadRequest)
 	}
 }
 

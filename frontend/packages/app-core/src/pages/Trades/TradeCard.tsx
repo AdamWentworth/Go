@@ -113,7 +113,19 @@ function TradeCard({
 }: TradeCardProps) {
   const setTradeData = useTradeStore((state) => state.setTradeData);
   const trades = useTradeStore((state) => state.trades) as Record<string, TradeCardTrade>;
-  const { confirm } = useModal();
+  const { alert, confirm } = useModal();
+
+  const runTradeAction = async (action: () => Promise<unknown>) => {
+    try {
+      await action();
+    } catch (error) {
+      const message =
+        error instanceof Error && error.message
+          ? error.message
+          : 'The trade could not be updated. Please try again.';
+      await alert(message);
+    }
+  };
 
   const canonicalTrade = toCanonicalTrade(trade);
   const canonicalTrades: Record<string, CanonicalTrade> = Object.fromEntries(
@@ -166,7 +178,7 @@ function TradeCard({
       },
       periodicUpdates,
     };
-    await handleAcceptTrade(args);
+    await runTradeAction(() => handleAcceptTrade(args));
   };
 
   const handleDeny = async () => {
@@ -181,7 +193,7 @@ function TradeCard({
       },
       periodicUpdates,
     };
-    await handleDenyTrade(args);
+    await runTradeAction(() => handleDenyTrade(args));
   };
 
   const handleDelete = async () => {
@@ -196,7 +208,7 @@ function TradeCard({
       },
       periodicUpdates,
     };
-    await handleDeleteTrade(args);
+    await runTradeAction(() => handleDeleteTrade(args));
   };
 
   const handleComplete = async () => {
@@ -219,7 +231,7 @@ function TradeCard({
       setInstances: applyInstanceUpdates,
       currentUsername,
     };
-    await handleCompleteTrade(args);
+    await runTradeAction(() => handleCompleteTrade(args));
   };
 
   const handleCancel = async () => {
@@ -235,7 +247,7 @@ function TradeCard({
       periodicUpdates,
       currentUsername,
     };
-    await handleCancelTrade(args);
+    await runTradeAction(() => handleCancelTrade(args));
   };
 
   const handleRePropose = async () => {
@@ -251,7 +263,7 @@ function TradeCard({
       periodicUpdates,
       currentUsername,
     };
-    await handleReProposeTrade(args);
+    await runTradeAction(() => handleReProposeTrade(args));
   };
 
   const handleThumbsUp = async () => {
@@ -264,7 +276,7 @@ function TradeCard({
       periodicUpdates,
       currentUsername,
     };
-    await handleThumbsUpTrade(args);
+    await runTradeAction(() => handleThumbsUpTrade(args));
   };
 
   const normalizedStatus = selectedStatus.toLowerCase();

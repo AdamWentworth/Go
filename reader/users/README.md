@@ -1,15 +1,42 @@
-# 👤 Users Service
+# 👤 Users and Social Command Service
 
-The users service provides profile and ownership-read APIs for the Pokemon app.
-It runs as a JWT-protected API for user-specific endpoints and also exposes public trainer snapshots.
+The users service is the authoritative synchronous API for MySQL-backed user,
+social, and trade state. It also provides ownership/profile reads and public
+trainer snapshots.
 
 ## 🎯 Responsibilities
 
 - Serve authenticated user overview payloads (`user`, `pokemon_instances`, `trades`, `registrations`).
 - Upsert user profile fields in MySQL.
+- Manage privacy preferences, friendships, requests, and blocks.
+- Validate and execute trade proposals and state transitions.
+- Atomically transfer Pokémon only after both trade participants confirm.
+- Reveal trade-partner details according to relationship/privacy rules.
 - Serve public trainer snapshot data by username.
 - Provide autocomplete suggestions for trainer search.
 - Expose health and metrics endpoints for operations.
+
+Receiver/Kafka remains responsible for bulk Pokémon synchronization. Interactive
+profile, social, and trade commands write directly through this service because
+callers require immediate authorization, conflict, and transaction results.
+
+## Trade command routes
+
+Authenticated routes are available under both `/api` and the nginx-compatible
+`/api/users` prefix:
+
+- `GET/POST /trades`
+- `POST /trades/:trade_id/accept`
+- `POST /trades/:trade_id/deny`
+- `POST /trades/:trade_id/cancel`
+- `POST /trades/:trade_id/complete-confirmation`
+- `POST /trades/:trade_id/repropose`
+- `PUT /trades/:trade_id/satisfaction`
+- `DELETE /trades/:trade_id`
+- `GET /trades/:trade_id/partner`
+
+The JWT determines the acting user. Clients cannot choose proposer identity,
+status, timestamps, confirmations, or Pokémon ownership.
 
 ## 🏗️ Service Topology (Mermaid)
 

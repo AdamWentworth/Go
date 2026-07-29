@@ -50,7 +50,9 @@ describe('shared contracts', () => {
   });
 
   it('exposes stable trades/location/events/pokemon endpoints', () => {
-    expect(tradesContract.endpoints.revealPartnerInfo).toBe('/reveal-partner-info');
+    expect(tradesContract.endpoints.revealPartnerInfo('trade/1')).toBe(
+      '/trades/trade%2F1/partner',
+    );
     expect(locationContract.endpoints.autocomplete).toBe('/autocomplete');
     expect(locationContract.endpoints.reverse).toBe('/reverse');
     expect(eventsContract.endpoints.getUpdates).toBe('/getUpdates');

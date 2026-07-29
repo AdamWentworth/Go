@@ -9,18 +9,20 @@ This service handles:
 - Account registration and login
 - JWT access/refresh token issuance
 - Refresh token rotation and logout
+- Verified email changes and password reset email delivery
+- Google, Discord, and Facebook OAuth registration/login/linking
+- Connected identity and all-session management
 - Account update and delete (owner-only)
-- Transitional trade reveal endpoint
 - Daily MongoDB backup task (`mongodump`)
 
 ## ✅ Current Scope
 
-- OAuth/social login is intentionally disabled.
-- Email delivery is intentionally disabled.
-- Password reset completion is intentionally disabled (`501` by design).
+- Email/password and Google, Discord, and Facebook authentication are active.
+- Password-reset and email-change messages are delivered through Resend.
+- Password changes, resets, and verified email changes revoke existing sessions.
 - Cookie-authenticated mutating routes enforce Origin checks.
 - Refresh tokens are stored as one-way hashes and rotated on refresh.
-- `tradeRevealRoute` is transitional and can be removed after replacement.
+- Trade authorization and partner reveal are owned by the MySQL users service.
 
 ## 🧭 API Routes
 
@@ -34,8 +36,13 @@ Mounted under `/auth`:
 | `POST` | `/auth/logout` | Revokes current refresh session |
 | `PUT` | `/auth/update/:id` | Requires auth, owner-only |
 | `DELETE` | `/auth/delete/:id` | Requires auth, owner-only |
-| `POST` | `/auth/reset-password/` | Intentionally disabled (`501`) |
-| `POST` | `/auth/reveal-partner-info` | Transitional endpoint |
+| `POST` | `/auth/reset-password` | Sends a privacy-preserving reset email |
+| `POST` | `/auth/reset-password/confirm` | Consumes a one-time reset token |
+| `POST` | `/auth/email-change` | Sends verification to a proposed email |
+| `POST` | `/auth/email-change/confirm` | Verifies the new email and revokes sessions |
+| `GET` | `/auth/account/security` | Connected identities and active-session count |
+| `POST` | `/auth/sessions/revoke-all` | Revokes all refresh sessions |
+| `DELETE` | `/auth/account/identities/:provider` | Disconnects an OAuth identity safely |
 
 Other routes:
 
@@ -60,9 +67,9 @@ Other routes:
 - `JWT_ISSUER` optional JWT issuer (default `pokemongonexus-auth`)
 - `JWT_AUDIENCE` optional JWT audience (default `pokemongonexus-clients`)
 
-### Google OAuth
+### OAuth
 
-Google login remains unavailable until all three values are configured:
+Each provider requires its client ID, client secret, and callback URL:
 
 - `GOOGLE_CLIENT_ID` OAuth 2.0 web client ID
 - `GOOGLE_CLIENT_SECRET` OAuth 2.0 web client secret
@@ -71,14 +78,17 @@ Google login remains unavailable until all three values are configured:
 - `OAUTH_STATE_SECRET` optional dedicated secret for short-lived OAuth state and
   onboarding cookies; falls back to `JWT_SECRET`
 
+Equivalent `DISCORD_*` and `FACEBOOK_*` values configure those providers.
+
 Register this exact authorized redirect URI in Google Cloud. Local frontend
 sessions may use the production HTTPS auth callback; the signed OAuth state
 returns them only to an allow-listed frontend origin.
 
-Google supplies and verifies the account email. New users still choose a
+OAuth providers supply a verified account email. New users still choose a
 PokeGoNexus username and may add trainer/location details, but they do not
-create a password. Existing password accounts are never silently linked by
-matching email.
+create a password. Registration rejects a verified provider email already owned
+by an account. Login with a verified matching email authenticates that same
+account and records the provider identity.
 
 ## 🏗 Architecture (Mermaid)
 

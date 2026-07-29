@@ -24,5 +24,6 @@ export interface ReceiverBatchedUpdatesPayload<
 > {
   location: unknown | null;
   pokemonUpdates: TPokemonUpdate[];
-  tradeUpdates: TTradeUpdate[];
+  /** @deprecated Legacy installed-PWA compatibility only. */
+  tradeUpdates?: TTradeUpdate[];
 }

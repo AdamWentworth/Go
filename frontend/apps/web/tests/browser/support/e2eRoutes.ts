@@ -13,6 +13,7 @@ export type E2eRouteOptions = {
   userInstances?: unknown;
   publicUser?: unknown;
   userOverview?: unknown;
+  trades?: unknown;
   pokedexSpecies?: unknown[];
   raidDataDelayMs?: number;
 };
@@ -291,6 +292,21 @@ const defaultUserOverview = {
 };
 
 export async function installE2eRoutes(page: Page, options: E2eRouteOptions = {}) {
+  const overviewRecord =
+    options.userOverview && typeof options.userOverview === 'object'
+      ? options.userOverview as Record<string, unknown>
+      : {};
+  const tradeRecord =
+    options.trades && typeof options.trades === 'object'
+      ? options.trades as Record<string, unknown>
+      : overviewRecord.trades && typeof overviewRecord.trades === 'object'
+        ? overviewRecord.trades as Record<string, unknown>
+        : {};
+  const relatedTradeInstances =
+    overviewRecord.related_instances &&
+    typeof overviewRecord.related_instances === 'object'
+      ? overviewRecord.related_instances as Record<string, unknown>
+      : {};
   let trainerProfileState = JSON.parse(
     JSON.stringify(
       options.trainerProfile ?? {
@@ -476,6 +492,22 @@ export async function installE2eRoutes(page: Page, options: E2eRouteOptions = {}
   await page.route('**/__e2e/users/autocomplete-trainers**', async (route) => {
     await fulfillJson(route, options.trainerSuggestions ?? []);
   });
+
+  for (const pathPattern of ['**/api/users/trades', '**/__e2e/users/trades']) {
+    await page.route(pathPattern, async (route) => {
+      const url = new URL(route.request().url());
+      if (route.request().method() === 'GET' && /\/trades$/.test(url.pathname)) {
+        await fulfillJson(route, {
+          trades: Object.values(tradeRecord),
+          related_instances: relatedTradeInstances,
+        });
+        return;
+      }
+      await fulfillJson(route, {
+        message: `Unhandled trade route: ${route.request().method()} ${url.pathname}`,
+      }, 404);
+    });
+  }
 
   for (const pathPattern of ['**/api/users/profile', '**/__e2e/users/profile']) {
     await page.route(pathPattern, async (route) => {

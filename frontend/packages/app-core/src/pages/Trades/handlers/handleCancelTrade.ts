@@ -1,10 +1,5 @@
-// handleCancelTrade.ts
-
-import { putBatchedTradeUpdates } from "../../../db/indexedDB";
-import { createScopedLogger } from '@/utils/logger';
+import { cancelTrade } from '@/services/tradeService';
 import type { TradeRecord } from '@shared-contracts/trades';
-
-const log = createScopedLogger('handleCancelTrade');
 
 export type Trade = TradeRecord & {
   trade_id: string;
@@ -20,55 +15,13 @@ export interface HandleCancelTradeArgs {
   currentUsername: string;
 }
 
-/**
- * Cancels a trade by updating its status to 'cancelled', setting a cancelled date,
- * recording who cancelled the trade, and updating the last update timestamp.
- * It persists the updated trades state and batches an update for the backend.
- */
 export async function handleCancelTrade({
   trade,
   trades,
   setTradeData,
   periodicUpdates,
-  currentUsername,
 }: HandleCancelTradeArgs): Promise<void> {
-  // Create an updated trade object with a cancelled date, new status, updated timestamp, and the cancelling user.
-  const updatedTrade: Trade = {
-    ...trade,
-    trade_cancelled_date: new Date().toISOString(),
-    trade_status: 'cancelled',
-    trade_cancelled_by: currentUsername,
-    last_update: Date.now(),
-  };
-
-  // Update the in-memory trades collection.
-  const updatedTrades: Record<string, Trade> = {
-    ...trades,
-    [trade.trade_id]: updatedTrade,
-  };
-
-  // Persist the updated trades data.
-  try {
-    await setTradeData(updatedTrades);
-  } catch (error) {
-    log.error('Error persisting trade data', error);
-    return;
-  }
-
-  // Prepare batched update data for updating the trade as cancelled.
-  const batchedUpdateData = {
-    operation: 'updateTrade',
-    tradeData: updatedTrade,
-  };
-
-  // Execute the batched update operation.
-  try {
-    await putBatchedTradeUpdates(trade.trade_id, batchedUpdateData);
-  } catch (error) {
-    log.error('Error in putBatchedTradeUpdates', error);
-  }
-
-  // Trigger periodic updates after marking trade as cancelled.
+  const response = await cancelTrade(trade.trade_id);
+  await setTradeData({ ...trades, [trade.trade_id]: response.trade as Trade });
   periodicUpdates();
-  log.debug('Completed');
 }

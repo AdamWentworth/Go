@@ -1,6 +1,19 @@
 export const tradesContract = {
   endpoints: {
-    revealPartnerInfo: '/reveal-partner-info',
+    list: '/trades',
+    create: '/trades',
+    accept: (tradeId: string) => `/trades/${encodeURIComponent(tradeId)}/accept`,
+    deny: (tradeId: string) => `/trades/${encodeURIComponent(tradeId)}/deny`,
+    cancel: (tradeId: string) => `/trades/${encodeURIComponent(tradeId)}/cancel`,
+    complete: (tradeId: string) =>
+      `/trades/${encodeURIComponent(tradeId)}/complete-confirmation`,
+    repropose: (tradeId: string) =>
+      `/trades/${encodeURIComponent(tradeId)}/repropose`,
+    satisfaction: (tradeId: string) =>
+      `/trades/${encodeURIComponent(tradeId)}/satisfaction`,
+    remove: (tradeId: string) => `/trades/${encodeURIComponent(tradeId)}`,
+    revealPartnerInfo: (tradeId: string) =>
+      `/trades/${encodeURIComponent(tradeId)}/partner`,
   },
 } as const;
 
@@ -31,6 +44,16 @@ export interface TradeRecord {
 export interface RelatedInstanceRecord {
   instance_id: string;
   [key: string]: unknown;
+}
+
+export interface TradeEnvelope {
+  trade: TradeRecord & { trade_id: string };
+  affected_instances: Record<string, RelatedInstanceRecord>;
+}
+
+export interface TradesEnvelope {
+  trades: Array<TradeRecord & { trade_id: string }>;
+  related_instances: Record<string, RelatedInstanceRecord>;
 }
 
 export interface TradeReference {
@@ -93,4 +116,15 @@ export interface TradeProposalRequest {
   trade_proposal_date: string;
   trade_status: 'proposed';
   last_update: number;
+}
+
+export interface AuthoritativeTradeProposalRequest {
+  username_accepting: string;
+  pokemon_instance_id_user_proposed: string;
+  pokemon_instance_id_user_accepting: string;
+  is_special_trade: boolean;
+  is_registered_trade: boolean;
+  is_lucky_trade: boolean;
+  trade_dust_cost: number;
+  trade_friendship_level: 1 | 2 | 3 | 4;
 }

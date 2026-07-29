@@ -1,0 +1,586 @@
+package main
+
+import (
+	"errors"
+	"strings"
+	"time"
+
+	"github.com/gofiber/fiber/v3"
+	"github.com/google/uuid"
+	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
+)
+
+var tradeFriendshipLevels = map[int]string{
+	1: "Good",
+	2: "Great",
+	3: "Ultra",
+	4: "Best",
+}
+
+type CreateTradeRequest struct {
+	UsernameAccepting              string `json:"username_accepting"`
+	PokemonInstanceIDUserProposed  string `json:"pokemon_instance_id_user_proposed"`
+	PokemonInstanceIDUserAccepting string `json:"pokemon_instance_id_user_accepting"`
+	IsSpecialTrade                 bool   `json:"is_special_trade"`
+	IsRegisteredTrade              bool   `json:"is_registered_trade"`
+	IsLuckyTrade                   bool   `json:"is_lucky_trade"`
+	TradeDustCost                  int    `json:"trade_dust_cost"`
+	TradeFriendshipLevel           int    `json:"trade_friendship_level"`
+}
+
+type TradeSatisfactionRequest struct {
+	Satisfied bool `json:"satisfied"`
+}
+
+type TradeEnvelope struct {
+	Trade             Trade                      `json:"trade"`
+	AffectedInstances map[string]PokemonInstance `json:"affected_instances"`
+}
+
+type TradesEnvelope struct {
+	Trades           []Trade                    `json:"trades"`
+	RelatedInstances map[string]PokemonInstance `json:"related_instances"`
+}
+
+func tradeParticipant(trade Trade, userID string) bool {
+	return trade.UserIDProposed == userID || trade.UserIDAccepting == userID
+}
+
+func tradeOtherUserID(trade Trade, userID string) string {
+	if trade.UserIDProposed == userID {
+		return trade.UserIDAccepting
+	}
+	return trade.UserIDProposed
+}
+
+func tradeEnvelope(trade Trade, instances ...PokemonInstance) TradeEnvelope {
+	affected := make(map[string]PokemonInstance, len(instances))
+	for _, instance := range instances {
+		affected[instance.InstanceID] = instance
+	}
+	return TradeEnvelope{Trade: trade, AffectedInstances: affected}
+}
+
+func loadLockedTrade(tx *gorm.DB, tradeID string) (Trade, error) {
+	var trade Trade
+	err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).
+		Where("trade_id = ?", tradeID).First(&trade).Error
+	return trade, err
+}
+
+func loadLockedInstance(tx *gorm.DB, instanceID string) (PokemonInstance, error) {
+	var instance PokemonInstance
+	err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).
+		Where("instance_id = ?", instanceID).First(&instance).Error
+	return instance, err
+}
+
+func loadLockedTradeInstances(
+	tx *gorm.DB,
+	proposedID string,
+	acceptingID string,
+) (PokemonInstance, PokemonInstance, error) {
+	firstID, secondID := proposedID, acceptingID
+	reversed := false
+	if secondID < firstID {
+		firstID, secondID = secondID, firstID
+		reversed = true
+	}
+	first, err := loadLockedInstance(tx, firstID)
+	if err != nil {
+		return PokemonInstance{}, PokemonInstance{}, err
+	}
+	second, err := loadLockedInstance(tx, secondID)
+	if err != nil {
+		return PokemonInstance{}, PokemonInstance{}, err
+	}
+	if reversed {
+		return second, first, nil
+	}
+	return first, second, nil
+}
+
+func loadTradeForParticipant(c fiber.Ctx, tx *gorm.DB) (Trade, error) {
+	trade, err := loadLockedTrade(tx, c.Params("trade_id"))
+	if err != nil {
+		return trade, err
+	}
+	if !tradeParticipant(trade, viewerID(c)) {
+		return trade, errTradeForbidden
+	}
+	return trade, nil
+}
+
+var (
+	errTradeForbidden = errors.New("trade is not available to this user")
+	errTradeConflict  = errors.New("trade state has changed")
+)
+
+func tradeError(c fiber.Ctx, err error, fallback string) error {
+	switch {
+	case errors.Is(err, gorm.ErrRecordNotFound):
+		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"message": "Trade not found"})
+	case errors.Is(err, errTradeForbidden):
+		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{"message": err.Error()})
+	case errors.Is(err, errTradeConflict):
+		return c.Status(fiber.StatusConflict).JSON(fiber.Map{"message": err.Error()})
+	default:
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"message": fallback})
+	}
+}
+
+func GetTradesHandler(c fiber.Ctx) error {
+	userID := viewerID(c)
+	var trades []Trade
+	if err := db.Where("user_id_proposed = ? OR user_id_accepting = ?", userID, userID).
+		Order("last_update DESC").Find(&trades).Error; err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"message": "Could not load trades"})
+	}
+
+	instanceIDs := make([]string, 0, len(trades)*2)
+	for _, trade := range trades {
+		instanceIDs = append(instanceIDs,
+			trade.PokemonInstanceIDUserProposed,
+			trade.PokemonInstanceIDUserAccepting,
+		)
+	}
+	instances := []PokemonInstance{}
+	if len(instanceIDs) > 0 {
+		if err := db.Where("instance_id IN ?", instanceIDs).Find(&instances).Error; err != nil {
+			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"message": "Could not load trade Pokémon"})
+		}
+	}
+	related := make(map[string]PokemonInstance, len(instances))
+	for _, instance := range instances {
+		related[instance.InstanceID] = instance
+	}
+	return c.JSON(TradesEnvelope{Trades: trades, RelatedInstances: related})
+}
+
+func CreateTradeHandler(c fiber.Ctx) error {
+	var request CreateTradeRequest
+	if err := c.Bind().Body(&request); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"message": "Invalid trade proposal"})
+	}
+	request.UsernameAccepting = strings.TrimSpace(request.UsernameAccepting)
+	request.PokemonInstanceIDUserProposed = strings.TrimSpace(request.PokemonInstanceIDUserProposed)
+	request.PokemonInstanceIDUserAccepting = strings.TrimSpace(request.PokemonInstanceIDUserAccepting)
+	friendshipLevel, validLevel := tradeFriendshipLevels[request.TradeFriendshipLevel]
+	if request.UsernameAccepting == "" ||
+		request.PokemonInstanceIDUserProposed == "" ||
+		request.PokemonInstanceIDUserAccepting == "" ||
+		!validLevel || request.TradeDustCost < 0 {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"message": "Invalid trade proposal"})
+	}
+
+	proposer, err := findUserByID(viewerID(c))
+	if err != nil {
+		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"message": "Current user not found"})
+	}
+	accepter, err := findUserByUsername(request.UsernameAccepting)
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"message": "Trade partner not found"})
+	}
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"message": "Could not load trade partner"})
+	}
+	if proposer.UserID == accepter.UserID {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"message": "You cannot trade with yourself"})
+	}
+	canViewCollection, relationship, err := collectionAccessForUser(proposer.UserID, accepter.UserID)
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"message": "Could not validate trade partner privacy"})
+	}
+	if relationship == relationshipBlocked || !canViewCollection {
+		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{"message": "Trade unavailable"})
+	}
+
+	var created Trade
+	var instances []PokemonInstance
+	err = db.Transaction(func(tx *gorm.DB) error {
+		proposed, accepting, lockErr := loadLockedTradeInstances(
+			tx,
+			request.PokemonInstanceIDUserProposed,
+			request.PokemonInstanceIDUserAccepting,
+		)
+		if lockErr != nil {
+			return lockErr
+		}
+		if proposed.UserID != proposer.UserID || accepting.UserID != accepter.UserID ||
+			!proposed.IsCaught || !accepting.IsCaught || proposed.Disabled || accepting.Disabled {
+			return errTradeForbidden
+		}
+		var active int64
+		if countErr := tx.Model(&Trade{}).
+			Where("trade_status IN ? AND (pokemon_instance_id_user_proposed IN ? OR pokemon_instance_id_user_accepting IN ?)",
+				[]string{"proposed", "pending"},
+				[]string{proposed.InstanceID, accepting.InstanceID},
+				[]string{proposed.InstanceID, accepting.InstanceID}).
+			Count(&active).Error; countErr != nil {
+			return countErr
+		}
+		if active > 0 {
+			return errTradeConflict
+		}
+		now := time.Now().UTC()
+		lastUpdate := now.UnixMilli()
+		dustCost := request.TradeDustCost
+		created = Trade{
+			TradeID:        uuid.NewString(),
+			UserIDProposed: proposer.UserID, UsernameProposed: proposer.Username,
+			UserIDAccepting: accepter.UserID, UsernameAccepting: accepter.Username,
+			PokemonInstanceIDUserProposed:  proposed.InstanceID,
+			PokemonInstanceIDUserAccepting: accepting.InstanceID,
+			TradeStatus:                    "proposed", TradeProposalDate: &now,
+			IsSpecialTrade:       request.IsSpecialTrade,
+			IsRegisteredTrade:    request.IsRegisteredTrade,
+			IsLuckyTrade:         request.IsLuckyTrade,
+			TradeDustCost:        &dustCost,
+			TradeFriendshipLevel: friendshipLevel,
+			LastUpdate:           &lastUpdate,
+		}
+		if createErr := tx.Create(&created).Error; createErr != nil {
+			return createErr
+		}
+		instances = []PokemonInstance{proposed, accepting}
+		return nil
+	})
+	if err != nil {
+		return tradeError(c, err, "Could not create trade")
+	}
+	return c.Status(fiber.StatusCreated).JSON(tradeEnvelope(created, instances...))
+}
+
+func AcceptTradeHandler(c fiber.Ctx) error {
+	var updated Trade
+	err := db.Transaction(func(tx *gorm.DB) error {
+		trade, err := loadTradeForParticipant(c, tx)
+		if err != nil {
+			return err
+		}
+		if trade.UserIDAccepting != viewerID(c) {
+			return errTradeForbidden
+		}
+		if trade.TradeStatus != "proposed" {
+			return errTradeConflict
+		}
+		proposed, accepting, err := loadLockedTradeInstances(
+			tx,
+			trade.PokemonInstanceIDUserProposed,
+			trade.PokemonInstanceIDUserAccepting,
+		)
+		if err != nil {
+			return err
+		}
+		if proposed.UserID != trade.UserIDProposed || accepting.UserID != trade.UserIDAccepting ||
+			!proposed.IsCaught || !accepting.IsCaught || proposed.Disabled || accepting.Disabled {
+			return errTradeConflict
+		}
+		var conflicts int64
+		if err = tx.Model(&Trade{}).Where(
+			"trade_id <> ? AND trade_status = ? AND (pokemon_instance_id_user_proposed IN ? OR pokemon_instance_id_user_accepting IN ?)",
+			trade.TradeID, "pending",
+			[]string{trade.PokemonInstanceIDUserProposed, trade.PokemonInstanceIDUserAccepting},
+			[]string{trade.PokemonInstanceIDUserProposed, trade.PokemonInstanceIDUserAccepting},
+		).Count(&conflicts).Error; err != nil {
+			return err
+		}
+		if conflicts > 0 {
+			return errTradeConflict
+		}
+		now := time.Now().UTC()
+		lastUpdate := now.UnixMilli()
+		trade.TradeStatus = "pending"
+		trade.TradeAcceptedDate = &now
+		trade.LastUpdate = &lastUpdate
+		if err = tx.Save(&trade).Error; err != nil {
+			return err
+		}
+		if err = tx.Model(&Trade{}).
+			Where(
+				"trade_id <> ? AND trade_status = ? AND (pokemon_instance_id_user_proposed IN ? OR pokemon_instance_id_user_accepting IN ?)",
+				trade.TradeID, "proposed",
+				[]string{trade.PokemonInstanceIDUserProposed, trade.PokemonInstanceIDUserAccepting},
+				[]string{trade.PokemonInstanceIDUserProposed, trade.PokemonInstanceIDUserAccepting},
+			).
+			Updates(map[string]interface{}{"trade_status": "deleted", "last_update": lastUpdate}).Error; err != nil {
+			return err
+		}
+		updated = trade
+		return nil
+	})
+	if err != nil {
+		return tradeError(c, err, "Could not accept trade")
+	}
+	return c.JSON(tradeEnvelope(updated))
+}
+
+func DenyTradeHandler(c fiber.Ctx) error {
+	return transitionTrade(c, "proposed", "denied", true)
+}
+
+func CancelTradeHandler(c fiber.Ctx) error {
+	return transitionTrade(c, "pending", "cancelled", false)
+}
+
+func transitionTrade(c fiber.Ctx, from, to string, accepterOnly bool) error {
+	var updated Trade
+	err := db.Transaction(func(tx *gorm.DB) error {
+		trade, err := loadTradeForParticipant(c, tx)
+		if err != nil {
+			return err
+		}
+		if accepterOnly && trade.UserIDAccepting != viewerID(c) {
+			return errTradeForbidden
+		}
+		if trade.TradeStatus != from {
+			return errTradeConflict
+		}
+		now := time.Now().UTC()
+		lastUpdate := now.UnixMilli()
+		trade.TradeStatus = to
+		trade.LastUpdate = &lastUpdate
+		if to == "cancelled" {
+			trade.TradeCancelledDate = &now
+			cancelledBy := trade.UsernameProposed
+			if viewerID(c) == trade.UserIDAccepting {
+				cancelledBy = trade.UsernameAccepting
+			}
+			trade.TradeCancelledBy = &cancelledBy
+		}
+		if err = tx.Save(&trade).Error; err != nil {
+			return err
+		}
+		updated = trade
+		return nil
+	})
+	if err != nil {
+		return tradeError(c, err, "Could not update trade")
+	}
+	return c.JSON(tradeEnvelope(updated))
+}
+
+func CompleteTradeHandler(c fiber.Ctx) error {
+	var updated Trade
+	var instances []PokemonInstance
+	err := db.Transaction(func(tx *gorm.DB) error {
+		trade, err := loadTradeForParticipant(c, tx)
+		if err != nil {
+			return err
+		}
+		if trade.TradeStatus != "pending" {
+			return errTradeConflict
+		}
+		proposed, accepting, err := loadLockedTradeInstances(
+			tx,
+			trade.PokemonInstanceIDUserProposed,
+			trade.PokemonInstanceIDUserAccepting,
+		)
+		if err != nil {
+			return err
+		}
+		if proposed.UserID != trade.UserIDProposed || accepting.UserID != trade.UserIDAccepting ||
+			!proposed.IsCaught || !accepting.IsCaught || proposed.Disabled || accepting.Disabled {
+			return errTradeConflict
+		}
+		if viewerID(c) == trade.UserIDProposed {
+			if trade.UserProposedCompletionConfirmed {
+				return errTradeConflict
+			}
+			trade.UserProposedCompletionConfirmed = true
+		} else {
+			if trade.UserAcceptingCompletionConfirmed {
+				return errTradeConflict
+			}
+			trade.UserAcceptingCompletionConfirmed = true
+		}
+		now := time.Now().UTC()
+		lastUpdate := now.UnixMilli()
+		trade.LastUpdate = &lastUpdate
+		if trade.UserProposedCompletionConfirmed && trade.UserAcceptingCompletionConfirmed {
+			trade.TradeStatus = "completed"
+			trade.TradeCompletedDate = &now
+			proposed.UserID = trade.UserIDAccepting
+			accepting.UserID = trade.UserIDProposed
+			proposed.IsCaught, proposed.IsForTrade, proposed.IsWanted = true, false, false
+			accepting.IsCaught, accepting.IsForTrade, accepting.IsWanted = true, false, false
+			proposed.LastUpdate, accepting.LastUpdate = lastUpdate, lastUpdate
+			if err = tx.Save(&proposed).Error; err != nil {
+				return err
+			}
+			if err = tx.Save(&accepting).Error; err != nil {
+				return err
+			}
+			instances = []PokemonInstance{proposed, accepting}
+		}
+		if err = tx.Save(&trade).Error; err != nil {
+			return err
+		}
+		updated = trade
+		return nil
+	})
+	if err != nil {
+		return tradeError(c, err, "Could not confirm trade completion")
+	}
+	return c.JSON(tradeEnvelope(updated, instances...))
+}
+
+func ReproposeTradeHandler(c fiber.Ctx) error {
+	var updated Trade
+	err := db.Transaction(func(tx *gorm.DB) error {
+		trade, err := loadTradeForParticipant(c, tx)
+		if err != nil {
+			return err
+		}
+		if trade.TradeStatus != "cancelled" {
+			return errTradeConflict
+		}
+		proposed, accepting, err := loadLockedTradeInstances(
+			tx,
+			trade.PokemonInstanceIDUserProposed,
+			trade.PokemonInstanceIDUserAccepting,
+		)
+		if err != nil {
+			return err
+		}
+		if proposed.UserID != trade.UserIDProposed || accepting.UserID != trade.UserIDAccepting ||
+			!proposed.IsCaught || !accepting.IsCaught || proposed.Disabled || accepting.Disabled {
+			return errTradeConflict
+		}
+		var conflicts int64
+		if err = tx.Model(&Trade{}).
+			Where(
+				"trade_id <> ? AND trade_status IN ? AND (pokemon_instance_id_user_proposed IN ? OR pokemon_instance_id_user_accepting IN ?)",
+				trade.TradeID, []string{"proposed", "pending"},
+				[]string{trade.PokemonInstanceIDUserProposed, trade.PokemonInstanceIDUserAccepting},
+				[]string{trade.PokemonInstanceIDUserProposed, trade.PokemonInstanceIDUserAccepting},
+			).Count(&conflicts).Error; err != nil {
+			return err
+		}
+		if conflicts > 0 {
+			return errTradeConflict
+		}
+		if trade.UserIDAccepting == viewerID(c) {
+			trade.UserIDProposed, trade.UserIDAccepting = trade.UserIDAccepting, trade.UserIDProposed
+			trade.UsernameProposed, trade.UsernameAccepting = trade.UsernameAccepting, trade.UsernameProposed
+			trade.PokemonInstanceIDUserProposed, trade.PokemonInstanceIDUserAccepting =
+				trade.PokemonInstanceIDUserAccepting, trade.PokemonInstanceIDUserProposed
+		}
+		now := time.Now().UTC()
+		lastUpdate := now.UnixMilli()
+		trade.TradeStatus = "proposed"
+		trade.TradeProposalDate = &now
+		trade.TradeAcceptedDate = nil
+		trade.TradeCancelledDate = nil
+		trade.TradeCancelledBy = nil
+		trade.TradeCompletedDate = nil
+		trade.UserProposedCompletionConfirmed = false
+		trade.UserAcceptingCompletionConfirmed = false
+		trade.LastUpdate = &lastUpdate
+		if err = tx.Save(&trade).Error; err != nil {
+			return err
+		}
+		updated = trade
+		return nil
+	})
+	if err != nil {
+		return tradeError(c, err, "Could not repropose trade")
+	}
+	return c.JSON(tradeEnvelope(updated))
+}
+
+func UpdateTradeSatisfactionHandler(c fiber.Ctx) error {
+	var request TradeSatisfactionRequest
+	if err := c.Bind().Body(&request); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"message": "Invalid satisfaction value"})
+	}
+	var updated Trade
+	err := db.Transaction(func(tx *gorm.DB) error {
+		trade, err := loadTradeForParticipant(c, tx)
+		if err != nil {
+			return err
+		}
+		if trade.TradeStatus != "completed" {
+			return errTradeConflict
+		}
+		value := request.Satisfied
+		if viewerID(c) == trade.UserIDProposed {
+			trade.User1TradeSatisfaction = &value
+		} else {
+			trade.User2TradeSatisfaction = &value
+		}
+		now := time.Now().UnixMilli()
+		trade.LastUpdate = &now
+		if err = tx.Save(&trade).Error; err != nil {
+			return err
+		}
+		updated = trade
+		return nil
+	})
+	if err != nil {
+		return tradeError(c, err, "Could not update satisfaction")
+	}
+	return c.JSON(tradeEnvelope(updated))
+}
+
+func DeleteTradeHandler(c fiber.Ctx) error {
+	err := db.Transaction(func(tx *gorm.DB) error {
+		trade, err := loadTradeForParticipant(c, tx)
+		if err != nil {
+			return err
+		}
+		if trade.TradeStatus != "denied" && trade.TradeStatus != "cancelled" && trade.TradeStatus != "completed" {
+			return errTradeConflict
+		}
+		return tx.Delete(&trade).Error
+	})
+	if err != nil {
+		return tradeError(c, err, "Could not delete trade")
+	}
+	return c.SendStatus(fiber.StatusNoContent)
+}
+
+func RevealTradePartnerHandler(c fiber.Ctx) error {
+	var trade Trade
+	userID := viewerID(c)
+	if err := db.Where("trade_id = ? AND (user_id_proposed = ? OR user_id_accepting = ?)",
+		c.Params("trade_id"), userID, userID).First(&trade).Error; err != nil {
+		return tradeError(c, err, "Could not load trade")
+	}
+	var partner User
+	if err := db.Where("user_id = ?", tradeOtherUserID(trade, userID)).First(&partner).Error; err != nil {
+		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"message": "Trade partner not found"})
+	}
+	profile, err := loadUserProfile(partner.UserID)
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"message": "Could not load partner privacy"})
+	}
+	response := fiber.Map{
+		"trainerCode":   nil,
+		"pokemonGoName": nil,
+		"location":      nil,
+		"coordinates":   nil,
+	}
+	relationship, _, err := relationshipForUsers(userID, partner.UserID)
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"message": "Could not validate partner relationship"})
+	}
+	if profile.ShowPokemonGoName {
+		response["pokemonGoName"] = partner.PokemonGoName
+	}
+	if profile.TrainerCodeVisibility == "public" ||
+		(profile.TrainerCodeVisibility == "friends" && relationship == relationshipFriend) {
+		response["trainerCode"] = partner.TrainerCode
+	}
+	if profile.ShowLocation {
+		response["location"] = partner.Location
+		if partner.Latitude != nil && partner.Longitude != nil {
+			response["coordinates"] = fiber.Map{
+				"latitude":  *partner.Latitude,
+				"longitude": *partner.Longitude,
+			}
+		}
+	}
+	return c.JSON(response)
+}

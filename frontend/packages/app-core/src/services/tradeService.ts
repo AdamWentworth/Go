@@ -1,48 +1,92 @@
-// services/tradeService.js
-
 import { createScopedLogger } from '@/utils/logger';
-import { buildUrl, parseJsonSafe, requestWithPolicy } from './httpClient';
-import { tradesContract } from '@shared-contracts/trades';
-import type {
-  PartnerInfo,
-  RevealPartnerInfoRequest,
-  TradeReference,
+import {
+  buildUrl,
+  parseJsonSafe,
+  requestWithPolicy,
+  toHttpError,
+} from './httpClient';
+import {
+  tradesContract,
+  type AuthoritativeTradeProposalRequest,
+  type PartnerInfo,
+  type TradeEnvelope,
+  type TradeReference,
+  type TradesEnvelope,
 } from '@shared-contracts/trades';
 
 export type { PartnerInfo } from '@shared-contracts/trades';
 
 const log = createScopedLogger('tradeService');
+const endpoint = (path: string) =>
+  buildUrl(import.meta.env.VITE_USERS_API_URL, path);
 
-/**
- * Reveal the partner's info for a given trade.
- * @param trade - The entire trade object (including trade_id, usernames, etc.)
- * @returns {Promise<PartnerInfo>} - Partner info on success
- */
-export async function revealPartnerInfo(trade: TradeReference): Promise<PartnerInfo> {
+async function tradeRequest<T>(path: string, init?: RequestInit): Promise<T> {
+  const response = await requestWithPolicy(endpoint(path), {
+    ...init,
+    headers: {
+      'Content-Type': 'application/json',
+      ...(init?.headers ?? {}),
+    },
+  });
+  const body = await parseJsonSafe<T & { message?: string }>(response);
+  if (!response.ok || !body) {
+    throw toHttpError(response.status, body);
+  }
+  return body;
+}
+
+export const fetchTrades = () =>
+  tradeRequest<TradesEnvelope>(tradesContract.endpoints.list);
+
+export const createTrade = (proposal: AuthoritativeTradeProposalRequest) =>
+  tradeRequest<TradeEnvelope>(tradesContract.endpoints.create, {
+    method: 'POST',
+    body: JSON.stringify(proposal),
+  });
+
+const command = (path: string) =>
+  tradeRequest<TradeEnvelope>(path, { method: 'POST' });
+
+export const acceptTrade = (tradeId: string) =>
+  command(tradesContract.endpoints.accept(tradeId));
+export const denyTrade = (tradeId: string) =>
+  command(tradesContract.endpoints.deny(tradeId));
+export const cancelTrade = (tradeId: string) =>
+  command(tradesContract.endpoints.cancel(tradeId));
+export const confirmTradeComplete = (tradeId: string) =>
+  command(tradesContract.endpoints.complete(tradeId));
+export const reproposeTrade = (tradeId: string) =>
+  command(tradesContract.endpoints.repropose(tradeId));
+
+export const updateTradeSatisfaction = (
+  tradeId: string,
+  satisfied: boolean,
+) =>
+  tradeRequest<TradeEnvelope>(tradesContract.endpoints.satisfaction(tradeId), {
+    method: 'PUT',
+    body: JSON.stringify({ satisfied }),
+  });
+
+export async function removeTrade(tradeId: string): Promise<void> {
+  const response = await requestWithPolicy(
+    endpoint(tradesContract.endpoints.remove(tradeId)),
+    { method: 'DELETE' },
+  );
+  if (!response.ok && response.status !== 204) {
+    throw toHttpError(response.status, await parseJsonSafe(response));
+  }
+}
+
+export async function revealPartnerInfo(
+  trade: TradeReference,
+): Promise<PartnerInfo> {
   try {
-    const payload: RevealPartnerInfoRequest = { trade };
-    const response = await requestWithPolicy(
-      buildUrl(import.meta.env.VITE_AUTH_API_URL, tradesContract.endpoints.revealPartnerInfo),
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-      },
+    if (!trade.trade_id) throw new Error('Trade ID is required');
+    return await tradeRequest<PartnerInfo>(
+      tradesContract.endpoints.revealPartnerInfo(trade.trade_id),
     );
-    const data = await parseJsonSafe<PartnerInfo>(response);
-
-    if (response.status >= 200 && response.status < 300) {
-      return data ?? {};
-    } else {
-      throw new Error('Failed to reveal partner info.');
-    }
-  } catch (error: unknown) {
-    if (error instanceof Error) {
-      log.error('[revealPartnerInfo] error:', error.message);
-      throw error;
-    } else {
-      log.error('[revealPartnerInfo] unknown error:', error);
-      throw new Error('An unexpected error occurred.');
-    }
+  } catch (error) {
+    log.error('[revealPartnerInfo] error:', error);
+    throw error;
   }
 }

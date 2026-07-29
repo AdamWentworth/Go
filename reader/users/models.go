@@ -287,18 +287,18 @@ type Trade struct {
 	TradeStatus                      string     `gorm:"column:trade_status" json:"trade_status"`
 	UserProposedCompletionConfirmed  bool       `gorm:"column:user_proposed_completion_confirmed" json:"user_proposed_completion_confirmed"`
 	UserAcceptingCompletionConfirmed bool       `gorm:"column:user_accepting_completion_confirmed" json:"user_accepting_completion_confirmed"`
-	TradeProposalDate                *time.Time `gorm:"column:trade_proposal_date"`
-	TradeAcceptedDate                *time.Time `gorm:"column:trade_accepted_date"`
-	TradeCompletedDate               *time.Time `gorm:"column:trade_completed_date"`
-	TradeCancelledDate               *time.Time `gorm:"column:trade_cancelled_date"`
+	TradeProposalDate                *time.Time `gorm:"column:trade_proposal_date" json:"trade_proposal_date"`
+	TradeAcceptedDate                *time.Time `gorm:"column:trade_accepted_date" json:"trade_accepted_date"`
+	TradeCompletedDate               *time.Time `gorm:"column:trade_completed_date" json:"trade_completed_date"`
+	TradeCancelledDate               *time.Time `gorm:"column:trade_cancelled_date" json:"trade_cancelled_date"`
 	TradeCancelledBy                 *string    `gorm:"column:trade_cancelled_by" json:"trade_cancelled_by"`
 	IsSpecialTrade                   bool       `gorm:"column:is_special_trade" json:"is_special_trade"`
 	IsRegisteredTrade                bool       `gorm:"column:is_registered_trade" json:"is_registered_trade"`
 	IsLuckyTrade                     bool       `gorm:"column:is_lucky_trade" json:"is_lucky_trade"`
 	TradeDustCost                    *int       `gorm:"column:trade_dust_cost" json:"trade_dust_cost"`
 	TradeFriendshipLevel             string     `gorm:"column:trade_friendship_level" json:"trade_friendship_level"`
-	User1TradeSatisfaction           *int       `gorm:"column:user_1_trade_satisfaction" json:"user_1_trade_satisfaction"`
-	User2TradeSatisfaction           *int       `gorm:"column:user_2_trade_satisfaction" json:"user_2_trade_satisfaction"`
+	User1TradeSatisfaction           *bool      `gorm:"column:user_1_trade_satisfaction" json:"user_1_trade_satisfaction"`
+	User2TradeSatisfaction           *bool      `gorm:"column:user_2_trade_satisfaction" json:"user_2_trade_satisfaction"`
 	TraceID                          *string    `gorm:"column:trace_id" json:"trace_id"`
 	LastUpdate                       *int64     `gorm:"column:last_update" json:"last_update"`
 }

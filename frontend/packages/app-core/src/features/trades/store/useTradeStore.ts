@@ -1,18 +1,17 @@
 import { create } from 'zustand';
 import { subscribeWithSelector } from 'zustand/middleware';
 import { createScopedLogger } from '@/utils/logger';
+import { fetchTrades } from '@/services/tradeService';
 
 import {
   POKEMON_TRADES_STORE,
   RELATED_INSTANCES_STORE,
   setTradesinDB,
   getAllFromTradesDB,
-  putBatchedTradeUpdates,
   deleteFromTradesDB,
 } from '@/db/indexedDB';
 
 import { proposeTrade as proposeTradeService } from '@/features/trades/actions/proposeTrade';
-import { useInstancesStore } from '@/features/instances/store/useInstancesStore';
 import type {
   RelatedInstanceRecord,
   TradeRecord,
@@ -63,10 +62,12 @@ export const useTradeStore = create<TradeStoreState>()(
       if (!newTradesObj) return;
 
       const mutableTrades = { ...newTradesObj };
+      const deletedTradeIds: string[] = [];
 
       for (const [tradeId, trade] of Object.entries(mutableTrades)) {
         if (trade?.trade_status === 'deleted') {
           await deleteFromTradesDB(POKEMON_TRADES_STORE, tradeId);
+          deletedTradeIds.push(tradeId);
           delete mutableTrades[tradeId];
         }
       }
@@ -80,9 +81,11 @@ export const useTradeStore = create<TradeStoreState>()(
         await setTradesinDB(POKEMON_TRADES_STORE, rowsToPersist);
       }
 
-      set((state) => ({
-        trades: { ...state.trades, ...mutableTrades },
-      }));
+      set((state) => {
+        const trades = { ...state.trades, ...mutableTrades };
+        deletedTradeIds.forEach((tradeId) => delete trades[tradeId]);
+        return { trades };
+      });
 
       return mutableTrades;
     },
@@ -180,14 +183,6 @@ export const useTradeStore = create<TradeStoreState>()(
           [canonicalInstance.instance_id]: canonicalInstance,
         });
 
-        await putBatchedTradeUpdates(tradeId, {
-          operation: 'createTrade',
-          tradeData: tradeEntry,
-        });
-
-        const { periodicUpdates } = useInstancesStore.getState();
-        periodicUpdates();
-
         return { success: true, tradeId } as const;
       } catch (error) {
         return { success: false, error: getErrorMessage(error) } as const;
@@ -224,6 +219,22 @@ export const useTradeStore = create<TradeStoreState>()(
         );
 
         set({ trades: tradesObj, relatedInstances: instancesObj });
+
+        const server = await fetchTrades();
+        const serverTrades = Object.fromEntries(
+          server.trades.map((trade) => [trade.trade_id, trade]),
+        );
+        await Promise.all(
+          Object.keys(tradesObj)
+            .filter((tradeId) => !(tradeId in serverTrades))
+            .map((tradeId) => deleteFromTradesDB(POKEMON_TRADES_STORE, tradeId)),
+        );
+        await get().setTradeData(serverTrades);
+        await get().setRelatedInstances(server.related_instances);
+        set({
+          trades: serverTrades,
+          relatedInstances: server.related_instances,
+        });
       } catch (error) {
         log.error('hydrateFromDB error:', error);
       }

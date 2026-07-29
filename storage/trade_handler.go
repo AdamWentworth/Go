@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/sirupsen/logrus"
@@ -221,6 +222,14 @@ func parseAndUpsertTrades(data map[string]interface{}) (createdTrades, updatedTr
 				Where("trade_id = ?", tradeID).First(&existingTrade).Error
 
 			if errors.Is(findErr, gorm.ErrRecordNotFound) {
+				// Only legacy browser-generated IDs are accepted through Kafka.
+				// UUID trade IDs are authoritative users-service records and must
+				// only be changed through its authenticated command API.
+				if !strings.HasPrefix(tradeID, "trade_") {
+					logrus.Warnf("Rejected non-legacy trade %s from Kafka", tradeID)
+					droppedTrades++
+					return nil
+				}
 				// If trade not found: only create if not "deleted".
 				if tradeStatus == "proposed" {
 					if err := validatePokemonAvailability(tx,
@@ -248,6 +257,11 @@ func parseAndUpsertTrades(data map[string]interface{}) (createdTrades, updatedTr
 				// Some other DB error
 				logrus.Errorf("Failed to retrieve Trade %s: %v", tradeID, findErr)
 				return findErr
+			}
+			if !strings.HasPrefix(existingTrade.TradeID, "trade_") {
+				logrus.Warnf("Rejected Kafka mutation for authoritative trade %s", tradeID)
+				droppedTrades++
+				return nil
 			}
 
 			// If incoming is "deleted", physically remove the row.

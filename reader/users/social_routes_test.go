@@ -35,6 +35,10 @@ func TestProtectedSocialRoutesExposeCanonicalAndPrefixedPaths(t *testing.T) {
 		{method: http.MethodPut, path: "/api/users/profile"},
 		{method: http.MethodGet, path: "/api/users/friends"},
 		{method: http.MethodGet, path: "/api/users/preferences"},
+		{method: http.MethodGet, path: "/api/trades"},
+		{method: http.MethodPost, path: "/api/trades/trade-1/accept"},
+		{method: http.MethodGet, path: "/api/users/trades"},
+		{method: http.MethodPost, path: "/api/users/trades/trade-1/complete-confirmation"},
 	}
 
 	for _, request := range requests {

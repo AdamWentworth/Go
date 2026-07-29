@@ -72,6 +72,16 @@ func registerProtectedSocialRoutes(app *fiber.App, prefix string, rateLimit fibe
 	app.Delete(prefix+"/friends/:user_id", verifyJWT, rateLimit, RemoveFriendHandler)
 	app.Post(prefix+"/friends/blocks", verifyJWT, rateLimit, BlockUserHandler)
 	app.Delete(prefix+"/friends/blocks/:user_id", verifyJWT, rateLimit, UnblockUserHandler)
+	app.Get(prefix+"/trades", verifyJWT, rateLimit, GetTradesHandler)
+	app.Post(prefix+"/trades", verifyJWT, rateLimit, CreateTradeHandler)
+	app.Post(prefix+"/trades/:trade_id/accept", verifyJWT, rateLimit, AcceptTradeHandler)
+	app.Post(prefix+"/trades/:trade_id/deny", verifyJWT, rateLimit, DenyTradeHandler)
+	app.Post(prefix+"/trades/:trade_id/cancel", verifyJWT, rateLimit, CancelTradeHandler)
+	app.Post(prefix+"/trades/:trade_id/complete-confirmation", verifyJWT, rateLimit, CompleteTradeHandler)
+	app.Post(prefix+"/trades/:trade_id/repropose", verifyJWT, rateLimit, ReproposeTradeHandler)
+	app.Put(prefix+"/trades/:trade_id/satisfaction", verifyJWT, rateLimit, UpdateTradeSatisfactionHandler)
+	app.Delete(prefix+"/trades/:trade_id", verifyJWT, rateLimit, DeleteTradeHandler)
+	app.Get(prefix+"/trades/:trade_id/partner", verifyJWT, rateLimit, RevealTradePartnerHandler)
 }
 
 func newApp() *fiber.App {
