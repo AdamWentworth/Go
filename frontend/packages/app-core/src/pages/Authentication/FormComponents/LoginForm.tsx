@@ -15,7 +15,6 @@ import { startFacebookAuthentication } from '@/services/authService';
 import {
   isStandalonePwa,
   prepareFacebookAuthentication,
-  getFacebookExternalHref,
 } from '@/services/authService';
 import { FaDiscord, FaFacebookF } from 'react-icons/fa';
 
@@ -43,9 +42,7 @@ const LoginForm: FC<LoginFormProps> = ({
     let active = true;
     prepareFacebookAuthentication('login')
       .then((authorizationUrl) => {
-        if (active) {
-          setFacebookAuthorizationUrl(getFacebookExternalHref(authorizationUrl));
-        }
+        if (active) setFacebookAuthorizationUrl(authorizationUrl);
       })
       .catch(() => undefined);
     return () => {

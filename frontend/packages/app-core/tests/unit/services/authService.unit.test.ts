@@ -2,7 +2,6 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import {
   loginUser,
-  getFacebookExternalHref,
   prepareFacebookAuthentication,
   refreshTokenService,
   resolveFacebookAuthorizationUrl,
@@ -149,31 +148,6 @@ describe('authService', () => {
     expect(requestUrl.searchParams.get('intent')).toBe('register');
     expect(requestUrl.searchParams.get('response_mode')).toBe('json');
     expect(requestUrl.searchParams.get('device_id')).toBe('device-123');
-  });
-
-  it('forces Android PWA Facebook authorization into Chrome with an HTTPS fallback', () => {
-    const authorizationUrl =
-      'https://www.facebook.com/dialog/oauth?client_id=123&state=signed-state';
-    const href = getFacebookExternalHref(
-      authorizationUrl,
-      'Mozilla/5.0 (Linux; Android 15; Pixel 9) AppleWebKit/537.36 Chrome/138 Mobile',
-    );
-
-    expect(href).toContain('intent://www.facebook.com/dialog/oauth?');
-    expect(href).toContain('package=com.android.chrome');
-    expect(href).toContain(
-      `S.browser_fallback_url=${encodeURIComponent(authorizationUrl)}`,
-    );
-  });
-
-  it('keeps the normal Facebook URL outside Android', () => {
-    const authorizationUrl =
-      'https://www.facebook.com/dialog/oauth?client_id=123&state=signed-state';
-
-    expect(getFacebookExternalHref(
-      authorizationUrl,
-      'Mozilla/5.0 (iPhone; CPU iPhone OS 18_5 like Mac OS X)',
-    )).toBe(authorizationUrl);
   });
 
   it('rejects an invalid Facebook direct-navigation response', async () => {

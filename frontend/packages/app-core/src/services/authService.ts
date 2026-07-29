@@ -91,19 +91,6 @@ export const prepareFacebookAuthentication = (
   return resolveFacebookAuthorizationUrl(url);
 };
 
-export const getFacebookExternalHref = (
-  authorizationUrl: string,
-  userAgent = navigator.userAgent,
-): string => {
-  if (!/Android/i.test(userAgent)) return authorizationUrl;
-
-  const url = new URL(authorizationUrl);
-  const fallbackUrl = encodeURIComponent(authorizationUrl);
-  return `intent://${url.host}${url.pathname}${url.search}`
-    + `#Intent;scheme=https;package=com.android.chrome;`
-    + `S.browser_fallback_url=${fallbackUrl};end`;
-};
-
 export const resolveFacebookAuthorizationUrl = async (url: URL): Promise<string> => {
   const response = await fetch(url.toString(), { credentials: 'include' });
   if (!response.ok) {
