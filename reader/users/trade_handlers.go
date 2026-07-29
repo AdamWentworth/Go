@@ -133,7 +133,10 @@ func tradeError(c fiber.Ctx, err error, fallback string) error {
 func GetTradesHandler(c fiber.Ctx) error {
 	userID := viewerID(c)
 	var trades []Trade
-	if err := db.Where("user_id_proposed = ? OR user_id_accepting = ?", userID, userID).
+	if err := db.Where(
+		"trade_status <> ? AND (user_id_proposed = ? OR user_id_accepting = ?)",
+		"deleted", userID, userID,
+	).
 		Order("last_update DESC").Find(&trades).Error; err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"message": "Could not load trades"})
 	}
