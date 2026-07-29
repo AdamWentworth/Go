@@ -7,6 +7,7 @@
     "packages/*"
   ],
   "scripts": {
+    "postinstall": "patch-package",
     "test": "npm run test:web && npm run test:mobile",
     "test:web": "npm --workspace apps/web run test",
     "test:browsers:web": "npm --workspace apps/web run test:browsers",
@@ -22,6 +23,7 @@
     "@testing-library/react": "^16.3.2",
     "@types/react": "19.2.10",
     "@types/react-dom": "19.2.3",
+    "patch-package": "^8.0.1",
     "react": "19.2.8",
     "react-dom": "19.2.8",
     "react-router": "8.3.0",
@@ -44,10 +46,7 @@
     },
     "js-yaml": "^4.3.0",
     "minimatch@3.1.5": {
-      "brace-expansion": "1.1.16"
-    },
-    "minimatch@9.0.9": {
-      "brace-expansion": "2.1.0"
+      "brace-expansion": "5.0.8"
     },
     "minimatch@10.2.5": {
       "brace-expansion": "5.0.8"
