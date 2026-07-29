@@ -12,7 +12,10 @@ const { hashRefreshToken } = require('../utils/refreshTokenHash');
 const sanitizeForLogging = require('../utils/sanitizeLogging');
 const crypto = require('crypto');
 const { sendPasswordResetEmail } = require('../services/passwordResetEmailService');
-const { sendEmailChangeVerification } = require('../services/emailChangeService');
+const {
+    sendEmailChangeVerification,
+    sendEmailChangedNotice
+} = require('../services/emailChangeService');
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const TRAINER_CODE_RE = /^\d{12}$/;
@@ -534,13 +537,24 @@ router.post('/email-change/confirm', async (req, res) => {
         if (await User.exists({ email: user.pendingEmail, _id: { $ne: user._id } })) {
             return res.status(409).json({ message: 'Email already exists' });
         }
-        user.email = user.pendingEmail;
+        const oldEmail = user.email;
+        const newEmail = user.pendingEmail;
+        user.email = newEmail;
         user.pendingEmail = null;
         user.emailChangeToken = null;
         user.emailChangeExpires = null;
         user.refreshToken = [];
         await user.save();
         clearAuthCookies(res);
+        try {
+            await sendEmailChangedNotice({
+                email: oldEmail,
+                username: user.username,
+                newEmail
+            });
+        } catch (emailError) {
+            logger.error(`Email change security notice failed: ${emailError.message}`);
+        }
         return res.status(200).json({
             message: 'Email updated. Please sign in again with your new email.'
         });
@@ -699,6 +713,11 @@ router.put('/update/:id', requireAuth, async (req, res) => {
         if (!updatedUser) {
             logger.error(`Update failed: User not found with ID: ${id} with status 404`);
             return res.status(404).json({ success: false, message: 'User not found' });
+        }
+        if (passwordUpdated) {
+            updatedUser.refreshToken = [];
+            await updatedUser.save({ validateModifiedOnly: true });
+            clearAuthCookies(res);
         }
 
         logger.info(`User ${updatedUser.username} updated successfully with status 200`);

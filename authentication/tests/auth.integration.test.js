@@ -37,8 +37,10 @@ jest.mock('../services/passwordResetEmailService', () => ({
 }));
 
 jest.mock('../services/emailChangeService', () => ({
-  sendEmailChangeVerification: jest.fn(async () => undefined)
+  sendEmailChangeVerification: jest.fn(async () => undefined),
+  sendEmailChangedNotice: jest.fn(async () => undefined)
 }));
+const { sendEmailChangedNotice } = require('../services/emailChangeService');
 
 jest.setTimeout(120000);
 
@@ -81,6 +83,7 @@ describe('authentication service integration', () => {
   });
 
   beforeEach(() => {
+    jest.clearAllMocks();
     const seed = Date.now().toString(36);
     validLoginId = `ci_user_${seed}`;
     validEmail = `ci_${seed}@example.invalid`;
@@ -334,6 +337,11 @@ describe('authentication service integration', () => {
         currentPassword: validPassphrase
       });
     expect(accepted.status).toBe(200);
+    expect(accepted.headers['set-cookie']).toEqual(expect.arrayContaining([
+      expect.stringMatching(/^accessToken=;/),
+      expect.stringMatching(/^refreshToken=;/)
+    ]));
+    expect((await User.findById(user._id)).refreshToken).toHaveLength(0);
   });
 
   test('email changes require proof and a one-time verification link', async () => {
@@ -375,6 +383,11 @@ describe('authentication service integration', () => {
       .send({ token: rawToken });
     expect(confirmed.status).toBe(200);
     expect((await User.findById(user._id)).email).toBe(newEmail);
+    expect(sendEmailChangedNotice).toHaveBeenCalledWith({
+      email: validEmail,
+      username: validLoginId,
+      newEmail
+    });
 
     const reused = await request(app)
       .post('/auth/email-change/confirm')

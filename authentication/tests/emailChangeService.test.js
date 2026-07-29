@@ -1,4 +1,7 @@
-const { buildEmailChangeEmail } = require('../services/emailChangeService');
+const {
+  buildEmailChangeEmail,
+  buildEmailChangedNotice
+} = require('../services/emailChangeService');
 
 describe('email change email service', () => {
   test('renders a clear verification action and safe escaped content', () => {
@@ -12,6 +15,21 @@ describe('email change email service', () => {
     expect(content.text).toContain('new@example.com');
     expect(content.text).toContain('expires in 30 minutes');
     expect(content.html).toContain('Confirm new email');
+    expect(content.html).toContain('&lt;Adam&gt;');
+    expect(content.html).not.toContain('<Adam>');
+  });
+
+  test('renders a clear security notice for the previous email address', () => {
+    const content = buildEmailChangedNotice({
+      username: '<Adam>',
+      oldEmail: 'old@example.com',
+      newEmail: 'new@example.com'
+    });
+
+    expect(content.subject).toContain('email was changed');
+    expect(content.text).toContain('old@example.com');
+    expect(content.text).toContain('new@example.com');
+    expect(content.text).toContain('If you did not make it');
     expect(content.html).toContain('&lt;Adam&gt;');
     expect(content.html).not.toContain('<Adam>');
   });
