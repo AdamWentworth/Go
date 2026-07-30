@@ -24,6 +24,7 @@ import { getDeviceId }  from '../utils/deviceID';
 import { createScopedLogger } from '@/utils/logger';
 import { buildUrl } from '@/services/httpClient';
 import { eventsContract } from '@shared-contracts/events';
+import { queryClient, socialQueryKeys } from '@/services/queryClient';
 import type {
   IncomingUpdateEnvelope,
   SseQueryParams,
@@ -91,6 +92,17 @@ export const EventsProvider: React.FC<EventsProviderProps> = ({ children }) => {
       if (data.affectedInstances) {
         void applyAuthoritativeInstanceChanges(data.affectedInstances);
         updateTimestamp(new Date());
+      }
+      for (const invalidation of data.invalidations ?? []) {
+        if (invalidation.type === 'friends') {
+          void queryClient.invalidateQueries({ queryKey: socialQueryKeys.friends });
+        } else if (invalidation.type === 'preferences') {
+          void queryClient.invalidateQueries({ queryKey: socialQueryKeys.preferences });
+        } else if (invalidation.username) {
+          void queryClient.invalidateQueries({
+            queryKey: socialQueryKeys.profile(invalidation.username),
+          });
+        }
       }
     },
     [applyAuthoritativeInstanceChanges, setInstances, updateTimestamp, updateTradeData],

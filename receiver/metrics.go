@@ -31,12 +31,21 @@ var (
 		},
 		[]string{"method", "route", "status"},
 	)
+
+	syncBatchesTotal = prometheus.NewCounterVec(
+		prometheus.CounterOpts{
+			Name: "receiver_sync_batches_total",
+			Help: "Pokémon synchronization batches by receiver outcome.",
+		},
+		[]string{"result"},
+	)
 )
 
 func registerMetrics() {
 	metricsOnce.Do(func() {
 		tryRegister(httpRequestsTotal)
 		tryRegister(httpRequestDurationSeconds)
+		tryRegister(syncBatchesTotal)
 	})
 }
 

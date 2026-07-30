@@ -112,11 +112,13 @@ func parseAndUpsertPokemon(
 			lookup := DB.Where("instance_id = ?", instanceID).First(&existing)
 			if lookup.Error == nil {
 				if existing.UserID != userID {
+					instanceMutationsTotal.WithLabelValues("unauthorized").Inc()
 					logrus.Warnf("Unauthorized delete attempt by user %s for instance %s owned by %s",
 						userID, instanceID, existing.UserID)
 					continue
 				}
 				if !shouldApplyInstanceMutation(existing.LastUpdate, msgLastUpdate) {
+					instanceMutationsTotal.WithLabelValues("stale").Inc()
 					logrus.Infof("Ignored older or same deletion for instance %s", instanceID)
 					continue
 				}
@@ -137,6 +139,7 @@ func parseAndUpsertPokemon(
 			if errDel := deleteResult.Error; errDel != nil {
 				logrus.Warnf("Failed to delete instance_id %s: %v", instanceID, errDel)
 			} else if deleteResult.RowsAffected == 1 {
+				instanceMutationsTotal.WithLabelValues("deleted").Inc()
 				deletedCount++
 				addAffectedVariant(variantForRegistration)
 				if errRel := cleanupInstanceTags(DB, instanceID); errRel != nil {
@@ -159,11 +162,13 @@ func parseAndUpsertPokemon(
 		msgLastUpdate := int64(safeFloat(pm["last_update"], 0))
 		if tx.Error == nil {
 			if existingInstance.UserID != userID {
+				instanceMutationsTotal.WithLabelValues("unauthorized").Inc()
 				logrus.Warnf("Unauthorized attempt by user %s to modify instance %s owned by %s",
 					userID, instanceID, existingInstance.UserID)
 				continue
 			}
 			if !shouldApplyInstanceMutation(existingInstance.LastUpdate, msgLastUpdate) {
+				instanceMutationsTotal.WithLabelValues("stale").Inc()
 				logrus.Infof("Ignored older or same update for instance %s", instanceID)
 				continue
 			}
@@ -334,6 +339,7 @@ func parseAndUpsertPokemon(
 				continue
 			}
 			createdCount++
+			instanceMutationsTotal.WithLabelValues("created").Inc()
 			addAffectedVariant(variantForRegistration)
 		} else if tx.Error == nil {
 			// UPDATE using map to include zero values
@@ -342,6 +348,7 @@ func parseAndUpsertPokemon(
 				continue
 			}
 			updatedCount++
+			instanceMutationsTotal.WithLabelValues("updated").Inc()
 			addAffectedVariant(existingVariantID)
 			addAffectedVariant(variantForRegistration)
 		}

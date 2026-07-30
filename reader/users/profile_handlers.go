@@ -364,19 +364,38 @@ func UpdateProfileHandler(c fiber.Ctx) error {
 		}
 	}
 
-	if len(updates) > 0 {
-		if err := db.Model(&User{}).Where("user_id = ?", userID).Updates(updates).Error; err != nil {
-			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"message": "Could not save profile"})
+	if err := db.Transaction(func(tx *gorm.DB) error {
+		if len(updates) > 0 {
+			if err := tx.Model(&User{}).Where("user_id = ?", userID).Updates(updates).Error; err != nil {
+				return err
+			}
 		}
-	}
-	if request.TrainerTitles != nil {
-		profile := defaultUserProfile(userID)
-		profile.TrainerTitles = trainerTitles
-		if err := db.Where("user_id = ?", userID).
-			Assign(map[string]interface{}{"trainer_titles": trainerTitles}).
-			FirstOrCreate(&profile).Error; err != nil {
-			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"message": "Could not save trainer titles"})
+		if request.TrainerTitles != nil {
+			profile := defaultUserProfile(userID)
+			profile.TrainerTitles = trainerTitles
+			if err := tx.Where("user_id = ?", userID).
+				Assign(map[string]interface{}{"trainer_titles": trainerTitles}).
+				FirstOrCreate(&profile).Error; err != nil {
+				return err
+			}
 		}
+		var user User
+		if err := tx.Select("user_id", "username").Where("user_id = ?", userID).First(&user).Error; err != nil {
+			return err
+		}
+		recipients, err := profileEventRecipients(tx, userID)
+		if err != nil {
+			return err
+		}
+		return enqueueSocialInvalidation(
+			tx, c, "profile", userID, "profile.updated", recipients,
+			[]ClientInvalidation{
+				{Type: "profile", Username: user.Username},
+				{Type: "preferences"},
+			},
+		)
+	}); err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"message": "Could not save profile"})
 	}
 	return c.JSON(fiber.Map{"success": true})
 }
@@ -425,9 +444,30 @@ func UpdatePreferencesHandler(c fiber.Ctx) error {
 	profile.TrainerCodeVisibility = request.TrainerCodeVisibility
 	profile.ShowLocation = request.ShowLocation
 	profile.ShowPokemonGoName = request.ShowPokemonGoName
-	if err := db.Where("user_id = ?", profile.UserID).
-		Assign(profile).
-		FirstOrCreate(&profile).Error; err != nil {
+	if err := db.Transaction(func(tx *gorm.DB) error {
+		if err := tx.Where("user_id = ?", profile.UserID).
+			Assign(profile).
+			FirstOrCreate(&profile).Error; err != nil {
+			return err
+		}
+		var user User
+		if err := tx.Select("user_id", "username").Where("user_id = ?", profile.UserID).
+			First(&user).Error; err != nil {
+			return err
+		}
+		recipients, err := profileEventRecipients(tx, profile.UserID)
+		if err != nil {
+			return err
+		}
+		return enqueueSocialInvalidation(
+			tx, c, "profile", profile.UserID, "profile.preferences_updated", recipients,
+			[]ClientInvalidation{
+				{Type: "profile", Username: user.Username},
+				{Type: "preferences"},
+				{Type: "friends"},
+			},
+		)
+	}); err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"message": "Could not save settings"})
 	}
 	return c.JSON(profile)

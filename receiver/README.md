@@ -136,6 +136,11 @@ classDiagram
 - `GET /readyz`
 - `GET /metrics`
 
+The metrics endpoint includes
+`receiver_sync_batches_total{result="accepted|invalid|oversized|kafka_failed"}`
+so ingress rejection and Kafka availability are visible independently of HTTP
+request totals.
+
 ## 🔐 Authentication
 
 The service validates `accessToken` cookie and requires:

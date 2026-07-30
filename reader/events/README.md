@@ -40,6 +40,9 @@ It:
 | `events_sse_broadcasts_total{result="sent"}` | Updates delivered to another connected device |
 | `events_sse_broadcasts_total{result="no_recipient"}` | Valid updates with no other session connected |
 | `events_sse_broadcasts_total{result="dropped"}` | Updates not queued because a client stopped consuming |
+| `events_outbox_dispatch_total{result}` | Outbox rows processed, rejected, or lost during claiming/marking |
+| `events_outbox_pending` | Committed rows still awaiting dispatch |
+| `events_outbox_oldest_pending_age_seconds` | Age of the oldest pending row; the primary delivery-lag signal |
 
 The originating `device_id` is intentionally excluded from each broadcast because that
 session already applied its canonical HTTP response. Other devices belonging to the
@@ -91,7 +94,7 @@ sequenceDiagram
   E->>D: Query Pokémon deltas as needed
   E-->>C: SSE data event (excluding same device_id)
 
-  U->>D: Commit trade command + outbox event atomically
+  U->>D: Commit trade/social command + outbox event atomically
   E->>D: Poll unprocessed outbox events
   E-->>C: Canonical trade event for both participants
   E->>D: Mark outbox event processed

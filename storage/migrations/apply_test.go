@@ -39,6 +39,9 @@ func TestEmbeddedMigrationsIncludeSocialProfileSchema(t *testing.T) {
 	if !slices.Contains(names, "0005_processed_sync_batches.sql") {
 		t.Fatalf("processed sync batches migration missing from embedded files: %#v", names)
 	}
+	if !slices.Contains(names, "0006_social_pagination_indexes.sql") {
+		t.Fatalf("social pagination index migration missing from embedded files: %#v", names)
+	}
 }
 
 func TestWithMultiStatementsPreservesExistingQuery(t *testing.T) {

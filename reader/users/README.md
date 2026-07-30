@@ -25,6 +25,9 @@ profile, social, and trade commands write directly through this service because
 callers require immediate authorization, conflict, and transaction results.
 The events service dispatches committed outbox rows over SSE; trade state never
 depends on live delivery, and reconnect reads remain authoritative.
+Profile, privacy, friendship, and block changes use that same transactional
+outbox. Other devices and affected friends invalidate their short-lived
+TanStack Query cache and refetch canonical state.
 
 ## Trade command routes
 
@@ -43,6 +46,13 @@ Authenticated routes are available under both `/api` and the nginx-compatible
 
 The JWT determines the acting user. Clients cannot choose proposer identity,
 status, timestamps, confirmations, or Pokémon ownership.
+
+`GET /trades` and `GET /friends` remain backward compatible when called without
+pagination parameters. New callers may pass `limit=1..100` and follow the opaque
+`next_cursor` value using `cursor=<value>`. Cursors are keyset-based rather than
+offset-based, so concurrent inserts do not shift already-read pages. Storage
+migration `0006_social_pagination_indexes.sql` supplies the participant/time
+indexes used by these reads.
 
 ## 🏗️ Service Topology (Mermaid)
 

@@ -21,10 +21,16 @@ type FriendSummary struct {
 }
 
 type FriendsResponse struct {
-	Friends  []FriendSummary `json:"friends"`
-	Incoming []FriendSummary `json:"incoming"`
-	Outgoing []FriendSummary `json:"outgoing"`
-	Blocked  []FriendSummary `json:"blocked"`
+	Friends    []FriendSummary `json:"friends"`
+	Incoming   []FriendSummary `json:"incoming"`
+	Outgoing   []FriendSummary `json:"outgoing"`
+	Blocked    []FriendSummary `json:"blocked"`
+	NextCursor string          `json:"next_cursor,omitempty"`
+}
+
+type friendshipCursor struct {
+	UpdatedAt    time.Time `json:"updated_at"`
+	FriendshipID string    `json:"friendship_id"`
 }
 
 func friendSummary(user User, profile UserProfile, friendshipID, direction string) FriendSummary {
@@ -41,11 +47,40 @@ func friendSummary(user User, profile UserProfile, friendshipID, direction strin
 
 func GetFriendsHandler(c fiber.Ctx) error {
 	userID := viewerID(c)
+	limit, paginated, err := requestedPageSize(c)
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"message": err.Error()})
+	}
 	var friendships []Friendship
-	if err := db.Where("user_id_low = ? OR user_id_high = ?", userID, userID).
-		Order("updated_at DESC").
-		Find(&friendships).Error; err != nil {
+	query := db.Where("user_id_low = ? OR user_id_high = ?", userID, userID).
+		Order("updated_at DESC, friendship_id DESC")
+	if rawCursor := c.Query("cursor"); rawCursor != "" {
+		if !paginated {
+			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"message": "cursor requires limit"})
+		}
+		var cursor friendshipCursor
+		if decodeCursor(rawCursor, &cursor) != nil || cursor.UpdatedAt.IsZero() ||
+			cursor.FriendshipID == "" {
+			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"message": "Invalid cursor"})
+		}
+		query = query.Where(
+			"(updated_at < ?) OR (updated_at = ? AND friendship_id < ?)",
+			cursor.UpdatedAt, cursor.UpdatedAt, cursor.FriendshipID,
+		)
+	}
+	if paginated {
+		query = query.Limit(limit + 1)
+	}
+	if err := query.Find(&friendships).Error; err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"message": "Could not load friends"})
+	}
+	nextCursor := ""
+	if paginated && len(friendships) > limit {
+		friendships = friendships[:limit]
+		last := friendships[len(friendships)-1]
+		nextCursor = encodeCursor(friendshipCursor{
+			UpdatedAt: last.UpdatedAt, FriendshipID: last.FriendshipID,
+		})
 	}
 	var blocks []UserBlock
 	if err := db.Where("blocker_user_id = ?", userID).Find(&blocks).Error; err != nil {
@@ -92,7 +127,7 @@ func GetFriendsHandler(c fiber.Ctx) error {
 
 	response := FriendsResponse{
 		Friends: []FriendSummary{}, Incoming: []FriendSummary{},
-		Outgoing: []FriendSummary{}, Blocked: []FriendSummary{},
+		Outgoing: []FriendSummary{}, Blocked: []FriendSummary{}, NextCursor: nextCursor,
 	}
 	for _, friendship := range friendships {
 		otherID := friendship.UserIDLow
@@ -177,7 +212,19 @@ func CreateFriendRequestHandler(c fiber.Ctx) error {
 		FriendshipID: uuid.NewString(), UserIDLow: low, UserIDHigh: high,
 		RequestedBy: requesterID, Status: "pending",
 	}
-	if err := db.Create(&friendship).Error; err != nil {
+	if err := db.Transaction(func(tx *gorm.DB) error {
+		if err := tx.Create(&friendship).Error; err != nil {
+			return err
+		}
+		usernames, err := usernamesForUsers(tx, requesterID, target.UserID)
+		if err != nil {
+			return err
+		}
+		return enqueueSocialInvalidation(
+			tx, c, "friendship", friendship.FriendshipID, "friendship.requested",
+			[]string{requesterID, target.UserID}, friendshipInvalidations(usernames...),
+		)
+	}); err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"message": "Could not send friend request"})
 	}
 	return c.Status(fiber.StatusCreated).JSON(friendship)
@@ -194,9 +241,21 @@ func AcceptFriendRequestHandler(c fiber.Ctx) error {
 		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{"message": "This request is not yours to accept"})
 	}
 	now := time.Now().UTC()
-	if err := db.Model(&friendship).Updates(map[string]interface{}{
-		"status": "accepted", "accepted_at": now,
-	}).Error; err != nil {
+	if err := db.Transaction(func(tx *gorm.DB) error {
+		if err := tx.Model(&friendship).Updates(map[string]interface{}{
+			"status": "accepted", "accepted_at": now,
+		}).Error; err != nil {
+			return err
+		}
+		usernames, err := usernamesForUsers(tx, friendship.UserIDLow, friendship.UserIDHigh)
+		if err != nil {
+			return err
+		}
+		return enqueueSocialInvalidation(
+			tx, c, "friendship", friendship.FriendshipID, "friendship.accepted",
+			[]string{friendship.UserIDLow, friendship.UserIDHigh}, friendshipInvalidations(usernames...),
+		)
+	}); err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"message": "Could not accept friend request"})
 	}
 	return c.JSON(fiber.Map{"success": true})
@@ -204,14 +263,30 @@ func AcceptFriendRequestHandler(c fiber.Ctx) error {
 
 func DeleteFriendRequestHandler(c fiber.Ctx) error {
 	userID := viewerID(c)
-	result := db.Where(
-		"friendship_id = ? AND status = ? AND (user_id_low = ? OR user_id_high = ?)",
-		c.Params("friendship_id"), "pending", userID, userID,
-	).Delete(&Friendship{})
-	if result.Error != nil {
+	var friendship Friendship
+	err := db.Transaction(func(tx *gorm.DB) error {
+		if err := tx.Where(
+			"friendship_id = ? AND status = ? AND (user_id_low = ? OR user_id_high = ?)",
+			c.Params("friendship_id"), "pending", userID, userID,
+		).First(&friendship).Error; err != nil {
+			return err
+		}
+		if err := tx.Delete(&friendship).Error; err != nil {
+			return err
+		}
+		usernames, err := usernamesForUsers(tx, friendship.UserIDLow, friendship.UserIDHigh)
+		if err != nil {
+			return err
+		}
+		return enqueueSocialInvalidation(
+			tx, c, "friendship", friendship.FriendshipID, "friendship.request_removed",
+			[]string{friendship.UserIDLow, friendship.UserIDHigh}, friendshipInvalidations(usernames...),
+		)
+	})
+	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"message": "Could not remove friend request"})
 	}
-	if result.RowsAffected == 0 {
+	if errors.Is(err, gorm.ErrRecordNotFound) {
 		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"message": "Friend request not found"})
 	}
 	return c.SendStatus(fiber.StatusNoContent)
@@ -219,13 +294,30 @@ func DeleteFriendRequestHandler(c fiber.Ctx) error {
 
 func RemoveFriendHandler(c fiber.Ctx) error {
 	userID := viewerID(c)
-	low, high := canonicalFriendPair(userID, c.Params("user_id"))
-	result := db.Where("user_id_low = ? AND user_id_high = ? AND status = ?", low, high, "accepted").
-		Delete(&Friendship{})
-	if result.Error != nil {
+	otherID := c.Params("user_id")
+	low, high := canonicalFriendPair(userID, otherID)
+	var friendship Friendship
+	err := db.Transaction(func(tx *gorm.DB) error {
+		if err := tx.Where("user_id_low = ? AND user_id_high = ? AND status = ?", low, high, "accepted").
+			First(&friendship).Error; err != nil {
+			return err
+		}
+		if err := tx.Delete(&friendship).Error; err != nil {
+			return err
+		}
+		usernames, err := usernamesForUsers(tx, userID, otherID)
+		if err != nil {
+			return err
+		}
+		return enqueueSocialInvalidation(
+			tx, c, "friendship", friendship.FriendshipID, "friendship.removed",
+			[]string{userID, otherID}, friendshipInvalidations(usernames...),
+		)
+	})
+	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"message": "Could not remove friend"})
 	}
-	if result.RowsAffected == 0 {
+	if errors.Is(err, gorm.ErrRecordNotFound) {
 		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"message": "Friend not found"})
 	}
 	return c.SendStatus(fiber.StatusNoContent)
@@ -254,7 +346,14 @@ func BlockUserHandler(c fiber.Ctx) error {
 			FirstOrCreate(&block).Error; err != nil {
 			return err
 		}
-		return nil
+		usernames, err := usernamesForUsers(tx, userID, target.UserID)
+		if err != nil {
+			return err
+		}
+		return enqueueSocialInvalidation(
+			tx, c, "block", userID+":"+target.UserID, "user.blocked",
+			[]string{userID, target.UserID}, friendshipInvalidations(usernames...),
+		)
 	}); err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"message": "Could not block trainer"})
 	}
@@ -262,9 +361,22 @@ func BlockUserHandler(c fiber.Ctx) error {
 }
 
 func UnblockUserHandler(c fiber.Ctx) error {
-	result := db.Where("blocker_user_id = ? AND blocked_user_id = ?", viewerID(c), c.Params("user_id")).
-		Delete(&UserBlock{})
-	if result.Error != nil {
+	userID := viewerID(c)
+	otherID := c.Params("user_id")
+	if err := db.Transaction(func(tx *gorm.DB) error {
+		if err := tx.Where("blocker_user_id = ? AND blocked_user_id = ?", userID, otherID).
+			Delete(&UserBlock{}).Error; err != nil {
+			return err
+		}
+		usernames, err := usernamesForUsers(tx, userID, otherID)
+		if err != nil {
+			return err
+		}
+		return enqueueSocialInvalidation(
+			tx, c, "block", userID+":"+otherID, "user.unblocked",
+			[]string{userID, otherID}, friendshipInvalidations(usernames...),
+		)
+	}); err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"message": "Could not unblock trainer"})
 	}
 	return c.SendStatus(fiber.StatusNoContent)

@@ -71,10 +71,12 @@ func handleBatchedUpdates(c fiber.Ctx) error {
 		requestData.PokemonUpdates = []any{}
 	}
 	if requestData.SyncBatchID != "" && !syncBatchIDPattern.MatchString(requestData.SyncBatchID) {
+		syncBatchesTotal.WithLabelValues("invalid").Inc()
 		return c.Status(fiber.StatusBadRequest).
 			JSON(fiber.Map{"message": "Invalid sync_batch_id"})
 	}
 	if len(requestData.PokemonUpdates) > maxUpdatesPerRequest {
+		syncBatchesTotal.WithLabelValues("oversized").Inc()
 		logger.WithFields(map[string]interface{}{
 			"trace_id": traceID,
 			"user_id":  userID,
@@ -107,6 +109,7 @@ func handleBatchedUpdates(c fiber.Ctx) error {
 	// Produce to Kafka
 	err = kafkaProducerFunc(message)
 	if err != nil {
+		syncBatchesTotal.WithLabelValues("kafka_failed").Inc()
 		logger.WithFields(map[string]interface{}{
 			"trace_id": traceID,
 			"user_id":  userID,
@@ -127,6 +130,7 @@ func handleBatchedUpdates(c fiber.Ctx) error {
 		"User %s sent %d Pokemon updates to Kafka",
 		username, len(requestData.PokemonUpdates),
 	)
+	syncBatchesTotal.WithLabelValues("accepted").Inc()
 
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{"message": "Batched updates successfully processed"})
 }

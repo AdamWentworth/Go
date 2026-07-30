@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bufio"
 	"context"
 	"encoding/json"
 	"errors"
@@ -61,6 +62,51 @@ var (
 			Help: "Kafka consumer readiness (1=ready, 0=not ready).",
 		},
 	)
+
+	syncBatchesTotal = prometheus.NewCounterVec(
+		prometheus.CounterOpts{
+			Name: "storage_sync_batches_total",
+			Help: "Pokémon synchronization batches by outcome.",
+		},
+		[]string{"result"},
+	)
+
+	instanceMutationsTotal = prometheus.NewCounterVec(
+		prometheus.CounterOpts{
+			Name: "storage_instance_mutations_total",
+			Help: "Pokémon instance mutations by outcome.",
+		},
+		[]string{"result"},
+	)
+
+	kafkaLastSuccessUnixtime = prometheus.NewGauge(
+		prometheus.GaugeOpts{
+			Name: "storage_kafka_last_success_unixtime",
+			Help: "Unix timestamp of the last successfully processed Kafka message.",
+		},
+	)
+
+	failedMessagesPending = prometheus.NewGaugeFunc(
+		prometheus.GaugeOpts{
+			Name: "storage_failed_messages_pending",
+			Help: "Number of poison messages currently retained for reprocessing.",
+		},
+		func() float64 {
+			file, err := os.Open(failedMessagesFile)
+			if err != nil {
+				return 0
+			}
+			defer file.Close()
+			count := 0
+			scanner := bufio.NewScanner(file)
+			for scanner.Scan() {
+				if strings.TrimSpace(scanner.Text()) != "" {
+					count++
+				}
+			}
+			return float64(count)
+		},
+	)
 )
 
 func registerObservabilityMetrics() {
@@ -70,6 +116,10 @@ func registerObservabilityMetrics() {
 		registerCollector(kafkaMessagesTotal)
 		registerCollector(kafkaMessageDurationSeconds)
 		registerCollector(kafkaConsumerReady)
+		registerCollector(syncBatchesTotal)
+		registerCollector(instanceMutationsTotal)
+		registerCollector(kafkaLastSuccessUnixtime)
+		registerCollector(failedMessagesPending)
 		syncConsumerReadyGauge()
 	})
 }
@@ -101,6 +151,9 @@ func observeKafkaMessage(result string, dur time.Duration) {
 	}
 	kafkaMessagesTotal.WithLabelValues(result).Inc()
 	kafkaMessageDurationSeconds.WithLabelValues(result).Observe(dur.Seconds())
+	if result == "processed" {
+		kafkaLastSuccessUnixtime.SetToCurrentTime()
+	}
 }
 
 func startObservabilityServer(ctx context.Context) {

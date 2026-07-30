@@ -54,6 +54,28 @@ var (
 		},
 		[]string{"result"},
 	)
+
+	outboxDispatchTotal = prometheus.NewCounterVec(
+		prometheus.CounterOpts{
+			Name: "events_outbox_dispatch_total",
+			Help: "Application outbox dispatch attempts by result.",
+		},
+		[]string{"result"},
+	)
+
+	outboxPending = prometheus.NewGauge(
+		prometheus.GaugeOpts{
+			Name: "events_outbox_pending",
+			Help: "Number of unprocessed application outbox events.",
+		},
+	)
+
+	outboxOldestPendingAgeSeconds = prometheus.NewGauge(
+		prometheus.GaugeOpts{
+			Name: "events_outbox_oldest_pending_age_seconds",
+			Help: "Age in seconds of the oldest unprocessed application outbox event.",
+		},
+	)
 )
 
 func registerMetrics() {
@@ -63,6 +85,9 @@ func registerMetrics() {
 		tryRegister(sseActiveClients)
 		tryRegister(sseBroadcastsTotal)
 		tryRegister(kafkaMessagesTotal)
+		tryRegister(outboxDispatchTotal)
+		tryRegister(outboxPending)
+		tryRegister(outboxOldestPendingAgeSeconds)
 	})
 }
 

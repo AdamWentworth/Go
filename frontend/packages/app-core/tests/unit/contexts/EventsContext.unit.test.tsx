@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { EventsProvider } from '@/contexts/EventsContext';
 import { fetchUpdates } from '@/services/sseService';
+import { queryClient, socialQueryKeys } from '@/services/queryClient';
 import { useSessionStore } from '@/stores/useSessionStore';
 
 const mocks = vi.hoisted(() => ({
@@ -158,5 +159,36 @@ describe('EventsContext', () => {
     expect(mocks.setInstances).toHaveBeenCalledWith(pokemon);
     expect(mocks.updateTradeData).toHaveBeenCalledWith(trade, relatedInstance);
     expect(mocks.applyAuthoritativeInstanceChanges).toHaveBeenCalledWith(affectedInstances);
+  });
+
+  it('invalidates live social data identified by an outbox event', async () => {
+    const invalidate = vi.spyOn(queryClient, 'invalidateQueries').mockResolvedValue();
+    render(
+      <EventsProvider>
+        <div>ready</div>
+      </EventsProvider>,
+    );
+
+    await waitFor(() => expect(EventSourceMock.instances).toHaveLength(1));
+
+    act(() => {
+      EventSourceMock.instances[0].onmessage?.(
+        new MessageEvent('message', {
+          data: JSON.stringify({
+            invalidations: [
+              { type: 'friends' },
+              { type: 'preferences' },
+              { type: 'profile', username: 'OtherTrainer' },
+            ],
+          }),
+        }),
+      );
+    });
+
+    expect(invalidate).toHaveBeenCalledWith({ queryKey: socialQueryKeys.friends });
+    expect(invalidate).toHaveBeenCalledWith({ queryKey: socialQueryKeys.preferences });
+    expect(invalidate).toHaveBeenCalledWith({
+      queryKey: socialQueryKeys.profile('OtherTrainer'),
+    });
   });
 });

@@ -41,6 +41,12 @@ type TradeEnvelope struct {
 type TradesEnvelope struct {
 	Trades           []Trade                    `json:"trades"`
 	RelatedInstances map[string]PokemonInstance `json:"related_instances"`
+	NextCursor       string                     `json:"next_cursor,omitempty"`
+}
+
+type tradeCursor struct {
+	LastUpdate int64  `json:"last_update"`
+	TradeID    string `json:"trade_id"`
 }
 
 func tradeParticipant(trade Trade, userID string) bool {
@@ -132,13 +138,43 @@ func tradeError(c fiber.Ctx, err error, fallback string) error {
 
 func GetTradesHandler(c fiber.Ctx) error {
 	userID := viewerID(c)
+	limit, paginated, err := requestedPageSize(c)
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"message": err.Error()})
+	}
 	var trades []Trade
-	if err := db.Where(
+	query := db.Where(
 		"trade_status <> ? AND (user_id_proposed = ? OR user_id_accepting = ?)",
 		"deleted", userID, userID,
-	).
-		Order("last_update DESC").Find(&trades).Error; err != nil {
+	).Order("COALESCE(last_update, 0) DESC, trade_id DESC")
+	if rawCursor := c.Query("cursor"); rawCursor != "" {
+		if !paginated {
+			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"message": "cursor requires limit"})
+		}
+		var cursor tradeCursor
+		if decodeCursor(rawCursor, &cursor) != nil || cursor.TradeID == "" {
+			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"message": "Invalid cursor"})
+		}
+		query = query.Where(
+			"(COALESCE(last_update, 0) < ?) OR (COALESCE(last_update, 0) = ? AND trade_id < ?)",
+			cursor.LastUpdate, cursor.LastUpdate, cursor.TradeID,
+		)
+	}
+	if paginated {
+		query = query.Limit(limit + 1)
+	}
+	if err := query.Find(&trades).Error; err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"message": "Could not load trades"})
+	}
+	nextCursor := ""
+	if paginated && len(trades) > limit {
+		trades = trades[:limit]
+		last := trades[len(trades)-1]
+		var lastUpdate int64
+		if last.LastUpdate != nil {
+			lastUpdate = *last.LastUpdate
+		}
+		nextCursor = encodeCursor(tradeCursor{LastUpdate: lastUpdate, TradeID: last.TradeID})
 	}
 
 	instanceIDs := make([]string, 0, len(trades)*2)
@@ -158,7 +194,9 @@ func GetTradesHandler(c fiber.Ctx) error {
 	for _, instance := range instances {
 		related[instance.InstanceID] = instance
 	}
-	return c.JSON(TradesEnvelope{Trades: trades, RelatedInstances: related})
+	return c.JSON(TradesEnvelope{
+		Trades: trades, RelatedInstances: related, NextCursor: nextCursor,
+	})
 }
 
 func CreateTradeHandler(c fiber.Ctx) error {

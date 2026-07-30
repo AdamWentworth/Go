@@ -274,9 +274,15 @@ const pokemonManifestFixture = {
 };
 
 async function fulfillJson(route: Route, body: unknown, status = 200) {
+  const requestOrigin = route.request().headers()['origin'];
   await route.fulfill({
     status,
     contentType: 'application/json',
+    headers: {
+      'access-control-allow-origin': requestOrigin ?? '*',
+      'access-control-allow-credentials': 'true',
+      vary: 'Origin',
+    },
     body: JSON.stringify(body),
   });
 }

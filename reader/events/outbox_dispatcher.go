@@ -61,11 +61,43 @@ func outboxBroadcastData(event ApplicationOutbox) (map[string]bool, string, []by
 func startOutboxDispatcher() {
 	go func() {
 		ticker := time.NewTicker(outboxPollInterval())
+		metricsTicker := time.NewTicker(5 * time.Second)
 		defer ticker.Stop()
-		for range ticker.C {
-			dispatchOutboxBatch()
+		defer metricsTicker.Stop()
+		refreshOutboxMetrics()
+		for {
+			select {
+			case <-ticker.C:
+				dispatchOutboxBatch()
+			case <-metricsTicker.C:
+				refreshOutboxMetrics()
+			}
 		}
 	}()
+}
+
+func refreshOutboxMetrics() {
+	type pendingSummary struct {
+		Count  int64
+		Oldest *time.Time
+	}
+	var summary pendingSummary
+	if err := db.Model(&ApplicationOutbox{}).
+		Select("COUNT(*) AS count, MIN(created_at) AS oldest").
+		Where("processed_at IS NULL").
+		Scan(&summary).Error; err != nil {
+		logrus.Errorf("Failed to refresh outbox metrics: %v", err)
+		return
+	}
+	outboxPending.Set(float64(summary.Count))
+	age := 0.0
+	if summary.Oldest != nil {
+		age = time.Since(*summary.Oldest).Seconds()
+		if age < 0 {
+			age = 0
+		}
+	}
+	outboxOldestPendingAgeSeconds.Set(age)
 }
 
 func dispatchOutboxBatch() {
@@ -85,6 +117,7 @@ func dispatchOutboxBatch() {
 				"next_attempt_at": claimUntil,
 			})
 		if result.Error != nil || result.RowsAffected != 1 {
+			outboxDispatchTotal.WithLabelValues("claim_missed").Inc()
 			continue
 		}
 
@@ -97,6 +130,7 @@ func dispatchOutboxBatch() {
 					"next_attempt_at": time.Now().UTC().Add(time.Minute),
 				}).Error
 			logrus.Errorf("Invalid outbox event %s: %v", candidate.EventID, err)
+			outboxDispatchTotal.WithLabelValues("invalid").Inc()
 			continue
 		}
 		sent, dropped := broadcastToClients(userIDs, sourceDeviceID, payload)
@@ -115,6 +149,9 @@ func dispatchOutboxBatch() {
 				"last_error":   nil,
 			}).Error; err != nil {
 			logrus.Errorf("Failed to mark outbox event %s processed: %v", candidate.EventID, err)
+			outboxDispatchTotal.WithLabelValues("mark_failed").Inc()
+		} else {
+			outboxDispatchTotal.WithLabelValues("processed").Inc()
 		}
 	}
 }

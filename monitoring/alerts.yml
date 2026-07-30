@@ -105,6 +105,16 @@ groups:
           summary: "receiver_service request metrics are missing"
           description: "http_requests_total has been absent for 10 minutes."
 
+      - alert: ReceiverKafkaPublishingFailures
+        expr: increase(receiver_sync_batches_total{job="receiver_service",result="kafka_failed"}[5m]) > 0
+        for: 2m
+        labels:
+          severity: warning
+          service: receiver_service
+        annotations:
+          summary: "receiver_service cannot publish Pokémon sync batches"
+          description: "At least one batch has failed Kafka publication during the last 5 minutes."
+
   - name: storage-service-alerts
     rules:
       - alert: StorageServiceTargetDown
@@ -136,6 +146,26 @@ groups:
         annotations:
           summary: "storage_service Kafka consumer is not ready"
           description: "storage_kafka_consumer_ready has been 0 for at least 2 minutes."
+
+      - alert: StoragePoisonMessageBacklog
+        expr: storage_failed_messages_pending{job="storage_service"} > 0
+        for: 10m
+        labels:
+          severity: warning
+          service: storage_service
+        annotations:
+          summary: "storage_service has unreprocessed poison messages"
+          description: "The durable failed-message backlog has remained non-empty for 10 minutes."
+
+      - alert: StorageKafkaProcessingStale
+        expr: storage_kafka_last_success_unixtime{job="storage_service"} > 0 and time() - storage_kafka_last_success_unixtime{job="storage_service"} > 900
+        for: 5m
+        labels:
+          severity: warning
+          service: storage_service
+        annotations:
+          summary: "storage_service has not processed Kafka data recently"
+          description: "No Kafka message has completed successfully for at least 15 minutes."
 
   - name: events-service-alerts
     rules:
@@ -189,6 +219,26 @@ groups:
         annotations:
           summary: "events_service request metrics are missing"
           description: "http_requests_total has been absent for 10 minutes."
+
+      - alert: EventsOutboxDeliveryLag
+        expr: events_outbox_oldest_pending_age_seconds{job="events_service"} > 60
+        for: 5m
+        labels:
+          severity: warning
+          service: events_service
+        annotations:
+          summary: "events_service outbox delivery is delayed"
+          description: "The oldest committed real-time event has waited more than 60 seconds."
+
+      - alert: EventsOutboxDispatchFailures
+        expr: increase(events_outbox_dispatch_total{job="events_service",result=~"invalid|mark_failed"}[5m]) > 0
+        for: 2m
+        labels:
+          severity: warning
+          service: events_service
+        annotations:
+          summary: "events_service is failing outbox dispatch"
+          description: "An outbox row was invalid or could not be marked processed in the last 5 minutes."
 
   - name: users-service-alerts
     rules:
@@ -547,4 +597,3 @@ groups:
         annotations:
           summary: "Container memory usage is high"
           description: "Container {{ $labels.name }} is using more than 1 GiB memory for at least 10 minutes."
-

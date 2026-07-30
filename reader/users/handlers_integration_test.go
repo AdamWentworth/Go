@@ -90,6 +90,17 @@ func newHandlerTestApp(authUserID string) *fiber.App {
 	return app
 }
 
+func expectProfileInvalidationOutbox(mock sqlmock.Sqlmock, userID, username string) {
+	mock.ExpectQuery("SELECT .* FROM `users` WHERE user_id = \\?").
+		WithArgs(userID, 1).
+		WillReturnRows(sqlmock.NewRows([]string{"user_id", "username"}).AddRow(userID, username))
+	mock.ExpectQuery("SELECT \\* FROM `friendships` WHERE status = \\? AND \\(user_id_low = \\? OR user_id_high = \\?\\)").
+		WithArgs("accepted", userID, userID).
+		WillReturnRows(sqlmock.NewRows([]string{"friendship_id", "user_id_low", "user_id_high", "status"}))
+	mock.ExpectExec("INSERT INTO `application_outbox`").
+		WillReturnResult(sqlmock.NewResult(1, 1))
+}
+
 func TestDeleteUserHandler_DeletesAccountGraphInTransaction(t *testing.T) {
 	mock, cleanup := setupMockDB(t)
 	defer cleanup()
@@ -777,12 +788,12 @@ func TestUpdateProfileHandler_SavesTrainerTitles(t *testing.T) {
 	defer cleanup()
 
 	app := newHandlerTestApp("user-1")
+	mock.ExpectBegin()
 	mock.ExpectQuery(regexp.QuoteMeta("SELECT * FROM `user_profiles` WHERE user_id = ? AND `user_profiles`.`user_id` = ? ORDER BY `user_profiles`.`user_id` LIMIT ?")).
 		WithArgs("user-1", "user-1", 1).
 		WillReturnRows(sqlmock.NewRows([]string{
 			"user_id", "trainer_titles",
 		}).AddRow("user-1", `["raid-regular"]`))
-	mock.ExpectBegin()
 	mock.ExpectExec("UPDATE `user_profiles` SET `trainer_titles`=\\?,`updated_at`=\\? WHERE user_id = \\? AND `user_id` = \\?").
 		WithArgs(
 			`["raid-regular","egg-hatcher","route-explorer"]`,
@@ -791,6 +802,7 @@ func TestUpdateProfileHandler_SavesTrainerTitles(t *testing.T) {
 			"user-1",
 		).
 		WillReturnResult(sqlmock.NewResult(0, 1))
+	expectProfileInvalidationOutbox(mock, "user-1", "adam")
 	mock.ExpectCommit()
 
 	req := makeJSONRequest(t, http.MethodPut, "/api/profile", map[string]any{
@@ -818,12 +830,12 @@ func TestUpdateProfileHandler_ClearsTrainerTitles(t *testing.T) {
 	defer cleanup()
 
 	app := newHandlerTestApp("user-1")
+	mock.ExpectBegin()
 	mock.ExpectQuery(regexp.QuoteMeta("SELECT * FROM `user_profiles` WHERE user_id = ? AND `user_profiles`.`user_id` = ? ORDER BY `user_profiles`.`user_id` LIMIT ?")).
 		WithArgs("user-1", "user-1", 1).
 		WillReturnRows(sqlmock.NewRows([]string{
 			"user_id", "trainer_titles",
 		}).AddRow("user-1", `["raid-regular"]`))
-	mock.ExpectBegin()
 	mock.ExpectExec("UPDATE `user_profiles` SET `trainer_titles`=\\?,`updated_at`=\\? WHERE user_id = \\? AND `user_id` = \\?").
 		WithArgs(
 			"[]",
@@ -832,6 +844,7 @@ func TestUpdateProfileHandler_ClearsTrainerTitles(t *testing.T) {
 			"user-1",
 		).
 		WillReturnResult(sqlmock.NewResult(0, 1))
+	expectProfileInvalidationOutbox(mock, "user-1", "adam")
 	mock.ExpectCommit()
 
 	req := makeJSONRequest(t, http.MethodPut, "/api/profile", map[string]any{

@@ -32,6 +32,7 @@ func HandleMessage(data map[string]interface{}) error {
 			return fmt.Errorf("check sync batch idempotency: %w", err)
 		}
 		if count > 0 {
+			syncBatchesTotal.WithLabelValues("duplicate").Inc()
 			logrus.Infof("Ignoring already processed sync batch %s for user %s", syncBatchID, userID)
 			return nil
 		}
@@ -108,6 +109,7 @@ func HandleMessage(data map[string]interface{}) error {
 			return fmt.Errorf("record processed sync batch: %w", err)
 		}
 	}
+	syncBatchesTotal.WithLabelValues("processed").Inc()
 	return nil
 }
 

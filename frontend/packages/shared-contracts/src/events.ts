@@ -34,5 +34,9 @@ export interface IncomingUpdateEnvelope<
   trade?: TTrade;
   relatedInstance?: TRelatedInstance;
   affectedInstances?: TAffectedInstance;
+  invalidations?: Array<{
+    type: 'friends' | 'profile' | 'preferences';
+    username?: string;
+  }>;
   [key: string]: unknown;
 }

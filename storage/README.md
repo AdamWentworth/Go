@@ -21,6 +21,14 @@ Trades are written synchronously by the users service.
 - `GET /readyz`
 - `GET /metrics`
 
+Operational metrics include:
+
+- `storage_sync_batches_total{result}` for processed and duplicate batches
+- `storage_instance_mutations_total{result}` for created, updated, deleted,
+  stale, and unauthorized instance changes
+- `storage_kafka_last_success_unixtime` for consumer freshness
+- `storage_failed_messages_pending` for the durable poison-message backlog
+
 ## 🧭 Architecture (Mermaid)
 
 ### Service Context
