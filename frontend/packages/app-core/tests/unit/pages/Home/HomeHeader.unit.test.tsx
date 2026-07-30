@@ -12,7 +12,7 @@ describe('HomeHeader', () => {
   it('renders branding content and auth buttons when logged out', () => {
     render(<HomeHeader logoUrl="/images/logo/logo.png" isLoggedIn={false} />);
 
-    expect(screen.getByRole('heading', { name: /welcome to pok/i })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: /your pokémon go collection/i })).toBeInTheDocument();
     expect(screen.getByRole('img', { name: 'Logo' })).toHaveAttribute(
       'src',
       '/images/logo/logo.png',

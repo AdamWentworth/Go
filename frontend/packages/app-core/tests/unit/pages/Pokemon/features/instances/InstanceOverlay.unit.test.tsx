@@ -5,6 +5,11 @@ import InstanceOverlay, {
   isSwipeInteractiveTarget,
 } from '@/pages/Pokemon/features/instances/InstanceOverlay';
 
+vi.mock('react-router', async () => ({
+  ...(await vi.importActual<typeof import('react-router')>('react-router')),
+  useNavigate: () => vi.fn(),
+}));
+
 vi.mock('@/components/OverlayPortal', () => ({
   default: ({ children }: { children: React.ReactNode }) => (
     <div data-testid="overlay-portal">{children}</div>
@@ -150,7 +155,7 @@ function renderOverlay(
 }
 
 describe('InstanceOverlay', () => {
-  it('uses stacked trade layout below 768px and side-by-side at 768px and above', async () => {
+  it('uses one coherent trade workspace at mobile and desktop widths', async () => {
     Object.defineProperty(window, 'innerWidth', {
       configurable: true,
       writable: true,
@@ -158,7 +163,7 @@ describe('InstanceOverlay', () => {
     });
 
     const p1 = makePokemon({ variant_id: '0001-default', instanceData: { instance_id: 'i-1' } });
-    const { rerender } = render(
+    render(
       <InstanceOverlay
         pokemon={p1}
         onClose={vi.fn()}
@@ -173,28 +178,16 @@ describe('InstanceOverlay', () => {
       />,
     );
 
-    expect(document.querySelector('.overlay-row.other-overlays-row')).toHaveClass('column-layout');
+    expect(document.querySelectorAll('.trade-workspace-window')).toHaveLength(1);
+    expect(document.querySelector('.overlay-row.other-overlays-row')).not.toBeInTheDocument();
+    expect(screen.getByText('View matches')).toBeInTheDocument();
+    expect(screen.getByText('Edit trade preferences')).toBeInTheDocument();
 
     window.innerWidth = 768;
     fireEvent(window, new Event('resize'));
 
     await waitFor(() =>
-      expect(document.querySelector('.overlay-row.other-overlays-row')).not.toHaveClass('column-layout'),
-    );
-
-    rerender(
-      <InstanceOverlay
-        pokemon={p1}
-        onClose={vi.fn()}
-        variants={[]}
-        tagFilter="trade"
-        lists={{}}
-        instances={{}}
-        sortType="name"
-        sortMode="ascending"
-        isEditable={true}
-        username="ash"
-      />,
+      expect(document.querySelectorAll('.trade-workspace-window')).toHaveLength(1),
     );
   });
 
@@ -564,7 +557,7 @@ describe('InstanceOverlay', () => {
     expect(screen.getByTestId('trade-details')).toBeInTheDocument();
   });
 
-  it('navigates forward when swiping left from the trade details window', async () => {
+  it('does not navigate while swiping inside the trade preference disclosure', async () => {
     const p1 = makePokemon({ variant_id: '0001-default', instanceData: { instance_id: 'i-1' } });
     const p2 = makePokemon({ variant_id: '0002-default', instanceData: { instance_id: 'i-2' } });
     const onNavigatePokemon = vi.fn();
@@ -586,7 +579,7 @@ describe('InstanceOverlay', () => {
       />,
     );
 
-    const tradeDetailsWindow = document.querySelector('.trade-details-window') as HTMLElement | null;
+    const tradeDetailsWindow = document.querySelector('.trade-pane-shell--targets') as HTMLElement | null;
     expect(tradeDetailsWindow).not.toBeNull();
 
     fireEvent.mouseDown(tradeDetailsWindow as HTMLElement, {
@@ -603,7 +596,7 @@ describe('InstanceOverlay', () => {
       clientY: 224,
     });
 
-    await waitFor(() => expect(onNavigatePokemon).toHaveBeenCalledWith(p2));
+    await waitFor(() => expect(onNavigatePokemon).not.toHaveBeenCalled());
   });
 
   it('locks trade overlay into horizontal swipe mode during a horizontal drag', () => {
@@ -648,7 +641,7 @@ describe('InstanceOverlay', () => {
     expect(overlay).not.toHaveClass('is-horizontal-swiping');
   });
 
-  it('navigates trade after axis locks horizontal even with extra vertical drift', async () => {
+  it('keeps preference editing isolated even after a horizontal gesture with drift', async () => {
     const p1 = makePokemon({ variant_id: '0001-default', instanceData: { instance_id: 'i-1' } });
     const p2 = makePokemon({ variant_id: '0002-default', instanceData: { instance_id: 'i-2' } });
     const onNavigatePokemon = vi.fn();
@@ -670,7 +663,7 @@ describe('InstanceOverlay', () => {
       />,
     );
 
-    const tradeDetailsWindow = document.querySelector('.trade-details-window') as HTMLElement | null;
+    const tradeDetailsWindow = document.querySelector('.trade-pane-shell--targets') as HTMLElement | null;
     expect(tradeDetailsWindow).not.toBeNull();
 
     fireEvent.mouseDown(tradeDetailsWindow as HTMLElement, {
@@ -687,7 +680,7 @@ describe('InstanceOverlay', () => {
       clientY: 286,
     });
 
-    await waitFor(() => expect(onNavigatePokemon).toHaveBeenCalledWith(p2));
+    await waitFor(() => expect(onNavigatePokemon).not.toHaveBeenCalled());
   });
 
   it('does not navigate trade when a drag resolves as vertical scrolling', async () => {
@@ -712,7 +705,7 @@ describe('InstanceOverlay', () => {
       />,
     );
 
-    const tradeDetailsWindow = document.querySelector('.trade-details-window') as HTMLElement | null;
+    const tradeDetailsWindow = document.querySelector('.trade-pane-shell--targets') as HTMLElement | null;
     expect(tradeDetailsWindow).not.toBeNull();
 
     fireEvent.mouseDown(tradeDetailsWindow as HTMLElement, {

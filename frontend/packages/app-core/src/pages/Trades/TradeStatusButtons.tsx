@@ -1,72 +1,48 @@
-import type { TradeStatusFilter } from './types';
-
-import './TradeStatusButtons.css';
+export type TradeHubSection = 'matches' | 'active' | 'history';
 
 interface TradeStatusButtonsProps {
-  selectedStatus: TradeStatusFilter;
-  setSelectedStatus: (status: TradeStatusFilter) => void;
+  selectedSection: TradeHubSection;
+  setSelectedSection: (section: TradeHubSection) => void;
+  activeCount?: number;
 }
 
-const leftStatuses: ReadonlyArray<{ value: TradeStatusFilter; label: string }> = [
-  { value: 'Accepting', label: 'Offers' },
-  { value: 'Proposed', label: 'Proposed' },
+const sections: ReadonlyArray<{
+  value: TradeHubSection;
+  label: string;
+  description: string;
+}> = [
+  { value: 'matches', label: 'Matches', description: 'Find reciprocal trades' },
+  { value: 'active', label: 'Active', description: 'Offers and trades in progress' },
+  { value: 'history', label: 'History', description: 'Completed and closed trades' },
 ];
 
-const middleStatus: TradeStatusFilter = 'Pending';
-const rightStatuses: ReadonlyArray<TradeStatusFilter> = ['Completed', 'Cancelled'];
-
 function TradeStatusButtons({
-  selectedStatus,
-  setSelectedStatus,
+  selectedSection,
+  setSelectedSection,
+  activeCount = 0,
 }: TradeStatusButtonsProps) {
   return (
-    <div className="status-buttons">
-      <div className="button-group vertical-group">
-        {leftStatuses.map(({ value, label }) => (
-          <button
-            key={value}
-            onClick={() => setSelectedStatus(value)}
-            className={
-              selectedStatus === value
-                ? `status-button active ${value.toLowerCase()}`
-                : 'status-button'
-            }
-          >
-            {label}
-          </button>
-        ))}
-      </div>
-
-      <div className="button-group middle-group">
+    <nav className="trade-hub-tabs" aria-label="Trade sections">
+      {sections.map((section) => (
         <button
-          key={middleStatus}
-          onClick={() => setSelectedStatus(middleStatus)}
-          className={
-            selectedStatus === middleStatus
-              ? `status-button active ${middleStatus.toLowerCase()}`
-              : 'status-button'
-          }
+          key={section.value}
+          type="button"
+          aria-current={selectedSection === section.value ? 'page' : undefined}
+          onClick={() => setSelectedSection(section.value)}
+          className={selectedSection === section.value ? 'trade-hub-tab active' : 'trade-hub-tab'}
         >
-          {middleStatus}
+          <span>
+            {section.label}
+            {section.value === 'active' && activeCount > 0 ? (
+              <span className="trade-hub-count" aria-label={`${activeCount} active trades`}>
+                {activeCount}
+              </span>
+            ) : null}
+          </span>
+          <small>{section.description}</small>
         </button>
-      </div>
-
-      <div className="button-group vertical-group right-group">
-        {rightStatuses.map((status) => (
-          <button
-            key={status}
-            onClick={() => setSelectedStatus(status)}
-            className={
-              selectedStatus === status
-                ? `status-button active ${status.toLowerCase()}`
-                : 'status-button'
-            }
-          >
-            {status}
-          </button>
-        ))}
-      </div>
-    </div>
+      ))}
+    </nav>
   );
 }
 

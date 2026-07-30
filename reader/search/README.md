@@ -24,6 +24,7 @@ Fiber is still a good fit for this service right now:
 
 - `GET /api/searchPokemon`
 - `GET /api/searchPokemon/`
+- `GET /api/trade-matches`
 - `GET /api/rankings?limit=50`
 - `GET /healthz`
 - `GET /readyz`
@@ -39,6 +40,15 @@ instance rows. It returns:
 - anonymous collector/wishlist population totals and snapshot time
 
 Responses are private-cacheable for 60 seconds and include an `ETag`.
+
+`/api/trade-matches` returns an authenticated, cursor-paginated reciprocal
+match feed. It pairs the caller's For Trade and Wanted entries with another
+eligible trainer's corresponding entries, ranks accepted friends first, and
+applies profile/collection visibility, blocks, per-entry exclusions, location
+range, and active-trade conflicts. Optional `source_type` plus
+`source_instance_id` or `candidate_instance_id` parameters support contextual
+handoffs from the catalog and Search. The users service still revalidates every
+proposal and remains authoritative for trade commands.
 
 ## 🛡️ Runtime Guards
 

@@ -937,12 +937,12 @@ test.describe('pokemon app browser regressions', () => {
         .getByRole('button', { name: /Search/i })
         .click();
       await expect(page).toHaveURL(/\/search$/);
-      await expect(page.getByText('Which type of search would you like?')).toBeVisible();
+      await expect(page.getByRole('heading', { name: 'Find trainers and Pokémon' })).toBeVisible();
 
       await triggerBrowserBack(page);
 
       await expect(page).toHaveURL(/\/search$/);
-      await expect(page.getByText('Which type of search would you like?')).toBeVisible();
+      await expect(page.getByRole('heading', { name: 'Find trainers and Pokémon' })).toBeVisible();
     } finally {
       await diagnostics.flush();
     }

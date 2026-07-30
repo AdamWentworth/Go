@@ -55,9 +55,74 @@ export interface PokemonSearchQueryParams extends SearchQueryParams {
   gigantamax: boolean;
 }
 
+export type TradeMatchSourceType = 'trade' | 'wanted';
+export type TradeMatchBlocker =
+  | 'not_friends'
+  | 'outside_trade_range'
+  | 'active_trade_conflict'
+  | 'privacy_restricted'
+  | 'ownership_changed';
+
+export interface TradeMatchQueryParams extends SearchQueryParams {
+  source_type?: TradeMatchSourceType;
+  source_instance_id?: string;
+  candidate_instance_id?: string;
+  cursor?: string;
+  limit?: number;
+  latitude?: number;
+  longitude?: number;
+  range_km?: number;
+  friendship?: 'all' | 'friends';
+  special_trade?: boolean;
+}
+
+export interface TradeMatchPokemonSummary {
+  instance_id: string;
+  variant_id?: string | null;
+  pokemon_id: number;
+  nickname?: string | null;
+  cp?: number | null;
+  shiny: boolean;
+  costume_id?: number | null;
+  lucky: boolean;
+  shadow: boolean;
+  dynamax: boolean;
+  gigantamax: boolean;
+}
+
+export interface TradeMatchTrainerSummary {
+  user_id: string;
+  username: string;
+  distance_km?: number | null;
+  is_friend: boolean;
+  friendship_level?: number | null;
+}
+
+export interface TradeMatchCard {
+  match_id: string;
+  my_offer: TradeMatchPokemonSummary;
+  my_wanted: TradeMatchPokemonSummary;
+  their_offer: TradeMatchPokemonSummary;
+  their_wanted: TradeMatchPokemonSummary;
+  trainer: TradeMatchTrainerSummary;
+  match_reasons: string[];
+  is_special_trade: boolean;
+  is_registered_trade: boolean;
+  eligibility: {
+    can_propose: boolean;
+    blockers: TradeMatchBlocker[];
+  };
+}
+
+export interface TradeMatchFeed {
+  matches: TradeMatchCard[];
+  next_cursor?: string;
+}
+
 export const searchContract = {
   endpoints: {
     searchPokemon: '/searchPokemon',
+    tradeMatches: '/trade-matches',
     rankings: '/rankings',
   },
 } as const;

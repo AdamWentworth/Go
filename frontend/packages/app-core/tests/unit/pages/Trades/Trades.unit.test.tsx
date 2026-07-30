@@ -5,6 +5,8 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import Trades from '@/pages/Trades/Trades';
 
 const mocks = vi.hoisted(() => ({
+  params: new URLSearchParams(),
+  setParams: vi.fn(),
   tradeStoreState: {
     trades: { t1: { trade_status: 'pending' } },
     relatedInstances: { i1: { instance_id: 'i1' } },
@@ -22,69 +24,71 @@ const mocks = vi.hoisted(() => ({
   listPropsHistory: [] as Array<Record<string, unknown>>,
 }));
 
+vi.mock('react-router', async () => {
+  const actual = await vi.importActual<typeof import('react-router')>('react-router');
+  return {
+    ...actual,
+    useSearchParams: () => [mocks.params, mocks.setParams],
+  };
+});
+
 vi.mock('@/features/trades/store/useTradeStore', () => ({
   useTradeStore: (selector: (state: typeof mocks.tradeStoreState) => unknown) =>
     selector(mocks.tradeStoreState),
 }));
-
 vi.mock('@/features/variants/store/useVariantsStore', () => ({
   useVariantsStore: (selector: (state: typeof mocks.variantsStoreState) => unknown) =>
     selector(mocks.variantsStoreState),
 }));
-
 vi.mock('@/features/instances/store/useInstancesStore', () => ({
   useInstancesStore: (selector: (state: typeof mocks.instancesStoreState) => unknown) =>
     selector(mocks.instancesStoreState),
 }));
-
 vi.mock('@/pages/Trades/TradeStatusButtons', () => ({
   default: (props: Record<string, unknown>) => {
     mocks.statusPropsHistory.push(props);
     return <div data-testid="trade-status-buttons" />;
   },
 }));
-
 vi.mock('@/pages/Trades/TradeList', () => ({
   default: (props: Record<string, unknown>) => {
     mocks.listPropsHistory.push(props);
     return <div data-testid="trade-list" />;
   },
 }));
+vi.mock('@/pages/Trades/components/TradeMatches', () => ({
+  default: () => <div data-testid="trade-matches" />,
+}));
 
 describe('Trades page', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mocks.params = new URLSearchParams();
     mocks.statusPropsHistory.length = 0;
     mocks.listPropsHistory.length = 0;
   });
 
-  it('wires store data to status controls and list, and updates selected status', () => {
+  it('starts in Matches and switches to grouped Active trades', () => {
     render(<Trades />);
 
     expect(screen.getByTestId('trade-status-buttons')).toBeInTheDocument();
-    expect(screen.getByTestId('trade-list')).toBeInTheDocument();
-
+    expect(screen.getByTestId('trade-matches')).toBeInTheDocument();
     const initialStatusProps = mocks.statusPropsHistory.at(-1);
-    const initialListProps = mocks.listPropsHistory.at(-1);
+    expect(initialStatusProps?.selectedSection).toBe('matches');
+    expect(initialStatusProps?.activeCount).toBe(1);
 
-    expect(initialStatusProps?.selectedStatus).toBe('Pending');
-    expect(initialListProps?.selectedStatus).toBe('Pending');
-    expect(initialListProps?.trades).toEqual(mocks.tradeStoreState.trades);
-    expect(initialListProps?.relatedInstances).toEqual(mocks.tradeStoreState.relatedInstances);
-    expect(initialListProps?.variants).toEqual(mocks.variantsStoreState.variants);
-    expect(initialListProps?.instances).toEqual(mocks.instancesStoreState.instances);
-    expect(initialListProps?.loading).toBe(true);
-
-    const setSelectedStatus = initialStatusProps?.setSelectedStatus as
-      | ((status: string) => void)
+    const setSelectedSection = initialStatusProps?.setSelectedSection as
+      | ((section: 'active') => void)
       | undefined;
-    expect(setSelectedStatus).toBeTypeOf('function');
+    act(() => setSelectedSection?.('active'));
 
-    act(() => {
-      setSelectedStatus?.('Completed');
-    });
-
-    const updatedListProps = mocks.listPropsHistory.at(-1);
-    expect(updatedListProps?.selectedStatus).toBe('Completed');
+    expect(screen.getAllByTestId('trade-list')).toHaveLength(3);
+    expect(mocks.listPropsHistory.map((props) => props.selectedStatus)).toEqual([
+      'Accepting',
+      'Proposed',
+      'Pending',
+    ]);
+    expect(mocks.listPropsHistory[0]?.trades).toEqual(mocks.tradeStoreState.trades);
+    expect(mocks.setParams).toHaveBeenCalled();
   });
 });

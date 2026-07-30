@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { useSearchParams } from 'react-router';
 
 import PokemonSearchBar from './PokemonSearchBar';
 import TrainerSearchBar from './TrainerSearchBar';
@@ -20,7 +21,7 @@ import type {
 } from '@/services/searchService';
 import './Search.css';
 
-type SearchMode = 'pokemon' | 'trainer' | null;
+type SearchMode = 'pokemon' | 'trainer';
 type SearchView = 'list' | 'map';
 
 type EnrichedSearchResult = SearchResultRow & {
@@ -40,7 +41,10 @@ const coerceOwnershipModeInput = (
 const log = createScopedLogger('Search');
 
 const Search: React.FC = () => {
-  const [searchMode, setSearchMode] = useState<SearchMode>(null);
+  const [urlParams, setUrlParams] = useSearchParams();
+  const [searchMode, setSearchMode] = useState<SearchMode>(
+    urlParams.get('mode') === 'trainer' ? 'trainer' : 'pokemon',
+  );
   const [view, setView] = useState<SearchView>('list');
   const [searchResults, setSearchResults] = useState<EnrichedSearchResult[]>([]);
   const [ownershipMode, setOwnershipMode] = useState<
@@ -99,6 +103,13 @@ const Search: React.FC = () => {
     setHasSearched(true);
     setOwnershipMode(normalizeOwnershipMode(coerceOwnershipModeInput(queryParams.ownership)));
     shouldScrollRef.current = true;
+    const nextParams = new URLSearchParams({ mode: 'pokemon' });
+    Object.entries(queryParams).forEach(([key, value]) => {
+      if (value !== null && value !== undefined && value !== '') {
+        nextParams.set(key, String(value));
+      }
+    });
+    setUrlParams(nextParams, { replace: true });
 
     try {
       const dataArray = await searchPokemon(queryParams);
@@ -144,24 +155,22 @@ const Search: React.FC = () => {
     }
   };
 
-  if (!searchMode) {
-    return (
-      <div className="search-welcome-screen">
-        <h1 className="search-welcome-title">
-          Which type of search would you like?
-        </h1>
-        <SearchModeToggle
-          searchMode={searchMode}
-          setSearchMode={setSearchMode}
-          isWelcome={true}
-        />
-      </div>
-    );
-  }
+  const changeSearchMode: React.Dispatch<React.SetStateAction<SearchMode | null>> = (next) => {
+    const resolved = typeof next === 'function' ? next(searchMode) : next;
+    const mode = resolved === 'trainer' ? 'trainer' : 'pokemon';
+    setSearchMode(mode);
+    setUrlParams({ mode }, { replace: true });
+  };
 
   return (
-    <div>
-      <SearchModeToggle searchMode={searchMode} setSearchMode={setSearchMode} />
+    <main className="search-page">
+      <header className="search-page-header">
+        <div>
+          <p>Community discovery</p>
+          <h1>Find trainers and Pokémon</h1>
+        </div>
+        <SearchModeToggle searchMode={searchMode} setSearchMode={changeSearchMode} />
+      </header>
 
       {searchMode === 'pokemon' && (
         <PokemonSearchBar
@@ -211,7 +220,7 @@ const Search: React.FC = () => {
           ))}
       </div>
 
-    </div>
+    </main>
   );
 };
 

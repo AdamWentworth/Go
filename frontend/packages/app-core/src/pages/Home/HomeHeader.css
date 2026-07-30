@@ -1,7 +1,10 @@
 /* HomeHeader.css */
 
 .homeHeader {
-    background-color: #1a1a1a;
+    background:
+      radial-gradient(circle at 50% 0%, color-mix(in srgb, var(--primary-color, #f18b2b) 16%, transparent), transparent 45%),
+      color-mix(in srgb, var(--background-color, #fff) 94%, var(--text-color, #111));
+    color: var(--text-color, #17191c);
     text-align: center;
     margin-bottom: clamp(1rem, 2vw, 2rem);
     width: 100%;
@@ -21,14 +24,18 @@
     font-size: clamp(2rem, 5vw, 3rem);
     margin: 0;
     font-weight: 800;
-    color: #ffffff;
+    color: inherit;
   }
   
   .titleContainer h2 {
     font-size: clamp(1.8rem, 4vw, 2.5rem);
     font-weight: bold;
     margin: 0;
-    background: linear-gradient(to right, #c8fdf3, #42c9ff);
+    background: linear-gradient(
+      to right,
+      var(--primary-color, #e87520),
+      color-mix(in srgb, var(--primary-color, #e87520) 58%, #42c9ff)
+    );
     background-size: 100% 100%;
     background-position: 0 100%;
     -webkit-background-clip: text;
@@ -41,14 +48,14 @@
   .titleContainer p {
     max-width: 50%;
     margin: clamp(0.25rem, 1vw, 0.5rem) auto;
-    color: #bbb;
+    color: color-mix(in srgb, currentColor 70%, transparent);
     font-size: clamp(1rem, 2vw, 1.2rem);
     font-weight: 400;
     line-height: 1.5;
   }
   
   .titleContainer p strong {
-    color: #c8fdf3;
+    color: var(--primary-color, #e87520);
   }
   
   @media (max-width: 768px) {
@@ -56,4 +63,3 @@
       max-width: 85%;
     }
   }
-  

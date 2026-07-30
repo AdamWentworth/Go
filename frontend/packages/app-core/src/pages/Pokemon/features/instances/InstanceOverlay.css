@@ -190,8 +190,8 @@
 }
 
 .instance-overlay.trade-mode {
-  --trade-pane-max-width: 500px;
-  --trade-shell-max-width: calc((var(--trade-pane-max-width) * 2) + clamp(12px, 2vw, 18px));
+  --trade-pane-max-width: 680px;
+  --trade-shell-max-width: var(--trade-pane-max-width);
   --trade-shell-width: min(var(--trade-shell-max-width), 96vw);
   --instance-shell-side-gap: calc((100vw - var(--trade-shell-width)) / 2);
 }
@@ -325,6 +325,149 @@
   justify-content: center;
   gap: clamp(12px, 2vw, 18px);
   min-height: 0;
+}
+
+.overlay-content.trade-workspace-window,
+.overlay-content.wanted-workspace-window {
+  width: min(680px, 96vw);
+  max-width: 680px;
+  max-height: calc(100dvh - 110px - env(safe-area-inset-top) - env(safe-area-inset-bottom));
+  overflow: auto;
+  border-radius: 18px;
+  background: color-mix(in srgb, #202327 94%, transparent);
+  color: #f4f7f5;
+  scrollbar-width: thin;
+}
+
+.wanted-instance-overlay {
+  width: min(680px, 96vw);
+  margin: max(18px, env(safe-area-inset-top)) auto
+    calc(110px + env(safe-area-inset-bottom));
+}
+
+.pokemon-trade-workspace {
+  width: 100%;
+}
+
+.pokemon-trade-workspace .trade-pane-scroll {
+  height: auto;
+  overflow: visible;
+}
+
+.pokemon-trade-summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  margin: 16px;
+  padding: 16px;
+  border: 1px solid rgb(255 255 255 / 13%);
+  border-radius: 14px;
+  background: rgb(0 0 0 / 18%);
+}
+
+.pokemon-trade-summary > div {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+}
+
+.pokemon-trade-summary span {
+  color: #f4a45d;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+}
+
+.pokemon-trade-summary strong {
+  font-size: 1.05rem;
+}
+
+.pokemon-trade-summary p {
+  margin: 0;
+  color: rgb(255 255 255 / 65%);
+  font-size: 0.82rem;
+}
+
+.pokemon-trade-summary button {
+  flex: 0 0 auto;
+  min-height: 44px;
+  padding: 0 16px;
+  border: 0;
+  border-radius: 11px;
+  background: #e87520;
+  color: white;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.pokemon-preference-disclosure {
+  margin: 0 16px 20px;
+  border: 1px solid rgb(255 255 255 / 13%);
+  border-radius: 14px;
+  overflow: clip;
+  background: rgb(0 0 0 / 12%);
+}
+
+.pokemon-preference-disclosure > summary {
+  min-height: 52px;
+  padding: 0 16px;
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  font-weight: 800;
+  list-style: none;
+}
+
+.pokemon-preference-disclosure > summary::-webkit-details-marker {
+  display: none;
+}
+
+.pokemon-preference-disclosure > summary::after {
+  content: "+";
+  margin-left: auto;
+  font-size: 1.4rem;
+}
+
+.pokemon-preference-disclosure[open] > summary::after {
+  content: "−";
+}
+
+.pokemon-preference-disclosure[open] > summary {
+  border-bottom: 1px solid rgb(255 255 255 / 13%);
+}
+
+.pokemon-preference-disclosure .trade-pane-shell--targets,
+.pokemon-preference-disclosure > div {
+  min-height: 0;
+}
+
+@media (max-width: 560px) {
+  .overlay-content.trade-workspace-window,
+  .overlay-content.wanted-workspace-window {
+    width: 100vw;
+    max-width: none;
+    max-height: 100dvh;
+    min-height: 100dvh;
+    border-radius: 0;
+  }
+
+  .trade-instance-overlay,
+  .wanted-instance-overlay {
+    width: 100vw;
+    margin: 0;
+    padding-bottom: calc(88px + env(safe-area-inset-bottom));
+  }
+
+  .pokemon-trade-summary {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .pokemon-trade-summary button {
+    width: 100%;
+  }
 }
 
 .overlay-content.trade-instance-window,

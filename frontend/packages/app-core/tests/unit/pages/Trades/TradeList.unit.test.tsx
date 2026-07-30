@@ -78,7 +78,7 @@ describe('TradeList', () => {
   it('shows the empty-state message when no trades match status', () => {
     render(<TradeList {...baseProps} selectedStatus="Cancelled" />);
 
-    expect(screen.getByText('No trades found for status: Cancelled')).toBeInTheDocument();
+    expect(screen.getByText('Nothing here right now.')).toBeInTheDocument();
   });
 
   it('passes a safe empty instances object to trade cards when instances are missing', () => {

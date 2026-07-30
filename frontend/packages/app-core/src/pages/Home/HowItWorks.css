@@ -1,34 +1,106 @@
 .howItWorks {
-    background-color: #111;
-    width: 100%;
-    text-align: center;
-    padding: clamp(1rem, 2vw, 2rem) 0;
-    color: white;
-  }
-  
-  /* Common row container */
-  .row {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 1rem;
-    justify-content: center;
-    margin-bottom: 1rem;
-  }
-
-  .row.top-row {
-    margin-bottom: unset;
-  }
-  
-  /* Section divider styling */
-  .section-divider {
-    width: 80%;
-    height: 2px;
-    background-color: #333;
-    margin: 2rem auto;
-  }
-
-.howItWorks h2 {
-  font-size: clamp(1.3rem, 3vw, 2rem);
-  margin-block-start: 0.5rem;
+  width: min(1120px, calc(100% - 32px));
+  margin: 0 auto;
+  padding: 36px 0 100px;
+  color: var(--text-color, white);
 }
-  
+
+.howItWorks > header {
+  margin-bottom: 20px;
+}
+
+.howItWorks > header p,
+.howItWorks > header h2 {
+  margin: 0;
+}
+
+.howItWorks > header p {
+  color: var(--primary-color, #ed8a31);
+  font-size: 0.75rem;
+  font-weight: 900;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.howItWorks > header h2 {
+  margin-top: 4px;
+  font-size: clamp(1.6rem, 4vw, 2.5rem);
+}
+
+.home-feature-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.home-feature-grid article {
+  min-height: 190px;
+  padding: 23px;
+  border: 1px solid color-mix(in srgb, currentColor 13%, transparent);
+  border-radius: 18px;
+  background: color-mix(in srgb, var(--background-color, #151719) 91%, white);
+}
+
+.home-feature-grid article > span {
+  color: var(--primary-color, #ee8c34);
+  font-size: 0.76rem;
+  font-weight: 900;
+}
+
+.home-feature-grid h3 {
+  margin: 24px 0 8px;
+}
+
+.home-feature-grid p {
+  margin: 0;
+  color: color-mix(in srgb, currentColor 66%, transparent);
+  line-height: 1.55;
+}
+
+.home-feature-cta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  margin-top: 18px;
+  padding: 20px 22px;
+  border-radius: 18px;
+  background: color-mix(in srgb, var(--primary-color, #e87520) 15%, transparent);
+}
+
+.home-feature-cta > div {
+  display: grid;
+  gap: 3px;
+}
+
+.home-feature-cta span {
+  color: color-mix(in srgb, currentColor 66%, transparent);
+}
+
+.home-feature-cta a {
+  flex: 0 0 auto;
+  min-height: 46px;
+  display: grid;
+  place-items: center;
+  padding: 0 18px;
+  border-radius: 11px;
+  background: var(--primary-color, #e87520);
+  color: white;
+  font-weight: 850;
+  text-decoration: none;
+}
+
+@media (max-width: 740px) {
+  .howItWorks {
+    width: min(100% - 20px, 1120px);
+  }
+
+  .home-feature-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .home-feature-cta {
+    align-items: stretch;
+    flex-direction: column;
+  }
+}

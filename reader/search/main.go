@@ -89,6 +89,7 @@ func newApp() *fiber.App {
 	protected := app.Group("/", verifyJWT, newRateLimiter())
 	protected.Get("/api/searchPokemon", SearchPokemonInstances)
 	protected.Get("/api/searchPokemon/", SearchPokemonInstances)
+	protected.Get("/api/trade-matches", TradeMatches)
 
 	return app
 }

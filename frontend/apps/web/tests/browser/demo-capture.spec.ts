@@ -510,7 +510,6 @@ test.describe('demo media capture', () => {
       await expect(page.locator('.instance-overlay')).toHaveCount(0);
 
       await page.goto('/search', { waitUntil: 'domcontentloaded' });
-      await page.getByRole('button', { name: 'Pokemon' }).click();
       await page.getByPlaceholder('Enter Pokemon name').fill('Pikachu');
       await page.getByPlaceholder('Enter location').fill('Vancouver');
       await page.getByText('Vancouver, British Columbia, Canada').click();
@@ -525,6 +524,8 @@ test.describe('demo media capture', () => {
       await capture(page, 'search-results-map');
 
       await page.goto('/trades', { waitUntil: 'domcontentloaded' });
+      await page.getByRole('button', { name: /^Active/ }).click();
+      await page.getByText('Review completion').click();
       await expect(page.getByText('Reveal Trade Partner Info').first()).toBeVisible({ timeout: 20_000 });
       await expect(page.getByText('Party Hat Pikachu').first()).toBeVisible({ timeout: 20_000 });
       await expect(page.getByText('Mewtwo').first()).toBeVisible({ timeout: 20_000 });

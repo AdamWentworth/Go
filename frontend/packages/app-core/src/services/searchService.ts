@@ -8,6 +8,8 @@ import type {
   PokemonCommunityRankingsPayload,
   SearchQueryParams,
   SearchResultRow,
+  TradeMatchFeed,
+  TradeMatchQueryParams,
 } from '@shared-contracts/search';
 import { searchContract } from '@shared-contracts/search';
 export type { SearchQueryParams, SearchResultRow } from '@shared-contracts/search';
@@ -37,6 +39,23 @@ export async function searchPokemon(
   }
 
   return Array.isArray(payload) ? payload : Object.values(payload);
+}
+
+export async function getTradeMatches(
+  queryParams: TradeMatchQueryParams = {},
+): Promise<TradeMatchFeed> {
+  const response = await requestWithPolicy(
+    buildUrl(SEARCH_API_URL, searchContract.endpoints.tradeMatches, queryParams),
+    { method: 'GET', cache: 'no-cache' },
+  );
+  const payload = await parseJsonSafe<TradeMatchFeed>(response);
+  if (!response.ok || !payload) {
+    throw toHttpError(response.status, payload, 'Trade matches are temporarily unavailable.');
+  }
+  return {
+    matches: Array.isArray(payload.matches) ? payload.matches : [],
+    next_cursor: payload.next_cursor,
+  };
 }
 
 export async function getPokemonCommunityRankings(
