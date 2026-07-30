@@ -218,11 +218,11 @@ const PokemonSearchBar: React.FC<PokemonSearchBarProps> = ({
         <div className="view-controls">
           <button
             type="button"
-            className={`view-button ${view === 'list' ? 'active' : ''}`}
+            className="view-button"
             aria-label="List view"
             onClick={() => setView('list')}
           >
-            <FaList aria-hidden="true" /> <span>List</span>
+            <FaList />
           </button>
           <button
             type="button"
@@ -230,16 +230,15 @@ const PokemonSearchBar: React.FC<PokemonSearchBarProps> = ({
             aria-label="Toggle search filters"
             onClick={toggleCollapse}
           >
-            {isCollapsed ? <FaChevronDown aria-hidden="true" /> : <FaChevronUp aria-hidden="true" />}
-            <span>{isCollapsed ? 'Show filters' : 'Hide filters'}</span>
+            {isCollapsed ? <FaChevronDown /> : <FaChevronUp />}
           </button>
           <button
             type="button"
-            className={`view-button ${view === 'map' ? 'active' : ''}`}
+            className="view-button"
             aria-label="Map view"
             onClick={() => setView('map')}
           >
-            <FaGlobe aria-hidden="true" /> <span>Map</span>
+            <FaGlobe />
           </button>
         </div>
       </div>

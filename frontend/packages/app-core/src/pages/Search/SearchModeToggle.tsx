@@ -16,18 +16,16 @@ const SearchModeToggle: React.FC<SearchModeToggleProps> = ({
 }) => (
   <div className={`search-toggle-container ${isWelcome ? 'welcome' : ''}`}>
     <button
-      type="button"
       className={`toggle-btn trainer-btn ${searchMode === 'trainer' ? 'active' : ''} ${isWelcome ? 'large' : ''}`}
       onClick={() => setSearchMode('trainer')}
     >
-      Trainers
+      Trainer
     </button>
     <button
-      type="button"
       className={`toggle-btn pokemon-btn ${searchMode === 'pokemon' ? 'active' : ''} ${isWelcome ? 'large' : ''}`}
       onClick={() => setSearchMode('pokemon')}
     >
-      Pokémon
+      Pokemon
     </button>
   </div>
 );

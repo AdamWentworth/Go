@@ -1,87 +1,25 @@
 /* TradeList.css */
 
-  .trades-list {
+.trades-list {
     display: flex;
     flex-direction: column;
     gap: 10px;
     padding: 10px;
+    margin-bottom: 100px;
   }
-
-  .trades-list > p:only-child {
-    margin: 0;
-    padding: 18px 12px;
-    color: color-mix(in srgb, currentColor 62%, transparent);
-    text-align: center;
-  }
-
-  .trade-record-disclosure {
-    overflow: clip;
-    border: 1px solid color-mix(in srgb, currentColor 14%, transparent);
-    border-radius: 14px;
-    background: color-mix(in srgb, var(--background-color, #17191c) 88%, white);
-  }
-
-  .trade-record-disclosure > summary {
-    display: flex;
-    min-height: 66px;
-    align-items: center;
-    justify-content: space-between;
-    gap: 16px;
-    padding: 0 16px;
-    cursor: pointer;
-    list-style: none;
-  }
-
-  .trade-record-disclosure > summary::-webkit-details-marker {
-    display: none;
-  }
-
-  .trade-record-disclosure > summary > span:first-child {
-    display: grid;
-    gap: 2px;
-  }
-
-  .trade-record-disclosure > summary small {
-    color: color-mix(in srgb, currentColor 62%, transparent);
-  }
-
-  .trade-record-status {
-    padding: 5px 9px;
-    border-radius: 999px;
-    background: color-mix(in srgb, currentColor 8%, transparent);
-    font-size: 0.73rem;
-    font-weight: 800;
-    text-transform: capitalize;
-  }
-
-  .trade-record-status.proposed {
-    color: #76c98a;
-  }
-
-  .trade-record-status.pending {
-    color: #f6a14d;
-  }
-
-  .trade-record-disclosure[open] > summary {
-    border-bottom: 1px solid color-mix(in srgb, currentColor 12%, transparent);
-  }
-
-  .trade-record-disclosure .trade-card {
-    margin: 10px;
-  }
-
+  
   .trade-card {
     border: 1px solid #ccc;
     border-radius: 5px;
     background: #333;
   }
-
+  
   .trade-info {
     display: flex;
     justify-content: space-between;
     margin-bottom: 10px;
   }
-
+  
   .pokemon-sent,
   .pokemon-received {
     width: 48%;
@@ -90,9 +28,10 @@
     border-radius: 4px;
     box-shadow: 0 1px 3px rgba(0,0,0,0.1);
   }
-
+  
   .pokemon-sent p,
   .pokemon-received p {
     margin: 5px 0;
     word-break: break-all; /* Ensure long IDs wrap if needed */
   }
+  

@@ -16,11 +16,12 @@ const HomeHeader = ({ logoUrl, isLoggedIn }: HomeHeaderProps) => {
         <img src={logoUrl} alt="Logo" onContextMenu={(e) => e.preventDefault()} />
       </div>
       <div className="titleContainer">
-        <h1>Your Pokémon GO collection, connected</h1>
-        <h2>Catalog. Discover. Match. Trade.</h2>
+        <h1>Welcome to PokeGo Nexus</h1>
+        <h2>The Ultimate Trainer Hub</h2>
         <p>
-          Keep a detailed catalog, publish what you want and what you can offer,
-          and <strong>find reciprocal matches with eligible trainers.</strong>
+          The go-to platform for Pokémon GO trainers to{' '}
+          <strong>catalog Pokémon, showcase rare catches, and connect with players worldwide for seamless trades.</strong>{' '}
+          Discover, list, and connect with trainers for smooth trading.
         </p>
         {!isLoggedIn && <AuthButtons />}
       </div>

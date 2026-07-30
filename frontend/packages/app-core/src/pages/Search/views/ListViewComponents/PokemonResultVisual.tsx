@@ -74,10 +74,10 @@ const PokemonResultVisual: React.FC<PokemonResultVisualProps> = ({
           <Gender gender={genderValue} />
         </div>
       ) : (
-        <div className="pokemon-name">
+        <p className="pokemon-name">
           {pokemonDisplayName}
           <Gender gender={genderValue} />
-        </div>
+        </p>
       )}
     </div>
   );

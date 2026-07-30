@@ -6,15 +6,6 @@ import Search from '@/pages/Search/Search';
 
 const mockedSearchPokemon = vi.fn();
 const alertMock = vi.fn().mockResolvedValue(undefined);
-const setSearchParamsMock = vi.fn();
-
-vi.mock('react-router', async () => {
-  const actual = await vi.importActual<typeof import('react-router')>('react-router');
-  return {
-    ...actual,
-    useSearchParams: () => [new URLSearchParams(), setSearchParamsMock],
-  };
-});
 
 const variantsState = {
   variants: [{ pokemon_id: 1, name: 'Bulbasaur' }],
@@ -41,10 +32,12 @@ vi.mock('@/contexts/ModalContext', () => ({
 vi.mock('@/pages/Search/SearchModeToggle', () => ({
   default: ({
     setSearchMode,
+    isWelcome,
   }: {
     setSearchMode: (mode: 'pokemon' | 'trainer') => void;
+    isWelcome?: boolean;
   }) => (
-    <div data-testid="search-toggle-active">
+    <div data-testid={isWelcome ? 'search-toggle-welcome' : 'search-toggle-active'}>
       <button onClick={() => setSearchMode('pokemon')}>mode-pokemon</button>
       <button onClick={() => setSearchMode('trainer')}>mode-trainer</button>
     </div>
@@ -120,12 +113,11 @@ describe('Search', () => {
     alertMock.mockClear();
   });
 
-  it('opens directly in persistent Pokémon discovery mode', () => {
+  it('renders welcome state before selecting search mode', () => {
     render(<Search />);
 
-    expect(screen.getByTestId('search-toggle-active')).toBeInTheDocument();
-    expect(screen.getByTestId('pokemon-search-bar')).toBeInTheDocument();
-    expect(screen.getByText('Find trainers and Pokémon')).toBeInTheDocument();
+    expect(screen.getByTestId('search-toggle-welcome')).toBeInTheDocument();
+    expect(screen.getByText('Which type of search would you like?')).toBeInTheDocument();
   });
 
   it('normalizes owned -> caught and renders sorted/enriched list results', async () => {
@@ -137,6 +129,7 @@ describe('Search', () => {
 
     render(<Search />);
 
+    fireEvent.click(screen.getByText('mode-pokemon'));
     fireEvent.click(screen.getByText('search-owned'));
 
     await waitFor(() => {
@@ -155,6 +148,7 @@ describe('Search', () => {
 
     render(<Search />);
 
+    fireEvent.click(screen.getByText('mode-pokemon'));
     fireEvent.click(screen.getByText('search-trade'));
 
     await waitFor(() => {

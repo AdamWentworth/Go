@@ -2,7 +2,6 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import {
   getPokemonCommunityRankings,
-  getTradeMatches,
   searchPokemon,
 } from '@/services/searchService';
 
@@ -111,30 +110,5 @@ describe('searchService.getPokemonCommunityRankings', () => {
     await expect(getPokemonCommunityRankings()).rejects.toThrow(
       'Community rankings are temporarily unavailable.',
     );
-  });
-});
-
-describe('searchService.getTradeMatches', () => {
-  beforeEach(() => {
-    vi.restoreAllMocks();
-  });
-
-  it('requests the typed contextual match feed', async () => {
-    const fetchMock = vi.spyOn(global, 'fetch').mockResolvedValueOnce(
-      new Response(JSON.stringify({ matches: [], next_cursor: 'next' }), {
-        status: 200,
-        headers: { 'Content-Type': 'application/json' },
-      }),
-    );
-    await expect(getTradeMatches({
-      source_type: 'trade',
-      source_instance_id: 'mine',
-      limit: 20,
-    })).resolves.toEqual({ matches: [], next_cursor: 'next' });
-    expect(fetchMock).toHaveBeenCalledWith(
-      expect.stringContaining('/trade-matches?'),
-      expect.objectContaining({ method: 'GET', cache: 'no-cache' }),
-    );
-    expect(String(fetchMock.mock.calls[0]?.[0])).toContain('source_instance_id=mine');
   });
 });

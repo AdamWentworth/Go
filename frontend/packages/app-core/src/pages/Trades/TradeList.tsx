@@ -82,46 +82,21 @@ function TradeList({
   return (
     <div className="trades-list">
       {filteredTrades.length === 0 ? (
-        <p>Nothing here right now.</p>
+        <p>No trades found for status: {selectedStatus}</p>
       ) : (
-        filteredTrades.map((trade, index) => {
-          const isProposer = trade.username_proposed === currentUsername;
-          const partner = isProposer ? trade.username_accepting : trade.username_proposed;
-          const summary =
-            selectedStatus === 'Accepting'
-              ? 'Review offer'
-              : selectedStatus === 'Proposed'
-                ? 'Waiting for response'
-                : selectedStatus === 'Pending'
-                  ? 'Review completion'
-                  : selectedStatus;
-          return (
-            <details
-              className="trade-record-disclosure"
-              key={trade.trade_id ? `${trade.trade_id}_${index}` : `trade_${index}`}
-            >
-              <summary>
-                <span>
-                  <strong>{partner || 'Trade partner'}</strong>
-                  <small>{summary}</small>
-                </span>
-                <span className={`trade-record-status ${normalizeStatus(trade.trade_status)}`}>
-                  {trade.trade_status}
-                </span>
-              </summary>
-              <TradeCard
-                trade={trade}
-                relatedInstances={relatedInstances}
-                selectedStatus={selectedStatus}
-                setInstances={setInstances}
-                variants={variants}
-                instances={resolvedInstances}
-                loading={loading}
-                periodicUpdates={periodicUpdates}
-              />
-            </details>
-          );
-        })
+        filteredTrades.map((trade, index) => (
+          <TradeCard
+            key={trade.trade_id ? `${trade.trade_id}_${index}` : `trade_${index}`}
+            trade={trade}
+            relatedInstances={relatedInstances}
+            selectedStatus={selectedStatus}
+            setInstances={setInstances}
+            variants={variants}
+            instances={resolvedInstances}
+            loading={loading}
+            periodicUpdates={periodicUpdates}
+          />
+        ))
       )}
     </div>
   );

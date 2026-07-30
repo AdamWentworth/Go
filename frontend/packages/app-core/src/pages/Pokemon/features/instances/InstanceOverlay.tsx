@@ -1,6 +1,5 @@
 // InstanceOverlay.jsx
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
-import { useNavigate } from 'react-router';
 import './InstanceOverlay.css';
 import OverlayPortal from '@/components/OverlayPortal';
 import WindowOverlay from '@/components/WindowOverlay';
@@ -15,6 +14,7 @@ import type { PokemonInstance } from '@/types/pokemonInstance';
 import type { PokemonVariant } from '@/types/pokemonVariants';
 import type { SortMode, SortType } from '@/types/sort';
 import { createScopedLogger } from '@/utils/logger';
+import { useViewportBelow, VIEWPORT_BREAKPOINTS } from '@/hooks/useViewport';
 import { getBackgroundImageSrc, getCaughtBgColor } from './overlay/overlayBackground';
 import { getOverlayIdentityKey, withInstanceData } from './overlay/overlayPokemon';
 import { deriveInitialOverlay } from './overlay/overlayState';
@@ -61,7 +61,6 @@ const InstanceOverlay: React.FC<InstanceOverlayProps> = ({
   navigationPokemons = [],
   onNavigatePokemon,
 }) => {
-  const navigate = useNavigate();
   const [selectedPokemon, setSelectedPokemon] = useState<OverlayPokemon | null>(pokemon);
   const [previewInstanceDataPatch, setPreviewInstanceDataPatch] = useState<
     Partial<PokemonInstance>
@@ -82,6 +81,10 @@ const InstanceOverlay: React.FC<InstanceOverlayProps> = ({
       instanceData: mergedInstanceData,
     };
   }, [instances, previewInstanceDataPatch, selectedPokemon]);
+
+  const isSmallScreen = useViewportBelow(
+    VIEWPORT_BREAKPOINTS.overlayStacked,
+  );
 
   const [currentOverlay, setCurrentOverlay] = useState<OverlayType>(() =>
     deriveInitialOverlay(tagFilter, pokemon)
@@ -216,28 +219,6 @@ const InstanceOverlay: React.FC<InstanceOverlayProps> = ({
     setPreviewInstanceDataPatch({});
   };
 
-  const openContextualMatches = (sourceType: 'trade' | 'wanted') => {
-    const instanceId = liveSelectedPokemon?.instanceData?.instance_id;
-    const params = new URLSearchParams({ section: 'matches' });
-    if (typeof instanceId === 'string' && instanceId.length > 0) {
-      params.set('source_type', sourceType);
-      params.set('source_instance_id', instanceId);
-    }
-    handleCloseOverlay();
-    navigate(`/trades?${params.toString()}`);
-  };
-
-  const visibleTargetCount = (
-    bucket: 'trade' | 'wanted',
-    excluded: unknown,
-  ) => {
-    const exclusions =
-      excluded && typeof excluded === 'object'
-        ? excluded as Record<string, boolean>
-        : {};
-    return Object.keys(lists?.[bucket] ?? {}).filter((key) => !exclusions[key]).length;
-  };
-
   const renderCloseButton = () => (
     <div className="close-button-container">
       <CloseButton onClick={onClose} />
@@ -279,9 +260,11 @@ const InstanceOverlay: React.FC<InstanceOverlayProps> = ({
           `trade:${activePokemon.pokemon_id}:${String(activePokemon.variant_id ?? '')}`;
         return (
           <div className="instance-motion-shell instance-motion-shell--trade" style={overlayMotionStyle}>
-            <div className="trade-instance-overlay">
-              <WindowOverlay onClose={handleCloseOverlay} className="trade-workspace-window">
-                <div className="pokemon-trade-workspace">
+            <div
+              className={`trade-instance-overlay ${isSmallScreen ? 'small-screen' : ''}`}
+            >
+              <div className={`overlay-row other-overlays-row ${isSmallScreen ? 'column-layout' : ''}`}>
+                <WindowOverlay onClose={handleCloseOverlay} className="trade-instance-window">
                   <div className="trade-pane-scroll trade-pane-scroll--offer">
                     <div className="trade-pane-shell trade-pane-shell--offer">
                       <TradeInstance
@@ -291,39 +274,32 @@ const InstanceOverlay: React.FC<InstanceOverlayProps> = ({
                       />
                     </div>
                   </div>
-                  <section className="pokemon-trade-summary">
-                    <div>
-                      <span>Looking for</span>
-                      <strong>
-                        {visibleTargetCount('wanted', activePokemon.instanceData?.not_wanted_list)}
-                        {' '}eligible target{visibleTargetCount('wanted', activePokemon.instanceData?.not_wanted_list) === 1 ? '' : 's'}
-                      </strong>
-                      <p>Your detailed preferences stay attached to this Pokémon.</p>
-                    </div>
-                    <button type="button" onClick={() => openContextualMatches('trade')}>
-                      View matches
-                    </button>
-                  </section>
-                  <details className="pokemon-preference-disclosure">
-                    <summary>{isEditable ? 'Edit trade preferences' : 'View requested Pokémon'}</summary>
+                </WindowOverlay>
+                <WindowOverlay
+                  onClose={handleCloseOverlay}
+                  className="trade-details-window"
+                  {...swipeCaptureHandlers}
+                >
+                  <div className="trade-pane-scroll trade-pane-scroll--targets">
                     <div className="trade-pane-shell trade-pane-shell--targets">
                       <TradeTargetsPanel
-                          key={`${tradeInstanceKey}:details`}
-                          pokemon={withInstanceData(activePokemon) as TradeTargetsPanelPokemon}
-                          lists={lists}
-                          instances={instances}
-                          sortType={sortType}
-                          sortMode={sortMode}
-                          onClose={handleCloseOverlay}
-                          openTradeTargetOverlay={handleOpenTradeTargetOverlay}
-                          variants={variants}
-                          isEditable={isEditable}
-                          username={username}
-                        />
+                        key={`${tradeInstanceKey}:details`}
+                        pokemon={withInstanceData(activePokemon) as TradeTargetsPanelPokemon}
+                        lists={lists}
+                        instances={instances}
+                        sortType={sortType}
+                        sortMode={sortMode}
+                        onClose={handleCloseOverlay}
+                        openTradeTargetOverlay={handleOpenTradeTargetOverlay}
+                        variants={variants}
+                        isEditable={isEditable}
+                        username={username}
+                        swipeCaptureHandlers={swipeCaptureHandlers}
+                      />
                     </div>
-                  </details>
-                </div>
-              </WindowOverlay>
+                  </div>
+                </WindowOverlay>
+              </div>
             </div>
           </div>
         );
@@ -335,42 +311,28 @@ const InstanceOverlay: React.FC<InstanceOverlayProps> = ({
           `wanted:${activePokemon.pokemon_id}:${String(activePokemon.variant_id ?? '')}`;
         return (
           <div className="wanted-instance-overlay">
-            <WindowOverlay onClose={handleCloseOverlay} className="wanted-workspace-window">
-              <div className="pokemon-trade-workspace pokemon-trade-workspace--wanted">
+            <div className={`overlay-row other-overlays-row ${isSmallScreen ? 'column-layout' : ''}`}>
+              <WindowOverlay onClose={handleCloseOverlay} className="wanted-details-window">
+                <WantedDetails
+                  key={`${wantedInstanceKey}:details`}
+                  pokemon={withInstanceData(activePokemon) as WantedDetailsPokemon}
+                  lists={lists}
+                  instances={instances}
+                  sortType={sortType}
+                  sortMode={sortMode}
+                  openTradeOverlay={handleOpenTradeOverlay}
+                  variants={variants}
+                  isEditable={isEditable}
+                />
+              </WindowOverlay>
+              <WindowOverlay onClose={handleCloseOverlay} className="wanted-instance-window">
                 <WantedInstance
                   key={wantedInstanceKey}
                   pokemon={activePokemon as unknown as WantedOverlayPokemon}
                   isEditable={isEditable}
                 />
-                <section className="pokemon-trade-summary">
-                  <div>
-                    <span>Available from your catalog</span>
-                    <strong>
-                      {visibleTargetCount('trade', activePokemon.instanceData?.not_trade_list)}
-                      {' '}possible offer{visibleTargetCount('trade', activePokemon.instanceData?.not_trade_list) === 1 ? '' : 's'}
-                    </strong>
-                    <p>Use the Trade Hub to find trainers with a reciprocal match.</p>
-                  </div>
-                  <button type="button" onClick={() => openContextualMatches('wanted')}>
-                    View available offers
-                  </button>
-                </section>
-                <details className="pokemon-preference-disclosure">
-                  <summary>{isEditable ? 'Edit wanted preferences' : 'View matching offers'}</summary>
-                  <WantedDetails
-                    key={`${wantedInstanceKey}:details`}
-                    pokemon={withInstanceData(activePokemon) as WantedDetailsPokemon}
-                    lists={lists}
-                    instances={instances}
-                    sortType={sortType}
-                    sortMode={sortMode}
-                    openTradeOverlay={handleOpenTradeOverlay}
-                    variants={variants}
-                    isEditable={isEditable}
-                  />
-                </details>
-              </div>
-            </WindowOverlay>
+              </WindowOverlay>
+            </div>
           </div>
         );
       }

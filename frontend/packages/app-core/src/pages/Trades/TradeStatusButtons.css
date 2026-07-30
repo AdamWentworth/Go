@@ -1,164 +1,73 @@
+/* TradeStatusButtons.css */
+
+/* Container styling */
 .trades-container {
-  --trade-surface: color-mix(in srgb, var(--background-color, #101214) 88%, white);
-  --trade-border: color-mix(in srgb, currentColor 18%, transparent);
-  width: min(1180px, calc(100% - 32px));
-  margin: 0 auto;
-  padding: 28px 0 calc(120px + env(safe-area-inset-bottom));
-  color: var(--text-color, #f6f7f8);
-}
-
-.trade-hub-header {
-  display: flex;
-  align-items: end;
-  justify-content: space-between;
-  gap: 24px;
-  margin-bottom: 24px;
-}
-
-.trade-hub-header h1 {
-  margin: 3px 0 8px;
-  font-size: clamp(1.8rem, 4vw, 2.75rem);
-  line-height: 1.05;
-}
-
-.trade-hub-header p,
-.trade-section-heading p {
-  margin: 0;
-  color: color-mix(in srgb, currentColor 68%, transparent);
-}
-
-.trade-hub-eyebrow {
-  color: var(--primary-color, #f18b2b) !important;
-  font-size: 0.78rem;
-  font-weight: 800;
-  letter-spacing: 0.13em;
-  text-transform: uppercase;
-}
-
-.trade-hub-tabs {
-  position: sticky;
-  top: 8px;
-  z-index: 20;
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 8px;
-  padding: 7px;
-  border: 1px solid var(--trade-border);
-  border-radius: 18px;
-  background: color-mix(in srgb, var(--trade-surface) 92%, transparent);
-  box-shadow: 0 12px 35px rgb(0 0 0 / 18%);
-  backdrop-filter: blur(18px);
-}
-
-.trade-hub-tab {
-  min-height: 62px;
-  padding: 10px 14px;
-  border: 0;
-  border-radius: 12px;
-  background: transparent;
-  color: inherit;
-  cursor: pointer;
-  text-align: left;
-}
-
-.trade-hub-tab > span {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 1rem;
-  font-weight: 800;
-}
-
-.trade-hub-tab small {
-  display: block;
-  margin-top: 3px;
-  color: color-mix(in srgb, currentColor 62%, transparent);
-}
-
-.trade-hub-tab:hover,
-.trade-hub-tab:focus-visible {
-  background: color-mix(in srgb, currentColor 8%, transparent);
-}
-
-.trade-hub-tab.active {
-  background: var(--primary-color, #e87520);
-  color: white;
-  box-shadow: 0 8px 22px rgb(232 117 32 / 28%);
-}
-
-.trade-hub-tab.active small {
-  color: rgb(255 255 255 / 76%);
-}
-
-.trade-hub-count {
-  display: inline-grid;
-  min-width: 22px;
-  height: 22px;
-  place-items: center;
-  padding-inline: 6px;
-  border-radius: 999px;
-  background: rgb(0 0 0 / 24%);
-  font-size: 0.75rem;
-}
-
-.trade-hub-groups {
-  display: grid;
-  gap: 28px;
-  margin-top: 28px;
-}
-
-.trade-hub-groups > section {
-  overflow: hidden;
-  border: 1px solid var(--trade-border);
-  border-radius: 18px;
-  background: var(--trade-surface);
-}
-
-.trade-section-heading {
-  padding: 20px 22px 4px;
-}
-
-.trade-section-heading h2 {
-  margin: 0 0 4px;
-  font-size: 1.18rem;
-}
-
-@media (max-width: 640px) {
-  .trades-container {
-    width: min(100% - 20px, 1180px);
-    padding-top: 18px;
+    color: white;
+  }
+  
+  /* Container for all button groups */
+  .trades-container  .status-buttons {
+    display: flex;
+    justify-content: center;   
+    align-items: flex-start;   /* Align groups at the top by default */
+    gap: 20px;                 
+    margin: 15px 0;
+  }
+  
+  /* Generic button group styling */
+  .trades-container  .button-group {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;  
+  }
+  
+  /* Vertical center for middle-group */
+  .trades-container  .middle-group {
+    align-self: center;
+  }
+  
+  /* Base style for all status buttons */
+  .trades-container  .status-button {
+    background-color: #6c757d;
+    color: #fff;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+  }
+  
+  /* Hover effect for buttons */
+  .trades-container  .status-button:hover {
+    opacity: 0.9;
+  }
+  
+  /* Active status button color variations */
+  .trades-container .status-button.active.proposed {
+    background-color: #43A047;
+  }
+  .trades-container  .status-button.active.accepting {
+    background-color: #43A047;
+  }
+  .trades-container .status-button.active.pending {
+    background-color: #fd7e14;
+  }
+  .trades-container .status-button.active.cancelled {
+    background-color: #dc3545;
+  }
+  .trades-container .status-button.active.completed {
+    background-color: #007bff;
+  }
+  
+  /* Media query for screens smaller than 600px */
+@media (max-width: 480px) {
+  .trades-container .status-button {
+    padding: 8px 12px;
+    font-size: 0.8rem;
   }
 
-  .trade-hub-header {
-    margin-bottom: 18px;
-  }
-
-  .trade-hub-header > div > p:last-child {
-    font-size: 0.9rem;
-  }
-
-  .trade-hub-tabs {
-    top: 4px;
-  }
-
-  .trade-hub-tab {
-    min-height: 48px;
-    padding: 10px 8px;
-    text-align: center;
-  }
-
-  .trade-hub-tab > span {
-    justify-content: center;
-    font-size: 0.92rem;
-  }
-
-  .trade-hub-tab small {
-    display: none;
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .trade-hub-tab {
-    transition: none;
+  /* Optionally adjust gaps and layout for smaller screens */
+  .trades-container .status-buttons {
+    gap: 10px;              /* Reduce gap between button groups */
   }
 }

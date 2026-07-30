@@ -457,11 +457,6 @@ export async function installE2eRoutes(page: Page, options: E2eRouteOptions = {}
   await page.route('**/__e2e/search/searchPokemon**', async (route) => {
     await fulfillJson(route, options.searchResults ?? []);
   });
-  for (const pathPattern of ['**/api/search/trade-matches**', '**/__e2e/search/trade-matches**']) {
-    await page.route(pathPattern, async (route) => {
-      await fulfillJson(route, { matches: [] });
-    });
-  }
 
   const rankings = options.communityRankings ?? {
     privacy_threshold: 5,

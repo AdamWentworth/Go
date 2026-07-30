@@ -9,10 +9,7 @@
   width: 100%;
   position: sticky; 
   top: 0;
-  z-index: 30;
-  border: 1px solid color-mix(in srgb, currentColor 14%, transparent);
-  border-radius: 16px;
-  overflow: clip;
+  z-index: 1000;
   /* box-shadow: 0px 4px 2px -2px rgb(168, 168, 168); */
 }
 
@@ -22,8 +19,7 @@
   align-items: center;
   justify-content: flex-start; /* Align items to the start */
   width: 100%;
-  min-height: 58px;
-  padding: 7px 14px;
+  padding: 10px 20px; /* Add padding for layout */
   position: relative; /* Use relative positioning to ensure correct height */
 }
 
@@ -47,18 +43,16 @@
   position: absolute; /* Position it relative to the controls-container */
   left: 50%; /* Center it */
   transform: translateX(-50%); /* Correct the centering */
-  gap: 6px;
+  gap: 10px; /* Add space between buttons */
   margin-top: 0; /* Remove top margin */
 }
 
 .view-button {
-  gap: 7px;
-  min-height: 44px;
-  background: transparent;
-  color: inherit;
-  border: 0;
-  padding: 0 13px;
-  border-radius: 10px;
+  background: #444;
+  color: white;
+  border: none;
+  padding: 10px;
+  border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -67,32 +61,25 @@
 }
 
 .view-button:hover {
-  background: color-mix(in srgb, currentColor 8%, transparent);
-}
-
-.view-button.active {
-  background: color-mix(in srgb, var(--primary-color, #e87520) 18%, transparent);
-  color: var(--primary-color, #f29a4d);
+  background-color: #666;
 }
 
 .pokemon-search-bar .toggle-button {
   display: flex;
   justify-content: center;
   align-items: center;
-  gap: 7px;
-  background: transparent;
-  color: inherit;
+  background-color: #444;
+  color: white;
   cursor: pointer;
-  min-width: 124px;
-  min-height: 44px;
-  padding: 0 12px;
-  border: 1px solid color-mix(in srgb, currentColor 15%, transparent);
-  border-radius: 10px;
-  box-shadow: none;
+  padding: 3px 5px;
+  border-radius: 50%;
+  width: 30px;
+  height: 30px;
+  box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.2);
 }
 
 .pokemon-search-bar .toggle-button:hover {
-  background: color-mix(in srgb, currentColor 8%, transparent);
+  background-color: #666;
 }
 
 .pokemon-search-bar .toggle-button svg {
@@ -136,6 +123,30 @@
   transition: max-height 0.6s ease-in-out, visibility 0s linear 0.6s; /* Add visibility delay */
 }
 
+/* Additional CSS for the controls and buttons */
+.pokemon-search-bar .toggle-button {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background-color: #444;
+  color: white;
+  cursor: pointer;
+  padding: 3px 5px;
+  border-radius: 50%;
+  width: 30px;
+  height: 30px;
+  box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.pokemon-search-bar .toggle-button:hover {
+  background-color: #666;
+}
+
+.pokemon-search-bar .toggle-button svg {
+  width: 12px;
+  height: 12px;
+}
+
 .pokemon-search-bar.collapsed {
   height: 0;
   overflow: hidden;
@@ -166,10 +177,6 @@
   position: relative;
   left: unset;
   transform: unset;
-}
-.view-button,
-.pokemon-search-bar .toggle-button {
-  flex: 1;
 }
 .pokemon-search-bar {
   top:0px

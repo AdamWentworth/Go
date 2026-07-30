@@ -94,13 +94,12 @@ test('accepts and confirms a trade through authoritative commands', async ({
 
   await seedLogin(page);
   await page.goto('/trades');
-  await page.getByRole('button', { name: /^Active/ }).click();
-  await page.getByText('Review offer').click();
+  await page.getByRole('button', { name: 'Offers' }).click();
   await expect(page.getByRole('button', { name: 'Accept' })).toBeVisible();
   await page.getByRole('button', { name: 'Accept' }).click();
   await page.getByRole('button', { name: 'OK' }).click();
 
-  await page.getByText('Review completion').click();
+  await page.getByRole('button', { name: 'Pending' }).click();
   await expect(page.getByRole('button', { name: 'Confirm Complete' })).toBeVisible();
   await page.getByRole('button', { name: 'Confirm Complete' }).click();
   await page.getByRole('button', { name: 'OK' }).click();
@@ -125,8 +124,7 @@ test('keeps canonical trade state and explains a rejected server command', async
 
   await seedLogin(page);
   await page.goto('/trades');
-  await page.getByRole('button', { name: /^Active/ }).click();
-  await page.getByText('Review offer').click();
+  await page.getByRole('button', { name: 'Offers' }).click();
   await page.getByRole('button', { name: 'Accept' }).click();
   await page.getByRole('button', { name: 'OK' }).click();
 

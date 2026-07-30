@@ -5,39 +5,47 @@ import { fireEvent, render, screen } from '@testing-library/react';
 import TradeStatusButtons from '@/pages/Trades/TradeStatusButtons';
 
 describe('TradeStatusButtons', () => {
-  it('renders the three hub sections and marks the selected one active', () => {
-    const setSelectedSection = vi.fn();
+  it('renders all status controls and marks the selected one active', () => {
+    const setSelectedStatus = vi.fn();
 
     render(
       <TradeStatusButtons
-        selectedSection="active"
-        setSelectedSection={setSelectedSection}
-        activeCount={3}
+        selectedStatus="Pending"
+        setSelectedStatus={setSelectedStatus}
       />,
     );
 
-    expect(screen.getByRole('button', { name: /Matches/ })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /Active/ })).toHaveClass('active');
-    expect(screen.getByRole('button', { name: /History/ })).toBeInTheDocument();
-    expect(screen.getByLabelText('3 active trades')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Offers' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Proposed' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Pending' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Completed' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Cancelled' })).toBeInTheDocument();
+
+    expect(screen.getByRole('button', { name: 'Pending' })).toHaveClass('active');
   });
 
-  it('emits canonical hub section values when buttons are clicked', () => {
-    const setSelectedSection = vi.fn();
+  it('emits canonical status values when buttons are clicked', () => {
+    const setSelectedStatus = vi.fn();
 
     render(
       <TradeStatusButtons
-        selectedSection="matches"
-        setSelectedSection={setSelectedSection}
+        selectedStatus="Pending"
+        setSelectedStatus={setSelectedStatus}
       />,
     );
 
-    fireEvent.click(screen.getByRole('button', { name: /Active/ }));
-    fireEvent.click(screen.getByRole('button', { name: /History/ }));
+    fireEvent.click(screen.getByRole('button', { name: 'Offers' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Proposed' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Pending' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Completed' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Cancelled' }));
 
-    expect(setSelectedSection.mock.calls.map(([value]) => value)).toEqual([
-      'active',
-      'history',
+    expect(setSelectedStatus.mock.calls.map(([value]) => value)).toEqual([
+      'Accepting',
+      'Proposed',
+      'Pending',
+      'Completed',
+      'Cancelled',
     ]);
   });
 });

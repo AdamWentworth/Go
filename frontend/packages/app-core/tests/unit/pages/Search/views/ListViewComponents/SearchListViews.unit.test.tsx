@@ -66,7 +66,7 @@ describe('Search list view components', () => {
       />,
     );
 
-    expect(within(view.container).queryByTestId('mini-map')).not.toBeInTheDocument();
+    expect(within(view.container).getByTestId('mini-map')).toBeInTheDocument();
     expect(within(view.container).getByTestId('gender-chip')).toHaveTextContent('Male');
   });
 
@@ -78,7 +78,7 @@ describe('Search list view components', () => {
       />,
     );
 
-    expect(within(view.container).queryByTestId('mini-map')).not.toBeInTheDocument();
+    expect(within(view.container).getByTestId('mini-map')).toBeInTheDocument();
     expect(within(view.container).getByTestId('gender-chip')).toHaveTextContent('Male');
   });
 });

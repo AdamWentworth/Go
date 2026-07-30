@@ -1,5 +1,8 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router';
+
+import ConfirmationOverlay from '../ConfirmationOverlay';
+import MiniMap from './MiniMap';
 
 type SearchResultMapInstance = 'caught' | 'trade' | 'wanted';
 type SearchResultNavigationInstance = 'Caught' | 'Trade' | 'Wanted';
@@ -23,58 +26,75 @@ const SearchResultRow: React.FC<SearchResultRowProps> = ({
   username,
   instanceId,
   distance,
+  latitude,
+  longitude,
+  mapInstanceData,
   navigationInstanceData,
   pokemonDisplayName,
   rightColumn,
   children,
 }) => {
   const navigate = useNavigate();
-  const canTrade = navigationInstanceData === 'Trade' || navigationInstanceData === 'Wanted';
+  const [showConfirmation, setShowConfirmation] = useState(false);
 
-  const viewPokemon = () => {
+  const handleOpenConfirmation = () => {
+    setShowConfirmation(true);
+  };
+
+  const handleCenterColumnKeyDown = (
+    event: React.KeyboardEvent<HTMLDivElement>,
+  ) => {
+    if (event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault();
+      handleOpenConfirmation();
+    }
+  };
+
+  const handleConfirmNavigation = () => {
     navigate(`/pokemon/${username ?? ''}`, {
       state: {
         instanceId: instanceId ?? '',
         instanceData: navigationInstanceData,
       },
     });
+    setShowConfirmation(false);
   };
 
-  const findTrade = () => {
-    const params = new URLSearchParams({ section: 'matches' });
-    if (instanceId) params.set('candidate_instance_id', instanceId);
-    navigate(`/trades?${params.toString()}`);
+  const handleCloseConfirmation = () => {
+    setShowConfirmation(false);
   };
 
   return (
-    <article className={['list-view-row', className].filter(Boolean).join(' ')}>
-      <header className="search-result-identity">
-        <div>
-          <span>{navigationInstanceData === 'Trade' ? 'For trade' : navigationInstanceData}</span>
-          <strong>{username || 'Trainer'}</strong>
-        </div>
-        {typeof distance === 'number' && distance > 0 ? (
-          <span>{distance.toFixed(1)} km away</span>
-        ) : null}
-      </header>
+    <div className={['list-view-row', className].filter(Boolean).join(' ')}>
+      <div className="left-column">
+        {typeof distance === 'number' && distance > 0 && (
+          <p>Distance: {distance.toFixed(2)} km</p>
+        )}
+        <MiniMap latitude={latitude} longitude={longitude} instanceData={mapInstanceData} />
+      </div>
 
-      <div className="center-column">{children}</div>
-      {rightColumn ? <div className="right-column">{rightColumn}</div> : null}
+      <div
+        className="center-column"
+        onClick={handleOpenConfirmation}
+        onKeyDown={handleCenterColumnKeyDown}
+        role="button"
+        tabIndex={0}
+      >
+        {children}
+      </div>
 
-      <footer className="search-result-actions">
-        <button type="button" onClick={() => navigate(`/profile/${username ?? ''}`)}>
-          View profile
-        </button>
-        <button type="button" onClick={viewPokemon}>
-          View {pokemonDisplayName}
-        </button>
-        {canTrade ? (
-          <button type="button" className="primary" onClick={findTrade}>
-            Find trade
-          </button>
-        ) : null}
-      </footer>
-    </article>
+      <div className="right-column">{rightColumn}</div>
+
+      {showConfirmation && (
+        <ConfirmationOverlay
+          username={username ?? ''}
+          pokemonDisplayName={pokemonDisplayName}
+          instanceId={instanceId ?? ''}
+          onConfirm={handleConfirmNavigation}
+          onClose={handleCloseConfirmation}
+        />
+      )}
+    </div>
   );
 };
 
