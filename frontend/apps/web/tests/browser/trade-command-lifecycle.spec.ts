@@ -155,6 +155,118 @@ test('keeps canonical trade state and explains a rejected server command', async
   await expect(page.getByRole('button', { name: 'Accept offer' })).toBeVisible();
 });
 
+test('denies an offer, moves it to Closed, and re-proposes it', async ({ page }) => {
+  let trade = { ...proposedTrade };
+  const commands: string[] = [];
+  await installE2eRoutes(page, {
+    trades: { [trade.trade_id]: trade },
+    userOverview: { related_instances: instances },
+  });
+  await routeTradeCommand(page, async (route) => {
+    const pathname = new URL(route.request().url()).pathname;
+    commands.push(pathname.slice(pathname.indexOf('/trades/')));
+    if (pathname.endsWith('/deny')) {
+      trade = { ...trade, trade_status: 'denied', last_update: 200 };
+      await json(route, { trade, affected_instances: {} });
+      return;
+    }
+    if (pathname.endsWith('/repropose')) {
+      trade = {
+        ...trade,
+        user_id_proposed: 'trade-user-2',
+        username_proposed: 'misty',
+        user_id_accepting: 'trade-user-1',
+        username_accepting: 'ash',
+        trade_status: 'proposed',
+        last_update: 300,
+      };
+      await json(route, { trade, affected_instances: {} });
+      return;
+    }
+    await json(route, { message: 'Unhandled trade command' }, 404);
+  });
+
+  await seedLogin(page);
+  await openTradeActivity(page);
+  await page.getByRole('button', { name: 'Deny' }).click();
+  await page.getByRole('button', { name: 'OK' }).click();
+
+  await expect(page.getByRole('button', { name: /^Closed, 1/ })).toBeVisible();
+  await page.getByRole('button', { name: /^Closed, 1/ }).click();
+  await page.getByRole('button', { name: 'Re-Propose Trade' }).click();
+  await page.getByRole('button', { name: 'OK' }).click();
+
+  await expect(page.getByRole('button', { name: /^Sent, 1/ })).toBeVisible();
+  expect(commands).toEqual([
+    '/trades/trade-e2e/deny',
+    '/trades/trade-e2e/repropose',
+  ]);
+});
+
+test('withdraws a sent proposal and reconciles it into Closed', async ({ page }) => {
+  let trade = {
+    ...proposedTrade,
+    user_id_proposed: 'trade-user-2',
+    username_proposed: 'misty',
+    user_id_accepting: 'trade-user-1',
+    username_accepting: 'ash',
+  };
+  await installE2eRoutes(page, {
+    trades: { [trade.trade_id]: trade },
+    userOverview: { related_instances: instances },
+  });
+  await routeTradeCommand(page, async (route) => {
+    trade = {
+      ...trade,
+      trade_status: 'cancelled',
+      trade_cancelled_by: 'misty',
+      trade_cancelled_date: '2026-07-30T12:00:00Z',
+      last_update: 200,
+    };
+    await json(route, { trade, affected_instances: {} });
+  });
+
+  await seedLogin(page);
+  await openTradeActivity(page);
+  await page.getByRole('button', { name: /^Sent, 1/ }).click();
+  await page.getByRole('button', { name: 'Cancel proposal' }).click();
+  await page.getByRole('button', { name: 'OK' }).click();
+
+  await expect(page.getByRole('button', { name: /^Sent, 0/ })).toBeVisible();
+  await expect(page.getByRole('button', { name: /^Closed, 1/ })).toBeVisible();
+  await page.getByRole('button', { name: /^Closed, 1/ }).click();
+  await expect(page.getByRole('button', { name: 'Re-Propose Trade' })).toBeVisible();
+});
+
+test('records satisfaction only from completed trade history', async ({ page }) => {
+  let trade = {
+    ...proposedTrade,
+    trade_status: 'completed',
+    user_proposed_completion_confirmed: true,
+    user_accepting_completion_confirmed: true,
+    user_1_trade_satisfaction: false,
+    user_2_trade_satisfaction: false,
+  };
+  await installE2eRoutes(page, {
+    trades: { [trade.trade_id]: trade },
+    userOverview: { related_instances: instances },
+  });
+  await routeTradeCommand(page, async (route) => {
+    expect(route.request().method()).toBe('PUT');
+    expect(route.request().postDataJSON()).toEqual({ satisfied: true });
+    trade = { ...trade, user_2_trade_satisfaction: true, last_update: 200 };
+    await json(route, { trade, affected_instances: {} });
+  });
+
+  await seedLogin(page);
+  await openTradeActivity(page);
+  await page.getByRole('button', { name: /^Completed, 1/ }).click();
+  await page.getByRole('button', { name: 'Mark as satisfying' }).click();
+
+  await expect(page.getByRole('button', { name: 'Feedback saved' })).toBeVisible();
+  await expect(page.getByText('Thanks for the feedback!')).toBeVisible();
+});
+
 test('uses a compact side-by-side comparison without horizontal overflow on mobile', async ({
   page,
 }) => {
