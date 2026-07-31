@@ -85,14 +85,22 @@ vi.mock('@/features/trades/proposal/CatalogWantedLauncherPanel', () => ({
 }));
 
 vi.mock('@/pages/Pokemon/features/instances/components/Trade/TradeTargetsPanel', () => ({
-  default: ({ isEditable }: { isEditable: boolean }) => (
-    <div data-testid="own-trade-targets" data-editable={String(isEditable)} />
+  default: ({ isEditable, summaryMode }: { isEditable: boolean; summaryMode?: boolean }) => (
+    <div
+      data-testid="own-trade-targets"
+      data-editable={String(isEditable)}
+      data-summary={String(summaryMode)}
+    />
   ),
 }));
 
 vi.mock('@/pages/Pokemon/features/instances/components/Wanted/WantedDetails', () => ({
-  default: ({ isEditable }: { isEditable: boolean }) => (
-    <div data-testid="own-wanted-targets" data-editable={String(isEditable)} />
+  default: ({ isEditable, summaryMode }: { isEditable: boolean; summaryMode?: boolean }) => (
+    <div
+      data-testid="own-wanted-targets"
+      data-editable={String(isEditable)}
+      data-summary={String(summaryMode)}
+    />
   ),
 }));
 
@@ -165,6 +173,7 @@ describe('InstanceOverlay', () => {
       'data-editable',
       'false',
     );
+    expect(screen.getByTestId('own-trade-targets')).toHaveAttribute('data-summary', 'true');
     expect(screen.getByTestId('trade-preference-handoff')).toBeInTheDocument();
     expect(screen.queryByTestId('trade-details')).not.toBeInTheDocument();
   });
@@ -176,6 +185,7 @@ describe('InstanceOverlay', () => {
       'data-editable',
       'false',
     );
+    expect(screen.getByTestId('own-wanted-targets')).toHaveAttribute('data-summary', 'true');
     expect(screen.getByTestId('trade-preference-handoff')).toBeInTheDocument();
     expect(screen.queryByTestId('wanted-details')).not.toBeInTheDocument();
   });

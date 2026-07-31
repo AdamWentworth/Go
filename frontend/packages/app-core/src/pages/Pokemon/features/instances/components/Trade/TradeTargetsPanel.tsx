@@ -58,6 +58,7 @@ interface TradeTargetsPanelProps {
   variants: PokemonVariant[];
   isEditable: boolean;
   onEditingChange?: (editing: boolean) => void;
+  summaryMode?: boolean;
 }
 
 const log = createScopedLogger('TradeTargetsPanel');
@@ -72,6 +73,7 @@ const TradeTargetsPanel: React.FC<TradeTargetsPanelProps> = ({
   variants,
   isEditable,
   onEditingChange,
+  summaryMode = false,
 }) => {
   const instancesMap = (instances ?? {}) as Record<string, PokemonInstance>;
   const { not_wanted_list = {}, wanted_filters = {} } = pokemon.instanceData;
@@ -232,6 +234,33 @@ const TradeTargetsPanel: React.FC<TradeTargetsPanelProps> = ({
       (updater) => setListsState((prev) => updater(prev)),
     );
   };
+
+  if (summaryMode) {
+    return (
+      <section className="preference-target-summary preference-target-summary--trade">
+        <header>
+          <strong>Trade targets</strong>
+          <span>{filteredWantedListCount}</span>
+        </header>
+        <TradeTargetsList
+          pokemon={pokemon}
+          lists={{ wanted: filteredWantedList }}
+          localNotWantedList={localNotWantedList}
+          isMirror={isMirror}
+          mirrorKey={mirrorKey}
+          setLocalNotWantedList={setLocalNotWantedList}
+          editMode={false}
+          toggleReciprocalUpdates={toggleReciprocalUpdates}
+          sortType={sortType}
+          sortMode={sortMode}
+          onPokemonClick={(key) => {
+            if (filteredWantedList[key]) handlePokemonClick(key);
+          }}
+          compact
+        />
+      </section>
+    );
+  }
 
   return (
     <div className="trade-details-root">

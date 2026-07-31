@@ -49,6 +49,7 @@ interface TradeListDisplayProps {
   sortType: SortType;
   sortMode: SortMode;
   onPokemonClick?: (key: string) => void;
+  compact?: boolean;
 }
 
 const extractBaseKey = (instanceId: string): string => {
@@ -77,6 +78,7 @@ const TradeListDisplay = ({
   sortType,
   sortMode,
   onPokemonClick,
+  compact = false,
 }: TradeListDisplayProps) => {
   const isSmallScreen = useViewportBelow(VIEWPORT_BREAKPOINTS.desktop);
   const notTradeMap = localNotTradeList || {};
@@ -164,7 +166,7 @@ const TradeListDisplay = ({
 
   return (
     <>
-      <div className="preference-candidate-tools">
+      {!compact ? <div className="preference-candidate-tools">
         <label>
           <input
             type="search"
@@ -210,9 +212,9 @@ const TradeListDisplay = ({
             ) : null}
           </>
         ) : null}
-      </div>
+      </div> : null}
       {sortedTradeListToDisplay.length > 0 ? (
-      <div className={`trade-list-container ${containerClass} ${gridClass}`}>
+      <div className={`trade-list-container ${containerClass} ${gridClass}${compact ? ' preference-target-summary__list' : ''}`}>
       {sortedTradeListToDisplay.map((tradePokemon) => {
         const isNotTrade =
           Boolean(notTradeMap[tradePokemon.key]) ||

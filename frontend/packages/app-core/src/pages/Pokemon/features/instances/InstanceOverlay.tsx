@@ -298,10 +298,12 @@ const InstanceOverlay: React.FC<InstanceOverlayProps> = ({
                             openTradeTargetOverlay={handleOpenTradeTargetOverlay}
                             variants={variants}
                             isEditable={false}
+                            summaryMode
                           />
                           <TradePreferenceHandoff
                             mode="trade"
                             instanceId={activePokemon.instanceData.instance_id}
+                            compact
                           />
                         </>
                       ) : null}
@@ -354,10 +356,12 @@ const InstanceOverlay: React.FC<InstanceOverlayProps> = ({
                       openTradeOverlay={handleOpenTradeOverlay}
                       variants={variants}
                       isEditable={false}
+                      summaryMode
                     />
                     <TradePreferenceHandoff
                       mode="wanted"
                       instanceId={activePokemon.instanceData.instance_id}
+                      compact
                     />
                   </>
                 ) : null}

@@ -61,6 +61,7 @@ interface WantedDetailsProps {
   variants: PokemonVariant[];
   isEditable: boolean;
   onEditingChange?: (editing: boolean) => void;
+  summaryMode?: boolean;
 }
 
 const WantedDetails: React.FC<WantedDetailsProps> = ({
@@ -73,6 +74,7 @@ const WantedDetails: React.FC<WantedDetailsProps> = ({
   variants,
   isEditable,
   onEditingChange,
+  summaryMode = false,
 }) => {
   const instancesMap = instances ?? {};
   // Defensive defaults in case instanceData is not ready yet.
@@ -245,6 +247,29 @@ const WantedDetails: React.FC<WantedDetailsProps> = ({
     };
     openTradeOverlay(mergedPokemonData);
   };
+
+  if (summaryMode) {
+    return (
+      <section className="preference-target-summary preference-target-summary--wanted">
+        <header>
+          <strong>Acceptable offers</strong>
+          <span>{filteredTradeListCount}</span>
+        </header>
+        <TradeListDisplay
+          pokemon={pokemon}
+          lists={{ trade: filteredTradeList || {} }}
+          localNotTradeList={localNotTradeList}
+          setLocalNotTradeList={setLocalNotTradeList}
+          editMode={false}
+          toggleReciprocalUpdates={toggleReciprocalUpdates}
+          sortType={sortType}
+          sortMode={sortMode}
+          onPokemonClick={handlePokemonClick}
+          compact
+        />
+      </section>
+    );
+  }
 
   return (
     <div className="trade-details-root wanted-preferences-root">

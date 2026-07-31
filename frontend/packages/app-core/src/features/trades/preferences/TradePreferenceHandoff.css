@@ -44,6 +44,18 @@
   text-decoration: none;
 }
 
+.trade-preference-handoff--compact {
+  justify-content: flex-end;
+  margin-top: -0.25rem;
+  padding: 0 0.9rem 0.8rem;
+  border: 0;
+  background: transparent;
+}
+
+.trade-preference-handoff--compact a {
+  min-height: 40px;
+}
+
 @media (max-width: 560px) {
   .trade-preference-handoff {
     align-items: stretch;

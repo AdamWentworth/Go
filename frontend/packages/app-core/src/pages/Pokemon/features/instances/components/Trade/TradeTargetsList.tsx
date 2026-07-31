@@ -28,6 +28,7 @@ interface TradeTargetsListProps {
   sortType: SortType;
   sortMode: SortMode;
   onPokemonClick?: (key: string) => void;
+  compact?: boolean;
 }
 
 const TradeTargetsList = ({
@@ -42,6 +43,7 @@ const TradeTargetsList = ({
   sortType,
   sortMode,
   onPokemonClick,
+  compact = false,
 }: TradeTargetsListProps) => {
   const isSmallScreen = useViewportBelow(VIEWPORT_BREAKPOINTS.desktop);
   const notWantedMap = localNotWantedList || {};
@@ -114,7 +116,7 @@ const TradeTargetsList = ({
 
   return (
     <>
-      <div className="preference-candidate-tools">
+      {!compact ? <div className="preference-candidate-tools">
         <label>
           <input
             type="search"
@@ -160,9 +162,9 @@ const TradeTargetsList = ({
             ) : null}
           </>
         ) : null}
-      </div>
+      </div> : null}
       {finalWantedListToDisplay.length > 0 ? (
-        <div className={`wanted-list-container ${containerClass} ${gridClass}`}>
+        <div className={`wanted-list-container ${containerClass} ${gridClass}${compact ? ' preference-target-summary__list' : ''}`}>
           {finalWantedListToDisplay.map((wantedPokemon) => (
             <TradeTargetListItem
               key={wantedPokemon.key}
