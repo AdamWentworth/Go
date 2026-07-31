@@ -2,7 +2,7 @@ import { act, renderHook } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 
 import type { PokemonInstance } from '@/types/pokemonInstance';
-import useTradeProposalFlow from '@/pages/Pokemon/features/instances/components/Trade/useTradeProposalFlow';
+import { useTradeProposalFlow } from '@/features/trades/proposal';
 
 const makeInstance = (overrides: Partial<PokemonInstance> = {}): PokemonInstance =>
   ({
@@ -29,7 +29,7 @@ const makeArgs = () => {
   };
 };
 
-describe('useTradeProposalFlow', () => {
+describe('shared useTradeProposalFlow', () => {
   it('returns early when no selected pokemon is set', async () => {
     const { alert, closeOverlay, fetchInstances, fetchTrades } = makeArgs();
     const { result } = renderHook(() =>

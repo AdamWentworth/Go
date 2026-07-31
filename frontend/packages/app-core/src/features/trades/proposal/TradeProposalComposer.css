@@ -2,7 +2,7 @@
 /* ====================================
    Overlay
    ==================================== */
-   .trade-proposal-overlay {
+.trade-proposal-overlay {
     position: fixed;
     inset: 0;
     display: flex;

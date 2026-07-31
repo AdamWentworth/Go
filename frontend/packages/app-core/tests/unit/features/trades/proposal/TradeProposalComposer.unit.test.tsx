@@ -2,7 +2,7 @@ import React from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 
-import TradeProposal from '@/pages/Pokemon/features/instances/components/Trade/TradeProposal';
+import { TradeProposalComposer } from '@/features/trades/proposal';
 import type {
   MatchedInstancePokemon,
   TradeProposalPayload,
@@ -93,7 +93,7 @@ const makePokemon = (
     ...overrides,
   }) as unknown as MatchedInstancePokemon;
 
-describe('TradeProposal', () => {
+describe('shared TradeProposalComposer', () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
@@ -113,14 +113,18 @@ describe('TradeProposal', () => {
     const matchedTwo = makePokemon('Gastly', 'matched-2');
 
     render(
-      <TradeProposal
-        passedInPokemon={wanted}
-        clickedPokemon={{ matchedInstances: [matchedOne, matchedTwo] } as TradeProposalPayload}
-        wantedPokemon={{ friendship_level: 3, pref_lucky: true }}
+      <TradeProposalComposer
+        context={{
+          partnerUsername: 'acceptor',
+          requestedPokemon: wanted,
+          candidateOffers: {
+            matchedInstances: [matchedOne, matchedTwo],
+          } as TradeProposalPayload,
+          requestedPreferences: { friendship_level: 3, pref_lucky: true },
+          ownedInstances: {},
+          relatedInstances: {},
+        }}
         onClose={onClose}
-        myInstances={{}}
-        instances={{}}
-        username="acceptor"
       />,
     );
 

@@ -3,9 +3,9 @@ import React from 'react';
 import type { Instances } from '@/types/instances';
 import type { PokemonInstance } from '@/types/pokemonInstance';
 import type { PokemonVariant } from '@/types/pokemonVariants';
+import { TradeProposalComposer } from '@/features/trades/proposal';
 
 import PokemonActionOverlay from './PokemonActionOverlay';
-import TradeProposal from './TradeProposal';
 import UpdateForTradeModal from './UpdateForTradeModal';
 import type { SelectedPokemon, TradeProposalPayload } from './tradeTargetsHelpers';
 
@@ -56,14 +56,21 @@ const TradeOverlaysPanel: React.FC<TradeOverlaysPanelProps> = ({
     />
 
     {isTradeProposalOpen && (
-      <TradeProposal
-        passedInPokemon={pokemon as unknown as PokemonVariant & { instanceData?: PokemonInstance }}
-        clickedPokemon={tradeClickedPokemon}
-        wantedPokemon={selectedPokemon as unknown as { friendship_level?: number; pref_lucky?: boolean } | null}
+      <TradeProposalComposer
+        context={{
+          partnerUsername: username,
+          requestedPokemon:
+            pokemon as unknown as PokemonVariant & { instanceData?: PokemonInstance },
+          candidateOffers: tradeClickedPokemon,
+          requestedPreferences:
+            selectedPokemon as unknown as {
+              friendship_level?: number;
+              pref_lucky?: boolean;
+            } | null,
+          ownedInstances: myInstances,
+          relatedInstances: instancesMap,
+        }}
         onClose={onCloseTradeProposal}
-        myInstances={myInstances}
-        instances={instancesMap}
-        username={username}
       />
     )}
 

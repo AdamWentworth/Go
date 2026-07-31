@@ -10,8 +10,8 @@ vi.mock('@/pages/Pokemon/features/instances/components/Trade/PokemonActionOverla
     isOpen ? <div data-testid="pokemon-action-overlay" /> : null,
 }));
 
-vi.mock('@/pages/Pokemon/features/instances/components/Trade/TradeProposal', () => ({
-  default: ({ onClose }: { onClose: () => void }) => (
+vi.mock('@/features/trades/proposal', () => ({
+  TradeProposalComposer: ({ onClose }: { onClose: () => void }) => (
     <button type="button" data-testid="trade-proposal" onClick={onClose}>
       close trade proposal
     </button>

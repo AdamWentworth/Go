@@ -5,7 +5,7 @@ import type {
   TradeProposalRequest,
 } from '@shared-contracts/trades';
 
-type SanitizedInstanceData = TradeProposalInstanceData;
+export type SanitizedInstanceData = TradeProposalInstanceData;
 
 type BuildTradeProposalRequestArgs = {
   usernameProposed: string;

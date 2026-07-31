@@ -36,7 +36,7 @@ import {
   initializeSelection,
   type SelectedPokemon,
 } from './tradeTargetsHelpers';
-import useTradeProposalFlow from './useTradeProposalFlow';
+import { useTradeProposalFlow } from '@/features/trades/proposal';
 import { createScopedLogger } from '@/utils/logger';
 import { useViewportBelow, VIEWPORT_BREAKPOINTS } from '@/hooks/useViewport';
 import {

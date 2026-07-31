@@ -8,7 +8,7 @@ import {
   TradeProposalMatchedDetails,
   TradeProposalPokemonCard,
   TradeProposalPokemonDetails,
-} from '@/pages/Pokemon/features/instances/components/Trade/TradeProposalSections';
+} from '@/features/trades/proposal/TradeProposalSections';
 import type { MatchedInstancePokemon } from '@/pages/Pokemon/features/instances/components/Trade/tradeTargetsHelpers';
 
 vi.mock('@/components/pokemonComponents/CP', () => ({
@@ -53,7 +53,7 @@ const makePokemon = (overrides: Record<string, unknown> = {}): MatchedInstancePo
     ...overrides,
   }) as unknown as MatchedInstancePokemon;
 
-describe('TradeProposalSections', () => {
+describe('shared TradeProposalSections', () => {
   it('renders pokemon details with nickname and readonly child fields', () => {
     render(<TradeProposalPokemonDetails pokemon={makePokemon()} showNickname />);
 

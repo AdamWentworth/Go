@@ -75,8 +75,8 @@ vi.mock('@/pages/Pokemon/features/instances/hooks/useToggleEditModeTrade', () =>
   default: (...args: unknown[]) => mocks.useToggleEditModeTradeMock(...args),
 }));
 
-vi.mock('@/pages/Pokemon/features/instances/components/Trade/useTradeProposalFlow', () => ({
-  default: (...args: unknown[]) => mocks.useTradeProposalFlowMock(...args),
+vi.mock('@/features/trades/proposal', () => ({
+  useTradeProposalFlow: (...args: unknown[]) => mocks.useTradeProposalFlowMock(...args),
 }));
 
 vi.mock('@/pages/Pokemon/features/instances/components/Trade/tradeTargetsHelpers', async () => {

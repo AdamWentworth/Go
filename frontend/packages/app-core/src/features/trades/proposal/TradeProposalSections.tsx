@@ -7,7 +7,7 @@ import Moves from '@/components/pokemonComponents/Moves';
 import type { PokemonInstance } from '@/types/pokemonInstance';
 import type { PokemonVariant } from '@/types/pokemonVariants';
 
-type TradeProposalPokemon = PokemonVariant & { instanceData: PokemonInstance };
+export type TradeProposalPokemon = PokemonVariant & { instanceData: PokemonInstance };
 
 const noop = () => undefined;
 

@@ -7,7 +7,7 @@ import {
   hasInstanceData,
   parseUsernameFromStoredUser,
   sanitizeInstanceData,
-} from '@/pages/Pokemon/features/instances/components/Trade/tradeProposalHelpers';
+} from '@/features/trades/proposal/tradeProposalHelpers';
 import type { PokemonVariant } from '@/types/pokemonVariants';
 import type { PokemonInstance } from '@/types/pokemonInstance';
 
@@ -24,7 +24,7 @@ const makeVariant = (
     ...overrides,
   } as PokemonVariant);
 
-describe('tradeProposalHelpers', () => {
+describe('shared tradeProposalHelpers', () => {
   it('parses username safely from stored user JSON', () => {
     expect(parseUsernameFromStoredUser('{"username":"Ash"}')).toBe('Ash');
     expect(parseUsernameFromStoredUser('{"username":123}')).toBeNull();

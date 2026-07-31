@@ -13,13 +13,13 @@ import {
   resolveTradeProposalDecision,
   type TradeProposalPayload,
   type SelectedPokemon,
-} from './tradeTargetsHelpers';
+} from './proposalCandidateHelpers';
 
 const log = createScopedLogger('useTradeProposalFlow');
 
 type AlertFn = (message: string) => void | Promise<void>;
 
-interface UseTradeProposalFlowParams {
+export interface UseTradeProposalFlowParams {
   selectedPokemon: SelectedPokemon | null;
   closeOverlay: () => void;
   alert: AlertFn;
@@ -27,7 +27,7 @@ interface UseTradeProposalFlowParams {
   fetchTrades?: () => Promise<unknown[]>;
 }
 
-interface UseTradeProposalFlowResult {
+export interface UseTradeProposalFlowResult {
   myInstances: Instances | undefined;
   isTradeProposalOpen: boolean;
   tradeClickedPokemon: TradeProposalPayload | null;

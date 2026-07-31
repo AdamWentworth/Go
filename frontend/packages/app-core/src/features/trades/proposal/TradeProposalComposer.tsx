@@ -1,8 +1,8 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import './TradeProposal.css';
+import './TradeProposalComposer.css';
 
-import FriendshipManager from '../Wanted/FriendshipManager';
-import useCalculateStardustCost from '../../hooks/useCalculateStardustCost';
+import FriendshipManager from '@/pages/Pokemon/features/instances/components/Wanted/FriendshipManager';
+import useCalculateStardustCost from '@/pages/Pokemon/features/instances/hooks/useCalculateStardustCost';
 
 import { useTradeStore } from '@/features/trades/store/useTradeStore';
 import { useModal } from '@/contexts/ModalContext';
@@ -11,7 +11,7 @@ import { createScopedLogger } from '@/utils/logger';
 import type { PokemonVariant } from '@/types/pokemonVariants';
 import type { PokemonInstance } from '@/types/pokemonInstance';
 import type { Instances } from '@/types/instances';
-import type { TradeProposalPayload } from './tradeTargetsHelpers';
+import type { TradeProposalPayload } from './proposalCandidateHelpers';
 import {
   buildTradeProposalPreflight,
   buildTradeProposalRequest,
@@ -29,35 +29,45 @@ import {
 
 const log = createScopedLogger('TradeProposal');
 
-interface TradeProposalProps {
-  passedInPokemon: PokemonVariant & { instanceData?: PokemonInstance };
-  clickedPokemon?: TradeProposalPayload | null;
-  wantedPokemon?: { friendship_level?: number; pref_lucky?: boolean } | null;
-  onClose: () => void;
-  myInstances?: Instances;
-  instances: Instances;
-  username: string;
+export interface TradeProposalContext {
+  partnerUsername: string;
+  requestedPokemon: PokemonVariant & { instanceData?: PokemonInstance };
+  candidateOffers?: TradeProposalPayload | null;
+  requestedPreferences?: {
+    friendship_level?: number;
+    pref_lucky?: boolean;
+  } | null;
+  ownedInstances?: Instances;
+  relatedInstances: Instances;
 }
 
-const TradeProposal: React.FC<TradeProposalProps> = ({
-  passedInPokemon,
-  clickedPokemon,
-  wantedPokemon,
+export interface TradeProposalComposerProps {
+  context: TradeProposalContext;
+  onClose: () => void;
+}
+
+const TradeProposalComposer: React.FC<TradeProposalComposerProps> = ({
+  context,
   onClose,
-  myInstances,
-  instances,
-  username,
 }) => {
+  const {
+    partnerUsername,
+    requestedPokemon,
+    candidateOffers,
+    requestedPreferences,
+    ownedInstances,
+    relatedInstances,
+  } = context;
   const proposeTrade = useTradeStore((s) => s.proposeTrade);
   const { alert } = useModal();
   const containerRef = useRef<HTMLDivElement | null>(null);
 
   const matchedInstances = useMemo(
     () =>
-      Array.isArray(clickedPokemon?.matchedInstances)
-        ? clickedPokemon.matchedInstances
+      Array.isArray(candidateOffers?.matchedInstances)
+        ? candidateOffers.matchedInstances
         : [],
-    [clickedPokemon?.matchedInstances],
+    [candidateOffers?.matchedInstances],
   );
   const [selectedMatchedInstance, setSelectedMatchedInstance] =
     useState<PokemonVariant | null>(matchedInstances[0] ?? null);
@@ -66,11 +76,11 @@ const TradeProposal: React.FC<TradeProposalProps> = ({
   const [pref_lucky, setPrefLucky] = useState<boolean>(false);
 
   useEffect(() => {
-    if (wantedPokemon) {
-      setFriendshipLevel(wantedPokemon.friendship_level ?? 0);
-      setPrefLucky(wantedPokemon.pref_lucky ?? false);
+    if (requestedPreferences) {
+      setFriendshipLevel(requestedPreferences.friendship_level ?? 0);
+      setPrefLucky(requestedPreferences.pref_lucky ?? false);
     }
-  }, [wantedPokemon]);
+  }, [requestedPreferences]);
 
   useEffect(() => {
     if (matchedInstances.length) setSelectedMatchedInstance(matchedInstances[0]);
@@ -87,10 +97,10 @@ const TradeProposal: React.FC<TradeProposalProps> = ({
 
   const { stardustCost, isSpecialTrade, isRegisteredTrade } = useCalculateStardustCost(
     friendship_level,
-    passedInPokemon,
+    requestedPokemon,
     selectedMatchedInstance?.instanceData ?? null,
-    myInstances ?? {},
-    instances,
+    ownedInstances ?? {},
+    relatedInstances,
   );
 
   const formattedStardustCost = stardustCost.toLocaleString();
@@ -112,22 +122,22 @@ const TradeProposal: React.FC<TradeProposalProps> = ({
     }
     const proposedInstanceId = preflight.proposedInstanceId;
     const normalizedFriendshipLevel = friendship_level as 1 | 2 | 3 | 4 | 5;
-    const sanitizedInstanceData = sanitizeInstanceData(passedInPokemon.instanceData);
+    const sanitizedInstanceData = sanitizeInstanceData(requestedPokemon.instanceData);
     const tradeData = buildTradeProposalRequest({
       usernameProposed: preflight.usernameProposed,
-      usernameAccepting: username,
+      usernameAccepting: partnerUsername,
       proposedInstanceId,
       acceptingInstanceId:
-        passedInPokemon.instanceData?.instance_id ?? passedInPokemon.variant_id ?? '',
+        requestedPokemon.instanceData?.instance_id ?? requestedPokemon.variant_id ?? '',
       isSpecialTrade,
       isRegisteredTrade,
       isLuckyTrade: pref_lucky,
       stardustCost,
       friendshipLevel: normalizedFriendshipLevel,
-      variantId: passedInPokemon.variant_id,
+      variantId: requestedPokemon.variant_id,
       passedInInstanceId:
-        typeof passedInPokemon.instanceData?.instance_id === 'string'
-          ? passedInPokemon.instanceData.instance_id
+        typeof requestedPokemon.instanceData?.instance_id === 'string'
+          ? requestedPokemon.instanceData.instance_id
           : undefined,
       sanitizedInstanceData,
     });
@@ -150,9 +160,9 @@ const TradeProposal: React.FC<TradeProposalProps> = ({
     }
   };
 
-  if (!passedInPokemon) return <p>Missing Pokemon data.</p>;
+  if (!requestedPokemon) return <p>Missing Pokemon data.</p>;
 
-  const wantPoke = hasInstanceData(passedInPokemon) ? passedInPokemon : undefined;
+  const wantPoke = hasInstanceData(requestedPokemon) ? requestedPokemon : undefined;
   const matchPoke = hasInstanceData(selectedMatchedInstance) ? selectedMatchedInstance : undefined;
 
   return (
@@ -211,4 +221,4 @@ const TradeProposal: React.FC<TradeProposalProps> = ({
   );
 };
 
-export default TradeProposal;
+export default TradeProposalComposer;
