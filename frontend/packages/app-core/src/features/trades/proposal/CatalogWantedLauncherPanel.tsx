@@ -1,6 +1,7 @@
 import { useState } from 'react';
 
 import { useModal } from '@/contexts/ModalContext';
+import PokemonLocationBackground from '@/features/pokemonDisplay/PokemonLocationBackground';
 import UpdateForTradeModal from '@/pages/Pokemon/features/instances/components/Trade/UpdateForTradeModal';
 import type { Instances } from '@/types/instances';
 import type { PokemonInstance } from '@/types/pokemonInstance';
@@ -102,7 +103,10 @@ const CatalogWantedLauncherPanel = ({
               key={pokemon.instanceData.instance_id}
               onClick={() => chooseReturn(pokemon)}
             >
-              {pokemon.currentImage ? <img src={pokemon.currentImage} alt="" /> : null}
+              <span className="catalog-wanted-launcher__media">
+                <PokemonLocationBackground pokemon={pokemon} />
+                {pokemon.currentImage ? <img src={pokemon.currentImage} alt="" /> : null}
+              </span>
               <span>{pokemon.name ?? pokemon.species_name ?? 'Unknown Pokémon'}</span>
             </button>
           ))}

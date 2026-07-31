@@ -6,6 +6,7 @@ import { useInstancesStore } from '@/features/instances/store/useInstancesStore'
 import { useTagsStore } from '@/features/tags/store/useTagsStore';
 import { useVariantsStore } from '@/features/variants/store/useVariantsStore';
 import { useModal } from '@/contexts/ModalContext';
+import PokemonLocationBackground from '@/features/pokemonDisplay/PokemonLocationBackground';
 import { getFilteredPokemonsByOwnership } from '@/hooks/filtering/usePokemonOwnershipFilter';
 import TradeTargetsPanel from '@/pages/Pokemon/features/instances/components/Trade/TradeTargetsPanel';
 import WantedDetails from '@/pages/Pokemon/features/instances/components/Wanted/WantedDetails';
@@ -45,7 +46,14 @@ const TradePreferencePokemonImage = ({
   const maxKind = getMaxKind(pokemon);
   return (
     <span className={`trade-preference-pokemon-image ${className}`.trim()}>
-      {pokemon.currentImage ? <img src={pokemon.currentImage} alt="" /> : null}
+      <PokemonLocationBackground pokemon={pokemon} />
+      {pokemon.currentImage ? (
+        <img
+          src={pokemon.currentImage}
+          alt=""
+          className="trade-preference-pokemon-sprite"
+        />
+      ) : null}
       {maxKind ? (
         <img
           src={`/images/${maxKind}.png`}

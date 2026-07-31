@@ -4,6 +4,7 @@ import CP from '@/components/pokemonComponents/CP';
 import DateCaughtComponent from '@/components/pokemonComponents/DateCaught';
 import LocationCaught from '@/components/pokemonComponents/LocationCaught';
 import Moves from '@/components/pokemonComponents/Moves';
+import PokemonLocationBackground from '@/features/pokemonDisplay/PokemonLocationBackground';
 import type { PokemonInstance } from '@/types/pokemonInstance';
 import type { PokemonVariant } from '@/types/pokemonVariants';
 
@@ -53,6 +54,7 @@ export const TradeProposalPokemonCard: React.FC<TradeProposalPokemonCardProps> =
   return (
     <div className="trade-proposal-image-container">
       <div className="image-wrapper">
+        <PokemonLocationBackground pokemon={pokemon} />
         {prefLucky && <img src="/images/lucky.png" alt="Lucky" className="lucky-backdrop" />}
         {variantType.includes('dynamax') && (
           <img src="/images/dynamax.png" alt="Dynamax" className="max-icon" />

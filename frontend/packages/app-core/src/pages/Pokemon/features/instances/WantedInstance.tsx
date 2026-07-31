@@ -13,6 +13,7 @@ import Height from '@/components/pokemonComponents/Height';
 import Moves from '@/components/pokemonComponents/Moves';
 import FriendshipManager from './components/Wanted/FriendshipManager';
 import BackgroundLocationCard from '@/components/pokemonComponents/BackgroundLocationCard';
+import PokemonLocationBackground from '@/features/pokemonDisplay/PokemonLocationBackground';
 import OverlayPortal from '@/components/OverlayPortal';
 
 import { determineImageUrl } from '@/utils/imageHelpers';
@@ -149,6 +150,7 @@ const WantedInstance: React.FC<WantedInstanceProps> = ({
         <div className="wanted-instance__catalog-label">Wanted</div>
         <div className="image-container">
           <div className="pokemon-image-container">
+            <PokemonLocationBackground pokemon={pokemon} />
             <img
               src={currentImage}
               alt={pokemon.name}

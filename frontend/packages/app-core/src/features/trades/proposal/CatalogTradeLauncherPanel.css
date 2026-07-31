@@ -101,7 +101,19 @@
   box-shadow: inset 0 0 0 1px #53d39a;
 }
 
-.catalog-trade-launcher__picker img {
+.catalog-trade-launcher__media {
+  position: relative;
+  display: grid;
+  width: 4.5rem;
+  height: 4.5rem;
+  place-items: center;
+  overflow: hidden;
+  border-radius: 0.55rem;
+}
+
+.catalog-trade-launcher__picker .catalog-trade-launcher__media > img:not(.pokemon-location-background) {
+  position: relative;
+  z-index: 1;
   width: 3.5rem;
   height: 3.5rem;
   object-fit: contain;

@@ -104,7 +104,19 @@
   }
 }
 
-.catalog-wanted-launcher__returns img {
+.catalog-wanted-launcher__media {
+  position: relative;
+  display: grid;
+  width: 5rem;
+  height: 5rem;
+  place-items: center;
+  overflow: hidden;
+  border-radius: 0.55rem;
+}
+
+.catalog-wanted-launcher__returns .catalog-wanted-launcher__media > img:not(.pokemon-location-background) {
+  position: relative;
+  z-index: 1;
   width: 4rem;
   height: 4rem;
   object-fit: contain;

@@ -1,6 +1,7 @@
 import { useState } from 'react';
 
 import { useModal } from '@/contexts/ModalContext';
+import PokemonLocationBackground from '@/features/pokemonDisplay/PokemonLocationBackground';
 import UpdateForTradeModal from '@/pages/Pokemon/features/instances/components/Trade/UpdateForTradeModal';
 import type { Instances } from '@/types/instances';
 import type { PokemonInstance } from '@/types/pokemonInstance';
@@ -107,9 +108,12 @@ const CatalogTradeLauncherPanel = ({
                   className={selected ? 'selected' : ''}
                   onClick={() => selectTarget(target)}
                 >
-                  {typeof target.currentImage === 'string' ? (
-                    <img src={target.currentImage} alt="" />
-                  ) : null}
+                  <span className="catalog-trade-launcher__media">
+                    <PokemonLocationBackground pokemon={target} />
+                    {typeof target.currentImage === 'string' ? (
+                      <img src={target.currentImage} alt="" />
+                    ) : null}
+                  </span>
                   <span>{targetName(target)}</span>
                 </button>
               );
