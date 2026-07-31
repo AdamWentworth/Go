@@ -2,7 +2,21 @@
 
 /* Container styling */
 .trades-container {
-    color: white;
+    --trade-accent: #42d7c6;
+    --trade-accent-strong: #14b9c8;
+    --trade-surface: #171c1d;
+    --trade-surface-raised: #202728;
+    --trade-nav-surface: #0d1516;
+    --trade-selected-surface: #213536;
+    --trade-border: #315052;
+    --trade-text: #f7fbfa;
+    --trade-muted: #9db5b4;
+    min-height: 100vh;
+    padding-top: 1px;
+    background:
+      linear-gradient(180deg, rgba(22, 117, 121, 0.12), transparent 210px),
+      var(--color-app-surface);
+    color: var(--trade-text);
   }
   
   /* Container for all button groups */
@@ -11,7 +25,12 @@
     justify-content: center;   
     align-items: flex-start;   /* Align groups at the top by default */
     gap: 20px;                 
-    margin: 15px 0;
+    width: min(720px, calc(100% - 24px));
+    margin: 15px auto;
+    padding: 14px;
+    border: 1px solid var(--trade-border);
+    border-radius: 12px;
+    background: var(--trade-surface);
   }
   
   /* Generic button group styling */
@@ -28,18 +47,21 @@
   
   /* Base style for all status buttons */
   .trades-container  .status-button {
-    background-color: #6c757d;
-    color: #fff;
+    min-height: 44px;
+    background: var(--trade-surface-raised);
+    color: var(--trade-muted);
     padding: 10px 20px;
     border: none;
-    border-radius: 4px;
+    border: 1px solid transparent;
+    border-radius: 8px;
     cursor: pointer;
     transition: background-color 0.3s;
   }
   
   /* Hover effect for buttons */
   .trades-container  .status-button:hover {
-    opacity: 0.9;
+    border-color: var(--trade-border);
+    color: var(--trade-text);
   }
   
   /* Active status button color variations */
@@ -57,6 +79,42 @@
   }
   .trades-container .status-button.active.completed {
     background-color: #007bff;
+  }
+  .trade-page-sections {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    width: min(1060px, calc(100% - 24px));
+    margin: 18px auto 8px;
+    padding: 4px;
+    border: 1px solid var(--trade-border);
+    border-radius: 8px;
+    background: var(--trade-nav-surface);
+  }
+
+  .trade-page-section {
+    min-height: 44px;
+    padding: 0 18px;
+    border: 0;
+    border-radius: 6px;
+    background: transparent;
+    color: var(--trade-muted);
+    cursor: pointer;
+    font-weight: 700;
+  }
+
+  .trade-page-section.active {
+    background: linear-gradient(90deg, var(--trade-accent-strong), #63e2b4);
+    color: #071516;
+  }
+
+  :root[data-theme="light"] .trades-container {
+    --trade-surface: #f3faf5;
+    --trade-surface-raised: #e0f0e5;
+    --trade-nav-surface: #e7f3eb;
+    --trade-selected-surface: #d3ebe4;
+    --trade-border: #9bb8b1;
+    --trade-text: #2f4744;
+    --trade-muted: #687f7b;
   }
   
   /* Media query for screens smaller than 600px */
