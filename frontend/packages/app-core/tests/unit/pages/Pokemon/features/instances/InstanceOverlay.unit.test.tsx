@@ -60,7 +60,12 @@ vi.mock('@/pages/Pokemon/features/instances/CaughtInstance', () => ({
 }));
 
 vi.mock('@/pages/Pokemon/features/instances/TradeInstance', () => ({
-  default: () => <div data-testid="trade-instance" />,
+  default: ({ compactListingView }: { compactListingView?: boolean }) => (
+    <div
+      data-testid="trade-instance"
+      data-compact-listing={String(compactListingView)}
+    />
+  ),
 }));
 
 vi.mock('@/features/trades/preferences/TradePreferenceHandoff', () => ({
@@ -110,15 +115,21 @@ vi.mock('@/pages/Pokemon/features/instances/WantedInstance', async () => {
   return {
     default: ({
       pokemon,
+      compactListingView,
     }: {
       pokemon: { instanceData?: { instance_id?: string | null } };
+      compactListingView?: boolean;
     }) => {
       const [draftInstanceId] = ReactActual.useState(
         () => pokemon.instanceData?.instance_id ?? 'none',
       );
 
       return (
-        <div data-testid="wanted-instance" data-draft-instance-id={draftInstanceId}>
+        <div
+          data-testid="wanted-instance"
+          data-draft-instance-id={draftInstanceId}
+          data-compact-listing={String(compactListingView)}
+        >
           {draftInstanceId}
         </div>
       );
@@ -173,6 +184,10 @@ describe('InstanceOverlay', () => {
       'data-editable',
       'false',
     );
+    expect(screen.getByTestId('trade-instance')).toHaveAttribute(
+      'data-compact-listing',
+      'true',
+    );
     expect(screen.getByTestId('own-trade-targets')).toHaveAttribute('data-summary', 'true');
     expect(screen.getByTestId('trade-preference-handoff')).toBeInTheDocument();
     expect(screen.queryByTestId('trade-details')).not.toBeInTheDocument();
@@ -184,6 +199,10 @@ describe('InstanceOverlay', () => {
     expect(screen.getByTestId('own-wanted-targets')).toHaveAttribute(
       'data-editable',
       'false',
+    );
+    expect(screen.getByTestId('wanted-instance')).toHaveAttribute(
+      'data-compact-listing',
+      'true',
     );
     expect(screen.getByTestId('own-wanted-targets')).toHaveAttribute('data-summary', 'true');
     expect(screen.getByTestId('trade-preference-handoff')).toBeInTheDocument();

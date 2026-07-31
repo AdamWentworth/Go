@@ -285,6 +285,7 @@ const InstanceOverlay: React.FC<InstanceOverlayProps> = ({
                         pokemon={activePokemon as unknown as TradeOverlayPokemon}
                         isEditable={isEditable}
                         catalogView={!isEditable}
+                        compactListingView={isEditable}
                       />
                       {isEditable && activePokemon.instanceData?.instance_id ? (
                         <>
@@ -343,6 +344,7 @@ const InstanceOverlay: React.FC<InstanceOverlayProps> = ({
                   pokemon={activePokemon as unknown as WantedOverlayPokemon}
                   isEditable={isEditable}
                   catalogView={!isEditable}
+                  compactListingView={isEditable}
                 />
                 {isEditable && activePokemon.instanceData?.instance_id ? (
                   <>

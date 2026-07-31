@@ -145,4 +145,32 @@ describe('TradeInstance', () => {
     expect(screen.queryByText('purify')).not.toBeInTheDocument();
     expect(screen.queryByText('Offering')).not.toBeInTheDocument();
   });
+
+  it('shows a real level but omits an empty level in the compact listing view', () => {
+    const pokemon = {
+      pokemon_id: 1,
+      name: 'Bulbasaur',
+      species_name: 'Bulbasaur',
+      variant_id: '0001-default',
+      variantType: 'default',
+      backgrounds: [],
+      max: [],
+      moves: [],
+      instanceData: { instance_id: 'uuid-1', is_for_trade: true },
+    } as any;
+
+    const { unmount } = render(
+      <TradeInstance pokemon={pokemon} isEditable compactListingView />,
+    );
+    expect(screen.getByText('35')).toBeInTheDocument();
+    unmount();
+
+    mocks.controllerMock.mockReturnValue({
+      ...mocks.controllerMock.mock.results[0]?.value,
+      level: null,
+    });
+    render(<TradeInstance pokemon={pokemon} isEditable compactListingView />);
+
+    expect(screen.queryByText('N/A')).not.toBeInTheDocument();
+  });
 });

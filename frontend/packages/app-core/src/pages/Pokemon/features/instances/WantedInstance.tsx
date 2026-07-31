@@ -33,12 +33,14 @@ interface WantedInstanceProps {
   pokemon: WantedPokemon;
   isEditable: boolean;
   catalogView?: boolean;
+  compactListingView?: boolean;
 }
 
 const WantedInstance: React.FC<WantedInstanceProps> = ({
   pokemon,
   isEditable,
   catalogView = false,
+  compactListingView = false,
 }) => {
   const updateDetails = useInstancesStore((s) => s.updateInstanceDetails);
   const entityKey = getEntityKey(pokemon);
@@ -267,7 +269,7 @@ const WantedInstance: React.FC<WantedInstanceProps> = ({
 
       <div className="stats-container">
         <Weight pokemon={pokemon} editMode={editMode} onWeightChange={handleWeightChange} />
-        {!catalogView ? <Types pokemon={pokemon} /> : null}
+        {!catalogView && !compactListingView ? <Types pokemon={pokemon} /> : null}
         <Height pokemon={pokemon} editMode={editMode} onHeightChange={handleHeightChange} />
       </div>
 

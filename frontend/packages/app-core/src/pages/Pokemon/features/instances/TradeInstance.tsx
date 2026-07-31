@@ -33,13 +33,16 @@ interface TradeInstanceProps {
   pokemon: TradePokemon;
   isEditable: boolean;
   catalogView?: boolean;
+  compactListingView?: boolean;
 }
 
 const TradeInstance: React.FC<TradeInstanceProps> = ({
   pokemon,
   isEditable,
   catalogView = false,
+  compactListingView = false,
 }) => {
+  const hideCollectionMetadata = catalogView || compactListingView;
   const updateDetails = useInstancesStore((s) => s.updateInstanceDetails);
   const { alert } = useModal();
   const entityKey = getEntityKey(pokemon);
@@ -107,6 +110,7 @@ const TradeInstance: React.FC<TradeInstanceProps> = ({
     isCrown: crownData.isCrown,
     crownForm: crownData.crownForm,
   });
+  const showLevelMetadata = !catalogView && (!compactListingView || level != null);
 
   const isShadow = Boolean(pokemon.instanceData.shadow);
   const isPurified = Boolean(pokemon.instanceData.purified);
@@ -326,7 +330,7 @@ const TradeInstance: React.FC<TradeInstanceProps> = ({
         editMode,
         onToggle: () => setShowBackgrounds((prev) => !prev),
       }}
-      levelArcLevel={catalogView ? null : level}
+      levelArcLevel={showLevelMetadata ? level : null}
       imageStage={{
         selectedBackground,
         isLucky,
@@ -356,13 +360,13 @@ const TradeInstance: React.FC<TradeInstanceProps> = ({
         gender,
         onGenderChange: handleGenderChange,
       }}
-      showLevelGenderRow={!catalogView}
+      showLevelGenderRow={showLevelMetadata}
       statsRow={{
         pokemon: statsPokemon,
         editMode,
         onWeightChange: (value) => handleWeightChange(String(value)),
         onHeightChange: (value) => handleHeightChange(String(value)),
-        showTypes: !catalogView,
+        showTypes: !hideCollectionMetadata,
       }}
       addStatsBottomGap={addStatsBottomGap}
       showStatsDivider={showStatsDivider}
