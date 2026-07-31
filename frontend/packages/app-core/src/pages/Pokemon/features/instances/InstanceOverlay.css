@@ -415,6 +415,53 @@
   touch-action: pan-y;
 }
 
+.overlay-content.trade-unified-window {
+  flex: 0 1 860px;
+  width: min(94vw, 860px);
+  max-width: 860px;
+  max-height: calc(
+    100dvh -
+    var(--overlay-close-button-size, 64px) -
+    var(--overlay-close-button-bottom, 20px) -
+    20px -
+    env(safe-area-inset-top) -
+    env(safe-area-inset-bottom)
+  );
+  overflow-x: hidden;
+  overflow-y: auto;
+}
+
+.trade-unified-window .trade-pane-scroll {
+  height: auto;
+  max-height: none;
+  overflow: visible;
+}
+
+.trade-unified-window .trade-pane-shell {
+  min-height: 0;
+}
+
+.trade-pane-shell--catalog-view {
+  --panel-offset: 240px;
+}
+
+@media (max-width: 767px) {
+  .overlay-content.trade-unified-window {
+    width: min(94vw, 720px);
+    max-width: 720px;
+  }
+}
+
+@media (max-width: 520px) {
+  .trade-pane-shell--catalog-view {
+    /*
+     * Keep the identity row inside the card as the image stage contracts.
+     * This belongs on the shell because the card background is its ::before.
+     */
+    --panel-offset: clamp(184px, 46vw, 206px);
+  }
+}
+
 /* responsive rules (unchanged) */
 @media (max-width: 767px) {
   .instance-overlay .overlay-row {
@@ -458,6 +505,12 @@
   .overlay-content.trade-details-window {
     overflow: visible;
     overscroll-behavior: auto;
+  }
+
+  .overlay-content.trade-unified-window {
+    width: min(95vw, 680px);
+    max-height: none;
+    overflow: visible;
   }
 }
 

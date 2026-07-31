@@ -21,6 +21,36 @@
   filter: drop-shadow(0 6px 6px rgba(0,0,0,0.3));
 }
 
+.catalog-owner {
+  align-self: center;
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: 0.4rem;
+  min-width: 0;
+  max-width: min(100%, 34rem);
+  margin: -0.35rem 0 0.75rem;
+  color: var(--color-pokemon-header-toggle-inactive);
+  line-height: 1.2;
+}
+
+.catalog-owner-label {
+  flex: 0 0 auto;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.catalog-owner-username {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--color-pokemon-header-toggle-active);
+  font-size: 1rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 /* The row that holds three columns */
 .controls-row {
   display: flex;
@@ -90,6 +120,23 @@
 
 /* Optional smaller/larger text on certain screens */
 @media (max-width: 480px) {
+  .header {
+    padding-inline: 10px;
+  }
+
+  .catalog-owner {
+    width: 100%;
+    margin-bottom: 0.65rem;
+  }
+
+  .catalog-owner-label {
+    font-size: 0.62rem;
+  }
+
+  .catalog-owner-username {
+    font-size: 0.82rem;
+  }
+
   .toggle-text,
   .free-toggle-text {
     font-size: 0.7rem;

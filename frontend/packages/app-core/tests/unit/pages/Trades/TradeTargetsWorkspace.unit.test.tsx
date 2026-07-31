@@ -1,6 +1,7 @@
 import React from 'react';
 import { act, fireEvent, render, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { MemoryRouter } from 'react-router';
 
 import TradeTargetsWorkspace from '@/pages/Trades/TradeTargetsWorkspace';
 
@@ -95,13 +96,12 @@ describe('TradeTargetsWorkspace', () => {
   });
 
   it('mounts the existing For Trade target editor with the canonical stores', () => {
-    render(<TradeTargetsWorkspace />);
+    render(<TradeTargetsWorkspace />, { wrapper: MemoryRouter });
 
     expect(screen.getByTestId('existing-trade-targets')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'For Trade (2)' })).toHaveClass('active');
     expect(mocks.tradePanelProps.at(-1)?.instances).toBe(mocks.instancesState.instances);
     expect(mocks.tradePanelProps.at(-1)?.lists).toBe(mocks.tagsState.tags);
-    expect(mocks.tradePanelProps.at(-1)?.username).toBe('ash');
     expect(
       screen.getAllByRole('button')
         .filter(
@@ -116,7 +116,7 @@ describe('TradeTargetsWorkspace', () => {
   });
 
   it('switches to the existing Wanted target editor without changing its behavior', async () => {
-    render(<TradeTargetsWorkspace />);
+    render(<TradeTargetsWorkspace />, { wrapper: MemoryRouter });
 
     await act(async () => {
       fireEvent.click(screen.getByRole('button', { name: 'Wanted (1)' }));
@@ -126,5 +126,24 @@ describe('TradeTargetsWorkspace', () => {
     expect(screen.queryByTestId('existing-trade-targets')).not.toBeInTheDocument();
     expect(mocks.wantedPanelProps.at(-1)?.instances).toBe(mocks.instancesState.instances);
     expect(mocks.wantedPanelProps.at(-1)?.lists).toBe(mocks.tagsState.tags);
+  });
+
+  it('opens a URL-selected preference mode and instance directly', async () => {
+    render(
+      <MemoryRouter
+        initialEntries={[
+          '/trades?section=preferences&mode=trade&instance=trade2',
+        ]}
+      >
+        <TradeTargetsWorkspace />
+      </MemoryRouter>,
+    );
+
+    expect(await screen.findByTestId('existing-trade-targets')).toBeInTheDocument();
+    expect(
+      (mocks.tradePanelProps.at(-1)?.pokemon as {
+        instanceData?: { instance_id?: string };
+      })?.instanceData?.instance_id,
+    ).toBe('trade2');
   });
 });

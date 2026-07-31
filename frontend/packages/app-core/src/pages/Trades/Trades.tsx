@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { useSearchParams } from 'react-router';
 
 import { useInstancesStore } from '@/features/instances/store/useInstancesStore';
 import { useTradeStore } from '@/features/trades/store/useTradeStore';
@@ -13,6 +14,7 @@ import './TradeStatusButtons.css';
 import './TradeActivity.css';
 
 function Trades() {
+  const [searchParams, setSearchParams] = useSearchParams();
   const trades = useTradeStore((state) => state.trades);
   const relatedInstances = useTradeStore((state) => state.relatedInstances);
 
@@ -23,10 +25,22 @@ function Trades() {
   const setInstances = useInstancesStore((state) => state.applyAuthoritativeInstanceChanges);
   const periodicUpdates = useInstancesStore((state) => state.periodicUpdates);
 
-  const [activeSection, setActiveSection] = useState<'activity' | 'preferences'>('preferences');
+  const activeSection =
+    searchParams.get('section') === 'activity' ? 'activity' : 'preferences';
   const [selectedStatus, setSelectedStatus] = useState<TradeStatusFilter>('Accepting');
   const loading = variantsLoading;
   const currentUsername = getStoredUsername() ?? '';
+  const setActiveSection = (section: 'activity' | 'preferences') => {
+    setSearchParams((current) => {
+      const next = new URLSearchParams(current);
+      next.set('section', section);
+      if (section === 'activity') {
+        next.delete('mode');
+        next.delete('instance');
+      }
+      return next;
+    });
+  };
   const activityCounts = useMemo(() => {
     const counts: Record<TradeStatusFilter, number> = {
       Accepting: 0,

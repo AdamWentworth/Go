@@ -9,6 +9,8 @@ import CaughtInstance from '../../CaughtInstance';
 import type { PokemonInstance } from '@/types/pokemonInstance';
 import type { PokemonVariant } from '@/types/pokemonVariants';
 import { createScopedLogger } from '@/utils/logger';
+import { canMarkInstanceForTrade } from '@/features/trades/proposal/proposalCandidateHelpers';
+import CloseButton from '@/components/CloseButton';
 
 const log = createScopedLogger('UpdateForTradeModal');
 
@@ -59,10 +61,12 @@ const UpdateForTradeModal: React.FC<UpdateForTradeModalProps> = ({
   useEffect(() => {
     if (!variantData || caughtInstances.length === 0) return;
 
-    const merged: VariantWithInstance[] = caughtInstances.map((inst) => ({
-      ...variantData,
-      instanceData: { ...inst },
-    }));
+    const merged: VariantWithInstance[] = caughtInstances
+      .filter(canMarkInstanceForTrade)
+      .map((inst) => ({
+        ...variantData,
+        instanceData: { ...inst },
+      }));
 
     setRestructuredData(merged);
   }, [variantData, caughtInstances]);
@@ -76,6 +80,10 @@ const UpdateForTradeModal: React.FC<UpdateForTradeModalProps> = ({
       )?.instanceData;
 
       if (!current) return;
+      if (!canMarkInstanceForTrade(current)) {
+        setError('Lucky Pokémon cannot be marked For Trade.');
+        return;
+      }
 
       const updatedInstance: PokemonInstance = {
         ...current,
@@ -115,6 +123,8 @@ const UpdateForTradeModal: React.FC<UpdateForTradeModalProps> = ({
       aria-labelledby="modal-title"
     >
       <div className="modal-content" ref={modalContentRef}>
+        <CloseButton onClick={onClose} />
+
         <h2 id="modal-title">Update Instances for Trade</h2>
 
         {loading && <p>Loading variant data…</p>}
@@ -134,9 +144,14 @@ const UpdateForTradeModal: React.FC<UpdateForTradeModalProps> = ({
                     handleUpdateToTrade(pokemon.instanceData.instance_id!)
                   }
                   className="update-button"
-                  disabled={pokemon.instanceData.is_for_trade}
+                  disabled={
+                    pokemon.instanceData.is_for_trade ||
+                    !canMarkInstanceForTrade(pokemon.instanceData)
+                  }
                 >
-                  {pokemon.instanceData.is_for_trade
+                  {pokemon.instanceData.lucky
+                    ? 'Lucky Pokémon cannot be traded'
+                    : pokemon.instanceData.is_for_trade
                     ? 'For Trade'
                     : 'Add to For Trade'}
                 </button>

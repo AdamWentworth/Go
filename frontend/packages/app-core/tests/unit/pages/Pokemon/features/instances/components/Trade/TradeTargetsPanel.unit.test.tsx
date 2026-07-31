@@ -53,20 +53,6 @@ vi.mock('@/pages/Pokemon/features/instances/components/Trade/TradeTargetsList', 
   ),
 }));
 
-vi.mock('@/pages/Pokemon/features/instances/components/Trade/TradeOverlaysPanel', () => ({
-  default: ({
-    isOverlayOpen,
-    selectedPokemon,
-  }: {
-    isOverlayOpen: boolean;
-    selectedPokemon?: { key?: string } | null;
-  }) => (
-    <div data-testid="trade-overlays-panel">
-      {isOverlayOpen ? `open:${selectedPokemon?.key ?? ''}` : 'closed'}
-    </div>
-  ),
-}));
-
 vi.mock('@/pages/Pokemon/features/instances/hooks/useTradeTargetFiltering', () => ({
   default: (...args: unknown[]) => mocks.useTradeTargetFilteringMock(...args),
 }));
@@ -152,7 +138,6 @@ const makeProps = (
     },
   ] as TradeTargetsPanelProps['variants'],
   isEditable: true,
-  username: 'ash',
   ...overrides,
 });
 
@@ -215,7 +200,6 @@ describe('TradeTargetsPanel', () => {
         variant_id: '0001-default',
       }),
     );
-    expect(screen.getByTestId('trade-overlays-panel')).toHaveTextContent('closed');
   });
 
   it('logs and skips opening overlay when variant lookup fails', () => {
@@ -248,18 +232,6 @@ describe('TradeTargetsPanel', () => {
       'No instance data found for key: 0001-default_uuid-1',
     );
     expect(props.openTradeTargetOverlay).not.toHaveBeenCalled();
-  });
-
-  it('opens action overlay instead of wanted overlay when not editable', () => {
-    const props = makeProps({ isEditable: false });
-    render(<TradeTargetsPanel {...props} />);
-
-    fireEvent.click(screen.getByTestId('wanted-list-click'));
-
-    expect(props.openTradeTargetOverlay).not.toHaveBeenCalled();
-    expect(screen.getByTestId('trade-overlays-panel')).toHaveTextContent(
-      'open:0001-default_uuid-1',
-    );
   });
 
   it('renders the trade target heading copy', () => {

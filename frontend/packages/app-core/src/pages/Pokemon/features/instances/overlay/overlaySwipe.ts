@@ -16,6 +16,7 @@ export const isSwipeInteractiveTarget = (target: EventTarget | null): boolean =>
         'input[type="date"]',
         'input[type="checkbox"]',
         'input[type="radio"]',
+        'input[type="range"]',
         '.mirror',
         '.favorite-component',
         '.background-button',

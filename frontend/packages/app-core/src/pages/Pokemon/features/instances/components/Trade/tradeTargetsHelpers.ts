@@ -3,6 +3,7 @@ import type { PokemonVariant } from '@/types/pokemonVariants';
 
 export {
   buildMatchedInstancesPayload,
+  canMarkInstanceForTrade,
   findAvailableTradeInstances,
   findCaughtInstancesForBaseKey,
   findTradeableInstances,

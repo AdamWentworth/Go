@@ -82,14 +82,28 @@ const FriendshipManager: React.FC<FriendshipManagerProps> = ({
   // 4) RENDER HEARTS:
   const hearts = [];
   for (let i = 0; i < 5; i++) {
+    const level = i + 1;
     hearts.push(
-      <img
+      <button
+        type="button"
         key={`heart-${i}`}
-        src={`/images/${i < actualFriendshipLevel ? 'heart-filled' : 'heart-unfilled'}.png`}
-        alt={`Friendship Level ${i < actualFriendshipLevel ? 'Filled' : 'Unfilled'}`}
-        title={i === 4 ? 'Forever Friends — remote trade eligible' : undefined}
-        className="heart"
-      />
+        className="heart-button"
+        aria-label={`Set friendship to ${level} heart${level === 1 ? '' : 's'}${
+          level === 5 ? ' and enable remote trading' : ''
+        }`}
+        aria-pressed={actualFriendshipLevel === level}
+        disabled={!editMode}
+        onClick={() => handleFriendshipChange({
+          target: { value: String(level) },
+        } as React.ChangeEvent<HTMLInputElement>)}
+      >
+        <img
+          src={`/images/${i < actualFriendshipLevel ? 'heart-filled' : 'heart-unfilled'}.png`}
+          alt=""
+          title={i === 4 ? 'Forever Friends — remote trade eligible' : undefined}
+          className="heart"
+        />
+      </button>
     );
   }
 
@@ -109,7 +123,37 @@ const FriendshipManager: React.FC<FriendshipManagerProps> = ({
           className={`lucky-icon ${actualIsLucky ? '' : 'grey-out'}`}
           onClick={toggleLucky}
           style={{ cursor: editMode ? 'pointer' : 'default' }}
+          role={editMode ? 'button' : undefined}
+          tabIndex={editMode ? 0 : -1}
+          onKeyDown={(event) => {
+            if (event.key === 'Enter' || event.key === ' ') {
+              event.preventDefault();
+              toggleLucky();
+            }
+          }}
         />
+
+        <img
+          src="/images/remote_trade_icon.png"
+          alt={
+            actualFriendshipLevel >= 5
+              ? 'Remote trade available'
+              : 'Remote trade unlocks at five hearts'
+          }
+          title={
+            actualFriendshipLevel >= 5
+              ? 'Forever Friends — remote trade available'
+              : 'Remote trade unlocks at five hearts'
+          }
+          className={`remote-trade-icon ${
+            actualFriendshipLevel >= 5 ? '' : 'grey-out'
+          }`}
+        />
+      </div>
+
+      <div className="friendship-status" aria-live="polite">
+        <span>{actualFriendshipLevel === 5 ? 'Remote trade available' : `${actualFriendshipLevel}/5 hearts`}</span>
+        <span>{actualIsLucky ? 'Lucky trade requested' : actualFriendshipLevel >= 4 ? 'Lucky Friends eligible' : 'Lucky unlocks at 4 hearts'}</span>
       </div>
 
       {editMode && (

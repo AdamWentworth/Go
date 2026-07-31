@@ -7,7 +7,7 @@ export interface HeaderUIProps {
   onWishlistClick: () => void;
   onHaveTagsClick: () => void;
   onPokemonClick: () => void;
-  contextText: React.ReactNode;
+  catalogOwner?: string;
   totalPokemon: number;
   highlightedCards?: Set<string | number>;
   onClearSelection: () => void;
@@ -21,7 +21,7 @@ const HeaderUI: React.FC<HeaderUIProps> = ({
   onWishlistClick,
   onHaveTagsClick,
   onPokemonClick,
-  contextText,
+  catalogOwner,
   totalPokemon,
   highlightedCards,
   onClearSelection,
@@ -31,8 +31,6 @@ const HeaderUI: React.FC<HeaderUIProps> = ({
   wishlistSubLabel,
 }) => {
   const hasSelection = Boolean(highlightedCards && highlightedCards.size > 0);
-  const isCustomContext = React.isValidElement(contextText);
-  const attachHaveTagsClick = !isCustomContext;
 
   // Refs for header and each column
   const headerRef = useRef<HTMLElement>(null);         // ← use HTMLElement here
@@ -76,24 +74,14 @@ const HeaderUI: React.FC<HeaderUIProps> = ({
       );
     }
 
-    const btnClass = isCustomContext
-      ? 'toggle-button custom-context-button'
-      : 'toggle-button';
-    const textClass = isCustomContext
-      ? 'toggle-text custom-context'
-      : 'toggle-text';
-
     return (
-      <div
-        className={btnClass}
-        onClick={attachHaveTagsClick ? onHaveTagsClick : undefined}
-      >
-        <span className={`${textClass} ${isHaveTagsActive ? 'active' : ''}`}>
-          {isCustomContext ? contextText : 'TAGS'}
+      <div className="toggle-button" onClick={onHaveTagsClick}>
+        <span className={`toggle-text ${isHaveTagsActive ? 'active' : ''}`}>
+          TAGS
         </span>
 
-        {!isCustomContext && haveTagsSubLabel && (
-          <span className={`${textClass} ${isHaveTagsActive ? 'active' : ''}`}>
+        {haveTagsSubLabel && (
+          <span className={`toggle-text ${isHaveTagsActive ? 'active' : ''}`}>
             {haveTagsSubLabel}
           </span>
         )}
@@ -125,6 +113,13 @@ const HeaderUI: React.FC<HeaderUIProps> = ({
 
   return (
     <header className={headerClassName} ref={headerRef}>
+      {!hasSelection && catalogOwner && (
+        <div className="catalog-owner" role="status" aria-label={`Viewing ${catalogOwner}'s catalog`}>
+          <span className="catalog-owner-label">Viewing catalog</span>
+          <strong className="catalog-owner-username">{catalogOwner}</strong>
+        </div>
+      )}
+
       <div className="controls-row">
         <div className="toggle-col" ref={colRef0}>
           {renderHaveTagsToggle()}

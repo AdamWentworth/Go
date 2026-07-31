@@ -120,9 +120,30 @@ func loadTradeForParticipant(c fiber.Ctx, tx *gorm.DB) (Trade, error) {
 }
 
 var (
-	errTradeForbidden = errors.New("trade is not available to this user")
-	errTradeConflict  = errors.New("trade state has changed")
+	errTradeForbidden     = errors.New("trade is not available to this user")
+	errTradeConflict      = errors.New("trade state has changed")
+	errPokemonNotForTrade = errors.New("one or more Pokémon are no longer marked For Trade")
+	errPokemonTradeLocked = errors.New("lucky Pokémon cannot be traded again")
 )
+
+func validateTradeInstancePair(
+	proposed PokemonInstance,
+	accepting PokemonInstance,
+	proposedUserID string,
+	acceptingUserID string,
+) error {
+	if proposed.UserID != proposedUserID || accepting.UserID != acceptingUserID ||
+		!proposed.IsCaught || !accepting.IsCaught || proposed.Disabled || accepting.Disabled {
+		return errTradeForbidden
+	}
+	if !proposed.IsForTrade || !accepting.IsForTrade {
+		return errPokemonNotForTrade
+	}
+	if proposed.Lucky || accepting.Lucky {
+		return errPokemonTradeLocked
+	}
+	return nil
+}
 
 func tradeError(c fiber.Ctx, err error, fallback string) error {
 	switch {
@@ -132,6 +153,16 @@ func tradeError(c fiber.Ctx, err error, fallback string) error {
 		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{"message": err.Error()})
 	case errors.Is(err, errTradeConflict):
 		return c.Status(fiber.StatusConflict).JSON(fiber.Map{"message": err.Error()})
+	case errors.Is(err, errPokemonNotForTrade):
+		return c.Status(fiber.StatusConflict).JSON(fiber.Map{
+			"code":    "pokemon_not_for_trade",
+			"message": err.Error(),
+		})
+	case errors.Is(err, errPokemonTradeLocked):
+		return c.Status(fiber.StatusConflict).JSON(fiber.Map{
+			"code":    "pokemon_trade_locked",
+			"message": err.Error(),
+		})
 	default:
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"message": fallback})
 	}
@@ -249,9 +280,10 @@ func CreateTradeHandler(c fiber.Ctx) error {
 		if lockErr != nil {
 			return lockErr
 		}
-		if proposed.UserID != proposer.UserID || accepting.UserID != accepter.UserID ||
-			!proposed.IsCaught || !accepting.IsCaught || proposed.Disabled || accepting.Disabled {
-			return errTradeForbidden
+		if validationErr := validateTradeInstancePair(
+			proposed, accepting, proposer.UserID, accepter.UserID,
+		); validationErr != nil {
+			return validationErr
 		}
 		var active int64
 		if countErr := tx.Model(&Trade{}).
@@ -315,8 +347,9 @@ func AcceptTradeHandler(c fiber.Ctx) error {
 		if err != nil {
 			return err
 		}
-		if proposed.UserID != trade.UserIDProposed || accepting.UserID != trade.UserIDAccepting ||
-			!proposed.IsCaught || !accepting.IsCaught || proposed.Disabled || accepting.Disabled {
+		if validateTradeInstancePair(
+			proposed, accepting, trade.UserIDProposed, trade.UserIDAccepting,
+		) != nil {
 			return errTradeConflict
 		}
 		var conflicts int64
@@ -471,8 +504,9 @@ func CompleteTradeHandler(c fiber.Ctx) error {
 		if err != nil {
 			return err
 		}
-		if proposed.UserID != trade.UserIDProposed || accepting.UserID != trade.UserIDAccepting ||
-			!proposed.IsCaught || !accepting.IsCaught || proposed.Disabled || accepting.Disabled {
+		if validateTradeInstancePair(
+			proposed, accepting, trade.UserIDProposed, trade.UserIDAccepting,
+		) != nil {
 			return errTradeConflict
 		}
 		if viewerID(c) == trade.UserIDProposed {

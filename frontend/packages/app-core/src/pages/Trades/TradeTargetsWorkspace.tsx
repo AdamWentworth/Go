@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import type { ComponentProps } from 'react';
+import { useSearchParams } from 'react-router';
 
 import { useInstancesStore } from '@/features/instances/store/useInstancesStore';
 import { useTagsStore } from '@/features/tags/store/useTagsStore';
@@ -10,7 +11,6 @@ import TradeTargetsPanel from '@/pages/Pokemon/features/instances/components/Tra
 import WantedDetails from '@/pages/Pokemon/features/instances/components/Wanted/WantedDetails';
 import type { PokemonInstance } from '@/types/pokemonInstance';
 import type { PokemonVariant } from '@/types/pokemonVariants';
-import { getStoredUsername } from '@/utils/storage';
 
 import './TradeTargetsWorkspace.css';
 
@@ -110,11 +110,15 @@ const normalizeLinkedPokemon = (
 };
 
 function TradeTargetsWorkspace() {
+  const [searchParams, setSearchParams] = useSearchParams();
   const instances = useInstancesStore((state) => state.instances);
   const tags = useTagsStore((state) => state.tags);
   const variants = useVariantsStore((state) => state.variants);
   const variantsLoading = useVariantsStore((state) => state.variantsLoading);
-  const [mode, setMode] = useState<TargetMode>('trade');
+  const requestedMode: TargetMode =
+    searchParams.get('mode') === 'wanted' ? 'wanted' : 'trade';
+  const requestedInstanceId = searchParams.get('instance');
+  const [mode, setMode] = useState<TargetMode>(requestedMode);
   const [selectedPokemon, setSelectedPokemon] = useState<TargetPokemon | null>(null);
   const [mobilePickerOpen, setMobilePickerOpen] = useState(false);
   const [pickerQuery, setPickerQuery] = useState('');
@@ -152,7 +156,17 @@ function TradeTargetsWorkspace() {
     : visiblePokemon;
 
   useEffect(() => {
+    setMode(requestedMode);
+  }, [requestedMode]);
+
+  useEffect(() => {
     setSelectedPokemon((current) => {
+      if (requestedInstanceId) {
+        const requested = visiblePokemon.find(
+          (pokemon) => getInstanceId(pokemon) === requestedInstanceId,
+        );
+        if (requested) return requested;
+      }
       if (current) {
         const currentId = getInstanceId(current);
         const refreshed = visiblePokemon.find(
@@ -162,7 +176,21 @@ function TradeTargetsWorkspace() {
       }
       return visiblePokemon[0] ?? null;
     });
-  }, [visiblePokemon]);
+  }, [requestedInstanceId, visiblePokemon]);
+
+  const updatePreferenceLocation = (
+    nextMode: TargetMode,
+    instanceId?: string,
+  ) => {
+    setSearchParams((current) => {
+      const next = new URLSearchParams(current);
+      next.set('section', 'preferences');
+      next.set('mode', nextMode);
+      if (instanceId) next.set('instance', instanceId);
+      else next.delete('instance');
+      return next;
+    });
+  };
 
   const openLinkedPokemon = (
     nextMode: TargetMode,
@@ -171,6 +199,7 @@ function TradeTargetsWorkspace() {
     const normalized = normalizeLinkedPokemon(value);
     if (!normalized) return;
     setMode(nextMode);
+    updatePreferenceLocation(nextMode);
     setSelectedPokemon(normalized);
     setMobilePickerOpen(false);
     setPickerQuery('');
@@ -197,6 +226,7 @@ function TradeTargetsWorkspace() {
     ) return;
     setIsEditingPreferences(false);
     setSelectedPokemon(pokemon);
+    updatePreferenceLocation(mode, getInstanceId(pokemon));
     setMobilePickerOpen(false);
     setPickerQuery('');
   };
@@ -365,7 +395,6 @@ function TradeTargetsWorkspace() {
                 openTradeTargetOverlay={(pokemon) => openLinkedPokemon('wanted', pokemon)}
                 variants={variants}
                 isEditable
-                username={getStoredUsername() ?? ''}
                 onEditingChange={setIsEditingPreferences}
               />
             ) : null}

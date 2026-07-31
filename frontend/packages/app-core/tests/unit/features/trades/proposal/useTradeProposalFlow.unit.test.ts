@@ -107,6 +107,39 @@ describe('shared useTradeProposalFlow', () => {
     expect(fetchTrades).not.toHaveBeenCalled();
   });
 
+  it('does not open the chooser when every caught copy is Lucky', async () => {
+    const { alert, closeOverlay, fetchInstances, fetchTrades } = makeArgs();
+    fetchInstances.mockResolvedValueOnce([
+      makeInstance({
+        instance_id: 'lucky-copy',
+        is_caught: true,
+        is_for_trade: false,
+        lucky: true,
+      }),
+    ]);
+
+    const { result } = renderHook(() =>
+      useTradeProposalFlow({
+        selectedPokemon: { key: '0001-default', name: 'Bulbasaur' },
+        closeOverlay,
+        alert,
+        fetchInstances,
+        fetchTrades,
+      }),
+    );
+
+    await act(async () => {
+      await result.current.proposeTrade();
+    });
+
+    expect(alert).toHaveBeenCalledWith(
+      'You have this Pokemon, but your caught copies are Lucky and cannot be traded again.',
+    );
+    expect(result.current.isUpdateForTradeModalOpen).toBe(false);
+    expect(result.current.isTradeProposalOpen).toBe(false);
+    expect(fetchTrades).not.toHaveBeenCalled();
+  });
+
   it('opens trade proposal when a tradeable instance is available', async () => {
     const { alert, closeOverlay, fetchInstances, fetchTrades } = makeArgs();
     fetchInstances.mockResolvedValueOnce([
@@ -156,5 +189,80 @@ describe('shared useTradeProposalFlow', () => {
     });
     expect(result.current.isTradeProposalOpen).toBe(false);
     expect(result.current.tradeClickedPokemon).toBeNull();
+  });
+
+  it('matches catalog targets by variant_id when local instance ids are UUIDs', async () => {
+    const { alert, closeOverlay, fetchInstances, fetchTrades } = makeArgs();
+    fetchInstances.mockResolvedValueOnce([
+      makeInstance({
+        instance_id: '123e4567-e89b-12d3-a456-426614174000',
+        variant_id: '0001-default',
+        is_caught: true,
+        is_for_trade: true,
+      }),
+    ]);
+    fetchTrades.mockResolvedValueOnce([]);
+
+    const { result } = renderHook(() =>
+      useTradeProposalFlow({
+        selectedPokemon: {
+          key: 'remote-wanted-instance-uuid',
+          variant_id: '0001-default',
+          name: 'Bulbasaur',
+        },
+        closeOverlay,
+        alert,
+        fetchInstances,
+        fetchTrades,
+      }),
+    );
+
+    await act(async () => {
+      await result.current.proposeTrade();
+    });
+
+    expect(alert).not.toHaveBeenCalled();
+    expect(result.current.isTradeProposalOpen).toBe(true);
+    expect(result.current.tradeClickedPokemon?.matchedInstances[0].instanceData.instance_id)
+      .toBe('123e4567-e89b-12d3-a456-426614174000');
+  });
+
+  it('matches a nested Gigantamax target variant to a local For Trade instance', async () => {
+    const { alert, closeOverlay, fetchInstances, fetchTrades } = makeArgs();
+    fetchInstances.mockResolvedValueOnce([
+      makeInstance({
+        instance_id: '223e4567-e89b-42d3-a456-426614174000',
+        variant_id: '0006-gigantamax',
+        pokemon_id: 6,
+        is_caught: true,
+        is_for_trade: true,
+      }),
+    ]);
+    fetchTrades.mockResolvedValueOnce([]);
+
+    const { result } = renderHook(() =>
+      useTradeProposalFlow({
+        selectedPokemon: {
+          key: 'remote-wanted-charizard-uuid',
+          name: 'Gigantamax Charizard',
+          pokemon_id: 6,
+          variantType: 'gigantamax',
+          instanceData: { instance_id: 'remote-wanted-charizard-uuid' },
+        },
+        closeOverlay,
+        alert,
+        fetchInstances,
+        fetchTrades,
+      }),
+    );
+
+    await act(async () => {
+      await result.current.proposeTrade();
+    });
+
+    expect(alert).not.toHaveBeenCalled();
+    expect(result.current.isTradeProposalOpen).toBe(true);
+    expect(result.current.tradeClickedPokemon?.matchedInstances[0].instanceData.variant_id)
+      .toBe('0006-gigantamax');
   });
 });

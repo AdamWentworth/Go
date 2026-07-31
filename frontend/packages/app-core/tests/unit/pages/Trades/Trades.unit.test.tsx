@@ -1,6 +1,7 @@
 import React from 'react';
 import { act, render, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { MemoryRouter } from 'react-router';
 
 import Trades from '@/pages/Trades/Trades';
 
@@ -71,7 +72,7 @@ describe('Trades page', () => {
   });
 
   it('wires store data to status controls and list, and updates selected status', () => {
-    render(<Trades />);
+    render(<Trades />, { wrapper: MemoryRouter });
 
     expect(screen.getByTestId('trade-targets-workspace')).toBeInTheDocument();
     expect(screen.queryByTestId('trade-list')).not.toBeInTheDocument();

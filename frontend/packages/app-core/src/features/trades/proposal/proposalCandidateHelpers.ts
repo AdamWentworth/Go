@@ -16,6 +16,41 @@ export interface TradeCandidateSets {
   tradeableInstances: PokemonInstance[];
 }
 
+const canonicalizeVariantId = (value: unknown): string => {
+  const raw = typeof value === 'string' ? value.trim().toLowerCase() : '';
+  if (!raw) return '';
+  const separatorIndex = raw.indexOf('-');
+  if (separatorIndex < 0) return raw;
+  return `${raw.slice(0, separatorIndex)}-${raw.slice(separatorIndex + 1).replace(/-/g, '_')}`;
+};
+
+export const resolveSelectedVariantId = (
+  selectedPokemon: SelectedPokemon,
+  parseVariantId: (input: string) => { baseKey: string },
+): string => {
+  const nestedInstance = selectedPokemon.instanceData;
+  const directVariant = canonicalizeVariantId(selectedPokemon.variant_id);
+  if (directVariant) return directVariant;
+
+  const nestedVariant = canonicalizeVariantId(nestedInstance?.variant_id);
+  if (nestedVariant) return nestedVariant;
+
+  const pokemonId = Number(selectedPokemon.pokemon_id);
+  const variantType =
+    typeof selectedPokemon.variantType === 'string'
+      ? selectedPokemon.variantType
+      : '';
+  if (Number.isFinite(pokemonId) && pokemonId > 0 && variantType) {
+    return canonicalizeVariantId(
+      `${String(pokemonId).padStart(4, '0')}-${variantType}`,
+    );
+  }
+
+  return canonicalizeVariantId(
+    parseVariantId(String(selectedPokemon.key ?? '')).baseKey,
+  );
+};
+
 export type MatchedInstancePokemon = PokemonVariant & {
   instanceData: PokemonInstance;
 };
@@ -27,6 +62,7 @@ export interface TradeProposalPayload {
 
 export type TradeProposalDecision =
   | { kind: 'noCaught' }
+  | { kind: 'onlyTradeLocked' }
   | {
       kind: 'needsTradeSelection';
       selectedBaseKey: string;
@@ -54,14 +90,21 @@ export const findCaughtInstancesForBaseKey = (
   parseVariantId: (input: string) => { baseKey: string },
 ): PokemonInstance[] =>
   userInstances.filter((item) => {
-    const parsed = parseVariantId(String(item.instance_id ?? ''));
-    return parsed.baseKey === baseKey && item.is_caught === true;
+    const instanceVariantId = canonicalizeVariantId(item.variant_id);
+    const instanceBaseKey = instanceVariantId ||
+      canonicalizeVariantId(parseVariantId(String(item.instance_id ?? '')).baseKey);
+    return instanceBaseKey === canonicalizeVariantId(baseKey) && item.is_caught === true;
   });
 
 export const findTradeableInstances = (
   caughtInstances: PokemonInstance[],
 ): PokemonInstance[] =>
-  caughtInstances.filter((item) => item.is_for_trade === true);
+  caughtInstances.filter(
+    (item) => item.is_for_trade === true && item.lucky !== true,
+  );
+
+export const canMarkInstanceForTrade = (instance: PokemonInstance): boolean =>
+  instance.is_caught === true && instance.lucky !== true;
 
 const isPendingTrade = (trade: unknown): trade is PendingTradeRow => {
   if (!trade || typeof trade !== 'object') return false;
@@ -104,7 +147,7 @@ export const prepareTradeCandidateSets = (
   userInstances: PokemonInstance[],
   parseVariantId: (input: string) => { baseKey: string },
 ): TradeCandidateSets => {
-  const selectedBaseKey = parseVariantId(String(selectedPokemon.key ?? '')).baseKey;
+  const selectedBaseKey = resolveSelectedVariantId(selectedPokemon, parseVariantId);
   const hashedInstances = toInstanceMap(userInstances);
   const caughtInstances = findCaughtInstancesForBaseKey(
     userInstances,
@@ -130,11 +173,14 @@ export const resolveTradeProposalDecision = (
 ): TradeProposalDecision => {
   if (caughtInstances.length === 0) return { kind: 'noCaught' };
 
+  const eligibleCaughtInstances = caughtInstances.filter(canMarkInstanceForTrade);
+  if (eligibleCaughtInstances.length === 0) return { kind: 'onlyTradeLocked' };
+
   if (tradeableInstances.length === 0) {
     return {
       kind: 'needsTradeSelection',
       selectedBaseKey,
-      caughtInstances,
+      caughtInstances: eligibleCaughtInstances,
     };
   }
 

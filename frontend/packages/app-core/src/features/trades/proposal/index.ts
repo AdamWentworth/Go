@@ -17,10 +17,12 @@ export {
 } from './tradeProposalHelpers';
 export {
   buildMatchedInstancesPayload,
+  canMarkInstanceForTrade,
   findAvailableTradeInstances,
   findCaughtInstancesForBaseKey,
   findTradeableInstances,
   prepareTradeCandidateSets,
+  resolveSelectedVariantId,
   resolveTradeProposalDecision,
   toInstanceMap,
 } from './proposalCandidateHelpers';

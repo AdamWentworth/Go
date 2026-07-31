@@ -34,7 +34,7 @@ export interface UseTradeProposalFlowResult {
   isUpdateForTradeModalOpen: boolean;
   caughtInstancesToTrade: PokemonInstance[];
   currentBaseKey: string | null;
-  proposeTrade: () => Promise<void>;
+  proposeTrade: (pokemonOverride?: SelectedPokemon) => Promise<void>;
   closeTradeProposal: () => void;
   closeTradeSelectionModal: () => void;
 }
@@ -57,8 +57,9 @@ const useTradeProposalFlow = ({
   const [caughtInstancesToTrade, setCaughtInstancesToTrade] = useState<PokemonInstance[]>([]);
   const [currentBaseKey, setCurrentBaseKey] = useState<string | null>(null);
 
-  const proposeTrade = async () => {
-    if (!selectedPokemon) {
+  const proposeTrade = async (pokemonOverride?: SelectedPokemon) => {
+    const proposalPokemon = pokemonOverride ?? selectedPokemon;
+    if (!proposalPokemon) {
       log.debug('No selectedPokemon. Aborting trade proposal.');
       return;
     }
@@ -73,7 +74,7 @@ const useTradeProposalFlow = ({
     }
 
     const { selectedBaseKey, hashedInstances, caughtInstances, tradeableInstances } =
-      prepareTradeCandidateSets(selectedPokemon, userInstances, parseVariantId);
+      prepareTradeCandidateSets(proposalPokemon, userInstances, parseVariantId);
 
     log.debug('Hashed ownership data prepared.', {
       count: Object.keys(hashedInstances).length,
@@ -87,7 +88,7 @@ const useTradeProposalFlow = ({
       try {
         const allTrades = await fetchTrades();
         decision = resolveTradeProposalDecision(
-          selectedPokemon,
+          proposalPokemon,
           selectedBaseKey,
           caughtInstances,
           tradeableInstances,
@@ -100,7 +101,7 @@ const useTradeProposalFlow = ({
       }
     } else {
       decision = resolveTradeProposalDecision(
-        selectedPokemon,
+        proposalPokemon,
         selectedBaseKey,
         caughtInstances,
         tradeableInstances,
@@ -111,6 +112,11 @@ const useTradeProposalFlow = ({
     switch (decision.kind) {
       case 'noCaught':
         await alert('You do not have this Pokemon caught, so you cannot propose a trade.');
+        return;
+      case 'onlyTradeLocked':
+        await alert(
+          'You have this Pokemon, but your caught copies are Lucky and cannot be traded again.',
+        );
         return;
       case 'noAvailableTradeable':
         await alert(

@@ -31,9 +31,14 @@ type WantedPokemon = PokemonVariant & {
 interface WantedInstanceProps {
   pokemon: WantedPokemon;
   isEditable: boolean;
+  catalogView?: boolean;
 }
 
-const WantedInstance: React.FC<WantedInstanceProps> = ({ pokemon, isEditable }) => {
+const WantedInstance: React.FC<WantedInstanceProps> = ({
+  pokemon,
+  isEditable,
+  catalogView = false,
+}) => {
   const updateDetails = useInstancesStore((s) => s.updateInstanceDetails);
   const entityKey = getEntityKey(pokemon);
 
@@ -138,6 +143,43 @@ const WantedInstance: React.FC<WantedInstanceProps> = ({ pokemon, isEditable }) 
     return background.costume_id === parseInt(variantTypeId ?? '', 10);
   });
 
+  if (catalogView) {
+    return (
+      <div className="wanted-instance wanted-instance--catalog-view">
+        <div className="wanted-instance__catalog-label">Wanted</div>
+        <div className="image-container">
+          <div className="pokemon-image-container">
+            <img
+              src={currentImage}
+              alt={pokemon.name}
+              className="pokemon-image"
+            />
+            {dynamax ? (
+              <img src="/images/dynamax.png" alt="Dynamax Badge" className="max-badge" />
+            ) : null}
+            {gigantamax ? (
+              <img src="/images/gigantamax.png" alt="Gigantamax Badge" className="max-badge" />
+            ) : null}
+          </div>
+        </div>
+        <div className="name-container">
+          <NameComponent
+            pokemon={pokemon}
+            editMode={false}
+            onNicknameChange={handleNicknameChange}
+          />
+        </div>
+        <FriendshipManager
+          friendship={friendship}
+          setFriendship={setFriendship}
+          editMode={false}
+          isLucky={isLucky}
+          setIsLucky={setIsLucky}
+        />
+      </div>
+    );
+  }
+
   return (
     <div className="wanted-instance">
       <div className="top-row">
@@ -147,7 +189,7 @@ const WantedInstance: React.FC<WantedInstanceProps> = ({ pokemon, isEditable }) 
         <h2>Wanted</h2>
       </div>
 
-      {selectableBackgrounds.length > 0 && (
+      {!catalogView && selectableBackgrounds.length > 0 && (
         <div className="background-select-container">
           <div className={`background-select-row ${editMode ? 'active' : ''}`}>
             <img
@@ -223,7 +265,7 @@ const WantedInstance: React.FC<WantedInstanceProps> = ({ pokemon, isEditable }) 
 
       <div className="stats-container">
         <Weight pokemon={pokemon} editMode={editMode} onWeightChange={handleWeightChange} />
-        <Types pokemon={pokemon} />
+        {!catalogView ? <Types pokemon={pokemon} /> : null}
         <Height pokemon={pokemon} editMode={editMode} onHeightChange={handleHeightChange} />
       </div>
 

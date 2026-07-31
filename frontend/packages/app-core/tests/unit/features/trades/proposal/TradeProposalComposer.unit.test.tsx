@@ -73,6 +73,20 @@ vi.mock('@/components/pokemonComponents/DateCaught', () => ({
   default: () => <div>date-caught</div>,
 }));
 
+vi.mock('@/components/CloseButton', () => ({
+  default: ({
+    onClick,
+  }: React.ButtonHTMLAttributes<HTMLButtonElement>) => (
+    <button
+      type="button"
+      aria-label="Close"
+      onClick={onClick}
+    >
+      Close
+    </button>
+  ),
+}));
+
 const makePokemon = (
   name: string,
   instanceId: string,
@@ -129,13 +143,21 @@ describe('shared TradeProposalComposer', () => {
     );
 
     await waitFor(() => {
-      expect(screen.getByRole('button', { name: 'Propose Trade' })).not.toBeDisabled();
+      expect(screen.getByRole('button', { name: 'Propose trade' })).not.toBeDisabled();
     });
+
+    const exchangeParties = screen
+      .getByRole('region', { name: 'Pokémon exchange' })
+      .querySelectorAll('.trade-proposal-party');
+    expect(exchangeParties[0]).toHaveTextContent('You offer');
+    expect(exchangeParties[0]).toHaveTextContent('Haunter');
+    expect(exchangeParties[1]).toHaveTextContent('acceptor offers');
+    expect(exchangeParties[1]).toHaveTextContent('Gengar');
 
     fireEvent.change(screen.getByLabelText('Choose the instance to trade:'), {
       target: { value: 'matched-2' },
     });
-    fireEvent.click(screen.getByRole('button', { name: 'Propose Trade' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Propose trade' }));
 
     await waitFor(() => {
       expect(mocks.proposeTrade).toHaveBeenCalledTimes(1);
@@ -155,6 +177,35 @@ describe('shared TradeProposalComposer', () => {
       }),
     );
     expect(mocks.alert).toHaveBeenCalledWith('Trade proposal successfully created!');
+    expect(onClose).toHaveBeenCalledTimes(1);
+  });
+
+  it('closes only the composer when its close control is used', () => {
+    mocks.useCalculateStardustCost.mockReturnValue({
+      stardustCost: 1000,
+      isSpecialTrade: true,
+      isRegisteredTrade: false,
+    });
+    const onClose = vi.fn();
+
+    render(
+      <TradeProposalComposer
+        context={{
+          partnerUsername: 'acceptor',
+          requestedPokemon: makePokemon('Pikachu', 'wanted-pikachu'),
+          candidateOffers: {
+            matchedInstances: [makePokemon('Gigantamax Charizard', 'offered-charizard')],
+          },
+          ownedInstances: {},
+          relatedInstances: {},
+        }}
+        onClose={onClose}
+      />,
+    );
+
+    const close = screen.getByRole('button', { name: 'Close' });
+    fireEvent.click(close);
+
     expect(onClose).toHaveBeenCalledTimes(1);
   });
 });

@@ -148,25 +148,29 @@ describe('shared TradeProposalSections', () => {
         disabled={true}
         formattedStardustCost="1,000,000"
         isSpecialTrade={true}
+        isRemoteTrade={true}
         onProposeTrade={onProposeTrade}
       />,
     );
 
-    expect(screen.getByRole('button', { name: 'Propose Trade' })).toBeDisabled();
-    expect(screen.getByText('Stardust Cost: 1,000,000')).toBeInTheDocument();
-    expect(screen.getByText('Special Trade!')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Propose trade' })).toBeDisabled();
+    expect(screen.getByText('1,000,000 Stardust')).toBeInTheDocument();
+    expect(screen.getByText('Special trade')).toBeInTheDocument();
+    expect(screen.getByText('Remote trade available')).toBeInTheDocument();
 
     rerender(
       <TradeProposalActionRow
         disabled={false}
         formattedStardustCost="800"
         isSpecialTrade={false}
+        isRemoteTrade={false}
         onProposeTrade={onProposeTrade}
       />,
     );
-    fireEvent.click(screen.getByRole('button', { name: 'Propose Trade' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Propose trade' }));
 
     expect(onProposeTrade).toHaveBeenCalledTimes(1);
-    expect(screen.queryByText('Special Trade!')).not.toBeInTheDocument();
+    expect(screen.queryByText('Special trade')).not.toBeInTheDocument();
+    expect(screen.queryByText('Remote trade available')).not.toBeInTheDocument();
   });
 });

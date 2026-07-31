@@ -58,7 +58,6 @@ type UsePokemonPageControllerResult = {
   setActiveView: React.Dispatch<React.SetStateAction<ActiveView>>;
   handleListsButtonClick: () => void;
   handleClearTagFilter: () => void;
-  contextText: React.ReactNode;
   sortedPokemons: PokemonVariant[];
   highlightedCards: Set<string>;
   handleClearSelection: () => void;
@@ -397,16 +396,6 @@ export default function usePokemonPageController({
 
   const displayUsername = canonicalUsername || urlUsername || '';
   const isEditable = isOwnCollection;
-  const contextText: React.ReactNode =
-    tagFilter === ''
-      ? 'Catalog View'
-      : isEditable
-      ? 'Editing your Collection'
-      : (
-          <>
-            Viewing <span className="username"><strong>{displayUsername}</strong></span>'s Collection
-          </>
-        );
 
   const isPageLoading = loading || viewedLoading || isUpdating;
 
@@ -418,7 +407,6 @@ export default function usePokemonPageController({
     setActiveView,
     handleListsButtonClick,
     handleClearTagFilter,
-    contextText,
     sortedPokemons,
     highlightedCards,
     handleClearSelection,

@@ -20,11 +20,12 @@ import {
   sanitizeInstanceData,
 } from './tradeProposalHelpers';
 import { getStoredUsername } from '@/utils/storage';
+import CloseButton from '@/components/CloseButton';
+import OverlayPortal from '@/components/OverlayPortal';
 import {
   TradeProposalActionRow,
   TradeProposalMatchedDetails,
   TradeProposalPokemonCard,
-  TradeProposalPokemonDetails,
 } from './TradeProposalSections';
 
 const log = createScopedLogger('TradeProposal');
@@ -166,10 +167,22 @@ const TradeProposalComposer: React.FC<TradeProposalComposerProps> = ({
   const matchPoke = hasInstanceData(selectedMatchedInstance) ? selectedMatchedInstance : undefined;
 
   return (
-    <div className="trade-proposal-overlay">
-      <div className="trade-proposal-container" ref={containerRef}>
-        {/* friendship / lucky manager */}
-        <div className="friendship-manager">
+    <OverlayPortal>
+      <div className="trade-proposal-overlay">
+        <div className="trade-proposal-container" ref={containerRef}>
+        <CloseButton onClick={onClose} />
+
+        <header className="trade-proposal-header">
+          <span>Trade proposal</span>
+          <h2>Review the exchange</h2>
+          <p>Set your friendship details, confirm both Pokémon, then send the proposal.</p>
+        </header>
+
+        <section className="trade-proposal-friendship" aria-label="Friendship and trade access">
+          <div>
+            <span>Friendship</span>
+            <strong>Trade conditions</strong>
+          </div>
           <FriendshipManager
             friendship={friendship_level}
             setFriendship={setFriendshipLevel}
@@ -181,43 +194,51 @@ const TradeProposalComposer: React.FC<TradeProposalComposerProps> = ({
             setPrefLucky={setPrefLucky}
             editMode
           />
-        </div>
+        </section>
 
-        <div className="trade-proposal-row trade-proposal-row-first">
-          <div className="trade-proposal-details">
-            {wantPoke ? <TradeProposalPokemonDetails pokemon={wantPoke} showNickname /> : null}
+        <section className="trade-proposal-exchange" aria-label="Pokémon exchange">
+          <div className="trade-proposal-party">
+            <span>You offer</span>
+            <TradeProposalPokemonCard
+              pokemon={matchPoke}
+              prefLucky={pref_lucky}
+              fallbackAlt="Your Pokemon"
+            />
+            <TradeProposalMatchedDetails
+              pokemon={matchPoke}
+              matchedInstances={matchedInstances}
+              onInstanceChange={handleInstanceChange}
+            />
           </div>
 
-          <TradeProposalPokemonCard
-            pokemon={wantPoke}
-            prefLucky={pref_lucky}
-            fallbackAlt="Wanted Pokemon"
-          />
-        </div>
+          <div className="trade-proposal-arrow" aria-hidden="true">
+            <img
+              src="/images/pogo_trade_icon.png"
+              alt=""
+              className="trade-proposal-arrow-image"
+            />
+          </div>
+
+          <div className="trade-proposal-party">
+            <span>{partnerUsername} offers</span>
+            <TradeProposalPokemonCard
+              pokemon={wantPoke}
+              prefLucky={pref_lucky}
+              fallbackAlt="Wanted Pokemon"
+            />
+          </div>
+        </section>
 
         <TradeProposalActionRow
           disabled={friendship_level === 0}
           formattedStardustCost={formattedStardustCost}
           isSpecialTrade={isSpecialTrade}
+          isRemoteTrade={friendship_level === 5}
           onProposeTrade={handleProposeTrade}
         />
-
-        <div className="trade-proposal-row trade-proposal-row-bottom">
-          <TradeProposalPokemonCard
-            pokemon={matchPoke}
-            prefLucky={pref_lucky}
-            fallbackAlt="Your Pokemon"
-          />
-
-          <TradeProposalMatchedDetails
-            pokemon={matchPoke}
-            matchedInstances={matchedInstances}
-            onInstanceChange={handleInstanceChange}
-          />
         </div>
-
       </div>
-    </div>
+    </OverlayPortal>
   );
 };
 

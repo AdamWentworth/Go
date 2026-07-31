@@ -2,6 +2,7 @@
 import React, { ButtonHTMLAttributes } from 'react';
 import './CloseButton.css';
 import { useTheme } from '../contexts/ThemeContext';
+import { useIsTopmostCloseButton } from './closeButtonStack';
 
 export type CloseButtonProps = ButtonHTMLAttributes<HTMLButtonElement>;
 
@@ -9,9 +10,11 @@ const CloseButton: React.FC<CloseButtonProps> = ({
   onClick,
   className = '',
   style,
+  disabled,
   ...buttonProps
 }) => {
   const { isLightMode } = useTheme();
+  const isTopmost = useIsTopmostCloseButton();
 
   const imageSrc = isLightMode
     ? '/images/close-button-light.png'
@@ -20,10 +23,13 @@ const CloseButton: React.FC<CloseButtonProps> = ({
   return (
     <button
       {...buttonProps}
-      className={`close-button ${className}`}
+      className={`close-button${isTopmost ? '' : ' close-button--stacked-beneath'} ${className}`}
       type="button"
       onClick={onClick}
       style={style}
+      disabled={disabled || !isTopmost}
+      aria-hidden={!isTopmost || undefined}
+      tabIndex={isTopmost ? buttonProps.tabIndex : -1}
       aria-label="Close"
     >
       <img

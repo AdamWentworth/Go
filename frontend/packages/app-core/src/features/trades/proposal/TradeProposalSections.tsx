@@ -116,9 +116,7 @@ export const TradeProposalMatchedDetails: React.FC<TradeProposalMatchedDetailsPr
   matchedInstances,
   onInstanceChange,
 }) => (
-  <div className="trade-proposal-details">
-    {pokemon ? <TradeProposalPokemonDetails pokemon={pokemon} /> : null}
-
+  <div className="trade-proposal-details trade-proposal-instance-choice">
     {matchedInstances.length > 1 ? (
       <TradeProposalInstancePicker
         matchedInstances={matchedInstances}
@@ -135,6 +133,7 @@ type TradeProposalActionRowProps = {
   disabled: boolean;
   formattedStardustCost: string;
   isSpecialTrade: boolean;
+  isRemoteTrade: boolean;
   onProposeTrade: () => void;
 };
 
@@ -142,25 +141,26 @@ export const TradeProposalActionRow: React.FC<TradeProposalActionRowProps> = ({
   disabled,
   formattedStardustCost,
   isSpecialTrade,
+  isRemoteTrade,
   onProposeTrade,
 }) => (
   <div className="trade-proposal-row trade-proposal-row-middle">
+    <div className="trade-proposal-stardust">
+      <span>Estimated cost</span>
+      <strong>{formattedStardustCost} Stardust</strong>
+      <img src="/images/stardust.png" alt="" className="stardust-icon" />
+      <div className="trade-proposal-flags">
+        {isSpecialTrade && <span className="special-trade-warning">Special trade</span>}
+        {isRemoteTrade && <span className="remote-trade-status">Remote trade available</span>}
+      </div>
+    </div>
+
     <button
       className="trade-proposal-propose-button"
       onClick={onProposeTrade}
       disabled={disabled}
     >
-      Propose Trade
+      Propose trade
     </button>
-
-    <div className="trade-proposal-arrow">
-      <img src="/images/pogo_trade_icon.png" alt="" className="trade-proposal-arrow-image" />
-    </div>
-
-    <div className="trade-proposal-stardust">
-      <p>Stardust Cost: {formattedStardustCost}</p>
-      <img src="/images/stardust.png" alt="" className="stardust-icon" />
-      {isSpecialTrade && <p className="special-trade-warning">Special Trade!</p>}
-    </div>
   </div>
 );

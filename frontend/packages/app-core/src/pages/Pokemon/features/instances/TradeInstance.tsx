@@ -32,9 +32,14 @@ const log = createScopedLogger('TradeInstance');
 interface TradeInstanceProps {
   pokemon: TradePokemon;
   isEditable: boolean;
+  catalogView?: boolean;
 }
 
-const TradeInstance: React.FC<TradeInstanceProps> = ({ pokemon, isEditable }) => {
+const TradeInstance: React.FC<TradeInstanceProps> = ({
+  pokemon,
+  isEditable,
+  catalogView = false,
+}) => {
   const updateDetails = useInstancesStore((s) => s.updateInstanceDetails);
   const { alert } = useModal();
   const entityKey = getEntityKey(pokemon);
@@ -295,7 +300,9 @@ const TradeInstance: React.FC<TradeInstanceProps> = ({ pokemon, isEditable }) =>
 
   return (
     <InstanceDetailsLayout
-      className="caught-instance trade-instance trade-instance--caught-layout"
+      className={`caught-instance trade-instance trade-instance--caught-layout${
+        catalogView ? ' trade-instance--catalog-view' : ''
+      }`}
       dateCaught={dateCaught}
       headerRow={{
         editMode,
@@ -305,7 +312,7 @@ const TradeInstance: React.FC<TradeInstanceProps> = ({ pokemon, isEditable }) =>
         onCPChange: handleCPChange,
         onFavoriteChange: () => undefined,
         showFavorite: false,
-        rightSlot: (
+        rightSlot: catalogView ? null : (
           <BackgroundSelector
             canPick={pokemon.backgrounds.length > 0}
             editMode={editMode}
@@ -319,7 +326,7 @@ const TradeInstance: React.FC<TradeInstanceProps> = ({ pokemon, isEditable }) =>
         editMode,
         onToggle: () => setShowBackgrounds((prev) => !prev),
       }}
-      levelArcLevel={level}
+      levelArcLevel={catalogView ? null : level}
       imageStage={{
         selectedBackground,
         isLucky,
@@ -349,11 +356,13 @@ const TradeInstance: React.FC<TradeInstanceProps> = ({ pokemon, isEditable }) =>
         gender,
         onGenderChange: handleGenderChange,
       }}
+      showLevelGenderRow={!catalogView}
       statsRow={{
         pokemon: statsPokemon,
         editMode,
         onWeightChange: (value) => handleWeightChange(String(value)),
         onHeightChange: (value) => handleHeightChange(String(value)),
+        showTypes: !catalogView,
       }}
       addStatsBottomGap={addStatsBottomGap}
       showStatsDivider={showStatsDivider}

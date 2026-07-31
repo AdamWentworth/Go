@@ -5,9 +5,7 @@ import OverlayPortal from '@/components/OverlayPortal';
 import WindowOverlay from '@/components/WindowOverlay';
 import CaughtInstance from './CaughtInstance';
 import TradeInstance from './TradeInstance';
-import TradeTargetsPanel from './components/Trade/TradeTargetsPanel';
 import WantedInstance from './WantedInstance';
-import WantedDetails from './components/Wanted/WantedDetails';
 import CloseButton from '@/components/CloseButton';
 import type { Instances } from '@/types/instances';
 import type { PokemonInstance } from '@/types/pokemonInstance';
@@ -20,6 +18,9 @@ import { getOverlayIdentityKey, withInstanceData } from './overlay/overlayPokemo
 import { deriveInitialOverlay } from './overlay/overlayState';
 import type { OverlayPokemon, OverlayType } from './overlay/overlayTypes';
 import { useOverlaySwipeNavigation } from './overlay/useOverlaySwipeNavigation';
+import TradePreferenceHandoff from '@/features/trades/preferences/TradePreferenceHandoff';
+import CatalogTradeLauncherPanel from '@/features/trades/proposal/CatalogTradeLauncherPanel';
+import CatalogWantedLauncherPanel from '@/features/trades/proposal/CatalogWantedLauncherPanel';
 
 const log = createScopedLogger('InstanceOverlay');
 const dbg = (...args: unknown[]) => log.debug(...args);
@@ -41,21 +42,18 @@ interface InstanceOverlayProps {
 
 type CaughtOverlayPokemon = React.ComponentProps<typeof CaughtInstance>['pokemon'];
 type TradeOverlayPokemon = React.ComponentProps<typeof TradeInstance>['pokemon'];
-type TradeTargetsPanelPokemon = React.ComponentProps<typeof TradeTargetsPanel>['pokemon'];
+type CatalogTradePokemon = React.ComponentProps<typeof CatalogTradeLauncherPanel>['partnerPokemon'];
+type CatalogWantedPokemon = React.ComponentProps<typeof CatalogWantedLauncherPanel>['wantedPokemon'];
 type WantedOverlayPokemon = React.ComponentProps<typeof WantedInstance>['pokemon'];
-type WantedDetailsPokemon = React.ComponentProps<typeof WantedDetails>['pokemon'];
 
 export { isSwipeInteractiveTarget } from './overlay/overlaySwipe';
 
 const InstanceOverlay: React.FC<InstanceOverlayProps> = ({
   pokemon,
   onClose,
-  variants,
   tagFilter,
   lists,
   instances,
-  sortType,
-  sortMode,
   isEditable,
   username,
   navigationPokemons = [],
@@ -200,18 +198,6 @@ const InstanceOverlay: React.FC<InstanceOverlayProps> = ({
     setCurrentOverlay(deriveInitialOverlay(tagFilter, liveSelectedPokemon));
   }, [tagFilter, liveSelectedPokemon]);
 
-  const handleOpenTradeTargetOverlay = (pokemonData: Record<string, unknown>) => {
-    setSelectedPokemon(pokemonData as unknown as OverlayPokemon);
-    setPreviewInstanceDataPatch({});
-    setCurrentOverlay('wanted');
-  };
-
-  const handleOpenTradeOverlay = (pokemonData: Record<string, unknown>) => {
-    setSelectedPokemon(pokemonData as unknown as OverlayPokemon);
-    setPreviewInstanceDataPatch({});
-    setCurrentOverlay('trade');
-  };
-
   const handleCloseOverlay = () => {
     onClose();
     setCurrentOverlay(deriveInitialOverlay(tagFilter, null));
@@ -264,38 +250,40 @@ const InstanceOverlay: React.FC<InstanceOverlayProps> = ({
               className={`trade-instance-overlay ${isSmallScreen ? 'small-screen' : ''}`}
             >
               <div className={`overlay-row other-overlays-row ${isSmallScreen ? 'column-layout' : ''}`}>
-                <WindowOverlay onClose={handleCloseOverlay} className="trade-instance-window">
+                <WindowOverlay
+                  onClose={handleCloseOverlay}
+                  className="trade-instance-window trade-details-window trade-unified-window"
+                  {...swipeCaptureHandlers}
+                >
                   <div className="trade-pane-scroll trade-pane-scroll--offer">
-                    <div className="trade-pane-shell trade-pane-shell--offer">
+                    <div
+                      className={`trade-pane-shell trade-pane-shell--offer${
+                        !isEditable ? ' trade-pane-shell--catalog-view' : ''
+                      }`}
+                    >
                       <TradeInstance
                         key={tradeInstanceKey}
                         pokemon={activePokemon as unknown as TradeOverlayPokemon}
                         isEditable={isEditable}
+                        catalogView={!isEditable}
                       />
-                    </div>
-                  </div>
-                </WindowOverlay>
-                <WindowOverlay
-                  onClose={handleCloseOverlay}
-                  className="trade-details-window"
-                  {...swipeCaptureHandlers}
-                >
-                  <div className="trade-pane-scroll trade-pane-scroll--targets">
-                    <div className="trade-pane-shell trade-pane-shell--targets">
-                      <TradeTargetsPanel
-                        key={`${tradeInstanceKey}:details`}
-                        pokemon={withInstanceData(activePokemon) as TradeTargetsPanelPokemon}
-                        lists={lists}
-                        instances={instances}
-                        sortType={sortType}
-                        sortMode={sortMode}
-                        onClose={handleCloseOverlay}
-                        openTradeTargetOverlay={handleOpenTradeTargetOverlay}
-                        variants={variants}
-                        isEditable={isEditable}
-                        username={username}
-                        swipeCaptureHandlers={swipeCaptureHandlers}
-                      />
+                      {isEditable && activePokemon.instanceData?.instance_id ? (
+                        <TradePreferenceHandoff
+                          mode="trade"
+                          instanceId={activePokemon.instanceData.instance_id}
+                        />
+                      ) : null}
+                      {!isEditable ? (
+                        <CatalogTradeLauncherPanel
+                          key={`${tradeInstanceKey}:proposal`}
+                          partnerUsername={username}
+                          partnerPokemon={
+                            withInstanceData(activePokemon) as CatalogTradePokemon
+                          }
+                          partnerLists={lists}
+                          partnerInstances={instances}
+                        />
+                      ) : null}
                     </div>
                   </div>
                 </WindowOverlay>
@@ -312,25 +300,31 @@ const InstanceOverlay: React.FC<InstanceOverlayProps> = ({
         return (
           <div className="wanted-instance-overlay">
             <div className={`overlay-row other-overlays-row ${isSmallScreen ? 'column-layout' : ''}`}>
-              <WindowOverlay onClose={handleCloseOverlay} className="wanted-details-window">
-                <WantedDetails
-                  key={`${wantedInstanceKey}:details`}
-                  pokemon={withInstanceData(activePokemon) as WantedDetailsPokemon}
-                  lists={lists}
-                  instances={instances}
-                  sortType={sortType}
-                  sortMode={sortMode}
-                  openTradeOverlay={handleOpenTradeOverlay}
-                  variants={variants}
-                  isEditable={isEditable}
-                />
-              </WindowOverlay>
-              <WindowOverlay onClose={handleCloseOverlay} className="wanted-instance-window">
+              <WindowOverlay
+                onClose={handleCloseOverlay}
+                className="wanted-instance-window wanted-details-window trade-unified-window"
+              >
                 <WantedInstance
                   key={wantedInstanceKey}
                   pokemon={activePokemon as unknown as WantedOverlayPokemon}
                   isEditable={isEditable}
+                  catalogView={!isEditable}
                 />
+                {isEditable && activePokemon.instanceData?.instance_id ? (
+                  <TradePreferenceHandoff
+                    mode="wanted"
+                    instanceId={activePokemon.instanceData.instance_id}
+                  />
+                ) : null}
+                {!isEditable ? (
+                  <CatalogWantedLauncherPanel
+                    key={`${wantedInstanceKey}:proposal`}
+                    partnerUsername={username}
+                    wantedPokemon={withInstanceData(activePokemon) as CatalogWantedPokemon}
+                    partnerLists={lists}
+                    partnerInstances={instances}
+                  />
+                ) : null}
               </WindowOverlay>
             </div>
           </div>
