@@ -14,6 +14,7 @@ import Moves from '@/components/pokemonComponents/Moves';
 import FriendshipManager from './components/Wanted/FriendshipManager';
 import BackgroundLocationCard from '@/components/pokemonComponents/BackgroundLocationCard';
 import PokemonLocationBackground from '@/features/pokemonDisplay/PokemonLocationBackground';
+import BackgroundSelector from './sections/BackgroundSelector';
 import OverlayPortal from '@/components/OverlayPortal';
 
 import { determineImageUrl } from '@/utils/imageHelpers';
@@ -195,14 +196,11 @@ const WantedInstance: React.FC<WantedInstanceProps> = ({
 
       {!catalogView && editMode && selectableBackgrounds.length > 0 && (
         <div className="background-select-container">
-          <div className={`background-select-row ${editMode ? 'active' : ''}`}>
-            <img
-              src={'/images/location.png'}
-              alt="Background Selector"
-              className="background-icon"
-              onClick={editMode ? () => setShowBackgrounds(!showBackgrounds) : undefined}
-            />
-          </div>
+          <BackgroundSelector
+            canPick
+            editMode={editMode}
+            onToggle={() => setShowBackgrounds((visible) => !visible)}
+          />
         </div>
       )}
 

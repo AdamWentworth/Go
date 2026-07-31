@@ -1,6 +1,6 @@
 import React from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import TradeInstance from '@/pages/Pokemon/features/instances/TradeInstance';
 
 const mocks = vi.hoisted(() => ({
@@ -174,6 +174,8 @@ describe('TradeInstance', () => {
     mocks.controllerMock.mockReturnValue({ ...viewController, editMode: true });
     render(<TradeInstance pokemon={pokemon} isEditable />);
     expect(document.querySelector('.background-select-row--header')).not.toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Choose special background' }));
+    expect(viewController.setShowBackgrounds).toHaveBeenCalledTimes(1);
   });
 
   it('shows a real level but omits an empty level in the compact listing view', () => {
