@@ -63,7 +63,7 @@ const FriendshipManager: React.FC<FriendshipManagerProps> = ({
   const handleFriendshipChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newLevel = parseInt(e.target.value, 10);
 
-    if (actualIsLucky && newLevel !== 4) {
+    if (actualIsLucky && newLevel < 4) {
       handleSetIsLucky(false);
     }
     handleSetFriendshipLevel(newLevel);
@@ -74,19 +74,20 @@ const FriendshipManager: React.FC<FriendshipManagerProps> = ({
       const newLuckyStatus = !actualIsLucky;
       handleSetIsLucky(newLuckyStatus);
       if (newLuckyStatus) {
-        handleSetFriendshipLevel(4);
+        handleSetFriendshipLevel(Math.max(actualFriendshipLevel, 4));
       }
     }
   };
 
   // 4) RENDER HEARTS:
   const hearts = [];
-  for (let i = 0; i < 4; i++) {
+  for (let i = 0; i < 5; i++) {
     hearts.push(
       <img
         key={`heart-${i}`}
         src={`/images/${i < actualFriendshipLevel ? 'heart-filled' : 'heart-unfilled'}.png`}
         alt={`Friendship Level ${i < actualFriendshipLevel ? 'Filled' : 'Unfilled'}`}
+        title={i === 4 ? 'Forever Friends — remote trade eligible' : undefined}
         className="heart"
       />
     );
@@ -95,7 +96,12 @@ const FriendshipManager: React.FC<FriendshipManagerProps> = ({
   return (
     <div className="friendship-level-container">
       <div className="hearts-lucky-container">
-        <div className="hearts">{hearts}</div>
+        <div
+          className="hearts"
+          aria-label={`${actualFriendshipLevel} of 5 friendship hearts${actualFriendshipLevel >= 5 ? ', Forever Friends remote trade eligible' : ''}`}
+        >
+          {hearts}
+        </div>
 
         <img
           src={`/images/lucky_friend_icon.png`}
@@ -110,7 +116,7 @@ const FriendshipManager: React.FC<FriendshipManagerProps> = ({
         <input
           type="range"
           min="0"
-          max="4"
+          max="5"
           value={actualFriendshipLevel}
           onChange={handleFriendshipChange}
           className="friendship-slider"

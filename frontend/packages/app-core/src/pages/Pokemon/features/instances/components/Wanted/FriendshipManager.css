@@ -10,6 +10,7 @@
 
 .friendship-level-container .hearts-lucky-container {
     display: flex;
+    flex-wrap: nowrap;
     justify-content: center;
     align-items: center;
 }
@@ -22,6 +23,8 @@
 
 .friendship-level-container .hearts {
     display: flex;
+    flex-flow: row nowrap;
+    flex: 0 0 auto;
     justify-content: center;
     align-items: center; /* Center items vertically */
 }

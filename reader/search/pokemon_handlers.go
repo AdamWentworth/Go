@@ -262,7 +262,7 @@ func SearchPokemonInstances(c fiber.Ctx) error {
 			logrus.Error("Invalid friendship_level value: ", err)
 			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Invalid friendship_level value"})
 		}
-		if fl >= 1 && fl <= 4 {
+		if fl >= 1 && fl <= 5 {
 			friendshipLevel = &fl
 		} else if fl == 0 {
 			// Treat as null (do not filter)

@@ -212,11 +212,11 @@ describe('WantedDetails', () => {
 
     expect(screen.getByTestId('not-trade-count')).toHaveTextContent('1');
 
-    fireEvent.click(screen.getByAltText('Reset Filters'));
+    fireEvent.click(screen.getByRole('button', { name: 'Reset' }));
     expect(screen.getByTestId('not-trade-count')).toHaveTextContent('1');
 
-    fireEvent.click(screen.getByTestId('toggle-edit-mode'));
-    fireEvent.click(screen.getByAltText('Reset Filters'));
+    fireEvent.click(screen.getByRole('button', { name: 'Edit preferences' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Reset' }));
 
     expect(screen.getByTestId('not-trade-count')).toHaveTextContent('0');
   });

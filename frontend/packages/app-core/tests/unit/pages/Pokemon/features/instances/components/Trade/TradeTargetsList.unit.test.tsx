@@ -88,4 +88,22 @@ describe('TradeTargetsList', () => {
     expect(screen.getByText('Bulbasaur')).toBeInTheDocument();
     expect(screen.getByText('#001')).toBeInTheDocument();
   });
+
+  it('supports candidate search and bulk selection while editing', () => {
+    const props = buildProps({ editMode: true });
+    render(<TradeTargetsList {...props} />);
+
+    fireEvent.change(screen.getByRole('searchbox', { name: 'Search acceptable Pokémon' }), {
+      target: { value: 'squirtle' },
+    });
+    expect(screen.getByText('No Pokémon match this view.')).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Allow all' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Clear all' }));
+
+    expect(props.setLocalNotWantedList).toHaveBeenNthCalledWith(1, {});
+    expect(props.setLocalNotWantedList).toHaveBeenNthCalledWith(2, {
+      'variant-1_uuid-1': true,
+    });
+  });
 });

@@ -1,24 +1,28 @@
 // WantedDetails.jsx
 
 import React, { useState, useEffect, useMemo } from 'react';
+import { FaUndoAlt } from 'react-icons/fa';
 import './WantedDetails.css';
-import EditSaveComponent from '@/components/EditSaveComponent';
+import '../Trade/TradeTargetsPanel.css';
 import { useInstancesStore } from '@/features/instances/store/useInstancesStore';
 import TradeListDisplay from './TradeListDisplay';
+import TradePreferenceFilters from '../Trade/TradePreferenceFilters';
+import PreferenceEditAction from '../Trade/PreferenceEditAction';
 
 import { toggleEditMode } from '../../hooks/useToggleEditModeWanted';
-import FilterImages from '../../FilterImages';
 import useImageSelection from '../../utils/useImageSelection';
 
-import { EXCLUDE_IMAGES_trade, INCLUDE_IMAGES_trade, FILTER_NAMES } from '../../utils/constants';
-import { TOOLTIP_TEXTS } from '../../utils/tooltipTexts';
+import {
+  EXCLUDE_IMAGES_trade,
+  FILTER_NAMES,
+  INCLUDE_IMAGES_trade,
+} from '../../utils/constants';
 
 import useTradeFiltering from '../../hooks/useTradeFiltering';
 import type { Instances } from '@/types/instances';
 import type { PokemonVariant } from '@/types/pokemonVariants';
 import type { SortMode, SortType } from '@/types/sort';
 import { createScopedLogger } from '@/utils/logger';
-import { useViewportBelow, VIEWPORT_BREAKPOINTS } from '@/hooks/useViewport';
 
 const log = createScopedLogger('WantedDetails');
 
@@ -56,6 +60,7 @@ interface WantedDetailsProps {
   openTradeOverlay: (pokemon: Record<string, unknown>) => void;
   variants: PokemonVariant[];
   isEditable: boolean;
+  onEditingChange?: (editing: boolean) => void;
 }
 
 const WantedDetails: React.FC<WantedDetailsProps> = ({
@@ -66,7 +71,8 @@ const WantedDetails: React.FC<WantedDetailsProps> = ({
   sortMode,
   openTradeOverlay,
   variants,
-  isEditable
+  isEditable,
+  onEditingChange,
 }) => {
   const instancesMap = instances ?? {};
   // Defensive defaults in case instanceData is not ready yet.
@@ -80,6 +86,9 @@ const WantedDetails: React.FC<WantedDetailsProps> = ({
   );
 
   const [editMode, setEditMode] = useState(false);
+  const [saveStatus, setSaveStatus] = useState<
+    'idle' | 'dirty' | 'saving' | 'saved' | 'error'
+  >('idle');
   const [localNotTradeList, setLocalNotTradeList] = useState({ ...not_trade_list });
   const [localTradeFilters, setLocalTradeFilters] = useState({ ...trade_filters });
   const updateDetails = useInstancesStore((s) => s.updateInstanceDetails);
@@ -96,8 +105,6 @@ const WantedDetails: React.FC<WantedDetailsProps> = ({
 
   const [listsState, setListsState] = useState<WantedDetailsListsState>(listsWithTrade);
   useEffect(() => { setListsState(listsWithTrade); }, [listsWithTrade]);
-
-  const isSmallScreen = useViewportBelow(VIEWPORT_BREAKPOINTS.desktop);
 
   // Image selection states
   const {
@@ -149,6 +156,17 @@ const WantedDetails: React.FC<WantedDetailsProps> = ({
     setLocalNotTradeList({ ...(pokemon?.instanceData?.not_trade_list ?? {}) });
   }, [pokemon?.instanceData?.not_trade_list]);
 
+  const persistDetails: UpdateDetailsAdapter = async (...args) => {
+    setSaveStatus('saving');
+    try {
+      await updateDetails(...args);
+      setSaveStatus('saved');
+    } catch (error) {
+      setSaveStatus('error');
+      throw error;
+    }
+  };
+
   const handleToggleEditMode = () =>
     toggleEditMode({
       editMode,
@@ -159,8 +177,19 @@ const WantedDetails: React.FC<WantedDetailsProps> = ({
       instances: instances as unknown as InstanceReciprocalMap,
       filteredOutPokemon,
       localTradeFilters,
-      updateDetails: updateDetails as unknown as UpdateDetailsAdapter,
+      updateDetails: persistDetails,
     });
+
+  useEffect(() => {
+    onEditingChange?.(editMode);
+    if (editMode) setSaveStatus('dirty');
+  }, [editMode, onEditingChange]);
+
+  useEffect(() => {
+    if (saveStatus !== 'saved') return undefined;
+    const timeout = window.setTimeout(() => setSaveStatus('idle'), 1600);
+    return () => window.clearTimeout(timeout);
+  }, [saveStatus]);
 
   const [, setPendingUpdates] = useState<Record<string, boolean>>({});
 
@@ -171,8 +200,6 @@ const WantedDetails: React.FC<WantedDetailsProps> = ({
   const filteredTradeListCount = Object.keys(filteredTradeList || {}).filter(
     (key) => !(localNotTradeList || {})[key]
   ).length;
-
-  const shouldShowFewLayout = isSmallScreen || filteredTradeListCount <= 15;
 
   const handleResetFilters = () => {
     if (!editMode) return;
@@ -220,77 +247,79 @@ const WantedDetails: React.FC<WantedDetailsProps> = ({
   };
 
   return (
-    <div>
-      <div
-        className={`wanted-details-grid ${shouldShowFewLayout ? 'few-layout' : 'many-layout'}`}
-      >
-        {/* -- EDIT/SAVE -- */}
-        <div className="edit-save">
-          <EditSaveComponent
-            editMode={editMode}
-            toggleEditMode={handleToggleEditMode}
-            isEditable={isEditable}
-          />
+    <div className="trade-details-root wanted-preferences-root">
+      <div className="trade-details-container">
+        <div className="trade-details-container__intro">
+          <div className="trade-details-container__eyebrow">Wanted preferences</div>
+          <h2>Acceptable offers</h2>
+          <p>Choose which For Trade Pokémon you would accept for this entry.</p>
         </div>
 
-        {/* -- EXCLUDE HEADER -- */}
-        <div className="exclude-header">
-          <h3>Exclude</h3>
-        </div>
-
-        {/* -- INCLUDE HEADER -- */}
-        <div className="include-header">
-          <h3>Include</h3>
-        </div>
-
-        {/* -- EXCLUDE IMAGES -- */}
-        <div className="exclude-images">
-          <FilterImages
-            images={[...EXCLUDE_IMAGES_trade]}
-            selectedImages={selectedExcludeImages}
-            toggleImageSelection={toggleExcludeImageSelection}
-            editMode={editMode}
-            tooltipTexts={FILTER_NAMES.slice(6).map((name) => TOOLTIP_TEXTS[name])}
-          />
-        </div>
-
-        {/* -- INCLUDE IMAGES -- */}
-        <div className="include-images">
-          <FilterImages
-            images={[...INCLUDE_IMAGES_trade]}
-            selectedImages={selectedIncludeOnlyImages}
-            toggleImageSelection={toggleIncludeOnlyImageSelection}
-            editMode={editMode}
-            tooltipTexts={FILTER_NAMES.slice(0, 6).map((name) => TOOLTIP_TEXTS[name])}
-          />
-        </div>
-
-        {/* -- RESET BUTTON -- */}
-        {isEditable && (
-          <div className="reset">
-            <img
-              src={`/images/reset.png`}
-              alt="Reset Filters"
-              onClick={handleResetFilters}
-            />
+        <div className="trade-details-container__filters-panel">
+          <div className="top-row">
+            {isEditable ? (
+              <div className="trade-target-actions">
+                <div className="edit-save-container">
+                  <PreferenceEditAction
+                    editMode={editMode}
+                    onToggle={handleToggleEditMode}
+                    saveStatus={saveStatus}
+                  />
+                </div>
+              </div>
+            ) : null}
+            <div className="trade-target-filters-inline">
+              <TradePreferenceFilters
+                context="trade"
+                editMode={editMode}
+                selectedExcludeImages={selectedExcludeImages}
+                selectedIncludeOnlyImages={selectedIncludeOnlyImages}
+                toggleExcludeImageSelection={toggleExcludeImageSelection}
+                toggleIncludeOnlyImageSelection={toggleIncludeOnlyImageSelection}
+              />
+            </div>
           </div>
-        )}
-      </div>
+        </div>
 
-      {/* -- FOR TRADE (header + list) -- */}
-      <div className="for-trade">
-        <h2>For Trade List:</h2>
-        <TradeListDisplay
-          pokemon={pokemon}
-          lists={{ trade: filteredTradeList || {} }}
-          localNotTradeList={localNotTradeList}
-          setLocalNotTradeList={setLocalNotTradeList}
-          editMode={editMode}
-          toggleReciprocalUpdates={toggleReciprocalUpdates}
-          sortType={sortType}
-          sortMode={sortMode}
-          onPokemonClick={handlePokemonClick}
-        />
+        <div className="trade-details-container__wanted-panel wanted-preferences-offers">
+          <div className="trade-details-container__wanted-header">
+            <div>
+              <h3>For Trade Pokémon</h3>
+              <span>
+                {filteredTradeListCount} acceptable ·{' '}
+                {Object.values(localTradeFilters).filter(Boolean).length === 0
+                  ? 'no advanced rules'
+                  : `${Object.values(localTradeFilters).filter(Boolean).length} active ${
+                    Object.values(localTradeFilters).filter(Boolean).length === 1
+                      ? 'rule'
+                      : 'rules'
+                  }`}
+              </span>
+            </div>
+            {isEditable ? (
+              <button
+                type="button"
+                className={`trade-target-reset-button ${editMode ? 'editable' : ''}`}
+                disabled={!editMode}
+                onClick={handleResetFilters}
+              >
+                <FaUndoAlt aria-hidden="true" />
+                <span>Reset</span>
+              </button>
+            ) : null}
+          </div>
+          <TradeListDisplay
+            pokemon={pokemon}
+            lists={{ trade: filteredTradeList || {} }}
+            localNotTradeList={localNotTradeList}
+            setLocalNotTradeList={setLocalNotTradeList}
+            editMode={editMode}
+            toggleReciprocalUpdates={toggleReciprocalUpdates}
+            sortType={sortType}
+            sortMode={sortMode}
+            onPokemonClick={handlePokemonClick}
+          />
+        </div>
       </div>
     </div>
   );

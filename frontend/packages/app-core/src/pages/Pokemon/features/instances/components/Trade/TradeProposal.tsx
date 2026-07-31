@@ -111,7 +111,7 @@ const TradeProposal: React.FC<TradeProposalProps> = ({
       return;
     }
     const proposedInstanceId = preflight.proposedInstanceId;
-    const normalizedFriendshipLevel = friendship_level as 1 | 2 | 3 | 4;
+    const normalizedFriendshipLevel = friendship_level as 1 | 2 | 3 | 4 | 5;
     const sanitizedInstanceData = sanitizeInstanceData(passedInPokemon.instanceData);
     const tradeData = buildTradeProposalRequest({
       usernameProposed: preflight.usernameProposed,

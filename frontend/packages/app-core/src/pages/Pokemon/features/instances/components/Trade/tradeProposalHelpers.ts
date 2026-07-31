@@ -16,7 +16,7 @@ type BuildTradeProposalRequestArgs = {
   isRegisteredTrade: boolean;
   isLuckyTrade: boolean;
   stardustCost: number;
-  friendshipLevel: 1 | 2 | 3 | 4;
+  friendshipLevel: 1 | 2 | 3 | 4 | 5;
   variantId: string;
   passedInInstanceId?: string;
   sanitizedInstanceData: SanitizedInstanceData;
@@ -93,10 +93,10 @@ export const buildTradeProposalPreflight = ({
     };
   }
 
-  if (friendshipLevel < 1 || friendshipLevel > 4) {
+  if (friendshipLevel < 1 || friendshipLevel > 5) {
     return {
       ok: false,
-      error: 'Please select a valid friendship level (1-4).',
+      error: 'Please select a valid friendship level (1-5).',
     };
   }
 

@@ -105,7 +105,7 @@ export interface TradeProposalRequest {
   is_registered_trade: boolean;
   is_lucky_trade: boolean;
   trade_dust_cost: number;
-  trade_friendship_level: 1 | 2 | 3 | 4;
+  trade_friendship_level: 1 | 2 | 3 | 4 | 5;
   user_1_trade_satisfaction: null;
   user_2_trade_satisfaction: null;
   pokemon: TradeProposalPokemonPayload;
@@ -126,5 +126,5 @@ export interface AuthoritativeTradeProposalRequest {
   is_registered_trade: boolean;
   is_lucky_trade: boolean;
   trade_dust_cost: number;
-  trade_friendship_level: 1 | 2 | 3 | 4;
+  trade_friendship_level: 1 | 2 | 3 | 4 | 5;
 }

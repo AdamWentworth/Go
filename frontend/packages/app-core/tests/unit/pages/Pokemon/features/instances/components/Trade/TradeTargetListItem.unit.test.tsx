@@ -75,7 +75,7 @@ describe('TradeTargetListItem', () => {
     );
 
     expect(screen.queryByRole('button', { name: 'Trade Target Bulbasaur' })).not.toBeInTheDocument();
-    fireEvent.click(screen.getByRole('button', { name: 'X' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Remove Bulbasaur' }));
 
     expect(onNotWantedToggle).toHaveBeenCalledWith('variant-1_uuid-1');
     expect(onPokemonClick).not.toHaveBeenCalled();
@@ -92,6 +92,6 @@ describe('TradeTargetListItem', () => {
       />,
     );
 
-    expect(screen.getByRole('button', { name: '\u2713' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Allow Bulbasaur' })).toBeInTheDocument();
   });
 });

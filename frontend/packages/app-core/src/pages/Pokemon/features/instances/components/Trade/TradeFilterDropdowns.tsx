@@ -12,6 +12,7 @@ interface TradeFilterDropdownsProps {
   selectedIncludeOnlyImages: boolean[];
   toggleExcludeImageSelection: (index: number, editMode: boolean) => void;
   toggleIncludeOnlyImageSelection: (index: number, editMode: boolean) => void;
+  filterContext?: 'wanted' | 'trade';
 }
 
 const countActiveFilters = (items: boolean[]): number => items.filter(Boolean).length;
@@ -23,6 +24,7 @@ const TradeFilterDropdowns: React.FC<TradeFilterDropdownsProps> = ({
   selectedIncludeOnlyImages,
   toggleExcludeImageSelection,
   toggleIncludeOnlyImageSelection,
+  filterContext = 'wanted',
 }) => {
   const [openMode, setOpenMode] = useState<TradeFilterMode | null>(null);
   const rootRef = useRef<HTMLDivElement | null>(null);
@@ -82,9 +84,10 @@ const TradeFilterDropdowns: React.FC<TradeFilterDropdownsProps> = ({
           type="button"
           className={`trade-filter-trigger ${openMode === 'include' ? 'is-open' : ''}`}
           aria-expanded={openMode === 'include'}
+          aria-label="Required matching filters"
           onClick={() => handleToggleMode('include')}
         >
-          <span>Include</span>
+          <span>Require</span>
           {includeCount > 0 ? (
             <span className="trade-filter-trigger__count">{includeCount}</span>
           ) : null}
@@ -95,12 +98,13 @@ const TradeFilterDropdowns: React.FC<TradeFilterDropdownsProps> = ({
         <div
           className="trade-filter-dropdowns__panel"
           role="dialog"
-          aria-label={openMode === 'exclude' ? 'Exclude filters' : 'Include filters'}
+          aria-label={openMode === 'exclude' ? 'Exclude filters' : 'Required filters'}
         >
           <TradeFiltersPanel
             isMirror={false}
             shouldShowFewLayout={false}
             mode={openMode}
+            filterContext={filterContext}
             editMode={editMode}
             selectedExcludeImages={selectedExcludeImages}
             selectedIncludeOnlyImages={selectedIncludeOnlyImages}

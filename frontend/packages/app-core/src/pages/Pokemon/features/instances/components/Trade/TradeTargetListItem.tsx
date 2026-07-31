@@ -93,12 +93,18 @@ const TradeTargetListItem: React.FC<TradeTargetListItemProps> = ({
           <button
             type="button"
             className="toggle-not-wanted"
+            aria-label={
+              isNotWanted
+                ? `Allow ${displayName}`
+                : `Remove ${displayName}`
+            }
             onClick={(event) => {
               event.stopPropagation();
               onNotWantedToggle(wantedPokemon.key);
             }}
           >
-            {isNotWanted ? '\u2713' : 'X'}
+            <span aria-hidden="true">{isNotWanted ? '+' : '\u2713'}</span>
+            <span>{isNotWanted ? 'Allow' : 'Allowed'}</span>
           </button>
         )}
       </div>

@@ -127,7 +127,7 @@ describe('tradeProposalHelpers', () => {
       }),
     ).toEqual({
       ok: false,
-      error: 'Please select a valid friendship level (1-4).',
+      error: 'Please select a valid friendship level (1-5).',
     });
 
     expect(
@@ -175,6 +175,24 @@ describe('tradeProposalHelpers', () => {
     ).toEqual({
       ok: true,
       proposedInstanceId: 'inst-1',
+      usernameProposed: 'Ash',
+    });
+  });
+
+  it('accepts Forever Friends as a valid remote-trade friendship level', () => {
+    expect(
+      buildTradeProposalPreflight({
+        selectedMatchedInstance: makeVariant({
+          instanceData: {
+            instance_id: 'remote-inst',
+          } as unknown as PokemonInstance,
+        }),
+        friendshipLevel: 5,
+        usernameProposed: 'Ash',
+      }),
+    ).toEqual({
+      ok: true,
+      proposedInstanceId: 'remote-inst',
       usernameProposed: 'Ash',
     });
   });

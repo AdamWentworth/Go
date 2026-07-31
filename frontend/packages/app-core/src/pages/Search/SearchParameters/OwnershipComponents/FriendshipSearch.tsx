@@ -9,7 +9,8 @@ type FriendshipSearchProps = {
   setPrefLucky: React.Dispatch<React.SetStateAction<boolean>>;
 };
 
-const MAX_FRIENDSHIP_LEVEL = 4;
+const MAX_FRIENDSHIP_LEVEL = 5;
+const LUCKY_FRIENDSHIP_LEVEL = 4;
 
 const FriendshipSearch: React.FC<FriendshipSearchProps> = ({
   friendshipLevel,
@@ -23,14 +24,14 @@ const FriendshipSearch: React.FC<FriendshipSearchProps> = ({
     const nextFriendshipLevel = Number.parseInt(event.target.value, 10);
     setFriendshipLevel(nextFriendshipLevel);
 
-    if (nextFriendshipLevel < MAX_FRIENDSHIP_LEVEL) {
+    if (nextFriendshipLevel < LUCKY_FRIENDSHIP_LEVEL) {
       setPrefLucky(false);
     }
   };
 
   const toggleLucky = () => {
     if (!prefLucky) {
-      setFriendshipLevel(MAX_FRIENDSHIP_LEVEL);
+      setFriendshipLevel(Math.max(friendshipLevel, LUCKY_FRIENDSHIP_LEVEL));
     }
     setPrefLucky((prev) => !prev);
   };
@@ -38,7 +39,10 @@ const FriendshipSearch: React.FC<FriendshipSearchProps> = ({
   return (
     <div className="friendship-search-options">
       <div className="hearts-lucky-container">
-        <div className="hearts">
+        <div
+          className="hearts"
+          aria-label={`${friendshipLevel} of 5 friendship hearts${friendshipLevel >= MAX_FRIENDSHIP_LEVEL ? ', Forever Friends remote trade eligible' : ''}`}
+        >
           {Array.from({ length: MAX_FRIENDSHIP_LEVEL }).map((_, index) => {
             const isFilled = index < friendshipLevel;
             return (
@@ -46,6 +50,11 @@ const FriendshipSearch: React.FC<FriendshipSearchProps> = ({
                 key={`heart-${index}`}
                 src={`/images/${isFilled ? 'heart-filled' : 'heart-unfilled'}.png`}
                 alt={`Friendship Level ${isFilled ? 'Filled' : 'Unfilled'}`}
+                title={
+                  index === 4
+                    ? 'Forever Friends — remote trade eligible'
+                    : undefined
+                }
                 className="heart"
               />
             );
@@ -58,7 +67,7 @@ const FriendshipSearch: React.FC<FriendshipSearchProps> = ({
           onClick={toggleLucky}
           style={{
             cursor:
-              friendshipLevel === MAX_FRIENDSHIP_LEVEL || !prefLucky
+              friendshipLevel >= LUCKY_FRIENDSHIP_LEVEL || !prefLucky
                 ? 'pointer'
                 : 'default',
           }}

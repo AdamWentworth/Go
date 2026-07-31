@@ -1,8 +1,12 @@
 import React from 'react';
-import { fireEvent, render, screen } from '@testing-library/react';
+import { act, fireEvent, render, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import TradeTargetsWorkspace from '@/pages/Trades/TradeTargetsWorkspace';
+
+vi.mock('@/contexts/ModalContext', () => ({
+  useModal: () => ({ confirm: vi.fn().mockResolvedValue(true) }),
+}));
 
 const mocks = vi.hoisted(() => ({
   tradePanelProps: [] as Array<Record<string, unknown>>,
@@ -19,6 +23,7 @@ const mocks = vi.hoisted(() => ({
 
 const tradePokemon = {
   name: 'Pikachu',
+  variantType: 'dynamax',
   currentImage: '/pikachu.png',
   instanceData: mocks.instancesState.instances.trade1,
 };
@@ -31,6 +36,7 @@ const wantedPokemon = {
 };
 const laterTradePokemon = {
   name: 'Eevee',
+  variantType: 'gigantamax',
   pokedex_number: 133,
   variant_id: 'v2',
   currentImage: '/eevee.png',
@@ -98,17 +104,25 @@ describe('TradeTargetsWorkspace', () => {
     expect(mocks.tradePanelProps.at(-1)?.username).toBe('ash');
     expect(
       screen.getAllByRole('button')
-        .filter((button) => button.closest('.trade-target-entry-list'))
+        .filter(
+          (button) =>
+            button.closest('.trade-target-entry-list') &&
+            !button.closest('.trade-target-mobile-picker-panel'),
+        )
         .map((button) => button.textContent),
-    ).toEqual(['PikachuCP 100', 'EeveeCP 300']);
+    ).toEqual(['Pikachu#0025', 'Eevee#0133']);
+    expect(screen.getAllByAltText('Dynamax')).not.toHaveLength(0);
+    expect(screen.getAllByAltText('Gigantamax')).not.toHaveLength(0);
   });
 
-  it('switches to the existing Wanted target editor without changing its behavior', () => {
+  it('switches to the existing Wanted target editor without changing its behavior', async () => {
     render(<TradeTargetsWorkspace />);
 
-    fireEvent.click(screen.getByRole('button', { name: 'Wanted (1)' }));
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'Wanted (1)' }));
+    });
 
-    expect(screen.getByTestId('existing-wanted-targets')).toBeInTheDocument();
+    expect(await screen.findByTestId('existing-wanted-targets')).toBeInTheDocument();
     expect(screen.queryByTestId('existing-trade-targets')).not.toBeInTheDocument();
     expect(mocks.wantedPanelProps.at(-1)?.instances).toBe(mocks.instancesState.instances);
     expect(mocks.wantedPanelProps.at(-1)?.lists).toBe(mocks.tagsState.tags);

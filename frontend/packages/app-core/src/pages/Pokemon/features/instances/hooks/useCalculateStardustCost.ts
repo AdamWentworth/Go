@@ -18,18 +18,21 @@ const UNREG_COST_NOT_SPECIAL: Record<number, number> = {
   2: 16000,
   3: 1600,
   4: 800,
+  5: 800,
 };
 const UNREG_COST_SPECIAL: Record<number, number> = {
   1: 1000000,
   2: 800000,
   3: 80000,
   4: 40000,
+  5: 40000,
 };
 const REG_COST_SPECIAL: Record<number, number> = {
   1: 20000,
   2: 16000,
   3: 1600,
   4: 800,
+  5: 800,
 };
 const MAX_COST = 1000000;
 

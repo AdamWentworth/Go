@@ -23,8 +23,8 @@ describe('TradeFilterDropdowns', () => {
 
     expect(screen.getByRole('button', { name: /Exclude/i })).toHaveTextContent('Exclude');
     expect(screen.getByRole('button', { name: /Exclude/i })).toHaveTextContent('2');
-    expect(screen.getByRole('button', { name: /Include/i })).toHaveTextContent('Include');
-    expect(screen.getByRole('button', { name: /Include/i })).toHaveTextContent('1');
+    expect(screen.getByRole('button', { name: /Required/i })).toHaveTextContent('Require');
+    expect(screen.getByRole('button', { name: /Required/i })).toHaveTextContent('1');
   });
 
   it('opens one filter picker at a time and closes on outside click', () => {
@@ -33,20 +33,20 @@ describe('TradeFilterDropdowns', () => {
     fireEvent.click(screen.getByRole('button', { name: /Exclude/i }));
     const excludeDialog = screen.getByRole('dialog', { name: 'Exclude filters' });
     expect(within(excludeDialog).getByRole('heading', { name: 'Exclude' })).toBeInTheDocument();
-    expect(within(excludeDialog).queryByRole('heading', { name: 'Include' })).not.toBeInTheDocument();
+    expect(within(excludeDialog).queryByRole('heading', { name: 'Require' })).not.toBeInTheDocument();
 
-    fireEvent.click(screen.getByRole('button', { name: /Include/i }));
-    const includeDialog = screen.getByRole('dialog', { name: 'Include filters' });
-    expect(within(includeDialog).getByRole('heading', { name: 'Include' })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: /Required/i }));
+    const includeDialog = screen.getByRole('dialog', { name: 'Required filters' });
+    expect(within(includeDialog).getByRole('heading', { name: 'Require' })).toBeInTheDocument();
     expect(within(includeDialog).queryByRole('heading', { name: 'Exclude' })).not.toBeInTheDocument();
 
     fireEvent.pointerDown(document.body);
-    expect(screen.queryByRole('dialog', { name: 'Include filters' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('dialog', { name: 'Required filters' })).not.toBeInTheDocument();
   });
 
   it('renders nothing in mirror mode', () => {
     render(<TradeFilterDropdowns {...makeProps()} isMirror />);
     expect(screen.queryByRole('button', { name: /Exclude/i })).not.toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: /Include/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /Required/i })).not.toBeInTheDocument();
   });
 });

@@ -52,4 +52,5 @@ export const TRADE_FRIENDSHIP_LEVELS: { [key: number]: string } = {
   2: 'Great',
   3: 'Ultra',
   4: 'Best',
+  5: 'Forever',
 };

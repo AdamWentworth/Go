@@ -273,7 +273,7 @@ describe('TradeTargetsPanel', () => {
       ),
     ).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: 'Target List' })).toBeInTheDocument();
-    expect(screen.getByText('1 visible')).toBeInTheDocument();
+    expect(screen.getByText('1 acceptable · no advanced rules')).toBeInTheDocument();
   });
 
   it('uses mirror-specific count copy when mirror mode is active', () => {
@@ -299,11 +299,11 @@ describe('TradeTargetsPanel', () => {
     const editableProps = makeProps({ isEditable: true });
     const { rerender } = render(<TradeTargetsPanel {...editableProps} />);
 
-    const reset = screen.getByAltText('Reset Filters');
+    const reset = screen.getByRole('button', { name: 'Reset' });
     expect(reset).toBeInTheDocument();
 
     const readOnlyProps = makeProps({ isEditable: false });
     rerender(<TradeTargetsPanel {...readOnlyProps} />);
-    expect(screen.queryByAltText('Reset Filters')).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Reset' })).not.toBeInTheDocument();
   });
 });

@@ -29,11 +29,11 @@ describe('TradeFiltersPanel', () => {
       <TradeFiltersPanel {...makeProps()} shouldShowFewLayout={false} />,
     );
     expect(screen.getByRole('heading', { name: 'Exclude' })).toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: 'Include' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Require' })).toBeInTheDocument();
 
     rerender(<TradeFiltersPanel {...makeProps()} shouldShowFewLayout />);
     expect(screen.getByRole('heading', { name: 'Exclude' })).toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: 'Include' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Require' })).toBeInTheDocument();
   });
 
   it('forwards image clicks to both exclude and include toggles', () => {
@@ -56,10 +56,10 @@ describe('TradeFiltersPanel', () => {
   it('can render a single filter group for dropdown mode', () => {
     const { rerender } = render(<TradeFiltersPanel {...makeProps()} mode="exclude" />);
     expect(screen.getByRole('heading', { name: 'Exclude' })).toBeInTheDocument();
-    expect(screen.queryByRole('heading', { name: 'Include' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: 'Require' })).not.toBeInTheDocument();
 
     rerender(<TradeFiltersPanel {...makeProps()} mode="include" />);
-    expect(screen.getByRole('heading', { name: 'Include' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Require' })).toBeInTheDocument();
     expect(screen.queryByRole('heading', { name: 'Exclude' })).not.toBeInTheDocument();
   });
 });
