@@ -134,7 +134,7 @@ describe('TradeInstance', () => {
     );
 
     expect(document.querySelector('.trade-instance--caught-layout')).not.toBeNull();
-    expect(document.querySelector('.background-select-row--header')).not.toBeNull();
+    expect(document.querySelector('.background-select-row--header')).toBeNull();
     expect(document.querySelector('.background-select-row--row')).toBeNull();
     expect(screen.getByLabelText('Caught date 2025 01-02')).toBeInTheDocument();
     expect(screen.getByText('CAUGHT')).toBeInTheDocument();
@@ -144,6 +144,36 @@ describe('TradeInstance', () => {
     expect(screen.queryByText('lucky')).not.toBeInTheDocument();
     expect(screen.queryByText('purify')).not.toBeInTheDocument();
     expect(screen.queryByText('Offering')).not.toBeInTheDocument();
+  });
+
+  it('only shows the background selector while editing', () => {
+    const pokemon = {
+      pokemon_id: 1,
+      name: 'Bulbasaur',
+      species_name: 'Bulbasaur',
+      variant_id: '0001-default',
+      variantType: 'default',
+      backgrounds: [{
+        background_id: 1,
+        image_url: '/images/bg.png',
+        name: 'BG',
+        costume_id: 0,
+        date: '',
+        location: '',
+      }],
+      max: [],
+      moves: [],
+      instanceData: { instance_id: 'uuid-1', is_for_trade: true },
+    } as any;
+
+    const { unmount } = render(<TradeInstance pokemon={pokemon} isEditable />);
+    const viewController = mocks.controllerMock.mock.results[0]?.value;
+    expect(document.querySelector('.background-select-row--header')).toBeNull();
+    unmount();
+
+    mocks.controllerMock.mockReturnValue({ ...viewController, editMode: true });
+    render(<TradeInstance pokemon={pokemon} isEditable />);
+    expect(document.querySelector('.background-select-row--header')).not.toBeNull();
   });
 
   it('shows a real level but omits an empty level in the compact listing view', () => {

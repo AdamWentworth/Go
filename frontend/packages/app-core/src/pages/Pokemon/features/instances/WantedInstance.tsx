@@ -193,7 +193,7 @@ const WantedInstance: React.FC<WantedInstanceProps> = ({
         <h2>Wanted</h2>
       </div>
 
-      {!catalogView && selectableBackgrounds.length > 0 && (
+      {!catalogView && editMode && selectableBackgrounds.length > 0 && (
         <div className="background-select-container">
           <div className={`background-select-row ${editMode ? 'active' : ''}`}>
             <img

@@ -316,7 +316,7 @@ const TradeInstance: React.FC<TradeInstanceProps> = ({
         onCPChange: handleCPChange,
         onFavoriteChange: () => undefined,
         showFavorite: false,
-        rightSlot: catalogView ? null : (
+        rightSlot: catalogView || !editMode ? null : (
           <BackgroundSelector
             canPick={pokemon.backgrounds.length > 0}
             editMode={editMode}
