@@ -74,6 +74,12 @@ function TradeList({
       );
     }
 
+    if (normalizedSelectedStatus === 'cancelled') {
+      return sortedTrades.filter((trade) =>
+        ['cancelled', 'denied'].includes(normalizeStatus(trade.trade_status)),
+      );
+    }
+
     return sortedTrades.filter(
       (trade) => normalizeStatus(trade.trade_status) === normalizedSelectedStatus,
     );
@@ -82,7 +88,21 @@ function TradeList({
   return (
     <div className="trades-list">
       {filteredTrades.length === 0 ? (
-        <p>No trades found for status: {selectedStatus}</p>
+        <div className="trade-activity-empty">
+          <div aria-hidden="true">↔</div>
+          <h2>No trades here</h2>
+          <p>
+            {selectedStatus === 'Accepting'
+              ? 'New offers will appear here.'
+              : selectedStatus === 'Proposed'
+                ? 'Sent proposals will appear here.'
+                : selectedStatus === 'Pending'
+                  ? 'Accepted trades will stay here until completion.'
+                  : selectedStatus === 'Completed'
+                    ? 'Completed trades will appear here.'
+                    : 'Cancelled and denied trades appear here.'}
+          </p>
+        </div>
       ) : (
         filteredTrades.map((trade, index) => (
           <TradeCard

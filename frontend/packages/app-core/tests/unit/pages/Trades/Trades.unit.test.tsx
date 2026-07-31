@@ -6,7 +6,10 @@ import Trades from '@/pages/Trades/Trades';
 
 const mocks = vi.hoisted(() => ({
   tradeStoreState: {
-    trades: { t1: { trade_status: 'pending' } },
+    trades: {
+      t1: { trade_status: 'pending' },
+      t2: { trade_status: 'denied' },
+    },
     relatedInstances: { i1: { instance_id: 'i1' } },
   },
   variantsStoreState: {
@@ -83,8 +86,9 @@ describe('Trades page', () => {
     const activityStatusProps = mocks.statusPropsHistory.at(-1);
     const activityListProps = mocks.listPropsHistory.at(-1);
 
-    expect(activityStatusProps?.selectedStatus).toBe('Pending');
-    expect(activityListProps?.selectedStatus).toBe('Pending');
+    expect(activityStatusProps?.selectedStatus).toBe('Accepting');
+    expect(activityStatusProps?.counts).toMatchObject({ Pending: 1, Cancelled: 1 });
+    expect(activityListProps?.selectedStatus).toBe('Accepting');
     expect(activityListProps?.trades).toEqual(mocks.tradeStoreState.trades);
     expect(activityListProps?.relatedInstances).toEqual(mocks.tradeStoreState.relatedInstances);
     expect(activityListProps?.variants).toEqual(mocks.variantsStoreState.variants);

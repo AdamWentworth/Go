@@ -16,6 +16,7 @@ var tradeFriendshipLevels = map[int]string{
 	2: "Great",
 	3: "Ultra",
 	4: "Best",
+	5: "Forever",
 }
 
 type CreateTradeRequest struct {
@@ -378,7 +379,40 @@ func DenyTradeHandler(c fiber.Ctx) error {
 }
 
 func CancelTradeHandler(c fiber.Ctx) error {
-	return transitionTrade(c, "pending", "cancelled", false)
+	var updated Trade
+	err := db.Transaction(func(tx *gorm.DB) error {
+		trade, err := loadTradeForParticipant(c, tx)
+		if err != nil {
+			return err
+		}
+		// A proposal may only be withdrawn by the trainer who created it.
+		// Once accepted, either participant may cancel the active trade.
+		if trade.TradeStatus == "proposed" && trade.UserIDProposed != viewerID(c) {
+			return errTradeForbidden
+		}
+		if trade.TradeStatus != "proposed" && trade.TradeStatus != "pending" {
+			return errTradeConflict
+		}
+		now := time.Now().UTC()
+		lastUpdate := now.UnixMilli()
+		cancelledBy := trade.UsernameProposed
+		if viewerID(c) == trade.UserIDAccepting {
+			cancelledBy = trade.UsernameAccepting
+		}
+		trade.TradeStatus = "cancelled"
+		trade.TradeCancelledDate = &now
+		trade.TradeCancelledBy = &cancelledBy
+		trade.LastUpdate = &lastUpdate
+		if err = tx.Save(&trade).Error; err != nil {
+			return err
+		}
+		updated = trade
+		return enqueueTradeEvent(tx, c, updated)
+	})
+	if err != nil {
+		return tradeError(c, err, "Could not cancel trade")
+	}
+	return c.JSON(tradeEnvelope(updated))
 }
 
 func transitionTrade(c fiber.Ctx, from, to string, accepterOnly bool) error {
@@ -490,7 +524,7 @@ func ReproposeTradeHandler(c fiber.Ctx) error {
 		if err != nil {
 			return err
 		}
-		if trade.TradeStatus != "cancelled" {
+		if trade.TradeStatus != "cancelled" && trade.TradeStatus != "denied" {
 			return errTradeConflict
 		}
 		proposed, accepting, err := loadLockedTradeInstances(

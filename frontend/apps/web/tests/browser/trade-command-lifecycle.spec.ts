@@ -63,6 +63,23 @@ async function seedLogin(page: Page) {
   }, user);
 }
 
+async function openTradeActivity(page: Page) {
+  await page.goto('/trades');
+  await page.getByRole('button', { name: 'Trade Activity' }).click();
+}
+
+async function routeTradeCommand(
+  page: Page,
+  handler: (route: Route) => Promise<void>,
+) {
+  for (const pattern of [
+    '**/api/users/trades/trade-e2e/**',
+    '**/__e2e/users/trades/trade-e2e/**',
+  ]) {
+    await page.route(pattern, handler);
+  }
+}
+
 test('accepts and confirms a trade through authoritative commands', async ({
   page,
 }) => {
@@ -72,7 +89,7 @@ test('accepts and confirms a trade through authoritative commands', async ({
     trades: { [trade.trade_id]: trade },
     userOverview: { related_instances: instances },
   });
-  await page.route('**/__e2e/users/trades/trade-e2e/**', async (route) => {
+  await routeTradeCommand(page, async (route) => {
     const url = new URL(route.request().url());
     calls.push(url.pathname);
     if (url.pathname.endsWith('/accept')) {
@@ -93,21 +110,21 @@ test('accepts and confirms a trade through authoritative commands', async ({
   });
 
   await seedLogin(page);
-  await page.goto('/trades');
-  await page.getByRole('button', { name: 'Offers' }).click();
-  await expect(page.getByRole('button', { name: 'Accept' })).toBeVisible();
-  await page.getByRole('button', { name: 'Accept' }).click();
+  await openTradeActivity(page);
+  await page.getByRole('button', { name: /^Needs response,/ }).click();
+  await expect(page.getByRole('button', { name: 'Accept offer' })).toBeVisible();
+  await page.getByRole('button', { name: 'Accept offer' }).click();
   await page.getByRole('button', { name: 'OK' }).click();
 
-  await page.getByRole('button', { name: 'Pending' }).click();
+  await page.getByRole('button', { name: /^Active,/ }).click();
   await expect(page.getByRole('button', { name: 'Confirm Complete' })).toBeVisible();
   await page.getByRole('button', { name: 'Confirm Complete' }).click();
   await page.getByRole('button', { name: 'OK' }).click();
 
   await expect(page.getByRole('button', { name: 'Awaiting Partner...' })).toBeDisabled();
-  expect(calls).toEqual([
-    '/__e2e/users/trades/trade-e2e/accept',
-    '/__e2e/users/trades/trade-e2e/complete-confirmation',
+  expect(calls.map((path) => path.slice(path.indexOf('/trades/')))).toEqual([
+    '/trades/trade-e2e/accept',
+    '/trades/trade-e2e/complete-confirmation',
   ]);
 });
 
@@ -118,18 +135,80 @@ test('keeps canonical trade state and explains a rejected server command', async
     trades: { [proposedTrade.trade_id]: proposedTrade },
     userOverview: { related_instances: instances },
   });
-  await page.route('**/__e2e/users/trades/trade-e2e/accept', async (route) => {
+  await routeTradeCommand(page, async (route) => {
+    if (!new URL(route.request().url()).pathname.endsWith('/accept')) {
+      await json(route, { message: 'Unhandled trade command' }, 404);
+      return;
+    }
     await json(route, { message: 'This trade changed on another device.' }, 409);
   });
 
   await seedLogin(page);
-  await page.goto('/trades');
-  await page.getByRole('button', { name: 'Offers' }).click();
-  await page.getByRole('button', { name: 'Accept' }).click();
+  await openTradeActivity(page);
+  await page.getByRole('button', { name: /^Needs response,/ }).click();
+  await page.getByRole('button', { name: 'Accept offer' }).click();
   await page.getByRole('button', { name: 'OK' }).click();
 
   const failureMessage = page.getByText('This trade changed on another device.');
   await expect(failureMessage).toBeVisible();
   await failureMessage.click();
-  await expect(page.getByRole('button', { name: 'Accept' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Accept offer' })).toBeVisible();
+});
+
+test('uses a compact side-by-side comparison without horizontal overflow on mobile', async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 336, height: 750 });
+  await installE2eRoutes(page, {
+    trades: { [proposedTrade.trade_id]: proposedTrade },
+    userOverview: { related_instances: instances },
+  });
+
+  await seedLogin(page);
+  await openTradeActivity(page);
+
+  const card = page.locator('.trade-activity-card-shell').first();
+  await expect(card).toBeVisible();
+  const positions = await card.evaluate((element) => {
+    const left = element.querySelector('.trade-pokemon > .pokemon:first-child');
+    const summary = element.querySelector('.trade-pokemon > .center-column');
+    const right = element.querySelector('.trade-pokemon > .pokemon:last-child');
+    if (!left || !summary || !right) return null;
+    return {
+      leftTop: left.getBoundingClientRect().top,
+      leftBottom: left.getBoundingClientRect().bottom,
+      summaryTop: summary.getBoundingClientRect().top,
+      rightTop: right.getBoundingClientRect().top,
+      rightBottom: right.getBoundingClientRect().bottom,
+      documentWidth: document.documentElement.scrollWidth,
+      viewportWidth: window.innerWidth,
+    };
+  });
+
+  expect(positions).not.toBeNull();
+  expect(Math.abs(positions!.leftTop - positions!.rightTop)).toBeLessThanOrEqual(1);
+  expect(positions!.summaryTop).toBeGreaterThanOrEqual(
+    Math.max(positions!.leftBottom, positions!.rightBottom),
+  );
+  expect(positions!.documentWidth).toBeLessThanOrEqual(positions!.viewportWidth);
+  const stageNavigation = page.getByLabel('Trade activity stage');
+  await expect(stageNavigation).toBeVisible();
+  const activityDescription = page.getByText(
+    'Respond to offers, track active trades, and revisit past exchanges.',
+  );
+  await expect(activityDescription).toHaveCSS('text-align', 'center');
+  const stageLayout = await stageNavigation.evaluate((element) => ({
+    left: element.getBoundingClientRect().left,
+    right: element.getBoundingClientRect().right,
+    childrenFit: Array.from(element.querySelectorAll('button')).every((button) => {
+      const buttonBounds = button.getBoundingClientRect();
+      return (
+        buttonBounds.left >= element.getBoundingClientRect().left &&
+        buttonBounds.right <= element.getBoundingClientRect().right
+      );
+    }),
+  }));
+  expect(stageLayout.left).toBeGreaterThanOrEqual(0);
+  expect(stageLayout.right).toBeLessThanOrEqual(336);
+  expect(stageLayout.childrenFit).toBe(true);
 });

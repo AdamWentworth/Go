@@ -212,6 +212,71 @@ func TestAcceptTradeHandler_RejectsDuplicateTransition(t *testing.T) {
 	}
 }
 
+func TestCancelTradeHandler_AllowsProposerToWithdrawProposal(t *testing.T) {
+	mock, cleanup := setupMockDB(t)
+	defer cleanup()
+
+	mock.ExpectBegin()
+	mock.ExpectQuery("SELECT \\* FROM `trades` WHERE trade_id = \\?").
+		WithArgs("trade-1", 1).
+		WillReturnRows(tradeMockRows("proposed", false, false))
+	mock.ExpectExec("UPDATE `trades` SET").
+		WillReturnResult(sqlmock.NewResult(0, 1))
+	mock.ExpectExec("INSERT INTO `application_outbox`").
+		WillReturnResult(sqlmock.NewResult(1, 1))
+	mock.ExpectCommit()
+
+	app := newHandlerTestApp("user-1")
+	resp, err := app.Test(
+		makeJSONRequest(t, http.MethodPost, "/api/trades/trade-1/cancel", nil),
+		fiber.TestConfig{Timeout: 0},
+	)
+	if err != nil {
+		t.Fatalf("request failed: %v", err)
+	}
+	if resp.StatusCode != http.StatusOK {
+		t.Fatalf("unexpected status: got %d, want %d", resp.StatusCode, http.StatusOK)
+	}
+	var body TradeEnvelope
+	if err := json.NewDecoder(resp.Body).Decode(&body); err != nil {
+		t.Fatalf("decode response: %v", err)
+	}
+	if body.Trade.TradeStatus != "cancelled" ||
+		body.Trade.TradeCancelledBy == nil ||
+		*body.Trade.TradeCancelledBy != "ash" {
+		t.Fatalf("unexpected cancelled trade response: %#v", body)
+	}
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Fatalf("unmet DB expectations: %v", err)
+	}
+}
+
+func TestCancelTradeHandler_RejectsAccepterWithdrawingProposal(t *testing.T) {
+	mock, cleanup := setupMockDB(t)
+	defer cleanup()
+
+	mock.ExpectBegin()
+	mock.ExpectQuery("SELECT \\* FROM `trades` WHERE trade_id = \\?").
+		WithArgs("trade-1", 1).
+		WillReturnRows(tradeMockRows("proposed", false, false))
+	mock.ExpectRollback()
+
+	app := newHandlerTestApp("user-2")
+	resp, err := app.Test(
+		makeJSONRequest(t, http.MethodPost, "/api/trades/trade-1/cancel", nil),
+		fiber.TestConfig{Timeout: 0},
+	)
+	if err != nil {
+		t.Fatalf("request failed: %v", err)
+	}
+	if resp.StatusCode != http.StatusForbidden {
+		t.Fatalf("unexpected status: got %d, want %d", resp.StatusCode, http.StatusForbidden)
+	}
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Fatalf("unmet DB expectations: %v", err)
+	}
+}
+
 func TestCompleteTradeHandler_AtomicallyTransfersBothPokemon(t *testing.T) {
 	mock, cleanup := setupMockDB(t)
 	defer cleanup()

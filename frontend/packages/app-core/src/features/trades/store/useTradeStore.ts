@@ -66,26 +66,36 @@ export const useTradeStore = create<TradeStoreState>()(
 
       for (const [tradeId, trade] of Object.entries(mutableTrades)) {
         if (trade?.trade_status === 'deleted') {
-          await deleteFromTradesDB(POKEMON_TRADES_STORE, tradeId);
           deletedTradeIds.push(tradeId);
           delete mutableTrades[tradeId];
         }
       }
+
+      // Server responses are authoritative. Update the visible state immediately;
+      // IndexedDB is only a cache and must never leave a successful command stale.
+      set((state) => {
+        const trades = { ...state.trades, ...mutableTrades };
+        deletedTradeIds.forEach((tradeId) => delete trades[tradeId]);
+        return { trades };
+      });
 
       const rowsToPersist = Object.entries(mutableTrades).map(([tradeId, trade]) => ({
         ...trade,
         trade_id: tradeId,
       }));
 
-      if (rowsToPersist.length > 0) {
-        await setTradesinDB(POKEMON_TRADES_STORE, rowsToPersist);
+      try {
+        await Promise.all([
+          ...deletedTradeIds.map((tradeId) =>
+            deleteFromTradesDB(POKEMON_TRADES_STORE, tradeId),
+          ),
+          ...(rowsToPersist.length > 0
+            ? [setTradesinDB(POKEMON_TRADES_STORE, rowsToPersist)]
+            : []),
+        ]);
+      } catch (error) {
+        log.warn('Trade cache persistence failed; keeping authoritative in-memory state:', error);
       }
-
-      set((state) => {
-        const trades = { ...state.trades, ...mutableTrades };
-        deletedTradeIds.forEach((tradeId) => delete trades[tradeId]);
-        return { trades };
-      });
 
       return mutableTrades;
     },

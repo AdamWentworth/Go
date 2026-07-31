@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 
 import { useInstancesStore } from '@/features/instances/store/useInstancesStore';
 import { useTradeStore } from '@/features/trades/store/useTradeStore';
@@ -7,8 +7,10 @@ import TradeList from '@/pages/Trades/TradeList';
 import TradeStatusButtons from '@/pages/Trades/TradeStatusButtons';
 import TradeTargetsWorkspace from '@/pages/Trades/TradeTargetsWorkspace';
 import type { TradeStatusFilter } from '@/pages/Trades/types';
+import { getStoredUsername } from '@/utils/storage';
 
 import './TradeStatusButtons.css';
+import './TradeActivity.css';
 
 function Trades() {
   const trades = useTradeStore((state) => state.trades);
@@ -22,8 +24,28 @@ function Trades() {
   const periodicUpdates = useInstancesStore((state) => state.periodicUpdates);
 
   const [activeSection, setActiveSection] = useState<'activity' | 'preferences'>('preferences');
-  const [selectedStatus, setSelectedStatus] = useState<TradeStatusFilter>('Pending');
+  const [selectedStatus, setSelectedStatus] = useState<TradeStatusFilter>('Accepting');
   const loading = variantsLoading;
+  const currentUsername = getStoredUsername() ?? '';
+  const activityCounts = useMemo(() => {
+    const counts: Record<TradeStatusFilter, number> = {
+      Accepting: 0,
+      Proposed: 0,
+      Pending: 0,
+      Completed: 0,
+      Cancelled: 0,
+    };
+    Object.values(trades ?? {}).forEach((trade) => {
+      const status = String(trade.trade_status ?? '').toLowerCase();
+      if (status === 'proposed') {
+        if (trade.username_accepting === currentUsername) counts.Accepting += 1;
+        if (trade.username_proposed === currentUsername) counts.Proposed += 1;
+      } else if (status === 'pending') counts.Pending += 1;
+      else if (status === 'completed') counts.Completed += 1;
+      else if (status === 'cancelled' || status === 'denied') counts.Cancelled += 1;
+    });
+    return counts;
+  }, [currentUsername, trades]);
 
   return (
     <div className="trades-container">
@@ -47,10 +69,17 @@ function Trades() {
       {activeSection === 'preferences' ? (
         <TradeTargetsWorkspace />
       ) : (
-        <>
+        <section className="trade-activity-workspace" aria-labelledby="trade-activity-heading">
+          <header className="trade-activity-heading">
+            <div>
+              <h1 id="trade-activity-heading">Your trades</h1>
+              <p>Respond to offers, track active trades, and revisit past exchanges.</p>
+            </div>
+          </header>
           <TradeStatusButtons
             selectedStatus={selectedStatus}
             setSelectedStatus={setSelectedStatus}
+            counts={activityCounts}
           />
           <TradeList
             trades={trades}
@@ -62,7 +91,7 @@ function Trades() {
             loading={loading}
             periodicUpdates={periodicUpdates}
           />
-        </>
+        </section>
       )}
     </div>
   );
