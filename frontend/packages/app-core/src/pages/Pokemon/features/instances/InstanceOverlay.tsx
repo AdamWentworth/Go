@@ -21,6 +21,8 @@ import { useOverlaySwipeNavigation } from './overlay/useOverlaySwipeNavigation';
 import TradePreferenceHandoff from '@/features/trades/preferences/TradePreferenceHandoff';
 import CatalogTradeLauncherPanel from '@/features/trades/proposal/CatalogTradeLauncherPanel';
 import CatalogWantedLauncherPanel from '@/features/trades/proposal/CatalogWantedLauncherPanel';
+import TradeTargetsPanel from './components/Trade/TradeTargetsPanel';
+import WantedDetails from './components/Wanted/WantedDetails';
 
 const log = createScopedLogger('InstanceOverlay');
 const dbg = (...args: unknown[]) => log.debug(...args);
@@ -45,15 +47,20 @@ type TradeOverlayPokemon = React.ComponentProps<typeof TradeInstance>['pokemon']
 type CatalogTradePokemon = React.ComponentProps<typeof CatalogTradeLauncherPanel>['partnerPokemon'];
 type CatalogWantedPokemon = React.ComponentProps<typeof CatalogWantedLauncherPanel>['wantedPokemon'];
 type WantedOverlayPokemon = React.ComponentProps<typeof WantedInstance>['pokemon'];
+type TradeTargetsPanelPokemon = React.ComponentProps<typeof TradeTargetsPanel>['pokemon'];
+type WantedDetailsPokemon = React.ComponentProps<typeof WantedDetails>['pokemon'];
 
 export { isSwipeInteractiveTarget } from './overlay/overlaySwipe';
 
 const InstanceOverlay: React.FC<InstanceOverlayProps> = ({
   pokemon,
   onClose,
+  variants,
   tagFilter,
   lists,
   instances,
+  sortType,
+  sortMode,
   isEditable,
   username,
   navigationPokemons = [],
@@ -198,6 +205,18 @@ const InstanceOverlay: React.FC<InstanceOverlayProps> = ({
     setCurrentOverlay(deriveInitialOverlay(tagFilter, liveSelectedPokemon));
   }, [tagFilter, liveSelectedPokemon]);
 
+  const handleOpenTradeTargetOverlay = (pokemonData: Record<string, unknown>) => {
+    setSelectedPokemon(pokemonData as unknown as OverlayPokemon);
+    setPreviewInstanceDataPatch({});
+    setCurrentOverlay('wanted');
+  };
+
+  const handleOpenTradeOverlay = (pokemonData: Record<string, unknown>) => {
+    setSelectedPokemon(pokemonData as unknown as OverlayPokemon);
+    setPreviewInstanceDataPatch({});
+    setCurrentOverlay('trade');
+  };
+
   const handleCloseOverlay = () => {
     onClose();
     setCurrentOverlay(deriveInitialOverlay(tagFilter, null));
@@ -268,10 +287,23 @@ const InstanceOverlay: React.FC<InstanceOverlayProps> = ({
                         catalogView={!isEditable}
                       />
                       {isEditable && activePokemon.instanceData?.instance_id ? (
-                        <TradePreferenceHandoff
-                          mode="trade"
-                          instanceId={activePokemon.instanceData.instance_id}
-                        />
+                        <>
+                          <TradeTargetsPanel
+                            key={`${tradeInstanceKey}:preference-summary`}
+                            pokemon={withInstanceData(activePokemon) as TradeTargetsPanelPokemon}
+                            lists={lists}
+                            instances={instances}
+                            sortType={sortType}
+                            sortMode={sortMode}
+                            openTradeTargetOverlay={handleOpenTradeTargetOverlay}
+                            variants={variants}
+                            isEditable={false}
+                          />
+                          <TradePreferenceHandoff
+                            mode="trade"
+                            instanceId={activePokemon.instanceData.instance_id}
+                          />
+                        </>
                       ) : null}
                       {!isEditable ? (
                         <CatalogTradeLauncherPanel
@@ -311,10 +343,23 @@ const InstanceOverlay: React.FC<InstanceOverlayProps> = ({
                   catalogView={!isEditable}
                 />
                 {isEditable && activePokemon.instanceData?.instance_id ? (
-                  <TradePreferenceHandoff
-                    mode="wanted"
-                    instanceId={activePokemon.instanceData.instance_id}
-                  />
+                  <>
+                    <WantedDetails
+                      key={`${wantedInstanceKey}:preference-summary`}
+                      pokemon={withInstanceData(activePokemon) as WantedDetailsPokemon}
+                      lists={lists}
+                      instances={instances}
+                      sortType={sortType}
+                      sortMode={sortMode}
+                      openTradeOverlay={handleOpenTradeOverlay}
+                      variants={variants}
+                      isEditable={false}
+                    />
+                    <TradePreferenceHandoff
+                      mode="wanted"
+                      instanceId={activePokemon.instanceData.instance_id}
+                    />
+                  </>
                 ) : null}
                 {!isEditable ? (
                   <CatalogWantedLauncherPanel

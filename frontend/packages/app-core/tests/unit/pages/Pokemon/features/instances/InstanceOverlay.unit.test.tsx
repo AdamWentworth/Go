@@ -84,6 +84,18 @@ vi.mock('@/features/trades/proposal/CatalogWantedLauncherPanel', () => ({
   ),
 }));
 
+vi.mock('@/pages/Pokemon/features/instances/components/Trade/TradeTargetsPanel', () => ({
+  default: ({ isEditable }: { isEditable: boolean }) => (
+    <div data-testid="own-trade-targets" data-editable={String(isEditable)} />
+  ),
+}));
+
+vi.mock('@/pages/Pokemon/features/instances/components/Wanted/WantedDetails', () => ({
+  default: ({ isEditable }: { isEditable: boolean }) => (
+    <div data-testid="own-wanted-targets" data-editable={String(isEditable)} />
+  ),
+}));
+
 vi.mock('@/pages/Pokemon/features/instances/WantedInstance', async () => {
   const ReactActual = await vi.importActual<typeof import('react')>('react');
 
@@ -127,6 +139,7 @@ function makePokemon(overrides: Record<string, unknown> = {}) {
 function renderOverlay(
   tagFilter: string,
   pokemonOverrides: Record<string, unknown> = {},
+  isEditable = false,
 ) {
   render(
     <InstanceOverlay
@@ -138,13 +151,35 @@ function renderOverlay(
       instances={{}}
       sortType="name"
       sortMode="ascending"
-      isEditable={false}
+      isEditable={isEditable}
       username="ash"
     />,
   );
 }
 
 describe('InstanceOverlay', () => {
+  it('shows read-only targets and the preference handoff for the owner trade listing', () => {
+    renderOverlay('trade', { instanceData: { instance_id: 'trade-1' } }, true);
+
+    expect(screen.getByTestId('own-trade-targets')).toHaveAttribute(
+      'data-editable',
+      'false',
+    );
+    expect(screen.getByTestId('trade-preference-handoff')).toBeInTheDocument();
+    expect(screen.queryByTestId('trade-details')).not.toBeInTheDocument();
+  });
+
+  it('shows read-only offers and the preference handoff for the owner wanted listing', () => {
+    renderOverlay('wanted', { instanceData: { instance_id: 'wanted-1' } }, true);
+
+    expect(screen.getByTestId('own-wanted-targets')).toHaveAttribute(
+      'data-editable',
+      'false',
+    );
+    expect(screen.getByTestId('trade-preference-handoff')).toBeInTheDocument();
+    expect(screen.queryByTestId('wanted-details')).not.toBeInTheDocument();
+  });
+
   it('uses stacked trade layout below 768px and side-by-side at 768px and above', async () => {
     Object.defineProperty(window, 'innerWidth', {
       configurable: true,
