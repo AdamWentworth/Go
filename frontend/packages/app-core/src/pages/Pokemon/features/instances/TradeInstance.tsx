@@ -110,7 +110,9 @@ const TradeInstance: React.FC<TradeInstanceProps> = ({
     isCrown: crownData.isCrown,
     crownForm: crownData.crownForm,
   });
-  const showLevelMetadata = !catalogView && (!compactListingView || level != null);
+  const showLevelMetadata =
+    !catalogView && (!compactListingView || editMode || level != null);
+  const showLevelArc = !catalogView && level != null;
 
   const isShadow = Boolean(pokemon.instanceData.shadow);
   const isPurified = Boolean(pokemon.instanceData.purified);
@@ -330,7 +332,7 @@ const TradeInstance: React.FC<TradeInstanceProps> = ({
         editMode,
         onToggle: () => setShowBackgrounds((prev) => !prev),
       }}
-      levelArcLevel={showLevelMetadata ? level : null}
+      levelArcLevel={showLevelArc ? level : null}
       imageStage={{
         selectedBackground,
         isLucky,

@@ -204,5 +204,16 @@ describe('TradeInstance', () => {
     render(<TradeInstance pokemon={pokemon} isEditable compactListingView />);
 
     expect(screen.queryByText('N/A')).not.toBeInTheDocument();
+    expect(screen.queryByPlaceholderText('1-51 (0.5 steps)')).not.toBeInTheDocument();
+
+    const nullLevelController = mocks.controllerMock.mock.results.at(-1)?.value;
+    mocks.controllerMock.mockReturnValue({
+      ...nullLevelController,
+      editMode: true,
+      level: null,
+    });
+    render(<TradeInstance pokemon={pokemon} isEditable compactListingView />);
+
+    expect(screen.getByPlaceholderText('1-51 (0.5 steps)')).toBeInTheDocument();
   });
 });
