@@ -199,17 +199,6 @@ const WantedInstance: React.FC<WantedInstanceProps> = ({
       className={`wanted-instance__conditions${isEditable ? ' has-actions' : ''}`}
       aria-labelledby={`${entityKey}-conditions`}
     >
-      <div className="wanted-instance__conditions-label">
-        <strong id={`${entityKey}-conditions`}>Wanted conditions</strong>
-        <span>Friendship and eligibility</span>
-      </div>
-      <FriendshipManager
-        friendship={friendship}
-        setFriendship={setFriendship}
-        editMode={editMode}
-        isLucky={isLucky}
-        setIsLucky={setIsLucky}
-      />
       {isEditable ? (
         <div className="wanted-instance__condition-actions">
           <EditSaveComponent
@@ -228,6 +217,17 @@ const WantedInstance: React.FC<WantedInstanceProps> = ({
           ) : null}
         </div>
       ) : null}
+      <div className="wanted-instance__conditions-label">
+        <strong id={`${entityKey}-conditions`}>Wanted conditions</strong>
+        <span>Friendship and eligibility</span>
+      </div>
+      <FriendshipManager
+        friendship={friendship}
+        setFriendship={setFriendship}
+        editMode={editMode}
+        isLucky={isLucky}
+        setIsLucky={setIsLucky}
+      />
     </section>
   );
 

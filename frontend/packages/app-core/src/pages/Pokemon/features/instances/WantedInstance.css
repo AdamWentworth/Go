@@ -59,7 +59,7 @@
 }
 
 .wanted-instance__conditions.has-actions {
-  grid-template-columns: minmax(104px, auto) minmax(0, 1fr) auto;
+  grid-template-columns: auto minmax(104px, auto) minmax(0, 1fr);
 }
 
 .wanted-instance__conditions-label {
@@ -91,7 +91,8 @@
 .wanted-instance__condition-actions {
   display: flex;
   align-items: center;
-  justify-content: flex-end;
+  align-self: start;
+  justify-content: flex-start;
   gap: 4px;
 }
 
@@ -288,7 +289,7 @@
   }
 
   .wanted-instance__conditions.has-actions {
-    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-columns: auto minmax(0, 1fr);
   }
 
   .wanted-instance__conditions-label {
@@ -301,7 +302,6 @@
 
   .wanted-instance__conditions.has-actions .wanted-instance__conditions-label {
     justify-self: start;
-    padding-inline-start: 6px;
   }
 
   .wanted-instance__conditions .friendship-level-container {
@@ -310,7 +310,7 @@
   }
 
   .wanted-instance__condition-actions {
-    grid-column: 2;
+    grid-column: 1;
     grid-row: 1;
   }
 
