@@ -1,214 +1,292 @@
-/* WantedInstance.css */  
-
 .wanted-instance {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
+  --wanted-accent: #ef5b71;
+  --wanted-accent-soft: color-mix(in srgb, var(--wanted-accent) 10%, transparent);
+  --wanted-border: color-mix(in srgb, var(--wanted-accent) 35%, #48605d);
+  --wanted-panel: color-mix(in srgb, #15201f 92%, var(--wanted-accent));
+  --caught-divider-color: color-mix(in srgb, var(--wanted-accent) 45%, #65716f);
+  --caught-image-stage-size: 238px;
+  --caught-stage-lift: 18px;
   width: 100%;
-}
-
-.wanted-instance .top-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  width: 100%;
-  padding: 0 1rem;
-  position: relative;
-}
-
-.wanted-instance .top-row h2 {
-  position: absolute;
-  left: 50%;
-  transform: translateX(-50%);
-  margin: 0;
-  text-align: center;
-}
-
-.wanted-instance .edit-save-container {
-  margin-right: auto;
-}
-
-.wanted-instance .favorite-container {
-  margin-left: auto;
-  display: flex;
-  justify-content: flex-end;
-  align-items: center;
-}
-
-.wanted-instance .background-select-container {
-  width: 100%;
-  position: relative;
-  display: flex;
-  justify-content: flex-end;
-  margin-bottom: -40px;
-  margin-top: 10px;
-}
-
-.wanted-instance .background-select-row {
-  position: relative;
-  display: inline-flex;  /* Changed to inline-flex */
-  justify-content: flex-end;
-  z-index: 10;
-}
-
-.wanted-instance .background-icon {
-  width: 25px;  /* Or whatever size you want */
-  height: 25px;  /* Or whatever size you want */
-  z-index: 11;
-}
-
-.wanted-instance .background-select-row.active .background-icon {
-  cursor: pointer;
-}
-
-.wanted-instance .image-container {
-  position: relative;
-  width: 240px;
-  height: 240px;
-}
-
-.wanted-instance .max-badge {
-  position: absolute;
-  top: 2%; /* Position at the top */
-  right: 2%; /* Position at the right */
-  width: 35%;
-  height: auto;
-  z-index: 4;
-  max-width: 100%;
-  height: auto;
-}
-
-
-.wanted-instance .background-container {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  overflow: hidden;
-  z-index: 1;
-}
-
-.wanted-instance .background-image {
-  width: 100%;
-  height: 100%;
-  background-size: cover;
-  background-position: center;
-  background-repeat: no-repeat;
-  -webkit-mask-image: radial-gradient(circle, rgba(0, 0, 0, 1), rgba(0, 0, 0, 0.7) 50%, rgba(0, 0, 0, 0.3) 70%, transparent 100%);
-  mask-image: radial-gradient(circle, rgba(0, 0, 0, 1), rgba(0, 0, 0, 0.7) 45%, rgba(0, 0, 0, 0.3) 65%, transparent 70%);
-}
-
-.wanted-instance .brightness-overlay {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: radial-gradient(circle, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0) 70%);
-  z-index: 2;
-}
-
-.wanted-instance .pokemon-image-container {
-  position: relative;
-  display: inline-block;  /* Adjust size to fit the image */
-  /* Remove or comment out fixed dimensions if present:
-  width: 100%;
-  height: 100%;
-  */
-  z-index: 3;
-}
-
-.wanted-instance .pokemon-image-container img {
-  filter: drop-shadow(0 4px 4px rgba(0, 0, 0, 0.2));
-}
-
-.wanted-instance .lucky-backdrop {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  object-fit: contain;  /* Ensure backdrop scales nicely */
-  z-index: 4;
-}
-
-.wanted-instance .pokemon-image {
-  position: relative;
-  z-index: 5;
-  max-width: 100%;
-  height: auto;
-}
-
-.wanted-instance .name-container {
-  width: 100%;
-  display: flex;
-  justify-content: center;
-}
-
-.wanted-instance .gender-container {
-  width: 100%;
-  display: flex;
-  justify-content: flex-end;
-}
-
-.wanted-instance .stats-container {
-  display: flex;
-  width: 100%;
-}
-
-.wanted-instance .type-container {
-  flex: 1;
-}
-
-.wanted-instance .moves-container {
-  width: 100%;
-}
-
-.wanted-instance--catalog-view {
-  gap: 0.2rem;
-  padding: 0.65rem 1rem 0.85rem;
-  border-bottom: 1px solid rgba(239, 107, 127, 0.28);
+  min-width: 0;
   box-sizing: border-box;
 }
 
-.wanted-instance__catalog-label {
-  color: #ef6b7f;
-  font-size: 0.72rem;
+.wanted-instance > .instance-details-body {
+  gap: 0;
+  padding: 10px 0 4px;
+  box-sizing: border-box;
+}
+
+.wanted-instance .top-row {
+  width: calc(100% - 24px);
+  margin-inline: auto;
+}
+
+.wanted-instance .identity-name-slot .identity-name-eyebrow {
+  color: var(--wanted-accent);
+}
+
+.wanted-instance .identity-name-slot .name-editable-content {
+  max-width: min(78vw, 520px);
+  overflow-wrap: anywhere;
+  white-space: normal;
+  font-size: clamp(27px, 4vw, 40px);
+  line-height: 1.08;
+}
+
+.wanted-instance .purify-name-shadow-container {
+  min-height: 2.9rem;
+}
+
+.wanted-instance .purify-name-shadow-container > .lucky-component,
+.wanted-instance .purify-name-shadow-container > .purify-component {
+  margin-inline: 0;
+}
+
+.wanted-instance__conditions,
+.wanted-instance__desired-details {
+  width: calc(100% - 24px);
+  max-width: 700px;
+  margin: 8px auto 0;
+  padding: 11px 13px 12px;
+  border: 1px solid var(--wanted-border);
+  border-radius: 12px;
+  background: var(--wanted-panel);
+  box-sizing: border-box;
+}
+
+.wanted-instance__desired-details {
+  margin-top: 9px;
+}
+
+.wanted-instance__section-heading {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 9px;
+  text-align: left;
+}
+
+.wanted-instance__section-heading > div {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.wanted-instance__section-heading span {
+  color: var(--wanted-accent);
+  font-size: 0.66rem;
   font-weight: 850;
-  letter-spacing: 0.1em;
+  letter-spacing: 0.11em;
+  line-height: 1;
   text-transform: uppercase;
 }
 
-.wanted-instance--catalog-view .image-container {
-  width: 180px;
-  height: 180px;
+.wanted-instance__section-heading strong {
+  color: inherit;
+  font-size: 0.94rem;
+  line-height: 1.2;
 }
 
-.wanted-instance--catalog-view .pokemon-image-container {
+.wanted-instance__section-heading small {
+  max-width: 210px;
+  color: var(--color-text-secondary, #a9b8b5);
+  font-size: 0.71rem;
+  line-height: 1.3;
+  text-align: right;
+}
+
+.wanted-instance__conditions .friendship-level-container {
+  gap: 5px;
+}
+
+.wanted-instance__conditions .heart-button:focus-visible,
+.wanted-instance__conditions .lucky-icon:focus-visible {
+  outline-color: var(--wanted-accent);
+}
+
+.wanted-instance__conditions .friendship-slider {
+  accent-color: var(--wanted-accent);
+}
+
+.wanted-instance__conditions .friendship-status span {
+  border-color: color-mix(in srgb, var(--wanted-accent) 28%, transparent);
+  background: var(--wanted-accent-soft);
+}
+
+.wanted-instance__detail-fields {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  min-width: 0;
+}
+
+.wanted-instance__gender-field {
   display: grid;
-  width: 100%;
-  height: 100%;
+  flex: 0 0 80px;
   place-items: center;
+  gap: 3px;
+  min-height: 45px;
 }
 
-.wanted-instance--catalog-view .name-editable-content {
+.wanted-instance__gender-field > span {
+  color: var(--color-text-secondary, #a9b8b5);
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.wanted-instance__gender-field .gender-container {
+  width: auto;
+  min-height: 26px;
+  justify-content: center;
+}
+
+.wanted-instance__detail-fields .weight-type-height-container.without-types {
+  flex: 1 1 auto;
+  max-width: 340px;
+  margin: 0;
+  padding-inline: 0;
+}
+
+.wanted-instance__moves {
+  width: 100%;
+  min-width: 0;
+}
+
+.wanted-instance__moves:empty {
+  display: none;
+}
+
+.wanted-instance__moves .moves-container {
+  --moves-page-inline-pad: 0;
+  width: 100%;
+  margin-top: 12px;
+  padding-top: 10px;
+  border-top: 1px solid color-mix(in srgb, var(--wanted-border) 72%, transparent);
+}
+
+.wanted-instance--catalog-view {
+  --caught-image-stage-size: 196px;
+  --caught-stage-lift: 0px;
+}
+
+.wanted-instance--catalog-view > .instance-details-body {
+  padding: 10px 0 4px;
+}
+
+.wanted-instance--catalog-view .purify-name-shadow-container {
+  min-height: 2.55rem;
+}
+
+.wanted-instance--catalog-view .identity-name-slot .name-editable-content {
   font-size: clamp(25px, 4vw, 34px);
-  line-height: 1.1;
 }
 
-.wanted-instance--catalog-view .friendship-level-container {
-  margin-top: 0.25rem;
+.wanted-instance--catalog-view .wanted-instance__conditions,
+.wanted-instance--catalog-view .wanted-instance__desired-details {
+  width: calc(100% - 20px);
 }
 
-@media (max-width: 520px) {
-  .wanted-instance--catalog-view .image-container {
-    width: 150px;
-    height: 150px;
+:root[data-theme='light'] .wanted-instance {
+  --wanted-panel: color-mix(in srgb, var(--light-caught-card-bg, #ffffff) 96%, var(--wanted-accent));
+  --wanted-border: color-mix(in srgb, var(--wanted-accent) 35%, var(--light-caught-card-border, #b9c8c4));
+  color: var(--light-text-primary);
+}
+
+:root[data-theme='light'] .wanted-instance__conditions,
+:root[data-theme='light'] .wanted-instance__desired-details {
+  box-shadow: var(--light-caught-soft-shadow, 0 2px 8px rgba(31, 50, 45, 0.08));
+}
+
+:root[data-theme='light'] .wanted-instance__section-heading small,
+:root[data-theme='light'] .wanted-instance__gender-field > span {
+  color: var(--light-text-secondary);
+}
+
+@media (max-width: 600px) {
+  .wanted-instance {
+    --caught-image-stage-size: 185px;
+    --caught-stage-lift: 8px;
+  }
+
+  .wanted-instance > .instance-details-body {
+    padding-top: 6px;
+  }
+
+  .wanted-instance .top-row {
+    width: calc(100% - 16px);
+  }
+
+  .wanted-instance .identity-name-slot .name-editable-content {
+    max-width: 76vw;
+    font-size: clamp(25px, 8vw, 32px);
+  }
+
+  .wanted-instance__conditions,
+  .wanted-instance__desired-details {
+    width: calc(100% - 16px);
+    margin-top: 7px;
+    padding: 10px;
+    border-radius: 10px;
+  }
+
+  .wanted-instance__section-heading {
+    display: grid;
+    gap: 3px;
+    margin-bottom: 8px;
+  }
+
+  .wanted-instance__section-heading small {
+    max-width: none;
+    text-align: left;
+  }
+
+  .wanted-instance__detail-fields {
+    gap: 6px;
+  }
+
+  .wanted-instance__gender-field {
+    flex-basis: 62px;
+  }
+
+  .wanted-instance__detail-fields .weight-type-height-container.without-types {
+    column-gap: 5px;
   }
 
   .wanted-instance--catalog-view {
-    padding: 0.5rem 0.65rem 0.65rem;
+    --caught-image-stage-size: 164px;
+    --caught-stage-lift: 0px;
+  }
+
+  .wanted-instance--catalog-view > .instance-details-body {
+    padding-top: 6px;
+  }
+}
+
+@media (max-width: 370px) {
+  .wanted-instance {
+    --caught-image-stage-size: 168px;
+  }
+
+  .wanted-instance__conditions .heart-button {
+    width: 30px;
+    height: 30px;
+  }
+
+  .wanted-instance__conditions .hearts img {
+    width: 28px;
+    height: 28px;
+  }
+
+  .wanted-instance__conditions .lucky-icon,
+  .wanted-instance__conditions .remote-trade-icon {
+    width: 39px;
+    height: 39px;
+    margin-left: 2px;
   }
 }
 
@@ -219,39 +297,8 @@
   }
 }
 
-@media (min-width: 481px) and (max-width: 767px){
+@media (min-width: 481px) and (max-width: 767px) {
   .wanted-instance-window {
     margin-bottom: 80px;
-  }
-}
-
-@media (min-width: 768px) and (max-width: 1023px) {
-}
-
-@media (min-width: 1024px) and (max-width: 1439px) {
-  .wanted-instance-overlay {
-    overflow-y: visible;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-  }
-
-  .wanted-details-container .trade-item img.trade-item-img {
-    width: 100px !important;
-  }
-  .wanted-instance-overlay .overlay-row {
-    flex-wrap: nowrap;
-    display: flex;
-    gap: 10px;
-    align-items: center;
-  }
-}
-
-@media (min-width: 1440px) {
-  .wanted-instance-overlay .overlay-row {
-    flex-wrap: nowrap;
-    display: flex;
-    gap: 10px;
-    align-items: center;
   }
 }

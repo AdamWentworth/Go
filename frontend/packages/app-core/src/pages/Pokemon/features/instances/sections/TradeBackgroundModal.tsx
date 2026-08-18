@@ -2,21 +2,18 @@ import React from 'react';
 import BackgroundLocationCard from '@/components/pokemonComponents/BackgroundLocationCard';
 import CloseButton from '@/components/CloseButton';
 import OverlayPortal from '@/components/OverlayPortal';
-import type { PokemonInstance } from '@/types/pokemonInstance';
-import type { PokemonVariant } from '@/types/pokemonVariants';
 import type { VariantBackground } from '@/types/pokemonSubTypes';
 
 type BackgroundOption = VariantBackground;
 
-type TradePokemon = PokemonVariant & {
-  instanceData: PokemonInstance;
+type BackgroundPokemon = {
+  variantType?: string;
   backgrounds: BackgroundOption[];
-  max: unknown[];
 };
 
 interface TradeBackgroundModalProps {
   showBackgrounds: boolean;
-  pokemon: TradePokemon;
+  pokemon: BackgroundPokemon;
   onClose: () => void;
   onSelectBackground: (background: BackgroundOption | null) => void;
 }
