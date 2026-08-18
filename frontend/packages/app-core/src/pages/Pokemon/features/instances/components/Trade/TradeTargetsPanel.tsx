@@ -93,7 +93,6 @@ const TradeTargetsPanel: React.FC<TradeTargetsPanelProps> = ({
   const [saveStatus, setSaveStatus] = useState<
     'idle' | 'dirty' | 'saving' | 'saved' | 'error'
   >('idle');
-  const [isSummaryExpanded, setIsSummaryExpanded] = useState(false);
   const isSmallScreen = useViewportBelow(VIEWPORT_BREAKPOINTS.desktop);
 
   const {
@@ -238,11 +237,7 @@ const TradeTargetsPanel: React.FC<TradeTargetsPanelProps> = ({
 
   if (summaryMode) {
     return (
-      <section
-        className={`preference-target-summary preference-target-summary--trade${
-          isSummaryExpanded ? ' preference-target-summary--expanded' : ''
-        }`}
-      >
+      <section className="preference-target-summary preference-target-summary--trade">
         <header>
           <strong>Trade targets</strong>
           <span>{filteredWantedListCount}</span>
@@ -262,18 +257,7 @@ const TradeTargetsPanel: React.FC<TradeTargetsPanelProps> = ({
             if (filteredWantedList[key]) handlePokemonClick(key);
           }}
           compact
-          maxItems={isSummaryExpanded ? undefined : 6}
         />
-        {filteredWantedListCount > 6 ? (
-          <button
-            type="button"
-            className="preference-target-summary__toggle"
-            aria-expanded={isSummaryExpanded}
-            onClick={() => setIsSummaryExpanded((expanded) => !expanded)}
-          >
-            {isSummaryExpanded ? 'Show less' : `View all ${filteredWantedListCount}`}
-          </button>
-        ) : null}
       </section>
     );
   }

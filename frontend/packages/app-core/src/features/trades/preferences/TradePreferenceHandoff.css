@@ -45,15 +45,17 @@
 }
 
 .trade-preference-handoff--compact {
-  justify-content: flex-end;
-  margin-top: -0.25rem;
-  padding: 0 0.9rem 0.8rem;
+  justify-content: center;
+  margin: -0.25rem 0.75rem 0.75rem;
+  padding: 0;
   border: 0;
   background: transparent;
 }
 
 .trade-preference-handoff--compact a {
+  width: min(100%, 24rem);
   min-height: 40px;
+  box-sizing: border-box;
 }
 
 @media (max-width: 560px) {

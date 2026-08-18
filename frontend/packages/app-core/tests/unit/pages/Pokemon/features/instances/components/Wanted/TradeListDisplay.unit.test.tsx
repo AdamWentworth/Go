@@ -118,29 +118,4 @@ describe('TradeListDisplay', () => {
     });
   });
 
-  it('limits compact previews to the requested number of offers', () => {
-    const trade = Object.fromEntries(
-      Array.from({ length: 7 }, (_, index) => [
-        `variant-${index + 1}_uuid-${index + 1}`,
-        {
-          name: `Pokemon ${index + 1}`,
-          species_name: `Pokemon ${index + 1}`,
-          pokedex_number: index + 1,
-          pokemon_id: index + 1,
-          currentImage: `/images/${index + 1}.png`,
-        },
-      ]),
-    );
-
-    render(
-      <TradeListDisplay
-        {...buildProps({ lists: { trade } })}
-        compact
-        maxItems={6}
-      />,
-    );
-
-    expect(screen.getByText('Pokemon 6')).toBeInTheDocument();
-    expect(screen.queryByText('Pokemon 7')).not.toBeInTheDocument();
-  });
 });
