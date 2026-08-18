@@ -455,7 +455,7 @@
 }
 
 .trade-pane-shell--wanted {
-  --panel-offset: 330px;
+  --panel-offset: 286px;
 }
 
 .trade-pane-shell--wanted.trade-pane-shell--catalog-view {
@@ -471,7 +471,7 @@
 
 @media (max-width: 520px) {
   .trade-pane-shell--wanted {
-    --panel-offset: 286px;
+    --panel-offset: 242px;
   }
 
   .trade-pane-shell--catalog-view {

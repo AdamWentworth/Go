@@ -3,6 +3,7 @@ import './WantedInstance.css';
 
 import { useModal } from '@/contexts/ModalContext';
 import { useInstancesStore } from '@/features/instances/store/useInstancesStore';
+import EditSaveComponent from '@/components/EditSaveComponent';
 import Gender from '@/components/pokemonComponents/Gender';
 import Moves from '@/components/pokemonComponents/Moves';
 import type { PokemonInstance } from '@/types/pokemonInstance';
@@ -13,7 +14,6 @@ import { createScopedLogger } from '@/utils/logger';
 
 import FriendshipManager from './components/Wanted/FriendshipManager';
 import BackgroundSelector from './sections/BackgroundSelector';
-import HeaderRow from './sections/HeaderRow';
 import IdentityRow from './sections/IdentityRow';
 import ImageStage from './sections/ImageStage';
 import StatsRow from './sections/StatsRow';
@@ -195,7 +195,10 @@ const WantedInstance: React.FC<WantedInstanceProps> = ({
   };
 
   const friendshipSection = (
-    <section className="wanted-instance__conditions" aria-labelledby={`${entityKey}-conditions`}>
+    <section
+      className={`wanted-instance__conditions${isEditable ? ' has-actions' : ''}`}
+      aria-labelledby={`${entityKey}-conditions`}
+    >
       <div className="wanted-instance__conditions-label">
         <strong id={`${entityKey}-conditions`}>Wanted conditions</strong>
         <span>Friendship and eligibility</span>
@@ -207,6 +210,24 @@ const WantedInstance: React.FC<WantedInstanceProps> = ({
         isLucky={isLucky}
         setIsLucky={setIsLucky}
       />
+      {isEditable ? (
+        <div className="wanted-instance__condition-actions">
+          <EditSaveComponent
+            editMode={editMode}
+            toggleEditMode={toggleEditMode}
+            isEditable
+            label={editMode ? 'Save wanted listing' : 'Edit wanted listing'}
+          />
+          {editMode ? (
+            <BackgroundSelector
+              canPick={selectableBackgrounds.length > 0}
+              editMode
+              onToggle={() => setShowBackgrounds((visible) => !visible)}
+              variant="header"
+            />
+          ) : null}
+        </div>
+      ) : null}
     </section>
   );
 
@@ -289,27 +310,6 @@ const WantedInstance: React.FC<WantedInstanceProps> = ({
       }`}
     >
       <div className="instance-details-body">
-        <HeaderRow
-          editMode={editMode}
-          toggleEditMode={toggleEditMode}
-          isEditable={isEditable}
-          cp={0}
-          onCPChange={() => undefined}
-          onFavoriteChange={() => undefined}
-          showCP={false}
-          showFavorite={false}
-          rightSlot={
-            editMode ? (
-              <BackgroundSelector
-                canPick={selectableBackgrounds.length > 0}
-                editMode
-                onToggle={() => setShowBackgrounds((visible) => !visible)}
-                variant="header"
-              />
-            ) : null
-          }
-        />
-
         {friendshipSection}
 
         <ImageStage

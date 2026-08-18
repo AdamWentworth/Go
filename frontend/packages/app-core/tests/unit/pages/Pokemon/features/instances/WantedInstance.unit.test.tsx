@@ -1,4 +1,3 @@
-import React from 'react';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import WantedInstance from '@/pages/Pokemon/features/instances/WantedInstance';
@@ -27,33 +26,6 @@ vi.mock('@/utils/logger', () => ({
 
 vi.mock('@/utils/imageHelpers', () => ({
   determineImageUrl: () => '/images/wanted.png',
-}));
-
-vi.mock('@/pages/Pokemon/features/instances/sections/HeaderRow', () => ({
-  default: ({
-    editMode,
-    toggleEditMode,
-    showCP,
-    showFavorite,
-    rightSlot,
-  }: {
-    editMode: boolean;
-    toggleEditMode: () => void;
-    showCP: boolean;
-    showFavorite: boolean;
-    rightSlot?: React.ReactNode;
-  }) => (
-    <div
-      data-testid="header-row"
-      data-show-cp={String(showCP)}
-      data-show-favorite={String(showFavorite)}
-    >
-      <button type="button" onClick={toggleEditMode}>
-        {editMode ? 'Save' : 'Edit'}
-      </button>
-      {rightSlot}
-    </div>
-  ),
 }));
 
 vi.mock('@/pages/Pokemon/features/instances/sections/ImageStage', () => ({
@@ -231,8 +203,9 @@ describe('WantedInstance', () => {
       Boolean(wantedConditions.compareDocumentPosition(imageStage) & Node.DOCUMENT_POSITION_FOLLOWING),
     ).toBe(true);
     expect(document.querySelector('.wanted-instance__requirements')).toBeNull();
-    expect(screen.getByTestId('header-row')).toHaveAttribute('data-show-cp', 'false');
-    expect(screen.getByTestId('header-row')).toHaveAttribute('data-show-favorite', 'false');
+    expect(wantedConditions).toContainElement(
+      screen.getByRole('button', { name: 'Edit wanted listing' }),
+    );
 
     await waitFor(() => {
       expect(screen.getByTestId('image-stage')).toHaveAttribute('data-background', '7');
@@ -250,7 +223,7 @@ describe('WantedInstance', () => {
       />,
     );
 
-    fireEvent.click(screen.getByRole('button', { name: 'Edit' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Edit wanted listing' }));
 
     expect(document.querySelector('.wanted-instance__requirements')).not.toBeNull();
     expect(screen.getByTestId('stats-row')).toHaveAttribute('data-show-types', 'false');
@@ -260,7 +233,7 @@ describe('WantedInstance', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Set desired moves' }));
     fireEvent.click(screen.getByRole('button', { name: 'Choose special background' }));
     fireEvent.click(screen.getByRole('button', { name: 'Select Vancouver background' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Save' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Save wanted listing' }));
 
     await waitFor(() => {
       expect(mocks.updateDetails).toHaveBeenCalledWith(
@@ -275,30 +248,29 @@ describe('WantedInstance', () => {
         }),
       );
     });
-    expect(screen.getByRole('button', { name: 'Edit' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Edit wanted listing' })).toBeInTheDocument();
   });
 
   it('keeps edit mode open and reports a failed save', async () => {
     mocks.updateDetails.mockRejectedValueOnce(new Error('offline'));
     render(<WantedInstance pokemon={makePokemon()} isEditable />);
 
-    fireEvent.click(screen.getByRole('button', { name: 'Edit' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Save' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Edit wanted listing' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Save wanted listing' }));
 
     await waitFor(() => {
       expect(mocks.alert).toHaveBeenCalledWith(
         'An error occurred while updating the wanted Pokémon. Please try again.',
       );
     });
-    expect(screen.getByRole('button', { name: 'Save' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Save wanted listing' })).toBeInTheDocument();
   });
 
   it('keeps another trainer catalog view read-only and compact', () => {
     render(<WantedInstance pokemon={makePokemon()} isEditable={false} catalogView />);
 
     expect(document.querySelector('.wanted-instance--catalog-view')).not.toBeNull();
-    expect(screen.queryByTestId('header-row')).not.toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: 'Edit' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Edit wanted listing' })).not.toBeInTheDocument();
     expect(screen.getByText('Wanted')).toBeInTheDocument();
     expect(screen.getByText('3/5 hearts')).toBeInTheDocument();
   });

@@ -17,13 +17,6 @@
   box-sizing: border-box;
 }
 
-.wanted-instance .top-row {
-  width: calc(100% - 24px);
-  min-height: 44px;
-  margin-inline: auto;
-  transform: none;
-}
-
 .wanted-instance .identity-name-slot .identity-name-eyebrow {
   color: var(--wanted-accent);
 }
@@ -65,6 +58,10 @@
   box-sizing: border-box;
 }
 
+.wanted-instance__conditions.has-actions {
+  grid-template-columns: minmax(104px, auto) minmax(0, 1fr) auto;
+}
+
 .wanted-instance__conditions-label {
   display: grid;
   gap: 3px;
@@ -89,6 +86,33 @@
 
 .wanted-instance__conditions .friendship-level-container {
   gap: 3px;
+}
+
+.wanted-instance__condition-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 4px;
+}
+
+.wanted-instance__condition-actions .edit-save-container,
+.wanted-instance__condition-actions .icon-button {
+  display: grid;
+  width: 44px;
+  height: 44px;
+  flex: 0 0 44px;
+  place-items: center;
+  margin: 0;
+  padding: 0;
+}
+
+.wanted-instance__condition-actions .edit-save-container .icon-button img {
+  width: 32px;
+  height: 32px;
+}
+
+.wanted-instance__condition-actions .background-select-row {
+  margin: 0;
 }
 
 .wanted-instance__conditions .heart-button:focus-visible,
@@ -249,10 +273,6 @@
     padding-top: 6px;
   }
 
-  .wanted-instance .top-row {
-    width: calc(100% - 16px);
-  }
-
   .wanted-instance .identity-name-slot .name-editable-content {
     max-width: 76vw;
     font-size: clamp(25px, 8vw, 32px);
@@ -267,12 +287,31 @@
     padding: 6px 2px;
   }
 
+  .wanted-instance__conditions.has-actions {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+
   .wanted-instance__conditions-label {
     display: flex;
     align-items: baseline;
     justify-content: center;
     gap: 6px;
     text-align: center;
+  }
+
+  .wanted-instance__conditions.has-actions .wanted-instance__conditions-label {
+    justify-self: start;
+    padding-inline-start: 6px;
+  }
+
+  .wanted-instance__conditions .friendship-level-container {
+    grid-column: 1 / -1;
+    grid-row: 2;
+  }
+
+  .wanted-instance__condition-actions {
+    grid-column: 2;
+    grid-row: 1;
   }
 
   .wanted-instance__requirements {
