@@ -2,7 +2,7 @@
   --wanted-accent: #ef5b71;
   --wanted-accent-soft: color-mix(in srgb, var(--wanted-accent) 10%, transparent);
   --wanted-border: color-mix(in srgb, var(--wanted-accent) 35%, #48605d);
-  --wanted-conditions-surface: rgba(15, 24, 23, 0.82);
+  --wanted-conditions-surface: #333;
   --caught-divider-color: color-mix(in srgb, var(--wanted-accent) 45%, #65716f);
   --caught-image-stage-size: 238px;
   --caught-stage-lift: 18px;
@@ -48,12 +48,9 @@
   margin: 6px auto 9px;
   padding: 9px 10px;
   border: 0;
-  border-radius: 15px;
+  border-radius: 12px;
   background: var(--wanted-conditions-surface);
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.06),
-    0 8px 22px rgba(0, 0, 0, 0.2);
-  backdrop-filter: blur(10px);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.35);
   box-sizing: border-box;
 }
 
@@ -260,15 +257,18 @@
 }
 
 :root[data-theme='light'] .wanted-instance {
-  --wanted-conditions-surface: color-mix(in srgb, var(--light-caught-card-bg, #ffffff) 92%, transparent);
+  --wanted-conditions-surface: linear-gradient(
+    180deg,
+    rgba(248, 255, 249, 0.98) 0%,
+    rgba(228, 241, 235, 0.96) 100%
+  );
   --wanted-border: color-mix(in srgb, var(--wanted-accent) 35%, var(--light-caught-card-border, #b9c8c4));
   color: var(--light-text-primary);
 }
 
 :root[data-theme='light'] .wanted-instance__conditions {
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.72),
-    0 8px 22px rgba(31, 50, 45, 0.11);
+  border: 1px solid rgba(157, 181, 173, 0.42);
+  box-shadow: var(--light-caught-shadow);
 }
 
 :root[data-theme='light'] .wanted-instance__gender-field > span,
@@ -298,7 +298,7 @@
     gap: 4px;
     margin: 4px auto 7px;
     padding: 8px;
-    border-radius: 13px;
+    border-radius: 12px;
   }
 
   .wanted-instance__conditions.has-actions {
