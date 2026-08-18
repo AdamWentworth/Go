@@ -253,9 +253,6 @@ const TradeTargetsPanel: React.FC<TradeTargetsPanelProps> = ({
           toggleReciprocalUpdates={toggleReciprocalUpdates}
           sortType={sortType}
           sortMode={sortMode}
-          onPokemonClick={(key) => {
-            if (filteredWantedList[key]) handlePokemonClick(key);
-          }}
           compact
         />
       </section>

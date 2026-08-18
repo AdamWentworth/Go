@@ -89,6 +89,18 @@ describe('TradeTargetsList', () => {
     expect(screen.getByText('#001')).toBeInTheDocument();
   });
 
+  it('renders compact summary targets as read-only cards', () => {
+    render(
+      <TradeTargetsList
+        {...buildProps({ onPokemonClick: undefined })}
+        compact
+      />,
+    );
+
+    expect(screen.queryByRole('button', { name: /Bulbasaur/ })).not.toBeInTheDocument();
+    expect(screen.getByText('Bulbasaur')).toBeInTheDocument();
+  });
+
   it('supports candidate search and bulk selection while editing', () => {
     const props = buildProps({ editMode: true });
     render(<TradeTargetsList {...props} />);

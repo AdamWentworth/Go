@@ -228,16 +228,17 @@ const TradeListDisplay = ({
             onPokemonClick?.(tradePokemon.key);
           }
         };
+        const isInteractive = !editMode && Boolean(onPokemonClick);
 
         return (
           <div
             key={tradePokemon.key}
             className={`trade-item ${isNotTrade ? 'is-not-trade' : ''}`}
             onClick={handleOpenTrade}
-            role={!editMode ? 'button' : undefined}
-            tabIndex={!editMode ? 0 : undefined}
+            role={isInteractive ? 'button' : undefined}
+            tabIndex={isInteractive ? 0 : undefined}
             onKeyDown={(event) => {
-              if (!editMode && (event.key === 'Enter' || event.key === ' ')) {
+              if (isInteractive && (event.key === 'Enter' || event.key === ' ')) {
                 event.preventDefault();
                 handleOpenTrade();
               }

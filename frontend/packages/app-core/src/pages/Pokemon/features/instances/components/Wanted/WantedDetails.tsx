@@ -264,7 +264,6 @@ const WantedDetails: React.FC<WantedDetailsProps> = ({
           toggleReciprocalUpdates={toggleReciprocalUpdates}
           sortType={sortType}
           sortMode={sortMode}
-          onPokemonClick={handlePokemonClick}
           compact
         />
       </section>

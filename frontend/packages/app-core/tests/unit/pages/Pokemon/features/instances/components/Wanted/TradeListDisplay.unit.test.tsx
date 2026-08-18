@@ -100,6 +100,18 @@ describe('TradeListDisplay', () => {
     );
   });
 
+  it('renders compact summary offers as read-only cards', () => {
+    render(
+      <TradeListDisplay
+        {...buildProps({ onPokemonClick: undefined })}
+        compact
+      />,
+    );
+
+    expect(screen.queryByRole('button', { name: /Charmander/ })).not.toBeInTheDocument();
+    expect(screen.getByText('Charmander')).toBeInTheDocument();
+  });
+
   it('supports candidate search and bulk selection while editing', () => {
     const props = buildProps({ editMode: true });
     render(<TradeListDisplay {...props} />);

@@ -353,6 +353,7 @@ const TradeInstance: React.FC<TradeInstanceProps> = ({
         onTogglePurify: () => undefined,
         showLucky: false,
         showPurify: false,
+        eyebrow: compactListingView || catalogView ? 'For Trade' : undefined,
       }}
       levelGenderRow={{
         pokemon,

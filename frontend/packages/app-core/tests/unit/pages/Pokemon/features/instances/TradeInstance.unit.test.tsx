@@ -194,6 +194,7 @@ describe('TradeInstance', () => {
     const { unmount } = render(
       <TradeInstance pokemon={pokemon} isEditable compactListingView />,
     );
+    expect(screen.getByText('For Trade')).toBeInTheDocument();
     expect(screen.getByText('35')).toBeInTheDocument();
     unmount();
 
