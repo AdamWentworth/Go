@@ -2,7 +2,7 @@
   --wanted-accent: #ef5b71;
   --wanted-accent-soft: color-mix(in srgb, var(--wanted-accent) 10%, transparent);
   --wanted-border: color-mix(in srgb, var(--wanted-accent) 35%, #48605d);
-  --wanted-conditions-surface: rgba(24, 31, 30, 0.66);
+  --wanted-conditions-surface: rgba(15, 24, 23, 0.82);
   --caught-divider-color: color-mix(in srgb, var(--wanted-accent) 45%, #65716f);
   --caught-image-stage-size: 238px;
   --caught-stage-lift: 18px;
@@ -44,17 +44,16 @@
   align-items: center;
   gap: 12px;
   width: calc(100% - 24px);
-  max-width: 680px;
-  margin: 2px auto 7px;
-  padding: 7px 8px;
-  border-block: 1px solid color-mix(in srgb, var(--wanted-accent) 30%, transparent);
-  background: linear-gradient(
-    90deg,
-    color-mix(in srgb, var(--wanted-accent) 7%, var(--wanted-conditions-surface)),
-    var(--wanted-conditions-surface) 48%,
-    transparent
-  );
-  backdrop-filter: blur(4px);
+  max-width: 650px;
+  margin: 6px auto 9px;
+  padding: 9px 10px;
+  border: 0;
+  border-radius: 15px;
+  background: var(--wanted-conditions-surface);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.06),
+    0 8px 22px rgba(0, 0, 0, 0.2);
+  backdrop-filter: blur(10px);
   box-sizing: border-box;
 }
 
@@ -105,6 +104,17 @@
   place-items: center;
   margin: 0;
   padding: 0;
+  border-radius: 10px;
+}
+
+.wanted-instance__condition-actions .icon-button:hover,
+.wanted-instance__condition-actions .icon-button:focus-visible {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.wanted-instance__condition-actions .icon-button:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--wanted-accent) 72%, white);
+  outline-offset: 1px;
 }
 
 .wanted-instance__condition-actions .edit-save-container .icon-button img {
@@ -256,7 +266,9 @@
 }
 
 :root[data-theme='light'] .wanted-instance__conditions {
-  box-shadow: 0 2px 8px rgba(31, 50, 45, 0.05);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.72),
+    0 8px 22px rgba(31, 50, 45, 0.11);
 }
 
 :root[data-theme='light'] .wanted-instance__gender-field > span,
@@ -284,8 +296,9 @@
     grid-template-columns: 1fr;
     justify-items: center;
     gap: 4px;
-    margin-bottom: 4px;
-    padding: 6px 2px;
+    margin: 4px auto 7px;
+    padding: 8px;
+    border-radius: 13px;
   }
 
   .wanted-instance__conditions.has-actions {
