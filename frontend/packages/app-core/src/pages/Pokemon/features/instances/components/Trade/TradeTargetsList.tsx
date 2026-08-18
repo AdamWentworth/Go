@@ -29,6 +29,7 @@ interface TradeTargetsListProps {
   sortMode: SortMode;
   onPokemonClick?: (key: string) => void;
   compact?: boolean;
+  maxItems?: number;
 }
 
 const TradeTargetsList = ({
@@ -44,6 +45,7 @@ const TradeTargetsList = ({
   sortMode,
   onPokemonClick,
   compact = false,
+  maxItems,
 }: TradeTargetsListProps) => {
   const isSmallScreen = useViewportBelow(VIEWPORT_BREAKPOINTS.desktop);
   const notWantedMap = localNotWantedList || {};
@@ -100,6 +102,10 @@ const TradeTargetsList = ({
         .toLocaleLowerCase()
         .includes(normalizedQuery);
     });
+  const visibleWantedList =
+    typeof maxItems === 'number'
+      ? finalWantedListToDisplay.slice(0, maxItems)
+      : finalWantedListToDisplay;
 
   if (!lists || wantedEntries.length === 0) {
     return <div>No trade targets currently selected.</div>;
@@ -165,7 +171,7 @@ const TradeTargetsList = ({
       </div> : null}
       {finalWantedListToDisplay.length > 0 ? (
         <div className={`wanted-list-container ${containerClass} ${gridClass}${compact ? ' preference-target-summary__list' : ''}`}>
-          {finalWantedListToDisplay.map((wantedPokemon) => (
+          {visibleWantedList.map((wantedPokemon) => (
             <TradeTargetListItem
               key={wantedPokemon.key}
               wantedPokemon={wantedPokemon}

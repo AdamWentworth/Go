@@ -91,6 +91,7 @@ const WantedDetails: React.FC<WantedDetailsProps> = ({
   const [saveStatus, setSaveStatus] = useState<
     'idle' | 'dirty' | 'saving' | 'saved' | 'error'
   >('idle');
+  const [isSummaryExpanded, setIsSummaryExpanded] = useState(false);
   const [localNotTradeList, setLocalNotTradeList] = useState({ ...not_trade_list });
   const [localTradeFilters, setLocalTradeFilters] = useState({ ...trade_filters });
   const updateDetails = useInstancesStore((s) => s.updateInstanceDetails);
@@ -250,7 +251,11 @@ const WantedDetails: React.FC<WantedDetailsProps> = ({
 
   if (summaryMode) {
     return (
-      <section className="preference-target-summary preference-target-summary--wanted">
+      <section
+        className={`preference-target-summary preference-target-summary--wanted${
+          isSummaryExpanded ? ' preference-target-summary--expanded' : ''
+        }`}
+      >
         <header>
           <strong>Acceptable offers</strong>
           <span>{filteredTradeListCount}</span>
@@ -266,7 +271,18 @@ const WantedDetails: React.FC<WantedDetailsProps> = ({
           sortMode={sortMode}
           onPokemonClick={handlePokemonClick}
           compact
+          maxItems={isSummaryExpanded ? undefined : 6}
         />
+        {filteredTradeListCount > 6 ? (
+          <button
+            type="button"
+            className="preference-target-summary__toggle"
+            aria-expanded={isSummaryExpanded}
+            onClick={() => setIsSummaryExpanded((expanded) => !expanded)}
+          >
+            {isSummaryExpanded ? 'Show less' : `View all ${filteredTradeListCount}`}
+          </button>
+        ) : null}
       </section>
     );
   }

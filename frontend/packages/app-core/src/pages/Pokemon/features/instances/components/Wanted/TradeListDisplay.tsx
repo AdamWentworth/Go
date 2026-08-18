@@ -50,6 +50,7 @@ interface TradeListDisplayProps {
   sortMode: SortMode;
   onPokemonClick?: (key: string) => void;
   compact?: boolean;
+  maxItems?: number;
 }
 
 const extractBaseKey = (instanceId: string): string => {
@@ -79,6 +80,7 @@ const TradeListDisplay = ({
   sortMode,
   onPokemonClick,
   compact = false,
+  maxItems,
 }: TradeListDisplayProps) => {
   const isSmallScreen = useViewportBelow(VIEWPORT_BREAKPOINTS.desktop);
   const notTradeMap = localNotTradeList || {};
@@ -145,6 +147,10 @@ const TradeListDisplay = ({
       .toLocaleLowerCase()
       .includes(normalizedQuery);
   });
+  const visibleTradeList =
+    typeof maxItems === 'number'
+      ? sortedTradeListToDisplay.slice(0, maxItems)
+      : sortedTradeListToDisplay;
 
   if (!lists || tradeEntries.length === 0) {
     return <div>No Pokemon currently for trade.</div>;
@@ -215,7 +221,7 @@ const TradeListDisplay = ({
       </div> : null}
       {sortedTradeListToDisplay.length > 0 ? (
       <div className={`trade-list-container ${containerClass} ${gridClass}${compact ? ' preference-target-summary__list' : ''}`}>
-      {sortedTradeListToDisplay.map((tradePokemon) => {
+      {visibleTradeList.map((tradePokemon) => {
         const isNotTrade =
           Boolean(notTradeMap[tradePokemon.key]) ||
           Boolean(notTradeMap[extractBaseKey(tradePokemon.key)]);
