@@ -239,7 +239,7 @@ const TradeTargetsPanel: React.FC<TradeTargetsPanelProps> = ({
     return (
       <section className="preference-target-summary preference-target-summary--trade">
         <header>
-          <strong>Trade targets</strong>
+          <strong>Wanted Pokémon</strong>
           <span>{filteredWantedListCount}</span>
         </header>
         <TradeTargetsList

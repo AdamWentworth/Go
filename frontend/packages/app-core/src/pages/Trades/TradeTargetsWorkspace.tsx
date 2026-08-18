@@ -249,7 +249,7 @@ function TradeTargetsWorkspace() {
   }, [isEditingPreferences]);
 
   if (variantsLoading) {
-    return <p className="trade-targets-state">Loading your trade targets…</p>;
+    return <p className="trade-targets-state">Loading your trade preferences…</p>;
   }
 
   return (
@@ -283,8 +283,8 @@ function TradeTargetsWorkspace() {
       {visiblePokemon.length === 0 ? (
         <p className="trade-targets-state">
           {mode === 'trade'
-            ? 'Mark a Pokémon as For Trade to configure its targets here.'
-            : 'Add a Wanted Pokémon to configure acceptable offers here.'}
+            ? 'Mark a Pokémon as For Trade to choose its Wanted Pokémon here.'
+            : 'Add a Wanted Pokémon to choose its eligible For Trade Pokémon here.'}
         </p>
       ) : (
         <div className="trade-targets-layout">

@@ -101,10 +101,10 @@ const TradeTargetsList = ({
         .includes(normalizedQuery);
     });
   if (!lists || wantedEntries.length === 0) {
-    return <div>No trade targets currently selected.</div>;
+    return <div>No Wanted Pokémon are currently selected.</div>;
   }
   if (!editMode && !query.trim() && finalWantedListToDisplay.length === 0) {
-    return <div>No trade targets currently selected.</div>;
+    return <div>No Wanted Pokémon are currently selected.</div>;
   }
 
   const containerClass = resolveTradeTargetContainerClass(
@@ -119,7 +119,7 @@ const TradeTargetsList = ({
         <label>
           <input
             type="search"
-            aria-label="Search acceptable Pokémon"
+            aria-label="Search Wanted Pokémon"
             value={query}
             placeholder="Search Pokémon"
             onChange={(event) => setQuery(event.target.value)}

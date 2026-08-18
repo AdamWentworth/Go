@@ -12,10 +12,10 @@ describe('TradeTargetsPanelSections', () => {
     const { rerender } = render(<TradeTargetsIntro isMirror={false} />);
 
     expect(screen.getByText('Desired Return')).toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: 'Trade Targets' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Wanted Pokémon' })).toBeInTheDocument();
     expect(
       screen.getByText(
-        'Choose the Pokemon you would accept for this trade and fine-tune the filters below.',
+        'Choose the Pokémon you want in return for this For Trade listing.',
       ),
     ).toBeInTheDocument();
 
@@ -39,8 +39,8 @@ describe('TradeTargetsPanelSections', () => {
       </TradeTargetsWantedPanel>,
     );
 
-    expect(screen.getByRole('heading', { name: 'Target List' })).toBeInTheDocument();
-    expect(screen.getByText('7 acceptable · no advanced rules')).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Wanted Pokémon' })).toBeInTheDocument();
+    expect(screen.getByText('7 wanted · no advanced rules')).toBeInTheDocument();
     expect(screen.getByText('wanted-list')).toBeInTheDocument();
   });
 

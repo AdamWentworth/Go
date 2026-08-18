@@ -238,14 +238,13 @@ describe('TradeTargetsPanel', () => {
     render(<TradeTargetsPanel {...makeProps()} />);
 
     expect(screen.getByText('Desired Return')).toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: 'Trade Targets' })).toBeInTheDocument();
+    expect(screen.getAllByRole('heading', { name: 'Wanted Pokémon' })).toHaveLength(2);
     expect(
       screen.getByText(
-        'Choose the Pokemon you would accept for this trade and fine-tune the filters below.',
+        'Choose the Pokémon you want in return for this For Trade listing.',
       ),
     ).toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: 'Target List' })).toBeInTheDocument();
-    expect(screen.getByText('1 acceptable · no advanced rules')).toBeInTheDocument();
+    expect(screen.getByText('1 wanted · no advanced rules')).toBeInTheDocument();
   });
 
   it('uses mirror-specific count copy when mirror mode is active', () => {

@@ -42,7 +42,7 @@ export const TradeTargetsWantedPanel: React.FC<TradeTargetsWantedPanelProps> = (
   const showResetFilters = !isMirror && isEditable;
   const countLabel = isMirror
     ? `${visibleCount} mirror ${visibleCount === 1 ? 'target' : 'targets'}`
-    : `${visibleCount} acceptable · ${activeRuleCount === 0
+    : `${visibleCount} wanted · ${activeRuleCount === 0
       ? 'no advanced rules'
       : `${activeRuleCount} active ${activeRuleCount === 1 ? 'rule' : 'rules'}`}`;
 

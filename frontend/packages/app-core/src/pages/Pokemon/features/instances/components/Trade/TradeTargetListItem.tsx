@@ -84,7 +84,7 @@ const TradeTargetListItem: React.FC<TradeTargetListItemProps> = ({
         <img
           src={wantedPokemon.currentImage}
           className={imageClasses}
-          alt={`Trade Target ${wantedPokemon.name}`}
+          alt={`Wanted Pokémon ${wantedPokemon.name}`}
           title={displayName}
           draggable={false}
           onDragStart={preventImageDrag}

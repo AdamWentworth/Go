@@ -4,7 +4,8 @@
   min-width: 0;
   flex-direction: column;
   gap: 5px;
-  min-height: 136px;
+  min-height: 164px;
+  height: 100%;
   padding: 7px;
   overflow: hidden;
   border: 1px solid rgba(191, 212, 203, 0.18);
@@ -16,6 +17,7 @@
     transform 0.2s ease,
     box-shadow 0.2s ease,
     opacity 0.2s ease;
+  box-sizing: border-box;
 }
 
 .trade-item[role='button'] {
@@ -40,8 +42,8 @@
 .trade-item__media {
   position: relative;
   display: flex;
-  min-height: 88px;
-  flex: 0 0 88px;
+  min-height: 92px;
+  flex: 0 0 92px;
   align-items: center;
   justify-content: center;
 }
@@ -51,7 +53,7 @@
   z-index: 2;
   width: 100%;
   max-width: 88px;
-  max-height: 88px;
+  max-height: 92px;
   height: auto;
   object-fit: contain;
   cursor: inherit;
@@ -77,7 +79,7 @@
   align-items: center;
   flex-direction: column;
   gap: 2px;
-  flex: 1 0 auto;
+  flex: 1 1 auto;
   text-align: center;
 }
 

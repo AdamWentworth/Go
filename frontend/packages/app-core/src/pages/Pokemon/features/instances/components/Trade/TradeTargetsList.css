@@ -27,6 +27,8 @@
   display: flex;
   flex-direction: column;
   gap: 5px;
+  min-height: 164px;
+  height: 100%;
   padding: 7px;
   border-radius: 12px;
   border: 1px solid rgba(191, 212, 203, 0.18);
@@ -37,6 +39,7 @@
     transform 0.2s ease,
     box-shadow 0.2s ease,
     opacity 0.2s ease;
+  box-sizing: border-box;
 }
 
 .wanted-item[role='button'] {
@@ -60,7 +63,8 @@
 
 .wanted-item__media {
   position: relative;
-  min-height: 88px;
+  min-height: 92px;
+  flex: 0 0 92px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -81,7 +85,9 @@
   z-index: 2;
   width: 100%;
   max-width: 88px;
+  max-height: 92px;
   height: auto;
+  object-fit: contain;
   filter: drop-shadow(0 6px 10px rgba(0, 0, 0, 0.24));
   cursor: inherit;
 }
@@ -107,6 +113,7 @@
   align-items: center;
   text-align: center;
   min-width: 0;
+  flex: 1 1 auto;
 }
 
 .wanted-item__name {

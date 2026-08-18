@@ -2,7 +2,7 @@
   --wanted-accent: #ef5b71;
   --wanted-accent-soft: color-mix(in srgb, var(--wanted-accent) 10%, transparent);
   --wanted-border: color-mix(in srgb, var(--wanted-accent) 35%, #48605d);
-  --wanted-conditions-surface: rgba(24, 31, 30, 0.84);
+  --wanted-conditions-surface: rgba(24, 31, 30, 0.66);
   --caught-divider-color: color-mix(in srgb, var(--wanted-accent) 45%, #65716f);
   --caught-image-stage-size: 238px;
   --caught-stage-lift: 18px;
@@ -19,7 +19,9 @@
 
 .wanted-instance .top-row {
   width: calc(100% - 24px);
+  min-height: 44px;
   margin-inline: auto;
+  transform: none;
 }
 
 .wanted-instance .identity-name-slot .identity-name-eyebrow {
@@ -45,26 +47,44 @@
 
 .wanted-instance__conditions {
   display: grid;
-  justify-items: center;
-  gap: 4px;
+  grid-template-columns: minmax(104px, auto) minmax(0, 1fr);
+  align-items: center;
+  gap: 12px;
   width: calc(100% - 24px);
-  max-width: 520px;
-  margin: 0 auto 5px;
-  padding: 7px 10px 8px;
-  border: 1px solid color-mix(in srgb, var(--wanted-accent) 32%, transparent);
-  border-radius: 10px;
-  background: var(--wanted-conditions-surface);
-  backdrop-filter: blur(5px);
+  max-width: 680px;
+  margin: 2px auto 7px;
+  padding: 7px 8px;
+  border-block: 1px solid color-mix(in srgb, var(--wanted-accent) 30%, transparent);
+  background: linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--wanted-accent) 7%, var(--wanted-conditions-surface)),
+    var(--wanted-conditions-surface) 48%,
+    transparent
+  );
+  backdrop-filter: blur(4px);
   box-sizing: border-box;
 }
 
-.wanted-instance__conditions > strong {
+.wanted-instance__conditions-label {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+  text-align: left;
+}
+
+.wanted-instance__conditions-label > strong {
   color: var(--wanted-accent);
   font-size: 0.66rem;
   font-weight: 850;
   letter-spacing: 0.11em;
   line-height: 1;
   text-transform: uppercase;
+}
+
+.wanted-instance__conditions-label > span {
+  color: var(--color-text-secondary, #a9b8b5);
+  font-size: 0.68rem;
+  line-height: 1.2;
 }
 
 .wanted-instance__conditions .friendship-level-container {
@@ -211,10 +231,11 @@
 }
 
 :root[data-theme='light'] .wanted-instance__conditions {
-  box-shadow: var(--light-caught-soft-shadow, 0 2px 8px rgba(31, 50, 45, 0.08));
+  box-shadow: 0 2px 8px rgba(31, 50, 45, 0.05);
 }
 
-:root[data-theme='light'] .wanted-instance__gender-field > span {
+:root[data-theme='light'] .wanted-instance__gender-field > span,
+:root[data-theme='light'] .wanted-instance__conditions-label > span {
   color: var(--light-text-secondary);
 }
 
@@ -239,8 +260,19 @@
 
   .wanted-instance__conditions {
     width: calc(100% - 16px);
+    grid-template-columns: 1fr;
+    justify-items: center;
+    gap: 4px;
     margin-bottom: 4px;
-    padding: 6px 6px 7px;
+    padding: 6px 2px;
+  }
+
+  .wanted-instance__conditions-label {
+    display: flex;
+    align-items: baseline;
+    justify-content: center;
+    gap: 6px;
+    text-align: center;
   }
 
   .wanted-instance__requirements {

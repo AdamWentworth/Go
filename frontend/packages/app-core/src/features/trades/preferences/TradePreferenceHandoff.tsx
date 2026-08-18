@@ -27,8 +27,8 @@ const TradePreferenceHandoff = ({
         <strong>{isTrade ? 'Trade preferences' : 'Wanted preferences'}</strong>
         <span>
           {isTrade
-            ? 'Choose which Pokémon you would accept for this trade.'
-            : 'Choose which of your For Trade Pokémon are acceptable offers.'}
+            ? 'Choose the Wanted Pokémon you would accept in return.'
+            : 'Choose which of your For Trade Pokémon can be offered.'}
         </span>
       </div> : null}
       <Link to={destination}>{compact ? 'Edit preferences' : 'Manage preferences'}</Link>
