@@ -4,6 +4,7 @@
   min-width: 0;
   flex-direction: column;
   gap: 5px;
+  min-height: 136px;
   padding: 7px;
   overflow: hidden;
   border: 1px solid rgba(191, 212, 203, 0.18);
@@ -40,6 +41,7 @@
   position: relative;
   display: flex;
   min-height: 88px;
+  flex: 0 0 88px;
   align-items: center;
   justify-content: center;
 }
@@ -49,7 +51,9 @@
   z-index: 2;
   width: 100%;
   max-width: 88px;
+  max-height: 88px;
   height: auto;
+  object-fit: contain;
   cursor: inherit;
   filter: drop-shadow(0 6px 10px rgba(0, 0, 0, 0.24));
 }
@@ -73,6 +77,7 @@
   align-items: center;
   flex-direction: column;
   gap: 2px;
+  flex: 1 0 auto;
   text-align: center;
 }
 

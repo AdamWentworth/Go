@@ -34,6 +34,7 @@ interface WantedInstanceProps {
   isEditable: boolean;
   catalogView?: boolean;
   compactListingView?: boolean;
+  onPreviewInstanceDataChange?: (patch: Partial<PokemonInstance>) => void;
 }
 
 type MovesSelection = {
@@ -65,6 +66,7 @@ const WantedInstance: React.FC<WantedInstanceProps> = ({
   isEditable,
   catalogView = false,
   compactListingView = false,
+  onPreviewInstanceDataChange,
 }) => {
   const updateDetails = useInstancesStore((state) => state.updateInstanceDetails);
   const { alert } = useModal();
@@ -95,6 +97,10 @@ const WantedInstance: React.FC<WantedInstanceProps> = ({
         ) ?? null
       );
     });
+
+  useEffect(() => {
+    onPreviewInstanceDataChange?.({ pref_lucky: isLucky });
+  }, [isLucky, onPreviewInstanceDataChange]);
 
   const backgrounds = useMemo(() => pokemon.backgrounds ?? [], [pokemon.backgrounds]);
   const selectableBackgrounds = useMemo(
@@ -152,7 +158,7 @@ const WantedInstance: React.FC<WantedInstanceProps> = ({
     [gender, height, instanceData, moves, nickname, pokemon, weight],
   );
 
-  const showDesiredDetails =
+  const showWantedDetails =
     editMode || hasDesiredDetails(gender, weight, height, moves);
 
   const handleBackgroundSelect = (background: BackgroundOption | null) => {
@@ -190,13 +196,7 @@ const WantedInstance: React.FC<WantedInstanceProps> = ({
 
   const friendshipSection = (
     <section className="wanted-instance__conditions" aria-labelledby={`${entityKey}-conditions`}>
-      <div className="wanted-instance__section-heading">
-        <div>
-          <span>Trade conditions</span>
-          <strong id={`${entityKey}-conditions`}>Friendship preference</strong>
-        </div>
-        <small>Five hearts allows a remote trade</small>
-      </div>
+      <strong id={`${entityKey}-conditions`}>Wanted conditions</strong>
       <FriendshipManager
         friendship={friendship}
         setFriendship={setFriendship}
@@ -207,19 +207,8 @@ const WantedInstance: React.FC<WantedInstanceProps> = ({
     </section>
   );
 
-  const desiredDetailsSection = showDesiredDetails ? (
-    <section
-      className={`wanted-instance__desired-details${editMode ? ' is-editing' : ''}`}
-      aria-labelledby={`${entityKey}-desired-details`}
-    >
-      <div className="wanted-instance__section-heading wanted-instance__section-heading--compact">
-        <div>
-          <span>Optional preferences</span>
-          <strong id={`${entityKey}-desired-details`}>Desired Pokémon details</strong>
-        </div>
-        <small>{editMode ? 'Leave a field blank to accept any' : 'Only specified details must match'}</small>
-      </div>
-
+  const wantedDetails = showWantedDetails ? (
+    <div className="wanted-instance__requirements" aria-label="Wanted Pokémon details">
       <div className="wanted-instance__detail-fields">
         {(editMode || hasSpecificGender(gender)) && (
           <div className="wanted-instance__gender-field">
@@ -254,13 +243,14 @@ const WantedInstance: React.FC<WantedInstanceProps> = ({
           isPurified={isPurified}
         />
       </div>
-    </section>
+    </div>
   ) : null;
 
   if (catalogView) {
     return (
       <div className="caught-instance wanted-instance wanted-instance--catalog-view">
         <div className="instance-details-body">
+          {friendshipSection}
           <ImageStage
             selectedBackground={selectedBackground}
             isLucky={isLucky}
@@ -283,8 +273,7 @@ const WantedInstance: React.FC<WantedInstanceProps> = ({
             showPurify={false}
             eyebrow="Wanted"
           />
-          {friendshipSection}
-          {desiredDetailsSection}
+          {wantedDetails}
         </div>
       </div>
     );
@@ -318,6 +307,8 @@ const WantedInstance: React.FC<WantedInstanceProps> = ({
           }
         />
 
+        {friendshipSection}
+
         <ImageStage
           selectedBackground={selectedBackground}
           isLucky={isLucky}
@@ -342,8 +333,7 @@ const WantedInstance: React.FC<WantedInstanceProps> = ({
           eyebrow="Wanted"
         />
 
-        {friendshipSection}
-        {desiredDetailsSection}
+        {wantedDetails}
 
         <TradeBackgroundModal
           showBackgrounds={showBackgrounds}

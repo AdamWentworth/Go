@@ -279,6 +279,42 @@ describe('InstanceOverlay', () => {
     expect(background?.getAttribute('src')).toContain('bg_fire.png');
   });
 
+  it('renders type and wanted-lucky backgrounds behind wanted overlays', () => {
+    const { unmount } = render(
+      <InstanceOverlay
+        pokemon={makePokemon({
+          type1_name: 'Grass',
+          instanceData: { instance_id: 'wanted-1', is_wanted: true },
+        })}
+        onClose={vi.fn()}
+        variants={[]}
+        tagFilter="wanted"
+        lists={{}}
+        instances={{}}
+        sortType="name"
+        sortMode="ascending"
+        isEditable
+        username="ash"
+      />,
+    );
+
+    let background = document.querySelector('.io-bg-img') as HTMLImageElement | null;
+    expect(background?.getAttribute('src')).toContain('bg_grass.png');
+    expect(document.querySelector('.instance-overlay')).toHaveClass('wanted-mode');
+    unmount();
+
+    renderOverlay('wanted', {
+      type1_name: 'Grass',
+      instanceData: {
+        instance_id: 'wanted-2',
+        is_wanted: true,
+        pref_lucky: true,
+      },
+    });
+    background = document.querySelector('.io-bg-img') as HTMLImageElement | null;
+    expect(background?.getAttribute('src')).toContain('bg_lucky.png');
+  });
+
   it('falls back to pokemon status when tag filter is unknown', () => {
     renderOverlay('unknown-filter', {
       instanceData: { status: 'wanted' },

@@ -252,7 +252,7 @@ const WantedDetails: React.FC<WantedDetailsProps> = ({
     return (
       <section className="preference-target-summary preference-target-summary--wanted">
         <header>
-          <strong>Acceptable offers</strong>
+          <strong>Available for trade</strong>
           <span>{filteredTradeListCount}</span>
         </header>
         <TradeListDisplay
@@ -275,8 +275,8 @@ const WantedDetails: React.FC<WantedDetailsProps> = ({
       <div className="trade-details-container">
         <div className="trade-details-container__intro">
           <div className="trade-details-container__eyebrow">Wanted preferences</div>
-          <h2>Acceptable offers</h2>
-          <p>Choose which For Trade Pokémon you would accept for this entry.</p>
+          <h2>Available for trade</h2>
+          <p>Choose which of your For Trade Pokémon can be offered for this wanted entry.</p>
         </div>
 
         <div className="trade-details-container__filters-panel">

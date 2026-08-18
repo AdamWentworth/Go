@@ -223,9 +223,14 @@ describe('WantedInstance', () => {
 
     expect(document.querySelector('.wanted-instance--caught-layout')).not.toBeNull();
     expect(screen.getByText('Wanted')).toBeInTheDocument();
-    expect(screen.getByText('Friendship preference')).toBeInTheDocument();
-    expect(screen.getByText('Five hearts allows a remote trade')).toBeInTheDocument();
-    expect(screen.queryByText('Desired Pokémon details')).not.toBeInTheDocument();
+    const wantedConditions = screen.getByText('Wanted conditions').closest('section');
+    const imageStage = screen.getByTestId('image-stage');
+    expect(wantedConditions).not.toBeNull();
+    if (!wantedConditions) throw new Error('Wanted conditions section was not rendered');
+    expect(
+      Boolean(wantedConditions.compareDocumentPosition(imageStage) & Node.DOCUMENT_POSITION_FOLLOWING),
+    ).toBe(true);
+    expect(document.querySelector('.wanted-instance__requirements')).toBeNull();
     expect(screen.getByTestId('header-row')).toHaveAttribute('data-show-cp', 'false');
     expect(screen.getByTestId('header-row')).toHaveAttribute('data-show-favorite', 'false');
 
@@ -235,14 +240,22 @@ describe('WantedInstance', () => {
     expect(screen.getByTestId('image-stage')).toHaveAttribute('data-dynamax', 'true');
   });
 
-  it('edits and saves wanted-specific conditions and optional details together', async () => {
-    render(<WantedInstance pokemon={makePokemon()} isEditable />);
+  it('edits and saves wanted conditions and Pokémon requirements together', async () => {
+    const onPreviewInstanceDataChange = vi.fn();
+    render(
+      <WantedInstance
+        pokemon={makePokemon()}
+        isEditable
+        onPreviewInstanceDataChange={onPreviewInstanceDataChange}
+      />,
+    );
 
     fireEvent.click(screen.getByRole('button', { name: 'Edit' }));
 
-    expect(screen.getByText('Desired Pokémon details')).toBeInTheDocument();
+    expect(document.querySelector('.wanted-instance__requirements')).not.toBeNull();
     expect(screen.getByTestId('stats-row')).toHaveAttribute('data-show-types', 'false');
     fireEvent.click(screen.getByRole('button', { name: 'Require remote lucky trade' }));
+    expect(onPreviewInstanceDataChange).toHaveBeenLastCalledWith({ pref_lucky: true });
     fireEvent.click(screen.getByRole('button', { name: 'Set female' }));
     fireEvent.click(screen.getByRole('button', { name: 'Set desired moves' }));
     fireEvent.click(screen.getByRole('button', { name: 'Choose special background' }));
@@ -298,7 +311,7 @@ describe('WantedInstance', () => {
         catalogView
       />,
     );
-    expect(screen.queryByText('Desired Pokémon details')).not.toBeInTheDocument();
+    expect(document.querySelector('.wanted-instance__requirements')).toBeNull();
 
     rerender(
       <WantedInstance
@@ -308,7 +321,7 @@ describe('WantedInstance', () => {
         catalogView
       />,
     );
-    expect(screen.getByText('Desired Pokémon details')).toBeInTheDocument();
+    expect(document.querySelector('.wanted-instance__requirements')).not.toBeNull();
     expect(screen.getByRole('button', { name: 'Set female' })).toBeInTheDocument();
     expect(screen.getByTestId('stats-row')).toHaveAttribute('data-show-types', 'false');
   });

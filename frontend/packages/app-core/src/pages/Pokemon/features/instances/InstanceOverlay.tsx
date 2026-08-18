@@ -177,7 +177,7 @@ const InstanceOverlay: React.FC<InstanceOverlayProps> = ({
     resetMotionForIncomingPokemon();
   }, [incomingNavigationKey, pokemon, resetMotionForIncomingPokemon]);
 
-  const handleCaughtPreviewInstanceDataChange = useCallback(
+  const handleInstancePreviewDataChange = useCallback(
     (patch: Partial<PokemonInstance>) => {
       setPreviewInstanceDataPatch((prev) => {
         const next = { ...prev, ...patch };
@@ -247,7 +247,7 @@ const InstanceOverlay: React.FC<InstanceOverlayProps> = ({
                     key={caughtInstanceKey}
                     pokemon={activePokemon as CaughtOverlayPokemon}
                     isEditable={isEditable}
-                    onPreviewInstanceDataChange={handleCaughtPreviewInstanceDataChange}
+                    onPreviewInstanceDataChange={handleInstancePreviewDataChange}
                     activeInstanceIdHint={activeInstanceIdHint}
                   />
                 </div>
@@ -333,50 +333,61 @@ const InstanceOverlay: React.FC<InstanceOverlayProps> = ({
           getOverlayIdentityKey(activePokemon) ??
           `wanted:${activePokemon.pokemon_id}:${String(activePokemon.variant_id ?? '')}`;
         return (
-          <div className="wanted-instance-overlay">
-            <div className={`overlay-row other-overlays-row ${isSmallScreen ? 'column-layout' : ''}`}>
-              <WindowOverlay
-                onClose={handleCloseOverlay}
-                className="wanted-instance-window wanted-details-window trade-unified-window"
-              >
-                <WantedInstance
-                  key={wantedInstanceKey}
-                  pokemon={activePokemon as unknown as WantedOverlayPokemon}
-                  isEditable={isEditable}
-                  catalogView={!isEditable}
-                  compactListingView={isEditable}
-                />
-                {isEditable && activePokemon.instanceData?.instance_id ? (
-                  <>
-                    <WantedDetails
-                      key={`${wantedInstanceKey}:preference-summary`}
-                      pokemon={withInstanceData(activePokemon) as WantedDetailsPokemon}
-                      lists={lists}
-                      instances={instances}
-                      sortType={sortType}
-                      sortMode={sortMode}
-                      openTradeOverlay={handleOpenTradeOverlay}
-                      variants={variants}
-                      isEditable={false}
-                      summaryMode
-                    />
-                    <TradePreferenceHandoff
-                      mode="wanted"
-                      instanceId={activePokemon.instanceData.instance_id}
-                      compact
-                    />
-                  </>
-                ) : null}
-                {!isEditable ? (
-                  <CatalogWantedLauncherPanel
-                    key={`${wantedInstanceKey}:proposal`}
-                    partnerUsername={username}
-                    wantedPokemon={withInstanceData(activePokemon) as CatalogWantedPokemon}
-                    partnerLists={lists}
-                    partnerInstances={instances}
-                  />
-                ) : null}
-              </WindowOverlay>
+          <div className="instance-motion-shell instance-motion-shell--wanted" style={overlayMotionStyle}>
+            <div className="wanted-instance-overlay">
+              <div className={`overlay-row other-overlays-row ${isSmallScreen ? 'column-layout' : ''}`}>
+                <WindowOverlay
+                  onClose={handleCloseOverlay}
+                  className="trade-instance-window wanted-instance-window wanted-details-window trade-unified-window"
+                >
+                  <div className="trade-pane-scroll trade-pane-scroll--offer">
+                    <div
+                      className={`trade-pane-shell trade-pane-shell--offer trade-pane-shell--wanted${
+                        !isEditable ? ' trade-pane-shell--catalog-view' : ''
+                      }`}
+                    >
+                      <WantedInstance
+                        key={wantedInstanceKey}
+                        pokemon={activePokemon as unknown as WantedOverlayPokemon}
+                        isEditable={isEditable}
+                        catalogView={!isEditable}
+                        compactListingView={isEditable}
+                        onPreviewInstanceDataChange={handleInstancePreviewDataChange}
+                      />
+                      {isEditable && activePokemon.instanceData?.instance_id ? (
+                        <>
+                          <WantedDetails
+                            key={`${wantedInstanceKey}:preference-summary`}
+                            pokemon={withInstanceData(activePokemon) as WantedDetailsPokemon}
+                            lists={lists}
+                            instances={instances}
+                            sortType={sortType}
+                            sortMode={sortMode}
+                            openTradeOverlay={handleOpenTradeOverlay}
+                            variants={variants}
+                            isEditable={false}
+                            summaryMode
+                          />
+                          <TradePreferenceHandoff
+                            mode="wanted"
+                            instanceId={activePokemon.instanceData.instance_id}
+                            compact
+                          />
+                        </>
+                      ) : null}
+                      {!isEditable ? (
+                        <CatalogWantedLauncherPanel
+                          key={`${wantedInstanceKey}:proposal`}
+                          partnerUsername={username}
+                          wantedPokemon={withInstanceData(activePokemon) as CatalogWantedPokemon}
+                          partnerLists={lists}
+                          partnerInstances={instances}
+                        />
+                      ) : null}
+                    </div>
+                  </div>
+                </WindowOverlay>
+              </div>
             </div>
           </div>
         );
@@ -386,7 +397,8 @@ const InstanceOverlay: React.FC<InstanceOverlayProps> = ({
     }
   };
 
-  const showTypeBackground = currentOverlay === 'caught' || currentOverlay === 'trade';
+  const showTypeBackground =
+    currentOverlay === 'caught' || currentOverlay === 'trade' || currentOverlay === 'wanted';
   const bgColor = showTypeBackground ? getCaughtBgColor(liveSelectedPokemon) : null;
 
   // recompute the background image whenever the selected pokemon changes
@@ -411,7 +423,7 @@ const InstanceOverlay: React.FC<InstanceOverlayProps> = ({
     <OverlayPortal>
       <div
         ref={overlayRootRef}
-        className={`instance-overlay ${currentOverlay === 'caught' ? 'caught-mode' : ''} ${currentOverlay === 'trade' ? 'trade-mode' : ''} ${isSwiping ? 'is-swiping' : ''} ${isHorizontalSwiping ? 'is-horizontal-swiping' : ''}`}
+        className={`instance-overlay ${currentOverlay === 'caught' ? 'caught-mode' : ''} ${currentOverlay === 'trade' ? 'trade-mode' : ''} ${currentOverlay === 'wanted' ? 'wanted-mode' : ''} ${isSwiping ? 'is-swiping' : ''} ${isHorizontalSwiping ? 'is-horizontal-swiping' : ''}`}
         style={{ pointerEvents: ignorePointerEvents ? 'none' : 'auto' }}
         {...swipeCaptureHandlers}
         onMouseLeave={cancelSwipeAndResetOffset}

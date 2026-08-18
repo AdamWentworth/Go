@@ -344,6 +344,8 @@
 .preference-target-summary .preference-target-summary__list {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(96px, 1fr));
+  grid-auto-rows: minmax(136px, auto);
+  align-content: start;
   gap: 0.45rem;
   max-height: min(34dvh, 19rem);
   margin: 0;

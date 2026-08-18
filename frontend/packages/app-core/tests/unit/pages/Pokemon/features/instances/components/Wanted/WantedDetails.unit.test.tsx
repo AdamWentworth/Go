@@ -220,4 +220,11 @@ describe('WantedDetails', () => {
 
     expect(screen.getByTestId('not-trade-count')).toHaveTextContent('0');
   });
+
+  it('labels the summary as Pokémon available for this wanted listing', () => {
+    render(<WantedDetails {...makeProps({ summaryMode: true })} />);
+
+    expect(screen.getByText('Available for trade')).toBeInTheDocument();
+    expect(screen.queryByText('Acceptable offers')).not.toBeInTheDocument();
+  });
 });

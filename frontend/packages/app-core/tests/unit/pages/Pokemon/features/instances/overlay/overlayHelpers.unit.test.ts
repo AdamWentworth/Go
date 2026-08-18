@@ -102,6 +102,14 @@ describe('overlay helpers', () => {
         }),
       ),
     ).toBe('/images/backgrounds/bg_lucky.png');
+    expect(
+      getBackgroundImageSrc(
+        pokemon({
+          type1_name: 'Water',
+          instanceData: { is_wanted: true, pref_lucky: true },
+        }),
+      ),
+    ).toBe('/images/backgrounds/bg_lucky.png');
   });
 
   it('locks swipe axis only after intent is clear', () => {
