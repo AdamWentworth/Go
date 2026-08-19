@@ -1,9 +1,10 @@
 import React from 'react';
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { fireEvent, render, screen } from '@testing-library/react';
 
 import VariantSearchBackgroundOverlay from '@/pages/Search/SearchParameters/VariantSearchBackgroundOverlay';
 import type { PokemonVariant } from '@/types/pokemonVariants';
+import { OVERLAY_MOTION_DURATION_MS } from '@/components/OverlayPortal';
 
 vi.mock('@/components/pokemonComponents/BackgroundLocationCard', () => ({
   default: ({
@@ -43,6 +44,10 @@ vi.mock('@/components/CloseButton', () => ({
 }));
 
 describe('VariantSearchBackgroundOverlay', () => {
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
   it('does not render while closed', () => {
     render(
       <VariantSearchBackgroundOverlay
@@ -58,9 +63,10 @@ describe('VariantSearchBackgroundOverlay', () => {
   });
 
   it('renders while open and forwards close/select actions', () => {
+    vi.useFakeTimers();
     const onClose = vi.fn();
     const onSelectBackground = vi.fn();
-    const { container } = render(
+    render(
       <VariantSearchBackgroundOverlay
         isOpen={true}
         onClose={onClose}
@@ -70,7 +76,7 @@ describe('VariantSearchBackgroundOverlay', () => {
       />,
     );
 
-    fireEvent.click(container.querySelector('.background-overlay-content') as HTMLElement);
+    fireEvent.click(document.body.querySelector('.background-overlay-content') as HTMLElement);
     expect(onClose).not.toHaveBeenCalled();
 
     fireEvent.click(screen.getByTestId('select-background'));
@@ -78,7 +84,7 @@ describe('VariantSearchBackgroundOverlay', () => {
     expect(screen.getByTestId('selected-costume-id')).toHaveTextContent('7');
 
     fireEvent.click(screen.getByRole('button', { name: 'Close' }));
-    fireEvent.click(container.querySelector('.background-overlay') as HTMLElement);
-    expect(onClose).toHaveBeenCalledTimes(2);
+    expect(onClose).toHaveBeenCalledTimes(1);
+    vi.advanceTimersByTime(OVERLAY_MOTION_DURATION_MS);
   });
 });

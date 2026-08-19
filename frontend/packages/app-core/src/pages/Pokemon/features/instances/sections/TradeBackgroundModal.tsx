@@ -29,7 +29,7 @@ const TradeBackgroundModal: React.FC<TradeBackgroundModalProps> = ({
   }
 
   return (
-    <OverlayPortal>
+    <OverlayPortal onClose={onClose} closeOnBackdrop>
       <div className="background-overlay" onClick={onClose}>
         <div className="background-overlay-content" onClick={(e) => e.stopPropagation()}>
           <BackgroundLocationCard

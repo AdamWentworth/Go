@@ -48,7 +48,7 @@ const ColorSettingsOverlay: React.FC<ColorSettingsOverlayProps> = ({ colorPreset
   const secondRow = presets.slice(2);
 
   return (
-    <OverlayPortal>
+    <OverlayPortal onClose={onClose}>
       <div className="color-overlay">
         <WindowOverlay onClose={onClose} className="color-settings-overlay">
           <div className="color-settings-panel">

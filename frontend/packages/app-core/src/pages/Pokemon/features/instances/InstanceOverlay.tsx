@@ -420,7 +420,7 @@ const InstanceOverlay: React.FC<InstanceOverlayProps> = ({
   }, [currentOverlay, bgImageSrc, liveSelectedPokemon?.name]);
 
   return (
-    <OverlayPortal>
+    <OverlayPortal onClose={onClose}>
       <div
         ref={overlayRootRef}
         className={`instance-overlay ${currentOverlay === 'caught' ? 'caught-mode' : ''} ${currentOverlay === 'trade' ? 'trade-mode' : ''} ${currentOverlay === 'wanted' ? 'wanted-mode' : ''} ${isSwiping ? 'is-swiping' : ''} ${isHorizontalSwiping ? 'is-horizontal-swiping' : ''}`}

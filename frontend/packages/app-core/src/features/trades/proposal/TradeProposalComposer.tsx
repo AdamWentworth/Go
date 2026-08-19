@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import './TradeProposalComposer.css';
 
 import FriendshipManager from '@/pages/Pokemon/features/instances/components/Wanted/FriendshipManager';
@@ -61,7 +61,6 @@ const TradeProposalComposer: React.FC<TradeProposalComposerProps> = ({
   } = context;
   const proposeTrade = useTradeStore((s) => s.proposeTrade);
   const { alert } = useModal();
-  const containerRef = useRef<HTMLDivElement | null>(null);
 
   const matchedInstances = useMemo(
     () =>
@@ -86,15 +85,6 @@ const TradeProposalComposer: React.FC<TradeProposalComposerProps> = ({
   useEffect(() => {
     if (matchedInstances.length) setSelectedMatchedInstance(matchedInstances[0]);
   }, [matchedInstances]);
-
-  useEffect(() => {
-    const handler = (e: MouseEvent) => {
-      if (containerRef.current && !containerRef.current.contains(e.target as Node))
-        onClose();
-    };
-    document.addEventListener('mousedown', handler);
-    return () => document.removeEventListener('mousedown', handler);
-  }, [onClose]);
 
   const { stardustCost, isSpecialTrade, isRegisteredTrade } = useCalculateStardustCost(
     friendship_level,
@@ -167,9 +157,9 @@ const TradeProposalComposer: React.FC<TradeProposalComposerProps> = ({
   const matchPoke = hasInstanceData(selectedMatchedInstance) ? selectedMatchedInstance : undefined;
 
   return (
-    <OverlayPortal>
+    <OverlayPortal onClose={onClose} closeOnBackdrop>
       <div className="trade-proposal-overlay">
-        <div className="trade-proposal-container" ref={containerRef}>
+        <div className="trade-proposal-container">
         <CloseButton onClick={onClose} />
 
         <header className="trade-proposal-header">

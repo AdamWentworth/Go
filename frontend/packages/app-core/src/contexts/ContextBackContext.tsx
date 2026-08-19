@@ -14,6 +14,7 @@ import {
   useNavigationType,
   type Location,
 } from 'react-router';
+import { requestCloseTopmostMotionOverlay } from '@/components/overlayMotionStack';
 
 type ContextBackHandler = () => boolean | void;
 
@@ -84,6 +85,8 @@ export function ContextBackProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const handleContextBack = useCallback(() => {
+    if (requestCloseTopmostMotionOverlay()) return true;
+
     const entries = entriesRef.current;
 
     for (let index = entries.length - 1; index >= 0; index -= 1) {

@@ -12,11 +12,9 @@
     align-items: center;
     z-index: 2005;
     opacity: 1;
-    transition: opacity 0.3s ease;
-  }
-  
-  .modal-overlay.fade-out {
-    opacity: 0;
+    transition:
+      translate var(--motion-overlay-duration, 280ms) var(--motion-overlay-easing, cubic-bezier(0.22, 1, 0.36, 1)),
+      opacity var(--motion-overlay-duration, 280ms) ease;
   }
   
   .alert-modal {
@@ -35,4 +33,4 @@
   .alert-modal p {
     margin: 0;
     padding: 0;
-  }  
+  }

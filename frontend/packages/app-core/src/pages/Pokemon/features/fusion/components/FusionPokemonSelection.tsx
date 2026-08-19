@@ -48,7 +48,7 @@ const FusionPokemonSelection: React.FC<FusionPokemonSelectionProps> = ({
   };
 
   return (
-    <OverlayPortal>
+    <OverlayPortal onClose={onCancel} closeOnBackdrop>
       <div className="background-overlay fusion-pokemon-selection-overlay" onClick={onCancel}>
         <div
           className="background-overlay-content fusion-modal-content"

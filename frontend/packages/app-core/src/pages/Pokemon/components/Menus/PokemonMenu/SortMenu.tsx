@@ -121,7 +121,7 @@ const SortMenu: React.FC<SortMenuProps> = ({
 
       {/* Sort Menu */}
       {isMenuVisible && (
-        <OverlayPortal>
+        <OverlayPortal onClose={() => setIsAnimating(false)}>
           <div
             className={`sort-menu-overlay ${isAnimating ? 'visible' : ''}`}
             onClick={handleBackdropClick}

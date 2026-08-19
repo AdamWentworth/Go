@@ -127,6 +127,7 @@ const ActionMenu: React.FC = () => {
         <div
           className={`action-menu-overlay ${isOpen ? 'active' : ''}`}
           data-menu-state={isOpen ? 'open' : 'closed'}
+          data-overlay-motion={isOpen ? 'entered' : 'exiting'}
         >
           <CloseButton onClick={closeMenu} disabled={!isCloseEnabled} />
 

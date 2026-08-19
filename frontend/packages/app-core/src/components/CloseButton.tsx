@@ -3,6 +3,7 @@ import React, { ButtonHTMLAttributes } from 'react';
 import './CloseButton.css';
 import { useTheme } from '../contexts/ThemeContext';
 import { useIsTopmostCloseButton } from './closeButtonStack';
+import { useOverlayMotion } from './OverlayPortal';
 
 export type CloseButtonProps = ButtonHTMLAttributes<HTMLButtonElement>;
 
@@ -15,6 +16,7 @@ const CloseButton: React.FC<CloseButtonProps> = ({
 }) => {
   const { isLightMode } = useTheme();
   const isTopmost = useIsTopmostCloseButton();
+  const overlayMotion = useOverlayMotion();
 
   const imageSrc = isLightMode
     ? '/images/close-button-light.png'
@@ -25,7 +27,16 @@ const CloseButton: React.FC<CloseButtonProps> = ({
       {...buttonProps}
       className={`close-button${isTopmost ? '' : ' close-button--stacked-beneath'} ${className}`}
       type="button"
-      onClick={onClick}
+      onClick={(event) => {
+        if (!overlayMotion) {
+          onClick?.(event);
+          return;
+        }
+
+        event.preventDefault();
+        event.stopPropagation();
+        overlayMotion.requestClose(() => onClick?.(event));
+      }}
       style={style}
       disabled={disabled || !isTopmost}
       aria-hidden={!isTopmost || undefined}

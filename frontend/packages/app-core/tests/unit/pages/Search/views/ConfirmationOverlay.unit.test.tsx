@@ -1,10 +1,15 @@
 import React from 'react';
-import { describe, expect, it, vi } from 'vitest';
-import { fireEvent, render, screen } from '@testing-library/react';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import { act, fireEvent, render, screen } from '@testing-library/react';
 
 import ConfirmationOverlay from '@/pages/Search/views/ConfirmationOverlay';
+import { OVERLAY_MOTION_DURATION_MS } from '@/components/OverlayPortal';
 
 describe('ConfirmationOverlay', () => {
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
   it('renders the expected confirmation prompt', () => {
     render(
       <ConfirmationOverlay
@@ -24,6 +29,7 @@ describe('ConfirmationOverlay', () => {
   });
 
   it('calls onConfirm and onClose when Yes is clicked', () => {
+    vi.useFakeTimers();
     const onConfirm = vi.fn();
     const onClose = vi.fn();
 
@@ -38,16 +44,19 @@ describe('ConfirmationOverlay', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Yes' }));
 
+    expect(onConfirm).not.toHaveBeenCalled();
+    act(() => vi.advanceTimersByTime(OVERLAY_MOTION_DURATION_MS));
     expect(onConfirm).toHaveBeenCalledTimes(1);
     expect(onClose).toHaveBeenCalledTimes(1);
   });
 
   it('calls only onClose for No and blocks click propagation to parent', () => {
+    vi.useFakeTimers();
     const onConfirm = vi.fn();
     const onClose = vi.fn();
     const parentClick = vi.fn();
 
-    const { container } = render(
+    render(
       <div onClick={parentClick}>
         <ConfirmationOverlay
           username="user"
@@ -60,10 +69,11 @@ describe('ConfirmationOverlay', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'No' }));
     expect(onConfirm).not.toHaveBeenCalled();
+    act(() => vi.advanceTimersByTime(OVERLAY_MOTION_DURATION_MS));
     expect(onClose).toHaveBeenCalledTimes(1);
     expect(parentClick).not.toHaveBeenCalled();
 
-    fireEvent.click(container.querySelector('.confirmation-overlay') as Element);
+    fireEvent.click(document.body.querySelector('.confirmation-overlay') as Element);
     expect(parentClick).not.toHaveBeenCalled();
   });
 });

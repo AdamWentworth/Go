@@ -6,6 +6,8 @@ import './ResetPasswordOverlay.css';
 import { resetPassword } from '../../services/authService';
 import { toast } from 'react-toastify';
 import { isApiError } from '../../utils/errors';
+import OverlayDismissButton from '../../components/OverlayDismissButton';
+import OverlayPortal from '../../components/OverlayPortal';
 
 interface ResetPasswordOverlayProps {
   onClose: () => void;
@@ -45,7 +47,8 @@ const ResetPasswordOverlay: FC<ResetPasswordOverlayProps> = ({ onClose }) => {
   };
 
   return (
-    <div className="reset-password-overlay" role="presentation" onMouseDown={onClose}>
+    <OverlayPortal onClose={onClose} closeOnBackdrop>
+      <div className="reset-password-overlay" role="presentation">
       <section
         className="overlay-content"
         role="dialog"
@@ -53,9 +56,9 @@ const ResetPasswordOverlay: FC<ResetPasswordOverlayProps> = ({ onClose }) => {
         aria-labelledby="reset-password-title"
         onMouseDown={(event) => event.stopPropagation()}
       >
-        <button type="button" className="close-button" aria-label="Close password reset" onClick={onClose}>
+        <OverlayDismissButton className="close-button" aria-label="Close password reset" onDismiss={onClose}>
           &times;
-        </button>
+        </OverlayDismissButton>
         <div className="reset-password-overlay__icon"><FaKey /></div>
         <span className="reset-password-overlay__eyebrow">Account recovery</span>
         <h2 id="reset-password-title">Reset your password</h2>
@@ -86,7 +89,8 @@ const ResetPasswordOverlay: FC<ResetPasswordOverlayProps> = ({ onClose }) => {
           account matches what you entered.
         </small>
       </section>
-    </div>
+      </div>
+    </OverlayPortal>
   );
 };
 

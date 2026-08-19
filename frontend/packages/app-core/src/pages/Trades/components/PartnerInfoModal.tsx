@@ -13,6 +13,7 @@ import { useModal } from '@/contexts/ModalContext';
 import type { PartnerInfo } from '@shared-contracts/trades';
 
 import CloseButton from '@/components/CloseButton';
+import OverlayPortal from '@/components/OverlayPortal';
 import { useTheme } from '@/contexts/ThemeContext';
 
 import 'ol/ol.css';
@@ -102,7 +103,8 @@ function PartnerInfoModal({ partnerInfo, onClose }: PartnerInfoModalProps) {
   };
 
   return (
-    <div className="partner-modal-overlay">
+    <OverlayPortal onClose={onClose} closeOnBackdrop>
+      <div className="partner-modal-overlay">
       <div className="modal-content">
         <CloseButton onClick={onClose} />
         <h2>Partner Info</h2>
@@ -146,7 +148,8 @@ function PartnerInfoModal({ partnerInfo, onClose }: PartnerInfoModalProps) {
           Pokemon Go friends can be messaged directly using Campfire!
         </p>
       </div>
-    </div>
+      </div>
+    </OverlayPortal>
   );
 }
 

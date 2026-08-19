@@ -1,5 +1,5 @@
 // src/features/instances/components/UpdateForTradeModal.tsx
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import './UpdateForTradeModal.css';
 
 import { useInstancesStore } from '@/features/instances/store/useInstancesStore';
@@ -11,6 +11,7 @@ import type { PokemonVariant } from '@/types/pokemonVariants';
 import { createScopedLogger } from '@/utils/logger';
 import { canMarkInstanceForTrade } from '@/features/trades/proposal/proposalCandidateHelpers';
 import CloseButton from '@/components/CloseButton';
+import OverlayPortal from '@/components/OverlayPortal';
 
 const log = createScopedLogger('UpdateForTradeModal');
 
@@ -35,7 +36,6 @@ const UpdateForTradeModal: React.FC<UpdateForTradeModalProps> = ({
   const [variantData, setVariantData] = useState<PokemonVariant | null>(null);
   const [restructuredData, setRestructuredData] = useState<VariantWithInstance[]>([]);
 
-  const modalContentRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     const fetchVariant = async () => {
@@ -105,24 +105,15 @@ const UpdateForTradeModal: React.FC<UpdateForTradeModalProps> = ({
     }
   };
 
-  useEffect(() => {
-    const handleClickOutside = (e: MouseEvent) => {
-      if (modalContentRef.current && !modalContentRef.current.contains(e.target as Node)) {
-        onClose();
-      }
-    };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, [onClose]);
-
   return (
-    <div
-      className="update-for-trade-modal-overlay"
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="modal-title"
-    >
-      <div className="modal-content" ref={modalContentRef}>
+    <OverlayPortal onClose={onClose} closeOnBackdrop>
+      <div
+        className="update-for-trade-modal-overlay"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="modal-title"
+      >
+      <div className="modal-content">
         <CloseButton onClick={onClose} />
 
         <h2 id="modal-title">Update Instances for Trade</h2>
@@ -160,7 +151,8 @@ const UpdateForTradeModal: React.FC<UpdateForTradeModalProps> = ({
           </div>
         )}
       </div>
-    </div>
+      </div>
+    </OverlayPortal>
   );
 };
 

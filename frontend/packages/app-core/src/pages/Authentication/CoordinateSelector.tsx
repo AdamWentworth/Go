@@ -16,6 +16,7 @@ import { useTheme } from '../../contexts/ThemeContext';
 import { useModal } from '../../contexts/ModalContext';
 import './CoordinateSelector.css';
 import CloseButton from '../../components/CloseButton';
+import OverlayPortal from '../../components/OverlayPortal';
 import LocationOptionsOverlay from './LocationOptionsOverlay';
 import { fetchLocationOptions } from '../../services/locationServices';
 import type { LocationSuggestion } from '../../types/location';
@@ -140,7 +141,8 @@ const CoordinateSelector: FC<CoordinateSelectorProps> = ({
   };
 
   return (
-    <div className="coordinate-selector-overlay">
+    <OverlayPortal onClose={onClose}>
+      <div className="coordinate-selector-overlay">
       <div className="coordinate-selector-map" ref={mapContainer} />
       <CloseButton onClick={onClose} />
 
@@ -157,7 +159,8 @@ const CoordinateSelector: FC<CoordinateSelectorProps> = ({
       {!loading && locationOptions.length === 0 && !showOptionsOverlay && (
         <p className="no-locations-text">Click on the map to set coordinates.</p>
       )}
-    </div>
+      </div>
+    </OverlayPortal>
   );
 };
 

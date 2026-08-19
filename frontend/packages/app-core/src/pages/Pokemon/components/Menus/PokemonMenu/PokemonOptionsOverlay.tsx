@@ -92,7 +92,7 @@ const PokemonOptionsOverlay: React.FC<PokemonOptionsOverlayProps> = ({
   };
 
   return (
-    <OverlayPortal>
+    <OverlayPortal onClose={onClose}>
       <div
         className="pokemon-options-overlay"
         style={{ pointerEvents: ignorePointer ? 'none' : 'auto' }}
