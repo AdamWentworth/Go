@@ -12,6 +12,7 @@
   display: grid;
   width: min(720px, 94vw);
   height: 100%;
+  height: 100dvh;
   grid-template-rows: auto auto minmax(0, 1fr) auto;
   border-left: 1px solid color-mix(in srgb, var(--color-text-primary) 18%, transparent);
   background: var(--color-search-section-surface);
@@ -104,9 +105,7 @@
   overscroll-behavior: contain;
 }
 
-.search-filter-sheet__body > .pokemon-variant-container,
-.search-filter-sheet__body > .location-search,
-.search-filter-sheet__body > .ownership-status-container {
+.search-filter-sheet__body > .search-filter-panel {
   width: 100%;
   max-width: none;
 }
@@ -150,14 +149,6 @@
   grid-column: 1 / -1;
 }
 
-.search-filter-sheet .search-advanced-variant {
-  padding: 0;
-}
-
-.search-filter-sheet .search-advanced-variant .main-content {
-  min-width: 0;
-}
-
 @media (max-width: 600px) {
   .search-filter-sheet {
     width: 100%;
@@ -179,7 +170,7 @@
   }
 
   .search-filter-sheet__body {
-    padding: 13px 10px;
+    padding: 13px 10px 24px;
   }
 
   .search-filter-sheet__footer {
@@ -190,19 +181,5 @@
   .search-filter-sheet__footer button {
     padding-inline: 10px;
     font-size: 0.86rem;
-  }
-
-  .search-filter-sheet .search-advanced-variant .main-content {
-    flex-direction: column;
-    align-items: center;
-  }
-
-  .search-filter-sheet .ownership-status-container {
-    height: auto;
-    padding-right: 0;
-  }
-
-  .search-filter-sheet .ownership-row {
-    width: 100%;
   }
 }

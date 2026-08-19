@@ -7,10 +7,8 @@ import {
   FaSlidersH,
 } from 'react-icons/fa';
 
-import {
-  VariantSearchAdvancedFields,
-  VariantSearchPrimaryInput,
-} from './SearchParameters/VariantSearch';
+import { VariantSearchPrimaryInput } from './SearchParameters/VariantSearch';
+import AppearanceFilters from './SearchParameters/AppearanceFilters';
 import useVariantSearchController from './SearchParameters/useVariantSearchController';
 import LocationSearch from './SearchParameters/LocationSearch';
 import OwnershipSearch from './SearchParameters/OwnershipSearch';
@@ -407,16 +405,17 @@ const PokemonSearchBar: React.FC<PokemonSearchBarProps> = ({
 
       <SearchFilterSheet
         appearance={
-          <VariantSearchAdvancedFields
+          <AppearanceFilters
             controller={variantController}
-            pokemon={pokemon}
-            isShiny={isShiny}
-            isShadow={isShadow}
             costume={costume}
-            selectedForm={selectedForm}
-            selectedMoves={selectedMoves}
             dynamax={dynamax}
             gigantamax={gigantamax}
+            isShadow={isShadow}
+            isShiny={isShiny}
+            pokemon={pokemon}
+            selectedForm={selectedForm}
+            selectedGender={selectedGender}
+            selectedMoves={selectedMoves}
           />
         }
         canReset={hasActiveFilters}

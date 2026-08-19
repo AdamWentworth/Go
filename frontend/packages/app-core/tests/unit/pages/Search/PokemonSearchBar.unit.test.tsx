@@ -89,7 +89,10 @@ let mockConfig: MockConfig = { ...defaultMockConfig };
 vi.mock('@/pages/Search/SearchParameters/VariantSearch', () => ({
   default: () => <div data-testid="legacy-variant-search" />,
   VariantSearchPrimaryInput: () => <div data-testid="primary-pokemon-input" />,
-  VariantSearchAdvancedFields: () => <div data-testid="variant-search" />,
+}));
+
+vi.mock('@/pages/Search/SearchParameters/AppearanceFilters', () => ({
+  default: () => <div data-testid="variant-search" />,
 }));
 
 vi.mock('@/pages/Search/SearchParameters/useVariantSearchController', () => ({

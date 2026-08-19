@@ -4,7 +4,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import useVariantSearchController from '@/pages/Search/SearchParameters/useVariantSearchController';
 import type { BackgroundSelection } from '@/pages/Search/SearchParameters/VariantSearchBackgroundOverlay';
-import type { SelectedMoves } from '@/pages/Search/SearchParameters/VariantComponents/MovesSearch';
+import type { SelectedMoves } from '@/pages/Search/utils/buildPokemonSearchQuery';
 import type { PokemonVariant } from '@/types/pokemonVariants';
 
 const validatePokemonMock = vi.fn();
@@ -184,6 +184,21 @@ describe('useVariantSearchController', () => {
 
     expect(setDynamax).toHaveBeenCalledWith(false);
     expect(setGigantamax).toHaveBeenCalledWith(true);
+  });
+
+  it('sets an explicit Max mode without relying on the cycle order', () => {
+    const setDynamax = toSetter<boolean>();
+    const setGigantamax = toSetter<boolean>();
+    const args = makeArgs({ setDynamax, setGigantamax });
+    const { result } = renderHook(() => useVariantSearchController(args));
+
+    act(() => result.current.setMaxMode('gigantamax'));
+    expect(setDynamax).toHaveBeenLastCalledWith(false);
+    expect(setGigantamax).toHaveBeenLastCalledWith(true);
+
+    act(() => result.current.setMaxMode('standard'));
+    expect(setDynamax).toHaveBeenLastCalledWith(false);
+    expect(setGigantamax).toHaveBeenLastCalledWith(false);
   });
 
   it('resets costume when costume dropdown is closed', () => {

@@ -25,7 +25,7 @@ import {
   type VariantValidationState,
 } from './variantSearchControllerHelpers';
 import type { BackgroundSelection } from './VariantSearchBackgroundOverlay';
-import type { SelectedMoves } from './VariantComponents/MovesSearch';
+import type { SelectedMoves } from '../utils/buildPokemonSearchQuery';
 import type { PokemonVariant } from '@/types/pokemonVariants';
 
 export interface UseVariantSearchControllerArgs {
@@ -65,6 +65,9 @@ export interface UseVariantSearchControllerResult {
   backgroundAllowed: boolean;
   selectedCostumeId: number | undefined;
   canDynamax: boolean;
+  hasDynamax: boolean;
+  hasGigantamax: boolean;
+  setMaxMode: (mode: 'standard' | 'dynamax' | 'gigantamax') => void;
   toggleMax: () => void;
   setShowBackgroundOverlay: React.Dispatch<React.SetStateAction<boolean>>;
   handleImageError: () => void;
@@ -182,6 +185,11 @@ const useVariantSearchController = ({
     if (next.gigantamax !== gigantamax) {
       setGigantamax(next.gigantamax);
     }
+  };
+
+  const setMaxMode = (mode: 'standard' | 'dynamax' | 'gigantamax') => {
+    setDynamax(mode === 'dynamax');
+    setGigantamax(mode === 'gigantamax');
   };
 
   const handleGenderChange = (gender: string | null) => {
@@ -369,6 +377,9 @@ const useVariantSearchController = ({
     backgroundAllowed,
     selectedCostumeId,
     canDynamax,
+    hasDynamax,
+    hasGigantamax,
+    setMaxMode,
     toggleMax,
     setShowBackgroundOverlay,
     handleImageError,
