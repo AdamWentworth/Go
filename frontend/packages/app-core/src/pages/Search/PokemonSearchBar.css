@@ -34,6 +34,60 @@
   min-width: 0;
 }
 
+.search-primary-pokemon-control {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 8px;
+}
+
+.search-primary-pokemon-control .pokemon-search-row {
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+.selected-pokemon-preview {
+  position: relative;
+  display: grid;
+  box-sizing: border-box;
+  width: 48px;
+  height: 48px;
+  flex: 0 0 48px;
+  place-items: center;
+  overflow: hidden;
+  border: 1px solid color-mix(in srgb, var(--color-text-primary) 18%, transparent);
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--color-text-primary) 6%, transparent);
+  background-position: center;
+  background-size: cover;
+}
+
+.selected-pokemon-preview.has-background::after {
+  position: absolute;
+  inset: 0;
+  background: color-mix(in srgb, var(--color-search-section-surface) 18%, transparent);
+  content: '';
+}
+
+.selected-pokemon-preview__pokemon {
+  position: relative;
+  z-index: 1;
+  width: 92%;
+  height: 92%;
+  object-fit: contain;
+  filter: drop-shadow(0 2px 2px rgba(0, 0, 0, 0.28));
+}
+
+.selected-pokemon-preview__badge {
+  position: absolute;
+  z-index: 2;
+  top: 2px;
+  right: 2px;
+  width: 17px;
+  height: 17px;
+  object-fit: contain;
+}
+
 .search-primary-pokemon-field > label,
 .search-primary-ownership legend {
   display: block;
@@ -331,14 +385,13 @@
   }
 
   .pokemon-search-bar--compact .search-mobile-summary {
-    display: grid;
+    display: flex;
   }
 
   .search-mobile-summary {
     box-sizing: border-box;
     width: calc(100% - 20px);
     min-width: 0;
-    grid-template-columns: minmax(0, 1fr) auto;
     align-items: center;
     gap: 10px;
     padding: 10px;
@@ -351,6 +404,7 @@
   .search-mobile-summary__content {
     display: flex;
     min-width: 0;
+    flex: 1 1 auto;
     flex-direction: column;
     gap: 2px;
   }
@@ -430,7 +484,14 @@
     font: inherit;
     font-size: 0.72rem;
     font-weight: 850;
+    flex: 0 0 auto;
     cursor: pointer;
+  }
+
+  .search-mobile-summary__preview {
+    width: 50px;
+    height: 50px;
+    flex-basis: 50px;
   }
 
   .search-mobile-summary > button:focus-visible {

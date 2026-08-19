@@ -13,6 +13,7 @@ import useVariantSearchController from './SearchParameters/useVariantSearchContr
 import LocationSearch from './SearchParameters/LocationSearch';
 import OwnershipSearch from './SearchParameters/OwnershipSearch';
 import SearchFilterSheet, { type FilterSection } from './SearchFilterSheet';
+import SelectedPokemonPreview from './SearchParameters/SelectedPokemonPreview';
 import './PokemonSearchBar.css';
 import { createScopedLogger } from '@/utils/logger';
 import type { PokemonVariant } from '@/types/pokemonVariants';
@@ -359,6 +360,13 @@ const PokemonSearchBar: React.FC<PokemonSearchBarProps> = ({
         aria-live="polite"
         className="search-mobile-summary"
       >
+        <SelectedPokemonPreview
+          className="search-mobile-summary__preview"
+          controller={variantController}
+          dynamax={dynamax}
+          gigantamax={gigantamax}
+          pokemon={pokemon}
+        />
         <div className="search-mobile-summary__content">
           <span>Current search</span>
           <strong>{compactPokemonLabel}</strong>
@@ -381,17 +389,20 @@ const PokemonSearchBar: React.FC<PokemonSearchBarProps> = ({
         </div>
         <button
           aria-controls="pokemon-search-primary-controls"
+          aria-label="Modify search"
           onClick={handleModifySearch}
           type="button"
         >
           <FaSlidersH aria-hidden="true" />
-          Modify search
+          Modify
         </button>
       </section>
 
       <div className="search-primary-surface" id="pokemon-search-primary-controls">
         <VariantSearchPrimaryInput
           controller={variantController}
+          dynamax={dynamax}
+          gigantamax={gigantamax}
           pokemon={pokemon}
         />
 

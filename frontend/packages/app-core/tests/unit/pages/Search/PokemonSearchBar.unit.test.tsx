@@ -144,6 +144,10 @@ vi.mock('@/pages/Search/SearchParameters/useVariantSearchController', () => ({
     ]);
 
     return {
+      handleImageError: vi.fn(),
+      imageError: false,
+      imageUrl: '/images/bulbasaur.png',
+      selectedBackground: null,
       resetVariantFilters: () => {
         setIsShiny(false);
         setIsShadow(false);
@@ -404,6 +408,10 @@ describe('PokemonSearchBar', () => {
     expect(summary).toHaveTextContent('Caught');
     expect(summary).toHaveTextContent('Seattle, WA, USA');
     expect(summary).toHaveTextContent('2 filters');
+    expect(screen.getByAltText('Bulbasaur preview')).toHaveAttribute(
+      'src',
+      '/images/bulbasaur.png',
+    );
 
     fireEvent.click(screen.getByRole('button', { name: 'Modify search' }));
     expect(searchBar).not.toHaveClass('pokemon-search-bar--compact');
