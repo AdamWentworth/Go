@@ -262,6 +262,21 @@ describe('InstanceOverlay', () => {
     expect(screen.getByTestId('caught-instance')).toBeInTheDocument();
   });
 
+  it('renders the Wanted overlay for a Most Wanted tag result', () => {
+    renderOverlay('Most Wanted', {
+      instanceData: {
+        instance_id: 'most-wanted-1',
+        is_wanted: true,
+        most_wanted: true,
+      },
+    });
+
+    expect(screen.getByTestId('wanted-instance')).toBeInTheDocument();
+    expect(screen.getByTestId('wanted-details')).toBeInTheDocument();
+    expect(screen.queryByTestId('caught-instance')).not.toBeInTheDocument();
+    expect(document.querySelector('.instance-overlay')).toHaveClass('wanted-mode');
+  });
+
   it('renders trade details and proposal in one unified window', () => {
     renderOverlay('trade');
     expect(screen.getByTestId('trade-instance')).toBeInTheDocument();

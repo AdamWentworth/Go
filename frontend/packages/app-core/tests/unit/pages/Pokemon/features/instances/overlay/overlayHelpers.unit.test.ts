@@ -31,6 +31,24 @@ describe('overlay helpers', () => {
     ).toBe('trade');
   });
 
+  it('treats Most Wanted as a Wanted filter rather than a separate ownership type', () => {
+    expect(
+      deriveInitialOverlay(
+        'Most Wanted',
+        pokemon({ instanceData: { is_wanted: true, most_wanted: true } }),
+      ),
+    ).toBe('wanted');
+  });
+
+  it('falls back to ownership flags when a filtered instance has no status', () => {
+    expect(
+      deriveInitialOverlay(
+        'unknown',
+        pokemon({ instanceData: { is_wanted: true, most_wanted: true } }),
+      ),
+    ).toBe('wanted');
+  });
+
   it('falls back from unknown tag to instance status, top-level status, then caught', () => {
     expect(
       deriveInitialOverlay(
