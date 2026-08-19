@@ -2,7 +2,6 @@
   --wanted-accent: #ef5b71;
   --wanted-accent-soft: color-mix(in srgb, var(--wanted-accent) 10%, transparent);
   --wanted-border: color-mix(in srgb, var(--wanted-accent) 35%, #48605d);
-  --wanted-conditions-surface: #333;
   --caught-divider-color: color-mix(in srgb, var(--wanted-accent) 45%, #65716f);
   --caught-image-stage-size: 238px;
   --caught-stage-lift: 18px;
@@ -47,10 +46,10 @@
   max-width: 650px;
   margin: 6px auto 9px;
   padding: 9px 10px;
-  border: 0;
+  border: var(--border-instance-panel);
   border-radius: 12px;
-  background: var(--wanted-conditions-surface);
-  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.35);
+  background: var(--background-instance-panel);
+  box-shadow: var(--shadow-instance-panel);
   box-sizing: border-box;
 }
 
@@ -106,7 +105,7 @@
 
 .wanted-instance__condition-actions .icon-button:hover,
 .wanted-instance__condition-actions .icon-button:focus-visible {
-  background: rgba(255, 255, 255, 0.08);
+  background: var(--color-icon-button-hover);
 }
 
 .wanted-instance__condition-actions .icon-button:focus-visible {
@@ -257,18 +256,8 @@
 }
 
 :root[data-theme='light'] .wanted-instance {
-  --wanted-conditions-surface: linear-gradient(
-    180deg,
-    rgba(248, 255, 249, 0.98) 0%,
-    rgba(228, 241, 235, 0.96) 100%
-  );
   --wanted-border: color-mix(in srgb, var(--wanted-accent) 35%, var(--light-caught-card-border, #b9c8c4));
   color: var(--light-text-primary);
-}
-
-:root[data-theme='light'] .wanted-instance__conditions {
-  border: 1px solid rgba(157, 181, 173, 0.42);
-  box-shadow: var(--light-caught-shadow);
 }
 
 :root[data-theme='light'] .wanted-instance__gender-field > span,

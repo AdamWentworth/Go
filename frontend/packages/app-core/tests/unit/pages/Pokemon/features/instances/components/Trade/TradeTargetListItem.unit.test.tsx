@@ -56,7 +56,7 @@ describe('TradeTargetListItem', () => {
     expect(screen.getByAltText('Lucky backdrop')).toHaveClass('grey-out');
     expect(screen.getByAltText('Dynamax')).toBeInTheDocument();
     expect(screen.getByAltText('Gigantamax')).toBeInTheDocument();
-    expect(screen.getByAltText('Trade Target Bulbasaur')).toHaveClass('grey-out');
+    expect(screen.getByAltText('Wanted Pokémon Bulbasaur')).toHaveClass('grey-out');
     expect(screen.getByText('Mega Bulbasaur')).toBeInTheDocument();
     expect(screen.getByText('#001')).toBeInTheDocument();
   });

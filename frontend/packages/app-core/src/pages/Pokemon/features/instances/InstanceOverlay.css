@@ -284,7 +284,7 @@
   overflow: visible;
 }
 
-/* draw the #333 panel starting lower down, exposing the image above */
+/* Draw the themed panel lower down, exposing the image above. */
 :is(.caught-column, .trade-pane-shell--offer)::before {
   content: "";
   position: absolute;
@@ -292,9 +292,10 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background: #333;
+  border: var(--border-instance-panel);
+  background: var(--background-instance-panel);
   border-radius: 12px;
-  box-shadow: 0 8px 20px rgba(0,0,0,.35);
+  box-shadow: var(--shadow-instance-panel);
   z-index: 0;
 }
 
@@ -598,12 +599,6 @@
   border-color: transparent;
   box-shadow: none;
   color: var(--light-text-primary);
-}
-
-:root[data-theme='light'] :is(.instance-overlay.caught-mode .caught-column, .trade-pane-shell--offer)::before {
-  background: linear-gradient(180deg, rgba(248, 255, 249, 0.98) 0%, rgba(228, 241, 235, 0.96) 100%);
-  border: 1px solid rgba(157, 181, 173, 0.42);
-  box-shadow: var(--light-caught-shadow);
 }
 
 :root[data-theme='light'] .trade-pane-shell--targets {

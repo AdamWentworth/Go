@@ -222,10 +222,7 @@
   cursor: pointer;
   width: 40px; /* Adjust as needed */
   height: 40px; /* Adjust as needed */
-}
-
-:root[data-theme='light'] .pokemon-variant-container .background-button {
-  filter: var(--light-filter-invert);
+  filter: var(--filter-icon-from-white);
 }
 
 .autocomplete-suggestions {

@@ -21,6 +21,7 @@
   height: 44px;
   z-index: 10;
   object-fit: contain;
+  filter: var(--filter-icon-from-white);
 }
 
 .background-select-button {
@@ -38,7 +39,7 @@
 
 .background-select-button:hover,
 .background-select-button:focus-visible {
-  background: rgba(255, 255, 255, 0.08);
+  background: var(--color-icon-button-hover);
 }
 
 .background-select-button:focus-visible {

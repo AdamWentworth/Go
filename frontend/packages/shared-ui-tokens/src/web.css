@@ -79,6 +79,12 @@
   --color-search-moves-select-outline: #a3a3a3;
   --color-search-moves-add-button-text: #fff;
   --color-search-moves-add-button-border: #fff;
+  --background-instance-panel: #333;
+  --border-instance-panel: 0 solid transparent;
+  --shadow-instance-panel: 0 8px 20px rgba(0, 0, 0, 0.35);
+  --filter-icon-from-black: invert(1);
+  --filter-icon-from-white: none;
+  --color-icon-button-hover: rgba(255, 255, 255, 0.08);
 
   --space-1: 4px;
   --space-2: 8px;
@@ -138,6 +144,18 @@
   --light-caught-unselected-text: #8aa09a;
   --light-caught-iv-track: #d4ddd8;
   --light-caught-input-border: #a9c0ba;
+  --color-text-primary: var(--light-text-primary);
+  --color-text-secondary: var(--light-text-secondary);
+  --background-instance-panel: linear-gradient(
+    180deg,
+    rgba(248, 255, 249, 0.98) 0%,
+    rgba(228, 241, 235, 0.96) 100%
+  );
+  --border-instance-panel: 1px solid rgba(157, 181, 173, 0.42);
+  --shadow-instance-panel: var(--light-caught-shadow);
+  --filter-icon-from-black: none;
+  --filter-icon-from-white: invert(1);
+  --color-icon-button-hover: rgba(72, 97, 94, 0.12);
   --color-pokemon-menu-surface: var(--light-surface-base);
   --color-pokemon-header-surface: var(--light-surface-base);
   --color-pokemon-header-shadow: var(--light-surface-base);

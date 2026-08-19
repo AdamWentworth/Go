@@ -244,6 +244,7 @@
 .preference-edit-action img {
   width: 19px;
   height: 19px;
+  filter: var(--filter-icon-from-black);
 }
 
 .preference-edit-action__status {
