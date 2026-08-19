@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useRef, useState } from 'react';
 import {
   FaGlobe,
   FaList,
@@ -86,11 +86,14 @@ const PokemonSearchBar: React.FC<PokemonSearchBarProps> = ({
   const [tradeInWantedList, setTradeInWantedList] = useState(false);
   const [friendshipLevel, setFriendshipLevel] = useState(0);
   const [filtersOpen, setFiltersOpen] = useState(false);
+  const [hasSubmittedSearch, setHasSubmittedSearch] = useState(false);
+  const [isEditingSubmittedSearch, setIsEditingSubmittedSearch] = useState(false);
   const [initialFilterSection, setInitialFilterSection] =
     useState<FilterSection>('appearance');
 
   const [errorMessage, setErrorMessage] = useState<string | null>('');
   const [, setSelectedBoundary] = useState<string | null>(null);
+  const searchBarRef = useRef<HTMLDivElement | null>(null);
   const variantController = useVariantSearchController({
     pokemon,
     setPokemon,
@@ -152,6 +155,8 @@ const PokemonSearchBar: React.FC<PokemonSearchBarProps> = ({
     const queryParams: PokemonSearchQueryParams = preparedSearch.queryParams;
 
     log.debug('Search query parameters', queryParams);
+    setHasSubmittedSearch(true);
+    setIsEditingSubmittedSearch(false);
     await onSearch(queryParams, null);
     window.scrollTo({ top: 0, behavior: 'smooth' });
     return true;
@@ -223,6 +228,46 @@ const PokemonSearchBar: React.FC<PokemonSearchBarProps> = ({
       friendshipLevel > 0,
   );
 
+  const ownershipLabel =
+    ownershipMode === 'trade'
+      ? 'For Trade'
+      : ownershipMode === 'wanted'
+        ? 'Wanted'
+        : 'Caught';
+  const locationLabel = useCurrentLocation
+    ? 'Current location'
+    : city || `Within ${range} km`;
+  const compactPokemonLabel = [
+    isShiny ? 'Shiny' : '',
+    isShadow ? 'Shadow' : '',
+    gigantamax ? 'Gigantamax' : dynamax ? 'Dynamax' : '',
+    costume || '',
+    selectedForm || '',
+    pokemon || 'Any Pokémon',
+  ]
+    .filter(Boolean)
+    .join(' ');
+  const additionalFilterCount = [
+    isShiny,
+    isShadow,
+    Boolean(costume),
+    Boolean(selectedForm),
+    selectedMoveCount > 0,
+    Boolean(selectedGender && selectedGender !== 'Any'),
+    selectedBackgroundId != null,
+    dynamax,
+    gigantamax,
+    resultsLimit !== 5,
+    hasIvFilter,
+    onlyMatchingTrades,
+    prefLucky,
+    alreadyRegistered,
+    tradeInWantedList,
+    friendshipLevel > 0,
+  ].filter(Boolean).length;
+  const showMobileSearchSummary =
+    hasSubmittedSearch && !isEditingSubmittedSearch;
+
   const filterChips = useMemo(() => {
     const chips: string[] = [];
     if (ownershipMode !== 'caught') {
@@ -293,9 +338,58 @@ const PokemonSearchBar: React.FC<PokemonSearchBarProps> = ({
     setFriendshipLevel(0);
   };
 
+  const handleModifySearch = () => {
+    setIsEditingSubmittedSearch(true);
+    window.requestAnimationFrame(() => {
+      searchBarRef.current
+        ?.querySelector<HTMLInputElement>(
+          '.search-primary-pokemon-field input[type="text"]',
+        )
+        ?.focus();
+    });
+  };
+
   return (
-    <div className="pokemon-search-bar">
-      <div className="search-primary-surface">
+    <div
+      className={`pokemon-search-bar${showMobileSearchSummary ? ' pokemon-search-bar--compact' : ''}`}
+      ref={searchBarRef}
+    >
+      <section
+        aria-label="Current Pokémon search"
+        aria-live="polite"
+        className="search-mobile-summary"
+      >
+        <div className="search-mobile-summary__content">
+          <span>Current search</span>
+          <strong>{compactPokemonLabel}</strong>
+          <div className="search-mobile-summary__meta">
+            <span className={`search-mobile-summary__ownership search-mobile-summary__ownership--${ownershipMode}`}>
+              {ownershipLabel}
+            </span>
+            <span>
+              <FaMapMarkerAlt aria-hidden="true" />
+              {locationLabel}
+            </span>
+            {additionalFilterCount > 0 ? (
+              <span>
+                <FaSlidersH aria-hidden="true" />
+                {additionalFilterCount}{' '}
+                {additionalFilterCount === 1 ? 'filter' : 'filters'}
+              </span>
+            ) : null}
+          </div>
+        </div>
+        <button
+          aria-controls="pokemon-search-primary-controls"
+          onClick={handleModifySearch}
+          type="button"
+        >
+          <FaSlidersH aria-hidden="true" />
+          Modify search
+        </button>
+      </section>
+
+      <div className="search-primary-surface" id="pokemon-search-primary-controls">
         <VariantSearchPrimaryInput
           controller={variantController}
           pokemon={pokemon}
@@ -332,9 +426,7 @@ const PokemonSearchBar: React.FC<PokemonSearchBarProps> = ({
           <span>
             <small>Location</small>
             <strong>
-              {useCurrentLocation
-                ? 'Current location'
-                : city || `Within ${range} km`}
+              {locationLabel}
             </strong>
           </span>
         </button>

@@ -12,6 +12,10 @@
   backdrop-filter: blur(12px);
 }
 
+.search-mobile-summary {
+  display: none;
+}
+
 .search-primary-surface {
   display: grid;
   box-sizing: border-box;
@@ -319,6 +323,119 @@
     gap: 8px;
     padding: 10px;
     border-radius: 13px;
+  }
+
+  .pokemon-search-bar--compact .search-primary-surface,
+  .pokemon-search-bar--compact .search-filter-summary {
+    display: none;
+  }
+
+  .pokemon-search-bar--compact .search-mobile-summary {
+    display: grid;
+  }
+
+  .search-mobile-summary {
+    box-sizing: border-box;
+    width: calc(100% - 20px);
+    min-width: 0;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 10px;
+    padding: 10px;
+    border: 1px solid color-mix(in srgb, var(--color-text-primary) 17%, transparent);
+    border-radius: 13px;
+    background: color-mix(in srgb, var(--color-search-section-surface) 92%, var(--color-text-primary) 8%);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.14);
+  }
+
+  .search-mobile-summary__content {
+    display: flex;
+    min-width: 0;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .search-mobile-summary__content > span {
+    color: color-mix(in srgb, var(--color-accent-primary) 80%, var(--color-text-primary));
+    font-size: 0.64rem;
+    font-weight: 900;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+
+  .search-mobile-summary__content > strong {
+    display: -webkit-box;
+    min-width: 0;
+    overflow: hidden;
+    overflow-wrap: anywhere;
+    color: var(--color-text-primary);
+    font-size: 1rem;
+    line-height: 1.2;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+  }
+
+  .search-mobile-summary__meta {
+    display: flex;
+    min-width: 0;
+    flex-wrap: wrap;
+    gap: 4px;
+    margin-top: 4px;
+  }
+
+  .search-mobile-summary__meta > span {
+    display: inline-flex;
+    min-width: 0;
+    align-items: center;
+    gap: 4px;
+    padding: 3px 7px;
+    border: 1px solid color-mix(in srgb, var(--color-text-primary) 13%, transparent);
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--color-text-primary) 5%, transparent);
+    color: var(--color-text-secondary);
+    font-size: 0.66rem;
+    font-weight: 750;
+    line-height: 1.15;
+  }
+
+  .search-mobile-summary__meta .search-mobile-summary__ownership--caught {
+    border-color: color-mix(in srgb, #2196f3 48%, transparent);
+    background: color-mix(in srgb, #2196f3 14%, transparent);
+    color: color-mix(in srgb, #2196f3 75%, var(--color-text-primary));
+  }
+
+  .search-mobile-summary__meta .search-mobile-summary__ownership--trade {
+    border-color: color-mix(in srgb, #31b777 48%, transparent);
+    background: color-mix(in srgb, #31b777 14%, transparent);
+    color: color-mix(in srgb, #31b777 75%, var(--color-text-primary));
+  }
+
+  .search-mobile-summary__meta .search-mobile-summary__ownership--wanted {
+    border-color: color-mix(in srgb, #ff5965 48%, transparent);
+    background: color-mix(in srgb, #ff5965 14%, transparent);
+    color: color-mix(in srgb, #ff5965 75%, var(--color-text-primary));
+  }
+
+  .search-mobile-summary > button {
+    display: inline-flex;
+    min-height: 44px;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 8px 10px;
+    border: 1px solid color-mix(in srgb, var(--color-accent-primary) 55%, transparent);
+    border-radius: 9px;
+    background: color-mix(in srgb, var(--color-accent-primary) 15%, transparent);
+    color: var(--color-text-primary);
+    font: inherit;
+    font-size: 0.72rem;
+    font-weight: 850;
+    cursor: pointer;
+  }
+
+  .search-mobile-summary > button:focus-visible {
+    outline: 3px solid color-mix(in srgb, var(--color-accent-primary) 34%, transparent);
+    outline-offset: 2px;
   }
 
   .search-primary-pokemon-field,

@@ -374,6 +374,39 @@ describe('PokemonSearchBar', () => {
       screen.getByText('Shadow Pokemon cannot be listed for trade or wanted'),
     ).toBeInTheDocument();
     expect(screen.getByRole('dialog')).toBeInTheDocument();
+    expect(
+      screen.getByLabelText('Current Pokémon search').closest('.pokemon-search-bar'),
+    ).not.toHaveClass('pokemon-search-bar--compact');
+  });
+
+  it('collapses a submitted mobile search into a useful editable summary', async () => {
+    render(
+      <PokemonSearchBar
+        onSearch={onSearchMock}
+        isLoading={false}
+        view="list"
+        setView={setViewMock}
+        pokemonCache={pokemonCache}
+      />,
+    );
+
+    await mountAdvancedSearchState();
+    fireEvent.click(screen.getByRole('button', { name: 'Apply and search' }));
+
+    await waitFor(() => {
+      expect(onSearchMock).toHaveBeenCalledTimes(1);
+    });
+
+    const summary = screen.getByLabelText('Current Pokémon search');
+    const searchBar = summary.closest('.pokemon-search-bar');
+    expect(searchBar).toHaveClass('pokemon-search-bar--compact');
+    expect(summary).toHaveTextContent('Bulbasaur');
+    expect(summary).toHaveTextContent('Caught');
+    expect(summary).toHaveTextContent('Seattle, WA, USA');
+    expect(summary).toHaveTextContent('2 filters');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Modify search' }));
+    expect(searchBar).not.toHaveClass('pokemon-search-bar--compact');
   });
 
   it('builds trade query params with caught-only and wanted-only fields normalized', async () => {
