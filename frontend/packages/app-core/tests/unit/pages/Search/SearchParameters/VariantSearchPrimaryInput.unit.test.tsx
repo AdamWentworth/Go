@@ -46,6 +46,9 @@ describe('VariantSearchPrimaryInput', () => {
     );
     const preview = screen.getByAltText('Bulbasaur preview');
     expect(preview).toHaveAttribute('src', '/images/bulbasaur.png');
+    expect(preview.closest('.search-primary-pokemon-control')).toHaveClass(
+      'has-preview',
+    );
     expect(preview.parentElement).toHaveClass('has-background');
     expect(preview.parentElement).toHaveStyle({
       backgroundImage: 'url(/images/location-background.png)',
@@ -70,6 +73,11 @@ describe('VariantSearchPrimaryInput', () => {
     );
 
     expect(screen.getByPlaceholderText('Enter Pokemon name')).toBeInTheDocument();
+    expect(
+      screen
+        .getByPlaceholderText('Enter Pokemon name')
+        .closest('.search-primary-pokemon-control'),
+    ).not.toHaveClass('has-preview');
     expect(screen.queryByRole('img')).not.toBeInTheDocument();
   });
 });

@@ -50,13 +50,13 @@
   position: relative;
   display: grid;
   box-sizing: border-box;
-  width: 48px;
-  height: 48px;
-  flex: 0 0 48px;
+  width: 64px;
+  height: 64px;
+  flex: 0 0 64px;
   place-items: center;
   overflow: hidden;
   border: 1px solid color-mix(in srgb, var(--color-text-primary) 18%, transparent);
-  border-radius: 10px;
+  border-radius: 13px;
   background: color-mix(in srgb, var(--color-text-primary) 6%, transparent);
   background-position: center;
   background-size: cover;
@@ -72,8 +72,10 @@
 .selected-pokemon-preview__pokemon {
   position: relative;
   z-index: 1;
-  width: 92%;
-  height: 92%;
+  width: calc(100% - 8px);
+  height: calc(100% - 8px);
+  max-width: 124px;
+  max-height: 124px;
   object-fit: contain;
   filter: drop-shadow(0 2px 2px rgba(0, 0, 0, 0.28));
 }
@@ -81,10 +83,10 @@
 .selected-pokemon-preview__badge {
   position: absolute;
   z-index: 2;
-  top: 2px;
-  right: 2px;
-  width: 17px;
-  height: 17px;
+  top: 3px;
+  right: 3px;
+  width: 22px;
+  height: 22px;
   object-fit: contain;
 }
 
@@ -489,9 +491,9 @@
   }
 
   .search-mobile-summary__preview {
-    width: 50px;
-    height: 50px;
-    flex-basis: 50px;
+    width: 62px;
+    height: 62px;
+    flex-basis: 62px;
   }
 
   .search-mobile-summary > button:focus-visible {
@@ -503,6 +505,31 @@
   .search-primary-ownership,
   .search-primary-location {
     grid-column: 1 / -1;
+  }
+
+  .search-primary-pokemon-control.has-preview {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+  }
+
+  .search-primary-pokemon-control.has-preview > .selected-pokemon-preview {
+    width: 100%;
+    height: 136px;
+    flex-basis: auto;
+    align-self: center;
+    border-radius: 18px;
+  }
+
+  .search-primary-pokemon-control.has-preview .selected-pokemon-preview__badge {
+    top: 6px;
+    right: 6px;
+    width: 30px;
+    height: 30px;
+  }
+
+  .search-primary-pokemon-control.has-preview .selected-pokemon-preview__pokemon {
+    transform: scale(1.35);
   }
 
   .search-primary-ownership {
@@ -539,5 +566,17 @@
 
   .search-filter-summary__chips span {
     flex: 0 0 auto;
+  }
+}
+
+@media (max-width: 360px) {
+  .search-primary-pokemon-control.has-preview > .selected-pokemon-preview {
+    height: 124px;
+  }
+
+  .search-mobile-summary__preview {
+    width: 54px;
+    height: 54px;
+    flex-basis: 54px;
   }
 }

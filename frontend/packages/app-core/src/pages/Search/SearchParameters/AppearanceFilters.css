@@ -76,9 +76,9 @@
 .appearance-preview {
   position: relative;
   display: grid;
-  width: 82px;
-  height: 82px;
-  flex: 0 0 82px;
+  width: 104px;
+  height: 104px;
+  flex: 0 0 104px;
   place-items: center;
   overflow: hidden;
   border: 1px solid color-mix(in srgb, var(--color-text-primary) 18%, transparent);
@@ -98,8 +98,8 @@
 
 .appearance-preview > img:not(.appearance-preview__badge) {
   z-index: 1;
-  width: 72px;
-  height: 72px;
+  width: 94px;
+  height: 94px;
   object-fit: contain;
   filter: drop-shadow(0 3px 6px rgba(0, 0, 0, 0.34));
 }
@@ -326,19 +326,29 @@
 
 @media (max-width: 600px) {
   .appearance-filters__intro {
-    align-items: flex-start;
+    align-items: stretch;
+    flex-direction: column;
+    gap: 10px;
   }
 
   .appearance-preview {
-    width: 68px;
-    height: 68px;
-    flex-basis: 68px;
-    border-radius: 13px;
+    width: 100%;
+    height: 148px;
+    flex-basis: auto;
+    border-radius: 15px;
   }
 
   .appearance-preview > img:not(.appearance-preview__badge) {
-    width: 60px;
-    height: 60px;
+    width: 136px;
+    height: 136px;
+    transform: scale(1.25);
+  }
+
+  .appearance-preview .appearance-preview__badge {
+    top: 8px;
+    right: 8px;
+    width: 32px;
+    height: 32px;
   }
 
   .search-filter-card {
