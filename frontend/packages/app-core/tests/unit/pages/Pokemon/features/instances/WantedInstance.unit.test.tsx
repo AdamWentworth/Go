@@ -54,12 +54,6 @@ vi.mock('@/pages/Pokemon/features/instances/sections/IdentityRow', () => ({
   default: ({ eyebrow }: { eyebrow?: string }) => <div>{eyebrow}</div>,
 }));
 
-vi.mock('@/pages/Pokemon/features/instances/sections/StatsRow', () => ({
-  default: ({ showTypes }: { showTypes: boolean }) => (
-    <div data-testid="stats-row" data-show-types={String(showTypes)} />
-  ),
-}));
-
 vi.mock('@/pages/Pokemon/features/instances/components/Wanted/FriendshipManager', () => ({
   default: ({
     friendship,
@@ -151,6 +145,20 @@ const makePokemon = (overrides: Record<string, unknown> = {}) =>
     species_name: 'Bulbasaur',
     variant_id: '0001-default',
     variantType: 'default',
+    sizes: {
+      pokedex_height: 1,
+      pokedex_weight: 6,
+      height_standard_deviation: 0.25,
+      weight_standard_deviation: 1.5,
+      height_xxs_threshold: 0.5,
+      height_xs_threshold: 0.75,
+      height_xl_threshold: 1.25,
+      height_xxl_threshold: 1.5,
+      weight_xxs_threshold: 4,
+      weight_xs_threshold: 5,
+      weight_xl_threshold: 8,
+      weight_xxl_threshold: 9,
+    },
     backgrounds: [
       {
         background_id: 7,
@@ -227,7 +235,9 @@ describe('WantedInstance', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Edit wanted listing' }));
 
     expect(document.querySelector('.wanted-instance__requirements')).not.toBeNull();
-    expect(screen.getByTestId('stats-row')).toHaveAttribute('data-show-types', 'false');
+    expect(document.querySelector('.wanted-instance__requirements .level-gender-row')).not.toBeNull();
+    expect(screen.getByRole('group', { name: 'Wanted weight' })).toBeInTheDocument();
+    expect(screen.getByRole('group', { name: 'Wanted height' })).toBeInTheDocument();
     const backgroundButton = screen.getByRole('button', { name: 'Choose special background' });
     expect(backgroundButton.closest('.wanted-instance__conditions')).not.toBeNull();
     expect(
@@ -244,6 +254,8 @@ describe('WantedInstance', () => {
       most_wanted: true,
     });
     fireEvent.click(screen.getByRole('button', { name: 'Set female' }));
+    fireEvent.click(screen.getByRole('button', { name: 'XL weight' }));
+    fireEvent.click(screen.getByRole('button', { name: 'XXS height' }));
     fireEvent.click(screen.getByRole('button', { name: 'Set desired moves' }));
     fireEvent.click(backgroundButton);
     fireEvent.click(screen.getByRole('button', { name: 'Select Vancouver background' }));
@@ -254,6 +266,8 @@ describe('WantedInstance', () => {
         'wanted-instance-1',
         expect.objectContaining({
           gender: 'Female',
+          weight: 8.5,
+          height: 0.375,
           fast_move_id: 11,
           charged_move1_id: 22,
           friendship_level: 5,
@@ -318,13 +332,14 @@ describe('WantedInstance', () => {
     rerender(
       <WantedInstance
         key="specific-wanted"
-        pokemon={makePokemon({ gender: 'Female', weight: 6.9 })}
+        pokemon={makePokemon({ gender: 'Any', weight: 8.5 })}
         isEditable={false}
         catalogView
       />,
     );
     expect(document.querySelector('.wanted-instance__requirements')).not.toBeNull();
-    expect(screen.getByRole('button', { name: 'Set female' })).toBeInTheDocument();
-    expect(screen.getByTestId('stats-row')).toHaveAttribute('data-show-types', 'false');
+    expect(screen.getByText('Weight')).toBeInTheDocument();
+    expect(screen.getByText('XL')).toBeInTheDocument();
+    expect(document.querySelector('.level-gender-row')).toBeNull();
   });
 });

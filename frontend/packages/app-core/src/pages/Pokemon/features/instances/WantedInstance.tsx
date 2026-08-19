@@ -4,7 +4,6 @@ import './WantedInstance.css';
 import { useModal } from '@/contexts/ModalContext';
 import { useInstancesStore } from '@/features/instances/store/useInstancesStore';
 import EditSaveComponent from '@/components/EditSaveComponent';
-import Gender from '@/components/pokemonComponents/Gender';
 import Moves from '@/components/pokemonComponents/Moves';
 import type { PokemonInstance } from '@/types/pokemonInstance';
 import type { VariantBackground } from '@/types/pokemonSubTypes';
@@ -14,10 +13,16 @@ import { createScopedLogger } from '@/utils/logger';
 
 import FriendshipManager from './components/Wanted/FriendshipManager';
 import MostWantedToggle from './components/Wanted/MostWantedToggle';
+import WantedSizePreferences from './components/Wanted/WantedSizePreferences';
+import {
+  getWantedSizePreference,
+  getWantedSizeValue,
+  type WantedSizePreference,
+} from './components/Wanted/wantedSizePreferences';
 import BackgroundSelector from './sections/BackgroundSelector';
 import IdentityRow from './sections/IdentityRow';
 import ImageStage from './sections/ImageStage';
-import StatsRow from './sections/StatsRow';
+import LevelGenderRow from './sections/LevelGenderRow';
 import TradeBackgroundModal from './sections/TradeBackgroundModal';
 import { getEntityKey } from './utils/getEntityKey';
 
@@ -49,8 +54,8 @@ const hasSpecificGender = (gender: string | null): boolean =>
 
 const hasDesiredDetails = (
   gender: string | null,
-  weight: number | null,
-  height: number | null,
+  weight: WantedSizePreference,
+  height: WantedSizePreference,
   moves: MovesSelection,
 ): boolean =>
   Boolean(
@@ -77,8 +82,12 @@ const WantedInstance: React.FC<WantedInstanceProps> = ({
   const [editMode, setEditMode] = useState(false);
   const [nickname, setNickname] = useState<string | null>(instanceData.nickname);
   const [gender, setGender] = useState<string | null>(instanceData.gender);
-  const [weight, setWeight] = useState<number | null>(instanceData.weight);
-  const [height, setHeight] = useState<number | null>(instanceData.height);
+  const [weight, setWeight] = useState<WantedSizePreference>(() =>
+    getWantedSizePreference(instanceData.weight, pokemon.sizes, 'weight'),
+  );
+  const [height, setHeight] = useState<WantedSizePreference>(() =>
+    getWantedSizePreference(instanceData.height, pokemon.sizes, 'height'),
+  );
   const [moves, setMoves] = useState<MovesSelection>({
     fastMove: instanceData.fast_move_id,
     chargedMove1: instanceData.charged_move1_id,
@@ -111,6 +120,12 @@ const WantedInstance: React.FC<WantedInstanceProps> = ({
     if (!editMode) setMostWanted(Boolean(instanceData.most_wanted));
   }, [editMode, instanceData.most_wanted]);
 
+  useEffect(() => {
+    if (editMode) return;
+    setWeight(getWantedSizePreference(instanceData.weight, pokemon.sizes, 'weight'));
+    setHeight(getWantedSizePreference(instanceData.height, pokemon.sizes, 'height'));
+  }, [editMode, instanceData.height, instanceData.weight, pokemon.sizes]);
+
   const backgrounds = useMemo(() => pokemon.backgrounds ?? [], [pokemon.backgrounds]);
   const selectableBackgrounds = useMemo(
     () =>
@@ -135,6 +150,8 @@ const WantedInstance: React.FC<WantedInstanceProps> = ({
   const isShadow = Boolean(instanceData.shadow);
   const isPurified = Boolean(instanceData.purified);
   const displayName = pokemon.name ?? pokemon.species_name ?? 'Pokemon';
+  const wantedWeightValue = getWantedSizeValue(weight, pokemon.sizes, 'weight');
+  const wantedHeightValue = getWantedSizeValue(height, pokemon.sizes, 'height');
   const currentImage = useMemo(
     () =>
       determineImageUrl(
@@ -157,14 +174,22 @@ const WantedInstance: React.FC<WantedInstanceProps> = ({
         ...instanceData,
         nickname,
         gender,
-        weight,
-        height,
+        weight: wantedWeightValue,
+        height: wantedHeightValue,
         fast_move_id: moves.fastMove,
         charged_move1_id: moves.chargedMove1,
         charged_move2_id: moves.chargedMove2,
       },
     }),
-    [gender, height, instanceData, moves, nickname, pokemon, weight],
+    [
+      gender,
+      instanceData,
+      moves,
+      nickname,
+      pokemon,
+      wantedHeightValue,
+      wantedWeightValue,
+    ],
   );
 
   const showWantedDetails =
@@ -185,8 +210,8 @@ const WantedInstance: React.FC<WantedInstanceProps> = ({
       await updateDetails(entityKey, {
         nickname,
         gender,
-        weight,
-        height,
+        weight: wantedWeightValue,
+        height: wantedHeightValue,
         fast_move_id: moves.fastMove,
         charged_move1_id: moves.chargedMove1,
         charged_move2_id: moves.chargedMove2,
@@ -266,30 +291,25 @@ const WantedInstance: React.FC<WantedInstanceProps> = ({
 
   const wantedDetails = showWantedDetails ? (
     <div className="wanted-instance__requirements" aria-label="Wanted Pokémon details">
-      <div className="wanted-instance__detail-fields">
-        {(editMode || hasSpecificGender(gender)) && (
-          <div className="wanted-instance__gender-field">
-            <span>Gender</span>
-            <Gender
-              pokemon={displayPokemon}
-              editMode={editMode}
-              searchMode
-              onGenderChange={setGender}
-            />
-          </div>
-        )}
-        <StatsRow
-          pokemon={displayPokemon}
-          editMode={editMode}
-          onWeightChange={(value) =>
-            setWeight(value === '' ? null : Number(value))
-          }
-          onHeightChange={(value) =>
-            setHeight(value === '' ? null : Number(value))
-          }
-          showTypes={false}
-        />
-      </div>
+      <LevelGenderRow
+        pokemon={displayPokemon}
+        editMode={editMode}
+        level={null}
+        onLevelChange={() => undefined}
+        gender={gender}
+        onGenderChange={setGender}
+        showLevel={false}
+        showGenderWhenUnset={editMode}
+        searchMode
+      />
+
+      <WantedSizePreferences
+        weight={weight}
+        height={height}
+        editMode={editMode}
+        onWeightChange={setWeight}
+        onHeightChange={setHeight}
+      />
 
       <div className="wanted-instance__moves">
         <Moves

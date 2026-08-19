@@ -190,41 +190,9 @@
   box-sizing: border-box;
 }
 
-.wanted-instance__detail-fields {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 14px;
-  min-width: 0;
-}
-
-.wanted-instance__gender-field {
-  display: grid;
-  flex: 0 0 80px;
-  place-items: center;
-  gap: 3px;
-  min-height: 45px;
-}
-
-.wanted-instance__gender-field > span {
-  color: var(--color-text-secondary, #a9b8b5);
-  font-size: 0.68rem;
-  font-weight: 700;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-}
-
-.wanted-instance__gender-field .gender-container {
-  width: auto;
-  min-height: 26px;
-  justify-content: center;
-}
-
-.wanted-instance__detail-fields .weight-type-height-container.without-types {
-  flex: 1 1 auto;
-  max-width: 340px;
-  margin: 0;
-  padding-inline: 0;
+.wanted-instance__requirements > .level-gender-row {
+  min-height: 30px;
+  margin-bottom: 2px;
 }
 
 .wanted-instance__moves {
@@ -307,7 +275,6 @@
   color: var(--light-text-primary);
 }
 
-:root[data-theme='light'] .wanted-instance__gender-field > span,
 :root[data-theme='light'] .wanted-instance__conditions-label > span {
   color: var(--light-text-secondary);
 }
@@ -379,18 +346,6 @@
     width: calc(100% - 16px);
     margin-top: 6px;
     padding-inline: 4px;
-  }
-
-  .wanted-instance__detail-fields {
-    gap: 6px;
-  }
-
-  .wanted-instance__gender-field {
-    flex-basis: 62px;
-  }
-
-  .wanted-instance__detail-fields .weight-type-height-container.without-types {
-    column-gap: 5px;
   }
 
   .wanted-instance--catalog-view {

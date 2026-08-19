@@ -350,6 +350,26 @@ describe('instances section components', () => {
     expect(screen.queryByText('gender')).not.toBeInTheDocument();
   });
 
+  it('LevelGenderRow can preserve the caught gender rail without a level field', () => {
+    render(
+      <LevelGenderRow
+        pokemon={{}}
+        editMode={true}
+        level={null}
+        onLevelChange={vi.fn()}
+        gender={null}
+        onGenderChange={vi.fn()}
+        showLevel={false}
+        showGenderWhenUnset
+        searchMode
+      />,
+    );
+
+    expect(screen.queryByText('level-')).not.toBeInTheDocument();
+    expect(screen.getByText('gender')).toBeInTheDocument();
+    expect(screen.getByText('gender').closest('.gender-wrapper')).not.toBeNull();
+  });
+
   it('MetaPanel renders location/date/ball controls', () => {
     const onPokeballChange = vi.fn();
     const onIsTradedChange = vi.fn();
