@@ -1,6 +1,8 @@
-import { useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router';
 
+import HorizontalPageSlider from '@/components/motion/HorizontalPageSlider';
+import useHorizontalPageNavigation from '@/components/motion/useHorizontalPageNavigation';
 import { useInstancesStore } from '@/features/instances/store/useInstancesStore';
 import { useTradeStore } from '@/features/trades/store/useTradeStore';
 import { useVariantsStore } from '@/features/variants/store/useVariantsStore';
@@ -12,6 +14,8 @@ import { getStoredUsername } from '@/utils/storage';
 
 import './TradeStatusButtons.css';
 import './TradeActivity.css';
+
+const TRADE_SECTIONS = ['preferences', 'activity'] as const;
 
 function Trades() {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -30,7 +34,7 @@ function Trades() {
   const [selectedStatus, setSelectedStatus] = useState<TradeStatusFilter>('Accepting');
   const loading = variantsLoading;
   const currentUsername = getStoredUsername() ?? '';
-  const setActiveSection = (section: 'activity' | 'preferences') => {
+  const setActiveSection = useCallback((section: 'activity' | 'preferences') => {
     setSearchParams((current) => {
       const next = new URLSearchParams(current);
       next.set('section', section);
@@ -40,7 +44,12 @@ function Trades() {
       }
       return next;
     });
-  };
+  }, [setSearchParams]);
+  const sectionSlider = useHorizontalPageNavigation({
+    pages: TRADE_SECTIONS,
+    activePage: activeSection,
+    onChange: setActiveSection,
+  });
   const activityCounts = useMemo(() => {
     const counts: Record<TradeStatusFilter, number> = {
       Accepting: 0,
@@ -80,9 +89,15 @@ function Trades() {
         </button>
       </nav>
 
-      {activeSection === 'preferences' ? (
+      <HorizontalPageSlider
+        activeIndex={sectionSlider.activeIndex}
+        className="trade-page-slider"
+        viewportRef={sectionSlider.viewportRef}
+        dragOffset={sectionSlider.dragOffset}
+        isDragging={sectionSlider.isDragging}
+        {...sectionSlider.swipeHandlers}
+      >
         <TradeTargetsWorkspace />
-      ) : (
         <section className="trade-activity-workspace" aria-labelledby="trade-activity-heading">
           <header className="trade-activity-heading">
             <div>
@@ -106,7 +121,7 @@ function Trades() {
             periodicUpdates={periodicUpdates}
           />
         </section>
-      )}
+      </HorizontalPageSlider>
     </div>
   );
 }

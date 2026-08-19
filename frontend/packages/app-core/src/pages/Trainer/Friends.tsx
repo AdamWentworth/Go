@@ -15,6 +15,8 @@ import { useNavigate } from "react-router";
 import { toast } from "react-toastify";
 
 import { useModal } from "@/contexts/ModalContext";
+import HorizontalPageSlider from "@/components/motion/HorizontalPageSlider";
+import useHorizontalPageNavigation from "@/components/motion/useHorizontalPageNavigation";
 import {
   acceptFriendRequest,
   deleteFriendRequest,
@@ -35,6 +37,8 @@ import type {
 import TrainerPageShell from "./TrainerPageShell";
 
 type FriendsTab = "friends" | "requests" | "find" | "blocked";
+
+const FRIEND_TABS = ["friends", "requests", "find", "blocked"] as const;
 
 const emptyOverview: FriendsOverview = {
   friends: [],
@@ -102,6 +106,11 @@ const Friends = () => {
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<TrainerAutocompleteEntry[]>([]);
   const [searching, setSearching] = useState(false);
+  const tabSlider = useHorizontalPageNavigation({
+    pages: FRIEND_TABS,
+    activePage: tab,
+    onChange: setTab,
+  });
 
   const friendsQuery = useQuery({
     queryKey: socialQueryKeys.friends,
@@ -227,7 +236,16 @@ const Friends = () => {
         <div className="trainer-status">Loading friends...</div>
       ) : null}
 
-      {!loading && tab === "friends" ? (
+      <HorizontalPageSlider
+        activeIndex={tabSlider.activeIndex}
+        className="trainer-page-slider"
+        viewportRef={tabSlider.viewportRef}
+        dragOffset={tabSlider.dragOffset}
+        isDragging={tabSlider.isDragging}
+        {...tabSlider.swipeHandlers}
+      >
+        <div>
+      {!loading ? (
         <section className="trainer-section">
           <header>
             <div>
@@ -262,8 +280,10 @@ const Friends = () => {
           ) : null}
         </section>
       ) : null}
+        </div>
 
-      {!loading && tab === "requests" ? (
+        <div>
+      {!loading ? (
         <div className="trainer-section-stack">
           <section className="trainer-section">
             <header>
@@ -356,8 +376,9 @@ const Friends = () => {
           </section>
         </div>
       ) : null}
+        </div>
 
-      {tab === "find" ? (
+        <div>
         <section className="trainer-section">
           <header>
             <div>
@@ -412,9 +433,10 @@ const Friends = () => {
             ))}
           </div>
         </section>
-      ) : null}
+        </div>
 
-      {!loading && tab === "blocked" ? (
+        <div>
+      {!loading ? (
         <section className="trainer-section">
           <header>
             <div>
@@ -450,6 +472,8 @@ const Friends = () => {
           ) : null}
         </section>
       ) : null}
+        </div>
+      </HorizontalPageSlider>
     </TrainerPageShell>
   );
 };

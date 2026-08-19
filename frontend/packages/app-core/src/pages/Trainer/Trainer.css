@@ -1317,6 +1317,10 @@
   background: #0d1516;
 }
 
+.trainer-page-slider {
+  width: 100%;
+}
+
 .trainer-tabs button {
   display: flex;
   min-height: 44px;

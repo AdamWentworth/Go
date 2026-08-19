@@ -24,6 +24,14 @@
     margin: 14px auto 110px;
   }
 
+  .trade-page-slider {
+    width: 100%;
+  }
+
+  .trade-page-slider .horizontal-page-slider__panel {
+    min-width: 0;
+  }
+
   .trade-activity-heading {
     margin: 8px 0 12px;
     text-align: center;

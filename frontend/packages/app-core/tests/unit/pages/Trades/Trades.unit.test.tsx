@@ -75,7 +75,17 @@ describe('Trades page', () => {
     render(<Trades />, { wrapper: MemoryRouter });
 
     expect(screen.getByTestId('trade-targets-workspace')).toBeInTheDocument();
-    expect(screen.queryByTestId('trade-list')).not.toBeInTheDocument();
+    expect(screen.getByTestId('trade-targets-workspace').closest('[data-active]')).toHaveAttribute(
+      'data-active',
+      'true',
+    );
+    expect(screen.getByTestId('trade-list').closest('[data-active]')).toHaveAttribute(
+      'aria-hidden',
+      'true',
+    );
+    expect(document.querySelector('.horizontal-page-slider__track')).toHaveStyle({
+      transform: 'translate3d(calc(0% + 0px), 0, 0)',
+    });
 
     act(() => {
       screen.getByRole('button', { name: 'Trade Activity' }).click();
@@ -83,6 +93,13 @@ describe('Trades page', () => {
 
     expect(screen.getByTestId('trade-status-buttons')).toBeInTheDocument();
     expect(screen.getByTestId('trade-list')).toBeInTheDocument();
+    expect(screen.getByTestId('trade-list').closest('[data-active]')).toHaveAttribute(
+      'data-active',
+      'true',
+    );
+    expect(document.querySelector('.horizontal-page-slider__track')).toHaveStyle({
+      transform: 'translate3d(calc(-100% + 0px), 0, 0)',
+    });
 
     const activityStatusProps = mocks.statusPropsHistory.at(-1);
     const activityListProps = mocks.listPropsHistory.at(-1);
@@ -113,6 +130,9 @@ describe('Trades page', () => {
     });
 
     expect(screen.getByTestId('trade-targets-workspace')).toBeInTheDocument();
-    expect(screen.queryByTestId('trade-list')).not.toBeInTheDocument();
+    expect(screen.getByTestId('trade-list').closest('[data-active]')).toHaveAttribute(
+      'aria-hidden',
+      'true',
+    );
   });
 });
