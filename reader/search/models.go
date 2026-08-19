@@ -84,6 +84,7 @@ type PokemonInstance struct {
 	IsCaught        bool     `gorm:"column:is_caught" json:"is_caught"`
 	IsForTrade      bool     `gorm:"column:is_for_trade" json:"is_for_trade"`
 	IsWanted        bool     `gorm:"column:is_wanted" json:"is_wanted"`
+	MostWanted      bool     `gorm:"column:most_wanted" json:"most_wanted"`
 	NotTradeList    RawJSON  `gorm:"column:not_trade_list;type:json" json:"not_trade_list"`
 	NotWantedList   RawJSON  `gorm:"column:not_wanted_list;type:json" json:"not_wanted_list"`
 	TraceID         *string  `gorm:"column:trace_id" json:"trace_id"`

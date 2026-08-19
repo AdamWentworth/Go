@@ -358,11 +358,7 @@ const WantedInstance: React.FC<WantedInstanceProps> = ({
 
   if (catalogView) {
     return (
-      <div
-        className={`caught-instance wanted-instance wanted-instance--catalog-view${
-          mostWanted ? ' wanted-instance--most-wanted' : ''
-        }`}
-      >
+      <div className="caught-instance wanted-instance wanted-instance--catalog-view">
         <div className="instance-details-body">
           {friendshipSection}
           {wantedImageStage}
@@ -377,7 +373,7 @@ const WantedInstance: React.FC<WantedInstanceProps> = ({
             onTogglePurify={() => undefined}
             showLucky={false}
             showPurify={false}
-            eyebrow={mostWanted ? 'Most Wanted' : 'Wanted'}
+            eyebrow="Wanted"
           />
           {wantedDetails}
         </div>
@@ -388,8 +384,6 @@ const WantedInstance: React.FC<WantedInstanceProps> = ({
   return (
     <div
       className={`caught-instance wanted-instance wanted-instance--caught-layout${
-        mostWanted ? ' wanted-instance--most-wanted' : ''
-      }${
         compactListingView ? ' wanted-instance--compact-listing' : ''
       }`}
     >
@@ -409,7 +403,7 @@ const WantedInstance: React.FC<WantedInstanceProps> = ({
           onTogglePurify={() => undefined}
           showLucky={false}
           showPurify={false}
-          eyebrow={mostWanted ? 'Most Wanted' : 'Wanted'}
+          eyebrow="Wanted"
         />
 
         {wantedDetails}

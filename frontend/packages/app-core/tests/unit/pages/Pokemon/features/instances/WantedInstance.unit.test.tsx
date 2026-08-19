@@ -321,7 +321,7 @@ describe('WantedInstance', () => {
     expect(screen.queryByText('Most Wanted')).not.toBeInTheDocument();
   });
 
-  it('labels another trainer priority listing as Most Wanted without exposing a toggle', () => {
+  it('keeps a priority listing visually Wanted and changes only its priority toggle', () => {
     render(
       <WantedInstance
         pokemon={makePokemon({ most_wanted: true })}
@@ -330,9 +330,10 @@ describe('WantedInstance', () => {
       />,
     );
 
-    expect(screen.getAllByText('Most Wanted')).toHaveLength(2);
+    expect(screen.getByText('Wanted')).toBeInTheDocument();
+    expect(screen.getByText('Most Wanted')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Most Wanted' })).toBeDisabled();
-    expect(document.querySelector('.wanted-instance--most-wanted')).not.toBeNull();
+    expect(document.querySelector('.wanted-instance--most-wanted')).toBeNull();
   });
 
   it('reveals only meaningful desired details outside edit mode', () => {

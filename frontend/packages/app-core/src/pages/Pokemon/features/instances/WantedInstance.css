@@ -69,10 +69,6 @@
   grid-column: 1 / -1;
 }
 
-.wanted-instance--most-wanted .identity-name-slot .identity-name-eyebrow {
-  color: #ff7043;
-}
-
 .wanted-instance__conditions-label {
   display: grid;
   gap: 3px;
