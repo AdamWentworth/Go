@@ -656,6 +656,7 @@ func SearchPokemonInstances(c fiber.Ctx) error {
 			"dynamax":          instance.Dynamax,
 			"gigantamax":       instance.Gigantamax,
 		}
+		instanceData["wanted_size_preferences"] = instance.WantedSizes
 
 		if instanceUserID != "" && username != "" {
 			instanceData["user_id"] = instanceUserID
@@ -737,6 +738,7 @@ func SearchPokemonInstances(c fiber.Ctx) error {
 						"dynamax":          tradeInstance.Dynamax,
 						"gigantamax":       tradeInstance.Gigantamax,
 					}
+					tradeInstanceData["wanted_size_preferences"] = tradeInstance.WantedSizes
 					// Add 'match' field based on tradeInWantedList
 					if tradeInWantedList && userID != "" {
 						// Determine if any of the user's 'wanted' instances match this tradeInstance
@@ -842,6 +844,7 @@ func SearchPokemonInstances(c fiber.Ctx) error {
 						"dynamax":          wantedInstance.Dynamax,
 						"gigantamax":       wantedInstance.Gigantamax,
 					}
+					wantedInstanceData["wanted_size_preferences"] = wantedInstance.WantedSizes
 
 					// Add 'match' field based on onlyMatchingTrades
 					if onlyMatchingTrades && userID != "" {
@@ -926,6 +929,17 @@ func instancesMatch(a, b PokemonInstance) (bool, string) {
 
 	if !chargedMovesMatch {
 		return false, "ChargedMoveID mismatch"
+	}
+
+	if a.IsWanted && !b.IsWanted {
+		if matched, reason := matchesWantedSizePreferences(a, b); !matched {
+			return false, reason
+		}
+	}
+	if b.IsWanted && !a.IsWanted {
+		if matched, reason := matchesWantedSizePreferences(b, a); !matched {
+			return false, reason
+		}
 	}
 
 	return true, ""

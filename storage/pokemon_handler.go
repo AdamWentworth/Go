@@ -318,6 +318,7 @@ func parseAndUpsertPokemon(
 			"max_guard":             maxGuard,
 			"max_spirit":            maxSpirit,
 		}
+		addOptionalJSONUpdate(updates, pm, "wanted_size_preferences")
 		if originalTrainerID != nil && *originalTrainerID != "" {
 			updates["original_trainer_id"] = originalTrainerID
 		}

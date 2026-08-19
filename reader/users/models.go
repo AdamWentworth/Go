@@ -250,6 +250,7 @@ type PokemonInstance struct {
 	NotWantedList RawJSON `gorm:"column:not_wanted_list;type:json" json:"not_wanted_list"`
 	TradeFilters  JSON    `gorm:"column:trade_filters;type:json"  json:"trade_filters"`
 	WantedFilters JSON    `gorm:"column:wanted_filters;type:json" json:"wanted_filters"`
+	WantedSizes   RawJSON `gorm:"column:wanted_size_preferences;type:json" json:"wanted_size_preferences"`
 
 	// Misc
 	FriendshipLevel *int    `gorm:"column:friendship_level" json:"friendship_level"`
