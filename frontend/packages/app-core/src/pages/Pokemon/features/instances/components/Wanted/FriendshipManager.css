@@ -70,11 +70,16 @@
 .friendship-level-container .remote-trade-icon {
     width: 44px;
     height: 44px;
+    filter: var(--filter-icon-from-white);
 }
 
 .friendship-level-container .grey-out {
     filter: grayscale(100%);
     opacity: 0.5;
+}
+
+.friendship-level-container .remote-trade-icon.grey-out {
+    filter: var(--filter-icon-from-white) grayscale(100%);
 }
 
 .friendship-status {
