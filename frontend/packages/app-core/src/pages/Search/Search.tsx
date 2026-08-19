@@ -203,6 +203,7 @@ const Search: React.FC = () => {
               <RenderProfiler id="Search.MapView">
                 <MapView
                   data={searchResults}
+                  hasSearched={hasSearched}
                   instanceData={ownershipMode}
                   pokemonCache={variants}
                 />

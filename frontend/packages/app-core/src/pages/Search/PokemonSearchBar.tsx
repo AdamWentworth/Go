@@ -390,7 +390,8 @@ const PokemonSearchBar: React.FC<PokemonSearchBarProps> = ({
             aria-label="List view"
             onClick={() => setView('list')}
           >
-            <FaList />
+            <FaList aria-hidden="true" />
+            <span>List</span>
           </button>
           <button
             type="button"
@@ -398,7 +399,8 @@ const PokemonSearchBar: React.FC<PokemonSearchBarProps> = ({
             aria-label="Map view"
             onClick={() => setView('map')}
           >
-            <FaGlobe />
+            <FaGlobe aria-hidden="true" />
+            <span>Map</span>
           </button>
         </div>
       </div>

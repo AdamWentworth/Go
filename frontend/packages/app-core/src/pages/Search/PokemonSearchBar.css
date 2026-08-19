@@ -265,18 +265,28 @@
 .view-controls {
   display: flex;
   flex: 0 0 auto;
-  gap: 6px;
+  gap: 3px;
+  padding: 3px;
+  border: 1px solid color-mix(in srgb, var(--color-text-primary) 16%, transparent);
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--color-text-primary) 5%, transparent);
 }
 
 .view-button {
-  display: grid;
-  width: 38px;
+  display: inline-flex;
+  min-width: 76px;
   height: 38px;
-  place-items: center;
-  border: 1px solid color-mix(in srgb, var(--color-text-primary) 18%, transparent);
-  border-radius: 50%;
-  background: color-mix(in srgb, var(--color-text-primary) 7%, transparent);
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  padding: 0 11px;
+  border: 1px solid transparent;
+  border-radius: 9px;
+  background: transparent;
   color: var(--color-text-secondary);
+  font: inherit;
+  font-size: 0.78rem;
+  font-weight: 850;
   cursor: pointer;
 }
 

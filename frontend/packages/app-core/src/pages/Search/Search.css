@@ -55,12 +55,6 @@
   text-align: center;
 }
 
-.search-map-view {
-  margin-top: 20px;
-  width: 100%;
-  height: 500px;
-}
-
 @media (max-width: 520px) {
   .search-page-header {
     width: min(100% - 20px, 760px);
