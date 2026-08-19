@@ -139,7 +139,9 @@ const OwnershipSearch: React.FC<OwnershipSearchProps> = ({
               >
                 {option === 'caught'
                   ? 'Caught'
-                  : option.charAt(0).toUpperCase() + option.slice(1)}
+                  : option === 'trade'
+                    ? 'For Trade'
+                    : 'Wanted'}
               </button>
             ))}
           </div>

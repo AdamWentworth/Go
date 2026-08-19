@@ -1,14 +1,24 @@
-import React, { useState } from 'react';
-import { FaChevronDown, FaChevronUp, FaGlobe, FaList } from 'react-icons/fa';
+import React, { useMemo, useState } from 'react';
+import {
+  FaGlobe,
+  FaList,
+  FaMapMarkerAlt,
+  FaSearch,
+  FaSlidersH,
+} from 'react-icons/fa';
 
-import VariantSearch from './SearchParameters/VariantSearch';
-import SearchSecondaryPanels from './SearchSecondaryPanels';
+import {
+  VariantSearchAdvancedFields,
+  VariantSearchPrimaryInput,
+} from './SearchParameters/VariantSearch';
+import useVariantSearchController from './SearchParameters/useVariantSearchController';
+import LocationSearch from './SearchParameters/LocationSearch';
+import OwnershipSearch from './SearchParameters/OwnershipSearch';
+import SearchFilterSheet, { type FilterSection } from './SearchFilterSheet';
 import './PokemonSearchBar.css';
 import { createScopedLogger } from '@/utils/logger';
 import type { PokemonVariant } from '@/types/pokemonVariants';
-import {
-  type SearchOwnershipMode,
-} from './utils/ownershipMode';
+import { type SearchOwnershipMode } from './utils/ownershipMode';
 import {
   preparePokemonSearchQuery,
   type Coordinates,
@@ -16,7 +26,6 @@ import {
   type PokemonSearchQueryParams,
   type SelectedMoves,
 } from './utils/buildPokemonSearchQuery';
-import { useSearchBarCollapse } from './hooks/useSearchBarCollapse';
 
 type SearchView = 'list' | 'map';
 
@@ -28,8 +37,6 @@ type PokemonSearchBarProps = {
   isLoading: boolean;
   view: SearchView;
   setView: React.Dispatch<React.SetStateAction<SearchView>>;
-  isCollapsed: boolean;
-  setIsCollapsed: React.Dispatch<React.SetStateAction<boolean>>;
   pokemonCache: PokemonVariant[] | null;
 };
 
@@ -40,8 +47,6 @@ const PokemonSearchBar: React.FC<PokemonSearchBarProps> = ({
   isLoading,
   view,
   setView,
-  isCollapsed,
-  setIsCollapsed,
   pokemonCache,
 }) => {
   const [pokemon, setPokemon] = useState('');
@@ -62,7 +67,8 @@ const PokemonSearchBar: React.FC<PokemonSearchBarProps> = ({
   const [gigantamax, setGigantamax] = useState(false);
   const [city, setCity] = useState('');
   const [useCurrentLocation, setUseCurrentLocation] = useState(false);
-  const [ownershipMode, setOwnershipMode] = useState<SearchOwnershipMode>('caught');
+  const [ownershipMode, setOwnershipMode] =
+    useState<SearchOwnershipMode>('caught');
   const [coordinates, setCoordinates] = useState<Coordinates>({
     latitude: null,
     longitude: null,
@@ -81,17 +87,34 @@ const PokemonSearchBar: React.FC<PokemonSearchBarProps> = ({
   const [alreadyRegistered, setAlreadyRegistered] = useState(false);
   const [tradeInWantedList, setTradeInWantedList] = useState(false);
   const [friendshipLevel, setFriendshipLevel] = useState(0);
+  const [filtersOpen, setFiltersOpen] = useState(false);
+  const [initialFilterSection, setInitialFilterSection] =
+    useState<FilterSection>('appearance');
 
   const [errorMessage, setErrorMessage] = useState<string | null>('');
   const [, setSelectedBoundary] = useState<string | null>(null);
-  const {
-    collapsibleRef,
-    isMidWidth,
-    toggleCollapse,
-    markSearchTriggered,
-  } = useSearchBarCollapse({
-    isCollapsed,
-    setIsCollapsed,
+  const variantController = useVariantSearchController({
+    pokemon,
+    setPokemon,
+    isShiny,
+    setIsShiny,
+    isShadow,
+    setIsShadow,
+    costume,
+    setCostume,
+    selectedForm,
+    setSelectedForm,
+    selectedMoves,
+    setSelectedMoves,
+    selectedGender,
+    setSelectedGender,
+    setErrorMessage,
+    setSelectedBackgroundId,
+    dynamax,
+    setDynamax,
+    gigantamax,
+    setGigantamax,
+    pokemonCache,
   });
 
   const handleSearch = async () => {
@@ -124,20 +147,19 @@ const PokemonSearchBar: React.FC<PokemonSearchBarProps> = ({
     if (!preparedSearch.ok) {
       setErrorMessage(preparedSearch.errorMessage);
       if (preparedSearch.shouldExpandSearchBar) {
-        setIsCollapsed(false);
+        setFiltersOpen(true);
       }
-      return;
+      return false;
     }
     const queryParams: PokemonSearchQueryParams = preparedSearch.queryParams;
 
     log.debug('Search query parameters', queryParams);
     await onSearch(queryParams, null);
-    setIsCollapsed(true);
-    markSearchTriggered();
     window.scrollTo({ top: 0, behavior: 'smooth' });
+    return true;
   };
 
-  const locationProps: React.ComponentProps<typeof SearchSecondaryPanels>['locationProps'] = {
+  const locationProps: React.ComponentProps<typeof LocationSearch> = {
     city,
     setCity,
     useCurrentLocation,
@@ -147,13 +169,16 @@ const PokemonSearchBar: React.FC<PokemonSearchBarProps> = ({
     setRange,
     resultsLimit,
     setResultsLimit,
-    handleSearch,
+    handleSearch: () => {
+      void handleSearch();
+    },
     isLoading,
     view,
     setView,
     setSelectedBoundary,
+    showSearchButton: false,
   };
-  const ownershipProps: React.ComponentProps<typeof SearchSecondaryPanels>['ownershipProps'] = {
+  const ownershipProps: React.ComponentProps<typeof OwnershipSearch> = {
     ownershipMode,
     setOwnershipMode,
     ivs,
@@ -172,53 +197,198 @@ const PokemonSearchBar: React.FC<PokemonSearchBarProps> = ({
     setFriendshipLevel,
   };
 
-  return (
-    <div className="pokemon-search-bar sticky">
-      <div
-        ref={collapsibleRef}
-        className={`collapsible-container ${isCollapsed ? 'collapsed' : ''}`}
-      >
-        <div className="search-bar-container content">
-          <div className="pokemon-variant">
-            <VariantSearch
-              pokemon={pokemon}
-              setPokemon={setPokemon}
-              isShiny={isShiny}
-              setIsShiny={setIsShiny}
-              isShadow={isShadow}
-              setIsShadow={setIsShadow}
-              costume={costume}
-              setCostume={setCostume}
-              selectedForm={selectedForm}
-              setSelectedForm={setSelectedForm}
-              selectedMoves={selectedMoves}
-              setSelectedMoves={setSelectedMoves}
-              selectedGender={selectedGender}
-              setSelectedGender={setSelectedGender}
-              setSelectedBackgroundId={setSelectedBackgroundId}
-              setErrorMessage={setErrorMessage}
-              dynamax={dynamax}
-              setDynamax={setDynamax}
-              gigantamax={gigantamax}
-              setGigantamax={setGigantamax}
-              pokemonCache={pokemonCache}
-            />
-          </div>
+  const selectedMoveCount = Object.values(selectedMoves).filter(
+    (move) => move != null && move !== '',
+  ).length;
+  const hasIvFilter =
+    isHundo || Object.values(ivs).some((iv) => iv != null && iv !== '');
+  const hasActiveFilters = Boolean(
+    isShiny ||
+      isShadow ||
+      costume ||
+      selectedForm ||
+      selectedMoveCount ||
+      (selectedGender && selectedGender !== 'Any') ||
+      selectedBackgroundId != null ||
+      dynamax ||
+      gigantamax ||
+      city ||
+      useCurrentLocation ||
+      range !== 5 ||
+      resultsLimit !== 5 ||
+      ownershipMode !== 'caught' ||
+      hasIvFilter ||
+      onlyMatchingTrades ||
+      prefLucky ||
+      alreadyRegistered ||
+      tradeInWantedList ||
+      friendshipLevel > 0,
+  );
 
-          <SearchSecondaryPanels
-            isMidWidth={isMidWidth}
-            locationProps={locationProps}
-            ownershipProps={ownershipProps}
-          />
-        </div>
+  const filterChips = useMemo(() => {
+    const chips: string[] = [];
+    if (ownershipMode !== 'caught') {
+      chips.push(ownershipMode === 'trade' ? 'For Trade' : 'Wanted');
+    }
+    if (useCurrentLocation) chips.push('Current location');
+    else if (city) chips.push(city);
+    else if (range !== 5) chips.push(`Within ${range} km`);
+    if (resultsLimit !== 5) chips.push(`${resultsLimit} results`);
+    if (isShiny) chips.push('Shiny');
+    if (isShadow) chips.push('Shadow');
+    if (gigantamax) chips.push('Gigantamax');
+    else if (dynamax) chips.push('Dynamax');
+    if (selectedForm) chips.push(selectedForm);
+    if (costume) chips.push(costume);
+    if (selectedGender && selectedGender !== 'Any') chips.push(selectedGender);
+    if (selectedMoveCount) {
+      chips.push(
+        `${selectedMoveCount} move filter${selectedMoveCount === 1 ? '' : 's'}`,
+      );
+    }
+    if (selectedBackgroundId != null) chips.push('Background');
+    if (hasIvFilter) chips.push(isHundo ? 'Perfect IV' : 'IV filters');
+    if (onlyMatchingTrades) chips.push('Reciprocal matches');
+    if (prefLucky) chips.push('Lucky preferred');
+    if (alreadyRegistered) chips.push('Registered only');
+    if (tradeInWantedList) chips.push('Wanted-list matches');
+    if (friendshipLevel > 0) chips.push(`${friendshipLevel}/5 hearts`);
+    return chips;
+  }, [
+    alreadyRegistered,
+    city,
+    costume,
+    dynamax,
+    friendshipLevel,
+    gigantamax,
+    hasIvFilter,
+    isHundo,
+    isShadow,
+    isShiny,
+    onlyMatchingTrades,
+    ownershipMode,
+    prefLucky,
+    range,
+    resultsLimit,
+    selectedBackgroundId,
+    selectedForm,
+    selectedGender,
+    selectedMoveCount,
+    tradeInWantedList,
+    useCurrentLocation,
+  ]);
+
+  const resetFilters = () => {
+    variantController.resetVariantFilters();
+    setCity('');
+    setUseCurrentLocation(false);
+    setCoordinates({ latitude: null, longitude: null });
+    setRange(5);
+    setResultsLimit(5);
+    setOwnershipMode('caught');
+    setIvs({ Attack: null, Defense: null, Stamina: null });
+    setIsHundo(false);
+    setOnlyMatchingTrades(false);
+    setPrefLucky(false);
+    setAlreadyRegistered(false);
+    setTradeInWantedList(false);
+    setFriendshipLevel(0);
+  };
+
+  return (
+    <div className="pokemon-search-bar">
+      <div className="search-primary-surface">
+        <VariantSearchPrimaryInput
+          controller={variantController}
+          pokemon={pokemon}
+        />
+
+        <fieldset className="search-primary-ownership">
+          <legend>Looking for</legend>
+          {(['caught', 'trade', 'wanted'] as const).map((option) => (
+            <button
+              aria-pressed={ownershipMode === option}
+              className={`search-primary-ownership__button search-primary-ownership__button--${option}`}
+              key={option}
+              onClick={() => setOwnershipMode(option)}
+              type="button"
+            >
+              {option === 'caught'
+                ? 'Caught'
+                : option === 'trade'
+                  ? 'For Trade'
+                  : 'Wanted'}
+            </button>
+          ))}
+        </fieldset>
+
+        <button
+          className="search-primary-location"
+          onClick={() => {
+            setInitialFilterSection('location');
+            setFiltersOpen(true);
+          }}
+          type="button"
+        >
+          <FaMapMarkerAlt aria-hidden="true" />
+          <span>
+            <small>Location</small>
+            <strong>
+              {useCurrentLocation
+                ? 'Current location'
+                : city || `Within ${range} km`}
+            </strong>
+          </span>
+        </button>
+
+        <button
+          className="search-primary-filter-button"
+          onClick={() => {
+            setInitialFilterSection('appearance');
+            setFiltersOpen(true);
+          }}
+          type="button"
+        >
+          <FaSlidersH aria-hidden="true" />
+          Filters
+          {hasActiveFilters ? <span aria-label="Filters active">•</span> : null}
+        </button>
+
+        <button
+          className="search-primary-submit"
+          disabled={isLoading}
+          onClick={() => void handleSearch()}
+          type="button"
+        >
+          <FaSearch aria-hidden="true" />
+          {isLoading ? 'Searching…' : 'Search'}
+        </button>
       </div>
 
-      <div className="controls-container">
-        <div className="error-message">{errorMessage}</div>
+      {hasActiveFilters ? (
+        <div
+          aria-label="Current search filters"
+          className="search-filter-summary"
+        >
+          <div className="search-filter-summary__chips">
+            {filterChips.map((chip) => (
+              <span key={chip}>{chip}</span>
+            ))}
+          </div>
+          <button onClick={resetFilters} type="button">
+            Reset
+          </button>
+        </div>
+      ) : null}
+
+      <div className="search-results-toolbar">
+        <div className="error-message" role={errorMessage ? 'alert' : undefined}>
+          {errorMessage}
+        </div>
         <div className="view-controls">
           <button
             type="button"
-            className="view-button"
+            className={`view-button ${view === 'list' ? 'active' : ''}`}
             aria-label="List view"
             onClick={() => setView('list')}
           >
@@ -226,15 +396,7 @@ const PokemonSearchBar: React.FC<PokemonSearchBarProps> = ({
           </button>
           <button
             type="button"
-            className="toggle-button"
-            aria-label="Toggle search filters"
-            onClick={toggleCollapse}
-          >
-            {isCollapsed ? <FaChevronDown /> : <FaChevronUp />}
-          </button>
-          <button
-            type="button"
-            className="view-button"
+            className={`view-button ${view === 'map' ? 'active' : ''}`}
             aria-label="Map view"
             onClick={() => setView('map')}
           >
@@ -242,6 +404,31 @@ const PokemonSearchBar: React.FC<PokemonSearchBarProps> = ({
           </button>
         </div>
       </div>
+
+      <SearchFilterSheet
+        appearance={
+          <VariantSearchAdvancedFields
+            controller={variantController}
+            pokemon={pokemon}
+            isShiny={isShiny}
+            isShadow={isShadow}
+            costume={costume}
+            selectedForm={selectedForm}
+            selectedMoves={selectedMoves}
+            dynamax={dynamax}
+            gigantamax={gigantamax}
+          />
+        }
+        canReset={hasActiveFilters}
+        isLoading={isLoading}
+        isOpen={filtersOpen}
+        initialSection={initialFilterSection}
+        location={<LocationSearch {...locationProps} />}
+        matching={<OwnershipSearch {...ownershipProps} />}
+        onClose={() => setFiltersOpen(false)}
+        onReset={resetFilters}
+        onSearch={handleSearch}
+      />
     </div>
   );
 };

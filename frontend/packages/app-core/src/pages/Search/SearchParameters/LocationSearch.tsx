@@ -34,6 +34,7 @@ type LocationSearchProps = {
   view: ViewMode;
   setView: React.Dispatch<React.SetStateAction<ViewMode>>;
   setSelectedBoundary?: React.Dispatch<React.SetStateAction<string | null>>;
+  showSearchButton?: boolean;
 };
 
 const log = createScopedLogger('LocationSearch');
@@ -62,6 +63,7 @@ const LocationSearch: React.FC<LocationSearchProps> = ({
   view: _view,
   setView: _setView,
   setSelectedBoundary,
+  showSearchButton = true,
 }) => {
   const [suggestions, setSuggestions] = useState<SuggestionWithCoordinates[]>([]);
   const wrapperRef = useRef<HTMLDivElement | null>(null);
@@ -217,11 +219,13 @@ const LocationSearch: React.FC<LocationSearchProps> = ({
         </div>
       </div>
 
-      <div className="location-search-button">
-        <button type="button" onClick={handleSearch} disabled={isLoading}>
-          {isLoading ? 'Searching...' : 'Search'}
-        </button>
-      </div>
+      {showSearchButton ? (
+        <div className="location-search-button">
+          <button type="button" onClick={handleSearch} disabled={isLoading}>
+            {isLoading ? 'Searching...' : 'Search'}
+          </button>
+        </div>
+      ) : null}
     </div>
   );
 };

@@ -1,6 +1,7 @@
 import React from 'react';
 
 interface VariantSearchInputProps {
+  inputId?: string;
   pokemon: string;
   suggestions: string[];
   onPokemonChange: (event: React.ChangeEvent<HTMLInputElement>) => void;
@@ -10,6 +11,7 @@ interface VariantSearchInputProps {
 }
 
 const VariantSearchInput: React.FC<VariantSearchInputProps> = ({
+  inputId,
   pokemon,
   suggestions,
   onPokemonChange,
@@ -19,6 +21,7 @@ const VariantSearchInput: React.FC<VariantSearchInputProps> = ({
 }) => (
   <div className="pokemon-search-row">
     <input
+      id={inputId}
       type="text"
       value={pokemon}
       onChange={onPokemonChange}

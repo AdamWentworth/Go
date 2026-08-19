@@ -339,4 +339,58 @@ describe('useVariantSearchController', () => {
     expect(result.current.availableCostumes).toEqual([]);
     expect(setCostume).toHaveBeenCalledWith(null);
   });
+
+  it('resets every advanced variant filter without clearing the Pokemon', () => {
+    const setIsShiny = toSetter<boolean>();
+    const setIsShadow = toSetter<boolean>();
+    const setCostume = toSetter<string | null>();
+    const setSelectedForm = toSetter<string>();
+    const setSelectedGender = toSetter<string | null>();
+    const setSelectedMoves = toSetter<SelectedMoves>();
+    const setSelectedBackgroundId = toSetter<number | null>();
+    const setDynamax = toSetter<boolean>();
+    const setGigantamax = toSetter<boolean>();
+    const setErrorMessage = toSetter<string | null>();
+    const args = makeArgs({
+      pokemon: 'Bulbasaur',
+      isShiny: true,
+      isShadow: true,
+      costume: 'Party',
+      selectedForm: 'Origin',
+      selectedGender: 'Female',
+      dynamax: true,
+      gigantamax: true,
+      setIsShiny,
+      setIsShadow,
+      setCostume,
+      setSelectedForm,
+      setSelectedGender,
+      setSelectedMoves,
+      setSelectedBackgroundId,
+      setDynamax,
+      setGigantamax,
+      setErrorMessage,
+    });
+    const { result } = renderHook(() => useVariantSearchController(args));
+
+    act(() => {
+      result.current.resetVariantFilters();
+    });
+
+    expect(setIsShiny).toHaveBeenCalledWith(false);
+    expect(setIsShadow).toHaveBeenCalledWith(false);
+    expect(setCostume).toHaveBeenCalledWith(null);
+    expect(setSelectedForm).toHaveBeenCalledWith('');
+    expect(setSelectedGender).toHaveBeenCalledWith('Any');
+    expect(setSelectedMoves).toHaveBeenCalledWith({
+      fastMove: null,
+      chargedMove1: null,
+      chargedMove2: null,
+    });
+    expect(setSelectedBackgroundId).toHaveBeenCalledWith(null);
+    expect(setDynamax).toHaveBeenCalledWith(false);
+    expect(setGigantamax).toHaveBeenCalledWith(false);
+    expect(setErrorMessage).toHaveBeenCalledWith(null);
+    expect(args.setPokemon).not.toHaveBeenCalled();
+  });
 });

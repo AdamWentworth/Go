@@ -8,7 +8,9 @@ import VariantSearchInput from './VariantSearchInput';
 import VariantSearchTogglePanel from './VariantSearchTogglePanel';
 import VariantSearchPreviewPanel from './VariantSearchPreviewPanel';
 import VariantSearchBackgroundOverlay from './VariantSearchBackgroundOverlay';
-import useVariantSearchController from './useVariantSearchController';
+import useVariantSearchController, {
+  type UseVariantSearchControllerResult,
+} from './useVariantSearchController';
 import './VariantSearch.base.css';
 import './VariantSearch.responsive.css';
 
@@ -35,6 +37,103 @@ type VariantSearchProps = {
   setGigantamax: React.Dispatch<React.SetStateAction<boolean>>;
   pokemonCache: PokemonVariant[] | null;
 };
+
+type ControlledVariantSearchProps = {
+  controller: UseVariantSearchControllerResult;
+  pokemon: string;
+  isShiny: boolean;
+  isShadow: boolean;
+  costume: string | null;
+  selectedForm: string;
+  selectedMoves: SelectedMoves;
+  dynamax: boolean;
+  gigantamax: boolean;
+};
+
+export const VariantSearchPrimaryInput: React.FC<
+  Pick<ControlledVariantSearchProps, 'controller' | 'pokemon'>
+> = ({ controller, pokemon }) => (
+  <div className="search-primary-pokemon-field">
+    <label htmlFor="pokemon-search-primary-input">Pokémon</label>
+    <VariantSearchInput
+      inputId="pokemon-search-primary-input"
+      pokemon={pokemon}
+      suggestions={controller.suggestions}
+      onPokemonChange={controller.handlePokemonChange}
+      onInputFocus={controller.handleInputFocus}
+      onInputBlur={controller.handleInputBlur}
+      onSuggestionClick={controller.handleSuggestionClick}
+    />
+  </div>
+);
+
+export const VariantSearchAdvancedFields: React.FC<
+  ControlledVariantSearchProps
+> = ({
+  controller,
+  pokemon,
+  isShiny,
+  isShadow,
+  costume,
+  selectedForm,
+  selectedMoves,
+  dynamax,
+  gigantamax,
+}) => (
+  <div className="pokemon-variant-container search-advanced-variant">
+    <div className="main-content">
+      <div className="pokemon-variant-details">
+        <h3>Appearance</h3>
+        <VariantSearchTogglePanel
+          isShiny={isShiny}
+          isShadow={isShadow}
+          showCostumeDropdown={controller.showCostumeDropdown}
+          onShinyToggle={controller.handleShinyChange}
+          onCostumeToggle={controller.handleCostumeToggle}
+          onShadowToggle={controller.handleShadowChange}
+          availableForms={controller.availableForms}
+          selectedForm={selectedForm}
+          onFormChange={controller.handleFormChange}
+          availableCostumeNames={controller.availableCostumes.map(
+            (entry) => entry.name,
+          )}
+          costume={costume}
+          onCostumeChange={controller.handleCostumeChange}
+          formatCostumeLabel={formatCostumeName}
+          formatFormLabel={formatForm}
+        />
+      </div>
+
+      <VariantSearchPreviewPanel
+        selectedBackground={controller.selectedBackground}
+        imageUrl={controller.imageUrl}
+        imageError={controller.imageError}
+        pokemon={pokemon}
+        onImageError={controller.handleImageError}
+        dynamax={dynamax}
+        gigantamax={gigantamax}
+        currentPokemonData={controller.currentPokemonData}
+        selectedMoves={selectedMoves}
+        onMovesChange={controller.handleMovesChange}
+        onGenderChange={controller.handleGenderChange}
+        backgroundAllowed={controller.backgroundAllowed}
+        onOpenBackgroundOverlay={() =>
+          controller.setShowBackgroundOverlay(true)
+        }
+        canDynamax={controller.canDynamax}
+        onToggleMax={controller.toggleMax}
+      />
+    </div>
+
+    <VariantSearchBackgroundOverlay
+      isOpen={controller.showBackgroundOverlay}
+      onClose={() => controller.setShowBackgroundOverlay(false)}
+      currentPokemonData={controller.currentPokemonData}
+      onSelectBackground={controller.handleBackgroundChange}
+      selectedCostumeId={controller.selectedCostumeId}
+    />
+  </div>
+);
 
 const VariantSearch: React.FC<VariantSearchProps> = ({
   pokemon,

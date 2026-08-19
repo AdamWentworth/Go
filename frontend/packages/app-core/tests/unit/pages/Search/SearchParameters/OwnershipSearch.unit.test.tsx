@@ -108,7 +108,7 @@ describe('OwnershipSearch', () => {
       />,
     );
 
-    fireEvent.click(screen.getByRole('button', { name: 'Trade' }));
+    fireEvent.click(screen.getByRole('button', { name: 'For Trade' }));
     fireEvent.click(screen.getByRole('button', { name: 'Wanted' }));
 
     expect(setOwnershipMode).toHaveBeenNthCalledWith(1, 'trade');

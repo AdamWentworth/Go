@@ -28,7 +28,7 @@ import type { BackgroundSelection } from './VariantSearchBackgroundOverlay';
 import type { SelectedMoves } from './VariantComponents/MovesSearch';
 import type { PokemonVariant } from '@/types/pokemonVariants';
 
-interface UseVariantSearchControllerArgs {
+export interface UseVariantSearchControllerArgs {
   pokemon: string;
   setPokemon: React.Dispatch<React.SetStateAction<string>>;
   isShiny: boolean;
@@ -52,7 +52,7 @@ interface UseVariantSearchControllerArgs {
   pokemonCache: PokemonVariant[] | null;
 }
 
-interface UseVariantSearchControllerResult {
+export interface UseVariantSearchControllerResult {
   currentPokemonData: PokemonVariant | undefined;
   availableForms: string[];
   availableCostumes: SortableCostume[];
@@ -80,6 +80,7 @@ interface UseVariantSearchControllerResult {
   handleFormChange: (event: React.ChangeEvent<HTMLSelectElement>) => void;
   handleMovesChange: (moves: SelectedMoves) => void;
   handleSuggestionClick: (suggestion: string) => void;
+  resetVariantFilters: () => void;
 }
 
 const useVariantSearchController = ({
@@ -326,6 +327,35 @@ const useVariantSearchController = ({
     handleValidation(suggestionDecision.validationPatch);
   };
 
+  const resetVariantFilters = () => {
+    const resetState = buildPokemonChangeResetState();
+    setIsShiny(false);
+    setIsShadow(false);
+    setCostume(null);
+    setSelectedForm(resetState.selectedForm);
+    setSelectedGender(resetState.selectedGender);
+    setSelectedMoves(resetState.selectedMoves);
+    setSelectedBackground(null);
+    setSelectedBackgroundId(null);
+    setDynamax(resetState.dynamax);
+    setGigantamax(resetState.gigantamax);
+    setShowCostumeDropdown(false);
+    setImageError(false);
+    setErrorMessage(null);
+
+    if (pokemon) {
+      handleValidation({
+        shinyChecked: false,
+        shadowChecked: false,
+        selectedCostume: null,
+        form: resetState.selectedForm,
+        selectedGenderValue: resetState.selectedGender,
+        dynamaxEnabled: resetState.dynamax,
+        gigantamaxEnabled: resetState.gigantamax,
+      });
+    }
+  };
+
   return {
     currentPokemonData,
     availableForms,
@@ -354,6 +384,7 @@ const useVariantSearchController = ({
     handleFormChange,
     handleMovesChange,
     handleSuggestionClick,
+    resetVariantFilters,
   };
 };
 

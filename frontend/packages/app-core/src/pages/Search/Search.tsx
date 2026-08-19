@@ -52,7 +52,6 @@ const Search: React.FC = () => {
   const [errorMessage, setErrorMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [hasSearched, setHasSearched] = useState(false);
-  const [isCollapsed, setIsCollapsed] = useState(false);
   const [scrollToTopTrigger, setScrollToTopTrigger] = useState(0);
 
   const variants = useVariantsStore((state) => state.variants);
@@ -105,7 +104,9 @@ const Search: React.FC = () => {
     setErrorMessage('');
     setIsLoading(true);
     setHasSearched(true);
-    setOwnershipMode(normalizeOwnershipMode(coerceOwnershipModeInput(queryParams.ownership)));
+    setOwnershipMode(
+      normalizeOwnershipMode(coerceOwnershipModeInput(queryParams.ownership)),
+    );
     shouldScrollRef.current = true;
 
     try {
@@ -134,19 +135,15 @@ const Search: React.FC = () => {
           enrichedData.sort((a, b) => (a.distance ?? 0) - (b.distance ?? 0));
           setSearchResults(enrichedData);
           setScrollToTopTrigger((prev) => prev + 1);
-          setIsCollapsed(true);
         } else {
           setSearchResults([]);
-          setIsCollapsed(false);
         }
       } else {
         setSearchResults([]);
-        setIsCollapsed(false);
       }
     } catch (error) {
       log.error('Search request failed', error);
       await alert('An error occurred while searching. Please try again.');
-      setIsCollapsed(false);
     } finally {
       setIsLoading(false);
     }
@@ -180,8 +177,6 @@ const Search: React.FC = () => {
             isLoading={isLoading}
             view={view}
             setView={setView}
-            isCollapsed={isCollapsed}
-            setIsCollapsed={setIsCollapsed}
             pokemonCache={pokemonCache}
           />
 
