@@ -257,7 +257,8 @@
 }
 
 .wanted-instance__moves .move-section {
-  padding-inline: 2px;
+  margin-bottom: 1px;
+  padding: 2px 4px;
   overflow: hidden;
 }
 
