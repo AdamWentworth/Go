@@ -213,6 +213,8 @@ const PokemonCard = memo(({
     ${isDisabled ? 'disabled-card' : ''}
     ${shouldJiggle ? 'jiggle' : ''}
   `.trim();
+  const isWantedListing =
+    displayModel.ownershipClass === 'wanted' || Boolean(pokemon.instanceData?.is_wanted);
 
   // Modifier-click toggles selection on desktop; normal activation delegates to the
   // parent, which selects catalog entries and opens owned instance details.
@@ -277,7 +279,7 @@ const PokemonCard = memo(({
       </div>
 
       <div className="fav-container">
-        {pokemon.instanceData?.favorite && (
+        {!isWantedListing && pokemon.instanceData?.favorite && (
           <img
             src="/images/fav_pressed.png"
             alt="Favorite"
@@ -285,6 +287,14 @@ const PokemonCard = memo(({
             draggable={false}
           />
         )}
+        {isWantedListing && pokemon.instanceData?.most_wanted ? (
+          <span
+            className="favorite-icon most-wanted-icon"
+            role="img"
+            aria-label="Most Wanted"
+            title="Most Wanted"
+          />
+        ) : null}
       </div>
 
       <PokemonImagePresentation

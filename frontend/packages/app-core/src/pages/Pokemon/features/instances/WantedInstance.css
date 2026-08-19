@@ -57,6 +57,22 @@
   grid-template-columns: auto minmax(104px, auto) minmax(0, 1fr);
 }
 
+.wanted-instance__conditions.has-priority {
+  grid-template-columns: minmax(104px, 1fr) auto;
+}
+
+.wanted-instance__conditions.has-actions.has-priority {
+  grid-template-columns: auto minmax(104px, 1fr) auto;
+}
+
+.wanted-instance__conditions.has-priority .friendship-level-container {
+  grid-column: 1 / -1;
+}
+
+.wanted-instance--most-wanted .identity-name-slot .identity-name-eyebrow {
+  color: #ff7043;
+}
+
 .wanted-instance__conditions-label {
   display: grid;
   gap: 3px;
@@ -294,6 +310,14 @@
     grid-template-columns: auto minmax(0, 1fr);
   }
 
+  .wanted-instance__conditions.has-priority {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+
+  .wanted-instance__conditions.has-actions.has-priority {
+    grid-template-columns: auto minmax(0, 1fr) auto;
+  }
+
   .wanted-instance__conditions-label {
     display: flex;
     align-items: baseline;
@@ -314,6 +338,10 @@
   .wanted-instance__condition-actions {
     grid-column: 1;
     grid-row: 1;
+  }
+
+  .wanted-instance__conditions.has-actions.has-priority .wanted-instance__conditions-label {
+    justify-self: center;
   }
 
   .wanted-instance__requirements {

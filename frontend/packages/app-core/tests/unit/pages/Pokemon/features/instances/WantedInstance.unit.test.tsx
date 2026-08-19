@@ -174,6 +174,7 @@ const makePokemon = (overrides: Record<string, unknown> = {}) =>
       charged_move2_id: null,
       friendship_level: 3,
       pref_lucky: false,
+      most_wanted: false,
       location_card: '7',
       dynamax: true,
       gigantamax: false,
@@ -228,7 +229,15 @@ describe('WantedInstance', () => {
     expect(document.querySelector('.wanted-instance__requirements')).not.toBeNull();
     expect(screen.getByTestId('stats-row')).toHaveAttribute('data-show-types', 'false');
     fireEvent.click(screen.getByRole('button', { name: 'Require remote lucky trade' }));
-    expect(onPreviewInstanceDataChange).toHaveBeenLastCalledWith({ pref_lucky: true });
+    expect(onPreviewInstanceDataChange).toHaveBeenLastCalledWith({
+      pref_lucky: true,
+      most_wanted: false,
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Mark as Most Wanted' }));
+    expect(onPreviewInstanceDataChange).toHaveBeenLastCalledWith({
+      pref_lucky: true,
+      most_wanted: true,
+    });
     fireEvent.click(screen.getByRole('button', { name: 'Set female' }));
     fireEvent.click(screen.getByRole('button', { name: 'Set desired moves' }));
     fireEvent.click(screen.getByRole('button', { name: 'Choose special background' }));
@@ -244,6 +253,7 @@ describe('WantedInstance', () => {
           charged_move1_id: 22,
           friendship_level: 5,
           pref_lucky: true,
+          most_wanted: true,
           location_card: '7',
         }),
       );
@@ -273,6 +283,21 @@ describe('WantedInstance', () => {
     expect(screen.queryByRole('button', { name: 'Edit wanted listing' })).not.toBeInTheDocument();
     expect(screen.getByText('Wanted')).toBeInTheDocument();
     expect(screen.getByText('3/5 hearts')).toBeInTheDocument();
+    expect(screen.queryByText('Most Wanted')).not.toBeInTheDocument();
+  });
+
+  it('labels another trainer priority listing as Most Wanted without exposing a toggle', () => {
+    render(
+      <WantedInstance
+        pokemon={makePokemon({ most_wanted: true })}
+        isEditable={false}
+        catalogView
+      />,
+    );
+
+    expect(screen.getAllByText('Most Wanted')).toHaveLength(2);
+    expect(screen.getByRole('button', { name: 'Most Wanted' })).toBeDisabled();
+    expect(document.querySelector('.wanted-instance--most-wanted')).not.toBeNull();
   });
 
   it('reveals only meaningful desired details outside edit mode', () => {

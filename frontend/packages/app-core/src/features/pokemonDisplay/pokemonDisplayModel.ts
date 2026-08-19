@@ -215,6 +215,7 @@ export const getPokemonDisplayOwnershipClass = (tagFilter: string): string => {
     case 'trade':
       return 'trade';
     case 'wanted':
+    case 'most wanted':
       return 'wanted';
     case 'missing':
       return 'missing';
@@ -228,7 +229,8 @@ export const shouldDisplayPokemonLuckyBackdrop = (
   instanceData: Partial<PokemonInstance> | undefined,
 ): boolean =>
   Boolean(
-    (tagFilter.toLowerCase() === 'wanted' && instanceData?.pref_lucky) ||
+    (['wanted', 'most wanted'].includes(tagFilter.toLowerCase()) &&
+      instanceData?.pref_lucky) ||
       instanceData?.lucky,
   );
 

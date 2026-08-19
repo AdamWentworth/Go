@@ -13,6 +13,7 @@ import { determineImageUrl } from '@/utils/imageHelpers';
 import { createScopedLogger } from '@/utils/logger';
 
 import FriendshipManager from './components/Wanted/FriendshipManager';
+import MostWantedToggle from './components/Wanted/MostWantedToggle';
 import BackgroundSelector from './sections/BackgroundSelector';
 import IdentityRow from './sections/IdentityRow';
 import ImageStage from './sections/ImageStage';
@@ -87,6 +88,7 @@ const WantedInstance: React.FC<WantedInstanceProps> = ({
     Math.max(0, Math.min(5, Math.trunc(Number(instanceData.friendship_level ?? 0)))),
   );
   const [isLucky, setIsLucky] = useState(Boolean(instanceData.pref_lucky));
+  const [mostWanted, setMostWanted] = useState(Boolean(instanceData.most_wanted));
   const [showBackgrounds, setShowBackgrounds] = useState(false);
   const [selectedBackground, setSelectedBackground] =
     useState<BackgroundOption | null>(() => {
@@ -99,8 +101,15 @@ const WantedInstance: React.FC<WantedInstanceProps> = ({
     });
 
   useEffect(() => {
-    onPreviewInstanceDataChange?.({ pref_lucky: isLucky });
-  }, [isLucky, onPreviewInstanceDataChange]);
+    onPreviewInstanceDataChange?.({
+      pref_lucky: isLucky,
+      most_wanted: mostWanted,
+    });
+  }, [isLucky, mostWanted, onPreviewInstanceDataChange]);
+
+  useEffect(() => {
+    if (!editMode) setMostWanted(Boolean(instanceData.most_wanted));
+  }, [editMode, instanceData.most_wanted]);
 
   const backgrounds = useMemo(() => pokemon.backgrounds ?? [], [pokemon.backgrounds]);
   const selectableBackgrounds = useMemo(
@@ -183,6 +192,7 @@ const WantedInstance: React.FC<WantedInstanceProps> = ({
         charged_move2_id: moves.chargedMove2,
         friendship_level: friendship,
         pref_lucky: isLucky,
+        most_wanted: mostWanted,
         location_card: selectedBackground
           ? String(selectedBackground.background_id)
           : null,
@@ -196,7 +206,9 @@ const WantedInstance: React.FC<WantedInstanceProps> = ({
 
   const friendshipSection = (
     <section
-      className={`wanted-instance__conditions${isEditable ? ' has-actions' : ''}`}
+      className={`wanted-instance__conditions${isEditable ? ' has-actions' : ''}${
+        isEditable || mostWanted ? ' has-priority' : ''
+      }`}
       aria-labelledby={`${entityKey}-conditions`}
     >
       {isEditable ? (
@@ -221,6 +233,13 @@ const WantedInstance: React.FC<WantedInstanceProps> = ({
         <strong id={`${entityKey}-conditions`}>Wanted conditions</strong>
         <span>Friendship and eligibility</span>
       </div>
+      {isEditable || mostWanted ? (
+        <MostWantedToggle
+          active={mostWanted}
+          editMode={editMode}
+          onChange={setMostWanted}
+        />
+      ) : null}
       <FriendshipManager
         friendship={friendship}
         setFriendship={setFriendship}
@@ -272,7 +291,11 @@ const WantedInstance: React.FC<WantedInstanceProps> = ({
 
   if (catalogView) {
     return (
-      <div className="caught-instance wanted-instance wanted-instance--catalog-view">
+      <div
+        className={`caught-instance wanted-instance wanted-instance--catalog-view${
+          mostWanted ? ' wanted-instance--most-wanted' : ''
+        }`}
+      >
         <div className="instance-details-body">
           {friendshipSection}
           <ImageStage
@@ -295,7 +318,7 @@ const WantedInstance: React.FC<WantedInstanceProps> = ({
             onTogglePurify={() => undefined}
             showLucky={false}
             showPurify={false}
-            eyebrow="Wanted"
+            eyebrow={mostWanted ? 'Most Wanted' : 'Wanted'}
           />
           {wantedDetails}
         </div>
@@ -306,6 +329,8 @@ const WantedInstance: React.FC<WantedInstanceProps> = ({
   return (
     <div
       className={`caught-instance wanted-instance wanted-instance--caught-layout${
+        mostWanted ? ' wanted-instance--most-wanted' : ''
+      }${
         compactListingView ? ' wanted-instance--compact-listing' : ''
       }`}
     >
@@ -333,7 +358,7 @@ const WantedInstance: React.FC<WantedInstanceProps> = ({
           onTogglePurify={() => undefined}
           showLucky={false}
           showPurify={false}
-          eyebrow="Wanted"
+          eyebrow={mostWanted ? 'Most Wanted' : 'Wanted'}
         />
 
         {wantedDetails}

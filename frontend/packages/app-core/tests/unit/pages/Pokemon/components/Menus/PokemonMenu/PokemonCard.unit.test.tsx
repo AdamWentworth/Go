@@ -169,6 +169,60 @@ describe('PokemonCard', () => {
     ).toBeInTheDocument();
   });
 
+  it('uses the red-orange Most Wanted star instead of Favorite on wanted cards', () => {
+    const { rerender } = render(
+      <PokemonCard
+        pokemon={makePokemon({
+          instanceData: {
+            instance_id: 'wanted-1',
+            is_wanted: true,
+            most_wanted: true,
+            favorite: true,
+          },
+        })}
+        onSelect={vi.fn()}
+        onSwipe={vi.fn()}
+        toggleCardHighlight={vi.fn()}
+        setIsFastSelectEnabled={vi.fn()}
+        isEditable
+        isFastSelectEnabled={false}
+        isHighlighted={false}
+        tagFilter="Wanted"
+        sortType="name"
+        variantByPokemonId={new Map()}
+      />,
+    );
+
+    expect(screen.getByRole('img', { name: 'Most Wanted' })).toHaveClass(
+      'most-wanted-icon',
+    );
+    expect(screen.queryByAltText('Favorite')).not.toBeInTheDocument();
+
+    rerender(
+      <PokemonCard
+        pokemon={makePokemon({
+          instanceData: {
+            instance_id: 'wanted-1',
+            is_wanted: true,
+            most_wanted: false,
+          },
+        })}
+        onSelect={vi.fn()}
+        onSwipe={vi.fn()}
+        toggleCardHighlight={vi.fn()}
+        setIsFastSelectEnabled={vi.fn()}
+        isEditable
+        isFastSelectEnabled={false}
+        isHighlighted={false}
+        tagFilter="Wanted"
+        sortType="name"
+        variantByPokemonId={new Map()}
+      />,
+    );
+
+    expect(screen.queryByRole('img', { name: 'Most Wanted' })).not.toBeInTheDocument();
+  });
+
   it('renders mega-prefixed display names in catalog cards for mega instances', () => {
     renderCard({
       name: 'Shiny Tyranitar',
