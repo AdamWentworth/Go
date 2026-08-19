@@ -228,6 +228,9 @@ describe('WantedInstance', () => {
 
     expect(document.querySelector('.wanted-instance__requirements')).not.toBeNull();
     expect(screen.getByTestId('stats-row')).toHaveAttribute('data-show-types', 'false');
+    const backgroundButton = screen.getByRole('button', { name: 'Choose special background' });
+    expect(backgroundButton.closest('.wanted-instance__image-stage')).not.toBeNull();
+    expect(backgroundButton.closest('.wanted-instance__conditions')).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: 'Require remote lucky trade' }));
     expect(onPreviewInstanceDataChange).toHaveBeenLastCalledWith({
       pref_lucky: true,
@@ -240,7 +243,7 @@ describe('WantedInstance', () => {
     });
     fireEvent.click(screen.getByRole('button', { name: 'Set female' }));
     fireEvent.click(screen.getByRole('button', { name: 'Set desired moves' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Choose special background' }));
+    fireEvent.click(backgroundButton);
     fireEvent.click(screen.getByRole('button', { name: 'Select Vancouver background' }));
     fireEvent.click(screen.getByRole('button', { name: 'Save wanted listing' }));
 

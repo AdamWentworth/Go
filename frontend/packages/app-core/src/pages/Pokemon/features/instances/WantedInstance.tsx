@@ -219,14 +219,6 @@ const WantedInstance: React.FC<WantedInstanceProps> = ({
             isEditable
             label={editMode ? 'Save wanted listing' : 'Edit wanted listing'}
           />
-          {editMode ? (
-            <BackgroundSelector
-              canPick={selectableBackgrounds.length > 0}
-              editMode
-              onToggle={() => setShowBackgrounds((visible) => !visible)}
-              variant="header"
-            />
-          ) : null}
         </div>
       ) : null}
       <div className="wanted-instance__conditions-label">
@@ -248,6 +240,30 @@ const WantedInstance: React.FC<WantedInstanceProps> = ({
         setIsLucky={setIsLucky}
       />
     </section>
+  );
+
+  const wantedImageStage = (
+    <div className="wanted-instance__image-stage">
+      <ImageStage
+        selectedBackground={selectedBackground}
+        isLucky={isLucky}
+        currentImage={currentImage}
+        name={displayName}
+        dynamax={dynamax}
+        gigantamax={gigantamax}
+        isPurified={isPurified}
+      />
+      {editMode ? (
+        <div className="wanted-instance__background-action">
+          <BackgroundSelector
+            canPick={selectableBackgrounds.length > 0}
+            editMode
+            onToggle={() => setShowBackgrounds((visible) => !visible)}
+            variant="header"
+          />
+        </div>
+      ) : null}
+    </div>
   );
 
   const wantedDetails = showWantedDetails ? (
@@ -298,15 +314,7 @@ const WantedInstance: React.FC<WantedInstanceProps> = ({
       >
         <div className="instance-details-body">
           {friendshipSection}
-          <ImageStage
-            selectedBackground={selectedBackground}
-            isLucky={isLucky}
-            currentImage={currentImage}
-            name={displayName}
-            dynamax={dynamax}
-            gigantamax={gigantamax}
-            isPurified={isPurified}
-          />
+          {wantedImageStage}
           <IdentityRow
             pokemon={displayPokemon}
             isLucky={isLucky}
@@ -337,15 +345,7 @@ const WantedInstance: React.FC<WantedInstanceProps> = ({
       <div className="instance-details-body">
         {friendshipSection}
 
-        <ImageStage
-          selectedBackground={selectedBackground}
-          isLucky={isLucky}
-          currentImage={currentImage}
-          name={displayName}
-          dynamax={dynamax}
-          gigantamax={gigantamax}
-          isPurified={isPurified}
-        />
+        {wantedImageStage}
 
         <IdentityRow
           pokemon={displayPokemon}
