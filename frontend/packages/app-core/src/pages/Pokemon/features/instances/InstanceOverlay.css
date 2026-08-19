@@ -472,7 +472,7 @@
 
 @media (max-width: 520px) {
   .trade-pane-shell--wanted {
-    --panel-offset: 242px;
+    --panel-offset: 286px;
   }
 
   .trade-pane-shell--catalog-view {
@@ -481,6 +481,16 @@
      * This belongs on the shell because the card background is its ::before.
      */
     --panel-offset: clamp(184px, 46vw, 206px);
+  }
+
+  .trade-pane-shell--wanted.trade-pane-shell--catalog-view {
+    --panel-offset: clamp(218px, 55vw, 245px);
+  }
+}
+
+@media (max-width: 370px) {
+  .trade-pane-shell--wanted:not(.trade-pane-shell--catalog-view) {
+    --panel-offset: 306px;
   }
 }
 
