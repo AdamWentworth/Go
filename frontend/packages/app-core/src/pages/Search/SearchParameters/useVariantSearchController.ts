@@ -72,6 +72,7 @@ export interface UseVariantSearchControllerResult {
   setShowBackgroundOverlay: React.Dispatch<React.SetStateAction<boolean>>;
   handleImageError: () => void;
   handleBackgroundChange: (background: BackgroundSelection | null) => void;
+  handleClearPokemon: () => void;
   handleGenderChange: (gender: string | null) => void;
   handlePokemonChange: (event: React.ChangeEvent<HTMLInputElement>) => void;
   handleInputFocus: () => void;
@@ -197,11 +198,12 @@ const useVariantSearchController = ({
   };
 
   useEffect(() => {
-    if (pokemon) {
+    if (pokemon && currentPokemonData) {
       handleValidationRef.current();
     }
   }, [
     costume,
+    currentPokemonData,
     dynamax,
     gigantamax,
     isShadow,
@@ -221,36 +223,56 @@ const useVariantSearchController = ({
     setImageError(true);
   };
 
-  const handlePokemonChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const newPokemon = event.target.value;
+  const updatePokemonInput = (newPokemon: string) => {
     const inputDecision = evaluatePokemonInputChange({
       nextPokemon: newPokemon,
       pokemonData,
     });
     if (inputDecision.shouldIgnore) return;
     const resetState = buildPokemonChangeResetState();
+    const normalizedPokemon = newPokemon.trim().toLowerCase();
+    const hasExactMatch = pokemonData.some(
+      (entry) => entry.name.toLowerCase() === normalizedPokemon,
+    );
 
     setPokemon(newPokemon);
+    setCostume(null);
     setSelectedForm(resetState.selectedForm);
     setSelectedGender(resetState.selectedGender);
     setSelectedMoves(resetState.selectedMoves);
+    setSelectedBackground(null);
+    setSelectedBackgroundId(null);
     setDynamax(resetState.dynamax);
     setGigantamax(resetState.gigantamax);
+    setShowCostumeDropdown(false);
 
     setSuggestions(inputDecision.suggestions);
-    if (inputDecision.shouldResetDerivedState) {
+    if (inputDecision.shouldResetDerivedState || !hasExactMatch) {
       setImageUrl(null);
+      setImageError(false);
       setAvailableForms([]);
       setAvailableCostumes([]);
-      setCostume(null);
-      setSelectedBackground(null);
+      setErrorMessage(null);
+      clearError();
       return;
     }
 
     handleValidation({
       name: newPokemon,
       form: '',
+      selectedCostume: null,
+      selectedGenderValue: resetState.selectedGender,
+      dynamaxEnabled: resetState.dynamax,
+      gigantamaxEnabled: resetState.gigantamax,
     });
+  };
+
+  const handlePokemonChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    updatePokemonInput(event.target.value);
+  };
+
+  const handleClearPokemon = () => {
+    updatePokemonInput('');
   };
 
   const handleInputFocus = () => {
@@ -384,6 +406,7 @@ const useVariantSearchController = ({
     setShowBackgroundOverlay,
     handleImageError,
     handleBackgroundChange,
+    handleClearPokemon,
     handleGenderChange,
     handlePokemonChange,
     handleInputFocus,

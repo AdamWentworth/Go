@@ -4,6 +4,7 @@ import { fireEvent, render, screen } from '@testing-library/react';
 
 import { VariantSearchPrimaryInput } from '@/pages/Search/SearchParameters/VariantSearch';
 import type { UseVariantSearchControllerResult } from '@/pages/Search/SearchParameters/useVariantSearchController';
+import type { PokemonVariant } from '@/types/pokemonVariants';
 
 const buildController = (
   overrides: Partial<UseVariantSearchControllerResult> = {},
@@ -38,6 +39,7 @@ describe('VariantSearchPrimaryInput', () => {
         dynamax
         gigantamax={false}
         pokemon="Bulbasaur"
+        pokemonCache={[]}
       />,
     );
 
@@ -69,6 +71,7 @@ describe('VariantSearchPrimaryInput', () => {
         dynamax={false}
         gigantamax={false}
         pokemon="Bul"
+        pokemonCache={[]}
       />,
     );
 
@@ -79,5 +82,36 @@ describe('VariantSearchPrimaryInput', () => {
         .closest('.search-primary-pokemon-control'),
     ).not.toHaveClass('has-preview');
     expect(screen.queryByRole('img')).not.toBeInTheDocument();
+  });
+
+  it('enriches matching names with catalog imagery and Pokédex details', () => {
+    const pokemonCache = [
+      {
+        image_url: '/images/bulbasaur.png',
+        name: 'Bulbasaur',
+        pokedex_number: 1,
+        type1_name: 'Grass',
+        type2_name: 'Poison',
+        variant_id: '0001-default',
+      } as PokemonVariant,
+    ];
+
+    render(
+      <VariantSearchPrimaryInput
+        controller={buildController({
+          imageUrl: null,
+          suggestions: ['Bulbasaur'],
+        })}
+        dynamax={false}
+        gigantamax={false}
+        pokemon="Bul"
+        pokemonCache={pokemonCache}
+      />,
+    );
+
+    expect(screen.getByRole('option', { name: /Bulbasaur/ }))
+      .toBeInTheDocument();
+    expect(screen.getByText('#0001')).toBeInTheDocument();
+    expect(screen.getByText('Grass · Poison')).toBeInTheDocument();
   });
 });

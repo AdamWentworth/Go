@@ -47,14 +47,25 @@ export const normalizeAvailableForms = (validatedForms: unknown[]): string[] => 
 export const getPokemonSuggestions = (
   pokemonData: PokemonVariant[],
   query: string,
-): string[] =>
-  Array.from(
+  limit = 6,
+): string[] => {
+  const normalizedQuery = query.trim().toLowerCase();
+  if (!normalizedQuery) return [];
+
+  return Array.from(
     new Set(
       pokemonData
-        .filter((entry) => entry.name.toLowerCase().startsWith(query.toLowerCase()))
+        .filter((entry) => {
+          const normalizedName = entry.name.toLowerCase();
+          return (
+            normalizedName.startsWith(normalizedQuery) &&
+            normalizedName !== normalizedQuery
+          );
+        })
         .map((entry) => entry.name),
     ),
-  );
+  ).slice(0, limit);
+};
 
 export const computeMaxAvailability = (
   currentPokemonData?: PokemonVariant,
@@ -116,4 +127,3 @@ export const isBackgroundAllowedForSelection = (
       background.costume_id === selectedCostumeId || background.costume_id == null,
   );
 };
-

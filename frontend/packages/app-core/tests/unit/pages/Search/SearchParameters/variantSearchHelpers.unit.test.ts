@@ -49,6 +49,15 @@ describe('variantSearchHelpers', () => {
 
     expect(getPokemonSuggestions(variants, 'Bu')).toEqual(['Bulbasaur', 'Butterfree']);
     expect(getPokemonSuggestions(variants, 'iv')).toEqual(['Ivysaur']);
+    expect(getPokemonSuggestions(variants, 'Bulbasaur')).toEqual([]);
+  });
+
+  it('limits broad autocomplete matches to a manageable visual list', () => {
+    const variants = Array.from({ length: 8 }, (_, index) =>
+      makeVariant({ name: `Char-${index + 1}` }),
+    );
+
+    expect(getPokemonSuggestions(variants, 'Cha')).toHaveLength(6);
   });
 
   it('computeMaxAvailability reports dynamax and gigantamax flags', () => {
@@ -123,4 +132,3 @@ describe('variantSearchHelpers', () => {
     ).toBe(false);
   });
 });
-

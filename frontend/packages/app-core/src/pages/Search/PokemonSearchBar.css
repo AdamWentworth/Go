@@ -108,16 +108,47 @@
   margin: 0;
 }
 
+.pokemon-search-input-control {
+  position: relative;
+}
+
 .search-primary-pokemon-field .pokemon-search-row input[type='text'] {
   box-sizing: border-box;
   width: 100%;
   min-height: 44px;
-  padding: 10px 12px;
+  padding: 10px 44px 10px 12px;
   border: 1px solid color-mix(in srgb, var(--color-text-primary) 27%, transparent);
   border-radius: 9px;
   background: var(--color-search-section-input-bg);
   color: var(--color-search-section-input-text);
   font: inherit;
+}
+
+.pokemon-search-input-clear {
+  position: absolute;
+  top: 50%;
+  right: 5px;
+  display: grid;
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  place-items: center;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  transform: translateY(-50%);
+}
+
+.pokemon-search-input-clear:hover {
+  background: color-mix(in srgb, var(--color-text-primary) 9%, transparent);
+  color: var(--color-text-primary);
+}
+
+.pokemon-search-input-clear:focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--color-accent-primary) 32%, transparent);
+  outline-offset: 0;
 }
 
 .search-primary-pokemon-field .pokemon-search-row input[type='text']:focus {
@@ -126,10 +157,113 @@
 }
 
 .search-primary-pokemon-field .autocomplete-suggestions {
+  position: absolute;
+  z-index: 50;
+  top: calc(100% + 6px);
+  left: 0;
+  display: flex;
   box-sizing: border-box;
   width: 100%;
-  border-radius: 0 0 9px 9px;
-  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.24);
+  max-height: min(420px, 52vh);
+  flex-direction: column;
+  gap: 3px;
+  overflow-y: auto;
+  padding: 6px;
+  border: 1px solid color-mix(in srgb, var(--color-text-primary) 20%, transparent);
+  border-radius: 12px;
+  background: color-mix(
+    in srgb,
+    var(--color-search-section-surface) 96%,
+    var(--color-text-primary) 4%
+  );
+  box-shadow: 0 14px 30px rgba(0, 0, 0, 0.3);
+  scrollbar-width: thin;
+}
+
+.autocomplete-suggestion-button {
+  display: grid;
+  width: 100%;
+  min-width: 0;
+  min-height: 64px;
+  grid-template-columns: 52px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+  padding: 5px 9px 5px 5px;
+  border: 1px solid transparent;
+  border-radius: 9px;
+  background: transparent;
+  color: var(--color-text-primary);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.autocomplete-suggestion-button:hover,
+.autocomplete-suggestion-button[aria-selected='true'] {
+  border-color: color-mix(in srgb, var(--color-accent-primary) 42%, transparent);
+  background: color-mix(in srgb, var(--color-accent-primary) 14%, transparent);
+}
+
+.autocomplete-suggestion-button:focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--color-accent-primary) 32%, transparent);
+  outline-offset: -2px;
+}
+
+.autocomplete-suggestion-visual {
+  position: relative;
+  display: grid;
+  width: 52px;
+  height: 52px;
+  place-items: center;
+  overflow: hidden;
+  border: 1px solid color-mix(in srgb, var(--color-text-primary) 12%, transparent);
+  border-radius: 9px;
+  background: color-mix(in srgb, var(--color-text-primary) 6%, transparent);
+}
+
+.autocomplete-suggestion-visual img {
+  width: 48px;
+  height: 48px;
+  object-fit: contain;
+  transform: scale(1.2);
+}
+
+.autocomplete-suggestion-visual > span {
+  color: var(--color-text-secondary);
+  font-size: 0.8rem;
+  font-weight: 850;
+}
+
+.autocomplete-suggestion-copy {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.autocomplete-suggestion-copy strong {
+  overflow-wrap: anywhere;
+  font-size: 0.92rem;
+  line-height: 1.15;
+}
+
+.autocomplete-suggestion-copy small,
+.autocomplete-suggestion-number {
+  color: var(--color-text-secondary);
+  font-size: 0.68rem;
+  font-weight: 750;
+}
+
+.autocomplete-suggestion-copy small {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.autocomplete-suggestion-number {
+  padding-left: 4px;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.03em;
 }
 
 .search-primary-ownership {

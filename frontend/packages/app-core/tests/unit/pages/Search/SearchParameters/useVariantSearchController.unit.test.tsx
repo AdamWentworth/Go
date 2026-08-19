@@ -108,12 +108,18 @@ describe('useVariantSearchController', () => {
     const setSelectedForm = toSetter<string>();
     const setSelectedGender = toSetter<string | null>();
     const setSelectedMoves = toSetter<SelectedMoves>();
+    const setCostume = toSetter<string | null>();
+    const setSelectedBackgroundId = toSetter<number | null>();
+    const setErrorMessage = toSetter<string | null>();
     const setDynamax = toSetter<boolean>();
     const setGigantamax = toSetter<boolean>();
     const args = makeArgs({
       setSelectedForm,
       setSelectedGender,
       setSelectedMoves,
+      setCostume,
+      setSelectedBackgroundId,
+      setErrorMessage,
       setDynamax,
       setGigantamax,
       pokemonCache: [
@@ -140,6 +146,11 @@ describe('useVariantSearchController', () => {
     });
     expect(setDynamax).toHaveBeenCalledWith(false);
     expect(setGigantamax).toHaveBeenCalledWith(false);
+    expect(setCostume).toHaveBeenCalledWith(null);
+    expect(setSelectedBackgroundId).toHaveBeenCalledWith(null);
+    expect(setErrorMessage).toHaveBeenCalledWith(null);
+    expect(result.current.imageUrl).toBeNull();
+    expect(validatePokemonMock).not.toHaveBeenCalled();
 
     act(() => {
       result.current.handlePokemonChange({
@@ -148,6 +159,15 @@ describe('useVariantSearchController', () => {
     });
 
     expect(result.current.suggestions).toEqual([]);
+
+    act(() => {
+      result.current.handlePokemonChange({
+        target: { value: 'Bulbasaur' },
+      } as React.ChangeEvent<HTMLInputElement>);
+    });
+
+    expect(validatePokemonMock).toHaveBeenCalled();
+    expect(result.current.imageUrl).toBe('/images/default.png');
   });
 
   it('cycles max state from dynamax to gigantamax when both are available', () => {
@@ -327,7 +347,7 @@ describe('useVariantSearchController', () => {
     expect(setSelectedBackgroundId).toHaveBeenCalledWith(101);
   });
 
-  it('clears derived state when pokemon input is emptied', async () => {
+  it('clears the Pokémon and its derived state through the clear action', async () => {
     const setCostume = toSetter<string | null>();
     const args = makeArgs({
       pokemon: 'Bulbasaur',
@@ -344,11 +364,10 @@ describe('useVariantSearchController', () => {
     });
 
     act(() => {
-      result.current.handlePokemonChange({
-        target: { value: '' },
-      } as React.ChangeEvent<HTMLInputElement>);
+      result.current.handleClearPokemon();
     });
 
+    expect(args.setPokemon).toHaveBeenCalledWith('');
     expect(result.current.imageUrl).toBeNull();
     expect(result.current.availableForms).toEqual([]);
     expect(result.current.availableCostumes).toEqual([]);

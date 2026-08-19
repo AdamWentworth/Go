@@ -220,7 +220,7 @@ export const evaluatePokemonInputChange = ({
   nextPokemon,
   pokemonData,
   minSuggestionChars = 3,
-  maxPokemonLength = 11,
+  maxPokemonLength = 64,
 }: EvaluatePokemonInputChangeArgs): PokemonInputChangeDecision => {
   if (nextPokemon.length > maxPokemonLength) {
     return {

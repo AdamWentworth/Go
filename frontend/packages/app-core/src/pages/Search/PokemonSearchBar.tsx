@@ -404,6 +404,7 @@ const PokemonSearchBar: React.FC<PokemonSearchBarProps> = ({
           dynamax={dynamax}
           gigantamax={gigantamax}
           pokemon={pokemon}
+          pokemonCache={pokemonCache}
         />
 
         <fieldset className="search-primary-ownership">
