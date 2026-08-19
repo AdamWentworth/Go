@@ -55,10 +55,18 @@ const TrainerSearchBar = () => {
   }
 
   return (
-    <div className="trainer-search-container">
-      <p className="trainer-search-heading">Search Trainers</p>
+    <section className="trainer-search-container" aria-labelledby="trainer-search-heading">
+      <header className="trainer-search-header">
+        <span>Trainer search</span>
+        <h2 id="trainer-search-heading">Find a trainer</h2>
+        <p>Search by their Nexus username or Pokémon GO name.</p>
+      </header>
 
+      <label className="trainer-search-label" htmlFor="trainer-search-input">
+        Trainer name
+      </label>
       <input
+        id="trainer-search-input"
         type="text"
         className="trainer-search-input"
         placeholder="Start typing a trainer's name..."
@@ -87,7 +95,7 @@ const TrainerSearchBar = () => {
       {!loading && query.trim().length >= MIN_QUERY_LEN && results.length === 0 && !error && (
         <p className="trainer-search-empty">No trainers found.</p>
       )}
-    </div>
+    </section>
   );
 };
 

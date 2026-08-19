@@ -1,6 +1,6 @@
 import React from 'react';
 import { describe, expect, it, vi, beforeEach } from 'vitest';
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 
 import TradeListView from '@/pages/Search/views/ListViewComponents/TradeListView';
 
@@ -86,7 +86,7 @@ describe('TradeListView', () => {
     );
   });
 
-  it('navigates to trade catalog on confirmation Yes', () => {
+  it('navigates to trade catalog on confirmation Yes', async () => {
     const findPokemonByKey = vi.fn(() => null);
     const { container } = render(
       <TradeListView item={baseItem} findPokemonByKey={findPokemonByKey} />,
@@ -95,12 +95,14 @@ describe('TradeListView', () => {
     fireEvent.click(container.querySelector('.center-column') as Element);
     fireEvent.click(screen.getByRole('button', { name: 'Yes' }));
 
-    expect(navigateMock).toHaveBeenCalledWith('/pokemon/ash', {
-      state: { instanceId: 'inst-1', instanceData: 'Trade' },
+    await waitFor(() => {
+      expect(navigateMock).toHaveBeenCalledWith('/pokemon/ash', {
+        state: { instanceId: 'inst-1', instanceData: 'Trade' },
+      });
     });
   });
 
-  it('closes confirmation on No without navigating', () => {
+  it('closes confirmation on No without navigating', async () => {
     const findPokemonByKey = vi.fn(() => null);
     const { container } = render(
       <TradeListView item={baseItem} findPokemonByKey={findPokemonByKey} />,
@@ -112,9 +114,11 @@ describe('TradeListView', () => {
     ).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('button', { name: 'No' }));
-    expect(
-      screen.queryByText(/Would you like to see ash's Bulbasaur in their catalog/i),
-    ).not.toBeInTheDocument();
+    await waitFor(() => {
+      expect(
+        screen.queryByText(/Would you like to see ash's Bulbasaur in their catalog/i),
+      ).not.toBeInTheDocument();
+    });
     expect(navigateMock).not.toHaveBeenCalled();
   });
 

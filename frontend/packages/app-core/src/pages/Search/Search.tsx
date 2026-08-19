@@ -1,8 +1,10 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 
+import HorizontalPageSlider from '@/components/motion/HorizontalPageSlider';
+import useHorizontalPageNavigation from '@/components/motion/useHorizontalPageNavigation';
 import PokemonSearchBar from './PokemonSearchBar';
 import TrainerSearchBar from './TrainerSearchBar';
-import SearchModeToggle from './SearchModeToggle';
+import SearchModeToggle, { type SearchMode } from './SearchModeToggle';
 import ListView from './views/ListView';
 import MapView from './views/MapView';
 import LoadingSpinner from '../../components/LoadingSpinner';
@@ -20,8 +22,9 @@ import type {
 } from '@/services/searchService';
 import './Search.css';
 
-type SearchMode = 'pokemon' | 'trainer' | null;
 type SearchView = 'list' | 'map';
+
+const SEARCH_MODES = ['pokemon', 'trainer'] as const;
 
 type EnrichedSearchResult = SearchResultRow & {
   pokemonInfo: PokemonVariant;
@@ -40,7 +43,7 @@ const coerceOwnershipModeInput = (
 const log = createScopedLogger('Search');
 
 const Search: React.FC = () => {
-  const [searchMode, setSearchMode] = useState<SearchMode>(null);
+  const [searchMode, setSearchMode] = useState<SearchMode>('pokemon');
   const [view, setView] = useState<SearchView>('list');
   const [searchResults, setSearchResults] = useState<EnrichedSearchResult[]>([]);
   const [ownershipMode, setOwnershipMode] = useState<
@@ -55,6 +58,11 @@ const Search: React.FC = () => {
   const variants = useVariantsStore((state) => state.variants);
   const pokedexLists = useVariantsStore((state) => state.pokedexLists);
   const { alert } = useModal();
+  const modeSlider = useHorizontalPageNavigation({
+    pages: SEARCH_MODES,
+    activePage: searchMode,
+    onChange: setSearchMode,
+  });
 
   const containerRef = useRef<HTMLDivElement | null>(null);
   const shouldScrollRef = useRef(false);
@@ -144,74 +152,80 @@ const Search: React.FC = () => {
     }
   };
 
-  if (!searchMode) {
-    return (
-      <div className="search-welcome-screen">
-        <h1 className="search-welcome-title">
-          Which type of search would you like?
-        </h1>
-        <SearchModeToggle
-          searchMode={searchMode}
-          setSearchMode={setSearchMode}
-          isWelcome={true}
-        />
-      </div>
-    );
-  }
-
   return (
-    <div>
-      <SearchModeToggle searchMode={searchMode} setSearchMode={setSearchMode} />
+    <main className="search-page">
+      <header className="search-page-header">
+        <span className="search-page-header__eyebrow">Community discovery</span>
+        <h1>Search</h1>
+        <p>Find Pokémon listings and connect with trainers nearby.</p>
+        <SearchModeToggle searchMode={searchMode} setSearchMode={setSearchMode} />
+      </header>
 
-      {searchMode === 'pokemon' && (
-        <PokemonSearchBar
-          onSearch={handleSearch}
-          isLoading={isLoading}
-          view={view}
-          setView={setView}
-          isCollapsed={isCollapsed}
-          setIsCollapsed={setIsCollapsed}
-          pokemonCache={pokemonCache}
-        />
-      )}
-
-      {searchMode === 'trainer' && <TrainerSearchBar />}
-
-      {errorMessage && (
-        <div
-          className="search-error-message"
-          style={{ color: 'red', padding: '1rem', textAlign: 'center' }}
+      <HorizontalPageSlider
+        activeIndex={modeSlider.activeIndex}
+        className="search-mode-slider"
+        dragOffset={modeSlider.dragOffset}
+        isDragging={modeSlider.isDragging}
+        viewportRef={modeSlider.viewportRef}
+        {...modeSlider.swipeHandlers}
+      >
+        <section
+          aria-labelledby="search-tab-pokemon"
+          className="search-mode-panel search-mode-panel--pokemon"
+          id="search-panel-pokemon"
+          role="tabpanel"
         >
-          {errorMessage}
-        </div>
-      )}
+          <PokemonSearchBar
+            onSearch={handleSearch}
+            isLoading={isLoading}
+            view={view}
+            setView={setView}
+            isCollapsed={isCollapsed}
+            setIsCollapsed={setIsCollapsed}
+            pokemonCache={pokemonCache}
+          />
 
-      <div ref={containerRef}>
-        {searchMode === 'pokemon' &&
-          (isLoading ? (
-            <LoadingSpinner />
-          ) : view === 'list' ? (
-            <RenderProfiler id="Search.ListView">
-              <ListView
-                data={searchResults}
-                instanceData={ownershipMode}
-                hasSearched={hasSearched}
-                pokemonCache={variants}
-                scrollToTopTrigger={scrollToTopTrigger}
-              />
-            </RenderProfiler>
-          ) : (
-            <RenderProfiler id="Search.MapView">
-              <MapView
-                data={searchResults}
-                instanceData={ownershipMode}
-                pokemonCache={variants}
-              />
-            </RenderProfiler>
-          ))}
-      </div>
+          {errorMessage && (
+            <div className="search-error-message" role="alert">
+              {errorMessage}
+            </div>
+          )}
 
-    </div>
+          <div ref={containerRef}>
+            {isLoading ? (
+              <LoadingSpinner />
+            ) : view === 'list' ? (
+              <RenderProfiler id="Search.ListView">
+                <ListView
+                  data={searchResults}
+                  instanceData={ownershipMode}
+                  hasSearched={hasSearched}
+                  pokemonCache={variants}
+                  scrollToTopTrigger={scrollToTopTrigger}
+                />
+              </RenderProfiler>
+            ) : (
+              <RenderProfiler id="Search.MapView">
+                <MapView
+                  data={searchResults}
+                  instanceData={ownershipMode}
+                  pokemonCache={variants}
+                />
+              </RenderProfiler>
+            )}
+          </div>
+        </section>
+
+        <section
+          aria-labelledby="search-tab-trainer"
+          className="search-mode-panel search-mode-panel--trainer"
+          id="search-panel-trainer"
+          role="tabpanel"
+        >
+          <TrainerSearchBar />
+        </section>
+      </HorizontalPageSlider>
+    </main>
   );
 };
 

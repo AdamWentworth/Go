@@ -31,13 +31,13 @@ vi.mock('@/contexts/ModalContext', () => ({
 
 vi.mock('@/pages/Search/SearchModeToggle', () => ({
   default: ({
+    searchMode,
     setSearchMode,
-    isWelcome,
   }: {
+    searchMode: 'pokemon' | 'trainer';
     setSearchMode: (mode: 'pokemon' | 'trainer') => void;
-    isWelcome?: boolean;
   }) => (
-    <div data-testid={isWelcome ? 'search-toggle-welcome' : 'search-toggle-active'}>
+    <div data-testid="search-toggle-active" data-mode={searchMode}>
       <button onClick={() => setSearchMode('pokemon')}>mode-pokemon</button>
       <button onClick={() => setSearchMode('trainer')}>mode-trainer</button>
     </div>
@@ -113,11 +113,34 @@ describe('Search', () => {
     alertMock.mockClear();
   });
 
-  it('renders welcome state before selecting search mode', () => {
-    render(<Search />);
+  it('renders a persistent header with Pokemon selected by default', () => {
+    const { container } = render(<Search />);
 
-    expect(screen.getByTestId('search-toggle-welcome')).toBeInTheDocument();
-    expect(screen.getByText('Which type of search would you like?')).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Search' })).toBeInTheDocument();
+    expect(screen.getByTestId('search-toggle-active')).toHaveAttribute(
+      'data-mode',
+      'pokemon',
+    );
+    expect(screen.getByTestId('pokemon-search-bar')).toBeInTheDocument();
+    expect(
+      container.querySelector('.horizontal-page-slider__track'),
+    ).toHaveStyle({ transform: 'translate3d(calc(0% + 0px), 0, 0)' });
+  });
+
+  it('slides to trainer search while preserving the Pokemon panel', () => {
+    const { container } = render(<Search />);
+
+    fireEvent.click(screen.getByText('mode-trainer'));
+
+    expect(screen.getByTestId('search-toggle-active')).toHaveAttribute(
+      'data-mode',
+      'trainer',
+    );
+    expect(screen.getByTestId('trainer-search-bar')).toBeInTheDocument();
+    expect(screen.getByTestId('pokemon-search-bar')).toBeInTheDocument();
+    expect(
+      container.querySelector('.horizontal-page-slider__track'),
+    ).toHaveStyle({ transform: 'translate3d(calc(-100% + 0px), 0, 0)' });
   });
 
   it('normalizes owned -> caught and renders sorted/enriched list results', async () => {
@@ -129,7 +152,6 @@ describe('Search', () => {
 
     render(<Search />);
 
-    fireEvent.click(screen.getByText('mode-pokemon'));
     fireEvent.click(screen.getByText('search-owned'));
 
     await waitFor(() => {
@@ -148,7 +170,6 @@ describe('Search', () => {
 
     render(<Search />);
 
-    fireEvent.click(screen.getByText('mode-pokemon'));
     fireEvent.click(screen.getByText('search-trade'));
 
     await waitFor(() => {

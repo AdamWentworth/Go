@@ -1,6 +1,6 @@
 import React from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 
 import CaughtPopup from '@/pages/Search/views/MapViewComponents/CaughtPopup';
 
@@ -58,7 +58,7 @@ describe('CaughtPopup', () => {
     expect(moveDisplayProps.chargedMove1Id).toBe(11);
   });
 
-  it('opens confirmation and confirms navigation to caught catalog', () => {
+  it('opens confirmation and confirms navigation to caught catalog', async () => {
     const { container } = render(
       <CaughtPopup
         item={baseItem}
@@ -69,10 +69,12 @@ describe('CaughtPopup', () => {
     fireEvent.click(container.querySelector('.caught-popup-container') as Element);
     fireEvent.click(screen.getByRole('button', { name: 'Yes' }));
 
-    expect(navigateToUserCatalog).toHaveBeenCalledWith('brock', 'inst-3', 'Caught');
+    await waitFor(() => {
+      expect(navigateToUserCatalog).toHaveBeenCalledWith('brock', 'inst-3', 'Caught');
+    });
   });
 
-  it('closes confirmation on No without navigating', () => {
+  it('closes confirmation on No without navigating', async () => {
     const { container } = render(
       <CaughtPopup
         item={baseItem}
@@ -87,9 +89,11 @@ describe('CaughtPopup', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'No' }));
 
-    expect(
-      screen.queryByText(/Would you like to see brock's Eevee in their catalog/i),
-    ).not.toBeInTheDocument();
+    await waitFor(() => {
+      expect(
+        screen.queryByText(/Would you like to see brock's Eevee in their catalog/i),
+      ).not.toBeInTheDocument();
+    });
     expect(navigateToUserCatalog).not.toHaveBeenCalled();
   });
 

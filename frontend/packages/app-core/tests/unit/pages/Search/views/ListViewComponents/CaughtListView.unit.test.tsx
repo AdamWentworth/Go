@@ -1,6 +1,6 @@
 import React from 'react';
 import { describe, expect, it, vi, beforeEach } from 'vitest';
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 
 import CaughtListView from '@/pages/Search/views/ListViewComponents/CaughtListView';
 
@@ -89,13 +89,15 @@ describe('CaughtListView', () => {
     expect(screen.getByText('2026-02-10')).toBeInTheDocument();
   });
 
-  it('opens confirmation from center click and closes on No', () => {
+  it('opens confirmation from center click and closes on No', async () => {
     const { container } = render(<CaughtListView item={baseItem} />);
 
     fireEvent.click(container.querySelector('.left-column') as Element);
-    expect(
-      screen.queryByText(/Would you like to see ash's Bulbasaur in their catalog/i),
-    ).not.toBeInTheDocument();
+    await waitFor(() => {
+      expect(
+        screen.queryByText(/Would you like to see ash's Bulbasaur in their catalog/i),
+      ).not.toBeInTheDocument();
+    });
 
     fireEvent.click(container.querySelector('.center-column') as Element);
     expect(
@@ -103,9 +105,11 @@ describe('CaughtListView', () => {
     ).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('button', { name: 'No' }));
-    expect(
-      screen.queryByText(/Would you like to see ash's Bulbasaur in their catalog/i),
-    ).not.toBeInTheDocument();
+    await waitFor(() => {
+      expect(
+        screen.queryByText(/Would you like to see ash's Bulbasaur in their catalog/i),
+      ).not.toBeInTheDocument();
+    });
     expect(navigateMock).not.toHaveBeenCalled();
   });
 
@@ -123,14 +127,16 @@ describe('CaughtListView', () => {
     expect(screen.getByText('Unknown')).toBeInTheDocument();
   });
 
-  it('navigates to user catalog when confirmation is accepted', () => {
+  it('navigates to user catalog when confirmation is accepted', async () => {
     const { container } = render(<CaughtListView item={baseItem} />);
 
     fireEvent.click(container.querySelector('.center-column') as Element);
     fireEvent.click(screen.getByRole('button', { name: 'Yes' }));
 
-    expect(navigateMock).toHaveBeenCalledWith('/pokemon/ash', {
-      state: { instanceId: 'inst-1', instanceData: 'Caught' },
+    await waitFor(() => {
+      expect(navigateMock).toHaveBeenCalledWith('/pokemon/ash', {
+        state: { instanceId: 'inst-1', instanceData: 'Caught' },
+      });
     });
   });
 });

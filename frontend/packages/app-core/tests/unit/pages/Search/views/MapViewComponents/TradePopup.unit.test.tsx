@@ -1,6 +1,6 @@
 import React from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 
 import TradePopup from '@/pages/Search/views/MapViewComponents/TradePopup';
 
@@ -71,7 +71,7 @@ describe('TradePopup', () => {
     );
   });
 
-  it('opens confirmation and confirms navigation to trade catalog', () => {
+  it('opens confirmation and confirms navigation to trade catalog', async () => {
     findPokemonByKey.mockReturnValue(null);
 
     const { container } = render(
@@ -85,10 +85,12 @@ describe('TradePopup', () => {
     fireEvent.click(container.querySelector('.trade-popup-content') as Element);
     fireEvent.click(screen.getByRole('button', { name: 'Yes' }));
 
-    expect(navigateToUserCatalog).toHaveBeenCalledWith('misty', 'inst-2', 'Trade');
+    await waitFor(() => {
+      expect(navigateToUserCatalog).toHaveBeenCalledWith('misty', 'inst-2', 'Trade');
+    });
   });
 
-  it('only opens confirmation from popup content and cancels without navigation', () => {
+  it('only opens confirmation from popup content and cancels without navigation', async () => {
     findPokemonByKey.mockReturnValue(null);
 
     const { container } = render(
@@ -100,9 +102,11 @@ describe('TradePopup', () => {
     );
 
     fireEvent.click(container.querySelector('.trade-popup-header') as Element);
-    expect(
-      screen.queryByText(/Would you like to see misty's Charizard in their catalog/i),
-    ).not.toBeInTheDocument();
+    await waitFor(() => {
+      expect(
+        screen.queryByText(/Would you like to see misty's Charizard in their catalog/i),
+      ).not.toBeInTheDocument();
+    });
 
     fireEvent.click(container.querySelector('.trade-popup-content') as Element);
     expect(
@@ -112,9 +116,11 @@ describe('TradePopup', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'No' }));
 
-    expect(
-      screen.queryByText(/Would you like to see misty's Charizard in their catalog/i),
-    ).not.toBeInTheDocument();
+    await waitFor(() => {
+      expect(
+        screen.queryByText(/Would you like to see misty's Charizard in their catalog/i),
+      ).not.toBeInTheDocument();
+    });
     expect(navigateToUserCatalog).not.toHaveBeenCalled();
   });
 });

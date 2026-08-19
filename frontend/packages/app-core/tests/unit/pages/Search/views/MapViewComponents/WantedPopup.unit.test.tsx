@@ -1,6 +1,6 @@
 import React from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 
 import WantedPopup from '@/pages/Search/views/MapViewComponents/WantedPopup';
 
@@ -74,7 +74,7 @@ describe('WantedPopup', () => {
     );
   });
 
-  it('opens confirmation and confirms navigation to wanted catalog', () => {
+  it('opens confirmation and confirms navigation to wanted catalog', async () => {
     findPokemonByKey.mockReturnValue(null);
 
     const { container } = render(
@@ -89,8 +89,10 @@ describe('WantedPopup', () => {
     fireEvent.click(container.querySelector('.wanted-popup-content') as Element);
     fireEvent.click(screen.getByRole('button', { name: 'Yes' }));
 
-    expect(navigateToUserCatalog).toHaveBeenCalledWith('ash', 'inst-1', 'Wanted');
-    expect(onClose).toHaveBeenCalled();
+    await waitFor(() => {
+      expect(navigateToUserCatalog).toHaveBeenCalledWith('ash', 'inst-1', 'Wanted');
+      expect(onClose).toHaveBeenCalled();
+    });
   });
 
   it('closes popup when clicking wrapper outside content', () => {
@@ -109,7 +111,7 @@ describe('WantedPopup', () => {
     expect(onClose).toHaveBeenCalledTimes(1);
   });
 
-  it('opens confirmation from content without closing the wrapper and cancels cleanly', () => {
+  it('opens confirmation from content without closing the wrapper and cancels cleanly', async () => {
     findPokemonByKey.mockReturnValue(null);
 
     const { container } = render(
@@ -131,9 +133,11 @@ describe('WantedPopup', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'No' }));
 
-    expect(
-      screen.queryByText(/Would you like to see ash's Bulbasaur in their catalog/i),
-    ).not.toBeInTheDocument();
+    await waitFor(() => {
+      expect(
+        screen.queryByText(/Would you like to see ash's Bulbasaur in their catalog/i),
+      ).not.toBeInTheDocument();
+    });
     expect(navigateToUserCatalog).not.toHaveBeenCalled();
     expect(onClose).not.toHaveBeenCalled();
   });
