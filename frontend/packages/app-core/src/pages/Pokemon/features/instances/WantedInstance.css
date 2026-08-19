@@ -143,13 +143,37 @@
 
 .wanted-instance__background-action {
   position: absolute;
-  top: calc(var(--caught-stage-lift, 0px) * -1);
-  right: 12px;
+  right: 14px;
+  bottom: 10px;
   z-index: 8;
 }
 
 .wanted-instance__background-action .background-select-row {
   margin: 0;
+}
+
+.wanted-instance__background-action .background-select-row--header,
+.wanted-instance__background-action .background-select-button {
+  width: 42px;
+  height: 42px;
+}
+
+.wanted-instance__background-action .background-select-button {
+  border: 1px solid color-mix(in srgb, var(--wanted-border) 72%, transparent);
+  border-radius: 11px;
+  background: color-mix(in srgb, var(--color-modal-panel-surface) 88%, transparent);
+  box-shadow: 0 5px 14px rgba(0, 0, 0, 0.28);
+  backdrop-filter: blur(5px);
+}
+
+.wanted-instance__background-action .background-select-button:hover,
+.wanted-instance__background-action .background-select-button:focus-visible {
+  background: color-mix(in srgb, var(--color-modal-panel-surface) 96%, white 4%);
+}
+
+.wanted-instance__background-action .background-icon {
+  width: 31px;
+  height: 31px;
 }
 
 .wanted-instance__conditions .heart-button:focus-visible,
