@@ -1,7 +1,12 @@
 import type { PokemonVariant } from '@/types/pokemonVariants';
+import type {
+  PokemonSizeClass,
+  WantedSizePreferences,
+  WantedSizeRange,
+} from '@/types/pokemonInstance';
 
 export type WantedSizeMetric = 'weight' | 'height';
-export type WantedSizePreference = 'XXS' | 'XS' | 'XL' | 'XXL' | null;
+export type WantedSizePreference = PokemonSizeClass | null;
 
 type SizeThresholds = PokemonVariant['sizes'];
 
@@ -27,22 +32,73 @@ export const getWantedSizePreference = (
   return null;
 };
 
-export const getWantedSizeValue = (
+const isWantedSizePreference = (value: unknown): value is PokemonSizeClass =>
+  value === 'XXS' || value === 'XS' || value === 'XL' || value === 'XXL';
+
+export const getStoredWantedSizePreference = (
+  preferences: WantedSizePreferences | null | undefined,
+  legacyValue: number | null | undefined,
+  sizes: SizeThresholds | null | undefined,
+  metric: WantedSizeMetric,
+): WantedSizePreference => {
+  const category = preferences?.[metric]?.category;
+  return isWantedSizePreference(category)
+    ? category
+    : getWantedSizePreference(legacyValue, sizes, metric);
+};
+
+export const buildWantedSizeRange = (
   preference: WantedSizePreference,
   sizes: SizeThresholds | null | undefined,
   metric: WantedSizeMetric,
-): number | null => {
+): WantedSizeRange | null => {
   if (preference == null || !sizes) return null;
 
   const { xxs, xs, xl, xxl } = getThresholds(sizes, metric);
   switch (preference) {
     case 'XXS':
-      return Math.max(Number.EPSILON, xxs - Math.max((xs - xxs) / 2, xxs * 0.1));
+      return {
+        category: preference,
+        min: null,
+        max: xxs,
+        min_inclusive: false,
+        max_inclusive: false,
+      };
     case 'XS':
-      return (xxs + xs) / 2;
+      return {
+        category: preference,
+        min: xxs,
+        max: xs,
+        min_inclusive: true,
+        max_inclusive: false,
+      };
     case 'XL':
-      return (xl + xxl) / 2;
+      return {
+        category: preference,
+        min: xl,
+        max: xxl,
+        min_inclusive: false,
+        max_inclusive: true,
+      };
     case 'XXL':
-      return xxl + Math.max((xxl - xl) / 2, xxl * 0.1, 0.001);
+      return {
+        category: preference,
+        min: xxl,
+        max: null,
+        min_inclusive: false,
+        max_inclusive: false,
+      };
   }
+};
+
+export const buildWantedSizePreferences = (
+  weight: WantedSizePreference,
+  height: WantedSizePreference,
+  sizes: SizeThresholds | null | undefined,
+): WantedSizePreferences | null => {
+  const preferences = {
+    weight: buildWantedSizeRange(weight, sizes, 'weight'),
+    height: buildWantedSizeRange(height, sizes, 'height'),
+  };
+  return preferences.weight || preferences.height ? preferences : null;
 };

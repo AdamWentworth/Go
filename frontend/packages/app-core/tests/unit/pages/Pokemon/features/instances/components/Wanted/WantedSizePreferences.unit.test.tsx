@@ -3,8 +3,9 @@ import { describe, expect, it, vi } from 'vitest';
 
 import WantedSizePreferences from '@/pages/Pokemon/features/instances/components/Wanted/WantedSizePreferences';
 import {
+  buildWantedSizePreferences,
   getWantedSizePreference,
-  getWantedSizeValue,
+  getStoredWantedSizePreference,
 } from '@/pages/Pokemon/features/instances/components/Wanted/wantedSizePreferences';
 
 const sizes = {
@@ -23,18 +24,37 @@ const sizes = {
 };
 
 describe('wanted size preferences', () => {
-  it('maps persisted measurements to size categories and back inside their thresholds', () => {
+  it('migrates legacy measurements and builds explicit persisted ranges', () => {
     expect(getWantedSizePreference(3.5, sizes, 'weight')).toBe('XXS');
     expect(getWantedSizePreference(4.5, sizes, 'weight')).toBe('XS');
     expect(getWantedSizePreference(6, sizes, 'weight')).toBeNull();
     expect(getWantedSizePreference(8.5, sizes, 'weight')).toBe('XL');
     expect(getWantedSizePreference(10, sizes, 'weight')).toBe('XXL');
 
-    for (const preference of ['XXS', 'XS', 'XL', 'XXL'] as const) {
-      const value = getWantedSizeValue(preference, sizes, 'height');
-      expect(getWantedSizePreference(value, sizes, 'height')).toBe(preference);
-    }
-    expect(getWantedSizeValue(null, sizes, 'height')).toBeNull();
+    const preferences = buildWantedSizePreferences('XS', 'XXL', sizes);
+    expect(preferences).toEqual({
+      weight: {
+        category: 'XS',
+        min: 4,
+        max: 5,
+        min_inclusive: true,
+        max_inclusive: false,
+      },
+      height: {
+        category: 'XXL',
+        min: 1.5,
+        max: null,
+        min_inclusive: false,
+        max_inclusive: false,
+      },
+    });
+    expect(buildWantedSizePreferences(null, null, sizes)).toBeNull();
+    expect(
+      getStoredWantedSizePreference(preferences, 3.5, sizes, 'weight'),
+    ).toBe('XS');
+    expect(
+      getStoredWantedSizePreference(null, 3.5, sizes, 'weight'),
+    ).toBe('XXS');
   });
 
   it('offers independent accessible weight and height toggles with Any as null', () => {
@@ -93,4 +113,3 @@ describe('wanted size preferences', () => {
     expect(screen.queryByText('Height')).not.toBeInTheDocument();
   });
 });
-

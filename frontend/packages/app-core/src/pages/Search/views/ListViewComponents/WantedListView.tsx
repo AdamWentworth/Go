@@ -125,6 +125,7 @@ const WantedListView: React.FC<WantedListViewProps> = ({ item, findPokemonByKey 
               prefLucky={Boolean(item.pref_lucky)}
               weight={item.weight}
               height={item.height}
+              wantedSizePreferences={item.wanted_size_preferences}
               fastMoveId={item.fast_move_id}
               chargedMove1Id={item.charged_move1_id}
               chargedMove2Id={item.charged_move2_id}

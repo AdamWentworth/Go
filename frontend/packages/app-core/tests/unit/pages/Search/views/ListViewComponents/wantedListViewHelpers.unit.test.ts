@@ -36,6 +36,20 @@ describe('wantedListViewHelpers', () => {
     expect(hasWantedAdditionalDetails({ weight: 12.5 })).toBe(true);
     expect(hasWantedAdditionalDetails({ date_caught: '2026-02-17' })).toBe(true);
     expect(hasWantedAdditionalDetails({ charged_move1_id: 14 })).toBe(true);
+    expect(
+      hasWantedAdditionalDetails({
+        wanted_size_preferences: {
+          weight: {
+            category: 'XXL',
+            min: 20,
+            max: null,
+            min_inclusive: false,
+            max_inclusive: false,
+          },
+          height: null,
+        },
+      }),
+    ).toBe(true);
   });
 
   it('returns stable trade-list entries for rendering', () => {

@@ -15,8 +15,8 @@ import FriendshipManager from './components/Wanted/FriendshipManager';
 import MostWantedToggle from './components/Wanted/MostWantedToggle';
 import WantedSizePreferences from './components/Wanted/WantedSizePreferences';
 import {
-  getWantedSizePreference,
-  getWantedSizeValue,
+  buildWantedSizePreferences,
+  getStoredWantedSizePreference,
   type WantedSizePreference,
 } from './components/Wanted/wantedSizePreferences';
 import BackgroundSelector from './sections/BackgroundSelector';
@@ -83,10 +83,20 @@ const WantedInstance: React.FC<WantedInstanceProps> = ({
   const [nickname, setNickname] = useState<string | null>(instanceData.nickname);
   const [gender, setGender] = useState<string | null>(instanceData.gender);
   const [weight, setWeight] = useState<WantedSizePreference>(() =>
-    getWantedSizePreference(instanceData.weight, pokemon.sizes, 'weight'),
+    getStoredWantedSizePreference(
+      instanceData.wanted_size_preferences,
+      instanceData.weight,
+      pokemon.sizes,
+      'weight',
+    ),
   );
   const [height, setHeight] = useState<WantedSizePreference>(() =>
-    getWantedSizePreference(instanceData.height, pokemon.sizes, 'height'),
+    getStoredWantedSizePreference(
+      instanceData.wanted_size_preferences,
+      instanceData.height,
+      pokemon.sizes,
+      'height',
+    ),
   );
   const [moves, setMoves] = useState<MovesSelection>({
     fastMove: instanceData.fast_move_id,
@@ -122,9 +132,29 @@ const WantedInstance: React.FC<WantedInstanceProps> = ({
 
   useEffect(() => {
     if (editMode) return;
-    setWeight(getWantedSizePreference(instanceData.weight, pokemon.sizes, 'weight'));
-    setHeight(getWantedSizePreference(instanceData.height, pokemon.sizes, 'height'));
-  }, [editMode, instanceData.height, instanceData.weight, pokemon.sizes]);
+    setWeight(
+      getStoredWantedSizePreference(
+        instanceData.wanted_size_preferences,
+        instanceData.weight,
+        pokemon.sizes,
+        'weight',
+      ),
+    );
+    setHeight(
+      getStoredWantedSizePreference(
+        instanceData.wanted_size_preferences,
+        instanceData.height,
+        pokemon.sizes,
+        'height',
+      ),
+    );
+  }, [
+    editMode,
+    instanceData.height,
+    instanceData.wanted_size_preferences,
+    instanceData.weight,
+    pokemon.sizes,
+  ]);
 
   const backgrounds = useMemo(() => pokemon.backgrounds ?? [], [pokemon.backgrounds]);
   const selectableBackgrounds = useMemo(
@@ -150,8 +180,10 @@ const WantedInstance: React.FC<WantedInstanceProps> = ({
   const isShadow = Boolean(instanceData.shadow);
   const isPurified = Boolean(instanceData.purified);
   const displayName = pokemon.name ?? pokemon.species_name ?? 'Pokemon';
-  const wantedWeightValue = getWantedSizeValue(weight, pokemon.sizes, 'weight');
-  const wantedHeightValue = getWantedSizeValue(height, pokemon.sizes, 'height');
+  const wantedSizePreferences = useMemo(
+    () => buildWantedSizePreferences(weight, height, pokemon.sizes),
+    [height, pokemon.sizes, weight],
+  );
   const currentImage = useMemo(
     () =>
       determineImageUrl(
@@ -174,8 +206,9 @@ const WantedInstance: React.FC<WantedInstanceProps> = ({
         ...instanceData,
         nickname,
         gender,
-        weight: wantedWeightValue,
-        height: wantedHeightValue,
+        weight: null,
+        height: null,
+        wanted_size_preferences: wantedSizePreferences,
         fast_move_id: moves.fastMove,
         charged_move1_id: moves.chargedMove1,
         charged_move2_id: moves.chargedMove2,
@@ -187,8 +220,7 @@ const WantedInstance: React.FC<WantedInstanceProps> = ({
       moves,
       nickname,
       pokemon,
-      wantedHeightValue,
-      wantedWeightValue,
+      wantedSizePreferences,
     ],
   );
 
@@ -210,8 +242,9 @@ const WantedInstance: React.FC<WantedInstanceProps> = ({
       await updateDetails(entityKey, {
         nickname,
         gender,
-        weight: wantedWeightValue,
-        height: wantedHeightValue,
+        weight: null,
+        height: null,
+        wanted_size_preferences: wantedSizePreferences,
         fast_move_id: moves.fastMove,
         charged_move1_id: moves.chargedMove1,
         charged_move2_id: moves.chargedMove2,

@@ -266,8 +266,24 @@ describe('WantedInstance', () => {
         'wanted-instance-1',
         expect.objectContaining({
           gender: 'Female',
-          weight: 8.5,
-          height: 0.375,
+          weight: null,
+          height: null,
+          wanted_size_preferences: {
+            weight: {
+              category: 'XL',
+              min: 8,
+              max: 9,
+              min_inclusive: false,
+              max_inclusive: true,
+            },
+            height: {
+              category: 'XXS',
+              min: null,
+              max: 0.5,
+              min_inclusive: false,
+              max_inclusive: false,
+            },
+          },
           fast_move_id: 11,
           charged_move1_id: 22,
           friendship_level: 5,
@@ -341,5 +357,30 @@ describe('WantedInstance', () => {
     expect(screen.getByText('Weight')).toBeInTheDocument();
     expect(screen.getByText('XL')).toBeInTheDocument();
     expect(document.querySelector('.level-gender-row')).toBeNull();
+  });
+
+  it('uses canonical size categories before legacy numeric values', () => {
+    render(
+      <WantedInstance
+        pokemon={makePokemon({
+          weight: 3.5,
+          wanted_size_preferences: {
+            weight: {
+              category: 'XL',
+              min: 8,
+              max: 9,
+              min_inclusive: false,
+              max_inclusive: true,
+            },
+            height: null,
+          },
+        })}
+        isEditable={false}
+        catalogView
+      />,
+    );
+
+    expect(screen.getByText('XL')).toBeInTheDocument();
+    expect(screen.queryByText('XXS')).not.toBeInTheDocument();
   });
 });
