@@ -369,13 +369,6 @@
 
 @media (max-width: 480px) {
   .wanted-instance-window {
-    margin-bottom: 70px;
     overflow-x: hidden;
-  }
-}
-
-@media (min-width: 481px) and (max-width: 767px) {
-  .wanted-instance-window {
-    margin-bottom: 80px;
   }
 }
