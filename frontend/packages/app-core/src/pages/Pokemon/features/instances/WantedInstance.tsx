@@ -226,11 +226,21 @@ const WantedInstance: React.FC<WantedInstanceProps> = ({
         <span>Friendship and eligibility</span>
       </div>
       {isEditable || mostWanted ? (
-        <MostWantedToggle
-          active={mostWanted}
-          editMode={editMode}
-          onChange={setMostWanted}
-        />
+        <div className="wanted-instance__condition-right-actions">
+          {editMode ? (
+            <BackgroundSelector
+              canPick={selectableBackgrounds.length > 0}
+              editMode
+              onToggle={() => setShowBackgrounds((visible) => !visible)}
+              variant="header"
+            />
+          ) : null}
+          <MostWantedToggle
+            active={mostWanted}
+            editMode={editMode}
+            onChange={setMostWanted}
+          />
+        </div>
       ) : null}
       <FriendshipManager
         friendship={friendship}
@@ -243,27 +253,15 @@ const WantedInstance: React.FC<WantedInstanceProps> = ({
   );
 
   const wantedImageStage = (
-    <div className="wanted-instance__image-stage">
-      <ImageStage
-        selectedBackground={selectedBackground}
-        isLucky={isLucky}
-        currentImage={currentImage}
-        name={displayName}
-        dynamax={dynamax}
-        gigantamax={gigantamax}
-        isPurified={isPurified}
-      />
-      {editMode ? (
-        <div className="wanted-instance__background-action">
-          <BackgroundSelector
-            canPick={selectableBackgrounds.length > 0}
-            editMode
-            onToggle={() => setShowBackgrounds((visible) => !visible)}
-            variant="header"
-          />
-        </div>
-      ) : null}
-    </div>
+    <ImageStage
+      selectedBackground={selectedBackground}
+      isLucky={isLucky}
+      currentImage={currentImage}
+      name={displayName}
+      dynamax={dynamax}
+      gigantamax={gigantamax}
+      isPurified={isPurified}
+    />
   );
 
   const wantedDetails = showWantedDetails ? (

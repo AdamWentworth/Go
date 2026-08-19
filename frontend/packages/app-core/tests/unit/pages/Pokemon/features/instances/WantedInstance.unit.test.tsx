@@ -229,8 +229,10 @@ describe('WantedInstance', () => {
     expect(document.querySelector('.wanted-instance__requirements')).not.toBeNull();
     expect(screen.getByTestId('stats-row')).toHaveAttribute('data-show-types', 'false');
     const backgroundButton = screen.getByRole('button', { name: 'Choose special background' });
-    expect(backgroundButton.closest('.wanted-instance__image-stage')).not.toBeNull();
-    expect(backgroundButton.closest('.wanted-instance__conditions')).toBeNull();
+    expect(backgroundButton.closest('.wanted-instance__conditions')).not.toBeNull();
+    expect(
+      backgroundButton.closest('.wanted-instance__condition-right-actions'),
+    ).not.toBeNull();
     fireEvent.click(screen.getByRole('button', { name: 'Require remote lucky trade' }));
     expect(onPreviewInstanceDataChange).toHaveBeenLastCalledWith({
       pref_lucky: true,

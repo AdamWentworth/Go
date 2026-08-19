@@ -134,46 +134,38 @@
   height: 32px;
 }
 
-.wanted-instance__image-stage {
-  position: relative;
+.wanted-instance__condition-right-actions {
   display: flex;
-  width: 100%;
-  justify-content: center;
+  min-width: 0;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 4px;
 }
 
-.wanted-instance__background-action {
-  position: absolute;
-  right: 14px;
-  bottom: 10px;
-  z-index: 8;
-}
-
-.wanted-instance__background-action .background-select-row {
+.wanted-instance__condition-right-actions .background-select-row {
   margin: 0;
 }
 
-.wanted-instance__background-action .background-select-row--header,
-.wanted-instance__background-action .background-select-button {
-  width: 42px;
-  height: 42px;
+.wanted-instance__condition-right-actions .background-select-row--header,
+.wanted-instance__condition-right-actions .background-select-button {
+  width: 40px;
+  height: 40px;
 }
 
-.wanted-instance__background-action .background-select-button {
-  border: 1px solid color-mix(in srgb, var(--wanted-border) 72%, transparent);
-  border-radius: 11px;
-  background: color-mix(in srgb, var(--color-modal-panel-surface) 88%, transparent);
-  box-shadow: 0 5px 14px rgba(0, 0, 0, 0.28);
-  backdrop-filter: blur(5px);
+.wanted-instance__condition-right-actions .background-select-button {
+  border: 1px solid color-mix(in srgb, var(--wanted-border) 48%, transparent);
+  border-radius: 10px;
+  background: var(--wanted-accent-soft);
 }
 
-.wanted-instance__background-action .background-select-button:hover,
-.wanted-instance__background-action .background-select-button:focus-visible {
-  background: color-mix(in srgb, var(--color-modal-panel-surface) 96%, white 4%);
+.wanted-instance__condition-right-actions .background-select-button:hover,
+.wanted-instance__condition-right-actions .background-select-button:focus-visible {
+  background: color-mix(in srgb, var(--wanted-accent) 17%, transparent);
 }
 
-.wanted-instance__background-action .background-icon {
-  width: 31px;
-  height: 31px;
+.wanted-instance__condition-right-actions .background-icon {
+  width: 30px;
+  height: 30px;
 }
 
 .wanted-instance__conditions .heart-button:focus-visible,
@@ -357,10 +349,10 @@
   }
 
   .wanted-instance__conditions-label {
-    display: flex;
-    align-items: baseline;
+    display: grid;
+    align-items: center;
     justify-content: center;
-    gap: 6px;
+    gap: 3px;
     text-align: center;
   }
 
@@ -430,6 +422,21 @@
     width: 39px;
     height: 39px;
     margin-left: 2px;
+  }
+
+  .wanted-instance__conditions.has-actions.has-priority {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+
+  .wanted-instance__conditions.has-actions.has-priority
+    .wanted-instance__condition-right-actions {
+    grid-column: 2;
+    grid-row: 2;
+    justify-self: end;
+  }
+
+  .wanted-instance__conditions.has-actions.has-priority .friendship-level-container {
+    grid-row: 3;
   }
 }
 
