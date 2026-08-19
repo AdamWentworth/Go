@@ -55,36 +55,6 @@
   text-align: center;
 }
 
-/* View toggle button container */
-.search-view-toggle-buttons {
-  margin-top: 20px;
-  text-align: center;
-}
-
-.search-view-toggle-buttons button {
-  margin: 0 10px;
-  padding: 10px 20px;
-  cursor: pointer;
-}
-
-/* List view layout */
-.search-list-view {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 20px;
-  margin-top: 20px;
-}
-
-/* Individual result card */
-.search-result-card {
-  background-color: #fff;
-  padding: 20px;
-  border-radius: 8px;
-  width: 200px;
-  text-align: center;
-}
-
-/* Globe / map view */
 .search-map-view {
   margin-top: 20px;
   width: 100%;

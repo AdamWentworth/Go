@@ -1,6 +1,6 @@
 import React from 'react';
 import { describe, expect, it, vi, beforeEach } from 'vitest';
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 
 import CaughtListView from '@/pages/Search/views/ListViewComponents/CaughtListView';
 
@@ -18,10 +18,6 @@ vi.mock('react-router', async () => {
 
 vi.mock('@/components/pokemonComponents/CP', () => ({
   default: ({ cp }: { cp: number }) => <div data-testid="cp">CP:{cp}</div>,
-}));
-
-vi.mock('@/pages/Search/views/ListViewComponents/MiniMap', () => ({
-  default: () => <div data-testid="mini-map" />,
 }));
 
 vi.mock('@/components/pokemonComponents/IV', () => ({
@@ -76,50 +72,26 @@ describe('CaughtListView', () => {
   it('renders key caught details', () => {
     render(<CaughtListView item={baseItem} />);
 
-    expect(screen.getByText('Distance: 1.23 km')).toBeInTheDocument();
-    expect(screen.getByTestId('mini-map')).toBeInTheDocument();
+    expect(screen.getByText('1.2 km away')).toBeInTheDocument();
+    expect(screen.getByText('Caught')).toBeInTheDocument();
     expect(screen.getByTestId('cp')).toHaveTextContent('CP:1500');
     expect(screen.getByAltText('Bulbasaur')).toBeInTheDocument();
     expect(screen.getByTestId('gender')).toHaveTextContent('Male');
     expect(screen.getByTestId('move-display')).toBeInTheDocument();
     expect(screen.getByTestId('ivs')).toBeInTheDocument();
-    expect(screen.getByText(/Location Caught:/)).toBeInTheDocument();
+    expect(screen.getByText('Caught in')).toBeInTheDocument();
     expect(screen.getByText('Seattle')).toBeInTheDocument();
-    expect(screen.getByText(/Date Caught:/)).toBeInTheDocument();
+    expect(screen.getByText('Caught on')).toBeInTheDocument();
     expect(screen.getByText('2026-02-10')).toBeInTheDocument();
   });
 
-  it('opens confirmation from center click and closes on No', async () => {
-    const { container } = render(<CaughtListView item={baseItem} />);
-
-    fireEvent.click(container.querySelector('.left-column') as Element);
-    await waitFor(() => {
-      expect(
-        screen.queryByText(/Would you like to see ash's Bulbasaur in their catalog/i),
-      ).not.toBeInTheDocument();
-    });
-
-    fireEvent.click(container.querySelector('.center-column') as Element);
-    expect(
-      screen.getByText(/Would you like to see ash's Bulbasaur in their catalog/i),
-    ).toBeInTheDocument();
-
-    fireEvent.click(screen.getByRole('button', { name: 'No' }));
-    await waitFor(() => {
-      expect(
-        screen.queryByText(/Would you like to see ash's Bulbasaur in their catalog/i),
-      ).not.toBeInTheDocument();
-    });
-    expect(navigateMock).not.toHaveBeenCalled();
-  });
-
-  it('opens confirmation from keyboard activation on center column', () => {
+  it('opens and closes the progressively disclosed Pokémon details', () => {
     render(<CaughtListView item={baseItem} />);
-    const centerColumn = screen.getByRole('button');
-    fireEvent.keyDown(centerColumn, { key: 'Enter' });
-    expect(
-      screen.getByText(/Would you like to see ash's Bulbasaur in their catalog/i),
-    ).toBeInTheDocument();
+    const summary = screen.getByText('Pokémon details');
+    const details = summary.closest('details');
+    expect(details).not.toHaveAttribute('open');
+    fireEvent.click(summary);
+    expect(details).toHaveAttribute('open');
   });
 
   it('shows Unknown when date is invalid instead of crashing', () => {
@@ -127,16 +99,19 @@ describe('CaughtListView', () => {
     expect(screen.getByText('Unknown')).toBeInTheDocument();
   });
 
-  it('navigates to user catalog when confirmation is accepted', async () => {
-    const { container } = render(<CaughtListView item={baseItem} />);
+  it('navigates directly to the Pokémon listing', () => {
+    render(<CaughtListView item={baseItem} />);
+    fireEvent.click(screen.getByRole('button', { name: 'View Pokémon' }));
+    expect(navigateMock).toHaveBeenCalledWith('/pokemon/ash', {
+      state: { instanceId: 'inst-1', instanceData: 'Caught' },
+    });
+  });
 
-    fireEvent.click(container.querySelector('.center-column') as Element);
-    fireEvent.click(screen.getByRole('button', { name: 'Yes' }));
-
-    await waitFor(() => {
-      expect(navigateMock).toHaveBeenCalledWith('/pokemon/ash', {
-        state: { instanceId: 'inst-1', instanceData: 'Caught' },
-      });
+  it('navigates directly to the trainer profile', () => {
+    render(<CaughtListView item={baseItem} />);
+    fireEvent.click(screen.getByRole('button', { name: 'View trainer' }));
+    expect(navigateMock).toHaveBeenCalledWith('/profile/ash', {
+      state: { contextBackTo: '/search' },
     });
   });
 });

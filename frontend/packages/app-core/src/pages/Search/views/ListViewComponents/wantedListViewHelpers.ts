@@ -81,7 +81,9 @@ export const formatWantedDate = (dateString?: string): string => {
 
 export const hasWantedAdditionalDetails = (item: WantedListItem): boolean =>
   Boolean(
-    item.weight ||
+    item.friendship_level ||
+      item.pref_lucky ||
+      item.weight ||
       item.height ||
       item.wanted_size_preferences?.weight ||
       item.wanted_size_preferences?.height ||

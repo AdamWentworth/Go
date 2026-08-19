@@ -55,8 +55,10 @@ const PokemonResultVisual: React.FC<PokemonResultVisualProps> = ({
         ) : (
           luckyImage
         ))}
-      {imageUrl && (
+      {imageUrl ? (
         <img src={imageUrl} alt={pokemonDisplayName} className="pokemon-image" />
+      ) : (
+        <span className="pokemon-image-unavailable">Image unavailable</span>
       )}
       {dynamax && (
         <img src="/images/dynamax.png" alt="Dynamax Badge" className="max-badge" />

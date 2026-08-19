@@ -1,6 +1,6 @@
 import React from 'react';
 import { describe, expect, it, vi, beforeEach } from 'vitest';
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 
 import TradeListView from '@/pages/Search/views/ListViewComponents/TradeListView';
 
@@ -15,10 +15,6 @@ vi.mock('react-router', async () => {
     useNavigate: () => navigateMock,
   };
 });
-
-vi.mock('@/pages/Search/views/ListViewComponents/MiniMap', () => ({
-  default: () => <div data-testid="mini-map" />,
-}));
 
 vi.mock('@/components/pokemonComponents/MoveDisplay', () => ({
   default: () => <div data-testid="move-display" />,
@@ -69,8 +65,9 @@ describe('TradeListView', () => {
 
     render(<TradeListView item={baseItem} findPokemonByKey={findPokemonByKey} />);
 
-    expect(screen.getByTestId('mini-map')).toBeInTheDocument();
-    expect(screen.getByText('Distance: 3.14 km')).toBeInTheDocument();
+    expect(screen.getByText('3.1 km away')).toBeInTheDocument();
+    expect(screen.getByText('For Trade')).toBeInTheDocument();
+    expect(screen.getByText('Trainer wants')).toBeInTheDocument();
     expect(screen.getByTestId('cp')).toHaveTextContent('CP:1400');
     expect(screen.getByTestId('gender')).toHaveTextContent('Male');
     const bulbasaurImages = screen.getAllByAltText('Bulbasaur');
@@ -86,50 +83,33 @@ describe('TradeListView', () => {
     );
   });
 
-  it('navigates to trade catalog on confirmation Yes', async () => {
+  it('navigates directly to the trade listing', () => {
     const findPokemonByKey = vi.fn(() => null);
-    const { container } = render(
+    render(
       <TradeListView item={baseItem} findPokemonByKey={findPokemonByKey} />,
     );
-
-    fireEvent.click(container.querySelector('.center-column') as Element);
-    fireEvent.click(screen.getByRole('button', { name: 'Yes' }));
-
-    await waitFor(() => {
-      expect(navigateMock).toHaveBeenCalledWith('/pokemon/ash', {
-        state: { instanceId: 'inst-1', instanceData: 'Trade' },
-      });
+    fireEvent.click(screen.getByRole('button', { name: 'Open listing' }));
+    expect(navigateMock).toHaveBeenCalledWith('/pokemon/ash', {
+      state: { instanceId: 'inst-1', instanceData: 'Trade' },
     });
   });
 
-  it('closes confirmation on No without navigating', async () => {
+  it('navigates directly to the trainer profile', () => {
     const findPokemonByKey = vi.fn(() => null);
-    const { container } = render(
+    render(
       <TradeListView item={baseItem} findPokemonByKey={findPokemonByKey} />,
     );
-
-    fireEvent.click(container.querySelector('.center-column') as Element);
-    expect(
-      screen.getByText(/Would you like to see ash's Bulbasaur in their catalog/i),
-    ).toBeInTheDocument();
-
-    fireEvent.click(screen.getByRole('button', { name: 'No' }));
-    await waitFor(() => {
-      expect(
-        screen.queryByText(/Would you like to see ash's Bulbasaur in their catalog/i),
-      ).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'View trainer' }));
+    expect(navigateMock).toHaveBeenCalledWith('/profile/ash', {
+      state: { contextBackTo: '/search' },
     });
-    expect(navigateMock).not.toHaveBeenCalled();
   });
 
-  it('opens confirmation from keyboard activation on center column', () => {
+  it('keeps secondary listing details collapsed until requested', () => {
     const findPokemonByKey = vi.fn(() => null);
     render(<TradeListView item={baseItem} findPokemonByKey={findPokemonByKey} />);
-    const centerColumn = screen.getByRole('button');
-    fireEvent.keyDown(centerColumn, { key: 'Enter' });
-    expect(
-      screen.getByText(/Would you like to see ash's Bulbasaur in their catalog/i),
-    ).toBeInTheDocument();
+    const details = screen.getByText('Listing details').closest('details');
+    expect(details).not.toHaveAttribute('open');
   });
 
   it('shows Unknown date when date_caught is invalid instead of crashing', () => {

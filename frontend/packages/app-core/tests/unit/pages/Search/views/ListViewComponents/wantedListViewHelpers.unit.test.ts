@@ -34,6 +34,8 @@ describe('wantedListViewHelpers', () => {
     expect(hasWantedAdditionalDetails(empty)).toBe(false);
 
     expect(hasWantedAdditionalDetails({ weight: 12.5 })).toBe(true);
+    expect(hasWantedAdditionalDetails({ friendship_level: 5 })).toBe(true);
+    expect(hasWantedAdditionalDetails({ pref_lucky: true })).toBe(true);
     expect(hasWantedAdditionalDetails({ date_caught: '2026-02-17' })).toBe(true);
     expect(hasWantedAdditionalDetails({ charged_move1_id: 14 })).toBe(true);
     expect(

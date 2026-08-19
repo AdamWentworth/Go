@@ -17,15 +17,7 @@ type LinkedPokemonGridProps = {
   containerClassName: string;
   imageClassName: string;
   entries: LinkedPokemonGridEntry[];
-};
-
-const badgeStyle: React.CSSProperties = {
-  position: 'absolute',
-  top: '5%',
-  right: '5%',
-  width: '30%',
-  height: '30%',
-  zIndex: 1,
+  maxVisible?: number;
 };
 
 const LinkedPokemonGrid: React.FC<LinkedPokemonGridProps> = ({
@@ -35,38 +27,58 @@ const LinkedPokemonGrid: React.FC<LinkedPokemonGridProps> = ({
   containerClassName,
   imageClassName,
   entries,
+  maxVisible = 3,
 }) => {
+  const visibleEntries = entries.slice(0, maxVisible);
+  const remainingCount = Math.max(0, entries.length - visibleEntries.length);
+
   return (
     <div className={sectionClassName}>
-      <h1>{title}</h1>
-      <div className={gridClassName}>
-        {entries.map((entry) => (
+      <header className="linked-pokemon-grid__header">
+        <div>
+          <span>Trade compatibility</span>
+          <h4>{title}</h4>
+        </div>
+        <strong>{entries.length}</strong>
+      </header>
+      <div className={`${gridClassName} linked-pokemon-grid`}>
+        {visibleEntries.map((entry) => (
           <div
             key={entry.id}
-            className={containerClassName}
-            style={{ position: 'relative' }}
+            className={`${containerClassName} linked-pokemon-grid__item`}
           >
             {entry.dynamax && (
-              <img src="/images/dynamax.png" alt="Dynamax" style={badgeStyle} />
+              <img
+                src="/images/dynamax.png"
+                alt="Dynamax"
+                className="linked-pokemon-grid__max-badge"
+              />
             )}
 
             {entry.gigantamax && (
               <img
                 src="/images/gigantamax.png"
                 alt="Gigantamax"
-                style={badgeStyle}
+                className="linked-pokemon-grid__max-badge"
               />
             )}
 
             <img
               src={entry.currentImage}
-              alt={entry.name}
+              alt={entry.name || 'Pokémon'}
               className={`${imageClassName} ${entry.match ? 'glowing-pokemon' : ''}`}
               title={`${entry.form ? `${entry.form} ` : ''}${entry.name ?? ''}`}
             />
+            <span>{entry.name || 'Unknown Pokémon'}</span>
+            {entry.match ? <small>Mutual match</small> : null}
           </div>
         ))}
       </div>
+      {remainingCount > 0 ? (
+        <p className="linked-pokemon-grid__remaining">
+          +{remainingCount} more in this trainer&apos;s listing
+        </p>
+      ) : null}
     </div>
   );
 };
