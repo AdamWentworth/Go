@@ -301,12 +301,8 @@ describe('useVariantSearchController', () => {
     expect(result.current.suggestions).toEqual(['Bulbasaur']);
 
     act(() => {
-      result.current.handleCostumeChange({
-        target: { value: 'Party' },
-      } as React.ChangeEvent<HTMLSelectElement>);
-      result.current.handleFormChange({
-        target: { value: 'Origin' },
-      } as React.ChangeEvent<HTMLSelectElement>);
+      result.current.handleCostumeChange('Party');
+      result.current.handleFormChange('Origin');
       result.current.handleSuggestionClick('Bulbasaur');
     });
 

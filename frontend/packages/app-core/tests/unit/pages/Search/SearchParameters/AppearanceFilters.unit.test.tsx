@@ -41,6 +41,7 @@ const makeController = (
     setShowBackgroundOverlay: vi.fn(),
     handleImageError: vi.fn(),
     handleBackgroundChange: vi.fn(),
+    handleClearPokemon: vi.fn(),
     handleGenderChange: vi.fn(),
     handlePokemonChange: vi.fn(),
     handleInputFocus: vi.fn(),
@@ -97,13 +98,11 @@ describe('AppearanceFilters', () => {
 
     fireEvent.click(screen.getByRole('button', { name: /Shiny/ }));
     fireEvent.click(screen.getByRole('button', { name: /Shadow/ }));
-    fireEvent.click(screen.getByRole('button', { name: /Costume/ }));
-    fireEvent.change(screen.getByLabelText('Form'), {
-      target: { value: 'Mega' },
-    });
-    fireEvent.change(screen.getByLabelText('Costume'), {
-      target: { value: 'Party' },
-    });
+    fireEvent.click(screen.getByRole('button', { name: 'CostumeParty' }));
+    fireEvent.click(screen.getByLabelText('Form'));
+    fireEvent.click(screen.getByRole('option', { name: 'Mega' }));
+    fireEvent.click(screen.getByLabelText('Costume'));
+    fireEvent.click(screen.getByRole('option', { name: 'Party' }));
     fireEvent.click(screen.getByRole('button', { name: 'Gigantamax' }));
     fireEvent.click(screen.getByRole('button', { name: 'Female' }));
     fireEvent.click(screen.getByRole('button', { name: 'Choose' }));
@@ -122,15 +121,12 @@ describe('AppearanceFilters', () => {
     const controller = makeController();
     renderFilters(controller);
 
-    fireEvent.change(screen.getByLabelText('Fast move'), {
-      target: { value: '1' },
-    });
-    fireEvent.change(screen.getByLabelText('Charged move'), {
-      target: { value: '2' },
-    });
-    fireEvent.change(screen.getByLabelText('Second charged move'), {
-      target: { value: '3' },
-    });
+    fireEvent.click(screen.getByLabelText('Fast move'));
+    fireEvent.click(screen.getByRole('option', { name: 'Vine Whip' }));
+    fireEvent.click(screen.getByLabelText('Charged move'));
+    fireEvent.click(screen.getByRole('option', { name: 'Power Whip' }));
+    fireEvent.click(screen.getByLabelText('Second charged move'));
+    fireEvent.click(screen.getByRole('option', { name: 'Sludge Bomb*' }));
 
     expect(controller.handleMovesChange).toHaveBeenNthCalledWith(1, {
       fastMove: 1,

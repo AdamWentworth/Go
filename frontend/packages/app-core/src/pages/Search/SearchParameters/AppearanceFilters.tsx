@@ -5,6 +5,7 @@ import { formatCostumeName } from '../utils/formatCostumeName';
 import { formatForm } from '@/utils/formattingHelpers';
 import type { SelectedMoves } from '../utils/buildPokemonSearchQuery';
 import type { UseVariantSearchControllerResult } from './useVariantSearchController';
+import InFrameSelect from './InFrameSelect';
 import VariantSearchBackgroundOverlay from './VariantSearchBackgroundOverlay';
 
 import './AppearanceFilters.css';
@@ -172,36 +173,32 @@ const AppearanceFilters: React.FC<AppearanceFiltersProps> = ({
         </div>
 
         <div className="appearance-select-grid">
-          <label>
-            <span>Form</span>
-            <select
-              disabled={controller.availableForms.length === 0}
-              onChange={controller.handleFormChange}
-              value={selectedForm}
-            >
-              <option value="">Any form</option>
-              {controller.availableForms.map((form) => (
-                <option key={form} value={form}>
-                  {formatForm(form)}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label>
-            <span>Costume</span>
-            <select
-              disabled={!controller.showCostumeDropdown}
-              onChange={controller.handleCostumeChange}
-              value={costume ?? ''}
-            >
-              <option value="">Any costume</option>
-              {controller.availableCostumes.map((entry) => (
-                <option key={entry.costume_id} value={entry.name}>
-                  {formatCostumeName(entry.name)}
-                </option>
-              ))}
-            </select>
-          </label>
+          <InFrameSelect
+            disabled={controller.availableForms.length === 0}
+            label="Form"
+            onChange={controller.handleFormChange}
+            options={[
+              { label: 'Any form', value: '' },
+              ...controller.availableForms.map((form) => ({
+                label: formatForm(form),
+                value: form,
+              })),
+            ]}
+            value={selectedForm}
+          />
+          <InFrameSelect
+            disabled={!controller.showCostumeDropdown}
+            label="Costume"
+            onChange={controller.handleCostumeChange}
+            options={[
+              { label: 'Any costume', value: '' },
+              ...controller.availableCostumes.map((entry) => ({
+                label: formatCostumeName(entry.name),
+                value: entry.name,
+              })),
+            ]}
+            value={costume ?? ''}
+          />
         </div>
 
         {controller.canDynamax ? (
@@ -261,55 +258,49 @@ const AppearanceFilters: React.FC<AppearanceFiltersProps> = ({
         ) : null}
 
         <div className="appearance-move-grid">
-          <label>
-            <span>Fast move</span>
-            <select
-              disabled={fastMoves.length === 0}
-              onChange={(event) => updateMove('fastMove', event.target.value)}
-              value={selectedMoves.fastMove ?? ''}
-            >
-              <option value="">Any fast move</option>
-              {fastMoves.map((move) => (
-                <option key={move.move_id} value={move.move_id}>
-                  {move.name}{move.legacy ? '*' : ''}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label>
-            <span>Charged move</span>
-            <select
-              disabled={chargedMoves.length === 0}
-              onChange={(event) => updateMove('chargedMove1', event.target.value)}
-              value={selectedMoves.chargedMove1 ?? ''}
-            >
-              <option value="">Any charged move</option>
-              {chargedMoves
+          <InFrameSelect
+            disabled={fastMoves.length === 0}
+            label="Fast move"
+            onChange={(value) => updateMove('fastMove', value)}
+            options={[
+              { label: 'Any fast move', value: '' },
+              ...fastMoves.map((move) => ({
+                label: `${move.name}${move.legacy ? '*' : ''}`,
+                value: String(move.move_id),
+              })),
+            ]}
+            value={String(selectedMoves.fastMove ?? '')}
+          />
+          <InFrameSelect
+            disabled={chargedMoves.length === 0}
+            label="Charged move"
+            onChange={(value) => updateMove('chargedMove1', value)}
+            options={[
+              { label: 'Any charged move', value: '' },
+              ...chargedMoves
                 .filter((move) => move.move_id !== selectedMoves.chargedMove2)
-                .map((move) => (
-                  <option key={move.move_id} value={move.move_id}>
-                    {move.name}{move.legacy ? '*' : ''}
-                  </option>
-                ))}
-            </select>
-          </label>
-          <label>
-            <span>Second charged move</span>
-            <select
-              disabled={chargedMoves.length === 0}
-              onChange={(event) => updateMove('chargedMove2', event.target.value)}
-              value={selectedMoves.chargedMove2 ?? ''}
-            >
-              <option value="">Any second move</option>
-              {chargedMoves
+                .map((move) => ({
+                  label: `${move.name}${move.legacy ? '*' : ''}`,
+                  value: String(move.move_id),
+                })),
+            ]}
+            value={String(selectedMoves.chargedMove1 ?? '')}
+          />
+          <InFrameSelect
+            disabled={chargedMoves.length === 0}
+            label="Second charged move"
+            onChange={(value) => updateMove('chargedMove2', value)}
+            options={[
+              { label: 'Any second move', value: '' },
+              ...chargedMoves
                 .filter((move) => move.move_id !== selectedMoves.chargedMove1)
-                .map((move) => (
-                  <option key={move.move_id} value={move.move_id}>
-                    {move.name}{move.legacy ? '*' : ''}
-                  </option>
-                ))}
-            </select>
-          </label>
+                .map((move) => ({
+                  label: `${move.name}${move.legacy ? '*' : ''}`,
+                  value: String(move.move_id),
+                })),
+            ]}
+            value={String(selectedMoves.chargedMove2 ?? '')}
+          />
         </div>
       </section>
 

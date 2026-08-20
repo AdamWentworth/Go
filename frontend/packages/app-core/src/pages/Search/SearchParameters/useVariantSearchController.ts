@@ -80,8 +80,8 @@ export interface UseVariantSearchControllerResult {
   handleShinyChange: () => void;
   handleShadowChange: () => void;
   handleCostumeToggle: () => void;
-  handleCostumeChange: (event: React.ChangeEvent<HTMLSelectElement>) => void;
-  handleFormChange: (event: React.ChangeEvent<HTMLSelectElement>) => void;
+  handleCostumeChange: (value: string) => void;
+  handleFormChange: (value: string) => void;
   handleMovesChange: (moves: SelectedMoves) => void;
   handleSuggestionClick: (suggestion: string) => void;
   resetVariantFilters: () => void;
@@ -328,18 +328,18 @@ const useVariantSearchController = ({
     }
   };
 
-  const handleCostumeChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
+  const handleCostumeChange = (value: string) => {
     const costumeDecision = buildSelectionValidationChange({
-      value: event.target.value,
+      value,
       field: 'selectedCostume',
     });
     setCostume(costumeDecision.value);
     handleValidation(costumeDecision.validationPatch);
   };
 
-  const handleFormChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
+  const handleFormChange = (value: string) => {
     const formDecision = buildSelectionValidationChange({
-      value: event.target.value,
+      value,
       field: 'form',
     });
     setSelectedForm(formDecision.value);
