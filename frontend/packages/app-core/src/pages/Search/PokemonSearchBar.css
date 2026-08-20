@@ -69,25 +69,17 @@
   content: '';
 }
 
-.selected-pokemon-preview__pokemon {
+.selected-pokemon-preview__artwork {
   position: relative;
   z-index: 1;
   width: calc(100% - 8px);
   height: calc(100% - 8px);
   max-width: 124px;
   max-height: 124px;
-  object-fit: contain;
-  filter: drop-shadow(0 2px 2px rgba(0, 0, 0, 0.28));
 }
 
-.selected-pokemon-preview__badge {
-  position: absolute;
-  z-index: 2;
-  top: 3px;
-  right: 3px;
-  width: 22px;
-  height: 22px;
-  object-fit: contain;
+.selected-pokemon-preview__pokemon {
+  filter: drop-shadow(0 2px 2px rgba(0, 0, 0, 0.28));
 }
 
 .search-primary-pokemon-field > label,
@@ -649,21 +641,17 @@
 
   .search-primary-pokemon-control.has-preview > .selected-pokemon-preview {
     width: 100%;
-    height: 136px;
+    height: 168px;
     flex-basis: auto;
     align-self: center;
     border-radius: 18px;
   }
 
-  .search-primary-pokemon-control.has-preview .selected-pokemon-preview__badge {
-    top: 6px;
-    right: 6px;
-    width: 30px;
-    height: 30px;
-  }
-
-  .search-primary-pokemon-control.has-preview .selected-pokemon-preview__pokemon {
-    transform: scale(1.35);
+  .search-primary-pokemon-control.has-preview .selected-pokemon-preview__artwork {
+    width: 156px;
+    height: 156px;
+    max-width: calc(100% - 12px);
+    max-height: calc(100% - 12px);
   }
 
   .search-primary-ownership {
@@ -705,7 +693,12 @@
 
 @media (max-width: 360px) {
   .search-primary-pokemon-control.has-preview > .selected-pokemon-preview {
-    height: 124px;
+    height: 156px;
+  }
+
+  .search-primary-pokemon-control.has-preview .selected-pokemon-preview__artwork {
+    width: 144px;
+    height: 144px;
   }
 
   .search-mobile-summary__preview {

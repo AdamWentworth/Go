@@ -59,6 +59,7 @@ const makeController = (
 
 const renderFilters = (
   controller: UseVariantSearchControllerResult = makeController(),
+  overrides: Partial<React.ComponentProps<typeof AppearanceFilters>> = {},
 ) =>
   render(
     <AppearanceFilters
@@ -76,6 +77,7 @@ const renderFilters = (
         chargedMove1: null,
         chargedMove2: null,
       }}
+      {...overrides}
     />,
   );
 
@@ -90,6 +92,19 @@ describe('AppearanceFilters', () => {
     expect(screen.getByLabelText('Fast move')).toBeInTheDocument();
     expect(screen.getByLabelText('Charged move')).toBeInTheDocument();
     expect(screen.getByLabelText('Second charged move')).toBeInTheDocument();
+  });
+
+  it('anchors Max badges to the shared Pokémon artwork instead of the preview frame', () => {
+    renderFilters(makeController(), { gigantamax: true });
+
+    const pokemon = screen.getByRole('img', { name: 'Bulbasaur' });
+    const badge = screen.getByRole('img', { name: 'Gigantamax' });
+    expect(pokemon.parentElement).toHaveClass(
+      'pokemon-artwork',
+      'appearance-preview__artwork',
+    );
+    expect(badge.parentElement).toBe(pokemon.parentElement);
+    expect(badge.closest('.appearance-preview')).toBeInTheDocument();
   });
 
   it('dispatches variant, Max, gender, and background selections', () => {

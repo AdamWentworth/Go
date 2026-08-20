@@ -1,5 +1,6 @@
 import React from 'react';
 
+import PokemonArtwork from '@/components/pokemonComponents/PokemonArtwork';
 import type { UseVariantSearchControllerResult } from './useVariantSearchController';
 
 type SelectedPokemonPreviewProps = {
@@ -42,26 +43,15 @@ const SelectedPokemonPreview: React.FC<SelectedPokemonPreviewProps> = ({
           : undefined
       }
     >
-      <img
+      <PokemonArtwork
         alt={`${pokemon || 'Selected Pokémon'} preview`}
-        className="selected-pokemon-preview__pokemon"
+        className="selected-pokemon-preview__artwork"
+        dynamax={dynamax}
+        gigantamax={gigantamax}
+        imageClassName="selected-pokemon-preview__pokemon"
+        imageUrl={controller.imageUrl}
         onError={controller.handleImageError}
-        src={controller.imageUrl}
       />
-      {dynamax ? (
-        <img
-          alt="Dynamax"
-          className="selected-pokemon-preview__badge"
-          src="/images/dynamax.png"
-        />
-      ) : null}
-      {gigantamax ? (
-        <img
-          alt="Gigantamax"
-          className="selected-pokemon-preview__badge"
-          src="/images/gigantamax.png"
-        />
-      ) : null}
     </div>
   );
 };

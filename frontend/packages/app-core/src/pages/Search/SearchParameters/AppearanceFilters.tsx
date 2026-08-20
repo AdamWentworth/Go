@@ -2,6 +2,7 @@ import React, { useEffect, useMemo } from 'react';
 import { FaMapMarkedAlt } from 'react-icons/fa';
 
 import { formatCostumeName } from '../utils/formatCostumeName';
+import PokemonArtwork from '@/components/pokemonComponents/PokemonArtwork';
 import { formatForm } from '@/utils/formattingHelpers';
 import type { SelectedMoves } from '../utils/buildPokemonSearchQuery';
 import type { UseVariantSearchControllerResult } from './useVariantSearchController';
@@ -99,28 +100,18 @@ const AppearanceFilters: React.FC<AppearanceFiltersProps> = ({
           }
         >
           {controller.imageUrl && !controller.imageError ? (
-            <img
+            <PokemonArtwork
               alt={pokemon || 'Selected Pokémon'}
+              className="appearance-preview__artwork"
+              dynamax={dynamax}
+              gigantamax={gigantamax}
+              imageClassName="appearance-preview__pokemon"
+              imageUrl={controller.imageUrl}
               onError={controller.handleImageError}
-              src={controller.imageUrl}
             />
           ) : (
             <span>{pokemon ? 'No image' : 'Select a Pokémon'}</span>
           )}
-          {dynamax ? (
-            <img
-              alt="Dynamax"
-              className="appearance-preview__badge"
-              src="/images/dynamax.png"
-            />
-          ) : null}
-          {gigantamax ? (
-            <img
-              alt="Gigantamax"
-              className="appearance-preview__badge"
-              src="/images/gigantamax.png"
-            />
-          ) : null}
         </div>
       </header>
 

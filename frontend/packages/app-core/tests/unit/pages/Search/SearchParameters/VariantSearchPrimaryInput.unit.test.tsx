@@ -51,10 +51,14 @@ describe('VariantSearchPrimaryInput', () => {
     expect(preview.closest('.search-primary-pokemon-control')).toHaveClass(
       'has-preview',
     );
-    expect(preview.parentElement).toHaveClass('has-background');
-    expect(preview.parentElement).toHaveStyle({
+    const previewFrame = preview.closest('.selected-pokemon-preview');
+    expect(previewFrame).toHaveClass('has-background');
+    expect(previewFrame).toHaveStyle({
       backgroundImage: 'url(/images/location-background.png)',
     });
+    expect(screen.getByAltText('Dynamax').parentElement).toBe(
+      preview.parentElement,
+    );
     expect(screen.getByAltText('Dynamax')).toHaveAttribute(
       'src',
       '/images/dynamax.png',
