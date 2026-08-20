@@ -154,6 +154,25 @@ describe('PokemonMenu', () => {
     );
   });
 
+  it('shows a required tag without a clear control for foreign catalogs', () => {
+    render(
+      <AppLoadingProvider>
+        <PokemonMenu
+          {...makeProps({
+            isEditable: false,
+            tagFilter: 'Caught',
+            onClearTagFilter: undefined,
+          })}
+        />
+      </AppLoadingProvider>,
+    );
+
+    expect(screen.getByText('Caught')).toBeInTheDocument();
+    expect(
+      screen.queryByRole('button', { name: /clear caught tag filter/i }),
+    ).not.toBeInTheDocument();
+  });
+
   it('selects a catalog Pokemon instead of opening the legacy Pokedex overlay', () => {
     const pokemon = makePokemon();
     const setSelectedPokemon = vi.fn();

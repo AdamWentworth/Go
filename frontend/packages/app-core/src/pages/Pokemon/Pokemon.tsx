@@ -74,7 +74,9 @@ function Pokemon({ isOwnCollection }: PokemonProps) {
         highlightedCards={controller.highlightedCards}
         tagFilter={controller.tagFilter}
         sidePanelTagFilter={controller.sidePanelTagFilter}
-        onClearTagFilter={controller.handleClearTagFilter}
+        onClearTagFilter={
+          controller.isUsernamePath ? undefined : controller.handleClearTagFilter
+        }
         activeTags={controller.activeTags}
         instances={controller.instances}
         sortType={controller.sortType}

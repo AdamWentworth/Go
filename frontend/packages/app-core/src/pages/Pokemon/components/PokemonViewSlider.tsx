@@ -27,7 +27,7 @@ type PokemonViewSliderProps = {
   highlightedCards: Set<string>;
   tagFilter: string;
   sidePanelTagFilter: string;
-  onClearTagFilter: () => void;
+  onClearTagFilter?: () => void;
   activeTags: TagBuckets;
   instances: Instances;
   sortType: SortType;

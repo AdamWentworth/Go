@@ -36,6 +36,10 @@
   backdrop-filter: blur(8px);
 }
 
+.active-tag-filter-required {
+  padding-inline-end: 0.58rem;
+}
+
 .active-tag-filter-row::before {
   content: "";
   flex: 0 0 auto;

@@ -181,6 +181,25 @@ describe('TagsMenu', () => {
     });
   });
 
+  it('keeps a required foreign-catalog tag visible without an escape hatch', () => {
+    render(
+      <TagsMenu
+        panel="inventory"
+        onSelectTag={vi.fn()}
+        activeTags={{ caught: {}, wanted: {} }}
+        variants={[]}
+        tagFilter="Caught"
+      />,
+    );
+
+    expect(document.querySelector('.active-tag-filter-name')).toHaveTextContent(
+      'Caught',
+    );
+    expect(
+      screen.queryByRole('button', { name: /clear caught tag filter/i }),
+    ).not.toBeInTheDocument();
+  });
+
 
   it('caps preview rendering to 18 sprites per tag for large datasets', () => {
     const caught: Record<string, TagItem> = {};

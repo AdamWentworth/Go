@@ -34,7 +34,7 @@ interface PokemonMenuProps {
   toggleCardHighlight: (key: string) => void;
   highlightedCards: Set<string>;
   tagFilter: string;
-  onClearTagFilter: () => void;
+  onClearTagFilter?: () => void;
   lists: Record<string, Record<string, unknown>>;
   instances: Record<string, PokemonInstance>;
   sortType: SortType;

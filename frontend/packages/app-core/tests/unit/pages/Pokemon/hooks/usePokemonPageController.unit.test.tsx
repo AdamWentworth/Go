@@ -287,6 +287,46 @@ describe('usePokemonPageController', () => {
     expect(result.current.sidePanelTagFilter).toBe('Trade');
   });
 
+  it('always retains a tag while viewing another trainer catalog', async () => {
+    const navigate = vi.fn() as unknown as NavigateFunction;
+    const location = {
+      pathname: '/pokemon/ash',
+      search: '',
+      state: null,
+    } as any;
+
+    const { result } = renderHook(() =>
+      usePokemonPageController({
+        isOwnCollection: false,
+        urlUsername: 'ash',
+        location,
+        navigate,
+      }),
+    );
+
+    expect(result.current.tagFilter).toBe('Caught');
+    expect(result.current.sidePanelTagFilter).toBe('Caught');
+
+    act(() => {
+      result.current.handleTagSelect('Wanted');
+    });
+    expect(result.current.tagFilter).toBe('Wanted');
+
+    act(() => {
+      result.current.handleClearTagFilter();
+    });
+
+    expect(result.current.tagFilter).toBe('Wanted');
+    expect(result.current.sidePanelTagFilter).toBe('Wanted');
+
+    act(() => {
+      result.current.handleTagSelect('');
+    });
+
+    expect(result.current.tagFilter).toBe('Caught');
+    expect(result.current.sidePanelTagFilter).toBe('Caught');
+  });
+
   it('opens a foreign trade listing under the Trade tag from router state', async () => {
     const navigate = vi.fn() as unknown as NavigateFunction;
     const location = {

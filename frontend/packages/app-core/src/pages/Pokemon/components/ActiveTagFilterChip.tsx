@@ -6,7 +6,7 @@ import './ActiveTagFilterChip.css';
 
 type ActiveTagFilterChipProps = {
   tagFilter: string;
-  onClearTagFilter: () => void;
+  onClearTagFilter?: () => void;
   placement?: 'search' | 'panel';
 };
 
@@ -26,6 +26,7 @@ const ActiveTagFilterChip: React.FC<ActiveTagFilterChipProps> = ({
   const trimmedTagFilter = tagFilter.trim();
 
   const handleClearActiveTagFilter = useCallback(async () => {
+    if (!onClearTagFilter) return;
     const confirmed = await confirm(
       `Clear the ${trimmedTagFilter} tag? This returns you to browsing all available Pokémon and forms in Pokémon GO, without using your personal tag lists.`,
     );
@@ -46,7 +47,16 @@ const ActiveTagFilterChip: React.FC<ActiveTagFilterChipProps> = ({
         `active-tag-filter-${tagFilterClass}`,
         `active-tag-filter-placement-${placement}`,
         isFavoritesFilter ? 'active-tag-filter-with-icon' : '',
+        !onClearTagFilter ? 'active-tag-filter-required' : '',
       ].filter(Boolean).join(' ')}
+      aria-label={`${trimmedTagFilter} tag filter${
+        onClearTagFilter ? '' : ', required while viewing this catalog'
+      }`}
+      title={
+        onClearTagFilter
+          ? undefined
+          : 'A tag is required while viewing another trainer’s catalog.'
+      }
     >
       {isFavoritesFilter && (
         <img
@@ -58,15 +68,17 @@ const ActiveTagFilterChip: React.FC<ActiveTagFilterChipProps> = ({
         />
       )}
       <span className="active-tag-filter-name">{trimmedTagFilter}</span>
-      <button
-        type="button"
-        className="active-tag-filter-clear"
-        onClick={handleClearActiveTagFilter}
-        aria-label={`Clear ${trimmedTagFilter} tag filter`}
-        title={`Clear ${trimmedTagFilter} tag`}
-      >
-        ×
-      </button>
+      {onClearTagFilter ? (
+        <button
+          type="button"
+          className="active-tag-filter-clear"
+          onClick={handleClearActiveTagFilter}
+          aria-label={`Clear ${trimmedTagFilter} tag filter`}
+          title={`Clear ${trimmedTagFilter} tag`}
+        >
+          ×
+        </button>
+      ) : null}
     </div>
   );
 };

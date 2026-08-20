@@ -43,6 +43,7 @@ import { createScopedLogger } from '@/utils/logger';
 
 const log = createScopedLogger('PokemonPage');
 const SIDE_PANEL_TAG_FILTER_SYNC_DELAY_MS = 300;
+const DEFAULT_FOREIGN_CATALOG_TAG = 'Caught';
 
 type UsePokemonPageControllerArgs = {
   isOwnCollection: boolean;
@@ -70,7 +71,6 @@ type UsePokemonPageControllerResult = {
   swipeHandlers: SwipeHandlers;
   transform: string;
   isDragging: boolean;
-  setTagFilter: React.Dispatch<React.SetStateAction<string>>;
   variants: PokemonVariant[];
   isEditable: boolean;
   selectedPokemon: PokemonOverlaySelection;
@@ -149,9 +149,11 @@ export default function usePokemonPageController({
     ? contextInstanceData
     : foreignInstances || contextInstanceData) as Instances;
 
-  const [tagFilter, setTagFilter] = useState<string>(requestedTagFilter ?? '');
+  const initialTagFilter =
+    requestedTagFilter ?? (isUsernamePath ? DEFAULT_FOREIGN_CATALOG_TAG : '');
+  const [tagFilter, setTagFilter] = useState<string>(initialTagFilter);
   const [sidePanelTagFilter, setSidePanelTagFilter] = useState<string>(
-    requestedTagFilter ?? '',
+    initialTagFilter,
   );
   const [selectedPokemon, setSelectedPokemon] = useState<PokemonOverlaySelection>(null);
   const [hasProcessedInstanceId, setHasProcessedInstanceId] = useState<boolean>(false);
@@ -227,7 +229,7 @@ export default function usePokemonPageController({
   useEffect(() => {
     if (!isUsernamePath || !urlUsername) return;
     void loadForeignProfile(urlUsername, () => {
-      const initialFilter = requestedTagFilter ?? 'Caught';
+      const initialFilter = requestedTagFilter ?? DEFAULT_FOREIGN_CATALOG_TAG;
       setTagFilter(initialFilter);
       syncSidePanelTagFilter(initialFilter, false);
     });
@@ -238,6 +240,12 @@ export default function usePokemonPageController({
     requestedTagFilter,
     syncSidePanelTagFilter,
   ]);
+
+  useEffect(() => {
+    if (!isUsernamePath || tagFilter.trim()) return;
+    setTagFilter(DEFAULT_FOREIGN_CATALOG_TAG);
+    syncSidePanelTagFilter(DEFAULT_FOREIGN_CATALOG_TAG, false);
+  }, [isUsernamePath, tagFilter, syncSidePanelTagFilter]);
 
   useEffect(() => {
     if (!requestedTagFilter) return;
@@ -298,22 +306,33 @@ export default function usePokemonPageController({
 
   const handleClearTagFilter = useCallback(() => {
     const shouldDelaySidePanelUpdate = activeView !== 'pokemon';
+    const nextFilter = isUsernamePath
+      ? tagFilter.trim() || DEFAULT_FOREIGN_CATALOG_TAG
+      : '';
     setHighlightedCards(new Set());
-    setTagFilter('');
+    setTagFilter(nextFilter);
     setActiveView('pokemon');
-    syncSidePanelTagFilter('', shouldDelaySidePanelUpdate);
-  }, [activeView, setHighlightedCards, syncSidePanelTagFilter]);
+    syncSidePanelTagFilter(nextFilter, shouldDelaySidePanelUpdate);
+  }, [
+    activeView,
+    isUsernamePath,
+    setHighlightedCards,
+    syncSidePanelTagFilter,
+    tagFilter,
+  ]);
 
   const handleTagSelect = useCallback(
     (filter: string) => {
       const shouldDelaySidePanelUpdate = activeView !== 'pokemon';
+      const nextFilter =
+        filter.trim() || (isUsernamePath ? DEFAULT_FOREIGN_CATALOG_TAG : '');
       setHighlightedCards(new Set());
-      setTagFilter(filter);
+      setTagFilter(nextFilter);
       setLastMenu('ownership');
       setActiveView('pokemon');
-      syncSidePanelTagFilter(filter, shouldDelaySidePanelUpdate);
+      syncSidePanelTagFilter(nextFilter, shouldDelaySidePanelUpdate);
     },
-    [activeView, setHighlightedCards, syncSidePanelTagFilter],
+    [activeView, isUsernamePath, setHighlightedCards, syncSidePanelTagFilter],
   );
 
   const setStatusFilter = useCallback((filter: InstanceStatus) => {
@@ -440,7 +459,6 @@ export default function usePokemonPageController({
     swipeHandlers,
     transform,
     isDragging,
-    setTagFilter,
     variants,
     isEditable,
     selectedPokemon,

@@ -202,7 +202,7 @@ const TagsMenu: React.FC<TagsMenuProps> = ({
             </div>
           )}
 
-          {tagFilter.trim() && onClearTagFilter ? (
+          {tagFilter.trim() ? (
             <ActiveTagFilterChip
               tagFilter={tagFilter}
               onClearTagFilter={onClearTagFilter}
