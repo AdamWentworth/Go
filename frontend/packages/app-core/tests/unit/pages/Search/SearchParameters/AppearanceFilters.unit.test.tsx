@@ -94,6 +94,29 @@ describe('AppearanceFilters', () => {
     expect(screen.getByLabelText('Second charged move')).toBeInTheDocument();
   });
 
+  it('enables move filters after the selected Pokémon receives its hydrated moves', () => {
+    renderFilters();
+
+    expect(screen.getByLabelText('Fast move')).toBeEnabled();
+    expect(screen.getByLabelText('Charged move')).toBeEnabled();
+    expect(screen.getByLabelText('Second charged move')).toBeEnabled();
+  });
+
+  it('keeps move filters unavailable when the moves chunk has no matching data', () => {
+    renderFilters(
+      makeController({
+        currentPokemonData: {
+          ...variant,
+          moves: [],
+        } as PokemonVariant,
+      }),
+    );
+
+    expect(screen.getByLabelText('Fast move')).toBeDisabled();
+    expect(screen.getByLabelText('Charged move')).toBeDisabled();
+    expect(screen.getByLabelText('Second charged move')).toBeDisabled();
+  });
+
   it('anchors Max badges to the shared Pokémon artwork instead of the preview frame', () => {
     renderFilters(makeController(), { gigantamax: true });
 

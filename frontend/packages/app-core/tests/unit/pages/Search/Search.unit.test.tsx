@@ -8,9 +8,22 @@ const mockedSearchPokemon = vi.fn();
 const alertMock = vi.fn().mockResolvedValue(undefined);
 
 const variantsState = {
-  variants: [{ pokemon_id: 1, name: 'Bulbasaur' }],
+  variants: [
+    {
+      pokemon_id: 1,
+      name: 'Bulbasaur',
+      variantType: 'default',
+      moves: [{ move_id: 1, name: 'Vine Whip', is_fast: 1 }],
+    },
+    {
+      pokemon_id: 1,
+      name: 'Shiny Bulbasaur',
+      variantType: 'shiny',
+      moves: [{ move_id: 1, name: 'Vine Whip', is_fast: 1 }],
+    },
+  ],
   pokedexLists: {
-    default: [{ pokemon_id: 1, name: 'Bulbasaur' }],
+    default: [{ pokemon_id: 1, name: 'Bulbasaur', moves: [] }],
   },
 };
 
@@ -47,12 +60,18 @@ vi.mock('@/pages/Search/SearchModeToggle', () => ({
 vi.mock('@/pages/Search/PokemonSearchBar', () => ({
   default: ({
     onSearch,
+    pokemonCache,
     setView,
   }: {
     onSearch: (query: Record<string, string>, boundary: string) => Promise<void>;
+    pokemonCache: Array<{ moves?: unknown[] }>;
     setView: (view: 'list' | 'map') => void;
   }) => (
-    <div data-testid="pokemon-search-bar">
+    <div
+      data-cache-count={pokemonCache.length}
+      data-move-count={pokemonCache[0]?.moves?.length ?? 0}
+      data-testid="pokemon-search-bar"
+    >
       <button
         onClick={() => onSearch({ ownership: 'owned' }, 'BOUNDARY-WKT')}
       >
@@ -125,6 +144,19 @@ describe('Search', () => {
     expect(
       container.querySelector('.horizontal-page-slider__track'),
     ).toHaveStyle({ transform: 'translate3d(calc(0% + 0px), 0, 0)' });
+  });
+
+  it('feeds Search the live move-hydrated default variants', () => {
+    render(<Search />);
+
+    expect(screen.getByTestId('pokemon-search-bar')).toHaveAttribute(
+      'data-cache-count',
+      '1',
+    );
+    expect(screen.getByTestId('pokemon-search-bar')).toHaveAttribute(
+      'data-move-count',
+      '1',
+    );
   });
 
   it('slides to trainer search while preserving the Pokemon panel', () => {

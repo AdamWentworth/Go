@@ -55,7 +55,6 @@ const Search: React.FC = () => {
   const [scrollToTopTrigger, setScrollToTopTrigger] = useState(0);
 
   const variants = useVariantsStore((state) => state.variants);
-  const pokedexLists = useVariantsStore((state) => state.pokedexLists);
   const { alert } = useModal();
   const modeSlider = useHorizontalPageNavigation({
     pages: SEARCH_MODES,
@@ -66,8 +65,8 @@ const Search: React.FC = () => {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const shouldScrollRef = useRef(false);
   const pokemonCache = useMemo<PokemonVariant[]>(
-    () => pokedexLists?.default ?? [],
-    [pokedexLists],
+    () => variants.filter((variant) => variant.variantType === 'default'),
+    [variants],
   );
   const pokemonById = useMemo(() => {
     const map = new Map<number, PokemonVariant>();
