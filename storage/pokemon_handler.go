@@ -74,6 +74,7 @@ func parseAndUpsertPokemon(
 		isForTrade := parseOptionalBool(pm["is_for_trade"])
 		registered := parseOptionalBool(pm["registered"])
 		mostWanted := parseOptionalBool(pm["most_wanted"])
+		favorite := parseOptionalBool(pm["favorite"])
 
 		origIsCaught := isCaught
 		origIsWanted := isWanted
@@ -178,6 +179,24 @@ func parseAndUpsertPokemon(
 			continue
 		}
 
+		originalFavorite := favorite
+		originalForTrade := isForTrade
+		favorite, isForTrade = normalizeFavoriteTradeState(
+			favorite,
+			isForTrade,
+			tx.Error == nil,
+			existingInstance.Favorite,
+			existingInstance.IsForTrade,
+		)
+		if originalFavorite != favorite || originalForTrade != isForTrade {
+			logrus.Warnf(
+				"Normalized mutually exclusive Favorite/For Trade flags for instance %s: favorite %t->%t, for_trade %t->%t",
+				instanceID,
+				originalFavorite, favorite,
+				originalForTrade, isForTrade,
+			)
+		}
+
 		var resolvedVariant bool
 		variantID, variantForRegistration, resolvedVariant = resolveTrackedVariantID(
 			variantID,
@@ -207,7 +226,6 @@ func parseAndUpsertPokemon(
 		purified := parseOptionalBool(pm["purified"])
 		mirror := parseOptionalBool(pm["mirror"])
 		prefLucky := parseOptionalBool(pm["pref_lucky"])
-		favorite := parseOptionalBool(pm["favorite"])
 		isMega := parseOptionalBool(pm["is_mega"])
 		mega := parseOptionalBool(pm["mega"])
 		isFused := parseOptionalBool(pm["is_fused"])
