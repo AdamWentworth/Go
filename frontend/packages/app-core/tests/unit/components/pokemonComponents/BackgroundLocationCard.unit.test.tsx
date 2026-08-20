@@ -58,4 +58,94 @@ describe('BackgroundLocationCard', () => {
     fireEvent.click(screen.getByRole('button', { name: /none/i }));
     expect(onSelectBackground).toHaveBeenLastCalledWith(null);
   });
+
+  it('shows only exact no-costume backgrounds for a standard variant', () => {
+    render(
+      <BackgroundLocationCard
+        pokemon={{
+          variantType: 'default',
+          backgrounds: [
+            {
+              background_id: 1,
+              image_url: '/images/backgrounds/base.png',
+              name: 'Base Background',
+              costume_id: null,
+              date: '2025-01-01',
+              location: 'Base Location',
+            },
+            {
+              background_id: 2,
+              image_url: '/images/backgrounds/party.png',
+              name: 'Party Background',
+              costume_id: 7,
+              date: '2025-01-02',
+              location: 'Party Location',
+            },
+          ],
+        }}
+      />,
+    );
+
+    expect(screen.getByRole('button', { name: /base background/i })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /party background/i })).not.toBeInTheDocument();
+  });
+
+  it.each(['costume_7', 'shiny_costume_7', 'shadow_costume_7', 'shiny_shadow_costume_7'])(
+    'shows only the exact costume background for %s',
+    (variantType) => {
+      render(
+        <BackgroundLocationCard
+          pokemon={{
+            variantType,
+            backgrounds: [
+              {
+                background_id: 1,
+                image_url: '/images/backgrounds/base.png',
+                name: 'Base Background',
+                costume_id: null,
+                date: '2025-01-01',
+                location: 'Base Location',
+              },
+              {
+                background_id: 2,
+                image_url: '/images/backgrounds/party.png',
+                name: 'Party Background',
+                costume_id: 7,
+                date: '2025-01-02',
+                location: 'Party Location',
+              },
+            ],
+          }}
+        />,
+      );
+
+      expect(screen.getByRole('button', { name: /party background/i })).toBeInTheDocument();
+      expect(screen.queryByRole('button', { name: /base background/i })).not.toBeInTheDocument();
+    },
+  );
+
+  it('uses an explicit costume and labels background pairings when requested', () => {
+    render(
+      <BackgroundLocationCard
+        costumeOptions={[{ name: 'Party', costume_id: 7 }]}
+        pokemon={{
+          variantType: 'default',
+          backgrounds: [
+            {
+              background_id: 2,
+              image_url: '/images/backgrounds/party.png',
+              name: 'Party Background',
+              costume_id: 7,
+              date: '2025-01-02',
+              location: 'Party Location',
+            },
+          ],
+        }}
+        selectedCostumeId={7}
+        showCostumePairing
+      />,
+    );
+
+    expect(screen.getByText('Party')).toBeInTheDocument();
+  });
 });

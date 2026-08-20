@@ -396,6 +396,16 @@
   color: var(--color-text-primary);
 }
 
+.appearance-background-summary__costume {
+  padding: 3px 7px;
+  border: 1px solid color-mix(in srgb, var(--color-text-primary) 18%, transparent);
+  border-radius: 999px;
+  color: var(--color-text-primary);
+  font-size: 0.72rem;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
 .appearance-background-summary button {
   margin-left: auto;
   border: 0;

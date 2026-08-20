@@ -258,6 +258,16 @@ const pokemonCache = [
     name: 'Bulbasaur',
     form: null,
     costumes: [{ name: 'Party', costume_id: 7 }],
+    backgrounds: [
+      {
+        background_id: 42,
+        costume_id: 7,
+        image_url: '/images/party-bg.png',
+        name: 'Party City',
+        location: 'Seattle',
+        date: '2025-01-02',
+      },
+    ],
     max: [],
   },
 ] as unknown as PokemonVariant[];

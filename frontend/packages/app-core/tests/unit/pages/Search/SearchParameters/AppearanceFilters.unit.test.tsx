@@ -155,6 +155,27 @@ describe('AppearanceFilters', () => {
     expect(controller.setShowBackgroundOverlay).toHaveBeenCalledWith(true);
   });
 
+  it('shows the exact costume paired with a selected background', () => {
+    const controller = makeController({
+      selectedBackground: {
+        background_id: 42,
+        costume_id: 7,
+        image_url: '/images/party-bg.png',
+        name: 'Party City',
+        location: 'Seattle',
+        date: '2025-01-02',
+      },
+    });
+    const { container } = renderFilters(controller);
+
+    const summary = container.querySelector('.appearance-background-summary');
+    expect(summary).toHaveTextContent('Party City');
+    expect(summary).toHaveTextContent('Seattle');
+    expect(summary).toHaveTextContent('Party');
+    fireEvent.click(screen.getByRole('button', { name: 'Clear' }));
+    expect(controller.handleBackgroundChange).toHaveBeenCalledWith(null);
+  });
+
   it('updates each move slot without changing the other selections', () => {
     const controller = makeController();
     renderFilters(controller);

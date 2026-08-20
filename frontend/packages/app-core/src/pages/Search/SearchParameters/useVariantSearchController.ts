@@ -27,6 +27,7 @@ import {
 import type { BackgroundSelection } from './VariantSearchBackgroundOverlay';
 import type { SelectedMoves } from '../utils/buildPokemonSearchQuery';
 import type { PokemonVariant } from '@/types/pokemonVariants';
+import { resolveBackgroundCostume } from '@/utils/backgroundCostume';
 
 export interface UseVariantSearchControllerArgs {
   pokemon: string;
@@ -123,7 +124,10 @@ const useVariantSearchController = ({
   const [suggestions, setSuggestions] = useState<string[]>([]);
 
   const currentPokemonData = pokemonData.find(
-    (entry) => entry.name.toLowerCase() === (pokemon || '').toLowerCase(),
+    (entry) =>
+      entry.name.toLowerCase() === (pokemon || '').toLowerCase() &&
+      (!selectedForm ||
+        (entry.form ?? '').toLowerCase() === selectedForm.toLowerCase()),
   );
   const { hasDynamax, hasGigantamax } = computeMaxAvailability(currentPokemonData);
   const backgroundAllowed = isBackgroundAllowedForSelection(
@@ -233,9 +237,40 @@ const useVariantSearchController = ({
   ]);
 
   const handleBackgroundChange = (background: BackgroundSelection | null) => {
+    if (!background) {
+      setSelectedBackground(null);
+      setSelectedBackgroundId(null);
+      setShowBackgroundOverlay(false);
+      return;
+    }
+
+    const resolvedCostume = resolveBackgroundCostume(background, availableCostumes);
+    if (!resolvedCostume) {
+      const message = 'This background’s required costume is unavailable.';
+      setErrorMessage(message);
+      handleError(message);
+      return;
+    }
+
+    const nextCostume = resolvedCostume.costume?.name ?? null;
+    const shouldExitMax = resolvedCostume.costumeId !== null && (dynamax || gigantamax);
+
+    setCostume(nextCostume);
+    setShowCostumeDropdown(resolvedCostume.costumeId !== null);
+    if (shouldExitMax) {
+      setDynamax(false);
+      setGigantamax(false);
+    }
     setSelectedBackground(background);
-    setSelectedBackgroundId(background ? background.background_id : null);
+    setSelectedBackgroundId(background.background_id);
     setShowBackgroundOverlay(false);
+    setErrorMessage(null);
+    clearError();
+    handleValidation({
+      selectedCostume: nextCostume,
+      dynamaxEnabled: shouldExitMax ? false : dynamax,
+      gigantamaxEnabled: shouldExitMax ? false : gigantamax,
+    });
   };
 
   const handleImageError = () => {

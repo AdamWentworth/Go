@@ -1,4 +1,5 @@
 import type { PokemonVariant } from '@/types/pokemonVariants';
+import { resolveBackgroundCostume } from '@/utils/backgroundCostume';
 
 export type SortableCostume = {
   name: string;
@@ -109,7 +110,7 @@ export const getSelectedCostumeId = (
 
 export const isBackgroundAllowedForSelection = (
   currentPokemonData: PokemonVariant | undefined,
-  costume: string | null,
+  _costume: string | null,
   availableCostumes: SortableCostume[],
 ): boolean => {
   const backgrounds = currentPokemonData?.backgrounds as BackgroundRow[] | undefined;
@@ -117,13 +118,7 @@ export const isBackgroundAllowedForSelection = (
     return false;
   }
 
-  if (!costume) {
-    return backgrounds.some((background) => background.costume_id == null);
-  }
-
-  const selectedCostumeId = getSelectedCostumeId(availableCostumes, costume);
   return backgrounds.some(
-    (background) =>
-      background.costume_id === selectedCostumeId || background.costume_id == null,
+    (background) => resolveBackgroundCostume(background, availableCostumes) !== null,
   );
 };

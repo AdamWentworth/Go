@@ -112,7 +112,7 @@ describe('variantSearchHelpers', () => {
     expect(getSelectedCostumeId(availableCostumes, 'Missing')).toBeUndefined();
   });
 
-  it('isBackgroundAllowedForSelection supports default and costume-specific backgrounds', () => {
+  it('allows backgrounds only when their exact costume can be resolved', () => {
     const variant = makeVariant({
       backgrounds: [
         { background_id: 1, costume_id: null },
@@ -123,6 +123,15 @@ describe('variantSearchHelpers', () => {
 
     expect(isBackgroundAllowedForSelection(variant, null, availableCostumes)).toBe(true);
     expect(isBackgroundAllowedForSelection(variant, 'Party', availableCostumes)).toBe(true);
+    expect(
+      isBackgroundAllowedForSelection(
+        makeVariant({
+          backgrounds: [{ background_id: 2, costume_id: 7 }] as PokemonVariant['backgrounds'],
+        }),
+        null,
+        availableCostumes,
+      ),
+    ).toBe(true);
     expect(
       isBackgroundAllowedForSelection(
         makeVariant({ backgrounds: [{ background_id: 3, costume_id: 9 }] as PokemonVariant['backgrounds'] }),

@@ -44,6 +44,14 @@ const baseVariant = {
       location: 'Seattle',
       date: '2025-01-01',
     },
+    {
+      background_id: 102,
+      costume_id: 7,
+      image_url: '/images/party-bg.png',
+      name: 'Party City',
+      location: 'Seattle',
+      date: '2025-01-02',
+    },
   ],
   max: [
     {
@@ -204,6 +212,33 @@ describe('useVariantSearchController', () => {
 
     expect(setDynamax).toHaveBeenCalledWith(false);
     expect(setGigantamax).toHaveBeenCalledWith(true);
+  });
+
+  it('uses backgrounds from the exact selected Pokémon form', () => {
+    const megaVariant = {
+      ...baseVariant,
+      variant_id: '0001-mega',
+      form: 'Mega',
+      backgrounds: [
+        {
+          background_id: 201,
+          costume_id: null,
+          image_url: '/images/mega-bg.png',
+          name: 'Mega City',
+          location: 'Seattle',
+          date: '2025-02-01',
+        },
+      ],
+    } as PokemonVariant;
+    const args = makeArgs({
+      pokemon: 'Bulbasaur',
+      selectedForm: 'Mega',
+      pokemonCache: [baseVariant, megaVariant],
+    });
+    const { result } = renderHook(() => useVariantSearchController(args));
+
+    expect(result.current.currentPokemonData?.variant_id).toBe('0001-mega');
+    expect(result.current.currentPokemonData?.backgrounds?.[0]?.background_id).toBe(201);
   });
 
   it('sets an explicit Max mode without relying on the cycle order', () => {
@@ -458,9 +493,12 @@ describe('useVariantSearchController', () => {
   });
 
   it('applies selected background and closes background overlay', () => {
+    const setCostume = toSetter<string | null>();
     const setSelectedBackgroundId = toSetter<number | null>();
     const args = makeArgs({
       pokemon: 'Bulbasaur',
+      costume: 'Party',
+      setCostume,
       setSelectedBackgroundId,
     });
     const { result } = renderHook(() => useVariantSearchController(args));
@@ -486,6 +524,84 @@ describe('useVariantSearchController', () => {
     expect(result.current.selectedBackground).toEqual(background);
     expect(result.current.showBackgroundOverlay).toBe(false);
     expect(setSelectedBackgroundId).toHaveBeenCalledWith(101);
+    expect(setCostume).toHaveBeenCalledWith(null);
+    expect(result.current.showCostumeDropdown).toBe(false);
+  });
+
+  it('automatically applies the one costume required by a selected background', async () => {
+    const setCostume = toSetter<string | null>();
+    const setSelectedBackgroundId = toSetter<number | null>();
+    const args = makeArgs({
+      pokemon: 'Bulbasaur',
+      setCostume,
+      setSelectedBackgroundId,
+    });
+    const { result } = renderHook(() => useVariantSearchController(args));
+
+    await waitFor(() => expect(result.current.availableCostumes).toHaveLength(1));
+
+    const background: BackgroundSelection = {
+      background_id: 102,
+      image_url: '/images/party-bg.png',
+      name: 'Party City',
+      location: 'Seattle',
+      date: '2025-01-02',
+      costume_id: 7,
+    };
+
+    act(() => result.current.handleBackgroundChange(background));
+
+    expect(setCostume).toHaveBeenLastCalledWith('Party');
+    expect(setSelectedBackgroundId).toHaveBeenLastCalledWith(102);
+    expect(result.current.selectedBackground).toEqual(background);
+    expect(result.current.showCostumeDropdown).toBe(true);
+    expect(updateImageMock).toHaveBeenLastCalledWith(
+      expect.any(Array),
+      'Bulbasaur',
+      false,
+      false,
+      'Party',
+      '',
+      'Any',
+      false,
+      false,
+    );
+  });
+
+  it('rejects a background whose required costume is missing from the catalog', async () => {
+    const setErrorMessageMock = vi.fn();
+    const setSelectedBackgroundIdMock = vi.fn();
+    const setErrorMessage =
+      setErrorMessageMock as React.Dispatch<React.SetStateAction<string | null>>;
+    const setSelectedBackgroundId =
+      setSelectedBackgroundIdMock as React.Dispatch<React.SetStateAction<number | null>>;
+    const args = makeArgs({
+      pokemon: 'Bulbasaur',
+      setErrorMessage,
+      setSelectedBackgroundId,
+    });
+    const { result } = renderHook(() => useVariantSearchController(args));
+
+    await waitFor(() => expect(result.current.availableCostumes).toHaveLength(1));
+    setErrorMessageMock.mockClear();
+    setSelectedBackgroundIdMock.mockClear();
+
+    act(() => {
+      result.current.handleBackgroundChange({
+        background_id: 103,
+        image_url: '/images/missing-bg.png',
+        name: 'Missing Costume',
+        location: 'Seattle',
+        date: '2025-01-03',
+        costume_id: 9,
+      });
+    });
+
+    expect(setErrorMessage).toHaveBeenCalledWith(
+      'This background’s required costume is unavailable.',
+    );
+    expect(setSelectedBackgroundId).not.toHaveBeenCalled();
+    expect(result.current.selectedBackground).toBeNull();
   });
 
   it('clears the Pokémon and its derived state through the clear action', async () => {

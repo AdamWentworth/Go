@@ -311,6 +311,30 @@ describe('WantedInstance', () => {
     expect(screen.getByRole('button', { name: 'Save wanted listing' })).toBeInTheDocument();
   });
 
+  it('rejects a background from the wrong costume pool', async () => {
+    const pokemon = makePokemon({ costume_id: 7, location_card: null });
+    pokemon.variantType = 'costume_7';
+    render(
+      <WantedInstance
+        pokemon={pokemon}
+        isEditable
+      />,
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Edit wanted listing' }));
+    expect(
+      screen.queryByRole('button', { name: 'Choose special background' }),
+    ).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Save wanted listing' }));
+
+    await waitFor(() => {
+      expect(mocks.updateDetails).toHaveBeenCalledWith(
+        'wanted-instance-1',
+        expect.objectContaining({ location_card: null }),
+      );
+    });
+  });
+
   it('keeps another trainer catalog view read-only and compact', () => {
     render(<WantedInstance pokemon={makePokemon()} isEditable={false} catalogView />);
 

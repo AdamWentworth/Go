@@ -4,6 +4,7 @@ import { FaMapMarkedAlt } from 'react-icons/fa';
 import { formatCostumeName } from '../utils/formatCostumeName';
 import PokemonArtwork from '@/components/pokemonComponents/PokemonArtwork';
 import { formatForm } from '@/utils/formattingHelpers';
+import { normalizeCostumeId } from '@/utils/backgroundCostume';
 import type { SelectedMoves } from '../utils/buildPokemonSearchQuery';
 import type { UseVariantSearchControllerResult } from './useVariantSearchController';
 import InFrameSelect from './InFrameSelect';
@@ -80,6 +81,12 @@ const AppearanceFilters: React.FC<AppearanceFiltersProps> = ({
   };
 
   const maxMode = gigantamax ? 'gigantamax' : dynamax ? 'dynamax' : 'standard';
+  const selectedBackgroundCostumeId = normalizeCostumeId(
+    controller.selectedBackground?.costume_id,
+  );
+  const selectedBackgroundCostumeName = controller.availableCostumes.find(
+    (entry) => normalizeCostumeId(entry.costume_id) === selectedBackgroundCostumeId,
+  )?.name;
 
   return (
     <div className="search-filter-panel appearance-filters">
@@ -157,7 +164,7 @@ const AppearanceFilters: React.FC<AppearanceFiltersProps> = ({
                   ? 'Unavailable'
                   : costume
                     ? formatCostumeName(costume)
-                    : 'Any'}
+                    : 'No costume'}
               </small>
             </span>
           </button>
@@ -182,7 +189,7 @@ const AppearanceFilters: React.FC<AppearanceFiltersProps> = ({
             label="Costume"
             onChange={controller.handleCostumeChange}
             options={[
-              { label: 'Any costume', value: '' },
+              { label: 'No costume', value: '' },
               ...controller.availableCostumes.map((entry) => ({
                 label: formatCostumeName(entry.name),
                 value: entry.name,
@@ -315,6 +322,13 @@ const AppearanceFilters: React.FC<AppearanceFiltersProps> = ({
             <>
               <strong>{controller.selectedBackground.name}</strong>
               <span>{controller.selectedBackground.location}</span>
+              <span className="appearance-background-summary__costume">
+                {selectedBackgroundCostumeId === null
+                  ? 'No costume'
+                  : selectedBackgroundCostumeName
+                    ? formatCostumeName(selectedBackgroundCostumeName)
+                    : `Costume #${selectedBackgroundCostumeId}`}
+              </span>
               <button
                 onClick={() => controller.handleBackgroundChange(null)}
                 type="button"
@@ -325,19 +339,19 @@ const AppearanceFilters: React.FC<AppearanceFiltersProps> = ({
           ) : (
             <span>
               {controller.backgroundAllowed
-                ? 'Any eligible background'
-                : 'Select an eligible Pokémon or costume first'}
+                ? 'Choose a background; its exact costume will be applied automatically.'
+                : 'No valid background and costume combinations are available.'}
             </span>
           )}
         </div>
       </section>
 
       <VariantSearchBackgroundOverlay
+        availableCostumes={controller.availableCostumes}
         currentPokemonData={controller.currentPokemonData}
         isOpen={controller.showBackgroundOverlay}
         onClose={() => controller.setShowBackgroundOverlay(false)}
         onSelectBackground={controller.handleBackgroundChange}
-        selectedCostumeId={controller.selectedCostumeId}
       />
     </div>
   );

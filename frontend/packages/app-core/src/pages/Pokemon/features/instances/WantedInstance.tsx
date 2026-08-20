@@ -10,6 +10,7 @@ import type { VariantBackground } from '@/types/pokemonSubTypes';
 import type { PokemonVariant } from '@/types/pokemonVariants';
 import { determineImageUrl } from '@/utils/imageHelpers';
 import { createScopedLogger } from '@/utils/logger';
+import { backgroundMatchesVariant } from '@/utils/backgroundCostume';
 
 import FriendshipManager from './components/Wanted/FriendshipManager';
 import MostWantedToggle from './components/Wanted/MostWantedToggle';
@@ -159,20 +160,20 @@ const WantedInstance: React.FC<WantedInstanceProps> = ({
   const backgrounds = useMemo(() => pokemon.backgrounds ?? [], [pokemon.backgrounds]);
   const selectableBackgrounds = useMemo(
     () =>
-      backgrounds.filter((background) => {
-        if (!background.costume_id) return true;
-        const variantTypeId = pokemon.variantType?.split('_')[1];
-        return background.costume_id === Number.parseInt(variantTypeId ?? '', 10);
-      }),
+      backgrounds.filter((background) =>
+        backgroundMatchesVariant(background, pokemon.variantType),
+      ),
     [backgrounds, pokemon.variantType],
   );
 
   useEffect(() => {
     const locationCardId = Number.parseInt(String(instanceData.location_card ?? ''), 10);
     setSelectedBackground(
-      backgrounds.find((background) => background.background_id === locationCardId) ?? null,
+      selectableBackgrounds.find(
+        (background) => background.background_id === locationCardId,
+      ) ?? null,
     );
-  }, [backgrounds, instanceData.location_card]);
+  }, [instanceData.location_card, selectableBackgrounds]);
 
   const isFemale = gender === 'Female';
   const dynamax = Boolean(instanceData.dynamax);
@@ -228,7 +229,11 @@ const WantedInstance: React.FC<WantedInstanceProps> = ({
     editMode || hasDesiredDetails(gender, weight, height, moves);
 
   const handleBackgroundSelect = (background: BackgroundOption | null) => {
-    setSelectedBackground(background);
+    setSelectedBackground(
+      background && backgroundMatchesVariant(background, pokemon.variantType)
+        ? background
+        : null,
+    );
     setShowBackgrounds(false);
   };
 

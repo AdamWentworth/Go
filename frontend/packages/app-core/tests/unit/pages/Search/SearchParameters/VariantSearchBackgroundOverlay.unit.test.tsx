@@ -8,14 +8,24 @@ import { OVERLAY_MOTION_DURATION_MS } from '@/components/OverlayPortal';
 
 vi.mock('@/components/pokemonComponents/BackgroundLocationCard', () => ({
   default: ({
+    costumeOptions,
+    filterBackground,
     onSelectBackground,
-    selectedCostumeId,
+    showCostumePairing,
   }: {
+    costumeOptions: Array<{ name: string; costume_id?: number }>;
+    filterBackground: (value: { costume_id?: number | null }) => boolean;
     onSelectBackground: (value: unknown) => void;
-    selectedCostumeId?: number;
+    showCostumePairing?: boolean;
   }) => (
     <div>
-      <span data-testid="selected-costume-id">{String(selectedCostumeId ?? '')}</span>
+      <span data-testid="costume-options">
+        {costumeOptions.map((costume) => costume.name).join(',')}
+      </span>
+      <span data-testid="shows-costume-pairing">{String(showCostumePairing)}</span>
+      <span data-testid="allows-base">{String(filterBackground({ costume_id: null }))}</span>
+      <span data-testid="allows-party">{String(filterBackground({ costume_id: 7 }))}</span>
+      <span data-testid="allows-missing">{String(filterBackground({ costume_id: 9 }))}</span>
       <button
         type="button"
         data-testid="select-background"
@@ -51,11 +61,11 @@ describe('VariantSearchBackgroundOverlay', () => {
   it('does not render while closed', () => {
     render(
       <VariantSearchBackgroundOverlay
+        availableCostumes={[]}
         isOpen={false}
         onClose={vi.fn()}
         currentPokemonData={undefined}
         onSelectBackground={vi.fn()}
-        selectedCostumeId={undefined}
       />,
     );
 
@@ -68,11 +78,11 @@ describe('VariantSearchBackgroundOverlay', () => {
     const onSelectBackground = vi.fn();
     render(
       <VariantSearchBackgroundOverlay
+        availableCostumes={[{ name: 'Party', costume_id: 7 }]}
         isOpen={true}
         onClose={onClose}
         currentPokemonData={{ name: 'Bulbasaur' } as unknown as PokemonVariant}
         onSelectBackground={onSelectBackground}
-        selectedCostumeId={7}
       />,
     );
 
@@ -81,7 +91,11 @@ describe('VariantSearchBackgroundOverlay', () => {
 
     fireEvent.click(screen.getByTestId('select-background'));
     expect(onSelectBackground).toHaveBeenCalledTimes(1);
-    expect(screen.getByTestId('selected-costume-id')).toHaveTextContent('7');
+    expect(screen.getByTestId('costume-options')).toHaveTextContent('Party');
+    expect(screen.getByTestId('shows-costume-pairing')).toHaveTextContent('true');
+    expect(screen.getByTestId('allows-base')).toHaveTextContent('true');
+    expect(screen.getByTestId('allows-party')).toHaveTextContent('true');
+    expect(screen.getByTestId('allows-missing')).toHaveTextContent('false');
 
     fireEvent.click(screen.getByRole('button', { name: 'Close' }));
     expect(onClose).toHaveBeenCalledTimes(1);
