@@ -7,7 +7,7 @@ SET @sql = IF(
     WHERE table_schema = DATABASE() AND table_name = 'instances'
       AND column_name = 'wanted_size_preferences'
   ),
-  'ALTER TABLE instances ADD COLUMN wanted_size_preferences JSON NULL AFTER wanted_filters',
+  'ALTER TABLE instances ADD COLUMN wanted_size_preferences JSON NULL',
   'SELECT 1'
 );
 PREPARE migration_statement FROM @sql;
