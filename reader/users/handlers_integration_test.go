@@ -431,7 +431,7 @@ func TestUpdateUserHandler_UpdatesExistingUser(t *testing.T) {
 		WillReturnRows(sqlmock.NewRows([]string{"user_id"}))
 
 	mock.ExpectBegin()
-	mock.ExpectExec(regexp.QuoteMeta("UPDATE `users` SET")).
+	mock.ExpectExec("INSERT INTO `users` .* ON DUPLICATE KEY UPDATE").
 		WillReturnResult(sqlmock.NewResult(0, 1))
 	mock.ExpectCommit()
 
@@ -468,12 +468,7 @@ func TestUpdateUserHandler_InsertsWhenNoExistingRow(t *testing.T) {
 		WillReturnRows(sqlmock.NewRows([]string{"user_id"}))
 
 	mock.ExpectBegin()
-	mock.ExpectExec(regexp.QuoteMeta("UPDATE `users` SET")).
-		WillReturnResult(sqlmock.NewResult(0, 0))
-	mock.ExpectCommit()
-
-	mock.ExpectBegin()
-	mock.ExpectExec(regexp.QuoteMeta("INSERT INTO `users`")).
+	mock.ExpectExec("INSERT INTO `users` .* ON DUPLICATE KEY UPDATE").
 		WillReturnResult(sqlmock.NewResult(1, 1))
 	mock.ExpectCommit()
 
@@ -484,6 +479,45 @@ func TestUpdateUserHandler_InsertsWhenNoExistingRow(t *testing.T) {
 
 	req := makeJSONRequest(t, http.MethodPut, "/api/users/update-user/user-999", map[string]any{
 		"username": "new_user",
+	})
+
+	resp, err := app.Test(req, fiber.TestConfig{Timeout: 0})
+	if err != nil {
+		t.Fatalf("request failed: %v", err)
+	}
+	if resp.StatusCode != http.StatusOK {
+		t.Fatalf("unexpected status: got %d, want %d", resp.StatusCode, http.StatusOK)
+	}
+
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Fatalf("unmet sqlmock expectations: %v", err)
+	}
+}
+
+func TestUpdateUserHandler_SucceedsWhenUpsertChangesNoValues(t *testing.T) {
+	mock, cleanup := setupMockDB(t)
+	defer cleanup()
+
+	app := newHandlerTestApp("user-123")
+
+	mock.ExpectQuery(regexp.QuoteMeta("SELECT * FROM `users` WHERE username = ? AND user_id <> ? ORDER BY `users`.`user_id` LIMIT ?")).
+		WithArgs("adam", "user-123", 1).
+		WillReturnRows(sqlmock.NewRows([]string{"user_id"}))
+
+	mock.ExpectBegin()
+	mock.ExpectExec("INSERT INTO `users` .* ON DUPLICATE KEY UPDATE").
+		WillReturnResult(sqlmock.NewResult(0, 0))
+	mock.ExpectCommit()
+
+	mock.ExpectQuery(regexp.QuoteMeta("SELECT * FROM `users` WHERE user_id = ? ORDER BY `users`.`user_id` LIMIT ?")).
+		WithArgs("user-123", 1).
+		WillReturnRows(sqlmock.NewRows([]string{"user_id", "username", "allow_location", "app_joined_at"}).
+			AddRow("user-123", "adam", false, time.Now()))
+
+	req := makeJSONRequest(t, http.MethodPut, "/api/users/update-user/user-123", map[string]any{
+		"username":  "adam",
+		"latitude":  49.2327643,
+		"longitude": -123.0092935,
 	})
 
 	resp, err := app.Test(req, fiber.TestConfig{Timeout: 0})
