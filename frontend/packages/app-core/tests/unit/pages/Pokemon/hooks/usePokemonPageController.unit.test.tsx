@@ -228,6 +228,33 @@ describe('usePokemonPageController', () => {
     expect(loadForeignProfileMock).toHaveBeenCalledWith('ash', expect.any(Function));
   });
 
+  it('returns a viewed listing to its originating Search page', async () => {
+    const navigate = vi.fn() as unknown as NavigateFunction;
+    const location = {
+      pathname: '/pokemon/ash',
+      search: '',
+      state: { contextBackTo: '/search' },
+    } as any;
+
+    const { result } = renderHook(() =>
+      usePokemonPageController({
+        isOwnCollection: false,
+        urlUsername: 'ash',
+        location,
+        navigate,
+      }),
+    );
+
+    await waitFor(() => {
+      expect(result.current.returnToContext).toBeTypeOf('function');
+    });
+
+    act(() => {
+      result.current.returnToContext?.();
+    });
+    expect(navigate).toHaveBeenCalledWith('/search', { replace: true });
+  });
+
   it('preserves a requested filter after loading a foreign collection', async () => {
     const navigate = vi.fn() as unknown as NavigateFunction;
     const location = {

@@ -15,6 +15,15 @@ import { createScopedLogger } from '@/utils/logger';
 import { normalizeOwnershipMode } from './utils/ownershipMode';
 import { searchPokemon } from '@/services/searchService';
 import { RenderProfiler } from '@/components/dev/RenderProfiler';
+import { useAuthStore } from '@/stores/useAuthStore';
+import {
+  createDefaultPokemonSearchDraft,
+  patchSearchSession,
+  readSearchSession,
+  writeSearchSession,
+  type PokemonSearchDraft,
+  type SearchView,
+} from './searchSessionCache';
 
 import type { PokemonVariant } from '@/types/pokemonVariants';
 import type {
@@ -22,8 +31,6 @@ import type {
   SearchResultRow,
 } from '@/services/searchService';
 import './Search.css';
-
-type SearchView = 'list' | 'map';
 
 const SEARCH_MODES = ['pokemon', 'trainer'] as const;
 
@@ -61,16 +68,48 @@ const searchResultDistance = (row: SearchResultRow): number =>
     ? row.distance
     : Number.POSITIVE_INFINITY;
 
+const enrichAndSortSearchResults = (
+  rows: SearchResultRow[],
+  pokemonById: Map<number, PokemonVariant>,
+  boundaryWKT?: string | null,
+): EnrichedSearchResult[] => {
+  const enrichedResults = rows.reduce<EnrichedSearchResult[]>((acc, item) => {
+    const pokemonId = Number(item.pokemon_id);
+    if (!Number.isFinite(pokemonId)) return acc;
+    const pokemonInfo = pokemonById.get(pokemonId);
+    if (!pokemonInfo) return acc;
+    acc.push({
+      ...item,
+      pokemonInfo,
+      boundary: boundaryWKT,
+    });
+    return acc;
+  }, []);
+
+  return enrichedResults.sort(
+    (a, b) =>
+      Number(hasLinkedMatch(b)) - Number(hasLinkedMatch(a)) ||
+      searchResultDistance(a) - searchResultDistance(b),
+  );
+};
+
 const Search: React.FC = () => {
-  const [searchMode, setSearchMode] = useState<SearchMode>('pokemon');
-  const [view, setView] = useState<SearchView>('list');
+  const userId = useAuthStore((state) => state.user?.user_id);
+  const cacheOwnerKey = userId ?? 'anonymous';
+  const [initialSession, setInitialSession] = useState(() =>
+    readSearchSession(cacheOwnerKey),
+  );
+  const [searchMode, setSearchMode] = useState<SearchMode>(
+    initialSession?.searchMode ?? 'pokemon',
+  );
+  const [view, setView] = useState<SearchView>(initialSession?.view ?? 'list');
   const [searchResults, setSearchResults] = useState<EnrichedSearchResult[]>([]);
   const [ownershipMode, setOwnershipMode] = useState<
     ReturnType<typeof normalizeOwnershipMode>
-  >('caught');
+  >(initialSession?.ownershipMode ?? 'caught');
   const [errorMessage, setErrorMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [hasSearched, setHasSearched] = useState(false);
+  const [hasSearched, setHasSearched] = useState(Boolean(initialSession));
   const [scrollToTopTrigger, setScrollToTopTrigger] = useState(0);
 
   const variants = useVariantsStore((state) => state.variants);
@@ -83,6 +122,10 @@ const Search: React.FC = () => {
 
   const containerRef = useRef<HTMLDivElement | null>(null);
   const shouldScrollRef = useRef(false);
+  const hasRestoredSessionRef = useRef(false);
+  const loadedOwnerKeyRef = useRef(cacheOwnerKey);
+  const searchModeRef = useRef(searchMode);
+  const viewRef = useRef(view);
   const pokemonCache = useMemo<PokemonVariant[]>(
     () => variants.filter((variant) => variant.variantType === 'default'),
     [variants],
@@ -97,6 +140,62 @@ const Search: React.FC = () => {
     }
     return map;
   }, [pokemonCache]);
+
+  useEffect(() => {
+    if (loadedOwnerKeyRef.current === cacheOwnerKey) return;
+    loadedOwnerKeyRef.current = cacheOwnerKey;
+    const nextSession = readSearchSession(cacheOwnerKey);
+    hasRestoredSessionRef.current = false;
+    setInitialSession(nextSession);
+    setSearchMode(nextSession?.searchMode ?? 'pokemon');
+    setView(nextSession?.view ?? 'list');
+    setOwnershipMode(nextSession?.ownershipMode ?? 'caught');
+    setSearchResults([]);
+    setHasSearched(Boolean(nextSession));
+    setErrorMessage('');
+  }, [cacheOwnerKey]);
+
+  useEffect(() => {
+    searchModeRef.current = searchMode;
+    patchSearchSession(cacheOwnerKey, { searchMode });
+  }, [cacheOwnerKey, searchMode]);
+
+  useEffect(() => {
+    viewRef.current = view;
+    patchSearchSession(cacheOwnerKey, { view });
+  }, [cacheOwnerKey, view]);
+
+  useEffect(() => {
+    if (hasRestoredSessionRef.current || !initialSession) return;
+    if (pokemonById.size === 0) return;
+
+    hasRestoredSessionRef.current = true;
+    setSearchResults(
+      enrichAndSortSearchResults(
+        initialSession.rawResults,
+        pokemonById,
+        initialSession.boundaryWKT,
+      ),
+    );
+
+    const firstFrame = window.requestAnimationFrame(() => {
+      window.requestAnimationFrame(() => {
+        window.scrollTo({ top: initialSession.scrollY, behavior: 'auto' });
+      });
+    });
+    return () => window.cancelAnimationFrame(firstFrame);
+  }, [initialSession, pokemonById]);
+
+  useEffect(
+    () => () => {
+      patchSearchSession(cacheOwnerKey, {
+        searchMode: searchModeRef.current,
+        view: viewRef.current,
+        scrollY: window.scrollY,
+      });
+    },
+    [cacheOwnerKey],
+  );
 
   useEffect(() => {
     if (shouldScrollRef.current && searchResults.length > 0) {
@@ -118,51 +217,39 @@ const Search: React.FC = () => {
   const handleSearch = async (
     queryParams: SearchQueryParams,
     boundaryWKT?: string | null,
+    draft: PokemonSearchDraft = createDefaultPokemonSearchDraft(),
   ): Promise<void> => {
     setErrorMessage('');
     setIsLoading(true);
     setHasSearched(true);
-    setOwnershipMode(
-      normalizeOwnershipMode(coerceOwnershipModeInput(queryParams.ownership)),
+    const nextOwnershipMode = normalizeOwnershipMode(
+      coerceOwnershipModeInput(queryParams.ownership),
     );
+    setOwnershipMode(nextOwnershipMode);
     shouldScrollRef.current = true;
 
     try {
       const dataArray = await searchPokemon(queryParams);
-
-      if (dataArray.length > 0 && pokemonById.size > 0) {
-        const enrichedData = dataArray.reduce<EnrichedSearchResult[]>(
-          (acc, item) => {
-            const pokemonId = Number(item.pokemon_id);
-            if (!Number.isFinite(pokemonId)) return acc;
-            const pokemonInfo = pokemonById.get(pokemonId);
-
-            if (pokemonInfo) {
-              acc.push({
-                ...item,
-                pokemonInfo,
-                boundary: boundaryWKT,
-              });
-            }
-            return acc;
-          },
-          [],
-        );
-
-        if (enrichedData.length > 0) {
-          enrichedData.sort(
-            (a, b) =>
-              Number(hasLinkedMatch(b)) - Number(hasLinkedMatch(a)) ||
-              searchResultDistance(a) - searchResultDistance(b),
-          );
-          setSearchResults(enrichedData);
-          setScrollToTopTrigger((prev) => prev + 1);
-        } else {
-          setSearchResults([]);
-        }
-      } else {
-        setSearchResults([]);
+      const enrichedData = enrichAndSortSearchResults(
+        dataArray,
+        pokemonById,
+        boundaryWKT,
+      );
+      setSearchResults(enrichedData);
+      if (enrichedData.length > 0) {
+        setScrollToTopTrigger((prev) => prev + 1);
       }
+      writeSearchSession({
+        ownerKey: cacheOwnerKey,
+        queryParams,
+        draft,
+        rawResults: dataArray,
+        boundaryWKT: boundaryWKT ?? null,
+        ownershipMode: nextOwnershipMode,
+        searchMode: searchModeRef.current,
+        view: viewRef.current,
+        scrollY: 0,
+      });
     } catch (error) {
       log.error('Search request failed', error);
       const isTimeout =
@@ -202,11 +289,13 @@ const Search: React.FC = () => {
           role="tabpanel"
         >
           <PokemonSearchBar
+            key={`${cacheOwnerKey}:${initialSession?.savedAt ?? 'empty'}`}
             onSearch={handleSearch}
             isLoading={isLoading}
             view={view}
             setView={setView}
             pokemonCache={pokemonCache}
+            initialDraft={initialSession?.draft}
           />
 
           {errorMessage && (

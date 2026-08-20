@@ -21,15 +21,45 @@
   filter: drop-shadow(0 6px 6px rgba(0,0,0,0.3));
 }
 
-.catalog-owner {
+.catalog-context {
   align-self: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  min-width: 0;
+  max-width: min(100%, 34rem);
+  margin: -0.35rem 0 0.75rem;
+}
+
+.catalog-context-back {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 0.35rem;
+  min-height: 2.25rem;
+  padding: 0.35rem 0.65rem;
+  border: 1px solid color-mix(in srgb, var(--color-pokemon-header-toggle-active) 35%, transparent);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--color-pokemon-header-toggle-active);
+  font: inherit;
+  font-size: 0.76rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.catalog-context-back:hover,
+.catalog-context-back:focus-visible {
+  background: color-mix(in srgb, var(--color-pokemon-header-toggle-active) 12%, transparent);
+}
+
+.catalog-owner {
   display: flex;
   align-items: baseline;
   justify-content: center;
   gap: 0.4rem;
   min-width: 0;
-  max-width: min(100%, 34rem);
-  margin: -0.35rem 0 0.75rem;
   color: var(--color-pokemon-header-toggle-inactive);
   line-height: 1.2;
 }
@@ -124,9 +154,28 @@
     padding-inline: 10px;
   }
 
-  .catalog-owner {
+  .catalog-context {
     width: 100%;
     margin-bottom: 0.65rem;
+  }
+
+  .catalog-context-back {
+    min-width: 2.5rem;
+    min-height: 2.5rem;
+    justify-content: center;
+    padding-inline: 0.65rem;
+  }
+
+  .catalog-context-back span {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
   }
 
   .catalog-owner-label {

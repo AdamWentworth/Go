@@ -46,6 +46,7 @@ function Pokemon({ isOwnCollection }: PokemonProps) {
         }
         onPokemonClick={() => controller.setActiveView('pokemon')}
         catalogOwner={controller.isEditable ? undefined : controller.displayUsername}
+        onReturnToContext={controller.returnToContext}
         totalPokemon={controller.sortedPokemons.length}
         highlightedCards={controller.highlightedCards}
         onClearSelection={controller.handleClearSelection}

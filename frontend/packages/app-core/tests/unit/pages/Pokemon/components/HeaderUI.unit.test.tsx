@@ -45,4 +45,19 @@ describe('HeaderUI', () => {
     expect(screen.queryByRole('status')).not.toBeInTheDocument();
     expect(screen.getByText('TAGS')).toBeInTheDocument();
   });
+
+  it('offers a direct return to the originating search results', () => {
+    const onReturnToContext = vi.fn();
+    render(
+      <HeaderUI
+        {...makeProps({
+          catalogOwner: 'Misty',
+          onReturnToContext,
+        })}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Back to results' }));
+    expect(onReturnToContext).toHaveBeenCalledOnce();
+  });
 });

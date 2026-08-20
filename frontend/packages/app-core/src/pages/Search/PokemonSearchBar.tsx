@@ -25,18 +25,23 @@ import {
   type PokemonSearchQueryParams,
   type SelectedMoves,
 } from './utils/buildPokemonSearchQuery';
-
-type SearchView = 'list' | 'map';
+import {
+  createDefaultPokemonSearchDraft,
+  type PokemonSearchDraft,
+  type SearchView,
+} from './searchSessionCache';
 
 type PokemonSearchBarProps = {
   onSearch: (
     queryParams: PokemonSearchQueryParams,
     boundaryWKT?: string | null,
+    draft?: PokemonSearchDraft,
   ) => void | Promise<void>;
   isLoading: boolean;
   view: SearchView;
   setView: React.Dispatch<React.SetStateAction<SearchView>>;
   pokemonCache: PokemonVariant[] | null;
+  initialDraft?: PokemonSearchDraft | null;
 };
 
 const log = createScopedLogger('PokemonSearchBar');
@@ -47,47 +52,56 @@ const PokemonSearchBar: React.FC<PokemonSearchBarProps> = ({
   view,
   setView,
   pokemonCache,
+  initialDraft,
 }) => {
-  const [pokemon, setPokemon] = useState('');
-  const [isShiny, setIsShiny] = useState(false);
-  const [isShadow, setIsShadow] = useState(false);
-  const [costume, setCostume] = useState<string | null>('');
-  const [selectedForm, setSelectedForm] = useState('');
-  const [selectedMoves, setSelectedMoves] = useState<SelectedMoves>({
-    fastMove: null,
-    chargedMove1: null,
-    chargedMove2: null,
-  });
-  const [selectedGender, setSelectedGender] = useState<string | null>('Any');
-  const [selectedBackgroundId, setSelectedBackgroundId] = useState<number | null>(
-    null,
+  const initialSearch = initialDraft ?? createDefaultPokemonSearchDraft();
+  const [pokemon, setPokemon] = useState(initialSearch.pokemon);
+  const [isShiny, setIsShiny] = useState(initialSearch.isShiny);
+  const [isShadow, setIsShadow] = useState(initialSearch.isShadow);
+  const [costume, setCostume] = useState<string | null>(initialSearch.costume);
+  const [selectedForm, setSelectedForm] = useState(initialSearch.selectedForm);
+  const [selectedMoves, setSelectedMoves] = useState<SelectedMoves>(() => ({
+    ...initialSearch.selectedMoves,
+  }));
+  const [selectedGender, setSelectedGender] = useState<string | null>(
+    initialSearch.selectedGender,
   );
-  const [dynamax, setDynamax] = useState(false);
-  const [gigantamax, setGigantamax] = useState(false);
-  const [city, setCity] = useState('');
-  const [useCurrentLocation, setUseCurrentLocation] = useState(false);
+  const [selectedBackgroundId, setSelectedBackgroundId] = useState<number | null>(
+    initialSearch.selectedBackgroundId,
+  );
+  const [dynamax, setDynamax] = useState(initialSearch.dynamax);
+  const [gigantamax, setGigantamax] = useState(initialSearch.gigantamax);
+  const [city, setCity] = useState(initialSearch.city);
+  const [useCurrentLocation, setUseCurrentLocation] = useState(
+    initialSearch.useCurrentLocation,
+  );
   const [ownershipMode, setOwnershipMode] =
-    useState<SearchOwnershipMode>('caught');
-  const [coordinates, setCoordinates] = useState<Coordinates>({
-    latitude: null,
-    longitude: null,
-  });
-  const [range, setRange] = useState(5);
-  const [resultsLimit, setResultsLimit] = useState(5);
-  const [ivs, setIvs] = useState<IvFilters>({
-    Attack: null,
-    Defense: null,
-    Stamina: null,
-  });
-  const [isHundo, setIsHundo] = useState(false);
-  const [onlyMatchingTrades, setOnlyMatchingTrades] = useState(false);
+    useState<SearchOwnershipMode>(initialSearch.ownershipMode);
+  const [coordinates, setCoordinates] = useState<Coordinates>(() => ({
+    ...initialSearch.coordinates,
+  }));
+  const [range, setRange] = useState(initialSearch.range);
+  const [resultsLimit, setResultsLimit] = useState(initialSearch.resultsLimit);
+  const [ivs, setIvs] = useState<IvFilters>(() => ({ ...initialSearch.ivs }));
+  const [isHundo, setIsHundo] = useState(initialSearch.isHundo);
+  const [onlyMatchingTrades, setOnlyMatchingTrades] = useState(
+    initialSearch.onlyMatchingTrades,
+  );
 
-  const [prefLucky, setPrefLucky] = useState(false);
-  const [alreadyRegistered, setAlreadyRegistered] = useState(false);
-  const [tradeInWantedList, setTradeInWantedList] = useState(false);
-  const [friendshipLevel, setFriendshipLevel] = useState(0);
+  const [prefLucky, setPrefLucky] = useState(initialSearch.prefLucky);
+  const [alreadyRegistered, setAlreadyRegistered] = useState(
+    initialSearch.alreadyRegistered,
+  );
+  const [tradeInWantedList, setTradeInWantedList] = useState(
+    initialSearch.tradeInWantedList,
+  );
+  const [friendshipLevel, setFriendshipLevel] = useState(
+    initialSearch.friendshipLevel,
+  );
   const [filtersOpen, setFiltersOpen] = useState(false);
-  const [hasSubmittedSearch, setHasSubmittedSearch] = useState(false);
+  const [hasSubmittedSearch, setHasSubmittedSearch] = useState(
+    Boolean(initialDraft),
+  );
   const [isEditingSubmittedSearch, setIsEditingSubmittedSearch] = useState(false);
   const [initialFilterSection, setInitialFilterSection] =
     useState<FilterSection>('appearance');
@@ -111,6 +125,7 @@ const PokemonSearchBar: React.FC<PokemonSearchBarProps> = ({
     selectedGender,
     setSelectedGender,
     setErrorMessage,
+    selectedBackgroundId,
     setSelectedBackgroundId,
     dynamax,
     setDynamax,
@@ -154,11 +169,36 @@ const PokemonSearchBar: React.FC<PokemonSearchBarProps> = ({
       return false;
     }
     const queryParams: PokemonSearchQueryParams = preparedSearch.queryParams;
+    const draft: PokemonSearchDraft = {
+      pokemon,
+      isShiny,
+      isShadow,
+      costume,
+      selectedForm,
+      selectedMoves: { ...selectedMoves },
+      selectedGender,
+      selectedBackgroundId,
+      dynamax,
+      gigantamax,
+      city,
+      useCurrentLocation,
+      ownershipMode,
+      coordinates: { ...coordinates },
+      range,
+      resultsLimit,
+      ivs: { ...ivs },
+      isHundo,
+      onlyMatchingTrades,
+      prefLucky,
+      alreadyRegistered,
+      tradeInWantedList,
+      friendshipLevel,
+    };
 
     log.debug('Search query parameters', queryParams);
     setHasSubmittedSearch(true);
     setIsEditingSubmittedSearch(false);
-    void Promise.resolve(onSearch(queryParams, null)).catch((error) => {
+    void Promise.resolve(onSearch(queryParams, null, draft)).catch((error) => {
       log.error('Search execution failed outside the page handler', error);
     });
     window.scrollTo({ top: 0, behavior: 'smooth' });

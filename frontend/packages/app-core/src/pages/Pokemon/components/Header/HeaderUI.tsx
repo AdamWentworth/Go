@@ -1,6 +1,7 @@
 // HeaderUI.tsx
 
 import React, { useRef, useState, useEffect } from 'react';
+import { FaArrowLeft } from 'react-icons/fa';
 import './HeaderUI.css';
 
 export interface HeaderUIProps {
@@ -8,6 +9,7 @@ export interface HeaderUIProps {
   onHaveTagsClick: () => void;
   onPokemonClick: () => void;
   catalogOwner?: string;
+  onReturnToContext?: () => void;
   totalPokemon: number;
   highlightedCards?: Set<string | number>;
   onClearSelection: () => void;
@@ -22,6 +24,7 @@ const HeaderUI: React.FC<HeaderUIProps> = ({
   onHaveTagsClick,
   onPokemonClick,
   catalogOwner,
+  onReturnToContext,
   totalPokemon,
   highlightedCards,
   onClearSelection,
@@ -114,9 +117,25 @@ const HeaderUI: React.FC<HeaderUIProps> = ({
   return (
     <header className={headerClassName} ref={headerRef}>
       {!hasSelection && catalogOwner && (
-        <div className="catalog-owner" role="status" aria-label={`Viewing ${catalogOwner}'s catalog`}>
-          <span className="catalog-owner-label">Viewing catalog</span>
-          <strong className="catalog-owner-username">{catalogOwner}</strong>
+        <div className="catalog-context">
+          {onReturnToContext ? (
+            <button
+              className="catalog-context-back"
+              onClick={onReturnToContext}
+              type="button"
+            >
+              <FaArrowLeft aria-hidden="true" />
+              <span>Back to results</span>
+            </button>
+          ) : null}
+          <div
+            className="catalog-owner"
+            role="status"
+            aria-label={`Viewing ${catalogOwner}'s catalog`}
+          >
+            <span className="catalog-owner-label">Viewing catalog</span>
+            <strong className="catalog-owner-username">{catalogOwner}</strong>
+          </div>
         </div>
       )}
 

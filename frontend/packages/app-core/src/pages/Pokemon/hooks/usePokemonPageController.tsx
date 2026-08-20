@@ -107,6 +107,7 @@ type UsePokemonPageControllerResult = {
   closeFusionSelection: () => void;
   handleCreateNewLeft: () => Promise<void>;
   handleCreateNewRight: () => Promise<void>;
+  returnToContext?: () => void;
 };
 
 export default function usePokemonPageController({
@@ -135,6 +136,14 @@ export default function usePokemonPageController({
     readPokemonCatalogFilter(location.search ?? '') ??
     readPokemonCatalogStateFilter(location.state);
   const requestedSearchTerm = readPokemonCatalogSearch(location.search ?? '');
+  const contextBackTo =
+    location.state &&
+    typeof location.state === 'object' &&
+    'contextBackTo' in location.state &&
+    typeof location.state.contextBackTo === 'string' &&
+    location.state.contextBackTo.startsWith('/')
+      ? location.state.contextBackTo
+      : null;
 
   const instances = (isOwnCollection
     ? contextInstanceData
@@ -363,11 +372,21 @@ export default function usePokemonPageController({
     setActiveView('pokemon');
   }, []);
 
+  const returnToContext = useCallback(() => {
+    if (!contextBackTo) return;
+    void navigate(contextBackTo, { replace: true });
+  }, [contextBackTo, navigate]);
+
   useContextBackHandler(activeView !== 'pokemon', returnToPokemonView, 'pokemon-view');
   useContextBackHandler(highlightedCards.size > 0, handleClearSelection, 'pokemon-selection');
   useContextBackHandler(selectedPokemon !== null, closeSelectedPokemon, 'pokemon-overlay');
   useContextBackHandler(isMegaSelectionOpen, closeMegaSelectionFromBack, 'mega-selection');
   useContextBackHandler(isFusionSelectionOpen, closeFusionSelection, 'fusion-selection');
+  useContextBackHandler(
+    isUsernamePath && selectedPokemon === null && Boolean(contextBackTo),
+    returnToContext,
+    'pokemon-context',
+  );
 
   const containerRef = useRef<HTMLDivElement | null>(null);
   const maxPeekDistance = 0.3;
@@ -454,5 +473,6 @@ export default function usePokemonPageController({
     closeFusionSelection,
     handleCreateNewLeft,
     handleCreateNewRight,
+    returnToContext: contextBackTo ? returnToContext : undefined,
   };
 }

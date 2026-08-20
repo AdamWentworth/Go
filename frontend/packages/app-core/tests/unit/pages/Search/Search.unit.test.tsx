@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 
 import Search from '@/pages/Search/Search';
+import { clearSearchSession } from '@/pages/Search/searchSessionCache';
 
 const mockedSearchPokemon = vi.fn();
 const alertMock = vi.fn().mockResolvedValue(undefined);
@@ -130,6 +131,7 @@ describe('Search', () => {
   beforeEach(() => {
     mockedSearchPokemon.mockReset();
     alertMock.mockClear();
+    clearSearchSession();
   });
 
   it('renders a persistent header with Pokemon selected by default', () => {
@@ -252,6 +254,52 @@ describe('Search', () => {
     await waitFor(() => {
       expect(screen.getByTestId('map-view')).toHaveTextContent('trade|1');
     });
+  });
+
+  it('restores completed results after leaving Search without another request', async () => {
+    mockedSearchPokemon.mockResolvedValueOnce([
+      { pokemon_id: 1, distance: 3, username: 'cached-trainer' },
+    ]);
+
+    const firstVisit = render(<Search />);
+    fireEvent.click(screen.getByText('search-trade'));
+
+    await waitFor(() => {
+      expect(screen.getByTestId('list-view')).toHaveTextContent(
+        'trade|1|cached-trainer|true',
+      );
+    });
+    expect(mockedSearchPokemon).toHaveBeenCalledTimes(1);
+
+    firstVisit.unmount();
+    render(<Search />);
+
+    await waitFor(() => {
+      expect(screen.getByTestId('list-view')).toHaveTextContent(
+        'trade|1|cached-trainer|true',
+      );
+    });
+    expect(mockedSearchPokemon).toHaveBeenCalledTimes(1);
+  });
+
+  it('restores the selected results view with the cached search', async () => {
+    mockedSearchPokemon.mockResolvedValueOnce([
+      { pokemon_id: 1, distance: 3, username: 'map-trainer' },
+    ]);
+
+    const firstVisit = render(<Search />);
+    fireEvent.click(screen.getByText('search-trade'));
+    await screen.findByText('trade|1|map-trainer|true');
+    fireEvent.click(screen.getByText('switch-map'));
+    await screen.findByText('trade|1');
+
+    firstVisit.unmount();
+    render(<Search />);
+
+    await waitFor(() => {
+      expect(screen.getByTestId('map-view')).toHaveTextContent('trade|1');
+    });
+    expect(mockedSearchPokemon).toHaveBeenCalledTimes(1);
   });
 
   it('explains when a Pokemon search times out', async () => {

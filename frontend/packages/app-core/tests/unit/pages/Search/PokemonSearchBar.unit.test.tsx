@@ -7,6 +7,7 @@ import PokemonSearchBar, {
 } from '@/pages/Search/PokemonSearchBar';
 import type { SearchOwnershipMode } from '@/pages/Search/utils/ownershipMode';
 import type { PokemonVariant } from '@/types/pokemonVariants';
+import { createDefaultPokemonSearchDraft } from '@/pages/Search/searchSessionCache';
 
 type SearchView = 'list' | 'map';
 
@@ -426,6 +427,35 @@ describe('PokemonSearchBar', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Modify search' }));
     expect(searchBar).not.toHaveClass('pokemon-search-bar--compact');
+  });
+
+  it('restores a cached search directly into its compact submitted state', async () => {
+    render(
+      <PokemonSearchBar
+        initialDraft={{
+          ...createDefaultPokemonSearchDraft(),
+          pokemon: 'Bulbasaur',
+          city: 'Seattle, WA, USA',
+          coordinates: { latitude: 47.6062, longitude: -122.3321 },
+          resultsLimit: 10,
+        }}
+        onSearch={onSearchMock}
+        isLoading={false}
+        view="list"
+        setView={setViewMock}
+        pokemonCache={pokemonCache}
+      />,
+    );
+
+    const summary = screen.getByLabelText('Current Pokémon search');
+    await waitFor(() => {
+      expect(summary.closest('.pokemon-search-bar')).toHaveClass(
+        'pokemon-search-bar--compact',
+      );
+    });
+    expect(summary).toHaveTextContent('Bulbasaur');
+    expect(summary).toHaveTextContent('Seattle, WA, USA');
+    expect(onSearchMock).not.toHaveBeenCalled();
   });
 
   it('closes valid filters immediately while the search continues', async () => {

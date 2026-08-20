@@ -47,6 +47,7 @@ export interface UseVariantSearchControllerArgs {
   selectedGender: string | null;
   setSelectedGender: React.Dispatch<React.SetStateAction<string | null>>;
   setErrorMessage: React.Dispatch<React.SetStateAction<string | null>>;
+  selectedBackgroundId?: number | null;
   setSelectedBackgroundId: React.Dispatch<React.SetStateAction<number | null>>;
   dynamax: boolean;
   setDynamax: React.Dispatch<React.SetStateAction<boolean>>;
@@ -106,6 +107,7 @@ const useVariantSearchController = ({
   selectedGender,
   setSelectedGender,
   setErrorMessage,
+  selectedBackgroundId,
   setSelectedBackgroundId,
   dynamax,
   setDynamax,
@@ -237,6 +239,18 @@ const useVariantSearchController = ({
     selectedForm,
     selectedGender,
   ]);
+
+  useEffect(() => {
+    if (selectedBackgroundId == null) {
+      setSelectedBackground(null);
+      return;
+    }
+    const restoredBackground = currentPokemonData?.backgrounds?.find(
+      (background) =>
+        Number(background.background_id) === Number(selectedBackgroundId),
+    );
+    setSelectedBackground(restoredBackground ?? null);
+  }, [currentPokemonData, selectedBackgroundId]);
 
   const handleBackgroundChange = (background: BackgroundSelection | null) => {
     if (!background) {
