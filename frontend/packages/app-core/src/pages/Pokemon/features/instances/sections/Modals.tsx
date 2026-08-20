@@ -1,7 +1,7 @@
 import React from 'react';
 import CloseButton from '@/components/CloseButton';
 import OverlayPortal from '@/components/OverlayPortal';
-import './Modals.css';
+import '@/components/pokemonComponents/BackgroundLocationOverlay.css';
 import BackgroundLocationCard from '@/components/pokemonComponents/BackgroundLocationCard';
 import FuseOverlay from '../components/Caught/FuseOverlay';
 import type { PokemonVariant } from '@/types/pokemonVariants';

@@ -3,7 +3,7 @@ import CloseButton from '@/components/CloseButton';
 import OverlayPortal from '@/components/OverlayPortal';
 import { useModal } from '@/contexts/ModalContext';
 import CaughtInstance from '../../instances/CaughtInstance';
-import '../../instances/sections/Modals.css';
+import '@/components/pokemonComponents/BackgroundLocationOverlay.css';
 import './FusionPokemonSelection.css';
 
 import { Fusion } from '@/types/pokemonSubTypes';

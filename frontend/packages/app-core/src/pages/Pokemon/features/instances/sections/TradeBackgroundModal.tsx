@@ -1,5 +1,6 @@
 import React from 'react';
 import BackgroundLocationCard from '@/components/pokemonComponents/BackgroundLocationCard';
+import '@/components/pokemonComponents/BackgroundLocationOverlay.css';
 import CloseButton from '@/components/CloseButton';
 import OverlayPortal from '@/components/OverlayPortal';
 import type { VariantBackground } from '@/types/pokemonSubTypes';

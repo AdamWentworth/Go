@@ -6,6 +6,10 @@ const instanceOverlayCssPath = path.resolve(
   process.cwd(),
   '../../packages/app-core/src/pages/Pokemon/features/instances/InstanceOverlay.css',
 );
+const backgroundLocationOverlayCssPath = path.resolve(
+  process.cwd(),
+  '../../packages/app-core/src/components/pokemonComponents/BackgroundLocationOverlay.css',
+);
 
 test.describe('instance overlay layout', () => {
   test('caught panel background follows short content instead of stretching to viewport height', async ({
@@ -63,5 +67,77 @@ test.describe('instance overlay layout', () => {
     expect(metrics.scrollMinHeight).not.toBe('100dvh');
     expect(metrics.columnHeight).toBeGreaterThanOrEqual(metrics.contentHeight);
     expect(metrics.columnHeight).toBeLessThan(metrics.viewportHeight * 0.75);
+  });
+
+  test('background picker covers the Search sheet and keeps its content in view', async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.setContent(`
+      <!doctype html>
+      <html>
+        <head>
+          <meta name="viewport" content="width=device-width, initial-scale=1" />
+          <style>
+            html,
+            body {
+              margin: 0;
+            }
+
+            .search-filter-overlay {
+              position: fixed;
+              z-index: 2100;
+              inset: 0;
+            }
+
+            .fixture-content {
+              height: 1600px;
+            }
+          </style>
+        </head>
+        <body>
+          <div class="search-filter-overlay">Search filters</div>
+          <div class="background-overlay">
+            <div class="background-overlay-content">
+              <div class="fixture-content">Background choices</div>
+            </div>
+          </div>
+        </body>
+      </html>
+    `);
+    await page.addStyleTag({ path: backgroundLocationOverlayCssPath });
+
+    const metrics = await page.evaluate(() => {
+      const overlay = document.querySelector('.background-overlay');
+      const content = document.querySelector('.background-overlay-content');
+      if (!overlay || !content) {
+        throw new Error('Background overlay fixture did not render expected elements');
+      }
+
+      const overlayStyle = window.getComputedStyle(overlay);
+      const contentStyle = window.getComputedStyle(content);
+      const overlayBounds = overlay.getBoundingClientRect();
+      const contentBounds = content.getBoundingClientRect();
+
+      return {
+        contentHeight: contentBounds.height,
+        contentOverflow: contentStyle.overflow,
+        contentWidth: contentBounds.width,
+        overlayHeight: overlayBounds.height,
+        overlayPosition: overlayStyle.position,
+        overlayWidth: overlayBounds.width,
+        overlayZIndex: Number(overlayStyle.zIndex),
+        viewportHeight: window.innerHeight,
+        viewportWidth: window.innerWidth,
+      };
+    });
+
+    expect(metrics.overlayPosition).toBe('fixed');
+    expect(metrics.overlayZIndex).toBeGreaterThan(2100);
+    expect(metrics.overlayWidth).toBe(metrics.viewportWidth);
+    expect(metrics.overlayHeight).toBe(metrics.viewportHeight);
+    expect(metrics.contentWidth).toBeLessThanOrEqual(metrics.viewportWidth * 0.9 + 1);
+    expect(metrics.contentHeight).toBeLessThanOrEqual(metrics.viewportHeight * 0.8 + 1);
+    expect(metrics.contentOverflow).toBe('auto');
   });
 });
