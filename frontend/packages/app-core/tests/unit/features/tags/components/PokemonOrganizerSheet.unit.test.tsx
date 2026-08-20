@@ -225,12 +225,60 @@ describe('PokemonOrganizerSheet', () => {
       />,
     );
 
-    fireEvent.click(screen.getByRole('button', { name: /Favorite/i }));
+    fireEvent.click(screen.getByRole('button', { name: /Storage/i }));
     fireEvent.click(screen.getByRole('button', { name: /For Trade/i }));
     fireEvent.click(screen.getByRole('button', { name: 'Apply to 1' }));
 
     await waitFor(() => expect(onChangeStatus).toHaveBeenCalled());
     expect(mocks.updateInstanceDetails).not.toHaveBeenCalled();
     expect(mocks.success).not.toHaveBeenCalled();
+  });
+
+  it('disables Favorite for For Trade instances and For Trade for favorites', () => {
+    mocks.instances = {
+      trade: makeInstance({ instance_id: 'trade', is_for_trade: true }),
+    };
+    const { unmount } = render(
+      <PokemonOrganizerSheet
+        selectionKeys={new Set(['trade'])}
+        onChangeStatus={vi.fn(async () => [])}
+        onClearSelection={vi.fn()}
+        onClose={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByRole('button', { name: /FavoriteRemove For Trade first/i }))
+      .toBeDisabled();
+    unmount();
+
+    mocks.instances = {
+      favorite: makeInstance({ instance_id: 'favorite', favorite: true }),
+    };
+    render(
+      <PokemonOrganizerSheet
+        selectionKeys={new Set(['favorite'])}
+        onChangeStatus={vi.fn(async () => [])}
+        onClearSelection={vi.fn()}
+        onClose={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByRole('button', { name: /For TradeRemove Favorite first/i }))
+      .toBeDisabled();
+  });
+
+  it('does not offer Favorite when creating directly as For Trade', () => {
+    render(
+      <PokemonOrganizerSheet
+        selectionKeys={new Set(['0001-default'])}
+        onChangeStatus={vi.fn(async () => [])}
+        onClearSelection={vi.fn()}
+        onClose={vi.fn()}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: /For TradeAdd caught instances/i }));
+
+    expect(screen.queryByRole('button', { name: /Favorite/i })).not.toBeInTheDocument();
   });
 });

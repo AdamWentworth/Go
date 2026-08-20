@@ -300,16 +300,32 @@ const PokemonOrganizerSheet: React.FC<PokemonOrganizerSheetProps> = ({
     tone: string;
   }) => {
     const state = getBuiltInState(keyName);
+    const counterpartState = keyName === 'favorite'
+      ? getBuiltInState('forTrade')
+      : keyName === 'forTrade'
+        ? getBuiltInState('favorite')
+        : 'unchecked';
+    const disabled =
+      (keyName === 'favorite' || keyName === 'forTrade') &&
+      toggleFromState(state) &&
+      counterpartState !== 'unchecked';
+    const resolvedDescription = disabled
+      ? keyName === 'favorite'
+        ? 'Remove For Trade first.'
+        : 'Remove Favorite first.'
+      : description;
     return (
       <button
         aria-pressed={state === 'checked'}
         className={`pokemon-organizer__toggle ${state === 'mixed' ? 'mixed' : ''}`}
+        disabled={disabled}
         onClick={() => setBuiltIn(keyName)}
         style={{ '--organizer-tag-color': tone } as React.CSSProperties}
+        title={disabled ? resolvedDescription : undefined}
         type="button"
       >
         <span className="pokemon-organizer__toggle-icon" aria-hidden="true">{icon}</span>
-        <span><strong>{label}</strong><small>{description}</small></span>
+        <span><strong>{label}</strong><small>{resolvedDescription}</small></span>
         <span className="pokemon-organizer__check" aria-hidden="true">
           {state === 'checked' ? <FaCheck /> : state === 'mixed' ? '−' : ''}
         </span>
@@ -356,11 +372,11 @@ const PokemonOrganizerSheet: React.FC<PokemonOrganizerSheetProps> = ({
     );
   };
 
-  const renderCaughtChoices = (includeForTrade: boolean) => (
+  const renderCaughtChoices = (includeForTrade: boolean, includeFavorite = true) => (
     <section className="pokemon-organizer__section pokemon-organizer__section--caught">
       <div className="pokemon-organizer__eyebrow">Caught Pokémon</div>
       <div className="pokemon-organizer__built-ins">
-        {renderToggle({ icon: <FaStar />, keyName: 'favorite', label: 'Favorite', description: 'Keep important catches easy to find.', tone: '#FACC15' })}
+        {includeFavorite && renderToggle({ icon: <FaStar />, keyName: 'favorite', label: 'Favorite', description: 'Keep important catches easy to find.', tone: '#FACC15' })}
         {includeForTrade && renderToggle({ icon: <FaExchangeAlt />, keyName: 'forTrade', label: 'For Trade', description: 'Make these available in trade matching.', tone: '#22C55E' })}
       </div>
       {renderCustomTags('caught')}
@@ -438,7 +454,7 @@ const PokemonOrganizerSheet: React.FC<PokemonOrganizerSheetProps> = ({
                 <div className="pokemon-organizer__eyebrow">Caught status</div>
                 <div className="pokemon-organizer__destination-grid pokemon-organizer__destination-grid--two">
                   {(['Caught', 'Trade'] as const).map((destination) => (
-                    <button aria-pressed={conversionDestination === destination} key={destination} onClick={() => setConversionDestination(destination)} type="button">
+                    <button aria-pressed={conversionDestination === destination} key={destination} onClick={() => { setConversionDestination(destination); resetChoices(); }} type="button">
                       <strong>{destination === 'Trade' ? 'Caught and For Trade' : 'Caught'}</strong>
                       <small>{destination === 'Trade' ? 'Add to your collection and trade listings.' : 'Add to your collection.'}</small>
                     </button>
@@ -455,7 +471,13 @@ const PokemonOrganizerSheet: React.FC<PokemonOrganizerSheetProps> = ({
             {(stage === 'caught-conversion' ||
               (summary.kind === 'catalog' && catalogDestination !== 'Wanted') ||
               (stage === 'main' && summary.caughtInstanceIds.length > 0))
-              ? renderCaughtChoices(summary.kind !== 'catalog' && stage === 'main')
+              ? renderCaughtChoices(
+                  summary.kind !== 'catalog' && stage === 'main',
+                  !(
+                    (summary.kind === 'catalog' && catalogDestination === 'Trade') ||
+                    (stage === 'caught-conversion' && conversionDestination === 'Trade')
+                  ),
+                )
               : null}
 
             {stage === 'main' && summary.kind !== 'catalog' ? (

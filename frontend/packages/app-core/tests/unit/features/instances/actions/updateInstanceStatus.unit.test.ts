@@ -250,6 +250,22 @@ describe('updateInstanceStatus', () => {
     });
   });
 
+  it('does not allow a destination patch to make a For Trade instance a favorite', async () => {
+    const { updater, getInstances } = createHarness({});
+
+    const outcomes = await updater('0001-default', 'Trade', undefined, {
+      favorite: true,
+    });
+
+    expect(outcomes).toEqual([
+      expect.objectContaining({ targetStatus: 'Trade', changed: true }),
+    ]);
+    expect(getInstances()[outcomes[0].resultingInstanceId]).toMatchObject({
+      is_for_trade: true,
+      favorite: false,
+    });
+  });
+
   it('logs updatesDB errors but does not throw', async () => {
     const errSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
     (db.putBatchedPokemonUpdates as any).mockRejectedValueOnce(new Error('updates down'));

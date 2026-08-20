@@ -205,6 +205,34 @@ describe('updatePokemonInstanceStatus (current model)', () => {
     });
   });
 
+  it('blocks a favorite caught Pokémon from being listed For Trade', () => {
+    const alertMock = vi.fn();
+    instances[EXISTING_UUID] = makeInstance({
+      instance_id: EXISTING_UUID,
+      is_caught: true,
+      favorite: true,
+      registered: true,
+    });
+
+    const result = updatePokemonInstanceStatus(
+      EXISTING_UUID,
+      'Trade',
+      variants,
+      instances,
+      alertMock,
+    );
+
+    expect(result).toBe(EXISTING_UUID);
+    expect(alertMock).toHaveBeenCalledWith(
+      'Favorite Pokémon cannot be listed For Trade. Remove Favorite first.',
+    );
+    expect(instances[EXISTING_UUID]).toMatchObject({
+      favorite: true,
+      is_caught: true,
+      is_for_trade: false,
+    });
+  });
+
   it('creates a separate wanted clone when source instance is caught', () => {
     instances[EXISTING_UUID] = makeInstance({
       instance_id: EXISTING_UUID,
@@ -328,7 +356,7 @@ describe('updatePokemonInstanceStatus (current model)', () => {
       registered: true,
       caught_tags: ['inventory-tag'],
       wanted_tags: ['wanted-tag'],
-      favorite: true,
+      favorite: false,
       most_wanted: true,
     });
 
@@ -340,7 +368,7 @@ describe('updatePokemonInstanceStatus (current model)', () => {
       is_wanted: false,
       caught_tags: ['inventory-tag'],
       wanted_tags: [],
-      favorite: true,
+      favorite: false,
       most_wanted: false,
     });
   });

@@ -6,6 +6,7 @@ import { updateRegistrationStatus } from '../utils/updateRegistrationStatus';
 import type { PokemonVariant } from '@/types/pokemonVariants';
 import type { InstanceStatus, Instances } from '@/types/instances';
 import type { PokemonInstance } from '@/types/pokemonInstance';
+import { FAVORITE_TO_TRADE_ERROR } from '../utils/favoriteTradeRules';
 
 const log = createScopedLogger('updatePokemonInstanceStatus');
 
@@ -97,6 +98,12 @@ export function updatePokemonInstanceStatus(
       log.debug('Update blocked due to special status');
       return instanceId;
     }
+  }
+
+  if (newStatus === 'Trade' && instance.favorite) {
+    onAlert?.(FAVORITE_TO_TRADE_ERROR);
+    log.debug('Update blocked because favorite Pokémon cannot be listed For Trade');
+    return instanceId;
   }
 
   switch (newStatus) {

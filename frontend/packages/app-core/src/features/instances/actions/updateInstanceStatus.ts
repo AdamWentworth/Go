@@ -14,6 +14,7 @@ import type {
   InstanceStatusResultPatch,
 } from '@/types/instances';
 import { PokemonVariant } from '@/types/pokemonVariants';
+import { enforceFavoriteTradeInvariant } from '../utils/favoriteTradeRules';
 
 type AppState = {
   variants: PokemonVariant[];
@@ -167,6 +168,7 @@ export const updateInstanceStatus =
             : resultPatch;
           if (Object.keys(patch).length > 0) Object.assign(updated, patch);
         }
+        if (updated) enforceFavoriteTradeInvariant(updated, 'trade');
         const persistedChange = hasInstanceChanges(original, updated);
         const changed = persistedChange && hasTargetStatus(updated, newStatus);
         if (persistedChange) changedKeys.add(resolvedId);

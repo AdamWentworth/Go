@@ -170,6 +170,11 @@
   background: color-mix(in srgb, var(--organizer-tag-color) 16%, transparent);
 }
 
+.pokemon-organizer__toggle:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
 .pokemon-organizer__toggle > span:nth-child(2) { display: grid; min-width: 0; gap: 1px; }
 .pokemon-organizer__toggle-icon { display: grid; width: 31px; height: 31px; place-items: center; border-radius: 50%; background: color-mix(in srgb, var(--organizer-tag-color) 25%, transparent); color: var(--organizer-tag-color); }
 
@@ -255,4 +260,3 @@
   .pokemon-organizer,
   .pokemon-organizer-overlay { scroll-behavior: auto; }
 }
-
