@@ -7,7 +7,7 @@ import { useModal } from '@/contexts/ModalContext';
 import { useNavigate } from 'react-router';
 import AccountForm from './FormComponents/AccountForm';
 import './Account.css';
-import { toast } from 'react-toastify';
+import { feedback } from '@/components/feedback';
 import type { FormErrors, AccountFormValues } from '@/types/auth';
 import type { AccountFormHandle } from './FormComponents/AccountForm';
 import { isApiError } from '../../utils/errors';
@@ -41,11 +41,11 @@ const Account: FC = () => {
         setIsEditable(false);
 
         if (userData.password && !result.data?.passwordUpdated) {
-          toast.info('Password was not updated as it is identical to your previous password.');
+          feedback.info('Password was not updated as it is identical to your previous password.');
         } else if (result.data?.passwordUpdated) {
-          toast.success('Account details and password updated successfully!');
+          feedback.success('Account details and password updated successfully!');
         } else {
-          toast.success('Account details updated successfully!');
+          feedback.success('Account details updated successfully!');
         }
       } else {
         const errorMessage =
@@ -66,7 +66,7 @@ const Account: FC = () => {
             ? 'This Trainer Code is already in use.'
             : '',
         }));
-        toast.error('Update failed: ' + errorMessage);
+        feedback.error('Update failed: ' + errorMessage);
         log.error('Update failed:', errorMessage);
 
         if (formRef.current) {
@@ -80,7 +80,7 @@ const Account: FC = () => {
         errorMessage = error.response.data.message;
       }
     
-      toast.error(errorMessage);
+      feedback.error(errorMessage);
       log.error('Unexpected error during update:', error);
     
       if (formRef.current) {
@@ -95,7 +95,7 @@ const Account: FC = () => {
       navigate('/login');
     } catch (error: unknown) {
       log.error('Logout failed:', error);
-      toast.error('Failed to logout. Please try again.');
+      feedback.error('Failed to logout. Please try again.');
     }
   };
 
@@ -107,7 +107,7 @@ const Account: FC = () => {
     if (isConfirmed) {
       try {
         await deleteAccount(user.user_id);
-        toast.success('Account deleted successfully');
+        feedback.success('Account deleted successfully');
       } catch (error: unknown) {
         let errorMessage = 'Failed to delete account. Please try again.';
       
@@ -115,11 +115,11 @@ const Account: FC = () => {
           errorMessage = error.response.data.message;
         }
       
-        toast.error('Failed to delete account: ' + errorMessage);
+        feedback.error('Failed to delete account: ' + errorMessage);
         log.error('Delete account failed:', error);
       }      
     } else {
-      toast.info('Account deletion canceled');
+      feedback.info('Account deletion canceled');
     }
   };
 

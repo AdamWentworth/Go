@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { toast } from 'react-toastify';
+import { feedback } from '@/components/feedback';
 
 import validatePokemon from '../utils/validatePokemon';
 import { updateImage } from '../utils/updateImage';
@@ -278,9 +278,9 @@ const useVariantSearchController = ({
         const correction = currentCostume
           ? `Costume changed from ${formatCostumeName(currentCostume)} to ${nextCostumeLabel}`
           : `Costume set to ${nextCostumeLabel}`;
-        toast.info(`${correction} to match ${background.name}.`);
+        feedback.info(`${correction} to match ${background.name}.`);
       } else {
-        toast.info(`Costume removed because ${background.name} requires no costume.`);
+        feedback.info(`Costume removed because ${background.name} requires no costume.`);
       }
     }
 

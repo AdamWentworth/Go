@@ -12,7 +12,7 @@ import {
   FaUserPlus,
 } from "react-icons/fa";
 import { useNavigate } from "react-router";
-import { toast } from "react-toastify";
+import { feedback } from '@/components/feedback';
 
 import { useModal } from "@/contexts/ModalContext";
 import HorizontalPageSlider from "@/components/motion/HorizontalPageSlider";
@@ -125,7 +125,7 @@ const Friends = () => {
   }, [navigate, user]);
   useEffect(() => {
     if (friendsQuery.error) {
-      toast.error(
+      feedback.error(
         friendsQuery.error instanceof Error
           ? friendsQuery.error.message
           : "Could not load friends.",
@@ -135,14 +135,14 @@ const Friends = () => {
 
   const runSearch = async () => {
     if (query.trim().length < 2) {
-      toast.info("Enter at least two characters.");
+      feedback.info("Enter at least two characters.");
       return;
     }
     setSearching(true);
     const outcome = await fetchTrainerAutocomplete(query.trim());
     setSearching(false);
     if (outcome.type === "error") {
-      toast.error(outcome.message);
+      feedback.error(outcome.message);
       setResults([]);
       return;
     }
@@ -160,10 +160,10 @@ const Friends = () => {
   ) => {
     try {
       await action();
-      toast.success(successMessage);
+      feedback.success(successMessage);
       await queryClient.invalidateQueries({ queryKey: socialQueryKeys.friends });
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Action failed.");
+      feedback.error(error instanceof Error ? error.message : "Action failed.");
     }
   };
 

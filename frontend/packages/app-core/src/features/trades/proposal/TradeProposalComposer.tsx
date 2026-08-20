@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { toast } from 'react-toastify';
+import { feedback } from '@/components/feedback';
 import './TradeProposalComposer.css';
 
 import FriendshipManager from '@/pages/Pokemon/features/instances/components/Wanted/FriendshipManager';
@@ -168,7 +168,7 @@ const TradeProposalComposer: React.FC<TradeProposalComposerProps> = ({
         return;
       }
       onClose();
-      toast.success(`Trade proposal sent to ${partnerUsername}.`);
+      feedback.success(`Trade proposal sent to ${partnerUsername}.`);
     } catch (err) {
       setIsSubmitting(false);
       log.error('Unexpected error while proposing trade:', err);

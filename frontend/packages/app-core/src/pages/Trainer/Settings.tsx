@@ -8,7 +8,7 @@ import {
   FaShieldAlt,
   FaSyncAlt,
 } from 'react-icons/fa';
-import { toast } from 'react-toastify';
+import { feedback } from '@/components/feedback';
 
 import ThemeSwitch from '@/components/ThemeSwitch';
 import {
@@ -55,7 +55,7 @@ const Settings = () => {
   }, [preferencesQuery.data]);
   useEffect(() => {
     if (preferencesQuery.error) {
-      toast.error(
+      feedback.error(
         preferencesQuery.error instanceof Error
           ? preferencesQuery.error.message
           : 'Could not load settings.',
@@ -88,9 +88,9 @@ const Settings = () => {
       setPreferences(updated);
       queryClient.setQueryData(socialQueryKeys.preferences, updated);
       await queryClient.invalidateQueries({ queryKey: ['social', 'profile'] });
-      toast.success('Privacy settings saved');
+      feedback.success('Privacy settings saved');
     } catch (error) {
-      toast.error(
+      feedback.error(
         error instanceof Error ? error.message : 'Could not save settings.',
       );
     } finally {

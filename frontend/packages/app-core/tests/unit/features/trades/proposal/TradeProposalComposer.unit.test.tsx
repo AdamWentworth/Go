@@ -20,8 +20,8 @@ const mocks = vi.hoisted(() => ({
   },
 }));
 
-vi.mock('react-toastify', () => ({
-  toast: {
+vi.mock('@/components/feedback', () => ({
+  feedback: {
     success: mocks.toastSuccess,
   },
 }));

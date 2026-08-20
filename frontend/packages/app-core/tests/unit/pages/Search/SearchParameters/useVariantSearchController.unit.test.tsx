@@ -11,8 +11,8 @@ const validatePokemonMock = vi.fn();
 const updateImageMock = vi.fn();
 const { toastInfoMock } = vi.hoisted(() => ({ toastInfoMock: vi.fn() }));
 
-vi.mock('react-toastify', () => ({
-  toast: {
+vi.mock('@/components/feedback', () => ({
+  feedback: {
     info: toastInfoMock,
   },
 }));

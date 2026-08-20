@@ -28,7 +28,7 @@ import {
   FaUsers,
 } from "react-icons/fa";
 import { useNavigate, useParams } from "react-router";
-import { toast } from "react-toastify";
+import { feedback } from '@/components/feedback';
 
 import { useAuth } from "@/contexts/AuthContext";
 import { useModal } from "@/contexts/ModalContext";
@@ -760,13 +760,13 @@ const Profile = () => {
         highlight_instance_ids: highlightIds.filter(Boolean),
       };
       await updateTrainerProfile(request);
-      toast.success("Profile updated");
+      feedback.success("Profile updated");
       setEditingHighlightSlot(null);
       setShowcaseDragPreview(null);
       setEditing(false);
       await loadProfile();
     } catch (saveError) {
-      toast.error(
+      feedback.error(
         saveError instanceof Error
           ? saveError.message
           : "Could not update profile.",
@@ -782,15 +782,15 @@ const Profile = () => {
       switch (profile.viewer.relationship) {
         case "none":
           await sendFriendRequest(profile.user.username);
-          toast.success("Friend request sent");
+          feedback.success("Friend request sent");
           break;
         case "incoming":
           await acceptFriendRequest(profile.viewer.friendship_id || "");
-          toast.success("Friend request accepted");
+          feedback.success("Friend request accepted");
           break;
         case "outgoing":
           await deleteFriendRequest(profile.viewer.friendship_id || "");
-          toast.info("Friend request canceled");
+          feedback.info("Friend request canceled");
           break;
         case "friend": {
           const shouldRemove = await confirm(
@@ -798,7 +798,7 @@ const Profile = () => {
           );
           if (!shouldRemove) return;
           await removeFriend(profile.user.user_id);
-          toast.info("Friend removed");
+          feedback.info("Friend removed");
           break;
         }
         default:
@@ -807,7 +807,7 @@ const Profile = () => {
       await queryClient.invalidateQueries({ queryKey: socialQueryKeys.friends });
       await loadProfile();
     } catch (relationshipError) {
-      toast.error(
+      feedback.error(
         relationshipError instanceof Error
           ? relationshipError.message
           : "Could not update friendship.",
@@ -827,12 +827,12 @@ const Profile = () => {
       await queryClient.invalidateQueries({
         queryKey: socialQueryKeys.profile(profile.user.username),
       });
-      toast.info("Trainer blocked");
+      feedback.info("Trainer blocked");
       navigate("/profile/friends", {
         state: { contextBackTo: currentProfilePath },
       });
     } catch (blockError) {
-      toast.error(
+      feedback.error(
         blockError instanceof Error
           ? blockError.message
           : "Could not block trainer.",

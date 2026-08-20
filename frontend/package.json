@@ -26,8 +26,7 @@
     "patch-package": "^8.0.1",
     "react": "19.2.8",
     "react-dom": "19.2.8",
-    "react-router": "8.3.0",
-    "react-toastify": "^11.1.0"
+    "react-router": "8.3.0"
   },
   "overrides": {
     "@babel/helpers": "^7.28.6",

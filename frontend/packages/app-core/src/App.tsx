@@ -9,8 +9,6 @@ import {
   useLocation,
 } from 'react-router';
 
-import { ToastContainer } from 'react-toastify';
-import 'react-toastify/dist/ReactToastify.css';
 import './App.css';
 
 import AppProviders  from './AppProviders';
@@ -96,7 +94,6 @@ const AppContent: React.FC = () => {
       </main>
 
       {!isLegalRoute && <ActionMenu />}
-      <ToastContainer position="top-center" autoClose={5000} />
     </div>
   );
 };
