@@ -1,7 +1,9 @@
 import { useEffect, useRef, useState } from 'react';
+import { toast } from 'react-toastify';
 
 import validatePokemon from '../utils/validatePokemon';
 import { updateImage } from '../utils/updateImage';
+import { formatCostumeName } from '../utils/formatCostumeName';
 import useErrorHandler from '../hooks/useErrorHandler';
 import {
   computeMaxAvailability,
@@ -254,6 +256,19 @@ const useVariantSearchController = ({
 
     const nextCostume = resolvedCostume.costume?.name ?? null;
     const shouldExitMax = resolvedCostume.costumeId !== null && (dynamax || gigantamax);
+    const currentCostume = costume || null;
+
+    if (currentCostume !== nextCostume) {
+      if (nextCostume) {
+        const nextCostumeLabel = formatCostumeName(nextCostume);
+        const correction = currentCostume
+          ? `Costume changed from ${formatCostumeName(currentCostume)} to ${nextCostumeLabel}`
+          : `Costume set to ${nextCostumeLabel}`;
+        toast.info(`${correction} to match ${background.name}.`);
+      } else {
+        toast.info(`Costume removed because ${background.name} requires no costume.`);
+      }
+    }
 
     setCostume(nextCostume);
     setShowCostumeDropdown(resolvedCostume.costumeId !== null);

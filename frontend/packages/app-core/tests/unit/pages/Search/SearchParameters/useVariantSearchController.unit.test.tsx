@@ -9,6 +9,13 @@ import type { PokemonVariant } from '@/types/pokemonVariants';
 
 const validatePokemonMock = vi.fn();
 const updateImageMock = vi.fn();
+const { toastInfoMock } = vi.hoisted(() => ({ toastInfoMock: vi.fn() }));
+
+vi.mock('react-toastify', () => ({
+  toast: {
+    info: toastInfoMock,
+  },
+}));
 
 vi.mock('@/pages/Search/utils/validatePokemon', () => ({
   default: (...args: unknown[]) => validatePokemonMock(...args),
@@ -97,6 +104,7 @@ describe('useVariantSearchController', () => {
   beforeEach(() => {
     validatePokemonMock.mockReset();
     updateImageMock.mockReset();
+    toastInfoMock.mockReset();
 
     validatePokemonMock.mockReturnValue({
       error: null,
@@ -526,6 +534,9 @@ describe('useVariantSearchController', () => {
     expect(setSelectedBackgroundId).toHaveBeenCalledWith(101);
     expect(setCostume).toHaveBeenCalledWith(null);
     expect(result.current.showCostumeDropdown).toBe(false);
+    expect(toastInfoMock).toHaveBeenCalledWith(
+      'Costume removed because City requires no costume.',
+    );
   });
 
   it('automatically applies the one costume required by a selected background', async () => {
@@ -555,6 +566,9 @@ describe('useVariantSearchController', () => {
     expect(setSelectedBackgroundId).toHaveBeenLastCalledWith(102);
     expect(result.current.selectedBackground).toEqual(background);
     expect(result.current.showCostumeDropdown).toBe(true);
+    expect(toastInfoMock).toHaveBeenCalledWith(
+      'Costume set to Party to match Party City.',
+    );
     expect(updateImageMock).toHaveBeenLastCalledWith(
       expect.any(Array),
       'Bulbasaur',
@@ -565,6 +579,56 @@ describe('useVariantSearchController', () => {
       'Any',
       false,
       false,
+    );
+  });
+
+  it('does not notify when a selected background already matches the costume', async () => {
+    const args = makeArgs({
+      pokemon: 'Bulbasaur',
+      costume: 'Party',
+    });
+    const { result } = renderHook(() => useVariantSearchController(args));
+
+    await waitFor(() => expect(result.current.availableCostumes).toHaveLength(1));
+    toastInfoMock.mockClear();
+
+    act(() => {
+      result.current.handleBackgroundChange({
+        background_id: 102,
+        image_url: '/images/party-bg.png',
+        name: 'Party City',
+        location: 'Seattle',
+        date: '2025-01-02',
+        costume_id: 7,
+      });
+    });
+
+    expect(toastInfoMock).not.toHaveBeenCalled();
+  });
+
+  it('names both costumes when correcting one costume to another', async () => {
+    const args = makeArgs({
+      pokemon: 'Bulbasaur',
+      costume: 'Holiday Hat',
+    });
+    const { result } = renderHook(() => useVariantSearchController(args));
+
+    await waitFor(() => expect(result.current.availableCostumes).toHaveLength(1));
+    toastInfoMock.mockClear();
+
+    act(() => {
+      result.current.handleBackgroundChange({
+        background_id: 102,
+        image_url: '/images/party-bg.png',
+        name: 'Party City',
+        location: 'Seattle',
+        date: '2025-01-02',
+        costume_id: 7,
+      });
+    });
+
+    expect(toastInfoMock).toHaveBeenCalledWith(
+      'Costume changed from Holiday Hat to Party to match Party City.',
     );
   });
 
