@@ -34,5 +34,23 @@ describe('PokemonResultVisual', () => {
     );
 
     expect(view.container.querySelector('.gender-container')).toBeNull();
+    expect(view.container.querySelector('.pokemon-image-container')).not.toHaveClass(
+      'pokemon-image-container--with-detail',
+    );
+  });
+
+  it('reserves a detail row only when leading metadata is present', () => {
+    const view = render(
+      <PokemonResultVisual
+        beforeImage={<span>CP 1200</span>}
+        imageUrl="/images/pikachu.png"
+        pokemonDisplayName="Pikachu"
+        genderValue={null}
+      />,
+    );
+
+    expect(view.container.querySelector('.pokemon-image-container')).toHaveClass(
+      'pokemon-image-container--with-detail',
+    );
   });
 });

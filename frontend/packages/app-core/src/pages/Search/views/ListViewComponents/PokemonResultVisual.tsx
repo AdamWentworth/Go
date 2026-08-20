@@ -47,7 +47,9 @@ const PokemonResultVisual: React.FC<PokemonResultVisualProps> = ({
   );
 
   return (
-    <div className="pokemon-image-container">
+    <div
+      className={`pokemon-image-container${beforeImage ? ' pokemon-image-container--with-detail' : ''}`}
+    >
       {beforeImage}
       {lucky &&
         (wrapLuckyBackdrop ? (
