@@ -83,13 +83,13 @@
 
 .catalog-trade-launcher__picker button {
   min-width: 0;
-  min-height: 8.25rem;
+  min-height: 8.85rem;
   display: grid;
-  grid-template-rows: 4.5rem minmax(2.9rem, auto);
+  grid-template-rows: 4.5rem minmax(3.4rem, auto);
   place-items: center;
   align-content: start;
   gap: 0.35rem;
-  padding: 0.55rem 0.5rem 0.65rem;
+  padding: 0.55rem 0.5rem 0.8rem;
   border: 1px solid rgba(151, 190, 190, 0.3);
   border-radius: 0.65rem;
   background: rgba(8, 22, 22, 0.6);
@@ -126,7 +126,7 @@
   justify-content: center;
   align-self: stretch;
   max-width: 100%;
-  min-height: 2.9rem;
+  min-height: 3.4rem;
   padding-inline: 0.2rem;
   box-sizing: border-box;
   font-size: 0.78rem;
