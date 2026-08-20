@@ -1,8 +1,7 @@
 import { useState } from 'react';
 
-import { POKEMON_TRADES_STORE } from '@/db/constants';
 import { getAllInstances } from '@/db/instancesDB';
-import { getAllFromTradesDB } from '@/db/tradesDB';
+import { fetchTrades } from '@/services/tradeService';
 import type { Instances } from '@/types/instances';
 import type { PokemonInstance } from '@/types/pokemonInstance';
 import { parseVariantId } from '@/utils/PokemonIDUtils';
@@ -39,7 +38,8 @@ export interface UseTradeProposalFlowResult {
   closeTradeSelectionModal: () => void;
 }
 
-const defaultFetchTrades = async (): Promise<unknown[]> => getAllFromTradesDB(POKEMON_TRADES_STORE);
+const defaultFetchTrades = async (): Promise<unknown[]> =>
+  (await fetchTrades()).trades;
 
 const useTradeProposalFlow = ({
   selectedPokemon,
@@ -120,7 +120,7 @@ const useTradeProposalFlow = ({
         return;
       case 'noAvailableTradeable':
         await alert(
-          'All instances of this Pokemon are currently involved in pending trades. Catch some more of this Pokemon to offer this trade or cancel your current pending trade.',
+          'All For Trade copies of this Pokemon are already involved in active trade proposals. Choose another Pokemon or cancel the existing proposal first.',
         );
         return;
       case 'needsTradeSelection':

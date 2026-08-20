@@ -127,16 +127,18 @@ describe('tradeTargetsHelpers', () => {
     expect(canMarkInstanceForTrade(makeInstance({ is_caught: true, lucky: true }))).toBe(false);
   });
 
-  it('findAvailableTradeInstances excludes instances in pending trades only', () => {
+  it('findAvailableTradeInstances excludes instances in proposed and pending trades', () => {
     const tradeableInstances = [
       makeInstance({ instance_id: 'a', is_for_trade: true }),
       makeInstance({ instance_id: 'b', is_for_trade: true }),
       makeInstance({ instance_id: 'c', is_for_trade: true }),
+      makeInstance({ instance_id: 'd', is_for_trade: true }),
     ];
     const trades = [
       { trade_status: 'pending', pokemon_instance_id_user_proposed: 'a' },
       { trade_status: 'completed', pokemon_instance_id_user_proposed: 'b' },
       { trade_status: 'pending', pokemon_instance_id_user_accepting: 'c' },
+      { trade_status: 'proposed', pokemon_instance_id_user_proposed: 'd' },
     ];
 
     const result = findAvailableTradeInstances(tradeableInstances, trades);
@@ -346,5 +348,30 @@ describe('tradeTargetsHelpers', () => {
         }),
       );
     }
+  });
+
+  it('treats an existing proposal as active when choosing an offered copy', () => {
+    const caught = [
+      makeInstance({
+        instance_id: 'already-proposed',
+        is_caught: true,
+        is_for_trade: true,
+      }),
+    ];
+
+    expect(
+      resolveTradeProposalDecision(
+        { key: '0001-default', name: 'Bulbasaur' },
+        '0001-default',
+        caught,
+        caught,
+        [
+          {
+            trade_status: 'proposed',
+            pokemon_instance_id_user_proposed: 'already-proposed',
+          },
+        ],
+      ),
+    ).toEqual({ kind: 'noAvailableTradeable' });
   });
 });

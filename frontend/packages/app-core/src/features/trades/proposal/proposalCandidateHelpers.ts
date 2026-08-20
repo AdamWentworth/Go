@@ -71,7 +71,7 @@ export type TradeProposalDecision =
   | { kind: 'noAvailableTradeable' }
   | { kind: 'proposalReady'; payload: TradeProposalPayload };
 
-interface PendingTradeRow {
+interface ActiveTradeRow {
   trade_status?: string;
   pokemon_instance_id_user_proposed?: string | null;
   pokemon_instance_id_user_accepting?: string | null;
@@ -106,20 +106,20 @@ export const findTradeableInstances = (
 export const canMarkInstanceForTrade = (instance: PokemonInstance): boolean =>
   instance.is_caught === true && instance.lucky !== true;
 
-const isPendingTrade = (trade: unknown): trade is PendingTradeRow => {
+const isActiveTrade = (trade: unknown): trade is ActiveTradeRow => {
   if (!trade || typeof trade !== 'object') return false;
-  const row = trade as PendingTradeRow;
-  return row.trade_status === 'pending';
+  const row = trade as ActiveTradeRow;
+  return row.trade_status === 'proposed' || row.trade_status === 'pending';
 };
 
 export const findAvailableTradeInstances = (
   tradeableInstances: PokemonInstance[],
   allTrades: unknown[],
 ): PokemonInstance[] => {
-  const pendingTrades = allTrades.filter(isPendingTrade);
+  const activeTrades = allTrades.filter(isActiveTrade);
   return tradeableInstances.filter((instance) => {
     const instanceId = String(instance.instance_id ?? '');
-    return !pendingTrades.some(
+    return !activeTrades.some(
       (trade) =>
         trade.pokemon_instance_id_user_proposed === instanceId ||
         trade.pokemon_instance_id_user_accepting === instanceId,

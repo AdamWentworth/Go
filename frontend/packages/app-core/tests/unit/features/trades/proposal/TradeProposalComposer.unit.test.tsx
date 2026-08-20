@@ -14,6 +14,7 @@ const mocks = vi.hoisted(() => ({
   getStoredUsername: vi.fn(),
   useCalculateStardustCost: vi.fn(),
   logger: {
+    debug: vi.fn(),
     error: vi.fn(),
   },
 }));
@@ -207,5 +208,80 @@ describe('shared TradeProposalComposer', () => {
     fireEvent.click(close);
 
     expect(onClose).toHaveBeenCalledTimes(1);
+  });
+
+  it('shows the authoritative rejection reason instead of a generic failure', async () => {
+    mocks.proposeTrade.mockResolvedValue({
+      success: false,
+      error: 'trade state has changed',
+    });
+    mocks.alert.mockResolvedValue(undefined);
+    mocks.getStoredUsername.mockReturnValue('proposer');
+    mocks.useCalculateStardustCost.mockReturnValue({
+      stardustCost: 800,
+      isSpecialTrade: false,
+      isRegisteredTrade: true,
+    });
+
+    render(
+      <TradeProposalComposer
+        context={{
+          partnerUsername: 'acceptor',
+          requestedPokemon: makePokemon('Pikachu', 'partner-pikachu'),
+          candidateOffers: {
+            matchedInstances: [makePokemon('Bulbasaur', 'my-bulbasaur')],
+          },
+          requestedPreferences: { friendship_level: 3 },
+          ownedInstances: {},
+          relatedInstances: {},
+        }}
+        onClose={vi.fn()}
+      />,
+    );
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Propose trade' }));
+
+    await waitFor(() => {
+      expect(mocks.alert).toHaveBeenCalledWith(
+        expect.stringContaining('already involved in an active trade'),
+      );
+    });
+  });
+
+  it('does not submit a listing without a partner instance id', async () => {
+    mocks.alert.mockResolvedValue(undefined);
+    mocks.getStoredUsername.mockReturnValue('proposer');
+    mocks.useCalculateStardustCost.mockReturnValue({
+      stardustCost: 800,
+      isSpecialTrade: false,
+      isRegisteredTrade: true,
+    });
+    const partnerPokemon = makePokemon('Pikachu', 'partner-pikachu');
+    partnerPokemon.instanceData.instance_id = '';
+
+    render(
+      <TradeProposalComposer
+        context={{
+          partnerUsername: 'acceptor',
+          requestedPokemon: partnerPokemon,
+          candidateOffers: {
+            matchedInstances: [makePokemon('Bulbasaur', 'my-bulbasaur')],
+          },
+          requestedPreferences: { friendship_level: 3 },
+          ownedInstances: {},
+          relatedInstances: {},
+        }}
+        onClose={vi.fn()}
+      />,
+    );
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Propose trade' }));
+
+    await waitFor(() => {
+      expect(mocks.alert).toHaveBeenCalledWith(
+        expect.stringContaining('missing its Pokémon instance'),
+      );
+    });
+    expect(mocks.proposeTrade).not.toHaveBeenCalled();
   });
 });

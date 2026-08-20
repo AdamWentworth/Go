@@ -191,6 +191,44 @@ describe('shared useTradeProposalFlow', () => {
     expect(result.current.tradeClickedPokemon).toBeNull();
   });
 
+  it('does not offer an instance already committed to a proposed trade', async () => {
+    const { alert, closeOverlay, fetchInstances, fetchTrades } = makeArgs();
+    fetchInstances.mockResolvedValueOnce([
+      makeInstance({
+        instance_id: 'committed-copy',
+        is_caught: true,
+        is_for_trade: true,
+      }),
+    ]);
+    fetchTrades.mockResolvedValueOnce([
+      {
+        trade_status: 'proposed',
+        pokemon_instance_id_user_proposed: 'committed-copy',
+        pokemon_instance_id_user_accepting: 'partner-copy',
+      },
+    ]);
+
+    const { result } = renderHook(() =>
+      useTradeProposalFlow({
+        selectedPokemon: { key: '0001-default', name: 'Bulbasaur' },
+        closeOverlay,
+        alert,
+        fetchInstances,
+        fetchTrades,
+      }),
+    );
+
+    await act(async () => {
+      await result.current.proposeTrade();
+    });
+
+    expect(alert).toHaveBeenCalledWith(
+      expect.stringContaining('active trade proposals'),
+    );
+    expect(closeOverlay).not.toHaveBeenCalled();
+    expect(result.current.isTradeProposalOpen).toBe(false);
+  });
+
   it('matches catalog targets by variant_id when local instance ids are UUIDs', async () => {
     const { alert, closeOverlay, fetchInstances, fetchTrades } = makeArgs();
     fetchInstances.mockResolvedValueOnce([

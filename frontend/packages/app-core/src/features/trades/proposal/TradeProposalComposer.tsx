@@ -18,6 +18,7 @@ import {
   findMatchedInstanceById,
   hasInstanceData,
   sanitizeInstanceData,
+  tradeProposalErrorMessage,
 } from './tradeProposalHelpers';
 import { getStoredUsername } from '@/utils/storage';
 import CloseButton from '@/components/CloseButton';
@@ -111,6 +112,22 @@ const TradeProposalComposer: React.FC<TradeProposalComposerProps> = ({
       await alert(preflight.error);
       return;
     }
+    const acceptingInstanceId = requestedPokemon.instanceData?.instance_id;
+    if (
+      typeof acceptingInstanceId !== 'string' ||
+      acceptingInstanceId.trim() === ''
+    ) {
+      await alert(
+        'This listing is missing its Pokémon instance. Close it, refresh the trainer’s catalog, and try again.',
+      );
+      return;
+    }
+    if (!Number.isFinite(stardustCost) || stardustCost < 0) {
+      await alert(
+        'The Stardust cost could not be calculated. Recheck the friendship level and try again.',
+      );
+      return;
+    }
     const proposedInstanceId = preflight.proposedInstanceId;
     const normalizedFriendshipLevel = friendship_level as 1 | 2 | 3 | 4 | 5;
     const sanitizedInstanceData = sanitizeInstanceData(requestedPokemon.instanceData);
@@ -118,8 +135,7 @@ const TradeProposalComposer: React.FC<TradeProposalComposerProps> = ({
       usernameProposed: preflight.usernameProposed,
       usernameAccepting: partnerUsername,
       proposedInstanceId,
-      acceptingInstanceId:
-        requestedPokemon.instanceData?.instance_id ?? requestedPokemon.variant_id ?? '',
+      acceptingInstanceId: acceptingInstanceId.trim(),
       isSpecialTrade,
       isRegisteredTrade,
       isLuckyTrade: pref_lucky,
@@ -133,14 +149,18 @@ const TradeProposalComposer: React.FC<TradeProposalComposerProps> = ({
       sanitizedInstanceData,
     });
 
+    log.debug('Submitting authoritative trade proposal', {
+      partnerUsername,
+      proposedInstanceId,
+      acceptingInstanceId: acceptingInstanceId.trim(),
+      friendshipLevel: normalizedFriendshipLevel,
+      stardustCost,
+    });
+
     try {
       const result = await proposeTrade(tradeData);
       if (!result.success) {
-        await alert(
-          result.error?.includes('already exists')
-            ? 'This trade proposal already exists.'
-            : 'Failed to create trade proposal. Please try again.',
-        );
+        await alert(tradeProposalErrorMessage(result.error));
         return;
       }
       await alert('Trade proposal successfully created!');

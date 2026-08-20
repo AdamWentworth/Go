@@ -93,7 +93,11 @@ export const buildTradeProposalPreflight = ({
     };
   }
 
-  if (friendshipLevel < 1 || friendshipLevel > 5) {
+  if (
+    !Number.isInteger(friendshipLevel) ||
+    friendshipLevel < 1 ||
+    friendshipLevel > 5
+  ) {
     return {
       ok: false,
       error: 'Please select a valid friendship level (1-5).',
@@ -120,6 +124,35 @@ export const buildTradeProposalPreflight = ({
     proposedInstanceId,
     usernameProposed,
   };
+};
+
+export const tradeProposalErrorMessage = (error: string | undefined): string => {
+  const normalized = error?.trim().toLowerCase() ?? '';
+  if (!normalized) {
+    return 'The trade proposal could not be created. Please try again.';
+  }
+  if (normalized.includes('already exists')) {
+    return 'This trade proposal already exists.';
+  }
+  if (normalized.includes('trade state has changed')) {
+    return 'One of these Pokémon is already involved in an active trade. Refresh your trades and choose another copy.';
+  }
+  if (normalized.includes('no longer marked for trade')) {
+    return 'One of these Pokémon is no longer marked For Trade. Refresh the listing and choose again.';
+  }
+  if (normalized.includes('lucky pokémon cannot be traded')) {
+    return 'Lucky Pokémon cannot be traded again. Choose another copy.';
+  }
+  if (normalized.includes('invalid trade proposal')) {
+    return 'The proposal contains invalid Pokémon or friendship details. Close this listing, reopen it, and choose the trade again.';
+  }
+  if (normalized.includes('trade partner not found')) {
+    return 'This trainer is no longer available for trading.';
+  }
+  if (normalized.includes('trade unavailable')) {
+    return 'This trade is unavailable because the trainer’s privacy or block settings changed.';
+  }
+  return error?.trim() || 'The trade proposal could not be created. Please try again.';
 };
 
 export const buildTradeProposalRequest = ({

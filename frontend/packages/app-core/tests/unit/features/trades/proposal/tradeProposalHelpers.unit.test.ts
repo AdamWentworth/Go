@@ -7,6 +7,7 @@ import {
   hasInstanceData,
   parseUsernameFromStoredUser,
   sanitizeInstanceData,
+  tradeProposalErrorMessage,
 } from '@/features/trades/proposal/tradeProposalHelpers';
 import type { PokemonVariant } from '@/types/pokemonVariants';
 import type { PokemonInstance } from '@/types/pokemonInstance';
@@ -137,6 +138,21 @@ describe('shared tradeProposalHelpers', () => {
             instance_id: 'inst-1',
           } as unknown as PokemonInstance,
         }),
+        friendshipLevel: Number.NaN,
+        usernameProposed: 'Ash',
+      }),
+    ).toEqual({
+      ok: false,
+      error: 'Please select a valid friendship level (1-5).',
+    });
+
+    expect(
+      buildTradeProposalPreflight({
+        selectedMatchedInstance: makeVariant({
+          instanceData: {
+            instance_id: 'inst-1',
+          } as unknown as PokemonInstance,
+        }),
         friendshipLevel: 3,
         usernameProposed: null,
       }),
@@ -195,5 +211,17 @@ describe('shared tradeProposalHelpers', () => {
       proposedInstanceId: 'remote-inst',
       usernameProposed: 'Ash',
     });
+  });
+
+  it('turns authoritative trade failures into actionable messages', () => {
+    expect(tradeProposalErrorMessage('trade state has changed')).toContain(
+      'already involved in an active trade',
+    );
+    expect(tradeProposalErrorMessage('Invalid trade proposal')).toContain(
+      'invalid Pokémon or friendship details',
+    );
+    expect(tradeProposalErrorMessage('Custom server explanation')).toBe(
+      'Custom server explanation',
+    );
   });
 });
