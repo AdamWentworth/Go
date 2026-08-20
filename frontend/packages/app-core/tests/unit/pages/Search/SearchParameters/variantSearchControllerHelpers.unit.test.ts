@@ -270,6 +270,7 @@ describe('variantSearchControllerHelpers', () => {
       selectedForm: 'None',
       selectedGender: 'Any',
       dynamax: true,
+      gigantamax: false,
       updateImageFn,
     });
 
@@ -283,6 +284,7 @@ describe('variantSearchControllerHelpers', () => {
       'None',
       'Any',
       true,
+      false,
     );
   });
 

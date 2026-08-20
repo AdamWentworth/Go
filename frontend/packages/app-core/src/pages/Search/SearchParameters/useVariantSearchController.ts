@@ -172,6 +172,31 @@ const useVariantSearchController = ({
   const handleValidationRef = useRef(handleValidation);
   handleValidationRef.current = handleValidation;
 
+  const applyMaxMode = (nextDynamax: boolean, nextGigantamax: boolean) => {
+    const maxEnabled = nextDynamax || nextGigantamax;
+    const nextCostume = maxEnabled ? null : costume;
+    const nextShadow = maxEnabled ? false : isShadow;
+
+    setDynamax(nextDynamax);
+    setGigantamax(nextGigantamax);
+
+    if (maxEnabled) {
+      setCostume(null);
+      setIsShadow(false);
+      setShowCostumeDropdown(false);
+      setSelectedBackground(null);
+      setSelectedBackgroundId(null);
+    }
+
+    clearError();
+    handleValidation({
+      selectedCostume: nextCostume,
+      shadowChecked: nextShadow,
+      dynamaxEnabled: nextDynamax,
+      gigantamaxEnabled: nextGigantamax,
+    });
+  };
+
   const toggleMax = () => {
     const next = cycleMaxState({
       dynamax,
@@ -180,17 +205,11 @@ const useVariantSearchController = ({
       hasGigantamax,
     });
 
-    if (next.dynamax !== dynamax) {
-      setDynamax(next.dynamax);
-    }
-    if (next.gigantamax !== gigantamax) {
-      setGigantamax(next.gigantamax);
-    }
+    applyMaxMode(next.dynamax, next.gigantamax);
   };
 
   const setMaxMode = (mode: 'standard' | 'dynamax' | 'gigantamax') => {
-    setDynamax(mode === 'dynamax');
-    setGigantamax(mode === 'gigantamax');
+    applyMaxMode(mode === 'dynamax', mode === 'gigantamax');
   };
 
   const handleGenderChange = (gender: string | null) => {
@@ -302,8 +321,17 @@ const useVariantSearchController = ({
       currentValue: isShadow,
       field: 'shadowChecked',
     });
+    const shouldExitMax = shadowDecision.nextValue && (dynamax || gigantamax);
     setIsShadow(shadowDecision.nextValue);
-    handleValidation(shadowDecision.validationPatch);
+    if (shouldExitMax) {
+      setDynamax(false);
+      setGigantamax(false);
+    }
+    handleValidation({
+      ...shadowDecision.validationPatch,
+      dynamaxEnabled: shouldExitMax ? false : dynamax,
+      gigantamaxEnabled: shouldExitMax ? false : gigantamax,
+    });
   };
 
   const handleCostumeToggle = () => {
@@ -312,6 +340,8 @@ const useVariantSearchController = ({
 
     if (toggleDecision.shouldResetCostumeSelection) {
       setCostume(null);
+      setSelectedBackground(null);
+      setSelectedBackgroundId(null);
       clearError();
       handleValidation({ selectedCostume: '' });
       const defaultImage = buildCostumeResetImage({
@@ -322,6 +352,7 @@ const useVariantSearchController = ({
         selectedForm,
         selectedGender,
         dynamax,
+        gigantamax,
       });
       setImageUrl(defaultImage);
       setImageError(false);
@@ -333,8 +364,19 @@ const useVariantSearchController = ({
       value,
       field: 'selectedCostume',
     });
+    const shouldExitMax = Boolean(value) && (dynamax || gigantamax);
     setCostume(costumeDecision.value);
-    handleValidation(costumeDecision.validationPatch);
+    setSelectedBackground(null);
+    setSelectedBackgroundId(null);
+    if (shouldExitMax) {
+      setDynamax(false);
+      setGigantamax(false);
+    }
+    handleValidation({
+      ...costumeDecision.validationPatch,
+      dynamaxEnabled: shouldExitMax ? false : dynamax,
+      gigantamaxEnabled: shouldExitMax ? false : gigantamax,
+    });
   };
 
   const handleFormChange = (value: string) => {

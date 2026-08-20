@@ -221,6 +221,151 @@ describe('useVariantSearchController', () => {
     expect(setGigantamax).toHaveBeenLastCalledWith(false);
   });
 
+  it('clears incompatible costume, shadow, and background state for gigantamax', async () => {
+    const setCostume = toSetter<string | null>();
+    const setIsShadow = toSetter<boolean>();
+    const setSelectedBackgroundId = toSetter<number | null>();
+    const setDynamax = toSetter<boolean>();
+    const setGigantamax = toSetter<boolean>();
+    updateImageMock.mockImplementation((...call: unknown[]) => {
+      if (call[8]) return '/images/gigantamax.png';
+      if (call[4]) return '/images/costume.png';
+      return '/images/default.png';
+    });
+    const args = makeArgs({
+      pokemon: 'Bulbasaur',
+      costume: 'Party',
+      isShadow: true,
+      setCostume,
+      setIsShadow,
+      setSelectedBackgroundId,
+      setDynamax,
+      setGigantamax,
+    });
+    const { result } = renderHook(() => useVariantSearchController(args));
+
+    await waitFor(() => expect(result.current.imageUrl).toBe('/images/costume.png'));
+    act(() => {
+      result.current.handleBackgroundChange({
+        background_id: 101,
+        image_url: '/images/bg.png',
+        name: 'City',
+        location: 'Seattle',
+        date: '2025-01-01',
+      });
+      result.current.setMaxMode('gigantamax');
+    });
+
+    expect(setCostume).toHaveBeenLastCalledWith(null);
+    expect(setIsShadow).toHaveBeenLastCalledWith(false);
+    expect(setSelectedBackgroundId).toHaveBeenLastCalledWith(null);
+    expect(setDynamax).toHaveBeenLastCalledWith(false);
+    expect(setGigantamax).toHaveBeenLastCalledWith(true);
+    expect(result.current.selectedBackground).toBeNull();
+    expect(result.current.showCostumeDropdown).toBe(false);
+    expect(result.current.imageUrl).toBe('/images/gigantamax.png');
+    expect(updateImageMock).toHaveBeenLastCalledWith(
+      expect.any(Array),
+      'Bulbasaur',
+      false,
+      false,
+      null,
+      '',
+      'Any',
+      false,
+      true,
+    );
+  });
+
+  it('restores base artwork when dynamax replaces a costume selection', async () => {
+    const setCostume = toSetter<string | null>();
+    updateImageMock.mockImplementation((...call: unknown[]) =>
+      call[4] ? '/images/costume.png' : '/images/default.png',
+    );
+    const args = makeArgs({
+      pokemon: 'Bulbasaur',
+      costume: 'Party',
+      setCostume,
+    });
+    const { result } = renderHook(() => useVariantSearchController(args));
+
+    await waitFor(() => expect(result.current.imageUrl).toBe('/images/costume.png'));
+    act(() => result.current.setMaxMode('dynamax'));
+
+    expect(setCostume).toHaveBeenLastCalledWith(null);
+    expect(result.current.imageUrl).toBe('/images/default.png');
+    expect(validatePokemonMock).toHaveBeenLastCalledWith(
+      expect.any(Array),
+      'Bulbasaur',
+      false,
+      false,
+      null,
+      '',
+      true,
+      false,
+    );
+  });
+
+  it('returns to standard mode when a costume is selected from a Max state', () => {
+    const setCostume = toSetter<string | null>();
+    const setDynamax = toSetter<boolean>();
+    const setGigantamax = toSetter<boolean>();
+    const args = makeArgs({
+      pokemon: 'Bulbasaur',
+      dynamax: true,
+      setCostume,
+      setDynamax,
+      setGigantamax,
+    });
+    const { result } = renderHook(() => useVariantSearchController(args));
+
+    act(() => result.current.handleCostumeChange('Party'));
+
+    expect(setCostume).toHaveBeenLastCalledWith('Party');
+    expect(setDynamax).toHaveBeenLastCalledWith(false);
+    expect(setGigantamax).toHaveBeenLastCalledWith(false);
+    expect(validatePokemonMock).toHaveBeenLastCalledWith(
+      expect.any(Array),
+      'Bulbasaur',
+      false,
+      false,
+      'Party',
+      '',
+      false,
+      false,
+    );
+  });
+
+  it('returns to standard mode when shadow is selected from a Max state', () => {
+    const setIsShadow = toSetter<boolean>();
+    const setDynamax = toSetter<boolean>();
+    const setGigantamax = toSetter<boolean>();
+    const args = makeArgs({
+      pokemon: 'Bulbasaur',
+      gigantamax: true,
+      setIsShadow,
+      setDynamax,
+      setGigantamax,
+    });
+    const { result } = renderHook(() => useVariantSearchController(args));
+
+    act(() => result.current.handleShadowChange());
+
+    expect(setIsShadow).toHaveBeenLastCalledWith(true);
+    expect(setDynamax).toHaveBeenLastCalledWith(false);
+    expect(setGigantamax).toHaveBeenLastCalledWith(false);
+    expect(validatePokemonMock).toHaveBeenLastCalledWith(
+      expect.any(Array),
+      'Bulbasaur',
+      false,
+      true,
+      '',
+      '',
+      false,
+      false,
+    );
+  });
+
   it('resets costume when costume dropdown is closed', () => {
     const setCostume = toSetter<string | null>();
     const args = makeArgs({

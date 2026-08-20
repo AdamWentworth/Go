@@ -125,6 +125,7 @@ type BuildCostumeResetImageArgs = {
   selectedForm: string;
   selectedGender: string | null;
   dynamax: boolean;
+  gigantamax: boolean;
   updateImageFn?: typeof updateImage;
 };
 
@@ -185,6 +186,7 @@ export const runVariantValidation = ({
     state.selectedCostume,
     state.form,
     state.selectedGenderValue,
+    state.dynamaxEnabled,
     state.gigantamaxEnabled,
   );
 
@@ -321,6 +323,7 @@ export const buildCostumeResetImage = ({
   selectedForm,
   selectedGender,
   dynamax,
+  gigantamax,
   updateImageFn = updateImage,
 }: BuildCostumeResetImageArgs): string | null =>
   updateImageFn(
@@ -332,6 +335,7 @@ export const buildCostumeResetImage = ({
     selectedForm,
     selectedGender,
     dynamax,
+    gigantamax,
   );
 
 export const EMPTY_SELECTED_MOVES = {
