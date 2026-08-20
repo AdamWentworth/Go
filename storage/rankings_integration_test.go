@@ -21,7 +21,6 @@ func TestRankingsAggregationCountsDistinctUsers(t *testing.T) {
 	if err != nil {
 		t.Fatalf("open test MySQL: %v", err)
 	}
-	defer sqlDB.Close()
 
 	for _, statement := range []string{
 		"DROP TABLE IF EXISTS pokemon_rankings_snapshot",
@@ -52,6 +51,7 @@ func TestRankingsAggregationCountsDistinctUsers(t *testing.T) {
 		} {
 			_, _ = sqlDB.Exec("DROP TABLE IF EXISTS " + table)
 		}
+		_ = sqlDB.Close()
 	})
 
 	if err := migrations.Apply(dsn); err != nil {

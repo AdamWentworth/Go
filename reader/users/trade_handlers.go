@@ -7,6 +7,7 @@ import (
 
 	"github.com/gofiber/fiber/v3"
 	"github.com/google/uuid"
+	"github.com/sirupsen/logrus"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 )
@@ -164,6 +165,7 @@ func tradeError(c fiber.Ctx, err error, fallback string) error {
 			"message": err.Error(),
 		})
 	default:
+		logrus.Errorf("%s: %v", fallback, err)
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"message": fallback})
 	}
 }
