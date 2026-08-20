@@ -72,8 +72,9 @@
 .selected-pokemon-preview__artwork {
   position: relative;
   z-index: 1;
-  width: calc(100% - 8px);
-  height: calc(100% - 8px);
+  --pokemon-artwork-width: calc(100% - 8px);
+  --pokemon-artwork-height: calc(100% - 8px);
+
   max-width: 124px;
   max-height: 124px;
 }
@@ -648,8 +649,9 @@
   }
 
   .search-primary-pokemon-control.has-preview .selected-pokemon-preview__artwork {
-    width: 156px;
-    height: 156px;
+    --pokemon-artwork-width: 156px;
+    --pokemon-artwork-height: 156px;
+
     max-width: calc(100% - 12px);
     max-height: calc(100% - 12px);
   }
@@ -697,8 +699,8 @@
   }
 
   .search-primary-pokemon-control.has-preview .selected-pokemon-preview__artwork {
-    width: 144px;
-    height: 144px;
+    --pokemon-artwork-width: 144px;
+    --pokemon-artwork-height: 144px;
   }
 
   .search-mobile-summary__preview {

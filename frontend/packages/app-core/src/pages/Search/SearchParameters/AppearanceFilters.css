@@ -98,8 +98,8 @@
 
 .appearance-preview__artwork {
   z-index: 1;
-  width: 94px;
-  height: 94px;
+  --pokemon-artwork-width: 94px;
+  --pokemon-artwork-height: 94px;
 }
 
 .appearance-preview__pokemon {
@@ -430,8 +430,9 @@
   }
 
   .appearance-preview__artwork {
-    width: 156px;
-    height: 156px;
+    --pokemon-artwork-width: 156px;
+    --pokemon-artwork-height: 156px;
+
     max-width: calc(100% - 12px);
     max-height: calc(100% - 12px);
   }

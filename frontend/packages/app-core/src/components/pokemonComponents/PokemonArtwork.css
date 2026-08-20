@@ -1,18 +1,22 @@
 .pokemon-artwork {
   position: relative;
-  display: grid;
-  width: 100%;
-  height: 100%;
+  display: block;
+  width: var(--pokemon-artwork-width, 100%);
+  height: var(--pokemon-artwork-height, 100%);
   min-width: 0;
   min-height: 0;
-  place-items: center;
 }
 
 .pokemon-artwork__image {
+  position: absolute;
+  inset: 0;
   display: block;
   width: 100%;
   height: 100%;
+  max-width: 100%;
+  max-height: 100%;
   object-fit: contain;
+  object-position: center;
 }
 
 .pokemon-artwork__max-badge {
