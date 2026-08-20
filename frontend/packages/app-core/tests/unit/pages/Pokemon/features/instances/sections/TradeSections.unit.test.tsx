@@ -1,6 +1,6 @@
 import React from 'react';
 import { describe, expect, it, vi } from 'vitest';
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 
 import TradeImageStage from '@/pages/Pokemon/features/instances/sections/TradeImageStage';
 import TradeBackgroundModal from '@/pages/Pokemon/features/instances/sections/TradeBackgroundModal';
@@ -56,7 +56,7 @@ describe('Trade sections', () => {
     expect(document.querySelector('.background-image')).toBeTruthy();
   });
 
-  it('TradeBackgroundModal opens/closes and relays background selections', () => {
+  it('TradeBackgroundModal opens/closes and relays background selections', async () => {
     const onClose = vi.fn();
     const onSelectBackground = vi.fn();
 
@@ -88,6 +88,6 @@ describe('Trade sections', () => {
     });
 
     fireEvent.click(screen.getByRole('button', { name: 'Close' }));
-    expect(onClose).toHaveBeenCalled();
+    await waitFor(() => expect(onClose).toHaveBeenCalled());
   });
 });
