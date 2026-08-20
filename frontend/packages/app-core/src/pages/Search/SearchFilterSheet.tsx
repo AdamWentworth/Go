@@ -1,5 +1,6 @@
 import React, { ReactNode, useEffect, useState } from 'react';
 import {
+  FaExclamationCircle,
   FaExchangeAlt,
   FaMapMarkerAlt,
   FaSlidersH,
@@ -20,6 +21,7 @@ type SearchFilterSheetProps = {
   location: ReactNode;
   matching: ReactNode;
   initialSection?: FilterSection;
+  errorMessage?: string | null;
   isLoading: boolean;
   isOpen: boolean;
   onClose: () => void;
@@ -94,6 +96,7 @@ const SearchFilterSheet: React.FC<SearchFilterSheetProps> = ({
   canReset,
   location,
   matching,
+  errorMessage,
   isLoading,
   isOpen,
   initialSection = 'appearance',
@@ -172,6 +175,15 @@ const SearchFilterSheet: React.FC<SearchFilterSheetProps> = ({
           </div>
 
           <footer className="search-filter-sheet__footer">
+            {errorMessage ? (
+              <div className="search-filter-sheet__error" role="alert">
+                <FaExclamationCircle aria-hidden="true" />
+                <div>
+                  <strong>Check these filters</strong>
+                  <p>{errorMessage}</p>
+                </div>
+              </div>
+            ) : null}
             {canReset ? (
               <button
                 className="search-filter-sheet__reset"

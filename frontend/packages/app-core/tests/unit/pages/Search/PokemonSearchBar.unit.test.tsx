@@ -384,10 +384,11 @@ describe('PokemonSearchBar', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Apply and search' }));
 
     expect(onSearchMock).not.toHaveBeenCalled();
-    expect(
-      screen.getByText('Shadow Pokemon cannot be listed for trade or wanted'),
-    ).toBeInTheDocument();
-    expect(screen.getByRole('dialog')).toBeInTheDocument();
+    const dialog = screen.getByRole('dialog');
+    expect(dialog).toBeInTheDocument();
+    expect(dialog.querySelector('[role="alert"]')).toHaveTextContent(
+      'Check these filtersShadow Pokemon cannot be listed for trade or wanted',
+    );
     expect(
       screen.getByLabelText('Current Pokémon search').closest('.pokemon-search-bar'),
     ).not.toHaveClass('pokemon-search-bar--compact');

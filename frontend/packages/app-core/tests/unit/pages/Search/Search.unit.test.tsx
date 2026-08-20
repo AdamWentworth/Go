@@ -221,6 +221,19 @@ describe('Search', () => {
     });
   });
 
+  it('shows a centered, descriptive loading state while search is pending', () => {
+    mockedSearchPokemon.mockReturnValueOnce(new Promise(() => undefined));
+
+    const view = render(<Search />);
+    fireEvent.click(screen.getByText('search-trade'));
+
+    expect(screen.getByText('Searching community listings')).toBeInTheDocument();
+    expect(
+      screen.getByText('Checking nearby trainers for the Pokémon you selected…'),
+    ).toBeInTheDocument();
+    expect(view.container.querySelector('.search-loading-state')).toBeInTheDocument();
+  });
+
   it('switches to map view and passes trade ownership mode', async () => {
     mockedSearchPokemon.mockResolvedValueOnce([
       { pokemon_id: 1, distance: 3, username: 'ash' },
@@ -250,7 +263,9 @@ describe('Search', () => {
     fireEvent.click(screen.getByText('search-trade'));
 
     const message = await screen.findByRole('alert');
-    expect(message).toHaveTextContent('Search took too long to respond');
+    expect(message).toHaveTextContent(
+      "Search couldn't be completedSearch took too long to respond",
+    );
     expect(alertMock).toHaveBeenCalledWith(
       expect.stringContaining('smaller distance or fewer results'),
     );

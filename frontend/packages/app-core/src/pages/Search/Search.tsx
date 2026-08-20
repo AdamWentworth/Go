@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { FaExclamationTriangle } from 'react-icons/fa';
 
 import HorizontalPageSlider from '@/components/motion/HorizontalPageSlider';
 import useHorizontalPageNavigation from '@/components/motion/useHorizontalPageNavigation';
@@ -171,7 +172,7 @@ const Search: React.FC = () => {
         : 'Search is temporarily unavailable. Check your connection and try again.';
       setSearchResults([]);
       setErrorMessage(message);
-      await alert(message);
+      void alert(message);
     } finally {
       setIsLoading(false);
     }
@@ -210,13 +211,23 @@ const Search: React.FC = () => {
 
           {errorMessage && (
             <div className="search-error-message" role="alert">
-              {errorMessage}
+              <FaExclamationTriangle aria-hidden="true" />
+              <div>
+                <strong>Search couldn&apos;t be completed</strong>
+                <p>{errorMessage}</p>
+              </div>
             </div>
           )}
 
-          <div ref={containerRef}>
+          <div className="search-results-stage" ref={containerRef}>
             {isLoading ? (
-              <LoadingSpinner />
+              <div className="search-loading-state" aria-live="polite">
+                <LoadingSpinner />
+                <div>
+                  <strong>Searching community listings</strong>
+                  <span>Checking nearby trainers for the Pokémon you selected…</span>
+                </div>
+              </div>
             ) : view === 'list' ? (
               <RenderProfiler id="Search.ListView">
                 <ListView

@@ -486,8 +486,11 @@ const PokemonSearchBar: React.FC<PokemonSearchBarProps> = ({
       ) : null}
 
       <div className="search-results-toolbar">
-        <div className="error-message" role={errorMessage ? 'alert' : undefined}>
-          {errorMessage}
+        <div
+          className="error-message"
+          role={errorMessage && !filtersOpen ? 'alert' : undefined}
+        >
+          {filtersOpen ? null : errorMessage}
         </div>
         <div className="view-controls">
           <button
@@ -527,6 +530,7 @@ const PokemonSearchBar: React.FC<PokemonSearchBarProps> = ({
           />
         }
         canReset={hasActiveFilters}
+        errorMessage={errorMessage}
         isLoading={isLoading}
         isOpen={filtersOpen}
         initialSection={initialFilterSection}
