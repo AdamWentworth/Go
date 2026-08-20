@@ -132,6 +132,7 @@ describe('Search', () => {
     mockedSearchPokemon.mockReset();
     alertMock.mockClear();
     clearSearchSession();
+    window.history.replaceState({}, '', '/search');
   });
 
   it('renders a persistent header with Pokemon selected by default', () => {
@@ -172,6 +173,20 @@ describe('Search', () => {
     );
     expect(screen.getByTestId('trainer-search-bar')).toBeInTheDocument();
     expect(screen.getByTestId('pokemon-search-bar')).toBeInTheDocument();
+    expect(
+      container.querySelector('.horizontal-page-slider__track'),
+    ).toHaveStyle({ transform: 'translate3d(calc(-100% + 0px), 0, 0)' });
+  });
+
+  it('restores trainer mode from a trainer-search return URL', () => {
+    window.history.replaceState({}, '', '/search?mode=trainer&q=misty');
+
+    const { container } = render(<Search />);
+
+    expect(screen.getByTestId('search-toggle-active')).toHaveAttribute(
+      'data-mode',
+      'trainer',
+    );
     expect(
       container.querySelector('.horizontal-page-slider__track'),
     ).toHaveStyle({ transform: 'translate3d(calc(-100% + 0px), 0, 0)' });

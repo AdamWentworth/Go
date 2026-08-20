@@ -34,6 +34,11 @@ import './Search.css';
 
 const SEARCH_MODES = ['pokemon', 'trainer'] as const;
 
+const readRequestedSearchMode = (): SearchMode | null =>
+  new URLSearchParams(window.location.search).get('mode') === 'trainer'
+    ? 'trainer'
+    : null;
+
 type EnrichedSearchResult = SearchResultRow & {
   pokemonInfo: PokemonVariant;
   boundary?: string | null;
@@ -100,7 +105,7 @@ const Search: React.FC = () => {
     readSearchSession(cacheOwnerKey),
   );
   const [searchMode, setSearchMode] = useState<SearchMode>(
-    initialSession?.searchMode ?? 'pokemon',
+    readRequestedSearchMode() ?? initialSession?.searchMode ?? 'pokemon',
   );
   const [view, setView] = useState<SearchView>(initialSession?.view ?? 'list');
   const [searchResults, setSearchResults] = useState<EnrichedSearchResult[]>([]);
@@ -147,7 +152,9 @@ const Search: React.FC = () => {
     const nextSession = readSearchSession(cacheOwnerKey);
     hasRestoredSessionRef.current = false;
     setInitialSession(nextSession);
-    setSearchMode(nextSession?.searchMode ?? 'pokemon');
+    setSearchMode(
+      readRequestedSearchMode() ?? nextSession?.searchMode ?? 'pokemon',
+    );
     setView(nextSession?.view ?? 'list');
     setOwnershipMode(nextSession?.ownershipMode ?? 'caught');
     setSearchResults([]);
