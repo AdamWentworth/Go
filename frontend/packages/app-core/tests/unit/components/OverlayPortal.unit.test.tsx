@@ -135,4 +135,27 @@ describe('OverlayPortal motion', () => {
     act(() => vi.advanceTimersByTime(OVERLAY_MOTION_DURATION_MS));
     expect(screen.queryByTestId('parent-overlay')).not.toBeInTheDocument();
   });
+
+  it('keeps a busy overlay mounted when backdrop, controls, or Escape request dismissal', () => {
+    vi.useFakeTimers();
+    const onClose = vi.fn();
+    render(
+      <OverlayPortal closeOnBackdrop dismissible={false} onClose={onClose}>
+        <div className="busy-overlay">
+          <MotionCloseButton onClose={onClose} />
+        </div>
+      </OverlayPortal>,
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Close overlay' }));
+    fireEvent.click(document.querySelector('.busy-overlay') as HTMLElement);
+    fireEvent.keyDown(document, { key: 'Escape' });
+    act(() => vi.advanceTimersByTime(OVERLAY_MOTION_DURATION_MS));
+
+    expect(onClose).not.toHaveBeenCalled();
+    expect(document.querySelector('.busy-overlay')).toHaveAttribute(
+      'data-overlay-motion',
+      'entered',
+    );
+  });
 });

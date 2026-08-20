@@ -10,6 +10,7 @@
 }
 
 .pokemon-organizer {
+  position: relative;
   display: grid;
   width: min(680px, 100%);
   max-height: calc(100dvh - 36px);
@@ -20,6 +21,43 @@
   background: var(--color-search-section-surface);
   color: var(--color-text-primary);
   box-shadow: 0 22px 70px rgb(0 0 0 / 45%);
+}
+
+.pokemon-organizer__saving {
+  position: absolute;
+  z-index: 3;
+  inset: 0;
+  display: grid;
+  align-content: center;
+  justify-items: center;
+  gap: 8px;
+  padding: 24px;
+  background: color-mix(in srgb, var(--color-search-section-surface) 92%, transparent);
+  text-align: center;
+  backdrop-filter: blur(4px);
+}
+
+.pokemon-organizer__saving strong {
+  font-size: 1.05rem;
+}
+
+.pokemon-organizer__saving small {
+  max-width: 24rem;
+  color: var(--color-text-secondary);
+  line-height: 1.4;
+}
+
+.pokemon-organizer__spinner {
+  width: 34px;
+  height: 34px;
+  border: 4px solid color-mix(in srgb, var(--color-accent-primary) 22%, transparent);
+  border-top-color: var(--color-accent-primary);
+  border-radius: 50%;
+  animation: pokemon-organizer-spin 700ms linear infinite;
+}
+
+@keyframes pokemon-organizer-spin {
+  to { transform: rotate(360deg); }
 }
 
 .pokemon-organizer__header {
@@ -259,4 +297,6 @@
 @media (prefers-reduced-motion: reduce) {
   .pokemon-organizer,
   .pokemon-organizer-overlay { scroll-behavior: auto; }
+
+  .pokemon-organizer__spinner { animation-duration: 1.4s; }
 }

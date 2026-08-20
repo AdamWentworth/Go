@@ -28,7 +28,7 @@ const log = createScopedLogger('useHandleChangeTags');
 type MenuContext = 'pokedex' | 'ownership';
 
 interface useHandleChangeTagsProps {
-  setTagFilter: (filter: InstanceStatus) => void;
+  setTagFilter: (filter: string) => void;
   setLastMenu: (menu: MenuContext) => void; // ensure header switches to TAGS sublabel
   setHighlightedCards: (cards: Set<string>) => void;
   highlightedCards: Set<string>;
@@ -52,6 +52,8 @@ interface useHandleChangeTagsProps {
 export interface ConfirmInstanceStatusOptions {
   targets?: Iterable<string>;
   resultPatch?: InstanceStatusResultPatch;
+  additionalConfirmationDetails?: string[];
+  destinationFilter?: string;
 }
 
 // Normalize legacy labels to current canonical ones.
@@ -98,6 +100,7 @@ function useHandleChangeTags({
       cardsToMove: Set<string>,
       resultPatch?: InstanceStatusResultPatch,
       hasPriorChanges = false,
+      destinationFilter?: string,
     ): Promise<InstanceStatusMutationOutcome[]> => {
       try {
         const targetFilter = normalizeStatus(filter);
@@ -119,7 +122,7 @@ function useHandleChangeTags({
         // Reflect successful changes in the destination context. When every
         // item is blocked, keep the selection intact so the user can revise it.
         if (changed && targetFilter !== 'Missing') {
-          setTagFilter(targetFilter);
+          setTagFilter(destinationFilter ?? targetFilter);
           setLastMenu('ownership');
         }
 
@@ -184,7 +187,7 @@ function useHandleChangeTags({
         }
 
         messageDetails.push(
-          `Generate ${getDisplayName(baseKey, variants)} from Pokédex to ${displayFilterText}`,
+          `Create ${getDisplayName(baseKey, variants)} as ${displayFilterText}`,
         );
       };
 
@@ -196,6 +199,11 @@ function useHandleChangeTags({
       }
       for (const { key, baseKey } of fusion) {
         appendTransitionMessage(key, baseKey, Boolean(instances[key]));
+      }
+
+      for (const detail of options.additionalConfirmationDetails ?? []) {
+        const normalized = detail.trim();
+        if (normalized) messageDetails.push(normalized);
       }
 
       if (messageDetails.length > 0) {
@@ -278,6 +286,7 @@ function useHandleChangeTags({
             remainingHighlightedCards,
             options.resultPatch,
             specialOutcomes.some((outcome) => outcome.changed),
+            options.destinationFilter,
           );
         }
       } catch (error) {

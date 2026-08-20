@@ -31,6 +31,7 @@ import {
   summarizeOrganizerSelection,
   type BulkToggleState,
 } from '../utils/pokemonOrganizer';
+import { toCustomTagFilter } from '../utils/customTagSelectors';
 
 import './PokemonOrganizerSheet.css';
 
@@ -144,6 +145,26 @@ const PokemonOrganizerSheet: React.FC<PokemonOrganizerSheetProps> = ({
     );
   };
 
+  const selectedCustomTagsForParent = (parent: CustomTagParent) =>
+    Object.values(customTags[parent])
+      .map((bucket) => bucket.tag)
+      .filter((tag) => customChanges[tag.tag_id] === true);
+
+  const organizationOptions = (parent: CustomTagParent) => {
+    const selectedTags = selectedCustomTagsForParent(parent);
+    const details = selectedTags.map((tag) => `Add to tag: ${tag.name}`);
+    if (parent === 'caught' && builtInChanges.favorite) details.push('Mark as Favorite');
+    if (parent === 'wanted' && builtInChanges.mostWanted) details.push('Mark as Most Wanted');
+
+    return {
+      additionalConfirmationDetails: details,
+      destinationFilter:
+        selectedTags.length === 1
+          ? toCustomTagFilter(selectedTags[0].tag_id)
+          : undefined,
+    };
+  };
+
   const buildParentPatch = (
     parent: CustomTagParent,
     instance: PokemonInstance,
@@ -234,10 +255,17 @@ const PokemonOrganizerSheet: React.FC<PokemonOrganizerSheetProps> = ({
         const outcomes = await onChangeStatus(catalogDestination, {
           targets: summary.catalogKeys,
           resultPatch: prospectivePatch(parent),
+          ...organizationOptions(parent),
         });
         const changedCount = outcomes.filter((outcome) => outcome.changed).length;
         if (changedCount === 0) return;
-        finish(`${changedCount} Pokémon added.`);
+        const selectedTags = selectedCustomTagsForParent(parent);
+        const tagMessage = selectedTags.length === 1
+          ? ` and added to ${selectedTags[0].name}`
+          : selectedTags.length > 1
+            ? ` and added to ${selectedTags.length} tags`
+            : '';
+        finish(`${changedCount} Pokémon created as ${destinationCopy[catalogDestination].title}${tagMessage}.`);
         return;
       }
 
@@ -245,6 +273,7 @@ const PokemonOrganizerSheet: React.FC<PokemonOrganizerSheetProps> = ({
         const outcomes = await onChangeStatus('Wanted', {
           targets: summary.caughtInstanceIds,
           resultPatch: prospectivePatch('wanted'),
+          ...organizationOptions('wanted'),
         });
         const cloneCount = outcomes.filter(
           (outcome) => outcome.changed && outcome.operation === 'cloned',
@@ -258,6 +287,7 @@ const PokemonOrganizerSheet: React.FC<PokemonOrganizerSheetProps> = ({
         const outcomes = await onChangeStatus(conversionDestination, {
           targets: summary.wantedInstanceIds,
           resultPatch: prospectivePatch('caught'),
+          ...organizationOptions('caught'),
         });
         const changedCount = outcomes.filter((outcome) => outcome.changed).length;
         if (changedCount === 0) return;
@@ -400,10 +430,17 @@ const PokemonOrganizerSheet: React.FC<PokemonOrganizerSheetProps> = ({
       : stage === 'caught-conversion'
         ? 'Mark as Caught'
         : 'Organize Pokémon';
+  const catalogParent: CustomTagParent = catalogDestination === 'Wanted' ? 'wanted' : 'caught';
+  const catalogHasLabels =
+    selectedCustomTagsForParent(catalogParent).length > 0 ||
+    (catalogParent === 'caught' && Boolean(builtInChanges.favorite)) ||
+    (catalogParent === 'wanted' && Boolean(builtInChanges.mostWanted));
   const actionLabel = isSaving
-    ? 'Saving…'
+    ? summary.kind === 'catalog'
+      ? 'Creating & tagging…'
+      : 'Saving changes…'
     : summary.kind === 'catalog' && stage === 'main'
-      ? `Add ${summary.catalogKeys.length}`
+      ? `${catalogHasLabels ? 'Create & tag' : 'Create'} ${summary.catalogKeys.length} Pokémon`
       : stage === 'wanted-copy'
         ? `Create ${summary.caughtInstanceIds.length} Wanted ${summary.caughtInstanceIds.length === 1 ? 'copy' : 'copies'}`
         : stage === 'caught-conversion'
@@ -411,16 +448,16 @@ const PokemonOrganizerSheet: React.FC<PokemonOrganizerSheetProps> = ({
           : `Apply to ${summary.caughtInstanceIds.length + summary.wantedInstanceIds.length}`;
 
   return (
-    <OverlayPortal closeOnBackdrop onClose={onClose}>
+    <OverlayPortal closeOnBackdrop dismissible={!isSaving} onClose={onClose}>
       <div className="pokemon-organizer-overlay">
-        <section aria-labelledby="pokemon-organizer-title" aria-modal="true" className="pokemon-organizer" role="dialog">
+        <section aria-busy={isSaving} aria-labelledby="pokemon-organizer-title" aria-modal="true" className="pokemon-organizer" role="dialog">
           <header className="pokemon-organizer__header">
             <div>
               <span><FaTags aria-hidden="true" /> Pokémon organizer</span>
               <h2 id="pokemon-organizer-title">{title}</h2>
               <p>{summary.selectedCount} selected{summary.unavailableKeys.length ? ` · ${summary.unavailableKeys.length} unavailable` : ''}</p>
             </div>
-            <OverlayDismissButton aria-label="Close Pokémon organizer" className="pokemon-organizer__close" onDismiss={onClose}>
+            <OverlayDismissButton aria-label="Close Pokémon organizer" className="pokemon-organizer__close" disabled={isSaving} onDismiss={onClose}>
               <FaTimes aria-hidden="true" />
             </OverlayDismissButton>
           </header>
@@ -509,11 +546,19 @@ const PokemonOrganizerSheet: React.FC<PokemonOrganizerSheetProps> = ({
             ) : null}
           </div>
 
+          {isSaving ? (
+            <div aria-live="assertive" className="pokemon-organizer__saving" role="status">
+              <span aria-hidden="true" className="pokemon-organizer__spinner" />
+              <strong>{summary.kind === 'catalog' ? 'Creating your Pokémon…' : 'Saving your changes…'}</strong>
+              <small>Keep this window open. Your collection will update automatically.</small>
+            </div>
+          ) : null}
+
           <footer className="pokemon-organizer__footer">
             {stage !== 'main' ? (
               <button className="pokemon-organizer__back" disabled={isSaving} onClick={() => openStage('main')} type="button">Back</button>
             ) : (
-              <OverlayDismissButton className="pokemon-organizer__back" onDismiss={onClose}>Cancel</OverlayDismissButton>
+              <OverlayDismissButton className="pokemon-organizer__back" disabled={isSaving} onDismiss={onClose}>Cancel</OverlayDismissButton>
             )}
             <button className="pokemon-organizer__apply" disabled={isSaving} onClick={() => void handleApply()} type="button">{actionLabel}</button>
           </footer>

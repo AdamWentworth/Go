@@ -130,13 +130,22 @@ describe('PokemonOrganizerSheet', () => {
     fireEvent.click(screen.getByRole('button', { name: /WantedAdd new wishlist entries/i }));
     fireEvent.click(screen.getByRole('button', { name: /Most Wanted/i }));
     fireEvent.click(screen.getByRole('button', { name: /Regionals/i }));
-    fireEvent.click(screen.getByRole('button', { name: 'Add 1' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Create & tag 1 Pokémon' }));
 
     await waitFor(() => expect(onChangeStatus).toHaveBeenCalledWith(
       'Wanted',
-      expect.objectContaining({ targets: ['0001-default'] }),
+      expect.objectContaining({
+        targets: ['0001-default'],
+        additionalConfirmationDetails: [
+          'Add to tag: Regionals',
+          'Mark as Most Wanted',
+        ],
+        destinationFilter: 'custom:regional',
+      }),
     ));
-    expect(mocks.success).toHaveBeenCalledWith('1 Pokémon added.');
+    expect(mocks.success).toHaveBeenCalledWith(
+      '1 Pokémon created as Wanted and added to Regionals.',
+    );
     expect(onClose).toHaveBeenCalledTimes(1);
   });
 
@@ -280,5 +289,36 @@ describe('PokemonOrganizerSheet', () => {
     fireEvent.click(screen.getByRole('button', { name: /For TradeAdd caught instances/i }));
 
     expect(screen.queryByRole('button', { name: /Favorite/i })).not.toBeInTheDocument();
+  });
+
+  it('blocks dismissal and shows clear progress while creation is pending', async () => {
+    let completeCreation: ((outcomes: InstanceStatusMutationOutcome[]) => void) | undefined;
+    const onChangeStatus = vi.fn(() => new Promise<InstanceStatusMutationOutcome[]>((resolve) => {
+      completeCreation = resolve;
+    }));
+    const onClose = vi.fn();
+
+    render(
+      <PokemonOrganizerSheet
+        selectionKeys={new Set(['0001-default'])}
+        onChangeStatus={onChangeStatus}
+        onClearSelection={vi.fn()}
+        onClose={onClose}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: /Storage/i }));
+    fireEvent.click(screen.getByRole('button', { name: 'Create & tag 1 Pokémon' }));
+
+    expect(await screen.findByRole('status')).toHaveTextContent('Creating your Pokémon…');
+    expect(screen.getByRole('button', { name: 'Close Pokémon organizer' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Cancel' })).toBeDisabled();
+    expect(screen.getByRole('dialog')).toHaveAttribute('aria-busy', 'true');
+
+    completeCreation?.([
+      changedOutcome('0001-default', 'caught-new', 'Caught', 'created'),
+    ]);
+
+    await waitFor(() => expect(onClose).toHaveBeenCalledTimes(1));
   });
 });

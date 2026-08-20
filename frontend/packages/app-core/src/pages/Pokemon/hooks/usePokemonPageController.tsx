@@ -358,7 +358,7 @@ export default function usePokemonPageController({
     [activeView, isUsernamePath, setHighlightedCards, syncSidePanelTagFilter],
   );
 
-  const setStatusFilter = useCallback((filter: InstanceStatus) => {
+  const setStatusFilter = useCallback((filter: string) => {
     setTagFilter(filter);
     syncSidePanelTagFilter(filter, false);
   }, [syncSidePanelTagFilter]);

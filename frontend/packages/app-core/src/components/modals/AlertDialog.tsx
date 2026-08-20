@@ -14,7 +14,7 @@ type AlertSurfaceProps = AlertDialogProps & React.HTMLAttributes<HTMLDivElement>
 const AlertSurface: React.FC<AlertSurfaceProps> = ({ message, onClose, ...rootProps }) => {
   const overlayMotion = useOverlayMotion();
   return (
-    <div {...rootProps} className="modal-overlay" onClick={() => overlayMotion?.requestClose(onClose)}>
+    <div {...rootProps} className="alert-modal-overlay" onClick={() => overlayMotion?.requestClose(onClose)}>
       <div className="alert-modal">
         <p>{message}</p>
       </div>

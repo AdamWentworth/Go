@@ -43,6 +43,7 @@ type OverlayRootProps = HTMLAttributes<HTMLElement> & {
 type Props = {
   children: ReactNode;
   closeOnBackdrop?: boolean;
+  dismissible?: boolean;
   onClose?: () => void;
 };
 
@@ -54,6 +55,7 @@ const prefersReducedMotion = () =>
 const OverlayPortal: React.FC<Props> = ({
   children,
   closeOnBackdrop = false,
+  dismissible = true,
   onClose,
 }) => {
   const [phase, setPhase] = useState<OverlayMotionPhase>('entering');
@@ -75,6 +77,7 @@ const OverlayPortal: React.FC<Props> = ({
   );
 
   const requestClose = useCallback((afterExit?: AfterOverlayExit) => {
+    if (!dismissible) return;
     if (closingRef.current) return;
     closingRef.current = true;
     setPhase('exiting');
@@ -85,7 +88,7 @@ const OverlayPortal: React.FC<Props> = ({
       exitTimerRef.current = null;
       finishClose?.();
     }, delay);
-  }, []);
+  }, [dismissible]);
 
   const controls = useMemo<OverlayMotionControls>(
     () => ({ phase, requestClose }),
