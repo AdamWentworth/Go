@@ -2,8 +2,7 @@ diff --git a/node_modules/brace-expansion/dist/commonjs/index.js b/node_modules/
 index be9df86..8c888e8 100644
 --- a/node_modules/brace-expansion/dist/commonjs/index.js
 +++ b/node_modules/brace-expansion/dist/commonjs/index.js
-@@ -260,4 +260,11 @@ function expand_(str, max, maxLength, isTop) {
-     }
+@@ -287,3 +287,10 @@ function expand_(str, max, maxLength, isTop) {
      return acc;
  }
 +// Preserve the callable CommonJS API expected by minimatch 3 while retaining
