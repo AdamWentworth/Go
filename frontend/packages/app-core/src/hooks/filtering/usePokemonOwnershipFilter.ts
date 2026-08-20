@@ -5,6 +5,7 @@ import type { Instances } from '@/types/instances';
 import type { TagBuckets } from '@/types/tags';
 import type { PokemonInstance } from '@/types/pokemonInstance';
 import { createScopedLogger } from '@/utils/logger';
+import { fromCustomTagFilter, toCustomTagFilter } from '@/features/tags/utils/customTagSelectors';
 
 const log = createScopedLogger('usePokemonOwnershipFilter');
 
@@ -54,6 +55,15 @@ export function getFilteredPokemonsByOwnership(
 
     return mapped;
   };
+
+  const customTagId = fromCustomTagFilter(filter);
+  if (customTagId) {
+    const bucket =
+      tagBuckets[toCustomTagFilter(customTagId)] ??
+      tagBuckets[toCustomTagFilter(customTagId.toLowerCase())] ??
+      {};
+    return mapIds(Object.keys(bucket));
+  }
 
   // ---- derived children ----
   if ((normalizedFilter as SpecialFilter) === 'favorites') {

@@ -1,5 +1,5 @@
 // TagItems.tsx
-import React, { KeyboardEvent } from 'react';
+import React, { CSSProperties, KeyboardEvent, MouseEvent } from 'react';
 import type { TagItem } from '@/types/tags';
 import './TagItems.css';
 
@@ -12,6 +12,12 @@ export interface TagItemsProps {
   tagNames: string[];
   tagSummaries: Record<string, TagSummary>;
   onSelectTag: (tagName: string) => void;
+  tagMetadata?: Record<string, {
+    color?: string | null;
+    displayName: string;
+    isCustom?: boolean;
+  }>;
+  onEditTag?: (tagName: string) => void;
 }
 
 function buildKey(p: TagItem, idx: number, bucket: string): string {
@@ -25,10 +31,14 @@ const TagItems: React.FC<TagItemsProps> = ({
   tagNames,
   tagSummaries,
   onSelectTag,
+  tagMetadata = {},
+  onEditTag,
 }) => (
   <>
     {tagNames.map((tagName) => {
       const summary = tagSummaries[tagName] ?? { count: 0, preview: [] };
+      const metadata = tagMetadata[tagName];
+      const displayName = metadata?.displayName ?? tagName;
 
       // Build preview elements and filter out nulls so empty-state logic is accurate
       const previewEls = summary.preview
@@ -38,7 +48,7 @@ const TagItems: React.FC<TagItemsProps> = ({
           const key    = buildKey(p, i, tagName);
           const gmax   = p.variantType?.includes('gigantamax');
           const dmax   = p.variantType?.includes('dynamax');
-          const isMiss = tagName === 'Missing';
+          const isMiss = displayName === 'Missing';
 
           return (
             <div key={key} className="tag-sprite">
@@ -62,8 +72,16 @@ const TagItems: React.FC<TagItemsProps> = ({
         })
         .filter(Boolean) as React.JSX.Element[];
 
-      const onKey = (e: KeyboardEvent<HTMLDivElement>) =>
-        e.key === 'Enter' && onSelectTag(tagName);
+      const onKey = (e: KeyboardEvent<HTMLDivElement>) => {
+        if (e.key !== 'Enter' && e.key !== ' ') return;
+        e.preventDefault();
+        onSelectTag(tagName);
+      };
+      const handleEdit = (event: MouseEvent<HTMLButtonElement>) => {
+        event.preventDefault();
+        event.stopPropagation();
+        onEditTag?.(tagName);
+      };
 
       // DOM order: footer THEN preview (so pseudo works)
       // Visual order: preview first via flex column-reverse in CSS
@@ -71,14 +89,21 @@ const TagItems: React.FC<TagItemsProps> = ({
         <div
           key={tagName}
           className="tag-item"
-          data-tag={tagName}
+          data-tag={displayName}
+          data-custom={metadata?.isCustom ? 'true' : undefined}
           data-empty={(!previewEls.length).toString()}
+          style={metadata?.color ? {
+            '--custom-tag-color': metadata.color,
+          } as CSSProperties : undefined}
           onClick={() => onSelectTag(tagName)}
           tabIndex={0}
           onKeyDown={onKey}
         >
           <div className="tag-footer">
-            <span className="tag-title">{tagName}</span>
+            <span className="tag-title">
+              {metadata?.color ? <span className="tag-title-color" aria-hidden="true" /> : null}
+              {displayName}
+            </span>
             <span className="tag-subtitle">
               {summary.count} Pokémon have this tag.
             </span>
@@ -90,6 +115,16 @@ const TagItems: React.FC<TagItemsProps> = ({
                 draggable={false}
               />
             )}
+            {metadata?.isCustom && onEditTag ? (
+              <button
+                aria-label={`Edit ${displayName} tag`}
+                className="tag-edit-button"
+                onClick={handleEdit}
+                type="button"
+              >
+                Edit
+              </button>
+            ) : null}
           </div>
 
           <div className="tag-preview">

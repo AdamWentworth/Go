@@ -1,6 +1,7 @@
 // TagsMenu.tsx
 
-import React, { useRef, useState, useMemo } from 'react';
+import React, { CSSProperties, useRef, useState, useMemo } from 'react';
+import { FaPlus } from 'react-icons/fa';
 import './TagsMenu.css';
 import useDownloadImage from './hooks/useDownloadImage';
 import PreviewContainer from './PreviewContainer';
@@ -10,6 +11,14 @@ import TagItems, { type TagSummary } from './TagItems';
 import type { TagBuckets, TagItem } from '@/types/tags';
 import type { AllVariants } from '@/types/pokemonVariants';
 import ActiveTagFilterChip from '../../ActiveTagFilterChip';
+import CustomTagEditorSheet from './CustomTagEditorSheet';
+import { useTagsStore } from '@/features/tags/store/useTagsStore';
+import {
+  fromCustomTagFilter,
+  toCustomTagFilter,
+} from '@/features/tags/utils/customTagSelectors';
+import type { TagDef } from '@/db/tagsDB';
+import type { CustomTagParent } from '@shared-contracts/users';
 
 export interface TagsMenuProps {
   onSelectTag: (tagName: string) => void;
@@ -18,6 +27,7 @@ export interface TagsMenuProps {
   panel?: 'inventory' | 'wishlist' | 'all';
   tagFilter?: string;
   onClearTagFilter?: () => void;
+  isEditable?: boolean;
 }
 
 const PREVIEW_LIMIT = 18;
@@ -59,7 +69,14 @@ const TagsMenu: React.FC<TagsMenuProps> = ({
   panel = 'all',
   tagFilter = '',
   onClearTagFilter,
+  isEditable = false,
 }) => {
+  const customTags = useTagsStore((state) => state.customTags);
+  const createCustomTag = useTagsStore((state) => state.createCustomTag);
+  const updateCustomTag = useTagsStore((state) => state.updateCustomTag);
+  const deleteCustomTag = useTagsStore((state) => state.deleteCustomTag);
+  const [editingTag, setEditingTag] = useState<TagDef | null>(null);
+  const [creatingFor, setCreatingFor] = useState<CustomTagParent | null>(null);
   // Derive system-children from the currently active buckets (own or foreign).
   // This prevents foreign profile views from accidentally using local-user children.
   const derivedChildren = useMemo(() => {
@@ -87,22 +104,57 @@ const TagsMenu: React.FC<TagsMenuProps> = ({
     Object.values(derivedChildren.caught.favorite || {})
   );
 
+  const customTagEntries = useMemo(() => {
+    if (!isEditable) return { caught: [], wanted: [] } as Record<CustomTagParent, Array<[string, typeof customTags.caught[string]]>>;
+    const sortEntries = (entries: Array<[string, typeof customTags.caught[string]]>) =>
+      entries.sort(([, left], [, right]) =>
+        (left.tag.sort ?? 0) - (right.tag.sort ?? 0) || left.tag.name.localeCompare(right.tag.name),
+      );
+    return {
+      caught: sortEntries(Object.entries(customTags.caught)),
+      wanted: sortEntries(Object.entries(customTags.wanted)),
+    };
+  }, [customTags, isEditable]);
+
   const tagSummaries = useMemo<Record<string, TagSummary>>(
-    () => ({
+    () => {
+      const summaries: Record<string, TagSummary> = {
       Favorites: summarizeArray(sortedFavorites), // keep favorite ordering
       Caught: summarizeRecord(activeTags.caught),
       Trade: summarizeRecord(derivedChildren.caught.trade),
       Wanted: summarizeRecord(activeTags.wanted),
       'Most Wanted': summarizeRecord(derivedChildren.wanted.mostWanted),
-    }),
+      };
+      for (const entries of Object.values(customTagEntries)) {
+        for (const [tagId, bucket] of entries) {
+          summaries[toCustomTagFilter(tagId)] = summarizeRecord(bucket.items);
+        }
+      }
+      return summaries;
+    },
     [
       activeTags.caught,
       activeTags.wanted,
       derivedChildren.caught.trade,
       derivedChildren.wanted.mostWanted,
       sortedFavorites,
+      customTagEntries,
     ]
   );
+
+  const customTagMetadata = useMemo(() => {
+    const metadata: Record<string, { color?: string | null; displayName: string; isCustom: boolean }> = {};
+    for (const entries of Object.values(customTagEntries)) {
+      for (const [tagId, bucket] of entries) {
+        metadata[toCustomTagFilter(tagId)] = {
+          color: bucket.tag.color,
+          displayName: bucket.tag.name,
+          isCustom: true,
+        };
+      }
+    }
+    return metadata;
+  }, [customTagEntries]);
 
   const handleSelectTagInternal = (name: string) => onSelectTag(name);
 
@@ -153,16 +205,38 @@ const TagsMenu: React.FC<TagsMenuProps> = ({
   const TagGroup = ({
     tagNames,
     onSelect,
+    onEdit,
   }: {
     tagNames: string[];
     onSelect: (name: string) => void;
+    onEdit?: (name: string) => void;
   }) => (
     <TagItems
       tagNames={tagNames}
       tagSummaries={tagSummaries}
       onSelectTag={onSelect}
+      tagMetadata={customTagMetadata}
+      onEditTag={onEdit}
     />
   );
+
+  const closeEditor = () => {
+    setEditingTag(null);
+    setCreatingFor(null);
+  };
+
+  const editBySelector = (selector: string) => {
+    const entry = [...customTagEntries.caught, ...customTagEntries.wanted]
+      .find(([tagId]) => toCustomTagFilter(tagId) === selector);
+    if (entry) setEditingTag(entry[1].tag);
+  };
+
+  const handleDeleteCustomTag = async (tagId: string) => {
+    await deleteCustomTag(tagId);
+    if (fromCustomTagFilter(tagFilter) === tagId) {
+      onClearTagFilter?.();
+    }
+  };
 
   /* ----- render ---------------------------------------------------- */
   return (
@@ -234,6 +308,21 @@ const TagsMenu: React.FC<TagsMenuProps> = ({
                       <TagGroup tagNames={['Favorites']} onSelect={handleSelectTagInternal} />
                       <TagGroup tagNames={['Trade']} onSelect={handleSelectTagInternal} />
                       <TagGroup tagNames={['Caught']} onSelect={handleSelectTagInternal} />
+                      {customTagEntries.caught.length ? (
+                        <div className="tag-custom-section">
+                          <div className="tag-custom-section__heading">Your inventory tags</div>
+                          <TagGroup
+                            tagNames={customTagEntries.caught.map(([tagId]) => toCustomTagFilter(tagId))}
+                            onSelect={handleSelectTagInternal}
+                            onEdit={editBySelector}
+                          />
+                        </div>
+                      ) : null}
+                      {isEditable ? (
+                        <button className="tag-create-button" onClick={() => setCreatingFor('caught')} type="button">
+                          <FaPlus aria-hidden="true" /> New inventory tag
+                        </button>
+                      ) : null}
                     </div>
                   ) : (
                     /* ⬇ Collapsed: show all child tags as colored peek buttons */
@@ -248,6 +337,18 @@ const TagsMenu: React.FC<TagsMenuProps> = ({
                         <span className="tag-peek-title">Favorites</span>
                         <span className="tag-count-badge dark">{counts.favs}</span>
                       </button>
+                      {customTagEntries.caught.map(([tagId, bucket]) => (
+                        <button
+                          className="tag-peek-button tag-peek-button-custom"
+                          key={tagId}
+                          onClick={() => handleSelectTagInternal(toCustomTagFilter(tagId))}
+                          style={{ '--custom-tag-color': bucket.tag.color } as CSSProperties}
+                          type="button"
+                        >
+                          <span className="tag-peek-title">{bucket.tag.name}</span>
+                          <span className="tag-count-badge dark">{Object.keys(bucket.items).length}</span>
+                        </button>
+                      ))}
 
                       <button
                         className="tag-peek-button"
@@ -297,6 +398,21 @@ const TagsMenu: React.FC<TagsMenuProps> = ({
                     <div className="tag-sublist">
                       <TagGroup tagNames={['Most Wanted']} onSelect={handleSelectTagInternal} />
                       <TagGroup tagNames={['Wanted']} onSelect={handleSelectTagInternal} />
+                      {customTagEntries.wanted.length ? (
+                        <div className="tag-custom-section">
+                          <div className="tag-custom-section__heading">Your wanted tags</div>
+                          <TagGroup
+                            tagNames={customTagEntries.wanted.map(([tagId]) => toCustomTagFilter(tagId))}
+                            onSelect={handleSelectTagInternal}
+                            onEdit={editBySelector}
+                          />
+                        </div>
+                      ) : null}
+                      {isEditable ? (
+                        <button className="tag-create-button tag-create-button-wanted" onClick={() => setCreatingFor('wanted')} type="button">
+                          <FaPlus aria-hidden="true" /> New wanted tag
+                        </button>
+                      ) : null}
                     </div>
                   ) : (
                     /* ⬇ Collapsed: show both child tags as colored peek buttons */
@@ -311,6 +427,18 @@ const TagsMenu: React.FC<TagsMenuProps> = ({
                         <span className="tag-peek-title">Most Wanted</span>
                         <span className="tag-count-badge dark">{counts.mostW}</span>
                       </button>
+                      {customTagEntries.wanted.map(([tagId, bucket]) => (
+                        <button
+                          className="tag-peek-button tag-peek-button-custom"
+                          key={tagId}
+                          onClick={() => handleSelectTagInternal(toCustomTagFilter(tagId))}
+                          style={{ '--custom-tag-color': bucket.tag.color } as CSSProperties}
+                          type="button"
+                        >
+                          <span className="tag-peek-title">{bucket.tag.name}</span>
+                          <span className="tag-count-badge dark">{Object.keys(bucket.items).length}</span>
+                        </button>
+                      ))}
 
                       <button
                         className="tag-peek-button"
@@ -328,6 +456,16 @@ const TagsMenu: React.FC<TagsMenuProps> = ({
               </div>
             )}
           </div>
+          {(editingTag || creatingFor) ? (
+            <CustomTagEditorSheet
+              parent={(editingTag?.parent === 'wanted' ? 'wanted' : creatingFor ?? 'caught')}
+              tag={editingTag}
+              onClose={closeEditor}
+              onCreate={async (input) => { await createCustomTag(input); }}
+              onUpdate={async (tagId, input) => { await updateCustomTag(tagId, input); }}
+              onDelete={handleDeleteCustomTag}
+            />
+          ) : null}
         </>
       )}
     </div>

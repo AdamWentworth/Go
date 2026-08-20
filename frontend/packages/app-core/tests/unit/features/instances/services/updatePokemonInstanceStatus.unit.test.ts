@@ -258,6 +258,69 @@ describe('updatePokemonInstanceStatus (current model)', () => {
     );
   });
 
+  it('does not carry custom tags across incompatible collection states', () => {
+    instances[EXISTING_UUID] = makeInstance({
+      instance_id: EXISTING_UUID,
+      variant_id: '0001-default',
+      is_caught: true,
+      registered: true,
+      caught_tags: ['inventory-tag'],
+      trade_tags: ['legacy-trade-tag'],
+      wanted_tags: ['stale-wanted-tag'],
+      favorite: true,
+      most_wanted: true,
+    });
+
+    const result = updatePokemonInstanceStatus(EXISTING_UUID, 'Wanted', variants, instances);
+
+    expect(result).toBe(FIXED_UUID);
+    expect(instances[FIXED_UUID]).toMatchObject({
+      is_caught: false,
+      is_wanted: true,
+      caught_tags: [],
+      trade_tags: [],
+      wanted_tags: [],
+      favorite: false,
+      most_wanted: false,
+    });
+    expect(instances[EXISTING_UUID].caught_tags).toEqual(['inventory-tag']);
+
+    updatePokemonInstanceStatus(EXISTING_UUID, 'Missing', variants, instances);
+    expect(instances[EXISTING_UUID]).toMatchObject({
+      caught_tags: [],
+      trade_tags: [],
+      wanted_tags: [],
+      favorite: false,
+      most_wanted: false,
+    });
+  });
+
+  it('keeps inventory tags when toggling For Trade and clears wanted-only state', () => {
+    instances[EXISTING_UUID] = makeInstance({
+      instance_id: EXISTING_UUID,
+      variant_id: '0001-default',
+      is_caught: true,
+      is_wanted: true,
+      registered: true,
+      caught_tags: ['inventory-tag'],
+      wanted_tags: ['wanted-tag'],
+      favorite: true,
+      most_wanted: true,
+    });
+
+    updatePokemonInstanceStatus(EXISTING_UUID, 'Trade', variants, instances);
+
+    expect(instances[EXISTING_UUID]).toMatchObject({
+      is_caught: true,
+      is_for_trade: true,
+      is_wanted: false,
+      caught_tags: ['inventory-tag'],
+      wanted_tags: [],
+      favorite: true,
+      most_wanted: false,
+    });
+  });
+
   it('sets purified for pokemon_id 2301/2302 when variant includes default', () => {
     const purifiedVariant = makeVariant({ variant_id: '2301-default', pokemon_id: 2301 });
     variants = [purifiedVariant];

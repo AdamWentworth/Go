@@ -4,6 +4,7 @@ import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 
 import TagsMenu from '@/pages/Pokemon/components/Menus/TagsMenu/TagsMenu';
 import type { TagBuckets, TagItem } from '@/types/tags';
+import { useTagsStore } from '@/features/tags/store/useTagsStore';
 
 vi.mock('@/pages/Pokemon/components/Menus/TagsMenu/hooks/useDownloadImage', () => ({
   default: () => ({ isDownloading: false, downloadImage: vi.fn() }),
@@ -44,6 +45,12 @@ describe('TagsMenu', () => {
   beforeEach(() => {
     confirmMock.mockClear();
     confirmMock.mockResolvedValue(true);
+    useTagsStore.setState({
+      customTags: { caught: {}, wanted: {} },
+      createCustomTag: vi.fn().mockResolvedValue({}) as any,
+      updateCustomTag: vi.fn().mockResolvedValue({}) as any,
+      deleteCustomTag: vi.fn().mockResolvedValue(undefined) as any,
+    });
   });
 
   it('derives Trade from caught and Most Wanted from wanted only', () => {
@@ -198,6 +205,62 @@ describe('TagsMenu', () => {
     expect(
       screen.queryByRole('button', { name: /clear caught tag filter/i }),
     ).not.toBeInTheDocument();
+  });
+
+  it('renders editable custom tags and filters with a stable id selector', () => {
+    const customItem = makeItem({ instance_id: 'custom-1', is_caught: true });
+    useTagsStore.setState({
+      customTags: {
+        caught: {
+          'tag-raids': {
+            tag: {
+              tag_id: 'tag-raids',
+              parent: 'caught',
+              name: 'Raid team',
+              color: '#2563EB',
+              sort: 10,
+            },
+            items: { 'custom-1': customItem },
+          },
+        },
+        wanted: {},
+      },
+    });
+    const onSelectTag = vi.fn();
+
+    render(
+      <TagsMenu
+        activeTags={{
+          caught: { 'custom-1': customItem },
+          wanted: {},
+          'custom:tag-raids': { 'custom-1': customItem },
+        }}
+        isEditable
+        onSelectTag={onSelectTag}
+        panel="inventory"
+        variants={[]}
+      />,
+    );
+
+    fireEvent.click(screen.getByText('Raid team'));
+    expect(onSelectTag).toHaveBeenCalledWith('custom:tag-raids');
+    expect(screen.getByRole('button', { name: /edit raid team tag/i })).toBeInTheDocument();
+  });
+
+  it('opens the custom tag creator from an editable tag panel', () => {
+    render(
+      <TagsMenu
+        activeTags={{ caught: {}, wanted: {} }}
+        isEditable
+        onSelectTag={vi.fn()}
+        panel="wishlist"
+        variants={[]}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: /new wanted tag/i }));
+    expect(screen.getByRole('dialog', { name: /new wanted tag/i })).toBeInTheDocument();
+    expect(screen.getByPlaceholderText(/community day/i)).toBeInTheDocument();
   });
 
 

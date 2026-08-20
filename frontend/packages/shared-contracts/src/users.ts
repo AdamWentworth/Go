@@ -243,6 +243,38 @@ export interface SecondaryUserUpdateRequest {
   pokemonGoName?: string;
 }
 
+export type CustomTagParent = 'caught' | 'wanted';
+
+export interface CustomTagDefinition {
+  tag_id: string;
+  parent: CustomTagParent;
+  name: string;
+  color: string;
+  sort: number;
+  created_at: string;
+  updated_at?: string | null;
+}
+
+export interface CustomTagsEnvelope {
+  tags: CustomTagDefinition[];
+}
+
+export interface CreateCustomTagRequest {
+  parent: CustomTagParent;
+  name: string;
+  color: string;
+}
+
+export interface UpdateCustomTagRequest {
+  name?: string;
+  color?: string;
+}
+
+export interface DeleteCustomTagResponse {
+  tag_id: string;
+  affected_instance_ids: string[];
+}
+
 export type ErrorEnvelope = {
   message?: string;
 };
@@ -277,5 +309,7 @@ export const usersContract = {
     friendBlocks: '/friends/blocks',
     friendBlock: (userId: string) =>
       `/friends/blocks/${encodeURIComponent(userId)}`,
+    tags: '/tags',
+    tag: (tagId: string) => `/tags/${encodeURIComponent(tagId)}`,
   },
 } as const;

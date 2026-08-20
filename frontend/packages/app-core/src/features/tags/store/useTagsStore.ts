@@ -4,7 +4,7 @@ import { create } from 'zustand';
 
 import {
   getAllTagDefs,
-  getAllInstanceTags,
+  replaceTagDefs,
   persistSystemMembershipsFromBuckets,
   getSystemChildrenSnapshot,
   setSystemChildrenSnapshot,
@@ -32,6 +32,13 @@ import type { Instances }           from '@/types/instances';
 import type { PokemonVariant }      from '@/types/pokemonVariants';
 import type { PokemonInstance }     from '@/types/pokemonInstance';
 import type { TagDef }              from '@/db/tagsDB';
+import type { CustomTagDefinition, CustomTagParent } from '@shared-contracts/users';
+import {
+  createCustomTag as createCustomTagRequest,
+  deleteCustomTag as deleteCustomTagRequest,
+  fetchCustomTags,
+  updateCustomTag as updateCustomTagRequest,
+} from '@/services/tagService';
 
 const log = createScopedLogger('useTagsStore');
 
@@ -123,6 +130,40 @@ interface TagsStore {
   buildForeignTags(instances: Instances): void;
 
   rebuildCustomTags(): Promise<void>;
+  refreshCustomTagDefinitions(): Promise<void>;
+  createCustomTag(input: { parent: CustomTagParent; name: string; color: string }): Promise<TagDef>;
+  updateCustomTag(tagId: string, input: { name?: string; color?: string }): Promise<TagDef>;
+  deleteCustomTag(tagId: string): Promise<void>;
+  applyCustomTagChanges(
+    instanceIds: Iterable<string>,
+    changes: Record<string, boolean>,
+  ): Promise<{ updated: number; skipped: number }>;
+}
+
+function normalizeTagIds(value: unknown): string[] {
+  if (!Array.isArray(value)) return [];
+  const ids = new Set<string>();
+  for (const entry of value) {
+    const raw = typeof entry === 'string'
+      ? entry
+      : entry && typeof entry === 'object'
+        ? (entry as { tag_id?: unknown; id?: unknown; value?: unknown }).tag_id ??
+          (entry as { id?: unknown }).id ??
+          (entry as { value?: unknown }).value
+        : null;
+    if (typeof raw === 'string' && raw.trim()) ids.add(raw.trim());
+  }
+  return [...ids];
+}
+
+function toLocalTagDef(tag: CustomTagDefinition): TagDef {
+  return {
+    ...tag,
+    parent: tag.parent,
+    color: tag.color,
+    sort: tag.sort,
+    deleted_at: null,
+  };
 }
 
 export const useTagsStore = create<TagsStore>()((set, get) => ({
@@ -141,10 +182,8 @@ export const useTagsStore = create<TagsStore>()((set, get) => ({
     set({ customTagsLoading: true });
 
     try {
-      const [defs, memberships] = await Promise.all([
-        getAllTagDefs(),
-        getAllInstanceTags(),
-      ]);
+      const defs = await getAllTagDefs();
+      const instances = useInstancesStore.getState().instances;
 
       // quick lookup from system buckets
       const itemByInstance: Record<string, TagItem> = {};
@@ -155,12 +194,19 @@ export const useTagsStore = create<TagsStore>()((set, get) => ({
 
       const out: CustomTagsTree = { caught: {}, wanted: {} };
 
-      // group memberships by tag_id
       const byTag = new Map<string, string[]>();
-      for (const m of memberships) {
-        const arr = byTag.get(m.tag_id) || [];
-        arr.push(m.instance_id);
-        byTag.set(m.tag_id, arr);
+      for (const [collectionKey, instance] of Object.entries(instances)) {
+        const instanceId = collectionKey;
+        const tagIds = instance.is_wanted
+          ? normalizeTagIds(instance.wanted_tags)
+          : instance.is_caught
+            ? normalizeTagIds(instance.caught_tags)
+            : [];
+        for (const tagId of tagIds) {
+          const ids = byTag.get(tagId) ?? [];
+          ids.push(instanceId);
+          byTag.set(tagId, ids);
+        }
       }
 
       for (const def of defs) {
@@ -185,6 +231,102 @@ export const useTagsStore = create<TagsStore>()((set, get) => ({
       log.error('rebuildCustomTags failed:', e);
       set({ customTags: { ...EMPTY_CUSTOM }, customTagsLoading: false });
     }
+  },
+
+  async refreshCustomTagDefinitions() {
+    const tags = await fetchCustomTags();
+    await replaceTagDefs(tags.map(toLocalTagDef));
+    await get().rebuildCustomTags();
+  },
+
+  async createCustomTag(input) {
+    const created = toLocalTagDef(await createCustomTagRequest(input));
+    const definitions = (await getAllTagDefs()).filter((tag) => tag.tag_id !== created.tag_id);
+    await replaceTagDefs([...definitions, created]);
+    await get().rebuildCustomTags();
+    return created;
+  },
+
+  async updateCustomTag(tagId, input) {
+    const updated = toLocalTagDef(await updateCustomTagRequest(tagId, input));
+    const definitions = (await getAllTagDefs()).filter((tag) => tag.tag_id !== tagId);
+    await replaceTagDefs([...definitions, updated]);
+    await get().rebuildCustomTags();
+    return updated;
+  },
+
+  async deleteCustomTag(tagId) {
+    await deleteCustomTagRequest(tagId);
+    const definitions = (await getAllTagDefs()).filter((tag) => tag.tag_id !== tagId);
+    await replaceTagDefs(definitions);
+
+    const instances = useInstancesStore.getState().instances;
+    const patches: Record<string, Partial<PokemonInstance>> = {};
+    for (const [key, instance] of Object.entries(instances)) {
+      const caughtTags = normalizeTagIds(instance.caught_tags);
+      const wantedTags = normalizeTagIds(instance.wanted_tags);
+      if (caughtTags.includes(tagId)) {
+        patches[key] = { ...patches[key], caught_tags: caughtTags.filter((id) => id !== tagId) };
+      }
+      if (wantedTags.includes(tagId)) {
+        patches[key] = { ...patches[key], wanted_tags: wantedTags.filter((id) => id !== tagId) };
+      }
+    }
+    if (Object.keys(patches).length) {
+      await useInstancesStore.getState().updateInstanceDetails(patches);
+    }
+    await get().rebuildCustomTags();
+  },
+
+  async applyCustomTagChanges(instanceIds, changes) {
+    const instances = useInstancesStore.getState().instances;
+    const definitions = await getAllTagDefs();
+    const byId = new Map(definitions.map((tag) => [tag.tag_id, tag]));
+    const patches: Record<string, Partial<PokemonInstance>> = {};
+    let updated = 0;
+    let skipped = 0;
+
+    for (const requestedId of instanceIds) {
+      const entry = Object.entries(instances).find(
+        ([key, instance]) => key === requestedId || instance.instance_id === requestedId,
+      );
+      if (!entry) {
+        skipped += 1;
+        continue;
+      }
+      const [key, instance] = entry;
+      let changed = false;
+      const caught = new Set(normalizeTagIds(instance.caught_tags));
+      const wanted = new Set(normalizeTagIds(instance.wanted_tags));
+
+      for (const [tagId, shouldApply] of Object.entries(changes)) {
+        const definition = byId.get(tagId);
+        if (!definition || definition.deleted_at) continue;
+        const eligible = definition.parent === 'caught' ? instance.is_caught : instance.is_wanted;
+        if (!eligible) continue;
+        const target = definition.parent === 'caught' ? caught : wanted;
+        if (shouldApply && !target.has(tagId)) {
+          target.add(tagId);
+          changed = true;
+        } else if (!shouldApply && target.delete(tagId)) {
+          changed = true;
+        }
+      }
+
+      if (changed) {
+        patches[key] = {
+          caught_tags: instance.is_caught ? [...caught] : [],
+          wanted_tags: instance.is_wanted ? [...wanted] : [],
+        };
+        updated += 1;
+      }
+    }
+
+    if (Object.keys(patches).length) {
+      await useInstancesStore.getState().updateInstanceDetails(patches);
+    }
+    await get().rebuildCustomTags();
+    return { updated, skipped };
   },
 
   async buildTags() {

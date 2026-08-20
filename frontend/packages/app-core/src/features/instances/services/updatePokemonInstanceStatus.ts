@@ -104,6 +104,9 @@ export function updatePokemonInstanceStatus(
       instance.is_caught = true;
       instance.is_for_trade = false;
       instance.is_wanted = false;
+      instance.most_wanted = false;
+      instance.wanted_tags = [];
+      instance.trade_tags = [];
       instance.registered = true;
       break;
 
@@ -111,6 +114,8 @@ export function updatePokemonInstanceStatus(
       instance.is_caught = true; // caught but flagged for trade
       instance.is_for_trade = true;
       instance.is_wanted = false;
+      instance.most_wanted = false;
+      instance.wanted_tags = [];
       instance.registered = true;
       break;
 
@@ -123,6 +128,11 @@ export function updatePokemonInstanceStatus(
           is_wanted: true,
           is_caught: false,
           is_for_trade: false,
+          caught_tags: [],
+          trade_tags: [],
+          wanted_tags: [],
+          favorite: false,
+          most_wanted: false,
           registered: true, // wanted entries are considered registered for tags logic
           last_update: Date.now(),
         };
@@ -133,6 +143,11 @@ export function updatePokemonInstanceStatus(
       }
 
       instance.is_wanted = true;
+      instance.is_caught = false;
+      instance.is_for_trade = false;
+      instance.caught_tags = [];
+      instance.trade_tags = [];
+      instance.favorite = false;
       {
         const anyCaught = Object.values(instances).some(
           (d) => d.variant_id === variantKey && d.is_caught,
@@ -146,6 +161,11 @@ export function updatePokemonInstanceStatus(
       instance.is_caught = false;
       instance.is_for_trade = false;
       instance.is_wanted = false;
+      instance.most_wanted = false;
+      instance.favorite = false;
+      instance.caught_tags = [];
+      instance.trade_tags = [];
+      instance.wanted_tags = [];
       instance.registered = false;
       break;
   }

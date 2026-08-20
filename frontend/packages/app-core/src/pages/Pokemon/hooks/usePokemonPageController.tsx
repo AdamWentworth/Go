@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { Location, NavigateFunction } from 'react-router';
 
 import { useVariantsStore } from '@/features/variants/store/useVariantsStore';
@@ -40,6 +40,7 @@ import {
   readPokemonCatalogStateFilter,
 } from '../utils/pokemonCatalogNavigation';
 import { createScopedLogger } from '@/utils/logger';
+import { toCustomTagFilter } from '@/features/tags/utils/customTagSelectors';
 
 const log = createScopedLogger('PokemonPage');
 const SIDE_PANEL_TAG_FILTER_SYNC_DELAY_MS = 300;
@@ -131,6 +132,7 @@ export default function usePokemonPageController({
   const contextInstanceData = useInstancesStore((s) => s.instances);
 
   const tags = useTagsStore((s) => s.tags);
+  const customTags = useTagsStore((s) => s.customTags);
   const foreignTags = useTagsStore((s) => s.foreignTags);
   const requestedTagFilter =
     readPokemonCatalogFilter(location.search ?? '') ??
@@ -260,9 +262,16 @@ export default function usePokemonPageController({
     syncSidePanelTagFilter,
   ]);
 
-  const activeTags: TagBuckets = (
-    isUsernamePath ? foreignTags ?? (emptyTagBuckets as TagBuckets) : tags
-  ) as TagBuckets;
+  const activeTags = useMemo<TagBuckets>(() => {
+    if (isUsernamePath) return foreignTags ?? (emptyTagBuckets as TagBuckets);
+    const merged: TagBuckets = { ...tags };
+    for (const parent of [customTags.caught, customTags.wanted]) {
+      for (const bucket of Object.values(parent)) {
+        merged[toCustomTagFilter(bucket.tag.tag_id)] = bucket.items;
+      }
+    }
+    return merged;
+  }, [customTags, foreignTags, isUsernamePath, tags]);
 
   const baseVariants = variants;
   const activeStatusFilter = toInstanceStatus(tagFilter);

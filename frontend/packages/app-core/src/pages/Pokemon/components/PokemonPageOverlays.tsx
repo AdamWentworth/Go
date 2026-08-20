@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 
 import HighlightActionButton from './Menus/PokemonMenu/HighlightActionButton';
 import FusionPokemonModal from '../features/fusion/components/FusionPokemonModal';
@@ -6,6 +6,7 @@ import MegaPokemonModal from '../features/mega/components/MegaPokemonModal';
 import type { MegaSelectionData } from '../features/mega/hooks/useMegaPokemonHandler';
 import type { FusionSelectionData } from '@/types/fusion';
 import type { InstanceStatus } from '@/types/instances';
+import CustomTagAssignmentSheet from '@/features/tags/components/CustomTagAssignmentSheet';
 
 type PokemonPageOverlaysProps = {
   isEditable: boolean;
@@ -41,7 +42,10 @@ const PokemonPageOverlays: React.FC<PokemonPageOverlaysProps> = ({
   onFusionCancel,
   onCreateNewLeft,
   onCreateNewRight,
-}) => (
+}) => {
+  const [isCustomTagsOpen, setIsCustomTagsOpen] = useState(false);
+
+  return (
   <>
     {isEditable && highlightedCards.size > 0 && (
       <HighlightActionButton
@@ -49,8 +53,17 @@ const PokemonPageOverlays: React.FC<PokemonPageOverlaysProps> = ({
         handleConfirmChangeTags={onConfirmChangeTags}
         tagFilter={activeStatusFilter ?? ''}
         isUpdating={isUpdating}
+        onManageCustomTags={() => setIsCustomTagsOpen(true)}
       />
     )}
+
+    {isCustomTagsOpen ? (
+      <CustomTagAssignmentSheet
+        instanceIds={highlightedCards}
+        onClose={() => setIsCustomTagsOpen(false)}
+        onSaved={() => undefined}
+      />
+    ) : null}
 
     <MegaPokemonModal
       open={isMegaSelectionOpen}
@@ -70,6 +83,7 @@ const PokemonPageOverlays: React.FC<PokemonPageOverlaysProps> = ({
       />
     )}
   </>
-);
+  );
+};
 
 export default PokemonPageOverlays;

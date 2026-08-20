@@ -1,6 +1,8 @@
 import React, { useCallback } from 'react';
 
 import { useModal } from '@/contexts/ModalContext';
+import { useTagsStore } from '@/features/tags/store/useTagsStore';
+import { fromCustomTagFilter } from '@/features/tags/utils/customTagSelectors';
 
 import './ActiveTagFilterChip.css';
 
@@ -24,16 +26,22 @@ const ActiveTagFilterChip: React.FC<ActiveTagFilterChipProps> = ({
 }) => {
   const { confirm } = useModal();
   const trimmedTagFilter = tagFilter.trim();
+  const customTagId = fromCustomTagFilter(trimmedTagFilter);
+  const customTag = useTagsStore((state) => {
+    if (!customTagId) return null;
+    return state.customTags.caught[customTagId]?.tag ?? state.customTags.wanted[customTagId]?.tag ?? null;
+  });
+  const displayName = customTag?.name ?? trimmedTagFilter;
 
   const handleClearActiveTagFilter = useCallback(async () => {
     if (!onClearTagFilter) return;
     const confirmed = await confirm(
-      `Clear the ${trimmedTagFilter} tag? This returns you to browsing all available Pokémon and forms in Pokémon GO, without using your personal tag lists.`,
+      `Clear the ${displayName} tag? This returns you to browsing all available Pokémon and forms in Pokémon GO, without using your personal tag lists.`,
     );
     if (confirmed) {
       onClearTagFilter();
     }
-  }, [confirm, onClearTagFilter, trimmedTagFilter]);
+  }, [confirm, displayName, onClearTagFilter]);
 
   if (!trimmedTagFilter) return null;
 
@@ -49,9 +57,10 @@ const ActiveTagFilterChip: React.FC<ActiveTagFilterChipProps> = ({
         isFavoritesFilter ? 'active-tag-filter-with-icon' : '',
         !onClearTagFilter ? 'active-tag-filter-required' : '',
       ].filter(Boolean).join(' ')}
-      aria-label={`${trimmedTagFilter} tag filter${
+      aria-label={`${displayName} tag filter${
         onClearTagFilter ? '' : ', required while viewing this catalog'
       }`}
+      style={customTag?.color ? { '--active-custom-tag-color': customTag.color } as React.CSSProperties : undefined}
       title={
         onClearTagFilter
           ? undefined
@@ -67,14 +76,15 @@ const ActiveTagFilterChip: React.FC<ActiveTagFilterChipProps> = ({
           draggable={false}
         />
       )}
-      <span className="active-tag-filter-name">{trimmedTagFilter}</span>
+      {customTag?.color ? <span className="active-tag-filter-color" aria-hidden="true" /> : null}
+      <span className="active-tag-filter-name">{displayName}</span>
       {onClearTagFilter ? (
         <button
           type="button"
           className="active-tag-filter-clear"
           onClick={handleClearActiveTagFilter}
-          aria-label={`Clear ${trimmedTagFilter} tag filter`}
-          title={`Clear ${trimmedTagFilter} tag`}
+          aria-label={`Clear ${displayName} tag filter`}
+          title={`Clear ${displayName} tag`}
         >
           ×
         </button>

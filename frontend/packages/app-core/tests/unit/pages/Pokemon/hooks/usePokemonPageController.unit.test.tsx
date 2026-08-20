@@ -49,6 +49,7 @@ const instancesStoreState = {
 };
 const tagsStoreState = {
   tags: {} as TagBuckets,
+  customTags: { caught: {}, wanted: {} },
   foreignTags: null,
 };
 const userSearchStoreState = {

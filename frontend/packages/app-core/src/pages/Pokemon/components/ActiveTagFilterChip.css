@@ -103,6 +103,16 @@
   font-weight: 900;
 }
 
+.active-tag-filter-color {
+  width: 0.75rem;
+  height: 0.75rem;
+  flex: 0 0 0.75rem;
+  border: 1px solid color-mix(in srgb, var(--active-custom-tag-color) 65%, white);
+  border-radius: 50%;
+  background: var(--active-custom-tag-color);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--active-custom-tag-color) 18%, transparent);
+}
+
 .active-tag-filter-clear {
   flex: 0 0 auto;
   border: 0;

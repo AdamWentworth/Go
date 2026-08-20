@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 const dbMocks = vi.hoisted(() => ({
   getAllTagDefs: vi.fn(),
   getAllInstanceTags: vi.fn(),
+  replaceTagDefs: vi.fn(),
   persistSystemMembershipsFromBuckets: vi.fn(),
   getSystemChildrenSnapshot: vi.fn(),
   setSystemChildrenSnapshot: vi.fn(),
@@ -74,6 +75,7 @@ describe('useTagsStore integration', () => {
 
     dbMocks.getAllTagDefs.mockResolvedValue([]);
     dbMocks.getAllInstanceTags.mockResolvedValue([]);
+    dbMocks.replaceTagDefs.mockResolvedValue(undefined);
     dbMocks.persistSystemMembershipsFromBuckets.mockResolvedValue(undefined);
     dbMocks.getSystemChildrenSnapshot.mockResolvedValue(null);
     dbMocks.setSystemChildrenSnapshot.mockResolvedValue(undefined);
@@ -118,12 +120,23 @@ describe('useTagsStore integration', () => {
       { tag_id: 'legacy-trade-parent', parent: 'trade', name: 'Legacy Trade Parent' },
       { tag_id: 'deleted-tag', parent: 'caught', name: 'Deleted', deleted_at: '2026-01-01T00:00:00Z' },
     ]);
-    dbMocks.getAllInstanceTags.mockResolvedValue([
-      { key: 'tag-caught:caught-fav', tag_id: 'tag-caught', instance_id: 'caught-fav' },
-      { key: 'tag-wanted:wanted-most', tag_id: 'tag-wanted', instance_id: 'wanted-most' },
-      { key: 'legacy-trade-parent:caught-fav', tag_id: 'legacy-trade-parent', instance_id: 'caught-fav' },
-      { key: 'deleted-tag:caught-fav', tag_id: 'deleted-tag', instance_id: 'caught-fav' },
-    ]);
+    useInstancesStore.setState({
+      instances: {
+        'caught-fav': {
+          ...caughtTagItem,
+          variant_id: '0001-default',
+          caught_tags: ['tag-caught', 'legacy-trade-parent', 'deleted-tag'],
+          wanted_tags: [],
+        },
+        'wanted-most': {
+          ...wantedTagItem,
+          variant_id: '0001-default',
+          caught_tags: [],
+          wanted_tags: ['tag-wanted'],
+        },
+      } as any,
+      instancesLoading: false,
+    });
 
     await useTagsStore.getState().rebuildCustomTags();
 
@@ -166,5 +179,59 @@ describe('useTagsStore integration', () => {
     expect(state.tags.caught).toHaveProperty('caught-fav');
     expect(state.systemChildren.caught.favorite).toHaveProperty('caught-fav');
     expect(dbMocks.persistSystemMembershipsFromBuckets).toHaveBeenCalled();
+  });
+
+  it('applies custom tags only to instances in the matching parent collection', async () => {
+    dbMocks.getAllTagDefs.mockResolvedValue([
+      { tag_id: 'inventory-tag', parent: 'caught', name: 'Raid team', color: '#2563EB' },
+      { tag_id: 'wanted-tag', parent: 'wanted', name: 'Priority', color: '#E11D48' },
+    ]);
+    useTagsStore.setState({
+      tags: {
+        caught: { 'caught-1': caughtTagItem },
+        wanted: { 'wanted-1': wantedTagItem },
+      } as any,
+    });
+    useInstancesStore.setState({
+      instances: {
+        'caught-1': {
+          ...caughtTagItem,
+          variant_id: '0001-default',
+          caught_tags: [],
+          wanted_tags: [],
+        },
+        'wanted-1': {
+          ...wantedTagItem,
+          variant_id: '0001-default',
+          caught_tags: [],
+          wanted_tags: [],
+        },
+      } as any,
+      instancesLoading: false,
+    });
+
+    const updateSpy = vi
+      .spyOn(useInstancesStore.getState(), 'updateInstanceDetails')
+      .mockImplementation(async (patches: any) => {
+        useInstancesStore.setState((state) => ({
+          instances: Object.fromEntries(
+            Object.entries(state.instances).map(([key, instance]) => [
+              key,
+              { ...instance, ...(patches[key] ?? {}) },
+            ]),
+          ) as any,
+        }));
+      });
+
+    const result = await useTagsStore.getState().applyCustomTagChanges(
+      ['caught-1', 'wanted-1', 'not-an-instance'],
+      { 'inventory-tag': true, 'wanted-tag': true },
+    );
+
+    expect(result).toEqual({ updated: 2, skipped: 1 });
+    expect(updateSpy).toHaveBeenCalledWith({
+      'caught-1': { caught_tags: ['inventory-tag'], wanted_tags: [] },
+      'wanted-1': { caught_tags: [], wanted_tags: ['wanted-tag'] },
+    });
   });
 });

@@ -97,6 +97,7 @@ const PokemonViewSlider: React.FC<PokemonViewSliderProps> = ({
       variants={variants}
       tagFilter={sidePanelTagFilter}
       onClearTagFilter={onClearTagFilter}
+      isEditable={isEditable}
     />
 
     <PokemonMenu
@@ -134,6 +135,7 @@ const PokemonViewSlider: React.FC<PokemonViewSliderProps> = ({
       variants={variants}
       tagFilter={sidePanelTagFilter}
       onClearTagFilter={onClearTagFilter}
+      isEditable={isEditable}
     />
   </HorizontalPageSlider>
   );

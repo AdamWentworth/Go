@@ -35,6 +35,7 @@ describe('useBootstrapTags', () => {
       foreignTags: null,
       hydrateFromCache: vi.fn().mockResolvedValue(undefined) as any,
       buildTags: vi.fn().mockResolvedValue(undefined) as any,
+      refreshCustomTagDefinitions: vi.fn().mockResolvedValue(undefined) as any,
     });
   });
 

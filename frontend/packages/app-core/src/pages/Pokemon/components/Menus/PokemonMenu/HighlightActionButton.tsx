@@ -9,6 +9,7 @@ export interface HighlightActionButtonProps {
   handleConfirmChangeTags: (filter: InstanceStatus) => void;
   tagFilter: InstanceStatus | '';
   isUpdating: boolean;
+  onManageCustomTags: () => void;
 }
 
 const HighlightActionButton: React.FC<HighlightActionButtonProps> = ({
@@ -16,6 +17,7 @@ const HighlightActionButton: React.FC<HighlightActionButtonProps> = ({
   handleConfirmChangeTags,
   tagFilter,
   isUpdating,
+  onManageCustomTags,
 }) => {
   const [isExpanded, setIsExpanded] = useState<boolean>(false);
 
@@ -39,6 +41,16 @@ const HighlightActionButton: React.FC<HighlightActionButtonProps> = ({
               disabled={isUpdating}
             >
               Caught
+            </button>
+            <button
+              className="filter-button Custom"
+              onClick={() => {
+                setIsExpanded(false);
+                onManageCustomTags();
+              }}
+              disabled={isUpdating}
+            >
+              Custom tags…
             </button>
             <button
               className="filter-button Trade"

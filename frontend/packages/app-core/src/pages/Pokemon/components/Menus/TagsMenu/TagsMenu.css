@@ -198,3 +198,53 @@
   backdrop-filter: saturate(1.2) blur(0px);
   box-shadow: 0 1px 3px rgba(0,0,0,0.25) inset;
 }
+
+.tag-peek-button-custom::before {
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--custom-tag-color) 74%, white) 0%,
+    color-mix(in srgb, var(--custom-tag-color) 34%, white) 100%
+  );
+}
+
+.tag-custom-section {
+  margin-top: 0.45rem;
+  padding-top: 0.55rem;
+  border-top: 1px solid color-mix(in srgb, var(--color-text-primary) 13%, transparent);
+}
+
+.tag-custom-section__heading {
+  padding: 0 0.35rem;
+  color: var(--color-text-secondary);
+  font-size: 0.72rem;
+  font-weight: 900;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+}
+
+.tag-create-button {
+  display: inline-flex;
+  min-height: 44px;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  margin: 0.35rem 0 0.15rem;
+  padding: 0.6rem 0.9rem;
+  border: 1px dashed color-mix(in srgb, #2196f3 60%, transparent);
+  border-radius: 10px;
+  background: color-mix(in srgb, #2196f3 10%, transparent);
+  color: var(--color-text-primary);
+  font: inherit;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.tag-create-button-wanted {
+  border-color: color-mix(in srgb, #f44336 60%, transparent);
+  background: color-mix(in srgb, #f44336 10%, transparent);
+}
+
+.tag-create-button:focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--color-accent-primary) 32%, transparent);
+  outline-offset: 2px;
+}
