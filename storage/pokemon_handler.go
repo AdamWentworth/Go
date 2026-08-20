@@ -364,6 +364,7 @@ func parseAndUpsertPokemon(
 			*caughtTags,
 			*tradeTags,
 			*wantedTags,
+			isCaught,
 			favorite,
 			isForTrade,
 			isWanted,

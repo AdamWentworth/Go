@@ -59,6 +59,8 @@ func DeleteUserHandler(c fiber.Ctx) error {
 			{"user_id_proposed = ? OR user_id_accepting = ?", []interface{}{userID, userID}, &Trade{}},
 			{"user_id_low = ? OR user_id_high = ?", []interface{}{userID, userID}, &Friendship{}},
 			{"blocker_user_id = ? OR blocked_user_id = ?", []interface{}{userID, userID}, &UserBlock{}},
+			{"user_id = ?", []interface{}{userID}, &PokemonInstanceTag{}},
+			{"user_id = ?", []interface{}{userID}, &PokemonTag{}},
 			{"user_id = ?", []interface{}{userID}, &Registration{}},
 			{"user_id = ?", []interface{}{userID}, &PokemonInstance{}},
 			{"user_id = ?", []interface{}{userID}, &UserProfile{}},

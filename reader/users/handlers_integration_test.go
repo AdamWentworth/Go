@@ -64,6 +64,10 @@ func newHandlerTestApp(authUserID string) *fiber.App {
 	app.Put("/api/profile", UpdateProfileHandler)
 	app.Get("/api/preferences", GetPreferencesHandler)
 	app.Put("/api/preferences", UpdatePreferencesHandler)
+	app.Get("/api/tags", GetTagsHandler)
+	app.Post("/api/tags", CreateTagHandler)
+	app.Put("/api/tags/:tag_id", UpdateTagHandler)
+	app.Delete("/api/tags/:tag_id", DeleteTagHandler)
 	app.Get("/api/autocomplete-trainers", AutocompleteTrainersHandler)
 	app.Get("/api/friends", GetFriendsHandler)
 	app.Post("/api/friends/requests", CreateFriendRequestHandler)
@@ -112,6 +116,10 @@ func TestDeleteUserHandler_DeletesAccountGraphInTransaction(t *testing.T) {
 		WithArgs("user-123", "user-123").WillReturnResult(sqlmock.NewResult(0, 1))
 	mock.ExpectExec("DELETE FROM `user_blocks` WHERE blocker_user_id = \\? OR blocked_user_id = \\?").
 		WithArgs("user-123", "user-123").WillReturnResult(sqlmock.NewResult(0, 1))
+	mock.ExpectExec("DELETE FROM `instance_tags` WHERE user_id = \\?").
+		WithArgs("user-123").WillReturnResult(sqlmock.NewResult(0, 4))
+	mock.ExpectExec("DELETE FROM `tags` WHERE user_id = \\?").
+		WithArgs("user-123").WillReturnResult(sqlmock.NewResult(0, 2))
 	mock.ExpectExec("DELETE FROM `registrations` WHERE user_id = \\?").
 		WithArgs("user-123").WillReturnResult(sqlmock.NewResult(0, 3))
 	mock.ExpectExec("DELETE FROM `instances` WHERE user_id = \\?").

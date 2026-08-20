@@ -234,7 +234,11 @@ Behavior notes:
 - `registered` is automatically forced to `true` when `is_caught=true`.
 - Storage enforces canonical ownership semantics using `is_caught` only.
 - `registrations` is synchronized per `(user_id, variant_id)` from persisted instance state.
-- `instance_tags` is synchronized from `caught_tags` + `trade_tags` + `wanted_tags` (filtered to valid user tag IDs).
+- `instance_tags` is synchronized from `caught_tags` + `trade_tags` + `wanted_tags`.
+  IDs must belong to the authenticated user, remain active, and match the source
+  collection (`caught`, `trade`, or `wanted`); deleted or cross-collection tag
+  IDs are discarded. Built-in memberships are derived only from their canonical
+  instance flags, never from client-supplied tag arrays.
 - Unknown columns are filtered out at runtime via live `instances` schema inspection.
 - JSON object fields default to `{}` when missing/invalid.
 - JSON array tag fields default to `[]` when missing/invalid.

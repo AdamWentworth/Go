@@ -28,10 +28,15 @@ func TestProtectedSocialRoutesExposeCanonicalAndPrefixedPaths(t *testing.T) {
 		path   string
 	}{
 		{method: http.MethodGet, path: "/api/profile"},
+		{method: http.MethodGet, path: "/api/tags"},
+		{method: http.MethodPost, path: "/api/tags"},
+		{method: http.MethodPut, path: "/api/tags/tag-1"},
+		{method: http.MethodDelete, path: "/api/tags/tag-1"},
 		{method: http.MethodPut, path: "/api/profile"},
 		{method: http.MethodGet, path: "/api/friends"},
 		{method: http.MethodGet, path: "/api/preferences"},
 		{method: http.MethodGet, path: "/api/users/profile"},
+		{method: http.MethodGet, path: "/api/users/tags"},
 		{method: http.MethodPut, path: "/api/users/profile"},
 		{method: http.MethodGet, path: "/api/users/friends"},
 		{method: http.MethodGet, path: "/api/users/preferences"},

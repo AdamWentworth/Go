@@ -11,6 +11,7 @@ trainer snapshots.
   `GET /api/instances/sync`.
 - Upsert user profile fields in MySQL.
 - Manage privacy preferences, friendships, requests, and blocks.
+- Manage user-owned custom Pokémon tag definitions and colors.
 - Validate and execute trade proposals and state transitions.
 - Atomically transfer Pokémon only after both trade participants confirm.
 - Write participant-targeted trade events to a transactional MySQL outbox in
@@ -28,6 +29,23 @@ depends on live delivery, and reconnect reads remain authoritative.
 Profile, privacy, friendship, and block changes use that same transactional
 outbox. Other devices and affected friends invalidate their short-lived
 TanStack Query cache and refetch canonical state.
+
+## Custom Pokémon tags
+
+Authenticated tag-definition routes are available under `/api` and
+`/api/users`:
+
+- `GET /tags`
+- `POST /tags`
+- `PUT /tags/:tag_id`
+- `DELETE /tags/:tag_id`
+
+The users service synchronously owns each custom tag's name, color, and
+Inventory/Wanted parent. Built-in tags are reserved and cannot be renamed or
+deleted. Applying a tag does not use these routes: membership remains in an
+instance's `caught_tags` or `wanted_tags` array and follows the normal
+receiver/Kafka Pokémon synchronization path. MySQL `tags` and `instance_tags`
+remain authoritative after that asynchronous write is consumed.
 
 ## Trade command routes
 
