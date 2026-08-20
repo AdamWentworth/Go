@@ -233,6 +233,30 @@ describe('updatePokemonInstanceStatus (current model)', () => {
     expect(registrationUtils.updateRegistrationStatus).toHaveBeenCalledTimes(2);
   });
 
+  it('converts a wanted entry into the same caught instance', () => {
+    instances[EXISTING_UUID] = makeInstance({
+      instance_id: EXISTING_UUID,
+      variant_id: '0001-default',
+      is_wanted: true,
+      most_wanted: true,
+      wanted_tags: ['wishlist'],
+      registered: true,
+    });
+
+    const result = updatePokemonInstanceStatus(EXISTING_UUID, 'Caught', variants, instances);
+
+    expect(result).toBe(EXISTING_UUID);
+    expect(Object.keys(instances)).toEqual([EXISTING_UUID]);
+    expect(instances[EXISTING_UUID]).toMatchObject({
+      is_caught: true,
+      is_for_trade: false,
+      is_wanted: false,
+      most_wanted: false,
+      wanted_tags: [],
+      registered: true,
+    });
+  });
+
   it('resets flags when setting Missing', () => {
     instances[EXISTING_UUID] = makeInstance({
       instance_id: EXISTING_UUID,

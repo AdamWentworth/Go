@@ -12,7 +12,7 @@ interface Props {
   variantKey : string | undefined;
   megaForm   : string | undefined;
   onAssignExisting: (id: string) => void;
-  onCreateNew    : () => void;
+  onCreateNew    : (id: string) => void;
   onCancel       : () => void;
 }
 

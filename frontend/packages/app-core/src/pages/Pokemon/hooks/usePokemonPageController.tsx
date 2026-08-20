@@ -10,17 +10,27 @@ import { useModal } from '@/contexts/ModalContext';
 import { useContextBackHandler } from '@/contexts/ContextBackContext';
 
 import type { PokemonVariant } from '@/types/pokemonVariants';
-import type { InstanceStatus, Instances } from '@/types/instances';
+import type {
+  InstanceStatus,
+  Instances,
+  InstanceStatusMutationOutcome,
+  InstanceStatusResultPatch,
+} from '@/types/instances';
 import type { TagBuckets } from '@/types/tags';
 import type { SortMode, SortType } from '@/types/sort';
 import type { SwipeHandlers } from './useSwipeHandler';
 import type { PokemonOverlaySelection } from './useInstanceIdProcessor';
-import type { MegaSelectionData } from '../features/mega/hooks/useMegaPokemonHandler';
+import type {
+  MegaSelectionData,
+  MegaSelectionResult,
+} from '../features/mega/hooks/useMegaPokemonHandler';
 import type { FusionSelectionData } from '@/types/fusion';
 
 import useInstanceIdProcessor from './useInstanceIdProcessor';
 import useUIControls from './useUIControls';
-import useHandleChangeTags from '../services/changeInstanceTag/hooks/useHandleChangeTags';
+import useHandleChangeTags, {
+  type ConfirmInstanceStatusOptions,
+} from '../services/changeInstanceTag/hooks/useHandleChangeTags';
 import usePokemonProcessing from './usePokemonProcessing';
 import useMegaPokemonHandler from '../features/mega/hooks/useMegaPokemonHandler';
 import useFusionPokemonHandler from '../features/fusion/hooks/useFusionPokemonHandler';
@@ -91,12 +101,15 @@ type UsePokemonPageControllerResult = {
   showEvolutionaryLine: boolean;
   toggleEvolutionaryLine: () => void;
   handleTagSelect: (filter: string) => void;
-  handleConfirmChangeTags: (filter: InstanceStatus) => Promise<void>;
+  handleConfirmChangeTags: (
+    filter: InstanceStatus,
+    options?: ConfirmInstanceStatusOptions,
+  ) => Promise<InstanceStatusMutationOutcome[]>;
   activeStatusFilter: InstanceStatus | null;
   isUpdating: boolean;
   isMegaSelectionOpen: boolean;
   megaSelectionData: MegaSelectionData | null;
-  handleMegaSelectionResolve: (selectedOption: string) => void;
+  handleMegaSelectionResolve: (result: MegaSelectionResult) => void;
   handleMegaSelectionReject: (error: unknown) => void;
   isFusionSelectionOpen: boolean;
   fusionSelectionData: FusionSelectionData | null;
@@ -128,6 +141,7 @@ export default function usePokemonPageController({
   const variants = useVariantsStore((s) => s.variants);
   const loading = useVariantsStore((s) => s.variantsLoading);
   const updateInstanceStatus = useInstancesStore((s) => s.updateInstanceStatus);
+  const updateInstanceDetails = useInstancesStore((s) => s.updateInstanceDetails);
   const { alert } = useModal();
   const contextInstanceData = useInstancesStore((s) => s.instances);
 
@@ -350,10 +364,14 @@ export default function usePokemonPageController({
   }, [syncSidePanelTagFilter]);
 
   const updateInstanceStatusBatch = useCallback(
-    (keys: string[], filter: InstanceStatus) =>
+    (
+      keys: string[],
+      filter: InstanceStatus,
+      resultPatch?: InstanceStatusResultPatch,
+    ) =>
       updateInstanceStatus(keys, filter, (message) => {
         void alert(message);
-      }),
+      }, resultPatch),
     [alert, updateInstanceStatus],
   );
 
@@ -382,6 +400,7 @@ export default function usePokemonPageController({
     updateInstanceStatus: updateInstanceStatusBatch,
     variants,
     instances,
+    updateInstanceDetails,
     setIsUpdating,
     promptMegaPokemonSelection,
     promptFusionPokemonSelection,

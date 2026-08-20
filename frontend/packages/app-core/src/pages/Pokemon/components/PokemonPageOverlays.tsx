@@ -1,22 +1,31 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 
 import HighlightActionButton from './Menus/PokemonMenu/HighlightActionButton';
 import FusionPokemonModal from '../features/fusion/components/FusionPokemonModal';
 import MegaPokemonModal from '../features/mega/components/MegaPokemonModal';
-import type { MegaSelectionData } from '../features/mega/hooks/useMegaPokemonHandler';
+import type {
+  MegaSelectionData,
+  MegaSelectionResult,
+} from '../features/mega/hooks/useMegaPokemonHandler';
 import type { FusionSelectionData } from '@/types/fusion';
-import type { InstanceStatus } from '@/types/instances';
-import CustomTagAssignmentSheet from '@/features/tags/components/CustomTagAssignmentSheet';
+import type { InstanceStatus, InstanceStatusMutationOutcome } from '@/types/instances';
+import PokemonOrganizerSheet from '@/features/tags/components/PokemonOrganizerSheet';
+import { summarizeOrganizerSelection } from '@/features/tags/utils/pokemonOrganizer';
+import { useInstancesStore } from '@/features/instances/store/useInstancesStore';
+import type { ConfirmInstanceStatusOptions } from '../services/changeInstanceTag/hooks/useHandleChangeTags';
 
 type PokemonPageOverlaysProps = {
   isEditable: boolean;
   highlightedCards: Set<string>;
-  onConfirmChangeTags: (filter: InstanceStatus) => Promise<void>;
-  activeStatusFilter: InstanceStatus | null;
+  onConfirmChangeTags: (
+    filter: InstanceStatus,
+    options?: ConfirmInstanceStatusOptions,
+  ) => Promise<InstanceStatusMutationOutcome[]>;
+  onClearSelection: () => void;
   isUpdating: boolean;
   isMegaSelectionOpen: boolean;
   megaSelectionData: MegaSelectionData | null;
-  onMegaResolve: (option: string) => void;
+  onMegaResolve: (result: MegaSelectionResult) => void;
   onMegaReject: (reason?: unknown) => void;
   isFusionSelectionOpen: boolean;
   fusionSelectionData: FusionSelectionData | null;
@@ -30,7 +39,7 @@ const PokemonPageOverlays: React.FC<PokemonPageOverlaysProps> = ({
   isEditable,
   highlightedCards,
   onConfirmChangeTags,
-  activeStatusFilter,
+  onClearSelection,
   isUpdating,
   isMegaSelectionOpen,
   megaSelectionData,
@@ -43,25 +52,30 @@ const PokemonPageOverlays: React.FC<PokemonPageOverlaysProps> = ({
   onCreateNewLeft,
   onCreateNewRight,
 }) => {
-  const [isCustomTagsOpen, setIsCustomTagsOpen] = useState(false);
+  const [isOrganizerOpen, setIsOrganizerOpen] = useState(false);
+  const instances = useInstancesStore((state) => state.instances);
+  const selectionSummary = useMemo(
+    () => summarizeOrganizerSelection(highlightedCards, instances),
+    [highlightedCards, instances],
+  );
 
   return (
   <>
     {isEditable && highlightedCards.size > 0 && (
       <HighlightActionButton
-        highlightedCards={highlightedCards}
-        handleConfirmChangeTags={onConfirmChangeTags}
-        tagFilter={activeStatusFilter ?? ''}
+        action={selectionSummary.kind === 'catalog' ? 'add' : 'organize'}
+        count={highlightedCards.size}
         isUpdating={isUpdating}
-        onManageCustomTags={() => setIsCustomTagsOpen(true)}
+        onOpen={() => setIsOrganizerOpen(true)}
       />
     )}
 
-    {isCustomTagsOpen ? (
-      <CustomTagAssignmentSheet
-        instanceIds={highlightedCards}
-        onClose={() => setIsCustomTagsOpen(false)}
-        onSaved={() => undefined}
+    {isOrganizerOpen ? (
+      <PokemonOrganizerSheet
+        selectionKeys={highlightedCards}
+        onChangeStatus={onConfirmChangeTags}
+        onClearSelection={onClearSelection}
+        onClose={() => setIsOrganizerOpen(false)}
       />
     ) : null}
 

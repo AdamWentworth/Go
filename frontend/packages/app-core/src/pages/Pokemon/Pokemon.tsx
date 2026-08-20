@@ -97,7 +97,7 @@ function Pokemon({ isOwnCollection }: PokemonProps) {
         isEditable={controller.isEditable}
         highlightedCards={controller.highlightedCards}
         onConfirmChangeTags={controller.handleConfirmChangeTags}
-        activeStatusFilter={controller.activeStatusFilter}
+        onClearSelection={controller.handleClearSelection}
         isUpdating={controller.isUpdating}
         isMegaSelectionOpen={controller.isMegaSelectionOpen}
         megaSelectionData={controller.megaSelectionData}

@@ -10,11 +10,18 @@ import { buildInstanceTagChangeMessage } from '../utils/buildInstanceTagChangeMe
 import type { PokemonInstance } from '../../../../../types/pokemonInstance';
 import type { PokemonVariant } from '../../../../../types/pokemonVariants';
 import type { InstanceStatus } from '@/types/instances';
+import type {
+  InstanceStatusMutationOutcome,
+  InstanceStatusResultPatch,
+} from '@/types/instances';
 
 import { categorizeVariantKeys } from '../logic/categorizeVariantKeys';
 import { validateBlockedMoves } from '../logic/validateMoveToFilter';
 import { getDisplayName } from '../logic/getDisplayName';
 import { createScopedLogger } from '@/utils/logger';
+import type { MegaSelectionResult } from '@/pages/Pokemon/features/mega/hooks/useMegaPokemonHandler';
+import type { FusionSelectionResult } from '@/types/fusion';
+import { useInstancesStore } from '@/features/instances/store/useInstancesStore';
 
 const log = createScopedLogger('useHandleChangeTags');
 
@@ -25,13 +32,26 @@ interface useHandleChangeTagsProps {
   setLastMenu: (menu: MenuContext) => void; // ensure header switches to TAGS sublabel
   setHighlightedCards: (cards: Set<string>) => void;
   highlightedCards: Set<string>;
-  updateInstanceStatus: (keys: string[], filter: InstanceStatus) => Promise<void>;
+  updateInstanceStatus: (
+    keys: string[],
+    filter: InstanceStatus,
+    resultPatch?: InstanceStatusResultPatch,
+  ) => Promise<InstanceStatusMutationOutcome[]>;
   variants: PokemonVariant[];
   instances: Record<string, PokemonInstance>;
+  updateInstanceDetails: (
+    key: string,
+    patch: Partial<PokemonInstance>,
+  ) => Promise<void>;
   setIsUpdating: (value: boolean) => void;
-  promptMegaPokemonSelection: (baseKey: string, megaForm?: string) => Promise<string>;
-  promptFusionPokemonSelection: (baseKey: string) => Promise<string>;
+  promptMegaPokemonSelection: (baseKey: string, megaForm?: string) => Promise<MegaSelectionResult>;
+  promptFusionPokemonSelection: (baseKey: string) => Promise<FusionSelectionResult>;
   setIsFastSelectEnabled: (enabled: boolean) => void;
+}
+
+export interface ConfirmInstanceStatusOptions {
+  targets?: Iterable<string>;
+  resultPatch?: InstanceStatusResultPatch;
 }
 
 // Normalize legacy labels to current canonical ones.
@@ -64,6 +84,7 @@ function useHandleChangeTags({
   updateInstanceStatus,
   variants,
   instances,
+  updateInstanceDetails,
   setIsUpdating,
   promptMegaPokemonSelection,
   promptFusionPokemonSelection,
@@ -72,7 +93,12 @@ function useHandleChangeTags({
   const { confirm, alert } = useModal();
 
   const handleMoveHighlightedToFilter = useCallback(
-    async (filter: InstanceStatus, cardsToMove: Set<string>) => {
+    async (
+      filter: InstanceStatus,
+      cardsToMove: Set<string>,
+      resultPatch?: InstanceStatusResultPatch,
+      hasPriorChanges = false,
+    ): Promise<InstanceStatusMutationOutcome[]> => {
       try {
         const targetFilter = normalizeStatus(filter);
 
@@ -80,20 +106,31 @@ function useHandleChangeTags({
         flushSync(() => setIsUpdating(true));
         await yieldToPaint();
 
+        let outcomes: InstanceStatusMutationOutcome[] = [];
         if (cardsToMove.size > 0) {
-          await updateInstanceStatus([...cardsToMove], targetFilter);
+          outcomes = await updateInstanceStatus(
+            [...cardsToMove],
+            targetFilter,
+            resultPatch,
+          );
         }
+        const changed = hasPriorChanges || outcomes.some((outcome) => outcome.changed);
 
-        // Reflect the new context in UI (don’t jump to Missing)
-        if (targetFilter !== 'Missing') {
+        // Reflect successful changes in the destination context. When every
+        // item is blocked, keep the selection intact so the user can revise it.
+        if (changed && targetFilter !== 'Missing') {
           setTagFilter(targetFilter);
           setLastMenu('ownership');
         }
 
-        setHighlightedCards(new Set());
-        setIsFastSelectEnabled(false);
+        if (changed) {
+          setHighlightedCards(new Set());
+          setIsFastSelectEnabled(false);
+        }
+        return outcomes;
       } catch (error) {
         log.error('Error updating instance:', error);
+        throw error;
       } finally {
         setIsUpdating(false);
       }
@@ -102,12 +139,16 @@ function useHandleChangeTags({
   );
 
   const handleConfirmChangeTags = useCallback(
-    async (filter: InstanceStatus) => {
+    async (
+      filter: InstanceStatus,
+      options: ConfirmInstanceStatusOptions = {},
+    ): Promise<InstanceStatusMutationOutcome[]> => {
       const targetFilter = normalizeStatus(filter);
       const displayFilterText = targetFilter; // already normalized
       const messageDetails: string[] = [];
+      const targets = new Set(options.targets ?? highlightedCards);
 
-      const { regular, mega, fusion } = categorizeVariantKeys(highlightedCards);
+      const { regular, mega, fusion } = categorizeVariantKeys(targets);
 
       const validation = validateBlockedMoves({
         filter: targetFilter,
@@ -120,19 +161,88 @@ function useHandleChangeTags({
 
       if (!validation.success && validation.message) {
         await alert(validation.message);
-        return;
+        return [];
+      }
+
+      const appendTransitionMessage = (
+        key: string,
+        baseKey: string,
+        hasUUID: boolean,
+      ) => {
+        const instance = instances[key];
+        if (hasUUID && instance) {
+          const displayName =
+            instance.nickname || getDisplayName(instance.variant_id || baseKey, variants);
+          messageDetails.push(
+            getTransitionMessage(
+              getStatusFromInstance(instance),
+              targetFilter,
+              displayName,
+            ),
+          );
+          return;
+        }
+
+        messageDetails.push(
+          `Generate ${getDisplayName(baseKey, variants)} from Pokédex to ${displayFilterText}`,
+        );
+      };
+
+      for (const { key, parsed } of regular) {
+        appendTransitionMessage(key, parsed.baseKey, parsed.hasUUID);
+      }
+      for (const { key, baseKey } of mega) {
+        appendTransitionMessage(key, baseKey, Boolean(instances[key]));
+      }
+      for (const { key, baseKey } of fusion) {
+        appendTransitionMessage(key, baseKey, Boolean(instances[key]));
+      }
+
+      if (messageDetails.length > 0) {
+        const userConfirmed = await confirm(buildInstanceTagChangeMessage(messageDetails));
+        if (!userConfirmed) {
+          log.debug('User canceled the operation.');
+          return [];
+        }
       }
 
       const skippedMegaVariantKeys: string[] = [];
       const skippedFusionVariantKeys: string[] = [];
-      const remainingHighlightedCards = new Set(highlightedCards);
+      const remainingHighlightedCards = new Set(targets);
+      const specialOutcomes: InstanceStatusMutationOutcome[] = [];
+
+      const applySpecialPatch = async (
+        sourceKey: string,
+        resultingInstanceId: string,
+        operation: 'created' | 'updated',
+      ) => {
+        const outcome = {
+          sourceKey,
+          sourceInstanceId: operation === 'updated' ? resultingInstanceId : null,
+          resultingInstanceId,
+          targetStatus: targetFilter,
+          operation,
+        } as const;
+        const liveInstance = useInstancesStore.getState().instances[resultingInstanceId];
+        if (liveInstance && options.resultPatch) {
+          const patch = typeof options.resultPatch === 'function'
+            ? options.resultPatch(outcome, liveInstance)
+            : options.resultPatch;
+          if (Object.keys(patch).length > 0) {
+            await updateInstanceDetails(resultingInstanceId, patch);
+          }
+        }
+        specialOutcomes.push({ ...outcome, changed: true });
+      };
 
       for (const { key, baseKey, megaForm } of mega) {
         try {
           const result = await promptMegaPokemonSelection(baseKey, megaForm);
-          if (result !== 'assignExisting' && result !== 'createNew') {
-            skippedMegaVariantKeys.push(baseKey);
-          }
+          await applySpecialPatch(
+            key,
+            result.instanceId,
+            result.action === 'createNew' ? 'created' : 'updated',
+          );
           remainingHighlightedCards.delete(key);
         } catch (error) {
           log.error(`Error handling Mega Pokemon (${baseKey}):`, error);
@@ -144,12 +254,10 @@ function useHandleChangeTags({
       for (const { key, baseKey } of fusion) {
         try {
           const result = await promptFusionPokemonSelection(baseKey);
-          if (
-            result !== 'fuseThis' &&
-            result !== 'assignFusion' &&
-            result !== 'createNew'
-          ) {
+          if (result.action !== 'fuseThis' || !result.instanceId) {
             skippedFusionVariantKeys.push(baseKey);
+          } else {
+            await applySpecialPatch(key, result.instanceId, 'updated');
           }
           remainingHighlightedCards.delete(key);
         } catch (error) {
@@ -159,43 +267,23 @@ function useHandleChangeTags({
         }
       }
 
-      for (const { key, parsed } of regular) {
-        const { baseKey, hasUUID } = parsed;
-
-        if (hasUUID) {
-          // 🔧 Fix: Resolve name via the instance’s variant_id (not the parsed baseKey which can be empty for UUIDs)
-          const instance = instances[key];
-          const nameKey = instance?.variant_id || baseKey || '';
-          const displayName =
-            instance?.nickname || getDisplayName(nameKey, variants);
-
-          const currentStatus = instance
-            ? getStatusFromInstance(instance)
-            : ('Missing' as InstanceStatus);
-
-          const actionDetail = getTransitionMessage(currentStatus, targetFilter, displayName);
-          messageDetails.push(actionDetail);
-        } else {
-          // Base key without UUID
-          const displayName = getDisplayName(baseKey, variants);
-          messageDetails.push(`Generate ${displayName} from Pokédex to ${displayFilterText}`);
+      let outcomes: InstanceStatusMutationOutcome[] = [];
+      try {
+        if (
+          remainingHighlightedCards.size > 0 ||
+          specialOutcomes.some((outcome) => outcome.changed)
+        ) {
+          outcomes = await handleMoveHighlightedToFilter(
+            targetFilter,
+            remainingHighlightedCards,
+            options.resultPatch,
+            specialOutcomes.some((outcome) => outcome.changed),
+          );
         }
-      }
-
-      if (messageDetails.length > 0) {
-        const messageContent = buildInstanceTagChangeMessage(messageDetails);
-        const userConfirmed = await confirm(messageContent);
-
-        if (userConfirmed) {
-          handleMoveHighlightedToFilter(targetFilter, remainingHighlightedCards).catch((error) => {
-            log.error('Error during instance update:', error);
-            alert('An error occurred while updating instance. Please try again.');
-          });
-        } else {
-          log.debug('User canceled the operation.');
-        }
-      } else {
-        handleMoveHighlightedToFilter(targetFilter, remainingHighlightedCards);
+      } catch (error) {
+        log.error('Error during instance update:', error);
+        await alert('An error occurred while updating instance. Please try again.');
+        return [];
       }
 
       if (skippedMegaVariantKeys.length > 0) {
@@ -211,11 +299,14 @@ function useHandleChangeTags({
         log.info(msg);
         await alert(msg);
       }
+
+      return [...specialOutcomes, ...outcomes];
     },
     [
       highlightedCards,
       instances,
       variants,
+      updateInstanceDetails,
       confirm,
       alert,
       handleMoveHighlightedToFilter,
@@ -230,4 +321,3 @@ function useHandleChangeTags({
 }
 
 export default useHandleChangeTags;
-
