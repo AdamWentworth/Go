@@ -74,6 +74,7 @@
   z-index: 1;
   --pokemon-artwork-width: calc(100% - 8px);
   --pokemon-artwork-height: calc(100% - 8px);
+  --pokemon-max-badge-size: 28%;
 
   max-width: 124px;
   max-height: 124px;

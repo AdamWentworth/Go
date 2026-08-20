@@ -85,6 +85,7 @@ test.describe('reusable Pokémon artwork layout', () => {
     expect(layout.artwork.height).toBeCloseTo(156, 0);
     expect(layout.pokemon.width).toBeCloseTo(layout.artwork.width, 0);
     expect(layout.pokemon.height).toBeCloseTo(layout.artwork.height, 0);
+    expect(layout.badge.width).toBeCloseTo(layout.artwork.width * 0.28, 0);
     expect(layout.artwork.left).toBeGreaterThan(layout.frame.left);
     expect(layout.artwork.right).toBeLessThan(layout.frame.right);
     expect(layout.badge.top).toBeGreaterThanOrEqual(layout.artwork.top);
