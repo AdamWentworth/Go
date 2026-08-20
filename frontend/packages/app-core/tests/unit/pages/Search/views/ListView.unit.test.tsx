@@ -130,6 +130,7 @@ describe('ListView', () => {
     );
     expect(caught.getAllByTestId('caught-item')).toHaveLength(2);
     expect(caught.getByText('2 results')).toBeInTheDocument();
+    expect(caught.getByText('Search complete')).toBeInTheDocument();
     expect(caught.getByRole('heading', { name: 'Caught Pokémon' })).toBeInTheDocument();
     caught.unmount();
 

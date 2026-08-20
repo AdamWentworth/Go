@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef } from 'react';
-import { FaSearch } from 'react-icons/fa';
+import { FaCheckCircle, FaSearch } from 'react-icons/fa';
 import './ListView.base.css';
 import CaughtListView from './ListViewComponents/CaughtListView';
 import TradeListView from './ListViewComponents/TradeListView';
@@ -87,7 +87,10 @@ const ListView: React.FC<ListViewProps> = ({
     <section aria-label="Pokémon search results" className="search-results-region">
       <header className="search-results-heading">
         <div>
-          <span>Search results</span>
+          <span className="search-results-heading__complete">
+            <FaCheckCircle aria-hidden="true" />
+            Search complete
+          </span>
           <h2>{resultTypeLabel}</h2>
         </div>
         <strong>

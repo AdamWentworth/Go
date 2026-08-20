@@ -195,6 +195,32 @@ describe('Search', () => {
     );
   });
 
+  it('prioritizes reciprocal matches ahead of nearer unmatched listings', async () => {
+    mockedSearchPokemon.mockResolvedValueOnce([
+      {
+        pokemon_id: 1,
+        distance: 1,
+        username: 'near-unmatched',
+        wanted_list: { wanted: { match: false } },
+      },
+      {
+        pokemon_id: 1,
+        distance: 8,
+        username: 'far-matched',
+        wanted_list: { wanted: { match: true } },
+      },
+    ]);
+
+    render(<Search />);
+    fireEvent.click(screen.getByText('search-trade'));
+
+    await waitFor(() => {
+      expect(screen.getByTestId('list-view')).toHaveTextContent(
+        'trade|2|far-matched|true',
+      );
+    });
+  });
+
   it('switches to map view and passes trade ownership mode', async () => {
     mockedSearchPokemon.mockResolvedValueOnce([
       { pokemon_id: 1, distance: 3, username: 'ash' },

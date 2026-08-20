@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 
 export type LinkedPokemonGridEntry = {
   id: string;
@@ -17,7 +17,6 @@ type LinkedPokemonGridProps = {
   containerClassName: string;
   imageClassName: string;
   entries: LinkedPokemonGridEntry[];
-  maxVisible?: number;
 };
 
 const LinkedPokemonGrid: React.FC<LinkedPokemonGridProps> = ({
@@ -27,10 +26,19 @@ const LinkedPokemonGrid: React.FC<LinkedPokemonGridProps> = ({
   containerClassName,
   imageClassName,
   entries,
-  maxVisible = 3,
 }) => {
-  const visibleEntries = entries.slice(0, maxVisible);
-  const remainingCount = Math.max(0, entries.length - visibleEntries.length);
+  const orderedEntries = useMemo(
+    () =>
+      entries
+        .map((entry, originalIndex) => ({ entry, originalIndex }))
+        .sort(
+          (a, b) =>
+            Number(Boolean(b.entry.match)) - Number(Boolean(a.entry.match)) ||
+            a.originalIndex - b.originalIndex,
+        )
+        .map(({ entry }) => entry),
+    [entries],
+  );
 
   return (
     <div className={sectionClassName}>
@@ -41,11 +49,15 @@ const LinkedPokemonGrid: React.FC<LinkedPokemonGridProps> = ({
         </div>
         <strong>{entries.length}</strong>
       </header>
-      <div className={`${gridClassName} linked-pokemon-grid`}>
-        {visibleEntries.map((entry) => (
+      <div
+        aria-label={`${title}: ${orderedEntries.length} Pokémon`}
+        className={`${gridClassName} linked-pokemon-grid`}
+        tabIndex={orderedEntries.length > 6 ? 0 : undefined}
+      >
+        {orderedEntries.map((entry) => (
           <div
             key={entry.id}
-            className={`${containerClassName} linked-pokemon-grid__item`}
+            className={`${containerClassName} linked-pokemon-grid__item${entry.match ? ' linked-pokemon-grid__item--match' : ''}`}
           >
             {entry.dynamax && (
               <img
@@ -74,11 +86,6 @@ const LinkedPokemonGrid: React.FC<LinkedPokemonGridProps> = ({
           </div>
         ))}
       </div>
-      {remainingCount > 0 ? (
-        <p className="linked-pokemon-grid__remaining">
-          +{remainingCount} more in this trainer&apos;s listing
-        </p>
-      ) : null}
     </div>
   );
 };

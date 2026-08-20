@@ -14,7 +14,7 @@ const entries = Array.from({ length: 8 }, (_, index) => ({
 }));
 
 describe('LinkedPokemonGrid', () => {
-  it('summarizes large linked lists without rendering every entry', () => {
+  it('renders the full list in a scrollable grid with mutual matches first', () => {
     render(
       <LinkedPokemonGrid
         title="Trainer wants"
@@ -31,7 +31,10 @@ describe('LinkedPokemonGrid', () => {
     expect(screen.getByAltText('Dynamax')).toBeInTheDocument();
     expect(screen.getByAltText('Gigantamax')).toBeInTheDocument();
     expect(screen.getByText('Mutual match')).toBeInTheDocument();
-    expect(screen.getByText("+5 more in this trainer's listing")).toBeInTheDocument();
-    expect(screen.queryByText('Pokémon 4')).not.toBeInTheDocument();
+    expect(screen.getByText('Pokémon 8')).toBeInTheDocument();
+
+    const grid = screen.getByLabelText('Trainer wants: 8 Pokémon');
+    expect(grid).toHaveAttribute('tabindex', '0');
+    expect(grid.firstElementChild).toHaveTextContent('Pokémon 3Mutual match');
   });
 });

@@ -42,6 +42,24 @@ const coerceOwnershipModeInput = (
 
 const log = createScopedLogger('Search');
 
+const hasLinkedMatch = (row: SearchResultRow): boolean =>
+  ['wanted_list', 'trade_list'].some((listKey) => {
+    const list = row[listKey];
+    if (!list || typeof list !== 'object' || Array.isArray(list)) return false;
+    return Object.values(list as Record<string, unknown>).some(
+      (entry) =>
+        Boolean(entry) &&
+        typeof entry === 'object' &&
+        !Array.isArray(entry) &&
+        (entry as { match?: unknown }).match === true,
+    );
+  });
+
+const searchResultDistance = (row: SearchResultRow): number =>
+  typeof row.distance === 'number' && Number.isFinite(row.distance)
+    ? row.distance
+    : Number.POSITIVE_INFINITY;
+
 const Search: React.FC = () => {
   const [searchMode, setSearchMode] = useState<SearchMode>('pokemon');
   const [view, setView] = useState<SearchView>('list');
@@ -131,7 +149,11 @@ const Search: React.FC = () => {
         );
 
         if (enrichedData.length > 0) {
-          enrichedData.sort((a, b) => (a.distance ?? 0) - (b.distance ?? 0));
+          enrichedData.sort(
+            (a, b) =>
+              Number(hasLinkedMatch(b)) - Number(hasLinkedMatch(a)) ||
+              searchResultDistance(a) - searchResultDistance(b),
+          );
           setSearchResults(enrichedData);
           setScrollToTopTrigger((prev) => prev + 1);
         } else {

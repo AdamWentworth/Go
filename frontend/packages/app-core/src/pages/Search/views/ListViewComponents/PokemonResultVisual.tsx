@@ -73,13 +73,13 @@ const PokemonResultVisual: React.FC<PokemonResultVisualProps> = ({
       {nameLayout === 'stacked' ? (
         <div className="pokemon-name">
           <p>{pokemonDisplayName}</p>
-          <Gender gender={genderValue} />
+          {genderValue ? <Gender gender={genderValue} /> : null}
         </div>
       ) : (
-        <p className="pokemon-name">
+        <div className="pokemon-name">
           {pokemonDisplayName}
-          <Gender gender={genderValue} />
-        </p>
+          {genderValue ? <Gender gender={genderValue} /> : null}
+        </div>
       )}
     </div>
   );
