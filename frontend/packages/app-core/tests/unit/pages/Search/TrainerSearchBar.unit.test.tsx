@@ -60,7 +60,7 @@ describe('TrainerSearchBar', () => {
     });
     fireEvent.click(screen.getByRole('button', { name: 'Search' }));
 
-    expect(await screen.findByText('@Misty')).toBeInTheDocument();
+    expect(await screen.findByText('Nexus · @Misty')).toBeInTheDocument();
     expect(screen.getByText('Pokémon GO · CeruleanLeader')).toBeInTheDocument();
     expect(screen.getByText('Team Mystic')).toBeInTheDocument();
     expect(screen.getByText('Level 50')).toBeInTheDocument();
@@ -71,6 +71,23 @@ describe('TrainerSearchBar', () => {
     expect(
       screen.getByRole('button', { name: 'View profile' }),
     ).toBeInTheDocument();
+    expect(fetchTrainerAutocompleteMock).toHaveBeenCalledWith('mi');
+  });
+
+  it('shows both identities when the Nexus and Pokemon GO names are identical', async () => {
+    fetchTrainerAutocompleteMock.mockResolvedValueOnce({
+      type: 'success',
+      results: [{ username: 'sameName', pokemonGoName: 'sameName' }],
+    });
+
+    renderSearch();
+    fireEvent.change(screen.getByLabelText('Trainer name'), {
+      target: { value: 'same' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Search' }));
+
+    expect(await screen.findByText('Nexus · @sameName')).toBeInTheDocument();
+    expect(screen.getByText('Pokémon GO · sameName')).toBeInTheDocument();
   });
 
   it('returns from a trainer profile to the same trainer query', async () => {

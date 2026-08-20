@@ -307,9 +307,6 @@ const TrainerSearchBar = () => {
               {results.map((trainer) => {
                 const teamLabel = getTeamLabel(trainer.team);
                 const pokemonGoName = trainer.pokemonGoName?.trim();
-                const hasDistinctPokemonGoName =
-                  pokemonGoName &&
-                  pokemonGoName.toLowerCase() !== trainer.username.toLowerCase();
 
                 return (
                   <li key={trainer.username}>
@@ -323,12 +320,18 @@ const TrainerSearchBar = () => {
                           {trainer.username.slice(0, 1).toUpperCase()}
                         </span>
                         <div className="trainer-result-card__names">
-                          <h4>@{trainer.username}</h4>
-                          {hasDistinctPokemonGoName ? (
-                            <span>Pokémon GO · {pokemonGoName}</span>
-                          ) : (
-                            <span>Nexus trainer</span>
-                          )}
+                          <h4 title={`Nexus username: ${trainer.username}`}>
+                            Nexus · @{trainer.username}
+                          </h4>
+                          <span
+                            title={
+                              pokemonGoName
+                                ? `Pokémon GO name: ${pokemonGoName}`
+                                : undefined
+                            }
+                          >
+                            Pokémon GO · {pokemonGoName || 'Not shared'}
+                          </span>
                         </div>
                       </div>
 
