@@ -260,6 +260,38 @@ describe('usePokemonPageController', () => {
     expect(result.current.sidePanelTagFilter).toBe('Trade');
   });
 
+  it('opens a foreign trade listing under the Trade tag from router state', async () => {
+    const navigate = vi.fn() as unknown as NavigateFunction;
+    const location = {
+      pathname: '/pokemon/ash',
+      search: '',
+      state: { instanceId: 'inst-1', instanceData: 'Trade' },
+    } as any;
+
+    const { result } = renderHook(() =>
+      usePokemonPageController({
+        isOwnCollection: false,
+        urlUsername: 'ash',
+        location,
+        navigate,
+      }),
+    );
+
+    await waitFor(() => {
+      expect(loadForeignProfileMock).toHaveBeenCalledWith('ash', expect.any(Function));
+    });
+
+    const callback = loadForeignProfileMock.mock.calls.at(-1)?.[1] as
+      | (() => void)
+      | undefined;
+    act(() => {
+      callback?.();
+    });
+
+    expect(result.current.tagFilter).toBe('Trade');
+    expect(result.current.sidePanelTagFilter).toBe('Trade');
+  });
+
   it('select-all action sends computed ids to highlighted state and enables fast-select', async () => {
     const navigate = vi.fn() as unknown as NavigateFunction;
     const location = { pathname: '/pokemon', state: null } as any;

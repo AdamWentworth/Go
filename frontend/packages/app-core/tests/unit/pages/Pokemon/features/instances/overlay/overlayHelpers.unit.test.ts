@@ -49,6 +49,15 @@ describe('overlay helpers', () => {
     ).toBe('wanted');
   });
 
+  it('treats a caught Pokémon listed for trade as a trade overlay', () => {
+    expect(
+      deriveInitialOverlay(
+        'unknown',
+        pokemon({ instanceData: { is_caught: true, is_for_trade: true } }),
+      ),
+    ).toBe('trade');
+  });
+
   it('falls back from unknown tag to instance status, top-level status, then caught', () => {
     expect(
       deriveInitialOverlay(

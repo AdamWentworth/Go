@@ -100,8 +100,12 @@ describe('WantedListView', () => {
       <WantedListView item={baseItem} findPokemonByKey={findPokemonByKey} />,
     );
     fireEvent.click(screen.getByRole('button', { name: 'Open listing' }));
-    expect(navigateMock).toHaveBeenCalledWith('/pokemon/ash', {
-      state: { instanceId: 'inst-1', instanceData: 'Wanted' },
+    expect(navigateMock).toHaveBeenCalledWith('/pokemon/ash?filter=wanted', {
+      state: {
+        instanceId: 'inst-1',
+        instanceData: 'Wanted',
+        contextBackTo: '/search',
+      },
     });
   });
 

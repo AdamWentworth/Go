@@ -1,6 +1,7 @@
 import React from 'react';
 import { FaArrowRight, FaMapMarkerAlt, FaUser } from 'react-icons/fa';
 import { useNavigate } from 'react-router';
+import { buildPokemonCatalogPath } from '@/pages/Pokemon/utils/pokemonCatalogNavigation';
 
 type SearchResultNavigationInstance = 'Caught' | 'Trade' | 'Wanted';
 
@@ -32,12 +33,19 @@ const SearchResultRow: React.FC<SearchResultRowProps> = ({
     navigationInstanceData === 'Trade' ? 'For Trade' : navigationInstanceData;
 
   const handleViewListing = () => {
-    navigate(`/pokemon/${encodedUsername}`, {
-      state: {
-        instanceId: instanceId ?? '',
-        instanceData: navigationInstanceData,
+    navigate(
+      buildPokemonCatalogPath({
+        username: username ?? '',
+        filter: navigationInstanceData,
+      }),
+      {
+        state: {
+          instanceId: instanceId ?? '',
+          instanceData: navigationInstanceData,
+          contextBackTo: '/search',
+        },
       },
-    });
+    );
   };
 
   const handleViewTrainer = () => {

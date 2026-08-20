@@ -23,6 +23,7 @@ import type { PokemonVariant } from '@/types/pokemonVariants';
 import { normalizeOwnershipMode } from '../utils/ownershipMode';
 import { findVariantForInstance } from '../utils/findVariantForInstance';
 import { createScopedLogger } from '@/utils/logger';
+import { buildPokemonCatalogPath } from '@/pages/Pokemon/utils/pokemonCatalogNavigation';
 import CaughtPopup from './MapViewComponents/CaughtPopup';
 import TradePopup from './MapViewComponents/TradePopup';
 import WantedPopup from './MapViewComponents/WantedPopup';
@@ -97,13 +98,19 @@ const MapView: React.FC<MapViewProps> = ({
       instanceId: string,
       selectedInstanceData: string,
     ) => {
-      navigate(`/pokemon/${encodeURIComponent(username)}`, {
-        state: {
-          instanceId,
-          instanceData: selectedInstanceData,
-          contextBackTo: '/search',
+      navigate(
+        buildPokemonCatalogPath({
+          username,
+          filter: selectedInstanceData as 'Caught' | 'Trade' | 'Wanted',
+        }),
+        {
+          state: {
+            instanceId,
+            instanceData: selectedInstanceData,
+            contextBackTo: '/search',
+          },
         },
-      });
+      );
     },
     [navigate],
   );

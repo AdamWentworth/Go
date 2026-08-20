@@ -89,8 +89,12 @@ describe('TradeListView', () => {
       <TradeListView item={baseItem} findPokemonByKey={findPokemonByKey} />,
     );
     fireEvent.click(screen.getByRole('button', { name: 'Open listing' }));
-    expect(navigateMock).toHaveBeenCalledWith('/pokemon/ash', {
-      state: { instanceId: 'inst-1', instanceData: 'Trade' },
+    expect(navigateMock).toHaveBeenCalledWith('/pokemon/ash?filter=trade', {
+      state: {
+        instanceId: 'inst-1',
+        instanceData: 'Trade',
+        contextBackTo: '/search',
+      },
     });
   });
 

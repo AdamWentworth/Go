@@ -37,6 +37,7 @@ import {
 import {
   readPokemonCatalogFilter,
   readPokemonCatalogSearch,
+  readPokemonCatalogStateFilter,
 } from '../utils/pokemonCatalogNavigation';
 import { createScopedLogger } from '@/utils/logger';
 
@@ -130,7 +131,9 @@ export default function usePokemonPageController({
 
   const tags = useTagsStore((s) => s.tags);
   const foreignTags = useTagsStore((s) => s.foreignTags);
-  const requestedTagFilter = readPokemonCatalogFilter(location.search ?? '');
+  const requestedTagFilter =
+    readPokemonCatalogFilter(location.search ?? '') ??
+    readPokemonCatalogStateFilter(location.state);
   const requestedSearchTerm = readPokemonCatalogSearch(location.search ?? '');
 
   const instances = (isOwnCollection

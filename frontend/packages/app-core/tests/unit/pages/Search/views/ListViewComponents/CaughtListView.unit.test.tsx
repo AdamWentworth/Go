@@ -102,8 +102,12 @@ describe('CaughtListView', () => {
   it('navigates directly to the Pokémon listing', () => {
     render(<CaughtListView item={baseItem} />);
     fireEvent.click(screen.getByRole('button', { name: 'View Pokémon' }));
-    expect(navigateMock).toHaveBeenCalledWith('/pokemon/ash', {
-      state: { instanceId: 'inst-1', instanceData: 'Caught' },
+    expect(navigateMock).toHaveBeenCalledWith('/pokemon/ash?filter=caught', {
+      state: {
+        instanceId: 'inst-1',
+        instanceData: 'Caught',
+        contextBackTo: '/search',
+      },
     });
   });
 

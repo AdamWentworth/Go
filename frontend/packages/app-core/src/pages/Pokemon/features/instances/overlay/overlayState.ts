@@ -27,8 +27,8 @@ export const deriveInitialOverlay = (
   }
 
   if (pokemon?.instanceData?.is_wanted) return 'wanted';
-  if (pokemon?.instanceData?.is_caught) return 'caught';
   if (pokemon?.instanceData?.is_for_trade) return 'trade';
+  if (pokemon?.instanceData?.is_caught) return 'caught';
 
   return 'caught';
 };
