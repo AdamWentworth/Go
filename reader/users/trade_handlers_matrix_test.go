@@ -34,6 +34,16 @@ func executeTradeRequest(
 	return response
 }
 
+func TestTradeFriendshipLevels_IncludesForeverFriendsRemoteTrade(t *testing.T) {
+	level, ok := tradeFriendshipLevels[5]
+	if !ok {
+		t.Fatal("friendship level 5 must be accepted for remote trades")
+	}
+	if level != "Forever" {
+		t.Fatalf("unexpected level 5 label: got %q, want %q", level, "Forever")
+	}
+}
+
 func TestDenyTradeHandler_AccepterCanDenyProposal(t *testing.T) {
 	mock, cleanup := setupMockDB(t)
 	defer cleanup()
