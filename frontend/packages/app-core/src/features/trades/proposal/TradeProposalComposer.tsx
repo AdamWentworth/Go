@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
+import { toast } from 'react-toastify';
 import './TradeProposalComposer.css';
 
 import FriendshipManager from '@/pages/Pokemon/features/instances/components/Wanted/FriendshipManager';
@@ -75,6 +76,7 @@ const TradeProposalComposer: React.FC<TradeProposalComposerProps> = ({
 
   const [friendship_level, setFriendshipLevel] = useState<number>(0);
   const [pref_lucky, setPrefLucky] = useState<boolean>(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     if (requestedPreferences) {
@@ -157,15 +159,18 @@ const TradeProposalComposer: React.FC<TradeProposalComposerProps> = ({
       stardustCost,
     });
 
+    setIsSubmitting(true);
     try {
       const result = await proposeTrade(tradeData);
       if (!result.success) {
+        setIsSubmitting(false);
         await alert(tradeProposalErrorMessage(result.error));
         return;
       }
-      await alert('Trade proposal successfully created!');
       onClose();
+      toast.success(`Trade proposal sent to ${partnerUsername}.`);
     } catch (err) {
+      setIsSubmitting(false);
       log.error('Unexpected error while proposing trade:', err);
       await alert('An unexpected error occurred. Please try again.');
     }
@@ -240,7 +245,8 @@ const TradeProposalComposer: React.FC<TradeProposalComposerProps> = ({
         </section>
 
         <TradeProposalActionRow
-          disabled={friendship_level === 0}
+          disabled={friendship_level === 0 || isSubmitting}
+          isSubmitting={isSubmitting}
           formattedStardustCost={formattedStardustCost}
           isSpecialTrade={isSpecialTrade}
           isRemoteTrade={friendship_level === 5}

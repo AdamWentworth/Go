@@ -133,6 +133,7 @@ export const TradeProposalMatchedDetails: React.FC<TradeProposalMatchedDetailsPr
 
 type TradeProposalActionRowProps = {
   disabled: boolean;
+  isSubmitting: boolean;
   formattedStardustCost: string;
   isSpecialTrade: boolean;
   isRemoteTrade: boolean;
@@ -141,6 +142,7 @@ type TradeProposalActionRowProps = {
 
 export const TradeProposalActionRow: React.FC<TradeProposalActionRowProps> = ({
   disabled,
+  isSubmitting,
   formattedStardustCost,
   isSpecialTrade,
   isRemoteTrade,
@@ -161,8 +163,9 @@ export const TradeProposalActionRow: React.FC<TradeProposalActionRowProps> = ({
       className="trade-proposal-propose-button"
       onClick={onProposeTrade}
       disabled={disabled}
+      aria-busy={isSubmitting}
     >
-      Propose trade
+      {isSubmitting ? 'Sending proposal…' : 'Propose trade'}
     </button>
   </div>
 );

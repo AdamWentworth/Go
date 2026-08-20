@@ -146,6 +146,7 @@ describe('shared TradeProposalSections', () => {
     const { rerender } = render(
       <TradeProposalActionRow
         disabled={true}
+        isSubmitting={false}
         formattedStardustCost="1,000,000"
         isSpecialTrade={true}
         isRemoteTrade={true}
@@ -161,6 +162,7 @@ describe('shared TradeProposalSections', () => {
     rerender(
       <TradeProposalActionRow
         disabled={false}
+        isSubmitting={false}
         formattedStardustCost="800"
         isSpecialTrade={false}
         isRemoteTrade={false}

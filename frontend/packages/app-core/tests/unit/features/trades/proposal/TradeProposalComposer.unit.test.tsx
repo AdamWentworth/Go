@@ -13,9 +13,16 @@ const mocks = vi.hoisted(() => ({
   alert: vi.fn(),
   getStoredUsername: vi.fn(),
   useCalculateStardustCost: vi.fn(),
+  toastSuccess: vi.fn(),
   logger: {
     debug: vi.fn(),
     error: vi.fn(),
+  },
+}));
+
+vi.mock('react-toastify', () => ({
+  toast: {
+    success: mocks.toastSuccess,
   },
 }));
 
@@ -177,8 +184,61 @@ describe('shared TradeProposalComposer', () => {
         trade_friendship_level: 3,
       }),
     );
-    expect(mocks.alert).toHaveBeenCalledWith('Trade proposal successfully created!');
+    expect(mocks.toastSuccess).toHaveBeenCalledWith('Trade proposal sent to acceptor.');
+    expect(mocks.alert).not.toHaveBeenCalled();
     expect(onClose).toHaveBeenCalledTimes(1);
+  });
+
+  it('submits a five-heart remote trade and confirms it visibly', async () => {
+    let resolveProposal: ((value: { success: true; tradeId: string }) => void) | undefined;
+    mocks.proposeTrade.mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          resolveProposal = resolve;
+        }),
+    );
+    mocks.getStoredUsername.mockReturnValue('proposer');
+    mocks.useCalculateStardustCost.mockReturnValue({
+      stardustCost: 40_000,
+      isSpecialTrade: true,
+      isRegisteredTrade: false,
+    });
+    const onClose = vi.fn();
+
+    render(
+      <TradeProposalComposer
+        context={{
+          partnerUsername: 'forever-friend',
+          requestedPokemon: makePokemon('Pikachu', 'partner-pikachu'),
+          candidateOffers: {
+            matchedInstances: [makePokemon('Charizard', 'my-charizard')],
+          },
+          requestedPreferences: { friendship_level: 5 },
+          ownedInstances: {},
+          relatedInstances: {},
+        }}
+        onClose={onClose}
+      />,
+    );
+
+    const submit = await screen.findByRole('button', { name: 'Propose trade' });
+    fireEvent.click(submit);
+
+    await waitFor(() => {
+      expect(mocks.proposeTrade).toHaveBeenCalledWith(
+        expect.objectContaining({ trade_friendship_level: 5 }),
+      );
+      expect(screen.getByRole('button', { name: 'Sending proposal…' })).toBeDisabled();
+    });
+
+    resolveProposal?.({ success: true, tradeId: 'remote-trade' });
+
+    await waitFor(() => {
+      expect(onClose).toHaveBeenCalledTimes(1);
+      expect(mocks.toastSuccess).toHaveBeenCalledWith(
+        'Trade proposal sent to forever-friend.',
+      );
+    });
   });
 
   it('closes only the composer when its close control is used', () => {
