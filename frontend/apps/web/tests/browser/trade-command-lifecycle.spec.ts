@@ -67,10 +67,13 @@ async function openTradeActivity(page: Page) {
   await page.goto('/trades');
   await page.getByRole('button', { name: 'Trade Activity' }).click();
   const slider = page.locator('.trade-page-slider');
-  const activePanel = slider.locator('[data-active="true"]');
+  const activityPanel = slider.locator(
+    '.horizontal-page-slider__panel:has(.trade-activity-workspace)',
+  );
+  await expect(activityPanel).toHaveAttribute('data-active', 'true');
   await expect
     .poll(async () =>
-      activePanel.evaluate((panel, viewport) =>
+      activityPanel.evaluate((panel, viewport) =>
         Math.abs(
           panel.getBoundingClientRect().left -
           document.querySelector(viewport)!.getBoundingClientRect().left,
