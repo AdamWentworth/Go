@@ -1,11 +1,12 @@
 import React from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 
 import TradeCard from '@/pages/Trades/TradeCard';
 
 const mocks = vi.hoisted(() => ({
   confirmMock: vi.fn(),
+  alertMock: vi.fn(),
   usePokemonDetailsMock: vi.fn(),
   handleAcceptTradeMock: vi.fn(),
   handleDenyTradeMock: vi.fn(),
@@ -29,7 +30,7 @@ vi.mock('@/features/trades/store/useTradeStore', () => ({
 }));
 
 vi.mock('@/contexts/ModalContext', () => ({
-  useModal: () => ({ confirm: mocks.confirmMock }),
+  useModal: () => ({ confirm: mocks.confirmMock, alert: mocks.alertMock }),
 }));
 
 vi.mock('@/pages/Trades/hooks/usePokemonDetails', () => ({
@@ -174,6 +175,23 @@ describe('TradeCard', () => {
     );
     expect(mocks.handleCancelTradeMock).toHaveBeenCalledTimes(1);
     expect(mocks.handleDeleteTradeMock).not.toHaveBeenCalled();
+  });
+
+  it('makes a rejected cancellation explicit and leaves the proposal active', async () => {
+    mocks.handleCancelTradeMock.mockRejectedValueOnce(
+      new Error('trade state has changed'),
+    );
+
+    render(<TradeCard {...baseProps} selectedStatus="Proposed" />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'cancel proposal' }));
+
+    await waitFor(() => {
+      expect(mocks.alertMock).toHaveBeenCalledWith(
+        'Cancellation failed. This proposal is still active. trade state has changed',
+      );
+    });
+    expect(mocks.tradeStoreState.setTradeData).not.toHaveBeenCalled();
   });
 
   it('routes to status-specific views and fallback', () => {

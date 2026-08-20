@@ -114,15 +114,18 @@ function TradeCard({
   const trades = useTradeStore((state) => state.trades) as Record<string, TradeCardTrade>;
   const { alert, confirm } = useModal();
 
-  const runTradeAction = async (action: () => Promise<unknown>) => {
+  const runTradeAction = async (
+    action: () => Promise<unknown>,
+    failurePrefix?: string,
+  ) => {
     try {
       await action();
     } catch (error) {
-      const message =
+      const detail =
         error instanceof Error && error.message
           ? error.message
           : 'The trade could not be updated. Please try again.';
-      await alert(message);
+      await alert(failurePrefix ? `${failurePrefix} ${detail}` : detail);
     }
   };
 
@@ -231,7 +234,10 @@ function TradeCard({
       periodicUpdates,
       currentUsername,
     };
-    await runTradeAction(() => handleCancelTrade(args));
+    await runTradeAction(
+      () => handleCancelTrade(args),
+      'Cancellation failed. This proposal is still active.',
+    );
   };
 
   const handleRePropose = async () => {
