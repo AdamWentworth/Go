@@ -14,13 +14,17 @@ export async function requestWithPolicy(
   options: RequestWithPolicyOptions = {},
 ): Promise<Response> {
   const controller = new AbortController();
-  const timeoutMs = options.timeoutMs ?? DEFAULT_TIMEOUT_MS;
+  const {
+    timeoutMs = DEFAULT_TIMEOUT_MS,
+    credentials = 'include',
+    ...requestOptions
+  } = options;
   const timeout = window.setTimeout(() => controller.abort(), timeoutMs);
 
   try {
     return await fetch(input, {
-      credentials: options.credentials ?? 'include',
-      ...options,
+      credentials,
+      ...requestOptions,
       signal: controller.signal,
     });
   } catch (error) {

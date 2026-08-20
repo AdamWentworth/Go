@@ -106,7 +106,7 @@ const BackgroundLocationCard: React.FC<Props> = ({
 
           return (
             <button
-              key={background.background_id}
+              key={`${background.background_id}:${backgroundCostumeId ?? 'none'}`}
               type="button"
               className={`${itemClassName} ${
                 selectedBackgroundId === background.background_id ? selectedItemClassName : ''

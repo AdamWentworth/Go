@@ -20,6 +20,25 @@ func TestHaversine(t *testing.T) {
 	}
 }
 
+func TestSearchRelatedInstancesAreGroupedByUniqueUser(t *testing.T) {
+	instances := []PokemonInstance{
+		{InstanceID: "one", UserID: "user-a"},
+		{InstanceID: "two", UserID: "user-a"},
+		{InstanceID: "three", UserID: "user-b"},
+		{InstanceID: "orphan"},
+	}
+
+	userIDs := uniqueInstanceUserIDs(instances)
+	if len(userIDs) != 2 || userIDs[0] != "user-a" || userIDs[1] != "user-b" {
+		t.Fatalf("unexpected unique user ids: %#v", userIDs)
+	}
+
+	grouped := groupInstancesByUser(instances)
+	if len(grouped) != 2 || len(grouped["user-a"]) != 2 || len(grouped["user-b"]) != 1 {
+		t.Fatalf("unexpected grouped instances: %#v", grouped)
+	}
+}
+
 func TestInstancesMatchEnforcesWantedSizePreferences(t *testing.T) {
 	wanted := PokemonInstance{
 		PokemonID: 1,

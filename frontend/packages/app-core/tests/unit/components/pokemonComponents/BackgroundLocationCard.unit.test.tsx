@@ -148,4 +148,48 @@ describe('BackgroundLocationCard', () => {
 
     expect(screen.getByText('Party')).toBeInTheDocument();
   });
+
+  it('renders the same background id for distinct costume pairings without key warnings', () => {
+    const consoleError = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+
+    render(
+      <BackgroundLocationCard
+        costumeOptions={[
+          { name: 'Party', costume_id: 7 },
+          { name: 'Detective', costume_id: 8 },
+        ]}
+        filterBackground={() => true}
+        pokemon={{
+          variantType: 'default',
+          backgrounds: [
+            {
+              background_id: 2,
+              image_url: '/images/backgrounds/party.png',
+              name: 'Shared Background',
+              costume_id: 7,
+              date: '2025-01-02',
+              location: 'Party Location',
+            },
+            {
+              background_id: 2,
+              image_url: '/images/backgrounds/detective.png',
+              name: 'Shared Background',
+              costume_id: 8,
+              date: '2025-01-03',
+              location: 'Detective Location',
+            },
+          ],
+        }}
+        showCostumePairing
+      />,
+    );
+
+    expect(screen.getByText('Party')).toBeInTheDocument();
+    expect(screen.getByText('Detective')).toBeInTheDocument();
+    expect(
+      consoleError.mock.calls.some(([message]) =>
+        String(message).includes('same key'),
+      ),
+    ).toBe(false);
+  });
 });

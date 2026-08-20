@@ -142,7 +142,14 @@ const Search: React.FC = () => {
       }
     } catch (error) {
       log.error('Search request failed', error);
-      await alert('An error occurred while searching. Please try again.');
+      const isTimeout =
+        error instanceof Error && error.message.toLowerCase().includes('timed out');
+      const message = isTimeout
+        ? 'Search took too long to respond. Try a smaller distance or fewer results, then search again.'
+        : 'Search is temporarily unavailable. Check your connection and try again.';
+      setSearchResults([]);
+      setErrorMessage(message);
+      await alert(message);
     } finally {
       setIsLoading(false);
     }

@@ -214,4 +214,32 @@ describe('Search', () => {
       expect(screen.getByTestId('map-view')).toHaveTextContent('trade|1');
     });
   });
+
+  it('explains when a Pokemon search times out', async () => {
+    mockedSearchPokemon.mockRejectedValueOnce(
+      new Error('Request timed out after 30000ms'),
+    );
+
+    render(<Search />);
+    fireEvent.click(screen.getByText('search-trade'));
+
+    const message = await screen.findByRole('alert');
+    expect(message).toHaveTextContent('Search took too long to respond');
+    expect(alertMock).toHaveBeenCalledWith(
+      expect.stringContaining('smaller distance or fewer results'),
+    );
+  });
+
+  it('identifies non-timeout failures as connection or service errors', async () => {
+    mockedSearchPokemon.mockRejectedValueOnce(new TypeError('Failed to fetch'));
+
+    render(<Search />);
+    fireEvent.click(screen.getByText('search-owned'));
+
+    const message = await screen.findByRole('alert');
+    expect(message).toHaveTextContent('Search is temporarily unavailable');
+    expect(alertMock).toHaveBeenCalledWith(
+      expect.stringContaining('Check your connection'),
+    );
+  });
 });
