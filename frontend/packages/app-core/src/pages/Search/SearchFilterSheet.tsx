@@ -2,10 +2,10 @@ import React, { ReactNode, useEffect, useState } from 'react';
 import {
   FaExchangeAlt,
   FaMapMarkerAlt,
-  FaPalette,
   FaSlidersH,
   FaTimes,
 } from 'react-icons/fa';
+import { TbPokeball } from 'react-icons/tb';
 
 import OverlayDismissButton from '@/components/OverlayDismissButton';
 import OverlayPortal, { useOverlayMotion } from '@/components/OverlayPortal';
@@ -72,7 +72,11 @@ const sections: Array<{
   label: string;
   icon: ReactNode;
 }> = [
-  { id: 'appearance', label: 'Pokémon', icon: <FaPalette aria-hidden="true" /> },
+  {
+    id: 'appearance',
+    label: 'Pokémon',
+    icon: <TbPokeball aria-hidden="true" data-testid="pokemon-filter-icon" />,
+  },
   {
     id: 'location',
     label: 'Location',

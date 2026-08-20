@@ -427,6 +427,37 @@ describe('PokemonSearchBar', () => {
     expect(searchBar).not.toHaveClass('pokemon-search-bar--compact');
   });
 
+  it('closes valid filters immediately while the search continues', async () => {
+    let resolveSearch: (() => void) | undefined;
+    onSearchMock.mockImplementationOnce(
+      () =>
+        new Promise<void>((resolve) => {
+          resolveSearch = resolve;
+        }),
+    );
+
+    render(
+      <PokemonSearchBar
+        onSearch={onSearchMock}
+        isLoading={false}
+        view="list"
+        setView={setViewMock}
+        pokemonCache={pokemonCache}
+      />,
+    );
+
+    await mountAdvancedSearchState();
+    expect(screen.getByTestId('pokemon-filter-icon')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Apply and search' }));
+
+    await waitFor(() => {
+      expect(onSearchMock).toHaveBeenCalledTimes(1);
+      expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+    });
+
+    resolveSearch?.();
+  });
+
   it('builds trade query params with caught-only and wanted-only fields normalized', async () => {
     mockConfig.ownershipMode = 'trade';
     mockConfig.costume = 'Party';

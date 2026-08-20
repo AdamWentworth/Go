@@ -119,7 +119,7 @@ const PokemonSearchBar: React.FC<PokemonSearchBarProps> = ({
     pokemonCache,
   });
 
-  const handleSearch = async () => {
+  const handleSearch = (): boolean => {
     setErrorMessage('');
     const preparedSearch = preparePokemonSearchQuery({
       pokemon,
@@ -158,7 +158,9 @@ const PokemonSearchBar: React.FC<PokemonSearchBarProps> = ({
     log.debug('Search query parameters', queryParams);
     setHasSubmittedSearch(true);
     setIsEditingSubmittedSearch(false);
-    await onSearch(queryParams, null);
+    void Promise.resolve(onSearch(queryParams, null)).catch((error) => {
+      log.error('Search execution failed outside the page handler', error);
+    });
     window.scrollTo({ top: 0, behavior: 'smooth' });
     return true;
   };
