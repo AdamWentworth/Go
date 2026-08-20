@@ -114,7 +114,9 @@ const CatalogTradeLauncherPanel = ({
                       <img src={target.currentImage} alt="" />
                     ) : null}
                   </span>
-                  <span>{targetName(target)}</span>
+                  <span className="catalog-trade-launcher__label">
+                    {targetName(target)}
+                  </span>
                 </button>
               );
             })}

@@ -107,7 +107,9 @@ const CatalogWantedLauncherPanel = ({
                 <PokemonLocationBackground pokemon={pokemon} />
                 {pokemon.currentImage ? <img src={pokemon.currentImage} alt="" /> : null}
               </span>
-              <span>{pokemon.name ?? pokemon.species_name ?? 'Unknown Pokémon'}</span>
+              <span className="catalog-wanted-launcher__label">
+                {pokemon.name ?? pokemon.species_name ?? 'Unknown Pokémon'}
+              </span>
             </button>
           ))}
         </div>
