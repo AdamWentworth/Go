@@ -407,32 +407,16 @@ export default function usePokemonPageController({
     setIsFastSelectEnabled,
   });
 
-  const closeSelectedPokemon = useCallback(() => {
-    setSelectedPokemon(null);
-  }, []);
-
-  const closeMegaSelectionFromBack = useCallback(() => {
-    handleMegaSelectionReject('User canceled');
-  }, [handleMegaSelectionReject]);
-
-  const returnToPokemonView = useCallback(() => {
-    setActiveView('pokemon');
-  }, []);
-
   const returnToContext = useCallback(() => {
     if (!contextBackTo) return;
-    void navigate(contextBackTo, { replace: true });
+    void navigate(-1);
   }, [contextBackTo, navigate]);
 
-  useContextBackHandler(activeView !== 'pokemon', returnToPokemonView, 'pokemon-view');
-  useContextBackHandler(highlightedCards.size > 0, handleClearSelection, 'pokemon-selection');
-  useContextBackHandler(selectedPokemon !== null, closeSelectedPokemon, 'pokemon-overlay');
-  useContextBackHandler(isMegaSelectionOpen, closeMegaSelectionFromBack, 'mega-selection');
-  useContextBackHandler(isFusionSelectionOpen, closeFusionSelection, 'fusion-selection');
   useContextBackHandler(
-    isUsernamePath && selectedPokemon === null && Boolean(contextBackTo),
-    returnToContext,
-    'pokemon-context',
+    highlightedCards.size > 0,
+    handleClearSelection,
+    'pokemon-selection',
+    'mobile',
   );
 
   const containerRef = useRef<HTMLDivElement | null>(null);

@@ -1,8 +1,5 @@
-import { useCallback } from "react";
 import { FaArrowLeft } from "react-icons/fa6";
-import { Link, useNavigate } from "react-router";
-
-import { useContextBackHandler } from "@/contexts/ContextBackContext";
+import { Link } from "react-router";
 import "./RaidMethodology.css";
 
 const metrics = [
@@ -56,15 +53,6 @@ const rankingModes = [
 ];
 
 const RaidMethodology = () => {
-  const navigate = useNavigate();
-
-  const returnToRaid = useCallback(() => {
-    navigate("/raid");
-    return true;
-  }, [navigate]);
-
-  useContextBackHandler(true, returnToRaid, "raid-methodology");
-
   return (
     <article className="raid-methodology-page">
       <div className="raid-methodology-shell">

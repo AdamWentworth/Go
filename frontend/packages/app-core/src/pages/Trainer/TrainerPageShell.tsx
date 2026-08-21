@@ -2,7 +2,6 @@ import { useCallback, type ReactNode } from 'react';
 import { FaArrowLeft, FaCog, FaUser, FaUserFriends } from 'react-icons/fa';
 import { NavLink, useLocation, useNavigate } from 'react-router';
 
-import { useContextBackHandler } from '@/contexts/ContextBackContext';
 import './Trainer.css';
 
 type TrainerPageShellProps = {
@@ -29,11 +28,12 @@ const TrainerPageShell = ({
   const returnTo = origin && origin !== currentPath ? origin : '/';
 
   const goBack = useCallback(() => {
-    navigate(returnTo, { replace: true });
-    return true;
-  }, [navigate, returnTo]);
-
-  useContextBackHandler(true, goBack, 'trainer-page');
+    if (origin && origin !== currentPath) {
+      navigate(-1);
+      return;
+    }
+    navigate(returnTo);
+  }, [currentPath, navigate, origin, returnTo]);
 
   const navigationState = { contextBackTo: currentPath };
   const navigation =

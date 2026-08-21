@@ -3,7 +3,6 @@ import React, { useState, useEffect, CSSProperties } from 'react';
 import OverlayPortal from '@/components/OverlayPortal';
 import WindowOverlay from '@/components/WindowOverlay';
 import CloseButton from '@/components/CloseButton';
-import { useContextBackHandler } from '@/contexts/ContextBackContext';
 import { SortType, SortMode } from '@/types/sort';
 import './SortMenu.css';
 
@@ -88,14 +87,6 @@ const SortMenu: React.FC<SortMenuProps> = ({
     }
   }, [isAnimating, isMenuVisible]);
 
-  useContextBackHandler(
-    isMenuVisible,
-    () => {
-      setIsAnimating(false);
-    },
-    'sort-menu',
-  );
-
   return (
     <>
       {/* Sort Overlay Button */}
@@ -121,7 +112,10 @@ const SortMenu: React.FC<SortMenuProps> = ({
 
       {/* Sort Menu */}
       {isMenuVisible && (
-        <OverlayPortal onClose={() => setIsAnimating(false)}>
+        <OverlayPortal
+          backBehavior="mobile"
+          onClose={() => setIsAnimating(false)}
+        >
           <div
             className={`sort-menu-overlay ${isAnimating ? 'visible' : ''}`}
             onClick={handleBackdropClick}

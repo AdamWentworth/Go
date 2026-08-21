@@ -1,4 +1,3 @@
-import { useCallback } from 'react';
 import {
   FaArrowLeft,
   FaBolt,
@@ -7,9 +6,7 @@ import {
   FaShieldAlt,
   FaUsers,
 } from 'react-icons/fa';
-import { Link, useNavigate } from 'react-router';
-
-import { useContextBackHandler } from '@/contexts/ContextBackContext';
+import { Link } from 'react-router';
 import './PvpMethodology.css';
 
 const rankingViews = [
@@ -44,15 +41,6 @@ const rankingViews = [
 ];
 
 const PvpMethodology = () => {
-  const navigate = useNavigate();
-
-  const returnToPvp = useCallback(() => {
-    navigate('/pvp');
-    return true;
-  }, [navigate]);
-
-  useContextBackHandler(true, returnToPvp, 'pvp-methodology');
-
   return (
     <article className="pvp-methodology-page">
       <div className="pvp-methodology-shell">

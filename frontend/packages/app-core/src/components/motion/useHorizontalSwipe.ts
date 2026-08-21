@@ -7,6 +7,7 @@ import type {
 const SWIPE_THRESHOLD = 100;
 const MAX_PEEK_DISTANCE = 0.3;
 const DIRECTION_LOCK_ANGLE = 30;
+const SYSTEM_BACK_GESTURE_EDGE_PX = 24;
 
 export interface UseHorizontalSwipeProps {
   onSwipe?: (direction: 'left' | 'right' | null) => void;
@@ -44,9 +45,16 @@ export default function useHorizontalSwipe({
   const directionLock = useRef<'horizontal' | 'vertical' | null>(null);
 
   const handleStart = useCallback(
-    (x: number, y: number) => {
+    (x: number, y: number, preserveSystemBackGesture = false) => {
       if (disabled || isInteractiveElement(document.elementFromPoint(x, y)))
         return;
+      if (
+        preserveSystemBackGesture &&
+        (x <= SYSTEM_BACK_GESTURE_EDGE_PX ||
+          x >= window.innerWidth - SYSTEM_BACK_GESTURE_EDGE_PX)
+      ) {
+        return;
+      }
 
       startX.current = x;
       startY.current = y;
@@ -107,7 +115,7 @@ export default function useHorizontalSwipe({
   return {
     onTouchStart: (event) => {
       const touch = event.touches[0];
-      handleStart(touch.clientX, touch.clientY);
+      handleStart(touch.clientX, touch.clientY, true);
     },
     onTouchMove: (event) => {
       const touch = event.touches[0];

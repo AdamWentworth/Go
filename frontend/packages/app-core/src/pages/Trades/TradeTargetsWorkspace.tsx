@@ -190,14 +190,17 @@ function TradeTargetsWorkspace() {
     nextMode: TargetMode,
     instanceId?: string,
   ) => {
-    setSearchParams((current) => {
-      const next = new URLSearchParams(current);
-      next.set('section', 'preferences');
-      next.set('mode', nextMode);
-      if (instanceId) next.set('instance', instanceId);
-      else next.delete('instance');
-      return next;
-    });
+    setSearchParams(
+      (current) => {
+        const next = new URLSearchParams(current);
+        next.set('section', 'preferences');
+        next.set('mode', nextMode);
+        if (instanceId) next.set('instance', instanceId);
+        else next.delete('instance');
+        return next;
+      },
+      { replace: true },
+    );
   };
 
   const openLinkedPokemon = (

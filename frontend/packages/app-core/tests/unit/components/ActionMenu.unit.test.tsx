@@ -46,6 +46,7 @@ vi.mock('@/contexts/ThemeContext', () => ({
 }));
 
 vi.mock('@/contexts/ContextBackContext', () => ({
+  isMobileContextBackEnvironment: () => false,
   useContextBackHandler: vi.fn(),
 }));
 

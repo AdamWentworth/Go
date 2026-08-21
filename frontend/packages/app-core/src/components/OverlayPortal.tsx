@@ -20,6 +20,10 @@ import {
   isTopmostMotionOverlay,
   registerMotionOverlay,
 } from './overlayMotionStack';
+import {
+  useContextBackHandler,
+  type ContextBackBehavior,
+} from '@/contexts/ContextBackContext';
 
 export const OVERLAY_MOTION_DURATION_MS = 280;
 
@@ -41,6 +45,7 @@ type OverlayRootProps = HTMLAttributes<HTMLElement> & {
 };
 
 type Props = {
+  backBehavior?: ContextBackBehavior;
   children: ReactNode;
   closeOnBackdrop?: boolean;
   dismissible?: boolean;
@@ -53,6 +58,7 @@ const prefersReducedMotion = () =>
   window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 const OverlayPortal: React.FC<Props> = ({
+  backBehavior = 'all',
   children,
   closeOnBackdrop = false,
   dismissible = true,
@@ -93,6 +99,18 @@ const OverlayPortal: React.FC<Props> = ({
   const controls = useMemo<OverlayMotionControls>(
     () => ({ phase, requestClose }),
     [phase, requestClose],
+  );
+
+  const handleContextBack = useCallback(() => {
+    requestClose();
+    return true;
+  }, [requestClose]);
+
+  useContextBackHandler(
+    dismissible,
+    handleContextBack,
+    'motion-overlay',
+    backBehavior,
   );
 
   useEffect(() => registerMotionOverlay(requestClose), [requestClose]);

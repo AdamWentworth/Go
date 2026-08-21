@@ -253,7 +253,7 @@ describe('usePokemonPageController', () => {
     act(() => {
       result.current.returnToContext?.();
     });
-    expect(navigate).toHaveBeenCalledWith('/search', { replace: true });
+    expect(navigate).toHaveBeenCalledWith(-1);
   });
 
   it('preserves a requested filter after loading a foreign collection', async () => {

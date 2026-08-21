@@ -36,15 +36,18 @@ function Trades() {
   const loading = variantsLoading;
   const currentUsername = getStoredUsername() ?? '';
   const setActiveSection = useCallback((section: 'activity' | 'preferences') => {
-    setSearchParams((current) => {
-      const next = new URLSearchParams(current);
-      next.set('section', section);
-      if (section === 'activity') {
-        next.delete('mode');
-        next.delete('instance');
-      }
-      return next;
-    });
+    setSearchParams(
+      (current) => {
+        const next = new URLSearchParams(current);
+        next.set('section', section);
+        if (section === 'activity') {
+          next.delete('mode');
+          next.delete('instance');
+        }
+        return next;
+      },
+      { replace: true },
+    );
   }, [setSearchParams]);
   const sectionSlider = useHorizontalPageNavigation({
     pages: TRADE_SECTIONS,

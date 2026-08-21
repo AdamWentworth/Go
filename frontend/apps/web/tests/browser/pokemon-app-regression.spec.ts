@@ -872,9 +872,10 @@ test.describe('pokemon app browser regressions', () => {
     ).toEqual([]);
   });
 
-  test('uses browser back to close the action menu without leaving the current URL', async ({
+  test('uses mobile Back to close the action menu without leaving the current URL', async ({
     page,
   }, testInfo) => {
+    test.skip(!testInfo.project.name.startsWith('mobile'), 'mobile back behavior');
     const diagnostics = attachBrowserDiagnostics(page, testInfo);
 
     try {
@@ -994,7 +995,7 @@ test.describe('pokemon app browser regressions', () => {
     ).toEqual([]);
   });
 
-  test('keeps browser back from navigating to a previous app URL', async ({
+  test('uses browser back to return to the previous app route', async ({
     page,
   }, testInfo) => {
     const diagnostics = attachBrowserDiagnostics(page, testInfo);
@@ -1014,9 +1015,8 @@ test.describe('pokemon app browser regressions', () => {
 
       await triggerBrowserBack(page);
 
-      await expect(page).toHaveURL(/\/search$/);
-      await expect(page.getByRole('heading', { name: 'Search', level: 1 })).toBeVisible();
-      await expect(page.getByRole('tab', { name: 'Pokémon' })).toBeVisible();
+      await expect(page).toHaveURL(/\/pokemon$/);
+      await expect(page.getByRole('button', { name: 'Action Menu' })).toBeVisible();
     } finally {
       await diagnostics.flush();
     }

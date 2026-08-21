@@ -7,7 +7,10 @@ import ActionMenuButton from './ActionMenuButton';
 import CloseButton from './CloseButton';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
-import { useContextBackHandler } from '../contexts/ContextBackContext';
+import {
+  isMobileContextBackEnvironment,
+  useContextBackHandler,
+} from '../contexts/ContextBackContext';
 import { fetchFriendsOverview } from '../services/socialService';
 import ThemeSwitch from './ThemeSwitch';
 import './ActionMenu.css';
@@ -20,6 +23,7 @@ const ActionMenu: React.FC = () => {
   const [isCloseEnabled, setIsCloseEnabled] = useState(false);
   const openingAnimationTimeoutRef = useRef<number | null>(null);
   const closeEnableTimeoutRef = useRef<number | null>(null);
+  const pendingMobileNavigationRef = useRef(false);
   const navigate = useNavigate();
   const location = useLocation();
   const { isLoggedIn } = useAuth() ?? {};
@@ -56,6 +60,20 @@ const ActionMenu: React.FC = () => {
       cancelPendingCloseEnable();
     };
   }, [cancelPendingCloseEnable, cancelPendingOpenAnimation]);
+
+  useEffect(() => {
+    if (!pendingMobileNavigationRef.current) return;
+    pendingMobileNavigationRef.current = false;
+    cancelPendingOpenAnimation();
+    cancelPendingCloseEnable();
+    setIsCloseEnabled(false);
+    setIsOpen(false);
+    setIsVisible(false);
+  }, [
+    cancelPendingCloseEnable,
+    cancelPendingOpenAnimation,
+    location.key,
+  ]);
 
   useEffect(() => {
     if (!isOpen || !isLoggedIn) {
@@ -111,16 +129,24 @@ const ActionMenu: React.FC = () => {
 
   const handleNavigation = (path: string) => {
     if (location.pathname !== path) {
+      const replacesMobileMenuGuard = isMobileContextBackEnvironment();
+      pendingMobileNavigationRef.current = replacesMobileMenuGuard;
       navigate(path, {
+        replace: replacesMobileMenuGuard,
         state: {
           contextBackTo: `${location.pathname}${location.search}${location.hash}`,
         },
       });
+      if (replacesMobileMenuGuard) return;
     }
-    closeMenu();
+    cancelPendingOpenAnimation();
+    cancelPendingCloseEnable();
+    setIsCloseEnabled(false);
+    setIsOpen(false);
+    setIsVisible(false);
   };
 
-  useContextBackHandler(isVisible, closeMenu, 'action-menu');
+  useContextBackHandler(isVisible, closeMenu, 'action-menu', 'mobile');
 
   return (
     <>

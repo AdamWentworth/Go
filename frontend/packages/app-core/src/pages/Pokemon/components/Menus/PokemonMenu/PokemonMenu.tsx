@@ -193,6 +193,7 @@ const PokemonMenu: React.FC<PokemonMenuProps> = ({
       searchAreaRef.current?.querySelector('input')?.blur();
     },
     'pokemon-search-menu',
+    'mobile',
   );
 
   if (loading) return <AppLoadingFallback source="pokemon-menu" />;

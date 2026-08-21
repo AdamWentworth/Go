@@ -1,6 +1,5 @@
 import { useState, type FormEvent } from "react";
 import { FaSave, FaTimes } from "react-icons/fa";
-import { useContextBackHandler } from "@/contexts/ContextBackContext";
 import OverlayDismissButton from "@/components/OverlayDismissButton";
 import OverlayPortal from "@/components/OverlayPortal";
 import type { RaidObservationActual } from "../utils/raidCalibration";
@@ -45,8 +44,6 @@ const RaidObservationDialog = ({
     remainingBossHpPercent: "",
   });
   const [error, setError] = useState("");
-
-  useContextBackHandler(true, onCancel, "raid-observation");
 
   const setField = (field: keyof ObservationForm, value: string) => {
     setForm((current) => ({ ...current, [field]: value }));
