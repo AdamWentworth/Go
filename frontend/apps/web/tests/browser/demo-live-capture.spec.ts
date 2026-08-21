@@ -3414,7 +3414,7 @@ test.describe('live demo media capture', () => {
     'Set POKEGONEXUS_DEMO_USERNAME and POKEGONEXUS_DEMO_PASSWORD to capture live media',
   );
 
-  test('captures PokeGo Nexus surfaces with a real read-only demo account', async ({ page }, testInfo) => {
+  test('captures Pokémon Go Nexus surfaces with a real read-only demo account', async ({ page }, testInfo) => {
     fs.rmSync(liveDemoMediaDir, { recursive: true, force: true });
     fs.mkdirSync(liveDemoMediaDir, { recursive: true });
     const diagnostics = attachBrowserDiagnostics(page, testInfo);
@@ -3460,7 +3460,7 @@ test.describe('live demo video capture', () => {
   );
 
   test(
-    'records PokeGo Nexus demo flows with a real read-only demo account',
+    'records Pokémon Go Nexus demo flows with a real read-only demo account',
     async ({ browser }, testInfo) => {
       fs.mkdirSync(liveDemoVideoDir, { recursive: true });
       removeRawPlaywrightVideos();

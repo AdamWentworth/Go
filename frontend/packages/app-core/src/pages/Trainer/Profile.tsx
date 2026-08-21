@@ -1015,7 +1015,7 @@ const Profile = () => {
             <div className="trainer-card-body">
               <header className="trainer-card-heading">
                 <div>
-                  <span>PokeGoNexus</span>
+                  <span>Pokémon Go Nexus</span>
                   <h2>Trainer card</h2>
                 </div>
                 <div className="trainer-card-number">

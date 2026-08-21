@@ -101,9 +101,9 @@ const TradeBoard = forwardRef<HTMLDivElement, TradeBoardProps>(({
   <div className="trade-board" data-theme={theme} ref={ref}>
     <header className="trade-board__hero">
       <div className="trade-board__brand-lockup">
-        <img alt="PokeGoNexus" src="/icons/icon-192x192.png" />
+        <img alt="Pokémon Go Nexus" src="/icons/icon-192x192.png" />
         <div>
-          <span>POKEGO NEXUS</span>
+          <span>POKÉMON GO NEXUS</span>
           <strong>Community Trade Board</strong>
         </div>
       </div>

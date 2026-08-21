@@ -382,7 +382,7 @@ const Friends = () => {
         <section className="trainer-section">
           <header>
             <div>
-              <span>Search PokeGo Nexus</span>
+              <span>Search Pokémon Go Nexus</span>
               <h2>Find trainers</h2>
             </div>
           </header>

@@ -32,7 +32,7 @@ const HomeHeader = ({ logoUrl, lockupUrl, isLoggedIn }: HomeHeaderProps) => {
       <nav className="homeHeader__nav" aria-label="Home navigation">
         <Link className="home-brand" to="/">
           <img src={logoUrl} alt="" onContextMenu={(event) => event.preventDefault()} />
-          <span>PokeGo Nexus</span>
+          <span>Pokémon Go Nexus</span>
         </Link>
         <div className="homeHeader__nav-links">
           <Link to="/getting-started">How it works</Link>
@@ -46,13 +46,13 @@ const HomeHeader = ({ logoUrl, lockupUrl, isLoggedIn }: HomeHeaderProps) => {
           <img
             className="homeHeader__hero-logo"
             src={lockupUrl}
-            alt="PokeGo Nexus"
+            alt="Pokémon Go Nexus"
             onContextMenu={(event) => event.preventDefault()}
           />
           <span className="home-eyebrow">The ultimate trainer hub</span>
           <h1>Build your collection.<br /><em>Find the right trade.</em></h1>
           <p>
-            PokeGo Nexus is the go-to platform for Pokémon GO trainers to catalog Pokémon,
+            Pokémon Go Nexus is the go-to platform for Pokémon GO trainers to catalog Pokémon,
             showcase rare catches, and find players whose For Trade and Wanted lists actually line up.
           </p>
           {!isLoggedIn ? (

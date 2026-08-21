@@ -53,7 +53,7 @@ const PvpMethodology = () => {
           <p className="pvp-methodology-eyebrow">Trainer Battle documentation</p>
           <h1>How PvP rankings work</h1>
           <p className="pvp-methodology-intro">
-            PokeGo Nexus keeps published rankings, caught-build context, team
+            Pokémon Go Nexus keeps published rankings, caught-build context, team
             coverage, and direct battle simulation separate so each answer
             says exactly what it measures.
           </p>
@@ -92,7 +92,7 @@ const PvpMethodology = () => {
             <h2>A pinned simulation snapshot</h2>
             <p>
               League and cup rankings are imported from a pinned, attributable
-              PvPoke source snapshot. PokeGo Nexus maps released forms to its
+              PvPoke source snapshot. Pokémon Go Nexus maps released forms to its
               own catalog and presents the source&apos;s recommended level, IVs,
               moves, overall score, role scores, matchups, and counters.
             </p>
@@ -295,7 +295,7 @@ const PvpMethodology = () => {
               </li>
               <li>
                 Rankings and current cups change only when the pinned source
-                and PokeGo Nexus catalog are refreshed and republished.
+                and Pokémon Go Nexus catalog are refreshed and republished.
               </li>
               <li>
                 IV Rank measures stat product. Breakpoints, specific matchups,
@@ -303,7 +303,7 @@ const PvpMethodology = () => {
                 lower-ranked spread preferable in practice.
               </li>
               <li>
-                Only catalog forms that PokeGo Nexus can identify and display
+                Only catalog forms that Pokémon Go Nexus can identify and display
                 are published. Unmatched or unreleased entries are omitted.
               </li>
             </ul>

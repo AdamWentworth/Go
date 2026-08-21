@@ -65,7 +65,7 @@ const RaidMethodology = () => {
           <p className="raid-methodology-eyebrow">Raid documentation</p>
           <h1>How raid rankings work</h1>
           <p className="raid-methodology-intro">
-            PokeGo Nexus separates general strength, type strength, and exact
+            Pokémon Go Nexus separates general strength, type strength, and exact
             boss counters so one score is never asked to answer three different
             questions.
           </p>
@@ -247,7 +247,7 @@ const RaidMethodology = () => {
           </Link>
           <p>
             Pokemon and Pokemon GO are trademarks of their respective owners.
-            PokeGo Nexus is not affiliated with or endorsed by Niantic, Scopely,
+            Pokémon Go Nexus is not affiliated with or endorsed by Niantic, Scopely,
             The Pokemon Company, or Nintendo.
           </p>
         </footer>

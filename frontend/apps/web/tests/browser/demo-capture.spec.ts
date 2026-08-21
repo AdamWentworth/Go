@@ -486,7 +486,7 @@ async function capture(page: Page, name: string, options: Parameters<Page['scree
 test.describe('demo media capture', () => {
   test.skip(process.env.DEMO_CAPTURE !== '1', 'Only run through npm run capture:demo');
 
-  test('captures current PokeGo Nexus product surfaces', async ({ page }, testInfo) => {
+  test('captures current Pokémon Go Nexus product surfaces', async ({ page }, testInfo) => {
     fs.mkdirSync(demoMediaDir, { recursive: true });
     const diagnostics = attachBrowserDiagnostics(page, testInfo);
 

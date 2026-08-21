@@ -77,6 +77,6 @@ export const shareTradeBoardBlob = async (
   await navigator.share({
     files: [file],
     text: `See my current Pokémon GO Trade Board: ${boardUrl}`,
-    title: 'My PokeGoNexus Trade Board',
+    title: 'My Pokémon Go Nexus Trade Board',
   });
 };

@@ -275,7 +275,7 @@ const AccountSecurity = () => {
           <FaKey />
         </header>
         <p className="trainer-section-copy">
-          These verified providers currently open this same PokeGoNexus account.
+          These verified providers currently open this same Pokémon Go Nexus account.
         </p>
         <div className="trainer-connected-accounts">
           {(["google", "discord", "facebook"] as OAuthProvider[]).map(

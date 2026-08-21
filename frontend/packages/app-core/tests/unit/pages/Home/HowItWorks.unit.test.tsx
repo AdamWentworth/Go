@@ -13,7 +13,7 @@ describe('HowItWorks', () => {
     expect(screen.getByRole('heading', { name: 'Catalog what you have' })).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: 'Find a real match' })).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: 'Propose with confidence' })).toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: 'Explore PokeGo Nexus' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Explore Pokémon Go Nexus' })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: /complete illustrated guide/i })).toHaveAttribute('href', '/getting-started');
     expect(screen.getByRole('link', { name: /Pokémon collection/i })).toHaveAttribute('href', '/pokemon');
     expect(screen.getByRole('link', { name: /Search & discovery/i })).toHaveAttribute('href', '/search');

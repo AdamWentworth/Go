@@ -87,10 +87,11 @@ test.describe('Home page', () => {
       await expect.poll(() => page.locator('#feature-directory').evaluate((element) =>
         Math.abs(element.getBoundingClientRect().top))).toBeLessThan(30);
       await expect(page).toHaveURL(/#feature-directory$/);
-      await expect(page.getByRole('heading', { name: 'Explore PokeGo Nexus' })).toBeVisible();
-      await expect(page.getByRole('link', { name: /Pokémon collection/i })).toBeVisible();
-      await expect(page.getByRole('link', { name: /Search & discovery/i })).toBeVisible();
-      await expect(page.getByRole('link', { name: /^Trades/i })).toBeVisible();
+      const featureDirectory = page.locator('#feature-directory');
+      await expect(featureDirectory.getByRole('heading', { name: 'Explore Pokémon Go Nexus' })).toBeVisible();
+      await expect(featureDirectory.getByRole('link', { name: /Pokémon collection/i })).toBeVisible();
+      await expect(featureDirectory.getByRole('link', { name: /Search & discovery/i })).toBeVisible();
+      await expect(featureDirectory.getByRole('link', { name: /^Trades/i })).toBeVisible();
       await expect(page.getByRole('link', { name: /complete illustrated guide/i })).toBeAttached();
 
       const widths = await page.evaluate(() => ({

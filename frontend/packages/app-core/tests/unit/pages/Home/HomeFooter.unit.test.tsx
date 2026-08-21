@@ -9,7 +9,7 @@ describe('HomeFooter', () => {
   it('uses the branded lockup and routes visitors only to supported surfaces', () => {
     render(<MemoryRouter><HomeFooter /></MemoryRouter>);
 
-    expect(screen.getByRole('img', { name: 'PokeGo Nexus' })).toHaveAttribute(
+    expect(screen.getByRole('img', { name: 'Pokémon Go Nexus' })).toHaveAttribute(
       'src',
       '/images/logo/lockup.png',
     );
@@ -17,7 +17,7 @@ describe('HomeFooter', () => {
     expect(screen.getByRole('link', { name: 'Quick start guide' })).toHaveAttribute('href', '/getting-started');
     expect(screen.getByRole('link', { name: 'Privacy Policy' })).toHaveAttribute('href', '/privacy');
     expect(screen.getByRole('link', { name: 'Terms of Service' })).toHaveAttribute('href', '/terms');
-    expect(screen.queryByRole('link', { name: 'Contact PokeGo Nexus' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: 'Contact Pokémon Go Nexus' })).not.toBeInTheDocument();
     expect(document.querySelector('a[href^="mailto:"]')).not.toBeInTheDocument();
     expect(screen.getByText(/independent community project/i)).toBeInTheDocument();
   });

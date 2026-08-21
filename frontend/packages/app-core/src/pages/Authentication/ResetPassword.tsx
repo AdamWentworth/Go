@@ -38,7 +38,7 @@ const ResetPassword = () => {
   return (
     <div className="password-reset-page">
       <section className="password-reset-card">
-        <div className="password-reset-brand">PokeGoNexus</div>
+        <div className="password-reset-brand">Pokémon Go Nexus</div>
         {complete ? (
           <div className="password-reset-success">
             <FaCheckCircle />

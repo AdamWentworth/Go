@@ -114,7 +114,7 @@ const TradeBoardPage: React.FC = () => {
       <header className="trade-board-page__header">
         <Link className="trade-board-page__brand" to="/">
           <img alt="" aria-hidden="true" src="/icons/icon-192x192.png" />
-          <span>PokeGoNexus</span>
+          <span>Pokémon Go Nexus</span>
         </Link>
         <div className="trade-board-page__header-actions">
           {isLoggedIn ? <Link to="/search">Find trainers</Link> : <Link to="/register">Create your board</Link>}
@@ -131,7 +131,7 @@ const TradeBoardPage: React.FC = () => {
         ) : status === 'not-found' ? (
           <section className="trade-board-page__state">
             <h1>Trade Board not found</h1>
-            <p>That trainer may have changed their username or left PokeGoNexus.</p>
+            <p>That trainer may have changed their username or left Pokémon Go Nexus.</p>
             <Link to="/search">Search for a trainer</Link>
           </section>
         ) : status === 'private' ? (
@@ -153,7 +153,7 @@ const TradeBoardPage: React.FC = () => {
               <div>
                 <span>Live community listing</span>
                 <h1>@{model.username}’s Trade Board</h1>
-                <p>These listings reflect the trainer’s current public PokeGoNexus collection.</p>
+                <p>These listings reflect the trainer’s current public Pokémon Go Nexus collection.</p>
               </div>
               <button onClick={() => void handleCopy()} type="button"><FaLink aria-hidden="true" /> Copy link</button>
             </section>
@@ -171,8 +171,8 @@ const TradeBoardPage: React.FC = () => {
 
             {!isLoggedIn ? (
               <section className="trade-board-page__cta">
-                <div><span>Build your own collection</span><h2>Trade smarter with PokeGoNexus</h2><p>Catalog what you have, match what you want, and share one live Trade Board.</p></div>
-                <Link to="/register">Join PokeGoNexus <FaArrowRight aria-hidden="true" /></Link>
+                <div><span>Build your own collection</span><h2>Trade smarter with Pokémon Go Nexus</h2><p>Catalog what you have, match what you want, and share one live Trade Board.</p></div>
+                <Link to="/register">Join Pokémon Go Nexus <FaArrowRight aria-hidden="true" /></Link>
               </section>
             ) : null}
           </>

@@ -210,7 +210,7 @@ const RegisterForm: FC<RegisterFormProps> = ({
                   </button>
                 </div>
                 <p className="register-method-note">
-                  Your provider verifies your email. You will still choose a PokeGoNexus username.
+                  Your provider verifies your email. You will still choose a Pokémon Go Nexus username.
                 </p>
               </>
             )}
@@ -340,7 +340,7 @@ const RegisterForm: FC<RegisterFormProps> = ({
                   />
                   <span>
                     <strong>Use {values.username || 'my username'} as my Pokémon GO name</strong>
-                    <small>One name across PokeGoNexus and Pokémon GO.</small>
+                    <small>One name across Pokémon Go Nexus and Pokémon GO.</small>
                   </span>
                 </label>
                 <div className="register-field">

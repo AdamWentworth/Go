@@ -987,7 +987,7 @@ const Pvp = () => {
               <a href={data.source.url} target="_blank" rel="noreferrer">
                 {data.source.name}
               </a>
-              ; filtered to the current PokeGoNexus catalog.
+              ; filtered to the current Pokémon Go Nexus catalog.
             </span>
             <small>
               {rosterScope === 'owned'

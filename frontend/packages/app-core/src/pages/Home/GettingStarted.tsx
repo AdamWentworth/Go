@@ -127,7 +127,7 @@ const GUIDE_STEPS: GuideStep[] = [
   {
     id: 'sharing',
     number: '06',
-    title: 'Share beyond PokeGo Nexus',
+    title: 'Share beyond Pokémon Go Nexus',
     summary: 'Meet trainers where they already are without rebuilding your trade list by hand.',
     details: [
       'Generate a polished image containing your offers and wishlist.',
@@ -149,9 +149,9 @@ const GUIDE_STEPS: GuideStep[] = [
 const GettingStarted = () => (
   <div className="home-page getting-started">
     <header className="getting-started__topbar home-shell">
-      <Link className="home-brand" to="/" aria-label="PokeGo Nexus home">
+      <Link className="home-brand" to="/" aria-label="Pokémon Go Nexus home">
         <img src="/images/logo/logo.png" alt="" />
-        <span>PokeGo Nexus</span>
+        <span>Pokémon Go Nexus</span>
       </Link>
       <div>
         <Link className="getting-started__back" to="/"><FaArrowLeft aria-hidden="true" /> Home</Link>
@@ -171,7 +171,7 @@ const GettingStarted = () => (
 
       <div className="getting-started__content">
         <section className="getting-started__hero" aria-labelledby="getting-started-title">
-          <span className="home-eyebrow">PokeGo Nexus guide</span>
+          <span className="home-eyebrow">Pokémon Go Nexus guide</span>
           <h1 id="getting-started-title">Your first useful trade, step by step.</h1>
           <p>
             This guide follows the same order you will use in the app. Read it straight through,

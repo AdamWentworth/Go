@@ -29,7 +29,7 @@ describe('Home page', () => {
 
     expect(screen.getByRole('heading', { name: /Build your collection.*Find the right trade/i })).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: /The trade is the destination/i })).toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: /Explore PokeGo Nexus/i })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: /Explore Pokémon Go Nexus/i })).toBeInTheDocument();
     expect(screen.getAllByRole('link', { name: /create account/i }).length).toBeGreaterThan(0);
   });
 
@@ -51,7 +51,7 @@ describe('Home page', () => {
 
     renderHome();
 
-    expect(screen.getByRole('status')).toHaveTextContent('Opening PokeGo Nexus');
+    expect(screen.getByRole('status')).toHaveTextContent('Opening Pokémon Go Nexus');
   });
 
   it('has no automated accessibility violations on the signed-out landing page', async () => {

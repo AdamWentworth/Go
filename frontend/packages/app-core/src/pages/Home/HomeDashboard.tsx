@@ -130,9 +130,9 @@ const HomeDashboard = ({ user }: HomeDashboardProps) => {
   return (
     <div className="home-dashboard home-shell">
       <header className="home-dashboard__header">
-        <Link className="home-brand" to="/" aria-label="PokeGo Nexus home">
+        <Link className="home-brand" to="/" aria-label="Pokémon Go Nexus home">
           <img src="/images/logo/logo.png" alt="" />
-          <span>PokeGo Nexus</span>
+          <span>Pokémon Go Nexus</span>
         </Link>
         <Link className="home-dashboard__profile-link" to="/profile">
           <span aria-hidden="true">{user.username.slice(0, 1).toUpperCase()}</span>

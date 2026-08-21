@@ -12,7 +12,7 @@ const Home = () => {
     return (
       <div className="home-page home-auth-loading" role="status">
         <img src="/images/logo/logo.png" alt="" />
-        <strong>Opening PokeGo Nexus…</strong>
+        <strong>Opening Pokémon Go Nexus…</strong>
       </div>
     );
   }

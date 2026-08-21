@@ -19,7 +19,7 @@ This policy defines how user-facing messages should be shown in production.
 - Examples: validation gates during instance/fusion/trade interactions.
 
 3. App feedback notifications (`feedback`)
-- Use the PokeGoNexus `FeedbackProvider` for non-blocking system feedback.
+- Use the Pokémon Go Nexus `FeedbackProvider` for non-blocking system feedback.
 - Use `feedback.success`, `feedback.error`, `feedback.info`, or
   `feedback.warning`; do not mount page-local notification containers.
 - Examples: save/copy success, background sync warnings, session notices.

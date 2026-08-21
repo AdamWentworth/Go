@@ -1,6 +1,6 @@
 # Frontend Workspace
 
-This folder is the frontend monorepo workspace for PokeGo Nexus.
+This folder is the frontend monorepo workspace for Pokémon Go Nexus.
 
 The workspace contains the production web app, the Expo mobile shell, and shared packages that keep API contracts and UI tokens consistent across clients.
 

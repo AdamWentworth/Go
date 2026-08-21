@@ -61,7 +61,7 @@ const HowItWorks = () => {
           <span className="home-eyebrow">Trading, without the guesswork</span>
           <h2 id="home-trade-title">The trade is the destination.<br />Your collection makes it possible.</h2>
           <p>
-            PokeGo Nexus connects the pieces that usually live in screenshots, chat messages, and memory.
+            Pokémon Go Nexus connects the pieces that usually live in screenshots, chat messages, and memory.
             Your collection, wishlist, and trade preferences work together to surface useful matches.
           </p>
         </div>
@@ -106,7 +106,7 @@ const HowItWorks = () => {
       <section className="howItWorks__directory" id="feature-directory" aria-labelledby="feature-directory-title">
         <div className="howItWorks__section-heading">
           <span className="home-eyebrow">Everything in one trainer hub</span>
-          <h2 id="feature-directory-title">Explore PokeGo Nexus</h2>
+          <h2 id="feature-directory-title">Explore Pokémon Go Nexus</h2>
           <p>Trading is the heart of the platform, supported by the collection, discovery, social, and battle tools around it.</p>
         </div>
 

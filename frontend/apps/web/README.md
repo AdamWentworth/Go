@@ -1,6 +1,6 @@
-# PokeGo Nexus Frontend
+# Pokémon Go Nexus Frontend
 
-This is the **React web frontend** for the PokeGo Nexus platform. It is the primary client for managing Pokémon ownership, proposing trades, maintaining wanted lists, browsing Pokédex data, searching trainers/Pokémon, and validating Safari/WebKit behavior before production deploys.
+This is the **React web frontend** for the Pokémon Go Nexus platform. It is the primary client for managing Pokémon ownership, proposing trades, maintaining wanted lists, browsing Pokédex data, searching trainers/Pokémon, and validating Safari/WebKit behavior before production deploys.
 
 ---
 

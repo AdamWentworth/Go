@@ -10,7 +10,7 @@ const HomeFooter = () => (
         <img
           className="homeFooter__lockup"
           src="/images/logo/lockup.png"
-          alt="PokeGo Nexus"
+          alt="Pokémon Go Nexus"
           onContextMenu={(event) => event.preventDefault()}
         />
         <div className="homeFooter__cta-copy">
@@ -33,14 +33,14 @@ const HomeFooter = () => (
 
       <div className="homeFooter__directory">
         <div className="homeFooter__about">
-          <strong>PokeGo Nexus</strong>
+          <strong>Pokémon Go Nexus</strong>
           <p>
             A collection, discovery, and trading hub built around the details
             Pokémon GO trainers actually care about.
           </p>
         </div>
 
-        <nav className="homeFooter__links" aria-label="PokeGo Nexus footer">
+        <nav className="homeFooter__links" aria-label="Pokémon Go Nexus footer">
           <section>
             <h3>Get started</h3>
             <Link to="/getting-started">How it works</Link>
@@ -69,9 +69,9 @@ const HomeFooter = () => (
       </div>
 
       <div className="homeFooter__legal">
-        <p>© {new Date().getFullYear()} PokeGo Nexus.</p>
+        <p>© {new Date().getFullYear()} Pokémon Go Nexus.</p>
         <p>
-          PokeGo Nexus is an independent community project and is not affiliated
+          Pokémon Go Nexus is an independent community project and is not affiliated
           with or endorsed by Niantic, The Pokémon Company, Nintendo, or other
           rights holders. Pokémon, Pokémon GO, related names, images, and
           trademarks belong to their respective owners.
