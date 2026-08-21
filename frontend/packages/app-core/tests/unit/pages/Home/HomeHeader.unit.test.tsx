@@ -16,6 +16,7 @@ describe('HomeHeader', () => {
     renderHeader(false);
 
     expect(screen.getByRole('heading', { name: /build your collection.*find the right trade/i })).toBeInTheDocument();
+    expect(screen.getByRole('img', { name: 'PokeGo Nexus' })).toHaveAttribute('src', '/images/logo/logo.png');
     expect(screen.getByRole('link', { name: 'Log in' })).toHaveAttribute('href', '/login');
     expect(screen.getByRole('link', { name: /create your free account/i })).toHaveAttribute('href', '/register');
     expect(screen.getByRole('link', { name: /explore the app/i })).toHaveAttribute('href', '#feature-directory');

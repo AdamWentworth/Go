@@ -42,6 +42,12 @@ const HomeHeader = ({ logoUrl, isLoggedIn }: HomeHeaderProps) => {
 
       <div className="homeHeader__hero home-shell">
         <div className="homeHeader__copy">
+          <img
+            className="homeHeader__hero-logo"
+            src={logoUrl}
+            alt="PokeGo Nexus"
+            onContextMenu={(event) => event.preventDefault()}
+          />
           <span className="home-eyebrow">The ultimate trainer hub</span>
           <h1>Build your collection.<br /><em>Find the right trade.</em></h1>
           <p>

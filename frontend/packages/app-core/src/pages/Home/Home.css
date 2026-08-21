@@ -3,6 +3,7 @@
   --home-border-strong: color-mix(in srgb, var(--color-text-primary) 24%, transparent);
   --home-surface: color-mix(in srgb, var(--color-text-primary) 5%, var(--color-app-surface));
   --home-surface-raised: color-mix(in srgb, var(--color-text-primary) 9%, var(--color-app-surface));
+  --home-blue: #239bff;
   --home-green: #35c786;
   --home-red: #ff5878;
   --home-gold: #f3c544;
@@ -46,10 +47,10 @@
 }
 
 .home-primary-action {
-  border: 1px solid var(--home-green);
-  background: var(--home-green);
-  color: #06150f;
-  box-shadow: 0 10px 24px color-mix(in srgb, var(--home-green) 22%, transparent);
+  border: 1px solid var(--home-blue);
+  background: var(--home-blue);
+  color: #05111d;
+  box-shadow: 0 10px 24px color-mix(in srgb, var(--home-blue) 24%, transparent);
 }
 
 .home-secondary-action {
