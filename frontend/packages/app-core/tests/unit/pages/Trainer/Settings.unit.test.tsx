@@ -50,7 +50,7 @@ describe('Trainer Settings', () => {
   });
 
   it('saves server-backed privacy controls independently from device settings', async () => {
-    render(
+    const { container } = render(
       <MemoryRouter>
         <Settings />
       </MemoryRouter>,
@@ -59,6 +59,7 @@ describe('Trainer Settings', () => {
     fireEvent.change(await screen.findByLabelText(/profile visibility/i), {
       target: { value: 'friends' },
     });
+    await expect(container).toHaveNoViolations();
     fireEvent.click(screen.getByLabelText(/show profile location/i));
     fireEvent.click(screen.getByRole('button', { name: /save privacy/i }));
 

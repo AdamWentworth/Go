@@ -311,11 +311,12 @@ export default defineConfig(({ mode }) => {
         reporter: ['text', 'html', 'lcov', 'json'],
         reportsDirectory: path.join(testArtifactsRoot, 'coverage'),
         thresholds: {
-          // Conservative starting gate; ratchet upward as coverage work lands.
-          statements: 25,
-          branches: 25,
-          functions: 25,
-          lines: 25
+          // Preserve meaningful headroom beneath the current aggregate while
+          // preventing a large untested feature from silently diluting it.
+          statements: 70,
+          branches: 60,
+          functions: 70,
+          lines: 72
         },
         exclude: [
           'tests/**',
