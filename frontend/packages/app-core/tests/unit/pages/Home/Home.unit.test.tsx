@@ -27,8 +27,9 @@ describe('Home page', () => {
 
     renderHome();
 
-    expect(screen.getByRole('heading', { name: /Start with your collection.*We’ll guide the rest/i })).toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: /Follow one Pokémon through the app/i })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: /Build your collection.*Find the right trade/i })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: /The trade is the destination/i })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: /Explore PokeGo Nexus/i })).toBeInTheDocument();
     expect(screen.getAllByRole('link', { name: /create account/i }).length).toBeGreaterThan(0);
   });
 

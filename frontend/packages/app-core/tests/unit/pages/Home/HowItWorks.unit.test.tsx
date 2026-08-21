@@ -6,22 +6,22 @@ import { MemoryRouter } from 'react-router';
 import HowItWorks from '@/pages/Home/HowItWorks';
 
 describe('HowItWorks', () => {
-  it('renders navigation, pokemon, and search guidance blocks', () => {
+  it('centers trading while providing direct routes to the rest of the product', () => {
     const { container } = render(<MemoryRouter><HowItWorks /></MemoryRouter>);
 
-    expect(screen.getByRole('heading', { name: 'Follow one Pokémon through the app' })).toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: 'Add a Pokémon' })).toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: 'Describe what you want' })).toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: 'Prepare an offer' })).toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: 'Discover trainers' })).toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: 'Review the exchange' })).toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: 'Share when useful' })).toBeInTheDocument();
-    expect(screen.getByText('Server-authoritative trades')).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: /illustrated guide/i })).toHaveAttribute('href', '/getting-started');
-    expect(screen.getByText(/offering a Shiny Gigantamax Charizard/i)).toBeInTheDocument();
-    expect(container.querySelectorAll('img[src="/images/shiny_gigantamax/shiny_gigantamax_6.png"]')).toHaveLength(6);
-    expect(container.querySelectorAll('img[src="/images/gigantamax.png"]')).toHaveLength(6);
-    expect(container.querySelectorAll('img[src="/images/costumes_shiny/pokemon_25_detective_shiny.png"]')).toHaveLength(5);
+    expect(screen.getByRole('heading', { name: /the trade is the destination/i })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Catalog what you have' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Find a real match' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Propose with confidence' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Explore PokeGo Nexus' })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /complete illustrated guide/i })).toHaveAttribute('href', '/getting-started');
+    expect(screen.getByRole('link', { name: /Pokémon collection/i })).toHaveAttribute('href', '/pokemon');
+    expect(screen.getByRole('link', { name: /Search & discovery/i })).toHaveAttribute('href', '/search');
+    expect(screen.getByRole('link', { name: /^Trades/i })).toHaveAttribute('href', '/trades');
+    expect(screen.getByRole('link', { name: /Trade Board/i })).toHaveAttribute('href', '/trade-board');
+    expect(container.querySelectorAll('img[src="/images/shiny_gigantamax/shiny_gigantamax_6.png"]')).toHaveLength(3);
+    expect(container.querySelectorAll('img[src="/images/gigantamax.png"]')).toHaveLength(3);
+    expect(container.querySelectorAll('img[src="/images/costumes_shiny/pokemon_25_detective_shiny.png"]')).toHaveLength(2);
     expect(container.querySelector('img[src="/images/default/pokemon_1.png"]')).not.toBeInTheDocument();
   });
 });

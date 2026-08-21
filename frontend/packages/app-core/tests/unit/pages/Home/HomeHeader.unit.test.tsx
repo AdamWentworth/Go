@@ -15,33 +15,34 @@ describe('HomeHeader', () => {
   it('renders honest product content and account actions when logged out', () => {
     renderHeader(false);
 
-    expect(screen.getByRole('heading', { name: /start with your collection/i })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: /build your collection.*find the right trade/i })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Log in' })).toHaveAttribute('href', '/login');
-    expect(screen.getByRole('link', { name: /show me how/i })).toHaveAttribute('href', '#start-here');
-    expect(screen.getByRole('link', { name: /open the full guide/i })).toHaveAttribute('href', '/getting-started');
-    expect(screen.getByText('Learn before signing up')).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /create your free account/i })).toHaveAttribute('href', '/register');
+    expect(screen.getByRole('link', { name: /explore the app/i })).toHaveAttribute('href', '#feature-directory');
+    expect(screen.getByText('Reciprocal trade matching')).toBeInTheDocument();
+    expect(screen.getByText('You each have what the other trainer wants')).toBeInTheDocument();
   });
 
   it('hides guest calls to action when logged in', () => {
     renderHeader(true);
 
     expect(screen.queryByRole('link', { name: 'Log in' })).not.toBeInTheDocument();
-    expect(screen.queryByRole('link', { name: /show me how/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: /explore the app/i })).not.toBeInTheDocument();
   });
 
-  it('smoothly scrolls to the guide instead of using the browser hash jump', () => {
-    const guide = document.createElement('section');
-    guide.id = 'start-here';
+  it('smoothly scrolls to the feature directory instead of using the browser hash jump', () => {
+    const directory = document.createElement('section');
+    directory.id = 'feature-directory';
     const scrollIntoView = vi.fn();
-    guide.scrollIntoView = scrollIntoView;
-    document.body.appendChild(guide);
+    directory.scrollIntoView = scrollIntoView;
+    document.body.appendChild(directory);
 
     renderHeader(false);
-    fireEvent.click(screen.getByRole('link', { name: /show me how/i }));
+    fireEvent.click(screen.getByRole('link', { name: /explore the app/i }));
 
     expect(scrollIntoView).toHaveBeenCalledWith({ behavior: 'smooth', block: 'start' });
-    expect(window.location.hash).toBe('#start-here');
-    guide.remove();
+    expect(window.location.hash).toBe('#feature-directory');
+    directory.remove();
     window.history.replaceState(null, '', '/');
   });
 });

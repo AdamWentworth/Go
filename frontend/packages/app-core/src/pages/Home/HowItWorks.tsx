@@ -1,14 +1,12 @@
-// HowItWorks.jsx
-
 import type { IconType } from 'react-icons';
 import {
   FaArrowRight,
-  FaCheck,
+  FaBookOpen,
   FaExchangeAlt,
-  FaHeart,
   FaSearch,
   FaShareAlt,
   FaTags,
+  FaUserFriends,
 } from 'react-icons/fa';
 import { Link } from 'react-router';
 
@@ -16,170 +14,158 @@ import PokemonArtwork from '@/components/pokemonComponents/PokemonArtwork';
 
 import './HowItWorks.css';
 
-interface StoryPokemon {
-  gigantamax?: boolean;
-  imageUrl: string;
-}
-
-interface HomeGuideStep {
-  number: string;
+interface FeatureLink {
   title: string;
   description: string;
-  images: StoryPokemon[];
-  visualLabel: string;
-  icon: IconType;
-  tone: 'caught' | 'wanted' | 'trade' | 'search' | 'proposal' | 'share';
+  href: string;
+  image?: string;
+  icon?: IconType;
+  tone: string;
 }
 
-const HOME_GUIDE_STEPS: HomeGuideStep[] = [
+const CORE_FEATURES: FeatureLink[] = [
   {
-    number: '01',
-    title: 'Add a Pokémon',
-    description: 'Find its exact variant, then save it as Caught, For Trade, or Wanted.',
-    images: [{ imageUrl: '/images/shiny_gigantamax/shiny_gigantamax_6.png', gigantamax: true }],
-    visualLabel: 'Shiny Gigantamax Charizard',
-    icon: FaTags,
-    tone: 'caught',
+    title: 'Pokémon collection',
+    description: 'Catalog exact variants, showcase rare catches, and organize everything with flexible tags.',
+    href: '/pokemon',
+    image: '/images/btn_pokemon.png',
+    tone: 'collection',
   },
   {
-    number: '02',
-    title: 'Describe what you want',
-    description: 'Add a Wanted entry and only specify details—such as form or moves—when they matter.',
-    images: [{ imageUrl: '/images/costumes_shiny/pokemon_25_detective_shiny.png' }],
-    visualLabel: 'Shiny Detective Pikachu',
-    icon: FaHeart,
-    tone: 'wanted',
-  },
-  {
-    number: '03',
-    title: 'Prepare an offer',
-    description: 'List a caught Pokémon For Trade and choose the Wanted targets you would accept.',
-    images: [{ imageUrl: '/images/shiny_gigantamax/shiny_gigantamax_6.png', gigantamax: true }],
-    visualLabel: 'The same Charizard becomes your offer',
-    icon: FaExchangeAlt,
-    tone: 'trade',
-  },
-  {
-    number: '04',
-    title: 'Discover trainers',
-    description: 'Search exact listings or trainer names and inspect the public collection behind a result.',
-    images: [{ imageUrl: '/images/costumes_shiny/pokemon_25_detective_shiny.png' }],
-    visualLabel: 'Search for the Pikachu you want',
-    icon: FaSearch,
+    title: 'Search & discovery',
+    description: 'Find Pokémon listings or trainers nearby, with detailed filters that reflect what matters to you.',
+    href: '/search',
+    image: '/images/btn_search.png',
     tone: 'search',
   },
   {
-    number: '05',
-    title: 'Review the exchange',
-    description: 'Confirm both Pokémon, friendship level, eligibility, and Stardust cost before proposing.',
-    images: [
-      { imageUrl: '/images/shiny_gigantamax/shiny_gigantamax_6.png', gigantamax: true },
-      { imageUrl: '/images/costumes_shiny/pokemon_25_detective_shiny.png' },
-    ],
-    visualLabel: 'Your offer ↔ their offer',
-    icon: FaExchangeAlt,
-    tone: 'proposal',
+    title: 'Trades',
+    description: 'Set per-Pokémon preferences, propose an exchange, and follow every trade from offer to completion.',
+    href: '/trades',
+    image: '/images/btn_trades.png',
+    tone: 'trades',
   },
   {
-    number: '06',
-    title: 'Share when useful',
-    description: 'Create a live Trade Board or image for communities where the other trainer may not use the app yet.',
-    images: [
-      { imageUrl: '/images/shiny_gigantamax/shiny_gigantamax_6.png', gigantamax: true },
-      { imageUrl: '/images/costumes_shiny/pokemon_25_detective_shiny.png' },
-    ],
-    visualLabel: 'One board, both listings',
-    icon: FaShareAlt,
-    tone: 'share',
+    title: 'Friends',
+    description: 'Build your trainer network while keeping collection visibility and personal details under your control.',
+    href: '/friends',
+    icon: FaUserFriends,
+    tone: 'friends',
   },
+];
+
+const TRAINER_TOOLS: FeatureLink[] = [
+  { title: 'Pokédex', description: 'Explore species and variants.', href: '/pokedex', image: '/images/btn_pokedex.png', tone: 'pokedex' },
+  { title: 'Raids', description: 'Build effective raid teams.', href: '/raid', image: '/images/btn_raid.png', tone: 'raid' },
+  { title: 'PvP', description: 'Explore leagues and matchups.', href: '/pvp', image: '/images/btn_pvp.png', tone: 'pvp' },
+  { title: 'Max Battles', description: 'Plan for Dynamax encounters.', href: '/max', image: '/images/btn_max.png', tone: 'max' },
+  { title: 'Rankings', description: 'Compare Pokémon performance.', href: '/rankings', image: '/images/btn_rankings.png', tone: 'rankings' },
+  { title: 'Trade Board', description: 'Share a visual trade list anywhere.', href: '/trade-board', icon: FaShareAlt, tone: 'board' },
 ];
 
 const HowItWorks = () => {
   return (
-    <div className="howItWorks home-shell" id="start-here">
-      <section className="howItWorks__intro" aria-labelledby="home-workflow-title">
-        <span className="home-eyebrow">Start here</span>
-        <h2 id="home-workflow-title">Follow one Pokémon through the app</h2>
-        <p>You do not need to learn every feature at once. These six steps are the shortest path from an empty account to a useful trade.</p>
-        <p className="howItWorks__story-note"><strong>Example:</strong> you are offering a Shiny Gigantamax Charizard and looking for a Shiny Detective Pikachu.</p>
+    <main className="howItWorks home-shell">
+      <section className="howItWorks__trade-story" id="trade-matching" aria-labelledby="home-trade-title">
+        <div className="howItWorks__section-heading">
+          <span className="home-eyebrow">Trading, without the guesswork</span>
+          <h2 id="home-trade-title">The trade is the destination.<br />Your collection makes it possible.</h2>
+          <p>
+            PokeGo Nexus connects the pieces that usually live in screenshots, chat messages, and memory.
+            Your collection, wishlist, and trade preferences work together to surface useful matches.
+          </p>
+        </div>
 
-        <div className="howItWorks__concepts" aria-label="Collection status guide">
+        <div className="howItWorks__trade-steps">
           <article>
-            <span className="howItWorks__concept-icon howItWorks__concept-icon--caught" aria-hidden="true">
-              <PokemonArtwork alt="" className="howItWorks__concept-artwork" gigantamax imageUrl="/images/shiny_gigantamax/shiny_gigantamax_6.png" />
-              <FaCheck />
-            </span>
-            <div><strong>Caught</strong><small>A Pokémon currently in your collection.</small></div>
+            <span className="howItWorks__step-number">01</span>
+            <div className="howItWorks__step-visual howItWorks__step-visual--collection" aria-hidden="true">
+              <PokemonArtwork alt="" className="howItWorks__step-pokemon" gigantamax imageUrl="/images/shiny_gigantamax/shiny_gigantamax_6.png" />
+              <FaTags />
+            </div>
+            <h3>Catalog what you have</h3>
+            <p>Record exact catches, organize them your way, and mark the Pokémon you are ready to trade.</p>
           </article>
           <article>
-            <span className="howItWorks__concept-icon howItWorks__concept-icon--trade" aria-hidden="true">
-              <PokemonArtwork alt="" className="howItWorks__concept-artwork" gigantamax imageUrl="/images/shiny_gigantamax/shiny_gigantamax_6.png" />
+            <span className="howItWorks__step-number">02</span>
+            <div className="howItWorks__step-visual howItWorks__step-visual--match" aria-hidden="true">
+              <PokemonArtwork alt="" className="howItWorks__step-pokemon" gigantamax imageUrl="/images/shiny_gigantamax/shiny_gigantamax_6.png" />
+              <FaSearch />
+              <PokemonArtwork alt="" className="howItWorks__step-pokemon" imageUrl="/images/costumes_shiny/pokemon_25_detective_shiny.png" />
+            </div>
+            <h3>Find a real match</h3>
+            <p>Search listings and see when what you offer lines up with what another trainer actually wants.</p>
+          </article>
+          <article>
+            <span className="howItWorks__step-number">03</span>
+            <div className="howItWorks__step-visual howItWorks__step-visual--proposal" aria-hidden="true">
+              <PokemonArtwork alt="" className="howItWorks__step-pokemon" gigantamax imageUrl="/images/shiny_gigantamax/shiny_gigantamax_6.png" />
               <FaExchangeAlt />
-            </span>
-            <div><strong>For Trade</strong><small>A caught Pokémon you are willing to offer.</small></div>
-          </article>
-          <article>
-            <span className="howItWorks__concept-icon howItWorks__concept-icon--wanted" aria-hidden="true">
-              <PokemonArtwork alt="" className="howItWorks__concept-artwork" imageUrl="/images/costumes_shiny/pokemon_25_detective_shiny.png" />
-              <FaHeart />
-            </span>
-            <div><strong>Wanted</strong><small>A separate wishlist entry describing what you seek.</small></div>
+              <PokemonArtwork alt="" className="howItWorks__step-pokemon" imageUrl="/images/costumes_shiny/pokemon_25_detective_shiny.png" />
+            </div>
+            <h3>Propose with confidence</h3>
+            <p>Review both Pokémon, trade eligibility, friendship, and Stardust cost before either trainer commits.</p>
           </article>
         </div>
 
-        <div className="howItWorks__steps">
-          {HOME_GUIDE_STEPS.map((step) => {
-            const Icon = step.icon;
-            return (
-              <article key={step.number} className={`is-${step.tone}`}>
-                <span>{step.number}</span>
-                <div className={`howItWorks__step-art ${step.images.length > 1 ? 'has-pair' : ''}`} aria-hidden="true">
-                  <Icon />
-                  <div className="howItWorks__story-pokemon">
-                    {step.images.map((image, index) => (
-                      <PokemonArtwork
-                        key={`${image.imageUrl}-${index}`}
-                        alt=""
-                        className="howItWorks__story-artwork"
-                        gigantamax={image.gigantamax}
-                        imageUrl={image.imageUrl}
-                      />
-                    ))}
-                  </div>
-                  <small>{step.visualLabel}</small>
-                </div>
-                <h3>{step.title}</h3>
-                <p>{step.description}</p>
-              </article>
-            );
-          })}
-        </div>
         <Link className="howItWorks__guide-link" to="/getting-started">
-          Continue with the illustrated guide <FaArrowRight aria-hidden="true" />
+          <FaBookOpen aria-hidden="true" /> New here? Open the complete illustrated guide <FaArrowRight aria-hidden="true" />
         </Link>
       </section>
 
-      <section className="howItWorks__feature-band" aria-labelledby="home-real-features-title">
-        <div>
-          <span className="home-eyebrow">Learn at your pace</span>
-          <h2 id="home-real-features-title">The details appear when they become relevant.</h2>
-          <p>Start with a species and status. Forms, costumes, Max forms, backgrounds, moves, tags, and trade conditions remain available without blocking the basic workflow.</p>
-          <Link to="/getting-started">Read the complete walkthrough <FaArrowRight aria-hidden="true" /></Link>
+      <section className="howItWorks__directory" id="feature-directory" aria-labelledby="feature-directory-title">
+        <div className="howItWorks__section-heading">
+          <span className="home-eyebrow">Everything in one trainer hub</span>
+          <h2 id="feature-directory-title">Explore PokeGo Nexus</h2>
+          <p>Trading is the heart of the platform, supported by the collection, discovery, social, and battle tools around it.</p>
         </div>
-        <div className="howItWorks__feature-list">
-          <span><strong>Custom tags</strong><small>Organize catches and wishlist entries your way.</small></span>
-          <span><strong>Reciprocal matching</strong><small>See where your listings and another trainer’s needs align.</small></span>
-          <span><strong>Server-authoritative trades</strong><small>Trade state changes only after the service validates them.</small></span>
-          <span><strong>Privacy controls</strong><small>Choose who can view your profile, collection, and trainer details.</small></span>
+
+        <div className="howItWorks__core-grid">
+          {CORE_FEATURES.map((feature) => {
+            const Icon = feature.icon;
+            return (
+              <Link key={feature.href} className={`howItWorks__feature-card is-${feature.tone}`} to={feature.href}>
+                <span className="howItWorks__feature-icon" aria-hidden="true">
+                  {feature.image ? <img src={feature.image} alt="" /> : Icon ? <Icon /> : null}
+                </span>
+                <span><strong>{feature.title}</strong><small>{feature.description}</small></span>
+                <FaArrowRight aria-hidden="true" />
+              </Link>
+            );
+          })}
+        </div>
+
+        <div className="howItWorks__tools-heading">
+          <h3>Trainer tools</h3>
+          <p>Jump directly to the reference and planning tools you need.</p>
+        </div>
+        <div className="howItWorks__tools-grid">
+          {TRAINER_TOOLS.map((feature) => {
+            const Icon = feature.icon;
+            return (
+              <Link key={feature.href} className={`howItWorks__tool-card is-${feature.tone}`} to={feature.href}>
+                <span aria-hidden="true">{feature.image ? <img src={feature.image} alt="" /> : Icon ? <Icon /> : null}</span>
+                <span><strong>{feature.title}</strong><small>{feature.description}</small></span>
+                <FaArrowRight aria-hidden="true" />
+              </Link>
+            );
+          })}
         </div>
       </section>
 
       <section className="howItWorks__cta" aria-labelledby="home-cta-title">
         <img src="/images/logo/logo.png" alt="" />
-        <div><span className="home-eyebrow">Ready when you are</span><h2 id="home-cta-title">Begin with one Pokémon.</h2><p>Your signed-in Home will guide the next useful step as your collection grows.</p></div>
-        <div><Link className="home-primary-action" to="/register">Create account <FaArrowRight aria-hidden="true" /></Link><Link className="home-secondary-action" to="/login">I already have an account</Link></div>
+        <div>
+          <span className="home-eyebrow">Welcome to PokeGo Nexus</span>
+          <h2 id="home-cta-title">Bring your collection. Find your next trade.</h2>
+          <p>Create a free trainer account, or take the guided tour before you begin.</p>
+        </div>
+        <div>
+          <Link className="home-primary-action" to="/register">Create account <FaArrowRight aria-hidden="true" /></Link>
+          <Link className="home-secondary-action" to="/getting-started">See how it works</Link>
+        </div>
       </section>
-    </div>
+    </main>
   );
 };
 
