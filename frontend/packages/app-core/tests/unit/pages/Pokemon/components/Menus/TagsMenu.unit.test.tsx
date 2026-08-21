@@ -1,6 +1,6 @@
 import React from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 
 import TagsMenu from '@/pages/Pokemon/components/Menus/TagsMenu/TagsMenu';
 import type { TagBuckets, TagItem } from '@/types/tags';
@@ -161,34 +161,24 @@ describe('TagsMenu', () => {
     expect(container.querySelector('[data-tag="Trade"]')).toBeNull();
   });
 
-  it('shows a sticky active tag filter escape hatch in focused side panels', async () => {
-    const onClearTagFilter = vi.fn();
-
+  it('does not repeat the active Pokemon filter over the tag overview', () => {
     render(
       <TagsMenu
-        panel="wishlist"
+        panel="inventory"
         onSelectTag={vi.fn()}
         activeTags={{ caught: {}, wanted: {} }}
         variants={[]}
-        tagFilter="Wanted"
-        onClearTagFilter={onClearTagFilter}
+        tagFilter="Caught"
+        onClearTagFilter={vi.fn()}
       />,
     );
 
-    const clearButton = screen.getByRole('button', { name: /clear wanted tag filter/i });
-    const chip = clearButton.closest('.active-tag-filter-row');
-    expect(chip).toHaveClass('active-tag-filter-placement-panel');
-    expect(chip).toHaveClass('active-tag-filter-wanted');
-
-    fireEvent.click(clearButton);
-
-    await waitFor(() => {
-      expect(confirmMock).toHaveBeenCalledWith(expect.stringContaining('Clear the Wanted tag?'));
-      expect(onClearTagFilter).toHaveBeenCalledTimes(1);
-    });
+    expect(document.querySelector('.active-tag-filter-row')).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /clear caught tag filter/i })).not.toBeInTheDocument();
+    expect(document.querySelector('[data-tag="Caught"]')).toBeInTheDocument();
   });
 
-  it('keeps a required foreign-catalog tag visible without an escape hatch', () => {
+  it('does not render a required foreign-catalog filter over the tag overview', () => {
     render(
       <TagsMenu
         panel="inventory"
@@ -199,12 +189,7 @@ describe('TagsMenu', () => {
       />,
     );
 
-    expect(document.querySelector('.active-tag-filter-name')).toHaveTextContent(
-      'Caught',
-    );
-    expect(
-      screen.queryByRole('button', { name: /clear caught tag filter/i }),
-    ).not.toBeInTheDocument();
+    expect(document.querySelector('.active-tag-filter-row')).not.toBeInTheDocument();
   });
 
   it('renders editable custom tags and filters with a stable id selector', () => {
@@ -245,49 +230,6 @@ describe('TagsMenu', () => {
     fireEvent.click(screen.getByText('Raid team'));
     expect(onSelectTag).toHaveBeenCalledWith('custom:tag-raids');
     expect(screen.getByRole('button', { name: /edit raid team tag/i })).toBeInTheDocument();
-  });
-
-  it('uses the assigned custom tag color for the active filter chip', () => {
-    const customItem = makeItem({ instance_id: 'custom-shadow', is_caught: true });
-    useTagsStore.setState({
-      customTags: {
-        caught: {
-          'tag-shadow-shinies': {
-            tag: {
-              tag_id: 'tag-shadow-shinies',
-              parent: 'caught',
-              name: 'Shadow Shinies',
-              color: '#7C3AED',
-              sort: 10,
-            },
-            items: { 'custom-shadow': customItem },
-          },
-        },
-        wanted: {},
-      },
-    });
-
-    const { container } = render(
-      <TagsMenu
-        activeTags={{
-          caught: { 'custom-shadow': customItem },
-          wanted: {},
-          'custom:tag-shadow-shinies': { 'custom-shadow': customItem },
-        }}
-        isEditable
-        onClearTagFilter={vi.fn()}
-        onSelectTag={vi.fn()}
-        panel="inventory"
-        tagFilter="custom:tag-shadow-shinies"
-        variants={[]}
-      />,
-    );
-
-    const chip = container.querySelector('.active-tag-filter-row');
-    expect(chip?.querySelector('.active-tag-filter-name')).toHaveTextContent('Shadow Shinies');
-    expect(chip).toHaveAttribute('data-custom', 'true');
-    expect(chip).toHaveStyle({ '--active-custom-tag-color': '#7C3AED' });
-    expect(container.querySelector('.active-tag-filter-color')).not.toBeInTheDocument();
   });
 
   it('opens the custom tag creator from an editable tag panel', () => {

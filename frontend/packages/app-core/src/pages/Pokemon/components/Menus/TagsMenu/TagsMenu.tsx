@@ -10,7 +10,6 @@ import useFavoriteList from '@/hooks/sort/useFavoriteList';
 import TagItems, { type TagSummary } from './TagItems';
 import type { TagBuckets, TagItem } from '@/types/tags';
 import type { AllVariants } from '@/types/pokemonVariants';
-import ActiveTagFilterChip from '../../ActiveTagFilterChip';
 import CustomTagEditorSheet from './CustomTagEditorSheet';
 import { useTagsStore } from '@/features/tags/store/useTagsStore';
 import {
@@ -275,14 +274,6 @@ const TagsMenu: React.FC<TagsMenuProps> = ({
               </button>
             </div>
           )}
-
-          {tagFilter.trim() ? (
-            <ActiveTagFilterChip
-              tagFilter={tagFilter}
-              onClearTagFilter={onClearTagFilter}
-              placement="panel"
-            />
-          ) : null}
 
           {/* TAG TREE */}
           <div className="tag-tree">

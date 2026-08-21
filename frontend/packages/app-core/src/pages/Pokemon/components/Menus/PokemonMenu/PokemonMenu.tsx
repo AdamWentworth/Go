@@ -222,7 +222,6 @@ const PokemonMenu: React.FC<PokemonMenuProps> = ({
           <ActiveTagFilterChip
             tagFilter={tagFilter}
             onClearTagFilter={onClearTagFilter}
-            placement="search"
           />
         )}
         {isMenuVisible && (

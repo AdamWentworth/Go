@@ -9,7 +9,6 @@ import './ActiveTagFilterChip.css';
 type ActiveTagFilterChipProps = {
   tagFilter: string;
   onClearTagFilter?: () => void;
-  placement?: 'search' | 'panel';
 };
 
 const toTagFilterClass = (tagFilter: string): string =>
@@ -22,7 +21,6 @@ const toTagFilterClass = (tagFilter: string): string =>
 const ActiveTagFilterChip: React.FC<ActiveTagFilterChipProps> = ({
   tagFilter,
   onClearTagFilter,
-  placement = 'search',
 }) => {
   const { confirm } = useModal();
   const trimmedTagFilter = tagFilter.trim();
@@ -53,7 +51,7 @@ const ActiveTagFilterChip: React.FC<ActiveTagFilterChipProps> = ({
       className={[
         'active-tag-filter-row',
         `active-tag-filter-${tagFilterClass}`,
-        `active-tag-filter-placement-${placement}`,
+        'active-tag-filter-placement-search',
         isFavoritesFilter ? 'active-tag-filter-with-icon' : '',
         !onClearTagFilter ? 'active-tag-filter-required' : '',
       ].filter(Boolean).join(' ')}
