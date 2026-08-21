@@ -247,6 +247,49 @@ describe('TagsMenu', () => {
     expect(screen.getByRole('button', { name: /edit raid team tag/i })).toBeInTheDocument();
   });
 
+  it('uses the assigned custom tag color for the active filter chip', () => {
+    const customItem = makeItem({ instance_id: 'custom-shadow', is_caught: true });
+    useTagsStore.setState({
+      customTags: {
+        caught: {
+          'tag-shadow-shinies': {
+            tag: {
+              tag_id: 'tag-shadow-shinies',
+              parent: 'caught',
+              name: 'Shadow Shinies',
+              color: '#7C3AED',
+              sort: 10,
+            },
+            items: { 'custom-shadow': customItem },
+          },
+        },
+        wanted: {},
+      },
+    });
+
+    const { container } = render(
+      <TagsMenu
+        activeTags={{
+          caught: { 'custom-shadow': customItem },
+          wanted: {},
+          'custom:tag-shadow-shinies': { 'custom-shadow': customItem },
+        }}
+        isEditable
+        onClearTagFilter={vi.fn()}
+        onSelectTag={vi.fn()}
+        panel="inventory"
+        tagFilter="custom:tag-shadow-shinies"
+        variants={[]}
+      />,
+    );
+
+    const chip = container.querySelector('.active-tag-filter-row');
+    expect(chip?.querySelector('.active-tag-filter-name')).toHaveTextContent('Shadow Shinies');
+    expect(chip).toHaveAttribute('data-custom', 'true');
+    expect(chip).toHaveStyle({ '--active-custom-tag-color': '#7C3AED' });
+    expect(container.querySelector('.active-tag-filter-color')).not.toBeInTheDocument();
+  });
+
   it('opens the custom tag creator from an editable tag panel', () => {
     render(
       <TagsMenu

@@ -60,6 +60,7 @@ const ActiveTagFilterChip: React.FC<ActiveTagFilterChipProps> = ({
       aria-label={`${displayName} tag filter${
         onClearTagFilter ? '' : ', required while viewing this catalog'
       }`}
+      data-custom={customTag?.color ? 'true' : undefined}
       style={customTag?.color ? { '--active-custom-tag-color': customTag.color } as React.CSSProperties : undefined}
       title={
         onClearTagFilter
@@ -76,7 +77,6 @@ const ActiveTagFilterChip: React.FC<ActiveTagFilterChipProps> = ({
           draggable={false}
         />
       )}
-      {customTag?.color ? <span className="active-tag-filter-color" aria-hidden="true" /> : null}
       <span className="active-tag-filter-name">{displayName}</span>
       {onClearTagFilter ? (
         <button
