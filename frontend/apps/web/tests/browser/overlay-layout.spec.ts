@@ -24,6 +24,7 @@ test.describe('instance overlay layout', () => {
       <!doctype html>
       <html>
         <head>
+          <meta name="viewport" content="width=device-width, initial-scale=1" />
           <style>
             html,
             body {

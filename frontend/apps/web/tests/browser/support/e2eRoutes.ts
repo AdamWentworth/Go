@@ -16,6 +16,11 @@ export type E2eRouteOptions = {
   trades?: unknown;
   pokedexSpecies?: unknown[];
   raidDataDelayMs?: number;
+  customTags?: unknown[];
+  tagOrders?: {
+    caught: string[];
+    wanted: string[];
+  };
 };
 
 const fixturePath = (relativePath: string) =>
@@ -340,6 +345,10 @@ export async function installE2eRoutes(page: Page, options: E2eRouteOptions = {}
       },
     ),
   ) as Record<string, unknown>;
+  const tagOrders = options.tagOrders ?? {
+    caught: ['system:caught', 'system:favorites', 'system:trade'],
+    wanted: ['system:wanted', 'system:most-wanted'],
+  };
 
   if (options.mockImages ?? true) {
     await page.route('**/images/**', async (route) => {
@@ -512,6 +521,37 @@ export async function installE2eRoutes(page: Page, options: E2eRouteOptions = {}
       await fulfillJson(route, {
         message: `Unhandled trade route: ${route.request().method()} ${url.pathname}`,
       }, 404);
+    });
+  }
+
+  for (const pathPattern of ['**/api/users/tags', '**/__e2e/users/tags']) {
+    await page.route(pathPattern, async (route) => {
+      if (route.request().method() === 'GET') {
+        await fulfillJson(route, {
+          tags: options.customTags ?? [],
+          orders: tagOrders,
+        });
+        return;
+      }
+      await fulfillJson(route, {
+        message: `Unhandled tag route: ${route.request().method()}`,
+      }, 404);
+    });
+  }
+
+  for (const pathPattern of ['**/api/users/tags/order', '**/__e2e/users/tags/order']) {
+    await page.route(pathPattern, async (route) => {
+      const request = route.request().postDataJSON() as {
+        parent?: 'caught' | 'wanted';
+        tag_keys?: string[];
+      };
+      const parent = request.parent;
+      if (route.request().method() !== 'PUT' || !parent) {
+        await fulfillJson(route, { message: 'Invalid tag order request' }, 400);
+        return;
+      }
+      tagOrders[parent] = [...(request.tag_keys ?? [])];
+      await fulfillJson(route, { parent, tag_keys: tagOrders[parent] });
     });
   }
 
