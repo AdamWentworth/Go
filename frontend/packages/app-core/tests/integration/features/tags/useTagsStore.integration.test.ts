@@ -25,6 +25,8 @@ vi.mock('@/services/tagService', () => tagServiceMocks);
 import { useTagsStore } from '@/features/tags/store/useTagsStore';
 import { useVariantsStore } from '@/features/variants/store/useVariantsStore';
 import { useInstancesStore } from '@/features/instances/store/useInstancesStore';
+import { readCachedTagOrders } from '@/features/tags/utils/tagOrderCache';
+import { useAuthStore } from '@/stores/useAuthStore';
 
 const variantsFixture = [
   {
@@ -94,6 +96,11 @@ describe('useTagsStore integration', () => {
         caught: ['system:caught', 'system:favorites', 'system:trade'],
         wanted: ['system:wanted', 'system:most-wanted'],
       },
+    });
+
+    useAuthStore.setState({
+      isLoggedIn: true,
+      user: { user_id: 'user-1' } as any,
     });
 
     useVariantsStore.setState({
@@ -186,6 +193,7 @@ describe('useTagsStore integration', () => {
       tag_keys: requested,
     });
     expect(useTagsStore.getState().tagOrders.caught).toEqual(requested);
+    expect(readCachedTagOrders('user-1')?.caught).toEqual(requested);
   });
 
   it('rebuildCustomTags groups memberships by allowed parents and ignores legacy trade parent', async () => {

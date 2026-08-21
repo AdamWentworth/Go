@@ -18,6 +18,7 @@ import { initializePokemonTags } from '../utils/initializePokemonTags';
 import { isDataFresh }          from '@/utils/cacheHelpers';
 import { createScopedLogger }   from '@/utils/logger';
 import {
+  getStoredUser,
   getStorageNumber,
   removeStorageKey,
   setStorageNumber,
@@ -26,6 +27,11 @@ import {
 
 import { useVariantsStore }  from '@/features/variants/store/useVariantsStore';
 import { useInstancesStore } from '@/features/instances/store/useInstancesStore';
+import { useAuthStore }      from '@/stores/useAuthStore';
+import {
+  readCachedTagOrders,
+  writeCachedTagOrders,
+} from '@/features/tags/utils/tagOrderCache';
 
 import type { TagBuckets, TagItem } from '@/types/tags';
 import type { Instances }           from '@/types/instances';
@@ -77,6 +83,9 @@ export const DEFAULT_POKEMON_TAG_ORDERS: PokemonTagOrders = {
 };
 
 const customTagOrderKey = (tagId: string): PokemonTagOrderKey => `custom:${tagId}`;
+
+const currentUserId = (): string | null =>
+  useAuthStore.getState().user?.user_id ?? getStoredUser()?.user_id ?? null;
 
 function normalizePokemonTagOrders(
   orders: Partial<PokemonTagOrders> | null | undefined,
@@ -286,10 +295,19 @@ export const useTagsStore = create<TagsStore>()((set, get) => ({
   },
 
   async refreshCustomTagDefinitions() {
-    const response = await fetchCustomTags();
+    const responsePromise = fetchCustomTags();
+    const cachedDefinitions = await getAllTagDefs();
+    const cachedOrders = readCachedTagOrders(currentUserId());
+    if (cachedOrders) {
+      set({ tagOrders: normalizePokemonTagOrders(cachedOrders, cachedDefinitions) });
+    }
+
+    const response = await responsePromise;
     const definitions = response.tags.map(toLocalTagDef);
+    const orders = normalizePokemonTagOrders(response.orders, definitions);
     await replaceTagDefs(definitions);
-    set({ tagOrders: normalizePokemonTagOrders(response.orders, definitions) });
+    set({ tagOrders: orders });
+    writeCachedTagOrders(currentUserId(), orders);
     await get().rebuildCustomTags();
   },
 
@@ -307,6 +325,7 @@ export const useTagsStore = create<TagsStore>()((set, get) => ({
         ],
       },
     }));
+    writeCachedTagOrders(currentUserId(), get().tagOrders);
     await get().rebuildCustomTags();
     return created;
   },
@@ -330,6 +349,7 @@ export const useTagsStore = create<TagsStore>()((set, get) => ({
         wanted: state.tagOrders.wanted.filter((key) => key !== deletedKey),
       },
     }));
+    writeCachedTagOrders(currentUserId(), get().tagOrders);
 
     const instances = useInstancesStore.getState().instances;
     const patches: Record<string, Partial<PokemonInstance>> = {};
@@ -351,12 +371,12 @@ export const useTagsStore = create<TagsStore>()((set, get) => ({
 
   async saveTagOrder(parent, tagKeys) {
     const response = await updatePokemonTagOrder({ parent, tag_keys: tagKeys });
-    set((state) => ({
-      tagOrders: {
-        ...state.tagOrders,
-        [parent]: response.tag_keys,
-      },
-    }));
+    const savedOrders: PokemonTagOrders = {
+      ...get().tagOrders,
+      [parent]: response.tag_keys,
+    };
+    set({ tagOrders: savedOrders });
+    writeCachedTagOrders(currentUserId(), savedOrders);
   },
 
   async applyCustomTagChanges(instanceIds, changes) {
@@ -443,6 +463,12 @@ export const useTagsStore = create<TagsStore>()((set, get) => ({
     const needRebuild = ownTS > tagsTS;
 
     try {
+      const definitions = await getAllTagDefs();
+      const cachedOrders = readCachedTagOrders(currentUserId());
+      if (cachedOrders) {
+        set({ tagOrders: normalizePokemonTagOrders(cachedOrders, definitions) });
+      }
+
       let variants = useVariantsStore.getState().variants;
       let instancesMap = useInstancesStore.getState().instances;
 
@@ -515,6 +541,10 @@ export const useTagsStore = create<TagsStore>()((set, get) => ({
     set({
       tags: { ...EMPTY_BUCKETS },
       customTags: { ...EMPTY_CUSTOM },
+      tagOrders: {
+        caught: [...DEFAULT_POKEMON_TAG_ORDERS.caught],
+        wanted: [...DEFAULT_POKEMON_TAG_ORDERS.wanted],
+      },
       systemChildren: computeSystemChildren(EMPTY_BUCKETS),
       tagsLoading: true,
       customTagsLoading: true,
