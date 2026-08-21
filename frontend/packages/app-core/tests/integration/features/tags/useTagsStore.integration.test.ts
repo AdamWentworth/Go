@@ -9,9 +9,18 @@ const dbMocks = vi.hoisted(() => ({
   setSystemChildrenSnapshot: vi.fn(),
 }));
 
+const tagServiceMocks = vi.hoisted(() => ({
+  createCustomTag: vi.fn(),
+  deleteCustomTag: vi.fn(),
+  fetchCustomTags: vi.fn(),
+  updateCustomTag: vi.fn(),
+  updatePokemonTagOrder: vi.fn(),
+}));
+
 vi.mock('@/db/tagsDB', () => dbMocks);
 vi.mock('@/db/variantsDB', () => ({ getAllVariants: vi.fn() }));
 vi.mock('@/db/instancesDB', () => ({ getAllInstances: vi.fn() }));
+vi.mock('@/services/tagService', () => tagServiceMocks);
 
 import { useTagsStore } from '@/features/tags/store/useTagsStore';
 import { useVariantsStore } from '@/features/variants/store/useVariantsStore';
@@ -79,6 +88,13 @@ describe('useTagsStore integration', () => {
     dbMocks.persistSystemMembershipsFromBuckets.mockResolvedValue(undefined);
     dbMocks.getSystemChildrenSnapshot.mockResolvedValue(null);
     dbMocks.setSystemChildrenSnapshot.mockResolvedValue(undefined);
+    tagServiceMocks.fetchCustomTags.mockResolvedValue({
+      tags: [],
+      orders: {
+        caught: ['system:caught', 'system:favorites', 'system:trade'],
+        wanted: ['system:wanted', 'system:most-wanted'],
+      },
+    });
 
     useVariantsStore.setState({
       variants: [],
@@ -96,6 +112,10 @@ describe('useTagsStore integration', () => {
     useTagsStore.setState({
       tags: { caught: {}, wanted: {}, trade: {} } as any,
       customTags: { caught: {}, wanted: {} },
+      tagOrders: {
+        caught: ['system:caught', 'system:favorites', 'system:trade'],
+        wanted: ['system:wanted', 'system:most-wanted'],
+      },
       systemChildren: {
         caught: { favorite: {}, trade: {} },
         wanted: { mostWanted: {} },
@@ -104,6 +124,68 @@ describe('useTagsStore integration', () => {
       customTagsLoading: true,
       foreignTags: null,
     });
+  });
+
+  it('hydrates an interleaved account tag order and appends newly available tags', async () => {
+    tagServiceMocks.fetchCustomTags.mockResolvedValue({
+      tags: [
+        {
+          tag_id: 'tag-shadow',
+          parent: 'caught',
+          name: 'Shadow Shinies',
+          color: '#7C3AED',
+          sort: 10,
+          created_at: '2026-08-20T00:00:00Z',
+        },
+        {
+          tag_id: 'tag-raids',
+          parent: 'caught',
+          name: 'Raid team',
+          color: '#2563EB',
+          sort: 20,
+          created_at: '2026-08-20T00:00:00Z',
+        },
+      ],
+      orders: {
+        caught: [
+          'custom:tag-shadow',
+          'system:favorites',
+          'system:caught',
+          'system:trade',
+        ],
+        wanted: ['system:wanted', 'system:most-wanted'],
+      },
+    });
+
+    await useTagsStore.getState().refreshCustomTagDefinitions();
+
+    expect(useTagsStore.getState().tagOrders.caught).toEqual([
+      'custom:tag-shadow',
+      'system:favorites',
+      'system:caught',
+      'system:trade',
+      'custom:tag-raids',
+    ]);
+  });
+
+  it('adopts the canonical order only after the server saves it', async () => {
+    const requested = [
+      'system:favorites',
+      'system:trade',
+      'system:caught',
+    ] as const;
+    tagServiceMocks.updatePokemonTagOrder.mockResolvedValue({
+      parent: 'caught',
+      tag_keys: requested,
+    });
+
+    await useTagsStore.getState().saveTagOrder('caught', [...requested]);
+
+    expect(tagServiceMocks.updatePokemonTagOrder).toHaveBeenCalledWith({
+      parent: 'caught',
+      tag_keys: requested,
+    });
+    expect(useTagsStore.getState().tagOrders.caught).toEqual(requested);
   });
 
   it('rebuildCustomTags groups memberships by allowed parents and ignores legacy trade parent', async () => {

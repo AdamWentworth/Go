@@ -1,5 +1,13 @@
 // TagItems.tsx
-import React, { CSSProperties, KeyboardEvent, MouseEvent } from 'react';
+import React, {
+  CSSProperties,
+  KeyboardEvent,
+  MouseEvent,
+  PointerEvent,
+  useRef,
+  useState,
+} from 'react';
+import { FaArrowDown, FaArrowUp, FaGripVertical } from 'react-icons/fa';
 import type { TagItem } from '@/types/tags';
 import './TagItems.css';
 
@@ -18,6 +26,9 @@ export interface TagItemsProps {
     isCustom?: boolean;
   }>;
   onEditTag?: (tagName: string) => void;
+  reorderMode?: boolean;
+  onMoveTag?: (tagName: string, direction: -1 | 1) => void;
+  onReorderTag?: (sourceTagName: string, targetTagName: string) => void;
 }
 
 function buildKey(p: TagItem, idx: number, bucket: string): string {
@@ -33,8 +44,46 @@ const TagItems: React.FC<TagItemsProps> = ({
   onSelectTag,
   tagMetadata = {},
   onEditTag,
-}) => (
-  <>
+  reorderMode = false,
+  onMoveTag,
+  onReorderTag,
+}) => {
+  const [draggingTag, setDraggingTag] = useState<string | null>(null);
+  const lastDragTargetRef = useRef<string | null>(null);
+
+  const beginDrag = (event: PointerEvent<HTMLButtonElement>, tagName: string) => {
+    event.preventDefault();
+    event.stopPropagation();
+    event.currentTarget.setPointerCapture(event.pointerId);
+    lastDragTargetRef.current = null;
+    setDraggingTag(tagName);
+  };
+
+  const continueDrag = (event: PointerEvent<HTMLButtonElement>) => {
+    if (!draggingTag) return;
+    event.preventDefault();
+    event.stopPropagation();
+    const target = document
+      .elementFromPoint(event.clientX, event.clientY)
+      ?.closest<HTMLElement>('[data-tag-selector]')
+      ?.dataset.tagSelector;
+    if (!target || target === draggingTag || target === lastDragTargetRef.current) return;
+    lastDragTargetRef.current = target;
+    onReorderTag?.(draggingTag, target);
+  };
+
+  const endDrag = (event: PointerEvent<HTMLButtonElement>) => {
+    event.preventDefault();
+    event.stopPropagation();
+    if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+      event.currentTarget.releasePointerCapture(event.pointerId);
+    }
+    lastDragTargetRef.current = null;
+    setDraggingTag(null);
+  };
+
+  return (
+    <>
     {tagNames.map((tagName) => {
       const summary = tagSummaries[tagName] ?? { count: 0, preview: [] };
       const metadata = tagMetadata[tagName];
@@ -73,6 +122,7 @@ const TagItems: React.FC<TagItemsProps> = ({
         .filter(Boolean) as React.JSX.Element[];
 
       const onKey = (e: KeyboardEvent<HTMLDivElement>) => {
+        if (reorderMode) return;
         if (e.key !== 'Enter' && e.key !== ' ') return;
         e.preventDefault();
         onSelectTag(tagName);
@@ -88,15 +138,19 @@ const TagItems: React.FC<TagItemsProps> = ({
       return (
         <div
           key={tagName}
-          className="tag-item"
-          data-tag={displayName}
+          className={`tag-item${reorderMode ? ' tag-item-reordering' : ''}`}
+          data-tag={tagName}
+          data-tag-selector={tagName}
           data-custom={metadata?.isCustom ? 'true' : undefined}
+          data-dragging={(draggingTag === tagName).toString()}
           data-empty={(!previewEls.length).toString()}
           style={metadata?.color ? {
             '--custom-tag-color': metadata.color,
           } as CSSProperties : undefined}
-          onClick={() => onSelectTag(tagName)}
-          tabIndex={0}
+          onClick={() => {
+            if (!reorderMode) onSelectTag(tagName);
+          }}
+          tabIndex={reorderMode ? -1 : 0}
           onKeyDown={onKey}
         >
           <div className="tag-footer">
@@ -115,7 +169,7 @@ const TagItems: React.FC<TagItemsProps> = ({
                 draggable={false}
               />
             )}
-            {metadata?.isCustom && onEditTag ? (
+            {metadata?.isCustom && onEditTag && !reorderMode ? (
               <button
                 aria-label={`Edit ${displayName} tag`}
                 className="tag-edit-button"
@@ -124,6 +178,45 @@ const TagItems: React.FC<TagItemsProps> = ({
               >
                 Edit
               </button>
+            ) : null}
+            {reorderMode ? (
+              <div className="tag-reorder-controls">
+                <button
+                  aria-label={`Move ${displayName} up`}
+                  disabled={tagName === tagNames[0]}
+                  onClick={(event) => {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    onMoveTag?.(tagName, -1);
+                  }}
+                  type="button"
+                >
+                  <FaArrowUp aria-hidden="true" />
+                </button>
+                <button
+                  aria-label={`Drag ${displayName} to reorder`}
+                  className="tag-drag-handle"
+                  onPointerCancel={endDrag}
+                  onPointerDown={(event) => beginDrag(event, tagName)}
+                  onPointerMove={continueDrag}
+                  onPointerUp={endDrag}
+                  type="button"
+                >
+                  <FaGripVertical aria-hidden="true" />
+                </button>
+                <button
+                  aria-label={`Move ${displayName} down`}
+                  disabled={tagName === tagNames[tagNames.length - 1]}
+                  onClick={(event) => {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    onMoveTag?.(tagName, 1);
+                  }}
+                  type="button"
+                >
+                  <FaArrowDown aria-hidden="true" />
+                </button>
+              </div>
             ) : null}
           </div>
 
@@ -137,7 +230,8 @@ const TagItems: React.FC<TagItemsProps> = ({
         </div>
       );
     })}
-  </>
-);
+    </>
+  );
+};
 
 export default React.memo(TagItems);

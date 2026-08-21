@@ -1,7 +1,7 @@
 // TagsMenu.tsx
 
-import React, { CSSProperties, useRef, useState, useMemo } from 'react';
-import { FaPlus } from 'react-icons/fa';
+import React, { useRef, useState, useMemo } from 'react';
+import { FaCheck, FaPlus, FaSortAmountDown, FaTimes } from 'react-icons/fa';
 import './TagsMenu.css';
 import useDownloadImage from './hooks/useDownloadImage';
 import PreviewContainer from './PreviewContainer';
@@ -18,6 +18,8 @@ import {
 } from '@/features/tags/utils/customTagSelectors';
 import type { TagDef } from '@/db/tagsDB';
 import type { CustomTagParent } from '@shared-contracts/users';
+import type { PokemonTagOrderKey } from '@shared-contracts/users';
+import { feedback } from '@/components/feedback';
 
 export interface TagsMenuProps {
   onSelectTag: (tagName: string) => void;
@@ -30,6 +32,35 @@ export interface TagsMenuProps {
 }
 
 const PREVIEW_LIMIT = 18;
+const SYSTEM_TAG_SELECTORS: Record<CustomTagParent, Record<string, string>> = {
+  caught: {
+    'system:caught': 'Caught',
+    'system:favorites': 'Favorites',
+    'system:trade': 'Trade',
+  },
+  wanted: {
+    'system:wanted': 'Wanted',
+    'system:most-wanted': 'Most Wanted',
+  },
+};
+
+const selectorForOrderKey = (
+  parent: CustomTagParent,
+  key: PokemonTagOrderKey,
+): string | null => {
+  if (key.startsWith('custom:')) return key;
+  return SYSTEM_TAG_SELECTORS[parent][key] ?? null;
+};
+
+const orderKeyForSelector = (
+  parent: CustomTagParent,
+  selector: string,
+): PokemonTagOrderKey | null => {
+  if (selector.startsWith('custom:')) return selector as PokemonTagOrderKey;
+  const entry = Object.entries(SYSTEM_TAG_SELECTORS[parent])
+    .find(([, systemSelector]) => systemSelector === selector);
+  return entry?.[0] as PokemonTagOrderKey | undefined ?? null;
+};
 
 function summarizeRecord(record: Record<string, TagItem> | undefined): TagSummary {
   if (!record) return { count: 0, preview: [] };
@@ -74,8 +105,13 @@ const TagsMenu: React.FC<TagsMenuProps> = ({
   const createCustomTag = useTagsStore((state) => state.createCustomTag);
   const updateCustomTag = useTagsStore((state) => state.updateCustomTag);
   const deleteCustomTag = useTagsStore((state) => state.deleteCustomTag);
+  const tagOrders = useTagsStore((state) => state.tagOrders);
+  const saveTagOrder = useTagsStore((state) => state.saveTagOrder);
   const [editingTag, setEditingTag] = useState<TagDef | null>(null);
   const [creatingFor, setCreatingFor] = useState<CustomTagParent | null>(null);
+  const [reorderingParent, setReorderingParent] = useState<CustomTagParent | null>(null);
+  const [draftOrder, setDraftOrder] = useState<PokemonTagOrderKey[]>([]);
+  const [isSavingOrder, setIsSavingOrder] = useState(false);
   // Derive system-children from the currently active buckets (own or foreign).
   // This prevents foreign profile views from accidentally using local-user children.
   const derivedChildren = useMemo(() => {
@@ -141,8 +177,13 @@ const TagsMenu: React.FC<TagsMenuProps> = ({
     ]
   );
 
-  const customTagMetadata = useMemo(() => {
+  const tagMetadata = useMemo(() => {
     const metadata: Record<string, { color?: string | null; displayName: string; isCustom: boolean }> = {};
+    metadata.Caught = { displayName: 'All Caught', isCustom: false };
+    metadata.Trade = { displayName: 'For Trade', isCustom: false };
+    metadata.Favorites = { displayName: 'Favorites', isCustom: false };
+    metadata.Wanted = { displayName: 'All Wanted', isCustom: false };
+    metadata['Most Wanted'] = { displayName: 'Most Wanted', isCustom: false };
     for (const entries of Object.values(customTagEntries)) {
       for (const [tagId, bucket] of entries) {
         metadata[toCustomTagFilter(tagId)] = {
@@ -156,13 +197,6 @@ const TagsMenu: React.FC<TagsMenuProps> = ({
   }, [customTagEntries]);
 
   const handleSelectTagInternal = (name: string) => onSelectTag(name);
-
-  /* ----- expand/collapse state ------------------------------------ */
-  const [isCaughtOpen , setIsCaughtOpen ] = useState(true);
-  const [isWantedOpen , setIsWantedOpen ] = useState(true);
-
-  const toggleCaught  = () => setIsCaughtOpen(v => !v);
-  const toggleWanted  = () => setIsWantedOpen(v => !v);
 
   /* ----- preview / download --------------------------------------- */
   const [isPreviewMode     , setIsPreviewMode]     = useState(false);
@@ -191,31 +225,125 @@ const TagsMenu: React.FC<TagsMenuProps> = ({
   /* ----- counts for footers --------------------------------------- */
   const counts = {
     caught : tagSummaries.Caught?.count ?? 0,
-    trade  : tagSummaries.Trade?.count ?? 0,
     wanted : tagSummaries.Wanted?.count ?? 0,
-    mostW  : tagSummaries['Most Wanted']?.count ?? 0,
-    favs   : tagSummaries.Favorites?.count ?? 0,
   };
 
   const showInventory = panel === 'all' || panel === 'inventory';
   const showWishlist = panel === 'all' || panel === 'wishlist';
   const showPreviewButton = panel !== 'inventory';
 
-  const TagGroup = ({
+  const visibleOrders = useMemo<Record<CustomTagParent, PokemonTagOrderKey[]>>(() => {
+    const build = (parent: CustomTagParent) => {
+      const available = [
+        ...Object.keys(SYSTEM_TAG_SELECTORS[parent]) as PokemonTagOrderKey[],
+        ...customTagEntries[parent].map(([tagId]) => toCustomTagFilter(tagId) as PokemonTagOrderKey),
+      ];
+      const allowed = new Set(available);
+      const ordered = tagOrders[parent].filter((key) => allowed.has(key));
+      for (const key of available) {
+        if (!ordered.includes(key)) ordered.push(key);
+      }
+      return ordered;
+    };
+    return { caught: build('caught'), wanted: build('wanted') };
+  }, [customTagEntries, tagOrders]);
+
+  const currentOrder = (parent: CustomTagParent): PokemonTagOrderKey[] =>
+    reorderingParent === parent ? draftOrder : visibleOrders[parent];
+
+  const orderedTagNames = (parent: CustomTagParent): string[] =>
+    currentOrder(parent)
+      .map((key) => selectorForOrderKey(parent, key))
+      .filter((selector): selector is string => Boolean(selector));
+
+  const startReordering = (parent: CustomTagParent) => {
+    setDraftOrder([...visibleOrders[parent]]);
+    setReorderingParent(parent);
+  };
+
+  const cancelReordering = () => {
+    if (isSavingOrder) return;
+    setDraftOrder([]);
+    setReorderingParent(null);
+  };
+
+  const moveTag = (
+    parent: CustomTagParent,
+    selector: string,
+    direction: -1 | 1,
+  ) => {
+    if (reorderingParent !== parent) return;
+    const key = orderKeyForSelector(parent, selector);
+    if (!key) return;
+    setDraftOrder((current) => {
+      const index = current.indexOf(key);
+      const target = index + direction;
+      if (index < 0 || target < 0 || target >= current.length) return current;
+      const next = [...current];
+      [next[index], next[target]] = [next[target], next[index]];
+      return next;
+    });
+  };
+
+  const reorderTag = (
+    parent: CustomTagParent,
+    sourceSelector: string,
+    targetSelector: string,
+  ) => {
+    if (reorderingParent !== parent) return;
+    const source = orderKeyForSelector(parent, sourceSelector);
+    const target = orderKeyForSelector(parent, targetSelector);
+    if (!source || !target || source === target) return;
+    setDraftOrder((current) => {
+      const sourceIndex = current.indexOf(source);
+      const targetIndex = current.indexOf(target);
+      if (sourceIndex < 0 || targetIndex < 0) return current;
+      const next = [...current];
+      next.splice(sourceIndex, 1);
+      const targetAfterRemoval = next.indexOf(target);
+      const insertionIndex = sourceIndex < targetIndex
+        ? targetAfterRemoval + 1
+        : targetAfterRemoval;
+      next.splice(insertionIndex, 0, source);
+      return next;
+    });
+  };
+
+  const commitReordering = async (parent: CustomTagParent) => {
+    if (isSavingOrder || reorderingParent !== parent) return;
+    setIsSavingOrder(true);
+    try {
+      await saveTagOrder(parent, draftOrder);
+      setDraftOrder([]);
+      setReorderingParent(null);
+      feedback.success('Tag order saved.');
+    } catch (error) {
+      feedback.error(error instanceof Error ? error.message : 'Could not save your tag order.');
+    } finally {
+      setIsSavingOrder(false);
+    }
+  };
+
+  const renderTagGroup = ({
     tagNames,
     onSelect,
     onEdit,
+    parent,
   }: {
     tagNames: string[];
     onSelect: (name: string) => void;
     onEdit?: (name: string) => void;
+    parent: CustomTagParent;
   }) => (
     <TagItems
       tagNames={tagNames}
       tagSummaries={tagSummaries}
       onSelectTag={onSelect}
-      tagMetadata={customTagMetadata}
+      tagMetadata={tagMetadata}
       onEditTag={onEdit}
+      reorderMode={reorderingParent === parent}
+      onMoveTag={(selector, direction) => moveTag(parent, selector, direction)}
+      onReorderTag={(source, target) => reorderTag(parent, source, target)}
     />
   );
 
@@ -279,172 +407,110 @@ const TagsMenu: React.FC<TagsMenuProps> = ({
           <div className="tag-tree">
             {/* Inventory (Caught) */}
             {showInventory && (
-              <div className="tag-folder">
-                <button
-                  className="tag-folder-header Caught"
-                  onClick={toggleCaught}
-                  aria-expanded={isCaughtOpen}
-                  aria-controls="tag-folder-caught"
-                >
-                  <span className="tag-folder-title">Inventory</span>
-                  <span className="tag-folder-meta">
-                    <span className="tag-count-badge">{counts.caught}</span>
-                    <span className={`tag-chev ${isCaughtOpen ? 'open' : ''}`} />
-                  </span>
-                </button>
-
-                <div id="tag-folder-caught" className="tag-folder-body">
-                  {isCaughtOpen ? (
-                    <div className="tag-sublist">
-                      <TagGroup tagNames={['Favorites']} onSelect={handleSelectTagInternal} />
-                      <TagGroup tagNames={['Trade']} onSelect={handleSelectTagInternal} />
-                      <TagGroup tagNames={['Caught']} onSelect={handleSelectTagInternal} />
-                      {customTagEntries.caught.length ? (
-                        <div className="tag-custom-section">
-                          <div className="tag-custom-section__heading">Your inventory tags</div>
-                          <TagGroup
-                            tagNames={customTagEntries.caught.map(([tagId]) => toCustomTagFilter(tagId))}
-                            onSelect={handleSelectTagInternal}
-                            onEdit={editBySelector}
-                          />
-                        </div>
-                      ) : null}
-                      {isEditable ? (
-                        <button className="tag-create-button" onClick={() => setCreatingFor('caught')} type="button">
-                          <FaPlus aria-hidden="true" /> New inventory tag
+              <section className="tag-order-section" aria-label="Inventory tags">
+                <header className="tag-order-toolbar">
+                  <div>
+                    {panel === 'all' ? <h2>Inventory tags</h2> : null}
+                    <span>{counts.caught} Pokémon</span>
+                  </div>
+                  {isEditable ? (
+                    reorderingParent === 'caught' ? (
+                      <div className="tag-order-actions">
+                        <button onClick={cancelReordering} type="button">
+                          <FaTimes aria-hidden="true" /> Cancel
                         </button>
-                      ) : null}
-                    </div>
-                  ) : (
-                    /* ⬇ Collapsed: show all child tags as colored peek buttons */
-                    <div className="tag-peek-row">
-                      <button
-                        className="tag-peek-button"
-                        data-tag="Favorites"
-                        onClick={() => handleSelectTagInternal('Favorites')}
-                        title="Open Favorites"
-                        aria-label="Open Favorites tag"
-                      >
-                        <span className="tag-peek-title">Favorites</span>
-                        <span className="tag-count-badge dark">{counts.favs}</span>
-                      </button>
-                      {customTagEntries.caught.map(([tagId, bucket]) => (
                         <button
-                          className="tag-peek-button tag-peek-button-custom"
-                          key={tagId}
-                          onClick={() => handleSelectTagInternal(toCustomTagFilter(tagId))}
-                          style={{ '--custom-tag-color': bucket.tag.color } as CSSProperties}
+                          className="tag-order-save"
+                          disabled={isSavingOrder}
+                          onClick={() => void commitReordering('caught')}
                           type="button"
                         >
-                          <span className="tag-peek-title">{bucket.tag.name}</span>
-                          <span className="tag-count-badge dark">{Object.keys(bucket.items).length}</span>
+                          <FaCheck aria-hidden="true" />
+                          {isSavingOrder ? 'Saving…' : 'Save order'}
                         </button>
-                      ))}
-
+                      </div>
+                    ) : (
                       <button
-                        className="tag-peek-button"
-                        data-tag="Trade"
-                        onClick={() => handleSelectTagInternal('Trade')}
-                        title="Open Trade"
-                        aria-label="Open Trade tag"
+                        className="tag-order-start"
+                        onClick={() => startReordering('caught')}
+                        type="button"
                       >
-                        <span className="tag-peek-title">Trade</span>
-                        <span className="tag-count-badge dark">{counts.trade}</span>
+                        <FaSortAmountDown aria-hidden="true" /> Arrange
                       </button>
-
-                      <button
-                        className="tag-peek-button"
-                        data-tag="Caught"
-                        onClick={() => handleSelectTagInternal('Caught')}
-                        title="Open Caught"
-                        aria-label="Open Caught tag"
-                      >
-                        <span className="tag-peek-title">Caught</span>
-                        <span className="tag-count-badge dark">{counts.caught}</span>
-                      </button>
-                    </div>
-                  )}
+                    )
+                  ) : null}
+                </header>
+                {reorderingParent === 'caught' ? (
+                  <p className="tag-order-help">Drag a handle or use the arrow buttons.</p>
+                ) : null}
+                <div className="tag-sublist">
+                  {renderTagGroup({
+                    parent: 'caught',
+                    tagNames: orderedTagNames('caught'),
+                    onSelect: handleSelectTagInternal,
+                    onEdit: editBySelector,
+                  })}
+                  {isEditable && reorderingParent !== 'caught' ? (
+                    <button className="tag-create-button" onClick={() => setCreatingFor('caught')} type="button">
+                      <FaPlus aria-hidden="true" /> New inventory tag
+                    </button>
+                  ) : null}
                 </div>
-              </div>
+              </section>
             )}
 
             {/* Wanted */}
             {showWishlist && (
-              <div className="tag-folder">
-                <button
-                  className="tag-folder-header Wanted"
-                  onClick={toggleWanted}
-                  aria-expanded={isWantedOpen}
-                  aria-controls="tag-folder-wanted"
-                >
-                  <span className="tag-folder-title">Wanted</span>
-                  <span className="tag-folder-meta">
-                    <span className="tag-count-badge">{counts.wanted}</span>
-                    <span className={`tag-chev ${isWantedOpen ? 'open' : ''}`} />
-                  </span>
-                </button>
-
-                <div id="tag-folder-wanted" className="tag-folder-body">
-                  {isWantedOpen ? (
-                    <div className="tag-sublist">
-                      <TagGroup tagNames={['Most Wanted']} onSelect={handleSelectTagInternal} />
-                      <TagGroup tagNames={['Wanted']} onSelect={handleSelectTagInternal} />
-                      {customTagEntries.wanted.length ? (
-                        <div className="tag-custom-section">
-                          <div className="tag-custom-section__heading">Your wanted tags</div>
-                          <TagGroup
-                            tagNames={customTagEntries.wanted.map(([tagId]) => toCustomTagFilter(tagId))}
-                            onSelect={handleSelectTagInternal}
-                            onEdit={editBySelector}
-                          />
-                        </div>
-                      ) : null}
-                      {isEditable ? (
-                        <button className="tag-create-button tag-create-button-wanted" onClick={() => setCreatingFor('wanted')} type="button">
-                          <FaPlus aria-hidden="true" /> New wanted tag
+              <section className="tag-order-section tag-order-section-wanted" aria-label="Wanted tags">
+                <header className="tag-order-toolbar">
+                  <div>
+                    {panel === 'all' ? <h2>Wanted tags</h2> : null}
+                    <span>{counts.wanted} Pokémon</span>
+                  </div>
+                  {isEditable ? (
+                    reorderingParent === 'wanted' ? (
+                      <div className="tag-order-actions">
+                        <button onClick={cancelReordering} type="button">
+                          <FaTimes aria-hidden="true" /> Cancel
                         </button>
-                      ) : null}
-                    </div>
-                  ) : (
-                    /* ⬇ Collapsed: show both child tags as colored peek buttons */
-                    <div className="tag-peek-row">
-                      <button
-                        className="tag-peek-button"
-                        data-tag="Most Wanted"
-                        onClick={() => handleSelectTagInternal('Most Wanted')}
-                        title="Open Most Wanted"
-                        aria-label="Open Most Wanted tag"
-                      >
-                        <span className="tag-peek-title">Most Wanted</span>
-                        <span className="tag-count-badge dark">{counts.mostW}</span>
-                      </button>
-                      {customTagEntries.wanted.map(([tagId, bucket]) => (
                         <button
-                          className="tag-peek-button tag-peek-button-custom"
-                          key={tagId}
-                          onClick={() => handleSelectTagInternal(toCustomTagFilter(tagId))}
-                          style={{ '--custom-tag-color': bucket.tag.color } as CSSProperties}
+                          className="tag-order-save"
+                          disabled={isSavingOrder}
+                          onClick={() => void commitReordering('wanted')}
                           type="button"
                         >
-                          <span className="tag-peek-title">{bucket.tag.name}</span>
-                          <span className="tag-count-badge dark">{Object.keys(bucket.items).length}</span>
+                          <FaCheck aria-hidden="true" />
+                          {isSavingOrder ? 'Saving…' : 'Save order'}
                         </button>
-                      ))}
-
+                      </div>
+                    ) : (
                       <button
-                        className="tag-peek-button"
-                        data-tag="Wanted"
-                        onClick={() => handleSelectTagInternal('Wanted')}
-                        title="Open Wanted"
-                        aria-label="Open Wanted tag"
+                        className="tag-order-start"
+                        onClick={() => startReordering('wanted')}
+                        type="button"
                       >
-                        <span className="tag-peek-title">Wanted</span>
-                        <span className="tag-count-badge dark">{counts.wanted}</span>
+                        <FaSortAmountDown aria-hidden="true" /> Arrange
                       </button>
-                    </div>
-                  )}
+                    )
+                  ) : null}
+                </header>
+                {reorderingParent === 'wanted' ? (
+                  <p className="tag-order-help">Drag a handle or use the arrow buttons.</p>
+                ) : null}
+                <div className="tag-sublist">
+                  {renderTagGroup({
+                    parent: 'wanted',
+                    tagNames: orderedTagNames('wanted'),
+                    onSelect: handleSelectTagInternal,
+                    onEdit: editBySelector,
+                  })}
+                  {isEditable && reorderingParent !== 'wanted' ? (
+                    <button className="tag-create-button tag-create-button-wanted" onClick={() => setCreatingFor('wanted')} type="button">
+                      <FaPlus aria-hidden="true" /> New wanted tag
+                    </button>
+                  ) : null}
                 </div>
-              </div>
+              </section>
             )}
           </div>
           {(editingTag || creatingFor) ? (

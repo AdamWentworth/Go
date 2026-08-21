@@ -1,6 +1,6 @@
 import React from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 
 import TagsMenu from '@/pages/Pokemon/components/Menus/TagsMenu/TagsMenu';
 import type { TagBuckets, TagItem } from '@/types/tags';
@@ -47,9 +47,14 @@ describe('TagsMenu', () => {
     confirmMock.mockResolvedValue(true);
     useTagsStore.setState({
       customTags: { caught: {}, wanted: {} },
+      tagOrders: {
+        caught: ['system:caught', 'system:favorites', 'system:trade'],
+        wanted: ['system:wanted', 'system:most-wanted'],
+      },
       createCustomTag: vi.fn().mockResolvedValue({}) as any,
       updateCustomTag: vi.fn().mockResolvedValue({}) as any,
       deleteCustomTag: vi.fn().mockResolvedValue(undefined) as any,
+      saveTagOrder: vi.fn().mockResolvedValue(undefined) as any,
     });
   });
 
@@ -230,6 +235,60 @@ describe('TagsMenu', () => {
     fireEvent.click(screen.getByText('Raid team'));
     expect(onSelectTag).toHaveBeenCalledWith('custom:tag-raids');
     expect(screen.getByRole('button', { name: /edit raid team tag/i })).toBeInTheDocument();
+  });
+
+  it('allows custom and system tags to be interleaved and saves the complete order', async () => {
+    const customItem = makeItem({ instance_id: 'custom-shadow', is_caught: true });
+    const saveTagOrder = vi.fn().mockResolvedValue(undefined);
+    useTagsStore.setState({
+      customTags: {
+        caught: {
+          'tag-shadow': {
+            tag: {
+              tag_id: 'tag-shadow',
+              parent: 'caught',
+              name: 'Shadow Shinies',
+              color: '#7C3AED',
+              sort: 10,
+            },
+            items: { 'custom-shadow': customItem },
+          },
+        },
+        wanted: {},
+      },
+      tagOrders: {
+        caught: ['custom:tag-shadow', 'system:favorites', 'system:caught', 'system:trade'],
+        wanted: ['system:wanted', 'system:most-wanted'],
+      },
+      saveTagOrder,
+    });
+
+    const { container } = render(
+      <TagsMenu
+        activeTags={{ caught: { 'custom-shadow': customItem }, wanted: {} }}
+        isEditable
+        onSelectTag={vi.fn()}
+        panel="inventory"
+        variants={[]}
+      />,
+    );
+
+    expect(
+      [...container.querySelectorAll('.tag-item')].map((element) => element.getAttribute('data-tag')),
+    ).toEqual(['custom:tag-shadow', 'Favorites', 'Caught', 'Trade']);
+
+    fireEvent.click(screen.getByRole('button', { name: /arrange/i }));
+    fireEvent.click(screen.getByRole('button', { name: /move all caught up/i }));
+    fireEvent.click(screen.getByRole('button', { name: /save order/i }));
+
+    await waitFor(() => {
+      expect(saveTagOrder).toHaveBeenCalledWith('caught', [
+        'custom:tag-shadow',
+        'system:caught',
+        'system:favorites',
+        'system:trade',
+      ]);
+    });
   });
 
   it('opens the custom tag creator from an editable tag panel', () => {

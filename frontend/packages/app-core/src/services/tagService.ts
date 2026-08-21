@@ -3,6 +3,8 @@ import type {
   CustomTagDefinition,
   CustomTagsEnvelope,
   DeleteCustomTagResponse,
+  PokemonTagOrderEnvelope,
+  UpdatePokemonTagOrderRequest,
   UpdateCustomTagRequest,
 } from '@shared-contracts/users';
 import { usersContract } from '@shared-contracts/users';
@@ -32,9 +34,8 @@ async function tagRequest<T>(
   return data;
 }
 
-export async function fetchCustomTags(): Promise<CustomTagDefinition[]> {
-  const response = await tagRequest<CustomTagsEnvelope>(usersContract.endpoints.tags);
-  return response.tags;
+export async function fetchCustomTags(): Promise<CustomTagsEnvelope> {
+  return tagRequest<CustomTagsEnvelope>(usersContract.endpoints.tags);
 }
 
 export async function createCustomTag(
@@ -61,5 +62,14 @@ export async function updateCustomTag(
 export async function deleteCustomTag(tagId: string): Promise<DeleteCustomTagResponse> {
   return tagRequest<DeleteCustomTagResponse>(usersContract.endpoints.tag(tagId), {
     method: 'DELETE',
+  });
+}
+
+export async function updatePokemonTagOrder(
+  request: UpdatePokemonTagOrderRequest,
+): Promise<PokemonTagOrderEnvelope> {
+  return tagRequest<PokemonTagOrderEnvelope>(usersContract.endpoints.tagOrder, {
+    method: 'PUT',
+    body: JSON.stringify(request),
   });
 }

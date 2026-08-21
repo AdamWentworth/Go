@@ -4,6 +4,7 @@ import {
   createCustomTag,
   deleteCustomTag,
   fetchCustomTags,
+  updatePokemonTagOrder,
   updateCustomTag,
 } from '@/services/tagService';
 
@@ -26,9 +27,16 @@ describe.sequential('tagService', () => {
   it('loads custom tag definitions with authenticated cookies', async () => {
     fetchMock.mockResolvedValueOnce(jsonResponse(200, {
       tags: [{ tag_id: 'tag-1', parent: 'caught', name: 'Raids', color: '#2563EB', sort: 10 }],
+      orders: {
+        caught: ['custom:tag-1', 'system:caught', 'system:favorites', 'system:trade'],
+        wanted: ['system:wanted', 'system:most-wanted'],
+      },
     }));
 
-    await expect(fetchCustomTags()).resolves.toHaveLength(1);
+    await expect(fetchCustomTags()).resolves.toMatchObject({
+      tags: [{ tag_id: 'tag-1' }],
+      orders: { caught: ['custom:tag-1', 'system:caught', 'system:favorites', 'system:trade'] },
+    });
     expect(fetchMock.mock.calls[0][0]).toContain('/tags');
     expect(fetchMock.mock.calls[0][1]).toMatchObject({ credentials: 'include' });
   });
@@ -58,6 +66,30 @@ describe.sequential('tagService', () => {
       affected_instance_ids: ['instance-1'],
     });
     expect(fetchMock.mock.calls[0][1]).toMatchObject({ method: 'DELETE' });
+  });
+
+  it('saves a complete interleaved tag order', async () => {
+    const tagKeys = [
+      'custom:tag-1',
+      'system:favorites',
+      'system:caught',
+      'system:trade',
+    ] as const;
+    fetchMock.mockResolvedValueOnce(jsonResponse(200, {
+      parent: 'caught',
+      tag_keys: tagKeys,
+    }));
+
+    await expect(updatePokemonTagOrder({
+      parent: 'caught',
+      tag_keys: [...tagKeys],
+    })).resolves.toEqual({ parent: 'caught', tag_keys: tagKeys });
+
+    expect(fetchMock.mock.calls[0][1]).toMatchObject({ method: 'PUT' });
+    expect(JSON.parse(String(fetchMock.mock.calls[0][1].body))).toEqual({
+      parent: 'caught',
+      tag_keys: tagKeys,
+    });
   });
 
   it('surfaces server validation messages', async () => {

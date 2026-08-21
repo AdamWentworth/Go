@@ -32,11 +32,17 @@ import type { Instances }           from '@/types/instances';
 import type { PokemonVariant }      from '@/types/pokemonVariants';
 import type { PokemonInstance }     from '@/types/pokemonInstance';
 import type { TagDef }              from '@/db/tagsDB';
-import type { CustomTagDefinition, CustomTagParent } from '@shared-contracts/users';
+import type {
+  CustomTagDefinition,
+  CustomTagParent,
+  PokemonTagOrderKey,
+  PokemonTagOrders,
+} from '@shared-contracts/users';
 import {
   createCustomTag as createCustomTagRequest,
   deleteCustomTag as deleteCustomTagRequest,
   fetchCustomTags,
+  updatePokemonTagOrder,
   updateCustomTag as updateCustomTagRequest,
 } from '@/services/tagService';
 
@@ -65,6 +71,46 @@ export interface SystemChildren {
 // but we DO NOT treat it as a parent or read it to compute children/UI.
 const EMPTY_BUCKETS: TagBuckets = { caught: {}, wanted: {}, trade: {} };
 const EMPTY_CUSTOM  : CustomTagsTree = { caught: {}, wanted: {} };
+export const DEFAULT_POKEMON_TAG_ORDERS: PokemonTagOrders = {
+  caught: ['system:caught', 'system:favorites', 'system:trade'],
+  wanted: ['system:wanted', 'system:most-wanted'],
+};
+
+const customTagOrderKey = (tagId: string): PokemonTagOrderKey => `custom:${tagId}`;
+
+function normalizePokemonTagOrders(
+  orders: Partial<PokemonTagOrders> | null | undefined,
+  definitions: TagDef[],
+): PokemonTagOrders {
+  const normalizeParent = (parent: CustomTagParent): PokemonTagOrderKey[] => {
+    const available = [
+      ...DEFAULT_POKEMON_TAG_ORDERS[parent],
+      ...definitions
+        .filter((tag) => !tag.deleted_at && tag.parent === parent)
+        .sort((left, right) =>
+          (left.sort ?? 0) - (right.sort ?? 0) || left.name.localeCompare(right.name))
+        .map((tag) => customTagOrderKey(tag.tag_id)),
+    ];
+    const allowed = new Set<PokemonTagOrderKey>(available);
+    const seen = new Set<PokemonTagOrderKey>();
+    const normalized: PokemonTagOrderKey[] = [];
+    for (const key of orders?.[parent] ?? []) {
+      if (!allowed.has(key) || seen.has(key)) continue;
+      seen.add(key);
+      normalized.push(key);
+    }
+    for (const key of available) {
+      if (seen.has(key)) continue;
+      normalized.push(key);
+    }
+    return normalized;
+  };
+
+  return {
+    caught: normalizeParent('caught'),
+    wanted: normalizeParent('wanted'),
+  };
+}
 
 function computeSystemChildren(tags: TagBuckets): SystemChildren {
   const favorite   : Record<string, TagItem> = {};
@@ -118,6 +164,7 @@ function idsToChildren(snap: SystemChildrenIdsSnapshot, buckets: TagBuckets): Sy
 interface TagsStore {
   tags             : TagBuckets;
   customTags       : CustomTagsTree;
+  tagOrders        : PokemonTagOrders;
   systemChildren   : SystemChildren;
   tagsLoading      : boolean;
   customTagsLoading: boolean;
@@ -134,6 +181,7 @@ interface TagsStore {
   createCustomTag(input: { parent: CustomTagParent; name: string; color: string }): Promise<TagDef>;
   updateCustomTag(tagId: string, input: { name?: string; color?: string }): Promise<TagDef>;
   deleteCustomTag(tagId: string): Promise<void>;
+  saveTagOrder(parent: CustomTagParent, tagKeys: PokemonTagOrderKey[]): Promise<void>;
   applyCustomTagChanges(
     instanceIds: Iterable<string>,
     changes: Record<string, boolean>,
@@ -169,6 +217,10 @@ function toLocalTagDef(tag: CustomTagDefinition): TagDef {
 export const useTagsStore = create<TagsStore>()((set, get) => ({
   tags             : { ...EMPTY_BUCKETS },
   customTags       : { ...EMPTY_CUSTOM },
+  tagOrders        : {
+    caught: [...DEFAULT_POKEMON_TAG_ORDERS.caught],
+    wanted: [...DEFAULT_POKEMON_TAG_ORDERS.wanted],
+  },
   systemChildren   : computeSystemChildren(EMPTY_BUCKETS),
   tagsLoading      : true,
   customTagsLoading: true,
@@ -234,15 +286,27 @@ export const useTagsStore = create<TagsStore>()((set, get) => ({
   },
 
   async refreshCustomTagDefinitions() {
-    const tags = await fetchCustomTags();
-    await replaceTagDefs(tags.map(toLocalTagDef));
+    const response = await fetchCustomTags();
+    const definitions = response.tags.map(toLocalTagDef);
+    await replaceTagDefs(definitions);
+    set({ tagOrders: normalizePokemonTagOrders(response.orders, definitions) });
     await get().rebuildCustomTags();
   },
 
   async createCustomTag(input) {
     const created = toLocalTagDef(await createCustomTagRequest(input));
+    const parent: CustomTagParent = created.parent === 'wanted' ? 'wanted' : 'caught';
     const definitions = (await getAllTagDefs()).filter((tag) => tag.tag_id !== created.tag_id);
     await replaceTagDefs([...definitions, created]);
+    set((state) => ({
+      tagOrders: {
+        ...state.tagOrders,
+        [parent]: [
+          ...state.tagOrders[parent],
+          customTagOrderKey(created.tag_id),
+        ],
+      },
+    }));
     await get().rebuildCustomTags();
     return created;
   },
@@ -259,6 +323,13 @@ export const useTagsStore = create<TagsStore>()((set, get) => ({
     await deleteCustomTagRequest(tagId);
     const definitions = (await getAllTagDefs()).filter((tag) => tag.tag_id !== tagId);
     await replaceTagDefs(definitions);
+    const deletedKey = customTagOrderKey(tagId);
+    set((state) => ({
+      tagOrders: {
+        caught: state.tagOrders.caught.filter((key) => key !== deletedKey),
+        wanted: state.tagOrders.wanted.filter((key) => key !== deletedKey),
+      },
+    }));
 
     const instances = useInstancesStore.getState().instances;
     const patches: Record<string, Partial<PokemonInstance>> = {};
@@ -276,6 +347,16 @@ export const useTagsStore = create<TagsStore>()((set, get) => ({
       await useInstancesStore.getState().updateInstanceDetails(patches);
     }
     await get().rebuildCustomTags();
+  },
+
+  async saveTagOrder(parent, tagKeys) {
+    const response = await updatePokemonTagOrder({ parent, tag_keys: tagKeys });
+    set((state) => ({
+      tagOrders: {
+        ...state.tagOrders,
+        [parent]: response.tag_keys,
+      },
+    }));
   },
 
   async applyCustomTagChanges(instanceIds, changes) {
