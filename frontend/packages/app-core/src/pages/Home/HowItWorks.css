@@ -170,6 +170,20 @@
   transform: translateY(-2px);
 }
 
+.howItWorks__feature-card.is-friends {
+  border-color: color-mix(in srgb, var(--home-blue) 28%, var(--home-border));
+  background:
+    radial-gradient(circle at 5% 50%, color-mix(in srgb, var(--home-blue) 10%, transparent), transparent 11rem),
+    color-mix(in srgb, var(--color-app-surface) 72%, transparent);
+}
+
+.howItWorks__feature-card.is-friends:hover {
+  border-color: color-mix(in srgb, var(--home-blue) 58%, var(--home-border));
+  background:
+    radial-gradient(circle at 5% 50%, color-mix(in srgb, var(--home-blue) 16%, transparent), transparent 12rem),
+    color-mix(in srgb, var(--color-app-surface) 76%, transparent);
+}
+
 .howItWorks__feature-icon {
   display: grid;
   width: 62px;
@@ -184,6 +198,51 @@
 .howItWorks__feature-icon > svg { width: 28px; height: 28px; }
 .howItWorks__feature-card.is-trades .howItWorks__feature-icon { background: color-mix(in srgb, var(--home-green) 14%, transparent); color: var(--home-green); }
 .howItWorks__feature-card.is-collection .howItWorks__feature-icon { background: color-mix(in srgb, var(--home-gold) 12%, transparent); }
+
+.howItWorks__feature-card.is-friends .howItWorks__feature-icon {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  border: 1px solid color-mix(in srgb, var(--home-blue) 45%, var(--home-border));
+  background:
+    radial-gradient(circle at 50% 46%, color-mix(in srgb, var(--home-blue) 27%, transparent), transparent 58%),
+    linear-gradient(145deg, color-mix(in srgb, var(--home-blue) 16%, var(--home-surface-raised)), var(--home-surface-raised));
+  color: color-mix(in srgb, var(--home-blue) 80%, var(--color-text-primary));
+  box-shadow:
+    inset 0 0 0 1px color-mix(in srgb, var(--home-blue) 10%, transparent),
+    0 8px 22px color-mix(in srgb, var(--home-blue) 12%, transparent);
+}
+
+.howItWorks__feature-card.is-friends .howItWorks__feature-icon::before {
+  position: absolute;
+  z-index: -1;
+  inset: 8px;
+  border: 1px solid color-mix(in srgb, var(--home-blue) 38%, transparent);
+  border-radius: 50%;
+  content: '';
+  transform: rotate(-12deg);
+}
+
+.howItWorks__feature-card.is-friends .howItWorks__feature-icon::after {
+  position: absolute;
+  z-index: 2;
+  top: 14px;
+  left: 8px;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--home-blue);
+  box-shadow:
+    40px 25px 0 color-mix(in srgb, var(--home-blue) 72%, var(--color-text-primary)),
+    36px -2px 0 color-mix(in srgb, var(--home-gold) 76%, var(--home-blue));
+  content: '';
+}
+
+.howItWorks__feature-card.is-friends .howItWorks__feature-icon > svg {
+  position: relative;
+  z-index: 1;
+  filter: drop-shadow(0 3px 7px color-mix(in srgb, var(--home-blue) 28%, transparent));
+}
 
 .howItWorks__feature-card > span:nth-child(2) { display: flex; min-width: 0; flex-direction: column; gap: 6px; }
 .howItWorks__feature-card strong { font-size: 0.94rem; }
@@ -228,9 +287,56 @@
 }
 
 .howItWorks__tool-card:hover { border-color: var(--home-border-strong); transform: translateY(-2px); }
+.howItWorks__tool-card.is-board {
+  border-color: color-mix(in srgb, var(--home-blue) 28%, var(--home-border));
+  background:
+    radial-gradient(circle at 4% 50%, color-mix(in srgb, var(--home-blue) 10%, transparent), transparent 8rem),
+    color-mix(in srgb, var(--color-app-surface) 66%, transparent);
+}
+.howItWorks__tool-card.is-board:hover {
+  border-color: color-mix(in srgb, var(--home-blue) 58%, var(--home-border));
+  background:
+    radial-gradient(circle at 4% 50%, color-mix(in srgb, var(--home-blue) 16%, transparent), transparent 9rem),
+    color-mix(in srgb, var(--color-app-surface) 72%, transparent);
+}
 .howItWorks__tool-card > span:first-child { display: grid; width: 44px; height: 44px; place-items: center; border-radius: 11px; background: var(--home-surface-raised); color: var(--color-accent-primary); }
 .howItWorks__tool-card img { width: 36px; height: 36px; object-fit: contain; }
 .howItWorks__tool-card > span:first-child svg { width: 21px; height: 21px; }
+.howItWorks__tool-card.is-board > span:first-child {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  border: 1px solid color-mix(in srgb, var(--home-blue) 44%, var(--home-border));
+  background:
+    linear-gradient(145deg, color-mix(in srgb, var(--home-blue) 18%, var(--home-surface-raised)), var(--home-surface-raised));
+  color: color-mix(in srgb, var(--home-blue) 82%, var(--color-text-primary));
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--home-blue) 9%, transparent);
+}
+.howItWorks__tool-card.is-board > span:first-child::before {
+  position: absolute;
+  z-index: -1;
+  inset: 6px;
+  border: 1px dashed color-mix(in srgb, var(--home-blue) 40%, transparent);
+  border-radius: 7px;
+  content: '';
+}
+.howItWorks__tool-card.is-board > span:first-child::after {
+  position: absolute;
+  z-index: 2;
+  top: 7px;
+  right: 7px;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--home-gold);
+  box-shadow: -29px 25px 0 color-mix(in srgb, var(--home-blue) 72%, var(--color-text-primary));
+  content: '';
+}
+.howItWorks__tool-card.is-board > span:first-child svg {
+  position: relative;
+  z-index: 1;
+  filter: drop-shadow(0 3px 6px color-mix(in srgb, var(--home-blue) 28%, transparent));
+}
 .howItWorks__tool-card > span:nth-child(2) { display: flex; min-width: 0; flex-direction: column; gap: 3px; }
 .howItWorks__tool-card strong { font-size: 0.79rem; }
 .howItWorks__tool-card small { overflow: hidden; color: var(--color-text-secondary); font-size: 0.64rem; text-overflow: ellipsis; white-space: nowrap; }
