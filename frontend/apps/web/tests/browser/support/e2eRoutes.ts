@@ -10,6 +10,7 @@ export type E2eRouteOptions = {
   locationSuggestions?: unknown[];
   trainerSuggestions?: unknown[];
   trainerProfile?: unknown;
+  friendsOverview?: unknown;
   userInstances?: unknown;
   publicUser?: unknown;
   userOverview?: unknown;
@@ -522,7 +523,10 @@ export async function installE2eRoutes(page: Page, options: E2eRouteOptions = {}
 
   for (const pathPattern of ['**/api/users/friends', '**/__e2e/users/friends']) {
     await page.route(pathPattern, async (route) => {
-      await fulfillJson(route, { friends: [], incoming: [], outgoing: [], blocked: [] });
+      await fulfillJson(
+        route,
+        options.friendsOverview ?? { friends: [], incoming: [], outgoing: [], blocked: [] },
+      );
     });
   }
 

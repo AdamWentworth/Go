@@ -1,6 +1,7 @@
 import React from 'react';
 import { describe, expect, it, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
+import { MemoryRouter } from 'react-router';
 
 import Home from '@/pages/Home/Home';
 
@@ -12,30 +13,51 @@ vi.mock('@/contexts/AuthContext', () => ({
   useAuth: () => mocks.useAuthMock(),
 }));
 
-vi.mock('@/components/Navbar', () => ({
-  default: () => <div data-testid="navbar" />,
+vi.mock('@/pages/Home/HomeDashboard', () => ({
+  default: ({ user }: { user: { username: string } }) => (
+    <div data-testid="home-dashboard">Dashboard for {user.username}</div>
+  ),
 }));
 
-vi.mock('@/components/AuthButtons', () => ({
-  default: () => <div data-testid="auth-buttons">AuthButtons</div>,
-}));
+const renderHome = () => render(<MemoryRouter><Home /></MemoryRouter>);
 
 describe('Home page', () => {
-  it('renders core sections and forwards auth state to HomeHeader', () => {
-    mocks.useAuthMock.mockReturnValue({ isLoggedIn: false });
+  it('renders the product landing page for signed-out visitors', () => {
+    mocks.useAuthMock.mockReturnValue({ isLoggedIn: false, isLoading: false, user: null });
 
-    render(<Home />);
+    renderHome();
 
-    expect(screen.getByTestId('navbar')).toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: /how it works/i })).toBeInTheDocument();
-    expect(screen.getByTestId('auth-buttons')).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: /Your collection.*Better connected/i })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: /from catalog to completed trade/i })).toBeInTheDocument();
+    expect(screen.getAllByRole('link', { name: /create account/i }).length).toBeGreaterThan(0);
   });
 
-  it('hides auth buttons when authenticated', () => {
-    mocks.useAuthMock.mockReturnValue({ isLoggedIn: true });
+  it('renders the trainer dashboard when authenticated', () => {
+    mocks.useAuthMock.mockReturnValue({
+      isLoggedIn: true,
+      isLoading: false,
+      user: { username: 'AdamZilla' },
+    });
 
-    render(<Home />);
+    renderHome();
 
-    expect(screen.queryByTestId('auth-buttons')).not.toBeInTheDocument();
+    expect(screen.getByTestId('home-dashboard')).toHaveTextContent('AdamZilla');
+    expect(screen.queryByRole('heading', { name: /from catalog/i })).not.toBeInTheDocument();
+  });
+
+  it('shows a stable auth loading state before choosing a home experience', () => {
+    mocks.useAuthMock.mockReturnValue({ isLoggedIn: false, isLoading: true, user: null });
+
+    renderHome();
+
+    expect(screen.getByRole('status')).toHaveTextContent('Opening PokeGo Nexus');
+  });
+
+  it('has no automated accessibility violations on the signed-out landing page', async () => {
+    mocks.useAuthMock.mockReturnValue({ isLoggedIn: false, isLoading: false, user: null });
+
+    const { container } = renderHome();
+
+    await expect(container).toHaveNoViolations();
   });
 });
