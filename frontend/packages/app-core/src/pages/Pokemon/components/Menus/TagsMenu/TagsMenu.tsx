@@ -271,6 +271,7 @@ const TagsMenu: React.FC<TagsMenuProps> = ({
     parent: CustomTagParent,
     sourceSelector: string,
     targetSelector: string,
+    placement: 'before' | 'after',
   ) => {
     if (reorderingParent !== parent) return;
     const source = orderKeyForSelector(parent, sourceSelector);
@@ -283,9 +284,7 @@ const TagsMenu: React.FC<TagsMenuProps> = ({
       const next = [...current];
       next.splice(sourceIndex, 1);
       const targetAfterRemoval = next.indexOf(target);
-      const insertionIndex = sourceIndex < targetIndex
-        ? targetAfterRemoval + 1
-        : targetAfterRemoval;
+      const insertionIndex = targetAfterRemoval + (placement === 'after' ? 1 : 0);
       next.splice(insertionIndex, 0, source);
       return next;
     });
@@ -324,7 +323,7 @@ const TagsMenu: React.FC<TagsMenuProps> = ({
       tagMetadata={tagMetadata}
       onEditTag={onEdit}
       reorderMode={reorderingParent === parent}
-      onReorderTag={(source, target) => reorderTag(parent, source, target)}
+      onReorderTag={(source, target, placement) => reorderTag(parent, source, target, placement)}
     />
   );
 

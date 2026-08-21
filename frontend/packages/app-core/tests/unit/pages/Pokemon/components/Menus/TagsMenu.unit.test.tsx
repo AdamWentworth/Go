@@ -283,16 +283,35 @@ describe('TagsMenu', () => {
     });
     const favoritesCard = container.querySelector<HTMLElement>('[data-tag="Favorites"]');
     expect(favoritesCard).toBeTruthy();
+    vi.spyOn(favoritesCard as HTMLElement, 'getBoundingClientRect').mockReturnValue({
+      bottom: 400,
+      height: 200,
+      left: 20,
+      right: 380,
+      top: 200,
+      width: 360,
+      x: 20,
+      y: 200,
+      toJSON: () => ({}),
+    });
     Object.defineProperty(document, 'elementFromPoint', {
       configurable: true,
       value: vi.fn().mockReturnValue(favoritesCard),
     });
-    fireEvent.pointerDown(caughtHandle, { pointerId: 1, clientX: 200, clientY: 500 });
+    fireEvent.pointerDown(caughtHandle, {
+      pointerId: 1,
+      pointerType: 'mouse',
+      isPrimary: true,
+      button: 0,
+      clientX: 200,
+      clientY: 500,
+    });
     expect(document.querySelector('.tag-item-drag-preview')).toBeInTheDocument();
     expect(container.querySelector('.tag-footer-icon')).not.toBeInTheDocument();
-    fireEvent.pointerMove(caughtHandle, { pointerId: 1, clientX: 200, clientY: 250 });
-    fireEvent.pointerUp(caughtHandle, { pointerId: 1, clientX: 200, clientY: 250 });
+    fireEvent.pointerMove(document, { pointerId: 1, clientX: 200, clientY: 250 });
+    fireEvent.pointerUp(document, { pointerId: 1, clientX: 200, clientY: 250 });
     expect(document.querySelector('.tag-item-drag-preview')).not.toBeInTheDocument();
+    expect(document.body).not.toHaveClass('tag-drag-active');
     Reflect.deleteProperty(document, 'elementFromPoint');
     fireEvent.click(screen.getByRole('button', { name: /save order/i }));
 
@@ -304,6 +323,36 @@ describe('TagsMenu', () => {
         'system:trade',
       ]);
     });
+  });
+
+  it('always clears a floating tag when the pointer is cancelled outside the handle', () => {
+    render(
+      <TagsMenu
+        activeTags={{ caught: {}, wanted: {} }}
+        isEditable
+        onSelectTag={vi.fn()}
+        panel="inventory"
+        variants={[]}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: /arrange/i }));
+    const handle = screen.getByRole('button', {
+      name: /press and drag favorites to reorder/i,
+    });
+    fireEvent.pointerDown(handle, {
+      pointerId: 7,
+      pointerType: 'touch',
+      isPrimary: true,
+      clientX: 200,
+      clientY: 300,
+    });
+    expect(document.querySelector('.tag-item-drag-preview')).toBeInTheDocument();
+
+    fireEvent.pointerCancel(document, { pointerId: 7 });
+
+    expect(document.querySelector('.tag-item-drag-preview')).not.toBeInTheDocument();
+    expect(document.body).not.toHaveClass('tag-drag-active');
   });
 
   it('opens the custom tag creator from an editable tag panel', () => {

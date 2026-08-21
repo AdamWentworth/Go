@@ -3,6 +3,11 @@
    ======================= */
 
 /* Card wrapper */
+.tags-menu .tag-items-list {
+  display: flex;
+  flex-direction: column;
+}
+
 .tags-menu .tag-item {
   --tag-item-pad: 0.625rem;     /* ~10px */
   --tag-card-radius: 0.9375rem;
@@ -39,6 +44,34 @@
   box-shadow: 0 0 0 2px color-mix(in srgb, var(--color-accent-primary) 65%, transparent);
 }
 
+.tags-menu .tag-item-reordering[data-drop-position]::after {
+  content: "";
+  position: absolute;
+  z-index: 8;
+  right: 0.5rem;
+  left: 0.5rem;
+  height: 4px;
+  border-radius: 999px;
+  background: var(--color-accent-primary);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--color-tag-item-surface) 80%, transparent),
+    0 0 12px color-mix(in srgb, var(--color-accent-primary) 65%, transparent);
+  pointer-events: none;
+}
+
+.tags-menu .tag-item-reordering[data-drop-position="before"]::after {
+  top: 0.2rem;
+}
+
+.tags-menu .tag-item-reordering[data-drop-position="after"]::after {
+  bottom: 0.2rem;
+}
+
+body.tag-drag-active {
+  cursor: grabbing;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
 .tags-menu.tag-drag-layer {
   position: fixed;
   z-index: 10000;
@@ -62,7 +95,7 @@
     0 24px 48px rgba(0, 0, 0, 0.36),
     0 0 0 2px color-mix(in srgb, var(--color-accent-primary) 72%, transparent);
   filter: brightness(1.04);
-  will-change: left, top;
+  will-change: transform;
 }
 
 /* Footer (title + subtitle, icon on right) */

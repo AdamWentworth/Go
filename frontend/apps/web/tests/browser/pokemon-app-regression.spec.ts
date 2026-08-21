@@ -42,6 +42,78 @@ async function getElementTop(page: Page, selector: string) {
 }
 
 test.describe('pokemon app browser regressions', () => {
+  test('settles a touch tag drag into an exact slot after release', async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await openPokemonPage(page);
+    await page.getByText('TAGS', { exact: true }).click();
+    await expectActivePokemonView(page, 'TAGS');
+
+    await page.getByRole('button', { name: 'Arrange', exact: true }).click();
+    const sourceHandle = page.getByRole('button', {
+      name: /press and drag for trade to reorder/i,
+    });
+    const targetCard = page.locator('.tag-item[data-tag="Caught"]');
+    await expect(sourceHandle).toBeVisible();
+    await expect(targetCard).toBeVisible();
+
+    const sourceBounds = await sourceHandle.boundingBox();
+    const targetBounds = await targetCard.boundingBox();
+    expect(sourceBounds).not.toBeNull();
+    expect(targetBounds).not.toBeNull();
+    const pointerId = 41;
+    const targetPoint = {
+      x: (targetBounds?.x ?? 0) + (targetBounds?.width ?? 0) / 2,
+      y: (targetBounds?.y ?? 0) + 4,
+    };
+
+    await sourceHandle.dispatchEvent('pointerdown', {
+      bubbles: true,
+      button: 0,
+      cancelable: true,
+      clientX: (sourceBounds?.x ?? 0) + (sourceBounds?.width ?? 0) / 2,
+      clientY: (sourceBounds?.y ?? 0) + (sourceBounds?.height ?? 0) / 2,
+      isPrimary: true,
+      pointerId,
+      pointerType: 'touch',
+    });
+    await expect(page.locator('.tag-item-drag-preview')).toBeVisible();
+
+    await page.evaluate(({ id, point }) => {
+      document.dispatchEvent(new PointerEvent('pointermove', {
+        bubbles: true,
+        cancelable: true,
+        clientX: point.x,
+        clientY: point.y,
+        isPrimary: true,
+        pointerId: id,
+        pointerType: 'touch',
+      }));
+    }, { id: pointerId, point: targetPoint });
+    await expect(targetCard).toHaveAttribute('data-drop-position', 'before');
+
+    await page.evaluate(({ id, point }) => {
+      document.dispatchEvent(new PointerEvent('pointerup', {
+        bubbles: true,
+        cancelable: true,
+        clientX: point.x,
+        clientY: point.y,
+        isPrimary: true,
+        pointerId: id,
+        pointerType: 'touch',
+      }));
+    }, { id: pointerId, point: targetPoint });
+
+    await expect(page.locator('.tag-item-drag-preview')).toHaveCount(0);
+    await expect(page.locator('body')).not.toHaveClass(/tag-drag-active/);
+    await expect
+      .poll(() => page
+        .locator('section[aria-label="Inventory tags"] .tag-item')
+        .evaluateAll((cards) => cards.map((card) => card.getAttribute('data-tag'))))
+      .toEqual(['Trade', 'Caught', 'Favorites']);
+  });
+
   test('loads theme loading spinner WebM assets from shared media in every browser project', async ({
     page,
   }, testInfo) => {
