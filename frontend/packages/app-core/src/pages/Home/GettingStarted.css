@@ -138,10 +138,12 @@
   font-style: normal;
 }
 
-.getting-started__legend i img {
+.getting-started__legend-artwork {
   width: 50px;
   height: 50px;
-  object-fit: contain;
+  --pokemon-max-badge-size: 30%;
+  --pokemon-max-badge-inset-block: 1%;
+  --pokemon-max-badge-inset-inline: 1%;
 }
 
 .getting-started__legend i svg {
@@ -217,14 +219,16 @@
   justify-content: center;
 }
 
-.getting-started__story-pokemon img {
+.getting-started__story-artwork {
   width: min(154px, 52%);
   height: 154px;
-  object-fit: contain;
   filter: drop-shadow(0 16px 18px rgba(0, 0, 0, 0.28));
+  --pokemon-max-badge-size: 29%;
+  --pokemon-max-badge-inset-block: 5%;
+  --pokemon-max-badge-inset-inline: 5%;
 }
 
-.getting-started__step-visual.has-pair .getting-started__story-pokemon img {
+.getting-started__step-visual.has-pair .getting-started__story-artwork {
   width: min(124px, 45%);
   height: 124px;
   margin-inline: -10px;
@@ -337,8 +341,8 @@
   .getting-started__step-visual > span { font-size: 2.8rem; }
   .getting-started__step-visual > svg { width: 58px; height: 58px; }
   .getting-started__story-pokemon { bottom: 6%; }
-  .getting-started__story-pokemon img { width: 118px; height: 118px; }
-  .getting-started__step-visual.has-pair .getting-started__story-pokemon img { width: 98px; height: 98px; }
+  .getting-started__story-artwork { width: 118px; height: 118px; }
+  .getting-started__step-visual.has-pair .getting-started__story-artwork { width: 98px; height: 98px; }
   .getting-started__step-copy { padding: 22px 17px 24px; }
   .getting-started__finish { grid-template-columns: 1fr; justify-items: center; text-align: center; }
   .getting-started__finish > a { grid-column: auto; width: 100%; }

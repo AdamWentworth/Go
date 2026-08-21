@@ -163,10 +163,12 @@
   margin-top: 18px;
 }
 
-.homeHeader__pokemon-row img {
+.homeHeader__showcase-artwork {
   width: 100%;
-  max-height: 150px;
-  object-fit: contain;
+  height: 150px;
+  --pokemon-max-badge-size: 30%;
+  --pokemon-max-badge-inset-block: 3%;
+  --pokemon-max-badge-inset-inline: 3%;
 }
 
 .homeHeader__showcase-card--trade {
@@ -221,7 +223,7 @@
   .homeHeader__proof { gap: 8px 12px; }
   .homeHeader__showcase { min-height: 360px; }
   .homeHeader__showcase-card--collection { inset: 34px 8px 90px; padding: 18px; border-radius: 20px; }
-  .homeHeader__pokemon-row img { max-height: 105px; }
+  .homeHeader__showcase-artwork { height: 105px; }
   .homeHeader__showcase-card--share { right: 0; width: 190px; }
   .homeHeader__showcase-card--trade { right: 0; bottom: 35px; width: 82%; }
 }

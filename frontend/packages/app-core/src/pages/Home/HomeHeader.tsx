@@ -2,6 +2,9 @@
 
 import { FaArrowDown, FaArrowRight, FaCheckCircle } from 'react-icons/fa';
 import { Link } from 'react-router';
+
+import PokemonArtwork from '@/components/pokemonComponents/PokemonArtwork';
+
 import './HomeHeader.css';
 
 interface HomeHeaderProps {
@@ -67,9 +70,22 @@ const HomeHeader = ({ logoUrl, isLoggedIn }: HomeHeaderProps) => {
             <span>Step 1 · Collection</span>
             <strong>Begin with Pokémon you already know</strong>
             <div className="homeHeader__pokemon-row" aria-hidden="true">
-              <img src="/images/shiny_gigantamax/shiny_gigantamax_6.png" alt="" />
-              <img src="/images/costumes_shiny/pokemon_25_detective_shiny.png" alt="" />
-              <img src="/images/shiny_shadow/shiny_shadow_pokemon_376.png" alt="" />
+              <PokemonArtwork
+                alt=""
+                className="homeHeader__showcase-artwork"
+                gigantamax
+                imageUrl="/images/shiny_gigantamax/shiny_gigantamax_6.png"
+              />
+              <PokemonArtwork
+                alt=""
+                className="homeHeader__showcase-artwork"
+                imageUrl="/images/costumes_shiny/pokemon_25_detective_shiny.png"
+              />
+              <PokemonArtwork
+                alt=""
+                className="homeHeader__showcase-artwork"
+                imageUrl="/images/shiny_shadow/shiny_shadow_pokemon_376.png"
+              />
             </div>
           </div>
           <div className="homeHeader__showcase-card homeHeader__showcase-card--trade">

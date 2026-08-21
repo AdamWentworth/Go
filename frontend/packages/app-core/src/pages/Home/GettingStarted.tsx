@@ -11,8 +11,15 @@ import {
 } from 'react-icons/fa';
 import { Link } from 'react-router';
 
+import PokemonArtwork from '@/components/pokemonComponents/PokemonArtwork';
+
 import './Home.css';
 import './GettingStarted.css';
+
+interface StoryPokemon {
+  gigantamax?: boolean;
+  imageUrl: string;
+}
 
 interface GuideStep {
   id: string;
@@ -23,7 +30,7 @@ interface GuideStep {
   action: string;
   to: string;
   icon: IconType;
-  images: string[];
+  images: StoryPokemon[];
   visualLabel: string;
   tone: 'caught' | 'wanted' | 'trade' | 'search' | 'proposal' | 'share';
 }
@@ -42,7 +49,7 @@ const GUIDE_STEPS: GuideStep[] = [
     action: 'Open Pokémon',
     to: '/pokemon',
     icon: FaTags,
-    images: ['/images/shiny_gigantamax/shiny_gigantamax_6.png'],
+    images: [{ imageUrl: '/images/shiny_gigantamax/shiny_gigantamax_6.png', gigantamax: true }],
     visualLabel: 'Shiny Gigantamax Charizard',
     tone: 'caught',
   },
@@ -59,7 +66,7 @@ const GUIDE_STEPS: GuideStep[] = [
     action: 'Build your wishlist',
     to: '/pokemon?filter=wanted',
     icon: FaHeart,
-    images: ['/images/costumes_shiny/pokemon_25_detective_shiny.png'],
+    images: [{ imageUrl: '/images/costumes_shiny/pokemon_25_detective_shiny.png' }],
     visualLabel: 'Shiny Detective Pikachu',
     tone: 'wanted',
   },
@@ -76,7 +83,7 @@ const GUIDE_STEPS: GuideStep[] = [
     action: 'Open trade preferences',
     to: '/trades?section=preferences',
     icon: FaExchangeAlt,
-    images: ['/images/shiny_gigantamax/shiny_gigantamax_6.png'],
+    images: [{ imageUrl: '/images/shiny_gigantamax/shiny_gigantamax_6.png', gigantamax: true }],
     visualLabel: 'Your Shiny Gigantamax Charizard',
     tone: 'trade',
   },
@@ -93,7 +100,7 @@ const GUIDE_STEPS: GuideStep[] = [
     action: 'Explore search',
     to: '/search',
     icon: FaSearch,
-    images: ['/images/costumes_shiny/pokemon_25_detective_shiny.png'],
+    images: [{ imageUrl: '/images/costumes_shiny/pokemon_25_detective_shiny.png' }],
     visualLabel: 'Find a trainer offering this Pikachu',
     tone: 'search',
   },
@@ -111,8 +118,8 @@ const GUIDE_STEPS: GuideStep[] = [
     to: '/trades?section=activity',
     icon: FaCheck,
     images: [
-      '/images/shiny_gigantamax/shiny_gigantamax_6.png',
-      '/images/costumes_shiny/pokemon_25_detective_shiny.png',
+      { imageUrl: '/images/shiny_gigantamax/shiny_gigantamax_6.png', gigantamax: true },
+      { imageUrl: '/images/costumes_shiny/pokemon_25_detective_shiny.png' },
     ],
     visualLabel: 'Charizard ↔ Detective Pikachu',
     tone: 'proposal',
@@ -131,8 +138,8 @@ const GUIDE_STEPS: GuideStep[] = [
     to: '/trade-board',
     icon: FaShareAlt,
     images: [
-      '/images/shiny_gigantamax/shiny_gigantamax_6.png',
-      '/images/costumes_shiny/pokemon_25_detective_shiny.png',
+      { imageUrl: '/images/shiny_gigantamax/shiny_gigantamax_6.png', gigantamax: true },
+      { imageUrl: '/images/costumes_shiny/pokemon_25_detective_shiny.png' },
     ],
     visualLabel: 'One board, both listings',
     tone: 'share',
@@ -172,9 +179,9 @@ const GettingStarted = () => (
           </p>
           <p className="getting-started__story-note"><strong>Running example:</strong> offer a Shiny Gigantamax Charizard for a Shiny Detective Pikachu.</p>
           <div className="getting-started__legend">
-            <span><i className="is-caught"><img src="/images/shiny_gigantamax/shiny_gigantamax_6.png" alt="" /><FaCheck aria-hidden="true" /></i><strong>Caught</strong> You own it</span>
-            <span><i className="is-trade"><img src="/images/shiny_gigantamax/shiny_gigantamax_6.png" alt="" /><FaExchangeAlt aria-hidden="true" /></i><strong>For Trade</strong> You offer it</span>
-            <span><i className="is-wanted"><img src="/images/costumes_shiny/pokemon_25_detective_shiny.png" alt="" /><FaHeart aria-hidden="true" /></i><strong>Wanted</strong> You seek it</span>
+            <span><i className="is-caught" aria-hidden="true"><PokemonArtwork alt="" className="getting-started__legend-artwork" gigantamax imageUrl="/images/shiny_gigantamax/shiny_gigantamax_6.png" /><FaCheck /></i><strong>Caught</strong> You own it</span>
+            <span><i className="is-trade" aria-hidden="true"><PokemonArtwork alt="" className="getting-started__legend-artwork" gigantamax imageUrl="/images/shiny_gigantamax/shiny_gigantamax_6.png" /><FaExchangeAlt /></i><strong>For Trade</strong> You offer it</span>
+            <span><i className="is-wanted" aria-hidden="true"><PokemonArtwork alt="" className="getting-started__legend-artwork" imageUrl="/images/costumes_shiny/pokemon_25_detective_shiny.png" /><FaHeart /></i><strong>Wanted</strong> You seek it</span>
           </div>
         </section>
 
@@ -187,7 +194,15 @@ const GettingStarted = () => (
                   <span>{step.number}</span>
                   <Icon />
                   <div className="getting-started__story-pokemon">
-                    {step.images.map((image, index) => <img key={`${image}-${index}`} src={image} alt="" />)}
+                    {step.images.map((image, index) => (
+                      <PokemonArtwork
+                        key={`${image.imageUrl}-${index}`}
+                        alt=""
+                        className="getting-started__story-artwork"
+                        gigantamax={image.gigantamax}
+                        imageUrl={image.imageUrl}
+                      />
+                    ))}
                   </div>
                   <small>{step.visualLabel}</small>
                 </div>

@@ -11,13 +11,21 @@ import {
   FaTags,
 } from 'react-icons/fa';
 import { Link } from 'react-router';
+
+import PokemonArtwork from '@/components/pokemonComponents/PokemonArtwork';
+
 import './HowItWorks.css';
+
+interface StoryPokemon {
+  gigantamax?: boolean;
+  imageUrl: string;
+}
 
 interface HomeGuideStep {
   number: string;
   title: string;
   description: string;
-  images: string[];
+  images: StoryPokemon[];
   visualLabel: string;
   icon: IconType;
   tone: 'caught' | 'wanted' | 'trade' | 'search' | 'proposal' | 'share';
@@ -28,7 +36,7 @@ const HOME_GUIDE_STEPS: HomeGuideStep[] = [
     number: '01',
     title: 'Add a Pokémon',
     description: 'Find its exact variant, then save it as Caught, For Trade, or Wanted.',
-    images: ['/images/shiny_gigantamax/shiny_gigantamax_6.png'],
+    images: [{ imageUrl: '/images/shiny_gigantamax/shiny_gigantamax_6.png', gigantamax: true }],
     visualLabel: 'Shiny Gigantamax Charizard',
     icon: FaTags,
     tone: 'caught',
@@ -37,7 +45,7 @@ const HOME_GUIDE_STEPS: HomeGuideStep[] = [
     number: '02',
     title: 'Describe what you want',
     description: 'Add a Wanted entry and only specify details—such as form or moves—when they matter.',
-    images: ['/images/costumes_shiny/pokemon_25_detective_shiny.png'],
+    images: [{ imageUrl: '/images/costumes_shiny/pokemon_25_detective_shiny.png' }],
     visualLabel: 'Shiny Detective Pikachu',
     icon: FaHeart,
     tone: 'wanted',
@@ -46,7 +54,7 @@ const HOME_GUIDE_STEPS: HomeGuideStep[] = [
     number: '03',
     title: 'Prepare an offer',
     description: 'List a caught Pokémon For Trade and choose the Wanted targets you would accept.',
-    images: ['/images/shiny_gigantamax/shiny_gigantamax_6.png'],
+    images: [{ imageUrl: '/images/shiny_gigantamax/shiny_gigantamax_6.png', gigantamax: true }],
     visualLabel: 'The same Charizard becomes your offer',
     icon: FaExchangeAlt,
     tone: 'trade',
@@ -55,7 +63,7 @@ const HOME_GUIDE_STEPS: HomeGuideStep[] = [
     number: '04',
     title: 'Discover trainers',
     description: 'Search exact listings or trainer names and inspect the public collection behind a result.',
-    images: ['/images/costumes_shiny/pokemon_25_detective_shiny.png'],
+    images: [{ imageUrl: '/images/costumes_shiny/pokemon_25_detective_shiny.png' }],
     visualLabel: 'Search for the Pikachu you want',
     icon: FaSearch,
     tone: 'search',
@@ -65,8 +73,8 @@ const HOME_GUIDE_STEPS: HomeGuideStep[] = [
     title: 'Review the exchange',
     description: 'Confirm both Pokémon, friendship level, eligibility, and Stardust cost before proposing.',
     images: [
-      '/images/shiny_gigantamax/shiny_gigantamax_6.png',
-      '/images/costumes_shiny/pokemon_25_detective_shiny.png',
+      { imageUrl: '/images/shiny_gigantamax/shiny_gigantamax_6.png', gigantamax: true },
+      { imageUrl: '/images/costumes_shiny/pokemon_25_detective_shiny.png' },
     ],
     visualLabel: 'Your offer ↔ their offer',
     icon: FaExchangeAlt,
@@ -77,8 +85,8 @@ const HOME_GUIDE_STEPS: HomeGuideStep[] = [
     title: 'Share when useful',
     description: 'Create a live Trade Board or image for communities where the other trainer may not use the app yet.',
     images: [
-      '/images/shiny_gigantamax/shiny_gigantamax_6.png',
-      '/images/costumes_shiny/pokemon_25_detective_shiny.png',
+      { imageUrl: '/images/shiny_gigantamax/shiny_gigantamax_6.png', gigantamax: true },
+      { imageUrl: '/images/costumes_shiny/pokemon_25_detective_shiny.png' },
     ],
     visualLabel: 'One board, both listings',
     icon: FaShareAlt,
@@ -97,15 +105,24 @@ const HowItWorks = () => {
 
         <div className="howItWorks__concepts" aria-label="Collection status guide">
           <article>
-            <span className="howItWorks__concept-icon howItWorks__concept-icon--caught"><img src="/images/shiny_gigantamax/shiny_gigantamax_6.png" alt="" /><FaCheck aria-hidden="true" /></span>
+            <span className="howItWorks__concept-icon howItWorks__concept-icon--caught" aria-hidden="true">
+              <PokemonArtwork alt="" className="howItWorks__concept-artwork" gigantamax imageUrl="/images/shiny_gigantamax/shiny_gigantamax_6.png" />
+              <FaCheck />
+            </span>
             <div><strong>Caught</strong><small>A Pokémon currently in your collection.</small></div>
           </article>
           <article>
-            <span className="howItWorks__concept-icon howItWorks__concept-icon--trade"><img src="/images/shiny_gigantamax/shiny_gigantamax_6.png" alt="" /><FaExchangeAlt aria-hidden="true" /></span>
+            <span className="howItWorks__concept-icon howItWorks__concept-icon--trade" aria-hidden="true">
+              <PokemonArtwork alt="" className="howItWorks__concept-artwork" gigantamax imageUrl="/images/shiny_gigantamax/shiny_gigantamax_6.png" />
+              <FaExchangeAlt />
+            </span>
             <div><strong>For Trade</strong><small>A caught Pokémon you are willing to offer.</small></div>
           </article>
           <article>
-            <span className="howItWorks__concept-icon howItWorks__concept-icon--wanted"><img src="/images/costumes_shiny/pokemon_25_detective_shiny.png" alt="" /><FaHeart aria-hidden="true" /></span>
+            <span className="howItWorks__concept-icon howItWorks__concept-icon--wanted" aria-hidden="true">
+              <PokemonArtwork alt="" className="howItWorks__concept-artwork" imageUrl="/images/costumes_shiny/pokemon_25_detective_shiny.png" />
+              <FaHeart />
+            </span>
             <div><strong>Wanted</strong><small>A separate wishlist entry describing what you seek.</small></div>
           </article>
         </div>
@@ -119,7 +136,15 @@ const HowItWorks = () => {
                 <div className={`howItWorks__step-art ${step.images.length > 1 ? 'has-pair' : ''}`} aria-hidden="true">
                   <Icon />
                   <div className="howItWorks__story-pokemon">
-                    {step.images.map((image, index) => <img key={`${image}-${index}`} src={image} alt="" />)}
+                    {step.images.map((image, index) => (
+                      <PokemonArtwork
+                        key={`${image.imageUrl}-${index}`}
+                        alt=""
+                        className="howItWorks__story-artwork"
+                        gigantamax={image.gigantamax}
+                        imageUrl={image.imageUrl}
+                      />
+                    ))}
                   </div>
                   <small>{step.visualLabel}</small>
                 </div>

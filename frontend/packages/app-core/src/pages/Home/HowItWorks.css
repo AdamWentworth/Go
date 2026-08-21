@@ -82,10 +82,12 @@
   border-radius: 14px;
 }
 
-.howItWorks__concept-icon img {
+.howItWorks__concept-artwork {
   width: 54px;
   height: 54px;
-  object-fit: contain;
+  --pokemon-max-badge-size: 30%;
+  --pokemon-max-badge-inset-block: 1%;
+  --pokemon-max-badge-inset-inline: 1%;
 }
 
 .howItWorks__concept-icon svg {
@@ -172,14 +174,16 @@
   justify-content: center;
 }
 
-.howItWorks__story-pokemon img {
+.howItWorks__story-artwork {
   width: 126px;
   height: 126px;
-  object-fit: contain;
   filter: drop-shadow(0 12px 14px rgba(0, 0, 0, 0.3));
+  --pokemon-max-badge-size: 29%;
+  --pokemon-max-badge-inset-block: 5%;
+  --pokemon-max-badge-inset-inline: 5%;
 }
 
-.howItWorks__step-art.has-pair .howItWorks__story-pokemon img {
+.howItWorks__step-art.has-pair .howItWorks__story-artwork {
   width: 104px;
   height: 104px;
   margin-inline: -8px;

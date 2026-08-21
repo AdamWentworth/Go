@@ -26,6 +26,7 @@ describe('GettingStarted', () => {
     );
     expect(screen.getByText(/offer a Shiny Gigantamax Charizard/i)).toBeInTheDocument();
     expect(container.querySelectorAll('img[src="/images/shiny_gigantamax/shiny_gigantamax_6.png"]')).toHaveLength(6);
+    expect(container.querySelectorAll('img[src="/images/gigantamax.png"]')).toHaveLength(6);
     expect(container.querySelectorAll('img[src="/images/costumes_shiny/pokemon_25_detective_shiny.png"]')).toHaveLength(5);
     expect(container.querySelector('img[src="/images/default/pokemon_1.png"]')).not.toBeInTheDocument();
     await expect(container).toHaveNoViolations();
