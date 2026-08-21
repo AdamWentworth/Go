@@ -18,10 +18,20 @@ describe('HowItWorks', () => {
     expect(screen.getByRole('link', { name: /Pokémon collection/i })).toHaveAttribute('href', '/pokemon');
     expect(screen.getByRole('link', { name: /Search & discovery/i })).toHaveAttribute('href', '/search');
     expect(screen.getByRole('link', { name: /^Trades/i })).toHaveAttribute('href', '/trades');
-    expect(screen.getByRole('link', { name: /^Friends/i })).toHaveClass('is-friends');
-    expect(screen.getByRole('link', { name: /Trade Board/i }))
-      .toHaveAttribute('href', '/trade-board');
-    expect(screen.getByRole('link', { name: /Trade Board/i })).toHaveClass('is-board');
+    const friendsLink = screen.getByRole('link', { name: /Friends/i });
+    const tradeBoardLink = screen.getByRole('link', { name: /Trade Board/i });
+    const communityBand = container.querySelector('.howItWorks__community-band');
+    const coreGrid = container.querySelector('.howItWorks__core-grid');
+    const toolsGrid = container.querySelector('.howItWorks__tools-grid');
+
+    expect(friendsLink).toHaveAttribute('href', '/friends');
+    expect(friendsLink).toHaveClass('is-friends');
+    expect(tradeBoardLink).toHaveAttribute('href', '/trade-board');
+    expect(tradeBoardLink).toHaveClass('is-board');
+    expect(communityBand).toContainElement(friendsLink);
+    expect(communityBand).toContainElement(tradeBoardLink);
+    expect(coreGrid).not.toContainElement(friendsLink);
+    expect(toolsGrid).not.toContainElement(tradeBoardLink);
     expect(container.querySelectorAll('img[src="/images/shiny_gigantamax/shiny_gigantamax_6.png"]')).toHaveLength(3);
     expect(container.querySelectorAll('img[src="/images/gigantamax.png"]')).toHaveLength(3);
     expect(container.querySelectorAll('img[src="/images/costumes_shiny/pokemon_25_detective_shiny.png"]')).toHaveLength(2);

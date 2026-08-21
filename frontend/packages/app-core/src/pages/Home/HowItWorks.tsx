@@ -1,4 +1,3 @@
-import type { IconType } from 'react-icons';
 import {
   FaArrowRight,
   FaBookOpen,
@@ -18,8 +17,7 @@ interface FeatureLink {
   title: string;
   description: string;
   href: string;
-  image?: string;
-  icon?: IconType;
+  image: string;
   tone: string;
 }
 
@@ -45,13 +43,6 @@ const CORE_FEATURES: FeatureLink[] = [
     image: '/images/btn_trades.png',
     tone: 'trades',
   },
-  {
-    title: 'Friends',
-    description: 'Build your trainer network while keeping collection visibility and personal details under your control.',
-    href: '/friends',
-    icon: FaUserFriends,
-    tone: 'friends',
-  },
 ];
 
 const TRAINER_TOOLS: FeatureLink[] = [
@@ -60,7 +51,6 @@ const TRAINER_TOOLS: FeatureLink[] = [
   { title: 'PvP', description: 'Explore leagues and matchups.', href: '/pvp', image: '/images/btn_pvp.png', tone: 'pvp' },
   { title: 'Max Battles', description: 'Plan for Dynamax encounters.', href: '/max', image: '/images/btn_max.png', tone: 'max' },
   { title: 'Rankings', description: 'Compare Pokémon performance.', href: '/rankings', image: '/images/btn_rankings.png', tone: 'rankings' },
-  { title: 'Trade Board', description: 'Share a visual trade list anywhere.', href: '/trade-board', icon: FaShareAlt, tone: 'board' },
 ];
 
 const HowItWorks = () => {
@@ -122,11 +112,10 @@ const HowItWorks = () => {
 
         <div className="howItWorks__core-grid">
           {CORE_FEATURES.map((feature) => {
-            const Icon = feature.icon;
             return (
               <Link key={feature.href} className={`howItWorks__feature-card is-${feature.tone}`} to={feature.href}>
                 <span className="howItWorks__feature-icon" aria-hidden="true">
-                  {feature.image ? <img src={feature.image} alt="" /> : Icon ? <Icon /> : null}
+                  <img src={feature.image} alt="" />
                 </span>
                 <span><strong>{feature.title}</strong><small>{feature.description}</small></span>
                 <FaArrowRight aria-hidden="true" />
@@ -135,16 +124,43 @@ const HowItWorks = () => {
           })}
         </div>
 
+        <div className="howItWorks__community-band" aria-labelledby="community-band-title">
+          <div className="howItWorks__community-intro">
+            <span className="home-eyebrow">Connect and share</span>
+            <h3 id="community-band-title">Your collection can travel further.</h3>
+            <p>Build trusted connections inside Nexus, then take a polished trade list anywhere trainers gather.</p>
+          </div>
+          <nav className="howItWorks__community-actions" aria-label="Community and sharing features">
+            <Link className="howItWorks__community-action is-friends" to="/friends">
+              <span className="howItWorks__community-icon" aria-hidden="true"><FaUserFriends /></span>
+              <span className="howItWorks__community-copy">
+                <small>Trainer network</small>
+                <strong>Friends</strong>
+                <span>Manage trusted trainers, requests, privacy, and collection access.</span>
+              </span>
+              <FaArrowRight aria-hidden="true" />
+            </Link>
+            <Link className="howItWorks__community-action is-board" to="/trade-board">
+              <span className="howItWorks__community-icon" aria-hidden="true"><FaShareAlt /></span>
+              <span className="howItWorks__community-copy">
+                <small>Share beyond Nexus</small>
+                <strong>Trade Board</strong>
+                <span>Create one visual list or live link for Discord, chats, and communities.</span>
+              </span>
+              <FaArrowRight aria-hidden="true" />
+            </Link>
+          </nav>
+        </div>
+
         <div className="howItWorks__tools-heading">
           <h3>Trainer tools</h3>
           <p>Jump directly to the reference and planning tools you need.</p>
         </div>
         <div className="howItWorks__tools-grid">
           {TRAINER_TOOLS.map((feature) => {
-            const Icon = feature.icon;
             return (
               <Link key={feature.href} className={`howItWorks__tool-card is-${feature.tone}`} to={feature.href}>
-                <span aria-hidden="true">{feature.image ? <img src={feature.image} alt="" /> : Icon ? <Icon /> : null}</span>
+                <span aria-hidden="true"><img src={feature.image} alt="" /></span>
                 <span><strong>{feature.title}</strong><small>{feature.description}</small></span>
                 <FaArrowRight aria-hidden="true" />
               </Link>
