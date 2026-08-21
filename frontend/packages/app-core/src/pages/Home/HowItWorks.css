@@ -5,6 +5,10 @@
   padding: clamp(72px, 9vw, 112px) 0 max(150px, calc(110px + env(safe-area-inset-bottom)));
 }
 
+#start-here {
+  scroll-margin-top: 18px;
+}
+
 .howItWorks__intro { text-align: center; }
 
 .howItWorks__intro > h2,
@@ -36,7 +40,7 @@
 .howItWorks__concepts article {
   display: grid;
   min-width: 0;
-  grid-template-columns: 44px minmax(0, 1fr);
+  grid-template-columns: 62px minmax(0, 1fr);
   align-items: center;
   gap: 11px;
   padding: 12px;
@@ -56,11 +60,31 @@
 .howItWorks__concepts small { color: var(--color-text-secondary); font-size: 0.7rem; line-height: 1.35; }
 
 .howItWorks__concept-icon {
+  position: relative;
   display: grid;
-  width: 44px;
-  height: 44px;
+  width: 62px;
+  height: 62px;
   place-items: center;
-  border-radius: 12px;
+  border-radius: 14px;
+}
+
+.howItWorks__concept-icon img {
+  width: 54px;
+  height: 54px;
+  object-fit: contain;
+}
+
+.howItWorks__concept-icon svg {
+  position: absolute;
+  right: -3px;
+  bottom: -3px;
+  width: 13px;
+  height: 13px;
+  padding: 4px;
+  border: 2px solid var(--color-app-surface);
+  border-radius: 50%;
+  background: var(--home-surface-raised);
+  color: inherit;
 }
 
 .howItWorks__concept-icon--caught { background: color-mix(in srgb, var(--color-accent-primary) 15%, transparent); color: var(--color-accent-primary); }
@@ -92,10 +116,10 @@
 
 .howItWorks__steps article {
   position: relative;
-  min-height: 250px;
+  min-height: 310px;
   box-sizing: border-box;
   overflow: hidden;
-  padding: 20px;
+  padding: 16px;
   border: 1px solid var(--home-border);
   border-radius: 18px;
   background: var(--home-surface);
@@ -110,14 +134,45 @@
   font-weight: 950;
 }
 
-.howItWorks__steps article > svg {
-  width: 30px;
-  height: 30px;
-  margin-top: 6px;
+.howItWorks__step-art {
+  position: relative;
+  display: grid;
+  height: 160px;
+  place-items: center;
+  overflow: hidden;
+  margin: -6px -6px 14px;
+  border-radius: 14px;
+  background:
+    radial-gradient(circle, color-mix(in srgb, var(--color-accent-primary) 16%, transparent), transparent 68%),
+    color-mix(in srgb, var(--color-app-surface) 72%, transparent);
+}
+
+.howItWorks__steps article.is-wanted .howItWorks__step-art { background: radial-gradient(circle, color-mix(in srgb, var(--home-red) 20%, transparent), transparent 68%), color-mix(in srgb, var(--color-app-surface) 72%, transparent); }
+.howItWorks__steps article.is-trade .howItWorks__step-art,
+.howItWorks__steps article.is-proposal .howItWorks__step-art { background: radial-gradient(circle, color-mix(in srgb, var(--home-green) 20%, transparent), transparent 68%), color-mix(in srgb, var(--color-app-surface) 72%, transparent); }
+
+.howItWorks__step-art img {
+  width: 132px;
+  height: 132px;
+  object-fit: contain;
+  filter: drop-shadow(0 12px 14px rgba(0, 0, 0, 0.3));
+}
+
+.howItWorks__step-art svg {
+  position: absolute;
+  top: 11px;
+  left: 11px;
+  width: 23px;
+  height: 23px;
+  padding: 8px;
+  border: 1px solid var(--home-border);
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--color-app-surface) 82%, transparent);
   color: var(--home-green);
 }
 
-.howItWorks__steps h3 { margin: 62px 0 7px; font-size: 1rem; }
+.howItWorks__steps h3 { margin: 0 4px 7px; font-size: 1rem; }
+.howItWorks__steps article > p { margin-inline: 4px; }
 .howItWorks__steps p { margin: 0; color: var(--color-text-secondary); font-size: 0.8rem; line-height: 1.5; }
 
 .howItWorks__feature-band {
@@ -169,7 +224,7 @@
   .howItWorks__steps { grid-template-columns: 1fr; }
   .howItWorks__concepts { grid-template-columns: 1fr; }
   .howItWorks__steps article { min-height: 188px; }
-  .howItWorks__steps h3 { margin-top: 42px; }
+  .howItWorks__step-art { height: 172px; }
   .howItWorks__feature-band { grid-template-columns: 1fr; padding: 20px 15px; border-radius: 20px; }
   .howItWorks__feature-list { grid-template-columns: 1fr; }
   .howItWorks__feature-list > span { min-height: 86px; }

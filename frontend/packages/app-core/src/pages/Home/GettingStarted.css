@@ -103,7 +103,7 @@
 .getting-started__legend > span {
   display: grid;
   min-width: 0;
-  grid-template-columns: 38px minmax(0, 1fr);
+  grid-template-columns: 58px minmax(0, 1fr);
   align-items: center;
   gap: 3px 10px;
   padding: 12px;
@@ -115,13 +115,32 @@
 }
 
 .getting-started__legend i {
+  position: relative;
   display: grid;
-  width: 38px;
-  height: 38px;
+  width: 58px;
+  height: 58px;
   grid-row: 1 / 3;
   place-items: center;
   border-radius: 11px;
   font-style: normal;
+}
+
+.getting-started__legend i img {
+  width: 50px;
+  height: 50px;
+  object-fit: contain;
+}
+
+.getting-started__legend i svg {
+  position: absolute;
+  right: -2px;
+  bottom: -2px;
+  width: 13px;
+  height: 13px;
+  padding: 4px;
+  border: 2px solid var(--color-app-surface);
+  border-radius: 50%;
+  background: var(--home-surface-raised);
 }
 
 .getting-started__legend strong { color: var(--color-text-primary); font-size: 0.8rem; }

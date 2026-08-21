@@ -1,5 +1,6 @@
 // HowItWorks.jsx
 
+import type { IconType } from 'react-icons';
 import {
   FaArrowRight,
   FaCheck,
@@ -12,6 +13,66 @@ import {
 import { Link } from 'react-router';
 import './HowItWorks.css';
 
+interface HomeGuideStep {
+  number: string;
+  title: string;
+  description: string;
+  image: string;
+  icon: IconType;
+  tone: 'caught' | 'wanted' | 'trade' | 'search' | 'proposal' | 'share';
+}
+
+const HOME_GUIDE_STEPS: HomeGuideStep[] = [
+  {
+    number: '01',
+    title: 'Add a Pokémon',
+    description: 'Find its exact variant, then save it as Caught, For Trade, or Wanted.',
+    image: '/images/default/pokemon_1.png',
+    icon: FaTags,
+    tone: 'caught',
+  },
+  {
+    number: '02',
+    title: 'Describe what you want',
+    description: 'Add a Wanted entry and only specify details—such as form or moves—when they matter.',
+    image: '/images/default/pokemon_25.png',
+    icon: FaHeart,
+    tone: 'wanted',
+  },
+  {
+    number: '03',
+    title: 'Prepare an offer',
+    description: 'List a caught Pokémon For Trade and choose the Wanted targets you would accept.',
+    image: '/images/default/pokemon_6.png',
+    icon: FaExchangeAlt,
+    tone: 'trade',
+  },
+  {
+    number: '04',
+    title: 'Discover trainers',
+    description: 'Search exact listings or trainer names and inspect the public collection behind a result.',
+    image: '/images/default/pokemon_133.png',
+    icon: FaSearch,
+    tone: 'search',
+  },
+  {
+    number: '05',
+    title: 'Review the exchange',
+    description: 'Confirm both Pokémon, friendship level, eligibility, and Stardust cost before proposing.',
+    image: '/images/default/pokemon_150.png',
+    icon: FaExchangeAlt,
+    tone: 'proposal',
+  },
+  {
+    number: '06',
+    title: 'Share when useful',
+    description: 'Create a live Trade Board or image for communities where the other trainer may not use the app yet.',
+    image: '/images/default/pokemon_448.png',
+    icon: FaShareAlt,
+    tone: 'share',
+  },
+];
+
 const HowItWorks = () => {
   return (
     <div className="howItWorks home-shell" id="start-here">
@@ -22,26 +83,34 @@ const HowItWorks = () => {
 
         <div className="howItWorks__concepts" aria-label="Collection status guide">
           <article>
-            <span className="howItWorks__concept-icon howItWorks__concept-icon--caught"><FaCheck aria-hidden="true" /></span>
+            <span className="howItWorks__concept-icon howItWorks__concept-icon--caught"><img src="/images/default/pokemon_1.png" alt="" /><FaCheck aria-hidden="true" /></span>
             <div><strong>Caught</strong><small>A Pokémon currently in your collection.</small></div>
           </article>
           <article>
-            <span className="howItWorks__concept-icon howItWorks__concept-icon--trade"><FaExchangeAlt aria-hidden="true" /></span>
+            <span className="howItWorks__concept-icon howItWorks__concept-icon--trade"><img src="/images/default/pokemon_6.png" alt="" /><FaExchangeAlt aria-hidden="true" /></span>
             <div><strong>For Trade</strong><small>A caught Pokémon you are willing to offer.</small></div>
           </article>
           <article>
-            <span className="howItWorks__concept-icon howItWorks__concept-icon--wanted"><FaHeart aria-hidden="true" /></span>
+            <span className="howItWorks__concept-icon howItWorks__concept-icon--wanted"><img src="/images/default/pokemon_25.png" alt="" /><FaHeart aria-hidden="true" /></span>
             <div><strong>Wanted</strong><small>A separate wishlist entry describing what you seek.</small></div>
           </article>
         </div>
 
         <div className="howItWorks__steps">
-          <article><span>01</span><FaTags aria-hidden="true" /><h3>Add a Pokémon</h3><p>Find its exact variant, then save it as Caught, For Trade, or Wanted.</p></article>
-          <article><span>02</span><FaHeart aria-hidden="true" /><h3>Describe what you want</h3><p>Add a Wanted entry and only specify details—such as form or moves—when they matter.</p></article>
-          <article><span>03</span><FaExchangeAlt aria-hidden="true" /><h3>Prepare an offer</h3><p>List a caught Pokémon For Trade and choose the Wanted targets you would accept.</p></article>
-          <article><span>04</span><FaSearch aria-hidden="true" /><h3>Discover trainers</h3><p>Search exact listings or trainer names and inspect the public collection behind a result.</p></article>
-          <article><span>05</span><FaExchangeAlt aria-hidden="true" /><h3>Review the exchange</h3><p>Confirm both Pokémon, friendship level, eligibility, and Stardust cost before proposing.</p></article>
-          <article><span>06</span><FaShareAlt aria-hidden="true" /><h3>Share when useful</h3><p>Create a live Trade Board or image for communities where the other trainer may not use the app yet.</p></article>
+          {HOME_GUIDE_STEPS.map((step) => {
+            const Icon = step.icon;
+            return (
+              <article key={step.number} className={`is-${step.tone}`}>
+                <span>{step.number}</span>
+                <div className="howItWorks__step-art" aria-hidden="true">
+                  <Icon />
+                  <img src={step.image} alt="" />
+                </div>
+                <h3>{step.title}</h3>
+                <p>{step.description}</p>
+              </article>
+            );
+          })}
         </div>
         <Link className="howItWorks__guide-link" to="/getting-started">
           Continue with the illustrated guide <FaArrowRight aria-hidden="true" />

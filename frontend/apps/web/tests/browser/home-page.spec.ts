@@ -82,6 +82,10 @@ test.describe('Home page', () => {
     try {
       await page.goto('/', { waitUntil: 'domcontentloaded' });
       await expect(page.getByRole('heading', { name: 'Start with your collection. We’ll guide the rest.' })).toBeVisible();
+      await page.getByRole('link', { name: /show me how/i }).click();
+      await expect.poll(() => page.locator('#start-here').evaluate((element) =>
+        Math.abs(element.getBoundingClientRect().top))).toBeLessThan(30);
+      await expect(page).toHaveURL(/#start-here$/);
       await expect(page.getByRole('heading', { name: 'Follow one Pokémon through the app' })).toBeVisible();
       await expect(page.getByRole('heading', { name: 'Share when useful' })).toBeVisible();
       await expect(page.getByRole('link', { name: /open the full guide/i })).toBeVisible();

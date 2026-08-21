@@ -10,6 +10,21 @@ interface HomeHeaderProps {
 }
 
 const HomeHeader = ({ logoUrl, isLoggedIn }: HomeHeaderProps) => {
+  const handleShowGuide = (event: React.MouseEvent<HTMLAnchorElement>) => {
+    event.preventDefault();
+    const guide = document.getElementById('start-here');
+    if (!guide) return;
+
+    const prefersReducedMotion =
+      document.documentElement.dataset.reducedMotion === 'true' ||
+      window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+    guide.scrollIntoView({
+      behavior: prefersReducedMotion ? 'auto' : 'smooth',
+      block: 'start',
+    });
+    window.history.replaceState(null, '', '#start-here');
+  };
+
   return (
     <header className="homeHeader">
       <nav className="homeHeader__nav" aria-label="Home navigation">
@@ -35,7 +50,7 @@ const HomeHeader = ({ logoUrl, isLoggedIn }: HomeHeaderProps) => {
           </p>
           {!isLoggedIn ? (
             <div className="homeHeader__actions">
-              <a className="home-primary-action" href="#start-here">Show me how <FaArrowDown aria-hidden="true" /></a>
+              <a className="home-primary-action" href="#start-here" onClick={handleShowGuide}>Show me how <FaArrowDown aria-hidden="true" /></a>
               <Link className="home-secondary-action" to="/getting-started">Open the full guide <FaArrowRight aria-hidden="true" /></Link>
             </div>
           ) : null}
