@@ -1,6 +1,6 @@
-# 🌐 PokeGo Nexus — Full Stack Monorepo
+# 🌐 Pokémon Go Nexus — Full Stack Monorepo
 
-Welcome to the **PokeGo Nexus** — a full-stack web application and data ecosystem for tracking, managing, and trading Pokémon Go collections. This monorepo includes all services required for the platform: from a React frontend and Express/Go backends, to Kafka-based event syncing, to location intelligence and database editors.
+Welcome to **Pokémon Go Nexus** — a full-stack web application and data ecosystem for tracking, managing, and trading Pokémon Go collections. This monorepo includes all services required for the platform: from a React frontend and Express/Go backends, to Kafka-based event syncing, to location intelligence and database editors.
 
 ---
 

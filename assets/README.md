@@ -9,7 +9,7 @@ Structure:
 - `assets/media` - Shared media files (loading spinners).
 - `assets/favicons` - Browser favicon assets.
 
-## PokeGo Nexus brand assets
+## Pokémon Go Nexus brand assets
 
 The canonical application branding lives in `assets/images/logo`:
 
@@ -23,7 +23,13 @@ The canonical application branding lives in `assets/images/logo`:
 
 Installable-app exports live in both `assets/icons` and the web package's `public/icons` directory. `icon-*` files retain transparency; `maskable-icon-*` files include the approved navy safe area required by adaptive launchers. Native Expo icons are derived from the same mark under `frontend/apps/mobile/assets`.
 
-Use **PokeGo Nexus** for user-facing product text. The unspaced **PokeGoNexus** form is reserved for legacy identifiers, account handles, and places where changing the identifier would break compatibility.
+Use **Pokémon Go Nexus** for all user-facing product text. Keep the domain as
+`pokegonexus.com`; legacy unspaced forms may remain only in compatibility-sensitive
+repository paths, environment variables, service identifiers, and user agents.
+
+Deferred contact setup: create `support@pokegonexus.com` as the public support
+alias before restoring a public contact link. Do not expose an administrative
+mailbox in the application or legal pages.
 
 Do not duplicate shared media under frontend package `public/` folders. The web app should request these files through the same `/media/...` paths that production serves.
 
