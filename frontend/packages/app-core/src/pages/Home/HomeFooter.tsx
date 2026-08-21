@@ -1,4 +1,4 @@
-import { FaArrowRight, FaEnvelope } from 'react-icons/fa';
+import { FaArrowRight } from 'react-icons/fa';
 import { Link } from 'react-router';
 
 import './HomeFooter.css';
@@ -38,9 +38,6 @@ const HomeFooter = () => (
             A collection, discovery, and trading hub built around the details
             Pokémon GO trainers actually care about.
           </p>
-          <a href="mailto:admin@pokegonexus.com">
-            <FaEnvelope aria-hidden="true" /> Contact PokeGo Nexus
-          </a>
         </div>
 
         <nav className="homeFooter__links" aria-label="PokeGo Nexus footer">

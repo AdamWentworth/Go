@@ -88,17 +88,6 @@
   line-height: 1.55;
 }
 
-.homeFooter__about a {
-  display: inline-flex;
-  min-height: 44px;
-  align-items: center;
-  gap: 8px;
-  color: var(--home-blue);
-  font-size: 0.76rem;
-  font-weight: 850;
-  text-decoration: none;
-}
-
 .homeFooter__links {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -132,9 +121,7 @@
 }
 
 .homeFooter__links a:hover,
-.homeFooter__links a:focus-visible,
-.homeFooter__about a:hover,
-.homeFooter__about a:focus-visible {
+.homeFooter__links a:focus-visible {
   color: var(--color-text-primary);
 }
 

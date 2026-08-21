@@ -97,9 +97,7 @@ test('mobile Terms content and footer remain readable inside the viewport', asyn
   const document = page.locator('.legal-document');
   await expect(document.getByRole('heading', { name: 'Terms of Service' })).toBeVisible();
   await expect(document.getByRole('link', { name: 'Return to PokeGoNexus' })).toBeVisible();
-  await expect(
-    document.locator('footer').getByRole('link', { name: 'admin@pokegonexus.com' }),
-  ).toBeVisible();
+  await expect(document.locator('a[href^="mailto:"]')).toHaveCount(0);
 
   const bounds = await document.boundingBox();
   expect(bounds).not.toBeNull();

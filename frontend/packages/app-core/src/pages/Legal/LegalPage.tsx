@@ -21,7 +21,6 @@ const LegalPage: FC<LegalPageProps> = ({ eyebrow, title, updated, children }) =>
       <div className="legal-document__content">{children}</div>
       <footer>
         <Link to="/">Return to PokeGoNexus</Link>
-        <a href="mailto:admin@pokegonexus.com">admin@pokegonexus.com</a>
       </footer>
     </article>
   </main>

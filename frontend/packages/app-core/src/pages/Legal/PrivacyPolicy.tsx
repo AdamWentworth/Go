@@ -42,13 +42,6 @@ const PrivacyPolicy = () => (
         your account and associated application data from Account Security.
       </p>
     </section>
-    <section>
-      <h2>Contact</h2>
-      <p>
-        Privacy questions and requests can be sent to{' '}
-        <a href="mailto:admin@pokegonexus.com">admin@pokegonexus.com</a>.
-      </p>
-    </section>
   </LegalPage>
 );
 

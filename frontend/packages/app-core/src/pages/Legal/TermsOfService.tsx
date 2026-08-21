@@ -35,13 +35,6 @@ const TermsOfService = () => (
         providers.
       </p>
     </section>
-    <section>
-      <h2>Contact</h2>
-      <p>
-        Questions about these terms can be sent to{' '}
-        <a href="mailto:admin@pokegonexus.com">admin@pokegonexus.com</a>.
-      </p>
-    </section>
   </LegalPage>
 );
 

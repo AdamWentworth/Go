@@ -20,10 +20,10 @@ const DataDeletion = () => (
     <section>
       <h2>If you cannot sign in</h2>
       <p>
-        Email <a href="mailto:admin@pokegonexus.com">admin@pokegonexus.com</a> from
-        the address associated with the account. Include your PokeGoNexus username
-        and state that you are requesting account and data deletion. Do not send a
-        password, OAuth secret, or authentication code.
+        Password-based accounts can use the password-reset option on the login
+        screen. For Google, Discord, or Facebook accounts, sign in with the same
+        provider and email address originally connected to PokeGoNexus, then use
+        the account-deletion steps above.
       </p>
     </section>
     <section>
