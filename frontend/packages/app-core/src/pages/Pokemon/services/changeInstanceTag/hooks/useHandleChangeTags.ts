@@ -25,11 +25,8 @@ import { useInstancesStore } from '@/features/instances/store/useInstancesStore'
 
 const log = createScopedLogger('useHandleChangeTags');
 
-type MenuContext = 'pokedex' | 'ownership';
-
 interface useHandleChangeTagsProps {
   setTagFilter: (filter: string) => void;
-  setLastMenu: (menu: MenuContext) => void; // ensure header switches to TAGS sublabel
   setHighlightedCards: (cards: Set<string>) => void;
   highlightedCards: Set<string>;
   updateInstanceStatus: (
@@ -80,7 +77,6 @@ async function yieldToPaint() {
 
 function useHandleChangeTags({
   setTagFilter,
-  setLastMenu,
   setHighlightedCards,
   highlightedCards,
   updateInstanceStatus,
@@ -123,7 +119,6 @@ function useHandleChangeTags({
         // item is blocked, keep the selection intact so the user can revise it.
         if (changed && targetFilter !== 'Missing') {
           setTagFilter(destinationFilter ?? targetFilter);
-          setLastMenu('ownership');
         }
 
         if (changed) {
@@ -138,7 +133,7 @@ function useHandleChangeTags({
         setIsUpdating(false);
       }
     },
-    [updateInstanceStatus, setHighlightedCards, setIsFastSelectEnabled, setIsUpdating, setTagFilter, setLastMenu]
+    [updateInstanceStatus, setHighlightedCards, setIsFastSelectEnabled, setIsUpdating, setTagFilter]
   );
 
   const handleConfirmChangeTags = useCallback(

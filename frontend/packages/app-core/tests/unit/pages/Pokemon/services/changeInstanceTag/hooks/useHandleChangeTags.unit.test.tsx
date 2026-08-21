@@ -33,7 +33,6 @@ describe('useHandleChangeTags', () => {
 
     const { result } = renderHook(() => useHandleChangeTags({
       setTagFilter: vi.fn(),
-      setLastMenu: vi.fn(),
       setHighlightedCards,
       highlightedCards: new Set(['0003-mega']),
       updateInstanceStatus,
@@ -66,7 +65,6 @@ describe('useHandleChangeTags', () => {
   it('describes custom-tag creation and opens the completed destination tag', async () => {
     modal.confirm.mockResolvedValue(true);
     const setTagFilter = vi.fn();
-    const setLastMenu = vi.fn();
     const setHighlightedCards = vi.fn();
     const setIsFastSelectEnabled = vi.fn();
     const updateInstanceStatus = vi.fn(async () => [{
@@ -80,7 +78,6 @@ describe('useHandleChangeTags', () => {
 
     const { result } = renderHook(() => useHandleChangeTags({
       setTagFilter,
-      setLastMenu,
       setHighlightedCards,
       highlightedCards: new Set(['0003-shadow&shiny']),
       updateInstanceStatus,
@@ -108,7 +105,6 @@ describe('useHandleChangeTags', () => {
       'Review these changes:\n• Create Shiny Shadow Venusaur as Caught\n• Add to tag: Shadow Shinies',
     );
     expect(setTagFilter).toHaveBeenCalledWith('custom:shadow-shinies');
-    expect(setLastMenu).toHaveBeenCalledWith('ownership');
     expect(setHighlightedCards).toHaveBeenCalledWith(new Set());
     expect(setIsFastSelectEnabled).toHaveBeenCalledWith(false);
   });

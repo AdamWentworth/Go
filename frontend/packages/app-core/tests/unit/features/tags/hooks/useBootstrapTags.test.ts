@@ -13,7 +13,6 @@ describe('useBootstrapTags', () => {
     useVariantsStore.setState({
       variants: [],
       variantsLoading: false,
-      pokedexLists: {} as any,
       isRefreshing: false,
     });
 

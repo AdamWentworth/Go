@@ -3,6 +3,7 @@
 import React, { useRef, useState, useEffect } from 'react';
 import { FaArrowLeft } from 'react-icons/fa';
 import './HeaderUI.css';
+import type { ActiveView } from '../../utils/pokemonPageHelpers';
 
 export interface HeaderUIProps {
   onWishlistClick: () => void;
@@ -14,7 +15,7 @@ export interface HeaderUIProps {
   highlightedCards?: Set<string | number>;
   onClearSelection: () => void;
   onSelectAll: () => void;
-  activeView: 'pokedex' | 'pokemon' | 'tags';
+  activeView: ActiveView;
   haveTagsSubLabel?: string;
   wishlistSubLabel?: string;
 }
@@ -43,9 +44,9 @@ const HeaderUI: React.FC<HeaderUIProps> = ({
 
   const [underlineLeft, setUnderlineLeft] = useState(0);
 
-  const isHaveTagsActive = activeView === 'pokedex';
+  const isHaveTagsActive = activeView === 'inventory';
   const isPokemonActive = activeView === 'pokemon';
-  const isWishlistActive = activeView === 'tags';
+  const isWishlistActive = activeView === 'wishlist';
   const activeIndex = isHaveTagsActive ? 0 : isPokemonActive ? 1 : 2;
 
   useEffect(() => {

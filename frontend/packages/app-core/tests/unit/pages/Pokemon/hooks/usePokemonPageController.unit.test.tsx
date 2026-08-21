@@ -39,7 +39,6 @@ const usePokemonProcessingMock = vi.fn((..._args: UsePokemonProcessingArgs) => (
 const baseVariant = { variant_id: '0001-default', pokemon_id: 1 } as PokemonVariant;
 const variantsStoreState = {
   variants: [baseVariant],
-  pokedexLists: { default: [baseVariant] },
   variantsLoading: false,
 };
 const instancesStoreState = {
@@ -386,7 +385,7 @@ describe('usePokemonPageController', () => {
     expect(setIsFastSelectEnabledMock).toHaveBeenCalledWith(true);
   });
 
-  it('updates local tag/menu/view state when selecting a tag from tags panel', async () => {
+  it('updates local tag and view state when selecting a tag from a tag panel', async () => {
     const navigate = vi.fn() as unknown as NavigateFunction;
     const location = { pathname: '/pokemon', state: null } as any;
 
@@ -408,7 +407,6 @@ describe('usePokemonPageController', () => {
 
     expect(result.current.tagFilter).toBe('Trade');
     expect(result.current.sidePanelTagFilter).toBe('Trade');
-    expect(result.current.lastMenu).toBe('ownership');
     expect(result.current.activeView).toBe('pokemon');
   });
 
@@ -429,7 +427,7 @@ describe('usePokemonPageController', () => {
     });
 
     act(() => {
-      result.current.setActiveView('pokedex');
+      result.current.setActiveView('inventory');
     });
 
     vi.useFakeTimers();

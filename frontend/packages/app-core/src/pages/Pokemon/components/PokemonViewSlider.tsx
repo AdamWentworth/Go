@@ -76,7 +76,7 @@ const PokemonViewSlider: React.FC<PokemonViewSliderProps> = ({
   activeView,
   onTagSelect,
 }) => {
-  const activeIndex = activeView === 'pokedex' ? 0 : activeView === 'tags' ? 2 : 1;
+  const activeIndex = activeView === 'inventory' ? 0 : activeView === 'wishlist' ? 2 : 1;
 
   return (
   <HorizontalPageSlider

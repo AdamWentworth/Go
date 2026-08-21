@@ -23,9 +23,6 @@ const variantsState = {
       moves: [{ move_id: 1, name: 'Vine Whip', is_fast: 1 }],
     },
   ],
-  pokedexLists: {
-    default: [{ pokemon_id: 1, name: 'Bulbasaur', moves: [] }],
-  },
 };
 
 vi.mock('@/services/searchService', () => ({

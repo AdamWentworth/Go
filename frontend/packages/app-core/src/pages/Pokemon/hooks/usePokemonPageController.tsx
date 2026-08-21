@@ -42,7 +42,6 @@ import {
   clampDragOffset,
   toInstanceStatus,
   type ActiveView,
-  type LastMenu,
 } from '../utils/pokemonPageHelpers';
 import {
   readPokemonCatalogFilter,
@@ -75,7 +74,6 @@ type UsePokemonPageControllerResult = {
   highlightedCards: Set<string>;
   handleClearSelection: () => void;
   handleSelectAll: () => void;
-  lastMenu: LastMenu;
   tagFilter: string;
   sidePanelTagFilter: string;
   containerRef: React.RefObject<HTMLDivElement | null>;
@@ -174,7 +172,6 @@ export default function usePokemonPageController({
   const [selectedPokemon, setSelectedPokemon] = useState<PokemonOverlaySelection>(null);
   const [hasProcessedInstanceId, setHasProcessedInstanceId] = useState<boolean>(false);
   const [isUpdating, setIsUpdating] = useState<boolean>(false);
-  const [lastMenu, setLastMenu] = useState<LastMenu>('ownership');
   const [searchTerm, setSearchTerm] = useState<string>(requestedSearchTerm);
   const [activeView, setActiveView] = useState<ActiveView>('pokemon');
   const [dragOffset, setDragOffset] = useState<number>(0);
@@ -267,7 +264,6 @@ export default function usePokemonPageController({
     if (!requestedTagFilter) return;
     setHighlightedCards(new Set());
     setTagFilter(requestedTagFilter);
-    setLastMenu('ownership');
     setActiveView('pokemon');
     syncSidePanelTagFilter(requestedTagFilter, false);
   }, [
@@ -324,7 +320,7 @@ export default function usePokemonPageController({
   }, [sortedPokemons, setHighlightedCards, setIsFastSelectEnabled]);
 
   const handleListsButtonClick = useCallback(() => {
-    setActiveView((prev) => (prev === 'tags' ? 'pokemon' : 'tags'));
+    setActiveView((prev) => (prev === 'wishlist' ? 'pokemon' : 'wishlist'));
   }, []);
 
   const handleClearTagFilter = useCallback(() => {
@@ -351,7 +347,6 @@ export default function usePokemonPageController({
         filter.trim() || (isUsernamePath ? DEFAULT_FOREIGN_CATALOG_TAG : '');
       setHighlightedCards(new Set());
       setTagFilter(nextFilter);
-      setLastMenu('ownership');
       setActiveView('pokemon');
       syncSidePanelTagFilter(nextFilter, shouldDelaySidePanelUpdate);
     },
@@ -394,7 +389,6 @@ export default function usePokemonPageController({
 
   const { handleConfirmChangeTags } = useHandleChangeTags({
     setTagFilter: setStatusFilter,
-    setLastMenu,
     setHighlightedCards,
     highlightedCards,
     updateInstanceStatus: updateInstanceStatusBatch,
@@ -464,7 +458,6 @@ export default function usePokemonPageController({
     highlightedCards,
     handleClearSelection,
     handleSelectAll,
-    lastMenu,
     tagFilter,
     sidePanelTagFilter,
     containerRef,

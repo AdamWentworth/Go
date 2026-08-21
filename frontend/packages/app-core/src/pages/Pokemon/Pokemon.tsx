@@ -51,7 +51,7 @@ function Pokemon({ isOwnCollection }: PokemonProps) {
         activeView={controller.activeView}
         onWishlistClick={controller.handleListsButtonClick}
         onHaveTagsClick={() =>
-          controller.setActiveView((prev) => (prev === 'pokedex' ? 'pokemon' : 'pokedex'))
+          controller.setActiveView((prev) => (prev === 'inventory' ? 'pokemon' : 'inventory'))
         }
         onPokemonClick={() => controller.setActiveView('pokemon')}
         catalogOwner={controller.isEditable ? undefined : controller.displayUsername}
@@ -61,12 +61,10 @@ function Pokemon({ isOwnCollection }: PokemonProps) {
         onClearSelection={controller.handleClearSelection}
         onSelectAll={controller.handleSelectAll}
         haveTagsSubLabel={getHaveTagsSubLabel(
-          controller.lastMenu,
           controller.sidePanelTagFilter,
           activeCustomTag,
         )}
         wishlistSubLabel={getWishlistSubLabel(
-          controller.lastMenu,
           controller.sidePanelTagFilter,
           activeCustomTag,
         )}

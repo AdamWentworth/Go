@@ -106,7 +106,6 @@ describe('useTagsStore integration', () => {
     useVariantsStore.setState({
       variants: [],
       variantsLoading: false,
-      pokedexLists: {} as any,
       isRefreshing: false,
     });
 
