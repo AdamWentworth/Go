@@ -10,7 +10,6 @@ const mocks = vi.hoisted(() => ({
   usePokemonDetailsMock: vi.fn(),
   handleAcceptTradeMock: vi.fn(),
   handleDenyTradeMock: vi.fn(),
-  handleDeleteTradeMock: vi.fn(),
   handleCancelTradeMock: vi.fn(),
   handleReProposeTradeMock: vi.fn(),
   handleCompleteTradeMock: vi.fn(),
@@ -43,10 +42,6 @@ vi.mock('@/pages/Trades/handlers/handleAcceptTrade', () => ({
 
 vi.mock('@/pages/Trades/handlers/handleDenyTrade', () => ({
   handleDenyTrade: (...args: unknown[]) => mocks.handleDenyTradeMock(...args),
-}));
-
-vi.mock('@/pages/Trades/handlers/handleDeleteTrade', () => ({
-  handleDeleteTrade: (...args: unknown[]) => mocks.handleDeleteTradeMock(...args),
 }));
 
 vi.mock('@/pages/Trades/handlers/handleCancelTrade', () => ({
@@ -174,7 +169,6 @@ describe('TradeCard', () => {
       'Are you sure you want to cancel this trade?',
     );
     expect(mocks.handleCancelTradeMock).toHaveBeenCalledTimes(1);
-    expect(mocks.handleDeleteTradeMock).not.toHaveBeenCalled();
   });
 
   it('makes a rejected cancellation explicit and leaves the proposal active', async () => {
