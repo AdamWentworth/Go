@@ -9,6 +9,21 @@ Structure:
 - `assets/media` - Shared media files (loading spinners).
 - `assets/favicons` - Browser favicon assets.
 
+## PokeGo Nexus brand assets
+
+The canonical application branding lives in `assets/images/logo`:
+
+- `source-mark.png` - full-resolution transparent source mark; do not serve this large file directly in ordinary UI.
+- `logo.png` - optimized transparent mark used by the web application.
+- `wordmark.png` - transparent standalone wordmark.
+- `lockup.png` - transparent horizontal mark-and-wordmark lockup.
+- `email-lockup.png` - compact lockup for transactional email templates.
+- `social-card.png` - 1200×630 Open Graph/Twitter sharing image.
+
+Installable-app exports live in both `assets/icons` and the web package's `public/icons` directory. `icon-*` files retain transparency; `maskable-icon-*` files include the approved navy safe area required by adaptive launchers. Native Expo icons are derived from the same mark under `frontend/apps/mobile/assets`.
+
+Use **PokeGo Nexus** for user-facing product text. The unspaced **PokeGoNexus** form is reserved for legacy identifiers, account handles, and places where changing the identifier would break compatibility.
+
 Do not duplicate shared media under frontend package `public/` folders. The web app should request these files through the same `/media/...` paths that production serves.
 
 Long-term target:
