@@ -54,6 +54,9 @@ func TestEmbeddedMigrationsIncludeSocialProfileSchema(t *testing.T) {
 	if !slices.Contains(names, "0010_favorite_trade_exclusivity.sql") {
 		t.Fatalf("Favorite/For Trade exclusivity migration missing from embedded files: %#v", names)
 	}
+	if !slices.Contains(names, "0011_pokemon_tag_order.sql") {
+		t.Fatalf("Pokemon tag order migration missing from embedded files: %#v", names)
+	}
 }
 
 func TestWithMultiStatementsPreservesExistingQuery(t *testing.T) {

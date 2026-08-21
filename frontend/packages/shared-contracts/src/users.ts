@@ -244,6 +244,12 @@ export interface SecondaryUserUpdateRequest {
 }
 
 export type CustomTagParent = 'caught' | 'wanted';
+export type PokemonTagOrderKey = `system:${string}` | `custom:${string}`;
+
+export interface PokemonTagOrders {
+  caught: PokemonTagOrderKey[];
+  wanted: PokemonTagOrderKey[];
+}
 
 export interface CustomTagDefinition {
   tag_id: string;
@@ -257,6 +263,7 @@ export interface CustomTagDefinition {
 
 export interface CustomTagsEnvelope {
   tags: CustomTagDefinition[];
+  orders: PokemonTagOrders;
 }
 
 export interface CreateCustomTagRequest {
@@ -268,6 +275,16 @@ export interface CreateCustomTagRequest {
 export interface UpdateCustomTagRequest {
   name?: string;
   color?: string;
+}
+
+export interface UpdatePokemonTagOrderRequest {
+  parent: CustomTagParent;
+  tag_keys: PokemonTagOrderKey[];
+}
+
+export interface PokemonTagOrderEnvelope {
+  parent: CustomTagParent;
+  tag_keys: PokemonTagOrderKey[];
 }
 
 export interface DeleteCustomTagResponse {
@@ -310,6 +327,7 @@ export const usersContract = {
     friendBlock: (userId: string) =>
       `/friends/blocks/${encodeURIComponent(userId)}`,
     tags: '/tags',
+    tagOrder: '/tags/order',
     tag: (tagId: string) => `/tags/${encodeURIComponent(tagId)}`,
   },
 } as const;

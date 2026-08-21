@@ -63,6 +63,7 @@ func newRateLimiter() fiber.Handler {
 func registerProtectedSocialRoutes(app *fiber.App, prefix string, rateLimit fiber.Handler) {
 	app.Get(prefix+"/tags", verifyJWT, rateLimit, GetTagsHandler)
 	app.Post(prefix+"/tags", verifyJWT, rateLimit, CreateTagHandler)
+	app.Put(prefix+"/tags/order", verifyJWT, rateLimit, UpdateTagOrderHandler)
 	app.Put(prefix+"/tags/:tag_id", verifyJWT, rateLimit, UpdateTagHandler)
 	app.Delete(prefix+"/tags/:tag_id", verifyJWT, rateLimit, DeleteTagHandler)
 	app.Get(prefix+"/profile", verifyJWT, rateLimit, GetOwnProfileHandler)

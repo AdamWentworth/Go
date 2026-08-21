@@ -72,6 +72,38 @@ func TestCustomTagParentsExcludeTrade(t *testing.T) {
 	}
 }
 
+func TestNormalizeTagOrderPreservesInterleavingAndRepairsStaleKeys(t *testing.T) {
+	tags := []PokemonTag{
+		{TagID: "tag-shadow", Parent: "caught", Name: "Shadow Shinies"},
+		{TagID: "tag-raids", Parent: "caught", Name: "Raid team"},
+	}
+	stored := []string{
+		"custom:tag-shadow",
+		"system:favorites",
+		"custom:deleted",
+		"system:caught",
+		"system:trade",
+		"system:favorites",
+	}
+
+	got := normalizeTagOrder("caught", stored, tags)
+	want := []string{
+		"custom:tag-shadow",
+		"system:favorites",
+		"system:caught",
+		"system:trade",
+		"custom:tag-raids",
+	}
+	if len(got) != len(want) {
+		t.Fatalf("unexpected normalized order: %#v", got)
+	}
+	for index := range want {
+		if got[index] != want[index] {
+			t.Fatalf("order[%d] = %q, want %q; full order %#v", index, got[index], want[index], got)
+		}
+	}
+}
+
 func TestGetTagsHandlerReturnsOnlyCustomDefinitions(t *testing.T) {
 	mock, cleanup := setupMockDB(t)
 	defer cleanup()
@@ -83,6 +115,10 @@ func TestGetTagsHandlerReturnsOnlyCustomDefinitions(t *testing.T) {
 		}).
 			AddRow("builtin-favorite", "user-1", "caught", "Favorite", "#FACC15", 10, time.Now()).
 			AddRow("custom-raids", "user-1", "caught", "Raid team", "#2563EB", 20, time.Now()))
+	mock.ExpectQuery("SELECT .* FROM `tag_orders` WHERE user_id = \\? AND parent IN \\(.+\\)").
+		WithArgs("user-1", "caught", "wanted").
+		WillReturnRows(sqlmock.NewRows([]string{"user_id", "parent", "tag_keys", "updated_at"}).
+			AddRow("user-1", "caught", `["custom:custom-raids","system:caught","system:favorites","system:trade"]`, time.Now()))
 
 	app := newHandlerTestApp("user-1")
 	response, err := app.Test(makeJSONRequest(t, http.MethodGet, "/api/tags", nil), fiber.TestConfig{Timeout: 0})
@@ -90,16 +126,98 @@ func TestGetTagsHandlerReturnsOnlyCustomDefinitions(t *testing.T) {
 		t.Fatalf("request failed: %v", err)
 	}
 	if response.StatusCode != http.StatusOK {
-		t.Fatalf("unexpected status: got %d, want %d", response.StatusCode, http.StatusOK)
+		var errorBody map[string]interface{}
+		_ = json.NewDecoder(response.Body).Decode(&errorBody)
+		t.Fatalf("unexpected status: got %d, want %d; body %#v", response.StatusCode, http.StatusOK, errorBody)
 	}
 	var body struct {
-		Tags []PokemonTag `json:"tags"`
+		Tags   []PokemonTag      `json:"tags"`
+		Orders tagOrdersResponse `json:"orders"`
 	}
 	if err := json.NewDecoder(response.Body).Decode(&body); err != nil {
 		t.Fatalf("decode response: %v", err)
 	}
 	if len(body.Tags) != 1 || body.Tags[0].TagID != "custom-raids" {
 		t.Fatalf("unexpected custom tags response: %#v", body.Tags)
+	}
+	if len(body.Orders.Caught) != 4 || body.Orders.Caught[0] != "custom:custom-raids" {
+		t.Fatalf("unexpected caught tag order: %#v", body.Orders.Caught)
+	}
+	if len(body.Orders.Wanted) != 2 || body.Orders.Wanted[0] != "system:wanted" {
+		t.Fatalf("unexpected wanted tag order: %#v", body.Orders.Wanted)
+	}
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Fatalf("unmet DB expectations: %v", err)
+	}
+}
+
+func TestUpdateTagOrderHandlerAllowsSystemAndCustomTagsToInterleave(t *testing.T) {
+	mock, cleanup := setupMockDB(t)
+	defer cleanup()
+
+	mock.ExpectQuery("SELECT .* FROM `tags` WHERE user_id = \\? AND parent = \\? AND deleted_at IS NULL ORDER BY").
+		WithArgs("user-1", "caught").
+		WillReturnRows(sqlmock.NewRows([]string{
+			"tag_id", "user_id", "parent", "name", "color", "sort", "created_at",
+		}).AddRow("tag-shadow", "user-1", "caught", "Shadow Shinies", "#7C3AED", 10, time.Now()))
+	mock.ExpectBegin()
+	mock.ExpectExec("INSERT INTO `tag_orders`").
+		WillReturnResult(sqlmock.NewResult(1, 1))
+	mock.ExpectCommit()
+
+	requested := []string{
+		"custom:tag-shadow",
+		"system:favorites",
+		"system:caught",
+		"system:trade",
+	}
+	app := newHandlerTestApp("user-1")
+	response, err := app.Test(makeJSONRequest(t, http.MethodPut, "/api/tags/order", map[string]interface{}{
+		"parent": "caught", "tag_keys": requested,
+	}), fiber.TestConfig{Timeout: 0})
+	if err != nil {
+		t.Fatalf("request failed: %v", err)
+	}
+	if response.StatusCode != http.StatusOK {
+		var errorBody map[string]interface{}
+		_ = json.NewDecoder(response.Body).Decode(&errorBody)
+		t.Fatalf("unexpected status: got %d, want %d; body %#v", response.StatusCode, http.StatusOK, errorBody)
+	}
+	var body struct {
+		Parent  string   `json:"parent"`
+		TagKeys []string `json:"tag_keys"`
+	}
+	if err := json.NewDecoder(response.Body).Decode(&body); err != nil {
+		t.Fatalf("decode response: %v", err)
+	}
+	if body.Parent != "caught" || len(body.TagKeys) != len(requested) || body.TagKeys[0] != requested[0] {
+		t.Fatalf("unexpected order response: %#v", body)
+	}
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Fatalf("unmet DB expectations: %v", err)
+	}
+}
+
+func TestUpdateTagOrderHandlerRejectsMissingOrCrossParentKeys(t *testing.T) {
+	mock, cleanup := setupMockDB(t)
+	defer cleanup()
+
+	mock.ExpectQuery("SELECT .* FROM `tags` WHERE user_id = \\? AND parent = \\? AND deleted_at IS NULL ORDER BY").
+		WithArgs("user-1", "wanted").
+		WillReturnRows(sqlmock.NewRows([]string{
+			"tag_id", "user_id", "parent", "name", "color", "sort", "created_at",
+		}).AddRow("tag-priority", "user-1", "wanted", "Priority", "#DC2626", 10, time.Now()))
+
+	app := newHandlerTestApp("user-1")
+	response, err := app.Test(makeJSONRequest(t, http.MethodPut, "/api/tags/order", map[string]interface{}{
+		"parent":   "wanted",
+		"tag_keys": []string{"system:wanted", "system:trade", "custom:tag-priority"},
+	}), fiber.TestConfig{Timeout: 0})
+	if err != nil {
+		t.Fatalf("request failed: %v", err)
+	}
+	if response.StatusCode != http.StatusBadRequest {
+		t.Fatalf("unexpected status: got %d, want %d", response.StatusCode, http.StatusBadRequest)
 	}
 	if err := mock.ExpectationsWereMet(); err != nil {
 		t.Fatalf("unmet DB expectations: %v", err)

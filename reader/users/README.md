@@ -37,15 +37,18 @@ Authenticated tag-definition routes are available under `/api` and
 
 - `GET /tags`
 - `POST /tags`
+- `PUT /tags/order`
 - `PUT /tags/:tag_id`
 - `DELETE /tags/:tag_id`
 
 The users service synchronously owns each custom tag's name, color, and
 Inventory/Wanted parent. Built-in tags are reserved and cannot be renamed or
-deleted. Applying a tag does not use these routes: membership remains in an
-instance's `caught_tags` or `wanted_tags` array and follows the normal
-receiver/Kafka Pokémon synchronization path. MySQL `tags` and `instance_tags`
-remain authoritative after that asynchronous write is consumed.
+deleted. Built-in and custom tags can be freely interleaved within their parent;
+the complete account-synced order is stored in `tag_orders`. Applying a tag does
+not use these routes: membership remains in an instance's `caught_tags` or
+`wanted_tags` array and follows the normal receiver/Kafka Pokémon synchronization
+path. MySQL `tags` and `instance_tags` remain authoritative after that
+asynchronous write is consumed.
 
 ## Trade command routes
 

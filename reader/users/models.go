@@ -189,6 +189,15 @@ type PokemonTag struct {
 
 func (PokemonTag) TableName() string { return "tags" }
 
+type PokemonTagOrder struct {
+	UserID    string    `gorm:"column:user_id;primaryKey" json:"-"`
+	Parent    string    `gorm:"column:parent;primaryKey" json:"parent"`
+	TagKeys   RawJSON   `gorm:"column:tag_keys;type:json" json:"tag_keys"`
+	UpdatedAt time.Time `gorm:"column:updated_at" json:"updated_at"`
+}
+
+func (PokemonTagOrder) TableName() string { return "tag_orders" }
+
 type PokemonInstanceTag struct {
 	TagID      string    `gorm:"column:tag_id;primaryKey"`
 	InstanceID string    `gorm:"column:instance_id;primaryKey"`

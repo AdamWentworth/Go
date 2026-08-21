@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"errors"
 	"regexp"
 	"sort"
@@ -9,7 +10,9 @@ import (
 
 	"github.com/gofiber/fiber/v3"
 	"github.com/google/uuid"
+	"github.com/sirupsen/logrus"
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
 
 const maxCustomTagsPerUser = 50
@@ -21,10 +24,25 @@ var reservedTagNames = map[string]struct{}{
 	"for trade": {}, "wanted": {}, "most wanted": {}, "missing": {},
 }
 
+var defaultTagOrder = map[string][]string{
+	"caught": {"system:caught", "system:favorites", "system:trade"},
+	"wanted": {"system:wanted", "system:most-wanted"},
+}
+
 type tagMutationRequest struct {
 	Parent string  `json:"parent"`
 	Name   *string `json:"name"`
 	Color  *string `json:"color"`
+}
+
+type tagOrderRequest struct {
+	Parent  string   `json:"parent"`
+	TagKeys []string `json:"tag_keys"`
+}
+
+type tagOrdersResponse struct {
+	Caught []string `json:"caught"`
+	Wanted []string `json:"wanted"`
 }
 
 func normalizeTagName(value string) string {
@@ -52,6 +70,97 @@ func validateTagColor(value string) (string, string) {
 
 func validCustomTagParent(parent string) bool {
 	return parent == "caught" || parent == "wanted"
+}
+
+func customTagOrderKey(tagID string) string {
+	return "custom:" + tagID
+}
+
+func availableTagOrder(parent string, tags []PokemonTag) []string {
+	available := append([]string(nil), defaultTagOrder[parent]...)
+	for _, tag := range tags {
+		if tag.Parent == parent && !isBuiltInTag(tag) {
+			available = append(available, customTagOrderKey(tag.TagID))
+		}
+	}
+	return available
+}
+
+func normalizeTagOrder(parent string, stored []string, tags []PokemonTag) []string {
+	available := availableTagOrder(parent, tags)
+	allowed := make(map[string]struct{}, len(available))
+	for _, key := range available {
+		allowed[key] = struct{}{}
+	}
+
+	result := make([]string, 0, len(available))
+	seen := make(map[string]struct{}, len(available))
+	for _, key := range stored {
+		if _, ok := allowed[key]; !ok {
+			continue
+		}
+		if _, duplicate := seen[key]; duplicate {
+			continue
+		}
+		seen[key] = struct{}{}
+		result = append(result, key)
+	}
+	for _, key := range available {
+		if _, exists := seen[key]; exists {
+			continue
+		}
+		result = append(result, key)
+	}
+	return result
+}
+
+func decodeTagOrder(value RawJSON) []string {
+	if len(value) == 0 {
+		return nil
+	}
+	var keys []string
+	if err := json.Unmarshal(value, &keys); err != nil {
+		return nil
+	}
+	return keys
+}
+
+func loadTagOrders(userID string, tags []PokemonTag) (tagOrdersResponse, error) {
+	var rows []PokemonTagOrder
+	if err := db.Where("user_id = ? AND parent IN ?", userID, []string{"caught", "wanted"}).Find(&rows).Error; err != nil {
+		return tagOrdersResponse{}, err
+	}
+
+	stored := map[string][]string{}
+	for _, row := range rows {
+		stored[row.Parent] = decodeTagOrder(row.TagKeys)
+	}
+	return tagOrdersResponse{
+		Caught: normalizeTagOrder("caught", stored["caught"], tags),
+		Wanted: normalizeTagOrder("wanted", stored["wanted"], tags),
+	}, nil
+}
+
+func validateCompleteTagOrder(parent string, requested []string, tags []PokemonTag) bool {
+	expected := availableTagOrder(parent, tags)
+	if len(requested) != len(expected) {
+		return false
+	}
+	want := make(map[string]struct{}, len(expected))
+	for _, key := range expected {
+		want[key] = struct{}{}
+	}
+	seen := make(map[string]struct{}, len(requested))
+	for _, key := range requested {
+		if _, exists := want[key]; !exists {
+			return false
+		}
+		if _, duplicate := seen[key]; duplicate {
+			return false
+		}
+		seen[key] = struct{}{}
+	}
+	return true
 }
 
 func isBuiltInTag(tag PokemonTag) bool {
@@ -101,7 +210,51 @@ func GetTagsHandler(c fiber.Ctx) error {
 			custom = append(custom, tag)
 		}
 	}
-	return c.JSON(fiber.Map{"tags": custom})
+	orders, err := loadTagOrders(userID, custom)
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"message": "Could not load your tag order."})
+	}
+	return c.JSON(fiber.Map{"tags": custom, "orders": orders})
+}
+
+func UpdateTagOrderHandler(c fiber.Ctx) error {
+	userID := viewerID(c)
+	var request tagOrderRequest
+	if err := c.Bind().Body(&request); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"message": "Choose a valid tag order."})
+	}
+	request.Parent = strings.ToLower(strings.TrimSpace(request.Parent))
+	if !validCustomTagParent(request.Parent) {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"message": "Tag order must belong to Inventory or Wanted."})
+	}
+
+	var tags []PokemonTag
+	if err := db.
+		Where("user_id = ? AND parent = ? AND deleted_at IS NULL", userID, request.Parent).
+		Order("sort ASC, LOWER(name) ASC").
+		Find(&tags).Error; err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"message": "Could not validate this tag order."})
+	}
+	if !validateCompleteTagOrder(request.Parent, request.TagKeys, tags) {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"message": "Tag order must contain every tag in this section exactly once."})
+	}
+
+	encoded, err := json.Marshal(request.TagKeys)
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"message": "Choose a valid tag order."})
+	}
+	now := time.Now().UTC()
+	order := PokemonTagOrder{
+		UserID: userID, Parent: request.Parent, TagKeys: RawJSON(encoded), UpdatedAt: now,
+	}
+	if err := db.Clauses(clause.OnConflict{
+		Columns:   []clause.Column{{Name: "user_id"}, {Name: "parent"}},
+		DoUpdates: clause.AssignmentColumns([]string{"tag_keys", "updated_at"}),
+	}).Create(&order).Error; err != nil {
+		logrus.Errorf("save tag order for %s: %v", userID, err)
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"message": "Could not save your tag order."})
+	}
+	return c.JSON(fiber.Map{"parent": request.Parent, "tag_keys": request.TagKeys})
 }
 
 func CreateTagHandler(c fiber.Ctx) error {
