@@ -308,7 +308,7 @@
   }
 
   .trade-board-composer-page {
-    padding: 10px 8px calc(104px + env(safe-area-inset-bottom));
+    padding: 10px 8px calc(182px + env(safe-area-inset-bottom));
   }
 
   .trade-board-composer--page {
@@ -344,6 +344,25 @@
   .trade-board-composer__footer button { min-width: 0; padding-inline: 10px; }
   .trade-board-composer__copy { font-size: 0 !important; }
   .trade-board-composer__copy svg { width: 18px; height: 18px; }
+
+  .trade-board-composer--page .trade-board-composer__footer {
+    position: fixed;
+    z-index: 45;
+    right: 8px;
+    bottom: calc(84px + env(safe-area-inset-bottom));
+    left: 8px;
+    width: auto;
+    padding: 8px;
+    border: 1px solid color-mix(in srgb, var(--color-text-primary) 22%, transparent);
+    border-radius: 14px;
+    background: color-mix(in srgb, var(--color-modal-panel-surface, #18201f) 96%, transparent);
+    box-shadow: 0 14px 34px rgba(0, 0, 0, 0.34);
+    backdrop-filter: blur(14px);
+  }
+
+  .trade-board-composer--page .trade-board-composer__footer > div {
+    grid-template-columns: repeat(auto-fit, minmax(108px, 1fr));
+  }
 }
 
 @media (max-width: 410px) {

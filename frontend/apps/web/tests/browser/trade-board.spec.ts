@@ -268,6 +268,23 @@ test.describe('shareable Trade Board', () => {
       expect(layout.documentWidth).toBeLessThanOrEqual(layout.viewportWidth);
       expect(layout.workspace?.width).toBeLessThanOrEqual(layout.viewportWidth);
 
+      const actionDock = workspace.locator('.trade-board-composer__footer');
+      if (mobileProject) {
+        await expect(actionDock).toBeInViewport();
+        await expect(actionDock).toHaveCSS('position', 'fixed');
+        const [dockBox, menuButtonBox] = await Promise.all([
+          actionDock.boundingBox(),
+          page.locator('.action-menu-button').boundingBox(),
+        ]);
+        expect(dockBox).toBeTruthy();
+        expect(menuButtonBox).toBeTruthy();
+        expect((dockBox?.y ?? 0) + (dockBox?.height ?? 0)).toBeLessThanOrEqual(
+          (menuButtonBox?.y ?? 0) - 4,
+        );
+      } else {
+        await expect(actionDock).not.toHaveCSS('position', 'fixed');
+      }
+
       await workspace.getByRole('button', { name: /Nexus Light/ }).click();
       await expect(workspace.locator('.trade-board').first()).toHaveAttribute('data-theme', 'brand-light');
       await page.evaluate(() => { document.documentElement.dataset.theme = 'light'; });
