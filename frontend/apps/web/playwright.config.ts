@@ -1,7 +1,7 @@
 import { defineConfig, devices } from '@playwright/test';
 
-const parsedPort = Number(process.env.E2E_PORT ?? 3000);
-const port = Number.isInteger(parsedPort) && parsedPort > 0 ? parsedPort : 3000;
+const parsedPort = Number(process.env.E2E_PORT ?? 3100);
+const port = Number.isInteger(parsedPort) && parsedPort > 0 ? parsedPort : 3100;
 const rawBaseURL = process.env.E2E_BASE_URL ?? `http://127.0.0.1:${port}`;
 const baseURL = rawBaseURL.replace(/\/+$/, '');
 const useRealApis = process.env.E2E_USE_REAL_APIS === '1';
@@ -105,7 +105,7 @@ export default defineConfig({
         command: webServerCommand,
         env: e2eServerEnv,
         url: baseURL,
-        reuseExistingServer: !process.env.CI,
+        reuseExistingServer: process.env.E2E_REUSE_EXISTING_SERVER === '1',
         timeout: 120_000,
       }
     : undefined,
