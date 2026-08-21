@@ -1,0 +1,26 @@
+import React from 'react';
+import { describe, expect, it } from 'vitest';
+import { render, screen } from '@testing-library/react';
+import { MemoryRouter } from 'react-router';
+
+import HomeFooter from '@/pages/Home/HomeFooter';
+
+describe('HomeFooter', () => {
+  it('uses the branded lockup and routes visitors only to supported surfaces', () => {
+    render(<MemoryRouter><HomeFooter /></MemoryRouter>);
+
+    expect(screen.getByRole('img', { name: 'PokeGo Nexus' })).toHaveAttribute(
+      'src',
+      '/images/logo/lockup.png',
+    );
+    expect(screen.getByRole('heading', { name: /bring your collection/i })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Quick start guide' })).toHaveAttribute('href', '/getting-started');
+    expect(screen.getByRole('link', { name: 'Privacy Policy' })).toHaveAttribute('href', '/privacy');
+    expect(screen.getByRole('link', { name: 'Terms of Service' })).toHaveAttribute('href', '/terms');
+    expect(screen.getByRole('link', { name: 'Contact PokeGo Nexus' })).toHaveAttribute(
+      'href',
+      'mailto:admin@pokegonexus.com',
+    );
+    expect(screen.getByText(/independent community project/i)).toBeInTheDocument();
+  });
+});

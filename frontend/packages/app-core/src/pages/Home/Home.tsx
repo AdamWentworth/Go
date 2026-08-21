@@ -1,5 +1,6 @@
 import { useAuth } from '@/contexts/AuthContext';
 import HomeDashboard from './HomeDashboard';
+import HomeFooter from './HomeFooter';
 import HomeHeader from './HomeHeader';
 import HowItWorks from './HowItWorks';
 import './Home.css';
@@ -28,6 +29,7 @@ const Home = () => {
     <div className="home-page home-page--guest">
       <HomeHeader logoUrl="/images/logo/logo.png" isLoggedIn={false} />
       <HowItWorks />
+      <HomeFooter />
     </div>
   );
 };

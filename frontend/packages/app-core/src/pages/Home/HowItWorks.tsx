@@ -153,18 +153,6 @@ const HowItWorks = () => {
         </div>
       </section>
 
-      <section className="howItWorks__cta" aria-labelledby="home-cta-title">
-        <img src="/images/logo/logo.png" alt="" />
-        <div>
-          <span className="home-eyebrow">Welcome to PokeGo Nexus</span>
-          <h2 id="home-cta-title">Bring your collection. Find your next trade.</h2>
-          <p>Create a free trainer account, or take the guided tour before you begin.</p>
-        </div>
-        <div>
-          <Link className="home-primary-action" to="/register">Create account <FaArrowRight aria-hidden="true" /></Link>
-          <Link className="home-secondary-action" to="/getting-started">See how it works</Link>
-        </div>
-      </section>
     </main>
   );
 };
