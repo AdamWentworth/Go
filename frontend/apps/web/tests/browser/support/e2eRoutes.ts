@@ -360,6 +360,12 @@ export async function installE2eRoutes(page: Page, options: E2eRouteOptions = {}
     });
   }
 
+  for (const pathPattern of ['**/api/events/getUpdates**', '**/__e2e/events/getUpdates**']) {
+    await page.route(pathPattern, async (route) => {
+      await fulfillJson(route, {});
+    });
+  }
+
   await page.addInitScript(() => {
     class MockEventSource extends EventTarget {
       static readonly CONNECTING = 0;
@@ -508,6 +514,12 @@ export async function installE2eRoutes(page: Page, options: E2eRouteOptions = {}
     await fulfillJson(route, options.trainerSuggestions ?? []);
   });
 
+  for (const pathPattern of ['**/api/users/profiles/*', '**/__e2e/users/profiles/*']) {
+    await page.route(pathPattern, async (route) => {
+      await fulfillJson(route, trainerProfileState);
+    });
+  }
+
   for (const pathPattern of ['**/api/users/trades', '**/__e2e/users/trades']) {
     await page.route(pathPattern, async (route) => {
       const url = new URL(route.request().url());
@@ -579,6 +591,12 @@ export async function installE2eRoutes(page: Page, options: E2eRouteOptions = {}
   await page.route('**/__e2e/users/instances/by-username/**', async (route) => {
     await fulfillJson(route, options.userInstances ?? defaultUserInstances);
   });
+
+  for (const pathPattern of ['**/api/users/instances/sync**', '**/__e2e/users/instances/sync**']) {
+    await page.route(pathPattern, async (route) => {
+      await fulfillJson(route, { checkpoint: 'e2e-checkpoint', not_modified: true });
+    });
+  }
 
   await page.route('**/api/users/public/users/**', async (route) => {
     await fulfillJson(route, options.publicUser ?? defaultPublicUser);

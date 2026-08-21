@@ -44,6 +44,7 @@ const Trades = lazy(() => import('./pages/Trades/Trades'));
 const PrivacyPolicy = lazy(() => import('./pages/Legal/PrivacyPolicy'));
 const TermsOfService = lazy(() => import('./pages/Legal/TermsOfService'));
 const DataDeletion = lazy(() => import('./pages/Legal/DataDeletion'));
+const TradeBoardPage = lazy(() => import('./pages/TradeBoard/TradeBoardPage'));
 
 export const AppRouteFallback: React.FC = () => (
   <AppLoadingFallback source="route" />
@@ -54,6 +55,7 @@ const LEGAL_ROUTES = new Set(['/privacy', '/terms', '/data-deletion']);
 const AppContent: React.FC = () => {
   const { pathname } = useLocation();
   const isLegalRoute = LEGAL_ROUTES.has(pathname);
+  const isStandalonePublicRoute = pathname.startsWith('/trade-board/');
 
   return (
     <div className="App">
@@ -86,6 +88,7 @@ const AppContent: React.FC = () => {
           <Route path="/account"      element={<Navigate to="/settings/account" replace />} />
           <Route path="/search"       element={<Search />} />
           <Route path="/pokemon/:username" element={<Pokemon isOwnCollection={false} />} />
+          <Route path="/trade-board/:username" element={<TradeBoardPage />} />
           <Route path="/privacy" element={<PrivacyPolicy />} />
           <Route path="/terms" element={<TermsOfService />} />
           <Route path="/data-deletion" element={<DataDeletion />} />
@@ -93,7 +96,7 @@ const AppContent: React.FC = () => {
         </Suspense>
       </main>
 
-      {!isLegalRoute && <ActionMenu />}
+      {!isLegalRoute && !isStandalonePublicRoute && <ActionMenu />}
     </div>
   );
 };
