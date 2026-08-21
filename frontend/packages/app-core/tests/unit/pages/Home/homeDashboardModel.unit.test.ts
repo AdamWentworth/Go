@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import {
+  buildHomeOnboardingProgress,
   getRecentHomeInstances,
   summarizeHomeCollection,
   summarizeHomeTrades,
@@ -126,5 +127,24 @@ describe('home dashboard model', () => {
     }, 2);
 
     expect(recent.map((entry) => entry.instance_id)).toEqual(['newest', 'server-id']);
+  });
+
+  it('derives setup milestones from authoritative collection and connection data', () => {
+    const collection = summarizeHomeCollection({
+      trade: instance({ is_caught: true, is_for_trade: true }),
+      wanted: instance({ is_wanted: true }),
+    });
+
+    const progress = buildHomeOnboardingProgress(collection, 0);
+
+    expect(progress.completed).toBe(3);
+    expect(progress.total).toBe(4);
+    expect(progress.tasks.map(({ id, complete }) => [id, complete])).toEqual([
+      ['collection', true],
+      ['wanted', true],
+      ['trade', true],
+      ['connect', false],
+    ]);
+    expect(buildHomeOnboardingProgress(collection, 1).completed).toBe(4);
   });
 });

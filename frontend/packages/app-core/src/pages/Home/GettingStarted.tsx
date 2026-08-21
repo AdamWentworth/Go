@@ -1,0 +1,203 @@
+import type { IconType } from 'react-icons';
+import {
+  FaArrowLeft,
+  FaArrowRight,
+  FaCheck,
+  FaExchangeAlt,
+  FaHeart,
+  FaSearch,
+  FaShareAlt,
+  FaTags,
+} from 'react-icons/fa';
+import { Link } from 'react-router';
+
+import './Home.css';
+import './GettingStarted.css';
+
+interface GuideStep {
+  id: string;
+  number: string;
+  title: string;
+  summary: string;
+  details: string[];
+  action: string;
+  to: string;
+  icon: IconType;
+  tone: 'caught' | 'wanted' | 'trade' | 'search' | 'proposal' | 'share';
+}
+
+const GUIDE_STEPS: GuideStep[] = [
+  {
+    id: 'collection',
+    number: '01',
+    title: 'Start your collection',
+    summary: 'Add a Pokémon you own before worrying about the rest of the system.',
+    details: [
+      'Search for the species and exact variant.',
+      'Save it as Caught and add details only if they matter to you.',
+      'Use Favorites or custom tags to keep large collections manageable.',
+    ],
+    action: 'Open Pokémon',
+    to: '/pokemon',
+    icon: FaTags,
+    tone: 'caught',
+  },
+  {
+    id: 'wanted',
+    number: '02',
+    title: 'Create a Wanted entry',
+    summary: 'Wanted Pokémon are wishlist records, not missing caught instances.',
+    details: [
+      'Choose Wanted when adding the Pokémon.',
+      'Mark it Most Wanted when it deserves extra priority.',
+      'Set friendship, lucky, size, gender, or move conditions only when required.',
+    ],
+    action: 'Build your wishlist',
+    to: '/pokemon?filter=wanted',
+    icon: FaHeart,
+    tone: 'wanted',
+  },
+  {
+    id: 'for-trade',
+    number: '03',
+    title: 'List something For Trade',
+    summary: 'A For Trade listing remains part of your caught collection until a trade completes.',
+    details: [
+      'Choose a caught Pokémon that is eligible to trade.',
+      'Favorites and Lucky Pokémon remain protected from being listed.',
+      'Use Trade Preferences to choose what you would accept in return.',
+    ],
+    action: 'Open trade preferences',
+    to: '/trades?section=preferences',
+    icon: FaExchangeAlt,
+    tone: 'trade',
+  },
+  {
+    id: 'discovery',
+    number: '04',
+    title: 'Find a trainer or listing',
+    summary: 'Search can be broad or exact; add only the filters that improve the result.',
+    details: [
+      'Search Pokémon by ownership, variant, location, and trade details.',
+      'Search trainers by either Nexus username or Pokémon GO name.',
+      'Open a listing to review the trainer’s actual public catalog context.',
+    ],
+    action: 'Explore search',
+    to: '/search',
+    icon: FaSearch,
+    tone: 'search',
+  },
+  {
+    id: 'proposal',
+    number: '05',
+    title: 'Review and propose',
+    summary: 'The proposal screen is the final checkpoint, not an instant or optimistic trade.',
+    details: [
+      'Your Pokémon always appears on the left and theirs on the right.',
+      'Set the friendship level and review remote, Lucky, special-trade, and Stardust information.',
+      'The users service validates both participants and Pokémon before accepting the proposal.',
+    ],
+    action: 'View trade activity',
+    to: '/trades?section=activity',
+    icon: FaCheck,
+    tone: 'proposal',
+  },
+  {
+    id: 'sharing',
+    number: '06',
+    title: 'Share beyond PokeGo Nexus',
+    summary: 'Meet trainers where they already are without rebuilding your trade list by hand.',
+    details: [
+      'Generate a polished image containing your offers and wishlist.',
+      'Publish a live Trade Board that stays connected to your listings.',
+      'Keep private collection and profile details out of the public board.',
+    ],
+    action: 'Create a Trade Board',
+    to: '/trade-board',
+    icon: FaShareAlt,
+    tone: 'share',
+  },
+];
+
+const GettingStarted = () => (
+  <div className="home-page getting-started">
+    <header className="getting-started__topbar home-shell">
+      <Link className="home-brand" to="/" aria-label="PokeGo Nexus home">
+        <img src="/images/logo/logo.png" alt="" />
+        <span>PokeGo Nexus</span>
+      </Link>
+      <div>
+        <Link className="getting-started__back" to="/"><FaArrowLeft aria-hidden="true" /> Home</Link>
+        <Link className="home-primary-action" to="/register">Create account</Link>
+      </div>
+    </header>
+
+    <div className="getting-started__layout home-shell">
+      <aside className="getting-started__index" aria-label="Getting started sections">
+        <span className="home-eyebrow">On this page</span>
+        <nav>
+          {GUIDE_STEPS.map((step) => (
+            <a key={step.id} href={`#${step.id}`}><span>{step.number}</span>{step.title}</a>
+          ))}
+        </nav>
+      </aside>
+
+      <div className="getting-started__content">
+        <section className="getting-started__hero" aria-labelledby="getting-started-title">
+          <span className="home-eyebrow">PokeGo Nexus guide</span>
+          <h1 id="getting-started-title">Your first useful trade, step by step.</h1>
+          <p>
+            This guide follows the same order you will use in the app. Read it straight through,
+            or jump directly to the part of the workflow you need.
+          </p>
+          <div className="getting-started__legend">
+            <span><i className="is-caught"><FaCheck aria-hidden="true" /></i><strong>Caught</strong> You own it</span>
+            <span><i className="is-trade"><FaExchangeAlt aria-hidden="true" /></i><strong>For Trade</strong> You offer it</span>
+            <span><i className="is-wanted"><FaHeart aria-hidden="true" /></i><strong>Wanted</strong> You seek it</span>
+          </div>
+        </section>
+
+        <section className="getting-started__steps" aria-label="Getting started walkthrough">
+          {GUIDE_STEPS.map((step) => {
+            const Icon = step.icon;
+            return (
+              <article id={step.id} key={step.id} className={`getting-started__step is-${step.tone}`}>
+                <div className="getting-started__step-visual" aria-hidden="true">
+                  <span>{step.number}</span>
+                  <Icon />
+                  {step.tone === 'caught' || step.tone === 'wanted' || step.tone === 'trade' ? (
+                    <img
+                      src={step.tone === 'wanted' ? '/images/default/pokemon_25.png' : '/images/default/pokemon_1.png'}
+                      alt=""
+                    />
+                  ) : null}
+                </div>
+                <div className="getting-started__step-copy">
+                  <span className="home-eyebrow">Step {step.number}</span>
+                  <h2>{step.title}</h2>
+                  <p>{step.summary}</p>
+                  <ul>
+                    {step.details.map((detail) => <li key={detail}><FaCheck aria-hidden="true" />{detail}</li>)}
+                  </ul>
+                  <Link to={step.to}>{step.action} <FaArrowRight aria-hidden="true" /></Link>
+                </div>
+              </article>
+            );
+          })}
+        </section>
+
+        <section className="getting-started__finish" aria-labelledby="getting-started-finish-title">
+          <img src="/images/logo/logo.png" alt="" />
+          <div>
+            <span className="home-eyebrow">You do not need a complete catalog</span>
+            <h2 id="getting-started-finish-title">Start small. Let the workflow grow with you.</h2>
+            <p>Add one Pokémon today. Your signed-in Home will show the next useful milestone without forcing you through a tour.</p>
+          </div>
+          <Link className="home-primary-action" to="/register">Start your collection <FaArrowRight aria-hidden="true" /></Link>
+        </section>
+      </div>
+    </div>
+  </div>
+);
+
+export default GettingStarted;

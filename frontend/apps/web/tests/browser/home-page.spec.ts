@@ -81,10 +81,10 @@ test.describe('Home page', () => {
 
     try {
       await page.goto('/', { waitUntil: 'domcontentloaded' });
-      await expect(page.getByRole('heading', { name: 'Your collection. Better connected.' })).toBeVisible();
-      await expect(page.getByRole('heading', { name: 'From catalog to completed trade' })).toBeVisible();
-      await expect(page.getByRole('heading', { name: 'Share beyond the app' })).toBeVisible();
-      await expect(page.getByRole('link', { name: 'Build your collection' })).toBeVisible();
+      await expect(page.getByRole('heading', { name: 'Start with your collection. We’ll guide the rest.' })).toBeVisible();
+      await expect(page.getByRole('heading', { name: 'Follow one Pokémon through the app' })).toBeVisible();
+      await expect(page.getByRole('heading', { name: 'Share when useful' })).toBeVisible();
+      await expect(page.getByRole('link', { name: /open the full guide/i })).toBeVisible();
 
       const widths = await page.evaluate(() => ({
         body: document.body.scrollWidth,
@@ -93,6 +93,62 @@ test.describe('Home page', () => {
       }));
       expect(widths.body).toBeLessThanOrEqual(widths.viewport);
       expect(widths.document).toBeLessThanOrEqual(widths.viewport);
+    } finally {
+      await diagnostics.flush();
+    }
+
+    expect(diagnostics.blockingErrors()).toEqual([]);
+  });
+
+  test('keeps the complete getting-started guide readable on mobile and desktop', async ({ page }, testInfo) => {
+    const diagnostics = attachBrowserDiagnostics(page, testInfo);
+    const mobileProject = testInfo.project.name.includes('mobile');
+    await page.setViewportSize(mobileProject
+      ? { width: 390, height: 844 }
+      : { width: 1280, height: 900 });
+    await installE2eRoutes(page);
+
+    try {
+      await page.goto('/getting-started', { waitUntil: 'domcontentloaded' });
+      await expect(page.getByRole('heading', { name: 'Your first useful trade, step by step.' })).toBeVisible();
+      await expect(page.getByRole('heading', { name: 'Start your collection' })).toBeVisible();
+      await expect(page.getByRole('heading', { name: 'Review and propose' })).toBeVisible();
+      await expect(page.getByRole('link', { name: /create a trade board/i })).toBeVisible();
+
+      const widths = await page.evaluate(() => ({
+        body: document.body.scrollWidth,
+        document: document.documentElement.scrollWidth,
+        viewport: window.innerWidth,
+      }));
+      expect(widths.body).toBeLessThanOrEqual(widths.viewport);
+      expect(widths.document).toBeLessThanOrEqual(widths.viewport);
+    } finally {
+      await diagnostics.flush();
+    }
+
+    expect(diagnostics.blockingErrors()).toEqual([]);
+  });
+
+  test('guides an empty signed-in account before showing dashboard zeroes', async ({ page }, testInfo) => {
+    const diagnostics = attachBrowserDiagnostics(page, testInfo);
+    const mobileProject = testInfo.project.name.includes('mobile');
+    await page.setViewportSize(mobileProject
+      ? { width: 390, height: 844 }
+      : { width: 1280, height: 900 });
+    await addSignedInUser(page);
+    await installE2eRoutes(page);
+
+    try {
+      await page.goto('/', { waitUntil: 'domcontentloaded' });
+      await expect(page.getByRole('heading', { name: 'Let’s make your account useful.' })).toBeVisible();
+      await expect(page.getByLabel('0 of 4 setup milestones complete')).toBeVisible();
+      await expect(page.getByRole('link', { name: /open wishlist/i })).toBeVisible();
+      await expect(page.getByRole('heading', { name: 'At a glance' })).toHaveCount(0);
+
+      await page.getByRole('button', { name: 'Open trainer dashboard' }).click();
+      await expect(page.getByRole('heading', { name: 'Welcome back, HomeTrainerGO' })).toBeVisible();
+      await page.reload({ waitUntil: 'domcontentloaded' });
+      await expect(page.getByRole('heading', { name: 'Welcome back, HomeTrainerGO' })).toBeVisible();
     } finally {
       await diagnostics.flush();
     }
@@ -164,10 +220,11 @@ test.describe('Home page', () => {
 
     try {
       await page.goto('/', { waitUntil: 'domcontentloaded' });
-      await expect(page.getByRole('heading', { name: 'Welcome back, HomeTrainerGO' })).toBeVisible();
+      await expect(page.getByRole('heading', { name: 'Let’s make your account useful.' })).toBeVisible();
       await seedDashboardInstances(page, pokemonInstances);
       await page.reload({ waitUntil: 'domcontentloaded' });
 
+      await expect(page.getByRole('heading', { name: 'Welcome back, HomeTrainerGO' })).toBeVisible();
       await expect(page.getByRole('heading', { name: '3 items need your attention' })).toBeVisible();
       await expect(page.getByText('1 offer to review')).toBeVisible();
       await expect(page.getByText('1 trade ready to confirm')).toBeVisible();

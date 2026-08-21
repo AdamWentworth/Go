@@ -24,12 +24,70 @@
   line-height: 1.55;
 }
 
+.howItWorks__concepts {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  max-width: 860px;
+  margin: 28px auto 0;
+  text-align: left;
+}
+
+.howItWorks__concepts article {
+  display: grid;
+  min-width: 0;
+  grid-template-columns: 44px minmax(0, 1fr);
+  align-items: center;
+  gap: 11px;
+  padding: 12px;
+  border: 1px solid var(--home-border);
+  border-radius: 15px;
+  background: var(--home-surface);
+}
+
+.howItWorks__concepts article > div {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.howItWorks__concepts strong { font-size: 0.84rem; }
+.howItWorks__concepts small { color: var(--color-text-secondary); font-size: 0.7rem; line-height: 1.35; }
+
+.howItWorks__concept-icon {
+  display: grid;
+  width: 44px;
+  height: 44px;
+  place-items: center;
+  border-radius: 12px;
+}
+
+.howItWorks__concept-icon--caught { background: color-mix(in srgb, var(--color-accent-primary) 15%, transparent); color: var(--color-accent-primary); }
+.howItWorks__concept-icon--trade { background: color-mix(in srgb, var(--home-green) 15%, transparent); color: var(--home-green); }
+.howItWorks__concept-icon--wanted { background: color-mix(in srgb, var(--home-red) 15%, transparent); color: var(--home-red); }
+
 .howItWorks__steps {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 12px;
   margin-top: 34px;
   text-align: left;
+}
+
+.howItWorks__guide-link {
+  display: inline-flex;
+  min-height: 46px;
+  align-items: center;
+  gap: 8px;
+  margin-top: 18px;
+  padding: 0 16px;
+  border: 1px solid color-mix(in srgb, var(--home-green) 48%, var(--home-border));
+  border-radius: 12px;
+  color: var(--home-green);
+  font-size: 0.82rem;
+  font-weight: 850;
+  text-decoration: none;
 }
 
 .howItWorks__steps article {
@@ -109,6 +167,7 @@
 @media (max-width: 600px) {
   .howItWorks { gap: 66px; padding-top: 66px; }
   .howItWorks__steps { grid-template-columns: 1fr; }
+  .howItWorks__concepts { grid-template-columns: 1fr; }
   .howItWorks__steps article { min-height: 188px; }
   .howItWorks__steps h3 { margin-top: 42px; }
   .howItWorks__feature-band { grid-template-columns: 1fr; padding: 20px 15px; border-radius: 20px; }

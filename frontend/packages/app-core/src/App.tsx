@@ -23,6 +23,7 @@ import {
 } from './contexts/AppLoadingContext';
 
 const Home = lazy(() => import('./pages/Home/Home'));
+const GettingStarted = lazy(() => import('./pages/Home/GettingStarted'));
 const Pokedex = lazy(() => import('./pages/Pokedex/Pokedex'));
 const Pokemon = lazy(() => import('./pages/Pokemon/Pokemon'));
 const Raid = lazy(() => import('./pages/Raid/Raid'));
@@ -64,6 +65,7 @@ const AppContent: React.FC = () => {
         <Suspense fallback={<AppRouteFallback />}>
           <Routes>
           <Route path="/"             element={<Home />} />
+          <Route path="/getting-started" element={<GettingStarted />} />
           <Route path="/pokedex"      element={<Pokedex />} />
           <Route path="/pokemon"      element={<Pokemon isOwnCollection />} />
           <Route path="/raid"         element={<Raid />} />

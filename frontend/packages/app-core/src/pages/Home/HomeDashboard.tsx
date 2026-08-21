@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import {
   FaArrowRight,
@@ -27,10 +27,12 @@ import type { PokemonInstance } from '@/types/pokemonInstance';
 import type { PokemonVariant } from '@/types/pokemonVariants';
 
 import {
+  buildHomeOnboardingProgress,
   getRecentHomeInstances,
   summarizeHomeCollection,
   summarizeHomeTrades,
 } from './homeDashboardModel';
+import HomeOnboarding from './HomeOnboarding';
 
 interface HomeDashboardProps {
   user: User;
@@ -100,8 +102,30 @@ const HomeDashboard = ({ user }: HomeDashboardProps) => {
     [variants],
   );
   const incomingFriends = friendsQuery.data?.incoming.length ?? 0;
+  const friendConnections =
+    (friendsQuery.data?.friends.length ?? 0) +
+    (friendsQuery.data?.incoming.length ?? 0) +
+    (friendsQuery.data?.outgoing.length ?? 0);
+  const onboardingProgress = useMemo(
+    () => buildHomeOnboardingProgress(collection, friendConnections + Object.keys(trades).length),
+    [collection, friendConnections, trades],
+  );
+  const onboardingStorageKey = `pokegonexus-home-onboarding:${user.user_id || user.username}`;
+  const [onboardingDismissed, setOnboardingDismissed] = useState(
+    () => window.localStorage.getItem(onboardingStorageKey) === 'dismissed',
+  );
   const actionCount = tradeSummary.needsResponse + tradeSummary.readyToConfirm + incomingFriends;
   const firstName = user.pokemonGoName?.trim() || user.username;
+
+  const dismissOnboarding = () => {
+    window.localStorage.setItem(onboardingStorageKey, 'dismissed');
+    setOnboardingDismissed(true);
+  };
+
+  const showOnboarding =
+    !instancesLoading &&
+    !onboardingDismissed &&
+    onboardingProgress.completed < onboardingProgress.total;
 
   return (
     <div className="home-dashboard home-shell">
@@ -115,6 +139,15 @@ const HomeDashboard = ({ user }: HomeDashboardProps) => {
           <strong>@{user.username}</strong>
         </Link>
       </header>
+
+      {showOnboarding ? (
+        <HomeOnboarding
+          user={user}
+          progress={onboardingProgress}
+          onDismiss={dismissOnboarding}
+        />
+      ) : (
+        <>
 
       <section className="home-dashboard__welcome" aria-labelledby="home-dashboard-title">
         <div>
@@ -291,6 +324,8 @@ const HomeDashboard = ({ user }: HomeDashboardProps) => {
           <Link to="/max"><img src="/images/btn_max.png" alt="" /><span><strong>Max Battles</strong><small>Plan your team</small></span></Link>
         </div>
       </section>
+        </>
+      )}
     </div>
   );
 };

@@ -19,7 +19,7 @@ const Home = () => {
   if (isLoggedIn && user) {
     return (
       <div className="home-page home-page--dashboard">
-        <HomeDashboard user={user} />
+        <HomeDashboard key={user.user_id} user={user} />
       </div>
     );
   }

@@ -1,6 +1,6 @@
 // HomeHeader.jsx
 
-import { FaArrowRight, FaCheckCircle } from 'react-icons/fa';
+import { FaArrowDown, FaArrowRight, FaCheckCircle } from 'react-icons/fa';
 import { Link } from 'react-router';
 import './HomeHeader.css';
 
@@ -27,30 +27,30 @@ const HomeHeader = ({ logoUrl, isLoggedIn }: HomeHeaderProps) => {
 
       <div className="homeHeader__hero home-shell">
         <div className="homeHeader__copy">
-          <span className="home-eyebrow">Your Pokémon GO trainer hub</span>
-          <h1>Your collection.<br /><em>Better connected.</em></h1>
+          <span className="home-eyebrow">New to PokeGo Nexus?</span>
+          <h1>Start with your collection.<br /><em>We’ll guide the rest.</em></h1>
           <p>
-            Catalog the Pokémon you own, organize what you want, discover nearby trainers,
-            and turn compatible listings into clear, secure trade proposals.
+            Learn the workflow one step at a time: record what you have, mark what you want,
+            find compatible trainers, and send a clear trade proposal.
           </p>
           {!isLoggedIn ? (
             <div className="homeHeader__actions">
-              <Link className="home-primary-action" to="/register">Build your collection <FaArrowRight aria-hidden="true" /></Link>
-              <Link className="home-secondary-action" to="/search">Explore search</Link>
+              <a className="home-primary-action" href="#start-here">Show me how <FaArrowDown aria-hidden="true" /></a>
+              <Link className="home-secondary-action" to="/getting-started">Open the full guide <FaArrowRight aria-hidden="true" /></Link>
             </div>
           ) : null}
           <ul className="homeHeader__proof" aria-label="Available features">
             <li><FaCheckCircle aria-hidden="true" /> Free to use</li>
             <li><FaCheckCircle aria-hidden="true" /> Mobile ready</li>
-            <li><FaCheckCircle aria-hidden="true" /> Your listings, your privacy</li>
+            <li><FaCheckCircle aria-hidden="true" /> Learn before signing up</li>
           </ul>
         </div>
 
         <div className="homeHeader__showcase" aria-label="PokeGo Nexus feature preview">
           <div className="homeHeader__showcase-glow" aria-hidden="true" />
           <div className="homeHeader__showcase-card homeHeader__showcase-card--collection">
-            <span>Collection</span>
-            <strong>Keep every catch organized</strong>
+            <span>Step 1 · Collection</span>
+            <strong>Begin with Pokémon you already know</strong>
             <div className="homeHeader__pokemon-row" aria-hidden="true">
               <img src="/images/default/pokemon_1.png" alt="" />
               <img src="/images/default/pokemon_6.png" alt="" />
@@ -59,11 +59,11 @@ const HomeHeader = ({ logoUrl, isLoggedIn }: HomeHeaderProps) => {
           </div>
           <div className="homeHeader__showcase-card homeHeader__showcase-card--trade">
             <img src="/images/btn_trades.png" alt="" />
-            <span><strong>Trade-ready</strong><small>Match what you have with what trainers want.</small></span>
+            <span><strong>Then mark your intent</strong><small>For Trade and Wanted listings power the matching workflow.</small></span>
           </div>
           <div className="homeHeader__showcase-card homeHeader__showcase-card--share">
-            <span>Share Trade Board</span>
-            <strong>One link. Your offers and wishlist.</strong>
+            <span>Your destination</span>
+            <strong>A clear, reviewable trade proposal.</strong>
           </div>
         </div>
       </div>

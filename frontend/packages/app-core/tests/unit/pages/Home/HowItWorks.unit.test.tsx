@@ -9,11 +9,14 @@ describe('HowItWorks', () => {
   it('renders navigation, pokemon, and search guidance blocks', () => {
     render(<MemoryRouter><HowItWorks /></MemoryRouter>);
 
-    expect(screen.getByRole('heading', { name: 'From catalog to completed trade' })).toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: 'Catalog and organize' })).toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: 'Find the right trainer' })).toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: 'Propose with confidence' })).toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: 'Share beyond the app' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Follow one Pokémon through the app' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Add a Pokémon' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Describe what you want' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Prepare an offer' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Discover trainers' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Review the exchange' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Share when useful' })).toBeInTheDocument();
     expect(screen.getByText('Server-authoritative trades')).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /illustrated guide/i })).toHaveAttribute('href', '/getting-started');
   });
 });

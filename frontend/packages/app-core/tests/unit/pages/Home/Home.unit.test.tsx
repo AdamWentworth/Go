@@ -27,8 +27,8 @@ describe('Home page', () => {
 
     renderHome();
 
-    expect(screen.getByRole('heading', { name: /Your collection.*Better connected/i })).toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: /from catalog to completed trade/i })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: /Start with your collection.*We’ll guide the rest/i })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: /Follow one Pokémon through the app/i })).toBeInTheDocument();
     expect(screen.getAllByRole('link', { name: /create account/i }).length).toBeGreaterThan(0);
   });
 
