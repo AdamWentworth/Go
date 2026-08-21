@@ -278,7 +278,22 @@ describe('TagsMenu', () => {
     ).toEqual(['custom:tag-shadow', 'Favorites', 'Caught', 'Trade']);
 
     fireEvent.click(screen.getByRole('button', { name: /arrange/i }));
-    fireEvent.click(screen.getByRole('button', { name: /move all caught up/i }));
+    const caughtHandle = screen.getByRole('button', {
+      name: /press and drag all caught to reorder/i,
+    });
+    const favoritesCard = container.querySelector<HTMLElement>('[data-tag="Favorites"]');
+    expect(favoritesCard).toBeTruthy();
+    Object.defineProperty(document, 'elementFromPoint', {
+      configurable: true,
+      value: vi.fn().mockReturnValue(favoritesCard),
+    });
+    fireEvent.pointerDown(caughtHandle, { pointerId: 1, clientX: 200, clientY: 500 });
+    expect(document.querySelector('.tag-item-drag-preview')).toBeInTheDocument();
+    expect(container.querySelector('.tag-footer-icon')).not.toBeInTheDocument();
+    fireEvent.pointerMove(caughtHandle, { pointerId: 1, clientX: 200, clientY: 250 });
+    fireEvent.pointerUp(caughtHandle, { pointerId: 1, clientX: 200, clientY: 250 });
+    expect(document.querySelector('.tag-item-drag-preview')).not.toBeInTheDocument();
+    Reflect.deleteProperty(document, 'elementFromPoint');
     fireEvent.click(screen.getByRole('button', { name: /save order/i }));
 
     await waitFor(() => {

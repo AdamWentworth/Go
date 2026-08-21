@@ -4,10 +4,11 @@ import React, {
   KeyboardEvent,
   MouseEvent,
   PointerEvent,
+  useEffect,
   useRef,
   useState,
 } from 'react';
-import { FaArrowDown, FaArrowUp, FaGripVertical } from 'react-icons/fa';
+import { FaGripVertical } from 'react-icons/fa';
 import type { TagItem } from '@/types/tags';
 import './TagItems.css';
 
@@ -27,8 +28,15 @@ export interface TagItemsProps {
   }>;
   onEditTag?: (tagName: string) => void;
   reorderMode?: boolean;
-  onMoveTag?: (tagName: string, direction: -1 | 1) => void;
   onReorderTag?: (sourceTagName: string, targetTagName: string) => void;
+}
+
+interface DragPreview {
+  layer: HTMLDivElement;
+  preview: HTMLElement;
+  sourceTag: string;
+  offsetX: number;
+  offsetY: number;
 }
 
 function buildKey(p: TagItem, idx: number, bucket: string): string {
@@ -45,39 +53,82 @@ const TagItems: React.FC<TagItemsProps> = ({
   tagMetadata = {},
   onEditTag,
   reorderMode = false,
-  onMoveTag,
   onReorderTag,
 }) => {
   const [draggingTag, setDraggingTag] = useState<string | null>(null);
   const lastDragTargetRef = useRef<string | null>(null);
+  const dragPreviewRef = useRef<DragPreview | null>(null);
+
+  useEffect(() => () => {
+    dragPreviewRef.current?.layer.remove();
+    dragPreviewRef.current = null;
+  }, []);
 
   const beginDrag = (event: PointerEvent<HTMLButtonElement>, tagName: string) => {
     event.preventDefault();
     event.stopPropagation();
-    event.currentTarget.setPointerCapture(event.pointerId);
+    const card = event.currentTarget.closest<HTMLElement>('.tag-item');
+    if (!card) return;
+
+    const bounds = card.getBoundingClientRect();
+    const layer = document.createElement('div');
+    layer.className = 'tags-menu tag-drag-layer';
+    layer.setAttribute('aria-hidden', 'true');
+
+    const preview = card.cloneNode(true) as HTMLElement;
+    preview.classList.add('tag-item-drag-preview');
+    preview.dataset.floating = 'true';
+    preview.removeAttribute('tabindex');
+    preview.querySelectorAll<HTMLElement>('button').forEach((button) => {
+      button.setAttribute('tabindex', '-1');
+    });
+    Object.assign(preview.style, {
+      left: `${bounds.left}px`,
+      top: `${bounds.top}px`,
+      width: `${bounds.width}px`,
+      height: `${bounds.height}px`,
+    });
+    layer.appendChild(preview);
+    document.body.appendChild(layer);
+
+    dragPreviewRef.current?.layer.remove();
+    dragPreviewRef.current = {
+      layer,
+      preview,
+      sourceTag: tagName,
+      offsetX: event.clientX - bounds.left,
+      offsetY: event.clientY - bounds.top,
+    };
+    event.currentTarget.setPointerCapture?.(event.pointerId);
     lastDragTargetRef.current = null;
     setDraggingTag(tagName);
   };
 
   const continueDrag = (event: PointerEvent<HTMLButtonElement>) => {
-    if (!draggingTag) return;
+    const drag = dragPreviewRef.current;
+    if (!drag) return;
     event.preventDefault();
     event.stopPropagation();
+
+    drag.preview.style.left = `${event.clientX - drag.offsetX}px`;
+    drag.preview.style.top = `${event.clientY - drag.offsetY}px`;
     const target = document
       .elementFromPoint(event.clientX, event.clientY)
       ?.closest<HTMLElement>('[data-tag-selector]')
       ?.dataset.tagSelector;
-    if (!target || target === draggingTag || target === lastDragTargetRef.current) return;
+    if (!target || target === drag.sourceTag || target === lastDragTargetRef.current) return;
     lastDragTargetRef.current = target;
-    onReorderTag?.(draggingTag, target);
+    onReorderTag?.(drag.sourceTag, target);
   };
 
   const endDrag = (event: PointerEvent<HTMLButtonElement>) => {
     event.preventDefault();
     event.stopPropagation();
-    if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+    if (event.currentTarget.hasPointerCapture?.(event.pointerId)) {
       event.currentTarget.releasePointerCapture(event.pointerId);
     }
+    dragPreviewRef.current?.layer.remove();
+    dragPreviewRef.current = null;
     lastDragTargetRef.current = null;
     setDraggingTag(null);
   };
@@ -161,7 +212,7 @@ const TagItems: React.FC<TagItemsProps> = ({
             <span className="tag-subtitle">
               {summary.count} Pokémon have this tag.
             </span>
-            {tagName === 'Favorites' && (
+            {tagName === 'Favorites' && !reorderMode && (
               <img
                 src="/images/fav_pressed.png"
                 alt=""
@@ -182,19 +233,7 @@ const TagItems: React.FC<TagItemsProps> = ({
             {reorderMode ? (
               <div className="tag-reorder-controls">
                 <button
-                  aria-label={`Move ${displayName} up`}
-                  disabled={tagName === tagNames[0]}
-                  onClick={(event) => {
-                    event.preventDefault();
-                    event.stopPropagation();
-                    onMoveTag?.(tagName, -1);
-                  }}
-                  type="button"
-                >
-                  <FaArrowUp aria-hidden="true" />
-                </button>
-                <button
-                  aria-label={`Drag ${displayName} to reorder`}
+                  aria-label={`Press and drag ${displayName} to reorder`}
                   className="tag-drag-handle"
                   onPointerCancel={endDrag}
                   onPointerDown={(event) => beginDrag(event, tagName)}
@@ -203,18 +242,6 @@ const TagItems: React.FC<TagItemsProps> = ({
                   type="button"
                 >
                   <FaGripVertical aria-hidden="true" />
-                </button>
-                <button
-                  aria-label={`Move ${displayName} down`}
-                  disabled={tagName === tagNames[tagNames.length - 1]}
-                  onClick={(event) => {
-                    event.preventDefault();
-                    event.stopPropagation();
-                    onMoveTag?.(tagName, 1);
-                  }}
-                  type="button"
-                >
-                  <FaArrowDown aria-hidden="true" />
                 </button>
               </div>
             ) : null}

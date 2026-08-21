@@ -35,8 +35,34 @@
 }
 
 .tags-menu .tag-item-reordering[data-dragging="true"] {
-  opacity: 0.74;
-  box-shadow: 0 0 0 2px var(--color-accent-primary);
+  opacity: 0.3;
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--color-accent-primary) 65%, transparent);
+}
+
+.tags-menu.tag-drag-layer {
+  position: fixed;
+  z-index: 10000;
+  inset: 0;
+  display: block;
+  width: auto;
+  height: auto;
+  margin: 0;
+  pointer-events: none;
+}
+
+.tags-menu.tag-drag-layer .tag-item-drag-preview {
+  position: fixed;
+  z-index: 1;
+  margin: 0;
+  pointer-events: none;
+  opacity: 0.98;
+  transform: scale(1.025) rotate(0.2deg);
+  transform-origin: center;
+  box-shadow:
+    0 24px 48px rgba(0, 0, 0, 0.36),
+    0 0 0 2px color-mix(in srgb, var(--color-accent-primary) 72%, transparent);
+  filter: brightness(1.04);
+  will-change: left, top;
 }
 
 /* Footer (title + subtitle, icon on right) */
@@ -303,7 +329,9 @@
 }
 
 .tags-menu .tag-reorder-controls .tag-drag-handle {
-  min-width: 44px;
+  width: 52px;
+  min-width: 52px;
+  height: 44px;
   touch-action: none;
   cursor: grab;
 }

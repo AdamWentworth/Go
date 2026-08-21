@@ -267,24 +267,6 @@ const TagsMenu: React.FC<TagsMenuProps> = ({
     setReorderingParent(null);
   };
 
-  const moveTag = (
-    parent: CustomTagParent,
-    selector: string,
-    direction: -1 | 1,
-  ) => {
-    if (reorderingParent !== parent) return;
-    const key = orderKeyForSelector(parent, selector);
-    if (!key) return;
-    setDraftOrder((current) => {
-      const index = current.indexOf(key);
-      const target = index + direction;
-      if (index < 0 || target < 0 || target >= current.length) return current;
-      const next = [...current];
-      [next[index], next[target]] = [next[target], next[index]];
-      return next;
-    });
-  };
-
   const reorderTag = (
     parent: CustomTagParent,
     sourceSelector: string,
@@ -342,7 +324,6 @@ const TagsMenu: React.FC<TagsMenuProps> = ({
       tagMetadata={tagMetadata}
       onEditTag={onEdit}
       reorderMode={reorderingParent === parent}
-      onMoveTag={(selector, direction) => moveTag(parent, selector, direction)}
       onReorderTag={(source, target) => reorderTag(parent, source, target)}
     />
   );
@@ -441,7 +422,7 @@ const TagsMenu: React.FC<TagsMenuProps> = ({
                   ) : null}
                 </header>
                 {reorderingParent === 'caught' ? (
-                  <p className="tag-order-help">Drag a handle or use the arrow buttons.</p>
+                  <p className="tag-order-help">Press and drag a grip to move its tag.</p>
                 ) : null}
                 <div className="tag-sublist">
                   {renderTagGroup({
@@ -495,7 +476,7 @@ const TagsMenu: React.FC<TagsMenuProps> = ({
                   ) : null}
                 </header>
                 {reorderingParent === 'wanted' ? (
-                  <p className="tag-order-help">Drag a handle or use the arrow buttons.</p>
+                  <p className="tag-order-help">Press and drag a grip to move its tag.</p>
                 ) : null}
                 <div className="tag-sublist">
                   {renderTagGroup({
