@@ -33,7 +33,8 @@ import './TradeBoardComposer.css';
 
 export interface TradeBoardComposerProps {
   activeTags: Pick<TagBuckets, 'wanted' | 'trade'>;
-  onClose: () => void;
+  onClose?: () => void;
+  presentation?: 'overlay' | 'page';
   variants: AllVariants;
 }
 
@@ -67,6 +68,7 @@ const copyText = async (value: string): Promise<void> => {
 const TradeBoardComposer: React.FC<TradeBoardComposerProps> = ({
   activeTags,
   onClose,
+  presentation = 'overlay',
   variants,
 }) => {
   const user = useAuthStore((state) => state.user);
@@ -161,29 +163,35 @@ const TradeBoardComposer: React.FC<TradeBoardComposerProps> = ({
     }
   };
 
-  return (
-    <OverlayPortal closeOnBackdrop dismissible={!isExporting} onClose={onClose}>
-      <div className="trade-board-composer-overlay">
+  const isPage = presentation === 'page';
+  const closeComposer = () => onClose?.();
+  const composer = (
         <section
           aria-labelledby="trade-board-composer-title"
-          aria-modal="true"
-          className="trade-board-composer"
-          role="dialog"
+          {...(!isPage ? { 'aria-modal': true } : {})}
+          className={`trade-board-composer ${isPage ? 'trade-board-composer--page' : ''}`}
+          role={isPage ? 'region' : 'dialog'}
         >
           <header className="trade-board-composer__header">
             <div>
               <span>Share your collection</span>
-              <h2 id="trade-board-composer-title">Create a Trade Board</h2>
+              {isPage ? (
+                <h1 id="trade-board-composer-title">Share your Trade Board</h1>
+              ) : (
+                <h2 id="trade-board-composer-title">Create a Trade Board</h2>
+              )}
               <p>One clear image for what you have and what you want.</p>
             </div>
-            <OverlayDismissButton
-              aria-label="Close Trade Board composer"
-              className="trade-board-composer__close"
-              disabled={isExporting}
-              onDismiss={onClose}
-            >
-              <FaTimes aria-hidden="true" />
-            </OverlayDismissButton>
+            {!isPage ? (
+              <OverlayDismissButton
+                aria-label="Close Trade Board composer"
+                className="trade-board-composer__close"
+                disabled={isExporting}
+                onDismiss={closeComposer}
+              >
+                <FaTimes aria-hidden="true" />
+              </OverlayDismissButton>
+            ) : null}
           </header>
 
           <div className="trade-board-composer__body">
@@ -281,6 +289,16 @@ const TradeBoardComposer: React.FC<TradeBoardComposerProps> = ({
             <TradeBoard model={model} qrCodeDataUrl={qrCodeDataUrl} ref={exportRef} theme={theme} />
           </div>
         </section>
+  );
+
+  if (isPage) {
+    return <div className="trade-board-composer-page">{composer}</div>;
+  }
+
+  return (
+    <OverlayPortal closeOnBackdrop dismissible={!isExporting} onClose={closeComposer}>
+      <div className="trade-board-composer-overlay">
+        {composer}
       </div>
     </OverlayPortal>
   );

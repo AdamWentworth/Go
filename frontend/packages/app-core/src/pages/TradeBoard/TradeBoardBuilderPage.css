@@ -1,0 +1,134 @@
+.trade-board-builder-page {
+  min-height: 100dvh;
+  background:
+    radial-gradient(circle at 50% 0, rgba(52, 190, 145, 0.13), transparent 36rem),
+    var(--color-app-surface);
+  color: var(--color-text-primary);
+}
+
+.trade-board-builder-page__nav {
+  display: flex;
+  width: min(1180px, calc(100% - 32px));
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 0 auto;
+  padding-top: 18px;
+}
+
+.trade-board-builder-page__nav a {
+  display: inline-flex;
+  min-height: 44px;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border: 1px solid color-mix(in srgb, var(--color-text-primary) 18%, transparent);
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--color-text-primary) 5%, transparent);
+  color: var(--color-text-primary);
+  font-size: 0.82rem;
+  font-weight: 800;
+  text-decoration: none;
+}
+
+.trade-board-builder-page__nav a:last-child {
+  color: color-mix(in srgb, var(--color-accent-primary) 78%, var(--color-text-primary));
+}
+
+.trade-board-builder-page__nav a:hover {
+  border-color: color-mix(in srgb, var(--color-accent-primary) 55%, transparent);
+  background: color-mix(in srgb, var(--color-accent-primary) 10%, transparent);
+}
+
+.trade-board-builder-page__nav a:focus-visible,
+.trade-board-builder-page__empty a:focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--color-accent-primary) 40%, transparent);
+  outline-offset: 2px;
+}
+
+.trade-board-builder-page__state,
+.trade-board-builder-page__empty {
+  display: grid;
+  width: min(620px, calc(100% - 32px));
+  min-height: min(620px, 80dvh);
+  align-content: center;
+  justify-items: center;
+  margin: 0 auto;
+  padding: 40px 20px 120px;
+  text-align: center;
+}
+
+.trade-board-builder-page__state h1,
+.trade-board-builder-page__state p,
+.trade-board-builder-page__empty h1,
+.trade-board-builder-page__empty p {
+  margin: 0;
+}
+
+.trade-board-builder-page__state h1,
+.trade-board-builder-page__empty h1 {
+  margin-top: 12px;
+  font-size: clamp(1.5rem, 5vw, 2.25rem);
+}
+
+.trade-board-builder-page__state p,
+.trade-board-builder-page__empty p {
+  max-width: 510px;
+  margin-top: 8px;
+  color: var(--color-text-secondary);
+  line-height: 1.5;
+}
+
+.trade-board-builder-page__empty > span {
+  color: color-mix(in srgb, var(--color-accent-primary) 78%, var(--color-text-primary));
+  font-size: 0.72rem;
+  font-weight: 900;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+}
+
+.trade-board-builder-page__empty > div {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px;
+  margin-top: 24px;
+}
+
+.trade-board-builder-page__empty a {
+  display: inline-flex;
+  min-height: 48px;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  padding: 11px 16px;
+  border: 1px solid color-mix(in srgb, var(--color-text-primary) 20%, transparent);
+  border-radius: 11px;
+  color: var(--color-text-primary);
+  font-size: 0.85rem;
+  font-weight: 850;
+  text-decoration: none;
+}
+
+.trade-board-builder-page__empty .trade-board-builder-page__primary {
+  border-color: #35c786;
+  background: #35c786;
+  color: #06130e;
+}
+
+@media (max-width: 600px) {
+  .trade-board-builder-page__nav {
+    width: calc(100% - 16px);
+    padding-top: 8px;
+  }
+
+  .trade-board-builder-page__nav a {
+    padding-inline: 10px;
+    font-size: 0.75rem;
+  }
+
+  .trade-board-builder-page__empty > div,
+  .trade-board-builder-page__empty a {
+    width: 100%;
+  }
+}

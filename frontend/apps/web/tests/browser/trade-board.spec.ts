@@ -4,6 +4,7 @@ import { expect, test } from '@playwright/test';
 
 import { attachBrowserDiagnostics } from './support/diagnostics';
 import { installE2eRoutes } from './support/e2eRoutes';
+import { openActionMenu } from './support/actionMenu';
 
 const instance = (
   instanceId: string,
@@ -174,7 +175,10 @@ test.describe('shareable Trade Board', () => {
     page,
   }, testInfo) => {
     const diagnostics = attachBrowserDiagnostics(page, testInfo);
-    await page.setViewportSize({ width: 390, height: 844 });
+    const mobileProject = testInfo.project.name.includes('mobile');
+    await page.setViewportSize(mobileProject
+      ? { width: 390, height: 844 }
+      : { width: 1280, height: 900 });
     await page.addInitScript(() => {
       window.localStorage.setItem('user', JSON.stringify({
         accessTokenExpiry: '2099-01-01T00:00:00.000Z',
@@ -247,33 +251,32 @@ test.describe('shareable Trade Board', () => {
 
       await page.reload({ waitUntil: 'domcontentloaded' });
       await expect(page.locator('.pokemon-card[role="button"]').first()).toBeVisible({ timeout: 30_000 });
-      await page.getByText('WISHLIST', { exact: true }).click();
-      const openComposer = page.getByRole('button', { name: 'Create shareable Trade Board' });
-      await expect(openComposer).toBeVisible();
-      await openComposer.click();
+      await openActionMenu(page, testInfo.project.name);
+      await page.getByRole('button', { name: 'Share Trade Board' }).click();
+      await expect(page).toHaveURL(/\/trade-board$/);
 
-      const dialog = page.getByRole('dialog', { name: 'Create a Trade Board' });
-      await expect(dialog).toBeVisible();
-      await expect(dialog.getByText('3 Pokémon').first()).toBeVisible();
-      await expect(dialog.getByText('3 Pokémon').last()).toBeVisible();
-      await expect(dialog.getByAltText("QR code for this trainer's live trade board").first()).toBeVisible();
+      const workspace = page.getByRole('region', { name: 'Share your Trade Board' });
+      await expect(workspace).toBeVisible();
+      await expect(workspace.getByText('3 Pokémon').first()).toBeVisible();
+      await expect(workspace.getByText('3 Pokémon').last()).toBeVisible();
+      await expect(workspace.getByAltText("QR code for this trainer's live trade board").first()).toBeVisible();
       const layout = await page.evaluate(() => ({
         documentWidth: document.documentElement.scrollWidth,
         viewportWidth: window.innerWidth,
-        dialog: document.querySelector('.trade-board-composer')?.getBoundingClientRect(),
+        workspace: document.querySelector('.trade-board-composer')?.getBoundingClientRect(),
       }));
       expect(layout.documentWidth).toBeLessThanOrEqual(layout.viewportWidth);
-      expect(layout.dialog?.width).toBeLessThanOrEqual(layout.viewportWidth);
+      expect(layout.workspace?.width).toBeLessThanOrEqual(layout.viewportWidth);
 
-      await dialog.getByRole('button', { name: /Nexus Light/ }).click();
-      await expect(dialog.locator('.trade-board').first()).toHaveAttribute('data-theme', 'brand-light');
+      await workspace.getByRole('button', { name: /Nexus Light/ }).click();
+      await expect(workspace.locator('.trade-board').first()).toHaveAttribute('data-theme', 'brand-light');
       await page.evaluate(() => { document.documentElement.dataset.theme = 'light'; });
       await expect
-        .poll(() => dialog.evaluate((element) => window.getComputedStyle(element).backgroundColor))
+        .poll(() => workspace.evaluate((element) => window.getComputedStyle(element).backgroundColor))
         .toBe('rgb(248, 255, 249)');
 
       const downloadPromise = page.waitForEvent('download');
-      await dialog.getByRole('button', { name: 'Download PNG' }).click();
+      await workspace.getByRole('button', { name: 'Download PNG' }).click();
       const download = await downloadPromise;
       expect(download.suggestedFilename()).toMatch(/^pokegonexus-BoardTrainer-trade-board-\d{4}-\d{2}-\d{2}\.png$/);
       const downloadedPath = await download.path();
@@ -286,12 +289,26 @@ test.describe('shareable Trade Board', () => {
         path: exportPath,
       });
 
-      const screenshotPath = testInfo.outputPath('trade-board-composer-mobile.png');
+      const pageHeight = await page.evaluate(() => ({
+        builderBottom: document.querySelector('.trade-board-builder-page')?.getBoundingClientRect().bottom,
+        documentHeight: document.documentElement.scrollHeight,
+        scrollY: window.scrollY,
+      }));
+      expect(pageHeight.documentHeight).toBeLessThanOrEqual(
+        Math.ceil((pageHeight.builderBottom ?? 0) + pageHeight.scrollY) + 2,
+      );
+
+      const screenshotPath = testInfo.outputPath(
+        mobileProject ? 'trade-board-composer-mobile.png' : 'trade-board-composer-desktop.png',
+      );
       await page.screenshot({ fullPage: true, path: screenshotPath });
-      await testInfo.attach('trade-board-composer-mobile.png', {
-        contentType: 'image/png',
-        path: screenshotPath,
-      });
+      await testInfo.attach(
+        mobileProject ? 'trade-board-composer-mobile.png' : 'trade-board-composer-desktop.png',
+        {
+          contentType: 'image/png',
+          path: screenshotPath,
+        },
+      );
     } finally {
       await diagnostics.flush();
     }

@@ -520,6 +520,12 @@ export async function installE2eRoutes(page: Page, options: E2eRouteOptions = {}
     });
   }
 
+  for (const pathPattern of ['**/api/users/friends', '**/__e2e/users/friends']) {
+    await page.route(pathPattern, async (route) => {
+      await fulfillJson(route, { friends: [], incoming: [], outgoing: [], blocked: [] });
+    });
+  }
+
   for (const pathPattern of ['**/api/users/trades', '**/__e2e/users/trades']) {
     await page.route(pathPattern, async (route) => {
       const url = new URL(route.request().url());

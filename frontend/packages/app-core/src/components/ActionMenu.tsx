@@ -1,6 +1,7 @@
 // ActionMenu.tsx
 
 import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { FaShareAlt } from 'react-icons/fa';
 import { useNavigate, useLocation } from 'react-router';
 import ActionMenuButton from './ActionMenuButton';
 import CloseButton from './CloseButton';
@@ -130,6 +131,17 @@ const ActionMenu: React.FC = () => {
           data-overlay-motion={isOpen ? 'entered' : 'exiting'}
         >
           <CloseButton onClick={closeMenu} disabled={!isCloseEnabled} />
+
+          {isLoggedIn ? (
+            <button
+              className="trade-board-button"
+              onClick={() => handleNavigation('/trade-board')}
+              type="button"
+            >
+              <FaShareAlt aria-hidden="true" />
+              <span>Share Trade Board</span>
+            </button>
+          ) : null}
 
           <button
             className="settings-button"

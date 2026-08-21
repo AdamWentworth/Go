@@ -103,6 +103,24 @@ describe('ActionMenu', () => {
     expect(screen.getByTestId('location')).toHaveTextContent('/rankings');
   });
 
+  it('opens the signed-in Trade Board workspace without changing the nine primary destinations', () => {
+    mocks.auth.isLoggedIn = true;
+    mocks.fetchFriendsOverview.mockResolvedValue({ friends: [], incoming: [], outgoing: [], blocked: [] });
+
+    const { container } = render(
+      <MemoryRouter initialEntries={['/pokemon']}>
+        <ActionMenu />
+        <LocationProbe />
+      </MemoryRouter>,
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Action Menu' }));
+    expect(container.querySelectorAll('.action-menu-item')).toHaveLength(9);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Share Trade Board' }));
+    expect(screen.getByTestId('location')).toHaveTextContent('/trade-board');
+  });
+
   it('opens the real settings page instead of a placeholder modal', () => {
     render(
       <MemoryRouter initialEntries={['/pokemon']}>

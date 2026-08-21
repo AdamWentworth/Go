@@ -1,5 +1,6 @@
 import { useCallback, useMemo, useState } from 'react';
-import { useSearchParams } from 'react-router';
+import { FaShareAlt } from 'react-icons/fa';
+import { Link, useSearchParams } from 'react-router';
 
 import HorizontalPageSlider from '@/components/motion/HorizontalPageSlider';
 import useHorizontalPageNavigation from '@/components/motion/useHorizontalPageNavigation';
@@ -72,22 +73,27 @@ function Trades() {
 
   return (
     <div className="trades-container">
-      <nav className="trade-page-sections" aria-label="Trade sections">
-        <button
-          type="button"
-          className={`trade-page-section ${activeSection === 'preferences' ? 'active' : ''}`}
-          onClick={() => setActiveSection('preferences')}
-        >
-          Trade Preferences
-        </button>
-        <button
-          type="button"
-          className={`trade-page-section ${activeSection === 'activity' ? 'active' : ''}`}
-          onClick={() => setActiveSection('activity')}
-        >
-          Trade Activity
-        </button>
-      </nav>
+      <header className="trade-page-topbar">
+        <nav className="trade-page-sections" aria-label="Trade sections">
+          <button
+            type="button"
+            className={`trade-page-section ${activeSection === 'preferences' ? 'active' : ''}`}
+            onClick={() => setActiveSection('preferences')}
+          >
+            Trade Preferences
+          </button>
+          <button
+            type="button"
+            className={`trade-page-section ${activeSection === 'activity' ? 'active' : ''}`}
+            onClick={() => setActiveSection('activity')}
+          >
+            Trade Activity
+          </button>
+        </nav>
+        <Link className="trade-page-share-board" to="/trade-board">
+          <FaShareAlt aria-hidden="true" /> Share board
+        </Link>
+      </header>
 
       <HorizontalPageSlider
         activeIndex={sectionSlider.activeIndex}

@@ -74,6 +74,7 @@ describe('Trades page', () => {
   it('wires store data to status controls and list, and updates selected status', () => {
     render(<Trades />, { wrapper: MemoryRouter });
 
+    expect(screen.getByRole('link', { name: 'Share board' })).toHaveAttribute('href', '/trade-board');
     expect(screen.getByTestId('trade-targets-workspace')).toBeInTheDocument();
     expect(screen.getByTestId('trade-targets-workspace').closest('[data-active]')).toHaveAttribute(
       'data-active',

@@ -17,7 +17,6 @@ import type { TagDef } from '@/db/tagsDB';
 import type { CustomTagParent } from '@shared-contracts/users';
 import type { PokemonTagOrderKey } from '@shared-contracts/users';
 import { feedback } from '@/components/feedback';
-import TradeBoardComposer from '@/features/tradeBoard/components/TradeBoardComposer';
 
 export interface TagsMenuProps {
   onSelectTag: (tagName: string) => void;
@@ -93,7 +92,6 @@ function summarizeArray(items: TagItem[]): TagSummary {
 const TagsMenu: React.FC<TagsMenuProps> = ({
   onSelectTag,
   activeTags,
-  variants,
   panel = 'all',
   tagFilter = '',
   onClearTagFilter,
@@ -196,18 +194,6 @@ const TagsMenu: React.FC<TagsMenuProps> = ({
 
   const handleSelectTagInternal = (name: string) => onSelectTag(name);
 
-  /* ----- shareable Trade Board ------------------------------------ */
-  const [isTradeBoardOpen, setIsTradeBoardOpen] = useState(false);
-
-  // ✅ Force preview to use derived Trade (child of Caught)
-  const previewTags = useMemo<Pick<TagBuckets, 'wanted' | 'trade'>>(
-    () => ({
-      wanted: activeTags.wanted ?? {},
-      trade : derivedChildren.caught.trade ?? {},
-    }),
-    [activeTags.wanted, derivedChildren.caught.trade]
-  );
-
   /* ----- counts for footers --------------------------------------- */
   const counts = {
     caught : tagSummaries.Caught?.count ?? 0,
@@ -216,10 +202,6 @@ const TagsMenu: React.FC<TagsMenuProps> = ({
 
   const showInventory = panel === 'all' || panel === 'inventory';
   const showWishlist = panel === 'all' || panel === 'wishlist';
-  const hasBoardListings = Object.keys(previewTags.trade).length > 0
-    || Object.keys(previewTags.wanted).length > 0;
-  const showPreviewButton = isEditable && panel !== 'inventory' && hasBoardListings;
-
   const visibleOrders = useMemo<Record<CustomTagParent, PokemonTagOrderKey[]>>(() => {
     const build = (parent: CustomTagParent) => {
       const available = [
@@ -337,23 +319,6 @@ const TagsMenu: React.FC<TagsMenuProps> = ({
   return (
     <div className={`tags-menu tags-menu-${panel}`}>
       <>
-          {showPreviewButton && (
-            <div className="tag-toggle-row">
-              <button
-                className="tag-preview-toggle-button"
-                onClick={() => setIsTradeBoardOpen(true)}
-              >
-                <img
-                  src="/images/image-icon.png"
-                  alt=""
-                  aria-hidden="true"
-                  className="button-icon"
-                />
-                Create shareable Trade Board
-              </button>
-            </div>
-          )}
-
           {/* TAG TREE */}
           <div className="tag-tree">
             {/* Inventory (Caught) */}
@@ -472,13 +437,6 @@ const TagsMenu: React.FC<TagsMenuProps> = ({
               onCreate={async (input) => { await createCustomTag(input); }}
               onUpdate={async (tagId, input) => { await updateCustomTag(tagId, input); }}
               onDelete={handleDeleteCustomTag}
-            />
-          ) : null}
-          {isTradeBoardOpen ? (
-            <TradeBoardComposer
-              activeTags={previewTags}
-              onClose={() => setIsTradeBoardOpen(false)}
-              variants={variants}
             />
           ) : null}
         </>
