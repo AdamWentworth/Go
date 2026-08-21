@@ -1,11 +1,8 @@
 // TagsMenu.tsx
 
-import React, { useRef, useState, useMemo } from 'react';
+import React, { useState, useMemo } from 'react';
 import { FaCheck, FaPlus, FaSortAmountDown, FaTimes } from 'react-icons/fa';
 import './TagsMenu.css';
-import useDownloadImage from './hooks/useDownloadImage';
-import PreviewContainer from './PreviewContainer';
-import type { TagImageDownloadRef } from './TagImageDownload';
 import useFavoriteList from '@/hooks/sort/useFavoriteList';
 import TagItems, { type TagSummary } from './TagItems';
 import type { TagBuckets, TagItem } from '@/types/tags';
@@ -20,6 +17,7 @@ import type { TagDef } from '@/db/tagsDB';
 import type { CustomTagParent } from '@shared-contracts/users';
 import type { PokemonTagOrderKey } from '@shared-contracts/users';
 import { feedback } from '@/components/feedback';
+import TradeBoardComposer from '@/features/tradeBoard/components/TradeBoardComposer';
 
 export interface TagsMenuProps {
   onSelectTag: (tagName: string) => void;
@@ -198,20 +196,8 @@ const TagsMenu: React.FC<TagsMenuProps> = ({
 
   const handleSelectTagInternal = (name: string) => onSelectTag(name);
 
-  /* ----- preview / download --------------------------------------- */
-  const [isPreviewMode     , setIsPreviewMode]     = useState(false);
-  const [showColorSettings , setShowColorSettings] = useState(false);
-  const { isDownloading, downloadImage } = useDownloadImage();
-  const downloadRef = useRef<TagImageDownloadRef | null>(null);
-
-  const handleDownload = () => {
-    const captureArea = downloadRef.current?.getCaptureRef();
-    if (!captureArea) return;
-    const filename    = isPreviewMode
-      ? 'preview-wanted-trade.png'
-      : 'wanted-trade-pokemons.png';
-    downloadImage(captureArea, filename);
-  };
+  /* ----- shareable Trade Board ------------------------------------ */
+  const [isTradeBoardOpen, setIsTradeBoardOpen] = useState(false);
 
   // ✅ Force preview to use derived Trade (child of Caught)
   const previewTags = useMemo<Pick<TagBuckets, 'wanted' | 'trade'>>(
@@ -230,7 +216,9 @@ const TagsMenu: React.FC<TagsMenuProps> = ({
 
   const showInventory = panel === 'all' || panel === 'inventory';
   const showWishlist = panel === 'all' || panel === 'wishlist';
-  const showPreviewButton = panel !== 'inventory';
+  const hasBoardListings = Object.keys(previewTags.trade).length > 0
+    || Object.keys(previewTags.wanted).length > 0;
+  const showPreviewButton = isEditable && panel !== 'inventory' && hasBoardListings;
 
   const visibleOrders = useMemo<Record<CustomTagParent, PokemonTagOrderKey[]>>(() => {
     const build = (parent: CustomTagParent) => {
@@ -348,37 +336,20 @@ const TagsMenu: React.FC<TagsMenuProps> = ({
   /* ----- render ---------------------------------------------------- */
   return (
     <div className={`tags-menu tags-menu-${panel}`}>
-      {isPreviewMode ? (
-        <PreviewContainer
-          isDownloading={isDownloading}
-          setIsPreviewMode={setIsPreviewMode}
-          setShowColorSettings={setShowColorSettings}
-          showColorSettings={showColorSettings}
-          downloadRef={downloadRef}
-          handleDownload={handleDownload}
-          /* these keep PreviewContainer happy; its CSS has fallbacks anyway */
-          previewBgColor="#e0f0e5"
-          sectionFrameBgColor="#f8fff9"
-          h2FontColor="#000000"
-          pokemonNameColor="#000000"
-          onSelectPreset={() => {}}
-          activeTags={previewTags}
-          variants={variants}
-        />
-      ) : (
-        <>
+      <>
           {showPreviewButton && (
             <div className="tag-toggle-row">
               <button
                 className="tag-preview-toggle-button"
-                onClick={() => setIsPreviewMode(true)}
+                onClick={() => setIsTradeBoardOpen(true)}
               >
                 <img
                   src="/images/image-icon.png"
-                  alt="Image Icon"
+                  alt=""
+                  aria-hidden="true"
                   className="button-icon"
                 />
-                Preview Trade / Wanted Image
+                Create shareable Trade Board
               </button>
             </div>
           )}
@@ -503,8 +474,14 @@ const TagsMenu: React.FC<TagsMenuProps> = ({
               onDelete={handleDeleteCustomTag}
             />
           ) : null}
+          {isTradeBoardOpen ? (
+            <TradeBoardComposer
+              activeTags={previewTags}
+              onClose={() => setIsTradeBoardOpen(false)}
+              variants={variants}
+            />
+          ) : null}
         </>
-      )}
     </div>
   );
 };

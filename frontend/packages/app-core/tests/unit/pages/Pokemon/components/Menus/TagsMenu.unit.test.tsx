@@ -6,10 +6,6 @@ import TagsMenu from '@/pages/Pokemon/components/Menus/TagsMenu/TagsMenu';
 import type { TagBuckets, TagItem } from '@/types/tags';
 import { useTagsStore } from '@/features/tags/store/useTagsStore';
 
-vi.mock('@/pages/Pokemon/components/Menus/TagsMenu/hooks/useDownloadImage', () => ({
-  default: () => ({ isDownloading: false, downloadImage: vi.fn() }),
-}));
-
 const { confirmMock } = vi.hoisted(() => ({
   confirmMock: vi.fn().mockResolvedValue(true),
 }));
@@ -164,6 +160,38 @@ describe('TagsMenu', () => {
     expect(container.querySelector('[data-tag="Most Wanted"]')).toBeTruthy();
     expect(container.querySelector('[data-tag="Caught"]')).toBeNull();
     expect(container.querySelector('[data-tag="Trade"]')).toBeNull();
+  });
+
+  it('offers the shareable Trade Board only to an owner with listings', () => {
+    const activeTags: TagBuckets = {
+      caught: {
+        c1: makeItem({ instance_id: 'c1', is_caught: true, is_for_trade: true }),
+      },
+      wanted: {},
+    };
+
+    const { rerender } = render(
+      <TagsMenu
+        activeTags={activeTags}
+        isEditable
+        onSelectTag={vi.fn()}
+        panel="wishlist"
+        variants={[]}
+      />,
+    );
+
+    expect(screen.getByRole('button', { name: 'Create shareable Trade Board' })).toBeInTheDocument();
+
+    rerender(
+      <TagsMenu
+        activeTags={{ caught: {}, wanted: {} }}
+        isEditable
+        onSelectTag={vi.fn()}
+        panel="wishlist"
+        variants={[]}
+      />,
+    );
+    expect(screen.queryByRole('button', { name: 'Create shareable Trade Board' })).not.toBeInTheDocument();
   });
 
   it('does not repeat the active Pokemon filter over the tag overview', () => {

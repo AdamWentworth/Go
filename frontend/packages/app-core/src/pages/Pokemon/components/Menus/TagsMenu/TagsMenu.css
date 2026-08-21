@@ -20,13 +20,17 @@
 
 /* Preview Toggle Button */
 .tags-menu .tag-preview-toggle-button {
-  padding: 0.5rem 1rem;
-  font-size: 1rem;
+  min-height: 48px;
+  padding: 0.65rem 1rem;
+  border: 1px solid color-mix(in srgb, #36ca89 58%, transparent);
+  font-size: 0.9rem;
+  font-weight: 850;
   cursor: pointer;
-  border: none;
-  border-radius: 6px;
-  background: #555;
-  color: #fff;
+  border-radius: 12px;
+  background:
+    linear-gradient(110deg, rgba(54, 202, 137, 0.18), rgba(255, 95, 116, 0.12)),
+    color-mix(in srgb, var(--color-text-primary) 5%, transparent);
+  color: var(--color-text-primary);
   display: inline-flex;
   align-items: center;
 }
@@ -34,6 +38,11 @@
   width: 1.2rem;
   height: 1.2rem;
   margin-right: 0.5rem;
+}
+
+.tags-menu .tag-preview-toggle-button:focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--color-accent-primary) 38%, transparent);
+  outline-offset: 2px;
 }
 
 /* TAG TREE (single column) */
