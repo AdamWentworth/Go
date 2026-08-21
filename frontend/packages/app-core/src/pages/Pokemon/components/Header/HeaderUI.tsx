@@ -84,7 +84,7 @@ const HeaderUI: React.FC<HeaderUIProps> = ({
         </span>
 
         {haveTagsSubLabel && (
-          <span className={`toggle-text ${isHaveTagsActive ? 'active' : ''}`}>
+          <span className={`toggle-text toggle-subtext ${isHaveTagsActive ? 'active' : ''}`}>
             {haveTagsSubLabel}
           </span>
         )}
@@ -106,7 +106,7 @@ const HeaderUI: React.FC<HeaderUIProps> = ({
           WISHLIST
         </span>
         {wishlistSubLabel && (
-          <span className={`toggle-text ${isWishlistActive ? 'active' : ''}`}>
+          <span className={`toggle-text toggle-subtext ${isWishlistActive ? 'active' : ''}`}>
             {wishlistSubLabel}
           </span>
         )}

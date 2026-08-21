@@ -63,11 +63,35 @@ describe('pokemonPageHelpers', () => {
     expect(getHaveTagsSubLabel('ownership', 'Wanted')).toBeUndefined();
     expect(getHaveTagsSubLabel('pokedex', 'Caught')).toBeUndefined();
     expect(getHaveTagsSubLabel('ownership', '')).toBeUndefined();
+    expect(
+      getHaveTagsSubLabel('ownership', 'custom:shadow', {
+        name: 'Shadow Shinies',
+        parent: 'caught',
+      }),
+    ).toBe('(SHADOW SHINIES)');
+    expect(
+      getHaveTagsSubLabel('ownership', 'custom:raid', {
+        name: 'Raid targets',
+        parent: 'wanted',
+      }),
+    ).toBeUndefined();
 
     expect(getWishlistSubLabel('ownership', 'Wanted')).toBe('(WANTED)');
     expect(getWishlistSubLabel('ownership', 'Most Wanted')).toBe('(MOST WANTED)');
     expect(getWishlistSubLabel('ownership', 'Caught')).toBeUndefined();
     expect(getWishlistSubLabel('pokedex', 'Wanted')).toBeUndefined();
     expect(getWishlistSubLabel('ownership', '')).toBeUndefined();
+    expect(
+      getWishlistSubLabel('ownership', 'custom:raid', {
+        name: 'Raid targets',
+        parent: 'wanted',
+      }),
+    ).toBe('(RAID TARGETS)');
+    expect(
+      getWishlistSubLabel('ownership', 'custom:shadow', {
+        name: 'Shadow Shinies',
+        parent: 'caught',
+      }),
+    ).toBeUndefined();
   });
 });

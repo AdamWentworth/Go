@@ -8,6 +8,11 @@ const ACTIVE_VIEW_SEQUENCE: ActiveView[] = ['pokedex', 'pokemon', 'tags'];
 const HAVE_TAG_FILTERS = new Set(['Favorites', 'Trade', 'Caught']);
 const WISHLIST_TAG_FILTERS = new Set(['Most Wanted', 'Wanted']);
 
+type CustomTagHeader = {
+  name: string;
+  parent: string;
+};
+
 export const isActiveView = (value: string): value is ActiveView =>
   ACTIVE_VIEW_SEQUENCE.includes(value as ActiveView);
 
@@ -47,19 +52,32 @@ const getOwnershipSubLabel = (
   filters: Set<string>,
   lastMenu: LastMenu,
   tagFilter: string,
+  customTag: CustomTagHeader | null | undefined,
+  customParent: 'caught' | 'wanted',
 ): string | undefined => {
-  if (lastMenu !== 'ownership' || !tagFilter || !filters.has(tagFilter)) {
+  if (lastMenu !== 'ownership' || !tagFilter) {
     return undefined;
   }
-  return `(${tagFilter.toUpperCase()})`;
+
+  const label = filters.has(tagFilter)
+    ? tagFilter
+    : customTag?.parent === customParent
+      ? customTag.name
+      : null;
+
+  return label ? `(${label.toUpperCase()})` : undefined;
 };
 
 export const getHaveTagsSubLabel = (
   lastMenu: LastMenu,
   tagFilter: string,
-): string | undefined => getOwnershipSubLabel(HAVE_TAG_FILTERS, lastMenu, tagFilter);
+  customTag?: CustomTagHeader | null,
+): string | undefined =>
+  getOwnershipSubLabel(HAVE_TAG_FILTERS, lastMenu, tagFilter, customTag, 'caught');
 
 export const getWishlistSubLabel = (
   lastMenu: LastMenu,
   tagFilter: string,
-): string | undefined => getOwnershipSubLabel(WISHLIST_TAG_FILTERS, lastMenu, tagFilter);
+  customTag?: CustomTagHeader | null,
+): string | undefined =>
+  getOwnershipSubLabel(WISHLIST_TAG_FILTERS, lastMenu, tagFilter, customTag, 'wanted');

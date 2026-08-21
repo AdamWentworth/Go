@@ -12,6 +12,8 @@ import {
   getWishlistSubLabel,
 } from './utils/pokemonPageHelpers';
 import usePokemonPageController from './hooks/usePokemonPageController';
+import { useTagsStore } from '@/features/tags/store/useTagsStore';
+import { fromCustomTagFilter } from '@/features/tags/utils/customTagSelectors';
 
 interface PokemonProps {
   isOwnCollection: boolean;
@@ -28,6 +30,13 @@ function Pokemon({ isOwnCollection }: PokemonProps) {
     urlUsername,
     location,
     navigate,
+  });
+  const activeCustomTagId = fromCustomTagFilter(controller.sidePanelTagFilter);
+  const activeCustomTag = useTagsStore((state) => {
+    if (!activeCustomTagId) return null;
+    return state.customTags.caught[activeCustomTagId]?.tag
+      ?? state.customTags.wanted[activeCustomTagId]?.tag
+      ?? null;
   });
 
   if (controller.isPageLoading) {
@@ -54,8 +63,13 @@ function Pokemon({ isOwnCollection }: PokemonProps) {
         haveTagsSubLabel={getHaveTagsSubLabel(
           controller.lastMenu,
           controller.sidePanelTagFilter,
+          activeCustomTag,
         )}
-        wishlistSubLabel={getWishlistSubLabel(controller.lastMenu, controller.sidePanelTagFilter)}
+        wishlistSubLabel={getWishlistSubLabel(
+          controller.lastMenu,
+          controller.sidePanelTagFilter,
+          activeCustomTag,
+        )}
       />
 
       <PokemonViewSlider
