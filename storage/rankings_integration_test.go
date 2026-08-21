@@ -34,6 +34,8 @@ func TestRankingsAggregationCountsDistinctUsers(t *testing.T) {
 			is_wanted BOOLEAN NOT NULL DEFAULT FALSE,
 			most_wanted BOOLEAN NOT NULL DEFAULT FALSE,
 			is_caught BOOLEAN NOT NULL DEFAULT FALSE,
+			favorite BOOLEAN NOT NULL DEFAULT FALSE,
+			is_for_trade BOOLEAN NOT NULL DEFAULT FALSE,
 			registered BOOLEAN NOT NULL DEFAULT FALSE,
 			disabled BOOLEAN NOT NULL DEFAULT FALSE
 		) ENGINE=InnoDB`,
