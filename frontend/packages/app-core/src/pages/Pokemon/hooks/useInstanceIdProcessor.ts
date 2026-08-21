@@ -23,6 +23,7 @@ interface LocationState {
 interface AppLocation {
   state?: LocationState;
   pathname: string;
+  search?: string;
 }
 
 export type PokemonOverlaySelection =
@@ -66,10 +67,17 @@ export default function useInstanceIdProcessor({
   isOwnCollection,
 }: UseInstanceIdProcessorProps): void {
   const [retryCounter, setRetryCounter] = useState(0);
+  const [pendingSelection, setPendingSelection] = useState<PokemonVariant | null>(null);
 
   // 🔎  Pull loader state straight from the stores (no prop‑drilling)
   const { foreignInstancesLoading, viewedInstances } = useUserSearchStore.getState();
   const searchInstances = viewedInstances;
+
+  useEffect(() => {
+    if (!pendingSelection || location.state?.instanceId || selectedPokemon) return;
+    setSelectedPokemon({ pokemon: pendingSelection, overlayType: 'instance' });
+    setPendingSelection(null);
+  }, [location.state?.instanceId, pendingSelection, selectedPokemon, setSelectedPokemon]);
 
   useEffect(() => {
     if (variantsLoading || foreignInstancesLoading) return;
@@ -110,16 +118,16 @@ export default function useInstanceIdProcessor({
     /* 3) Open overlay if we found something                          */
     /* -------------------------------------------------------------- */
     if (combined) {
-      setSelectedPokemon({ pokemon: combined, overlayType: 'instance' });
       setHasProcessedInstanceId(true);
+      setPendingSelection(combined);
 
-      // Clean the param to avoid reopening on navigation/back‑button
-      setTimeout(() => {
-        void navigate(location.pathname, {
-          replace: true,
-          state: { ...location.state, instanceId: null },
-        });
-      }, 100);
+      // Commit the one-shot deep-link cleanup before mounting the overlay.
+      // Otherwise the replace can erase the overlay's browser-Back guard and
+      // leave a duplicate catalog entry behind in history.
+      void navigate(`${location.pathname}${location.search ?? ''}`, {
+        replace: true,
+        state: { ...location.state, instanceId: null },
+      });
     } else {
       // Still missing — try again shortly (rare race condition)
       setTimeout(() => setRetryCounter(c => c + 1), 500);

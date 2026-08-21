@@ -175,14 +175,36 @@ export function ContextBackProvider({ children }: { children: ReactNode }) {
 
     if (!guardArmedRef.current) return;
     const activeGuard = getGuardState(window.history.state);
-    if (
-      guardedUrlRef.current !== locationUrl ||
-      activeGuard?.token !== guardTokenRef.current
-    ) {
+    if (guardedUrlRef.current !== locationUrl) {
       guardArmedRef.current = false;
       guardedUrlRef.current = null;
+      return;
     }
-  }, [location]);
+
+    if (activeGuard?.token === guardTokenRef.current) return;
+
+    // BrowserRouter may publish the underlying same-URL entry before our
+    // popstate listener gets its turn. Defer guard recovery so that Back can
+    // close the active layer first; if a replaceState genuinely removed the
+    // guard, restore it after the event dispatch instead.
+    const expectedToken = guardTokenRef.current;
+    window.setTimeout(() => {
+      if (
+        !guardArmedRef.current ||
+        guardTokenRef.current !== expectedToken ||
+        guardedUrlRef.current !== currentUrlRef.current
+      ) {
+        return;
+      }
+
+      const currentGuard = getGuardState(window.history.state);
+      if (currentGuard?.token === expectedToken) return;
+
+      guardArmedRef.current = false;
+      guardedUrlRef.current = null;
+      scheduleGuardSync();
+    }, 0);
+  }, [location, scheduleGuardSync]);
 
   useEffect(() => {
     syncGuard();
