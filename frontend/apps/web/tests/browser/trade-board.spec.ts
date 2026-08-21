@@ -107,7 +107,7 @@ test.describe('shareable Trade Board', () => {
     expect(diagnostics.blockingErrors().filter((event) => !(
       event.kind === 'console'
       && event.text.includes('403 (Forbidden)')
-      && event.location.url.includes('/api/users/')
+      && /\/(?:api|__e2e)\/users\//.test(event.location.url)
     ))).toEqual([]);
   });
 

@@ -44,7 +44,7 @@
     "test:file": "cd ../../packages/app-core && cross-env NODE_OPTIONS=--max-old-space-size=4096 vitest run --config ../../apps/web/vite.config.mjs",
     "test:browsers": "node scripts/run-playwright-clean-env.mjs test",
     "test:browsers:ci": "node scripts/run-playwright-clean-env.mjs test --reporter=list",
-    "test:browsers:safari": "node scripts/run-playwright-clean-env.mjs test --project=webkit-desktop --project=mobile-safari",
+    "test:browsers:safari": "node scripts/run-playwright-clean-env.mjs test --project=webkit-desktop --project=mobile-safari --workers=2",
     "test:browsers:headed": "node scripts/run-playwright-clean-env.mjs test --headed",
     "test:browsers:debug": "node scripts/run-playwright-clean-env.mjs test --debug",
     "test:browsers:report": "playwright show-report .artifacts/browser/html-report",
