@@ -1,6 +1,6 @@
 ﻿# Authentication Service (Node.js) 🔒
 
-Authentication API for PokeGo Nexus.
+Authentication API for Pokémon Go Nexus.
 
 ## 📌 Overview
 
@@ -85,7 +85,7 @@ sessions may use the production HTTPS auth callback; the signed OAuth state
 returns them only to an allow-listed frontend origin.
 
 OAuth providers supply a verified account email. New users still choose a
-PokeGoNexus username and may add trainer/location details, but they do not
+Pokémon Go Nexus username and may add trainer/location details, but they do not
 create a password. Registration rejects a verified provider email already owned
 by an account. Login with a verified matching email authenticates that same
 account and records the provider identity.
