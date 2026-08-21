@@ -10,6 +10,7 @@ import React, {
   useState,
 } from 'react';
 import { FaGripVertical } from 'react-icons/fa';
+import CollectionPriorityStar from '@/components/pokemonComponents/CollectionPriorityStar';
 import type { TagItem } from '@/types/tags';
 import './TagItems.css';
 
@@ -400,11 +401,10 @@ const TagItems: React.FC<TagItemsProps> = ({
               {summary.count} Pokémon have this tag.
             </span>
             {tagName === 'Favorites' && !reorderMode && (
-              <img
-                src="/images/fav_pressed.png"
-                alt=""
+              <CollectionPriorityStar
+                filled
+                tone="favorite"
                 className="tag-footer-icon"
-                draggable={false}
               />
             )}
             {metadata?.isCustom && onEditTag && !reorderMode ? (

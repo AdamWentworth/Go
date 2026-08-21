@@ -1,4 +1,5 @@
 import React from 'react';
+import CollectionPriorityStar from '@/components/pokemonComponents/CollectionPriorityStar';
 import './MostWantedToggle.css';
 
 interface MostWantedToggleProps {
@@ -24,7 +25,11 @@ const MostWantedToggle: React.FC<MostWantedToggleProps> = ({
       title={editMode ? actionLabel : active ? 'Most Wanted' : 'Edit this listing to mark it Most Wanted'}
       onClick={() => onChange(!active)}
     >
-      <span className="most-wanted-toggle__star" aria-hidden="true" />
+      <CollectionPriorityStar
+        className="most-wanted-toggle__star"
+        filled={active}
+        tone={active ? 'most-wanted' : 'inherit'}
+      />
       <span className="most-wanted-toggle__label">Most Wanted</span>
     </button>
   );

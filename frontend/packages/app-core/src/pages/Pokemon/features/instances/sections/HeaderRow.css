@@ -47,7 +47,7 @@
   height: 40px;
 }
 
-.top-row .favorite-component img {
+.top-row .favorite-component .collection-priority-star {
   width: 44px;
   height: 44px;
 }

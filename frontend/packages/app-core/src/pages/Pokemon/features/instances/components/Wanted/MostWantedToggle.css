@@ -40,9 +40,7 @@
   width: 24px;
   height: 24px;
   flex: 0 0 24px;
-  background: var(--most-wanted-star);
-  -webkit-mask: url('/images/fav_unpressed.png') center / contain no-repeat;
-  mask: url('/images/fav_unpressed.png') center / contain no-repeat;
+  color: var(--most-wanted-star);
 }
 
 .most-wanted-toggle.is-active {
@@ -50,12 +48,6 @@
   border-color: color-mix(in srgb, var(--most-wanted-star) 52%, transparent);
   background: color-mix(in srgb, var(--most-wanted-star) 13%, transparent);
   color: var(--most-wanted-star);
-}
-
-.most-wanted-toggle.is-active .most-wanted-toggle__star {
-  -webkit-mask-image: url('/images/fav_pressed.png');
-  mask-image: url('/images/fav_pressed.png');
-  filter: drop-shadow(0 0 4px color-mix(in srgb, var(--most-wanted-star) 42%, transparent));
 }
 
 @media (max-width: 370px) {

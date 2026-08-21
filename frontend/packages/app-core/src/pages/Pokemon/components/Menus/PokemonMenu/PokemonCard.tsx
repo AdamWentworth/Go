@@ -1,6 +1,7 @@
 // PokemonCard.tsx
 import { useEffect, useState, memo, useRef, useMemo } from 'react';
 import CP from '@/components/pokemonComponents/CP';
+import CollectionPriorityStar from '@/components/pokemonComponents/CollectionPriorityStar';
 import PokemonImagePresentation from './PokemonImagePresentation';
 import './PokemonCard.css';
 import { usePokemonCardTouchHandlers } from './hooks/usePokemonCardTouchHandlers';
@@ -280,19 +281,19 @@ const PokemonCard = memo(({
 
       <div className="fav-container">
         {!isWantedListing && pokemon.instanceData?.favorite && (
-          <img
-            src="/images/fav_pressed.png"
-            alt="Favorite"
+          <CollectionPriorityStar
+            filled
+            label="Favorite"
+            tone="favorite"
             className="favorite-icon"
-            draggable={false}
           />
         )}
         {isWantedListing && pokemon.instanceData?.most_wanted ? (
-          <span
+          <CollectionPriorityStar
+            filled
             className="favorite-icon most-wanted-icon"
-            role="img"
-            aria-label="Most Wanted"
-            title="Most Wanted"
+            label="Most Wanted"
+            tone="most-wanted"
           />
         ) : null}
       </div>

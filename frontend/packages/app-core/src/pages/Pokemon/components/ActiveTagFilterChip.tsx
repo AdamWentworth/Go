@@ -1,5 +1,6 @@
 import React, { useCallback } from 'react';
 
+import CollectionPriorityStar from '@/components/pokemonComponents/CollectionPriorityStar';
 import { useModal } from '@/contexts/ModalContext';
 import { useTagsStore } from '@/features/tags/store/useTagsStore';
 import { fromCustomTagFilter } from '@/features/tags/utils/customTagSelectors';
@@ -67,12 +68,10 @@ const ActiveTagFilterChip: React.FC<ActiveTagFilterChipProps> = ({
       }
     >
       {isFavoritesFilter && (
-        <img
-          src="/images/fav_pressed.png"
-          alt=""
+        <CollectionPriorityStar
+          filled
+          tone="favorite"
           className="active-tag-filter-icon"
-          aria-hidden
-          draggable={false}
         />
       )}
       <span className="active-tag-filter-name">{displayName}</span>

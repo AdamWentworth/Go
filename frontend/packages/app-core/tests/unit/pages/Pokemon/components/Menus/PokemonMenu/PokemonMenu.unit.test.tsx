@@ -150,9 +150,8 @@ describe('PokemonMenu', () => {
     const chip = screen.getByText('Favorites').closest('.active-tag-filter-row');
     expect(chip).toHaveClass('active-tag-filter-favorites');
     expect(chip).toHaveClass('active-tag-filter-with-icon');
-    expect(chip?.querySelector('.active-tag-filter-icon')).toHaveAttribute(
-      'src',
-      '/images/fav_pressed.png',
+    expect(chip?.querySelector('.active-tag-filter-icon')).toHaveClass(
+      'collection-priority-star--favorite',
     );
   });
 
