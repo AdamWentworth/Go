@@ -6,12 +6,80 @@ const instanceOverlayCssPath = path.resolve(
   process.cwd(),
   '../../packages/app-core/src/pages/Pokemon/features/instances/InstanceOverlay.css',
 );
+const overlayPortalCssPath = path.resolve(
+  process.cwd(),
+  '../../packages/app-core/src/components/OverlayPortal.css',
+);
 const backgroundLocationOverlayCssPath = path.resolve(
   process.cwd(),
   '../../packages/app-core/src/components/pokemonComponents/BackgroundLocationOverlay.css',
 );
 
 test.describe('instance overlay layout', () => {
+  test('keeps the full-bleed background fixed while caught content scrolls', async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.setContent(`
+      <!doctype html>
+      <html>
+        <head>
+          <style>
+            html,
+            body {
+              margin: 0;
+            }
+
+            .fixture-content {
+              height: 1800px;
+            }
+          </style>
+        </head>
+        <body>
+          <div class="instance-overlay caught-mode" data-overlay-motion="entered">
+            <div class="io-bg"></div>
+            <div class="fixture-content">Tall caught overlay</div>
+          </div>
+        </body>
+      </html>
+    `);
+    await page.addStyleTag({ path: instanceOverlayCssPath });
+    await page.addStyleTag({ path: overlayPortalCssPath });
+
+    const overlay = page.locator('.instance-overlay');
+    const background = page.locator('.io-bg');
+    await overlay.evaluate((element) => {
+      element.scrollTop = 650;
+    });
+
+    const metrics = await page.evaluate(() => {
+      const overlayElement = document.querySelector('.instance-overlay');
+      const backgroundElement = document.querySelector('.io-bg');
+      if (!overlayElement || !backgroundElement) {
+        throw new Error('Overlay background fixture did not render');
+      }
+
+      const bounds = backgroundElement.getBoundingClientRect();
+      return {
+        backgroundBottom: bounds.bottom,
+        backgroundTop: bounds.top,
+        backgroundPosition: window.getComputedStyle(backgroundElement).position,
+        overlayScrollTop: overlayElement.scrollTop,
+        viewportHeight: window.innerHeight,
+      };
+    });
+
+    expect(metrics.overlayScrollTop).toBeGreaterThan(0);
+    expect(metrics.backgroundPosition).toBe('fixed');
+    expect(metrics.backgroundTop).toBe(0);
+    expect(metrics.backgroundBottom).toBe(metrics.viewportHeight);
+
+    await page.emulateMedia({ reducedMotion: 'reduce' });
+    const reducedMotionBounds = await background.boundingBox();
+    expect(reducedMotionBounds?.y).toBe(0);
+    expect(reducedMotionBounds?.height).toBe(metrics.viewportHeight);
+  });
+
   test('caught panel background follows short content instead of stretching to viewport height', async ({
     page,
   }) => {

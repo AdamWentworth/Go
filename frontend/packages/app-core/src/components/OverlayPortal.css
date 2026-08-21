@@ -16,7 +16,13 @@
 }
 
 [data-overlay-motion='entered'] {
-  translate: 0 0;
+  /*
+   * Release the animation containing block after entry. Leaving either a
+   * zero translate or will-change active makes fixed descendants scroll with
+   * long overlays instead of remaining fixed to the viewport.
+   */
+  translate: none;
+  will-change: auto;
 }
 
 [data-overlay-motion='exiting'] {
@@ -26,11 +32,15 @@
 @media (prefers-reduced-motion: reduce) {
   [data-overlay-motion] {
     transition-duration: 1ms;
-    translate: 0 0;
   }
 
   [data-overlay-motion='entering'],
   [data-overlay-motion='exiting'] {
+    translate: 0 0;
     opacity: 1;
+  }
+
+  [data-overlay-motion='entered'] {
+    translate: none;
   }
 }
