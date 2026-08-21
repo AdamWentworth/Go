@@ -103,6 +103,13 @@ export const useTradeStore = create<TradeStoreState>()(
     async setRelatedInstances(newInstancesObj) {
       if (!newInstancesObj) return;
 
+      // Related Pokemon from a command or event are authoritative too. Make
+      // them visible before touching the optional IndexedDB cache so a local
+      // persistence failure cannot leave the confirmed trade UI stale.
+      set((state) => ({
+        relatedInstances: { ...state.relatedInstances, ...newInstancesObj },
+      }));
+
       const rowsToPersist = Object.entries(newInstancesObj).map(
         ([instanceId, instance]) => ({
           ...instance,
@@ -110,11 +117,14 @@ export const useTradeStore = create<TradeStoreState>()(
         }),
       );
 
-      await setTradesinDB(RELATED_INSTANCES_STORE, rowsToPersist);
-
-      set((state) => ({
-        relatedInstances: { ...state.relatedInstances, ...newInstancesObj },
-      }));
+      try {
+        await setTradesinDB(RELATED_INSTANCES_STORE, rowsToPersist);
+      } catch (error) {
+        log.warn(
+          'Related Pokemon cache persistence failed; keeping authoritative in-memory state:',
+          error,
+        );
+      }
 
       return newInstancesObj;
     },

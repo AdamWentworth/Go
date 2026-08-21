@@ -368,6 +368,7 @@ export async function installE2eRoutes(page: Page, options: E2eRouteOptions = {}
   }
 
   await page.addInitScript(() => {
+    const eventSources = new Set<MockEventSource>();
     class MockEventSource extends EventTarget {
       static readonly CONNECTING = 0;
       static readonly OPEN = 1;
@@ -386,6 +387,7 @@ export async function installE2eRoutes(page: Page, options: E2eRouteOptions = {}
       constructor(url: string | URL) {
         super();
         this.url = String(url);
+        eventSources.add(this);
         queueMicrotask(() => {
           if (this.readyState === MockEventSource.CLOSED) return;
           this.readyState = MockEventSource.OPEN;
@@ -397,10 +399,27 @@ export async function installE2eRoutes(page: Page, options: E2eRouteOptions = {}
 
       close() {
         this.readyState = MockEventSource.CLOSED;
+        eventSources.delete(this);
       }
     }
 
     window.EventSource = MockEventSource as typeof EventSource;
+    Object.assign(window, {
+      __emitE2eEventSourceMessage: (payload: unknown) => {
+        const event = new MessageEvent('message', { data: JSON.stringify(payload) });
+        let delivered = 0;
+        eventSources.forEach((source) => {
+          if (source.readyState !== MockEventSource.OPEN) return;
+          source.dispatchEvent(event);
+          source.onmessage?.(event);
+          if (source.onmessage) delivered += 1;
+        });
+        return delivered;
+      },
+      __e2eEventSourceCount: () => Array.from(eventSources).filter(
+        (source) => source.readyState === MockEventSource.OPEN,
+      ).length,
+    });
   });
 
   await page.route('**/api/pokemon/pokemons', async (route) => {

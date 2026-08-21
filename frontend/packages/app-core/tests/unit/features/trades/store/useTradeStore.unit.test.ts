@@ -68,4 +68,28 @@ describe('useTradeStore authoritative reconciliation', () => {
 
     expect(useTradeStore.getState().trades).not.toHaveProperty('trade-1');
   });
+
+  it('shows canonical related Pokemon immediately without waiting for IndexedDB', async () => {
+    const pendingWrite = new Promise<void>(() => {});
+    dbMocks.setTradesinDB.mockReturnValue(pendingWrite);
+
+    const update = useTradeStore.getState().setRelatedInstances({
+      'instance-1': { instance_id: 'instance-1', pokemon_id: 25 },
+    });
+
+    expect(useTradeStore.getState().relatedInstances['instance-1']?.pokemon_id).toBe(25);
+    void update;
+  });
+
+  it('keeps canonical related Pokemon when IndexedDB persistence fails', async () => {
+    dbMocks.setTradesinDB.mockRejectedValue(new Error('IndexedDB unavailable'));
+
+    await expect(
+      useTradeStore.getState().setRelatedInstances({
+        'instance-2': { instance_id: 'instance-2', pokemon_id: 133 },
+      }),
+    ).resolves.toBeDefined();
+
+    expect(useTradeStore.getState().relatedInstances['instance-2']?.pokemon_id).toBe(133);
+  });
 });
