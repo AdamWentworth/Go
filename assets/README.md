@@ -17,6 +17,7 @@ The canonical application branding lives in `assets/images/logo`:
 - `logo.png` - optimized transparent mark used by the web application.
 - `wordmark.png` - transparent standalone wordmark.
 - `lockup.png` - transparent horizontal mark-and-wordmark lockup.
+- `hero-lockup.png` - integrated transparent lockup used as the Home hero signature.
 - `email-lockup.png` - compact lockup for transactional email templates.
 - `social-card.png` - 1200×630 Open Graph/Twitter sharing image.
 

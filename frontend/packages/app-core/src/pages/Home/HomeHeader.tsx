@@ -7,10 +7,11 @@ import './HomeHeader.css';
 
 interface HomeHeaderProps {
   logoUrl: string;
+  lockupUrl: string;
   isLoggedIn: boolean;
 }
 
-const HomeHeader = ({ logoUrl, isLoggedIn }: HomeHeaderProps) => {
+const HomeHeader = ({ logoUrl, lockupUrl, isLoggedIn }: HomeHeaderProps) => {
   const handleExploreFeatures = (event: React.MouseEvent<HTMLAnchorElement>) => {
     event.preventDefault();
     const directory = document.getElementById('feature-directory');
@@ -44,7 +45,7 @@ const HomeHeader = ({ logoUrl, isLoggedIn }: HomeHeaderProps) => {
         <div className="homeHeader__copy">
           <img
             className="homeHeader__hero-logo"
-            src={logoUrl}
+            src={lockupUrl}
             alt="PokeGo Nexus"
             onContextMenu={(event) => event.preventDefault()}
           />

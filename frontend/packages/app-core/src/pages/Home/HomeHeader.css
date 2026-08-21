@@ -73,9 +73,9 @@
 }
 
 .homeHeader__hero-logo {
-  width: clamp(104px, 11vw, 142px);
-  height: clamp(104px, 11vw, 142px);
-  margin-bottom: 14px;
+  width: clamp(360px, 42vw, 520px);
+  height: auto;
+  margin-bottom: 16px;
   object-fit: contain;
   filter:
     drop-shadow(0 16px 24px rgba(0, 0, 0, 0.34))
@@ -267,7 +267,7 @@
   .homeHeader__nav-links > a:first-child { display: none; }
   .homeHeader__nav-links > a { min-height: 40px; padding-inline: 11px; font-size: 0.74rem; }
   .homeHeader__hero { gap: 34px; padding: 32px 0 58px; }
-  .homeHeader__hero-logo { width: 106px; height: 106px; margin-bottom: 10px; }
+  .homeHeader__hero-logo { width: min(350px, 94vw); margin-bottom: 12px; }
   .homeHeader__copy h1 { font-size: clamp(2.75rem, 14vw, 4.1rem); }
   .homeHeader__copy > p { font-size: 0.92rem; line-height: 1.5; }
   .homeHeader__actions { flex-direction: column; }

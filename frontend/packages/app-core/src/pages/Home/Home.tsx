@@ -27,7 +27,11 @@ const Home = () => {
 
   return (
     <div className="home-page home-page--guest">
-      <HomeHeader logoUrl="/images/logo/logo.png" isLoggedIn={false} />
+      <HomeHeader
+        logoUrl="/images/logo/logo.png"
+        lockupUrl="/images/logo/hero-lockup.png"
+        isLoggedIn={false}
+      />
       <HowItWorks />
       <HomeFooter />
     </div>
