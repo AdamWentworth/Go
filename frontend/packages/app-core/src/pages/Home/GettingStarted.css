@@ -93,6 +93,19 @@
   line-height: 1.58;
 }
 
+.getting-started__hero > .getting-started__story-note {
+  width: fit-content;
+  max-width: 720px;
+  margin-top: 17px;
+  padding: 9px 13px;
+  border: 1px solid color-mix(in srgb, var(--home-green) 34%, var(--home-border));
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--home-green) 7%, transparent);
+  font-size: 0.74rem;
+}
+
+.getting-started__story-note strong { color: var(--home-green); }
+
 .getting-started__legend {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -194,14 +207,41 @@
   color: color-mix(in srgb, var(--home-green) 74%, var(--color-text-primary));
 }
 
-.getting-started__step-visual > img {
+.getting-started__story-pokemon {
   position: absolute;
-  right: 10%;
-  bottom: 8%;
-  width: min(150px, 48%);
-  height: 150px;
+  right: 4%;
+  bottom: 9%;
+  left: 4%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.getting-started__story-pokemon img {
+  width: min(154px, 52%);
+  height: 154px;
   object-fit: contain;
   filter: drop-shadow(0 16px 18px rgba(0, 0, 0, 0.28));
+}
+
+.getting-started__step-visual.has-pair .getting-started__story-pokemon img {
+  width: min(124px, 45%);
+  height: 124px;
+  margin-inline: -10px;
+}
+
+.getting-started__step-visual > small {
+  position: absolute;
+  right: 12px;
+  bottom: 10px;
+  left: 12px;
+  overflow: hidden;
+  color: var(--color-text-secondary);
+  font-size: 0.62rem;
+  font-weight: 800;
+  text-align: center;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .getting-started__step-copy {
@@ -296,7 +336,9 @@
   .getting-started__step-visual { min-height: 178px; }
   .getting-started__step-visual > span { font-size: 2.8rem; }
   .getting-started__step-visual > svg { width: 58px; height: 58px; }
-  .getting-started__step-visual > img { width: 110px; height: 110px; }
+  .getting-started__story-pokemon { bottom: 6%; }
+  .getting-started__story-pokemon img { width: 118px; height: 118px; }
+  .getting-started__step-visual.has-pair .getting-started__story-pokemon img { width: 98px; height: 98px; }
   .getting-started__step-copy { padding: 22px 17px 24px; }
   .getting-started__finish { grid-template-columns: 1fr; justify-items: center; text-align: center; }
   .getting-started__finish > a { grid-column: auto; width: 100%; }

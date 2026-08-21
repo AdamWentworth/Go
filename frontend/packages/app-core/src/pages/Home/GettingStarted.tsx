@@ -23,7 +23,8 @@ interface GuideStep {
   action: string;
   to: string;
   icon: IconType;
-  image: string;
+  images: string[];
+  visualLabel: string;
   tone: 'caught' | 'wanted' | 'trade' | 'search' | 'proposal' | 'share';
 }
 
@@ -41,7 +42,8 @@ const GUIDE_STEPS: GuideStep[] = [
     action: 'Open Pokémon',
     to: '/pokemon',
     icon: FaTags,
-    image: '/images/default/pokemon_1.png',
+    images: ['/images/shiny_gigantamax/shiny_gigantamax_6.png'],
+    visualLabel: 'Shiny Gigantamax Charizard',
     tone: 'caught',
   },
   {
@@ -57,7 +59,8 @@ const GUIDE_STEPS: GuideStep[] = [
     action: 'Build your wishlist',
     to: '/pokemon?filter=wanted',
     icon: FaHeart,
-    image: '/images/default/pokemon_25.png',
+    images: ['/images/costumes_shiny/pokemon_25_detective_shiny.png'],
+    visualLabel: 'Shiny Detective Pikachu',
     tone: 'wanted',
   },
   {
@@ -73,7 +76,8 @@ const GUIDE_STEPS: GuideStep[] = [
     action: 'Open trade preferences',
     to: '/trades?section=preferences',
     icon: FaExchangeAlt,
-    image: '/images/default/pokemon_6.png',
+    images: ['/images/shiny_gigantamax/shiny_gigantamax_6.png'],
+    visualLabel: 'Your Shiny Gigantamax Charizard',
     tone: 'trade',
   },
   {
@@ -89,7 +93,8 @@ const GUIDE_STEPS: GuideStep[] = [
     action: 'Explore search',
     to: '/search',
     icon: FaSearch,
-    image: '/images/default/pokemon_133.png',
+    images: ['/images/costumes_shiny/pokemon_25_detective_shiny.png'],
+    visualLabel: 'Find a trainer offering this Pikachu',
     tone: 'search',
   },
   {
@@ -105,7 +110,11 @@ const GUIDE_STEPS: GuideStep[] = [
     action: 'View trade activity',
     to: '/trades?section=activity',
     icon: FaCheck,
-    image: '/images/default/pokemon_150.png',
+    images: [
+      '/images/shiny_gigantamax/shiny_gigantamax_6.png',
+      '/images/costumes_shiny/pokemon_25_detective_shiny.png',
+    ],
+    visualLabel: 'Charizard ↔ Detective Pikachu',
     tone: 'proposal',
   },
   {
@@ -121,7 +130,11 @@ const GUIDE_STEPS: GuideStep[] = [
     action: 'Create a Trade Board',
     to: '/trade-board',
     icon: FaShareAlt,
-    image: '/images/default/pokemon_448.png',
+    images: [
+      '/images/shiny_gigantamax/shiny_gigantamax_6.png',
+      '/images/costumes_shiny/pokemon_25_detective_shiny.png',
+    ],
+    visualLabel: 'One board, both listings',
     tone: 'share',
   },
 ];
@@ -157,10 +170,11 @@ const GettingStarted = () => (
             This guide follows the same order you will use in the app. Read it straight through,
             or jump directly to the part of the workflow you need.
           </p>
+          <p className="getting-started__story-note"><strong>Running example:</strong> offer a Shiny Gigantamax Charizard for a Shiny Detective Pikachu.</p>
           <div className="getting-started__legend">
-            <span><i className="is-caught"><img src="/images/default/pokemon_1.png" alt="" /><FaCheck aria-hidden="true" /></i><strong>Caught</strong> You own it</span>
-            <span><i className="is-trade"><img src="/images/default/pokemon_6.png" alt="" /><FaExchangeAlt aria-hidden="true" /></i><strong>For Trade</strong> You offer it</span>
-            <span><i className="is-wanted"><img src="/images/default/pokemon_25.png" alt="" /><FaHeart aria-hidden="true" /></i><strong>Wanted</strong> You seek it</span>
+            <span><i className="is-caught"><img src="/images/shiny_gigantamax/shiny_gigantamax_6.png" alt="" /><FaCheck aria-hidden="true" /></i><strong>Caught</strong> You own it</span>
+            <span><i className="is-trade"><img src="/images/shiny_gigantamax/shiny_gigantamax_6.png" alt="" /><FaExchangeAlt aria-hidden="true" /></i><strong>For Trade</strong> You offer it</span>
+            <span><i className="is-wanted"><img src="/images/costumes_shiny/pokemon_25_detective_shiny.png" alt="" /><FaHeart aria-hidden="true" /></i><strong>Wanted</strong> You seek it</span>
           </div>
         </section>
 
@@ -169,10 +183,13 @@ const GettingStarted = () => (
             const Icon = step.icon;
             return (
               <article id={step.id} key={step.id} className={`getting-started__step is-${step.tone}`}>
-                <div className="getting-started__step-visual" aria-hidden="true">
+                <div className={`getting-started__step-visual ${step.images.length > 1 ? 'has-pair' : ''}`} aria-hidden="true">
                   <span>{step.number}</span>
                   <Icon />
-                  <img src={step.image} alt="" />
+                  <div className="getting-started__story-pokemon">
+                    {step.images.map((image, index) => <img key={`${image}-${index}`} src={image} alt="" />)}
+                  </div>
+                  <small>{step.visualLabel}</small>
                 </div>
                 <div className="getting-started__step-copy">
                   <span className="home-eyebrow">Step {step.number}</span>

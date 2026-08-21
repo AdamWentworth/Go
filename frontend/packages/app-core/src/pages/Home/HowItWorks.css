@@ -28,6 +28,20 @@
   line-height: 1.55;
 }
 
+.howItWorks__intro > .howItWorks__story-note {
+  width: fit-content;
+  max-width: 720px;
+  margin: 16px auto 0;
+  padding: 9px 13px;
+  border: 1px solid color-mix(in srgb, var(--home-green) 34%, var(--home-border));
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--home-green) 7%, transparent);
+  color: var(--color-text-secondary);
+  font-size: 0.74rem;
+}
+
+.howItWorks__story-note strong { color: var(--home-green); }
+
 .howItWorks__concepts {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -151,11 +165,38 @@
 .howItWorks__steps article.is-trade .howItWorks__step-art,
 .howItWorks__steps article.is-proposal .howItWorks__step-art { background: radial-gradient(circle, color-mix(in srgb, var(--home-green) 20%, transparent), transparent 68%), color-mix(in srgb, var(--color-app-surface) 72%, transparent); }
 
-.howItWorks__step-art img {
-  width: 132px;
-  height: 132px;
+.howItWorks__story-pokemon {
+  display: flex;
+  height: 124px;
+  align-items: center;
+  justify-content: center;
+}
+
+.howItWorks__story-pokemon img {
+  width: 126px;
+  height: 126px;
   object-fit: contain;
   filter: drop-shadow(0 12px 14px rgba(0, 0, 0, 0.3));
+}
+
+.howItWorks__step-art.has-pair .howItWorks__story-pokemon img {
+  width: 104px;
+  height: 104px;
+  margin-inline: -8px;
+}
+
+.howItWorks__step-art > small {
+  position: absolute;
+  right: 10px;
+  bottom: 7px;
+  left: 10px;
+  overflow: hidden;
+  color: var(--color-text-secondary);
+  font-size: 0.62rem;
+  font-weight: 800;
+  text-align: center;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .howItWorks__step-art svg {

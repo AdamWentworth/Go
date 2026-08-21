@@ -87,6 +87,9 @@ test.describe('Home page', () => {
         Math.abs(element.getBoundingClientRect().top))).toBeLessThan(30);
       await expect(page).toHaveURL(/#start-here$/);
       await expect(page.getByRole('heading', { name: 'Follow one Pokémon through the app' })).toBeVisible();
+      await expect(page.getByText(/offering a Shiny Gigantamax Charizard/i)).toBeVisible();
+      await expect(page.locator('.howItWorks__steps img[src*="shiny_gigantamax_6"]').first()).toBeVisible();
+      await expect(page.locator('.howItWorks__steps img[src*="pokemon_25_detective_shiny"]').first()).toBeVisible();
       await expect(page.getByRole('heading', { name: 'Share when useful' })).toBeVisible();
       await expect(page.getByRole('link', { name: /open the full guide/i })).toBeVisible();
 
@@ -115,6 +118,7 @@ test.describe('Home page', () => {
     try {
       await page.goto('/getting-started', { waitUntil: 'domcontentloaded' });
       await expect(page.getByRole('heading', { name: 'Your first useful trade, step by step.' })).toBeVisible();
+      await expect(page.getByText(/offer a Shiny Gigantamax Charizard/i)).toBeVisible();
       await expect(page.getByRole('heading', { name: 'Start your collection' })).toBeVisible();
       await expect(page.getByRole('heading', { name: 'Review and propose' })).toBeVisible();
       await expect(page.getByRole('link', { name: /create a trade board/i })).toBeVisible();

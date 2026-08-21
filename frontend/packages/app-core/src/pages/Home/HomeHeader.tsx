@@ -67,9 +67,9 @@ const HomeHeader = ({ logoUrl, isLoggedIn }: HomeHeaderProps) => {
             <span>Step 1 · Collection</span>
             <strong>Begin with Pokémon you already know</strong>
             <div className="homeHeader__pokemon-row" aria-hidden="true">
-              <img src="/images/default/pokemon_1.png" alt="" />
-              <img src="/images/default/pokemon_6.png" alt="" />
-              <img src="/images/default/pokemon_25.png" alt="" />
+              <img src="/images/shiny_gigantamax/shiny_gigantamax_6.png" alt="" />
+              <img src="/images/costumes_shiny/pokemon_25_detective_shiny.png" alt="" />
+              <img src="/images/shiny_shadow/shiny_shadow_pokemon_376.png" alt="" />
             </div>
           </div>
           <div className="homeHeader__showcase-card homeHeader__showcase-card--trade">

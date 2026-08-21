@@ -17,7 +17,8 @@ interface HomeGuideStep {
   number: string;
   title: string;
   description: string;
-  image: string;
+  images: string[];
+  visualLabel: string;
   icon: IconType;
   tone: 'caught' | 'wanted' | 'trade' | 'search' | 'proposal' | 'share';
 }
@@ -27,7 +28,8 @@ const HOME_GUIDE_STEPS: HomeGuideStep[] = [
     number: '01',
     title: 'Add a Pokémon',
     description: 'Find its exact variant, then save it as Caught, For Trade, or Wanted.',
-    image: '/images/default/pokemon_1.png',
+    images: ['/images/shiny_gigantamax/shiny_gigantamax_6.png'],
+    visualLabel: 'Shiny Gigantamax Charizard',
     icon: FaTags,
     tone: 'caught',
   },
@@ -35,7 +37,8 @@ const HOME_GUIDE_STEPS: HomeGuideStep[] = [
     number: '02',
     title: 'Describe what you want',
     description: 'Add a Wanted entry and only specify details—such as form or moves—when they matter.',
-    image: '/images/default/pokemon_25.png',
+    images: ['/images/costumes_shiny/pokemon_25_detective_shiny.png'],
+    visualLabel: 'Shiny Detective Pikachu',
     icon: FaHeart,
     tone: 'wanted',
   },
@@ -43,7 +46,8 @@ const HOME_GUIDE_STEPS: HomeGuideStep[] = [
     number: '03',
     title: 'Prepare an offer',
     description: 'List a caught Pokémon For Trade and choose the Wanted targets you would accept.',
-    image: '/images/default/pokemon_6.png',
+    images: ['/images/shiny_gigantamax/shiny_gigantamax_6.png'],
+    visualLabel: 'The same Charizard becomes your offer',
     icon: FaExchangeAlt,
     tone: 'trade',
   },
@@ -51,7 +55,8 @@ const HOME_GUIDE_STEPS: HomeGuideStep[] = [
     number: '04',
     title: 'Discover trainers',
     description: 'Search exact listings or trainer names and inspect the public collection behind a result.',
-    image: '/images/default/pokemon_133.png',
+    images: ['/images/costumes_shiny/pokemon_25_detective_shiny.png'],
+    visualLabel: 'Search for the Pikachu you want',
     icon: FaSearch,
     tone: 'search',
   },
@@ -59,7 +64,11 @@ const HOME_GUIDE_STEPS: HomeGuideStep[] = [
     number: '05',
     title: 'Review the exchange',
     description: 'Confirm both Pokémon, friendship level, eligibility, and Stardust cost before proposing.',
-    image: '/images/default/pokemon_150.png',
+    images: [
+      '/images/shiny_gigantamax/shiny_gigantamax_6.png',
+      '/images/costumes_shiny/pokemon_25_detective_shiny.png',
+    ],
+    visualLabel: 'Your offer ↔ their offer',
     icon: FaExchangeAlt,
     tone: 'proposal',
   },
@@ -67,7 +76,11 @@ const HOME_GUIDE_STEPS: HomeGuideStep[] = [
     number: '06',
     title: 'Share when useful',
     description: 'Create a live Trade Board or image for communities where the other trainer may not use the app yet.',
-    image: '/images/default/pokemon_448.png',
+    images: [
+      '/images/shiny_gigantamax/shiny_gigantamax_6.png',
+      '/images/costumes_shiny/pokemon_25_detective_shiny.png',
+    ],
+    visualLabel: 'One board, both listings',
     icon: FaShareAlt,
     tone: 'share',
   },
@@ -80,18 +93,19 @@ const HowItWorks = () => {
         <span className="home-eyebrow">Start here</span>
         <h2 id="home-workflow-title">Follow one Pokémon through the app</h2>
         <p>You do not need to learn every feature at once. These six steps are the shortest path from an empty account to a useful trade.</p>
+        <p className="howItWorks__story-note"><strong>Example:</strong> you are offering a Shiny Gigantamax Charizard and looking for a Shiny Detective Pikachu.</p>
 
         <div className="howItWorks__concepts" aria-label="Collection status guide">
           <article>
-            <span className="howItWorks__concept-icon howItWorks__concept-icon--caught"><img src="/images/default/pokemon_1.png" alt="" /><FaCheck aria-hidden="true" /></span>
+            <span className="howItWorks__concept-icon howItWorks__concept-icon--caught"><img src="/images/shiny_gigantamax/shiny_gigantamax_6.png" alt="" /><FaCheck aria-hidden="true" /></span>
             <div><strong>Caught</strong><small>A Pokémon currently in your collection.</small></div>
           </article>
           <article>
-            <span className="howItWorks__concept-icon howItWorks__concept-icon--trade"><img src="/images/default/pokemon_6.png" alt="" /><FaExchangeAlt aria-hidden="true" /></span>
+            <span className="howItWorks__concept-icon howItWorks__concept-icon--trade"><img src="/images/shiny_gigantamax/shiny_gigantamax_6.png" alt="" /><FaExchangeAlt aria-hidden="true" /></span>
             <div><strong>For Trade</strong><small>A caught Pokémon you are willing to offer.</small></div>
           </article>
           <article>
-            <span className="howItWorks__concept-icon howItWorks__concept-icon--wanted"><img src="/images/default/pokemon_25.png" alt="" /><FaHeart aria-hidden="true" /></span>
+            <span className="howItWorks__concept-icon howItWorks__concept-icon--wanted"><img src="/images/costumes_shiny/pokemon_25_detective_shiny.png" alt="" /><FaHeart aria-hidden="true" /></span>
             <div><strong>Wanted</strong><small>A separate wishlist entry describing what you seek.</small></div>
           </article>
         </div>
@@ -102,9 +116,12 @@ const HowItWorks = () => {
             return (
               <article key={step.number} className={`is-${step.tone}`}>
                 <span>{step.number}</span>
-                <div className="howItWorks__step-art" aria-hidden="true">
+                <div className={`howItWorks__step-art ${step.images.length > 1 ? 'has-pair' : ''}`} aria-hidden="true">
                   <Icon />
-                  <img src={step.image} alt="" />
+                  <div className="howItWorks__story-pokemon">
+                    {step.images.map((image, index) => <img key={`${image}-${index}`} src={image} alt="" />)}
+                  </div>
+                  <small>{step.visualLabel}</small>
                 </div>
                 <h3>{step.title}</h3>
                 <p>{step.description}</p>
