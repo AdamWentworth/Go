@@ -31,6 +31,7 @@ Run workspace-level CI parity:
 
 ```bash
 npm run lint
+npm run lint:dead-code
 npm run typecheck
 npm run test
 ```

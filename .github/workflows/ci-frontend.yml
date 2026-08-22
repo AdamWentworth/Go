@@ -56,6 +56,10 @@ jobs:
       - name: Lint Styles
         run: npm run lint:styles
 
+      - name: Detect Unreferenced Files
+        working-directory: frontend
+        run: npm run lint:dead-code
+
       - name: Typecheck
         run: npm run typecheck
 

@@ -49,10 +49,6 @@ vi.mock('@/components/EditSaveComponent', () => ({
   ),
 }));
 
-vi.mock('@/pages/Pokemon/features/instances/FilterImages', () => ({
-  default: () => <div data-testid="filter-images" />,
-}));
-
 vi.mock('@/pages/Pokemon/features/instances/components/Wanted/TradeListDisplay', () => ({
   default: (props: {
     onPokemonClick: (instanceId: string) => void;

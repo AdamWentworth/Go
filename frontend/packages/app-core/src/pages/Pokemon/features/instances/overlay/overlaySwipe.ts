@@ -20,7 +20,6 @@ export const isSwipeInteractiveTarget = (target: EventTarget | null): boolean =>
         '.mirror',
         '.favorite-component',
         '.background-button',
-        '.toggleable-image',
         '.reset-container',
         '.trade-target-reset-button',
       ].join(', '),
