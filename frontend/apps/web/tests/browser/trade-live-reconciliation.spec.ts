@@ -89,6 +89,37 @@ async function emitTrade(page: Page) {
   expect(delivered).toBeGreaterThan(0);
 }
 
+async function confirmTradeCommand(page: Page, endpointSuffix: string) {
+  const responsePromise = page.waitForResponse((response) => {
+    const request = response.request();
+    return request.method() === 'POST'
+      && new URL(response.url()).pathname.endsWith(endpointSuffix);
+  });
+
+  await page.getByRole('button', { name: 'OK' }).click();
+  const response = await responsePromise;
+  expect(response.ok()).toBe(true);
+  await response.json();
+}
+
+async function installCanonicalTradeFeed(page: Page) {
+  const handler = async (route: Route) => {
+    if (route.request().method() !== 'GET') {
+      await route.fallback();
+      return;
+    }
+
+    await fulfillJson(route, {
+      trades: [trade],
+      related_instances: instances,
+    });
+  };
+
+  for (const pattern of ['**/api/users/trades', '**/__e2e/users/trades']) {
+    await page.route(pattern, handler);
+  }
+}
+
 async function installTradeCommands(page: Page, actor: 'ash' | 'misty') {
   const handler = async (route: Route) => {
     const pathname = new URL(route.request().url()).pathname;
@@ -133,9 +164,9 @@ async function prepareParticipant(
 ) {
   const page = await context.newPage();
   await installE2eRoutes(page, {
-    trades: { [trade.trade_id]: trade },
     userOverview: { related_instances: instances },
   });
+  await installCanonicalTradeFeed(page);
   await installTradeCommands(page, actor);
   await seedLogin(page, user);
   await openTradeActivity(page);
@@ -164,7 +195,7 @@ test('reconciles acceptance and dual confirmation between two active trainers', 
     await expect(mistyPage.getByRole('button', { name: /^Needs response, 1/ })).toBeVisible();
 
     await mistyPage.getByRole('button', { name: 'Accept offer' }).click();
-    await mistyPage.getByRole('button', { name: 'OK' }).click();
+    await confirmTradeCommand(mistyPage, '/accept');
     await expect(mistyPage.getByRole('button', { name: /^Active, 1/ })).toBeVisible();
     await emitTrade(ashPage);
 
@@ -174,14 +205,14 @@ test('reconciles acceptance and dual confirmation between two active trainers', 
 
     await mistyPage.getByRole('button', { name: /^Active, 1/ }).click();
     await mistyPage.getByRole('button', { name: 'Confirm Complete' }).click();
-    await mistyPage.getByRole('button', { name: 'OK' }).click();
+    await confirmTradeCommand(mistyPage, '/complete-confirmation');
     await expect(mistyPage.getByRole('button', { name: 'Awaiting Partner...' })).toBeDisabled();
     await emitTrade(ashPage);
 
     await ashPage.getByRole('button', { name: /^Active, 1/ }).click();
     await expect(ashPage.getByRole('button', { name: 'Confirm Complete' })).toBeVisible();
     await ashPage.getByRole('button', { name: 'Confirm Complete' }).click();
-    await ashPage.getByRole('button', { name: 'OK' }).click();
+    await confirmTradeCommand(ashPage, '/complete-confirmation');
     await expect(ashPage.getByRole('button', { name: /^Completed, 1/ })).toBeVisible();
     await emitTrade(mistyPage);
 
