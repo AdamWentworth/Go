@@ -77,7 +77,12 @@ test('restores completed results after stepping back through a listing overlay',
     const pokemonInput = page.getByRole('combobox', { name: 'Pokémon' });
     await expect(pokemonInput).toBeVisible({ timeout: 30_000 });
     await pokemonInput.fill('Bulb');
-    await page.getByRole('option', { name: /Bulbasaur/i }).first().click();
+    const bulbasaurOption = page.getByRole('option', { name: /Bulbasaur/i }).first();
+    // Suggestions come from the processed catalog rather than a hard-coded
+    // test list. Let catalog hydration finish when the full CI matrix is
+    // competing for CPU before exercising the selection workflow.
+    await expect(bulbasaurOption).toBeVisible({ timeout: 30_000 });
+    await bulbasaurOption.click();
     await page.getByRole('button', { name: 'For Trade', exact: true }).click();
     await page.getByRole('button', { name: /Location/i }).click();
     await page.getByPlaceholder('Search for a city').fill('Burnaby');

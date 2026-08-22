@@ -196,6 +196,11 @@ test('reconciles acceptance and dual confirmation between two active trainers', 
 
     await mistyPage.getByRole('button', { name: 'Accept offer' }).click();
     await confirmTradeCommand(mistyPage, '/accept');
+    // Command responses and the live feed are separate authoritative paths.
+    // Deliver the accepted state to both active clients before asserting the
+    // reconciled activity buckets so a pending bootstrap refresh cannot win
+    // the race under a loaded CI browser worker.
+    await emitTrade(mistyPage);
     await expect(mistyPage.getByRole('button', { name: /^Active, 1/ })).toBeVisible();
     await emitTrade(ashPage);
 
