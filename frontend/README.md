@@ -42,6 +42,7 @@ npm --workspace apps/web run dev
 npm --workspace apps/web run build
 npm --workspace apps/web run test
 npm --workspace apps/web run test:browsers
+npm --workspace apps/web run smoke:production
 ```
 
 Run just the mobile app:

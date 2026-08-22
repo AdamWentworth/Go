@@ -48,6 +48,7 @@
     "test:browsers:headed": "node scripts/run-playwright-clean-env.mjs test --headed",
     "test:browsers:debug": "node scripts/run-playwright-clean-env.mjs test --debug",
     "test:browsers:report": "playwright show-report .artifacts/browser/html-report",
+    "smoke:production": "node scripts/smoke-production.mjs",
     "capture:demo": "cross-env DEMO_CAPTURE=1 E2E_PORT=3010 E2E_FAIL_ON_CONSOLE=0 node scripts/run-playwright-clean-env.mjs test tests/browser/demo-capture.spec.ts --project=chromium-desktop --reporter=list",
     "capture:demo:live": "node scripts/run-live-demo-capture.mjs",
     "capture:demo:video:live": "node scripts/run-live-demo-video-capture.mjs",

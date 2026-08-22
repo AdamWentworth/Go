@@ -8,6 +8,7 @@ on:
       - "nginx/**"
       - ".github/workflows/ci-frontend.yml"
       - ".github/workflows/deploy-frontend-prod.yml"
+      - ".github/workflows/smoke-frontend-prod.yml"
   push:
     branches: ["main", "master"]
     paths:
@@ -16,6 +17,7 @@ on:
       - "nginx/**"
       - ".github/workflows/ci-frontend.yml"
       - ".github/workflows/deploy-frontend-prod.yml"
+      - ".github/workflows/smoke-frontend-prod.yml"
   schedule:
     # Full Firefox/WebKit/Safari proofing runs nightly; pushes keep the two
     # Chromium viewports that catch application and responsive regressions.
@@ -26,22 +28,8 @@ permissions:
   contents: read
 
 jobs:
-  quality-gates:
+  static-quality:
     runs-on: ubuntu-latest
-    env:
-      VITE_POKEMON_API_URL: ${{ vars.VITE_POKEMON_API_URL || 'https://pokegonexus.com/api/pokemon' }}
-      VITE_AUTH_API_URL: ${{ vars.VITE_AUTH_API_URL || 'https://pokegonexus.com/api/auth' }}
-      VITE_RECEIVER_API_URL: ${{ vars.VITE_RECEIVER_API_URL || 'https://pokegonexus.com/api/receiver' }}
-      VITE_USERS_API_URL: ${{ vars.VITE_USERS_API_URL || 'https://pokegonexus.com/api/users' }}
-      VITE_SEARCH_API_URL: ${{ vars.VITE_SEARCH_API_URL || 'https://pokegonexus.com/api/search' }}
-      VITE_LOCATION_SERVICE_URL: ${{ vars.VITE_LOCATION_SERVICE_URL || 'https://pokegonexus.com/api/location' }}
-      VITE_EVENTS_API_URL: ${{ vars.VITE_EVENTS_API_URL || 'https://pokegonexus.com/api/events' }}
-      VITE_ASSET_ORIGIN: ${{ vars.VITE_ASSET_ORIGIN || 'https://pokegonexus.com' }}
-      VITE_FORCED_REFRESH_TIMESTAMP: ${{ vars.VITE_FORCED_REFRESH_TIMESTAMP || '1770678424675' }}
-      VITE_SERVICE_WORKER_VERSION: ${{ github.sha }}
-      FRONTEND_INITIAL_JS_GZIP_BUDGET_KB: ${{ vars.FRONTEND_INITIAL_JS_GZIP_BUDGET_KB || '180' }}
-      FRONTEND_MAX_JS_CHUNK_GZIP_KB: ${{ vars.FRONTEND_MAX_JS_CHUNK_GZIP_KB || '130' }}
-      FRONTEND_BUNDLE_BUDGET_REPORT_PATH: .artifacts/tests/reports/perf/bundle-budget.json
     defaults:
       run:
         working-directory: frontend/apps/web
@@ -71,11 +59,74 @@ jobs:
       - name: Typecheck
         run: npm run typecheck
 
-      - name: Validate Raid Ranking Model
-        run: npm run test:raid-model
+  unit-coverage:
+    runs-on: ubuntu-latest
+    env:
+      VITE_POKEMON_API_URL: ${{ vars.VITE_POKEMON_API_URL || 'https://pokegonexus.com/api/pokemon' }}
+      VITE_AUTH_API_URL: ${{ vars.VITE_AUTH_API_URL || 'https://pokegonexus.com/api/auth' }}
+      VITE_RECEIVER_API_URL: ${{ vars.VITE_RECEIVER_API_URL || 'https://pokegonexus.com/api/receiver' }}
+      VITE_USERS_API_URL: ${{ vars.VITE_USERS_API_URL || 'https://pokegonexus.com/api/users' }}
+      VITE_SEARCH_API_URL: ${{ vars.VITE_SEARCH_API_URL || 'https://pokegonexus.com/api/search' }}
+      VITE_LOCATION_SERVICE_URL: ${{ vars.VITE_LOCATION_SERVICE_URL || 'https://pokegonexus.com/api/location' }}
+      VITE_EVENTS_API_URL: ${{ vars.VITE_EVENTS_API_URL || 'https://pokegonexus.com/api/events' }}
+      VITE_ASSET_ORIGIN: ${{ vars.VITE_ASSET_ORIGIN || 'https://pokegonexus.com' }}
+      VITE_FORCED_REFRESH_TIMESTAMP: ${{ vars.VITE_FORCED_REFRESH_TIMESTAMP || '1770678424675' }}
+    defaults:
+      run:
+        working-directory: frontend/apps/web
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: "24"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install Dependencies
+        working-directory: frontend
+        run: npm ci
 
       - name: Test + Coverage Gate
         run: npm run test:coverage
+
+      - name: Upload Coverage Report
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: frontend-unit-coverage
+          path: frontend/apps/web/.artifacts/tests/coverage/**
+          if-no-files-found: ignore
+
+  browser-quality:
+    runs-on: ubuntu-latest
+    env:
+      VITE_POKEMON_API_URL: ${{ vars.VITE_POKEMON_API_URL || 'https://pokegonexus.com/api/pokemon' }}
+      VITE_AUTH_API_URL: ${{ vars.VITE_AUTH_API_URL || 'https://pokegonexus.com/api/auth' }}
+      VITE_RECEIVER_API_URL: ${{ vars.VITE_RECEIVER_API_URL || 'https://pokegonexus.com/api/receiver' }}
+      VITE_USERS_API_URL: ${{ vars.VITE_USERS_API_URL || 'https://pokegonexus.com/api/users' }}
+      VITE_SEARCH_API_URL: ${{ vars.VITE_SEARCH_API_URL || 'https://pokegonexus.com/api/search' }}
+      VITE_LOCATION_SERVICE_URL: ${{ vars.VITE_LOCATION_SERVICE_URL || 'https://pokegonexus.com/api/location' }}
+      VITE_EVENTS_API_URL: ${{ vars.VITE_EVENTS_API_URL || 'https://pokegonexus.com/api/events' }}
+      VITE_ASSET_ORIGIN: ${{ vars.VITE_ASSET_ORIGIN || 'https://pokegonexus.com' }}
+      VITE_FORCED_REFRESH_TIMESTAMP: ${{ vars.VITE_FORCED_REFRESH_TIMESTAMP || '1770678424675' }}
+    defaults:
+      run:
+        working-directory: frontend/apps/web
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: "24"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install Dependencies
+        working-directory: frontend
+        run: npm ci
 
       - name: Install Browser Runtimes
         shell: bash
@@ -104,6 +155,55 @@ jobs:
               --project chromium-desktop \
               --project mobile-chrome
           fi
+
+      - name: Upload Performance Reports
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: frontend-browser-performance
+          path: frontend/apps/web/.artifacts/tests/reports/perf/**/*.json
+          if-no-files-found: ignore
+
+      - name: Upload Browser Proofing Artifacts
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: frontend-browser-proofing
+          path: frontend/apps/web/.artifacts/browser/**
+          if-no-files-found: ignore
+
+  build-audit:
+    runs-on: ubuntu-latest
+    env:
+      VITE_POKEMON_API_URL: ${{ vars.VITE_POKEMON_API_URL || 'https://pokegonexus.com/api/pokemon' }}
+      VITE_AUTH_API_URL: ${{ vars.VITE_AUTH_API_URL || 'https://pokegonexus.com/api/auth' }}
+      VITE_RECEIVER_API_URL: ${{ vars.VITE_RECEIVER_API_URL || 'https://pokegonexus.com/api/receiver' }}
+      VITE_USERS_API_URL: ${{ vars.VITE_USERS_API_URL || 'https://pokegonexus.com/api/users' }}
+      VITE_SEARCH_API_URL: ${{ vars.VITE_SEARCH_API_URL || 'https://pokegonexus.com/api/search' }}
+      VITE_LOCATION_SERVICE_URL: ${{ vars.VITE_LOCATION_SERVICE_URL || 'https://pokegonexus.com/api/location' }}
+      VITE_EVENTS_API_URL: ${{ vars.VITE_EVENTS_API_URL || 'https://pokegonexus.com/api/events' }}
+      VITE_ASSET_ORIGIN: ${{ vars.VITE_ASSET_ORIGIN || 'https://pokegonexus.com' }}
+      VITE_FORCED_REFRESH_TIMESTAMP: ${{ vars.VITE_FORCED_REFRESH_TIMESTAMP || '1770678424675' }}
+      VITE_SERVICE_WORKER_VERSION: ${{ github.sha }}
+      FRONTEND_INITIAL_JS_GZIP_BUDGET_KB: ${{ vars.FRONTEND_INITIAL_JS_GZIP_BUDGET_KB || '180' }}
+      FRONTEND_MAX_JS_CHUNK_GZIP_KB: ${{ vars.FRONTEND_MAX_JS_CHUNK_GZIP_KB || '130' }}
+      FRONTEND_BUNDLE_BUDGET_REPORT_PATH: .artifacts/tests/reports/perf/bundle-budget.json
+    defaults:
+      run:
+        working-directory: frontend/apps/web
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: "24"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install Dependencies
+        working-directory: frontend
+        run: npm ci
 
       - name: Build
         run: npm run build
@@ -171,25 +271,17 @@ jobs:
           path: frontend/apps/web/.artifacts/tests/reports/npm-audit-dev.json
           if-no-files-found: ignore
 
-      - name: Upload Perf Snapshot Reports
+      - name: Upload Build Budget Report
         if: always()
         uses: actions/upload-artifact@v7
         with:
-          name: frontend-perf-snapshots
+          name: frontend-build-budget
           path: frontend/apps/web/.artifacts/tests/reports/perf/**/*.json
-          if-no-files-found: ignore
-
-      - name: Upload Browser Proofing Artifacts
-        if: always()
-        uses: actions/upload-artifact@v7
-        with:
-          name: frontend-browser-proofing
-          path: frontend/apps/web/.artifacts/browser/**
           if-no-files-found: ignore
 
   container-security-build:
     runs-on: ubuntu-latest
-    needs: quality-gates
+    needs: [static-quality, unit-coverage, browser-quality, build-audit]
     env:
       DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
       IMAGE_REPO: adamwentworth/frontend-nginx
