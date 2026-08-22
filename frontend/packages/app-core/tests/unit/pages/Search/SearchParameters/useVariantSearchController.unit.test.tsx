@@ -448,6 +448,44 @@ describe('useVariantSearchController', () => {
     expect(result.current.suggestions).toEqual(['Bulbasaur']);
   });
 
+  it('recomputes focused suggestions when the Pokemon catalog hydrates', async () => {
+    const initialArgs = makeArgs({
+      pokemon: 'Bul',
+      pokemonCache: null,
+    });
+    const { result, rerender } = renderHook(
+      (hookArgs: Args) => useVariantSearchController(hookArgs),
+      { initialProps: initialArgs },
+    );
+
+    act(() => result.current.handleInputFocus());
+    expect(result.current.suggestions).toEqual([]);
+
+    rerender({
+      ...initialArgs,
+      pokemonCache: [baseVariant],
+    });
+
+    await waitFor(() => {
+      expect(result.current.suggestions).toEqual(['Bulbasaur']);
+    });
+
+    act(() => result.current.handleInputBlur());
+    rerender({
+      ...initialArgs,
+      pokemonCache: [
+        baseVariant,
+        {
+          ...baseVariant,
+          variant_id: '0012-default',
+          name: 'Butterfree',
+        } as PokemonVariant,
+      ],
+    });
+
+    expect(result.current.suggestions).toEqual([]);
+  });
+
   it('toggles shiny and shadow flags through dedicated handlers', () => {
     const setIsShiny = toSetter<boolean>();
     const setIsShadow = toSetter<boolean>();

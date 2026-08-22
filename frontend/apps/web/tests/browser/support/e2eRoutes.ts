@@ -16,6 +16,7 @@ export type E2eRouteOptions = {
   userOverview?: unknown;
   trades?: unknown;
   pokedexSpecies?: unknown[];
+  pokemonCatalogDelayMs?: number;
   raidDataDelayMs?: number;
   customTags?: unknown[];
   tagOrders?: {
@@ -448,6 +449,9 @@ export async function installE2eRoutes(page: Page, options: E2eRouteOptions = {}
 
   for (const pathPattern of ['**/api/pokemon/catalog', '**/__e2e/pokemon/catalog']) {
     await page.route(pathPattern, async (route) => {
+      if (options.pokemonCatalogDelayMs) {
+        await new Promise((resolve) => setTimeout(resolve, options.pokemonCatalogDelayMs));
+      }
       await fulfillJson(route, catalogFixture);
     });
   }

@@ -45,6 +45,7 @@ test('restores completed results after stepping back through a listing overlay',
       );
     });
     await installE2eRoutes(page, {
+      pokemonCatalogDelayMs: 1_000,
       searchResults: [searchResult],
       locationSuggestions: [
         {
@@ -78,9 +79,8 @@ test('restores completed results after stepping back through a listing overlay',
     await expect(pokemonInput).toBeVisible({ timeout: 30_000 });
     await pokemonInput.fill('Bulb');
     const bulbasaurOption = page.getByRole('option', { name: /Bulbasaur/i }).first();
-    // Suggestions come from the processed catalog rather than a hard-coded
-    // test list. Let catalog hydration finish when the full CI matrix is
-    // competing for CPU before exercising the selection workflow.
+    // Catalog delivery is deliberately delayed so this workflow proves typed
+    // autocomplete text recovers when hydration finishes after input begins.
     await expect(bulbasaurOption).toBeVisible({ timeout: 30_000 });
     await bulbasaurOption.click();
     await page.getByRole('button', { name: 'For Trade', exact: true }).click();

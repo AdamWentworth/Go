@@ -126,6 +126,7 @@ const useVariantSearchController = ({
     useState<BackgroundSelection | null>(null);
   const [showBackgroundOverlay, setShowBackgroundOverlay] = useState(false);
   const [suggestions, setSuggestions] = useState<string[]>([]);
+  const [pokemonInputFocused, setPokemonInputFocused] = useState(false);
 
   const currentPokemonData = pokemonData.find(
     (entry) =>
@@ -239,6 +240,25 @@ const useVariantSearchController = ({
     selectedForm,
     selectedGender,
   ]);
+
+  useEffect(() => {
+    if (!pokemonInputFocused) return;
+
+    const hydratedPokemonData = pokemonCache ?? [];
+    const normalizedPokemon = pokemon.trim().toLowerCase();
+    const hasExactMatch = hydratedPokemonData.some(
+      (entry) => entry.name.toLowerCase() === normalizedPokemon,
+    );
+
+    setSuggestions(
+      hasExactMatch
+        ? []
+        : evaluatePokemonInputFocus({
+            pokemon,
+            pokemonData: hydratedPokemonData,
+          }),
+    );
+  }, [pokemon, pokemonCache, pokemonInputFocused]);
 
   useEffect(() => {
     if (selectedBackgroundId == null) {
@@ -359,6 +379,7 @@ const useVariantSearchController = ({
   };
 
   const handleInputFocus = () => {
+    setPokemonInputFocused(true);
     setSuggestions(
       evaluatePokemonInputFocus({
         pokemon,
@@ -368,6 +389,7 @@ const useVariantSearchController = ({
   };
 
   const handleInputBlur = () => {
+    setPokemonInputFocused(false);
     setSuggestions([]);
   };
 
