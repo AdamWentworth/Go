@@ -30,7 +30,7 @@ const HomeHeader = ({ logoUrl, lockupUrl, isLoggedIn }: HomeHeaderProps) => {
   return (
     <header className="homeHeader">
       <nav className="homeHeader__nav" aria-label="Home navigation">
-        <Link className="home-brand" to="/">
+        <Link className="home-brand" to="/" aria-label="Pokémon Go Nexus home">
           <img src={logoUrl} alt="" onContextMenu={(event) => event.preventDefault()} />
           <span>Pokémon Go Nexus</span>
         </Link>

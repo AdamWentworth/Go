@@ -146,7 +146,11 @@ describe('PokemonCard', () => {
       />,
     );
 
-    expect(screen.getByRole('button', { name: 'Select Bulbasaur' })).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', {
+        name: 'Select Bulbasaur. Press Space to select it for tagging.',
+      }),
+    ).toBeInTheDocument();
 
     rerender(
       <PokemonCard
@@ -165,7 +169,9 @@ describe('PokemonCard', () => {
     );
 
     expect(
-      screen.getByRole('button', { name: 'View Bulbasaur details' }),
+      screen.getByRole('button', {
+        name: 'View Bulbasaur details. Press Space to select it for tagging.',
+      }),
     ).toBeInTheDocument();
   });
 

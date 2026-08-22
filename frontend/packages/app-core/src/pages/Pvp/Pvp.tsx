@@ -124,7 +124,7 @@ const formatLevel = (level: number): string =>
 
 function TypeIcons({ types }: { types: string[] }) {
   return (
-    <span className="pvp-types" aria-label={types.join(' and ')}>
+    <span className="pvp-types" role="img" aria-label={types.join(' and ')}>
       {types.map((type) => (
         <img
           key={type}

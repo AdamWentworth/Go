@@ -198,7 +198,7 @@
   position: absolute;
   top: 14px;
   left: 18px;
-  color: color-mix(in srgb, var(--color-text-primary) 24%, transparent);
+  color: color-mix(in srgb, var(--color-text-primary) 42%, transparent);
   font-size: 3.4rem;
   font-weight: 950;
 }

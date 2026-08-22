@@ -238,6 +238,8 @@ const PokemonCard = memo(({
       if (isEditable) {
         setIsFastSelectEnabled(true);
         toggleCardHighlight(highlightKey);
+      } else {
+        onSelect();
       }
     } else if (e.key === 'Enter') {
       onSelect();
@@ -255,9 +257,9 @@ const PokemonCard = memo(({
       tabIndex={0}
       role="button"
       aria-label={
-        pokemon.instanceData?.instance_id
-          ? `View ${pokemon.name} details`
-          : `Select ${pokemon.name}`
+        `${pokemon.instanceData?.instance_id ? 'View' : 'Select'} ${pokemon.name}${
+          pokemon.instanceData?.instance_id ? ' details' : ''
+        }${isEditable ? '. Press Space to select it for tagging.' : ''}`
       }
     >
       {/* Select chip (desktop hover only before fast-select is enabled) */}

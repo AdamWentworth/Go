@@ -28,7 +28,7 @@
     width: 100%;
     margin: 0;
     padding: 12px 20px;
-    background-color: #007BFF;
+    background-color: #0069d2;
     color: white;
     border: none;
     cursor: pointer;
@@ -122,6 +122,6 @@
 
 .social-login-buttons .oauth-login-button--facebook {
     color: #fff;
-    background: #1877f2;
+    background: #1265d6;
     border-color: #4d96f5;
 }

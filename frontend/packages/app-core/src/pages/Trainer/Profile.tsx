@@ -992,11 +992,15 @@ const Profile = () => {
               </div>
               <div
                 className="trainer-card-level-track"
+                role="progressbar"
                 aria-label={
                   cardTrainerLevel
                     ? `Trainer level ${cardTrainerLevel}`
                     : "Trainer level not shared"
                 }
+                aria-valuemin={0}
+                aria-valuemax={50}
+                aria-valuenow={cardTrainerLevel || 0}
               >
                 <span
                   style={{
