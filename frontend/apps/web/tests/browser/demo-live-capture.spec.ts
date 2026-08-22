@@ -1584,7 +1584,9 @@ async function cleanupDisposableAuthAccount(
   if (account.deleted) return;
 
   const deleteById = async (userId: string) =>
-    await context.request.delete(authApiUrl(`/delete/${encodeURIComponent(userId)}`));
+    await context.request.delete(authApiUrl(`/delete/${encodeURIComponent(userId)}`), {
+      data: { currentPassword: account.password },
+    });
 
   if (account.userId) {
     const deleteResponse = await deleteById(account.userId);
@@ -1646,10 +1648,12 @@ async function cleanupDisposableAuthAccountFromPage(
   account.userId = account.userId || (await readStoredAuthUserId(page));
   if (!account.userId) return false;
 
-  const result = await page.evaluate(async (deleteUrl) => {
+  const result = await page.evaluate(async ({ deleteUrl, currentPassword }) => {
     const response = await fetch(deleteUrl, {
       method: 'DELETE',
       credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ currentPassword }),
     });
 
     return {
@@ -1657,7 +1661,10 @@ async function cleanupDisposableAuthAccountFromPage(
       status: response.status,
       body: await response.text().catch(() => ''),
     };
-  }, authApiUrl(`/delete/${encodeURIComponent(account.userId)}`));
+  }, {
+    deleteUrl: authApiUrl(`/delete/${encodeURIComponent(account.userId)}`),
+    currentPassword: account.password,
+  });
 
   if (result.ok || result.status === 404) {
     account.deleted = true;
@@ -1924,6 +1931,13 @@ async function performAuthLifecycleVideoFlow(
     await openAccountDetailsFromActionMenuForVideo(page);
     account.userId = account.userId || (await readStoredAuthUserId(page));
     await pauseForVideo(page, 500);
+  }
+
+  const currentPasswordInput = page.getByPlaceholder('Required for security changes');
+  if (await currentPasswordInput.isVisible({ timeout: 5_000 }).catch(() => false)) {
+    await clickForVideo(currentPasswordInput, 10_000);
+    await currentPasswordInput.fill(account.password);
+    await pauseForVideo(page, 250);
   }
 
   const userDataDeleteResponse = page.waitForResponse(
