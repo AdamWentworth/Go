@@ -4,6 +4,7 @@ const dbMocks = vi.hoisted(() => ({
   setTradesinDB: vi.fn(),
   deleteFromTradesDB: vi.fn(),
   getAllFromTradesDB: vi.fn(),
+  fetchTrades: vi.fn(),
 }));
 
 vi.mock('@/db/indexedDB', () => ({
@@ -15,7 +16,7 @@ vi.mock('@/db/indexedDB', () => ({
 }));
 
 vi.mock('@/services/tradeService', () => ({
-  fetchTrades: vi.fn(),
+  fetchTrades: dbMocks.fetchTrades,
 }));
 
 vi.mock('@/features/trades/actions/proposeTrade', () => ({
@@ -29,6 +30,8 @@ describe('useTradeStore authoritative reconciliation', () => {
     vi.clearAllMocks();
     dbMocks.setTradesinDB.mockResolvedValue(undefined);
     dbMocks.deleteFromTradesDB.mockResolvedValue(undefined);
+    dbMocks.getAllFromTradesDB.mockResolvedValue([]);
+    dbMocks.fetchTrades.mockResolvedValue({ trades: [], related_instances: {} });
     useTradeStore.getState().resetTradeData();
   });
 
@@ -52,6 +55,37 @@ describe('useTradeStore authoritative reconciliation', () => {
         'trade-1': { trade_id: 'trade-1', trade_status: 'pending' },
       }),
     ).resolves.toBeDefined();
+
+    expect(useTradeStore.getState().trades['trade-1']?.trade_status).toBe('pending');
+  });
+
+  it('does not let an older response overwrite a newer live trade', async () => {
+    await useTradeStore.getState().setTradeData({
+      'trade-1': { trade_id: 'trade-1', trade_status: 'pending', last_update: 200 },
+    });
+    await useTradeStore.getState().setTradeData({
+      'trade-1': { trade_id: 'trade-1', trade_status: 'proposed', last_update: 100 },
+    });
+
+    expect(useTradeStore.getState().trades['trade-1']?.trade_status).toBe('pending');
+  });
+
+  it('keeps a live update that arrives while hydration is in flight', async () => {
+    let resolveFetch: ((value: unknown) => void) | undefined;
+    dbMocks.fetchTrades.mockReturnValue(new Promise((resolve) => {
+      resolveFetch = resolve;
+    }));
+
+    const hydration = useTradeStore.getState().hydrateFromDB();
+    await vi.waitFor(() => expect(dbMocks.fetchTrades).toHaveBeenCalledOnce());
+    await useTradeStore.getState().setTradeData({
+      'trade-1': { trade_id: 'trade-1', trade_status: 'pending', last_update: 200 },
+    });
+    resolveFetch?.({
+      trades: [{ trade_id: 'trade-1', trade_status: 'proposed', last_update: 100 }],
+      related_instances: {},
+    });
+    await hydration;
 
     expect(useTradeStore.getState().trades['trade-1']?.trade_status).toBe('pending');
   });
