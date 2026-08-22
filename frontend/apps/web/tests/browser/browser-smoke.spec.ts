@@ -8,12 +8,23 @@ import { installE2eRoutes } from "./support/e2eRoutes";
 
 const defaultRoutePaths = [
   "/",
+  "/getting-started",
   "/login",
   "/register",
+  "/terms",
+  "/privacy",
+  "/data-deletion",
   "/pokedex",
   "/pokemon",
   "/search",
   "/trades",
+  "/raid",
+  "/raid/methodology",
+  "/max",
+  "/pvp",
+  "/pvp/methodology",
+  "/rankings",
+  "/trade-board",
 ];
 
 const configuredRoutePaths = process.env.E2E_ROUTE_PATHS
