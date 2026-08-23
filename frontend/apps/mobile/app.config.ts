@@ -22,7 +22,12 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   version: config.version ?? '1.0.0',
   scheme: config.scheme ?? 'pokegonexus',
   plugins: Array.from(
-    new Set([...(config.plugins ?? []), 'expo-router', 'expo-secure-store']),
+    new Set([
+      ...(config.plugins ?? []),
+      'expo-router',
+      'expo-secure-store',
+      'expo-sqlite',
+    ]),
   ),
   experiments: {
     ...config.experiments,
