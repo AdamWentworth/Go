@@ -55,6 +55,7 @@ const ActionMenu: React.FC = () => {
   const restoreFocusRef = useRef<HTMLElement | null>(null);
   const shouldRestoreFocusRef = useRef(false);
   const openingAnimationTimeoutRef = useRef<number | null>(null);
+  const closingAnimationTimeoutRef = useRef<number | null>(null);
   const closeEnableTimeoutRef = useRef<number | null>(null);
   const pendingMobileNavigationRef = useRef(false);
   const pendingNavigationLoadingRef = useRef(false);
@@ -77,24 +78,23 @@ const ActionMenu: React.FC = () => {
     closeEnableTimeoutRef.current = null;
   }, []);
 
-  useEffect(() => {
-    if (!isOpen && isVisible) {
-      const timeoutId = window.setTimeout(() => {
-        setIsVisible(false);
-      }, MENU_TRANSITION_MS);
-
-      return () => window.clearTimeout(timeoutId);
-    }
-
-    return undefined;
-  }, [isOpen, isVisible]);
+  const cancelPendingCloseAnimation = useCallback(() => {
+    if (closingAnimationTimeoutRef.current === null) return;
+    window.clearTimeout(closingAnimationTimeoutRef.current);
+    closingAnimationTimeoutRef.current = null;
+  }, []);
 
   useEffect(() => {
     return () => {
       cancelPendingOpenAnimation();
+      cancelPendingCloseAnimation();
       cancelPendingCloseEnable();
     };
-  }, [cancelPendingCloseEnable, cancelPendingOpenAnimation]);
+  }, [
+    cancelPendingCloseAnimation,
+    cancelPendingCloseEnable,
+    cancelPendingOpenAnimation,
+  ]);
 
   useEffect(() => {
     if (!isVisible) return undefined;
@@ -140,6 +140,7 @@ const ActionMenu: React.FC = () => {
     if (pendingMobileNavigationRef.current) {
       pendingMobileNavigationRef.current = false;
       cancelPendingOpenAnimation();
+      cancelPendingCloseAnimation();
       cancelPendingCloseEnable();
       setIsCloseEnabled(false);
       setIsOpen(false);
@@ -153,6 +154,7 @@ const ActionMenu: React.FC = () => {
       }
     };
   }, [
+    cancelPendingCloseAnimation,
     cancelPendingCloseEnable,
     cancelPendingOpenAnimation,
     location.key,
@@ -185,6 +187,7 @@ const ActionMenu: React.FC = () => {
 
   const openMenu = useCallback(() => {
     cancelPendingOpenAnimation();
+    cancelPendingCloseAnimation();
     cancelPendingCloseEnable();
     if (!isVisible) {
       restoreFocusRef.current = document.activeElement instanceof HTMLElement
@@ -205,15 +208,29 @@ const ActionMenu: React.FC = () => {
         setIsCloseEnabled(true);
       }, MENU_TRANSITION_MS);
     }, MENU_OPEN_DELAY_MS);
-  }, [cancelPendingCloseEnable, cancelPendingOpenAnimation, isVisible]);
+  }, [
+    cancelPendingCloseAnimation,
+    cancelPendingCloseEnable,
+    cancelPendingOpenAnimation,
+    isVisible,
+  ]);
 
   const closeMenu = useCallback(() => {
     cancelPendingOpenAnimation();
+    cancelPendingCloseAnimation();
     cancelPendingCloseEnable();
     setIsCloseEnabled(false);
     setIsSupportOpen(false);
     setIsOpen(false);
-  }, [cancelPendingCloseEnable, cancelPendingOpenAnimation]);
+    closingAnimationTimeoutRef.current = window.setTimeout(() => {
+      closingAnimationTimeoutRef.current = null;
+      setIsVisible(false);
+    }, MENU_TRANSITION_MS);
+  }, [
+    cancelPendingCloseAnimation,
+    cancelPendingCloseEnable,
+    cancelPendingOpenAnimation,
+  ]);
 
   const closeSupportMenu = useCallback((restoreFocus = true) => {
     setIsSupportOpen(false);
@@ -305,6 +322,7 @@ const ActionMenu: React.FC = () => {
       if (replacesMobileMenuGuard) return;
     }
     cancelPendingOpenAnimation();
+    cancelPendingCloseAnimation();
     cancelPendingCloseEnable();
     setIsCloseEnabled(false);
     setIsOpen(false);

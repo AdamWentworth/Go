@@ -140,8 +140,13 @@ function scheduleScrollRestore(position: RouteScrollPosition) {
   requestRestore();
 
   // Lazy routes and async page content may initially be too short to reach the
-  // saved coordinate. Retry only while the browser is still below the target.
-  for (const delayMs of RESTORE_RETRY_DELAYS_MS) {
+  // saved coordinate. A top-of-page navigation never needs retries: repeating
+  // a zero restore can pull someone back to the top after they have already
+  // started scrolling the newly rendered page.
+  const retryDelays = position.x > 0 || position.y > 0
+    ? RESTORE_RETRY_DELAYS_MS
+    : [];
+  for (const delayMs of retryDelays) {
     const timeoutId = window.setTimeout(() => {
       timeoutIds.delete(timeoutId);
       const currentPosition = currentScrollPosition();

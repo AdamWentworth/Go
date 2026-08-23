@@ -311,6 +311,33 @@ describe('ActionMenu', () => {
     }
   });
 
+  it('finishes opening when delayed timers are released in one batch', () => {
+    vi.useFakeTimers();
+
+    try {
+      const { container } = render(
+        <MemoryRouter initialEntries={['/pokemon']}>
+          <ActionMenu />
+        </MemoryRouter>,
+      );
+
+      fireEvent.click(screen.getByRole('button', { name: 'Action Menu' }));
+
+      act(() => {
+        vi.advanceTimersByTime(375);
+      });
+
+      expect(container.querySelector('.action-menu-overlay')).toHaveAttribute(
+        'data-menu-state',
+        'open',
+      );
+      expect(screen.getByRole('button', { name: 'Close' })).toBeEnabled();
+      expect(container.querySelector('.action-menu-button')).not.toBeInTheDocument();
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
   it('behaves as a modal dialog, traps focus, and closes with Escape', async () => {
     const { container } = render(
       <MemoryRouter initialEntries={['/pokemon']}>
