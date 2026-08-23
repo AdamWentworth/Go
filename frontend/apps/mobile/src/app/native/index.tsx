@@ -1,11 +1,46 @@
+import { ApiClientError } from '@pokemongonexus/shared-api-client';
+import type { CollectionSummary } from '@pokemongonexus/shared-contracts/users';
 import { Redirect, useRouter } from 'expo-router';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useNativeSession } from '../../auth/NativeSessionContext';
+import { NativeHomeScreen } from '../../screens/NativeHomeScreen';
+import { getCollectionSummary } from '../../services/collectionSummaryApi';
+import { createNativeUsersApiClient } from '../../services/nativeApiClients';
 import { theme } from '../../ui/theme';
 
 export default function NativeHomeRoute() {
   const router = useRouter();
-  const { retrySession, status, user, signOut } = useNativeSession();
+  const session = useNativeSession();
+  const { retrySession, status, user, signOut } = session;
+  const [summary, setSummary] = useState<CollectionSummary | null>(null);
+  const [summaryError, setSummaryError] = useState<string | null>(null);
+  const [isSummaryLoading, setIsSummaryLoading] = useState(false);
+  const usersApi = useMemo(() => createNativeUsersApiClient({
+    getAccessToken: session.getAccessToken,
+    refreshAccessToken: session.refreshAccessToken,
+    clearSession: session.clearSession,
+  }), [session.clearSession, session.getAccessToken, session.refreshAccessToken]);
+
+  const loadSummary = useCallback(async () => {
+    setIsSummaryLoading(true);
+    setSummaryError(null);
+    try {
+      setSummary(await getCollectionSummary(usersApi));
+    } catch (error) {
+      setSummaryError(
+        error instanceof ApiClientError || error instanceof Error
+          ? error.message
+          : 'Unable to load your collection.',
+      );
+    } finally {
+      setIsSummaryLoading(false);
+    }
+  }, [usersApi]);
+
+  useEffect(() => {
+    if (status === 'signed-in') void loadSummary();
+  }, [loadSummary, status]);
 
   if (status === 'restoring') {
     return (
@@ -41,30 +76,15 @@ export default function NativeHomeRoute() {
 
   if (!user) return <Redirect href="/native/login" />;
 
-  return (
-    <View style={styles.centered}>
-      <Text style={styles.eyebrow}>NATIVE SESSION READY</Text>
-      <Text accessibilityRole="header" style={styles.title}>Welcome, {user.username}</Text>
-      <Text style={styles.body}>
-        Your account is authenticated natively. Collection screens remain in
-        the current app until their complete workflow is ready.
-      </Text>
-      <Pressable
-        accessibilityRole="button"
-        onPress={() => router.replace('/web')}
-        style={styles.primaryButton}
-      >
-        <Text style={styles.primaryButtonText}>Open current app</Text>
-      </Pressable>
-      <Pressable
-        accessibilityRole="button"
-        onPress={() => void signOut()}
-        style={styles.secondaryButton}
-      >
-        <Text style={styles.secondaryButtonText}>Sign out of native preview</Text>
-      </Pressable>
-    </View>
-  );
+  return <NativeHomeScreen
+    username={user.username}
+    summary={summary}
+    isLoading={isSummaryLoading}
+    error={summaryError}
+    onRetry={() => void loadSummary()}
+    onOpenCurrentApp={() => router.replace('/web')}
+    onSignOut={() => void signOut()}
+  />;
 }
 
 const styles = StyleSheet.create({
@@ -76,7 +96,6 @@ const styles = StyleSheet.create({
     padding: theme.spacing.xl,
     backgroundColor: '#06162f',
   },
-  eyebrow: { color: '#5ed8ff', fontSize: theme.type.caption, fontWeight: '800', letterSpacing: 1.4 },
   title: { color: '#fff', fontSize: theme.type.title, fontWeight: '800', textAlign: 'center' },
   body: { maxWidth: 420, color: '#cbd5e1', fontSize: theme.type.body, lineHeight: 21, textAlign: 'center' },
   primaryButton: {

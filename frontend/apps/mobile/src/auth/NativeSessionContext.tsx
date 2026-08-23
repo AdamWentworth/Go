@@ -158,16 +158,18 @@ export const NativeSessionProvider = ({
     }
   }, [api, clearSession, persistence]);
 
+  const getAccessToken = useCallback(() => accessTokenRef.current, []);
+
   const value = useMemo<NativeSessionContextValue>(() => ({
     status,
     user,
     signIn,
     signOut,
-    getAccessToken: () => accessTokenRef.current,
+    getAccessToken,
     refreshAccessToken,
     retrySession,
     clearSession,
-  }), [clearSession, refreshAccessToken, retrySession, signIn, signOut, status, user]);
+  }), [clearSession, getAccessToken, refreshAccessToken, retrySession, signIn, signOut, status, user]);
 
   return (
     <NativeSessionContext.Provider value={value}>
