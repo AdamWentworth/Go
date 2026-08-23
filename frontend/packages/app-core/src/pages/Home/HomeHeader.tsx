@@ -25,7 +25,11 @@ const HomeHeader = ({ logoUrl, lockupUrl, isLoggedIn }: HomeHeaderProps) => {
       behavior: prefersReducedMotion ? 'auto' : 'smooth',
       block: 'start',
     });
-    window.history.replaceState(null, '', '#feature-directory');
+    window.history.replaceState(
+      window.history.state,
+      '',
+      '#feature-directory',
+    );
   };
 
   return (

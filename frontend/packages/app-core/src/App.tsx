@@ -16,6 +16,7 @@ import AppBootstrap  from './AppBootstrap';
 import ActionMenu from './components/ActionMenu';
 import PerfTelemetryPanel from './components/dev/PerfTelemetryPanel';
 import ErrorBoundary from './components/ErrorBoundary';
+import RouteScrollRestoration from './components/navigation/RouteScrollRestoration';
 import { ContextBackProvider } from './contexts/ContextBackContext';
 import {
   AppLoadingFallback,
@@ -110,6 +111,7 @@ const AppContent: React.FC = () => {
 const App: React.FC = () => (
   <Router>
     <ContextBackProvider>
+      <RouteScrollRestoration />
       <AppLoadingProvider>
         <AppProviders>
           <AppBootstrap />
