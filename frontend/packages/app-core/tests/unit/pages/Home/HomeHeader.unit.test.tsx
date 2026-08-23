@@ -26,6 +26,7 @@ describe('HomeHeader', () => {
     expect(screen.getByRole('heading', { name: /build your collection.*find the right trade/i })).toBeInTheDocument();
     expect(screen.getByRole('img', { name: 'Pokémon Go Nexus' })).toHaveAttribute('src', '/images/logo/hero-lockup.png');
     expect(screen.getByRole('link', { name: 'Log in' })).toHaveAttribute('href', '/login');
+    expect(screen.getByRole('link', { name: 'Help' })).toHaveAttribute('href', '/help');
     expect(screen.getByRole('link', { name: /create your free account/i })).toHaveAttribute('href', '/register');
     expect(screen.getByRole('link', { name: /explore the app/i })).toHaveAttribute('href', '#feature-directory');
     expect(screen.getByText('Reciprocal trade matching')).toBeInTheDocument();
@@ -41,6 +42,7 @@ describe('HomeHeader', () => {
     expect(screen.queryByRole('link', { name: 'Log in' })).not.toBeInTheDocument();
     expect(screen.queryByRole('link', { name: /explore the app/i })).not.toBeInTheDocument();
     expect(screen.queryByRole('note', { name: 'Action menu tip' })).not.toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Help' })).toHaveAttribute('href', '/help');
   });
 
   it('smoothly scrolls to the feature directory instead of using the browser hash jump', () => {

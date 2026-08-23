@@ -28,6 +28,7 @@
 }
 
 .trade-board-page__brand img { width: 36px; height: 36px; object-fit: contain; }
+.trade-board-page__header-actions { display: flex; align-items: center; gap: 14px; }
 .trade-board-page__header-actions a { color: var(--color-text-primary); font-size: 0.82rem; font-weight: 850; }
 
 .trade-board-page__main {
@@ -133,6 +134,8 @@
 @media (max-width: 620px) {
   .trade-board-page__header,
   .trade-board-page__main { width: min(100% - 20px, 1260px); }
+  .trade-board-page__brand span { display: none; }
+  .trade-board-page__header-actions { gap: 10px; }
   .trade-board-page__main { padding-top: 18px; }
   .trade-board-page__intro { align-items: flex-start; }
   .trade-board-page__intro button { flex: 0 0 44px; width: 44px; padding: 0; font-size: 0; }

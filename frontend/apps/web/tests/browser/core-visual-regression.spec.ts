@@ -1,5 +1,6 @@
 import { expect, test, type Page } from "@playwright/test";
 
+import { openActionMenu } from "./support/actionMenu";
 import { installE2eRoutes } from "./support/e2eRoutes";
 
 const addSignedInUser = async (page: Page) => {
@@ -38,6 +39,7 @@ const consolidatedPageBaselines = [
   { name: "trade-board-builder", path: "/trade-board" },
   { name: "raid-methodology", path: "/raid/methodology" },
   { name: "pvp-methodology", path: "/pvp/methodology" },
+  { name: "help-information", path: "/help" },
 ] as const;
 
 const addThemePreference = async (page: Page, themeMode: ThemeMode) => {
@@ -154,12 +156,12 @@ test.describe("core responsive visual regression", () => {
       );
     });
 
-    test(`matches the ${themeMode} signed-in Action Menu baseline`, async ({ page }) => {
+    test(`matches the ${themeMode} signed-in Action Menu baseline`, async ({ page }, testInfo) => {
       await installE2eRoutes(page, { mockImages: false });
       await addThemePreference(page, themeMode);
       await addSignedInUser(page);
       await page.goto("/", { waitUntil: "domcontentloaded" });
-      await page.getByRole("button", { name: "Action Menu", exact: true }).click();
+      await openActionMenu(page, testInfo.project.name);
       await expect(page.getByRole("dialog", { name: "Quick navigation" })).toBeVisible();
       await expect(page.getByRole("button", { name: "Close" })).toBeEnabled();
       await expectVisualBaseline(

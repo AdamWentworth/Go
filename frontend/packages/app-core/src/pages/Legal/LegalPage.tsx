@@ -20,6 +20,7 @@ const LegalPage: FC<LegalPageProps> = ({ eyebrow, title, updated, children }) =>
       </header>
       <div className="legal-document__content">{children}</div>
       <footer>
+        <Link to="/help">Help &amp; information</Link>
         <Link to="/">Return to Pokémon Go Nexus</Link>
       </footer>
     </article>

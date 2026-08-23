@@ -7,6 +7,7 @@ import { installE2eRoutes } from './support/e2eRoutes';
 const publicRoutes = [
   '/',
   '/getting-started',
+  '/help',
   '/login',
   '/register',
   '/terms',

@@ -139,6 +139,7 @@ test.describe('shareable Trade Board', () => {
     try {
       await page.goto('/trade-board/BoardTrainer', { waitUntil: 'domcontentloaded' });
       await expect(page.getByRole('heading', { name: "@BoardTrainer’s Trade Board" })).toBeVisible();
+      await expect(page.getByRole('link', { name: 'Help' })).toHaveAttribute('href', '/help');
       await expect(page.getByText('Pokémon GO: BoardTrainerGO')).toBeVisible();
       await expect(page.getByRole('heading', { name: 'For Trade', level: 2 })).toBeVisible();
       await expect(page.getByRole('heading', { name: 'Looking For', level: 2 })).toBeVisible();

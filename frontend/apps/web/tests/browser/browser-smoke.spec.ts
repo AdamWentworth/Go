@@ -9,6 +9,7 @@ import { installE2eRoutes } from "./support/e2eRoutes";
 const defaultRoutePaths = [
   "/",
   "/getting-started",
+  "/help",
   "/login",
   "/register",
   "/terms",

@@ -37,6 +37,7 @@ const HomeHeader = ({ logoUrl, lockupUrl, isLoggedIn }: HomeHeaderProps) => {
         </Link>
         <div className="homeHeader__nav-links">
           <Link to="/getting-started">How it works</Link>
+          <Link to="/help">Help</Link>
           {!isLoggedIn ? <Link className="homeHeader__login" to="/login">Log in</Link> : null}
           {!isLoggedIn ? <Link className="homeHeader__register" to="/register">Create account</Link> : null}
         </div>

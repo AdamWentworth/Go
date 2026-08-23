@@ -1,7 +1,7 @@
 // ActionMenu.tsx
 
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { FaShareAlt } from 'react-icons/fa';
+import { FaQuestionCircle, FaShareAlt } from 'react-icons/fa';
 import { useNavigate, useLocation } from 'react-router';
 import ActionMenuButton from './ActionMenuButton';
 import CloseButton from './CloseButton';
@@ -375,6 +375,15 @@ const ActionMenu: React.FC = () => {
               </div>
             )}
           </div>
+
+          <button
+            className="help-button"
+            onClick={() => handleNavigation('/help')}
+            type="button"
+          >
+            <FaQuestionCircle aria-hidden="true" />
+            <span>Help &amp; guides</span>
+          </button>
 
           <div className={`action-menu-buttons-container ${isOpen ? 'open' : ''}`}>
             <button

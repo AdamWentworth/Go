@@ -12,6 +12,7 @@ import {
 import { Link } from 'react-router';
 
 import PokemonArtwork from '@/components/pokemonComponents/PokemonArtwork';
+import { useAuth } from '@/contexts/AuthContext';
 
 import './Home.css';
 import './GettingStarted.css';
@@ -146,7 +147,11 @@ const GUIDE_STEPS: GuideStep[] = [
   },
 ];
 
-const GettingStarted = () => (
+interface GettingStartedContentProps {
+  isLoggedIn: boolean;
+}
+
+const GettingStartedContent = ({ isLoggedIn }: GettingStartedContentProps) => (
   <div className="home-page getting-started">
     <header className="getting-started__topbar home-shell">
       <Link className="home-brand" to="/" aria-label="Pokémon Go Nexus home">
@@ -155,7 +160,9 @@ const GettingStarted = () => (
       </Link>
       <div>
         <Link className="getting-started__back" to="/"><FaArrowLeft aria-hidden="true" /> Home</Link>
-        <Link className="home-primary-action" to="/register">Create account</Link>
+        <Link className="home-primary-action" to={isLoggedIn ? '/pokemon' : '/register'}>
+          {isLoggedIn ? 'Open collection' : 'Create account'}
+        </Link>
       </div>
     </header>
 
@@ -227,11 +234,19 @@ const GettingStarted = () => (
             <h2 id="getting-started-finish-title">Start small. Let the workflow grow with you.</h2>
             <p>Add one Pokémon today. Your signed-in Home will show the next useful milestone without forcing you through a tour.</p>
           </div>
-          <Link className="home-primary-action" to="/register">Start your collection <FaArrowRight aria-hidden="true" /></Link>
+          <Link className="home-primary-action" to={isLoggedIn ? '/pokemon' : '/register'}>
+            {isLoggedIn ? 'Open Pokémon' : 'Start your collection'} <FaArrowRight aria-hidden="true" />
+          </Link>
         </section>
       </div>
     </div>
   </div>
 );
+
+const GettingStarted = () => {
+  const { isLoggedIn } = useAuth() ?? {};
+
+  return <GettingStartedContent isLoggedIn={Boolean(isLoggedIn)} />;
+};
 
 export default GettingStarted;

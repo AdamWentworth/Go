@@ -40,6 +40,8 @@ test.describe('Action Menu', () => {
       ]) {
         await expect(page.getByRole('button', { name: destination, exact: true })).toBeVisible();
       }
+      await expect(page.getByRole('button', { name: 'Help & guides' })).toBeVisible();
+      await expect(page.getByTestId('perf-telemetry')).toBeHidden();
 
       const searchDestination = page.getByRole('button', { name: 'Search', exact: true });
       await searchDestination.hover();

@@ -319,6 +319,7 @@ const HomeDashboard = ({ user }: HomeDashboardProps) => {
       <section className="home-quick-links" aria-labelledby="home-explore-heading">
         <header className="home-section-heading">
           <div><span className="home-eyebrow">Explore</span><h2 id="home-explore-heading">More trainer tools</h2></div>
+          <Link to="/help">Help &amp; guides <FaArrowRight aria-hidden="true" /></Link>
         </header>
         <div>
           <Link to="/pokedex"><img src="/images/btn_pokedex.png" alt="" /><span><strong>Pokédex</strong><small>Track registrations</small></span></Link>

@@ -191,6 +191,21 @@ describe('ActionMenu', () => {
     expect(screen.getByTestId('location')).toHaveTextContent('/settings');
   });
 
+  it('keeps help and information discoverable without adding another primary destination', async () => {
+    const { container } = render(
+      <MemoryRouter initialEntries={['/pokemon']}>
+        <ActionMenu />
+        <LocationProbe />
+      </MemoryRouter>,
+    );
+
+    await openActionMenu();
+
+    expect(container.querySelectorAll('.action-menu-item')).toHaveLength(9);
+    fireEvent.click(screen.getByRole('button', { name: 'Help & guides' }));
+    expect(screen.getByTestId('location')).toHaveTextContent('/help');
+  });
+
   it('uses Profile as the single social destination and surfaces requests there', async () => {
     mocks.auth.isLoggedIn = true;
     mocks.fetchFriendsOverview.mockResolvedValue({

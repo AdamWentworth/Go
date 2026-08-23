@@ -117,6 +117,7 @@ const TradeBoardPage: React.FC = () => {
           <span>Pokémon Go Nexus</span>
         </Link>
         <div className="trade-board-page__header-actions">
+          <Link to="/help">Help</Link>
           {isLoggedIn ? <Link to="/search">Find trainers</Link> : <Link to="/register">Create your board</Link>}
         </div>
       </header>

@@ -101,6 +101,39 @@ test.describe('Home page', () => {
       await expect(featureDirectory.getByRole('link', { name: /Search & discovery/i })).toBeVisible();
       await expect(featureDirectory.getByRole('link', { name: /^Trades/i })).toBeVisible();
       await expect(page.getByRole('link', { name: /complete illustrated guide/i })).toBeAttached();
+      await expect(page.getByRole('link', { name: 'Help & information' })).toBeAttached();
+
+      const widths = await page.evaluate(() => ({
+        body: document.body.scrollWidth,
+        document: document.documentElement.scrollWidth,
+        viewport: window.innerWidth,
+      }));
+      expect(widths.body).toBeLessThanOrEqual(widths.viewport);
+      expect(widths.document).toBeLessThanOrEqual(widths.viewport);
+    } finally {
+      await diagnostics.flush();
+    }
+
+    expect(diagnostics.blockingErrors()).toEqual([]);
+  });
+
+  test('keeps the public help directory readable and complete on mobile and desktop', async ({ page }, testInfo) => {
+    const diagnostics = attachBrowserDiagnostics(page, testInfo);
+    const mobileProject = testInfo.project.name.includes('mobile');
+    await page.setViewportSize(mobileProject
+      ? { width: 390, height: 844 }
+      : { width: 1280, height: 900 });
+    await installE2eRoutes(page);
+
+    try {
+      await page.goto('/help', { waitUntil: 'domcontentloaded' });
+      await expect(page.getByRole('heading', { name: 'Help & information' })).toBeVisible();
+      await expect(page.getByRole('link', { name: /Getting started/i })).toBeVisible();
+      await expect(page.getByRole('link', { name: /Raid methodology/i })).toBeVisible();
+      await expect(page.getByRole('link', { name: /PvP methodology/i })).toBeVisible();
+      await expect(page.getByRole('link', { name: /Privacy policy/i })).toBeVisible();
+      await expect(page.getByRole('link', { name: /Terms of service/i })).toBeVisible();
+      await expect(page.getByRole('link', { name: /Data deletion/i })).toBeVisible();
 
       const widths = await page.evaluate(() => ({
         body: document.body.scrollWidth,
@@ -262,6 +295,7 @@ test.describe('Home page', () => {
       await expect(page.getByRole('link', { name: /1 For Trade/ })).toBeVisible();
       await expect(page.getByRole('link', { name: /1 Wanted/ })).toBeVisible();
       await expect(page.getByRole('heading', { name: 'Your latest Pokémon' })).toBeVisible();
+      await expect(page.getByRole('link', { name: /Help & guides/i })).toBeVisible();
 
       const widths = await page.evaluate(() => ({
         body: document.body.scrollWidth,
