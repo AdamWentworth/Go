@@ -13,16 +13,27 @@
     --trade-muted: #9db5b4;
     --trade-positive-text: #65c786;
     --trade-negative-text: #ed7b86;
-    min-height: 100vh;
-    padding-top: 1px;
-    background:
+    --app-page-shell-background:
       linear-gradient(180deg, rgba(22, 117, 121, 0.12), transparent 210px),
       var(--color-app-surface);
-    color: var(--trade-text);
+    --app-page-shell-color: var(--trade-text);
+  }
+
+  .trades-page-shell {
+    overflow-x: clip;
+  }
+
+  .trade-product-header {
+    --product-header-border: var(--trade-border);
+    --product-header-label: var(--trade-accent);
+    --product-header-muted: var(--trade-muted);
+    --product-header-text: var(--trade-text);
+
+    margin-bottom: 8px;
   }
   
   .trade-activity-workspace {
-    width: min(1060px, calc(100% - 24px));
+    width: 100%;
     margin: 14px auto 110px;
   }
 
@@ -31,6 +42,10 @@
   }
 
   .trade-page-slider .horizontal-page-slider__panel {
+    min-width: 0;
+  }
+
+  .trade-preferences-workspace {
     min-width: 0;
   }
 
@@ -154,16 +169,7 @@
     --segmented-text: var(--trade-muted);
   }
 
-  .trade-page-topbar {
-    display: grid;
-    width: min(1060px, calc(100% - 24px));
-    grid-template-columns: minmax(0, 1fr) auto;
-    align-items: stretch;
-    gap: 8px;
-    margin: 18px auto 8px;
-  }
-
-  .trade-page-topbar .trade-page-section-switcher {
+  .trade-product-header .trade-page-section-switcher {
     width: 100%;
   }
 
@@ -207,9 +213,14 @@
   
 /* Compact activity navigation without horizontal page controls. */
 @media (max-width: 600px) {
-  .trade-page-topbar {
-    width: min(100% - 16px, 1060px);
-    margin-top: 10px;
+  .trade-product-header {
+    margin-bottom: 4px;
+    padding-inline: 4px;
+  }
+
+  .trade-product-header .product-page-header__icon {
+    width: 42px;
+    height: 42px;
   }
 
   .trade-page-share-board {
@@ -217,7 +228,7 @@
   }
 
   .trade-activity-workspace {
-    width: min(100% - 16px, 1060px);
+    width: 100%;
     margin-top: 10px;
     margin-bottom: calc(90px + env(safe-area-inset-bottom));
   }
@@ -277,10 +288,6 @@
 }
 
 @media (max-width: 420px) {
-  .trade-page-topbar {
-    grid-template-columns: 1fr;
-  }
-
   .trade-page-share-board {
     min-height: 44px;
   }

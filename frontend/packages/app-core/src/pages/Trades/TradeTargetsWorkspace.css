@@ -2,7 +2,7 @@
   --preference-accent: #3aa85f;
   --preference-surface: rgba(58, 168, 95, 0.16);
 
-  width: min(1060px, calc(100% - 24px));
+  width: 100%;
   margin: 0 auto 110px;
   color: var(--trade-text);
 }

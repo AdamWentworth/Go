@@ -17,6 +17,7 @@ This folder contains shared styling primitives used across the app.
      - `FeatureName.responsive.css` (media-query overrides)
 
 3. Shared application layout components
+   - Use `AppPageShell` for responsive page gutters, maximum content widths, safe-area spacing, and the page background contract.
    - Use `ProductPageHeader` for standard page identity, supporting copy, and page actions.
    - Use `SegmentedControl` for sibling views that behave as buttons or tabs.
    - Use `PageState` for empty, loading, error, and retry states.

@@ -25,6 +25,7 @@ const themeModes = ["dark", "light"] as const;
 type ThemeMode = (typeof themeModes)[number];
 
 const consolidatedPageBaselines = [
+  { name: "pokedex-catalog", path: "/pokedex" },
   { name: "trainer-settings", path: "/settings" },
   { name: "raid-planner", path: "/raid" },
   { name: "max-battles", path: "/max" },
@@ -55,7 +56,10 @@ const stabilizePage = async (page: Page) => {
     await document.fonts.ready;
     await Promise.all(
       Array.from(document.images, (image) =>
-        image.decode().catch(() => undefined),
+        Promise.race([
+          image.decode().catch(() => undefined),
+          new Promise<void>((resolve) => window.setTimeout(resolve, 2_000)),
+        ]),
       ),
     );
   });

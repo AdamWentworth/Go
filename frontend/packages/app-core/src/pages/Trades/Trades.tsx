@@ -4,6 +4,8 @@ import { Link, useSearchParams } from 'react-router';
 
 import HorizontalPageSlider from '@/components/motion/HorizontalPageSlider';
 import useHorizontalPageNavigation from '@/components/motion/useHorizontalPageNavigation';
+import AppPageShell from '@/components/layout/AppPageShell';
+import ProductPageHeader from '@/components/layout/ProductPageHeader';
 import SegmentedControl from '@/components/layout/SegmentedControl';
 import { useInstancesStore } from '@/features/instances/store/useInstancesStore';
 import { useTradeStore } from '@/features/trades/store/useTradeStore';
@@ -92,8 +94,24 @@ function Trades() {
   }, [currentUsername, trades]);
 
   return (
-    <div className="trades-container">
-      <header className="trade-page-topbar">
+    <AppPageShell
+      className="trades-container"
+      contentClassName="trades-page-shell"
+      inset="compact"
+      maxWidth="workspace"
+    >
+      <ProductPageHeader
+        actions={(
+          <Link className="trade-page-share-board" to="/trade-board">
+            <FaShareAlt aria-hidden="true" /> Share board
+          </Link>
+        )}
+        className="trade-product-header"
+        description="Set your preferences, respond to offers, and follow every exchange."
+        eyebrow="Trainer exchange"
+        icon={<img alt="" src="/images/btn_trades.png" />}
+        title="Trades"
+      >
         <SegmentedControl
           ariaLabel="Trade sections"
           className="trade-page-section-switcher"
@@ -102,10 +120,7 @@ function Trades() {
           onChange={setActiveSection}
           value={activeSection}
         />
-        <Link className="trade-page-share-board" to="/trade-board">
-          <FaShareAlt aria-hidden="true" /> Share board
-        </Link>
-      </header>
+      </ProductPageHeader>
 
       <HorizontalPageSlider
         activeIndex={sectionSlider.activeIndex}
@@ -115,7 +130,14 @@ function Trades() {
         isDragging={sectionSlider.isDragging}
         {...sectionSlider.swipeHandlers}
       >
-        <TradeTargetsWorkspace />
+        <section
+          aria-labelledby="trade-tab-preferences"
+          className="trade-preferences-workspace"
+          id="trade-section-preferences"
+          role="tabpanel"
+        >
+          <TradeTargetsWorkspace />
+        </section>
         <section
           aria-labelledby="trade-tab-activity"
           className="trade-activity-workspace"
@@ -145,7 +167,7 @@ function Trades() {
           />
         </section>
       </HorizontalPageSlider>
-    </div>
+    </AppPageShell>
   );
 }
 
