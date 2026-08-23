@@ -191,7 +191,7 @@ describe('ActionMenu', () => {
     expect(screen.getByTestId('location')).toHaveTextContent('/settings');
   });
 
-  it('keeps help and information discoverable without adding another primary destination', async () => {
+  it('opens a Learn and support directory without adding another primary destination', async () => {
     const { container } = render(
       <MemoryRouter initialEntries={['/pokemon']}>
         <ActionMenu />
@@ -202,8 +202,40 @@ describe('ActionMenu', () => {
     await openActionMenu();
 
     expect(container.querySelectorAll('.action-menu-item')).toHaveLength(9);
-    fireEvent.click(screen.getByRole('button', { name: 'Help & guides' }));
-    expect(screen.getByTestId('location')).toHaveTextContent('/help');
+    const supportButton = screen.getByRole('button', { name: 'Learn & support' });
+    expect(supportButton).toHaveAttribute('aria-expanded', 'false');
+    fireEvent.click(supportButton);
+
+    expect(supportButton).toHaveAttribute('aria-expanded', 'true');
+    expect(screen.getByRole('navigation', { name: 'Learn and support' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Getting Started' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'FAQ' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'About' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Trade Safety' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Help directory' })).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'About' }));
+    expect(screen.getByTestId('location')).toHaveTextContent('/about');
+  });
+
+  it('closes the Learn and support directory before closing the action menu', async () => {
+    const { container } = render(
+      <MemoryRouter initialEntries={['/pokemon']}>
+        <ActionMenu />
+      </MemoryRouter>,
+    );
+
+    const dialog = await openActionMenu();
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Close' })).toBeEnabled());
+    fireEvent.click(screen.getByRole('button', { name: 'Learn & support' }));
+    expect(screen.getByRole('navigation', { name: 'Learn and support' })).toBeInTheDocument();
+
+    fireEvent.keyDown(dialog, { key: 'Escape' });
+    expect(screen.queryByRole('navigation', { name: 'Learn and support' })).not.toBeInTheDocument();
+    expect(container.querySelector('.action-menu-overlay')).toHaveAttribute('data-menu-state', 'open');
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'Learn & support' })).toHaveFocus();
+    });
   });
 
   it('uses Profile as the single social destination and surfaces requests there', async () => {
@@ -289,7 +321,7 @@ describe('ActionMenu', () => {
     const dialog = await openActionMenu();
     expect(dialog).toHaveAttribute('aria-modal', 'true');
     expect(document.body).toHaveStyle({ overflow: 'hidden' });
-    expect(dialog).toHaveFocus();
+    await waitFor(() => expect(dialog).toHaveFocus());
 
     const closeButton = await waitFor(() => {
       const control = screen.getByRole('button', { name: 'Close' });
@@ -317,6 +349,8 @@ describe('ActionMenu', () => {
 
     await openActionMenu();
     await waitFor(() => expect(screen.getByRole('button', { name: 'Close' })).toBeEnabled());
+    fireEvent.click(screen.getByRole('button', { name: 'Learn & support' }));
+    expect(screen.getByRole('navigation', { name: 'Learn and support' })).toBeInTheDocument();
 
     await expect(container).toHaveNoViolations();
   });

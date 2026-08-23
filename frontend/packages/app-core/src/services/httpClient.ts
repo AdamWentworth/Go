@@ -1,4 +1,5 @@
 import { createScopedLogger } from '@/utils/logger';
+import { usePwaStatusStore } from '@/stores/usePwaStatusStore';
 export { buildUrl } from '@shared-contracts/common';
 
 const log = createScopedLogger('httpClient');
@@ -13,6 +14,10 @@ export async function requestWithPolicy(
   input: string | URL,
   options: RequestWithPolicyOptions = {},
 ): Promise<Response> {
+  if (!usePwaStatusStore.getState().isOnline) {
+    throw new OfflineError();
+  }
+
   const controller = new AbortController();
   const {
     timeoutMs = DEFAULT_TIMEOUT_MS,
@@ -35,6 +40,13 @@ export async function requestWithPolicy(
     throw error;
   } finally {
     window.clearTimeout(timeout);
+  }
+}
+
+export class OfflineError extends Error {
+  constructor(message = 'You are offline. Reconnect before using this feature.') {
+    super(message);
+    this.name = 'OfflineError';
   }
 }
 

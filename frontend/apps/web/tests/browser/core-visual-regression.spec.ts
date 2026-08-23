@@ -182,6 +182,34 @@ test.describe("core responsive visual regression", () => {
         page,
         themedSnapshotName("action-menu-signed-in.png", themeMode),
       );
+
+      await page.getByRole("button", { name: "Learn & support" }).click();
+      await expect(
+        page.getByRole("navigation", { name: "Learn and support" }),
+      ).toBeVisible();
+      await expectVisualBaseline(
+        page,
+        themedSnapshotName("action-menu-support.png", themeMode),
+      );
+    });
+
+    test(`matches the ${themeMode} offline status baseline`, async ({ page }) => {
+      await installE2eRoutes(page, { mockImages: false });
+      await addThemePreference(page, themeMode);
+      await page.goto("/", { waitUntil: "domcontentloaded" });
+      await expect(
+        page.getByRole("heading", {
+          name: "Build your collection. Find the right trade.",
+        }),
+      ).toBeVisible();
+      await page.evaluate(() => window.dispatchEvent(new Event("offline")));
+      await expect(
+        page.getByRole("alert").filter({ hasText: "You’re offline" }),
+      ).toBeVisible();
+      await expectVisualBaseline(
+        page,
+        themedSnapshotName("offline-status.png", themeMode),
+      );
     });
 
     test(`matches the ${themeMode} login baseline`, async ({ page }) => {

@@ -14,6 +14,7 @@ import './App.css';
 import AppProviders  from './AppProviders';
 import AppBootstrap  from './AppBootstrap';
 import ActionMenu from './components/ActionMenu';
+import AppStatusCenter from './components/status/AppStatusCenter';
 import PerfTelemetryPanel from './components/dev/PerfTelemetryPanel';
 import ErrorBoundary from './components/ErrorBoundary';
 import RouteScrollRestoration from './components/navigation/RouteScrollRestoration';
@@ -125,6 +126,7 @@ const App: React.FC = () => (
           <AppBootstrap />
           <ErrorBoundary>
             <AppContent />
+            <AppStatusCenter />
           </ErrorBoundary>
           <PerfTelemetryPanel />
         </AppProviders>

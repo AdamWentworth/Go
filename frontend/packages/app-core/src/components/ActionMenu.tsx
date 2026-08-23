@@ -1,7 +1,14 @@
 // ActionMenu.tsx
 
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { FaQuestionCircle, FaShareAlt } from 'react-icons/fa';
+import {
+  FaBookOpen,
+  FaCompass,
+  FaInfoCircle,
+  FaQuestionCircle,
+  FaShareAlt,
+  FaShieldAlt,
+} from 'react-icons/fa';
 import { useNavigate, useLocation } from 'react-router';
 import ActionMenuButton from './ActionMenuButton';
 import CloseButton from './CloseButton';
@@ -29,11 +36,22 @@ const FOCUSABLE_MENU_CONTROL = [
   '[tabindex]:not([tabindex="-1"])',
 ].join(',');
 
+const SUPPORT_DESTINATIONS = [
+  { icon: FaCompass, label: 'Getting Started', path: '/getting-started' },
+  { icon: FaQuestionCircle, label: 'FAQ', path: '/faq' },
+  { icon: FaInfoCircle, label: 'About', path: '/about' },
+  { icon: FaShieldAlt, label: 'Trade Safety', path: '/safety' },
+  { icon: FaBookOpen, label: 'Help directory', path: '/help' },
+] as const;
+
 const ActionMenu: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [isVisible, setIsVisible] = useState(false);
   const [isCloseEnabled, setIsCloseEnabled] = useState(false);
+  const [isSupportOpen, setIsSupportOpen] = useState(false);
   const overlayRef = useRef<HTMLDivElement | null>(null);
+  const supportButtonRef = useRef<HTMLButtonElement | null>(null);
+  const supportPanelRef = useRef<HTMLElement | null>(null);
   const restoreFocusRef = useRef<HTMLElement | null>(null);
   const shouldRestoreFocusRef = useRef(false);
   const openingAnimationTimeoutRef = useRef<number | null>(null);
@@ -193,8 +211,28 @@ const ActionMenu: React.FC = () => {
     cancelPendingOpenAnimation();
     cancelPendingCloseEnable();
     setIsCloseEnabled(false);
+    setIsSupportOpen(false);
     setIsOpen(false);
   }, [cancelPendingCloseEnable, cancelPendingOpenAnimation]);
+
+  const closeSupportMenu = useCallback((restoreFocus = true) => {
+    setIsSupportOpen(false);
+    if (restoreFocus) {
+      window.requestAnimationFrame(() => supportButtonRef.current?.focus());
+    }
+  }, []);
+
+  const toggleSupportMenu = () => {
+    if (isSupportOpen) {
+      closeSupportMenu();
+      return;
+    }
+
+    setIsSupportOpen(true);
+    window.requestAnimationFrame(() => {
+      supportPanelRef.current?.querySelector<HTMLButtonElement>('button')?.focus();
+    });
+  };
 
   const handleMenuKeyDown = useCallback((event: React.KeyboardEvent<HTMLDivElement>) => {
     if (!isOpen) return;
@@ -203,6 +241,10 @@ const ActionMenu: React.FC = () => {
       if (!isCloseEnabled) return;
       event.preventDefault();
       event.stopPropagation();
+      if (isSupportOpen) {
+        closeSupportMenu();
+        return;
+      }
       closeMenu();
       return;
     }
@@ -230,7 +272,7 @@ const ActionMenu: React.FC = () => {
       event.preventDefault();
       firstControl.focus();
     }
-  }, [closeMenu, isCloseEnabled, isOpen]);
+  }, [closeMenu, closeSupportMenu, isCloseEnabled, isOpen, isSupportOpen]);
 
   useEffect(() => {
     const handleOpenRequest = () => openMenu();
@@ -248,6 +290,7 @@ const ActionMenu: React.FC = () => {
   };
 
   const handleNavigation = (path: string) => {
+    setIsSupportOpen(false);
     if (location.pathname !== path) {
       const replacesMobileMenuGuard = isMobileContextBackEnvironment();
       pendingMobileNavigationRef.current = replacesMobileMenuGuard;
@@ -269,6 +312,12 @@ const ActionMenu: React.FC = () => {
   };
 
   useContextBackHandler(isVisible, closeMenu, 'action-menu', 'mobile');
+  useContextBackHandler(
+    isVisible && isSupportOpen,
+    () => closeSupportMenu(),
+    'action-menu-support',
+    'mobile',
+  );
 
   return (
     <>
@@ -376,14 +425,40 @@ const ActionMenu: React.FC = () => {
             )}
           </div>
 
-          <button
-            className="help-button"
-            onClick={() => handleNavigation('/help')}
-            type="button"
-          >
-            <FaQuestionCircle aria-hidden="true" />
-            <span>Help &amp; guides</span>
-          </button>
+          <div className="action-menu-support">
+            {isSupportOpen ? (
+              <nav
+                ref={supportPanelRef}
+                className="action-menu-support__panel"
+                id="action-menu-support-panel"
+                aria-label="Learn and support"
+              >
+                <span className="action-menu-support__eyebrow">Learn &amp; support</span>
+                {SUPPORT_DESTINATIONS.map(({ icon: Icon, label, path }) => (
+                  <button
+                    key={path}
+                    className="action-menu-support__link"
+                    onClick={() => handleNavigation(path)}
+                    type="button"
+                  >
+                    <Icon aria-hidden="true" />
+                    <span>{label}</span>
+                  </button>
+                ))}
+              </nav>
+            ) : null}
+            <button
+              ref={supportButtonRef}
+              aria-controls="action-menu-support-panel"
+              aria-expanded={isSupportOpen}
+              className="help-button"
+              onClick={toggleSupportMenu}
+              type="button"
+            >
+              <FaBookOpen aria-hidden="true" />
+              <span>Learn &amp; support</span>
+            </button>
+          </div>
 
           <div className={`action-menu-buttons-container ${isOpen ? 'open' : ''}`}>
             <button

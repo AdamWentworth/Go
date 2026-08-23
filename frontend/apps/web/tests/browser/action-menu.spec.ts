@@ -40,7 +40,23 @@ test.describe('Action Menu', () => {
       ]) {
         await expect(page.getByRole('button', { name: destination, exact: true })).toBeVisible();
       }
-      await expect(page.getByRole('button', { name: 'Help & guides' })).toBeVisible();
+      const supportButton = page.getByRole('button', { name: 'Learn & support' });
+      await expect(supportButton).toBeVisible();
+      await supportButton.click();
+      const supportDirectory = page.getByRole('navigation', { name: 'Learn and support' });
+      await expect(supportDirectory).toBeVisible();
+      for (const destination of [
+        'Getting Started',
+        'FAQ',
+        'About',
+        'Trade Safety',
+        'Help directory',
+      ]) {
+        await expect(supportDirectory.getByRole('button', { name: destination })).toBeVisible();
+      }
+      await page.keyboard.press('Escape');
+      await expect(supportDirectory).toHaveCount(0);
+      await expect(dialog).toBeVisible();
       await expect(page.getByTestId('perf-telemetry')).toBeHidden();
 
       const searchDestination = page.getByRole('button', { name: 'Search', exact: true });
@@ -115,6 +131,25 @@ test.describe('Action Menu', () => {
         expect(item.right).toBeLessThanOrEqual(layout.viewportWidth);
         expect(item.bottom).toBeLessThanOrEqual(layout.viewportHeight);
       }
+
+      await page.getByRole('button', { name: 'Learn & support' }).click();
+      const supportLayout = await page
+        .getByRole('navigation', { name: 'Learn and support' })
+        .evaluate((element) => {
+          const rect = element.getBoundingClientRect();
+          return {
+            bottom: rect.bottom,
+            left: rect.left,
+            right: rect.right,
+            top: rect.top,
+            viewportHeight: window.innerHeight,
+            viewportWidth: window.innerWidth,
+          };
+        });
+      expect(supportLayout.left).toBeGreaterThanOrEqual(0);
+      expect(supportLayout.top).toBeGreaterThanOrEqual(0);
+      expect(supportLayout.right).toBeLessThanOrEqual(supportLayout.viewportWidth);
+      expect(supportLayout.bottom).toBeLessThanOrEqual(supportLayout.viewportHeight);
     } finally {
       await diagnostics.flush();
     }

@@ -34,6 +34,11 @@ self.addEventListener('message', (event) => {
     return;
   }
 
+  if (type === 'SKIP_WAITING') {
+    self.skipWaiting();
+    return;
+  }
+
   // Auth state updates (explicit)
   // e.g., { type: 'AUTH_STATE', payload: { isLoggedIn: true/false } }
   if (type === 'AUTH_STATE' && payload) {
@@ -73,7 +78,9 @@ self.addEventListener('message', (event) => {
 });
 
 /* -------------------------- Lifecycle (no cache) ------------------------- */
-self.addEventListener('install', () => self.skipWaiting());
+self.addEventListener('install', () => {
+  log('install', { waitingForActivation: Boolean(self.registration.active) });
+});
 self.addEventListener('activate', (event) => {
   event.waitUntil(self.clients.claim());
 });

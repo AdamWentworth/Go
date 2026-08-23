@@ -27,6 +27,13 @@ describe('service worker update queue compatibility', () => {
     expect(workerSource).toContain('db?.close()');
   });
 
+  it('waits for user approval before activating an updated worker', () => {
+    expect(workerSource).toContain("type === 'SKIP_WAITING'");
+    expect(workerSource).not.toContain(
+      "self.addEventListener('install', () => self.skipWaiting())",
+    );
+  });
+
   it('only reads and sends the Pokémon update queue', () => {
     expect(workerSource).toContain("'batchedPokemonUpdates'");
     expect(workerSource).not.toContain('batchedTradeUpdates');
