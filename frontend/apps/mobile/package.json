@@ -14,6 +14,7 @@
   },
   "dependencies": {
     "@babel/runtime": "^7.28.6",
+    "@pokemongonexus/shared-api-client": "file:../../packages/shared-api-client",
     "@pokemongonexus/shared-ui-tokens": "file:../../packages/shared-ui-tokens",
     "expo": "~55.0.29",
     "expo-constants": "~55.0.15",
