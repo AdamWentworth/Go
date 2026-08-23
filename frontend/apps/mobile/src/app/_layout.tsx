@@ -1,20 +1,20 @@
+import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { StyleSheet, View } from 'react-native';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
-import { MobileErrorBoundary } from './src/components/MobileErrorBoundary';
-import { MobileAppRoot } from './src/MobileAppRoot';
-import { initializeObservability } from './src/observability/bootstrap';
+import { MobileErrorBoundary } from '../components/MobileErrorBoundary';
+import { initializeObservability } from '../observability/bootstrap';
 
 initializeObservability();
 
-export default function App() {
+export default function RootLayout() {
   return (
     <SafeAreaProvider>
       <StatusBar style="light" translucent={false} backgroundColor="#000" />
       <SafeAreaView style={styles.appShell} edges={['top', 'bottom']}>
         <View style={styles.appShell}>
           <MobileErrorBoundary>
-            <MobileAppRoot />
+            <Stack screenOptions={{ headerShown: false }} />
           </MobileErrorBoundary>
         </View>
       </SafeAreaView>

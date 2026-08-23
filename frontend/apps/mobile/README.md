@@ -9,6 +9,8 @@ Expo mobile shell for Pokémon Go Nexus.
 3. Route presets for major frontend pages (`/pokemon`, `/search`, `/trades`, `/account`, etc.).
 4. Typed runtime config via Expo `extra`.
 5. Lint/typecheck/test scripts.
+6. Expo Router foundation for incremental native routes.
+7. SecureStore-backed refresh-token persistence for native sessions.
 
 ## Commands
 
@@ -30,6 +32,10 @@ npm --workspace apps/mobile run test
 Copy `.env.example` values into your environment (or EAS secrets) using `EXPO_PUBLIC_*` keys.
 
 `EXPO_PUBLIC_FRONTEND_APP_URL` controls which deployed web app the mobile shell loads.
+
+`EXPO_PUBLIC_MOBILE_EXPERIENCE` defaults to `webview`. Set it to
+`native-preview` only in deliberate preview builds; every preview retains a
+direct fallback to the current WebView app.
 
 ## Note on Node version
 

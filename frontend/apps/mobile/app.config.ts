@@ -17,9 +17,17 @@ const readMobileExperience = (): 'webview' | 'native-preview' =>
 
 export default ({ config }: ConfigContext): ExpoConfig => ({
   ...config,
-  name: config.name ?? 'mobile',
-  slug: config.slug ?? 'mobile',
+  name: config.name === 'mobile' || !config.name ? 'Pokémon Go Nexus' : config.name,
+  slug: config.slug === 'mobile' || !config.slug ? 'pokegonexus' : config.slug,
   version: config.version ?? '1.0.0',
+  scheme: config.scheme ?? 'pokegonexus',
+  plugins: Array.from(
+    new Set([...(config.plugins ?? []), 'expo-router', 'expo-secure-store']),
+  ),
+  experiments: {
+    ...config.experiments,
+    typedRoutes: true,
+  },
   extra: {
     ...config.extra,
     api: {

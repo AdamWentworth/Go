@@ -47,13 +47,15 @@ first complete vertical slice are ready.
 3. Extract browser-free contracts, API transport, and domain rules.
 4. Add bearer-token support alongside cookie authentication in every protected
    backend service.
-5. Add native login, session refresh, logout, OAuth callbacks, and secure token
-   storage behind `native-preview`.
-6. Add Expo Router and native Home/collection read-only screens.
-7. Add collection mutations and offline synchronization through Receiver.
-8. Port Search, social/profile, Trades, and the remaining routes by workflow.
-9. Make native mode the default only after device and production validation.
-10. Remove the WebView core path in a later contract phase.
+5. Add Expo Router and secure token storage while keeping WebView as the
+   default route.
+6. Add native login, session refresh, logout, and OAuth callbacks behind
+   `native-preview`.
+7. Add native Home/collection read-only screens.
+8. Add collection mutations and offline synchronization through Receiver.
+9. Port Search, social/profile, Trades, and the remaining routes by workflow.
+10. Make native mode the default only after device and production validation.
+11. Remove the WebView core path in a later contract phase.
 
 ## Commit gate
 
