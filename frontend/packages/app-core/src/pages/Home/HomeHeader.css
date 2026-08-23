@@ -86,7 +86,8 @@
   max-width: 940px;
   margin: 9px 0 20px;
   font-size: clamp(3rem, 6vw, 5.35rem);
-  line-height: 0.97;
+  /* Keep gradient-text descenders (notably the g in "right") in the paint box. */
+  line-height: 1.04;
   letter-spacing: -0.055em;
 }
 
