@@ -6,6 +6,7 @@ on:
       - "frontend/apps/mobile/**"
       - "frontend/packages/shared-api-client/**"
       - "frontend/packages/shared-contracts/**"
+      - "frontend/packages/shared-domain/**"
       - "frontend/packages/shared-ui-tokens/**"
       - ".github/workflows/ci-mobile.yml"
   push:
@@ -14,6 +15,7 @@ on:
       - "frontend/apps/mobile/**"
       - "frontend/packages/shared-api-client/**"
       - "frontend/packages/shared-contracts/**"
+      - "frontend/packages/shared-domain/**"
       - "frontend/packages/shared-ui-tokens/**"
       - ".github/workflows/ci-mobile.yml"
   workflow_dispatch: {}

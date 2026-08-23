@@ -1,0 +1,13 @@
+{
+  "name": "@pokemongonexus/shared-domain",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./instances": "./src/instances.ts"
+  },
+  "dependencies": {
+    "@pokemongonexus/shared-contracts": "file:../shared-contracts"
+  }
+}

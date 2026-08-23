@@ -1,11 +1,43 @@
-import type { PokemonInstance } from '@/types/pokemonInstance';
+import type { PokemonInstance } from '@pokemongonexus/shared-contracts/instances';
 
 type InstanceLike = {
   instance_id?: unknown;
 };
 
+type InstancePatch = Partial<PokemonInstance>;
+
 const UUID_AT_END_REGEX =
   /([0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12})$/i;
+
+export const FAVORITE_TO_TRADE_ERROR =
+  'Favorite Pokémon cannot be listed For Trade. Remove Favorite first.';
+
+export const TRADE_TO_FAVORITE_ERROR =
+  'For Trade Pokémon cannot be marked as Favorite. Remove it from For Trade first.';
+
+export const getFavoriteTradeConflict = (
+  current: InstancePatch,
+  patch: InstancePatch,
+): string | null => {
+  if (patch.favorite === undefined && patch.is_for_trade === undefined) return null;
+  const nextFavorite = patch.favorite ?? current.favorite ?? false;
+  const nextForTrade = patch.is_for_trade ?? current.is_for_trade ?? false;
+  if (!nextFavorite || !nextForTrade) return null;
+
+  if (patch.favorite === true && current.is_for_trade && patch.is_for_trade !== false) {
+    return TRADE_TO_FAVORITE_ERROR;
+  }
+  return FAVORITE_TO_TRADE_ERROR;
+};
+
+export const enforceFavoriteTradeInvariant = (
+  instance: InstancePatch,
+  preferredState: 'favorite' | 'trade',
+): void => {
+  if (!instance.favorite || !instance.is_for_trade) return;
+  if (preferredState === 'trade') instance.favorite = false;
+  else instance.is_for_trade = false;
+};
 
 export const extractLegacyInstanceId = (key: string): string | null => {
   const idx = key.lastIndexOf('_');
@@ -86,7 +118,10 @@ export const resolveInstanceCollectionKey = <T extends InstanceLike>(
 
   for (const [existingKey, row] of Object.entries(collection)) {
     const normalizedExistingKey = normalizeInstanceToken(existingKey);
-    if (normalizedExistingKey && normalizedCandidateIds.has(normalizedExistingKey)) {
+    if (
+      normalizedExistingKey &&
+      normalizedCandidateIds.has(normalizedExistingKey)
+    ) {
       return existingKey;
     }
 
@@ -101,7 +136,10 @@ export const resolveInstanceCollectionKey = <T extends InstanceLike>(
     }
 
     const normalizedRowInstanceId = normalizeInstanceToken(rowInstanceId);
-    if (normalizedRowInstanceId && normalizedCandidateIds.has(normalizedRowInstanceId)) {
+    if (
+      normalizedRowInstanceId &&
+      normalizedCandidateIds.has(normalizedRowInstanceId)
+    ) {
       return existingKey;
     }
   }
