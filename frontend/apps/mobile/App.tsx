@@ -2,8 +2,8 @@ import { StatusBar } from 'expo-status-bar';
 import { StyleSheet, View } from 'react-native';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import { MobileErrorBoundary } from './src/components/MobileErrorBoundary';
+import { MobileAppRoot } from './src/MobileAppRoot';
 import { initializeObservability } from './src/observability/bootstrap';
-import { WebReplicaApp } from './src/screens/WebReplicaApp';
 
 initializeObservability();
 
@@ -14,7 +14,7 @@ export default function App() {
       <SafeAreaView style={styles.appShell} edges={['top', 'bottom']}>
         <View style={styles.appShell}>
           <MobileErrorBoundary>
-            <WebReplicaApp />
+            <MobileAppRoot />
           </MobileErrorBoundary>
         </View>
       </SafeAreaView>

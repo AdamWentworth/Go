@@ -1,4 +1,8 @@
 import Constants from 'expo-constants';
+import {
+  resolveMobileExperienceMode,
+  type MobileExperienceMode,
+} from './mobileExperience';
 
 type RuntimeApiConfig = {
   authApiUrl: string;
@@ -22,10 +26,17 @@ type RuntimeRealtimeConfig = {
   allowAccessTokenQueryFallback: boolean;
 };
 
+type RuntimeMobileConfig = {
+  experienceMode: MobileExperienceMode;
+};
+
 type ExpoExtra = {
   api?: Partial<RuntimeApiConfig>;
   observability?: Partial<RuntimeObservabilityConfig>;
   realtime?: Partial<RuntimeRealtimeConfig>;
+  mobile?: {
+    experienceMode?: unknown;
+  };
 };
 
 const DEFAULT_API_CONFIG: RuntimeApiConfig = {
@@ -119,11 +130,13 @@ const extra = readExtra();
 const apiOverrides = extra.api ?? {};
 const observabilityOverrides = extra.observability ?? {};
 const realtimeOverrides = extra.realtime ?? {};
+const mobileOverrides = extra.mobile ?? {};
 
 export const runtimeConfig: {
   api: RuntimeApiConfig;
   observability: RuntimeObservabilityConfig;
   realtime: RuntimeRealtimeConfig;
+  mobile: RuntimeMobileConfig;
 } = {
   api: {
     authApiUrl: sanitizeUrl(apiOverrides.authApiUrl, DEFAULT_API_CONFIG.authApiUrl),
@@ -152,6 +165,11 @@ export const runtimeConfig: {
     allowAccessTokenQueryFallback: sanitizeBoolean(
       realtimeOverrides.allowAccessTokenQueryFallback,
       DEFAULT_REALTIME_CONFIG.allowAccessTokenQueryFallback,
+    ),
+  },
+  mobile: {
+    experienceMode: resolveMobileExperienceMode(
+      mobileOverrides.experienceMode,
     ),
   },
 };

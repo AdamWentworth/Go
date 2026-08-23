@@ -10,6 +10,11 @@ const readBool = (name: string, fallback: boolean): boolean => {
   return fallback;
 };
 
+const readMobileExperience = (): 'webview' | 'native-preview' =>
+  process.env.EXPO_PUBLIC_MOBILE_EXPERIENCE?.trim() === 'native-preview'
+    ? 'native-preview'
+    : 'webview';
+
 export default ({ config }: ConfigContext): ExpoConfig => ({
   ...config,
   name: config.name ?? 'mobile',
@@ -35,6 +40,9 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     },
     realtime: {
       allowAccessTokenQueryFallback: readBool('EXPO_PUBLIC_REALTIME_ALLOW_QUERY_TOKEN', false),
+    },
+    mobile: {
+      experienceMode: readMobileExperience(),
     },
   },
 });
