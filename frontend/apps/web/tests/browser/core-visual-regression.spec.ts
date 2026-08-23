@@ -154,6 +154,20 @@ test.describe("core responsive visual regression", () => {
       );
     });
 
+    test(`matches the ${themeMode} signed-in Action Menu baseline`, async ({ page }) => {
+      await installE2eRoutes(page, { mockImages: false });
+      await addThemePreference(page, themeMode);
+      await addSignedInUser(page);
+      await page.goto("/", { waitUntil: "domcontentloaded" });
+      await page.getByRole("button", { name: "Action Menu", exact: true }).click();
+      await expect(page.getByRole("dialog", { name: "Quick navigation" })).toBeVisible();
+      await expect(page.getByRole("button", { name: "Close" })).toBeEnabled();
+      await expectVisualBaseline(
+        page,
+        themedSnapshotName("action-menu-signed-in.png", themeMode),
+      );
+    });
+
     test(`matches the ${themeMode} login baseline`, async ({ page }) => {
       await installE2eRoutes(page, { mockImages: false });
       await addThemePreference(page, themeMode);
