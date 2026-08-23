@@ -6,6 +6,8 @@
   --ranking-text: #f4ffff;
   --ranking-muted: #9eb9bb;
   --ranking-teal: #42d7c4;
+  --ranking-label: #8ec5c9;
+  --ranking-accent-text: var(--ranking-teal);
   --ranking-gold: #f5cd59;
   min-height: 100vh;
   padding: clamp(0.65rem, 2vw, 1.3rem) clamp(0.55rem, 2vw, 1.3rem) 7rem;
@@ -51,7 +53,7 @@
 
 .community-rankings-header span,
 .community-rankings-context strong {
-  color: #8ec5c9;
+  color: var(--ranking-label);
   font-size: 0.7rem;
   font-weight: 900;
   text-transform: uppercase;
@@ -72,7 +74,7 @@
   padding: 0.45rem 0.65rem;
   border: 1px solid var(--ranking-line);
   border-radius: 7px;
-  color: var(--ranking-teal);
+  color: var(--ranking-accent-text);
   background: rgba(66, 215, 196, 0.07);
 }
 
@@ -326,7 +328,7 @@
   padding: 0.2rem 0.6rem;
   border: 1px solid var(--ranking-teal);
   border-radius: 5px;
-  color: var(--ranking-teal);
+  color: var(--ranking-accent-text);
   background: transparent;
   font-size: 0.66rem;
   font-weight: 900;
@@ -394,7 +396,7 @@
 
 .community-ranking-quick-controls label svg {
   flex: 0 0 auto;
-  color: var(--ranking-teal);
+  color: var(--ranking-accent-text);
 }
 
 .community-ranking-quick-controls input {
@@ -446,7 +448,7 @@
   place-items: center;
   border: 1px solid var(--ranking-line);
   border-radius: 50%;
-  color: var(--ranking-teal);
+  color: var(--ranking-accent-text);
 }
 
 .community-ranking-position svg {
@@ -543,7 +545,7 @@
 }
 
 .community-ranking-personal svg {
-  color: var(--ranking-teal);
+  color: var(--ranking-accent-text);
 }
 
 .community-ranking-count small {
@@ -563,7 +565,7 @@
   justify-content: flex-end;
   justify-self: end;
   margin-top: 0.18rem;
-  color: var(--ranking-teal);
+  color: var(--ranking-accent-text);
   font-size: 0.66rem;
   font-weight: 900;
   text-decoration: none;
@@ -608,7 +610,7 @@
 }
 
 .community-rankings-state > svg {
-  color: var(--ranking-teal);
+  color: var(--ranking-accent-text);
   font-size: 1.7rem;
 }
 
@@ -647,7 +649,7 @@
 
 .community-rankings-empty > svg {
   margin-bottom: 0.2rem;
-  color: var(--ranking-teal);
+  color: var(--ranking-accent-text);
   font-size: 1.45rem;
 }
 
@@ -712,7 +714,7 @@
   place-items: center;
   border: 1px solid var(--ranking-line);
   border-radius: 5px;
-  color: var(--ranking-teal);
+  color: var(--ranking-accent-text);
   background: transparent;
   cursor: pointer;
 }
@@ -775,7 +777,7 @@
 }
 
 .community-rankings-method summary svg {
-  color: var(--ranking-teal);
+  color: var(--ranking-accent-text);
 }
 
 .community-rankings-method[open] summary {
@@ -996,13 +998,16 @@
   --ranking-panel-raised: #f0eee7;
   --ranking-line: rgba(21, 117, 119, 0.3);
   --ranking-text: #132d32;
-  --ranking-muted: #567176;
+  --ranking-muted: #405b56;
   --ranking-teal: #1bb9ad;
+  --ranking-label: #28636a;
+  --ranking-accent-text: #08766b;
   background: #f5f2e9;
 }
 
 :root[data-theme='light'] .community-ranking-tabs,
-:root[data-theme='light'] .community-ranking-search {
+:root[data-theme='light'] .community-ranking-search,
+:root[data-theme='light'] .community-ranking-filters {
   background: #fffdf7;
 }
 

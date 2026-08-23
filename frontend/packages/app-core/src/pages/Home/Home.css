@@ -7,6 +7,10 @@
   --home-green: #35c786;
   --home-red: #ff5878;
   --home-gold: #f3c544;
+  --home-blue-text: var(--home-blue);
+  --home-green-text: var(--home-green);
+  --home-red-text: var(--home-red);
+  --home-gold-text: var(--home-gold);
   min-height: 100dvh;
   background:
     radial-gradient(circle at 16% 0, color-mix(in srgb, var(--color-accent-primary) 15%, transparent), transparent 31rem),
@@ -14,6 +18,13 @@
     var(--color-app-surface);
   color: var(--color-text-primary);
   text-align: left;
+}
+
+:root[data-theme='light'] .home-page {
+  --home-blue-text: #005bb5;
+  --home-green-text: #166534;
+  --home-red-text: #a51d35;
+  --home-gold-text: #765800;
 }
 
 .home-shell {
@@ -228,7 +239,7 @@
   color: var(--color-text-primary);
 }
 
-.home-onboarding__done { justify-content: start; padding: 0; color: var(--home-green); }
+.home-onboarding__done { justify-content: start; padding: 0; color: var(--home-green-text); }
 
 .home-onboarding__footer {
   display: flex;
@@ -420,7 +431,7 @@
 .home-action-card--trade .home-action-card__icon,
 .home-action-card--confirm .home-action-card__icon {
   background: color-mix(in srgb, var(--home-green) 14%, transparent);
-  color: var(--home-green);
+  color: var(--home-green-text);
 }
 
 .home-action-card > span:nth-child(2) {
@@ -500,13 +511,13 @@
 }
 
 .home-stat small {
-  color: color-mix(in srgb, var(--home-red) 76%, var(--color-text-secondary));
+  color: var(--home-red-text);
   font-size: 0.66rem;
 }
 
-.home-stat--favorite > span { color: var(--home-gold); }
-.home-stat--trade > span { color: var(--home-green); }
-.home-stat--wanted > span { color: var(--home-red); }
+.home-stat--favorite > span { color: var(--home-gold-text); }
+.home-stat--trade > span { color: var(--home-green-text); }
+.home-stat--wanted > span { color: var(--home-red-text); }
 
 .home-collection-panel__actions {
   display: flex;
@@ -533,7 +544,7 @@
 .home-collection-panel__actions a:last-child {
   justify-content: center;
   border-color: color-mix(in srgb, var(--home-green) 42%, var(--home-border));
-  color: var(--home-green);
+  color: var(--home-green-text);
 }
 
 .home-trade-panel__summary {
@@ -585,7 +596,7 @@
   gap: 10px;
 }
 
-.home-trade-panel nav > a > span > svg { flex: 0 0 18px; color: var(--home-green); }
+.home-trade-panel nav > a > span > svg { flex: 0 0 18px; color: var(--home-green-text); }
 .home-trade-panel nav > a > span > span { display: flex; min-width: 0; flex-direction: column; }
 .home-trade-panel nav strong { font-size: 0.8rem; }
 .home-trade-panel nav small { color: var(--color-text-secondary); font-size: 0.68rem; line-height: 1.3; }

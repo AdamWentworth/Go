@@ -117,8 +117,8 @@ const RaidMethodology = () => {
               ))}
             </div>
             <div className="raid-methodology-formulas" aria-label="Ranking formulas">
-              <code>ER = DPS^0.75 x TDO^0.25</code>
-              <code>eDPS = active damage / (active time + relobby time)</code>
+              <code tabIndex={0}>ER = DPS^0.75 x TDO^0.25</code>
+              <code tabIndex={0}>eDPS = active damage / (active time + relobby time)</code>
             </div>
           </section>
 
@@ -159,7 +159,7 @@ const RaidMethodology = () => {
                 </span>
               </li>
             </ol>
-            <pre className="raid-methodology-damage-formula">
+            <pre className="raid-methodology-damage-formula" tabIndex={0}>
               <code>damage = floor(0.5 x power x Attack / Defense x multipliers) + 1</code>
             </pre>
           </section>

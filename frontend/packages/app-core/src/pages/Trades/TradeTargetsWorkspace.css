@@ -63,11 +63,11 @@
 }
 
 .trade-target-mode button:first-child {
-  color: #65c786;
+  color: var(--trade-positive-text);
 }
 
 .trade-target-mode button:last-child {
-  color: #ed7b86;
+  color: var(--trade-negative-text);
 }
 
 .trade-target-mode button:first-child.active {

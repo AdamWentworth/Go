@@ -11,6 +11,9 @@ const publicRoutes = [
   '/register',
   '/terms',
   '/privacy',
+  '/data-deletion',
+  '/reset-password?token=accessibility-token',
+  '/verify-email-change',
 ] as const;
 
 const authenticatedRoutes = [
@@ -23,11 +26,25 @@ const authenticatedRoutes = [
   '/settings/account',
   '/pokedex',
   '/raid',
+  '/raid/methodology',
   '/max',
   '/pvp',
+  '/pvp/methodology',
   '/rankings',
   '/trade-board',
+  '/profile/OtherTrainer',
+  '/pokemon/OtherTrainer',
+  '/trade-board/OtherTrainer',
 ] as const;
+
+const themeModes = ['dark', 'light'] as const;
+type ThemeMode = (typeof themeModes)[number];
+
+const addThemePreference = async (page: Page, themeMode: ThemeMode) => {
+  await page.addInitScript((mode) => {
+    window.localStorage.setItem('isLightMode', String(mode === 'light'));
+  }, themeMode);
+};
 
 const addSignedInUser = async (page: Page) => {
   await page.addInitScript(() => {
@@ -45,10 +62,11 @@ const addSignedInUser = async (page: Page) => {
   });
 };
 
-const scanRoute = async (page: Page, routePath: string) => {
+const scanRoute = async (page: Page, routePath: string, themeMode: ThemeMode) => {
   const response = await page.goto(routePath, { waitUntil: 'domcontentloaded' });
   expect(response?.ok(), `${routePath} document response should be OK`).toBe(true);
   await expect(page.locator('#root')).not.toBeEmpty();
+  await expect(page.locator('html')).toHaveAttribute('data-theme', themeMode);
   await page.waitForLoadState('networkidle');
   await page.addStyleTag({
     content: '*, *::before, *::after { animation: none !important; transition: none !important; }',
@@ -86,42 +104,48 @@ test.describe('accessibility route smoke', () => {
     await installE2eRoutes(page);
   });
 
-  for (const routePath of publicRoutes) {
-    test(`keeps ${routePath} free of blocking axe violations`, async ({ page }, testInfo) => {
-      const diagnostics = attachBrowserDiagnostics(page, testInfo);
-      try {
-        await scanRoute(page, routePath);
-      } finally {
-        await diagnostics.flush();
-      }
-      expect(diagnostics.blockingErrors()).toEqual([]);
-    });
+  for (const themeMode of themeModes) {
+    for (const routePath of publicRoutes) {
+      test(`keeps ${themeMode} ${routePath} free of blocking axe violations`, async ({ page }, testInfo) => {
+        const diagnostics = attachBrowserDiagnostics(page, testInfo);
+        await addThemePreference(page, themeMode);
+        try {
+          await scanRoute(page, routePath, themeMode);
+        } finally {
+          await diagnostics.flush();
+        }
+        expect(diagnostics.blockingErrors()).toEqual([]);
+      });
+    }
   }
 
-  for (const routePath of authenticatedRoutes) {
-    test(`keeps ${routePath} free of blocking axe violations`, async ({ page }, testInfo) => {
-      const diagnostics = attachBrowserDiagnostics(page, testInfo);
-      await addSignedInUser(page);
-      if (routePath === '/settings/account') {
-        await page.route('**/account/security', async (route) => {
-          await route.fulfill({
-            status: 200,
-            contentType: 'application/json',
-            body: JSON.stringify({
-              activeSessions: 1,
-              email: 'accessibility@example.test',
-              hasPassword: true,
-              providers: [],
-            }),
+  for (const themeMode of themeModes) {
+    for (const routePath of authenticatedRoutes) {
+      test(`keeps ${themeMode} ${routePath} free of blocking axe violations`, async ({ page }, testInfo) => {
+        const diagnostics = attachBrowserDiagnostics(page, testInfo);
+        await addThemePreference(page, themeMode);
+        await addSignedInUser(page);
+        if (routePath === '/settings/account') {
+          await page.route('**/account/security', async (route) => {
+            await route.fulfill({
+              status: 200,
+              contentType: 'application/json',
+              body: JSON.stringify({
+                activeSessions: 1,
+                email: 'accessibility@example.test',
+                hasPassword: true,
+                providers: [],
+              }),
+            });
           });
-        });
-      }
-      try {
-        await scanRoute(page, routePath);
-      } finally {
-        await diagnostics.flush();
-      }
-      expect(diagnostics.blockingErrors()).toEqual([]);
-    });
+        }
+        try {
+          await scanRoute(page, routePath, themeMode);
+        } finally {
+          await diagnostics.flush();
+        }
+        expect(diagnostics.blockingErrors()).toEqual([]);
+      });
+    }
   }
 });

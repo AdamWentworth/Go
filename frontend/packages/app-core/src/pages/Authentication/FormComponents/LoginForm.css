@@ -3,6 +3,9 @@
     --login-control-text: #182027;
     --login-control-placeholder: #667085;
     --login-control-border: #c5ccd5;
+    --login-primary-action: #005bb5;
+    --login-primary-action-hover: #00498f;
+    --login-link: #58abff;
 
     box-sizing: border-box;
     width: calc(100% - 32px);
@@ -120,7 +123,7 @@
     min-height: 50px;
     margin: 0;
     padding: 12px 20px;
-    background-color: var(--color-accent-primary);
+    background-color: var(--login-primary-action);
     color: white;
     border: none;
     cursor: pointer;
@@ -131,7 +134,7 @@
 }
 
 .login-form button[type="submit"]:hover {
-    background-color: var(--color-accent-primary-hover);
+    background-color: var(--login-primary-action-hover);
     box-shadow: 0 7px 18px rgb(0 105 210 / 24%);
     transform: translateY(-1px);
 }
@@ -150,13 +153,17 @@
     min-height: 44px;
     margin: -3px auto 3px;
     padding: 8px 14px;
-    color: var(--color-accent-primary);
+    color: var(--login-link);
     background: transparent;
     border: 1px solid transparent;
     cursor: pointer;
     border-radius: 10px;
     font-size: 0.95rem;
     font-weight: 800;
+}
+
+:root[data-theme='light'] .login-form {
+    --login-link: #005bb5;
 }
 
 .login-form button.reset-password-button:hover {

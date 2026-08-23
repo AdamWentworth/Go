@@ -219,6 +219,12 @@
   white-space: nowrap;
 }
 
+.raid-methodology-formulas code:focus-visible,
+.raid-methodology-damage-formula:focus-visible {
+  outline: 3px solid #75e6df;
+  outline-offset: 3px;
+}
+
 .raid-methodology-steps {
   display: grid;
   gap: 0;

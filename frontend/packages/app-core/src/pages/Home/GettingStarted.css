@@ -69,7 +69,7 @@
 
 .getting-started__index a:first-child { border-top: 0; }
 .getting-started__index a:hover { color: var(--color-text-primary); }
-.getting-started__index a span { color: var(--home-green); font-size: 0.65rem; }
+.getting-started__index a span { color: var(--home-green-text); font-size: 0.65rem; }
 
 .getting-started__content { min-width: 0; }
 
@@ -104,7 +104,7 @@
   font-size: 0.74rem;
 }
 
-.getting-started__story-note strong { color: var(--home-green); }
+.getting-started__story-note strong { color: var(--home-green-text); }
 
 .getting-started__legend {
   display: grid;
@@ -160,8 +160,8 @@
 
 .getting-started__legend strong { color: var(--color-text-primary); font-size: 0.8rem; }
 .getting-started__legend .is-caught { background: color-mix(in srgb, var(--color-accent-primary) 15%, transparent); color: var(--color-accent-primary); }
-.getting-started__legend .is-trade { background: color-mix(in srgb, var(--home-green) 14%, transparent); color: var(--home-green); }
-.getting-started__legend .is-wanted { background: color-mix(in srgb, var(--home-red) 14%, transparent); color: var(--home-red); }
+.getting-started__legend .is-trade { background: color-mix(in srgb, var(--home-green) 14%, transparent); color: var(--home-green-text); }
+.getting-started__legend .is-wanted { background: color-mix(in srgb, var(--home-red) 14%, transparent); color: var(--home-red-text); }
 
 .getting-started__steps {
   display: flex;
@@ -198,7 +198,7 @@
   position: absolute;
   top: 14px;
   left: 18px;
-  color: color-mix(in srgb, var(--color-text-primary) 42%, transparent);
+  color: color-mix(in srgb, var(--color-text-primary) 74%, transparent);
   font-size: 3.4rem;
   font-weight: 950;
 }
@@ -206,7 +206,7 @@
 .getting-started__step-visual > svg {
   width: 76px;
   height: 76px;
-  color: color-mix(in srgb, var(--home-green) 74%, var(--color-text-primary));
+  color: var(--home-green-text);
 }
 
 .getting-started__story-pokemon {
@@ -287,7 +287,7 @@
   line-height: 1.42;
 }
 
-.getting-started__step-copy li svg { margin-top: 3px; color: var(--home-green); }
+.getting-started__step-copy li svg { margin-top: 3px; color: var(--home-green-text); }
 
 .getting-started__step-copy > a {
   display: inline-flex;
@@ -295,7 +295,7 @@
   align-self: start;
   align-items: center;
   gap: 8px;
-  color: var(--home-green);
+  color: var(--home-green-text);
   font-size: 0.82rem;
   font-weight: 850;
   text-decoration: none;

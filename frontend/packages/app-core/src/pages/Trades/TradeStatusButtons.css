@@ -11,6 +11,8 @@
     --trade-border: #315052;
     --trade-text: #f7fbfa;
     --trade-muted: #9db5b4;
+    --trade-positive-text: #65c786;
+    --trade-negative-text: #ed7b86;
     min-height: 100vh;
     padding-top: 1px;
     background:
@@ -217,7 +219,9 @@
     --trade-selected-surface: #d3ebe4;
     --trade-border: #9bb8b1;
     --trade-text: #2f4744;
-    --trade-muted: #687f7b;
+    --trade-muted: #4b625e;
+    --trade-positive-text: #166534;
+    --trade-negative-text: #a51d35;
   }
   
 /* Compact activity navigation without horizontal page controls. */

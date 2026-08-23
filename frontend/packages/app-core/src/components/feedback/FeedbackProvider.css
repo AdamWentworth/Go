@@ -129,6 +129,26 @@
   color: var(--light-text-primary, #17221d);
 }
 
+:root[data-theme='light'] .feedback-card--success {
+  --feedback-accent: #166534;
+  --feedback-accent-soft: rgba(22, 101, 52, 0.12);
+}
+
+:root[data-theme='light'] .feedback-card--error {
+  --feedback-accent: #b6213a;
+  --feedback-accent-soft: rgba(182, 33, 58, 0.12);
+}
+
+:root[data-theme='light'] .feedback-card--warning {
+  --feedback-accent: #765800;
+  --feedback-accent-soft: rgba(118, 88, 0, 0.12);
+}
+
+:root[data-theme='light'] .feedback-card--info {
+  --feedback-accent: #005bb5;
+  --feedback-accent-soft: rgba(0, 91, 181, 0.12);
+}
+
 :root[data-theme='light'] .feedback-card__dismiss {
   color: var(--light-text-secondary, #52665f);
 }

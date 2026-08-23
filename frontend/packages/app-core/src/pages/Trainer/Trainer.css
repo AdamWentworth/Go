@@ -6,6 +6,7 @@
   --trainer-border: #315052;
   --trainer-text: #f7fbfa;
   --trainer-muted: #9db5b4;
+  --trainer-label: #92c7cc;
   min-height: 100vh;
   padding: 18px 18px 110px;
   background:
@@ -38,7 +39,7 @@
 .trainer-card-heading span,
 .trainer-card-titles-heading > span,
 .trainer-card-setup > div > span {
-  color: #92c7cc;
+  color: var(--trainer-label);
   font-size: 0.75rem;
   font-weight: 800;
   letter-spacing: 0;
@@ -1571,14 +1572,16 @@
   --trainer-surface-raised: #e3efe8;
   --trainer-border: #9bb8b1;
   --trainer-text: #2f4744;
-  --trainer-muted: #687f7b;
+  --trainer-muted: #4b625e;
+  --trainer-label: #28636a;
 }
 
 :root[data-theme="light"] .trainer-card-highlight-drag-preview {
   --trainer-surface: #f3faf5;
   --trainer-border: #9bb8b1;
   --trainer-text: #2f4744;
-  --trainer-muted: #687f7b;
+  --trainer-muted: #4b625e;
+  --trainer-label: #28636a;
 }
 
 :root[data-theme="light"] .trainer-section-nav,

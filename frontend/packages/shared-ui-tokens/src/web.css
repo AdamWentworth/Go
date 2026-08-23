@@ -118,10 +118,10 @@
   --light-surface-highlight: #e3f7dc;
   --light-surface-hover: #ffffff;
   --light-input-bg: #e7f3df;
-  --light-text-primary: #48615e;
+  --light-text-primary: #405753;
   --light-text-heading: #2f4744;
-  --light-text-secondary: #6f8782;
-  --light-text-inactive: #abbbb8;
+  --light-text-secondary: #4b625e;
+  --light-text-inactive: #5c7470;
   --light-border-strong: #000000;
   --light-filter-invert: invert(1);
   --light-filter-mid-invert: invert(0.5);
@@ -146,6 +146,8 @@
   --light-caught-input-border: #a9c0ba;
   --color-text-primary: var(--light-text-primary);
   --color-text-secondary: var(--light-text-secondary);
+  --color-accent-primary: #005bb5;
+  --color-accent-primary-hover: #00498f;
   --background-instance-panel: linear-gradient(
     180deg,
     rgba(248, 255, 249, 0.98) 0%,

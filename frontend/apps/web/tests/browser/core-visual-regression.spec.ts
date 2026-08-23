@@ -21,6 +21,20 @@ const addSignedInUser = async (page: Page) => {
   });
 };
 
+const themeModes = ["dark", "light"] as const;
+type ThemeMode = (typeof themeModes)[number];
+
+const addThemePreference = async (page: Page, themeMode: ThemeMode) => {
+  await page.addInitScript((mode) => {
+    window.localStorage.setItem("isLightMode", String(mode === "light"));
+  }, themeMode);
+};
+
+const themedSnapshotName = (snapshotName: string, themeMode: ThemeMode) =>
+  themeMode === "dark"
+    ? snapshotName
+    : snapshotName.replace(/\.png$/, "-light.png");
+
 const stabilizePage = async (page: Page) => {
   await page.waitForLoadState("networkidle");
   await page.addStyleTag({
@@ -31,6 +45,11 @@ const stabilizePage = async (page: Page) => {
   });
   await page.evaluate(async () => {
     await document.fonts.ready;
+    await Promise.all(
+      Array.from(document.images, (image) =>
+        image.decode().catch(() => undefined),
+      ),
+    );
   });
 };
 
@@ -68,47 +87,79 @@ test.describe("core responsive visual regression", () => {
     );
   });
 
-  test("matches the signed-out Home baseline", async ({ page }) => {
-    await installE2eRoutes(page, { mockImages: false });
-    await page.goto("/", { waitUntil: "domcontentloaded" });
-    await expect(
-      page.getByRole("heading", {
-        name: "Build your collection. Find the right trade.",
-      }),
-    ).toBeVisible();
-    await expectVisualBaseline(page, "home-signed-out.png");
-    await expectScrolledVisualBaseline(
-      page,
-      "#feature-directory",
-      "home-feature-directory.png",
-    );
-  });
+  for (const themeMode of themeModes) {
+    test(`matches the ${themeMode} signed-out Home baseline`, async ({ page }) => {
+      await installE2eRoutes(page, { mockImages: false });
+      await addThemePreference(page, themeMode);
+      await page.goto("/", { waitUntil: "domcontentloaded" });
+      await expect(
+        page.getByRole("heading", {
+          name: "Build your collection. Find the right trade.",
+        }),
+      ).toBeVisible();
+      await expectVisualBaseline(
+        page,
+        themedSnapshotName("home-signed-out.png", themeMode),
+      );
+      await expectScrolledVisualBaseline(
+        page,
+        "#feature-directory",
+        themedSnapshotName("home-feature-directory.png", themeMode),
+      );
+    });
 
-  test("matches the registration method baseline", async ({ page }) => {
-    await installE2eRoutes(page, { mockImages: false });
-    await page.goto("/register", { waitUntil: "domcontentloaded" });
-    await expect(
-      page.getByRole("heading", { name: "Create your account" }),
-    ).toBeVisible();
-    await expectVisualBaseline(page, "register-method.png");
-  });
+    test(`matches the ${themeMode} registration method baseline`, async ({ page }) => {
+      await installE2eRoutes(page, { mockImages: false });
+      await addThemePreference(page, themeMode);
+      await page.goto("/register", { waitUntil: "domcontentloaded" });
+      await expect(
+        page.getByRole("heading", { name: "Create your account" }),
+      ).toBeVisible();
+      await expectVisualBaseline(
+        page,
+        themedSnapshotName("register-method.png", themeMode),
+      );
+    });
 
-  test("matches the signed-in Search baseline", async ({ page }) => {
-    await installE2eRoutes(page);
-    await addSignedInUser(page);
-    await page.goto("/search", { waitUntil: "domcontentloaded" });
-    await expect(page.getByRole("heading", { name: "Search" })).toBeVisible();
-    await expectVisualBaseline(page, "search-signed-in.png");
-  });
+    test(`matches the ${themeMode} login baseline`, async ({ page }) => {
+      await installE2eRoutes(page, { mockImages: false });
+      await addThemePreference(page, themeMode);
+      await page.goto("/login", { waitUntil: "domcontentloaded" });
+      await expect(page.getByLabel("Username or Email")).toBeVisible();
+      await expectVisualBaseline(
+        page,
+        themedSnapshotName("login-form.png", themeMode),
+      );
+    });
 
-  test("matches the Trade Activity baseline", async ({ page }) => {
-    await installE2eRoutes(page);
-    await addSignedInUser(page);
-    await page.goto("/trades", { waitUntil: "domcontentloaded" });
-    await page.getByRole("button", { name: "Trade Activity" }).click();
-    await expect(
-      page.getByRole("heading", { name: "Your trades" }),
-    ).toBeVisible();
-    await expectVisualBaseline(page, "trades-activity-empty.png");
-  });
+    test(`matches the ${themeMode} signed-in Search baseline`, async ({ page }) => {
+      await installE2eRoutes(page);
+      await addThemePreference(page, themeMode);
+      await addSignedInUser(page);
+      await page.goto("/search", { waitUntil: "domcontentloaded" });
+      await expect(page.getByRole("heading", { name: "Search" })).toBeVisible();
+      await expectVisualBaseline(
+        page,
+        themedSnapshotName("search-signed-in.png", themeMode),
+      );
+    });
+
+    test(`matches the ${themeMode} Trade Activity baseline`, async ({ page }) => {
+      await installE2eRoutes(page);
+      await addThemePreference(page, themeMode);
+      await addSignedInUser(page);
+      await page.goto("/trades", { waitUntil: "domcontentloaded" });
+      await page.getByRole("button", { name: "Trade Activity" }).click();
+      await expect(
+        page.getByRole("heading", { name: "Your trades" }),
+      ).toBeVisible();
+      await expect(
+        page.getByRole("heading", { name: "No trades here" }),
+      ).toBeVisible();
+      await expectVisualBaseline(
+        page,
+        themedSnapshotName("trades-activity-empty.png", themeMode),
+      );
+    });
+  }
 });
