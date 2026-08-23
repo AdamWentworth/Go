@@ -1,5 +1,6 @@
 import React from 'react';
 import { FaSearch, FaUserFriends } from 'react-icons/fa';
+import SegmentedControl from '@/components/layout/SegmentedControl';
 import './SearchModeToggle.css';
 
 export type SearchMode = 'pokemon' | 'trainer';
@@ -12,37 +13,34 @@ type SearchModeToggleProps = {
 const SearchModeToggle: React.FC<SearchModeToggleProps> = ({
   searchMode,
   setSearchMode,
-}) => (
-  <div
-    className="search-toggle-container"
-    aria-label="Search category"
-    role="tablist"
-  >
-    <button
-      aria-controls="search-panel-pokemon"
-      aria-selected={searchMode === 'pokemon'}
-      className={`toggle-btn ${searchMode === 'pokemon' ? 'active' : ''}`}
-      id="search-tab-pokemon"
-      onClick={() => setSearchMode('pokemon')}
-      role="tab"
-      type="button"
-    >
-      <FaSearch aria-hidden="true" />
-      <span>Pokémon</span>
-    </button>
-    <button
-      aria-controls="search-panel-trainer"
-      aria-selected={searchMode === 'trainer'}
-      className={`toggle-btn ${searchMode === 'trainer' ? 'active' : ''}`}
-      id="search-tab-trainer"
-      onClick={() => setSearchMode('trainer')}
-      role="tab"
-      type="button"
-    >
-      <FaUserFriends aria-hidden="true" />
-      <span>Trainers</span>
-    </button>
-  </div>
-);
+}) => {
+  const items = [
+    {
+      ariaControls: 'search-panel-pokemon',
+      icon: <FaSearch />,
+      id: 'search-tab-pokemon',
+      label: 'Pokémon',
+      value: 'pokemon',
+    },
+    {
+      ariaControls: 'search-panel-trainer',
+      icon: <FaUserFriends />,
+      id: 'search-tab-trainer',
+      label: 'Trainers',
+      value: 'trainer',
+    },
+  ] as const;
+
+  return (
+    <SegmentedControl
+      ariaLabel="Search category"
+      className="search-mode-toggle"
+      items={items}
+      mode="tabs"
+      onChange={setSearchMode}
+      value={searchMode}
+    />
+  );
+};
 
 export default SearchModeToggle;

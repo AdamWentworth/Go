@@ -277,7 +277,7 @@ const Settings = () => {
         </header>
         <div className="trainer-device-settings">
           <div>
-            <span>
+            <span className="trainer-sync-status">
               <strong>
                 {sync.status === 'error'
                   ? 'Needs attention'

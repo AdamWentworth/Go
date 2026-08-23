@@ -24,6 +24,14 @@ const addSignedInUser = async (page: Page) => {
 const themeModes = ["dark", "light"] as const;
 type ThemeMode = (typeof themeModes)[number];
 
+const consolidatedPageBaselines = [
+  { name: "trainer-settings", path: "/settings" },
+  { name: "raid-planner", path: "/raid" },
+  { name: "max-battles", path: "/max" },
+  { name: "pvp-tools", path: "/pvp" },
+  { name: "community-rankings", path: "/rankings" },
+] as const;
+
 const addThemePreference = async (page: Page, themeMode: ThemeMode) => {
   await page.addInitScript((mode) => {
     window.localStorage.setItem("isLightMode", String(mode === "light"));
@@ -149,7 +157,7 @@ test.describe("core responsive visual regression", () => {
       await addThemePreference(page, themeMode);
       await addSignedInUser(page);
       await page.goto("/trades", { waitUntil: "domcontentloaded" });
-      await page.getByRole("button", { name: "Trade Activity" }).click();
+      await page.getByRole("tab", { name: "Trade Activity" }).click();
       await expect(
         page.getByRole("heading", { name: "Your trades" }),
       ).toBeVisible();
@@ -161,5 +169,19 @@ test.describe("core responsive visual regression", () => {
         themedSnapshotName("trades-activity-empty.png", themeMode),
       );
     });
+
+    for (const baseline of consolidatedPageBaselines) {
+      test(`matches the ${themeMode} ${baseline.name} baseline`, async ({ page }) => {
+        await installE2eRoutes(page);
+        await addThemePreference(page, themeMode);
+        await addSignedInUser(page);
+        await page.goto(baseline.path, { waitUntil: "domcontentloaded" });
+        await expect(page.locator(".product-page-header")).toBeVisible();
+        await expectVisualBaseline(
+          page,
+          themedSnapshotName(`${baseline.name}.png`, themeMode),
+        );
+      });
+    }
   }
 });

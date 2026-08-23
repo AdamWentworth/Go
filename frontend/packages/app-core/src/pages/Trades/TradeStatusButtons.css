@@ -146,15 +146,12 @@
   .status-button.pending { --status-accent: #e39a3b; }
   .status-button.completed { --status-accent: #438de0; }
   .status-button.cancelled { --status-accent: #808c91; }
-  .trade-page-sections {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    width: min(1060px, calc(100% - 24px));
-    margin: 0;
-    padding: 4px;
-    border: 1px solid var(--trade-border);
-    border-radius: 8px;
-    background: var(--trade-nav-surface);
+  .trade-page-section-switcher {
+    --segmented-accent: var(--trade-accent-strong);
+    --segmented-active-text: #071516;
+    --segmented-border: var(--trade-border);
+    --segmented-surface: var(--trade-nav-surface);
+    --segmented-text: var(--trade-muted);
   }
 
   .trade-page-topbar {
@@ -166,7 +163,7 @@
     margin: 18px auto 8px;
   }
 
-  .trade-page-topbar .trade-page-sections {
+  .trade-page-topbar .trade-page-section-switcher {
     width: 100%;
   }
 
@@ -194,22 +191,6 @@
   .trade-page-share-board:focus-visible {
     outline: 3px solid color-mix(in srgb, var(--trade-accent) 42%, transparent);
     outline-offset: 2px;
-  }
-
-  .trade-page-section {
-    min-height: 44px;
-    padding: 0 18px;
-    border: 0;
-    border-radius: 6px;
-    background: transparent;
-    color: var(--trade-muted);
-    cursor: pointer;
-    font-weight: 700;
-  }
-
-  .trade-page-section.active {
-    background: linear-gradient(90deg, var(--trade-accent-strong), #63e2b4);
-    color: #071516;
   }
 
   :root[data-theme="light"] .trades-container {

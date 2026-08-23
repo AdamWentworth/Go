@@ -11,6 +11,7 @@ export type E2eRouteOptions = {
   trainerSuggestions?: unknown[];
   trainerProfile?: unknown;
   friendsOverview?: unknown;
+  trainerPreferences?: unknown;
   userInstances?: unknown;
   publicUser?: unknown;
   userOverview?: unknown;
@@ -550,6 +551,26 @@ export async function installE2eRoutes(page: Page, options: E2eRouteOptions = {}
         route,
         options.friendsOverview ?? { friends: [], incoming: [], outgoing: [], blocked: [] },
       );
+    });
+  }
+
+  let trainerPreferences = options.trainerPreferences ?? {
+    profile_visibility: 'public',
+    collection_visibility: 'public',
+    friend_request_permission: 'everyone',
+    trainer_code_visibility: 'friends',
+    show_location: true,
+    show_pokemon_go_name: true,
+  };
+  for (const pathPattern of ['**/api/users/preferences', '**/__e2e/users/preferences']) {
+    await page.route(pathPattern, async (route) => {
+      if (route.request().method() === 'PUT') {
+        trainerPreferences = {
+          ...(trainerPreferences as Record<string, unknown>),
+          ...(route.request().postDataJSON() as Record<string, unknown>),
+        };
+      }
+      await fulfillJson(route, trainerPreferences);
     });
   }
 

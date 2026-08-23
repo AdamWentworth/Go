@@ -257,8 +257,10 @@ function TradeTargetsWorkspace() {
 
   return (
     <section
+      id="trade-section-preferences"
       className={`trade-targets-workspace preference-mode-${mode}`}
-      aria-labelledby="trade-preferences-heading"
+      aria-labelledby="trade-tab-preferences"
+      role="tabpanel"
     >
       <header className="trade-targets-heading">
         <div>

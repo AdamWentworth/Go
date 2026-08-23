@@ -17,7 +17,7 @@
   text-align: center;
 }
 
-.trade-activity-empty > div {
+.trade-activity-empty > .page-state__icon {
   display: grid;
   width: 46px;
   height: 46px;

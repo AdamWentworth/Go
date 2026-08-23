@@ -1,5 +1,6 @@
 import { useMemo } from 'react';
 
+import PageState from '@/components/layout/PageState';
 import TradeCard from '@/pages/Trades/TradeCard';
 
 import type {
@@ -88,11 +89,10 @@ function TradeList({
   return (
     <div className="trades-list">
       {filteredTrades.length === 0 ? (
-        <div className="trade-activity-empty">
-          <div aria-hidden="true">↔</div>
-          <h2>No trades here</h2>
-          <p>
-            {selectedStatus === 'Accepting'
+        <PageState
+          className="trade-activity-empty"
+          description={
+            selectedStatus === 'Accepting'
               ? 'New offers will appear here.'
               : selectedStatus === 'Proposed'
                 ? 'Sent proposals will appear here.'
@@ -100,9 +100,11 @@ function TradeList({
                   ? 'Accepted trades will stay here until completion.'
                   : selectedStatus === 'Completed'
                     ? 'Completed trades will appear here.'
-                    : 'Cancelled and denied trades appear here.'}
-          </p>
-        </div>
+                    : 'Cancelled and denied trades appear here.'
+          }
+          icon={<span aria-hidden="true">↔</span>}
+          title="No trades here"
+        />
       ) : (
         filteredTrades.map((trade, index) => (
           <TradeCard

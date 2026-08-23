@@ -1,6 +1,8 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { FaExclamationTriangle } from 'react-icons/fa';
 
+import ProductPageHeader from '@/components/layout/ProductPageHeader';
+import PageState from '@/components/layout/PageState';
 import HorizontalPageSlider from '@/components/motion/HorizontalPageSlider';
 import useHorizontalPageNavigation from '@/components/motion/useHorizontalPageNavigation';
 import PokemonSearchBar from './PokemonSearchBar';
@@ -274,12 +276,15 @@ const Search: React.FC = () => {
 
   return (
     <main className="search-page">
-      <header className="search-page-header">
-        <span className="search-page-header__eyebrow">Community discovery</span>
-        <h1>Search</h1>
-        <p>Find Pokémon listings and connect with trainers nearby.</p>
+      <ProductPageHeader
+        align="center"
+        className="search-page-header"
+        description="Find Pokémon listings and connect with trainers nearby."
+        eyebrow="Community discovery"
+        title="Search"
+      >
         <SearchModeToggle searchMode={searchMode} setSearchMode={setSearchMode} />
-      </header>
+      </ProductPageHeader>
 
       <HorizontalPageSlider
         activeIndex={modeSlider.activeIndex}
@@ -306,24 +311,25 @@ const Search: React.FC = () => {
           />
 
           {errorMessage && (
-            <div className="search-error-message" role="alert">
-              <FaExclamationTriangle aria-hidden="true" />
-              <div>
-                <strong>Search couldn&apos;t be completed</strong>
-                <p>{errorMessage}</p>
-              </div>
-            </div>
+            <PageState
+              className="search-error-message"
+              description={errorMessage}
+              icon={<FaExclamationTriangle aria-hidden="true" />}
+              title="Search couldn't be completed"
+              tone="danger"
+            />
           )}
 
           <div className="search-results-stage" ref={containerRef}>
             {isLoading ? (
-              <div className="search-loading-state" aria-live="polite">
-                <LoadingSpinner />
-                <div>
-                  <strong>Searching community listings</strong>
-                  <span>Checking nearby trainers for the Pokémon you selected…</span>
-                </div>
-              </div>
+              <PageState
+                className="search-loading-state"
+                description="Checking nearby trainers for the Pokémon you selected…"
+                icon={<LoadingSpinner />}
+                live="polite"
+                title="Searching community listings"
+                tone="info"
+              />
             ) : view === 'list' ? (
               <RenderProfiler id="Search.ListView">
                 <ListView

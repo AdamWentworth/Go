@@ -1,9 +1,10 @@
 import { useCallback, useMemo, useState } from 'react';
-import { FaShareAlt } from 'react-icons/fa';
+import { FaExchangeAlt, FaShareAlt, FaSlidersH } from 'react-icons/fa';
 import { Link, useSearchParams } from 'react-router';
 
 import HorizontalPageSlider from '@/components/motion/HorizontalPageSlider';
 import useHorizontalPageNavigation from '@/components/motion/useHorizontalPageNavigation';
+import SegmentedControl from '@/components/layout/SegmentedControl';
 import { useInstancesStore } from '@/features/instances/store/useInstancesStore';
 import { useTradeStore } from '@/features/trades/store/useTradeStore';
 import { useVariantsStore } from '@/features/variants/store/useVariantsStore';
@@ -17,6 +18,22 @@ import './TradeStatusButtons.css';
 import './TradeActivity.css';
 
 const TRADE_SECTIONS = ['preferences', 'activity'] as const;
+const TRADE_SECTION_ITEMS = [
+  {
+    ariaControls: 'trade-section-preferences',
+    icon: <FaSlidersH />,
+    id: 'trade-tab-preferences',
+    label: 'Trade Preferences',
+    value: 'preferences',
+  },
+  {
+    ariaControls: 'trade-section-activity',
+    icon: <FaExchangeAlt />,
+    id: 'trade-tab-activity',
+    label: 'Trade Activity',
+    value: 'activity',
+  },
+] as const;
 
 function Trades() {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -77,22 +94,14 @@ function Trades() {
   return (
     <div className="trades-container">
       <header className="trade-page-topbar">
-        <nav className="trade-page-sections" aria-label="Trade sections">
-          <button
-            type="button"
-            className={`trade-page-section ${activeSection === 'preferences' ? 'active' : ''}`}
-            onClick={() => setActiveSection('preferences')}
-          >
-            Trade Preferences
-          </button>
-          <button
-            type="button"
-            className={`trade-page-section ${activeSection === 'activity' ? 'active' : ''}`}
-            onClick={() => setActiveSection('activity')}
-          >
-            Trade Activity
-          </button>
-        </nav>
+        <SegmentedControl
+          ariaLabel="Trade sections"
+          className="trade-page-section-switcher"
+          items={TRADE_SECTION_ITEMS}
+          mode="tabs"
+          onChange={setActiveSection}
+          value={activeSection}
+        />
         <Link className="trade-page-share-board" to="/trade-board">
           <FaShareAlt aria-hidden="true" /> Share board
         </Link>
@@ -107,7 +116,12 @@ function Trades() {
         {...sectionSlider.swipeHandlers}
       >
         <TradeTargetsWorkspace />
-        <section className="trade-activity-workspace" aria-labelledby="trade-activity-heading">
+        <section
+          aria-labelledby="trade-tab-activity"
+          className="trade-activity-workspace"
+          id="trade-section-activity"
+          role="tabpanel"
+        >
           <header className="trade-activity-heading">
             <div>
               <h1 id="trade-activity-heading">Your trades</h1>
