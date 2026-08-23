@@ -234,6 +234,13 @@ test.describe('Home page', () => {
       await page.reload({ waitUntil: 'domcontentloaded' });
 
       await expect(page.getByRole('heading', { name: 'Welcome back, HomeTrainerGO' })).toBeVisible();
+      await expect(page.getByRole('complementary', { name: 'Action menu tip' })).toBeVisible();
+      await page.getByRole('button', { name: 'Open action menu' }).click();
+      await expect(page.getByRole('button', { name: 'Search' })).toBeVisible();
+      const closeActionMenu = page.getByRole('button', { name: 'Close' });
+      await expect(closeActionMenu).toBeEnabled();
+      await closeActionMenu.click();
+      await expect(page.getByRole('button', { name: 'Action Menu' })).toBeVisible();
       await expect(page.getByRole('heading', { name: '3 items need your attention' })).toBeVisible();
       await expect(page.getByText('1 offer to review')).toBeVisible();
       await expect(page.getByText('1 trade ready to confirm')).toBeVisible();

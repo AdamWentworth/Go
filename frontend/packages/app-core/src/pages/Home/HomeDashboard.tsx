@@ -33,6 +33,7 @@ import {
   summarizeHomeTrades,
 } from './homeDashboardModel';
 import HomeOnboarding from './HomeOnboarding';
+import HomeActionMenuHint from './HomeActionMenuHint';
 
 interface HomeDashboardProps {
   user: User;
@@ -139,6 +140,8 @@ const HomeDashboard = ({ user }: HomeDashboardProps) => {
           <strong>@{user.username}</strong>
         </Link>
       </header>
+
+      <HomeActionMenuHint trainerKey={user.user_id || user.username} />
 
       {showOnboarding ? (
         <HomeOnboarding

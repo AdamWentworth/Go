@@ -3,6 +3,7 @@ import { MemoryRouter, useLocation } from 'react-router';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import ActionMenu from '@/components/ActionMenu';
+import { requestActionMenuOpen } from '@/components/actionMenuEvents';
 
 const mocks = vi.hoisted(() => ({
   auth: { isLoggedIn: false },
@@ -76,6 +77,18 @@ describe('ActionMenu', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Max Battles' }));
     expect(screen.getByTestId('location')).toHaveTextContent('/max');
+  });
+
+  it('can be opened by contextual guidance elsewhere in the app', () => {
+    const { container } = render(
+      <MemoryRouter initialEntries={['/']}>
+        <ActionMenu />
+      </MemoryRouter>,
+    );
+
+    act(() => requestActionMenuOpen());
+
+    expect(container.querySelector('.action-menu-overlay')).toBeInTheDocument();
   });
 
   it('navigates to the PvP rankings page', () => {

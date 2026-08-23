@@ -13,6 +13,7 @@ import {
 } from '../contexts/ContextBackContext';
 import { fetchFriendsOverview } from '../services/socialService';
 import ThemeSwitch from './ThemeSwitch';
+import { ACTION_MENU_OPEN_REQUEST } from './actionMenuEvents';
 import './ActionMenu.css';
 
 const ActionMenu: React.FC = () => {
@@ -118,6 +119,13 @@ const ActionMenu: React.FC = () => {
     setIsCloseEnabled(false);
     setIsOpen(false);
   }, [cancelPendingCloseEnable, cancelPendingOpenAnimation]);
+
+  useEffect(() => {
+    const handleOpenRequest = () => openMenu();
+    window.addEventListener(ACTION_MENU_OPEN_REQUEST, handleOpenRequest);
+
+    return () => window.removeEventListener(ACTION_MENU_OPEN_REQUEST, handleOpenRequest);
+  }, [openMenu]);
 
   const toggleMenu = () => {
     if (isOpen) {
