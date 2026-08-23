@@ -1,6 +1,7 @@
 import { Redirect, Stack } from 'expo-router';
 import { NativeSessionProvider } from '../../auth/NativeSessionContext';
 import { runtimeConfig } from '../../config/runtimeConfig';
+import { NativeQueryProvider } from '../../query/NativeQueryProvider';
 
 export default function NativeLayout() {
   if (runtimeConfig.mobile.experienceMode !== 'native-preview') {
@@ -9,7 +10,9 @@ export default function NativeLayout() {
 
   return (
     <NativeSessionProvider>
-      <Stack screenOptions={{ headerShown: false }} />
+      <NativeQueryProvider>
+        <Stack screenOptions={{ headerShown: false }} />
+      </NativeQueryProvider>
     </NativeSessionProvider>
   );
 }

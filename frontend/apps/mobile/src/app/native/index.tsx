@@ -1,46 +1,15 @@
-import { ApiClientError } from '@pokemongonexus/shared-api-client';
-import type { CollectionSummary } from '@pokemongonexus/shared-contracts/users';
 import { Redirect, useRouter } from 'expo-router';
-import { useCallback, useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useNativeSession } from '../../auth/NativeSessionContext';
+import { useNativeCollectionSummaryQuery } from '../../features/collection/collectionQueries';
 import { NativeHomeScreen } from '../../screens/NativeHomeScreen';
-import { getCollectionSummary } from '../../services/collectionSummaryApi';
-import { createNativeUsersApiClient } from '../../services/nativeApiClients';
 import { theme } from '../../ui/theme';
 
 export default function NativeHomeRoute() {
   const router = useRouter();
   const session = useNativeSession();
   const { retrySession, status, user, signOut } = session;
-  const [summary, setSummary] = useState<CollectionSummary | null>(null);
-  const [summaryError, setSummaryError] = useState<string | null>(null);
-  const [isSummaryLoading, setIsSummaryLoading] = useState(false);
-  const usersApi = useMemo(() => createNativeUsersApiClient({
-    getAccessToken: session.getAccessToken,
-    refreshAccessToken: session.refreshAccessToken,
-    clearSession: session.clearSession,
-  }), [session.clearSession, session.getAccessToken, session.refreshAccessToken]);
-
-  const loadSummary = useCallback(async () => {
-    setIsSummaryLoading(true);
-    setSummaryError(null);
-    try {
-      setSummary(await getCollectionSummary(usersApi));
-    } catch (error) {
-      setSummaryError(
-        error instanceof ApiClientError || error instanceof Error
-          ? error.message
-          : 'Unable to load your collection.',
-      );
-    } finally {
-      setIsSummaryLoading(false);
-    }
-  }, [usersApi]);
-
-  useEffect(() => {
-    if (status === 'signed-in') void loadSummary();
-  }, [loadSummary, status]);
+  const summaryQuery = useNativeCollectionSummaryQuery(user?.user_id ?? null);
 
   if (status === 'restoring') {
     return (
@@ -78,10 +47,10 @@ export default function NativeHomeRoute() {
 
   return <NativeHomeScreen
     username={user.username}
-    summary={summary}
-    isLoading={isSummaryLoading}
-    error={summaryError}
-    onRetry={() => void loadSummary()}
+    summary={summaryQuery.data ?? null}
+    isLoading={summaryQuery.isPending}
+    error={summaryQuery.error instanceof Error ? summaryQuery.error.message : null}
+    onRetry={() => void summaryQuery.refetch()}
     onOpenNativeCollection={() => router.push('/native/collection')}
     onOpenCurrentApp={() => router.replace('/web')}
     onSignOut={() => void signOut()}

@@ -1,0 +1,36 @@
+import { useQuery } from '@tanstack/react-query';
+import { getNativeCollectionSnapshot } from '../../services/collectionApi';
+import { getCollectionSummary } from '../../services/collectionSummaryApi';
+import { useNativeApiClients } from '../../services/useNativeApiClients';
+
+export const nativeCollectionQueryKeys = {
+  root: ['native', 'collection'] as const,
+  summary: (userId: string) =>
+    [...nativeCollectionQueryKeys.root, userId, 'summary'] as const,
+  snapshot: (userId: string) =>
+    [...nativeCollectionQueryKeys.root, userId, 'snapshot'] as const,
+};
+
+export const useNativeCollectionSummaryQuery = (
+  userId: string | null,
+) => {
+  const clients = useNativeApiClients();
+  return useQuery({
+    queryKey: nativeCollectionQueryKeys.summary(userId ?? 'signed-out'),
+    queryFn: () => getCollectionSummary(clients.users),
+    enabled: Boolean(userId),
+    staleTime: 30_000,
+  });
+};
+
+export const useNativeCollectionSnapshotQuery = (
+  userId: string | null,
+) => {
+  const clients = useNativeApiClients();
+  return useQuery({
+    queryKey: nativeCollectionQueryKeys.snapshot(userId ?? 'signed-out'),
+    queryFn: () => getNativeCollectionSnapshot(clients.users, clients.pokemon),
+    enabled: Boolean(userId),
+    staleTime: 5 * 60_000,
+  });
+};
