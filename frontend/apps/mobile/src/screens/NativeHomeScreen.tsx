@@ -15,6 +15,7 @@ type NativeHomeScreenProps = {
   isLoading: boolean;
   error: string | null;
   onRetry: () => void;
+  onOpenNativeCollection: () => void;
   onOpenCurrentApp: () => void;
   onSignOut: () => void;
 };
@@ -43,6 +44,7 @@ export const NativeHomeScreen = ({
   isLoading,
   error,
   onRetry,
+  onOpenNativeCollection,
   onOpenCurrentApp,
   onSignOut,
 }: NativeHomeScreenProps) => (
@@ -98,10 +100,18 @@ export const NativeHomeScreen = ({
 
       <Pressable
         accessibilityRole="button"
-        onPress={onOpenCurrentApp}
+        onPress={onOpenNativeCollection}
         style={styles.primaryButton}
       >
-        <Text style={styles.primaryButtonText}>Open full collection</Text>
+        <Text style={styles.primaryButtonText}>Browse native collection</Text>
+      </Pressable>
+
+      <Pressable
+        accessibilityRole="button"
+        onPress={onOpenCurrentApp}
+        style={styles.secondaryActionButton}
+      >
+        <Text style={styles.secondaryActionText}>Open full collection</Text>
       </Pressable>
       <Text style={styles.helperText}>
         Editing remains in the current app until native collection mutations are complete.
@@ -192,6 +202,15 @@ const styles = StyleSheet.create({
     backgroundColor: theme.colors.selectedBorder,
   },
   primaryButtonText: { color: '#fff', fontWeight: '800' },
+  secondaryActionButton: {
+    minHeight: 48,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: '#64748b',
+    borderRadius: theme.radius.md,
+  },
+  secondaryActionText: { color: '#e2e8f0', fontWeight: '700' },
   helperText: { color: '#9fb3c8', fontSize: theme.type.caption, lineHeight: 18 },
   signOutButton: {
     minHeight: 48,

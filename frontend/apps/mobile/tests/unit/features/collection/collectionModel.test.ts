@@ -1,0 +1,122 @@
+import type { PokemonInstance } from '@pokemongonexus/shared-contracts/instances';
+import type { BasePokemon } from '@pokemongonexus/shared-contracts/pokemon';
+import {
+  buildNativeCollectionRows,
+  filterNativeCollectionRows,
+  resolveNativeInstanceImage,
+} from '../../../../src/features/collection/collectionModel';
+
+const instance = (patch: Partial<PokemonInstance>): PokemonInstance => ({
+  pokemon_id: 6,
+  instance_id: 'instance-1',
+  variant_id: '6',
+  nickname: null,
+  cp: null,
+  level: null,
+  attack_iv: null,
+  defense_iv: null,
+  stamina_iv: null,
+  shiny: false,
+  costume_id: null,
+  lucky: false,
+  shadow: false,
+  purified: false,
+  fast_move_id: null,
+  charged_move1_id: null,
+  charged_move2_id: null,
+  weight: null,
+  height: null,
+  gender: null,
+  mega: false,
+  mega_form: null,
+  is_mega: false,
+  dynamax: false,
+  gigantamax: false,
+  crown: false,
+  max_attack: null,
+  max_guard: null,
+  max_spirit: null,
+  is_fused: false,
+  fusion: null,
+  fusion_form: null,
+  fused_with: null,
+  is_traded: false,
+  traded_date: null,
+  original_trainer_id: null,
+  original_trainer_name: null,
+  is_caught: true,
+  is_for_trade: false,
+  is_wanted: false,
+  most_wanted: false,
+  caught_tags: null,
+  trade_tags: null,
+  wanted_tags: null,
+  not_trade_list: null,
+  not_wanted_list: null,
+  trade_filters: null,
+  wanted_filters: null,
+  mirror: false,
+  pref_lucky: false,
+  friendship_level: null,
+  registered: true,
+  favorite: false,
+  disabled: false,
+  pokeball: null,
+  location_card: null,
+  location_caught: null,
+  date_caught: null,
+  date_added: '2026-08-23T00:00:00Z',
+  last_update: 1,
+  ...patch,
+});
+
+const pokemon = {
+  pokemon_id: 6,
+  name: 'Charizard',
+  pokedex_number: 6,
+  image_url: '/images/charizard.png',
+  image_url_shiny: '/images/charizard-shiny.png',
+  image_url_shadow: '/images/charizard-shadow.png',
+  image_url_shiny_shadow: '/images/charizard-shiny-shadow.png',
+  costumes: [],
+  megaEvolutions: [],
+  fusion: [],
+  max: [{
+    pokemon_id: 6,
+    dynamax: true,
+    gigantamax: true,
+    dynamax_release_date: null,
+    gigantamax_release_date: null,
+    gigantamax_image_url: '/images/gmax-charizard.png',
+    shiny_gigantamax_image_url: '/images/gmax-charizard-shiny.png',
+  }],
+} as unknown as BasePokemon;
+
+describe('native collection model', () => {
+  it('uses the exact shiny Gigantamax artwork when that form is selected', () => {
+    expect(resolveNativeInstanceImage(
+      instance({ shiny: true, gigantamax: true }),
+      pokemon,
+    )).toBe('/images/gmax-charizard-shiny.png');
+  });
+
+  it('builds stable rows, excludes disabled data, and resolves relative artwork', () => {
+    const rows = buildNativeCollectionRows({
+      caught: instance({ instance_id: 'caught', favorite: true }),
+      wanted: instance({ instance_id: 'wanted', is_caught: false, is_wanted: true, most_wanted: true }),
+      disabled: instance({ instance_id: 'disabled', disabled: true }),
+    }, [pokemon], 'https://pokegonexus.com');
+
+    expect(rows).toHaveLength(2);
+    expect(rows[0]).toEqual(expect.objectContaining({
+      name: 'Charizard',
+      imageUri: 'https://pokegonexus.com/images/charizard.png',
+      favorite: true,
+    }));
+    expect(filterNativeCollectionRows(rows, 'wanted', '')).toEqual([
+      expect.objectContaining({ id: 'wanted', mostWanted: true }),
+    ]);
+    expect(filterNativeCollectionRows(rows, 'all', '0006')).toHaveLength(0);
+    expect(filterNativeCollectionRows(rows, 'all', '6')).toHaveLength(2);
+  });
+});

@@ -82,6 +82,7 @@ export default function NativeHomeRoute() {
     isLoading={isSummaryLoading}
     error={summaryError}
     onRetry={() => void loadSummary()}
+    onOpenNativeCollection={() => router.push('/native/collection')}
     onOpenCurrentApp={() => router.replace('/web')}
     onSignOut={() => void signOut()}
   />;

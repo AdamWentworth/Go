@@ -14,6 +14,7 @@ const baseProps = {
   isLoading: false,
   error: null,
   onRetry: jest.fn(),
+  onOpenNativeCollection: jest.fn(),
   onOpenCurrentApp: jest.fn(),
   onSignOut: jest.fn(),
 };
@@ -26,6 +27,9 @@ describe('NativeHomeScreen', () => {
     expect(screen.getByText('24')).toBeTruthy();
     expect(screen.getByText('4')).toBeTruthy();
     expect(screen.getByText('7')).toBeTruthy();
+
+    fireEvent.press(screen.getByRole('button', { name: 'Browse native collection' }));
+    expect(baseProps.onOpenNativeCollection).toHaveBeenCalledTimes(1);
 
     fireEvent.press(screen.getByRole('button', { name: 'Open full collection' }));
     expect(baseProps.onOpenCurrentApp).toHaveBeenCalledTimes(1);
