@@ -3,6 +3,7 @@ import { Link } from 'react-router';
 
 import PokemonArtwork from '@/components/pokemonComponents/PokemonArtwork';
 
+import HomeActionMenuHint from './HomeActionMenuHint';
 import './HomeHeader.css';
 
 interface HomeHeaderProps {
@@ -63,6 +64,7 @@ const HomeHeader = ({ logoUrl, lockupUrl, isLoggedIn }: HomeHeaderProps) => {
               </a>
             </div>
           ) : null}
+          {!isLoggedIn ? <HomeActionMenuHint trainerKey="guest" audience="guest" /> : null}
           <ul className="homeHeader__proof" aria-label="Product highlights">
             <li><FaCheckCircle aria-hidden="true" /> Exact variants and custom tags</li>
             <li><FaCheckCircle aria-hidden="true" /> Reciprocal trade matching</li>

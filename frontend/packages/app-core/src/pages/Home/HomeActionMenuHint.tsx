@@ -3,12 +3,17 @@ import { FaTimes } from 'react-icons/fa';
 
 import { requestActionMenuOpen } from '@/components/actionMenuEvents';
 
+import './HomeActionMenuHint.css';
+
 interface HomeActionMenuHintProps {
   trainerKey: string;
+  audience?: 'guest' | 'trainer';
 }
 
-const storageKeyFor = (trainerKey: string) =>
-  `pokegonexus-action-menu-hint:${trainerKey}`;
+const storageKeyFor = (trainerKey: string, audience: 'guest' | 'trainer') =>
+  audience === 'guest'
+    ? 'pokegonexus-action-menu-hint:guest'
+    : `pokegonexus-action-menu-hint:${trainerKey}`;
 
 const hasSeenHint = (storageKey: string) => {
   try {
@@ -26,8 +31,11 @@ const rememberHint = (storageKey: string) => {
   }
 };
 
-const HomeActionMenuHint = ({ trainerKey }: HomeActionMenuHintProps) => {
-  const storageKey = storageKeyFor(trainerKey);
+const HomeActionMenuHint = ({
+  trainerKey,
+  audience = 'trainer',
+}: HomeActionMenuHintProps) => {
+  const storageKey = storageKeyFor(trainerKey, audience);
   const [isVisible, setIsVisible] = useState(() => !hasSeenHint(storageKey));
 
   if (!isVisible) return null;
@@ -43,12 +51,21 @@ const HomeActionMenuHint = ({ trainerKey }: HomeActionMenuHintProps) => {
   };
 
   return (
-    <aside className="home-action-menu-hint" aria-label="Action menu tip">
+    <div className="home-action-menu-hint" role="note" aria-label="Action menu tip">
       <img src="/images/btn_action_menu.png" alt="" />
       <div>
         <span className="home-eyebrow">Quick navigation</span>
         <p>
-          Tap the <strong>Poké Ball</strong> at the bottom of any page to open the action menu.
+          {audience === 'guest' ? (
+            <>
+              Tap the <strong>Poké Ball</strong> at the bottom of any page to explore tools,
+              switch themes, and find account options.
+            </>
+          ) : (
+            <>
+              Tap the <strong>Poké Ball</strong> at the bottom of any page to open the action menu.
+            </>
+          )}
         </p>
       </div>
       <button className="home-action-menu-hint__open" type="button" onClick={openMenu}>
@@ -62,7 +79,7 @@ const HomeActionMenuHint = ({ trainerKey }: HomeActionMenuHintProps) => {
       >
         <FaTimes aria-hidden="true" />
       </button>
-    </aside>
+    </div>
   );
 };
 

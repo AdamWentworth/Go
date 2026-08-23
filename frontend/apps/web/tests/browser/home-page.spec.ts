@@ -82,6 +82,13 @@ test.describe('Home page', () => {
     try {
       await page.goto('/', { waitUntil: 'domcontentloaded' });
       await expect(page.getByRole('heading', { name: 'Build your collection. Find the right trade.' })).toBeVisible();
+      await expect(page.getByRole('note', { name: 'Action menu tip' })).toContainText('explore tools');
+      await page.getByRole('button', { name: 'Open action menu' }).click();
+      await expect(page.getByRole('button', { name: 'Register' })).toBeVisible();
+      const closeActionMenu = page.getByRole('button', { name: 'Close' });
+      await expect(closeActionMenu).toBeEnabled();
+      await closeActionMenu.click();
+      await expect(page.getByRole('button', { name: 'Action Menu' })).toBeVisible();
       await expect(page.getByText('You each have what the other trainer wants')).toBeVisible();
       await page.getByRole('link', { name: /explore the app/i }).click();
       await expect.poll(() => page.locator('#feature-directory').evaluate((element) =>
@@ -234,7 +241,7 @@ test.describe('Home page', () => {
       await page.reload({ waitUntil: 'domcontentloaded' });
 
       await expect(page.getByRole('heading', { name: 'Welcome back, HomeTrainerGO' })).toBeVisible();
-      await expect(page.getByRole('complementary', { name: 'Action menu tip' })).toBeVisible();
+      await expect(page.getByRole('note', { name: 'Action menu tip' })).toBeVisible();
       await page.getByRole('button', { name: 'Open action menu' }).click();
       await expect(page.getByRole('button', { name: 'Search' })).toBeVisible();
       const closeActionMenu = page.getByRole('button', { name: 'Close' });

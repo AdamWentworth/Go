@@ -1,5 +1,5 @@
 import React from 'react';
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { fireEvent, render, screen } from '@testing-library/react';
 import { MemoryRouter } from 'react-router';
 
@@ -16,6 +16,10 @@ const renderHeader = (isLoggedIn: boolean) => render(
 );
 
 describe('HomeHeader', () => {
+  beforeEach(() => {
+    window.localStorage.clear();
+  });
+
   it('renders honest product content and account actions when logged out', () => {
     renderHeader(false);
 
@@ -26,6 +30,9 @@ describe('HomeHeader', () => {
     expect(screen.getByRole('link', { name: /explore the app/i })).toHaveAttribute('href', '#feature-directory');
     expect(screen.getByText('Reciprocal trade matching')).toBeInTheDocument();
     expect(screen.getByText('You each have what the other trainer wants')).toBeInTheDocument();
+    expect(screen.getByRole('note', { name: 'Action menu tip' })).toHaveTextContent(
+      /explore tools, switch themes, and find account options/i,
+    );
   });
 
   it('hides guest calls to action when logged in', () => {
@@ -33,6 +40,7 @@ describe('HomeHeader', () => {
 
     expect(screen.queryByRole('link', { name: 'Log in' })).not.toBeInTheDocument();
     expect(screen.queryByRole('link', { name: /explore the app/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole('note', { name: 'Action menu tip' })).not.toBeInTheDocument();
   });
 
   it('smoothly scrolls to the feature directory instead of using the browser hash jump', () => {

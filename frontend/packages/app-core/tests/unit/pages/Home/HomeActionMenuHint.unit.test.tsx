@@ -33,6 +33,14 @@ describe('HomeActionMenuHint', () => {
     expect(screen.queryByLabelText('Action menu tip')).not.toBeInTheDocument();
   });
 
+  it('gives signed-out visitors exploration guidance with separate persistence', () => {
+    render(<HomeActionMenuHint trainerKey="guest" audience="guest" />);
+
+    expect(screen.getByText(/explore tools, switch themes, and find account options/i)).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Dismiss action menu tip' }));
+    expect(window.localStorage.getItem('pokegonexus-action-menu-hint:guest')).toBe('seen');
+  });
+
   it('has no automated accessibility violations', async () => {
     const { container } = render(<HomeActionMenuHint trainerKey="trainer-accessibility" />);
 
