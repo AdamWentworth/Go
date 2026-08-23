@@ -16,6 +16,7 @@ describe('HomeFooter', () => {
     expect(screen.getByRole('heading', { name: /bring your collection/i })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Quick start guide' })).toHaveAttribute('href', '/getting-started');
     expect(screen.getByRole('link', { name: 'Help & information' })).toHaveAttribute('href', '/help');
+    expect(screen.getByRole('link', { name: 'Frequently asked questions' })).toHaveAttribute('href', '/faq');
     expect(screen.getByRole('link', { name: 'Privacy Policy' })).toHaveAttribute('href', '/privacy');
     expect(screen.getByRole('link', { name: 'Terms of Service' })).toHaveAttribute('href', '/terms');
     expect(screen.queryByRole('link', { name: 'Contact Pokémon Go Nexus' })).not.toBeInTheDocument();

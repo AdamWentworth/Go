@@ -40,6 +40,7 @@ const consolidatedPageBaselines = [
   { name: "raid-methodology", path: "/raid/methodology" },
   { name: "pvp-methodology", path: "/pvp/methodology" },
   { name: "help-information", path: "/help" },
+  { name: "frequently-asked-questions", path: "/faq" },
 ] as const;
 
 const addThemePreference = async (page: Page, themeMode: ThemeMode) => {

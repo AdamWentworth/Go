@@ -4,6 +4,7 @@ import {
   FaBookOpen,
   FaCompass,
   FaFileContract,
+  FaQuestionCircle,
   FaShieldAlt,
   FaTrashAlt,
   FaTrophy,
@@ -34,6 +35,12 @@ const HELP_SECTIONS: HelpSection[] = [
     title: 'Start using Pokémon Go Nexus',
     description: 'Learn the collection-to-trade workflow in the same order you will use it.',
     links: [
+      {
+        description: 'Quick answers about accounts, collections, tags, trades, Search, privacy, and sharing.',
+        icon: FaQuestionCircle,
+        label: 'Frequently asked questions',
+        to: '/faq',
+      },
       {
         description: 'Build a collection, create Wanted and For Trade entries, find a match, and propose safely.',
         icon: FaCompass,

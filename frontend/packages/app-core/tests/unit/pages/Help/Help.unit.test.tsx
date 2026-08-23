@@ -9,6 +9,7 @@ describe('Help page', () => {
     render(<MemoryRouter><Help /></MemoryRouter>);
 
     expect(screen.getByRole('heading', { name: 'Help & information' })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /Frequently asked questions/i })).toHaveAttribute('href', '/faq');
     expect(screen.getByRole('link', { name: /Getting started/i })).toHaveAttribute('href', '/getting-started');
     expect(screen.getByRole('link', { name: /Raid methodology/i })).toHaveAttribute('href', '/raid/methodology');
     expect(screen.getByRole('link', { name: /PvP methodology/i })).toHaveAttribute('href', '/pvp/methodology');

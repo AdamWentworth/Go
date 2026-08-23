@@ -10,6 +10,7 @@ const defaultRoutePaths = [
   "/",
   "/getting-started",
   "/help",
+  "/faq",
   "/login",
   "/register",
   "/terms",

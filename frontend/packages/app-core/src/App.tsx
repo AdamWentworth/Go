@@ -26,6 +26,7 @@ import {
 const Home = lazy(() => import('./pages/Home/Home'));
 const GettingStarted = lazy(() => import('./pages/Home/GettingStarted'));
 const Help = lazy(() => import('./pages/Help/Help'));
+const FAQ = lazy(() => import('./pages/FAQ/FAQ'));
 const Pokedex = lazy(() => import('./pages/Pokedex/Pokedex'));
 const Pokemon = lazy(() => import('./pages/Pokemon/Pokemon'));
 const Raid = lazy(() => import('./pages/Raid/Raid'));
@@ -69,6 +70,7 @@ const AppContent: React.FC = () => {
           <Route path="/"             element={<Home />} />
           <Route path="/getting-started" element={<GettingStarted />} />
           <Route path="/help" element={<Help />} />
+          <Route path="/faq" element={<FAQ />} />
           <Route path="/pokedex"      element={<Pokedex />} />
           <Route path="/pokemon"      element={<Pokemon isOwnCollection />} />
           <Route path="/raid"         element={<Raid />} />

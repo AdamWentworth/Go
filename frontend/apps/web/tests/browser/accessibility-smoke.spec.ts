@@ -8,6 +8,7 @@ const publicRoutes = [
   '/',
   '/getting-started',
   '/help',
+  '/faq',
   '/login',
   '/register',
   '/terms',

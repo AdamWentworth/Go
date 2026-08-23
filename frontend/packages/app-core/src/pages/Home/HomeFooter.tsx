@@ -44,6 +44,7 @@ const HomeFooter = () => (
           <section>
             <h3>Get started</h3>
             <Link to="/help">Help &amp; information</Link>
+            <Link to="/faq">Frequently asked questions</Link>
             <Link to="/getting-started">How it works</Link>
             <Link to="/pokemon">Collection</Link>
             <Link to="/search">Search &amp; discovery</Link>
