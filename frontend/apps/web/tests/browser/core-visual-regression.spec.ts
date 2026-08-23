@@ -29,7 +29,12 @@ const addSignedInUser = async (page: Page) => {
 const themeModes = ["dark", "light"] as const;
 type ThemeMode = (typeof themeModes)[number];
 
-const consolidatedPageBaselines = [
+const consolidatedPageBaselines: ReadonlyArray<{
+  name: string;
+  path: string;
+  realImages?: boolean;
+  readySelector?: string;
+}> = [
   { name: "pokedex-catalog", path: "/pokedex" },
   { name: "trainer-settings", path: "/settings" },
   { name: "raid-planner", path: "/raid" },
@@ -41,7 +46,15 @@ const consolidatedPageBaselines = [
   { name: "pvp-methodology", path: "/pvp/methodology" },
   { name: "help-information", path: "/help" },
   { name: "frequently-asked-questions", path: "/faq" },
-] as const;
+  { name: "about-pokemon-go-nexus", path: "/about", realImages: true },
+  { name: "trade-safety", path: "/safety" },
+  {
+    name: "page-not-found",
+    path: "/this-route-does-not-exist",
+    realImages: true,
+    readySelector: ".not-found-card",
+  },
+];
 
 const addThemePreference = async (page: Page, themeMode: ThemeMode) => {
   await page.addInitScript((mode) => {
@@ -214,11 +227,13 @@ test.describe("core responsive visual regression", () => {
 
     for (const baseline of consolidatedPageBaselines) {
       test(`matches the ${themeMode} ${baseline.name} baseline`, async ({ page }) => {
-        await installE2eRoutes(page);
+        await installE2eRoutes(page, { mockImages: !baseline.realImages });
         await addThemePreference(page, themeMode);
         await addSignedInUser(page);
         await page.goto(baseline.path, { waitUntil: "domcontentloaded" });
-        await expect(page.locator(".product-page-header")).toBeVisible();
+        await expect(
+          page.locator(baseline.readySelector ?? ".product-page-header"),
+        ).toBeVisible();
         await expectVisualBaseline(
           page,
           themedSnapshotName(`${baseline.name}.png`, themeMode),

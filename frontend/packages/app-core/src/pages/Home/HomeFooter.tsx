@@ -45,6 +45,7 @@ const HomeFooter = () => (
             <h3>Get started</h3>
             <Link to="/help">Help &amp; information</Link>
             <Link to="/faq">Frequently asked questions</Link>
+            <Link to="/about">About Pokémon Go Nexus</Link>
             <Link to="/getting-started">How it works</Link>
             <Link to="/pokemon">Collection</Link>
             <Link to="/search">Search &amp; discovery</Link>
@@ -66,6 +67,7 @@ const HomeFooter = () => (
             <Link to="/privacy">Privacy Policy</Link>
             <Link to="/terms">Terms of Service</Link>
             <Link to="/data-deletion">Data deletion</Link>
+            <Link to="/safety">Trade safety</Link>
           </section>
         </nav>
       </div>

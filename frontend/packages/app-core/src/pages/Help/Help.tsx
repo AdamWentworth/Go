@@ -4,11 +4,13 @@ import {
   FaBookOpen,
   FaCompass,
   FaFileContract,
+  FaGlobeAmericas,
   FaQuestionCircle,
   FaShieldAlt,
   FaTrashAlt,
   FaTrophy,
   FaUserShield,
+  FaUsers,
 } from 'react-icons/fa';
 import { Link } from 'react-router';
 
@@ -46,6 +48,24 @@ const HELP_SECTIONS: HelpSection[] = [
         icon: FaCompass,
         label: 'Getting started',
         to: '/getting-started',
+      },
+    ],
+  },
+  {
+    title: 'About and community',
+    description: 'Understand the project and review the expectations that support safer trainer interactions.',
+    links: [
+      {
+        description: 'Why the collection, discovery, and trade-planning tools belong in one trainer hub.',
+        icon: FaGlobeAmericas,
+        label: 'About Pokémon Go Nexus',
+        to: '/about',
+      },
+      {
+        description: 'Protect your account, privacy, and comfort while coordinating with other trainers.',
+        icon: FaUsers,
+        label: 'Trade safety & community guidelines',
+        to: '/safety',
       },
     ],
   },

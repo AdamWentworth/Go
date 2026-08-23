@@ -27,6 +27,9 @@ const Home = lazy(() => import('./pages/Home/Home'));
 const GettingStarted = lazy(() => import('./pages/Home/GettingStarted'));
 const Help = lazy(() => import('./pages/Help/Help'));
 const FAQ = lazy(() => import('./pages/FAQ/FAQ'));
+const About = lazy(() => import('./pages/Information/About'));
+const Safety = lazy(() => import('./pages/Information/Safety'));
+const NotFound = lazy(() => import('./pages/Information/NotFound'));
 const Pokedex = lazy(() => import('./pages/Pokedex/Pokedex'));
 const Pokemon = lazy(() => import('./pages/Pokemon/Pokemon'));
 const Raid = lazy(() => import('./pages/Raid/Raid'));
@@ -71,6 +74,8 @@ const AppContent: React.FC = () => {
           <Route path="/getting-started" element={<GettingStarted />} />
           <Route path="/help" element={<Help />} />
           <Route path="/faq" element={<FAQ />} />
+          <Route path="/about" element={<About />} />
+          <Route path="/safety" element={<Safety />} />
           <Route path="/pokedex"      element={<Pokedex />} />
           <Route path="/pokemon"      element={<Pokemon isOwnCollection />} />
           <Route path="/raid"         element={<Raid />} />
@@ -101,6 +106,7 @@ const AppContent: React.FC = () => {
           <Route path="/privacy" element={<PrivacyPolicy />} />
           <Route path="/terms" element={<TermsOfService />} />
           <Route path="/data-deletion" element={<DataDeletion />} />
+          <Route path="*" element={<NotFound />} />
           </Routes>
         </Suspense>
       </main>
