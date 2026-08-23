@@ -25,6 +25,7 @@ describe('NativeCollectionScreen', () => {
         query=""
         isLoading={false}
         error={null}
+        cachedAt={null}
         onFilterChange={onFilterChange}
         onQueryChange={jest.fn()}
         onRetry={jest.fn()}
@@ -42,5 +43,27 @@ describe('NativeCollectionScreen', () => {
     expect(onFilterChange).toHaveBeenCalledWith('wanted');
     fireEvent.press(screen.getByRole('button', { name: 'Edit in current app' }));
     expect(onOpenCurrentApp).toHaveBeenCalledTimes(1);
+  });
+
+  it('makes cached offline data explicit', () => {
+    render(
+      <NativeCollectionScreen
+        rows={[row]}
+        filter="all"
+        query=""
+        isLoading={false}
+        error={null}
+        cachedAt={1234}
+        onFilterChange={jest.fn()}
+        onQueryChange={jest.fn()}
+        onRetry={jest.fn()}
+        onBack={jest.fn()}
+        onOpenInstance={jest.fn()}
+        onOpenCurrentApp={jest.fn()}
+      />,
+    );
+
+    expect(screen.getByText('Offline collection')).toBeTruthy();
+    expect(screen.getByText(/retained edits are included/i)).toBeTruthy();
   });
 });

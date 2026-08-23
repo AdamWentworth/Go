@@ -21,6 +21,7 @@ type NativeCollectionScreenProps = {
   query: string;
   isLoading: boolean;
   error: string | null;
+  cachedAt: number | null;
   onFilterChange: (filter: NativeCollectionFilter) => void;
   onQueryChange: (query: string) => void;
   onRetry: () => void;
@@ -54,6 +55,7 @@ export const NativeCollectionScreen = ({
   query,
   isLoading,
   error,
+  cachedAt,
   onFilterChange,
   onQueryChange,
   onRetry,
@@ -122,6 +124,15 @@ export const NativeCollectionScreen = ({
                 <Pressable accessibilityRole="button" onPress={onRetry} style={styles.retryButton}>
                   <Text style={styles.retryText}>Retry</Text>
                 </Pressable>
+              </View>
+            ) : null}
+
+            {cachedAt != null ? (
+              <View accessibilityLiveRegion="polite" style={styles.cachedCard}>
+                <Text style={styles.cachedTitle}>Offline collection</Text>
+                <Text style={styles.cachedBody}>
+                  Showing the copy saved on this device. Your retained edits are included and will sync after reconnecting.
+                </Text>
               </View>
             ) : null}
           </View>
@@ -289,6 +300,16 @@ const styles = StyleSheet.create({
     padding: theme.spacing.md,
     backgroundColor: '#341827',
   },
+  cachedCard: {
+    gap: theme.spacing.xs,
+    borderWidth: 1,
+    borderColor: '#a87524',
+    borderRadius: theme.radius.md,
+    padding: theme.spacing.md,
+    backgroundColor: '#332714',
+  },
+  cachedTitle: { color: '#ffe2a8', fontWeight: '900' },
+  cachedBody: { color: '#f7d99b', fontSize: theme.type.caption, lineHeight: 18 },
   errorTitle: { color: '#fff', fontWeight: '800' },
   errorBody: { color: '#fecdd3' },
   retryButton: {

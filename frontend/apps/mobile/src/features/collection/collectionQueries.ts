@@ -6,6 +6,7 @@ import {
 import { getCollectionSummary } from '../../services/collectionSummaryApi';
 import { useNativeApiClients } from '../../services/useNativeApiClients';
 import { nativeCollectionOutbox } from '../../storage/nativeCollectionOutbox';
+import { nativeCollectionCache } from '../../storage/nativeCollectionCache';
 
 export const nativeCollectionQueryKeys = {
   root: ['native', 'collection'] as const,
@@ -48,6 +49,7 @@ export const useNativeCollectionSnapshotQuery = (
       clients.users,
       clients.pokemon,
       nativeCollectionOutbox,
+      nativeCollectionCache,
       userId ?? '',
     ),
     enabled: Boolean(userId),

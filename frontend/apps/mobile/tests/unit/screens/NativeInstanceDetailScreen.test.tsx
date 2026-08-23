@@ -29,6 +29,7 @@ describe('NativeInstanceDetailScreen', () => {
         detail={detail}
         isLoading={false}
         error={null}
+        cachedAt={null}
         movesWarning={null}
         saveNotice={null}
         saveError={null}
@@ -54,6 +55,7 @@ describe('NativeInstanceDetailScreen', () => {
         detail={null}
         isLoading={false}
         error={null}
+        cachedAt={null}
         movesWarning={null}
         saveNotice={null}
         saveError={null}
@@ -77,6 +79,7 @@ describe('NativeInstanceDetailScreen', () => {
         detail={{ ...detail, row: { ...detail.row, status: 'caught', favorite: false } }}
         isLoading={false}
         error={null}
+        cachedAt={1234}
         movesWarning={null}
         saveNotice="Saved on this device."
         saveError={null}
@@ -91,5 +94,6 @@ describe('NativeInstanceDetailScreen', () => {
     fireEvent.press(screen.getByRole('button', { name: 'Mark as Favorite' }));
     expect(onToggleFavorite).toHaveBeenCalledWith(true);
     expect(screen.getByText('Saved on this device.')).toBeTruthy();
+    expect(screen.getByText('Viewing an offline copy')).toBeTruthy();
   });
 });

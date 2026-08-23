@@ -14,6 +14,7 @@ type NativeInstanceDetailScreenProps = {
   detail: NativeInstanceDetail | null;
   isLoading: boolean;
   error: string | null;
+  cachedAt: number | null;
   movesWarning: string | null;
   saveNotice: string | null;
   saveError: string | null;
@@ -55,6 +56,7 @@ export const NativeInstanceDetailScreen = ({
   detail,
   isLoading,
   error,
+  cachedAt,
   movesWarning,
   saveNotice,
   saveError,
@@ -98,6 +100,13 @@ export const NativeInstanceDetailScreen = ({
         <Text style={styles.topBarTitle}>Pokémon details</Text>
         <View style={styles.topBarSpacer} />
       </View>
+
+      {cachedAt != null ? (
+        <View accessibilityLiveRegion="polite" style={styles.cachedCard}>
+          <Text style={styles.cachedTitle}>Viewing an offline copy</Text>
+          <Text style={styles.cachedBody}>Retained changes are shown and will sync after reconnecting.</Text>
+        </View>
+      ) : null}
 
       <View style={styles.hero}>
         <Text style={styles.dexNumber}>
@@ -297,6 +306,16 @@ const styles = StyleSheet.create({
   ivTrack: { height: 8, overflow: 'hidden', borderRadius: 4, backgroundColor: '#243648' },
   ivFill: { height: '100%', borderRadius: 4, backgroundColor: '#ff9b2f' },
   warningText: { color: '#ffd18a', lineHeight: 19 },
+  cachedCard: {
+    gap: theme.spacing.xs,
+    borderWidth: 1,
+    borderColor: '#a87524',
+    borderRadius: theme.radius.md,
+    padding: theme.spacing.md,
+    backgroundColor: '#332714',
+  },
+  cachedTitle: { color: '#ffe2a8', fontWeight: '900' },
+  cachedBody: { color: '#f7d99b', fontSize: theme.type.caption, lineHeight: 18 },
   favoriteButton: {
     minHeight: 50,
     flexDirection: 'row',

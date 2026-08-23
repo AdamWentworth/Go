@@ -72,12 +72,92 @@ describe('getNativeCollectionSnapshot', () => {
         .mockResolvedValueOnce(retained),
       removeAcknowledged: jest.fn().mockResolvedValue(undefined),
     };
+    const cache = {
+      read: jest.fn().mockResolvedValue(null),
+      write: jest.fn().mockResolvedValue(undefined),
+    };
 
     const snapshot = await getReconciledNativeCollectionSnapshot(
-      usersClient, pokemonClient, outbox, 'user-1',
+      usersClient, pokemonClient, outbox, cache, 'user-1',
     );
     expect(snapshot.instances['instance-1']?.cp).toBe(501);
+    expect(snapshot).toEqual(expect.objectContaining({ source: 'network', cachedAt: null }));
+    expect(cache.write).toHaveBeenCalledWith('user-1', {
+      instances: { 'instance-1': canonicalInstance },
+      catalog: [],
+    });
     expect(outbox.list).toHaveBeenNthCalledWith(1, 'user-1', 'acknowledged');
     expect(outbox.list).toHaveBeenNthCalledWith(2, 'user-1');
+  });
+
+  it('falls back to a user-scoped cached snapshot and still projects retained edits', async () => {
+    const cachedInstance = { instance_id: 'instance-1', pokemon_id: 1, last_update: 100 };
+    const retainedInstance = {
+      ...cachedInstance,
+      cp: 999,
+      is_caught: true,
+      is_for_trade: false,
+      is_wanted: false,
+      last_update: 200,
+    };
+    const usersClient = { get: jest.fn().mockRejectedValue(new Error('offline')) };
+    const pokemonClient = { get: jest.fn().mockRejectedValue(new Error('offline')) };
+    const outbox = {
+      list: jest.fn()
+        .mockResolvedValueOnce([])
+        .mockResolvedValueOnce([{
+          userId: 'user-1',
+          batch: { sync_batch_id: 'batch-1', location: null, pokemonUpdates: [retainedInstance] },
+          state: 'pending' as const,
+          createdAt: 100, updatedAt: 100, attemptCount: 0,
+          lastError: null, acknowledgedAt: null,
+        }]),
+      removeAcknowledged: jest.fn().mockResolvedValue(undefined),
+    };
+    const cache = {
+      read: jest.fn().mockResolvedValue({
+        snapshot: { instances: { 'instance-1': cachedInstance }, catalog: [] },
+        savedAt: 1234,
+      }),
+      write: jest.fn(),
+    };
+
+    const snapshot = await getReconciledNativeCollectionSnapshot(
+      usersClient, pokemonClient, outbox, cache, 'user-1',
+    );
+
+    expect(cache.read).toHaveBeenCalledWith('user-1');
+    expect(snapshot.source).toBe('cache');
+    expect(snapshot.cachedAt).toBe(1234);
+    expect(snapshot.instances['instance-1']?.cp).toBe(999);
+  });
+
+  it('does not let a replaceable cache write block an online collection', async () => {
+    const usersClient = { get: jest.fn().mockResolvedValue({ instances: {} }) };
+    const pokemonClient = { get: jest.fn().mockResolvedValue([]) };
+    const outbox = {
+      list: jest.fn().mockResolvedValue([]),
+      removeAcknowledged: jest.fn().mockResolvedValue(undefined),
+    };
+    const cache = {
+      read: jest.fn(),
+      write: jest.fn().mockRejectedValue(new Error('disk full')),
+    };
+
+    await expect(getReconciledNativeCollectionSnapshot(
+      usersClient, pokemonClient, outbox, cache, 'user-1',
+    )).resolves.toEqual({ instances: {}, catalog: [], source: 'network', cachedAt: null });
+  });
+
+  it('preserves the network failure when no cached copy exists', async () => {
+    const networkError = new Error('network unavailable');
+    const usersClient = { get: jest.fn().mockRejectedValue(networkError) };
+    const pokemonClient = { get: jest.fn().mockRejectedValue(networkError) };
+    const outbox = { list: jest.fn(), removeAcknowledged: jest.fn() };
+    const cache = { read: jest.fn().mockResolvedValue(null), write: jest.fn() };
+
+    await expect(getReconciledNativeCollectionSnapshot(
+      usersClient, pokemonClient, outbox, cache, 'user-1',
+    )).rejects.toBe(networkError);
   });
 });

@@ -17,10 +17,19 @@ import {
   reconcileAcknowledgedNativeCollectionBatches,
 } from '../features/collection/collectionSyncCoordinator';
 import type { nativeCollectionOutbox } from '../storage/nativeCollectionOutbox';
+import type {
+  NativeCachedCollectionSnapshot,
+  nativeCollectionCache,
+} from '../storage/nativeCollectionCache';
 
 export type NativeCollectionSnapshot = {
   instances: Record<string, PokemonInstance>;
   catalog: BasePokemon[];
+};
+
+export type NativeResolvedCollectionSnapshot = NativeCollectionSnapshot & {
+  source: 'network' | 'cache';
+  cachedAt: number | null;
 };
 
 export const getNativeCollectionSnapshot = async (
@@ -45,13 +54,47 @@ type NativeCollectionOutboxPort = Pick<
   'list' | 'removeAcknowledged'
 >;
 
+type NativeCollectionCachePort = Pick<
+  typeof nativeCollectionCache,
+  'read' | 'write'
+>;
+
+const errorMessage = (error: unknown): string =>
+  error instanceof Error ? error.message : 'Unknown error';
+
 export const getReconciledNativeCollectionSnapshot = async (
   usersClient: Pick<NativeUsersApiClient, 'get'>,
   pokemonClient: Pick<NativePokemonApiClient, 'get'>,
   outbox: NativeCollectionOutboxPort,
+  cache: NativeCollectionCachePort,
   userId: string,
-): Promise<NativeCollectionSnapshot> => {
-  const canonical = await getNativeCollectionSnapshot(usersClient, pokemonClient);
+): Promise<NativeResolvedCollectionSnapshot> => {
+  let canonical: NativeCachedCollectionSnapshot;
+  let source: NativeResolvedCollectionSnapshot['source'] = 'network';
+  let cachedAt: number | null = null;
+
+  try {
+    canonical = await getNativeCollectionSnapshot(usersClient, pokemonClient);
+    try {
+      await cache.write(userId, canonical);
+    } catch {
+      // A replaceable read cache must never block a successful online collection load.
+    }
+  } catch (networkError) {
+    try {
+      const cached = await cache.read(userId);
+      if (!cached) throw networkError;
+      canonical = cached.snapshot;
+      source = 'cache';
+      cachedAt = cached.savedAt;
+    } catch (cacheError) {
+      if (cacheError === networkError) throw networkError;
+      throw new Error(
+        `Unable to load the collection from the network or this device. Network: ${errorMessage(networkError)} Cache: ${errorMessage(cacheError)}`,
+      );
+    }
+  }
+
   await reconcileAcknowledgedNativeCollectionBatches({
     userId,
     outbox,
@@ -61,6 +104,8 @@ export const getReconciledNativeCollectionSnapshot = async (
   return {
     ...canonical,
     instances: projectNativeCollectionOutbox(canonical.instances, retained),
+    source,
+    cachedAt,
   };
 };
 

@@ -32,6 +32,7 @@ export default function NativeCollectionRoute() {
     query={query}
     isLoading={snapshotQuery.isPending}
     error={snapshotQuery.error instanceof Error ? snapshotQuery.error.message : null}
+    cachedAt={snapshotQuery.data?.cachedAt ?? null}
     onFilterChange={setFilter}
     onQueryChange={setQuery}
     onRetry={() => void snapshotQuery.refetch()}

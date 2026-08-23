@@ -42,6 +42,7 @@ export default function NativeInstanceDetailRoute() {
     detail={detail}
     isLoading={snapshotQuery.isPending}
     error={snapshotQuery.error instanceof Error ? snapshotQuery.error.message : null}
+    cachedAt={snapshotQuery.data?.cachedAt ?? null}
     movesWarning={movesQuery.error instanceof Error
       ? 'Move names are temporarily unavailable. The rest of this Pokémon is still current.'
       : null}
