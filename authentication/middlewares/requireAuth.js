@@ -1,7 +1,22 @@
 const tokenService = require('../services/tokenService');
 
+const readAccessToken = (req) => {
+  const cookieToken = typeof req.cookies?.accessToken === 'string'
+    ? req.cookies.accessToken.trim()
+    : '';
+  if (cookieToken) return cookieToken;
+
+  const authorization = typeof req.get === 'function'
+    ? req.get('authorization')
+    : req.headers?.authorization;
+  if (typeof authorization !== 'string') return '';
+
+  const match = authorization.trim().match(/^Bearer\s+(.+)$/i);
+  return match?.[1]?.trim() || '';
+};
+
 module.exports = (req, res, next) => {
-  const accessToken = req.cookies?.accessToken;
+  const accessToken = readAccessToken(req);
   if (!accessToken) {
     return res.status(401).json({ message: 'Authentication required' });
   }
