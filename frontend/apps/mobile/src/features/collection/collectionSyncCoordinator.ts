@@ -86,6 +86,40 @@ export const isNativeCollectionBatchCommitted = (
 });
 
 /**
+ * Retained device snapshots remain visible while offline or while Kafka and
+ * Storage catch up. A newer canonical timestamp always wins, so another device
+ * or a later server-authoritative change cannot be overwritten by stale local
+ * state.
+ */
+export const projectNativeCollectionOutbox = (
+  canonicalInstances: Record<string, PokemonInstance>,
+  entries: NativeCollectionOutboxEntry[],
+): Record<string, PokemonInstance> => {
+  const projected = { ...canonicalInstances };
+  const orderedEntries = [...entries].sort((left, right) =>
+    left.createdAt - right.createdAt
+    || left.batch.sync_batch_id.localeCompare(right.batch.sync_batch_id));
+
+  for (const entry of orderedEntries) {
+    for (const update of entry.batch.pokemonUpdates) {
+      const collectionKey = resolveInstanceCollectionKey(projected, update.instance_id)
+        ?? update.instance_id;
+      const current = projected[collectionKey];
+      if (current && current.last_update >= update.last_update) continue;
+
+      const expectedToExist = update.is_caught || update.is_for_trade || update.is_wanted;
+      if (!expectedToExist) {
+        delete projected[collectionKey];
+        continue;
+      }
+      projected[collectionKey] = { ...update };
+    }
+  }
+
+  return projected;
+};
+
+/**
  * Receiver acknowledgement only means Kafka accepted the batch. Entries leave
  * the outbox after a later users-service snapshot observes Storage's commit.
  */
@@ -95,7 +129,7 @@ export const reconcileAcknowledgedNativeCollectionBatches = async ({
   canonicalInstances,
 }: {
   userId: string;
-  outbox: CollectionOutboxPort;
+  outbox: Pick<CollectionOutboxPort, 'list' | 'removeAcknowledged'>;
   canonicalInstances: Record<string, PokemonInstance>;
 }): Promise<string[]> => {
   const acknowledged = await outbox.list(userId, 'acknowledged');

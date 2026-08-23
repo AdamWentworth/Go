@@ -1,10 +1,11 @@
 import { useQuery } from '@tanstack/react-query';
 import {
-  getNativeCollectionSnapshot,
+  getReconciledNativeCollectionSnapshot,
   getNativePokemonMoves,
 } from '../../services/collectionApi';
 import { getCollectionSummary } from '../../services/collectionSummaryApi';
 import { useNativeApiClients } from '../../services/useNativeApiClients';
+import { nativeCollectionOutbox } from '../../storage/nativeCollectionOutbox';
 
 export const nativeCollectionQueryKeys = {
   root: ['native', 'collection'] as const,
@@ -43,7 +44,12 @@ export const useNativeCollectionSnapshotQuery = (
   const clients = useNativeApiClients();
   return useQuery({
     queryKey: nativeCollectionQueryKeys.snapshot(userId ?? 'signed-out'),
-    queryFn: () => getNativeCollectionSnapshot(clients.users, clients.pokemon),
+    queryFn: () => getReconciledNativeCollectionSnapshot(
+      clients.users,
+      clients.pokemon,
+      nativeCollectionOutbox,
+      userId ?? '',
+    ),
     enabled: Boolean(userId),
     staleTime: 5 * 60_000,
   });

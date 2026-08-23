@@ -1,6 +1,7 @@
 import type { PokemonInstance } from '@pokemongonexus/shared-contracts/instances';
 import {
   isNativeCollectionBatchCommitted,
+  projectNativeCollectionOutbox,
   reconcileAcknowledgedNativeCollectionBatches,
   sendPendingNativeCollectionBatches,
 } from '../../../../src/features/collection/collectionSyncCoordinator';
@@ -129,5 +130,39 @@ describe('native collection sync coordinator', () => {
       },
     })).resolves.toEqual(['batch-1']);
     expect(store.removeAcknowledged).toHaveBeenCalledWith('user-1', ['batch-1']);
+  });
+
+  it('projects retained snapshots in device order without overriding newer canonical data', () => {
+    const olderLocal = entry('batch-1', 'pending', update({ cp: 501, last_update: 201 }));
+    const newerLocal = {
+      ...entry('batch-2', 'acknowledged', update({ cp: 502, last_update: 202 })),
+      createdAt: 101,
+    };
+    const result = projectNativeCollectionOutbox({
+      'instance-1': update({ cp: 500, last_update: 200 }),
+      'instance-newer': update({
+        instance_id: 'instance-newer', cp: 900, last_update: 300,
+      }),
+    }, [newerLocal, olderLocal, entry('stale', 'pending', update({
+      instance_id: 'instance-newer', cp: 100, last_update: 299,
+    }))]);
+
+    expect(result['instance-1']?.cp).toBe(502);
+    expect(result['instance-newer']?.cp).toBe(900);
+  });
+
+  it('projects retained creations and deletions', () => {
+    const result = projectNativeCollectionOutbox({
+      deleted: update({ instance_id: 'deleted', last_update: 100 }),
+    }, [
+      entry('create', 'pending', update({ instance_id: 'created', last_update: 200 })),
+      entry('delete', 'acknowledged', update({
+        instance_id: 'deleted', is_caught: false, is_for_trade: false,
+        is_wanted: false, last_update: 201,
+      })),
+    ]);
+
+    expect(result.created?.instance_id).toBe('created');
+    expect(result.deleted).toBeUndefined();
   });
 });

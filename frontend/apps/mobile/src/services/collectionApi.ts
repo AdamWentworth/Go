@@ -12,6 +12,11 @@ import type {
   NativePokemonApiClient,
   NativeUsersApiClient,
 } from './nativeApiClients';
+import {
+  projectNativeCollectionOutbox,
+  reconcileAcknowledgedNativeCollectionBatches,
+} from '../features/collection/collectionSyncCoordinator';
+import type { nativeCollectionOutbox } from '../storage/nativeCollectionOutbox';
 
 export type NativeCollectionSnapshot = {
   instances: Record<string, PokemonInstance>;
@@ -32,6 +37,30 @@ export const getNativeCollectionSnapshot = async (
   return {
     instances: instanceEnvelope.instances ?? {},
     catalog,
+  };
+};
+
+type NativeCollectionOutboxPort = Pick<
+  typeof nativeCollectionOutbox,
+  'list' | 'removeAcknowledged'
+>;
+
+export const getReconciledNativeCollectionSnapshot = async (
+  usersClient: Pick<NativeUsersApiClient, 'get'>,
+  pokemonClient: Pick<NativePokemonApiClient, 'get'>,
+  outbox: NativeCollectionOutboxPort,
+  userId: string,
+): Promise<NativeCollectionSnapshot> => {
+  const canonical = await getNativeCollectionSnapshot(usersClient, pokemonClient);
+  await reconcileAcknowledgedNativeCollectionBatches({
+    userId,
+    outbox,
+    canonicalInstances: canonical.instances,
+  });
+  const retained = await outbox.list(userId);
+  return {
+    ...canonical,
+    instances: projectNativeCollectionOutbox(canonical.instances, retained),
   };
 };
 
