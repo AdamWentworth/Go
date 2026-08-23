@@ -6,6 +6,7 @@ import {
   useNativePokemonMovesQuery,
 } from '../../../features/collection/collectionQueries';
 import { buildNativeInstanceDetail } from '../../../features/collection/collectionModel';
+import { useNativeFavoriteMutation } from '../../../features/collection/useNativeFavoriteMutation';
 import { runtimeConfig } from '../../../config/runtimeConfig';
 import { NativeInstanceDetailScreen } from '../../../screens/NativeInstanceDetailScreen';
 
@@ -18,6 +19,10 @@ export default function NativeInstanceDetailRoute() {
     : params.instanceId ?? '';
   const snapshotQuery = useNativeCollectionSnapshotQuery(session.user?.user_id ?? null);
   const movesQuery = useNativePokemonMovesQuery(Boolean(session.user));
+  const favoriteMutation = useNativeFavoriteMutation(
+    session.user?.user_id ?? '',
+    instanceId,
+  );
   const detail = useMemo(() => {
     if (!snapshotQuery.data || !instanceId) return null;
     return buildNativeInstanceDetail(
@@ -40,8 +45,14 @@ export default function NativeInstanceDetailRoute() {
     movesWarning={movesQuery.error instanceof Error
       ? 'Move names are temporarily unavailable. The rest of this Pokémon is still current.'
       : null}
+    saveNotice={favoriteMutation.data?.message ?? null}
+    saveError={favoriteMutation.error instanceof Error
+      ? favoriteMutation.error.message
+      : null}
+    isSaving={favoriteMutation.isPending}
     onRetry={() => void Promise.all([snapshotQuery.refetch(), movesQuery.refetch()])}
     onBack={() => router.canGoBack() ? router.back() : router.replace('/native/collection')}
+    onToggleFavorite={(favorite) => favoriteMutation.mutate(favorite)}
     onEditInCurrentApp={() => router.replace('/web')}
   />;
 }

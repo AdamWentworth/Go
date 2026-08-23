@@ -30,8 +30,12 @@ describe('NativeInstanceDetailScreen', () => {
         isLoading={false}
         error={null}
         movesWarning={null}
+        saveNotice={null}
+        saveError={null}
+        isSaving={false}
         onRetry={jest.fn()}
         onBack={jest.fn()}
+        onToggleFavorite={jest.fn()}
         onEditInCurrentApp={onEditInCurrentApp}
       />,
     );
@@ -51,8 +55,12 @@ describe('NativeInstanceDetailScreen', () => {
         isLoading={false}
         error={null}
         movesWarning={null}
+        saveNotice={null}
+        saveError={null}
+        isSaving={false}
         onRetry={jest.fn()}
         onBack={onBack}
+        onToggleFavorite={jest.fn()}
         onEditInCurrentApp={jest.fn()}
       />,
     );
@@ -60,5 +68,28 @@ describe('NativeInstanceDetailScreen', () => {
     expect(screen.getByText('This instance was not found.')).toBeTruthy();
     fireEvent.press(screen.getByRole('button', { name: 'Back to collection' }));
     expect(onBack).toHaveBeenCalledTimes(1);
+  });
+
+  it('offers the native Favorite action only for a caught Pokémon', () => {
+    const onToggleFavorite = jest.fn();
+    render(
+      <NativeInstanceDetailScreen
+        detail={{ ...detail, row: { ...detail.row, status: 'caught', favorite: false } }}
+        isLoading={false}
+        error={null}
+        movesWarning={null}
+        saveNotice="Saved on this device."
+        saveError={null}
+        isSaving={false}
+        onRetry={jest.fn()}
+        onBack={jest.fn()}
+        onToggleFavorite={onToggleFavorite}
+        onEditInCurrentApp={jest.fn()}
+      />,
+    );
+
+    fireEvent.press(screen.getByRole('button', { name: 'Mark as Favorite' }));
+    expect(onToggleFavorite).toHaveBeenCalledWith(true);
+    expect(screen.getByText('Saved on this device.')).toBeTruthy();
   });
 });

@@ -15,8 +15,12 @@ type NativeInstanceDetailScreenProps = {
   isLoading: boolean;
   error: string | null;
   movesWarning: string | null;
+  saveNotice: string | null;
+  saveError: string | null;
+  isSaving: boolean;
   onRetry: () => void;
   onBack: () => void;
+  onToggleFavorite: (favorite: boolean) => void;
   onEditInCurrentApp: () => void;
 };
 
@@ -52,8 +56,12 @@ export const NativeInstanceDetailScreen = ({
   isLoading,
   error,
   movesWarning,
+  saveNotice,
+  saveError,
+  isSaving,
   onRetry,
   onBack,
+  onToggleFavorite,
   onEditInCurrentApp,
 }: NativeInstanceDetailScreenProps) => {
   if (isLoading) {
@@ -172,6 +180,45 @@ export const NativeInstanceDetailScreen = ({
         </View>
       ) : null}
 
+      {detail.row.status === 'caught' ? (
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Collection actions</Text>
+          <Pressable
+            accessibilityRole="button"
+            disabled={isSaving}
+            onPress={() => onToggleFavorite(!detail.row.favorite)}
+            style={({ pressed }) => [
+              styles.favoriteButton,
+              detail.row.favorite && styles.favoriteButtonSelected,
+              (pressed || isSaving) && styles.buttonPressed,
+            ]}
+          >
+            <Text style={styles.favoriteIcon}>{detail.row.favorite ? '★' : '☆'}</Text>
+            <Text style={styles.favoriteButtonText}>
+              {isSaving
+                ? 'Saving on this device…'
+                : detail.row.favorite
+                  ? 'Remove Favorite'
+                  : 'Mark as Favorite'}
+            </Text>
+          </Pressable>
+          <Text style={styles.actionHint}>
+            Native Favorite changes are retained offline and synchronized through Receiver.
+          </Text>
+        </View>
+      ) : null}
+
+      {saveNotice ? (
+        <View accessibilityLiveRegion="polite" style={styles.notice}>
+          <Text style={styles.noticeText}>{saveNotice}</Text>
+        </View>
+      ) : null}
+      {saveError ? (
+        <View accessibilityRole="alert" style={styles.saveError}>
+          <Text style={styles.saveErrorText}>{saveError}</Text>
+        </View>
+      ) : null}
+
       <Pressable
         accessibilityRole="button"
         onPress={onEditInCurrentApp}
@@ -250,6 +297,38 @@ const styles = StyleSheet.create({
   ivTrack: { height: 8, overflow: 'hidden', borderRadius: 4, backgroundColor: '#243648' },
   ivFill: { height: '100%', borderRadius: 4, backgroundColor: '#ff9b2f' },
   warningText: { color: '#ffd18a', lineHeight: 19 },
+  favoriteButton: {
+    minHeight: 50,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: theme.spacing.sm,
+    borderWidth: 1,
+    borderColor: '#6d7d8e',
+    borderRadius: theme.radius.md,
+    backgroundColor: '#142a3d',
+  },
+  favoriteButtonSelected: { borderColor: '#ffd75f', backgroundColor: '#413616' },
+  favoriteIcon: { color: '#ffd75f', fontSize: 24 },
+  favoriteButtonText: { color: '#fff', fontWeight: '900' },
+  buttonPressed: { opacity: 0.68 },
+  actionHint: { color: '#8ca3b8', fontSize: theme.type.caption, lineHeight: 18 },
+  notice: {
+    borderWidth: 1,
+    borderColor: '#338b6b',
+    borderRadius: theme.radius.md,
+    padding: theme.spacing.md,
+    backgroundColor: '#102e26',
+  },
+  noticeText: { color: '#9ff0ca', lineHeight: 20, fontWeight: '700' },
+  saveError: {
+    borderWidth: 1,
+    borderColor: '#b65b70',
+    borderRadius: theme.radius.md,
+    padding: theme.spacing.md,
+    backgroundColor: '#3b1722',
+  },
+  saveErrorText: { color: '#ffd1da', lineHeight: 20, fontWeight: '700' },
   primaryButton: {
     minHeight: 50,
     alignItems: 'center',
