@@ -14,6 +14,8 @@ test.describe('FAQ page', () => {
         page.getByRole('heading', { name: 'Frequently asked questions' }),
       ).toBeVisible();
       await expect(page).toHaveTitle(/Frequently Asked Questions \| Pokémon Go Nexus/);
+      await expect(page.getByText('Common questions')).toBeVisible();
+      await expect(page.getByText('4 questions')).toBeVisible();
 
       const search = page.getByRole('searchbox', {
         name: 'Search questions and answers',
@@ -28,10 +30,12 @@ test.describe('FAQ page', () => {
       await expect(page).toHaveURL(/\/faq#remote-trades$/);
 
       await search.fill('');
-      await page.getByRole('button', { name: 'Collection & tags' }).click();
+      await page.getByRole('button', { name: 'Browse Collection & tags questions' }).click();
       await expect(page.getByText('5 questions')).toBeVisible();
       await expect(page.getByText('How do custom tags work?')).toBeVisible();
       await expect(page.getByText('How do I propose a trade?')).toHaveCount(0);
+      await page.getByRole('button', { name: 'All topics' }).click();
+      await expect(page.getByText('Common questions')).toBeVisible();
 
       const widths = await page.evaluate(() => ({
         body: document.body.scrollWidth,

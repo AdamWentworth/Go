@@ -5,6 +5,16 @@ import { describe, expect, it } from 'vitest';
 import FAQ from '@/pages/FAQ/FAQ';
 
 describe('FAQ page', () => {
+  it('starts with topic cards and a short common-question list', () => {
+    render(<MemoryRouter><FAQ /></MemoryRouter>);
+
+    expect(screen.getByRole('button', { name: 'Browse Account & access questions' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Browse Trading questions' })).toBeInTheDocument();
+    expect(screen.getByText('Common questions')).toBeInTheDocument();
+    expect(screen.getByText('4 questions')).toBeInTheDocument();
+    expect(screen.queryByText('Why can’t I list a Lucky Pokémon For Trade?')).not.toBeInTheDocument();
+  });
+
   it('searches both questions and answer content', () => {
     render(<MemoryRouter><FAQ /></MemoryRouter>);
 
@@ -21,14 +31,15 @@ describe('FAQ page', () => {
   it('filters categories and can expand every visible answer', () => {
     render(<MemoryRouter><FAQ /></MemoryRouter>);
 
-    fireEvent.click(screen.getByRole('button', { name: 'Collection & tags' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Browse Collection & tags questions' }));
     expect(screen.getByText('5 questions')).toBeInTheDocument();
     expect(screen.getByText('How do custom tags work?')).toBeInTheDocument();
     expect(screen.queryByText('How do I propose a trade?')).not.toBeInTheDocument();
 
-    fireEvent.click(screen.getByRole('button', { name: 'Expand results' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Expand answers' }));
     expect(screen.getByText(/Default system groups such as All Caught/i)).toBeVisible();
-    expect(screen.getByRole('button', { name: 'Collapse results' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Collapse answers' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'All topics' })).toBeInTheDocument();
   });
 
   it('opens and reveals a directly linked answer', async () => {

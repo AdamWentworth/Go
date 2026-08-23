@@ -1,12 +1,17 @@
 import { useEffect, useMemo, useState, type SyntheticEvent } from 'react';
+import type { IconType } from 'react-icons';
 import {
-  FaBookOpen,
+  FaArrowLeft,
   FaArrowRight,
+  FaBookOpen,
   FaChevronDown,
+  FaExchangeAlt,
   FaLink,
   FaQuestionCircle,
   FaSearch,
+  FaTags,
   FaTimes,
+  FaUserShield,
 } from 'react-icons/fa';
 import { Link, useLocation } from 'react-router';
 
@@ -28,12 +33,38 @@ type FaqItem = {
   };
 };
 
-const FAQ_CATEGORIES: Array<{ id: 'all' | FaqCategory; label: string }> = [
-  { id: 'all', label: 'All questions' },
-  { id: 'account', label: 'Account & access' },
-  { id: 'collection', label: 'Collection & tags' },
-  { id: 'trading', label: 'Trading' },
-  { id: 'discovery', label: 'Discovery & privacy' },
+type FaqCategoryMeta = {
+  description: string;
+  icon: IconType;
+  id: FaqCategory;
+  label: string;
+};
+
+const FAQ_CATEGORIES: FaqCategoryMeta[] = [
+  {
+    id: 'account',
+    label: 'Account & access',
+    description: 'Login methods, password recovery, and account control.',
+    icon: FaUserShield,
+  },
+  {
+    id: 'collection',
+    label: 'Collection & tags',
+    description: 'Statuses, custom organization, and collection synchronization.',
+    icon: FaTags,
+  },
+  {
+    id: 'trading',
+    label: 'Trading',
+    description: 'Preferences, proposals, eligibility, costs, and trade states.',
+    icon: FaExchangeAlt,
+  },
+  {
+    id: 'discovery',
+    label: 'Discovery & privacy',
+    description: 'Search, friends, location, visibility, and public sharing.',
+    icon: FaSearch,
+  },
 ];
 
 const FAQ_ITEMS: FaqItem[] = [
@@ -220,6 +251,13 @@ const FAQ_ITEMS: FaqItem[] = [
   },
 ];
 
+const COMMON_QUESTION_IDS = new Set([
+  'same-email-account',
+  'collection-statuses',
+  'propose-trade',
+  'search-matchmaker',
+]);
+
 const categoryLabel = (category: FaqCategory) =>
   FAQ_CATEGORIES.find(({ id }) => id === category)?.label ?? category;
 
@@ -227,7 +265,7 @@ const normalizeSearchText = (value: string) => value.trim().toLocaleLowerCase();
 
 const FAQ = () => {
   const location = useLocation();
-  const [activeCategory, setActiveCategory] = useState<'all' | FaqCategory>('all');
+  const [activeCategory, setActiveCategory] = useState<FaqCategory | null>(null);
   const [openIds, setOpenIds] = useState<Set<string>>(() => new Set());
   const [query, setQuery] = useState('');
   const normalizedQuery = normalizeSearchText(query);
@@ -235,10 +273,12 @@ const FAQ = () => {
   const visibleItems = useMemo(
     () =>
       FAQ_ITEMS.filter((item) => {
-        if (activeCategory !== 'all' && item.category !== activeCategory) {
+        if (!normalizedQuery && activeCategory && item.category !== activeCategory) {
           return false;
         }
-        if (!normalizedQuery) return true;
+        if (!normalizedQuery) {
+          return activeCategory !== null || COMMON_QUESTION_IDS.has(item.id);
+        }
         return normalizeSearchText(
           [item.question, ...item.answer, categoryLabel(item.category)].join(' '),
         ).includes(normalizedQuery);
@@ -281,7 +321,8 @@ const FAQ = () => {
     }
     if (!targetId || !FAQ_ITEMS.some(({ id }) => id === targetId)) return;
 
-    setActiveCategory('all');
+    const targetItem = FAQ_ITEMS.find(({ id }) => id === targetId);
+    setActiveCategory(targetItem?.category ?? null);
     setQuery('');
     setOpenIds((current) => new Set(current).add(targetId));
 
@@ -313,8 +354,7 @@ const FAQ = () => {
 
   const allVisibleOpen =
     visibleItems.length > 0 && visibleItems.every(({ id }) => openIds.has(id));
-  const activeCategoryLabel =
-    activeCategory === 'all' ? 'All questions' : categoryLabel(activeCategory);
+  const activeCategoryLabel = activeCategory ? categoryLabel(activeCategory) : 'Common questions';
 
   return (
     <AppPageShell
@@ -338,7 +378,10 @@ const FAQ = () => {
           </label>
           <input
             id="faq-search-input"
-            onChange={(event) => setQuery(event.target.value)}
+            onChange={(event) => {
+              setQuery(event.target.value);
+              if (event.target.value.trim()) setActiveCategory(null);
+            }}
             placeholder="Search questions and answers"
             type="search"
             value={query}
@@ -354,17 +397,30 @@ const FAQ = () => {
           ) : null}
         </div>
 
-        <div className="faq-categories" aria-label="FAQ categories">
-          {FAQ_CATEGORIES.map(({ id, label }) => (
-            <button
-              aria-pressed={activeCategory === id}
-              key={id}
-              onClick={() => setActiveCategory(id)}
-              type="button"
-            >
-              {label}
-            </button>
-          ))}
+        <div className="faq-categories" aria-label="Browse FAQ topics">
+          {FAQ_CATEGORIES.map(({ description, icon: Icon, id, label }) => {
+            const questionCount = FAQ_ITEMS.filter((item) => item.category === id).length;
+            return (
+              <button
+                aria-label={`Browse ${label} questions`}
+                aria-pressed={activeCategory === id}
+                key={id}
+                onClick={() => {
+                  setActiveCategory(id);
+                  setQuery('');
+                }}
+                type="button"
+              >
+                <span className="faq-categories__icon"><Icon aria-hidden="true" /></span>
+                <span className="faq-categories__copy">
+                  <strong>{label}</strong>
+                  <small>{description}</small>
+                </span>
+                <span className="faq-categories__count">{questionCount}</span>
+                <FaArrowRight className="faq-categories__arrow" aria-hidden="true" />
+              </button>
+            );
+          })}
         </div>
       </section>
 
@@ -380,25 +436,36 @@ const FAQ = () => {
               {normalizedQuery ? ` matching “${query.trim()}”` : ''}
             </p>
           </div>
-          {visibleItems.length > 0 ? (
-            <button
-              className="faq-results__expand"
-              onClick={() =>
-                setOpenIds((current) => {
-                  const next = new Set(current);
-                  if (allVisibleOpen) {
-                    visibleItems.forEach(({ id }) => next.delete(id));
-                  } else {
-                    visibleItems.forEach(({ id }) => next.add(id));
-                  }
-                  return next;
-                })
-              }
-              type="button"
-            >
-              {allVisibleOpen ? 'Collapse results' : 'Expand results'}
-            </button>
-          ) : null}
+          <div className="faq-results__actions">
+            {activeCategory && !normalizedQuery ? (
+              <button
+                className="faq-results__back"
+                onClick={() => setActiveCategory(null)}
+                type="button"
+              >
+                <FaArrowLeft aria-hidden="true" /> All topics
+              </button>
+            ) : null}
+            {visibleItems.length > 0 ? (
+              <button
+                className="faq-results__expand"
+                onClick={() =>
+                  setOpenIds((current) => {
+                    const next = new Set(current);
+                    if (allVisibleOpen) {
+                      visibleItems.forEach(({ id }) => next.delete(id));
+                    } else {
+                      visibleItems.forEach(({ id }) => next.add(id));
+                    }
+                    return next;
+                  })
+                }
+                type="button"
+              >
+                {allVisibleOpen ? 'Collapse answers' : 'Expand answers'}
+              </button>
+            ) : null}
+          </div>
         </header>
 
         {visibleItems.length > 0 ? (
@@ -441,7 +508,7 @@ const FAQ = () => {
             <p>Try a shorter phrase or search all categories.</p>
             <button
               onClick={() => {
-                setActiveCategory('all');
+                setActiveCategory(null);
                 setQuery('');
               }}
               type="button"
