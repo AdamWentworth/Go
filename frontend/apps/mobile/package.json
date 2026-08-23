@@ -18,6 +18,7 @@
     "@pokemongonexus/shared-contracts": "file:../../packages/shared-contracts",
     "@pokemongonexus/shared-domain": "file:../../packages/shared-domain",
     "@pokemongonexus/shared-ui-tokens": "file:../../packages/shared-ui-tokens",
+    "@react-native-community/netinfo": "11.5.2",
     "@tanstack/react-query": "^5.102.2",
     "expo": "~55.0.29",
     "expo-constants": "~55.0.15",
