@@ -2,6 +2,7 @@ import type { PokemonInstance } from '@pokemongonexus/shared-contracts/instances
 import {
   pokemonContract,
   type BasePokemon,
+  type PokemonMovesChunk,
 } from '@pokemongonexus/shared-contracts/pokemon';
 import {
   usersContract,
@@ -33,3 +34,8 @@ export const getNativeCollectionSnapshot = async (
     catalog,
   };
 };
+
+export const getNativePokemonMoves = (
+  pokemonClient: Pick<NativePokemonApiClient, 'get'>,
+): Promise<PokemonMovesChunk> =>
+  pokemonClient.get<PokemonMovesChunk>(pokemonContract.endpoints.moves);

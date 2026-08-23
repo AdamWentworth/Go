@@ -25,6 +25,7 @@ type NativeCollectionScreenProps = {
   onQueryChange: (query: string) => void;
   onRetry: () => void;
   onBack: () => void;
+  onOpenInstance: (instanceId: string) => void;
   onOpenCurrentApp: () => void;
 };
 
@@ -57,6 +58,7 @@ export const NativeCollectionScreen = ({
   onQueryChange,
   onRetry,
   onBack,
+  onOpenInstance,
   onOpenCurrentApp,
 }: NativeCollectionScreenProps) => {
   const visibleRows = filterNativeCollectionRows(rows, filter, query);
@@ -156,7 +158,12 @@ export const NativeCollectionScreen = ({
         renderItem={({ item }) => {
           const status = statusStyles[item.status];
           return (
-            <View style={styles.card}>
+            <Pressable
+              accessibilityLabel={`Open ${item.name}`}
+              accessibilityRole="button"
+              onPress={() => onOpenInstance(item.id)}
+              style={({ pressed }) => [styles.card, pressed && styles.cardPressed]}
+            >
               <View style={styles.cardTopRow}>
                 <Text style={styles.dexNumber}>#{String(item.pokedexNumber).padStart(4, '0')}</Text>
                 {item.favorite ? <Text accessibilityLabel="Favorite" style={styles.favorite}>★</Text> : null}
@@ -176,7 +183,7 @@ export const NativeCollectionScreen = ({
                 </Text>
               </View>
               {item.cp != null ? <Text style={styles.cp}>CP {item.cp.toLocaleString()}</Text> : null}
-            </View>
+            </Pressable>
           );
         }}
       />
@@ -253,6 +260,7 @@ const styles = StyleSheet.create({
     padding: theme.spacing.sm,
     backgroundColor: '#0b1c2d',
   },
+  cardPressed: { opacity: 0.76, transform: [{ scale: 0.985 }] },
   cardTopRow: { minHeight: 21, flexDirection: 'row', alignItems: 'center' },
   dexNumber: { flex: 1, color: '#8ca3b8', fontSize: theme.type.caption, fontWeight: '700' },
   favorite: { color: '#ffd75f', fontSize: 20 },

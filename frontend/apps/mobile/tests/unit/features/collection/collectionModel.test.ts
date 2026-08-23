@@ -2,6 +2,7 @@ import type { PokemonInstance } from '@pokemongonexus/shared-contracts/instances
 import type { BasePokemon } from '@pokemongonexus/shared-contracts/pokemon';
 import {
   buildNativeCollectionRows,
+  buildNativeInstanceDetail,
   filterNativeCollectionRows,
   resolveNativeInstanceImage,
 } from '../../../../src/features/collection/collectionModel';
@@ -118,5 +119,42 @@ describe('native collection model', () => {
     ]);
     expect(filterNativeCollectionRows(rows, 'all', '0006')).toHaveLength(0);
     expect(filterNativeCollectionRows(rows, 'all', '6')).toHaveLength(2);
+  });
+
+  it('builds a native detail model from shared instance identity and move metadata', () => {
+    const detail = buildNativeInstanceDetail(
+      {
+        legacy_key: instance({
+          instance_id: 'instance-1',
+          shiny: true,
+          cp: 2499,
+          attack_iv: 15,
+          friendship_level: 5,
+          pref_lucky: true,
+          fast_move_id: 101,
+        }),
+      },
+      [pokemon],
+      [{
+        pokemon_id: 6,
+        moves: [{ move_id: 101, name: 'Fire Spin' }],
+        fusion: [],
+        crownForms: [],
+      }] as never,
+      'instance-1',
+      'https://pokegonexus.com',
+    );
+
+    expect(detail).toEqual(expect.objectContaining({
+      row: expect.objectContaining({ name: 'Shiny Charizard' }),
+      traits: expect.arrayContaining(['Shiny']),
+      stats: expect.arrayContaining([{ label: 'CP', value: '2,499' }]),
+      ivs: [{ label: 'Attack', value: 15 }],
+      moves: [{ label: 'Fast move', value: 'Fire Spin' }],
+      preferences: expect.arrayContaining([
+        { label: 'Friendship', value: '5/5 hearts' },
+        { label: 'Lucky trade', value: 'Requested' },
+      ]),
+    }));
   });
 });

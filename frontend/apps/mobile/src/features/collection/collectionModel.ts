@@ -1,5 +1,9 @@
 import type { PokemonInstance } from '@pokemongonexus/shared-contracts/instances';
-import type { BasePokemon } from '@pokemongonexus/shared-contracts/pokemon';
+import type {
+  BasePokemon,
+  PokemonMovesChunk,
+} from '@pokemongonexus/shared-contracts/pokemon';
+import { resolveInstanceCollectionKey } from '@pokemongonexus/shared-domain/instances';
 
 export type NativeCollectionFilter = 'all' | 'caught' | 'trade' | 'wanted';
 
@@ -13,6 +17,16 @@ export type NativeCollectionRow = {
   cp: number | null;
   favorite: boolean;
   mostWanted: boolean;
+};
+
+export type NativeInstanceDetail = {
+  row: NativeCollectionRow;
+  traits: string[];
+  stats: { label: string; value: string }[];
+  ivs: { label: string; value: number }[];
+  moves: { label: string; value: string }[];
+  provenance: { label: string; value: string }[];
+  preferences: { label: string; value: string }[];
 };
 
 const firstString = (...values: (string | null | undefined)[]): string | null =>
@@ -190,4 +204,111 @@ export const filterNativeCollectionRows = (
       row.name.toLowerCase().includes(normalizedQuery) ||
       String(row.pokedexNumber).includes(normalizedQuery)),
   );
+};
+
+const formatNumber = (value: number): string =>
+  Number.isInteger(value) ? value.toLocaleString() : value.toFixed(2);
+
+const findMoveName = (
+  moves: PokemonMovesChunk,
+  pokemonId: number,
+  moveId: number | null,
+): string | null => {
+  if (moveId == null) return null;
+  const entry = moves.find((candidate) => candidate.pokemon_id === pokemonId);
+  if (!entry) return null;
+  const pool = [
+    ...entry.moves,
+    ...entry.fusion.flatMap((fusion) => fusion.moves ?? []),
+    ...entry.crownForms.flatMap((crown) => crown.moves ?? []),
+  ];
+  return pool.find((move) => move.move_id === moveId)?.name ?? `Move #${moveId}`;
+};
+
+const compactRows = <T>(rows: (T | null)[]): T[] =>
+  rows.filter((row): row is T => row !== null);
+
+export const buildNativeInstanceDetail = (
+  instances: Record<string, PokemonInstance>,
+  catalog: BasePokemon[],
+  moves: PokemonMovesChunk,
+  requestedInstanceId: string,
+  assetOrigin: string,
+): NativeInstanceDetail | null => {
+  const collectionKey = resolveInstanceCollectionKey(instances, requestedInstanceId);
+  if (!collectionKey) return null;
+  const instance = instances[collectionKey];
+  const pokemon = catalog.find((entry) => entry.pokemon_id === instance.pokemon_id);
+  if (!pokemon) return null;
+  const row = buildNativeCollectionRows(
+    { [collectionKey]: instance },
+    [pokemon],
+    assetOrigin,
+  )[0];
+  if (!row) return null;
+
+  const traits = compactRows([
+    instance.shiny ? 'Shiny' : null,
+    instance.shadow ? 'Shadow' : null,
+    instance.purified ? 'Purified' : null,
+    instance.lucky ? 'Lucky' : null,
+    instance.dynamax ? 'Dynamax' : null,
+    instance.gigantamax ? 'Gigantamax' : null,
+    instance.is_mega || instance.mega ? 'Mega Evolved' : null,
+    instance.is_fused ? 'Fused' : null,
+    instance.crown ? 'Crowned' : null,
+    instance.is_traded ? 'Previously traded' : null,
+  ]);
+
+  const stats = compactRows([
+    instance.cp == null ? null : { label: 'CP', value: instance.cp.toLocaleString() },
+    instance.level == null ? null : { label: 'Level', value: formatNumber(instance.level) },
+    instance.gender ? { label: 'Gender', value: instance.gender } : null,
+    instance.weight == null ? null : { label: 'Weight', value: `${formatNumber(instance.weight)} kg` },
+    instance.height == null ? null : { label: 'Height', value: `${formatNumber(instance.height)} m` },
+  ]);
+
+  const ivs = compactRows([
+    instance.attack_iv == null ? null : { label: 'Attack', value: instance.attack_iv },
+    instance.defense_iv == null ? null : { label: 'Defense', value: instance.defense_iv },
+    instance.stamina_iv == null ? null : { label: 'HP', value: instance.stamina_iv },
+  ]);
+
+  const moveRows = compactRows([
+    instance.fast_move_id == null ? null : {
+      label: 'Fast move',
+      value: findMoveName(moves, instance.pokemon_id, instance.fast_move_id) ?? 'Unknown',
+    },
+    instance.charged_move1_id == null ? null : {
+      label: 'Charged move',
+      value: findMoveName(moves, instance.pokemon_id, instance.charged_move1_id) ?? 'Unknown',
+    },
+    instance.charged_move2_id == null ? null : {
+      label: 'Second charged move',
+      value: findMoveName(moves, instance.pokemon_id, instance.charged_move2_id) ?? 'Unknown',
+    },
+  ]);
+
+  const provenance = compactRows([
+    instance.location_caught ? { label: 'Caught near', value: instance.location_caught } : null,
+    instance.date_caught ? {
+      label: 'Caught on',
+      value: new Date(instance.date_caught).toLocaleDateString(),
+    } : null,
+    instance.original_trainer_name ? {
+      label: 'Original trainer',
+      value: instance.original_trainer_name,
+    } : null,
+  ]);
+
+  const preferences = compactRows([
+    instance.friendship_level == null ? null : {
+      label: 'Friendship',
+      value: `${instance.friendship_level}/5 hearts`,
+    },
+    instance.pref_lucky ? { label: 'Lucky trade', value: 'Requested' } : null,
+    instance.mirror ? { label: 'Mirror trade', value: 'Required' } : null,
+  ]);
+
+  return { row, traits, stats, ivs, moves: moveRows, provenance, preferences };
 };

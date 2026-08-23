@@ -36,6 +36,10 @@ export default function NativeCollectionRoute() {
     onQueryChange={setQuery}
     onRetry={() => void snapshotQuery.refetch()}
     onBack={() => router.back()}
+    onOpenInstance={(instanceId) => router.push({
+      pathname: '/native/collection/[instanceId]',
+      params: { instanceId },
+    })}
     onOpenCurrentApp={() => router.replace('/web')}
   />;
 }

@@ -16,6 +16,7 @@ const row = {
 describe('NativeCollectionScreen', () => {
   it('renders a virtualized read-only collection and exposes filter controls', () => {
     const onFilterChange = jest.fn();
+    const onOpenInstance = jest.fn();
     const onOpenCurrentApp = jest.fn();
     render(
       <NativeCollectionScreen
@@ -28,12 +29,15 @@ describe('NativeCollectionScreen', () => {
         onQueryChange={jest.fn()}
         onRetry={jest.fn()}
         onBack={jest.fn()}
+        onOpenInstance={onOpenInstance}
         onOpenCurrentApp={onOpenCurrentApp}
       />,
     );
 
     expect(screen.getByText('Shiny Charizard')).toBeTruthy();
     expect(screen.getByText('For trade')).toBeTruthy();
+    fireEvent.press(screen.getByRole('button', { name: 'Open Shiny Charizard' }));
+    expect(onOpenInstance).toHaveBeenCalledWith('instance-1');
     fireEvent.press(screen.getByRole('tab', { name: 'Wanted' }));
     expect(onFilterChange).toHaveBeenCalledWith('wanted');
     fireEvent.press(screen.getByRole('button', { name: 'Edit in current app' }));

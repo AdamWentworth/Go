@@ -1,5 +1,8 @@
 import { useQuery } from '@tanstack/react-query';
-import { getNativeCollectionSnapshot } from '../../services/collectionApi';
+import {
+  getNativeCollectionSnapshot,
+  getNativePokemonMoves,
+} from '../../services/collectionApi';
 import { getCollectionSummary } from '../../services/collectionSummaryApi';
 import { useNativeApiClients } from '../../services/useNativeApiClients';
 
@@ -9,6 +12,17 @@ export const nativeCollectionQueryKeys = {
     [...nativeCollectionQueryKeys.root, userId, 'summary'] as const,
   snapshot: (userId: string) =>
     [...nativeCollectionQueryKeys.root, userId, 'snapshot'] as const,
+  moves: ['native', 'pokemon', 'moves'] as const,
+};
+
+export const useNativePokemonMovesQuery = (enabled: boolean) => {
+  const clients = useNativeApiClients();
+  return useQuery({
+    queryKey: nativeCollectionQueryKeys.moves,
+    queryFn: () => getNativePokemonMoves(clients.pokemon),
+    enabled,
+    staleTime: Number.POSITIVE_INFINITY,
+  });
 };
 
 export const useNativeCollectionSummaryQuery = (

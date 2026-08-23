@@ -11,5 +11,6 @@ describe('native collection query keys', () => {
       'user-1',
       'snapshot',
     ]);
+    expect(nativeCollectionQueryKeys.moves).toEqual(['native', 'pokemon', 'moves']);
   });
 });
