@@ -162,7 +162,7 @@ test.describe('Home page', () => {
       await expect(page.getByRole('heading', { name: 'Your first useful trade, step by step.' })).toBeVisible();
       await expect(page.getByText(/offer a Shiny Gigantamax Charizard/i)).toBeVisible();
       await expect(page.getByRole('heading', { name: 'Start your collection' })).toBeVisible();
-      await expect(page.getByRole('heading', { name: 'Review and propose' })).toBeVisible();
+      await expect(page.getByRole('heading', { name: 'Propose and coordinate' })).toBeVisible();
       await expect(page.getByRole('link', { name: /create a trade board/i })).toBeVisible();
 
       const widths = await page.evaluate(() => ({

@@ -65,7 +65,7 @@ async function seedLogin(page: Page) {
 
 async function openTradeActivity(page: Page) {
   await page.goto('/trades');
-  await page.getByRole('button', { name: 'Trade Activity' }).click();
+  await page.getByRole('tab', { name: 'Trade Activity' }).click();
   const slider = page.locator('.trade-page-slider');
   const activityPanel = slider.locator(
     '.horizontal-page-slider__panel:has(.trade-activity-workspace)',

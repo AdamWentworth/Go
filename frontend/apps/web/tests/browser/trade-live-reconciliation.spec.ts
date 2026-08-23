@@ -72,7 +72,7 @@ async function seedLogin(page: Page, user: typeof ash) {
 
 async function openTradeActivity(page: Page) {
   await page.goto('/trades', { waitUntil: 'domcontentloaded' });
-  await page.getByRole('button', { name: 'Trade Activity' }).click();
+  await page.getByRole('tab', { name: 'Trade Activity' }).click();
   await expect(page.locator('.trade-activity-workspace')).toBeVisible();
   await expect.poll(() => page.evaluate(() => (
     window as unknown as { __e2eEventSourceCount?: () => number }

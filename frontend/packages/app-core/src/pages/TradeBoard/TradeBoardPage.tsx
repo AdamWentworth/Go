@@ -112,7 +112,7 @@ const TradeBoardPage: React.FC = () => {
   return (
     <div className="trade-board-page">
       <header className="trade-board-page__header">
-        <Link className="trade-board-page__brand" to="/">
+        <Link aria-label="Pokémon Go Nexus home" className="trade-board-page__brand" to="/">
           <img alt="" aria-hidden="true" src="/icons/icon-192x192.png" />
           <span>Pokémon Go Nexus</span>
         </Link>
