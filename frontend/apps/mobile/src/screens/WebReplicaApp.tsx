@@ -10,6 +10,10 @@ import {
 import { WebView } from 'react-native-webview';
 import { runtimeConfig } from '../config/runtimeConfig';
 import { logDebug } from '../observability/logger';
+import {
+  classifyWebNavigation,
+  trustedEmbeddedOrigins,
+} from '../security/webNavigationPolicy';
 
 const PRIMARY_PATH = '/pokemon';
 const FALLBACK_PATH = '/';
@@ -137,6 +141,10 @@ export const WebReplicaApp = () => {
     () => resolveUrl(baseUrl, path),
     [baseUrl, path],
   );
+  const trustedOrigins = useMemo(
+    () => trustedEmbeddedOrigins(runtimeConfig.api.frontendAppUrl),
+    [],
+  );
 
   const clearLoadTimeout = () => {
     if (!loadTimeoutRef.current) return;
@@ -214,6 +222,19 @@ export const WebReplicaApp = () => {
     void Linking.openURL(targetUrl);
   };
 
+  const handleNavigationRequest = (url: string): boolean => {
+    const disposition = classifyWebNavigation(url, trustedOrigins);
+    if (disposition === 'embedded') return true;
+
+    if (disposition === 'external') {
+      void Linking.openURL(url).catch(() => {
+        logDebug('webview-navigation', `Unable to open external URL: ${url}`);
+      });
+    }
+
+    return false;
+  };
+
   const handleWebViewDiagnosticMessage = (rawMessage: string): void => {
     try {
       const parsed = JSON.parse(rawMessage) as {
@@ -281,13 +302,16 @@ export const WebReplicaApp = () => {
         testID="web-replica-webview"
         source={{ uri: targetUrl }}
         style={styles.webview}
-        originWhitelist={['*']}
+        originWhitelist={['http://*', 'https://*', 'about:*', 'blob:*', 'data:*']}
         javaScriptEnabled
         domStorageEnabled
         sharedCookiesEnabled
         thirdPartyCookiesEnabled
         cacheEnabled={false}
         injectedJavaScriptBeforeContentLoaded={WEBVIEW_DIAGNOSTIC_SCRIPT}
+        onShouldStartLoadWithRequest={(request) =>
+          handleNavigationRequest(request.url)
+        }
         onMessage={(event) =>
           handleWebViewDiagnosticMessage(event.nativeEvent.data)
         }

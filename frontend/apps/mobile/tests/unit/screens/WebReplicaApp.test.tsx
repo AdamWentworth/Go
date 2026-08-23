@@ -25,6 +25,8 @@ jest.mock('react-native-webview', () => {
 
 type MockWebViewProps = {
   source?: { uri?: string };
+  originWhitelist?: string[];
+  onShouldStartLoadWithRequest?: (request: { url: string }) => boolean;
   onLoadStart?: () => void;
   onLoadEnd?: () => void;
   onError?: (event: { nativeEvent: { description?: string; code?: number } }) => void;
@@ -45,6 +47,21 @@ describe('WebReplicaApp', () => {
     render(<WebReplicaApp />);
     const props = getWebViewProps();
     expect(props.source?.uri).toBe('https://pokegonexus.com/pokemon');
+    expect(props.originWhitelist).not.toContain('*');
+    expect(
+      props.onShouldStartLoadWithRequest?.({
+        url: 'https://pokegonexus.com/pokemon',
+      }),
+    ).toBe(true);
+  });
+
+  it('prevents untrusted web destinations from loading inside the app', () => {
+    render(<WebReplicaApp />);
+    expect(
+      getWebViewProps().onShouldStartLoadWithRequest?.({
+        url: 'javascript:alert(1)',
+      }),
+    ).toBe(false);
   });
 
   it('hides loading overlay once load ends', () => {
