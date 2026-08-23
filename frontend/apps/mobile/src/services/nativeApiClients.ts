@@ -15,6 +15,17 @@ export const createNativeUsersApiClient = (
 
 export type NativeUsersApiClient = ReturnType<typeof createNativeUsersApiClient>;
 
+export const createNativeReceiverApiClient = (
+  tokens: AccessTokenProvider,
+  fetchImplementation: typeof globalThis.fetch = globalThis.fetch,
+) => createApiClient({
+  baseUrl: runtimeConfig.api.receiverApiUrl,
+  authentication: { mode: 'bearer', tokens },
+  fetch: fetchImplementation,
+});
+
+export type NativeReceiverApiClient = ReturnType<typeof createNativeReceiverApiClient>;
+
 export const createNativePokemonApiClient = (
   fetchImplementation: typeof globalThis.fetch = globalThis.fetch,
 ) => createApiClient({
