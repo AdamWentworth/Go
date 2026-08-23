@@ -38,9 +38,9 @@ describe('SearchModeToggle', () => {
       />,
     );
 
-    expect(screen.getByRole('tab', { name: 'Trainers' })).toHaveClass('active');
+    expect(screen.getByRole('tab', { name: 'Trainers' })).toHaveClass('is-active');
     expect(screen.getByRole('tab', { name: 'Pokémon' })).not.toHaveClass(
-      'active',
+      'is-active',
     );
 
     rerender(
@@ -52,9 +52,9 @@ describe('SearchModeToggle', () => {
       />,
     );
 
-    expect(screen.getByRole('tab', { name: 'Pokémon' })).toHaveClass('active');
+    expect(screen.getByRole('tab', { name: 'Pokémon' })).toHaveClass('is-active');
     expect(screen.getByRole('tab', { name: 'Trainers' })).not.toHaveClass(
-      'active',
+      'is-active',
     );
   });
 

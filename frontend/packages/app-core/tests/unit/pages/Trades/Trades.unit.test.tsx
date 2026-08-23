@@ -89,7 +89,7 @@ describe('Trades page', () => {
     });
 
     act(() => {
-      screen.getByRole('button', { name: 'Trade Activity' }).click();
+      screen.getByRole('tab', { name: 'Trade Activity' }).click();
     });
 
     expect(screen.getByTestId('trade-status-buttons')).toBeInTheDocument();
@@ -127,7 +127,7 @@ describe('Trades page', () => {
     expect(updatedListProps?.selectedStatus).toBe('Completed');
 
     act(() => {
-      screen.getByRole('button', { name: 'Trade Preferences' }).click();
+      screen.getByRole('tab', { name: 'Trade Preferences' }).click();
     });
 
     expect(screen.getByTestId('trade-targets-workspace')).toBeInTheDocument();

@@ -147,5 +147,17 @@ test.describe('accessibility route smoke', () => {
         expect(diagnostics.blockingErrors()).toEqual([]);
       });
     }
+
+    test(`keeps ${themeMode} signed-in Home dashboard free of blocking axe violations`, async ({ page }, testInfo) => {
+      const diagnostics = attachBrowserDiagnostics(page, testInfo);
+      await addThemePreference(page, themeMode);
+      await addSignedInUser(page);
+      try {
+        await scanRoute(page, '/', themeMode);
+      } finally {
+        await diagnostics.flush();
+      }
+      expect(diagnostics.blockingErrors()).toEqual([]);
+    });
   }
 });

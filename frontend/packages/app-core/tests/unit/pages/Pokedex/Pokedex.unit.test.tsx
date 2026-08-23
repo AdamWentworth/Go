@@ -307,7 +307,7 @@ describe('Pokedex page', () => {
   it('guards category navigation, advanced qualities, region detail search, and Pokemon drill-in', async () => {
     render(<Pokedex />);
 
-    expect(await screen.findByRole('heading', { name: 'Pokedex' })).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { name: 'Pokédex' })).toBeInTheDocument();
     expect(screen.getByRole('switch', { name: /Advanced/i })).toHaveAttribute(
       'aria-checked',
       'false',
@@ -409,7 +409,7 @@ describe('Pokedex page', () => {
 
     render(<Pokedex />);
 
-    await screen.findByRole('heading', { name: 'Pokedex' });
+    await screen.findByRole('heading', { name: 'Pokédex' });
     fireEvent.click(screen.getByRole('tab', { name: /^Shiny$/i }));
     fireEvent.click(screen.getByRole('button', { name: /^100%$/i }));
 

@@ -1,8 +1,16 @@
 import { useMemo } from 'react';
-import { FaArrowLeft, FaArrowRight, FaExternalLinkAlt } from 'react-icons/fa';
+import {
+  FaArrowLeft,
+  FaArrowRight,
+  FaExternalLinkAlt,
+  FaShareAlt,
+} from 'react-icons/fa';
 import { Link, Navigate, useLocation } from 'react-router';
 
 import LoadingSpinner from '@/components/LoadingSpinner';
+import AppPageShell from '@/components/layout/AppPageShell';
+import PageState from '@/components/layout/PageState';
+import ProductPageHeader from '@/components/layout/ProductPageHeader';
 import TradeBoardComposer from '@/features/tradeBoard/components/TradeBoardComposer';
 import { tradeBoardPath } from '@/features/tradeBoard/model/tradeBoardUrl';
 import { useInstancesStore } from '@/features/instances/store/useInstancesStore';
@@ -38,13 +46,22 @@ const TradeBoardBuilderPage = () => {
 
   if (loading) {
     return (
-      <main className="trade-board-builder-page">
-        <section className="trade-board-builder-page__state" aria-live="polite">
-          <LoadingSpinner />
-          <h1>Preparing your Trade Board</h1>
-          <p>Gathering your current For Trade and Wanted listings…</p>
-        </section>
-      </main>
+      <AppPageShell className="trade-board-builder-page" maxWidth="standard">
+        <ProductPageHeader
+          className="trade-board-builder-page__header"
+          description="Create a polished, shareable view of your For Trade and Wanted listings."
+          eyebrow="Shareable collection"
+          icon={<FaShareAlt aria-hidden="true" />}
+          title="Trade Board"
+        />
+        <PageState
+          className="trade-board-builder-page__state"
+          description="Gathering your current For Trade and Wanted listings…"
+          icon={<LoadingSpinner />}
+          live="polite"
+          title="Preparing your Trade Board"
+        />
+      </AppPageShell>
     );
   }
 
@@ -53,35 +70,49 @@ const TradeBoardBuilderPage = () => {
   }
 
   return (
-    <main className="trade-board-builder-page">
-      <nav aria-label="Trade Board navigation" className="trade-board-builder-page__nav">
-        <Link to="/trades"><FaArrowLeft aria-hidden="true" /> Trades</Link>
-        {hasListings ? (
-          <Link to={tradeBoardPath(user.username)}>
-            View live board <FaExternalLinkAlt aria-hidden="true" />
-          </Link>
-        ) : null}
-      </nav>
+    <AppPageShell className="trade-board-builder-page" maxWidth="standard">
+      <ProductPageHeader
+        actions={(
+          <>
+            <Link className="product-page-header__action" to="/trades">
+              <FaArrowLeft aria-hidden="true" /> Trades
+            </Link>
+            {hasListings ? (
+              <Link
+                className="product-page-header__action trade-board-builder-page__live-link"
+                to={tradeBoardPath(user.username)}
+              >
+                View live board <FaExternalLinkAlt aria-hidden="true" />
+              </Link>
+            ) : null}
+          </>
+        )}
+        className="trade-board-builder-page__header"
+        description="Create a polished, shareable view of your For Trade and Wanted listings."
+        eyebrow="Shareable collection"
+        icon={<FaShareAlt aria-hidden="true" />}
+        title="Trade Board"
+      />
 
       {hasListings ? (
         <TradeBoardComposer activeTags={boardTags} presentation="page" variants={variants} />
       ) : (
-        <section className="trade-board-builder-page__empty">
-          <span>Share your collection</span>
-          <h1>Your Trade Board needs a listing</h1>
-          <p>
-            Mark at least one Pokémon as For Trade or Wanted. Your board will then stay
-            synchronized with those listings automatically.
-          </p>
-          <div>
-            <Link className="trade-board-builder-page__primary" to="/pokemon">
-              Add Pokémon listings <FaArrowRight aria-hidden="true" />
-            </Link>
-            <Link to="/trades?section=preferences">Review trade preferences</Link>
-          </div>
-        </section>
+        <PageState
+          action={(
+            <div className="trade-board-builder-page__empty-actions">
+              <Link className="trade-board-builder-page__primary" to="/pokemon">
+                Add Pokémon listings <FaArrowRight aria-hidden="true" />
+              </Link>
+              <Link to="/trades?section=preferences">Review trade preferences</Link>
+            </div>
+          )}
+          className="trade-board-builder-page__empty"
+          description="Mark at least one Pokémon as For Trade or Wanted. Your board will then stay synchronized with those listings automatically."
+          icon={<FaShareAlt aria-hidden="true" />}
+          title="Your Trade Board needs a listing"
+        />
       )}
-    </main>
+    </AppPageShell>
   );
 };
 

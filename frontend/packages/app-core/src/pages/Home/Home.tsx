@@ -1,4 +1,6 @@
+import AppPageShell from '@/components/layout/AppPageShell';
 import { useAuth } from '@/contexts/AuthContext';
+
 import HomeDashboard from './HomeDashboard';
 import HomeFooter from './HomeFooter';
 import HomeHeader from './HomeHeader';
@@ -19,9 +21,14 @@ const Home = () => {
 
   if (isLoggedIn && user) {
     return (
-      <div className="home-page home-page--dashboard">
+      <AppPageShell
+        className="home-page home-page--dashboard"
+        contentClassName="home-dashboard-shell"
+        inset="compact"
+        maxWidth="standard"
+      >
         <HomeDashboard key={user.user_id} user={user} />
-      </div>
+      </AppPageShell>
     );
   }
 

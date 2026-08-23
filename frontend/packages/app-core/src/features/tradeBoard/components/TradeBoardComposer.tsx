@@ -175,11 +175,9 @@ const TradeBoardComposer: React.FC<TradeBoardComposerProps> = ({
           <header className="trade-board-composer__header">
             <div>
               <span>Share your collection</span>
-              {isPage ? (
-                <h1 id="trade-board-composer-title">Share your Trade Board</h1>
-              ) : (
-                <h2 id="trade-board-composer-title">Create a Trade Board</h2>
-              )}
+              <h2 id="trade-board-composer-title">
+                {isPage ? 'Share your Trade Board' : 'Create a Trade Board'}
+              </h2>
               <p>One clear image for what you have and what you want.</p>
             </div>
             {!isPage ? (

@@ -1,6 +1,20 @@
 import { FaArrowLeft } from "react-icons/fa6";
 import { Link } from "react-router";
+
+import AppPageShell from '@/components/layout/AppPageShell';
+import InPageNavigation from '@/components/layout/InPageNavigation';
+import ProductPageHeader from '@/components/layout/ProductPageHeader';
+
 import "./RaidMethodology.css";
+
+const methodologyNavigation = [
+  { href: '#questions', label: 'Ranking modes' },
+  { href: '#metrics', label: 'Metrics' },
+  { href: '#calculation', label: 'Calculation' },
+  { href: '#personalized', label: 'My Pokémon' },
+  { href: '#super-mega', label: 'Super Mega' },
+  { href: '#limits', label: 'Limits' },
+] as const;
 
 const metrics = [
   {
@@ -54,34 +68,32 @@ const rankingModes = [
 
 const RaidMethodology = () => {
   return (
-    <article className="raid-methodology-page">
-      <div className="raid-methodology-shell">
-        <header className="raid-methodology-header">
-          <Link className="raid-methodology-back" to="/raid">
+    <AppPageShell
+      className="raid-methodology-page"
+      contentClassName="raid-methodology-shell"
+      maxWidth="workspace"
+    >
+      <ProductPageHeader
+        actions={(
+          <Link className="product-page-header__action raid-methodology-back" to="/raid">
             <FaArrowLeft aria-hidden="true" />
             <span>Raid rankings</span>
           </Link>
+        )}
+        className="raid-methodology-product-header"
+        description="Pokémon Go Nexus separates general strength, type strength, and exact boss counters so one score is never asked to answer three different questions."
+        eyebrow="Raid documentation"
+        icon={<img alt="" src="/images/btn_raid.png" />}
+        title="How raid rankings work"
+      />
 
-          <p className="raid-methodology-eyebrow">Raid documentation</p>
-          <h1>How raid rankings work</h1>
-          <p className="raid-methodology-intro">
-            Pokémon Go Nexus separates general strength, type strength, and exact
-            boss counters so one score is never asked to answer three different
-            questions.
-          </p>
+      <InPageNavigation
+        ariaLabel="Methodology sections"
+        className="raid-methodology-nav"
+        items={methodologyNavigation}
+      />
 
-        </header>
-
-        <nav className="raid-methodology-nav" aria-label="Methodology sections">
-          <a href="#questions">Ranking modes</a>
-          <a href="#metrics">Metrics</a>
-          <a href="#calculation">Calculation</a>
-          <a href="#personalized">My Pokemon</a>
-          <a href="#super-mega">Super Mega</a>
-          <a href="#limits">Limits</a>
-        </nav>
-
-        <main className="raid-methodology-content">
+      <div className="raid-methodology-content">
           <section id="questions" className="raid-methodology-section">
             <p className="raid-methodology-kicker">Three questions</p>
             <h2>Choose the ranking that matches the decision</h2>
@@ -238,21 +250,20 @@ const RaidMethodology = () => {
               results.
             </p>
           </section>
-        </main>
+        </div>
 
-        <footer className="raid-methodology-footer">
-          <Link className="raid-methodology-return" to="/raid">
-            <FaArrowLeft aria-hidden="true" />
-            Return to raid rankings
-          </Link>
-          <p>
-            Pokemon and Pokemon GO are trademarks of their respective owners.
-            Pokémon Go Nexus is not affiliated with or endorsed by Niantic, Scopely,
-            The Pokemon Company, or Nintendo.
-          </p>
-        </footer>
-      </div>
-    </article>
+      <footer className="raid-methodology-footer">
+        <Link className="raid-methodology-return" to="/raid">
+          <FaArrowLeft aria-hidden="true" />
+          Return to raid rankings
+        </Link>
+        <p>
+          Pokemon and Pokemon GO are trademarks of their respective owners.
+          Pokémon Go Nexus is not affiliated with or endorsed by Niantic, Scopely,
+          The Pokemon Company, or Nintendo.
+        </p>
+      </footer>
+    </AppPageShell>
   );
 };
 

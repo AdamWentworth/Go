@@ -18,6 +18,10 @@ const addSignedInUser = async (page: Page) => {
         username: "VisualTrainer",
       }),
     );
+    window.localStorage.setItem(
+      "pokegonexus-home-onboarding:visual-user",
+      "dismissed",
+    );
   });
 };
 
@@ -31,6 +35,9 @@ const consolidatedPageBaselines = [
   { name: "max-battles", path: "/max" },
   { name: "pvp-tools", path: "/pvp" },
   { name: "community-rankings", path: "/rankings" },
+  { name: "trade-board-builder", path: "/trade-board" },
+  { name: "raid-methodology", path: "/raid/methodology" },
+  { name: "pvp-methodology", path: "/pvp/methodology" },
 ] as const;
 
 const addThemePreference = async (page: Page, themeMode: ThemeMode) => {
@@ -130,6 +137,20 @@ test.describe("core responsive visual regression", () => {
       await expectVisualBaseline(
         page,
         themedSnapshotName("register-method.png", themeMode),
+      );
+    });
+
+    test(`matches the ${themeMode} signed-in Home dashboard baseline`, async ({ page }) => {
+      await installE2eRoutes(page);
+      await addThemePreference(page, themeMode);
+      await addSignedInUser(page);
+      await page.goto("/", { waitUntil: "domcontentloaded" });
+      await expect(
+        page.getByRole("heading", { name: "Welcome back, VisualTrainerGO" }),
+      ).toBeVisible();
+      await expectVisualBaseline(
+        page,
+        themedSnapshotName("home-dashboard.png", themeMode),
       );
     });
 

@@ -128,7 +128,7 @@ const HomeDashboard = ({ user }: HomeDashboardProps) => {
     onboardingProgress.completed < onboardingProgress.total;
 
   return (
-    <div className="home-dashboard home-shell">
+    <div className="home-dashboard">
       <header className="home-dashboard__header">
         <Link className="home-brand" to="/" aria-label="Pokémon Go Nexus home">
           <img src="/images/logo/logo.png" alt="" />

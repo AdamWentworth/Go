@@ -266,7 +266,7 @@
 .home-onboarding__footer button { padding: 0 13px; border: 1px solid var(--home-border); border-radius: 11px; background: transparent; cursor: pointer; }
 
 .home-dashboard {
-  padding: 18px 0 max(128px, calc(96px + env(safe-area-inset-bottom)));
+  padding: 0;
 }
 
 .home-dashboard__header {
@@ -744,7 +744,7 @@
 
 @media (max-width: 600px) {
   .home-shell { width: calc(100% - 20px); }
-  .home-dashboard { padding-top: 10px; }
+  .home-dashboard { padding-top: 0; }
   .home-brand span { font-size: 0.86rem; }
   .home-dashboard__profile-link strong { max-width: 112px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .home-dashboard__welcome { display: block; padding: 30px 4px 20px; }
