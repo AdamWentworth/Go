@@ -40,6 +40,14 @@ Unknown or missing values resolve to `webview`. A future `native` production
 mode will not be added until authentication, navigation, recovery, and the
 first complete vertical slice are ready.
 
+The current `native-preview` supports email/password sessions through explicit
+mobile login, refresh, and logout endpoints. Only the refresh token is persisted
+in SecureStore; access tokens remain in memory. Transient restoration failures
+preserve the saved session and offer retry, while rejected refresh tokens clear
+the local session. Native OAuth remains deferred until a system-browser,
+one-time-code callback exchange is available; existing OAuth stays on the
+WebView path during that phase.
+
 ## Increment sequence
 
 1. Establish the experience boundary and migration documentation.

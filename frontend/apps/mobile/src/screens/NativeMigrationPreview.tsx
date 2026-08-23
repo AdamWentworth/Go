@@ -2,10 +2,12 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { theme } from '../ui/theme';
 
 type NativeMigrationPreviewProps = {
+  onOpenNativeExperience?: () => void;
   onOpenWebExperience: () => void;
 };
 
 export const NativeMigrationPreview = ({
+  onOpenNativeExperience,
   onOpenWebExperience,
 }: NativeMigrationPreviewProps) => (
   <View testID="native-migration-preview" style={styles.container}>
@@ -15,13 +17,24 @@ export const NativeMigrationPreview = ({
       Native workflows are being introduced incrementally. The complete web
       experience remains available while each workflow is validated.
     </Text>
-    <Pressable
-      accessibilityRole="button"
-      onPress={onOpenWebExperience}
-      style={styles.button}
-    >
-      <Text style={styles.buttonText}>Open current app</Text>
-    </Pressable>
+    <View style={styles.actions}>
+      {onOpenNativeExperience ? (
+        <Pressable
+          accessibilityRole="button"
+          onPress={onOpenNativeExperience}
+          style={styles.button}
+        >
+          <Text style={styles.buttonText}>Try native sign in</Text>
+        </Pressable>
+      ) : null}
+      <Pressable
+        accessibilityRole="button"
+        onPress={onOpenWebExperience}
+        style={[styles.button, styles.secondaryButton]}
+      >
+        <Text style={styles.buttonText}>Open current app</Text>
+      </Pressable>
+    </View>
   </View>
 );
 
@@ -60,9 +73,20 @@ const styles = StyleSheet.create({
     paddingHorizontal: theme.spacing.xl,
     backgroundColor: theme.colors.selectedBorder,
   },
+  actions: {
+    width: '100%',
+    maxWidth: 320,
+    gap: theme.spacing.sm,
+  },
+  secondaryButton: {
+    borderWidth: 1,
+    borderColor: '#64748b',
+    backgroundColor: '#1e293b',
+  },
   buttonText: {
     color: '#fff',
     fontSize: theme.type.body,
     fontWeight: '700',
+    textAlign: 'center',
   },
 });

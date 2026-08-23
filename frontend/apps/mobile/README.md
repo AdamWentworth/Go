@@ -11,6 +11,8 @@ Expo mobile shell for Pokémon Go Nexus.
 5. Lint/typecheck/test scripts.
 6. Expo Router foundation for incremental native routes.
 7. SecureStore-backed refresh-token persistence for native sessions.
+8. Preview-only native email sign-in with refresh rotation, session recovery,
+   and an immediate fallback to the current app.
 
 ## Commands
 
@@ -36,6 +38,10 @@ Copy `.env.example` values into your environment (or EAS secrets) using `EXPO_PU
 `EXPO_PUBLIC_MOBILE_EXPERIENCE` defaults to `webview`. Set it to
 `native-preview` only in deliberate preview builds; every preview retains a
 direct fallback to the current WebView app.
+
+Native social sign-in is intentionally not enabled yet. Google, Discord, and
+Facebook continue through the current app until their system-browser callback
+exchange is implemented without placing session tokens in redirect URLs.
 
 ## Note on Node version
 

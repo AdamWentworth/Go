@@ -6,6 +6,9 @@ export const authContract = {
     login: '/login',
     logout: '/logout',
     refresh: '/refresh',
+    mobileLogin: '/mobile/login',
+    mobileLogout: '/mobile/logout',
+    mobileRefresh: '/mobile/refresh',
     resetPassword: '/reset-password',
     confirmPasswordReset: '/reset-password/confirm',
     accountSecurity: '/account/security',
@@ -51,6 +54,36 @@ export interface RefreshTokenResponse {
   accessToken: string;
   accessTokenExpiry: string;
   refreshTokenExpiry: string;
+}
+
+export interface MobileSessionUser {
+  user_id: string;
+  username: string;
+  email: string;
+  pokemonGoName: string | null;
+  trainerCode: string | null;
+  location: string | null;
+  allowLocation: boolean;
+  coordinates?: Coordinates | null;
+}
+
+export interface MobileSessionResponse {
+  user: MobileSessionUser;
+  accessToken: string;
+  refreshToken: string;
+  accessTokenExpiry: string;
+  refreshTokenExpiry: string;
+  message?: string;
+}
+
+export interface MobileLoginRequest {
+  username: string;
+  password: string;
+  device_id: string;
+}
+
+export interface MobileRefreshRequest {
+  refreshToken: string;
 }
 
 export type OAuthSessionResponse = AuthUser;

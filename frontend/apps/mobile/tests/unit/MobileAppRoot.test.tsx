@@ -24,4 +24,17 @@ describe('MobileAppRoot', () => {
     fireEvent.press(screen.getByText('Open current app'));
     expect(screen.getByTestId('web-experience')).toBeTruthy();
   });
+
+  it('exposes native sign in only when the routed preview provides it', () => {
+    const onOpenNativeExperience = jest.fn();
+    render(
+      <MobileAppRoot
+        experienceMode="native-preview"
+        onOpenNativeExperience={onOpenNativeExperience}
+      />,
+    );
+
+    fireEvent.press(screen.getByText('Try native sign in'));
+    expect(onOpenNativeExperience).toHaveBeenCalledTimes(1);
+  });
 });
