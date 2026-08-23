@@ -1,7 +1,10 @@
 import { fireEvent, render, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { ACTION_MENU_OPEN_REQUEST } from '@/components/actionMenuEvents';
+import {
+  ACTION_MENU_DID_OPEN,
+  ACTION_MENU_OPEN_REQUEST,
+} from '@/components/actionMenuEvents';
 import HomeActionMenuHint from '@/pages/Home/HomeActionMenuHint';
 
 describe('HomeActionMenuHint', () => {
@@ -15,7 +18,7 @@ describe('HomeActionMenuHint', () => {
 
     render(<HomeActionMenuHint trainerKey="trainer-1" />);
 
-    expect(screen.getByText(/Poké Ball/)).toBeInTheDocument();
+    expect(screen.getByRole('note', { name: 'Action menu tip' })).toHaveTextContent(/Poké Ball/);
     fireEvent.click(screen.getByRole('button', { name: 'Open action menu' }));
 
     expect(openListener).toHaveBeenCalledOnce();
@@ -39,6 +42,17 @@ describe('HomeActionMenuHint', () => {
     expect(screen.getByText(/explore tools, switch themes, and find account options/i)).toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: 'Dismiss action menu tip' }));
     expect(window.localStorage.getItem('pokegonexus-action-menu-hint:guest')).toBe('seen');
+  });
+
+  it('disappears permanently when the user opens the actual Poké Ball menu', () => {
+    render(<HomeActionMenuHint trainerKey="trainer-direct-menu" />);
+
+    fireEvent(window, new Event(ACTION_MENU_DID_OPEN));
+
+    expect(screen.queryByLabelText('Action menu tip')).not.toBeInTheDocument();
+    expect(
+      window.localStorage.getItem('pokegonexus-action-menu-hint:trainer-direct-menu'),
+    ).toBe('seen');
   });
 
   it('has no automated accessibility violations', async () => {

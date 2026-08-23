@@ -13,7 +13,7 @@ import {
 } from '../contexts/ContextBackContext';
 import { fetchFriendsOverview } from '../services/socialService';
 import ThemeSwitch from './ThemeSwitch';
-import { ACTION_MENU_OPEN_REQUEST } from './actionMenuEvents';
+import { ACTION_MENU_DID_OPEN, ACTION_MENU_OPEN_REQUEST } from './actionMenuEvents';
 import './ActionMenu.css';
 
 const ActionMenu: React.FC = () => {
@@ -101,6 +101,7 @@ const ActionMenu: React.FC = () => {
     cancelPendingCloseEnable();
     setIsCloseEnabled(false);
     setIsVisible(true);
+    window.dispatchEvent(new Event(ACTION_MENU_DID_OPEN));
 
     openingAnimationTimeoutRef.current = window.setTimeout(() => {
       openingAnimationTimeoutRef.current = null;

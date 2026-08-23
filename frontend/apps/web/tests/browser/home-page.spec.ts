@@ -83,7 +83,8 @@ test.describe('Home page', () => {
       await page.goto('/', { waitUntil: 'domcontentloaded' });
       await expect(page.getByRole('heading', { name: 'Build your collection. Find the right trade.' })).toBeVisible();
       await expect(page.getByRole('note', { name: 'Action menu tip' })).toContainText('explore tools');
-      await page.getByRole('button', { name: 'Open action menu' }).click();
+      await page.getByRole('button', { name: 'Action Menu', exact: true }).click();
+      await expect(page.getByRole('note', { name: 'Action menu tip' })).toHaveCount(0);
       await expect(page.getByRole('button', { name: 'Register' })).toBeVisible();
       const closeActionMenu = page.getByRole('button', { name: 'Close' });
       await expect(closeActionMenu).toBeEnabled();
@@ -161,6 +162,7 @@ test.describe('Home page', () => {
       await expect(page.getByRole('link', { name: /open wishlist/i })).toBeVisible();
       await expect(page.getByRole('heading', { name: 'At a glance' })).toHaveCount(0);
 
+      await page.getByRole('button', { name: 'Dismiss action menu tip' }).click();
       await page.getByRole('button', { name: 'Open trainer dashboard' }).click();
       await expect(page.getByRole('heading', { name: 'Welcome back, HomeTrainerGO' })).toBeVisible();
       await page.reload({ waitUntil: 'domcontentloaded' });
@@ -242,7 +244,12 @@ test.describe('Home page', () => {
 
       await expect(page.getByRole('heading', { name: 'Welcome back, HomeTrainerGO' })).toBeVisible();
       await expect(page.getByRole('note', { name: 'Action menu tip' })).toBeVisible();
-      await page.getByRole('button', { name: 'Open action menu' }).click();
+      if (mobileProject) {
+        await page.getByRole('button', { name: 'Action Menu', exact: true }).click();
+      } else {
+        await page.getByRole('button', { name: 'Open action menu' }).click();
+      }
+      await expect(page.getByRole('note', { name: 'Action menu tip' })).toHaveCount(0);
       await expect(page.getByRole('button', { name: 'Search' })).toBeVisible();
       const closeActionMenu = page.getByRole('button', { name: 'Close' });
       await expect(closeActionMenu).toBeEnabled();

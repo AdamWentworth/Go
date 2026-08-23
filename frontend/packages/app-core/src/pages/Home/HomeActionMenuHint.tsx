@@ -1,7 +1,10 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { FaTimes } from 'react-icons/fa';
 
-import { requestActionMenuOpen } from '@/components/actionMenuEvents';
+import {
+  ACTION_MENU_DID_OPEN,
+  requestActionMenuOpen,
+} from '@/components/actionMenuEvents';
 
 import './HomeActionMenuHint.css';
 
@@ -38,6 +41,16 @@ const HomeActionMenuHint = ({
   const storageKey = storageKeyFor(trainerKey, audience);
   const [isVisible, setIsVisible] = useState(() => !hasSeenHint(storageKey));
 
+  useEffect(() => {
+    const acknowledgeMenu = () => {
+      rememberHint(storageKey);
+      setIsVisible(false);
+    };
+
+    window.addEventListener(ACTION_MENU_DID_OPEN, acknowledgeMenu);
+    return () => window.removeEventListener(ACTION_MENU_DID_OPEN, acknowledgeMenu);
+  }, [storageKey]);
+
   if (!isVisible) return null;
 
   const dismiss = () => {
@@ -58,12 +71,22 @@ const HomeActionMenuHint = ({
         <p>
           {audience === 'guest' ? (
             <>
-              Tap the <strong>Poké Ball</strong> at the bottom of any page to explore tools,
-              switch themes, and find account options.
+              <span className="home-action-menu-hint__full-copy">
+                Tap the <strong>Poké Ball</strong> at the bottom of any page to explore tools,
+                switch themes, and find account options.
+              </span>
+              <span className="home-action-menu-hint__compact-copy">
+                Tap the <strong>Poké Ball below</strong> to explore the app.
+              </span>
             </>
           ) : (
             <>
-              Tap the <strong>Poké Ball</strong> at the bottom of any page to open the action menu.
+              <span className="home-action-menu-hint__full-copy">
+                Tap the <strong>Poké Ball</strong> at the bottom of any page to open the action menu.
+              </span>
+              <span className="home-action-menu-hint__compact-copy">
+                Tap the <strong>Poké Ball below</strong> for quick navigation.
+              </span>
             </>
           )}
         </p>
