@@ -215,6 +215,29 @@
   border-top: 1px solid rgba(151, 190, 190, 0.2);
 }
 
+.trade-proposal-coordination-note {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.55rem;
+  padding: 0.65rem 0.75rem;
+  border: 1px solid rgba(83, 177, 237, 0.22);
+  border-radius: 0.7rem;
+  background: rgba(44, 133, 188, 0.09);
+  color: var(--color-text-secondary, #b7c9c9);
+  font-size: 0.76rem;
+  line-height: 1.38;
+}
+
+.trade-proposal-coordination-note svg {
+  flex: 0 0 auto;
+  margin-top: 0.15rem;
+  color: #7bd8ff;
+}
+
+.trade-proposal-coordination-note p {
+  margin: 0;
+}
+
 .trade-proposal-stardust {
   display: grid;
   grid-template-columns: auto auto minmax(0, 1fr);
@@ -346,4 +369,9 @@
 :root[data-theme='light'] .trade-proposal-party,
 :root[data-theme='light'] .trade-proposal-friendship {
   background: rgba(229, 241, 235, 0.8);
+}
+
+:root[data-theme='light'] .trade-proposal-coordination-note {
+  background: rgba(215, 237, 248, 0.72);
+  color: #385864;
 }

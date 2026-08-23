@@ -145,6 +145,9 @@ type UserProfile struct {
 	CollectionVisibility    string           `gorm:"column:collection_visibility" json:"collection_visibility"`
 	FriendRequestPermission string           `gorm:"column:friend_request_permission" json:"friend_request_permission"`
 	TrainerCodeVisibility   string           `gorm:"column:trainer_code_visibility" json:"trainer_code_visibility"`
+	CoordinationMethod      string           `gorm:"column:coordination_method" json:"coordination_method"`
+	CoordinationHandle      *string          `gorm:"column:coordination_handle" json:"coordination_handle,omitempty"`
+	ShareTradeContact       bool             `gorm:"column:share_trade_contact" json:"share_trade_contact"`
 	ShowLocation            bool             `gorm:"column:show_location" json:"show_location"`
 	ShowPokemonGoName       bool             `gorm:"column:show_pokemon_go_name" json:"show_pokemon_go_name"`
 	UpdatedAt               time.Time        `gorm:"column:updated_at" json:"updated_at"`

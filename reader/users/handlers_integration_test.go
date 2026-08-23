@@ -1055,12 +1055,93 @@ func TestGetPreferencesHandler_ReturnsStableDefaultsBeforeFirstSave(t *testing.T
 	}
 	if body.ProfileVisibility != "public" ||
 		body.CollectionVisibility != "public" ||
-		body.TrainerCodeVisibility != "friends" {
+		body.TrainerCodeVisibility != "friends" ||
+		body.CoordinationMethod != "campfire" ||
+		!body.ShareTradeContact {
 		t.Fatalf("unexpected defaults: %#v", body)
 	}
 
 	if err := mock.ExpectationsWereMet(); err != nil {
 		t.Fatalf("unmet sqlmock expectations: %v", err)
+	}
+}
+
+func TestUpdatePreferencesHandler_RejectsUnsafeOrMissingCoordinationHandle(t *testing.T) {
+	tests := []struct {
+		name   string
+		method string
+		handle any
+	}{
+		{name: "email address", method: "discord", handle: "trainer@example.com"},
+		{name: "external link", method: "other", handle: "https://example.com/trainer"},
+		{name: "missing discord username", method: "discord", handle: nil},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			_, cleanup := setupMockDB(t)
+			defer cleanup()
+
+			response := executeTradeRequest(
+				t, newHandlerTestApp("user-1"), http.MethodPut,
+				"/api/preferences", map[string]any{
+					"profile_visibility":        "public",
+					"collection_visibility":     "public",
+					"friend_request_permission": "everyone",
+					"trainer_code_visibility":   "friends",
+					"coordination_method":       test.method,
+					"coordination_handle":       test.handle,
+					"share_trade_contact":       true,
+					"show_location":             false,
+					"show_pokemon_go_name":      true,
+				},
+			)
+			if response.StatusCode != http.StatusBadRequest {
+				t.Fatalf("unexpected status: got %d, want %d", response.StatusCode, http.StatusBadRequest)
+			}
+		})
+	}
+}
+
+func TestUpdatePreferencesHandler_SavesNormalizedTradeCoordination(t *testing.T) {
+	mock, cleanup := setupMockDB(t)
+	defer cleanup()
+
+	mock.ExpectBegin()
+	mock.ExpectQuery(regexp.QuoteMeta("SELECT * FROM `user_profiles` WHERE user_id = ? AND `user_profiles`.`user_id` = ? ORDER BY `user_profiles`.`user_id` LIMIT ?")).
+		WithArgs("user-1", "user-1", 1).
+		WillReturnRows(sqlmock.NewRows([]string{"user_id"}))
+	mock.ExpectExec("INSERT INTO `user_profiles`").
+		WillReturnResult(sqlmock.NewResult(1, 1))
+	expectProfileInvalidationOutbox(mock, "user-1", "ash")
+	mock.ExpectCommit()
+
+	response := executeTradeRequest(
+		t, newHandlerTestApp("user-1"), http.MethodPut,
+		"/api/preferences", map[string]any{
+			"profile_visibility":        "public",
+			"collection_visibility":     "friends",
+			"friend_request_permission": "everyone",
+			"trainer_code_visibility":   "friends",
+			"coordination_method":       "discord",
+			"coordination_handle":       "  @MistyTrades  ",
+			"share_trade_contact":       true,
+			"show_location":             false,
+			"show_pokemon_go_name":      true,
+		},
+	)
+	if response.StatusCode != http.StatusOK {
+		t.Fatalf("unexpected status: got %d, want %d", response.StatusCode, http.StatusOK)
+	}
+	var body UserProfile
+	if err := json.NewDecoder(response.Body).Decode(&body); err != nil {
+		t.Fatalf("decode response: %v", err)
+	}
+	if body.CoordinationMethod != "discord" || body.CoordinationHandle == nil ||
+		*body.CoordinationHandle != "MistyTrades" || !body.ShareTradeContact {
+		t.Fatalf("unexpected saved coordination preferences: %#v", body)
+	}
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Fatalf("unmet DB expectations: %v", err)
 	}
 }
 

@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
+import { FaComments } from 'react-icons/fa';
 import { feedback } from '@/components/feedback';
 import './TradeProposalComposer.css';
 
@@ -243,6 +244,14 @@ const TradeProposalComposer: React.FC<TradeProposalComposerProps> = ({
             />
           </div>
         </section>
+
+        <aside className="trade-proposal-coordination-note">
+          <FaComments aria-hidden="true" />
+          <p>
+            Pokémon Go Nexus does not provide messaging. If this offer is accepted,
+            use the trainer details they chose to share to coordinate externally.
+          </p>
+        </aside>
 
         <TradeProposalActionRow
           disabled={friendship_level === 0 || isSubmitting}

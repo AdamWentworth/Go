@@ -44,6 +44,139 @@ func TestTradeFriendshipLevels_IncludesForeverFriendsRemoteTrade(t *testing.T) {
 	}
 }
 
+func TestRevealTradePartnerHandler_RequiresAcceptedActiveTrade(t *testing.T) {
+	mock, cleanup := setupMockDB(t)
+	defer cleanup()
+
+	mock.ExpectQuery("SELECT \\* FROM `trades` WHERE trade_id = \\? AND \\(user_id_proposed = \\? OR user_id_accepting = \\?\\)").
+		WithArgs("trade-1", "user-1", "user-1", 1).
+		WillReturnRows(tradeMockRows("proposed", false, false))
+
+	response := executeTradeRequest(
+		t, newHandlerTestApp("user-1"), http.MethodGet,
+		"/api/trades/trade-1/partner", nil,
+	)
+	if response.StatusCode != http.StatusConflict {
+		t.Fatalf("unexpected status: got %d, want %d", response.StatusCode, http.StatusConflict)
+	}
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Fatalf("unmet DB expectations: %v", err)
+	}
+}
+
+func TestRevealTradePartnerHandler_RejectsBlockedParticipant(t *testing.T) {
+	mock, cleanup := setupMockDB(t)
+	defer cleanup()
+
+	mock.ExpectQuery("SELECT \\* FROM `trades` WHERE trade_id = \\? AND \\(user_id_proposed = \\? OR user_id_accepting = \\?\\)").
+		WithArgs("trade-1", "user-1", "user-1", 1).
+		WillReturnRows(tradeMockRows("pending", false, false))
+	mock.ExpectQuery("SELECT count\\(\\*\\) FROM `user_blocks`").
+		WithArgs("user-1", "user-2", "user-2", "user-1").
+		WillReturnRows(sqlmock.NewRows([]string{"count(*)"}).AddRow(1))
+
+	response := executeTradeRequest(
+		t, newHandlerTestApp("user-1"), http.MethodGet,
+		"/api/trades/trade-1/partner", nil,
+	)
+	if response.StatusCode != http.StatusForbidden {
+		t.Fatalf("unexpected status: got %d, want %d", response.StatusCode, http.StatusForbidden)
+	}
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Fatalf("unmet DB expectations: %v", err)
+	}
+}
+
+func TestRevealTradePartnerHandler_ReturnsOptedInCoordinationWithoutCoordinates(t *testing.T) {
+	mock, cleanup := setupMockDB(t)
+	defer cleanup()
+
+	mock.ExpectQuery("SELECT \\* FROM `trades` WHERE trade_id = \\? AND \\(user_id_proposed = \\? OR user_id_accepting = \\?\\)").
+		WithArgs("trade-1", "user-1", "user-1", 1).
+		WillReturnRows(tradeMockRows("pending", false, false))
+	mock.ExpectQuery("SELECT count\\(\\*\\) FROM `user_blocks`").
+		WithArgs("user-1", "user-2", "user-2", "user-1").
+		WillReturnRows(sqlmock.NewRows([]string{"count(*)"}).AddRow(0))
+	mock.ExpectQuery("SELECT \\* FROM `users` WHERE user_id = \\?").
+		WithArgs("user-2", 1).
+		WillReturnRows(sqlmock.NewRows([]string{
+			"user_id", "username", "pokemon_go_name", "trainer_code", "location", "latitude", "longitude",
+		}).AddRow("user-2", "misty", "MistyGO", "123456789012", "Cerulean City", 47.6, -122.3))
+	mock.ExpectQuery("SELECT \\* FROM `user_profiles` WHERE user_id = \\?").
+		WithArgs("user-2", 1).
+		WillReturnRows(sqlmock.NewRows([]string{
+			"user_id", "coordination_method", "coordination_handle", "share_trade_contact", "show_location",
+		}).AddRow("user-2", "campfire", "MistyCampfire", true, true))
+
+	response := executeTradeRequest(
+		t, newHandlerTestApp("user-1"), http.MethodGet,
+		"/api/trades/trade-1/partner", nil,
+	)
+	if response.StatusCode != http.StatusOK {
+		t.Fatalf("unexpected status: got %d, want %d", response.StatusCode, http.StatusOK)
+	}
+	var body map[string]any
+	if err := json.NewDecoder(response.Body).Decode(&body); err != nil {
+		t.Fatalf("decode response: %v", err)
+	}
+	if body["sharingEnabled"] != true ||
+		body["trainerCode"] != "123456789012" ||
+		body["pokemonGoName"] != "MistyGO" ||
+		body["coordinationMethod"] != "campfire" ||
+		body["coordinationHandle"] != "MistyCampfire" ||
+		body["location"] != "Cerulean City" {
+		t.Fatalf("unexpected coordination response: %#v", body)
+	}
+	if _, exists := body["coordinates"]; exists {
+		t.Fatalf("precise coordinates leaked in response: %#v", body)
+	}
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Fatalf("unmet DB expectations: %v", err)
+	}
+}
+
+func TestRevealTradePartnerHandler_HidesDetailsWhenSharingDisabled(t *testing.T) {
+	mock, cleanup := setupMockDB(t)
+	defer cleanup()
+
+	mock.ExpectQuery("SELECT \\* FROM `trades` WHERE trade_id = \\? AND \\(user_id_proposed = \\? OR user_id_accepting = \\?\\)").
+		WithArgs("trade-1", "user-1", "user-1", 1).
+		WillReturnRows(tradeMockRows("pending", false, false))
+	mock.ExpectQuery("SELECT count\\(\\*\\) FROM `user_blocks`").
+		WithArgs("user-1", "user-2", "user-2", "user-1").
+		WillReturnRows(sqlmock.NewRows([]string{"count(*)"}).AddRow(0))
+	mock.ExpectQuery("SELECT \\* FROM `users` WHERE user_id = \\?").
+		WithArgs("user-2", 1).
+		WillReturnRows(sqlmock.NewRows([]string{
+			"user_id", "username", "pokemon_go_name", "trainer_code", "location",
+		}).AddRow("user-2", "misty", "MistyGO", "123456789012", "Cerulean City"))
+	mock.ExpectQuery("SELECT \\* FROM `user_profiles` WHERE user_id = \\?").
+		WithArgs("user-2", 1).
+		WillReturnRows(sqlmock.NewRows([]string{
+			"user_id", "coordination_method", "coordination_handle", "share_trade_contact", "show_location",
+		}).AddRow("user-2", "discord", "misty", false, true))
+
+	response := executeTradeRequest(
+		t, newHandlerTestApp("user-1"), http.MethodGet,
+		"/api/trades/trade-1/partner", nil,
+	)
+	if response.StatusCode != http.StatusOK {
+		t.Fatalf("unexpected status: got %d, want %d", response.StatusCode, http.StatusOK)
+	}
+	var body map[string]any
+	if err := json.NewDecoder(response.Body).Decode(&body); err != nil {
+		t.Fatalf("decode response: %v", err)
+	}
+	if body["sharingEnabled"] != false || body["trainerCode"] != nil ||
+		body["pokemonGoName"] != nil || body["coordinationHandle"] != nil ||
+		body["location"] != nil || body["coordinationMethod"] != "none" {
+		t.Fatalf("private coordination details leaked: %#v", body)
+	}
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Fatalf("unmet DB expectations: %v", err)
+	}
+}
+
 func TestDenyTradeHandler_AccepterCanDenyProposal(t *testing.T) {
 	mock, cleanup := setupMockDB(t)
 	defer cleanup()

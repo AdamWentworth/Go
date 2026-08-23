@@ -681,39 +681,44 @@ func RevealTradePartnerHandler(c fiber.Ctx) error {
 		c.Params("trade_id"), userID, userID).First(&trade).Error; err != nil {
 		return tradeError(c, err, "Could not load trade")
 	}
+	if trade.TradeStatus != "pending" {
+		return c.Status(fiber.StatusConflict).JSON(fiber.Map{
+			"message": "Coordination details are available only after a trade is accepted and while it remains active",
+		})
+	}
+	partnerID := tradeOtherUserID(trade, userID)
+	blocked, err := usersAreBlocked(userID, partnerID)
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"message": "Could not validate partner access"})
+	}
+	if blocked {
+		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{"message": "Coordination details are unavailable for a blocked trainer"})
+	}
 	var partner User
-	if err := db.Where("user_id = ?", tradeOtherUserID(trade, userID)).First(&partner).Error; err != nil {
+	if err := db.Where("user_id = ?", partnerID).First(&partner).Error; err != nil {
 		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"message": "Trade partner not found"})
 	}
-	profile, err := loadUserProfile(partner.UserID)
+	profile, err := loadUserProfile(partnerID)
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"message": "Could not load partner privacy"})
 	}
 	response := fiber.Map{
-		"trainerCode":   nil,
-		"pokemonGoName": nil,
-		"location":      nil,
-		"coordinates":   nil,
+		"sharingEnabled":     profile.ShareTradeContact,
+		"trainerCode":        nil,
+		"pokemonGoName":      nil,
+		"coordinationMethod": "none",
+		"coordinationHandle": nil,
+		"location":           nil,
 	}
-	relationship, _, err := relationshipForUsers(userID, partner.UserID)
-	if err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"message": "Could not validate partner relationship"})
+	if !profile.ShareTradeContact {
+		return c.JSON(response)
 	}
-	if profile.ShowPokemonGoName {
-		response["pokemonGoName"] = partner.PokemonGoName
-	}
-	if profile.TrainerCodeVisibility == "public" ||
-		(profile.TrainerCodeVisibility == "friends" && relationship == relationshipFriend) {
-		response["trainerCode"] = partner.TrainerCode
-	}
+	response["trainerCode"] = partner.TrainerCode
+	response["pokemonGoName"] = partner.PokemonGoName
+	response["coordinationMethod"] = profile.CoordinationMethod
+	response["coordinationHandle"] = profile.CoordinationHandle
 	if profile.ShowLocation {
 		response["location"] = partner.Location
-		if partner.Latitude != nil && partner.Longitude != nil {
-			response["coordinates"] = fiber.Map{
-				"latitude":  *partner.Latitude,
-				"longitude": *partner.Longitude,
-			}
-		}
 	}
 	return c.JSON(response)
 }

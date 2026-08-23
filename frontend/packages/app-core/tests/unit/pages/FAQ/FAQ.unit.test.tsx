@@ -51,6 +51,19 @@ describe('FAQ page', () => {
     expect(screen.getByText(/Five hearts represents Forever Friends/i)).toBeVisible();
   });
 
+  it('explains that accepted trades are coordinated through external messaging', async () => {
+    render(<MemoryRouter initialEntries={['/faq#trade-communication']}><FAQ /></MemoryRouter>);
+
+    await waitFor(() => {
+      expect(document.getElementById('trade-communication')).toHaveAttribute('open');
+    });
+    expect(screen.getByText(/does not include chat/i)).toBeVisible();
+    expect(screen.getByRole('link', { name: /review trade safety guidance/i })).toHaveAttribute(
+      'href',
+      '/safety',
+    );
+  });
+
   it('has no automated accessibility violations', async () => {
     const { container } = render(<MemoryRouter><FAQ /></MemoryRouter>);
 

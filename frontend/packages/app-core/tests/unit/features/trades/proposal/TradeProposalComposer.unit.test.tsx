@@ -161,6 +161,7 @@ describe('shared TradeProposalComposer', () => {
     expect(exchangeParties[0]).toHaveTextContent('Haunter');
     expect(exchangeParties[1]).toHaveTextContent('acceptor offers');
     expect(exchangeParties[1]).toHaveTextContent('Gengar');
+    expect(screen.getByText(/does not provide messaging/i)).toBeInTheDocument();
 
     fireEvent.change(screen.getByLabelText('Choose the instance to trade:'), {
       target: { value: 'matched-2' },

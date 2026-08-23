@@ -108,12 +108,13 @@ const GUIDE_STEPS: GuideStep[] = [
   {
     id: 'proposal',
     number: '05',
-    title: 'Review and propose',
-    summary: 'The proposal screen is the final checkpoint, not an instant or optimistic trade.',
+    title: 'Propose and coordinate',
+    summary: 'Review the exact exchange, then coordinate an accepted trade outside the app.',
     details: [
       'Your Pokémon always appears on the left and theirs on the right.',
       'Set the friendship level and review remote, Lucky, special-trade, and Stardust information.',
       'The users service validates both participants and Pokémon before accepting the proposal.',
+      'After acceptance, use the opted-in Trainer Code and Campfire, Discord, or another agreed service to arrange the in-game trade.',
     ],
     action: 'View trade activity',
     to: '/trades?section=activity',

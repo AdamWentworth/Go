@@ -62,15 +62,12 @@ export interface TradeReference {
   [key: string]: unknown;
 }
 
-export interface PartnerCoordinates {
-  latitude: number;
-  longitude: number;
-}
-
 export interface PartnerInfo {
+  sharingEnabled: boolean;
   trainerCode?: string | null;
   pokemonGoName?: string | null;
-  coordinates?: PartnerCoordinates | null;
+  coordinationMethod: 'campfire' | 'discord' | 'other' | 'none';
+  coordinationHandle?: string | null;
   location?: string | null;
 }
 

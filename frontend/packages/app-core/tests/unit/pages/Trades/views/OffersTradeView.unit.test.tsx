@@ -59,6 +59,7 @@ describe('OffersTradeView', () => {
     expect(screen.getByText('For Trade:')).toBeInTheDocument();
     expect(screen.getByText('Offered')).toBeInTheDocument();
     expect(screen.getByText('20,000')).toBeInTheDocument();
+    expect(screen.getByText(/accepting unlocks any coordination details/i)).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('button', { name: 'Accept offer' }));
     fireEvent.click(screen.getByRole('button', { name: 'Deny' }));

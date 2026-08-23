@@ -356,7 +356,7 @@ const PendingTradeView: React.FC<PendingTradeViewProps> = ({
           onClick={handleRevealInfo}
           disabled={revealInProgress}
         >
-          <span>Reveal Trade Partner Info</span>
+          <span>Coordinate trade</span>
         </button>
         {error && <p className="error">{error}</p>}
       </div>
@@ -389,7 +389,11 @@ const PendingTradeView: React.FC<PendingTradeViewProps> = ({
         </button>
       </div>
 
-      <PartnerInfoModal partnerInfo={partnerInfo} onClose={handleCloseModal} />
+      <PartnerInfoModal
+        partnerInfo={partnerInfo}
+        partnerUsername={partnerUsername}
+        onClose={handleCloseModal}
+      />
     </div>
   );
 };

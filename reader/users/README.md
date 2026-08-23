@@ -16,7 +16,9 @@ trainer snapshots.
 - Atomically transfer Pokémon only after both trade participants confirm.
 - Write participant-targeted trade events to a transactional MySQL outbox in
   the same commit as each command.
-- Reveal trade-partner details according to relationship/privacy rules.
+- Reveal opted-in trade-coordination details only to participants in an
+  accepted, active trade; blocks always deny access and precise coordinates are
+  never returned.
 - Serve public trainer snapshot data by username.
 - Provide autocomplete suggestions for trainer search.
 - Expose health and metrics endpoints for operations.
@@ -67,6 +69,13 @@ Authenticated routes are available under both `/api` and the nginx-compatible
 
 The JWT determines the acting user. Clients cannot choose proposer identity,
 status, timestamps, confirmations, or Pokémon ownership.
+
+The partner route is a post-acceptance handoff, not a directory or chat API. It
+returns only the partner's opted-in Pokémon GO name, Trainer Code, preferred
+external coordination method/handle, and optional broad saved location. It
+rejects proposed or terminal trades and blocked relationships. Pokémon Go Nexus
+does not store external messages or expose latitude/longitude through this
+route.
 
 `GET /trades` and `GET /friends` remain backward compatible when called without
 pagination parameters. New callers may pass `limit=1..100` and follow the opaque

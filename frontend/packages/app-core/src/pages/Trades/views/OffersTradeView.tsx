@@ -264,6 +264,10 @@ const OffersTradeView: React.FC<OffersTradeViewProps> = ({
           isLuckyTrade={Boolean(trade.is_lucky_trade)}
           stardustCost={trade.trade_dust_cost}
         >
+          <p className="trade-accept-coordination-note">
+            Accepting unlocks any coordination details this trainer chose to share.
+            Pokémon Go Nexus has no in-app chat, so you will arrange the exchange externally.
+          </p>
           <button className="accept-button" onClick={handleAccept}>
             Accept offer
           </button>

@@ -340,6 +340,14 @@
   gap: 6px;
 }
 
+.trade-activity-card-shell .trade-accept-coordination-note {
+  margin: 0 0 2px;
+  color: var(--trade-muted);
+  font-size: 0.68rem;
+  line-height: 1.35;
+  text-align: center;
+}
+
 .trade-activity-card-shell .trade-actions button,
 .trade-activity-card-shell .delete-button,
 .trade-activity-card-shell .reveal-partner-button,
@@ -578,6 +586,11 @@
     grid-row: 2;
     grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
     margin-top: 2px;
+  }
+
+  .trade-activity-card-shell .trade-accept-coordination-note {
+    grid-column: 1 / -1;
+    font-size: 0.7rem;
   }
 
   .trade-activity-card-shell .trade-actions button,

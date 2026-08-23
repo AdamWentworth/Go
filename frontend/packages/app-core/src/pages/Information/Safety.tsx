@@ -3,6 +3,7 @@ import {
   FaArrowRight,
   FaBan,
   FaCheckCircle,
+  FaComments,
   FaExchangeAlt,
   FaExclamationTriangle,
   FaMapMarkerAlt,
@@ -55,6 +56,14 @@ const SAFETY_GUIDANCE: SafetyGuidance[] = [
     details: [
       'Keep listings accurate, communicate changes, and do not pressure another trainer to continue.',
       'Harassment, impersonation, deceptive listings, and attempts to obtain money or credentials are not acceptable.',
+    ],
+  },
+  {
+    icon: FaComments,
+    title: 'Coordinate outside the app carefully',
+    details: [
+      'Pokémon Go Nexus has no chat; accepted partners may share a Trainer Code and a preferred external method such as Campfire or Discord.',
+      'External messages are not moderated by Pokémon Go Nexus. Share only what is necessary, and use each service’s own privacy, reporting, and blocking tools.',
     ],
   },
   {
@@ -149,6 +158,7 @@ const Safety = () => {
               <li>That a stale listing still matches the trainer’s game account.</li>
               <li>A Lucky result, exact Stardust cost, or successful in-game trade.</li>
               <li>Safety outside the service or compliance with local rules.</li>
+              <li>Messages, conduct, or moderation on Campfire, Discord, or another external service.</li>
             </ul>
           </article>
         </div>

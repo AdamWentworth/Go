@@ -41,6 +41,7 @@ export type TrainerAutocompleteEntry = {
 export type ProfileVisibility = 'public' | 'friends' | 'private';
 export type FriendRequestPermission = 'everyone' | 'nobody';
 export type TrainerCodeVisibility = 'public' | 'friends' | 'private';
+export type TradeCoordinationMethod = 'campfire' | 'discord' | 'other' | 'none';
 export type TrainerRelationship =
   | 'none'
   | 'self'
@@ -142,6 +143,9 @@ export interface TrainerPreferences {
   collection_visibility: ProfileVisibility;
   friend_request_permission: FriendRequestPermission;
   trainer_code_visibility: TrainerCodeVisibility;
+  coordination_method: TradeCoordinationMethod;
+  coordination_handle?: string | null;
+  share_trade_contact: boolean;
   show_location: boolean;
   show_pokemon_go_name: boolean;
   updated_at?: string;

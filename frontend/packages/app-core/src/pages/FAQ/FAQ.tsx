@@ -203,6 +203,16 @@ const FAQ_ITEMS: FaqItem[] = [
     ],
   },
   {
+    id: 'trade-communication',
+    category: 'trading',
+    question: 'How do trainers communicate and complete an accepted trade?',
+    answer: [
+      'Pokémon Go Nexus does not include chat. After an offer is accepted, the Trade Activity screen can show only the Pokémon GO and coordination details that each participant chose to share for active accepted trades.',
+      'Add one another in Pokémon GO and coordinate through Campfire, Discord, or another agreed service. Campfire is the recommended default because it supports Niantic Friends and direct messages. Messaging, meetup arrangements, and the final exchange happen outside Pokémon Go Nexus and remain the trainers’ responsibility.',
+    ],
+    related: { label: 'Review trade safety guidance', to: '/safety' },
+  },
+  {
     id: 'search-matchmaker',
     category: 'discovery',
     question: 'What does Matchmaker change in Pokémon Search?',

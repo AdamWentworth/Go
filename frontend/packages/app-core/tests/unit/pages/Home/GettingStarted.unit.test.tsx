@@ -25,7 +25,7 @@ describe('GettingStarted', () => {
 
     expect(screen.getByRole('heading', { name: 'Your first useful trade, step by step.' })).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: 'Start your collection' })).toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: 'Review and propose' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Propose and coordinate' })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: /open trade preferences/i })).toHaveAttribute(
       'href',
       '/trades?section=preferences',

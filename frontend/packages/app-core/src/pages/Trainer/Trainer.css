@@ -1558,6 +1558,30 @@
   line-height: 1.5;
 }
 
+.trainer-coordination-summary {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin-top: 12px;
+  padding: 12px;
+  border: 1px solid color-mix(in srgb, var(--trainer-accent) 30%, var(--trainer-border));
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--trainer-accent) 8%, transparent);
+}
+
+.trainer-coordination-summary > svg {
+  flex: 0 0 auto;
+  margin-top: 2px;
+  color: var(--trainer-accent);
+}
+
+.trainer-coordination-summary p {
+  margin: 0;
+  color: var(--trainer-muted);
+  font-size: 0.82rem;
+  line-height: 1.5;
+}
+
 .trainer-danger-section {
   border-color: #6c343b;
 }

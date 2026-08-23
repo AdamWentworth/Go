@@ -36,12 +36,17 @@ const preferences = {
   collection_visibility: 'public',
   friend_request_permission: 'everyone',
   trainer_code_visibility: 'friends',
+  coordination_method: 'campfire',
+  coordination_handle: null,
+  share_trade_contact: true,
   show_location: false,
   show_pokemon_go_name: true,
 } as const;
 
 describe('Trainer Settings', () => {
   beforeEach(() => {
+    mocks.fetchPreferences.mockReset();
+    mocks.updatePreferences.mockReset();
     mocks.fetchPreferences.mockResolvedValue(preferences);
     mocks.updatePreferences.mockImplementation(async (request) => ({
       ...preferences,
@@ -69,10 +74,38 @@ describe('Trainer Settings', () => {
         collection_visibility: 'public',
         friend_request_permission: 'everyone',
         trainer_code_visibility: 'friends',
+        coordination_method: 'campfire',
+        coordination_handle: null,
+        share_trade_contact: true,
         show_location: true,
         show_pokemon_go_name: true,
       }),
     );
+  });
+
+  it('saves an external coordination preference separately from public profile visibility', async () => {
+    render(
+      <MemoryRouter>
+        <Settings />
+      </MemoryRouter>,
+    );
+
+    fireEvent.change(await screen.findByLabelText(/preferred coordination method/i), {
+      target: { value: 'discord' },
+    });
+    fireEvent.change(screen.getByLabelText(/discord username/i), {
+      target: { value: '@MistyTrades' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: /save coordination/i }));
+
+    await waitFor(() => expect(mocks.updatePreferences).toHaveBeenCalledWith(
+      expect.objectContaining({
+        coordination_method: 'discord',
+        coordination_handle: '@MistyTrades',
+        share_trade_contact: true,
+        trainer_code_visibility: 'friends',
+      }),
+    ));
   });
 
   it('restores and persists reduced motion for this browser only', async () => {
