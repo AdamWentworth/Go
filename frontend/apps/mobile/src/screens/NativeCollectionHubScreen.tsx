@@ -1,5 +1,5 @@
 import { useCallback, useMemo, useRef, useState } from 'react';
-import { StyleSheet, View, useColorScheme } from 'react-native';
+import { Animated, StyleSheet, View, useColorScheme, useWindowDimensions } from 'react-native';
 import { webCssVarTokens } from '@pokemongonexus/shared-ui-tokens';
 import {
   NativeHorizontalPageSlider,
@@ -44,10 +44,12 @@ export const NativeCollectionHubScreen = ({
   onRetry,
 }: Props) => {
   const light = useColorScheme() === 'light';
+  const { width } = useWindowDimensions();
   const [query, setQuery] = useState('');
   const [activeView, setActiveView] = useState<NativePokemonHubView>('pokemon');
   const [selectedTag, setSelectedTag] = useState<NativeTagSummary | null>(null);
   const sliderRef = useRef<NativeHorizontalPageSliderHandle>(null);
+  const [pageScrollX] = useState(() => new Animated.Value(width));
   const selectedRows = selectedTag?.rows ?? catalogRows;
   const inventoryCount = inventoryTags.find(
     (tag) => tag.key === 'system:caught',
@@ -171,6 +173,7 @@ export const NativeCollectionHubScreen = ({
         backgroundColor={background}
         collectionCount={selectedRows.length}
         onViewChange={changeView}
+        scrollX={pageScrollX}
         secondaryTextColor={secondary}
         textColor={text}
       />
@@ -178,6 +181,7 @@ export const NativeCollectionHubScreen = ({
         activeIndex={activeIndex}
         onIndexChange={(index) => setActiveView(VIEW_ORDER[index] ?? 'pokemon')}
         ref={sliderRef}
+        scrollX={pageScrollX}
       >
         {inventoryPanel}
         {pokemonPanel}

@@ -1,5 +1,6 @@
 import {
   AccessibilityInfo,
+  Animated,
   ScrollView,
   StyleSheet,
   View,
@@ -19,6 +20,7 @@ import {
 type Props = PropsWithChildren<{
   activeIndex: number;
   onIndexChange: (index: number) => void;
+  scrollX?: Animated.Value;
 }>;
 
 export type NativeHorizontalPageSliderHandle = {
@@ -48,6 +50,7 @@ export const NativeHorizontalPageSlider = forwardRef<
   activeIndex,
   children,
   onIndexChange,
+  scrollX,
 }, ref) {
   const panels = Children.toArray(children);
   const panelCount = panels.length;
@@ -56,6 +59,8 @@ export const NativeHorizontalPageSlider = forwardRef<
   const scrollRef = useRef<ScrollView>(null);
   const renderedIndexRef = useRef(safeIndex);
   const previousWidthRef = useRef(width);
+  const [internalScrollX] = useState(() => new Animated.Value(safeIndex * width));
+  const pageScrollX = scrollX ?? internalScrollX;
   const [reduceMotion, setReduceMotion] = useState(false);
 
   useEffect(() => {
@@ -91,13 +96,17 @@ export const NativeHorizontalPageSlider = forwardRef<
   }, [safeIndex, setPage, width]);
 
   return (
-    <ScrollView
+    <Animated.ScrollView
       bounces={false}
       contentOffset={{ x: safeIndex * width, y: 0 }}
       decelerationRate="fast"
       directionalLockEnabled
       horizontal
       nestedScrollEnabled
+      onScroll={Animated.event(
+        [{ nativeEvent: { contentOffset: { x: pageScrollX } } }],
+        { useNativeDriver: true },
+      )}
       onMomentumScrollEnd={(event) => {
         const nextIndex = resolveNativeHorizontalPageOffset({
           offsetX: event.nativeEvent.contentOffset.x,
@@ -126,7 +135,7 @@ export const NativeHorizontalPageSlider = forwardRef<
           {panel}
         </View>
       ))}
-    </ScrollView>
+    </Animated.ScrollView>
   );
 });
 
