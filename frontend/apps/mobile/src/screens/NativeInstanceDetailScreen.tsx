@@ -64,6 +64,12 @@ type NativeInstanceEditDraft = {
   weightSize: PokemonSizeClass | null;
   heightSize: PokemonSizeClass | null;
   locationCard: string | null;
+  lucky: boolean;
+  isTraded: boolean;
+  originalTrainerId: string | null;
+  originalTrainerName: string;
+  tradedDate: string;
+  pokeball: string | null;
 };
 
 const editableNumber = (value: unknown): string => (
@@ -109,7 +115,23 @@ const createEditDraft = (detail: NativeInstanceDetail): NativeInstanceEditDraft 
   weightSize: resolveWantedSizeClass(detail, 'weight'),
   heightSize: resolveWantedSizeClass(detail, 'height'),
   locationCard: detail.instance?.location_card ?? null,
+  lucky: Boolean(detail.instance?.lucky),
+  isTraded: Boolean(detail.instance?.is_traded || detail.instance?.lucky),
+  originalTrainerId: detail.instance?.original_trainer_id ?? null,
+  originalTrainerName: detail.instance?.original_trainer_name ?? '',
+  tradedDate: detail.instance?.traded_date?.slice(0, 10) ?? '',
+  pokeball: detail.instance?.pokeball ?? null,
 });
+
+const BALL_OPTIONS = [
+  ['poke_ball', 'POKÉ BALL'],
+  ['great_ball', 'GREAT BALL'],
+  ['ultra_ball', 'ULTRA BALL'],
+  ['premier_ball', 'PREMIER BALL'],
+  ['master_ball', 'MASTER BALL'],
+  ['safari_ball', 'SAFARI BALL'],
+  ['beast_ball', 'BEAST BALL'],
+] as const;
 
 const nullableNumber = (value: string): number | null => {
   const trimmed = value.trim();
@@ -163,15 +185,14 @@ const primaryTypeName = (detail: NativeInstanceDetail): string => {
 
 const backgroundPath = (
   detail: NativeInstanceDetail,
-  wantedLuckyOverride?: boolean,
+  luckyOverride?: boolean,
 ): string => {
   const instance = detail.instance;
   if (instance?.shadow && !instance.purified) return '/images/backgrounds/bg_shadow.png';
-  if (
-    detail.row.lucky
-    || instance?.lucky
-    || (instance?.is_wanted && (wantedLuckyOverride ?? instance.pref_lucky))
-  ) {
+  const canonicalLucky = Boolean(
+    detail.row.lucky || instance?.lucky || (instance?.is_wanted && instance.pref_lucky),
+  );
+  if (luckyOverride ?? canonicalLucky) {
     return '/images/backgrounds/bg_lucky.png';
   }
   return `/images/backgrounds/bg_${primaryTypeName(detail)}.png`;
@@ -711,15 +732,193 @@ const NativeBackgroundPicker = ({
   </Modal>
 );
 
+const NativeToggleGroup = ({
+  label,
+  options,
+  palette,
+  value,
+  onChange,
+}: {
+  label: string;
+  options: { label: string; value: boolean; disabled?: boolean }[];
+  palette: typeof LIGHT;
+  value: boolean;
+  onChange: (value: boolean) => void;
+}) => (
+  <View style={styles.editFieldGroup}>
+    <Text style={[styles.editFieldLabel, { color: palette.secondary }]}>{label}</Text>
+    <View accessibilityLabel={label} style={styles.booleanOptions}>
+      {options.map((option) => {
+        const selected = option.value === value;
+        return (
+          <Pressable
+            accessibilityLabel={`${label}: ${option.label}`}
+            accessibilityRole="button"
+            accessibilityState={{ disabled: option.disabled, selected }}
+            disabled={option.disabled}
+            key={option.label}
+            onPress={() => onChange(option.value)}
+            style={[
+              styles.booleanOption,
+              { borderColor: selected ? '#38a9ff' : palette.border },
+              selected && styles.booleanOptionSelected,
+              option.disabled && styles.disabledOption,
+            ]}
+          >
+            <Text style={[styles.booleanOptionText, { color: palette.text }]}>{option.label}</Text>
+          </Pressable>
+        );
+      })}
+    </View>
+  </View>
+);
+
+const NativeCaughtMetadataControls = ({
+  detail,
+  draft,
+  isCaught,
+  palette,
+  onChange,
+}: {
+  detail: NativeInstanceDetail;
+  draft: NativeInstanceEditDraft;
+  isCaught: boolean;
+  palette: typeof LIGHT;
+  onChange: (patch: Partial<NativeInstanceEditDraft>) => void;
+}) => {
+  const inputStyle = [
+    styles.editInput,
+    { backgroundColor: palette.input, borderColor: palette.border, color: palette.text },
+  ];
+  const isShadow = Boolean(detail.instance?.shadow && !detail.instance?.purified);
+  const canToggleLucky = isCaught && !isShadow && detail.rarity !== 'Mythic';
+  return (
+    <View style={styles.editMetaPanel}>
+      <Text style={[styles.editFieldLabel, { color: palette.secondary }]}>CAUGHT DETAILS</Text>
+
+      {isCaught ? (
+        <>
+          {canToggleLucky ? (
+            <NativeToggleGroup
+              label="LUCKY"
+              onChange={(lucky) => onChange({ lucky, isTraded: lucky || draft.isTraded })}
+              options={[
+                { label: 'YES', value: true },
+                { label: 'NO', value: false },
+              ]}
+              palette={palette}
+              value={draft.lucky}
+            />
+          ) : null}
+          <NativeToggleGroup
+            label="OBTAINED IN A TRADE"
+            onChange={(isTraded) => onChange({ isTraded })}
+            options={[
+              { label: 'YES', value: true, disabled: isShadow },
+              { label: 'NO', value: false, disabled: draft.lucky },
+            ]}
+            palette={palette}
+            value={draft.isTraded}
+          />
+          {isShadow ? (
+            <Text style={[styles.editHelpText, { color: palette.secondary }]}>Shadow Pokémon cannot be traded until purified.</Text>
+          ) : null}
+          {draft.lucky ? (
+            <Text style={[styles.editHelpText, { color: palette.secondary }]}>Lucky Pokémon are always traded.</Text>
+          ) : null}
+          {draft.isTraded ? (
+            <View style={styles.editFieldGroup}>
+              <Text style={[styles.editFieldLabel, { color: palette.secondary }]}>ORIGINAL TRAINER</Text>
+              <TextInput
+                accessibilityLabel="Original trainer name"
+                autoCapitalize="none"
+                onChangeText={(originalTrainerName) => onChange({
+                  originalTrainerName,
+                  originalTrainerId: null,
+                })}
+                placeholder="Optional"
+                placeholderTextColor={palette.secondary}
+                style={inputStyle}
+                value={draft.originalTrainerName}
+              />
+              <Text style={[styles.editFieldLabel, { color: palette.secondary }]}>TRADED DATE</Text>
+              <TextInput
+                accessibilityLabel="Traded date"
+                keyboardType="numbers-and-punctuation"
+                maxLength={10}
+                onChangeText={(tradedDate) => onChange({ tradedDate })}
+                placeholder="YYYY-MM-DD"
+                placeholderTextColor={palette.secondary}
+                style={inputStyle}
+                value={draft.tradedDate}
+              />
+            </View>
+          ) : null}
+        </>
+      ) : null}
+
+      <View style={styles.editFieldGroup}>
+        <Text style={[styles.editFieldLabel, { color: palette.secondary }]}>LOCATION CAUGHT</Text>
+        <TextInput
+          accessibilityLabel="Caught location"
+          autoCapitalize="words"
+          onChangeText={(locationCaught) => onChange({ locationCaught })}
+          placeholder="Location caught"
+          placeholderTextColor={palette.secondary}
+          style={inputStyle}
+          value={draft.locationCaught}
+        />
+        <Text style={[styles.editFieldLabel, { color: palette.secondary }]}>DATE CAUGHT</Text>
+        <TextInput
+          accessibilityLabel="Caught date"
+          keyboardType="numbers-and-punctuation"
+          maxLength={10}
+          onChangeText={(dateCaught) => onChange({ dateCaught })}
+          placeholder="YYYY-MM-DD"
+          placeholderTextColor={palette.secondary}
+          style={inputStyle}
+          value={draft.dateCaught}
+        />
+      </View>
+
+      <View style={styles.editFieldGroup}>
+        <Text style={[styles.editFieldLabel, { color: palette.secondary }]}>BALL CAUGHT</Text>
+        <View accessibilityLabel="Ball Caught" style={styles.ballOptions}>
+          {[...BALL_OPTIONS, [null, 'UNKNOWN'] as const].map(([value, label]) => {
+            const selected = draft.pokeball === value;
+            return (
+              <Pressable
+                accessibilityLabel={`Ball caught: ${label}`}
+                accessibilityRole="button"
+                key={label}
+                onPress={() => onChange({ pokeball: value })}
+                style={[
+                  styles.ballOption,
+                  { borderColor: selected ? '#38a9ff' : palette.border },
+                  selected && styles.booleanOptionSelected,
+                ]}
+              >
+                <Text style={[styles.ballOptionText, { color: palette.text }]}>{label}</Text>
+              </Pressable>
+            );
+          })}
+        </View>
+      </View>
+    </View>
+  );
+};
+
 const NativeInstanceEditFields = ({
   detail,
   draft,
+  isCaught,
   isWanted,
   palette,
   onChange,
 }: {
   detail: NativeInstanceDetail;
   draft: NativeInstanceEditDraft;
+  isCaught: boolean;
   isWanted: boolean;
   palette: typeof LIGHT;
   onChange: (patch: Partial<NativeInstanceEditDraft>) => void;
@@ -892,28 +1091,13 @@ const NativeInstanceEditFields = ({
             </View>
           </View>
 
-          <View style={styles.editFieldGroup}>
-            <Text style={[styles.editFieldLabel, { color: palette.secondary }]}>CAUGHT DETAILS</Text>
-            <TextInput
-              accessibilityLabel="Caught location"
-              autoCapitalize="words"
-              onChangeText={(locationCaught) => onChange({ locationCaught })}
-              placeholder="Location caught"
-              placeholderTextColor={palette.secondary}
-              style={inputStyle}
-              value={draft.locationCaught}
-            />
-            <TextInput
-              accessibilityLabel="Caught date"
-              keyboardType="numbers-and-punctuation"
-              maxLength={10}
-              onChangeText={(dateCaught) => onChange({ dateCaught })}
-              placeholder="YYYY-MM-DD"
-              placeholderTextColor={palette.secondary}
-              style={inputStyle}
-              value={draft.dateCaught}
-            />
-          </View>
+          <NativeCaughtMetadataControls
+            detail={detail}
+            draft={draft}
+            isCaught={isCaught}
+            onChange={onChange}
+            palette={palette}
+          />
         </>
       ) : null}
     </View>
@@ -1011,6 +1195,9 @@ export const NativeInstanceDetailScreen = ({
     ? editErrorState.message
     : null;
   const backgroundPickerOpen = backgroundPickerInstanceId === detail.row.id;
+  const displayLucky = editing
+    ? isWanted ? activeDraft.prefLucky : activeDraft.lucky
+    : Boolean(detail.row.lucky || instance?.lucky || (isWanted && instance?.pref_lucky));
   const selectedLocationBackgroundUri = editing
     ? detail.backgroundOptions?.find((option) => String(option.id) === activeDraft.locationCard)?.imageUri ?? null
     : detail.row.locationBackgroundUri;
@@ -1072,6 +1259,20 @@ export const NativeInstanceDetailScreen = ({
             charged_move1_id: activeDraft.chargedMove1,
             charged_move2_id: activeDraft.chargedMove2,
             location_card: activeDraft.locationCard,
+            lucky: isCaught ? activeDraft.lucky : instance?.lucky,
+            is_traded: isCaught
+              ? activeDraft.lucky || activeDraft.isTraded
+              : instance?.is_traded,
+            original_trainer_id: isCaught && activeDraft.isTraded
+              ? activeDraft.originalTrainerId
+              : instance?.original_trainer_id,
+            original_trainer_name: isCaught && activeDraft.isTraded
+              ? activeDraft.originalTrainerName
+              : instance?.original_trainer_name,
+            traded_date: isCaught && activeDraft.isTraded
+              ? activeDraft.tradedDate
+              : instance?.traded_date,
+            pokeball: activeDraft.pokeball,
           };
       await onSaveDetails(patch);
       setEditingInstanceId(null);
@@ -1095,7 +1296,7 @@ export const NativeInstanceDetailScreen = ({
         source={{
           uri: toAssetUrl(
             assetBaseUrl,
-            backgroundPath(detail, editing && isWanted ? activeDraft.prefLucky : undefined),
+            backgroundPath(detail, editing ? displayLucky : undefined),
           ),
         }}
         style={styles.fullBackground}
@@ -1194,7 +1395,7 @@ export const NativeInstanceDetailScreen = ({
                 <NativePokemonLocationBackdrop uri={selectedLocationBackgroundUri} />
               </View>
             ) : null}
-            {detail.row.lucky ? (
+            {displayLucky ? (
               <Image
                 accessibilityElementsHidden
                 resizeMode="contain"
@@ -1240,6 +1441,7 @@ export const NativeInstanceDetailScreen = ({
               <NativeInstanceEditFields
                 detail={detail}
                 draft={activeDraft}
+                isCaught={isCaught}
                 isWanted={isWanted}
                 onChange={updateDraft}
                 palette={palette}
@@ -1577,6 +1779,38 @@ const styles = StyleSheet.create({
   },
   genderOptionSelected: { backgroundColor: 'rgba(40,137,226,0.23)' },
   genderOptionText: { fontSize: 12, fontWeight: '900' },
+  booleanOptions: { flexDirection: 'row', gap: 7 },
+  booleanOption: {
+    minHeight: 42,
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderRadius: 9,
+  },
+  booleanOptionSelected: { backgroundColor: 'rgba(40,137,226,0.23)' },
+  booleanOptionText: { fontSize: 12, fontWeight: '900' },
+  disabledOption: { opacity: 0.42 },
+  editHelpText: { fontSize: 12, lineHeight: 17 },
+  editMetaPanel: {
+    width: '100%',
+    gap: 12,
+    padding: 10,
+    borderRadius: 10,
+    backgroundColor: 'rgba(127,145,141,0.09)',
+  },
+  ballOptions: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
+  ballOption: {
+    minHeight: 38,
+    flexGrow: 1,
+    minWidth: '30%',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 8,
+    borderWidth: 1,
+    borderRadius: 8,
+  },
+  ballOptionText: { fontSize: 10, fontWeight: '900' },
   choiceField: {
     minHeight: 52,
     flexDirection: 'row',

@@ -30,13 +30,19 @@ export type NativeInstanceDetailPatch = Partial<Pick<
   | 'friendship_level'
   | 'gender'
   | 'height'
+  | 'is_traded'
   | 'level'
+  | 'lucky'
   | 'location_card'
   | 'location_caught'
   | 'most_wanted'
   | 'nickname'
+  | 'original_trainer_id'
+  | 'original_trainer_name'
+  | 'pokeball'
   | 'pref_lucky'
   | 'stamina_iv'
+  | 'traded_date'
   | 'wanted_size_preferences'
   | 'weight'
 >>;
@@ -109,14 +115,33 @@ export const normalizeNativeInstanceDetailPatch = (
   if (gender && !['Male', 'Female', 'Genderless'].includes(gender)) {
     throw new Error('Gender selection is invalid.');
   }
+  const pokeball = normalizeNullableText(patch.pokeball);
+  if (pokeball && ![
+    'poke_ball',
+    'great_ball',
+    'ultra_ball',
+    'premier_ball',
+    'master_ball',
+    'safari_ball',
+    'beast_ball',
+  ].includes(pokeball)) {
+    throw new Error('Poké Ball selection is invalid.');
+  }
+  if (patch.lucky && patch.is_traded === false) {
+    throw new Error('Lucky Pokémon are always traded.');
+  }
 
   return {
     ...patch,
     nickname,
     gender,
+    original_trainer_id: normalizeNullableText(patch.original_trainer_id),
+    original_trainer_name: normalizeNullableText(patch.original_trainer_name),
+    pokeball,
     location_card: normalizeNullableText(patch.location_card),
     location_caught: normalizeNullableText(patch.location_caught),
     date_caught: normalizeNullableText(patch.date_caught),
+    traded_date: normalizeNullableText(patch.traded_date),
     wanted_size_preferences: normalizeWantedSizePreferences(patch.wanted_size_preferences),
   };
 };

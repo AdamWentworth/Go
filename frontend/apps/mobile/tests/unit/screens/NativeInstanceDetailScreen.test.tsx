@@ -192,6 +192,14 @@ describe('NativeInstanceDetailScreen', () => {
             attack_iv: 15,
             defense_iv: 14,
             stamina_iv: 13,
+            lucky: false,
+            shadow: false,
+            purified: false,
+            is_traded: false,
+            original_trainer_id: null,
+            original_trainer_name: null,
+            traded_date: null,
+            pokeball: null,
           } as NonNullable<NativeInstanceDetail['instance']>,
           row: { ...detail.row, status: 'caught' },
         }}
@@ -213,6 +221,10 @@ describe('NativeInstanceDetailScreen', () => {
     fireEvent.press(screen.getByRole('button', { name: 'Edit Pokémon' }));
     fireEvent.changeText(screen.getByLabelText('Pokémon nickname'), 'Fire Partner');
     fireEvent.changeText(screen.getByLabelText('Combat Power'), '2500');
+    fireEvent.press(screen.getByRole('button', { name: 'LUCKY: YES' }));
+    fireEvent.changeText(screen.getByLabelText('Original trainer name'), 'TradePartner');
+    fireEvent.changeText(screen.getByLabelText('Traded date'), '2026-08-23');
+    fireEvent.press(screen.getByRole('button', { name: 'Ball caught: BEAST BALL' }));
     await act(async () => {
       fireEvent.press(screen.getByRole('button', { name: 'Save Pokémon' }));
     });
@@ -223,6 +235,11 @@ describe('NativeInstanceDetailScreen', () => {
       level: 40,
       gender: 'Male',
       attack_iv: 15,
+      lucky: true,
+      is_traded: true,
+      original_trainer_name: 'TradePartner',
+      traded_date: '2026-08-23',
+      pokeball: 'beast_ball',
     }));
     expect(screen.queryByLabelText('Pokémon detail editor')).toBeNull();
   });
@@ -284,6 +301,43 @@ describe('NativeInstanceDetailScreen', () => {
       charged_move1_id: 102,
       location_card: '9',
     }));
+  });
+
+  it('keeps Lucky and traded controls constrained for an unpurified Shadow Pokémon', () => {
+    render(
+      <NativeInstanceDetailScreen
+        detail={{
+          ...detail,
+          instance: {
+            nickname: null,
+            shadow: true,
+            purified: false,
+            lucky: false,
+            is_traded: false,
+          } as NonNullable<NativeInstanceDetail['instance']>,
+          row: { ...detail.row, status: 'caught' },
+        }}
+        isLoading={false}
+        error={null}
+        cachedAt={null}
+        movesWarning={null}
+        saveNotice={null}
+        saveError={null}
+        isSaving={false}
+        onRetry={jest.fn()}
+        onBack={jest.fn()}
+        onSaveDetails={jest.fn().mockResolvedValue(undefined)}
+        onToggleFavorite={jest.fn()}
+        onEditInCurrentApp={jest.fn()}
+      />,
+    );
+
+    fireEvent.press(screen.getByRole('button', { name: 'Edit Pokémon' }));
+
+    expect(screen.queryByRole('button', { name: 'LUCKY: YES' })).toBeNull();
+    expect(screen.getByRole('button', { name: 'OBTAINED IN A TRADE: YES' })
+      .props.accessibilityState.disabled).toBe(true);
+    expect(screen.getByText('Shadow Pokémon cannot be traded until purified.')).toBeTruthy();
   });
 
   it('saves five-heart, lucky, and Most Wanted conditions natively', async () => {

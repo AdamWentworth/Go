@@ -329,10 +329,15 @@ export default function DeviceSmokeCollectionRoute() {
                   ]
                 : [],
               moves: openedRow.status === 'caught'
-                ? [
-                    { label: 'Fast move', value: 'Vine Whip' },
-                    { label: 'Charged move', value: 'Frenzy Plant' },
-                  ]
+                ? openedRow.pokemonId === 376
+                  ? [
+                      { label: 'Fast move', value: 'Bullet Punch' },
+                      { label: 'Charged move', value: 'Meteor Mash' },
+                    ]
+                  : [
+                      { label: 'Fast move', value: 'Vine Whip' },
+                      { label: 'Charged move', value: 'Frenzy Plant' },
+                    ]
                 : [],
               preferences: openedRow.status === 'wanted'
                 ? [
@@ -340,11 +345,17 @@ export default function DeviceSmokeCollectionRoute() {
                     { label: 'Lucky trade', value: 'Requested' },
                   ]
                 : [],
-              moveOptions: [
-                { id: 101, name: 'Vine Whip', kind: 'fast', legacy: false, typeName: 'Grass' },
-                { id: 102, name: 'Frenzy Plant', kind: 'charged', legacy: true, typeName: 'Grass' },
-                { id: 103, name: 'Sludge Bomb', kind: 'charged', legacy: false, typeName: 'Poison' },
-              ],
+              moveOptions: openedRow.pokemonId === 376
+                ? [
+                    { id: 101, name: 'Bullet Punch', kind: 'fast', legacy: false, typeName: 'Steel' },
+                    { id: 102, name: 'Meteor Mash', kind: 'charged', legacy: true, typeName: 'Steel' },
+                    { id: 103, name: 'Psychic', kind: 'charged', legacy: false, typeName: 'Psychic' },
+                  ]
+                : [
+                    { id: 101, name: 'Vine Whip', kind: 'fast', legacy: false, typeName: 'Grass' },
+                    { id: 102, name: 'Frenzy Plant', kind: 'charged', legacy: true, typeName: 'Grass' },
+                    { id: 103, name: 'Sludge Bomb', kind: 'charged', legacy: false, typeName: 'Poison' },
+                  ],
               backgroundOptions: [{
                 id: 9,
                 name: 'Vancouver City Safari',

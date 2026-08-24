@@ -190,6 +190,10 @@ tags:
 - tapOn: "View Shiny Shadow Venusaur"
 - assertVisible: Shiny Shadow Venusaur
 - assertVisible: Remove Favorite
+- tapOn: Close
+- tapOn: "View Shiny Metagross"
+- assertVisible: Shiny Metagross
+- assertVisible: Remove Favorite
 - tapOn: Edit Pokémon
 - assertVisible: Save Pokémon
 - assertVisible: Combat Power
@@ -206,9 +210,40 @@ tags:
     direction: DOWN
 - tapOn: Choose fast move
 - assertVisible: MOVE SELECTOR
-- assertVisible: Vine Whip
+- assertVisible: Bullet Punch
 - takeScreenshot: 06f-move-selector
 - tapOn: Close fast move selector
+- extendedWaitUntil:
+    notVisible: MOVE SELECTOR
+    timeout: 10000
+- swipe:
+    start: 50%, 82%
+    end: 50%, 18%
+    duration: 650
+- extendedWaitUntil:
+    visible: CAUGHT DETAILS
+    timeout: 10000
+- assertVisible: LUCKY
+- assertVisible: OBTAINED IN A TRADE
+- tapOn: "LUCKY: YES"
+- assertVisible: Original trainer name
+- swipe:
+    start: 50%, 82%
+    end: 50%, 28%
+    duration: 550
+- extendedWaitUntil:
+    visible: BALL CAUGHT
+    timeout: 10000
+- tapOn: "Ball caught: BEAST BALL"
+- takeScreenshot: 06g-caught-metadata-editor
+- swipe:
+    start: 50%, 18%
+    end: 50%, 82%
+    duration: 650
+- swipe:
+    start: 50%, 18%
+    end: 50%, 82%
+    duration: 650
 - scrollUntilVisible:
     element:
       text: Save Pokémon

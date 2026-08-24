@@ -97,6 +97,7 @@ export type NativeInstanceDetail = {
     imageUri: string;
   }[];
   sizeThresholds?: BasePokemon['sizes'];
+  rarity?: BasePokemon['rarity'];
 };
 
 export const buildCanonicalCollectionInstancePath = (
@@ -852,5 +853,6 @@ export const buildNativeInstanceDetail = (
     moveOptions,
     backgroundOptions,
     sizeThresholds: pokemon.sizes,
+    rarity: pokemon.rarity,
   };
 };

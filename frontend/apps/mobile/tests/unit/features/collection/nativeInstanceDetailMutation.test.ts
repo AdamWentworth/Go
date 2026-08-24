@@ -92,6 +92,10 @@ describe('persistNativeInstanceDetailMutation', () => {
         level: 40.5,
         attack_iv: 15,
         location_caught: '  Burnaby, British Columbia  ',
+        lucky: true,
+        is_traded: true,
+        original_trainer_name: '  TradePartner  ',
+        pokeball: 'beast_ball',
       },
       outbox,
       receiverClient,
@@ -106,6 +110,10 @@ describe('persistNativeInstanceDetailMutation', () => {
       level: 40.5,
       attack_iv: 15,
       location_caught: 'Burnaby, British Columbia',
+      lucky: true,
+      is_traded: true,
+      original_trainer_name: 'TradePartner',
+      pokeball: 'beast_ball',
       last_update: 200,
     }));
     expect(outbox.queue).toHaveBeenCalledTimes(1);
@@ -118,6 +126,8 @@ describe('persistNativeInstanceDetailMutation', () => {
     [{ attack_iv: 16 }, 'Attack IV must be between 0 and 15.'],
     [{ friendship_level: 6 }, 'Friendship must be between 0 and 5.'],
     [{ gender: 'Unknown' }, 'Gender selection is invalid.'],
+    [{ pokeball: 'ordinary_ball' }, 'Poké Ball selection is invalid.'],
+    [{ lucky: true, is_traded: false }, 'Lucky Pokémon are always traded.'],
   ])('rejects an invalid detail patch %#', async (patch, message) => {
     await expect(persistNativeInstanceDetailMutation({
       userId: 'user-1',
