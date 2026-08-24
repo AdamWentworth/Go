@@ -45,6 +45,10 @@ type Props = {
   inactiveTextColor?: string;
   scrollX?: Animated.Value;
   onViewChange: (view: NativePokemonHubView) => void;
+  selectionCount?: number;
+  selectionBackgroundColor?: string;
+  onClearSelection?: () => void;
+  onSelectAll?: () => void;
 };
 
 export const NativePokemonHubHeader = ({
@@ -58,10 +62,15 @@ export const NativePokemonHubHeader = ({
   inactiveTextColor = secondaryTextColor,
   scrollX,
   onViewChange,
+  selectionCount = 0,
+  selectionBackgroundColor,
+  onClearSelection,
+  onSelectAll,
 }: Props) => {
   const { width } = useWindowDimensions();
   const desktop = width >= 768;
   const selectedIndex = activeView === 'inventory' ? 0 : activeView === 'pokemon' ? 1 : 2;
+  const hasSelection = selectionCount > 0;
   const metrics = resolveNativePokemonHubIndicatorMetrics(width, selectedIndex);
   const indicatorTranslateX = scrollX?.interpolate({
     inputRange: [0, Math.max(1, width * 2)],
@@ -75,7 +84,9 @@ export const NativePokemonHubHeader = ({
       style={[
         styles.header,
         {
-          backgroundColor,
+          backgroundColor: hasSelection && selectionBackgroundColor
+            ? selectionBackgroundColor
+            : backgroundColor,
           paddingHorizontal: metrics.horizontalPadding,
         },
       ]}
@@ -85,6 +96,7 @@ export const NativePokemonHubHeader = ({
         ['pokemon', 'POKÉMON'],
         ['wishlist', 'WISHLIST'],
       ] as const).map(([key, label]) => {
+        const selectionAction = hasSelection && key !== 'pokemon';
         const selected = activeView === key;
         const tagBelongsHere = activeTag && (
           (key === 'inventory' && activeTagParent === 'caught')
@@ -95,16 +107,28 @@ export const NativePokemonHubHeader = ({
           : key === 'pokemon' ? `(${collectionCount})` : null;
         return (
           <Pressable
-            accessibilityRole="tab"
-            accessibilityState={{ selected }}
+            accessibilityRole={selectionAction ? 'button' : 'tab'}
+            accessibilityState={selectionAction ? undefined : { selected }}
             key={key}
-            onPress={() => onViewChange(key)}
+            onPress={() => {
+              if (hasSelection && key === 'inventory') onClearSelection?.();
+              else if (hasSelection && key === 'wishlist') onSelectAll?.();
+              else onViewChange(key);
+            }}
             style={({ pressed }) => [styles.tab, pressed && styles.pressedTab]}
           >
-            <Text style={[styles.tabText, desktop && styles.desktopTabText, { color: selected ? textColor : inactiveTextColor }]}>
-              {label}
+            <Text style={[
+              styles.tabText,
+              desktop && styles.desktopTabText,
+              { color: hasSelection || selected ? textColor : inactiveTextColor },
+            ]}>
+              {hasSelection && key === 'inventory'
+                ? 'X'
+                : hasSelection && key === 'wishlist'
+                  ? 'SELECT ALL'
+                  : label}
             </Text>
-            {subtext ? (
+            {(!hasSelection || key === 'pokemon') && subtext ? (
               <Text style={[styles.tabSubtext, desktop && styles.desktopTabSubtext, { color: selected ? textColor : inactiveTextColor }]}>
                 {subtext}
               </Text>
@@ -120,7 +144,9 @@ export const NativePokemonHubHeader = ({
             backgroundColor: textColor,
             left: metrics.indicatorLeft,
             width: metrics.indicatorWidth,
-            transform: [{ translateX: indicatorTranslateX }],
+            transform: [{
+              translateX: hasSelection ? metrics.tabWidth : indicatorTranslateX,
+            }],
           },
         ]}
         testID="native-pokemon-hub-indicator"

@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react-native';
+import { fireEvent, render, screen } from '@testing-library/react-native';
 import { NativeCollectionParityFixture } from '../../../../src/features/collection/parity/NativeCollectionParityFixture';
 import { COLLECTION_PARITY_FIXTURES } from '../../../../src/features/collection/parity/collectionParityFixtures';
 
@@ -153,5 +153,21 @@ describe('NativeCollectionParityFixture', () => {
     expect(screen.getByTestId('native-collection-parity-fixture')).toBeTruthy();
     expect(screen.queryByText('Save')).toBeNull();
     expect(screen.queryByText('Favorite Pokémon')).toBeNull();
+  });
+
+  it('replaces floating controls with the canonical selection action', () => {
+    const onSelectionActionPress = jest.fn();
+    render(
+      <NativeCollectionParityFixture
+        onSelectionActionPress={onSelectionActionPress}
+        selectedIds={new Set([COLLECTION_PARITY_FIXTURES[0].id])}
+        selectionAction="add"
+      />,
+    );
+
+    expect(screen.queryByLabelText('Sort by Pokédex number ascending')).toBeNull();
+    expect(screen.queryByLabelText('Open action menu')).toBeNull();
+    fireEvent.press(screen.getByRole('button', { name: /Add \(1\)/i }));
+    expect(onSelectionActionPress).toHaveBeenCalledTimes(1);
   });
 });

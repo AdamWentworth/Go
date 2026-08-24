@@ -170,4 +170,39 @@ describe('NativeCollectionHubScreen', () => {
     fireEvent.press(screen.getByRole('button', { name: 'Search' }));
     expect(onActionMenuNavigate).toHaveBeenCalledWith('/search');
   });
+
+  it('selects catalog variants in place and opens the canonical organizer', () => {
+    const onOpenEntry = jest.fn();
+    const onOrganizeCatalog = jest.fn().mockResolvedValue({ message: '1 Pokémon added.' });
+    render(
+      <SafeAreaProvider initialMetrics={{
+        frame: { x: 0, y: 0, width: 412, height: 915 },
+        insets: { top: 24, right: 0, bottom: 20, left: 0 },
+      }}>
+        <NativeCollectionHubScreen
+          assetBaseUrl="https://pokegonexus.com"
+          catalogRows={[catalogBulbasaur, catalogMewtwo]}
+          error={null}
+          inventoryTags={[inventoryTag, allCaughtTag]}
+          isLoading={false}
+          onActionMenuPress={jest.fn()}
+          onOpenEntry={onOpenEntry}
+          onOrganizeCatalog={onOrganizeCatalog}
+          onRetry={jest.fn()}
+          wishlistTags={[wishlistTag]}
+        />
+      </SafeAreaProvider>,
+    );
+
+    fireEvent.press(screen.getByRole('button', { name: 'View Bulbasaur' }));
+
+    expect(onOpenEntry).not.toHaveBeenCalled();
+    expect(screen.getByRole('button', { name: /Add \(1\)/i })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'X' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'SELECT ALL' })).toBeTruthy();
+
+    fireEvent.press(screen.getByRole('button', { name: /Add \(1\)/i }));
+    expect(screen.getByRole('header', { name: 'Add Pokémon' })).toBeTruthy();
+    expect(screen.getByText('1 selected')).toBeTruthy();
+  });
 });

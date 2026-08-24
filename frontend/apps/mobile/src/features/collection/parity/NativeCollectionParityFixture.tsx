@@ -39,6 +39,7 @@ type NativeCollectionParityFixtureProps = {
   isLoading?: boolean;
   onActionMenuPress?: () => void;
   onCardPress?: (card: CollectionParityCardFixture) => void;
+  onCardLongPress?: (card: CollectionParityCardFixture) => void;
   onClearTag?: () => void;
   onQueryChange?: (query: string) => void;
   onToggleEvolutionaryLine?: () => void;
@@ -47,6 +48,9 @@ type NativeCollectionParityFixtureProps = {
   onSortPress?: () => void;
   onTagsPress?: () => void;
   onWishlistPress?: () => void;
+  onClearSelection?: () => void;
+  onSelectAll?: () => void;
+  onSelectionActionPress?: () => void;
   activeView?: NativePokemonHubView;
   query?: string;
   sortDirection?: 'ascending' | 'descending';
@@ -57,6 +61,8 @@ type NativeCollectionParityFixtureProps = {
   tagTone?: 'caught' | 'trade' | 'favorites' | 'wanted' | 'most-wanted' | 'custom';
   theme?: CollectionParityTheme;
   showHeader?: boolean;
+  selectedIds?: ReadonlySet<string>;
+  selectionAction?: 'add' | 'organize';
 };
 
 const LIGHT = {
@@ -128,12 +134,16 @@ const CollectionParityCard = memo(function CollectionParityCard({
   card,
   cardWidth,
   onPressCard,
+  onLongPressCard,
+  selected,
   theme,
 }: {
   assetBaseUrl: string;
   card: CollectionParityCardFixture;
   cardWidth: number;
   onPressCard?: (card: CollectionParityCardFixture) => void;
+  onLongPressCard?: (card: CollectionParityCardFixture) => void;
+  selected: boolean;
   theme: CollectionParityTheme;
 }) {
   const palette = theme === 'light' ? LIGHT : DARK;
@@ -141,8 +151,10 @@ const CollectionParityCard = memo(function CollectionParityCard({
     <Pressable
       accessibilityLabel={`View ${card.name}`}
       accessibilityRole="button"
+      delayLongPress={450}
+      onLongPress={onLongPressCard ? () => onLongPressCard(card) : undefined}
       onPress={onPressCard ? () => onPressCard(card) : undefined}
-      style={[styles.card, { width: cardWidth }]}
+      style={[styles.card, selected && styles.selectedCard, { width: cardWidth }]}
       testID={`parity-card-${card.id}`}
     >
       <View style={styles.cardTopLine}>
@@ -242,6 +254,7 @@ export const NativeCollectionParityFixture = ({
   isLoading = false,
   onActionMenuPress,
   onCardPress,
+  onCardLongPress,
   onClearTag,
   onQueryChange,
   onToggleEvolutionaryLine,
@@ -250,6 +263,9 @@ export const NativeCollectionParityFixture = ({
   onSortPress,
   onTagsPress,
   onWishlistPress,
+  onClearSelection,
+  onSelectAll,
+  onSelectionActionPress,
   activeView = 'pokemon',
   query = '',
   sortDirection = 'ascending',
@@ -260,6 +276,8 @@ export const NativeCollectionParityFixture = ({
   tagTone = 'favorites',
   theme = 'dark',
   showHeader = true,
+  selectedIds = new Set<string>(),
+  selectionAction = 'organize',
 }: NativeCollectionParityFixtureProps) => {
   const { width } = useWindowDimensions();
   const [searchMenuVisible, setSearchMenuVisible] = useState(false);
@@ -301,6 +319,10 @@ export const NativeCollectionParityFixture = ({
             else onPokemonPress?.();
           }}
           secondaryTextColor={palette.secondaryText}
+          selectionBackgroundColor={theme === 'light' ? '#e3f7dc' : '#34807d'}
+          selectionCount={selectedIds.size}
+          onClearSelection={onClearSelection}
+          onSelectAll={onSelectAll}
           textColor={palette.text}
         />
       ) : null}
@@ -406,12 +428,14 @@ export const NativeCollectionParityFixture = ({
             card={item}
             cardWidth={cardWidth}
             onPressCard={onCardPress}
+            onLongPressCard={onCardLongPress}
+            selected={selectedIds.has(item.id)}
             theme={theme}
           />
         )}
       />
 
-      <Pressable
+      {selectedIds.size === 0 ? <Pressable
         accessibilityLabel={sortLabel}
         accessibilityRole="button"
         onPress={onSortPress}
@@ -436,9 +460,9 @@ export const NativeCollectionParityFixture = ({
             ]}
           />
         </View>
-      </Pressable>
+      </Pressable> : null}
 
-      <Pressable
+      {selectedIds.size === 0 ? <Pressable
         accessibilityLabel="Open action menu"
         accessibilityRole="button"
         onPress={onActionMenuPress}
@@ -450,7 +474,21 @@ export const NativeCollectionParityFixture = ({
           source={{ uri: toAssetUrl(assetBaseUrl, '/images/btn_action_menu.png') }}
           style={styles.actionMenuBall}
         />
-      </Pressable>
+      </Pressable> : null}
+
+      {selectedIds.size > 0 && onSelectionActionPress ? (
+        <View pointerEvents="box-none" style={styles.selectionActionContainer}>
+          <Pressable
+            accessibilityRole="button"
+            onPress={onSelectionActionPress}
+            style={styles.selectionActionButton}
+          >
+            <Text style={styles.selectionActionText}>
+              {selectionAction === 'add' ? '+' : '◆'} {selectionAction === 'add' ? 'Add' : 'Organize'} ({selectedIds.size})
+            </Text>
+          </Pressable>
+        </View>
+      ) : null}
     </View>
   );
 };
@@ -557,6 +595,7 @@ const styles = StyleSheet.create({
     alignSelf: 'flex-start',
     padding: 4,
   },
+  selectedCard: { borderRadius: 8, backgroundColor: '#34807d' },
   cardTopLine: { width: '100%', height: 20, alignItems: 'center', justifyContent: 'center' },
   cpDisplay: { flexDirection: 'row', alignItems: 'baseline', gap: 2 },
   cpLabel: { fontSize: 10, lineHeight: 12 },
@@ -656,4 +695,30 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
   },
   actionMenuBall: { width: 48, height: 48 },
+  selectionActionContainer: {
+    position: 'absolute',
+    right: 0,
+    bottom: 12,
+    left: 0,
+    zIndex: 30,
+    alignItems: 'center',
+    paddingHorizontal: 20,
+  },
+  selectionActionButton: {
+    width: '100%',
+    maxWidth: 520,
+    minHeight: 52,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: '#7cbcff',
+    borderRadius: 14,
+    backgroundColor: '#007bff',
+    shadowColor: '#000000',
+    shadowOpacity: 0.32,
+    shadowRadius: 14,
+    shadowOffset: { width: 0, height: 10 },
+    elevation: 8,
+  },
+  selectionActionText: { color: '#ffffff', fontSize: 16, fontWeight: '900' },
 });

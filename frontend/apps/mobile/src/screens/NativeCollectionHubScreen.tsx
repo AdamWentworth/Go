@@ -1,5 +1,5 @@
-import { useCallback, useMemo, useRef, useState } from 'react';
-import { Animated, StyleSheet, View, useColorScheme, useWindowDimensions } from 'react-native';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { Animated, StyleSheet, Text, View, useColorScheme, useWindowDimensions } from 'react-native';
 import type {
   CreateCustomTagRequest,
   CustomTagParent,
@@ -22,6 +22,8 @@ import {
 import { NativeCollectionParityScreen } from './NativeCollectionParityScreen';
 import { NativeTagsPanelScreen } from './NativeTagsPanelScreen';
 import { NativeActionMenu } from '../components/NativeActionMenu';
+import { NativePokemonOrganizerSheet } from '../features/collection/NativePokemonOrganizerSheet';
+import type { NativeCatalogOrganizerRequest } from '../features/collection/nativeCatalogMutation';
 
 const VIEW_ORDER: NativePokemonHubView[] = ['inventory', 'pokemon', 'wishlist'];
 
@@ -42,6 +44,9 @@ type Props = {
   onSaveTagOrder?: (parent: CustomTagParent, tagKeys: PokemonTagOrderKey[]) => Promise<unknown>;
   onUpdateTag?: (tagId: string, request: UpdateCustomTagRequest) => Promise<unknown>;
   isSavingTags?: boolean;
+  onOrganizeCatalog?: (request: NativeCatalogOrganizerRequest) => Promise<{ message: string }>;
+  isOrganizingCatalog?: boolean;
+  organizerError?: string | null;
 };
 
 export const NativeCollectionHubScreen = ({
@@ -61,6 +66,9 @@ export const NativeCollectionHubScreen = ({
   onSaveTagOrder,
   onUpdateTag,
   isSavingTags = false,
+  onOrganizeCatalog,
+  isOrganizingCatalog = false,
+  organizerError = null,
 }: Props) => {
   const light = useColorScheme() === 'light';
   const { width } = useWindowDimensions();
@@ -68,9 +76,16 @@ export const NativeCollectionHubScreen = ({
   const [activeView, setActiveView] = useState<NativePokemonHubView>('pokemon');
   const [selectedTag, setSelectedTag] = useState<NativeTagSummary | null>(null);
   const [actionMenuOpen, setActionMenuOpen] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [organizerOpen, setOrganizerOpen] = useState(false);
+  const [operationNotice, setOperationNotice] = useState<string | null>(null);
   const sliderRef = useRef<NativeHorizontalPageSliderHandle>(null);
   const [pageScrollX] = useState(() => new Animated.Value(width));
   const selectedRows = selectedTag?.rows ?? catalogRows;
+  const selectedCatalogRows = useMemo(
+    () => selectedRows.filter((row) => row.source === 'catalog' && selectedIds.has(row.id)),
+    [selectedIds, selectedRows],
+  );
   const inventoryCount = inventoryTags.find(
     (tag) => tag.key === 'system:caught',
   )?.rows.length ?? 0;
@@ -91,18 +106,44 @@ export const NativeCollectionHubScreen = ({
   }, []);
 
   const selectTag = useCallback((tag: NativeTagSummary) => {
+    setSelectedIds(new Set());
     setSelectedTag(tag);
     setQuery('');
     changeView('pokemon');
   }, [changeView]);
 
+  const toggleSelection = useCallback((entryId: string) => {
+    setSelectedIds((current) => {
+      const next = new Set(current);
+      if (next.has(entryId)) next.delete(entryId);
+      else next.add(entryId);
+      return next;
+    });
+  }, []);
   const openEntry = useCallback((entryId: string) => {
     const row = selectedRows.find((candidate) => candidate.id === entryId);
-    if (row) onOpenEntry(row);
-  }, [onOpenEntry, selectedRows]);
+    if (!row) return;
+    if (selectedIds.size > 0 || row.source === 'catalog') {
+      toggleSelection(entryId);
+      return;
+    }
+    onOpenEntry(row);
+  }, [onOpenEntry, selectedIds.size, selectedRows, toggleSelection]);
+  const longPressEntry = useCallback((entryId: string) => {
+    const row = selectedRows.find((candidate) => candidate.id === entryId);
+    if (row?.source === 'catalog') toggleSelection(entryId);
+  }, [selectedRows, toggleSelection]);
 
-  const clearTag = useCallback(() => setSelectedTag(null), []);
+  const clearTag = useCallback(() => {
+    setSelectedIds(new Set());
+    setSelectedTag(null);
+  }, []);
   const openActionMenu = useCallback(() => setActionMenuOpen(true), []);
+  useEffect(() => {
+    if (!operationNotice) return undefined;
+    const timer = setTimeout(() => setOperationNotice(null), 4200);
+    return () => clearTimeout(timer);
+  }, [operationNotice]);
   const inventoryPanel = useMemo(() => (
     <NativeTagsPanelScreen
       activeTagName={selectedTag?.parent === 'caught' ? selectedTag.name : null}
@@ -158,8 +199,16 @@ export const NativeCollectionHubScreen = ({
       onClearTag={clearTag}
       onViewChange={changeView}
       onOpenInstance={openEntry}
+      onLongPressInstance={longPressEntry}
       onOpenCanonicalCollection={openActionMenu}
       showHeader={false}
+      selectedIds={selectedIds}
+      onClearSelection={() => setSelectedIds(new Set())}
+      onSelectAll={() => setSelectedIds(new Set(
+        selectedRows.filter((row) => row.source === 'catalog').map((row) => row.id),
+      ))}
+      onSelectionActionPress={() => setOrganizerOpen(true)}
+      selectionAction="add"
     />
   ), [
     assetBaseUrl,
@@ -174,6 +223,8 @@ export const NativeCollectionHubScreen = ({
     catalogRows,
     selectedRows,
     selectedTag,
+    selectedIds,
+    longPressEntry,
   ]);
   const wishlistPanel = useMemo(() => (
     <NativeTagsPanelScreen
@@ -228,9 +279,20 @@ export const NativeCollectionHubScreen = ({
         inactiveTextColor={palette.headerInactive}
         onViewChange={changeView}
         scrollX={pageScrollX}
+        selectionBackgroundColor={light ? '#e3f7dc' : '#34807d'}
+        selectionCount={selectedIds.size}
+        onClearSelection={() => setSelectedIds(new Set())}
+        onSelectAll={() => setSelectedIds(new Set(
+          selectedRows.filter((row) => row.source === 'catalog').map((row) => row.id),
+        ))}
         secondaryTextColor={secondary}
         textColor={text}
       />
+      {operationNotice ? (
+        <View accessibilityLiveRegion="polite" style={styles.noticeBanner}>
+          <Text style={styles.noticeText}>{operationNotice}</Text>
+        </View>
+      ) : null}
       <NativeHorizontalPageSlider
         activeIndex={activeIndex}
         onIndexChange={(index) => setActiveView(VIEW_ORDER[index] ?? 'pokemon')}
@@ -254,10 +316,45 @@ export const NativeCollectionHubScreen = ({
           visible
         />
       ) : null}
+      {onOrganizeCatalog && organizerOpen && selectedCatalogRows.length > 0 ? (
+        <NativePokemonOrganizerSheet
+          error={organizerError}
+          inventoryTags={inventoryTags}
+          isSaving={isOrganizingCatalog}
+          onApply={async (request) => {
+            try {
+              const result = await onOrganizeCatalog(request);
+              setOrganizerOpen(false);
+              setSelectedIds(new Set());
+              setOperationNotice(result.message);
+            } catch {
+              // The mutation error is rendered inside the still-open organizer.
+            }
+          }}
+          onClose={() => setOrganizerOpen(false)}
+          rows={selectedCatalogRows}
+          visible
+          wishlistTags={wishlistTags}
+        />
+      ) : null}
     </View>
   );
 };
 
 const styles = StyleSheet.create({
   screen: { flex: 1, minHeight: 0 },
+  noticeBanner: {
+    position: 'absolute',
+    zIndex: 40,
+    top: 74,
+    right: 12,
+    left: 12,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#2fc17d',
+    borderRadius: 12,
+    padding: 11,
+    backgroundColor: '#123c2c',
+  },
+  noticeText: { color: '#c9ffe4', fontSize: 13, fontWeight: '900', textAlign: 'center' },
 });

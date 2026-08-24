@@ -1,7 +1,10 @@
 import * as Crypto from 'expo-crypto';
 import type { PokemonInstance } from '@pokemongonexus/shared-contracts/instances';
 import type { BasePokemon } from '@pokemongonexus/shared-contracts/pokemon';
-import type { PokemonCatalogEntry } from '@pokemongonexus/shared-domain/catalog';
+import {
+  buildPokemonCatalogEntries,
+  type PokemonCatalogEntry,
+} from '@pokemongonexus/shared-domain/catalog';
 import { createNativeCollectionSyncBatch } from '../../services/collectionSyncApi';
 import type { NativeCollectionSnapshot } from '../../services/collectionApi';
 import type { NativeReceiverApiClient } from '../../services/nativeApiClients';
@@ -9,6 +12,14 @@ import type { nativeCollectionOutbox } from '../../storage/nativeCollectionOutbo
 import { sendPendingNativeCollectionBatches } from './collectionSyncCoordinator';
 
 export type NativeCatalogDestination = 'caught' | 'trade' | 'wanted';
+
+export type NativeCatalogOrganizerRequest = {
+  variantIds: string[];
+  destination: NativeCatalogDestination;
+  customTagIds?: string[];
+  favorite?: boolean;
+  mostWanted?: boolean;
+};
 
 const variantSuffix = (entry: PokemonCatalogEntry): string =>
   entry.id.slice(entry.id.indexOf('-') + 1).toLowerCase();
@@ -133,6 +144,82 @@ type CollectionOutboxPort = Pick<
   typeof nativeCollectionOutbox,
   'queue' | 'list' | 'markAttemptFailed' | 'markAcknowledged' | 'removeAcknowledged'
 >;
+
+export const persistNativeCatalogAdditions = async ({
+  userId,
+  snapshot,
+  request,
+  outbox,
+  receiverClient,
+  onQueued,
+  instanceIds,
+  syncBatchId = Crypto.randomUUID(),
+  now = Date.now(),
+}: {
+  userId: string;
+  snapshot: NativeCollectionSnapshot;
+  request: NativeCatalogOrganizerRequest;
+  outbox: CollectionOutboxPort;
+  receiverClient: Pick<NativeReceiverApiClient, 'post'>;
+  onQueued?: (instances: PokemonInstance[]) => Promise<void> | void;
+  instanceIds?: string[];
+  syncBatchId?: string;
+  now?: number;
+}) => {
+  const requestedIds = [...new Set(request.variantIds.filter(Boolean))];
+  if (requestedIds.length === 0) throw new Error('Select at least one Pokémon.');
+  if (request.destination === 'trade' && request.favorite) {
+    throw new Error('Favorite Pokémon cannot be listed For Trade.');
+  }
+  if (request.destination !== 'wanted' && request.mostWanted) {
+    throw new Error('Most Wanted is only available for wanted Pokémon.');
+  }
+  const entriesById = new Map(
+    buildPokemonCatalogEntries(snapshot.catalog).map((entry) => [entry.id, entry]),
+  );
+  const pokemonById = new Map(
+    snapshot.catalog.map((pokemon) => [pokemon.pokemon_id, pokemon]),
+  );
+  const tagIds = [...new Set((request.customTagIds ?? []).filter(Boolean))];
+  const instances = requestedIds.map((variantId, index) => {
+    const entry = entriesById.get(variantId);
+    if (!entry) throw new Error(`The selected Pokémon variant ${variantId} is no longer available.`);
+    const pokemon = pokemonById.get(entry.pokemonId);
+    if (!pokemon) throw new Error(`The selected Pokémon ${entry.name} is no longer in the catalog.`);
+    const instance = createNativeInstanceFromCatalogEntry({
+      entry,
+      pokemon,
+      destination: request.destination,
+      instanceId: instanceIds?.[index] ?? Crypto.randomUUID(),
+      now: now + index,
+    });
+    return {
+      ...instance,
+      favorite: request.destination === 'caught' && Boolean(request.favorite),
+      most_wanted: request.destination === 'wanted' && Boolean(request.mostWanted),
+      caught_tags: request.destination === 'wanted' ? [] : tagIds,
+      wanted_tags: request.destination === 'wanted' ? tagIds : [],
+    } satisfies PokemonInstance;
+  });
+  const batch = createNativeCollectionSyncBatch({
+    syncBatchId,
+    location: null,
+    updates: instances.map((instance) => ({
+      ...instance,
+      instance_id: instance.instance_id!,
+    })),
+  });
+  await outbox.queue(userId, batch, now);
+  await onQueued?.(instances);
+  const sent = await sendPendingNativeCollectionBatches({ userId, outbox, receiverClient });
+  return {
+    instances,
+    syncState: sent.failedBatchId ? 'pending' as const : 'acknowledged' as const,
+    message: sent.failedBatchId
+      ? `${instances.length} Pokémon added on this device. They will sync when Receiver is available.`
+      : `${instances.length} Pokémon added. Receiver accepted the change.`,
+  };
+};
 
 export const persistNativeCatalogAddition = async ({
   userId,

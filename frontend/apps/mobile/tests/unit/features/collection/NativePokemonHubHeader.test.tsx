@@ -79,4 +79,33 @@ describe('NativePokemonHubHeader', () => {
     const halfway = resolveNativePokemonHubIndicatorMetrics(412, 1.5);
     expect(halfway.indicatorTranslateX).toBeCloseTo((392 / 3) * 1.5);
   });
+
+  it('matches the canonical fast-select header without changing pages', () => {
+    const onClearSelection = jest.fn();
+    const onSelectAll = jest.fn();
+    const onViewChange = jest.fn();
+    const view = render(
+      <NativePokemonHubHeader
+        activeView="pokemon"
+        backgroundColor="#111"
+        collectionCount={3285}
+        onClearSelection={onClearSelection}
+        onSelectAll={onSelectAll}
+        onViewChange={onViewChange}
+        secondaryTextColor="#aaa"
+        selectionBackgroundColor="#34807d"
+        selectionCount={2}
+        textColor="#fff"
+      />,
+    );
+
+    fireEvent.press(view.getByRole('button', { name: 'X' }));
+    fireEvent.press(view.getByRole('button', { name: 'SELECT ALL' }));
+
+    expect(onClearSelection).toHaveBeenCalledTimes(1);
+    expect(onSelectAll).toHaveBeenCalledTimes(1);
+    expect(onViewChange).not.toHaveBeenCalled();
+    expect(StyleSheet.flatten(view.getByTestId('native-pokemon-hub-indicator').props.style)
+      .transform[0].translateX).toBeCloseTo(392 / 3);
+  });
 });

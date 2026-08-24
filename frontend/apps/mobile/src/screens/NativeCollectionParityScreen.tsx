@@ -31,10 +31,16 @@ type NativeCollectionParityScreenProps = {
   onQueryChange: (query: string) => void;
   onRetry: () => void;
   onOpenInstance: (instanceId: string) => void;
+  onLongPressInstance?: (instanceId: string) => void;
   onOpenCanonicalCollection: () => void;
   onClearTag: () => void;
   onViewChange: (view: NativePokemonHubView) => void;
   showHeader?: boolean;
+  selectedIds?: ReadonlySet<string>;
+  onClearSelection?: () => void;
+  onSelectAll?: () => void;
+  onSelectionActionPress?: () => void;
+  selectionAction?: 'add' | 'organize';
 };
 
 const SORT_ICONS: Record<NativeCollectionSort, string> = {
@@ -76,10 +82,16 @@ export const NativeCollectionParityScreen = ({
   onQueryChange,
   onRetry,
   onOpenInstance,
+  onLongPressInstance,
   onOpenCanonicalCollection,
   onClearTag,
   onViewChange,
   showHeader = true,
+  selectedIds = new Set<string>(),
+  onClearSelection,
+  onSelectAll,
+  onSelectionActionPress,
+  selectionAction = 'organize',
 }: NativeCollectionParityScreenProps) => {
   const colorScheme = useColorScheme();
   const [sort, setSort] = useState<NativeCollectionSort>('number');
@@ -115,6 +127,7 @@ export const NativeCollectionParityScreen = ({
         isLoading={isLoading}
         onActionMenuPress={onOpenCanonicalCollection}
         onCardPress={(card) => onOpenInstance(card.id)}
+        onCardLongPress={onLongPressInstance ? (card) => onLongPressInstance(card.id) : undefined}
         customTagColor={activeTag?.color}
         onClearTag={onClearTag}
         onQueryChange={onQueryChange}
@@ -124,6 +137,9 @@ export const NativeCollectionParityScreen = ({
         onPokemonPress={() => onViewChange('pokemon')}
         onTagsPress={() => onViewChange('inventory')}
         onWishlistPress={() => onViewChange('wishlist')}
+        onClearSelection={onClearSelection}
+        onSelectAll={onSelectAll}
+        onSelectionActionPress={onSelectionActionPress}
         query={query}
         sortDirection={direction}
         sortIconPath={SORT_ICONS[sort]}
@@ -133,6 +149,8 @@ export const NativeCollectionParityScreen = ({
         tagTone={activeTag?.tone ?? 'caught'}
         theme={theme}
         showHeader={showHeader}
+        selectedIds={selectedIds}
+        selectionAction={selectionAction}
       />
 
       <NativeCollectionSortMenu

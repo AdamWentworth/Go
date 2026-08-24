@@ -3,12 +3,17 @@ import type { PokemonCatalogEntry } from '@pokemongonexus/shared-domain/catalog'
 import {
   createNativeInstanceFromCatalogEntry,
   persistNativeCatalogAddition,
+  persistNativeCatalogAdditions,
 } from '../../../../src/features/collection/nativeCatalogMutation';
 
 const pokemon = {
   pokemon_id: 6,
   name: 'Charizard',
   pokedex_number: 6,
+  image_url: '/images/charizard.png',
+  image_url_shiny: '/images/shiny-charizard.png',
+  shiny_available: true,
+  max: [{ dynamax: true }],
   costumes: [],
   megaEvolutions: [],
   fusion: [],
@@ -99,5 +104,93 @@ describe('native catalog additions', () => {
     );
     expect(onQueued).toHaveBeenCalledWith(expect.objectContaining({ instance_id: 'instance-1' }));
     expect(result.syncState).toBe('acknowledged');
+  });
+
+  it('organizes multiple catalog variants in one Receiver batch with canonical tag state', async () => {
+    const outbox = outboxStore();
+    outbox.list.mockImplementation(async () => {
+      const queued = outbox.queue.mock.calls[0];
+      if (!queued) return [];
+      return [{
+        userId: queued[0],
+        batch: queued[1],
+        state: 'pending',
+        createdAt: queued[2],
+        updatedAt: queued[2],
+        attemptCount: 0,
+        lastError: null,
+        acknowledgedAt: null,
+      }];
+    });
+    const receiverClient = { post: jest.fn().mockResolvedValue({ message: 'accepted' }) };
+    const onQueued = jest.fn();
+
+    const result = await persistNativeCatalogAdditions({
+      userId: 'user-1',
+      snapshot: { instances: {}, catalog: [pokemon] },
+      request: {
+        variantIds: ['0006-default', '0006-shiny_dynamax'],
+        destination: 'wanted',
+        customTagIds: ['tag-priority'],
+        mostWanted: true,
+      },
+      outbox,
+      receiverClient,
+      onQueued,
+      instanceIds: ['instance-1', 'instance-2'],
+      syncBatchId: 'batch-1',
+      now: 100,
+    });
+
+    expect(outbox.queue).toHaveBeenCalledTimes(1);
+    expect(outbox.queue.mock.calls[0][1].pokemonUpdates).toHaveLength(2);
+    expect(onQueued).toHaveBeenCalledWith([
+      expect.objectContaining({
+        instance_id: 'instance-1',
+        is_wanted: true,
+        most_wanted: true,
+        wanted_tags: ['tag-priority'],
+      }),
+      expect.objectContaining({
+        instance_id: 'instance-2',
+        is_wanted: true,
+        most_wanted: true,
+        wanted_tags: ['tag-priority'],
+      }),
+    ]);
+    expect(receiverClient.post).toHaveBeenCalledTimes(1);
+    expect(result.syncState).toBe('acknowledged');
+  });
+
+  it('rejects incompatible organizer combinations before touching the outbox', async () => {
+    const outbox = outboxStore();
+    const receiverClient = { post: jest.fn() };
+
+    await expect(persistNativeCatalogAdditions({
+      userId: 'user-1',
+      snapshot: { instances: {}, catalog: [pokemon] },
+      request: {
+        variantIds: ['0006-default'],
+        destination: 'trade',
+        favorite: true,
+      },
+      outbox,
+      receiverClient,
+    })).rejects.toThrow('Favorite Pokémon cannot be listed For Trade');
+
+    await expect(persistNativeCatalogAdditions({
+      userId: 'user-1',
+      snapshot: { instances: {}, catalog: [pokemon] },
+      request: {
+        variantIds: ['0006-default'],
+        destination: 'caught',
+        mostWanted: true,
+      },
+      outbox,
+      receiverClient,
+    })).rejects.toThrow('Most Wanted is only available for wanted Pokémon');
+
+    expect(outbox.queue).not.toHaveBeenCalled();
+    expect(receiverClient.post).not.toHaveBeenCalled();
   });
 });
