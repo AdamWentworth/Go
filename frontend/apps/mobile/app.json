@@ -20,6 +20,12 @@
     },
     "web": {
       "favicon": "./assets/favicon.png"
-    }
+    },
+    "extra": {
+      "eas": {
+        "projectId": "2cfa50a9-11e0-454b-8147-45963ff70432"
+      }
+    },
+    "owner": "adamwentworth"
   }
 }
