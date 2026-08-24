@@ -25,6 +25,19 @@ describe('MobileAppRoot', () => {
     expect(screen.queryByText('Your collection')).toBeNull();
   });
 
+  it('opens only the isolated collection fixture from the parity lab', () => {
+    const onOpenCollectionParityCandidate = jest.fn();
+    render(
+      <MobileAppRoot
+        experienceMode="native-preview"
+        onOpenCollectionParityCandidate={onOpenCollectionParityCandidate}
+      />,
+    );
+
+    fireEvent.press(screen.getByText('Review collection shell'));
+    expect(onOpenCollectionParityCandidate).toHaveBeenCalledTimes(1);
+  });
+
   it('lets the parity lab return directly to the canonical app', () => {
     render(<MobileAppRoot experienceMode="native-preview" />);
 

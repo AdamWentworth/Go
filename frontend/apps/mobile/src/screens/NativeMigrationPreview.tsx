@@ -2,24 +2,35 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { theme } from '../ui/theme';
 
 type NativeMigrationPreviewProps = {
+  onOpenCollectionParityCandidate?: () => void;
   onOpenWebExperience: () => void;
 };
 
 export const NativeMigrationPreview = ({
+  onOpenCollectionParityCandidate,
   onOpenWebExperience,
 }: NativeMigrationPreviewProps) => (
   <View testID="native-parity-lab" style={styles.container}>
     <Text style={styles.eyebrow}>DEVELOPMENT PARITY LAB</Text>
-    <Text style={styles.title}>No native workflow is ready for review</Text>
+    <Text style={styles.title}>Collection shell ready for comparison</Text>
     <Text style={styles.body}>
-      The current app remains the specification. A native workflow will only
-      appear here after it passes its automated parity gates.
+      This is an isolated visual fixture, not your collection. Compare it with
+      the current app before any live data or actions are connected.
     </Text>
     <View style={styles.actions}>
+      {onOpenCollectionParityCandidate ? (
+        <Pressable
+          accessibilityRole="button"
+          onPress={onOpenCollectionParityCandidate}
+          style={styles.button}
+        >
+          <Text style={styles.buttonText}>Review collection shell</Text>
+        </Pressable>
+      ) : null}
       <Pressable
         accessibilityRole="button"
         onPress={onOpenWebExperience}
-        style={styles.button}
+        style={[styles.button, styles.secondaryButton]}
       >
         <Text style={styles.buttonText}>Open canonical app</Text>
       </Pressable>
@@ -66,6 +77,11 @@ const styles = StyleSheet.create({
     width: '100%',
     maxWidth: 320,
     gap: theme.spacing.sm,
+  },
+  secondaryButton: {
+    borderWidth: 1,
+    borderColor: '#64748b',
+    backgroundColor: '#1e293b',
   },
   buttonText: {
     color: '#fff',

@@ -11,11 +11,24 @@ development parity lab and provides one path back to the canonical app. It must
 not expose the earlier approximate collection grid or describe it as **Your
 collection**.
 
-The next device checklist will be added only after the hidden collection shell
-passes the automated gates in `COLLECTION_PARITY_CONTRACT.md`. Until then, Pixel
-testing should confirm only that the production/default mode opens the canonical
-application and that the development lab cannot be confused with a finished
-feature.
+The lab currently contains one deterministic, read-only **collection shell**
+candidate. It has no account data or working collection actions. Compare it on
+the Pixel against the canonical `/pokemon` page at the same width:
+
+1. Confirm the three header tabs have the same order, density, type hierarchy,
+   and active underline.
+2. Confirm the idle search field and Favorites chip occupy the same perceived
+   space and position.
+3. Confirm exactly three compact Pokémon cards fit per row at Pixel portrait
+   width, without dashboard-style card frames or status badges.
+4. Compare CP, priority stars, image scale, Pokémon number, type icons, wrapped
+   names, lucky/background layers, and Gigantamax badge placement.
+5. Repeat in the Pixel's light and dark system themes.
+6. Confirm Android Back returns to the parity lab and **Open canonical app**
+   returns to the current application.
+
+Any noticeable mismatch fails this candidate. Do not test live edits, caching,
+or instance overlays yet; they are deliberately not connected.
 
 ## Preconditions
 
