@@ -3,7 +3,10 @@ import type {
   BasePokemon,
   PokemonMovesChunk,
 } from '@pokemongonexus/shared-contracts/pokemon';
-import { resolveInstanceCollectionKey } from '@pokemongonexus/shared-domain/instances';
+import {
+  parseBackgroundId,
+  resolveInstanceCollectionKey,
+} from '@pokemongonexus/shared-domain/instances';
 
 export type NativeCollectionFilter = 'all' | 'caught' | 'trade' | 'wanted';
 
@@ -17,6 +20,10 @@ export type NativeCollectionRow = {
   cp: number | null;
   favorite: boolean;
   mostWanted: boolean;
+  locationBackgroundUri: string | null;
+  luckyBackdropUri: string | null;
+  maxBadgeUri: string | null;
+  typeIconUris: string[];
 };
 
 export type NativeInstanceDetail = {
@@ -162,6 +169,30 @@ const absoluteImageUri = (image: string | null, assetOrigin: string): string | n
   }
 };
 
+const resolveNativeLocationBackground = (
+  instance: PokemonInstance,
+  pokemon: BasePokemon,
+  assetOrigin: string,
+): string | null => {
+  const backgroundId = parseBackgroundId(instance.location_card);
+  if (backgroundId == null) return null;
+  const background = pokemon.backgrounds?.find((entry) => entry.background_id === backgroundId);
+  return absoluteImageUri(background?.image_url ?? null, assetOrigin);
+};
+
+const resolveNativeMaxBadge = (
+  instance: PokemonInstance,
+  assetOrigin: string,
+): string | null => {
+  if (instance.gigantamax) {
+    return absoluteImageUri('/images/gigantamax-icon.png', assetOrigin);
+  }
+  if (instance.dynamax) {
+    return absoluteImageUri('/images/dynamax-icon.png', assetOrigin);
+  }
+  return null;
+};
+
 export const buildNativeCollectionRows = (
   instances: Record<string, PokemonInstance>,
   catalog: BasePokemon[],
@@ -185,6 +216,15 @@ export const buildNativeCollectionRows = (
         cp: instance.cp,
         favorite: instance.favorite,
         mostWanted: instance.most_wanted,
+        locationBackgroundUri: resolveNativeLocationBackground(instance, pokemon, assetOrigin),
+        luckyBackdropUri:
+          instance.lucky || (status === 'wanted' && instance.pref_lucky)
+            ? absoluteImageUri('/images/lucky.png', assetOrigin)
+            : null,
+        maxBadgeUri: resolveNativeMaxBadge(instance, assetOrigin),
+        typeIconUris: [pokemon.type_1_icon, pokemon.type_2_icon]
+          .map((icon) => absoluteImageUri(icon || null, assetOrigin))
+          .filter((icon): icon is string => icon != null),
       } satisfies NativeCollectionRow];
     })
     .sort((left, right) =>

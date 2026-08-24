@@ -79,7 +79,17 @@ const pokemon = {
   image_url_shiny: '/images/charizard-shiny.png',
   image_url_shadow: '/images/charizard-shadow.png',
   image_url_shiny_shadow: '/images/charizard-shiny-shadow.png',
+  type_1_icon: '/images/types/fire.png',
+  type_2_icon: '/images/types/flying.png',
   costumes: [],
+  backgrounds: [{
+    background_id: 44,
+    image_url: '/images/backgrounds/vancouver.png',
+    name: 'Vancouver',
+    costume_id: null,
+    date: '2026-08-23',
+    location: 'Vancouver',
+  }],
   megaEvolutions: [],
   fusion: [],
   max: [{
@@ -119,6 +129,29 @@ describe('native collection model', () => {
     ]);
     expect(filterNativeCollectionRows(rows, 'all', '0006')).toHaveLength(0);
     expect(filterNativeCollectionRows(rows, 'all', '6')).toHaveLength(2);
+  });
+
+  it('projects the canonical location, lucky, Max, and type visuals into native cards', () => {
+    const [row] = buildNativeCollectionRows({
+      wanted: instance({
+        instance_id: 'wanted',
+        is_caught: false,
+        is_wanted: true,
+        pref_lucky: true,
+        gigantamax: true,
+        location_card: '44',
+      }),
+    }, [pokemon], 'https://pokegonexus.com');
+
+    expect(row).toEqual(expect.objectContaining({
+      locationBackgroundUri: 'https://pokegonexus.com/images/backgrounds/vancouver.png',
+      luckyBackdropUri: 'https://pokegonexus.com/images/lucky.png',
+      maxBadgeUri: 'https://pokegonexus.com/images/gigantamax-icon.png',
+      typeIconUris: [
+        'https://pokegonexus.com/images/types/fire.png',
+        'https://pokegonexus.com/images/types/flying.png',
+      ],
+    }));
   });
 
   it('builds a native detail model from shared instance identity and move metadata', () => {
