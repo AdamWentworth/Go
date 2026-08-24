@@ -11,7 +11,7 @@ import {
   View,
   useColorScheme,
 } from 'react-native';
-import { useMemo, useState } from 'react';
+import { memo, useCallback, useMemo, useState } from 'react';
 import Svg, { Defs, LinearGradient, Rect, Stop } from 'react-native-svg';
 import type {
   CreateCustomTagRequest,
@@ -105,25 +105,25 @@ const NativeTagPreviewBackground = ({ colors }: { colors: TagGradient }) => (
   </View>
 );
 
-const NativeTagCard = ({
+const NativeTagCard = memo(function NativeTagCard({
   assetBaseUrl,
   light,
   tag,
-  onPress,
-  onEdit,
+  onPressTag,
+  onEditTag,
   reorder,
 }: {
   assetBaseUrl: string;
   light: boolean;
   tag: NativeTagSummary;
-  onPress: () => void;
-  onEdit?: () => void;
+  onPressTag: (tag: NativeTagSummary) => void;
+  onEditTag?: (tag: NativeTagSummary) => void;
   reorder?: {
     index: number;
     count: number;
     onMove: (sourceIndex: number, targetIndex: number) => void;
   };
-}) => {
+}) {
   const cardSurface = light ? '#f8fff9' : '#222222';
   const titleColor = light ? '#405753' : '#ffffff';
   const subtitleColor = light ? '#405753' : '#dddddd';
@@ -144,7 +144,7 @@ const NativeTagCard = ({
         accessibilityLabel={`Open ${tag.name}, ${tag.rows.length} Pokémon`}
         accessibilityRole="button"
         disabled={Boolean(reorder)}
-        onPress={onPress}
+        onPress={() => onPressTag(tag)}
         style={({ pressed }) => pressed && !reorder ? styles.pressed : null}
       >
       <View style={styles.preview} pointerEvents="none">
@@ -203,13 +203,13 @@ const NativeTagCard = ({
             onDragStart={() => setDragging(true)}
             onMove={reorder.onMove}
           />
-        ) : tag.tone === 'custom' && onEdit ? (
+        ) : tag.tone === 'custom' && onEditTag ? (
           <Pressable
             accessibilityLabel={`Edit ${tag.name}`}
             accessibilityRole="button"
             onPress={(event) => {
               event?.stopPropagation?.();
-              onEdit();
+              onEditTag(tag);
             }}
             style={[styles.editButton, { borderColor: `${tag.color}8f`, backgroundColor: `${tag.color}24` }]}
           >
@@ -220,7 +220,7 @@ const NativeTagCard = ({
       </Pressable>
     </Animated.View>
   );
-};
+});
 
 const NativeTagDragGrip = ({
   count,
@@ -323,6 +323,9 @@ export const NativeTagsPanelScreen = ({
       return tag ? [tag] : [];
     });
   }, [draftKeys, reordering, tags]);
+  const openTagEditor = useCallback((tag: NativeTagSummary) => {
+    setEditingTag(definitionFromSummary(tag));
+  }, []);
 
   const startReordering = () => {
     setOperationError(null);
@@ -366,7 +369,12 @@ export const NativeTagsPanelScreen = ({
         accessibilityLabel={parent === 'caught' ? 'Inventory tags' : 'Wanted tags'}
         contentContainerStyle={styles.list}
         data={orderedTags}
+        initialNumToRender={3}
         keyExtractor={(tag) => tag.key}
+        maxToRenderPerBatch={3}
+        removeClippedSubviews
+        updateCellsBatchingPeriod={48}
+        windowSize={3}
         ListHeaderComponent={(
           <View style={styles.listHeader}>
             <View style={styles.toolbar}>
@@ -418,8 +426,8 @@ export const NativeTagsPanelScreen = ({
           <NativeTagCard
             assetBaseUrl={assetBaseUrl}
             light={light}
-            onPress={() => onSelectTag(item)}
-            onEdit={item.tone === 'custom' ? () => setEditingTag(definitionFromSummary(item)) : undefined}
+            onPressTag={onSelectTag}
+            onEditTag={item.tone === 'custom' ? openTagEditor : undefined}
             reorder={reordering ? {
               index: orderedTags.findIndex((tag) => tag.key === item.key),
               count: orderedTags.length,

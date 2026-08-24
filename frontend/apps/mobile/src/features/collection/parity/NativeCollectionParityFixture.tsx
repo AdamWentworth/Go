@@ -8,7 +8,7 @@ import {
   View,
   useWindowDimensions,
 } from 'react-native';
-import { useState } from 'react';
+import { memo, useState } from 'react';
 import { webCssVarTokens } from '@pokemongonexus/shared-ui-tokens';
 import type {
   CollectionParityCardFixture,
@@ -118,25 +118,25 @@ const toAssetUrl = (baseUrl: string, path: string): string => {
   return `${baseUrl.replace(/\/$/, '')}/${path.replace(/^\//, '')}`;
 };
 
-const CollectionParityCard = ({
+const CollectionParityCard = memo(function CollectionParityCard({
   assetBaseUrl,
   card,
   cardWidth,
-  onPress,
+  onPressCard,
   theme,
 }: {
   assetBaseUrl: string;
   card: CollectionParityCardFixture;
   cardWidth: number;
-  onPress?: () => void;
+  onPressCard?: (card: CollectionParityCardFixture) => void;
   theme: CollectionParityTheme;
-}) => {
+}) {
   const palette = theme === 'light' ? LIGHT : DARK;
   return (
     <Pressable
       accessibilityLabel={`View ${card.name}`}
       accessibilityRole="button"
-      onPress={onPress}
+      onPress={onPressCard ? () => onPressCard(card) : undefined}
       style={[styles.card, { width: cardWidth }]}
       testID={`parity-card-${card.id}`}
     >
@@ -225,7 +225,7 @@ const CollectionParityCard = ({
       </Text>
     </Pressable>
   );
-};
+});
 
 export const NativeCollectionParityFixture = ({
   assetBaseUrl = 'https://pokegonexus.com',
@@ -303,9 +303,14 @@ export const NativeCollectionParityFixture = ({
         columnWrapperStyle={styles.gridRow}
         contentContainerStyle={styles.listContent}
         data={searchMenuVisible ? [] : cards}
+        initialNumToRender={18}
         key={columns}
         keyExtractor={(item) => item.id}
+        maxToRenderPerBatch={18}
         numColumns={columns}
+        removeClippedSubviews
+        updateCellsBatchingPeriod={32}
+        windowSize={5}
         ListHeaderComponent={(
           <View style={styles.collectionControls}>
             <NativeCollectionSearchControls
@@ -394,7 +399,7 @@ export const NativeCollectionParityFixture = ({
             assetBaseUrl={assetBaseUrl}
             card={item}
             cardWidth={cardWidth}
-            onPress={onCardPress ? () => onCardPress(item) : undefined}
+            onPressCard={onCardPress}
             theme={theme}
           />
         )}
