@@ -78,6 +78,10 @@ type NativeInstanceEditDraft = {
   maxAttack: number | null;
   maxGuard: number | null;
   maxSpirit: number | null;
+  megaEnabled: boolean;
+  megaForm: string | null;
+  crowned: boolean;
+  crownForm: string | null;
 };
 
 const editableNumber = (value: unknown): string => (
@@ -99,6 +103,12 @@ const resolveWantedSizeClass = (
   if (value > sizes[`${metric}_xl_threshold`]) return 'XL';
   return null;
 };
+
+const hasPotentialMaxMoveAccess = (detail: NativeInstanceDetail): boolean => Boolean(
+  detail.row.maxKind
+  || detail.specialMaxBaseEligible
+  || (detail.crownOptions?.length ?? 0) > 0,
+);
 
 const createEditDraft = (detail: NativeInstanceDetail): NativeInstanceEditDraft => ({
   nickname: detail.instance?.nickname
@@ -131,15 +141,19 @@ const createEditDraft = (detail: NativeInstanceDetail): NativeInstanceEditDraft 
   pokeball: detail.instance?.pokeball ?? null,
   shadow: Boolean(detail.instance?.shadow && !detail.instance?.purified),
   purified: Boolean(detail.instance?.purified),
-  maxAttack: detail.row.maxKind
+  maxAttack: hasPotentialMaxMoveAccess(detail)
     ? Number(detail.instance?.max_attack ?? 1)
     : null,
-  maxGuard: detail.row.maxKind
+  maxGuard: hasPotentialMaxMoveAccess(detail)
     ? Number(detail.instance?.max_guard ?? 0)
     : null,
-  maxSpirit: detail.row.maxKind
+  maxSpirit: hasPotentialMaxMoveAccess(detail)
     ? Number(detail.instance?.max_spirit ?? 0)
     : null,
+  megaEnabled: Boolean(detail.instance?.is_mega),
+  megaForm: detail.instance?.mega_form ?? detail.megaOptions?.[0]?.form ?? null,
+  crowned: Boolean(detail.instance?.crown),
+  crownForm: detail.instance?.fusion_form ?? detail.crownOptions?.[0]?.form ?? null,
 });
 
 const BALL_OPTIONS = [
@@ -972,6 +986,42 @@ const MaxMoveLevelPicker = ({
   );
 };
 
+const PowerFormOption = ({
+  imageUri,
+  label,
+  selected,
+  palette,
+  onPress,
+}: {
+  imageUri: string | null;
+  label: string;
+  selected: boolean;
+  palette: typeof LIGHT;
+  onPress: () => void;
+}) => (
+  <Pressable
+    accessibilityLabel={`Power form: ${label}`}
+    accessibilityRole="button"
+    accessibilityState={{ selected }}
+    onPress={onPress}
+    style={[
+      styles.powerFormOption,
+      { borderColor: selected ? '#5faeff' : palette.border },
+      selected && styles.powerFormOptionSelected,
+    ]}
+  >
+    {imageUri ? (
+      <Image
+        accessibilityElementsHidden
+        resizeMode="contain"
+        source={{ uri: imageUri }}
+        style={styles.powerFormImage}
+      />
+    ) : null}
+    <Text numberOfLines={2} style={[styles.powerFormLabel, { color: palette.text }]}>{label}</Text>
+  </Pressable>
+);
+
 const NativePowerControls = ({
   assetBaseUrl,
   detail,
@@ -995,12 +1045,19 @@ const NativePowerControls = ({
     || draft.shadow
     || draft.purified,
   );
+  const supportsMega = !isWanted
+    && !draft.shadow
+    && (detail.megaOptions?.length ?? 0) > 0
+    && !detail.row.name.toLowerCase().includes('clone');
+  const supportsCrown = !isWanted
+    && !draft.shadow
+    && (detail.crownOptions?.length ?? 0) > 0;
   const supportsMaxMoves = !isWanted
-    && Boolean(detail.row.maxKind)
+    && Boolean(detail.row.maxKind || detail.specialMaxBaseEligible || draft.crowned)
     && !draft.shadow
     && !draft.purified
     && detail.instance?.costume_id == null;
-  if (!supportsShadowState && !supportsMaxMoves) return null;
+  if (!supportsShadowState && !supportsMega && !supportsCrown && !supportsMaxMoves) return null;
 
   return (
     <View style={[styles.powerPanel, { borderColor: palette.border }]}>
@@ -1047,13 +1104,61 @@ const NativePowerControls = ({
           </Text>
         </View>
       ) : null}
+      {supportsMega ? (
+        <View style={styles.editFieldGroup}>
+          <Text style={[styles.powerTitle, { color: palette.text }]}>Mega Evolution</Text>
+          <View style={styles.powerFormOptions}>
+            <PowerFormOption
+              imageUri={detail.appearanceImageUris?.base ?? detail.row.imageUri}
+              label="Base form"
+              onPress={() => onChange({ megaEnabled: false, megaForm: null })}
+              palette={palette}
+              selected={!draft.megaEnabled}
+            />
+            {(detail.megaOptions ?? []).map((option) => (
+              <PowerFormOption
+                imageUri={option.imageUri}
+                key={`${option.label}-${option.form ?? 'default'}`}
+                label={option.label}
+                onPress={() => onChange({ megaEnabled: true, megaForm: option.form })}
+                palette={palette}
+                selected={draft.megaEnabled && draft.megaForm === option.form}
+              />
+            ))}
+          </View>
+        </View>
+      ) : null}
+      {supportsCrown ? (
+        <View style={styles.editFieldGroup}>
+          <Text style={[styles.powerTitle, { color: palette.text }]}>Crowned Form</Text>
+          <View style={styles.powerFormOptions}>
+            <PowerFormOption
+              imageUri={detail.appearanceImageUris?.base ?? detail.row.imageUri}
+              label="Hero form"
+              onPress={() => onChange({ crowned: false })}
+              palette={palette}
+              selected={!draft.crowned}
+            />
+            {(detail.crownOptions ?? []).map((option) => (
+              <PowerFormOption
+                imageUri={option.imageUri}
+                key={`${option.label}-${option.form ?? 'default'}`}
+                label={option.label}
+                onPress={() => onChange({ crowned: true, crownForm: option.form })}
+                palette={palette}
+                selected={draft.crowned && draft.crownForm === option.form}
+              />
+            ))}
+          </View>
+        </View>
+      ) : null}
       {supportsMaxMoves ? (
         <View style={styles.maxMovesPanel}>
           <View style={styles.maxMovesHeading}>
             <Image
               accessibilityElementsHidden
               resizeMode="contain"
-              source={{ uri: toAssetUrl(assetBaseUrl, `/images/${detail.row.maxKind}.png`) }}
+              source={{ uri: toAssetUrl(assetBaseUrl, `/images/${detail.row.maxKind ?? 'dynamax'}.png`) }}
               style={styles.maxMovesIcon}
             />
             <View>
@@ -1400,11 +1505,19 @@ export const NativeInstanceDetailScreen = ({
   const displayShadow = editing ? activeDraft.shadow : Boolean(instance?.shadow && !instance?.purified);
   const displayPurified = editing ? activeDraft.purified : Boolean(instance?.purified);
   const displayImageUri = editing
-    ? displayShadow
+    ? activeDraft.megaEnabled
+      ? detail.megaOptions?.find((option) => option.form === activeDraft.megaForm)?.imageUri
+        ?? detail.megaOptions?.[0]?.imageUri
+        ?? detail.row.imageUri
+      : activeDraft.crowned
+        ? detail.crownOptions?.find((option) => option.form === activeDraft.crownForm)?.imageUri
+          ?? detail.crownOptions?.[0]?.imageUri
+          ?? detail.row.imageUri
+        : displayShadow
       ? detail.appearanceImageUris?.shadow ?? detail.row.imageUri
       : displayPurified
         ? detail.appearanceImageUris?.purified ?? detail.row.imageUri
-        : detail.row.imageUri
+        : detail.appearanceImageUris?.base ?? detail.row.imageUri
     : detail.row.imageUri;
   const selectedLocationBackgroundUri = editing
     ? detail.backgroundOptions?.find((option) => String(option.id) === activeDraft.locationCard)?.imageUri ?? null
@@ -1483,9 +1596,20 @@ export const NativeInstanceDetailScreen = ({
             pokeball: activeDraft.pokeball,
             shadow: isCaught ? activeDraft.shadow : instance?.shadow,
             purified: isCaught ? activeDraft.purified : instance?.purified,
-            max_attack: detail.row.maxKind ? activeDraft.maxAttack : instance?.max_attack,
-            max_guard: detail.row.maxKind ? activeDraft.maxGuard : instance?.max_guard,
-            max_spirit: detail.row.maxKind ? activeDraft.maxSpirit : instance?.max_spirit,
+            max_attack: detail.row.maxKind || detail.specialMaxBaseEligible || activeDraft.crowned
+              ? activeDraft.maxAttack
+              : instance?.max_attack,
+            max_guard: detail.row.maxKind || detail.specialMaxBaseEligible || activeDraft.crowned
+              ? activeDraft.maxGuard
+              : instance?.max_guard,
+            max_spirit: detail.row.maxKind || detail.specialMaxBaseEligible || activeDraft.crowned
+              ? activeDraft.maxSpirit
+              : instance?.max_spirit,
+            mega: activeDraft.megaEnabled,
+            is_mega: activeDraft.megaEnabled,
+            mega_form: activeDraft.megaEnabled ? activeDraft.megaForm : null,
+            crown: activeDraft.crowned,
+            fusion_form: activeDraft.crowned ? activeDraft.crownForm : null,
           };
       await onSaveDetails(patch);
       setEditingInstanceId(null);
@@ -1567,7 +1691,7 @@ export const NativeInstanceDetailScreen = ({
                   accessibilityElementsHidden
                   resizeMode="contain"
                   source={{ uri: toAssetUrl(assetBaseUrl, editing ? '/images/save-icon.png' : '/images/edit-icon.png') }}
-                  style={[styles.editImage, { tintColor: palette.text }]}
+                  style={[styles.editImage, styles.stageHeaderIcon]}
                 />
               </Pressable>
               {isCaught && cp != null && !editing ? (
@@ -1585,7 +1709,7 @@ export const NativeInstanceDetailScreen = ({
                       accessibilityElementsHidden
                       resizeMode="contain"
                       source={{ uri: toAssetUrl(assetBaseUrl, '/images/location.png') }}
-                      style={[styles.editImage, { tintColor: palette.text }]}
+                      style={[styles.editImage, styles.stageHeaderIcon]}
                     />
                   </Pressable>
                 ) : <View style={styles.iconButton} />
@@ -1889,6 +2013,13 @@ const styles = StyleSheet.create({
   headerRow: { zIndex: 7, width: '100%', minHeight: 52, flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', paddingHorizontal: 12 },
   iconButton: { minWidth: 48, minHeight: 48, alignItems: 'center', justifyContent: 'center' },
   editImage: { width: 42, height: 42 },
+  stageHeaderIcon: {
+    tintColor: '#ffffff',
+    shadowColor: '#000000',
+    shadowOpacity: 0.42,
+    shadowRadius: 3,
+    shadowOffset: { width: 0, height: 1 },
+  },
   cpText: { paddingTop: 3, fontSize: 18, fontWeight: '500' },
   favoriteIcon: { color: '#ffffff', fontSize: 48, lineHeight: 50, fontWeight: '300' },
   favoriteSelected: { color: '#ffd000' },
@@ -2031,6 +2162,22 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(127,145,141,0.09)',
   },
   powerTitle: { fontSize: 14, fontWeight: '900' },
+  powerFormOptions: { flexDirection: 'row', flexWrap: 'wrap', gap: 7 },
+  powerFormOption: {
+    width: '31.8%',
+    minWidth: 92,
+    minHeight: 104,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 3,
+    paddingHorizontal: 5,
+    paddingVertical: 6,
+    borderWidth: 1,
+    borderRadius: 9,
+  },
+  powerFormOptionSelected: { backgroundColor: 'rgba(40,137,226,0.18)' },
+  powerFormImage: { width: 62, height: 62 },
+  powerFormLabel: { fontSize: 11, lineHeight: 13, fontWeight: '900', textAlign: 'center' },
   shadowOptionSelected: { backgroundColor: 'rgba(103,76,184,0.25)' },
   maxMovesPanel: { width: '100%', gap: 9 },
   maxMovesHeading: { flexDirection: 'row', alignItems: 'center', gap: 8 },

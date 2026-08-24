@@ -1,0 +1,29 @@
+appId: host.exp.exponent
+name: Native Mega form editing smoke
+tags:
+  - android
+  - native-instance
+  - mega-editing
+---
+- openLink:
+    link: exp://10.0.2.2:8091/--/device-smoke/collection?instance=smoke-metagross
+- runFlow:
+    when:
+      visible: "This is the developer menu.*"
+    commands:
+      - tapOn: Continue
+- runFlow:
+    when:
+      visible: React Native dev menu
+    commands:
+      - tapOn: Close
+- extendedWaitUntil:
+    visible: Shiny Metagross
+    timeout: 45000
+- tapOn: Edit Pokémon
+- assertVisible: Mega Evolution
+- assertVisible: "Power form: Base form"
+- tapOn: "Power form: Mega"
+- takeScreenshot: mega-01-selected
+- tapOn: Save Pokémon
+- assertNotVisible: Pokémon detail editor

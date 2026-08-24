@@ -23,18 +23,23 @@ export type NativeInstanceDetailPatch = Partial<Pick<
   | 'charged_move1_id'
   | 'charged_move2_id'
   | 'cp'
+  | 'crown'
   | 'date_caught'
   | 'defense_iv'
   | 'fast_move_id'
   | 'favorite'
   | 'friendship_level'
+  | 'fusion_form'
   | 'gender'
   | 'height'
+  | 'is_mega'
   | 'is_traded'
   | 'level'
   | 'lucky'
   | 'location_card'
   | 'location_caught'
+  | 'mega'
+  | 'mega_form'
   | 'max_attack'
   | 'max_guard'
   | 'max_spirit'
@@ -158,10 +163,16 @@ export const normalizeNativeInstanceDetailPatch = (
     : patch.purified === true
       ? { shadow: false, purified: true }
       : {};
+  const megaInvariant = patch.is_mega === true
+    ? { is_mega: true, mega: true }
+    : patch.is_mega === false
+      ? { is_mega: false, mega: false, mega_form: null }
+      : {};
 
   return {
     ...patch,
     ...appearanceInvariant,
+    ...megaInvariant,
     max_attack: maxAttack,
     max_guard: maxGuard,
     max_spirit: maxSpirit,

@@ -223,6 +223,10 @@ tags:
     end: 50%, 52%
     duration: 450
 - assertVisible: MOVES
+- swipe:
+    start: 50%, 82%
+    end: 50%, 62%
+    duration: 350
 - tapOn: Choose fast move
 - assertVisible: MOVE SELECTOR
 - assertVisible: Bullet Punch

@@ -175,4 +175,44 @@ describe('persistNativeInstanceDetailMutation', () => {
       is_traded: false,
     }));
   });
+
+  it('normalizes active and inactive Mega form state before persistence', async () => {
+    const active = await persistNativeInstanceDetailMutation({
+      userId: 'user-1',
+      snapshot,
+      requestedInstanceId: 'instance-1',
+      patch: {
+        is_mega: true,
+        mega: false,
+        mega_form: 'x',
+        fusion_form: 'Crowned Sword',
+      },
+      outbox: makeOutbox(),
+      receiverClient: { post: jest.fn().mockResolvedValue({ accepted: true }) },
+      syncBatchId: 'batch-mega-active',
+      now: 202,
+    });
+    expect(active.mutation.updated).toEqual(expect.objectContaining({
+      is_mega: true,
+      mega: true,
+      mega_form: 'x',
+      fusion_form: 'Crowned Sword',
+    }));
+
+    const inactive = await persistNativeInstanceDetailMutation({
+      userId: 'user-1',
+      snapshot,
+      requestedInstanceId: 'instance-1',
+      patch: { is_mega: false, mega: true, mega_form: 'x' },
+      outbox: makeOutbox(),
+      receiverClient: { post: jest.fn().mockResolvedValue({ accepted: true }) },
+      syncBatchId: 'batch-mega-inactive',
+      now: 203,
+    });
+    expect(inactive.mutation.updated).toEqual(expect.objectContaining({
+      is_mega: false,
+      mega: false,
+      mega_form: null,
+    }));
+  });
 });

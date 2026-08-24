@@ -441,6 +441,120 @@ describe('NativeInstanceDetailScreen', () => {
     }));
   });
 
+  it('selects and clears native Mega forms with live canonical state', async () => {
+    const onSaveDetails = jest.fn().mockResolvedValue(undefined);
+    render(
+      <NativeInstanceDetailScreen
+        detail={{
+          ...detail,
+          appearanceImageUris: {
+            base: 'https://pokegonexus.com/images/charizard.png',
+            shadow: 'https://pokegonexus.com/images/shadow-charizard.png',
+            purified: 'https://pokegonexus.com/images/charizard.png',
+          },
+          megaOptions: [
+            { form: 'x', imageUri: 'https://pokegonexus.com/images/mega-x.png', label: 'Mega X', primal: false },
+            { form: 'y', imageUri: 'https://pokegonexus.com/images/mega-y.png', label: 'Mega Y', primal: false },
+          ],
+          instance: {
+            nickname: null,
+            shadow: false,
+            purified: false,
+            costume_id: null,
+            mega: false,
+            is_mega: false,
+            mega_form: null,
+          } as NonNullable<NativeInstanceDetail['instance']>,
+          row: { ...detail.row, status: 'caught' },
+        }}
+        isLoading={false}
+        error={null}
+        cachedAt={null}
+        movesWarning={null}
+        saveNotice={null}
+        saveError={null}
+        isSaving={false}
+        onRetry={jest.fn()}
+        onBack={jest.fn()}
+        onSaveDetails={onSaveDetails}
+        onToggleFavorite={jest.fn()}
+        onEditInCurrentApp={jest.fn()}
+      />,
+    );
+
+    fireEvent.press(screen.getByRole('button', { name: 'Edit Pokémon' }));
+    fireEvent.press(screen.getByRole('button', { name: 'Power form: Mega Y' }));
+    await act(async () => {
+      fireEvent.press(screen.getByRole('button', { name: 'Save Pokémon' }));
+    });
+    expect(onSaveDetails).toHaveBeenCalledWith(expect.objectContaining({
+      mega: true,
+      is_mega: true,
+      mega_form: 'y',
+    }));
+  });
+
+  it('unlocks special Max Move editing when a Crowned form is selected', async () => {
+    const onSaveDetails = jest.fn().mockResolvedValue(undefined);
+    render(
+      <NativeInstanceDetailScreen
+        detail={{
+          ...detail,
+          appearanceImageUris: {
+            base: 'https://pokegonexus.com/images/zacian.png',
+            shadow: null,
+            purified: 'https://pokegonexus.com/images/zacian.png',
+          },
+          crownOptions: [{
+            form: 'Crowned Sword',
+            imageUri: 'https://pokegonexus.com/images/crowned-zacian.png',
+            label: 'Crowned Sword',
+          }],
+          instance: {
+            nickname: null,
+            pokemon_id: 888,
+            shadow: false,
+            purified: false,
+            costume_id: null,
+            crown: false,
+            max_attack: null,
+            max_guard: null,
+            max_spirit: null,
+          } as NonNullable<NativeInstanceDetail['instance']>,
+          row: { ...detail.row, pokemonId: 888, status: 'caught' },
+        }}
+        isLoading={false}
+        error={null}
+        cachedAt={null}
+        movesWarning={null}
+        saveNotice={null}
+        saveError={null}
+        isSaving={false}
+        onRetry={jest.fn()}
+        onBack={jest.fn()}
+        onSaveDetails={onSaveDetails}
+        onToggleFavorite={jest.fn()}
+        onEditInCurrentApp={jest.fn()}
+      />,
+    );
+
+    fireEvent.press(screen.getByRole('button', { name: 'Edit Pokémon' }));
+    expect(screen.queryByText('Max Move Levels')).toBeNull();
+    fireEvent.press(screen.getByRole('button', { name: 'Power form: Crowned Sword' }));
+    expect(screen.getByText('Max Move Levels')).toBeTruthy();
+    fireEvent.press(screen.getByRole('button', { name: 'Max Attack: 3' }));
+    await act(async () => {
+      fireEvent.press(screen.getByRole('button', { name: 'Save Pokémon' }));
+    });
+    expect(onSaveDetails).toHaveBeenCalledWith(expect.objectContaining({
+      crown: true,
+      fusion_form: 'Crowned Sword',
+      max_attack: 3,
+      max_guard: 0,
+      max_spirit: 0,
+    }));
+  });
+
   it('saves five-heart, lucky, and Most Wanted conditions natively', async () => {
     const onSaveDetails = jest.fn().mockResolvedValue(undefined);
     render(

@@ -114,6 +114,14 @@ const ROWS: NativeCollectionRow[] = [
     typeIconPaths: ['/images/types/dragon.png', '/images/types/flying.png'],
   }),
   row({
+    id: 'smoke-zacian',
+    pokemonId: 888,
+    name: 'Shiny Zacian',
+    imagePath: '/images/shiny/shiny_pokemon_2290.png',
+    status: 'caught',
+    typeIconPaths: ['/images/types/fairy.png'],
+  }),
+  row({
     id: 'smoke-gmax-blastoise',
     pokemonId: 9,
     name: 'Gigantamax Blastoise',
@@ -240,6 +248,7 @@ const SMOKE_INSTANCES = Object.fromEntries(ROWS.map((entry) => [entry.id, {
   date_caught: entry.status === 'wanted' ? null : '2026-08-24',
   mega: false,
   is_mega: false,
+  crown: false,
   dynamax: entry.maxKind === 'dynamax',
   gigantamax: entry.maxKind === 'gigantamax',
   max_attack: entry.maxKind ? 1 : null,
@@ -403,11 +412,27 @@ export default function DeviceSmokeCollectionRoute() {
                 imageUri: `${ASSET_BASE_URL}/images/backgrounds/bg_grass.png`,
               }],
               appearanceImageUris: {
+                base: openedRow.imageUri,
                 shadow: openedRow.imageUri,
                 purified: openedRow.name.includes('Shiny')
                   ? `${ASSET_BASE_URL}/images/shiny/shiny_pokemon_${openedRow.pokemonId}.png`
                   : `${ASSET_BASE_URL}/images/pokemon/pokemon_${openedRow.pokemonId}.png`,
               },
+              megaOptions: openedRow.pokemonId === 376
+                ? [{
+                    form: null,
+                    imageUri: openedRow.imageUri,
+                    label: 'Mega',
+                    primal: false,
+                }]
+                : [],
+              crownOptions: openedRow.pokemonId === 888
+                ? [{
+                    form: 'Crowned Sword',
+                    imageUri: `${ASSET_BASE_URL}/images/shiny/shiny_pokemon_888.png`,
+                    label: 'Crowned Sword',
+                  }]
+                : [],
               sizeThresholds: {
                 pokedex_height: 2,
                 pokedex_weight: 100,

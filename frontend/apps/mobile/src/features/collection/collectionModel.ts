@@ -97,9 +97,22 @@ export type NativeInstanceDetail = {
     imageUri: string;
   }[];
   appearanceImageUris?: {
+    base?: string | null;
     shadow: string | null;
     purified: string | null;
   };
+  megaOptions?: {
+    form: string | null;
+    imageUri: string | null;
+    label: string;
+    primal: boolean;
+  }[];
+  crownOptions?: {
+    form: string | null;
+    imageUri: string | null;
+    label: string;
+  }[];
+  specialMaxBaseEligible?: boolean;
   sizeThresholds?: BasePokemon['sizes'];
   rarity?: BasePokemon['rarity'];
 };
@@ -844,6 +857,13 @@ export const buildNativeInstanceDetail = (
       imageUri: absoluteImageUri(background.image_url, assetOrigin) ?? background.image_url,
     }));
   const appearanceImageUris = {
+    base: absoluteImageUri(resolvePokemonInstanceImagePath({
+      ...instance,
+      crown: false,
+      is_mega: false,
+      mega: false,
+      mega_form: null,
+    }, pokemon), assetOrigin),
     shadow: absoluteImageUri(resolvePokemonInstanceImagePath({
       ...instance,
       lucky: false,
@@ -856,6 +876,34 @@ export const buildNativeInstanceDetail = (
       shadow: false,
     }, pokemon), assetOrigin),
   };
+  const megaOptions = (pokemon.megaEvolutions ?? []).map((mega) => ({
+    form: mega.form ?? null,
+    imageUri: absoluteImageUri(
+      instance.shiny ? mega.image_url_shiny ?? mega.image_url ?? null : mega.image_url ?? null,
+      assetOrigin,
+    ),
+    label: `${mega.primal ? 'Primal' : 'Mega'}${mega.form?.trim() ? ` ${formatVariantLabel(mega.form)}` : ''}`,
+    primal: Boolean(mega.primal),
+  }));
+  const crownOptions = (pokemon.crownForms ?? []).map((crownForm) => ({
+    form: getPokemonCrownFormLabel(crownForm),
+    imageUri: absoluteImageUri(
+      instance.shiny
+        ? crownForm.image_url_shiny ?? crownForm.image_url ?? null
+        : crownForm.image_url ?? null,
+      assetOrigin,
+    ),
+    label: getPokemonCrownFormLabel(crownForm) ?? crownForm.name ?? 'Crowned',
+  }));
+  const canonicalPokemonId = pokemon.pokemon_id === 2290
+    ? 888
+    : pokemon.pokemon_id === 2292
+      ? 889
+      : pokemon.pokemon_id;
+  const specialMaxBaseEligible = canonicalPokemonId === 890
+    && instance.costume_id == null
+    && !instance.dynamax
+    && !instance.gigantamax;
 
   return {
     row,
@@ -870,6 +918,9 @@ export const buildNativeInstanceDetail = (
     moveOptions,
     backgroundOptions,
     appearanceImageUris,
+    megaOptions,
+    crownOptions,
+    specialMaxBaseEligible,
     sizeThresholds: pokemon.sizes,
     rarity: pokemon.rarity,
   };

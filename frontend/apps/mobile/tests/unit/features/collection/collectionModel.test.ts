@@ -366,6 +366,20 @@ describe('native collection model', () => {
   it('builds a native detail model from shared instance identity and move metadata', () => {
     const detailPokemon = {
       ...pokemon,
+      megaEvolutions: [{
+        id: 61,
+        form: 'x',
+        primal: false,
+        image_url: '/images/mega-charizard-x.png',
+        image_url_shiny: '/images/shiny-mega-charizard-x.png',
+      }],
+      crownForms: [{
+        id: 1,
+        name: 'Crowned Test',
+        display_form: 'Crowned Sword',
+        image_url: '/images/crowned-charizard.png',
+        image_url_shiny: '/images/shiny-crowned-charizard.png',
+      }],
       backgrounds: [
         {
           background_id: 9,
@@ -445,9 +459,22 @@ describe('native collection model', () => {
         imageUri: 'https://pokegonexus.com/images/vancouver-location.png',
       }],
       appearanceImageUris: {
+        base: 'https://pokegonexus.com/images/charizard-shiny.png',
         shadow: 'https://pokegonexus.com/images/charizard-shiny-shadow.png',
         purified: 'https://pokegonexus.com/images/charizard-shiny.png',
       },
+      megaOptions: [{
+        form: 'x',
+        imageUri: 'https://pokegonexus.com/images/shiny-mega-charizard-x.png',
+        label: 'Mega X',
+        primal: false,
+      }],
+      crownOptions: [{
+        form: 'Crowned Sword',
+        imageUri: 'https://pokegonexus.com/images/shiny-crowned-charizard.png',
+        label: 'Crowned Sword',
+      }],
+      specialMaxBaseEligible: false,
       sizeThresholds: detailPokemon.sizes,
     }));
   });
