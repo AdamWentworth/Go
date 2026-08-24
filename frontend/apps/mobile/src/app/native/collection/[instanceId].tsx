@@ -12,6 +12,7 @@ import {
 } from '../../../features/collection/collectionModel';
 import { resolveNativeInstanceNeighbors } from '../../../features/collection/nativeInstanceNavigationContext';
 import { useNativeFavoriteMutation } from '../../../features/collection/useNativeFavoriteMutation';
+import { useNativeInstanceDetailMutation } from '../../../features/collection/useNativeInstanceDetailMutation';
 import { runtimeConfig } from '../../../config/runtimeConfig';
 import { NativeInstanceDetailScreen } from '../../../screens/NativeInstanceDetailScreen';
 
@@ -25,6 +26,10 @@ export default function NativeInstanceDetailRoute() {
   const snapshotQuery = useNativeCollectionSnapshotQuery(session.user?.user_id ?? null);
   const movesQuery = useNativePokemonMovesQuery(Boolean(session.user));
   const favoriteMutation = useNativeFavoriteMutation(
+    session.user?.user_id ?? '',
+    instanceId,
+  );
+  const detailMutation = useNativeInstanceDetailMutation(
     session.user?.user_id ?? '',
     instanceId,
   );
@@ -73,17 +78,26 @@ export default function NativeInstanceDetailRoute() {
     movesWarning={movesQuery.error instanceof Error
       ? 'Move names are temporarily unavailable. The rest of this Pokémon is still current.'
       : null}
-    saveNotice={favoriteMutation.data?.message ?? null}
-    saveError={favoriteMutation.error instanceof Error
-      ? favoriteMutation.error.message
-      : null}
-    isSaving={favoriteMutation.isPending}
+    saveNotice={detailMutation.data?.message ?? favoriteMutation.data?.message ?? null}
+    saveError={detailMutation.error instanceof Error
+      ? detailMutation.error.message
+      : favoriteMutation.error instanceof Error
+        ? favoriteMutation.error.message
+        : null}
+    isSaving={favoriteMutation.isPending || detailMutation.isPending}
     onRetry={() => void Promise.all([snapshotQuery.refetch(), movesQuery.refetch()])}
     onBack={() => router.canGoBack() ? router.back() : router.replace('/native/collection')}
     onNext={supportsSiblingNavigation && neighbors.nextId ? () => navigateToInstance(neighbors.nextId!) : undefined}
     onOpenTarget={navigateToInstance}
     onPrevious={supportsSiblingNavigation && neighbors.previousId ? () => navigateToInstance(neighbors.previousId!) : undefined}
     onToggleFavorite={(favorite) => favoriteMutation.mutate(favorite)}
+    onSaveDetails={(patch) => detailMutation.mutateAsync(patch)}
+    onEditPreferences={() => router.push({
+      pathname: '/web',
+      params: {
+        path: `/trades?section=preferences&mode=${detail?.row.status === 'wanted' ? 'wanted' : 'trade'}&instance=${encodeURIComponent(instanceId)}`,
+      },
+    })}
     onEditInCurrentApp={() => router.replace({
       pathname: '/web',
       params: { path: canonicalCollectionPath },

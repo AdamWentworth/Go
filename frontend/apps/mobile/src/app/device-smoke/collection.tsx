@@ -293,6 +293,7 @@ export default function DeviceSmokeCollectionRoute() {
             assetBaseUrl={ASSET_BASE_URL}
             cachedAt={null}
             detail={{
+              instance: SMOKE_INSTANCES[openedRow.id],
               row: openedRow,
               targetRows: openedRow.status === 'wanted'
                 ? rowsWithStatus('trade')
@@ -342,6 +343,7 @@ export default function DeviceSmokeCollectionRoute() {
             }}
             onPrevious={openedRow.status !== 'wanted' && previousRow ? () => setOpenedRow(previousRow) : undefined}
             onRetry={() => undefined}
+            onSaveDetails={async () => undefined}
             onToggleFavorite={() => undefined}
             saveError={null}
             saveNotice={null}

@@ -87,7 +87,7 @@ describe('persistNativeInstanceDetailMutation', () => {
       snapshot,
       requestedInstanceId: 'instance-1',
       patch: {
-        nickname: '  Partner Bulbasaur  ',
+        nickname: '  BulbaBuddy  ',
         cp: 2222,
         level: 40.5,
         attack_iv: 15,
@@ -101,7 +101,7 @@ describe('persistNativeInstanceDetailMutation', () => {
     });
 
     expect(result.mutation.updated).toEqual(expect.objectContaining({
-      nickname: 'Partner Bulbasaur',
+      nickname: 'BulbaBuddy',
       cp: 2222,
       level: 40.5,
       attack_iv: 15,

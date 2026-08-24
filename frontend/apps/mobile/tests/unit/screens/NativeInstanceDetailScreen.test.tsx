@@ -1,4 +1,5 @@
-import { fireEvent, render, screen } from '@testing-library/react-native';
+import { act, fireEvent, render, screen } from '@testing-library/react-native';
+import type { NativeInstanceDetail } from '../../../src/features/collection/collectionModel';
 import { NativeInstanceDetailScreen } from '../../../src/screens/NativeInstanceDetailScreen';
 
 jest.mock('../../../src/features/collection/NativeCollectionSyncStatusCard', () => ({
@@ -173,5 +174,105 @@ describe('NativeInstanceDetailScreen', () => {
 
     fireEvent.press(screen.getByRole('button', { name: 'Open Gigantamax Blastoise' }));
     expect(onOpenTarget).toHaveBeenCalledWith('wanted-1');
+  });
+
+  it('edits and saves caught instance details without leaving the native overlay', async () => {
+    const onSaveDetails = jest.fn().mockResolvedValue(undefined);
+    render(
+      <NativeInstanceDetailScreen
+        detail={{
+          ...detail,
+          instance: {
+            nickname: 'Charizard',
+            cp: 2499,
+            level: 40,
+            gender: 'Male',
+            weight: 90.5,
+            height: 1.7,
+            attack_iv: 15,
+            defense_iv: 14,
+            stamina_iv: 13,
+          } as NonNullable<NativeInstanceDetail['instance']>,
+          row: { ...detail.row, status: 'caught' },
+        }}
+        isLoading={false}
+        error={null}
+        cachedAt={null}
+        movesWarning={null}
+        saveNotice={null}
+        saveError={null}
+        isSaving={false}
+        onRetry={jest.fn()}
+        onBack={jest.fn()}
+        onSaveDetails={onSaveDetails}
+        onToggleFavorite={jest.fn()}
+        onEditInCurrentApp={jest.fn()}
+      />,
+    );
+
+    fireEvent.press(screen.getByRole('button', { name: 'Edit Pokémon' }));
+    fireEvent.changeText(screen.getByLabelText('Pokémon nickname'), 'Fire Partner');
+    fireEvent.changeText(screen.getByLabelText('Combat Power'), '2500');
+    await act(async () => {
+      fireEvent.press(screen.getByRole('button', { name: 'Save Pokémon' }));
+    });
+
+    expect(onSaveDetails).toHaveBeenCalledWith(expect.objectContaining({
+      nickname: 'Fire Partner',
+      cp: 2500,
+      level: 40,
+      gender: 'Male',
+      attack_iv: 15,
+    }));
+    expect(screen.queryByLabelText('Pokémon detail editor')).toBeNull();
+  });
+
+  it('saves five-heart, lucky, and Most Wanted conditions natively', async () => {
+    const onSaveDetails = jest.fn().mockResolvedValue(undefined);
+    render(
+      <NativeInstanceDetailScreen
+        detail={{
+          ...detail,
+          instance: {
+            nickname: null,
+            friendship_level: 4,
+            pref_lucky: false,
+            most_wanted: false,
+          } as NonNullable<NativeInstanceDetail['instance']>,
+          row: {
+            ...detail.row,
+            id: 'wanted-1',
+            status: 'wanted',
+            mostWanted: false,
+          },
+        }}
+        isLoading={false}
+        error={null}
+        cachedAt={null}
+        movesWarning={null}
+        saveNotice={null}
+        saveError={null}
+        isSaving={false}
+        onRetry={jest.fn()}
+        onBack={jest.fn()}
+        onSaveDetails={onSaveDetails}
+        onToggleFavorite={jest.fn()}
+        onEditInCurrentApp={jest.fn()}
+      />,
+    );
+
+    fireEvent.press(screen.getByRole('button', { name: 'Edit wanted listing' }));
+    fireEvent.press(screen.getByRole('button', { name: 'Set friendship to 5 hearts' }));
+    fireEvent.press(screen.getByRole('button', { name: 'Lucky trade not requested' }));
+    fireEvent.press(screen.getByRole('button', { name: 'Mark as Most Wanted' }));
+    await act(async () => {
+      fireEvent.press(screen.getByRole('button', { name: 'Save wanted listing' }));
+    });
+
+    expect(onSaveDetails).toHaveBeenCalledWith(expect.objectContaining({
+      friendship_level: 5,
+      pref_lucky: true,
+      most_wanted: true,
+    }));
   });
 });

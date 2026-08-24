@@ -5,12 +5,15 @@ import {
   ScrollView,
   StyleSheet,
   Text,
+  TextInput,
   View,
   useColorScheme,
   useWindowDimensions,
 } from 'react-native';
+import { useState } from 'react';
 import Svg, { Circle, Path } from 'react-native-svg';
 import type { NativeInstanceDetail } from '../features/collection/collectionModel';
+import type { NativeInstanceDetailPatch } from '../features/collection/nativeInstanceDetailMutation';
 import { NativePokemonLocationBackdrop } from '../features/collection/parity/NativePokemonLocationBackdrop';
 
 type Props = {
@@ -30,6 +33,54 @@ type Props = {
   onOpenTarget?: (instanceId: string) => void;
   onToggleFavorite: (favorite: boolean) => void;
   onEditInCurrentApp: () => void;
+  onEditPreferences?: () => void;
+  onSaveDetails?: (patch: NativeInstanceDetailPatch) => Promise<unknown>;
+};
+
+type NativeInstanceEditDraft = {
+  nickname: string;
+  cp: string;
+  level: string;
+  gender: string | null;
+  weight: string;
+  height: string;
+  attackIv: string;
+  defenseIv: string;
+  staminaIv: string;
+  locationCaught: string;
+  dateCaught: string;
+  friendship: number;
+  prefLucky: boolean;
+  mostWanted: boolean;
+};
+
+const editableNumber = (value: unknown): string => (
+  typeof value === 'number' && Number.isFinite(value) ? String(value) : ''
+);
+
+const createEditDraft = (detail: NativeInstanceDetail): NativeInstanceEditDraft => ({
+  nickname: detail.instance?.nickname
+    ?? detail.row.name.trim().split(/\s+/).at(-1)
+    ?? detail.row.name,
+  cp: editableNumber(detail.instance?.cp),
+  level: editableNumber(detail.instance?.level),
+  gender: detail.instance?.gender ?? null,
+  weight: editableNumber(detail.instance?.weight),
+  height: editableNumber(detail.instance?.height),
+  attackIv: editableNumber(detail.instance?.attack_iv),
+  defenseIv: editableNumber(detail.instance?.defense_iv),
+  staminaIv: editableNumber(detail.instance?.stamina_iv),
+  locationCaught: detail.instance?.location_caught ?? '',
+  dateCaught: detail.instance?.date_caught?.slice(0, 10) ?? '',
+  friendship: friendshipLevelFor(detail),
+  prefLucky: Boolean(detail.instance?.pref_lucky),
+  mostWanted: Boolean(detail.instance?.most_wanted),
+});
+
+const nullableNumber = (value: string): number | null => {
+  const trimmed = value.trim();
+  if (!trimmed) return null;
+  return Number(trimmed);
 };
 
 const toAssetUrl = (baseUrl: string, path: string): string => (
@@ -89,20 +140,29 @@ const FriendshipConditions = ({
   detail,
   palette,
   onEdit,
+  editing,
+  draft,
+  onDraftChange,
 }: {
   assetBaseUrl: string;
   detail: NativeInstanceDetail;
   palette: typeof LIGHT;
   onEdit: () => void;
+  editing: boolean;
+  draft: NativeInstanceEditDraft;
+  onDraftChange: (patch: Partial<NativeInstanceEditDraft>) => void;
 }) => {
-  const friendship = friendshipLevelFor(detail);
-  const luckyRequested = Boolean(detail.instance?.pref_lucky)
-    || detail.preferences.some((row) => row.label === 'Lucky trade');
+  const friendship = editing ? draft.friendship : friendshipLevelFor(detail);
+  const luckyRequested = editing
+    ? draft.prefLucky
+    : Boolean(detail.instance?.pref_lucky)
+      || detail.preferences.some((row) => row.label === 'Lucky trade');
+  const mostWanted = editing ? draft.mostWanted : detail.row.mostWanted;
   return (
     <View style={[styles.conditionsPanel, { backgroundColor: palette.panel, borderColor: palette.border }]}>
       <View style={styles.conditionsHeadingRow}>
         <Pressable
-          accessibilityLabel="Edit wanted listing"
+          accessibilityLabel={editing ? 'Save wanted listing' : 'Edit wanted listing'}
           accessibilityRole="button"
           onPress={onEdit}
           style={styles.conditionEditButton}
@@ -110,7 +170,7 @@ const FriendshipConditions = ({
           <Image
             accessibilityElementsHidden
             resizeMode="contain"
-            source={{ uri: toAssetUrl(assetBaseUrl, '/images/edit-icon.png') }}
+            source={{ uri: toAssetUrl(assetBaseUrl, editing ? '/images/save-icon.png' : '/images/edit-icon.png') }}
             style={[styles.conditionEditImage, { tintColor: palette.text }]}
           />
         </Pressable>
@@ -118,11 +178,17 @@ const FriendshipConditions = ({
           <Text style={styles.conditionsTitle}>WANTED CONDITIONS</Text>
           <Text style={[styles.conditionsSubtitle, { color: palette.secondary }]}>Friendship and eligibility</Text>
         </View>
-        <View style={[styles.priorityBadge, detail.row.mostWanted && styles.priorityBadgeActive]}>
-          <Text style={[styles.priorityBadgeText, detail.row.mostWanted && styles.priorityBadgeTextActive]}>
-            {detail.row.mostWanted ? '★ Most Wanted' : '☆ Most Wanted'}
+        <Pressable
+          accessibilityLabel={mostWanted ? 'Remove Most Wanted' : 'Mark as Most Wanted'}
+          accessibilityRole={editing ? 'button' : undefined}
+          disabled={!editing}
+          onPress={() => onDraftChange({ mostWanted: !mostWanted })}
+          style={[styles.priorityBadge, mostWanted && styles.priorityBadgeActive]}
+        >
+          <Text style={[styles.priorityBadgeText, mostWanted && styles.priorityBadgeTextActive]}>
+            {mostWanted ? '★ Most Wanted' : '☆ Most Wanted'}
           </Text>
-        </View>
+        </Pressable>
       </View>
 
       <View
@@ -131,26 +197,40 @@ const FriendshipConditions = ({
       >
         <View style={styles.hearts}>
           {Array.from({ length: 5 }, (_, index) => (
-            <Image
-              accessibilityElementsHidden
+            <Pressable
+              accessibilityLabel={`Set friendship to ${index + 1} hearts`}
+              accessibilityRole={editing ? 'button' : undefined}
+              disabled={!editing}
               key={index}
-              resizeMode="contain"
-              source={{
-                uri: toAssetUrl(
-                  assetBaseUrl,
-                  `/images/${index < friendship ? 'heart-filled' : 'heart-unfilled'}.png`,
-                ),
-              }}
-              style={styles.heart}
-            />
+              onPress={() => onDraftChange({ friendship: index + 1 })}
+            >
+              <Image
+                accessibilityElementsHidden
+                resizeMode="contain"
+                source={{
+                  uri: toAssetUrl(
+                    assetBaseUrl,
+                    `/images/${index < friendship ? 'heart-filled' : 'heart-unfilled'}.png`,
+                  ),
+                }}
+                style={styles.heart}
+              />
+            </Pressable>
           ))}
         </View>
-        <Image
+        <Pressable
           accessibilityLabel={luckyRequested ? 'Lucky trade requested' : 'Lucky trade not requested'}
-          resizeMode="contain"
-          source={{ uri: toAssetUrl(assetBaseUrl, '/images/lucky_friend_icon.png') }}
-          style={[styles.friendshipBadgeIcon, !luckyRequested && styles.inactiveConditionIcon]}
-        />
+          accessibilityRole={editing ? 'button' : undefined}
+          disabled={!editing}
+          onPress={() => onDraftChange({ prefLucky: !luckyRequested })}
+        >
+          <Image
+            accessibilityElementsHidden
+            resizeMode="contain"
+            source={{ uri: toAssetUrl(assetBaseUrl, '/images/lucky_friend_icon.png') }}
+            style={[styles.friendshipBadgeIcon, !luckyRequested && styles.inactiveConditionIcon]}
+          />
+        </Pressable>
         <Image
           accessibilityLabel={friendship >= 5 ? 'Remote trade available' : 'Remote trade unavailable'}
           resizeMode="contain"
@@ -323,6 +403,182 @@ const DetailRows = ({
   </View>
 );
 
+const NativeInstanceEditFields = ({
+  draft,
+  isWanted,
+  palette,
+  onChange,
+}: {
+  draft: NativeInstanceEditDraft;
+  isWanted: boolean;
+  palette: typeof LIGHT;
+  onChange: (patch: Partial<NativeInstanceEditDraft>) => void;
+}) => {
+  const inputStyle = [
+    styles.editInput,
+    { backgroundColor: palette.input, borderColor: palette.border, color: palette.text },
+  ];
+  return (
+    <View accessibilityLabel="Pokémon detail editor" style={styles.editFields}>
+      <View style={styles.editFieldGroup}>
+        <Text style={[styles.editFieldLabel, { color: palette.secondary }]}>NAME</Text>
+        <TextInput
+          accessibilityLabel="Pokémon nickname"
+          autoCapitalize="words"
+          maxLength={12}
+          onChangeText={(nickname) => onChange({ nickname })}
+          placeholder="Pokémon name"
+          placeholderTextColor={palette.secondary}
+          selectTextOnFocus
+          style={[...inputStyle, styles.editNameInput]}
+          value={draft.nickname}
+        />
+      </View>
+
+      {!isWanted ? (
+        <View style={styles.editTwoColumns}>
+          <View style={styles.editColumn}>
+            <Text style={[styles.editFieldLabel, { color: palette.secondary }]}>CP</Text>
+            <TextInput
+              accessibilityLabel="Combat Power"
+              keyboardType="number-pad"
+              onChangeText={(cp) => onChange({ cp })}
+              placeholder="CP"
+              placeholderTextColor={palette.secondary}
+              selectTextOnFocus
+              style={inputStyle}
+              value={draft.cp}
+            />
+          </View>
+          <View style={styles.editColumn}>
+            <Text style={[styles.editFieldLabel, { color: palette.secondary }]}>LEVEL</Text>
+            <TextInput
+              accessibilityLabel="Pokémon level"
+              keyboardType="decimal-pad"
+              onChangeText={(level) => onChange({ level })}
+              placeholder="1–51"
+              placeholderTextColor={palette.secondary}
+              selectTextOnFocus
+              style={inputStyle}
+              value={draft.level}
+            />
+          </View>
+        </View>
+      ) : null}
+
+      <View style={styles.editFieldGroup}>
+        <Text style={[styles.editFieldLabel, { color: palette.secondary }]}>GENDER</Text>
+        <View style={styles.genderOptions}>
+          {[
+            { label: 'Any', value: null },
+            { label: '♂ Male', value: 'Male' },
+            { label: '♀ Female', value: 'Female' },
+            { label: 'Genderless', value: 'Genderless' },
+          ].map((option) => {
+            const selected = draft.gender === option.value;
+            return (
+              <Pressable
+                accessibilityRole="button"
+                key={option.label}
+                onPress={() => onChange({ gender: option.value })}
+                style={[
+                  styles.genderOption,
+                  { borderColor: selected ? '#38a9ff' : palette.border },
+                  selected && styles.genderOptionSelected,
+                ]}
+              >
+                <Text style={[styles.genderOptionText, { color: palette.text }]}>{option.label}</Text>
+              </Pressable>
+            );
+          })}
+        </View>
+      </View>
+
+      {!isWanted ? (
+        <>
+          <View style={styles.editTwoColumns}>
+            <View style={styles.editColumn}>
+              <Text style={[styles.editFieldLabel, { color: palette.secondary }]}>WEIGHT (KG)</Text>
+              <TextInput
+                accessibilityLabel="Pokémon weight"
+                keyboardType="decimal-pad"
+                onChangeText={(weight) => onChange({ weight })}
+                placeholder="Optional"
+                placeholderTextColor={palette.secondary}
+                selectTextOnFocus
+                style={inputStyle}
+                value={draft.weight}
+              />
+            </View>
+            <View style={styles.editColumn}>
+              <Text style={[styles.editFieldLabel, { color: palette.secondary }]}>HEIGHT (M)</Text>
+              <TextInput
+                accessibilityLabel="Pokémon height"
+                keyboardType="decimal-pad"
+                onChangeText={(height) => onChange({ height })}
+                placeholder="Optional"
+                placeholderTextColor={palette.secondary}
+                selectTextOnFocus
+                style={inputStyle}
+                value={draft.height}
+              />
+            </View>
+          </View>
+
+          <View style={styles.editFieldGroup}>
+            <Text style={[styles.editFieldLabel, { color: palette.secondary }]}>APPRAISAL IVS</Text>
+            <View style={styles.editThreeColumns}>
+              {[
+                { label: 'Attack', key: 'attackIv' as const },
+                { label: 'Defense', key: 'defenseIv' as const },
+                { label: 'HP', key: 'staminaIv' as const },
+              ].map((field) => (
+                <View key={field.key} style={styles.editColumn}>
+                  <Text style={[styles.inlineInputLabel, { color: palette.secondary }]}>{field.label}</Text>
+                  <TextInput
+                    accessibilityLabel={`${field.label} IV`}
+                    keyboardType="number-pad"
+                    maxLength={2}
+                    onChangeText={(value) => onChange({ [field.key]: value })}
+                    placeholder="0–15"
+                    placeholderTextColor={palette.secondary}
+                    selectTextOnFocus
+                    style={inputStyle}
+                    value={draft[field.key]}
+                  />
+                </View>
+              ))}
+            </View>
+          </View>
+
+          <View style={styles.editFieldGroup}>
+            <Text style={[styles.editFieldLabel, { color: palette.secondary }]}>CAUGHT DETAILS</Text>
+            <TextInput
+              accessibilityLabel="Caught location"
+              autoCapitalize="words"
+              onChangeText={(locationCaught) => onChange({ locationCaught })}
+              placeholder="Location caught"
+              placeholderTextColor={palette.secondary}
+              style={inputStyle}
+              value={draft.locationCaught}
+            />
+            <TextInput
+              accessibilityLabel="Caught date"
+              keyboardType="numbers-and-punctuation"
+              maxLength={10}
+              onChangeText={(dateCaught) => onChange({ dateCaught })}
+              placeholder="YYYY-MM-DD"
+              placeholderTextColor={palette.secondary}
+              style={inputStyle}
+              value={draft.dateCaught}
+            />
+          </View>
+        </>
+      ) : null}
+    </View>
+  );
+};
+
 export const NativeInstanceDetailScreen = ({
   assetBaseUrl = 'https://pokegonexus.com',
   detail,
@@ -340,11 +596,22 @@ export const NativeInstanceDetailScreen = ({
   onOpenTarget,
   onToggleFavorite,
   onEditInCurrentApp,
+  onEditPreferences,
+  onSaveDetails,
 }: Props) => {
   const light = useColorScheme() === 'light';
   const { width } = useWindowDimensions();
   const shellWidth = Math.min(width * 0.95, 500);
   const palette = light ? LIGHT : DARK;
+  const [editingInstanceId, setEditingInstanceId] = useState<string | null>(null);
+  const [draftState, setDraftState] = useState<{
+    instanceId: string;
+    value: NativeInstanceEditDraft;
+  } | null>(null);
+  const [editErrorState, setEditErrorState] = useState<{
+    instanceId: string;
+    message: string;
+  } | null>(null);
 
   if (isLoading) {
     return (
@@ -394,6 +661,73 @@ export const NativeInstanceDetailScreen = ({
   const statusLabel = detail.row.status === 'wanted' && detail.row.mostWanted
     ? 'MOST WANTED'
     : status.label;
+  const editing = editingInstanceId === detail.row.id;
+  const activeDraft = draftState?.instanceId === detail.row.id
+    ? draftState.value
+    : createEditDraft(detail);
+  const editError = editErrorState?.instanceId === detail.row.id
+    ? editErrorState.message
+    : null;
+  const updateDraft = (patch: Partial<NativeInstanceEditDraft>) => {
+    setDraftState((current) => ({
+      instanceId: detail.row.id,
+      value: {
+        ...(current?.instanceId === detail.row.id ? current.value : createEditDraft(detail)),
+        ...patch,
+      },
+    }));
+  };
+  const toggleEdit = async () => {
+    if (!onSaveDetails) {
+      onEditInCurrentApp();
+      return;
+    }
+    if (!editing) {
+      setDraftState({ instanceId: detail.row.id, value: createEditDraft(detail) });
+      setEditErrorState(null);
+      setEditingInstanceId(detail.row.id);
+      return;
+    }
+    try {
+      const patch: NativeInstanceDetailPatch = isWanted
+        ? {
+            nickname: !instance?.nickname
+              && activeDraft.nickname.trim() === detail.row.name.trim().split(/\s+/).at(-1)
+              ? null
+              : activeDraft.nickname,
+            gender: activeDraft.gender,
+            friendship_level: activeDraft.friendship,
+            pref_lucky: activeDraft.prefLucky,
+            most_wanted: activeDraft.mostWanted,
+          }
+        : {
+            nickname: !instance?.nickname
+              && activeDraft.nickname.trim() === detail.row.name.trim().split(/\s+/).at(-1)
+              ? null
+              : activeDraft.nickname,
+            cp: nullableNumber(activeDraft.cp),
+            level: nullableNumber(activeDraft.level),
+            gender: activeDraft.gender,
+            weight: nullableNumber(activeDraft.weight),
+            height: nullableNumber(activeDraft.height),
+            attack_iv: nullableNumber(activeDraft.attackIv),
+            defense_iv: nullableNumber(activeDraft.defenseIv),
+            stamina_iv: nullableNumber(activeDraft.staminaIv),
+            location_caught: activeDraft.locationCaught,
+            date_caught: activeDraft.dateCaught,
+          };
+      await onSaveDetails(patch);
+      setEditingInstanceId(null);
+      setEditErrorState(null);
+    } catch (saveFailure) {
+      setEditErrorState({
+        instanceId: detail.row.id,
+        message: saveFailure instanceof Error
+          ? saveFailure.message
+          : 'Pokémon details could not be saved.',
+      });
+    }
+  };
 
   return (
     <View style={styles.overlay} testID="native-instance-overlay">
@@ -423,21 +757,25 @@ export const NativeInstanceDetailScreen = ({
             <FriendshipConditions
               assetBaseUrl={assetBaseUrl}
               detail={detail}
-              onEdit={onEditInCurrentApp}
+              draft={activeDraft}
+              editing={editing}
+              onDraftChange={updateDraft}
+              onEdit={() => void toggleEdit()}
               palette={palette}
             />
           ) : (
             <View style={styles.headerRow}>
               <Pressable
-                accessibilityLabel="Edit Pokémon"
+                accessibilityLabel={editing ? 'Save Pokémon' : 'Edit Pokémon'}
                 accessibilityRole="button"
-                onPress={onEditInCurrentApp}
+                disabled={isSaving}
+                onPress={() => void toggleEdit()}
                 style={styles.iconButton}
               >
                 <Image
                   accessibilityElementsHidden
                   resizeMode="contain"
-                  source={{ uri: toAssetUrl(assetBaseUrl, '/images/edit-icon.png') }}
+                  source={{ uri: toAssetUrl(assetBaseUrl, editing ? '/images/save-icon.png' : '/images/edit-icon.png') }}
                   style={[styles.editImage, { tintColor: palette.text }]}
                 />
               </Pressable>
@@ -518,11 +856,20 @@ export const NativeInstanceDetailScreen = ({
             {statusLabel ? (
               <Text style={[styles.statusEyebrow, { color: status.accent }]}>{statusLabel}</Text>
             ) : null}
-            <Text accessibilityRole="header" style={[styles.name, { color: palette.text }]}>
-              {detail.row.name}
-            </Text>
+            {editing ? (
+              <NativeInstanceEditFields
+                draft={activeDraft}
+                isWanted={isWanted}
+                onChange={updateDraft}
+                palette={palette}
+              />
+            ) : (
+              <Text accessibilityRole="header" style={[styles.name, { color: palette.text }]}>
+                {detail.row.name}
+              </Text>
+            )}
 
-            {isCaught || gender ? (
+            {!editing && (isCaught || gender) ? (
               <View style={styles.levelGenderRow}>
                 <View style={styles.sideSlot} />
                 {isCaught && showArc ? (
@@ -534,7 +881,7 @@ export const NativeInstanceDetailScreen = ({
               </View>
             ) : null}
 
-            {isCaught && showPhysicalRow ? (
+            {!editing && isCaught && showPhysicalRow ? (
               <View style={styles.physicalRow}>
                 <View style={styles.physicalValue}>
                   {weight != null ? (
@@ -562,7 +909,7 @@ export const NativeInstanceDetailScreen = ({
               </View>
             ) : null}
 
-            {detail.moves.length || movesWarning ? (
+            {!editing && (detail.moves.length || movesWarning) ? (
               <View style={[styles.section, { borderTopColor: palette.divider }]}>
                 <View style={styles.moveTabs}>
                   <Text style={[styles.moveTabActive, { color: palette.text, borderBottomColor: palette.text }]}>GYMS &amp; RAIDS</Text>
@@ -575,7 +922,7 @@ export const NativeInstanceDetailScreen = ({
               </View>
             ) : null}
 
-            {isCaught && detail.ivs.length ? (
+            {!editing && isCaught && detail.ivs.length ? (
               <View style={[styles.section, { borderTopColor: palette.divider }]}>
                 {detail.ivs.map((iv) => (
                   <View key={iv.label} style={styles.ivRow}>
@@ -591,7 +938,7 @@ export const NativeInstanceDetailScreen = ({
               </View>
             ) : null}
 
-            {!isWanted && detail.preferences.length ? (
+            {!editing && !isWanted && detail.preferences.length ? (
               <View style={[styles.preferencePanel, { borderColor: status.accent }]}>
                 <Text style={[styles.preferenceTitle, { color: status.accent }]}>
                   {detail.row.status === 'wanted' ? 'WANTED CONDITIONS' : 'TRADE CONDITIONS'}
@@ -600,19 +947,21 @@ export const NativeInstanceDetailScreen = ({
               </View>
             ) : null}
 
-            {detail.provenance.length ? (
+            {!editing && detail.provenance.length ? (
               <View style={[styles.metaPanel, { backgroundColor: palette.meta }]}>
                 <DetailRows rows={detail.provenance} secondaryColor={palette.secondary} textColor={palette.text} />
               </View>
             ) : null}
 
-            <TargetSummary
-              assetBaseUrl={assetBaseUrl}
-              detail={detail}
-              onEdit={onEditInCurrentApp}
-              onOpenTarget={onOpenTarget}
-              palette={palette}
-            />
+            {!editing ? (
+              <TargetSummary
+                assetBaseUrl={assetBaseUrl}
+                detail={detail}
+                onEdit={onEditPreferences ?? onEditInCurrentApp}
+                onOpenTarget={onOpenTarget}
+                palette={palette}
+              />
+            ) : null}
 
             {saveNotice ? (
               <View accessibilityLiveRegion="polite" style={styles.notice}>
@@ -622,6 +971,11 @@ export const NativeInstanceDetailScreen = ({
             {saveError ? (
               <View accessibilityRole="alert" style={styles.saveError}>
                 <Text style={styles.saveErrorText}>{saveError}</Text>
+              </View>
+            ) : null}
+            {editError ? (
+              <View accessibilityRole="alert" style={styles.saveError}>
+                <Text style={styles.saveErrorText}>{editError}</Text>
               </View>
             ) : null}
           </View>
@@ -669,6 +1023,7 @@ const DARK = {
   divider: '#808080',
   fallbackBackground: '#0f2b2b',
   meta: 'rgba(255,255,255,0.08)',
+  input: '#242b2a',
   panel: '#333333',
   secondary: '#aeb8b5',
   text: '#e0f0e5',
@@ -682,6 +1037,7 @@ const LIGHT = {
   divider: '#8a9b98',
   fallbackBackground: '#e8f6f2',
   meta: 'rgba(23,59,66,0.06)',
+  input: '#ffffff',
   panel: '#f7fbf8',
   secondary: '#58716c',
   text: '#173b42',
@@ -799,6 +1155,35 @@ const styles = StyleSheet.create({
   compactDetailsPanel: { marginTop: -47, paddingTop: 55 },
   statusEyebrow: { marginBottom: 4, fontSize: 12, fontWeight: '900', letterSpacing: 1.7 },
   name: { maxWidth: '92%', fontSize: 32, lineHeight: 35, fontWeight: '500', textAlign: 'center' },
+  editFields: { width: '94%', gap: 14, paddingTop: 3 },
+  editFieldGroup: { width: '100%', gap: 6 },
+  editFieldLabel: { fontSize: 10, fontWeight: '900', letterSpacing: 1.1 },
+  editInput: {
+    minHeight: 44,
+    paddingHorizontal: 11,
+    paddingVertical: 8,
+    borderWidth: 1,
+    borderRadius: 8,
+    fontSize: 16,
+    fontWeight: '700',
+  },
+  editNameInput: { minHeight: 48, fontSize: 25, textAlign: 'center' },
+  editTwoColumns: { width: '100%', flexDirection: 'row', gap: 10 },
+  editThreeColumns: { width: '100%', flexDirection: 'row', gap: 8 },
+  editColumn: { flex: 1, minWidth: 0, gap: 4 },
+  inlineInputLabel: { fontSize: 11, fontWeight: '800', textAlign: 'center' },
+  genderOptions: { flexDirection: 'row', flexWrap: 'wrap', gap: 7 },
+  genderOption: {
+    minHeight: 42,
+    flexGrow: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 9,
+    borderWidth: 1,
+    borderRadius: 9,
+  },
+  genderOptionSelected: { backgroundColor: 'rgba(40,137,226,0.23)' },
+  genderOptionText: { fontSize: 12, fontWeight: '900' },
   levelGenderRow: { width: '100%', minHeight: 34, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 22 },
   sideSlot: { width: 42 },
   levelText: { fontSize: 12, fontWeight: '800' },

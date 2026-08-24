@@ -104,7 +104,7 @@ export const normalizeNativeInstanceDetailPatch = (
   assertNullableInteger('Second charged move', patch.charged_move2_id, 1, Number.MAX_SAFE_INTEGER);
 
   const nickname = normalizeNullableText(patch.nickname);
-  if (nickname && nickname.length > 64) throw new Error('Nickname must be 64 characters or fewer.');
+  if (nickname && nickname.length > 12) throw new Error('Nickname must be 12 characters or fewer.');
   const gender = normalizeNullableText(patch.gender);
   if (gender && !['Male', 'Female', 'Genderless'].includes(gender)) {
     throw new Error('Gender selection is invalid.');
