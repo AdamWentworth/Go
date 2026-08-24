@@ -26,6 +26,9 @@ tags:
 - tapOn: "Power form: Dawn Wings Necrozma"
 - assertVisible: FUSION PARTNER
 - assertVisible: "Power form: Lunala"
+- tapOn: Choose location background
+- assertVisible: Fusion sky
+- tapOn: Use Fusion sky background
 - takeScreenshot: fusion-01-selected
 - swipe:
     start: 50%, 70%

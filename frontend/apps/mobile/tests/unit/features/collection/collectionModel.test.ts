@@ -380,6 +380,21 @@ describe('native collection model', () => {
         name: 'Armored Charizard',
         image_url: '/images/fused-charizard.png',
         image_url_shiny: '/images/shiny-fused-charizard.png',
+        backgrounds: [{
+          background_id: 12,
+          costume_id: 0,
+          name: 'Fusion sky',
+          location: 'Fusion sky',
+          image_url: '/images/fusion-location.png',
+        }],
+        background_combo_rules: [{
+          member1_background_id: 12,
+          member2_background_id: 21,
+          combo_background_id: 99,
+          combo_background_name: 'Combined sky',
+          combo_background_location: 'Combined sky',
+          combo_background_image_url: '/images/fusion-combo.png',
+        }],
       }],
       crownForms: [{
         id: 1,
@@ -518,10 +533,63 @@ describe('native collection model', () => {
         name: 'Armored Charizard',
         partnerPokemonId: 150,
         partnerRows: [expect.objectContaining({ id: 'partner-1', name: 'Mewtwo' })],
+        backgroundOptions: [{
+          id: 12,
+          name: 'Fusion sky',
+          imageUri: 'https://pokegonexus.com/images/fusion-location.png',
+        }],
+        partnerBackgroundIds: { 'partner-1': null },
+        comboBackgrounds: [],
       }],
       fusionPartnerRow: null,
       specialMaxBaseEligible: false,
       sizeThresholds: detailPokemon.sizes,
     }));
+
+    const fusedDetail = buildNativeInstanceDetail(
+      {
+        legacy_key: instance({
+          instance_id: 'instance-1',
+          shiny: true,
+          location_card: '12',
+          is_fused: true,
+          fusion: { 2: true },
+          fusion_form: 'Armored Charizard',
+          fused_with: 'partner-1',
+        }),
+        partner_key: instance({
+          instance_id: 'partner-1',
+          pokemon_id: 150,
+          variant_id: '0150-default',
+          location_card: '21',
+          disabled: true,
+          is_fused: true,
+          fusion_form: 'Armored Charizard',
+          fused_with: 'instance-1',
+        }),
+      },
+      [detailPokemon, {
+        ...pokemon,
+        pokemon_id: 150,
+        pokedex_number: 150,
+        name: 'Mewtwo',
+        image_url: '/images/mewtwo.png',
+        image_url_shiny: '/images/shiny-mewtwo.png',
+        fusion: [],
+      } as unknown as BasePokemon],
+      [],
+      'instance-1',
+      'https://pokegonexus.com',
+    );
+    if (!fusedDetail) throw new Error('Expected the fused detail fixture to resolve.');
+    expect(fusedDetail.row.locationBackgroundUri).toBe(
+      'https://pokegonexus.com/images/fusion-combo.png',
+    );
+    expect(fusedDetail.backgroundOptions).toEqual([{
+      id: 12,
+      name: 'Fusion sky',
+      imageUri: 'https://pokegonexus.com/images/fusion-location.png',
+    }]);
+    expect(fusedDetail.fusionPartnerRow).toEqual(expect.objectContaining({ id: 'partner-1' }));
   });
 });

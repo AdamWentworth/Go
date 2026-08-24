@@ -16,6 +16,7 @@ import { useState } from 'react';
 import Svg, { Circle, Path } from 'react-native-svg';
 import { GestureDetector } from 'react-native-gesture-handler';
 import type {
+  NativeInstanceBackgroundOption,
   NativeInstanceDetail,
   NativeInstanceMoveOption,
 } from '../features/collection/collectionModel';
@@ -699,16 +700,16 @@ const NativeWantedSizeControls = ({
 
 const NativeBackgroundPicker = ({
   assetBaseUrl,
-  detail,
   open,
+  options,
   palette,
   selectedId,
   onChange,
   onClose,
 }: {
   assetBaseUrl: string;
-  detail: NativeInstanceDetail;
   open: boolean;
+  options: NativeInstanceBackgroundOption[];
   palette: typeof LIGHT;
   selectedId: string | null;
   onChange: (value: string | null) => void;
@@ -755,7 +756,7 @@ const NativeBackgroundPicker = ({
             />
             <Text style={[styles.backgroundOptionName, { color: palette.text }]}>None</Text>
           </Pressable>
-          {(detail.backgroundOptions ?? []).map((option) => (
+          {options.map((option) => (
             <Pressable
               accessibilityLabel={`Use ${option.name} background`}
               accessibilityRole="button"
@@ -1092,6 +1093,12 @@ const NativePowerControls = ({
       chargedMove2: supports(draft.chargedMove2, 'charged') ? draft.chargedMove2 : null,
     };
   };
+  const compatibleBackgroundPatch = (options: NativeInstanceBackgroundOption[] | undefined) => ({
+    locationCard: draft.locationCard == null
+      || options?.some((background) => String(background.id) === draft.locationCard)
+      ? draft.locationCard
+      : null,
+  });
   if (!supportsShadowState && !supportsMega && !supportsCrown && !supportsFusion && !supportsMaxMoves) return null;
 
   return (
@@ -1160,6 +1167,7 @@ const NativePowerControls = ({
                 fusionForm: null,
                 fusedWith: null,
                 ...compatibleMovePatch(detail.moveOptions),
+                ...compatibleBackgroundPatch(detail.backgroundOptions),
               })}
               palette={palette}
               selected={!draft.fused}
@@ -1181,6 +1189,7 @@ const NativePowerControls = ({
                     megaForm: null,
                     crowned: false,
                     ...compatibleMovePatch(option.moveOptions),
+                    ...compatibleBackgroundPatch(option.backgroundOptions),
                   })}
                   palette={palette}
                   selected={draft.fused && draft.fusionId === option.id}
@@ -1627,6 +1636,12 @@ export const NativeInstanceDetailScreen = ({
     ? editErrorState.message
     : null;
   const backgroundPickerOpen = backgroundPickerInstanceId === detail.row.id;
+  const selectedFusionOption = activeDraft.fused
+    ? detail.fusionOptions?.find((option) => option.id === activeDraft.fusionId) ?? null
+    : null;
+  const activeBackgroundOptions = selectedFusionOption?.backgroundOptions
+    ?? detail.backgroundOptions
+    ?? [];
   const displayLucky = editing
     ? isWanted ? activeDraft.prefLucky : activeDraft.lucky
     : Boolean(detail.row.lucky || instance?.lucky || (isWanted && instance?.pref_lucky));
@@ -1651,7 +1666,19 @@ export const NativeInstanceDetailScreen = ({
         : detail.appearanceImageUris?.base ?? detail.row.imageUri
     : detail.row.imageUri;
   const selectedLocationBackgroundUri = editing
-    ? detail.backgroundOptions?.find((option) => String(option.id) === activeDraft.locationCard)?.imageUri ?? null
+    ? (() => {
+        const selected = activeBackgroundOptions.find(
+          (option) => String(option.id) === activeDraft.locationCard,
+        );
+        if (!selected || !selectedFusionOption || !activeDraft.fusedWith) {
+          return selected?.imageUri ?? null;
+        }
+        const partnerBackgroundId = selectedFusionOption.partnerBackgroundIds[activeDraft.fusedWith];
+        return selectedFusionOption.comboBackgrounds.find((candidate) => (
+          candidate.ownBackgroundId === selected.id
+          && candidate.partnerBackgroundId === partnerBackgroundId
+        ))?.option.imageUri ?? selected.imageUri;
+      })()
     : detail.row.locationBackgroundUri;
   const updateDraft = (patch: Partial<NativeInstanceEditDraft>) => {
     setDraftState((current) => ({
@@ -1812,7 +1839,7 @@ export const NativeInstanceDetailScreen = ({
               detail={detail}
               draft={activeDraft}
               editing={editing}
-              canPickBackground={(detail.backgroundOptions?.length ?? 0) > 0}
+              canPickBackground={activeBackgroundOptions.length > 0}
               onDraftChange={updateDraft}
               onEdit={() => void toggleEdit()}
               onOpenBackground={() => setBackgroundPickerInstanceId(detail.row.id)}
@@ -1838,7 +1865,7 @@ export const NativeInstanceDetailScreen = ({
                 <Text style={[styles.cpText, { color: palette.text }]}>CP{cp}</Text>
               ) : <View />}
               {editing ? (
-                (detail.backgroundOptions?.length ?? 0) > 0 ? (
+                activeBackgroundOptions.length > 0 ? (
                   <Pressable
                     accessibilityLabel="Choose location background"
                     accessibilityRole="button"
@@ -2060,10 +2087,10 @@ export const NativeInstanceDetailScreen = ({
 
       <NativeBackgroundPicker
         assetBaseUrl={assetBaseUrl}
-        detail={detail}
         onChange={(locationCard) => updateDraft({ locationCard })}
         onClose={() => setBackgroundPickerInstanceId(null)}
         open={backgroundPickerOpen}
+        options={activeBackgroundOptions}
         palette={palette}
         selectedId={activeDraft.locationCard}
       />

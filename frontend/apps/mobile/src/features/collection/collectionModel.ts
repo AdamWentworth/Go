@@ -18,6 +18,10 @@ import {
   resolvePokemonActiveMegaEvolution,
   resolvePokemonInstanceImagePath,
 } from '@pokemongonexus/shared-domain/pokemon-display';
+import {
+  resolvePokemonDisplayFusionBackgroundPool,
+  resolvePokemonDisplayFusionComboBackground,
+} from '@pokemongonexus/shared-domain/fusion-backgrounds';
 import { normalizeNativeTagsEnvelope } from './nativeTagsEnvelope';
 import { normalizeNativeTagIds } from './nativeInstanceNormalization';
 
@@ -82,6 +86,12 @@ export type NativeInstanceMoveOption = {
   typeName: string;
 };
 
+export type NativeInstanceBackgroundOption = {
+  id: number;
+  name: string;
+  imageUri: string;
+};
+
 export type NativeInstanceDetail = {
   row: NativeCollectionRow;
   instance?: PokemonInstance;
@@ -93,11 +103,7 @@ export type NativeInstanceDetail = {
   provenance: { label: string; value: string }[];
   preferences: { label: string; value: string }[];
   moveOptions?: NativeInstanceMoveOption[];
-  backgroundOptions?: {
-    id: number;
-    name: string;
-    imageUri: string;
-  }[];
+  backgroundOptions?: NativeInstanceBackgroundOption[];
   appearanceImageUris?: {
     base?: string | null;
     shadow: string | null;
@@ -122,6 +128,13 @@ export type NativeInstanceDetail = {
     name: string;
     partnerPokemonId: number;
     partnerRows: NativeCollectionRow[];
+    backgroundOptions: NativeInstanceBackgroundOption[];
+    partnerBackgroundIds: Record<string, number | null>;
+    comboBackgrounds: {
+      ownBackgroundId: number;
+      partnerBackgroundId: number;
+      option: NativeInstanceBackgroundOption;
+    }[];
   }[];
   fusionPartnerRow?: NativeCollectionRow | null;
   specialMaxBaseEligible?: boolean;
@@ -366,20 +379,45 @@ const instanceSearchTerms = (instance: PokemonInstance, pokemon: BasePokemon): s
 const resolveLocationBackgroundImage = (
   instance: PokemonInstance,
   pokemon: BasePokemon,
+  instances: Record<string, PokemonInstance>,
 ): string | null => {
   if (instance.location_card == null || instance.location_card === '') return null;
   const backgroundId = Number(instance.location_card);
   if (!Number.isFinite(backgroundId)) return null;
-  const candidates = pokemon.backgrounds?.filter(
+  const resolvedPool = resolvePokemonDisplayFusionBackgroundPool({
+    pokemon,
+    fusion: {
+      is_fused: instance.is_fused,
+      fusion_form: instance.fusion_form,
+      storedFusionObject: instance.fusion,
+    },
+  });
+  const pool = instance.is_fused ? resolvedPool.backgrounds : pokemon.backgrounds ?? [];
+  const candidates = pool.filter(
     (background) => Number(background.background_id) === backgroundId,
-  ) ?? [];
+  );
   if (candidates.length === 0) return null;
 
   const exactCostume = candidates.find(
     (background) => Number(background.costume_id ?? 0) === Number(instance.costume_id ?? 0),
   );
   const generic = candidates.find((background) => background.costume_id == null);
-  return (exactCostume ?? generic ?? candidates[0])?.image_url ?? null;
+  const selected = exactCostume ?? generic ?? candidates[0];
+  if (!instance.is_fused || !instance.fused_with) return selected?.image_url ?? null;
+  const partnerKey = resolveInstanceCollectionKey(instances, instance.fused_with);
+  const partnerBackgroundId = partnerKey == null
+    ? null
+    : Number(instances[partnerKey]?.location_card);
+  const combo = resolvePokemonDisplayFusionComboBackground({
+    pokemonId: pokemon.pokemon_id,
+    fusionEntries: pokemon.fusion,
+    resolvedFusionId: resolvedPool.fusionId,
+    fusionForm: instance.fusion_form,
+    ownBackgroundId: selected?.background_id ?? backgroundId,
+    partnerBackgroundId: Number.isFinite(partnerBackgroundId) ? partnerBackgroundId : null,
+    availableBackgrounds: pool,
+  });
+  return combo?.image_url ?? selected?.image_url ?? null;
 };
 
 export const buildNativeCollectionRows = (
@@ -409,7 +447,7 @@ export const buildNativeCollectionRows = (
         name: displayName(instance, pokemon),
         imageUri: absoluteImageUri(resolveNativeInstanceImage(instance, pokemon), assetOrigin),
         locationBackgroundUri: absoluteImageUri(
-          resolveLocationBackgroundImage(instance, pokemon),
+          resolveLocationBackgroundImage(instance, pokemon, instances),
           assetOrigin,
         ),
         maxKind: instance.gigantamax
@@ -753,11 +791,10 @@ export const buildNativeInstanceDetail = (
   const instance = instances[collectionKey];
   const pokemon = catalog.find((entry) => entry.pokemon_id === instance.pokemon_id);
   if (!pokemon) return null;
-  const row = buildNativeCollectionRows(
-    { [collectionKey]: instance },
-    [pokemon],
-    assetOrigin,
-  )[0];
+  const collectionRows = buildNativeCollectionRows(instances, catalog, assetOrigin);
+  const row = collectionRows.find((candidate) => (
+    candidate.id === instance.instance_id || candidate.id === collectionKey
+  ));
   if (!row) return null;
 
   const traits = compactRows([
@@ -834,7 +871,6 @@ export const buildNativeInstanceDetail = (
     : instance.is_for_trade
       ? 'wanted'
       : null;
-  const collectionRows = buildNativeCollectionRows(instances, catalog, assetOrigin);
   const targetRows = targetStatus == null
     ? []
     : collectionRows
@@ -859,7 +895,15 @@ export const buildNativeInstanceDetail = (
     legacy: move.legacy,
     typeName: move.type_name,
   }])).values()];
-  const backgroundOptions = (pokemon.backgrounds ?? [])
+  const resolvedBackgroundPool = resolvePokemonDisplayFusionBackgroundPool({
+    pokemon,
+    fusion: {
+      is_fused: instance.is_fused,
+      fusion_form: instance.fusion_form,
+      storedFusionObject: instance.fusion,
+    },
+  });
+  const backgroundOptions = resolvedBackgroundPool.backgrounds
     .filter((background) => (
       instance.is_fused
       || Number(background.costume_id ?? 0) === Number(instance.costume_id ?? 0)
@@ -938,6 +982,50 @@ export const buildNativeInstanceDetail = (
           [key]: { ...candidate, disabled: false },
         }, catalog, assetOrigin);
       });
+      const resolvedFusionBackgrounds = resolvePokemonDisplayFusionBackgroundPool({
+        pokemon,
+        fusion: {
+          is_fused: true,
+          fusion_form: entry.name,
+          storedFusionObject: { [entry.fusion_id as number]: true },
+        },
+      });
+      const fusionBackgroundOptions = resolvedFusionBackgrounds.backgrounds.map((background) => ({
+        id: background.background_id,
+        name: background.location || background.name,
+        imageUri: absoluteImageUri(background.image_url, assetOrigin) ?? background.image_url,
+      }));
+      const partnerBackgroundIds = Object.fromEntries(partnerRows.map((partnerRow) => {
+        const partnerKey = resolveInstanceCollectionKey(instances, partnerRow.id);
+        const rawValue = partnerKey == null ? null : instances[partnerKey]?.location_card;
+        const value = rawValue == null || rawValue === '' ? Number.NaN : Number(rawValue);
+        return [partnerRow.id, Number.isFinite(value) ? value : null];
+      }));
+      const comboBackgrounds = partnerRows.flatMap((partnerRow) => {
+        const partnerBackgroundId = partnerBackgroundIds[partnerRow.id];
+        if (partnerBackgroundId == null) return [];
+        return resolvedFusionBackgrounds.backgrounds.flatMap((background) => {
+          const combo = resolvePokemonDisplayFusionComboBackground({
+            pokemonId: pokemon.pokemon_id,
+            fusionEntries: pokemon.fusion,
+            resolvedFusionId: resolvedFusionBackgrounds.fusionId,
+            fusionForm: entry.name,
+            ownBackgroundId: background.background_id,
+            partnerBackgroundId,
+            availableBackgrounds: resolvedFusionBackgrounds.backgrounds,
+          });
+          if (!combo) return [];
+          return [{
+            ownBackgroundId: background.background_id,
+            partnerBackgroundId,
+            option: {
+              id: combo.background_id,
+              name: combo.location || combo.name,
+              imageUri: absoluteImageUri(combo.image_url, assetOrigin) ?? combo.image_url,
+            },
+          }];
+        });
+      });
       return {
         id: entry.fusion_id as number,
         imageUri: absoluteImageUri(
@@ -958,6 +1046,9 @@ export const buildNativeInstanceDetail = (
         name: entry.name || `Fusion ${entry.fusion_id}`,
         partnerPokemonId: entry.base_pokemon_id2,
         partnerRows,
+        backgroundOptions: fusionBackgroundOptions,
+        partnerBackgroundIds,
+        comboBackgrounds,
       };
     });
   const fusionPartnerRow = activePartnerKey == null

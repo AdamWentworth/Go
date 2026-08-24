@@ -587,6 +587,21 @@ describe('NativeInstanceDetailScreen', () => {
             name: 'Dawn Wings Necrozma',
             partnerPokemonId: 792,
             partnerRows: [partner('lunala-1', 'Lunala One'), partner('lunala-2', 'Lunala Two')],
+            backgroundOptions: [{
+              id: 12,
+              name: 'Fusion sky',
+              imageUri: 'https://pokegonexus.com/images/fusion-location.png',
+            }],
+            partnerBackgroundIds: { 'lunala-1': 21, 'lunala-2': null },
+            comboBackgrounds: [{
+              ownBackgroundId: 12,
+              partnerBackgroundId: 21,
+              option: {
+                id: 99,
+                name: 'Combined sky',
+                imageUri: 'https://pokegonexus.com/images/fusion-combo.png',
+              },
+            }],
           }],
           instance: {
             nickname: null,
@@ -628,6 +643,9 @@ describe('NativeInstanceDetailScreen', () => {
 
     fireEvent.press(screen.getByRole('button', { name: 'Edit Pokémon' }));
     fireEvent.press(screen.getByRole('button', { name: 'Power form: Dawn Wings Necrozma' }));
+    fireEvent.press(screen.getByRole('button', { name: 'Choose location background' }));
+    expect(screen.getByRole('button', { name: 'Use Fusion sky background' })).toBeTruthy();
+    fireEvent.press(screen.getByRole('button', { name: 'Use Fusion sky background' }));
     fireEvent.press(screen.getByRole('button', { name: 'Power form: Lunala Two' }));
     fireEvent.press(screen.getByRole('button', { name: 'Choose charged move' }));
     expect(screen.getByText('Moongeist Beam')).toBeTruthy();
@@ -640,6 +658,7 @@ describe('NativeInstanceDetailScreen', () => {
       fused_with: 'lunala-2',
       fusion_form: 'Dawn Wings Necrozma',
       fusion: { 2: true },
+      location_card: '12',
     }));
   });
 

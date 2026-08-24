@@ -456,6 +456,21 @@ export default function DeviceSmokeCollectionRoute() {
                     name: 'Dawn Wings Necrozma',
                     partnerPokemonId: 792,
                     partnerRows: ROWS.filter((candidate) => candidate.id === 'smoke-lunala'),
+                    backgroundOptions: [{
+                      id: 501,
+                      name: 'Fusion sky',
+                      imageUri: `${ASSET_BASE_URL}/images/backgrounds/bg_psychic.png`,
+                    }],
+                    partnerBackgroundIds: { 'smoke-lunala': 502 },
+                    comboBackgrounds: [{
+                      ownBackgroundId: 501,
+                      partnerBackgroundId: 502,
+                      option: {
+                        id: 503,
+                        name: 'Combined fusion sky',
+                        imageUri: `${ASSET_BASE_URL}/images/backgrounds/bg_ghost.png`,
+                      },
+                    }],
                   }]
                 : [],
               crownOptions: openedRow.pokemonId === 888
