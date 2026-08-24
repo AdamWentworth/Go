@@ -62,6 +62,8 @@ export default function NativeInstanceDetailRoute() {
     return <Redirect href="/native" />;
   }
 
+  const supportsSiblingNavigation = detail?.row.status === 'caught' || detail?.row.status === 'trade';
+
   return <NativeInstanceDetailScreen
     assetBaseUrl={runtimeConfig.api.frontendAppUrl}
     detail={detail}
@@ -78,8 +80,9 @@ export default function NativeInstanceDetailRoute() {
     isSaving={favoriteMutation.isPending}
     onRetry={() => void Promise.all([snapshotQuery.refetch(), movesQuery.refetch()])}
     onBack={() => router.canGoBack() ? router.back() : router.replace('/native/collection')}
-    onNext={neighbors.nextId ? () => navigateToInstance(neighbors.nextId!) : undefined}
-    onPrevious={neighbors.previousId ? () => navigateToInstance(neighbors.previousId!) : undefined}
+    onNext={supportsSiblingNavigation && neighbors.nextId ? () => navigateToInstance(neighbors.nextId!) : undefined}
+    onOpenTarget={navigateToInstance}
+    onPrevious={supportsSiblingNavigation && neighbors.previousId ? () => navigateToInstance(neighbors.previousId!) : undefined}
     onToggleFavorite={(favorite) => favoriteMutation.mutate(favorite)}
     onEditInCurrentApp={() => router.replace({
       pathname: '/web',

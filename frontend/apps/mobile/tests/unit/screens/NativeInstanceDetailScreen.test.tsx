@@ -28,6 +28,22 @@ const detail = {
   moves: [{ label: 'Fast move', value: 'Fire Spin' }],
   provenance: [],
   preferences: [{ label: 'Friendship', value: '5/5 hearts' }],
+  targetRows: [{
+    id: 'wanted-1',
+    pokemonId: 9,
+    pokedexNumber: 9,
+    name: 'Gigantamax Blastoise',
+    imageUri: 'https://pokegonexus.com/images/blastoise.png',
+    locationBackgroundUri: null,
+    maxKind: 'gigantamax' as const,
+    purified: false,
+    lucky: false,
+    typeIconUris: [],
+    status: 'wanted' as const,
+    cp: null,
+    favorite: false,
+    mostWanted: true,
+  }],
 };
 
 describe('NativeInstanceDetailScreen', () => {
@@ -133,5 +149,29 @@ describe('NativeInstanceDetailScreen', () => {
     fireEvent.press(screen.getByRole('button', { name: 'Next Pokémon' }));
     expect(onPrevious).toHaveBeenCalledTimes(1);
     expect(onNext).toHaveBeenCalledTimes(1);
+  });
+
+  it('opens a configured target directly from the listing summary', () => {
+    const onOpenTarget = jest.fn();
+    render(
+      <NativeInstanceDetailScreen
+        detail={detail}
+        isLoading={false}
+        error={null}
+        cachedAt={null}
+        movesWarning={null}
+        saveNotice={null}
+        saveError={null}
+        isSaving={false}
+        onRetry={jest.fn()}
+        onBack={jest.fn()}
+        onOpenTarget={onOpenTarget}
+        onToggleFavorite={jest.fn()}
+        onEditInCurrentApp={jest.fn()}
+      />,
+    );
+
+    fireEvent.press(screen.getByRole('button', { name: 'Open Gigantamax Blastoise' }));
+    expect(onOpenTarget).toHaveBeenCalledWith('wanted-1');
   });
 });

@@ -27,6 +27,7 @@ type Props = {
   onBack: () => void;
   onNext?: () => void;
   onPrevious?: () => void;
+  onOpenTarget?: (instanceId: string) => void;
   onToggleFavorite: (favorite: boolean) => void;
   onEditInCurrentApp: () => void;
 };
@@ -186,12 +187,24 @@ const TargetCard = ({
   assetBaseUrl,
   row,
   palette,
+  onPress,
 }: {
   assetBaseUrl: string;
   row: NativeInstanceDetail['row'];
   palette: typeof LIGHT;
+  onPress?: () => void;
 }) => (
-  <View style={[styles.targetCard, { borderColor: palette.border, backgroundColor: palette.targetCard }]}>
+  <Pressable
+    accessibilityLabel={`Open ${row.name}`}
+    accessibilityRole={onPress ? 'button' : undefined}
+    disabled={!onPress}
+    onPress={onPress}
+    style={({ pressed }) => [
+      styles.targetCard,
+      { borderColor: palette.border, backgroundColor: palette.targetCard },
+      pressed && styles.targetCardPressed,
+    ]}
+  >
     <View style={styles.targetImageStage}>
       {row.lucky ? (
         <Image
@@ -220,7 +233,7 @@ const TargetCard = ({
     </View>
     <Text numberOfLines={3} style={[styles.targetName, { color: palette.text }]}>{row.name}</Text>
     <Text style={[styles.targetDex, { color: palette.secondary }]}>#{String(row.pokedexNumber).padStart(4, '0')}</Text>
-  </View>
+  </Pressable>
 );
 
 const TargetSummary = ({
@@ -228,11 +241,13 @@ const TargetSummary = ({
   detail,
   palette,
   onEdit,
+  onOpenTarget,
 }: {
   assetBaseUrl: string;
   detail: NativeInstanceDetail;
   palette: typeof LIGHT;
   onEdit: () => void;
+  onOpenTarget?: (instanceId: string) => void;
 }) => {
   const rows = detail.targetRows ?? [];
   if (detail.row.status === 'caught') return null;
@@ -262,7 +277,13 @@ const TargetSummary = ({
         >
           <View style={styles.targetGrid}>
             {rows.map((row) => (
-              <TargetCard assetBaseUrl={assetBaseUrl} key={row.id} palette={palette} row={row} />
+              <TargetCard
+                assetBaseUrl={assetBaseUrl}
+                key={row.id}
+                onPress={onOpenTarget ? () => onOpenTarget(row.id) : undefined}
+                palette={palette}
+                row={row}
+              />
             ))}
           </View>
         </ScrollView>
@@ -316,6 +337,7 @@ export const NativeInstanceDetailScreen = ({
   onBack,
   onNext,
   onPrevious,
+  onOpenTarget,
   onToggleFavorite,
   onEditInCurrentApp,
 }: Props) => {
@@ -588,6 +610,7 @@ export const NativeInstanceDetailScreen = ({
               assetBaseUrl={assetBaseUrl}
               detail={detail}
               onEdit={onEditInCurrentApp}
+              onOpenTarget={onOpenTarget}
               palette={palette}
             />
 
@@ -830,6 +853,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderRadius: 10,
   },
+  targetCardPressed: { opacity: 0.72, transform: [{ scale: 0.98 }] },
   targetImageStage: { width: '100%', height: 86, alignItems: 'center', justifyContent: 'center' },
   targetLuckyBackdrop: { position: 'absolute', width: 88, height: 88 },
   targetImage: { width: 82, height: 82 },

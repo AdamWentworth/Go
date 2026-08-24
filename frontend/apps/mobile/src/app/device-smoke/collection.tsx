@@ -335,8 +335,12 @@ export default function DeviceSmokeCollectionRoute() {
             movesWarning={null}
             onBack={() => setOpenedRow(null)}
             onEditInCurrentApp={() => undefined}
-            onNext={nextRow ? () => setOpenedRow(nextRow) : undefined}
-            onPrevious={previousRow ? () => setOpenedRow(previousRow) : undefined}
+            onNext={openedRow.status !== 'wanted' && nextRow ? () => setOpenedRow(nextRow) : undefined}
+            onOpenTarget={(instanceId) => {
+              const target = ROWS.find((row) => row.id === instanceId);
+              if (target) setOpenedRow(target);
+            }}
+            onPrevious={openedRow.status !== 'wanted' && previousRow ? () => setOpenedRow(previousRow) : undefined}
             onRetry={() => undefined}
             onToggleFavorite={() => undefined}
             saveError={null}

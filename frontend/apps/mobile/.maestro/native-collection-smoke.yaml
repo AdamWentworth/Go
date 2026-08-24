@@ -166,8 +166,8 @@ tags:
     timeout: 10000
 - assertVisible: Gigantamax Blastoise
 - assertVisible: MOST WANTED
-- assertVisible: Previous Pokémon
-- assertVisible: Next Pokémon
+- assertNotVisible: Previous Pokémon
+- assertNotVisible: Next Pokémon
 - takeScreenshot: 06-wanted-instance
 - tapOn: Close
 - assertNotVisible: WANTED CONDITIONS
@@ -176,7 +176,13 @@ tags:
 - tapOn: "View Shiny Gigantamax Charizard"
 - assertVisible: FOR TRADE
 - assertVisible: Wanted Pokémon
+- assertVisible: Previous Pokémon
+- assertVisible: Next Pokémon
 - takeScreenshot: 06b-for-trade-instance
+- tapOn: Open Gigantamax Blastoise
+- assertVisible: WANTED CONDITIONS
+- assertVisible: Gigantamax Blastoise
+- takeScreenshot: 06bb-target-navigation
 - tapOn: Close
 - tapOn: Clear Trade tag filter
 - tapOn: TAGS
