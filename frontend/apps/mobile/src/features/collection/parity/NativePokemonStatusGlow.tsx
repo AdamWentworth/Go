@@ -30,7 +30,7 @@ export const NativePokemonStatusGlow = ({
         <Defs>
           <RadialGradient cx="50%" cy="50%" id={`ownership-${ownership}`} r="50%">
             <Stop offset="0%" stopColor={color} stopOpacity="0.4" />
-            <Stop offset="28%" stopColor={color} stopOpacity="0.4" />
+            <Stop offset="10%" stopColor={color} stopOpacity="0.4" />
             <Stop offset="50%" stopColor={color} stopOpacity="0" />
             <Stop offset="100%" stopColor={color} stopOpacity="0" />
           </RadialGradient>

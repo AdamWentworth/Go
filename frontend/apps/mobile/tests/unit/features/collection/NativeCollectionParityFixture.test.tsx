@@ -42,6 +42,7 @@ describe('NativeCollectionParityFixture', () => {
 
     expect(screen.getAllByLabelText('Favorite')).toHaveLength(9);
     expect(screen.getAllByLabelText('Gigantamax')).toHaveLength(2);
+    expect(screen.getByTestId('native-location-backdrop', { includeHiddenElements: true })).toBeTruthy();
     expect(screen.getByLabelText('Sort by Pokédex number ascending')).toBeTruthy();
     expect(screen.getByLabelText('Open action menu')).toBeTruthy();
     for (const card of COLLECTION_PARITY_FIXTURES) {

@@ -20,6 +20,7 @@ import {
   type NativePokemonHubView,
 } from '../NativePokemonHubHeader';
 import { NativePokemonStatusGlow } from './NativePokemonStatusGlow';
+import { NativePokemonLocationBackdrop } from './NativePokemonLocationBackdrop';
 import {
   NativeCollectionSearchControls,
   NativeCollectionSearchMenu,
@@ -164,11 +165,8 @@ const CollectionParityCard = ({
       <View style={styles.imageStage}>
         <NativePokemonStatusGlow ownership={card.ownership} />
         {card.locationBackgroundPath ? (
-          <Image
-            accessibilityElementsHidden
-            resizeMode="cover"
-            source={{ uri: toAssetUrl(assetBaseUrl, card.locationBackgroundPath) }}
-            style={styles.locationBackground}
+          <NativePokemonLocationBackdrop
+            uri={toAssetUrl(assetBaseUrl, card.locationBackgroundPath)}
           />
         ) : null}
         {card.lucky ? (
@@ -559,13 +557,6 @@ const styles = StyleSheet.create({
     aspectRatio: 1,
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  locationBackground: {
-    position: 'absolute',
-    width: '100%',
-    height: '100%',
-    borderRadius: 999,
-    opacity: 0.68,
   },
   luckyBackground: { position: 'absolute', width: '100%', height: '100%', opacity: 0.85 },
   pokemonImage: { width: '100%', height: '100%' },
