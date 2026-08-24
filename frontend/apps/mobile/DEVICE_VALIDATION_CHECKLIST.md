@@ -2,6 +2,36 @@
 
 Use this checklist for Android and iOS device smoke validation against live services.
 
+## Current native-preview milestone
+
+This is the device check to run before migrating additional collection edits.
+The default application remains the stable WebView experience; start Expo with
+`EXPO_PUBLIC_MOBILE_EXPERIENCE=native-preview` to expose these routes.
+
+1. Open the preview in Expo Go while the phone and development computer are on
+   the same local network.
+2. Sign in with email and password. Native social sign-in is not part of this
+   milestone; the current app remains available as a fallback.
+3. Open **Your collection**, confirm the grid loads, search/filter it, and open
+   a caught Pokémon that is not currently For Trade.
+4. Toggle Favorite while online. Confirm the detail and collection grid update,
+   and that any Receiver-accepted state is distinguished from final server
+   reconciliation.
+5. Let the collection load online once, disable the phone's network, and keep
+   the preview open. Confirm the cached collection remains usable and is clearly
+   labelled as an offline copy.
+6. Toggle Favorite while offline. Confirm the change appears immediately and
+   the sync card says that one change is safely retained on the device.
+7. Restore the network. Confirm automatic retry begins, then progresses from
+   local/pending to Receiver-accepted and finally disappears after the users
+   service observes the committed snapshot. Use **Retry** or **Check** if needed.
+8. Reopen the Pokémon and confirm the final Favorite value remains correct.
+
+This preview uses the live APIs by default, so choose a harmless caught Pokémon
+and restore its original Favorite value before finishing. A force-stop/relaunch
+test while fully offline should wait for an installed development build; Expo Go
+may need Metro access to reopen a development bundle.
+
 ## Preconditions
 
 1. `EXPO_PUBLIC_*_API_URL` values point to production/staging endpoints.
@@ -9,6 +39,9 @@ Use this checklist for Android and iOS device smoke validation against live serv
 3. Device has stable network and then a reproducible offline toggle path (airplane mode).
 
 ## Flow Checklist
+
+The broader checklist below describes the destination architecture. Do not use
+it as a claim that every workflow has already migrated from the current app.
 
 1. Auth:
    - Login succeeds.
