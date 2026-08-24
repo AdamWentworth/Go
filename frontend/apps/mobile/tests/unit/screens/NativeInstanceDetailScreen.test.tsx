@@ -227,6 +227,65 @@ describe('NativeInstanceDetailScreen', () => {
     expect(screen.queryByLabelText('Pokémon detail editor')).toBeNull();
   });
 
+  it('selects compatible moves and a location background inside the native editor', async () => {
+    const onSaveDetails = jest.fn().mockResolvedValue(undefined);
+    render(
+      <NativeInstanceDetailScreen
+        detail={{
+          ...detail,
+          instance: {
+            nickname: null,
+            cp: 2499,
+            level: 40,
+            fast_move_id: null,
+            charged_move1_id: null,
+            charged_move2_id: null,
+            location_card: null,
+          } as NonNullable<NativeInstanceDetail['instance']>,
+          row: { ...detail.row, status: 'caught' },
+          moveOptions: [
+            { id: 101, name: 'Fire Spin', kind: 'fast', legacy: false, typeName: 'Fire' },
+            { id: 102, name: 'Blast Burn', kind: 'charged', legacy: true, typeName: 'Fire' },
+          ],
+          backgroundOptions: [{
+            id: 9,
+            name: 'Vancouver City Safari',
+            imageUri: 'https://pokegonexus.com/images/vancouver-location.png',
+          }],
+        }}
+        isLoading={false}
+        error={null}
+        cachedAt={null}
+        movesWarning={null}
+        saveNotice={null}
+        saveError={null}
+        isSaving={false}
+        onRetry={jest.fn()}
+        onBack={jest.fn()}
+        onSaveDetails={onSaveDetails}
+        onToggleFavorite={jest.fn()}
+        onEditInCurrentApp={jest.fn()}
+      />,
+    );
+
+    fireEvent.press(screen.getByRole('button', { name: 'Edit Pokémon' }));
+    fireEvent.press(screen.getByRole('button', { name: 'Choose fast move' }));
+    fireEvent.press(screen.getByRole('button', { name: 'Fire Spin' }));
+    fireEvent.press(screen.getByRole('button', { name: 'Choose charged move' }));
+    fireEvent.press(screen.getByRole('button', { name: 'Blast Burn' }));
+    fireEvent.press(screen.getByRole('button', { name: 'Choose location background' }));
+    fireEvent.press(screen.getByRole('button', { name: 'Use Vancouver City Safari background' }));
+    await act(async () => {
+      fireEvent.press(screen.getByRole('button', { name: 'Save Pokémon' }));
+    });
+
+    expect(onSaveDetails).toHaveBeenCalledWith(expect.objectContaining({
+      fast_move_id: 101,
+      charged_move1_id: 102,
+      location_card: '9',
+    }));
+  });
+
   it('saves five-heart, lucky, and Most Wanted conditions natively', async () => {
     const onSaveDetails = jest.fn().mockResolvedValue(undefined);
     render(
@@ -238,12 +297,27 @@ describe('NativeInstanceDetailScreen', () => {
             friendship_level: 4,
             pref_lucky: false,
             most_wanted: false,
+            wanted_size_preferences: null,
           } as NonNullable<NativeInstanceDetail['instance']>,
           row: {
             ...detail.row,
             id: 'wanted-1',
             status: 'wanted',
             mostWanted: false,
+          },
+          sizeThresholds: {
+            pokedex_height: 1,
+            pokedex_weight: 10,
+            height_standard_deviation: 0.1,
+            weight_standard_deviation: 1,
+            height_xxs_threshold: 1,
+            height_xs_threshold: 2,
+            height_xl_threshold: 3,
+            height_xxl_threshold: 4,
+            weight_xxs_threshold: 10,
+            weight_xs_threshold: 20,
+            weight_xl_threshold: 30,
+            weight_xxl_threshold: 40,
           },
         }}
         isLoading={false}
@@ -265,6 +339,8 @@ describe('NativeInstanceDetailScreen', () => {
     fireEvent.press(screen.getByRole('button', { name: 'Set friendship to 5 hearts' }));
     fireEvent.press(screen.getByRole('button', { name: 'Lucky trade not requested' }));
     fireEvent.press(screen.getByRole('button', { name: 'Mark as Most Wanted' }));
+    fireEvent.press(screen.getByRole('button', { name: 'XXL weight' }));
+    fireEvent.press(screen.getByRole('button', { name: 'XS height' }));
     await act(async () => {
       fireEvent.press(screen.getByRole('button', { name: 'Save wanted listing' }));
     });
@@ -273,6 +349,22 @@ describe('NativeInstanceDetailScreen', () => {
       friendship_level: 5,
       pref_lucky: true,
       most_wanted: true,
+      wanted_size_preferences: {
+        weight: {
+          category: 'XXL',
+          min: 40,
+          max: null,
+          min_inclusive: false,
+          max_inclusive: false,
+        },
+        height: {
+          category: 'XS',
+          min: 1,
+          max: 2,
+          min_inclusive: true,
+          max_inclusive: false,
+        },
+      },
     }));
   });
 });

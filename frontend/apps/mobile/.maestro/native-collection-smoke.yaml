@@ -195,6 +195,24 @@ tags:
 - assertVisible: Combat Power
 - assertVisible: APPRAISAL IVS
 - takeScreenshot: 06d-caught-instance-editor
+- tapOn: Choose location background
+- assertVisible: Choose a background
+- assertVisible: Vancouver City Safari
+- takeScreenshot: 06e-location-background-selector
+- tapOn: Close background selector
+- scrollUntilVisible:
+    element:
+      text: MOVES
+    direction: DOWN
+- tapOn: Choose fast move
+- assertVisible: MOVE SELECTOR
+- assertVisible: Vine Whip
+- takeScreenshot: 06f-move-selector
+- tapOn: Close fast move selector
+- scrollUntilVisible:
+    element:
+      text: Save Pokémon
+    direction: UP
 - tapOn: Save Pokémon
 - assertNotVisible: Pokémon detail editor
 - takeScreenshot: 06c-caught-instance

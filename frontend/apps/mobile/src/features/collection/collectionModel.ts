@@ -84,6 +84,19 @@ export type NativeInstanceDetail = {
   moves: { label: string; value: string }[];
   provenance: { label: string; value: string }[];
   preferences: { label: string; value: string }[];
+  moveOptions?: {
+    id: number;
+    name: string;
+    kind: 'fast' | 'charged';
+    legacy: boolean;
+    typeName: string;
+  }[];
+  backgroundOptions?: {
+    id: number;
+    name: string;
+    imageUri: string;
+  }[];
+  sizeThresholds?: BasePokemon['sizes'];
 };
 
 export const buildCanonicalCollectionInstancePath = (
@@ -799,6 +812,33 @@ export const buildNativeInstanceDetail = (
         && excluded[candidate.id] !== true
       ));
 
+  const moveEntry = moves.find((candidate) => candidate.pokemon_id === instance.pokemon_id);
+  const fusion = activeFusion(instance, pokemon);
+  const crown = activeCrown(instance, pokemon);
+  const specificMoves = fusion
+    ? moveEntry?.fusion.find((entry) => entry.fusion_id === fusion.fusion_id)?.moves
+    : crown
+      ? moveEntry?.crownForms.find((entry) => entry.id === crown.id)?.moves
+      : null;
+  const movePool = specificMoves?.length ? specificMoves : moveEntry?.moves ?? [];
+  const moveOptions = [...new Map(movePool.map((move) => [move.move_id, {
+    id: move.move_id,
+    name: move.name,
+    kind: move.is_fast ? 'fast' as const : 'charged' as const,
+    legacy: move.legacy,
+    typeName: move.type_name,
+  }])).values()];
+  const backgroundOptions = (pokemon.backgrounds ?? [])
+    .filter((background) => (
+      instance.is_fused
+      || Number(background.costume_id ?? 0) === Number(instance.costume_id ?? 0)
+    ))
+    .map((background) => ({
+      id: background.background_id,
+      name: background.location || background.name,
+      imageUri: absoluteImageUri(background.image_url, assetOrigin) ?? background.image_url,
+    }));
+
   return {
     row,
     instance,
@@ -809,5 +849,8 @@ export const buildNativeInstanceDetail = (
     moves: moveRows,
     provenance,
     preferences,
+    moveOptions,
+    backgroundOptions,
+    sizeThresholds: pokemon.sizes,
   };
 };

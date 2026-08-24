@@ -1,6 +1,7 @@
 import {
   ActivityIndicator,
   Image,
+  Modal,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -14,6 +15,11 @@ import { useState } from 'react';
 import Svg, { Circle, Path } from 'react-native-svg';
 import type { NativeInstanceDetail } from '../features/collection/collectionModel';
 import type { NativeInstanceDetailPatch } from '../features/collection/nativeInstanceDetailMutation';
+import type {
+  PokemonSizeClass,
+  WantedSizePreferences,
+  WantedSizeRange,
+} from '@pokemongonexus/shared-contracts/instances';
 import { NativePokemonLocationBackdrop } from '../features/collection/parity/NativePokemonLocationBackdrop';
 
 type Props = {
@@ -52,11 +58,33 @@ type NativeInstanceEditDraft = {
   friendship: number;
   prefLucky: boolean;
   mostWanted: boolean;
+  fastMove: number | null;
+  chargedMove1: number | null;
+  chargedMove2: number | null;
+  weightSize: PokemonSizeClass | null;
+  heightSize: PokemonSizeClass | null;
+  locationCard: string | null;
 };
 
 const editableNumber = (value: unknown): string => (
   typeof value === 'number' && Number.isFinite(value) ? String(value) : ''
 );
+
+const resolveWantedSizeClass = (
+  detail: NativeInstanceDetail,
+  metric: 'weight' | 'height',
+): PokemonSizeClass | null => {
+  const stored = detail.instance?.wanted_size_preferences?.[metric]?.category;
+  if (stored) return stored;
+  const value = detail.instance?.[metric];
+  const sizes = detail.sizeThresholds;
+  if (value == null || !sizes) return null;
+  if (value < sizes[`${metric}_xxs_threshold`]) return 'XXS';
+  if (value < sizes[`${metric}_xs_threshold`]) return 'XS';
+  if (value > sizes[`${metric}_xxl_threshold`]) return 'XXL';
+  if (value > sizes[`${metric}_xl_threshold`]) return 'XL';
+  return null;
+};
 
 const createEditDraft = (detail: NativeInstanceDetail): NativeInstanceEditDraft => ({
   nickname: detail.instance?.nickname
@@ -75,12 +103,51 @@ const createEditDraft = (detail: NativeInstanceDetail): NativeInstanceEditDraft 
   friendship: friendshipLevelFor(detail),
   prefLucky: Boolean(detail.instance?.pref_lucky),
   mostWanted: Boolean(detail.instance?.most_wanted),
+  fastMove: detail.instance?.fast_move_id ?? null,
+  chargedMove1: detail.instance?.charged_move1_id ?? null,
+  chargedMove2: detail.instance?.charged_move2_id ?? null,
+  weightSize: resolveWantedSizeClass(detail, 'weight'),
+  heightSize: resolveWantedSizeClass(detail, 'height'),
+  locationCard: detail.instance?.location_card ?? null,
 });
 
 const nullableNumber = (value: string): number | null => {
   const trimmed = value.trim();
   if (!trimmed) return null;
   return Number(trimmed);
+};
+
+const buildWantedSizeRange = (
+  category: PokemonSizeClass | null,
+  sizes: NativeInstanceDetail['sizeThresholds'],
+  metric: 'weight' | 'height',
+): WantedSizeRange | null => {
+  if (!category || !sizes) return null;
+  const xxs = sizes[`${metric}_xxs_threshold`];
+  const xs = sizes[`${metric}_xs_threshold`];
+  const xl = sizes[`${metric}_xl_threshold`];
+  const xxl = sizes[`${metric}_xxl_threshold`];
+  if (category === 'XXS') {
+    return { category, min: null, max: xxs, min_inclusive: false, max_inclusive: false };
+  }
+  if (category === 'XS') {
+    return { category, min: xxs, max: xs, min_inclusive: true, max_inclusive: false };
+  }
+  if (category === 'XL') {
+    return { category, min: xl, max: xxl, min_inclusive: false, max_inclusive: true };
+  }
+  return { category, min: xxl, max: null, min_inclusive: false, max_inclusive: false };
+};
+
+const buildWantedSizePreferences = (
+  draft: NativeInstanceEditDraft,
+  sizes: NativeInstanceDetail['sizeThresholds'],
+): WantedSizePreferences | null => {
+  const preferences = {
+    weight: buildWantedSizeRange(draft.weightSize, sizes, 'weight'),
+    height: buildWantedSizeRange(draft.heightSize, sizes, 'height'),
+  };
+  return preferences.weight || preferences.height ? preferences : null;
 };
 
 const toAssetUrl = (baseUrl: string, path: string): string => (
@@ -94,10 +161,17 @@ const primaryTypeName = (detail: NativeInstanceDetail): string => {
   return match?.[1]?.toLowerCase() ?? 'normal';
 };
 
-const backgroundPath = (detail: NativeInstanceDetail): string => {
+const backgroundPath = (
+  detail: NativeInstanceDetail,
+  wantedLuckyOverride?: boolean,
+): string => {
   const instance = detail.instance;
   if (instance?.shadow && !instance.purified) return '/images/backgrounds/bg_shadow.png';
-  if (detail.row.lucky || instance?.lucky || (instance?.is_wanted && instance.pref_lucky)) {
+  if (
+    detail.row.lucky
+    || instance?.lucky
+    || (instance?.is_wanted && (wantedLuckyOverride ?? instance.pref_lucky))
+  ) {
     return '/images/backgrounds/bg_lucky.png';
   }
   return `/images/backgrounds/bg_${primaryTypeName(detail)}.png`;
@@ -143,6 +217,8 @@ const FriendshipConditions = ({
   editing,
   draft,
   onDraftChange,
+  canPickBackground,
+  onOpenBackground,
 }: {
   assetBaseUrl: string;
   detail: NativeInstanceDetail;
@@ -151,6 +227,8 @@ const FriendshipConditions = ({
   editing: boolean;
   draft: NativeInstanceEditDraft;
   onDraftChange: (patch: Partial<NativeInstanceEditDraft>) => void;
+  canPickBackground: boolean;
+  onOpenBackground: () => void;
 }) => {
   const friendship = editing ? draft.friendship : friendshipLevelFor(detail);
   const luckyRequested = editing
@@ -178,6 +256,21 @@ const FriendshipConditions = ({
           <Text style={styles.conditionsTitle}>WANTED CONDITIONS</Text>
           <Text style={[styles.conditionsSubtitle, { color: palette.secondary }]}>Friendship and eligibility</Text>
         </View>
+        {editing && canPickBackground ? (
+          <Pressable
+            accessibilityLabel="Choose location background"
+            accessibilityRole="button"
+            onPress={onOpenBackground}
+            style={styles.conditionBackgroundButton}
+          >
+            <Image
+              accessibilityElementsHidden
+              resizeMode="contain"
+              source={{ uri: toAssetUrl(assetBaseUrl, '/images/location.png') }}
+              style={[styles.conditionBackgroundImage, { tintColor: palette.text }]}
+            />
+          </Pressable>
+        ) : null}
         <Pressable
           accessibilityLabel={mostWanted ? 'Remove Most Wanted' : 'Mark as Most Wanted'}
           accessibilityRole={editing ? 'button' : undefined}
@@ -403,12 +496,229 @@ const DetailRows = ({
   </View>
 );
 
+const NativeMoveSelector = ({
+  label,
+  options,
+  palette,
+  value,
+  onChange,
+}: {
+  label: string;
+  options: NonNullable<NativeInstanceDetail['moveOptions']>;
+  palette: typeof LIGHT;
+  value: number | null;
+  onChange: (value: number | null) => void;
+}) => {
+  const [open, setOpen] = useState(false);
+  const selected = options.find((option) => option.id === value);
+  return (
+    <>
+      <Pressable
+        accessibilityLabel={`Choose ${label.toLowerCase()}`}
+        accessibilityRole="button"
+        onPress={() => setOpen(true)}
+        style={[styles.choiceField, { backgroundColor: palette.input, borderColor: palette.border }]}
+      >
+        <View style={styles.choiceFieldCopy}>
+          <Text style={[styles.editFieldLabel, { color: palette.secondary }]}>{label.toUpperCase()}</Text>
+          <Text numberOfLines={1} style={[styles.choiceFieldValue, { color: palette.text }]}>
+            {selected?.name ?? 'Unselected move'}
+          </Text>
+        </View>
+        <Text style={[styles.choiceChevron, { color: palette.secondary }]}>⌄</Text>
+      </Pressable>
+      <Modal
+        animationType="slide"
+        onRequestClose={() => setOpen(false)}
+        statusBarTranslucent
+        transparent
+        visible={open}
+      >
+        <View accessibilityViewIsModal style={styles.choiceModalBackdrop}>
+          <View style={[styles.choiceModalSheet, { backgroundColor: palette.panel, borderColor: palette.border }]}>
+            <View style={styles.choiceModalHeader}>
+              <View>
+                <Text style={styles.choiceModalEyebrow}>MOVE SELECTOR</Text>
+                <Text style={[styles.choiceModalTitle, { color: palette.text }]}>{label}</Text>
+              </View>
+              <Pressable
+                accessibilityLabel={`Close ${label.toLowerCase()} selector`}
+                accessibilityRole="button"
+                onPress={() => setOpen(false)}
+                style={[styles.choiceModalClose, { borderColor: palette.border }]}
+              >
+                <Text style={[styles.choiceModalCloseText, { color: palette.text }]}>×</Text>
+              </Pressable>
+            </View>
+            <ScrollView style={styles.choiceList}>
+              <Pressable
+                accessibilityRole="button"
+                onPress={() => { onChange(null); setOpen(false); }}
+                style={[styles.choiceOption, { borderColor: palette.border }]}
+              >
+                <Text style={[styles.choiceOptionName, { color: palette.text }]}>Unselected move</Text>
+              </Pressable>
+              {options.map((option) => (
+                <Pressable
+                  accessibilityRole="button"
+                  key={option.id}
+                  onPress={() => { onChange(option.id); setOpen(false); }}
+                  style={[
+                    styles.choiceOption,
+                    { borderColor: value === option.id ? '#2e9eff' : palette.border },
+                    value === option.id && styles.choiceOptionSelected,
+                  ]}
+                >
+                  <View style={styles.choiceOptionCopy}>
+                    <Text style={[styles.choiceOptionName, { color: palette.text }]}>{option.name}</Text>
+                    <Text style={[styles.choiceOptionMeta, { color: palette.secondary }]}>
+                      {option.typeName}{option.legacy ? ' · Legacy' : ''}
+                    </Text>
+                  </View>
+                  {value === option.id ? <Text style={styles.choiceCheck}>✓</Text> : null}
+                </Pressable>
+              ))}
+            </ScrollView>
+          </View>
+        </View>
+      </Modal>
+    </>
+  );
+};
+
+const NativeWantedSizeControls = ({
+  draft,
+  palette,
+  onChange,
+}: {
+  draft: NativeInstanceEditDraft;
+  palette: typeof LIGHT;
+  onChange: (patch: Partial<NativeInstanceEditDraft>) => void;
+}) => (
+  <View style={styles.editFieldGroup}>
+    {([
+      ['WEIGHT', 'weightSize'],
+      ['HEIGHT', 'heightSize'],
+    ] as const).map(([label, field]) => (
+      <View key={field} style={styles.sizePreferenceRow}>
+        <Text style={[styles.editFieldLabel, styles.sizePreferenceLabel, { color: palette.secondary }]}>{label}</Text>
+        <View accessibilityLabel={`Wanted ${label.toLowerCase()}`} style={styles.sizeOptions}>
+          {(['XXS', 'XS', null, 'XL', 'XXL'] as const).map((option) => {
+            const selected = draft[field] === option;
+            const optionLabel = option ?? 'Any';
+            return (
+              <Pressable
+                accessibilityLabel={`${optionLabel} ${label.toLowerCase()}`}
+                accessibilityRole="button"
+                key={optionLabel}
+                onPress={() => onChange({ [field]: option })}
+                style={[
+                  styles.sizeOption,
+                  { borderColor: selected ? '#ff617d' : palette.border },
+                  selected && styles.sizeOptionSelected,
+                ]}
+              >
+                <Text style={[styles.sizeOptionText, { color: palette.text }]}>{optionLabel}</Text>
+              </Pressable>
+            );
+          })}
+        </View>
+      </View>
+    ))}
+  </View>
+);
+
+const NativeBackgroundPicker = ({
+  assetBaseUrl,
+  detail,
+  open,
+  palette,
+  selectedId,
+  onChange,
+  onClose,
+}: {
+  assetBaseUrl: string;
+  detail: NativeInstanceDetail;
+  open: boolean;
+  palette: typeof LIGHT;
+  selectedId: string | null;
+  onChange: (value: string | null) => void;
+  onClose: () => void;
+}) => (
+  <Modal
+    animationType="slide"
+    onRequestClose={onClose}
+    statusBarTranslucent
+    transparent
+    visible={open}
+  >
+    <View accessibilityViewIsModal style={styles.choiceModalBackdrop}>
+      <View style={[styles.choiceModalSheet, { backgroundColor: palette.panel, borderColor: palette.border }]}>
+        <View style={styles.choiceModalHeader}>
+          <View>
+            <Text style={styles.choiceModalEyebrow}>LOCATION CARD</Text>
+            <Text style={[styles.choiceModalTitle, { color: palette.text }]}>Choose a background</Text>
+          </View>
+          <Pressable
+            accessibilityLabel="Close background selector"
+            accessibilityRole="button"
+            onPress={onClose}
+            style={[styles.choiceModalClose, { borderColor: palette.border }]}
+          >
+            <Text style={[styles.choiceModalCloseText, { color: palette.text }]}>×</Text>
+          </Pressable>
+        </View>
+        <ScrollView contentContainerStyle={styles.backgroundGrid}>
+          <Pressable
+            accessibilityLabel="No location background"
+            accessibilityRole="button"
+            onPress={() => { onChange(null); onClose(); }}
+            style={[
+              styles.backgroundOption,
+              { backgroundColor: palette.input, borderColor: selectedId == null ? '#38a9ff' : palette.border },
+            ]}
+          >
+            <Image
+              accessibilityElementsHidden
+              resizeMode="contain"
+              source={{ uri: toAssetUrl(assetBaseUrl, '/images/location.png') }}
+              style={[styles.noBackgroundIcon, { tintColor: palette.secondary }]}
+            />
+            <Text style={[styles.backgroundOptionName, { color: palette.text }]}>None</Text>
+          </Pressable>
+          {(detail.backgroundOptions ?? []).map((option) => (
+            <Pressable
+              accessibilityLabel={`Use ${option.name} background`}
+              accessibilityRole="button"
+              key={option.id}
+              onPress={() => { onChange(String(option.id)); onClose(); }}
+              style={[
+                styles.backgroundOption,
+                { borderColor: selectedId === String(option.id) ? '#38a9ff' : palette.border },
+              ]}
+            >
+              <NativePokemonLocationBackdrop uri={option.imageUri} />
+              <View style={styles.backgroundOptionCaption}>
+                <Text numberOfLines={2} style={[styles.backgroundOptionName, styles.backgroundOptionImageName]}>
+                  {option.name}
+                </Text>
+              </View>
+            </Pressable>
+          ))}
+        </ScrollView>
+      </View>
+    </View>
+  </Modal>
+);
+
 const NativeInstanceEditFields = ({
+  detail,
   draft,
   isWanted,
   palette,
   onChange,
 }: {
+  detail: NativeInstanceDetail;
   draft: NativeInstanceEditDraft;
   isWanted: boolean;
   palette: typeof LIGHT;
@@ -494,37 +804,68 @@ const NativeInstanceEditFields = ({
         </View>
       </View>
 
+      {isWanted ? (
+        <NativeWantedSizeControls draft={draft} onChange={onChange} palette={palette} />
+      ) : null}
+
+      {!isWanted ? (
+        <View style={styles.editTwoColumns}>
+          <View style={styles.editColumn}>
+            <Text style={[styles.editFieldLabel, { color: palette.secondary }]}>WEIGHT (KG)</Text>
+            <TextInput
+              accessibilityLabel="Pokémon weight"
+              keyboardType="decimal-pad"
+              onChangeText={(weight) => onChange({ weight })}
+              placeholder="Optional"
+              placeholderTextColor={palette.secondary}
+              selectTextOnFocus
+              style={inputStyle}
+              value={draft.weight}
+            />
+          </View>
+          <View style={styles.editColumn}>
+            <Text style={[styles.editFieldLabel, { color: palette.secondary }]}>HEIGHT (M)</Text>
+            <TextInput
+              accessibilityLabel="Pokémon height"
+              keyboardType="decimal-pad"
+              onChangeText={(height) => onChange({ height })}
+              placeholder="Optional"
+              placeholderTextColor={palette.secondary}
+              selectTextOnFocus
+              style={inputStyle}
+              value={draft.height}
+            />
+          </View>
+        </View>
+      ) : null}
+
+      <View style={styles.editFieldGroup}>
+        <Text style={[styles.editFieldLabel, { color: palette.secondary }]}>MOVES</Text>
+        <NativeMoveSelector
+          label="Fast move"
+          onChange={(fastMove) => onChange({ fastMove })}
+          options={(detail.moveOptions ?? []).filter((move) => move.kind === 'fast')}
+          palette={palette}
+          value={draft.fastMove}
+        />
+        <NativeMoveSelector
+          label="Charged move"
+          onChange={(chargedMove1) => onChange({ chargedMove1 })}
+          options={(detail.moveOptions ?? []).filter((move) => move.kind === 'charged')}
+          palette={palette}
+          value={draft.chargedMove1}
+        />
+        <NativeMoveSelector
+          label="Second charged move"
+          onChange={(chargedMove2) => onChange({ chargedMove2 })}
+          options={(detail.moveOptions ?? []).filter((move) => move.kind === 'charged')}
+          palette={palette}
+          value={draft.chargedMove2}
+        />
+      </View>
+
       {!isWanted ? (
         <>
-          <View style={styles.editTwoColumns}>
-            <View style={styles.editColumn}>
-              <Text style={[styles.editFieldLabel, { color: palette.secondary }]}>WEIGHT (KG)</Text>
-              <TextInput
-                accessibilityLabel="Pokémon weight"
-                keyboardType="decimal-pad"
-                onChangeText={(weight) => onChange({ weight })}
-                placeholder="Optional"
-                placeholderTextColor={palette.secondary}
-                selectTextOnFocus
-                style={inputStyle}
-                value={draft.weight}
-              />
-            </View>
-            <View style={styles.editColumn}>
-              <Text style={[styles.editFieldLabel, { color: palette.secondary }]}>HEIGHT (M)</Text>
-              <TextInput
-                accessibilityLabel="Pokémon height"
-                keyboardType="decimal-pad"
-                onChangeText={(height) => onChange({ height })}
-                placeholder="Optional"
-                placeholderTextColor={palette.secondary}
-                selectTextOnFocus
-                style={inputStyle}
-                value={draft.height}
-              />
-            </View>
-          </View>
-
           <View style={styles.editFieldGroup}>
             <Text style={[styles.editFieldLabel, { color: palette.secondary }]}>APPRAISAL IVS</Text>
             <View style={styles.editThreeColumns}>
@@ -612,6 +953,7 @@ export const NativeInstanceDetailScreen = ({
     instanceId: string;
     message: string;
   } | null>(null);
+  const [backgroundPickerInstanceId, setBackgroundPickerInstanceId] = useState<string | null>(null);
 
   if (isLoading) {
     return (
@@ -668,6 +1010,10 @@ export const NativeInstanceDetailScreen = ({
   const editError = editErrorState?.instanceId === detail.row.id
     ? editErrorState.message
     : null;
+  const backgroundPickerOpen = backgroundPickerInstanceId === detail.row.id;
+  const selectedLocationBackgroundUri = editing
+    ? detail.backgroundOptions?.find((option) => String(option.id) === activeDraft.locationCard)?.imageUri ?? null
+    : detail.row.locationBackgroundUri;
   const updateDraft = (patch: Partial<NativeInstanceEditDraft>) => {
     setDraftState((current) => ({
       instanceId: detail.row.id,
@@ -699,6 +1045,13 @@ export const NativeInstanceDetailScreen = ({
             friendship_level: activeDraft.friendship,
             pref_lucky: activeDraft.prefLucky,
             most_wanted: activeDraft.mostWanted,
+            fast_move_id: activeDraft.fastMove,
+            charged_move1_id: activeDraft.chargedMove1,
+            charged_move2_id: activeDraft.chargedMove2,
+            location_card: activeDraft.locationCard,
+            weight: null,
+            height: null,
+            wanted_size_preferences: buildWantedSizePreferences(activeDraft, detail.sizeThresholds),
           }
         : {
             nickname: !instance?.nickname
@@ -715,6 +1068,10 @@ export const NativeInstanceDetailScreen = ({
             stamina_iv: nullableNumber(activeDraft.staminaIv),
             location_caught: activeDraft.locationCaught,
             date_caught: activeDraft.dateCaught,
+            fast_move_id: activeDraft.fastMove,
+            charged_move1_id: activeDraft.chargedMove1,
+            charged_move2_id: activeDraft.chargedMove2,
+            location_card: activeDraft.locationCard,
           };
       await onSaveDetails(patch);
       setEditingInstanceId(null);
@@ -735,7 +1092,12 @@ export const NativeInstanceDetailScreen = ({
         accessibilityElementsHidden
         blurRadius={3}
         resizeMode="cover"
-        source={{ uri: toAssetUrl(assetBaseUrl, backgroundPath(detail)) }}
+        source={{
+          uri: toAssetUrl(
+            assetBaseUrl,
+            backgroundPath(detail, editing && isWanted ? activeDraft.prefLucky : undefined),
+          ),
+        }}
         style={styles.fullBackground}
       />
       <View style={styles.backgroundTint} />
@@ -759,8 +1121,10 @@ export const NativeInstanceDetailScreen = ({
               detail={detail}
               draft={activeDraft}
               editing={editing}
+              canPickBackground={(detail.backgroundOptions?.length ?? 0) > 0}
               onDraftChange={updateDraft}
               onEdit={() => void toggleEdit()}
+              onOpenBackground={() => setBackgroundPickerInstanceId(detail.row.id)}
               palette={palette}
             />
           ) : (
@@ -779,10 +1143,26 @@ export const NativeInstanceDetailScreen = ({
                   style={[styles.editImage, { tintColor: palette.text }]}
                 />
               </Pressable>
-              {isCaught && cp != null ? (
+              {isCaught && cp != null && !editing ? (
                 <Text style={[styles.cpText, { color: palette.text }]}>CP{cp}</Text>
               ) : <View />}
-              {isCaught ? (
+              {editing ? (
+                (detail.backgroundOptions?.length ?? 0) > 0 ? (
+                  <Pressable
+                    accessibilityLabel="Choose location background"
+                    accessibilityRole="button"
+                    onPress={() => setBackgroundPickerInstanceId(detail.row.id)}
+                    style={styles.iconButton}
+                  >
+                    <Image
+                      accessibilityElementsHidden
+                      resizeMode="contain"
+                      source={{ uri: toAssetUrl(assetBaseUrl, '/images/location.png') }}
+                      style={[styles.editImage, { tintColor: palette.text }]}
+                    />
+                  </Pressable>
+                ) : <View style={styles.iconButton} />
+              ) : isCaught ? (
                 <Pressable
                   accessibilityLabel={detail.row.favorite ? 'Remove Favorite' : 'Mark as Favorite'}
                   accessibilityRole="button"
@@ -809,9 +1189,9 @@ export const NativeInstanceDetailScreen = ({
             isWanted && styles.wantedImageStage,
             isTrade && styles.tradeImageStage,
           ]}>
-            {detail.row.locationBackgroundUri ? (
+            {selectedLocationBackgroundUri ? (
               <View style={[styles.locationBackdrop, { width: Math.min(shellWidth, 447) }]}>
-                <NativePokemonLocationBackdrop uri={detail.row.locationBackgroundUri} />
+                <NativePokemonLocationBackdrop uri={selectedLocationBackgroundUri} />
               </View>
             ) : null}
             {detail.row.lucky ? (
@@ -858,6 +1238,7 @@ export const NativeInstanceDetailScreen = ({
             ) : null}
             {editing ? (
               <NativeInstanceEditFields
+                detail={detail}
                 draft={activeDraft}
                 isWanted={isWanted}
                 onChange={updateDraft}
@@ -982,6 +1363,16 @@ export const NativeInstanceDetailScreen = ({
         </View>
       </ScrollView>
 
+      <NativeBackgroundPicker
+        assetBaseUrl={assetBaseUrl}
+        detail={detail}
+        onChange={(locationCard) => updateDraft({ locationCard })}
+        onClose={() => setBackgroundPickerInstanceId(null)}
+        open={backgroundPickerOpen}
+        palette={palette}
+        selectedId={activeDraft.locationCard}
+      />
+
       <Pressable
         accessibilityLabel="Close"
         accessibilityRole="button"
@@ -1102,6 +1493,8 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   conditionEditImage: { width: 35, height: 35 },
+  conditionBackgroundButton: { width: 38, height: 38, alignItems: 'center', justifyContent: 'center' },
+  conditionBackgroundImage: { width: 32, height: 32 },
   conditionsHeadingCopy: { flex: 1, minWidth: 0, gap: 2 },
   conditionsTitle: { color: '#ff617d', fontSize: 11, fontWeight: '900', letterSpacing: 1.2 },
   conditionsSubtitle: { fontSize: 11, lineHeight: 13 },
@@ -1184,6 +1577,53 @@ const styles = StyleSheet.create({
   },
   genderOptionSelected: { backgroundColor: 'rgba(40,137,226,0.23)' },
   genderOptionText: { fontSize: 12, fontWeight: '900' },
+  choiceField: {
+    minHeight: 52,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    paddingHorizontal: 11,
+    paddingVertical: 7,
+    borderWidth: 1,
+    borderRadius: 9,
+  },
+  choiceFieldCopy: { flex: 1, minWidth: 0, gap: 2 },
+  choiceFieldValue: { fontSize: 15, fontWeight: '800' },
+  choiceChevron: { fontSize: 25, lineHeight: 26 },
+  choiceModalBackdrop: { flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(0,0,0,0.66)' },
+  choiceModalSheet: {
+    maxHeight: '82%',
+    paddingHorizontal: 14,
+    paddingTop: 14,
+    paddingBottom: 24,
+    borderWidth: 1,
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+  },
+  choiceModalHeader: { minHeight: 56, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12 },
+  choiceModalEyebrow: { color: '#2e9eff', fontSize: 10, fontWeight: '900', letterSpacing: 1.3 },
+  choiceModalTitle: { fontSize: 23, fontWeight: '900' },
+  choiceModalClose: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderRadius: 22 },
+  choiceModalCloseText: { fontSize: 28, lineHeight: 30 },
+  choiceList: { marginTop: 8 },
+  choiceOption: { minHeight: 54, flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 7, paddingHorizontal: 12, paddingVertical: 8, borderWidth: 1, borderRadius: 10 },
+  choiceOptionSelected: { backgroundColor: 'rgba(46,158,255,0.13)' },
+  choiceOptionCopy: { flex: 1, minWidth: 0 },
+  choiceOptionName: { fontSize: 15, fontWeight: '900' },
+  choiceOptionMeta: { marginTop: 2, fontSize: 12 },
+  choiceCheck: { color: '#43c995', fontSize: 22, fontWeight: '900' },
+  sizePreferenceRow: { gap: 5 },
+  sizePreferenceLabel: { paddingLeft: 2 },
+  sizeOptions: { flexDirection: 'row', gap: 5 },
+  sizeOption: { minHeight: 42, flex: 1, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderRadius: 8 },
+  sizeOptionSelected: { backgroundColor: 'rgba(255,97,125,0.16)' },
+  sizeOptionText: { fontSize: 12, fontWeight: '900' },
+  backgroundGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, paddingTop: 10, paddingBottom: 20 },
+  backgroundOption: { width: '48.5%', height: 150, overflow: 'hidden', alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderRadius: 12 },
+  backgroundOptionCaption: { position: 'absolute', left: 0, right: 0, bottom: 0, minHeight: 40, justifyContent: 'center', paddingHorizontal: 7, backgroundColor: 'rgba(0,0,0,0.72)' },
+  backgroundOptionName: { fontSize: 12, fontWeight: '900', textAlign: 'center' },
+  backgroundOptionImageName: { color: '#ffffff' },
+  noBackgroundIcon: { width: 54, height: 54, marginBottom: 7 },
   levelGenderRow: { width: '100%', minHeight: 34, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 22 },
   sideSlot: { width: 42 },
   levelText: { fontSize: 12, fontWeight: '800' },

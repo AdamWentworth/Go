@@ -364,6 +364,35 @@ describe('native collection model', () => {
   });
 
   it('builds a native detail model from shared instance identity and move metadata', () => {
+    const detailPokemon = {
+      ...pokemon,
+      backgrounds: [
+        {
+          background_id: 9,
+          costume_id: null,
+          name: 'City Safari',
+          location: 'Vancouver',
+          image_url: '/images/vancouver-location.png',
+        },
+        {
+          background_id: 10,
+          costume_id: 22,
+          name: 'Costume only',
+          location: 'Costume only',
+          image_url: '/images/costume-location.png',
+        },
+      ],
+      sizes: {
+        height_xxs_threshold: 1,
+        height_xs_threshold: 2,
+        height_xl_threshold: 3,
+        height_xxl_threshold: 4,
+        weight_xxs_threshold: 10,
+        weight_xs_threshold: 20,
+        weight_xl_threshold: 30,
+        weight_xxl_threshold: 40,
+      },
+    } as unknown as BasePokemon;
     const detail = buildNativeInstanceDetail(
       {
         legacy_key: instance({
@@ -376,10 +405,16 @@ describe('native collection model', () => {
           fast_move_id: 101,
         }),
       },
-      [pokemon],
+      [detailPokemon],
       [{
         pokemon_id: 6,
-        moves: [{ move_id: 101, name: 'Fire Spin' }],
+        moves: [{
+          move_id: 101,
+          name: 'Fire Spin',
+          is_fast: 1,
+          legacy: false,
+          type_name: 'Fire',
+        }],
         fusion: [],
         crownForms: [],
       }] as never,
@@ -397,6 +432,19 @@ describe('native collection model', () => {
         { label: 'Friendship', value: '5/5 hearts' },
         { label: 'Lucky trade', value: 'Requested' },
       ]),
+      moveOptions: [{
+        id: 101,
+        name: 'Fire Spin',
+        kind: 'fast',
+        legacy: false,
+        typeName: 'Fire',
+      }],
+      backgroundOptions: [{
+        id: 9,
+        name: 'Vancouver',
+        imageUri: 'https://pokegonexus.com/images/vancouver-location.png',
+      }],
+      sizeThresholds: detailPokemon.sizes,
     }));
   });
 });
