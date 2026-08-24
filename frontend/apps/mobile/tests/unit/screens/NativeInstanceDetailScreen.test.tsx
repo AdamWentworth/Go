@@ -340,6 +340,107 @@ describe('NativeInstanceDetailScreen', () => {
     expect(screen.getByText('Shadow Pokémon cannot be traded until purified.')).toBeTruthy();
   });
 
+  it('purifies and restores a caught Shadow Pokémon with canonical trade invariants', async () => {
+    const onSaveDetails = jest.fn().mockResolvedValue(undefined);
+    render(
+      <NativeInstanceDetailScreen
+        detail={{
+          ...detail,
+          appearanceImageUris: {
+            shadow: 'https://pokegonexus.com/images/shadow-charizard.png',
+            purified: 'https://pokegonexus.com/images/charizard.png',
+          },
+          instance: {
+            nickname: null,
+            shadow: true,
+            purified: false,
+            lucky: false,
+            is_traded: false,
+            costume_id: null,
+          } as NonNullable<NativeInstanceDetail['instance']>,
+          row: { ...detail.row, status: 'caught' },
+        }}
+        isLoading={false}
+        error={null}
+        cachedAt={null}
+        movesWarning={null}
+        saveNotice={null}
+        saveError={null}
+        isSaving={false}
+        onRetry={jest.fn()}
+        onBack={jest.fn()}
+        onSaveDetails={onSaveDetails}
+        onToggleFavorite={jest.fn()}
+        onEditInCurrentApp={jest.fn()}
+      />,
+    );
+
+    fireEvent.press(screen.getByRole('button', { name: 'Edit Pokémon' }));
+    fireEvent.press(screen.getByRole('button', { name: 'Shadow state: Purified' }));
+    expect(screen.getByLabelText('Purified')).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'LUCKY: YES' })).toBeTruthy();
+    fireEvent.press(screen.getByRole('button', { name: 'Shadow state: Shadow' }));
+    await act(async () => {
+      fireEvent.press(screen.getByRole('button', { name: 'Save Pokémon' }));
+    });
+
+    expect(onSaveDetails).toHaveBeenCalledWith(expect.objectContaining({
+      shadow: true,
+      purified: false,
+      lucky: false,
+      is_traded: false,
+    }));
+  });
+
+  it('edits all three Max Move levels for an eligible instance', async () => {
+    const onSaveDetails = jest.fn().mockResolvedValue(undefined);
+    render(
+      <NativeInstanceDetailScreen
+        detail={{
+          ...detail,
+          instance: {
+            nickname: null,
+            shadow: false,
+            purified: false,
+            costume_id: null,
+            dynamax: true,
+            gigantamax: false,
+            max_attack: 1,
+            max_guard: 0,
+            max_spirit: 0,
+          } as NonNullable<NativeInstanceDetail['instance']>,
+          row: { ...detail.row, status: 'caught', maxKind: 'dynamax' },
+        }}
+        isLoading={false}
+        error={null}
+        cachedAt={null}
+        movesWarning={null}
+        saveNotice={null}
+        saveError={null}
+        isSaving={false}
+        onRetry={jest.fn()}
+        onBack={jest.fn()}
+        onSaveDetails={onSaveDetails}
+        onToggleFavorite={jest.fn()}
+        onEditInCurrentApp={jest.fn()}
+      />,
+    );
+
+    fireEvent.press(screen.getByRole('button', { name: 'Edit Pokémon' }));
+    fireEvent.press(screen.getByRole('button', { name: 'Max Attack: 3' }));
+    fireEvent.press(screen.getByRole('button', { name: 'Max Guard: 2' }));
+    fireEvent.press(screen.getByRole('button', { name: 'Max Spirit: 1' }));
+    await act(async () => {
+      fireEvent.press(screen.getByRole('button', { name: 'Save Pokémon' }));
+    });
+
+    expect(onSaveDetails).toHaveBeenCalledWith(expect.objectContaining({
+      max_attack: 3,
+      max_guard: 2,
+      max_spirit: 1,
+    }));
+  });
+
   it('saves five-heart, lucky, and Most Wanted conditions natively', async () => {
     const onSaveDetails = jest.fn().mockResolvedValue(undefined);
     render(

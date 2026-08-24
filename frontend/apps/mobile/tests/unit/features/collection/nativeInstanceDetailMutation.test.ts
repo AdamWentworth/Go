@@ -96,6 +96,9 @@ describe('persistNativeInstanceDetailMutation', () => {
         is_traded: true,
         original_trainer_name: '  TradePartner  ',
         pokeball: 'beast_ball',
+        max_attack: '3',
+        max_guard: 2,
+        max_spirit: 0,
       },
       outbox,
       receiverClient,
@@ -114,6 +117,9 @@ describe('persistNativeInstanceDetailMutation', () => {
       is_traded: true,
       original_trainer_name: 'TradePartner',
       pokeball: 'beast_ball',
+      max_attack: 3,
+      max_guard: 2,
+      max_spirit: 0,
       last_update: 200,
     }));
     expect(outbox.queue).toHaveBeenCalledTimes(1);
@@ -128,6 +134,10 @@ describe('persistNativeInstanceDetailMutation', () => {
     [{ gender: 'Unknown' }, 'Gender selection is invalid.'],
     [{ pokeball: 'ordinary_ball' }, 'Poké Ball selection is invalid.'],
     [{ lucky: true, is_traded: false }, 'Lucky Pokémon are always traded.'],
+    [{ max_attack: 0 }, 'Max Attack must be between 1 and 3.'],
+    [{ max_guard: 4 }, 'Max Guard must be between 0 and 3.'],
+    [{ max_spirit: 1.5 }, 'Max Spirit must be a whole number.'],
+    [{ shadow: true, purified: true }, 'A Pokémon cannot be Shadow and Purified at the same time.'],
   ])('rejects an invalid detail patch %#', async (patch, message) => {
     await expect(persistNativeInstanceDetailMutation({
       userId: 'user-1',
@@ -139,5 +149,30 @@ describe('persistNativeInstanceDetailMutation', () => {
       syncBatchId: 'batch-1',
       now: 200,
     })).rejects.toThrow(message);
+  });
+
+  it('enforces the canonical Shadow invariants in the persisted mutation', async () => {
+    const result = await persistNativeInstanceDetailMutation({
+      userId: 'user-1',
+      snapshot,
+      requestedInstanceId: 'instance-1',
+      patch: {
+        shadow: true,
+        lucky: true,
+        is_traded: true,
+        purified: false,
+      },
+      outbox: makeOutbox(),
+      receiverClient: { post: jest.fn().mockResolvedValue({ accepted: true }) },
+      syncBatchId: 'batch-shadow',
+      now: 201,
+    });
+
+    expect(result.mutation.updated).toEqual(expect.objectContaining({
+      shadow: true,
+      purified: false,
+      lucky: false,
+      is_traded: false,
+    }));
   });
 });

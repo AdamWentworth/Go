@@ -35,12 +35,17 @@ export type NativeInstanceDetailPatch = Partial<Pick<
   | 'lucky'
   | 'location_card'
   | 'location_caught'
+  | 'max_attack'
+  | 'max_guard'
+  | 'max_spirit'
   | 'most_wanted'
   | 'nickname'
   | 'original_trainer_id'
   | 'original_trainer_name'
   | 'pokeball'
   | 'pref_lucky'
+  | 'purified'
+  | 'shadow'
   | 'stamina_iv'
   | 'traded_date'
   | 'wanted_size_preferences'
@@ -77,6 +82,17 @@ const normalizeNullableText = (value: string | null | undefined): string | null 
   return normalized || null;
 };
 
+const normalizeMaxMoveLevel = (
+  label: string,
+  value: string | number | null | undefined,
+  minimum: number,
+): number | null | undefined => {
+  if (value === undefined || value === null || value === '') return value === '' ? null : value;
+  const normalized = typeof value === 'number' ? value : Number(value);
+  assertNullableInteger(label, normalized, minimum, 3);
+  return normalized;
+};
+
 const normalizeWantedSizePreferences = (
   value: WantedSizePreferences | null | undefined,
 ): WantedSizePreferences | null | undefined => {
@@ -108,6 +124,9 @@ export const normalizeNativeInstanceDetailPatch = (
   assertNullableInteger('Fast move', patch.fast_move_id, 1, Number.MAX_SAFE_INTEGER);
   assertNullableInteger('Charged move', patch.charged_move1_id, 1, Number.MAX_SAFE_INTEGER);
   assertNullableInteger('Second charged move', patch.charged_move2_id, 1, Number.MAX_SAFE_INTEGER);
+  const maxAttack = normalizeMaxMoveLevel('Max Attack', patch.max_attack, 1);
+  const maxGuard = normalizeMaxMoveLevel('Max Guard', patch.max_guard, 0);
+  const maxSpirit = normalizeMaxMoveLevel('Max Spirit', patch.max_spirit, 0);
 
   const nickname = normalizeNullableText(patch.nickname);
   if (nickname && nickname.length > 12) throw new Error('Nickname must be 12 characters or fewer.');
@@ -130,9 +149,22 @@ export const normalizeNativeInstanceDetailPatch = (
   if (patch.lucky && patch.is_traded === false) {
     throw new Error('Lucky Pokémon are always traded.');
   }
+  if (patch.shadow && patch.purified) {
+    throw new Error('A Pokémon cannot be Shadow and Purified at the same time.');
+  }
+
+  const appearanceInvariant = patch.shadow === true
+    ? { shadow: true, purified: false, lucky: false, is_traded: false }
+    : patch.purified === true
+      ? { shadow: false, purified: true }
+      : {};
 
   return {
     ...patch,
+    ...appearanceInvariant,
+    max_attack: maxAttack,
+    max_guard: maxGuard,
+    max_spirit: maxSpirit,
     nickname,
     gender,
     original_trainer_id: normalizeNullableText(patch.original_trainer_id),

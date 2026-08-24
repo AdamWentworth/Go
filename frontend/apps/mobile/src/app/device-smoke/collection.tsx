@@ -102,6 +102,7 @@ const ROWS: NativeCollectionRow[] = [
     imagePath: '/images/shiny/shiny_pokemon_376.png',
     status: 'caught',
     favorite: true,
+    maxKind: 'dynamax',
     typeIconPaths: ['/images/types/steel.png', '/images/types/psychic.png'],
   }),
   row({
@@ -219,6 +220,7 @@ const SMOKE_INSTANCES = Object.fromEntries(ROWS.map((entry) => [entry.id, {
   disabled: false,
   lucky: false,
   shadow: entry.name.includes('Shadow'),
+  purified: false,
   nickname: null,
   cp: entry.cp,
   level: entry.status === 'wanted' ? null : 40,
@@ -238,6 +240,11 @@ const SMOKE_INSTANCES = Object.fromEntries(ROWS.map((entry) => [entry.id, {
   date_caught: entry.status === 'wanted' ? null : '2026-08-24',
   mega: false,
   is_mega: false,
+  dynamax: entry.maxKind === 'dynamax',
+  gigantamax: entry.maxKind === 'gigantamax',
+  max_attack: entry.maxKind ? 1 : null,
+  max_guard: entry.maxKind ? 0 : null,
+  max_spirit: entry.maxKind ? 0 : null,
   is_fused: false,
 } as unknown as PokemonInstance]));
 
@@ -257,6 +264,19 @@ export default function DeviceSmokeCollectionRoute() {
   const [catalogRows, setCatalogRows] = useState<NativeCollectionRow[]>([]);
   const [catalogError, setCatalogError] = useState<string | null>(null);
   const [catalogLoading, setCatalogLoading] = useState(true);
+
+  useEffect(() => {
+    if (!initialInstanceId) return;
+    const requestedRow = ROWS.find((entry) => entry.id === initialInstanceId);
+    if (!requestedRow) return;
+    const update = setTimeout(() => {
+      setOpenedContext({
+        row: requestedRow,
+        orderedRows: rowsWithStatus(requestedRow.status),
+      });
+    }, 0);
+    return () => clearTimeout(update);
+  }, [initialInstanceId]);
 
   useEffect(() => {
     if (!runtimeConfig.mobile.deviceSmokeMode) return undefined;
@@ -382,6 +402,12 @@ export default function DeviceSmokeCollectionRoute() {
                 name: 'Vancouver City Safari',
                 imageUri: `${ASSET_BASE_URL}/images/backgrounds/bg_grass.png`,
               }],
+              appearanceImageUris: {
+                shadow: openedRow.imageUri,
+                purified: openedRow.name.includes('Shiny')
+                  ? `${ASSET_BASE_URL}/images/shiny/shiny_pokemon_${openedRow.pokemonId}.png`
+                  : `${ASSET_BASE_URL}/images/pokemon/pokemon_${openedRow.pokemonId}.png`,
+              },
               sizeThresholds: {
                 pokedex_height: 2,
                 pokedex_weight: 100,

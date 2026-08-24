@@ -96,6 +96,10 @@ export type NativeInstanceDetail = {
     name: string;
     imageUri: string;
   }[];
+  appearanceImageUris?: {
+    shadow: string | null;
+    purified: string | null;
+  };
   sizeThresholds?: BasePokemon['sizes'];
   rarity?: BasePokemon['rarity'];
 };
@@ -839,6 +843,19 @@ export const buildNativeInstanceDetail = (
       name: background.location || background.name,
       imageUri: absoluteImageUri(background.image_url, assetOrigin) ?? background.image_url,
     }));
+  const appearanceImageUris = {
+    shadow: absoluteImageUri(resolvePokemonInstanceImagePath({
+      ...instance,
+      lucky: false,
+      purified: false,
+      shadow: true,
+    }, pokemon), assetOrigin),
+    purified: absoluteImageUri(resolvePokemonInstanceImagePath({
+      ...instance,
+      purified: true,
+      shadow: false,
+    }, pokemon), assetOrigin),
+  };
 
   return {
     row,
@@ -852,6 +869,7 @@ export const buildNativeInstanceDetail = (
     preferences,
     moveOptions,
     backgroundOptions,
+    appearanceImageUris,
     sizeThresholds: pokemon.sizes,
     rarity: pokemon.rarity,
   };

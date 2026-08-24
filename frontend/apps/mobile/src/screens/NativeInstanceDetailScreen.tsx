@@ -73,6 +73,11 @@ type NativeInstanceEditDraft = {
   originalTrainerName: string;
   tradedDate: string;
   pokeball: string | null;
+  shadow: boolean;
+  purified: boolean;
+  maxAttack: number | null;
+  maxGuard: number | null;
+  maxSpirit: number | null;
 };
 
 const editableNumber = (value: unknown): string => (
@@ -124,6 +129,17 @@ const createEditDraft = (detail: NativeInstanceDetail): NativeInstanceEditDraft 
   originalTrainerName: detail.instance?.original_trainer_name ?? '',
   tradedDate: detail.instance?.traded_date?.slice(0, 10) ?? '',
   pokeball: detail.instance?.pokeball ?? null,
+  shadow: Boolean(detail.instance?.shadow && !detail.instance?.purified),
+  purified: Boolean(detail.instance?.purified),
+  maxAttack: detail.row.maxKind
+    ? Number(detail.instance?.max_attack ?? 1)
+    : null,
+  maxGuard: detail.row.maxKind
+    ? Number(detail.instance?.max_guard ?? 0)
+    : null,
+  maxSpirit: detail.row.maxKind
+    ? Number(detail.instance?.max_spirit ?? 0)
+    : null,
 });
 
 const BALL_OPTIONS = [
@@ -188,14 +204,16 @@ const primaryTypeName = (detail: NativeInstanceDetail): string => {
 
 const backgroundPath = (
   detail: NativeInstanceDetail,
-  luckyOverride?: boolean,
+  overrides?: { lucky?: boolean; shadow?: boolean; purified?: boolean },
 ): string => {
   const instance = detail.instance;
-  if (instance?.shadow && !instance.purified) return '/images/backgrounds/bg_shadow.png';
+  const shadow = overrides?.shadow ?? instance?.shadow;
+  const purified = overrides?.purified ?? instance?.purified;
+  if (shadow && !purified) return '/images/backgrounds/bg_shadow.png';
   const canonicalLucky = Boolean(
     detail.row.lucky || instance?.lucky || (instance?.is_wanted && instance.pref_lucky),
   );
-  if (luckyOverride ?? canonicalLucky) {
+  if (overrides?.lucky ?? canonicalLucky) {
     return '/images/backgrounds/bg_lucky.png';
   }
   return `/images/backgrounds/bg_${primaryTypeName(detail)}.png`;
@@ -793,7 +811,7 @@ const NativeCaughtMetadataControls = ({
     styles.editInput,
     { backgroundColor: palette.input, borderColor: palette.border, color: palette.text },
   ];
-  const isShadow = Boolean(detail.instance?.shadow && !detail.instance?.purified);
+  const isShadow = Boolean(draft.shadow && !draft.purified);
   const canToggleLucky = isCaught && !isShadow && detail.rarity !== 'Mythic';
   return (
     <View style={styles.editMetaPanel}>
@@ -911,7 +929,51 @@ const NativeCaughtMetadataControls = ({
   );
 };
 
-const NativeInstanceEditFields = ({
+const MaxMoveLevelPicker = ({
+  label,
+  lockedAllowed,
+  value,
+  palette,
+  onChange,
+}: {
+  label: string;
+  lockedAllowed: boolean;
+  value: number | null;
+  palette: typeof LIGHT;
+  onChange: (value: number) => void;
+}) => {
+  const options = lockedAllowed ? [0, 1, 2, 3] : [1, 2, 3];
+  return (
+    <View style={styles.maxMoveRow}>
+      <Text style={[styles.maxMoveLabel, { color: palette.text }]}>{label}</Text>
+      <View accessibilityLabel={`${label} level`} style={styles.maxMoveOptions}>
+        {options.map((option) => {
+          const selected = value === option;
+          const optionLabel = option === 0 ? 'Locked' : String(option);
+          return (
+            <Pressable
+              accessibilityLabel={`${label}: ${optionLabel}`}
+              accessibilityRole="button"
+              accessibilityState={{ selected }}
+              key={option}
+              onPress={() => onChange(option)}
+              style={[
+                styles.maxMoveOption,
+                { borderColor: selected ? '#d6298f' : palette.border },
+                selected && styles.maxMoveOptionSelected,
+              ]}
+            >
+              <Text style={[styles.maxMoveOptionText, { color: palette.text }]}>{optionLabel}</Text>
+            </Pressable>
+          );
+        })}
+      </View>
+    </View>
+  );
+};
+
+const NativePowerControls = ({
+  assetBaseUrl,
   detail,
   draft,
   isCaught,
@@ -919,6 +981,123 @@ const NativeInstanceEditFields = ({
   palette,
   onChange,
 }: {
+  assetBaseUrl: string;
+  detail: NativeInstanceDetail;
+  draft: NativeInstanceEditDraft;
+  isCaught: boolean;
+  isWanted: boolean;
+  palette: typeof LIGHT;
+  onChange: (patch: Partial<NativeInstanceEditDraft>) => void;
+}) => {
+  const supportsShadowState = isCaught && Boolean(
+    detail.instance?.shadow
+    || detail.instance?.purified
+    || draft.shadow
+    || draft.purified,
+  );
+  const supportsMaxMoves = !isWanted
+    && Boolean(detail.row.maxKind)
+    && !draft.shadow
+    && !draft.purified
+    && detail.instance?.costume_id == null;
+  if (!supportsShadowState && !supportsMaxMoves) return null;
+
+  return (
+    <View style={[styles.powerPanel, { borderColor: palette.border }]}>
+      <Text style={[styles.editFieldLabel, { color: palette.secondary }]}>FORM &amp; POWER</Text>
+      {supportsShadowState ? (
+        <View style={styles.editFieldGroup}>
+          <Text style={[styles.powerTitle, { color: palette.text }]}>Shadow state</Text>
+          <View accessibilityLabel="Shadow state" style={styles.booleanOptions}>
+            {([
+              { label: 'SHADOW', shadow: true, purified: false },
+              { label: 'PURIFIED', shadow: false, purified: true },
+            ] as const).map((option) => {
+              const selected = option.shadow ? draft.shadow : draft.purified;
+              return (
+                <Pressable
+                  accessibilityLabel={`Shadow state: ${option.label === 'SHADOW' ? 'Shadow' : 'Purified'}`}
+                  accessibilityRole="button"
+                  accessibilityState={{ selected }}
+                  key={option.label}
+                  onPress={() => onChange(option.shadow
+                    ? {
+                        shadow: true,
+                        purified: false,
+                        lucky: false,
+                        isTraded: false,
+                        originalTrainerId: null,
+                        originalTrainerName: '',
+                        tradedDate: '',
+                      }
+                    : { shadow: false, purified: true })}
+                  style={[
+                    styles.booleanOption,
+                    { borderColor: selected ? '#8f72e8' : palette.border },
+                    selected && styles.shadowOptionSelected,
+                  ]}
+                >
+                  <Text style={[styles.booleanOptionText, { color: palette.text }]}>{option.label}</Text>
+                </Pressable>
+              );
+            })}
+          </View>
+          <Text style={[styles.editHelpText, { color: palette.secondary }]}>
+            Reverting to Shadow clears Lucky and traded status, matching Pokémon GO rules.
+          </Text>
+        </View>
+      ) : null}
+      {supportsMaxMoves ? (
+        <View style={styles.maxMovesPanel}>
+          <View style={styles.maxMovesHeading}>
+            <Image
+              accessibilityElementsHidden
+              resizeMode="contain"
+              source={{ uri: toAssetUrl(assetBaseUrl, `/images/${detail.row.maxKind}.png`) }}
+              style={styles.maxMovesIcon}
+            />
+            <View>
+              <Text style={[styles.powerTitle, { color: palette.text }]}>Max Move Levels</Text>
+              <Text style={[styles.editHelpText, { color: palette.secondary }]}>Set the levels unlocked in Pokémon GO.</Text>
+            </View>
+          </View>
+          <MaxMoveLevelPicker
+            label="Max Attack"
+            lockedAllowed={false}
+            onChange={(maxAttack) => onChange({ maxAttack })}
+            palette={palette}
+            value={draft.maxAttack}
+          />
+          <MaxMoveLevelPicker
+            label="Max Guard"
+            lockedAllowed
+            onChange={(maxGuard) => onChange({ maxGuard })}
+            palette={palette}
+            value={draft.maxGuard}
+          />
+          <MaxMoveLevelPicker
+            label="Max Spirit"
+            lockedAllowed
+            onChange={(maxSpirit) => onChange({ maxSpirit })}
+            palette={palette}
+            value={draft.maxSpirit}
+          />
+        </View>
+      ) : null}
+    </View>
+  );
+};
+
+const NativeInstanceEditFields = ({
+  assetBaseUrl,
+  detail,
+  draft,
+  isCaught,
+  isWanted,
+  palette,
+  onChange,
+}: {
+  assetBaseUrl: string;
   detail: NativeInstanceDetail;
   draft: NativeInstanceEditDraft;
   isCaught: boolean;
@@ -977,6 +1156,16 @@ const NativeInstanceEditFields = ({
           </View>
         </View>
       ) : null}
+
+      <NativePowerControls
+        assetBaseUrl={assetBaseUrl}
+        detail={detail}
+        draft={draft}
+        isCaught={isCaught}
+        isWanted={isWanted}
+        onChange={onChange}
+        palette={palette}
+      />
 
       <View style={styles.editFieldGroup}>
         <Text style={[styles.editFieldLabel, { color: palette.secondary }]}>GENDER</Text>
@@ -1208,6 +1397,15 @@ export const NativeInstanceDetailScreen = ({
   const displayLucky = editing
     ? isWanted ? activeDraft.prefLucky : activeDraft.lucky
     : Boolean(detail.row.lucky || instance?.lucky || (isWanted && instance?.pref_lucky));
+  const displayShadow = editing ? activeDraft.shadow : Boolean(instance?.shadow && !instance?.purified);
+  const displayPurified = editing ? activeDraft.purified : Boolean(instance?.purified);
+  const displayImageUri = editing
+    ? displayShadow
+      ? detail.appearanceImageUris?.shadow ?? detail.row.imageUri
+      : displayPurified
+        ? detail.appearanceImageUris?.purified ?? detail.row.imageUri
+        : detail.row.imageUri
+    : detail.row.imageUri;
   const selectedLocationBackgroundUri = editing
     ? detail.backgroundOptions?.find((option) => String(option.id) === activeDraft.locationCard)?.imageUri ?? null
     : detail.row.locationBackgroundUri;
@@ -1283,6 +1481,11 @@ export const NativeInstanceDetailScreen = ({
               ? activeDraft.tradedDate
               : instance?.traded_date,
             pokeball: activeDraft.pokeball,
+            shadow: isCaught ? activeDraft.shadow : instance?.shadow,
+            purified: isCaught ? activeDraft.purified : instance?.purified,
+            max_attack: detail.row.maxKind ? activeDraft.maxAttack : instance?.max_attack,
+            max_guard: detail.row.maxKind ? activeDraft.maxGuard : instance?.max_guard,
+            max_spirit: detail.row.maxKind ? activeDraft.maxSpirit : instance?.max_spirit,
           };
       await onSaveDetails(patch);
       setEditingInstanceId(null);
@@ -1311,7 +1514,11 @@ export const NativeInstanceDetailScreen = ({
           source={{
             uri: toAssetUrl(
               assetBaseUrl,
-              backgroundPath(detail, editing ? displayLucky : undefined),
+              backgroundPath(detail, editing ? {
+                lucky: displayLucky,
+                purified: displayPurified,
+                shadow: displayShadow,
+              } : undefined),
             ),
           }}
           style={styles.fullBackground}
@@ -1422,11 +1629,11 @@ export const NativeInstanceDetailScreen = ({
                 style={[styles.luckyBackdrop, !isCaught && styles.compactLuckyBackdrop]}
               />
             ) : null}
-            {detail.row.imageUri ? (
+            {displayImageUri ? (
               <Image
                 accessibilityLabel={detail.row.name}
                 resizeMode="contain"
-                source={{ uri: detail.row.imageUri }}
+                source={{ uri: displayImageUri }}
                 style={[styles.pokemonImage, !isCaught && styles.compactPokemonImage]}
               />
             ) : null}
@@ -1438,7 +1645,7 @@ export const NativeInstanceDetailScreen = ({
                 style={[styles.maxBadge, !isCaught && styles.compactMaxBadge]}
               />
             ) : null}
-            {detail.row.purified ? (
+            {displayPurified ? (
               <Image
                 accessibilityLabel="Purified"
                 resizeMode="contain"
@@ -1458,6 +1665,7 @@ export const NativeInstanceDetailScreen = ({
             ) : null}
             {editing ? (
               <NativeInstanceEditFields
+                assetBaseUrl={assetBaseUrl}
                 detail={detail}
                 draft={activeDraft}
                 isCaught={isCaught}
@@ -1814,6 +2022,33 @@ const styles = StyleSheet.create({
   booleanOptionText: { fontSize: 12, fontWeight: '900' },
   disabledOption: { opacity: 0.42 },
   editHelpText: { fontSize: 12, lineHeight: 17 },
+  powerPanel: {
+    width: '100%',
+    gap: 12,
+    padding: 11,
+    borderWidth: 1,
+    borderRadius: 10,
+    backgroundColor: 'rgba(127,145,141,0.09)',
+  },
+  powerTitle: { fontSize: 14, fontWeight: '900' },
+  shadowOptionSelected: { backgroundColor: 'rgba(103,76,184,0.25)' },
+  maxMovesPanel: { width: '100%', gap: 9 },
+  maxMovesHeading: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  maxMovesIcon: { width: 34, height: 34 },
+  maxMoveRow: { width: '100%', gap: 5 },
+  maxMoveLabel: { fontSize: 12, fontWeight: '900' },
+  maxMoveOptions: { flexDirection: 'row', gap: 6 },
+  maxMoveOption: {
+    minHeight: 40,
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 6,
+    borderWidth: 1,
+    borderRadius: 8,
+  },
+  maxMoveOptionSelected: { backgroundColor: 'rgba(214,41,143,0.18)' },
+  maxMoveOptionText: { fontSize: 11, fontWeight: '900' },
   editMetaPanel: {
     width: '100%',
     gap: 12,

@@ -444,6 +444,10 @@ describe('native collection model', () => {
         name: 'Vancouver',
         imageUri: 'https://pokegonexus.com/images/vancouver-location.png',
       }],
+      appearanceImageUris: {
+        shadow: 'https://pokegonexus.com/images/charizard-shiny-shadow.png',
+        purified: 'https://pokegonexus.com/images/charizard-shiny.png',
+      },
       sizeThresholds: detailPokemon.sizes,
     }));
   });

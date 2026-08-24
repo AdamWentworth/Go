@@ -211,17 +211,18 @@ tags:
 - tapOn: Edit Pokémon
 - assertVisible: Save Pokémon
 - assertVisible: Combat Power
-- assertVisible: APPRAISAL IVS
+- assertVisible: Max Move Levels
 - takeScreenshot: 06d-caught-instance-editor
 - tapOn: Choose location background
 - assertVisible: Choose a background
 - assertVisible: Vancouver City Safari
 - takeScreenshot: 06e-location-background-selector
 - tapOn: Close background selector
-- scrollUntilVisible:
-    element:
-      text: MOVES
-    direction: DOWN
+- swipe:
+    start: 50%, 82%
+    end: 50%, 52%
+    duration: 450
+- assertVisible: MOVES
 - tapOn: Choose fast move
 - assertVisible: MOVE SELECTOR
 - assertVisible: Bullet Punch
@@ -230,6 +231,11 @@ tags:
 - extendedWaitUntil:
     notVisible: MOVE SELECTOR
     timeout: 10000
+- swipe:
+    start: 50%, 82%
+    end: 50%, 58%
+    duration: 400
+- assertVisible: APPRAISAL IVS
 - swipe:
     start: 50%, 82%
     end: 50%, 18%
