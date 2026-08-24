@@ -40,6 +40,11 @@ Unknown or missing values resolve to `webview`. A future `native` production
 mode will not be added until authentication, navigation, recovery, and the
 first complete vertical slice are ready.
 
+Device development uses the Pokémon Go Nexus `expo-dev-client` APK on Expo SDK 57.
+Expo Go is not a supported runtime for this migration. The development build
+connects to Metro for fast iteration, while the internal `device-preview` APK
+bundles the preview for offline and cold-start validation.
+
 The current `native-preview` supports email/password sessions through explicit
 mobile login, refresh, and logout endpoints. Only the refresh token is persisted
 in SecureStore; access tokens remain in memory. Transient restoration failures

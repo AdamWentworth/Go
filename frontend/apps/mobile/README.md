@@ -21,6 +21,7 @@ cd frontend
 nvm use
 npm ci
 npm --workspace apps/mobile run start
+npm --workspace apps/mobile run start:native-preview
 npm --workspace apps/mobile run android
 npm --workspace apps/mobile run ios
 npm --workspace apps/mobile run web
@@ -38,6 +39,32 @@ Copy `.env.example` values into your environment (or EAS secrets) using `EXPO_PU
 `EXPO_PUBLIC_MOBILE_EXPERIENCE` defaults to `webview`. Set it to
 `native-preview` only in deliberate preview builds; every preview retains a
 direct fallback to the current WebView app.
+
+## Android development build
+
+Expo Go is no longer the device runtime for this project. The app targets Expo
+SDK 57 and uses `expo-dev-client`, which gives Pixel testing a Pokémon Go Nexus
+native runtime instead of depending on whichever SDK the Play Store Expo Go app
+currently embeds.
+
+Create the installable development APK from this directory with:
+
+```bash
+npx eas-cli build --platform android --profile development
+```
+
+Install the resulting APK on the Pixel once. For normal TypeScript/JavaScript
+iteration after that, keep the phone and computer on the same network and run:
+
+```bash
+cd frontend
+npm --workspace apps/mobile run start:native-preview
+```
+
+Open **Pokémon Go Nexus** on the phone and select the local development server.
+Rebuild the APK only after changing native dependencies, native configuration,
+or the Expo SDK. The `device-preview` EAS profile produces a standalone internal
+APK with the native preview bundled for force-stop/relaunch and offline checks.
 
 Native social sign-in is intentionally not enabled yet. Google, Discord, and
 Facebook continue through the current app until their system-browser callback
