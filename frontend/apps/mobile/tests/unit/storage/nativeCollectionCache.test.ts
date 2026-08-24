@@ -85,6 +85,35 @@ describe('native collection cache', () => {
     });
   });
 
+  it('repairs legacy instance tag membership before cached collection rendering', async () => {
+    const database = {
+      execAsync: jest.fn().mockResolvedValue(undefined),
+      runAsync: jest.fn().mockResolvedValue(result),
+      getFirstAsync: jest.fn().mockResolvedValue({
+        snapshot_json: JSON.stringify({
+          instances: {
+            legacy: {
+              instance_id: 'legacy',
+              caught_tags: {},
+              trade_tags: '["trade-tag"]',
+              wanted_tags: null,
+            },
+          },
+          catalog: [],
+        }),
+        saved_at: 1234,
+      }),
+    };
+    const cache = createNativeCollectionCache(async () => database);
+
+    const cached = await cache.read('user-1');
+    expect(cached?.snapshot.instances.legacy).toEqual(expect.objectContaining({
+      caught_tags: [],
+      trade_tags: ['trade-tag'],
+      wanted_tags: [],
+    }));
+  });
+
   it('rejects empty user identities so cached accounts cannot bleed together', async () => {
     const database = {
       execAsync: jest.fn().mockResolvedValue(undefined),

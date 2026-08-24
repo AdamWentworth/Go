@@ -24,7 +24,18 @@ describe('getNativeCollectionSnapshot', () => {
 
     await expect(
       getNativeCollectionSnapshot(usersClient, pokemonClient),
-    ).resolves.toEqual({ instances, catalog, tags });
+    ).resolves.toEqual({
+      instances: {
+        'instance-1': expect.objectContaining({
+          pokemon_id: 1,
+          caught_tags: [],
+          trade_tags: [],
+          wanted_tags: [],
+        }),
+      },
+      catalog,
+      tags,
+    });
     expect(usersClient.get).toHaveBeenCalledWith(usersContract.endpoints.instanceSync);
     expect(usersClient.get).toHaveBeenCalledWith(usersContract.endpoints.tags);
     expect(pokemonClient.get).toHaveBeenCalledWith(pokemonContract.endpoints.catalog);
@@ -49,7 +60,14 @@ describe('getNativeCollectionSnapshot', () => {
     const pokemonClient = { get: jest.fn().mockResolvedValue(catalog) };
 
     await expect(getNativeCollectionSnapshot(usersClient, pokemonClient)).resolves.toEqual({
-      instances,
+      instances: {
+        'instance-1': expect.objectContaining({
+          pokemon_id: 1,
+          caught_tags: [],
+          trade_tags: [],
+          wanted_tags: [],
+        }),
+      },
       catalog,
       tags: {
         tags: [],
@@ -133,7 +151,14 @@ describe('getNativeCollectionSnapshot', () => {
     expect(snapshot.instances['instance-1']?.cp).toBe(501);
     expect(snapshot).toEqual(expect.objectContaining({ source: 'network', cachedAt: null }));
     expect(cache.write).toHaveBeenCalledWith('user-1', {
-      instances: { 'instance-1': canonicalInstance },
+      instances: {
+        'instance-1': expect.objectContaining({
+          ...canonicalInstance,
+          caught_tags: [],
+          trade_tags: [],
+          wanted_tags: [],
+        }),
+      },
       catalog: [],
       tags,
     });

@@ -23,6 +23,7 @@ import {
   DEFAULT_NATIVE_TAGS_ENVELOPE,
   normalizeNativeTagsEnvelope,
 } from '../features/collection/nativeTagsEnvelope';
+import { normalizeNativeInstances } from '../features/collection/nativeInstanceNormalization';
 
 export type NativeCollectionSnapshot = {
   instances: Record<string, PokemonInstance>;
@@ -63,7 +64,7 @@ export const getNativeCollectionSnapshot = async (
   }
 
   return {
-    instances: instanceEnvelope.instances ?? {},
+    instances: normalizeNativeInstances(instanceEnvelope.instances),
     catalog,
     tags: tagResult.tags,
     ...(tagResult.tagLoadWarning
@@ -126,6 +127,7 @@ export const getReconciledNativeCollectionSnapshot = async (
       if (!cached) throw networkError;
       canonical = {
         ...cached.snapshot,
+        instances: normalizeNativeInstances(cached.snapshot.instances),
         tags: normalizeNativeTagsEnvelope(cached.snapshot.tags),
       };
       source = 'cache';

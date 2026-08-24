@@ -260,6 +260,33 @@ describe('native collection model', () => {
       .toEqual(['system:wanted', 'system:most-wanted']);
   });
 
+  it('does not crash when a legacy instance stores tag membership as an object', () => {
+    const instances = {
+      legacy: instance({
+        instance_id: 'legacy',
+        caught_tags: {} as never,
+      }),
+    };
+    const rows = buildNativeCollectionRows(instances, [pokemon], 'https://pokegonexus.com');
+    const envelope: CustomTagsEnvelope = {
+      tags: [{
+        tag_id: 'purple-tag',
+        parent: 'caught',
+        name: 'Shadow Shinies',
+        color: '#7c3aed',
+        sort: 0,
+        created_at: 'now',
+      }],
+      orders: {
+        caught: ['custom:purple-tag'],
+        wanted: [],
+      },
+    };
+
+    expect(() => buildNativeTagSummaries(rows, instances, envelope, 'caught')).not.toThrow();
+    expect(buildNativeTagSummaries(rows, instances, envelope, 'caught')[0].rows).toEqual([]);
+  });
+
   it('builds a native detail model from shared instance identity and move metadata', () => {
     const detail = buildNativeInstanceDetail(
       {

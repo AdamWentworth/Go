@@ -4,6 +4,7 @@ import type { CustomTagsEnvelope } from '@pokemongonexus/shared-contracts/users'
 import * as SQLite from 'expo-sqlite';
 import type { SQLiteBindParams, SQLiteRunResult } from 'expo-sqlite';
 import { normalizeNativeTagsEnvelope } from '../features/collection/nativeTagsEnvelope';
+import { normalizeNativeInstances } from '../features/collection/nativeInstanceNormalization';
 
 const DATABASE_NAME = 'pokegonexus-native.db';
 
@@ -67,7 +68,11 @@ const parseSnapshot = (snapshotJson: string): NativeCachedCollectionSnapshot => 
     'tags' in parsed ? parsed.tags : undefined,
   );
 
-  return { ...(parsed as Omit<NativeCachedCollectionSnapshot, 'tags'>), tags };
+  return {
+    instances: normalizeNativeInstances(instances),
+    catalog: catalog as BasePokemon[],
+    tags,
+  };
 };
 
 const defaultOpenDatabase: OpenCollectionCacheDatabase = async () =>

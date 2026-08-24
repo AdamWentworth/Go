@@ -11,6 +11,7 @@ import type {
 import { buildPokemonCatalogEntries } from '@pokemongonexus/shared-domain/catalog';
 import { resolveInstanceCollectionKey } from '@pokemongonexus/shared-domain/instances';
 import { normalizeNativeTagsEnvelope } from './nativeTagsEnvelope';
+import { normalizeNativeTagIds } from './nativeInstanceNormalization';
 
 export type NativeCollectionFilter =
   | 'all'
@@ -455,8 +456,10 @@ export const buildNativeTagSummaries = (
     const definition = customDefinitions.find((tag) => tag.tag_id === tagId);
     if (!definition) return [];
     const tagRows = Object.entries(instances).flatMap(([instanceKey, instance]) => {
-      const memberships = parent === 'caught' ? instance.caught_tags : instance.wanted_tags;
-      if (!memberships?.includes(tagId)) return [];
+      const memberships = normalizeNativeTagIds(
+        parent === 'caught' ? instance.caught_tags : instance.wanted_tags,
+      );
+      if (!memberships.includes(tagId)) return [];
       const row = rowById.get(instance.instance_id ?? instanceKey);
       return row ? [row] : [];
     });

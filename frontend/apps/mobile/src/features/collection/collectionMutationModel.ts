@@ -9,6 +9,7 @@ import {
   type NativeCollectionSyncLocation,
   type NativeCollectionSyncUpdate,
 } from '../../services/collectionSyncApi';
+import { normalizeNativeInstance } from './nativeInstanceNormalization';
 
 export type NativeCollectionMutation = {
   collectionKey: string;
@@ -34,7 +35,7 @@ export const createNativeCollectionMutation = ({
 }): NativeCollectionMutation => {
   const collectionKey = resolveInstanceCollectionKey(instances, requestedInstanceId);
   if (!collectionKey) throw new Error('This Pokémon is no longer in your collection.');
-  const previous = instances[collectionKey];
+  const previous = normalizeNativeInstance(instances[collectionKey]);
   const conflict = getFavoriteTradeConflict(previous, patch);
   if (conflict) throw new Error(conflict);
 
