@@ -99,11 +99,12 @@ describe('NativeCollectionParityScreen', () => {
   it('lets the user choose an actual sort and direction', () => {
     render(<Harness />);
 
-    fireEvent.press(screen.getByLabelText('Sort by Pokédex number ascending'));
-    fireEvent.press(screen.getByRole('radio', { name: 'Name' }));
-    fireEvent.press(screen.getByRole('radio', { name: 'Descending' }));
-    fireEvent.press(screen.getByRole('button', { name: 'Done' }));
-    expect(screen.getByLabelText('Sort by Name descending')).toBeTruthy();
+    fireEvent.press(screen.getByLabelText('Sort by NUMBER ascending'));
+    fireEvent.press(screen.getByRole('radio', { name: /name/i }));
+    expect(screen.getByLabelText('Sort by NAME ascending')).toBeTruthy();
+    fireEvent.press(screen.getByLabelText('Sort by NAME ascending'));
+    fireEvent.press(screen.getByRole('radio', { name: /name/i }));
+    expect(screen.getByLabelText('Sort by NAME descending')).toBeTruthy();
   });
 
   it('keeps the action menu callback available', () => {

@@ -47,6 +47,21 @@ tags:
 - extendedWaitUntil:
     visible: Bulbasaur
     timeout: 10000
+- tapOn: Sort by NUMBER ascending
+- extendedWaitUntil:
+    visible: COMBAT POWER
+    timeout: 10000
+- assertVisible: RECENT
+- assertVisible: FAVORITE
+- assertVisible: HP
+- takeScreenshot: 01c-sort-menu
+- tapOn:
+    text: ^NAME$
+- assertVisible: Sort by NAME ascending
+- tapOn: Sort by NAME ascending
+- tapOn:
+    text: ^NUMBER$
+- assertVisible: Sort by NUMBER ascending
 - tapOn: TAGS
 - extendedWaitUntil:
     visible: Inventory tags

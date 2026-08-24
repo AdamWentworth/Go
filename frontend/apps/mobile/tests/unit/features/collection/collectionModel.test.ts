@@ -199,7 +199,7 @@ describe('native collection model', () => {
       'favorite',
       'charizard',
     ]);
-    expect(sortNativeCollectionRows(rows, 'cp', 'descending').map((row) => row.id)).toEqual([
+    expect(sortNativeCollectionRows(rows, 'combatPower', 'descending').map((row) => row.id)).toEqual([
       'charizard',
       'favorite',
     ]);

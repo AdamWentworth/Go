@@ -35,6 +35,8 @@ export type NativeCollectionRow = {
   status: 'caught' | 'trade' | 'wanted';
   source?: 'catalog' | 'instance';
   cp: number | null;
+  hp?: number | null;
+  releaseTimestamp?: number | null;
   favorite: boolean;
   mostWanted: boolean;
   evolutionFamilyIds?: number[];
@@ -50,7 +52,13 @@ export type NativeTagSummary = {
   rows: NativeCollectionRow[];
 };
 
-export type NativeCollectionSort = 'number' | 'name' | 'cp' | 'favorite';
+export type NativeCollectionSort =
+  | 'releaseDate'
+  | 'favorite'
+  | 'number'
+  | 'hp'
+  | 'name'
+  | 'combatPower';
 export type NativeCollectionSortDirection = 'ascending' | 'descending';
 
 export type NativeInstanceDetail = {
@@ -288,6 +296,49 @@ const GENERATION_LABELS: Record<number, string> = {
   9: 'paldea',
 };
 
+const toTimestamp = (value: string | null | undefined): number | null => {
+  if (!value) return null;
+  const timestamp = Date.parse(value);
+  return Number.isFinite(timestamp) ? timestamp : null;
+};
+
+const releaseTimestampForEntry = (
+  entryId: string,
+  pokemon: BasePokemon,
+): number | null => {
+  const normalizedId = entryId.toLowerCase();
+  if (normalizedId.includes('gigantamax')) {
+    return toTimestamp(pokemon.max?.find((entry) => entry.gigantamax)?.gigantamax_release_date)
+      ?? toTimestamp(normalizedId.includes('shiny')
+        ? pokemon.date_shiny_available
+        : pokemon.date_available);
+  }
+  if (normalizedId.includes('dynamax')) {
+    return toTimestamp(pokemon.max?.find((entry) => entry.dynamax)?.dynamax_release_date)
+      ?? toTimestamp(normalizedId.includes('shiny')
+        ? pokemon.date_shiny_available
+        : pokemon.date_available);
+  }
+  const costume = pokemon.costumes?.find((entry) => normalizedId.includes(entry.name.toLowerCase()));
+  if (costume) {
+    if (normalizedId.includes('shadow') && costume.shadow_costume) {
+      return toTimestamp(costume.shadow_costume.date_available);
+    }
+    return toTimestamp(normalizedId.includes('shiny')
+      ? costume.date_shiny_available ?? costume.date_available
+      : costume.date_available);
+  }
+  if (normalizedId.includes('mega') || normalizedId.includes('primal')) {
+    return toTimestamp(pokemon.megaEvolutions?.find((entry) => (
+      !entry.form || normalizedId.includes(entry.form.toLowerCase())
+    ))?.date_available);
+  }
+  if (normalizedId.includes('shiny_shadow')) return toTimestamp(pokemon.date_shiny_shadow_available);
+  if (normalizedId.includes('shadow')) return toTimestamp(pokemon.date_shadow_available);
+  if (normalizedId.includes('shiny')) return toTimestamp(pokemon.date_shiny_available);
+  return toTimestamp(pokemon.date_available);
+};
+
 const toEvolutionIds = (value: unknown): number[] => {
   if (!Array.isArray(value)) return [];
   return value
@@ -412,6 +463,8 @@ export const buildNativeCollectionRows = (
         status,
         source: 'instance',
         cp: instance.cp,
+        hp: Number.isFinite(Number(pokemon.stamina)) ? Number(pokemon.stamina) : null,
+        releaseTimestamp: toTimestamp(instance.date_added),
         favorite: instance.favorite,
         mostWanted: instance.most_wanted,
         evolutionFamilyIds: evolutionFamilies.get(instance.pokemon_id) ?? [instance.pokemon_id],
@@ -448,6 +501,8 @@ export const buildNativeCatalogRows = (
       status: 'caught',
       source: 'catalog',
       cp: null,
+      hp: Number.isFinite(Number(pokemon?.stamina)) ? Number(pokemon?.stamina) : null,
+      releaseTimestamp: pokemon ? releaseTimestampForEntry(entry.id, pokemon) : null,
       favorite: false,
       mostWanted: false,
       evolutionFamilyIds: evolutionFamilies.get(entry.pokemonId) ?? [entry.pokemonId],
@@ -667,8 +722,12 @@ export const sortNativeCollectionRows = (
   const multiplier = direction === 'ascending' ? 1 : -1;
   return [...rows].sort((left, right) => {
     let comparison = 0;
+    if (sort === 'releaseDate') {
+      comparison = compareNullableNumber(left.releaseTimestamp ?? null, right.releaseTimestamp ?? null);
+    }
     if (sort === 'name') comparison = left.name.localeCompare(right.name);
-    if (sort === 'cp') {
+    if (sort === 'hp') comparison = compareNullableNumber(left.hp ?? null, right.hp ?? null);
+    if (sort === 'combatPower') {
       const nullableComparison = compareNullableNumber(left.cp, right.cp);
       if (left.cp == null || right.cp == null) return nullableComparison;
       comparison = nullableComparison;
