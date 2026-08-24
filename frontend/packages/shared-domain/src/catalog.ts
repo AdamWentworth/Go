@@ -176,20 +176,5 @@ export const buildPokemonCatalogEntries = (
     );
   });
 
-  pokemon.crownForms?.forEach((crown) => {
-    if (!released(crown.date_available, now)) return;
-    const form = crown.display_form?.trim() || crown.form?.trim() || crown.name;
-    const icons = typeIcons(crown.type1_name, crown.type2_name);
-    add(`${dexId}-crown_${crown.id}`, `${form} ${pokemon.name}`, crown.image_url, { icons });
-    if (released(crown.date_shiny_available, now)) {
-      add(
-        `${dexId}-shiny_crown_${crown.id}`,
-        `Shiny ${form} ${pokemon.name}`,
-        crown.image_url_shiny,
-        { icons },
-      );
-    }
-  });
-
   return entries;
 });
