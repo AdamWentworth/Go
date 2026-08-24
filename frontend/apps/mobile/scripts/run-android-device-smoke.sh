@@ -10,6 +10,7 @@ avd_name="${POKEGONEXUS_ANDROID_AVD:-PokeGoNexus_Pixel_8_Pro_API_36}"
 adb_bin="${android_sdk_root}/platform-tools/adb"
 emulator_bin="${android_sdk_root}/emulator/emulator"
 artifact_dir="$(mktemp -d /tmp/pokegonexus-android-smoke.XXXXXX)"
+color_scheme="${POKEGONEXUS_SMOKE_COLOR_SCHEME:-light}"
 metro_pid=""
 metro_pgid=""
 fixture_pid=""
@@ -120,7 +121,18 @@ if ! curl --silent --fail --max-time 1 http://127.0.0.1:8092/pokemons.json >/dev
   exit 1
 fi
 
-"${adb_bin}" -s "${device_id}" shell cmd uimode night no >/dev/null
+case "${color_scheme}" in
+  light)
+    "${adb_bin}" -s "${device_id}" shell cmd uimode night no >/dev/null
+    ;;
+  dark)
+    "${adb_bin}" -s "${device_id}" shell cmd uimode night yes >/dev/null
+    ;;
+  *)
+    echo "Unsupported POKEGONEXUS_SMOKE_COLOR_SCHEME: ${color_scheme} (expected light or dark)." >&2
+    exit 1
+    ;;
+esac
 setsid env \
   EXPO_PUBLIC_MOBILE_EXPERIENCE=native-preview \
   EXPO_PUBLIC_DEVICE_SMOKE_MODE=true \

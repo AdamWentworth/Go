@@ -73,6 +73,22 @@ tags:
     direction: DOWN
 - assertVisible: "Open Shadow Shinies, 2 Pokémon"
 - takeScreenshot: 02-inventory-tags
+- assertVisible: ↕ Arrange
+- scrollUntilVisible:
+    element:
+      text: "+ New inventory tag"
+    direction: DOWN
+- assertVisible: "+ New inventory tag"
+- tapOn: Edit Shadow Shinies
+- extendedWaitUntil:
+    visible: Edit tag
+    timeout: 10000
+- assertVisible: Organize your collection without changing a Pokémon’s built-in status.
+- takeScreenshot: 02b-edit-custom-tag
+- tapOn: Close tag editor
+- extendedWaitUntil:
+    notVisible: Edit tag
+    timeout: 10000
 - scrollUntilVisible:
     element:
       text: "Open For Trade, 3 Pokémon"

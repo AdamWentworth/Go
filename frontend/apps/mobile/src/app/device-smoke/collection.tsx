@@ -237,8 +237,12 @@ export default function DeviceSmokeCollectionRoute() {
         inventoryTags={INVENTORY_TAGS}
         isLoading={catalogLoading}
         onActionMenuPress={() => undefined}
+        onCreateTag={async () => undefined}
+        onDeleteTag={async () => undefined}
         onOpenEntry={setOpenedRow}
         onRetry={() => undefined}
+        onSaveTagOrder={async () => undefined}
+        onUpdateTag={async () => undefined}
         wishlistTags={WISHLIST_TAGS}
       />
       {openedRow ? (

@@ -10,12 +10,14 @@ import { useNativeCollectionSnapshotQuery } from '../../features/collection/coll
 import { runtimeConfig } from '../../config/runtimeConfig';
 import { useNativeSession } from '../../auth/NativeSessionContext';
 import { DEFAULT_NATIVE_TAGS_ENVELOPE } from '../../features/collection/nativeTagsEnvelope';
+import { useNativeTagMutations } from '../../features/collection/useNativeTagMutations';
 import { NativeCollectionHubScreen } from '../../screens/NativeCollectionHubScreen';
 
 export default function NativeCollectionRoute() {
   const router = useRouter();
   const session = useNativeSession();
   const snapshotQuery = useNativeCollectionSnapshotQuery(session.user?.user_id ?? null);
+  const tagMutations = useNativeTagMutations(session.user?.user_id ?? 'signed-out');
   const instanceRows = useMemo<NativeCollectionRow[]>(() => {
     if (!snapshotQuery.data) return [];
     return buildNativeCollectionRows(
@@ -78,6 +80,11 @@ export default function NativeCollectionRoute() {
       onActionMenuPress={() => router.push('/web')}
       onOpenEntry={openEntry}
       onRetry={() => void snapshotQuery.refetch()}
+      onCreateTag={tagMutations.createTag}
+      onDeleteTag={tagMutations.deleteTag}
+      onSaveTagOrder={tagMutations.saveOrder}
+      onUpdateTag={tagMutations.updateTag}
+      isSavingTags={tagMutations.isPending}
       warning={snapshotQuery.data?.tagLoadWarning ?? null}
       wishlistTags={wishlistTags}
     />

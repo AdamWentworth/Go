@@ -1,5 +1,11 @@
 import { useCallback, useMemo, useRef, useState } from 'react';
 import { Animated, StyleSheet, View, useColorScheme, useWindowDimensions } from 'react-native';
+import type {
+  CreateCustomTagRequest,
+  CustomTagParent,
+  PokemonTagOrderKey,
+  UpdateCustomTagRequest,
+} from '@pokemongonexus/shared-contracts/users';
 import { webCssVarTokens } from '@pokemongonexus/shared-ui-tokens';
 import {
   NativeHorizontalPageSlider,
@@ -31,6 +37,11 @@ type Props = {
   onActionMenuNavigate?: (path: string) => void;
   onOpenEntry: (row: NativeCollectionRow) => void;
   onRetry: () => void;
+  onCreateTag?: (request: CreateCustomTagRequest) => Promise<unknown>;
+  onDeleteTag?: (tagId: string) => Promise<unknown>;
+  onSaveTagOrder?: (parent: CustomTagParent, tagKeys: PokemonTagOrderKey[]) => Promise<unknown>;
+  onUpdateTag?: (tagId: string, request: UpdateCustomTagRequest) => Promise<unknown>;
+  isSavingTags?: boolean;
 };
 
 export const NativeCollectionHubScreen = ({
@@ -45,6 +56,11 @@ export const NativeCollectionHubScreen = ({
   onActionMenuNavigate,
   onOpenEntry,
   onRetry,
+  onCreateTag,
+  onDeleteTag,
+  onSaveTagOrder,
+  onUpdateTag,
+  isSavingTags = false,
 }: Props) => {
   const light = useColorScheme() === 'light';
   const { width } = useWindowDimensions();
@@ -62,6 +78,9 @@ export const NativeCollectionHubScreen = ({
   const text = light ? '#405753' : webCssVarTokens.colors.textPrimary;
   const secondary = light ? '#4b625e' : webCssVarTokens.colors.textSecondary;
   const activeIndex = VIEW_ORDER.indexOf(activeView);
+  const tagEditingEnabled = Boolean(
+    onCreateTag && onDeleteTag && onSaveTagOrder && onUpdateTag,
+  );
 
   const changeView = useCallback((view: NativePokemonHubView) => {
     sliderRef.current?.setPage(VIEW_ORDER.indexOf(view));
@@ -91,9 +110,15 @@ export const NativeCollectionHubScreen = ({
       isLoading={isLoading}
       onActionMenuPress={openActionMenu}
       onRetry={onRetry}
+      onCreateTag={onCreateTag}
+      onDeleteTag={onDeleteTag}
+      onSaveOrder={onSaveTagOrder}
       onSelectTag={selectTag}
+      onUpdateTag={onUpdateTag}
       onViewChange={changeView}
       parent="caught"
+      isEditable={tagEditingEnabled}
+      isSaving={isSavingTags}
       showHeader={false}
       tags={inventoryTags}
     />
@@ -106,6 +131,12 @@ export const NativeCollectionHubScreen = ({
     isLoading,
     openActionMenu,
     onRetry,
+    onCreateTag,
+    onDeleteTag,
+    onSaveTagOrder,
+    onUpdateTag,
+    isSavingTags,
+    tagEditingEnabled,
     selectTag,
     selectedTag,
     warning,
@@ -150,9 +181,15 @@ export const NativeCollectionHubScreen = ({
       isLoading={isLoading}
       onActionMenuPress={openActionMenu}
       onRetry={onRetry}
+      onCreateTag={onCreateTag}
+      onDeleteTag={onDeleteTag}
+      onSaveOrder={onSaveTagOrder}
       onSelectTag={selectTag}
+      onUpdateTag={onUpdateTag}
       onViewChange={changeView}
       parent="wanted"
+      isEditable={tagEditingEnabled}
+      isSaving={isSavingTags}
       showHeader={false}
       tags={wishlistTags}
       warning={warning}
@@ -165,6 +202,12 @@ export const NativeCollectionHubScreen = ({
     isLoading,
     openActionMenu,
     onRetry,
+    onCreateTag,
+    onDeleteTag,
+    onSaveTagOrder,
+    onUpdateTag,
+    isSavingTags,
+    tagEditingEnabled,
     selectTag,
     selectedTag,
     warning,

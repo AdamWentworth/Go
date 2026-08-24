@@ -1,21 +1,32 @@
 import {
   ActivityIndicator,
+  Animated,
   FlatList,
   Image,
+  LayoutAnimation,
+  PanResponder,
   Pressable,
   StyleSheet,
   Text,
   View,
   useColorScheme,
 } from 'react-native';
+import { useMemo, useState } from 'react';
 import Svg, { Defs, LinearGradient, Rect, Stop } from 'react-native-svg';
-import type { CustomTagParent } from '@pokemongonexus/shared-contracts/users';
+import type {
+  CreateCustomTagRequest,
+  CustomTagDefinition,
+  CustomTagParent,
+  PokemonTagOrderKey,
+  UpdateCustomTagRequest,
+} from '@pokemongonexus/shared-contracts/users';
 import { webCssVarTokens } from '@pokemongonexus/shared-ui-tokens';
 import type { NativeTagSummary } from '../features/collection/collectionModel';
 import {
   NativePokemonHubHeader,
   type NativePokemonHubView,
 } from '../features/collection/NativePokemonHubHeader';
+import { NativeCustomTagEditorSheet } from '../features/collection/NativeCustomTagEditorSheet';
 
 type Props = {
   activeTagName: string | null;
@@ -30,6 +41,12 @@ type Props = {
   onRetry: () => void;
   onSelectTag: (tag: NativeTagSummary) => void;
   onViewChange: (view: NativePokemonHubView) => void;
+  onCreateTag?: (request: CreateCustomTagRequest) => Promise<unknown>;
+  onDeleteTag?: (tagId: string) => Promise<unknown>;
+  onSaveOrder?: (parent: CustomTagParent, tagKeys: PokemonTagOrderKey[]) => Promise<unknown>;
+  onUpdateTag?: (tagId: string, request: UpdateCustomTagRequest) => Promise<unknown>;
+  isEditable?: boolean;
+  isSaving?: boolean;
   showHeader?: boolean;
 };
 
@@ -93,29 +110,44 @@ const NativeTagCard = ({
   light,
   tag,
   onPress,
+  onEdit,
+  reorder,
 }: {
   assetBaseUrl: string;
   light: boolean;
   tag: NativeTagSummary;
   onPress: () => void;
+  onEdit?: () => void;
+  reorder?: {
+    index: number;
+    count: number;
+    onMove: (sourceIndex: number, targetIndex: number) => void;
+  };
 }) => {
   const cardSurface = light ? '#f8fff9' : '#222222';
   const titleColor = light ? '#405753' : '#ffffff';
   const subtitleColor = light ? '#405753' : '#dddddd';
   const previewRows = tag.rows.slice(0, 12);
+  const [cardDragY] = useState(() => new Animated.Value(0));
+  const [dragging, setDragging] = useState(false);
   return (
-    <Pressable
-      accessibilityLabel={`Open ${tag.name}, ${tag.rows.length} Pokémon`}
-      accessibilityRole="button"
-      onPress={onPress}
-      style={({ pressed }) => [
+    <Animated.View
+      style={[
         styles.tagCard,
         { backgroundColor: cardSurface },
         tag.tone === 'custom' ? { borderColor: `${tag.color}7a`, borderWidth: 1 } : null,
-        pressed && styles.pressed,
+        reorder ? { transform: [{ translateY: cardDragY }] } : null,
+        dragging && styles.draggingCard,
       ]}
     >
-      <View style={styles.preview}>
+      <Pressable
+        accessibilityLabel={`Open ${tag.name}, ${tag.rows.length} Pokémon`}
+        accessibilityRole="button"
+        disabled={Boolean(reorder)}
+        onPress={onPress}
+        style={({ pressed }) => pressed && !reorder ? styles.pressed : null}
+      >
+      <View style={styles.preview} pointerEvents="none">
         <NativeTagPreviewBackground colors={tagGradient(tag, cardSurface)} />
         {previewRows.length ? previewRows.map((row) => (
           <View key={row.id} style={styles.previewCell}>
@@ -162,10 +194,95 @@ const NativeTagCard = ({
             </Text>
           </View>
         </View>
-        {tag.tone === 'favorites' ? <Text style={styles.favoriteStar}>★</Text> : null}
+        {reorder ? (
+          <NativeTagDragGrip
+            count={reorder.count}
+            dragY={cardDragY}
+            index={reorder.index}
+            onDragEnd={() => setDragging(false)}
+            onDragStart={() => setDragging(true)}
+            onMove={reorder.onMove}
+          />
+        ) : tag.tone === 'custom' && onEdit ? (
+          <Pressable
+            accessibilityLabel={`Edit ${tag.name}`}
+            accessibilityRole="button"
+            onPress={(event) => {
+              event?.stopPropagation?.();
+              onEdit();
+            }}
+            style={[styles.editButton, { borderColor: `${tag.color}8f`, backgroundColor: `${tag.color}24` }]}
+          >
+            <Text style={[styles.editText, { color: titleColor }]}>Edit</Text>
+          </Pressable>
+        ) : tag.tone === 'favorites' ? <Text style={styles.favoriteStar}>★</Text> : null}
       </View>
-    </Pressable>
+      </Pressable>
+    </Animated.View>
   );
+};
+
+const NativeTagDragGrip = ({
+  count,
+  dragY,
+  index,
+  onDragEnd,
+  onDragStart,
+  onMove,
+}: {
+  count: number;
+  dragY: Animated.Value;
+  index: number;
+  onDragEnd: () => void;
+  onDragStart: () => void;
+  onMove: (sourceIndex: number, targetIndex: number) => void;
+}) => {
+  const panResponder = useMemo(() => PanResponder.create({
+    onStartShouldSetPanResponder: () => true,
+    onMoveShouldSetPanResponder: () => true,
+    onPanResponderGrant: () => {
+      dragY.setValue(0);
+      onDragStart();
+    },
+    onPanResponderMove: Animated.event([null, { dy: dragY }], { useNativeDriver: false }),
+    onPanResponderRelease: (_event, gesture) => {
+      const targetIndex = Math.max(0, Math.min(count - 1, index + Math.round(gesture.dy / TAG_CARD_STRIDE)));
+      if (targetIndex !== index) {
+        LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+        onMove(index, targetIndex);
+      }
+      Animated.spring(dragY, { toValue: 0, useNativeDriver: true }).start(onDragEnd);
+    },
+    onPanResponderTerminate: () => {
+      Animated.spring(dragY, { toValue: 0, useNativeDriver: true }).start(onDragEnd);
+    },
+  }), [count, dragY, index, onDragEnd, onDragStart, onMove]);
+
+  return (
+    <Animated.View
+      {...panResponder.panHandlers}
+      accessibilityHint="Press and drag to move this tag"
+      accessibilityLabel="Reorder tag"
+      accessibilityRole="adjustable"
+      style={styles.dragGrip}
+    >
+      <Text style={styles.dragGripText}>⠿</Text>
+    </Animated.View>
+  );
+};
+
+const TAG_CARD_STRIDE = 208;
+
+const definitionFromSummary = (tag: NativeTagSummary): CustomTagDefinition | null => {
+  if (tag.tone !== 'custom' || !tag.key.startsWith('custom:')) return null;
+  return {
+    tag_id: tag.key.slice('custom:'.length),
+    parent: tag.parent,
+    name: tag.name,
+    color: tag.color,
+    sort: 0,
+    created_at: '',
+  };
 };
 
 export const NativeTagsPanelScreen = ({
@@ -181,12 +298,56 @@ export const NativeTagsPanelScreen = ({
   onRetry,
   onSelectTag,
   onViewChange,
+  onCreateTag,
+  onDeleteTag,
+  onSaveOrder,
+  onUpdateTag,
+  isEditable = false,
+  isSaving = false,
   showHeader = true,
 }: Props) => {
   const light = useColorScheme() === 'light';
   const background = light ? '#f8fff9' : webCssVarTokens.colors.bgApp;
   const text = light ? '#405753' : webCssVarTokens.colors.textPrimary;
   const secondary = light ? '#4b625e' : webCssVarTokens.colors.textSecondary;
+  const [reordering, setReordering] = useState(false);
+  const [draftKeys, setDraftKeys] = useState<PokemonTagOrderKey[]>([]);
+  const [editingTag, setEditingTag] = useState<CustomTagDefinition | null>(null);
+  const [creating, setCreating] = useState(false);
+  const [operationError, setOperationError] = useState<string | null>(null);
+  const orderedTags = useMemo(() => {
+    if (!reordering) return tags;
+    const byKey = new Map(tags.map((tag) => [tag.key, tag]));
+    return draftKeys.flatMap((key) => {
+      const tag = byKey.get(key);
+      return tag ? [tag] : [];
+    });
+  }, [draftKeys, reordering, tags]);
+
+  const startReordering = () => {
+    setOperationError(null);
+    setDraftKeys(tags.map((tag) => tag.key));
+    setReordering(true);
+  };
+  const moveTag = (sourceIndex: number, targetIndex: number) => {
+    setDraftKeys((current) => {
+      const next = [...current];
+      const [moved] = next.splice(sourceIndex, 1);
+      if (!moved) return current;
+      next.splice(targetIndex, 0, moved);
+      return next;
+    });
+  };
+  const saveOrder = async () => {
+    if (!onSaveOrder) return;
+    setOperationError(null);
+    try {
+      await onSaveOrder(parent, draftKeys);
+      setReordering(false);
+    } catch (caught) {
+      setOperationError(caught instanceof Error ? caught.message : 'Could not save your tag order.');
+    }
+  };
   return (
     <View style={[styles.screen, { backgroundColor: background }]} testID={`native-${parent}-tags-screen`}>
       {showHeader ? (
@@ -204,15 +365,33 @@ export const NativeTagsPanelScreen = ({
       <FlatList
         accessibilityLabel={parent === 'caught' ? 'Inventory tags' : 'Wanted tags'}
         contentContainerStyle={styles.list}
-        data={tags}
+        data={orderedTags}
         keyExtractor={(tag) => tag.key}
         ListHeaderComponent={(
           <View style={styles.listHeader}>
-            <Text style={[styles.total, { color: secondary }]}>
-              {parent === 'caught'
-                ? collectionCount
-                : tags.find((tag) => tag.key === 'system:wanted')?.rows.length ?? 0} Pokémon
-            </Text>
+            <View style={styles.toolbar}>
+              <Text style={[styles.total, { color: secondary }]}>
+                {parent === 'caught'
+                  ? collectionCount
+                  : tags.find((tag) => tag.key === 'system:wanted')?.rows.length ?? 0} Pokémon
+              </Text>
+              {isEditable ? reordering ? (
+                <View style={styles.orderActions}>
+                  <Pressable accessibilityRole="button" onPress={() => setReordering(false)} style={[styles.toolbarButton, { borderColor: secondary }]}>
+                    <Text style={[styles.toolbarButtonText, { color: text }]}>× Cancel</Text>
+                  </Pressable>
+                  <Pressable accessibilityRole="button" disabled={isSaving} onPress={() => void saveOrder()} style={[styles.toolbarButton, styles.saveOrderButton]}>
+                    <Text style={styles.saveOrderText}>{isSaving ? 'Saving…' : '✓ Save order'}</Text>
+                  </Pressable>
+                </View>
+              ) : (
+                <Pressable accessibilityRole="button" onPress={startReordering} style={[styles.toolbarButton, { borderColor: secondary }]}>
+                  <Text style={[styles.toolbarButtonText, { color: text }]}>↕ Arrange</Text>
+                </Pressable>
+              ) : null}
+            </View>
+            {reordering ? <Text style={[styles.orderHelp, { color: secondary }]}>Press and drag a grip to move its tag.</Text> : null}
+            {operationError ? <Text accessibilityRole="alert" style={styles.operationError}>{operationError}</Text> : null}
             {warning ? (
               <View accessibilityRole="alert" style={styles.warningCard}>
                 <Text style={styles.warningTitle}>Custom tags are temporarily unavailable</Text>
@@ -240,9 +419,25 @@ export const NativeTagsPanelScreen = ({
             assetBaseUrl={assetBaseUrl}
             light={light}
             onPress={() => onSelectTag(item)}
+            onEdit={item.tone === 'custom' ? () => setEditingTag(definitionFromSummary(item)) : undefined}
+            reorder={reordering ? {
+              index: orderedTags.findIndex((tag) => tag.key === item.key),
+              count: orderedTags.length,
+              onMove: moveTag,
+            } : undefined}
             tag={item}
           />
         )}
+        ListFooterComponent={isEditable && !reordering ? (
+          <Pressable
+            accessibilityLabel={`New ${parent === 'wanted' ? 'wanted' : 'inventory'} tag`}
+            accessibilityRole="button"
+            onPress={() => setCreating(true)}
+            style={[styles.createButton, parent === 'wanted' && styles.createButtonWanted]}
+          >
+            <Text style={[styles.createButtonText, { color: text }]}>+ New {parent === 'wanted' ? 'wanted' : 'inventory'} tag</Text>
+          </Pressable>
+        ) : null}
       />
       <Pressable
         accessibilityLabel="Open action menu"
@@ -257,6 +452,22 @@ export const NativeTagsPanelScreen = ({
           style={styles.actionMenuBall}
         />
       </Pressable>
+      {onCreateTag && onDeleteTag && onUpdateTag && (creating || editingTag) ? (
+        <NativeCustomTagEditorSheet
+          isSaving={isSaving}
+          onClose={() => {
+            setCreating(false);
+            setEditingTag(null);
+          }}
+          onCreate={onCreateTag}
+          onDelete={onDeleteTag}
+          onUpdate={onUpdateTag}
+          parent={editingTag?.parent ?? parent}
+          tag={editingTag}
+          key={editingTag?.tag_id ?? `new:${parent}`}
+          visible
+        />
+      ) : null}
     </View>
   );
 };
@@ -265,7 +476,15 @@ const styles = StyleSheet.create({
   screen: { flex: 1 },
   list: { flexGrow: 1, padding: 20, paddingBottom: 92 },
   listHeader: { gap: 12 },
-  total: { minHeight: 44, paddingHorizontal: 2, textAlignVertical: 'center', fontSize: 13, fontWeight: '400' },
+  toolbar: { minHeight: 44, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 10 },
+  total: { flex: 1, paddingHorizontal: 2, textAlignVertical: 'center', fontSize: 13, fontWeight: '400' },
+  orderActions: { flexDirection: 'row', gap: 6 },
+  toolbarButton: { minHeight: 44, justifyContent: 'center', paddingHorizontal: 12, borderWidth: 1, borderRadius: 10 },
+  toolbarButtonText: { fontSize: 12, fontWeight: '900' },
+  saveOrderButton: { borderColor: '#2fc17d', backgroundColor: '#2fc17d2e' },
+  saveOrderText: { color: '#70e6aa', fontSize: 12, fontWeight: '900' },
+  orderHelp: { marginHorizontal: 2, fontSize: 12, lineHeight: 16 },
+  operationError: { padding: 10, borderWidth: 1, borderColor: '#ef5b72', borderRadius: 10, color: '#ef5b72', fontSize: 12, fontWeight: '800' },
   warningCard: {
     gap: 2,
     borderWidth: 1,
@@ -285,6 +504,14 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.1,
     shadowRadius: 20,
+  },
+  draggingCard: {
+    zIndex: 50,
+    elevation: 20,
+    shadowColor: '#000000',
+    shadowOpacity: 0.42,
+    shadowRadius: 22,
+    shadowOffset: { width: 0, height: 16 },
   },
   pressed: { opacity: 0.78, transform: [{ scale: 0.99 }] },
   preview: {
@@ -319,6 +546,10 @@ const styles = StyleSheet.create({
   tagCopy: { minWidth: 0, flex: 1 },
   tagDot: { width: 12, height: 12, marginRight: 7, borderWidth: 1, borderColor: '#ffffff99', borderRadius: 6 },
   favoriteStar: { color: '#ffd21c', fontSize: 22 },
+  editButton: { minWidth: 54, minHeight: 38, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderRadius: 19 },
+  editText: { fontSize: 12, fontWeight: '900' },
+  dragGrip: { width: 52, height: 44, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: '#ffffff47', borderRadius: 12, backgroundColor: '#ffffff12', zIndex: 10, elevation: 8 },
+  dragGripText: { color: '#f5fffc', fontSize: 25, fontWeight: '900' },
   tagName: { fontSize: 18, fontWeight: '700' },
   tagCount: { fontSize: 14, lineHeight: 16 },
   emptyState: { minHeight: 300, alignItems: 'center', justifyContent: 'center', gap: 10 },
@@ -326,6 +557,9 @@ const styles = StyleSheet.create({
   emptyBody: { fontSize: 13, textAlign: 'center' },
   retryButton: { borderRadius: 10, paddingHorizontal: 20, paddingVertical: 12, backgroundColor: '#ef5b72' },
   retryText: { color: '#fff', fontWeight: '900' },
+  createButton: { minHeight: 48, alignItems: 'center', justifyContent: 'center', marginTop: 8, marginBottom: 12, borderWidth: 1, borderStyle: 'dashed', borderColor: '#2196f3', borderRadius: 10, backgroundColor: '#2196f31a' },
+  createButtonWanted: { borderColor: '#f44336', backgroundColor: '#f443361a' },
+  createButtonText: { fontWeight: '900' },
   actionMenuAnchor: {
     position: 'absolute',
     bottom: 12,

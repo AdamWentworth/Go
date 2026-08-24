@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from '@testing-library/react-native';
+import { act, fireEvent, render, screen } from '@testing-library/react-native';
 import { NativeTagsPanelScreen } from '../../../src/screens/NativeTagsPanelScreen';
 
 const tag = {
@@ -90,5 +90,74 @@ describe('NativeTagsPanelScreen', () => {
     expect(screen.UNSAFE_getByProps({ testID: 'native-tag-preview-gigantamax' })).toBeTruthy();
     expect(screen.queryByText('Inventory tags')).toBeNull();
     expect(screen.queryByText('›')).toBeNull();
+  });
+
+  it('provides the canonical arrange workflow', async () => {
+    const onCreateTag = jest.fn().mockResolvedValue(undefined);
+    const onDeleteTag = jest.fn().mockResolvedValue(undefined);
+    const onSaveOrder = jest.fn().mockResolvedValue(undefined);
+    const onUpdateTag = jest.fn().mockResolvedValue(undefined);
+    render(
+      <NativeTagsPanelScreen
+        activeTagName={null}
+        assetBaseUrl="https://pokegonexus.com"
+        collectionCount={1}
+        error={null}
+        isEditable
+        isLoading={false}
+        onActionMenuPress={jest.fn()}
+        onCreateTag={onCreateTag}
+        onDeleteTag={onDeleteTag}
+        onRetry={jest.fn()}
+        onSaveOrder={onSaveOrder}
+        onSelectTag={jest.fn()}
+        onUpdateTag={onUpdateTag}
+        onViewChange={jest.fn()}
+        parent="caught"
+        tags={[maxTag, tag]}
+      />,
+    );
+
+    expect(screen.getByRole('button', { name: 'New inventory tag' })).toBeTruthy();
+    fireEvent.press(screen.getByText('↕ Arrange'));
+    expect(screen.getAllByLabelText('Reorder tag')).toHaveLength(2);
+    fireEvent.press(screen.getByText('✓ Save order'));
+    await act(async () => Promise.resolve());
+    expect(onSaveOrder).toHaveBeenCalledWith('caught', ['system:trade', 'custom:purple-tag']);
+
+  });
+
+  it('provides the canonical custom-tag editor workflow', async () => {
+    const onUpdateTag = jest.fn().mockResolvedValue(undefined);
+    render(
+      <NativeTagsPanelScreen
+        activeTagName={null}
+        assetBaseUrl="https://pokegonexus.com"
+        collectionCount={1}
+        error={null}
+        isEditable
+        isLoading={false}
+        onActionMenuPress={jest.fn()}
+        onCreateTag={jest.fn().mockResolvedValue(undefined)}
+        onDeleteTag={jest.fn().mockResolvedValue(undefined)}
+        onRetry={jest.fn()}
+        onSaveOrder={jest.fn().mockResolvedValue(undefined)}
+        onSelectTag={jest.fn()}
+        onUpdateTag={onUpdateTag}
+        onViewChange={jest.fn()}
+        parent="caught"
+        tags={[tag]}
+      />,
+    );
+
+    fireEvent.press(screen.getByText('Edit'));
+    expect(screen.getByText('Edit tag')).toBeTruthy();
+    fireEvent.changeText(screen.getByLabelText('Tag name'), 'Shadow favorites');
+    fireEvent.press(screen.getByText('Save changes'));
+    await act(async () => Promise.resolve());
+    expect(onUpdateTag).toHaveBeenCalledWith('purple-tag', {
+      color: '#7c3aed',
+      name: 'Shadow favorites',
+    });
   });
 });

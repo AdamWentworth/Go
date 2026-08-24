@@ -36,6 +36,8 @@ export const NativePokemonHubHeader = ({
   const { width } = useWindowDimensions();
   const contentWidth = Math.max(0, width - (HEADER_HORIZONTAL_PADDING * 2));
   const tabWidth = contentWidth / 3;
+  const indicatorWidth = Math.max(INDICATOR_MIN_WIDTH, width * 0.1);
+  const desktop = width >= 768;
   const selectedIndex = activeView === 'inventory' ? 0 : activeView === 'pokemon' ? 1 : 2;
   const fallbackPosition = selectedIndex * tabWidth;
   const indicatorTranslateX = scrollX?.interpolate({
@@ -65,13 +67,13 @@ export const NativePokemonHubHeader = ({
             accessibilityState={{ selected }}
             key={key}
             onPress={() => onViewChange(key)}
-            style={styles.tab}
+            style={({ pressed }) => [styles.tab, pressed && styles.pressedTab]}
           >
-            <Text style={[styles.tabText, { color: selected ? textColor : secondaryTextColor }]}>
+            <Text style={[styles.tabText, desktop && styles.desktopTabText, { color: selected ? textColor : secondaryTextColor }]}>
               {label}
             </Text>
             {subtext ? (
-              <Text style={[styles.tabSubtext, { color: selected ? textColor : secondaryTextColor }]}>
+              <Text style={[styles.tabSubtext, desktop && styles.desktopTabSubtext, { color: selected ? textColor : secondaryTextColor }]}>
                 {subtext}
               </Text>
             ) : null}
@@ -84,7 +86,8 @@ export const NativePokemonHubHeader = ({
           styles.activeUnderline,
           {
             backgroundColor: textColor,
-            left: HEADER_HORIZONTAL_PADDING + (tabWidth / 2) - (INDICATOR_WIDTH / 2),
+            left: HEADER_HORIZONTAL_PADDING + (tabWidth / 2) - (indicatorWidth / 2),
+            width: indicatorWidth,
             transform: [{ translateX: indicatorTranslateX }],
           },
         ]}
@@ -95,7 +98,7 @@ export const NativePokemonHubHeader = ({
 };
 
 const HEADER_HORIZONTAL_PADDING = 10;
-const INDICATOR_WIDTH = 100;
+const INDICATOR_MIN_WIDTH = 100;
 
 const styles = StyleSheet.create({
   header: {
@@ -104,15 +107,23 @@ const styles = StyleSheet.create({
     paddingHorizontal: HEADER_HORIZONTAL_PADDING,
     paddingTop: 20,
     paddingBottom: 10,
+    marginBottom: 5,
+    shadowColor: '#000000',
+    shadowOffset: { width: 2, height: -4 },
+    shadowOpacity: 0.36,
+    shadowRadius: 2,
+    elevation: 3,
     zIndex: 2,
   },
   tab: { flex: 1, minWidth: 0, alignItems: 'center', justifyContent: 'flex-start' },
+  pressedTab: { opacity: 0.72 },
   tabText: { fontSize: 11, fontWeight: '800' },
   tabSubtext: { fontSize: 10, fontWeight: '800', lineHeight: 12 },
+  desktopTabText: { fontSize: 20 },
+  desktopTabSubtext: { fontSize: 16, lineHeight: 19 },
   activeUnderline: {
     position: 'absolute',
     bottom: 0,
-    width: INDICATOR_WIDTH,
     height: 6,
     borderRadius: 3,
   },
