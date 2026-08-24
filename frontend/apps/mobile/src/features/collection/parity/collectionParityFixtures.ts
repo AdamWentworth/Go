@@ -11,7 +11,9 @@ export type CollectionParityCardFixture = {
   mostWanted?: boolean;
   lucky?: boolean;
   locationBackgroundPath?: string;
-  maxBadgePath?: string;
+  maxKind?: 'dynamax' | 'gigantamax';
+  ownership?: 'caught' | 'trade' | 'wanted';
+  purified?: boolean;
 };
 
 export const COLLECTION_PARITY_FIXTURES: CollectionParityCardFixture[] = [
@@ -31,7 +33,8 @@ export const COLLECTION_PARITY_FIXTURES: CollectionParityCardFixture[] = [
     name: 'Shiny Gigantamax Venusaur',
     imagePath: '/images/shiny_gigantamax/shiny_gigantamax_3.png',
     typeIconPaths: ['/images/types/grass.png', '/images/types/poison.png'],
-    maxBadgePath: '/images/gigantamax.png',
+    favorite: true,
+    maxKind: 'gigantamax',
     lucky: true,
   },
   {
@@ -51,6 +54,7 @@ export const COLLECTION_PARITY_FIXTURES: CollectionParityCardFixture[] = [
     name: 'Shiny Charizard',
     imagePath: '/images/shiny/shiny_pokemon_6.png',
     typeIconPaths: ['/images/types/fire.png', '/images/types/flying.png'],
+    favorite: true,
   },
   {
     id: 'shiny-shadow-charizard',
@@ -59,6 +63,7 @@ export const COLLECTION_PARITY_FIXTURES: CollectionParityCardFixture[] = [
     name: 'Shiny Shadow Charizard',
     imagePath: '/images/shiny_shadow/shiny_shadow_pokemon_6.png',
     typeIconPaths: ['/images/types/fire.png', '/images/types/flying.png'],
+    favorite: true,
   },
   {
     id: 'shiny-gigantamax-charizard',
@@ -67,7 +72,8 @@ export const COLLECTION_PARITY_FIXTURES: CollectionParityCardFixture[] = [
     name: 'Shiny Gigantamax Charizard',
     imagePath: '/images/shiny_gigantamax/shiny_gigantamax_6.png',
     typeIconPaths: ['/images/types/fire.png', '/images/types/flying.png'],
-    maxBadgePath: '/images/gigantamax.png',
+    favorite: true,
+    maxKind: 'gigantamax',
   },
   {
     id: 'shiny-mewtwo',
@@ -76,6 +82,7 @@ export const COLLECTION_PARITY_FIXTURES: CollectionParityCardFixture[] = [
     name: 'Shiny Mewtwo',
     imagePath: '/images/shiny/shiny_pokemon_150.png',
     typeIconPaths: ['/images/types/psychic.png'],
+    favorite: true,
   },
   {
     id: 'shiny-suicune',
@@ -84,6 +91,7 @@ export const COLLECTION_PARITY_FIXTURES: CollectionParityCardFixture[] = [
     name: 'Shiny Suicune',
     imagePath: '/images/shiny/shiny_pokemon_245.png',
     typeIconPaths: ['/images/types/water.png'],
+    favorite: true,
   },
   {
     id: 'shiny-metagross',
@@ -92,5 +100,6 @@ export const COLLECTION_PARITY_FIXTURES: CollectionParityCardFixture[] = [
     name: 'Shiny Metagross',
     imagePath: '/images/shiny/shiny_pokemon_376.png',
     typeIconPaths: ['/images/types/steel.png', '/images/types/psychic.png'],
+    favorite: true,
   },
 ];
