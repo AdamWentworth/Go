@@ -176,9 +176,23 @@ tags:
 - tapOn: "View Shiny Gigantamax Charizard"
 - assertVisible: FOR TRADE
 - assertVisible: Wanted Pokémon
-- assertVisible: Previous Pokémon
+- assertNotVisible: Previous Pokémon
 - assertVisible: Next Pokémon
 - takeScreenshot: 06b-for-trade-instance
+- swipe:
+    start: 85%, 38%
+    end: 15%, 38%
+    duration: 450
+- extendedWaitUntil:
+    visible: Shiny Suicune
+    timeout: 10000
+- swipe:
+    start: 15%, 38%
+    end: 85%, 38%
+    duration: 450
+- extendedWaitUntil:
+    visible: Shiny Gigantamax Charizard
+    timeout: 10000
 - tapOn: Open Gigantamax Blastoise
 - assertVisible: WANTED CONDITIONS
 - assertVisible: Gigantamax Blastoise

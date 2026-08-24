@@ -1,4 +1,4 @@
-import { act, fireEvent, render, screen } from '@testing-library/react-native';
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react-native';
 import type { NativeInstanceDetail } from '../../../src/features/collection/collectionModel';
 import { NativeInstanceDetailScreen } from '../../../src/screens/NativeInstanceDetailScreen';
 
@@ -124,7 +124,7 @@ describe('NativeInstanceDetailScreen', () => {
     expect(screen.getByText('Viewing an offline copy')).toBeTruthy();
   });
 
-  it('preserves the canonical previous and next overlay controls', () => {
+  it('preserves the canonical animated previous and next overlay controls', async () => {
     const onPrevious = jest.fn();
     const onNext = jest.fn();
     render(
@@ -147,9 +147,9 @@ describe('NativeInstanceDetailScreen', () => {
     );
 
     fireEvent.press(screen.getByRole('button', { name: 'Previous Pokémon' }));
+    await waitFor(() => expect(onPrevious).toHaveBeenCalledTimes(1));
     fireEvent.press(screen.getByRole('button', { name: 'Next Pokémon' }));
-    expect(onPrevious).toHaveBeenCalledTimes(1);
-    expect(onNext).toHaveBeenCalledTimes(1);
+    await waitFor(() => expect(onNext).toHaveBeenCalledTimes(1));
   });
 
   it('opens a configured target directly from the listing summary', () => {

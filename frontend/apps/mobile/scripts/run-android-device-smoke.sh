@@ -11,6 +11,7 @@ adb_bin="${android_sdk_root}/platform-tools/adb"
 emulator_bin="${android_sdk_root}/emulator/emulator"
 artifact_dir="$(mktemp -d /tmp/pokegonexus-android-smoke.XXXXXX)"
 color_scheme="${POKEGONEXUS_SMOKE_COLOR_SCHEME:-light}"
+smoke_flow="${POKEGONEXUS_SMOKE_FLOW:-.maestro/native-collection-smoke.yaml}"
 smoke_density="${POKEGONEXUS_SMOKE_DENSITY:-520}"
 metro_pid=""
 metro_pgid=""
@@ -186,7 +187,7 @@ fi
 "${maestro_bin}" --device "${device_id}" test \
   --no-ansi \
   --test-output-dir "${artifact_dir}/maestro" \
-  .maestro/native-collection-smoke.yaml
+  "${smoke_flow}"
 
 "${adb_bin}" -s "${device_id}" exec-out screencap -p >"${artifact_dir}/final-screen.png"
 echo "Android device smoke passed. Artifacts: ${artifact_dir}"

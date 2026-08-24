@@ -1,6 +1,7 @@
-import { Redirect } from 'expo-router';
+import { Redirect, useLocalSearchParams } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { Modal } from 'react-native';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import type { BasePokemon } from '@pokemongonexus/shared-contracts/pokemon';
 import type { PokemonInstance } from '@pokemongonexus/shared-contracts/instances';
 import type {
@@ -241,7 +242,18 @@ const SMOKE_INSTANCES = Object.fromEntries(ROWS.map((entry) => [entry.id, {
 } as unknown as PokemonInstance]));
 
 export default function DeviceSmokeCollectionRoute() {
-  const [openedRow, setOpenedRow] = useState<NativeCollectionRow | null>(null);
+  const params = useLocalSearchParams<{ instance?: string | string[] }>();
+  const initialInstanceId = Array.isArray(params.instance)
+    ? params.instance[0]
+    : params.instance;
+  const initialRow = ROWS.find((entry) => entry.id === initialInstanceId) ?? null;
+  const [openedContext, setOpenedContext] = useState<{
+    row: NativeCollectionRow;
+    orderedRows: NativeCollectionRow[];
+  } | null>(() => initialRow ? {
+    row: initialRow,
+    orderedRows: rowsWithStatus(initialRow.status),
+  } : null);
   const [catalogRows, setCatalogRows] = useState<NativeCollectionRow[]>([]);
   const [catalogError, setCatalogError] = useState<string | null>(null);
   const [catalogLoading, setCatalogLoading] = useState(true);
@@ -269,13 +281,21 @@ export default function DeviceSmokeCollectionRoute() {
 
   if (!runtimeConfig.mobile.deviceSmokeMode) return <Redirect href="/" />;
 
+  const openedRow = openedContext?.row ?? null;
+  const openedRows = openedContext?.orderedRows ?? [];
   const openedIndex = openedRow
-    ? ROWS.findIndex((row) => row.id === openedRow.id)
+    ? openedRows.findIndex((row) => row.id === openedRow.id)
     : -1;
-  const previousRow = openedIndex > 0 ? ROWS[openedIndex - 1] : null;
-  const nextRow = openedIndex >= 0 && openedIndex < ROWS.length - 1
-    ? ROWS[openedIndex + 1]
+  const previousRow = openedIndex > 0 ? openedRows[openedIndex - 1] : null;
+  const nextRow = openedIndex >= 0 && openedIndex < openedRows.length - 1
+    ? openedRows[openedIndex + 1]
     : null;
+  const navigateWithinOverlay = (row: NativeCollectionRow) => {
+    setOpenedContext((current) => ({
+      row,
+      orderedRows: current?.orderedRows ?? rowsWithStatus(row.status),
+    }));
+  };
 
   return (
     <>
@@ -289,7 +309,7 @@ export default function DeviceSmokeCollectionRoute() {
         onActionMenuPress={() => undefined}
         onCreateTag={async () => undefined}
         onDeleteTag={async () => undefined}
-        onOpenEntry={setOpenedRow}
+        onOpenEntry={(row, orderedRows) => setOpenedContext({ row, orderedRows })}
         onOrganizePokemon={async () => ({
           message: 'Pokémon organized in the device fixture.',
         })}
@@ -301,12 +321,13 @@ export default function DeviceSmokeCollectionRoute() {
       {openedRow ? (
         <Modal
           animationType="slide"
-          onRequestClose={() => setOpenedRow(null)}
+          onRequestClose={() => setOpenedContext(null)}
           presentationStyle="fullScreen"
           statusBarTranslucent
           visible
         >
-          <NativeInstanceDetailScreen
+          <GestureHandlerRootView style={{ flex: 1 }}>
+            <NativeInstanceDetailScreen
             assetBaseUrl={ASSET_BASE_URL}
             cachedAt={null}
             detail={{
@@ -386,20 +407,21 @@ export default function DeviceSmokeCollectionRoute() {
             isLoading={false}
             isSaving={false}
             movesWarning={null}
-            onBack={() => setOpenedRow(null)}
+            onBack={() => setOpenedContext(null)}
             onEditInCurrentApp={() => undefined}
-            onNext={openedRow.status !== 'wanted' && nextRow ? () => setOpenedRow(nextRow) : undefined}
+            onNext={openedRow.status !== 'wanted' && nextRow ? () => navigateWithinOverlay(nextRow) : undefined}
             onOpenTarget={(instanceId) => {
               const target = ROWS.find((row) => row.id === instanceId);
-              if (target) setOpenedRow(target);
+              if (target) setOpenedContext({ row: target, orderedRows: [target] });
             }}
-            onPrevious={openedRow.status !== 'wanted' && previousRow ? () => setOpenedRow(previousRow) : undefined}
+            onPrevious={openedRow.status !== 'wanted' && previousRow ? () => navigateWithinOverlay(previousRow) : undefined}
             onRetry={() => undefined}
             onSaveDetails={async () => undefined}
             onToggleFavorite={() => undefined}
             saveError={null}
             saveNotice={null}
-          />
+            />
+          </GestureHandlerRootView>
         </Modal>
       ) : null}
     </>

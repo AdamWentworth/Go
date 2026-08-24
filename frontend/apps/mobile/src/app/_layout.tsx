@@ -2,6 +2,7 @@ import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { StyleSheet, View } from 'react-native';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { MobileErrorBoundary } from '../components/MobileErrorBoundary';
 import { initializeObservability } from '../observability/bootstrap';
 
@@ -9,16 +10,18 @@ initializeObservability();
 
 export default function RootLayout() {
   return (
-    <SafeAreaProvider>
-      <StatusBar style="light" />
-      <SafeAreaView style={styles.appShell} edges={['top', 'bottom']}>
-        <View style={styles.appShell}>
-          <MobileErrorBoundary>
-            <Stack screenOptions={{ headerShown: false }} />
-          </MobileErrorBoundary>
-        </View>
-      </SafeAreaView>
-    </SafeAreaProvider>
+    <GestureHandlerRootView style={styles.appShell}>
+      <SafeAreaProvider>
+        <StatusBar style="light" />
+        <SafeAreaView style={styles.appShell} edges={['top', 'bottom']}>
+          <View style={styles.appShell}>
+            <MobileErrorBoundary>
+              <Stack screenOptions={{ headerShown: false }} />
+            </MobileErrorBoundary>
+          </View>
+        </SafeAreaView>
+      </SafeAreaProvider>
+    </GestureHandlerRootView>
   );
 }
 

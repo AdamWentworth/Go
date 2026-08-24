@@ -1,5 +1,6 @@
 import {
   ActivityIndicator,
+  Animated,
   Image,
   Modal,
   Pressable,
@@ -13,6 +14,7 @@ import {
 } from 'react-native';
 import { useState } from 'react';
 import Svg, { Circle, Path } from 'react-native-svg';
+import { GestureDetector } from 'react-native-gesture-handler';
 import type { NativeInstanceDetail } from '../features/collection/collectionModel';
 import type { NativeInstanceDetailPatch } from '../features/collection/nativeInstanceDetailMutation';
 import type {
@@ -21,6 +23,7 @@ import type {
   WantedSizeRange,
 } from '@pokemongonexus/shared-contracts/instances';
 import { NativePokemonLocationBackdrop } from '../features/collection/parity/NativePokemonLocationBackdrop';
+import { useNativeOverlaySwipeNavigation } from '../features/collection/parity/useNativeOverlaySwipeNavigation';
 
 type Props = {
   assetBaseUrl?: string;
@@ -1138,6 +1141,13 @@ export const NativeInstanceDetailScreen = ({
     message: string;
   } | null>(null);
   const [backgroundPickerInstanceId, setBackgroundPickerInstanceId] = useState<string | null>(null);
+  const overlaySwipe = useNativeOverlaySwipeNavigation({
+    disabled: !detail
+      || editingInstanceId === detail.row.id
+      || backgroundPickerInstanceId === detail.row.id,
+    onNext,
+    onPrevious,
+  });
 
   if (isLoading) {
     return (
@@ -1289,26 +1299,35 @@ export const NativeInstanceDetailScreen = ({
 
   return (
     <View style={styles.overlay} testID="native-instance-overlay">
-      <Image
-        accessibilityElementsHidden
-        blurRadius={3}
-        resizeMode="cover"
-        source={{
-          uri: toAssetUrl(
-            assetBaseUrl,
-            backgroundPath(detail, editing ? displayLucky : undefined),
-          ),
-        }}
-        style={styles.fullBackground}
-      />
-      <View style={styles.backgroundTint} />
+      <GestureDetector gesture={overlaySwipe.gesture}>
+        <Animated.View
+          style={[styles.motionLayer, overlaySwipe.motionStyle]}
+          testID="native-instance-motion-layer"
+        >
+        <Image
+          accessibilityElementsHidden
+          blurRadius={3}
+          resizeMode="cover"
+          source={{
+            uri: toAssetUrl(
+              assetBaseUrl,
+              backgroundPath(detail, editing ? displayLucky : undefined),
+            ),
+          }}
+          style={styles.fullBackground}
+        />
+        <View style={styles.backgroundTint} />
 
-      <ScrollView
-        contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
-        style={styles.scroll}
-      >
-        <View style={[styles.shell, { width: shellWidth }]}>
+        <ScrollView
+          contentContainerStyle={styles.scrollContent}
+          directionalLockEnabled
+          showsVerticalScrollIndicator={false}
+          style={styles.scroll}
+        >
+          <View
+            style={[styles.shell, { width: shellWidth }]}
+            testID="native-instance-swipe-surface"
+          >
           {cachedAt != null ? (
             <View accessibilityLiveRegion="polite" style={styles.offlineBanner}>
               <Text style={styles.offlineTitle}>Viewing an offline copy</Text>
@@ -1562,8 +1581,10 @@ export const NativeInstanceDetailScreen = ({
               </View>
             ) : null}
           </View>
-        </View>
-      </ScrollView>
+          </View>
+        </ScrollView>
+        </Animated.View>
+      </GestureDetector>
 
       <NativeBackgroundPicker
         assetBaseUrl={assetBaseUrl}
@@ -1591,7 +1612,7 @@ export const NativeInstanceDetailScreen = ({
         <Pressable
           accessibilityLabel="Previous Pokémon"
           accessibilityRole="button"
-          onPress={onPrevious}
+          onPress={overlaySwipe.navigatePrevious}
           style={[styles.instanceNavigation, styles.previousInstance]}
         >
           <Text style={styles.instanceNavigationIcon}>◀</Text>
@@ -1601,7 +1622,7 @@ export const NativeInstanceDetailScreen = ({
         <Pressable
           accessibilityLabel="Next Pokémon"
           accessibilityRole="button"
-          onPress={onNext}
+          onPress={overlaySwipe.navigateNext}
           style={[styles.instanceNavigation, styles.nextInstance]}
         >
           <Text style={styles.instanceNavigationIcon}>▶</Text>
@@ -1641,6 +1662,7 @@ const LIGHT = {
 
 const styles = StyleSheet.create({
   overlay: { flex: 1, backgroundColor: '#0f2b2b' },
+  motionLayer: { flex: 1, overflow: 'hidden' },
   fullBackground: { ...StyleSheet.absoluteFill, width: '106%', height: '106%', left: '-3%', top: '-3%' },
   backgroundTint: { ...StyleSheet.absoluteFill, backgroundColor: 'rgba(15,43,43,0.08)' },
   scroll: { flex: 1 },
