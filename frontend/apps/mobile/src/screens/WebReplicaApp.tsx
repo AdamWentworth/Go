@@ -127,14 +127,24 @@ const WEBVIEW_DIAGNOSTIC_SCRIPT = `
 true;
 `;
 
-export const WebReplicaApp = () => {
+type WebReplicaAppProps = {
+  initialPath?: string;
+};
+
+const normalizeInitialPath = (value?: string): string => {
+  if (!value || !value.startsWith('/') || value.startsWith('//')) return PRIMARY_PATH;
+  return value;
+};
+
+export const WebReplicaApp = ({ initialPath }: WebReplicaAppProps) => {
   const loadTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const hasAttemptedPathFallbackRef = useRef(false);
   const hasAttemptedHostFallbackRef = useRef(false);
   const hasCompletedInitialLoadRef = useRef(false);
   const [isLoading, setIsLoading] = useState(true);
   const [baseUrl, setBaseUrl] = useState(runtimeConfig.api.frontendAppUrl);
-  const [path, setPath] = useState(PRIMARY_PATH);
+  const requestedPath = normalizeInitialPath(initialPath);
+  const [path, setPath] = useState(requestedPath);
   const [reloadNonce, setReloadNonce] = useState(0);
   const [loadError, setLoadError] = useState<string | null>(null);
   const targetUrl = useMemo(
@@ -179,7 +189,7 @@ export const WebReplicaApp = () => {
       setIsLoading(true);
       setLoadError(null);
       setBaseUrl(PROD_FRONTEND_APP_URL);
-      setPath(PRIMARY_PATH);
+      setPath(requestedPath);
       return;
     }
 
@@ -214,7 +224,7 @@ export const WebReplicaApp = () => {
     setLoadError(null);
     setIsLoading(true);
     setBaseUrl(runtimeConfig.api.frontendAppUrl);
-    setPath(PRIMARY_PATH);
+    setPath(requestedPath);
     setReloadNonce((prev) => prev + 1);
   };
 

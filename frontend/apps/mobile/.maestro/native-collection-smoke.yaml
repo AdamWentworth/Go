@@ -112,3 +112,19 @@ tags:
 - takeScreenshot: 06-instance-opened
 - tapOn: Close smoke detail
 - assertNotVisible: Opened Gigantamax Blastoise
+- tapOn: Open action menu
+- extendedWaitUntil:
+    visible: Quick navigation
+    timeout: 10000
+- assertVisible: Raid
+- assertVisible: Search
+- assertVisible: Pokémon
+- assertVisible: Pokedex
+- assertVisible: Home
+- assertVisible: PvP
+- assertVisible: Trades
+- assertVisible: Rankings
+- assertVisible: Max Battles
+- takeScreenshot: 07-action-menu
+- tapOn: Close
+- assertNotVisible: Quick navigation

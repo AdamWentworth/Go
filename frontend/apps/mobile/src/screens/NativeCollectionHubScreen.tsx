@@ -15,6 +15,7 @@ import {
 } from '../features/collection/NativePokemonHubHeader';
 import { NativeCollectionParityScreen } from './NativeCollectionParityScreen';
 import { NativeTagsPanelScreen } from './NativeTagsPanelScreen';
+import { NativeActionMenu } from '../components/NativeActionMenu';
 
 const VIEW_ORDER: NativePokemonHubView[] = ['inventory', 'pokemon', 'wishlist'];
 
@@ -27,6 +28,7 @@ type Props = {
   warning?: string | null;
   isLoading: boolean;
   onActionMenuPress: () => void;
+  onActionMenuNavigate?: (path: string) => void;
   onOpenEntry: (row: NativeCollectionRow) => void;
   onRetry: () => void;
 };
@@ -40,6 +42,7 @@ export const NativeCollectionHubScreen = ({
   warning = null,
   isLoading,
   onActionMenuPress,
+  onActionMenuNavigate,
   onOpenEntry,
   onRetry,
 }: Props) => {
@@ -48,6 +51,7 @@ export const NativeCollectionHubScreen = ({
   const [query, setQuery] = useState('');
   const [activeView, setActiveView] = useState<NativePokemonHubView>('pokemon');
   const [selectedTag, setSelectedTag] = useState<NativeTagSummary | null>(null);
+  const [actionMenuOpen, setActionMenuOpen] = useState(false);
   const sliderRef = useRef<NativeHorizontalPageSliderHandle>(null);
   const [pageScrollX] = useState(() => new Animated.Value(width));
   const selectedRows = selectedTag?.rows ?? catalogRows;
@@ -76,6 +80,7 @@ export const NativeCollectionHubScreen = ({
   }, [onOpenEntry, selectedRows]);
 
   const clearTag = useCallback(() => setSelectedTag(null), []);
+  const openActionMenu = useCallback(() => setActionMenuOpen(true), []);
   const inventoryPanel = useMemo(() => (
     <NativeTagsPanelScreen
       activeTagName={selectedTag?.parent === 'caught' ? selectedTag.name : null}
@@ -84,7 +89,7 @@ export const NativeCollectionHubScreen = ({
       error={error}
       warning={warning}
       isLoading={isLoading}
-      onActionMenuPress={onActionMenuPress}
+      onActionMenuPress={openActionMenu}
       onRetry={onRetry}
       onSelectTag={selectTag}
       onViewChange={changeView}
@@ -99,7 +104,7 @@ export const NativeCollectionHubScreen = ({
     inventoryCount,
     inventoryTags,
     isLoading,
-    onActionMenuPress,
+    openActionMenu,
     onRetry,
     selectTag,
     selectedTag,
@@ -119,7 +124,7 @@ export const NativeCollectionHubScreen = ({
       onClearTag={clearTag}
       onViewChange={changeView}
       onOpenInstance={openEntry}
-      onOpenCanonicalCollection={onActionMenuPress}
+      onOpenCanonicalCollection={openActionMenu}
       showHeader={false}
     />
   ), [
@@ -128,7 +133,7 @@ export const NativeCollectionHubScreen = ({
     clearTag,
     error,
     isLoading,
-    onActionMenuPress,
+    openActionMenu,
     onRetry,
     openEntry,
     query,
@@ -143,7 +148,7 @@ export const NativeCollectionHubScreen = ({
       collectionCount={inventoryCount}
       error={error}
       isLoading={isLoading}
-      onActionMenuPress={onActionMenuPress}
+      onActionMenuPress={openActionMenu}
       onRetry={onRetry}
       onSelectTag={selectTag}
       onViewChange={changeView}
@@ -158,7 +163,7 @@ export const NativeCollectionHubScreen = ({
     error,
     inventoryCount,
     isLoading,
-    onActionMenuPress,
+    openActionMenu,
     onRetry,
     selectTag,
     selectedTag,
@@ -189,6 +194,19 @@ export const NativeCollectionHubScreen = ({
         {pokemonPanel}
         {wishlistPanel}
       </NativeHorizontalPageSlider>
+      {actionMenuOpen ? (
+        <NativeActionMenu
+          assetBaseUrl={assetBaseUrl}
+          onClose={() => setActionMenuOpen(false)}
+          onNavigate={(path) => {
+            setActionMenuOpen(false);
+            if (path === '/pokemon') return;
+            if (onActionMenuNavigate) onActionMenuNavigate(path);
+            else onActionMenuPress();
+          }}
+          visible
+        />
+      ) : null}
     </View>
   );
 };

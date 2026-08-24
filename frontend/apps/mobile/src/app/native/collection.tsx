@@ -71,7 +71,11 @@ export default function NativeCollectionRoute() {
       error={snapshotQuery.error instanceof Error ? snapshotQuery.error.message : null}
       inventoryTags={inventoryTags}
       isLoading={snapshotQuery.isPending}
-      onActionMenuPress={() => router.replace('/web')}
+      onActionMenuNavigate={(path) => router.push({
+        pathname: '/web',
+        params: { path },
+      })}
+      onActionMenuPress={() => router.push('/web')}
       onOpenEntry={openEntry}
       onRetry={() => void snapshotQuery.refetch()}
       warning={snapshotQuery.data?.tagLoadWarning ?? null}

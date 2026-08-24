@@ -436,7 +436,7 @@ export const NativeCollectionParityFixture = ({
         <Image
           accessibilityElementsHidden
           resizeMode="contain"
-          source={{ uri: toAssetUrl(assetBaseUrl, '/images/balls/pokeball.png') }}
+          source={{ uri: toAssetUrl(assetBaseUrl, '/images/btn_action_menu.png') }}
           style={styles.actionMenuBall}
         />
       </Pressable>

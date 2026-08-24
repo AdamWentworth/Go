@@ -1,4 +1,5 @@
 import { fireEvent, render, screen } from '@testing-library/react-native';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 import type {
   NativeCollectionRow,
   NativeTagSummary,
@@ -88,7 +89,11 @@ describe('NativeCollectionHubScreen', () => {
   it('uses one stateful hub for tab changes, tag selection, and opening entries', () => {
     const onOpenEntry = jest.fn();
     render(
-      <NativeCollectionHubScreen
+      <SafeAreaProvider initialMetrics={{
+        frame: { x: 0, y: 0, width: 412, height: 915 },
+        insets: { top: 24, right: 0, bottom: 20, left: 0 },
+      }}>
+        <NativeCollectionHubScreen
         assetBaseUrl="https://pokegonexus.com"
         catalogRows={[catalogBulbasaur, catalogMewtwo]}
         error={null}
@@ -98,7 +103,8 @@ describe('NativeCollectionHubScreen', () => {
         onOpenEntry={onOpenEntry}
         onRetry={jest.fn()}
         wishlistTags={[wishlistTag]}
-      />,
+        />
+      </SafeAreaProvider>,
     );
 
     expect(screen.getByText('Bulbasaur')).toBeTruthy();
@@ -125,5 +131,38 @@ describe('NativeCollectionHubScreen', () => {
     fireEvent.press(screen.getByRole('tab', { name: /wishlist/i }));
     expect(screen.getByLabelText('Wanted tags')).toBeTruthy();
     expect(screen.getByText('Most Wanted')).toBeTruthy();
+  });
+
+  it('opens the canonical quick-navigation menu instead of replacing the collection', () => {
+    const onActionMenuNavigate = jest.fn();
+    render(
+      <SafeAreaProvider initialMetrics={{
+        frame: { x: 0, y: 0, width: 412, height: 915 },
+        insets: { top: 24, right: 0, bottom: 20, left: 0 },
+      }}>
+        <NativeCollectionHubScreen
+          assetBaseUrl="https://pokegonexus.com"
+          catalogRows={[catalogBulbasaur]}
+          error={null}
+          inventoryTags={[inventoryTag, allCaughtTag]}
+          isLoading={false}
+          onActionMenuNavigate={onActionMenuNavigate}
+          onActionMenuPress={jest.fn()}
+          onOpenEntry={jest.fn()}
+          onRetry={jest.fn()}
+          wishlistTags={[wishlistTag]}
+        />
+      </SafeAreaProvider>,
+    );
+
+    fireEvent.press(screen.getAllByRole('button', { name: 'Open action menu' })[0]);
+
+    expect(screen.getByTestId('native-action-menu')).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Pokémon' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Search' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Trades' })).toBeTruthy();
+
+    fireEvent.press(screen.getByRole('button', { name: 'Search' }));
+    expect(onActionMenuNavigate).toHaveBeenCalledWith('/search');
   });
 });

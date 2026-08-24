@@ -55,6 +55,18 @@ describe('WebReplicaApp', () => {
     ).toBe(true);
   });
 
+  it('loads an explicitly requested canonical route', () => {
+    render(<WebReplicaApp initialPath="/search" />);
+
+    expect(getWebViewProps().source?.uri).toBe('https://pokegonexus.com/search');
+  });
+
+  it('rejects malformed route handoffs and keeps the pokemon default', () => {
+    render(<WebReplicaApp initialPath="https://attacker.example/path" />);
+
+    expect(getWebViewProps().source?.uri).toBe('https://pokegonexus.com/pokemon');
+  });
+
   it('prevents untrusted web destinations from loading inside the app', () => {
     render(<WebReplicaApp />);
     expect(
