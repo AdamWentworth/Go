@@ -107,10 +107,16 @@ export default function NativeCollectionRoute() {
       onRetry={() => void snapshotQuery.refetch()}
       onClearTag={() => setSelectedTag(null)}
       onViewChange={setActiveView}
-      onOpenInstance={(instanceId) => router.push({
-        pathname: '/native/collection/[instanceId]',
-        params: { instanceId },
-      })}
+      onOpenInstance={(entryId) => {
+        const row = (selectedTag?.rows ?? catalogRows).find((candidate) => candidate.id === entryId);
+        router.push(row?.source === 'catalog' ? {
+          pathname: '/native/collection/catalog/[variantId]',
+          params: { variantId: entryId },
+        } : {
+          pathname: '/native/collection/[instanceId]',
+          params: { instanceId: entryId },
+        });
+      }}
       onOpenCanonicalCollection={() => router.replace('/web')}
     />
   );
