@@ -19,6 +19,7 @@ import {
   NativePokemonHubHeader,
   type NativePokemonHubView,
 } from '../NativePokemonHubHeader';
+import { NativePokemonStatusGlow } from './NativePokemonStatusGlow';
 
 type NativeCollectionParityFixtureProps = {
   assetBaseUrl?: string;
@@ -45,6 +46,7 @@ type NativeCollectionParityFixtureProps = {
   tagCanClear?: boolean;
   tagTone?: 'caught' | 'trade' | 'favorites' | 'wanted' | 'most-wanted' | 'custom';
   theme?: CollectionParityTheme;
+  showHeader?: boolean;
 };
 
 const LIGHT = {
@@ -67,15 +69,6 @@ const DARK = {
 
 const GRID_GAP = 8;
 const GRID_HORIZONTAL_PADDING = 8;
-
-const OWNERSHIP_GLOW: Record<
-  NonNullable<CollectionParityCardFixture['ownership']>,
-  string
-> = {
-  caught: '#0077ff',
-  trade: '#28a745',
-  wanted: '#dc3545',
-};
 
 const TAG_TONES = {
   caught: {
@@ -163,15 +156,7 @@ const CollectionParityCard = ({
         ) : null}
       </View>
       <View style={styles.imageStage}>
-        {card.ownership ? (
-          <View
-            pointerEvents="none"
-            style={[
-              styles.statusGlow,
-              { backgroundColor: OWNERSHIP_GLOW[card.ownership] },
-            ]}
-          />
-        ) : null}
+        <NativePokemonStatusGlow ownership={card.ownership} />
         {card.locationBackgroundPath ? (
           <Image
             accessibilityElementsHidden
@@ -263,6 +248,7 @@ export const NativeCollectionParityFixture = ({
   tagCanClear = true,
   tagTone = 'favorites',
   theme = 'dark',
+  showHeader = true,
 }: NativeCollectionParityFixtureProps) => {
   const { width } = useWindowDimensions();
   const palette = theme === 'light' ? LIGHT : DARK;
@@ -284,19 +270,22 @@ export const NativeCollectionParityFixture = ({
       style={[styles.screen, { backgroundColor: palette.background }]}
       testID="native-collection-parity-fixture"
     >
-      <NativePokemonHubHeader
-        activeTag={activeTag}
-        activeView={activeView}
-        backgroundColor={palette.background}
-        collectionCount={collectionCount}
-        onViewChange={(view) => {
-          if (view === 'inventory') onTagsPress?.();
-          else if (view === 'wishlist') onWishlistPress?.();
-          else onPokemonPress?.();
-        }}
-        secondaryTextColor={palette.secondaryText}
-        textColor={palette.text}
-      />
+      {showHeader ? (
+        <NativePokemonHubHeader
+          activeTag={activeTag}
+          activeTagParent={tagTone === 'wanted' || tagTone === 'most-wanted' ? 'wanted' : 'caught'}
+          activeView={activeView}
+          backgroundColor={palette.background}
+          collectionCount={collectionCount}
+          onViewChange={(view) => {
+            if (view === 'inventory') onTagsPress?.();
+            else if (view === 'wishlist') onWishlistPress?.();
+            else onPokemonPress?.();
+          }}
+          secondaryTextColor={palette.secondaryText}
+          textColor={palette.text}
+        />
+      ) : null}
 
       <FlatList
         columnWrapperStyle={styles.gridRow}
@@ -565,15 +554,6 @@ const styles = StyleSheet.create({
     aspectRatio: 1,
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  statusGlow: {
-    position: 'absolute',
-    top: '12%',
-    left: '12%',
-    width: '76%',
-    height: '76%',
-    borderRadius: 999,
-    opacity: 0.22,
   },
   locationBackground: {
     position: 'absolute',

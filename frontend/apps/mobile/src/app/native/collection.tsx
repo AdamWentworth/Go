@@ -1,5 +1,7 @@
 import { Redirect, useRouter } from 'expo-router';
 import { useMemo, useState } from 'react';
+import { StyleSheet, View, useColorScheme } from 'react-native';
+import { webCssVarTokens } from '@pokemongonexus/shared-ui-tokens';
 import {
   buildNativeCatalogRows,
   buildNativeCollectionRows,
@@ -14,9 +16,14 @@ import { NativeTagsPanelScreen } from '../../screens/NativeTagsPanelScreen';
 import { runtimeConfig } from '../../config/runtimeConfig';
 import { useNativeSession } from '../../auth/NativeSessionContext';
 import { DEFAULT_NATIVE_TAGS_ENVELOPE } from '../../features/collection/nativeTagsEnvelope';
+import { NativePokemonHubHeader } from '../../features/collection/NativePokemonHubHeader';
+import { NativeHorizontalPageSlider } from '../../components/NativeHorizontalPageSlider';
+
+const VIEW_ORDER: NativePokemonHubView[] = ['inventory', 'pokemon', 'wishlist'];
 
 export default function NativeCollectionRoute() {
   const router = useRouter();
+  const light = useColorScheme() === 'light';
   const session = useNativeSession();
   const [query, setQuery] = useState('');
   const [activeView, setActiveView] = useState<NativePokemonHubView>('pokemon');
@@ -66,48 +73,88 @@ export default function NativeCollectionRoute() {
     return <Redirect href="/native/login?returnTo=%2Fnative%2Fcollection" />;
   }
 
-  if (activeView === 'inventory' || activeView === 'wishlist') {
-    return (
-      <NativeTagsPanelScreen
-        activeTagName={selectedTag?.name ?? null}
-        assetBaseUrl={runtimeConfig.api.frontendAppUrl}
-        collectionCount={catalogRows.length}
-        error={snapshotQuery.error instanceof Error ? snapshotQuery.error.message : null}
-        warning={snapshotQuery.data?.tagLoadWarning ?? null}
-        isLoading={snapshotQuery.isPending}
-        onActionMenuPress={() => router.replace('/web')}
-        onRetry={() => void snapshotQuery.refetch()}
-        onSelectTag={selectTag}
-        onViewChange={setActiveView}
-        parent={activeView === 'inventory' ? 'caught' : 'wanted'}
-        tags={activeView === 'inventory' ? inventoryTags : wishlistTags}
-      />
-    );
-  }
+  const selectedRows = selectedTag?.rows ?? catalogRows;
+  const background = light ? '#f8fff9' : webCssVarTokens.colors.bgApp;
+  const text = light ? '#405753' : webCssVarTokens.colors.textPrimary;
+  const secondary = light ? '#4b625e' : webCssVarTokens.colors.textSecondary;
+  const activeIndex = VIEW_ORDER.indexOf(activeView);
+  const openEntry = (entryId: string) => {
+    const row = selectedRows.find((candidate) => candidate.id === entryId);
+    router.push(row?.source === 'catalog' ? {
+      pathname: '/native/collection/catalog/[variantId]',
+      params: { variantId: entryId },
+    } : {
+      pathname: '/native/collection/[instanceId]',
+      params: { instanceId: entryId },
+    });
+  };
 
   return (
-    <NativeCollectionParityScreen
-      activeTag={selectedTag}
-      assetBaseUrl={runtimeConfig.api.frontendAppUrl}
-      rows={selectedTag?.rows ?? catalogRows}
-      query={query}
-      isLoading={snapshotQuery.isPending}
-      error={snapshotQuery.error instanceof Error ? snapshotQuery.error.message : null}
-      onQueryChange={setQuery}
-      onRetry={() => void snapshotQuery.refetch()}
-      onClearTag={() => setSelectedTag(null)}
-      onViewChange={setActiveView}
-      onOpenInstance={(entryId) => {
-        const row = (selectedTag?.rows ?? catalogRows).find((candidate) => candidate.id === entryId);
-        router.push(row?.source === 'catalog' ? {
-          pathname: '/native/collection/catalog/[variantId]',
-          params: { variantId: entryId },
-        } : {
-          pathname: '/native/collection/[instanceId]',
-          params: { instanceId: entryId },
-        });
-      }}
-      onOpenCanonicalCollection={() => router.replace('/web')}
-    />
+    <View style={[styles.screen, { backgroundColor: background }]}>
+      <NativePokemonHubHeader
+        activeTag={selectedTag?.name ?? null}
+        activeTagParent={selectedTag?.parent ?? null}
+        activeView={activeView}
+        backgroundColor={background}
+        collectionCount={selectedRows.length}
+        onViewChange={setActiveView}
+        secondaryTextColor={secondary}
+        textColor={text}
+      />
+      <NativeHorizontalPageSlider
+        activeIndex={activeIndex}
+        onIndexChange={(index) => setActiveView(VIEW_ORDER[index] ?? 'pokemon')}
+      >
+        <NativeTagsPanelScreen
+          activeTagName={selectedTag?.parent === 'caught' ? selectedTag.name : null}
+          assetBaseUrl={runtimeConfig.api.frontendAppUrl}
+          collectionCount={catalogRows.length}
+          error={snapshotQuery.error instanceof Error ? snapshotQuery.error.message : null}
+          warning={snapshotQuery.data?.tagLoadWarning ?? null}
+          isLoading={snapshotQuery.isPending}
+          onActionMenuPress={() => router.replace('/web')}
+          onRetry={() => void snapshotQuery.refetch()}
+          onSelectTag={selectTag}
+          onViewChange={setActiveView}
+          parent="caught"
+          showHeader={false}
+          tags={inventoryTags}
+        />
+        <NativeCollectionParityScreen
+          activeTag={selectedTag}
+          assetBaseUrl={runtimeConfig.api.frontendAppUrl}
+          rows={selectedRows}
+          query={query}
+          isLoading={snapshotQuery.isPending}
+          error={snapshotQuery.error instanceof Error ? snapshotQuery.error.message : null}
+          onQueryChange={setQuery}
+          onRetry={() => void snapshotQuery.refetch()}
+          onClearTag={() => setSelectedTag(null)}
+          onViewChange={setActiveView}
+          onOpenInstance={openEntry}
+          onOpenCanonicalCollection={() => router.replace('/web')}
+          showHeader={false}
+        />
+        <NativeTagsPanelScreen
+          activeTagName={selectedTag?.parent === 'wanted' ? selectedTag.name : null}
+          assetBaseUrl={runtimeConfig.api.frontendAppUrl}
+          collectionCount={catalogRows.length}
+          error={snapshotQuery.error instanceof Error ? snapshotQuery.error.message : null}
+          isLoading={snapshotQuery.isPending}
+          onActionMenuPress={() => router.replace('/web')}
+          onRetry={() => void snapshotQuery.refetch()}
+          onSelectTag={selectTag}
+          onViewChange={setActiveView}
+          parent="wanted"
+          showHeader={false}
+          tags={wishlistTags}
+          warning={snapshotQuery.data?.tagLoadWarning ?? null}
+        />
+      </NativeHorizontalPageSlider>
+    </View>
   );
 }
+
+const styles = StyleSheet.create({
+  screen: { flex: 1, minHeight: 0 },
+});

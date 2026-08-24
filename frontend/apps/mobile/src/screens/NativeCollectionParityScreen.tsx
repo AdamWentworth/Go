@@ -32,6 +32,7 @@ type NativeCollectionParityScreenProps = {
   onOpenCanonicalCollection: () => void;
   onClearTag: () => void;
   onViewChange: (view: NativePokemonHubView) => void;
+  showHeader?: boolean;
 };
 
 const SORT_OPTIONS: { key: NativeCollectionSort; label: string }[] = [
@@ -80,6 +81,7 @@ export const NativeCollectionParityScreen = ({
   onOpenCanonicalCollection,
   onClearTag,
   onViewChange,
+  showHeader = true,
 }: NativeCollectionParityScreenProps) => {
   const colorScheme = useColorScheme();
   const [sort, setSort] = useState<NativeCollectionSort>('number');
@@ -126,6 +128,7 @@ export const NativeCollectionParityScreen = ({
         tagCanClear={Boolean(activeTag)}
         tagTone={activeTag?.tone ?? 'caught'}
         theme={theme}
+        showHeader={showHeader}
       />
 
       <Modal

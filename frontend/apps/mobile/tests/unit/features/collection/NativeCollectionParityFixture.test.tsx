@@ -78,8 +78,32 @@ describe('NativeCollectionParityFixture', () => {
     expect(screen.getByLabelText('Most Wanted')).toBeTruthy();
     expect(screen.getByLabelText('Dynamax')).toBeTruthy();
     expect(screen.getByLabelText('Purified')).toBeTruthy();
+    expect(screen.getByTestId(
+      'native-wanted-status-glow',
+      { includeHiddenElements: true },
+    )).toBeTruthy();
     expect(screen.queryByLabelText('Clear Most Wanted tag filter')).toBeNull();
   });
+
+  it.each(['caught', 'trade', 'wanted'] as const)(
+    'renders the canonical radial %s ownership glow behind tagged Pokémon',
+    (ownership) => {
+      render(
+        <NativeCollectionParityFixture
+          cards={[{
+            ...COLLECTION_PARITY_FIXTURES[0],
+            id: `${ownership}-glow-card`,
+            ownership,
+          }]}
+        />,
+      );
+
+      expect(screen.getByTestId(
+        `native-${ownership}-status-glow`,
+        { includeHiddenElements: true },
+      )).toBeTruthy();
+    },
+  );
 
   it('keeps incomplete mobile rows at the canonical three-column width', () => {
     render(<NativeCollectionParityFixture cards={COLLECTION_PARITY_FIXTURES.slice(0, 1)} />);

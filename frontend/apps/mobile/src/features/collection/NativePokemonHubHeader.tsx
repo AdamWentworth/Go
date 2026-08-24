@@ -1,10 +1,12 @@
 import { Pressable, StyleSheet, Text, View } from 'react-native';
+import type { CustomTagParent } from '@pokemongonexus/shared-contracts/users';
 
 export type NativePokemonHubView = 'inventory' | 'pokemon' | 'wishlist';
 
 type Props = {
   activeView: NativePokemonHubView;
   activeTag?: string | null;
+  activeTagParent?: CustomTagParent | null;
   collectionCount: number;
   backgroundColor: string;
   textColor: string;
@@ -15,6 +17,7 @@ type Props = {
 export const NativePokemonHubHeader = ({
   activeView,
   activeTag,
+  activeTagParent = null,
   collectionCount,
   backgroundColor,
   textColor,
@@ -28,8 +31,12 @@ export const NativePokemonHubHeader = ({
       ['wishlist', 'WISHLIST'],
     ] as const).map(([key, label]) => {
       const selected = activeView === key;
-      const subtext = key === 'inventory'
-        ? activeTag ? `(${activeTag.toUpperCase()})` : null
+      const tagBelongsHere = activeTag && (
+        (key === 'inventory' && activeTagParent === 'caught')
+        || (key === 'wishlist' && activeTagParent === 'wanted')
+      );
+      const subtext = tagBelongsHere
+        ? `(${activeTag.toUpperCase()})`
         : key === 'pokemon' ? `(${collectionCount})` : null;
       return (
         <Pressable

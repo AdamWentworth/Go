@@ -29,6 +29,7 @@ type Props = {
   onRetry: () => void;
   onSelectTag: (tag: NativeTagSummary) => void;
   onViewChange: (view: NativePokemonHubView) => void;
+  showHeader?: boolean;
 };
 
 const toAssetUrl = (baseUrl: string, path: string): string => {
@@ -120,6 +121,7 @@ export const NativeTagsPanelScreen = ({
   onRetry,
   onSelectTag,
   onViewChange,
+  showHeader = true,
 }: Props) => {
   const light = useColorScheme() === 'light';
   const background = light ? '#f8fff9' : webCssVarTokens.colors.bgApp;
@@ -127,15 +129,18 @@ export const NativeTagsPanelScreen = ({
   const secondary = light ? '#4b625e' : webCssVarTokens.colors.textSecondary;
   return (
     <View style={[styles.screen, { backgroundColor: background }]} testID={`native-${parent}-tags-screen`}>
-      <NativePokemonHubHeader
-        activeTag={activeTagName}
-        activeView={parent === 'caught' ? 'inventory' : 'wishlist'}
-        backgroundColor={background}
-        collectionCount={collectionCount}
-        onViewChange={onViewChange}
-        secondaryTextColor={secondary}
-        textColor={text}
-      />
+      {showHeader ? (
+        <NativePokemonHubHeader
+          activeTag={activeTagName}
+          activeTagParent={parent}
+          activeView={parent === 'caught' ? 'inventory' : 'wishlist'}
+          backgroundColor={background}
+          collectionCount={collectionCount}
+          onViewChange={onViewChange}
+          secondaryTextColor={secondary}
+          textColor={text}
+        />
+      ) : null}
       <FlatList
         contentContainerStyle={styles.list}
         data={tags}
