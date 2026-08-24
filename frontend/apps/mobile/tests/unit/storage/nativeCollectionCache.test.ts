@@ -25,7 +25,19 @@ describe('native collection cache', () => {
 
     await cache.write('user-1', snapshot, 1234);
 
-    await expect(cache.read('user-1')).resolves.toEqual({ snapshot, savedAt: 1234 });
+    await expect(cache.read('user-1')).resolves.toEqual({
+      snapshot: {
+        ...snapshot,
+        tags: {
+          tags: [],
+          orders: {
+            caught: ['system:caught', 'system:favorites', 'system:trade'],
+            wanted: ['system:wanted', 'system:most-wanted'],
+          },
+        },
+      },
+      savedAt: 1234,
+    });
     await expect(cache.read('user-2')).resolves.toBeNull();
     expect(openDatabase).toHaveBeenCalledTimes(1);
     expect(database.execAsync).toHaveBeenCalledTimes(1);

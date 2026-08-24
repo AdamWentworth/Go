@@ -48,6 +48,7 @@ const Harness = ({
   const [query, setQuery] = useState('');
   return (
     <NativeCollectionParityScreen
+      activeTag={null}
       assetBaseUrl="https://pokegonexus.com"
       rows={rows}
       query={query}
@@ -57,17 +58,16 @@ const Harness = ({
       onRetry={jest.fn()}
       onOpenInstance={onOpenInstance}
       onOpenCanonicalCollection={onOpenCanonicalCollection}
+      onClearTag={jest.fn()}
+      onViewChange={jest.fn()}
     />
   );
 };
 
 describe('NativeCollectionParityScreen', () => {
-  it('starts in the canonical Favorites context and can return to the full real collection', () => {
+  it('starts in the complete catalog context', () => {
     render(<Harness />);
 
-    expect(screen.getByText('Bulbasaur')).toBeTruthy();
-    expect(screen.queryByText('Charizard')).toBeNull();
-    fireEvent.press(screen.getByLabelText('Clear Favorites tag filter'));
     expect(screen.getByText('Bulbasaur')).toBeTruthy();
     expect(screen.getByText('Charizard')).toBeTruthy();
   });
@@ -76,7 +76,6 @@ describe('NativeCollectionParityScreen', () => {
     const onOpenInstance = jest.fn();
     render(<Harness onOpenInstance={onOpenInstance} />);
 
-    fireEvent.press(screen.getByLabelText('Clear Favorites tag filter'));
     fireEvent.changeText(screen.getByLabelText('Search'), 'char');
     expect(screen.queryByText('Bulbasaur')).toBeNull();
     expect(screen.getByText('Charizard')).toBeTruthy();
@@ -94,13 +93,11 @@ describe('NativeCollectionParityScreen', () => {
     expect(screen.getByLabelText('Sort by Name descending')).toBeTruthy();
   });
 
-  it('hands unfinished tabs and the action menu to the canonical app', () => {
+  it('keeps the action menu callback available', () => {
     const onOpenCanonicalCollection = jest.fn();
     render(<Harness onOpenCanonicalCollection={onOpenCanonicalCollection} />);
 
-    fireEvent.press(screen.getByRole('tab', { name: /tags/i }));
-    fireEvent.press(screen.getByRole('tab', { name: /wishlist/i }));
     fireEvent.press(screen.getByLabelText('Open action menu'));
-    expect(onOpenCanonicalCollection).toHaveBeenCalledTimes(3);
+    expect(onOpenCanonicalCollection).toHaveBeenCalledTimes(1);
   });
 });

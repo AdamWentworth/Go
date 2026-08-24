@@ -12,15 +12,17 @@ import { NativeCollectionParityFixture } from '../features/collection/parity/Nat
 import {
   filterNativeCollectionRows,
   sortNativeCollectionRows,
-  type NativeCollectionFilter,
   type NativeCollectionRow,
   type NativeCollectionSort,
   type NativeCollectionSortDirection,
+  type NativeTagSummary,
 } from '../features/collection/collectionModel';
+import type { NativePokemonHubView } from '../features/collection/NativePokemonHubHeader';
 
 type NativeCollectionParityScreenProps = {
   assetBaseUrl: string;
   rows: NativeCollectionRow[];
+  activeTag: NativeTagSummary | null;
   query: string;
   isLoading: boolean;
   error: string | null;
@@ -28,6 +30,8 @@ type NativeCollectionParityScreenProps = {
   onRetry: () => void;
   onOpenInstance: (instanceId: string) => void;
   onOpenCanonicalCollection: () => void;
+  onClearTag: () => void;
+  onViewChange: (view: NativePokemonHubView) => void;
 };
 
 const SORT_OPTIONS: { key: NativeCollectionSort; label: string }[] = [
@@ -42,21 +46,6 @@ const SORT_ICONS: Record<NativeCollectionSort, string> = {
   name: '/images/sorting/name.png',
   cp: '/images/sorting/cp.png',
   favorite: '/images/sorting/favorite.png',
-};
-
-const FILTER_PRESENTATION: Record<
-  NativeCollectionFilter,
-  {
-    label: string | null;
-    tone: 'caught' | 'trade' | 'favorites' | 'wanted' | 'most-wanted';
-  }
-> = {
-  all: { label: null, tone: 'caught' },
-  caught: { label: 'Caught', tone: 'caught' },
-  trade: { label: 'For Trade', tone: 'trade' },
-  wanted: { label: 'Wanted', tone: 'wanted' },
-  favorites: { label: 'Favorites', tone: 'favorites' },
-  'most-wanted': { label: 'Most Wanted', tone: 'most-wanted' },
 };
 
 const toParityCard = (
@@ -74,13 +63,14 @@ const toParityCard = (
   lucky: row.lucky,
   locationBackgroundPath: row.locationBackgroundUri ?? undefined,
   maxKind: row.maxKind ?? undefined,
-  ownership: showOwnership ? row.status : undefined,
+  ownership: showOwnership && row.source !== 'catalog' ? row.status : undefined,
   purified: row.purified,
 });
 
 export const NativeCollectionParityScreen = ({
   assetBaseUrl,
   rows,
+  activeTag,
   query,
   isLoading,
   error,
@@ -88,35 +78,32 @@ export const NativeCollectionParityScreen = ({
   onRetry,
   onOpenInstance,
   onOpenCanonicalCollection,
+  onClearTag,
+  onViewChange,
 }: NativeCollectionParityScreenProps) => {
   const colorScheme = useColorScheme();
-  const [filter, setFilter] = useState<NativeCollectionFilter>('favorites');
   const [sort, setSort] = useState<NativeCollectionSort>('number');
   const [direction, setDirection] = useState<NativeCollectionSortDirection>('ascending');
   const [sortOpen, setSortOpen] = useState(false);
   const filteredRows = useMemo(
-    () => filterNativeCollectionRows(rows, filter, query),
-    [filter, query, rows],
+    () => filterNativeCollectionRows(rows, 'all', query),
+    [query, rows],
   );
   const visibleRows = useMemo(
     () => sortNativeCollectionRows(filteredRows, sort, direction),
     [direction, filteredRows, sort],
   );
   const cards = useMemo(
-    () => visibleRows.map((row) => toParityCard(
-      row,
-      filter === 'caught' || filter === 'trade' || filter === 'wanted',
-    )),
-    [filter, visibleRows],
+    () => visibleRows.map((row) => toParityCard(row, Boolean(activeTag))),
+    [activeTag, visibleRows],
   );
-  const filterPresentation = FILTER_PRESENTATION[filter];
   const sortLabel = SORT_OPTIONS.find((option) => option.key === sort)?.label ?? 'Pokédex number';
   const theme = colorScheme === 'light' ? 'light' : 'dark';
 
   return (
     <View style={styles.screen} testID="native-collection-parity-screen">
       <NativeCollectionParityFixture
-        activeTag={filterPresentation.label}
+        activeTag={activeTag?.name ?? null}
         assetBaseUrl={assetBaseUrl}
         cards={cards}
         collectionCount={visibleRows.length}
@@ -124,18 +111,20 @@ export const NativeCollectionParityScreen = ({
         isLoading={isLoading}
         onActionMenuPress={onOpenCanonicalCollection}
         onCardPress={(card) => onOpenInstance(card.id)}
-        onClearTag={() => setFilter('all')}
+        customTagColor={activeTag?.color}
+        onClearTag={onClearTag}
         onQueryChange={onQueryChange}
         onRetry={onRetry}
         onSortPress={() => setSortOpen(true)}
-        onTagsPress={onOpenCanonicalCollection}
-        onWishlistPress={onOpenCanonicalCollection}
+        onPokemonPress={() => onViewChange('pokemon')}
+        onTagsPress={() => onViewChange('inventory')}
+        onWishlistPress={() => onViewChange('wishlist')}
         query={query}
         sortDirection={direction}
         sortIconPath={SORT_ICONS[sort]}
         sortLabel={`Sort by ${sortLabel} ${direction}`}
-        tagCanClear
-        tagTone={filterPresentation.tone}
+        tagCanClear={Boolean(activeTag)}
+        tagTone={activeTag?.tone ?? 'caught'}
         theme={theme}
       />
 

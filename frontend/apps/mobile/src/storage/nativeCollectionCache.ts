@@ -1,5 +1,6 @@
 import type { PokemonInstance } from '@pokemongonexus/shared-contracts/instances';
 import type { BasePokemon } from '@pokemongonexus/shared-contracts/pokemon';
+import type { CustomTagsEnvelope } from '@pokemongonexus/shared-contracts/users';
 import * as SQLite from 'expo-sqlite';
 import type { SQLiteBindParams, SQLiteRunResult } from 'expo-sqlite';
 
@@ -8,6 +9,7 @@ const DATABASE_NAME = 'pokegonexus-native.db';
 export type NativeCachedCollectionSnapshot = {
   instances: Record<string, PokemonInstance>;
   catalog: BasePokemon[];
+  tags?: CustomTagsEnvelope;
 };
 
 export type NativeCollectionCacheEntry = {
@@ -60,7 +62,17 @@ const parseSnapshot = (snapshotJson: string): NativeCachedCollectionSnapshot => 
     throw new Error('The saved Pokémon catalog is invalid.');
   }
 
-  return parsed as NativeCachedCollectionSnapshot;
+  const tags = 'tags' in parsed && parsed.tags && typeof parsed.tags === 'object'
+    ? parsed.tags as CustomTagsEnvelope
+    : {
+        tags: [],
+        orders: {
+          caught: ['system:caught', 'system:favorites', 'system:trade'],
+          wanted: ['system:wanted', 'system:most-wanted'],
+        },
+      } satisfies CustomTagsEnvelope;
+
+  return { ...(parsed as Omit<NativeCachedCollectionSnapshot, 'tags'>), tags };
 };
 
 const defaultOpenDatabase: OpenCollectionCacheDatabase = async () =>

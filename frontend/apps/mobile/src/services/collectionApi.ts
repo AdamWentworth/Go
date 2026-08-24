@@ -6,6 +6,7 @@ import {
 } from '@pokemongonexus/shared-contracts/pokemon';
 import {
   usersContract,
+  type CustomTagsEnvelope,
   type InstanceSyncEnvelope,
 } from '@pokemongonexus/shared-contracts/users';
 import type {
@@ -25,6 +26,7 @@ import type {
 export type NativeCollectionSnapshot = {
   instances: Record<string, PokemonInstance>;
   catalog: BasePokemon[];
+  tags?: CustomTagsEnvelope;
 };
 
 export type NativeResolvedCollectionSnapshot = NativeCollectionSnapshot & {
@@ -36,16 +38,18 @@ export const getNativeCollectionSnapshot = async (
   usersClient: Pick<NativeUsersApiClient, 'get'>,
   pokemonClient: Pick<NativePokemonApiClient, 'get'>,
 ): Promise<NativeCollectionSnapshot> => {
-  const [instanceEnvelope, catalog] = await Promise.all([
+  const [instanceEnvelope, catalog, tags] = await Promise.all([
     usersClient.get<InstanceSyncEnvelope<PokemonInstance>>(
       usersContract.endpoints.instanceSync,
     ),
     pokemonClient.get<BasePokemon[]>(pokemonContract.endpoints.catalog),
+    usersClient.get<CustomTagsEnvelope>(usersContract.endpoints.tags),
   ]);
 
   return {
     instances: instanceEnvelope.instances ?? {},
     catalog,
+    tags,
   };
 };
 

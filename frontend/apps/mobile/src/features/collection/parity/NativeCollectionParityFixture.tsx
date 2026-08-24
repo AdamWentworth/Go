@@ -15,6 +15,10 @@ import type {
   CollectionParityTheme,
 } from './collectionParityFixtures';
 import { COLLECTION_PARITY_FIXTURES } from './collectionParityFixtures';
+import {
+  NativePokemonHubHeader,
+  type NativePokemonHubView,
+} from '../NativePokemonHubHeader';
 
 type NativeCollectionParityFixtureProps = {
   assetBaseUrl?: string;
@@ -28,10 +32,12 @@ type NativeCollectionParityFixtureProps = {
   onCardPress?: (card: CollectionParityCardFixture) => void;
   onClearTag?: () => void;
   onQueryChange?: (query: string) => void;
+  onPokemonPress?: () => void;
   onRetry?: () => void;
   onSortPress?: () => void;
   onTagsPress?: () => void;
   onWishlistPress?: () => void;
+  activeView?: NativePokemonHubView;
   query?: string;
   sortDirection?: 'ascending' | 'descending';
   sortIconPath?: string;
@@ -244,10 +250,12 @@ export const NativeCollectionParityFixture = ({
   onCardPress,
   onClearTag,
   onQueryChange,
+  onPokemonPress,
   onRetry,
   onSortPress,
   onTagsPress,
   onWishlistPress,
+  activeView = 'pokemon',
   query = '',
   sortDirection = 'ascending',
   sortIconPath = '/images/sorting/number.png',
@@ -276,33 +284,19 @@ export const NativeCollectionParityFixture = ({
       style={[styles.screen, { backgroundColor: palette.background }]}
       testID="native-collection-parity-fixture"
     >
-      <View
-        accessibilityRole="tablist"
-        style={[styles.header, { backgroundColor: palette.background }]}
-      >
-        <Pressable accessibilityRole="tab" onPress={onTagsPress} style={styles.tab}>
-          <Text style={[styles.tabText, { color: palette.secondaryText }]}>TAGS</Text>
-          {activeTag ? (
-            <Text style={[styles.tabSubtext, { color: palette.secondaryText }]}>
-              ({activeTag.toUpperCase()})
-            </Text>
-          ) : null}
-        </Pressable>
-        <Pressable
-          accessibilityRole="tab"
-          accessibilityState={{ selected: true }}
-          style={styles.tab}
-        >
-          <Text style={[styles.tabText, { color: palette.text }]}>POKÉMON</Text>
-          <Text style={[styles.tabSubtext, { color: palette.text }]}>
-            ({collectionCount})
-          </Text>
-          <View style={[styles.activeUnderline, { backgroundColor: palette.text }]} />
-        </Pressable>
-        <Pressable accessibilityRole="tab" onPress={onWishlistPress} style={styles.tab}>
-          <Text style={[styles.tabText, { color: palette.secondaryText }]}>WISHLIST</Text>
-        </Pressable>
-      </View>
+      <NativePokemonHubHeader
+        activeTag={activeTag}
+        activeView={activeView}
+        backgroundColor={palette.background}
+        collectionCount={collectionCount}
+        onViewChange={(view) => {
+          if (view === 'inventory') onTagsPress?.();
+          else if (view === 'wishlist') onWishlistPress?.();
+          else onPokemonPress?.();
+        }}
+        secondaryTextColor={palette.secondaryText}
+        textColor={palette.text}
+      />
 
       <FlatList
         columnWrapperStyle={styles.gridRow}

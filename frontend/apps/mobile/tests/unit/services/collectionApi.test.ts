@@ -10,19 +10,23 @@ describe('getNativeCollectionSnapshot', () => {
   it('loads canonical instances and the image-bearing catalog together', async () => {
     const instances = { 'instance-1': { pokemon_id: 1 } };
     const catalog = [{ pokemon_id: 1, name: 'Bulbasaur' }];
+    const tags = { tags: [], orders: { caught: [], wanted: [] } };
     const usersClient = {
-      get: jest.fn().mockResolvedValue({
+      get: jest.fn()
+        .mockResolvedValueOnce({
         checkpoint: 'checkpoint-1',
         not_modified: false,
         instances,
-      }),
+        })
+        .mockResolvedValueOnce(tags),
     };
     const pokemonClient = { get: jest.fn().mockResolvedValue(catalog) };
 
     await expect(
       getNativeCollectionSnapshot(usersClient, pokemonClient),
-    ).resolves.toEqual({ instances, catalog });
+    ).resolves.toEqual({ instances, catalog, tags });
     expect(usersClient.get).toHaveBeenCalledWith(usersContract.endpoints.instanceSync);
+    expect(usersClient.get).toHaveBeenCalledWith(usersContract.endpoints.tags);
     expect(pokemonClient.get).toHaveBeenCalledWith(pokemonContract.endpoints.catalog);
   });
 
@@ -62,9 +66,10 @@ describe('getNativeCollectionSnapshot', () => {
       createdAt: 100, updatedAt: 100, attemptCount: 0,
       lastError: null, acknowledgedAt: null,
     }];
-    const usersClient = { get: jest.fn().mockResolvedValue({ instances: {
-      'instance-1': canonicalInstance,
-    } }) };
+    const tags = { tags: [], orders: { caught: [], wanted: [] } };
+    const usersClient = { get: jest.fn()
+      .mockResolvedValueOnce({ instances: { 'instance-1': canonicalInstance } })
+      .mockResolvedValueOnce(tags) };
     const pokemonClient = { get: jest.fn().mockResolvedValue([]) };
     const outbox = {
       list: jest.fn()
@@ -85,6 +90,7 @@ describe('getNativeCollectionSnapshot', () => {
     expect(cache.write).toHaveBeenCalledWith('user-1', {
       instances: { 'instance-1': canonicalInstance },
       catalog: [],
+      tags,
     });
     expect(outbox.list).toHaveBeenNthCalledWith(1, 'user-1', 'acknowledged');
     expect(outbox.list).toHaveBeenNthCalledWith(2, 'user-1');
@@ -133,7 +139,10 @@ describe('getNativeCollectionSnapshot', () => {
   });
 
   it('does not let a replaceable cache write block an online collection', async () => {
-    const usersClient = { get: jest.fn().mockResolvedValue({ instances: {} }) };
+    const tags = { tags: [], orders: { caught: [], wanted: [] } };
+    const usersClient = { get: jest.fn()
+      .mockResolvedValueOnce({ instances: {} })
+      .mockResolvedValueOnce(tags) };
     const pokemonClient = { get: jest.fn().mockResolvedValue([]) };
     const outbox = {
       list: jest.fn().mockResolvedValue([]),
@@ -146,7 +155,7 @@ describe('getNativeCollectionSnapshot', () => {
 
     await expect(getReconciledNativeCollectionSnapshot(
       usersClient, pokemonClient, outbox, cache, 'user-1',
-    )).resolves.toEqual({ instances: {}, catalog: [], source: 'network', cachedAt: null });
+    )).resolves.toEqual({ instances: {}, catalog: [], tags, source: 'network', cachedAt: null });
   });
 
   it('preserves the network failure when no cached copy exists', async () => {

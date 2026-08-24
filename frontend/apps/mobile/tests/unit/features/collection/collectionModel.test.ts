@@ -1,8 +1,11 @@
 import type { PokemonInstance } from '@pokemongonexus/shared-contracts/instances';
 import type { BasePokemon } from '@pokemongonexus/shared-contracts/pokemon';
+import type { CustomTagsEnvelope } from '@pokemongonexus/shared-contracts/users';
 import {
+  buildNativeCatalogRows,
   buildNativeCollectionRows,
   buildNativeInstanceDetail,
+  buildNativeTagSummaries,
   filterNativeCollectionRows,
   resolveNativeInstanceImage,
   sortNativeCollectionRows,
@@ -95,6 +98,25 @@ const pokemon = {
 } as unknown as BasePokemon;
 
 describe('native collection model', () => {
+  it('builds the complete catalog separately from collection instances', () => {
+    const rows = buildNativeCatalogRows([
+      {
+        ...pokemon,
+        shiny_available: 1,
+        date_shadow_available: '2020-01-01',
+        date_shiny_shadow_available: '2020-01-01',
+      } as BasePokemon,
+    ], 'https://pokegonexus.com');
+
+    expect(rows).toEqual(expect.arrayContaining([
+      expect.objectContaining({ id: '0006-default', name: 'Charizard', source: 'catalog' }),
+      expect.objectContaining({ id: '0006-shiny', name: 'Shiny Charizard' }),
+      expect.objectContaining({ id: '0006-shadow', name: 'Shadow Charizard' }),
+      expect.objectContaining({ id: '0006-shiny_shadow', name: 'Shiny Shadow Charizard' }),
+      expect.objectContaining({ id: '0006-gigantamax', maxKind: 'gigantamax' }),
+    ]));
+  });
+
   it('uses the exact shiny Gigantamax artwork when that form is selected', () => {
     expect(resolveNativeInstanceImage(
       instance({ shiny: true, gigantamax: true }),
@@ -182,6 +204,51 @@ describe('native collection model', () => {
     ]);
     expect(sortNativeCollectionRows(rows, 'favorite', 'descending')[0].id).toBe('favorite');
     expect(rows.map((row) => row.id)).toEqual(originalOrder);
+  });
+
+  it('derives ordered system and custom tag membership from canonical instances', () => {
+    const instances = {
+      favorite: instance({
+        instance_id: 'favorite',
+        favorite: true,
+        caught_tags: ['purple-tag'],
+      }),
+      trade: instance({
+        instance_id: 'trade',
+        is_for_trade: true,
+        caught_tags: ['purple-tag'],
+      }),
+      wanted: instance({
+        instance_id: 'wanted',
+        is_caught: false,
+        is_wanted: true,
+        most_wanted: true,
+        wanted_tags: ['dream-tag'],
+      }),
+    };
+    const rows = buildNativeCollectionRows(instances, [pokemon], 'https://pokegonexus.com');
+    const envelope: CustomTagsEnvelope = {
+      tags: [
+        { tag_id: 'purple-tag', parent: 'caught' as const, name: 'Shadow Shinies', color: '#7c3aed', sort: 0, created_at: 'now' },
+        { tag_id: 'dream-tag', parent: 'wanted' as const, name: 'Dream Trades', color: '#f43f5e', sort: 0, created_at: 'now' },
+      ],
+      orders: {
+        caught: ['system:favorites', 'custom:purple-tag', 'system:caught', 'system:trade'],
+        wanted: ['custom:dream-tag', 'system:most-wanted', 'system:wanted'],
+      },
+    };
+
+    const caught = buildNativeTagSummaries(rows, instances, envelope, 'caught');
+    const wanted = buildNativeTagSummaries(rows, instances, envelope, 'wanted');
+
+    expect(caught.map((tag) => tag.name)).toEqual([
+      'Favorites', 'Shadow Shinies', 'All Caught', 'For Trade',
+    ]);
+    expect(caught.find((tag) => tag.name === 'Shadow Shinies')?.rows).toHaveLength(2);
+    expect(wanted.map((tag) => tag.name)).toEqual([
+      'Dream Trades', 'Most Wanted', 'All Wanted',
+    ]);
+    expect(wanted[0].rows[0]).toEqual(expect.objectContaining({ id: 'wanted' }));
   });
 
   it('builds a native detail model from shared instance identity and move metadata', () => {

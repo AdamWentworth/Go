@@ -3,6 +3,12 @@ import type {
   BasePokemon,
   PokemonMovesChunk,
 } from '@pokemongonexus/shared-contracts/pokemon';
+import type {
+  CustomTagParent,
+  CustomTagsEnvelope,
+  PokemonTagOrderKey,
+} from '@pokemongonexus/shared-contracts/users';
+import { buildPokemonCatalogEntries } from '@pokemongonexus/shared-domain/catalog';
 import { resolveInstanceCollectionKey } from '@pokemongonexus/shared-domain/instances';
 
 export type NativeCollectionFilter =
@@ -25,9 +31,19 @@ export type NativeCollectionRow = {
   lucky: boolean;
   typeIconUris: string[];
   status: 'caught' | 'trade' | 'wanted';
+  source?: 'catalog' | 'instance';
   cp: number | null;
   favorite: boolean;
   mostWanted: boolean;
+};
+
+export type NativeTagSummary = {
+  key: PokemonTagOrderKey;
+  parent: CustomTagParent;
+  name: string;
+  color: string;
+  tone: 'caught' | 'trade' | 'favorites' | 'wanted' | 'most-wanted' | 'custom';
+  rows: NativeCollectionRow[];
 };
 
 export type NativeCollectionSort = 'number' | 'name' | 'cp' | 'favorite';
@@ -312,6 +328,7 @@ export const buildNativeCollectionRows = (
         ),
         typeIconUris,
         status,
+        source: 'instance',
         cp: instance.cp,
         favorite: instance.favorite,
         mostWanted: instance.most_wanted,
@@ -320,6 +337,136 @@ export const buildNativeCollectionRows = (
     .sort((left, right) =>
       left.pokedexNumber - right.pokedexNumber || left.name.localeCompare(right.name),
     );
+};
+
+export const buildNativeCatalogRows = (
+  catalog: BasePokemon[],
+  assetOrigin: string,
+): NativeCollectionRow[] => buildPokemonCatalogEntries(catalog).map((entry) => ({
+  id: entry.id,
+  pokemonId: entry.pokemonId,
+  pokedexNumber: entry.pokedexNumber,
+  name: entry.name,
+  imageUri: absoluteImageUri(entry.imageUri, assetOrigin),
+  locationBackgroundUri: null,
+  maxKind: entry.maxKind,
+  purified: false,
+  lucky: false,
+  typeIconUris: entry.typeIconUris
+    .map((icon) => absoluteImageUri(icon, assetOrigin))
+    .filter((icon): icon is string => Boolean(icon)),
+  status: 'caught',
+  source: 'catalog',
+  cp: null,
+  favorite: false,
+  mostWanted: false,
+}));
+
+const DEFAULT_TAG_ORDER: Record<CustomTagParent, PokemonTagOrderKey[]> = {
+  caught: ['system:caught', 'system:favorites', 'system:trade'],
+  wanted: ['system:wanted', 'system:most-wanted'],
+};
+
+const SYSTEM_TAGS: Record<string, Omit<NativeTagSummary, 'rows'>> = {
+  'system:caught': {
+    key: 'system:caught',
+    parent: 'caught',
+    name: 'All Caught',
+    color: '#5798ff',
+    tone: 'caught',
+  },
+  'system:favorites': {
+    key: 'system:favorites',
+    parent: 'caught',
+    name: 'Favorites',
+    color: '#ffd45a',
+    tone: 'favorites',
+  },
+  'system:trade': {
+    key: 'system:trade',
+    parent: 'caught',
+    name: 'For Trade',
+    color: '#4bc574',
+    tone: 'trade',
+  },
+  'system:wanted': {
+    key: 'system:wanted',
+    parent: 'wanted',
+    name: 'All Wanted',
+    color: '#ef5b72',
+    tone: 'wanted',
+  },
+  'system:most-wanted': {
+    key: 'system:most-wanted',
+    parent: 'wanted',
+    name: 'Most Wanted',
+    color: '#ff704d',
+    tone: 'most-wanted',
+  },
+};
+
+const rowsForSystemTag = (
+  key: PokemonTagOrderKey,
+  rows: NativeCollectionRow[],
+): NativeCollectionRow[] => {
+  switch (key) {
+    case 'system:caught':
+      return rows.filter((row) => row.status === 'caught' || row.status === 'trade');
+    case 'system:favorites':
+      return rows.filter((row) => row.favorite);
+    case 'system:trade':
+      return rows.filter((row) => row.status === 'trade');
+    case 'system:wanted':
+      return rows.filter((row) => row.status === 'wanted');
+    case 'system:most-wanted':
+      return rows.filter((row) => row.status === 'wanted' && row.mostWanted);
+    default:
+      return [];
+  }
+};
+
+export const buildNativeTagSummaries = (
+  rows: NativeCollectionRow[],
+  instances: Record<string, PokemonInstance>,
+  envelope: CustomTagsEnvelope,
+  parent: CustomTagParent,
+): NativeTagSummary[] => {
+  const rowById = new Map(rows.map((row) => [row.id, row]));
+  const customDefinitions = envelope.tags.filter((tag) => tag.parent === parent);
+  const customKeys = customDefinitions.map(
+    (tag) => `custom:${tag.tag_id}` as PokemonTagOrderKey,
+  );
+  const allowed = new Set([...DEFAULT_TAG_ORDER[parent], ...customKeys]);
+  const orderedKeys = [
+    ...(envelope.orders?.[parent] ?? []),
+    ...DEFAULT_TAG_ORDER[parent],
+    ...customKeys,
+  ].filter((key, index, all) => allowed.has(key) && all.indexOf(key) === index);
+
+  return orderedKeys.flatMap((key) => {
+    const system = SYSTEM_TAGS[key];
+    if (system && system.parent === parent) {
+      return [{ ...system, rows: rowsForSystemTag(key, rows) }];
+    }
+    if (!key.startsWith('custom:')) return [];
+    const tagId = key.slice('custom:'.length);
+    const definition = customDefinitions.find((tag) => tag.tag_id === tagId);
+    if (!definition) return [];
+    const tagRows = Object.entries(instances).flatMap(([instanceKey, instance]) => {
+      const memberships = parent === 'caught' ? instance.caught_tags : instance.wanted_tags;
+      if (!memberships?.includes(tagId)) return [];
+      const row = rowById.get(instance.instance_id ?? instanceKey);
+      return row ? [row] : [];
+    });
+    return [{
+      key,
+      parent,
+      name: definition.name,
+      color: definition.color,
+      tone: 'custom',
+      rows: tagRows,
+    } satisfies NativeTagSummary];
+  });
 };
 
 export const filterNativeCollectionRows = (
