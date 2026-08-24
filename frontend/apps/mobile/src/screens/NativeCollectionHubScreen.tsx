@@ -110,6 +110,7 @@ export const NativeCollectionHubScreen = ({
       activeTag={selectedTag}
       assetBaseUrl={assetBaseUrl}
       rows={selectedRows}
+      searchUniverseRows={catalogRows}
       query={query}
       isLoading={isLoading}
       error={error}
@@ -131,6 +132,7 @@ export const NativeCollectionHubScreen = ({
     onRetry,
     openEntry,
     query,
+    catalogRows,
     selectedRows,
     selectedTag,
   ]);

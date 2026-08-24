@@ -30,7 +30,7 @@ describe('NativeCollectionParityFixture', () => {
     expect(screen.getByRole('tab', { name: /tags/i })).toBeTruthy();
     expect(screen.getByRole('tab', { name: /pokémon/i })).toBeTruthy();
     expect(screen.getByRole('tab', { name: /wishlist/i })).toBeTruthy();
-    expect(screen.getByLabelText('Search')).toBeTruthy();
+    expect(screen.getByLabelText('Search Pokémon')).toBeTruthy();
     expect(screen.getByText('Favorites')).toBeTruthy();
     expect(screen.queryByText('NATIVE COLLECTION')).toBeNull();
     expect(screen.queryByText('Your Pokémon')).toBeNull();

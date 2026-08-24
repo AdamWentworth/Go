@@ -26,6 +26,27 @@ tags:
 - assertVisible: Shadow Bulbasaur
 - assertNotVisible: For Trade
 - takeScreenshot: 01-pokemon-grid
+- tapOn: Search Pokémon
+- extendedWaitUntil:
+    visible: Variants
+    timeout: 10000
+- assertNotVisible: View Bulbasaur
+- takeScreenshot: 01b-search-filters
+- hideKeyboard
+- tapOn:
+    text: ^Shiny$
+- extendedWaitUntil:
+    visible: Shiny Bulbasaur
+    timeout: 10000
+- assertNotVisible: View Bulbasaur
+- tapOn: Clear Pokémon search
+- extendedWaitUntil:
+    visible: Variants
+    timeout: 10000
+- tapOn: Close Pokémon search
+- extendedWaitUntil:
+    visible: Bulbasaur
+    timeout: 10000
 - tapOn: TAGS
 - extendedWaitUntil:
     visible: Inventory tags

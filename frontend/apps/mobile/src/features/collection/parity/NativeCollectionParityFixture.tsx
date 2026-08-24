@@ -5,10 +5,10 @@ import {
   Pressable,
   StyleSheet,
   Text,
-  TextInput,
   View,
   useWindowDimensions,
 } from 'react-native';
+import { useState } from 'react';
 import { webCssVarTokens } from '@pokemongonexus/shared-ui-tokens';
 import type {
   CollectionParityCardFixture,
@@ -20,6 +20,10 @@ import {
   type NativePokemonHubView,
 } from '../NativePokemonHubHeader';
 import { NativePokemonStatusGlow } from './NativePokemonStatusGlow';
+import {
+  NativeCollectionSearchControls,
+  NativeCollectionSearchMenu,
+} from './NativeCollectionSearchControls';
 
 type NativeCollectionParityFixtureProps = {
   assetBaseUrl?: string;
@@ -33,6 +37,7 @@ type NativeCollectionParityFixtureProps = {
   onCardPress?: (card: CollectionParityCardFixture) => void;
   onClearTag?: () => void;
   onQueryChange?: (query: string) => void;
+  onToggleEvolutionaryLine?: () => void;
   onPokemonPress?: () => void;
   onRetry?: () => void;
   onSortPress?: () => void;
@@ -43,6 +48,7 @@ type NativeCollectionParityFixtureProps = {
   sortDirection?: 'ascending' | 'descending';
   sortIconPath?: string;
   sortLabel?: string;
+  showEvolutionaryLine?: boolean;
   tagCanClear?: boolean;
   tagTone?: 'caught' | 'trade' | 'favorites' | 'wanted' | 'most-wanted' | 'custom';
   theme?: CollectionParityTheme;
@@ -235,6 +241,7 @@ export const NativeCollectionParityFixture = ({
   onCardPress,
   onClearTag,
   onQueryChange,
+  onToggleEvolutionaryLine,
   onPokemonPress,
   onRetry,
   onSortPress,
@@ -245,12 +252,14 @@ export const NativeCollectionParityFixture = ({
   sortDirection = 'ascending',
   sortIconPath = '/images/sorting/number.png',
   sortLabel = 'Sort by Pokédex number ascending',
+  showEvolutionaryLine = false,
   tagCanClear = true,
   tagTone = 'favorites',
   theme = 'dark',
   showHeader = true,
 }: NativeCollectionParityFixtureProps) => {
   const { width } = useWindowDimensions();
+  const [searchMenuVisible, setSearchMenuVisible] = useState(false);
   const palette = theme === 'light' ? LIGHT : DARK;
   const columns = width < 481 ? 3 : width < 1024 ? 6 : 9;
   const cardWidth = Math.floor(
@@ -264,6 +273,11 @@ export const NativeCollectionParityFixture = ({
         surface: customTagSurface(customTagColor),
       }
     : baseTagColors;
+  const appendFilter = (filter: string) => {
+    const nextQuery = query.trim() ? `${query}&${filter}` : filter;
+    onQueryChange?.(nextQuery);
+    setSearchMenuVisible(false);
+  };
 
   return (
     <View
@@ -290,29 +304,24 @@ export const NativeCollectionParityFixture = ({
       <FlatList
         columnWrapperStyle={styles.gridRow}
         contentContainerStyle={styles.listContent}
-        data={cards}
+        data={searchMenuVisible ? [] : cards}
         key={columns}
         keyExtractor={(item) => item.id}
         numColumns={columns}
         ListHeaderComponent={(
           <View style={styles.collectionControls}>
-            <View style={[styles.searchPill, { backgroundColor: palette.search }]}>
-              <Image
-                accessibilityElementsHidden
-                source={{ uri: toAssetUrl(assetBaseUrl, '/images/search_icon.png') }}
-                style={[styles.searchIcon, { tintColor: palette.searchText }]}
-              />
-              <TextInput
-                accessibilityLabel="Search"
-                autoCapitalize="none"
-                editable={Boolean(onQueryChange)}
-                onChangeText={onQueryChange}
-                placeholder="Search"
-                placeholderTextColor={palette.searchText}
-                style={[styles.searchInput, { color: palette.searchText }]}
-                value={query}
-              />
-            </View>
+            <NativeCollectionSearchControls
+              assetBaseUrl={assetBaseUrl}
+              inputBackground={palette.search}
+              inputTextColor={palette.searchText}
+              menuVisible={searchMenuVisible}
+              onMenuVisibleChange={setSearchMenuVisible}
+              onQueryChange={(value) => onQueryChange?.(value)}
+              onToggleEvolutionaryLine={() => onToggleEvolutionaryLine?.()}
+              query={query}
+              showEvolutionaryLine={showEvolutionaryLine}
+              textColor={palette.text}
+            />
             {activeTag ? (
               <View
                 style={[
@@ -358,9 +367,16 @@ export const NativeCollectionParityFixture = ({
                 ) : null}
               </View>
             ) : null}
+            {searchMenuVisible ? (
+              <NativeCollectionSearchMenu
+                assetBaseUrl={assetBaseUrl}
+                onFilterPress={appendFilter}
+                textColor={palette.text}
+              />
+            ) : null}
           </View>
         )}
-        ListEmptyComponent={(
+        ListEmptyComponent={searchMenuVisible ? null : (
           <View style={styles.emptyState}>
             {isLoading ? (
               <>
@@ -461,18 +477,7 @@ const styles = StyleSheet.create({
     paddingBottom: 92,
   },
   gridRow: { gap: GRID_GAP },
-  collectionControls: { alignItems: 'center', paddingTop: 18, paddingBottom: 6 },
-  searchPill: {
-    width: '80%',
-    height: 40,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderRadius: 22,
-    paddingHorizontal: 16,
-  },
-  searchIcon: { width: 17, height: 17, marginRight: 5 },
-  searchInput: { flexGrow: 0, minWidth: 56, padding: 0, fontSize: 14 },
+  collectionControls: { alignItems: 'center', paddingBottom: 6 },
   activeTagChip: {
     minHeight: 31,
     flexDirection: 'row',

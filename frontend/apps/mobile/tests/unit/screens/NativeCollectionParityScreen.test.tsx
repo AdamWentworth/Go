@@ -76,11 +76,24 @@ describe('NativeCollectionParityScreen', () => {
     const onOpenInstance = jest.fn();
     render(<Harness onOpenInstance={onOpenInstance} />);
 
-    fireEvent.changeText(screen.getByLabelText('Search'), 'char');
+    fireEvent.changeText(screen.getByLabelText('Search Pokémon'), 'char');
     expect(screen.queryByText('Bulbasaur')).toBeNull();
     expect(screen.getByText('Charizard')).toBeTruthy();
     fireEvent.press(screen.getByRole('button', { name: 'View Charizard' }));
     expect(onOpenInstance).toHaveBeenCalledWith('charizard');
+  });
+
+  it('matches the canonical focus-to-filter and filter-to-results workflow', () => {
+    render(<Harness />);
+
+    fireEvent(screen.getByLabelText('Search Pokémon'), 'focus');
+    expect(screen.getByLabelText('Pokémon search filters')).toBeTruthy();
+    expect(screen.queryByText('Bulbasaur')).toBeNull();
+
+    fireEvent.press(screen.getByRole('button', { name: 'Filter by Fire' }));
+    expect(screen.queryByLabelText('Pokémon search filters')).toBeNull();
+    expect(screen.getByLabelText('Clear Pokémon search')).toBeTruthy();
+    expect(screen.getByRole('checkbox')).toBeTruthy();
   });
 
   it('lets the user choose an actual sort and direction', () => {

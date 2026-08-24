@@ -44,9 +44,9 @@ export const NativePokemonStatusGlow = ({
 const styles = StyleSheet.create({
   glow: {
     position: 'absolute',
-    top: '-20%',
-    left: '-20%',
-    width: '140%',
-    height: '140%',
+    top: '-4%',
+    left: '-4%',
+    width: '108%',
+    height: '108%',
   },
 });

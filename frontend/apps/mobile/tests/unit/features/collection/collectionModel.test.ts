@@ -10,6 +10,7 @@ import {
   resolveNativeInstanceImage,
   sortNativeCollectionRows,
 } from '../../../../src/features/collection/collectionModel';
+import type { NativeCollectionRow } from '../../../../src/features/collection/collectionModel';
 
 const instance = (patch: Partial<PokemonInstance>): PokemonInstance => ({
   pokemon_id: 6,
@@ -204,6 +205,52 @@ describe('native collection model', () => {
     ]);
     expect(sortNativeCollectionRows(rows, 'favorite', 'descending')[0].id).toBe('favorite');
     expect(rows.map((row) => row.id)).toEqual(originalOrder);
+  });
+
+  it('matches the canonical union, intersection, exclusion, and family search syntax', () => {
+    const searchableRows: NativeCollectionRow[] = [
+      {
+        id: 'bulbasaur', pokemonId: 1, pokedexNumber: 1, name: 'Bulbasaur', imageUri: null,
+        locationBackgroundUri: null, maxKind: null, purified: false, lucky: false,
+        typeIconUris: [], status: 'caught', cp: null, favorite: false, mostWanted: false,
+        evolutionFamilyIds: [1, 2, 3], searchTerms: ['Grass', 'Poison'],
+      },
+      {
+        id: 'ivysaur', pokemonId: 2, pokedexNumber: 2, name: 'Ivysaur', imageUri: null,
+        locationBackgroundUri: null, maxKind: null, purified: false, lucky: false,
+        typeIconUris: [], status: 'caught', cp: null, favorite: false, mostWanted: false,
+        evolutionFamilyIds: [1, 2, 3], searchTerms: ['Grass', 'Poison'],
+      },
+      {
+        id: 'venusaur', pokemonId: 3, pokedexNumber: 3, name: 'Shiny Venusaur', imageUri: null,
+        locationBackgroundUri: null, maxKind: null, purified: false, lucky: false,
+        typeIconUris: [], status: 'caught', cp: null, favorite: false, mostWanted: false,
+        evolutionFamilyIds: [1, 2, 3], searchTerms: ['Grass', 'Poison', 'Shiny'],
+      },
+      {
+        id: 'charizard', pokemonId: 6, pokedexNumber: 6, name: 'Charizard', imageUri: null,
+        locationBackgroundUri: null, maxKind: null, purified: false, lucky: false,
+        typeIconUris: [], status: 'caught', cp: null, favorite: false, mostWanted: false,
+        evolutionFamilyIds: [4, 5, 6], searchTerms: ['Fire', 'Flying'],
+      },
+    ];
+
+    expect(filterNativeCollectionRows(searchableRows, 'all', 'bulb,char')).toEqual([
+      searchableRows[0], searchableRows[3],
+    ]);
+    expect(filterNativeCollectionRows(searchableRows, 'all', 'grass&shiny')).toEqual([
+      searchableRows[2],
+    ]);
+    expect(filterNativeCollectionRows(searchableRows, 'all', 'grass&!shiny')).toEqual([
+      searchableRows[0], searchableRows[1],
+    ]);
+    expect(filterNativeCollectionRows(searchableRows, 'all', '+bulbasaur')).toEqual(
+      searchableRows.slice(0, 3),
+    );
+    expect(filterNativeCollectionRows(searchableRows, 'all', 'bulbasaur', {
+      showEvolutionaryLine: true,
+      universeRows: searchableRows,
+    })).toEqual(searchableRows.slice(0, 3));
   });
 
   it('derives ordered system and custom tag membership from canonical instances', () => {

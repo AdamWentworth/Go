@@ -37,6 +37,8 @@ export type NativeCollectionRow = {
   cp: number | null;
   favorite: boolean;
   mostWanted: boolean;
+  evolutionFamilyIds?: number[];
+  searchTerms?: string[];
 };
 
 export type NativeTagSummary = {
@@ -274,6 +276,83 @@ const absoluteImageUri = (image: string | null, assetOrigin: string): string | n
   }
 };
 
+const GENERATION_LABELS: Record<number, string> = {
+  1: 'kanto',
+  2: 'johto',
+  3: 'hoenn',
+  4: 'sinnoh',
+  5: 'unova',
+  6: 'kalos',
+  7: 'alola',
+  8: 'galar',
+  9: 'paldea',
+};
+
+const toEvolutionIds = (value: unknown): number[] => {
+  if (!Array.isArray(value)) return [];
+  return value
+    .map(Number)
+    .filter((value) => Number.isFinite(value));
+};
+
+const buildEvolutionFamilyMap = (catalog: BasePokemon[]): Map<number, number[]> => {
+  const adjacency = new Map<number, Set<number>>();
+  const connect = (left: number, right: number) => {
+    if (!adjacency.has(left)) adjacency.set(left, new Set());
+    if (!adjacency.has(right)) adjacency.set(right, new Set());
+    adjacency.get(left)?.add(right);
+    adjacency.get(right)?.add(left);
+  };
+
+  for (const pokemon of catalog) {
+    const id = Number(pokemon.pokemon_id);
+    if (!Number.isFinite(id)) continue;
+    if (!adjacency.has(id)) adjacency.set(id, new Set());
+    const relatives = [
+      ...toEvolutionIds(pokemon.evolves_to ?? pokemon.evolutionData?.evolves_to),
+      ...toEvolutionIds(pokemon.evolves_from ?? pokemon.evolutionData?.evolves_from),
+    ];
+    relatives.forEach((relative) => connect(id, relative));
+  }
+
+  const families = new Map<number, number[]>();
+  for (const id of adjacency.keys()) {
+    const family = new Set<number>();
+    const pending = [id];
+    while (pending.length) {
+      const current = pending.pop() as number;
+      if (family.has(current)) continue;
+      family.add(current);
+      adjacency.get(current)?.forEach((relative) => {
+        if (!family.has(relative)) pending.push(relative);
+      });
+    }
+    families.set(id, [...family]);
+  }
+  return families;
+};
+
+const instanceSearchTerms = (instance: PokemonInstance, pokemon: BasePokemon): string[] => {
+  const terms = [
+    pokemon.name,
+    pokemon.type1_name,
+    pokemon.type2_name,
+    pokemon.rarity,
+    GENERATION_LABELS[pokemon.generation],
+    instance.shiny ? 'shiny' : null,
+    instance.shadow ? 'shadow' : null,
+    instance.costume_id != null ? 'costume' : null,
+    instance.is_mega || instance.mega ? 'mega' : null,
+    instance.dynamax ? 'dynamax' : null,
+    instance.gigantamax ? 'gigantamax' : null,
+    instance.lucky ? 'lucky' : null,
+    instance.attack_iv === 15 && instance.defense_iv === 15 && instance.stamina_iv === 15
+      ? '100%'
+      : null,
+  ];
+  return terms.filter((term): term is string => Boolean(term?.trim()));
+};
+
 const resolveLocationBackgroundImage = (
   instance: PokemonInstance,
   pokemon: BasePokemon,
@@ -299,6 +378,7 @@ export const buildNativeCollectionRows = (
   assetOrigin: string,
 ): NativeCollectionRow[] => {
   const pokemonById = new Map(catalog.map((pokemon) => [pokemon.pokemon_id, pokemon]));
+  const evolutionFamilies = buildEvolutionFamilyMap(catalog);
 
   return Object.entries(instances)
     .flatMap(([key, instance]) => {
@@ -334,6 +414,8 @@ export const buildNativeCollectionRows = (
         cp: instance.cp,
         favorite: instance.favorite,
         mostWanted: instance.most_wanted,
+        evolutionFamilyIds: evolutionFamilies.get(instance.pokemon_id) ?? [instance.pokemon_id],
+        searchTerms: instanceSearchTerms(instance, pokemon),
       } satisfies NativeCollectionRow];
     })
     .sort((left, right) =>
@@ -344,25 +426,44 @@ export const buildNativeCollectionRows = (
 export const buildNativeCatalogRows = (
   catalog: BasePokemon[],
   assetOrigin: string,
-): NativeCollectionRow[] => buildPokemonCatalogEntries(catalog).map((entry) => ({
-  id: entry.id,
-  pokemonId: entry.pokemonId,
-  pokedexNumber: entry.pokedexNumber,
-  name: entry.name,
-  imageUri: absoluteImageUri(entry.imageUri, assetOrigin),
-  locationBackgroundUri: null,
-  maxKind: entry.maxKind,
-  purified: false,
-  lucky: false,
-  typeIconUris: entry.typeIconUris
-    .map((icon) => absoluteImageUri(icon, assetOrigin))
-    .filter((icon): icon is string => Boolean(icon)),
-  status: 'caught',
-  source: 'catalog',
-  cp: null,
-  favorite: false,
-  mostWanted: false,
-}));
+): NativeCollectionRow[] => {
+  const pokemonById = new Map(catalog.map((pokemon) => [pokemon.pokemon_id, pokemon]));
+  const evolutionFamilies = buildEvolutionFamilyMap(catalog);
+  return buildPokemonCatalogEntries(catalog).map((entry) => {
+    const pokemon = pokemonById.get(entry.pokemonId);
+    const costume = pokemon?.costumes?.some((candidate) => entry.id.includes(candidate.name));
+    return {
+      id: entry.id,
+      pokemonId: entry.pokemonId,
+      pokedexNumber: entry.pokedexNumber,
+      name: entry.name,
+      imageUri: absoluteImageUri(entry.imageUri, assetOrigin),
+      locationBackgroundUri: null,
+      maxKind: entry.maxKind,
+      purified: false,
+      lucky: false,
+      typeIconUris: entry.typeIconUris
+        .map((icon) => absoluteImageUri(icon, assetOrigin))
+        .filter((icon): icon is string => Boolean(icon)),
+      status: 'caught',
+      source: 'catalog',
+      cp: null,
+      favorite: false,
+      mostWanted: false,
+      evolutionFamilyIds: evolutionFamilies.get(entry.pokemonId) ?? [entry.pokemonId],
+      searchTerms: [
+        entry.name,
+        pokemon?.name,
+        pokemon?.type1_name,
+        pokemon?.type2_name,
+        pokemon?.rarity,
+        pokemon ? GENERATION_LABELS[pokemon.generation] : null,
+        costume ? 'costume' : null,
+        entry.maxKind,
+      ].filter((term): term is string => Boolean(term?.trim())),
+    } satisfies NativeCollectionRow;
+  });
+};
 
 const DEFAULT_TAG_ORDER: Record<CustomTagParent, PokemonTagOrderKey[]> = {
   caught: ['system:caught', 'system:favorites', 'system:trade'],
@@ -478,16 +579,73 @@ export const filterNativeCollectionRows = (
   rows: NativeCollectionRow[],
   filter: NativeCollectionFilter,
   query: string,
+  options: {
+    showEvolutionaryLine?: boolean;
+    universeRows?: NativeCollectionRow[];
+  } = {},
 ): NativeCollectionRow[] => {
-  const normalizedQuery = query.trim().toLowerCase();
+  const normalize = (value: string): string => value
+    .toLowerCase()
+    .normalize('NFKD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9%]+/g, ' ')
+    .trim();
+  const matchesTerm = (row: NativeCollectionRow, rawTerm: string): boolean => {
+    const negated = rawTerm.startsWith('!');
+    const term = normalize(negated ? rawTerm.slice(1) : rawTerm);
+    if (!term) return true;
+    const searchable = [row.name, ...(row.searchTerms ?? [])].map(normalize);
+    const matched = searchable.some((candidate) => (
+      candidate === term || candidate.split(' ').some((word) => word.startsWith(term))
+    )) || String(row.pokedexNumber).includes(term);
+    return negated ? !matched : matched;
+  };
+  const matchesQuery = (row: NativeCollectionRow, rawQuery: string): boolean => rawQuery
+    .split(',')
+    .map((union) => union.trim())
+    .filter(Boolean)
+    .some((union) => union
+      .split('&')
+      .map((term) => term.trim())
+      .filter(Boolean)
+      .every((term) => matchesTerm(row, term)));
+  const normalizedQuery = query.trim();
+  const universe = options.universeRows ?? rows;
+  const queryGroups = normalizedQuery
+    .split(',')
+    .map((term) => term.trim())
+    .filter(Boolean);
+  const explicitFamilyTerms = queryGroups
+    .filter((term) => term.startsWith('+'))
+    .map((term) => term.slice(1).trim())
+    .filter(Boolean);
+  const ordinaryQuery = queryGroups
+    .filter((term) => !term.startsWith('+'))
+    .join(',');
+  const familyQuery = options.showEvolutionaryLine
+    ? queryGroups.map((term) => term.replace(/^\+/, '')).join(',')
+    : explicitFamilyTerms.join(',');
+  const familyIds = familyQuery
+    ? new Set(universe
+      .filter((row) => matchesQuery(row, familyQuery))
+      .flatMap((row) => row.evolutionFamilyIds ?? [row.pokemonId]))
+    : null;
+  const matchesSearch = (row: NativeCollectionRow): boolean => {
+    if (!normalizedQuery) return true;
+    if (options.showEvolutionaryLine) return Boolean(familyIds?.has(row.pokemonId));
+    if (explicitFamilyTerms.length > 0) {
+      return Boolean(familyIds?.has(row.pokemonId)) || (
+        Boolean(ordinaryQuery) && matchesQuery(row, ordinaryQuery)
+      );
+    }
+    return matchesQuery(row, normalizedQuery);
+  };
   return rows.filter((row) =>
     (filter === 'all' ||
       row.status === filter ||
       (filter === 'favorites' && row.favorite) ||
       (filter === 'most-wanted' && row.status === 'wanted' && row.mostWanted)) &&
-    (!normalizedQuery ||
-      row.name.toLowerCase().includes(normalizedQuery) ||
-      String(row.pokedexNumber).includes(normalizedQuery)),
+    matchesSearch(row),
   );
 };
 

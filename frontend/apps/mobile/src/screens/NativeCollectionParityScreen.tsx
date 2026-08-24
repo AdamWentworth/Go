@@ -22,6 +22,7 @@ import type { NativePokemonHubView } from '../features/collection/NativePokemonH
 type NativeCollectionParityScreenProps = {
   assetBaseUrl: string;
   rows: NativeCollectionRow[];
+  searchUniverseRows?: NativeCollectionRow[];
   activeTag: NativeTagSummary | null;
   query: string;
   isLoading: boolean;
@@ -71,6 +72,7 @@ const toParityCard = (
 export const NativeCollectionParityScreen = ({
   assetBaseUrl,
   rows,
+  searchUniverseRows = rows,
   activeTag,
   query,
   isLoading,
@@ -87,9 +89,13 @@ export const NativeCollectionParityScreen = ({
   const [sort, setSort] = useState<NativeCollectionSort>('number');
   const [direction, setDirection] = useState<NativeCollectionSortDirection>('ascending');
   const [sortOpen, setSortOpen] = useState(false);
+  const [showEvolutionaryLine, setShowEvolutionaryLine] = useState(false);
   const filteredRows = useMemo(
-    () => filterNativeCollectionRows(rows, 'all', query),
-    [query, rows],
+    () => filterNativeCollectionRows(rows, 'all', query, {
+      showEvolutionaryLine,
+      universeRows: searchUniverseRows,
+    }),
+    [query, rows, searchUniverseRows, showEvolutionaryLine],
   );
   const visibleRows = useMemo(
     () => sortNativeCollectionRows(filteredRows, sort, direction),
@@ -116,6 +122,7 @@ export const NativeCollectionParityScreen = ({
         customTagColor={activeTag?.color}
         onClearTag={onClearTag}
         onQueryChange={onQueryChange}
+        onToggleEvolutionaryLine={() => setShowEvolutionaryLine((current) => !current)}
         onRetry={onRetry}
         onSortPress={() => setSortOpen(true)}
         onPokemonPress={() => onViewChange('pokemon')}
@@ -125,6 +132,7 @@ export const NativeCollectionParityScreen = ({
         sortDirection={direction}
         sortIconPath={SORT_ICONS[sort]}
         sortLabel={`Sort by ${sortLabel} ${direction}`}
+        showEvolutionaryLine={showEvolutionaryLine}
         tagCanClear={Boolean(activeTag)}
         tagTone={activeTag?.tone ?? 'caught'}
         theme={theme}
