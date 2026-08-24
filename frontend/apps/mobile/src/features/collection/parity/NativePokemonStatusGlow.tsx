@@ -44,9 +44,14 @@ export const NativePokemonStatusGlow = ({
 const styles = StyleSheet.create({
   glow: {
     position: 'absolute',
-    top: '-4%',
-    left: '-4%',
-    width: '108%',
-    height: '108%',
+    // Canonical web geometry: a 140% pseudo-element is centered at 50%/45%
+    // and scaled to 0.5, producing a 70% glow centered slightly above the
+    // card midpoint. The component is therefore mounted against the card,
+    // not the smaller image stage, and expresses the effective geometry
+    // directly instead of relying on a second transform.
+    top: '10%',
+    left: '15%',
+    width: '70%',
+    height: '70%',
   },
 });

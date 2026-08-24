@@ -6,6 +6,7 @@ export type CollectionParityCardFixture = {
   dexNumber: number;
   name: string;
   imagePath: string;
+  interaction?: 'select' | 'view';
   typeIconPaths: string[];
   favorite?: boolean;
   mostWanted?: boolean;

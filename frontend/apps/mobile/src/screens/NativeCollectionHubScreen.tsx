@@ -101,8 +101,12 @@ export const NativeCollectionHubScreen = ({
   );
 
   const changeView = useCallback((view: NativePokemonHubView) => {
+    // Let the native pager own the transition. Updating activeView here makes
+    // the coordinated header underline jump to its destination one frame
+    // before ScrollView begins moving the page. The settled page is committed
+    // by onMomentumScrollEnd below, keeping the underline, content, pointer
+    // events, and accessibility state on the same timeline.
     sliderRef.current?.setPage(VIEW_ORDER.indexOf(view));
-    setActiveView(view);
   }, []);
 
   const selectTag = useCallback((tag: NativeTagSummary) => {

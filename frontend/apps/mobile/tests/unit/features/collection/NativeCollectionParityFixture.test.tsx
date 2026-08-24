@@ -99,10 +99,16 @@ describe('NativeCollectionParityFixture', () => {
         />,
       );
 
-      expect(screen.getByTestId(
+      const glow = screen.getByTestId(
         `native-${ownership}-status-glow`,
         { includeHiddenElements: true },
-      )).toBeTruthy();
+      );
+      expect(glow).toHaveStyle({
+        top: '10%',
+        left: '15%',
+        width: '70%',
+        height: '70%',
+      });
     },
   );
 

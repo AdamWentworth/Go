@@ -243,6 +243,9 @@ export default function DeviceSmokeCollectionRoute() {
         onCreateTag={async () => undefined}
         onDeleteTag={async () => undefined}
         onOpenEntry={setOpenedRow}
+        onOrganizeCatalog={async (request) => ({
+          message: `${request.variantIds.length} Pokémon organized in the device fixture.`,
+        })}
         onRetry={() => undefined}
         onSaveTagOrder={async () => undefined}
         onUpdateTag={async () => undefined}

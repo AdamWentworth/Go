@@ -123,6 +123,22 @@ describe('native collection model', () => {
       expect.objectContaining({ id: '0006-shiny_shadow', name: 'Shiny Shadow Charizard' }),
       expect.objectContaining({ id: '0006-gigantamax', maxKind: 'gigantamax' }),
     ]));
+    expect(sortNativeCollectionRows(rows, 'number', 'ascending').slice(0, 6).map((row) => row.id)).toEqual([
+      '0006-default',
+      '0006-shiny',
+      '0006-shadow',
+      '0006-shiny_shadow',
+      '0006-dynamax',
+      '0006-shiny_dynamax',
+    ]);
+    expect(sortNativeCollectionRows(rows, 'number', 'descending').slice(0, 6).map((row) => row.id)).toEqual([
+      '0006-default',
+      '0006-shiny',
+      '0006-shadow',
+      '0006-shiny_shadow',
+      '0006-dynamax',
+      '0006-shiny_dynamax',
+    ]);
   });
 
   it('uses the exact shiny Gigantamax artwork when that form is selected', () => {

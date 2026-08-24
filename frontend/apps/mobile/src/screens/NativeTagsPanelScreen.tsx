@@ -28,6 +28,7 @@ import {
   type NativePokemonHubView,
 } from '../features/collection/NativePokemonHubHeader';
 import { NativeCustomTagEditorSheet } from '../features/collection/NativeCustomTagEditorSheet';
+import { NativeCollectionPriorityStar } from '../features/collection/parity/NativeCollectionPriorityStar';
 
 type Props = {
   activeTagName: string | null;
@@ -240,7 +241,9 @@ const NativeTagCard = memo(function NativeTagCard({
           >
             <Text style={[styles.editText, { color: titleColor }]}>Edit</Text>
           </Pressable>
-        ) : tag.tone === 'favorites' ? <Text style={styles.favoriteStar}>★</Text> : null}
+        ) : tag.tone === 'favorites' ? (
+          <NativeCollectionPriorityStar size={22} tone="favorite" />
+        ) : null}
       </View>
       </Pressable>
     </Animated.View>
@@ -609,7 +612,6 @@ const styles = StyleSheet.create({
   tagIdentity: { minWidth: 0, flex: 1, flexDirection: 'row', alignItems: 'center' },
   tagCopy: { minWidth: 0, flex: 1 },
   tagDot: { width: 12, height: 12, marginRight: 7, borderWidth: 1, borderColor: '#ffffff99', borderRadius: 6 },
-  favoriteStar: { color: '#ffd21c', fontSize: 22 },
   editButton: { minWidth: 54, minHeight: 38, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderRadius: 19 },
   editText: { fontSize: 12, fontWeight: '900' },
   dragGrip: { width: 52, height: 44, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: '#ffffff47', borderRadius: 12, backgroundColor: '#ffffff12', zIndex: 10, elevation: 8 },

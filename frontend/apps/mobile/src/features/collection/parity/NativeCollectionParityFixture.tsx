@@ -28,6 +28,7 @@ import {
   NativeCollectionSearchControls,
   NativeCollectionSearchMenu,
 } from './NativeCollectionSearchControls';
+import { NativeCollectionPriorityStar } from './NativeCollectionPriorityStar';
 
 type NativeCollectionParityFixtureProps = {
   assetBaseUrl?: string;
@@ -149,7 +150,7 @@ const CollectionParityCard = memo(function CollectionParityCard({
   const palette = theme === 'light' ? LIGHT : DARK;
   return (
     <Pressable
-      accessibilityLabel={`View ${card.name}`}
+      accessibilityLabel={`${card.interaction === 'select' ? 'Select' : 'View'} ${card.name}`}
       accessibilityRole="button"
       delayLongPress={450}
       onLongPress={onLongPressCard ? () => onLongPressCard(card) : undefined}
@@ -157,6 +158,7 @@ const CollectionParityCard = memo(function CollectionParityCard({
       style={[styles.card, selected && styles.selectedCard, { width: cardWidth }]}
       testID={`parity-card-${card.id}`}
     >
+      <NativePokemonStatusGlow ownership={card.ownership} />
       <View style={styles.cardTopLine}>
         <View
           accessibilityLabel={card.cp == null ? undefined : `CP ${card.cp}`}
@@ -168,19 +170,17 @@ const CollectionParityCard = memo(function CollectionParityCard({
           </Text>
         </View>
         {card.favorite || card.mostWanted ? (
-          <Text
-            accessibilityLabel={card.favorite ? 'Favorite' : 'Most Wanted'}
+          <NativeCollectionPriorityStar
+            label={card.favorite ? 'Favorite' : 'Most Wanted'}
+            size={18}
             style={[
               styles.priorityStar,
-              { color: card.favorite ? '#ffcc00' : '#ff704d' },
             ]}
-          >
-            ★
-          </Text>
+            tone={card.favorite ? 'favorite' : 'most-wanted'}
+          />
         ) : null}
       </View>
       <View style={styles.imageStage}>
-        <NativePokemonStatusGlow ownership={card.ownership} />
         {card.locationBackgroundPath ? (
           <NativePokemonLocationBackdrop
             uri={toAssetUrl(assetBaseUrl, card.locationBackgroundPath)}
@@ -365,7 +365,12 @@ export const NativeCollectionParityFixture = ({
                 ]}
               >
                 {tagTone === 'favorites' ? (
-                  <Text accessibilityLabel="Favorites tag" style={styles.tagStar}>★</Text>
+                  <NativeCollectionPriorityStar
+                    label="Favorites tag"
+                    size={16}
+                    style={styles.tagStar}
+                    tone="favorite"
+                  />
                 ) : (
                   <View
                     accessibilityElementsHidden
@@ -537,7 +542,7 @@ const styles = StyleSheet.create({
     paddingRight: 5,
     paddingVertical: 3,
   },
-  tagStar: { color: '#ffd21c', fontSize: 16, marginRight: 3 },
+  tagStar: { marginRight: 3 },
   tagDot: {
     width: 9,
     height: 9,
@@ -588,6 +593,7 @@ const styles = StyleSheet.create({
   emptyTitle: { fontSize: 18, fontWeight: '800', textAlign: 'center' },
   emptyBody: { fontSize: 13, textAlign: 'center' },
   card: {
+    position: 'relative',
     flexGrow: 0,
     flexShrink: 0,
     minWidth: 0,
@@ -601,7 +607,7 @@ const styles = StyleSheet.create({
   cpLabel: { fontSize: 10, lineHeight: 12 },
   cpValue: { fontSize: 15, fontWeight: '700', lineHeight: 18 },
   hidden: { opacity: 0 },
-  priorityStar: { position: 'absolute', top: -2, right: 4, fontSize: 18 },
+  priorityStar: { position: 'absolute', top: -2, right: 4 },
   imageStage: {
     width: '65%',
     aspectRatio: 1,

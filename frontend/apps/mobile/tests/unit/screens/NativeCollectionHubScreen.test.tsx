@@ -114,8 +114,23 @@ describe('NativeCollectionHubScreen', () => {
     expect(screen.queryByText('Shiny Mewtwo')).toBeNull();
 
     fireEvent.press(screen.getByRole('tab', { name: /tags/i }));
+    expect(screen.getByRole('tab', { name: /pokémon/i }).props.accessibilityState).toEqual({
+      selected: true,
+    });
+    expect(screen.getByRole('tab', { name: /tags/i }).props.accessibilityState).toEqual({
+      selected: false,
+    });
+    fireEvent(screen.getByTestId('native-horizontal-page-slider'), 'momentumScrollEnd', {
+      nativeEvent: { contentOffset: { x: 0, y: 0 } },
+    });
+    expect(screen.getByRole('tab', { name: /tags/i }).props.accessibilityState).toEqual({
+      selected: true,
+    });
     expect(screen.getByText('1 Pokémon')).toBeTruthy();
     fireEvent.press(screen.getByRole('button', { name: /Open Favorites/i }));
+    fireEvent(screen.getByTestId('native-horizontal-page-slider'), 'momentumScrollEnd', {
+      nativeEvent: { contentOffset: { x: 412, y: 0 } },
+    });
 
     expect(screen.getByText('Favorites')).toBeTruthy();
     expect(screen.getByText('Shiny Bulbasaur')).toBeTruthy();
@@ -130,10 +145,19 @@ describe('NativeCollectionHubScreen', () => {
     expect(screen.queryByText('Shiny Bulbasaur')).toBeNull();
 
     fireEvent.press(screen.getByRole('tab', { name: /tags/i }));
+    fireEvent(screen.getByTestId('native-horizontal-page-slider'), 'momentumScrollEnd', {
+      nativeEvent: { contentOffset: { x: 0, y: 0 } },
+    });
     fireEvent.press(screen.getByRole('button', { name: /Open All Caught/i }));
+    fireEvent(screen.getByTestId('native-horizontal-page-slider'), 'momentumScrollEnd', {
+      nativeEvent: { contentOffset: { x: 412, y: 0 } },
+    });
     expect(screen.getByText('Caught')).toBeTruthy();
 
     fireEvent.press(screen.getByRole('tab', { name: /wishlist/i }));
+    fireEvent(screen.getByTestId('native-horizontal-page-slider'), 'momentumScrollEnd', {
+      nativeEvent: { contentOffset: { x: 824, y: 0 } },
+    });
     expect(screen.getByLabelText('Wanted tags')).toBeTruthy();
     expect(screen.getByText('Most Wanted')).toBeTruthy();
   });
@@ -194,7 +218,7 @@ describe('NativeCollectionHubScreen', () => {
       </SafeAreaProvider>,
     );
 
-    fireEvent.press(screen.getByRole('button', { name: 'View Bulbasaur' }));
+    fireEvent.press(screen.getByRole('button', { name: 'Select Bulbasaur' }));
 
     expect(onOpenEntry).not.toHaveBeenCalled();
     expect(screen.getByRole('button', { name: /Add \(1\)/i })).toBeTruthy();

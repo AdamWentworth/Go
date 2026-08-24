@@ -11,10 +11,14 @@ adb_bin="${android_sdk_root}/platform-tools/adb"
 emulator_bin="${android_sdk_root}/emulator/emulator"
 artifact_dir="$(mktemp -d /tmp/pokegonexus-android-smoke.XXXXXX)"
 color_scheme="${POKEGONEXUS_SMOKE_COLOR_SCHEME:-light}"
+smoke_density="${POKEGONEXUS_SMOKE_DENSITY:-520}"
 metro_pid=""
 metro_pgid=""
 fixture_pid=""
 fixture_pgid=""
+device_id=""
+original_density_override=""
+density_changed="false"
 
 cleanup() {
   if [[ -n "${metro_pgid}" ]]; then
@@ -34,6 +38,13 @@ cleanup() {
     kill -KILL -- "-${fixture_pgid}" 2>/dev/null || true
   elif [[ -n "${fixture_pid}" ]] && kill -0 "${fixture_pid}" 2>/dev/null; then
     kill "${fixture_pid}" 2>/dev/null || true
+  fi
+  if [[ "${density_changed}" == "true" && -n "${device_id}" ]]; then
+    if [[ -n "${original_density_override}" ]]; then
+      "${adb_bin}" -s "${device_id}" shell wm density "${original_density_override}" >/dev/null 2>&1 || true
+    else
+      "${adb_bin}" -s "${device_id}" shell wm density reset >/dev/null 2>&1 || true
+    fi
   fi
 }
 trap cleanup EXIT
@@ -84,6 +95,19 @@ if [[ "$("${adb_bin}" -s "${device_id}" shell getprop sys.boot_completed 2>/dev/
   echo "Android emulator did not finish booting." >&2
   exit 1
 fi
+
+# The AVD's physical Pixel 8 Pro density produces a 448dp-wide window, while
+# the agreed collection reference is the roughly 412dp Pixel viewport used by
+# the web parity suite and the real-device review. Normalize the density for
+# deterministic screenshots and restore the developer's prior override when
+# the smoke exits.
+original_density_override="$(
+  "${adb_bin}" -s "${device_id}" shell wm density \
+    | tr -d '\r' \
+    | awk -F': ' '/Override density/ { print $2; exit }'
+)"
+"${adb_bin}" -s "${device_id}" shell wm density "${smoke_density}" >/dev/null
+density_changed="true"
 
 if ! "${adb_bin}" -s "${device_id}" shell pm list packages | grep -q '^package:host.exp.exponent$'; then
   "${adb_bin}" -s "${device_id}" install -r "${expo_go_apk}"

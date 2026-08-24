@@ -26,6 +26,20 @@ tags:
 - assertVisible: Shadow Bulbasaur
 - assertNotVisible: For Trade
 - takeScreenshot: 01-pokemon-grid
+- tapOn:
+    text: ^Bulbasaur$
+- assertVisible: "+ Add (1)"
+- tapOn: "+ Add (1)"
+- extendedWaitUntil:
+    visible: Add Pokémon
+    timeout: 10000
+- assertVisible: Caught
+- assertVisible: For Trade
+- assertVisible: Wanted
+- takeScreenshot: 01a-catalog-organizer
+- tapOn: Close Pokémon organizer
+- tapOn:
+    text: ^X$
 - tapOn: Search Pokémon
 - extendedWaitUntil:
     visible: Variants
@@ -66,7 +80,7 @@ tags:
 - extendedWaitUntil:
     visible: Inventory tags
     timeout: 10000
-- assertVisible: "Open Trade, 3 Pokémon"
+- assertVisible: "Open For Trade, 3 Pokémon"
 - scrollUntilVisible:
     element:
       text: "Open Shadow Shinies, 2 Pokémon"
@@ -91,9 +105,9 @@ tags:
     timeout: 10000
 - scrollUntilVisible:
     element:
-      text: "Open Trade, 3 Pokémon"
+      text: "Open For Trade, 3 Pokémon"
     direction: UP
-- tapOn: "Open Trade, 3 Pokémon"
+- tapOn: "Open For Trade, 3 Pokémon"
 - extendedWaitUntil:
     visible: "(TRADE)"
     timeout: 10000
@@ -108,7 +122,7 @@ tags:
 - assertNotVisible: Shiny Suicune
 - takeScreenshot: 04-catalog-restored
 - tapOn: TAGS
-- tapOn: "Open Trade, 3 Pokémon"
+- tapOn: "Open For Trade, 3 Pokémon"
 - swipe:
     start: 90%, 50%
     end: 10%, 50%
@@ -133,7 +147,7 @@ tags:
 - tapOn: Close
 - assertNotVisible: WANTED CONDITIONS
 - tapOn: TAGS
-- tapOn: "Open Trade, 3 Pokémon"
+- tapOn: "Open For Trade, 3 Pokémon"
 - tapOn: "View Shiny Gigantamax Charizard"
 - assertVisible: FOR TRADE
 - assertVisible: Wanted Pokémon

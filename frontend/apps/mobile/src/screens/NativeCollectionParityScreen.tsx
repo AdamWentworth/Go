@@ -61,6 +61,7 @@ const toParityCard = (
   dexNumber: row.pokedexNumber,
   name: row.name,
   imagePath: row.imageUri ?? `/images/disabled/disabled_${row.pokemonId}.png`,
+  interaction: row.source === 'catalog' ? 'select' : 'view',
   typeIconPaths: row.typeIconUris,
   favorite: row.favorite,
   mostWanted: row.mostWanted,

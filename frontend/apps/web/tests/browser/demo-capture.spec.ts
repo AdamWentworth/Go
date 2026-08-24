@@ -124,7 +124,7 @@ const pikachuTrade = baseInstance('0025-party_hat_default_demo-trade', '0025-par
   defense_iv: 13,
   stamina_iv: 14,
   costume_id: 41,
-  is_caught: false,
+  is_caught: true,
   is_for_trade: true,
   registered: true,
   trade_tags: ['Costume', 'Local trade'],
@@ -486,6 +486,52 @@ async function capture(page: Page, name: string, options: Parameters<Page['scree
 test.describe('demo media capture', () => {
   test.skip(process.env.DEMO_CAPTURE !== '1', 'Only run through npm run capture:demo');
 
+  test('captures canonical mobile collection references', async ({ page }, testInfo) => {
+    fs.mkdirSync(demoMediaDir, { recursive: true });
+    const diagnostics = attachBrowserDiagnostics(page, testInfo);
+
+    try {
+      await installDemoRoutes(page);
+      await seedDemoBrowserState(page);
+      await page.setViewportSize({ width: 412, height: 915 });
+      await page.goto('/pokemon', { waitUntil: 'domcontentloaded' });
+      await expect(page.locator('.pokemon-card').first()).toBeVisible({ timeout: 30_000 });
+      await expect(page.locator('.app-loading-overlay')).toHaveCount(0);
+      await capture(page, 'collection-catalog-mobile');
+
+      await page.getByText('TAGS', { exact: true }).click();
+      await expect(page.locator('.tag-item[data-tag="Caught"]')).toBeVisible({ timeout: 15_000 });
+      await capture(page, 'collection-tags-mobile');
+
+      await page.locator('.tag-item[data-tag="Caught"]').click();
+      await expect(page.locator('.pokemon-card').first()).toBeVisible({ timeout: 15_000 });
+      await capture(page, 'collection-mobile');
+
+      await page.getByText('WISHLIST', { exact: true }).click();
+      await expect(page.locator('.tag-item[data-tag="Wanted"]')).toBeVisible({ timeout: 15_000 });
+      await capture(page, 'collection-wishlist-tags-mobile');
+
+      await page.locator('.tag-item[data-tag="Wanted"]').click();
+      await page.locator('[role="button"][aria-label^="View Gengar"]').first().click();
+      await expect(page.locator('.instance-overlay')).toBeVisible({ timeout: 15_000 });
+      await capture(page, 'collection-wanted-overlay-mobile');
+      await page.getByRole('button', { name: 'Close' }).click();
+
+      await page.getByText('TAGS', { exact: true }).click();
+      await page.locator('.tag-item[data-tag="Trade"]').click();
+      await page.locator('[role="button"][aria-label^="View Party Hat Pikachu"]').first().click();
+      await expect(page.locator('.instance-overlay')).toBeVisible({ timeout: 15_000 });
+      await capture(page, 'collection-trade-overlay-mobile');
+    } finally {
+      await diagnostics.flush();
+    }
+
+    expect(
+      diagnostics.blockingErrors(),
+      'collection reference capture should not include runtime errors',
+    ).toEqual([]);
+  });
+
   test('captures current Pokémon Go Nexus product surfaces', async ({ page }, testInfo) => {
     fs.mkdirSync(demoMediaDir, { recursive: true });
     const diagnostics = attachBrowserDiagnostics(page, testInfo);
@@ -510,11 +556,12 @@ test.describe('demo media capture', () => {
       await expect(page.locator('.instance-overlay')).toHaveCount(0);
 
       await page.goto('/search', { waitUntil: 'domcontentloaded' });
-      await page.getByRole('button', { name: 'Pokemon' }).click();
+      await page.getByRole('tab', { name: 'Pokémon' }).click();
       await page.getByPlaceholder('Enter Pokemon name').fill('Pikachu');
-      await page.getByPlaceholder('Enter location').fill('Vancouver');
+      await page.getByRole('button', { name: /Location/ }).click();
+      await page.getByPlaceholder('Search for a city').fill('Vancouver');
       await page.getByText('Vancouver, British Columbia, Canada').click();
-      await page.getByRole('button', { name: 'Search', exact: true }).click();
+      await page.getByRole('button', { name: 'Apply and search' }).click();
       await expect(page.locator('.list-view-container')).toBeVisible({ timeout: 20_000 });
       await expect(page.getByText('HarbourMew').first()).toBeVisible();
       await capture(page, 'search-results-list');
@@ -530,15 +577,6 @@ test.describe('demo media capture', () => {
       await expect(page.getByText('Mewtwo').first()).toBeVisible({ timeout: 20_000 });
       await capture(page, 'trades-pending');
 
-      await page.setViewportSize({ width: 390, height: 844 });
-      await page.goto('/pokemon', { waitUntil: 'domcontentloaded' });
-      await expect(page.locator('.pokemon-card').first()).toBeVisible({ timeout: 30_000 });
-      await expect(page.locator('.app-loading-overlay')).toHaveCount(0);
-      await page.getByText('TAGS', { exact: true }).click();
-      await expect(page.locator('.tag-item[data-tag="Caught"]')).toBeVisible({ timeout: 15_000 });
-      await page.locator('.tag-item[data-tag="Caught"]').click();
-      await expect(page.locator('.pokemon-card').first()).toBeVisible({ timeout: 15_000 });
-      await capture(page, 'collection-mobile');
     } finally {
       await diagnostics.flush();
     }

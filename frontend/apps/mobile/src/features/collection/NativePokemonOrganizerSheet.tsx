@@ -14,6 +14,7 @@ import type {
   NativeCatalogDestination,
   NativeCatalogOrganizerRequest,
 } from './nativeCatalogMutation';
+import { NativeCollectionPriorityStar } from './parity/NativeCollectionPriorityStar';
 
 type Props = {
   inventoryTags: NativeTagSummary[];
@@ -165,7 +166,7 @@ export const NativePokemonOrganizerSheet = ({
                   onPress={() => setFavorite((current) => !current)}
                   style={[styles.builtInChoice, light && styles.controlLight, favorite && styles.favoriteSelected]}
                 >
-                  <Text style={styles.favoriteIcon}>★</Text>
+                  <NativeCollectionPriorityStar size={25} style={styles.priorityIcon} tone="favorite" />
                   <View style={styles.choiceCopy}>
                     <Text style={[styles.choiceTitle, light && styles.textLight]}>Favorite</Text>
                     <Text style={[styles.choiceDetail, light && styles.secondaryLight]}>Keep important catches easy to find.</Text>
@@ -179,7 +180,7 @@ export const NativePokemonOrganizerSheet = ({
                   onPress={() => setMostWanted((current) => !current)}
                   style={[styles.builtInChoice, light && styles.controlLight, mostWanted && styles.mostWantedSelected]}
                 >
-                  <Text style={styles.mostWantedIcon}>★</Text>
+                  <NativeCollectionPriorityStar size={25} style={styles.priorityIcon} tone="most-wanted" />
                   <View style={styles.choiceCopy}>
                     <Text style={[styles.choiceTitle, light && styles.textLight]}>Most Wanted</Text>
                     <Text style={[styles.choiceDetail, light && styles.secondaryLight]}>Highlight your highest-priority wishlist entries.</Text>
@@ -269,8 +270,7 @@ const styles = StyleSheet.create({
   builtInChoice: { minHeight: 58, flexDirection: 'row', alignItems: 'center', gap: 9, borderWidth: 1, borderColor: '#53615e', borderRadius: 10, padding: 9, backgroundColor: '#202728' },
   favoriteSelected: { borderColor: '#facc15', backgroundColor: '#facc1529' },
   mostWantedSelected: { borderColor: '#f05a45', backgroundColor: '#f05a4529' },
-  favoriteIcon: { width: 31, color: '#facc15', fontSize: 25, textAlign: 'center' },
-  mostWantedIcon: { width: 31, color: '#f05a45', fontSize: 25, textAlign: 'center' },
+  priorityIcon: { width: 31, alignItems: 'center' },
   choiceCopy: { minWidth: 0, flex: 1 },
   choiceTitle: { minWidth: 0, flex: 1, color: '#ffffff', fontSize: 14, fontWeight: '900' },
   choiceDetail: { color: '#aaaaaa', fontSize: 11, lineHeight: 15 },

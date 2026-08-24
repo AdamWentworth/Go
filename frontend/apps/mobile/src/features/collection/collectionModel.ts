@@ -47,6 +47,8 @@ export type NativeCollectionRow = {
   releaseTimestamp?: number | null;
   favorite: boolean;
   mostWanted: boolean;
+  /** Position inside the canonical web variant sequence for this species. */
+  variantOrder?: number;
   evolutionFamilyIds?: number[];
   searchTerms?: string[];
 };
@@ -344,6 +346,9 @@ export const buildNativeCollectionRows = (
 ): NativeCollectionRow[] => {
   const pokemonById = new Map(catalog.map((pokemon) => [pokemon.pokemon_id, pokemon]));
   const evolutionFamilies = buildEvolutionFamilyMap(catalog);
+  const catalogOrder = new Map(
+    buildPokemonCatalogEntries(catalog).map((entry, index) => [entry.id, index]),
+  );
 
   return Object.entries(instances)
     .flatMap(([key, instance]) => {
@@ -381,6 +386,8 @@ export const buildNativeCollectionRows = (
         releaseTimestamp: toTimestamp(instance.date_added),
         favorite: instance.favorite,
         mostWanted: instance.most_wanted,
+        variantOrder: catalogOrder.get(instance.variant_id)
+          ?? catalogOrder.get(`${String(instance.pokemon_id).padStart(4, '0')}-default`),
         evolutionFamilyIds: evolutionFamilies.get(instance.pokemon_id) ?? [instance.pokemon_id],
         searchTerms: instanceSearchTerms(instance, pokemon),
       } satisfies NativeCollectionRow];
@@ -396,7 +403,7 @@ export const buildNativeCatalogRows = (
 ): NativeCollectionRow[] => {
   const pokemonById = new Map(catalog.map((pokemon) => [pokemon.pokemon_id, pokemon]));
   const evolutionFamilies = buildEvolutionFamilyMap(catalog);
-  return buildPokemonCatalogEntries(catalog).map((entry) => {
+  return buildPokemonCatalogEntries(catalog).map((entry, variantOrder) => {
     const pokemon = pokemonById.get(entry.pokemonId);
     const costume = pokemon?.costumes?.some((candidate) => entry.id.includes(candidate.name));
     return {
@@ -419,6 +426,7 @@ export const buildNativeCatalogRows = (
       releaseTimestamp: pokemon ? releaseTimestampForEntry(entry.id, pokemon) : null,
       favorite: false,
       mostWanted: false,
+      variantOrder,
       evolutionFamilyIds: evolutionFamilies.get(entry.pokemonId) ?? [entry.pokemonId],
       searchTerms: [
         entry.name,
@@ -653,7 +661,15 @@ export const sortNativeCollectionRows = (
       comparison = nullableComparison;
     }
     if (sort === 'favorite') comparison = Number(left.favorite) - Number(right.favorite);
-    if (sort === 'number') comparison = left.pokedexNumber - right.pokedexNumber;
+    if (sort === 'number') {
+      const dexComparison = left.pokedexNumber - right.pokedexNumber;
+      if (dexComparison !== 0) return dexComparison * multiplier;
+      const variantComparison = compareNullableNumber(
+        left.variantOrder ?? null,
+        right.variantOrder ?? null,
+      );
+      if (variantComparison !== 0) return variantComparison;
+    }
 
     if (comparison !== 0) return comparison * multiplier;
     return left.pokedexNumber - right.pokedexNumber || left.name.localeCompare(right.name);
