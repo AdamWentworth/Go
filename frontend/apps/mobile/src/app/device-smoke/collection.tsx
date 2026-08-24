@@ -122,6 +122,22 @@ const ROWS: NativeCollectionRow[] = [
     typeIconPaths: ['/images/types/fairy.png'],
   }),
   row({
+    id: 'smoke-necrozma',
+    pokemonId: 800,
+    name: 'Necrozma',
+    imagePath: '/images/default/pokemon_800.png',
+    status: 'caught',
+    typeIconPaths: ['/images/types/psychic.png'],
+  }),
+  row({
+    id: 'smoke-lunala',
+    pokemonId: 792,
+    name: 'Lunala',
+    imagePath: '/images/default/pokemon_792.png',
+    status: 'caught',
+    typeIconPaths: ['/images/types/psychic.png', '/images/types/ghost.png'],
+  }),
+  row({
     id: 'smoke-gmax-blastoise',
     pokemonId: 9,
     name: 'Gigantamax Blastoise',
@@ -424,7 +440,23 @@ export default function DeviceSmokeCollectionRoute() {
                     imageUri: openedRow.imageUri,
                     label: 'Mega',
                     primal: false,
-                }]
+                  }]
+                : [],
+              fusionOptions: openedRow.pokemonId === 800
+                ? [{
+                    id: 2,
+                    imageUri: `${ASSET_BASE_URL}/images/fusion/fusion_2.png`,
+                    moveOptions: [{
+                      id: 202,
+                      name: 'Moongeist Beam',
+                      kind: 'charged',
+                      legacy: false,
+                      typeName: 'Ghost',
+                    }],
+                    name: 'Dawn Wings Necrozma',
+                    partnerPokemonId: 792,
+                    partnerRows: ROWS.filter((candidate) => candidate.id === 'smoke-lunala'),
+                  }]
                 : [],
               crownOptions: openedRow.pokemonId === 888
                 ? [{

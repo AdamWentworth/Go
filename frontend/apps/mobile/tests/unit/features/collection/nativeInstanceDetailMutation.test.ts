@@ -1,5 +1,16 @@
 import { persistNativeInstanceDetailMutation } from '../../../../src/features/collection/nativeInstanceDetailMutation';
 import type { NativeCollectionSnapshot } from '../../../../src/services/collectionApi';
+import type { BasePokemon } from '@pokemongonexus/shared-contracts/pokemon';
+
+const necrozmaCatalogEntry = {
+  pokemon_id: 800,
+  fusion: [{
+    fusion_id: 2,
+    base_pokemon_id1: 800,
+    base_pokemon_id2: 792,
+    name: 'Dawn Wings Necrozma',
+  }],
+} as unknown as BasePokemon;
 
 const snapshot = {
   catalog: [],
@@ -213,6 +224,150 @@ describe('persistNativeInstanceDetailMutation', () => {
       is_mega: false,
       mega: false,
       mega_form: null,
+    }));
+  });
+
+  it('queues the visible Pokémon and consumed fusion partner in one atomic batch', async () => {
+    const outbox = makeOutbox();
+    const fusionSnapshot: NativeCollectionSnapshot = {
+      ...snapshot,
+      catalog: [necrozmaCatalogEntry],
+      instances: {
+        ...snapshot.instances,
+        'instance-1': {
+          ...snapshot.instances['instance-1'],
+          pokemon_id: 800,
+          variant_id: '0800-default',
+        },
+        'partner-1': {
+          ...snapshot.instances['instance-1'],
+          instance_id: 'partner-1',
+          pokemon_id: 792,
+          variant_id: '0792-default',
+        },
+      },
+    };
+    const onQueued = jest.fn();
+    const result = await persistNativeInstanceDetailMutation({
+      userId: 'user-1',
+      snapshot: fusionSnapshot,
+      requestedInstanceId: 'instance-1',
+      patch: {
+        is_fused: true,
+        fused_with: 'partner-1',
+        fusion_form: 'Dawn Wings Necrozma',
+        fusion: { 2: true },
+      },
+      outbox,
+      receiverClient: { post: jest.fn().mockResolvedValue({ accepted: true }) },
+      onQueued,
+      syncBatchId: 'batch-fusion',
+      now: 204,
+    });
+
+    expect(result.mutation.updated).toEqual(expect.objectContaining({
+      is_fused: true,
+      fused_with: 'partner-1',
+      fusion_form: 'Dawn Wings Necrozma',
+    }));
+    expect(result.companionMutations[0]?.updated).toEqual(expect.objectContaining({
+      instance_id: 'partner-1',
+      disabled: true,
+      is_fused: true,
+      fused_with: 'instance-1',
+      fusion_form: 'Dawn Wings Necrozma',
+    }));
+    expect(outbox.queue).toHaveBeenCalledWith(
+      'user-1',
+      expect.objectContaining({ pokemonUpdates: expect.arrayContaining([
+        expect.objectContaining({ instance_id: 'instance-1' }),
+        expect.objectContaining({ instance_id: 'partner-1', disabled: true }),
+      ]) }),
+      204,
+    );
+    expect(onQueued).toHaveBeenCalledTimes(2);
+  });
+
+  it('rejects a fusion partner whose species does not match the selected form', async () => {
+    const fusionSnapshot: NativeCollectionSnapshot = {
+      ...snapshot,
+      catalog: [necrozmaCatalogEntry],
+      instances: {
+        ...snapshot.instances,
+        'instance-1': {
+          ...snapshot.instances['instance-1'],
+          pokemon_id: 800,
+          variant_id: '0800-default',
+        },
+        'wrong-partner': {
+          ...snapshot.instances['instance-1'],
+          instance_id: 'wrong-partner',
+          pokemon_id: 791,
+          variant_id: '0791-default',
+        },
+      },
+    };
+
+    await expect(persistNativeInstanceDetailMutation({
+      userId: 'user-1',
+      snapshot: fusionSnapshot,
+      requestedInstanceId: 'instance-1',
+      patch: {
+        is_fused: true,
+        fused_with: 'wrong-partner',
+        fusion_form: 'Dawn Wings Necrozma',
+        fusion: { 2: true },
+      },
+      outbox: makeOutbox(),
+      receiverClient: { post: jest.fn() },
+      syncBatchId: 'batch-wrong-fusion',
+      now: 205,
+    })).rejects.toThrow("This fusion requires Dawn Wings Necrozma's matching partner.");
+  });
+
+  it('releases a linked fusion partner in the same separation batch', async () => {
+    const fusionSnapshot: NativeCollectionSnapshot = {
+      ...snapshot,
+      instances: {
+        'instance-1': {
+          ...snapshot.instances['instance-1'],
+          is_fused: true,
+          fused_with: 'partner-1',
+          fusion_form: 'Dawn Wings Necrozma',
+        },
+        'partner-1': {
+          ...snapshot.instances['instance-1'],
+          instance_id: 'partner-1',
+          pokemon_id: 792,
+          variant_id: '0792-default',
+          disabled: true,
+          is_fused: true,
+          fused_with: 'instance-1',
+          fusion_form: 'Dawn Wings Necrozma',
+        },
+      },
+    };
+    const result = await persistNativeInstanceDetailMutation({
+      userId: 'user-1',
+      snapshot: fusionSnapshot,
+      requestedInstanceId: 'instance-1',
+      patch: { is_fused: false, fused_with: null, fusion_form: null },
+      outbox: makeOutbox(),
+      receiverClient: { post: jest.fn().mockResolvedValue({ accepted: true }) },
+      syncBatchId: 'batch-separate',
+      now: 205,
+    });
+
+    expect(result.mutation.updated).toEqual(expect.objectContaining({
+      is_fused: false,
+      fused_with: null,
+      fusion_form: null,
+    }));
+    expect(result.companionMutations[0]?.updated).toEqual(expect.objectContaining({
+      disabled: false,
+      is_fused: false,
+      fused_with: null,
+      fusion_form: null,
     }));
   });
 });

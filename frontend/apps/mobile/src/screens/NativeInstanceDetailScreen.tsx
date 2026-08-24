@@ -15,7 +15,10 @@ import {
 import { useState } from 'react';
 import Svg, { Circle, Path } from 'react-native-svg';
 import { GestureDetector } from 'react-native-gesture-handler';
-import type { NativeInstanceDetail } from '../features/collection/collectionModel';
+import type {
+  NativeInstanceDetail,
+  NativeInstanceMoveOption,
+} from '../features/collection/collectionModel';
 import type { NativeInstanceDetailPatch } from '../features/collection/nativeInstanceDetailMutation';
 import type {
   PokemonSizeClass,
@@ -82,6 +85,10 @@ type NativeInstanceEditDraft = {
   megaForm: string | null;
   crowned: boolean;
   crownForm: string | null;
+  fused: boolean;
+  fusionId: number | null;
+  fusionForm: string | null;
+  fusedWith: string | null;
 };
 
 const editableNumber = (value: unknown): string => (
@@ -154,6 +161,12 @@ const createEditDraft = (detail: NativeInstanceDetail): NativeInstanceEditDraft 
   megaForm: detail.instance?.mega_form ?? detail.megaOptions?.[0]?.form ?? null,
   crowned: Boolean(detail.instance?.crown),
   crownForm: detail.instance?.fusion_form ?? detail.crownOptions?.[0]?.form ?? null,
+  fused: Boolean(detail.instance?.is_fused),
+  fusionId: detail.instance?.is_fused
+    ? detail.fusionOptions?.find((option) => option.name === detail.instance?.fusion_form)?.id ?? null
+    : null,
+  fusionForm: detail.instance?.is_fused ? detail.instance.fusion_form : null,
+  fusedWith: detail.instance?.is_fused ? detail.instance.fused_with : null,
 });
 
 const BALL_OPTIONS = [
@@ -987,12 +1000,14 @@ const MaxMoveLevelPicker = ({
 };
 
 const PowerFormOption = ({
+  disabled = false,
   imageUri,
   label,
   selected,
   palette,
   onPress,
 }: {
+  disabled?: boolean;
   imageUri: string | null;
   label: string;
   selected: boolean;
@@ -1002,12 +1017,14 @@ const PowerFormOption = ({
   <Pressable
     accessibilityLabel={`Power form: ${label}`}
     accessibilityRole="button"
-    accessibilityState={{ selected }}
+    accessibilityState={{ disabled, selected }}
+    disabled={disabled}
     onPress={onPress}
     style={[
       styles.powerFormOption,
       { borderColor: selected ? '#5faeff' : palette.border },
       selected && styles.powerFormOptionSelected,
+      disabled && styles.powerFormOptionDisabled,
     ]}
   >
     {imageUri ? (
@@ -1047,17 +1064,35 @@ const NativePowerControls = ({
   );
   const supportsMega = !isWanted
     && !draft.shadow
+    && !draft.fused
     && (detail.megaOptions?.length ?? 0) > 0
     && !detail.row.name.toLowerCase().includes('clone');
   const supportsCrown = !isWanted
     && !draft.shadow
+    && !draft.fused
     && (detail.crownOptions?.length ?? 0) > 0;
+  const supportsFusion = isCaught
+    && !draft.shadow
+    && !draft.megaEnabled
+    && !draft.crowned
+    && (detail.fusionOptions?.length ?? 0) > 0;
   const supportsMaxMoves = !isWanted
     && Boolean(detail.row.maxKind || detail.specialMaxBaseEligible || draft.crowned)
     && !draft.shadow
     && !draft.purified
     && detail.instance?.costume_id == null;
-  if (!supportsShadowState && !supportsMega && !supportsCrown && !supportsMaxMoves) return null;
+  const selectedFusion = detail.fusionOptions?.find((option) => option.id === draft.fusionId) ?? null;
+  const compatibleMovePatch = (options: NativeInstanceMoveOption[] | undefined) => {
+    const supports = (id: number | null, kind: NativeInstanceMoveOption['kind']) => (
+      id == null || Boolean(options?.some((move) => move.id === id && move.kind === kind))
+    );
+    return {
+      fastMove: supports(draft.fastMove, 'fast') ? draft.fastMove : null,
+      chargedMove1: supports(draft.chargedMove1, 'charged') ? draft.chargedMove1 : null,
+      chargedMove2: supports(draft.chargedMove2, 'charged') ? draft.chargedMove2 : null,
+    };
+  };
+  if (!supportsShadowState && !supportsMega && !supportsCrown && !supportsFusion && !supportsMaxMoves) return null;
 
   return (
     <View style={[styles.powerPanel, { borderColor: palette.border }]}>
@@ -1086,6 +1121,13 @@ const NativePowerControls = ({
                         originalTrainerId: null,
                         originalTrainerName: '',
                         tradedDate: '',
+                        fused: false,
+                        fusionId: null,
+                        fusionForm: null,
+                        fusedWith: null,
+                        megaEnabled: false,
+                        megaForm: null,
+                        crowned: false,
                       }
                     : { shadow: false, purified: true })}
                   style={[
@@ -1104,6 +1146,67 @@ const NativePowerControls = ({
           </Text>
         </View>
       ) : null}
+      {supportsFusion ? (
+        <View style={styles.editFieldGroup}>
+          <Text style={[styles.powerTitle, { color: palette.text }]}>Fusion</Text>
+          <Text style={[styles.editHelpText, { color: palette.secondary }]}>Choose a form and the caught partner it consumes.</Text>
+          <View style={styles.powerFormOptions}>
+            <PowerFormOption
+              imageUri={detail.appearanceImageUris?.base ?? detail.row.imageUri}
+              label="Base form"
+              onPress={() => onChange({
+                fused: false,
+                fusionId: null,
+                fusionForm: null,
+                fusedWith: null,
+                ...compatibleMovePatch(detail.moveOptions),
+              })}
+              palette={palette}
+              selected={!draft.fused}
+            />
+            {(detail.fusionOptions ?? []).map((option) => {
+              const firstPartner = option.partnerRows[0] ?? null;
+              return (
+                <PowerFormOption
+                  disabled={!firstPartner}
+                  imageUri={option.imageUri}
+                  key={option.id}
+                  label={firstPartner ? option.name : `${option.name} · partner needed`}
+                  onPress={() => onChange({
+                    fused: true,
+                    fusionId: option.id,
+                    fusionForm: option.name,
+                    fusedWith: firstPartner?.id ?? null,
+                    megaEnabled: false,
+                    megaForm: null,
+                    crowned: false,
+                    ...compatibleMovePatch(option.moveOptions),
+                  })}
+                  palette={palette}
+                  selected={draft.fused && draft.fusionId === option.id}
+                />
+              );
+            })}
+          </View>
+          {draft.fused && selectedFusion ? (
+            <View style={styles.fusionPartnerPanel}>
+              <Text style={[styles.editFieldLabel, { color: palette.secondary }]}>FUSION PARTNER</Text>
+              <View style={styles.powerFormOptions}>
+                {selectedFusion.partnerRows.map((partner) => (
+                  <PowerFormOption
+                    imageUri={partner.imageUri}
+                    key={partner.id}
+                    label={partner.name}
+                    onPress={() => onChange({ fusedWith: partner.id })}
+                    palette={palette}
+                    selected={draft.fusedWith === partner.id}
+                  />
+                ))}
+              </View>
+            </View>
+          ) : null}
+        </View>
+      ) : null}
       {supportsMega ? (
         <View style={styles.editFieldGroup}>
           <Text style={[styles.powerTitle, { color: palette.text }]}>Mega Evolution</Text>
@@ -1120,7 +1223,14 @@ const NativePowerControls = ({
                 imageUri={option.imageUri}
                 key={`${option.label}-${option.form ?? 'default'}`}
                 label={option.label}
-                onPress={() => onChange({ megaEnabled: true, megaForm: option.form })}
+                onPress={() => onChange({
+                  megaEnabled: true,
+                  megaForm: option.form,
+                  fused: false,
+                  fusionId: null,
+                  fusionForm: null,
+                  fusedWith: null,
+                })}
                 palette={palette}
                 selected={draft.megaEnabled && draft.megaForm === option.form}
               />
@@ -1135,7 +1245,10 @@ const NativePowerControls = ({
             <PowerFormOption
               imageUri={detail.appearanceImageUris?.base ?? detail.row.imageUri}
               label="Hero form"
-              onPress={() => onChange({ crowned: false })}
+              onPress={() => onChange({
+                crowned: false,
+                ...compatibleMovePatch(detail.moveOptions),
+              })}
               palette={palette}
               selected={!draft.crowned}
             />
@@ -1144,7 +1257,15 @@ const NativePowerControls = ({
                 imageUri={option.imageUri}
                 key={`${option.label}-${option.form ?? 'default'}`}
                 label={option.label}
-                onPress={() => onChange({ crowned: true, crownForm: option.form })}
+                onPress={() => onChange({
+                  crowned: true,
+                  crownForm: option.form,
+                  fused: false,
+                  fusionId: null,
+                  fusionForm: null,
+                  fusedWith: null,
+                  ...compatibleMovePatch(option.moveOptions ?? detail.moveOptions),
+                })}
                 palette={palette}
                 selected={draft.crowned && draft.crownForm === option.form}
               />
@@ -1214,6 +1335,13 @@ const NativeInstanceEditFields = ({
     styles.editInput,
     { backgroundColor: palette.input, borderColor: palette.border, color: palette.text },
   ];
+  const selectedFusionMoves = draft.fused
+    ? detail.fusionOptions?.find((option) => option.id === draft.fusionId)?.moveOptions
+    : null;
+  const selectedCrownMoves = draft.crowned
+    ? detail.crownOptions?.find((option) => option.form === draft.crownForm)?.moveOptions
+    : null;
+  const editMoveOptions = selectedFusionMoves ?? selectedCrownMoves ?? detail.moveOptions ?? [];
   return (
     <View accessibilityLabel="Pokémon detail editor" style={styles.editFields}>
       <View style={styles.editFieldGroup}>
@@ -1340,21 +1468,21 @@ const NativeInstanceEditFields = ({
         <NativeMoveSelector
           label="Fast move"
           onChange={(fastMove) => onChange({ fastMove })}
-          options={(detail.moveOptions ?? []).filter((move) => move.kind === 'fast')}
+          options={editMoveOptions.filter((move) => move.kind === 'fast')}
           palette={palette}
           value={draft.fastMove}
         />
         <NativeMoveSelector
           label="Charged move"
           onChange={(chargedMove1) => onChange({ chargedMove1 })}
-          options={(detail.moveOptions ?? []).filter((move) => move.kind === 'charged')}
+          options={editMoveOptions.filter((move) => move.kind === 'charged')}
           palette={palette}
           value={draft.chargedMove1}
         />
         <NativeMoveSelector
           label="Second charged move"
           onChange={(chargedMove2) => onChange({ chargedMove2 })}
-          options={(detail.moveOptions ?? []).filter((move) => move.kind === 'charged')}
+          options={editMoveOptions.filter((move) => move.kind === 'charged')}
           palette={palette}
           value={draft.chargedMove2}
         />
@@ -1505,7 +1633,10 @@ export const NativeInstanceDetailScreen = ({
   const displayShadow = editing ? activeDraft.shadow : Boolean(instance?.shadow && !instance?.purified);
   const displayPurified = editing ? activeDraft.purified : Boolean(instance?.purified);
   const displayImageUri = editing
-    ? activeDraft.megaEnabled
+    ? activeDraft.fused
+      ? detail.fusionOptions?.find((option) => option.id === activeDraft.fusionId)?.imageUri
+        ?? detail.row.imageUri
+      : activeDraft.megaEnabled
       ? detail.megaOptions?.find((option) => option.form === activeDraft.megaForm)?.imageUri
         ?? detail.megaOptions?.[0]?.imageUri
         ?? detail.row.imageUri
@@ -1608,8 +1739,17 @@ export const NativeInstanceDetailScreen = ({
             mega: activeDraft.megaEnabled,
             is_mega: activeDraft.megaEnabled,
             mega_form: activeDraft.megaEnabled ? activeDraft.megaForm : null,
-            crown: activeDraft.crowned,
-            fusion_form: activeDraft.crowned ? activeDraft.crownForm : null,
+            crown: activeDraft.fused ? false : activeDraft.crowned,
+            is_fused: activeDraft.fused,
+            fused_with: activeDraft.fused ? activeDraft.fusedWith : null,
+            fusion: activeDraft.fused && activeDraft.fusionId != null
+              ? { [activeDraft.fusionId]: true }
+              : instance?.fusion,
+            fusion_form: activeDraft.fused
+              ? activeDraft.fusionForm
+              : activeDraft.crowned
+                ? activeDraft.crownForm
+                : null,
           };
       await onSaveDetails(patch);
       setEditingInstanceId(null);
@@ -2176,8 +2316,10 @@ const styles = StyleSheet.create({
     borderRadius: 9,
   },
   powerFormOptionSelected: { backgroundColor: 'rgba(40,137,226,0.18)' },
+  powerFormOptionDisabled: { opacity: 0.45 },
   powerFormImage: { width: 62, height: 62 },
   powerFormLabel: { fontSize: 11, lineHeight: 13, fontWeight: '900', textAlign: 'center' },
+  fusionPartnerPanel: { gap: 7, paddingTop: 2 },
   shadowOptionSelected: { backgroundColor: 'rgba(103,76,184,0.25)' },
   maxMovesPanel: { width: '100%', gap: 9 },
   maxMovesHeading: { flexDirection: 'row', alignItems: 'center', gap: 8 },

@@ -555,6 +555,94 @@ describe('NativeInstanceDetailScreen', () => {
     }));
   });
 
+  it('selects a fusion partner, swaps to the fusion move pool, and saves the linked form', async () => {
+    const onSaveDetails = jest.fn().mockResolvedValue(undefined);
+    const partner = (id: string, name: string): NativeInstanceDetail['row'] => ({
+      ...detail.row,
+      id,
+      pokemonId: 792,
+      pokedexNumber: 792,
+      name,
+      status: 'caught',
+    });
+    render(
+      <NativeInstanceDetailScreen
+        detail={{
+          ...detail,
+          appearanceImageUris: {
+            base: 'https://pokegonexus.com/images/necrozma.png',
+            shadow: null,
+            purified: 'https://pokegonexus.com/images/necrozma.png',
+          },
+          fusionOptions: [{
+            id: 2,
+            imageUri: 'https://pokegonexus.com/images/dawn-wings.png',
+            moveOptions: [{
+              id: 202,
+              name: 'Moongeist Beam',
+              kind: 'charged',
+              legacy: false,
+              typeName: 'Ghost',
+            }],
+            name: 'Dawn Wings Necrozma',
+            partnerPokemonId: 792,
+            partnerRows: [partner('lunala-1', 'Lunala One'), partner('lunala-2', 'Lunala Two')],
+          }],
+          instance: {
+            nickname: null,
+            pokemon_id: 800,
+            shadow: false,
+            purified: false,
+            costume_id: null,
+            is_fused: false,
+            fused_with: null,
+            fusion_form: null,
+            fusion: null,
+            crown: false,
+            mega: false,
+            is_mega: false,
+          } as NonNullable<NativeInstanceDetail['instance']>,
+          moveOptions: [{
+            id: 101,
+            name: 'Metal Claw',
+            kind: 'fast',
+            legacy: false,
+            typeName: 'Steel',
+          }],
+          row: { ...detail.row, pokemonId: 800, status: 'caught' },
+        }}
+        isLoading={false}
+        error={null}
+        cachedAt={null}
+        movesWarning={null}
+        saveNotice={null}
+        saveError={null}
+        isSaving={false}
+        onRetry={jest.fn()}
+        onBack={jest.fn()}
+        onSaveDetails={onSaveDetails}
+        onToggleFavorite={jest.fn()}
+        onEditInCurrentApp={jest.fn()}
+      />,
+    );
+
+    fireEvent.press(screen.getByRole('button', { name: 'Edit Pokémon' }));
+    fireEvent.press(screen.getByRole('button', { name: 'Power form: Dawn Wings Necrozma' }));
+    fireEvent.press(screen.getByRole('button', { name: 'Power form: Lunala Two' }));
+    fireEvent.press(screen.getByRole('button', { name: 'Choose charged move' }));
+    expect(screen.getByText('Moongeist Beam')).toBeTruthy();
+    fireEvent.press(screen.getByRole('button', { name: 'Close charged move selector' }));
+    await act(async () => {
+      fireEvent.press(screen.getByRole('button', { name: 'Save Pokémon' }));
+    });
+    expect(onSaveDetails).toHaveBeenCalledWith(expect.objectContaining({
+      is_fused: true,
+      fused_with: 'lunala-2',
+      fusion_form: 'Dawn Wings Necrozma',
+      fusion: { 2: true },
+    }));
+  });
+
   it('saves five-heart, lucky, and Most Wanted conditions natively', async () => {
     const onSaveDetails = jest.fn().mockResolvedValue(undefined);
     render(

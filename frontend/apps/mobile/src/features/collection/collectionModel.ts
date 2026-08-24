@@ -74,6 +74,14 @@ export type NativeCollectionSort =
   | 'combatPower';
 export type NativeCollectionSortDirection = 'ascending' | 'descending';
 
+export type NativeInstanceMoveOption = {
+  id: number;
+  name: string;
+  kind: 'fast' | 'charged';
+  legacy: boolean;
+  typeName: string;
+};
+
 export type NativeInstanceDetail = {
   row: NativeCollectionRow;
   instance?: PokemonInstance;
@@ -84,13 +92,7 @@ export type NativeInstanceDetail = {
   moves: { label: string; value: string }[];
   provenance: { label: string; value: string }[];
   preferences: { label: string; value: string }[];
-  moveOptions?: {
-    id: number;
-    name: string;
-    kind: 'fast' | 'charged';
-    legacy: boolean;
-    typeName: string;
-  }[];
+  moveOptions?: NativeInstanceMoveOption[];
   backgroundOptions?: {
     id: number;
     name: string;
@@ -111,7 +113,17 @@ export type NativeInstanceDetail = {
     form: string | null;
     imageUri: string | null;
     label: string;
+    moveOptions?: NativeInstanceMoveOption[];
   }[];
+  fusionOptions?: {
+    id: number;
+    imageUri: string | null;
+    moveOptions: NativeInstanceMoveOption[];
+    name: string;
+    partnerPokemonId: number;
+    partnerRows: NativeCollectionRow[];
+  }[];
+  fusionPartnerRow?: NativeCollectionRow | null;
   specialMaxBaseEligible?: boolean;
   sizeThresholds?: BasePokemon['sizes'];
   rarity?: BasePokemon['rarity'];
@@ -822,9 +834,10 @@ export const buildNativeInstanceDetail = (
     : instance.is_for_trade
       ? 'wanted'
       : null;
+  const collectionRows = buildNativeCollectionRows(instances, catalog, assetOrigin);
   const targetRows = targetStatus == null
     ? []
-    : buildNativeCollectionRows(instances, catalog, assetOrigin)
+    : collectionRows
       .filter((candidate) => (
         candidate.status === targetStatus
         && excluded[candidate.id] !== true
@@ -894,7 +907,66 @@ export const buildNativeInstanceDetail = (
       assetOrigin,
     ),
     label: getPokemonCrownFormLabel(crownForm) ?? crownForm.name ?? 'Crowned',
+    moveOptions: (moveEntry?.crownForms.find((candidate) => (
+      candidate.id === crownForm.id
+    ))?.moves ?? []).map((move) => ({
+      id: move.move_id,
+      name: move.name,
+      kind: move.is_fast ? 'fast' as const : 'charged' as const,
+      legacy: move.legacy,
+      typeName: move.type_name,
+    })),
   }));
+  const activePartnerKey = instance.fused_with
+    ? resolveInstanceCollectionKey(instances, instance.fused_with)
+    : null;
+  const fusionOptions = (pokemon.fusion ?? [])
+    .filter((entry) => (
+      entry.base_pokemon_id1 === pokemon.pokemon_id
+      && typeof entry.fusion_id === 'number'
+    ))
+    .map((entry) => {
+      const partnerRows = Object.entries(instances).flatMap(([key, candidate]) => {
+        const isActivePartner = activePartnerKey === key;
+        if (candidate.pokemon_id !== entry.base_pokemon_id2 || !candidate.is_caught) return [];
+        if (!isActivePartner && (candidate.is_for_trade || candidate.is_fused || candidate.disabled)) return [];
+        const existing = collectionRows.find((row) => (
+          row.id === candidate.instance_id || row.id === key
+        ));
+        if (existing) return [existing];
+        return buildNativeCollectionRows({
+          [key]: { ...candidate, disabled: false },
+        }, catalog, assetOrigin);
+      });
+      return {
+        id: entry.fusion_id as number,
+        imageUri: absoluteImageUri(
+          instance.shiny
+            ? entry.image_url_shiny ?? entry.image_url ?? null
+            : entry.image_url ?? null,
+          assetOrigin,
+        ),
+        moveOptions: (moveEntry?.fusion.find((candidate) => (
+          candidate.fusion_id === entry.fusion_id
+        ))?.moves ?? []).map((move) => ({
+          id: move.move_id,
+          name: move.name,
+          kind: move.is_fast ? 'fast' as const : 'charged' as const,
+          legacy: move.legacy,
+          typeName: move.type_name,
+        })),
+        name: entry.name || `Fusion ${entry.fusion_id}`,
+        partnerPokemonId: entry.base_pokemon_id2,
+        partnerRows,
+      };
+    });
+  const fusionPartnerRow = activePartnerKey == null
+    ? null
+    : fusionOptions.flatMap((entry) => entry.partnerRows)
+      .find((candidate) => (
+        candidate.id === instances[activePartnerKey]?.instance_id
+        || candidate.id === activePartnerKey
+      )) ?? null;
   const canonicalPokemonId = pokemon.pokemon_id === 2290
     ? 888
     : pokemon.pokemon_id === 2292
@@ -920,6 +992,8 @@ export const buildNativeInstanceDetail = (
     appearanceImageUris,
     megaOptions,
     crownOptions,
+    fusionOptions,
+    fusionPartnerRow,
     specialMaxBaseEligible,
     sizeThresholds: pokemon.sizes,
     rarity: pokemon.rarity,

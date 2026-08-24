@@ -3,7 +3,12 @@ import type {
   PokemonInstance,
   WantedSizePreferences,
 } from '@pokemongonexus/shared-contracts/instances';
+import {
+  normalizeInstanceToken,
+  resolveInstanceCollectionKey,
+} from '@pokemongonexus/shared-domain/instances';
 import type { NativeCollectionSnapshot } from '../../services/collectionApi';
+import { createNativeCollectionSyncBatch } from '../../services/collectionSyncApi';
 import type { NativeReceiverApiClient } from '../../services/nativeApiClients';
 import type { nativeCollectionOutbox } from '../../storage/nativeCollectionOutbox';
 import { sendPendingNativeCollectionBatches } from './collectionSyncCoordinator';
@@ -29,9 +34,12 @@ export type NativeInstanceDetailPatch = Partial<Pick<
   | 'fast_move_id'
   | 'favorite'
   | 'friendship_level'
+  | 'fused_with'
+  | 'fusion'
   | 'fusion_form'
   | 'gender'
   | 'height'
+  | 'is_fused'
   | 'is_mega'
   | 'is_traded'
   | 'level'
@@ -157,9 +165,27 @@ export const normalizeNativeInstanceDetailPatch = (
   if (patch.shadow && patch.purified) {
     throw new Error('A Pokémon cannot be Shadow and Purified at the same time.');
   }
+  if (patch.is_fused === true && (!patch.fused_with || !patch.fusion_form)) {
+    throw new Error('Choose a fusion partner before saving this form.');
+  }
+  if (patch.is_fused === true && (patch.shadow || patch.purified || patch.is_mega || patch.crown)) {
+    throw new Error('Fusion cannot be combined with Shadow, Purified, Mega, or Crowned state.');
+  }
 
   const appearanceInvariant = patch.shadow === true
-    ? { shadow: true, purified: false, lucky: false, is_traded: false }
+    ? {
+        shadow: true,
+        purified: false,
+        lucky: false,
+        is_traded: false,
+        is_mega: false,
+        mega: false,
+        mega_form: null,
+        crown: false,
+        is_fused: false,
+        fused_with: null,
+        fusion_form: null,
+      }
     : patch.purified === true
       ? { shadow: false, purified: true }
       : {};
@@ -168,11 +194,26 @@ export const normalizeNativeInstanceDetailPatch = (
     : patch.is_mega === false
       ? { is_mega: false, mega: false, mega_form: null }
       : {};
+  const fusionInvariant = patch.is_fused === true
+    ? {
+        is_fused: true,
+        shadow: false,
+        purified: false,
+        is_mega: false,
+        mega: false,
+        mega_form: null,
+        crown: false,
+      }
+    : patch.is_fused === false
+      ? {
+        is_fused: false,
+        fused_with: null,
+        fusion_form: patch.crown ? patch.fusion_form ?? null : null,
+      }
+      : {};
 
   return {
     ...patch,
-    ...appearanceInvariant,
-    ...megaInvariant,
     max_attack: maxAttack,
     max_guard: maxGuard,
     max_spirit: maxSpirit,
@@ -180,12 +221,17 @@ export const normalizeNativeInstanceDetailPatch = (
     gender,
     original_trainer_id: normalizeNullableText(patch.original_trainer_id),
     original_trainer_name: normalizeNullableText(patch.original_trainer_name),
+    fused_with: normalizeNullableText(patch.fused_with),
+    fusion_form: normalizeNullableText(patch.fusion_form),
     pokeball,
     location_card: normalizeNullableText(patch.location_card),
     location_caught: normalizeNullableText(patch.location_caught),
     date_caught: normalizeNullableText(patch.date_caught),
     traded_date: normalizeNullableText(patch.traded_date),
     wanted_size_preferences: normalizeWantedSizePreferences(patch.wanted_size_preferences),
+    ...appearanceInvariant,
+    ...megaInvariant,
+    ...fusionInvariant,
   };
 };
 
@@ -210,18 +256,109 @@ export const persistNativeInstanceDetailMutation = async ({
   syncBatchId?: string;
   now?: number;
 }) => {
+  const normalizedPatch = normalizeNativeInstanceDetailPatch(patch);
   const mutation = createNativeCollectionMutation({
     instances: snapshot.instances,
     requestedInstanceId,
-    patch: normalizeNativeInstanceDetailPatch(patch),
+    patch: normalizedPatch,
     syncBatchId,
     now,
   });
-  await outbox.queue(userId, mutation.batch, now);
-  await onQueued?.(mutation);
+  const companionPatches = new Map<string, Partial<PokemonInstance>>();
+  const mainRef = mutation.updated.instance_id;
+  const mainToken = normalizeInstanceToken(mainRef);
+  const previousPartnerKey = mutation.previous.fused_with
+    ? resolveInstanceCollectionKey(snapshot.instances, mutation.previous.fused_with)
+    : null;
+  const desiredPartnerKey = normalizedPatch.is_fused === true && normalizedPatch.fused_with
+    ? resolveInstanceCollectionKey(snapshot.instances, normalizedPatch.fused_with)
+    : null;
+
+  if (normalizedPatch.is_fused !== undefined) {
+    if (previousPartnerKey && previousPartnerKey !== desiredPartnerKey) {
+      companionPatches.set(previousPartnerKey, {
+        disabled: false,
+        fused_with: null,
+        is_fused: false,
+        fusion_form: null,
+      });
+    }
+    if (normalizedPatch.is_fused === false) {
+      for (const [key, candidate] of Object.entries(snapshot.instances)) {
+        if (!candidate.fused_with) continue;
+        if (normalizeInstanceToken(candidate.fused_with) !== mainToken) continue;
+        companionPatches.set(key, {
+          disabled: false,
+          fused_with: null,
+          is_fused: false,
+          fusion_form: null,
+        });
+      }
+    }
+    if (normalizedPatch.is_fused === true) {
+      if (!mutation.previous.is_caught || mutation.previous.is_for_trade || mutation.previous.is_wanted || mutation.previous.disabled) {
+        throw new Error('Only an available caught Pokémon can be fused.');
+      }
+      if (!desiredPartnerKey) throw new Error('The selected fusion partner is no longer in your collection.');
+      if (desiredPartnerKey === mutation.collectionKey) throw new Error('A Pokémon cannot fuse with itself.');
+      const partner = snapshot.instances[desiredPartnerKey];
+      const activeFusionId = Object.entries(normalizedPatch.fusion ?? {}).find(([, enabled]) => Boolean(enabled))?.[0];
+      const fusionDefinition = snapshot.catalog
+        .find((pokemon) => pokemon.pokemon_id === mutation.previous.pokemon_id)
+        ?.fusion.find((candidate) => (
+          (activeFusionId != null && candidate.fusion_id === Number(activeFusionId))
+          || candidate.name === normalizedPatch.fusion_form
+        ));
+      if (!fusionDefinition) {
+        throw new Error('The selected fusion form is not available for this Pokémon.');
+      }
+      if (partner?.pokemon_id !== fusionDefinition.base_pokemon_id2) {
+        throw new Error(`This fusion requires ${fusionDefinition.name}'s matching partner.`);
+      }
+      const alreadyLinked = normalizeInstanceToken(partner?.fused_with) === mainToken;
+      if (!partner?.is_caught) throw new Error('The selected fusion partner is not caught.');
+      if (!alreadyLinked && partner.is_for_trade) {
+        throw new Error('Remove the fusion partner from For Trade before fusing.');
+      }
+      if (!alreadyLinked && (partner.disabled || partner.is_fused)) {
+        throw new Error('The selected fusion partner is already committed to another form.');
+      }
+      companionPatches.set(desiredPartnerKey, {
+        disabled: true,
+        fused_with: mainRef,
+        is_fused: true,
+        fusion_form: normalizedPatch.fusion_form ?? null,
+      });
+    }
+  }
+
+  const companionMutations = [...companionPatches.entries()].flatMap(([key, companionPatch]) => {
+    const previous = snapshot.instances[key];
+    const changed = previous && Object.entries(companionPatch).some(
+      ([field, value]) => !Object.is(previous[field], value),
+    );
+    if (!changed) return [];
+    return [createNativeCollectionMutation({
+      instances: snapshot.instances,
+      requestedInstanceId: key,
+      patch: companionPatch,
+      syncBatchId,
+      now,
+    })];
+  });
+  const batch = createNativeCollectionSyncBatch({
+    syncBatchId,
+    location: null,
+    updates: [mutation.updated, ...companionMutations.map((entry) => entry.updated)],
+  });
+  await outbox.queue(userId, batch, now);
+  for (const queuedMutation of [mutation, ...companionMutations]) {
+    await onQueued?.(queuedMutation);
+  }
   const sent = await sendPendingNativeCollectionBatches({ userId, outbox, receiverClient });
   return {
     mutation,
+    companionMutations,
     syncState: sent.failedBatchId ? 'pending' as const : 'acknowledged' as const,
     message: sent.failedBatchId
       ? 'Details saved on this device. They will sync when Receiver is available.'
