@@ -1,4 +1,4 @@
-import { AccessibilityInfo, Text } from 'react-native';
+import { AccessibilityInfo, Animated, Text } from 'react-native';
 import { act, fireEvent, render } from '@testing-library/react-native';
 import {
   NativeHorizontalPageSlider,
@@ -67,5 +67,26 @@ describe('NativeHorizontalPageSlider', () => {
       panelCount: 3,
       width: 412,
     })).toBe(2);
+  });
+
+  it('publishes native drag progress for the coordinated header underline', async () => {
+    const scrollX = new Animated.Value(412);
+    const { getByTestId } = render(
+      <NativeHorizontalPageSlider
+        activeIndex={1}
+        onIndexChange={jest.fn()}
+        scrollX={scrollX}
+      >
+        <Text>Tags panel</Text>
+        <Text>Pokémon panel</Text>
+        <Text>Wishlist panel</Text>
+      </NativeHorizontalPageSlider>,
+    );
+
+    await act(async () => Promise.resolve());
+    const slider = getByTestId('native-horizontal-page-slider');
+    expect(typeof slider.props.onScroll).toBe('function');
+    expect(slider.props.scrollEventThrottle).toBe(16);
+    expect(slider.props.pagingEnabled).toBe(true);
   });
 });

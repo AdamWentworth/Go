@@ -10,6 +10,7 @@ import {
   Text,
   View,
   useColorScheme,
+  useWindowDimensions,
 } from 'react-native';
 import { memo, useCallback, useMemo, useState } from 'react';
 import Svg, { Defs, LinearGradient, Rect, Stop } from 'react-native-svg';
@@ -20,7 +21,7 @@ import type {
   PokemonTagOrderKey,
   UpdateCustomTagRequest,
 } from '@pokemongonexus/shared-contracts/users';
-import { webCssVarTokens } from '@pokemongonexus/shared-ui-tokens';
+import { collectionParityTokens } from '@pokemongonexus/shared-ui-tokens';
 import type { NativeTagSummary } from '../features/collection/collectionModel';
 import {
   NativePokemonHubHeader,
@@ -124,10 +125,20 @@ const NativeTagCard = memo(function NativeTagCard({
     onMove: (sourceIndex: number, targetIndex: number) => void;
   };
 }) {
-  const cardSurface = light ? '#f8fff9' : '#222222';
-  const titleColor = light ? '#405753' : '#ffffff';
-  const subtitleColor = light ? '#405753' : '#dddddd';
-  const previewRows = tag.rows.slice(0, 12);
+  const { width } = useWindowDimensions();
+  const widePreview = width >= 767;
+  const palette = light
+    ? collectionParityTokens.colors.light
+    : collectionParityTokens.colors.dark;
+  const cardSurface = palette.tagSurface;
+  const titleColor = palette.tagTitle;
+  const subtitleColor = palette.tagSubtitle;
+  const previewRows = tag.rows.slice(
+    0,
+    widePreview
+      ? collectionParityTokens.tags.previewColumnsWide * collectionParityTokens.tags.previewRows
+      : collectionParityTokens.tags.previewColumnsNarrow * collectionParityTokens.tags.previewRows,
+  );
   const [cardDragY] = useState(() => new Animated.Value(0));
   const [dragging, setDragging] = useState(false);
   return (
@@ -147,16 +158,30 @@ const NativeTagCard = memo(function NativeTagCard({
         onPress={() => onPressTag(tag)}
         style={({ pressed }) => pressed && !reorder ? styles.pressed : null}
       >
-      <View style={styles.preview} pointerEvents="none">
+      <View
+        style={[
+          styles.preview,
+          widePreview ? styles.previewWide : styles.previewNarrow,
+        ]}
+        pointerEvents="none"
+      >
         <NativeTagPreviewBackground colors={tagGradient(tag, cardSurface)} />
         {previewRows.length ? previewRows.map((row) => (
-          <View key={row.id} style={styles.previewCell}>
+          <View
+            key={row.id}
+            style={[
+              styles.previewCell,
+              widePreview ? styles.previewCellWide : styles.previewCellNarrow,
+            ]}
+          >
             {row.imageUri ? (
               <Image
                 accessibilityElementsHidden
                 resizeMode="contain"
                 source={{ uri: row.imageUri }}
-                style={styles.previewImage}
+                style={[
+                  widePreview ? styles.previewImageWide : styles.previewImageNarrow,
+                ]}
               />
             ) : null}
             {row.maxKind ? (
@@ -307,9 +332,12 @@ export const NativeTagsPanelScreen = ({
   showHeader = true,
 }: Props) => {
   const light = useColorScheme() === 'light';
-  const background = light ? '#f8fff9' : webCssVarTokens.colors.bgApp;
-  const text = light ? '#405753' : webCssVarTokens.colors.textPrimary;
-  const secondary = light ? '#4b625e' : webCssVarTokens.colors.textSecondary;
+  const palette = light
+    ? collectionParityTokens.colors.light
+    : collectionParityTokens.colors.dark;
+  const background = palette.page;
+  const text = palette.textPrimary;
+  const secondary = palette.textSecondary;
   const [reordering, setReordering] = useState(false);
   const [draftKeys, setDraftKeys] = useState<PokemonTagOrderKey[]>([]);
   const [editingTag, setEditingTag] = useState<CustomTagDefinition | null>(null);
@@ -360,6 +388,7 @@ export const NativeTagsPanelScreen = ({
           activeView={parent === 'caught' ? 'inventory' : 'wishlist'}
           backgroundColor={background}
           collectionCount={collectionCount}
+          inactiveTextColor={palette.headerInactive}
           onViewChange={onViewChange}
           secondaryTextColor={secondary}
           textColor={text}
@@ -482,7 +511,16 @@ export const NativeTagsPanelScreen = ({
 
 const styles = StyleSheet.create({
   screen: { flex: 1 },
-  list: { flexGrow: 1, padding: 20, paddingBottom: 92 },
+  list: {
+    flexGrow: 1,
+    width: '100%',
+    maxWidth:
+      collectionParityTokens.tags.contentMaxWidth
+      + (collectionParityTokens.tags.pageInset * 2),
+    alignSelf: 'center',
+    padding: collectionParityTokens.tags.pageInset,
+    paddingBottom: 92,
+  },
   listHeader: { gap: 12 },
   toolbar: { minHeight: 44, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 10 },
   total: { flex: 1, paddingHorizontal: 2, textAlignVertical: 'center', fontSize: 13, fontWeight: '400' },
@@ -506,8 +544,8 @@ const styles = StyleSheet.create({
   warningBody: { color: '#d9c79f', fontSize: 12, lineHeight: 17 },
   tagCard: {
     overflow: 'hidden',
-    marginVertical: 10,
-    borderRadius: 15,
+    marginVertical: collectionParityTokens.tags.cardMarginVertical,
+    borderRadius: collectionParityTokens.tags.cardRadius,
     shadowColor: '#ffffff',
     shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.1,
@@ -523,32 +561,45 @@ const styles = StyleSheet.create({
   },
   pressed: { opacity: 0.78, transform: [{ scale: 0.99 }] },
   preview: {
-    minHeight: 124,
     flexDirection: 'row',
     flexWrap: 'wrap',
     alignContent: 'center',
-    paddingHorizontal: 12,
-    paddingVertical: 8,
+    paddingVertical: collectionParityTokens.tags.previewBlockInset,
+  },
+  previewNarrow: {
+    minHeight: 94,
+    paddingHorizontal: collectionParityTokens.tags.previewInlineInsetNarrow,
+  },
+  previewWide: {
+    minHeight: 154,
+    paddingHorizontal: 24,
   },
   previewCell: {
     position: 'relative',
-    width: '16.666%',
-    height: 54,
     alignItems: 'center',
     justifyContent: 'center',
     padding: 2,
   },
-  previewImage: { width: '100%', height: '100%' },
+  previewCellNarrow: { width: '16.666%', height: 39 },
+  previewCellWide: { width: '11.111%', height: 69 },
+  previewImageNarrow: {
+    width: collectionParityTokens.tags.previewCellNarrow,
+    height: collectionParityTokens.tags.previewCellNarrow,
+  },
+  previewImageWide: {
+    width: collectionParityTokens.tags.previewCellWide,
+    height: collectionParityTokens.tags.previewCellWide,
+  },
   previewMaxBadge: { position: 'absolute', top: 2, right: 2, width: 13, height: 13 },
   emptyPreview: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   emptyPreviewText: { color: '#525252', fontSize: 15, fontWeight: '500', opacity: 0.9 },
   tagFooter: {
-    minHeight: 64,
+    minHeight: 54,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 10,
-    paddingVertical: 8,
+    paddingHorizontal: collectionParityTokens.tags.footerHorizontalInset,
+    paddingVertical: collectionParityTokens.tags.footerVerticalInset,
   },
   tagIdentity: { minWidth: 0, flex: 1, flexDirection: 'row', alignItems: 'center' },
   tagCopy: { minWidth: 0, flex: 1 },

@@ -1,7 +1,8 @@
-import { StyleSheet } from 'react-native';
+import { Animated, StyleSheet } from 'react-native';
 import { fireEvent, render } from '@testing-library/react-native';
 import {
   NativePokemonHubHeader,
+  resolveNativePokemonHubIndicatorMetrics,
   type NativePokemonHubView,
 } from '../../../../src/features/collection/NativePokemonHubHeader';
 
@@ -56,5 +57,26 @@ describe('NativePokemonHubHeader', () => {
     fireEvent.press(view.getByRole('tab', { name: /wishlist/i }));
 
     expect(onViewChange).toHaveBeenCalledWith('wishlist');
+  });
+
+  it('moves the underline continuously with the page instead of jumping after navigation', () => {
+    const scrollX = new Animated.Value(412);
+    const view = render(
+      <NativePokemonHubHeader
+        activeView="pokemon"
+        backgroundColor="#111"
+        collectionCount={3285}
+        onViewChange={jest.fn()}
+        scrollX={scrollX}
+        secondaryTextColor="#aaa"
+        textColor="#fff"
+      />,
+    );
+    const indicator = view.getByTestId('native-pokemon-hub-indicator');
+    const indicatorStyle = StyleSheet.flatten(indicator.props.style);
+    expect(indicatorStyle.transform[0].translateX).toBeDefined();
+
+    const halfway = resolveNativePokemonHubIndicatorMetrics(412, 1.5);
+    expect(halfway.indicatorTranslateX).toBeCloseTo((392 / 3) * 1.5);
   });
 });

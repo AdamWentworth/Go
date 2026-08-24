@@ -9,7 +9,10 @@ import {
   useWindowDimensions,
 } from 'react-native';
 import { memo, useState } from 'react';
-import { webCssVarTokens } from '@pokemongonexus/shared-ui-tokens';
+import {
+  collectionParityTokens,
+  webCssVarTokens,
+} from '@pokemongonexus/shared-ui-tokens';
 import type {
   CollectionParityCardFixture,
   CollectionParityTheme,
@@ -57,25 +60,27 @@ type NativeCollectionParityFixtureProps = {
 };
 
 const LIGHT = {
-  background: '#f8fff9',
-  text: '#405753',
-  secondaryText: '#4b625e',
-  search: '#e7f3df',
-  searchText: '#405753',
-  tagText: '#405753',
+  background: collectionParityTokens.colors.light.page,
+  text: collectionParityTokens.colors.light.textPrimary,
+  secondaryText: collectionParityTokens.colors.light.textSecondary,
+  headerInactive: collectionParityTokens.colors.light.headerInactive,
+  search: collectionParityTokens.colors.light.searchSurface,
+  searchText: collectionParityTokens.colors.light.searchText,
+  tagText: collectionParityTokens.colors.light.tagTitle,
 };
 
 const DARK = {
   background: webCssVarTokens.colors.bgApp,
   text: webCssVarTokens.colors.textPrimary,
-  secondaryText: webCssVarTokens.colors.textSecondary,
+  secondaryText: collectionParityTokens.colors.dark.textSecondary,
+  headerInactive: collectionParityTokens.colors.dark.headerInactive,
   search: '#fff',
   searchText: '#111',
   tagText: '#fff',
 };
 
-const GRID_GAP = 8;
-const GRID_HORIZONTAL_PADDING = 8;
+const GRID_GAP = collectionParityTokens.grid.gap;
+const GRID_HORIZONTAL_PADDING = collectionParityTokens.grid.horizontalPadding;
 
 const TAG_TONES = {
   caught: {
@@ -289,6 +294,7 @@ export const NativeCollectionParityFixture = ({
           activeView={activeView}
           backgroundColor={palette.background}
           collectionCount={collectionCount}
+          inactiveTextColor={palette.headerInactive}
           onViewChange={(view) => {
             if (view === 'inventory') onTagsPress?.();
             else if (view === 'wishlist') onWishlistPress?.();

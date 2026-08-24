@@ -6,7 +6,7 @@ import type {
   PokemonTagOrderKey,
   UpdateCustomTagRequest,
 } from '@pokemongonexus/shared-contracts/users';
-import { webCssVarTokens } from '@pokemongonexus/shared-ui-tokens';
+import { collectionParityTokens } from '@pokemongonexus/shared-ui-tokens';
 import {
   NativeHorizontalPageSlider,
   type NativeHorizontalPageSliderHandle,
@@ -74,9 +74,12 @@ export const NativeCollectionHubScreen = ({
   const inventoryCount = inventoryTags.find(
     (tag) => tag.key === 'system:caught',
   )?.rows.length ?? 0;
-  const background = light ? '#f8fff9' : webCssVarTokens.colors.bgApp;
-  const text = light ? '#405753' : webCssVarTokens.colors.textPrimary;
-  const secondary = light ? '#4b625e' : webCssVarTokens.colors.textSecondary;
+  const palette = light
+    ? collectionParityTokens.colors.light
+    : collectionParityTokens.colors.dark;
+  const background = palette.page;
+  const text = palette.textPrimary;
+  const secondary = palette.textSecondary;
   const activeIndex = VIEW_ORDER.indexOf(activeView);
   const tagEditingEnabled = Boolean(
     onCreateTag && onDeleteTag && onSaveTagOrder && onUpdateTag,
@@ -222,6 +225,7 @@ export const NativeCollectionHubScreen = ({
         activeView={activeView}
         backgroundColor={background}
         collectionCount={selectedRows.length}
+        inactiveTextColor={palette.headerInactive}
         onViewChange={changeView}
         scrollX={pageScrollX}
         secondaryTextColor={secondary}
