@@ -52,8 +52,9 @@ describe('NativeInstanceDetailScreen', () => {
 
     expect(screen.getByText('Shiny Charizard')).toBeTruthy();
     expect(screen.getByText('Fire Spin')).toBeTruthy();
-    expect(screen.getByText('15')).toBeTruthy();
-    fireEvent.press(screen.getByRole('button', { name: 'Edit in current app' }));
+    expect(screen.getByText('Wanted Pokémon')).toBeTruthy();
+    expect(screen.queryByText('15')).toBeNull();
+    fireEvent.press(screen.getByRole('button', { name: 'Edit Pokémon' }));
     expect(onEditInCurrentApp).toHaveBeenCalledTimes(1);
   });
 

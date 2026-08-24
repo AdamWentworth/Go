@@ -64,6 +64,7 @@ export type NativeCollectionSortDirection = 'ascending' | 'descending';
 export type NativeInstanceDetail = {
   row: NativeCollectionRow;
   instance?: PokemonInstance;
+  targetRows?: NativeCollectionRow[];
   traits: string[];
   stats: { label: string; value: string }[];
   ivs: { label: string; value: number }[];
@@ -845,5 +846,34 @@ export const buildNativeInstanceDetail = (
     instance.mirror ? { label: 'Mirror trade', value: 'Required' } : null,
   ]);
 
-  return { row, instance, traits, stats, ivs, moves: moveRows, provenance, preferences };
+  const excludedTargetIds = instance.is_wanted
+    ? instance.not_trade_list
+    : instance.not_wanted_list;
+  const excluded = excludedTargetIds && typeof excludedTargetIds === 'object'
+    ? excludedTargetIds
+    : {};
+  const targetStatus: NativeCollectionRow['status'] | null = instance.is_wanted
+    ? 'trade'
+    : instance.is_for_trade
+      ? 'wanted'
+      : null;
+  const targetRows = targetStatus == null
+    ? []
+    : buildNativeCollectionRows(instances, catalog, assetOrigin)
+      .filter((candidate) => (
+        candidate.status === targetStatus
+        && excluded[candidate.id] !== true
+      ));
+
+  return {
+    row,
+    instance,
+    targetRows,
+    traits,
+    stats,
+    ivs,
+    moves: moveRows,
+    provenance,
+    preferences,
+  };
 };

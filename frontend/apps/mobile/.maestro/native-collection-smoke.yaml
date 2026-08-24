@@ -116,6 +116,21 @@ tags:
 - takeScreenshot: 06-wanted-instance
 - tapOn: Close
 - assertNotVisible: WANTED CONDITIONS
+- tapOn: TAGS
+- tapOn: "Open For Trade, 3 Pokémon"
+- tapOn: "View Shiny Gigantamax Charizard"
+- assertVisible: FOR TRADE
+- assertVisible: Wanted Pokémon
+- takeScreenshot: 06b-for-trade-instance
+- tapOn: Close
+- tapOn: Clear For Trade tag filter
+- tapOn: TAGS
+- tapOn: "Open Favorites, 3 Pokémon"
+- tapOn: "View Shiny Shadow Venusaur"
+- assertVisible: Shiny Shadow Venusaur
+- assertVisible: Remove Favorite
+- takeScreenshot: 06c-caught-instance
+- tapOn: Close
 - tapOn: Open action menu
 - extendedWaitUntil:
     visible: Quick navigation

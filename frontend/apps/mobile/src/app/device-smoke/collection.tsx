@@ -25,6 +25,7 @@ const row = ({
   mostWanted = false,
   lucky = false,
   maxKind = null,
+  typeIconPaths = [],
 }: {
   id: string;
   pokemonId: number;
@@ -36,6 +37,7 @@ const row = ({
   mostWanted?: boolean;
   lucky?: boolean;
   maxKind?: NativeCollectionRow['maxKind'];
+  typeIconPaths?: string[];
 }): NativeCollectionRow => ({
   id,
   pokemonId,
@@ -46,7 +48,7 @@ const row = ({
   maxKind,
   purified: false,
   lucky,
-  typeIconUris: [],
+  typeIconUris: typeIconPaths.map((path) => `${ASSET_BASE_URL}${path}`),
   status,
   source: 'instance',
   cp,
@@ -62,6 +64,7 @@ const ROWS: NativeCollectionRow[] = [
     imagePath: '/images/shiny_shadow/shiny_shadow_pokemon_3.png',
     status: 'caught',
     favorite: true,
+    typeIconPaths: ['/images/types/grass.png', '/images/types/poison.png'],
   }),
   row({
     id: 'smoke-gmax-charizard',
@@ -71,6 +74,7 @@ const ROWS: NativeCollectionRow[] = [
     status: 'trade',
     maxKind: 'gigantamax',
     lucky: true,
+    typeIconPaths: ['/images/types/fire.png', '/images/types/flying.png'],
   }),
   row({
     id: 'smoke-shadow-typhlosion',
@@ -79,6 +83,7 @@ const ROWS: NativeCollectionRow[] = [
     imagePath: '/images/shiny_shadow/shiny_shadow_pokemon_157.png',
     status: 'caught',
     favorite: true,
+    typeIconPaths: ['/images/types/fire.png'],
   }),
   row({
     id: 'smoke-suicune',
@@ -86,6 +91,7 @@ const ROWS: NativeCollectionRow[] = [
     name: 'Shiny Suicune',
     imagePath: '/images/shiny/shiny_pokemon_245.png',
     status: 'trade',
+    typeIconPaths: ['/images/types/water.png'],
   }),
   row({
     id: 'smoke-metagross',
@@ -94,6 +100,7 @@ const ROWS: NativeCollectionRow[] = [
     imagePath: '/images/shiny/shiny_pokemon_376.png',
     status: 'caught',
     favorite: true,
+    typeIconPaths: ['/images/types/steel.png', '/images/types/psychic.png'],
   }),
   row({
     id: 'smoke-rayquaza',
@@ -101,6 +108,7 @@ const ROWS: NativeCollectionRow[] = [
     name: 'Shiny Rayquaza',
     imagePath: '/images/shiny/shiny_pokemon_384.png',
     status: 'trade',
+    typeIconPaths: ['/images/types/dragon.png', '/images/types/flying.png'],
   }),
   row({
     id: 'smoke-gmax-blastoise',
@@ -111,6 +119,7 @@ const ROWS: NativeCollectionRow[] = [
     cp: null,
     maxKind: 'gigantamax',
     mostWanted: true,
+    typeIconPaths: ['/images/types/water.png'],
   }),
   row({
     id: 'smoke-pikachu',
@@ -119,6 +128,7 @@ const ROWS: NativeCollectionRow[] = [
     imagePath: '/images/shiny/shiny_pokemon_25.png',
     status: 'wanted',
     cp: null,
+    typeIconPaths: ['/images/types/electric.png'],
   }),
   row({
     id: 'smoke-mewtwo',
@@ -128,6 +138,7 @@ const ROWS: NativeCollectionRow[] = [
     status: 'wanted',
     cp: null,
     mostWanted: true,
+    typeIconPaths: ['/images/types/psychic.png'],
   }),
 ];
 
@@ -243,17 +254,40 @@ export default function DeviceSmokeCollectionRoute() {
             cachedAt={null}
             detail={{
               row: openedRow,
+              targetRows: openedRow.status === 'wanted'
+                ? rowsWithStatus('trade')
+                : openedRow.status === 'trade'
+                  ? rowsWithStatus('wanted')
+                  : [],
               traits: openedRow.name.includes('Shiny') ? ['Shiny'] : [],
-              stats: [],
-              ivs: [],
-              moves: [],
+              stats: openedRow.status === 'caught'
+                ? [{ label: 'Level', value: '40' }]
+                : [],
+              ivs: openedRow.status === 'caught'
+                ? [
+                    { label: 'Attack', value: 15 },
+                    { label: 'Defense', value: 12 },
+                    { label: 'HP', value: 13 },
+                  ]
+                : [],
+              moves: openedRow.status === 'caught'
+                ? [
+                    { label: 'Fast move', value: 'Vine Whip' },
+                    { label: 'Charged move', value: 'Frenzy Plant' },
+                  ]
+                : [],
               preferences: openedRow.status === 'wanted'
                 ? [
                     { label: 'Friendship', value: '4/5 hearts' },
                     { label: 'Lucky trade', value: 'Requested' },
                   ]
                 : [],
-              provenance: [],
+              provenance: openedRow.status === 'caught'
+                ? [
+                    { label: 'Caught near', value: 'Burnaby, British Columbia, Canada' },
+                    { label: 'Caught on', value: '2026-08-24' },
+                  ]
+                : [],
             }}
             error={null}
             isLoading={false}
