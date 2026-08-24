@@ -1,15 +1,12 @@
 import { Redirect, useRouter } from 'expo-router';
 import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useNativeSession } from '../../auth/NativeSessionContext';
-import { useNativeCollectionSummaryQuery } from '../../features/collection/collectionQueries';
-import { NativeHomeScreen } from '../../screens/NativeHomeScreen';
 import { theme } from '../../ui/theme';
 
 export default function NativeHomeRoute() {
   const router = useRouter();
   const session = useNativeSession();
-  const { retrySession, status, user, signOut } = session;
-  const summaryQuery = useNativeCollectionSummaryQuery(user?.user_id ?? null);
+  const { retrySession, status, user } = session;
 
   if (status === 'restoring') {
     return (
@@ -44,17 +41,7 @@ export default function NativeHomeRoute() {
   }
 
   if (!user) return <Redirect href="/native/login" />;
-
-  return <NativeHomeScreen
-    username={user.username}
-    summary={summaryQuery.data ?? null}
-    isLoading={summaryQuery.isPending}
-    error={summaryQuery.error instanceof Error ? summaryQuery.error.message : null}
-    onRetry={() => void summaryQuery.refetch()}
-    onOpenNativeCollection={() => router.push('/native/collection')}
-    onOpenCurrentApp={() => router.replace('/web')}
-    onSignOut={() => void signOut()}
-  />;
+  return <Redirect href="/web" />;
 }
 
 const styles = StyleSheet.create({

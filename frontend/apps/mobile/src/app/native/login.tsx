@@ -43,12 +43,12 @@ export default function NativeLoginRoute() {
     );
   }
 
-  if (user) return <Redirect href="/native" />;
+  if (user) return <Redirect href="/web" />;
 
   return (
     <NativeLoginScreen
       onSignIn={signIn}
-      onSignedIn={() => router.replace('/native')}
+      onSignedIn={() => router.replace('/web')}
       onUseCurrentApp={() => router.replace('/web')}
     />
   );
