@@ -2,6 +2,11 @@
 
 Expo mobile shell for Pokémon Go Nexus.
 
+Native workflow replacements are governed by the
+[Native Collection Parity Contract](./COLLECTION_PARITY_CONTRACT.md). The
+canonical web application remains the default until a complete workflow passes
+its automated and manual parity gates.
+
 ## Included baseline
 
 1. Expo + TypeScript shell.
