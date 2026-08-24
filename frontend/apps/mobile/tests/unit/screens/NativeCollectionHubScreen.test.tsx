@@ -1,5 +1,6 @@
 import { fireEvent, render, screen } from '@testing-library/react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
+import type { PokemonInstance } from '@pokemongonexus/shared-contracts/instances';
 import type {
   NativeCollectionRow,
   NativeTagSummary,
@@ -86,6 +87,26 @@ const wishlistTag: NativeTagSummary = {
   rows: [wantedRow],
 };
 
+const caughtInstance = {
+  instance_id: caughtRow.id,
+  variant_id: '0001-shiny',
+  pokemon_id: 1,
+  is_caught: true,
+  is_for_trade: false,
+  is_wanted: false,
+  favorite: true,
+  most_wanted: false,
+  caught_tags: [],
+  wanted_tags: [],
+  registered: true,
+  disabled: false,
+  lucky: false,
+  shadow: false,
+  mega: false,
+  is_mega: false,
+  is_fused: false,
+} as unknown as PokemonInstance;
+
 describe('NativeCollectionHubScreen', () => {
   it('uses one stateful hub for tab changes, tag selection, and opening entries', () => {
     const onOpenEntry = jest.fn();
@@ -99,6 +120,7 @@ describe('NativeCollectionHubScreen', () => {
         catalogRows={[catalogBulbasaur, catalogMewtwo]}
         error={null}
         inventoryTags={[inventoryTag, allCaughtTag]}
+        instances={{}}
         isLoading={false}
         onActionMenuPress={jest.fn()}
         onOpenEntry={onOpenEntry}
@@ -174,6 +196,7 @@ describe('NativeCollectionHubScreen', () => {
           catalogRows={[catalogBulbasaur]}
           error={null}
           inventoryTags={[inventoryTag, allCaughtTag]}
+          instances={{}}
           isLoading={false}
           onActionMenuNavigate={onActionMenuNavigate}
           onActionMenuPress={jest.fn()}
@@ -197,7 +220,7 @@ describe('NativeCollectionHubScreen', () => {
 
   it('selects catalog variants in place and opens the canonical organizer', () => {
     const onOpenEntry = jest.fn();
-    const onOrganizeCatalog = jest.fn().mockResolvedValue({ message: '1 Pokémon added.' });
+    const onOrganizePokemon = jest.fn().mockResolvedValue({ message: '1 Pokémon added.' });
     render(
       <SafeAreaProvider initialMetrics={{
         frame: { x: 0, y: 0, width: 412, height: 915 },
@@ -208,10 +231,11 @@ describe('NativeCollectionHubScreen', () => {
           catalogRows={[catalogBulbasaur, catalogMewtwo]}
           error={null}
           inventoryTags={[inventoryTag, allCaughtTag]}
+          instances={{}}
           isLoading={false}
           onActionMenuPress={jest.fn()}
           onOpenEntry={onOpenEntry}
-          onOrganizeCatalog={onOrganizeCatalog}
+          onOrganizePokemon={onOrganizePokemon}
           onRetry={jest.fn()}
           wishlistTags={[wishlistTag]}
         />
@@ -228,5 +252,46 @@ describe('NativeCollectionHubScreen', () => {
     fireEvent.press(screen.getByRole('button', { name: /Add \(1\)/i }));
     expect(screen.getByRole('header', { name: 'Add Pokémon' })).toBeTruthy();
     expect(screen.getByText('1 selected')).toBeTruthy();
+  });
+
+  it('long-presses an existing instance into the same organizer workflow', () => {
+    const onOpenEntry = jest.fn();
+    render(
+      <SafeAreaProvider initialMetrics={{
+        frame: { x: 0, y: 0, width: 412, height: 915 },
+        insets: { top: 24, right: 0, bottom: 20, left: 0 },
+      }}>
+        <NativeCollectionHubScreen
+          assetBaseUrl="https://pokegonexus.com"
+          catalogRows={[catalogBulbasaur]}
+          error={null}
+          inventoryTags={[inventoryTag, allCaughtTag]}
+          instances={{ [caughtRow.id]: caughtInstance }}
+          isLoading={false}
+          onActionMenuPress={jest.fn()}
+          onOpenEntry={onOpenEntry}
+          onOrganizePokemon={jest.fn().mockResolvedValue({ message: 'Saved.' })}
+          onRetry={jest.fn()}
+          wishlistTags={[wishlistTag]}
+        />
+      </SafeAreaProvider>,
+    );
+
+    fireEvent.press(screen.getByRole('tab', { name: /tags/i }));
+    fireEvent(screen.getByTestId('native-horizontal-page-slider'), 'momentumScrollEnd', {
+      nativeEvent: { contentOffset: { x: 0, y: 0 } },
+    });
+    fireEvent.press(screen.getByRole('button', { name: /Open All Caught/i }));
+    fireEvent(screen.getByTestId('native-horizontal-page-slider'), 'momentumScrollEnd', {
+      nativeEvent: { contentOffset: { x: 412, y: 0 } },
+    });
+    fireEvent(screen.getByRole('button', { name: 'View Shiny Bulbasaur' }), 'longPress');
+
+    expect(onOpenEntry).not.toHaveBeenCalled();
+    expect(screen.getByRole('button', { name: /Organize \(1\)/i })).toBeTruthy();
+    fireEvent.press(screen.getByRole('button', { name: /Organize \(1\)/i }));
+    expect(screen.getByRole('header', { name: 'Organize Pokémon' })).toBeTruthy();
+    expect(screen.getByText('Create Wanted copy')).toBeTruthy();
+    expect(screen.getByText('Transfer selected')).toBeTruthy();
   });
 });

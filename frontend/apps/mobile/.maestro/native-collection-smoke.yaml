@@ -114,6 +114,29 @@ tags:
 - assertVisible: Shiny Gigantamax Charizard
 - assertVisible: Shiny Suicune
 - takeScreenshot: 03-for-trade-glows
+- longPressOn: "View Shiny Gigantamax Charizard"
+- assertVisible: "Organize (1)"
+- tapOn: "Organize (1)"
+- extendedWaitUntil:
+    visible: Organize Pokémon
+    timeout: 10000
+- assertVisible: For Trade
+- assertVisible: Create Wanted copy
+- assertVisible: Transfer selected
+- takeScreenshot: 03b-existing-organizer
+- tapOn: "New inventory tag"
+- extendedWaitUntil:
+    visible: "New Inventory tag"
+    timeout: 10000
+- assertVisible: Tag name
+- takeScreenshot: 03c-organizer-new-tag
+- tapOn: Close tag editor
+- extendedWaitUntil:
+    visible: Organize Pokémon
+    timeout: 10000
+- tapOn: Close Pokémon organizer
+- tapOn:
+    text: ^X$
 - tapOn: Clear Trade tag filter
 - extendedWaitUntil:
     visible: Bulbasaur

@@ -11,7 +11,7 @@ import { runtimeConfig } from '../../config/runtimeConfig';
 import { useNativeSession } from '../../auth/NativeSessionContext';
 import { DEFAULT_NATIVE_TAGS_ENVELOPE } from '../../features/collection/nativeTagsEnvelope';
 import { useNativeTagMutations } from '../../features/collection/useNativeTagMutations';
-import { useNativeCatalogOrganizerMutation } from '../../features/collection/useNativeCatalogOrganizerMutation';
+import { useNativePokemonOrganizerMutation } from '../../features/collection/useNativePokemonOrganizerMutation';
 import { NativeCollectionHubScreen } from '../../screens/NativeCollectionHubScreen';
 
 export default function NativeCollectionRoute() {
@@ -19,7 +19,7 @@ export default function NativeCollectionRoute() {
   const session = useNativeSession();
   const snapshotQuery = useNativeCollectionSnapshotQuery(session.user?.user_id ?? null);
   const tagMutations = useNativeTagMutations(session.user?.user_id ?? 'signed-out');
-  const catalogOrganizer = useNativeCatalogOrganizerMutation(
+  const pokemonOrganizer = useNativePokemonOrganizerMutation(
     session.user?.user_id ?? 'signed-out',
   );
   const instanceRows = useMemo<NativeCollectionRow[]>(() => {
@@ -76,6 +76,7 @@ export default function NativeCollectionRoute() {
       catalogRows={catalogRows}
       error={snapshotQuery.error instanceof Error ? snapshotQuery.error.message : null}
       inventoryTags={inventoryTags}
+      instances={snapshotQuery.data?.instances ?? {}}
       isLoading={snapshotQuery.isPending}
       onActionMenuNavigate={(path) => router.push({
         pathname: '/web',
@@ -83,16 +84,16 @@ export default function NativeCollectionRoute() {
       })}
       onActionMenuPress={() => router.push('/web')}
       onOpenEntry={openEntry}
-      onOrganizeCatalog={(request) => catalogOrganizer.mutateAsync(request)}
+      onOrganizePokemon={(request) => pokemonOrganizer.mutateAsync(request)}
       onRetry={() => void snapshotQuery.refetch()}
       onCreateTag={tagMutations.createTag}
       onDeleteTag={tagMutations.deleteTag}
       onSaveTagOrder={tagMutations.saveOrder}
       onUpdateTag={tagMutations.updateTag}
       isSavingTags={tagMutations.isPending}
-      isOrganizingCatalog={catalogOrganizer.isPending}
-      organizerError={catalogOrganizer.error instanceof Error
-        ? catalogOrganizer.error.message
+      isOrganizingPokemon={pokemonOrganizer.isPending}
+      organizerError={pokemonOrganizer.error instanceof Error
+        ? pokemonOrganizer.error.message
         : null}
       warning={snapshotQuery.data?.tagLoadWarning ?? null}
       wishlistTags={wishlistTags}

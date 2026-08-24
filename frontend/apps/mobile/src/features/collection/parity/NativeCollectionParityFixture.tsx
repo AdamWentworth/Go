@@ -484,6 +484,7 @@ export const NativeCollectionParityFixture = ({
       {selectedIds.size > 0 && onSelectionActionPress ? (
         <View pointerEvents="box-none" style={styles.selectionActionContainer}>
           <Pressable
+            accessibilityLabel={`${selectionAction === 'add' ? 'Add' : 'Organize'} (${selectedIds.size})`}
             accessibilityRole="button"
             onPress={onSelectionActionPress}
             style={styles.selectionActionButton}

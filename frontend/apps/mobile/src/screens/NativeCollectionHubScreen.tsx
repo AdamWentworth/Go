@@ -6,6 +6,7 @@ import type {
   PokemonTagOrderKey,
   UpdateCustomTagRequest,
 } from '@pokemongonexus/shared-contracts/users';
+import type { PokemonInstance } from '@pokemongonexus/shared-contracts/instances';
 import { collectionParityTokens } from '@pokemongonexus/shared-ui-tokens';
 import {
   NativeHorizontalPageSlider,
@@ -23,13 +24,14 @@ import { NativeCollectionParityScreen } from './NativeCollectionParityScreen';
 import { NativeTagsPanelScreen } from './NativeTagsPanelScreen';
 import { NativeActionMenu } from '../components/NativeActionMenu';
 import { NativePokemonOrganizerSheet } from '../features/collection/NativePokemonOrganizerSheet';
-import type { NativeCatalogOrganizerRequest } from '../features/collection/nativeCatalogMutation';
+import type { NativePokemonOrganizerRequest } from '../features/collection/useNativePokemonOrganizerMutation';
 
 const VIEW_ORDER: NativePokemonHubView[] = ['inventory', 'pokemon', 'wishlist'];
 
 type Props = {
   assetBaseUrl: string;
   catalogRows: NativeCollectionRow[];
+  instances: Record<string, PokemonInstance>;
   inventoryTags: NativeTagSummary[];
   wishlistTags: NativeTagSummary[];
   error: string | null;
@@ -44,14 +46,15 @@ type Props = {
   onSaveTagOrder?: (parent: CustomTagParent, tagKeys: PokemonTagOrderKey[]) => Promise<unknown>;
   onUpdateTag?: (tagId: string, request: UpdateCustomTagRequest) => Promise<unknown>;
   isSavingTags?: boolean;
-  onOrganizeCatalog?: (request: NativeCatalogOrganizerRequest) => Promise<{ message: string }>;
-  isOrganizingCatalog?: boolean;
+  onOrganizePokemon?: (request: NativePokemonOrganizerRequest) => Promise<{ message: string }>;
+  isOrganizingPokemon?: boolean;
   organizerError?: string | null;
 };
 
 export const NativeCollectionHubScreen = ({
   assetBaseUrl,
   catalogRows,
+  instances,
   inventoryTags,
   wishlistTags,
   error,
@@ -66,8 +69,8 @@ export const NativeCollectionHubScreen = ({
   onSaveTagOrder,
   onUpdateTag,
   isSavingTags = false,
-  onOrganizeCatalog,
-  isOrganizingCatalog = false,
+  onOrganizePokemon,
+  isOrganizingPokemon = false,
   organizerError = null,
 }: Props) => {
   const light = useColorScheme() === 'light';
@@ -82,10 +85,12 @@ export const NativeCollectionHubScreen = ({
   const sliderRef = useRef<NativeHorizontalPageSliderHandle>(null);
   const [pageScrollX] = useState(() => new Animated.Value(width));
   const selectedRows = selectedTag?.rows ?? catalogRows;
-  const selectedCatalogRows = useMemo(
-    () => selectedRows.filter((row) => row.source === 'catalog' && selectedIds.has(row.id)),
+  const selectedOrganizerRows = useMemo(
+    () => selectedRows.filter((row) => selectedIds.has(row.id)),
     [selectedIds, selectedRows],
   );
+  const selectedRowsAreCatalog = selectedOrganizerRows.length > 0
+    && selectedOrganizerRows.every((row) => row.source === 'catalog');
   const inventoryCount = inventoryTags.find(
     (tag) => tag.key === 'system:caught',
   )?.rows.length ?? 0;
@@ -135,7 +140,7 @@ export const NativeCollectionHubScreen = ({
   }, [onOpenEntry, selectedIds.size, selectedRows, toggleSelection]);
   const longPressEntry = useCallback((entryId: string) => {
     const row = selectedRows.find((candidate) => candidate.id === entryId);
-    if (row?.source === 'catalog') toggleSelection(entryId);
+    if (row) toggleSelection(entryId);
   }, [selectedRows, toggleSelection]);
 
   const clearTag = useCallback(() => {
@@ -208,11 +213,9 @@ export const NativeCollectionHubScreen = ({
       showHeader={false}
       selectedIds={selectedIds}
       onClearSelection={() => setSelectedIds(new Set())}
-      onSelectAll={() => setSelectedIds(new Set(
-        selectedRows.filter((row) => row.source === 'catalog').map((row) => row.id),
-      ))}
+      onSelectAll={() => setSelectedIds(new Set(selectedRows.map((row) => row.id)))}
       onSelectionActionPress={() => setOrganizerOpen(true)}
-      selectionAction="add"
+      selectionAction={selectedRowsAreCatalog ? 'add' : 'organize'}
     />
   ), [
     assetBaseUrl,
@@ -228,6 +231,7 @@ export const NativeCollectionHubScreen = ({
     selectedRows,
     selectedTag,
     selectedIds,
+    selectedRowsAreCatalog,
     longPressEntry,
   ]);
   const wishlistPanel = useMemo(() => (
@@ -286,9 +290,7 @@ export const NativeCollectionHubScreen = ({
         selectionBackgroundColor={light ? '#e3f7dc' : '#34807d'}
         selectionCount={selectedIds.size}
         onClearSelection={() => setSelectedIds(new Set())}
-        onSelectAll={() => setSelectedIds(new Set(
-          selectedRows.filter((row) => row.source === 'catalog').map((row) => row.id),
-        ))}
+        onSelectAll={() => setSelectedIds(new Set(selectedRows.map((row) => row.id)))}
         secondaryTextColor={secondary}
         textColor={text}
       />
@@ -320,14 +322,15 @@ export const NativeCollectionHubScreen = ({
           visible
         />
       ) : null}
-      {onOrganizeCatalog && organizerOpen && selectedCatalogRows.length > 0 ? (
+      {onOrganizePokemon && organizerOpen && selectedOrganizerRows.length > 0 ? (
         <NativePokemonOrganizerSheet
           error={organizerError}
           inventoryTags={inventoryTags}
-          isSaving={isOrganizingCatalog}
+          instances={instances}
+          isSaving={isOrganizingPokemon}
           onApply={async (request) => {
             try {
-              const result = await onOrganizeCatalog(request);
+              const result = await onOrganizePokemon(request);
               setOrganizerOpen(false);
               setSelectedIds(new Set());
               setOperationNotice(result.message);
@@ -335,8 +338,9 @@ export const NativeCollectionHubScreen = ({
               // The mutation error is rendered inside the still-open organizer.
             }
           }}
+          onCreateTag={onCreateTag}
           onClose={() => setOrganizerOpen(false)}
-          rows={selectedCatalogRows}
+          rows={selectedOrganizerRows}
           visible
           wishlistTags={wishlistTags}
         />

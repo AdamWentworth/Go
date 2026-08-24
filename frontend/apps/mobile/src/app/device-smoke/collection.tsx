@@ -2,6 +2,7 @@ import { Redirect } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { Modal } from 'react-native';
 import type { BasePokemon } from '@pokemongonexus/shared-contracts/pokemon';
+import type { PokemonInstance } from '@pokemongonexus/shared-contracts/instances';
 import type {
   NativeCollectionRow,
   NativeTagSummary,
@@ -202,6 +203,26 @@ const WISHLIST_TAGS: NativeTagSummary[] = [
   },
 ];
 
+const SMOKE_INSTANCES = Object.fromEntries(ROWS.map((entry) => [entry.id, {
+  instance_id: entry.id,
+  variant_id: `${String(entry.pokemonId).padStart(4, '0')}-default`,
+  pokemon_id: entry.pokemonId,
+  is_caught: entry.status !== 'wanted',
+  is_for_trade: entry.status === 'trade',
+  is_wanted: entry.status === 'wanted',
+  favorite: entry.favorite,
+  most_wanted: entry.mostWanted,
+  caught_tags: entry.name.includes('Shadow') ? ['shadow-shinies'] : [],
+  wanted_tags: [],
+  registered: true,
+  disabled: false,
+  lucky: false,
+  shadow: entry.name.includes('Shadow'),
+  mega: false,
+  is_mega: false,
+  is_fused: false,
+} as unknown as PokemonInstance]));
+
 export default function DeviceSmokeCollectionRoute() {
   const [openedRow, setOpenedRow] = useState<NativeCollectionRow | null>(null);
   const [catalogRows, setCatalogRows] = useState<NativeCollectionRow[]>([]);
@@ -238,13 +259,14 @@ export default function DeviceSmokeCollectionRoute() {
         catalogRows={catalogRows}
         error={catalogError}
         inventoryTags={INVENTORY_TAGS}
+        instances={SMOKE_INSTANCES}
         isLoading={catalogLoading}
         onActionMenuPress={() => undefined}
         onCreateTag={async () => undefined}
         onDeleteTag={async () => undefined}
         onOpenEntry={setOpenedRow}
-        onOrganizeCatalog={async (request) => ({
-          message: `${request.variantIds.length} Pokémon organized in the device fixture.`,
+        onOrganizePokemon={async () => ({
+          message: 'Pokémon organized in the device fixture.',
         })}
         onRetry={() => undefined}
         onSaveTagOrder={async () => undefined}
