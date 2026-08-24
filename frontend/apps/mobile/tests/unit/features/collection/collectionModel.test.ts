@@ -5,6 +5,7 @@ import {
   buildNativeInstanceDetail,
   filterNativeCollectionRows,
   resolveNativeInstanceImage,
+  sortNativeCollectionRows,
 } from '../../../../src/features/collection/collectionModel';
 
 const instance = (patch: Partial<PokemonInstance>): PokemonInstance => ({
@@ -117,8 +118,70 @@ describe('native collection model', () => {
     expect(filterNativeCollectionRows(rows, 'wanted', '')).toEqual([
       expect.objectContaining({ id: 'wanted', mostWanted: true }),
     ]);
+    expect(filterNativeCollectionRows(rows, 'favorites', '')).toEqual([
+      expect.objectContaining({ id: 'caught', favorite: true }),
+    ]);
+    expect(filterNativeCollectionRows(rows, 'most-wanted', '')).toEqual([
+      expect.objectContaining({ id: 'wanted', mostWanted: true }),
+    ]);
     expect(filterNativeCollectionRows(rows, 'all', '0006')).toHaveLength(0);
     expect(filterNativeCollectionRows(rows, 'all', '6')).toHaveLength(2);
+  });
+
+  it('preserves costume names, type icons, and the costume-specific location background', () => {
+    const presentationPokemon = {
+      ...pokemon,
+      type_1_icon: '/images/types/fire.png',
+      type_2_icon: '/images/types/flying.png',
+      costumes: [{
+        costume_id: 22,
+        name: 'detective_hat',
+        image_url: '/images/detective-charizard.png',
+        image_url_shiny: '/images/shiny-detective-charizard.png',
+      }],
+      backgrounds: [
+        { background_id: 9, costume_id: null, image_url: '/images/generic-location.png' },
+        { background_id: 9, costume_id: 22, image_url: '/images/detective-location.png' },
+      ],
+    } as unknown as BasePokemon;
+
+    const rows = buildNativeCollectionRows({
+      detective: instance({
+        instance_id: 'detective',
+        shiny: true,
+        costume_id: 22,
+        location_card: '9',
+      }),
+    }, [presentationPokemon], 'https://pokegonexus.com');
+
+    expect(rows[0]).toEqual(expect.objectContaining({
+      name: 'Shiny Detective Hat Charizard',
+      imageUri: 'https://pokegonexus.com/images/shiny-detective-charizard.png',
+      locationBackgroundUri: 'https://pokegonexus.com/images/detective-location.png',
+      typeIconUris: [
+        'https://pokegonexus.com/images/types/fire.png',
+        'https://pokegonexus.com/images/types/flying.png',
+      ],
+    }));
+  });
+
+  it('sorts a copy of real collection rows without mutating query data', () => {
+    const rows = buildNativeCollectionRows({
+      charizard: instance({ instance_id: 'charizard', cp: 2500, favorite: false }),
+      favorite: instance({ instance_id: 'favorite', nickname: 'Ace', cp: 1500, favorite: true }),
+    }, [pokemon], 'https://pokegonexus.com');
+    const originalOrder = rows.map((row) => row.id);
+
+    expect(sortNativeCollectionRows(rows, 'name', 'ascending').map((row) => row.id)).toEqual([
+      'favorite',
+      'charizard',
+    ]);
+    expect(sortNativeCollectionRows(rows, 'cp', 'descending').map((row) => row.id)).toEqual([
+      'charizard',
+      'favorite',
+    ]);
+    expect(sortNativeCollectionRows(rows, 'favorite', 'descending')[0].id).toBe('favorite');
+    expect(rows.map((row) => row.id)).toEqual(originalOrder);
   });
 
   it('builds a native detail model from shared instance identity and move metadata', () => {

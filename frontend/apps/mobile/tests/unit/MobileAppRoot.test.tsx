@@ -25,7 +25,7 @@ describe('MobileAppRoot', () => {
     expect(screen.queryByText('Your collection')).toBeNull();
   });
 
-  it('opens only the isolated collection fixture from the parity lab', () => {
+  it('opens the functional native collection slice from the parity lab', () => {
     const onOpenCollectionParityCandidate = jest.fn();
     render(
       <MobileAppRoot
@@ -34,7 +34,7 @@ describe('MobileAppRoot', () => {
       />,
     );
 
-    fireEvent.press(screen.getByText('Review collection shell'));
+    fireEvent.press(screen.getByText('Review native collection'));
     expect(onOpenCollectionParityCandidate).toHaveBeenCalledTimes(1);
   });
 

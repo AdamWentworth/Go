@@ -5,7 +5,13 @@ import type {
 } from '@pokemongonexus/shared-contracts/pokemon';
 import { resolveInstanceCollectionKey } from '@pokemongonexus/shared-domain/instances';
 
-export type NativeCollectionFilter = 'all' | 'caught' | 'trade' | 'wanted';
+export type NativeCollectionFilter =
+  | 'all'
+  | 'caught'
+  | 'trade'
+  | 'wanted'
+  | 'favorites'
+  | 'most-wanted';
 
 export type NativeCollectionRow = {
   id: string;
@@ -13,11 +19,19 @@ export type NativeCollectionRow = {
   pokedexNumber: number;
   name: string;
   imageUri: string | null;
-  status: Exclude<NativeCollectionFilter, 'all'>;
+  locationBackgroundUri: string | null;
+  maxKind: 'dynamax' | 'gigantamax' | null;
+  purified: boolean;
+  lucky: boolean;
+  typeIconUris: string[];
+  status: 'caught' | 'trade' | 'wanted';
   cp: number | null;
   favorite: boolean;
   mostWanted: boolean;
 };
+
+export type NativeCollectionSort = 'number' | 'name' | 'cp' | 'favorite';
+export type NativeCollectionSortDirection = 'ascending' | 'descending';
 
 export type NativeInstanceDetail = {
   row: NativeCollectionRow;
@@ -80,9 +94,7 @@ export const resolveNativeInstanceImage = (
   }
 
   if (instance.is_mega || instance.mega) {
-    const mega = pokemon.megaEvolutions?.find(
-      (entry) => !instance.mega_form || entry.form?.toLowerCase() === instance.mega_form.toLowerCase(),
-    ) ?? pokemon.megaEvolutions?.[0];
+    const mega = activeMega(instance, pokemon);
     return firstString(
       instance.shiny ? mega?.image_url_shiny : null,
       mega?.image_url,
@@ -90,10 +102,8 @@ export const resolveNativeInstanceImage = (
     );
   }
 
-  if (instance.is_fused && instance.fusion_form) {
-    const fusion = pokemon.fusion?.find(
-      (entry) => entry.name.toLowerCase() === instance.fusion_form?.toLowerCase(),
-    );
+  if (instance.is_fused) {
+    const fusion = activeFusion(instance, pokemon);
     return firstString(
       instance.shiny ? fusion?.image_url_shiny : null,
       fusion?.image_url,
@@ -102,9 +112,7 @@ export const resolveNativeInstanceImage = (
   }
 
   if (instance.crown) {
-    const crown = pokemon.crownForms?.find(
-      (entry) => entry.form?.toLowerCase() === instance.fusion_form?.toLowerCase(),
-    ) ?? pokemon.crownForms?.[0];
+    const crown = activeCrown(instance, pokemon);
     return firstString(
       instance.shiny ? crown?.image_url_shiny : null,
       crown?.image_url,
@@ -143,14 +151,100 @@ const statusForInstance = (
   return null;
 };
 
+const normalizeFormToken = (value: string | null | undefined): string =>
+  String(value ?? '')
+    .trim()
+    .toLowerCase()
+    .replace(/[_-]+/g, ' ')
+    .replace(/\s+/g, ' ');
+
+const formatVariantLabel = (value: string): string =>
+  value
+    .trim()
+    .split(/[_-]+/)
+    .filter(Boolean)
+    .map((word) => `${word.charAt(0).toUpperCase()}${word.slice(1).toLowerCase()}`)
+    .join(' ');
+
+function activeFusion(instance: PokemonInstance, pokemon: BasePokemon) {
+  if (!instance.is_fused) return undefined;
+  const normalizedForm = normalizeFormToken(instance.fusion_form);
+  if (normalizedForm) {
+    return pokemon.fusion?.find(
+      (entry) => normalizeFormToken(entry.name) === normalizedForm,
+    ) ?? pokemon.fusion?.[0];
+  }
+  const storedId = Number(instance.fusion?.fusion_id ?? instance.fusion?.id);
+  return pokemon.fusion?.find((entry) => entry.fusion_id === storedId) ?? pokemon.fusion?.[0];
+}
+
+function activeMega(instance: PokemonInstance, pokemon: BasePokemon) {
+  if (!instance.is_mega && !instance.mega) return undefined;
+  const normalizedForm = normalizeFormToken(instance.mega_form);
+  return pokemon.megaEvolutions?.find(
+    (entry) => normalizeFormToken(entry.form) === normalizedForm,
+  ) ?? pokemon.megaEvolutions?.[0];
+}
+
+function activeCrown(instance: PokemonInstance, pokemon: BasePokemon) {
+  if (!instance.crown) return undefined;
+  const normalizedForm = normalizeFormToken(instance.fusion_form);
+  return pokemon.crownForms?.find((entry) =>
+    normalizeFormToken(entry.display_form) === normalizedForm ||
+    normalizeFormToken(entry.form) === normalizedForm,
+  ) ?? pokemon.crownForms?.[0];
+}
+
 const displayName = (instance: PokemonInstance, pokemon: BasePokemon): string => {
   if (instance.nickname?.trim()) return instance.nickname.trim();
+
+  const fusion = activeFusion(instance, pokemon);
+  if (fusion) return `${instance.shiny ? 'Shiny ' : ''}${fusion.name}`;
+
+  const crown = activeCrown(instance, pokemon);
+  if (crown) {
+    const label = crown.display_form?.trim() || crown.form?.trim();
+    return `${instance.shiny ? 'Shiny ' : ''}${label ? `${label} ` : ''}${pokemon.name}`;
+  }
+
+  const mega = activeMega(instance, pokemon);
+  if (mega) {
+    const kind = mega.primal ? 'Primal' : 'Mega';
+    const suffix = mega.form?.trim() ? ` ${mega.form.trim()}` : '';
+    return `${instance.shiny ? 'Shiny ' : ''}${kind} ${pokemon.name}${suffix}`;
+  }
+
+  const costume = instance.costume_id == null
+    ? undefined
+    : pokemon.costumes?.find((entry) => entry.costume_id === instance.costume_id);
   const traits = [
     instance.shiny ? 'Shiny' : null,
     instance.shadow ? 'Shadow' : null,
     instance.gigantamax ? 'Gigantamax' : null,
+    !instance.gigantamax && instance.dynamax ? 'Dynamax' : null,
+    costume?.name ? formatVariantLabel(costume.name) : null,
   ].filter(Boolean);
   return [...traits, pokemon.name].join(' ');
+};
+
+const resolveTypeIcons = (
+  instance: PokemonInstance,
+  pokemon: BasePokemon,
+): string[] => {
+  const fusion = activeFusion(instance, pokemon);
+  const crown = activeCrown(instance, pokemon);
+  const mega = activeMega(instance, pokemon);
+  const variantTypes = fusion
+    ? [fusion.type1_name, fusion.type2_name]
+    : crown
+      ? [crown.type1_name, crown.type2_name]
+      : mega
+        ? [mega.type1_name, mega.type2_name]
+        : null;
+  if (!variantTypes) return [pokemon.type_1_icon, pokemon.type_2_icon].filter(Boolean);
+  return variantTypes
+    .filter((type): type is string => Boolean(type?.trim()))
+    .map((type) => `/images/types/${type.trim().toLowerCase()}.png`);
 };
 
 const absoluteImageUri = (image: string | null, assetOrigin: string): string | null => {
@@ -160,6 +254,25 @@ const absoluteImageUri = (image: string | null, assetOrigin: string): string | n
   } catch {
     return null;
   }
+};
+
+const resolveLocationBackgroundImage = (
+  instance: PokemonInstance,
+  pokemon: BasePokemon,
+): string | null => {
+  if (instance.location_card == null || instance.location_card === '') return null;
+  const backgroundId = Number(instance.location_card);
+  if (!Number.isFinite(backgroundId)) return null;
+  const candidates = pokemon.backgrounds?.filter(
+    (background) => Number(background.background_id) === backgroundId,
+  ) ?? [];
+  if (candidates.length === 0) return null;
+
+  const exactCostume = candidates.find(
+    (background) => Number(background.costume_id ?? 0) === Number(instance.costume_id ?? 0),
+  );
+  const generic = candidates.find((background) => background.costume_id == null);
+  return (exactCostume ?? generic ?? candidates[0])?.image_url ?? null;
 };
 
 export const buildNativeCollectionRows = (
@@ -175,12 +288,29 @@ export const buildNativeCollectionRows = (
       const status = statusForInstance(instance);
       const pokemon = pokemonById.get(instance.pokemon_id);
       if (!status || !pokemon) return [];
+      const typeIconUris = resolveTypeIcons(instance, pokemon)
+        .map((icon) => absoluteImageUri(icon, assetOrigin))
+        .filter((icon): icon is string => Boolean(icon));
       return [{
         id: instance.instance_id ?? key,
         pokemonId: instance.pokemon_id,
         pokedexNumber: pokemon.pokedex_number,
         name: displayName(instance, pokemon),
         imageUri: absoluteImageUri(resolveNativeInstanceImage(instance, pokemon), assetOrigin),
+        locationBackgroundUri: absoluteImageUri(
+          resolveLocationBackgroundImage(instance, pokemon),
+          assetOrigin,
+        ),
+        maxKind: instance.gigantamax
+          ? 'gigantamax'
+          : instance.dynamax
+            ? 'dynamax'
+            : null,
+        purified: instance.purified,
+        lucky: instance.lucky || (
+          status === 'wanted' && instance.pref_lucky
+        ),
+        typeIconUris,
         status,
         cp: instance.cp,
         favorite: instance.favorite,
@@ -199,11 +329,46 @@ export const filterNativeCollectionRows = (
 ): NativeCollectionRow[] => {
   const normalizedQuery = query.trim().toLowerCase();
   return rows.filter((row) =>
-    (filter === 'all' || row.status === filter) &&
+    (filter === 'all' ||
+      row.status === filter ||
+      (filter === 'favorites' && row.favorite) ||
+      (filter === 'most-wanted' && row.status === 'wanted' && row.mostWanted)) &&
     (!normalizedQuery ||
       row.name.toLowerCase().includes(normalizedQuery) ||
       String(row.pokedexNumber).includes(normalizedQuery)),
   );
+};
+
+const compareNullableNumber = (
+  left: number | null,
+  right: number | null,
+): number => {
+  if (left == null && right == null) return 0;
+  if (left == null) return 1;
+  if (right == null) return -1;
+  return left - right;
+};
+
+export const sortNativeCollectionRows = (
+  rows: NativeCollectionRow[],
+  sort: NativeCollectionSort,
+  direction: NativeCollectionSortDirection,
+): NativeCollectionRow[] => {
+  const multiplier = direction === 'ascending' ? 1 : -1;
+  return [...rows].sort((left, right) => {
+    let comparison = 0;
+    if (sort === 'name') comparison = left.name.localeCompare(right.name);
+    if (sort === 'cp') {
+      const nullableComparison = compareNullableNumber(left.cp, right.cp);
+      if (left.cp == null || right.cp == null) return nullableComparison;
+      comparison = nullableComparison;
+    }
+    if (sort === 'favorite') comparison = Number(left.favorite) - Number(right.favorite);
+    if (sort === 'number') comparison = left.pokedexNumber - right.pokedexNumber;
+
+    if (comparison !== 0) return comparison * multiplier;
+    return left.pokedexNumber - right.pokedexNumber || left.name.localeCompare(right.name);
+  });
 };
 
 const formatNumber = (value: number): string =>

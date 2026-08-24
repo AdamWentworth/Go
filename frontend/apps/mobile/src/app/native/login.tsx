@@ -1,4 +1,4 @@
-import { Redirect, useRouter } from 'expo-router';
+import { Redirect, useLocalSearchParams, useRouter } from 'expo-router';
 import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useNativeSession } from '../../auth/NativeSessionContext';
 import { NativeLoginScreen } from '../../screens/NativeLoginScreen';
@@ -6,7 +6,14 @@ import { theme } from '../../ui/theme';
 
 export default function NativeLoginRoute() {
   const router = useRouter();
+  const params = useLocalSearchParams<{ returnTo?: string | string[] }>();
   const { retrySession, signIn, status, user } = useNativeSession();
+  const requestedReturnTo = Array.isArray(params.returnTo)
+    ? params.returnTo[0]
+    : params.returnTo;
+  const returnTo = requestedReturnTo === '/native/collection'
+    ? '/native/collection' as const
+    : '/web' as const;
 
   if (status === 'restoring') {
     return (
@@ -43,12 +50,12 @@ export default function NativeLoginRoute() {
     );
   }
 
-  if (user) return <Redirect href="/web" />;
+  if (user) return <Redirect href={returnTo} />;
 
   return (
     <NativeLoginScreen
       onSignIn={signIn}
-      onSignedIn={() => router.replace('/web')}
+      onSignedIn={() => router.replace(returnTo)}
       onUseCurrentApp={() => router.replace('/web')}
     />
   );

@@ -1,4 +1,5 @@
 import {
+  ActivityIndicator,
   FlatList,
   Image,
   Pressable,
@@ -17,10 +18,24 @@ import { COLLECTION_PARITY_FIXTURES } from './collectionParityFixtures';
 
 type NativeCollectionParityFixtureProps = {
   assetBaseUrl?: string;
-  activeTag?: string;
+  activeTag?: string | null;
   cards?: CollectionParityCardFixture[];
   collectionCount?: number;
   customTagColor?: string;
+  error?: string | null;
+  isLoading?: boolean;
+  onActionMenuPress?: () => void;
+  onCardPress?: (card: CollectionParityCardFixture) => void;
+  onClearTag?: () => void;
+  onQueryChange?: (query: string) => void;
+  onRetry?: () => void;
+  onSortPress?: () => void;
+  onTagsPress?: () => void;
+  onWishlistPress?: () => void;
+  query?: string;
+  sortDirection?: 'ascending' | 'descending';
+  sortIconPath?: string;
+  sortLabel?: string;
   tagCanClear?: boolean;
   tagTone?: 'caught' | 'trade' | 'favorites' | 'wanted' | 'most-wanted' | 'custom';
   theme?: CollectionParityTheme;
@@ -92,18 +107,22 @@ const TAG_TONES = {
 const customTagSurface = (color: string): string =>
   /^#[0-9a-f]{6}$/i.test(color) ? `${color}2e` : TAG_TONES.custom.surface;
 
-const toAssetUrl = (baseUrl: string, path: string): string =>
-  `${baseUrl.replace(/\/$/, '')}/${path.replace(/^\//, '')}`;
+const toAssetUrl = (baseUrl: string, path: string): string => {
+  if (/^https?:\/\//i.test(path)) return path;
+  return `${baseUrl.replace(/\/$/, '')}/${path.replace(/^\//, '')}`;
+};
 
 const CollectionParityCard = ({
   assetBaseUrl,
   card,
   cardWidth,
+  onPress,
   theme,
 }: {
   assetBaseUrl: string;
   card: CollectionParityCardFixture;
   cardWidth: number;
+  onPress?: () => void;
   theme: CollectionParityTheme;
 }) => {
   const palette = theme === 'light' ? LIGHT : DARK;
@@ -111,6 +130,7 @@ const CollectionParityCard = ({
     <Pressable
       accessibilityLabel={`View ${card.name}`}
       accessibilityRole="button"
+      onPress={onPress}
       style={[styles.card, { width: cardWidth }]}
       testID={`parity-card-${card.id}`}
     >
@@ -218,6 +238,20 @@ export const NativeCollectionParityFixture = ({
   cards = COLLECTION_PARITY_FIXTURES,
   collectionCount = 168,
   customTagColor = TAG_TONES.custom.accent,
+  error = null,
+  isLoading = false,
+  onActionMenuPress,
+  onCardPress,
+  onClearTag,
+  onQueryChange,
+  onRetry,
+  onSortPress,
+  onTagsPress,
+  onWishlistPress,
+  query = '',
+  sortDirection = 'ascending',
+  sortIconPath = '/images/sorting/number.png',
+  sortLabel = 'Sort by Pokédex number ascending',
   tagCanClear = true,
   tagTone = 'favorites',
   theme = 'dark',
@@ -246,11 +280,13 @@ export const NativeCollectionParityFixture = ({
         accessibilityRole="tablist"
         style={[styles.header, { backgroundColor: palette.background }]}
       >
-        <Pressable accessibilityRole="tab" style={styles.tab}>
+        <Pressable accessibilityRole="tab" onPress={onTagsPress} style={styles.tab}>
           <Text style={[styles.tabText, { color: palette.secondaryText }]}>TAGS</Text>
-          <Text style={[styles.tabSubtext, { color: palette.secondaryText }]}>
-            ({activeTag.toUpperCase()})
-          </Text>
+          {activeTag ? (
+            <Text style={[styles.tabSubtext, { color: palette.secondaryText }]}>
+              ({activeTag.toUpperCase()})
+            </Text>
+          ) : null}
         </Pressable>
         <Pressable
           accessibilityRole="tab"
@@ -263,7 +299,7 @@ export const NativeCollectionParityFixture = ({
           </Text>
           <View style={[styles.activeUnderline, { backgroundColor: palette.text }]} />
         </Pressable>
-        <Pressable accessibilityRole="tab" style={styles.tab}>
+        <Pressable accessibilityRole="tab" onPress={onWishlistPress} style={styles.tab}>
           <Text style={[styles.tabText, { color: palette.secondaryText }]}>WISHLIST</Text>
         </Pressable>
       </View>
@@ -285,42 +321,75 @@ export const NativeCollectionParityFixture = ({
               />
               <TextInput
                 accessibilityLabel="Search"
-                editable={false}
+                autoCapitalize="none"
+                editable={Boolean(onQueryChange)}
+                onChangeText={onQueryChange}
                 placeholder="Search"
                 placeholderTextColor={palette.searchText}
                 style={[styles.searchInput, { color: palette.searchText }]}
+                value={query}
               />
             </View>
-            <View
-              style={[
-                styles.activeTagChip,
-                {
-                  backgroundColor: tagColors.surface,
-                  borderColor: tagColors.accent,
-                  paddingRight: tagCanClear ? 5 : 9,
-                },
-              ]}
-            >
-              {tagTone === 'favorites' ? (
-                <Text accessibilityLabel="Favorites tag" style={styles.tagStar}>★</Text>
-              ) : (
-                <View
-                  accessibilityElementsHidden
-                  style={[styles.tagDot, { backgroundColor: tagColors.accent }]}
-                />
-              )}
-              <Text style={[styles.activeTagText, { color: palette.tagText }]}>
-                {activeTag}
-              </Text>
-              {tagCanClear ? (
-                <View
-                  accessibilityLabel={`Clear ${activeTag} tag filter`}
-                  style={[styles.clearTag, { backgroundColor: tagColors.accent }]}
-                >
-                  <Text style={[styles.clearTagText, { color: tagColors.contrast }]}>×</Text>
-                </View>
-              ) : null}
-            </View>
+            {activeTag ? (
+              <View
+                style={[
+                  styles.activeTagChip,
+                  {
+                    backgroundColor: tagColors.surface,
+                    borderColor: tagColors.accent,
+                    paddingRight: tagCanClear ? 5 : 9,
+                  },
+                ]}
+              >
+                {tagTone === 'favorites' ? (
+                  <Text accessibilityLabel="Favorites tag" style={styles.tagStar}>★</Text>
+                ) : (
+                  <View
+                    accessibilityElementsHidden
+                    style={[styles.tagDot, { backgroundColor: tagColors.accent }]}
+                  />
+                )}
+                <Text style={[styles.activeTagText, { color: palette.tagText }]}>
+                  {activeTag}
+                </Text>
+                {tagCanClear ? (
+                  <Pressable
+                    accessibilityLabel={`Clear ${activeTag} tag filter`}
+                    accessibilityRole="button"
+                    onPress={onClearTag}
+                    style={[styles.clearTag, { backgroundColor: tagColors.accent }]}
+                  >
+                    <Text style={[styles.clearTagText, { color: tagColors.contrast }]}>×</Text>
+                  </Pressable>
+                ) : null}
+              </View>
+            ) : null}
+            {error ? (
+              <View accessibilityRole="alert" style={styles.errorCard}>
+                <Text style={[styles.errorTitle, { color: palette.text }]}>Collection unavailable</Text>
+                <Text style={[styles.errorBody, { color: palette.secondaryText }]}>{error}</Text>
+                {onRetry ? (
+                  <Pressable accessibilityRole="button" onPress={onRetry} style={styles.retryButton}>
+                    <Text style={styles.retryButtonText}>Retry</Text>
+                  </Pressable>
+                ) : null}
+              </View>
+            ) : null}
+          </View>
+        )}
+        ListEmptyComponent={(
+          <View style={styles.emptyState}>
+            {isLoading ? (
+              <>
+                <ActivityIndicator color="#34807d" size="large" />
+                <Text style={[styles.emptyTitle, { color: palette.text }]}>Loading your collection…</Text>
+              </>
+            ) : !error ? (
+              <>
+                <Text style={[styles.emptyTitle, { color: palette.text }]}>No Pokémon found</Text>
+                <Text style={[styles.emptyBody, { color: palette.secondaryText }]}>Try another search or tag.</Text>
+              </>
+            ) : null}
           </View>
         )}
         renderItem={({ item }) => (
@@ -328,22 +397,23 @@ export const NativeCollectionParityFixture = ({
             assetBaseUrl={assetBaseUrl}
             card={item}
             cardWidth={cardWidth}
+            onPress={onCardPress ? () => onCardPress(item) : undefined}
             theme={theme}
           />
         )}
       />
 
-      <View
-        accessibilityLabel="Sort by Pokédex number ascending"
-        accessible
-        pointerEvents="none"
+      <Pressable
+        accessibilityLabel={sortLabel}
+        accessibilityRole="button"
+        onPress={onSortPress}
         style={styles.sortAnchor}
       >
         <View style={[styles.sortCircle, styles.sortTypeCircle]}>
           <View style={styles.sortInnerRing} />
           <Image
             resizeMode="contain"
-            source={{ uri: toAssetUrl(assetBaseUrl, '/images/sorting/number.png') }}
+            source={{ uri: toAssetUrl(assetBaseUrl, sortIconPath) }}
             style={styles.sortTypeImage}
           />
         </View>
@@ -352,19 +422,27 @@ export const NativeCollectionParityFixture = ({
           <Image
             resizeMode="contain"
             source={{ uri: toAssetUrl(assetBaseUrl, '/images/sorting/arrow.png') }}
-            style={styles.sortArrowImage}
+            style={[
+              styles.sortArrowImage,
+              sortDirection === 'descending' ? styles.sortArrowDescending : null,
+            ]}
           />
         </View>
-      </View>
+      </Pressable>
 
-      <View pointerEvents="none" style={styles.actionMenuAnchor}>
+      <Pressable
+        accessibilityLabel="Open action menu"
+        accessibilityRole="button"
+        onPress={onActionMenuPress}
+        style={styles.actionMenuAnchor}
+      >
         <Image
-          accessibilityLabel="Open action menu"
+          accessibilityElementsHidden
           resizeMode="contain"
           source={{ uri: toAssetUrl(assetBaseUrl, '/images/balls/pokeball.png') }}
           style={styles.actionMenuBall}
         />
-      </View>
+      </Pressable>
     </View>
   );
 };
@@ -445,6 +523,35 @@ const styles = StyleSheet.create({
     backgroundColor: '#ffd45a',
   },
   clearTagText: { color: '#111', fontSize: 18, fontWeight: '900', lineHeight: 19 },
+  errorCard: {
+    width: '92%',
+    gap: 7,
+    marginTop: 12,
+    borderWidth: 1,
+    borderColor: '#ef5b72',
+    borderRadius: 10,
+    padding: 12,
+    backgroundColor: 'rgba(239, 91, 114, 0.12)',
+  },
+  errorTitle: { fontSize: 15, fontWeight: '900', textAlign: 'center' },
+  errorBody: { fontSize: 12, lineHeight: 17, textAlign: 'center' },
+  retryButton: {
+    minHeight: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 8,
+    backgroundColor: '#ef5b72',
+  },
+  retryButtonText: { color: '#fff', fontWeight: '800' },
+  emptyState: {
+    minHeight: 260,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    paddingHorizontal: 24,
+  },
+  emptyTitle: { fontSize: 18, fontWeight: '800', textAlign: 'center' },
+  emptyBody: { fontSize: 13, textAlign: 'center' },
   card: {
     flexGrow: 0,
     flexShrink: 0,
@@ -551,6 +658,7 @@ const styles = StyleSheet.create({
   },
   sortTypeImage: { width: 30, height: 30 },
   sortArrowImage: { width: 15, height: 15 },
+  sortArrowDescending: { transform: [{ rotate: '180deg' }] },
   actionMenuAnchor: {
     position: 'absolute',
     bottom: 12,

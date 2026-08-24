@@ -5,7 +5,7 @@ export default function IndexRoute() {
   const router = useRouter();
   return (
     <MobileAppRoot
-      onOpenCollectionParityCandidate={() => router.push('/parity/collection')}
+      onOpenCollectionParityCandidate={() => router.push('/native/collection')}
     />
   );
 }

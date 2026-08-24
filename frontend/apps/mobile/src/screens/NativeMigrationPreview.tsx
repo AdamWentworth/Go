@@ -12,10 +12,11 @@ export const NativeMigrationPreview = ({
 }: NativeMigrationPreviewProps) => (
   <View testID="native-parity-lab" style={styles.container}>
     <Text style={styles.eyebrow}>DEVELOPMENT PARITY LAB</Text>
-    <Text style={styles.title}>Collection shell ready for comparison</Text>
+    <Text style={styles.title}>Functional collection slice</Text>
     <Text style={styles.body}>
-      This is an isolated visual fixture, not your collection. Compare it with
-      the current app before any live data or actions are connected.
+      Sign in to review your real collection with native search, sorting, card
+      navigation, and offline cache support. Unfinished workflows return to the
+      canonical app.
     </Text>
     <View style={styles.actions}>
       {onOpenCollectionParityCandidate ? (
@@ -24,7 +25,7 @@ export const NativeMigrationPreview = ({
           onPress={onOpenCollectionParityCandidate}
           style={styles.button}
         >
-          <Text style={styles.buttonText}>Review collection shell</Text>
+          <Text style={styles.buttonText}>Review native collection</Text>
         </Pressable>
       ) : null}
       <Pressable

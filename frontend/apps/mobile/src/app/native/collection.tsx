@@ -3,14 +3,13 @@ import { useMemo, useState } from 'react';
 import type { NativeCollectionRow } from '../../features/collection/collectionModel';
 import { buildNativeCollectionRows } from '../../features/collection/collectionModel';
 import { useNativeCollectionSnapshotQuery } from '../../features/collection/collectionQueries';
-import { NativeCollectionScreen } from '../../screens/NativeCollectionScreen';
+import { NativeCollectionParityScreen } from '../../screens/NativeCollectionParityScreen';
 import { runtimeConfig } from '../../config/runtimeConfig';
 import { useNativeSession } from '../../auth/NativeSessionContext';
 
 export default function NativeCollectionRoute() {
   const router = useRouter();
   const session = useNativeSession();
-  const [filter, setFilter] = useState<'all' | 'caught' | 'trade' | 'wanted'>('all');
   const [query, setQuery] = useState('');
   const snapshotQuery = useNativeCollectionSnapshotQuery(session.user?.user_id ?? null);
   const rows = useMemo<NativeCollectionRow[]>(() => {
@@ -23,24 +22,23 @@ export default function NativeCollectionRoute() {
   }, [snapshotQuery.data]);
 
   if (session.status !== 'signed-in' || !session.user) {
-    return <Redirect href="/native" />;
+    return <Redirect href="/native/login?returnTo=%2Fnative%2Fcollection" />;
   }
 
-  return <NativeCollectionScreen
-    rows={rows}
-    filter={filter}
-    query={query}
-    isLoading={snapshotQuery.isPending}
-    error={snapshotQuery.error instanceof Error ? snapshotQuery.error.message : null}
-    cachedAt={snapshotQuery.data?.cachedAt ?? null}
-    onFilterChange={setFilter}
-    onQueryChange={setQuery}
-    onRetry={() => void snapshotQuery.refetch()}
-    onBack={() => router.back()}
-    onOpenInstance={(instanceId) => router.push({
-      pathname: '/native/collection/[instanceId]',
-      params: { instanceId },
-    })}
-    onOpenCurrentApp={() => router.replace('/web')}
-  />;
+  return (
+    <NativeCollectionParityScreen
+      assetBaseUrl={runtimeConfig.api.frontendAppUrl}
+      rows={rows}
+      query={query}
+      isLoading={snapshotQuery.isPending}
+      error={snapshotQuery.error instanceof Error ? snapshotQuery.error.message : null}
+      onQueryChange={setQuery}
+      onRetry={() => void snapshotQuery.refetch()}
+      onOpenInstance={(instanceId) => router.push({
+        pathname: '/native/collection/[instanceId]',
+        params: { instanceId },
+      })}
+      onOpenCanonicalCollection={() => router.replace('/web')}
+    />
+  );
 }
