@@ -106,4 +106,32 @@ describe('NativeInstanceDetailScreen', () => {
     expect(screen.getByText('Saved on this device.')).toBeTruthy();
     expect(screen.getByText('Viewing an offline copy')).toBeTruthy();
   });
+
+  it('preserves the canonical previous and next overlay controls', () => {
+    const onPrevious = jest.fn();
+    const onNext = jest.fn();
+    render(
+      <NativeInstanceDetailScreen
+        detail={detail}
+        isLoading={false}
+        error={null}
+        cachedAt={null}
+        movesWarning={null}
+        saveNotice={null}
+        saveError={null}
+        isSaving={false}
+        onRetry={jest.fn()}
+        onBack={jest.fn()}
+        onPrevious={onPrevious}
+        onNext={onNext}
+        onToggleFavorite={jest.fn()}
+        onEditInCurrentApp={jest.fn()}
+      />,
+    );
+
+    fireEvent.press(screen.getByRole('button', { name: 'Previous Pokémon' }));
+    fireEvent.press(screen.getByRole('button', { name: 'Next Pokémon' }));
+    expect(onPrevious).toHaveBeenCalledTimes(1);
+    expect(onNext).toHaveBeenCalledTimes(1);
+  });
 });

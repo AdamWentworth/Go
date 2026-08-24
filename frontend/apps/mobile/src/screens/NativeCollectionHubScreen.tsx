@@ -39,7 +39,7 @@ type Props = {
   isLoading: boolean;
   onActionMenuPress: () => void;
   onActionMenuNavigate?: (path: string) => void;
-  onOpenEntry: (row: NativeCollectionRow) => void;
+  onOpenEntry: (row: NativeCollectionRow, orderedRows: NativeCollectionRow[]) => void;
   onRetry: () => void;
   onCreateTag?: (request: CreateCustomTagRequest) => Promise<unknown>;
   onDeleteTag?: (tagId: string) => Promise<unknown>;
@@ -129,14 +129,18 @@ export const NativeCollectionHubScreen = ({
       return next;
     });
   }, []);
-  const openEntry = useCallback((entryId: string) => {
+  const openEntry = useCallback((entryId: string, orderedEntryIds: string[]) => {
     const row = selectedRows.find((candidate) => candidate.id === entryId);
     if (!row) return;
     if (selectedIds.size > 0 || row.source === 'catalog') {
       toggleSelection(entryId);
       return;
     }
-    onOpenEntry(row);
+    const orderedRows = orderedEntryIds.flatMap((id) => {
+      const candidate = selectedRows.find((entry) => entry.id === id);
+      return candidate && candidate.source !== 'catalog' ? [candidate] : [];
+    });
+    onOpenEntry(row, orderedRows);
   }, [onOpenEntry, selectedIds.size, selectedRows, toggleSelection]);
   const longPressEntry = useCallback((entryId: string) => {
     const row = selectedRows.find((candidate) => candidate.id === entryId);

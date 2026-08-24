@@ -13,6 +13,7 @@ import { DEFAULT_NATIVE_TAGS_ENVELOPE } from '../../features/collection/nativeTa
 import { useNativeTagMutations } from '../../features/collection/useNativeTagMutations';
 import { useNativePokemonOrganizerMutation } from '../../features/collection/useNativePokemonOrganizerMutation';
 import { NativeCollectionHubScreen } from '../../screens/NativeCollectionHubScreen';
+import { setNativeInstanceNavigationContext } from '../../features/collection/nativeInstanceNavigationContext';
 
 export default function NativeCollectionRoute() {
   const router = useRouter();
@@ -60,7 +61,8 @@ export default function NativeCollectionRoute() {
     return <Redirect href="/native/login?returnTo=%2Fnative%2Fcollection" />;
   }
 
-  const openEntry = (row: NativeCollectionRow) => {
+  const openEntry = (row: NativeCollectionRow, orderedRows: NativeCollectionRow[]) => {
+    setNativeInstanceNavigationContext(orderedRows.map((entry) => entry.id));
     router.push(row?.source === 'catalog' ? {
       pathname: '/native/collection/catalog/[variantId]',
       params: { variantId: row.id },

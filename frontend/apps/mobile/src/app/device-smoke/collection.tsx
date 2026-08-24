@@ -252,6 +252,14 @@ export default function DeviceSmokeCollectionRoute() {
 
   if (!runtimeConfig.mobile.deviceSmokeMode) return <Redirect href="/" />;
 
+  const openedIndex = openedRow
+    ? ROWS.findIndex((row) => row.id === openedRow.id)
+    : -1;
+  const previousRow = openedIndex > 0 ? ROWS[openedIndex - 1] : null;
+  const nextRow = openedIndex >= 0 && openedIndex < ROWS.length - 1
+    ? ROWS[openedIndex + 1]
+    : null;
+
   return (
     <>
       <NativeCollectionHubScreen
@@ -327,6 +335,8 @@ export default function DeviceSmokeCollectionRoute() {
             movesWarning={null}
             onBack={() => setOpenedRow(null)}
             onEditInCurrentApp={() => undefined}
+            onNext={nextRow ? () => setOpenedRow(nextRow) : undefined}
+            onPrevious={previousRow ? () => setOpenedRow(previousRow) : undefined}
             onRetry={() => undefined}
             onToggleFavorite={() => undefined}
             saveError={null}

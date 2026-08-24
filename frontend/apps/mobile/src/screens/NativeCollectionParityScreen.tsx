@@ -30,7 +30,7 @@ type NativeCollectionParityScreenProps = {
   error: string | null;
   onQueryChange: (query: string) => void;
   onRetry: () => void;
-  onOpenInstance: (instanceId: string) => void;
+  onOpenInstance: (instanceId: string, orderedInstanceIds: string[]) => void;
   onLongPressInstance?: (instanceId: string) => void;
   onOpenCanonicalCollection: () => void;
   onClearTag: () => void;
@@ -127,7 +127,7 @@ export const NativeCollectionParityScreen = ({
         error={error}
         isLoading={isLoading}
         onActionMenuPress={onOpenCanonicalCollection}
-        onCardPress={(card) => onOpenInstance(card.id)}
+        onCardPress={(card) => onOpenInstance(card.id, visibleRows.map((row) => row.id))}
         onCardLongPress={onLongPressInstance ? (card) => onLongPressInstance(card.id) : undefined}
         customTagColor={activeTag?.color}
         onClearTag={onClearTag}

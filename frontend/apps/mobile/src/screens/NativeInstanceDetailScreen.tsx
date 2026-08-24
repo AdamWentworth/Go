@@ -25,6 +25,8 @@ type Props = {
   isSaving: boolean;
   onRetry: () => void;
   onBack: () => void;
+  onNext?: () => void;
+  onPrevious?: () => void;
   onToggleFavorite: (favorite: boolean) => void;
   onEditInCurrentApp: () => void;
 };
@@ -312,6 +314,8 @@ export const NativeInstanceDetailScreen = ({
   isSaving,
   onRetry,
   onBack,
+  onNext,
+  onPrevious,
   onToggleFavorite,
   onEditInCurrentApp,
 }: Props) => {
@@ -613,6 +617,26 @@ export const NativeInstanceDetailScreen = ({
           style={styles.closeImage}
         />
       </Pressable>
+      {onPrevious ? (
+        <Pressable
+          accessibilityLabel="Previous Pokémon"
+          accessibilityRole="button"
+          onPress={onPrevious}
+          style={[styles.instanceNavigation, styles.previousInstance]}
+        >
+          <Text style={styles.instanceNavigationIcon}>◀</Text>
+        </Pressable>
+      ) : null}
+      {onNext ? (
+        <Pressable
+          accessibilityLabel="Next Pokémon"
+          accessibilityRole="button"
+          onPress={onNext}
+          style={[styles.instanceNavigation, styles.nextInstance]}
+        >
+          <Text style={styles.instanceNavigationIcon}>▶</Text>
+        </Pressable>
+      ) : null}
     </View>
   );
 };
@@ -821,4 +845,8 @@ const styles = StyleSheet.create({
   saveErrorText: { color: '#ffd1da', fontWeight: '700', textAlign: 'center' },
   closeButton: { position: 'absolute', bottom: 18, left: '50%', zIndex: 20, width: 64, height: 64, marginLeft: -32 },
   closeImage: { width: 64, height: 64 },
+  instanceNavigation: { position: 'absolute', bottom: 24, zIndex: 19, width: 56, height: 56, alignItems: 'center', justifyContent: 'center' },
+  previousInstance: { left: 0 },
+  nextInstance: { right: 0 },
+  instanceNavigationIcon: { color: '#ffffff', fontSize: 34, lineHeight: 38, textShadowColor: '#00000088', textShadowRadius: 4 },
 });

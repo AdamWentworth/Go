@@ -166,6 +166,8 @@ tags:
     timeout: 10000
 - assertVisible: Gigantamax Blastoise
 - assertVisible: MOST WANTED
+- assertVisible: Previous Pokémon
+- assertVisible: Next Pokémon
 - takeScreenshot: 06-wanted-instance
 - tapOn: Close
 - assertNotVisible: WANTED CONDITIONS

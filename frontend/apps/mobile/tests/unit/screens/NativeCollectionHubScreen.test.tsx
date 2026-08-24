@@ -159,7 +159,7 @@ describe('NativeCollectionHubScreen', () => {
     expect(screen.queryByText('Shiny Mewtwo')).toBeNull();
 
     fireEvent.press(screen.getByRole('button', { name: 'View Shiny Bulbasaur' }));
-    expect(onOpenEntry).toHaveBeenCalledWith(caughtRow);
+    expect(onOpenEntry).toHaveBeenCalledWith(caughtRow, [caughtRow]);
 
     fireEvent.press(screen.getByRole('button', { name: /Clear Favorites tag filter/i }));
     expect(screen.getByText('Bulbasaur')).toBeTruthy();

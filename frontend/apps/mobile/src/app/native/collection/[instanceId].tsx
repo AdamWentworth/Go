@@ -7,8 +7,10 @@ import {
 } from '../../../features/collection/collectionQueries';
 import {
   buildCanonicalCollectionInstancePath,
+  buildNativeCollectionRows,
   buildNativeInstanceDetail,
 } from '../../../features/collection/collectionModel';
+import { resolveNativeInstanceNeighbors } from '../../../features/collection/nativeInstanceNavigationContext';
 import { useNativeFavoriteMutation } from '../../../features/collection/useNativeFavoriteMutation';
 import { runtimeConfig } from '../../../config/runtimeConfig';
 import { NativeInstanceDetailScreen } from '../../../screens/NativeInstanceDetailScreen';
@@ -42,6 +44,19 @@ export default function NativeInstanceDetailRoute() {
       detail?.row.status ?? 'caught',
     );
   }, [detail?.row.status, instanceId]);
+  const neighbors = useMemo(() => {
+    if (!snapshotQuery.data) return { previousId: null, nextId: null };
+    const fallbackIds = buildNativeCollectionRows(
+      snapshotQuery.data.instances,
+      snapshotQuery.data.catalog,
+      runtimeConfig.api.frontendAppUrl,
+    ).map((row) => row.id);
+    return resolveNativeInstanceNeighbors({ instanceId, fallbackIds });
+  }, [instanceId, snapshotQuery.data]);
+  const navigateToInstance = (nextInstanceId: string) => router.replace({
+    pathname: '/native/collection/[instanceId]',
+    params: { instanceId: nextInstanceId },
+  });
 
   if (session.status !== 'signed-in' || !session.user) {
     return <Redirect href="/native" />;
@@ -63,6 +78,8 @@ export default function NativeInstanceDetailRoute() {
     isSaving={favoriteMutation.isPending}
     onRetry={() => void Promise.all([snapshotQuery.refetch(), movesQuery.refetch()])}
     onBack={() => router.canGoBack() ? router.back() : router.replace('/native/collection')}
+    onNext={neighbors.nextId ? () => navigateToInstance(neighbors.nextId!) : undefined}
+    onPrevious={neighbors.previousId ? () => navigateToInstance(neighbors.previousId!) : undefined}
     onToggleFavorite={(favorite) => favoriteMutation.mutate(favorite)}
     onEditInCurrentApp={() => router.replace({
       pathname: '/web',

@@ -80,7 +80,7 @@ describe('NativeCollectionParityScreen', () => {
     expect(screen.queryByText('Bulbasaur')).toBeNull();
     expect(screen.getByText('Charizard')).toBeTruthy();
     fireEvent.press(screen.getByRole('button', { name: 'View Charizard' }));
-    expect(onOpenInstance).toHaveBeenCalledWith('charizard');
+    expect(onOpenInstance).toHaveBeenCalledWith('charizard', ['charizard']);
   });
 
   it('matches the canonical focus-to-filter and filter-to-results workflow', () => {
