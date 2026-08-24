@@ -141,6 +141,70 @@ describe('authentication service integration', () => {
     expect(login.headers['set-cookie'].some((c) => c.startsWith('refreshToken='))).toBe(true);
   });
 
+  test('mobile session login, bearer access, rotation, and logout work without cookies', async () => {
+    await registerUser();
+
+    const login = await request(app).post('/auth/mobile/login').send({
+      username: validEmail,
+      password: validPassphrase,
+      device_id: `${validDeviceId}-native`
+    });
+
+    expect(login.status).toBe(200);
+    expect(login.headers['set-cookie']).toBeUndefined();
+    expect(login.headers['cache-control']).toContain('no-store');
+    expect(login.body.user).toMatchObject({
+      username: validLoginId,
+      email: validEmail
+    });
+    expect(login.body.accessToken).toEqual(expect.any(String));
+    expect(login.body.refreshToken).toEqual(expect.any(String));
+
+    const security = await request(app)
+      .get('/auth/account/security')
+      .set('Authorization', `Bearer ${login.body.accessToken}`);
+    expect(security.status).toBe(200);
+    expect(security.body.email).toBe(validEmail);
+
+    const refreshed = await request(app).post('/auth/mobile/refresh').send({
+      refreshToken: login.body.refreshToken
+    });
+    expect(refreshed.status).toBe(200);
+    expect(refreshed.headers['set-cookie']).toBeUndefined();
+    expect(refreshed.body.accessToken).toEqual(expect.any(String));
+    expect(refreshed.body.refreshToken).not.toBe(login.body.refreshToken);
+
+    const reused = await request(app).post('/auth/mobile/refresh').send({
+      refreshToken: login.body.refreshToken
+    });
+    expect(reused.status).toBe(401);
+
+    const logout = await request(app).post('/auth/mobile/logout').send({
+      refreshToken: refreshed.body.refreshToken
+    });
+    expect(logout.status).toBe(200);
+
+    const refreshAfterLogout = await request(app).post('/auth/mobile/refresh').send({
+      refreshToken: refreshed.body.refreshToken
+    });
+    expect(refreshAfterLogout.status).toBe(401);
+  });
+
+  test('mobile session endpoints reject invalid credentials and missing tokens', async () => {
+    await registerUser();
+
+    const badLogin = await request(app).post('/auth/mobile/login').send({
+      username: validLoginId,
+      password: 'invalid_passphrase_for_ci',
+      device_id: `${validDeviceId}-native`
+    });
+    expect(badLogin.status).toBe(401);
+    expect(badLogin.body.message).toBe('Invalid credentials');
+
+    expect((await request(app).post('/auth/mobile/refresh').send({})).status).toBe(401);
+    expect((await request(app).post('/auth/mobile/logout').send({})).status).toBe(400);
+  });
+
   test('refresh succeeds with valid refresh token cookie', async () => {
     await registerUser();
 

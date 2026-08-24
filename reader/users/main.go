@@ -150,6 +150,8 @@ func newApp() *fiber.App {
 	app.Get("/api/users/:user_id/overview", verifyJWT, protectedLimiter, GetUserOverviewHandler)
 	app.Get("/api/instances/sync", verifyJWT, protectedLimiter, GetOwnInstanceSyncHandler)
 	app.Get("/api/users/instances/sync", verifyJWT, protectedLimiter, GetOwnInstanceSyncHandler)
+	app.Get("/api/collection/summary", verifyJWT, protectedLimiter, GetOwnCollectionSummaryHandler)
+	app.Get("/api/users/collection/summary", verifyJWT, protectedLimiter, GetOwnCollectionSummaryHandler)
 	app.Put("/api/update-user/:user_id", verifyJWT, protectedLimiter, UpdateUserHandler)
 	app.Put("/api/users/update-user/:user_id", verifyJWT, protectedLimiter, UpdateUserHandler)
 	registerProtectedSocialRoutes(app, "/api", protectedLimiter)

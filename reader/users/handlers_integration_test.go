@@ -57,6 +57,7 @@ func newHandlerTestApp(authUserID string) *fiber.App {
 	app.Put("/api/update-user/:user_id", UpdateUserHandler)
 	app.Put("/api/users/update-user/:user_id", UpdateUserHandler)
 	app.Get("/api/users/:user_id/overview", GetUserOverviewHandler)
+	app.Get("/api/collection/summary", GetOwnCollectionSummaryHandler)
 	app.Get("/api/instances/by-username/:username", GetInstancesByUsername)
 	app.Get("/api/users/instances/by-username/:username", GetInstancesByUsername)
 	app.Get("/api/profiles/:username", GetProfileHandler)

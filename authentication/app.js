@@ -146,6 +146,7 @@ const passwordResetLimiter = rateLimit({
 });
 app.use('/auth', limiter);
 app.use('/auth/login', loginLimiter);
+app.use('/auth/mobile/login', loginLimiter);
 app.use('/auth/register', registerLimiter);
 app.use('/auth/google/complete-registration', registerLimiter);
 app.use('/auth/discord/complete-registration', registerLimiter);
@@ -154,6 +155,7 @@ app.use('/auth/reset-password', passwordResetLimiter);
 app.use('/auth', csrfOriginGuard(allowedOrigins));
 
 app.use('/auth', require('./routes/authRoute'));
+app.use('/auth', require('./routes/mobileSessionRoutes'));
 app.use('/auth', require('./routes/passportRoutes'));
 
 function startServer() {

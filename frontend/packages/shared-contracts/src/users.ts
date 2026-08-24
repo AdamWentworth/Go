@@ -12,6 +12,15 @@ export interface InstanceSyncEnvelope<TInstance = Record<string, unknown>> {
   instances?: Record<string, TInstance>;
 }
 
+export interface CollectionSummary {
+  collection_total: number;
+  caught: number;
+  for_trade: number;
+  wanted: number;
+  favorite: number;
+  most_wanted: number;
+}
+
 export interface UserOverviewUser {
   user_id: string;
   username: string;
@@ -317,6 +326,7 @@ export const usersContract = {
     userOverview: (userId: string) =>
       `/users/${encodeURIComponent(userId)}/overview`,
     instanceSync: '/instances/sync',
+    collectionSummary: '/collection/summary',
     profile: '/profile',
     preferences: '/preferences',
     friends: '/friends',
