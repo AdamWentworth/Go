@@ -42,8 +42,9 @@ Copy `.env.example` values into your environment (or EAS secrets) using `EXPO_PU
 `EXPO_PUBLIC_FRONTEND_APP_URL` controls which deployed web app the mobile shell loads.
 
 `EXPO_PUBLIC_MOBILE_EXPERIENCE` defaults to `webview`. Set it to
-`native-preview` only in deliberate preview builds; every preview retains a
-direct fallback to the current WebView app.
+`native-preview` only in deliberate development builds. That mode opens the
+parity lab, not an unfinished replacement workflow, and retains a direct path
+to the canonical WebView app.
 
 ## Android development build
 
@@ -70,6 +71,10 @@ Open **Pokémon Go Nexus** on the phone and select the local development server.
 Rebuild the APK only after changing native dependencies, native configuration,
 or the Expo SDK. The `device-preview` EAS profile produces a standalone internal
 APK with the native preview bundled for force-stop/relaunch and offline checks.
+
+Until a native milestone passes the parity contract, the lab intentionally
+contains no user-facing replacement. Native engineering routes may still exist
+for automated development, but they are not candidates for device approval.
 
 Native social sign-in is intentionally not enabled yet. Google, Discord, and
 Facebook continue through the current app until their system-browser callback

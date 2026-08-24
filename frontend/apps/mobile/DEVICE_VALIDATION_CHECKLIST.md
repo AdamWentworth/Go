@@ -4,35 +4,18 @@ Use this checklist for Android and iOS device smoke validation against live serv
 
 ## Current native-preview milestone
 
-This is the device check to run before migrating additional collection edits.
-The default application remains the stable WebView experience. Install the
-Pokémon Go Nexus Android development APK, then run
-`npm --workspace apps/mobile run start:native-preview` to expose these routes.
+There is currently no native replacement workflow ready for device approval.
+The default application remains the stable canonical WebView experience. Running
+`npm --workspace apps/mobile run start:native-preview` opens a clearly labelled
+development parity lab and provides one path back to the canonical app. It must
+not expose the earlier approximate collection grid or describe it as **Your
+collection**.
 
-1. Open **Pokémon Go Nexus** (the development build, not Expo Go) while the phone
-   and development computer are on the same local network, then connect to the
-   local development server.
-2. Sign in with email and password. Native social sign-in is not part of this
-   milestone; the current app remains available as a fallback.
-3. Open **Your collection**, confirm the grid loads, search/filter it, and open
-   a caught Pokémon that is not currently For Trade.
-4. Toggle Favorite while online. Confirm the detail and collection grid update,
-   and that any Receiver-accepted state is distinguished from final server
-   reconciliation.
-5. Let the collection load online once, disable the phone's network, and keep
-   the preview open. Confirm the cached collection remains usable and is clearly
-   labelled as an offline copy.
-6. Toggle Favorite while offline. Confirm the change appears immediately and
-   the sync card says that one change is safely retained on the device.
-7. Restore the network. Confirm automatic retry begins, then progresses from
-   local/pending to Receiver-accepted and finally disappears after the users
-   service observes the committed snapshot. Use **Retry** or **Check** if needed.
-8. Reopen the Pokémon and confirm the final Favorite value remains correct.
-
-This preview uses the live APIs by default, so choose a harmless caught Pokémon
-and restore its original Favorite value before finishing. Use the standalone
-`device-preview` APK—not the Metro-backed development client—for a definitive
-force-stop/relaunch test while fully offline.
+The next device checklist will be added only after the hidden collection shell
+passes the automated gates in `COLLECTION_PARITY_CONTRACT.md`. Until then, Pixel
+testing should confirm only that the production/default mode opens the canonical
+application and that the development lab cannot be confused with a finished
+feature.
 
 ## Preconditions
 

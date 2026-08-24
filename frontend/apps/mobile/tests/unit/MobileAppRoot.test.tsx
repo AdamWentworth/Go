@@ -14,27 +14,22 @@ describe('MobileAppRoot', () => {
   it('keeps the existing WebView experience as the default', () => {
     render(<MobileAppRoot experienceMode="webview" />);
     expect(screen.getByTestId('web-experience')).toBeTruthy();
-    expect(screen.queryByTestId('native-migration-preview')).toBeNull();
+    expect(screen.queryByTestId('native-parity-lab')).toBeNull();
   });
 
-  it('lets a native preview return directly to the stable WebView', () => {
+  it('keeps unfinished native workflows inside an explicit parity lab', () => {
     render(<MobileAppRoot experienceMode="native-preview" />);
 
-    expect(screen.getByTestId('native-migration-preview')).toBeTruthy();
-    fireEvent.press(screen.getByText('Open current app'));
-    expect(screen.getByTestId('web-experience')).toBeTruthy();
+    expect(screen.getByTestId('native-parity-lab')).toBeTruthy();
+    expect(screen.queryByText('Try native sign in')).toBeNull();
+    expect(screen.queryByText('Your collection')).toBeNull();
   });
 
-  it('exposes native sign in only when the routed preview provides it', () => {
-    const onOpenNativeExperience = jest.fn();
-    render(
-      <MobileAppRoot
-        experienceMode="native-preview"
-        onOpenNativeExperience={onOpenNativeExperience}
-      />,
-    );
+  it('lets the parity lab return directly to the canonical app', () => {
+    render(<MobileAppRoot experienceMode="native-preview" />);
 
-    fireEvent.press(screen.getByText('Try native sign in'));
-    expect(onOpenNativeExperience).toHaveBeenCalledTimes(1);
+    fireEvent.press(screen.getByText('Open canonical app'));
+    expect(screen.getByTestId('web-experience')).toBeTruthy();
+    expect(screen.queryByTestId('native-parity-lab')).toBeNull();
   });
 });

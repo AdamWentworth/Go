@@ -2,37 +2,26 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { theme } from '../ui/theme';
 
 type NativeMigrationPreviewProps = {
-  onOpenNativeExperience?: () => void;
   onOpenWebExperience: () => void;
 };
 
 export const NativeMigrationPreview = ({
-  onOpenNativeExperience,
   onOpenWebExperience,
 }: NativeMigrationPreviewProps) => (
-  <View testID="native-migration-preview" style={styles.container}>
-    <Text style={styles.eyebrow}>NATIVE PREVIEW</Text>
-    <Text style={styles.title}>Pokémon Go Nexus</Text>
+  <View testID="native-parity-lab" style={styles.container}>
+    <Text style={styles.eyebrow}>DEVELOPMENT PARITY LAB</Text>
+    <Text style={styles.title}>No native workflow is ready for review</Text>
     <Text style={styles.body}>
-      Native workflows are being introduced incrementally. The complete web
-      experience remains available while each workflow is validated.
+      The current app remains the specification. A native workflow will only
+      appear here after it passes its automated parity gates.
     </Text>
     <View style={styles.actions}>
-      {onOpenNativeExperience ? (
-        <Pressable
-          accessibilityRole="button"
-          onPress={onOpenNativeExperience}
-          style={styles.button}
-        >
-          <Text style={styles.buttonText}>Try native sign in</Text>
-        </Pressable>
-      ) : null}
       <Pressable
         accessibilityRole="button"
         onPress={onOpenWebExperience}
-        style={[styles.button, styles.secondaryButton]}
+        style={styles.button}
       >
-        <Text style={styles.buttonText}>Open current app</Text>
+        <Text style={styles.buttonText}>Open canonical app</Text>
       </Pressable>
     </View>
   </View>
@@ -77,11 +66,6 @@ const styles = StyleSheet.create({
     width: '100%',
     maxWidth: 320,
     gap: theme.spacing.sm,
-  },
-  secondaryButton: {
-    borderWidth: 1,
-    borderColor: '#64748b',
-    backgroundColor: '#1e293b',
   },
   buttonText: {
     color: '#fff',

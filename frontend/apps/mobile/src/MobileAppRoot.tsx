@@ -6,12 +6,10 @@ import { WebReplicaApp } from './screens/WebReplicaApp';
 
 type MobileAppRootProps = {
   experienceMode?: MobileExperienceMode;
-  onOpenNativeExperience?: () => void;
 };
 
 export const MobileAppRoot = ({
   experienceMode = runtimeConfig.mobile.experienceMode,
-  onOpenNativeExperience,
 }: MobileAppRootProps) => {
   const [useWebExperience, setUseWebExperience] = useState(
     experienceMode === 'webview',
@@ -23,7 +21,6 @@ export const MobileAppRoot = ({
 
   return (
     <NativeMigrationPreview
-      onOpenNativeExperience={onOpenNativeExperience}
       onOpenWebExperience={() => setUseWebExperience(true)}
     />
   );
