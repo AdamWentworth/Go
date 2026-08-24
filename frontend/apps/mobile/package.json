@@ -20,17 +20,17 @@
     "@pokemongonexus/shared-ui-tokens": "file:../../packages/shared-ui-tokens",
     "@react-native-community/netinfo": "12.0.1",
     "@tanstack/react-query": "^5.102.2",
-    "expo": "^56.0.0",
-    "expo-constants": "~56.0.24",
-    "expo-crypto": "~56.0.4",
-    "expo-linking": "~56.0.17",
-    "expo-router": "~56.2.19",
-    "expo-secure-store": "~56.0.4",
-    "expo-splash-screen": "~56.0.14",
-    "expo-sqlite": "~56.0.5",
-    "expo-status-bar": "~56.0.4",
-    "react": "19.2.3",
-    "react-native": "0.85.3",
+    "expo": "^57.0.9",
+    "expo-constants": "~57.0.13",
+    "expo-crypto": "~57.0.1",
+    "expo-linking": "~57.0.7",
+    "expo-router": "~57.0.15",
+    "expo-secure-store": "~57.0.1",
+    "expo-splash-screen": "~57.0.7",
+    "expo-sqlite": "~57.0.1",
+    "expo-status-bar": "~57.0.1",
+    "react": "19.2.8",
+    "react-native": "0.86.2",
     "react-native-safe-area-context": "~5.7.0",
     "react-native-screens": "~4.26.0",
     "react-native-webview": "13.16.1"
@@ -40,17 +40,17 @@
     "@types/jest": "29.5.14",
     "@types/react": "~19.2.14",
     "eslint": "^9.39.3",
-    "eslint-config-expo": "~56.0.4",
+    "eslint-config-expo": "~57.0.1",
     "jest": "29.7.0",
-    "jest-expo": "~56.0.5",
-    "react-test-renderer": "^19.2.3",
+    "jest-expo": "~57.0.4",
+    "react-test-renderer": "19.2.8",
     "typescript": "~6.0.3"
   },
   "jest": {
     "preset": "jest-expo",
     "moduleNameMapper": {
-      "^react$": "<rootDir>/node_modules/react",
-      "^react/(.*)$": "<rootDir>/node_modules/react/$1"
+      "^react$": "<rootDir>/../../node_modules/react",
+      "^react/(.*)$": "<rootDir>/../../node_modules/react/$1"
     },
     "roots": [
       "<rootDir>/tests"
@@ -58,6 +58,13 @@
     "testPathIgnorePatterns": [
       "/node_modules/"
     ]
+  },
+  "expo": {
+    "install": {
+      "exclude": [
+        "react"
+      ]
+    }
   },
   "private": true
 }
