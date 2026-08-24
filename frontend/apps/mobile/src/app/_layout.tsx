@@ -10,7 +10,7 @@ initializeObservability();
 export default function RootLayout() {
   return (
     <SafeAreaProvider>
-      <StatusBar style="light" translucent={false} backgroundColor="#000" />
+      <StatusBar style="light" />
       <SafeAreaView style={styles.appShell} edges={['top', 'bottom']}>
         <View style={styles.appShell}>
           <MobileErrorBoundary>

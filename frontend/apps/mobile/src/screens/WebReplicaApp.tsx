@@ -343,7 +343,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#000',
   },
   loadingOverlay: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     alignItems: 'center',
     justifyContent: 'center',
     gap: 10,
@@ -356,7 +356,7 @@ const styles = StyleSheet.create({
     fontWeight: '500',
   },
   errorOverlay: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     zIndex: 30,
     justifyContent: 'center',
     alignItems: 'center',

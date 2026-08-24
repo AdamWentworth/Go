@@ -27,6 +27,16 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
       'expo-router',
       'expo-secure-store',
       'expo-sqlite',
+      'expo-status-bar',
+      [
+        'expo-splash-screen',
+        {
+          backgroundColor: '#06162f',
+          image: './assets/splash-icon.png',
+          imageWidth: 200,
+          resizeMode: 'contain',
+        },
+      ],
     ]),
   ),
   experiments: {
