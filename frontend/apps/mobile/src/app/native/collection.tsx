@@ -26,9 +26,6 @@ export default function NativeCollectionRoute() {
     return <Redirect href="/native" />;
   }
 
-  const openCurrentCollection = () => router.replace('/web');
-  const actionMenuImageUri = `${runtimeConfig.api.frontendAppUrl.replace(/\/+$/, '')}/images/btn_action_menu.png`;
-
   return <NativeCollectionScreen
     rows={rows}
     filter={filter}
@@ -36,16 +33,14 @@ export default function NativeCollectionRoute() {
     isLoading={snapshotQuery.isPending}
     error={snapshotQuery.error instanceof Error ? snapshotQuery.error.message : null}
     cachedAt={snapshotQuery.data?.cachedAt ?? null}
-    actionMenuImageUri={actionMenuImageUri}
     onFilterChange={setFilter}
     onQueryChange={setQuery}
     onRetry={() => void snapshotQuery.refetch()}
+    onBack={() => router.back()}
     onOpenInstance={(instanceId) => router.push({
       pathname: '/native/collection/[instanceId]',
       params: { instanceId },
     })}
-    onOpenTags={openCurrentCollection}
-    onOpenWishlist={openCurrentCollection}
-    onOpenCurrentApp={openCurrentCollection}
+    onOpenCurrentApp={() => router.replace('/web')}
   />;
 }

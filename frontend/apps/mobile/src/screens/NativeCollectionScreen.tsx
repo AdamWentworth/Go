@@ -6,7 +6,6 @@ import {
   StyleSheet,
   Text,
   TextInput,
-  useWindowDimensions,
   View,
 } from 'react-native';
 import {
@@ -14,10 +13,8 @@ import {
   type NativeCollectionFilter,
   type NativeCollectionRow,
 } from '../features/collection/collectionModel';
-import { NativeCollectionSyncStatusCard } from '../features/collection/NativeCollectionSyncStatusCard';
-import { NativeCollectionTabs } from '../features/collection/NativeCollectionTabs';
-import { NativePokemonGridCard } from '../features/collection/NativePokemonGridCard';
 import { theme } from '../ui/theme';
+import { NativeCollectionSyncStatusCard } from '../features/collection/NativeCollectionSyncStatusCard';
 
 type NativeCollectionScreenProps = {
   rows: NativeCollectionRow[];
@@ -26,39 +23,32 @@ type NativeCollectionScreenProps = {
   isLoading: boolean;
   error: string | null;
   cachedAt: number | null;
-  actionMenuImageUri: string;
   onFilterChange: (filter: NativeCollectionFilter) => void;
   onQueryChange: (query: string) => void;
   onRetry: () => void;
+  onBack: () => void;
   onOpenInstance: (instanceId: string) => void;
-  onOpenTags: () => void;
-  onOpenWishlist: () => void;
   onOpenCurrentApp: () => void;
 };
 
-const filters: {
-  key: NativeCollectionFilter;
-  label: string;
-  accessibilityLabel: string;
-}[] = [
-  { key: 'all', label: 'All', accessibilityLabel: 'All Pokémon' },
-  { key: 'caught', label: 'Caught', accessibilityLabel: 'Caught Pokémon' },
-  { key: 'trade', label: 'For Trade', accessibilityLabel: 'For Trade Pokémon' },
-  { key: 'wanted', label: 'Wanted', accessibilityLabel: 'Wanted Pokémon' },
+const filters: { key: NativeCollectionFilter; label: string }[] = [
+  { key: 'all', label: 'All' },
+  { key: 'caught', label: 'Caught' },
+  { key: 'trade', label: 'Trade' },
+  { key: 'wanted', label: 'Wanted' },
 ];
 
-const filterTones = {
-  all: { border: '#6b7280', surface: '#2b2b2b', text: '#ffffff' },
-  caught: { border: '#2a94ff', surface: '#153658', text: '#d8ecff' },
-  trade: { border: '#41c77a', surface: '#143b28', text: '#d6ffe8' },
-  wanted: { border: '#ff526b', surface: '#4a2028', text: '#ffe1e6' },
-} as const;
-
-const collectionColumnCount = (width: number): number => {
-  if (width < 481) return 3;
-  if (width < 1024) return 6;
-  return 9;
+const statusLabels: Record<NativeCollectionRow['status'], string> = {
+  caught: 'Caught',
+  trade: 'For trade',
+  wanted: 'Wanted',
 };
+
+const statusStyles = {
+  caught: { color: '#79c2ff', borderColor: '#2385e8' },
+  trade: { color: '#61e5a3', borderColor: '#2fbd79' },
+  wanted: { color: '#ff8b9d', borderColor: '#ef5b72' },
+} as const;
 
 export const NativeCollectionScreen = ({
   rows,
@@ -67,103 +57,71 @@ export const NativeCollectionScreen = ({
   isLoading,
   error,
   cachedAt,
-  actionMenuImageUri,
   onFilterChange,
   onQueryChange,
   onRetry,
+  onBack,
   onOpenInstance,
-  onOpenTags,
-  onOpenWishlist,
   onOpenCurrentApp,
 }: NativeCollectionScreenProps) => {
-  const { width } = useWindowDimensions();
-  const columnCount = collectionColumnCount(width);
   const visibleRows = filterNativeCollectionRows(rows, filter, query);
 
   return (
     <View style={styles.screen} testID="native-collection-screen">
-      <NativeCollectionTabs
-        activeSection="pokemon"
-        pokemonCount={visibleRows.length}
-        onOpenPokemon={() => onFilterChange('all')}
-        onOpenTags={onOpenTags}
-        onOpenWishlist={onOpenWishlist}
-      />
-
-      <View style={styles.collectionControls}>
-        <View style={styles.searchShell}>
-          <Text accessibilityElementsHidden style={styles.searchIcon}>⌕</Text>
-          <TextInput
-            accessibilityLabel="Search your collection"
-            autoCapitalize="none"
-            autoCorrect={false}
-            onChangeText={onQueryChange}
-            placeholder="Search"
-            placeholderTextColor="#777777"
-            returnKeyType="search"
-            style={styles.searchInput}
-            value={query}
-          />
-          {query ? (
-            <Pressable
-              accessibilityLabel="Clear collection search"
-              accessibilityRole="button"
-              hitSlop={8}
-              onPress={() => onQueryChange('')}
-              style={({ pressed }) => [styles.clearSearch, pressed && styles.pressed]}
-            >
-              <Text style={styles.clearSearchText}>×</Text>
-            </Pressable>
-          ) : null}
-        </View>
-
-        <View accessibilityRole="tablist" style={styles.filters}>
-          {filters.map((entry) => {
-            const selected = filter === entry.key;
-            const tone = filterTones[entry.key];
-            return (
-              <Pressable
-                accessibilityLabel={entry.accessibilityLabel}
-                accessibilityRole="tab"
-                accessibilityState={{ selected }}
-                key={entry.key}
-                onPress={() => onFilterChange(entry.key)}
-                style={({ pressed }) => [
-                  styles.filterButton,
-                  selected && {
-                    borderColor: tone.border,
-                    backgroundColor: tone.surface,
-                  },
-                  pressed && styles.pressed,
-                ]}
-              >
-                <Text style={[styles.filterText, selected && { color: tone.text }]}>
-                  {entry.label}
-                </Text>
-              </Pressable>
-            );
-          })}
-        </View>
-      </View>
-
       <FlatList
-        columnWrapperStyle={styles.gridRow}
-        contentContainerStyle={styles.content}
         data={visibleRows}
-        initialNumToRender={columnCount * 5}
-        key={`native-collection-${columnCount}`}
         keyExtractor={(item) => item.id}
-        keyboardDismissMode="on-drag"
-        keyboardShouldPersistTaps="handled"
-        numColumns={columnCount}
+        numColumns={2}
+        columnWrapperStyle={styles.row}
+        contentContainerStyle={styles.content}
         ListHeaderComponent={(
-          <View style={styles.statusArea}>
+          <View style={styles.headerContent}>
+            <View style={styles.topBar}>
+              <Pressable accessibilityRole="button" onPress={onBack} style={styles.backButton}>
+                <Text style={styles.backButtonText}>‹</Text>
+              </Pressable>
+              <View style={styles.headingCopy}>
+                <Text style={styles.eyebrow}>NATIVE COLLECTION</Text>
+                <Text accessibilityRole="header" style={styles.title}>Your Pokémon</Text>
+              </View>
+              <View style={styles.headerCount}>
+                <Text style={styles.headerCountText}>{rows.length.toLocaleString()}</Text>
+              </View>
+            </View>
+
+            <TextInput
+              accessibilityLabel="Search your collection"
+              autoCapitalize="none"
+              onChangeText={onQueryChange}
+              placeholder="Search name or Pokédex number"
+              placeholderTextColor="#8193a7"
+              style={styles.searchInput}
+              value={query}
+            />
+
+            <View accessibilityRole="tablist" style={styles.filters}>
+              {filters.map((entry) => {
+                const selected = filter === entry.key;
+                return (
+                  <Pressable
+                    accessibilityRole="tab"
+                    accessibilityState={{ selected }}
+                    key={entry.key}
+                    onPress={() => onFilterChange(entry.key)}
+                    style={[styles.filterButton, selected && styles.filterButtonSelected]}
+                  >
+                    <Text style={[styles.filterText, selected && styles.filterTextSelected]}>
+                      {entry.label}
+                    </Text>
+                  </Pressable>
+                );
+              })}
+            </View>
+
             {error ? (
-              <View accessibilityRole="alert" style={styles.errorCard}>
-                <View style={styles.messageCopy}>
-                  <Text style={styles.errorTitle}>Collection unavailable</Text>
-                  <Text style={styles.errorBody}>{error}</Text>
-                </View>
+              <View style={styles.errorCard}>
+                <Text style={styles.errorTitle}>Collection unavailable</Text>
+                <Text style={styles.errorBody}>{error}</Text>
                 <Pressable accessibilityRole="button" onPress={onRetry} style={styles.retryButton}>
                   <Text style={styles.retryText}>Retry</Text>
                 </Pressable>
@@ -172,8 +130,10 @@ export const NativeCollectionScreen = ({
 
             {cachedAt != null ? (
               <View accessibilityLiveRegion="polite" style={styles.cachedCard}>
-                <Text style={styles.cachedTitle}>Offline copy</Text>
-                <Text style={styles.cachedBody}>Saved Pokémon and retained edits are shown.</Text>
+                <Text style={styles.cachedTitle}>Offline collection</Text>
+                <Text style={styles.cachedBody}>
+                  Showing the copy saved on this device. Your retained edits are included and will sync after reconnecting.
+                </Text>
               </View>
             ) : null}
 
@@ -184,162 +144,193 @@ export const NativeCollectionScreen = ({
           <View style={styles.emptyState}>
             {isLoading ? (
               <>
-                <ActivityIndicator color="#ffffff" size="large" />
-                <Text style={styles.emptyTitle}>Loading your Pokémon…</Text>
+                <ActivityIndicator color="#5ed8ff" size="large" />
+                <Text style={styles.emptyTitle}>Loading your collection…</Text>
               </>
             ) : !error ? (
               <>
                 <Text style={styles.emptyTitle}>No Pokémon found</Text>
-                <Text style={styles.emptyBody}>Try another search or collection filter.</Text>
+                <Text style={styles.emptyBody}>Try another name or collection filter.</Text>
               </>
             ) : null}
           </View>
         )}
-        renderItem={({ item }) => (
-          <NativePokemonGridCard
-            columnCount={columnCount}
-            item={item}
-            onOpen={onOpenInstance}
-          />
+        ListFooterComponent={(
+          <View style={styles.footer}>
+            <Pressable
+              accessibilityRole="button"
+              onPress={onOpenCurrentApp}
+              style={styles.primaryButton}
+            >
+              <Text style={styles.primaryButtonText}>Edit in current app</Text>
+            </Pressable>
+            <Text style={styles.footerText}>
+              This native milestone is intentionally read-only.
+            </Text>
+          </View>
         )}
-        testID="native-collection-grid"
-        windowSize={9}
+        renderItem={({ item }) => {
+          const status = statusStyles[item.status];
+          return (
+            <Pressable
+              accessibilityLabel={`Open ${item.name}`}
+              accessibilityRole="button"
+              onPress={() => onOpenInstance(item.id)}
+              style={({ pressed }) => [styles.card, pressed && styles.cardPressed]}
+            >
+              <View style={styles.cardTopRow}>
+                <Text style={styles.dexNumber}>#{String(item.pokedexNumber).padStart(4, '0')}</Text>
+                {item.favorite ? <Text accessibilityLabel="Favorite" style={styles.favorite}>★</Text> : null}
+                {item.mostWanted ? <Text accessibilityLabel="Most wanted" style={styles.mostWanted}>★</Text> : null}
+              </View>
+              <View style={styles.imageFrame}>
+                {item.imageUri ? (
+                  <Image resizeMode="contain" source={{ uri: item.imageUri }} style={styles.image} />
+                ) : (
+                  <Text style={styles.imageFallback}>#{item.pokemonId}</Text>
+                )}
+              </View>
+              <Text numberOfLines={2} style={styles.name}>{item.name}</Text>
+              <View style={[styles.statusBadge, { borderColor: status.borderColor }]}>
+                <Text style={[styles.statusText, { color: status.color }]}>
+                  {statusLabels[item.status]}
+                </Text>
+              </View>
+              {item.cp != null ? <Text style={styles.cp}>CP {item.cp.toLocaleString()}</Text> : null}
+            </Pressable>
+          );
+        }}
       />
-
-      <Pressable
-        accessibilityHint="Opens every feature in the current app"
-        accessibilityLabel="Open action menu in current app"
-        accessibilityRole="button"
-        onPress={onOpenCurrentApp}
-        style={({ pressed }) => [styles.actionButton, pressed && styles.actionButtonPressed]}
-      >
-        <Text accessibilityElementsHidden style={styles.actionFallback}>◉</Text>
-        <Image
-          accessibilityElementsHidden
-          resizeMode="contain"
-          source={{ uri: actionMenuImageUri }}
-          style={styles.actionImage}
-        />
-      </Pressable>
     </View>
   );
 };
 
 const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: '#111111' },
-  collectionControls: {
-    gap: 9,
-    paddingHorizontal: 12,
-    paddingTop: 12,
-    paddingBottom: 10,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: '#242424',
-    backgroundColor: '#111111',
+  screen: { flex: 1, backgroundColor: '#06162f' },
+  content: {
+    flexGrow: 1,
+    gap: theme.spacing.sm,
+    paddingHorizontal: theme.spacing.md,
+    paddingBottom: theme.spacing.xl,
   },
-  searchShell: {
-    width: '88%',
-    maxWidth: 560,
-    minHeight: 44,
-    alignSelf: 'center',
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderRadius: 999,
-    paddingHorizontal: 14,
-    backgroundColor: '#ffffff',
-  },
-  searchIcon: { color: '#727272', fontSize: 24, lineHeight: 25 },
-  searchInput: {
-    minHeight: 44,
-    flex: 1,
-    paddingHorizontal: 7,
-    paddingVertical: 0,
-    color: '#111111',
-    fontSize: 16,
-    textAlign: 'center',
-  },
-  clearSearch: {
-    width: 32,
-    height: 32,
+  headerContent: { gap: theme.spacing.md, paddingTop: theme.spacing.md, paddingBottom: theme.spacing.sm },
+  topBar: { minHeight: 52, flexDirection: 'row', alignItems: 'center', gap: theme.spacing.sm },
+  backButton: {
+    width: 48,
+    height: 48,
     alignItems: 'center',
     justifyContent: 'center',
-    borderLeftWidth: StyleSheet.hairlineWidth,
-    borderLeftColor: '#c3c3c3',
+    borderWidth: 1,
+    borderColor: '#385773',
+    borderRadius: theme.radius.md,
+    backgroundColor: '#0c203a',
   },
-  clearSearchText: { color: '#505050', fontSize: 26, lineHeight: 27 },
-  filters: { flexDirection: 'row', justifyContent: 'center', gap: 6 },
+  backButtonText: { color: '#fff', fontSize: 36, lineHeight: 38 },
+  headingCopy: { flex: 1 },
+  eyebrow: { color: '#5ed8ff', fontSize: theme.type.caption, fontWeight: '800', letterSpacing: 1.2 },
+  title: { color: '#fff', fontSize: 24, fontWeight: '900' },
+  headerCount: {
+    minWidth: 48,
+    minHeight: 38,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 19,
+    backgroundColor: '#173954',
+  },
+  headerCountText: { color: '#dff6ff', fontWeight: '800' },
+  searchInput: {
+    minHeight: 48,
+    borderWidth: 1,
+    borderColor: '#385773',
+    borderRadius: theme.radius.md,
+    paddingHorizontal: theme.spacing.md,
+    color: '#fff',
+    backgroundColor: '#0c203a',
+  },
+  filters: { flexDirection: 'row', gap: theme.spacing.xs },
   filterButton: {
-    minHeight: 36,
+    minHeight: 44,
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
-    borderColor: '#303030',
-    borderRadius: 999,
-    paddingHorizontal: 5,
-    backgroundColor: '#191919',
+    borderColor: '#385773',
+    borderRadius: theme.radius.md,
+    backgroundColor: '#0c203a',
   },
-  filterText: { color: '#929292', fontSize: 11, fontWeight: '800' },
-  pressed: { opacity: 0.68 },
-  content: { flexGrow: 1, paddingHorizontal: 4, paddingTop: 6, paddingBottom: 104 },
-  gridRow: { alignItems: 'flex-start' },
-  statusArea: { gap: 7, paddingHorizontal: 8, paddingBottom: 7 },
+  filterButtonSelected: { borderColor: '#2385e8', backgroundColor: '#123b68' },
+  filterText: { color: '#aebdcc', fontSize: theme.type.caption, fontWeight: '700' },
+  filterTextSelected: { color: '#fff' },
+  row: { gap: theme.spacing.sm },
+  card: {
+    minHeight: 238,
+    flex: 1,
+    maxWidth: '49%',
+    gap: theme.spacing.xs,
+    marginBottom: theme.spacing.sm,
+    borderWidth: 1,
+    borderColor: '#294962',
+    borderRadius: theme.radius.md,
+    padding: theme.spacing.sm,
+    backgroundColor: '#0b1c2d',
+  },
+  cardPressed: { opacity: 0.76, transform: [{ scale: 0.985 }] },
+  cardTopRow: { minHeight: 21, flexDirection: 'row', alignItems: 'center' },
+  dexNumber: { flex: 1, color: '#8ca3b8', fontSize: theme.type.caption, fontWeight: '700' },
+  favorite: { color: '#ffd75f', fontSize: 20 },
+  mostWanted: { color: '#ff704d', fontSize: 20 },
+  imageFrame: { height: 104, alignItems: 'center', justifyContent: 'center' },
+  image: { width: '100%', height: '100%' },
+  imageFallback: { color: '#8193a7', fontWeight: '800' },
+  name: { minHeight: 40, color: '#fff', fontSize: theme.type.body, fontWeight: '800', textAlign: 'center' },
+  statusBadge: {
+    alignSelf: 'center',
+    borderWidth: 1,
+    borderRadius: 999,
+    paddingHorizontal: theme.spacing.sm,
+    paddingVertical: 3,
+  },
+  statusText: { fontSize: theme.type.caption, fontWeight: '800' },
+  cp: { color: '#9fb3c8', fontSize: theme.type.caption, textAlign: 'center' },
+  emptyState: { minHeight: 260, alignItems: 'center', justifyContent: 'center', gap: theme.spacing.sm },
+  emptyTitle: { color: '#fff', fontSize: 20, fontWeight: '800', textAlign: 'center' },
+  emptyBody: { color: '#9fb3c8', textAlign: 'center' },
   errorCard: {
-    minHeight: 58,
-    flexDirection: 'row',
-    alignItems: 'center',
     gap: theme.spacing.sm,
     borderWidth: 1,
     borderColor: '#ef5b72',
     borderRadius: theme.radius.md,
-    padding: theme.spacing.sm,
-    backgroundColor: '#32151d',
+    padding: theme.spacing.md,
+    backgroundColor: '#341827',
   },
-  messageCopy: { flex: 1, gap: 2 },
-  errorTitle: { color: '#ffffff', fontWeight: '900' },
-  errorBody: { color: '#fecdd3', fontSize: theme.type.caption },
+  cachedCard: {
+    gap: theme.spacing.xs,
+    borderWidth: 1,
+    borderColor: '#a87524',
+    borderRadius: theme.radius.md,
+    padding: theme.spacing.md,
+    backgroundColor: '#332714',
+  },
+  cachedTitle: { color: '#ffe2a8', fontWeight: '900' },
+  cachedBody: { color: '#f7d99b', fontSize: theme.type.caption, lineHeight: 18 },
+  errorTitle: { color: '#fff', fontWeight: '800' },
+  errorBody: { color: '#fecdd3' },
   retryButton: {
-    minWidth: 66,
     minHeight: 44,
     alignItems: 'center',
     justifyContent: 'center',
     borderRadius: theme.radius.md,
     backgroundColor: '#ef5b72',
   },
-  retryText: { color: '#ffffff', fontWeight: '900' },
-  cachedCard: {
+  retryText: { color: '#fff', fontWeight: '800' },
+  footer: { gap: theme.spacing.sm, paddingTop: theme.spacing.md },
+  primaryButton: {
     minHeight: 48,
-    justifyContent: 'center',
-    borderWidth: 1,
-    borderColor: '#8d6a28',
-    borderRadius: theme.radius.md,
-    paddingHorizontal: theme.spacing.md,
-    backgroundColor: '#2a2112',
-  },
-  cachedTitle: { color: '#ffe2a8', fontWeight: '900' },
-  cachedBody: { color: '#e4c88e', fontSize: theme.type.caption },
-  emptyState: { minHeight: 300, alignItems: 'center', justifyContent: 'center', gap: 9 },
-  emptyTitle: { color: '#ffffff', fontSize: 18, fontWeight: '900', textAlign: 'center' },
-  emptyBody: { color: '#9ca3af', textAlign: 'center' },
-  actionButton: {
-    position: 'absolute',
-    bottom: 12,
-    left: '50%',
-    width: 64,
-    height: 64,
-    marginLeft: -32,
     alignItems: 'center',
     justifyContent: 'center',
-    borderWidth: 2,
-    borderColor: 'rgba(255,255,255,0.72)',
-    borderRadius: 32,
-    backgroundColor: '#1b1b1b',
-    shadowColor: '#000000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.45,
-    shadowRadius: 8,
-    elevation: 9,
+    borderRadius: theme.radius.md,
+    backgroundColor: theme.colors.selectedBorder,
   },
-  actionButtonPressed: { opacity: 0.82, transform: [{ scale: 0.95 }] },
-  actionFallback: { position: 'absolute', color: '#f4f4f4', fontSize: 36 },
-  actionImage: { width: 57, height: 57 },
+  primaryButtonText: { color: '#fff', fontWeight: '800' },
+  footerText: { color: '#8ca3b8', fontSize: theme.type.caption, textAlign: 'center' },
 });

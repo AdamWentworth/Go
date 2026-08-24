@@ -14,11 +14,8 @@ Pokémon Go Nexus Android development APK, then run
    local development server.
 2. Sign in with email and password. Native social sign-in is not part of this
    milestone; the current app remains available as a fallback.
-3. Confirm sign-in lands directly on the canonical collection layout. Verify the
-   Tags / Pokémon / Wishlist header, white search field, three-column phone grid,
-   Favorite/Most Wanted markers, location or Lucky backdrops, and Dynamax or
-   Gigantamax badges against the current app. Search/filter it, then open a
-   caught Pokémon that is not currently For Trade.
+3. Open **Your collection**, confirm the grid loads, search/filter it, and open
+   a caught Pokémon that is not currently For Trade.
 4. Toggle Favorite while online. Confirm the detail and collection grid update,
    and that any Receiver-accepted state is distinguished from final server
    reconciliation.
@@ -31,9 +28,6 @@ Pokémon Go Nexus Android development APK, then run
    local/pending to Receiver-accepted and finally disappears after the users
    service observes the committed snapshot. Use **Retry** or **Check** if needed.
 8. Reopen the Pokémon and confirm the final Favorite value remains correct.
-9. Tap Tags, Wishlist, and the bottom Poké Ball. Until those complete native
-   workflows are migrated, each must hand off cleanly to the current app rather
-   than expose an incomplete native substitute.
 
 This preview uses the live APIs by default, so choose a harmless caught Pokémon
 and restore its original Favorite value before finishing. Use the standalone

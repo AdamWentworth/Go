@@ -13,15 +13,6 @@ Expo mobile shell for Pokémon Go Nexus.
 7. SecureStore-backed refresh-token persistence for native sessions.
 8. Preview-only native email sign-in with refresh rotation, session recovery,
    and an immediate fallback to the current app.
-9. A parity-focused native collection shell using the canonical Tags / Pokémon /
-   Wishlist header, compact search and collection filters, responsive 3/6/9-column
-   grid, and the existing Pokémon presentation assets for location cards, Lucky,
-   Max forms, types, Favorites, and Most Wanted.
-
-The native preview now lands signed-in users directly in the collection. Tags,
-Wishlist, and the bottom Poké Ball still hand off to the current app until each
-complete workflow is ported; this keeps the preview honest and deployable while
-the production default remains the WebView experience.
 
 ## Commands
 
