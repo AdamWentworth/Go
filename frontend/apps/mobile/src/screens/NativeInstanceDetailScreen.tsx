@@ -12,7 +12,7 @@ import {
   useColorScheme,
   useWindowDimensions,
 } from 'react-native';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import Svg, { Circle, Path } from 'react-native-svg';
 import { GestureDetector } from 'react-native-gesture-handler';
 import type {
@@ -28,6 +28,7 @@ import type {
 } from '@pokemongonexus/shared-contracts/instances';
 import { NativePokemonLocationBackdrop } from '../features/collection/parity/NativePokemonLocationBackdrop';
 import { useNativeOverlaySwipeNavigation } from '../features/collection/parity/useNativeOverlaySwipeNavigation';
+import { getNativeLocationSuggestions } from '../services/locationApi';
 
 type Props = {
   assetBaseUrl?: string;
@@ -835,12 +836,63 @@ const NativeCaughtMetadataControls = ({
   palette: typeof LIGHT;
   onChange: (patch: Partial<NativeInstanceEditDraft>) => void;
 }) => {
+  const [locationSuggestions, setLocationSuggestions] = useState<string[]>([]);
+  const [locationSuggestionError, setLocationSuggestionError] = useState<string | null>(null);
+  const [isLoadingLocationSuggestions, setIsLoadingLocationSuggestions] = useState(false);
+  const locationRequestRef = useRef(0);
+  const acceptedLocationRef = useRef<string | null>(null);
   const inputStyle = [
     styles.editInput,
     { backgroundColor: palette.input, borderColor: palette.border, color: palette.text },
   ];
   const isShadow = Boolean(draft.shadow && !draft.purified);
   const canToggleLucky = isCaught && !isShadow && detail.rarity !== 'Mythic';
+
+  useEffect(() => {
+    const query = draft.locationCaught.trim();
+    const requestId = ++locationRequestRef.current;
+
+    if (acceptedLocationRef.current === draft.locationCaught) {
+      acceptedLocationRef.current = null;
+      return undefined;
+    }
+
+    if (query.length < 3) {
+      return undefined;
+    }
+
+    const timeout = setTimeout(() => {
+      setIsLoadingLocationSuggestions(true);
+      void getNativeLocationSuggestions(query)
+        .then((suggestions) => {
+          if (requestId !== locationRequestRef.current) return;
+          setLocationSuggestions(suggestions.map(({ displayName }) => displayName));
+          setLocationSuggestionError(null);
+        })
+        .catch(() => {
+          if (requestId !== locationRequestRef.current) return;
+          setLocationSuggestions([]);
+          setLocationSuggestionError('Location suggestions are unavailable. You can still enter a location manually.');
+        })
+        .finally(() => {
+          if (requestId === locationRequestRef.current) {
+            setIsLoadingLocationSuggestions(false);
+          }
+        });
+    }, 250);
+
+    return () => clearTimeout(timeout);
+  }, [draft.locationCaught]);
+
+  const selectLocationSuggestion = (displayName: string) => {
+    locationRequestRef.current += 1;
+    acceptedLocationRef.current = displayName;
+    setLocationSuggestions([]);
+    setLocationSuggestionError(null);
+    setIsLoadingLocationSuggestions(false);
+    onChange({ locationCaught: displayName });
+  };
+
   return (
     <View style={styles.editMetaPanel}>
       <Text style={[styles.editFieldLabel, { color: palette.secondary }]}>CAUGHT DETAILS</Text>
@@ -908,15 +960,60 @@ const NativeCaughtMetadataControls = ({
 
       <View style={styles.editFieldGroup}>
         <Text style={[styles.editFieldLabel, { color: palette.secondary }]}>LOCATION CAUGHT</Text>
-        <TextInput
-          accessibilityLabel="Caught location"
-          autoCapitalize="words"
-          onChangeText={(locationCaught) => onChange({ locationCaught })}
-          placeholder="Location caught"
-          placeholderTextColor={palette.secondary}
-          style={inputStyle}
-          value={draft.locationCaught}
-        />
+        <View style={styles.locationInputWrapper}>
+          {locationSuggestions.length > 0 ? (
+            <ScrollView
+              accessibilityLabel="Location suggestions"
+              keyboardShouldPersistTaps="handled"
+              nestedScrollEnabled
+              showsVerticalScrollIndicator={locationSuggestions.length > 4}
+              style={[styles.locationSuggestions, { backgroundColor: palette.panel, borderColor: palette.border }]}
+            >
+              {locationSuggestions.map((displayName) => (
+                <Pressable
+                  accessibilityLabel={`Use location ${displayName}`}
+                  accessibilityRole="button"
+                  key={displayName}
+                  onPress={() => selectLocationSuggestion(displayName)}
+                  style={({ pressed }) => [
+                    styles.locationSuggestion,
+                    { borderBottomColor: palette.border },
+                    pressed && styles.locationSuggestionPressed,
+                  ]}
+                >
+                  <Text style={[styles.locationSuggestionPin, { color: '#38a9ff' }]}>⌖</Text>
+                  <Text style={[styles.locationSuggestionText, { color: palette.text }]}>{displayName}</Text>
+                </Pressable>
+              ))}
+            </ScrollView>
+          ) : null}
+          <TextInput
+            accessibilityLabel="Caught location"
+            autoCapitalize="words"
+            autoComplete="off"
+            onChangeText={(locationCaught) => {
+              locationRequestRef.current += 1;
+              acceptedLocationRef.current = null;
+              setLocationSuggestions([]);
+              setLocationSuggestionError(null);
+              setIsLoadingLocationSuggestions(false);
+              onChange({ locationCaught });
+            }}
+            placeholder="Location caught"
+            placeholderTextColor={palette.secondary}
+            style={inputStyle}
+            value={draft.locationCaught}
+          />
+        </View>
+        {isLoadingLocationSuggestions ? (
+          <View accessibilityLabel="Loading location suggestions" style={styles.locationSuggestionStatus}>
+            <ActivityIndicator color="#38a9ff" size="small" />
+            <Text style={[styles.locationSuggestionStatusText, { color: palette.secondary }]}>Finding locations…</Text>
+          </View>
+        ) : null}
+        {locationSuggestionError ? (
+          <Text accessibilityRole="alert" style={styles.locationSuggestionError}>{locationSuggestionError}</Text>
+        ) : null}
         <Text style={[styles.editFieldLabel, { color: palette.secondary }]}>DATE CAUGHT</Text>
         <TextInput
           accessibilityLabel="Caught date"
@@ -1819,6 +1916,7 @@ export const NativeInstanceDetailScreen = ({
         <ScrollView
           contentContainerStyle={styles.scrollContent}
           directionalLockEnabled
+          keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
           style={styles.scroll}
         >
@@ -2372,6 +2470,28 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     backgroundColor: 'rgba(127,145,141,0.09)',
   },
+  locationSuggestionStatus: { minHeight: 30, flexDirection: 'row', alignItems: 'center', gap: 8 },
+  locationSuggestionStatusText: { fontSize: 12, fontWeight: '700' },
+  locationSuggestionError: { color: '#ff7188', fontSize: 12, lineHeight: 17, fontWeight: '700' },
+  locationInputWrapper: { gap: 6 },
+  locationSuggestions: {
+    maxHeight: 210,
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderRadius: 9,
+  },
+  locationSuggestion: {
+    minHeight: 46,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 9,
+    paddingHorizontal: 11,
+    paddingVertical: 8,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+  },
+  locationSuggestionPressed: { backgroundColor: 'rgba(56,169,255,0.14)' },
+  locationSuggestionPin: { width: 18, fontSize: 20, lineHeight: 22, fontWeight: '900', textAlign: 'center' },
+  locationSuggestionText: { flex: 1, minWidth: 0, fontSize: 14, lineHeight: 19, fontWeight: '800' },
   ballOptions: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
   ballOption: {
     minHeight: 38,

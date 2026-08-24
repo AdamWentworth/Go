@@ -260,7 +260,9 @@ const SMOKE_INSTANCES = Object.fromEntries(ROWS.map((entry) => [entry.id, {
   friendship_level: entry.status === 'wanted' ? 4 : null,
   pref_lucky: entry.status === 'wanted',
   location_card: null,
-  location_caught: entry.status === 'wanted' ? null : 'Burnaby, British Columbia, Canada',
+  location_caught: entry.status === 'wanted' || entry.id === 'smoke-metagross'
+    ? null
+    : 'Burnaby, British Columbia, Canada',
   date_caught: entry.status === 'wanted' ? null : '2026-08-24',
   mega: false,
   is_mega: false,

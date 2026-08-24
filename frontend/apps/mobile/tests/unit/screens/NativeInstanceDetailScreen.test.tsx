@@ -1,10 +1,17 @@
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react-native';
 import type { NativeInstanceDetail } from '../../../src/features/collection/collectionModel';
 import { NativeInstanceDetailScreen } from '../../../src/screens/NativeInstanceDetailScreen';
+import { getNativeLocationSuggestions } from '../../../src/services/locationApi';
 
 jest.mock('../../../src/features/collection/NativeCollectionSyncStatusCard', () => ({
   NativeCollectionSyncStatusCard: () => null,
 }));
+
+jest.mock('../../../src/services/locationApi', () => ({
+  getNativeLocationSuggestions: jest.fn(),
+}));
+
+const mockGetNativeLocationSuggestions = jest.mocked(getNativeLocationSuggestions);
 
 const detail = {
   row: {
@@ -48,6 +55,10 @@ const detail = {
 };
 
 describe('NativeInstanceDetailScreen', () => {
+  beforeEach(() => {
+    mockGetNativeLocationSuggestions.mockReset();
+  });
+
   it('renders canonical Pokémon details and keeps editing behind the fallback', () => {
     const onEditInCurrentApp = jest.fn();
     render(
@@ -492,6 +503,165 @@ describe('NativeInstanceDetailScreen', () => {
       is_mega: true,
       mega_form: 'y',
     }));
+  });
+
+  it('suggests caught locations and saves the selected canonical display name', async () => {
+    const onSaveDetails = jest.fn().mockResolvedValue(undefined);
+    mockGetNativeLocationSuggestions.mockResolvedValue([
+      {
+        displayName: 'Burnaby, British Columbia, Canada',
+        name: 'Burnaby',
+        state_or_province: 'British Columbia',
+        country: 'Canada',
+      },
+    ]);
+    render(
+      <NativeInstanceDetailScreen
+        detail={{
+          ...detail,
+          instance: {
+            nickname: null,
+            location_caught: null,
+            shadow: false,
+            purified: false,
+          } as NonNullable<NativeInstanceDetail['instance']>,
+          row: { ...detail.row, status: 'caught' },
+        }}
+        isLoading={false}
+        error={null}
+        cachedAt={null}
+        movesWarning={null}
+        saveNotice={null}
+        saveError={null}
+        isSaving={false}
+        onRetry={jest.fn()}
+        onBack={jest.fn()}
+        onSaveDetails={onSaveDetails}
+        onToggleFavorite={jest.fn()}
+        onEditInCurrentApp={jest.fn()}
+      />,
+    );
+
+    fireEvent.press(screen.getByRole('button', { name: 'Edit Pokémon' }));
+    fireEvent.changeText(screen.getByLabelText('Caught location'), 'Burnaby');
+    await waitFor(() => {
+      expect(mockGetNativeLocationSuggestions).toHaveBeenCalledWith('Burnaby');
+    });
+    fireEvent.press(screen.getByRole('button', {
+      name: 'Use location Burnaby, British Columbia, Canada',
+    }));
+    expect(screen.getByLabelText('Caught location').props.value).toBe(
+      'Burnaby, British Columbia, Canada',
+    );
+
+    await act(async () => {
+      fireEvent.press(screen.getByRole('button', { name: 'Save Pokémon' }));
+    });
+    expect(onSaveDetails).toHaveBeenCalledWith(expect.objectContaining({
+      location_caught: 'Burnaby, British Columbia, Canada',
+    }));
+  });
+
+  it('keeps manual caught-location editing available when suggestions fail', async () => {
+    mockGetNativeLocationSuggestions.mockRejectedValue(new Error('offline'));
+    render(
+      <NativeInstanceDetailScreen
+        detail={{
+          ...detail,
+          instance: {
+            nickname: null,
+            location_caught: null,
+            shadow: false,
+            purified: false,
+          } as NonNullable<NativeInstanceDetail['instance']>,
+          row: { ...detail.row, status: 'caught' },
+        }}
+        isLoading={false}
+        error={null}
+        cachedAt={null}
+        movesWarning={null}
+        saveNotice={null}
+        saveError={null}
+        isSaving={false}
+        onRetry={jest.fn()}
+        onBack={jest.fn()}
+        onSaveDetails={jest.fn().mockResolvedValue(undefined)}
+        onToggleFavorite={jest.fn()}
+        onEditInCurrentApp={jest.fn()}
+      />,
+    );
+
+    fireEvent.press(screen.getByRole('button', { name: 'Edit Pokémon' }));
+    fireEvent.changeText(screen.getByLabelText('Caught location'), 'Burnaby');
+    expect(await screen.findByRole('alert')).toHaveTextContent(
+      'Location suggestions are unavailable. You can still enter a location manually.',
+    );
+    expect(screen.getByLabelText('Caught location').props.value).toBe('Burnaby');
+  });
+
+  it('does not let an older location response replace newer suggestions', async () => {
+    let resolveFirst: (value: Awaited<ReturnType<typeof getNativeLocationSuggestions>>) => void = () => undefined;
+    let resolveSecond: (value: Awaited<ReturnType<typeof getNativeLocationSuggestions>>) => void = () => undefined;
+    const firstResponse = new Promise<Awaited<ReturnType<typeof getNativeLocationSuggestions>>>((resolve) => {
+      resolveFirst = resolve;
+    });
+    const secondResponse = new Promise<Awaited<ReturnType<typeof getNativeLocationSuggestions>>>((resolve) => {
+      resolveSecond = resolve;
+    });
+    mockGetNativeLocationSuggestions
+      .mockReturnValueOnce(firstResponse)
+      .mockReturnValueOnce(secondResponse);
+    render(
+      <NativeInstanceDetailScreen
+        detail={{
+          ...detail,
+          instance: {
+            nickname: null,
+            location_caught: null,
+            shadow: false,
+            purified: false,
+          } as NonNullable<NativeInstanceDetail['instance']>,
+          row: { ...detail.row, status: 'caught' },
+        }}
+        isLoading={false}
+        error={null}
+        cachedAt={null}
+        movesWarning={null}
+        saveNotice={null}
+        saveError={null}
+        isSaving={false}
+        onRetry={jest.fn()}
+        onBack={jest.fn()}
+        onSaveDetails={jest.fn().mockResolvedValue(undefined)}
+        onToggleFavorite={jest.fn()}
+        onEditInCurrentApp={jest.fn()}
+      />,
+    );
+
+    fireEvent.press(screen.getByRole('button', { name: 'Edit Pokémon' }));
+    fireEvent.changeText(screen.getByLabelText('Caught location'), 'Burnab');
+    await waitFor(() => expect(mockGetNativeLocationSuggestions).toHaveBeenCalledTimes(1));
+    fireEvent.changeText(screen.getByLabelText('Caught location'), 'Burnaby');
+    await waitFor(() => expect(mockGetNativeLocationSuggestions).toHaveBeenCalledTimes(2));
+
+    await act(async () => {
+      resolveSecond([{ displayName: 'Burnaby, British Columbia, Canada' }]);
+      await secondResponse;
+    });
+    expect(screen.getByRole('button', {
+      name: 'Use location Burnaby, British Columbia, Canada',
+    })).toBeTruthy();
+
+    await act(async () => {
+      resolveFirst([{ displayName: 'Burnaby Lake, British Columbia, Canada' }]);
+      await firstResponse;
+    });
+    expect(screen.queryByRole('button', {
+      name: 'Use location Burnaby Lake, British Columbia, Canada',
+    })).toBeNull();
+    expect(screen.getByRole('button', {
+      name: 'Use location Burnaby, British Columbia, Canada',
+    })).toBeTruthy();
   });
 
   it('unlocks special Max Move editing when a Crowned form is selected', async () => {

@@ -1,0 +1,48 @@
+appId: host.exp.exponent
+name: Native caught-location autocomplete smoke
+tags:
+  - android
+  - native-instance
+  - location-autocomplete
+---
+- openLink:
+    link: exp://10.0.2.2:8091/--/device-smoke/collection?instance=smoke-metagross
+- runFlow:
+    when:
+      visible: "This is the developer menu.*"
+    commands:
+      - tapOn: Continue
+- runFlow:
+    when:
+      visible: React Native dev menu
+    commands:
+      - tapOn: Close
+- extendedWaitUntil:
+    visible: Shiny Metagross
+    timeout: 45000
+- tapOn: Edit Pokémon
+- swipe:
+    start: 50%, 82%
+    end: 50%, 52%
+    duration: 450
+- swipe:
+    start: 50%, 82%
+    end: 50%, 42%
+    duration: 500
+- swipe:
+    start: 50%, 82%
+    end: 50%, 20%
+    duration: 650
+- extendedWaitUntil:
+    visible: CAUGHT DETAILS
+    timeout: 15000
+- tapOn: Location caught
+- inputText: Burnaby
+- extendedWaitUntil:
+    visible: Burnaby, British Columbia, Canada
+    timeout: 15000
+- takeScreenshot: location-01-suggestions
+- tapOn: Burnaby, British Columbia, Canada
+- assertVisible: Burnaby, British Columbia, Canada
+- hideKeyboard
+- takeScreenshot: location-02-selected
