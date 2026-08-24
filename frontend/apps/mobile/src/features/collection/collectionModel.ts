@@ -54,7 +54,10 @@ export type NativeCollectionRow = {
 export type NativeTagSummary = {
   key: PokemonTagOrderKey;
   parent: CustomTagParent;
+  /** Canonical tag card label (for example, "All Caught"). */
   name: string;
+  /** Canonical filter/header identity (for example, "Caught"). */
+  filterName?: string;
   color: string;
   tone: 'caught' | 'trade' | 'favorites' | 'wanted' | 'most-wanted' | 'custom';
   rows: NativeCollectionRow[];
@@ -440,7 +443,8 @@ const SYSTEM_TAGS: Record<string, Omit<NativeTagSummary, 'rows'>> = {
   'system:caught': {
     key: 'system:caught',
     parent: 'caught',
-    name: 'Caught',
+    name: 'All Caught',
+    filterName: 'Caught',
     color: '#5798ff',
     tone: 'caught',
   },
@@ -448,20 +452,23 @@ const SYSTEM_TAGS: Record<string, Omit<NativeTagSummary, 'rows'>> = {
     key: 'system:favorites',
     parent: 'caught',
     name: 'Favorites',
+    filterName: 'Favorites',
     color: '#ffd45a',
     tone: 'favorites',
   },
   'system:trade': {
     key: 'system:trade',
     parent: 'caught',
-    name: 'Trade',
+    name: 'For Trade',
+    filterName: 'Trade',
     color: '#4bc574',
     tone: 'trade',
   },
   'system:wanted': {
     key: 'system:wanted',
     parent: 'wanted',
-    name: 'Wanted',
+    name: 'All Wanted',
+    filterName: 'Wanted',
     color: '#ef5b72',
     tone: 'wanted',
   },
@@ -469,6 +476,7 @@ const SYSTEM_TAGS: Record<string, Omit<NativeTagSummary, 'rows'>> = {
     key: 'system:most-wanted',
     parent: 'wanted',
     name: 'Most Wanted',
+    filterName: 'Most Wanted',
     color: '#ff704d',
     tone: 'most-wanted',
   },
@@ -534,6 +542,7 @@ export const buildNativeTagSummaries = (
       key,
       parent,
       name: definition.name,
+      filterName: definition.name,
       color: definition.color,
       tone: 'custom',
       rows: tagRows,

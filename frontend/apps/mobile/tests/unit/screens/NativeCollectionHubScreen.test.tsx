@@ -71,6 +71,7 @@ const allCaughtTag: NativeTagSummary = {
   key: 'system:caught',
   parent: 'caught',
   name: 'All Caught',
+  filterName: 'Caught',
   color: '#5798ff',
   tone: 'caught',
   rows: [caughtRow],
@@ -127,6 +128,10 @@ describe('NativeCollectionHubScreen', () => {
     expect(screen.getByText('Bulbasaur')).toBeTruthy();
     expect(screen.getByText('Mewtwo')).toBeTruthy();
     expect(screen.queryByText('Shiny Bulbasaur')).toBeNull();
+
+    fireEvent.press(screen.getByRole('tab', { name: /tags/i }));
+    fireEvent.press(screen.getByRole('button', { name: /Open All Caught/i }));
+    expect(screen.getByText('Caught')).toBeTruthy();
 
     fireEvent.press(screen.getByRole('tab', { name: /wishlist/i }));
     expect(screen.getByLabelText('Wanted tags')).toBeTruthy();

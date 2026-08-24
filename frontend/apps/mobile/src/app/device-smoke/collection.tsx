@@ -157,7 +157,8 @@ const INVENTORY_TAGS: NativeTagSummary[] = [
   {
     key: 'system:trade',
     parent: 'caught',
-    name: 'Trade',
+    name: 'For Trade',
+    filterName: 'Trade',
     color: '#4bc574',
     tone: 'trade',
     rows: rowsWithStatus('trade'),
@@ -165,7 +166,8 @@ const INVENTORY_TAGS: NativeTagSummary[] = [
   {
     key: 'system:caught',
     parent: 'caught',
-    name: 'Caught',
+    name: 'All Caught',
+    filterName: 'Caught',
     color: '#5798ff',
     tone: 'caught',
     rows: ROWS.filter((candidate) => candidate.status !== 'wanted'),
@@ -184,7 +186,8 @@ const WISHLIST_TAGS: NativeTagSummary[] = [
   {
     key: 'system:wanted',
     parent: 'wanted',
-    name: 'Wanted',
+    name: 'All Wanted',
+    filterName: 'Wanted',
     color: '#ef5b72',
     tone: 'wanted',
     rows: rowsWithStatus('wanted'),

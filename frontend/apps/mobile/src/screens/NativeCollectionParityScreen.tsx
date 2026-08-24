@@ -107,7 +107,7 @@ export const NativeCollectionParityScreen = ({
   return (
     <View style={styles.screen} testID="native-collection-parity-screen">
       <NativeCollectionParityFixture
-        activeTag={activeTag?.name ?? null}
+        activeTag={activeTag?.filterName ?? activeTag?.name ?? null}
         assetBaseUrl={assetBaseUrl}
         cards={cards}
         collectionCount={visibleRows.length}

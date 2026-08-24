@@ -220,7 +220,7 @@ export const NativeCollectionHubScreen = ({
   return (
     <View style={[styles.screen, { backgroundColor: background }]} testID="native-collection-hub">
       <NativePokemonHubHeader
-        activeTag={selectedTag?.name ?? null}
+        activeTag={selectedTag?.filterName ?? selectedTag?.name ?? null}
         activeTagParent={selectedTag?.parent ?? null}
         activeView={activeView}
         backgroundColor={background}
