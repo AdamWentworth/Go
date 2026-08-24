@@ -12,6 +12,8 @@ emulator_bin="${android_sdk_root}/emulator/emulator"
 artifact_dir="$(mktemp -d /tmp/pokegonexus-android-smoke.XXXXXX)"
 metro_pid=""
 metro_pgid=""
+fixture_pid=""
+fixture_pgid=""
 
 cleanup() {
   if [[ -n "${metro_pgid}" ]]; then
@@ -26,12 +28,24 @@ cleanup() {
   elif [[ -n "${metro_pid}" ]] && kill -0 "${metro_pid}" 2>/dev/null; then
     kill "${metro_pid}" 2>/dev/null || true
   fi
+  if [[ -n "${fixture_pgid}" ]]; then
+    kill -- "-${fixture_pgid}" 2>/dev/null || true
+    kill -KILL -- "-${fixture_pgid}" 2>/dev/null || true
+  elif [[ -n "${fixture_pid}" ]] && kill -0 "${fixture_pid}" 2>/dev/null; then
+    kill "${fixture_pid}" 2>/dev/null || true
+  fi
 }
 trap cleanup EXIT
 
 for required in "${adb_bin}" "${emulator_bin}" "${java_home}/bin/java" "${maestro_bin}" "${expo_go_apk}"; do
   if [[ ! -e "${required}" ]]; then
     echo "Missing Android smoke dependency: ${required}" >&2
+    exit 1
+  fi
+done
+for required_command in curl python3 setsid; do
+  if ! command -v "${required_command}" >/dev/null 2>&1; then
+    echo "Missing Android smoke command: ${required_command}" >&2
     exit 1
   fi
 done
@@ -78,6 +92,33 @@ if curl --silent --fail --max-time 1 http://127.0.0.1:8091/status >/dev/null 2>&
   echo "Android smoke port 8091 is already in use; stop that Metro server and retry." >&2
   exit 1
 fi
+if curl --silent --fail --max-time 1 http://127.0.0.1:8092/pokemons.json >/dev/null 2>&1; then
+  echo "Android smoke fixture port 8092 is already in use; stop that server and retry." >&2
+  exit 1
+fi
+
+fixture_directory="$(cd ../../packages/app-core/tests/__helpers__/fixtures && pwd)"
+setsid python3 -m http.server 8092 \
+  --bind 127.0.0.1 \
+  --directory "${fixture_directory}" >"${artifact_dir}/fixture-server.log" 2>&1 &
+fixture_pid="$!"
+fixture_pgid="${fixture_pid}"
+for _attempt in $(seq 1 30); do
+  if curl --silent --fail --max-time 1 http://127.0.0.1:8092/pokemons.json >/dev/null 2>&1; then
+    break
+  fi
+  if ! kill -0 "${fixture_pid}" 2>/dev/null; then
+    echo "Catalog fixture server exited before the device smoke could start." >&2
+    cat "${artifact_dir}/fixture-server.log" >&2
+    exit 1
+  fi
+  sleep 0.2
+done
+if ! curl --silent --fail --max-time 1 http://127.0.0.1:8092/pokemons.json >/dev/null 2>&1; then
+  echo "Catalog fixture server did not become ready." >&2
+  cat "${artifact_dir}/fixture-server.log" >&2
+  exit 1
+fi
 
 "${adb_bin}" -s "${device_id}" shell cmd uimode night no >/dev/null
 setsid env \
@@ -99,6 +140,11 @@ for _attempt in $(seq 1 90); do
   fi
   sleep 1
 done
+if ! curl --silent --fail --max-time 1 http://127.0.0.1:8091/status | grep -q 'packager-status:running'; then
+  echo "Metro did not become ready for the Android smoke." >&2
+  tail -80 "${artifact_dir}/metro.log" >&2
+  exit 1
+fi
 
 "${adb_bin}" -s "${device_id}" shell am force-stop host.exp.exponent
 "${maestro_bin}" --device "${device_id}" test \

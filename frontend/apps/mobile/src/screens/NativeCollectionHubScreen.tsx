@@ -45,6 +45,9 @@ export const NativeCollectionHubScreen = ({
   const [activeView, setActiveView] = useState<NativePokemonHubView>('pokemon');
   const [selectedTag, setSelectedTag] = useState<NativeTagSummary | null>(null);
   const selectedRows = selectedTag?.rows ?? catalogRows;
+  const inventoryCount = inventoryTags.find(
+    (tag) => tag.key === 'system:caught',
+  )?.rows.length ?? 0;
   const background = light ? '#f8fff9' : webCssVarTokens.colors.bgApp;
   const text = light ? '#405753' : webCssVarTokens.colors.textPrimary;
   const secondary = light ? '#4b625e' : webCssVarTokens.colors.textSecondary;
@@ -80,7 +83,7 @@ export const NativeCollectionHubScreen = ({
         <NativeTagsPanelScreen
           activeTagName={selectedTag?.parent === 'caught' ? selectedTag.name : null}
           assetBaseUrl={assetBaseUrl}
-          collectionCount={catalogRows.length}
+          collectionCount={inventoryCount}
           error={error}
           warning={warning}
           isLoading={isLoading}
@@ -110,7 +113,7 @@ export const NativeCollectionHubScreen = ({
         <NativeTagsPanelScreen
           activeTagName={selectedTag?.parent === 'wanted' ? selectedTag.name : null}
           assetBaseUrl={assetBaseUrl}
-          collectionCount={catalogRows.length}
+          collectionCount={inventoryCount}
           error={error}
           isLoading={isLoading}
           onActionMenuPress={onActionMenuPress}

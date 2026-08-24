@@ -19,7 +19,12 @@ tags:
 - extendedWaitUntil:
     visible: POKÉMON
     timeout: 45000
-- assertVisible: Shiny Shadow Venusaur
+- extendedWaitUntil:
+    visible: Bulbasaur
+    timeout: 45000
+- assertVisible: Shiny Bulbasaur
+- assertVisible: Shadow Bulbasaur
+- assertNotVisible: For Trade
 - takeScreenshot: 01-pokemon-grid
 - tapOn: TAGS
 - extendedWaitUntil:
@@ -43,6 +48,15 @@ tags:
 - assertVisible: Shiny Gigantamax Charizard
 - assertVisible: Shiny Suicune
 - takeScreenshot: 03-for-trade-glows
+- tapOn: Clear For Trade tag filter
+- extendedWaitUntil:
+    visible: Bulbasaur
+    timeout: 10000
+- assertVisible: Shiny Bulbasaur
+- assertNotVisible: Shiny Suicune
+- takeScreenshot: 04-catalog-restored
+- tapOn: TAGS
+- tapOn: "Open For Trade, 3 Pokémon"
 - swipe:
     start: 90%, 50%
     end: 10%, 50%
@@ -51,7 +65,7 @@ tags:
     visible: Wishlist tags
     timeout: 10000
 - assertVisible: Most Wanted
-- takeScreenshot: 04-wishlist-tags
+- takeScreenshot: 05-wishlist-tags
 - tapOn: "Open Most Wanted, 2 Pokémon"
 - extendedWaitUntil:
     visible: "(MOST WANTED)"
@@ -59,6 +73,6 @@ tags:
 - assertVisible: Gigantamax Blastoise
 - tapOn: "View Gigantamax Blastoise"
 - assertVisible: Opened Gigantamax Blastoise
-- takeScreenshot: 05-instance-opened
+- takeScreenshot: 06-instance-opened
 - tapOn: Close smoke detail
 - assertNotVisible: Opened Gigantamax Blastoise

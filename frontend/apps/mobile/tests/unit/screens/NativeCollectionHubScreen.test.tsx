@@ -40,12 +40,38 @@ const wantedRow: NativeCollectionRow = {
   mostWanted: true,
 };
 
+const catalogBulbasaur: NativeCollectionRow = {
+  ...caughtRow,
+  id: '0001-default',
+  name: 'Bulbasaur',
+  cp: null,
+  favorite: false,
+  source: 'catalog',
+};
+
+const catalogMewtwo: NativeCollectionRow = {
+  ...wantedRow,
+  id: '0150-default',
+  name: 'Mewtwo',
+  mostWanted: false,
+  source: 'catalog',
+};
+
 const inventoryTag: NativeTagSummary = {
   key: 'system:favorites',
   parent: 'caught',
   name: 'Favorites',
   color: '#ffd45a',
   tone: 'favorites',
+  rows: [caughtRow],
+};
+
+const allCaughtTag: NativeTagSummary = {
+  key: 'system:caught',
+  parent: 'caught',
+  name: 'All Caught',
+  color: '#5798ff',
+  tone: 'caught',
   rows: [caughtRow],
 };
 
@@ -64,9 +90,9 @@ describe('NativeCollectionHubScreen', () => {
     render(
       <NativeCollectionHubScreen
         assetBaseUrl="https://pokegonexus.com"
-        catalogRows={[caughtRow, wantedRow]}
+        catalogRows={[catalogBulbasaur, catalogMewtwo]}
         error={null}
-        inventoryTags={[inventoryTag]}
+        inventoryTags={[inventoryTag, allCaughtTag]}
         isLoading={false}
         onActionMenuPress={jest.fn()}
         onOpenEntry={onOpenEntry}
@@ -75,10 +101,13 @@ describe('NativeCollectionHubScreen', () => {
       />,
     );
 
-    expect(screen.getByText('Shiny Bulbasaur')).toBeTruthy();
-    expect(screen.getByText('Shiny Mewtwo')).toBeTruthy();
+    expect(screen.getByText('Bulbasaur')).toBeTruthy();
+    expect(screen.getByText('Mewtwo')).toBeTruthy();
+    expect(screen.queryByText('Shiny Bulbasaur')).toBeNull();
+    expect(screen.queryByText('Shiny Mewtwo')).toBeNull();
 
     fireEvent.press(screen.getByRole('tab', { name: /tags/i }));
+    expect(screen.getByText('1 Pokémon')).toBeTruthy();
     fireEvent.press(screen.getByRole('button', { name: /Open Favorites/i }));
 
     expect(screen.getByText('Favorites')).toBeTruthy();
@@ -87,6 +116,11 @@ describe('NativeCollectionHubScreen', () => {
 
     fireEvent.press(screen.getByRole('button', { name: 'View Shiny Bulbasaur' }));
     expect(onOpenEntry).toHaveBeenCalledWith(caughtRow);
+
+    fireEvent.press(screen.getByRole('button', { name: /Clear Favorites tag filter/i }));
+    expect(screen.getByText('Bulbasaur')).toBeTruthy();
+    expect(screen.getByText('Mewtwo')).toBeTruthy();
+    expect(screen.queryByText('Shiny Bulbasaur')).toBeNull();
 
     fireEvent.press(screen.getByRole('tab', { name: /wishlist/i }));
     expect(screen.getByText('Wishlist tags')).toBeTruthy();

@@ -1,14 +1,17 @@
 import { Redirect } from 'expo-router';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Modal, Pressable, StyleSheet, Text, View } from 'react-native';
+import type { BasePokemon } from '@pokemongonexus/shared-contracts/pokemon';
 import type {
   NativeCollectionRow,
   NativeTagSummary,
 } from '../../features/collection/collectionModel';
+import { buildNativeCatalogRows } from '../../features/collection/collectionModel';
 import { runtimeConfig } from '../../config/runtimeConfig';
 import { NativeCollectionHubScreen } from '../../screens/NativeCollectionHubScreen';
 
 const ASSET_BASE_URL = 'https://pokegonexus.com';
+const CATALOG_FIXTURE_URL = 'http://10.0.2.2:8092/pokemons.json';
 
 const row = ({
   id,
@@ -186,6 +189,30 @@ const WISHLIST_TAGS: NativeTagSummary[] = [
 
 export default function DeviceSmokeCollectionRoute() {
   const [openedRow, setOpenedRow] = useState<NativeCollectionRow | null>(null);
+  const [catalogRows, setCatalogRows] = useState<NativeCollectionRow[]>([]);
+  const [catalogError, setCatalogError] = useState<string | null>(null);
+  const [catalogLoading, setCatalogLoading] = useState(true);
+
+  useEffect(() => {
+    if (!runtimeConfig.mobile.deviceSmokeMode) return undefined;
+    const controller = new AbortController();
+    void fetch(CATALOG_FIXTURE_URL, { signal: controller.signal })
+      .then(async (response) => {
+        if (!response.ok) throw new Error(`Catalog fixture returned ${response.status}.`);
+        const payload: unknown = await response.json();
+        if (!Array.isArray(payload)) throw new Error('Catalog fixture is not an array.');
+        setCatalogRows(buildNativeCatalogRows(payload as BasePokemon[], ASSET_BASE_URL));
+        setCatalogError(null);
+      })
+      .catch((error: unknown) => {
+        if (controller.signal.aborted) return;
+        setCatalogError(error instanceof Error ? error.message : 'Catalog fixture failed to load.');
+      })
+      .finally(() => {
+        if (!controller.signal.aborted) setCatalogLoading(false);
+      });
+    return () => controller.abort();
+  }, []);
 
   if (!runtimeConfig.mobile.deviceSmokeMode) return <Redirect href="/" />;
 
@@ -193,10 +220,10 @@ export default function DeviceSmokeCollectionRoute() {
     <>
       <NativeCollectionHubScreen
         assetBaseUrl={ASSET_BASE_URL}
-        catalogRows={ROWS}
-        error={null}
+        catalogRows={catalogRows}
+        error={catalogError}
         inventoryTags={INVENTORY_TAGS}
-        isLoading={false}
+        isLoading={catalogLoading}
         onActionMenuPress={() => undefined}
         onOpenEntry={setOpenedRow}
         onRetry={() => undefined}

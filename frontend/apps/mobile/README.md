@@ -37,10 +37,12 @@ npm --workspace apps/mobile run device:smoke:android
 ```
 
 `device:smoke:android` boots or reuses the dedicated Pixel emulator, starts an
-isolated Metro server with a development-only seeded collection, and drives the
-real Expo/React Native runtime with Maestro. It verifies the Tags, Pokémon, and
-Wishlist tabs, horizontal swiping, tag selection, tagged ownership glows, and
-opening a collection entry without requiring production credentials. The
+isolated Metro server with the full checked-in Pokémon catalog plus seeded tag
+memberships, and drives the real Expo/React Native runtime with Maestro. It
+verifies that the unfiltered catalog is the default, then checks the Tags,
+Pokémon, and Wishlist tabs, horizontal swiping, tag selection, filter clearing,
+tagged ownership glows, and opening a collection entry without requiring
+production credentials. The
 device-smoke route is disabled unless `EXPO_PUBLIC_DEVICE_SMOKE_MODE=true` and
 is unavailable in production bundles.
 
