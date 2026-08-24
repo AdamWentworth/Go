@@ -29,7 +29,7 @@ const tag = {
 const maxTag = {
   ...tag,
   key: 'system:trade' as const,
-  name: 'For Trade',
+  name: 'Trade',
   color: '#3aa85f',
   tone: 'trade' as const,
   rows: [{
@@ -86,7 +86,7 @@ describe('NativeTagsPanelScreen', () => {
 
     expect(screen.getByLabelText('Inventory tags')).toBeTruthy();
     expect(screen.getByText('1 Pokémon')).toBeTruthy();
-    expect(screen.getByLabelText('Open For Trade, 1 Pokémon')).toBeTruthy();
+    expect(screen.getByLabelText('Open Trade, 1 Pokémon')).toBeTruthy();
     expect(screen.UNSAFE_getByProps({ testID: 'native-tag-preview-gigantamax' })).toBeTruthy();
     expect(screen.queryByText('Inventory tags')).toBeNull();
     expect(screen.queryByText('›')).toBeNull();

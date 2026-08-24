@@ -10,6 +10,14 @@ import type {
 } from '@pokemongonexus/shared-contracts/users';
 import { buildPokemonCatalogEntries } from '@pokemongonexus/shared-domain/catalog';
 import { resolveInstanceCollectionKey } from '@pokemongonexus/shared-domain/instances';
+import {
+  buildPokemonTypeIconPath,
+  getPokemonCrownFormLabel,
+  resolvePokemonActiveCrownForm,
+  resolvePokemonActiveFusionEntry,
+  resolvePokemonActiveMegaEvolution,
+  resolvePokemonInstanceImagePath,
+} from '@pokemongonexus/shared-domain/pokemon-display';
 import { normalizeNativeTagsEnvelope } from './nativeTagsEnvelope';
 import { normalizeNativeTagIds } from './nativeInstanceNormalization';
 
@@ -73,104 +81,10 @@ export type NativeInstanceDetail = {
   preferences: { label: string; value: string }[];
 };
 
-const firstString = (...values: (string | null | undefined)[]): string | null =>
-  values.find((value): value is string => Boolean(value?.trim())) ?? null;
-
-const selectCostumeImage = (
-  instance: PokemonInstance,
-  pokemon: BasePokemon,
-): string | null => {
-  if (instance.costume_id == null) return null;
-  const costume = pokemon.costumes?.find(
-    (entry) => entry.costume_id === instance.costume_id,
-  );
-  if (!costume) return null;
-  const isFemale = instance.gender?.toLowerCase() === 'female';
-
-  if (instance.shadow && costume.shadow_costume) {
-    return instance.shiny
-      ? firstString(
-        isFemale
-          ? costume.shadow_costume.image_url_female_shiny_shadow_costume
-          : null,
-        costume.shadow_costume.image_url_shiny_shadow_costume,
-      )
-      : firstString(
-        isFemale ? costume.shadow_costume.image_url_female_shadow_costume : null,
-        costume.shadow_costume.image_url_shadow_costume,
-      );
-  }
-
-  return instance.shiny
-    ? firstString(
-      isFemale ? costume.image_url_shiny_female : null,
-      costume.image_url_shiny,
-    )
-    : firstString(isFemale ? costume.image_url_female : null, costume.image_url);
-};
-
 export const resolveNativeInstanceImage = (
   instance: PokemonInstance,
   pokemon: BasePokemon,
-): string | null => {
-  if (instance.gigantamax) {
-    const maxForm = pokemon.max?.find((entry) => Boolean(entry.gigantamax));
-    return firstString(
-      instance.shiny ? maxForm?.shiny_gigantamax_image_url : null,
-      maxForm?.gigantamax_image_url,
-      instance.shiny ? pokemon.image_url_shiny : null,
-      pokemon.image_url,
-    );
-  }
-
-  if (instance.is_mega || instance.mega) {
-    const mega = activeMega(instance, pokemon);
-    return firstString(
-      instance.shiny ? mega?.image_url_shiny : null,
-      mega?.image_url,
-      pokemon.image_url,
-    );
-  }
-
-  if (instance.is_fused) {
-    const fusion = activeFusion(instance, pokemon);
-    return firstString(
-      instance.shiny ? fusion?.image_url_shiny : null,
-      fusion?.image_url,
-      pokemon.image_url,
-    );
-  }
-
-  if (instance.crown) {
-    const crown = activeCrown(instance, pokemon);
-    return firstString(
-      instance.shiny ? crown?.image_url_shiny : null,
-      crown?.image_url,
-      pokemon.image_url,
-    );
-  }
-
-  const costumeImage = selectCostumeImage(instance, pokemon);
-  if (costumeImage) return costumeImage;
-
-  const isFemale = instance.gender?.toLowerCase() === 'female';
-  const female = isFemale ? pokemon.female_data : null;
-  if (instance.shadow) {
-    return firstString(
-      instance.shiny ? female?.shiny_shadow_image_url : null,
-      instance.shiny ? pokemon.image_url_shiny_shadow : null,
-      female?.shadow_image_url,
-      pokemon.image_url_shadow,
-      pokemon.image_url,
-    );
-  }
-  return firstString(
-    instance.shiny ? female?.shiny_image_url : null,
-    instance.shiny ? pokemon.image_url_shiny : null,
-    female?.image_url,
-    pokemon.image_url,
-  );
-};
+): string => resolvePokemonInstanceImagePath(instance, pokemon);
 
 const statusForInstance = (
   instance: PokemonInstance,
@@ -181,13 +95,6 @@ const statusForInstance = (
   return null;
 };
 
-const normalizeFormToken = (value: string | null | undefined): string =>
-  String(value ?? '')
-    .trim()
-    .toLowerCase()
-    .replace(/[_-]+/g, ' ')
-    .replace(/\s+/g, ' ');
-
 const formatVariantLabel = (value: string): string =>
   value
     .trim()
@@ -197,32 +104,25 @@ const formatVariantLabel = (value: string): string =>
     .join(' ');
 
 function activeFusion(instance: PokemonInstance, pokemon: BasePokemon) {
-  if (!instance.is_fused) return undefined;
-  const normalizedForm = normalizeFormToken(instance.fusion_form);
-  if (normalizedForm) {
-    return pokemon.fusion?.find(
-      (entry) => normalizeFormToken(entry.name) === normalizedForm,
-    ) ?? pokemon.fusion?.[0];
-  }
-  const storedId = Number(instance.fusion?.fusion_id ?? instance.fusion?.id);
-  return pokemon.fusion?.find((entry) => entry.fusion_id === storedId) ?? pokemon.fusion?.[0];
+  return resolvePokemonActiveFusionEntry({
+    isFused: instance.is_fused,
+    fusionForm: instance.fusion_form,
+    fusionEntries: pokemon.fusion,
+    storedFusion: instance.fusion,
+  });
 }
 
 function activeMega(instance: PokemonInstance, pokemon: BasePokemon) {
-  if (!instance.is_mega && !instance.mega) return undefined;
-  const normalizedForm = normalizeFormToken(instance.mega_form);
-  return pokemon.megaEvolutions?.find(
-    (entry) => normalizeFormToken(entry.form) === normalizedForm,
-  ) ?? pokemon.megaEvolutions?.[0];
+  return resolvePokemonActiveMegaEvolution({
+    isMega: instance.is_mega || instance.mega,
+    megaForm: instance.mega_form,
+    megaEvolutions: pokemon.megaEvolutions,
+  });
 }
 
 function activeCrown(instance: PokemonInstance, pokemon: BasePokemon) {
   if (!instance.crown) return undefined;
-  const normalizedForm = normalizeFormToken(instance.fusion_form);
-  return pokemon.crownForms?.find((entry) =>
-    normalizeFormToken(entry.display_form) === normalizedForm ||
-    normalizeFormToken(entry.form) === normalizedForm,
-  ) ?? pokemon.crownForms?.[0];
+  return resolvePokemonActiveCrownForm(pokemon.crownForms, instance.fusion_form);
 }
 
 const displayName = (instance: PokemonInstance, pokemon: BasePokemon): string => {
@@ -233,7 +133,7 @@ const displayName = (instance: PokemonInstance, pokemon: BasePokemon): string =>
 
   const crown = activeCrown(instance, pokemon);
   if (crown) {
-    const label = crown.display_form?.trim() || crown.form?.trim();
+    const label = getPokemonCrownFormLabel(crown);
     return `${instance.shiny ? 'Shiny ' : ''}${label ? `${label} ` : ''}${pokemon.name}`;
   }
 
@@ -274,7 +174,8 @@ const resolveTypeIcons = (
   if (!variantTypes) return [pokemon.type_1_icon, pokemon.type_2_icon].filter(Boolean);
   return variantTypes
     .filter((type): type is string => Boolean(type?.trim()))
-    .map((type) => `/images/types/${type.trim().toLowerCase()}.png`);
+    .map(buildPokemonTypeIconPath)
+    .filter((icon): icon is string => Boolean(icon));
 };
 
 const absoluteImageUri = (image: string | null, assetOrigin: string): string | null => {
@@ -531,7 +432,7 @@ const SYSTEM_TAGS: Record<string, Omit<NativeTagSummary, 'rows'>> = {
   'system:caught': {
     key: 'system:caught',
     parent: 'caught',
-    name: 'All Caught',
+    name: 'Caught',
     color: '#5798ff',
     tone: 'caught',
   },
@@ -545,14 +446,14 @@ const SYSTEM_TAGS: Record<string, Omit<NativeTagSummary, 'rows'>> = {
   'system:trade': {
     key: 'system:trade',
     parent: 'caught',
-    name: 'For Trade',
+    name: 'Trade',
     color: '#4bc574',
     tone: 'trade',
   },
   'system:wanted': {
     key: 'system:wanted',
     parent: 'wanted',
-    name: 'All Wanted',
+    name: 'Wanted',
     color: '#ef5b72',
     tone: 'wanted',
   },

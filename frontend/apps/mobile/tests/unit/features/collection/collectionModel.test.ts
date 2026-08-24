@@ -289,11 +289,11 @@ describe('native collection model', () => {
     const wanted = buildNativeTagSummaries(rows, instances, envelope, 'wanted');
 
     expect(caught.map((tag) => tag.name)).toEqual([
-      'Favorites', 'Shadow Shinies', 'All Caught', 'For Trade',
+      'Favorites', 'Shadow Shinies', 'Caught', 'Trade',
     ]);
     expect(caught.find((tag) => tag.name === 'Shadow Shinies')?.rows).toHaveLength(2);
     expect(wanted.map((tag) => tag.name)).toEqual([
-      'Dream Trades', 'Most Wanted', 'All Wanted',
+      'Dream Trades', 'Most Wanted', 'Wanted',
     ]);
     expect(wanted[0].rows[0]).toEqual(expect.objectContaining({ id: 'wanted' }));
   });

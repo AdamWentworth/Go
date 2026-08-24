@@ -66,7 +66,7 @@ tags:
 - extendedWaitUntil:
     visible: Inventory tags
     timeout: 10000
-- assertVisible: "Open For Trade, 3 Pokémon"
+- assertVisible: "Open Trade, 3 Pokémon"
 - scrollUntilVisible:
     element:
       text: "Open Shadow Shinies, 2 Pokémon"
@@ -91,16 +91,16 @@ tags:
     timeout: 10000
 - scrollUntilVisible:
     element:
-      text: "Open For Trade, 3 Pokémon"
+      text: "Open Trade, 3 Pokémon"
     direction: UP
-- tapOn: "Open For Trade, 3 Pokémon"
+- tapOn: "Open Trade, 3 Pokémon"
 - extendedWaitUntil:
-    visible: "(FOR TRADE)"
+    visible: "(TRADE)"
     timeout: 10000
 - assertVisible: Shiny Gigantamax Charizard
 - assertVisible: Shiny Suicune
 - takeScreenshot: 03-for-trade-glows
-- tapOn: Clear For Trade tag filter
+- tapOn: Clear Trade tag filter
 - extendedWaitUntil:
     visible: Bulbasaur
     timeout: 10000
@@ -108,7 +108,7 @@ tags:
 - assertNotVisible: Shiny Suicune
 - takeScreenshot: 04-catalog-restored
 - tapOn: TAGS
-- tapOn: "Open For Trade, 3 Pokémon"
+- tapOn: "Open Trade, 3 Pokémon"
 - swipe:
     start: 90%, 50%
     end: 10%, 50%
@@ -133,13 +133,13 @@ tags:
 - tapOn: Close
 - assertNotVisible: WANTED CONDITIONS
 - tapOn: TAGS
-- tapOn: "Open For Trade, 3 Pokémon"
+- tapOn: "Open Trade, 3 Pokémon"
 - tapOn: "View Shiny Gigantamax Charizard"
 - assertVisible: FOR TRADE
 - assertVisible: Wanted Pokémon
 - takeScreenshot: 06b-for-trade-instance
 - tapOn: Close
-- tapOn: Clear For Trade tag filter
+- tapOn: Clear Trade tag filter
 - tapOn: TAGS
 - tapOn: "Open Favorites, 3 Pokémon"
 - tapOn: "View Shiny Shadow Venusaur"

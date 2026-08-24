@@ -546,6 +546,7 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     marginVertical: collectionParityTokens.tags.cardMarginVertical,
     borderRadius: collectionParityTokens.tags.cardRadius,
+    padding: collectionParityTokens.tags.cardPadding,
     shadowColor: '#ffffff',
     shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.1,
@@ -563,16 +564,20 @@ const styles = StyleSheet.create({
   preview: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    alignContent: 'center',
+    alignContent: 'flex-start',
+    marginTop: -collectionParityTokens.tags.cardPadding,
+    marginHorizontal: -collectionParityTokens.tags.cardPadding,
     paddingVertical: collectionParityTokens.tags.previewBlockInset,
   },
   previewNarrow: {
     minHeight: 94,
-    paddingHorizontal: collectionParityTokens.tags.previewInlineInsetNarrow,
+    paddingHorizontal:
+      collectionParityTokens.tags.cardPadding
+      + collectionParityTokens.tags.previewInlineInsetNarrow,
   },
   previewWide: {
     minHeight: 154,
-    paddingHorizontal: 24,
+    paddingHorizontal: collectionParityTokens.tags.cardPadding + 24,
   },
   previewCell: {
     position: 'relative',
@@ -610,7 +615,7 @@ const styles = StyleSheet.create({
   dragGrip: { width: 52, height: 44, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: '#ffffff47', borderRadius: 12, backgroundColor: '#ffffff12', zIndex: 10, elevation: 8 },
   dragGripText: { color: '#f5fffc', fontSize: 25, fontWeight: '900' },
   tagName: { fontSize: 18, fontWeight: '700' },
-  tagCount: { fontSize: 14, lineHeight: 16 },
+  tagCount: { fontSize: 14.4, lineHeight: 16 },
   emptyState: { minHeight: 300, alignItems: 'center', justifyContent: 'center', gap: 10 },
   emptyTitle: { fontSize: 18, fontWeight: '900', textAlign: 'center' },
   emptyBody: { fontSize: 13, textAlign: 'center' },
