@@ -28,6 +28,7 @@ type RuntimeRealtimeConfig = {
 
 type RuntimeMobileConfig = {
   experienceMode: MobileExperienceMode;
+  deviceSmokeMode: boolean;
 };
 
 type ExpoExtra = {
@@ -36,6 +37,7 @@ type ExpoExtra = {
   realtime?: Partial<RuntimeRealtimeConfig>;
   mobile?: {
     experienceMode?: unknown;
+    deviceSmokeMode?: unknown;
   };
 };
 
@@ -170,6 +172,10 @@ export const runtimeConfig: {
   mobile: {
     experienceMode: resolveMobileExperienceMode(
       mobileOverrides.experienceMode,
+    ),
+    deviceSmokeMode: __DEV__ && sanitizeBoolean(
+      mobileOverrides.deviceSmokeMode,
+      false,
     ),
   },
 };

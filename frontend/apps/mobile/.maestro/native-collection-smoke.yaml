@@ -1,0 +1,64 @@
+appId: host.exp.exponent
+name: Native collection runtime and interaction smoke
+tags:
+  - android
+  - native-collection
+---
+- openLink:
+    link: exp://10.0.2.2:8091/--/device-smoke/collection
+- runFlow:
+    when:
+      visible: "This is the developer menu.*"
+    commands:
+      - tapOn: Continue
+- runFlow:
+    when:
+      visible: React Native dev menu
+    commands:
+      - tapOn: Close
+- extendedWaitUntil:
+    visible: POKÉMON
+    timeout: 45000
+- assertVisible: Shiny Shadow Venusaur
+- takeScreenshot: 01-pokemon-grid
+- tapOn: TAGS
+- extendedWaitUntil:
+    visible: Inventory tags
+    timeout: 10000
+- assertVisible: "Open For Trade, 3 Pokémon"
+- scrollUntilVisible:
+    element:
+      text: "Open Shadow Shinies, 2 Pokémon"
+    direction: DOWN
+- assertVisible: "Open Shadow Shinies, 2 Pokémon"
+- takeScreenshot: 02-inventory-tags
+- scrollUntilVisible:
+    element:
+      text: "Open For Trade, 3 Pokémon"
+    direction: UP
+- tapOn: "Open For Trade, 3 Pokémon"
+- extendedWaitUntil:
+    visible: "(FOR TRADE)"
+    timeout: 10000
+- assertVisible: Shiny Gigantamax Charizard
+- assertVisible: Shiny Suicune
+- takeScreenshot: 03-for-trade-glows
+- swipe:
+    start: 90%, 50%
+    end: 10%, 50%
+    duration: 500
+- extendedWaitUntil:
+    visible: Wishlist tags
+    timeout: 10000
+- assertVisible: Most Wanted
+- takeScreenshot: 04-wishlist-tags
+- tapOn: "Open Most Wanted, 2 Pokémon"
+- extendedWaitUntil:
+    visible: "(MOST WANTED)"
+    timeout: 10000
+- assertVisible: Gigantamax Blastoise
+- tapOn: "View Gigantamax Blastoise"
+- assertVisible: Opened Gigantamax Blastoise
+- takeScreenshot: 05-instance-opened
+- tapOn: Close smoke detail
+- assertNotVisible: Opened Gigantamax Blastoise

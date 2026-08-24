@@ -1,0 +1,110 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+user_home="$(getent passwd "$(id -u)" | cut -d: -f6)"
+android_sdk_root="${ANDROID_SDK_ROOT:-${user_home}/Android/Sdk}"
+java_home="${JAVA_HOME:-${user_home}/.local/share/pokegonexus-android/jdk}"
+maestro_bin="${MAESTRO_BIN:-${user_home}/.maestro/bin/maestro}"
+expo_go_apk="${POKEGONEXUS_EXPO_GO_APK:-${user_home}/.local/share/pokegonexus-android/downloads/Expo-Go-57.0.9.apk}"
+avd_name="${POKEGONEXUS_ANDROID_AVD:-PokeGoNexus_Pixel_8_Pro_API_36}"
+adb_bin="${android_sdk_root}/platform-tools/adb"
+emulator_bin="${android_sdk_root}/emulator/emulator"
+artifact_dir="$(mktemp -d /tmp/pokegonexus-android-smoke.XXXXXX)"
+metro_pid=""
+metro_pgid=""
+
+cleanup() {
+  if [[ -n "${metro_pgid}" ]]; then
+    kill -- "-${metro_pgid}" 2>/dev/null || true
+    for _attempt in $(seq 1 20); do
+      if ! kill -0 -- "-${metro_pgid}" 2>/dev/null; then
+        break
+      fi
+      sleep 0.1
+    done
+    kill -KILL -- "-${metro_pgid}" 2>/dev/null || true
+  elif [[ -n "${metro_pid}" ]] && kill -0 "${metro_pid}" 2>/dev/null; then
+    kill "${metro_pid}" 2>/dev/null || true
+  fi
+}
+trap cleanup EXIT
+
+for required in "${adb_bin}" "${emulator_bin}" "${java_home}/bin/java" "${maestro_bin}" "${expo_go_apk}"; do
+  if [[ ! -e "${required}" ]]; then
+    echo "Missing Android smoke dependency: ${required}" >&2
+    exit 1
+  fi
+done
+
+export ANDROID_HOME="${android_sdk_root}"
+export ANDROID_SDK_ROOT="${android_sdk_root}"
+export JAVA_HOME="${java_home}"
+export PATH="${java_home}/bin:${android_sdk_root}/platform-tools:${PATH}"
+export MAESTRO_CLI_NO_ANALYTICS=1
+export MAESTRO_CLI_ANALYSIS_NOTIFICATION_DISABLED=true
+
+device_id="$(${adb_bin} devices | awk '/^emulator-[0-9]+[[:space:]]+device/ { print $1; exit }')"
+if [[ -z "${device_id}" ]]; then
+  nohup "${emulator_bin}" \
+    -avd "${avd_name}" \
+    -no-snapshot-load \
+    -no-boot-anim \
+    -no-audio \
+    -no-metrics \
+    -gpu auto \
+    -netdelay none \
+    -netspeed full \
+    >"${artifact_dir}/emulator.log" 2>&1 &
+  "${adb_bin}" wait-for-device
+  device_id="$(${adb_bin} devices | awk '/^emulator-[0-9]+[[:space:]]+device/ { print $1; exit }')"
+fi
+
+for _attempt in $(seq 1 120); do
+  if [[ "$("${adb_bin}" -s "${device_id}" shell getprop sys.boot_completed 2>/dev/null | tr -d '\r')" == "1" ]]; then
+    break
+  fi
+  sleep 1
+done
+if [[ "$("${adb_bin}" -s "${device_id}" shell getprop sys.boot_completed 2>/dev/null | tr -d '\r')" != "1" ]]; then
+  echo "Android emulator did not finish booting." >&2
+  exit 1
+fi
+
+if ! "${adb_bin}" -s "${device_id}" shell pm list packages | grep -q '^package:host.exp.exponent$'; then
+  "${adb_bin}" -s "${device_id}" install -r "${expo_go_apk}"
+fi
+
+if curl --silent --fail --max-time 1 http://127.0.0.1:8091/status >/dev/null 2>&1; then
+  echo "Android smoke port 8091 is already in use; stop that Metro server and retry." >&2
+  exit 1
+fi
+
+"${adb_bin}" -s "${device_id}" shell cmd uimode night no >/dev/null
+setsid env \
+  EXPO_PUBLIC_MOBILE_EXPERIENCE=native-preview \
+  EXPO_PUBLIC_DEVICE_SMOKE_MODE=true \
+  CI=1 \
+  npx expo start --host localhost --port 8091 >"${artifact_dir}/metro.log" 2>&1 &
+metro_pid="$!"
+metro_pgid="${metro_pid}"
+
+for _attempt in $(seq 1 90); do
+  if curl --silent --fail http://127.0.0.1:8091/status | grep -q 'packager-status:running'; then
+    break
+  fi
+  if ! kill -0 "${metro_pid}" 2>/dev/null; then
+    echo "Metro exited before the device smoke could start." >&2
+    tail -80 "${artifact_dir}/metro.log" >&2
+    exit 1
+  fi
+  sleep 1
+done
+
+"${adb_bin}" -s "${device_id}" shell am force-stop host.exp.exponent
+"${maestro_bin}" --device "${device_id}" test \
+  --no-ansi \
+  --test-output-dir "${artifact_dir}/maestro" \
+  .maestro/native-collection-smoke.yaml
+
+"${adb_bin}" -s "${device_id}" exec-out screencap -p >"${artifact_dir}/final-screen.png"
+echo "Android device smoke passed. Artifacts: ${artifact_dir}"

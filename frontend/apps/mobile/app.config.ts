@@ -66,6 +66,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     },
     mobile: {
       experienceMode: readMobileExperience(),
+      deviceSmokeMode: readBool('EXPO_PUBLIC_DEVICE_SMOKE_MODE', false),
     },
   },
 });

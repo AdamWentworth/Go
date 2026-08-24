@@ -12,7 +12,8 @@
     "lint": "eslint . --ext .ts,.tsx",
     "typecheck": "tsc --noEmit",
     "test": "jest",
-    "test:watch": "jest --watch"
+    "test:watch": "jest --watch",
+    "device:smoke:android": "bash scripts/run-android-device-smoke.sh"
   },
   "dependencies": {
     "@babel/runtime": "^7.28.6",
