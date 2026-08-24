@@ -6,12 +6,15 @@ import {
   StyleSheet,
   Text,
   View,
+  useColorScheme,
+  useWindowDimensions,
 } from 'react-native';
+import Svg, { Circle, Path } from 'react-native-svg';
 import type { NativeInstanceDetail } from '../features/collection/collectionModel';
-import { theme } from '../ui/theme';
-import { NativeCollectionSyncStatusCard } from '../features/collection/NativeCollectionSyncStatusCard';
+import { NativePokemonLocationBackdrop } from '../features/collection/parity/NativePokemonLocationBackdrop';
 
-type NativeInstanceDetailScreenProps = {
+type Props = {
+  assetBaseUrl?: string;
   detail: NativeInstanceDetail | null;
   isLoading: boolean;
   error: string | null;
@@ -26,34 +29,71 @@ type NativeInstanceDetailScreenProps = {
   onEditInCurrentApp: () => void;
 };
 
-const statusLabels = {
-  caught: 'Caught',
-  trade: 'For trade',
-  wanted: 'Wanted',
+const toAssetUrl = (baseUrl: string, path: string): string => (
+  /^https?:\/\//i.test(path)
+    ? path
+    : `${baseUrl.replace(/\/$/, '')}/${path.replace(/^\//, '')}`
+);
+
+const primaryTypeName = (detail: NativeInstanceDetail): string => {
+  const match = detail.row.typeIconUris[0]?.match(/\/([^/?]+)\.png(?:\?|$)/i);
+  return match?.[1]?.toLowerCase() ?? 'normal';
+};
+
+const backgroundPath = (detail: NativeInstanceDetail): string => {
+  const instance = detail.instance;
+  if (instance?.shadow && !instance.purified) return '/images/backgrounds/bg_shadow.png';
+  if (instance?.lucky || (instance?.is_wanted && instance.pref_lucky)) {
+    return '/images/backgrounds/bg_lucky.png';
+  }
+  return `/images/backgrounds/bg_${primaryTypeName(detail)}.png`;
+};
+
+const STATUS = {
+  caught: { accent: '#58c7eb', label: null },
+  trade: { accent: '#53d39a', label: 'FOR TRADE' },
+  wanted: { accent: '#ff617d', label: 'WANTED' },
 } as const;
 
-const statusColors = {
-  caught: '#79c2ff',
-  trade: '#61e5a3',
-  wanted: '#ff8b9d',
-} as const;
+const LevelArc = ({ level }: { level: number }) => {
+  const bounded = Math.max(1, Math.min(51, level));
+  const angle = Math.PI - ((bounded - 1) / 50) * Math.PI;
+  const pointX = 150 + (126 * Math.cos(angle));
+  const pointY = 136 - (126 * Math.sin(angle));
+  return (
+    <Svg accessibilityElementsHidden height={146} viewBox="0 0 300 146" width={300}>
+      <Path
+        d="M24 136 A126 126 0 0 1 276 136"
+        fill="none"
+        stroke="rgba(255,255,255,0.92)"
+        strokeWidth={3}
+      />
+      <Circle cx={pointX} cy={pointY} fill="#ffffff" r={6} />
+    </Svg>
+  );
+};
 
 const DetailRows = ({
   rows,
+  secondaryColor,
+  textColor,
 }: {
   rows: { label: string; value: string }[];
+  secondaryColor: string;
+  textColor: string;
 }) => (
   <View style={styles.detailRows}>
     {rows.map((row) => (
       <View key={row.label} style={styles.detailRow}>
-        <Text style={styles.detailLabel}>{row.label}</Text>
-        <Text style={styles.detailValue}>{row.value}</Text>
+        <Text style={[styles.detailLabel, { color: secondaryColor }]}>{row.label}</Text>
+        <Text style={[styles.detailValue, { color: textColor }]}>{row.value}</Text>
       </View>
     ))}
   </View>
 );
 
 export const NativeInstanceDetailScreen = ({
+  assetBaseUrl = 'https://pokegonexus.com',
   detail,
   isLoading,
   error,
@@ -66,310 +106,374 @@ export const NativeInstanceDetailScreen = ({
   onBack,
   onToggleFavorite,
   onEditInCurrentApp,
-}: NativeInstanceDetailScreenProps) => {
+}: Props) => {
+  const light = useColorScheme() === 'light';
+  const { width } = useWindowDimensions();
+  const shellWidth = Math.min(width * 0.95, 500);
+  const palette = light ? LIGHT : DARK;
+
   if (isLoading) {
     return (
-      <View style={styles.centered}>
+      <View style={[styles.centered, { backgroundColor: palette.fallbackBackground }]}>
         <ActivityIndicator color="#5ed8ff" size="large" />
-        <Text style={styles.loadingText}>Loading Pokémon details…</Text>
+        <Text style={{ color: palette.secondary }}>Loading Pokémon details…</Text>
       </View>
     );
   }
 
   if (error || !detail) {
     return (
-      <View style={styles.centered}>
-        <Text accessibilityRole="header" style={styles.errorTitle}>Pokémon unavailable</Text>
-        <Text style={styles.errorBody}>{error ?? 'This instance was not found.'}</Text>
+      <View style={[styles.centered, { backgroundColor: palette.fallbackBackground }]}>
+        <Text accessibilityRole="header" style={[styles.errorTitle, { color: palette.text }]}>Pokémon unavailable</Text>
+        <Text style={[styles.errorBody, { color: palette.secondary }]}>{error ?? 'This instance was not found.'}</Text>
         <Pressable accessibilityRole="button" onPress={onRetry} style={styles.primaryButton}>
           <Text style={styles.primaryButtonText}>Retry</Text>
         </Pressable>
-        <Pressable accessibilityRole="button" onPress={onBack} style={styles.secondaryButton}>
-          <Text style={styles.secondaryButtonText}>Back to collection</Text>
+        <Pressable
+          accessibilityRole="button"
+          onPress={onBack}
+          style={[styles.secondaryButton, { borderColor: palette.border }]}
+        >
+          <Text style={[styles.secondaryButtonText, { color: palette.text }]}>Back to collection</Text>
         </Pressable>
       </View>
     );
   }
 
-  const statusColor = statusColors[detail.row.status];
+  const instance = detail.instance;
+  const status = STATUS[detail.row.status];
+  const level = instance?.level ?? Number(
+    detail.stats.find((row) => row.label === 'Level')?.value ?? Number.NaN,
+  );
+  const cp = instance?.cp ?? detail.row.cp;
+  const weight = instance?.weight;
+  const height = instance?.height;
+  const gender = instance?.gender;
+  const showPhysicalRow = weight != null || height != null || detail.row.typeIconUris.length > 0;
+  const showArc = Number.isFinite(level);
+  const maxBadge = detail.row.maxKind
+    ? toAssetUrl(assetBaseUrl, `/images/${detail.row.maxKind}.png`)
+    : null;
+  const statusLabel = detail.row.status === 'wanted' && detail.row.mostWanted
+    ? 'MOST WANTED'
+    : status.label;
+
   return (
-    <ScrollView contentContainerStyle={styles.content} style={styles.screen}>
-      <View style={styles.topBar}>
-        <Pressable accessibilityRole="button" onPress={onBack} style={styles.backButton}>
-          <Text style={styles.backButtonText}>‹</Text>
-        </Pressable>
-        <Text style={styles.topBarTitle}>Pokémon details</Text>
-        <View style={styles.topBarSpacer} />
-      </View>
+    <View style={styles.overlay} testID="native-instance-overlay">
+      <Image
+        accessibilityElementsHidden
+        blurRadius={3}
+        resizeMode="cover"
+        source={{ uri: toAssetUrl(assetBaseUrl, backgroundPath(detail)) }}
+        style={styles.fullBackground}
+      />
+      <View style={styles.backgroundTint} />
 
-      {cachedAt != null ? (
-        <View accessibilityLiveRegion="polite" style={styles.cachedCard}>
-          <Text style={styles.cachedTitle}>Viewing an offline copy</Text>
-          <Text style={styles.cachedBody}>Retained changes are shown and will sync after reconnecting.</Text>
-        </View>
-      ) : null}
+      <ScrollView
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+        style={styles.scroll}
+      >
+        <View style={[styles.shell, { width: shellWidth }]}>
+          {cachedAt != null ? (
+            <View accessibilityLiveRegion="polite" style={styles.offlineBanner}>
+              <Text style={styles.offlineTitle}>Viewing an offline copy</Text>
+              <Text style={styles.offlineBody}>Saved changes will synchronize after reconnecting.</Text>
+            </View>
+          ) : null}
 
-      <NativeCollectionSyncStatusCard />
-
-      <View style={styles.hero}>
-        <Text style={styles.dexNumber}>
-          #{String(detail.row.pokedexNumber).padStart(4, '0')}
-        </Text>
-        <View style={styles.imageFrame}>
-          {detail.row.imageUri ? (
-            <Image
-              accessibilityLabel={detail.row.name}
-              resizeMode="contain"
-              source={{ uri: detail.row.imageUri }}
-              style={styles.image}
-            />
-          ) : (
-            <Text style={styles.imageFallback}>#{detail.row.pokemonId}</Text>
-          )}
-        </View>
-        <Text accessibilityRole="header" style={styles.name}>{detail.row.name}</Text>
-        <View style={[styles.statusBadge, { borderColor: statusColor }]}>
-          <Text style={[styles.statusText, { color: statusColor }]}>
-            {statusLabels[detail.row.status]}
-          </Text>
-        </View>
-        {detail.traits.length ? (
-          <View style={styles.traits}>
-            {detail.traits.map((trait) => (
-              <View key={trait} style={styles.traitBadge}>
-                <Text style={styles.traitText}>{trait}</Text>
+          <View style={styles.headerRow}>
+            <Pressable
+              accessibilityLabel="Edit in current app"
+              accessibilityRole="button"
+              onPress={onEditInCurrentApp}
+              style={styles.iconButton}
+            >
+              <Text style={[styles.editIcon, { color: palette.text }]}>✎</Text>
+            </Pressable>
+            {cp != null ? (
+              <Text style={[styles.cpText, { color: palette.text }]}>CP{cp}</Text>
+            ) : <View />}
+            {detail.row.status === 'caught' ? (
+              <Pressable
+                accessibilityLabel={detail.row.favorite ? 'Remove Favorite' : 'Mark as Favorite'}
+                accessibilityRole="button"
+                disabled={isSaving}
+                onPress={() => onToggleFavorite(!detail.row.favorite)}
+                style={styles.iconButton}
+              >
+                <Text style={[styles.favoriteIcon, detail.row.favorite && styles.favoriteSelected]}>
+                  {detail.row.favorite ? '★' : '☆'}
+                </Text>
+              </Pressable>
+            ) : detail.row.status === 'wanted' ? (
+              <View style={[styles.wantedBadge, detail.row.mostWanted && styles.mostWantedBadge]}>
+                <Text style={[styles.wantedBadgeText, detail.row.mostWanted && styles.mostWantedBadgeText]}>
+                  {detail.row.mostWanted ? '★ Most Wanted' : '☆ Wanted'}
+                </Text>
               </View>
-            ))}
+            ) : <View style={styles.iconButton} />}
           </View>
-        ) : null}
-      </View>
 
-      {detail.stats.length ? (
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Pokémon information</Text>
-          <DetailRows rows={detail.stats} />
-        </View>
-      ) : null}
+          {showArc ? (
+            <View style={styles.arc}>
+              <LevelArc level={level} />
+            </View>
+          ) : null}
 
-      {detail.ivs.length ? (
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Appraisal</Text>
-          <View style={styles.ivRows}>
-            {detail.ivs.map((iv) => (
-              <View key={iv.label} style={styles.ivRow}>
-                <View style={styles.ivHeader}>
-                  <Text style={styles.detailLabel}>{iv.label}</Text>
-                  <Text style={styles.detailValue}>{iv.value}/15</Text>
-                </View>
-                <View style={styles.ivTrack}>
-                  <View style={[styles.ivFill, { width: `${Math.max(0, Math.min(15, iv.value)) / 15 * 100}%` }]} />
-                </View>
+          <View style={styles.imageStage}>
+            {detail.row.locationBackgroundUri ? (
+              <View style={[styles.locationBackdrop, { width: Math.min(shellWidth, 447) }]}>
+                <NativePokemonLocationBackdrop uri={detail.row.locationBackgroundUri} />
               </View>
-            ))}
+            ) : null}
+            {detail.row.lucky ? (
+              <Image
+                accessibilityElementsHidden
+                resizeMode="contain"
+                source={{ uri: toAssetUrl(assetBaseUrl, '/images/lucky.png') }}
+                style={styles.luckyBackdrop}
+              />
+            ) : null}
+            {detail.row.imageUri ? (
+              <Image
+                accessibilityLabel={detail.row.name}
+                resizeMode="contain"
+                source={{ uri: detail.row.imageUri }}
+                style={styles.pokemonImage}
+              />
+            ) : null}
+            {maxBadge ? (
+              <Image
+                accessibilityLabel={detail.row.maxKind === 'gigantamax' ? 'Gigantamax' : 'Dynamax'}
+                resizeMode="contain"
+                source={{ uri: maxBadge }}
+                style={styles.maxBadge}
+              />
+            ) : null}
+            {detail.row.purified ? (
+              <Image
+                accessibilityLabel="Purified"
+                resizeMode="contain"
+                source={{ uri: toAssetUrl(assetBaseUrl, '/images/purified.png') }}
+                style={styles.purifiedBadge}
+              />
+            ) : null}
           </View>
-        </View>
-      ) : null}
 
-      {detail.moves.length || movesWarning ? (
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Moves</Text>
-          {detail.moves.length ? <DetailRows rows={detail.moves} /> : null}
-          {movesWarning ? <Text style={styles.warningText}>{movesWarning}</Text> : null}
-        </View>
-      ) : null}
-
-      {detail.preferences.length ? (
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Trade preferences</Text>
-          <DetailRows rows={detail.preferences} />
-        </View>
-      ) : null}
-
-      {detail.provenance.length ? (
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>History</Text>
-          <DetailRows rows={detail.provenance} />
-        </View>
-      ) : null}
-
-      {detail.row.status === 'caught' ? (
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Collection actions</Text>
-          <Pressable
-            accessibilityRole="button"
-            disabled={isSaving}
-            onPress={() => onToggleFavorite(!detail.row.favorite)}
-            style={({ pressed }) => [
-              styles.favoriteButton,
-              detail.row.favorite && styles.favoriteButtonSelected,
-              (pressed || isSaving) && styles.buttonPressed,
-            ]}
-          >
-            <Text style={styles.favoriteIcon}>{detail.row.favorite ? '★' : '☆'}</Text>
-            <Text style={styles.favoriteButtonText}>
-              {isSaving
-                ? 'Saving on this device…'
-                : detail.row.favorite
-                  ? 'Remove Favorite'
-                  : 'Mark as Favorite'}
+          <View style={[styles.detailsPanel, { backgroundColor: palette.panel }]}>
+            {statusLabel ? (
+              <Text style={[styles.statusEyebrow, { color: status.accent }]}>{statusLabel}</Text>
+            ) : null}
+            <Text accessibilityRole="header" style={[styles.name, { color: palette.text }]}>
+              {detail.row.name}
             </Text>
-          </Pressable>
-          <Text style={styles.actionHint}>
-            Native Favorite changes are retained offline and synchronized through Receiver.
-          </Text>
-        </View>
-      ) : null}
 
-      {saveNotice ? (
-        <View accessibilityLiveRegion="polite" style={styles.notice}>
-          <Text style={styles.noticeText}>{saveNotice}</Text>
+            <View style={styles.levelGenderRow}>
+              <View style={styles.sideSlot} />
+              {showArc ? (
+                <Text style={[styles.levelText, { color: palette.secondary }]}>LEVEL: {level}</Text>
+              ) : <View />}
+              <Text style={[styles.genderText, { color: gender === 'Female' ? '#ff3b87' : '#30a7ff' }]}>
+                {gender === 'Female' ? '♀' : gender === 'Male' ? '♂' : ''}
+              </Text>
+            </View>
+
+            {showPhysicalRow ? (
+              <View style={styles.physicalRow}>
+                <View style={styles.physicalValue}>
+                  {weight != null ? (
+                    <>
+                      <Text style={[styles.statValue, { color: palette.text }]}>{weight}kg</Text>
+                      <Text style={[styles.statLabel, { color: palette.secondary }]}>WEIGHT</Text>
+                    </>
+                  ) : null}
+                </View>
+                <View style={[styles.pipe, { backgroundColor: palette.divider }]} />
+                <View style={styles.types}>
+                  {detail.row.typeIconUris.map((uri) => (
+                    <Image key={uri} source={{ uri }} style={styles.typeIcon} />
+                  ))}
+                </View>
+                <View style={[styles.pipe, { backgroundColor: palette.divider }]} />
+                <View style={styles.physicalValue}>
+                  {height != null ? (
+                    <>
+                      <Text style={[styles.statValue, { color: palette.text }]}>{height}m</Text>
+                      <Text style={[styles.statLabel, { color: palette.secondary }]}>HEIGHT</Text>
+                    </>
+                  ) : null}
+                </View>
+              </View>
+            ) : null}
+
+            {detail.moves.length || movesWarning ? (
+              <View style={[styles.section, { borderTopColor: palette.divider }]}>
+                <View style={styles.moveTabs}>
+                  <Text style={[styles.moveTabActive, { color: palette.text, borderBottomColor: palette.text }]}>GYMS &amp; RAIDS</Text>
+                  <Text style={[styles.moveTab, { color: palette.secondary }]}>TRAINER BATTLES</Text>
+                </View>
+                {detail.moves.length ? (
+                  <DetailRows rows={detail.moves} secondaryColor={palette.secondary} textColor={palette.text} />
+                ) : null}
+                {movesWarning ? <Text style={styles.warningText}>{movesWarning}</Text> : null}
+              </View>
+            ) : null}
+
+            {detail.ivs.length ? (
+              <View style={[styles.section, { borderTopColor: palette.divider }]}>
+                {detail.ivs.map((iv) => (
+                  <View key={iv.label} style={styles.ivRow}>
+                    <Text style={styles.ivLabel}>{iv.label}</Text>
+                    <View style={[styles.ivTrack, { backgroundColor: palette.track }]}>
+                      <View style={[styles.ivFill, { width: `${Math.max(0, Math.min(15, iv.value)) / 15 * 100}%` }]} />
+                      <View style={styles.ivThird} />
+                      <View style={styles.ivTwoThirds} />
+                    </View>
+                    <Text style={styles.ivNumber}>{iv.value}</Text>
+                  </View>
+                ))}
+              </View>
+            ) : null}
+
+            {detail.preferences.length ? (
+              <View style={[styles.preferencePanel, { borderColor: status.accent }]}>
+                <Text style={[styles.preferenceTitle, { color: status.accent }]}>
+                  {detail.row.status === 'wanted' ? 'WANTED CONDITIONS' : 'TRADE CONDITIONS'}
+                </Text>
+                <DetailRows rows={detail.preferences} secondaryColor={palette.secondary} textColor={palette.text} />
+              </View>
+            ) : null}
+
+            {detail.provenance.length ? (
+              <View style={[styles.metaPanel, { backgroundColor: palette.meta }]}>
+                <DetailRows rows={detail.provenance} secondaryColor={palette.secondary} textColor={palette.text} />
+              </View>
+            ) : null}
+
+            {saveNotice ? (
+              <View accessibilityLiveRegion="polite" style={styles.notice}>
+                <Text style={styles.noticeText}>{saveNotice}</Text>
+              </View>
+            ) : null}
+            {saveError ? (
+              <View accessibilityRole="alert" style={styles.saveError}>
+                <Text style={styles.saveErrorText}>{saveError}</Text>
+              </View>
+            ) : null}
+          </View>
         </View>
-      ) : null}
-      {saveError ? (
-        <View accessibilityRole="alert" style={styles.saveError}>
-          <Text style={styles.saveErrorText}>{saveError}</Text>
-        </View>
-      ) : null}
+      </ScrollView>
 
       <Pressable
+        accessibilityLabel="Close"
         accessibilityRole="button"
-        onPress={onEditInCurrentApp}
-        style={styles.primaryButton}
+        onPress={onBack}
+        style={styles.closeButton}
       >
-        <Text style={styles.primaryButtonText}>Edit in current app</Text>
+        <Image
+          resizeMode="contain"
+          source={{ uri: toAssetUrl(assetBaseUrl, light ? '/images/close-button-light.png' : '/images/close-button.png') }}
+          style={styles.closeImage}
+        />
       </Pressable>
-      <Text style={styles.footerText}>
-        Native editing will replace this fallback only after Receiver synchronization is complete.
-      </Text>
-    </ScrollView>
+    </View>
   );
 };
 
+const DARK = {
+  border: '#64748b',
+  divider: '#808080',
+  fallbackBackground: '#0f2b2b',
+  meta: 'rgba(255,255,255,0.08)',
+  panel: '#333333',
+  secondary: '#aeb8b5',
+  text: '#e0f0e5',
+  track: '#d9dce0',
+};
+
+const LIGHT = {
+  border: '#6f8883',
+  divider: '#8a9b98',
+  fallbackBackground: '#e8f6f2',
+  meta: 'rgba(23,59,66,0.06)',
+  panel: '#f7fbf8',
+  secondary: '#58716c',
+  text: '#173b42',
+  track: '#d5dfdd',
+};
+
 const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: '#06162f' },
-  content: { gap: theme.spacing.md, padding: theme.spacing.md, paddingBottom: theme.spacing.xl },
-  centered: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: theme.spacing.md,
-    padding: theme.spacing.xl,
-    backgroundColor: '#06162f',
-  },
-  loadingText: { color: '#cbd5e1' },
-  topBar: { minHeight: 52, flexDirection: 'row', alignItems: 'center' },
-  backButton: {
-    width: 48,
-    height: 48,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 1,
-    borderColor: '#385773',
-    borderRadius: theme.radius.md,
-    backgroundColor: '#0c203a',
-  },
-  backButtonText: { color: '#fff', fontSize: 36, lineHeight: 38 },
-  topBarTitle: { flex: 1, color: '#dcecff', fontSize: 18, fontWeight: '800', textAlign: 'center' },
-  topBarSpacer: { width: 48 },
-  hero: {
-    alignItems: 'center',
-    gap: theme.spacing.sm,
-    borderWidth: 1,
-    borderColor: '#294962',
-    borderRadius: theme.radius.lg,
-    padding: theme.spacing.lg,
-    backgroundColor: '#0b1c2d',
-  },
-  dexNumber: { alignSelf: 'flex-start', color: '#8ca3b8', fontWeight: '700' },
-  imageFrame: { width: '100%', height: 220, alignItems: 'center', justifyContent: 'center' },
-  image: { width: '100%', height: '100%' },
-  imageFallback: { color: '#8193a7', fontSize: 24, fontWeight: '800' },
-  name: { color: '#fff', fontSize: 27, fontWeight: '900', textAlign: 'center' },
-  statusBadge: { borderWidth: 1, borderRadius: 999, paddingHorizontal: theme.spacing.md, paddingVertical: 5 },
-  statusText: { fontWeight: '800' },
-  traits: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: theme.spacing.xs },
-  traitBadge: { borderRadius: 999, paddingHorizontal: theme.spacing.sm, paddingVertical: 5, backgroundColor: '#23394c' },
-  traitText: { color: '#dcecff', fontSize: theme.type.caption, fontWeight: '700' },
-  section: {
-    gap: theme.spacing.sm,
-    borderWidth: 1,
-    borderColor: '#294962',
-    borderRadius: theme.radius.md,
-    padding: theme.spacing.md,
-    backgroundColor: '#0c203a',
-  },
-  sectionTitle: { color: '#5ed8ff', fontSize: theme.type.body, fontWeight: '900' },
-  detailRows: { gap: theme.spacing.xs },
-  detailRow: { minHeight: 38, flexDirection: 'row', alignItems: 'center', gap: theme.spacing.md },
-  detailLabel: { flex: 1, color: '#9fb3c8' },
-  detailValue: { flexShrink: 1, color: '#fff', fontWeight: '800', textAlign: 'right' },
-  ivRows: { gap: theme.spacing.sm },
-  ivRow: { gap: theme.spacing.xs },
-  ivHeader: { flexDirection: 'row', alignItems: 'center' },
-  ivTrack: { height: 8, overflow: 'hidden', borderRadius: 4, backgroundColor: '#243648' },
-  ivFill: { height: '100%', borderRadius: 4, backgroundColor: '#ff9b2f' },
-  warningText: { color: '#ffd18a', lineHeight: 19 },
-  cachedCard: {
-    gap: theme.spacing.xs,
-    borderWidth: 1,
-    borderColor: '#a87524',
-    borderRadius: theme.radius.md,
-    padding: theme.spacing.md,
-    backgroundColor: '#332714',
-  },
-  cachedTitle: { color: '#ffe2a8', fontWeight: '900' },
-  cachedBody: { color: '#f7d99b', fontSize: theme.type.caption, lineHeight: 18 },
-  favoriteButton: {
-    minHeight: 50,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: theme.spacing.sm,
-    borderWidth: 1,
-    borderColor: '#6d7d8e',
-    borderRadius: theme.radius.md,
-    backgroundColor: '#142a3d',
-  },
-  favoriteButtonSelected: { borderColor: '#ffd75f', backgroundColor: '#413616' },
-  favoriteIcon: { color: '#ffd75f', fontSize: 24 },
-  favoriteButtonText: { color: '#fff', fontWeight: '900' },
-  buttonPressed: { opacity: 0.68 },
-  actionHint: { color: '#8ca3b8', fontSize: theme.type.caption, lineHeight: 18 },
-  notice: {
-    borderWidth: 1,
-    borderColor: '#338b6b',
-    borderRadius: theme.radius.md,
-    padding: theme.spacing.md,
-    backgroundColor: '#102e26',
-  },
-  noticeText: { color: '#9ff0ca', lineHeight: 20, fontWeight: '700' },
-  saveError: {
-    borderWidth: 1,
-    borderColor: '#b65b70',
-    borderRadius: theme.radius.md,
-    padding: theme.spacing.md,
-    backgroundColor: '#3b1722',
-  },
-  saveErrorText: { color: '#ffd1da', lineHeight: 20, fontWeight: '700' },
-  primaryButton: {
-    minHeight: 50,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderRadius: theme.radius.md,
-    backgroundColor: theme.colors.selectedBorder,
-  },
+  overlay: { flex: 1, backgroundColor: '#0f2b2b' },
+  fullBackground: { ...StyleSheet.absoluteFill, width: '106%', height: '106%', left: '-3%', top: '-3%' },
+  backgroundTint: { ...StyleSheet.absoluteFill, backgroundColor: 'rgba(15,43,43,0.08)' },
+  scroll: { flex: 1 },
+  scrollContent: { alignItems: 'center', paddingTop: 30, paddingBottom: 104 },
+  shell: { maxWidth: 500, alignItems: 'center' },
+  centered: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 14, padding: 24 },
+  errorTitle: { fontSize: 24, fontWeight: '900', textAlign: 'center' },
+  errorBody: { textAlign: 'center' },
+  primaryButton: { minWidth: 240, minHeight: 48, alignItems: 'center', justifyContent: 'center', borderRadius: 12, backgroundColor: '#147de2' },
   primaryButtonText: { color: '#fff', fontWeight: '900' },
-  secondaryButton: {
-    minHeight: 48,
-    minWidth: 240,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 1,
-    borderColor: '#64748b',
-    borderRadius: theme.radius.md,
-  },
-  secondaryButtonText: { color: '#e2e8f0', fontWeight: '700' },
-  errorTitle: { color: '#fff', fontSize: 24, fontWeight: '900', textAlign: 'center' },
-  errorBody: { color: '#fecdd3', textAlign: 'center' },
-  footerText: { color: '#8ca3b8', fontSize: theme.type.caption, lineHeight: 18, textAlign: 'center' },
+  secondaryButton: { minWidth: 240, minHeight: 48, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderRadius: 12 },
+  secondaryButtonText: { fontWeight: '800' },
+  offlineBanner: { width: '94%', gap: 2, marginBottom: 8, padding: 9, borderWidth: 1, borderColor: '#a87524', borderRadius: 12, backgroundColor: 'rgba(51,39,20,0.92)' },
+  offlineTitle: { color: '#ffe2a8', fontWeight: '900', textAlign: 'center' },
+  offlineBody: { color: '#f7d99b', fontSize: 12, textAlign: 'center' },
+  headerRow: { zIndex: 7, width: '100%', minHeight: 52, flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', paddingHorizontal: 12 },
+  iconButton: { minWidth: 48, minHeight: 48, alignItems: 'center', justifyContent: 'center' },
+  editIcon: { fontSize: 45, lineHeight: 48, fontWeight: '300', transform: [{ rotate: '-18deg' }] },
+  cpText: { paddingTop: 3, fontSize: 18, fontWeight: '500' },
+  favoriteIcon: { color: '#ffffff', fontSize: 48, lineHeight: 50, fontWeight: '300' },
+  favoriteSelected: { color: '#ffd000' },
+  wantedBadge: { minHeight: 40, justifyContent: 'center', marginTop: 1, paddingHorizontal: 12, borderWidth: 1, borderColor: '#8b9997', borderRadius: 999, backgroundColor: 'rgba(53,61,61,0.82)' },
+  mostWantedBadge: { borderColor: '#ff704d' },
+  wantedBadgeText: { color: '#c5cdcb', fontSize: 12, fontWeight: '900' },
+  mostWantedBadgeText: { color: '#ff8a63' },
+  arc: { position: 'absolute', zIndex: 1, top: 48, alignSelf: 'center' },
+  imageStage: { zIndex: 3, width: 272, height: 272, alignItems: 'center', justifyContent: 'center', marginTop: 16 },
+  locationBackdrop: { position: 'absolute', top: -20, height: 292 },
+  luckyBackdrop: { position: 'absolute', zIndex: 2, width: 272, height: 272 },
+  pokemonImage: { zIndex: 4, width: 267, height: 267 },
+  maxBadge: { position: 'absolute', zIndex: 5, top: 5, right: 5, width: 92, height: 92 },
+  purifiedBadge: { position: 'absolute', zIndex: 5, bottom: 5, left: 5, width: 54, height: 54 },
+  detailsPanel: { width: '100%', minHeight: 300, alignItems: 'center', marginTop: -36, paddingTop: 64, paddingBottom: 18, borderRadius: 12, overflow: 'hidden' },
+  statusEyebrow: { marginBottom: 4, fontSize: 12, fontWeight: '900', letterSpacing: 1.7 },
+  name: { maxWidth: '92%', fontSize: 42, lineHeight: 46, fontWeight: '500', textAlign: 'center' },
+  levelGenderRow: { width: '100%', minHeight: 34, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 22 },
+  sideSlot: { width: 42 },
+  levelText: { fontSize: 12, fontWeight: '800' },
+  genderText: { width: 42, fontSize: 34, lineHeight: 36, fontWeight: '500', textAlign: 'right' },
+  physicalRow: { width: '100%', minHeight: 55, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingHorizontal: 28 },
+  physicalValue: { flex: 1, alignItems: 'center' },
+  statValue: { fontSize: 17, fontWeight: '500' },
+  statLabel: { fontSize: 11, fontWeight: '800' },
+  pipe: { width: 2, height: 38 },
+  types: { minWidth: 94, flexDirection: 'row', justifyContent: 'center', gap: 5, paddingHorizontal: 10 },
+  typeIcon: { width: 24, height: 24 },
+  section: { width: '94%', marginTop: 12, paddingTop: 12, borderTopWidth: 2 },
+  moveTabs: { flexDirection: 'row', justifyContent: 'center', gap: 28, marginBottom: 8 },
+  moveTabActive: { paddingBottom: 4, borderBottomWidth: 2, fontSize: 11, fontWeight: '900', letterSpacing: 0.8 },
+  moveTab: { paddingBottom: 4, fontSize: 11, fontWeight: '900', letterSpacing: 0.8 },
+  detailRows: { width: '100%' },
+  detailRow: { minHeight: 36, flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 8 },
+  detailLabel: { flex: 1, fontSize: 16, fontWeight: '600' },
+  detailValue: { flexShrink: 1, fontSize: 16, fontWeight: '800', textAlign: 'right' },
+  warningText: { color: '#ffd18a', paddingHorizontal: 8, lineHeight: 19 },
+  ivRow: { minHeight: 34, flexDirection: 'row', alignItems: 'center', gap: 7, paddingHorizontal: 4 },
+  ivLabel: { width: 66, color: '#ff9700', fontSize: 16, fontWeight: '700' },
+  ivTrack: { flex: 1, height: 14, overflow: 'hidden', borderRadius: 7 },
+  ivFill: { position: 'absolute', left: 0, top: 0, bottom: 0, borderRadius: 7, backgroundColor: '#ff9d23' },
+  ivThird: { position: 'absolute', left: '33.333%', width: 2, top: 0, bottom: 0, backgroundColor: '#ffffff' },
+  ivTwoThirds: { position: 'absolute', left: '66.666%', width: 2, top: 0, bottom: 0, backgroundColor: '#ffffff' },
+  ivNumber: { width: 24, color: '#ff9700', fontSize: 16, textAlign: 'right' },
+  preferencePanel: { width: '94%', marginTop: 14, gap: 4, padding: 10, borderWidth: 1, borderRadius: 12 },
+  preferenceTitle: { fontSize: 11, fontWeight: '900', letterSpacing: 1.3 },
+  metaPanel: { width: '94%', marginTop: 14, paddingVertical: 8, borderRadius: 10 },
+  notice: { width: '94%', marginTop: 10, padding: 10, borderWidth: 1, borderColor: '#338b6b', borderRadius: 10, backgroundColor: '#102e26' },
+  noticeText: { color: '#9ff0ca', fontWeight: '700', textAlign: 'center' },
+  saveError: { width: '94%', marginTop: 10, padding: 10, borderWidth: 1, borderColor: '#b65b70', borderRadius: 10, backgroundColor: '#3b1722' },
+  saveErrorText: { color: '#ffd1da', fontWeight: '700', textAlign: 'center' },
+  closeButton: { position: 'absolute', bottom: 18, left: '50%', zIndex: 20, width: 64, height: 64, marginLeft: -32 },
+  closeImage: { width: 64, height: 64 },
 });

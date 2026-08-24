@@ -1,6 +1,6 @@
 import { Redirect } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { Modal, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Modal } from 'react-native';
 import type { BasePokemon } from '@pokemongonexus/shared-contracts/pokemon';
 import type {
   NativeCollectionRow,
@@ -9,6 +9,7 @@ import type {
 import { buildNativeCatalogRows } from '../../features/collection/collectionModel';
 import { runtimeConfig } from '../../config/runtimeConfig';
 import { NativeCollectionHubScreen } from '../../screens/NativeCollectionHubScreen';
+import { NativeInstanceDetailScreen } from '../../screens/NativeInstanceDetailScreen';
 
 const ASSET_BASE_URL = 'https://pokegonexus.com';
 const CATALOG_FIXTURE_URL = 'http://10.0.2.2:8092/pokemons.json';
@@ -229,61 +230,44 @@ export default function DeviceSmokeCollectionRoute() {
         onRetry={() => undefined}
         wishlistTags={WISHLIST_TAGS}
       />
-      <Modal
-        animationType="fade"
-        onRequestClose={() => setOpenedRow(null)}
-        transparent
-        visible={Boolean(openedRow)}
-      >
-        <View style={styles.backdrop}>
-          <View accessibilityViewIsModal style={styles.confirmation}>
-            <Text accessibilityRole="header" style={styles.confirmationTitle}>
-              {openedRow ? `Opened ${openedRow.name}` : ''}
-            </Text>
-            <Pressable
-              accessibilityRole="button"
-              onPress={() => setOpenedRow(null)}
-              style={styles.closeButton}
-            >
-              <Text style={styles.closeButtonText}>Close smoke detail</Text>
-            </Pressable>
-          </View>
-        </View>
-      </Modal>
+      {openedRow ? (
+        <Modal
+          animationType="slide"
+          onRequestClose={() => setOpenedRow(null)}
+          presentationStyle="fullScreen"
+          statusBarTranslucent
+          visible
+        >
+          <NativeInstanceDetailScreen
+            assetBaseUrl={ASSET_BASE_URL}
+            cachedAt={null}
+            detail={{
+              row: openedRow,
+              traits: openedRow.name.includes('Shiny') ? ['Shiny'] : [],
+              stats: [],
+              ivs: [],
+              moves: [],
+              preferences: openedRow.status === 'wanted'
+                ? [
+                    { label: 'Friendship', value: '4/5 hearts' },
+                    { label: 'Lucky trade', value: 'Requested' },
+                  ]
+                : [],
+              provenance: [],
+            }}
+            error={null}
+            isLoading={false}
+            isSaving={false}
+            movesWarning={null}
+            onBack={() => setOpenedRow(null)}
+            onEditInCurrentApp={() => undefined}
+            onRetry={() => undefined}
+            onToggleFavorite={() => undefined}
+            saveError={null}
+            saveNotice={null}
+          />
+        </Modal>
+      ) : null}
     </>
   );
 }
-
-const styles = StyleSheet.create({
-  backdrop: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: 24,
-    backgroundColor: 'rgba(0, 0, 0, 0.72)',
-  },
-  confirmation: {
-    width: '100%',
-    maxWidth: 420,
-    gap: 18,
-    borderWidth: 1,
-    borderColor: '#42d4c4',
-    borderRadius: 18,
-    padding: 24,
-    backgroundColor: '#101a2a',
-  },
-  confirmationTitle: {
-    color: '#fff',
-    fontSize: 22,
-    fontWeight: '800',
-    textAlign: 'center',
-  },
-  closeButton: {
-    minHeight: 48,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderRadius: 12,
-    backgroundColor: '#42d4c4',
-  },
-  closeButtonText: { color: '#06162f', fontWeight: '900' },
-});

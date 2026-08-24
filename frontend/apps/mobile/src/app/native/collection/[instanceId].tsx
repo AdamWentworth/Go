@@ -39,6 +39,7 @@ export default function NativeInstanceDetailRoute() {
   }
 
   return <NativeInstanceDetailScreen
+    assetBaseUrl={runtimeConfig.api.frontendAppUrl}
     detail={detail}
     isLoading={snapshotQuery.isPending}
     error={snapshotQuery.error instanceof Error ? snapshotQuery.error.message : null}

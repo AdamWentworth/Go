@@ -63,6 +63,7 @@ export type NativeCollectionSortDirection = 'ascending' | 'descending';
 
 export type NativeInstanceDetail = {
   row: NativeCollectionRow;
+  instance?: PokemonInstance;
   traits: string[];
   stats: { label: string; value: string }[];
   ivs: { label: string; value: number }[];
@@ -844,5 +845,5 @@ export const buildNativeInstanceDetail = (
     instance.mirror ? { label: 'Mirror trade', value: 'Required' } : null,
   ]);
 
-  return { row, traits, stats, ivs, moves: moveRows, provenance, preferences };
+  return { row, instance, traits, stats, ivs, moves: moveRows, provenance, preferences };
 };

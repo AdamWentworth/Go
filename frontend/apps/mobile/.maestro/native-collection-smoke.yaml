@@ -108,10 +108,14 @@ tags:
     timeout: 10000
 - assertVisible: Gigantamax Blastoise
 - tapOn: "View Gigantamax Blastoise"
-- assertVisible: Opened Gigantamax Blastoise
-- takeScreenshot: 06-instance-opened
-- tapOn: Close smoke detail
-- assertNotVisible: Opened Gigantamax Blastoise
+- extendedWaitUntil:
+    visible: WANTED CONDITIONS
+    timeout: 10000
+- assertVisible: Gigantamax Blastoise
+- assertVisible: MOST WANTED
+- takeScreenshot: 06-wanted-instance
+- tapOn: Close
+- assertNotVisible: WANTED CONDITIONS
 - tapOn: Open action menu
 - extendedWaitUntil:
     visible: Quick navigation

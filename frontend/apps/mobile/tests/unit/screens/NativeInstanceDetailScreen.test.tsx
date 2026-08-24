@@ -52,7 +52,7 @@ describe('NativeInstanceDetailScreen', () => {
 
     expect(screen.getByText('Shiny Charizard')).toBeTruthy();
     expect(screen.getByText('Fire Spin')).toBeTruthy();
-    expect(screen.getByText('15/15')).toBeTruthy();
+    expect(screen.getByText('15')).toBeTruthy();
     fireEvent.press(screen.getByRole('button', { name: 'Edit in current app' }));
     expect(onEditInCurrentApp).toHaveBeenCalledTimes(1);
   });
