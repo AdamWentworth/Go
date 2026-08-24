@@ -106,11 +106,11 @@ export const NativeCollectionHubScreen = ({
   );
 
   const changeView = useCallback((view: NativePokemonHubView) => {
-    // Let the native pager own the transition. Updating activeView here makes
-    // the coordinated header underline jump to its destination one frame
-    // before ScrollView begins moving the page. The settled page is committed
-    // by onMomentumScrollEnd below, keeping the underline, content, pointer
-    // events, and accessibility state on the same timeline.
+    // Commit the destination immediately so taps never wait for momentum to
+    // settle before the selected tab becomes responsive. The underline still
+    // follows pageScrollX continuously, so the visual indicator travels with
+    // the native page rather than jumping ahead of it.
+    setActiveView(view);
     sliderRef.current?.setPage(VIEW_ORDER.indexOf(view));
   }, []);
 

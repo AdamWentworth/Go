@@ -137,10 +137,10 @@ describe('NativeCollectionHubScreen', () => {
 
     fireEvent.press(screen.getByRole('tab', { name: /tags/i }));
     expect(screen.getByRole('tab', { name: /pokémon/i }).props.accessibilityState).toEqual({
-      selected: true,
+      selected: false,
     });
     expect(screen.getByRole('tab', { name: /tags/i }).props.accessibilityState).toEqual({
-      selected: false,
+      selected: true,
     });
     fireEvent(screen.getByTestId('native-horizontal-page-slider'), 'momentumScrollEnd', {
       nativeEvent: { contentOffset: { x: 0, y: 0 } },
