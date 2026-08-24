@@ -26,6 +26,19 @@ const tag = {
   }],
 };
 
+const maxTag = {
+  ...tag,
+  key: 'system:trade' as const,
+  name: 'For Trade',
+  color: '#3aa85f',
+  tone: 'trade' as const,
+  rows: [{
+    ...tag.rows[0],
+    id: 'instance-gigantamax',
+    maxKind: 'gigantamax' as const,
+  }],
+};
+
 describe('NativeTagsPanelScreen', () => {
   it('renders real tag membership and returns the selected tag to the Pokémon grid', () => {
     const onSelectTag = jest.fn();
@@ -52,5 +65,30 @@ describe('NativeTagsPanelScreen', () => {
     expect(onSelectTag).toHaveBeenCalledWith(tag);
     fireEvent.press(screen.getByRole('tab', { name: /wishlist/i }));
     expect(onViewChange).toHaveBeenCalledWith('wishlist');
+  });
+
+  it('keeps tag previews aligned with the web cards and preserves Max badges', () => {
+    render(
+      <NativeTagsPanelScreen
+        activeTagName={null}
+        assetBaseUrl="https://pokegonexus.com"
+        collectionCount={1}
+        error={null}
+        isLoading={false}
+        onActionMenuPress={jest.fn()}
+        onRetry={jest.fn()}
+        onSelectTag={jest.fn()}
+        onViewChange={jest.fn()}
+        parent="caught"
+        tags={[maxTag]}
+      />,
+    );
+
+    expect(screen.getByLabelText('Inventory tags')).toBeTruthy();
+    expect(screen.getByText('1 Pokémon')).toBeTruthy();
+    expect(screen.getByLabelText('Open For Trade, 1 Pokémon')).toBeTruthy();
+    expect(screen.UNSAFE_getByProps({ testID: 'native-tag-preview-gigantamax' })).toBeTruthy();
+    expect(screen.queryByText('Inventory tags')).toBeNull();
+    expect(screen.queryByText('›')).toBeNull();
   });
 });

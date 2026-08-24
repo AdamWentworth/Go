@@ -29,10 +29,9 @@ export const NativePokemonStatusGlow = ({
       <Svg height="100%" width="100%">
         <Defs>
           <RadialGradient cx="50%" cy="50%" id={`ownership-${ownership}`} r="50%">
-            <Stop offset="0%" stopColor={color} stopOpacity="0.42" />
-            <Stop offset="20%" stopColor={color} stopOpacity="0.39" />
-            <Stop offset="48%" stopColor={color} stopOpacity="0.2" />
-            <Stop offset="72%" stopColor={color} stopOpacity="0.06" />
+            <Stop offset="0%" stopColor={color} stopOpacity="0.4" />
+            <Stop offset="28%" stopColor={color} stopOpacity="0.4" />
+            <Stop offset="50%" stopColor={color} stopOpacity="0" />
             <Stop offset="100%" stopColor={color} stopOpacity="0" />
           </RadialGradient>
         </Defs>
@@ -45,9 +44,9 @@ export const NativePokemonStatusGlow = ({
 const styles = StyleSheet.create({
   glow: {
     position: 'absolute',
-    top: '-12%',
-    left: '-12%',
-    width: '124%',
-    height: '124%',
+    top: '-20%',
+    left: '-20%',
+    width: '140%',
+    height: '140%',
   },
 });

@@ -62,7 +62,7 @@ tags:
     end: 10%, 50%
     duration: 500
 - extendedWaitUntil:
-    visible: Wishlist tags
+    visible: Wanted tags
     timeout: 10000
 - assertVisible: Most Wanted
 - takeScreenshot: 05-wishlist-tags

@@ -123,7 +123,7 @@ describe('NativeCollectionHubScreen', () => {
     expect(screen.queryByText('Shiny Bulbasaur')).toBeNull();
 
     fireEvent.press(screen.getByRole('tab', { name: /wishlist/i }));
-    expect(screen.getByText('Wishlist tags')).toBeTruthy();
+    expect(screen.getByLabelText('Wanted tags')).toBeTruthy();
     expect(screen.getByText('Most Wanted')).toBeTruthy();
   });
 });

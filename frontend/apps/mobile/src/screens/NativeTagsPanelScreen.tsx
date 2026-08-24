@@ -8,6 +8,7 @@ import {
   View,
   useColorScheme,
 } from 'react-native';
+import Svg, { Defs, LinearGradient, Rect, Stop } from 'react-native-svg';
 import type { CustomTagParent } from '@pokemongonexus/shared-contracts/users';
 import { webCssVarTokens } from '@pokemongonexus/shared-ui-tokens';
 import type { NativeTagSummary } from '../features/collection/collectionModel';
@@ -37,44 +38,85 @@ const toAssetUrl = (baseUrl: string, path: string): string => {
   return `${baseUrl.replace(/\/$/, '')}/${path.replace(/^\//, '')}`;
 };
 
-const readableTextColor = (color: string): string => {
-  const match = /^#([0-9a-f]{6})$/i.exec(color);
-  if (!match) return '#fff';
-  const value = Number.parseInt(match[1], 16);
-  const red = (value >> 16) & 255;
-  const green = (value >> 8) & 255;
-  const blue = value & 255;
-  return (red * 299 + green * 587 + blue * 114) / 1000 > 150 ? '#101514' : '#fff';
+type TagGradient = readonly [string, string, string];
+
+const SYSTEM_TAG_GRADIENTS: Record<Exclude<NativeTagSummary['tone'], 'custom'>, TagGradient> = {
+  favorites: ['#ffd77a', '#fff1aa', '#fff9dc'],
+  trade: ['#3aa85f', '#7fdc9e', '#eaf8f1'],
+  caught: ['#3f89ff', '#9bc5ff', '#e6f1ff'],
+  'most-wanted': ['#ff6f61', '#ff9b89', '#ffe4dc'],
+  wanted: ['#dd5260', '#fd9090', '#ffc5cc'],
 };
 
-const tagSurface = (tag: NativeTagSummary): string => {
-  if (tag.tone === 'favorites') return '#ffe496';
-  if (tag.tone === 'trade') return '#67d28d';
-  if (tag.tone === 'caught') return '#72aaff';
-  if (tag.tone === 'most-wanted') return '#ff8a70';
-  if (tag.tone === 'wanted') return '#f17182';
-  return tag.color;
+const mixHex = (foreground: string, background: string, foregroundWeight: number): string => {
+  const parse = (value: string): [number, number, number] | null => {
+    const match = /^#([0-9a-f]{6})$/i.exec(value);
+    if (!match) return null;
+    const packed = Number.parseInt(match[1], 16);
+    return [(packed >> 16) & 255, (packed >> 8) & 255, packed & 255];
+  };
+  const front = parse(foreground);
+  const back = parse(background);
+  if (!front || !back) return background;
+  const channel = (index: number) => Math.round(
+    front[index] * foregroundWeight + back[index] * (1 - foregroundWeight),
+  ).toString(16).padStart(2, '0');
+  return `#${channel(0)}${channel(1)}${channel(2)}`;
 };
+
+const tagGradient = (tag: NativeTagSummary, cardSurface: string): TagGradient => {
+  if (tag.tone !== 'custom') return SYSTEM_TAG_GRADIENTS[tag.tone];
+  return [
+    mixHex(tag.color, cardSurface, 0.62),
+    mixHex(tag.color, cardSurface, 0.24),
+    cardSurface,
+  ];
+};
+
+const NativeTagPreviewBackground = ({ colors }: { colors: TagGradient }) => (
+  <View pointerEvents="none" style={StyleSheet.absoluteFill}>
+    <Svg height="100%" width="100%">
+      <Defs>
+        <LinearGradient id="native-tag-gradient" x1="0%" x2="0%" y1="0%" y2="100%">
+          <Stop offset="0%" stopColor={colors[0]} />
+          <Stop offset="45%" stopColor={colors[1]} />
+          <Stop offset="100%" stopColor={colors[2]} />
+        </LinearGradient>
+      </Defs>
+      <Rect fill="url(#native-tag-gradient)" height="100%" width="100%" />
+    </Svg>
+  </View>
+);
 
 const NativeTagCard = ({
   assetBaseUrl,
+  light,
   tag,
   onPress,
 }: {
   assetBaseUrl: string;
+  light: boolean;
   tag: NativeTagSummary;
   onPress: () => void;
 }) => {
-  const surface = tagSurface(tag);
+  const cardSurface = light ? '#f8fff9' : '#222222';
+  const titleColor = light ? '#405753' : '#ffffff';
+  const subtitleColor = light ? '#405753' : '#dddddd';
   const previewRows = tag.rows.slice(0, 12);
   return (
     <Pressable
       accessibilityLabel={`Open ${tag.name}, ${tag.rows.length} Pokémon`}
       accessibilityRole="button"
       onPress={onPress}
-      style={({ pressed }) => [styles.tagCard, pressed && styles.pressed]}
+      style={({ pressed }) => [
+        styles.tagCard,
+        { backgroundColor: cardSurface },
+        tag.tone === 'custom' ? { borderColor: `${tag.color}7a`, borderWidth: 1 } : null,
+        pressed && styles.pressed,
+      ]}
     >
-      <View style={[styles.preview, { backgroundColor: surface }]}>
+      <View style={styles.preview}>
+        <NativeTagPreviewBackground colors={tagGradient(tag, cardSurface)} />
         {previewRows.length ? previewRows.map((row) => (
           <View key={row.id} style={styles.previewCell}>
             {row.imageUri ? (
@@ -85,24 +127,42 @@ const NativeTagCard = ({
                 style={styles.previewImage}
               />
             ) : null}
+            {row.maxKind ? (
+              <Image
+                accessibilityElementsHidden
+                resizeMode="contain"
+                source={{
+                  uri: toAssetUrl(
+                    assetBaseUrl,
+                    row.maxKind === 'gigantamax'
+                      ? '/images/gigantamax.png'
+                      : '/images/dynamax.png',
+                  ),
+                }}
+                style={styles.previewMaxBadge}
+                testID={`native-tag-preview-${row.maxKind}`}
+              />
+            ) : null}
           </View>
         )) : (
           <View style={styles.emptyPreview}>
-            <Text style={[styles.emptyPreviewText, { color: readableTextColor(surface) }]}>No Pokémon yet</Text>
+            <Text style={styles.emptyPreviewText}>No Pokémon in this tag.</Text>
           </View>
         )}
       </View>
       <View style={styles.tagFooter}>
         <View style={styles.tagIdentity}>
-          {tag.tone === 'favorites' ? <Text style={styles.favoriteStar}>★</Text> : (
+          {tag.tone === 'custom' ? (
             <View style={[styles.tagDot, { backgroundColor: tag.color }]} />
-          )}
+          ) : null}
           <View style={styles.tagCopy}>
-            <Text numberOfLines={1} style={styles.tagName}>{tag.name}</Text>
-            <Text style={styles.tagCount}>{tag.rows.length} Pokémon have this tag.</Text>
+            <Text numberOfLines={1} style={[styles.tagName, { color: titleColor }]}>{tag.name}</Text>
+            <Text style={[styles.tagCount, { color: subtitleColor }]}>
+              {tag.rows.length} Pokémon have this tag.
+            </Text>
           </View>
         </View>
-        <Text style={styles.chevron}>›</Text>
+        {tag.tone === 'favorites' ? <Text style={styles.favoriteStar}>★</Text> : null}
       </View>
     </Pressable>
   );
@@ -142,24 +202,17 @@ export const NativeTagsPanelScreen = ({
         />
       ) : null}
       <FlatList
+        accessibilityLabel={parent === 'caught' ? 'Inventory tags' : 'Wanted tags'}
         contentContainerStyle={styles.list}
         data={tags}
         keyExtractor={(tag) => tag.key}
         ListHeaderComponent={(
           <View style={styles.listHeader}>
-            <View style={styles.headingRow}>
-              <View>
-                <Text style={[styles.eyebrow, { color: parent === 'caught' ? '#4aa2ff' : '#ef5b72' }]}>
-                  {parent === 'caught' ? 'YOUR COLLECTION' : 'YOUR WISHLIST'}
-                </Text>
-                <Text accessibilityRole="header" style={[styles.title, { color: text }]}>
-                  {parent === 'caught' ? 'Inventory tags' : 'Wishlist tags'}
-                </Text>
-              </View>
-              <Text style={[styles.total, { color: secondary }]}>
-                {parent === 'caught' ? collectionCount : tags.find((tag) => tag.key === 'system:wanted')?.rows.length ?? 0} Pokémon
-              </Text>
-            </View>
+            <Text style={[styles.total, { color: secondary }]}>
+              {parent === 'caught'
+                ? collectionCount
+                : tags.find((tag) => tag.key === 'system:wanted')?.rows.length ?? 0} Pokémon
+            </Text>
             {warning ? (
               <View accessibilityRole="alert" style={styles.warningCard}>
                 <Text style={styles.warningTitle}>Custom tags are temporarily unavailable</Text>
@@ -185,6 +238,7 @@ export const NativeTagsPanelScreen = ({
         renderItem={({ item }) => (
           <NativeTagCard
             assetBaseUrl={assetBaseUrl}
+            light={light}
             onPress={() => onSelectTag(item)}
             tag={item}
           />
@@ -209,18 +263,9 @@ export const NativeTagsPanelScreen = ({
 
 const styles = StyleSheet.create({
   screen: { flex: 1 },
-  list: { flexGrow: 1, gap: 16, padding: 20, paddingBottom: 92 },
+  list: { flexGrow: 1, padding: 20, paddingBottom: 92 },
   listHeader: { gap: 12 },
-  headingRow: {
-    flexDirection: 'row',
-    alignItems: 'flex-end',
-    justifyContent: 'space-between',
-    gap: 12,
-    marginBottom: 2,
-  },
-  eyebrow: { fontSize: 11, fontWeight: '900', letterSpacing: 1.2 },
-  title: { fontSize: 24, fontWeight: '900' },
-  total: { fontSize: 13, fontWeight: '700', paddingBottom: 3 },
+  total: { minHeight: 44, paddingHorizontal: 2, textAlignVertical: 'center', fontSize: 13, fontWeight: '400' },
   warningCard: {
     gap: 2,
     borderWidth: 1,
@@ -234,39 +279,48 @@ const styles = StyleSheet.create({
   warningBody: { color: '#d9c79f', fontSize: 12, lineHeight: 17 },
   tagCard: {
     overflow: 'hidden',
-    borderWidth: 1,
-    borderColor: '#47504f',
-    borderRadius: 16,
-    backgroundColor: '#232725',
+    marginVertical: 10,
+    borderRadius: 15,
+    shadowColor: '#ffffff',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.1,
+    shadowRadius: 20,
   },
   pressed: { opacity: 0.78, transform: [{ scale: 0.99 }] },
   preview: {
-    minHeight: 130,
+    minHeight: 124,
     flexDirection: 'row',
     flexWrap: 'wrap',
     alignContent: 'center',
-    paddingHorizontal: 10,
+    paddingHorizontal: 12,
     paddingVertical: 8,
   },
-  previewCell: { width: '16.666%', height: 55, alignItems: 'center', justifyContent: 'center' },
-  previewImage: { width: 48, height: 48 },
+  previewCell: {
+    position: 'relative',
+    width: '16.666%',
+    height: 54,
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 2,
+  },
+  previewImage: { width: '100%', height: '100%' },
+  previewMaxBadge: { position: 'absolute', top: 2, right: 2, width: 13, height: 13 },
   emptyPreview: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-  emptyPreviewText: { fontSize: 14, fontWeight: '800' },
+  emptyPreviewText: { color: '#525252', fontSize: 15, fontWeight: '500', opacity: 0.9 },
   tagFooter: {
-    minHeight: 66,
+    minHeight: 64,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 14,
-    paddingVertical: 10,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
   },
   tagIdentity: { minWidth: 0, flex: 1, flexDirection: 'row', alignItems: 'center' },
   tagCopy: { minWidth: 0, flex: 1 },
-  tagDot: { width: 13, height: 13, marginRight: 6, borderRadius: 7 },
-  favoriteStar: { color: '#ffd21c', fontSize: 22, marginRight: 6 },
-  tagName: { color: '#fff', fontSize: 18, fontWeight: '900' },
-  tagCount: { color: '#bdc5c2', fontSize: 13 },
-  chevron: { color: '#d7dfdc', fontSize: 32, lineHeight: 34 },
+  tagDot: { width: 12, height: 12, marginRight: 7, borderWidth: 1, borderColor: '#ffffff99', borderRadius: 6 },
+  favoriteStar: { color: '#ffd21c', fontSize: 22 },
+  tagName: { fontSize: 18, fontWeight: '700' },
+  tagCount: { fontSize: 14, lineHeight: 16 },
   emptyState: { minHeight: 300, alignItems: 'center', justifyContent: 'center', gap: 10 },
   emptyTitle: { fontSize: 18, fontWeight: '900', textAlign: 'center' },
   emptyBody: { fontSize: 13, textAlign: 'center' },
