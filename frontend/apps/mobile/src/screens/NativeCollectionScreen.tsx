@@ -14,6 +14,7 @@ import {
   type NativeCollectionRow,
 } from '../features/collection/collectionModel';
 import { theme } from '../ui/theme';
+import { NativeCollectionSyncStatusCard } from '../features/collection/NativeCollectionSyncStatusCard';
 
 type NativeCollectionScreenProps = {
   rows: NativeCollectionRow[];
@@ -135,6 +136,8 @@ export const NativeCollectionScreen = ({
                 </Text>
               </View>
             ) : null}
+
+            <NativeCollectionSyncStatusCard />
           </View>
         )}
         ListEmptyComponent={(

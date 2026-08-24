@@ -1,6 +1,10 @@
 import { fireEvent, render, screen } from '@testing-library/react-native';
 import { NativeInstanceDetailScreen } from '../../../src/screens/NativeInstanceDetailScreen';
 
+jest.mock('../../../src/features/collection/NativeCollectionSyncStatusCard', () => ({
+  NativeCollectionSyncStatusCard: () => null,
+}));
+
 const detail = {
   row: {
     id: 'instance-1',

@@ -18,6 +18,11 @@ jest.mock('../../../../src/features/collection/nativeFavoriteMutation', () => ({
   persistNativeFavoriteMutation: jest.fn(),
 }));
 
+const mockRefreshStatus = jest.fn().mockResolvedValue(undefined);
+jest.mock('../../../../src/features/collection/NativeCollectionSyncProvider', () => ({
+  useNativeCollectionSync: () => ({ refreshStatus: mockRefreshStatus }),
+}));
+
 const mockedPersist = persistNativeFavoriteMutation as jest.MockedFunction<
   typeof persistNativeFavoriteMutation
 >;
@@ -69,6 +74,7 @@ describe('useNativeFavoriteMutation', () => {
 
     expect(queryClient.getQueryData<NativeCollectionSnapshot>(queryKey)
       ?.instances['instance-1']?.favorite).toBe(true);
+    expect(mockRefreshStatus).toHaveBeenCalledTimes(1);
     queryClient.clear();
   });
 });

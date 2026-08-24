@@ -1,5 +1,6 @@
 import {
   canAttemptNativeCollectionSync,
+  summarizeNativeCollectionOutbox,
   shouldSyncForAppState,
 } from '../../../../src/features/collection/NativeCollectionSyncProvider';
 
@@ -26,5 +27,19 @@ describe('NativeCollectionSyncProvider lifecycle rules', () => {
     expect(shouldSyncForAppState('active')).toBe(true);
     expect(shouldSyncForAppState('background')).toBe(false);
     expect(shouldSyncForAppState('inactive')).toBe(false);
+  });
+
+  it('reports pending, Receiver-accepted, and failed retained batches separately', () => {
+    const entries = [
+      { state: 'pending', lastError: null },
+      { state: 'pending', lastError: 'Receiver unavailable' },
+      { state: 'acknowledged', lastError: null },
+    ] as never;
+
+    expect(summarizeNativeCollectionOutbox(entries)).toEqual({
+      pendingCount: 2,
+      acceptedCount: 1,
+      lastError: 'Receiver unavailable',
+    });
   });
 });

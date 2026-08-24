@@ -1,6 +1,10 @@
 import { fireEvent, render, screen } from '@testing-library/react-native';
 import { NativeCollectionScreen } from '../../../src/screens/NativeCollectionScreen';
 
+jest.mock('../../../src/features/collection/NativeCollectionSyncStatusCard', () => ({
+  NativeCollectionSyncStatusCard: () => null,
+}));
+
 const row = {
   id: 'instance-1',
   pokemonId: 6,

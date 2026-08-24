@@ -4,6 +4,7 @@ import { nativeCollectionOutbox } from '../../storage/nativeCollectionOutbox';
 import type { NativeCollectionSnapshot } from '../../services/collectionApi';
 import { nativeCollectionQueryKeys } from './collectionQueries';
 import { persistNativeFavoriteMutation } from './nativeFavoriteMutation';
+import { useNativeCollectionSync } from './NativeCollectionSyncProvider';
 
 export const useNativeFavoriteMutation = (
   userId: string,
@@ -11,6 +12,7 @@ export const useNativeFavoriteMutation = (
 ) => {
   const clients = useNativeApiClients();
   const queryClient = useQueryClient();
+  const sync = useNativeCollectionSync();
   return useMutation({
     mutationFn: async (favorite: boolean) => {
       const queryKey = nativeCollectionQueryKeys.snapshot(userId);
@@ -37,6 +39,7 @@ export const useNativeFavoriteMutation = (
         },
       });
       await queryClient.invalidateQueries({ queryKey });
+      await sync.refreshStatus();
       return result;
     },
   });

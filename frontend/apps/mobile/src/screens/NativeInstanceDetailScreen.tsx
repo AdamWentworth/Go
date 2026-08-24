@@ -9,6 +9,7 @@ import {
 } from 'react-native';
 import type { NativeInstanceDetail } from '../features/collection/collectionModel';
 import { theme } from '../ui/theme';
+import { NativeCollectionSyncStatusCard } from '../features/collection/NativeCollectionSyncStatusCard';
 
 type NativeInstanceDetailScreenProps = {
   detail: NativeInstanceDetail | null;
@@ -107,6 +108,8 @@ export const NativeInstanceDetailScreen = ({
           <Text style={styles.cachedBody}>Retained changes are shown and will sync after reconnecting.</Text>
         </View>
       ) : null}
+
+      <NativeCollectionSyncStatusCard />
 
       <View style={styles.hero}>
         <Text style={styles.dexNumber}>
