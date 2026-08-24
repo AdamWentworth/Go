@@ -81,6 +81,14 @@ export type NativeInstanceDetail = {
   preferences: { label: string; value: string }[];
 };
 
+export const buildCanonicalCollectionInstancePath = (
+  instanceId: string,
+  status: NativeCollectionRow['status'],
+): string => {
+  const query = new URLSearchParams({ filter: status, instanceId });
+  return `/pokemon?${query.toString()}`;
+};
+
 export const resolveNativeInstanceImage = (
   instance: PokemonInstance,
   pokemon: BasePokemon,

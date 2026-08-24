@@ -300,6 +300,7 @@ export default function usePokemonPageController({
   useInstanceIdProcessor({
     variantsLoading: loading,
     filteredVariants,
+    instances,
     location: location as unknown as Parameters<typeof useInstanceIdProcessor>[0]['location'],
     selectedPokemon,
     isOwnCollection,

@@ -2,6 +2,7 @@ import type { PokemonInstance } from '@pokemongonexus/shared-contracts/instances
 import type { BasePokemon } from '@pokemongonexus/shared-contracts/pokemon';
 import type { CustomTagsEnvelope } from '@pokemongonexus/shared-contracts/users';
 import {
+  buildCanonicalCollectionInstancePath,
   buildNativeCatalogRows,
   buildNativeCollectionRows,
   buildNativeInstanceDetail,
@@ -99,6 +100,12 @@ const pokemon = {
 } as unknown as BasePokemon;
 
 describe('native collection model', () => {
+  it('builds an exact canonical instance handoff with its status filter', () => {
+    expect(buildCanonicalCollectionInstancePath('instance 1', 'trade')).toBe(
+      '/pokemon?filter=trade&instanceId=instance+1',
+    );
+  });
+
   it('builds the complete catalog separately from collection instances', () => {
     const rows = buildNativeCatalogRows([
       {
