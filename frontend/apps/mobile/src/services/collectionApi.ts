@@ -18,15 +18,17 @@ import {
   reconcileAcknowledgedNativeCollectionBatches,
 } from '../features/collection/collectionSyncCoordinator';
 import type { nativeCollectionOutbox } from '../storage/nativeCollectionOutbox';
-import type {
-  NativeCachedCollectionSnapshot,
-  nativeCollectionCache,
-} from '../storage/nativeCollectionCache';
+import type { nativeCollectionCache } from '../storage/nativeCollectionCache';
+import {
+  DEFAULT_NATIVE_TAGS_ENVELOPE,
+  normalizeNativeTagsEnvelope,
+} from '../features/collection/nativeTagsEnvelope';
 
 export type NativeCollectionSnapshot = {
   instances: Record<string, PokemonInstance>;
   catalog: BasePokemon[];
   tags?: CustomTagsEnvelope;
+  tagLoadWarning?: string;
 };
 
 export type NativeResolvedCollectionSnapshot = NativeCollectionSnapshot & {
@@ -38,18 +40,35 @@ export const getNativeCollectionSnapshot = async (
   usersClient: Pick<NativeUsersApiClient, 'get'>,
   pokemonClient: Pick<NativePokemonApiClient, 'get'>,
 ): Promise<NativeCollectionSnapshot> => {
-  const [instanceEnvelope, catalog, tags] = await Promise.all([
-    usersClient.get<InstanceSyncEnvelope<PokemonInstance>>(
-      usersContract.endpoints.instanceSync,
-    ),
+  const instancesRequest = usersClient.get<InstanceSyncEnvelope<PokemonInstance>>(
+    usersContract.endpoints.instanceSync,
+  );
+  const tagsRequest = usersClient.get<unknown>(usersContract.endpoints.tags)
+    .then((value) => ({
+      tags: normalizeNativeTagsEnvelope(value),
+      tagLoadWarning: undefined,
+    }))
+    .catch((error: unknown) => ({
+      tags: DEFAULT_NATIVE_TAGS_ENVELOPE,
+      tagLoadWarning: `Custom tags could not be refreshed. ${errorMessage(error)}`,
+    }));
+  const [instanceEnvelope, catalog, tagResult] = await Promise.all([
+    instancesRequest,
     pokemonClient.get<BasePokemon[]>(pokemonContract.endpoints.catalog),
-    usersClient.get<CustomTagsEnvelope>(usersContract.endpoints.tags),
+    tagsRequest,
   ]);
+
+  if (!catalog || !Array.isArray(catalog)) {
+    throw new Error('The Pokémon catalog response is invalid.');
+  }
 
   return {
     instances: instanceEnvelope.instances ?? {},
     catalog,
-    tags,
+    tags: tagResult.tags,
+    ...(tagResult.tagLoadWarning
+      ? { tagLoadWarning: tagResult.tagLoadWarning }
+      : {}),
   };
 };
 
@@ -73,14 +92,31 @@ export const getReconciledNativeCollectionSnapshot = async (
   cache: NativeCollectionCachePort,
   userId: string,
 ): Promise<NativeResolvedCollectionSnapshot> => {
-  let canonical: NativeCachedCollectionSnapshot;
+  let canonical: NativeCollectionSnapshot;
   let source: NativeResolvedCollectionSnapshot['source'] = 'network';
   let cachedAt: number | null = null;
 
   try {
     canonical = await getNativeCollectionSnapshot(usersClient, pokemonClient);
+    if (canonical.tagLoadWarning) {
+      try {
+        const cached = await cache.read(userId);
+        if (cached?.snapshot.tags) {
+          canonical = {
+            ...canonical,
+            tags: normalizeNativeTagsEnvelope(cached.snapshot.tags),
+          };
+        }
+      } catch {
+        // System tags remain available if optional cached custom tags are unavailable.
+      }
+    }
     try {
-      await cache.write(userId, canonical);
+      await cache.write(userId, {
+        instances: canonical.instances,
+        catalog: canonical.catalog,
+        tags: canonical.tags,
+      });
     } catch {
       // A replaceable read cache must never block a successful online collection load.
     }
@@ -88,7 +124,10 @@ export const getReconciledNativeCollectionSnapshot = async (
     try {
       const cached = await cache.read(userId);
       if (!cached) throw networkError;
-      canonical = cached.snapshot;
+      canonical = {
+        ...cached.snapshot,
+        tags: normalizeNativeTagsEnvelope(cached.snapshot.tags),
+      };
       source = 'cache';
       cachedAt = cached.savedAt;
     } catch (cacheError) {

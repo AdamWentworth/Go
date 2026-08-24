@@ -251,6 +251,15 @@ describe('native collection model', () => {
     expect(wanted[0].rows[0]).toEqual(expect.objectContaining({ id: 'wanted' }));
   });
 
+  it('keeps system tags available for malformed optional tag metadata', () => {
+    const rows = buildNativeCollectionRows({}, [pokemon], 'https://pokegonexus.com');
+
+    expect(buildNativeTagSummaries(rows, {}, undefined, 'caught').map((tag) => tag.key))
+      .toEqual(['system:caught', 'system:favorites', 'system:trade']);
+    expect(buildNativeTagSummaries(rows, {}, null, 'wanted').map((tag) => tag.key))
+      .toEqual(['system:wanted', 'system:most-wanted']);
+  });
+
   it('builds a native detail model from shared instance identity and move metadata', () => {
     const detail = buildNativeInstanceDetail(
       {

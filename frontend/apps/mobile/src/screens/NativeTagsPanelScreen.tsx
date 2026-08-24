@@ -21,6 +21,7 @@ type Props = {
   assetBaseUrl: string;
   collectionCount: number;
   error: string | null;
+  warning?: string | null;
   isLoading: boolean;
   parent: CustomTagParent;
   tags: NativeTagSummary[];
@@ -111,6 +112,7 @@ export const NativeTagsPanelScreen = ({
   assetBaseUrl,
   collectionCount,
   error,
+  warning = null,
   isLoading,
   parent,
   tags,
@@ -139,18 +141,26 @@ export const NativeTagsPanelScreen = ({
         data={tags}
         keyExtractor={(tag) => tag.key}
         ListHeaderComponent={(
-          <View style={styles.headingRow}>
-            <View>
-              <Text style={[styles.eyebrow, { color: parent === 'caught' ? '#4aa2ff' : '#ef5b72' }]}>
-                {parent === 'caught' ? 'YOUR COLLECTION' : 'YOUR WISHLIST'}
-              </Text>
-              <Text accessibilityRole="header" style={[styles.title, { color: text }]}>
-                {parent === 'caught' ? 'Inventory tags' : 'Wishlist tags'}
+          <View style={styles.listHeader}>
+            <View style={styles.headingRow}>
+              <View>
+                <Text style={[styles.eyebrow, { color: parent === 'caught' ? '#4aa2ff' : '#ef5b72' }]}>
+                  {parent === 'caught' ? 'YOUR COLLECTION' : 'YOUR WISHLIST'}
+                </Text>
+                <Text accessibilityRole="header" style={[styles.title, { color: text }]}>
+                  {parent === 'caught' ? 'Inventory tags' : 'Wishlist tags'}
+                </Text>
+              </View>
+              <Text style={[styles.total, { color: secondary }]}>
+                {parent === 'caught' ? collectionCount : tags.find((tag) => tag.key === 'system:wanted')?.rows.length ?? 0} Pokémon
               </Text>
             </View>
-            <Text style={[styles.total, { color: secondary }]}>
-              {parent === 'caught' ? collectionCount : tags.find((tag) => tag.key === 'system:wanted')?.rows.length ?? 0} Pokémon
-            </Text>
+            {warning ? (
+              <View accessibilityRole="alert" style={styles.warningCard}>
+                <Text style={styles.warningTitle}>Custom tags are temporarily unavailable</Text>
+                <Text style={styles.warningBody}>Your collection and system tags are still ready to use.</Text>
+              </View>
+            ) : null}
           </View>
         )}
         ListEmptyComponent={(
@@ -195,6 +205,7 @@ export const NativeTagsPanelScreen = ({
 const styles = StyleSheet.create({
   screen: { flex: 1 },
   list: { flexGrow: 1, gap: 16, padding: 20, paddingBottom: 92 },
+  listHeader: { gap: 12 },
   headingRow: {
     flexDirection: 'row',
     alignItems: 'flex-end',
@@ -205,6 +216,17 @@ const styles = StyleSheet.create({
   eyebrow: { fontSize: 11, fontWeight: '900', letterSpacing: 1.2 },
   title: { fontSize: 24, fontWeight: '900' },
   total: { fontSize: 13, fontWeight: '700', paddingBottom: 3 },
+  warningCard: {
+    gap: 2,
+    borderWidth: 1,
+    borderColor: '#a1772c',
+    borderRadius: 12,
+    backgroundColor: '#332a18',
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+  },
+  warningTitle: { color: '#ffe0a0', fontSize: 13, fontWeight: '900' },
+  warningBody: { color: '#d9c79f', fontSize: 12, lineHeight: 17 },
   tagCard: {
     overflow: 'hidden',
     borderWidth: 1,

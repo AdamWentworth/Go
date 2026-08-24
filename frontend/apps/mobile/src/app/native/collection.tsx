@@ -13,6 +13,7 @@ import { NativeCollectionParityScreen } from '../../screens/NativeCollectionPari
 import { NativeTagsPanelScreen } from '../../screens/NativeTagsPanelScreen';
 import { runtimeConfig } from '../../config/runtimeConfig';
 import { useNativeSession } from '../../auth/NativeSessionContext';
+import { DEFAULT_NATIVE_TAGS_ENVELOPE } from '../../features/collection/nativeTagsEnvelope';
 
 export default function NativeCollectionRoute() {
   const router = useRouter();
@@ -41,13 +42,7 @@ export default function NativeCollectionRoute() {
     return buildNativeTagSummaries(
       instanceRows,
       snapshotQuery.data.instances,
-      snapshotQuery.data.tags ?? {
-        tags: [],
-        orders: {
-          caught: ['system:caught', 'system:favorites', 'system:trade'],
-          wanted: ['system:wanted', 'system:most-wanted'],
-        },
-      },
+      snapshotQuery.data.tags ?? DEFAULT_NATIVE_TAGS_ENVELOPE,
       'caught',
     );
   }, [instanceRows, snapshotQuery.data]);
@@ -56,13 +51,7 @@ export default function NativeCollectionRoute() {
     return buildNativeTagSummaries(
       instanceRows,
       snapshotQuery.data.instances,
-      snapshotQuery.data.tags ?? {
-        tags: [],
-        orders: {
-          caught: ['system:caught', 'system:favorites', 'system:trade'],
-          wanted: ['system:wanted', 'system:most-wanted'],
-        },
-      },
+      snapshotQuery.data.tags ?? DEFAULT_NATIVE_TAGS_ENVELOPE,
       'wanted',
     );
   }, [instanceRows, snapshotQuery.data]);
@@ -84,6 +73,7 @@ export default function NativeCollectionRoute() {
         assetBaseUrl={runtimeConfig.api.frontendAppUrl}
         collectionCount={catalogRows.length}
         error={snapshotQuery.error instanceof Error ? snapshotQuery.error.message : null}
+        warning={snapshotQuery.data?.tagLoadWarning ?? null}
         isLoading={snapshotQuery.isPending}
         onActionMenuPress={() => router.replace('/web')}
         onRetry={() => void snapshotQuery.refetch()}

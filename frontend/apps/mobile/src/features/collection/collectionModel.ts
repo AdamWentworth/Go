@@ -10,6 +10,7 @@ import type {
 } from '@pokemongonexus/shared-contracts/users';
 import { buildPokemonCatalogEntries } from '@pokemongonexus/shared-domain/catalog';
 import { resolveInstanceCollectionKey } from '@pokemongonexus/shared-domain/instances';
+import { normalizeNativeTagsEnvelope } from './nativeTagsEnvelope';
 
 export type NativeCollectionFilter =
   | 'all'
@@ -428,17 +429,18 @@ const rowsForSystemTag = (
 export const buildNativeTagSummaries = (
   rows: NativeCollectionRow[],
   instances: Record<string, PokemonInstance>,
-  envelope: CustomTagsEnvelope,
+  envelope: CustomTagsEnvelope | null | undefined,
   parent: CustomTagParent,
 ): NativeTagSummary[] => {
+  const normalizedEnvelope = normalizeNativeTagsEnvelope(envelope);
   const rowById = new Map(rows.map((row) => [row.id, row]));
-  const customDefinitions = envelope.tags.filter((tag) => tag.parent === parent);
+  const customDefinitions = normalizedEnvelope.tags.filter((tag) => tag.parent === parent);
   const customKeys = customDefinitions.map(
     (tag) => `custom:${tag.tag_id}` as PokemonTagOrderKey,
   );
   const allowed = new Set([...DEFAULT_TAG_ORDER[parent], ...customKeys]);
   const orderedKeys = [
-    ...(envelope.orders?.[parent] ?? []),
+    ...normalizedEnvelope.orders[parent],
     ...DEFAULT_TAG_ORDER[parent],
     ...customKeys,
   ].filter((key, index, all) => allowed.has(key) && all.indexOf(key) === index);

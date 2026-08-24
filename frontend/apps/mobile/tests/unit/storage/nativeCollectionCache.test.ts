@@ -54,6 +54,37 @@ describe('native collection cache', () => {
     await expect(cache.read('user-1')).rejects.toThrow('not valid JSON');
   });
 
+  it('repairs malformed optional tag metadata without discarding cached Pokémon', async () => {
+    const database = {
+      execAsync: jest.fn().mockResolvedValue(undefined),
+      runAsync: jest.fn().mockResolvedValue(result),
+      getFirstAsync: jest.fn().mockResolvedValue({
+        snapshot_json: JSON.stringify({
+          instances: {},
+          catalog: [],
+          tags: { tags: null, orders: { caught: {}, wanted: ['system:wanted'] } },
+        }),
+        saved_at: 1234,
+      }),
+    };
+    const cache = createNativeCollectionCache(async () => database);
+
+    await expect(cache.read('user-1')).resolves.toEqual({
+      snapshot: {
+        instances: {},
+        catalog: [],
+        tags: {
+          tags: [],
+          orders: {
+            caught: ['system:caught', 'system:favorites', 'system:trade'],
+            wanted: ['system:wanted'],
+          },
+        },
+      },
+      savedAt: 1234,
+    });
+  });
+
   it('rejects empty user identities so cached accounts cannot bleed together', async () => {
     const database = {
       execAsync: jest.fn().mockResolvedValue(undefined),

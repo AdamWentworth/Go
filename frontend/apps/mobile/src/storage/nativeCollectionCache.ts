@@ -3,6 +3,7 @@ import type { BasePokemon } from '@pokemongonexus/shared-contracts/pokemon';
 import type { CustomTagsEnvelope } from '@pokemongonexus/shared-contracts/users';
 import * as SQLite from 'expo-sqlite';
 import type { SQLiteBindParams, SQLiteRunResult } from 'expo-sqlite';
+import { normalizeNativeTagsEnvelope } from '../features/collection/nativeTagsEnvelope';
 
 const DATABASE_NAME = 'pokegonexus-native.db';
 
@@ -62,15 +63,9 @@ const parseSnapshot = (snapshotJson: string): NativeCachedCollectionSnapshot => 
     throw new Error('The saved Pokémon catalog is invalid.');
   }
 
-  const tags = 'tags' in parsed && parsed.tags && typeof parsed.tags === 'object'
-    ? parsed.tags as CustomTagsEnvelope
-    : {
-        tags: [],
-        orders: {
-          caught: ['system:caught', 'system:favorites', 'system:trade'],
-          wanted: ['system:wanted', 'system:most-wanted'],
-        },
-      } satisfies CustomTagsEnvelope;
+  const tags = normalizeNativeTagsEnvelope(
+    'tags' in parsed ? parsed.tags : undefined,
+  );
 
   return { ...(parsed as Omit<NativeCachedCollectionSnapshot, 'tags'>), tags };
 };

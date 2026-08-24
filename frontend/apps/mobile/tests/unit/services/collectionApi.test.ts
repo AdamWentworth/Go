@@ -38,6 +38,51 @@ describe('getNativeCollectionSnapshot', () => {
     expect(pokemonClient.get).toHaveBeenCalledWith(pokemonContract.endpoints.moves);
   });
 
+  it('keeps the catalog usable when optional custom tags cannot load', async () => {
+    const instances = { 'instance-1': { pokemon_id: 1 } };
+    const catalog = [{ pokemon_id: 1, name: 'Bulbasaur' }];
+    const usersClient = {
+      get: jest.fn()
+        .mockResolvedValueOnce({ instances })
+        .mockRejectedValueOnce(new Error('tag service unavailable')),
+    };
+    const pokemonClient = { get: jest.fn().mockResolvedValue(catalog) };
+
+    await expect(getNativeCollectionSnapshot(usersClient, pokemonClient)).resolves.toEqual({
+      instances,
+      catalog,
+      tags: {
+        tags: [],
+        orders: {
+          caught: ['system:caught', 'system:favorites', 'system:trade'],
+          wanted: ['system:wanted', 'system:most-wanted'],
+        },
+      },
+      tagLoadWarning: expect.stringContaining('tag service unavailable'),
+    });
+  });
+
+  it('normalizes malformed custom tag data instead of crashing tag views', async () => {
+    const usersClient = {
+      get: jest.fn()
+        .mockResolvedValueOnce({ instances: {} })
+        .mockResolvedValueOnce({ tags: null, orders: { caught: 'bad', wanted: [42] } }),
+    };
+    const pokemonClient = { get: jest.fn().mockResolvedValue([]) };
+
+    await expect(getNativeCollectionSnapshot(usersClient, pokemonClient)).resolves.toEqual({
+      instances: {},
+      catalog: [],
+      tags: {
+        tags: [],
+        orders: {
+          caught: ['system:caught', 'system:favorites', 'system:trade'],
+          wanted: [],
+        },
+      },
+    });
+  });
+
   it('reconciles acknowledged batches and projects retained local snapshots', async () => {
     const canonicalInstance = { instance_id: 'instance-1', pokemon_id: 1, last_update: 100 };
     const localInstance = {
@@ -94,6 +139,38 @@ describe('getNativeCollectionSnapshot', () => {
     });
     expect(outbox.list).toHaveBeenNthCalledWith(1, 'user-1', 'acknowledged');
     expect(outbox.list).toHaveBeenNthCalledWith(2, 'user-1');
+  });
+
+  it('does not downgrade the whole collection to offline when only tags fail', async () => {
+    const usersClient = { get: jest.fn()
+      .mockResolvedValueOnce({ instances: {} })
+      .mockRejectedValueOnce(new Error('tags unavailable')) };
+    const pokemonClient = { get: jest.fn().mockResolvedValue([]) };
+    const outbox = {
+      list: jest.fn().mockResolvedValue([]),
+      removeAcknowledged: jest.fn().mockResolvedValue(undefined),
+    };
+    const cache = {
+      read: jest.fn().mockResolvedValue(null),
+      write: jest.fn().mockResolvedValue(undefined),
+    };
+
+    const snapshot = await getReconciledNativeCollectionSnapshot(
+      usersClient, pokemonClient, outbox, cache, 'user-1',
+    );
+
+    expect(snapshot).toEqual(expect.objectContaining({
+      source: 'network',
+      instances: {},
+      catalog: [],
+      tagLoadWarning: expect.stringContaining('tags unavailable'),
+    }));
+    expect(snapshot.tags?.orders.caught).toContain('system:caught');
+    expect(cache.write).toHaveBeenCalledWith('user-1', expect.objectContaining({
+      instances: {},
+      catalog: [],
+      tags: expect.objectContaining({ tags: [] }),
+    }));
   });
 
   it('falls back to a user-scoped cached snapshot and still projects retained edits', async () => {
