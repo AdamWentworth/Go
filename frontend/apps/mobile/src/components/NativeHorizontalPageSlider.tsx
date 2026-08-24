@@ -1,18 +1,18 @@
 import {
   AccessibilityInfo,
-  Animated,
-  Easing,
-  PanResponder,
+  ScrollView,
   StyleSheet,
   View,
   useWindowDimensions,
 } from 'react-native';
 import {
   Children,
+  forwardRef,
   type PropsWithChildren,
   useCallback,
   useEffect,
-  useMemo,
+  useImperativeHandle,
+  useRef,
   useState,
 } from 'react';
 
@@ -21,41 +21,41 @@ type Props = PropsWithChildren<{
   onIndexChange: (index: number) => void;
 }>;
 
-const PAGE_DURATION_MS = 300;
-const PAGE_EASING = Easing.bezier(0.25, 0.46, 0.45, 0.94);
-
-export const resolveNativeHorizontalPageSwipe = ({
-  currentIndex,
-  distanceX,
-  panelCount,
-  velocityX,
-  width,
-}: {
-  currentIndex: number;
-  distanceX: number;
-  panelCount: number;
-  velocityX: number;
-  width: number;
-}): number => {
-  const crossesDistance = Math.abs(distanceX) >= width * 0.18;
-  const crossesVelocity = Math.abs(velocityX) >= 0.55;
-  if (!crossesDistance && !crossesVelocity) return currentIndex;
-  return Math.max(
-    0,
-    Math.min(currentIndex + (distanceX < 0 ? 1 : -1), panelCount - 1),
-  );
+export type NativeHorizontalPageSliderHandle = {
+  setPage: (index: number, animated?: boolean) => void;
 };
 
-export const NativeHorizontalPageSlider = ({
+const clampPageIndex = (index: number, panelCount: number): number =>
+  Math.max(0, Math.min(index, Math.max(0, panelCount - 1)));
+
+export const resolveNativeHorizontalPageOffset = ({
+  offsetX,
+  panelCount,
+  width,
+}: {
+  offsetX: number;
+  panelCount: number;
+  width: number;
+}): number => clampPageIndex(
+  width > 0 ? Math.round(offsetX / width) : 0,
+  panelCount,
+);
+
+export const NativeHorizontalPageSlider = forwardRef<
+  NativeHorizontalPageSliderHandle,
+  Props
+>(function NativeHorizontalPageSlider({
   activeIndex,
   children,
   onIndexChange,
-}: Props) => {
+}, ref) {
   const panels = Children.toArray(children);
   const panelCount = panels.length;
   const { width } = useWindowDimensions();
-  const safeIndex = Math.max(0, Math.min(activeIndex, panelCount - 1));
-  const [translateX] = useState(() => new Animated.Value(-safeIndex * width));
+  const safeIndex = clampPageIndex(activeIndex, panelCount);
+  const scrollRef = useRef<ScrollView>(null);
+  const renderedIndexRef = useRef(safeIndex);
+  const previousWidthRef = useRef(width);
   const [reduceMotion, setReduceMotion] = useState(false);
 
   useEffect(() => {
@@ -67,92 +67,70 @@ export const NativeHorizontalPageSlider = ({
     return () => subscription.remove();
   }, []);
 
+  const setPage = useCallback((index: number, animated = !reduceMotion) => {
+    const nextIndex = clampPageIndex(index, panelCount);
+    renderedIndexRef.current = nextIndex;
+    scrollRef.current?.scrollTo({
+      x: nextIndex * width,
+      y: 0,
+      animated,
+    });
+  }, [panelCount, reduceMotion, width]);
+
+  useImperativeHandle(ref, () => ({ setPage }), [setPage]);
+
   useEffect(() => {
-    Animated.timing(translateX, {
-      toValue: -safeIndex * width,
-      duration: reduceMotion ? 0 : PAGE_DURATION_MS,
-      easing: PAGE_EASING,
-      useNativeDriver: true,
-    }).start();
-  }, [reduceMotion, safeIndex, translateX, width]);
+    if (renderedIndexRef.current !== safeIndex) setPage(safeIndex);
+  }, [safeIndex, setPage]);
 
-  const settle = useCallback((index: number) => {
-    const nextIndex = Math.max(0, Math.min(index, panelCount - 1));
-    if (nextIndex !== safeIndex) {
-      onIndexChange(nextIndex);
-      return;
-    }
-    Animated.timing(translateX, {
-      toValue: -nextIndex * width,
-      duration: reduceMotion ? 0 : PAGE_DURATION_MS,
-      easing: PAGE_EASING,
-      useNativeDriver: true,
-    }).start();
-  }, [onIndexChange, panelCount, reduceMotion, safeIndex, translateX, width]);
-
-  const panResponder = useMemo(() => PanResponder.create({
-    onMoveShouldSetPanResponder: (_event, gesture) =>
-      Math.abs(gesture.dx) > 12
-      && Math.abs(gesture.dx) > Math.abs(gesture.dy) * 1.2,
-    onPanResponderGrant: () => translateX.stopAnimation(),
-    onPanResponderMove: (_event, gesture) => {
-      const base = -safeIndex * width;
-      const min = -(panelCount - 1) * width;
-      const resistance = 0.22;
-      const proposed = base + gesture.dx;
-      const restrained = proposed > 0
-        ? proposed * resistance
-        : proposed < min
-          ? min + (proposed - min) * resistance
-          : proposed;
-      translateX.setValue(restrained);
-    },
-    onPanResponderRelease: (_event, gesture) => {
-      settle(resolveNativeHorizontalPageSwipe({
-        currentIndex: safeIndex,
-        distanceX: gesture.dx,
-        panelCount,
-        velocityX: gesture.vx,
-        width,
-      }));
-    },
-    onPanResponderTerminate: () => settle(safeIndex),
-  }), [panelCount, safeIndex, settle, translateX, width]);
+  useEffect(() => {
+    // Preserve the selected page across rotations without animating from the old width.
+    if (previousWidthRef.current === width) return;
+    previousWidthRef.current = width;
+    setPage(safeIndex, false);
+  }, [safeIndex, setPage, width]);
 
   return (
-    <View
-      {...panResponder.panHandlers}
+    <ScrollView
+      bounces={false}
+      contentOffset={{ x: safeIndex * width, y: 0 }}
+      decelerationRate="fast"
+      directionalLockEnabled
+      horizontal
+      nestedScrollEnabled
+      onMomentumScrollEnd={(event) => {
+        const nextIndex = resolveNativeHorizontalPageOffset({
+          offsetX: event.nativeEvent.contentOffset.x,
+          panelCount,
+          width,
+        });
+        renderedIndexRef.current = nextIndex;
+        if (nextIndex !== safeIndex) onIndexChange(nextIndex);
+      }}
+      pagingEnabled
+      ref={scrollRef}
+      scrollEventThrottle={16}
+      showsHorizontalScrollIndicator={false}
       style={styles.viewport}
       testID="native-horizontal-page-slider"
     >
-      <Animated.View
-        style={[
-          styles.track,
-          {
-            width: width * panelCount,
-            transform: [{ translateX }],
-          },
-        ]}
-        testID="native-horizontal-page-track"
-      >
-        {panels.map((panel, index) => (
-          <View
-            accessibilityElementsHidden={index !== safeIndex}
-            importantForAccessibility={index === safeIndex ? 'auto' : 'no-hide-descendants'}
-            key={index}
-            pointerEvents={index === safeIndex ? 'auto' : 'none'}
-            style={[styles.panel, { width }]}
-          >
-            {panel}
-          </View>
-        ))}
-      </Animated.View>
-    </View>
+      {panels.map((panel, index) => (
+        <View
+          accessibilityElementsHidden={index !== safeIndex}
+          importantForAccessibility={index === safeIndex ? 'auto' : 'no-hide-descendants'}
+          key={index}
+          pointerEvents={index === safeIndex ? 'auto' : 'none'}
+          style={[styles.panel, { width }]}
+          testID={`native-horizontal-page-${index}`}
+        >
+          {panel}
+        </View>
+      ))}
+    </ScrollView>
   );
-};
+});
 
 const styles = StyleSheet.create({
-  viewport: { flex: 1, minHeight: 0, overflow: 'hidden' },
-  track: { flex: 1, minHeight: 0, flexDirection: 'row' },
+  viewport: { flex: 1, minHeight: 0 },
   panel: { flex: 1, minHeight: 0 },
 });
