@@ -67,6 +67,12 @@ describe('resolveNativeActionMenuDestination', () => {
     '/native/trades',
     '/native/profile',
     '/native/profile/OtherTrainer',
+    '/native/collection/instance-1',
+    '/native/collection/catalog/variant-1',
+    '/native/collection/trainer/OtherTrainer',
+    '/native/collection/trainer/OtherTrainer/instance-1',
+    '/native/pokedex/variant-1',
+    '/native/trade-board/OtherTrainer',
   ] as const)('returns a signed-in user to ready native route %s', (path) => {
     expect(resolveNativeLoginReturnTo(path)).toBe(path);
   });
@@ -74,6 +80,7 @@ describe('resolveNativeActionMenuDestination', () => {
   test('rejects arbitrary login return paths', () => {
     expect(resolveNativeLoginReturnTo('/native/not-ready')).toBe('/web');
     expect(resolveNativeLoginReturnTo('/native/profile/name/extra')).toBe('/web');
+    expect(resolveNativeLoginReturnTo('/native/trade-board/name/extra')).toBe('/web');
     expect(resolveNativeLoginReturnTo()).toBe('/web');
   });
 });

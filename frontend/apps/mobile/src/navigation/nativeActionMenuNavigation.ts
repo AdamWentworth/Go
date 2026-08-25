@@ -1,6 +1,13 @@
 export type NativeActionMenuPath = '/' | '/about' | '/data-deletion' | '/faq' | '/getting-started' | '/help' | '/max' | '/pokedex' | '/pokemon' | '/privacy' | '/profile' | '/profile/friends' | '/pvp' | '/raid' | '/rankings' | '/safety' | '/search' | '/settings' | '/terms' | '/trade-board' | '/trades';
 export type ReadyNativePath = '/native' | '/native/account' | '/native/collection' | '/native/friends' | '/native/info/about' | '/native/info/data-deletion' | '/native/info/faq' | '/native/info/getting-started' | '/native/info/help' | '/native/info/privacy' | '/native/info/safety' | '/native/info/terms' | '/native/max' | '/native/pokedex' | '/native/profile' | '/native/pvp' | '/native/pvp-methodology' | '/native/raid' | '/native/raid-methodology' | '/native/rankings' | '/native/search' | '/native/settings' | '/native/trade-board' | '/native/trades';
-export type NativeLoginReturnPath = ReadyNativePath | `/native/profile/${string}`;
+export type NativeLoginReturnPath = ReadyNativePath
+  | `/native/profile/${string}`
+  | `/native/collection/${string}`
+  | `/native/collection/catalog/${string}`
+  | `/native/collection/trainer/${string}`
+  | `/native/collection/trainer/${string}/${string}`
+  | `/native/pokedex/${string}`
+  | `/native/trade-board/${string}`;
 
 export type NativeActionMenuDestination =
   | { kind: 'current' }
@@ -75,6 +82,24 @@ export const resolveNativeLoginReturnTo = (
   }
   if (requestedPath && /^\/native\/profile\/[^/]+$/.test(requestedPath)) {
     return requestedPath as `/native/profile/${string}`;
+  }
+  if (requestedPath && /^\/native\/collection\/catalog\/[^/]+$/.test(requestedPath)) {
+    return requestedPath as `/native/collection/catalog/${string}`;
+  }
+  if (requestedPath && /^\/native\/collection\/trainer\/[^/]+\/[^/]+$/.test(requestedPath)) {
+    return requestedPath as `/native/collection/trainer/${string}/${string}`;
+  }
+  if (requestedPath && /^\/native\/collection\/trainer\/[^/]+$/.test(requestedPath)) {
+    return requestedPath as `/native/collection/trainer/${string}`;
+  }
+  if (requestedPath && /^\/native\/collection\/[^/]+$/.test(requestedPath)) {
+    return requestedPath as `/native/collection/${string}`;
+  }
+  if (requestedPath && /^\/native\/pokedex\/[^/]+$/.test(requestedPath)) {
+    return requestedPath as `/native/pokedex/${string}`;
+  }
+  if (requestedPath && /^\/native\/trade-board\/[^/]+$/.test(requestedPath)) {
+    return requestedPath as `/native/trade-board/${string}`;
   }
   return '/web';
 };

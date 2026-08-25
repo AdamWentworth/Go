@@ -110,6 +110,14 @@ export const requestNativeEmailChange = async (
   'email change',
 );
 
+export const confirmNativeEmailChange = async (
+  client: Pick<AuthAccountClient, 'post'>,
+  token: string,
+): Promise<void> => requireMessageResponse(
+  await client.post<unknown>(authContract.endpoints.confirmEmailChange, { token }),
+  'email verification',
+);
+
 export const revokeNativeAccountSessions = async (
   client: Pick<AuthAccountClient, 'post'>,
   proof: { currentPassword?: string },

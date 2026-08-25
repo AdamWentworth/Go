@@ -34,21 +34,7 @@ export default function NativeLoginRoute() {
     : params.returnTo;
   const notice = Array.isArray(params.notice) ? params.notice[0] : params.notice;
   const returnTo = resolveNativeLoginReturnTo(requestedReturnTo);
-  const returnHref = returnTo.startsWith('/native/profile/')
-    ? {
-        pathname: '/native/profile/[username]' as const,
-        params: { username: decodeURIComponent(returnTo.slice('/native/profile/'.length)) },
-      }
-    : returnTo === '/native/account'
-      || returnTo === '/native/collection'
-      || returnTo === '/native/friends'
-      || returnTo === '/native/search'
-      || returnTo === '/native/settings'
-      || returnTo === '/native/trade-board'
-      || returnTo === '/native/trades'
-      || returnTo === '/native/profile'
-      ? returnTo
-      : '/web' as const;
+  const returnHref = returnTo as Parameters<typeof router.replace>[0];
 
   if (status === 'restoring') {
     return (

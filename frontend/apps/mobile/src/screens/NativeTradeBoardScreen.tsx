@@ -25,10 +25,12 @@ type Props = {
   error?: string | null;
   isLoading?: boolean;
   model: NativeTradeBoardModel | null;
+  editable?: boolean;
   onActionMenuPress: () => void;
   onBack: () => void;
   onOpenCollection: () => void;
   onRetry: () => void;
+  ownerUsername?: string;
 };
 
 const THEMES: { id: NativeTradeBoardTheme; label: string }[] = [
@@ -42,10 +44,12 @@ export const NativeTradeBoardScreen = ({
   error = null,
   isLoading = false,
   model,
+  editable = true,
   onActionMenuPress,
   onBack,
   onOpenCollection,
   onRetry,
+  ownerUsername,
 }: Props) => {
   const light = useColorScheme() === 'light';
   const insets = useSafeAreaInsets();
@@ -110,7 +114,11 @@ export const NativeTradeBoardScreen = ({
           <View style={styles.headerCopy}>
             <Text style={styles.eyebrow}>SHAREABLE COLLECTION</Text>
             <Text accessibilityRole="header" style={[styles.title, light && styles.textLight]}>Trade Board</Text>
-            <Text style={[styles.subtitle, light && styles.mutedLight]}>Create one polished image of what you have and what you want.</Text>
+            <Text style={[styles.subtitle, light && styles.mutedLight]}>
+              {editable
+                ? 'Create one polished image of what you have and what you want.'
+                : `Explore and share @${ownerUsername ?? model?.username ?? 'trainer'}'s live listings.`}
+            </Text>
           </View>
         </View>
 
@@ -130,10 +138,16 @@ export const NativeTradeBoardScreen = ({
         ) : !model || model.tradeCount + model.wantedCount === 0 ? (
           <View style={[styles.state, light && styles.panelLight]}>
             <Text style={styles.stateGlyph}>↗</Text>
-            <Text style={[styles.stateTitle, light && styles.textLight]}>Your Trade Board needs a listing</Text>
-            <Text style={[styles.stateCopy, light && styles.mutedLight]}>Mark at least one Pokémon as For Trade or Wanted, then this board stays synchronized automatically.</Text>
+            <Text style={[styles.stateTitle, light && styles.textLight]}>
+              {editable ? 'Your Trade Board needs a listing' : 'No public listings yet'}
+            </Text>
+            <Text style={[styles.stateCopy, light && styles.mutedLight]}>
+              {editable
+                ? 'Mark at least one Pokémon as For Trade or Wanted, then this board stays synchronized automatically.'
+                : `@${ownerUsername ?? 'This trainer'} has not published any For Trade or Wanted Pokémon.`}
+            </Text>
             <Pressable accessibilityRole="button" onPress={onOpenCollection} style={styles.primaryButton}>
-              <Text style={styles.primaryButtonText}>Add Pokémon listings</Text>
+              <Text style={styles.primaryButtonText}>{editable ? 'Add Pokémon listings' : 'View trainer catalog'}</Text>
             </Pressable>
           </View>
         ) : visibleModel ? (

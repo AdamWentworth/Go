@@ -64,7 +64,7 @@ export const useNativeTrainerProfileQuery = (
   return useQuery({
     queryKey: nativeSocialQueryKeys.profile(viewerId ?? 'signed-out', username),
     queryFn: () => getNativeTrainerProfile(clients.users, username),
-    enabled: Boolean(viewerId),
+    enabled: Boolean(viewerId || username?.trim()),
     staleTime: username ? 30_000 : 60_000,
   });
 };

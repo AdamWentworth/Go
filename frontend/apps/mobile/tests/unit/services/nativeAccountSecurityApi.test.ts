@@ -1,4 +1,5 @@
 import {
+  confirmNativeEmailChange,
   deleteNativeApplicationAccount,
   deleteNativeAuthenticationAccount,
   exchangeNativeOAuthProviderLink,
@@ -66,6 +67,7 @@ describe('nativeAccountSecurityApi', () => {
       currentPassword: 'proof',
       email: 'new@example.com',
     });
+    await confirmNativeEmailChange({ post }, 'a'.repeat(64));
     await revokeNativeAccountSessions({ post }, { currentPassword: 'proof' });
     await unlinkNativeAccountProvider({ request }, 'discord', { currentPassword: 'proof' });
     await deleteNativeAuthenticationAccount({ request }, 'user-1', { currentPassword: 'proof' });
@@ -74,7 +76,8 @@ describe('nativeAccountSecurityApi', () => {
       currentPassword: 'proof',
       email: 'new@example.com',
     });
-    expect(post).toHaveBeenNthCalledWith(2, '/sessions/revoke-all', { currentPassword: 'proof' });
+    expect(post).toHaveBeenNthCalledWith(2, '/email-change/confirm', { token: 'a'.repeat(64) });
+    expect(post).toHaveBeenNthCalledWith(3, '/sessions/revoke-all', { currentPassword: 'proof' });
     expect(request).toHaveBeenNthCalledWith(1, '/account/identities/discord', {
       json: { currentPassword: 'proof' },
       method: 'DELETE',

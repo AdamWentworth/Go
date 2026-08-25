@@ -41,7 +41,7 @@ export const useNativeForeignCollectionQuery = (
       clients.pokemon,
       normalizedUsername,
     ),
-    enabled: Boolean(viewerId && normalizedUsername),
+    enabled: Boolean(normalizedUsername),
     staleTime: 60_000,
   });
 };
