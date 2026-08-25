@@ -79,4 +79,33 @@ describe('shared native trade domain', () => {
       isRegisteredTrade: false,
     });
   });
+
+  it('resolves registration from variant ids when native maps are UUID-keyed', () => {
+    const result = calculateTradeCost({
+      friendshipLevel: 5,
+      receivedPokemon: { variant_id: '0150-default', rarity: 'Legendary' },
+      offeredInstance: instance({ instance_id: 'mine-uuid', variant_id: '0006-default' }),
+      currentTrainerInstances: {
+        'native-owned-uuid': instance({
+          instance_id: 'native-owned-uuid',
+          variant_id: '0150-default',
+          registered: true,
+        }),
+      },
+      partnerInstances: {
+        'native-partner-uuid': instance({
+          instance_id: 'native-partner-uuid',
+          variant_id: '0006-default',
+          registered: true,
+        }),
+      },
+      parseVariantId,
+    });
+
+    expect(result).toEqual({
+      stardustCost: 800,
+      isSpecialTrade: true,
+      isRegisteredTrade: true,
+    });
+  });
 });

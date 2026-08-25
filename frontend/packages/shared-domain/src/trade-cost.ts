@@ -63,9 +63,13 @@ export const isTradePokemonRegistered = (
   if (!instanceReference || !instances) return false;
 
   const { baseKey } = parseVariantId(instanceReference);
-  return Object.entries(instances).some(([key, instance]) => (
-    parseVariantId(key).baseKey === baseKey && Boolean(instance.registered)
-  ));
+  return Object.entries(instances).some(([key, instance]) => {
+    const candidateReference = instance.variant_id?.trim() || key;
+    return (
+      parseVariantId(candidateReference).baseKey === baseKey
+      && Boolean(instance.registered)
+    );
+  });
 };
 
 export const calculateTradeCost = ({
@@ -91,10 +95,13 @@ export const calculateTradeCost = ({
       || offeredInstance.rarity === 'Legendary',
   );
   const receivedInstanceReference =
-    receivedPokemon.instanceData?.instance_id
+    receivedPokemon.instanceData?.variant_id
       ?? receivedPokemon.variant_id
+      ?? receivedPokemon.instanceData?.instance_id
       ?? '';
-  const offeredInstanceReference = offeredInstance.instance_id ?? '';
+  const offeredInstanceReference = offeredInstance.variant_id
+    ?? offeredInstance.instance_id
+    ?? '';
   const receivedIsRegistered = isTradePokemonRegistered(
     receivedInstanceReference,
     currentTrainerInstances,
