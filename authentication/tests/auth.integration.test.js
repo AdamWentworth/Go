@@ -48,6 +48,7 @@ let mongoServer;
 let app;
 let mongoConnectionPromise;
 let User;
+let OAuthLinkTransaction;
 let validLoginId;
 let validEmail;
 let validPassphrase;
@@ -80,6 +81,7 @@ describe('authentication service integration', () => {
     await mongoConnectionPromise;
 
     User = require('../models/user');
+    OAuthLinkTransaction = require('../models/oauthLinkTransaction');
   });
 
   beforeEach(() => {
@@ -93,6 +95,7 @@ describe('authentication service integration', () => {
 
   afterEach(async () => {
     await User.deleteMany({});
+    await OAuthLinkTransaction.deleteMany({});
   });
 
   afterAll(async () => {
@@ -203,6 +206,161 @@ describe('authentication service integration', () => {
 
     expect((await request(app).post('/auth/mobile/refresh').send({})).status).toBe(401);
     expect((await request(app).post('/auth/mobile/logout').send({})).status).toBe(400);
+  });
+
+  test('native OAuth linking uses a one-use bearer-bound result without browser cookies', async () => {
+    await registerUser();
+    const login = await request(app).post('/auth/mobile/login').send({
+      username: validEmail,
+      password: validPassphrase,
+      device_id: `${validDeviceId}-native-link`
+    });
+
+    const start = await request(app)
+      .post('/auth/mobile/oauth/link/start')
+      .set('Authorization', `Bearer ${login.body.accessToken}`)
+      .send({ provider: 'google' });
+    expect(start.status).toBe(201);
+    expect(start.headers['set-cookie']).toBeUndefined();
+    expect(start.body).toMatchObject({ provider: 'google' });
+
+    const authorizationUrl = new URL(start.body.authorizationUrl);
+    const state = authorizationUrl.searchParams.get('state');
+    expect(state).toMatch(/^native\./);
+
+    const callback = await request(app)
+      .get('/auth/google/callback')
+      .query({ code: 'native-google-code', state });
+    expect(callback.status).toBe(302);
+    const callbackUrl = new URL(callback.headers.location);
+    expect(`${callbackUrl.protocol}//${callbackUrl.host}${callbackUrl.pathname}`).toBe(
+      'pokegonexus://native/account'
+    );
+    const resultCode = callbackUrl.searchParams.get('oauth_code');
+    expect(resultCode).toEqual(expect.any(String));
+    expect(callback.headers.location).not.toContain(login.body.accessToken);
+    expect(callback.headers.location).not.toContain(login.body.refreshToken);
+
+    const exchange = await request(app)
+      .post('/auth/mobile/oauth/link/exchange')
+      .set('Authorization', `Bearer ${login.body.accessToken}`)
+      .send({ code: resultCode });
+    expect(exchange.status).toBe(200);
+    expect(exchange.body).toEqual({ provider: 'google', status: 'linked' });
+
+    const user = await User.findOne({ username: validLoginId }).lean();
+    expect(user.identities).toEqual(expect.arrayContaining([
+      expect.objectContaining({ provider: 'google', subject: 'google-subject-123' })
+    ]));
+
+    const replay = await request(app)
+      .post('/auth/mobile/oauth/link/exchange')
+      .set('Authorization', `Bearer ${login.body.accessToken}`)
+      .send({ code: resultCode });
+    expect(replay.status).toBe(409);
+  });
+
+  test('native OAuth link results cannot be exchanged by another device session', async () => {
+    await registerUser();
+    const firstLogin = await request(app).post('/auth/mobile/login').send({
+      username: validEmail,
+      password: validPassphrase,
+      device_id: `${validDeviceId}-first`
+    });
+    const secondLogin = await request(app).post('/auth/mobile/login').send({
+      username: validEmail,
+      password: validPassphrase,
+      device_id: `${validDeviceId}-second`
+    });
+    const start = await request(app)
+      .post('/auth/mobile/oauth/link/start')
+      .set('Authorization', `Bearer ${firstLogin.body.accessToken}`)
+      .send({ provider: 'discord' });
+    const state = new URL(start.body.authorizationUrl).searchParams.get('state');
+    const callback = await request(app)
+      .get('/auth/discord/callback')
+      .query({ code: 'native-discord-code', state });
+    const resultCode = new URL(callback.headers.location).searchParams.get('oauth_code');
+
+    const wrongDevice = await request(app)
+      .post('/auth/mobile/oauth/link/exchange')
+      .set('Authorization', `Bearer ${secondLogin.body.accessToken}`)
+      .send({ code: resultCode });
+    expect(wrongDevice.status).toBe(409);
+
+    const correctDevice = await request(app)
+      .post('/auth/mobile/oauth/link/exchange')
+      .set('Authorization', `Bearer ${firstLogin.body.accessToken}`)
+      .send({ code: resultCode });
+    expect(correctDevice.status).toBe(200);
+    expect(correctDevice.body).toEqual({ provider: 'discord', status: 'linked' });
+  });
+
+  test('native OAuth linking permits concurrent pending provider transactions', async () => {
+    await registerUser();
+    const login = await request(app).post('/auth/mobile/login').send({
+      username: validEmail,
+      password: validPassphrase,
+      device_id: `${validDeviceId}-parallel-links`
+    });
+    const bearer = { Authorization: `Bearer ${login.body.accessToken}` };
+
+    const [google, discord, facebook] = await Promise.all([
+      request(app).post('/auth/mobile/oauth/link/start').set(bearer).send({ provider: 'google' }),
+      request(app).post('/auth/mobile/oauth/link/start').set(bearer).send({ provider: 'discord' }),
+      request(app).post('/auth/mobile/oauth/link/start').set(bearer).send({ provider: 'facebook' })
+    ]);
+
+    expect([google.status, discord.status, facebook.status]).toEqual([201, 201, 201]);
+    expect(await OAuthLinkTransaction.countDocuments({ status: 'pending' })).toBe(3);
+  });
+
+  test('native OAuth linking rejects unsupported providers and unauthenticated starts', async () => {
+    expect((await request(app)
+      .post('/auth/mobile/oauth/link/start')
+      .send({ provider: 'google' })).status).toBe(401);
+
+    await registerUser();
+    const login = await request(app).post('/auth/mobile/login').send({
+      username: validEmail,
+      password: validPassphrase,
+      device_id: `${validDeviceId}-native-link`
+    });
+    const unsupported = await request(app)
+      .post('/auth/mobile/oauth/link/start')
+      .set('Authorization', `Bearer ${login.body.accessToken}`)
+      .send({ provider: 'twitter' });
+    expect(unsupported.status).toBe(400);
+  });
+
+  test('native Facebook linking returns to the app and exchanges the canonical result', async () => {
+    await registerUser();
+    const login = await request(app).post('/auth/mobile/login').send({
+      username: validEmail,
+      password: validPassphrase,
+      device_id: `${validDeviceId}-native-facebook`
+    });
+    const start = await request(app)
+      .post('/auth/mobile/oauth/link/start')
+      .set('Authorization', `Bearer ${login.body.accessToken}`)
+      .send({ provider: 'facebook' });
+    const state = new URL(start.body.authorizationUrl).searchParams.get('state');
+    const callback = await request(app)
+      .get('/auth/facebook/callback')
+      .query({ code: 'native-facebook-code', state });
+    const resultCode = new URL(callback.headers.location).searchParams.get('oauth_code');
+    const exchange = await request(app)
+      .post('/auth/mobile/oauth/link/exchange')
+      .set('Authorization', `Bearer ${login.body.accessToken}`)
+      .send({ code: resultCode });
+
+    expect(exchange.status).toBe(200);
+    expect(exchange.body).toEqual({ provider: 'facebook', status: 'linked' });
+    expect((await User.findOne({ username: validLoginId }).lean()).identities).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ provider: 'facebook', subject: 'facebook-subject-789' })
+      ])
+    );
   });
 
   test('refresh succeeds with valid refresh token cookie', async () => {

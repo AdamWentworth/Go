@@ -10,6 +10,13 @@ const discordOAuth = require('../services/discordOAuthService');
 const facebookOAuth = require('../services/facebookOAuthService');
 const { createSession } = require('../services/sessionService');
 const tokenService = require('../services/tokenService');
+const {
+  claimNativeOAuthLink,
+  completeNativeOAuthLink,
+  isNativeOAuthState,
+  redirectNativeOAuthError,
+  redirectNativeOAuthResult
+} = require('../services/nativeOAuthLinkService');
 
 const router = express.Router();
 const FLOW_TTL = '10m';
@@ -142,6 +149,32 @@ const linkProviderIdentity = async ({ provider, identity, flow }) => {
   return { status: 'linked' };
 };
 
+const handleNativeProviderCallback = async ({
+  provider,
+  transaction,
+  exchangeIdentity,
+  res
+}) => {
+  try {
+    const identity = await exchangeIdentity();
+    const linked = await linkProviderIdentity({
+      provider,
+      identity,
+      flow: { linkUserId: String(transaction.userId) }
+    });
+    const resultCode = await completeNativeOAuthLink(transaction, linked.status);
+    return redirectNativeOAuthResult(res, resultCode);
+  } catch (error) {
+    logger.warn(`${provider} native OAuth callback failed: ${error.message}`);
+    try {
+      const resultCode = await completeNativeOAuthLink(transaction, 'failed');
+      return redirectNativeOAuthResult(res, resultCode);
+    } catch {
+      return redirectNativeOAuthError(res, 'failed');
+    }
+  }
+};
+
 router.get('/google', (req, res) => {
   try {
     const deviceId = typeof req.query.device_id === 'string' ? req.query.device_id.trim() : '';
@@ -164,6 +197,20 @@ router.get('/google/callback', async (req, res) => {
   let flow;
   try {
     const state = typeof req.query.state === 'string' ? req.query.state : '';
+    const nativeTransaction = await claimNativeOAuthLink({ provider: 'google', state });
+    if (nativeTransaction) {
+      if (typeof req.query.code !== 'string') {
+        const resultCode = await completeNativeOAuthLink(nativeTransaction, 'failed');
+        return redirectNativeOAuthResult(res, resultCode);
+      }
+      return handleNativeProviderCallback({
+        provider: 'google',
+        transaction: nativeTransaction,
+        exchangeIdentity: () => googleOAuth.exchangeCode(req.query.code, nativeTransaction.nonce),
+        res
+      });
+    }
+    if (isNativeOAuthState(state)) return redirectNativeOAuthError(res);
     if (!state || state !== req.cookies[STATE_COOKIE]) throw new Error('OAuth state mismatch.');
     flow = verifyFlow(state);
     res.clearCookie(STATE_COOKIE, { ...cookieOptions, maxAge: undefined });
@@ -360,6 +407,20 @@ router.get('/discord/callback', async (req, res) => {
   let flow;
   try {
     const state = typeof req.query.state === 'string' ? req.query.state : '';
+    const nativeTransaction = await claimNativeOAuthLink({ provider: 'discord', state });
+    if (nativeTransaction) {
+      if (typeof req.query.code !== 'string') {
+        const resultCode = await completeNativeOAuthLink(nativeTransaction, 'failed');
+        return redirectNativeOAuthResult(res, resultCode);
+      }
+      return handleNativeProviderCallback({
+        provider: 'discord',
+        transaction: nativeTransaction,
+        exchangeIdentity: () => discordOAuth.exchangeCode(req.query.code),
+        res
+      });
+    }
+    if (isNativeOAuthState(state)) return redirectNativeOAuthError(res);
     if (!state || state !== req.cookies[DISCORD_STATE_COOKIE]) {
       throw new Error('OAuth state mismatch.');
     }
@@ -582,6 +643,20 @@ router.get('/facebook/callback', async (req, res) => {
   let flow;
   try {
     const state = typeof req.query.state === 'string' ? req.query.state : '';
+    const nativeTransaction = await claimNativeOAuthLink({ provider: 'facebook', state });
+    if (nativeTransaction) {
+      if (typeof req.query.code !== 'string') {
+        const resultCode = await completeNativeOAuthLink(nativeTransaction, 'failed');
+        return redirectNativeOAuthResult(res, resultCode);
+      }
+      return handleNativeProviderCallback({
+        provider: 'facebook',
+        transaction: nativeTransaction,
+        exchangeIdentity: () => facebookOAuth.exchangeCode(req.query.code),
+        res
+      });
+    }
+    if (isNativeOAuthState(state)) return redirectNativeOAuthError(res);
     if (!state || state !== req.cookies[FACEBOOK_STATE_COOKIE]) {
       throw new Error('OAuth state mismatch.');
     }
