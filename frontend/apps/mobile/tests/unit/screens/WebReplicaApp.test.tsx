@@ -47,7 +47,18 @@ describe('WebReplicaApp', () => {
     render(<WebReplicaApp />);
     const props = getWebViewProps();
     expect(props.source?.uri).toBe('https://pokegonexus.com/pokemon');
-    expect(props.originWhitelist).not.toContain('*');
+    expect(props.originWhitelist).toEqual(expect.arrayContaining([
+      'https://pokegonexus.com/*',
+      'https://accounts.google.com/*',
+      'https://discord.com/*',
+      'https://www.facebook.com/*',
+      'https://m.facebook.com/*',
+      'about:*',
+      'blob:*',
+      'data:*',
+    ]));
+    expect(props.originWhitelist).not.toContain('http://*');
+    expect(props.originWhitelist).not.toContain('https://*');
     expect(
       props.onShouldStartLoadWithRequest?.({
         url: 'https://pokegonexus.com/pokemon',

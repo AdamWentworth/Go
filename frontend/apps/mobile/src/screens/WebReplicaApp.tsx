@@ -156,6 +156,15 @@ export const WebReplicaApp = ({ initialPath, onOpenNativePath }: WebReplicaAppPr
     () => trustedEmbeddedOrigins(runtimeConfig.api.frontendAppUrl),
     [],
   );
+  const embeddedOriginWhitelist = useMemo(
+    () => [
+      ...trustedOrigins.map((origin) => `${origin}/*`),
+      'about:*',
+      'blob:*',
+      'data:*',
+    ],
+    [trustedOrigins],
+  );
   const appOrigins = useMemo(() => {
     const values = [runtimeConfig.api.frontendAppUrl, PROD_FRONTEND_APP_URL];
     return values.flatMap((value) => {
@@ -336,7 +345,7 @@ export const WebReplicaApp = ({ initialPath, onOpenNativePath }: WebReplicaAppPr
         testID="web-replica-webview"
         source={{ uri: targetUrl }}
         style={styles.webview}
-        originWhitelist={['http://*', 'https://*', 'about:*', 'blob:*', 'data:*']}
+        originWhitelist={embeddedOriginWhitelist}
         javaScriptEnabled
         domStorageEnabled
         sharedCookiesEnabled

@@ -214,8 +214,8 @@ export const NativePvpBattleLab = ({
           Simulate a focused matchup
         </Text>
         <Text style={[styles.body, light && styles.mutedLight]}>
-          Set shields and starting energy, then run the same deterministic
-          mechanics used by the full web Battle Lab.
+          Set shields and starting energy, then run the canonical deterministic
+          Battle Lab mechanics directly on this device.
         </Text>
 
         <View style={styles.battlePair}>
