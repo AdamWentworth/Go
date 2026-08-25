@@ -1,10 +1,5 @@
-import {
-  Camera,
-  Map,
-  Marker,
-  type StyleSpecification,
-} from '@maplibre/maplibre-react-native';
-import { useMemo, useState } from 'react';
+import Constants from 'expo-constants';
+import { useEffect, useMemo, useState, type ComponentType } from 'react';
 import {
   Pressable,
   StyleSheet,
@@ -13,37 +8,12 @@ import {
   useColorScheme,
 } from 'react-native';
 import type { NativePokemonSearchResult } from './pokemonSearchModel';
+import type { NativeSearchMapLibreCanvasProps } from './NativeSearchMapLibreCanvas';
 
 type Props = {
   onOpenListing: (result: NativePokemonSearchResult) => void;
   onOpenProfile: (username: string) => void;
   results: NativePokemonSearchResult[];
-};
-
-const LIGHT_MAP_STYLE: StyleSpecification = {
-  version: 8,
-  sources: {
-    carto: {
-      type: 'raster',
-      tiles: ['https://a.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}@2x.png'],
-      tileSize: 256,
-      attribution: '© OpenStreetMap contributors © CARTO',
-    },
-  },
-  layers: [{ id: 'carto', type: 'raster', source: 'carto' }],
-};
-
-const DARK_MAP_STYLE: StyleSpecification = {
-  version: 8,
-  sources: {
-    carto: {
-      type: 'raster',
-      tiles: ['https://a.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}@2x.png'],
-      tileSize: 256,
-      attribution: '© OpenStreetMap contributors © CARTO',
-    },
-  },
-  layers: [{ id: 'carto', type: 'raster', source: 'carto' }],
 };
 
 const accentFor = (result: NativePokemonSearchResult): string => (
@@ -74,6 +44,19 @@ export const NativeSearchMapView = ({ onOpenListing, onOpenProfile, results }: P
   const [selectedId, setSelectedId] = useState<string | null>(() => mappable[0]?.id ?? null);
   const selected = mappable.find((result) => result.id === selectedId) ?? mappable[0] ?? null;
   const camera = useMemo(() => initialCamera(mappable), [mappable]);
+  const [MapCanvas, setMapCanvas] = useState<ComponentType<NativeSearchMapLibreCanvasProps> | null>(null);
+  const expoGo = Constants.appOwnership === 'expo';
+
+  useEffect(() => {
+    if (expoGo) return undefined;
+    let active = true;
+    void import('./NativeSearchMapLibreCanvas').then((module) => {
+      if (active) setMapCanvas(() => module.default);
+    }).catch(() => {
+      if (active) setMapCanvas(null);
+    });
+    return () => { active = false; };
+  }, [expoGo]);
 
   if (mappable.length === 0) {
     return (
@@ -89,41 +72,18 @@ export const NativeSearchMapView = ({ onOpenListing, onOpenProfile, results }: P
 
   return (
     <View style={[styles.shell, light && styles.shellLight]} testID="native-search-map">
-      <Map
-        attribution
-        compass
-        mapStyle={light ? LIGHT_MAP_STYLE : DARK_MAP_STYLE}
-        style={styles.map}
-        touchPitch={false}
-        touchRotate={false}
-      >
-        <Camera initialViewState={{ center: camera.center, zoom: camera.zoom }} maxZoom={16} minZoom={2} />
-        {mappable.map((result) => {
-          const accent = accentFor(result);
-          const active = result.id === selected?.id;
-          return (
-            <Marker
-              anchor="center"
-              id={result.id}
-              key={result.id}
-              lngLat={result.mapCoordinate!}
-              onPress={() => setSelectedId(result.id)}
-            >
-              <View
-                accessibilityLabel={`${result.username}, ${result.row.name}${result.mapCoordinateIsApproximate ? ', approximate area' : ''}`}
-                style={[
-                  styles.marker,
-                  { backgroundColor: accent },
-                  result.mapCoordinateIsApproximate && styles.approximateMarker,
-                  active && styles.markerActive,
-                ]}
-              >
-                <Text style={styles.markerText}>{result.username.slice(0, 1).toLocaleUpperCase()}</Text>
-              </View>
-            </Marker>
-          );
-        })}
-      </Map>
+      {MapCanvas ? <MapCanvas camera={camera} light={light} mappable={mappable} onSelect={setSelectedId} selectedId={selected?.id ?? null} /> : (
+        <View style={[styles.previewMap, light && styles.previewMapLight]}>
+          <View style={styles.previewGrid} />
+          {mappable.slice(0, 12).map((result, index) => {
+            const active = result.id === selected?.id;
+            const column = index % 4;
+            const row = Math.floor(index / 4);
+            return <Pressable accessibilityLabel={`${result.username}, ${result.row.name}`} key={result.id} onPress={() => setSelectedId(result.id)} style={[styles.previewMarker, { backgroundColor: accentFor(result), left: `${10 + column * 24}%`, top: `${15 + row * 28}%` }, active && styles.previewMarkerActive]}><Text style={styles.markerText}>{result.username.slice(0, 1).toLocaleUpperCase()}</Text></Pressable>;
+          })}
+          <Text style={[styles.previewMapLabel, light && styles.mutedLight]}>Approximate public areas</Text>
+        </View>
+      )}
       <View style={[styles.mapCount, light && styles.mapCountLight]}>
         <Text style={[styles.mapCountText, light && styles.textLight]}>{mappable.length} on map</Text>
       </View>
@@ -150,10 +110,12 @@ export const NativeSearchMapView = ({ onOpenListing, onOpenProfile, results }: P
 const styles = StyleSheet.create({
   shell: { height: 530, overflow: 'hidden', borderWidth: 1, borderColor: '#3d5256', borderRadius: 14, backgroundColor: '#11191b' },
   shellLight: { borderColor: '#aebdc0', backgroundColor: '#ffffff' },
-  map: { flex: 1 },
-  marker: { width: 34, height: 34, alignItems: 'center', justifyContent: 'center', borderWidth: 3, borderColor: '#ffffff', borderRadius: 17, shadowColor: '#000000', shadowOpacity: 0.35, shadowRadius: 5, shadowOffset: { width: 0, height: 2 }, elevation: 5 },
-  approximateMarker: { borderStyle: 'dashed' },
-  markerActive: { width: 42, height: 42, borderRadius: 21, borderWidth: 4 },
+  previewMap: { flex: 1, overflow: 'hidden', backgroundColor: '#13242b' },
+  previewMapLight: { backgroundColor: '#dcebf0' },
+  previewGrid: { position: 'absolute', top: 0, right: 0, bottom: 0, left: 0, opacity: .32, borderWidth: 1, borderColor: '#6f858d' },
+  previewMarker: { position: 'absolute', width: 36, height: 36, alignItems: 'center', justifyContent: 'center', borderWidth: 3, borderColor: '#fff', borderRadius: 18, elevation: 3 },
+  previewMarkerActive: { width: 44, height: 44, borderRadius: 22, borderWidth: 4 },
+  previewMapLabel: { position: 'absolute', right: 10, bottom: 10, overflow: 'hidden', borderRadius: 999, paddingHorizontal: 10, paddingVertical: 6, color: '#d8e8ed', backgroundColor: '#071216bb', fontSize: 9, fontWeight: '800' },
   markerText: { color: '#041312', fontSize: 13, fontWeight: '900' },
   mapCount: { position: 'absolute', top: 10, left: 10, minHeight: 34, justifyContent: 'center', paddingHorizontal: 12, borderWidth: 1, borderColor: '#53666a', borderRadius: 17, backgroundColor: '#131b1ddd' },
   mapCountLight: { borderColor: '#a6b4b7', backgroundColor: '#fffffff2' },
