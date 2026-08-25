@@ -1,5 +1,6 @@
 import type {
   BasePokemon,
+  PokemonMovesChunk,
   PokemonPvPRankingsPayload,
   PokemonRaidDataChunk,
 } from '@pokemongonexus/shared-contracts/pokemon';
@@ -26,6 +27,10 @@ export const getNativeMaxData = (
 export const getNativePvpData = (
   client: Pick<NativePokemonApiClient, 'get'>,
 ): Promise<PokemonPvPRankingsPayload> => client.get<PokemonPvPRankingsPayload>(pokemonContract.endpoints.pvpData);
+
+export const getNativeMovesData = (
+  client: Pick<NativePokemonApiClient, 'get'>,
+): Promise<PokemonMovesChunk> => client.get<PokemonMovesChunk>(pokemonContract.endpoints.moves);
 
 export const getNativeCommunityRankings = (
   client: Pick<NativeSearchApiClient, 'get'>,

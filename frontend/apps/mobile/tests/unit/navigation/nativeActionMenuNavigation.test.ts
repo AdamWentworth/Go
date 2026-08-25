@@ -10,6 +10,8 @@ describe('resolveNativeActionMenuDestination', () => {
     ['/pokedex', '/native/pokedex'],
     ['/profile', '/native/profile'],
     ['/profile/friends', '/native/friends'],
+    ['/raid', '/native/raid'],
+    ['/rankings', '/native/rankings'],
     ['/search', '/native/search'],
     ['/settings', '/native/settings'],
     ['/trade-board', '/native/trade-board'],
@@ -31,9 +33,9 @@ describe('resolveNativeActionMenuDestination', () => {
   });
 
   test('keeps unmigrated destinations in the canonical web app', () => {
-    expect(resolveNativeActionMenuDestination('/raid')).toEqual({
+    expect(resolveNativeActionMenuDestination('/max')).toEqual({
       kind: 'web',
-      path: '/raid',
+      path: '/max',
     });
   });
 
@@ -51,6 +53,9 @@ describe('resolveNativeActionMenuDestination', () => {
     '/native/info/safety',
     '/native/info/terms',
     '/native/pokedex',
+    '/native/raid',
+    '/native/raid-methodology',
+    '/native/rankings',
     '/native/search',
     '/native/settings',
     '/native/trade-board',
