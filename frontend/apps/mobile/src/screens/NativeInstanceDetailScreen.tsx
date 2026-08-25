@@ -15,6 +15,7 @@ import {
 import { useEffect, useRef, useState } from 'react';
 import Svg, { Circle, Path } from 'react-native-svg';
 import { GestureDetector } from 'react-native-gesture-handler';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type {
   NativeInstanceBackgroundOption,
   NativeInstanceDetail,
@@ -1854,6 +1855,7 @@ export const NativeInstanceDetailScreen = ({
   canEdit = true,
 }: Props) => {
   const light = useColorScheme() === 'light';
+  const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
   const shellWidth = Math.min(width * 0.95, 500);
   const palette = light ? LIGHT : DARK;
@@ -2146,7 +2148,10 @@ export const NativeInstanceDetailScreen = ({
         <View style={styles.backgroundTint} />
 
         <ScrollView
-          contentContainerStyle={styles.scrollContent}
+          contentContainerStyle={[
+            styles.scrollContent,
+            { paddingTop: Math.max(30, insets.top + 12) },
+          ]}
           directionalLockEnabled
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
@@ -2439,7 +2444,10 @@ export const NativeInstanceDetailScreen = ({
           onPress={() => void toggleEdit()}
           style={[
             styles.floatingSaveButton,
-            { left: Math.max(12, (width - shellWidth) / 2 + 12) },
+            {
+              left: Math.max(12, (width - shellWidth) / 2 + 12),
+              top: Math.max(30, insets.top + 12),
+            },
           ]}
         >
           <Image
@@ -2465,7 +2473,7 @@ export const NativeInstanceDetailScreen = ({
         accessibilityLabel="Close"
         accessibilityRole="button"
         onPress={onBack}
-        style={styles.closeButton}
+        style={[styles.closeButton, { bottom: insets.bottom + 18 }]}
       >
         <Image
           resizeMode="contain"
@@ -2478,7 +2486,11 @@ export const NativeInstanceDetailScreen = ({
           accessibilityLabel="Previous Pokémon"
           accessibilityRole="button"
           onPress={overlaySwipe.navigatePrevious}
-          style={[styles.instanceNavigation, styles.previousInstance]}
+          style={[
+            styles.instanceNavigation,
+            styles.previousInstance,
+            { bottom: insets.bottom + 24 },
+          ]}
         >
           <Text style={styles.instanceNavigationIcon}>◀</Text>
         </Pressable>
@@ -2488,7 +2500,11 @@ export const NativeInstanceDetailScreen = ({
           accessibilityLabel="Next Pokémon"
           accessibilityRole="button"
           onPress={overlaySwipe.navigateNext}
-          style={[styles.instanceNavigation, styles.nextInstance]}
+          style={[
+            styles.instanceNavigation,
+            styles.nextInstance,
+            { bottom: insets.bottom + 24 },
+          ]}
         >
           <Text style={styles.instanceNavigationIcon}>▶</Text>
         </Pressable>
