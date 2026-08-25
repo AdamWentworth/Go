@@ -1,7 +1,9 @@
+import type { ReactNode } from 'react';
 import { Modal, Pressable, StyleSheet, Text, View, useColorScheme } from 'react-native';
 
 type Props = {
   body: string;
+  children?: ReactNode;
   confirmLabel: string;
   isPending?: boolean;
   onCancel: () => void;
@@ -13,6 +15,7 @@ type Props = {
 
 export const NativeConfirmationDialog = ({
   body,
+  children,
   confirmLabel,
   isPending = false,
   onCancel,
@@ -35,6 +38,7 @@ export const NativeConfirmationDialog = ({
           <Text style={styles.eyebrow}>TRAINER ACTION</Text>
           <Text style={[styles.title, light && styles.textLight]}>{title}</Text>
           <Text style={[styles.body, light && styles.mutedLight]}>{body}</Text>
+          {children}
           <View style={styles.actions}>
             <Pressable accessibilityRole="button" disabled={isPending} onPress={onCancel} style={[styles.cancel, light && styles.cancelLight]}>
               <Text style={[styles.cancelText, light && styles.textLight]}>Cancel</Text>

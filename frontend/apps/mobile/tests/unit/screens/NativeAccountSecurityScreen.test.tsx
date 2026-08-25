@@ -89,15 +89,22 @@ describe('NativeAccountSecurityScreen', () => {
   });
 
   it('connects missing providers and confirms provider disconnection', () => {
+    const onChange = jest.fn();
     const onConnectProvider = jest.fn();
     const onUnlinkProvider = jest.fn();
-    const view = renderScreen({ onConnectProvider, onUnlinkProvider });
+    const view = renderScreen({ onChange, onConnectProvider, onUnlinkProvider });
 
     fireEvent.press(view.getByRole('button', { name: 'Connect Discord' }));
     expect(onConnectProvider).toHaveBeenCalledWith('discord');
 
     fireEvent.press(view.getByRole('button', { name: 'Disconnect Google' }));
     expect(view.getByText('Disconnect Google?')).toBeTruthy();
+    const passwordInputs = view.getAllByLabelText('Current password');
+    fireEvent.changeText(passwordInputs[passwordInputs.length - 1], 'Current_password_42!');
+    expect(onChange).toHaveBeenCalledWith({
+      ...draft,
+      currentPassword: 'Current_password_42!',
+    });
     const disconnectConfirmations = view.getAllByRole('button', { name: 'Disconnect' });
     fireEvent.press(disconnectConfirmations[disconnectConfirmations.length - 1]);
     expect(onUnlinkProvider).toHaveBeenCalledWith('google');
@@ -126,6 +133,8 @@ describe('NativeAccountSecurityScreen', () => {
     expect(view.queryByLabelText('Current password')).toBeNull();
     expect(view.getByText('Add a password')).toBeTruthy();
     expect(view.getByText(/recent provider sign-in confirms sensitive actions/i)).toBeTruthy();
+    fireEvent.press(view.getByRole('button', { name: 'Disconnect Google' }));
+    expect(view.getByText(/you do not need a separate password/i)).toBeTruthy();
   });
 
   it('keeps loading, errors, and command feedback visible and actionable', () => {

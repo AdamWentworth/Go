@@ -307,7 +307,25 @@ export const NativeAccountSecurityScreen = ({
         title={confirmation?.title ?? 'Confirm action'}
         tone={confirmation?.kind === 'delete' ? 'danger' : 'default'}
         visible={Boolean(confirmation)}
-      />
+      >
+        {confirmation && security?.hasPassword ? (
+          <AccountField
+            help="Required to confirm this security change."
+            label="Current password"
+            light={light}
+            onChangeText={(value) => update('currentPassword', value)}
+            placeholder="Enter your account password"
+            secureTextEntry
+            value={draft.currentPassword}
+          />
+        ) : confirmation ? (
+          <View style={[styles.info, light && styles.infoLight]}>
+            <Text style={[styles.infoText, light && styles.textLight]}>
+              Your recent provider sign-in confirms this change. You do not need a separate password.
+            </Text>
+          </View>
+        ) : null}
+      </NativeConfirmationDialog>
     </View>
   );
 };
