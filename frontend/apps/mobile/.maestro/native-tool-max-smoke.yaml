@@ -1,0 +1,10 @@
+appId: host.exp.exponent
+name: Native Max Battles tool smoke
+---
+- openLink: "exp://10.0.2.2:8091/--/device-smoke/tools?tool=max"
+- assertVisible: "Max Battles"
+- tapOn: "Tank"
+- assertVisible: "Top tank rankings"
+- tapOn: "Boss teams"
+- assertVisible: "BOSS TEAM"
+- takeScreenshot: "native-tool-max"

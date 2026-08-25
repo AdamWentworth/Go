@@ -1,0 +1,18 @@
+appId: host.exp.exponent
+name: Native registration workflow smoke
+---
+- openLink: "exp://10.0.2.2:8091/--/device-smoke/public?page=register"
+- assertVisible: "Create your account"
+- assertVisible: "Sign up with Google"
+- assertVisible: "Sign up with Discord"
+- assertVisible: "Sign up with Facebook"
+- tapOn: "Continue with email"
+- assertVisible: "YOUR ACCOUNT"
+- tapOn: "Username"
+- inputText: "VisualTrainer"
+- tapOn: "Email"
+- inputText: "visual@example.invalid"
+- hideKeyboard
+- tapOn: "Continue ›"
+- assertVisible: "PROTECT YOUR ACCOUNT"
+- takeScreenshot: "native-registration-password-step"

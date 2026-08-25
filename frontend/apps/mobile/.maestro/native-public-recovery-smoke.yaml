@@ -1,0 +1,14 @@
+appId: host.exp.exponent
+name: Native password recovery smoke
+---
+- openLink: "exp://10.0.2.2:8091/--/device-smoke/public?page=reset"
+- assertVisible: "Reset your password"
+- tapOn: "Email"
+- inputText: "visual@example.invalid"
+- hideKeyboard
+- tapOn: "Email reset link"
+- assertVisible: "Check your email"
+- openLink: "exp://10.0.2.2:8091/--/device-smoke/public?page=reset-confirm"
+- assertVisible: "Choose a new password"
+- assertVisible: "Update password"
+- takeScreenshot: "native-password-recovery"

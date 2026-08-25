@@ -1,0 +1,11 @@
+appId: host.exp.exponent
+name: Native Pokédex tool smoke
+---
+- openLink: "exp://10.0.2.2:8091/--/device-smoke/tools?tool=pokedex"
+- assertVisible: "Pokédex"
+- assertVisible: "Shiny Bulbasaur"
+- tapOn: "Shiny"
+- tapOn: "Search Pokédex"
+- inputText: "bulba"
+- assertVisible: "Shiny Bulbasaur"
+- takeScreenshot: "native-tool-pokedex"

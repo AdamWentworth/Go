@@ -1,0 +1,9 @@
+appId: host.exp.exponent
+name: Native Raid tool smoke
+---
+- openLink: "exp://10.0.2.2:8091/--/device-smoke/tools?tool=raid"
+- assertVisible: "Raid Planner"
+- tapOn: "Boss counters"
+- assertVisible: "CURRENT MATCHUP"
+- assertVisible: "Bulbasaur"
+- takeScreenshot: "native-tool-raid"

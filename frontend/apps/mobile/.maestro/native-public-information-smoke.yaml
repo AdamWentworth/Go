@@ -1,0 +1,18 @@
+appId: host.exp.exponent
+name: Native information and legal routes smoke
+---
+- openLink: "exp://10.0.2.2:8091/--/device-smoke/public?page=getting-started"
+- assertVisible: "Your first useful trade, step by step."
+- assertVisible: "Start your collection"
+- openLink: "exp://10.0.2.2:8091/--/device-smoke/public?page=faq"
+- assertVisible: "Frequently asked questions"
+- tapOn: "TRADING"
+- assertVisible: "How do I propose a trade?"
+- tapOn: "How do I propose a trade?"
+- assertVisible: ".*Open another trainer’s For Trade.*"
+- openLink: "exp://10.0.2.2:8091/--/device-smoke/public?page=privacy"
+- assertVisible: "Privacy Policy"
+- assertVisible: "Last updated July 28, 2026"
+- openLink: "exp://10.0.2.2:8091/--/device-smoke/public?page=safety"
+- assertVisible: "Trade Safety & Community Guidelines"
+- takeScreenshot: "native-information-safety"

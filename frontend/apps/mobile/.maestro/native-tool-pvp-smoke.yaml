@@ -1,0 +1,13 @@
+appId: host.exp.exponent
+name: Native PvP tool smoke
+---
+- openLink: "exp://10.0.2.2:8091/--/device-smoke/tools?tool=pvp"
+- assertVisible: "PvP Rankings"
+- assertVisible: "Bulbasaur"
+- tapOn: "Team Builder"
+- assertVisible: "Choose team members"
+- tapOn: "Battle Lab"
+- assertVisible: "Compare two published builds"
+- tapOn: "IV Rank"
+- assertVisible: "Rank one IV spread"
+- takeScreenshot: "native-tool-pvp"

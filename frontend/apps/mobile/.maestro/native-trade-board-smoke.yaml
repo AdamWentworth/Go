@@ -1,0 +1,13 @@
+appId: host.exp.exponent
+name: Native Trade Board smoke
+---
+- openLink: "exp://10.0.2.2:8091/--/device-smoke/public?page=trade-board"
+- assertVisible: "Trade Board"
+- assertVisible: "Shiny Gigantamax Charizard"
+- assertVisible: "Gigantamax Blastoise"
+- tapOn: "Nexus Light"
+- tapOn: "Include Looking For Pokémon"
+- assertNotVisible: "Gigantamax Blastoise"
+- assertVisible: "Share live link"
+- assertVisible: "Share board image"
+- takeScreenshot: "native-trade-board"
