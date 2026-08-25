@@ -8,6 +8,12 @@ name: Native Trade Board smoke
 - tapOn: "Nexus Light"
 - tapOn: "Include Looking For Pokémon"
 - assertNotVisible: "Gigantamax Blastoise"
+- scrollUntilVisible:
+    element:
+      text: "Share live link"
+    direction: DOWN
+    speed: 40
+    timeout: 15000
 - assertVisible: "Share live link"
 - assertVisible: "Share board image"
 - takeScreenshot: "native-trade-board"

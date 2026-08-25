@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator,
   FlatList,
@@ -173,6 +173,7 @@ export const NativePvpScreen = ({
 }: Props) => {
   const light = useColorScheme() === "light";
   const insets = useSafeAreaInsets();
+  const workspaceScrollRef = useRef<ScrollView>(null);
   const formats = useMemo(() => buildNativePvpFormats(payload), [payload]);
   const [workspace, setWorkspace] = useState<NativePvpWorkspace>("rankings");
   const [formatKey, setFormatKey] = useState("great");
@@ -495,6 +496,7 @@ export const NativePvpScreen = ({
         styles.scrollContent,
         { paddingTop: insets.top + 8, paddingBottom: insets.bottom + 96 },
       ]}
+      ref={workspaceScrollRef}
       style={[styles.root, light && styles.rootLight]}
       testID="native-pvp-screen"
     >
@@ -617,6 +619,12 @@ export const NativePvpScreen = ({
           entries={entries}
           light={light}
           mechanics={mechanics}
+          onResultLayout={(offsetY) =>
+            workspaceScrollRef.current?.scrollTo({
+              animated: true,
+              y: Math.max(0, offsetY - 16),
+            })
+          }
         />
       ) : (
         <>

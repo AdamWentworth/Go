@@ -7,7 +7,15 @@ name: Native PvP tool smoke
 - tapOn: "Team Builder"
 - assertVisible: "Choose team members"
 - tapOn: "Battle Lab"
-- assertVisible: "Compare two published builds"
+- assertVisible: "Simulate a focused matchup"
+- tapOn: "Simulate battle"
+- assertVisible: "SIMULATED RESULT"
+- scrollUntilVisible:
+    element:
+      text: "IV Rank"
+    direction: UP
+    speed: 40
+    timeout: 15000
 - tapOn: "IV Rank"
 - assertVisible: "Rank one IV spread"
 - takeScreenshot: "native-tool-pvp"

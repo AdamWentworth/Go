@@ -22,6 +22,7 @@ type Props = {
   entries: PokemonPvPRankingEntry[];
   light: boolean;
   mechanics: PokemonPvPBattleMechanics;
+  onResultLayout?: (offsetY: number) => void;
 };
 
 const assetUri = (base: string, value: string): string | undefined => {
@@ -106,6 +107,7 @@ export const NativePvpBattleLab = ({
   entries,
   light,
   mechanics,
+  onResultLayout,
 }: Props) => {
   const readyEntries = useMemo(
     () =>
@@ -306,6 +308,7 @@ export const NativePvpBattleLab = ({
       {result ? (
         <View
           accessibilityLiveRegion="polite"
+          onLayout={(event) => onResultLayout?.(event.nativeEvent.layout.y)}
           style={[styles.result, light && styles.panelLight]}
         >
           <Text style={styles.eyebrow}>SIMULATED RESULT</Text>
