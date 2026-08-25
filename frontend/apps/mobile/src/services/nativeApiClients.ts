@@ -68,3 +68,15 @@ export const createNativeSearchApiClient = (
 });
 
 export type NativeSearchApiClient = ReturnType<typeof createNativeSearchApiClient>;
+
+export const createNativeEventsApiClient = (
+  tokens: AccessTokenProvider,
+  fetchImplementation: typeof globalThis.fetch = globalThis.fetch,
+) => createApiClient({
+  baseUrl: runtimeConfig.api.eventsApiUrl,
+  authentication: { mode: 'bearer', tokens },
+  fetch: fetchImplementation,
+  defaultTimeoutMs: 30_000,
+});
+
+export type NativeEventsApiClient = ReturnType<typeof createNativeEventsApiClient>;

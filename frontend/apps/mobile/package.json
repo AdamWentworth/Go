@@ -40,6 +40,7 @@
     "react-native-gesture-handler": "~2.32.0",
     "react-native-safe-area-context": "~5.7.0",
     "react-native-screens": "~4.26.0",
+    "react-native-sse": "^1.2.1",
     "react-native-svg": "15.15.4",
     "react-native-webview": "13.16.1"
   },

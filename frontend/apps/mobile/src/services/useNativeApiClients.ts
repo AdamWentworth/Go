@@ -2,6 +2,7 @@ import { useMemo } from 'react';
 import { useNativeSession } from '../auth/NativeSessionContext';
 import {
   createNativeAuthApiClient,
+  createNativeEventsApiClient,
   createNativePokemonApiClient,
   createNativeReceiverApiClient,
   createNativeSearchApiClient,
@@ -18,6 +19,7 @@ export const useNativeApiClients = () => {
     };
     return {
       auth: createNativeAuthApiClient(tokens),
+      events: createNativeEventsApiClient(tokens),
       users: createNativeUsersApiClient(tokens),
       receiver: createNativeReceiverApiClient(tokens),
       pokemon: createNativePokemonApiClient(),
