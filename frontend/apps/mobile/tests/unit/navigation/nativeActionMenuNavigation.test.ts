@@ -8,6 +8,7 @@ describe('resolveNativeActionMenuDestination', () => {
     ['/pokemon', '/native/collection'],
     ['/profile/friends', '/native/friends'],
     ['/search', '/native/search'],
+    ['/settings', '/native/settings'],
     ['/trades', '/native/trades'],
   ] as const)('keeps %s inside the ready native experience', (path, pathname) => {
     expect(resolveNativeActionMenuDestination(path)).toEqual({ kind: 'native', pathname });
@@ -28,6 +29,7 @@ describe('resolveNativeActionMenuDestination', () => {
     '/native/collection',
     '/native/friends',
     '/native/search',
+    '/native/settings',
     '/native/trades',
     '/native/profile',
     '/native/profile/OtherTrainer',

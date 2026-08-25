@@ -33,4 +33,24 @@ tags:
     direction: DOWN
     timeout: 10000
 - assertVisible: Discord
+- scrollUntilVisible:
+    element:
+      text: Display
+    direction: DOWN
+    timeout: 10000
+- assertVisible: Color theme
+- scrollUntilVisible:
+    element:
+      text: Reduce motion
+    direction: DOWN
+    timeout: 10000
+- tapOn: Reduce motion
+- scrollUntilVisible:
+    element:
+      text: Up to date
+    direction: DOWN
+    timeout: 10000
+- assertVisible: Pokémon synchronization
+- assertVisible: Up to date
+- tapOn: Retry now
 - takeScreenshot: native-trainer-settings

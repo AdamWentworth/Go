@@ -19,6 +19,7 @@ export default function NativeLayout() {
             <Stack.Screen name="collection" options={{ animation: 'none' }} />
             <Stack.Screen name="search" options={{ animation: 'none' }} />
             <Stack.Screen name="trades" options={{ animation: 'none' }} />
+            <Stack.Screen name="settings" options={{ animation: 'slide_from_right' }} />
             <Stack.Screen name="profile/index" options={{ animation: 'slide_from_right' }} />
             <Stack.Screen name="profile/[username]" options={{ animation: 'slide_from_right' }} />
             <Stack.Screen

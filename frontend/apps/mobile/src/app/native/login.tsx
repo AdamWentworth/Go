@@ -21,6 +21,7 @@ export default function NativeLoginRoute() {
     : returnTo === '/native/collection'
       || returnTo === '/native/friends'
       || returnTo === '/native/search'
+      || returnTo === '/native/settings'
       || returnTo === '/native/trades'
       || returnTo === '/native/profile'
       ? returnTo
