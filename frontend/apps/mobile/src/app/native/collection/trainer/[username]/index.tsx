@@ -100,7 +100,6 @@ export default function NativeForeignCollectionRoute() {
       isLoading={foreignQuery.isPending}
       key={initialTagKey}
       onActionMenuNavigate={navigateFromActionMenu}
-      onActionMenuPress={() => router.push('/web')}
       onOpenEntry={openEntry}
       onRetry={() => void foreignQuery.refetch()}
       onReturnToContext={returnToContext}

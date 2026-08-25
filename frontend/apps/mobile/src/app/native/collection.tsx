@@ -104,7 +104,6 @@ export default function NativeCollectionRoute() {
       key={initialTagKey ?? 'full-catalog'}
       isLoading={snapshotQuery.isPending}
       onActionMenuNavigate={navigateFromActionMenu}
-      onActionMenuPress={() => router.push('/web')}
       onOpenEntry={openEntry}
       onOrganizePokemon={(request) => pokemonOrganizer.mutateAsync(request)}
       onRetry={() => void snapshotQuery.refetch()}

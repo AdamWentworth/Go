@@ -191,7 +191,7 @@ export const NativeTrainerProfileRoute = ({ username }: Props) => {
             router.replace('/native/search');
             return;
           }
-          router.replace({ pathname: '/web', params: { path: '/' } });
+          router.replace('/native');
         }}
         onDismissFeedback={() => setFeedback(null)}
         onBeginEdit={isOwner && profileQuery.data

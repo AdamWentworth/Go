@@ -1,5 +1,4 @@
 import type { OAuthProvider } from '@pokemongonexus/shared-contracts/auth';
-import { ApiClientError } from '@pokemongonexus/shared-api-client';
 import { Redirect, useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, StyleSheet, Text, View, useColorScheme } from 'react-native';
@@ -238,16 +237,7 @@ export const NativeAccountSecurityRoute = () => {
   });
 
   const connectProvider = (provider: OAuthProvider) => run(`provider-${provider}`, async () => {
-    let result;
-    try {
-      result = await connectNativeOAuthProvider({ client: clients.auth, provider });
-    } catch (error) {
-      if (error instanceof ApiClientError && (error.status === 404 || error.status === 405)) {
-        router.push({ pathname: '/web', params: { path: '/settings/account' } });
-        return;
-      }
-      throw error;
-    }
+    const result = await connectNativeOAuthProvider({ client: clients.auth, provider });
     if (!result) {
       setFeedback({
         tone: 'error',

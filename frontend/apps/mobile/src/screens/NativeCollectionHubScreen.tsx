@@ -37,7 +37,8 @@ type Props = {
   error: string | null;
   warning?: string | null;
   isLoading: boolean;
-  onActionMenuPress: () => void;
+  /** @deprecated The hub owns its native action menu. */
+  onActionMenuPress?: () => void;
   onActionMenuNavigate?: (path: string) => void;
   onOpenEntry: (row: NativeCollectionRow, orderedRows: NativeCollectionRow[]) => void;
   onRetry: () => void;
@@ -64,7 +65,7 @@ export const NativeCollectionHubScreen = ({
   error,
   warning = null,
   isLoading,
-  onActionMenuPress,
+  onActionMenuPress: _legacyActionMenuPress,
   onActionMenuNavigate,
   onOpenEntry,
   onRetry,
@@ -348,7 +349,6 @@ export const NativeCollectionHubScreen = ({
             setActionMenuOpen(false);
             if (path === '/pokemon') return;
             if (onActionMenuNavigate) onActionMenuNavigate(path);
-            else onActionMenuPress();
           }}
           visible
         />

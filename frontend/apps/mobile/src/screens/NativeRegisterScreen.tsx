@@ -32,7 +32,7 @@ type Props = {
   onRegistered: () => void;
 };
 
-const SOCIAL_PROVIDERS: Array<{ provider: OAuthProvider; label: string; glyph: string }> = [
+const SOCIAL_PROVIDERS: { provider: OAuthProvider; label: string; glyph: string }[] = [
   { provider: 'google', label: 'Sign up with Google', glyph: 'G' },
   { provider: 'discord', label: 'Sign up with Discord', glyph: '◉' },
   { provider: 'facebook', label: 'Sign up with Facebook', glyph: 'f' },

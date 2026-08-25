@@ -111,7 +111,7 @@ const NativeSignedInFriendsRoute = ({
             router.back();
             return;
           }
-          router.replace({ pathname: '/web', params: { path: '/' } });
+          router.replace('/native');
         }}
         onCommand={(command) => void runCommand(command)}
         onDismissFeedback={() => setFeedback(null)}

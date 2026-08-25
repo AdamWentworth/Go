@@ -192,7 +192,6 @@ export default function NativeForeignInstanceRoute() {
         ? 'Move names are temporarily unavailable. The rest of this Pokémon is still current.'
         : null}
       onBack={returnToCatalog}
-      onEditInCurrentApp={() => undefined}
       onNext={neighbors.nextId ? () => navigateToInstance(neighbors.nextId!) : undefined}
       onOpenTarget={setProposalTargetId}
       onPrevious={neighbors.previousId ? () => navigateToInstance(neighbors.previousId!) : undefined}

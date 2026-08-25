@@ -6,7 +6,6 @@ import {
   useNativePokemonMovesQuery,
 } from '../../../features/collection/collectionQueries';
 import {
-  buildCanonicalCollectionInstancePath,
   buildNativeCollectionRows,
   buildNativeInstanceDetail,
 } from '../../../features/collection/collectionModel';
@@ -43,12 +42,6 @@ export default function NativeInstanceDetailRoute() {
       runtimeConfig.api.frontendAppUrl,
     );
   }, [instanceId, movesQuery.data, snapshotQuery.data]);
-  const canonicalCollectionPath = useMemo(() => {
-    return buildCanonicalCollectionInstancePath(
-      instanceId,
-      detail?.row.status ?? 'caught',
-    );
-  }, [detail?.row.status, instanceId]);
   const neighbors = useMemo(() => {
     if (!snapshotQuery.data) return { previousId: null, nextId: null };
     const fallbackIds = buildNativeCollectionRows(
@@ -99,10 +92,6 @@ export default function NativeInstanceDetailRoute() {
         mode: detail?.row.status === 'wanted' ? 'wanted' : 'trade',
         section: 'preferences',
       },
-    })}
-    onEditInCurrentApp={() => router.replace({
-      pathname: '/web',
-      params: { path: canonicalCollectionPath },
     })}
   />;
 }

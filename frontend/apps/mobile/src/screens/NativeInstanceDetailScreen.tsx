@@ -56,7 +56,8 @@ type Props = {
   onPrevious?: () => void;
   onOpenTarget?: (instanceId: string) => void;
   onToggleFavorite: (favorite: boolean) => void;
-  onEditInCurrentApp: () => void;
+  /** @deprecated Native editing is handled by onSaveDetails. */
+  onEditInCurrentApp?: () => void;
   onEditPreferences?: () => void;
   onSaveDetails?: (patch: NativeInstanceDetailPatch) => Promise<unknown>;
   canEdit?: boolean;
@@ -2007,7 +2008,7 @@ export const NativeInstanceDetailScreen = ({
   const toggleEdit = async () => {
     if (!canEdit) return;
     if (!onSaveDetails) {
-      onEditInCurrentApp();
+      onEditInCurrentApp?.();
       return;
     }
     if (!editing) {
@@ -2402,7 +2403,7 @@ export const NativeInstanceDetailScreen = ({
               <TargetSummary
                 assetBaseUrl={assetBaseUrl}
                 detail={detail}
-                onEdit={onEditPreferences ?? onEditInCurrentApp}
+                onEdit={() => onEditPreferences?.()}
                 onOpenTarget={onOpenTarget}
                 palette={palette}
                 canEdit={canEdit}
