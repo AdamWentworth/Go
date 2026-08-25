@@ -25,7 +25,6 @@ tags:
 - eraseText: 2
 - inputText: "40.5"
 - assertVisible: "3773"
-- hideKeyboard
 - tapOn: Save Pokémon
 - assertNotVisible: Pokémon detail editor
 - assertVisible: "CP3773"
