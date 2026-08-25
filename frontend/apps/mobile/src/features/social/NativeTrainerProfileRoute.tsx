@@ -88,7 +88,10 @@ export const NativeTrainerProfileRoute = ({ username }: Props) => {
     || normalizedUsername.toLocaleLowerCase() === session.user.username.toLocaleLowerCase();
   const openCollection = (filter?: 'caught' | 'trade' | 'wanted' | 'favorites') => {
     if (isOwner) {
-      router.push('/native/collection');
+      router.push(filter ? {
+        pathname: '/native/collection',
+        params: { filter },
+      } : '/native/collection');
       return;
     }
     router.push({

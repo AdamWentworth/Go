@@ -9,6 +9,7 @@ import {
 import { useNativeForeignCollectionQuery } from '../../../../../features/collection/collectionQueries';
 import { DEFAULT_NATIVE_TAGS_ENVELOPE } from '../../../../../features/collection/nativeTagsEnvelope';
 import { setNativeInstanceNavigationContext } from '../../../../../features/collection/nativeInstanceNavigationContext';
+import { nativeCollectionTagKeyForFilter } from '../../../../../features/collection/nativeCollectionRouteFilter';
 import { runtimeConfig } from '../../../../../config/runtimeConfig';
 import { NativeCollectionHubScreen } from '../../../../../screens/NativeCollectionHubScreen';
 import { resolveNativeActionMenuDestination } from '../../../../../navigation/nativeActionMenuNavigation';
@@ -16,15 +17,6 @@ import { resolveNativeActionMenuDestination } from '../../../../../navigation/na
 const firstParam = (value: string | string[] | undefined): string => (
   Array.isArray(value) ? value[0] ?? '' : value ?? ''
 );
-
-const initialForeignTagKey = (filter: string): string => {
-  const normalized = filter.trim().toLocaleLowerCase().replaceAll('_', '-');
-  if (normalized === 'trade' || normalized === 'for-trade') return 'system:trade';
-  if (normalized === 'wanted') return 'system:wanted';
-  if (normalized === 'most-wanted') return 'system:most-wanted';
-  if (normalized === 'favorites') return 'system:favorites';
-  return 'system:caught';
-};
 
 export default function NativeForeignCollectionRoute() {
   const router = useRouter();
@@ -59,7 +51,8 @@ export default function NativeForeignCollectionRoute() {
     DEFAULT_NATIVE_TAGS_ENVELOPE,
     'wanted',
   ), [rows, success?.instances]);
-  const initialTagKey = initialForeignTagKey(firstParam(params.filter));
+  const initialTagKey = nativeCollectionTagKeyForFilter(firstParam(params.filter))
+    ?? 'system:caught';
   const resultError = foreignQuery.error instanceof Error
     ? foreignQuery.error.message
     : foreignQuery.data?.type === 'forbidden'
@@ -105,6 +98,7 @@ export default function NativeForeignCollectionRoute() {
       instances={success?.instances ?? {}}
       inventoryTags={inventoryTags}
       isLoading={foreignQuery.isPending}
+      key={initialTagKey}
       onActionMenuNavigate={navigateFromActionMenu}
       onActionMenuPress={() => router.push('/web')}
       onOpenEntry={openEntry}

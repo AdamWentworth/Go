@@ -1,4 +1,4 @@
-import { Redirect, useRouter } from 'expo-router';
+import { Redirect, useLocalSearchParams, useRouter } from 'expo-router';
 import { useMemo } from 'react';
 import {
   buildNativeCatalogRows,
@@ -15,10 +15,18 @@ import { useNativePokemonOrganizerMutation } from '../../features/collection/use
 import { NativeCollectionHubScreen } from '../../screens/NativeCollectionHubScreen';
 import { setNativeInstanceNavigationContext } from '../../features/collection/nativeInstanceNavigationContext';
 import { resolveNativeActionMenuDestination } from '../../navigation/nativeActionMenuNavigation';
+import { nativeCollectionTagKeyForFilter } from '../../features/collection/nativeCollectionRouteFilter';
+
+const firstParam = (value: string | string[] | undefined): string => (
+  Array.isArray(value) ? value[0] ?? '' : value ?? ''
+);
 
 export default function NativeCollectionRoute() {
   const router = useRouter();
+  const params = useLocalSearchParams<{ filter?: string | string[] }>();
   const session = useNativeSession();
+  const filter = firstParam(params.filter);
+  const initialTagKey = nativeCollectionTagKeyForFilter(filter);
   const snapshotQuery = useNativeCollectionSnapshotQuery(session.user?.user_id ?? null);
   const tagMutations = useNativeTagMutations(session.user?.user_id ?? 'signed-out');
   const pokemonOrganizer = useNativePokemonOrganizerMutation(
@@ -59,7 +67,10 @@ export default function NativeCollectionRoute() {
   }, [instanceRows, snapshotQuery.data]);
 
   if (session.status !== 'signed-in' || !session.user) {
-    return <Redirect href="/native/login?returnTo=%2Fnative%2Fcollection" />;
+    const returnTo = filter
+      ? `/native/collection?filter=${encodeURIComponent(filter)}`
+      : '/native/collection';
+    return <Redirect href={`/native/login?returnTo=${encodeURIComponent(returnTo)}`} />;
   }
 
   const openEntry = (row: NativeCollectionRow, orderedRows: NativeCollectionRow[]) => {
@@ -89,6 +100,8 @@ export default function NativeCollectionRoute() {
       error={snapshotQuery.error instanceof Error ? snapshotQuery.error.message : null}
       inventoryTags={inventoryTags}
       instances={snapshotQuery.data?.instances ?? {}}
+      initialTagKey={initialTagKey}
+      key={initialTagKey ?? 'full-catalog'}
       isLoading={snapshotQuery.isPending}
       onActionMenuNavigate={navigateFromActionMenu}
       onActionMenuPress={() => router.push('/web')}
