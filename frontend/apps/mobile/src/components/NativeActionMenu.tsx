@@ -12,6 +12,7 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Defs, LinearGradient, Rect, Stop } from 'react-native-svg';
+import { useOptionalNativeDevicePreferences } from '../features/settings/NativeDevicePreferencesProvider';
 
 type Props = {
   assetBaseUrl: string;
@@ -60,6 +61,7 @@ export const NativeActionMenu = ({
 }: Props) => {
   const insets = useSafeAreaInsets();
   const scheme = useColorScheme();
+  const devicePreferences = useOptionalNativeDevicePreferences();
   const light = scheme === 'light';
   const { height, width } = useWindowDimensions();
   const [supportOpen, setSupportOpen] = useState(false);
@@ -137,7 +139,7 @@ export const NativeActionMenu = ({
             accessibilityLabel={`Use ${light ? 'dark' : 'light'} theme`}
             accessibilityRole="switch"
             accessibilityState={{ checked: light }}
-            onPress={() => Appearance.setColorScheme(light ? 'dark' : 'light')}
+            onPress={devicePreferences?.toggleColorTheme ?? (() => Appearance.setColorScheme(light ? 'dark' : 'light'))}
             style={[styles.themeSwitch, { backgroundColor: palette.surface, borderColor: palette.border }]}
           >
             <Text style={styles.themeGlyph}>{light ? '☀' : '☾'}</Text>

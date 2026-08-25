@@ -16,6 +16,7 @@ import {
   useRef,
   useState,
 } from 'react';
+import { useOptionalNativeDevicePreferences } from '../features/settings/NativeDevicePreferencesProvider';
 
 type Props = PropsWithChildren<{
   activeIndex: number;
@@ -61,16 +62,19 @@ export const NativeHorizontalPageSlider = forwardRef<
   const previousWidthRef = useRef(width);
   const [internalScrollX] = useState(() => new Animated.Value(safeIndex * width));
   const pageScrollX = scrollX ?? internalScrollX;
-  const [reduceMotion, setReduceMotion] = useState(false);
+  const devicePreferences = useOptionalNativeDevicePreferences();
+  const [systemReduceMotion, setSystemReduceMotion] = useState(false);
 
   useEffect(() => {
-    void AccessibilityInfo.isReduceMotionEnabled().then(setReduceMotion);
+    void AccessibilityInfo.isReduceMotionEnabled().then(setSystemReduceMotion);
     const subscription = AccessibilityInfo.addEventListener(
       'reduceMotionChanged',
-      setReduceMotion,
+      setSystemReduceMotion,
     );
     return () => subscription.remove();
   }, []);
+
+  const reduceMotion = devicePreferences?.shouldReduceMotion ?? systemReduceMotion;
 
   const setPage = useCallback((index: number, animated = !reduceMotion) => {
     const nextIndex = clampPageIndex(index, panelCount);

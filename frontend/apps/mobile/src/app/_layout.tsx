@@ -5,16 +5,23 @@ import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { MobileErrorBoundary } from '../components/MobileErrorBoundary';
 import { initializeObservability } from '../observability/bootstrap';
+import {
+  NativeDevicePreferencesProvider,
+  useNativeDevicePreferences,
+} from '../features/settings/NativeDevicePreferencesProvider';
 
 initializeObservability();
 
-export default function RootLayout() {
+const RootContent = () => {
+  const devicePreferences = useNativeDevicePreferences();
+  const light = devicePreferences.colorTheme === 'light';
+
   return (
     <GestureHandlerRootView style={styles.appShell}>
       <SafeAreaProvider>
-        <StatusBar style="light" />
-        <SafeAreaView style={styles.appShell} edges={['top', 'bottom']}>
-          <View style={styles.appShell}>
+        <StatusBar style={light ? 'dark' : 'light'} />
+        <SafeAreaView style={[styles.appShell, light && styles.appShellLight]} edges={['top', 'bottom']}>
+          <View style={[styles.appShell, light && styles.appShellLight]}>
             <MobileErrorBoundary>
               <Stack screenOptions={{ headerShown: false }} />
             </MobileErrorBoundary>
@@ -23,6 +30,14 @@ export default function RootLayout() {
       </SafeAreaProvider>
     </GestureHandlerRootView>
   );
+};
+
+export default function RootLayout() {
+  return (
+    <NativeDevicePreferencesProvider>
+      <RootContent />
+    </NativeDevicePreferencesProvider>
+  );
 }
 
 const styles = StyleSheet.create({
@@ -30,4 +45,5 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#000',
   },
+  appShellLight: { backgroundColor: '#eef4f5' },
 });

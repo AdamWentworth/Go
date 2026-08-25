@@ -26,27 +26,36 @@ import {
   changeNativeCoordinationMethod,
   type NativeTrainerPreferencesDraft,
 } from '../features/social/nativeTrainerPreferencesModel';
+import type { NativeColorTheme } from '../features/settings/nativeDevicePreferences';
+import type { NativeSyncSettingsSummary } from '../features/settings/nativeSyncSettingsModel';
 
 type PickerKey =
   | 'profileVisibility'
   | 'collectionVisibility'
   | 'friendRequestPermission'
   | 'trainerCodeVisibility'
-  | 'coordinationMethod';
+  | 'coordinationMethod'
+  | 'colorTheme';
 
 type Props = {
   draft: NativeTrainerPreferencesDraft | null;
   error?: string | null;
   feedback?: { tone: 'success' | 'error'; text: string } | null;
+  colorTheme: NativeColorTheme;
   isLoading?: boolean;
   isSaving?: boolean;
   onBack: () => void;
   onChange: (draft: NativeTrainerPreferencesDraft) => void;
   onDismissFeedback?: () => void;
+  onChangeColorTheme: (theme: NativeColorTheme) => void;
+  onChangeReduceMotion: (value: boolean) => void;
   onOpenAccount: () => void;
   onRetry: () => void;
+  onRetrySync: () => void;
   onSaveCoordination: () => void;
   onSavePrivacy: () => void;
+  reduceMotion: boolean;
+  syncSummary: NativeSyncSettingsSummary;
 };
 
 const VISIBILITY_OPTIONS: NativeOptionPickerEntry[] = [
@@ -63,6 +72,10 @@ const COORDINATION_OPTIONS: NativeOptionPickerEntry[] = [
   { key: 'discord', label: 'Discord' },
   { key: 'other', label: 'Another community or app' },
   { key: 'none', label: 'Do not share coordination details' },
+];
+const COLOR_THEME_OPTIONS: NativeOptionPickerEntry[] = [
+  { key: 'dark', label: 'Dark' },
+  { key: 'light', label: 'Light' },
 ];
 
 const labelFor = (options: NativeOptionPickerEntry[], value: string): string => (
@@ -120,18 +133,24 @@ const ToggleField = ({ description, disabled, label, light, onChange, value }: T
 );
 
 export const NativeTrainerSettingsScreen = ({
+  colorTheme,
   draft,
   error = null,
   feedback = null,
   isLoading = false,
   isSaving = false,
   onBack,
+  onChangeColorTheme,
+  onChangeReduceMotion,
   onChange,
   onDismissFeedback,
   onOpenAccount,
   onRetry,
+  onRetrySync,
   onSaveCoordination,
   onSavePrivacy,
+  reduceMotion,
+  syncSummary,
 }: Props) => {
   const light = useColorScheme() === 'light';
   const insets = useSafeAreaInsets();
@@ -145,26 +164,30 @@ export const NativeTrainerSettingsScreen = ({
     onChange({ ...draft, [key]: value });
   };
 
-  const pickerConfig = draft && picker ? ({
+  const pickerConfig = picker ? ({
     profileVisibility: {
-      title: 'Profile visibility', options: VISIBILITY_OPTIONS, selected: draft.profileVisibility,
+      title: 'Profile visibility', options: VISIBILITY_OPTIONS, selected: draft?.profileVisibility ?? 'private',
       select: (key: string) => update('profileVisibility', key as ProfileVisibility),
     },
     collectionVisibility: {
-      title: 'Pokémon visibility', options: VISIBILITY_OPTIONS, selected: draft.collectionVisibility,
+      title: 'Pokémon visibility', options: VISIBILITY_OPTIONS, selected: draft?.collectionVisibility ?? 'private',
       select: (key: string) => update('collectionVisibility', key as ProfileVisibility),
     },
     friendRequestPermission: {
-      title: 'Friend requests', options: FRIEND_OPTIONS, selected: draft.friendRequestPermission,
+      title: 'Friend requests', options: FRIEND_OPTIONS, selected: draft?.friendRequestPermission ?? 'nobody',
       select: (key: string) => update('friendRequestPermission', key as FriendRequestPermission),
     },
     trainerCodeVisibility: {
-      title: 'Trainer code visibility', options: VISIBILITY_OPTIONS, selected: draft.trainerCodeVisibility,
+      title: 'Trainer code visibility', options: VISIBILITY_OPTIONS, selected: draft?.trainerCodeVisibility ?? 'private',
       select: (key: string) => update('trainerCodeVisibility', key as TrainerCodeVisibility),
     },
     coordinationMethod: {
-      title: 'Preferred coordination method', options: COORDINATION_OPTIONS, selected: draft.coordinationMethod,
-      select: (key: string) => onChange(changeNativeCoordinationMethod(draft, key as TradeCoordinationMethod)),
+      title: 'Preferred coordination method', options: COORDINATION_OPTIONS, selected: draft?.coordinationMethod ?? 'none',
+      select: (key: string) => { if (draft) onChange(changeNativeCoordinationMethod(draft, key as TradeCoordinationMethod)); },
+    },
+    colorTheme: {
+      title: 'Color theme', options: COLOR_THEME_OPTIONS, selected: colorTheme,
+      select: (key: string) => onChangeColorTheme(key as NativeColorTheme),
     },
   } as const)[picker] : null;
 
@@ -258,6 +281,48 @@ export const NativeTrainerSettingsScreen = ({
             </View>
           </>
         ) : null}
+
+        <View style={[styles.section, light && styles.sectionLight]}>
+          <View style={styles.sectionHeader}>
+            <View><Text style={styles.sectionEyebrow}>THIS DEVICE</Text><Text style={[styles.sectionTitle, light && styles.textLight]}>Display</Text></View>
+            <Text style={styles.sectionIcon}>{colorTheme === 'light' ? '☀' : '☾'}</Text>
+          </View>
+          <SelectionField
+            description="Stored on this device and shared by every native screen."
+            label="Color theme"
+            light={light}
+            onPress={() => setPicker('colorTheme')}
+            value={labelFor(COLOR_THEME_OPTIONS, colorTheme)}
+          />
+          <ToggleField
+            description="Use simpler page and instance transitions. Android's accessibility preference is also honored."
+            label="Reduce motion"
+            light={light}
+            onChange={onChangeReduceMotion}
+            value={reduceMotion}
+          />
+        </View>
+
+        <View style={[styles.section, light && styles.sectionLight]}>
+          <View style={styles.sectionHeader}>
+            <View><Text style={styles.sectionEyebrow}>THIS DEVICE</Text><Text style={[styles.sectionTitle, light && styles.textLight]}>Pokémon synchronization</Text></View>
+            <Text style={styles.sectionIcon}>↻</Text>
+          </View>
+          <View accessibilityLiveRegion="polite" style={[styles.syncRow, light && styles.toggleRowLight]}>
+            <View style={styles.toggleCopy}>
+              <Text style={[styles.syncTitle, light && styles.textLight]}>{syncSummary.title}</Text>
+              <Text style={[styles.help, light && styles.mutedLight]}>{syncSummary.detail}</Text>
+            </View>
+            <Pressable
+              accessibilityRole="button"
+              disabled={!syncSummary.canRetry}
+              onPress={onRetrySync}
+              style={[styles.syncRetry, light && styles.syncRetryLight, !syncSummary.canRetry && styles.disabled]}
+            >
+              <Text style={[styles.syncRetryText, light && styles.textLight]}>Retry now</Text>
+            </Pressable>
+          </View>
+        </View>
       </ScrollView>
 
       <NativeOptionPicker
@@ -321,6 +386,11 @@ const styles = StyleSheet.create({
   noteText: { flex: 1, color: '#f7fbfa', fontSize: 12, lineHeight: 17, fontWeight: '700' },
   coordinationNote: { padding: 11, borderLeftWidth: 3, borderLeftColor: '#42d7c6', borderRadius: 6, backgroundColor: '#102526' },
   coordinationNoteLight: { backgroundColor: '#eaf8f6' },
+  syncRow: { minHeight: 72, flexDirection: 'row', alignItems: 'center', gap: 10, padding: 11, borderWidth: 1, borderColor: '#315052', borderRadius: 8, backgroundColor: '#202728' },
+  syncTitle: { color: '#f7fbfa', fontSize: 14, fontWeight: '900' },
+  syncRetry: { minHeight: 44, minWidth: 86, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 10, borderWidth: 1, borderColor: '#42d7c6', borderRadius: 8, backgroundColor: '#163b3a' },
+  syncRetryLight: { backgroundColor: '#eaf8f6' },
+  syncRetryText: { color: '#ffffff', fontSize: 12, fontWeight: '900' },
   textLight: { color: '#172124' },
   labelLight: { color: '#49666b' },
   mutedLight: { color: '#5e6c6f' },

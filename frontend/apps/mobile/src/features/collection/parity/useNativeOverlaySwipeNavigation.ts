@@ -4,6 +4,7 @@ import {
 } from 'react-native';
 import { Gesture } from 'react-native-gesture-handler';
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useOptionalNativeDevicePreferences } from '../../settings/NativeDevicePreferencesProvider';
 
 export type NativeOverlaySwipeDirection = 'previous' | 'next';
 
@@ -58,16 +59,19 @@ export const useNativeOverlaySwipeNavigation = ({
 }: Args): Result => {
   const [translateX] = useState(() => new Animated.Value(0));
   const [isAnimating, setIsAnimating] = useState(false);
-  const [reduceMotion, setReduceMotion] = useState(false);
+  const devicePreferences = useOptionalNativeDevicePreferences();
+  const [systemReduceMotion, setSystemReduceMotion] = useState(false);
 
   useEffect(() => {
-    void AccessibilityInfo.isReduceMotionEnabled().then(setReduceMotion);
+    void AccessibilityInfo.isReduceMotionEnabled().then(setSystemReduceMotion);
     const subscription = AccessibilityInfo.addEventListener(
       'reduceMotionChanged',
-      setReduceMotion,
+      setSystemReduceMotion,
     );
     return () => subscription.remove();
   }, []);
+
+  const reduceMotion = devicePreferences?.shouldReduceMotion ?? systemReduceMotion;
 
   useEffect(() => () => {
     translateX.stopAnimation();

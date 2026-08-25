@@ -21,13 +21,19 @@ const renderScreen = (props: Partial<React.ComponentProps<typeof NativeTrainerSe
     insets: { top: 24, right: 0, bottom: 20, left: 0 },
   }}>
     <NativeTrainerSettingsScreen
+      colorTheme="dark"
       draft={draft}
       onBack={jest.fn()}
       onChange={jest.fn()}
+      onChangeColorTheme={jest.fn()}
+      onChangeReduceMotion={jest.fn()}
       onOpenAccount={jest.fn()}
       onRetry={jest.fn()}
+      onRetrySync={jest.fn()}
       onSaveCoordination={jest.fn()}
       onSavePrivacy={jest.fn()}
+      reduceMotion={false}
+      syncSummary={{ canRetry: true, detail: 'No collection changes are waiting on this device.', title: 'Up to date' }}
       {...props}
     />
   </SafeAreaProvider>,
@@ -38,8 +44,24 @@ describe('NativeTrainerSettingsScreen', () => {
     const view = renderScreen();
     expect(view.getByText('Privacy')).toBeTruthy();
     expect(view.getByText('Trade coordination')).toBeTruthy();
+    expect(view.getByText('Display')).toBeTruthy();
+    expect(view.getByText('Pokémon synchronization')).toBeTruthy();
     expect(view.getByText('Pokémon GO Nexus does not provide messaging. Choose how an accepted trade partner can connect with you.')).toBeTruthy();
     expect(view.getByRole('tab', { name: 'Settings' }).props.accessibilityState.selected).toBe(true);
+  });
+
+  it('updates device display settings and retries collection synchronization', () => {
+    const onChangeColorTheme = jest.fn();
+    const onChangeReduceMotion = jest.fn();
+    const onRetrySync = jest.fn();
+    const view = renderScreen({ onChangeColorTheme, onChangeReduceMotion, onRetrySync });
+    fireEvent.press(view.getByRole('button', { name: 'Color theme, Dark' }));
+    fireEvent.press(view.getByRole('radio', { name: 'Light' }));
+    expect(onChangeColorTheme).toHaveBeenCalledWith('light');
+    fireEvent(view.getByLabelText('Reduce motion'), 'valueChange', true);
+    expect(onChangeReduceMotion).toHaveBeenCalledWith(true);
+    fireEvent.press(view.getByRole('button', { name: 'Retry now' }));
+    expect(onRetrySync).toHaveBeenCalledTimes(1);
   });
 
   it('updates picker, toggle, handle, and save commands explicitly', () => {
