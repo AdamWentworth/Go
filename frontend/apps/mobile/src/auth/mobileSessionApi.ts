@@ -1,15 +1,21 @@
 import { createApiClient } from '@pokemongonexus/shared-api-client';
 import {
   authContract,
+  type ConfirmPasswordResetRequest,
   type MobileLoginRequest,
+  type MobileRegisterRequest,
   type MobileSessionResponse,
+  type ResetPasswordRequest,
 } from '@pokemongonexus/shared-contracts/auth';
 import { runtimeConfig } from '../config/runtimeConfig';
 
 export type MobileSessionApi = {
   login: (request: MobileLoginRequest) => Promise<MobileSessionResponse>;
+  register: (request: MobileRegisterRequest) => Promise<MobileSessionResponse>;
   refresh: (refreshToken: string) => Promise<MobileSessionResponse>;
   logout: (refreshToken: string) => Promise<void>;
+  requestPasswordReset: (request: ResetPasswordRequest) => Promise<void>;
+  confirmPasswordReset: (request: ConfirmPasswordResetRequest) => Promise<void>;
 };
 
 const validateSession = (value: MobileSessionResponse): MobileSessionResponse => {
@@ -38,6 +44,17 @@ export const createMobileSessionApi = (
     login: async (request) => validateSession(
       await client.post<MobileSessionResponse>(authContract.endpoints.mobileLogin, request),
     ),
+    register: async (request) => {
+      await client.post(authContract.endpoints.register, request);
+      return validateSession(await client.post<MobileSessionResponse>(
+        authContract.endpoints.mobileLogin,
+        {
+          username: request.username,
+          password: request.password,
+          device_id: request.device_id,
+        },
+      ));
+    },
     refresh: async (refreshToken) => validateSession(
       await client.post<MobileSessionResponse>(authContract.endpoints.mobileRefresh, {
         refreshToken,
@@ -45,6 +62,12 @@ export const createMobileSessionApi = (
     ),
     logout: async (refreshToken) => {
       await client.post(authContract.endpoints.mobileLogout, { refreshToken });
+    },
+    requestPasswordReset: async (request) => {
+      await client.post(authContract.endpoints.resetPassword, request);
+    },
+    confirmPasswordReset: async (request) => {
+      await client.post(authContract.endpoints.confirmPasswordReset, request);
     },
   };
 };

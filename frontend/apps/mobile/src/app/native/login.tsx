@@ -35,6 +35,7 @@ export default function NativeLoginRoute() {
       || returnTo === '/native/friends'
       || returnTo === '/native/search'
       || returnTo === '/native/settings'
+      || returnTo === '/native/trade-board'
       || returnTo === '/native/trades'
       || returnTo === '/native/profile'
       ? returnTo
@@ -93,7 +94,8 @@ export default function NativeLoginRoute() {
     <View style={styles.screen}>
       <NativeLoginScreen
         notice={notice}
-        onOpenPasswordReset={openWebLogin}
+        onOpenPasswordReset={() => router.push('/native/reset-password')}
+        onOpenRegister={() => router.push('/native/register')}
         onSignIn={signIn}
         onSignedIn={() => router.replace(returnHref)}
         onSocialSignIn={openWebLogin}

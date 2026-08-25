@@ -10,6 +10,7 @@ export default function DeviceSmokeLoginRoute() {
     <NativeLoginScreen
       notice={notice}
       onOpenPasswordReset={() => setNotice('Password reset opens the secure account recovery flow.')}
+      onOpenRegister={() => setNotice('Registration opened.')}
       onSignIn={async () => undefined}
       onSignedIn={() => setNotice('Signed in.')}
       onSocialSignIn={(provider) => setNotice(`${provider} sign-in opened.`)}

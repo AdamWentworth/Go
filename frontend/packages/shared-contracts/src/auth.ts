@@ -84,6 +84,18 @@ export interface MobileLoginRequest {
   device_id: string;
 }
 
+export interface MobileRegisterRequest {
+  username: string;
+  email: string;
+  password: string;
+  pokemonGoName?: string | null;
+  trainerCode?: string | null;
+  location?: string | null;
+  allowLocation?: boolean;
+  coordinates?: Coordinates | null;
+  device_id: string;
+}
+
 export interface MobileRefreshRequest {
   refreshToken: string;
 }

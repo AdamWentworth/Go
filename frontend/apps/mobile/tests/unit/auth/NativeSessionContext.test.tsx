@@ -23,13 +23,19 @@ const session = (suffix: string) => ({
   refreshTokenExpiry: '2026-08-30T21:00:00.000Z',
 });
 
+const createApi = (patch: Record<string, jest.Mock> = {}) => ({
+  confirmPasswordReset: jest.fn(),
+  login: jest.fn(),
+  logout: jest.fn(),
+  refresh: jest.fn(),
+  register: jest.fn(),
+  requestPasswordReset: jest.fn(),
+  ...patch,
+});
+
 describe('NativeSessionProvider', () => {
   it('restores and rotates a persisted session before exposing the user', async () => {
-    const api = {
-      login: jest.fn(),
-      refresh: jest.fn().mockResolvedValue(session('rotated')),
-      logout: jest.fn(),
-    };
+    const api = createApi({ refresh: jest.fn().mockResolvedValue(session('rotated')) });
     const persistence = {
       read: jest.fn().mockResolvedValue('refresh-stored'),
       store: jest.fn().mockResolvedValue(undefined),
@@ -51,11 +57,10 @@ describe('NativeSessionProvider', () => {
   });
 
   it('signs in with a stable device ID and clears both sides on logout', async () => {
-    const api = {
+    const api = createApi({
       login: jest.fn().mockResolvedValue(session('login')),
-      refresh: jest.fn(),
       logout: jest.fn().mockResolvedValue(undefined),
-    };
+    });
     const persistence = {
       read: jest.fn()
         .mockResolvedValueOnce(null)
@@ -92,13 +97,11 @@ describe('NativeSessionProvider', () => {
   });
 
   it('preserves persisted credentials on a transient restoration failure', async () => {
-    const api = {
-      login: jest.fn(),
+    const api = createApi({
       refresh: jest.fn()
         .mockRejectedValueOnce(new Error('Network request failed'))
         .mockResolvedValueOnce(session('retry')),
-      logout: jest.fn(),
-    };
+    });
     const persistence = {
       read: jest.fn().mockResolvedValue('refresh-stored'),
       store: jest.fn().mockResolvedValue(undefined),
@@ -119,14 +122,45 @@ describe('NativeSessionProvider', () => {
     expect(result.current.getAccessToken()).toBe('access-retry');
   });
 
+  it('creates an account with the stable device ID and applies its mobile session', async () => {
+    const api = createApi({ register: jest.fn().mockResolvedValue(session('register')) });
+    const persistence = {
+      read: jest.fn().mockResolvedValue(null),
+      store: jest.fn().mockResolvedValue(undefined),
+      clear: jest.fn().mockResolvedValue(undefined),
+    };
+    const wrapper = ({ children }: PropsWithChildren) => (
+      <NativeSessionProvider
+        api={api}
+        persistence={persistence}
+        getDeviceId={jest.fn().mockResolvedValue('native-device')}
+      >
+        {children}
+      </NativeSessionProvider>
+    );
+    const { result } = renderHook(() => useNativeSession(), { wrapper });
+    await waitFor(() => expect(result.current.status).toBe('signed-out'));
+
+    await act(async () => result.current.register({
+      email: 'misty@example.com',
+      password: 'Strong_password_42',
+      username: 'misty',
+    }));
+
+    expect(api.register).toHaveBeenCalledWith(expect.objectContaining({
+      device_id: 'native-device',
+      username: 'misty',
+    }));
+    expect(result.current.status).toBe('signed-in');
+    expect(persistence.store).toHaveBeenCalledWith('refresh-register');
+  });
+
   it('clears an invalid persisted refresh token', async () => {
-    const api = {
-      login: jest.fn(),
+    const api = createApi({
       refresh: jest.fn().mockRejectedValue(
         new ApiClientError(401, 'Invalid token', { message: 'Invalid token' }),
       ),
-      logout: jest.fn(),
-    };
+    });
     const persistence = {
       read: jest.fn().mockResolvedValue('refresh-invalid'),
       store: jest.fn(),
@@ -144,11 +178,9 @@ describe('NativeSessionProvider', () => {
   });
 
   it('applies a validated account profile response without replacing session tokens', async () => {
-    const api = {
-      login: jest.fn(),
+    const api = createApi({
       refresh: jest.fn().mockResolvedValue(session('restored')),
-      logout: jest.fn(),
-    };
+    });
     const persistence = {
       read: jest.fn().mockResolvedValue('refresh-stored'),
       store: jest.fn().mockResolvedValue(undefined),

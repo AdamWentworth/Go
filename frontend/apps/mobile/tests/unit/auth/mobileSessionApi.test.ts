@@ -53,4 +53,29 @@ describe('mobile session API', () => {
       'Authentication service returned an invalid mobile session',
     );
   });
+
+  it('registers, exchanges the password for mobile tokens, and supports password recovery', async () => {
+    const fetchMock = jest.fn()
+      .mockResolvedValueOnce(response(201, { message: 'Account created successfully.' }))
+      .mockResolvedValueOnce(response(200, session))
+      .mockResolvedValueOnce(response(200, { message: 'If that account exists, reset instructions are on the way.' }))
+      .mockResolvedValueOnce(response(200, { message: 'Password reset successful.' }));
+    const api = createMobileSessionApi(fetchMock);
+
+    await expect(api.register({
+      device_id: 'native-device',
+      email: 'misty@example.com',
+      password: 'Strong_password_42',
+      username: 'misty',
+    })).resolves.toEqual(session);
+    await api.requestPasswordReset({ identifier: 'misty@example.com' });
+    await api.confirmPasswordReset({ token: 'reset-token', password: 'Strong_password_43' });
+
+    expect(fetchMock.mock.calls.map(([url]) => url)).toEqual([
+      'https://pokegonexus.com/api/auth/register',
+      'https://pokegonexus.com/api/auth/mobile/login',
+      'https://pokegonexus.com/api/auth/reset-password',
+      'https://pokegonexus.com/api/auth/reset-password/confirm',
+    ]);
+  });
 });

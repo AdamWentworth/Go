@@ -1,4 +1,8 @@
-import type { MobileSessionResponse, MobileSessionUser } from '@pokemongonexus/shared-contracts/auth';
+import type {
+  MobileRegisterRequest,
+  MobileSessionResponse,
+  MobileSessionUser,
+} from '@pokemongonexus/shared-contracts/auth';
 import { ApiClientError } from '@pokemongonexus/shared-api-client';
 import {
   createContext,
@@ -28,6 +32,7 @@ type NativeSessionContextValue = {
   status: NativeSessionStatus;
   user: MobileSessionUser | null;
   signIn: (username: string, password: string) => Promise<void>;
+  register: (request: Omit<MobileRegisterRequest, 'device_id'>) => Promise<void>;
   signOut: () => Promise<void>;
   getAccessToken: () => string | null;
   refreshAccessToken: () => Promise<string | null>;
@@ -138,6 +143,21 @@ export const NativeSessionProvider = ({
     }
   }, [api, applySession, getDeviceId]);
 
+  const register = useCallback(async (request: Omit<MobileRegisterRequest, 'device_id'>) => {
+    const deviceId = await getDeviceId();
+    const nextSession = await api.register({ ...request, device_id: deviceId });
+    try {
+      await applySession(nextSession);
+    } catch (error) {
+      try {
+        await api.logout(nextSession.refreshToken);
+      } catch {
+        // Server expiry is the fallback if local persistence fails.
+      }
+      throw error;
+    }
+  }, [api, applySession, getDeviceId]);
+
   const retrySession = useCallback(async () => {
     setStatus('restoring');
     await refreshAccessToken();
@@ -168,13 +188,14 @@ export const NativeSessionProvider = ({
     status,
     user,
     signIn,
+    register,
     signOut,
     getAccessToken,
     refreshAccessToken,
     replaceSessionUser,
     retrySession,
     clearSession,
-  }), [clearSession, getAccessToken, refreshAccessToken, replaceSessionUser, retrySession, signIn, signOut, status, user]);
+  }), [clearSession, getAccessToken, refreshAccessToken, register, replaceSessionUser, retrySession, signIn, signOut, status, user]);
 
   return (
     <NativeSessionContext.Provider value={value}>

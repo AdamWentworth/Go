@@ -17,6 +17,7 @@ import { theme } from '../ui/theme';
 type NativeLoginScreenProps = {
   notice?: string | null;
   onOpenPasswordReset: () => void;
+  onOpenRegister: () => void;
   onSignIn: (username: string, password: string) => Promise<void>;
   onSocialSignIn: (provider: NativeLoginProvider) => void;
   onSignedIn: () => void;
@@ -45,6 +46,7 @@ const errorMessage = (error: unknown): string => {
 export const NativeLoginScreen = ({
   notice = null,
   onOpenPasswordReset,
+  onOpenRegister,
   onSignIn,
   onSocialSignIn,
   onSignedIn,
@@ -145,6 +147,13 @@ export const NativeLoginScreen = ({
               <Text style={styles.primaryButtonText}>Login</Text>
             )}
           </Pressable>
+
+          <View style={styles.registerPrompt}>
+            <Text style={[styles.registerCopy, light && styles.labelLight]}>New to Pokémon Go Nexus?</Text>
+            <Pressable accessibilityRole="button" disabled={isSubmitting} onPress={onOpenRegister}>
+              <Text style={[styles.registerLink, light && styles.resetButtonTextLight]}>Create account</Text>
+            </Pressable>
+          </View>
 
           <Pressable
             accessibilityRole="button"
@@ -267,6 +276,9 @@ const styles = StyleSheet.create({
   },
   resetButtonText: { color: '#58abff', fontSize: 15, fontWeight: '900' },
   resetButtonTextLight: { color: '#005bb5' },
+  registerPrompt: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 7, marginBottom: 5 },
+  registerCopy: { color: '#d9e1e5', fontSize: 13, fontWeight: '700' },
+  registerLink: { color: '#58abff', fontSize: 13, fontWeight: '900' },
   socialButtons: { gap: 12, marginTop: 1 },
   socialButton: { minHeight: 52, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10, paddingHorizontal: 16, borderWidth: 1, borderColor: 'transparent', borderRadius: 12 },
   googleButton: { borderColor: '#d8dce1', backgroundColor: '#ffffff' },

@@ -8,6 +8,7 @@ describe('NativeLoginScreen', () => {
       <NativeLoginScreen
         notice="Password updated. Sign in again on this device."
         onOpenPasswordReset={jest.fn()}
+        onOpenRegister={jest.fn()}
         onSignIn={jest.fn()}
         onSignedIn={jest.fn()}
         onSocialSignIn={jest.fn()}
@@ -22,6 +23,7 @@ describe('NativeLoginScreen', () => {
     render(
       <NativeLoginScreen
         onOpenPasswordReset={jest.fn()}
+        onOpenRegister={jest.fn()}
         onSignIn={onSignIn}
         onSignedIn={onSignedIn}
         onSocialSignIn={jest.fn()}
@@ -43,6 +45,7 @@ describe('NativeLoginScreen', () => {
     render(
       <NativeLoginScreen
         onOpenPasswordReset={jest.fn()}
+        onOpenRegister={jest.fn()}
         onSignIn={onSignIn}
         onSignedIn={jest.fn()}
         onSocialSignIn={jest.fn()}
@@ -60,10 +63,12 @@ describe('NativeLoginScreen', () => {
 
   it('matches the canonical reset and provider actions', () => {
     const onOpenPasswordReset = jest.fn();
+    const onOpenRegister = jest.fn();
     const onSocialSignIn = jest.fn();
     render(
       <NativeLoginScreen
         onOpenPasswordReset={onOpenPasswordReset}
+        onOpenRegister={onOpenRegister}
         onSignIn={jest.fn()}
         onSignedIn={jest.fn()}
         onSocialSignIn={onSocialSignIn}
@@ -71,11 +76,13 @@ describe('NativeLoginScreen', () => {
     );
 
     fireEvent.press(screen.getByText('Reset Password'));
+    fireEvent.press(screen.getByText('Create account'));
     fireEvent.press(screen.getByText('Login with Google'));
     fireEvent.press(screen.getByText('Login with Discord'));
     fireEvent.press(screen.getByText('Login with Facebook'));
 
     expect(onOpenPasswordReset).toHaveBeenCalledTimes(1);
+    expect(onOpenRegister).toHaveBeenCalledTimes(1);
     expect(onSocialSignIn).toHaveBeenNthCalledWith(1, 'google');
     expect(onSocialSignIn).toHaveBeenNthCalledWith(2, 'discord');
     expect(onSocialSignIn).toHaveBeenNthCalledWith(3, 'facebook');
