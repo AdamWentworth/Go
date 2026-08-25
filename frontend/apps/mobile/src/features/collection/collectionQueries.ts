@@ -4,6 +4,7 @@ import {
   getNativePokemonMoves,
 } from '../../services/collectionApi';
 import { getCollectionSummary } from '../../services/collectionSummaryApi';
+import { getNativeForeignCollection } from '../../services/foreignCollectionApi';
 import { useNativeApiClients } from '../../services/useNativeApiClients';
 import { nativeCollectionOutbox } from '../../storage/nativeCollectionOutbox';
 import { nativeCollectionCache } from '../../storage/nativeCollectionCache';
@@ -14,7 +15,35 @@ export const nativeCollectionQueryKeys = {
     [...nativeCollectionQueryKeys.root, userId, 'summary'] as const,
   snapshot: (userId: string) =>
     [...nativeCollectionQueryKeys.root, userId, 'snapshot'] as const,
+  foreign: (viewerId: string, username: string) =>
+    [
+      ...nativeCollectionQueryKeys.root,
+      viewerId,
+      'foreign',
+      username.trim().toLocaleLowerCase(),
+    ] as const,
   moves: ['native', 'pokemon', 'moves'] as const,
+};
+
+export const useNativeForeignCollectionQuery = (
+  viewerId: string | null,
+  username: string,
+) => {
+  const clients = useNativeApiClients();
+  const normalizedUsername = username.trim();
+  return useQuery({
+    queryKey: nativeCollectionQueryKeys.foreign(
+      viewerId ?? 'signed-out',
+      normalizedUsername,
+    ),
+    queryFn: () => getNativeForeignCollection(
+      clients.users,
+      clients.pokemon,
+      normalizedUsername,
+    ),
+    enabled: Boolean(viewerId && normalizedUsername),
+    staleTime: 60_000,
+  });
 };
 
 export const useNativePokemonMovesQuery = (enabled: boolean) => {
