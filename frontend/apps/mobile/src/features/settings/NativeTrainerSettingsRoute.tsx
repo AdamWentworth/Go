@@ -125,7 +125,7 @@ export const NativeTrainerSettingsRoute = () => {
         onChangeColorTheme={devicePreferences.setColorTheme}
         onChangeReduceMotion={devicePreferences.setReduceMotion}
         onDismissFeedback={() => setFeedback(null)}
-        onOpenAccount={() => router.push({ pathname: '/web', params: { path: '/settings/account' } })}
+        onOpenAccount={() => router.push('/native/account')}
         onRetry={() => void retryPreferences()}
         onRetrySync={() => void collectionSync.retry()}
         onSaveCoordination={() => void saveGroup('coordination')}

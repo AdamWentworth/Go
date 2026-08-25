@@ -1,9 +1,11 @@
 import {
   deleteNativeApplicationAccount,
   deleteNativeAuthenticationAccount,
+  exchangeNativeOAuthProviderLink,
   getNativeAccountSecurity,
   requestNativeEmailChange,
   revokeNativeAccountSessions,
+  startNativeOAuthProviderLink,
   unlinkNativeAccountProvider,
   updateNativeAccountPassword,
   updateNativeAccountUsername,
@@ -84,6 +86,31 @@ describe('nativeAccountSecurityApi', () => {
     expect(request).toHaveBeenNthCalledWith(3, '/user-1', { method: 'DELETE' });
   });
 
+  it('validates native provider-link start and exchange envelopes', async () => {
+    const post = jest.fn()
+      .mockResolvedValueOnce({
+        authorizationUrl: 'https://accounts.example.test/oauth?state=native.state',
+        provider: 'google',
+      })
+      .mockResolvedValueOnce({ provider: 'google', status: 'linked' });
+    await expect(startNativeOAuthProviderLink({ post }, 'google')).resolves.toMatchObject({
+      provider: 'google',
+    });
+    await expect(exchangeNativeOAuthProviderLink({ post }, 'one-use-code')).resolves.toEqual({
+      provider: 'google',
+      status: 'linked',
+    });
+    expect(post).toHaveBeenNthCalledWith(1, '/mobile/oauth/link/start', { provider: 'google' });
+    expect(post).toHaveBeenNthCalledWith(2, '/mobile/oauth/link/exchange', { code: 'one-use-code' });
+
+    post.mockResolvedValueOnce({ provider: 'google', authorizationUrl: 'javascript:alert(1)' });
+    await expect(startNativeOAuthProviderLink({ post }, 'google'))
+      .rejects.toThrow('provider connection response is invalid');
+    post.mockResolvedValueOnce({ provider: 'google', status: 'unknown' });
+    await expect(exchangeNativeOAuthProviderLink({ post }, 'bad-result'))
+      .rejects.toThrow('provider connection result is invalid');
+  });
+
   it('syncs a username to the users service and rejects malformed success', async () => {
     const put = jest.fn().mockResolvedValue({ success: true, message: 'Updated' });
     await expect(updateNativeSecondaryUsername({ put }, 'user-1', 'TrainerTwo')).resolves.toBeUndefined();
@@ -93,4 +120,3 @@ describe('nativeAccountSecurityApi', () => {
       .rejects.toThrow('trainer username response is invalid');
   });
 });
-

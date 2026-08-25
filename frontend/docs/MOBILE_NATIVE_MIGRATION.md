@@ -49,9 +49,11 @@ The current `native-preview` supports email/password sessions through explicit
 mobile login, refresh, and logout endpoints. Only the refresh token is persisted
 in SecureStore; access tokens remain in memory. Transient restoration failures
 preserve the saved session and offer retry, while rejected refresh tokens clear
-the local session. Native OAuth remains deferred until a system-browser,
-one-time-code callback exchange is available; existing OAuth stays on the
-WebView path during that phase.
+the local session. Native provider linking now uses a system-browser,
+device-bound, one-time-code callback exchange; access and refresh tokens never
+enter deep links. The current-app handoff remains only as a rollout fallback
+until the authentication service containing those endpoints is deployed
+everywhere.
 
 ## Increment sequence
 

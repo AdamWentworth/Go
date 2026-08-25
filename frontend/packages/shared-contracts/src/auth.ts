@@ -9,6 +9,8 @@ export const authContract = {
     mobileLogin: '/mobile/login',
     mobileLogout: '/mobile/logout',
     mobileRefresh: '/mobile/refresh',
+    mobileOAuthLinkStart: '/mobile/oauth/link/start',
+    mobileOAuthLinkExchange: '/mobile/oauth/link/exchange',
     resetPassword: '/reset-password',
     confirmPasswordReset: '/reset-password/confirm',
     accountSecurity: '/account/security',
@@ -104,6 +106,24 @@ export interface ConfirmPasswordResetRequest {
 }
 
 export type OAuthProvider = 'google' | 'discord' | 'facebook';
+
+export interface MobileOAuthLinkStartRequest {
+  provider: OAuthProvider;
+}
+
+export interface MobileOAuthLinkStartResponse {
+  provider: OAuthProvider;
+  authorizationUrl: string;
+}
+
+export interface MobileOAuthLinkExchangeRequest {
+  code: string;
+}
+
+export interface MobileOAuthLinkExchangeResponse {
+  provider: OAuthProvider;
+  status: 'linked' | 'link-conflict' | 'failed';
+}
 
 export interface AccountSecuritySummary {
   email: string;

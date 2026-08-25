@@ -1,7 +1,8 @@
 import type { OAuthProvider } from '@pokemongonexus/shared-contracts/auth';
-import { Redirect, useRouter } from 'expo-router';
-import { useState } from 'react';
-import { StyleSheet, View, useColorScheme } from 'react-native';
+import { ApiClientError } from '@pokemongonexus/shared-api-client';
+import { Redirect, useLocalSearchParams, useRouter } from 'expo-router';
+import { useEffect, useRef, useState } from 'react';
+import { ActivityIndicator, StyleSheet, Text, View, useColorScheme } from 'react-native';
 import { useNativeSession } from '../../auth/NativeSessionContext';
 import { NativeActionMenu } from '../../components/NativeActionMenu';
 import { NativeActionMenuAnchor } from '../../components/NativeActionMenuAnchor';
@@ -30,6 +31,10 @@ import {
   revokeNativeSessionsAndClearSession,
   saveNativeUsernameGraph,
 } from './nativeAccountSecurityCommands';
+import {
+  connectNativeOAuthProvider,
+  exchangeNativeOAuthLinkCode,
+} from './nativeOAuthProviderLink';
 
 type Feedback = { tone: 'success' | 'error'; text: string };
 
@@ -38,8 +43,14 @@ const errorMessage = (error: unknown): string =>
     ? error.message
     : 'The account-security request could not be completed.';
 
+const firstParam = (value: string | string[] | undefined): string | null => {
+  const candidate = Array.isArray(value) ? value[0] : value;
+  return typeof candidate === 'string' && candidate.trim() ? candidate.trim() : null;
+};
+
 export const NativeAccountSecurityRoute = () => {
   const router = useRouter();
+  const params = useLocalSearchParams<{ oauth_code?: string | string[]; oauth_error?: string | string[] }>();
   const light = useColorScheme() === 'light';
   const session = useNativeSession();
   const clients = useNativeApiClients();
@@ -50,6 +61,60 @@ export const NativeAccountSecurityRoute = () => {
   const [pendingAction, setPendingAction] = useState<string | null>(null);
   const [pendingSecondaryUsername, setPendingSecondaryUsername] = useState<string | null>(null);
   const [actionMenuOpen, setActionMenuOpen] = useState(false);
+  const processedOAuthReturnRef = useRef<string | null>(null);
+
+  const oauthCode = firstParam(params.oauth_code);
+  const oauthError = firstParam(params.oauth_error);
+
+  useEffect(() => {
+    const resultKey = oauthCode ? `code:${oauthCode}` : oauthError ? `error:${oauthError}` : null;
+    if (session.status !== 'signed-in' || !resultKey
+        || processedOAuthReturnRef.current === resultKey) return;
+    processedOAuthReturnRef.current = resultKey;
+    router.setParams({ oauth_code: undefined, oauth_error: undefined });
+    let active = true;
+    void (async () => {
+      await Promise.resolve();
+      if (!active) return;
+      if (oauthError) {
+        setFeedback({
+          tone: 'error',
+          text: 'The provider authorization expired or was not completed.',
+        });
+        return;
+      }
+      if (!oauthCode) return;
+
+      setPendingAction('provider-return');
+      setFeedback(null);
+      try {
+        const result = await exchangeNativeOAuthLinkCode({ client: clients.auth, code: oauthCode });
+        const refreshed = await securityQuery.refetch();
+        if (!refreshed.data) throw new Error('The updated sign-in methods could not be loaded.');
+        if (!active) return;
+        setFeedback({
+          tone: 'success',
+          text: `${nativeOAuthProviderLabel(result.provider)} connected.`,
+        });
+      } catch (error) {
+        if (active) setFeedback({ tone: 'error', text: errorMessage(error) });
+      } finally {
+        if (active) setPendingAction(null);
+      }
+    })();
+    return () => { active = false; };
+  }, [clients.auth, oauthCode, oauthError, router, securityQuery, session.status]);
+
+  if (session.status === 'restoring') {
+    return (
+      <View style={[styles.restoring, light && styles.rootLight]}>
+        <ActivityIndicator color="#35a8ff" />
+        <Text style={[styles.restoringText, light && styles.restoringTextLight]}>
+          Restoring account security…
+        </Text>
+      </View>
+    );
+  }
 
   if (session.status !== 'signed-in' || !user) {
     return <Redirect href="/native/login?returnTo=%2Fnative%2Faccount" />;
@@ -172,6 +237,32 @@ export const NativeAccountSecurityRoute = () => {
     setFeedback({ tone: 'success', text: `${nativeOAuthProviderLabel(provider)} disconnected.` });
   });
 
+  const connectProvider = (provider: OAuthProvider) => run(`provider-${provider}`, async () => {
+    let result;
+    try {
+      result = await connectNativeOAuthProvider({ client: clients.auth, provider });
+    } catch (error) {
+      if (error instanceof ApiClientError && (error.status === 404 || error.status === 405)) {
+        router.push({ pathname: '/web', params: { path: '/settings/account' } });
+        return;
+      }
+      throw error;
+    }
+    if (!result) {
+      setFeedback({
+        tone: 'error',
+        text: `${nativeOAuthProviderLabel(provider)} connection was cancelled. No changes were made.`,
+      });
+      return;
+    }
+    const refreshed = await securityQuery.refetch();
+    if (!refreshed.data) throw new Error('The updated sign-in methods could not be loaded.');
+    setFeedback({
+      tone: 'success',
+      text: `${nativeOAuthProviderLabel(result.provider)} connected.`,
+    });
+  });
+
   const revokeSessions = () => run('sessions', async () => {
     await revokeNativeSessionsAndClearSession({
       auth: clients.auth,
@@ -233,7 +324,7 @@ export const NativeAccountSecurityRoute = () => {
         onBack={() => router.canGoBack() ? router.back() : router.replace('/native/settings')}
         onChange={(next) => { setDraftOverride(next); setFeedback(null); }}
         onChangePassword={() => void changePassword()}
-        onConnectProvider={() => router.push({ pathname: '/web', params: { path: '/settings/account' } })}
+        onConnectProvider={(provider) => void connectProvider(provider)}
         onDeleteAccount={() => void deleteAccount()}
         onDismissFeedback={() => setFeedback(null)}
         onOpenSettings={() => router.replace('/native/settings')}
@@ -265,4 +356,13 @@ export const NativeAccountSecurityRoute = () => {
 const styles = StyleSheet.create({
   root: { flex: 1, minHeight: 0, backgroundColor: '#081012' },
   rootLight: { backgroundColor: '#eef4f5' },
+  restoring: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 12,
+    backgroundColor: '#081012',
+  },
+  restoringText: { color: '#a8b9bc', fontSize: 14, fontWeight: '700' },
+  restoringTextLight: { color: '#5f7074' },
 });

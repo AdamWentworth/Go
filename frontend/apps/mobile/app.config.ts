@@ -33,6 +33,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
       'expo-secure-store',
       'expo-sqlite',
       'expo-status-bar',
+      'expo-web-browser',
       [
         'expo-splash-screen',
         {

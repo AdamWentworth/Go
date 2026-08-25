@@ -2,6 +2,8 @@ import {
   authContract,
   type AccountSecuritySummary,
   type MobileSessionUser,
+  type MobileOAuthLinkExchangeResponse,
+  type MobileOAuthLinkStartResponse,
   type OAuthProvider,
 } from '@pokemongonexus/shared-contracts/auth';
 import { usersContract } from '@pokemongonexus/shared-contracts/users';
@@ -57,6 +59,27 @@ const requireUpdatedUser = (value: unknown): MobileSessionUser => {
   return value.data as unknown as MobileSessionUser;
 };
 
+const requireOAuthLinkStart = (value: unknown): MobileOAuthLinkStartResponse => {
+  if (!isRecord(value)
+      || typeof value.provider !== 'string'
+      || !PROVIDERS.has(value.provider as OAuthProvider)
+      || typeof value.authorizationUrl !== 'string'
+      || !/^https:\/\//.test(value.authorizationUrl)) {
+    throw new Error('The provider connection response is invalid.');
+  }
+  return value as unknown as MobileOAuthLinkStartResponse;
+};
+
+const requireOAuthLinkExchange = (value: unknown): MobileOAuthLinkExchangeResponse => {
+  if (!isRecord(value)
+      || typeof value.provider !== 'string'
+      || !PROVIDERS.has(value.provider as OAuthProvider)
+      || !['linked', 'link-conflict', 'failed'].includes(String(value.status))) {
+    throw new Error('The provider connection result is invalid.');
+  }
+  return value as unknown as MobileOAuthLinkExchangeResponse;
+};
+
 export const getNativeAccountSecurity = async (
   client: Pick<AuthAccountClient, 'get'>,
 ): Promise<AccountSecuritySummary> => requireAccountSecurity(
@@ -107,6 +130,20 @@ export const unlinkNativeAccountProvider = async (
   'provider removal',
 );
 
+export const startNativeOAuthProviderLink = async (
+  client: Pick<AuthAccountClient, 'post'>,
+  provider: OAuthProvider,
+): Promise<MobileOAuthLinkStartResponse> => requireOAuthLinkStart(
+  await client.post<unknown>(authContract.endpoints.mobileOAuthLinkStart, { provider }),
+);
+
+export const exchangeNativeOAuthProviderLink = async (
+  client: Pick<AuthAccountClient, 'post'>,
+  code: string,
+): Promise<MobileOAuthLinkExchangeResponse> => requireOAuthLinkExchange(
+  await client.post<unknown>(authContract.endpoints.mobileOAuthLinkExchange, { code }),
+);
+
 export const deleteNativeApplicationAccount = async (
   client: Pick<UsersAccountClient, 'request'>,
   userId: string,
@@ -137,4 +174,3 @@ export const updateNativeSecondaryUsername = async (
     throw new Error('The trainer username response is invalid.');
   }
 };
-
