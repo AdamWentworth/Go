@@ -25,6 +25,16 @@ tags:
 - assertVisible: Shiny Bulbasaur
 - assertVisible: Wanted Pokémon
 - assertVisible: Edit preferences
+- tapOn: Trade Activity
+- extendedWaitUntil:
+    visible: Your trades
+    timeout: 10000
+- assertVisible: No trades here
+- takeScreenshot: 00-trade-activity-page
+- tapOn: Trade Preferences
+- extendedWaitUntil:
+    visible: Wanted Pokémon
+    timeout: 10000
 - assertVisible: Shiny Charmander
 - assertNotVisible: Shiny Mewtwo
 - takeScreenshot: 01-for-trade-view

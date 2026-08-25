@@ -35,6 +35,7 @@ type Props = {
   onRetry: () => void;
   onRevealPartner: (tradeId: string) => Promise<PartnerInfo>;
   rows: NativeTradeActivityRow[];
+  showModeTabs?: boolean;
 };
 
 const FILTER_LABELS: Record<TradeActivityFilter, { full: string; compact: string }> = {
@@ -334,6 +335,7 @@ export const NativeTradeActivityScreen = ({
   onRetry,
   onRevealPartner,
   rows,
+  showModeTabs = true,
 }: Props) => {
   const light = useColorScheme() === 'light';
   const [selectedFilter, setSelectedFilter] = useState<TradeActivityFilter>('Accepting');
@@ -392,14 +394,16 @@ export const NativeTradeActivityScreen = ({
 
   return (
     <View style={[styles.screen, light && styles.screenLight]} testID="native-trade-activity-screen">
-      <View style={[styles.modeTabs, light && styles.modeTabsLight]}>
-        <Pressable accessibilityRole="button" onPress={onOpenPreferences} style={styles.modeTab}>
-          <Text style={[styles.modeTabText, light && styles.secondaryLight]}>Trade Preferences</Text>
-        </Pressable>
-        <View accessibilityRole="tab" accessibilityState={{ selected: true }} style={[styles.modeTab, styles.activeModeTab]}>
-          <Text style={styles.activeModeText}>Trade Activity</Text>
+      {showModeTabs ? (
+        <View style={[styles.modeTabs, light && styles.modeTabsLight]}>
+          <Pressable accessibilityRole="button" onPress={onOpenPreferences} style={styles.modeTab}>
+            <Text style={[styles.modeTabText, light && styles.secondaryLight]}>Trade Preferences</Text>
+          </Pressable>
+          <View accessibilityRole="tab" accessibilityState={{ selected: true }} style={[styles.modeTab, styles.activeModeTab]}>
+            <Text style={styles.activeModeText}>Trade Activity</Text>
+          </View>
         </View>
-      </View>
+      ) : null}
 
       <View style={styles.pageHeading}>
         <Text accessibilityRole="header" maxFontSizeMultiplier={1.25} style={[styles.pageTitle, light && styles.textLight]}>

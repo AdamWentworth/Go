@@ -172,6 +172,33 @@ describe('NativeTradePreferencesScreen', () => {
     expect(getByText('1 acceptable targets')).toBeTruthy();
   });
 
+  it('hydrates saved rules and exclusions when live collection data arrives after mount', async () => {
+    const onSave = jest.fn().mockResolvedValue(undefined);
+    const screen = render(
+      <NativeTradePreferencesScreen
+        assetBaseUrl="https://pokegonexus.com"
+        entries={{ trade: [], wanted: [] }}
+        isLoading
+        onOpenActivity={jest.fn()}
+        onSave={onSave}
+      />,
+    );
+
+    expect(screen.getByText('Loading trade preferences')).toBeTruthy();
+    screen.rerender(
+      <NativeTradePreferencesScreen
+        assetBaseUrl="https://pokegonexus.com"
+        entries={{ trade: [tradeEntry], wanted: [wantedEntry] }}
+        onOpenActivity={jest.fn()}
+        onSave={onSave}
+      />,
+    );
+
+    await waitFor(() => expect(screen.getByText('Shiny Charizard')).toBeTruthy());
+    expect(screen.queryByText('Shiny Mewtwo')).toBeNull();
+    expect(screen.getByText('1 acceptable targets')).toBeTruthy();
+  });
+
   it('switches to Wanted semantics without reusing For Trade copy', () => {
     const { getByText, queryByText } = renderScreen();
 

@@ -1,9 +1,19 @@
-import { Redirect, useRouter } from 'expo-router';
-import { useMemo } from 'react';
+import { Redirect } from 'expo-router';
+import { Animated, StyleSheet, View } from 'react-native';
+import { useCallback, useMemo, useRef, useState } from 'react';
 import type { PokemonInstance } from '@pokemongonexus/shared-contracts/instances';
 import type { BasePokemon } from '@pokemongonexus/shared-contracts/pokemon';
 import { runtimeConfig } from '../../config/runtimeConfig';
+import {
+  NativeHorizontalPageSlider,
+  type NativeHorizontalPageSliderHandle,
+} from '../../components/NativeHorizontalPageSlider';
+import {
+  NativeTradeHubHeader,
+  type NativeTradeHubView,
+} from '../../features/trades/NativeTradeHubHeader';
 import { buildNativeTradePreferenceEntries } from '../../features/trades/nativeTradePreferencesModel';
+import { NativeTradeActivityScreen } from '../../screens/NativeTradeActivityScreen';
 import { NativeTradePreferencesScreen } from '../../screens/NativeTradePreferencesScreen';
 
 const ASSET_BASE_URL = 'https://pokegonexus.com';
@@ -168,7 +178,13 @@ const INSTANCES: Record<string, PokemonInstance> = {
 };
 
 export default function DeviceSmokeTradePreferencesRoute() {
-  const router = useRouter();
+  const [activeView, setActiveView] = useState<NativeTradeHubView>('preferences');
+  const [pageScrollX] = useState(() => new Animated.Value(0));
+  const sliderRef = useRef<NativeHorizontalPageSliderHandle>(null);
+  const changeView = useCallback((view: NativeTradeHubView) => {
+    setActiveView(view);
+    sliderRef.current?.setPage(view === 'preferences' ? 0 : 1);
+  }, []);
   const entries = useMemo(() => ({
     trade: buildNativeTradePreferenceEntries({
       assetOrigin: ASSET_BASE_URL,
@@ -187,11 +203,41 @@ export default function DeviceSmokeTradePreferencesRoute() {
   if (!runtimeConfig.mobile.deviceSmokeMode) return <Redirect href="/" />;
 
   return (
-    <NativeTradePreferencesScreen
-      assetBaseUrl={ASSET_BASE_URL}
-      entries={entries}
-      onOpenActivity={() => router.push('/device-smoke/trade-activity')}
-      onSave={async () => new Promise((resolve) => setTimeout(resolve, 250))}
-    />
+    <View style={styles.screen}>
+      <NativeTradeHubHeader
+        activeView={activeView}
+        onViewChange={changeView}
+        scrollX={pageScrollX}
+      />
+      <NativeHorizontalPageSlider
+        activeIndex={activeView === 'preferences' ? 0 : 1}
+        onIndexChange={(index) => setActiveView(index === 1 ? 'activity' : 'preferences')}
+        ref={sliderRef}
+        scrollX={pageScrollX}
+      >
+        <NativeTradePreferencesScreen
+          assetBaseUrl={ASSET_BASE_URL}
+          entries={entries}
+          onOpenActivity={() => changeView('activity')}
+          onSave={async () => new Promise((resolve) => setTimeout(resolve, 250))}
+          showModeTabs={false}
+        />
+        <NativeTradeActivityScreen
+          assetBaseUrl={ASSET_BASE_URL}
+          error={null}
+          isLoading={false}
+          onAction={async () => undefined}
+          onOpenPreferences={() => changeView('preferences')}
+          onRetry={() => undefined}
+          onRevealPartner={async () => { throw new Error('No fixture partner.'); }}
+          rows={[]}
+          showModeTabs={false}
+        />
+      </NativeHorizontalPageSlider>
+    </View>
   );
 }
+
+const styles = StyleSheet.create({
+  screen: { flex: 1, minHeight: 0, backgroundColor: '#071012' },
+});

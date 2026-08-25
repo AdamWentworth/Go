@@ -5,6 +5,7 @@ import {
   type TradePreferenceRuleKey,
 } from '@pokemongonexus/shared-domain/trade-preferences';
 import {
+  ActivityIndicator,
   FlatList,
   Image,
   Modal,
@@ -18,7 +19,7 @@ import {
   useWindowDimensions,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { NativeTradePreferencePokemonCard } from '../features/trades/NativeTradePreferencePokemonCard';
 import {
   resolveNativeTradePreferenceDraftCandidates,
@@ -37,11 +38,13 @@ type Props = {
   entries: Record<NativeTradePreferenceMode, NativeTradePreferenceEntry[]>;
   error?: string | null;
   initialMode?: NativeTradePreferenceMode;
+  isLoading?: boolean;
   onOpenActivity: () => void;
   onSave: (
     entry: NativeTradePreferenceEntry,
     draft: NativeTradePreferenceDraft,
   ) => Promise<void>;
+  showModeTabs?: boolean;
 };
 
 const RULES: Record<TradePreferenceRuleKey, { image: string; label: string }> = {
@@ -211,8 +214,10 @@ export const NativeTradePreferencesScreen = ({
   entries,
   error = null,
   initialMode = 'trade',
+  isLoading = false,
   onOpenActivity,
   onSave,
+  showModeTabs = true,
 }: Props) => {
   const { width } = useWindowDimensions();
   const light = useColorScheme() === 'light';
@@ -254,6 +259,33 @@ export const NativeTradePreferencesScreen = ({
     setSaveError(null);
     setSaveSuccess(false);
   };
+
+  const selectedEntrySignature = selectedEntry
+    ? [
+        selectedEntry.collectionKey,
+        selectedEntry.instance.last_update,
+        selectedEntry.mirror,
+        JSON.stringify(selectedEntry.filters),
+        [...initialManualExclusions(selectedEntry)].sort().join('|'),
+      ].join(':')
+    : '';
+  const synchronizedEntryRef = useRef(initialEntry ? selectedEntrySignature : '');
+  useEffect(() => {
+    if (editing || !selectedEntry || synchronizedEntryRef.current === selectedEntrySignature) {
+      return;
+    }
+    synchronizedEntryRef.current = selectedEntrySignature;
+    setSelectedKeys((current) => current[mode]
+      ? current
+      : { ...current, [mode]: selectedEntry.collectionKey });
+    setFilters(selectedEntry.filters);
+    setManualExclusions(initialManualExclusions(selectedEntry));
+    setMirror(selectedEntry.mirror);
+    setAdvancedOpen(Boolean(selectedEntry.activeRuleCount || selectedEntry.mirror));
+    setQuery('');
+    setShowAllowedOnly(false);
+    setSaveError(null);
+  }, [editing, mode, selectedEntry, selectedEntrySignature]);
 
   const dirty = Boolean(selectedEntry && (
     !filtersEqual(filters, selectedEntry.filters)
@@ -529,7 +561,15 @@ export const NativeTradePreferencesScreen = ({
     </View>
   ) : null;
 
-  const candidateList = selectedEntry ? (
+  const candidateList = isLoading ? (
+    <View style={styles.loadingState}>
+      <ActivityIndicator color="#31cfd1" size="large" />
+      <Text style={[styles.emptyTitle, light && styles.textLight]}>Loading trade preferences</Text>
+      <Text style={[styles.emptyBody, light && styles.secondaryLight]}>
+        Reading your For Trade and Wanted Pokémon…
+      </Text>
+    </View>
+  ) : selectedEntry ? (
     <FlatList
       columnWrapperStyle={columns > 1 ? { gap } : undefined}
       contentContainerStyle={[
@@ -585,14 +625,16 @@ export const NativeTradePreferencesScreen = ({
 
   return (
     <View style={[styles.safe, light && styles.safeLight]} testID="native-trade-preferences-screen">
-      <View style={[styles.topTabs, light && styles.topTabsLight]}>
-        <Pressable accessibilityState={{ selected: true }} style={styles.topTab}>
-          <Text style={[styles.topTabText, light && styles.textLight]}>Trade Preferences</Text>
-        </Pressable>
-        <Pressable onPress={onOpenActivity} style={[styles.topTab, styles.topTabInactive]}>
-          <Text style={[styles.topTabText, styles.topTabInactiveText]}>Trade Activity</Text>
-        </Pressable>
-      </View>
+      {showModeTabs ? (
+        <View style={[styles.topTabs, light && styles.topTabsLight]}>
+          <Pressable accessibilityState={{ selected: true }} style={styles.topTab}>
+            <Text style={[styles.topTabText, light && styles.textLight]}>Trade Preferences</Text>
+          </Pressable>
+          <Pressable onPress={onOpenActivity} style={[styles.topTab, styles.topTabInactive]}>
+            <Text style={[styles.topTabText, styles.topTabInactiveText]}>Trade Activity</Text>
+          </Pressable>
+        </View>
+      ) : null}
       <View style={styles.heading}>
         <Text style={[styles.pageTitle, light && styles.textLight]}>Trade preferences</Text>
         <Text style={[styles.pageDescription, light && styles.secondaryLight]}>
@@ -845,6 +887,7 @@ const styles = StyleSheet.create({
   emptyTitle: { color: '#f3f8f9', fontSize: 17, fontWeight: '900', textAlign: 'center' },
   emptyBody: { color: '#9eb0b4', fontSize: 13, lineHeight: 18, textAlign: 'center', marginTop: 4 },
   noListings: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 30 },
+  loadingState: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 9, padding: 30 },
   saveSuccess: { flexShrink: 0, minHeight: 50, marginHorizontal: 10, marginBottom: 8, borderWidth: 1, borderColor: '#37bf78', borderRadius: 11, backgroundColor: '#173b2d', flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 12 },
   saveSuccessMark: { color: '#53db94', fontSize: 18, fontWeight: '900' },
   saveSuccessText: { flex: 1, color: '#f2fff8', fontSize: 13, fontWeight: '900' },
