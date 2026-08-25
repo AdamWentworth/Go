@@ -3,6 +3,11 @@ import {
   authContract,
   type ConfirmPasswordResetRequest,
   type MobileLoginRequest,
+  type MobileOAuthCompleteRegistrationRequest,
+  type MobileOAuthExchangeRequest,
+  type MobileOAuthExchangeResponse,
+  type MobileOAuthStartRequest,
+  type MobileOAuthStartResponse,
   type MobileRegisterRequest,
   type MobileSessionResponse,
   type ResetPasswordRequest,
@@ -16,6 +21,11 @@ export type MobileSessionApi = {
   logout: (refreshToken: string) => Promise<void>;
   requestPasswordReset: (request: ResetPasswordRequest) => Promise<void>;
   confirmPasswordReset: (request: ConfirmPasswordResetRequest) => Promise<void>;
+  startOAuth: (request: MobileOAuthStartRequest) => Promise<MobileOAuthStartResponse>;
+  exchangeOAuth: (request: MobileOAuthExchangeRequest) => Promise<MobileOAuthExchangeResponse>;
+  completeOAuthRegistration: (
+    request: MobileOAuthCompleteRegistrationRequest,
+  ) => Promise<MobileOAuthExchangeResponse>;
 };
 
 const validateSession = (value: MobileSessionResponse): MobileSessionResponse => {
@@ -69,6 +79,18 @@ export const createMobileSessionApi = (
     confirmPasswordReset: async (request) => {
       await client.post(authContract.endpoints.confirmPasswordReset, request);
     },
+    startOAuth: (request) => client.post<MobileOAuthStartResponse>(
+      authContract.endpoints.mobileOAuthStart,
+      request,
+    ),
+    exchangeOAuth: (request) => client.post<MobileOAuthExchangeResponse>(
+      authContract.endpoints.mobileOAuthExchange,
+      request,
+    ),
+    completeOAuthRegistration: (request) => client.post<MobileOAuthExchangeResponse>(
+      authContract.endpoints.mobileOAuthCompleteRegistration,
+      request,
+    ),
   };
 };
 

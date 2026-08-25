@@ -10,10 +10,14 @@ describe('NativeRegisterScreen', () => {
         onBackToLogin={jest.fn()}
         onOpenPrivacy={jest.fn()}
         onOpenTerms={jest.fn()}
+        onOAuthRegister={jest.fn()}
+        onOAuthStart={jest.fn()}
         onRegister={onRegister}
         onRegistered={onRegistered}
       />,
     );
+
+    fireEvent.press(screen.getByText('✉  Continue with email'));
 
     fireEvent.changeText(screen.getByPlaceholderText('Choose a unique username'), 'Misty_42');
     fireEvent.changeText(screen.getByPlaceholderText('you@example.com'), 'MISTY@example.com ');
@@ -53,15 +57,61 @@ describe('NativeRegisterScreen', () => {
         onBackToLogin={jest.fn()}
         onOpenPrivacy={jest.fn()}
         onOpenTerms={jest.fn()}
+        onOAuthRegister={jest.fn()}
+        onOAuthStart={jest.fn()}
         onRegister={jest.fn()}
         onRegistered={jest.fn()}
       />,
     );
+
+    fireEvent.press(screen.getByText('✉  Continue with email'));
 
     fireEvent.press(screen.getByText('Continue ›'));
     expect(screen.getByRole('alert')).toHaveTextContent(
       'Username must be 3–15 letters, numbers, or underscores.',
     );
     expect(screen.getByPlaceholderText('Choose a unique username')).toBeTruthy();
+  });
+
+  it('uses a verified provider email and skips password collection for OAuth registration', async () => {
+    const onOAuthStart = jest.fn().mockResolvedValue({
+      code: 'native-oauth-result-code',
+      email: 'misty@example.com',
+    });
+    const onOAuthRegister = jest.fn().mockResolvedValue(undefined);
+    const onRegistered = jest.fn();
+    render(
+      <NativeRegisterScreen
+        onBackToLogin={jest.fn()}
+        onOpenPrivacy={jest.fn()}
+        onOpenTerms={jest.fn()}
+        onOAuthRegister={onOAuthRegister}
+        onOAuthStart={onOAuthStart}
+        onRegister={jest.fn()}
+        onRegistered={onRegistered}
+      />,
+    );
+
+    fireEvent.press(screen.getByText('Sign up with Google'));
+    await screen.findByText('misty@example.com');
+    expect(screen.queryByPlaceholderText('Create a password')).toBeNull();
+    fireEvent.changeText(screen.getByPlaceholderText('Choose a unique username'), 'Misty_42');
+    fireEvent.press(screen.getByText('Continue ›'));
+    expect(screen.getByPlaceholderText('Optional')).toBeTruthy();
+    fireEvent.press(screen.getByText('Continue ›'));
+    fireEvent.press(screen.getByText('Continue ›'));
+    fireEvent.press(screen.getByText('Create account ✓'));
+
+    await waitFor(() => expect(onOAuthRegister).toHaveBeenCalledWith(
+      'native-oauth-result-code',
+      {
+        allowLocation: false,
+        location: null,
+        pokemonGoName: null,
+        trainerCode: null,
+        username: 'Misty_42',
+      },
+    ));
+    expect(onRegistered).toHaveBeenCalledTimes(1);
   });
 });

@@ -13,7 +13,7 @@ export default function DeviceSmokeLoginRoute() {
       onOpenRegister={() => setNotice('Registration opened.')}
       onSignIn={async () => undefined}
       onSignedIn={() => setNotice('Signed in.')}
-      onSocialSignIn={(provider) => setNotice(`${provider} sign-in opened.`)}
+      onSocialSignIn={async (provider) => setNotice(`${provider} sign-in opened.`)}
     />
   );
 }

@@ -19,7 +19,7 @@ type NativeLoginScreenProps = {
   onOpenPasswordReset: () => void;
   onOpenRegister: () => void;
   onSignIn: (username: string, password: string) => Promise<void>;
-  onSocialSignIn: (provider: NativeLoginProvider) => void;
+  onSocialSignIn: (provider: NativeLoginProvider) => Promise<void>;
   onSignedIn: () => void;
 };
 
@@ -66,6 +66,20 @@ export const NativeLoginScreen = ({
     setIsSubmitting(true);
     try {
       await onSignIn(username, password);
+      onSignedIn();
+    } catch (reason) {
+      setError(errorMessage(reason));
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const submitSocial = async (provider: NativeLoginProvider) => {
+    if (isSubmitting) return;
+    setError(null);
+    setIsSubmitting(true);
+    try {
+      await onSocialSignIn(provider);
       onSignedIn();
     } catch (reason) {
       setError(errorMessage(reason));
@@ -170,7 +184,7 @@ export const NativeLoginScreen = ({
                 accessibilityRole="button"
                 disabled={isSubmitting}
                 key={provider}
-                onPress={() => onSocialSignIn(provider)}
+                onPress={() => void submitSocial(provider)}
                 style={({ pressed }) => [
                   styles.socialButton,
                   provider === 'google' && styles.googleButton,

@@ -12,6 +12,7 @@ import {
   View,
   useColorScheme,
 } from 'react-native';
+import type { OAuthProvider } from '@pokemongonexus/shared-contracts/auth';
 import {
   buildNativeRegistrationRequest,
   createNativeRegistrationDraft,
@@ -23,8 +24,19 @@ type Props = {
   onOpenPrivacy: () => void;
   onOpenTerms: () => void;
   onRegister: (request: ReturnType<typeof buildNativeRegistrationRequest>) => Promise<void>;
+  onOAuthStart: (provider: OAuthProvider) => Promise<{ code: string; email: string }>;
+  onOAuthRegister: (
+    code: string,
+    request: Omit<ReturnType<typeof buildNativeRegistrationRequest>, 'email' | 'password'>,
+  ) => Promise<void>;
   onRegistered: () => void;
 };
+
+const SOCIAL_PROVIDERS: Array<{ provider: OAuthProvider; label: string; glyph: string }> = [
+  { provider: 'google', label: 'Sign up with Google', glyph: 'G' },
+  { provider: 'discord', label: 'Sign up with Discord', glyph: '◉' },
+  { provider: 'facebook', label: 'Sign up with Facebook', glyph: 'f' },
+];
 
 const STEP_COPY = [
   ['YOUR ACCOUNT', 'Choose how trainers know you here.'],
@@ -38,6 +50,8 @@ export const NativeRegisterScreen = ({
   onBackToLogin,
   onOpenPrivacy,
   onOpenTerms,
+  onOAuthRegister,
+  onOAuthStart,
   onRegister,
   onRegistered,
 }: Props) => {
@@ -47,6 +61,9 @@ export const NativeRegisterScreen = ({
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [passwordVisible, setPasswordVisible] = useState(false);
+  const [method, setMethod] = useState<'email' | 'oauth' | null>(null);
+  const [oauthCode, setOAuthCode] = useState<string | null>(null);
+  const [oauthProvider, setOAuthProvider] = useState<OAuthProvider | null>(null);
   const patch = <K extends keyof typeof draft>(key: K, value: (typeof draft)[K]) => {
     setDraft((current) => ({ ...current, [key]: value }));
     setError(null);
@@ -59,13 +76,19 @@ export const NativeRegisterScreen = ({
       return;
     }
     if (step < 4) {
-      setStep((current) => current + 1);
+      setStep((current) => method === 'oauth' && current === 0 ? 2 : current + 1);
       return;
     }
     setSubmitting(true);
     setError(null);
     try {
-      await onRegister(buildNativeRegistrationRequest(draft));
+      const request = buildNativeRegistrationRequest(draft);
+      if (method === 'oauth' && oauthCode) {
+        const { email: _email, password: _password, ...oauthRequest } = request;
+        await onOAuthRegister(oauthCode, oauthRequest);
+      } else {
+        await onRegister(request);
+      }
       onRegistered();
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : 'Your account could not be created.');
@@ -74,6 +97,26 @@ export const NativeRegisterScreen = ({
     }
   };
   const [eyebrow, description] = STEP_COPY[step] ?? STEP_COPY[0];
+  const visibleSteps = method === 'oauth' ? [0, 2, 3, 4] : [0, 1, 2, 3, 4];
+  const visibleStepIndex = Math.max(0, visibleSteps.indexOf(step));
+
+  const startOAuth = async (provider: OAuthProvider) => {
+    if (submitting) return;
+    setSubmitting(true);
+    setError(null);
+    try {
+      const pending = await onOAuthStart(provider);
+      setDraft((current) => ({ ...current, email: pending.email, password: '', confirmPassword: '' }));
+      setOAuthCode(pending.code);
+      setOAuthProvider(provider);
+      setMethod('oauth');
+      setStep(0);
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : 'Provider registration could not start.');
+    } finally {
+      setSubmitting(false);
+    }
+  };
 
   return (
     <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={[styles.root, light && styles.rootLight]}>
@@ -89,27 +132,67 @@ export const NativeRegisterScreen = ({
               <Text style={[styles.signInText, light && styles.textLight]}>Sign in</Text>
             </Pressable>
           </View>
-          <View accessibilityLabel={`Step ${step + 1} of ${STEP_COPY.length}`} style={styles.progress}>
-            {STEP_COPY.map((_, index) => <View key={index} style={[styles.progressSegment, index <= step && styles.progressActive]} />)}
-          </View>
-          <View style={styles.stepHeading}>
-            <Text style={styles.stepEyebrow}>{eyebrow}</Text>
-            <Text style={[styles.stepDescription, light && styles.mutedLight]}>{description}</Text>
-          </View>
+          {method ? (
+            <>
+              <View accessibilityLabel={`Step ${visibleStepIndex + 1} of ${visibleSteps.length}`} style={styles.progress}>
+                {visibleSteps.map((stepNumber, index) => <View key={stepNumber} style={[styles.progressSegment, index <= visibleStepIndex && styles.progressActive]} />)}
+              </View>
+              <View style={styles.stepHeading}>
+                <Text style={styles.stepEyebrow}>{eyebrow}</Text>
+                <Text style={[styles.stepDescription, light && styles.mutedLight]}>{description}</Text>
+              </View>
+            </>
+          ) : null}
 
-          {step === 0 ? (
+          {!method ? (
+            <View style={styles.methodPicker}>
+              <Text style={styles.stepEyebrow}>CHOOSE A SIGN-UP METHOD</Text>
+              <Text style={[styles.methodTitle, light && styles.textLight]}>Start your trainer account</Text>
+              <Text style={[styles.stepDescription, light && styles.mutedLight]}>Use a trusted provider or your email address.</Text>
+              {SOCIAL_PROVIDERS.map(({ provider, label, glyph }) => (
+                <Pressable
+                  accessibilityRole="button"
+                  disabled={submitting}
+                  key={provider}
+                  onPress={() => void startOAuth(provider)}
+                  style={[
+                    styles.socialButton,
+                    provider === 'google' && styles.googleButton,
+                    provider === 'discord' && styles.discordButton,
+                    provider === 'facebook' && styles.facebookButton,
+                  ]}
+                >
+                  <Text style={[styles.socialGlyph, provider === 'google' && styles.googleGlyph]}>{glyph}</Text>
+                  <Text style={[styles.socialText, provider === 'google' && styles.googleText]}>{label}</Text>
+                </Pressable>
+              ))}
+              <Pressable accessibilityRole="button" disabled={submitting} onPress={() => setMethod('email')} style={[styles.emailButton, light && styles.secondaryLight]}>
+                <Text style={[styles.emailButtonText, light && styles.textLight]}>✉  Continue with email</Text>
+              </Pressable>
+              <Text style={[styles.providerNote, light && styles.mutedLight]}>Your provider verifies your email. You will still choose a Pokémon Go Nexus username.</Text>
+            </View>
+          ) : null}
+
+          {method && step === 0 ? (
             <View style={styles.fields}>
               <Field label="Username" light={light}>
                 <TextInput autoCapitalize="none" autoComplete="username-new" onChangeText={(value) => patch('username', value.replace(/\s+/g, ''))} placeholder="Choose a unique username" placeholderTextColor="#718087" style={[styles.input, light && styles.inputLight]} value={draft.username} />
               </Field>
               <Text style={[styles.help, light && styles.mutedLight]}>3–15 letters, numbers, or underscores.</Text>
-              <Field label="Email" light={light}>
-                <TextInput autoCapitalize="none" autoComplete="email" inputMode="email" onChangeText={(value) => patch('email', value)} placeholder="you@example.com" placeholderTextColor="#718087" style={[styles.input, light && styles.inputLight]} value={draft.email} />
-              </Field>
+              {method === 'email' ? (
+                <Field label="Email" light={light}>
+                  <TextInput autoCapitalize="none" autoComplete="email" inputMode="email" onChangeText={(value) => patch('email', value)} placeholder="you@example.com" placeholderTextColor="#718087" style={[styles.input, light && styles.inputLight]} value={draft.email} />
+                </Field>
+              ) : (
+                <View style={[styles.verifiedEmail, light && styles.secondaryLight]}>
+                  <Text style={styles.reviewLabel}>{oauthProvider?.toLocaleUpperCase()} VERIFIED EMAIL</Text>
+                  <Text style={[styles.reviewValue, light && styles.textLight]}>{draft.email}</Text>
+                </View>
+              )}
             </View>
           ) : null}
 
-          {step === 1 ? (
+          {method === 'email' && step === 1 ? (
             <View style={styles.fields}>
               <Field label="Password" light={light}>
                 <View>
@@ -126,7 +209,7 @@ export const NativeRegisterScreen = ({
             </View>
           ) : null}
 
-          {step === 2 ? (
+          {method && step === 2 ? (
             <View style={styles.fields}>
               <Field label="Pokémon GO name" light={light}>
                 <TextInput autoCapitalize="none" onChangeText={(value) => patch('pokemonGoName', value.replace(/\s+/g, ''))} placeholder="Optional" placeholderTextColor="#718087" style={[styles.input, light && styles.inputLight]} value={draft.pokemonGoName} />
@@ -141,7 +224,7 @@ export const NativeRegisterScreen = ({
             </View>
           ) : null}
 
-          {step === 3 ? (
+          {method && step === 3 ? (
             <View style={styles.fields}>
               <Field label="City or place" light={light}>
                 <TextInput onChangeText={(value) => patch('location', value)} placeholder="City, region, country (optional)" placeholderTextColor="#718087" style={[styles.input, light && styles.inputLight]} value={draft.location} />
@@ -156,7 +239,7 @@ export const NativeRegisterScreen = ({
             </View>
           ) : null}
 
-          {step === 4 ? (
+          {method && step === 4 ? (
             <View style={styles.review}>
               <ReviewRow label="ACCOUNT" light={light} onPress={() => setStep(0)} value={draft.username} />
               <ReviewRow label="EMAIL" light={light} onPress={() => setStep(0)} value={draft.email} />
@@ -168,10 +251,21 @@ export const NativeRegisterScreen = ({
           ) : null}
 
           {error ? <Text accessibilityRole="alert" style={[styles.error, light && styles.errorLight]}>{error}</Text> : null}
-          <View style={styles.actions}>
-            {step > 0 ? <Pressable accessibilityRole="button" disabled={submitting} onPress={() => { setError(null); setStep((current) => current - 1); }} style={[styles.backButton, light && styles.secondaryLight]}><Text style={[styles.backText, light && styles.textLight]}>‹ Back</Text></Pressable> : <View />}
-            <Pressable accessibilityRole="button" disabled={submitting} onPress={() => void continueOrSubmit()} style={styles.continueButton}>{submitting ? <ActivityIndicator color="#fff" /> : <Text style={styles.continueText}>{step === 4 ? 'Create account ✓' : 'Continue ›'}</Text>}</Pressable>
-          </View>
+          {method ? (
+            <View style={styles.actions}>
+              <Pressable accessibilityRole="button" disabled={submitting} onPress={() => {
+                setError(null);
+                if (step === 0) {
+                  setMethod(null);
+                  setOAuthCode(null);
+                  setOAuthProvider(null);
+                } else {
+                  setStep((current) => method === 'oauth' && current === 2 ? 0 : current - 1);
+                }
+              }} style={[styles.backButton, light && styles.secondaryLight]}><Text style={[styles.backText, light && styles.textLight]}>‹ Back</Text></Pressable>
+              <Pressable accessibilityRole="button" disabled={submitting} onPress={() => void continueOrSubmit()} style={styles.continueButton}>{submitting ? <ActivityIndicator color="#fff" /> : <Text style={styles.continueText}>{step === 4 ? 'Create account ✓' : 'Continue ›'}</Text>}</Pressable>
+            </View>
+          ) : submitting ? <ActivityIndicator color="#2098ff" style={styles.methodLoading} /> : null}
         </View>
       </ScrollView>
     </KeyboardAvoidingView>
@@ -204,4 +298,19 @@ const styles = StyleSheet.create({
   backButton: { minHeight: 48, justifyContent: 'center', borderWidth: 1, borderColor: '#56636a', borderRadius: 11, paddingHorizontal: 16, backgroundColor: '#252b2f' }, backText: { color: '#fff', fontWeight: '900' },
   continueButton: { minWidth: 142, minHeight: 48, alignItems: 'center', justifyContent: 'center', borderRadius: 11, paddingHorizontal: 18, backgroundColor: '#0b86ee' }, continueText: { color: '#fff', fontSize: 14, fontWeight: '900' },
   secondaryLight: { borderColor: '#b5c1c6', backgroundColor: '#f5f8f9' }, textLight: { color: '#142126' }, mutedLight: { color: '#5e7077' },
+  methodPicker: { gap: 10, paddingTop: 4 },
+  methodTitle: { color: '#fff', fontSize: 23, fontWeight: '900', textAlign: 'center' },
+  socialButton: { minHeight: 54, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10, borderRadius: 12, paddingHorizontal: 16 },
+  googleButton: { borderWidth: 1, borderColor: '#d9dee4', backgroundColor: '#fff' },
+  discordButton: { backgroundColor: '#5865f2' },
+  facebookButton: { backgroundColor: '#1877f2' },
+  socialGlyph: { minWidth: 25, color: '#fff', fontSize: 23, fontWeight: '900', textAlign: 'center' },
+  googleGlyph: { color: '#4285f4', fontSize: 20 },
+  socialText: { color: '#fff', fontSize: 15, fontWeight: '900' },
+  googleText: { color: '#202124' },
+  emailButton: { minHeight: 54, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: '#68747b', borderRadius: 12, backgroundColor: '#282d31' },
+  emailButtonText: { color: '#fff', fontSize: 15, fontWeight: '900' },
+  providerNote: { color: '#a7b6bd', fontSize: 11, lineHeight: 16, textAlign: 'center' },
+  verifiedEmail: { gap: 3, borderWidth: 1, borderColor: '#3d5964', borderRadius: 11, padding: 12, backgroundColor: '#172126' },
+  methodLoading: { marginTop: 12 },
 });

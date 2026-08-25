@@ -78,4 +78,37 @@ describe('mobile session API', () => {
       'https://pokegonexus.com/api/auth/reset-password/confirm',
     ]);
   });
+
+  it('uses native provider start, exchange, and registration endpoints', async () => {
+    const fetchMock = jest.fn()
+      .mockResolvedValueOnce(response(201, {
+        provider: 'google',
+        intent: 'register',
+        authorizationUrl: 'https://accounts.example/authorize',
+      }))
+      .mockResolvedValueOnce(response(200, {
+        provider: 'google', status: 'registration-required', email: 'misty@example.com',
+      }))
+      .mockResolvedValueOnce(response(201, {
+        provider: 'google', status: 'authenticated', session,
+      }));
+    const api = createMobileSessionApi(fetchMock);
+
+    await api.startOAuth({ provider: 'google', intent: 'register', device_id: 'native-device' });
+    await api.exchangeOAuth({ code: 'one-use-code', device_id: 'native-device' });
+    await api.completeOAuthRegistration({
+      code: 'one-use-code',
+      device_id: 'native-device',
+      username: 'misty',
+    });
+
+    expect(fetchMock.mock.calls.map(([url]) => url)).toEqual([
+      'https://pokegonexus.com/api/auth/mobile/oauth/start',
+      'https://pokegonexus.com/api/auth/mobile/oauth/exchange',
+      'https://pokegonexus.com/api/auth/mobile/oauth/complete-registration',
+    ]);
+    for (const [, options] of fetchMock.mock.calls) {
+      expect(options).toEqual(expect.objectContaining({ credentials: 'omit' }));
+    }
+  });
 });

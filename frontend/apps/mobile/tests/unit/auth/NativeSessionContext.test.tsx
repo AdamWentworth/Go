@@ -25,11 +25,14 @@ const session = (suffix: string) => ({
 
 const createApi = (patch: Record<string, jest.Mock> = {}) => ({
   confirmPasswordReset: jest.fn(),
+  completeOAuthRegistration: jest.fn(),
+  exchangeOAuth: jest.fn(),
   login: jest.fn(),
   logout: jest.fn(),
   refresh: jest.fn(),
   register: jest.fn(),
   requestPasswordReset: jest.fn(),
+  startOAuth: jest.fn(),
   ...patch,
 });
 

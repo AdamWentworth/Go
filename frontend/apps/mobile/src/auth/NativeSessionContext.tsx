@@ -1,7 +1,10 @@
 import type {
+  MobileOAuthCompleteRegistrationRequest,
+  MobileOAuthIntent,
   MobileRegisterRequest,
   MobileSessionResponse,
   MobileSessionUser,
+  OAuthProvider,
 } from '@pokemongonexus/shared-contracts/auth';
 import { ApiClientError } from '@pokemongonexus/shared-api-client';
 import {
@@ -21,6 +24,10 @@ import {
   readRefreshToken,
   storeRefreshToken,
 } from './sessionStorage';
+import {
+  authenticateWithNativeOAuth,
+  type NativeOAuthAttemptResult,
+} from '../features/auth/nativeOAuthSession';
 
 export type NativeSessionStatus =
   | 'restoring'
@@ -33,6 +40,14 @@ type NativeSessionContextValue = {
   user: MobileSessionUser | null;
   signIn: (username: string, password: string) => Promise<void>;
   register: (request: Omit<MobileRegisterRequest, 'device_id'>) => Promise<void>;
+  authenticateWithOAuth: (
+    provider: OAuthProvider,
+    intent: MobileOAuthIntent,
+  ) => Promise<NativeOAuthAttemptResult | null>;
+  completeOAuthRegistration: (
+    code: string,
+    request: Omit<MobileOAuthCompleteRegistrationRequest, 'code' | 'device_id'>,
+  ) => Promise<void>;
   signOut: () => Promise<void>;
   getAccessToken: () => string | null;
   refreshAccessToken: () => Promise<string | null>;
@@ -158,6 +173,40 @@ export const NativeSessionProvider = ({
     }
   }, [api, applySession, getDeviceId]);
 
+  const authenticateWithOAuth = useCallback(async (
+    provider: OAuthProvider,
+    intent: MobileOAuthIntent,
+  ) => {
+    const deviceId = await getDeviceId();
+    const result = await authenticateWithNativeOAuth({
+      api,
+      deviceId,
+      intent,
+      provider,
+    });
+    if (result?.status === 'authenticated') {
+      if (!result.session) throw new Error('Provider sign-in returned an invalid mobile session.');
+      await applySession(result.session);
+    }
+    return result;
+  }, [api, applySession, getDeviceId]);
+
+  const completeOAuthRegistration = useCallback(async (
+    code: string,
+    request: Omit<MobileOAuthCompleteRegistrationRequest, 'code' | 'device_id'>,
+  ) => {
+    const deviceId = await getDeviceId();
+    const result = await api.completeOAuthRegistration({
+      ...request,
+      code,
+      device_id: deviceId,
+    });
+    if (result.status !== 'authenticated' || !result.session) {
+      throw new Error('Provider registration returned an invalid mobile session.');
+    }
+    await applySession(result.session);
+  }, [api, applySession, getDeviceId]);
+
   const retrySession = useCallback(async () => {
     setStatus('restoring');
     await refreshAccessToken();
@@ -189,13 +238,15 @@ export const NativeSessionProvider = ({
     user,
     signIn,
     register,
+    authenticateWithOAuth,
+    completeOAuthRegistration,
     signOut,
     getAccessToken,
     refreshAccessToken,
     replaceSessionUser,
     retrySession,
     clearSession,
-  }), [clearSession, getAccessToken, refreshAccessToken, register, replaceSessionUser, retrySession, signIn, signOut, status, user]);
+  }), [authenticateWithOAuth, clearSession, completeOAuthRegistration, getAccessToken, refreshAccessToken, register, replaceSessionUser, retrySession, signIn, signOut, status, user]);
 
   return (
     <NativeSessionContext.Provider value={value}>

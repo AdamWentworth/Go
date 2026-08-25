@@ -4,7 +4,10 @@ import { useNativeSession } from '../../auth/NativeSessionContext';
 import { NativeActionMenu } from '../../components/NativeActionMenu';
 import { NativeActionMenuAnchor } from '../../components/NativeActionMenuAnchor';
 import { runtimeConfig } from '../../config/runtimeConfig';
-import { NativeLoginScreen } from '../../screens/NativeLoginScreen';
+import {
+  NativeLoginScreen,
+  type NativeLoginProvider,
+} from '../../screens/NativeLoginScreen';
 import { theme } from '../../ui/theme';
 import {
   resolveNativeActionMenuDestination,
@@ -18,7 +21,13 @@ export default function NativeLoginRoute() {
     notice?: string | string[];
     returnTo?: string | string[];
   }>();
-  const { retrySession, signIn, status, user } = useNativeSession();
+  const {
+    authenticateWithOAuth,
+    retrySession,
+    signIn,
+    status,
+    user,
+  } = useNativeSession();
   const [actionMenuOpen, setActionMenuOpen] = useState(false);
   const requestedReturnTo = Array.isArray(params.returnTo)
     ? params.returnTo[0]
@@ -78,7 +87,18 @@ export default function NativeLoginRoute() {
 
   if (user) return <Redirect href={returnHref} />;
 
-  const openWebLogin = () => router.push({ pathname: '/web', params: { path: '/login' } });
+  const authenticateWithProvider = async (provider: NativeLoginProvider) => {
+    const result = await authenticateWithOAuth(provider, 'login');
+    if (!result) throw new Error('Provider sign-in was canceled.');
+    if (result.status === 'authenticated') return;
+    if (result.status === 'account-not-found') {
+      throw new Error('No account uses that provider email yet. Create an account instead.');
+    }
+    if (result.status === 'account-exists') {
+      throw new Error('An account already exists for that email. Sign in instead.');
+    }
+    throw new Error('Provider sign-in could not be completed.');
+  };
   const navigateFromActionMenu = (path: string) => {
     setActionMenuOpen(false);
     const destination = resolveNativeActionMenuDestination(path);
@@ -98,7 +118,7 @@ export default function NativeLoginRoute() {
         onOpenRegister={() => router.push('/native/register')}
         onSignIn={signIn}
         onSignedIn={() => router.replace(returnHref)}
-        onSocialSignIn={openWebLogin}
+        onSocialSignIn={authenticateWithProvider}
       />
       <NativeActionMenuAnchor
         assetBaseUrl={runtimeConfig.api.frontendAppUrl}

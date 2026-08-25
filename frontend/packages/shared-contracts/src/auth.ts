@@ -11,6 +11,9 @@ export const authContract = {
     mobileRefresh: '/mobile/refresh',
     mobileOAuthLinkStart: '/mobile/oauth/link/start',
     mobileOAuthLinkExchange: '/mobile/oauth/link/exchange',
+    mobileOAuthStart: '/mobile/oauth/start',
+    mobileOAuthExchange: '/mobile/oauth/exchange',
+    mobileOAuthCompleteRegistration: '/mobile/oauth/complete-registration',
     resetPassword: '/reset-password',
     confirmPasswordReset: '/reset-password/confirm',
     accountSecurity: '/account/security',
@@ -135,6 +138,50 @@ export interface MobileOAuthLinkExchangeRequest {
 export interface MobileOAuthLinkExchangeResponse {
   provider: OAuthProvider;
   status: 'linked' | 'link-conflict' | 'failed';
+}
+
+export type MobileOAuthIntent = 'login' | 'register';
+
+export interface MobileOAuthStartRequest {
+  provider: OAuthProvider;
+  intent: MobileOAuthIntent;
+  device_id: string;
+}
+
+export interface MobileOAuthStartResponse {
+  provider: OAuthProvider;
+  intent: MobileOAuthIntent;
+  authorizationUrl: string;
+}
+
+export type MobileOAuthAuthenticationStatus =
+  | 'authenticated'
+  | 'registration-required'
+  | 'account-exists'
+  | 'account-not-found'
+  | 'failed';
+
+export interface MobileOAuthExchangeRequest {
+  code: string;
+  device_id: string;
+}
+
+export interface MobileOAuthExchangeResponse {
+  provider: OAuthProvider;
+  status: MobileOAuthAuthenticationStatus;
+  email?: string;
+  session?: MobileSessionResponse;
+}
+
+export interface MobileOAuthCompleteRegistrationRequest {
+  code: string;
+  device_id: string;
+  username: string;
+  pokemonGoName?: string | null;
+  trainerCode?: string | null;
+  location?: string | null;
+  allowLocation?: boolean;
+  coordinates?: Coordinates | null;
 }
 
 export interface AccountSecuritySummary {

@@ -61,7 +61,7 @@ describe('NativeLoginScreen', () => {
     )).toBeTruthy();
   });
 
-  it('matches the canonical reset and provider actions', () => {
+  it('matches the canonical reset and provider actions', async () => {
     const onOpenPasswordReset = jest.fn();
     const onOpenRegister = jest.fn();
     const onSocialSignIn = jest.fn();
@@ -78,8 +78,11 @@ describe('NativeLoginScreen', () => {
     fireEvent.press(screen.getByText('Reset Password'));
     fireEvent.press(screen.getByText('Create account'));
     fireEvent.press(screen.getByText('Login with Google'));
+    await waitFor(() => expect(onSocialSignIn).toHaveBeenCalledTimes(1));
     fireEvent.press(screen.getByText('Login with Discord'));
+    await waitFor(() => expect(onSocialSignIn).toHaveBeenCalledTimes(2));
     fireEvent.press(screen.getByText('Login with Facebook'));
+    await waitFor(() => expect(onSocialSignIn).toHaveBeenCalledTimes(3));
 
     expect(onOpenPasswordReset).toHaveBeenCalledTimes(1);
     expect(onOpenRegister).toHaveBeenCalledTimes(1);

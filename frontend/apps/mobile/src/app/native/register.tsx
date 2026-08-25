@@ -11,6 +11,18 @@ export default function NativeRegisterRoute() {
       onBackToLogin={() => router.replace('/native/login')}
       onOpenPrivacy={() => router.push({ pathname: '/native/info/[slug]', params: { slug: 'privacy' } })}
       onOpenTerms={() => router.push({ pathname: '/native/info/[slug]', params: { slug: 'terms' } })}
+      onOAuthStart={async (provider) => {
+        const result = await session.authenticateWithOAuth(provider, 'register');
+        if (!result) throw new Error('Provider registration was canceled.');
+        if (result.status === 'account-exists') {
+          throw new Error('An account already exists for that email. Sign in instead.');
+        }
+        if (result.status !== 'registration-required' || !result.email) {
+          throw new Error('Provider registration could not be started.');
+        }
+        return { code: result.code, email: result.email };
+      }}
+      onOAuthRegister={(code, request) => session.completeOAuthRegistration(code, request)}
       onRegister={session.register}
       onRegistered={() => router.replace('/native')}
     />
