@@ -1,0 +1,39 @@
+appId: host.exp.exponent
+name: Native friends workflow smoke
+tags:
+  - android
+  - native-friends
+---
+- openLink:
+    link: exp://10.0.2.2:8091/--/device-smoke/friends
+- runFlow:
+    when:
+      visible: "This is the developer menu.*"
+    commands:
+      - tapOn: Continue
+- runFlow:
+    when:
+      visible: React Native dev menu
+    commands:
+      - tapOn: Close
+- extendedWaitUntil:
+    visible: Your friends
+    timeout: 45000
+- assertVisible: CeruleanLeader
+- tapOn: Requests
+- assertVisible: Incoming requests
+- assertVisible: PewterLeader
+- tapOn: Accept Brock
+- assertVisible: Friend request accepted.
+- tapOn: Find
+- assertVisible: Find trainers
+- assertVisible: PalletRival
+- tapOn: Add GaryOak
+- assertVisible: Friend request sent.
+- tapOn: Blocked
+- assertVisible: Blocked trainers
+- assertVisible: Rocket
+- tapOn: Unblock Rocket
+- assertVisible: Trainer unblocked.
+- assertVisible: You have not blocked any trainers.
+- takeScreenshot: native-friends-workflow

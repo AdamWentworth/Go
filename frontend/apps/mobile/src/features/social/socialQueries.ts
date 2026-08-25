@@ -3,9 +3,11 @@ import {
   acceptNativeFriendRequest,
   blockNativeTrainer,
   deleteNativeFriendRequest,
+  getNativeFriendsOverview,
   getNativeTrainerProfile,
   removeNativeFriend,
   sendNativeFriendRequest,
+  unblockNativeTrainer,
 } from '../../services/socialApi';
 import { useNativeApiClients } from '../../services/useNativeApiClients';
 
@@ -27,6 +29,13 @@ export type NativeProfileRelationshipCommand =
   | { action: 'remove-friend'; userId: string }
   | { action: 'block'; userId: string };
 
+export type NativeFriendsCommand =
+  | { action: 'add'; username: string }
+  | { action: 'accept'; friendshipId: string }
+  | { action: 'delete-request'; friendshipId: string; message: string }
+  | { action: 'remove-friend'; userId: string }
+  | { action: 'unblock'; userId: string };
+
 export const useNativeTrainerProfileQuery = (
   viewerId: string | null,
   username?: string | null,
@@ -37,6 +46,45 @@ export const useNativeTrainerProfileQuery = (
     queryFn: () => getNativeTrainerProfile(clients.users, username),
     enabled: Boolean(viewerId),
     staleTime: username ? 30_000 : 60_000,
+  });
+};
+
+export const useNativeFriendsQuery = (viewerId: string | null) => {
+  const clients = useNativeApiClients();
+  return useQuery({
+    queryKey: nativeSocialQueryKeys.friends(viewerId ?? 'signed-out'),
+    queryFn: () => getNativeFriendsOverview(clients.users),
+    enabled: Boolean(viewerId),
+    staleTime: 30_000,
+  });
+};
+
+export const useNativeFriendsMutation = (viewerId: string) => {
+  const clients = useNativeApiClients();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (command: NativeFriendsCommand) => {
+      switch (command.action) {
+        case 'add':
+          await sendNativeFriendRequest(clients.users, command.username);
+          return 'Friend request sent.';
+        case 'accept':
+          await acceptNativeFriendRequest(clients.users, command.friendshipId);
+          return 'Friend request accepted.';
+        case 'delete-request':
+          await deleteNativeFriendRequest(clients.users, command.friendshipId);
+          return command.message;
+        case 'remove-friend':
+          await removeNativeFriend(clients.users, command.userId);
+          return 'Friend removed.';
+        case 'unblock':
+          await unblockNativeTrainer(clients.users, command.userId);
+          return 'Trainer unblocked.';
+      }
+    },
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: nativeSocialQueryKeys.friends(viewerId) });
+    },
   });
 };
 

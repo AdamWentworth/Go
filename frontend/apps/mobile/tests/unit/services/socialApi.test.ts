@@ -3,9 +3,11 @@ import {
   acceptNativeFriendRequest,
   blockNativeTrainer,
   deleteNativeFriendRequest,
+  getNativeFriendsOverview,
   getNativeTrainerProfile,
   removeNativeFriend,
   sendNativeFriendRequest,
+  unblockNativeTrainer,
 } from '../../../src/services/socialApi';
 
 const profile = {
@@ -62,6 +64,11 @@ describe('native profile relationship commands', () => {
     expect(client.post).toHaveBeenNthCalledWith(3, usersContract.endpoints.friendBlocks, {
       user_id: 'user-2',
     });
+    await unblockNativeTrainer(client, 'user-2');
+    expect(client.delete).toHaveBeenNthCalledWith(
+      3,
+      usersContract.endpoints.friendBlock('user-2'),
+    );
   });
 
   it('rejects missing identifiers and malformed command responses', async () => {
@@ -69,5 +76,34 @@ describe('native profile relationship commands', () => {
     await expect(sendNativeFriendRequest(client, 'trainer')).rejects.toThrow('invalid');
     await expect(acceptNativeFriendRequest(client, ' ')).rejects.toThrow('required');
     await expect(removeNativeFriend(client, '')).rejects.toThrow('required');
+  });
+});
+
+describe('getNativeFriendsOverview', () => {
+  const friend = {
+    user_id: 'user-2',
+    username: 'Misty',
+    friendship_id: 'friendship-1',
+  };
+
+  it('accepts the complete authoritative friends envelope', async () => {
+    const overview = {
+      friends: [friend],
+      incoming: [],
+      outgoing: [],
+      blocked: [],
+    };
+    const client = { get: jest.fn().mockResolvedValue(overview) };
+    await expect(getNativeFriendsOverview(client)).resolves.toEqual(overview);
+    expect(client.get).toHaveBeenCalledWith(usersContract.endpoints.friends);
+  });
+
+  it('rejects partial or malformed friends state', async () => {
+    await expect(getNativeFriendsOverview({
+      get: jest.fn().mockResolvedValue({ friends: [friend] }),
+    })).rejects.toThrow('invalid');
+    await expect(getNativeFriendsOverview({
+      get: jest.fn().mockResolvedValue({ friends: [{}], incoming: [], outgoing: [], blocked: [] }),
+    })).rejects.toThrow('invalid');
   });
 });
