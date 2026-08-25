@@ -184,11 +184,38 @@ if ! curl --silent --fail --max-time 1 http://127.0.0.1:8091/status | grep -q 'p
   exit 1
 fi
 
-"${adb_bin}" -s "${device_id}" shell am force-stop host.exp.exponent
-"${maestro_bin}" --device "${device_id}" test \
-  --no-ansi \
-  --test-output-dir "${artifact_dir}/maestro" \
-  "${smoke_flow}"
+run_maestro_flow() {
+  local flow="$1"
+  local output_name="$2"
+  # Expo Router deliberately preserves mounted route state. A directory run
+  # must therefore restart Expo Go between flows so each smoke validates a
+  # fresh user session rather than inheriting the preceding flow's modal,
+  # selected tag, or draft edits.
+  "${adb_bin}" -s "${device_id}" shell am force-stop host.exp.exponent
+  "${maestro_bin}" --device "${device_id}" test \
+    --no-ansi \
+    --test-output-dir "${artifact_dir}/maestro/${output_name}" \
+    "${flow}"
+}
+
+if [[ -d "${smoke_flow}" ]]; then
+  mapfile -t smoke_flows < <(find "${smoke_flow}" -maxdepth 1 -type f -name '*.yaml' | sort)
+  failed_flows=()
+  for flow in "${smoke_flows[@]}"; do
+    flow_name="$(basename "${flow}" .yaml)"
+    echo "Running isolated device smoke: ${flow_name}"
+    if ! run_maestro_flow "${flow}" "${flow_name}"; then
+      failed_flows+=("${flow_name}")
+    fi
+  done
+  if (( ${#failed_flows[@]} > 0 )); then
+    echo "Android device smoke failures: ${failed_flows[*]}" >&2
+    echo "Artifacts: ${artifact_dir}" >&2
+    exit 1
+  fi
+else
+  run_maestro_flow "${smoke_flow}" "$(basename "${smoke_flow}" .yaml)"
+fi
 
 "${adb_bin}" -s "${device_id}" exec-out screencap -p >"${artifact_dir}/final-screen.png"
 echo "Android device smoke passed. Artifacts: ${artifact_dir}"
