@@ -11,6 +11,7 @@ describe('resolveNativeActionMenuDestination', () => {
     ['/max', '/native/max'],
     ['/profile', '/native/profile'],
     ['/profile/friends', '/native/friends'],
+    ['/pvp', '/native/pvp'],
     ['/raid', '/native/raid'],
     ['/rankings', '/native/rankings'],
     ['/search', '/native/search'],
@@ -33,10 +34,10 @@ describe('resolveNativeActionMenuDestination', () => {
     expect(resolveNativeActionMenuDestination('/search', '/search')).toEqual({ kind: 'current' });
   });
 
-  test('keeps unmigrated destinations in the canonical web app', () => {
-    expect(resolveNativeActionMenuDestination('/pvp')).toEqual({
+  test('keeps unknown destinations in the canonical web app', () => {
+    expect(resolveNativeActionMenuDestination('/not-native')).toEqual({
       kind: 'web',
-      path: '/pvp',
+      path: '/not-native',
     });
   });
 
@@ -54,6 +55,8 @@ describe('resolveNativeActionMenuDestination', () => {
     '/native/info/safety',
     '/native/info/terms',
     '/native/pokedex',
+    '/native/pvp',
+    '/native/pvp-methodology',
     '/native/max',
     '/native/raid',
     '/native/raid-methodology',

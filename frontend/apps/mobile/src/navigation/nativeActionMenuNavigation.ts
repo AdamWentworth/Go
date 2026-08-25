@@ -1,5 +1,5 @@
-export type NativeActionMenuPath = '/' | '/about' | '/data-deletion' | '/faq' | '/getting-started' | '/help' | '/max' | '/pokedex' | '/pokemon' | '/privacy' | '/profile' | '/profile/friends' | '/raid' | '/rankings' | '/safety' | '/search' | '/settings' | '/terms' | '/trade-board' | '/trades';
-export type ReadyNativePath = '/native' | '/native/account' | '/native/collection' | '/native/friends' | '/native/info/about' | '/native/info/data-deletion' | '/native/info/faq' | '/native/info/getting-started' | '/native/info/help' | '/native/info/privacy' | '/native/info/safety' | '/native/info/terms' | '/native/max' | '/native/pokedex' | '/native/profile' | '/native/raid' | '/native/raid-methodology' | '/native/rankings' | '/native/search' | '/native/settings' | '/native/trade-board' | '/native/trades';
+export type NativeActionMenuPath = '/' | '/about' | '/data-deletion' | '/faq' | '/getting-started' | '/help' | '/max' | '/pokedex' | '/pokemon' | '/privacy' | '/profile' | '/profile/friends' | '/pvp' | '/raid' | '/rankings' | '/safety' | '/search' | '/settings' | '/terms' | '/trade-board' | '/trades';
+export type ReadyNativePath = '/native' | '/native/account' | '/native/collection' | '/native/friends' | '/native/info/about' | '/native/info/data-deletion' | '/native/info/faq' | '/native/info/getting-started' | '/native/info/help' | '/native/info/privacy' | '/native/info/safety' | '/native/info/terms' | '/native/max' | '/native/pokedex' | '/native/profile' | '/native/pvp' | '/native/pvp-methodology' | '/native/raid' | '/native/raid-methodology' | '/native/rankings' | '/native/search' | '/native/settings' | '/native/trade-board' | '/native/trades';
 export type NativeLoginReturnPath = ReadyNativePath | `/native/profile/${string}`;
 
 export type NativeActionMenuDestination =
@@ -20,6 +20,7 @@ const NATIVE_DESTINATIONS: Record<NativeActionMenuPath, NativeActionMenuDestinat
   '/privacy': { kind: 'native', pathname: '/native/info/privacy' },
   '/profile': { kind: 'native', pathname: '/native/profile' },
   '/profile/friends': { kind: 'native', pathname: '/native/friends' },
+  '/pvp': { kind: 'native', pathname: '/native/pvp' },
   '/raid': { kind: 'native', pathname: '/native/raid' },
   '/rankings': { kind: 'native', pathname: '/native/rankings' },
   '/safety': { kind: 'native', pathname: '/native/info/safety' },
@@ -60,6 +61,8 @@ export const resolveNativeLoginReturnTo = (
     || requestedPath === '/native/info/terms'
     || requestedPath === '/native/max'
     || requestedPath === '/native/pokedex'
+    || requestedPath === '/native/pvp'
+    || requestedPath === '/native/pvp-methodology'
     || requestedPath === '/native/raid'
     || requestedPath === '/native/raid-methodology'
     || requestedPath === '/native/rankings'
