@@ -97,6 +97,58 @@ describe('NativeInstanceDetailScreen', () => {
     expect(onEditInCurrentApp).toHaveBeenCalledTimes(1);
   });
 
+  it('removes owner mutation controls from a foreign For Trade listing', () => {
+    render(
+      <NativeInstanceDetailScreen
+        canEdit={false}
+        detail={detail}
+        isLoading={false}
+        error={null}
+        cachedAt={null}
+        movesWarning={null}
+        saveNotice={null}
+        saveError={null}
+        isSaving={false}
+        onRetry={jest.fn()}
+        onBack={jest.fn()}
+        onToggleFavorite={jest.fn()}
+        onEditInCurrentApp={jest.fn()}
+      />,
+    );
+
+    expect(screen.getByText('Shiny Charizard')).toBeTruthy();
+    expect(screen.getByText('Wanted Pokémon')).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Edit Pokémon' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Edit preferences' })).toBeNull();
+  });
+
+  it('removes owner mutation controls from a foreign Wanted listing', () => {
+    render(
+      <NativeInstanceDetailScreen
+        canEdit={false}
+        detail={{
+          ...detail,
+          row: { ...detail.row, status: 'wanted', mostWanted: true },
+        }}
+        isLoading={false}
+        error={null}
+        cachedAt={null}
+        movesWarning={null}
+        saveNotice={null}
+        saveError={null}
+        isSaving={false}
+        onRetry={jest.fn()}
+        onBack={jest.fn()}
+        onToggleFavorite={jest.fn()}
+        onEditInCurrentApp={jest.fn()}
+      />,
+    );
+
+    expect(screen.getByText('MOST WANTED')).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Edit wanted listing' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Edit preferences' })).toBeNull();
+  });
+
   it('renders canonical type, legacy, power, and Shadow bonus move signals', () => {
     render(
       <NativeInstanceDetailScreen

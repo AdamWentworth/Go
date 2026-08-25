@@ -59,6 +59,7 @@ type Props = {
   onEditInCurrentApp: () => void;
   onEditPreferences?: () => void;
   onSaveDetails?: (patch: NativeInstanceDetailPatch) => Promise<unknown>;
+  canEdit?: boolean;
 };
 
 type NativeInstanceEditDraft = {
@@ -319,6 +320,7 @@ const FriendshipConditions = ({
   onDraftChange,
   canPickBackground,
   onOpenBackground,
+  canEdit,
 }: {
   assetBaseUrl: string;
   detail: NativeInstanceDetail;
@@ -329,6 +331,7 @@ const FriendshipConditions = ({
   onDraftChange: (patch: Partial<NativeInstanceEditDraft>) => void;
   canPickBackground: boolean;
   onOpenBackground: () => void;
+  canEdit: boolean;
 }) => {
   const friendship = editing ? draft.friendship : friendshipLevelFor(detail);
   const luckyRequested = editing
@@ -339,19 +342,21 @@ const FriendshipConditions = ({
   return (
     <View style={[styles.conditionsPanel, { backgroundColor: palette.panel, borderColor: palette.border }]}>
       <View style={styles.conditionsHeadingRow}>
-        <Pressable
-          accessibilityLabel={editing ? 'Save wanted listing' : 'Edit wanted listing'}
-          accessibilityRole="button"
-          onPress={onEdit}
-          style={styles.conditionEditButton}
-        >
-          <Image
-            accessibilityElementsHidden
-            resizeMode="contain"
-            source={{ uri: toAssetUrl(assetBaseUrl, editing ? '/images/save-icon.png' : '/images/edit-icon.png') }}
-            style={[styles.conditionEditImage, { tintColor: palette.text }]}
-          />
-        </Pressable>
+        {canEdit ? (
+          <Pressable
+            accessibilityLabel={editing ? 'Save wanted listing' : 'Edit wanted listing'}
+            accessibilityRole="button"
+            onPress={onEdit}
+            style={styles.conditionEditButton}
+          >
+            <Image
+              accessibilityElementsHidden
+              resizeMode="contain"
+              source={{ uri: toAssetUrl(assetBaseUrl, editing ? '/images/save-icon.png' : '/images/edit-icon.png') }}
+              style={[styles.conditionEditImage, { tintColor: palette.text }]}
+            />
+          </Pressable>
+        ) : null}
         <View style={styles.conditionsHeadingCopy}>
           <Text style={styles.conditionsTitle}>WANTED CONDITIONS</Text>
           <Text style={[styles.conditionsSubtitle, { color: palette.secondary }]}>Friendship and eligibility</Text>
@@ -515,12 +520,14 @@ const TargetSummary = ({
   palette,
   onEdit,
   onOpenTarget,
+  canEdit,
 }: {
   assetBaseUrl: string;
   detail: NativeInstanceDetail;
   palette: typeof LIGHT;
   onEdit: () => void;
   onOpenTarget?: (instanceId: string) => void;
+  canEdit: boolean;
 }) => {
   const rows = detail.targetRows ?? [];
   if (detail.row.status === 'caught') return null;
@@ -563,16 +570,18 @@ const TargetSummary = ({
       ) : (
         <Text style={[styles.noTargets, { color: palette.secondary }]}>No matching targets are configured.</Text>
       )}
-      <Pressable
-        accessibilityRole="button"
-        onPress={onEdit}
-        style={[
-          styles.editPreferencesButton,
-          { backgroundColor: detail.row.status === 'wanted' ? '#873e50' : '#258758' },
-        ]}
-      >
-        <Text style={styles.editPreferencesText}>Edit preferences</Text>
-      </Pressable>
+      {canEdit ? (
+        <Pressable
+          accessibilityRole="button"
+          onPress={onEdit}
+          style={[
+            styles.editPreferencesButton,
+            { backgroundColor: detail.row.status === 'wanted' ? '#873e50' : '#258758' },
+          ]}
+        >
+          <Text style={styles.editPreferencesText}>Edit preferences</Text>
+        </Pressable>
+      ) : null}
     </View>
   );
 };
@@ -1841,6 +1850,7 @@ export const NativeInstanceDetailScreen = ({
   onEditInCurrentApp,
   onEditPreferences,
   onSaveDetails,
+  canEdit = true,
 }: Props) => {
   const light = useColorScheme() === 'light';
   const { width } = useWindowDimensions();
@@ -1995,6 +2005,7 @@ export const NativeInstanceDetailScreen = ({
     setEditErrorState(null);
   };
   const toggleEdit = async () => {
+    if (!canEdit) return;
     if (!onSaveDetails) {
       onEditInCurrentApp();
       return;
@@ -2162,23 +2173,26 @@ export const NativeInstanceDetailScreen = ({
               onEdit={() => void toggleEdit()}
               onOpenBackground={() => setBackgroundPickerInstanceId(detail.row.id)}
               palette={palette}
+              canEdit={canEdit}
             />
           ) : (
             <View style={styles.headerRow}>
-              <Pressable
-                accessibilityLabel={editing ? 'Save Pokémon' : 'Edit Pokémon'}
-                accessibilityRole="button"
-                disabled={isSaving}
-                onPress={() => void toggleEdit()}
-                style={styles.iconButton}
-              >
-                <Image
-                  accessibilityElementsHidden
-                  resizeMode="contain"
-                  source={{ uri: toAssetUrl(assetBaseUrl, editing ? '/images/save-icon.png' : '/images/edit-icon.png') }}
-                  style={[styles.editImage, styles.stageHeaderIcon]}
-                />
-              </Pressable>
+              {canEdit ? (
+                <Pressable
+                  accessibilityLabel={editing ? 'Save Pokémon' : 'Edit Pokémon'}
+                  accessibilityRole="button"
+                  disabled={isSaving}
+                  onPress={() => void toggleEdit()}
+                  style={styles.iconButton}
+                >
+                  <Image
+                    accessibilityElementsHidden
+                    resizeMode="contain"
+                    source={{ uri: toAssetUrl(assetBaseUrl, editing ? '/images/save-icon.png' : '/images/edit-icon.png') }}
+                    style={[styles.editImage, styles.stageHeaderIcon]}
+                  />
+                </Pressable>
+              ) : <View style={styles.iconButton} />}
               {isCaught && cp != null && !editing ? (
                 <Text style={styles.cpText}>CP{cp}</Text>
               ) : <View />}
@@ -2198,7 +2212,7 @@ export const NativeInstanceDetailScreen = ({
                     />
                   </Pressable>
                 ) : <View style={styles.iconButton} />
-              ) : isCaught ? (
+              ) : isCaught && canEdit ? (
                 <Pressable
                   accessibilityLabel={detail.row.favorite ? 'Remove Favorite' : 'Mark as Favorite'}
                   accessibilityRole="button"
@@ -2391,6 +2405,7 @@ export const NativeInstanceDetailScreen = ({
                 onEdit={onEditPreferences ?? onEditInCurrentApp}
                 onOpenTarget={onOpenTarget}
                 palette={palette}
+                canEdit={canEdit}
               />
             ) : null}
 

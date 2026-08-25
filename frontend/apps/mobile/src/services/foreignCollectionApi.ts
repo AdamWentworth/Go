@@ -45,13 +45,22 @@ export const getNativeForeignCollection = async (
       usersContract.endpoints.instancesByUsername(requestedUsername),
     );
   } catch (error) {
-    if (error instanceof ApiClientError && error.status === 404) {
-      return { type: 'not-found' };
+    if (!(error instanceof ApiClientError) || (error.status !== 403 && error.status !== 404)) {
+      throw error;
     }
-    if (error instanceof ApiClientError && error.status === 403) {
-      return { type: 'forbidden', message: error.message };
+    try {
+      envelope = await usersClient.get<UserInstancesEnvelope<Record<string, PokemonInstance>>>(
+        usersContract.endpoints.publicUserByUsername(requestedUsername),
+      );
+    } catch (fallbackError) {
+      if (fallbackError instanceof ApiClientError && fallbackError.status === 404) {
+        return { type: 'not-found' };
+      }
+      if (fallbackError instanceof ApiClientError && fallbackError.status === 403) {
+        return { type: 'forbidden', message: fallbackError.message };
+      }
+      throw fallbackError;
     }
-    throw error;
   }
 
   if (!envelope || typeof envelope !== 'object' || Array.isArray(envelope)) {

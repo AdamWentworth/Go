@@ -25,6 +25,14 @@ export default function NativeLayout() {
               name="collection/catalog/[variantId]"
               options={{ animation: 'slide_from_bottom', gestureDirection: 'vertical' }}
             />
+            <Stack.Screen
+              name="collection/trainer/[username]/index"
+              options={{ animation: 'slide_from_right', gestureDirection: 'horizontal' }}
+            />
+            <Stack.Screen
+              name="collection/trainer/[username]/[instanceId]"
+              options={{ animation: 'slide_from_bottom', gestureDirection: 'vertical' }}
+            />
           </Stack>
         </NativeCollectionSyncProvider>
       </NativeQueryProvider>

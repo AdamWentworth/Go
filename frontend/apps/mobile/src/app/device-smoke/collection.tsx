@@ -402,6 +402,7 @@ export default function DeviceSmokeCollectionRoute() {
             <NativeInstanceDetailScreen
             assetBaseUrl={ASSET_BASE_URL}
             cachedAt={null}
+            canEdit={!foreignMode}
             detail={{
               instance: smokeInstances[openedRow.id],
               row: openedRow,

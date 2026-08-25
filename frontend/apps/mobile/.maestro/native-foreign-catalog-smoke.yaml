@@ -26,6 +26,15 @@ tags:
 - assertNotVisible: Gigantamax Blastoise
 - assertNotVisible: Clear Trade tag filter
 - takeScreenshot: 01-foreign-trade-context
+- tapOn: "View Shiny Gigantamax Charizard"
+- extendedWaitUntil:
+    visible: FOR TRADE
+    timeout: 10000
+- assertVisible: Wanted Pokémon
+- assertNotVisible: Edit Pokémon
+- assertNotVisible: Edit preferences
+- takeScreenshot: 01b-foreign-trade-read-only
+- tapOn: Close
 - tapOn: TAGS
 - extendedWaitUntil:
     visible: Inventory tags
