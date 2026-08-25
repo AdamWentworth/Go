@@ -19,6 +19,7 @@ export default function NativeLoginRoute() {
         params: { username: decodeURIComponent(returnTo.slice('/native/profile/'.length)) },
       }
     : returnTo === '/native/collection'
+      || returnTo === '/native/friends'
       || returnTo === '/native/search'
       || returnTo === '/native/trades'
       || returnTo === '/native/profile'

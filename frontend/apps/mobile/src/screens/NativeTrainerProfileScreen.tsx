@@ -14,6 +14,7 @@ import type { NativeCollectionRow } from '../features/collection/collectionModel
 import { NativePokemonLocationBackdrop } from '../features/collection/parity/NativePokemonLocationBackdrop';
 import type { NativeTrainerProfileModel } from '../features/social/nativeTrainerProfileModel';
 import { NativeConfirmationDialog } from '../components/NativeConfirmationDialog';
+import { NativeTrainerWorkspaceNav } from '../components/NativeTrainerWorkspaceNav';
 
 export type NativeTrainerProfileAction =
   | 'add'
@@ -32,6 +33,7 @@ type Props = {
   model?: NativeTrainerProfileModel | null;
   onBack?: () => void;
   onOpenCollection: (filter?: 'caught' | 'trade' | 'wanted' | 'favorites') => void;
+  onOpenFriends?: () => void;
   onRetry?: () => void;
   onRelationshipAction?: (action: NativeTrainerProfileAction) => void;
   feedback?: { tone: 'success' | 'error'; text: string } | null;
@@ -96,6 +98,7 @@ export const NativeTrainerProfileScreen = ({
   model = null,
   onBack,
   onOpenCollection,
+  onOpenFriends,
   onRetry,
   onRelationshipAction,
   feedback = null,
@@ -173,6 +176,13 @@ export const NativeTrainerProfileScreen = ({
         style={styles.screen}
         testID="native-trainer-profile"
       >
+      {onOpenFriends ? (
+        <NativeTrainerWorkspaceNav
+          active="profile"
+          onOpenFriends={onOpenFriends}
+          onOpenProfile={() => undefined}
+        />
+      ) : null}
       <View style={styles.productHeader}>
         <View style={styles.productHeaderCopy}>
           <Text style={styles.eyebrow}>{isOwner ? 'YOUR TRAINER CARD' : 'TRAINER PROFILE'}</Text>

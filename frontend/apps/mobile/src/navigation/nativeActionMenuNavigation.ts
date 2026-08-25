@@ -1,5 +1,5 @@
-export type NativeActionMenuPath = '/pokemon' | '/search' | '/trades';
-export type ReadyNativePath = '/native/collection' | '/native/search' | '/native/trades';
+export type NativeActionMenuPath = '/pokemon' | '/profile/friends' | '/search' | '/trades';
+export type ReadyNativePath = '/native/collection' | '/native/friends' | '/native/search' | '/native/trades';
 export type NativeLoginReturnPath = ReadyNativePath | '/native/profile' | `/native/profile/${string}`;
 
 export type NativeActionMenuDestination =
@@ -9,12 +9,13 @@ export type NativeActionMenuDestination =
 
 const NATIVE_DESTINATIONS: Record<NativeActionMenuPath, NativeActionMenuDestination> = {
   '/pokemon': { kind: 'native', pathname: '/native/collection' },
+  '/profile/friends': { kind: 'native', pathname: '/native/friends' },
   '/search': { kind: 'native', pathname: '/native/search' },
   '/trades': { kind: 'native', pathname: '/native/trades' },
 };
 
 const isNativeActionMenuPath = (path: string): path is NativeActionMenuPath => (
-  path === '/pokemon' || path === '/search' || path === '/trades'
+  path === '/pokemon' || path === '/profile/friends' || path === '/search' || path === '/trades'
 );
 
 export const resolveNativeActionMenuDestination = (
@@ -30,6 +31,7 @@ export const resolveNativeLoginReturnTo = (
   requestedPath?: string,
 ): NativeLoginReturnPath | '/web' => {
   if (requestedPath === '/native/collection'
+    || requestedPath === '/native/friends'
     || requestedPath === '/native/search'
     || requestedPath === '/native/trades'
     || requestedPath === '/native/profile') {

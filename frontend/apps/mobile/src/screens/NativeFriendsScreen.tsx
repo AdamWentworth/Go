@@ -17,6 +17,7 @@ import {
   type NativeHorizontalPageSliderHandle,
 } from '../components/NativeHorizontalPageSlider';
 import { NativeConfirmationDialog } from '../components/NativeConfirmationDialog';
+import { NativeTrainerWorkspaceNav } from '../components/NativeTrainerWorkspaceNav';
 import type {
   NativeFriendRow,
   NativeFriendsOverviewModel,
@@ -248,14 +249,11 @@ export const NativeFriendsScreen = ({
   return (
     <View style={[styles.screen, light && styles.screenLight]} testID="native-friends-screen">
       <View style={[styles.header, light && styles.headerLight, { paddingTop: Math.max(insets.top + 6, 14) }]}>
-        <View style={styles.workspaceNav}>
-          <Pressable accessibilityRole="button" onPress={onOpenProfileHome} style={styles.workspaceButton}>
-            <Text style={[styles.workspaceLabel, light && styles.mutedLight]}>Profile</Text>
-          </Pressable>
-          <View style={[styles.workspaceButton, styles.workspaceButtonActive]}>
-            <Text style={styles.workspaceLabelActive}>Friends</Text>
-          </View>
-        </View>
+        <NativeTrainerWorkspaceNav
+          active="friends"
+          onOpenFriends={() => undefined}
+          onOpenProfile={onOpenProfileHome}
+        />
         <Text style={styles.eyebrow}>TRAINER NETWORK</Text>
         <View style={styles.titleRow}>
           <Text accessibilityRole="header" style={[styles.title, light && styles.textLight]}>Friends</Text>
@@ -276,6 +274,7 @@ export const NativeFriendsScreen = ({
           />
           {VIEWS.map((view) => (
             <Pressable
+              accessibilityLabel={`${viewLabel(view)} view`}
               accessibilityRole="tab"
               accessibilityState={{ selected: activeView === view }}
               key={view}
@@ -455,11 +454,6 @@ const styles = StyleSheet.create({
   screenLight: { backgroundColor: '#eef4f5' },
   header: { zIndex: 2, paddingHorizontal: 10, paddingBottom: 7, backgroundColor: '#080d0f' },
   headerLight: { backgroundColor: '#eef4f5' },
-  workspaceNav: { alignSelf: 'center', flexDirection: 'row', padding: 3, borderWidth: 1, borderColor: '#35494d', borderRadius: 10, backgroundColor: '#0e1517' },
-  workspaceButton: { minWidth: 92, minHeight: 36, alignItems: 'center', justifyContent: 'center', borderRadius: 7 },
-  workspaceButtonActive: { backgroundColor: '#1b6d62' },
-  workspaceLabel: { color: '#9daaac', fontSize: 13, fontWeight: '800' },
-  workspaceLabelActive: { color: '#ffffff', fontSize: 13, fontWeight: '900' },
   eyebrow: { color: '#42d7c6', fontSize: 10, fontWeight: '900', letterSpacing: 1.25 },
   titleRow: { flexDirection: 'row', alignItems: 'center', gap: 9 },
   title: { color: '#f7fbfc', fontSize: 27, fontWeight: '900' },

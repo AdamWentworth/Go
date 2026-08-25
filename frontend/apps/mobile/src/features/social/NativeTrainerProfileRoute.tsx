@@ -147,6 +147,7 @@ export const NativeTrainerProfileRoute = ({ username }: Props) => {
         onBack={normalizedUsername ? () => router.canGoBack() ? router.back() : router.replace('/native/search') : undefined}
         onDismissFeedback={() => setFeedback(null)}
         onOpenCollection={openCollection}
+        onOpenFriends={() => router.push('/native/friends')}
         onRelationshipAction={isOwner ? undefined : (action) => void updateRelationship(action)}
         onRetry={() => {
           void profileQuery.refetch();

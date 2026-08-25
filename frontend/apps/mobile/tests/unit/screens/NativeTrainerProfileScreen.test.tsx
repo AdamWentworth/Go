@@ -84,6 +84,13 @@ describe('NativeTrainerProfileScreen', () => {
     expect(onOpenCollection).toHaveBeenCalledWith();
   });
 
+  it('opens Friends from the shared trainer workspace navigation', () => {
+    const onOpenFriends = jest.fn();
+    const view = renderScreen({ onOpenFriends });
+    fireEvent.press(view.getByRole('tab', { name: 'Friends' }));
+    expect(onOpenFriends).toHaveBeenCalledTimes(1);
+  });
+
   it('surfaces loading and retryable error states above the workflow', () => {
     const retry = jest.fn();
     const loading = renderScreen({ isLoading: true });

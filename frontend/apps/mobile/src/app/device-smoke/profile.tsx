@@ -75,6 +75,7 @@ export default function DeviceSmokeProfileRoute() {
       isOwner
       model={MODEL}
       onOpenCollection={() => undefined}
+      onOpenFriends={() => undefined}
     />
   );
 }

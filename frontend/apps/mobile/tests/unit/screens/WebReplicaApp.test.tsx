@@ -76,6 +76,34 @@ describe('WebReplicaApp', () => {
     ).toBe(false);
   });
 
+  it('hands a completed canonical-page navigation to a ready native route', () => {
+    const onOpenNativePath = jest.fn().mockReturnValue(true);
+    render(<WebReplicaApp initialPath="/profile" onOpenNativePath={onOpenNativePath} />);
+
+    expect(getWebViewProps().onShouldStartLoadWithRequest?.({
+      url: 'https://pokegonexus.com/profile',
+    })).toBe(true);
+    expect(onOpenNativePath).not.toHaveBeenCalled();
+    act(() => getWebViewProps().onLoadEnd?.());
+    expect(getWebViewProps().onShouldStartLoadWithRequest?.({
+      url: 'https://pokegonexus.com/profile/friends',
+    })).toBe(false);
+    expect(onOpenNativePath).toHaveBeenCalledWith('/profile/friends');
+  });
+
+  it('keeps canonical and OAuth navigation embedded when no native route accepts it', () => {
+    const onOpenNativePath = jest.fn().mockReturnValue(false);
+    render(<WebReplicaApp initialPath="/profile" onOpenNativePath={onOpenNativePath} />);
+    act(() => getWebViewProps().onLoadEnd?.());
+    expect(getWebViewProps().onShouldStartLoadWithRequest?.({
+      url: 'https://pokegonexus.com/profile/settings',
+    })).toBe(true);
+    expect(getWebViewProps().onShouldStartLoadWithRequest?.({
+      url: 'https://accounts.google.com/o/oauth2/v2/auth',
+    })).toBe(true);
+    expect(onOpenNativePath).toHaveBeenCalledTimes(1);
+  });
+
   it('hides loading overlay once load ends', () => {
     render(<WebReplicaApp />);
     expect(screen.getByTestId('web-replica-loading')).toBeTruthy();

@@ -129,6 +129,7 @@ true;
 
 type WebReplicaAppProps = {
   initialPath?: string;
+  onOpenNativePath?: (path: string) => boolean;
 };
 
 const normalizeInitialPath = (value?: string): string => {
@@ -136,7 +137,7 @@ const normalizeInitialPath = (value?: string): string => {
   return value;
 };
 
-export const WebReplicaApp = ({ initialPath }: WebReplicaAppProps) => {
+export const WebReplicaApp = ({ initialPath, onOpenNativePath }: WebReplicaAppProps) => {
   const loadTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const hasAttemptedPathFallbackRef = useRef(false);
   const hasAttemptedHostFallbackRef = useRef(false);
@@ -155,6 +156,16 @@ export const WebReplicaApp = ({ initialPath }: WebReplicaAppProps) => {
     () => trustedEmbeddedOrigins(runtimeConfig.api.frontendAppUrl),
     [],
   );
+  const appOrigins = useMemo(() => {
+    const values = [runtimeConfig.api.frontendAppUrl, PROD_FRONTEND_APP_URL];
+    return values.flatMap((value) => {
+      try {
+        return [new URL(value).origin];
+      } catch {
+        return [];
+      }
+    });
+  }, []);
 
   const clearLoadTimeout = () => {
     if (!loadTimeoutRef.current) return;
@@ -234,7 +245,20 @@ export const WebReplicaApp = ({ initialPath }: WebReplicaAppProps) => {
 
   const handleNavigationRequest = (url: string): boolean => {
     const disposition = classifyWebNavigation(url, trustedOrigins);
-    if (disposition === 'embedded') return true;
+    if (disposition === 'embedded') {
+      if (hasCompletedInitialLoadRef.current && onOpenNativePath) {
+        try {
+          const parsed = new URL(url);
+          if (appOrigins.includes(parsed.origin)) {
+            const canonicalPath = `${parsed.pathname}${parsed.search}${parsed.hash}`;
+            if (onOpenNativePath(canonicalPath)) return false;
+          }
+        } catch {
+          // Embedded non-HTTP documents stay in the canonical app.
+        }
+      }
+      return true;
+    }
 
     if (disposition === 'external') {
       void Linking.openURL(url).catch(() => {

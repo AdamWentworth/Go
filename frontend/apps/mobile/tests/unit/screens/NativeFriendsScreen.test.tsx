@@ -55,13 +55,13 @@ describe('NativeFriendsScreen', () => {
     const onOpenProfile = jest.fn();
     const onViewChange = jest.fn();
     const view = renderScreen('friends', { onOpenProfile, onViewChange });
-    expect(view.getByRole('tab', { name: 'Friends' })).toBeTruthy();
-    expect(view.getByRole('tab', { name: 'Requests' })).toBeTruthy();
-    expect(view.getByRole('tab', { name: 'Find' })).toBeTruthy();
-    expect(view.getByRole('tab', { name: 'Blocked' })).toBeTruthy();
+    expect(view.getByRole('tab', { name: 'Friends view' })).toBeTruthy();
+    expect(view.getByRole('tab', { name: 'Requests view' })).toBeTruthy();
+    expect(view.getByRole('tab', { name: 'Find view' })).toBeTruthy();
+    expect(view.getByRole('tab', { name: 'Blocked view' })).toBeTruthy();
     fireEvent.press(view.getByRole('button', { name: "Open Misty's profile" }));
     expect(onOpenProfile).toHaveBeenCalledWith('Misty');
-    fireEvent.press(view.getByRole('tab', { name: 'Requests' }));
+    fireEvent.press(view.getByRole('tab', { name: 'Requests view' }));
     expect(onViewChange).toHaveBeenCalledWith('requests');
   });
 

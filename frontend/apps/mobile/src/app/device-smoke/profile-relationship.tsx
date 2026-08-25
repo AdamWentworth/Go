@@ -67,6 +67,7 @@ export default function DeviceSmokeProfileRelationshipRoute() {
         model={model}
         onDismissFeedback={() => setFeedback(null)}
         onOpenCollection={() => undefined}
+        onOpenFriends={() => undefined}
         onRelationshipAction={updateRelationship}
       />
       <NativeConfirmationDialog

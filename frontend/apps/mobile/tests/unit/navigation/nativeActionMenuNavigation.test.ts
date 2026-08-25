@@ -6,6 +6,7 @@ import {
 describe('resolveNativeActionMenuDestination', () => {
   test.each([
     ['/pokemon', '/native/collection'],
+    ['/profile/friends', '/native/friends'],
     ['/search', '/native/search'],
     ['/trades', '/native/trades'],
   ] as const)('keeps %s inside the ready native experience', (path, pathname) => {
@@ -25,6 +26,7 @@ describe('resolveNativeActionMenuDestination', () => {
 
   test.each([
     '/native/collection',
+    '/native/friends',
     '/native/search',
     '/native/trades',
     '/native/profile',
