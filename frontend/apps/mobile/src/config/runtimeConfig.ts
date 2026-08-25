@@ -29,6 +29,7 @@ type RuntimeRealtimeConfig = {
 type RuntimeMobileConfig = {
   experienceMode: MobileExperienceMode;
   deviceSmokeMode: boolean;
+  deviceSmokeColorScheme: 'light' | 'dark' | null;
 };
 
 type ExpoExtra = {
@@ -38,6 +39,7 @@ type ExpoExtra = {
   mobile?: {
     experienceMode?: unknown;
     deviceSmokeMode?: unknown;
+    deviceSmokeColorScheme?: unknown;
   };
 };
 
@@ -123,6 +125,9 @@ const sanitizeBoolean = (value: unknown, fallback: boolean): boolean => {
   return fallback;
 };
 
+const sanitizeColorScheme = (value: unknown): 'light' | 'dark' | null =>
+  value === 'light' || value === 'dark' ? value : null;
+
 const readExtra = (): ExpoExtra => {
   const fromExpoConfig = (Constants.expoConfig?.extra ?? {}) as ExpoExtra;
   return fromExpoConfig;
@@ -177,5 +182,8 @@ export const runtimeConfig: {
       mobileOverrides.deviceSmokeMode,
       false,
     ),
+    deviceSmokeColorScheme: __DEV__
+      ? sanitizeColorScheme(mobileOverrides.deviceSmokeColorScheme)
+      : null,
   },
 };

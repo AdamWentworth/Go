@@ -7,6 +7,7 @@ type Props = {
   onCancel: () => void;
   onConfirm: () => void;
   title: string;
+  tone?: 'default' | 'danger';
   visible: boolean;
 };
 
@@ -17,6 +18,7 @@ export const NativeConfirmationDialog = ({
   onCancel,
   onConfirm,
   title,
+  tone = 'default',
   visible,
 }: Props) => {
   const light = useColorScheme() === 'light';
@@ -37,7 +39,7 @@ export const NativeConfirmationDialog = ({
             <Pressable accessibilityRole="button" disabled={isPending} onPress={onCancel} style={[styles.cancel, light && styles.cancelLight]}>
               <Text style={[styles.cancelText, light && styles.textLight]}>Cancel</Text>
             </Pressable>
-            <Pressable accessibilityRole="button" disabled={isPending} onPress={onConfirm} style={[styles.confirm, isPending && styles.disabled]}>
+            <Pressable accessibilityRole="button" disabled={isPending} onPress={onConfirm} style={[styles.confirm, tone === 'danger' && styles.confirmDanger, isPending && styles.disabled]}>
               <Text style={styles.confirmText}>{isPending ? 'Working…' : confirmLabel}</Text>
             </Pressable>
           </View>
@@ -59,6 +61,7 @@ const styles = StyleSheet.create({
   cancelLight: { borderColor: '#a5b3b5' },
   cancelText: { color: '#ffffff', fontWeight: '900' },
   confirm: { flex: 1, minHeight: 48, alignItems: 'center', justifyContent: 'center', borderRadius: 24, backgroundColor: '#36c5a4' },
+  confirmDanger: { backgroundColor: '#df4d63' },
   confirmText: { color: '#041411', fontWeight: '900', textAlign: 'center' },
   disabled: { opacity: 0.55 },
   textLight: { color: '#172124' },

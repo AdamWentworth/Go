@@ -15,6 +15,11 @@ const readMobileExperience = (): 'webview' | 'native-preview' =>
     ? 'native-preview'
     : 'webview';
 
+const readDeviceSmokeColorScheme = (): 'light' | 'dark' | null => {
+  const value = process.env.EXPO_PUBLIC_DEVICE_SMOKE_COLOR_SCHEME?.trim().toLowerCase();
+  return value === 'light' || value === 'dark' ? value : null;
+};
+
 export default ({ config }: ConfigContext): ExpoConfig => ({
   ...config,
   name: config.name === 'mobile' || !config.name ? 'Pokémon Go Nexus' : config.name,
@@ -67,6 +72,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     mobile: {
       experienceMode: readMobileExperience(),
       deviceSmokeMode: readBool('EXPO_PUBLIC_DEVICE_SMOKE_MODE', false),
+      deviceSmokeColorScheme: readDeviceSmokeColorScheme(),
     },
   },
 });

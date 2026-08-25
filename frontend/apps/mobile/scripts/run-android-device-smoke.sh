@@ -161,6 +161,7 @@ esac
 setsid env \
   EXPO_PUBLIC_MOBILE_EXPERIENCE=native-preview \
   EXPO_PUBLIC_DEVICE_SMOKE_MODE=true \
+  EXPO_PUBLIC_DEVICE_SMOKE_COLOR_SCHEME="${color_scheme}" \
   CI=1 \
   npx expo start --host localhost --port 8091 >"${artifact_dir}/metro.log" 2>&1 &
 metro_pid="$!"

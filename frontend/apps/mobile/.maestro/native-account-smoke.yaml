@@ -1,0 +1,59 @@
+appId: host.exp.exponent
+name: Native account security parity smoke
+tags:
+  - android
+  - native-account
+---
+- openLink:
+    link: exp://10.0.2.2:8091/--/device-smoke/account
+- runFlow:
+    when:
+      visible: "This is the developer menu.*"
+    commands:
+      - tapOn: Continue
+- runFlow:
+    when:
+      visible: React Native dev menu
+    commands:
+      - tapOn: Close
+- extendedWaitUntil:
+    visible: LOGIN IDENTITY
+    timeout: 45000
+- assertVisible: Account details
+- assertVisible: Save username
+- tapOn: Save username
+- assertVisible: Username saved.
+- scrollUntilVisible:
+    element:
+      text: Connected accounts
+    direction: DOWN
+    timeout: 10000
+- scrollUntilVisible:
+    element:
+      text: trainer@gmail.com
+    direction: DOWN
+    timeout: 10000
+- assertVisible: trainer@gmail.com
+- tapOn: Connect Discord
+- assertVisible: discord connected.
+- scrollUntilVisible:
+    element:
+      text: Sign out
+    direction: DOWN
+    timeout: 10000
+- tapOn: Sign out all
+- assertVisible: Sign out every device?
+- tapOn: Sign out all
+- assertVisible: All sessions revoked.
+- scrollUntilVisible:
+    element:
+      text: Delete account
+    direction: DOWN
+    timeout: 10000
+- tapOn:
+    id: native-account-delete-button
+- assertVisible: Permanently delete your account?
+- takeScreenshot: native-account-security-confirmation
+- tapOn: Cancel
+- assertVisible: Delete account
+- takeScreenshot: native-account-security

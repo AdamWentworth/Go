@@ -12,6 +12,7 @@ import {
   useState,
 } from 'react';
 import { logWarn } from '../../observability/logger';
+import { runtimeConfig } from '../../config/runtimeConfig';
 import {
   defaultNativeDevicePreferences,
   readNativeDevicePreferences,
@@ -43,15 +44,21 @@ export const useOptionalNativeDevicePreferences = (): NativeDevicePreferencesCon
   useContext(NativeDevicePreferencesContext);
 
 export const NativeDevicePreferencesProvider = ({ children }: PropsWithChildren) => {
+  const smokeColorTheme = runtimeConfig.mobile.deviceSmokeMode
+    ? runtimeConfig.mobile.deviceSmokeColorScheme
+    : null;
   const [preferences, setPreferences] = useState<NativeDevicePreferences>(() =>
-    defaultNativeDevicePreferences(normalizeTheme(Appearance.getColorScheme())),
+    defaultNativeDevicePreferences(smokeColorTheme ?? normalizeTheme(Appearance.getColorScheme())),
   );
   const [hydrated, setHydrated] = useState(false);
   const [systemReduceMotion, setSystemReduceMotion] = useState(false);
 
   useEffect(() => {
     let active = true;
-    void readNativeDevicePreferences(normalizeTheme(Appearance.getColorScheme()))
+    const restorePreferences = smokeColorTheme
+      ? Promise.resolve(defaultNativeDevicePreferences(smokeColorTheme))
+      : readNativeDevicePreferences(normalizeTheme(Appearance.getColorScheme()));
+    void restorePreferences
       .then((stored) => {
         if (!active) return;
         setPreferences(stored);
@@ -74,7 +81,7 @@ export const NativeDevicePreferencesProvider = ({ children }: PropsWithChildren)
       active = false;
       subscription.remove();
     };
-  }, []);
+  }, [smokeColorTheme]);
 
   const persist = useCallback((next: NativeDevicePreferences) => {
     setPreferences(next);
