@@ -192,6 +192,10 @@ run_maestro_flow() {
   # fresh user session rather than inheriting the preceding flow's modal,
   # selected tag, or draft edits.
   "${adb_bin}" -s "${device_id}" shell am force-stop host.exp.exponent
+  # Expo Go occasionally relaunches before Android has fully torn down the
+  # preceding React host. Give the process boundary time to settle so an
+  # infrastructure splash/error screen cannot masquerade as an app failure.
+  sleep 1
   "${maestro_bin}" --device "${device_id}" test \
     --no-ansi \
     --test-output-dir "${artifact_dir}/maestro/${output_name}" \
@@ -205,7 +209,10 @@ if [[ -d "${smoke_flow}" ]]; then
     flow_name="$(basename "${flow}" .yaml)"
     echo "Running isolated device smoke: ${flow_name}"
     if ! run_maestro_flow "${flow}" "${flow_name}"; then
-      failed_flows+=("${flow_name}")
+      echo "Retrying isolated device smoke once after a clean Expo Go restart: ${flow_name}"
+      if ! run_maestro_flow "${flow}" "${flow_name}-retry"; then
+        failed_flows+=("${flow_name}")
+      fi
     fi
   done
   if (( ${#failed_flows[@]} > 0 )); then
