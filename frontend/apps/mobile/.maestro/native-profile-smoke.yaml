@@ -24,7 +24,11 @@ tags:
 - assertVisible: Shiny Gigantamax Charizard
 - assertVisible: Armored Mewtwo
 - tapOn: Edit profile
-- assertVisible: Your trainer details
+- scrollUntilVisible:
+    element:
+      text: Your trainer details
+    direction: DOWN
+    timeout: 10000
 - assertVisible: POKÉMON GO NAME
 - takeScreenshot: native-trainer-profile-editor
 - scrollUntilVisible:

@@ -7,6 +7,7 @@ import {
   Text,
   View,
   useColorScheme,
+  useWindowDimensions,
 } from 'react-native';
 import { useState } from 'react';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -122,6 +123,7 @@ export const NativeTrainerProfileScreen = ({
   onSaveProfile,
 }: Props) => {
   const light = useColorScheme() === 'light';
+  const compactHeader = useWindowDimensions().width <= 520;
   const insets = useSafeAreaInsets();
   const [confirmation, setConfirmation] = useState<'cancel-request' | 'remove-friend' | 'block' | null>(null);
   const [editingHighlightSlot, setEditingHighlightSlot] = useState<number | null>(null);
@@ -227,14 +229,12 @@ export const NativeTrainerProfileScreen = ({
         style={styles.screen}
         testID="native-trainer-profile"
       >
-      {onOpenFriends ? (
-        <NativeTrainerWorkspaceNav
-          active="profile"
-          onOpenFriends={onOpenFriends}
-          onOpenProfile={() => undefined}
-        />
-      ) : null}
       <View style={styles.productHeader}>
+        {onBack ? (
+          <Pressable accessibilityLabel="Back" accessibilityRole="button" onPress={onBack} style={[styles.backButton, light && styles.backButtonLight]}>
+            <Text style={[styles.backButtonText, light && styles.textLight]}>‹</Text>
+          </Pressable>
+        ) : null}
         <View style={styles.productHeaderCopy}>
           <Text style={styles.eyebrow}>{isOwner ? 'YOUR TRAINER CARD' : 'TRAINER PROFILE'}</Text>
           <Text numberOfLines={1} style={[styles.pageTitle, light && styles.textLight]}>{model.username}</Text>
@@ -242,7 +242,7 @@ export const NativeTrainerProfileScreen = ({
             {isOwner ? 'Your Pokémon GO identity and collection showcase.' : `Meet @${model.username} and explore their shared collection.`}
           </Text>
         </View>
-        <View style={styles.headerActions}>
+        <View style={[styles.headerActions, compactHeader && styles.headerActionsCompact]}>
           {isOwner && onBeginEdit ? (
             <Pressable
               accessibilityRole="button"
@@ -276,13 +276,15 @@ export const NativeTrainerProfileScreen = ({
               </Text>
             </Pressable>
           ) : null}
-          {onBack ? (
-            <Pressable accessibilityLabel="Back" accessibilityRole="button" onPress={onBack} style={[styles.backButton, light && styles.backButtonLight]}>
-              <Text style={[styles.backButtonText, light && styles.textLight]}>‹</Text>
-            </Pressable>
-          ) : null}
         </View>
       </View>
+      {onOpenFriends ? (
+        <NativeTrainerWorkspaceNav
+          active="profile"
+          onOpenFriends={onOpenFriends}
+          onOpenProfile={() => undefined}
+        />
+      ) : null}
 
       {feedback ? (
         <View accessibilityRole="alert" style={[styles.feedback, feedback.tone === 'success' ? styles.feedbackSuccess : styles.feedbackError]}>
@@ -484,9 +486,10 @@ const styles = StyleSheet.create({
   screen: { flex: 1 },
   screenLight: { backgroundColor: '#eef4f5' },
   content: { width: '100%', maxWidth: 1060, alignSelf: 'center', paddingHorizontal: 14, gap: 14 },
-  productHeader: { minHeight: 74, flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 },
+  productHeader: { minHeight: 62, flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: 11 },
   productHeaderCopy: { flex: 1, minWidth: 0 },
   headerActions: { flexDirection: 'row', alignItems: 'center', gap: 7 },
+  headerActionsCompact: { width: '100%', justifyContent: 'flex-start', paddingLeft: 55 },
   headerAction: { minHeight: 44, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 13, borderRadius: 9 },
   headerActionPrimary: { backgroundColor: '#36c5a4' },
   headerActionSecondary: { borderWidth: 1, borderColor: '#536467', backgroundColor: '#171c1d' },

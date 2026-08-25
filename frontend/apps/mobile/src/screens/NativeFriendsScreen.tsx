@@ -40,6 +40,7 @@ type Props = {
   isLoading?: boolean;
   isSearching?: boolean;
   onCommand: (command: NativeFriendsScreenCommand) => void;
+  onBack: () => void;
   onDismissFeedback?: () => void;
   onOpenProfile: (username: string) => void;
   onOpenProfileHome: () => void;
@@ -187,6 +188,7 @@ export const NativeFriendsScreen = ({
   isLoading = false,
   isSearching = false,
   onCommand,
+  onBack,
   onDismissFeedback,
   onOpenProfile,
   onOpenProfileHome,
@@ -249,23 +251,32 @@ export const NativeFriendsScreen = ({
   return (
     <View style={[styles.screen, light && styles.screenLight]} testID="native-friends-screen">
       <View style={[styles.header, light && styles.headerLight, { paddingTop: Math.max(insets.top + 6, 14) }]}>
+        <View style={styles.productHeader}>
+          <Pressable
+            accessibilityLabel="Back"
+            accessibilityRole="button"
+            onPress={onBack}
+            style={[styles.backButton, light && styles.backButtonLight]}
+          >
+            <Text style={[styles.backButtonText, light && styles.textLight]}>‹</Text>
+          </Pressable>
+          <View style={styles.productCopy}>
+            <Text style={styles.eyebrow}>TRAINER NETWORK</Text>
+            <View style={styles.titleRow}>
+              <Text accessibilityRole="header" style={[styles.title, light && styles.textLight]}>Friends</Text>
+              {overview.incoming.length ? (
+                <Text accessibilityLabel={`${overview.incoming.length} incoming requests`} style={styles.requestBadge}>
+                  {overview.incoming.length} new
+                </Text>
+              ) : null}
+            </View>
+          </View>
+        </View>
         <NativeTrainerWorkspaceNav
           active="friends"
           onOpenFriends={() => undefined}
           onOpenProfile={onOpenProfileHome}
         />
-        <Text style={styles.eyebrow}>TRAINER NETWORK</Text>
-        <View style={styles.titleRow}>
-          <Text accessibilityRole="header" style={[styles.title, light && styles.textLight]}>Friends</Text>
-          {overview.incoming.length ? (
-            <Text accessibilityLabel={`${overview.incoming.length} incoming requests`} style={styles.requestBadge}>
-              {overview.incoming.length} new
-            </Text>
-          ) : null}
-        </View>
-        <Text style={[styles.description, light && styles.mutedLight]}>
-          Connect with trainers while keeping your collection and personal details under control.
-        </Text>
         <View accessibilityRole="tablist" style={[styles.tabs, light && styles.tabsLight]}>
           <Animated.View
             pointerEvents="none"
@@ -454,11 +465,15 @@ const styles = StyleSheet.create({
   screenLight: { backgroundColor: '#eef4f5' },
   header: { zIndex: 2, paddingHorizontal: 10, paddingBottom: 7, backgroundColor: '#080d0f' },
   headerLight: { backgroundColor: '#eef4f5' },
+  productHeader: { minHeight: 62, flexDirection: 'row', alignItems: 'center', gap: 11 },
+  productCopy: { flex: 1, minWidth: 0 },
+  backButton: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: '#35494d', borderRadius: 10, backgroundColor: '#171f20' },
+  backButtonLight: { borderColor: '#aababc', backgroundColor: '#ffffff' },
+  backButtonText: { color: '#ffffff', fontSize: 35, lineHeight: 35 },
   eyebrow: { color: '#42d7c6', fontSize: 10, fontWeight: '900', letterSpacing: 1.25 },
   titleRow: { flexDirection: 'row', alignItems: 'center', gap: 9 },
   title: { color: '#f7fbfc', fontSize: 27, fontWeight: '900' },
   requestBadge: { overflow: 'hidden', paddingHorizontal: 9, paddingVertical: 4, color: '#071915', fontSize: 11, fontWeight: '900', borderRadius: 999, backgroundColor: '#42d7c6' },
-  description: { marginTop: 1, color: '#a4b1b3', fontSize: 12, lineHeight: 17 },
   tabs: { position: 'relative', flexDirection: 'row', minHeight: 58, marginTop: 8, padding: 4, overflow: 'hidden', borderWidth: 1, borderColor: '#35494d', borderRadius: 11, backgroundColor: '#0d1416' },
   tabsLight: { borderColor: '#aab9bc', backgroundColor: '#ffffff' },
   tabIndicator: { position: 'absolute', top: 4, bottom: 4, left: 4, borderWidth: 1, borderColor: '#36c5a4', borderRadius: 8, backgroundColor: '#153e39' },

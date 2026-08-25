@@ -106,6 +106,13 @@ const NativeSignedInFriendsRoute = ({
         isCommandPending={friendsMutation.isPending}
         isLoading={friendsQuery.isPending}
         isSearching={trainerSearch.isFetching}
+        onBack={() => {
+          if (router.canGoBack()) {
+            router.back();
+            return;
+          }
+          router.replace({ pathname: '/web', params: { path: '/' } });
+        }}
         onCommand={(command) => void runCommand(command)}
         onDismissFeedback={() => setFeedback(null)}
         onOpenProfile={(trainerUsername) => router.push({

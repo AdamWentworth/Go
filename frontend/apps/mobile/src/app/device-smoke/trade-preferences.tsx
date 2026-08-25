@@ -206,6 +206,8 @@ export default function DeviceSmokeTradePreferencesRoute() {
     <View style={styles.screen}>
       <NativeTradeHubHeader
         activeView={activeView}
+        assetBaseUrl={ASSET_BASE_URL}
+        onOpenTradeBoard={() => undefined}
         onViewChange={changeView}
         scrollX={pageScrollX}
       />

@@ -53,8 +53,8 @@ export const NativeTrainerWorkspaceNav = ({
 
 const styles = StyleSheet.create({
   nav: {
-    alignSelf: 'center',
     flexDirection: 'row',
+    width: '100%',
     padding: 3,
     borderWidth: 1,
     borderColor: '#35494d',
@@ -63,8 +63,9 @@ const styles = StyleSheet.create({
   },
   navLight: { borderColor: '#9eafb2', backgroundColor: '#ffffff' },
   button: {
-    minWidth: 92,
-    minHeight: 40,
+    flex: 1,
+    minWidth: 0,
+    minHeight: 42,
     alignItems: 'center',
     justifyContent: 'center',
     borderRadius: 7,

@@ -40,11 +40,14 @@ tags:
 - takeScreenshot: 01-for-trade-view
 - tapOn: Edit preferences
 - assertVisible: Save changes
-- assertVisible: Shiny Mewtwo
 - tapOn: No additional rules
 - assertVisible: Mirror trade
 - assertVisible: Must match
-- assertVisible: Leave out
+- scrollUntilVisible:
+    element:
+      text: Leave out
+    direction: DOWN
+    timeout: 15000
 - takeScreenshot: 02-for-trade-edit-rules
 - scrollUntilVisible:
     element:

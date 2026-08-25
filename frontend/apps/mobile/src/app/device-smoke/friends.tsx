@@ -87,6 +87,7 @@ export default function DeviceSmokeFriendsRoute() {
       <NativeFriendsScreen
         activeView={activeView}
         feedback={feedback}
+        onBack={() => undefined}
         onCommand={command}
         onDismissFeedback={() => setFeedback(null)}
         onOpenProfile={() => undefined}

@@ -34,6 +34,7 @@ const renderScreen = (
   }}>
     <NativeFriendsScreen
       activeView={activeView}
+      onBack={jest.fn()}
       onCommand={jest.fn()}
       onOpenProfile={jest.fn()}
       onOpenProfileHome={jest.fn()}
@@ -52,9 +53,14 @@ describe('NativeFriendsScreen', () => {
   beforeEach(() => jest.clearAllMocks());
 
   it('renders the canonical four views and opens a trainer profile', () => {
+    const onBack = jest.fn();
     const onOpenProfile = jest.fn();
     const onViewChange = jest.fn();
-    const view = renderScreen('friends', { onOpenProfile, onViewChange });
+    const view = renderScreen('friends', { onBack, onOpenProfile, onViewChange });
+    expect(view.getByText('TRAINER NETWORK')).toBeTruthy();
+    expect(view.getByRole('header', { name: 'Friends' })).toBeTruthy();
+    fireEvent.press(view.getByRole('button', { name: 'Back' }));
+    expect(onBack).toHaveBeenCalledTimes(1);
     expect(view.getByRole('tab', { name: 'Friends view' })).toBeTruthy();
     expect(view.getByRole('tab', { name: 'Requests view' })).toBeTruthy();
     expect(view.getByRole('tab', { name: 'Find view' })).toBeTruthy();

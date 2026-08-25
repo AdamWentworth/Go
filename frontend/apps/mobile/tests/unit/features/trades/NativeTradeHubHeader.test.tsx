@@ -23,6 +23,24 @@ describe('NativeTradeHubHeader', () => {
     expect(onViewChange).toHaveBeenCalledWith('activity');
   });
 
+  it('matches the canonical trade header and opens the trade board', () => {
+    const onOpenTradeBoard = jest.fn();
+    const { getByRole, getByText } = render(
+      <NativeTradeHubHeader
+        activeView="preferences"
+        assetBaseUrl="https://pokegonexus.test"
+        onOpenTradeBoard={onOpenTradeBoard}
+        onViewChange={jest.fn()}
+      />,
+    );
+
+    expect(getByText('TRAINER EXCHANGE')).toBeTruthy();
+    expect(getByRole('header', { name: 'Trades' })).toBeTruthy();
+    expect(getByText('Set your preferences, respond to offers, and follow every exchange.')).toBeTruthy();
+    fireEvent.press(getByRole('button', { name: 'Share board' }));
+    expect(onOpenTradeBoard).toHaveBeenCalledTimes(1);
+  });
+
   it('uses the pager value for a coordinated sliding indicator', () => {
     const { getByTestId } = render(
       <NativeTradeHubHeader

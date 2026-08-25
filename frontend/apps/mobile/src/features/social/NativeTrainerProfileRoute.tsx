@@ -182,7 +182,17 @@ export const NativeTrainerProfileRoute = ({ username }: Props) => {
         model={model}
         feedback={feedback}
         editorDraft={profileDraft}
-        onBack={normalizedUsername ? () => router.canGoBack() ? router.back() : router.replace('/native/search') : undefined}
+        onBack={() => {
+          if (router.canGoBack()) {
+            router.back();
+            return;
+          }
+          if (normalizedUsername) {
+            router.replace('/native/search');
+            return;
+          }
+          router.replace({ pathname: '/web', params: { path: '/' } });
+        }}
         onDismissFeedback={() => setFeedback(null)}
         onBeginEdit={isOwner && profileQuery.data
           ? () => setProfileDraft(createNativeTrainerProfileDraft(profileQuery.data))

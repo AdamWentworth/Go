@@ -85,8 +85,11 @@ describe('NativeTrainerProfileScreen', () => {
   });
 
   it('opens Friends from the shared trainer workspace navigation', () => {
+    const onBack = jest.fn();
     const onOpenFriends = jest.fn();
-    const view = renderScreen({ onOpenFriends });
+    const view = renderScreen({ onBack, onOpenFriends });
+    fireEvent.press(view.getByRole('button', { name: 'Back' }));
+    expect(onBack).toHaveBeenCalledTimes(1);
     fireEvent.press(view.getByRole('tab', { name: 'Friends' }));
     expect(onOpenFriends).toHaveBeenCalledTimes(1);
   });
