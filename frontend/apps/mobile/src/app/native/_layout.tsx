@@ -21,6 +21,7 @@ export default function NativeLayout() {
             <Stack.Screen name="register" options={{ animation: 'slide_from_right' }} />
             <Stack.Screen name="reset-password" options={{ animation: 'slide_from_bottom' }} />
             <Stack.Screen name="verify-email-change" options={{ animation: 'slide_from_bottom' }} />
+            <Stack.Screen name="not-found" options={{ animation: 'fade' }} />
             <Stack.Screen name="info/[slug]" options={{ animation: 'slide_from_right' }} />
             <Stack.Screen name="pokedex/index" options={{ animation: 'none' }} />
             <Stack.Screen name="pokedex/[variantId]" options={{ animation: 'slide_from_bottom', gestureDirection: 'vertical' }} />
