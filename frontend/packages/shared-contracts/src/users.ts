@@ -323,6 +323,8 @@ export const usersContract = {
       `/autocomplete-trainers?q=${encodeURIComponent(query)}`,
     updateUser: (userId: string) =>
       `/update-user/${encodeURIComponent(userId)}`,
+    deleteUser: (userId: string) =>
+      `/${encodeURIComponent(userId)}`,
     userOverview: (userId: string) =>
       `/users/${encodeURIComponent(userId)}/overview`,
     instanceSync: '/instances/sync',
