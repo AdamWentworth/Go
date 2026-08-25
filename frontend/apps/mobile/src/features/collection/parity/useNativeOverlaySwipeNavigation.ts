@@ -46,6 +46,7 @@ type Args = {
 };
 
 type Result = {
+  isAnimating: boolean;
   motionStyle: { transform: { translateX: Animated.Value }[] };
   navigateNext: () => void;
   navigatePrevious: () => void;
@@ -59,6 +60,7 @@ export const useNativeOverlaySwipeNavigation = ({
 }: Args): Result => {
   const [translateX] = useState(() => new Animated.Value(0));
   const [isAnimating, setIsAnimating] = useState(false);
+  const [pendingNavigation, setPendingNavigation] = useState<NativeOverlaySwipeDirection | null>(null);
   const devicePreferences = useOptionalNativeDevicePreferences();
   const [systemReduceMotion, setSystemReduceMotion] = useState(false);
 
@@ -88,7 +90,11 @@ export const useNativeOverlaySwipeNavigation = ({
   }, [translateX]);
 
   const navigate = useCallback((direction: NativeOverlaySwipeDirection) => {
-    if (disabled || isAnimating) return;
+    if (disabled) return;
+    if (isAnimating) {
+      setPendingNavigation(direction);
+      return;
+    }
     const callback = direction === 'next' ? onNext : onPrevious;
     if (!callback) {
       resetPosition();
@@ -102,6 +108,9 @@ export const useNativeOverlaySwipeNavigation = ({
     }
 
     setIsAnimating(true);
+    const finishNavigation = () => {
+      setIsAnimating(false);
+    };
     const exitOffset = direction === 'next' ? -140 : 140;
     const enterOffset = direction === 'next' ? 110 : -110;
     Animated.timing(translateX, {
@@ -110,7 +119,7 @@ export const useNativeOverlaySwipeNavigation = ({
       useNativeDriver: true,
     }).start(({ finished }) => {
       if (!finished) {
-        setIsAnimating(false);
+        finishNavigation();
         resetPosition();
         return;
       }
@@ -121,10 +130,20 @@ export const useNativeOverlaySwipeNavigation = ({
         duration: 220,
         useNativeDriver: true,
       }).start(() => {
-        setIsAnimating(false);
+        finishNavigation();
       });
     });
   }, [disabled, isAnimating, onNext, onPrevious, reduceMotion, resetPosition, translateX]);
+
+  useEffect(() => {
+    if (isAnimating || !pendingNavigation) return undefined;
+    const direction = pendingNavigation;
+    const frame = requestAnimationFrame(() => {
+      setPendingNavigation(null);
+      navigate(direction);
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [isAnimating, navigate, pendingNavigation]);
 
   const gesture = useMemo(() => Gesture.Pan()
     .enabled(!disabled && !isAnimating && Boolean(onNext || onPrevious))
@@ -159,6 +178,7 @@ export const useNativeOverlaySwipeNavigation = ({
 
   return {
     gesture,
+    isAnimating,
     motionStyle: { transform: [{ translateX }] },
     navigateNext: () => navigate('next'),
     navigatePrevious: () => navigate('previous'),

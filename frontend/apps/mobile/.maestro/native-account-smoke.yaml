@@ -45,6 +45,8 @@ tags:
 - assertVisible: Sign out every device?
 - tapOn: Sign out all
 - assertVisible: All sessions revoked.
+- tapOn: Dismiss message
+- assertNotVisible: All sessions revoked.
 - scrollUntilVisible:
     element:
       text: Delete account
@@ -52,7 +54,9 @@ tags:
     timeout: 10000
 - tapOn:
     id: native-account-delete-button
-- assertVisible: Permanently delete your account?
+- extendedWaitUntil:
+    visible: Permanently delete your account?
+    timeout: 10000
 - takeScreenshot: native-account-security-confirmation
 - tapOn: Cancel
 - assertVisible: Delete account

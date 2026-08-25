@@ -2519,12 +2519,15 @@ export const NativeInstanceDetailScreen = ({
         <Pressable
           accessibilityLabel="Previous Pokémon"
           accessibilityRole="button"
+          accessibilityState={{ disabled: overlaySwipe.isAnimating }}
+          disabled={overlaySwipe.isAnimating}
           onPress={overlaySwipe.navigatePrevious}
           style={[
             styles.instanceNavigation,
             styles.previousInstance,
             { bottom: insets.bottom + 24 },
           ]}
+          testID="native-instance-previous"
         >
           <Text style={styles.instanceNavigationIcon}>◀</Text>
         </Pressable>
@@ -2533,12 +2536,15 @@ export const NativeInstanceDetailScreen = ({
         <Pressable
           accessibilityLabel="Next Pokémon"
           accessibilityRole="button"
+          accessibilityState={{ disabled: overlaySwipe.isAnimating }}
+          disabled={overlaySwipe.isAnimating}
           onPress={overlaySwipe.navigateNext}
           style={[
             styles.instanceNavigation,
             styles.nextInstance,
             { bottom: insets.bottom + 24 },
           ]}
+          testID="native-instance-next"
         >
           <Text style={styles.instanceNavigationIcon}>▶</Text>
         </Pressable>

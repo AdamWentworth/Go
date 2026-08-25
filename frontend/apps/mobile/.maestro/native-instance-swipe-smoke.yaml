@@ -35,7 +35,14 @@ tags:
 - extendedWaitUntil:
     visible: Shiny Gigantamax Charizard
     timeout: 10000
-- tapOn: Next Pokémon
+- extendedWaitUntil:
+    visible:
+      id: native-instance-next
+      enabled: true
+    timeout: 10000
+- tapOn:
+    id: native-instance-next
+    enabled: true
 - extendedWaitUntil:
     visible: Shiny Suicune
     timeout: 10000
