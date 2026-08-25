@@ -33,7 +33,15 @@ const detail = {
   traits: ['Shiny'],
   stats: [{ label: 'CP', value: '2,499' }],
   ivs: [{ label: 'Attack', value: 15 }],
-  moves: [{ label: 'Fast move', value: 'Fire Spin' }],
+  moves: [{
+    label: 'Fast move',
+    value: 'Fire Spin',
+    legacy: false,
+    typeName: 'Fire',
+    typeIconUri: 'https://pokegonexus.com/images/types/fire.png',
+    raidPower: 14,
+    pvpPower: 9,
+  }],
   provenance: [],
   preferences: [{ label: 'Friendship', value: '5/5 hearts' }],
   targetRows: [{
@@ -80,10 +88,49 @@ describe('NativeInstanceDetailScreen', () => {
 
     expect(screen.getByText('Shiny Charizard')).toBeTruthy();
     expect(screen.getByText('Fire Spin')).toBeTruthy();
+    expect(screen.getByText('14')).toBeTruthy();
+    fireEvent.press(screen.getByRole('tab', { name: 'TRAINER BATTLES' }));
+    expect(screen.getByText('9')).toBeTruthy();
     expect(screen.getByText('Wanted Pokémon')).toBeTruthy();
     expect(screen.queryByText('15')).toBeNull();
     fireEvent.press(screen.getByRole('button', { name: 'Edit Pokémon' }));
     expect(onEditInCurrentApp).toHaveBeenCalledTimes(1);
+  });
+
+  it('renders canonical type, legacy, power, and Shadow bonus move signals', () => {
+    render(
+      <NativeInstanceDetailScreen
+        detail={{
+          ...detail,
+          instance: { shadow: true } as NonNullable<NativeInstanceDetail['instance']>,
+          moves: [{
+            label: 'Charged move',
+            value: 'Blast Burn',
+            legacy: true,
+            typeName: 'Fire',
+            typeIconUri: 'https://pokegonexus.com/images/types/fire.png',
+            raidPower: 120,
+            pvpPower: 110,
+          }],
+        }}
+        isLoading={false}
+        error={null}
+        cachedAt={null}
+        movesWarning={null}
+        saveNotice={null}
+        saveError={null}
+        isSaving={false}
+        onRetry={jest.fn()}
+        onBack={jest.fn()}
+        onToggleFavorite={jest.fn()}
+        onEditInCurrentApp={jest.fn()}
+      />,
+    );
+
+    expect(screen.getByText('Blast Burn*')).toBeTruthy();
+    expect(screen.getByLabelText('Fire type')).toBeTruthy();
+    expect(screen.getByText('+24')).toBeTruthy();
+    expect(screen.getByLabelText('Shadow bonus')).toBeTruthy();
   });
 
   it('shows a recoverable missing-instance state', () => {

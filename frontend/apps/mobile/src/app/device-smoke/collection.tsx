@@ -409,12 +409,12 @@ export default function DeviceSmokeCollectionRoute() {
               moves: openedRow.status === 'caught'
                 ? openedRow.pokemonId === 376
                   ? [
-                      { label: 'Fast move', value: 'Bullet Punch' },
-                      { label: 'Charged move', value: 'Meteor Mash' },
+                      { label: 'Fast move', value: 'Bullet Punch', typeName: 'Steel', typeIconUri: `${ASSET_BASE_URL}/images/types/steel.png`, raidPower: 9, pvpPower: 9 },
+                      { label: 'Charged move', value: 'Meteor Mash', legacy: true, typeName: 'Steel', typeIconUri: `${ASSET_BASE_URL}/images/types/steel.png`, raidPower: 100, pvpPower: 100 },
                     ]
                   : [
-                      { label: 'Fast move', value: 'Vine Whip' },
-                      { label: 'Charged move', value: 'Frenzy Plant' },
+                      { label: 'Fast move', value: 'Vine Whip', typeName: 'Grass', typeIconUri: `${ASSET_BASE_URL}/images/types/grass.png`, raidPower: 7, pvpPower: 5 },
+                      { label: 'Charged move', value: 'Frenzy Plant', legacy: true, typeName: 'Grass', typeIconUri: `${ASSET_BASE_URL}/images/types/grass.png`, raidPower: 100, pvpPower: 100 },
                     ]
                 : [],
               preferences: openedRow.status === 'wanted'
@@ -425,14 +425,14 @@ export default function DeviceSmokeCollectionRoute() {
                 : [],
               moveOptions: openedRow.pokemonId === 376
                 ? [
-                    { id: 101, name: 'Bullet Punch', kind: 'fast', legacy: false, typeName: 'Steel' },
-                    { id: 102, name: 'Meteor Mash', kind: 'charged', legacy: true, typeName: 'Steel' },
-                    { id: 103, name: 'Psychic', kind: 'charged', legacy: false, typeName: 'Psychic' },
+                    { id: 101, name: 'Bullet Punch', kind: 'fast', legacy: false, typeName: 'Steel', typeIconUri: `${ASSET_BASE_URL}/images/types/steel.png`, raidPower: 9, pvpPower: 9 },
+                    { id: 102, name: 'Meteor Mash', kind: 'charged', legacy: true, typeName: 'Steel', typeIconUri: `${ASSET_BASE_URL}/images/types/steel.png`, raidPower: 100, pvpPower: 100 },
+                    { id: 103, name: 'Psychic', kind: 'charged', legacy: false, typeName: 'Psychic', typeIconUri: `${ASSET_BASE_URL}/images/types/psychic.png`, raidPower: 90, pvpPower: 75 },
                   ]
                 : [
-                    { id: 101, name: 'Vine Whip', kind: 'fast', legacy: false, typeName: 'Grass' },
-                    { id: 102, name: 'Frenzy Plant', kind: 'charged', legacy: true, typeName: 'Grass' },
-                    { id: 103, name: 'Sludge Bomb', kind: 'charged', legacy: false, typeName: 'Poison' },
+                    { id: 101, name: 'Vine Whip', kind: 'fast', legacy: false, typeName: 'Grass', typeIconUri: `${ASSET_BASE_URL}/images/types/grass.png`, raidPower: 7, pvpPower: 5 },
+                    { id: 102, name: 'Frenzy Plant', kind: 'charged', legacy: true, typeName: 'Grass', typeIconUri: `${ASSET_BASE_URL}/images/types/grass.png`, raidPower: 100, pvpPower: 100 },
+                    { id: 103, name: 'Sludge Bomb', kind: 'charged', legacy: false, typeName: 'Poison', typeIconUri: `${ASSET_BASE_URL}/images/types/poison.png`, raidPower: 80, pvpPower: 80 },
                   ],
               backgroundOptions: [{
                 id: 9,

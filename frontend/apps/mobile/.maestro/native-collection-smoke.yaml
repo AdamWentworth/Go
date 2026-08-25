@@ -204,6 +204,14 @@ tags:
 - tapOn: "View Shiny Shadow Venusaur"
 - assertVisible: Shiny Shadow Venusaur
 - assertVisible: Remove Favorite
+- scrollUntilVisible:
+    element:
+      text: SHADOW BONUS
+    direction: DOWN
+- assertVisible: SHADOW BONUS
+- tapOn: TRAINER BATTLES
+- assertVisible: SHADOW BONUS
+- takeScreenshot: 06cc-shadow-move-presentation
 - tapOn: Close
 - tapOn: "View Shiny Metagross"
 - assertVisible: Shiny Metagross

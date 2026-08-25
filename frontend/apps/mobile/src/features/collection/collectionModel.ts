@@ -1,6 +1,7 @@
 import type { PokemonInstance } from '@pokemongonexus/shared-contracts/instances';
 import type {
   BasePokemon,
+  Move,
   PokemonMovesChunk,
 } from '@pokemongonexus/shared-contracts/pokemon';
 import type {
@@ -22,6 +23,10 @@ import {
   resolvePokemonDisplayFusionBackgroundPool,
   resolvePokemonDisplayFusionComboBackground,
 } from '@pokemongonexus/shared-domain/fusion-backgrounds';
+import {
+  buildPokemonMoveTypeIconPath,
+  getPokemonMovePower,
+} from '@pokemongonexus/shared-domain/moves';
 import { normalizeNativeTagsEnvelope } from './nativeTagsEnvelope';
 import { normalizeNativeTagIds } from './nativeInstanceNormalization';
 
@@ -84,6 +89,19 @@ export type NativeInstanceMoveOption = {
   kind: 'fast' | 'charged';
   legacy: boolean;
   typeName: string;
+  typeIconUri?: string;
+  raidPower?: number | null;
+  pvpPower?: number | null;
+};
+
+export type NativeInstanceMoveRow = {
+  label: string;
+  value: string;
+  legacy?: boolean;
+  typeName?: string;
+  typeIconUri?: string;
+  raidPower?: number | null;
+  pvpPower?: number | null;
 };
 
 export type NativeInstanceBackgroundOption = {
@@ -100,7 +118,7 @@ export type NativeInstanceDetail = {
   traits: string[];
   stats: { label: string; value: string }[];
   ivs: { label: string; value: number }[];
-  moves: { label: string; value: string }[];
+  moves: NativeInstanceMoveRow[];
   provenance: { label: string; value: string }[];
   preferences: { label: string; value: string }[];
   moveOptions?: NativeInstanceMoveOption[];
@@ -776,11 +794,11 @@ export const sortNativeCollectionRows = (
 const formatNumber = (value: number): string =>
   Number.isInteger(value) ? value.toLocaleString() : value.toFixed(2);
 
-const findMoveName = (
+const findMove = (
   moves: PokemonMovesChunk,
   pokemonId: number,
   moveId: number | null,
-): string | null => {
+): Move | null => {
   if (moveId == null) return null;
   const entry = moves.find((candidate) => candidate.pokemon_id === pokemonId);
   if (!entry) return null;
@@ -789,7 +807,7 @@ const findMoveName = (
     ...entry.fusion.flatMap((fusion) => fusion.moves ?? []),
     ...entry.crownForms.flatMap((crown) => crown.moves ?? []),
   ];
-  return pool.find((move) => move.move_id === moveId)?.name ?? `Move #${moveId}`;
+  return pool.find((move) => move.move_id === moveId) ?? null;
 };
 
 const compactRows = <T>(rows: (T | null)[]): T[] =>
@@ -840,19 +858,24 @@ export const buildNativeInstanceDetail = (
     instance.stamina_iv == null ? null : { label: 'HP', value: instance.stamina_iv },
   ]);
 
+  const buildMoveRow = (label: string, moveId: number | null): NativeInstanceMoveRow | null => {
+    if (moveId == null) return null;
+    const move = findMove(moves, instance.pokemon_id, moveId);
+    const typeName = move?.type_name || move?.type || 'Normal';
+    return {
+      label,
+      value: move?.name ?? `Move #${moveId}`,
+      legacy: move?.legacy ?? false,
+      typeName,
+      typeIconUri: absoluteImageUri(buildPokemonMoveTypeIconPath(typeName), assetOrigin) ?? undefined,
+      raidPower: move ? getPokemonMovePower(move, 'raid') : null,
+      pvpPower: move ? getPokemonMovePower(move, 'pvp') : null,
+    };
+  };
   const moveRows = compactRows([
-    instance.fast_move_id == null ? null : {
-      label: 'Fast move',
-      value: findMoveName(moves, instance.pokemon_id, instance.fast_move_id) ?? 'Unknown',
-    },
-    instance.charged_move1_id == null ? null : {
-      label: 'Charged move',
-      value: findMoveName(moves, instance.pokemon_id, instance.charged_move1_id) ?? 'Unknown',
-    },
-    instance.charged_move2_id == null ? null : {
-      label: 'Second charged move',
-      value: findMoveName(moves, instance.pokemon_id, instance.charged_move2_id) ?? 'Unknown',
-    },
+    buildMoveRow('Fast move', instance.fast_move_id),
+    buildMoveRow('Charged move', instance.charged_move1_id),
+    buildMoveRow('Second charged move', instance.charged_move2_id),
   ]);
 
   const provenance = compactRows([
@@ -910,6 +933,12 @@ export const buildNativeInstanceDetail = (
     kind: move.is_fast ? 'fast' as const : 'charged' as const,
     legacy: move.legacy,
     typeName: move.type_name,
+    typeIconUri: absoluteImageUri(
+      buildPokemonMoveTypeIconPath(move.type_name || move.type),
+      assetOrigin,
+    ) ?? undefined,
+    raidPower: getPokemonMovePower(move, 'raid'),
+    pvpPower: getPokemonMovePower(move, 'pvp'),
   }])).values()];
   const resolvedBackgroundPool = resolvePokemonDisplayFusionBackgroundPool({
     pokemon,
@@ -983,6 +1012,12 @@ export const buildNativeInstanceDetail = (
       kind: move.is_fast ? 'fast' as const : 'charged' as const,
       legacy: move.legacy,
       typeName: move.type_name,
+      typeIconUri: absoluteImageUri(
+        buildPokemonMoveTypeIconPath(move.type_name || move.type),
+        assetOrigin,
+      ) ?? undefined,
+      raidPower: getPokemonMovePower(move, 'raid'),
+      pvpPower: getPokemonMovePower(move, 'pvp'),
     })),
     stats: crownForm.attack == null || crownForm.defense == null || crownForm.stamina == null
       ? undefined
@@ -1077,6 +1112,12 @@ export const buildNativeInstanceDetail = (
           kind: move.is_fast ? 'fast' as const : 'charged' as const,
           legacy: move.legacy,
           typeName: move.type_name,
+          typeIconUri: absoluteImageUri(
+            buildPokemonMoveTypeIconPath(move.type_name || move.type),
+            assetOrigin,
+          ) ?? undefined,
+          raidPower: getPokemonMovePower(move, 'raid'),
+          pvpPower: getPokemonMovePower(move, 'pvp'),
         })),
         name: entry.name || `Fusion ${entry.fusion_id}`,
         stats: entry.attack == null || entry.defense == null || entry.stamina == null
