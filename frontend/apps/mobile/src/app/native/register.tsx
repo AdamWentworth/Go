@@ -9,8 +9,8 @@ export default function NativeRegisterRoute() {
   return (
     <NativeRegisterScreen
       onBackToLogin={() => router.replace('/native/login')}
-      onOpenPrivacy={() => router.push({ pathname: '/web', params: { path: '/privacy' } })}
-      onOpenTerms={() => router.push({ pathname: '/web', params: { path: '/terms' } })}
+      onOpenPrivacy={() => router.push({ pathname: '/native/info/[slug]', params: { slug: 'privacy' } })}
+      onOpenTerms={() => router.push({ pathname: '/native/info/[slug]', params: { slug: 'terms' } })}
       onRegister={session.register}
       onRegistered={() => router.replace('/native')}
     />

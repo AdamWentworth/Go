@@ -1,5 +1,5 @@
-export type NativeActionMenuPath = '/' | '/pokemon' | '/profile' | '/profile/friends' | '/search' | '/settings' | '/trade-board' | '/trades';
-export type ReadyNativePath = '/native' | '/native/account' | '/native/collection' | '/native/friends' | '/native/profile' | '/native/search' | '/native/settings' | '/native/trade-board' | '/native/trades';
+export type NativeActionMenuPath = '/' | '/about' | '/data-deletion' | '/faq' | '/getting-started' | '/help' | '/pokemon' | '/privacy' | '/profile' | '/profile/friends' | '/safety' | '/search' | '/settings' | '/terms' | '/trade-board' | '/trades';
+export type ReadyNativePath = '/native' | '/native/account' | '/native/collection' | '/native/friends' | '/native/info/about' | '/native/info/data-deletion' | '/native/info/faq' | '/native/info/getting-started' | '/native/info/help' | '/native/info/privacy' | '/native/info/safety' | '/native/info/terms' | '/native/profile' | '/native/search' | '/native/settings' | '/native/trade-board' | '/native/trades';
 export type NativeLoginReturnPath = ReadyNativePath | `/native/profile/${string}`;
 
 export type NativeActionMenuDestination =
@@ -9,17 +9,25 @@ export type NativeActionMenuDestination =
 
 const NATIVE_DESTINATIONS: Record<NativeActionMenuPath, NativeActionMenuDestination> = {
   '/': { kind: 'native', pathname: '/native' },
+  '/about': { kind: 'native', pathname: '/native/info/about' },
+  '/data-deletion': { kind: 'native', pathname: '/native/info/data-deletion' },
+  '/faq': { kind: 'native', pathname: '/native/info/faq' },
+  '/getting-started': { kind: 'native', pathname: '/native/info/getting-started' },
+  '/help': { kind: 'native', pathname: '/native/info/help' },
   '/pokemon': { kind: 'native', pathname: '/native/collection' },
+  '/privacy': { kind: 'native', pathname: '/native/info/privacy' },
   '/profile': { kind: 'native', pathname: '/native/profile' },
   '/profile/friends': { kind: 'native', pathname: '/native/friends' },
+  '/safety': { kind: 'native', pathname: '/native/info/safety' },
   '/search': { kind: 'native', pathname: '/native/search' },
   '/settings': { kind: 'native', pathname: '/native/settings' },
+  '/terms': { kind: 'native', pathname: '/native/info/terms' },
   '/trade-board': { kind: 'native', pathname: '/native/trade-board' },
   '/trades': { kind: 'native', pathname: '/native/trades' },
 };
 
 const isNativeActionMenuPath = (path: string): path is NativeActionMenuPath => (
-  path === '/' || path === '/pokemon' || path === '/profile' || path === '/profile/friends' || path === '/search' || path === '/settings' || path === '/trade-board' || path === '/trades'
+  Object.prototype.hasOwnProperty.call(NATIVE_DESTINATIONS, path)
 );
 
 export const resolveNativeActionMenuDestination = (
@@ -38,6 +46,14 @@ export const resolveNativeLoginReturnTo = (
     || requestedPath === '/native'
     || requestedPath === '/native/collection'
     || requestedPath === '/native/friends'
+    || requestedPath === '/native/info/about'
+    || requestedPath === '/native/info/data-deletion'
+    || requestedPath === '/native/info/faq'
+    || requestedPath === '/native/info/getting-started'
+    || requestedPath === '/native/info/help'
+    || requestedPath === '/native/info/privacy'
+    || requestedPath === '/native/info/safety'
+    || requestedPath === '/native/info/terms'
     || requestedPath === '/native/search'
     || requestedPath === '/native/settings'
     || requestedPath === '/native/trade-board'

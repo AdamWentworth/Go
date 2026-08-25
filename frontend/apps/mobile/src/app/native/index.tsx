@@ -1,5 +1,5 @@
 import * as SecureStore from 'expo-secure-store';
-import { Redirect, useRouter } from 'expo-router';
+import { useRouter } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
@@ -26,7 +26,9 @@ import {
 } from '../../features/home/nativeHomeDashboardModel';
 import { useNativeFriendsQuery } from '../../features/social/socialQueries';
 import { useNativeTradesQuery } from '../../features/trades/tradeQueries';
+import { isNativeInformationSlug } from '../../features/information/nativeInformationContent';
 import { resolveNativeActionMenuDestination } from '../../navigation/nativeActionMenuNavigation';
+import { NativeGuestHomeScreen } from '../../screens/NativeGuestHomeScreen';
 import { NativeHomeScreen } from '../../screens/NativeHomeScreen';
 
 const hintStorageKey = (userId: string): string => (
@@ -43,6 +45,83 @@ export default function NativeHomeRoute() {
   const friendsQuery = useNativeFriendsQuery(userId);
   const [actionMenuOpen, setActionMenuOpen] = useState(false);
   const [showActionMenuHint, setShowActionMenuHint] = useState(false);
+
+  const navigate = (path: string) => {
+    setActionMenuOpen(false);
+    const [pathname = '/', search = ''] = path.split('?');
+    const params = new URLSearchParams(search);
+
+    if (pathname === '/') return;
+    if (isNativeInformationSlug(pathname.slice(1))) {
+      router.push({ pathname: '/native/info/[slug]', params: { slug: pathname.slice(1) } });
+      return;
+    }
+    if (pathname === '/login') {
+      router.push('/native/login');
+      return;
+    }
+    if (pathname === '/register') {
+      router.push('/native/register');
+      return;
+    }
+    if (pathname === '/pokemon') {
+      const instanceId = params.get('instanceId');
+      if (instanceId) {
+        router.push({ pathname: '/native/collection/[instanceId]', params: { instanceId } });
+        return;
+      }
+      const filter = params.get('filter');
+      router.push(filter
+        ? { pathname: '/native/collection', params: { filter } }
+        : '/native/collection');
+      return;
+    }
+    if (pathname === '/trades') {
+      const section = params.get('section');
+      router.push(section
+        ? { pathname: '/native/trades', params: { section } }
+        : '/native/trades');
+      return;
+    }
+    if (pathname === '/profile/friends') {
+      router.push('/native/friends');
+      return;
+    }
+    if (pathname === '/profile') {
+      router.push('/native/profile');
+      return;
+    }
+    if (pathname === '/search') {
+      router.push('/native/search');
+      return;
+    }
+    if (pathname === '/settings') {
+      router.push('/native/settings');
+      return;
+    }
+    if (pathname === '/settings/account') {
+      router.push('/native/account');
+      return;
+    }
+    if (pathname === '/trade-board') {
+      router.push('/native/trade-board');
+      return;
+    }
+    router.push({ pathname: '/web', params: { path } });
+  };
+  const navigateFromActionMenu = (path: string) => {
+    const destination = resolveNativeActionMenuDestination(path, '/');
+    if (destination.kind === 'current') {
+      setActionMenuOpen(false);
+      return;
+    }
+    if (destination.kind === 'native') {
+      setActionMenuOpen(false);
+      router.push(destination.pathname);
+      return;
+    }
+    navigate(destination.path);
+  };
 
   useEffect(() => {
     if (!userId) return undefined;
@@ -98,65 +177,23 @@ export default function NativeHomeRoute() {
     );
   }
 
-  if (!session.user) return <Redirect href="/native/login?returnTo=%2Fnative" />;
+  if (!session.user) {
+    return (
+      <View style={styles.root}>
+        <NativeGuestHomeScreen assetBaseUrl={runtimeConfig.api.frontendAppUrl} onNavigate={navigate} />
+        <NativeActionMenuAnchor assetBaseUrl={runtimeConfig.api.frontendAppUrl} onPress={() => setActionMenuOpen(true)} />
+        {actionMenuOpen ? (
+          <NativeActionMenu
+            assetBaseUrl={runtimeConfig.api.frontendAppUrl}
+            onClose={() => setActionMenuOpen(false)}
+            onNavigate={navigateFromActionMenu}
+            visible
+          />
+        ) : null}
+      </View>
+    );
+  }
   const signedInUser = session.user;
-
-  const navigate = (path: string) => {
-    setActionMenuOpen(false);
-    const [pathname = '/', search = ''] = path.split('?');
-    const params = new URLSearchParams(search);
-
-    if (pathname === '/') return;
-    if (pathname === '/pokemon') {
-      const instanceId = params.get('instanceId');
-      if (instanceId) {
-        router.push({ pathname: '/native/collection/[instanceId]', params: { instanceId } });
-        return;
-      }
-      const filter = params.get('filter');
-      router.push(filter
-        ? { pathname: '/native/collection', params: { filter } }
-        : '/native/collection');
-      return;
-    }
-    if (pathname === '/trades') {
-      const section = params.get('section');
-      router.push(section
-        ? { pathname: '/native/trades', params: { section } }
-        : '/native/trades');
-      return;
-    }
-    if (pathname === '/profile/friends') {
-      router.push('/native/friends');
-      return;
-    }
-    if (pathname === '/profile') {
-      router.push('/native/profile');
-      return;
-    }
-    if (pathname === '/search') {
-      router.push('/native/search');
-      return;
-    }
-    if (pathname === '/settings') {
-      router.push('/native/settings');
-      return;
-    }
-    router.push({ pathname: '/web', params: { path } });
-  };
-  const navigateFromActionMenu = (path: string) => {
-    const destination = resolveNativeActionMenuDestination(path, '/');
-    if (destination.kind === 'current') {
-      setActionMenuOpen(false);
-      return;
-    }
-    if (destination.kind === 'native') {
-      setActionMenuOpen(false);
-      router.push(destination.pathname);
-      return;
-    }
-    navigate(destination.path);
-  };
   const dismissActionMenuHint = () => {
     setShowActionMenuHint(false);
     void SecureStore.setItemAsync(hintStorageKey(signedInUser.user_id), 'dismissed');
