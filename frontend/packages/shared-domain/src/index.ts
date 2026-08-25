@@ -5,3 +5,4 @@ export * from './fusion-backgrounds';
 export * from './combat-power';
 export * from './moves';
 export * from './trade-proposal-candidates';
+export * from './trade-cost';

@@ -11,7 +11,8 @@
     "./fusion-backgrounds": "./src/fusion-backgrounds.ts",
     "./combat-power": "./src/combat-power.ts",
     "./moves": "./src/moves.ts",
-    "./trade-proposal-candidates": "./src/trade-proposal-candidates.ts"
+    "./trade-proposal-candidates": "./src/trade-proposal-candidates.ts",
+    "./trade-cost": "./src/trade-cost.ts"
   },
   "dependencies": {
     "@pokemongonexus/shared-contracts": "file:../shared-contracts"
