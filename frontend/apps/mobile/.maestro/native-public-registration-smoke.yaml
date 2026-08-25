@@ -10,8 +10,10 @@ name: Native registration workflow smoke
 - assertVisible: "YOUR ACCOUNT"
 - tapOn: "Username"
 - inputText: "VisualTrainer"
-- tapOn: "Email"
+- pressKey: ENTER
 - inputText: "visual@example.invalid"
-- tapOn: "Continue ›"
-- assertVisible: "PROTECT YOUR ACCOUNT"
+- pressKey: ENTER
+- extendedWaitUntil:
+    visible: "PROTECT YOUR ACCOUNT"
+    timeout: 15000
 - takeScreenshot: "native-registration-password-step"

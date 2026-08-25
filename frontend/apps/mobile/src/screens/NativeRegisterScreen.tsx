@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import {
   ActivityIndicator,
   KeyboardAvoidingView,
@@ -65,6 +65,7 @@ export const NativeRegisterScreen = ({
   const [method, setMethod] = useState<'email' | 'oauth' | null>(null);
   const [oauthCode, setOAuthCode] = useState<string | null>(null);
   const [oauthProvider, setOAuthProvider] = useState<OAuthProvider | null>(null);
+  const emailInputRef = useRef<TextInput>(null);
   const patch = <K extends keyof typeof draft>(key: K, value: (typeof draft)[K]) => {
     setDraft((current) => ({ ...current, [key]: value }));
     setError(null);
@@ -120,8 +121,8 @@ export const NativeRegisterScreen = ({
   };
 
   return (
-    <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={[styles.root, light && styles.rootLight]}>
-      <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
+    <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={[styles.root, light && styles.rootLight]}>
+      <ScrollView automaticallyAdjustKeyboardInsets contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
         <View style={[styles.card, light && styles.cardLight]}>
           <View style={styles.header}>
             <View style={styles.headerCopy}>
@@ -177,12 +178,41 @@ export const NativeRegisterScreen = ({
           {method && step === 0 ? (
             <View style={styles.fields}>
               <Field label="Username" light={light}>
-                <TextInput accessibilityLabel="Username" autoCapitalize="none" autoComplete="username-new" onChangeText={(value) => patch('username', value.replace(/\s+/g, ''))} placeholder="Choose a unique username" placeholderTextColor="#718087" style={[styles.input, light && styles.inputLight]} value={draft.username} />
+                <TextInput
+                  accessibilityLabel="Username"
+                  autoCapitalize="none"
+                  autoComplete="username-new"
+                  onChangeText={(value) => patch('username', value.replace(/\s+/g, ''))}
+                  onSubmitEditing={() => {
+                    if (method === 'email') emailInputRef.current?.focus();
+                    else void continueOrSubmit();
+                  }}
+                  placeholder="Choose a unique username"
+                  placeholderTextColor="#718087"
+                  returnKeyType={method === 'email' ? 'next' : 'done'}
+                  style={[styles.input, light && styles.inputLight]}
+                  submitBehavior="submit"
+                  value={draft.username}
+                />
               </Field>
               <Text style={[styles.help, light && styles.mutedLight]}>3–15 letters, numbers, or underscores.</Text>
               {method === 'email' ? (
                 <Field label="Email" light={light}>
-                  <TextInput accessibilityLabel="Email" autoCapitalize="none" autoComplete="email" inputMode="email" onChangeText={(value) => patch('email', value)} placeholder="you@example.com" placeholderTextColor="#718087" style={[styles.input, light && styles.inputLight]} value={draft.email} />
+                  <TextInput
+                    accessibilityLabel="Email"
+                    autoCapitalize="none"
+                    autoComplete="email"
+                    inputMode="email"
+                    onChangeText={(value) => patch('email', value)}
+                    onSubmitEditing={() => void continueOrSubmit()}
+                    placeholder="you@example.com"
+                    placeholderTextColor="#718087"
+                    ref={emailInputRef}
+                    returnKeyType="done"
+                    style={[styles.input, light && styles.inputLight]}
+                    submitBehavior="blurAndSubmit"
+                    value={draft.email}
+                  />
                 </Field>
               ) : (
                 <View style={[styles.verifiedEmail, light && styles.secondaryLight]}>

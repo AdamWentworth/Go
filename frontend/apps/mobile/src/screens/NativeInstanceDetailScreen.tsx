@@ -12,7 +12,7 @@ import {
   useColorScheme,
   useWindowDimensions,
 } from 'react-native';
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import Svg, { Circle, Path } from 'react-native-svg';
 import { GestureDetector } from 'react-native-gesture-handler';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -734,6 +734,7 @@ const NativeMoveSelector = ({
 }) => {
   const [open, setOpen] = useState(false);
   const selected = options.find((option) => option.id === value);
+  const selectorTestId = `native-move-selector-${label.toLowerCase().replace(/\s+/g, '-')}`;
   return (
     <>
       <Pressable
@@ -741,6 +742,7 @@ const NativeMoveSelector = ({
         accessibilityRole="button"
         onPress={() => setOpen(true)}
         style={[styles.choiceField, { backgroundColor: palette.input, borderColor: palette.border }]}
+        testID={selectorTestId}
       >
         {selected?.typeIconUri ? (
           <Image
@@ -1001,17 +1003,20 @@ const NativeCaughtMetadataControls = ({
   isCaught,
   palette,
   onChange,
+  onRequestLocationVisibility,
 }: {
   detail: NativeInstanceDetail;
   draft: NativeInstanceEditDraft;
   isCaught: boolean;
   palette: typeof LIGHT;
   onChange: (patch: Partial<NativeInstanceEditDraft>) => void;
+  onRequestLocationVisibility: (target: number) => void;
 }) => {
   const [locationSuggestions, setLocationSuggestions] = useState<string[]>([]);
   const [locationSuggestionError, setLocationSuggestionError] = useState<string | null>(null);
   const [isLoadingLocationSuggestions, setIsLoadingLocationSuggestions] = useState(false);
   const locationRequestRef = useRef(0);
+  const locationInputTargetRef = useRef<number | null>(null);
   const acceptedLocationRef = useRef<string | null>(null);
   const inputStyle = [
     styles.editInput,
@@ -1055,6 +1060,16 @@ const NativeCaughtMetadataControls = ({
 
     return () => clearTimeout(timeout);
   }, [draft.locationCaught]);
+
+  useEffect(() => {
+    if (locationSuggestions.length === 0 || locationInputTargetRef.current == null) return undefined;
+    const frame = requestAnimationFrame(() => {
+      if (locationInputTargetRef.current != null) {
+        onRequestLocationVisibility(locationInputTargetRef.current);
+      }
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [locationSuggestions.length, onRequestLocationVisibility]);
 
   const selectLocationSuggestion = (displayName: string) => {
     locationRequestRef.current += 1;
@@ -1170,6 +1185,10 @@ const NativeCaughtMetadataControls = ({
               setLocationSuggestionError(null);
               setIsLoadingLocationSuggestions(false);
               onChange({ locationCaught });
+            }}
+            onFocus={(event) => {
+              locationInputTargetRef.current = event.nativeEvent.target;
+              onRequestLocationVisibility(event.nativeEvent.target);
             }}
             placeholder="Location caught"
             placeholderTextColor={palette.secondary}
@@ -1601,6 +1620,7 @@ const NativeInstanceEditFields = ({
   palette,
   typeIconUris,
   onChange,
+  onRequestLocationVisibility,
 }: {
   assetBaseUrl: string;
   detail: NativeInstanceDetail;
@@ -1610,6 +1630,7 @@ const NativeInstanceEditFields = ({
   palette: typeof LIGHT;
   typeIconUris: string[];
   onChange: (patch: Partial<NativeInstanceEditDraft>) => void;
+  onRequestLocationVisibility: (target: number) => void;
 }) => {
   const [moveDamageMode, setMoveDamageMode] = useState<PokemonMoveDamageMode>('raid');
   const inputStyle = [
@@ -1825,6 +1846,7 @@ const NativeInstanceEditFields = ({
             draft={draft}
             isCaught={isCaught}
             onChange={onChange}
+            onRequestLocationVisibility={onRequestLocationVisibility}
             palette={palette}
           />
         </>
@@ -1869,6 +1891,16 @@ export const NativeInstanceDetailScreen = ({
     message: string;
   } | null>(null);
   const [backgroundPickerInstanceId, setBackgroundPickerInstanceId] = useState<string | null>(null);
+  const scrollRef = useRef<ScrollView>(null);
+  const requestKeyboardFieldVisibility = useCallback((target: number) => {
+    requestAnimationFrame(() => {
+      scrollRef.current?.scrollResponderScrollNativeHandleToKeyboard(
+        target,
+        230,
+        true,
+      );
+    });
+  }, []);
   const overlaySwipe = useNativeOverlaySwipeNavigation({
     disabled: !detail
       || editingInstanceId === detail.row.id
@@ -2154,6 +2186,7 @@ export const NativeInstanceDetailScreen = ({
           ]}
           directionalLockEnabled
           keyboardShouldPersistTaps="handled"
+          ref={scrollRef}
           showsVerticalScrollIndicator={false}
           style={styles.scroll}
         >
@@ -2300,6 +2333,7 @@ export const NativeInstanceDetailScreen = ({
                 isCaught={isCaught}
                 isWanted={isWanted}
                 onChange={updateDraft}
+                onRequestLocationVisibility={requestKeyboardFieldVisibility}
                 palette={palette}
                 typeIconUris={displayTypeIconUris}
               />

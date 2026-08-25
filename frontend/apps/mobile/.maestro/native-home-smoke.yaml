@@ -54,7 +54,11 @@ tags:
       text: Your latest Pokémon
     direction: DOWN
     timeout: 10000
-- assertVisible: Shiny Gigantamax Charizard
+- scrollUntilVisible:
+    element:
+      text: Shiny Gigantamax Charizard
+    direction: DOWN
+    timeout: 10000
 - scrollUntilVisible:
     element:
       text: More trainer tools

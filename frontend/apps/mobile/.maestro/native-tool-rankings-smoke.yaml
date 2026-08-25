@@ -6,5 +6,8 @@ name: Native community rankings tool smoke
 - assertVisible: "Shiny Bulbasaur"
 - tapOn: "Search rankings"
 - inputText: "bulba"
-- assertVisible: "Shiny Bulbasaur"
+- hideKeyboard
+- extendedWaitUntil:
+    visible: "Shiny Bulbasaur"
+    timeout: 15000
 - takeScreenshot: "native-tool-rankings"

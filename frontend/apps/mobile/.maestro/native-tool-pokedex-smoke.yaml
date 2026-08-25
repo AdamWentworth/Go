@@ -7,5 +7,8 @@ name: Native Pokédex tool smoke
 - tapOn: "Shiny"
 - tapOn: "Search Pokédex"
 - inputText: "bulba"
-- assertVisible: "Shiny Bulbasaur"
+- hideKeyboard
+- extendedWaitUntil:
+    visible: "Shiny Bulbasaur"
+    timeout: 15000
 - takeScreenshot: "native-tool-pokedex"
