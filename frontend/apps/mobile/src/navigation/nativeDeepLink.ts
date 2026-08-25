@@ -26,12 +26,13 @@ const pathFromIncomingUrl = (incoming: string): { pathname: string; query: strin
   if (!trimmed) return { pathname: '/', query: '' };
   try {
     const parsed = new URL(trimmed, 'https://pokegonexus.invalid');
-    const schemeUsesHostAsPath = parsed.protocol !== 'http:'
-      && parsed.protocol !== 'https:'
-      && parsed.hostname;
-    const pathname = schemeUsesHostAsPath
+    const schemeUsesHostAsPath = parsed.protocol === 'pokegonexus:' && parsed.hostname;
+    const rawPathname = schemeUsesHostAsPath
       ? `/${parsed.hostname}${parsed.pathname}`
       : parsed.pathname;
+    const pathname = rawPathname.startsWith('/--/')
+      ? rawPathname.slice(3)
+      : rawPathname;
     return {
       pathname: pathname.replace(/\/{2,}/g, '/').replace(/\/$/, '') || '/',
       query: parsed.searchParams.toString(),

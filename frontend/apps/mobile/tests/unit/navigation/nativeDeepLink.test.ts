@@ -11,6 +11,7 @@ describe('resolveNativeDeepLink', () => {
     ['https://pokegonexus.com/settings/account', '/native/account'],
     ['https://pokegonexus.com/verify-email-change?token=abc', '/native/verify-email-change?token=abc'],
     ['pokegonexus://native/account', '/native/account'],
+    ['exp://10.0.2.2:8091/--/device-smoke/login', '/device-smoke/login'],
     ['/native/search?mode=trainers', '/native/search?mode=trainers'],
   ])('maps %s to %s', (incoming, expected) => {
     expect(resolveNativeDeepLink(incoming)).toBe(expected);
