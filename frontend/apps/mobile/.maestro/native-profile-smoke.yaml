@@ -29,9 +29,9 @@ tags:
 - takeScreenshot: native-trainer-profile-editor
 - scrollUntilVisible:
     element:
-      text: Save profile
+      id: native-profile-showcase-slot-1
     direction: DOWN
-    timeout: 10000
+    timeout: 15000
 - tapOn:
     id: native-profile-showcase-slot-1
 - assertVisible: Choose a caught Pokémon

@@ -1,0 +1,33 @@
+appId: host.exp.exponent
+name: Native collection filter interaction smoke
+tags:
+  - android
+  - native-collection
+---
+- openLink:
+    link: exp://10.0.2.2:8091/--/device-smoke/collection
+- runFlow:
+    when:
+      visible: "Something went wrong.*"
+    commands:
+      - tapOn:
+          id: host.exp.exponent:id/reload_button
+- extendedWaitUntil:
+    visible: POKÉMON
+    timeout: 45000
+- tapOn: Search Pokémon
+- runFlow:
+    when:
+      visible: Try out your stylus
+    commands:
+      - tapOn: Cancel
+- extendedWaitUntil:
+    visible: Variants
+    timeout: 10000
+- tapOn:
+    id: native-collection-filter-shiny
+- extendedWaitUntil:
+    visible: Shiny Bulbasaur
+    timeout: 10000
+- assertNotVisible: Shadow Bulbasaur
+- takeScreenshot: native-collection-filter-shiny

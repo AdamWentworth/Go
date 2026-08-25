@@ -8,6 +8,12 @@ tags:
     link: exp://10.0.2.2:8091/--/device-smoke/collection
 - runFlow:
     when:
+      visible: "Something went wrong.*"
+    commands:
+      - tapOn:
+          id: host.exp.exponent:id/reload_button
+- runFlow:
+    when:
       visible: "This is the developer menu.*"
     commands:
       - tapOn: Continue
@@ -41,14 +47,18 @@ tags:
 - tapOn:
     text: ^X$
 - tapOn: Search Pokémon
+- runFlow:
+    when:
+      visible: Try out your stylus
+    commands:
+      - tapOn: Cancel
 - extendedWaitUntil:
     visible: Variants
     timeout: 10000
 - assertNotVisible: View Bulbasaur
 - takeScreenshot: 01b-search-filters
-- hideKeyboard
 - tapOn:
-    text: ^Shiny$
+    id: native-collection-filter-shiny
 - extendedWaitUntil:
     visible: Shiny Bulbasaur
     timeout: 10000
@@ -230,7 +240,13 @@ tags:
     start: 50%, 82%
     end: 50%, 52%
     duration: 450
-- assertVisible: MOVES
+- swipe:
+    start: 50%, 82%
+    end: 50%, 52%
+    duration: 450
+- extendedWaitUntil:
+    visible: MOVES
+    timeout: 10000
 - swipe:
     start: 50%, 82%
     end: 50%, 62%

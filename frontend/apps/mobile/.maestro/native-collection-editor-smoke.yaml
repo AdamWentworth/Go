@@ -1,0 +1,51 @@
+appId: host.exp.exponent
+name: Native collection editor interaction smoke
+tags:
+  - android
+  - native-collection
+---
+- openLink:
+    link: exp://10.0.2.2:8091/--/device-smoke/collection?instance=smoke-metagross
+- runFlow:
+    when:
+      visible: "Something went wrong.*"
+    commands:
+      - tapOn:
+          id: host.exp.exponent:id/reload_button
+- extendedWaitUntil:
+    visible: Shiny Metagross
+    timeout: 45000
+- tapOn: Edit Pokémon
+- assertVisible: Save Pokémon
+- assertVisible: Max Move Levels
+- tapOn: Choose location background
+- assertVisible: Vancouver City Safari
+- tapOn: Close background selector
+- swipe:
+    start: 50%, 82%
+    end: 50%, 52%
+    duration: 450
+- swipe:
+    start: 50%, 82%
+    end: 50%, 52%
+    duration: 450
+- extendedWaitUntil:
+    visible: MOVES
+    timeout: 10000
+- swipe:
+    start: 50%, 82%
+    end: 50%, 62%
+    duration: 350
+- tapOn: Choose fast move
+- assertVisible: MOVE SELECTOR
+- assertVisible: Bullet Punch
+- tapOn: Close fast move selector
+- extendedWaitUntil:
+    notVisible: MOVE SELECTOR
+    timeout: 10000
+- swipe:
+    start: 50%, 82%
+    end: 50%, 58%
+    duration: 400
+- assertVisible: APPRAISAL IVS
+- takeScreenshot: native-collection-editor
