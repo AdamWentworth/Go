@@ -1,0 +1,30 @@
+appId: host.exp.exponent
+name: Native action menu system-window smoke
+tags:
+  - android
+  - native-action-menu
+---
+- openLink:
+    link: exp://10.0.2.2:8091/--/device-smoke/collection
+- runFlow:
+    when:
+      visible: "This is the developer menu.*"
+    commands:
+      - tapOn: Continue
+- runFlow:
+    when:
+      visible: React Native dev menu
+    commands:
+      - tapOn: Close
+- extendedWaitUntil:
+    visible: POKÉMON
+    timeout: 45000
+- tapOn: Open action menu
+- extendedWaitUntil:
+    visible: Quick navigation
+    timeout: 10000
+- assertVisible: Share Trade Board
+- assertVisible: Learn & support
+- takeScreenshot: action-menu-system-window
+- tapOn: Close
+- assertNotVisible: Quick navigation
