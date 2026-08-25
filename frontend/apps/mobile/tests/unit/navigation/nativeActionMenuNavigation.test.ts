@@ -5,6 +5,7 @@ import {
 
 describe('resolveNativeActionMenuDestination', () => {
   test.each([
+    ['/', '/native'],
     ['/pokemon', '/native/collection'],
     ['/profile', '/native/profile'],
     ['/profile/friends', '/native/friends'],
@@ -27,6 +28,7 @@ describe('resolveNativeActionMenuDestination', () => {
   });
 
   test.each([
+    '/native',
     '/native/account',
     '/native/collection',
     '/native/friends',

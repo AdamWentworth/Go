@@ -1,4 +1,4 @@
-import { Redirect, useRouter } from 'expo-router';
+import { Redirect, useLocalSearchParams, useRouter } from 'expo-router';
 import {
   Animated,
   StyleSheet,
@@ -43,8 +43,19 @@ import { resolveNativeActionMenuDestination } from '../../navigation/nativeActio
 
 const TRADE_VIEWS: NativeTradeHubView[] = ['preferences', 'activity'];
 
+const firstParam = (value: string | string[] | undefined): string => (
+  Array.isArray(value) ? value[0] ?? '' : value ?? ''
+);
+
+const initialTradeView = (value: string): NativeTradeHubView => (
+  TRADE_VIEWS.includes(value as NativeTradeHubView)
+    ? value as NativeTradeHubView
+    : 'preferences'
+);
+
 export default function NativeTradesRoute() {
   const router = useRouter();
+  const params = useLocalSearchParams<{ section?: string | string[] }>();
   const session = useNativeSession();
   const clients = useNativeApiClients();
   const light = useColorScheme() === 'light';
@@ -60,7 +71,9 @@ export default function NativeTradesRoute() {
   const repropose = useNativeTradeCommand(userId, 'repropose');
   const satisfaction = useNativeTradeSatisfactionMutation(userId);
   const remove = useNativeDeleteTradeMutation(userId);
-  const [activeView, setActiveView] = useState<NativeTradeHubView>('preferences');
+  const [activeView, setActiveView] = useState<NativeTradeHubView>(() => (
+    initialTradeView(firstParam(params.section))
+  ));
   const [actionMenuOpen, setActionMenuOpen] = useState(false);
   const [pageScrollX] = useState(() => new Animated.Value(0));
   const sliderRef = useRef<NativeHorizontalPageSliderHandle>(null);

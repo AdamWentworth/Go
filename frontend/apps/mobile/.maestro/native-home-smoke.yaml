@@ -1,0 +1,75 @@
+appId: host.exp.exponent
+name: Native signed-in dashboard parity smoke
+tags:
+  - android
+  - native-home
+---
+- openLink:
+    link: exp://10.0.2.2:8091/--/device-smoke/home
+- runFlow:
+    when:
+      visible: "This is the developer menu.*"
+    commands:
+      - tapOn: Continue
+- runFlow:
+    when:
+      visible: React Native dev menu
+    commands:
+      - tapOn: Close
+- extendedWaitUntil:
+    visible: TRAINER DASHBOARD
+    timeout: 45000
+- assertVisible: "Welcome back,.*VisualTrainerGO"
+- assertVisible: Find Pokémon
+- assertVisible: QUICK NAVIGATION
+- takeScreenshot: home-01-top
+- tapOn: Dismiss quick navigation hint
+- assertNotVisible: QUICK NAVIGATION
+- scrollUntilVisible:
+    element:
+      text: At a glance
+    direction: DOWN
+    timeout: 10000
+- assertVisible: 2,255
+- scrollUntilVisible:
+    element:
+      text: 208
+    direction: DOWN
+    timeout: 10000
+- assertVisible: 208
+- scrollUntilVisible:
+    element:
+      text: Trade workspace
+    direction: DOWN
+    timeout: 10000
+- scrollUntilVisible:
+    element:
+      text: Trade preferences
+    direction: DOWN
+    timeout: 10000
+- assertVisible: Trade preferences
+- assertVisible: Trade activity
+- scrollUntilVisible:
+    element:
+      text: Your latest Pokémon
+    direction: DOWN
+    timeout: 10000
+- assertVisible: Shiny Gigantamax Charizard
+- scrollUntilVisible:
+    element:
+      text: More trainer tools
+    direction: DOWN
+    timeout: 10000
+- scrollUntilVisible:
+    element:
+      text: Pokédex
+    direction: DOWN
+    timeout: 10000
+- assertVisible: Pokédex
+- scrollUntilVisible:
+    element:
+      text: Max Battles
+    direction: DOWN
+    timeout: 10000
+- assertVisible: Max Battles
+- takeScreenshot: home-02-dashboard

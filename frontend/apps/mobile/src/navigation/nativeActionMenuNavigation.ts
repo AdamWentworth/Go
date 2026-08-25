@@ -1,5 +1,5 @@
-export type NativeActionMenuPath = '/pokemon' | '/profile' | '/profile/friends' | '/search' | '/settings' | '/trades';
-export type ReadyNativePath = '/native/account' | '/native/collection' | '/native/friends' | '/native/profile' | '/native/search' | '/native/settings' | '/native/trades';
+export type NativeActionMenuPath = '/' | '/pokemon' | '/profile' | '/profile/friends' | '/search' | '/settings' | '/trades';
+export type ReadyNativePath = '/native' | '/native/account' | '/native/collection' | '/native/friends' | '/native/profile' | '/native/search' | '/native/settings' | '/native/trades';
 export type NativeLoginReturnPath = ReadyNativePath | `/native/profile/${string}`;
 
 export type NativeActionMenuDestination =
@@ -8,6 +8,7 @@ export type NativeActionMenuDestination =
   | { kind: 'web'; path: string };
 
 const NATIVE_DESTINATIONS: Record<NativeActionMenuPath, NativeActionMenuDestination> = {
+  '/': { kind: 'native', pathname: '/native' },
   '/pokemon': { kind: 'native', pathname: '/native/collection' },
   '/profile': { kind: 'native', pathname: '/native/profile' },
   '/profile/friends': { kind: 'native', pathname: '/native/friends' },
@@ -17,7 +18,7 @@ const NATIVE_DESTINATIONS: Record<NativeActionMenuPath, NativeActionMenuDestinat
 };
 
 const isNativeActionMenuPath = (path: string): path is NativeActionMenuPath => (
-  path === '/pokemon' || path === '/profile' || path === '/profile/friends' || path === '/search' || path === '/settings' || path === '/trades'
+  path === '/' || path === '/pokemon' || path === '/profile' || path === '/profile/friends' || path === '/search' || path === '/settings' || path === '/trades'
 );
 
 export const resolveNativeActionMenuDestination = (
@@ -33,6 +34,7 @@ export const resolveNativeLoginReturnTo = (
   requestedPath?: string,
 ): NativeLoginReturnPath | '/web' => {
   if (requestedPath === '/native/account'
+    || requestedPath === '/native'
     || requestedPath === '/native/collection'
     || requestedPath === '/native/friends'
     || requestedPath === '/native/search'
