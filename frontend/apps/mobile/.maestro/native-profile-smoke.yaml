@@ -27,7 +27,28 @@ tags:
 - assertVisible: Your trainer details
 - assertVisible: POKÉMON GO NAME
 - takeScreenshot: native-trainer-profile-editor
+- scrollUntilVisible:
+    element:
+      text: Save profile
+    direction: DOWN
+    timeout: 10000
+- tapOn:
+    id: native-profile-showcase-slot-1
+- assertVisible: Choose a caught Pokémon
+- assertVisible: Shiny Metagross
+- takeScreenshot: native-trainer-showcase-picker
+- tapOn: Shiny Metagross
+- scrollUntilVisible:
+    element:
+      text: Cancel
+    direction: UP
+    timeout: 10000
 - tapOn: Cancel
+- scrollUntilVisible:
+    element:
+      text: AdamGo
+    direction: UP
+    timeout: 10000
 - assertVisible: AdamGo
 - scrollUntilVisible:
     element:

@@ -83,6 +83,19 @@ export const NativeTrainerProfileRoute = ({ username }: Props) => {
       return row ? [row] : [];
     });
   }, [collectionQuery.data, profileQuery.data]);
+  const highlightCandidates = useMemo(() => {
+    if (!collectionQuery.data) return [];
+    const caughtInstances = Object.fromEntries(
+      Object.entries(collectionQuery.data.instances).filter(([, instance]) => (
+        instance.is_caught && !instance.disabled
+      )),
+    );
+    return buildNativeCollectionRows(
+      caughtInstances,
+      collectionQuery.data.catalog,
+      runtimeConfig.api.frontendAppUrl,
+    );
+  }, [collectionQuery.data]);
 
   if (session.status !== 'signed-in' || !session.user) {
     const returnTo = normalizedUsername
@@ -161,6 +174,7 @@ export const NativeTrainerProfileRoute = ({ username }: Props) => {
         assetBaseUrl={runtimeConfig.api.frontendAppUrl}
         error={error}
         highlights={highlights}
+        highlightCandidates={highlightCandidates}
         isLoading={profileQuery.isPending || (Boolean(profileQuery.data?.highlights.length) && collectionQuery.isPending)}
         isOwner={isOwner}
         isProfileSaving={profileMutation.isPending}

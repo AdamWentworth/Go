@@ -15,6 +15,7 @@ import { NativePokemonLocationBackdrop } from '../features/collection/parity/Nat
 import type { NativeTrainerProfileModel } from '../features/social/nativeTrainerProfileModel';
 import type { NativeTrainerProfileDraft } from '../features/social/nativeTrainerProfileEditorModel';
 import { NativeTrainerProfileEditorPanel } from '../features/social/NativeTrainerProfileEditorPanel';
+import { NativeTrainerShowcasePicker } from '../features/social/NativeTrainerShowcasePicker';
 import { NativeConfirmationDialog } from '../components/NativeConfirmationDialog';
 import { NativeTrainerWorkspaceNav } from '../components/NativeTrainerWorkspaceNav';
 
@@ -29,6 +30,7 @@ type Props = {
   assetBaseUrl: string;
   error?: string | null;
   highlights?: NativeCollectionRow[];
+  highlightCandidates?: NativeCollectionRow[];
   isLoading?: boolean;
   isOwner: boolean;
   isRelationshipPending?: boolean;
@@ -100,6 +102,7 @@ export const NativeTrainerProfileScreen = ({
   assetBaseUrl,
   error = null,
   highlights = [],
+  highlightCandidates = [],
   isLoading = false,
   isOwner,
   isRelationshipPending = false,
@@ -121,6 +124,7 @@ export const NativeTrainerProfileScreen = ({
   const light = useColorScheme() === 'light';
   const insets = useSafeAreaInsets();
   const [confirmation, setConfirmation] = useState<'cancel-request' | 'remove-friend' | 'block' | null>(null);
+  const [editingHighlightSlot, setEditingHighlightSlot] = useState<number | null>(null);
 
   if (isLoading) {
     return (
@@ -181,6 +185,39 @@ export const NativeTrainerProfileScreen = ({
       return;
     }
     onRelationshipAction?.(action);
+  };
+  const selectedHighlightIds = editorDraft?.highlightInstanceIds ?? [];
+  const highlightById = new Map([
+    ...highlights,
+    ...highlightCandidates,
+  ].map((row) => [row.id, row]));
+  const displayedHighlights = editorDraft
+    ? Array.from({ length: 6 }, (_, index) => highlightById.get(selectedHighlightIds[index] ?? ''))
+    : highlights;
+  const updateHighlightIds = (nextIds: string[]) => {
+    if (!editorDraft || !onChangeEditorDraft) return;
+    onChangeEditorDraft({ ...editorDraft, highlightInstanceIds: nextIds });
+  };
+  const chooseHighlight = (instanceId: string) => {
+    if (editingHighlightSlot === null) return;
+    const nextIds = Array.from({ length: 6 }, (_, index) => selectedHighlightIds[index] ?? '');
+    nextIds[editingHighlightSlot] = instanceId;
+    updateHighlightIds(nextIds);
+    setEditingHighlightSlot(null);
+  };
+  const clearHighlight = () => {
+    if (editingHighlightSlot === null) return;
+    const nextIds = Array.from({ length: 6 }, (_, index) => selectedHighlightIds[index] ?? '');
+    nextIds[editingHighlightSlot] = '';
+    updateHighlightIds(nextIds);
+    setEditingHighlightSlot(null);
+  };
+  const moveHighlight = (index: number, direction: -1 | 1) => {
+    const destination = index + direction;
+    if (destination < 0 || destination > 5) return;
+    const nextIds = Array.from({ length: 6 }, (_, slot) => selectedHighlightIds[slot] ?? '');
+    [nextIds[index], nextIds[destination]] = [nextIds[destination], nextIds[index]];
+    updateHighlightIds(nextIds);
   };
 
   return (
@@ -305,7 +342,44 @@ export const NativeTrainerProfileScreen = ({
 
           <View accessibilityLabel="Featured Pokémon" style={styles.showcase}>
             {Array.from({ length: 6 }, (_, index) => (
-              <HighlightCard assetBaseUrl={assetBaseUrl} key={`highlight-${index + 1}`} light={light} row={highlights[index]} />
+              <View key={`highlight-${index + 1}`} style={styles.highlightSlot}>
+                {editorDraft ? (
+                  <Pressable
+                    accessibilityLabel={`${displayedHighlights[index]?.name ?? 'Open slot'}, edit showcase slot ${index + 1}`}
+                    accessibilityRole="button"
+                    onPress={() => setEditingHighlightSlot(index)}
+                    style={styles.highlightEditButton}
+                    testID={`native-profile-showcase-slot-${index + 1}`}
+                  >
+                    <HighlightCard assetBaseUrl={assetBaseUrl} light={light} row={displayedHighlights[index]} />
+                    <Text style={styles.highlightEditCue}>EDIT · SLOT {index + 1}</Text>
+                  </Pressable>
+                ) : (
+                  <HighlightCard assetBaseUrl={assetBaseUrl} light={light} row={displayedHighlights[index]} />
+                )}
+                {editorDraft && displayedHighlights[index] ? (
+                  <View style={styles.highlightOrderActions}>
+                    <Pressable
+                      accessibilityLabel={`Move showcase slot ${index + 1} left`}
+                      accessibilityRole="button"
+                      disabled={index === 0}
+                      onPress={() => moveHighlight(index, -1)}
+                      style={[styles.highlightOrderButton, index === 0 && styles.highlightOrderDisabled]}
+                    >
+                      <Text style={styles.highlightOrderText}>‹</Text>
+                    </Pressable>
+                    <Pressable
+                      accessibilityLabel={`Move showcase slot ${index + 1} right`}
+                      accessibilityRole="button"
+                      disabled={index === 5}
+                      onPress={() => moveHighlight(index, 1)}
+                      style={[styles.highlightOrderButton, index === 5 && styles.highlightOrderDisabled]}
+                    >
+                      <Text style={styles.highlightOrderText}>›</Text>
+                    </Pressable>
+                  </View>
+                ) : null}
+              </View>
             ))}
           </View>
 
@@ -391,6 +465,16 @@ export const NativeTrainerProfileScreen = ({
         title={confirmationCopy.title}
         visible={Boolean(confirmation)}
       />
+      <NativeTrainerShowcasePicker
+        assetBaseUrl={assetBaseUrl}
+        candidates={highlightCandidates}
+        onClear={clearHighlight}
+        onClose={() => setEditingHighlightSlot(null)}
+        onSelect={chooseHighlight}
+        selectedIds={selectedHighlightIds}
+        slotIndex={editingHighlightSlot ?? 0}
+        visible={editingHighlightSlot !== null}
+      />
     </View>
   );
 };
@@ -439,13 +523,20 @@ const styles = StyleSheet.create({
   memberLabel: { color: '#9db5b4', fontSize: 9, fontWeight: '900', letterSpacing: 0.7 },
   memberValue: { color: '#f7fbfa', fontSize: 12, fontWeight: '800', textAlign: 'right' },
   showcase: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  highlight: { position: 'relative', width: '31.5%', minHeight: 128, overflow: 'hidden', alignItems: 'center', justifyContent: 'flex-end', padding: 7, borderWidth: 1, borderColor: '#315052', borderRadius: 8, backgroundColor: '#11191a' },
+  highlightSlot: { width: '31.5%', gap: 4 },
+  highlightEditButton: { width: '100%' },
+  highlight: { position: 'relative', width: '100%', minHeight: 128, overflow: 'hidden', alignItems: 'center', justifyContent: 'flex-end', padding: 7, borderWidth: 1, borderColor: '#315052', borderRadius: 8, backgroundColor: '#11191a' },
   highlightLight: { borderColor: '#bdc8ca', backgroundColor: '#f6f9f9' },
   highlightImage: { width: 74, height: 74, marginBottom: 2 },
   maxIcon: { position: 'absolute', top: 7, right: 7, width: 22, height: 22 },
   emptyStar: { marginBottom: 25, color: '#6f7c7e', fontSize: 34 },
   highlightName: { color: '#f7fbfa', fontSize: 11, lineHeight: 14, fontWeight: '900', textAlign: 'center' },
   highlightDetail: { color: '#9db5b4', fontSize: 9, lineHeight: 12, textAlign: 'center' },
+  highlightEditCue: { position: 'absolute', top: 5, left: 5, paddingHorizontal: 4, paddingVertical: 2, borderRadius: 4, backgroundColor: '#1780c9', color: '#ffffff', fontSize: 7, fontWeight: '900' },
+  highlightOrderActions: { flexDirection: 'row', gap: 4 },
+  highlightOrderButton: { minHeight: 34, flex: 1, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: '#456265', borderRadius: 6, backgroundColor: '#172526' },
+  highlightOrderDisabled: { opacity: 0.3 },
+  highlightOrderText: { color: '#ffffff', fontSize: 24, lineHeight: 24, fontWeight: '900' },
   facts: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, paddingVertical: 13, borderTopWidth: 1, borderBottomWidth: 1, borderColor: '#315052' },
   fact: { flexGrow: 1, flexBasis: 96, gap: 2 },
   factLabel: { fontSize: 10, fontWeight: '900', letterSpacing: 0.6 },

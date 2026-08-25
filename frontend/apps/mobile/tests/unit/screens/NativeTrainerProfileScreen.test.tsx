@@ -184,4 +184,60 @@ describe('NativeTrainerProfileScreen', () => {
     fireEvent.press(view.getAllByRole('button', { name: 'Cancel' })[0]);
     expect(onCancelEdit).toHaveBeenCalledTimes(1);
   });
+
+  it('edits and reorders the six-slot showcase from caught Pokémon only', () => {
+    const onChangeEditorDraft = jest.fn();
+    const editorDraft = {
+      trainerTitles: [] as const,
+      pokemonGoName: 'AdamGo',
+      trainerCode: '',
+      team: 'Mystic',
+      trainerLevel: '50',
+      totalXp: '',
+      startedOn: '',
+      location: '',
+      highlightInstanceIds: ['highlight-1', 'highlight-2'],
+    };
+    const secondHighlight = {
+      ...highlight,
+      id: 'highlight-2',
+      name: 'Shiny Suicune',
+      pokedexNumber: 245,
+      pokemonId: 245,
+    };
+    const replacement = {
+      ...highlight,
+      id: 'highlight-3',
+      name: 'Shiny Metagross',
+      pokedexNumber: 376,
+      pokemonId: 376,
+    };
+    const view = renderScreen({
+      editorDraft: { ...editorDraft, trainerTitles: [] },
+      highlightCandidates: [highlight, secondHighlight, replacement],
+      highlights: [highlight, secondHighlight],
+      onBeginEdit: jest.fn(),
+      onCancelEdit: jest.fn(),
+      onChangeEditorDraft,
+      onSaveProfile: jest.fn(),
+    });
+
+    fireEvent.press(view.getByRole('button', {
+      name: 'Shiny Gigantamax Charizard, edit showcase slot 1',
+    }));
+    expect(view.getByText('Choose a caught Pokémon')).toBeTruthy();
+    fireEvent.press(view.getByRole('button', { name: 'Shiny Metagross' }));
+    expect(onChangeEditorDraft).toHaveBeenCalledWith({
+      ...editorDraft,
+      trainerTitles: [],
+      highlightInstanceIds: ['highlight-3', 'highlight-2', '', '', '', ''],
+    });
+
+    fireEvent.press(view.getByRole('button', { name: 'Move showcase slot 1 right' }));
+    expect(onChangeEditorDraft).toHaveBeenCalledWith({
+      ...editorDraft,
+      trainerTitles: [],
+      highlightInstanceIds: ['highlight-2', 'highlight-1', '', '', '', ''],
+    });
+  });
 });

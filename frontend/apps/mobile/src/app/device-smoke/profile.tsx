@@ -90,6 +90,11 @@ export default function DeviceSmokeProfileRoute() {
       editorDraft={draft}
       feedback={feedback}
       highlights={HIGHLIGHTS}
+      highlightCandidates={[
+        ...HIGHLIGHTS,
+        highlight('suicune', 245, 'Shiny Suicune', '/images/shiny/shiny_pokemon_245.png'),
+        highlight('metagross', 376, 'Shiny Metagross', '/images/shiny/shiny_pokemon_376.png'),
+      ]}
       isOwner
       model={MODEL}
       onBeginEdit={() => setDraft({ ...EDITOR_DRAFT })}
