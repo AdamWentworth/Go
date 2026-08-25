@@ -4,10 +4,8 @@ import type { PokemonInstance } from '@pokemongonexus/shared-contracts/instances
 import type { TradeRecord } from '@pokemongonexus/shared-contracts/trades';
 import type { NativeInstanceDetail } from '../../features/collection/collectionModel';
 import { buildNativeTradeActivityModel } from '../../features/trades/nativeTradeActivityModel';
-import {
-  NativeTradeActivityScreen,
-  type NativeTradeActivityRow,
-} from '../../screens/NativeTradeActivityScreen';
+import type { NativeTradeActivityRow } from '../../features/trades/nativeTradeActivityRows';
+import { NativeTradeActivityScreen } from '../../screens/NativeTradeActivityScreen';
 import { runtimeConfig } from '../../config/runtimeConfig';
 
 const ASSET_BASE_URL = 'https://pokegonexus.com';

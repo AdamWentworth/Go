@@ -17,16 +17,11 @@ import {
 import { useMemo, useState } from 'react';
 import { NativePokemonLocationBackdrop } from '../features/collection/parity/NativePokemonLocationBackdrop';
 import type { NativeInstanceDetail } from '../features/collection/collectionModel';
+import type { NativeTradeActivityRow } from '../features/trades/nativeTradeActivityRows';
 import type {
   NativeTradeActivityActionModel,
   NativeTradeActivityModel,
 } from '../features/trades/nativeTradeActivityModel';
-
-export type NativeTradeActivityRow = {
-  currentUserPokemon: NativeInstanceDetail | null;
-  model: NativeTradeActivityModel;
-  partnerPokemon: NativeInstanceDetail | null;
-};
 
 type Props = {
   assetBaseUrl: string;

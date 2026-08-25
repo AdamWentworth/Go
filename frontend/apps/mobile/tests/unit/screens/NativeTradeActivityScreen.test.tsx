@@ -2,10 +2,8 @@ import { fireEvent, render, waitFor } from '@testing-library/react-native';
 import type { TradeRecord } from '@pokemongonexus/shared-contracts/trades';
 import type { NativeInstanceDetail } from '../../../src/features/collection/collectionModel';
 import { buildNativeTradeActivityModel } from '../../../src/features/trades/nativeTradeActivityModel';
-import {
-  NativeTradeActivityScreen,
-  type NativeTradeActivityRow,
-} from '../../../src/screens/NativeTradeActivityScreen';
+import type { NativeTradeActivityRow } from '../../../src/features/trades/nativeTradeActivityRows';
+import { NativeTradeActivityScreen } from '../../../src/screens/NativeTradeActivityScreen';
 
 const detail = (id: string, name: string): NativeInstanceDetail => ({
   row: {
