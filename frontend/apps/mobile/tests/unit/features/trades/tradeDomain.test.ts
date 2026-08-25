@@ -1,6 +1,7 @@
 import type { PokemonInstance } from '@pokemongonexus/shared-contracts/instances';
 import { calculateTradeCost } from '@pokemongonexus/shared-domain/trade-cost';
 import {
+  parseTradeVariantReference,
   prepareTradeCandidateSets,
   resolveTradeCandidateDecision,
 } from '@pokemongonexus/shared-domain/trade-proposal-candidates';
@@ -106,6 +107,15 @@ describe('shared native trade domain', () => {
       stardustCost: 800,
       isSpecialTrade: true,
       isRegisteredTrade: true,
+    });
+  });
+
+  it('removes only a trailing instance UUID from a variant reference', () => {
+    expect(parseTradeVariantReference(
+      '0006-gigantamax_55cee90d-855b-4bd9-8d4a-667c1bc37934',
+    )).toEqual({ baseKey: '0006-gigantamax' });
+    expect(parseTradeVariantReference('0006-gigantamax')).toEqual({
+      baseKey: '0006-gigantamax',
     });
   });
 });

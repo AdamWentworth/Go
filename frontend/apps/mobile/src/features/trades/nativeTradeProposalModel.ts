@@ -9,7 +9,7 @@ import type { NativeInstanceDetail } from '../collection/collectionModel';
 export type NativeTradeProposalContext = {
   acceptingInstanceId: string;
   candidateVariantId: string;
-  friendshipLevel: 1 | 2 | 3 | 4 | 5;
+  friendshipLevel: number;
   luckyRequested: boolean;
   partnerPokemon: NativeInstanceDetail;
 };
@@ -28,10 +28,10 @@ export type NativeTradeProposalSelection =
       offeredInstances: PokemonInstance[];
     } & NativeTradeProposalContext);
 
-const normalizedFriendshipLevel = (instance: PokemonInstance): 1 | 2 | 3 | 4 | 5 => {
+const normalizedFriendshipLevel = (instance: PokemonInstance): number => {
   const value = Number(instance.friendship_level);
-  if (!Number.isInteger(value) || value < 1 || value > 5) return 1;
-  return value as 1 | 2 | 3 | 4 | 5;
+  if (!Number.isInteger(value) || value < 1 || value > 5) return 0;
+  return value;
 };
 
 const proposalContext = (

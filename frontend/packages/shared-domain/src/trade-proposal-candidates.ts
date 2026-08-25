@@ -43,6 +43,15 @@ interface ActiveTradeRow {
   pokemon_instance_id_user_accepting?: string | null;
 }
 
+const TRAILING_INSTANCE_UUID =
+  /_([0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12})$/i;
+
+export const parseTradeVariantReference = (
+  input: string,
+): { baseKey: string } => ({
+  baseKey: input.trim().replace(TRAILING_INSTANCE_UUID, ''),
+});
+
 const canonicalizeVariantId = (value: unknown): string => {
   const raw = typeof value === 'string' ? value.trim().toLowerCase() : '';
   if (!raw) return '';

@@ -1,5 +1,6 @@
 import { Redirect, useLocalSearchParams, useRouter } from 'expo-router';
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
+import { parseTradeVariantReference } from '@pokemongonexus/shared-domain/trade-proposal-candidates';
 import { useNativeSession } from '../../../../../auth/NativeSessionContext';
 import {
   buildNativeCollectionRows,
@@ -7,9 +8,20 @@ import {
 } from '../../../../../features/collection/collectionModel';
 import {
   useNativeForeignCollectionQuery,
+  useNativeCollectionSnapshotQuery,
   useNativePokemonMovesQuery,
 } from '../../../../../features/collection/collectionQueries';
 import { resolveNativeInstanceNeighbors } from '../../../../../features/collection/nativeInstanceNavigationContext';
+import { useNativePokemonOrganizerMutation } from '../../../../../features/collection/useNativePokemonOrganizerMutation';
+import { NativeTradeProposalSheet } from '../../../../../features/trades/NativeTradeProposalSheet';
+import {
+  buildNativeTradeProposalSelection,
+  type NativeTradeProposalSelection,
+} from '../../../../../features/trades/nativeTradeProposalModel';
+import {
+  useNativeCreateTradeProposal,
+  useNativeTradesQuery,
+} from '../../../../../features/trades/tradeQueries';
 import { runtimeConfig } from '../../../../../config/runtimeConfig';
 import { NativeInstanceDetailScreen } from '../../../../../screens/NativeInstanceDetailScreen';
 
@@ -24,13 +36,19 @@ export default function NativeForeignInstanceRoute() {
     username?: string | string[];
   }>();
   const session = useNativeSession();
+  const userId = session.user?.user_id ?? null;
   const username = firstParam(params.username).trim();
   const instanceId = firstParam(params.instanceId).trim();
   const foreignQuery = useNativeForeignCollectionQuery(
-    session.user?.user_id ?? null,
+    userId,
     username,
   );
   const movesQuery = useNativePokemonMovesQuery(Boolean(session.user));
+  const ownedQuery = useNativeCollectionSnapshotQuery(userId);
+  const tradesQuery = useNativeTradesQuery(userId);
+  const organizerMutation = useNativePokemonOrganizerMutation(userId ?? 'signed-out');
+  const proposalMutation = useNativeCreateTradeProposal(userId ?? 'signed-out');
+  const [proposalTargetId, setProposalTargetId] = useState<string | null>(null);
   const success = foreignQuery.data?.type === 'success' ? foreignQuery.data : null;
   const rows = useMemo(() => success ? buildNativeCollectionRows(
     success.instances,
@@ -44,6 +62,82 @@ export default function NativeForeignInstanceRoute() {
     instanceId,
     runtimeConfig.api.frontendAppUrl,
   ) : null, [instanceId, movesQuery.data, success]);
+  const selectedTargetDetail = useMemo(() => (
+    success && proposalTargetId
+      ? buildNativeInstanceDetail(
+          success.instances,
+          success.catalog,
+          movesQuery.data ?? [],
+          proposalTargetId,
+          runtimeConfig.api.frontendAppUrl,
+        )
+      : null
+  ), [movesQuery.data, proposalTargetId, success]);
+  const proposalSelection = useMemo<NativeTradeProposalSelection | null>(() => {
+    if (!proposalTargetId || !detail || !selectedTargetDetail) return null;
+    if (ownedQuery.error) {
+      return {
+        kind: 'invalid',
+        message: ownedQuery.error instanceof Error
+          ? ownedQuery.error.message
+          : 'Your collection could not be checked.',
+      };
+    }
+    if (tradesQuery.error) {
+      return {
+        kind: 'invalid',
+        message: tradesQuery.error instanceof Error
+          ? tradesQuery.error.message
+          : 'Your active trades could not be checked.',
+      };
+    }
+    if (!ownedQuery.data || !tradesQuery.data) return null;
+    return buildNativeTradeProposalSelection({
+      listing: detail,
+      selectedTarget: selectedTargetDetail,
+      ownedInstances: ownedQuery.data.instances,
+      activeTrades: tradesQuery.data.trades,
+      parseVariantId: parseTradeVariantReference,
+    });
+  }, [
+    detail,
+    ownedQuery.data,
+    ownedQuery.error,
+    proposalTargetId,
+    selectedTargetDetail,
+    tradesQuery.data,
+    tradesQuery.error,
+  ]);
+  const offeredDetails = useMemo(() => {
+    if (proposalSelection?.kind !== 'proposalReady' || !ownedQuery.data) return [];
+    return proposalSelection.offeredInstances.flatMap((instance) => {
+      const instanceId = instance.instance_id;
+      if (!instanceId) return [];
+      const candidate = buildNativeInstanceDetail(
+        ownedQuery.data.instances,
+        ownedQuery.data.catalog,
+        movesQuery.data ?? [],
+        instanceId,
+        runtimeConfig.api.frontendAppUrl,
+      );
+      return candidate ? [candidate] : [];
+    });
+  }, [movesQuery.data, ownedQuery.data, proposalSelection]);
+  const caughtDetails = useMemo(() => {
+    if (proposalSelection?.kind !== 'needsTradeSelection' || !ownedQuery.data) return [];
+    return proposalSelection.caughtInstances.flatMap((instance) => {
+      const instanceId = instance.instance_id;
+      if (!instanceId) return [];
+      const candidate = buildNativeInstanceDetail(
+        ownedQuery.data.instances,
+        ownedQuery.data.catalog,
+        movesQuery.data ?? [],
+        instanceId,
+        runtimeConfig.api.frontendAppUrl,
+      );
+      return candidate ? [candidate] : [];
+    });
+  }, [movesQuery.data, ownedQuery.data, proposalSelection]);
   const neighbors = useMemo(() => resolveNativeInstanceNeighbors({
     instanceId,
     fallbackIds: rows
@@ -75,8 +169,17 @@ export default function NativeForeignInstanceRoute() {
       params: { username: success?.username ?? username, filter: detail?.row.status ?? 'caught' },
     });
   };
+  const closeProposal = () => setProposalTargetId(null);
+  const markForTrade = async (candidateInstanceId: string) => {
+    await organizerMutation.mutateAsync({
+      operation: 'update',
+      instanceIds: [candidateInstanceId],
+      forTrade: true,
+    });
+  };
 
   return (
+    <>
     <NativeInstanceDetailScreen
       assetBaseUrl={runtimeConfig.api.frontendAppUrl}
       cachedAt={null}
@@ -91,12 +194,32 @@ export default function NativeForeignInstanceRoute() {
       onBack={returnToCatalog}
       onEditInCurrentApp={() => undefined}
       onNext={neighbors.nextId ? () => navigateToInstance(neighbors.nextId!) : undefined}
-      onOpenTarget={navigateToInstance}
+      onOpenTarget={setProposalTargetId}
       onPrevious={neighbors.previousId ? () => navigateToInstance(neighbors.previousId!) : undefined}
       onRetry={() => void Promise.all([foreignQuery.refetch(), movesQuery.refetch()])}
       onToggleFavorite={() => undefined}
       saveError={null}
       saveNotice={null}
     />
+    <NativeTradeProposalSheet
+      key={`${proposalTargetId ?? 'closed'}:${proposalSelection?.kind ?? 'preparing'}`}
+      assetBaseUrl={runtimeConfig.api.frontendAppUrl}
+      caughtDetails={caughtDetails}
+      currentTrainerInstances={ownedQuery.data?.instances ?? {}}
+      isMarkingForTrade={organizerMutation.isPending}
+      isPreparing={Boolean(
+        proposalTargetId
+          && !proposalSelection
+          && (ownedQuery.isPending || tradesQuery.isPending),
+      )}
+      onClose={closeProposal}
+      onMarkForTrade={markForTrade}
+      onSubmit={(proposal) => proposalMutation.mutateAsync(proposal)}
+      offeredDetails={offeredDetails}
+      partnerInstances={success?.instances ?? {}}
+      partnerUsername={success?.username ?? username}
+      selection={proposalSelection}
+    />
+    </>
   );
 }
