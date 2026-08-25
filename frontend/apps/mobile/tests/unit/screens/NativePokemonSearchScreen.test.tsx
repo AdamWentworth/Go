@@ -1,0 +1,136 @@
+import type { BasePokemon } from '@pokemongonexus/shared-contracts/pokemon';
+import { fireEvent, render } from '@testing-library/react-native';
+import { NativePokemonSearchScreen } from '../../../src/screens/NativePokemonSearchScreen';
+import { createNativePokemonSearchDraft } from '../../../src/features/search/nativePokemonSearchDraft';
+import type { NativePokemonSearchResult } from '../../../src/features/search/pokemonSearchModel';
+
+jest.mock('../../../src/services/locationApi', () => ({
+  getNativeLocationSuggestions: jest.fn().mockResolvedValue([]),
+}));
+
+const pokemon = {
+  pokemon_id: 25,
+  pokedex_number: 25,
+  name: 'Pikachu',
+  form: null,
+  image_url: 'https://assets/pikachu.png',
+  image_url_shiny: 'https://assets/shiny-pikachu.png',
+  image_url_shadow: '',
+  image_url_shiny_shadow: '',
+  type_1_icon: '',
+  type_2_icon: '',
+  costumes: [],
+  backgrounds: [],
+  moves: [],
+  fusion: [],
+  megaEvolutions: [],
+  evolves_from: [],
+  max: [],
+} as unknown as BasePokemon;
+
+const row = (id: string, name: string, status: 'trade' | 'wanted') => ({
+  id,
+  pokemonId: 25,
+  pokedexNumber: 25,
+  name,
+  imageUri: 'https://assets/pikachu.png',
+  locationBackgroundUri: null,
+  maxKind: null,
+  purified: false,
+  lucky: false,
+  typeIconUris: [],
+  status,
+  source: 'instance' as const,
+  cp: null,
+  favorite: false,
+  mostWanted: false,
+});
+
+const result: NativePokemonSearchResult = {
+  id: 'listing-1',
+  username: 'OtherTrainer',
+  distanceKm: 1.2,
+  mode: 'trade',
+  row: row('listing-1', 'Shiny Detective Pikachu', 'trade'),
+  relatedRows: [{ ...row('wanted-1', 'Gigantamax Charizard', 'wanted'), match: true }],
+  hasMutualMatch: true,
+};
+
+const draft = {
+  ...createNativePokemonSearchDraft({
+    city: 'Burnaby, British Columbia, Canada',
+    latitude: 49.24,
+    longitude: -122.98,
+  }),
+  pokemonId: 25,
+  pokemonName: 'Pikachu',
+  ownership: 'trade' as const,
+  shiny: true,
+};
+
+const baseProps = {
+  assetBaseUrl: 'https://pokegonexus.com',
+  catalog: [pokemon],
+  draft,
+  onDraftChange: jest.fn(),
+  onOpenListing: jest.fn(),
+  onOpenProfile: jest.fn(),
+  onSearch: jest.fn(),
+  results: [] as NativePokemonSearchResult[],
+};
+
+describe('NativePokemonSearchScreen', () => {
+  beforeEach(() => jest.clearAllMocks());
+
+  it('runs a valid search immediately and publishes the exact canonical query', () => {
+    const view = render(<NativePokemonSearchScreen {...baseProps} />);
+    fireEvent.press(view.getByText('Search community listings'));
+    expect(baseProps.onSearch).toHaveBeenCalledWith(
+      expect.objectContaining({
+        pokemon_id: 25,
+        ownership: 'trade',
+        latitude: 49.24,
+        longitude: -122.98,
+      }),
+      draft,
+    );
+  });
+
+  it('keeps validation feedback inside the relevant filter stage', () => {
+    const invalidDraft = { ...draft, latitude: null, longitude: null };
+    const view = render(<NativePokemonSearchScreen {...baseProps} draft={invalidDraft} />);
+    fireEvent.press(view.getByText('Search community listings'));
+    expect(view.getByTestId('native-pokemon-search-filter-sheet')).toBeTruthy();
+    expect(view.getByText('Choose a location before searching.')).toBeTruthy();
+    expect(view.getByText('Where should we look?')).toBeTruthy();
+    expect(baseProps.onSearch).not.toHaveBeenCalled();
+  });
+
+  it('renders reciprocal listings and preserves both explicit destinations', () => {
+    const onOpenListing = jest.fn();
+    const onOpenProfile = jest.fn();
+    const view = render(
+      <NativePokemonSearchScreen
+        {...baseProps}
+        hasSearched
+        onOpenListing={onOpenListing}
+        onOpenProfile={onOpenProfile}
+        results={[result]}
+      />,
+    );
+    expect(view.getByText('MUTUAL MATCH')).toBeTruthy();
+    expect(view.getByText('Gigantamax Charizard')).toBeTruthy();
+    fireEvent.press(view.getByText('View trainer'));
+    fireEvent.press(view.getByText('Open listing  →'));
+    expect(onOpenProfile).toHaveBeenCalledWith('OtherTrainer');
+    expect(onOpenListing).toHaveBeenCalledWith(result);
+  });
+
+  it('places loading and errors before any result cards', () => {
+    const view = render(<NativePokemonSearchScreen {...baseProps} isLoading />);
+    expect(view.getByText('Searching community listings')).toBeTruthy();
+    view.rerender(<NativePokemonSearchScreen {...baseProps} error="Search service unavailable." />);
+    expect(view.getByText('Search couldn’t be completed')).toBeTruthy();
+    expect(view.getByText('Search service unavailable.')).toBeTruthy();
+  });
+});

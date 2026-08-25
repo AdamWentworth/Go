@@ -1,0 +1,66 @@
+appId: host.exp.exponent
+name: Native search workflow smoke
+tags:
+  - android
+  - native-search
+---
+- openLink:
+    link: exp://10.0.2.2:8091/--/device-smoke/search
+- runFlow:
+    when:
+      visible: "This is the developer menu.*"
+    commands:
+      - tapOn: Continue
+- runFlow:
+    when:
+      visible: React Native dev menu
+    commands:
+      - tapOn: Close
+- extendedWaitUntil:
+    visible: Search
+    timeout: 45000
+- assertVisible: ".*Pokémon.*"
+- assertVisible: ".*Trainers.*"
+- assertVisible: Shiny Pikachu
+- scrollUntilVisible:
+    element:
+      text: MUTUAL MATCH
+    direction: DOWN
+    timeout: 10000
+- assertVisible: MUTUAL MATCH
+- assertVisible: Gigantamax Charizard
+- takeScreenshot: search-01-results
+- scrollUntilVisible:
+    element:
+      text: Modify
+    direction: UP
+    timeout: 10000
+- tapOn: Modify
+- extendedWaitUntil:
+    visible: Refine your search
+    timeout: 10000
+- assertVisible: ".*Pokémon.*"
+- assertVisible: ".*Location.*"
+- assertVisible: ".*Matching.*"
+- assertVisible: Shiny
+- takeScreenshot: search-02-filters
+- tapOn: Matching
+- assertVisible: Mutual matches only
+- tapOn: Apply & search.*
+- scrollUntilVisible:
+    element:
+      text: ".*SEARCH COMPLETE.*"
+    direction: UP
+    timeout: 10000
+- assertVisible: ".*SEARCH COMPLETE.*"
+- tapOn: Trainer search
+- extendedWaitUntil:
+    visible: Find a trainer
+    timeout: 10000
+- tapOn: Username or Pokémon GO name
+- inputText: Other
+- extendedWaitUntil:
+    visible: Nexus · @OtherTrainer
+    timeout: 10000
+- assertVisible: Pokémon GO · OtherPogoName
+- takeScreenshot: search-03-trainers

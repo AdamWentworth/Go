@@ -17,6 +17,7 @@ export default function NativeLayout() {
             <Stack.Screen name="index" options={{ animation: 'none' }} />
             <Stack.Screen name="login" options={{ animation: 'slide_from_bottom' }} />
             <Stack.Screen name="collection" options={{ animation: 'none' }} />
+            <Stack.Screen name="search" options={{ animation: 'none' }} />
             <Stack.Screen name="trades" options={{ animation: 'none' }} />
             <Stack.Screen
               name="collection/[instanceId]"
