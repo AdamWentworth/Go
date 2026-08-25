@@ -7,3 +7,4 @@ export * from './moves';
 export * from './trade-proposal-candidates';
 export * from './trade-cost';
 export * from './trade-activity';
+export * from './trade-preferences';
