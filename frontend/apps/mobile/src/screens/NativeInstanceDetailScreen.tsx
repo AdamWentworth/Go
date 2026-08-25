@@ -2178,9 +2178,9 @@ export const NativeInstanceDetailScreen = ({
             />
           ) : (
             <View style={styles.headerRow}>
-              {canEdit ? (
+              {canEdit && !editing ? (
                 <Pressable
-                  accessibilityLabel={editing ? 'Save Pokémon' : 'Edit Pokémon'}
+                  accessibilityLabel="Edit Pokémon"
                   accessibilityRole="button"
                   disabled={isSaving}
                   onPress={() => void toggleEdit()}
@@ -2189,7 +2189,7 @@ export const NativeInstanceDetailScreen = ({
                   <Image
                     accessibilityElementsHidden
                     resizeMode="contain"
-                    source={{ uri: toAssetUrl(assetBaseUrl, editing ? '/images/save-icon.png' : '/images/edit-icon.png') }}
+                    source={{ uri: toAssetUrl(assetBaseUrl, '/images/edit-icon.png') }}
                     style={[styles.editImage, styles.stageHeaderIcon]}
                   />
                 </Pressable>
@@ -2431,6 +2431,26 @@ export const NativeInstanceDetailScreen = ({
         </Animated.View>
       </GestureDetector>
 
+      {editing && !isWanted && canEdit ? (
+        <Pressable
+          accessibilityLabel="Save Pokémon"
+          accessibilityRole="button"
+          disabled={isSaving}
+          onPress={() => void toggleEdit()}
+          style={[
+            styles.floatingSaveButton,
+            { left: Math.max(12, (width - shellWidth) / 2 + 12) },
+          ]}
+        >
+          <Image
+            accessibilityElementsHidden
+            resizeMode="contain"
+            source={{ uri: toAssetUrl(assetBaseUrl, '/images/save-icon.png') }}
+            style={[styles.editImage, styles.stageHeaderIcon]}
+          />
+        </Pressable>
+      ) : null}
+
       <NativeBackgroundPicker
         assetBaseUrl={assetBaseUrl}
         onChange={(locationCard) => updateDraft({ locationCard })}
@@ -2525,6 +2545,18 @@ const styles = StyleSheet.create({
   offlineBody: { color: '#f7d99b', fontSize: 12, textAlign: 'center' },
   headerRow: { zIndex: 7, width: '100%', minHeight: 52, flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', paddingHorizontal: 12 },
   iconButton: { minWidth: 48, minHeight: 48, alignItems: 'center', justifyContent: 'center' },
+  floatingSaveButton: {
+    position: 'absolute',
+    zIndex: 30,
+    top: 30,
+    width: 48,
+    height: 48,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 12,
+    backgroundColor: 'rgba(20,35,35,0.46)',
+    elevation: 8,
+  },
   editImage: { width: 42, height: 42 },
   stageHeaderIcon: {
     tintColor: '#ffffff',
