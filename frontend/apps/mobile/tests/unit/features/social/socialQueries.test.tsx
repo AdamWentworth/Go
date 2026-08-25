@@ -1,4 +1,4 @@
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { QueryClient, QueryClientProvider, notifyManager } from '@tanstack/react-query';
 import { act, renderHook } from '@testing-library/react-native';
 import type { PropsWithChildren } from 'react';
 import {
@@ -29,6 +29,10 @@ import {
 } from '../../../../src/services/nativeTrainerPreferencesApi';
 
 const mockReplaceSessionUser = jest.fn();
+
+notifyManager.setNotifyFunction((notification) => {
+  act(notification);
+});
 
 jest.mock('../../../../src/auth/NativeSessionContext', () => ({
   useNativeSession: () => ({

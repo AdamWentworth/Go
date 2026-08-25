@@ -67,7 +67,7 @@ describe('NativeInstanceDetailScreen', () => {
     mockGetNativeLocationSuggestions.mockReset();
   });
 
-  it('renders canonical Pokémon details and keeps editing behind the fallback', () => {
+  it('renders canonical Pokémon details and keeps editing behind the fallback', async () => {
     const onEditInCurrentApp = jest.fn();
     render(
       <NativeInstanceDetailScreen
@@ -91,6 +91,9 @@ describe('NativeInstanceDetailScreen', () => {
     expect(screen.getByText('14')).toBeTruthy();
     fireEvent.press(screen.getByRole('tab', { name: 'TRAINER BATTLES' }));
     expect(screen.getByText('9')).toBeTruthy();
+    await act(async () => {
+      await new Promise<void>((resolve) => setTimeout(resolve, 240));
+    });
     expect(screen.getByText('Wanted Pokémon')).toBeTruthy();
     expect(screen.queryByText('15')).toBeNull();
     fireEvent.press(screen.getByRole('button', { name: 'Edit Pokémon' }));
@@ -338,6 +341,9 @@ describe('NativeInstanceDetailScreen', () => {
     await act(async () => {
       fireEvent.press(screen.getByRole('button', { name: 'Save Pokémon' }));
     });
+    await waitFor(() => {
+      expect(screen.queryByLabelText('Pokémon detail editor')).toBeNull();
+    });
 
     expect(onSaveDetails).toHaveBeenCalledWith(expect.objectContaining({
       nickname: 'Fire Partner',
@@ -494,6 +500,9 @@ describe('NativeInstanceDetailScreen', () => {
     await act(async () => {
       fireEvent.press(screen.getByRole('button', { name: 'Save Pokémon' }));
     });
+    await waitFor(() => {
+      expect(screen.queryByLabelText('Pokémon detail editor')).toBeNull();
+    });
 
     expect(onSaveDetails).toHaveBeenCalledWith(expect.objectContaining({
       fast_move_id: 101,
@@ -502,7 +511,7 @@ describe('NativeInstanceDetailScreen', () => {
     }));
   });
 
-  it('keeps Lucky and traded controls constrained for an unpurified Shadow Pokémon', () => {
+  it('keeps Lucky and traded controls constrained for an unpurified Shadow Pokémon', async () => {
     render(
       <NativeInstanceDetailScreen
         detail={{
@@ -537,6 +546,9 @@ describe('NativeInstanceDetailScreen', () => {
     expect(screen.getByRole('button', { name: 'OBTAINED IN A TRADE: YES' })
       .props.accessibilityState.disabled).toBe(true);
     expect(screen.getByText('Shadow Pokémon cannot be traded until purified.')).toBeTruthy();
+    await act(async () => {
+      await new Promise<void>((resolve) => setTimeout(resolve, 300));
+    });
   });
 
   it('purifies and restores a caught Shadow Pokémon with canonical trade invariants', async () => {
