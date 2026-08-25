@@ -3,6 +3,7 @@ import type { BasePokemon } from '@pokemongonexus/shared-contracts/pokemon';
 import {
   buildNativeTradePreferenceEntries,
   buildNativeTradePreferencePatchPlan,
+  resolveNativeTradePreferenceDraftCandidates,
 } from '../../../../src/features/trades/nativeTradePreferencesModel';
 
 const instance = (
@@ -293,5 +294,54 @@ describe('native trade preference model', () => {
       mode: 'trade',
       selectedInstanceId: 'caught',
     })).toThrow('no longer listed For Trade');
+  });
+
+  it('makes Mirror authoritative and clears ordinary target exclusions', () => {
+    const instances = {
+      offered: instance('offered', 25, {
+        is_for_trade: true,
+        not_wanted_list: { mirrorTarget: true, otherTarget: true },
+      }),
+      mirrorTarget: instance('mirror-target', 25, {
+        is_caught: false,
+        is_wanted: true,
+      }),
+      otherTarget: instance('other-target', 7, {
+        is_caught: false,
+        is_wanted: true,
+      }),
+    };
+    const entry = buildNativeTradePreferenceEntries({
+      assetOrigin: 'https://pokegonexus.com',
+      catalog,
+      instances,
+      mode: 'trade',
+    })[0];
+
+    const plan = buildNativeTradePreferencePatchPlan({
+      filteredOutIds: ['otherTarget'],
+      filters: { shinyIconFilter: true },
+      instances,
+      manuallyExcludedIds: ['mirrorTarget'],
+      mirror: true,
+      mode: 'trade',
+      selectedInstanceId: 'offered',
+    });
+
+    expect(plan.updatedExcludedIds).toEqual([]);
+    expect(plan.patches.offered).toEqual({
+      mirror: true,
+      not_wanted_list: {},
+      wanted_filters: {},
+    });
+    expect(resolveNativeTradePreferenceDraftCandidates({
+      entry,
+      filters: {},
+      manuallyExcludedIds: new Set(['mirrorTarget']),
+      mirror: true,
+    }).map(({ collectionKey, allowed }) => ({ collectionKey, allowed }))).toEqual([
+      { collectionKey: 'otherTarget', allowed: false },
+      { collectionKey: 'mirrorTarget', allowed: true },
+    ]);
   });
 });

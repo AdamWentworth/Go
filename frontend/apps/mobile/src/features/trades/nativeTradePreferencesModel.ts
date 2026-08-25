@@ -240,7 +240,9 @@ export const resolveNativeTradePreferenceDraftCandidates = ({
       || candidate.instance.variant_id !== entry.instance.variant_id
     );
     const excludedByRule = matching[candidate.collectionKey] == null || excludedByMirror;
-    const manuallyExcluded = manuallyExcludedIds.has(candidate.collectionKey);
+    // Mirror mode is authoritative: the canonical editor clears ordinary
+    // per-target exclusions and limits the listing to the matching variant.
+    const manuallyExcluded = mirror ? false : manuallyExcludedIds.has(candidate.collectionKey);
     return {
       ...candidate,
       allowed: !excludedByRule && !manuallyExcluded,
@@ -306,12 +308,14 @@ export const buildNativeTradePreferencePatchPlan = ({
     instances,
     mode === 'trade' ? selected.instance.not_wanted_list : selected.instance.not_trade_list,
   );
-  const updated = Object.fromEntries(
-    [...manuallyExcludedIds, ...filteredOutIds].flatMap((reference) => {
-      const key = resolveInstanceCollectionKey(instances, reference);
-      return key ? [[key, true]] : [];
-    }),
-  );
+  const updated = mode === 'trade' && mirror
+    ? {}
+    : Object.fromEntries(
+        [...manuallyExcludedIds, ...filteredOutIds].flatMap((reference) => {
+          const key = resolveInstanceCollectionKey(instances, reference);
+          return key ? [[key, true]] : [];
+        }),
+      );
   const previousKeys = new Set(Object.keys(previous));
   const updatedKeys = new Set(Object.keys(updated));
   const removed = [...previousKeys].filter((key) => !updatedKeys.has(key));
