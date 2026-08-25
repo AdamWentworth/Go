@@ -33,6 +33,7 @@ import {
   useNativeTrainerSearchQuery,
 } from '../../features/search/searchQueries';
 import {
+  hydrateNativeSearchSession,
   patchNativeSearchSession,
   readNativeSearchSession,
   writeNativeSearchSession,
@@ -52,6 +53,8 @@ const NativeSignedInSearchRoute = ({ user }: { user: MobileSessionUser }) => {
   const light = useColorScheme() === 'light';
   const snapshotQuery = useNativeCollectionSnapshotQuery(user.user_id);
   const [initialSession] = useState(() => readNativeSearchSession(user.user_id));
+  const [restoredSession, setRestoredSession] = useState(initialSession);
+  const [sessionHydrated, setSessionHydrated] = useState(Boolean(initialSession));
   const [activeView, setActiveView] = useState<NativeSearchHubView>(
     initialSession?.activeView ?? 'pokemon',
   );
@@ -83,28 +86,52 @@ const NativeSignedInSearchRoute = ({ user }: { user: MobileSessionUser }) => {
   const activeIndex = SEARCH_VIEWS.indexOf(activeView);
 
   useEffect(() => {
+    if (initialSession) return;
+    let cancelled = false;
+    void hydrateNativeSearchSession(user.user_id).then((restored) => {
+      if (cancelled) return;
+      if (restored) {
+        setRestoredSession(restored);
+        setActiveView(restored.activeView);
+        setDraft(restored.draft);
+        setExecutedDraft(restored.executedDraft);
+        setPokemonQuery(restored.pokemonQuery);
+        setTrainerQuery(restored.trainerQuery);
+        setDebouncedTrainerQuery(restored.trainerQuery.trim());
+        sliderRef.current?.setPage(SEARCH_VIEWS.indexOf(restored.activeView), false);
+      }
+      setSessionHydrated(true);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [initialSession, user.user_id]);
+
+  useEffect(() => {
     const timer = setTimeout(() => setDebouncedTrainerQuery(trainerQuery.trim()), 250);
     return () => clearTimeout(timer);
   }, [trainerQuery]);
 
   useEffect(() => {
+    if (!sessionHydrated) return;
     writeNativeSearchSession({
       activeView,
       draft,
       executedDraft,
       ownerKey: user.user_id,
-      pokemonDisplayMode: initialSession?.pokemonDisplayMode ?? 'list',
+      pokemonDisplayMode: restoredSession?.pokemonDisplayMode ?? 'list',
       pokemonQuery,
-      pokemonScrollOffset: initialSession?.pokemonScrollOffset ?? 0,
+      pokemonScrollOffset: restoredSession?.pokemonScrollOffset ?? 0,
       trainerQuery,
-      trainerScrollOffset: initialSession?.trainerScrollOffset ?? 0,
+      trainerScrollOffset: restoredSession?.trainerScrollOffset ?? 0,
     });
   // The initial write establishes the owner-scoped session. Subsequent field
   // changes are patched below so restored scroll offsets are not overwritten.
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user.user_id]);
+  }, [restoredSession, sessionHydrated, user.user_id]);
 
   useEffect(() => {
+    if (!sessionHydrated) return;
     patchNativeSearchSession(user.user_id, {
       activeView,
       draft,
@@ -112,7 +139,7 @@ const NativeSignedInSearchRoute = ({ user }: { user: MobileSessionUser }) => {
       pokemonQuery,
       trainerQuery,
     });
-  }, [activeView, draft, executedDraft, pokemonQuery, trainerQuery, user.user_id]);
+  }, [activeView, draft, executedDraft, pokemonQuery, sessionHydrated, trainerQuery, user.user_id]);
 
   const changeView = useCallback((view: NativeSearchHubView) => {
     setActiveView(view);
@@ -159,7 +186,7 @@ const NativeSignedInSearchRoute = ({ user }: { user: MobileSessionUser }) => {
     router.push({ pathname: '/web', params: { path: destination.path } });
   };
 
-  const pokemonPanel = snapshotQuery.isPending ? (
+  const pokemonPanel = !sessionHydrated || snapshotQuery.isPending ? (
     <View style={[styles.state, light && styles.stateLight]}>
       <ActivityIndicator color="#2f9cff" size="large" />
       <Text style={[styles.stateTitle, light && styles.textLight]}>Loading Pokémon search</Text>
@@ -182,7 +209,7 @@ const NativeSignedInSearchRoute = ({ user }: { user: MobileSessionUser }) => {
       draft={draft}
       error={errorMessage(pokemonSearch.error)}
       hasSearched={Boolean(pokemonQuery)}
-      initialDisplayMode={initialSession?.pokemonDisplayMode ?? 'list'}
+      initialDisplayMode={restoredSession?.pokemonDisplayMode ?? 'list'}
       isLoading={pokemonSearch.isFetching}
       notice={searchNotice}
       onDraftChange={setDraft}
@@ -201,7 +228,7 @@ const NativeSignedInSearchRoute = ({ user }: { user: MobileSessionUser }) => {
       }}
       results={results}
       savedLocation={savedLocation}
-      initialScrollOffset={initialSession?.pokemonScrollOffset ?? 0}
+      initialScrollOffset={restoredSession?.pokemonScrollOffset ?? 0}
       onScrollOffsetChange={(pokemonScrollOffset) => {
         patchNativeSearchSession(user.user_id, { pokemonScrollOffset });
       }}
@@ -231,7 +258,7 @@ const NativeSignedInSearchRoute = ({ user }: { user: MobileSessionUser }) => {
           onQueryChange={setTrainerQuery}
           onRetry={() => void trainerSearch.refetch()}
           query={trainerQuery}
-          initialScrollOffset={initialSession?.trainerScrollOffset ?? 0}
+          initialScrollOffset={restoredSession?.trainerScrollOffset ?? 0}
           onScrollOffsetChange={(trainerScrollOffset) => {
             patchNativeSearchSession(user.user_id, { trainerScrollOffset });
           }}

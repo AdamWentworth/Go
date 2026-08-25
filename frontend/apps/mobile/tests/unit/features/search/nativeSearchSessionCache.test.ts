@@ -1,5 +1,7 @@
+import * as SecureStore from 'expo-secure-store';
 import {
   clearNativeSearchSession,
+  hydrateNativeSearchSession,
   patchNativeSearchSession,
   readNativeSearchSession,
   writeNativeSearchSession,
@@ -33,8 +35,19 @@ const pokemonQuery = {
   gigantamax: false,
 };
 
+jest.mock('expo-secure-store', () => ({
+  deleteItemAsync: jest.fn().mockResolvedValue(undefined),
+  getItemAsync: jest.fn().mockResolvedValue(null),
+  setItemAsync: jest.fn().mockResolvedValue(undefined),
+}));
+
+const mockedSecureStore = jest.mocked(SecureStore);
+
 describe('nativeSearchSessionCache', () => {
-  beforeEach(() => clearNativeSearchSession());
+  beforeEach(() => {
+    jest.clearAllMocks();
+    clearNativeSearchSession();
+  });
 
   it('keeps each trainer search session isolated in memory', () => {
     const draft = createNativePokemonSearchDraft({ city: 'Burnaby' });
@@ -106,5 +119,46 @@ describe('nativeSearchSessionCache', () => {
 
     expect(readNativeSearchSession('trainer-1')).toBeNull();
     expect(readNativeSearchSession('trainer-2')).not.toBeNull();
+  });
+
+  it('restores a valid owner-scoped session after an app restart', async () => {
+    const draft = createNativePokemonSearchDraft({ city: 'Burnaby' });
+    const persisted = {
+      activeView: 'trainers',
+      draft,
+      executedDraft: draft,
+      ownerKey: 'trainer-1',
+      pokemonDisplayMode: 'map',
+      pokemonQuery,
+      pokemonScrollOffset: 360,
+      savedAt: 123,
+      trainerQuery: 'misty',
+      trainerScrollOffset: 180,
+    };
+    clearNativeSearchSession('trainer-1');
+    mockedSecureStore.getItemAsync.mockResolvedValueOnce(JSON.stringify(persisted));
+
+    await expect(hydrateNativeSearchSession('trainer-1')).resolves.toEqual(persisted);
+    expect(readNativeSearchSession('trainer-1')).toEqual(persisted);
+  });
+
+  it('discards a persisted session owned by another trainer', async () => {
+    mockedSecureStore.getItemAsync.mockResolvedValueOnce(JSON.stringify({
+      activeView: 'pokemon',
+      draft: createNativePokemonSearchDraft(),
+      executedDraft: null,
+      ownerKey: 'trainer-2',
+      pokemonDisplayMode: 'list',
+      pokemonQuery: null,
+      pokemonScrollOffset: 0,
+      savedAt: 123,
+      trainerQuery: '',
+      trainerScrollOffset: 0,
+    }));
+
+    await expect(hydrateNativeSearchSession('trainer-1')).resolves.toBeNull();
+    expect(mockedSecureStore.deleteItemAsync).toHaveBeenCalledWith(
+      'pokemongonexus.mobile.search-session.v1.trainer-1',
+    );
   });
 });
