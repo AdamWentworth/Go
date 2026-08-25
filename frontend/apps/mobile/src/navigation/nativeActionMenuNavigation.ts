@@ -1,5 +1,6 @@
 export type NativeActionMenuPath = '/pokemon' | '/search' | '/trades';
 export type ReadyNativePath = '/native/collection' | '/native/search' | '/native/trades';
+export type NativeLoginReturnPath = ReadyNativePath | '/native/profile' | `/native/profile/${string}`;
 
 export type NativeActionMenuDestination =
   | { kind: 'current' }
@@ -18,17 +19,24 @@ const isNativeActionMenuPath = (path: string): path is NativeActionMenuPath => (
 
 export const resolveNativeActionMenuDestination = (
   path: string,
-  currentPath?: NativeActionMenuPath,
+  currentPath?: string,
 ): NativeActionMenuDestination => {
   if (path === currentPath) return { kind: 'current' };
   if (isNativeActionMenuPath(path)) return NATIVE_DESTINATIONS[path];
   return { kind: 'web', path };
 };
 
-export const resolveNativeLoginReturnTo = (requestedPath?: string): ReadyNativePath | '/web' => (
-  requestedPath === '/native/collection'
+export const resolveNativeLoginReturnTo = (
+  requestedPath?: string,
+): NativeLoginReturnPath | '/web' => {
+  if (requestedPath === '/native/collection'
     || requestedPath === '/native/search'
     || requestedPath === '/native/trades'
-    ? requestedPath
-    : '/web'
-);
+    || requestedPath === '/native/profile') {
+    return requestedPath;
+  }
+  if (requestedPath && /^\/native\/profile\/[^/]+$/.test(requestedPath)) {
+    return requestedPath as `/native/profile/${string}`;
+  }
+  return '/web';
+};

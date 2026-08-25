@@ -27,12 +27,15 @@ describe('resolveNativeActionMenuDestination', () => {
     '/native/collection',
     '/native/search',
     '/native/trades',
+    '/native/profile',
+    '/native/profile/OtherTrainer',
   ] as const)('returns a signed-in user to ready native route %s', (path) => {
     expect(resolveNativeLoginReturnTo(path)).toBe(path);
   });
 
   test('rejects arbitrary login return paths', () => {
     expect(resolveNativeLoginReturnTo('/native/not-ready')).toBe('/web');
+    expect(resolveNativeLoginReturnTo('/native/profile/name/extra')).toBe('/web');
     expect(resolveNativeLoginReturnTo()).toBe('/web');
   });
 });

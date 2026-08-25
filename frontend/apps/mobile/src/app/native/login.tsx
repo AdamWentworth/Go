@@ -13,6 +13,17 @@ export default function NativeLoginRoute() {
     ? params.returnTo[0]
     : params.returnTo;
   const returnTo = resolveNativeLoginReturnTo(requestedReturnTo);
+  const returnHref = returnTo.startsWith('/native/profile/')
+    ? {
+        pathname: '/native/profile/[username]' as const,
+        params: { username: decodeURIComponent(returnTo.slice('/native/profile/'.length)) },
+      }
+    : returnTo === '/native/collection'
+      || returnTo === '/native/search'
+      || returnTo === '/native/trades'
+      || returnTo === '/native/profile'
+      ? returnTo
+      : '/web' as const;
 
   if (status === 'restoring') {
     return (
@@ -49,12 +60,12 @@ export default function NativeLoginRoute() {
     );
   }
 
-  if (user) return <Redirect href={returnTo} />;
+  if (user) return <Redirect href={returnHref} />;
 
   return (
     <NativeLoginScreen
       onSignIn={signIn}
-      onSignedIn={() => router.replace(returnTo)}
+      onSignedIn={() => router.replace(returnHref)}
       onUseCurrentApp={() => router.replace('/web')}
     />
   );
