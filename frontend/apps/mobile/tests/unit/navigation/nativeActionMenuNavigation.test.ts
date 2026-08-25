@@ -7,6 +7,7 @@ describe('resolveNativeActionMenuDestination', () => {
   test.each([
     ['/', '/native'],
     ['/pokemon', '/native/collection'],
+    ['/pokedex', '/native/pokedex'],
     ['/profile', '/native/profile'],
     ['/profile/friends', '/native/friends'],
     ['/search', '/native/search'],
@@ -49,6 +50,7 @@ describe('resolveNativeActionMenuDestination', () => {
     '/native/info/privacy',
     '/native/info/safety',
     '/native/info/terms',
+    '/native/pokedex',
     '/native/search',
     '/native/settings',
     '/native/trade-board',

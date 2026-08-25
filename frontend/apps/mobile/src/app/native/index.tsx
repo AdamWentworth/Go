@@ -76,6 +76,10 @@ export default function NativeHomeRoute() {
         : '/native/collection');
       return;
     }
+    if (pathname === '/pokedex') {
+      router.push('/native/pokedex');
+      return;
+    }
     if (pathname === '/trades') {
       const section = params.get('section');
       router.push(section
