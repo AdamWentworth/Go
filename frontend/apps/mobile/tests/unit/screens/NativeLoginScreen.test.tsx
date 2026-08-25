@@ -3,6 +3,18 @@ import { fireEvent, render, screen, waitFor } from '@testing-library/react-nativ
 import { NativeLoginScreen } from '../../../src/screens/NativeLoginScreen';
 
 describe('NativeLoginScreen', () => {
+  it('keeps a security-action result visible when reauthentication is required', () => {
+    render(
+      <NativeLoginScreen
+        notice="Password updated. Sign in again on this device."
+        onSignIn={jest.fn()}
+        onSignedIn={jest.fn()}
+        onUseCurrentApp={jest.fn()}
+      />,
+    );
+    expect(screen.getByText('Password updated. Sign in again on this device.')).toBeTruthy();
+  });
+
   it('submits credentials and advances only after the session succeeds', async () => {
     const onSignIn = jest.fn().mockResolvedValue(undefined);
     const onSignedIn = jest.fn();

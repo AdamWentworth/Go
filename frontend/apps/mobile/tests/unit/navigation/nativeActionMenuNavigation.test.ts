@@ -26,6 +26,7 @@ describe('resolveNativeActionMenuDestination', () => {
   });
 
   test.each([
+    '/native/account',
     '/native/collection',
     '/native/friends',
     '/native/search',

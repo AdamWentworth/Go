@@ -14,6 +14,7 @@ import { ApiClientError } from '@pokemongonexus/shared-api-client';
 import { theme } from '../ui/theme';
 
 type NativeLoginScreenProps = {
+  notice?: string | null;
   onSignIn: (username: string, password: string) => Promise<void>;
   onUseCurrentApp: () => void;
   onSignedIn: () => void;
@@ -28,6 +29,7 @@ const errorMessage = (error: unknown): string => {
 };
 
 export const NativeLoginScreen = ({
+  notice = null,
   onSignIn,
   onUseCurrentApp,
   onSignedIn,
@@ -69,6 +71,12 @@ export const NativeLoginScreen = ({
             Sign in with your Pokémon Go Nexus username or email. Social sign-in
             remains available in the current app during migration.
           </Text>
+
+          {notice ? (
+            <Text accessibilityLiveRegion="polite" style={styles.notice}>
+              {notice}
+            </Text>
+          ) : null}
 
           <Text style={styles.label}>Username or email</Text>
           <TextInput
@@ -187,6 +195,15 @@ const styles = StyleSheet.create({
     padding: theme.spacing.md,
     color: '#fecdd3',
     backgroundColor: '#4c0519',
+    lineHeight: 20,
+  },
+  notice: {
+    borderWidth: 1,
+    borderColor: '#2dd4bf',
+    borderRadius: theme.radius.sm,
+    padding: theme.spacing.md,
+    color: '#ccfbf1',
+    backgroundColor: '#134e4a',
     lineHeight: 20,
   },
   primaryButton: {

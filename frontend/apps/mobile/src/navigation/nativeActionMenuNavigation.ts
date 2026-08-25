@@ -1,5 +1,5 @@
 export type NativeActionMenuPath = '/pokemon' | '/profile/friends' | '/search' | '/settings' | '/trades';
-export type ReadyNativePath = '/native/collection' | '/native/friends' | '/native/search' | '/native/settings' | '/native/trades';
+export type ReadyNativePath = '/native/account' | '/native/collection' | '/native/friends' | '/native/search' | '/native/settings' | '/native/trades';
 export type NativeLoginReturnPath = ReadyNativePath | '/native/profile' | `/native/profile/${string}`;
 
 export type NativeActionMenuDestination =
@@ -31,7 +31,8 @@ export const resolveNativeActionMenuDestination = (
 export const resolveNativeLoginReturnTo = (
   requestedPath?: string,
 ): NativeLoginReturnPath | '/web' => {
-  if (requestedPath === '/native/collection'
+  if (requestedPath === '/native/account'
+    || requestedPath === '/native/collection'
     || requestedPath === '/native/friends'
     || requestedPath === '/native/search'
     || requestedPath === '/native/settings'

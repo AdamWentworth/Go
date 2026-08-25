@@ -7,18 +7,23 @@ import { resolveNativeLoginReturnTo } from '../../navigation/nativeActionMenuNav
 
 export default function NativeLoginRoute() {
   const router = useRouter();
-  const params = useLocalSearchParams<{ returnTo?: string | string[] }>();
+  const params = useLocalSearchParams<{
+    notice?: string | string[];
+    returnTo?: string | string[];
+  }>();
   const { retrySession, signIn, status, user } = useNativeSession();
   const requestedReturnTo = Array.isArray(params.returnTo)
     ? params.returnTo[0]
     : params.returnTo;
+  const notice = Array.isArray(params.notice) ? params.notice[0] : params.notice;
   const returnTo = resolveNativeLoginReturnTo(requestedReturnTo);
   const returnHref = returnTo.startsWith('/native/profile/')
     ? {
         pathname: '/native/profile/[username]' as const,
         params: { username: decodeURIComponent(returnTo.slice('/native/profile/'.length)) },
       }
-    : returnTo === '/native/collection'
+    : returnTo === '/native/account'
+      || returnTo === '/native/collection'
       || returnTo === '/native/friends'
       || returnTo === '/native/search'
       || returnTo === '/native/settings'
@@ -66,6 +71,7 @@ export default function NativeLoginRoute() {
 
   return (
     <NativeLoginScreen
+      notice={notice}
       onSignIn={signIn}
       onSignedIn={() => router.replace(returnHref)}
       onUseCurrentApp={() => router.replace('/web')}
