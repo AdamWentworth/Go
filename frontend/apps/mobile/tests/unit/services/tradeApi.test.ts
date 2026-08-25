@@ -2,7 +2,11 @@ import type { AuthoritativeTradeProposalRequest } from '@pokemongonexus/shared-c
 import { tradesContract } from '@pokemongonexus/shared-contracts/trades';
 import {
   createNativeTradeProposal,
+  deleteNativeTrade,
+  getNativeTradePartnerInfo,
   getNativeTrades,
+  runNativeTradeCommand,
+  updateNativeTradeSatisfaction,
 } from '../../../src/services/tradeApi';
 
 const proposal: AuthoritativeTradeProposalRequest = {
@@ -73,5 +77,77 @@ describe('native trade API', () => {
     await expect(
       createNativeTradeProposal(usersClient, proposal),
     ).rejects.toThrow('proposal response is invalid');
+  });
+
+  it.each([
+    ['accept', tradesContract.endpoints.accept('trade/1')],
+    ['deny', tradesContract.endpoints.deny('trade/1')],
+    ['cancel', tradesContract.endpoints.cancel('trade/1')],
+    ['complete', tradesContract.endpoints.complete('trade/1')],
+    ['repropose', tradesContract.endpoints.repropose('trade/1')],
+  ] as const)('runs the %s command against its encoded endpoint', async (command, endpoint) => {
+    const envelope = {
+      trade: { trade_id: 'trade/1', trade_status: 'pending' },
+      affected_instances: {},
+    };
+    const usersClient = { post: jest.fn().mockResolvedValue(envelope) };
+
+    await expect(
+      runNativeTradeCommand(usersClient, command, 'trade/1'),
+    ).resolves.toEqual(envelope);
+    expect(usersClient.post).toHaveBeenCalledWith(endpoint);
+  });
+
+  it('updates satisfaction with the bounded command payload', async () => {
+    const envelope = {
+      trade: { trade_id: 'trade-1', trade_status: 'completed' },
+      affected_instances: {},
+    };
+    const usersClient = { put: jest.fn().mockResolvedValue(envelope) };
+
+    await expect(
+      updateNativeTradeSatisfaction(usersClient, 'trade-1', true),
+    ).resolves.toEqual(envelope);
+    expect(usersClient.put).toHaveBeenCalledWith(
+      tradesContract.endpoints.satisfaction('trade-1'),
+      { satisfied: true },
+    );
+  });
+
+  it('deletes a terminal trade through the canonical endpoint', async () => {
+    const usersClient = { delete: jest.fn().mockResolvedValue(undefined) };
+
+    await expect(deleteNativeTrade(usersClient, 'trade-1')).resolves.toBeUndefined();
+    expect(usersClient.delete).toHaveBeenCalledWith(
+      tradesContract.endpoints.remove('trade-1'),
+    );
+  });
+
+  it('validates revealed coordination information', async () => {
+    const partner = {
+      sharingEnabled: true,
+      trainerCode: '1234 5678 9012',
+      pokemonGoName: 'OtherTrainer',
+      coordinationMethod: 'campfire' as const,
+      coordinationHandle: 'OtherTrainer',
+      location: 'Burnaby, British Columbia, Canada',
+    };
+    const usersClient = { get: jest.fn().mockResolvedValue(partner) };
+
+    await expect(
+      getNativeTradePartnerInfo(usersClient, 'trade-1'),
+    ).resolves.toEqual(partner);
+    expect(usersClient.get).toHaveBeenCalledWith(
+      tradesContract.endpoints.revealPartnerInfo('trade-1'),
+    );
+  });
+
+  it('rejects empty trade ids before making a command request', async () => {
+    const usersClient = { post: jest.fn() };
+
+    await expect(
+      runNativeTradeCommand(usersClient, 'cancel', '   '),
+    ).rejects.toThrow('Trade ID is required');
+    expect(usersClient.post).not.toHaveBeenCalled();
   });
 });

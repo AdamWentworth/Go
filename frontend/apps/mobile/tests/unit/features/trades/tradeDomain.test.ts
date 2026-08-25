@@ -1,6 +1,10 @@
 import type { PokemonInstance } from '@pokemongonexus/shared-contracts/instances';
 import { calculateTradeCost } from '@pokemongonexus/shared-domain/trade-cost';
 import {
+  countTradeActivity,
+  tradeMatchesActivityFilter,
+} from '@pokemongonexus/shared-domain/trade-activity';
+import {
   parseTradeVariantReference,
   prepareTradeCandidateSets,
   resolveTradeCandidateDecision,
@@ -117,5 +121,27 @@ describe('shared native trade domain', () => {
     expect(parseTradeVariantReference('0006-gigantamax')).toEqual({
       baseKey: '0006-gigantamax',
     });
+  });
+
+  it('groups the canonical five activity stages without leaking deleted rows', () => {
+    const trades = [
+      { trade_status: 'proposed', username_accepting: 'Me', username_proposed: 'A' },
+      { trade_status: 'proposed', username_accepting: 'B', username_proposed: 'Me' },
+      { trade_status: 'pending', username_accepting: 'Me', username_proposed: 'C' },
+      { trade_status: 'completed', username_accepting: 'D', username_proposed: 'Me' },
+      { trade_status: 'cancelled', username_accepting: 'Me', username_proposed: 'E' },
+      { trade_status: 'denied', username_accepting: 'F', username_proposed: 'Me' },
+      { trade_status: 'deleted', username_accepting: 'Me', username_proposed: 'G' },
+    ];
+
+    expect(countTradeActivity(trades, 'Me')).toEqual({
+      Accepting: 1,
+      Proposed: 1,
+      Pending: 1,
+      Completed: 1,
+      Cancelled: 2,
+    });
+    expect(tradeMatchesActivityFilter(trades[0], 'Accepting', 'Me')).toBe(true);
+    expect(tradeMatchesActivityFilter(trades[0], 'Proposed', 'Me')).toBe(false);
   });
 });
