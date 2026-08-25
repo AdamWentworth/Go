@@ -232,14 +232,34 @@ const toAssetUrl = (baseUrl: string, path: string): string => (
     : `${baseUrl.replace(/\/$/, '')}/${path.replace(/^\//, '')}`
 );
 
-const primaryTypeName = (detail: NativeInstanceDetail): string => {
-  const match = detail.row.typeIconUris[0]?.match(/\/([^/?]+)\.png(?:\?|$)/i);
+const primaryTypeName = (
+  detail: NativeInstanceDetail,
+  typeIconUris = detail.row.typeIconUris,
+): string => {
+  const match = typeIconUris[0]?.match(/\/([^/?]+)\.png(?:\?|$)/i);
   return match?.[1]?.toLowerCase() ?? 'normal';
 };
 
+const typeNamesFromIconUris = (typeIconUris: string[]): string[] => (
+  typeIconUris.map((uri) => uri.match(/\/([^/?]+)\.png(?:\?|$)/i)?.[1]?.toLowerCase() ?? 'unknown')
+);
+
+const pokemonTypesAccessibilityLabel = (typeIconUris: string[]): string => (
+  `Pokémon types: ${typeNamesFromIconUris(typeIconUris).join(' and ') || 'unknown'}`
+);
+
+const pokemonTypesTestId = (typeIconUris: string[]): string => (
+  `native-instance-types-${typeNamesFromIconUris(typeIconUris).join('-') || 'unknown'}`
+);
+
 const backgroundPath = (
   detail: NativeInstanceDetail,
-  overrides?: { lucky?: boolean; shadow?: boolean; purified?: boolean },
+  overrides?: {
+    lucky?: boolean;
+    shadow?: boolean;
+    purified?: boolean;
+    typeIconUris?: string[];
+  },
 ): string => {
   const instance = detail.instance;
   const shadow = overrides?.shadow ?? instance?.shadow;
@@ -251,7 +271,7 @@ const backgroundPath = (
   if (overrides?.lucky ?? canonicalLucky) {
     return '/images/backgrounds/bg_lucky.png';
   }
-  return `/images/backgrounds/bg_${primaryTypeName(detail)}.png`;
+  return `/images/backgrounds/bg_${primaryTypeName(detail, overrides?.typeIconUris)}.png`;
 };
 
 const STATUS = {
@@ -1432,6 +1452,7 @@ const NativeInstanceEditFields = ({
   isCaught,
   isWanted,
   palette,
+  typeIconUris,
   onChange,
 }: {
   assetBaseUrl: string;
@@ -1440,6 +1461,7 @@ const NativeInstanceEditFields = ({
   isCaught: boolean;
   isWanted: boolean;
   palette: typeof LIGHT;
+  typeIconUris: string[];
   onChange: (patch: Partial<NativeInstanceEditDraft>) => void;
 }) => {
   const inputStyle = [
@@ -1544,7 +1566,7 @@ const NativeInstanceEditFields = ({
       ) : null}
 
       {!isWanted ? (
-        <View style={styles.editTwoColumns}>
+        <View style={styles.editMeasurements}>
           <View style={styles.editColumn}>
             <Text style={[styles.editFieldLabel, { color: palette.secondary }]}>WEIGHT (KG)</Text>
             <TextInput
@@ -1557,6 +1579,21 @@ const NativeInstanceEditFields = ({
               style={inputStyle}
               value={draft.weight}
             />
+          </View>
+          <View
+            accessibilityLabel={pokemonTypesAccessibilityLabel(typeIconUris)}
+            accessible
+            style={styles.editTypes}
+            testID={pokemonTypesTestId(typeIconUris)}
+          >
+            {typeIconUris.map((uri) => (
+              <Image
+                accessibilityLabel={`${uri.match(/\/([^/?]+)\.png(?:\?|$)/i)?.[1] ?? 'Pokémon'} type`}
+                key={uri}
+                source={{ uri }}
+                style={styles.editTypeIcon}
+              />
+            ))}
           </View>
           <View style={styles.editColumn}>
             <Text style={[styles.editFieldLabel, { color: palette.secondary }]}>HEIGHT (M)</Text>
@@ -1722,7 +1759,6 @@ export const NativeInstanceDetailScreen = ({
   const weight = instance?.weight;
   const height = instance?.height;
   const gender = instance?.gender;
-  const showPhysicalRow = weight != null || height != null || detail.row.typeIconUris.length > 0;
   const maxBadge = detail.row.maxKind
     ? toAssetUrl(assetBaseUrl, `/images/${detail.row.maxKind}.png`)
     : null;
@@ -1742,6 +1778,22 @@ export const NativeInstanceDetailScreen = ({
   const selectedFusionOption = activeDraft.fused
     ? detail.fusionOptions?.find((option) => option.id === activeDraft.fusionId) ?? null
     : null;
+  const selectedMegaOption = activeDraft.megaEnabled
+    ? detail.megaOptions?.find((option) => option.form === activeDraft.megaForm) ?? null
+    : null;
+  const selectedCrownOption = activeDraft.crowned
+    ? detail.crownOptions?.find((option) => option.form === activeDraft.crownForm) ?? null
+    : null;
+  const displayTypeIconUris = editing
+    ? selectedFusionOption?.typeIconUris?.length
+      ? selectedFusionOption.typeIconUris
+      : selectedMegaOption?.typeIconUris?.length
+        ? selectedMegaOption.typeIconUris
+        : selectedCrownOption?.typeIconUris?.length
+          ? selectedCrownOption.typeIconUris
+          : detail.row.typeIconUris
+    : detail.row.typeIconUris;
+  const showPhysicalRow = weight != null || height != null || displayTypeIconUris.length > 0;
   const activeBackgroundOptions = selectedFusionOption?.backgroundOptions
     ?? detail.backgroundOptions
     ?? [];
@@ -1927,10 +1979,12 @@ export const NativeInstanceDetailScreen = ({
                 lucky: displayLucky,
                 purified: displayPurified,
                 shadow: displayShadow,
+                typeIconUris: displayTypeIconUris,
               } : undefined),
             ),
           }}
           style={styles.fullBackground}
+          testID="native-instance-background"
         />
         <View style={styles.backgroundTint} />
 
@@ -2082,6 +2136,7 @@ export const NativeInstanceDetailScreen = ({
                 isWanted={isWanted}
                 onChange={updateDraft}
                 palette={palette}
+                typeIconUris={displayTypeIconUris}
               />
             ) : (
               <Text accessibilityRole="header" style={[styles.name, { color: palette.text }]}>
@@ -2112,9 +2167,19 @@ export const NativeInstanceDetailScreen = ({
                   ) : null}
                 </View>
                 <View style={[styles.pipe, { backgroundColor: palette.divider }]} />
-                <View style={styles.types}>
-                  {detail.row.typeIconUris.map((uri) => (
-                    <Image key={uri} source={{ uri }} style={styles.typeIcon} />
+                <View
+                  accessibilityLabel={pokemonTypesAccessibilityLabel(displayTypeIconUris)}
+                  accessible
+                  style={styles.types}
+                  testID={pokemonTypesTestId(displayTypeIconUris)}
+                >
+                  {displayTypeIconUris.map((uri) => (
+                    <Image
+                      accessibilityLabel={`${uri.match(/\/([^/?]+)\.png(?:\?|$)/i)?.[1] ?? 'Pokémon'} type`}
+                      key={uri}
+                      source={{ uri }}
+                      style={styles.typeIcon}
+                    />
                   ))}
                 </View>
                 <View style={[styles.pipe, { backgroundColor: palette.divider }]} />
@@ -2419,8 +2484,18 @@ const styles = StyleSheet.create({
   },
   editNameInput: { minHeight: 48, fontSize: 25, textAlign: 'center' },
   editTwoColumns: { width: '100%', flexDirection: 'row', gap: 10 },
+  editMeasurements: { width: '100%', flexDirection: 'row', alignItems: 'flex-end', gap: 8 },
   editThreeColumns: { width: '100%', flexDirection: 'row', gap: 8 },
   editColumn: { flex: 1, minWidth: 0, gap: 4 },
+  editTypes: {
+    width: 58,
+    minHeight: 48,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 4,
+  },
+  editTypeIcon: { width: 24, height: 24 },
   inlineInputLabel: { fontSize: 11, fontWeight: '800', textAlign: 'center' },
   genderOptions: { flexDirection: 'row', flexWrap: 'wrap', gap: 7 },
   genderOption: {

@@ -25,5 +25,16 @@ tags:
 - assertVisible: "Power form: Base form"
 - tapOn: "Power form: Mega"
 - takeScreenshot: mega-01-selected
+- swipe:
+    start: 50%, 82%
+    end: 50%, 18%
+    duration: 600
+- assertVisible:
+    id: "native-instance-types-steel-dragon"
+- takeScreenshot: mega-02-types
+- swipe:
+    start: 50%, 18%
+    end: 50%, 82%
+    duration: 600
 - tapOn: Save Pokémon
 - assertNotVisible: Pokémon detail editor

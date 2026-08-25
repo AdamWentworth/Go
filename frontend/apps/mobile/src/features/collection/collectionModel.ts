@@ -116,6 +116,7 @@ export type NativeInstanceDetail = {
     label: string;
     primal: boolean;
     stats?: { attack: number; defense: number; stamina: number };
+    typeIconUris?: string[];
   }[];
   crownOptions?: {
     form: string | null;
@@ -123,6 +124,7 @@ export type NativeInstanceDetail = {
     label: string;
     moveOptions?: NativeInstanceMoveOption[];
     stats?: { attack: number; defense: number; stamina: number };
+    typeIconUris?: string[];
   }[];
   fusionOptions?: {
     id: number;
@@ -130,6 +132,7 @@ export type NativeInstanceDetail = {
     moveOptions: NativeInstanceMoveOption[];
     name: string;
     stats?: { attack: number; defense: number; stamina: number };
+    typeIconUris?: string[];
     partnerPokemonId: number;
     partnerRows: NativeCollectionRow[];
     backgroundOptions: NativeInstanceBackgroundOption[];
@@ -259,6 +262,15 @@ const absoluteImageUri = (image: string | null, assetOrigin: string): string | n
     return null;
   }
 };
+
+const absoluteTypeIconUris = (
+  typeNames: (string | null | undefined)[],
+  assetOrigin: string,
+): string[] => typeNames
+  .filter((typeName): typeName is string => Boolean(typeName?.trim()))
+  .map(buildPokemonTypeIconPath)
+  .map((path) => absoluteImageUri(path ?? null, assetOrigin))
+  .filter((uri): uri is string => Boolean(uri));
 
 const GENERATION_LABELS: Record<number, string> = {
   1: 'kanto',
@@ -952,6 +964,7 @@ export const buildNativeInstanceDetail = (
           defense: Number(mega.defense),
           stamina: Number(mega.stamina),
         },
+    typeIconUris: absoluteTypeIconUris([mega.type1_name, mega.type2_name], assetOrigin),
   }));
   const crownOptions = (pokemon.crownForms ?? []).map((crownForm) => ({
     form: getPokemonCrownFormLabel(crownForm),
@@ -978,6 +991,10 @@ export const buildNativeInstanceDetail = (
           defense: Number(crownForm.defense),
           stamina: Number(crownForm.stamina),
         },
+    typeIconUris: absoluteTypeIconUris(
+      [crownForm.type1_name, crownForm.type2_name],
+      assetOrigin,
+    ),
   }));
   const activePartnerKey = instance.fused_with
     ? resolveInstanceCollectionKey(instances, instance.fused_with)
@@ -1069,6 +1086,7 @@ export const buildNativeInstanceDetail = (
               defense: Number(entry.defense),
               stamina: Number(entry.stamina),
             },
+        typeIconUris: absoluteTypeIconUris([entry.type1_name, entry.type2_name], assetOrigin),
         partnerPokemonId: entry.base_pokemon_id2,
         partnerRows,
         backgroundOptions: fusionBackgroundOptions,

@@ -453,6 +453,10 @@ export default function DeviceSmokeCollectionRoute() {
                     label: 'Mega',
                     primal: false,
                     stats: { attack: 300, defense: 289, stamina: 190 },
+                    typeIconUris: [
+                      `${ASSET_BASE_URL}/images/types/steel.png`,
+                      `${ASSET_BASE_URL}/images/types/dragon.png`,
+                    ],
                   }]
                 : [],
               fusionOptions: openedRow.pokemonId === 800
@@ -468,6 +472,10 @@ export default function DeviceSmokeCollectionRoute() {
                     }],
                     name: 'Dawn Wings Necrozma',
                     stats: { attack: 277, defense: 220, stamina: 200 },
+                    typeIconUris: [
+                      `${ASSET_BASE_URL}/images/types/psychic.png`,
+                      `${ASSET_BASE_URL}/images/types/ghost.png`,
+                    ],
                     partnerPokemonId: 792,
                     partnerRows: ROWS.filter((candidate) => candidate.id === 'smoke-lunala'),
                     backgroundOptions: [{
@@ -493,6 +501,10 @@ export default function DeviceSmokeCollectionRoute() {
                     imageUri: `${ASSET_BASE_URL}/images/shiny/shiny_pokemon_888.png`,
                     label: 'Crowned Sword',
                     stats: { attack: 332, defense: 240, stamina: 192 },
+                    typeIconUris: [
+                      `${ASSET_BASE_URL}/images/types/fairy.png`,
+                      `${ASSET_BASE_URL}/images/types/steel.png`,
+                    ],
                   }]
                 : [],
               sizeThresholds: {

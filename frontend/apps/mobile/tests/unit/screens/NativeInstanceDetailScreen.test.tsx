@@ -553,8 +553,20 @@ describe('NativeInstanceDetailScreen', () => {
             purified: 'https://pokegonexus.com/images/charizard.png',
           },
           megaOptions: [
-            { form: 'x', imageUri: 'https://pokegonexus.com/images/mega-x.png', label: 'Mega X', primal: false },
-            { form: 'y', imageUri: 'https://pokegonexus.com/images/mega-y.png', label: 'Mega Y', primal: false },
+            {
+              form: 'x',
+              imageUri: 'https://pokegonexus.com/images/mega-x.png',
+              label: 'Mega X',
+              primal: false,
+              typeIconUris: ['https://pokegonexus.com/images/types/fire.png'],
+            },
+            {
+              form: 'y',
+              imageUri: 'https://pokegonexus.com/images/mega-y.png',
+              label: 'Mega Y',
+              primal: false,
+              typeIconUris: ['https://pokegonexus.com/images/types/dragon.png'],
+            },
           ],
           instance: {
             nickname: null,
@@ -565,7 +577,11 @@ describe('NativeInstanceDetailScreen', () => {
             is_mega: false,
             mega_form: null,
           } as NonNullable<NativeInstanceDetail['instance']>,
-          row: { ...detail.row, status: 'caught' },
+          row: {
+            ...detail.row,
+            status: 'caught',
+            typeIconUris: ['https://pokegonexus.com/images/types/fire.png'],
+          },
         }}
         isLoading={false}
         error={null}
@@ -582,8 +598,21 @@ describe('NativeInstanceDetailScreen', () => {
       />,
     );
 
-    fireEvent.press(screen.getByRole('button', { name: 'Edit Pokémon' }));
-    fireEvent.press(screen.getByRole('button', { name: 'Power form: Mega Y' }));
+    await act(async () => {
+      fireEvent.press(screen.getByRole('button', { name: 'Edit Pokémon' }));
+    });
+    const megaYButton = await screen.findByRole('button', { name: 'Power form: Mega Y' });
+    await act(async () => {
+      fireEvent.press(megaYButton);
+    });
+    expect(screen.getByLabelText('Pokémon types: dragon')).toBeTruthy();
+    expect(screen.getByTestId('native-instance-types-dragon')).toBeTruthy();
+    expect(screen.getByTestId(
+      'native-instance-background',
+      { includeHiddenElements: true },
+    ).props.source.uri).toContain(
+      '/images/backgrounds/bg_dragon.png',
+    );
     await act(async () => {
       fireEvent.press(screen.getByRole('button', { name: 'Save Pokémon' }));
     });

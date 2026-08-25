@@ -151,6 +151,33 @@ describe('native collection model', () => {
     )).toBe('/images/gmax-charizard-shiny.png');
   });
 
+  it('uses canonical type assets for transformed collection rows', () => {
+    const transformedPokemon = {
+      ...pokemon,
+      megaEvolutions: [{
+        id: 61,
+        form: 'x',
+        primal: false,
+        type1_name: 'Fire',
+        type2_name: 'Dragon',
+      }],
+    } as unknown as BasePokemon;
+
+    const [megaRow] = buildNativeCollectionRows({
+      mega: instance({
+        instance_id: 'mega',
+        mega: true,
+        is_mega: true,
+        mega_form: 'x',
+      }),
+    }, [transformedPokemon], 'https://pokegonexus.com');
+
+    expect(megaRow.typeIconUris).toEqual([
+      'https://pokegonexus.com/images/types/fire.png',
+      'https://pokegonexus.com/images/types/dragon.png',
+    ]);
+  });
+
   it('builds stable rows, excludes disabled data, and resolves relative artwork', () => {
     const rows = buildNativeCollectionRows({
       caught: instance({ instance_id: 'caught', favorite: true }),
@@ -378,6 +405,8 @@ describe('native collection model', () => {
         attack: 273,
         defense: 213,
         stamina: 186,
+        type1_name: 'Fire',
+        type2_name: 'Dragon',
       }],
       fusion: [{
         fusion_id: 2,
@@ -389,6 +418,8 @@ describe('native collection model', () => {
         attack: 277,
         defense: 220,
         stamina: 200,
+        type1_name: 'Fire',
+        type2_name: 'Steel',
         backgrounds: [{
           background_id: 12,
           costume_id: 0,
@@ -414,6 +445,8 @@ describe('native collection model', () => {
         attack: 332,
         defense: 240,
         stamina: 192,
+        type1_name: 'Fairy',
+        type2_name: 'Steel',
       }],
       backgrounds: [
         {
@@ -531,6 +564,10 @@ describe('native collection model', () => {
         label: 'Mega X',
         primal: false,
         stats: { attack: 273, defense: 213, stamina: 186 },
+        typeIconUris: [
+          'https://pokegonexus.com/images/types/fire.png',
+          'https://pokegonexus.com/images/types/dragon.png',
+        ],
       }],
       crownOptions: [{
         form: 'Crowned Sword',
@@ -538,6 +575,10 @@ describe('native collection model', () => {
         label: 'Crowned Sword',
         moveOptions: [],
         stats: { attack: 332, defense: 240, stamina: 192 },
+        typeIconUris: [
+          'https://pokegonexus.com/images/types/fairy.png',
+          'https://pokegonexus.com/images/types/steel.png',
+        ],
       }],
       fusionOptions: [{
         id: 2,
@@ -551,6 +592,10 @@ describe('native collection model', () => {
         }],
         name: 'Armored Charizard',
         stats: { attack: 277, defense: 220, stamina: 200 },
+        typeIconUris: [
+          'https://pokegonexus.com/images/types/fire.png',
+          'https://pokegonexus.com/images/types/steel.png',
+        ],
         partnerPokemonId: 150,
         partnerRows: [expect.objectContaining({ id: 'partner-1', name: 'Mewtwo' })],
         backgroundOptions: [{
