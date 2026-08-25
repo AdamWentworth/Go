@@ -3,6 +3,7 @@ import {
   FlatList,
   Image,
   Pressable,
+  ScrollView,
   StyleSheet,
   Text,
   View,
@@ -29,6 +30,7 @@ import {
   NativeCollectionSearchMenu,
 } from './NativeCollectionSearchControls';
 import { NativeCollectionPriorityStar } from './NativeCollectionPriorityStar';
+import { NativeActionMenuAnchor } from '../../../components/NativeActionMenuAnchor';
 
 type NativeCollectionParityFixtureProps = {
   assetBaseUrl?: string;
@@ -299,6 +301,79 @@ export const NativeCollectionParityFixture = ({
     onQueryChange?.(nextQuery);
     setSearchMenuVisible(false);
   };
+  const renderCollectionControls = (includeSearchMenu: boolean) => (
+    <View style={styles.collectionControls}>
+      <NativeCollectionSearchControls
+        assetBaseUrl={assetBaseUrl}
+        inputBackground={palette.search}
+        inputTextColor={palette.searchText}
+        menuVisible={searchMenuVisible}
+        onMenuVisibleChange={setSearchMenuVisible}
+        onQueryChange={(value) => onQueryChange?.(value)}
+        onToggleEvolutionaryLine={() => onToggleEvolutionaryLine?.()}
+        query={query}
+        showEvolutionaryLine={showEvolutionaryLine}
+        textColor={palette.text}
+      />
+      {activeTag ? (
+        <View
+          style={[
+            styles.activeTagChip,
+            {
+              backgroundColor: tagColors.surface,
+              borderColor: tagColors.accent,
+              paddingRight: tagCanClear ? 5 : 9,
+            },
+          ]}
+        >
+          {tagTone === 'favorites' ? (
+            <NativeCollectionPriorityStar
+              label="Favorites tag"
+              size={16}
+              style={styles.tagStar}
+              tone="favorite"
+            />
+          ) : (
+            <View
+              accessibilityElementsHidden
+              style={[styles.tagDot, { backgroundColor: tagColors.accent }]}
+            />
+          )}
+          <Text style={[styles.activeTagText, { color: palette.tagText }]}>
+            {activeTag}
+          </Text>
+          {tagCanClear ? (
+            <Pressable
+              accessibilityLabel={`Clear ${activeTag} tag filter`}
+              accessibilityRole="button"
+              onPress={onClearTag}
+              style={[styles.clearTag, { backgroundColor: tagColors.accent }]}
+            >
+              <Text style={[styles.clearTagText, { color: tagColors.contrast }]}>×</Text>
+            </Pressable>
+          ) : null}
+        </View>
+      ) : null}
+      {error ? (
+        <View accessibilityRole="alert" style={styles.errorCard}>
+          <Text style={[styles.errorTitle, { color: palette.text }]}>Collection unavailable</Text>
+          <Text style={[styles.errorBody, { color: palette.secondaryText }]}>{error}</Text>
+          {onRetry ? (
+            <Pressable accessibilityRole="button" onPress={onRetry} style={styles.retryButton}>
+              <Text style={styles.retryButtonText}>Retry</Text>
+            </Pressable>
+          ) : null}
+        </View>
+      ) : null}
+      {includeSearchMenu ? (
+        <NativeCollectionSearchMenu
+          assetBaseUrl={assetBaseUrl}
+          onFilterPress={appendFilter}
+          textColor={palette.text}
+        />
+      ) : null}
+    </View>
+  );
 
   return (
     <View
@@ -327,118 +402,58 @@ export const NativeCollectionParityFixture = ({
         />
       ) : null}
 
-      <FlatList
-        columnWrapperStyle={styles.gridRow}
-        contentContainerStyle={styles.listContent}
-        data={searchMenuVisible ? [] : cards}
-        initialNumToRender={18}
-        key={columns}
-        keyExtractor={(item) => item.id}
-        maxToRenderPerBatch={18}
-        numColumns={columns}
-        removeClippedSubviews
-        updateCellsBatchingPeriod={32}
-        windowSize={5}
-        ListHeaderComponent={(
-          <View style={styles.collectionControls}>
-            <NativeCollectionSearchControls
+      {searchMenuVisible ? (
+        <ScrollView
+          contentContainerStyle={styles.searchMenuContent}
+          keyboardShouldPersistTaps="always"
+          testID="native-collection-filter-scroll"
+        >
+          {renderCollectionControls(true)}
+        </ScrollView>
+      ) : (
+        <FlatList
+          columnWrapperStyle={styles.gridRow}
+          contentContainerStyle={styles.listContent}
+          data={cards}
+          initialNumToRender={18}
+          key={columns}
+          keyExtractor={(item) => item.id}
+          keyboardShouldPersistTaps="always"
+          maxToRenderPerBatch={18}
+          numColumns={columns}
+          removeClippedSubviews
+          testID="native-collection-grid"
+          updateCellsBatchingPeriod={32}
+          windowSize={5}
+          ListHeaderComponent={renderCollectionControls(false)}
+          ListEmptyComponent={(
+            <View style={styles.emptyState}>
+              {isLoading ? (
+                <>
+                  <ActivityIndicator color="#34807d" size="large" />
+                  <Text style={[styles.emptyTitle, { color: palette.text }]}>Loading your collection…</Text>
+                </>
+              ) : !error ? (
+                <>
+                  <Text style={[styles.emptyTitle, { color: palette.text }]}>No Pokémon found</Text>
+                  <Text style={[styles.emptyBody, { color: palette.secondaryText }]}>Try another search or tag.</Text>
+                </>
+              ) : null}
+            </View>
+          )}
+          renderItem={({ item }) => (
+            <CollectionParityCard
               assetBaseUrl={assetBaseUrl}
-              inputBackground={palette.search}
-              inputTextColor={palette.searchText}
-              menuVisible={searchMenuVisible}
-              onMenuVisibleChange={setSearchMenuVisible}
-              onQueryChange={(value) => onQueryChange?.(value)}
-              onToggleEvolutionaryLine={() => onToggleEvolutionaryLine?.()}
-              query={query}
-              showEvolutionaryLine={showEvolutionaryLine}
-              textColor={palette.text}
+              card={item}
+              cardWidth={cardWidth}
+              onPressCard={onCardPress}
+              onLongPressCard={onCardLongPress}
+              selected={selectedIds.has(item.id)}
+              theme={theme}
             />
-            {activeTag ? (
-              <View
-                style={[
-                  styles.activeTagChip,
-                  {
-                    backgroundColor: tagColors.surface,
-                    borderColor: tagColors.accent,
-                    paddingRight: tagCanClear ? 5 : 9,
-                  },
-                ]}
-              >
-                {tagTone === 'favorites' ? (
-                  <NativeCollectionPriorityStar
-                    label="Favorites tag"
-                    size={16}
-                    style={styles.tagStar}
-                    tone="favorite"
-                  />
-                ) : (
-                  <View
-                    accessibilityElementsHidden
-                    style={[styles.tagDot, { backgroundColor: tagColors.accent }]}
-                  />
-                )}
-                <Text style={[styles.activeTagText, { color: palette.tagText }]}>
-                  {activeTag}
-                </Text>
-                {tagCanClear ? (
-                  <Pressable
-                    accessibilityLabel={`Clear ${activeTag} tag filter`}
-                    accessibilityRole="button"
-                    onPress={onClearTag}
-                    style={[styles.clearTag, { backgroundColor: tagColors.accent }]}
-                  >
-                    <Text style={[styles.clearTagText, { color: tagColors.contrast }]}>×</Text>
-                  </Pressable>
-                ) : null}
-              </View>
-            ) : null}
-            {error ? (
-              <View accessibilityRole="alert" style={styles.errorCard}>
-                <Text style={[styles.errorTitle, { color: palette.text }]}>Collection unavailable</Text>
-                <Text style={[styles.errorBody, { color: palette.secondaryText }]}>{error}</Text>
-                {onRetry ? (
-                  <Pressable accessibilityRole="button" onPress={onRetry} style={styles.retryButton}>
-                    <Text style={styles.retryButtonText}>Retry</Text>
-                  </Pressable>
-                ) : null}
-              </View>
-            ) : null}
-            {searchMenuVisible ? (
-              <NativeCollectionSearchMenu
-                assetBaseUrl={assetBaseUrl}
-                onFilterPress={appendFilter}
-                textColor={palette.text}
-              />
-            ) : null}
-          </View>
-        )}
-        ListEmptyComponent={searchMenuVisible ? null : (
-          <View style={styles.emptyState}>
-            {isLoading ? (
-              <>
-                <ActivityIndicator color="#34807d" size="large" />
-                <Text style={[styles.emptyTitle, { color: palette.text }]}>Loading your collection…</Text>
-              </>
-            ) : !error ? (
-              <>
-                <Text style={[styles.emptyTitle, { color: palette.text }]}>No Pokémon found</Text>
-                <Text style={[styles.emptyBody, { color: palette.secondaryText }]}>Try another search or tag.</Text>
-              </>
-            ) : null}
-          </View>
-        )}
-        renderItem={({ item }) => (
-          <CollectionParityCard
-            assetBaseUrl={assetBaseUrl}
-            card={item}
-            cardWidth={cardWidth}
-            onPressCard={onCardPress}
-            onLongPressCard={onCardLongPress}
-            selected={selectedIds.has(item.id)}
-            theme={theme}
-          />
-        )}
-      />
+          )}
+        />
+      )}
 
       {selectedIds.size === 0 ? <Pressable
         accessibilityLabel={sortLabel}
@@ -467,19 +482,12 @@ export const NativeCollectionParityFixture = ({
         </View>
       </Pressable> : null}
 
-      {selectedIds.size === 0 ? <Pressable
-        accessibilityLabel="Open action menu"
-        accessibilityRole="button"
-        onPress={onActionMenuPress}
-        style={styles.actionMenuAnchor}
-      >
-        <Image
-          accessibilityElementsHidden
-          resizeMode="contain"
-          source={{ uri: toAssetUrl(assetBaseUrl, '/images/btn_action_menu.png') }}
-          style={styles.actionMenuBall}
+      {selectedIds.size === 0 ? (
+        <NativeActionMenuAnchor
+          assetBaseUrl={assetBaseUrl}
+          onPress={onActionMenuPress ?? (() => undefined)}
         />
-      </Pressable> : null}
+      ) : null}
 
       {selectedIds.size > 0 && onSelectionActionPress ? (
         <View pointerEvents="box-none" style={styles.selectionActionContainer}>
@@ -525,6 +533,11 @@ const styles = StyleSheet.create({
     borderRadius: 3,
   },
   listContent: {
+    flexGrow: 1,
+    paddingHorizontal: GRID_HORIZONTAL_PADDING,
+    paddingBottom: 92,
+  },
+  searchMenuContent: {
     flexGrow: 1,
     paddingHorizontal: GRID_HORIZONTAL_PADDING,
     paddingBottom: 92,
@@ -686,22 +699,6 @@ const styles = StyleSheet.create({
   sortTypeImage: { width: 30, height: 30 },
   sortArrowImage: { width: 15, height: 15 },
   sortArrowDescending: { transform: [{ rotate: '180deg' }] },
-  actionMenuAnchor: {
-    position: 'absolute',
-    bottom: 12,
-    left: '50%',
-    zIndex: 21,
-    width: 54,
-    height: 54,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginLeft: -27,
-    borderWidth: 3,
-    borderColor: '#d9ffff',
-    borderRadius: 27,
-    backgroundColor: '#fff',
-  },
-  actionMenuBall: { width: 48, height: 48 },
   selectionActionContainer: {
     position: 'absolute',
     right: 0,

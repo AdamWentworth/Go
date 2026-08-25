@@ -112,7 +112,8 @@ const FilterTile = ({
       accessibilityLabel={`Filter by ${filter}`}
       accessibilityRole="button"
       onPress={onPress}
-      style={({ pressed }) => [styles.filterTile, pressed && styles.pressed]}
+      style={({ pressed }) => [styles.filterTile, pressed ? styles.pressed : null]}
+      testID={`native-collection-filter-${filter.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`}
     >
       <View style={[
         styles.filterImageCircle,

@@ -8,6 +8,10 @@ jest.mock('react-native/Libraries/Utilities/useWindowDimensions', () => ({
   default: () => ({ width: 412, height: 915, scale: 2.625, fontScale: 1 }),
 }));
 
+jest.mock('react-native-safe-area-context', () => ({
+  useSafeAreaInsets: () => ({ top: 0, right: 0, bottom: 0, left: 0 }),
+}));
+
 const row = (patch: Partial<NativeCollectionRow>): NativeCollectionRow => ({
   id: 'instance-1',
   pokemonId: 1,

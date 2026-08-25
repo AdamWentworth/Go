@@ -14,6 +14,10 @@ jest.mock('react-native/Libraries/Utilities/useWindowDimensions', () => ({
   default: () => mockUseWindowDimensions(),
 }));
 
+jest.mock('react-native-safe-area-context', () => ({
+  useSafeAreaInsets: () => ({ top: 0, right: 0, bottom: 0, left: 0 }),
+}));
+
 describe('NativeCollectionParityFixture', () => {
   beforeEach(() => {
     mockUseWindowDimensions.mockReturnValue({
@@ -159,6 +163,12 @@ describe('NativeCollectionParityFixture', () => {
     expect(screen.getByTestId('native-collection-parity-fixture')).toBeTruthy();
     expect(screen.queryByText('Save')).toBeNull();
     expect(screen.queryByText('Favorite Pokémon')).toBeNull();
+  });
+
+  it('lets search filter controls receive the first tap while the search input is focused', () => {
+    render(<NativeCollectionParityFixture />);
+
+    expect(screen.getByTestId('native-collection-grid').props.keyboardShouldPersistTaps).toBe('always');
   });
 
   it('replaces floating controls with the canonical selection action', () => {
