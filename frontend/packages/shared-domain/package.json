@@ -9,7 +9,8 @@
     "./catalog": "./src/catalog.ts",
     "./pokemon-display": "./src/pokemon-display.ts",
     "./fusion-backgrounds": "./src/fusion-backgrounds.ts",
-    "./combat-power": "./src/combat-power.ts"
+    "./combat-power": "./src/combat-power.ts",
+    "./moves": "./src/moves.ts"
   },
   "dependencies": {
     "@pokemongonexus/shared-contracts": "file:../shared-contracts"
