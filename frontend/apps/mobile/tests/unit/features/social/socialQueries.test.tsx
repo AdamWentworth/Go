@@ -6,6 +6,7 @@ import {
   useNativeFriendsMutation,
   useNativeFriendsQuery,
   useNativeProfileRelationshipMutation,
+  useNativeTrainerProfileMutation,
 } from '../../../../src/features/social/socialQueries';
 import {
   acceptNativeFriendRequest,
@@ -16,9 +17,33 @@ import {
   sendNativeFriendRequest,
   unblockNativeTrainer,
 } from '../../../../src/services/socialApi';
+import {
+  updateNativeAuthProfile,
+  updateNativeTrainerProfile,
+} from '../../../../src/services/nativeTrainerProfileApi';
+
+const mockReplaceSessionUser = jest.fn();
+
+jest.mock('../../../../src/auth/NativeSessionContext', () => ({
+  useNativeSession: () => ({
+    user: {
+      user_id: 'viewer-1',
+      username: 'Misty',
+      email: 'misty@example.invalid',
+      pokemonGoName: 'MistyGo',
+      trainerCode: null,
+      location: null,
+      allowLocation: false,
+    },
+    replaceSessionUser: mockReplaceSessionUser,
+  }),
+}));
 
 jest.mock('../../../../src/services/useNativeApiClients', () => ({
-  useNativeApiClients: () => ({ users: { kind: 'users-client' } }),
+  useNativeApiClients: () => ({
+    auth: { kind: 'auth-client' },
+    users: { kind: 'users-client' },
+  }),
 }));
 
 jest.mock('../../../../src/services/socialApi', () => ({
@@ -30,6 +55,11 @@ jest.mock('../../../../src/services/socialApi', () => ({
   removeNativeFriend: jest.fn().mockResolvedValue(undefined),
   sendNativeFriendRequest: jest.fn().mockResolvedValue('friendship-1'),
   unblockNativeTrainer: jest.fn().mockResolvedValue(undefined),
+}));
+
+jest.mock('../../../../src/services/nativeTrainerProfileApi', () => ({
+  updateNativeAuthProfile: jest.fn(),
+  updateNativeTrainerProfile: jest.fn(),
 }));
 
 const makeWrapper = () => {
@@ -139,6 +169,91 @@ describe('useNativeProfileRelationshipMutation', () => {
     expect(invalidate).toHaveBeenCalledWith({
       queryKey: nativeSocialQueryKeys.friends('viewer-1'),
     });
+    queryClient.clear();
+  });
+});
+
+describe('useNativeTrainerProfileMutation', () => {
+  beforeEach(() => jest.clearAllMocks());
+
+  const profile = {
+    user: {
+      user_id: 'viewer-1',
+      username: 'Misty',
+      pokemonGoName: 'MistyGo',
+      app_joined_at: '2026-01-01',
+    },
+    trainer_titles: [],
+    stats: { caught: 0, for_trade: 0, wanted: 0, favorites: 0, registered: 0 },
+    highlights: [],
+    viewer: { relationship: 'self', can_view_profile: true, can_view_collection: true },
+  } as Parameters<typeof useNativeTrainerProfileMutation>[0] extends infer T ? NonNullable<T> : never;
+
+  it('writes auth only when identity changed, then saves and invalidates the trainer profile', async () => {
+    const updatedUser = {
+      user_id: 'viewer-1',
+      username: 'Misty',
+      email: 'misty@example.invalid',
+      pokemonGoName: 'NewMisty',
+      trainerCode: null,
+      location: null,
+      allowLocation: false,
+    };
+    jest.mocked(updateNativeAuthProfile).mockResolvedValue(updatedUser);
+    jest.mocked(updateNativeTrainerProfile).mockResolvedValue(undefined);
+    const { queryClient, wrapper } = makeWrapper();
+    const invalidate = jest.spyOn(queryClient, 'invalidateQueries').mockResolvedValue(undefined);
+    const { result } = renderHook(() => useNativeTrainerProfileMutation(profile), { wrapper });
+
+    await act(async () => {
+      await result.current.mutateAsync({
+        trainerTitles: ['shiny-hunter'],
+        pokemonGoName: 'NewMisty',
+        trainerCode: '',
+        team: 'Mystic',
+        trainerLevel: '50',
+        totalXp: '1000',
+        startedOn: '2016-07-06',
+        location: '',
+        highlightInstanceIds: [],
+      });
+      await new Promise<void>((resolve) => setTimeout(resolve, 0));
+    });
+
+    expect(updateNativeAuthProfile).toHaveBeenCalledWith(
+      expect.objectContaining({ kind: 'auth-client' }),
+      'viewer-1',
+      expect.objectContaining({ pokemonGoName: 'NewMisty' }),
+    );
+    expect(mockReplaceSessionUser).toHaveBeenCalledWith(updatedUser);
+    expect(updateNativeTrainerProfile).toHaveBeenCalledWith(
+      expect.objectContaining({ kind: 'users-client' }),
+      expect.objectContaining({ trainer_level: 50, trainer_titles: ['shiny-hunter'] }),
+    );
+    expect(invalidate).toHaveBeenCalledWith({
+      queryKey: nativeSocialQueryKeys.profile('viewer-1'),
+    });
+    queryClient.clear();
+  });
+
+  it('refuses to edit a foreign profile', async () => {
+    const { queryClient, wrapper } = makeWrapper();
+    const { result } = renderHook(() => useNativeTrainerProfileMutation({
+      ...profile,
+      user: { ...profile.user, user_id: 'other-user' },
+    }), { wrapper });
+    await expect(result.current.mutateAsync({
+      trainerTitles: [],
+      pokemonGoName: '',
+      trainerCode: '',
+      team: '',
+      trainerLevel: '',
+      totalXp: '',
+      startedOn: '',
+      location: '',
+      highlightInstanceIds: [],
+    })).rejects.toThrow('Only your own');
+    expect(updateNativeTrainerProfile).not.toHaveBeenCalled();
     queryClient.clear();
   });
 });

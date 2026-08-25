@@ -9,6 +9,17 @@ import {
   sendNativeFriendRequest,
   unblockNativeTrainer,
 } from '../../services/socialApi';
+import {
+  updateNativeAuthProfile,
+  updateNativeTrainerProfile,
+} from '../../services/nativeTrainerProfileApi';
+import { useNativeSession } from '../../auth/NativeSessionContext';
+import {
+  buildNativeTrainerProfileSavePlan,
+  type NativeTrainerProfileDraft,
+} from './nativeTrainerProfileEditorModel';
+import type { PokemonInstance } from '@pokemongonexus/shared-contracts/instances';
+import type { TrainerProfile } from '@pokemongonexus/shared-contracts/users';
 import { useNativeApiClients } from '../../services/useNativeApiClients';
 
 export const nativeSocialQueryKeys = {
@@ -84,6 +95,42 @@ export const useNativeFriendsMutation = (viewerId: string) => {
     },
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: nativeSocialQueryKeys.friends(viewerId) });
+    },
+  });
+};
+
+export const useNativeTrainerProfileMutation = (
+  profile: TrainerProfile<PokemonInstance> | null,
+) => {
+  const clients = useNativeApiClients();
+  const session = useNativeSession();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (draft: NativeTrainerProfileDraft) => {
+      if (!profile || !session.user) throw new Error('The trainer profile is not ready.');
+      if (profile.user.user_id !== session.user.user_id) {
+        throw new Error('Only your own trainer profile can be edited.');
+      }
+      const plan = buildNativeTrainerProfileSavePlan(draft, session.user);
+      if (plan.authUpdate) {
+        const updatedUser = await updateNativeAuthProfile(
+          clients.auth,
+          session.user.user_id,
+          plan.authUpdate,
+        );
+        session.replaceSessionUser(updatedUser);
+      }
+      await updateNativeTrainerProfile(clients.users, plan.profileUpdate);
+      return plan;
+    },
+    onSuccess: () => {
+      if (!session.user) return;
+      void queryClient.invalidateQueries({
+        queryKey: nativeSocialQueryKeys.profile(session.user.user_id),
+      });
+      void queryClient.invalidateQueries({
+        queryKey: nativeSocialQueryKeys.friends(session.user.user_id),
+      });
     },
   });
 };

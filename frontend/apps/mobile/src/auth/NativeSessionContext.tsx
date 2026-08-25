@@ -31,6 +31,7 @@ type NativeSessionContextValue = {
   signOut: () => Promise<void>;
   getAccessToken: () => string | null;
   refreshAccessToken: () => Promise<string | null>;
+  replaceSessionUser: (user: MobileSessionUser) => void;
   retrySession: () => Promise<void>;
   clearSession: () => Promise<void>;
 };
@@ -159,6 +160,9 @@ export const NativeSessionProvider = ({
   }, [api, clearSession, persistence]);
 
   const getAccessToken = useCallback(() => accessTokenRef.current, []);
+  const replaceSessionUser = useCallback((nextUser: MobileSessionUser) => {
+    setUser(nextUser);
+  }, []);
 
   const value = useMemo<NativeSessionContextValue>(() => ({
     status,
@@ -167,9 +171,10 @@ export const NativeSessionProvider = ({
     signOut,
     getAccessToken,
     refreshAccessToken,
+    replaceSessionUser,
     retrySession,
     clearSession,
-  }), [clearSession, getAccessToken, refreshAccessToken, retrySession, signIn, signOut, status, user]);
+  }), [clearSession, getAccessToken, refreshAccessToken, replaceSessionUser, retrySession, signIn, signOut, status, user]);
 
   return (
     <NativeSessionContext.Provider value={value}>

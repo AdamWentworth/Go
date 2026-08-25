@@ -142,4 +142,33 @@ describe('NativeSessionProvider', () => {
     await waitFor(() => expect(result.current.status).toBe('signed-out'));
     expect(persistence.clear).toHaveBeenCalledTimes(1);
   });
+
+  it('applies a validated account profile response without replacing session tokens', async () => {
+    const api = {
+      login: jest.fn(),
+      refresh: jest.fn().mockResolvedValue(session('restored')),
+      logout: jest.fn(),
+    };
+    const persistence = {
+      read: jest.fn().mockResolvedValue('refresh-stored'),
+      store: jest.fn().mockResolvedValue(undefined),
+      clear: jest.fn().mockResolvedValue(undefined),
+    };
+    const wrapper = ({ children }: PropsWithChildren) => (
+      <NativeSessionProvider api={api} persistence={persistence}>
+        {children}
+      </NativeSessionProvider>
+    );
+    const { result } = renderHook(() => useNativeSession(), { wrapper });
+    await waitFor(() => expect(result.current.status).toBe('signed-in'));
+
+    act(() => result.current.replaceSessionUser({
+      ...session('restored').user,
+      pokemonGoName: 'UpdatedGoName',
+    }));
+
+    expect(result.current.user?.pokemonGoName).toBe('UpdatedGoName');
+    expect(result.current.getAccessToken()).toBe('access-restored');
+    expect(api.refresh).toHaveBeenCalledTimes(1);
+  });
 });
