@@ -18,6 +18,7 @@ import {
   createNativeRegistrationDraft,
   validateNativeRegistrationStep,
 } from '../features/auth/nativeRegistrationModel';
+import { NativeLocationAutocompleteInput } from '../components/NativeLocationAutocompleteInput';
 
 type Props = {
   onBackToLogin: () => void;
@@ -227,7 +228,13 @@ export const NativeRegisterScreen = ({
           {method && step === 3 ? (
             <View style={styles.fields}>
               <Field label="City or place" light={light}>
-                <TextInput onChangeText={(value) => patch('location', value)} placeholder="City, region, country (optional)" placeholderTextColor="#718087" style={[styles.input, light && styles.inputLight]} value={draft.location} />
+                <NativeLocationAutocompleteInput
+                  accessibilityLabel="City or place"
+                  light={light}
+                  onChangeText={(value) => patch('location', value)}
+                  placeholder="City, region, country (optional)"
+                  value={draft.location}
+                />
               </Field>
               <View style={[styles.choice, light && styles.secondaryLight]}>
                 <View style={styles.choiceCopy}>

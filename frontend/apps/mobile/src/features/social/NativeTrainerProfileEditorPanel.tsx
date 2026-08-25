@@ -8,6 +8,7 @@ import {
   useColorScheme,
 } from 'react-native';
 import type { NativeTrainerProfileDraft } from './nativeTrainerProfileEditorModel';
+import { NativeLocationAutocompleteInput } from '../../components/NativeLocationAutocompleteInput';
 
 type Props = {
   draft: NativeTrainerProfileDraft;
@@ -131,14 +132,13 @@ export const NativeTrainerProfileEditorPanel = ({
         </View>
         <View style={styles.fieldWide}>
           <Text style={[styles.label, light && styles.labelLight]}>LOCATION</Text>
-          <TextInput
+          <NativeLocationAutocompleteInput
             accessibilityLabel="Location"
+            compact
+            light={light}
             maxLength={255}
             onChangeText={(value) => setField('location', value)}
             placeholder="City or region"
-            placeholderTextColor={placeholderColor}
-            selectionColor="#35a8ff"
-            style={[...inputStyle, { color: inputTextColor }]}
             value={draft.location}
           />
         </View>
