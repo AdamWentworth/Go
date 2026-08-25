@@ -15,8 +15,13 @@ import {
 } from '../../screens/NativeTrainerProfileScreen';
 import { buildNativeTrainerProfileModel } from './nativeTrainerProfileModel';
 import {
+  createNativeTrainerProfileDraft,
+  type NativeTrainerProfileDraft,
+} from './nativeTrainerProfileEditorModel';
+import {
   useNativeProfileRelationshipMutation,
   useNativeTrainerProfileQuery,
+  useNativeTrainerProfileMutation,
   type NativeProfileRelationshipCommand,
 } from './socialQueries';
 
@@ -47,6 +52,7 @@ export const NativeTrainerProfileRoute = ({ username }: Props) => {
   const session = useNativeSession();
   const [actionMenuOpen, setActionMenuOpen] = useState(false);
   const [feedback, setFeedback] = useState<{ tone: 'success' | 'error'; text: string } | null>(null);
+  const [profileDraft, setProfileDraft] = useState<NativeTrainerProfileDraft | null>(null);
   const normalizedUsername = username?.trim() || null;
   const viewerId = session.user?.user_id ?? null;
   const profileQuery = useNativeTrainerProfileQuery(viewerId, normalizedUsername);
@@ -54,6 +60,7 @@ export const NativeTrainerProfileRoute = ({ username }: Props) => {
     viewerId ?? '',
     normalizedUsername ?? '',
   );
+  const profileMutation = useNativeTrainerProfileMutation(profileQuery.data ?? null);
   const collectionQuery = useNativeCollectionSnapshotQuery(viewerId);
   const model = useMemo(() => (
     profileQuery.data ? buildNativeTrainerProfileModel(profileQuery.data) : null
@@ -132,6 +139,21 @@ export const NativeTrainerProfileRoute = ({ username }: Props) => {
     }
   };
   const error = errorMessage(profileQuery.error);
+  const saveProfile = async () => {
+    if (!profileDraft) return;
+    setFeedback(null);
+    try {
+      await profileMutation.mutateAsync(profileDraft);
+      await profileQuery.refetch();
+      setProfileDraft(null);
+      setFeedback({ tone: 'success', text: 'Profile updated.' });
+    } catch (mutationError) {
+      setFeedback({
+        tone: 'error',
+        text: errorMessage(mutationError) ?? 'The trainer profile could not be saved.',
+      });
+    }
+  };
 
   return (
     <View style={styles.screen}>
@@ -141,14 +163,22 @@ export const NativeTrainerProfileRoute = ({ username }: Props) => {
         highlights={highlights}
         isLoading={profileQuery.isPending || (Boolean(profileQuery.data?.highlights.length) && collectionQuery.isPending)}
         isOwner={isOwner}
+        isProfileSaving={profileMutation.isPending}
         isRelationshipPending={relationshipMutation.isPending}
         model={model}
         feedback={feedback}
+        editorDraft={profileDraft}
         onBack={normalizedUsername ? () => router.canGoBack() ? router.back() : router.replace('/native/search') : undefined}
         onDismissFeedback={() => setFeedback(null)}
+        onBeginEdit={isOwner && profileQuery.data
+          ? () => setProfileDraft(createNativeTrainerProfileDraft(profileQuery.data))
+          : undefined}
+        onCancelEdit={() => setProfileDraft(null)}
+        onChangeEditorDraft={setProfileDraft}
         onOpenCollection={openCollection}
         onOpenFriends={() => router.push('/native/friends')}
         onRelationshipAction={isOwner ? undefined : (action) => void updateRelationship(action)}
+        onSaveProfile={() => void saveProfile()}
         onRetry={() => {
           void profileQuery.refetch();
           if (profileQuery.data?.highlights.length) void collectionQuery.refetch();

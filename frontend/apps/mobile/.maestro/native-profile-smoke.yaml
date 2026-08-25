@@ -23,6 +23,12 @@ tags:
 - assertVisible: "@AdamZilla"
 - assertVisible: Shiny Gigantamax Charizard
 - assertVisible: Armored Mewtwo
+- tapOn: Edit profile
+- assertVisible: Your trainer details
+- assertVisible: POKÉMON GO NAME
+- takeScreenshot: native-trainer-profile-editor
+- tapOn: Cancel
+- assertVisible: AdamGo
 - scrollUntilVisible:
     element:
       text: Shiny Hunter

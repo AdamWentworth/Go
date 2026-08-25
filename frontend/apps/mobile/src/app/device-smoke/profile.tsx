@@ -1,7 +1,9 @@
 import { Redirect } from 'expo-router';
+import { useState } from 'react';
 import { runtimeConfig } from '../../config/runtimeConfig';
 import type { NativeCollectionRow } from '../../features/collection/collectionModel';
 import type { NativeTrainerProfileModel } from '../../features/social/nativeTrainerProfileModel';
+import type { NativeTrainerProfileDraft } from '../../features/social/nativeTrainerProfileEditorModel';
 import { NativeTrainerProfileScreen } from '../../screens/NativeTrainerProfileScreen';
 
 const ASSET_BASE_URL = 'https://pokegonexus.com';
@@ -66,16 +68,40 @@ const HIGHLIGHTS = [
   highlight('mewtwo', 150, 'Armored Mewtwo', '/images/default/pokemon_150.png'),
 ];
 
+const EDITOR_DRAFT: NativeTrainerProfileDraft = {
+  trainerTitles: ['shiny-hunter', 'lucky-trader'],
+  pokemonGoName: 'AdamGo',
+  trainerCode: '123456789012',
+  team: 'Mystic',
+  trainerLevel: '50',
+  totalXp: '123456789',
+  startedOn: '2016-07-06',
+  location: 'Burnaby, British Columbia, Canada',
+  highlightInstanceIds: HIGHLIGHTS.map(({ id }) => id),
+};
+
 export default function DeviceSmokeProfileRoute() {
+  const [draft, setDraft] = useState<NativeTrainerProfileDraft | null>(null);
+  const [feedback, setFeedback] = useState<{ tone: 'success'; text: string } | null>(null);
   if (!runtimeConfig.mobile.deviceSmokeMode) return <Redirect href="/" />;
   return (
     <NativeTrainerProfileScreen
       assetBaseUrl={ASSET_BASE_URL}
+      editorDraft={draft}
+      feedback={feedback}
       highlights={HIGHLIGHTS}
       isOwner
       model={MODEL}
+      onBeginEdit={() => setDraft({ ...EDITOR_DRAFT })}
+      onCancelEdit={() => setDraft(null)}
+      onChangeEditorDraft={setDraft}
+      onDismissFeedback={() => setFeedback(null)}
       onOpenCollection={() => undefined}
       onOpenFriends={() => undefined}
+      onSaveProfile={() => {
+        setDraft(null);
+        setFeedback({ tone: 'success', text: 'Profile updated.' });
+      }}
     />
   );
 }

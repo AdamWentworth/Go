@@ -13,6 +13,8 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { NativeCollectionRow } from '../features/collection/collectionModel';
 import { NativePokemonLocationBackdrop } from '../features/collection/parity/NativePokemonLocationBackdrop';
 import type { NativeTrainerProfileModel } from '../features/social/nativeTrainerProfileModel';
+import type { NativeTrainerProfileDraft } from '../features/social/nativeTrainerProfileEditorModel';
+import { NativeTrainerProfileEditorPanel } from '../features/social/NativeTrainerProfileEditorPanel';
 import { NativeConfirmationDialog } from '../components/NativeConfirmationDialog';
 import { NativeTrainerWorkspaceNav } from '../components/NativeTrainerWorkspaceNav';
 
@@ -30,6 +32,7 @@ type Props = {
   isLoading?: boolean;
   isOwner: boolean;
   isRelationshipPending?: boolean;
+  isProfileSaving?: boolean;
   model?: NativeTrainerProfileModel | null;
   onBack?: () => void;
   onOpenCollection: (filter?: 'caught' | 'trade' | 'wanted' | 'favorites') => void;
@@ -38,6 +41,11 @@ type Props = {
   onRelationshipAction?: (action: NativeTrainerProfileAction) => void;
   feedback?: { tone: 'success' | 'error'; text: string } | null;
   onDismissFeedback?: () => void;
+  editorDraft?: NativeTrainerProfileDraft | null;
+  onBeginEdit?: () => void;
+  onCancelEdit?: () => void;
+  onChangeEditorDraft?: (draft: NativeTrainerProfileDraft) => void;
+  onSaveProfile?: () => void;
 };
 
 const TEAM_COLORS = {
@@ -95,6 +103,7 @@ export const NativeTrainerProfileScreen = ({
   isLoading = false,
   isOwner,
   isRelationshipPending = false,
+  isProfileSaving = false,
   model = null,
   onBack,
   onOpenCollection,
@@ -103,6 +112,11 @@ export const NativeTrainerProfileScreen = ({
   onRelationshipAction,
   feedback = null,
   onDismissFeedback,
+  editorDraft = null,
+  onBeginEdit,
+  onCancelEdit,
+  onChangeEditorDraft,
+  onSaveProfile,
 }: Props) => {
   const light = useColorScheme() === 'light';
   const insets = useSafeAreaInsets();
@@ -192,6 +206,22 @@ export const NativeTrainerProfileScreen = ({
           </Text>
         </View>
         <View style={styles.headerActions}>
+          {isOwner && onBeginEdit ? (
+            <Pressable
+              accessibilityRole="button"
+              disabled={isProfileSaving}
+              onPress={editorDraft ? onCancelEdit : onBeginEdit}
+              style={[
+                styles.headerAction,
+                editorDraft ? styles.headerActionSecondary : styles.headerActionPrimary,
+                light && editorDraft && styles.backButtonLight,
+              ]}
+            >
+              <Text style={editorDraft ? [styles.headerActionText, light && styles.textLight] : styles.primaryButtonText}>
+                {editorDraft ? 'Cancel' : 'Edit profile'}
+              </Text>
+            </Pressable>
+          ) : null}
           {!isOwner && relationshipAction && onRelationshipAction ? (
             <Pressable
               accessibilityRole="button"
@@ -262,6 +292,16 @@ export const NativeTrainerProfileScreen = ({
               <Text style={[styles.memberValue, light && styles.textLight]}>{model.memberSinceLabel}</Text>
             </View>
           </View>
+
+          {editorDraft && onChangeEditorDraft && onCancelEdit && onSaveProfile ? (
+            <NativeTrainerProfileEditorPanel
+              draft={editorDraft}
+              isSaving={isProfileSaving}
+              onCancel={onCancelEdit}
+              onChange={onChangeEditorDraft}
+              onSave={onSaveProfile}
+            />
+          ) : null}
 
           <View accessibilityLabel="Featured Pokémon" style={styles.showcase}>
             {Array.from({ length: 6 }, (_, index) => (

@@ -144,4 +144,44 @@ describe('NativeTrainerProfileScreen', () => {
     fireEvent.press(view.getByRole('button', { name: 'Dismiss message' }));
     expect(onDismissFeedback).toHaveBeenCalledTimes(1);
   });
+
+  it('opens the owner editor, updates canonical fields, and saves explicitly', () => {
+    const onBeginEdit = jest.fn();
+    const onCancelEdit = jest.fn();
+    const onChangeEditorDraft = jest.fn();
+    const onSaveProfile = jest.fn();
+    const editorDraft = {
+      trainerTitles: ['shiny-hunter' as const],
+      pokemonGoName: 'AdamGo',
+      trainerCode: '123456789012',
+      team: 'Mystic',
+      trainerLevel: '50',
+      totalXp: '123456',
+      startedOn: '2016-07-06',
+      location: 'Burnaby, BC',
+      highlightInstanceIds: ['highlight-1'],
+    };
+    const closed = renderScreen({ onBeginEdit });
+    fireEvent.press(closed.getByRole('button', { name: 'Edit profile' }));
+    expect(onBeginEdit).toHaveBeenCalledTimes(1);
+    closed.unmount();
+
+    const view = renderScreen({
+      editorDraft,
+      onBeginEdit,
+      onCancelEdit,
+      onChangeEditorDraft,
+      onSaveProfile,
+    });
+    expect(view.getByText('Your trainer details')).toBeTruthy();
+    fireEvent.changeText(view.getByLabelText('Pokémon GO name'), 'UpdatedAdam');
+    expect(onChangeEditorDraft).toHaveBeenCalledWith({
+      ...editorDraft,
+      pokemonGoName: 'UpdatedAdam',
+    });
+    fireEvent.press(view.getByRole('button', { name: 'Save profile' }));
+    expect(onSaveProfile).toHaveBeenCalledTimes(1);
+    fireEvent.press(view.getAllByRole('button', { name: 'Cancel' })[0]);
+    expect(onCancelEdit).toHaveBeenCalledTimes(1);
+  });
 });
