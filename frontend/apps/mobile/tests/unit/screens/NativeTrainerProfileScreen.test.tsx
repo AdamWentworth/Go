@@ -5,6 +5,7 @@ import type { NativeTrainerProfileModel } from '../../../src/features/social/nat
 import type { NativeCollectionRow } from '../../../src/features/collection/collectionModel';
 
 const model: NativeTrainerProfileModel = {
+  userId: 'user-1',
   username: 'AdamZilla',
   pokemonGoName: 'AdamGo',
   avatarLabel: 'A',
@@ -93,5 +94,47 @@ describe('NativeTrainerProfileScreen', () => {
     expect(failed.getByText('Profile is private.')).toBeTruthy();
     fireEvent.press(failed.getByRole('button', { name: 'Try again' }));
     expect(retry).toHaveBeenCalled();
+  });
+
+  it('runs direct friend actions and confirms destructive relationship changes', () => {
+    const onRelationshipAction = jest.fn();
+    const view = renderScreen({
+      isOwner: false,
+      model: { ...model, relationship: 'none' },
+      onRelationshipAction,
+    });
+    fireEvent.press(view.getByRole('button', { name: 'Add friend' }));
+    expect(onRelationshipAction).toHaveBeenCalledWith('add');
+
+    view.rerender(
+      <SafeAreaProvider initialMetrics={{
+        frame: { x: 0, y: 0, width: 412, height: 915 },
+        insets: { top: 24, right: 0, bottom: 20, left: 0 },
+      }}>
+        <NativeTrainerProfileScreen
+          assetBaseUrl="https://pokegonexus.com"
+          highlights={[highlight]}
+          isOwner={false}
+          model={{ ...model, relationship: 'outgoing', friendshipId: 'friendship-1' }}
+          onOpenCollection={jest.fn()}
+          onRelationshipAction={onRelationshipAction}
+        />
+      </SafeAreaProvider>,
+    );
+    fireEvent.press(view.getByRole('button', { name: 'Request sent' }));
+    expect(view.getByText('Cancel friend request?')).toBeTruthy();
+    fireEvent.press(view.getByRole('button', { name: 'Cancel request' }));
+    expect(onRelationshipAction).toHaveBeenCalledWith('cancel-request');
+  });
+
+  it('keeps command feedback visible and dismissible', () => {
+    const onDismissFeedback = jest.fn();
+    const view = renderScreen({
+      feedback: { tone: 'error', text: 'Friend requests are disabled.' },
+      onDismissFeedback,
+    });
+    expect(view.getByText('Friend requests are disabled.')).toBeTruthy();
+    fireEvent.press(view.getByRole('button', { name: 'Dismiss message' }));
+    expect(onDismissFeedback).toHaveBeenCalledTimes(1);
   });
 });

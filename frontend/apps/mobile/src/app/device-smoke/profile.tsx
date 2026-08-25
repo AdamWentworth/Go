@@ -31,6 +31,7 @@ const highlight = (
 });
 
 const MODEL: NativeTrainerProfileModel = {
+  userId: 'user-1',
   username: 'AdamZilla',
   pokemonGoName: 'AdamGo',
   avatarLabel: 'A',

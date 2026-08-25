@@ -3,7 +3,7 @@ import type { TrainerProfile } from '@pokemongonexus/shared-contracts/users';
 import { usersContract } from '@pokemongonexus/shared-contracts/users';
 import type { NativeUsersApiClient } from './nativeApiClients';
 
-type SocialClient = Pick<NativeUsersApiClient, 'get'>;
+type SocialClient = Pick<NativeUsersApiClient, 'delete' | 'get' | 'post'>;
 
 const isRecord = (value: unknown): value is Record<string, unknown> => (
   Boolean(value) && typeof value === 'object' && !Array.isArray(value)
@@ -33,7 +33,7 @@ const isTrainerProfile = (value: unknown): value is TrainerProfile<PokemonInstan
 };
 
 export const getNativeTrainerProfile = async (
-  usersClient: SocialClient,
+  usersClient: Pick<SocialClient, 'get'>,
   username?: string | null,
 ): Promise<TrainerProfile<PokemonInstance>> => {
   const normalizedUsername = username?.trim();
@@ -45,4 +45,57 @@ export const getNativeTrainerProfile = async (
     throw new Error('The trainer profile response is invalid.');
   }
   return payload;
+};
+
+const required = (value: string, label: string): string => {
+  const normalized = value.trim();
+  if (!normalized) throw new Error(`${label} is required.`);
+  return normalized;
+};
+
+export const sendNativeFriendRequest = async (
+  usersClient: Pick<SocialClient, 'post'>,
+  username: string,
+): Promise<string> => {
+  const payload = await usersClient.post<unknown>(usersContract.endpoints.friendRequests, {
+    username: required(username, 'Username'),
+  });
+  if (!isRecord(payload) || typeof payload.friendship_id !== 'string' || !payload.friendship_id) {
+    throw new Error('The friend request response is invalid.');
+  }
+  return payload.friendship_id;
+};
+
+export const acceptNativeFriendRequest = async (
+  usersClient: Pick<SocialClient, 'post'>,
+  friendshipId: string,
+): Promise<void> => {
+  await usersClient.post(
+    usersContract.endpoints.acceptFriendRequest(required(friendshipId, 'Friend request ID')),
+  );
+};
+
+export const deleteNativeFriendRequest = async (
+  usersClient: Pick<SocialClient, 'delete'>,
+  friendshipId: string,
+): Promise<void> => {
+  await usersClient.delete(
+    usersContract.endpoints.friendRequest(required(friendshipId, 'Friend request ID')),
+  );
+};
+
+export const removeNativeFriend = async (
+  usersClient: Pick<SocialClient, 'delete'>,
+  userId: string,
+): Promise<void> => {
+  await usersClient.delete(usersContract.endpoints.friend(required(userId, 'User ID')));
+};
+
+export const blockNativeTrainer = async (
+  usersClient: Pick<SocialClient, 'post'>,
+  userId: string,
+): Promise<void> => {
+  await usersClient.post(usersContract.endpoints.friendBlocks, {
+    user_id: required(userId, 'User ID'),
+  });
 };

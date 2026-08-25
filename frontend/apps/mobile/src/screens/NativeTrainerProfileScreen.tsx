@@ -8,10 +8,19 @@ import {
   View,
   useColorScheme,
 } from 'react-native';
+import { useState } from 'react';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { NativeCollectionRow } from '../features/collection/collectionModel';
 import { NativePokemonLocationBackdrop } from '../features/collection/parity/NativePokemonLocationBackdrop';
 import type { NativeTrainerProfileModel } from '../features/social/nativeTrainerProfileModel';
+import { NativeConfirmationDialog } from '../components/NativeConfirmationDialog';
+
+export type NativeTrainerProfileAction =
+  | 'add'
+  | 'accept'
+  | 'cancel-request'
+  | 'remove-friend'
+  | 'block';
 
 type Props = {
   assetBaseUrl: string;
@@ -19,10 +28,14 @@ type Props = {
   highlights?: NativeCollectionRow[];
   isLoading?: boolean;
   isOwner: boolean;
+  isRelationshipPending?: boolean;
   model?: NativeTrainerProfileModel | null;
   onBack?: () => void;
   onOpenCollection: (filter?: 'caught' | 'trade' | 'wanted' | 'favorites') => void;
   onRetry?: () => void;
+  onRelationshipAction?: (action: NativeTrainerProfileAction) => void;
+  feedback?: { tone: 'success' | 'error'; text: string } | null;
+  onDismissFeedback?: () => void;
 };
 
 const TEAM_COLORS = {
@@ -79,13 +92,18 @@ export const NativeTrainerProfileScreen = ({
   highlights = [],
   isLoading = false,
   isOwner,
+  isRelationshipPending = false,
   model = null,
   onBack,
   onOpenCollection,
   onRetry,
+  onRelationshipAction,
+  feedback = null,
+  onDismissFeedback,
 }: Props) => {
   const light = useColorScheme() === 'light';
   const insets = useSafeAreaInsets();
+  const [confirmation, setConfirmation] = useState<'cancel-request' | 'remove-friend' | 'block' | null>(null);
 
   if (isLoading) {
     return (
@@ -114,13 +132,47 @@ export const NativeTrainerProfileScreen = ({
 
   const team = TEAM_COLORS[model.team];
   const relationship = relationshipLabel(model.relationship);
+  const relationshipAction = model.relationship === 'none'
+    ? { action: 'add' as const, label: 'Add friend', tone: 'primary' as const }
+    : model.relationship === 'incoming'
+      ? { action: 'accept' as const, label: 'Accept request', tone: 'primary' as const }
+      : model.relationship === 'outgoing'
+        ? { action: 'cancel-request' as const, label: 'Request sent', tone: 'secondary' as const }
+        : model.relationship === 'friend'
+          ? { action: 'remove-friend' as const, label: 'Friends', tone: 'secondary' as const }
+          : null;
+  const confirmationCopy = confirmation === 'block'
+    ? {
+        title: `Block ${model.username}?`,
+        body: 'Existing friendship and pending requests will be removed. This trainer will no longer be able to interact with you.',
+        confirmLabel: 'Block trainer',
+      }
+    : confirmation === 'remove-friend'
+      ? {
+          title: `Remove ${model.username}?`,
+          body: 'This trainer will be removed from your friends. You can send a new request later.',
+          confirmLabel: 'Remove friend',
+        }
+      : {
+          title: 'Cancel friend request?',
+          body: `Your pending request to ${model.username} will be canceled.`,
+          confirmLabel: 'Cancel request',
+        };
+  const requestAction = (action: NativeTrainerProfileAction) => {
+    if (action === 'cancel-request' || action === 'remove-friend' || action === 'block') {
+      setConfirmation(action);
+      return;
+    }
+    onRelationshipAction?.(action);
+  };
 
   return (
-    <ScrollView
-      contentContainerStyle={[styles.content, { paddingTop: Math.max(insets.top + 12, 24), paddingBottom: Math.max(insets.bottom + 100, 116) }]}
-      style={[styles.screen, light && styles.screenLight]}
-      testID="native-trainer-profile"
-    >
+    <View style={[styles.screenRoot, light && styles.screenLight]}>
+      <ScrollView
+        contentContainerStyle={[styles.content, { paddingTop: Math.max(insets.top + 12, 24), paddingBottom: Math.max(insets.bottom + 100, 116) }]}
+        style={styles.screen}
+        testID="native-trainer-profile"
+      >
       <View style={styles.productHeader}>
         <View style={styles.productHeaderCopy}>
           <Text style={styles.eyebrow}>{isOwner ? 'YOUR TRAINER CARD' : 'TRAINER PROFILE'}</Text>
@@ -129,12 +181,42 @@ export const NativeTrainerProfileScreen = ({
             {isOwner ? 'Your Pokémon GO identity and collection showcase.' : `Meet @${model.username} and explore their shared collection.`}
           </Text>
         </View>
-        {onBack ? (
-          <Pressable accessibilityLabel="Back" accessibilityRole="button" onPress={onBack} style={[styles.backButton, light && styles.backButtonLight]}>
-            <Text style={[styles.backButtonText, light && styles.textLight]}>‹</Text>
-          </Pressable>
-        ) : null}
+        <View style={styles.headerActions}>
+          {!isOwner && relationshipAction && onRelationshipAction ? (
+            <Pressable
+              accessibilityRole="button"
+              disabled={isRelationshipPending}
+              onPress={() => requestAction(relationshipAction.action)}
+              testID="native-profile-relationship-action"
+              style={[
+                styles.headerAction,
+                relationshipAction.tone === 'primary' ? styles.headerActionPrimary : styles.headerActionSecondary,
+                light && relationshipAction.tone === 'secondary' && styles.backButtonLight,
+              ]}
+            >
+              <Text style={relationshipAction.tone === 'primary' ? styles.primaryButtonText : [styles.headerActionText, light && styles.textLight]}>
+                {isRelationshipPending ? 'Working…' : relationshipAction.label}
+              </Text>
+            </Pressable>
+          ) : null}
+          {onBack ? (
+            <Pressable accessibilityLabel="Back" accessibilityRole="button" onPress={onBack} style={[styles.backButton, light && styles.backButtonLight]}>
+              <Text style={[styles.backButtonText, light && styles.textLight]}>‹</Text>
+            </Pressable>
+          ) : null}
+        </View>
       </View>
+
+      {feedback ? (
+        <View accessibilityRole="alert" style={[styles.feedback, feedback.tone === 'success' ? styles.feedbackSuccess : styles.feedbackError]}>
+          <Text style={styles.feedbackText}>{feedback.text}</Text>
+          {onDismissFeedback ? (
+            <Pressable accessibilityLabel="Dismiss message" accessibilityRole="button" onPress={onDismissFeedback}>
+              <Text style={styles.feedbackDismiss}>×</Text>
+            </Pressable>
+          ) : null}
+        </View>
+      ) : null}
 
       <View style={[styles.card, { borderColor: team.accent }, light && styles.cardLight]}>
         <View style={[styles.identity, { backgroundColor: light ? `${team.accent}18` : team.soft, borderColor: `${team.accent}88` }]}>
@@ -233,18 +315,48 @@ export const NativeTrainerProfileScreen = ({
               <Text style={styles.primaryButtonText}>View Pokémon</Text>
             </Pressable>
           ) : null}
+          {!isOwner && model.relationship !== 'blocked' && onRelationshipAction ? (
+            <Pressable
+              accessibilityRole="button"
+              disabled={isRelationshipPending}
+              onPress={() => requestAction('block')}
+              style={styles.blockButton}
+            >
+              <Text style={styles.blockButtonText}>Block trainer</Text>
+            </Pressable>
+          ) : null}
         </View>
       </View>
-    </ScrollView>
+      </ScrollView>
+      <NativeConfirmationDialog
+        body={confirmationCopy.body}
+        confirmLabel={confirmationCopy.confirmLabel}
+        isPending={isRelationshipPending}
+        onCancel={() => setConfirmation(null)}
+        onConfirm={() => {
+          if (!confirmation) return;
+          onRelationshipAction?.(confirmation);
+          setConfirmation(null);
+        }}
+        title={confirmationCopy.title}
+        visible={Boolean(confirmation)}
+      />
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: '#081012' },
+  screenRoot: { flex: 1, backgroundColor: '#081012' },
+  screen: { flex: 1 },
   screenLight: { backgroundColor: '#eef4f5' },
   content: { width: '100%', maxWidth: 1060, alignSelf: 'center', paddingHorizontal: 14, gap: 14 },
   productHeader: { minHeight: 74, flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 },
   productHeaderCopy: { flex: 1, minWidth: 0 },
+  headerActions: { flexDirection: 'row', alignItems: 'center', gap: 7 },
+  headerAction: { minHeight: 44, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 13, borderRadius: 9 },
+  headerActionPrimary: { backgroundColor: '#36c5a4' },
+  headerActionSecondary: { borderWidth: 1, borderColor: '#536467', backgroundColor: '#171c1d' },
+  headerActionText: { color: '#ffffff', fontSize: 12, fontWeight: '900' },
   eyebrow: { color: '#35a8ff', fontSize: 11, lineHeight: 15, fontWeight: '900', letterSpacing: 1.3 },
   pageTitle: { color: '#f7fbfa', fontSize: 28, lineHeight: 34, fontWeight: '900' },
   pageSubtitle: { maxWidth: 620, color: '#9db5b4', fontSize: 13, lineHeight: 19 },
@@ -304,6 +416,13 @@ const styles = StyleSheet.create({
   relationshipText: { fontSize: 11, fontWeight: '900' },
   primaryButton: { minHeight: 48, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 18, borderRadius: 8, backgroundColor: '#2f9cff' },
   primaryButtonText: { color: '#061617', fontSize: 14, fontWeight: '900' },
+  blockButton: { minHeight: 44, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: '#a9434d', borderRadius: 8, backgroundColor: '#6c252d' },
+  blockButtonText: { color: '#ffffff', fontSize: 13, fontWeight: '900' },
+  feedback: { flexDirection: 'row', alignItems: 'center', gap: 8, padding: 11, borderWidth: 1, borderRadius: 10 },
+  feedbackSuccess: { borderColor: '#2fbd79', backgroundColor: '#13372b' },
+  feedbackError: { borderColor: '#ef5b72', backgroundColor: '#3a1820' },
+  feedbackText: { flex: 1, color: '#ffffff', fontSize: 13, lineHeight: 18, fontWeight: '800' },
+  feedbackDismiss: { color: '#ffffff', fontSize: 24, lineHeight: 25 },
   state: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 9, padding: 28, backgroundColor: '#081012' },
   stateTitle: { color: '#f7fbfa', fontSize: 20, fontWeight: '900', textAlign: 'center' },
   stateCopy: { maxWidth: 420, color: '#9db5b4', fontSize: 13, lineHeight: 19, textAlign: 'center' },

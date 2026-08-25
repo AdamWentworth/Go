@@ -30,6 +30,7 @@ describe('buildNativeTrainerProfileModel', () => {
 
     const model = buildNativeTrainerProfileModel(profile);
     expect(model).toMatchObject({
+      userId: 'user-1',
       username: 'AdamZilla',
       pokemonGoName: 'AdamGo',
       avatarLabel: 'A',

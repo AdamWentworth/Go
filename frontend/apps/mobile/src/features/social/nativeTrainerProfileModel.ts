@@ -36,6 +36,7 @@ export type NativeTrainerTitleRow = {
 };
 
 export type NativeTrainerProfileModel = {
+  userId: string;
   username: string;
   pokemonGoName: string;
   avatarLabel: string;
@@ -61,6 +62,7 @@ export const buildNativeTrainerProfileModel = (
   const team = normalizeNativeTrainerTeam(profile.user.team);
   const rawTeam = profile.user.team?.trim().replace(/^team\s+/i, '');
   return {
+    userId: profile.user.user_id,
     username: profile.user.username.trim(),
     pokemonGoName: profile.user.pokemonGoName?.trim() || profile.user.username.trim(),
     avatarLabel: profile.user.username.trim().slice(0, 1).toLocaleUpperCase() || '?',
