@@ -1,4 +1,4 @@
-import { Redirect } from 'expo-router';
+import { Redirect, useRouter } from 'expo-router';
 import {
   Animated,
   StyleSheet,
@@ -37,10 +37,14 @@ import { getNativeTradePartnerInfo } from '../../services/tradeApi';
 import { useNativeApiClients } from '../../services/useNativeApiClients';
 import { NativeTradeActivityScreen } from '../../screens/NativeTradeActivityScreen';
 import { NativeTradePreferencesScreen } from '../../screens/NativeTradePreferencesScreen';
+import { NativeActionMenu } from '../../components/NativeActionMenu';
+import { NativeActionMenuAnchor } from '../../components/NativeActionMenuAnchor';
+import { resolveNativeActionMenuDestination } from '../../navigation/nativeActionMenuNavigation';
 
 const TRADE_VIEWS: NativeTradeHubView[] = ['preferences', 'activity'];
 
 export default function NativeTradesRoute() {
+  const router = useRouter();
   const session = useNativeSession();
   const clients = useNativeApiClients();
   const light = useColorScheme() === 'light';
@@ -57,6 +61,7 @@ export default function NativeTradesRoute() {
   const satisfaction = useNativeTradeSatisfactionMutation(userId);
   const remove = useNativeDeleteTradeMutation(userId);
   const [activeView, setActiveView] = useState<NativeTradeHubView>('preferences');
+  const [actionMenuOpen, setActionMenuOpen] = useState(false);
   const [pageScrollX] = useState(() => new Animated.Value(0));
   const sliderRef = useRef<NativeHorizontalPageSliderHandle>(null);
   const activeIndex = TRADE_VIEWS.indexOf(activeView);
@@ -104,6 +109,16 @@ export default function NativeTradesRoute() {
   const collectionError = collectionQuery.error instanceof Error
     ? collectionQuery.error.message
     : null;
+  const navigateFromActionMenu = (path: string) => {
+    setActionMenuOpen(false);
+    const destination = resolveNativeActionMenuDestination(path, '/trades');
+    if (destination.kind === 'current') return;
+    if (destination.kind === 'native') {
+      router.push(destination.pathname);
+      return;
+    }
+    router.push({ pathname: '/web', params: { path: destination.path } });
+  };
 
   return (
     <View style={[styles.screen, light && styles.screenLight]} testID="native-trades-hub">
@@ -171,6 +186,18 @@ export default function NativeTradesRoute() {
           showModeTabs={false}
         />
       </NativeHorizontalPageSlider>
+      <NativeActionMenuAnchor
+        assetBaseUrl={runtimeConfig.api.frontendAppUrl}
+        onPress={() => setActionMenuOpen(true)}
+      />
+      {actionMenuOpen ? (
+        <NativeActionMenu
+          assetBaseUrl={runtimeConfig.api.frontendAppUrl}
+          onClose={() => setActionMenuOpen(false)}
+          onNavigate={navigateFromActionMenu}
+          visible
+        />
+      ) : null}
     </View>
   );
 }

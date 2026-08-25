@@ -11,6 +11,7 @@ import { DEFAULT_NATIVE_TAGS_ENVELOPE } from '../../../../../features/collection
 import { setNativeInstanceNavigationContext } from '../../../../../features/collection/nativeInstanceNavigationContext';
 import { runtimeConfig } from '../../../../../config/runtimeConfig';
 import { NativeCollectionHubScreen } from '../../../../../screens/NativeCollectionHubScreen';
+import { resolveNativeActionMenuDestination } from '../../../../../navigation/nativeActionMenuNavigation';
 
 const firstParam = (value: string | string[] | undefined): string => (
   Array.isArray(value) ? value[0] ?? '' : value ?? ''
@@ -84,6 +85,15 @@ export default function NativeForeignCollectionRoute() {
       params: { username: success?.username ?? username, instanceId: row.id },
     });
   };
+  const navigateFromActionMenu = (path: string) => {
+    const destination = resolveNativeActionMenuDestination(path);
+    if (destination.kind === 'current') return;
+    if (destination.kind === 'native') {
+      router.push(destination.pathname);
+      return;
+    }
+    router.push({ pathname: '/web', params: { path: destination.path } });
+  };
 
   return (
     <NativeCollectionHubScreen
@@ -95,7 +105,7 @@ export default function NativeForeignCollectionRoute() {
       instances={success?.instances ?? {}}
       inventoryTags={inventoryTags}
       isLoading={foreignQuery.isPending}
-      onActionMenuNavigate={(path) => router.push({ pathname: '/web', params: { path } })}
+      onActionMenuNavigate={navigateFromActionMenu}
       onActionMenuPress={() => router.push('/web')}
       onOpenEntry={openEntry}
       onRetry={() => void foreignQuery.refetch()}

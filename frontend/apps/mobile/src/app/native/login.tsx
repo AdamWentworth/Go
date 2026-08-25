@@ -3,6 +3,7 @@ import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-nati
 import { useNativeSession } from '../../auth/NativeSessionContext';
 import { NativeLoginScreen } from '../../screens/NativeLoginScreen';
 import { theme } from '../../ui/theme';
+import { resolveNativeLoginReturnTo } from '../../navigation/nativeActionMenuNavigation';
 
 export default function NativeLoginRoute() {
   const router = useRouter();
@@ -11,9 +12,7 @@ export default function NativeLoginRoute() {
   const requestedReturnTo = Array.isArray(params.returnTo)
     ? params.returnTo[0]
     : params.returnTo;
-  const returnTo = requestedReturnTo === '/native/collection'
-    ? '/native/collection' as const
-    : '/web' as const;
+  const returnTo = resolveNativeLoginReturnTo(requestedReturnTo);
 
   if (status === 'restoring') {
     return (

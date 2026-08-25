@@ -14,6 +14,7 @@ import { useNativeTagMutations } from '../../features/collection/useNativeTagMut
 import { useNativePokemonOrganizerMutation } from '../../features/collection/useNativePokemonOrganizerMutation';
 import { NativeCollectionHubScreen } from '../../screens/NativeCollectionHubScreen';
 import { setNativeInstanceNavigationContext } from '../../features/collection/nativeInstanceNavigationContext';
+import { resolveNativeActionMenuDestination } from '../../navigation/nativeActionMenuNavigation';
 
 export default function NativeCollectionRoute() {
   const router = useRouter();
@@ -71,6 +72,15 @@ export default function NativeCollectionRoute() {
       params: { instanceId: row.id },
     });
   };
+  const navigateFromActionMenu = (path: string) => {
+    const destination = resolveNativeActionMenuDestination(path, '/pokemon');
+    if (destination.kind === 'current') return;
+    if (destination.kind === 'native') {
+      router.push(destination.pathname);
+      return;
+    }
+    router.push({ pathname: '/web', params: { path: destination.path } });
+  };
 
   return (
     <NativeCollectionHubScreen
@@ -80,10 +90,7 @@ export default function NativeCollectionRoute() {
       inventoryTags={inventoryTags}
       instances={snapshotQuery.data?.instances ?? {}}
       isLoading={snapshotQuery.isPending}
-      onActionMenuNavigate={(path) => router.push({
-        pathname: '/web',
-        params: { path },
-      })}
+      onActionMenuNavigate={navigateFromActionMenu}
       onActionMenuPress={() => router.push('/web')}
       onOpenEntry={openEntry}
       onOrganizePokemon={(request) => pokemonOrganizer.mutateAsync(request)}

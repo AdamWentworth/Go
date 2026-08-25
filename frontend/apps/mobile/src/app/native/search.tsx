@@ -34,6 +34,7 @@ import {
 } from '../../features/search/searchQueries';
 import { NativePokemonSearchScreen } from '../../screens/NativePokemonSearchScreen';
 import { NativeTrainerSearchScreen } from '../../screens/NativeTrainerSearchScreen';
+import { resolveNativeActionMenuDestination } from '../../navigation/nativeActionMenuNavigation';
 
 const SEARCH_VIEWS: NativeSearchHubView[] = ['pokemon', 'trainers'];
 
@@ -108,16 +109,13 @@ const NativeSignedInSearchRoute = ({ user }: { user: MobileSessionUser }) => {
   });
   const navigateFromActionMenu = (path: string) => {
     setActionMenuOpen(false);
-    if (path === '/search') return;
-    if (path === '/pokemon') {
-      router.push('/native/collection');
+    const destination = resolveNativeActionMenuDestination(path, '/search');
+    if (destination.kind === 'current') return;
+    if (destination.kind === 'native') {
+      router.push(destination.pathname);
       return;
     }
-    if (path === '/trades') {
-      router.push('/native/trades');
-      return;
-    }
-    router.push({ pathname: '/web', params: { path } });
+    router.push({ pathname: '/web', params: { path: destination.path } });
   };
 
   const pokemonPanel = snapshotQuery.isPending ? (
