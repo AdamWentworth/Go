@@ -1,30 +1,5 @@
-import { useState } from 'react';
-import { runtimeConfig } from './config/runtimeConfig';
-import type { MobileExperienceMode } from './config/mobileExperience';
-import { NativeMigrationPreview } from './screens/NativeMigrationPreview';
 import { WebReplicaApp } from './screens/WebReplicaApp';
 
-type MobileAppRootProps = {
-  experienceMode?: MobileExperienceMode;
-  onOpenCollectionParityCandidate?: () => void;
-};
-
-export const MobileAppRoot = ({
-  experienceMode = runtimeConfig.mobile.experienceMode,
-  onOpenCollectionParityCandidate,
-}: MobileAppRootProps) => {
-  const [useWebExperience, setUseWebExperience] = useState(
-    experienceMode === 'webview',
-  );
-
-  if (useWebExperience) {
-    return <WebReplicaApp />;
-  }
-
-  return (
-    <NativeMigrationPreview
-      onOpenCollectionParityCandidate={onOpenCollectionParityCandidate}
-      onOpenWebExperience={() => setUseWebExperience(true)}
-    />
-  );
-};
+// The root route is used only by the production-safe WebView profile. Native
+// preview builds are redirected by Expo Router before this component mounts.
+export const MobileAppRoot = () => <WebReplicaApp />;
