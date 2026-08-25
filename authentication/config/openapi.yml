@@ -180,6 +180,51 @@ paths:
         '200':
           description: Session revoked or already absent
 
+  /auth/mobile/oauth/link/start:
+    post:
+      summary: Start an OAuth provider link from a native client
+      description: Creates a short-lived, device-bound link transaction and returns the provider authorization URL. Requires a recent bearer session.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [provider]
+              properties:
+                provider:
+                  type: string
+                  enum: [google, discord, facebook]
+      responses:
+        '201':
+          description: Native provider-link transaction created
+        '401':
+          description: Missing, invalid, or insufficiently recent bearer session
+
+  /auth/mobile/oauth/link/exchange:
+    post:
+      summary: Consume a native OAuth provider-link result
+      description: Exchanges the one-use callback result while proving the original user and device bearer session. No session token is carried in the browser redirect.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [code]
+              properties:
+                code:
+                  type: string
+      responses:
+        '200':
+          description: Canonical provider-link result
+        '409':
+          description: Result is invalid, expired, already used, or belongs to another device
+
   /auth/google:
     get:
       summary: Redirect to Google for authentication

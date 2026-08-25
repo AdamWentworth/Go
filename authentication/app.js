@@ -128,7 +128,7 @@ const limiter = rateLimit({
 });
 const loginLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 20,
+  max: process.env.NODE_ENV === 'test' ? 1000 : 20,
   standardHeaders: true,
   legacyHeaders: false
 });
@@ -156,6 +156,7 @@ app.use('/auth', csrfOriginGuard(allowedOrigins));
 
 app.use('/auth', require('./routes/authRoute'));
 app.use('/auth', require('./routes/mobileSessionRoutes'));
+app.use('/auth', require('./routes/nativeOAuthLinkRoutes'));
 app.use('/auth', require('./routes/passportRoutes'));
 
 function startServer() {

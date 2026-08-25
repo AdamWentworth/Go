@@ -11,6 +11,7 @@ This service handles:
 - Refresh token rotation and logout
 - Verified email changes and password reset email delivery
 - Google, Discord, and Facebook OAuth registration/login/linking
+- One-use, device-bound OAuth provider linking for native clients
 - Connected identity and all-session management
 - Account update and delete (owner-only)
 - Daily MongoDB backup task (`mongodump`)
@@ -43,6 +44,8 @@ Mounted under `/auth`:
 | `GET` | `/auth/account/security` | Connected identities and active-session count |
 | `POST` | `/auth/sessions/revoke-all` | Revokes all refresh sessions |
 | `DELETE` | `/auth/account/identities/:provider` | Disconnects an OAuth identity safely |
+| `POST` | `/auth/mobile/oauth/link/start` | Starts a recent-session, device-bound native link |
+| `POST` | `/auth/mobile/oauth/link/exchange` | Consumes the one-use native callback result |
 
 Other routes:
 
@@ -79,6 +82,13 @@ Each provider requires its client ID, client secret, and callback URL:
   onboarding cookies; falls back to `JWT_SECRET`
 
 Equivalent `DISCORD_*` and `FACEBOOK_*` values configure those providers.
+
+Native account linking keeps these same provider callback URLs. The callback
+returns only a short-lived, one-use result code to
+`pokegonexus://native/account`; the native client must exchange it using the
+same user's bearer session and device ID. Access and refresh tokens are never
+placed in browser or deep-link URLs. `MOBILE_OAUTH_REDIRECT_URI` may override
+the app redirect URI for a controlled build environment.
 
 Register this exact authorized redirect URI in Google Cloud. Local frontend
 sessions may use the production HTTPS auth callback; the signed OAuth state
