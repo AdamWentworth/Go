@@ -3,6 +3,7 @@ import { useNativeSession } from '../auth/NativeSessionContext';
 import {
   createNativePokemonApiClient,
   createNativeReceiverApiClient,
+  createNativeSearchApiClient,
   createNativeUsersApiClient,
 } from './nativeApiClients';
 
@@ -18,6 +19,7 @@ export const useNativeApiClients = () => {
       users: createNativeUsersApiClient(tokens),
       receiver: createNativeReceiverApiClient(tokens),
       pokemon: createNativePokemonApiClient(),
+      search: createNativeSearchApiClient(tokens),
     };
   }, [session.clearSession, session.getAccessToken, session.refreshAccessToken]);
 };

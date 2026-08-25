@@ -45,3 +45,15 @@ export const createNativeLocationApiClient = (
 });
 
 export type NativeLocationApiClient = ReturnType<typeof createNativeLocationApiClient>;
+
+export const createNativeSearchApiClient = (
+  tokens: AccessTokenProvider,
+  fetchImplementation: typeof globalThis.fetch = globalThis.fetch,
+) => createApiClient({
+  baseUrl: runtimeConfig.api.searchApiUrl,
+  authentication: { mode: 'bearer', tokens },
+  fetch: fetchImplementation,
+  defaultTimeoutMs: 30_000,
+});
+
+export type NativeSearchApiClient = ReturnType<typeof createNativeSearchApiClient>;

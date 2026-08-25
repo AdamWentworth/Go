@@ -1,6 +1,8 @@
 import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import { searchNativeTrainers } from '../../services/trainerSearchApi';
+import { searchNativePokemon } from '../../services/pokemonSearchApi';
 import { useNativeApiClients } from '../../services/useNativeApiClients';
+import type { PokemonSearchQueryParams } from '@pokemongonexus/shared-contracts/search';
 
 export const nativeSearchQueryKeys = {
   root: ['native', 'search'] as const,
@@ -9,6 +11,24 @@ export const nativeSearchQueryKeys = {
     'trainers',
     query.trim().toLocaleLowerCase(),
   ] as const,
+  pokemon: (query: PokemonSearchQueryParams) => [
+    ...nativeSearchQueryKeys.root,
+    'pokemon',
+    query,
+  ] as const,
+};
+
+export const useNativePokemonSearchQuery = (
+  query: PokemonSearchQueryParams | null,
+) => {
+  const clients = useNativeApiClients();
+  return useQuery({
+    queryKey: nativeSearchQueryKeys.pokemon(query ?? {} as PokemonSearchQueryParams),
+    queryFn: () => searchNativePokemon(clients.search, query as PokemonSearchQueryParams),
+    enabled: Boolean(query),
+    placeholderData: keepPreviousData,
+    staleTime: 2 * 60_000,
+  });
 };
 
 export const useNativeTrainerSearchQuery = (
