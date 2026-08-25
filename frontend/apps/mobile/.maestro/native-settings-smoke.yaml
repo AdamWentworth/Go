@@ -1,0 +1,36 @@
+appId: host.exp.exponent
+name: Native trainer settings parity smoke
+tags:
+  - android
+  - native-settings
+---
+- openLink:
+    link: exp://10.0.2.2:8091/--/device-smoke/settings
+- runFlow:
+    when:
+      visible: "This is the developer menu.*"
+    commands:
+      - tapOn: Continue
+- runFlow:
+    when:
+      visible: React Native dev menu
+    commands:
+      - tapOn: Close
+- extendedWaitUntil:
+    visible: WHO CAN SEE YOU
+    timeout: 45000
+- assertVisible: Privacy
+- tapOn: "Profile visibility, Everyone"
+- assertVisible: Profile visibility
+- tapOn: Friends only
+- assertVisible: "Profile visibility, Friends only"
+- tapOn: Show profile location
+- tapOn: Save privacy
+- assertVisible: Privacy settings saved.
+- scrollUntilVisible:
+    element:
+      text: Trade coordination
+    direction: DOWN
+    timeout: 10000
+- assertVisible: Discord
+- takeScreenshot: native-trainer-settings
