@@ -6,6 +6,7 @@ import {
 describe('resolveNativeActionMenuDestination', () => {
   test.each([
     ['/pokemon', '/native/collection'],
+    ['/profile', '/native/profile'],
     ['/profile/friends', '/native/friends'],
     ['/search', '/native/search'],
     ['/settings', '/native/settings'],
@@ -19,9 +20,9 @@ describe('resolveNativeActionMenuDestination', () => {
   });
 
   test('keeps unmigrated destinations in the canonical web app', () => {
-    expect(resolveNativeActionMenuDestination('/profile')).toEqual({
+    expect(resolveNativeActionMenuDestination('/raid')).toEqual({
       kind: 'web',
-      path: '/profile',
+      path: '/raid',
     });
   });
 

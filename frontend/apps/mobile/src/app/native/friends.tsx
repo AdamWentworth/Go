@@ -112,7 +112,7 @@ const NativeSignedInFriendsRoute = ({
           pathname: '/native/profile/[username]',
           params: { username: trainerUsername },
         })}
-        onOpenProfileHome={() => router.push({ pathname: '/web', params: { path: '/profile' } })}
+        onOpenProfileHome={() => router.push('/native/profile')}
         onQueryChange={setQuery}
         onRetry={() => void friendsQuery.refetch()}
         onRunSearch={runSearch}
