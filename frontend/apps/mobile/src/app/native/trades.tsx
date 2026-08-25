@@ -154,7 +154,7 @@ export default function NativeTradesRoute() {
       <NativeTradeHubHeader
         activeView={activeView}
         assetBaseUrl={runtimeConfig.api.frontendAppUrl}
-        onOpenTradeBoard={() => router.push({ pathname: '/web', params: { path: '/trade-board' } })}
+        onOpenTradeBoard={() => router.push('/native/trade-board')}
         onViewChange={changeView}
         scrollX={pageScrollX}
       />

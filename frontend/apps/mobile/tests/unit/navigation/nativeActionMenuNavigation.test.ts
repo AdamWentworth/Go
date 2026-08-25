@@ -11,6 +11,7 @@ describe('resolveNativeActionMenuDestination', () => {
     ['/profile/friends', '/native/friends'],
     ['/search', '/native/search'],
     ['/settings', '/native/settings'],
+    ['/trade-board', '/native/trade-board'],
     ['/trades', '/native/trades'],
   ] as const)('keeps %s inside the ready native experience', (path, pathname) => {
     expect(resolveNativeActionMenuDestination(path)).toEqual({ kind: 'native', pathname });
@@ -34,6 +35,7 @@ describe('resolveNativeActionMenuDestination', () => {
     '/native/friends',
     '/native/search',
     '/native/settings',
+    '/native/trade-board',
     '/native/trades',
     '/native/profile',
     '/native/profile/OtherTrainer',
