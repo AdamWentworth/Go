@@ -111,6 +111,12 @@ export default function NativeHomeRoute() {
       router.push('/native/trade-board');
       return;
     }
+    const destination = resolveNativeActionMenuDestination(pathname);
+    if (destination.kind === 'native') {
+      router.push(destination.pathname);
+      return;
+    }
+    if (destination.kind === 'current') return;
     router.push({ pathname: '/web', params: { path } });
   };
   const navigateFromActionMenu = (path: string) => {

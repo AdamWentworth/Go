@@ -23,6 +23,7 @@ export default function NativeLoginRoute() {
   }>();
   const {
     authenticateWithOAuth,
+    clearSession,
     retrySession,
     signIn,
     status,
@@ -51,7 +52,7 @@ export default function NativeLoginRoute() {
         <Text accessibilityRole="header" style={styles.title}>Session check unavailable</Text>
         <Text style={styles.body}>
           Your saved sign-in was kept securely. Check your connection and retry,
-          or continue in the current app.
+          or clear it only if you need to use another account.
         </Text>
         <Pressable
           accessibilityRole="button"
@@ -62,10 +63,10 @@ export default function NativeLoginRoute() {
         </Pressable>
         <Pressable
           accessibilityRole="button"
-          onPress={() => router.replace('/web')}
+          onPress={() => void clearSession()}
           style={styles.secondaryButton}
         >
-          <Text style={styles.secondaryButtonText}>Open current app</Text>
+          <Text style={styles.secondaryButtonText}>Use another account</Text>
         </Pressable>
       </View>
     );

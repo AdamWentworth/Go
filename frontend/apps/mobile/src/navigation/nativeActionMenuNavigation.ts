@@ -53,7 +53,7 @@ export const resolveNativeActionMenuDestination = (
 
 export const resolveNativeLoginReturnTo = (
   requestedPath?: string,
-): NativeLoginReturnPath | '/web' => {
+): NativeLoginReturnPath => {
   if (requestedPath === '/native/account'
     || requestedPath === '/native'
     || requestedPath === '/native/collection'
@@ -101,5 +101,5 @@ export const resolveNativeLoginReturnTo = (
   if (requestedPath && /^\/native\/trade-board\/[^/]+$/.test(requestedPath)) {
     return requestedPath as `/native/trade-board/${string}`;
   }
-  return '/web';
+  return '/native';
 };

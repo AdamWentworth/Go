@@ -78,9 +78,9 @@ describe('resolveNativeActionMenuDestination', () => {
   });
 
   test('rejects arbitrary login return paths', () => {
-    expect(resolveNativeLoginReturnTo('/native/not-ready')).toBe('/web');
-    expect(resolveNativeLoginReturnTo('/native/profile/name/extra')).toBe('/web');
-    expect(resolveNativeLoginReturnTo('/native/trade-board/name/extra')).toBe('/web');
-    expect(resolveNativeLoginReturnTo()).toBe('/web');
+    expect(resolveNativeLoginReturnTo('/native/not-ready')).toBe('/native');
+    expect(resolveNativeLoginReturnTo('/native/profile/name/extra')).toBe('/native');
+    expect(resolveNativeLoginReturnTo('/native/trade-board/name/extra')).toBe('/native');
+    expect(resolveNativeLoginReturnTo()).toBe('/native');
   });
 });
