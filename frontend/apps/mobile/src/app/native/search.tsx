@@ -32,6 +32,11 @@ import {
   useNativePokemonSearchQuery,
   useNativeTrainerSearchQuery,
 } from '../../features/search/searchQueries';
+import {
+  patchNativeSearchSession,
+  readNativeSearchSession,
+  writeNativeSearchSession,
+} from '../../features/search/nativeSearchSessionCache';
 import { NativePokemonSearchScreen } from '../../screens/NativePokemonSearchScreen';
 import { NativeTrainerSearchScreen } from '../../screens/NativeTrainerSearchScreen';
 import { resolveNativeActionMenuDestination } from '../../navigation/nativeActionMenuNavigation';
@@ -46,20 +51,29 @@ const NativeSignedInSearchRoute = ({ user }: { user: MobileSessionUser }) => {
   const router = useRouter();
   const light = useColorScheme() === 'light';
   const snapshotQuery = useNativeCollectionSnapshotQuery(user.user_id);
-  const [activeView, setActiveView] = useState<NativeSearchHubView>('pokemon');
+  const [initialSession] = useState(() => readNativeSearchSession(user.user_id));
+  const [activeView, setActiveView] = useState<NativeSearchHubView>(
+    initialSession?.activeView ?? 'pokemon',
+  );
   const [pageScrollX] = useState(() => new Animated.Value(0));
   const sliderRef = useRef<NativeHorizontalPageSliderHandle>(null);
   const [draft, setDraft] = useState<NativePokemonSearchDraft>(() => (
-    createNativePokemonSearchDraft({
+    initialSession?.draft ?? createNativePokemonSearchDraft({
       city: user.location,
       latitude: user.coordinates?.latitude,
       longitude: user.coordinates?.longitude,
     })
   ));
-  const [executedDraft, setExecutedDraft] = useState<NativePokemonSearchDraft | null>(null);
-  const [pokemonQuery, setPokemonQuery] = useState<PokemonSearchQueryParams | null>(null);
-  const [trainerQuery, setTrainerQuery] = useState('');
-  const [debouncedTrainerQuery, setDebouncedTrainerQuery] = useState('');
+  const [executedDraft, setExecutedDraft] = useState<NativePokemonSearchDraft | null>(
+    initialSession?.executedDraft ?? null,
+  );
+  const [pokemonQuery, setPokemonQuery] = useState<PokemonSearchQueryParams | null>(
+    initialSession?.pokemonQuery ?? null,
+  );
+  const [trainerQuery, setTrainerQuery] = useState(initialSession?.trainerQuery ?? '');
+  const [debouncedTrainerQuery, setDebouncedTrainerQuery] = useState(
+    initialSession?.trainerQuery.trim() ?? '',
+  );
   const [actionMenuOpen, setActionMenuOpen] = useState(false);
   const pokemonSearch = useNativePokemonSearchQuery(pokemonQuery);
   const trainerSearch = useNativeTrainerSearchQuery(
@@ -72,6 +86,32 @@ const NativeSignedInSearchRoute = ({ user }: { user: MobileSessionUser }) => {
     const timer = setTimeout(() => setDebouncedTrainerQuery(trainerQuery.trim()), 250);
     return () => clearTimeout(timer);
   }, [trainerQuery]);
+
+  useEffect(() => {
+    writeNativeSearchSession({
+      activeView,
+      draft,
+      executedDraft,
+      ownerKey: user.user_id,
+      pokemonQuery,
+      pokemonScrollOffset: initialSession?.pokemonScrollOffset ?? 0,
+      trainerQuery,
+      trainerScrollOffset: initialSession?.trainerScrollOffset ?? 0,
+    });
+  // The initial write establishes the owner-scoped session. Subsequent field
+  // changes are patched below so restored scroll offsets are not overwritten.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user.user_id]);
+
+  useEffect(() => {
+    patchNativeSearchSession(user.user_id, {
+      activeView,
+      draft,
+      executedDraft,
+      pokemonQuery,
+      trainerQuery,
+    });
+  }, [activeView, draft, executedDraft, pokemonQuery, trainerQuery, user.user_id]);
 
   const changeView = useCallback((view: NativeSearchHubView) => {
     setActiveView(view);
@@ -156,6 +196,10 @@ const NativeSignedInSearchRoute = ({ user }: { user: MobileSessionUser }) => {
       }}
       results={results}
       savedLocation={savedLocation}
+      initialScrollOffset={initialSession?.pokemonScrollOffset ?? 0}
+      onScrollOffsetChange={(pokemonScrollOffset) => {
+        patchNativeSearchSession(user.user_id, { pokemonScrollOffset });
+      }}
     />
   );
 
@@ -182,6 +226,10 @@ const NativeSignedInSearchRoute = ({ user }: { user: MobileSessionUser }) => {
           onQueryChange={setTrainerQuery}
           onRetry={() => void trainerSearch.refetch()}
           query={trainerQuery}
+          initialScrollOffset={initialSession?.trainerScrollOffset ?? 0}
+          onScrollOffsetChange={(trainerScrollOffset) => {
+            patchNativeSearchSession(user.user_id, { trainerScrollOffset });
+          }}
         />
       </NativeHorizontalPageSlider>
       <NativeActionMenuAnchor

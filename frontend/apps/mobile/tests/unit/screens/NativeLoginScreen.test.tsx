@@ -7,9 +7,10 @@ describe('NativeLoginScreen', () => {
     render(
       <NativeLoginScreen
         notice="Password updated. Sign in again on this device."
+        onOpenPasswordReset={jest.fn()}
         onSignIn={jest.fn()}
         onSignedIn={jest.fn()}
-        onUseCurrentApp={jest.fn()}
+        onSocialSignIn={jest.fn()}
       />,
     );
     expect(screen.getByText('Password updated. Sign in again on this device.')).toBeTruthy();
@@ -20,15 +21,16 @@ describe('NativeLoginScreen', () => {
     const onSignedIn = jest.fn();
     render(
       <NativeLoginScreen
+        onOpenPasswordReset={jest.fn()}
         onSignIn={onSignIn}
         onSignedIn={onSignedIn}
-        onUseCurrentApp={jest.fn()}
+        onSocialSignIn={jest.fn()}
       />,
     );
 
-    fireEvent.changeText(screen.getByPlaceholderText('Trainer name or email'), 'misty');
+    fireEvent.changeText(screen.getByPlaceholderText('Username or Email'), 'misty');
     fireEvent.changeText(screen.getByPlaceholderText('Password'), 'password');
-    fireEvent.press(screen.getByText('Sign in'));
+    fireEvent.press(screen.getByText('Login'));
 
     await waitFor(() => expect(onSignIn).toHaveBeenCalledWith('misty', 'password'));
     expect(onSignedIn).toHaveBeenCalledTimes(1);
@@ -40,18 +42,42 @@ describe('NativeLoginScreen', () => {
     );
     render(
       <NativeLoginScreen
+        onOpenPasswordReset={jest.fn()}
         onSignIn={onSignIn}
         onSignedIn={jest.fn()}
-        onUseCurrentApp={jest.fn()}
+        onSocialSignIn={jest.fn()}
       />,
     );
 
-    fireEvent.changeText(screen.getByPlaceholderText('Trainer name or email'), 'misty');
+    fireEvent.changeText(screen.getByPlaceholderText('Username or Email'), 'misty');
     fireEvent.changeText(screen.getByPlaceholderText('Password'), 'password');
-    fireEvent.press(screen.getByText('Sign in'));
+    fireEvent.press(screen.getByText('Login'));
 
     expect(await screen.findByText(
       'That username, email, or password was not recognized.',
     )).toBeTruthy();
+  });
+
+  it('matches the canonical reset and provider actions', () => {
+    const onOpenPasswordReset = jest.fn();
+    const onSocialSignIn = jest.fn();
+    render(
+      <NativeLoginScreen
+        onOpenPasswordReset={onOpenPasswordReset}
+        onSignIn={jest.fn()}
+        onSignedIn={jest.fn()}
+        onSocialSignIn={onSocialSignIn}
+      />,
+    );
+
+    fireEvent.press(screen.getByText('Reset Password'));
+    fireEvent.press(screen.getByText('Login with Google'));
+    fireEvent.press(screen.getByText('Login with Discord'));
+    fireEvent.press(screen.getByText('Login with Facebook'));
+
+    expect(onOpenPasswordReset).toHaveBeenCalledTimes(1);
+    expect(onSocialSignIn).toHaveBeenNthCalledWith(1, 'google');
+    expect(onSocialSignIn).toHaveBeenNthCalledWith(2, 'discord');
+    expect(onSocialSignIn).toHaveBeenNthCalledWith(3, 'facebook');
   });
 });

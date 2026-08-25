@@ -10,7 +10,7 @@ import {
   View,
   useColorScheme,
 } from 'react-native';
-import { useMemo, useRef } from 'react';
+import { useCallback, useMemo, useRef } from 'react';
 import {
   buildNativeTrainerSearchRows,
   type NativeTrainerSearchRow,
@@ -20,10 +20,12 @@ type Props = {
   entries: TrainerAutocompleteEntry[];
   error?: string | null;
   isLoading?: boolean;
+  initialScrollOffset?: number;
   onOpenCatalog: (username: string) => void;
   onOpenProfile: (username: string) => void;
   onQueryChange: (query: string) => void;
   onRetry?: () => void;
+  onScrollOffsetChange?: (offset: number) => void;
   query: string;
 };
 
@@ -110,22 +112,43 @@ export const NativeTrainerSearchScreen = ({
   entries,
   error = null,
   isLoading = false,
+  initialScrollOffset = 0,
   onOpenCatalog,
   onOpenProfile,
   onQueryChange,
   onRetry,
+  onScrollOffsetChange,
   query,
 }: Props) => {
   const light = useColorScheme() === 'light';
   const inputRef = useRef<TextInput>(null);
+  const listRef = useRef<FlatList<NativeTrainerSearchRow>>(null);
+  const restoredScrollRef = useRef(initialScrollOffset <= 0);
+  const latestScrollOffsetRef = useRef(initialScrollOffset);
   const rows = useMemo(() => buildNativeTrainerSearchRows(entries), [entries]);
   const trimmedQuery = query.trim();
   const hasQuery = trimmedQuery.length >= 2;
+  const restoreScrollPosition = useCallback(() => {
+    if (restoredScrollRef.current || initialScrollOffset <= 0 || isLoading) return;
+    restoredScrollRef.current = true;
+    requestAnimationFrame(() => {
+      listRef.current?.scrollToOffset({ animated: false, offset: initialScrollOffset });
+    });
+  }, [initialScrollOffset, isLoading]);
+  const reportScrollPosition = () => {
+    onScrollOffsetChange?.(latestScrollOffsetRef.current);
+  };
 
   return (
     <FlatList
       contentContainerStyle={styles.content}
       data={!isLoading && !error ? rows : []}
+      onContentSizeChange={restoreScrollPosition}
+      onMomentumScrollEnd={reportScrollPosition}
+      onScroll={(event) => { latestScrollOffsetRef.current = event.nativeEvent.contentOffset.y; }}
+      onScrollEndDrag={reportScrollPosition}
+      ref={listRef}
+      scrollEventThrottle={100}
       keyboardShouldPersistTaps="handled"
       keyExtractor={(row) => row.username.toLocaleLowerCase()}
       ListHeaderComponent={(

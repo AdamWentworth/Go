@@ -12,7 +12,7 @@ import {
   View,
   useColorScheme,
 } from 'react-native';
-import { Fragment, useMemo, useState } from 'react';
+import { Fragment, useCallback, useMemo, useRef, useState } from 'react';
 import type { NativePokemonSearchResult } from '../features/search/pokemonSearchModel';
 import {
   countNativePokemonSearchFilters,
@@ -34,6 +34,7 @@ type Props = {
   error?: string | null;
   hasSearched?: boolean;
   isLoading?: boolean;
+  initialScrollOffset?: number;
   notice?: string | null;
   onDraftChange: (draft: NativePokemonSearchDraft) => void;
   onOpenListing: (result: NativePokemonSearchResult) => void;
@@ -43,6 +44,7 @@ type Props = {
     draft: NativePokemonSearchDraft,
   ) => void;
   onRetry?: () => void;
+  onScrollOffsetChange?: (offset: number) => void;
   results: NativePokemonSearchResult[];
   savedLocation?: SavedLocation | null;
 };
@@ -65,16 +67,18 @@ const SearchArtwork = ({
   assetBaseUrl,
   backgroundUri,
   imageUri,
+  light,
   maxKind,
   size = 'large',
 }: {
   assetBaseUrl: string;
   backgroundUri: string | null;
   imageUri: string | null;
+  light: boolean;
   maxKind: 'dynamax' | 'gigantamax' | null;
   size?: 'large' | 'small';
 }) => (
-  <View style={[styles.artwork, size === 'small' && styles.artworkSmall]}>
+  <View style={[styles.artwork, light && styles.artworkLight, size === 'small' && styles.artworkSmall]}>
     {backgroundUri ? <Image resizeMode="cover" source={{ uri: backgroundUri }} style={StyleSheet.absoluteFill} /> : null}
     {imageUri ? <Image resizeMode="contain" source={{ uri: imageUri }} style={styles.artworkPokemon} /> : <Text style={styles.imageFallback}>No image</Text>}
     {maxKind ? (
@@ -119,6 +123,7 @@ const ResultCard = ({
           assetBaseUrl={assetBaseUrl}
           backgroundUri={result.row.locationBackgroundUri}
           imageUri={result.row.imageUri}
+          light={light}
           maxKind={result.row.maxKind}
         />
         <Text numberOfLines={3} style={[styles.listingName, light && styles.textLight]}>{result.row.name}</Text>
@@ -134,8 +139,8 @@ const ResultCard = ({
           </View>
           <ScrollView horizontal nestedScrollEnabled showsHorizontalScrollIndicator={false} contentContainerStyle={styles.relatedScroll}>
             {result.relatedRows.map((row) => (
-              <View key={row.id} style={[styles.relatedCard, row.match && { borderColor: accent }]}>
-                <SearchArtwork assetBaseUrl={assetBaseUrl} backgroundUri={row.locationBackgroundUri} imageUri={row.imageUri} maxKind={row.maxKind} size="small" />
+              <View key={row.id} style={[styles.relatedCard, light && styles.relatedCardLight, row.match && { borderColor: accent }]}>
+                <SearchArtwork assetBaseUrl={assetBaseUrl} backgroundUri={row.locationBackgroundUri} imageUri={row.imageUri} light={light} maxKind={row.maxKind} size="small" />
                 <Text numberOfLines={3} style={[styles.relatedName, light && styles.textLight]}>{row.name}</Text>
                 {row.match ? <Text style={[styles.matchLabel, { color: accent }]}>MUTUAL MATCH</Text> : null}
               </View>
@@ -162,12 +167,14 @@ export const NativePokemonSearchScreen = ({
   error = null,
   hasSearched = false,
   isLoading = false,
+  initialScrollOffset = 0,
   notice = null,
   onDraftChange,
   onOpenListing,
   onOpenProfile,
   onSearch,
   onRetry,
+  onScrollOffsetChange,
   results,
   savedLocation = null,
 }: Props) => {
@@ -176,10 +183,25 @@ export const NativePokemonSearchScreen = ({
   const [filterSection, setFilterSection] = useState<NativeSearchFilterSection>('pokemon');
   const [filterError, setFilterError] = useState<string | null>(null);
   const [filterNotice, setFilterNotice] = useState<string | null>(null);
+  const listRef = useRef<FlatList<NativePokemonSearchResult>>(null);
+  const restoredScrollRef = useRef(initialScrollOffset <= 0);
+  const latestScrollOffsetRef = useRef(initialScrollOffset);
   const selectedPokemon = useMemo(() => catalog.find((pokemon) => (
     pokemon.pokemon_id === draft.pokemonId && (pokemon.form ?? null) === draft.form
   )) ?? catalog.find((pokemon) => pokemon.pokemon_id === draft.pokemonId) ?? null, [catalog, draft.form, draft.pokemonId]);
   const filterCount = countNativePokemonSearchFilters(draft);
+
+  const restoreScrollPosition = useCallback(() => {
+    if (restoredScrollRef.current || initialScrollOffset <= 0 || isLoading) return;
+    restoredScrollRef.current = true;
+    requestAnimationFrame(() => {
+      listRef.current?.scrollToOffset({ animated: false, offset: initialScrollOffset });
+    });
+  }, [initialScrollOffset, isLoading]);
+
+  const reportScrollPosition = () => {
+    onScrollOffsetChange?.(latestScrollOffsetRef.current);
+  };
 
   const openFilters = (section: NativeSearchFilterSection = 'pokemon') => {
     setFilterError(null);
@@ -204,6 +226,12 @@ export const NativePokemonSearchScreen = ({
       <FlatList
       contentContainerStyle={styles.content}
       data={!isLoading && !error ? results : []}
+      onContentSizeChange={restoreScrollPosition}
+      onMomentumScrollEnd={reportScrollPosition}
+      onScroll={(event) => { latestScrollOffsetRef.current = event.nativeEvent.contentOffset.y; }}
+      onScrollEndDrag={reportScrollPosition}
+      ref={listRef}
+      scrollEventThrottle={100}
       keyboardShouldPersistTaps="handled"
       keyExtractor={(result) => result.id}
       ListHeaderComponent={(
@@ -366,6 +394,7 @@ const styles = StyleSheet.create({
   distance: { maxWidth: 110, color: '#a9b5b7', fontSize: 11, fontWeight: '800', textAlign: 'right' },
   listingBody: { alignItems: 'center', padding: 12 },
   artwork: { width: 180, height: 150, overflow: 'hidden', alignItems: 'center', justifyContent: 'center', borderRadius: 11, backgroundColor: '#0d1416' },
+  artworkLight: { backgroundColor: '#f4f8f8' },
   artworkSmall: { width: 102, height: 88 },
   artworkPokemon: { width: '86%', height: '86%' },
   artworkMax: { position: 'absolute', width: 42, height: 42, top: 11, right: 12 },
@@ -379,6 +408,7 @@ const styles = StyleSheet.create({
   relatedCount: { marginLeft: 'auto', overflow: 'hidden', minWidth: 32, paddingHorizontal: 7, paddingVertical: 5, fontSize: 11, fontWeight: '900', textAlign: 'center', borderRadius: 999 },
   relatedScroll: { gap: 8, paddingTop: 9, paddingBottom: 2 },
   relatedCard: { width: 118, minHeight: 146, alignItems: 'center', padding: 7, borderWidth: 1, borderColor: '#405155', borderRadius: 9, backgroundColor: '#101719' },
+  relatedCardLight: { borderColor: '#aebdc0', backgroundColor: '#ffffff' },
   relatedName: { marginTop: 5, color: '#f0f6f7', fontSize: 11, fontWeight: '900', textAlign: 'center' },
   matchLabel: { marginTop: 'auto', paddingTop: 4, fontSize: 8, fontWeight: '900' },
   actions: { flexDirection: 'row', gap: 8, padding: 10 },

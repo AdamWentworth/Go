@@ -1,9 +1,16 @@
 import { Redirect, useLocalSearchParams, useRouter } from 'expo-router';
 import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useNativeSession } from '../../auth/NativeSessionContext';
+import { NativeActionMenu } from '../../components/NativeActionMenu';
+import { NativeActionMenuAnchor } from '../../components/NativeActionMenuAnchor';
+import { runtimeConfig } from '../../config/runtimeConfig';
 import { NativeLoginScreen } from '../../screens/NativeLoginScreen';
 import { theme } from '../../ui/theme';
-import { resolveNativeLoginReturnTo } from '../../navigation/nativeActionMenuNavigation';
+import {
+  resolveNativeActionMenuDestination,
+  resolveNativeLoginReturnTo,
+} from '../../navigation/nativeActionMenuNavigation';
+import { useState } from 'react';
 
 export default function NativeLoginRoute() {
   const router = useRouter();
@@ -12,6 +19,7 @@ export default function NativeLoginRoute() {
     returnTo?: string | string[];
   }>();
   const { retrySession, signIn, status, user } = useNativeSession();
+  const [actionMenuOpen, setActionMenuOpen] = useState(false);
   const requestedReturnTo = Array.isArray(params.returnTo)
     ? params.returnTo[0]
     : params.returnTo;
@@ -69,17 +77,45 @@ export default function NativeLoginRoute() {
 
   if (user) return <Redirect href={returnHref} />;
 
+  const openWebLogin = () => router.push({ pathname: '/web', params: { path: '/login' } });
+  const navigateFromActionMenu = (path: string) => {
+    setActionMenuOpen(false);
+    const destination = resolveNativeActionMenuDestination(path);
+    if (destination.kind === 'current') return;
+    if (destination.kind === 'native') {
+      router.push(destination.pathname);
+      return;
+    }
+    router.push({ pathname: '/web', params: { path: destination.path } });
+  };
+
   return (
-    <NativeLoginScreen
-      notice={notice}
-      onSignIn={signIn}
-      onSignedIn={() => router.replace(returnHref)}
-      onUseCurrentApp={() => router.replace('/web')}
-    />
+    <View style={styles.screen}>
+      <NativeLoginScreen
+        notice={notice}
+        onOpenPasswordReset={openWebLogin}
+        onSignIn={signIn}
+        onSignedIn={() => router.replace(returnHref)}
+        onSocialSignIn={openWebLogin}
+      />
+      <NativeActionMenuAnchor
+        assetBaseUrl={runtimeConfig.api.frontendAppUrl}
+        onPress={() => setActionMenuOpen(true)}
+      />
+      {actionMenuOpen ? (
+        <NativeActionMenu
+          assetBaseUrl={runtimeConfig.api.frontendAppUrl}
+          onClose={() => setActionMenuOpen(false)}
+          onNavigate={navigateFromActionMenu}
+          visible
+        />
+      ) : null}
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
+  screen: { flex: 1, minHeight: 0 },
   centered: {
     flex: 1,
     alignItems: 'center',
