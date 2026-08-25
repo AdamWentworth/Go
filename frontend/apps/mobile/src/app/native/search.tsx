@@ -99,9 +99,9 @@ const NativeSignedInSearchRoute = ({ user }: { user: MobileSessionUser }) => {
       }
     : null;
 
-  const openWebProfile = (username: string) => router.push({
-    pathname: '/web',
-    params: { path: `/profile/${encodeURIComponent(username)}` },
+  const openTrainerProfile = (username: string) => router.push({
+    pathname: '/native/profile/[username]',
+    params: { username },
   });
   const openForeignCatalog = (username: string) => router.push({
     pathname: '/native/collection/trainer/[username]',
@@ -148,7 +148,7 @@ const NativeSignedInSearchRoute = ({ user }: { user: MobileSessionUser }) => {
         pathname: '/native/collection/trainer/[username]/[instanceId]',
         params: { username: result.username, instanceId: result.id },
       })}
-      onOpenProfile={openWebProfile}
+      onOpenProfile={openTrainerProfile}
       onRetry={() => void pokemonSearch.refetch()}
       onSearch={(query, nextDraft) => {
         setExecutedDraft(nextDraft);
@@ -178,7 +178,7 @@ const NativeSignedInSearchRoute = ({ user }: { user: MobileSessionUser }) => {
           error={errorMessage(trainerSearch.error)}
           isLoading={trainerSearch.isFetching}
           onOpenCatalog={openForeignCatalog}
-          onOpenProfile={openWebProfile}
+          onOpenProfile={openTrainerProfile}
           onQueryChange={setTrainerQuery}
           onRetry={() => void trainerSearch.refetch()}
           query={trainerQuery}
