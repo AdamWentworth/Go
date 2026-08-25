@@ -1,4 +1,5 @@
 import { Image, Pressable, StyleSheet } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 type Props = {
   assetBaseUrl: string;
@@ -9,26 +10,32 @@ const toAssetUrl = (baseUrl: string, path: string): string => (
   `${baseUrl.replace(/\/$/, '')}/${path.replace(/^\//, '')}`
 );
 
-export const NativeActionMenuAnchor = ({ assetBaseUrl, onPress }: Props) => (
-  <Pressable
-    accessibilityLabel="Open action menu"
-    accessibilityRole="button"
-    onPress={onPress}
-    style={({ pressed }) => [styles.anchor, pressed && styles.pressed]}
-  >
-    <Image
-      accessibilityElementsHidden
-      resizeMode="contain"
-      source={{ uri: toAssetUrl(assetBaseUrl, '/images/btn_action_menu.png') }}
-      style={styles.ball}
-    />
-  </Pressable>
-);
+export const NativeActionMenuAnchor = ({ assetBaseUrl, onPress }: Props) => {
+  const insets = useSafeAreaInsets();
+  return (
+    <Pressable
+      accessibilityLabel="Open action menu"
+      accessibilityRole="button"
+      onPress={onPress}
+      style={({ pressed }) => [
+        styles.anchor,
+        { bottom: Math.max(20, insets.bottom) },
+        pressed && styles.pressed,
+      ]}
+    >
+      <Image
+        accessibilityElementsHidden
+        resizeMode="contain"
+        source={{ uri: toAssetUrl(assetBaseUrl, '/images/btn_action_menu.png') }}
+        style={styles.ball}
+      />
+    </Pressable>
+  );
+};
 
 const styles = StyleSheet.create({
   anchor: {
     position: 'absolute',
-    bottom: 12,
     left: '50%',
     zIndex: 21,
     width: 54,
@@ -36,11 +43,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     marginLeft: -27,
-    borderWidth: 3,
-    borderColor: '#d9ffff',
     borderRadius: 27,
-    backgroundColor: '#ffffff',
+    backgroundColor: 'transparent',
   },
-  ball: { width: 48, height: 48 },
+  ball: { width: 54, height: 54 },
   pressed: { opacity: 0.76, transform: [{ scale: 0.97 }] },
 });
