@@ -96,11 +96,17 @@ export const NativeCollectionHubScreen = ({
     () => [...inventoryTags, ...wishlistTags],
     [inventoryTags, wishlistTags],
   );
-  const selectedTag = availableTags.find((tag) => tag.key === selectedTagKey)
-    ?? (requireTagSelection
-      ? availableTags.find((tag) => tag.key === 'system:caught') ?? availableTags[0] ?? null
-      : null);
-  const selectedRows = selectedTag?.rows ?? (requireTagSelection ? [] : catalogRows);
+  const selectedTag = useMemo(
+    () => availableTags.find((tag) => tag.key === selectedTagKey)
+      ?? (requireTagSelection
+        ? availableTags.find((tag) => tag.key === 'system:caught') ?? availableTags[0] ?? null
+        : null),
+    [availableTags, requireTagSelection, selectedTagKey],
+  );
+  const selectedRows = useMemo(
+    () => selectedTag?.rows ?? (requireTagSelection ? [] : catalogRows),
+    [catalogRows, requireTagSelection, selectedTag],
+  );
   const selectedOrganizerRows = useMemo(
     () => selectedRows.filter((row) => selectedIds.has(row.id)),
     [selectedIds, selectedRows],
