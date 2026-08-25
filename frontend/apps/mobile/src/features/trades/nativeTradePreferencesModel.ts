@@ -22,6 +22,7 @@ export type NativeTradePreferenceCandidate = {
   allowed: boolean;
   excludedByRule: boolean;
   manuallyExcluded: boolean;
+  traits: TradePreferenceCandidate;
 };
 
 export type NativeTradePreferenceEntry = {
@@ -195,6 +196,7 @@ export const buildNativeTradePreferenceEntries = ({
         allowed: !excludedByRule && !isManuallyExcluded,
         excludedByRule,
         manuallyExcluded: isManuallyExcluded,
+        traits: candidateTraits[candidateKey],
       } satisfies NativeTradePreferenceCandidate];
     }).sort(compareRows);
 
@@ -210,6 +212,42 @@ export const buildNativeTradePreferenceEntries = ({
       row,
     } satisfies NativeTradePreferenceEntry];
   }).sort(entryCompare);
+};
+
+export const resolveNativeTradePreferenceDraftCandidates = ({
+  entry,
+  filters,
+  manuallyExcludedIds,
+  mirror = false,
+}: {
+  entry: NativeTradePreferenceEntry;
+  filters: TradePreferenceFilters;
+  manuallyExcludedIds: ReadonlySet<string>;
+  mirror?: boolean;
+}): NativeTradePreferenceCandidate[] => {
+  const candidatesById = Object.fromEntries(entry.candidates.map((candidate) => [
+    candidate.collectionKey,
+    candidate.traits,
+  ]));
+  const matching = filterTradePreferenceCandidates(
+    candidatesById,
+    entry.mode === 'trade' ? 'wanted-targets' : 'trade-offers',
+    filters,
+  );
+  return entry.candidates.map((candidate) => {
+    const excludedByMirror = mirror && (
+      candidate.instance.pokemon_id !== entry.instance.pokemon_id
+      || candidate.instance.variant_id !== entry.instance.variant_id
+    );
+    const excludedByRule = matching[candidate.collectionKey] == null || excludedByMirror;
+    const manuallyExcluded = manuallyExcludedIds.has(candidate.collectionKey);
+    return {
+      ...candidate,
+      allowed: !excludedByRule && !manuallyExcluded,
+      excludedByRule,
+      manuallyExcluded,
+    };
+  });
 };
 
 const patchReciprocalList = ({

@@ -1,0 +1,57 @@
+appId: host.exp.exponent
+name: Native trade-preferences parity smoke
+tags:
+  - android
+  - native-trades
+  - trade-preferences
+---
+- openLink:
+    link: exp://10.0.2.2:8091/--/device-smoke/trade-preferences
+- runFlow:
+    when:
+      visible: "This is the developer menu.*"
+    commands:
+      - tapOn: Continue
+- runFlow:
+    when:
+      visible: React Native dev menu
+    commands:
+      - tapOn: Close
+- extendedWaitUntil:
+    visible: Trade preferences
+    timeout: 45000
+- assertVisible: For Trade
+- assertVisible: Wanted
+- assertVisible: Shiny Bulbasaur
+- assertVisible: Wanted Pokémon
+- assertVisible: Edit preferences
+- assertVisible: Shiny Charmander
+- assertNotVisible: Shiny Mewtwo
+- takeScreenshot: 01-for-trade-view
+- tapOn: Edit preferences
+- assertVisible: Save changes
+- assertVisible: Shiny Mewtwo
+- tapOn: No additional rules
+- assertVisible: Mirror trade
+- assertVisible: Must match
+- assertVisible: Leave out
+- takeScreenshot: 02-for-trade-edit-rules
+- scrollUntilVisible:
+    element:
+      id: preference-candidate-wanted-mewtwo
+    direction: DOWN
+    timeout: 15000
+- tapOn:
+    id: preference-candidate-wanted-mewtwo
+- tapOn: Save changes
+- extendedWaitUntil:
+    visible: Preferences saved.
+    timeout: 10000
+- tapOn:
+    text: ^Wanted$
+- extendedWaitUntil:
+    visible: For Trade Pokémon
+    timeout: 10000
+- assertVisible: Shiny Venusaur
+- assertVisible: Shiny Gigantamax Charizard
+- takeScreenshot: 03-wanted-view
