@@ -38,10 +38,10 @@ tags:
 - assertVisible: discord connected.
 - scrollUntilVisible:
     element:
-      text: Sign out
+      text: Sign out all devices
     direction: DOWN
     timeout: 10000
-- tapOn: Sign out all
+- tapOn: Sign out all devices
 - assertVisible: Sign out every device?
 - tapOn: Sign out all
 - assertVisible: All sessions revoked.

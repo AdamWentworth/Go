@@ -292,10 +292,6 @@ tags:
     start: 50%, 18%
     end: 50%, 82%
     duration: 650
-- scrollUntilVisible:
-    element:
-      text: Save Pokémon
-    direction: UP
 - tapOn: Save Pokémon
 - assertNotVisible: Pokémon detail editor
 - takeScreenshot: 06c-caught-instance
