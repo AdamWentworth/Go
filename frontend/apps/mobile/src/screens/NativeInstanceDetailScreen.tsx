@@ -29,6 +29,12 @@ import type {
 import { NativePokemonLocationBackdrop } from '../features/collection/parity/NativePokemonLocationBackdrop';
 import { useNativeOverlaySwipeNavigation } from '../features/collection/parity/useNativeOverlaySwipeNavigation';
 import { getNativeLocationSuggestions } from '../services/locationApi';
+import { getPokemonLevelArcProgress } from '@pokemongonexus/shared-domain/combat-power';
+import {
+  calculateNativeDraftCp,
+  firstNativeCombatError,
+  validateNativeCombatDraft,
+} from '../features/collection/nativeCombatPower';
 
 type Props = {
   assetBaseUrl?: string;
@@ -255,8 +261,7 @@ const STATUS = {
 } as const;
 
 const LevelArc = ({ level }: { level: number }) => {
-  const bounded = Math.max(1, Math.min(51, level));
-  const angle = Math.PI - ((bounded - 1) / 50) * Math.PI;
+  const angle = Math.PI - getPokemonLevelArcProgress(level) * Math.PI;
   const pointX = 150 + (126 * Math.cos(angle));
   const pointY = 136 - (126 * Math.sin(angle));
   return (
@@ -1718,7 +1723,6 @@ export const NativeInstanceDetailScreen = ({
   const height = instance?.height;
   const gender = instance?.gender;
   const showPhysicalRow = weight != null || height != null || detail.row.typeIconUris.length > 0;
-  const showArc = Number.isFinite(level);
   const maxBadge = detail.row.maxKind
     ? toAssetUrl(assetBaseUrl, `/images/${detail.row.maxKind}.png`)
     : null;
@@ -1732,6 +1736,8 @@ export const NativeInstanceDetailScreen = ({
   const editError = editErrorState?.instanceId === detail.row.id
     ? editErrorState.message
     : null;
+  const displayLevel = editing ? Number(activeDraft.level) : level;
+  const showArc = Number.isFinite(displayLevel);
   const backgroundPickerOpen = backgroundPickerInstanceId === detail.row.id;
   const selectedFusionOption = activeDraft.fused
     ? detail.fusionOptions?.find((option) => option.id === activeDraft.fusionId) ?? null
@@ -1778,13 +1784,18 @@ export const NativeInstanceDetailScreen = ({
       })()
     : detail.row.locationBackgroundUri;
   const updateDraft = (patch: Partial<NativeInstanceEditDraft>) => {
-    setDraftState((current) => ({
-      instanceId: detail.row.id,
-      value: {
+    setDraftState((current) => {
+      const next = {
         ...(current?.instanceId === detail.row.id ? current.value : createEditDraft(detail)),
         ...patch,
-      },
-    }));
+      };
+      const calculatedCp = isWanted ? null : calculateNativeDraftCp(detail, next);
+      return {
+        instanceId: detail.row.id,
+        value: calculatedCp == null ? next : { ...next, cp: String(calculatedCp) },
+      };
+    });
+    setEditErrorState(null);
   };
   const toggleEdit = async () => {
     if (!onSaveDetails) {
@@ -1798,6 +1809,16 @@ export const NativeInstanceDetailScreen = ({
       return;
     }
     try {
+      const combatValidation = !isWanted && detail.baseStats
+        ? validateNativeCombatDraft(detail, activeDraft)
+        : null;
+      const combatError = combatValidation == null
+        ? null
+        : firstNativeCombatError(combatValidation);
+      if (combatError) {
+        setEditErrorState({ instanceId: detail.row.id, message: combatError });
+        return;
+      }
       const patch: NativeInstanceDetailPatch = isWanted
         ? {
             nickname: !instance?.nickname
@@ -1821,14 +1842,14 @@ export const NativeInstanceDetailScreen = ({
               && activeDraft.nickname.trim() === detail.row.name.trim().split(/\s+/).at(-1)
               ? null
               : activeDraft.nickname,
-            cp: nullableNumber(activeDraft.cp),
-            level: nullableNumber(activeDraft.level),
+            cp: combatValidation?.computed.cp ?? nullableNumber(activeDraft.cp),
+            level: combatValidation?.computed.level ?? nullableNumber(activeDraft.level),
             gender: activeDraft.gender,
             weight: nullableNumber(activeDraft.weight),
             height: nullableNumber(activeDraft.height),
-            attack_iv: nullableNumber(activeDraft.attackIv),
-            defense_iv: nullableNumber(activeDraft.defenseIv),
-            stamina_iv: nullableNumber(activeDraft.staminaIv),
+            attack_iv: combatValidation?.computed.ivs?.attack ?? nullableNumber(activeDraft.attackIv),
+            defense_iv: combatValidation?.computed.ivs?.defense ?? nullableNumber(activeDraft.defenseIv),
+            stamina_iv: combatValidation?.computed.ivs?.stamina ?? nullableNumber(activeDraft.staminaIv),
             location_caught: activeDraft.locationCaught,
             date_caught: activeDraft.dateCaught,
             fast_move_id: activeDraft.fastMove,
@@ -1960,7 +1981,7 @@ export const NativeInstanceDetailScreen = ({
                 />
               </Pressable>
               {isCaught && cp != null && !editing ? (
-                <Text style={[styles.cpText, { color: palette.text }]}>CP{cp}</Text>
+                <Text style={styles.cpText}>CP{cp}</Text>
               ) : <View />}
               {editing ? (
                 activeBackgroundOptions.length > 0 ? (
@@ -1996,7 +2017,7 @@ export const NativeInstanceDetailScreen = ({
 
           {isCaught && showArc ? (
             <View style={styles.arc}>
-              <LevelArc level={level} />
+              <LevelArc level={displayLevel} />
             </View>
           ) : null}
 
@@ -2072,7 +2093,7 @@ export const NativeInstanceDetailScreen = ({
               <View style={styles.levelGenderRow}>
                 <View style={styles.sideSlot} />
                 {isCaught && showArc ? (
-                  <Text style={[styles.levelText, { color: palette.secondary }]}>LEVEL: {level}</Text>
+                  <Text style={[styles.levelText, { color: palette.secondary }]}>LEVEL: {displayLevel}</Text>
                 ) : <View />}
                 <Text style={[styles.genderText, { color: gender === 'Female' ? '#ff3b87' : '#30a7ff' }]}>
                   {gender === 'Female' ? '♀' : gender === 'Male' ? '♂' : ''}
@@ -2285,7 +2306,15 @@ const styles = StyleSheet.create({
     shadowRadius: 3,
     shadowOffset: { width: 0, height: 1 },
   },
-  cpText: { paddingTop: 3, fontSize: 18, fontWeight: '500' },
+  cpText: {
+    paddingTop: 3,
+    color: '#ffffff',
+    fontSize: 18,
+    fontWeight: '700',
+    textShadowColor: 'rgba(0,0,0,0.7)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 3,
+  },
   favoriteIcon: { color: '#ffffff', fontSize: 48, lineHeight: 50, fontWeight: '300' },
   favoriteSelected: { color: '#ffd000' },
   wantedBadge: { minHeight: 40, justifyContent: 'center', marginTop: 1, paddingHorizontal: 12, borderWidth: 1, borderColor: '#8b9997', borderRadius: 999, backgroundColor: 'rgba(53,61,61,0.82)' },

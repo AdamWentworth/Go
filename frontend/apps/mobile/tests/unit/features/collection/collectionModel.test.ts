@@ -80,6 +80,9 @@ const instance = (patch: Partial<PokemonInstance>): PokemonInstance => ({
 const pokemon = {
   pokemon_id: 6,
   name: 'Charizard',
+  attack: 223,
+  defense: 173,
+  stamina: 186,
   pokedex_number: 6,
   image_url: '/images/charizard.png',
   image_url_shiny: '/images/charizard-shiny.png',
@@ -372,6 +375,9 @@ describe('native collection model', () => {
         primal: false,
         image_url: '/images/mega-charizard-x.png',
         image_url_shiny: '/images/shiny-mega-charizard-x.png',
+        attack: 273,
+        defense: 213,
+        stamina: 186,
       }],
       fusion: [{
         fusion_id: 2,
@@ -380,6 +386,9 @@ describe('native collection model', () => {
         name: 'Armored Charizard',
         image_url: '/images/fused-charizard.png',
         image_url_shiny: '/images/shiny-fused-charizard.png',
+        attack: 277,
+        defense: 220,
+        stamina: 200,
         backgrounds: [{
           background_id: 12,
           costume_id: 0,
@@ -402,6 +411,9 @@ describe('native collection model', () => {
         display_form: 'Crowned Sword',
         image_url: '/images/crowned-charizard.png',
         image_url_shiny: '/images/shiny-crowned-charizard.png',
+        attack: 332,
+        defense: 240,
+        stamina: 192,
       }],
       backgrounds: [
         {
@@ -483,6 +495,11 @@ describe('native collection model', () => {
 
     expect(detail).toEqual(expect.objectContaining({
       row: expect.objectContaining({ name: 'Shiny Charizard' }),
+      baseStats: {
+        attack: Number(detailPokemon.attack),
+        defense: Number(detailPokemon.defense),
+        stamina: Number(detailPokemon.stamina),
+      },
       traits: expect.arrayContaining(['Shiny']),
       stats: expect.arrayContaining([{ label: 'CP', value: '2,499' }]),
       ivs: [{ label: 'Attack', value: 15 }],
@@ -513,12 +530,14 @@ describe('native collection model', () => {
         imageUri: 'https://pokegonexus.com/images/shiny-mega-charizard-x.png',
         label: 'Mega X',
         primal: false,
+        stats: { attack: 273, defense: 213, stamina: 186 },
       }],
       crownOptions: [{
         form: 'Crowned Sword',
         imageUri: 'https://pokegonexus.com/images/shiny-crowned-charizard.png',
         label: 'Crowned Sword',
         moveOptions: [],
+        stats: { attack: 332, defense: 240, stamina: 192 },
       }],
       fusionOptions: [{
         id: 2,
@@ -531,6 +550,7 @@ describe('native collection model', () => {
           typeName: 'Fire',
         }],
         name: 'Armored Charizard',
+        stats: { attack: 277, defense: 220, stamina: 200 },
         partnerPokemonId: 150,
         partnerRows: [expect.objectContaining({ id: 'partner-1', name: 'Mewtwo' })],
         backgroundOptions: [{

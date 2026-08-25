@@ -95,6 +95,7 @@ export type NativeInstanceBackgroundOption = {
 export type NativeInstanceDetail = {
   row: NativeCollectionRow;
   instance?: PokemonInstance;
+  baseStats?: { attack: number; defense: number; stamina: number };
   targetRows?: NativeCollectionRow[];
   traits: string[];
   stats: { label: string; value: string }[];
@@ -114,18 +115,21 @@ export type NativeInstanceDetail = {
     imageUri: string | null;
     label: string;
     primal: boolean;
+    stats?: { attack: number; defense: number; stamina: number };
   }[];
   crownOptions?: {
     form: string | null;
     imageUri: string | null;
     label: string;
     moveOptions?: NativeInstanceMoveOption[];
+    stats?: { attack: number; defense: number; stamina: number };
   }[];
   fusionOptions?: {
     id: number;
     imageUri: string | null;
     moveOptions: NativeInstanceMoveOption[];
     name: string;
+    stats?: { attack: number; defense: number; stamina: number };
     partnerPokemonId: number;
     partnerRows: NativeCollectionRow[];
     backgroundOptions: NativeInstanceBackgroundOption[];
@@ -941,6 +945,13 @@ export const buildNativeInstanceDetail = (
     ),
     label: `${mega.primal ? 'Primal' : 'Mega'}${mega.form?.trim() ? ` ${formatVariantLabel(mega.form)}` : ''}`,
     primal: Boolean(mega.primal),
+    stats: mega.attack == null || mega.defense == null || mega.stamina == null
+      ? undefined
+      : {
+          attack: Number(mega.attack),
+          defense: Number(mega.defense),
+          stamina: Number(mega.stamina),
+        },
   }));
   const crownOptions = (pokemon.crownForms ?? []).map((crownForm) => ({
     form: getPokemonCrownFormLabel(crownForm),
@@ -960,6 +971,13 @@ export const buildNativeInstanceDetail = (
       legacy: move.legacy,
       typeName: move.type_name,
     })),
+    stats: crownForm.attack == null || crownForm.defense == null || crownForm.stamina == null
+      ? undefined
+      : {
+          attack: Number(crownForm.attack),
+          defense: Number(crownForm.defense),
+          stamina: Number(crownForm.stamina),
+        },
   }));
   const activePartnerKey = instance.fused_with
     ? resolveInstanceCollectionKey(instances, instance.fused_with)
@@ -1044,6 +1062,13 @@ export const buildNativeInstanceDetail = (
           typeName: move.type_name,
         })),
         name: entry.name || `Fusion ${entry.fusion_id}`,
+        stats: entry.attack == null || entry.defense == null || entry.stamina == null
+          ? undefined
+          : {
+              attack: Number(entry.attack),
+              defense: Number(entry.defense),
+              stamina: Number(entry.stamina),
+            },
         partnerPokemonId: entry.base_pokemon_id2,
         partnerRows,
         backgroundOptions: fusionBackgroundOptions,
@@ -1071,6 +1096,11 @@ export const buildNativeInstanceDetail = (
   return {
     row,
     instance,
+    baseStats: {
+      attack: Number(pokemon.attack),
+      defense: Number(pokemon.defense),
+      stamina: Number(pokemon.stamina),
+    },
     targetRows,
     traits,
     stats,

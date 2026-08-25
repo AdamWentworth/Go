@@ -255,6 +255,95 @@ describe('NativeInstanceDetailScreen', () => {
     expect(screen.queryByLabelText('Pokémon detail editor')).toBeNull();
   });
 
+  it('recalculates caught CP from level and IVs before saving', async () => {
+    const onSaveDetails = jest.fn().mockResolvedValue(undefined);
+    render(
+      <NativeInstanceDetailScreen
+        detail={{
+          ...detail,
+          baseStats: { attack: 223, defense: 173, stamina: 186 },
+          instance: {
+            nickname: null,
+            cp: 2867,
+            level: 40,
+            attack_iv: 15,
+            defense_iv: 14,
+            stamina_iv: 13,
+          } as NonNullable<NativeInstanceDetail['instance']>,
+          row: { ...detail.row, status: 'caught', cp: 2867 },
+        }}
+        isLoading={false}
+        error={null}
+        cachedAt={null}
+        movesWarning={null}
+        saveNotice={null}
+        saveError={null}
+        isSaving={false}
+        onRetry={jest.fn()}
+        onBack={jest.fn()}
+        onSaveDetails={onSaveDetails}
+        onToggleFavorite={jest.fn()}
+        onEditInCurrentApp={jest.fn()}
+      />,
+    );
+
+    fireEvent.press(screen.getByRole('button', { name: 'Edit Pokémon' }));
+    fireEvent.changeText(screen.getByLabelText('Pokémon level'), '40.5');
+    expect(screen.getByLabelText('Combat Power').props.value).toBe('2885');
+    await act(async () => {
+      fireEvent.press(screen.getByRole('button', { name: 'Save Pokémon' }));
+    });
+    expect(onSaveDetails).toHaveBeenCalledWith(expect.objectContaining({
+      cp: 2885,
+      level: 40.5,
+      attack_iv: 15,
+      defense_iv: 14,
+      stamina_iv: 13,
+    }));
+  });
+
+  it('keeps the editor open and explains invalid level increments', async () => {
+    const onSaveDetails = jest.fn().mockResolvedValue(undefined);
+    render(
+      <NativeInstanceDetailScreen
+        detail={{
+          ...detail,
+          baseStats: { attack: 223, defense: 173, stamina: 186 },
+          instance: {
+            nickname: null,
+            cp: 2867,
+            level: 40,
+            attack_iv: 15,
+            defense_iv: 14,
+            stamina_iv: 13,
+          } as NonNullable<NativeInstanceDetail['instance']>,
+          row: { ...detail.row, status: 'caught', cp: 2867 },
+        }}
+        isLoading={false}
+        error={null}
+        cachedAt={null}
+        movesWarning={null}
+        saveNotice={null}
+        saveError={null}
+        isSaving={false}
+        onRetry={jest.fn()}
+        onBack={jest.fn()}
+        onSaveDetails={onSaveDetails}
+        onToggleFavorite={jest.fn()}
+        onEditInCurrentApp={jest.fn()}
+      />,
+    );
+
+    fireEvent.press(screen.getByRole('button', { name: 'Edit Pokémon' }));
+    fireEvent.changeText(screen.getByLabelText('Pokémon level'), '40.25');
+    await act(async () => {
+      fireEvent.press(screen.getByRole('button', { name: 'Save Pokémon' }));
+    });
+    expect(onSaveDetails).not.toHaveBeenCalled();
+    expect(screen.getByText('Level must be 1–51 in 0.5 increments.')).toBeTruthy();
+    expect(screen.getByLabelText('Pokémon detail editor')).toBeTruthy();
+  });
+
   it('selects compatible moves and a location background inside the native editor', async () => {
     const onSaveDetails = jest.fn().mockResolvedValue(undefined);
     render(

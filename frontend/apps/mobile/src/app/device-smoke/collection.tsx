@@ -172,6 +172,14 @@ const ROWS: NativeCollectionRow[] = [
 const rowsWithStatus = (status: NativeCollectionRow['status']) =>
   ROWS.filter((candidate) => candidate.status === status);
 
+const combatStatsFor = (pokemonId: number) => {
+  if (pokemonId === 3) return { attack: 198, defense: 189, stamina: 190 };
+  if (pokemonId === 376) return { attack: 257, defense: 228, stamina: 190 };
+  if (pokemonId === 800) return { attack: 251, defense: 195, stamina: 219 };
+  if (pokemonId === 888) return { attack: 254, defense: 236, stamina: 192 };
+  return { attack: 200, defense: 200, stamina: 200 };
+};
+
 const INVENTORY_TAGS: NativeTagSummary[] = [
   {
     key: 'system:favorites',
@@ -291,6 +299,7 @@ export default function DeviceSmokeCollectionRoute() {
   const [catalogRows, setCatalogRows] = useState<NativeCollectionRow[]>([]);
   const [catalogError, setCatalogError] = useState<string | null>(null);
   const [catalogLoading, setCatalogLoading] = useState(true);
+  const [smokeInstances, setSmokeInstances] = useState(SMOKE_INSTANCES);
 
   useEffect(() => {
     if (!initialInstanceId) return;
@@ -378,8 +387,9 @@ export default function DeviceSmokeCollectionRoute() {
             assetBaseUrl={ASSET_BASE_URL}
             cachedAt={null}
             detail={{
-              instance: SMOKE_INSTANCES[openedRow.id],
+              instance: smokeInstances[openedRow.id],
               row: openedRow,
+              baseStats: combatStatsFor(openedRow.pokemonId),
               targetRows: openedRow.status === 'wanted'
                 ? rowsWithStatus('trade')
                 : openedRow.status === 'trade'
@@ -437,11 +447,12 @@ export default function DeviceSmokeCollectionRoute() {
                   : `${ASSET_BASE_URL}/images/pokemon/pokemon_${openedRow.pokemonId}.png`,
               },
               megaOptions: openedRow.pokemonId === 376
-                ? [{
+                  ? [{
                     form: null,
                     imageUri: openedRow.imageUri,
                     label: 'Mega',
                     primal: false,
+                    stats: { attack: 300, defense: 289, stamina: 190 },
                   }]
                 : [],
               fusionOptions: openedRow.pokemonId === 800
@@ -456,6 +467,7 @@ export default function DeviceSmokeCollectionRoute() {
                       typeName: 'Ghost',
                     }],
                     name: 'Dawn Wings Necrozma',
+                    stats: { attack: 277, defense: 220, stamina: 200 },
                     partnerPokemonId: 792,
                     partnerRows: ROWS.filter((candidate) => candidate.id === 'smoke-lunala'),
                     backgroundOptions: [{
@@ -480,6 +492,7 @@ export default function DeviceSmokeCollectionRoute() {
                     form: 'Crowned Sword',
                     imageUri: `${ASSET_BASE_URL}/images/shiny/shiny_pokemon_888.png`,
                     label: 'Crowned Sword',
+                    stats: { attack: 332, defense: 240, stamina: 192 },
                   }]
                 : [],
               sizeThresholds: {
@@ -516,7 +529,12 @@ export default function DeviceSmokeCollectionRoute() {
             }}
             onPrevious={openedRow.status !== 'wanted' && previousRow ? () => navigateWithinOverlay(previousRow) : undefined}
             onRetry={() => undefined}
-            onSaveDetails={async () => undefined}
+            onSaveDetails={async (patch) => {
+              setSmokeInstances((current) => ({
+                ...current,
+                [openedRow.id]: { ...current[openedRow.id], ...patch },
+              }));
+            }}
             onToggleFavorite={() => undefined}
             saveError={null}
             saveNotice={null}
