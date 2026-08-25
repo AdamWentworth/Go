@@ -284,7 +284,19 @@ const SMOKE_INSTANCES = Object.fromEntries(ROWS.map((entry) => [entry.id, {
 } as unknown as PokemonInstance]));
 
 export default function DeviceSmokeCollectionRoute() {
-  const params = useLocalSearchParams<{ instance?: string | string[] }>();
+  const params = useLocalSearchParams<{
+    foreign?: string | string[];
+    instance?: string | string[];
+    tag?: string | string[];
+  }>();
+  const foreignParam = Array.isArray(params.foreign) ? params.foreign[0] : params.foreign;
+  const tagParam = Array.isArray(params.tag) ? params.tag[0] : params.tag;
+  const foreignMode = foreignParam === '1';
+  const initialTagKey = tagParam === 'trade'
+    ? 'system:trade'
+    : tagParam === 'wanted'
+      ? 'system:wanted'
+      : foreignMode ? 'system:caught' : null;
   const initialInstanceId = Array.isArray(params.instance)
     ? params.instance[0]
     : params.instance;
@@ -357,8 +369,10 @@ export default function DeviceSmokeCollectionRoute() {
     <>
       <NativeCollectionHubScreen
         assetBaseUrl={ASSET_BASE_URL}
-        catalogRows={catalogRows}
+        catalogOwner={foreignMode ? 'OtherTrainer' : null}
+        catalogRows={foreignMode ? ROWS : catalogRows}
         error={catalogError}
+        initialTagKey={initialTagKey}
         inventoryTags={INVENTORY_TAGS}
         instances={SMOKE_INSTANCES}
         isLoading={catalogLoading}
@@ -370,8 +384,10 @@ export default function DeviceSmokeCollectionRoute() {
           message: 'Pokémon organized in the device fixture.',
         })}
         onRetry={() => undefined}
+        onReturnToContext={foreignMode ? () => undefined : undefined}
         onSaveTagOrder={async () => undefined}
         onUpdateTag={async () => undefined}
+        requireTagSelection={foreignMode}
         wishlistTags={WISHLIST_TAGS}
       />
       {openedRow ? (

@@ -41,6 +41,7 @@ type NativeCollectionParityScreenProps = {
   onSelectAll?: () => void;
   onSelectionActionPress?: () => void;
   selectionAction?: 'add' | 'organize';
+  tagCanClear?: boolean;
 };
 
 const SORT_ICONS: Record<NativeCollectionSort, string> = {
@@ -93,6 +94,7 @@ export const NativeCollectionParityScreen = ({
   onSelectAll,
   onSelectionActionPress,
   selectionAction = 'organize',
+  tagCanClear = Boolean(activeTag),
 }: NativeCollectionParityScreenProps) => {
   const colorScheme = useColorScheme();
   const [sort, setSort] = useState<NativeCollectionSort>('number');
@@ -146,7 +148,7 @@ export const NativeCollectionParityScreen = ({
         sortIconPath={SORT_ICONS[sort]}
         sortLabel={`Sort by ${sortLabel} ${direction}`}
         showEvolutionaryLine={showEvolutionaryLine}
-        tagCanClear={Boolean(activeTag)}
+        tagCanClear={tagCanClear}
         tagTone={activeTag?.tone ?? 'caught'}
         theme={theme}
         showHeader={showHeader}

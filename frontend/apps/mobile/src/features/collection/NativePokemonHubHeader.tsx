@@ -49,6 +49,8 @@ type Props = {
   selectionBackgroundColor?: string;
   onClearSelection?: () => void;
   onSelectAll?: () => void;
+  catalogOwner?: string | null;
+  onReturnToContext?: () => void;
 };
 
 export const NativePokemonHubHeader = ({
@@ -66,6 +68,8 @@ export const NativePokemonHubHeader = ({
   selectionBackgroundColor,
   onClearSelection,
   onSelectAll,
+  catalogOwner = null,
+  onReturnToContext,
 }: Props) => {
   const { width } = useWindowDimensions();
   const desktop = width >= 768;
@@ -91,51 +95,88 @@ export const NativePokemonHubHeader = ({
         },
       ]}
     >
-      {([
-        ['inventory', 'TAGS'],
-        ['pokemon', 'POKÉMON'],
-        ['wishlist', 'WISHLIST'],
-      ] as const).map(([key, label]) => {
-        const selectionAction = hasSelection && key !== 'pokemon';
-        const selected = activeView === key;
-        const tagBelongsHere = activeTag && (
-          (key === 'inventory' && activeTagParent === 'caught')
-          || (key === 'wishlist' && activeTagParent === 'wanted')
-        );
-        const subtext = tagBelongsHere
-          ? `(${activeTag.toUpperCase()})`
-          : key === 'pokemon' ? `(${collectionCount})` : null;
-        return (
-          <Pressable
-            accessibilityRole={selectionAction ? 'button' : 'tab'}
-            accessibilityState={selectionAction ? undefined : { selected }}
-            key={key}
-            onPress={() => {
-              if (hasSelection && key === 'inventory') onClearSelection?.();
-              else if (hasSelection && key === 'wishlist') onSelectAll?.();
-              else onViewChange(key);
-            }}
-            style={({ pressed }) => [styles.tab, pressed && styles.pressedTab]}
+      {!hasSelection && catalogOwner ? (
+        <View style={styles.catalogContext}>
+          {onReturnToContext ? (
+            <Pressable
+              accessibilityLabel="Back to results"
+              accessibilityRole="button"
+              onPress={onReturnToContext}
+              style={({ pressed }) => [
+                styles.catalogBack,
+                { borderColor: inactiveTextColor },
+                pressed && styles.pressedTab,
+              ]}
+            >
+              <Text style={[styles.catalogBackIcon, { color: textColor }]}>←</Text>
+              {desktop ? (
+                <Text style={[styles.catalogBackText, { color: textColor }]}>Back to results</Text>
+              ) : null}
+            </Pressable>
+          ) : null}
+          <View
+            accessibilityLabel={`Viewing ${catalogOwner}'s catalog`}
+            accessibilityRole="summary"
+            style={styles.catalogOwner}
           >
-            <Text style={[
-              styles.tabText,
-              desktop && styles.desktopTabText,
-              { color: hasSelection || selected ? textColor : inactiveTextColor },
-            ]}>
-              {hasSelection && key === 'inventory'
-                ? 'X'
-                : hasSelection && key === 'wishlist'
-                  ? 'SELECT ALL'
-                  : label}
+            <Text style={[styles.catalogOwnerLabel, { color: inactiveTextColor }]}>Viewing catalog</Text>
+            <Text numberOfLines={1} style={[styles.catalogOwnerName, { color: textColor }]}>
+              {catalogOwner}
             </Text>
-            {(!hasSelection || key === 'pokemon') && subtext ? (
-              <Text style={[styles.tabSubtext, desktop && styles.desktopTabSubtext, { color: selected ? textColor : inactiveTextColor }]}>
-                {subtext}
+          </View>
+        </View>
+      ) : null}
+      <View style={styles.controlsRow}>
+        {([
+          ['inventory', 'TAGS'],
+          ['pokemon', 'POKÉMON'],
+          ['wishlist', 'WISHLIST'],
+        ] as const).map(([key, label]) => {
+          const selectionAction = hasSelection && key !== 'pokemon';
+          const selected = activeView === key;
+          const tagBelongsHere = activeTag && (
+            (key === 'inventory' && activeTagParent === 'caught')
+            || (key === 'wishlist' && activeTagParent === 'wanted')
+          );
+          const subtext = tagBelongsHere
+            ? `(${activeTag.toUpperCase()})`
+            : key === 'pokemon' ? `(${collectionCount})` : null;
+          return (
+            <Pressable
+              accessibilityRole={selectionAction ? 'button' : 'tab'}
+              accessibilityState={selectionAction ? undefined : { selected }}
+              key={key}
+              onPress={() => {
+                if (hasSelection && key === 'inventory') onClearSelection?.();
+                else if (hasSelection && key === 'wishlist') onSelectAll?.();
+                else onViewChange(key);
+              }}
+              style={({ pressed }) => [styles.tab, pressed && styles.pressedTab]}
+            >
+              <Text style={[
+                styles.tabText,
+                desktop && styles.desktopTabText,
+                { color: hasSelection || selected ? textColor : inactiveTextColor },
+              ]}>
+                {hasSelection && key === 'inventory'
+                  ? 'X'
+                  : hasSelection && key === 'wishlist'
+                    ? 'SELECT ALL'
+                    : label}
               </Text>
-            ) : null}
-          </Pressable>
-        );
-      })}
+              {(!hasSelection || key === 'pokemon') && subtext ? (
+                <Text style={[
+                  styles.tabSubtext,
+                  desktop && styles.desktopTabSubtext,
+                  { color: selected ? textColor : inactiveTextColor },
+                ]}>
+                  {subtext}
+                </Text>
+              ) : null}
+            </Pressable>
+          );
+        })}
+      </View>
       <Animated.View
         pointerEvents="none"
         style={[
@@ -158,7 +199,7 @@ export const NativePokemonHubHeader = ({
 const styles = StyleSheet.create({
   header: {
     minHeight: 64,
-    flexDirection: 'row',
+    flexDirection: 'column',
     paddingTop: collectionParityTokens.header.paddingTop,
     paddingBottom: collectionParityTokens.header.paddingBottom,
     marginBottom: 5,
@@ -169,6 +210,46 @@ const styles = StyleSheet.create({
     elevation: 3,
     zIndex: 2,
   },
+  controlsRow: { flexDirection: 'row', minHeight: 34 },
+  catalogContext: {
+    width: '100%',
+    minHeight: 40,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 10,
+    marginTop: -5,
+    marginBottom: 8,
+  },
+  catalogBack: {
+    minWidth: 40,
+    minHeight: 40,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 5,
+    paddingHorizontal: 10,
+    borderWidth: 1,
+    borderRadius: 999,
+  },
+  catalogBackIcon: { fontSize: 20, fontWeight: '900' },
+  catalogBackText: { fontSize: 12, fontWeight: '800' },
+  catalogOwner: {
+    minWidth: 0,
+    maxWidth: '70%',
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    justifyContent: 'center',
+    gap: 6,
+  },
+  catalogOwnerLabel: {
+    flexShrink: 0,
+    fontSize: 10,
+    fontWeight: '700',
+    letterSpacing: 0.8,
+    textTransform: 'uppercase',
+  },
+  catalogOwnerName: { flexShrink: 1, fontSize: 13, fontWeight: '900' },
   tab: { flex: 1, minWidth: 0, alignItems: 'center', justifyContent: 'flex-start' },
   pressedTab: { opacity: 0.72 },
   tabText: { fontSize: collectionParityTokens.header.narrowLabelSize, fontWeight: '800' },

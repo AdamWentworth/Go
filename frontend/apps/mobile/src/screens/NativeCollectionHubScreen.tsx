@@ -49,6 +49,10 @@ type Props = {
   onOrganizePokemon?: (request: NativePokemonOrganizerRequest) => Promise<{ message: string }>;
   isOrganizingPokemon?: boolean;
   organizerError?: string | null;
+  catalogOwner?: string | null;
+  onReturnToContext?: () => void;
+  requireTagSelection?: boolean;
+  initialTagKey?: string | null;
 };
 
 export const NativeCollectionHubScreen = ({
@@ -72,19 +76,31 @@ export const NativeCollectionHubScreen = ({
   onOrganizePokemon,
   isOrganizingPokemon = false,
   organizerError = null,
+  catalogOwner = null,
+  onReturnToContext,
+  requireTagSelection = false,
+  initialTagKey = null,
 }: Props) => {
   const light = useColorScheme() === 'light';
   const { width } = useWindowDimensions();
   const [query, setQuery] = useState('');
   const [activeView, setActiveView] = useState<NativePokemonHubView>('pokemon');
-  const [selectedTag, setSelectedTag] = useState<NativeTagSummary | null>(null);
+  const [selectedTagKey, setSelectedTagKey] = useState<string | null>(initialTagKey);
   const [actionMenuOpen, setActionMenuOpen] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [organizerOpen, setOrganizerOpen] = useState(false);
   const [operationNotice, setOperationNotice] = useState<string | null>(null);
   const sliderRef = useRef<NativeHorizontalPageSliderHandle>(null);
   const [pageScrollX] = useState(() => new Animated.Value(width));
-  const selectedRows = selectedTag?.rows ?? catalogRows;
+  const availableTags = useMemo(
+    () => [...inventoryTags, ...wishlistTags],
+    [inventoryTags, wishlistTags],
+  );
+  const selectedTag = availableTags.find((tag) => tag.key === selectedTagKey)
+    ?? (requireTagSelection
+      ? availableTags.find((tag) => tag.key === 'system:caught') ?? availableTags[0] ?? null
+      : null);
+  const selectedRows = selectedTag?.rows ?? (requireTagSelection ? [] : catalogRows);
   const selectedOrganizerRows = useMemo(
     () => selectedRows.filter((row) => selectedIds.has(row.id)),
     [selectedIds, selectedRows],
@@ -116,7 +132,7 @@ export const NativeCollectionHubScreen = ({
 
   const selectTag = useCallback((tag: NativeTagSummary) => {
     setSelectedIds(new Set());
-    setSelectedTag(tag);
+    setSelectedTagKey(tag.key);
     setQuery('');
     changeView('pokemon');
   }, [changeView]);
@@ -148,9 +164,10 @@ export const NativeCollectionHubScreen = ({
   }, [selectedRows, toggleSelection]);
 
   const clearTag = useCallback(() => {
+    if (requireTagSelection) return;
     setSelectedIds(new Set());
-    setSelectedTag(null);
-  }, []);
+    setSelectedTagKey(null);
+  }, [requireTagSelection]);
   const openActionMenu = useCallback(() => setActionMenuOpen(true), []);
   useEffect(() => {
     if (!operationNotice) return undefined;
@@ -220,6 +237,7 @@ export const NativeCollectionHubScreen = ({
       onSelectAll={() => setSelectedIds(new Set(selectedRows.map((row) => row.id)))}
       onSelectionActionPress={() => setOrganizerOpen(true)}
       selectionAction={selectedRowsAreCatalog ? 'add' : 'organize'}
+      tagCanClear={!requireTagSelection && Boolean(selectedTag)}
     />
   ), [
     assetBaseUrl,
@@ -236,6 +254,7 @@ export const NativeCollectionHubScreen = ({
     selectedTag,
     selectedIds,
     selectedRowsAreCatalog,
+    requireTagSelection,
     longPressEntry,
   ]);
   const wishlistPanel = useMemo(() => (
@@ -297,6 +316,8 @@ export const NativeCollectionHubScreen = ({
         onSelectAll={() => setSelectedIds(new Set(selectedRows.map((row) => row.id)))}
         secondaryTextColor={secondary}
         textColor={text}
+        catalogOwner={catalogOwner}
+        onReturnToContext={onReturnToContext}
       />
       {operationNotice ? (
         <View accessibilityLiveRegion="polite" style={styles.noticeBanner}>

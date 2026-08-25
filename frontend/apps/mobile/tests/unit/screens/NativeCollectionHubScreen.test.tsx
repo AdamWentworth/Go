@@ -294,4 +294,67 @@ describe('NativeCollectionHubScreen', () => {
     expect(screen.getByText('Create Wanted copy')).toBeTruthy();
     expect(screen.getByText('Transfer selected')).toBeTruthy();
   });
+
+  it('requires a stable tag while viewing another trainer catalog', () => {
+    const onReturnToContext = jest.fn();
+    render(
+      <SafeAreaProvider initialMetrics={{
+        frame: { x: 0, y: 0, width: 412, height: 915 },
+        insets: { top: 24, right: 0, bottom: 20, left: 0 },
+      }}>
+        <NativeCollectionHubScreen
+          assetBaseUrl="https://pokegonexus.com"
+          catalogOwner="OtherTrainer"
+          catalogRows={[caughtRow, wantedRow]}
+          error={null}
+          inventoryTags={[allCaughtTag]}
+          instances={{ [caughtRow.id]: caughtInstance }}
+          isLoading={false}
+          onActionMenuPress={jest.fn()}
+          onOpenEntry={jest.fn()}
+          onRetry={jest.fn()}
+          onReturnToContext={onReturnToContext}
+          requireTagSelection
+          wishlistTags={[wishlistTag]}
+        />
+      </SafeAreaProvider>,
+    );
+
+    expect(screen.getByLabelText("Viewing OtherTrainer's catalog")).toBeTruthy();
+    expect(screen.getByText('Shiny Bulbasaur')).toBeTruthy();
+    expect(screen.queryByText('Shiny Mewtwo')).toBeNull();
+    expect(screen.queryByRole('button', { name: /Clear Caught tag filter/i })).toBeNull();
+
+    fireEvent.press(screen.getByRole('button', { name: 'Back to results' }));
+    expect(onReturnToContext).toHaveBeenCalledTimes(1);
+  });
+
+  it('preserves the listing tag used to enter a foreign catalog', () => {
+    render(
+      <SafeAreaProvider initialMetrics={{
+        frame: { x: 0, y: 0, width: 412, height: 915 },
+        insets: { top: 24, right: 0, bottom: 20, left: 0 },
+      }}>
+        <NativeCollectionHubScreen
+          assetBaseUrl="https://pokegonexus.com"
+          catalogOwner="OtherTrainer"
+          catalogRows={[caughtRow, wantedRow]}
+          error={null}
+          initialTagKey="system:most-wanted"
+          inventoryTags={[allCaughtTag]}
+          instances={{ [caughtRow.id]: caughtInstance }}
+          isLoading={false}
+          onActionMenuPress={jest.fn()}
+          onOpenEntry={jest.fn()}
+          onRetry={jest.fn()}
+          requireTagSelection
+          wishlistTags={[wishlistTag]}
+        />
+      </SafeAreaProvider>,
+    );
+
+    expect(screen.getByText('Shiny Mewtwo')).toBeTruthy();
+    expect(screen.queryByText('Shiny Bulbasaur')).toBeNull();
+    expect(screen.queryByRole('button', { name: /Clear Most Wanted tag filter/i })).toBeNull();
+  });
 });

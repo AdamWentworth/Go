@@ -108,4 +108,24 @@ describe('NativePokemonHubHeader', () => {
     expect(StyleSheet.flatten(view.getByTestId('native-pokemon-hub-indicator').props.style)
       .transform[0].translateX).toBeCloseTo(392 / 3);
   });
+
+  it('preserves the canonical foreign-catalog context and return action', () => {
+    const onReturnToContext = jest.fn();
+    const view = render(
+      <NativePokemonHubHeader
+        activeView="pokemon"
+        backgroundColor="#111"
+        catalogOwner="OtherTrainer"
+        collectionCount={12}
+        onReturnToContext={onReturnToContext}
+        onViewChange={jest.fn()}
+        secondaryTextColor="#aaa"
+        textColor="#fff"
+      />,
+    );
+
+    expect(view.getByLabelText("Viewing OtherTrainer's catalog")).toBeTruthy();
+    fireEvent.press(view.getByRole('button', { name: 'Back to results' }));
+    expect(onReturnToContext).toHaveBeenCalledTimes(1);
+  });
 });
