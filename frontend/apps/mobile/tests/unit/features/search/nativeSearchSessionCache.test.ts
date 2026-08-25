@@ -43,6 +43,7 @@ describe('nativeSearchSessionCache', () => {
       draft,
       executedDraft: draft,
       ownerKey: 'trainer-1',
+      pokemonDisplayMode: 'map',
       pokemonQuery,
       pokemonScrollOffset: 480,
       trainerQuery: '',
@@ -51,6 +52,7 @@ describe('nativeSearchSessionCache', () => {
 
     expect(readNativeSearchSession('trainer-1')).toEqual(expect.objectContaining({
       activeView: 'pokemon',
+      pokemonDisplayMode: 'map',
       pokemonScrollOffset: 480,
     }));
     expect(readNativeSearchSession('trainer-2')).toBeNull();
@@ -63,6 +65,7 @@ describe('nativeSearchSessionCache', () => {
       draft,
       executedDraft: draft,
       ownerKey: 'trainer-1',
+      pokemonDisplayMode: 'list',
       pokemonQuery,
       pokemonScrollOffset: 0,
       trainerQuery: '',
@@ -91,6 +94,7 @@ describe('nativeSearchSessionCache', () => {
         draft: createNativePokemonSearchDraft(),
         executedDraft: null,
         ownerKey,
+        pokemonDisplayMode: 'list',
         pokemonQuery: null,
         pokemonScrollOffset: 0,
         trainerQuery: '',

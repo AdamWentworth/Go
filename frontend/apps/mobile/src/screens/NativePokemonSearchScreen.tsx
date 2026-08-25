@@ -24,6 +24,7 @@ import {
   NativePokemonSearchFilterSheet,
   type NativeSearchFilterSection,
 } from '../features/search/NativePokemonSearchFilterSheet';
+import { NativeSearchMapView } from '../features/search/NativeSearchMapView';
 
 type SavedLocation = Coordinates & { label: string };
 
@@ -33,9 +34,11 @@ type Props = {
   draft: NativePokemonSearchDraft;
   error?: string | null;
   hasSearched?: boolean;
+  initialDisplayMode?: 'list' | 'map';
   isLoading?: boolean;
   initialScrollOffset?: number;
   notice?: string | null;
+  onDisplayModeChange?: (mode: 'list' | 'map') => void;
   onDraftChange: (draft: NativePokemonSearchDraft) => void;
   onOpenListing: (result: NativePokemonSearchResult) => void;
   onOpenProfile: (username: string) => void;
@@ -166,9 +169,11 @@ export const NativePokemonSearchScreen = ({
   draft,
   error = null,
   hasSearched = false,
+  initialDisplayMode = 'list',
   isLoading = false,
   initialScrollOffset = 0,
   notice = null,
+  onDisplayModeChange,
   onDraftChange,
   onOpenListing,
   onOpenProfile,
@@ -183,6 +188,7 @@ export const NativePokemonSearchScreen = ({
   const [filterSection, setFilterSection] = useState<NativeSearchFilterSection>('pokemon');
   const [filterError, setFilterError] = useState<string | null>(null);
   const [filterNotice, setFilterNotice] = useState<string | null>(null);
+  const [displayMode, setDisplayMode] = useState<'list' | 'map'>(initialDisplayMode);
   const listRef = useRef<FlatList<NativePokemonSearchResult>>(null);
   const restoredScrollRef = useRef(initialScrollOffset <= 0);
   const latestScrollOffsetRef = useRef(initialScrollOffset);
@@ -201,6 +207,11 @@ export const NativePokemonSearchScreen = ({
 
   const reportScrollPosition = () => {
     onScrollOffsetChange?.(latestScrollOffsetRef.current);
+  };
+
+  const changeDisplayMode = (mode: 'list' | 'map') => {
+    setDisplayMode(mode);
+    onDisplayModeChange?.(mode);
   };
 
   const openFilters = (section: NativeSearchFilterSection = 'pokemon') => {
@@ -225,7 +236,7 @@ export const NativePokemonSearchScreen = ({
     <Fragment>
       <FlatList
       contentContainerStyle={styles.content}
-      data={!isLoading && !error ? results : []}
+      data={!isLoading && !error && displayMode === 'list' ? results : []}
       onContentSizeChange={restoreScrollPosition}
       onMomentumScrollEnd={reportScrollPosition}
       onScroll={(event) => { latestScrollOffsetRef.current = event.nativeEvent.contentOffset.y; }}
@@ -295,13 +306,40 @@ export const NativePokemonSearchScreen = ({
             </View>
           ) : null}
           {!isLoading && !error && hasSearched && results.length > 0 ? (
-            <View style={styles.resultsHeader}>
-              <View>
-                <Text style={styles.resultsComplete}>✓ SEARCH COMPLETE</Text>
-                <Text style={[styles.resultsTitle, light && styles.textLight]}>{modeLabel(draft.ownership)} {draft.ownership === 'caught' ? 'Pokémon' : 'listings'}</Text>
+            <>
+              <View style={styles.resultsHeader}>
+                <View>
+                  <Text style={styles.resultsComplete}>✓ SEARCH COMPLETE</Text>
+                  <Text style={[styles.resultsTitle, light && styles.textLight]}>{modeLabel(draft.ownership)} {draft.ownership === 'caught' ? 'Pokémon' : 'listings'}</Text>
+                </View>
+                <Text style={[styles.resultsCount, light && styles.neutralChipLight]}>{results.length} results</Text>
               </View>
-              <Text style={[styles.resultsCount, light && styles.neutralChipLight]}>{results.length} results</Text>
-            </View>
+              <View accessibilityRole="tablist" style={[styles.displayModes, light && styles.displayModesLight]}>
+                <Pressable
+                  accessibilityRole="tab"
+                  accessibilityState={{ selected: displayMode === 'list' }}
+                  onPress={() => changeDisplayMode('list')}
+                  style={[styles.displayMode, displayMode === 'list' && styles.displayModeActive]}
+                >
+                  <Text style={[styles.displayModeText, light && styles.secondaryLight, displayMode === 'list' && styles.displayModeTextActive]}>☷  List</Text>
+                </Pressable>
+                <Pressable
+                  accessibilityRole="tab"
+                  accessibilityState={{ selected: displayMode === 'map' }}
+                  onPress={() => changeDisplayMode('map')}
+                  style={[styles.displayMode, displayMode === 'map' && styles.displayModeActive]}
+                >
+                  <Text style={[styles.displayModeText, light && styles.secondaryLight, displayMode === 'map' && styles.displayModeTextActive]}>⌖  Map</Text>
+                </Pressable>
+              </View>
+              {displayMode === 'map' ? (
+                <NativeSearchMapView
+                  onOpenListing={onOpenListing}
+                  onOpenProfile={onOpenProfile}
+                  results={results}
+                />
+              ) : null}
+            </>
           ) : null}
           {!isLoading && !error && hasSearched && results.length === 0 ? (
             <View style={[styles.loadingState, light && styles.summaryLight]}>
@@ -380,6 +418,12 @@ const styles = StyleSheet.create({
   retryButton: { minHeight: 44, marginTop: 5, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 18, borderRadius: 9, backgroundColor: '#2f9cff' },
   retryText: { color: '#06131f', fontWeight: '900' },
   resultsHeader: { marginTop: 18, marginBottom: 8, flexDirection: 'row', alignItems: 'flex-end' },
+  displayModes: { alignSelf: 'flex-end', flexDirection: 'row', gap: 3, marginBottom: 9, padding: 3, borderWidth: 1, borderColor: '#435458', borderRadius: 11, backgroundColor: '#111719' },
+  displayModesLight: { borderColor: '#b1bec0', backgroundColor: '#ffffff' },
+  displayMode: { minWidth: 80, minHeight: 42, alignItems: 'center', justifyContent: 'center', borderRadius: 8 },
+  displayModeActive: { backgroundColor: '#123a61' },
+  displayModeText: { color: '#9ba8aa', fontSize: 13, fontWeight: '900' },
+  displayModeTextActive: { color: '#ffffff' },
   resultsComplete: { color: '#2f9cff', fontSize: 10, fontWeight: '900', letterSpacing: 1 },
   resultsTitle: { color: '#f7fbfc', fontSize: 19, fontWeight: '900' },
   resultsCount: { marginLeft: 'auto', overflow: 'hidden', paddingHorizontal: 9, paddingVertical: 4, color: '#c2ccce', fontSize: 11, borderWidth: 1, borderColor: '#59686b', borderRadius: 999 },

@@ -1,5 +1,8 @@
 import type { BasePokemon } from '@pokemongonexus/shared-contracts/pokemon';
-import { buildNativePokemonSearchResults } from '../../../src/features/search/pokemonSearchModel';
+import {
+  buildNativePokemonSearchResults,
+  mapCoordinateForSearchListing,
+} from '../../../src/features/search/pokemonSearchModel';
 
 const pokemon = (pokemonId: number, name: string): BasePokemon => ({
   pokemon_id: pokemonId,
@@ -21,6 +24,16 @@ const pokemon = (pokemonId: number, name: string): BasePokemon => ({
 } as unknown as BasePokemon);
 
 describe('native Pokémon search model', () => {
+  it('maps exact coordinates and derives an explicitly approximate boundary center', () => {
+    expect(mapCoordinateForSearchListing({ latitude: '49.2', longitude: '-123.1' }))
+      .toEqual({ coordinate: [-123.1, 49.2], approximate: false });
+    expect(mapCoordinateForSearchListing({
+      boundary: 'POLYGON((-123.2 49.1,-122.8 49.1,-122.8 49.5,-123.2 49.5,-123.2 49.1))',
+    })).toEqual({ coordinate: [-123, 49.3], approximate: true });
+    expect(mapCoordinateForSearchListing({ boundary: 'invalid' }))
+      .toEqual({ coordinate: null, approximate: false });
+  });
+
   it('uses canonical collection artwork and ranks reciprocal matches before distance', () => {
     const results = buildNativePokemonSearchResults({
       assetOrigin: 'https://pokegonexus.com',

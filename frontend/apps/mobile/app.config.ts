@@ -34,6 +34,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
       'expo-sqlite',
       'expo-status-bar',
       'expo-web-browser',
+      '@maplibre/maplibre-react-native',
       [
         'expo-splash-screen',
         {

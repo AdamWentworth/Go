@@ -17,6 +17,8 @@ export type NativePokemonSearchResult = {
   row: NativeCollectionRow;
   relatedRows: NativePokemonSearchRelatedRow[];
   hasMutualMatch: boolean;
+  mapCoordinate: [longitude: number, latitude: number] | null;
+  mapCoordinateIsApproximate: boolean;
 };
 
 type RawSearchListing = SearchResultRow & Partial<PokemonInstance> & {
@@ -24,6 +26,42 @@ type RawSearchListing = SearchResultRow & Partial<PokemonInstance> & {
   username?: string;
   wanted_list?: Record<string, unknown> | null;
   trade_list?: Record<string, unknown> | null;
+  latitude?: number | string | null;
+  longitude?: number | string | null;
+  boundary?: string | null;
+};
+
+const finiteNumber = (value: unknown): number | null => {
+  const numeric = typeof value === 'number' ? value : Number.parseFloat(String(value ?? ''));
+  return Number.isFinite(numeric) ? numeric : null;
+};
+
+export const mapCoordinateForSearchListing = (
+  listing: Pick<RawSearchListing, 'boundary' | 'latitude' | 'longitude'>,
+): { coordinate: [number, number] | null; approximate: boolean } => {
+  const longitude = finiteNumber(listing.longitude);
+  const latitude = finiteNumber(listing.latitude);
+  if (longitude != null && latitude != null) {
+    return { coordinate: [longitude, latitude], approximate: false };
+  }
+
+  if (!listing.boundary) return { coordinate: null, approximate: false };
+  const points = [...listing.boundary.matchAll(/(-?\d+(?:\.\d+)?)\s+(-?\d+(?:\.\d+)?)/g)]
+    .flatMap((match) => {
+      const lon = finiteNumber(match[1]);
+      const lat = finiteNumber(match[2]);
+      return lon != null && lat != null ? [[lon, lat] as [number, number]] : [];
+    });
+  if (points.length === 0) return { coordinate: null, approximate: false };
+  const longitudes = points.map(([lon]) => lon);
+  const latitudes = points.map(([, lat]) => lat);
+  return {
+    coordinate: [
+      (Math.min(...longitudes) + Math.max(...longitudes)) / 2,
+      (Math.min(...latitudes) + Math.max(...latitudes)) / 2,
+    ],
+    approximate: true,
+  };
 };
 
 const recordEntries = (value: unknown): [string, Record<string, unknown>][] => {
@@ -99,6 +137,7 @@ export const buildNativePokemonSearchResults = ({
       },
     );
     const distance = Number(listing.distance);
+    const mapLocation = mapCoordinateForSearchListing(listing);
     return [{
       id,
       username: listing.username?.trim() || 'Unknown trainer',
@@ -111,6 +150,8 @@ export const buildNativePokemonSearchResults = ({
         || left.name.localeCompare(right.name)
       )),
       hasMutualMatch: relatedRows.some((related) => related.match),
+      mapCoordinate: mapLocation.coordinate,
+      mapCoordinateIsApproximate: mapLocation.approximate,
     }];
   });
 

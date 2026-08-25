@@ -93,6 +93,7 @@ const NativeSignedInSearchRoute = ({ user }: { user: MobileSessionUser }) => {
       draft,
       executedDraft,
       ownerKey: user.user_id,
+      pokemonDisplayMode: initialSession?.pokemonDisplayMode ?? 'list',
       pokemonQuery,
       pokemonScrollOffset: initialSession?.pokemonScrollOffset ?? 0,
       trainerQuery,
@@ -181,9 +182,13 @@ const NativeSignedInSearchRoute = ({ user }: { user: MobileSessionUser }) => {
       draft={draft}
       error={errorMessage(pokemonSearch.error)}
       hasSearched={Boolean(pokemonQuery)}
+      initialDisplayMode={initialSession?.pokemonDisplayMode ?? 'list'}
       isLoading={pokemonSearch.isFetching}
       notice={searchNotice}
       onDraftChange={setDraft}
+      onDisplayModeChange={(pokemonDisplayMode) => {
+        patchNativeSearchSession(user.user_id, { pokemonDisplayMode });
+      }}
       onOpenListing={(result) => router.push({
         pathname: '/native/collection/trainer/[username]/[instanceId]',
         params: { username: result.username, instanceId: result.id },

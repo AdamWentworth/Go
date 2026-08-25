@@ -7,6 +7,7 @@ export type NativeSearchSession = {
   draft: NativePokemonSearchDraft;
   executedDraft: NativePokemonSearchDraft | null;
   ownerKey: string;
+  pokemonDisplayMode: 'list' | 'map';
   pokemonQuery: PokemonSearchQueryParams | null;
   pokemonScrollOffset: number;
   savedAt: number;

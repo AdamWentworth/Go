@@ -17,6 +17,7 @@
   },
   "dependencies": {
     "@babel/runtime": "^7.28.6",
+    "@maplibre/maplibre-react-native": "^11.3.7",
     "@pokemongonexus/shared-api-client": "file:../../packages/shared-api-client",
     "@pokemongonexus/shared-contracts": "file:../../packages/shared-contracts",
     "@pokemongonexus/shared-domain": "file:../../packages/shared-domain",

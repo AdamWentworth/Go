@@ -4,6 +4,16 @@ import { NativePokemonSearchScreen } from '../../../src/screens/NativePokemonSea
 import { createNativePokemonSearchDraft } from '../../../src/features/search/nativePokemonSearchDraft';
 import type { NativePokemonSearchResult } from '../../../src/features/search/pokemonSearchModel';
 
+jest.mock('@maplibre/maplibre-react-native', () => {
+  const React = jest.requireActual('react');
+  const { View } = jest.requireActual('react-native');
+  return {
+    Camera: () => null,
+    Map: ({ children, ...props }: React.ComponentProps<typeof View>) => React.createElement(View, props, children),
+    Marker: ({ children }: { children: React.ReactNode }) => React.createElement(View, null, children),
+  };
+});
+
 jest.mock('../../../src/services/locationApi', () => ({
   getNativeLocationSuggestions: jest.fn().mockResolvedValue([]),
 }));
@@ -54,6 +64,8 @@ const result: NativePokemonSearchResult = {
   row: row('listing-1', 'Shiny Detective Pikachu', 'trade'),
   relatedRows: [{ ...row('wanted-1', 'Gigantamax Charizard', 'wanted'), match: true }],
   hasMutualMatch: true,
+  mapCoordinate: [-122.98, 49.24],
+  mapCoordinateIsApproximate: false,
 };
 
 const draft = {
@@ -124,6 +136,22 @@ describe('NativePokemonSearchScreen', () => {
     fireEvent.press(view.getByText('Open listing  →'));
     expect(onOpenProfile).toHaveBeenCalledWith('OtherTrainer');
     expect(onOpenListing).toHaveBeenCalledWith(result);
+  });
+
+  it('switches between list and native map results without losing actions', () => {
+    const onDisplayModeChange = jest.fn();
+    const view = render(
+      <NativePokemonSearchScreen
+        {...baseProps}
+        hasSearched
+        onDisplayModeChange={onDisplayModeChange}
+        results={[result]}
+      />,
+    );
+    fireEvent.press(view.getByRole('tab', { name: /Map/ }));
+    expect(onDisplayModeChange).toHaveBeenCalledWith('map');
+    expect(view.getByTestId('native-search-map')).toBeTruthy();
+    expect(view.getByText('1 on map')).toBeTruthy();
   });
 
   it('places loading and errors before any result cards', () => {

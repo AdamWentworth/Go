@@ -110,6 +110,8 @@ const RESULTS: NativePokemonSearchResult[] = [{
     match: true,
   }],
   hasMutualMatch: true,
+  mapCoordinate: [-122.98, 49.24],
+  mapCoordinateIsApproximate: false,
 }];
 
 export default function DeviceSmokeSearchRoute() {
