@@ -118,7 +118,7 @@ export const NativeCustomTagEditorSheet = ({
                 {tag ? 'Edit tag' : `New ${parent === 'wanted' ? 'Wanted' : 'Inventory'} tag`}
               </Text>
             </View>
-            <Pressable accessibilityLabel="Close tag editor" onPress={onClose} style={[styles.close, { borderColor: border }]}>
+            <Pressable accessibilityRole="button" accessibilityLabel="Close tag editor" onPress={onClose} style={[styles.close, { borderColor: border }]}>
               <Text style={[styles.closeText, { color: text }]}>×</Text>
             </Pressable>
           </View>
@@ -167,11 +167,11 @@ export const NativeCustomTagEditorSheet = ({
 
           <View style={[styles.footer, { borderTopColor: border }]}>
             {tag ? (
-              <Pressable disabled={isSaving} onPress={confirmDelete} style={styles.deleteButton}>
+              <Pressable accessibilityRole="button" disabled={isSaving} onPress={confirmDelete} style={styles.deleteButton}>
                 <Text style={styles.deleteText}>Delete</Text>
               </Pressable>
             ) : <View />}
-            <Pressable
+            <Pressable accessibilityRole="button"
               disabled={isSaving}
               onPress={() => void save()}
               style={[styles.saveButton, isSaving && styles.disabled]}

@@ -171,7 +171,7 @@ export const NativeInformationScreen = ({ assetBaseUrl, onBack, onNavigate, page
           <Text style={[styles.footerText, light && styles.mutedLight]}>An independent community project. Pokémon and related marks belong to their respective owners.</Text>
           <View style={styles.footerLinks}>
             {(['help', 'privacy', 'terms', 'safety'] as const).map((slug) => (
-              <Pressable key={slug} onPress={() => onNavigate(`/${slug}`)}><Text style={styles.footerLink}>{slug.replace('-', ' ')}</Text></Pressable>
+              <Pressable accessibilityRole="button" key={slug} onPress={() => onNavigate(`/${slug}`)}><Text style={styles.footerLink}>{slug.replace('-', ' ')}</Text></Pressable>
             ))}
           </View>
         </View>

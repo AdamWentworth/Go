@@ -79,7 +79,7 @@ export const NativeSearchMapView = ({ onOpenListing, onOpenProfile, results }: P
             const active = result.id === selected?.id;
             const column = index % 4;
             const row = Math.floor(index / 4);
-            return <Pressable accessibilityLabel={`${result.username}, ${result.row.name}`} key={result.id} onPress={() => setSelectedId(result.id)} style={[styles.previewMarker, { backgroundColor: accentFor(result), left: `${10 + column * 24}%`, top: `${15 + row * 28}%` }, active && styles.previewMarkerActive]}><Text style={styles.markerText}>{result.username.slice(0, 1).toLocaleUpperCase()}</Text></Pressable>;
+            return <Pressable accessibilityRole="button" accessibilityLabel={`${result.username}, ${result.row.name}`} key={result.id} onPress={() => setSelectedId(result.id)} style={[styles.previewMarker, { backgroundColor: accentFor(result), left: `${10 + column * 24}%`, top: `${15 + row * 28}%` }, active && styles.previewMarkerActive]}><Text style={styles.markerText}>{result.username.slice(0, 1).toLocaleUpperCase()}</Text></Pressable>;
           })}
           <Text style={[styles.previewMapLabel, light && styles.mutedLight]}>Approximate public areas</Text>
         </View>

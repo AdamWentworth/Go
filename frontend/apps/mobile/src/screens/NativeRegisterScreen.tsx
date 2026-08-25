@@ -177,12 +177,12 @@ export const NativeRegisterScreen = ({
           {method && step === 0 ? (
             <View style={styles.fields}>
               <Field label="Username" light={light}>
-                <TextInput autoCapitalize="none" autoComplete="username-new" onChangeText={(value) => patch('username', value.replace(/\s+/g, ''))} placeholder="Choose a unique username" placeholderTextColor="#718087" style={[styles.input, light && styles.inputLight]} value={draft.username} />
+                <TextInput accessibilityLabel="Username" autoCapitalize="none" autoComplete="username-new" onChangeText={(value) => patch('username', value.replace(/\s+/g, ''))} placeholder="Choose a unique username" placeholderTextColor="#718087" style={[styles.input, light && styles.inputLight]} value={draft.username} />
               </Field>
               <Text style={[styles.help, light && styles.mutedLight]}>3–15 letters, numbers, or underscores.</Text>
               {method === 'email' ? (
                 <Field label="Email" light={light}>
-                  <TextInput autoCapitalize="none" autoComplete="email" inputMode="email" onChangeText={(value) => patch('email', value)} placeholder="you@example.com" placeholderTextColor="#718087" style={[styles.input, light && styles.inputLight]} value={draft.email} />
+                  <TextInput accessibilityLabel="Email" autoCapitalize="none" autoComplete="email" inputMode="email" onChangeText={(value) => patch('email', value)} placeholder="you@example.com" placeholderTextColor="#718087" style={[styles.input, light && styles.inputLight]} value={draft.email} />
                 </Field>
               ) : (
                 <View style={[styles.verifiedEmail, light && styles.secondaryLight]}>
@@ -197,12 +197,12 @@ export const NativeRegisterScreen = ({
             <View style={styles.fields}>
               <Field label="Password" light={light}>
                 <View>
-                  <TextInput autoCapitalize="none" autoComplete="new-password" onChangeText={(value) => patch('password', value)} placeholder="Create a password" placeholderTextColor="#718087" secureTextEntry={!passwordVisible} style={[styles.input, styles.passwordInput, light && styles.inputLight]} value={draft.password} />
-                  <Pressable accessibilityLabel={passwordVisible ? 'Hide password' : 'Show password'} onPress={() => setPasswordVisible((current) => !current)} style={styles.eye}><Text style={[styles.eyeText, light && styles.mutedLight]}>{passwordVisible ? 'Hide' : 'Show'}</Text></Pressable>
+                  <TextInput accessibilityLabel="Password" autoCapitalize="none" autoComplete="new-password" onChangeText={(value) => patch('password', value)} placeholder="Create a password" placeholderTextColor="#718087" secureTextEntry={!passwordVisible} style={[styles.input, styles.passwordInput, light && styles.inputLight]} value={draft.password} />
+                  <Pressable accessibilityRole="button" accessibilityLabel={passwordVisible ? 'Hide password' : 'Show password'} onPress={() => setPasswordVisible((current) => !current)} style={styles.eye}><Text style={[styles.eyeText, light && styles.mutedLight]}>{passwordVisible ? 'Hide' : 'Show'}</Text></Pressable>
                 </View>
               </Field>
               <Field label="Confirm password" light={light}>
-                <TextInput autoCapitalize="none" autoComplete="new-password" onChangeText={(value) => patch('confirmPassword', value)} placeholder="Enter it again" placeholderTextColor="#718087" secureTextEntry={!passwordVisible} style={[styles.input, light && styles.inputLight]} value={draft.confirmPassword} />
+                <TextInput accessibilityLabel="Confirm password" autoCapitalize="none" autoComplete="new-password" onChangeText={(value) => patch('confirmPassword', value)} placeholder="Enter it again" placeholderTextColor="#718087" secureTextEntry={!passwordVisible} style={[styles.input, light && styles.inputLight]} value={draft.confirmPassword} />
               </Field>
               <View style={[styles.rules, light && styles.secondaryLight]}>
                 <Text style={[styles.rulesText, light && styles.mutedLight]}>8+ characters · uppercase · lowercase · number · symbol</Text>
@@ -213,10 +213,10 @@ export const NativeRegisterScreen = ({
           {method && step === 2 ? (
             <View style={styles.fields}>
               <Field label="Pokémon GO name" light={light}>
-                <TextInput autoCapitalize="none" onChangeText={(value) => patch('pokemonGoName', value.replace(/\s+/g, ''))} placeholder="Optional" placeholderTextColor="#718087" style={[styles.input, light && styles.inputLight]} value={draft.pokemonGoName} />
+                <TextInput accessibilityLabel="Pokémon GO name" autoCapitalize="none" onChangeText={(value) => patch('pokemonGoName', value.replace(/\s+/g, ''))} placeholder="Optional" placeholderTextColor="#718087" style={[styles.input, light && styles.inputLight]} value={draft.pokemonGoName} />
               </Field>
               <Field label="Trainer code" light={light}>
-                <TextInput inputMode="numeric" maxLength={14} onChangeText={(value) => {
+                <TextInput accessibilityLabel="Trainer code" inputMode="numeric" maxLength={14} onChangeText={(value) => {
                   const clean = value.replace(/\D/g, '').slice(0, 12);
                   patch('trainerCode', clean.replace(/(\d{4})(?=\d)/g, '$1 '));
                 }} placeholder="0000 0000 0000" placeholderTextColor="#718087" style={[styles.input, light && styles.inputLight]} value={draft.trainerCode} />

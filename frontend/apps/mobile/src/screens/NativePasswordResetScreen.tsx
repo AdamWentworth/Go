@@ -88,18 +88,18 @@ export const NativePasswordResetScreen = ({
           {!complete && !confirming ? (
             <View style={styles.field}>
               <Text style={[styles.label, light && styles.textLight]}>Username or email</Text>
-              <TextInput autoCapitalize="none" autoComplete="username" onChangeText={setIdentifier} placeholder="you@example.com" placeholderTextColor="#718087" style={[styles.input, light && styles.inputLight]} value={identifier} />
+              <TextInput accessibilityLabel="Username or email" autoCapitalize="none" autoComplete="username" onChangeText={setIdentifier} placeholder="you@example.com" placeholderTextColor="#718087" style={[styles.input, light && styles.inputLight]} value={identifier} />
             </View>
           ) : null}
           {!complete && confirming ? (
             <View style={styles.fields}>
               <View style={styles.field}>
                 <Text style={[styles.label, light && styles.textLight]}>New password</Text>
-                <TextInput autoCapitalize="none" autoComplete="new-password" onChangeText={setPassword} placeholder="Create a strong password" placeholderTextColor="#718087" secureTextEntry style={[styles.input, light && styles.inputLight]} value={password} />
+                <TextInput accessibilityLabel="New password" autoCapitalize="none" autoComplete="new-password" onChangeText={setPassword} placeholder="Create a strong password" placeholderTextColor="#718087" secureTextEntry style={[styles.input, light && styles.inputLight]} value={password} />
               </View>
               <View style={styles.field}>
                 <Text style={[styles.label, light && styles.textLight]}>Confirm new password</Text>
-                <TextInput autoCapitalize="none" autoComplete="new-password" onChangeText={setConfirmation} placeholder="Enter it again" placeholderTextColor="#718087" secureTextEntry style={[styles.input, light && styles.inputLight]} value={confirmation} />
+                <TextInput accessibilityLabel="Confirm new password" autoCapitalize="none" autoComplete="new-password" onChangeText={setConfirmation} placeholder="Enter it again" placeholderTextColor="#718087" secureTextEntry style={[styles.input, light && styles.inputLight]} value={confirmation} />
               </View>
               <Text style={[styles.rules, light && styles.mutedLight]}>8+ characters with uppercase, lowercase, a number, and a symbol.</Text>
             </View>

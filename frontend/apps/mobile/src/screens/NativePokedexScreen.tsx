@@ -82,21 +82,21 @@ export const NativePokedexScreen = ({
 
             <Text style={[styles.railLabel, light && styles.textLight]}>Region</Text>
             <ScrollView contentContainerStyle={styles.railContent} horizontal showsHorizontalScrollIndicator={false}>
-              <Pressable onPress={() => setGeneration(null)} style={[styles.chip, light && styles.chipLight, generation == null && styles.chipActive]}><Text style={[styles.chipText, generation == null && styles.chipTextActive]}>All regions</Text></Pressable>
+              <Pressable accessibilityRole="button" onPress={() => setGeneration(null)} style={[styles.chip, light && styles.chipLight, generation == null && styles.chipActive]}><Text style={[styles.chipText, generation == null && styles.chipTextActive]}>All regions</Text></Pressable>
               {REGIONS.map(([id, label]) => {
                 const selected = generation === id;
                 const species = new Set(entries.filter((entry) => entry.generation === id).map((entry) => entry.pokemonId)).size;
                 const registered = new Set(entries.filter((entry) => entry.generation === id && entry.registered).map((entry) => entry.pokemonId)).size;
-                return <Pressable key={id} onPress={() => setGeneration(id)} style={[styles.regionChip, light && styles.chipLight, selected && styles.chipActive]}><Text style={[styles.regionTitle, light && styles.textLight, selected && styles.chipTextActive]}>{label}</Text><Text style={[styles.regionCount, light && styles.mutedLight, selected && styles.chipTextActive]}>{registered}/{species}</Text></Pressable>;
+                return <Pressable accessibilityRole="button" key={id} onPress={() => setGeneration(id)} style={[styles.regionChip, light && styles.chipLight, selected && styles.chipActive]}><Text style={[styles.regionTitle, light && styles.textLight, selected && styles.chipTextActive]}>{label}</Text><Text style={[styles.regionCount, light && styles.mutedLight, selected && styles.chipTextActive]}>{registered}/{species}</Text></Pressable>;
               })}
             </ScrollView>
 
             <Text style={[styles.railLabel, light && styles.textLight]}>Collection</Text>
             <ScrollView contentContainerStyle={styles.railContent} horizontal showsHorizontalScrollIndicator={false}>
-              {CATEGORIES.map(([value, label]) => <Pressable key={value} onPress={() => setCategory(value)} style={[styles.chip, light && styles.chipLight, category === value && styles.chipActive]}><Text style={[styles.chipText, light && styles.textLight, category === value && styles.chipTextActive]}>{label}</Text></Pressable>)}
+              {CATEGORIES.map(([value, label]) => <Pressable accessibilityRole="button" key={value} onPress={() => setCategory(value)} style={[styles.chip, light && styles.chipLight, category === value && styles.chipActive]}><Text style={[styles.chipText, light && styles.textLight, category === value && styles.chipTextActive]}>{label}</Text></Pressable>)}
             </ScrollView>
             <View style={styles.resultsHeading}><Text style={[styles.resultsTitle, light && styles.textLight]}>{filtered.length.toLocaleString()} entries</Text><Text style={[styles.resultsDetail, light && styles.mutedLight]}>Tap a Pokémon for its exact variant.</Text></View>
-            {error ? <View accessibilityRole="alert" style={styles.error}><Text style={styles.errorTitle}>Pokédex unavailable</Text><Text style={styles.errorText}>{error}</Text><Pressable onPress={onRetry} style={styles.retry}><Text style={styles.retryText}>Retry</Text></Pressable></View> : null}
+            {error ? <View accessibilityRole="alert" style={styles.error}><Text style={styles.errorTitle}>Pokédex unavailable</Text><Text style={styles.errorText}>{error}</Text><Pressable accessibilityRole="button" onPress={onRetry} style={styles.retry}><Text style={styles.retryText}>Retry</Text></Pressable></View> : null}
             {isLoading ? <View style={styles.loading}><ActivityIndicator color="#299cf5" /><Text style={[styles.loadingText, light && styles.mutedLight]}>Opening Pokédex…</Text></View> : null}
           </View>
         )}

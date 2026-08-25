@@ -106,6 +106,7 @@ export const NativeLoginScreen = ({
 
           <Text style={[styles.label, light && styles.labelLight]}>Username or email</Text>
           <TextInput
+            accessibilityLabel="Username or email"
             autoCapitalize="none"
             autoComplete="username"
             editable={!isSubmitting}
@@ -120,6 +121,7 @@ export const NativeLoginScreen = ({
           <Text style={[styles.label, light && styles.labelLight]}>Password</Text>
           <View style={styles.passwordField}>
             <TextInput
+              accessibilityLabel="Password"
               autoCapitalize="none"
               autoComplete="current-password"
               editable={!isSubmitting}

@@ -27,12 +27,12 @@ const absoluteUri = (base: string, value: string | null): string | null => {
 export const NativePokedexDetailScreen = ({ assetBaseUrl, entry, onAdd, onBack, pokemon, signedIn }: Props) => {
   const light = useColorScheme() === 'light';
   if (!entry || !pokemon) {
-    return <View style={[styles.centered, light && styles.rootLight]}><Text style={[styles.title, light && styles.textLight]}>Pokémon unavailable</Text><Pressable onPress={onBack} style={styles.primary}><Text style={styles.primaryText}>Back to Pokédex</Text></Pressable></View>;
+    return <View style={[styles.centered, light && styles.rootLight]}><Text style={[styles.title, light && styles.textLight]}>Pokémon unavailable</Text><Pressable accessibilityRole="button" onPress={onBack} style={styles.primary}><Text style={styles.primaryText}>Back to Pokédex</Text></Pressable></View>;
   }
   const stats = [['Attack', pokemon.attack], ['Defense', pokemon.defense], ['Stamina', pokemon.stamina], ['CP 40', pokemon.cp40], ['CP 50', pokemon.cp50]] as const;
   return (
     <ScrollView contentContainerStyle={styles.content} style={[styles.root, light && styles.rootLight]}>
-      <View style={styles.topbar}><Pressable accessibilityLabel="Back to Pokédex" onPress={onBack} style={[styles.back, light && styles.backLight]}><Text style={[styles.backText, light && styles.textLight]}>‹</Text></Pressable><Text style={[styles.topTitle, light && styles.textLight]}>Pokédex entry</Text><View style={styles.back} /></View>
+      <View style={styles.topbar}><Pressable accessibilityRole="button" accessibilityLabel="Back to Pokédex" onPress={onBack} style={[styles.back, light && styles.backLight]}><Text style={[styles.backText, light && styles.textLight]}>‹</Text></Pressable><Text style={[styles.topTitle, light && styles.textLight]}>Pokédex entry</Text><View style={styles.back} /></View>
       <View style={[styles.hero, light && styles.cardLight]}>
         <Text style={styles.dex}>#{String(entry.pokedexNumber).padStart(4, '0')}</Text>
         <View style={styles.imageStage}>

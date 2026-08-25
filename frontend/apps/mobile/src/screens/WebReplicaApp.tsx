@@ -322,10 +322,10 @@ export const WebReplicaApp = ({ initialPath, onOpenNativePath }: WebReplicaAppPr
           <Text style={styles.errorTitle}>Unable to load app</Text>
           <Text style={styles.errorBody}>{loadError}</Text>
           <View style={styles.errorActions}>
-            <Pressable onPress={handleRetry} style={styles.retryButton}>
+            <Pressable accessibilityRole="button" onPress={handleRetry} style={styles.retryButton}>
               <Text style={styles.retryButtonText}>Retry</Text>
             </Pressable>
-            <Pressable onPress={handleOpenInBrowser} style={styles.browserButton}>
+            <Pressable accessibilityRole="button" onPress={handleOpenInBrowser} style={styles.browserButton}>
               <Text style={styles.browserButtonText}>Open in Browser</Text>
             </Pressable>
           </View>

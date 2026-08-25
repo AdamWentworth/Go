@@ -214,11 +214,11 @@ const Stepper = ({
   <View style={styles.stepper}>
     <Text style={[styles.stepperLabel, light && styles.textLight]}>{label}</Text>
     <View style={styles.stepperControls}>
-      <Pressable accessibilityLabel={`Decrease ${label}`} onPress={() => onChange(Math.max(min, value - step))} style={[styles.stepperButton, light && styles.stepperButtonLight]}>
+      <Pressable accessibilityRole="button" accessibilityLabel={`Decrease ${label}`} onPress={() => onChange(Math.max(min, value - step))} style={[styles.stepperButton, light && styles.stepperButtonLight]}>
         <Text style={[styles.stepperButtonText, light && styles.textLight]}>−</Text>
       </Pressable>
       <Text style={[styles.stepperValue, light && styles.textLight]}>{value}{suffix}</Text>
-      <Pressable accessibilityLabel={`Increase ${label}`} onPress={() => onChange(Math.min(max, value + step))} style={[styles.stepperButton, light && styles.stepperButtonLight]}>
+      <Pressable accessibilityRole="button" accessibilityLabel={`Increase ${label}`} onPress={() => onChange(Math.min(max, value + step))} style={[styles.stepperButton, light && styles.stepperButtonLight]}>
         <Text style={[styles.stepperButtonText, light && styles.textLight]}>+</Text>
       </Pressable>
     </View>
@@ -229,11 +229,11 @@ const IvStepper = ({ label, light, onChange, value }: { label: string; light: bo
   <View style={styles.ivField}>
     <Text style={[styles.fieldLabel, light && styles.secondaryLight]}>{label}</Text>
     <View style={styles.ivControls}>
-      <Pressable onPress={() => onChange(value == null ? 0 : value <= 0 ? null : value - 1)} style={[styles.miniButton, light && styles.miniButtonLight]}>
+      <Pressable accessibilityRole="button" onPress={() => onChange(value == null ? 0 : value <= 0 ? null : value - 1)} style={[styles.miniButton, light && styles.miniButtonLight]}>
         <Text style={[styles.miniButtonText, light && styles.textLight]}>−</Text>
       </Pressable>
       <Text style={[styles.ivValue, light && styles.textLight]}>{value == null ? 'Any' : `${value}/15`}</Text>
-      <Pressable onPress={() => onChange(value == null ? 0 : Math.min(15, value + 1))} style={[styles.miniButton, light && styles.miniButtonLight]}>
+      <Pressable accessibilityRole="button" onPress={() => onChange(value == null ? 0 : Math.min(15, value + 1))} style={[styles.miniButton, light && styles.miniButtonLight]}>
         <Text style={[styles.miniButtonText, light && styles.textLight]}>+</Text>
       </Pressable>
     </View>
@@ -504,7 +504,7 @@ export const NativePokemonSearchFilterSheet = ({
               <Text style={[styles.cardTitle, light && styles.textLight]}>Individual values</Text>
               <Text style={[styles.cardCopy, light && styles.secondaryLight]}>Leave a stat at Any to accept 0–15.</Text>
             </View>
-            <Pressable onPress={() => onChange({ ...draft, attackIv: 15, defenseIv: 15, staminaIv: 15 })} style={[styles.compactButton, light && styles.compactButtonLight]}>
+            <Pressable accessibilityRole="button" onPress={() => onChange({ ...draft, attackIv: 15, defenseIv: 15, staminaIv: 15 })} style={[styles.compactButton, light && styles.compactButtonLight]}>
               <Text style={styles.compactButtonText}>Perfect IVs</Text>
             </Pressable>
           </View>
@@ -534,7 +534,7 @@ export const NativePokemonSearchFilterSheet = ({
             <Text style={[styles.cardCopy, light && styles.secondaryLight]}>Choose the exact friendship condition on the wanted listing.</Text>
             <View style={styles.hearts}>
               {Array.from({ length: 6 }, (_, level) => (
-                <Pressable
+                <Pressable accessibilityRole="button"
                   accessibilityLabel={level === 0 ? 'Any friendship level' : `${level} hearts`}
                   key={level}
                   onPress={() => onChange({

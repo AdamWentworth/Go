@@ -107,13 +107,13 @@ export const NativeGuestHomeScreen = ({ assetBaseUrl, onNavigate }: Props) => {
           <View style={[styles.cta, light && styles.ctaLight]}>
             <Image source={{ uri: toAssetUrl(assetBaseUrl, '/images/logo/lockup.png') }} style={styles.ctaLogo} />
             <View style={styles.ctaCopy}><Text style={styles.eyebrow}>READY TO TRADE SMARTER?</Text><Text style={[styles.ctaTitle, light && styles.textLight]}>Bring your collection. Find the right trainer.</Text><Text style={[styles.ctaDetail, light && styles.mutedLight]}>Create your free account, publish your trade list, and discover exchanges that work for both trainers.</Text></View>
-            <View style={styles.ctaActions}><Pressable onPress={() => onNavigate('/register')} style={styles.primary}><Text style={styles.primaryText}>Create account →</Text></Pressable><Pressable onPress={() => onNavigate('/getting-started')} style={[styles.secondary, light && styles.secondaryLight]}><Text style={[styles.secondaryText, light && styles.textLight]}>Quick start guide</Text></Pressable></View>
+            <View style={styles.ctaActions}><Pressable accessibilityRole="button" onPress={() => onNavigate('/register')} style={styles.primary}><Text style={styles.primaryText}>Create account →</Text></Pressable><Pressable accessibilityRole="button" onPress={() => onNavigate('/getting-started')} style={[styles.secondary, light && styles.secondaryLight]}><Text style={[styles.secondaryText, light && styles.textLight]}>Quick start guide</Text></Pressable></View>
           </View>
 
           <View style={styles.footer}>
             <Text style={[styles.footerBrand, light && styles.textLight]}>Pokémon Go Nexus</Text>
             <Text style={[styles.footerLegal, light && styles.mutedLight]}>An independent community project. Pokémon, Pokémon GO, related names, images, and trademarks belong to their respective owners.</Text>
-            <View style={styles.footerLinks}>{['help', 'faq', 'about', 'safety', 'privacy', 'terms', 'data-deletion'].map((path) => <Pressable key={path} onPress={() => onNavigate(`/${path}`)}><Text style={styles.footerLink}>{path.replace('-', ' ')}</Text></Pressable>)}</View>
+            <View style={styles.footerLinks}>{['help', 'faq', 'about', 'safety', 'privacy', 'terms', 'data-deletion'].map((path) => <Pressable accessibilityRole="button" key={path} onPress={() => onNavigate(`/${path}`)}><Text style={styles.footerLink}>{path.replace('-', ' ')}</Text></Pressable>)}</View>
           </View>
         </View>
       </ScrollView>

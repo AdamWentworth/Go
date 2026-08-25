@@ -541,19 +541,19 @@ export const NativeTradePreferencesScreen = ({
             value={query}
           />
           <View style={styles.toolButtons}>
-            <Pressable
+            <Pressable accessibilityRole="button"
               onPress={() => setShowAllowedOnly((value) => !value)}
               style={[styles.toolButton, showAllowedOnly && { borderColor: colors.accent }]}
             >
               <Text style={[styles.toolButtonText, light && styles.textLight]}>Allowed only</Text>
             </Pressable>
-            <Pressable
+            <Pressable accessibilityRole="button"
               onPress={() => setManualExclusions(new Set())}
               style={styles.toolButton}
             >
               <Text style={[styles.toolButtonText, light && styles.textLight]}>Allow all</Text>
             </Pressable>
-            <Pressable
+            <Pressable accessibilityRole="button"
               onPress={() => setManualExclusions(new Set(
                 draftCandidates.filter((candidate) => !candidate.excludedByRule).map(
                   (candidate) => candidate.collectionKey,
@@ -635,10 +635,10 @@ export const NativeTradePreferencesScreen = ({
     <View style={[styles.safe, light && styles.safeLight]} testID="native-trade-preferences-screen">
       {showModeTabs ? (
         <View style={[styles.topTabs, light && styles.topTabsLight]}>
-          <Pressable accessibilityState={{ selected: true }} style={styles.topTab}>
+          <Pressable accessibilityRole="tab" accessibilityState={{ selected: true }} style={styles.topTab}>
             <Text style={[styles.topTabText, light && styles.textLight]}>Trade Preferences</Text>
           </Pressable>
-          <Pressable onPress={onOpenActivity} style={[styles.topTab, styles.topTabInactive]}>
+          <Pressable accessibilityRole="tab" accessibilityState={{ selected: false }} onPress={onOpenActivity} style={[styles.topTab, styles.topTabInactive]}>
             <Text style={[styles.topTabText, styles.topTabInactiveText]}>Trade Activity</Text>
           </Pressable>
         </View>
@@ -697,7 +697,7 @@ export const NativeTradePreferencesScreen = ({
         <View accessibilityLiveRegion="polite" style={styles.saveSuccess} testID="trade-preferences-save-success">
           <Text style={styles.saveSuccessMark}>✓</Text>
           <Text style={styles.saveSuccessText}>Preferences saved.</Text>
-          <Pressable accessibilityLabel="Dismiss saved message" onPress={() => setSaveSuccess(false)}>
+          <Pressable accessibilityRole="button" accessibilityLabel="Dismiss saved message" onPress={() => setSaveSuccess(false)}>
             <Text style={styles.saveSuccessDismiss}>×</Text>
           </Pressable>
         </View>
@@ -734,7 +734,7 @@ export const NativeTradePreferencesScreen = ({
               <Text style={[styles.eyebrow, { color: colors.accent }]}>SELECT A LISTING</Text>
               <Text style={[styles.pickerTitle, light && styles.textLight]}>{colors.label} Pokémon</Text>
             </View>
-            <Pressable accessibilityLabel="Close listing picker" onPress={() => setPickerOpen(false)} style={styles.close}>
+            <Pressable accessibilityRole="button" accessibilityLabel="Close listing picker" onPress={() => setPickerOpen(false)} style={styles.close}>
               <Text style={[styles.closeText, light && styles.textLight]}>×</Text>
             </Pressable>
           </View>
@@ -765,10 +765,10 @@ export const NativeTradePreferencesScreen = ({
               Your current changes have not been saved.
             </Text>
             <View style={styles.confirmActions}>
-              <Pressable onPress={() => setDiscardOpen(false)} style={styles.cancelButton}>
+              <Pressable accessibilityRole="button" onPress={() => setDiscardOpen(false)} style={styles.cancelButton}>
                 <Text style={[styles.cancelText, light && styles.textLight]}>Keep editing</Text>
               </Pressable>
-              <Pressable
+              <Pressable accessibilityRole="button"
                 onPress={() => {
                   setDiscardOpen(false);
                   resetDraft(selectedEntry);
