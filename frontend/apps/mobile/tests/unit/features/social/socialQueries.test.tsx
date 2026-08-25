@@ -6,6 +6,8 @@ import {
   useNativeFriendsMutation,
   useNativeFriendsQuery,
   useNativeProfileRelationshipMutation,
+  useNativeTrainerPreferencesMutation,
+  useNativeTrainerPreferencesQuery,
   useNativeTrainerProfileMutation,
 } from '../../../../src/features/social/socialQueries';
 import {
@@ -21,6 +23,10 @@ import {
   updateNativeAuthProfile,
   updateNativeTrainerProfile,
 } from '../../../../src/services/nativeTrainerProfileApi';
+import {
+  getNativeTrainerPreferences,
+  updateNativeTrainerPreferences,
+} from '../../../../src/services/nativeTrainerPreferencesApi';
 
 const mockReplaceSessionUser = jest.fn();
 
@@ -60,6 +66,11 @@ jest.mock('../../../../src/services/socialApi', () => ({
 jest.mock('../../../../src/services/nativeTrainerProfileApi', () => ({
   updateNativeAuthProfile: jest.fn(),
   updateNativeTrainerProfile: jest.fn(),
+}));
+
+jest.mock('../../../../src/services/nativeTrainerPreferencesApi', () => ({
+  getNativeTrainerPreferences: jest.fn(),
+  updateNativeTrainerPreferences: jest.fn(),
 }));
 
 const makeWrapper = () => {
@@ -254,6 +265,80 @@ describe('useNativeTrainerProfileMutation', () => {
       highlightInstanceIds: [],
     })).rejects.toThrow('Only your own');
     expect(updateNativeTrainerProfile).not.toHaveBeenCalled();
+    queryClient.clear();
+  });
+});
+
+describe('native trainer preferences queries', () => {
+  beforeEach(() => jest.clearAllMocks());
+  const preferences = {
+    user_id: 'viewer-1',
+    profile_visibility: 'public' as const,
+    collection_visibility: 'friends' as const,
+    friend_request_permission: 'everyone' as const,
+    trainer_code_visibility: 'friends' as const,
+    coordination_method: 'discord' as const,
+    coordination_handle: 'MistyTrades',
+    share_trade_contact: true,
+    show_location: false,
+    show_pokemon_go_name: true,
+  };
+
+  it('loads settings only for the signed-in viewer', async () => {
+    jest.mocked(getNativeTrainerPreferences).mockResolvedValue(preferences);
+    const { queryClient, wrapper } = makeWrapper();
+    const signedOut = renderHook(() => useNativeTrainerPreferencesQuery(null), { wrapper });
+    expect(signedOut.result.current.fetchStatus).toBe('idle');
+    signedOut.unmount();
+
+    const signedIn = renderHook(() => useNativeTrainerPreferencesQuery('viewer-1'), { wrapper });
+    await act(async () => {
+      await signedIn.result.current.refetch();
+      await new Promise<void>((resolve) => setTimeout(resolve, 0));
+    });
+    expect(getNativeTrainerPreferences).toHaveBeenCalledWith(
+      expect.objectContaining({ kind: 'users-client' }),
+    );
+    queryClient.clear();
+  });
+
+  it('normalizes, saves, caches, and invalidates preference consumers', async () => {
+    jest.mocked(updateNativeTrainerPreferences).mockResolvedValue(preferences);
+    const { queryClient, wrapper } = makeWrapper();
+    const invalidate = jest.spyOn(queryClient, 'invalidateQueries').mockResolvedValue(undefined);
+    const setQueryData = jest.spyOn(queryClient, 'setQueryData');
+    const { result } = renderHook(
+      () => useNativeTrainerPreferencesMutation('viewer-1'),
+      { wrapper },
+    );
+    await act(async () => {
+      await result.current.mutateAsync({
+        collectionVisibility: 'friends',
+        coordinationHandle: '  @MistyTrades  ',
+        coordinationMethod: 'discord',
+        friendRequestPermission: 'everyone',
+        profileVisibility: 'public',
+        shareTradeContact: true,
+        showLocation: false,
+        showPokemonGoName: true,
+        trainerCodeVisibility: 'friends',
+      });
+      await new Promise<void>((resolve) => setTimeout(resolve, 0));
+    });
+    expect(updateNativeTrainerPreferences).toHaveBeenCalledWith(
+      expect.objectContaining({ kind: 'users-client' }),
+      expect.objectContaining({ coordination_handle: 'MistyTrades' }),
+    );
+    expect(setQueryData).toHaveBeenCalledWith(
+      nativeSocialQueryKeys.preferences('viewer-1'),
+      preferences,
+    );
+    expect(invalidate).toHaveBeenCalledWith({
+      queryKey: nativeSocialQueryKeys.profile('viewer-1'),
+    });
+    expect(invalidate).toHaveBeenCalledWith({
+      queryKey: nativeSocialQueryKeys.friends('viewer-1'),
+    });
     queryClient.clear();
   });
 });

@@ -13,11 +13,19 @@ import {
   updateNativeAuthProfile,
   updateNativeTrainerProfile,
 } from '../../services/nativeTrainerProfileApi';
+import {
+  getNativeTrainerPreferences,
+  updateNativeTrainerPreferences,
+} from '../../services/nativeTrainerPreferencesApi';
 import { useNativeSession } from '../../auth/NativeSessionContext';
 import {
   buildNativeTrainerProfileSavePlan,
   type NativeTrainerProfileDraft,
 } from './nativeTrainerProfileEditorModel';
+import {
+  buildNativeTrainerPreferencesRequest,
+  type NativeTrainerPreferencesDraft,
+} from './nativeTrainerPreferencesModel';
 import type { PokemonInstance } from '@pokemongonexus/shared-contracts/instances';
 import type { TrainerProfile } from '@pokemongonexus/shared-contracts/users';
 import { useNativeApiClients } from '../../services/useNativeApiClients';
@@ -31,6 +39,7 @@ export const nativeSocialQueryKeys = {
     username?.trim().toLocaleLowerCase() || 'self',
   ] as const,
   friends: (viewerId: string) => [...nativeSocialQueryKeys.root, viewerId, 'friends'] as const,
+  preferences: (viewerId: string) => [...nativeSocialQueryKeys.root, viewerId, 'preferences'] as const,
 };
 
 export type NativeProfileRelationshipCommand =
@@ -67,6 +76,32 @@ export const useNativeFriendsQuery = (viewerId: string | null) => {
     queryFn: () => getNativeFriendsOverview(clients.users),
     enabled: Boolean(viewerId),
     staleTime: 30_000,
+  });
+};
+
+export const useNativeTrainerPreferencesQuery = (viewerId: string | null) => {
+  const clients = useNativeApiClients();
+  return useQuery({
+    queryKey: nativeSocialQueryKeys.preferences(viewerId ?? 'signed-out'),
+    queryFn: () => getNativeTrainerPreferences(clients.users),
+    enabled: Boolean(viewerId),
+    staleTime: 60_000,
+  });
+};
+
+export const useNativeTrainerPreferencesMutation = (viewerId: string) => {
+  const clients = useNativeApiClients();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (draft: NativeTrainerPreferencesDraft) => {
+      const request = buildNativeTrainerPreferencesRequest(draft);
+      return updateNativeTrainerPreferences(clients.users, request);
+    },
+    onSuccess: (preferences) => {
+      queryClient.setQueryData(nativeSocialQueryKeys.preferences(viewerId), preferences);
+      void queryClient.invalidateQueries({ queryKey: nativeSocialQueryKeys.profile(viewerId) });
+      void queryClient.invalidateQueries({ queryKey: nativeSocialQueryKeys.friends(viewerId) });
+    },
   });
 };
 
