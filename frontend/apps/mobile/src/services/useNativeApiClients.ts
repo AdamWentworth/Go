@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
 import { useNativeSession } from '../auth/NativeSessionContext';
 import {
+  createNativeAuthApiClient,
   createNativePokemonApiClient,
   createNativeReceiverApiClient,
   createNativeSearchApiClient,
@@ -16,6 +17,7 @@ export const useNativeApiClients = () => {
       clearSession: session.clearSession,
     };
     return {
+      auth: createNativeAuthApiClient(tokens),
       users: createNativeUsersApiClient(tokens),
       receiver: createNativeReceiverApiClient(tokens),
       pokemon: createNativePokemonApiClient(),

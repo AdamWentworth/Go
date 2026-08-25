@@ -4,6 +4,17 @@ import {
 } from '@pokemongonexus/shared-api-client';
 import { runtimeConfig } from '../config/runtimeConfig';
 
+export const createNativeAuthApiClient = (
+  tokens: AccessTokenProvider,
+  fetchImplementation: typeof globalThis.fetch = globalThis.fetch,
+) => createApiClient({
+  baseUrl: runtimeConfig.api.authApiUrl,
+  authentication: { mode: 'bearer', tokens },
+  fetch: fetchImplementation,
+});
+
+export type NativeAuthApiClient = ReturnType<typeof createNativeAuthApiClient>;
+
 export const createNativeUsersApiClient = (
   tokens: AccessTokenProvider,
   fetchImplementation: typeof globalThis.fetch = globalThis.fetch,

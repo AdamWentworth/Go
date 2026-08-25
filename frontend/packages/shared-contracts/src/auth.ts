@@ -86,6 +86,12 @@ export interface MobileRefreshRequest {
   refreshToken: string;
 }
 
+export interface UpdateAuthProfileRequest {
+  pokemonGoName: string | null;
+  trainerCode: string | null;
+  location: string | null;
+}
+
 export type OAuthSessionResponse = AuthUser;
 
 export interface ResetPasswordRequest {
