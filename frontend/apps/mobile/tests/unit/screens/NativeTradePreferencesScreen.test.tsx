@@ -143,6 +143,16 @@ const wantedEntry = entry({
   ],
 });
 
+const secondTradeEntry = entry({
+  id: 'trade-pikachu',
+  mode: 'trade',
+  name: 'Shiny Pikachu',
+  pokemonId: 25,
+  candidates: [
+    candidate({ id: 'wanted-rayquaza', name: 'Shiny Rayquaza', pokemonId: 384, status: 'wanted' }),
+  ],
+});
+
 const renderScreen = (onSave = jest.fn().mockResolvedValue(undefined)) => render(
   <NativeTradePreferencesScreen
     assetBaseUrl="https://pokegonexus.com"
@@ -197,6 +207,24 @@ describe('NativeTradePreferencesScreen', () => {
     await waitFor(() => expect(screen.getByText('Shiny Charizard')).toBeTruthy());
     expect(screen.queryByText('Shiny Mewtwo')).toBeNull();
     expect(screen.getByText('1 acceptable targets')).toBeTruthy();
+  });
+
+  it('opens the listing requested by contextual route navigation', () => {
+    const onSave = jest.fn().mockResolvedValue(undefined);
+    const screen = render(
+      <NativeTradePreferencesScreen
+        assetBaseUrl="https://pokegonexus.com"
+        entries={{ trade: [tradeEntry, secondTradeEntry], wanted: [wantedEntry] }}
+        initialEntryId="trade-pikachu"
+        initialMode="trade"
+        onOpenActivity={jest.fn()}
+        onSave={onSave}
+      />,
+    );
+
+    expect(screen.getByText('Shiny Rayquaza')).toBeTruthy();
+    expect(screen.getByText('Shiny Pikachu')).toBeTruthy();
+    expect(screen.queryByText('Shiny Charizard')).toBeNull();
   });
 
   it('switches to Wanted semantics without reusing For Trade copy', () => {

@@ -37,6 +37,7 @@ type Props = {
   assetBaseUrl: string;
   entries: Record<NativeTradePreferenceMode, NativeTradePreferenceEntry[]>;
   error?: string | null;
+  initialEntryId?: string | null;
   initialMode?: NativeTradePreferenceMode;
   isLoading?: boolean;
   onOpenActivity: () => void;
@@ -213,6 +214,7 @@ export const NativeTradePreferencesScreen = ({
   assetBaseUrl,
   entries,
   error = null,
+  initialEntryId = null,
   initialMode = 'trade',
   isLoading = false,
   onOpenActivity,
@@ -222,11 +224,17 @@ export const NativeTradePreferencesScreen = ({
   const { width } = useWindowDimensions();
   const light = useColorScheme() === 'light';
   const desktop = width >= 760;
-  const initialEntry = entries[initialMode][0] ?? null;
+  const initialEntry = entries[initialMode].find(
+    (entry) => entry.collectionKey === initialEntryId,
+  ) ?? entries[initialMode][0] ?? null;
   const [mode, setMode] = useState<NativeTradePreferenceMode>(initialMode);
   const [selectedKeys, setSelectedKeys] = useState<Record<NativeTradePreferenceMode, string | null>>({
-    trade: entries.trade[0]?.collectionKey ?? null,
-    wanted: entries.wanted[0]?.collectionKey ?? null,
+    trade: initialMode === 'trade' && initialEntry
+      ? initialEntry.collectionKey
+      : entries.trade[0]?.collectionKey ?? null,
+    wanted: initialMode === 'wanted' && initialEntry
+      ? initialEntry.collectionKey
+      : entries.wanted[0]?.collectionKey ?? null,
   });
   const [editing, setEditing] = useState(false);
   const [advancedOpen, setAdvancedOpen] = useState(false);

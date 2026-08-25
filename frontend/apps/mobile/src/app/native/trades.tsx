@@ -25,6 +25,7 @@ import { executeNativeTradeActivityAction } from '../../features/trades/nativeTr
 import {
   buildNativeTradePreferenceEntries,
   resolveNativeTradePreferenceDraftCandidates,
+  type NativeTradePreferenceMode,
 } from '../../features/trades/nativeTradePreferencesModel';
 import {
   useNativeDeleteTradeMutation,
@@ -53,9 +54,17 @@ const initialTradeView = (value: string): NativeTradeHubView => (
     : 'preferences'
 );
 
+const initialPreferenceMode = (value: string): NativeTradePreferenceMode => (
+  value === 'wanted' ? 'wanted' : 'trade'
+);
+
 export default function NativeTradesRoute() {
   const router = useRouter();
-  const params = useLocalSearchParams<{ section?: string | string[] }>();
+  const params = useLocalSearchParams<{
+    instance?: string | string[];
+    mode?: string | string[];
+    section?: string | string[];
+  }>();
   const session = useNativeSession();
   const clients = useNativeApiClients();
   const light = useColorScheme() === 'light';
@@ -78,6 +87,8 @@ export default function NativeTradesRoute() {
   const [pageScrollX] = useState(() => new Animated.Value(0));
   const sliderRef = useRef<NativeHorizontalPageSliderHandle>(null);
   const activeIndex = TRADE_VIEWS.indexOf(activeView);
+  const preferenceMode = initialPreferenceMode(firstParam(params.mode));
+  const preferenceEntryId = firstParam(params.instance) || null;
 
   const changeView = useCallback((view: NativeTradeHubView) => {
     setActiveView(view);
@@ -111,6 +122,11 @@ export default function NativeTradesRoute() {
       }),
     };
   }, [collectionQuery.data]);
+  const preferenceSelectionState = preferenceEntryId
+    ? preferenceEntries[preferenceMode].some((entry) => entry.collectionKey === preferenceEntryId)
+      ? 'selected'
+      : collectionQuery.isPending ? 'loading' : 'missing'
+    : collectionQuery.isPending ? 'loading' : 'default';
 
   if (session.status !== 'signed-in' || !session.user) {
     return <Redirect href="/native/login?returnTo=%2Fnative%2Ftrades" />;
@@ -149,9 +165,12 @@ export default function NativeTradesRoute() {
         scrollX={pageScrollX}
       >
         <NativeTradePreferencesScreen
+          key={`${preferenceMode}:${preferenceEntryId ?? 'default'}:${preferenceSelectionState}`}
           assetBaseUrl={runtimeConfig.api.frontendAppUrl}
           entries={preferenceEntries}
           error={collectionError}
+          initialEntryId={preferenceEntryId}
+          initialMode={preferenceMode}
           isLoading={collectionQuery.isPending}
           onOpenActivity={() => changeView('activity')}
           onSave={async (entry, draft) => {

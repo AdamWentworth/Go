@@ -93,9 +93,11 @@ export default function NativeInstanceDetailRoute() {
     onToggleFavorite={(favorite) => favoriteMutation.mutate(favorite)}
     onSaveDetails={(patch) => detailMutation.mutateAsync(patch)}
     onEditPreferences={() => router.push({
-      pathname: '/web',
+      pathname: '/native/trades',
       params: {
-        path: `/trades?section=preferences&mode=${detail?.row.status === 'wanted' ? 'wanted' : 'trade'}&instance=${encodeURIComponent(instanceId)}`,
+        instance: instanceId,
+        mode: detail?.row.status === 'wanted' ? 'wanted' : 'trade',
+        section: 'preferences',
       },
     })}
     onEditInCurrentApp={() => router.replace({
