@@ -1,5 +1,5 @@
-export type NativeActionMenuPath = '/' | '/about' | '/data-deletion' | '/faq' | '/getting-started' | '/help' | '/pokedex' | '/pokemon' | '/privacy' | '/profile' | '/profile/friends' | '/raid' | '/rankings' | '/safety' | '/search' | '/settings' | '/terms' | '/trade-board' | '/trades';
-export type ReadyNativePath = '/native' | '/native/account' | '/native/collection' | '/native/friends' | '/native/info/about' | '/native/info/data-deletion' | '/native/info/faq' | '/native/info/getting-started' | '/native/info/help' | '/native/info/privacy' | '/native/info/safety' | '/native/info/terms' | '/native/pokedex' | '/native/profile' | '/native/raid' | '/native/raid-methodology' | '/native/rankings' | '/native/search' | '/native/settings' | '/native/trade-board' | '/native/trades';
+export type NativeActionMenuPath = '/' | '/about' | '/data-deletion' | '/faq' | '/getting-started' | '/help' | '/max' | '/pokedex' | '/pokemon' | '/privacy' | '/profile' | '/profile/friends' | '/raid' | '/rankings' | '/safety' | '/search' | '/settings' | '/terms' | '/trade-board' | '/trades';
+export type ReadyNativePath = '/native' | '/native/account' | '/native/collection' | '/native/friends' | '/native/info/about' | '/native/info/data-deletion' | '/native/info/faq' | '/native/info/getting-started' | '/native/info/help' | '/native/info/privacy' | '/native/info/safety' | '/native/info/terms' | '/native/max' | '/native/pokedex' | '/native/profile' | '/native/raid' | '/native/raid-methodology' | '/native/rankings' | '/native/search' | '/native/settings' | '/native/trade-board' | '/native/trades';
 export type NativeLoginReturnPath = ReadyNativePath | `/native/profile/${string}`;
 
 export type NativeActionMenuDestination =
@@ -14,6 +14,7 @@ const NATIVE_DESTINATIONS: Record<NativeActionMenuPath, NativeActionMenuDestinat
   '/faq': { kind: 'native', pathname: '/native/info/faq' },
   '/getting-started': { kind: 'native', pathname: '/native/info/getting-started' },
   '/help': { kind: 'native', pathname: '/native/info/help' },
+  '/max': { kind: 'native', pathname: '/native/max' },
   '/pokedex': { kind: 'native', pathname: '/native/pokedex' },
   '/pokemon': { kind: 'native', pathname: '/native/collection' },
   '/privacy': { kind: 'native', pathname: '/native/info/privacy' },
@@ -57,6 +58,7 @@ export const resolveNativeLoginReturnTo = (
     || requestedPath === '/native/info/privacy'
     || requestedPath === '/native/info/safety'
     || requestedPath === '/native/info/terms'
+    || requestedPath === '/native/max'
     || requestedPath === '/native/pokedex'
     || requestedPath === '/native/raid'
     || requestedPath === '/native/raid-methodology'

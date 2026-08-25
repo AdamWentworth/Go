@@ -26,6 +26,7 @@ export default function NativeLayout() {
             <Stack.Screen name="rankings" options={{ animation: 'none' }} />
             <Stack.Screen name="raid" options={{ animation: 'none' }} />
             <Stack.Screen name="raid-methodology" options={{ animation: 'slide_from_right' }} />
+            <Stack.Screen name="max" options={{ animation: 'none' }} />
             <Stack.Screen name="collection" options={{ animation: 'none' }} />
             <Stack.Screen name="search" options={{ animation: 'none' }} />
             <Stack.Screen name="trades" options={{ animation: 'none' }} />

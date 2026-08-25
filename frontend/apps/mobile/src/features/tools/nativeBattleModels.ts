@@ -55,6 +55,25 @@ export const hydrateNativeToolCatalog = (
   return catalog.map((pokemon) => ({ ...pokemon, moves: movesById.get(pokemon.pokemon_id) ?? pokemon.moves ?? [], raid_boss: raidsById.get(pokemon.pokemon_id) ?? pokemon.raid_boss ?? [] }));
 };
 
+export const hydrateNativeMaxCatalog = (
+  catalog: BasePokemon[],
+  maxData: BasePokemon[] = [],
+  moves: PokemonMovesChunk = [],
+): BasePokemon[] => {
+  const maxById = new Map(maxData.map((pokemon) => [pokemon.pokemon_id, pokemon]));
+  return hydrateNativeToolCatalog(catalog, moves).map((pokemon) => {
+    const supplement = maxById.get(pokemon.pokemon_id);
+    if (!supplement) return pokemon;
+    return {
+      ...pokemon,
+      max: supplement.max?.length ? supplement.max : pokemon.max,
+      max_battle_profiles: supplement.max_battle_profiles?.length
+        ? supplement.max_battle_profiles
+        : pokemon.max_battle_profiles,
+    };
+  });
+};
+
 const selectMoves = (pokemon: BasePokemon, targetTypes: string[] = [], requiredType = ''): { fast: Move | null; charged: Move | null; dps: number } => {
   const ownTypes = [pokemon.type1_name, pokemon.type2_name].filter(Boolean).map((type) => type.toLocaleLowerCase());
   const scoreMove = (move: Move) => Number(move.raid_power) / moveSeconds(move) * (ownTypes.includes(moveType(move)) ? 1.2 : 1) * nativeTypeEffectiveness(moveType(move), targetTypes);
