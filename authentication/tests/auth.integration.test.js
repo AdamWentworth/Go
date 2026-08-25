@@ -296,6 +296,25 @@ describe('authentication service integration', () => {
     expect(correctDevice.body).toEqual({ provider: 'discord', status: 'linked' });
   });
 
+  test('native OAuth linking permits concurrent pending provider transactions', async () => {
+    await registerUser();
+    const login = await request(app).post('/auth/mobile/login').send({
+      username: validEmail,
+      password: validPassphrase,
+      device_id: `${validDeviceId}-parallel-links`
+    });
+    const bearer = { Authorization: `Bearer ${login.body.accessToken}` };
+
+    const [google, discord, facebook] = await Promise.all([
+      request(app).post('/auth/mobile/oauth/link/start').set(bearer).send({ provider: 'google' }),
+      request(app).post('/auth/mobile/oauth/link/start').set(bearer).send({ provider: 'discord' }),
+      request(app).post('/auth/mobile/oauth/link/start').set(bearer).send({ provider: 'facebook' })
+    ]);
+
+    expect([google.status, discord.status, facebook.status]).toEqual([201, 201, 201]);
+    expect(await OAuthLinkTransaction.countDocuments({ status: 'pending' })).toBe(3);
+  });
+
   test('native OAuth linking rejects unsupported providers and unauthenticated starts', async () => {
     expect((await request(app)
       .post('/auth/mobile/oauth/link/start')

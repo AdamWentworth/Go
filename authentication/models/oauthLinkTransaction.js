@@ -21,7 +21,7 @@ const oauthLinkTransactionSchema = new mongoose.Schema({
     default: 'pending',
     required: true
   },
-  resultHash: { type: String, default: null },
+  resultHash: { type: String, default: undefined },
   resultStatus: {
     type: String,
     enum: ['linked', 'link-conflict', 'failed'],
@@ -34,6 +34,9 @@ const oauthLinkTransactionSchema = new mongoose.Schema({
 });
 
 oauthLinkTransactionSchema.index({ expiresAt: 1 }, { expireAfterSeconds: 0 });
-oauthLinkTransactionSchema.index({ resultHash: 1 }, { sparse: true, unique: true });
+oauthLinkTransactionSchema.index({ resultHash: 1 }, {
+  unique: true,
+  partialFilterExpression: { resultHash: { $type: 'string' } }
+});
 
 module.exports = mongoose.model('OAuthLinkTransaction', oauthLinkTransactionSchema);
