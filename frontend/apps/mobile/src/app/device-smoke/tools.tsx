@@ -216,7 +216,7 @@ const pokedexEntry = {
   pokedexNumber: 1,
   name: "Shiny Bulbasaur",
   imageUri,
-  typeIconUris: [],
+  typeIconUris: ["/images/types/grass.png", "/images/types/poison.png"],
   maxKind: null,
   category: "shiny" as const,
   generation: 1,
@@ -257,6 +257,7 @@ const dynamaxPokedexEntry = {
 };
 const detailPokemon = {
   ...battleCatalog[0],
+  generation: 1,
   date_available: "2016-07-06",
   date_shiny_available: "2018-03-25",
   shiny_available: 1,
@@ -310,8 +311,12 @@ function DeviceSmokePokedexDetail() {
       assetBaseUrl={ASSET_BASE_URL}
       entry={current}
       onBack={noOp}
-      onManage={noOp}
       onOpenEntry={noOp}
+      onSetRegistrations={(nextRegistrations, registered) => {
+        setRegistrations((existing) => registered
+          ? [...existing.filter(({ registrationId }) => !nextRegistrations.some((next) => next.registrationId === registrationId)), ...nextRegistrations]
+          : existing.filter(({ registrationId }) => !nextRegistrations.some((next) => next.registrationId === registrationId)));
+      }}
       onToggleRegistration={(registration, registered) => {
         setRegistrations((existing) => registered
           ? [...existing.filter(({ registrationId }) => registrationId !== registration.registrationId), registration]

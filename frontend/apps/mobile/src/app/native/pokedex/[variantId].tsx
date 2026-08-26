@@ -35,11 +35,8 @@ export default function NativePokedexDetailRoute() {
     error={mutation.error instanceof Error ? mutation.error.message : null}
     isSaving={mutation.isPending}
     onBack={() => router.canGoBack() ? router.back() : router.replace('/native/pokedex')}
-    onManage={(selected) => {
-      if (!session.user) { router.push('/native/login?returnTo=%2Fnative%2Fpokedex'); return; }
-      router.push({ pathname: '/native/collection/catalog/[variantId]', params: { variantId: selected.id } });
-    }}
     onOpenEntry={(selected) => router.replace({ pathname: '/native/pokedex/[variantId]', params: { variantId: selected.id } })}
+    onSetRegistrations={(registrations, registered) => mutation.mutate({ registrations, registered })}
     onToggleRegistration={(registration, registered) => mutation.mutate({ registrations: [registration], registered })}
     pokemon={pokemon}
     signedIn={Boolean(session.user)}

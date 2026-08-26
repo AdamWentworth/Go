@@ -14,7 +14,7 @@ name: Native Pokédex detail parity smoke
     commands:
       - tapOn: Close
 - extendedWaitUntil:
-    visible: "Registration checklist"
+    visible: "Register all"
     timeout: 45000
 - assertVisible: "Shiny Bulbasaur"
 - assertVisible: "Registered"
@@ -28,7 +28,10 @@ name: Native Pokédex detail parity smoke
 - assertVisible: "Vine Whip"
 - takeScreenshot: "native-tool-pokedex-detail-battle"
 - tapOn: "More"
-- assertVisible: "Quality registrations"
-- tapOn: "Lucky"
-- assertVisible: "Registered"
+- assertVisible: "Variant combinations"
+- scrollUntilVisible:
+    element:
+      text: "SEARCH COMBINATIONS"
+    direction: DOWN
+- assertVisible: "Showing 60 of 60"
 - takeScreenshot: "native-tool-pokedex-detail-more"
