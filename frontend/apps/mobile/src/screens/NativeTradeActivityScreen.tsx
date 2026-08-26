@@ -121,7 +121,7 @@ const PokemonCard = ({
   light: boolean;
 }) => (
   <View style={[styles.pokemonCard, light && styles.surfaceLight]}>
-    <Text maxFontSizeMultiplier={1.25} numberOfLines={1} style={styles.partyLabel}>
+    <Text maxFontSizeMultiplier={1.25} numberOfLines={2} style={styles.partyLabel}>
       {label}
     </Text>
     <View style={styles.pokemonStage}>
@@ -606,7 +606,17 @@ const styles = StyleSheet.create({
   exchange: { flexDirection: 'row', alignItems: 'center', gap: 5, padding: 8 },
   pokemonCard: { flex: 1, minWidth: 0, minHeight: 205, alignItems: 'center', borderWidth: 1, borderColor: '#2b5a53', borderRadius: 11, padding: 7, backgroundColor: '#071514' },
   surfaceLight: { borderColor: '#a8bdb8', backgroundColor: '#f5f9f8' },
-  partyLabel: { width: '100%', color: '#62d7bd', fontSize: 10, fontWeight: '900', letterSpacing: 0.7, textAlign: 'center' },
+  partyLabel: {
+    width: '100%',
+    minHeight: 26,
+    color: '#62d7bd',
+    fontSize: 10,
+    lineHeight: 13,
+    fontWeight: '900',
+    letterSpacing: 0.55,
+    textAlign: 'center',
+    textAlignVertical: 'center',
+  },
   pokemonStage: { width: '100%', height: 124, alignItems: 'center', justifyContent: 'center', overflow: 'hidden' },
   luckyBackdrop: { position: 'absolute', width: 138, height: 138, opacity: 0.88 },
   pokemonImage: { width: 112, height: 112 },
