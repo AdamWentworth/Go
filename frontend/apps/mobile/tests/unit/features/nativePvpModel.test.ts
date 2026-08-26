@@ -20,6 +20,7 @@ describe('native PvP model', () => {
     const instances = { caught: { pokemon_id: 184, is_caught: true, disabled: false } } as never;
     expect(filterNativePvpEntries({ entries: [azumarill, clodsire], instances, scope: 'owned' })).toEqual([azumarill]);
     expect(analyzeNativePvpTeam([azumarill, clodsire]).sharedThreats).toEqual(['lanturn']);
+    expect(analyzeNativePvpTeam([azumarill, clodsire]).coveredThreats).toBe(0);
   });
 
   it('ranks a selected appraisal against all legal spreads', () => {

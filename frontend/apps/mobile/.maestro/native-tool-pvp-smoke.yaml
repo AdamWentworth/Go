@@ -17,7 +17,31 @@ name: Native PvP tool smoke
 - assertVisible: "Bulbasaur"
 - takeScreenshot: "native-pvp-rankings"
 - tapOn: "Team Builder"
-- assertVisible: "Choose team members"
+- assertVisible: "THREE-POKÉMON TEAM"
+- assertVisible: "0 / 3"
+- takeScreenshot: "native-pvp-team-builder-empty"
+- scrollUntilVisible:
+    element:
+      text: "Add suggested Bulbasaur"
+    direction: DOWN
+    speed: 40
+    timeout: 15000
+- tapOn: "Add suggested Bulbasaur"
+- scrollUntilVisible:
+    element:
+      text: "Add suggested Ivysaur"
+    direction: DOWN
+    speed: 40
+    timeout: 15000
+- tapOn: "Add suggested Ivysaur"
+- assertVisible: "2 / 3"
+- takeScreenshot: "native-pvp-team-builder-filled"
+- scrollUntilVisible:
+    element:
+      text: "Battle Lab"
+    direction: UP
+    speed: 40
+    timeout: 15000
 - tapOn: "Battle Lab"
 - assertVisible: "Simulate a focused matchup"
 - scrollUntilVisible:

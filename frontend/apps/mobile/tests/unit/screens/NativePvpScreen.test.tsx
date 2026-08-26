@@ -38,10 +38,11 @@ const entry = (id: string, name: string, pokemonId: number, attack: number): Pok
 
 const bulbasaur = entry('bulbasaur', 'Bulbasaur', 1, 121);
 const ivysaur = entry('ivysaur', 'Ivysaur', 2, 119);
+const venusaur = entry('venusaur', 'Venusaur', 3, 117);
 const payload = {
   source: null,
   leagues: {
-    great: { key: 'great', label: 'Great', cpLimit: 1500, entries: [bulbasaur, ivysaur] },
+    great: { key: 'great', label: 'Great', cpLimit: 1500, entries: [bulbasaur, ivysaur, venusaur] },
     ultra: { key: 'ultra', label: 'Ultra', cpLimit: 2500, entries: [] },
     master: { key: 'master', label: 'Master', cpLimit: null, entries: [] },
   },
@@ -62,7 +63,7 @@ describe('NativePvpScreen', () => {
     renderScreen();
     expect(screen.getByRole('button', { name: /All Pokémon/ }).props.accessibilityState).toEqual({ disabled: false });
     expect(screen.getByRole('button', { name: /My Pokémon/ }).props.accessibilityState).toEqual({ disabled: true });
-    expect(screen.getByText('2 ranked')).toBeTruthy();
+    expect(screen.getByText('3 ranked')).toBeTruthy();
   });
 
   it('exposes all four PvP workspaces without a web fallback', () => {
@@ -70,7 +71,20 @@ describe('NativePvpScreen', () => {
     expect(screen.getByText('PvP Rankings')).toBeTruthy();
     expect(screen.getByText('Bulbasaur')).toBeTruthy();
     fireEvent.press(screen.getByText('Team Builder'));
-    expect(screen.getByText('Choose team members')).toBeTruthy();
+    expect(screen.getByText('THREE-POKÉMON TEAM')).toBeTruthy();
+    expect(screen.getByText('0 / 3')).toBeTruthy();
+    expect(screen.getByLabelText('Search Team Builder Pokémon')).toBeTruthy();
+    fireEvent.press(screen.getByLabelText('Select Bulbasaur'));
+    expect(screen.getByText('1 / 3')).toBeTruthy();
+    expect(screen.getByLabelText('Edit Lead, Bulbasaur')).toBeTruthy();
+    fireEvent.press(screen.getByLabelText('Select Ivysaur'));
+    expect(screen.getByText('2 / 3')).toBeTruthy();
+    expect(screen.getByLabelText('Edit Safe Swap, Ivysaur')).toBeTruthy();
+    fireEvent.press(screen.getByLabelText('Select Venusaur'));
+    expect(screen.getByText('3 / 3')).toBeTruthy();
+    expect(screen.getByText('AVERAGE SCORE')).toBeTruthy();
+    expect(screen.getByText('SHARED LOSSES')).toBeTruthy();
+    expect(screen.getByRole('button', { name: /Test a matchup in Battle Lab/ })).toBeTruthy();
     fireEvent.press(screen.getByText('Battle Lab'));
     expect(screen.getByText('Simulate a focused matchup')).toBeTruthy();
     expect(screen.queryByText(/web simulator/i)).toBeNull();

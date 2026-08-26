@@ -21,8 +21,8 @@ import type {
 } from "@pokemongonexus/shared-contracts/pokemon";
 import { NativePvpBattleLab } from "../components/tools/NativePvpBattleLab";
 import { NativePvpIvRank } from "../components/tools/NativePvpIvRank";
+import { NativePvpTeamBuilder } from "../components/tools/NativePvpTeamBuilder";
 import {
-  analyzeNativePvpTeam,
   buildNativePvpFormats,
   filterNativePvpEntries,
   pvpRoleScore,
@@ -249,11 +249,6 @@ export const NativePvpScreen = ({
       }),
     [format?.entries, instances, query, role, scope],
   );
-  const [teamKeys, setTeamKeys] = useState<string[]>([]);
-  const selectedTeam = teamKeys.flatMap(
-    (key) => entries.find((entry) => entry.speciesId === key) ?? [],
-  );
-  const teamAnalysis = analyzeNativePvpTeam(selectedTeam);
   const mechanics =
     format?.mechanics ??
     (/\bcompetitors?\b/i.test(
@@ -345,7 +340,6 @@ export const NativePvpScreen = ({
             key={key}
             onPress={() => {
               setFormatKey(key);
-              setTeamKeys([]);
               setCupOpen(false);
             }}
             style={[
@@ -392,7 +386,7 @@ export const NativePvpScreen = ({
           {cupOpen && cupFormats.length ? (
             <View style={[styles.cupOptions, light && styles.panelLight]}>
               {cupFormats.map((item) => (
-                <Pressable key={item.key} onPress={() => { setFormatKey(item.key); setCupOpen(false); setTeamKeys([]); }} style={styles.cupOption}>
+                <Pressable key={item.key} onPress={() => { setFormatKey(item.key); setCupOpen(false); }} style={styles.cupOption}>
                   <Text style={[styles.cupOptionText, light && styles.textLight]}>{item.label}</Text>
                 </Pressable>
               ))}
@@ -567,117 +561,14 @@ export const NativePvpScreen = ({
     >
       {header}
       {workspace === "team" ? (
-        <>
-          <View style={[styles.workspacePanel, light && styles.panelLight]}>
-            <Text style={styles.eyebrow}>YOUR THREE-POKÉMON TEAM</Text>
-            <View style={styles.teamSlots}>
-              {["Lead", "Safe Swap", "Closer"].map((label, index) => {
-                const member = selectedTeam[index];
-                return (
-                  <Pressable
-                    accessibilityRole="button"
-                    accessibilityLabel={`Choose ${label}`}
-                    key={label}
-                    onPress={() => {
-                      if (member)
-                        setTeamKeys((keys) =>
-                          keys.filter((_, slot) => slot !== index),
-                        );
-                    }}
-                    style={[
-                      styles.teamSlot,
-                      light && styles.controlLight,
-                      member && styles.teamSlotFilled,
-                    ]}
-                  >
-                    {member ? (
-                      <Image
-                        source={{ uri: uri(assetBaseUrl, member.imageUrl) }}
-                        style={styles.teamImage}
-                      />
-                    ) : (
-                      <Text style={styles.plus}>+</Text>
-                    )}
-                    <Text style={[styles.teamRole, light && styles.textLight]}>
-                      {label}
-                    </Text>
-                    <Text
-                      numberOfLines={2}
-                      style={[styles.teamName, light && styles.mutedLight]}
-                    >
-                      {member?.name ?? "Choose"}
-                    </Text>
-                  </Pressable>
-                );
-              })}
-            </View>
-            {selectedTeam.length === 3 ? (
-              <View style={styles.analysis}>
-                <Text style={[styles.analysisTitle, light && styles.textLight]}>
-                  Team profile
-                </Text>
-                <Text style={[styles.stateCopy, light && styles.mutedLight]}>
-                  Average score {teamAnalysis.averageScore.toFixed(1)} ·{" "}
-                  {teamAnalysis.typeCount} attack types
-                </Text>
-                <Text style={[styles.warning, light && styles.mutedLight]}>
-                  {teamAnalysis.sharedThreats.length
-                    ? `Shared threats: ${teamAnalysis.sharedThreats.slice(0, 4).join(", ")}`
-                    : "No shared threats in the published matchup evidence."}
-                </Text>
-              </View>
-            ) : (
-              <Text style={[styles.stateCopy, light && styles.mutedLight]}>
-                Choose three Pokémon below, then review shared coverage and
-                threats.
-              </Text>
-            )}
-          </View>
-          <Text style={[styles.resultsTitle, light && styles.textLight]}>
-            Choose team members
-          </Text>
-          <View style={styles.candidateGrid}>
-            {entries.slice(0, 30).map((entry) => {
-              const selected = teamKeys.includes(entry.speciesId);
-              return (
-                <Pressable
-                  accessibilityRole="button"
-                  accessibilityLabel={`${selected ? "Remove" : "Add"} ${entry.name}`}
-                  key={entry.speciesId}
-                  onPress={() =>
-                    setTeamKeys((keys) =>
-                      selected
-                        ? keys.filter((key) => key !== entry.speciesId)
-                        : keys.length < 3
-                          ? [...keys, entry.speciesId]
-                          : [entry.speciesId, keys[1], keys[2]].filter(Boolean),
-                    )
-                  }
-                  style={[
-                    styles.candidate,
-                    light && styles.controlLight,
-                    selected && styles.candidateActive,
-                  ]}
-                >
-                  <Image
-                    resizeMode="contain"
-                    source={{ uri: uri(assetBaseUrl, entry.imageUrl) }}
-                    style={styles.candidateImage}
-                  />
-                  <Text
-                    numberOfLines={2}
-                    style={[styles.candidateName, light && styles.textLight]}
-                  >
-                    {entry.name}
-                  </Text>
-                  <Text style={styles.candidateScore}>
-                    {entry.score.toFixed(0)}
-                  </Text>
-                </Pressable>
-              );
-            })}
-          </View>
-        </>
+        <NativePvpTeamBuilder
+          assetBaseUrl={assetBaseUrl}
+          entries={entries}
+          key={`${format?.key ?? "great"}:${scope}`}
+          light={light}
+          onOpenBattleLab={() => updateWorkspace("battle")}
+          storageKey={`${format?.key ?? "great"}:${scope}`}
+        />
       ) : workspace === "battle" ? (
         <NativePvpBattleLab
           assetBaseUrl={assetBaseUrl}

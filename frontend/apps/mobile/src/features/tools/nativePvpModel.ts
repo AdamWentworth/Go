@@ -229,6 +229,11 @@ export const calculateNativePvpIvSummary = (
 
 export const analyzeNativePvpTeam = (entries: PokemonPvPRankingEntry[]) => {
   const types = new Set(entries.flatMap((entry) => entry.types));
+  const coverage = new Set(
+    entries.flatMap((entry) =>
+      (entry.matchups ?? []).map((matchup) => matchup.speciesId),
+    ),
+  );
   const threatCounts = new Map<string, number>();
   entries
     .flatMap((entry) => entry.counters ?? [])
@@ -248,6 +253,7 @@ export const analyzeNativePvpTeam = (entries: PokemonPvPRankingEntry[]) => {
         entries.length
       : 0,
     sharedThreats,
+    coveredThreats: coverage.size,
     typeCount: types.size,
   };
 };
