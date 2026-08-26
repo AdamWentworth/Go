@@ -148,12 +148,12 @@ export const NativeActionMenu = ({
   const iconSize = short
     ? clamp(height * 0.14, 54, 78)
     : clamp(width * 0.08, 66, 150);
-  const columnOffset = clamp(shortestSide * 0.24, 112, 250);
+  const columnOffset = clamp(shortestSide * 0.26, 116, 250);
   const rowOffset = short
     ? clamp(height * 0.22, 90, 126)
     : clamp(shortestSide * 0.22, 116, 220);
-  const destinationWidth = Math.min(122, width / 3);
-  const destinationHeight = iconSize + 45;
+  const destinationWidth = Math.min(116, width / 3);
+  const destinationHeight = iconSize + 56;
   const topInset = Platform.OS === 'android' ? 16 : insets.top + 12;
   const bottomInset = Math.max(
     insets.bottom,
@@ -402,7 +402,7 @@ const styles = StyleSheet.create({
   destination: { position: 'absolute' },
   destinationPressable: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   destinationLabel: {
-    maxWidth: '100%',
+    width: 96,
     marginTop: 3,
     fontSize: 16,
     fontWeight: '700',
@@ -425,7 +425,7 @@ const styles = StyleSheet.create({
     elevation: 6,
   },
   cornerLabel: { fontSize: 14, fontWeight: '800', lineHeight: 16 },
-  tradeBoardLabel: { maxWidth: 84, textAlign: 'left' },
+  tradeBoardLabel: { maxWidth: 112, textAlign: 'left' },
   cornerImage: { width: 40, height: 40, resizeMode: 'contain' },
   cornerImageLight: { padding: 4, borderRadius: 20, backgroundColor: '#214f55' },
   tradeBoardButton: { position: 'absolute', left: 16, zIndex: 5 },
