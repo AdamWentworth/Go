@@ -19,7 +19,8 @@
     "./pvp-battle-protocol": "./src/pvp-battle-protocol.ts",
     "./raid-rules": "./src/raid-rules.ts",
     "./type-effectiveness": "./src/type-effectiveness.ts",
-    "./raid-combat": "./src/raid-combat.ts"
+    "./raid-combat": "./src/raid-combat.ts",
+    "./special-max-pokemon": "./src/special-max-pokemon.ts"
   },
   "dependencies": {
     "@pokemongonexus/shared-contracts": "file:../shared-contracts"
