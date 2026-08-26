@@ -386,7 +386,7 @@ export const NativePvpScreen = ({
           {cupOpen && cupFormats.length ? (
             <View style={[styles.cupOptions, light && styles.panelLight]}>
               {cupFormats.map((item) => (
-                <Pressable key={item.key} onPress={() => { setFormatKey(item.key); setCupOpen(false); }} style={styles.cupOption}>
+                <Pressable accessibilityRole="button" key={item.key} onPress={() => { setFormatKey(item.key); setCupOpen(false); }} style={styles.cupOption}>
                   <Text style={[styles.cupOptionText, light && styles.textLight]}>{item.label}</Text>
                 </Pressable>
               ))}

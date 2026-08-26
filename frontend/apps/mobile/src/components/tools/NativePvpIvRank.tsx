@@ -14,6 +14,12 @@ import type {
   PokemonPvPLeagueKey,
 } from "@pokemongonexus/shared-contracts/pokemon";
 import { calculateNativePvpIvSummary } from "../../features/tools/nativePvpModel";
+import {
+  buildNativePvpIvPokemonOptions,
+  nativePvpIvOptionImage,
+  resolveNativePvpIvOptionForInstance,
+  type NativePvpIvPokemonOption,
+} from "../../features/tools/nativePvpIvPokemon";
 
 type IvField = "attack" | "defense" | "stamina";
 type Scope = "catalog" | "owned";
@@ -105,7 +111,7 @@ export const NativePvpIvRank = ({
   signedIn,
 }: Props) => {
   const [query, setQuery] = useState("");
-  const [selectedPokemonId, setSelectedPokemonId] = useState<number | null>(null);
+  const [selectedOptionId, setSelectedOptionId] = useState<string | null>(null);
   const [selectedInstanceId, setSelectedInstanceId] = useState<string | null>(null);
   const [ivs, setIvs] = useState({ attack: 0, defense: 15, stamina: 15 });
   const [bestBuddy, setBestBuddy] = useState(false);
@@ -113,85 +119,100 @@ export const NativePvpIvRank = ({
     () => new Map(catalog.map((pokemon) => [pokemon.pokemon_id, pokemon])),
     [catalog],
   );
-  const owned = useMemo(
-    () => Object.values(instances)
-      .filter((instance) =>
-        instance.is_caught &&
-        !instance.disabled &&
-        instance.attack_iv != null &&
-        instance.defense_iv != null &&
-        instance.stamina_iv != null &&
-        pokemonById.has(instance.pokemon_id),
-      )
-      .sort((left, right) =>
-        (pokemonById.get(left.pokemon_id)?.pokedex_number ?? 0) -
-          (pokemonById.get(right.pokemon_id)?.pokedex_number ?? 0),
-      ),
-    [instances, pokemonById],
+  const pokemonOptions = useMemo(
+    () => buildNativePvpIvPokemonOptions(catalog),
+    [catalog],
   );
-  const selectedPokemon = selectedPokemonId == null
+  const owned = useMemo(
+    () => Object.entries(instances)
+      .flatMap(([sourceKey, instance]) => {
+        const pokemon = pokemonById.get(instance.pokemon_id);
+        if (
+          !pokemon ||
+          !instance.is_caught ||
+          instance.disabled ||
+          instance.is_mega ||
+          instance.mega ||
+          instance.attack_iv == null ||
+          instance.defense_iv == null ||
+          instance.stamina_iv == null
+        ) return [];
+        const option = resolveNativePvpIvOptionForInstance(instance, pokemon, pokemonOptions);
+        if (!option) return [];
+        return [{
+          id: String(instance.instance_id || sourceKey),
+          instance,
+          option,
+        }];
+      })
+      .sort((left, right) =>
+        left.option.pokedexNumber - right.option.pokedexNumber ||
+        left.option.name.localeCompare(right.option.name),
+      ),
+    [instances, pokemonById, pokemonOptions],
+  );
+  const selectedOption = selectedOptionId == null
     ? null
-    : pokemonById.get(selectedPokemonId) ?? null;
+    : pokemonOptions.find((option) => option.id === selectedOptionId) ?? null;
   const selectedInstance = selectedInstanceId == null
     ? null
-    : instances[selectedInstanceId] ?? null;
+    : owned.find((entry) => entry.id === selectedInstanceId)?.instance ?? null;
   const normalizedQuery = query.trim().toLocaleLowerCase();
   const matchingCatalog = useMemo(
-    () => catalog
-      .filter((pokemon) =>
+    () => pokemonOptions
+      .filter((option) =>
         !normalizedQuery ||
-        pokemon.name.toLocaleLowerCase().includes(normalizedQuery) ||
-        String(pokemon.pokedex_number).includes(normalizedQuery),
+        option.name.toLocaleLowerCase().includes(normalizedQuery) ||
+        String(option.pokedexNumber).includes(normalizedQuery),
       )
       .slice(0, 24),
-    [catalog, normalizedQuery],
+    [normalizedQuery, pokemonOptions],
   );
   const matchingOwned = useMemo(
-    () => owned.filter((instance) => {
-      const pokemon = pokemonById.get(instance.pokemon_id);
+    () => owned.filter(({ instance, option }) => {
       return !normalizedQuery ||
-        pokemon?.name.toLocaleLowerCase().includes(normalizedQuery) ||
+        option.name.toLocaleLowerCase().includes(normalizedQuery) ||
         String(instance.nickname ?? "").toLocaleLowerCase().includes(normalizedQuery) ||
-        String(pokemon?.pokedex_number ?? "").includes(normalizedQuery);
+        String(option.pokedexNumber).includes(normalizedQuery);
     }),
-    [normalizedQuery, owned, pokemonById],
+    [normalizedQuery, owned],
   );
   const evaluatedAttack = selectedInstance ? Number(selectedInstance.attack_iv) : ivs.attack;
   const evaluatedDefense = selectedInstance ? Number(selectedInstance.defense_iv) : ivs.defense;
   const evaluatedStamina = selectedInstance ? Number(selectedInstance.stamina_iv) : ivs.stamina;
   const result = useMemo(
-    () => selectedPokemon
+    () => selectedOption
       ? calculateNativePvpIvSummary(
-          selectedPokemon,
+          selectedOption.evaluationPokemon,
           { attack: evaluatedAttack, defense: evaluatedDefense, stamina: evaluatedStamina },
           league,
           bestBuddy ? 51 : 50,
         )
       : null,
-    [bestBuddy, evaluatedAttack, evaluatedDefense, evaluatedStamina, league, selectedPokemon],
+    [bestBuddy, evaluatedAttack, evaluatedDefense, evaluatedStamina, league, selectedOption],
   );
   const changeScope = (next: Scope) => {
     if (next === "owned" && !signedIn) return;
     setScope(next);
-    setSelectedPokemonId(null);
+    setSelectedOptionId(null);
     setSelectedInstanceId(null);
     setQuery("");
   };
-  const chooseCatalog = (pokemon: BasePokemon) => {
-    setSelectedPokemonId(pokemon.pokemon_id);
+  const chooseCatalog = (option: NativePvpIvPokemonOption) => {
+    setSelectedOptionId(option.id);
     setSelectedInstanceId(null);
-    setQuery(pokemon.name);
+    setQuery(option.name);
   };
-  const chooseOwned = (instance: PokemonInstance) => {
-    setSelectedPokemonId(instance.pokemon_id);
-    setSelectedInstanceId(instance.instance_id ?? null);
-    setQuery(instance.nickname || pokemonById.get(instance.pokemon_id)?.name || "");
+  const chooseOwned = (entry: (typeof owned)[number]) => {
+    setSelectedOptionId(entry.option.id);
+    setSelectedInstanceId(entry.id);
+    setQuery(entry.instance.nickname || entry.option.name);
   };
   const updateIv = (field: IvField, value: number) =>
     setIvs((current) => ({ ...current, [field]: Math.max(0, Math.min(15, Math.round(value))) }));
   const clearSelection = () => {
     setQuery("");
-    setSelectedPokemonId(null);
+    setSelectedOptionId(null);
     setSelectedInstanceId(null);
   };
 
@@ -222,7 +243,7 @@ export const NativePvpIvRank = ({
           <Text style={[styles.searchIcon, light && styles.mutedLight]}>⌕</Text>
           <TextInput
             accessibilityLabel="Search IV Rank Pokémon"
-            onChangeText={(value) => { setQuery(value); if (selectedPokemon) { setSelectedPokemonId(null); setSelectedInstanceId(null); } }}
+            onChangeText={(value) => { setQuery(value); if (selectedOption) { setSelectedOptionId(null); setSelectedInstanceId(null); } }}
             placeholder={scope === "owned" ? "Search species or nickname" : "Search Pokémon"}
             placeholderTextColor="#7b9092"
             style={[styles.searchInput, light && styles.textLight]}
@@ -231,7 +252,7 @@ export const NativePvpIvRank = ({
           {query ? <Pressable accessibilityLabel="Clear IV Rank Pokémon" accessibilityRole="button" onPress={clearSelection}><Text style={[styles.clear, light && styles.mutedLight]}>×</Text></Pressable> : null}
         </View>
 
-        {!selectedPokemon ? (
+        {!selectedOption ? (
           <View style={styles.browser}>
             {scope === "owned" ? (
               <View style={styles.browserSummary}><Text style={[styles.searchLabel, light && styles.accentLight]}>APPRAISED POKÉMON</Text><Text style={[styles.summaryCopy, light && styles.mutedLight]}>{matchingOwned.length} shown</Text></View>
@@ -239,16 +260,16 @@ export const NativePvpIvRank = ({
             {(scope === "owned" ? matchingOwned : matchingCatalog).length ? (
               <View style={styles.optionGrid}>
                 {scope === "owned"
-                  ? matchingOwned.map((instance) => {
-                      const pokemon = pokemonById.get(instance.pokemon_id)!;
-                      return <Pressable key={instance.instance_id ?? instance.variant_id} onPress={() => chooseOwned(instance)} style={[styles.option, light && styles.controlLight]}>
-                        <Image resizeMode="contain" source={{ uri: absoluteUri(assetBaseUrl, instance.shiny ? pokemon.image_url_shiny : pokemon.image_url) }} style={styles.optionImage} />
-                        <View style={styles.optionCopy}><Text style={[styles.optionNumber, light && styles.mutedLight]}>#{String(pokemon.pokedex_number).padStart(4, "0")}</Text><Text numberOfLines={1} style={[styles.optionName, light && styles.textLight]}>{instance.nickname || pokemon.name}</Text><Text style={[styles.optionMeta, light && styles.mutedLight]}>{instance.attack_iv}/{instance.defense_iv}/{instance.stamina_iv} IV</Text></View>
+                  ? matchingOwned.map((entry) => {
+                      const { instance, option } = entry;
+                      return <Pressable accessibilityRole="button" key={entry.id} onPress={() => chooseOwned(entry)} style={[styles.option, light && styles.controlLight]}>
+                        <Image resizeMode="contain" source={{ uri: absoluteUri(assetBaseUrl, nativePvpIvOptionImage(option, instance.shiny)) }} style={styles.optionImage} />
+                        <View style={styles.optionCopy}><Text style={[styles.optionNumber, light && styles.mutedLight]}>#{String(option.pokedexNumber).padStart(4, "0")}</Text><Text numberOfLines={2} style={[styles.optionName, light && styles.textLight]}>{instance.nickname || option.name}</Text><Text style={[styles.optionMeta, light && styles.mutedLight]}>{instance.attack_iv}/{instance.defense_iv}/{instance.stamina_iv} IV</Text></View>
                       </Pressable>;
                     })
-                  : matchingCatalog.map((pokemon) => <Pressable key={pokemon.pokemon_id} onPress={() => chooseCatalog(pokemon)} style={[styles.option, light && styles.controlLight]}>
-                      <Image resizeMode="contain" source={{ uri: absoluteUri(assetBaseUrl, pokemon.image_url) }} style={styles.optionImage} />
-                      <View style={styles.optionCopy}><Text style={[styles.optionNumber, light && styles.mutedLight]}>#{String(pokemon.pokedex_number).padStart(4, "0")}</Text><Text numberOfLines={1} style={[styles.optionName, light && styles.textLight]}>{pokemon.name}</Text></View>
+                  : matchingCatalog.map((option) => <Pressable accessibilityRole="button" key={option.id} onPress={() => chooseCatalog(option)} style={[styles.option, light && styles.controlLight]}>
+                      <Image resizeMode="contain" source={{ uri: absoluteUri(assetBaseUrl, option.imageUrl) }} style={styles.optionImage} />
+                      <View style={styles.optionCopy}><Text style={[styles.optionNumber, light && styles.mutedLight]}>#{String(option.pokedexNumber).padStart(4, "0")}</Text><Text numberOfLines={2} style={[styles.optionName, light && styles.textLight]}>{option.name}</Text></View>
                     </Pressable>)}
               </View>
             ) : <Text style={[styles.empty, light && styles.mutedLight]}>{scope === "owned" ? "No appraised caught Pokémon match that search." : "No Pokémon match that search."}</Text>}
@@ -256,8 +277,8 @@ export const NativePvpIvRank = ({
         ) : (
           <>
             <View style={[styles.selected, light && styles.controlLight]}>
-              <Image resizeMode="contain" source={{ uri: absoluteUri(assetBaseUrl, selectedInstance?.shiny ? selectedPokemon.image_url_shiny : selectedPokemon.image_url) }} style={styles.selectedImage} />
-              <View style={styles.selectedCopy}><Text style={[styles.optionNumber, light && styles.mutedLight]}>#{String(selectedPokemon.pokedex_number).padStart(4, "0")}</Text><Text style={[styles.selectedName, light && styles.textLight]}>{selectedInstance?.nickname || selectedPokemon.name}</Text><Text style={[styles.optionMeta, light && styles.mutedLight]}>{selectedPokemon.type1_name}{selectedPokemon.type2_name ? ` / ${selectedPokemon.type2_name}` : ""}</Text></View>
+              <Image resizeMode="contain" source={{ uri: absoluteUri(assetBaseUrl, nativePvpIvOptionImage(selectedOption, selectedInstance?.shiny)) }} style={styles.selectedImage} />
+              <View style={styles.selectedCopy}><Text style={[styles.optionNumber, light && styles.mutedLight]}>#{String(selectedOption.pokedexNumber).padStart(4, "0")}</Text><Text style={[styles.selectedName, light && styles.textLight]}>{selectedInstance?.nickname || selectedOption.name}</Text><Text style={[styles.optionMeta, light && styles.mutedLight]}>{selectedOption.types.join(" / ")}</Text></View>
             </View>
             {scope === "catalog" ? <View style={styles.ivInputs}>
               <Text style={[styles.searchLabel, light && styles.accentLight]}>APPRAISAL IVS</Text>
@@ -268,14 +289,14 @@ export const NativePvpIvRank = ({
               </View>
             </View> : null}
             <View style={styles.levelControls}>
-              <Pressable disabled={!selectedPokemon} onPress={() => setBestBuddy(false)} style={[styles.levelButton, light && styles.controlLight, !bestBuddy && styles.levelActive]}><Text style={[styles.levelButtonText, light && styles.textLight, !bestBuddy && styles.activeText]}>Level 50</Text></Pressable>
-              <Pressable disabled={!selectedPokemon} onPress={() => setBestBuddy(true)} style={[styles.levelButton, light && styles.controlLight, bestBuddy && styles.levelActive]}><Text style={[styles.levelButtonText, light && styles.textLight, bestBuddy && styles.activeText]}>★ Best Buddy 51</Text></Pressable>
+              <Pressable accessibilityRole="button" disabled={!selectedOption} onPress={() => setBestBuddy(false)} style={[styles.levelButton, light && styles.controlLight, !bestBuddy && styles.levelActive]}><Text style={[styles.levelButtonText, light && styles.textLight, !bestBuddy && styles.activeText]}>Level 50</Text></Pressable>
+              <Pressable accessibilityRole="button" disabled={!selectedOption} onPress={() => setBestBuddy(true)} style={[styles.levelButton, light && styles.controlLight, bestBuddy && styles.levelActive]}><Text style={[styles.levelButtonText, light && styles.textLight, bestBuddy && styles.activeText]}>★ Best Buddy 51</Text></Pressable>
             </View>
           </>
         )}
       </View>
 
-      {selectedPokemon && result ? <View accessibilityLiveRegion="polite" style={[styles.result, light && styles.panelLight]}>
+      {selectedOption && result ? <View accessibilityLiveRegion="polite" style={[styles.result, light && styles.panelLight]}>
         <View style={styles.resultHero}>
           <View style={styles.rankBlock}><Text style={styles.topPercent}>TOP {Math.max(0.1, (result.rank / result.total) * 100).toFixed(result.rank / result.total < 0.01 ? 1 : 0)}%</Text><Text style={[styles.resultRank, light && styles.textLight]}>#{result.rank}</Text><Text style={[styles.resultOf, light && styles.mutedLight]}>of {result.total.toLocaleString()}</Text></View>
           <View style={styles.productBlock}><Text style={[styles.productLabel, light && styles.mutedLight]}>STAT PRODUCT</Text><Text style={styles.productValue}>{result.statProductPercent.toFixed(2)}%</Text></View>

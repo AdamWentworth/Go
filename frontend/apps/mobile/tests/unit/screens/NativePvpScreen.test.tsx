@@ -49,8 +49,34 @@ const payload = {
   formats: [],
 } as PokemonPvPRankingsPayload;
 const catalog = [
-  { pokemon_id: 1, name: 'Bulbasaur', pokedex_number: 1, attack: 118, defense: 111, stamina: 128, image_url: '/1.png' },
-] as BasePokemon[];
+  {
+    pokemon_id: 1,
+    name: 'Bulbasaur',
+    pokedex_number: 1,
+    attack: 118,
+    defense: 111,
+    stamina: 128,
+    image_url: '/1.png',
+    image_url_shiny: '/1-shiny.png',
+    type1_name: 'Grass',
+    type2_name: 'Poison',
+    fusion: [],
+    crownForms: [{
+      id: 11,
+      base_pokemon_id: 1,
+      crown_pokemon_id: 1001,
+      display_form: 'Test Crown',
+      name: 'Bulbasaur',
+      attack: 130,
+      defense: 125,
+      stamina: 140,
+      type_1_id: 12,
+      type1_name: 'Grass',
+      type2_name: 'Poison',
+      image_url: '/1-crown.png',
+    }],
+  },
+] as unknown as BasePokemon[];
 
 const renderScreen = () => render(
   <SafeAreaProvider initialMetrics={{ frame: { x: 0, y: 0, width: 390, height: 844 }, insets: { top: 24, right: 0, bottom: 20, left: 0 } }}>
@@ -102,6 +128,15 @@ describe('NativePvpScreen', () => {
     expect(screen.getByText('SIMULATED RESULT')).toBeTruthy();
     expect(screen.getByText(/wins|draw/i)).toBeTruthy();
     expect(screen.getAllByText(/rating/)).toHaveLength(2);
+  });
+
+  it('offers exact crowned forms in the IV Rank catalog', () => {
+    renderScreen();
+    fireEvent.press(screen.getByText('IV Rank'));
+    expect(screen.getByText('Test Crown Bulbasaur')).toBeTruthy();
+    fireEvent.press(screen.getByText('Test Crown Bulbasaur'));
+    expect(screen.getByText('grass / poison')).toBeTruthy();
+    expect(screen.getByText('RANK 1 SPREAD')).toBeTruthy();
   });
 
   it('runs a switch-aware three-on-three team battle locally', async () => {
