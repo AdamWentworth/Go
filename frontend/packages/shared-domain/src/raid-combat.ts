@@ -63,9 +63,13 @@ export const getSharedRaidAttackerIvs = (attacker: PokemonVariant) => ({
   stamina: clampIv(attacker.instanceData?.stamina_iv),
 });
 
-const supportedLevels = Object.keys(cpMultipliers).map(Number);
+const supportedLevels = Object.keys(cpMultipliers).map(Number) as Array<
+  keyof typeof cpMultipliers
+>;
 
-const closestSupportedLevel = (level: number): number => supportedLevels.reduce(
+const closestSupportedLevel = (
+  level: number,
+): keyof typeof cpMultipliers => supportedLevels.reduce(
   (closest, candidate) => (
     Math.abs(candidate - level) < Math.abs(closest - level) ? candidate : closest
   ),
@@ -83,7 +87,9 @@ const calculateCpAtLevel = (attacker: PokemonVariant, level: number): number => 
   ));
 };
 
-const inferLevelFromCp = (attacker: PokemonVariant): number | null => {
+const inferLevelFromCp = (
+  attacker: PokemonVariant,
+): keyof typeof cpMultipliers | null => {
   const cp = Number(attacker.instanceData?.cp);
   if (!Number.isFinite(cp) || cp <= 0) return null;
   return supportedLevels.reduce((closest, candidate) => (
@@ -97,7 +103,7 @@ const inferLevelFromCp = (attacker: PokemonVariant): number | null => {
 export const resolveSharedRaidAttackerLevel = (
   attacker: PokemonVariant,
   fallback: string,
-): number => {
+): keyof typeof cpMultipliers => {
   const recorded = Number(attacker.instanceData?.level);
   if (Number.isFinite(recorded) && recorded > 0) return closestSupportedLevel(recorded);
   return inferLevelFromCp(attacker) ?? closestSupportedLevel(Number(fallback) || 50);
