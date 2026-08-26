@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from '@testing-library/react-native';
+import { act, fireEvent, render, screen } from '@testing-library/react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import type { BasePokemon, Move } from '@pokemongonexus/shared-contracts/pokemon';
 import { NativeRaidScreen } from '../../../src/screens/NativeRaidScreen';
@@ -12,12 +12,18 @@ const renderRaid = (props: Partial<React.ComponentProps<typeof NativeRaidScreen>
 );
 
 describe('NativeRaidScreen', () => {
+  beforeEach(() => jest.useFakeTimers());
+  afterEach(() => {
+    act(() => jest.runOnlyPendingTimers());
+    jest.useRealTimers();
+  });
   it('switches to exact boss counters and opens methodology', () => {
     const onMethodology = jest.fn();
     renderRaid({ onMethodology });
     expect(screen.getByText('Raid Planner')).toBeTruthy();
     fireEvent.press(screen.getByText('Boss counters'));
-    expect(screen.getByText('CURRENT MATCHUP')).toBeTruthy();
+    expect(screen.getByText('RAID BOSS')).toBeTruthy();
+    expect(screen.getByLabelText('Find boss')).toBeTruthy();
     fireEvent.press(screen.getByLabelText('How raid rankings work'));
     expect(onMethodology).toHaveBeenCalled();
   });
@@ -32,5 +38,16 @@ describe('NativeRaidScreen', () => {
     fireEvent.press(screen.getByLabelText('Show all raid stats for Bulbasaur'));
     expect(screen.getByText('TDO')).toBeTruthy();
     expect(screen.getByText('ER')).toBeTruthy();
+  });
+  it('expands boss setup and simulates a custom raid party', () => {
+    renderRaid();
+    fireEvent.press(screen.getByText('Boss counters'));
+    fireEvent.press(screen.getByLabelText('Raid setup'));
+    expect(screen.getByText('BOSS HP')).toBeTruthy();
+    expect(screen.getByText('COMFORTABLE')).toBeTruthy();
+    fireEvent.press(screen.getByLabelText('Custom raid party'));
+    expect(screen.getByLabelText('Suggested raid team')).toBeTruthy();
+    fireEvent.press(screen.getByText('⚡ Simulate lobby'));
+    expect(screen.getByText('Likely clear')).toBeTruthy();
   });
 });

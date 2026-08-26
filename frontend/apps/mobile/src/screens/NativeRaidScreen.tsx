@@ -4,7 +4,6 @@ import {
   FlatList,
   Image,
   Pressable,
-  ScrollView,
   StyleSheet,
   Text,
   TextInput,
@@ -14,6 +13,7 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { PokemonInstance } from '@pokemongonexus/shared-contracts/instances';
 import type { BasePokemon } from '@pokemongonexus/shared-contracts/pokemon';
+import { NativeRaidBossSetupPanel } from '../components/tools/NativeRaidBossSetupPanel';
 import { NativeRaidRankingCard } from '../components/tools/NativeRaidRankingCard';
 import { NativeRaidSettingsPanel } from '../components/tools/NativeRaidSettingsPanel';
 import { NativeRaidTypeFilter } from '../components/tools/NativeRaidTypeFilter';
@@ -63,11 +63,17 @@ export const NativeRaidScreen = ({
   const [selectedType, setSelectedType] = useState('');
   const [query, setQuery] = useState('');
   const [bossId, setBossId] = useState('');
+  const [bossQuery, setBossQuery] = useState('');
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [settings, setSettings] = useState<NativeRaidSettings>(DEFAULT_NATIVE_RAID_SETTINGS);
   const bosses = useMemo(() => buildNativeRaidBosses(catalog), [catalog]);
   const selectedBoss = bosses.find((boss) => boss.id === bossId) ?? bosses[0] ?? null;
+  const bossSuggestions = useMemo(() => {
+    const normalized = bossQuery.trim().toLocaleLowerCase();
+    if (!normalized) return [];
+    return bosses.filter((boss) => `${boss.name} ${boss.pokemon.pokedex_number}`.toLocaleLowerCase().includes(normalized)).slice(0, 6);
+  }, [bossQuery, bosses]);
   const ownedCount = useMemo(() => Object.values(instances).filter((instance) => instance.is_caught && !instance.disabled).length, [instances]);
   const effectiveScope = signedIn ? scope : 'catalog';
 
@@ -101,6 +107,11 @@ export const NativeRaidScreen = ({
     setView(next);
     setExpandedId(null);
     setQuery('');
+  };
+  const selectBoss = (id: string) => {
+    setBossId(id);
+    setBossQuery('');
+    setExpandedId(null);
   };
 
   const productHeader = (
@@ -212,31 +223,40 @@ export const NativeRaidScreen = ({
 
   const bossPicker = view === 'boss' ? (
     <View style={styles.bossSection}>
-      <Text style={[styles.fieldLabel, light && styles.mutedLight]}>RAID BOSS</Text>
-      <ScrollView contentContainerStyle={styles.bossRail} horizontal showsHorizontalScrollIndicator={false}>
-        {bosses.slice(0, 100).map((boss) => (
-          <Pressable
-            accessibilityLabel={`Select ${boss.name} raid boss`}
-            accessibilityRole="button"
-            accessibilityState={{ selected: selectedBoss?.id === boss.id }}
-            key={boss.id}
-            onPress={() => setBossId(boss.id)}
-            style={[styles.bossCard, light && styles.cardLight, selectedBoss?.id === boss.id && styles.bossActive]}
-          >
-            <Image resizeMode="contain" source={{ uri: absoluteUri(assetBaseUrl, boss.imageUri) }} style={styles.bossImage} />
-            <Text numberOfLines={2} style={[styles.bossName, light && styles.textLight]}>{boss.name}</Text>
-            <Text style={styles.tier}>{boss.boss.tier}</Text>
-          </Pressable>
-        ))}
-      </ScrollView>
       {selectedBoss ? (
-        <View style={[styles.bossSummary, light && styles.panelLight]}>
+        <View style={[styles.selectedBoss, light && styles.panelLight]}>
+          <Image resizeMode="contain" source={{ uri: absoluteUri(assetBaseUrl, selectedBoss.imageUri) }} style={styles.selectedBossImage} />
           <View style={styles.bossSummaryCopy}>
-            <Text style={styles.eyebrow}>CURRENT MATCHUP</Text>
+            <Text style={styles.eyebrow}>RAID BOSS</Text>
             <Text style={[styles.bossTitle, light && styles.textLight]}>{selectedBoss.name}</Text>
-            <Text style={[styles.bossMeta, light && styles.mutedLight]}>{selectedBoss.boss.tier} · Catch CP {selectedBoss.boss.min_unboosted_cp.toLocaleString()}–{selectedBoss.boss.max_boosted_cp.toLocaleString()}</Text>
+            <Text style={[styles.bossMeta, light && styles.mutedLight]}>{selectedBoss.boss.tier} · #{String(selectedBoss.pokemon.pokedex_number).padStart(4, '0')}</Text>
           </View>
-          <Text style={styles.bossCount}>{rankings.length} counters</Text>
+        </View>
+      ) : null}
+      <TextInput
+        accessibilityLabel="Find boss"
+        onChangeText={setBossQuery}
+        placeholder="Search raid bosses"
+        placeholderTextColor={light ? '#708183' : '#809294'}
+        style={[styles.search, styles.bossSearch, light && styles.inputLight]}
+        value={bossQuery}
+      />
+      {bossQuery.trim() ? (
+        <View accessibilityLabel="Raid boss suggestions" style={[styles.bossSuggestions, light && styles.panelLight]}>
+          {bossSuggestions.length > 0 ? bossSuggestions.map((boss) => (
+            <Pressable
+              accessibilityLabel={`Select ${boss.name} raid boss`}
+              accessibilityRole="button"
+              accessibilityState={{ selected: selectedBoss?.id === boss.id }}
+              key={boss.id}
+              onPress={() => selectBoss(boss.id)}
+              style={[styles.bossSuggestion, selectedBoss?.id === boss.id && styles.bossSuggestionActive]}
+            >
+              <Image resizeMode="contain" source={{ uri: absoluteUri(assetBaseUrl, boss.imageUri) }} style={styles.bossSuggestionImage} />
+              <Text numberOfLines={1} style={[styles.bossSuggestionName, light && styles.textLight]}>{boss.name}</Text>
+              <Text style={[styles.bossSuggestionNumber, light && styles.mutedLight]}>#{String(boss.pokemon.pokedex_number).padStart(4, '0')}</Text>
+            </Pressable>
+          )) : <Text style={[styles.noBosses, light && styles.mutedLight]}>No matching raid boss found.</Text>}
         </View>
       ) : null}
     </View>
@@ -263,6 +283,7 @@ export const NativeRaidScreen = ({
         </Pressable>
       </View>
       {toolbar}
+      {view === 'boss' && selectedBoss ? <NativeRaidBossSetupPanel assetBaseUrl={assetBaseUrl} boss={selectedBoss} key={selectedBoss.id} scores={rankings} /> : null}
       {isLoading ? <View style={styles.state}><ActivityIndicator color="#2fd6d0" /><Text style={[styles.stateCopy, light && styles.mutedLight]}>Loading battle data…</Text></View> : null}
       {error ? (
         <View accessibilityRole="alert" style={styles.error}>
@@ -309,7 +330,6 @@ const styles = StyleSheet.create({
   mutedLight: { color: '#617476' },
   panelLight: { borderColor: '#b8cccc', backgroundColor: '#fff' },
   controlLight: { borderColor: '#b8c8c8', backgroundColor: '#fff' },
-  cardLight: { borderColor: '#bdcccc', backgroundColor: '#fff' },
   inputLight: { borderColor: '#b8c8c8', color: '#142629', backgroundColor: '#fff' },
   headerStack: { gap: 8, marginBottom: 8 },
   productHeader: { minHeight: 100, flexDirection: 'row', alignItems: 'center', gap: 8, borderBottomWidth: 1, borderBottomColor: '#294749', paddingHorizontal: 3, paddingBottom: 9 },
@@ -349,17 +369,19 @@ const styles = StyleSheet.create({
   info: { width: 43, height: 43, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: '#3e5557', borderRadius: 22, backgroundColor: '#162122' },
   infoText: { color: '#52ded5', fontSize: 16, fontWeight: '900' },
   bossSection: { gap: 7 },
-  bossRail: { gap: 7, paddingRight: 8 },
-  bossCard: { width: 92, minHeight: 110, alignItems: 'center', borderWidth: 1, borderColor: '#354d4f', borderRadius: 12, padding: 6, backgroundColor: '#11191a' },
-  bossActive: { borderColor: '#2fd6d0', backgroundColor: '#123532' },
-  bossImage: { width: 59, height: 59 },
-  bossName: { minHeight: 27, color: '#fff', fontSize: 9.5, lineHeight: 12, fontWeight: '900', textAlign: 'center' },
-  tier: { color: '#5edfd5', fontSize: 7.5, fontWeight: '900', textTransform: 'uppercase' },
-  bossSummary: { flexDirection: 'row', alignItems: 'center', gap: 8, borderWidth: 1, borderColor: '#355153', borderRadius: 12, padding: 10, backgroundColor: '#101819' },
+  selectedBoss: { flexDirection: 'row', alignItems: 'center', gap: 10, borderWidth: 1, borderColor: '#355153', borderRadius: 13, padding: 9, backgroundColor: '#101819' },
+  selectedBossImage: { width: 72, height: 72 },
   bossSummaryCopy: { minWidth: 0, flex: 1 },
-  bossTitle: { color: '#fff', fontSize: 16, fontWeight: '900' },
-  bossMeta: { marginTop: 2, color: '#9badae', fontSize: 8.5 },
-  bossCount: { color: '#46d7c8', fontSize: 10, fontWeight: '900' },
+  bossTitle: { color: '#fff', fontSize: 19, fontWeight: '900' },
+  bossMeta: { marginTop: 3, color: '#9badae', fontSize: 9.5, fontWeight: '800' },
+  bossSearch: { marginTop: 0 },
+  bossSuggestions: { gap: 3, borderWidth: 1, borderColor: '#355153', borderRadius: 12, padding: 5, backgroundColor: '#101819' },
+  bossSuggestion: { minHeight: 48, flexDirection: 'row', alignItems: 'center', gap: 8, borderRadius: 9, paddingHorizontal: 7 },
+  bossSuggestionActive: { backgroundColor: '#174d47' },
+  bossSuggestionImage: { width: 40, height: 40 },
+  bossSuggestionName: { minWidth: 0, flex: 1, color: '#fff', fontSize: 11, fontWeight: '900' },
+  bossSuggestionNumber: { color: '#95a8a9', fontSize: 8.5, fontWeight: '800' },
+  noBosses: { padding: 10, color: '#9badae', fontSize: 10, textAlign: 'center' },
   state: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, padding: 20 },
   stateCopy: { color: '#a3b5b6', fontSize: 11.5, lineHeight: 17, textAlign: 'center' },
   error: { gap: 7, borderWidth: 1, borderColor: '#df5770', borderRadius: 12, padding: 13, backgroundColor: '#39151e' },
