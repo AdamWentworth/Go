@@ -38,6 +38,8 @@ describe('NativeTradeBoardScreen', () => {
     expect(screen.getByText('Trade Board')).toBeTruthy();
     expect(screen.getByText('Gigantamax Charizard')).toBeTruthy();
     expect(screen.getByText('Shiny Blastoise')).toBeTruthy();
+    expect(screen.getByText('Gigantamax Charizard').props.allowFontScaling).toBe(false);
+    expect(screen.getByText('Shiny Blastoise').props.allowFontScaling).toBe(false);
 
     fireEvent(screen.getByLabelText('Include Looking For Pokémon'), 'valueChange', false);
     expect(screen.queryByText('Shiny Blastoise')).toBeNull();

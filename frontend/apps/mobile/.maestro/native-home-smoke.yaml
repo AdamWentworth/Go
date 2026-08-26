@@ -31,6 +31,11 @@ tags:
       text: At a glance
     direction: DOWN
     timeout: 10000
+- scrollUntilVisible:
+    element:
+      text: 2,255
+    direction: DOWN
+    timeout: 10000
 - assertVisible: 2,255
 - scrollUntilVisible:
     element:

@@ -30,6 +30,11 @@ tags:
       text: Your trainer details
     direction: DOWN
     timeout: 10000
+- scrollUntilVisible:
+    element:
+      text: POKÉMON GO NAME
+    direction: DOWN
+    timeout: 10000
 - assertVisible: POKÉMON GO NAME
 - tapOn: Pokémon GO name
 - eraseText: 20

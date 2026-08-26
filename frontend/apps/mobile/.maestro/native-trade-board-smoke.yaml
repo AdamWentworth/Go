@@ -15,7 +15,17 @@ name: Native Trade Board smoke
       - tapOn: Close
 - assertVisible: "Trade Board"
 - assertVisible: "Shiny Gigantamax Charizard"
+- scrollUntilVisible:
+    element:
+      text: "Gigantamax Blastoise"
+    direction: DOWN
+    timeout: 10000
 - assertVisible: "Gigantamax Blastoise"
+- scrollUntilVisible:
+    element:
+      text: "Nexus Light"
+    direction: UP
+    timeout: 10000
 - tapOn: "Nexus Light"
 - tapOn: "Include Looking For Pokémon"
 - assertNotVisible: "Gigantamax Blastoise"

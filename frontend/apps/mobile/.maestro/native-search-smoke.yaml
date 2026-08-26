@@ -60,8 +60,12 @@ tags:
     timeout: 10000
 - tapOn: Username or Pokémon GO name
 - inputText: Other
-- extendedWaitUntil:
-    visible: Nexus · @OtherTrainer
+- hideKeyboard
+- scrollUntilVisible:
+    element:
+      text: Nexus · @OtherTrainer
+    direction: DOWN
     timeout: 10000
+- assertVisible: Nexus · @OtherTrainer
 - assertVisible: Pokémon GO · OtherPogoName
 - takeScreenshot: search-03-trainers

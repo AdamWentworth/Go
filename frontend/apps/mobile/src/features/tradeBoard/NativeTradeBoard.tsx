@@ -1,4 +1,4 @@
-import { forwardRef } from 'react';
+import { forwardRef, type ComponentProps } from 'react';
 import { Image, StyleSheet, Text, View } from 'react-native';
 import QRCode from 'react-native-qrcode-svg';
 import type {
@@ -12,6 +12,13 @@ type Props = {
   model: NativeTradeBoardModel;
   theme: NativeTradeBoardTheme;
 };
+
+// The board is an image-generation canvas. Keep its typography deterministic so
+// exported boards do not reflow differently based on the creator's system font
+// scale; the surrounding screen controls continue to honor accessibility text.
+const BoardText = (props: ComponentProps<typeof Text>) => (
+  <Text {...props} allowFontScaling={false} />
+);
 
 const toAssetUrl = (baseUrl: string, path: string): string => (
   /^https?:\/\//i.test(path)
@@ -81,14 +88,14 @@ const BoardEntry = ({
           style={styles.maxBadge}
         />
       ) : null}
-      {entry.mostWanted ? <Text accessibilityLabel="Most Wanted" style={styles.mostWanted}>★</Text> : null}
+      {entry.mostWanted ? <BoardText accessibilityLabel="Most Wanted" style={styles.mostWanted}>★</BoardText> : null}
       {entry.quantity > 1 ? (
-        <Text style={[styles.quantity, { backgroundColor: palette.border }]}>×{entry.quantity}</Text>
+        <BoardText style={[styles.quantity, { backgroundColor: palette.border }]}>×{entry.quantity}</BoardText>
       ) : null}
     </View>
-    <Text numberOfLines={2} style={[styles.entryName, { color: palette.text }]}>{entry.name}</Text>
-    <Text style={[styles.entryNumber, { color: palette.muted }]}>#{String(entry.pokedexNumber).padStart(4, '0')}</Text>
-    {entry.luckyRequested ? <Text style={styles.luckyRequested}>Lucky requested</Text> : null}
+    <BoardText numberOfLines={2} style={[styles.entryName, { color: palette.text }]}>{entry.name}</BoardText>
+    <BoardText style={[styles.entryNumber, { color: palette.muted }]}>#{String(entry.pokedexNumber).padStart(4, '0')}</BoardText>
+    {entry.luckyRequested ? <BoardText style={styles.luckyRequested}>Lucky requested</BoardText> : null}
   </View>
 );
 
@@ -107,8 +114,8 @@ const BoardSection = ({
 }) => (
   <View style={[styles.section, { borderColor: `${accent}a6` }]}>
     <View style={styles.sectionHeader}>
-      <Text style={[styles.sectionTitle, { color: accent }]}>{label}</Text>
-      <Text style={[styles.sectionCount, { backgroundColor: `${accent}26`, color: accent }]}>{entries.length}</Text>
+      <BoardText style={[styles.sectionTitle, { color: accent }]}>{label}</BoardText>
+      <BoardText style={[styles.sectionCount, { backgroundColor: `${accent}26`, color: accent }]}>{entries.length}</BoardText>
     </View>
     {entries.length ? (
       <View style={styles.grid}>
@@ -117,7 +124,7 @@ const BoardSection = ({
         ))}
       </View>
     ) : (
-      <Text style={[styles.empty, { color: palette.muted }]}>No Pokémon listed here yet.</Text>
+      <BoardText style={[styles.empty, { color: palette.muted }]}>No Pokémon listed here yet.</BoardText>
     )}
   </View>
 );
@@ -147,16 +154,16 @@ export const NativeTradeBoard = forwardRef<View, Props>(function NativeTradeBoar
           style={styles.logo}
         />
         <View style={styles.identity}>
-          <Text style={[styles.kicker, { color: palette.border }]}>LIVE TRADE BOARD</Text>
-          <Text numberOfLines={1} style={[styles.username, { color: palette.text }]}>@{model.username}</Text>
+          <BoardText style={[styles.kicker, { color: palette.border }]}>LIVE TRADE BOARD</BoardText>
+          <BoardText numberOfLines={1} style={[styles.username, { color: palette.text }]}>@{model.username}</BoardText>
           {model.pokemonGoName ? (
-            <Text style={[styles.pogoName, { color: palette.muted }]}>Pokémon GO: {model.pokemonGoName}</Text>
+            <BoardText style={[styles.pogoName, { color: palette.muted }]}>Pokémon GO: {model.pokemonGoName}</BoardText>
           ) : null}
         </View>
       </View>
       <View style={styles.summary}>
-        <Text style={styles.tradeSummary}><Text style={styles.summaryNumber}>{model.tradeCount}</Text> For Trade</Text>
-        <Text style={styles.wantedSummary}><Text style={styles.summaryNumber}>{model.wantedCount}</Text> Looking For</Text>
+        <BoardText style={styles.tradeSummary}><BoardText style={styles.summaryNumber}>{model.tradeCount}</BoardText> For Trade</BoardText>
+        <BoardText style={styles.wantedSummary}><BoardText style={styles.summaryNumber}>{model.wantedCount}</BoardText> Looking For</BoardText>
       </View>
       <View style={styles.content}>
         {model.includeTrade ? (
@@ -168,9 +175,9 @@ export const NativeTradeBoard = forwardRef<View, Props>(function NativeTradeBoar
       </View>
       <View style={[styles.footer, { borderTopColor: `${palette.border}70` }]}>
         <View style={styles.footerCopy}>
-          <Text style={[styles.footerTitle, { color: palette.text }]}>See this board live</Text>
-          <Text style={[styles.footerUrl, { color: palette.border }]} numberOfLines={1}>pokegonexus.com/trade-board/{model.username}</Text>
-          <Text style={[styles.generated, { color: palette.muted }]}>Generated {generatedLabel} · Unofficial community tool</Text>
+          <BoardText style={[styles.footerTitle, { color: palette.text }]}>See this board live</BoardText>
+          <BoardText style={[styles.footerUrl, { color: palette.border }]} numberOfLines={1}>pokegonexus.com/trade-board/{model.username}</BoardText>
+          <BoardText style={[styles.generated, { color: palette.muted }]}>Generated {generatedLabel} · Unofficial community tool</BoardText>
         </View>
         <View style={styles.qrShell}>
           <QRCode backgroundColor="#ffffff" color="#071526" quietZone={4} size={76} value={model.boardUrl} />
