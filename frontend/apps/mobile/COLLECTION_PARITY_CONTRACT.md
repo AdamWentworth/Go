@@ -342,15 +342,17 @@ because the grid renders. Do not cut over an instance type with missing editing,
 organizer, proposal, or child-modal behavior. The unit of migration is a complete
 user workflow, not a component or a screen.
 
-## Initial collection milestone boundary
+## Current collection milestone boundary
 
-Before implementation resumes, the first candidate milestone is limited to a
-hidden, read-only visual parity lab for the page shell, header, search idle state,
-active tag chip, and virtualized card grid. It must use deterministic fixtures
-and must not be presented as **Your collection** or as a usable replacement.
+The obsolete read-only collection lab has been removed. The development-only
+native preview now contains the complete collection candidate: live snapshot and
+cache hydration, virtualized responsive catalog, tags and wishlist, organizer
+mutations, caught/For Trade/Wanted overlays, preference and proposal handoffs,
+offline outbox status, Receiver acceptance, and canonical reconciliation.
 
-Only after that lab passes screenshot parity may it connect to live collection
-data. Mutations and instance overlays remain canonical WebView workflows until
-their complete parity milestones pass independently. This prevents another
-partial engineering screen from being mistaken for the application the user has
-spent years designing.
+That broader implementation does not relax this contract. It remains behind the
+native-preview flag until the entire required state matrix passes and the Pixel
+side-by-side review approves it as one complete workflow. If any child selector,
+mutation, responsive state, theme, or error path is incomplete, the collection
+candidate is incomplete; the presence of a working grid is never sufficient for
+cutover.
