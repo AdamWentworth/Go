@@ -320,6 +320,11 @@ tags:
 - extendedWaitUntil:
     visible: BALL CAUGHT
     timeout: 10000
+- scrollUntilVisible:
+    element:
+      text: "Ball caught: BEAST BALL"
+    direction: DOWN
+    timeout: 20000
 - tapOn: "Ball caught: BEAST BALL"
 - takeScreenshot: 06g-caught-metadata-editor
 - tapOn: Save Pokémon

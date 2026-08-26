@@ -202,7 +202,7 @@ export const NativeAccountSecurityScreen = ({
             <Text style={styles.sectionIcon}>◇</Text>
           </View>
           <Text style={[styles.sectionCopy, light && styles.mutedLight]}>Changing your password signs out every device, including this one.</Text>
-          <AccountField label="New password" light={light} onChangeText={(value) => update('newPassword', value)} placeholder="8+ characters with mixed character types" secureTextEntry value={draft.newPassword} />
+          <AccountField label="New password" light={light} onChangeText={(value) => update('newPassword', value)} placeholder="8+ characters, mixed types" secureTextEntry value={draft.newPassword} />
           <AccountField label="Confirm new password" light={light} onChangeText={(value) => update('confirmNewPassword', value)} secureTextEntry value={draft.confirmNewPassword} />
           <Pressable accessibilityRole="button" disabled={working} onPress={onChangePassword} style={[styles.primary, working && styles.disabled]}>
             <Text style={styles.primaryText}>{pendingAction === 'password' ? 'Updating…' : security?.hasPassword ? 'Update password' : 'Add password'}</Text>

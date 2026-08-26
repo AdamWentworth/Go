@@ -34,6 +34,7 @@ tags:
     element:
       text: One clear trading workflow
     direction: DOWN
+    visibilityPercentage: 50
     timeout: 10000
 - assertVisible: Exact collection
 - assertVisible: Reciprocal trading

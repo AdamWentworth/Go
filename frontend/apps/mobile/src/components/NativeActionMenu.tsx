@@ -154,6 +154,7 @@ export const NativeActionMenu = ({
     : clamp(shortestSide * 0.22, 116, 220);
   const destinationWidth = Math.min(116, width / 3);
   const destinationHeight = iconSize + 56;
+  const bottomCornerMaxWidth = Math.max(96, (width / 2) - 64);
   const topInset = Platform.OS === 'android' ? 16 : insets.top + 12;
   const bottomInset = Math.max(
     insets.bottom,
@@ -309,7 +310,12 @@ export const NativeActionMenu = ({
           style={[
             styles.cornerButton,
             styles.profileButton,
-            { backgroundColor: palette.surface, borderColor: palette.border, bottom: bottomInset },
+            {
+              backgroundColor: palette.surface,
+              borderColor: palette.border,
+              bottom: bottomInset,
+              maxWidth: bottomCornerMaxWidth,
+            },
           ]}
         >
           <Text numberOfLines={2} style={[styles.cornerLabel, { color: palette.text }]}>Profile</Text>
@@ -346,7 +352,14 @@ export const NativeActionMenu = ({
             accessibilityRole="button"
             accessibilityState={{ expanded: supportOpen }}
             onPress={() => setSupportOpen((current) => !current)}
-            style={[styles.cornerButton, { backgroundColor: palette.surface, borderColor: palette.border }]}
+            style={[
+              styles.cornerButton,
+              {
+                backgroundColor: palette.surface,
+                borderColor: palette.border,
+                maxWidth: bottomCornerMaxWidth,
+              },
+            ]}
           >
             <HelpGlyph color={palette.focus} ink={light ? '#ffffff' : '#07252a'} />
             <Text numberOfLines={2} style={[styles.cornerLabel, { color: palette.text }]}>Learn &amp; support</Text>
@@ -424,7 +437,7 @@ const styles = StyleSheet.create({
     shadowRadius: 14,
     elevation: 6,
   },
-  cornerLabel: { fontSize: 14, fontWeight: '800', lineHeight: 16 },
+  cornerLabel: { minWidth: 0, flexShrink: 1, fontSize: 14, fontWeight: '800', lineHeight: 16 },
   tradeBoardLabel: { maxWidth: 112, textAlign: 'left' },
   cornerImage: { width: 40, height: 40, resizeMode: 'contain' },
   cornerImageLight: { padding: 4, borderRadius: 20, backgroundColor: '#214f55' },

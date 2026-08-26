@@ -1,4 +1,5 @@
 import { act, fireEvent, render } from '@testing-library/react-native';
+import { StyleSheet } from 'react-native';
 import { NativeActionMenu } from '../../../src/components/NativeActionMenu';
 
 const mockToggleColorTheme = jest.fn();
@@ -97,5 +98,19 @@ describe('NativeActionMenu', () => {
     expect(getByTestId('native-action-menu-destination-home')).toBeTruthy();
     act(() => jest.runAllTimers());
     expect(getByTestId('native-action-menu-destination-pokemon')).toBeTruthy();
+  });
+
+  it('keeps the bottom corner actions clear of the centered close control', () => {
+    const { getByLabelText } = render(
+      <NativeActionMenu
+        assetBaseUrl="https://pokegonexus.com"
+        onClose={jest.fn()}
+        onNavigate={jest.fn()}
+        visible
+      />,
+    );
+
+    expect(StyleSheet.flatten(getByLabelText('Profile').props.style).maxWidth).toBe(142);
+    expect(StyleSheet.flatten(getByLabelText('Learn and support').props.style).maxWidth).toBe(142);
   });
 });
