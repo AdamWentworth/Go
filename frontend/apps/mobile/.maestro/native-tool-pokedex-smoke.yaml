@@ -25,4 +25,11 @@ name: Native Pokédex tool smoke
 - extendedWaitUntil:
     visible: "Shiny Bulbasaur"
     timeout: 15000
+- assertVisible: "Register all"
+- assertVisible: "Unregister all"
+- tapOn: "Register all"
+- assertVisible: "Register every visible entry?"
+- assertVisible: ".*mark all 1 currently visible entries.*"
+- tapOn: "Cancel"
+- assertNotVisible: "Register every visible entry?"
 - takeScreenshot: "native-tool-pokedex-region-detail"

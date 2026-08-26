@@ -439,6 +439,7 @@ export default function DeviceSmokeToolsRoute() {
         onBack={noOp}
         onOpenEntry={noOp}
         onRetry={noOp}
+        onSetRegistrations={noOp}
       />
     );
   }
