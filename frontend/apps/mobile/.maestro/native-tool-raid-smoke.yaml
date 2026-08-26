@@ -61,8 +61,20 @@ name: Native Raid tool smoke
     direction: DOWN
 - tapOn: "Custom raid party"
 - assertVisible: "2 Trainers"
+- scrollUntilVisible:
+    element:
+      text: "Trainer 1"
+    direction: DOWN
 - assertVisible: "Trainer 1"
+- scrollUntilVisible:
+    element:
+      text: "⚡ Simulate"
+    direction: UP
 - tapOn: "⚡ Simulate"
+- scrollUntilVisible:
+    element:
+      text: "Likely clear"
+    direction: DOWN
 - assertVisible: "Likely clear"
 - takeScreenshot: "native-tool-raid-party"
 - scrollUntilVisible:
