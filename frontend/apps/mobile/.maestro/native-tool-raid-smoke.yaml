@@ -49,11 +49,35 @@ name: Native Raid tool smoke
     element:
       text: "BOSS HP"
     direction: DOWN
+- scrollUntilVisible:
+    element:
+      text: "COMFORTABLE"
+    direction: DOWN
 - assertVisible: "COMFORTABLE"
 - takeScreenshot: "native-tool-raid-setup"
 - scrollUntilVisible:
     element:
+      text: "Custom raid party"
+    direction: DOWN
+- tapOn: "Custom raid party"
+- assertVisible: "2 Trainers"
+- assertVisible: "Trainer 1"
+- tapOn: "⚡ Simulate"
+- assertVisible: "Likely clear"
+- takeScreenshot: "native-tool-raid-party"
+- scrollUntilVisible:
+    element:
+      text: "Battle team"
+    direction: DOWN
+- assertVisible: "Trainer 1 team slot 1"
+- takeScreenshot: "native-tool-raid-party-trainer"
+- scrollUntilVisible:
+    element:
       text: "Battle calibration"
+    direction: DOWN
+- scrollUntilVisible:
+    element:
+      text: "◷  Log raid"
     direction: DOWN
 - tapOn: "◷  Log raid"
 - assertVisible: "Log the actual result"

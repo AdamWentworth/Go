@@ -1,13 +1,14 @@
 import { useMemo, useState } from 'react';
-import { Image, Pressable, StyleSheet, Text, View, useColorScheme } from 'react-native';
+import { Pressable, StyleSheet, Text, View, useColorScheme } from 'react-native';
 import type { NativeCombatEntry, NativeRaidBossEntry } from '../../features/tools/nativeBattleModels';
 import {
   estimateNativeRaidGroup,
-  getNativeRaidTeam,
   resolveNativeRaidTier,
   simulateNativeRaidLobby,
+  type NativeRaidPartyResult,
 } from '../../features/tools/nativeRaidPlannerModel';
 import { NativeRaidCalibrationPanel } from './NativeRaidCalibrationPanel';
+import { NativeRaidPartyBuilder } from './NativeRaidPartyBuilder';
 
 type Props = {
   assetBaseUrl: string;
@@ -15,24 +16,15 @@ type Props = {
   scores: NativeCombatEntry[];
 };
 
-const assetUri = (base: string, value: string | null) => {
-  if (!value) return undefined;
-  try { return new URL(value, base).toString(); } catch { return undefined; }
-};
-
 const trainerLabel = (count: number) => count > 0 ? `${count} trainer${count === 1 ? '' : 's'}` : '—';
 
 export const NativeRaidBossSetupPanel = ({ assetBaseUrl, boss, scores }: Props) => {
   const light = useColorScheme() === 'light';
   const [open, setOpen] = useState(false);
-  const [partyOpen, setPartyOpen] = useState(false);
+  const [partyResult, setPartyResult] = useState<NativeRaidPartyResult | null>(null);
   const tier = useMemo(() => resolveNativeRaidTier(boss), [boss]);
   const estimate = useMemo(() => estimateNativeRaidGroup(scores, tier), [scores, tier]);
-  const team = useMemo(() => getNativeRaidTeam(scores), [scores]);
-  const [trainerCount, setTrainerCount] = useState(Math.max(1, estimate.minimumTrainers || 1));
-  const [simulationCount, setSimulationCount] = useState<number | null>(null);
-  const simulation = simulationCount == null ? null : simulateNativeRaidLobby(estimate, tier, simulationCount);
-  const calibrationPrediction = simulation ?? simulateNativeRaidLobby(estimate, tier, trainerCount);
+  const calibrationPrediction = partyResult ?? simulateNativeRaidLobby(estimate, tier, Math.max(1, estimate.minimumTrainers || 1));
   const shadow = tier.key.startsWith('shadow');
 
   return (
@@ -72,38 +64,10 @@ export const NativeRaidBossSetupPanel = ({ assetBaseUrl, boss, scores }: Props) 
             </View>
           </View>
 
-          <View style={[styles.party, light && styles.subpanelLight]}>
-            <Pressable
-              accessibilityLabel="Custom raid party"
-              accessibilityRole="button"
-              accessibilityState={{ expanded: partyOpen }}
-              onPress={() => setPartyOpen((current) => !current)}
-              style={styles.partyToggle}
-            >
-              <Text style={styles.partyIcon}>♟</Text>
-              <View style={styles.toggleCopy}><Text style={[styles.partyTitle, light && styles.textLight]}>Custom raid party</Text><Text style={[styles.toggleMeta, light && styles.mutedLight]}>Build and test a lobby with your top team</Text></View>
-              <Text style={[styles.chevron, light && styles.textLight]}>{partyOpen ? '⌃' : '⌄'}</Text>
-            </Pressable>
-            {partyOpen ? (
-              <View style={styles.partyContent}>
-                <View style={styles.lobbyRow}>
-                  <View><Text style={styles.eyebrow}>LOBBY SIZE</Text><Text style={[styles.lobbyTitle, light && styles.textLight]}>{trainerCount} Trainer{trainerCount === 1 ? '' : 's'}</Text></View>
-                  <View style={styles.stepper}>
-                    <Pressable accessibilityLabel="Remove Trainer" accessibilityRole="button" disabled={trainerCount <= 1} onPress={() => { setTrainerCount((count) => Math.max(1, count - 1)); setSimulationCount(null); }} style={[styles.stepperButton, light && styles.controlLight, trainerCount <= 1 && styles.disabled]}><Text style={[styles.stepperText, light && styles.textLight]}>−</Text></Pressable>
-                    <Pressable accessibilityLabel="Add Trainer" accessibilityRole="button" disabled={trainerCount >= 20} onPress={() => { setTrainerCount((count) => Math.min(20, count + 1)); setSimulationCount(null); }} style={[styles.stepperButton, light && styles.controlLight]}><Text style={[styles.stepperText, light && styles.textLight]}>+</Text></Pressable>
-                  </View>
-                </View>
-                <View accessibilityLabel="Suggested raid team" style={styles.team}>
-                  {team.map((member) => <View key={member.id} style={[styles.teamMember, light && styles.controlLight]}><Image resizeMode="contain" source={{ uri: assetUri(assetBaseUrl, member.imageUri) }} style={styles.teamImage} /><Text numberOfLines={1} style={[styles.teamName, light && styles.textLight]}>{member.name}</Text></View>)}
-                </View>
-                <Pressable accessibilityRole="button" disabled={team.length === 0} onPress={() => setSimulationCount(trainerCount)} style={[styles.simulate, team.length === 0 && styles.disabled]}><Text style={styles.simulateText}>⚡ Simulate lobby</Text></Pressable>
-                {simulation ? <View accessibilityRole="summary" style={[styles.result, simulation.clears ? styles.resultClear : styles.resultFailed]}><Text style={styles.resultTitle}>{simulation.clears ? 'Likely clear' : 'Time expired'}</Text><Text style={styles.resultCopy}>{Number.isFinite(simulation.seconds) ? `${simulation.seconds.toFixed(1)} seconds` : 'No clear'} · {simulation.dps.toFixed(1)} group DPS</Text></View> : null}
-              </View>
-            ) : null}
-          </View>
+          <NativeRaidPartyBuilder assetBaseUrl={assetBaseUrl} onResultChange={setPartyResult} scores={scores} tier={tier} />
 
           <NativeRaidCalibrationPanel
-            disabled={team.length === 0}
+            disabled={scores.length === 0}
             predictedCleared={calibrationPrediction.clears}
             predictedSeconds={Number.isFinite(calibrationPrediction.seconds) ? calibrationPrediction.seconds : null}
           />
@@ -144,29 +108,6 @@ const styles = StyleSheet.create({
   catchRangesLight: { borderTopColor: '#cedddd' },
   catchText: { color: '#9db0b1', fontSize: 8.5 },
   catchValue: { color: '#fff', fontWeight: '900' },
-  party: { overflow: 'hidden', borderRadius: 11, backgroundColor: '#172223' },
-  partyToggle: { minHeight: 54, flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 10 },
-  partyIcon: { color: '#55ddd4', fontSize: 18 },
-  partyTitle: { color: '#fff', fontSize: 12, fontWeight: '900' },
-  partyContent: { gap: 9, borderTopWidth: 1, borderTopColor: '#2c4243', padding: 9 },
-  lobbyRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 },
-  lobbyTitle: { color: '#fff', fontSize: 14, fontWeight: '900' },
-  stepper: { flexDirection: 'row', gap: 6 },
-  stepperButton: { width: 40, height: 40, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: '#465b5c', borderRadius: 20, backgroundColor: '#202b2c' },
-  stepperText: { color: '#fff', fontSize: 22, fontWeight: '900' },
-  controlLight: { borderColor: '#b9caca', backgroundColor: '#fff' },
-  disabled: { opacity: .4 },
-  team: { flexDirection: 'row', gap: 4 },
-  teamMember: { minWidth: 0, flex: 1, alignItems: 'center', borderWidth: 1, borderColor: '#3d5253', borderRadius: 8, padding: 3, backgroundColor: '#101819' },
-  teamImage: { width: 37, height: 37 },
-  teamName: { maxWidth: '100%', color: '#e8f2f2', fontSize: 6.5, fontWeight: '900' },
-  simulate: { minHeight: 42, alignItems: 'center', justifyContent: 'center', borderRadius: 999, backgroundColor: '#2fd6d0' },
-  simulateText: { color: '#071214', fontSize: 11, fontWeight: '900' },
-  result: { gap: 2, borderWidth: 1, borderRadius: 10, padding: 9 },
-  resultClear: { borderColor: '#39c99d', backgroundColor: '#12372e' },
-  resultFailed: { borderColor: '#df5770', backgroundColor: '#39151e' },
-  resultTitle: { color: '#fff', fontSize: 12, fontWeight: '900' },
-  resultCopy: { color: '#dbe8e8', fontSize: 9 },
   shadowNote: { gap: 3, borderWidth: 1, borderColor: '#9569c7', borderRadius: 10, padding: 10, backgroundColor: '#2a183a' },
   shadowTitle: { color: '#ead6ff', fontSize: 11, fontWeight: '900' },
   shadowCopy: { color: '#ceb6e7', fontSize: 9.5, lineHeight: 13 },

@@ -48,8 +48,9 @@ describe('NativeRaidScreen', () => {
     expect(screen.getByText('COMFORTABLE')).toBeTruthy();
     expect(screen.getByText('Battle calibration')).toBeTruthy();
     fireEvent.press(screen.getByLabelText('Custom raid party'));
-    expect(screen.getByLabelText('Suggested raid team')).toBeTruthy();
-    fireEvent.press(screen.getByText('⚡ Simulate lobby'));
+    expect(screen.getByLabelText('Trainer 1 battle team')).toBeTruthy();
+    expect(screen.getByLabelText('Trainer 2 settings')).toBeTruthy();
+    fireEvent.press(screen.getByText('⚡ Simulate'));
     expect(screen.getByText('Likely clear')).toBeTruthy();
   });
   it('exposes the canonical advanced boss battle controls', () => {

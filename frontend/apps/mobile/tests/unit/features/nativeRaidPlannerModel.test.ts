@@ -1,9 +1,12 @@
 import type { NativeCombatEntry, NativeRaidBossEntry } from '../../../src/features/tools/nativeBattleModels';
 import {
+  createNativeRaidParty,
   estimateNativeRaidGroup,
   getNativeRaidTeam,
+  optimizeNativeRaidParty,
   resolveNativeRaidTier,
   simulateNativeRaidLobby,
+  simulateNativeRaidParty,
 } from '../../../src/features/tools/nativeRaidPlannerModel';
 
 const score = (id: string, pokemonId: number, value: number): NativeCombatEntry => ({
@@ -43,5 +46,21 @@ describe('native raid planner model', () => {
     const estimate = estimateNativeRaidGroup([score('a', 1, 40)], tier);
     expect(simulateNativeRaidLobby(estimate, tier, 1).clears).toBe(false);
     expect(simulateNativeRaidLobby(estimate, tier, 2).seconds).toBeLessThan(simulateNativeRaidLobby(estimate, tier, 1).seconds);
+  });
+  it('models independent trainer teams and reports their contribution', () => {
+    const scores = [score('a', 1, 60), score('b', 2, 40), score('c', 3, 20)];
+    const party = createNativeRaidParty(scores, 2);
+    party[1] = { ...party[1], actionDelaySeconds: 1, dodgeStrategy: 'charged', memberIds: ['c'] };
+    const result = simulateNativeRaidParty(party, scores, resolveNativeRaidTier(boss('one-star')));
+    expect(result.trainers).toHaveLength(2);
+    expect(result.trainers[0]?.damageShare).toBeGreaterThan(result.trainers[1]?.damageShare ?? 1);
+    expect(result.dps).toBeGreaterThan(0);
+  });
+  it('optimizes every trainer with a legal distinct six-member team', () => {
+    const scores = Array.from({ length: 8 }, (_, index) => score(`score-${index}`, index + 1, 80 - index));
+    const party = createNativeRaidParty(scores, 2).map((trainer) => ({ ...trainer, memberIds: [] }));
+    const optimized = optimizeNativeRaidParty(party, scores);
+    expect(optimized).toHaveLength(2);
+    expect(new Set(optimized[0]?.memberIds).size).toBe(6);
   });
 });

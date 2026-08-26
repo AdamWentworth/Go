@@ -15,6 +15,32 @@ export type NativeRaidGroupEstimate = {
   teamDps: number;
 };
 
+export type NativeRaidPartyTrainerDraft = {
+  actionDelaySeconds: 0 | .5 | 1;
+  dodgeStrategy: 'none' | 'charged';
+  dodgeSuccessRate: .25 | .5 | .75 | 1;
+  id: string;
+  label: string;
+  memberIds: string[];
+  relobbySeconds: 5 | 10 | 15 | 20;
+};
+
+export type NativeRaidPartyTrainerResult = {
+  damageShare: number;
+  dps: number;
+  id: string;
+  label: string;
+};
+
+export type NativeRaidPartyResult = {
+  clears: boolean;
+  dps: number;
+  faints: number;
+  relobbies: number;
+  seconds: number;
+  trainers: NativeRaidPartyTrainerResult[];
+};
+
 const TIERS: Record<string, NativeRaidTier> = {
   'one-star': { hp: 600, key: 'tier1', label: 'One-star Raid', note: 'Entry-level raid with a 180-second timer.', timeLimitSeconds: 180 },
   'three-star': { hp: 3600, key: 'tier3', label: 'Three-star Raid', note: 'Standard three-star raid with a 180-second timer.', timeLimitSeconds: 180 },
@@ -48,6 +74,74 @@ export const getNativeRaidTeam = (scores: NativeCombatEntry[]): NativeCombatEntr
     seen.add(key);
     return true;
   }).slice(0, 6);
+};
+
+export const createNativeRaidPartyTrainer = (
+  index: number,
+  scores: NativeCombatEntry[],
+): NativeRaidPartyTrainerDraft => ({
+  actionDelaySeconds: 0,
+  dodgeStrategy: 'none',
+  dodgeSuccessRate: 1,
+  id: `trainer-${index + 1}`,
+  label: `Trainer ${index + 1}`,
+  memberIds: getNativeRaidTeam(scores).map((entry) => entry.id),
+  relobbySeconds: 10,
+});
+
+export const createNativeRaidParty = (
+  scores: NativeCombatEntry[],
+  trainerCount = 2,
+): NativeRaidPartyTrainerDraft[] => Array.from(
+  { length: Math.max(1, Math.min(20, trainerCount)) },
+  (_, index) => createNativeRaidPartyTrainer(index, scores),
+);
+
+export const optimizeNativeRaidParty = (
+  trainers: NativeRaidPartyTrainerDraft[],
+  scores: NativeCombatEntry[],
+): NativeRaidPartyTrainerDraft[] => {
+  const defaultIds = getNativeRaidTeam(scores).map((entry) => entry.id);
+  return trainers.map((trainer) => ({ ...trainer, memberIds: defaultIds }));
+};
+
+const partyTrainerDps = (
+  trainer: NativeRaidPartyTrainerDraft,
+  scoreById: Map<string, NativeCombatEntry>,
+): number => {
+  const members = trainer.memberIds.flatMap((id) => scoreById.get(id) ?? []);
+  if (members.length === 0) return 0;
+  const base = members.reduce((sum, member) => sum + member.score, 0) / members.length;
+  const dodgeDelay = trainer.dodgeStrategy === 'charged' ? .94 : 1;
+  const actionDelay = 1 / (1 + trainer.actionDelaySeconds * .09);
+  const relobbyUptime = 180 / (180 + trainer.relobbySeconds);
+  return base * dodgeDelay * actionDelay * relobbyUptime;
+};
+
+export const simulateNativeRaidParty = (
+  trainers: NativeRaidPartyTrainerDraft[],
+  scores: NativeCombatEntry[],
+  tier: NativeRaidTier,
+): NativeRaidPartyResult => {
+  const scoreById = new Map(scores.map((entry) => [entry.id, entry]));
+  const trainerDps = trainers.map((trainer) => ({ trainer, dps: partyTrainerDps(trainer, scoreById) }));
+  const dps = trainerDps.reduce((sum, row) => sum + row.dps, 0);
+  const seconds = dps > 0 ? tier.hp / dps : Infinity;
+  const totalTdo = trainers.reduce((sum, trainer) => sum + trainer.memberIds.reduce((teamSum, id) => teamSum + (scoreById.get(id)?.tdo ?? 0), 0), 0);
+  const faintCycles = totalTdo > 0 ? Math.max(0, tier.hp / totalTdo - 1) : 0;
+  return {
+    clears: Number.isFinite(seconds) && seconds <= tier.timeLimitSeconds,
+    dps,
+    faints: Math.max(0, Math.round(faintCycles * trainers.length * 6)),
+    relobbies: Math.max(0, Math.floor(faintCycles) * trainers.length),
+    seconds,
+    trainers: trainerDps.map(({ trainer, dps: trainerDamage }) => ({
+      damageShare: dps > 0 ? trainerDamage / dps : 0,
+      dps: trainerDamage,
+      id: trainer.id,
+      label: trainer.label,
+    })),
+  };
 };
 
 export const estimateNativeRaidGroup = (
