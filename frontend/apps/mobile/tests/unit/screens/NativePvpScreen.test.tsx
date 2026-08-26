@@ -58,6 +58,13 @@ const renderScreen = () => render(
 );
 
 describe('NativePvpScreen', () => {
+  it('matches the web roster default and keeps the signed-out personal roster unavailable', () => {
+    renderScreen();
+    expect(screen.getByRole('button', { name: /All Pokémon/ }).props.accessibilityState).toEqual({ disabled: false });
+    expect(screen.getByRole('button', { name: /My Pokémon/ }).props.accessibilityState).toEqual({ disabled: true });
+    expect(screen.getByText('2 ranked')).toBeTruthy();
+  });
+
   it('exposes all four PvP workspaces without a web fallback', () => {
     renderScreen();
     expect(screen.getByText('PvP Rankings')).toBeTruthy();

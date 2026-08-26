@@ -42,20 +42,25 @@ type Props = {
   payload: PokemonPvPRankingsPayload | null;
   signedIn: boolean;
 };
-const WORKSPACES: [NativePvpWorkspace, string][] = [
-  ["rankings", "Rankings"],
-  ["team", "Team Builder"],
-  ["battle", "Battle Lab"],
-  ["iv-rank", "IV Rank"],
+const WORKSPACES: [NativePvpWorkspace, string, string][] = [
+  ["rankings", "Rankings", "☷"],
+  ["team", "Team Builder", "♟"],
+  ["battle", "Battle Lab", "♜"],
+  ["iv-rank", "IV Rank", "▣"],
 ];
-const ROLES: [NativePvpRole, string][] = [
-  ["overall", "Overall"],
-  ["lead", "Lead"],
-  ["closer", "Closer"],
-  ["switch", "Switch"],
-  ["charger", "Charger"],
-  ["attacker", "Attacker"],
-  ["consistency", "Consistency"],
+const ROLES: [NativePvpRole, string, string][] = [
+  ["overall", "Overall", "⌁"],
+  ["lead", "Lead", "⚑"],
+  ["closer", "Closer", "✊"],
+  ["switch", "Switch", "↔"],
+  ["charger", "Charger", "ϟ"],
+  ["attacker", "Attacker", "✊"],
+  ["consistency", "Consistency", "⚖"],
+];
+const LEAGUES: [PokemonPvPLeagueKey, string, string][] = [
+  ["great", "Great", "1,500 CP"],
+  ["ultra", "Ultra", "2,500 CP"],
+  ["master", "Master", "No CP limit"],
 ];
 const uri = (base: string, value: string) => {
   try {
@@ -80,6 +85,8 @@ const PvpEntryCard = ({
   role: NativePvpRole;
 }) => {
   const light = useColorScheme() === "light";
+  const typeIcon = (type: string) =>
+    uri(assetBaseUrl, `/images/types/${type.toLocaleLowerCase()}.png`);
   return (
     <Pressable
       accessibilityRole="button"
@@ -91,32 +98,79 @@ const PvpEntryCard = ({
         expanded && styles.rankingExpanded,
       ]}
     >
-      <View style={[styles.rank, rank <= 3 && styles.rankTop]}>
-        <Text style={styles.rankText}>{rank}</Text>
+      <View
+        style={[
+          styles.rank,
+          rank === 1 && styles.rankGold,
+          rank === 2 && styles.rankSilver,
+          rank === 3 && styles.rankBronze,
+        ]}
+      >
+        <Text style={[styles.rankText, rank <= 3 && styles.rankTextTop]}>
+          {rank}
+        </Text>
       </View>
-      <Image
-        resizeMode="contain"
-        source={{ uri: uri(assetBaseUrl, entry.imageUrl) }}
-        style={styles.pokemonImage}
-      />
       <View style={styles.rankingCopy}>
-        <Text style={[styles.pokemonName, light && styles.textLight]}>
-          {entry.name}
-        </Text>
-        <Text style={[styles.pokemonMeta, light && styles.mutedLight]}>
-          Lv {entry.recommendedLevel} · {entry.attackIv}/{entry.defenseIv}/
-          {entry.staminaIv} · {entry.types.join(" / ")}
-        </Text>
-        <Text
-          numberOfLines={2}
-          style={[styles.moveLine, light && styles.mutedLight]}
-        >
-          {entry.moveset.map((move) => move.name).join(" · ")}
-        </Text>
-        <Text style={styles.score}>
-          {role === "overall" ? "Score" : role}:{" "}
-          {pvpRoleScore(entry, role).toFixed(1)}
-        </Text>
+        <View style={styles.buildRow}>
+          <Image
+            resizeMode="contain"
+            source={{ uri: uri(assetBaseUrl, entry.imageUrl) }}
+            style={styles.pokemonImage}
+          />
+          <View style={styles.identity}>
+            <Text style={[styles.pokemonName, light && styles.textLight]}>
+              {entry.name}
+            </Text>
+            <View style={styles.typeRow}>
+              {entry.types.map((type) => (
+                <Image
+                  accessibilityIgnoresInvertColors
+                  key={type}
+                  resizeMode="contain"
+                  source={{ uri: typeIcon(type) }}
+                  style={styles.typeIcon}
+                />
+              ))}
+            </View>
+            <View style={styles.moves}>
+              {entry.moveset.map((move) => (
+                <View key={`${move.kind}-${move.id}`} style={styles.moveRow}>
+                  <Image
+                    accessibilityIgnoresInvertColors
+                    resizeMode="contain"
+                    source={{ uri: typeIcon(move.type) }}
+                    style={styles.moveIcon}
+                  />
+                  <Text
+                    numberOfLines={1}
+                    style={[styles.moveLine, light && styles.textLight]}
+                  >
+                    {move.name}
+                  </Text>
+                </View>
+              ))}
+            </View>
+          </View>
+          <View style={styles.buildMeta}>
+            <Text style={styles.score}>
+              {pvpRoleScore(entry, role).toFixed(1)}
+            </Text>
+            <Text style={[styles.scoreLabel, light && styles.mutedLight]}>
+              {role === "overall" ? "Overall" : role}
+            </Text>
+            <Text style={[styles.level, light && styles.textLight]}>
+              Level {entry.recommendedLevel}
+            </Text>
+            <Text style={[styles.ivs, light && styles.mutedLight]}>
+              {entry.attackIv}/{entry.defenseIv}/{entry.staminaIv} IV
+            </Text>
+            <View style={[styles.detailPill, light && styles.detailPillLight]}>
+              <Text style={[styles.detailPillText, light && styles.textLight]}>
+                Details {expanded ? "⌃" : "⌄"}
+              </Text>
+            </View>
+          </View>
+        </View>
         {expanded ? (
           <View style={styles.expanded}>
             <Text style={[styles.detailTitle, light && styles.textLight]}>
@@ -154,7 +208,6 @@ const PvpEntryCard = ({
           </View>
         ) : null}
       </View>
-      <Text style={styles.chevron}>{expanded ? "⌃" : "⌄"}</Text>
     </Pressable>
   );
 };
@@ -165,7 +218,7 @@ export const NativePvpScreen = ({
   error = null,
   instances = {},
   isLoading = false,
-  onBack,
+  onBack: _onBack,
   onMethodology,
   onRetry,
   payload,
@@ -180,9 +233,8 @@ export const NativePvpScreen = ({
   const format =
     formats.find((item) => item.key === formatKey) ?? formats[0] ?? null;
   const league = (format?.league ?? "great") as PokemonPvPLeagueKey;
-  const [scope, setScope] = useState<"catalog" | "owned">(
-    signedIn ? "owned" : "catalog",
-  );
+  const [scope, setScope] = useState<"catalog" | "owned">("catalog");
+  const [cupOpen, setCupOpen] = useState(false);
   const [role, setRole] = useState<NativePvpRole>("overall");
   const [query, setQuery] = useState("");
   const [expanded, setExpanded] = useState<string | null>(null);
@@ -225,18 +277,21 @@ export const NativePvpScreen = ({
   const updateWorkspace = (next: NativePvpWorkspace) => {
     setWorkspace(next);
     setExpanded(null);
+    setCupOpen(false);
   };
+  const cupFormats = formats.filter(
+    (item) => !["great", "ultra", "master"].includes(item.key),
+  );
+  const activeCup = cupFormats.find((item) => item.key === format?.key) ?? null;
+  const rankedCount = workspace === "iv-rank" ? 4096 : entries.length;
   const header = (
     <View>
       <View style={styles.topbar}>
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel="Go back"
-          onPress={onBack}
-          style={[styles.back, light && styles.controlLight]}
-        >
-          <Text style={[styles.backText, light && styles.textLight]}>‹</Text>
-        </Pressable>
+        <Image
+          resizeMode="contain"
+          source={{ uri: uri(assetBaseUrl, "/images/btn_pvp.png") }}
+          style={styles.productIcon}
+        />
         <View style={styles.headerCopy}>
           <Text style={styles.eyebrow}>TRAINER BATTLES</Text>
           <Text
@@ -252,21 +307,24 @@ export const NativePvpScreen = ({
                   : "PvP IV Rank"}
           </Text>
         </View>
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel="How PvP rankings work"
-          onPress={onMethodology}
-          style={[styles.info, light && styles.controlLight]}
-        >
-          <Text style={styles.infoText}>?</Text>
-        </Pressable>
+        <View style={styles.headerActions}>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="How PvP rankings work"
+            onPress={onMethodology}
+            style={[styles.method, light && styles.methodLight]}
+          >
+            <Text style={[styles.methodText, light && styles.accentLight]}>ⓘ METHOD</Text>
+          </Pressable>
+          <View style={[styles.countPill, light && styles.countPillLight]}>
+            <Text style={[styles.countText, light && styles.countTextLight]}>
+              {rankedCount.toLocaleString()} {workspace === "iv-rank" ? "spreads" : scope === "owned" ? "ready" : "ranked"}
+            </Text>
+          </View>
+        </View>
       </View>
-      <ScrollView
-        contentContainerStyle={styles.workspaceRail}
-        horizontal
-        showsHorizontalScrollIndicator={false}
-      >
-        {WORKSPACES.map(([value, label]) => (
+      <View style={[styles.workspaceRail, light && styles.sectionLight]}>
+        {WORKSPACES.map(([value, label, icon]) => (
           <Pressable
             accessibilityRole="tab"
             accessibilityState={{ selected: workspace === value }}
@@ -278,7 +336,9 @@ export const NativePvpScreen = ({
               workspace === value && styles.workspaceActive,
             ]}
           >
-            <Text
+            <View style={styles.workspaceLabel}>
+              <Text style={[styles.workspaceIcon, light && styles.textLight, workspace === value && styles.workspaceTextActive]}>{icon}</Text>
+              <Text
               style={[
                 styles.workspaceText,
                 light && styles.textLight,
@@ -286,53 +346,74 @@ export const NativePvpScreen = ({
               ]}
             >
               {label}
-            </Text>
+              </Text>
+            </View>
           </Pressable>
         ))}
-      </ScrollView>
-      <ScrollView
-        contentContainerStyle={styles.formatRail}
-        horizontal
-        showsHorizontalScrollIndicator={false}
-      >
-        {formats.map((item) => (
+      </View>
+      <View style={[styles.leagueTabs, light && styles.sectionLight]}>
+        {LEAGUES.map(([key, label, detail]) => (
           <Pressable
             accessibilityRole="button"
-            key={item.key}
+            key={key}
             onPress={() => {
-              setFormatKey(item.key);
+              setFormatKey(key);
               setTeamKeys([]);
               setIvResult(null);
+              setCupOpen(false);
             }}
             style={[
-              styles.format,
-              light && styles.controlLight,
-              format?.key === item.key && styles.formatActive,
+              styles.league,
+              format?.league === key && !activeCup && styles.leagueActive,
             ]}
           >
             <Text
               style={[
-                styles.formatTitle,
+                styles.leagueTitle,
                 light && styles.textLight,
-                format?.key === item.key && styles.formatTextActive,
+                format?.league === key && !activeCup && styles.leagueTextActive,
               ]}
             >
-              {item.label}
+              {label}
             </Text>
             <Text
               style={[
-                styles.formatDetail,
+                styles.leagueDetail,
                 light && styles.mutedLight,
-                format?.key === item.key && styles.formatTextActive,
+                format?.league === key && !activeCup && styles.leagueDetailActive,
               ]}
             >
-              {item.cpLimit
-                ? `${item.cpLimit.toLocaleString()} CP`
-                : "No CP limit"}
+              {detail}
             </Text>
           </Pressable>
         ))}
-      </ScrollView>
+      </View>
+      {workspace !== "iv-rank" ? (
+        <View>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityState={{ expanded: cupOpen }}
+            onPress={() => setCupOpen((open) => !open)}
+            style={[styles.cupPicker, light && styles.sectionLight]}
+          >
+            <Text style={[styles.cupIcon, light && styles.accentLight]}>♜</Text>
+            <View style={styles.cupCopy}>
+              <Text style={[styles.cupLabel, light && styles.accentLight]}>CURRENT CUPS</Text>
+              <Text style={[styles.cupValue, light && styles.textLight]}>{activeCup?.label ?? (cupFormats.length ? "Choose a cup" : "No cups available")}</Text>
+            </View>
+            <Text style={[styles.cupChevron, light && styles.mutedLight]}>{cupOpen ? "⌃" : "⌄"}</Text>
+          </Pressable>
+          {cupOpen && cupFormats.length ? (
+            <View style={[styles.cupOptions, light && styles.panelLight]}>
+              {cupFormats.map((item) => (
+                <Pressable key={item.key} onPress={() => { setFormatKey(item.key); setCupOpen(false); setTeamKeys([]); setIvResult(null); }} style={styles.cupOption}>
+                  <Text style={[styles.cupOptionText, light && styles.textLight]}>{item.label}</Text>
+                </Pressable>
+              ))}
+            </View>
+          ) : null}
+        </View>
+      ) : null}
       {format?.rules.length ? (
         <View style={[styles.rules, light && styles.panelLight]}>
           <Text style={styles.eyebrow}>FORMAT RULES</Text>
@@ -341,11 +422,8 @@ export const NativePvpScreen = ({
           </Text>
         </View>
       ) : null}
-      {workspace !== "iv-rank" && signedIn ? (
-        <View style={styles.scopeRow}>
-          <Text style={[styles.scopeLabel, light && styles.mutedLight]}>
-            Roster
-          </Text>
+      {workspace !== "iv-rank" ? (
+        <View style={[styles.scopeRow, light && styles.sectionLight]}>
           {(
             [
               ["catalog", "All Pokémon"],
@@ -354,12 +432,13 @@ export const NativePvpScreen = ({
           ).map(([value, label]) => (
             <Pressable
               accessibilityRole="button"
+              disabled={value === "owned" && !signedIn}
               key={value}
               onPress={() => setScope(value)}
               style={[
                 styles.scopeButton,
-                light && styles.controlLight,
                 scope === value && styles.scopeActive,
+                value === "owned" && !signedIn && styles.disabled,
               ]}
             >
               <Text
@@ -369,7 +448,7 @@ export const NativePvpScreen = ({
                   scope === value && styles.scopeTextActive,
                 ]}
               >
-                {label}
+                {value === "catalog" ? "⚑" : "♟"} {label}
               </Text>
             </Pressable>
           ))}
@@ -415,12 +494,8 @@ export const NativePvpScreen = ({
           ListHeaderComponent={
             <>
               {header}
-              <ScrollView
-                contentContainerStyle={styles.roleRail}
-                horizontal
-                showsHorizontalScrollIndicator={false}
-              >
-                {ROLES.map(([value, label]) => (
+              <View style={styles.roleRail}>
+                {ROLES.map(([value, label, icon]) => (
                   <Pressable
                     accessibilityRole="button"
                     key={value}
@@ -431,7 +506,9 @@ export const NativePvpScreen = ({
                       role === value && styles.roleActive,
                     ]}
                   >
-                    <Text
+                    <View style={styles.roleLabel}>
+                      <Text style={[styles.roleIcon, light && styles.textLight, role === value && styles.roleTextActive]}>{icon}</Text>
+                      <Text
                       style={[
                         styles.roleText,
                         light && styles.textLight,
@@ -439,25 +516,27 @@ export const NativePvpScreen = ({
                       ]}
                     >
                       {label}
-                    </Text>
+                      </Text>
+                    </View>
                   </Pressable>
                 ))}
-              </ScrollView>
-              <TextInput
-                accessibilityLabel="Search PvP rankings"
-                onChangeText={setQuery}
-                placeholder="Pokémon, type, or move"
-                placeholderTextColor="#78868e"
-                style={[styles.search, light && styles.inputLight]}
-                value={query}
-              />
-              <View style={styles.resultsHeading}>
-                <Text style={[styles.resultsTitle, light && styles.textLight]}>
-                  {ROLES.find(([value]) => value === role)?.[1]} rankings
-                </Text>
-                <Text style={[styles.resultsMeta, light && styles.mutedLight]}>
-                  {entries.length} ranked
-                </Text>
+              </View>
+              <View style={[styles.toolbar, light && styles.panelLight]}>
+                <View style={styles.resultsHeading}>
+                  <Text style={[styles.toolbarLabel, light && styles.accentLight]}>{ROLES.find(([value]) => value === role)?.[1]?.toLocaleUpperCase()} RANKINGS</Text>
+                  <Text style={[styles.resultsTitle, light && styles.textLight]}>{format?.label ?? "Great League"}</Text>
+                </View>
+                <View style={[styles.searchWrap, light && styles.inputLight]}>
+                  <Text style={[styles.searchIcon, light && styles.mutedLight]}>⌕</Text>
+                  <TextInput
+                    accessibilityLabel="Search PvP rankings"
+                    onChangeText={setQuery}
+                    placeholder="Pokémon, type, or move"
+                    placeholderTextColor="#78868e"
+                    style={[styles.search, light && styles.textLight]}
+                    value={query}
+                  />
+                </View>
               </View>
             </>
           }
@@ -787,86 +866,141 @@ export const NativePvpScreen = ({
 };
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: "#090d12" },
-  rootLight: { backgroundColor: "#eef4f7" },
-  scrollContent: { gap: 12, paddingHorizontal: 12 },
-  textLight: { color: "#14232a" },
-  mutedLight: { color: "#5d6e76" },
-  panelLight: { borderColor: "#c0ccd2", backgroundColor: "#fff" },
+  root: { flex: 1, backgroundColor: "#0d1112" },
+  rootLight: { backgroundColor: "#edf7f7" },
+  scrollContent: { gap: 8, paddingHorizontal: 7 },
+  textLight: { color: "#071d20" },
+  mutedLight: { color: "#4c7073" },
+  accentLight: { color: "#08766b" },
+  panelLight: { borderColor: "#b2d2d2", backgroundColor: "#fff" },
   controlLight: { borderColor: "#bdc9cf", backgroundColor: "#fff" },
-  cardLight: { borderColor: "#c3ced4", backgroundColor: "#fff" },
+  cardLight: { borderColor: "#d5e7e7", backgroundColor: "#fff" },
+  sectionLight: { borderColor: "#b2d2d2", backgroundColor: "#f8ffff" },
+  methodLight: { borderColor: "#7dbdb9", backgroundColor: "#f8ffff" },
+  countPillLight: { borderColor: "#e6a9c3", backgroundColor: "#fff3f8" },
+  countTextLight: { color: "#a83567" },
+  detailPillLight: { borderColor: "#7dbdb9", backgroundColor: "#fff" },
   inputLight: {
-    borderColor: "#b9c7ce",
-    color: "#14232a",
-    backgroundColor: "#fff",
+    borderColor: "#8dc3c3",
+    color: "#071d20",
+    backgroundColor: "#fbffff",
   },
   topbar: {
-    minHeight: 66,
+    minHeight: 116,
     flexDirection: "row",
     alignItems: "center",
-    gap: 11,
-  },
-  back: {
-    width: 44,
-    height: 44,
-    alignItems: "center",
-    justifyContent: "center",
-    borderWidth: 1,
-    borderColor: "#43515b",
-    borderRadius: 22,
-    backgroundColor: "#171d22",
-  },
-  backText: { marginTop: -4, color: "#fff", fontSize: 38 },
-  headerCopy: { minWidth: 0, flex: 1 },
-  eyebrow: {
-    color: "#299cf5",
-    fontSize: 9,
-    fontWeight: "900",
-    letterSpacing: 1.1,
-  },
-  title: { color: "#fff", fontSize: 27, fontWeight: "900" },
-  info: {
-    width: 40,
-    height: 40,
-    alignItems: "center",
-    justifyContent: "center",
-    borderWidth: 1,
-    borderColor: "#42515a",
-    borderRadius: 20,
-    backgroundColor: "#171d22",
-  },
-  infoText: { color: "#299cf5", fontSize: 20, fontWeight: "900" },
-  workspaceRail: { gap: 7, paddingVertical: 8 },
-  workspace: {
-    minHeight: 43,
-    justifyContent: "center",
-    borderWidth: 1,
-    borderColor: "#414e56",
-    borderRadius: 11,
-    paddingHorizontal: 15,
-    backgroundColor: "#161c21",
-  },
-  workspaceActive: { borderColor: "#299cf5", backgroundColor: "#123c61" },
-  workspaceText: { color: "#aeb9be", fontSize: 11, fontWeight: "900" },
-  workspaceTextActive: { color: "#fff" },
-  formatRail: { gap: 7, paddingVertical: 3 },
-  format: {
-    minWidth: 104,
-    minHeight: 53,
-    justifyContent: "center",
-    borderWidth: 1,
-    borderColor: "#414e56",
-    borderRadius: 11,
+    flexWrap: "wrap",
+    gap: 10,
+    borderBottomWidth: 1,
+    borderColor: "rgba(115,204,204,0.28)",
     paddingHorizontal: 12,
-    backgroundColor: "#161c21",
+    paddingVertical: 12,
   },
-  formatActive: { borderColor: "#42cc9f", backgroundColor: "#123c31" },
-  formatTitle: { color: "#fff", fontSize: 11, fontWeight: "900" },
-  formatDetail: { marginTop: 2, color: "#92a0a7", fontSize: 8 },
-  formatTextActive: { color: "#fff" },
-  rules: {
+  productIcon: { width: 48, height: 48 },
+  headerCopy: { minWidth: 0, flex: 1, justifyContent: "center" },
+  eyebrow: {
+    color: "#8fc6cb",
+    fontSize: 10,
+    fontWeight: "900",
+    letterSpacing: 1.2,
+  },
+  title: { color: "#f5ffff", fontSize: 27, fontWeight: "900" },
+  headerActions: {
+    width: "100%",
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 7,
+  },
+  method: {
+    minHeight: 39,
+    justifyContent: "center",
+    borderWidth: 1,
+    borderColor: "rgba(115,204,204,0.5)",
+    borderRadius: 999,
+    paddingHorizontal: 13,
+    backgroundColor: "rgba(66,213,194,0.06)",
+  },
+  methodText: { color: "#42d5c2", fontSize: 10, fontWeight: "900" },
+  countPill: {
+    minHeight: 39,
+    justifyContent: "center",
+    borderWidth: 1,
+    borderColor: "rgba(237,111,165,0.42)",
+    borderRadius: 999,
+    paddingHorizontal: 12,
+    backgroundColor: "rgba(237,111,165,0.09)",
+  },
+  countText: { color: "#ffd7e8", fontSize: 11, fontWeight: "900" },
+  workspaceRail: {
+    flexDirection: "row",
     gap: 4,
     marginTop: 8,
+    borderWidth: 1,
+    borderColor: "rgba(115,204,204,0.28)",
+    borderRadius: 9,
+    padding: 4,
+    backgroundColor: "#101516",
+  },
+  workspace: {
+    minWidth: 0,
+    flex: 1,
+    minHeight: 43,
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: 7,
+    paddingHorizontal: 2,
+  },
+  workspaceActive: { backgroundColor: "#42d5c2" },
+  workspaceText: { color: "#9db6b8", fontSize: 9, fontWeight: "900", textAlign: "center" },
+  workspaceLabel: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 3 },
+  workspaceIcon: { color: "#9db6b8", fontSize: 10 },
+  workspaceTextActive: { color: "#071313" },
+  leagueTabs: {
+    flexDirection: "row",
+    gap: 4,
+    marginTop: 7,
+    borderWidth: 1,
+    borderColor: "rgba(115,204,204,0.28)",
+    borderRadius: 8,
+    padding: 4,
+    backgroundColor: "#101516",
+  },
+  league: {
+    minWidth: 0,
+    flex: 1,
+    minHeight: 52,
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: 6,
+  },
+  leagueActive: { backgroundColor: "#42d5c2" },
+  leagueTitle: { color: "#f5ffff", fontSize: 12, fontWeight: "900" },
+  leagueDetail: { marginTop: 2, color: "#9db6b8", fontSize: 9, fontWeight: "700" },
+  leagueTextActive: { color: "#071313" },
+  leagueDetailActive: { color: "#123c39" },
+  cupPicker: {
+    minHeight: 53,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 9,
+    marginTop: 5,
+    borderWidth: 1,
+    borderColor: "rgba(115,204,204,0.28)",
+    borderRadius: 8,
+    paddingHorizontal: 11,
+    backgroundColor: "#101516",
+  },
+  cupIcon: { color: "#42d5c2", fontSize: 19 },
+  cupCopy: { minWidth: 0, flex: 1 },
+  cupLabel: { color: "#8fc6cb", fontSize: 9, fontWeight: "900", letterSpacing: 0.5 },
+  cupValue: { marginTop: 2, color: "#f5ffff", fontSize: 11, fontWeight: "900" },
+  cupChevron: { color: "#9db6b8", fontSize: 17 },
+  cupOptions: { gap: 2, marginTop: 3, borderWidth: 1, borderColor: "rgba(115,204,204,0.28)", borderRadius: 8, padding: 5, backgroundColor: "#151a1b" },
+  cupOption: { minHeight: 42, justifyContent: "center", borderBottomWidth: 1, borderColor: "rgba(115,204,204,0.15)", paddingHorizontal: 10 },
+  cupOptionText: { color: "#f5ffff", fontSize: 11, fontWeight: "800" },
+  rules: {
+    gap: 4,
+    marginTop: 5,
     borderWidth: 1,
     borderColor: "#34424a",
     borderRadius: 11,
@@ -877,107 +1011,122 @@ const styles = StyleSheet.create({
   scopeRow: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 7,
-    marginTop: 9,
-  },
-  scopeLabel: {
-    marginRight: "auto",
-    color: "#95a2aa",
-    fontSize: 10,
-    fontWeight: "900",
-    textTransform: "uppercase",
+    gap: 5,
+    marginTop: 7,
+    borderWidth: 1,
+    borderColor: "rgba(115,204,204,0.28)",
+    borderRadius: 8,
+    padding: 5,
+    backgroundColor: "#101516",
   },
   scopeButton: {
-    minHeight: 38,
+    minWidth: 0,
+    flex: 1,
+    minHeight: 42,
+    alignItems: "center",
     justifyContent: "center",
     borderWidth: 1,
-    borderColor: "#414e56",
+    borderColor: "rgba(115,204,204,0.5)",
     borderRadius: 999,
-    paddingHorizontal: 12,
-    backgroundColor: "#171d22",
+    backgroundColor: "#151a1b",
   },
-  scopeActive: { borderColor: "#42cc9f", backgroundColor: "#123c31" },
-  scopeText: { color: "#a9b5bb", fontSize: 10, fontWeight: "900" },
-  scopeTextActive: { color: "#fff" },
-  roleRail: { gap: 7, paddingTop: 11 },
+  scopeActive: { borderColor: "#42d5c2", backgroundColor: "#42d5c2" },
+  scopeText: { color: "#f5ffff", fontSize: 11, fontWeight: "900" },
+  scopeTextActive: { color: "#071313" },
+  roleRail: { flexDirection: "row", flexWrap: "wrap", gap: 4, paddingTop: 7 },
   role: {
-    minHeight: 39,
+    width: "24%",
+    minHeight: 38,
+    alignItems: "center",
     justifyContent: "center",
     borderWidth: 1,
-    borderColor: "#414e56",
-    borderRadius: 999,
-    paddingHorizontal: 13,
-    backgroundColor: "#161c21",
+    borderColor: "rgba(115,204,204,0.5)",
+    borderRadius: 5,
+    paddingHorizontal: 2,
+    backgroundColor: "#151a1b",
   },
-  roleActive: { borderColor: "#299cf5", backgroundColor: "#123c61" },
-  roleText: { color: "#adb8bd", fontSize: 10, fontWeight: "900" },
-  roleTextActive: { color: "#fff" },
+  roleActive: { borderColor: "#54a9ef", backgroundColor: "rgba(84,169,239,0.18)", borderBottomWidth: 3 },
+  roleText: { color: "#9db6b8", fontSize: 9, fontWeight: "900", textAlign: "center" },
+  roleLabel: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 2 },
+  roleIcon: { color: "#9db6b8", fontSize: 10 },
+  roleTextActive: { color: "#f5ffff" },
+  toolbar: { gap: 8, marginTop: 7, marginBottom: 8, borderWidth: 1, borderColor: "rgba(115,204,204,0.28)", borderRadius: 8, padding: 8, backgroundColor: "#151a1b" },
+  toolbarLabel: { color: "#8fc6cb", fontSize: 9, fontWeight: "900" },
+  searchWrap: { minHeight: 45, flexDirection: "row", alignItems: "center", gap: 7, borderWidth: 1, borderColor: "rgba(115,204,204,0.5)", borderRadius: 999, paddingHorizontal: 12, backgroundColor: "#101516" },
+  searchIcon: { color: "#9db6b8", fontSize: 22 },
   search: {
-    minHeight: 47,
-    marginTop: 11,
-    borderWidth: 1,
-    borderColor: "#46545d",
-    borderRadius: 12,
-    paddingHorizontal: 14,
-    color: "#fff",
-    backgroundColor: "#161c21",
+    minWidth: 0,
+    flex: 1,
+    minHeight: 43,
+    color: "#f5ffff",
     fontSize: 14,
   },
   resultsHeading: {
     flexDirection: "row",
     alignItems: "baseline",
-    justifyContent: "space-between",
     gap: 8,
-    marginTop: 16,
-    marginBottom: 8,
   },
-  resultsTitle: { color: "#fff", fontSize: 18, fontWeight: "900" },
+  resultsTitle: { color: "#f5ffff", fontSize: 14, fontWeight: "900" },
   resultsMeta: { color: "#8d9ba2", fontSize: 10 },
   rankingCard: {
-    minHeight: 112,
+    minHeight: 128,
     flexDirection: "row",
-    alignItems: "flex-start",
+    alignItems: "center",
     gap: 8,
     marginBottom: 8,
     borderWidth: 1,
-    borderColor: "#34434b",
-    borderRadius: 14,
-    padding: 9,
-    backgroundColor: "#151b20",
+    borderColor: "rgba(141,192,194,0.17)",
+    borderRadius: 6,
+    padding: 8,
+    backgroundColor: "#151a1b",
   },
-  rankingExpanded: { borderColor: "#299cf5" },
+  rankingExpanded: { borderColor: "rgba(115,204,204,0.5)" },
   rank: {
-    width: 30,
-    height: 30,
+    width: 39,
+    height: 39,
     alignItems: "center",
     justifyContent: "center",
-    borderRadius: 15,
-    backgroundColor: "#29343a",
+    borderWidth: 1,
+    borderColor: "rgba(66,213,194,0.55)",
+    borderRadius: 20,
   },
-  rankTop: { backgroundColor: "#795916" },
-  rankText: { color: "#fff", fontSize: 12, fontWeight: "900" },
-  pokemonImage: { width: 72, height: 76 },
+  rankGold: { borderColor: "#f4cf54", backgroundColor: "#f4cf54" },
+  rankSilver: { borderColor: "#d6e6eb", backgroundColor: "#d6e6eb" },
+  rankBronze: { borderColor: "#d88b51", backgroundColor: "#d88b51" },
+  rankText: { color: "#f5ffff", fontSize: 13, fontWeight: "900" },
+  rankTextTop: { color: "#142025" },
+  pokemonImage: { width: 58, height: 58 },
   rankingCopy: { minWidth: 0, flex: 1 },
-  pokemonName: { color: "#fff", fontSize: 14, fontWeight: "900" },
+  buildRow: { minWidth: 0, flexDirection: "row", alignItems: "center", gap: 7 },
+  identity: { minWidth: 0, flex: 1 },
+  pokemonName: { color: "#f5ffff", fontSize: 13, fontWeight: "900" },
   pokemonMeta: { marginTop: 2, color: "#99a7ae", fontSize: 9 },
-  moveLine: { marginTop: 5, color: "#a9b5bb", fontSize: 9.5 },
+  typeRow: { flexDirection: "row", gap: 3, marginTop: 2 },
+  typeIcon: { width: 14, height: 14 },
+  moves: { gap: 2, marginTop: 6 },
+  moveRow: { minWidth: 0, flexDirection: "row", alignItems: "center", gap: 4 },
+  moveIcon: { width: 13, height: 13 },
+  moveLine: { minWidth: 0, flex: 1, color: "#d8e6e7", fontSize: 9, fontWeight: "700" },
+  buildMeta: { minWidth: 72, alignItems: "flex-end" },
   score: {
-    marginTop: 6,
-    color: "#42cc9f",
-    fontSize: 11,
+    color: "#42d5c2",
+    fontSize: 16,
     fontWeight: "900",
-    textTransform: "capitalize",
   },
-  chevron: { color: "#8fa0a8", fontSize: 18 },
+  scoreLabel: { color: "#9db6b8", fontSize: 8, fontWeight: "800", textTransform: "capitalize" },
+  level: { marginTop: 8, color: "#f5ffff", fontSize: 9, fontWeight: "900" },
+  ivs: { color: "#9db6b8", fontSize: 8, fontWeight: "700" },
+  detailPill: { marginTop: 5, borderWidth: 1, borderColor: "rgba(115,204,204,0.5)", borderRadius: 999, paddingHorizontal: 7, paddingVertical: 4 },
+  detailPillText: { color: "#f5ffff", fontSize: 8, fontWeight: "900" },
   expanded: {
     gap: 3,
     marginTop: 9,
     borderTopWidth: 1,
-    borderColor: "#334149",
+    borderColor: "rgba(115,204,204,0.28)",
     paddingTop: 8,
   },
-  detailTitle: { marginTop: 4, color: "#fff", fontSize: 10, fontWeight: "900" },
-  detailBody: { color: "#9daab1", fontSize: 9.5, lineHeight: 14 },
+  detailTitle: { marginTop: 4, color: "#f5ffff", fontSize: 10, fontWeight: "900" },
+  detailBody: { color: "#9db6b8", fontSize: 9.5, lineHeight: 14 },
   workspacePanel: {
     gap: 10,
     borderWidth: 1,

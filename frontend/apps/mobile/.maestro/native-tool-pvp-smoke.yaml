@@ -15,10 +15,17 @@ name: Native PvP tool smoke
       - tapOn: Close
 - assertVisible: "PvP Rankings"
 - assertVisible: "Bulbasaur"
+- takeScreenshot: "native-pvp-rankings"
 - tapOn: "Team Builder"
 - assertVisible: "Choose team members"
 - tapOn: "Battle Lab"
 - assertVisible: "Simulate a focused matchup"
+- scrollUntilVisible:
+    element:
+      text: "Simulate battle"
+    direction: DOWN
+    speed: 40
+    timeout: 15000
 - tapOn: "Simulate battle"
 - assertVisible: "SIMULATED RESULT"
 - scrollUntilVisible:
@@ -29,4 +36,4 @@ name: Native PvP tool smoke
     timeout: 15000
 - tapOn: "IV Rank"
 - assertVisible: "Rank one IV spread"
-- takeScreenshot: "native-tool-pvp"
+- takeScreenshot: "native-pvp-iv-rank"
