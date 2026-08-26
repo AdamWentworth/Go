@@ -14,7 +14,16 @@ name: Native Raid tool smoke
     commands:
       - tapOn: Close
 - assertVisible: "Raid Planner"
+- assertVisible: "Attacker rankings"
+- assertVisible: "ALL TYPES"
+- assertVisible: "Top raid attackers"
+- takeScreenshot: "native-tool-raid-rankings"
+- tapOn: "Ranking settings"
+- assertVisible: "Ranking conditions"
+- assertVisible: "Attacker level"
+- takeScreenshot: "native-tool-raid-settings"
+- tapOn: "Ranking settings"
 - tapOn: "Boss counters"
 - assertVisible: "CURRENT MATCHUP"
 - assertVisible: "Bulbasaur"
-- takeScreenshot: "native-tool-raid"
+- takeScreenshot: "native-tool-raid-boss"

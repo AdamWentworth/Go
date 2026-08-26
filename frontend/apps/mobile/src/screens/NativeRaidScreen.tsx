@@ -1,33 +1,373 @@
 import { useMemo, useState } from 'react';
-import { ActivityIndicator, FlatList, Image, Pressable, ScrollView, StyleSheet, Text, TextInput, View, useColorScheme } from 'react-native';
+import {
+  ActivityIndicator,
+  FlatList,
+  Image,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
+  useColorScheme,
+} from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { PokemonInstance } from '@pokemongonexus/shared-contracts/instances';
 import type { BasePokemon } from '@pokemongonexus/shared-contracts/pokemon';
-import { NativeCombatRankingCard } from '../components/NativeCombatRankingCard';
-import { buildNativeRaidAttackers, buildNativeRaidBosses, NATIVE_BATTLE_TYPES, type NativeRosterScope } from '../features/tools/nativeBattleModels';
+import { NativeRaidRankingCard } from '../components/tools/NativeRaidRankingCard';
+import { NativeRaidSettingsPanel } from '../components/tools/NativeRaidSettingsPanel';
+import { NativeRaidTypeFilter } from '../components/tools/NativeRaidTypeFilter';
+import {
+  buildNativeRaidAttackers,
+  buildNativeRaidBosses,
+  DEFAULT_NATIVE_RAID_SETTINGS,
+  type NativeRaidSettings,
+  type NativeRosterScope,
+} from '../features/tools/nativeBattleModels';
 
-type Props = { assetBaseUrl: string; catalog: BasePokemon[]; error?: string | null; instances?: Record<string, PokemonInstance>; isLoading?: boolean; onBack: () => void; onMethodology: () => void; onOpenPokemon: (variantId: string) => void; onRetry: () => void; signedIn: boolean };
+type Props = {
+  assetBaseUrl: string;
+  catalog: BasePokemon[];
+  error?: string | null;
+  instances?: Record<string, PokemonInstance>;
+  isLoading?: boolean;
+  onBack: () => void;
+  onMethodology: () => void;
+  onOpenPokemon: (variantId: string) => void;
+  onRetry: () => void;
+  signedIn: boolean;
+};
 type ViewMode = 'rankings' | 'boss';
-const imageUri = (base: string, value: string | null) => { if (!value) return undefined; try { return new URL(value, base).toString(); } catch { return undefined; } };
-export const NativeRaidScreen = ({ assetBaseUrl, catalog, error = null, instances = {}, isLoading = false, onBack, onMethodology, onOpenPokemon, onRetry, signedIn }: Props) => {
-  const light = useColorScheme() === 'light'; const insets = useSafeAreaInsets();
-  const [view, setView] = useState<ViewMode>('rankings'); const [scope, setScope] = useState<NativeRosterScope>(signedIn ? 'owned' : 'catalog');
-  const [type, setType] = useState(''); const [query, setQuery] = useState(''); const bosses = useMemo(() => buildNativeRaidBosses(catalog), [catalog]);
-  const [bossId, setBossId] = useState(''); const selectedBoss = bosses.find((boss) => boss.id === bossId) ?? bosses[0] ?? null;
-  const rankings = useMemo(() => buildNativeRaidAttackers({ boss: view === 'boss' ? selectedBoss : null, catalog, instances, requiredType: view === 'rankings' ? type : '', scope }).filter((entry) => !query.trim() || `${entry.name} ${entry.fastMove?.name} ${entry.chargedMove?.name}`.toLocaleLowerCase().includes(query.trim().toLocaleLowerCase())).slice(0, 50), [catalog, instances, query, scope, selectedBoss, type, view]);
-  const header = <View>
-    <View style={styles.topbar}><Pressable accessibilityRole="button" accessibilityLabel="Go back" onPress={onBack} style={[styles.back, light && styles.controlLight]}><Text style={[styles.backText, light && styles.textLight]}>‹</Text></Pressable><View style={styles.headerCopy}><Text style={styles.eyebrow}>BATTLE PLANNING</Text><Text accessibilityRole="header" style={[styles.title, light && styles.textLight]}>Raid Planner</Text><Text style={[styles.lead, light && styles.mutedLight]}>Rank attackers, prepare counters, and build teams for raid bosses.</Text></View><Pressable accessibilityRole="button" accessibilityLabel="How raid rankings work" onPress={onMethodology} style={[styles.info, light && styles.controlLight]}><Text style={styles.infoText}>?</Text></Pressable></View>
-    <View accessibilityRole="tablist" style={[styles.segment, light && styles.panelLight]}>{([['rankings', 'Overall rankings'], ['boss', 'Boss counters']] as const).map(([value, label]) => <Pressable accessibilityRole="tab" accessibilityState={{ selected: view === value }} key={value} onPress={() => setView(value)} style={[styles.segmentButton, view === value && styles.segmentActive]}><Text style={[styles.segmentText, light && styles.textLight, view === value && styles.segmentTextActive]}>{label}</Text></Pressable>)}</View>
-    {signedIn ? <View style={styles.scope}><Text style={[styles.scopeLabel, light && styles.mutedLight]}>Roster</Text>{([['owned', 'My Pokémon'], ['catalog', 'Full catalog']] as const).map(([value, label]) => <Pressable accessibilityRole="button" key={value} onPress={() => setScope(value)} style={[styles.scopeButton, light && styles.controlLight, scope === value && styles.scopeActive]}><Text style={[styles.scopeText, light && styles.textLight, scope === value && styles.scopeTextActive]}>{label}</Text></Pressable>)}</View> : null}
-    {view === 'boss' ? <><Text style={[styles.sectionLabel, light && styles.textLight]}>Raid boss</Text><ScrollView contentContainerStyle={styles.bossRail} horizontal showsHorizontalScrollIndicator={false}>{bosses.slice(0, 100).map((boss) => <Pressable accessibilityRole="button" accessibilityLabel={`Select ${boss.name} raid boss`} key={boss.id} onPress={() => setBossId(boss.id)} style={[styles.bossCard, light && styles.cardLight, selectedBoss?.id === boss.id && styles.bossActive]}>{boss.imageUri ? <Image resizeMode="contain" source={{ uri: imageUri(assetBaseUrl, boss.imageUri) }} style={styles.bossImage} /> : null}<Text numberOfLines={2} style={[styles.bossName, light && styles.textLight]}>{boss.name}</Text><Text style={styles.tier}>{boss.boss.tier}</Text></Pressable>)}</ScrollView>{selectedBoss ? <View style={[styles.bossSummary, light && styles.panelLight]}><View><Text style={styles.eyebrow}>CURRENT MATCHUP</Text><Text style={[styles.bossTitle, light && styles.textLight]}>{selectedBoss.name}</Text><Text style={[styles.bossMeta, light && styles.mutedLight]}>{selectedBoss.boss.tier} · Catch CP {selectedBoss.boss.min_unboosted_cp.toLocaleString()}–{selectedBoss.boss.max_boosted_cp.toLocaleString()}</Text></View><Text style={styles.bossCount}>{rankings.length} counters</Text></View> : null}</> : <><Text style={[styles.sectionLabel, light && styles.textLight]}>Attack type</Text><ScrollView contentContainerStyle={styles.typeRail} horizontal showsHorizontalScrollIndicator={false}><Pressable accessibilityRole="button" onPress={() => setType('')} style={[styles.chip, light && styles.controlLight, !type && styles.chipActive]}><Text style={[styles.chipText, light && styles.textLight, !type && styles.chipTextActive]}>All</Text></Pressable>{NATIVE_BATTLE_TYPES.map((value) => <Pressable accessibilityRole="button" key={value} onPress={() => setType(value)} style={[styles.chip, light && styles.controlLight, type === value && styles.chipActive]}><Text style={[styles.chipText, light && styles.textLight, type === value && styles.chipTextActive]}>{value}</Text></Pressable>)}</ScrollView></>}
-    <TextInput accessibilityLabel={view === 'boss' ? 'Search raid counters' : 'Search raid rankings'} onChangeText={setQuery} placeholder="Pokémon or move" placeholderTextColor="#78868e" style={[styles.search, light && styles.inputLight]} value={query} />
-    <View style={styles.resultsHeading}><Text style={[styles.resultsTitle, light && styles.textLight]}>{view === 'boss' ? `Best counters${selectedBoss ? ` vs ${selectedBoss.name}` : ''}` : type ? `Top ${type} attackers` : 'Top raid attackers'}</Text><Text style={[styles.resultsMeta, light && styles.mutedLight]}>{rankings.length} shown</Text></View>
-    {isLoading ? <View style={styles.state}><ActivityIndicator color="#299cf5" /><Text style={[styles.stateCopy, light && styles.mutedLight]}>Loading battle data…</Text></View> : null}{error ? <View accessibilityRole="alert" style={styles.error}><Text style={styles.errorTitle}>Raid Planner unavailable</Text><Text style={styles.errorCopy}>{error}</Text><Pressable accessibilityRole="button" onPress={onRetry} style={styles.retry}><Text style={styles.retryText}>Try again</Text></Pressable></View> : null}
-  </View>;
-  return <View style={[styles.root, light && styles.rootLight]} testID="native-raid-screen"><FlatList contentContainerStyle={{ paddingHorizontal: 12, paddingTop: insets.top + 8, paddingBottom: insets.bottom + 96 }} data={rankings} keyExtractor={(entry) => entry.id} ListHeaderComponent={header} ListEmptyComponent={!isLoading && !error ? <View style={styles.empty}><Text style={[styles.emptyTitle, light && styles.textLight]}>No compatible attackers</Text><Text style={[styles.stateCopy, light && styles.mutedLight]}>{scope === 'owned' ? 'Add complete level and move details to caught Pokémon, or view the full catalog.' : 'Try another boss, type, or search.'}</Text></View> : null} renderItem={({ item, index }) => <NativeCombatRankingCard assetBaseUrl={assetBaseUrl} entry={item} metricLabel={view === 'boss' ? 'DPS' : 'eDPS'} rank={index + 1} onPress={() => onOpenPokemon(item.id)} />} /></View>;
+
+const absoluteUri = (base: string, value: string | null) => {
+  if (!value) return undefined;
+  try { return new URL(value, base).toString(); } catch { return undefined; }
+};
+
+export const NativeRaidScreen = ({
+  assetBaseUrl,
+  catalog,
+  error = null,
+  instances = {},
+  isLoading = false,
+  onBack,
+  onMethodology,
+  onOpenPokemon,
+  onRetry,
+  signedIn,
+}: Props) => {
+  const light = useColorScheme() === 'light';
+  const insets = useSafeAreaInsets();
+  const [view, setView] = useState<ViewMode>('rankings');
+  const [scope, setScope] = useState<NativeRosterScope>(signedIn ? 'owned' : 'catalog');
+  const [selectedType, setSelectedType] = useState('');
+  const [query, setQuery] = useState('');
+  const [bossId, setBossId] = useState('');
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [settings, setSettings] = useState<NativeRaidSettings>(DEFAULT_NATIVE_RAID_SETTINGS);
+  const bosses = useMemo(() => buildNativeRaidBosses(catalog), [catalog]);
+  const selectedBoss = bosses.find((boss) => boss.id === bossId) ?? bosses[0] ?? null;
+  const ownedCount = useMemo(() => Object.values(instances).filter((instance) => instance.is_caught && !instance.disabled).length, [instances]);
+  const effectiveScope = signedIn ? scope : 'catalog';
+
+  const rankings = useMemo(() => {
+    const normalizedQuery = query.trim().toLocaleLowerCase();
+    return buildNativeRaidAttackers({
+      boss: view === 'boss' ? selectedBoss : null,
+      catalog,
+      instances,
+      requiredType: view === 'rankings' ? selectedType : '',
+      scope: effectiveScope,
+      settings,
+    }).filter((entry) => !normalizedQuery || [
+      entry.name,
+      entry.fastMove?.name,
+      entry.chargedMove?.name,
+      ...entry.types,
+    ].some((value) => value?.toLocaleLowerCase().includes(normalizedQuery))).slice(0, 100);
+  }, [catalog, effectiveScope, instances, query, selectedBoss, selectedType, settings, view]);
+
+  const customSettingCount = [
+    settings.attackerLevel !== DEFAULT_NATIVE_RAID_SETTINGS.attackerLevel,
+    settings.friendship !== 'none',
+    settings.megaAllyBonus !== 'none',
+    settings.partyPower !== 'none',
+    settings.relobbySeconds !== DEFAULT_NATIVE_RAID_SETTINGS.relobbySeconds,
+    Boolean(settings.weatherBoostedType),
+  ].filter(Boolean).length;
+
+  const switchView = (next: ViewMode) => {
+    setView(next);
+    setExpandedId(null);
+    setQuery('');
+  };
+
+  const productHeader = (
+    <View style={styles.productHeader}>
+      <Pressable
+        accessibilityLabel="Go back"
+        accessibilityRole="button"
+        onPress={onBack}
+        style={[styles.back, light && styles.controlLight]}
+      >
+        <Text style={[styles.backText, light && styles.textLight]}>‹</Text>
+      </Pressable>
+      <Image
+        accessibilityElementsHidden
+        resizeMode="contain"
+        source={{ uri: absoluteUri(assetBaseUrl, '/images/btn_raid.png') }}
+        style={styles.productIcon}
+      />
+      <View style={styles.headerCopy}>
+        <Text style={styles.eyebrow}>BATTLE PLANNING</Text>
+        <Text accessibilityRole="header" style={[styles.title, light && styles.textLight]}>Raid Planner</Text>
+        <Text style={[styles.lead, light && styles.mutedLight]}>Rank attackers, prepare counters, and build teams for current raid bosses.</Text>
+      </View>
+    </View>
+  );
+
+  const modeTabs = (
+    <View accessibilityRole="tablist" style={[styles.modeTabs, light && styles.panelLight]}>
+      {([['rankings', '▥', 'Attacker rankings'], ['boss', '◉', 'Boss counters']] as const).map(([value, icon, label]) => (
+        <Pressable
+          accessibilityRole="tab"
+          accessibilityState={{ selected: view === value }}
+          key={value}
+          onPress={() => switchView(value)}
+          style={[styles.modeButton, view === value && styles.modeActive]}
+        >
+          <Text style={[styles.modeIcon, light && styles.textLight, view === value && styles.modeTextActive]}>{icon}</Text>
+          <Text style={[styles.modeText, light && styles.textLight, view === value && styles.modeTextActive]}>{label}</Text>
+        </Pressable>
+      ))}
+    </View>
+  );
+
+  const roster = (
+    <View accessibilityLabel="Raid attacker roster" style={[styles.roster, light && styles.panelLight]}>
+      {([['catalog', '▣  ALL POKÉMON'], ['owned', `♟  MY POKÉMON${effectiveScope === 'owned' ? `   ${ownedCount}` : ''}`]] as const).map(([value, label]) => (
+        <Pressable
+          accessibilityRole="button"
+          accessibilityState={{ disabled: value === 'owned' && !signedIn, selected: effectiveScope === value }}
+          disabled={value === 'owned' && !signedIn}
+          key={value}
+          onPress={() => setScope(value)}
+          style={[
+            styles.rosterButton,
+            light && styles.controlLight,
+            effectiveScope === value && styles.rosterActive,
+            value === 'owned' && !signedIn && styles.disabled,
+          ]}
+        >
+          <Text style={[styles.rosterText, light && styles.textLight, effectiveScope === value && styles.rosterTextActive]}>{label}</Text>
+        </Pressable>
+      ))}
+    </View>
+  );
+
+  const toolbar = (
+    <View style={styles.toolbar}>
+      <Text style={[styles.fieldLabel, light && styles.mutedLight]}>{view === 'boss' ? 'COUNTER SEARCH' : 'ATTACKER SEARCH'}</Text>
+      <TextInput
+        accessibilityLabel={view === 'boss' ? 'Search raid counters' : 'Search raid rankings'}
+        onChangeText={setQuery}
+        placeholder="Pokémon, type, or move"
+        placeholderTextColor={light ? '#708183' : '#809294'}
+        style={[styles.search, light && styles.inputLight]}
+        value={query}
+      />
+      <View style={styles.toolbarActions}>
+        <View accessibilityLabel="Result detail" style={[styles.movesetTabs, light && styles.controlLight]}>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityState={{ selected: settings.bestOnly }}
+            onPress={() => setSettings((current) => ({ ...current, bestOnly: true }))}
+            style={[styles.movesetButton, settings.bestOnly && styles.movesetActive]}
+          >
+            <Text style={[styles.movesetText, light && styles.textLight, settings.bestOnly && styles.movesetTextActive]}>BEST MOVESET</Text>
+          </Pressable>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityState={{ selected: !settings.bestOnly }}
+            onPress={() => setSettings((current) => ({ ...current, bestOnly: false }))}
+            style={[styles.movesetButton, !settings.bestOnly && styles.movesetActive]}
+          >
+            <Text style={[styles.movesetText, light && styles.textLight, !settings.bestOnly && styles.movesetTextActive]}>ALL MOVESETS</Text>
+          </Pressable>
+        </View>
+        <Pressable
+          accessibilityLabel="Ranking settings"
+          accessibilityRole="button"
+          accessibilityState={{ expanded: settingsOpen }}
+          onPress={() => setSettingsOpen((current) => !current)}
+          style={[styles.settingsButton, light && styles.controlLight, settingsOpen && styles.settingsActive]}
+        >
+          <Text style={[styles.settingsText, light && styles.textLight]}>☷  SETTINGS{customSettingCount ? ` ${customSettingCount}` : ''} {settingsOpen ? '⌃' : '⌄'}</Text>
+        </Pressable>
+      </View>
+      {settingsOpen ? <NativeRaidSettingsPanel onChange={setSettings} settings={settings} /> : null}
+    </View>
+  );
+
+  const bossPicker = view === 'boss' ? (
+    <View style={styles.bossSection}>
+      <Text style={[styles.fieldLabel, light && styles.mutedLight]}>RAID BOSS</Text>
+      <ScrollView contentContainerStyle={styles.bossRail} horizontal showsHorizontalScrollIndicator={false}>
+        {bosses.slice(0, 100).map((boss) => (
+          <Pressable
+            accessibilityLabel={`Select ${boss.name} raid boss`}
+            accessibilityRole="button"
+            accessibilityState={{ selected: selectedBoss?.id === boss.id }}
+            key={boss.id}
+            onPress={() => setBossId(boss.id)}
+            style={[styles.bossCard, light && styles.cardLight, selectedBoss?.id === boss.id && styles.bossActive]}
+          >
+            <Image resizeMode="contain" source={{ uri: absoluteUri(assetBaseUrl, boss.imageUri) }} style={styles.bossImage} />
+            <Text numberOfLines={2} style={[styles.bossName, light && styles.textLight]}>{boss.name}</Text>
+            <Text style={styles.tier}>{boss.boss.tier}</Text>
+          </Pressable>
+        ))}
+      </ScrollView>
+      {selectedBoss ? (
+        <View style={[styles.bossSummary, light && styles.panelLight]}>
+          <View style={styles.bossSummaryCopy}>
+            <Text style={styles.eyebrow}>CURRENT MATCHUP</Text>
+            <Text style={[styles.bossTitle, light && styles.textLight]}>{selectedBoss.name}</Text>
+            <Text style={[styles.bossMeta, light && styles.mutedLight]}>{selectedBoss.boss.tier} · Catch CP {selectedBoss.boss.min_unboosted_cp.toLocaleString()}–{selectedBoss.boss.max_boosted_cp.toLocaleString()}</Text>
+          </View>
+          <Text style={styles.bossCount}>{rankings.length} counters</Text>
+        </View>
+      ) : null}
+    </View>
+  ) : null;
+
+  const heading = view === 'boss'
+    ? `Best counters${selectedBoss ? ` vs ${selectedBoss.name}` : ''}`
+    : selectedType
+      ? `Top ${selectedType.charAt(0).toUpperCase() + selectedType.slice(1)} attackers`
+      : effectiveScope === 'owned'
+        ? 'Your top raid attackers'
+        : 'Top raid attackers';
+
+  const header = (
+    <View style={styles.headerStack}>
+      {productHeader}
+      {modeTabs}
+      {roster}
+      {view === 'rankings' ? <NativeRaidTypeFilter assetBaseUrl={assetBaseUrl} onChange={setSelectedType} selectedType={selectedType} /> : bossPicker}
+      <View style={styles.leaderboardHeading}>
+        <Text style={[styles.resultsTitle, light && styles.textLight]}>{heading}</Text>
+        <Pressable accessibilityLabel="How raid rankings work" accessibilityRole="button" onPress={onMethodology} style={[styles.info, light && styles.controlLight]}>
+          <Text style={styles.infoText}>ⓘ</Text>
+        </Pressable>
+      </View>
+      {toolbar}
+      {isLoading ? <View style={styles.state}><ActivityIndicator color="#2fd6d0" /><Text style={[styles.stateCopy, light && styles.mutedLight]}>Loading battle data…</Text></View> : null}
+      {error ? (
+        <View accessibilityRole="alert" style={styles.error}>
+          <Text style={styles.errorTitle}>Raid Planner unavailable</Text>
+          <Text style={styles.errorCopy}>{error}</Text>
+          <Pressable accessibilityRole="button" onPress={onRetry} style={styles.retry}><Text style={styles.retryText}>Try again</Text></Pressable>
+        </View>
+      ) : null}
+    </View>
+  );
+
+  return (
+    <View style={[styles.root, light && styles.rootLight]} testID="native-raid-screen">
+      <FlatList
+        contentContainerStyle={{ paddingHorizontal: 8, paddingTop: insets.top + 4, paddingBottom: insets.bottom + 96 }}
+        data={rankings}
+        keyExtractor={(entry) => entry.id}
+        ListHeaderComponent={header}
+        ListEmptyComponent={!isLoading && !error ? (
+          <View style={[styles.empty, light && styles.emptyLight]}>
+            <Text style={[styles.emptyTitle, light && styles.textLight]}>No compatible attackers</Text>
+            <Text style={[styles.stateCopy, light && styles.mutedLight]}>{effectiveScope === 'owned' ? 'No caught attackers match the current filters. Add level, IV, CP, and move details to improve personalized rankings.' : 'Try another boss, type, or search.'}</Text>
+          </View>
+        ) : null}
+        renderItem={({ item, index }) => (
+          <NativeRaidRankingCard
+            assetBaseUrl={assetBaseUrl}
+            entry={item}
+            expanded={expandedId === item.id}
+            onOpenPokemon={() => onOpenPokemon(`${item.pokemonId}-default`)}
+            onToggle={() => setExpandedId((current) => current === item.id ? null : item.id)}
+            rank={index + 1}
+          />
+        )}
+      />
+    </View>
+  );
 };
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: '#090d12' }, rootLight: { backgroundColor: '#eef4f7' }, textLight: { color: '#14232a' }, mutedLight: { color: '#5d6e76' }, panelLight: { borderColor: '#c0ccd2', backgroundColor: '#fff' }, controlLight: { borderColor: '#bdc9cf', backgroundColor: '#fff' }, cardLight: { borderColor: '#c3ced4', backgroundColor: '#fff' }, inputLight: { borderColor: '#b9c7ce', color: '#14232a', backgroundColor: '#fff' }, topbar: { minHeight: 72, flexDirection: 'row', alignItems: 'center', gap: 11 }, back: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: '#43515b', borderRadius: 22, backgroundColor: '#171d22' }, backText: { marginTop: -4, color: '#fff', fontSize: 38 }, headerCopy: { flex: 1 }, eyebrow: { color: '#299cf5', fontSize: 9, fontWeight: '900', letterSpacing: 1.2 }, title: { color: '#fff', fontSize: 28, fontWeight: '900' }, lead: { marginTop: 2, color: '#9eabb2', fontSize: 11, lineHeight: 15 }, info: { width: 40, height: 40, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: '#42515a', borderRadius: 20, backgroundColor: '#171d22' }, infoText: { color: '#299cf5', fontSize: 20, fontWeight: '900' }, segment: { flexDirection: 'row', gap: 5, marginTop: 8, borderWidth: 1, borderColor: '#34424a', borderRadius: 13, padding: 4, backgroundColor: '#151b20' }, segmentButton: { flex: 1, minHeight: 45, alignItems: 'center', justifyContent: 'center', borderRadius: 9 }, segmentActive: { backgroundColor: '#176faf' }, segmentText: { color: '#a7b3ba', fontSize: 12, fontWeight: '900' }, segmentTextActive: { color: '#fff' }, scope: { flexDirection: 'row', alignItems: 'center', gap: 7, marginTop: 10 }, scopeLabel: { marginRight: 'auto', color: '#95a2aa', fontSize: 10, fontWeight: '900', textTransform: 'uppercase' }, scopeButton: { minHeight: 38, justifyContent: 'center', borderWidth: 1, borderColor: '#414e56', borderRadius: 999, paddingHorizontal: 12, backgroundColor: '#171d22' }, scopeActive: { borderColor: '#39c99d', backgroundColor: '#123c31' }, scopeText: { color: '#a9b5bb', fontSize: 10, fontWeight: '900' }, scopeTextActive: { color: '#fff' }, sectionLabel: { marginTop: 15, marginBottom: 7, color: '#fff', fontSize: 12, fontWeight: '900' }, bossRail: { gap: 8, paddingRight: 12 }, bossCard: { width: 100, minHeight: 116, alignItems: 'center', borderWidth: 1, borderColor: '#35434b', borderRadius: 12, padding: 7, backgroundColor: '#151b20' }, bossActive: { borderColor: '#299cf5', backgroundColor: '#12324b' }, bossImage: { width: 62, height: 62 }, bossName: { minHeight: 28, color: '#fff', fontSize: 10, lineHeight: 13, fontWeight: '900', textAlign: 'center' }, tier: { color: '#299cf5', fontSize: 8, fontWeight: '900', textTransform: 'uppercase' }, bossSummary: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8, marginTop: 9, borderWidth: 1, borderColor: '#35434b', borderRadius: 12, padding: 12, backgroundColor: '#151b20' }, bossTitle: { color: '#fff', fontSize: 16, fontWeight: '900' }, bossMeta: { marginTop: 2, color: '#96a4ab', fontSize: 9 }, bossCount: { color: '#39c99d', fontSize: 11, fontWeight: '900' }, typeRail: { gap: 7, paddingRight: 12 }, chip: { minHeight: 40, justifyContent: 'center', borderWidth: 1, borderColor: '#43515a', borderRadius: 999, paddingHorizontal: 14, backgroundColor: '#161c21' }, chipActive: { borderColor: '#299cf5', backgroundColor: '#123c61' }, chipText: { color: '#bbc6cb', fontSize: 10, fontWeight: '900', textTransform: 'capitalize' }, chipTextActive: { color: '#fff' }, search: { minHeight: 47, marginTop: 12, borderWidth: 1, borderColor: '#46545d', borderRadius: 12, paddingHorizontal: 14, color: '#fff', backgroundColor: '#161c21', fontSize: 14 }, resultsHeading: { flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between', gap: 8, marginTop: 17, marginBottom: 8 }, resultsTitle: { flex: 1, color: '#fff', fontSize: 18, fontWeight: '900' }, resultsMeta: { color: '#8d9ba2', fontSize: 10 }, state: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, padding: 22 }, stateCopy: { color: '#a8b5bc', fontSize: 12, lineHeight: 18, textAlign: 'center' }, error: { gap: 7, borderWidth: 1, borderColor: '#df5770', borderRadius: 12, padding: 13, backgroundColor: '#39151e' }, errorTitle: { color: '#ffd8df', fontSize: 15, fontWeight: '900' }, errorCopy: { color: '#ffb8c4', fontSize: 12 }, retry: { alignSelf: 'flex-start', minHeight: 40, justifyContent: 'center', borderRadius: 8, paddingHorizontal: 14, backgroundColor: '#df5770' }, retryText: { color: '#fff', fontWeight: '900' }, empty: { alignItems: 'center', gap: 5, padding: 40 }, emptyTitle: { color: '#fff', fontSize: 18, fontWeight: '900' },
+  root: { flex: 1, backgroundColor: '#071011' },
+  rootLight: { backgroundColor: '#eef5f3' },
+  textLight: { color: '#142629' },
+  mutedLight: { color: '#617476' },
+  panelLight: { borderColor: '#b8cccc', backgroundColor: '#fff' },
+  controlLight: { borderColor: '#b8c8c8', backgroundColor: '#fff' },
+  cardLight: { borderColor: '#bdcccc', backgroundColor: '#fff' },
+  inputLight: { borderColor: '#b8c8c8', color: '#142629', backgroundColor: '#fff' },
+  headerStack: { gap: 8, marginBottom: 8 },
+  productHeader: { minHeight: 100, flexDirection: 'row', alignItems: 'center', gap: 8, borderBottomWidth: 1, borderBottomColor: '#294749', paddingHorizontal: 3, paddingBottom: 9 },
+  back: { width: 34, height: 42, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: '#435758', borderRadius: 18, backgroundColor: '#172122' },
+  backText: { marginTop: -4, color: '#fff', fontSize: 34 },
+  productIcon: { width: 48, height: 48 },
+  headerCopy: { minWidth: 0, flex: 1 },
+  eyebrow: { color: '#69ded7', fontSize: 9, fontWeight: '900', letterSpacing: 1.1 },
+  title: { color: '#fff', fontSize: 27, fontWeight: '900', letterSpacing: -.6 },
+  lead: { marginTop: 2, color: '#a9bbbb', fontSize: 11.5, lineHeight: 16 },
+  modeTabs: { flexDirection: 'row', gap: 4, borderWidth: 1, borderColor: '#355153', borderRadius: 14, padding: 4, backgroundColor: '#101819' },
+  modeButton: { flex: 1, minHeight: 42, flexDirection: 'row', gap: 5, alignItems: 'center', justifyContent: 'center', borderRadius: 10 },
+  modeActive: { backgroundColor: '#2fd6d0' },
+  modeIcon: { color: '#d5e5e5', fontSize: 11, fontWeight: '900' },
+  modeText: { color: '#d5e5e5', fontSize: 10.5, fontWeight: '900' },
+  modeTextActive: { color: '#071214' },
+  roster: { flexDirection: 'row', gap: 5, borderWidth: 1, borderColor: '#355153', borderRadius: 13, padding: 5, backgroundColor: '#101819' },
+  rosterButton: { flex: 1, minHeight: 37, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: '#435758', borderRadius: 999, backgroundColor: '#1b2526' },
+  rosterActive: { borderColor: '#2fd6d0', backgroundColor: '#45dbc4' },
+  rosterText: { color: '#e6f1f1', fontSize: 9.5, fontWeight: '900' },
+  rosterTextActive: { color: '#071214' },
+  disabled: { opacity: .45 },
+  toolbar: { gap: 7 },
+  fieldLabel: { color: '#a3b5b6', fontSize: 9, fontWeight: '900', letterSpacing: .8 },
+  search: { minHeight: 45, borderWidth: 1, borderColor: '#455a5c', borderRadius: 999, paddingHorizontal: 14, color: '#fff', backgroundColor: '#101819', fontSize: 13, fontWeight: '700' },
+  toolbarActions: { flexDirection: 'row', gap: 6 },
+  movesetTabs: { minWidth: 0, flex: 1, flexDirection: 'row', borderWidth: 1, borderColor: '#3b5052', borderRadius: 999, padding: 3, backgroundColor: '#101819' },
+  movesetButton: { minWidth: 0, flex: 1, minHeight: 36, alignItems: 'center', justifyContent: 'center', borderRadius: 999, paddingHorizontal: 4 },
+  movesetActive: { backgroundColor: '#45dbc4' },
+  movesetText: { color: '#d5e5e5', fontSize: 8.5, fontWeight: '900' },
+  movesetTextActive: { color: '#071214' },
+  settingsButton: { minHeight: 42, justifyContent: 'center', borderWidth: 1, borderColor: '#455a5c', borderRadius: 999, paddingHorizontal: 10, backgroundColor: '#1a2324' },
+  settingsActive: { borderColor: '#2fd6d0' },
+  settingsText: { color: '#e2eeee', fontSize: 8.5, fontWeight: '900' },
+  leaderboardHeading: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingTop: 3 },
+  resultsTitle: { minWidth: 0, flex: 1, color: '#fff', fontSize: 20, lineHeight: 24, fontWeight: '900', textAlign: 'center' },
+  info: { width: 43, height: 43, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: '#3e5557', borderRadius: 22, backgroundColor: '#162122' },
+  infoText: { color: '#52ded5', fontSize: 16, fontWeight: '900' },
+  bossSection: { gap: 7 },
+  bossRail: { gap: 7, paddingRight: 8 },
+  bossCard: { width: 92, minHeight: 110, alignItems: 'center', borderWidth: 1, borderColor: '#354d4f', borderRadius: 12, padding: 6, backgroundColor: '#11191a' },
+  bossActive: { borderColor: '#2fd6d0', backgroundColor: '#123532' },
+  bossImage: { width: 59, height: 59 },
+  bossName: { minHeight: 27, color: '#fff', fontSize: 9.5, lineHeight: 12, fontWeight: '900', textAlign: 'center' },
+  tier: { color: '#5edfd5', fontSize: 7.5, fontWeight: '900', textTransform: 'uppercase' },
+  bossSummary: { flexDirection: 'row', alignItems: 'center', gap: 8, borderWidth: 1, borderColor: '#355153', borderRadius: 12, padding: 10, backgroundColor: '#101819' },
+  bossSummaryCopy: { minWidth: 0, flex: 1 },
+  bossTitle: { color: '#fff', fontSize: 16, fontWeight: '900' },
+  bossMeta: { marginTop: 2, color: '#9badae', fontSize: 8.5 },
+  bossCount: { color: '#46d7c8', fontSize: 10, fontWeight: '900' },
+  state: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, padding: 20 },
+  stateCopy: { color: '#a3b5b6', fontSize: 11.5, lineHeight: 17, textAlign: 'center' },
+  error: { gap: 7, borderWidth: 1, borderColor: '#df5770', borderRadius: 12, padding: 13, backgroundColor: '#39151e' },
+  errorTitle: { color: '#ffd8df', fontSize: 15, fontWeight: '900' },
+  errorCopy: { color: '#ffb8c4', fontSize: 12 },
+  retry: { alignSelf: 'flex-start', minHeight: 40, justifyContent: 'center', borderRadius: 999, paddingHorizontal: 14, backgroundColor: '#df5770' },
+  retryText: { color: '#fff', fontWeight: '900' },
+  empty: { alignItems: 'center', gap: 5, marginTop: 3, borderWidth: 1, borderStyle: 'dashed', borderColor: '#3d5556', borderRadius: 12, padding: 25, backgroundColor: '#101819' },
+  emptyLight: { borderColor: '#a9c2c2', backgroundColor: '#fff' },
+  emptyTitle: { color: '#fff', fontSize: 16, fontWeight: '900' },
 });
-

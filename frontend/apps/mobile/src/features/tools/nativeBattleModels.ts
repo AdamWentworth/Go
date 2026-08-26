@@ -10,6 +10,30 @@ import type {
 export const NATIVE_BATTLE_TYPES = ['bug', 'dark', 'dragon', 'electric', 'fairy', 'fighting', 'fire', 'flying', 'ghost', 'grass', 'ground', 'ice', 'normal', 'poison', 'psychic', 'rock', 'steel', 'water'] as const;
 export type NativeBattleType = typeof NATIVE_BATTLE_TYPES[number];
 export type NativeRosterScope = 'catalog' | 'owned';
+export type NativeRaidAttackerLevel = '40.0' | '50.0' | '51.0';
+export type NativeRaidFriendship = 'none' | 'good' | 'great' | 'ultra' | 'best';
+export type NativeRaidMegaAlly = 'none' | 'general' | 'matching';
+export type NativeRaidPartyPower = 'none' | 'party2' | 'party3' | 'party4';
+
+export type NativeRaidSettings = {
+  attackerLevel: NativeRaidAttackerLevel;
+  bestOnly: boolean;
+  friendship: NativeRaidFriendship;
+  megaAllyBonus: NativeRaidMegaAlly;
+  partyPower: NativeRaidPartyPower;
+  relobbySeconds: number;
+  weatherBoostedType: string;
+};
+
+export const DEFAULT_NATIVE_RAID_SETTINGS: NativeRaidSettings = {
+  attackerLevel: '50.0',
+  bestOnly: true,
+  friendship: 'none',
+  megaAllyBonus: 'none',
+  partyPower: 'none',
+  relobbySeconds: 10,
+  weatherBoostedType: '',
+};
 
 export type NativeCombatEntry = {
   chargedMove: Move | null;
@@ -22,7 +46,9 @@ export type NativeCombatEntry = {
   maxKind: 'dynamax' | 'gigantamax' | null;
   name: string;
   pokemonId: number;
+  rosterDetail: string | null;
   score: number;
+  sourceInstanceId: string | null;
   tdo: number;
   types: string[];
 };
@@ -44,6 +70,25 @@ const moveType = (move: Move): string => String(move.type_name || move.type || '
 const moveSeconds = (move: Move): number => { const raw = Number(move.raid_cooldown); return Math.max(.1, raw > 20 ? raw / 1000 : raw); };
 const validFastMoves = (moves: Move[]) => moves.filter((move) => Number(move.is_fast) === 1 && Number(move.raid_power) > 0 && Number(move.raid_cooldown) > 0);
 const validChargedMoves = (moves: Move[]) => moves.filter((move) => Number(move.is_fast) === 0 && Number(move.raid_power) > 0 && Number(move.raid_cooldown) > 0);
+
+const FRIENDSHIP_BONUS: Record<NativeRaidFriendship, number> = {
+  none: 1,
+  good: 1.03,
+  great: 1.05,
+  ultra: 1.07,
+  best: 1.1,
+};
+const MEGA_ALLY_BONUS: Record<NativeRaidMegaAlly, number> = {
+  none: 1,
+  general: 1.1,
+  matching: 1.3,
+};
+const PARTY_POWER_BONUS: Record<NativeRaidPartyPower, number> = {
+  none: 1,
+  party2: 1.18,
+  party3: 1.35,
+  party4: 1.5,
+};
 
 export const hydrateNativeToolCatalog = (
   catalog: BasePokemon[],
@@ -87,22 +132,159 @@ const selectMoves = (pokemon: BasePokemon, targetTypes: string[] = [], requiredT
 
 const ownedPokemonIds = (instances: Record<string, PokemonInstance>): Set<number> => new Set(Object.values(instances).filter((instance) => instance.is_caught && !instance.disabled).map((instance) => Number(instance.pokemon_id)));
 
-export const buildNativeRaidAttackers = ({ boss, catalog, instances = {}, requiredType = '', scope = 'catalog' }: {
-  boss?: NativeRaidBossEntry | null; catalog: BasePokemon[]; instances?: Record<string, PokemonInstance>; requiredType?: string; scope?: NativeRosterScope;
+const resolveRecordedMove = (moves: Move[], moveId: number | null): Move | null => (
+  moveId == null ? null : moves.find((move) => Number(move.move_id) === Number(moveId)) ?? null
+);
+
+const describeInstance = (instance: PokemonInstance): string => {
+  const details = [
+    instance.level == null ? null : `Lv ${instance.level}`,
+    instance.cp == null ? null : `CP ${instance.cp.toLocaleString()}`,
+    [instance.attack_iv, instance.defense_iv, instance.stamina_iv].every((value) => value != null)
+      ? `${instance.attack_iv}/${instance.defense_iv}/${instance.stamina_iv}`
+      : null,
+  ].filter(Boolean);
+  return details.length > 0 ? details.join(' · ') : 'Caught copy';
+};
+
+type RaidSource = {
+  instance: PokemonInstance | null;
+  pokemon: BasePokemon;
+  sourceKey: string | null;
+};
+
+const buildRaidSources = (
+  catalog: BasePokemon[],
+  instances: Record<string, PokemonInstance>,
+  scope: NativeRosterScope,
+): RaidSource[] => {
+  const available = catalog.filter((pokemon) => pokemon.available);
+  if (scope === 'catalog') return available.map((pokemon) => ({ instance: null, pokemon, sourceKey: null }));
+  const byPokemonId = new Map(available.map((pokemon) => [Number(pokemon.pokemon_id), pokemon]));
+  return Object.entries(instances).flatMap(([sourceKey, instance]) => {
+    if (!instance.is_caught || instance.disabled) return [];
+    const pokemon = byPokemonId.get(Number(instance.pokemon_id));
+    return pokemon ? [{ instance, pokemon, sourceKey }] : [];
+  });
+};
+
+const buildMovePairs = (
+  pokemon: BasePokemon,
+  instance: PokemonInstance | null,
+  requiredType: string,
+): { charged: Move; fast: Move }[] => {
+  const moves = pokemon.moves ?? [];
+  const recordedFast = instance ? resolveRecordedMove(moves, instance.fast_move_id) : null;
+  const recordedCharged = instance
+    ? [
+      resolveRecordedMove(moves, instance.charged_move1_id),
+      resolveRecordedMove(moves, instance.charged_move2_id),
+    ].filter((move): move is Move => move != null)
+    : [];
+  const fastMoves = recordedFast ? [recordedFast] : validFastMoves(moves);
+  const chargedMoves = recordedCharged.length > 0 ? recordedCharged : validChargedMoves(moves);
+  return fastMoves.flatMap((fast) => chargedMoves.flatMap((charged) => (
+    requiredType && moveType(fast) !== requiredType && moveType(charged) !== requiredType
+      ? []
+      : [{ charged, fast }]
+  )));
+};
+
+const scoreRaidPair = ({
+  bossTypes,
+  charged,
+  fast,
+  instance,
+  pokemon,
+  settings,
+}: {
+  bossTypes: string[];
+  charged: Move;
+  fast: Move;
+  instance: PokemonInstance | null;
+  pokemon: BasePokemon;
+  settings: NativeRaidSettings;
+}) => {
+  const ownTypes = [pokemon.type1_name, pokemon.type2_name]
+    .filter(Boolean)
+    .map((value) => value.toLocaleLowerCase());
+  const moveDps = (move: Move) => {
+    const type = moveType(move);
+    const stab = ownTypes.includes(type) ? 1.2 : 1;
+    const weather = settings.weatherBoostedType === type ? 1.2 : 1;
+    return Number(move.raid_power) / moveSeconds(move)
+      * nativeTypeEffectiveness(type, bossTypes)
+      * stab
+      * weather;
+  };
+  const friendship = FRIENDSHIP_BONUS[settings.friendship];
+  const mega = MEGA_ALLY_BONUS[settings.megaAllyBonus];
+  const party = PARTY_POWER_BONUS[settings.partyPower];
+  const requestedLevel = Number(settings.attackerLevel);
+  const level = instance?.level ?? requestedLevel;
+  const levelScale = Math.sqrt(Math.max(1, level) / 50);
+  const attackIv = instance?.attack_iv ?? 15;
+  const defenseIv = instance?.defense_iv ?? 15;
+  const staminaIv = instance?.stamina_iv ?? 15;
+  const attack = (Number(pokemon.attack || 1) + attackIv) * levelScale;
+  const defense = (Number(pokemon.defense || 1) + defenseIv) * levelScale;
+  const stamina = (Number(pokemon.stamina || 1) + staminaIv) * levelScale;
+  const combinedMoveDps = moveDps(fast) * .35 + moveDps(charged) * .65 * party;
+  const dps = attack * combinedMoveDps / 100 * friendship * mega;
+  const bulk = defense * Math.sqrt(stamina);
+  const tdo = dps * bulk / 225;
+  const activeSeconds = Math.max(1, tdo / Math.max(.1, dps));
+  const effectiveDps = dps * activeSeconds / (activeSeconds + Math.max(0, settings.relobbySeconds));
+  return {
+    dps,
+    er: Math.pow(effectiveDps, .75) * Math.pow(tdo, .25),
+    score: bossTypes.length > 0 ? effectiveDps : Math.pow(effectiveDps, .75) * Math.pow(tdo, .25),
+    tdo,
+  };
+};
+
+export const buildNativeRaidAttackers = ({ boss, catalog, instances = {}, requiredType = '', scope = 'catalog', settings }: {
+  boss?: NativeRaidBossEntry | null;
+  catalog: BasePokemon[];
+  instances?: Record<string, PokemonInstance>;
+  requiredType?: string;
+  scope?: NativeRosterScope;
+  settings?: Partial<NativeRaidSettings>;
 }): NativeCombatEntry[] => {
-  const owned = ownedPokemonIds(instances);
-  return catalog.filter((pokemon) => pokemon.available && (scope === 'catalog' || owned.has(pokemon.pokemon_id))).flatMap((pokemon) => {
-    const targetTypes = boss?.types ?? [];
-    const selected = selectMoves(pokemon, targetTypes, requiredType);
-    if (!selected.fast || !selected.charged) return [];
-    if (requiredType && moveType(selected.fast) !== requiredType && moveType(selected.charged) !== requiredType) return [];
-    const attack = Number(pokemon.attack || 1);
-    const bulk = Number(pokemon.defense || 1) * Math.sqrt(Number(pokemon.stamina || 1));
-    const dps = attack * selected.dps / 100;
-    const tdo = dps * bulk / 225;
-    const er = Math.pow(dps, .75) * Math.pow(tdo, .25);
-    return [{ chargedMove: selected.charged, cp: pokemon.cp50 || pokemon.cp40 || 0, dps, er, fastMove: selected.fast, id: `${pokemon.pokemon_id}-default`, imageUri: pokemon.image_url, maxKind: null, name: pokemon.name, pokemonId: pokemon.pokemon_id, score: boss ? dps : er, tdo, types: [pokemon.type1_name, pokemon.type2_name].filter(Boolean).map((type) => type.toLocaleLowerCase()) }];
-  }).sort((left, right) => right.score - left.score);
+  const resolvedSettings = { ...DEFAULT_NATIVE_RAID_SETTINGS, ...settings };
+  const scores = buildRaidSources(catalog, instances, scope).flatMap(({ instance, pokemon, sourceKey }) => {
+    const pairs = buildMovePairs(pokemon, instance, requiredType);
+    const rows = pairs.map(({ charged, fast }, pairIndex) => {
+      const metrics = scoreRaidPair({
+        bossTypes: boss?.types ?? [],
+        charged,
+        fast,
+        instance,
+        pokemon,
+        settings: resolvedSettings,
+      });
+      const sourceId = instance?.instance_id ?? sourceKey ?? null;
+      return {
+        chargedMove: charged,
+        cp: instance?.cp ?? (pokemon.cp50 || pokemon.cp40 || 0),
+        dps: metrics.dps,
+        er: metrics.er,
+        fastMove: fast,
+        id: `${sourceId ?? pokemon.pokemon_id}-${fast.move_id}-${charged.move_id}-${pairIndex}`,
+        imageUri: pokemon.image_url,
+        maxKind: null,
+        name: instance?.nickname || pokemon.name,
+        pokemonId: pokemon.pokemon_id,
+        rosterDetail: instance ? describeInstance(instance) : `Level ${resolvedSettings.attackerLevel.replace('.0', '')}`,
+        score: metrics.score,
+        sourceInstanceId: sourceId,
+        tdo: metrics.tdo,
+        types: [pokemon.type1_name, pokemon.type2_name].filter(Boolean).map((value) => value.toLocaleLowerCase()),
+      } satisfies NativeCombatEntry;
+    }).sort((left, right) => right.score - left.score);
+    return resolvedSettings.bestOnly ? rows.slice(0, 1) : rows;
+  });
+  return scores.sort((left, right) => right.score - left.score);
 };
 
 export const buildNativeRaidBosses = (catalog: BasePokemon[]): NativeRaidBossEntry[] => catalog.flatMap((pokemon) => (pokemon.raid_boss ?? []).map((boss) => ({ boss, id: `${pokemon.pokemon_id}-${boss.id}`, imageUri: pokemon.image_url, name: boss.name || pokemon.name, pokemon, types: [pokemon.type1_name, pokemon.type2_name].filter(Boolean).map((type) => type.toLocaleLowerCase()) }))).sort((a, b) => a.pokemon.pokedex_number - b.pokemon.pokedex_number);
@@ -128,7 +310,7 @@ export const buildNativeMaxRankings = ({ boss, catalog, instances = {}, role, sc
       const damage = attack * maxPower * effectiveness / 100;
       const roleScore = role === 'damage' ? damage : role === 'tank' ? bulk : bulk * .65 + Number(pokemon.stamina || 0) * 1.6;
       const imageUri = kind === 'gigantamax' ? form.gigantamax_image_url || pokemon.image_url : pokemon.image_url;
-      return [{ chargedMove: selected.charged, cp: pokemon.cp50 || pokemon.cp40 || 0, dps: damage, er: roleScore, fastMove: selected.fast, id: `${pokemon.pokemon_id}-${kind}`, imageUri, maxKind: kind, name: `${kind === 'gigantamax' ? 'Gigantamax' : 'Dynamax'} ${pokemon.name}`, pokemonId: pokemon.pokemon_id, score: roleScore, tdo: bulk, types: [pokemon.type1_name, pokemon.type2_name].filter(Boolean).map((type) => type.toLocaleLowerCase()) }];
+      return [{ chargedMove: selected.charged, cp: pokemon.cp50 || pokemon.cp40 || 0, dps: damage, er: roleScore, fastMove: selected.fast, id: `${pokemon.pokemon_id}-${kind}`, imageUri, maxKind: kind, name: `${kind === 'gigantamax' ? 'Gigantamax' : 'Dynamax'} ${pokemon.name}`, pokemonId: pokemon.pokemon_id, rosterDetail: null, score: roleScore, sourceInstanceId: null, tdo: bulk, types: [pokemon.type1_name, pokemon.type2_name].filter(Boolean).map((type) => type.toLocaleLowerCase()) }];
     });
   }).sort((left, right) => right.score - left.score);
 };
