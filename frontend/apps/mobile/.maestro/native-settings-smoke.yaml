@@ -44,6 +44,11 @@ tags:
 - assertVisible: Preferred coordination method
 - tapOn: Campfire
 - assertVisible: "Preferred coordination method, Campfire"
+- scrollUntilVisible:
+    element:
+      text: Coordination handle
+    direction: DOWN
+    timeout: 10000
 - tapOn: Coordination handle
 - eraseText: 40
 - inputText: MistyCampfire
@@ -58,16 +63,30 @@ tags:
 - tapOn: Dismiss message
 - scrollUntilVisible:
     element:
-      text: "Color theme, Light"
+      text: "Color theme, (Light|Dark)"
     direction: DOWN
     timeout: 10000
 - assertVisible: Color theme
-- tapOn: "Color theme, Light"
-- tapOn: Dark
-- assertVisible: "Color theme, Dark"
-- tapOn: "Color theme, Dark"
-- tapOn: Light
-- assertVisible: "Color theme, Light"
+- runFlow:
+    when:
+      visible: "Color theme, Dark"
+    commands:
+      - tapOn: "Color theme, Dark"
+      - tapOn: Light
+      - assertVisible: "Color theme, Light"
+      - tapOn: "Color theme, Light"
+      - tapOn: Dark
+      - assertVisible: "Color theme, Dark"
+- runFlow:
+    when:
+      visible: "Color theme, Light"
+    commands:
+      - tapOn: "Color theme, Light"
+      - tapOn: Dark
+      - assertVisible: "Color theme, Dark"
+      - tapOn: "Color theme, Dark"
+      - tapOn: Light
+      - assertVisible: "Color theme, Light"
 - scrollUntilVisible:
     element:
       text: Reduce motion
