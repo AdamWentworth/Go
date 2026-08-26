@@ -1,8 +1,24 @@
-import { fireEvent, render, screen } from '@testing-library/react-native';
+import { act, fireEvent, render, screen } from '@testing-library/react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import type { BasePokemon, Move } from '@pokemongonexus/shared-contracts/pokemon';
 import { NativeMaxScreen } from '../../../src/screens/NativeMaxScreen';
 const fast = { move_id: 1, name: 'Vine Whip', raid_power: 10, raid_energy: 8, raid_cooldown: 1, is_fast: 1, type_name: 'grass', type: 'grass' } as Move;
 const charged = { ...fast, move_id: 2, name: 'Power Whip', raid_power: 90, raid_energy: -50, raid_cooldown: 2.5, is_fast: 0 } as Move;
 const catalog = [{ pokemon_id: 1, name: 'Bulbasaur', pokedex_number: 1, attack: 118, defense: 111, stamina: 128, available: 1, cp40: 1000, cp50: 1200, type1_name: 'grass', type2_name: 'poison', image_url: '/1.png', moves: [fast, charged], max: [{ pokemon_id: 1, dynamax: 1, gigantamax: 0, dynamax_release_date: null, gigantamax_release_date: null }] }] as BasePokemon[];
-describe('NativeMaxScreen', () => { it('switches roles and exposes the canonical boss simulator', () => { render(<SafeAreaProvider initialMetrics={{ frame: { x: 0, y: 0, width: 390, height: 844 }, insets: { top: 24, right: 0, bottom: 20, left: 0 } }}><NativeMaxScreen assetBaseUrl="https://pokegonexus.com" catalog={catalog} onBack={jest.fn()} onOpenPokemon={jest.fn()} onRetry={jest.fn()} signedIn={false} /></SafeAreaProvider>); expect(screen.getByText('Max Battles')).toBeTruthy(); fireEvent.press(screen.getByText('Tank')); expect(screen.getByText('Top tanks')).toBeTruthy(); fireEvent.press(screen.getByText('Boss teams')); expect(screen.getByText('Can this group beat Dynamax Bulbasaur?')).toBeTruthy(); expect(screen.getByText('More help needed')).toBeTruthy(); }); });
+describe('NativeMaxScreen', () => {
+  beforeEach(() => jest.useFakeTimers());
+  afterEach(() => {
+    act(() => jest.runOnlyPendingTimers());
+    jest.useRealTimers();
+  });
+
+  it('switches roles and exposes the canonical boss simulator', () => {
+    render(<SafeAreaProvider initialMetrics={{ frame: { x: 0, y: 0, width: 390, height: 844 }, insets: { top: 24, right: 0, bottom: 20, left: 0 } }}><NativeMaxScreen assetBaseUrl="https://pokegonexus.com" catalog={catalog} onBack={jest.fn()} onOpenPokemon={jest.fn()} onRetry={jest.fn()} signedIn={false} /></SafeAreaProvider>);
+    expect(screen.getByText('Max Battles')).toBeTruthy();
+    fireEvent.press(screen.getByText('Tank'));
+    expect(screen.getByText('Top tanks')).toBeTruthy();
+    fireEvent.press(screen.getByText('Boss teams'));
+    expect(screen.getByText('Can this group beat Dynamax Bulbasaur?')).toBeTruthy();
+    expect(screen.getByText('More help needed')).toBeTruthy();
+  });
+});
