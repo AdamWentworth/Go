@@ -57,3 +57,81 @@ tags:
 - assertVisible: "Trainer code: 1234 5678 9012"
 - assertVisible: Pokémon Go Nexus does not include chat.*
 - takeScreenshot: 04-external-coordination
+- tapOn: Done
+- tapOn:
+    id: trade-filter-Accepting
+- tapOn:
+    id: trade-action-accept-incoming
+- assertVisible: Accept this offer?
+- tapOn: Accept offer
+- extendedWaitUntil:
+    visible: Trade updated from the server response.
+    timeout: 10000
+- assertNotVisible: Shiny Mewtwo
+- tapOn:
+    id: trade-action-deny-incoming-deny
+- assertVisible: Deny this offer?
+- tapOn: Deny offer
+- extendedWaitUntil:
+    visible: No trades here
+    timeout: 10000
+- tapOn:
+    id: trade-filter-Pending
+- scrollUntilVisible:
+    element:
+      id: trade-action-complete-active-completable
+    direction: DOWN
+- tapOn:
+    id: trade-action-complete-active-completable
+- assertVisible: Confirm the exchange happened?
+- tapOn: Confirm complete
+- extendedWaitUntil:
+    visible: Trade updated from the server response.
+    timeout: 10000
+- assertNotVisible: Shiny Rayquaza
+- tapOn:
+    id: trade-filter-Completed
+- tapOn:
+    id: trade-action-satisfy-completed
+- assertVisible: Mark this trade as satisfying?
+- tapOn: Save feedback
+- extendedWaitUntil:
+    visible: Trade updated from the server response.
+    timeout: 10000
+- assertNotVisible:
+    id: trade-action-satisfy-completed
+- scrollUntilVisible:
+    element:
+      id: trade-action-delete-completed-delete
+    direction: DOWN
+- tapOn:
+    id: trade-action-delete-completed-delete
+- assertVisible: Remove this trade from history?
+- tapOn: Remove trade
+- extendedWaitUntil:
+    visible: Trade updated from the server response.
+    timeout: 10000
+- assertNotVisible: Shiny Lugia
+- tapOn:
+    id: trade-filter-Cancelled
+- tapOn:
+    id: trade-action-repropose-sent
+- assertVisible: Re-propose this trade?
+- tapOn: Re-propose
+- extendedWaitUntil:
+    visible: Trade updated from the server response.
+    timeout: 10000
+- assertNotVisible: Shiny Dialga
+- scrollUntilVisible:
+    element:
+      id: trade-action-delete-closed-delete
+    direction: DOWN
+- tapOn:
+    id: trade-action-delete-closed-delete
+- assertVisible: Remove this trade from history?
+- tapOn: Remove trade
+- extendedWaitUntil:
+    visible: Trade updated from the server response.
+    timeout: 10000
+- assertNotVisible: Shiny Lucario
+- takeScreenshot: 05-complete-authoritative-lifecycle

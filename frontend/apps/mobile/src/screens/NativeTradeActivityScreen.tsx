@@ -14,7 +14,7 @@ import {
   View,
   useColorScheme,
 } from 'react-native';
-import { useMemo, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { NativePokemonLocationBackdrop } from '../features/collection/parity/NativePokemonLocationBackdrop';
 import type { NativeInstanceDetail } from '../features/collection/collectionModel';
 import type { NativeTradeActivityRow } from '../features/trades/nativeTradeActivityRows';
@@ -346,6 +346,7 @@ export const NativeTradeActivityScreen = ({
   const [partner, setPartner] = useState<{ username: string; info: PartnerInfo } | null>(null);
   const [workingAction, setWorkingAction] = useState<string | null>(null);
   const [feedback, setFeedback] = useState<{ tone: 'success' | 'error'; text: string } | null>(null);
+  const listRef = useRef<FlatList<NativeTradeActivityRow>>(null);
   const counts = useMemo(() => Object.fromEntries(TRADE_ACTIVITY_FILTERS.map((filter) => [
     filter,
     rows.filter((row) => row.model.activityFilter === filter).length,
@@ -424,6 +425,7 @@ export const NativeTradeActivityScreen = ({
               key={filter}
               onPress={() => {
                 setFeedback(null);
+                listRef.current?.scrollToOffset({ animated: false, offset: 0 });
                 setSelectedFilter(filter);
               }}
               style={[styles.statusTab, selected && styles.activeStatusTab]}
@@ -478,6 +480,7 @@ export const NativeTradeActivityScreen = ({
         </View>
       ) : (
         <FlatList
+          ref={listRef}
           contentContainerStyle={visibleRows.length ? styles.listContent : styles.emptyListContent}
           data={visibleRows}
           keyExtractor={(row) => row.model.tradeId}

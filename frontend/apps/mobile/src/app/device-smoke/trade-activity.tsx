@@ -21,6 +21,14 @@ const imagePaths: Record<string, string> = {
   'theirs-completed': '/images/shiny/shiny_pokemon_245.png',
   'mine-closed': '/images/shiny/shiny_pokemon_376.png',
   'theirs-closed': '/images/shiny/shiny_pokemon_248.png',
+  'mine-incoming-deny': '/images/shiny/shiny_pokemon_6.png',
+  'theirs-incoming-deny': '/images/shiny/shiny_pokemon_9.png',
+  'mine-active-completable': '/images/shiny/shiny_pokemon_384.png',
+  'theirs-active-completable': '/images/shiny/shiny_pokemon_382.png',
+  'mine-completed-delete': '/images/shiny/shiny_pokemon_249.png',
+  'theirs-completed-delete': '/images/shiny/shiny_pokemon_243.png',
+  'mine-closed-delete': '/images/shiny/shiny_pokemon_448.png',
+  'theirs-closed-delete': '/images/shiny/shiny_pokemon_475.png',
 };
 
 const names: Record<string, string> = {
@@ -34,6 +42,14 @@ const names: Record<string, string> = {
   'theirs-completed': 'Shiny Suicune',
   'mine-closed': 'Shiny Metagross',
   'theirs-closed': 'Shiny Tyranitar',
+  'mine-incoming-deny': 'Shiny Charizard',
+  'theirs-incoming-deny': 'Shiny Blastoise',
+  'mine-active-completable': 'Shiny Rayquaza',
+  'theirs-active-completable': 'Shiny Kyogre',
+  'mine-completed-delete': 'Shiny Lugia',
+  'theirs-completed-delete': 'Shiny Raikou',
+  'mine-closed-delete': 'Shiny Lucario',
+  'theirs-closed-delete': 'Shiny Gallade',
 };
 
 const detail = (id: string): NativeInstanceDetail => ({
@@ -95,6 +111,18 @@ const initialTrades: TradeRecord[] = [
     trade_proposal_date: '2026-08-23T10:00:00.000Z',
   },
   {
+    trade_id: 'incoming-deny',
+    trade_status: 'proposed',
+    username_proposed: 'CeruleanLeader',
+    username_accepting: 'AdamZilla',
+    pokemon_instance_id_user_proposed: 'theirs-incoming-deny',
+    pokemon_instance_id_user_accepting: 'mine-incoming-deny',
+    trade_friendship_level: 'Great',
+    trade_dust_cost: 16_000,
+    is_lucky_trade: false,
+    trade_proposal_date: '2026-08-23T09:00:00.000Z',
+  },
+  {
     trade_id: 'active',
     trade_status: 'pending',
     username_proposed: 'AdamZilla',
@@ -120,6 +148,33 @@ const initialTrades: TradeRecord[] = [
     trade_completed_date: '2026-08-21T10:00:00.000Z',
   },
   {
+    trade_id: 'active-completable',
+    trade_status: 'pending',
+    username_proposed: 'AdamZilla',
+    username_accepting: 'PalletRival',
+    pokemon_instance_id_user_proposed: 'mine-active-completable',
+    pokemon_instance_id_user_accepting: 'theirs-active-completable',
+    trade_friendship_level: 'Best',
+    trade_dust_cost: 800,
+    is_lucky_trade: false,
+    user_accepting_completion_confirmed: true,
+    trade_proposal_date: '2026-08-21T09:00:00.000Z',
+    trade_accepted_date: '2026-08-21T09:30:00.000Z',
+  },
+  {
+    trade_id: 'completed-delete',
+    trade_status: 'completed',
+    username_proposed: 'AdamZilla',
+    username_accepting: 'JohtoTrainer',
+    pokemon_instance_id_user_proposed: 'mine-completed-delete',
+    pokemon_instance_id_user_accepting: 'theirs-completed-delete',
+    trade_friendship_level: 'Ultra',
+    trade_dust_cost: 1_600,
+    is_lucky_trade: false,
+    user_1_trade_satisfaction: true,
+    trade_completed_date: '2026-08-20T12:00:00.000Z',
+  },
+  {
     trade_id: 'closed',
     trade_status: 'cancelled',
     username_proposed: 'AdamZilla',
@@ -130,6 +185,19 @@ const initialTrades: TradeRecord[] = [
     trade_dust_cost: 1_000_000,
     is_lucky_trade: false,
     trade_cancelled_date: '2026-08-20T10:00:00.000Z',
+  },
+  {
+    trade_id: 'closed-delete',
+    trade_status: 'denied',
+    username_proposed: 'AdamZilla',
+    username_accepting: 'SinnohTrainer',
+    pokemon_instance_id_user_proposed: 'mine-closed-delete',
+    pokemon_instance_id_user_accepting: 'theirs-closed-delete',
+    trade_friendship_level: 'Good',
+    trade_dust_cost: 20_000,
+    is_lucky_trade: false,
+    trade_proposal_date: '2026-08-19T10:00:00.000Z',
+    trade_cancelled_date: '2026-08-19T11:00:00.000Z',
   },
 ];
 
@@ -160,15 +228,23 @@ export default function DeviceSmokeTradeActivityRoute() {
           if (action === 'accept') return [{ ...trade, trade_status: 'pending' }];
           if (action === 'deny') return [{ ...trade, trade_status: 'denied' }];
           if (action === 'repropose') return [{ ...trade, trade_status: 'proposed' }];
-          if (action === 'complete') return [{
-            ...trade,
-            user_proposed_completion_confirmed: model.participantRole === 'proposer'
+          if (action === 'complete') {
+            const proposerConfirmed = model.participantRole === 'proposer'
               ? true
-              : trade.user_proposed_completion_confirmed,
-            user_accepting_completion_confirmed: model.participantRole === 'accepter'
+              : trade.user_proposed_completion_confirmed;
+            const accepterConfirmed = model.participantRole === 'accepter'
               ? true
-              : trade.user_accepting_completion_confirmed,
-          }];
+              : trade.user_accepting_completion_confirmed;
+            return [{
+              ...trade,
+              trade_status: proposerConfirmed && accepterConfirmed ? 'completed' : trade.trade_status,
+              trade_completed_date: proposerConfirmed && accepterConfirmed
+                ? '2026-08-25T12:00:00.000Z'
+                : trade.trade_completed_date,
+              user_proposed_completion_confirmed: proposerConfirmed,
+              user_accepting_completion_confirmed: accepterConfirmed,
+            }];
+          }
           if (action === 'satisfy') return [{
             ...trade,
             user_1_trade_satisfaction: model.participantRole === 'proposer'
