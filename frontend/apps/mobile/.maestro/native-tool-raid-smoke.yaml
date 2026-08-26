@@ -51,3 +51,12 @@ name: Native Raid tool smoke
     direction: DOWN
 - assertVisible: "COMFORTABLE"
 - takeScreenshot: "native-tool-raid-setup"
+- scrollUntilVisible:
+    element:
+      text: "Battle calibration"
+    direction: DOWN
+- tapOn: "◷  Log raid"
+- assertVisible: "Log the actual result"
+- assertVisible: "ACTUAL CLEAR TIME (SECONDS)"
+- takeScreenshot: "native-tool-raid-log"
+- tapOn: "Close raid log"

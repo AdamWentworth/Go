@@ -7,6 +7,7 @@ import {
   resolveNativeRaidTier,
   simulateNativeRaidLobby,
 } from '../../features/tools/nativeRaidPlannerModel';
+import { NativeRaidCalibrationPanel } from './NativeRaidCalibrationPanel';
 
 type Props = {
   assetBaseUrl: string;
@@ -31,6 +32,7 @@ export const NativeRaidBossSetupPanel = ({ assetBaseUrl, boss, scores }: Props) 
   const [trainerCount, setTrainerCount] = useState(Math.max(1, estimate.minimumTrainers || 1));
   const [simulationCount, setSimulationCount] = useState<number | null>(null);
   const simulation = simulationCount == null ? null : simulateNativeRaidLobby(estimate, tier, simulationCount);
+  const calibrationPrediction = simulation ?? simulateNativeRaidLobby(estimate, tier, trainerCount);
   const shadow = tier.key.startsWith('shadow');
 
   return (
@@ -99,6 +101,12 @@ export const NativeRaidBossSetupPanel = ({ assetBaseUrl, boss, scores }: Props) 
               </View>
             ) : null}
           </View>
+
+          <NativeRaidCalibrationPanel
+            disabled={team.length === 0}
+            predictedCleared={calibrationPrediction.clears}
+            predictedSeconds={Number.isFinite(calibrationPrediction.seconds) ? calibrationPrediction.seconds : null}
+          />
 
           {shadow ? <View style={styles.shadowNote}><Text style={styles.shadowTitle}>Purified Gem reminder</Text><Text style={styles.shadowCopy}>Each Trainer can use up to 5 Purified Gems. Coordinate Gems to subdue an enraged Shadow Raid Boss.</Text></View> : null}
           <Text style={[styles.rules, light && styles.mutedLight]}>Estimates use six distinct attackers and at most one Mega or Primal. One caught Pokémon cannot fill two team slots.</Text>
