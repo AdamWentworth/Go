@@ -572,9 +572,12 @@ test.describe('demo media capture', () => {
       await capture(page, 'search-results-map');
 
       await page.goto('/trades', { waitUntil: 'domcontentloaded' });
-      await expect(page.getByText('Reveal Trade Partner Info').first()).toBeVisible({ timeout: 20_000 });
-      await expect(page.getByText('Party Hat Pikachu').first()).toBeVisible({ timeout: 20_000 });
-      await expect(page.getByText('Mewtwo').first()).toBeVisible({ timeout: 20_000 });
+      await page.getByRole('tab', { name: 'Trade Activity' }).click();
+      const tradeActivity = page.locator('.trade-activity-workspace');
+      await expect(tradeActivity).toBeVisible({ timeout: 20_000 });
+      await page.getByRole('button', { name: 'Active, 1' }).click();
+      await expect(tradeActivity.getByText('Party Hat Pikachu').first()).toBeVisible({ timeout: 20_000 });
+      await expect(tradeActivity.getByText('Mewtwo').first()).toBeVisible({ timeout: 20_000 });
       await capture(page, 'trades-pending');
 
     } finally {
