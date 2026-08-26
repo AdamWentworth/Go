@@ -100,9 +100,9 @@ tags:
 - assertNotVisible: All sessions revoked.
 - scrollUntilVisible:
     element:
-      text: Delete account
+      id: native-account-delete-button
     direction: DOWN
-    timeout: 10000
+    timeout: 20000
 - tapOn:
     id: native-account-delete-button
 - extendedWaitUntil:

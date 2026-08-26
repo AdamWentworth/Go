@@ -214,6 +214,11 @@ tags:
 - tapOn: Close
 - tapOn: Clear Trade tag filter
 - tapOn: TAGS
+- scrollUntilVisible:
+    element:
+      text: "Open Favorites, 3 Pokémon"
+    direction: UP
+    timeout: 20000
 - tapOn: "Open Favorites, 3 Pokémon"
 - tapOn: "View Shiny Shadow Venusaur"
 - assertVisible: Shiny Shadow Venusaur
@@ -240,21 +245,16 @@ tags:
 - assertVisible: Vancouver City Safari
 - takeScreenshot: 06e-location-background-selector
 - tapOn: Close background selector
-- swipe:
-    start: 50%, 82%
-    end: 50%, 52%
-    duration: 450
-- swipe:
-    start: 50%, 82%
-    end: 50%, 52%
-    duration: 450
+- assertVisible: Save Pokémon
+- scrollUntilVisible:
+    element:
+      text: Choose fast move
+    direction: DOWN
+    centerElement: true
+    timeout: 20000
 - extendedWaitUntil:
     visible: MOVES
     timeout: 10000
-- swipe:
-    start: 50%, 82%
-    end: 50%, 62%
-    duration: 350
 - tapOn: Choose fast move
 - assertVisible: MOVE SELECTOR
 - assertVisible: Bullet Punch
@@ -263,39 +263,53 @@ tags:
 - extendedWaitUntil:
     notVisible: MOVE SELECTOR
     timeout: 10000
-- swipe:
-    start: 50%, 82%
-    end: 50%, 58%
-    duration: 400
+- assertVisible: Save Pokémon
+- scrollUntilVisible:
+    element:
+      text: APPRAISAL IVS
+    direction: DOWN
+    timeout: 20000
 - assertVisible: APPRAISAL IVS
-- swipe:
-    start: 50%, 82%
-    end: 50%, 18%
-    duration: 650
+- scrollUntilVisible:
+    element:
+      text: CAUGHT DETAILS
+    direction: DOWN
+    timeout: 20000
 - extendedWaitUntil:
     visible: CAUGHT DETAILS
     timeout: 10000
 - assertVisible: LUCKY
+- scrollUntilVisible:
+    element:
+      text: OBTAINED IN A TRADE
+    direction: DOWN
+    speed: 40
+    timeout: 20000
 - assertVisible: OBTAINED IN A TRADE
+- scrollUntilVisible:
+    element:
+      text: LUCKY
+    direction: UP
+    speed: 40
+    timeout: 20000
 - tapOn: "LUCKY: YES"
+- scrollUntilVisible:
+    element:
+      text: Original trainer name
+    direction: DOWN
+    speed: 40
+    timeout: 20000
 - assertVisible: Original trainer name
-- swipe:
-    start: 50%, 82%
-    end: 50%, 28%
-    duration: 550
+- scrollUntilVisible:
+    element:
+      text: BALL CAUGHT
+    direction: DOWN
+    timeout: 20000
 - extendedWaitUntil:
     visible: BALL CAUGHT
     timeout: 10000
 - tapOn: "Ball caught: BEAST BALL"
 - takeScreenshot: 06g-caught-metadata-editor
-- swipe:
-    start: 50%, 18%
-    end: 50%, 82%
-    duration: 650
-- swipe:
-    start: 50%, 18%
-    end: 50%, 82%
-    duration: 650
 - tapOn: Save Pokémon
 - assertNotVisible: Pokémon detail editor
 - takeScreenshot: 06c-caught-instance

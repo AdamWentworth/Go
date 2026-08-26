@@ -31,6 +31,17 @@ tags:
 - assertVisible: MUTUAL MATCH
 - assertVisible: Gigantamax Charizard
 - takeScreenshot: search-01-results
+- tapOn:
+    id: native-search-map-view
+- assertVisible:
+    id: native-search-map
+- assertVisible: "1 on map"
+- assertVisible: "OtherTrainer"
+- takeScreenshot: search-01b-map
+- tapOn:
+    id: native-search-list-view
+- assertNotVisible:
+    id: native-search-map
 - scrollUntilVisible:
     element:
       text: Modify

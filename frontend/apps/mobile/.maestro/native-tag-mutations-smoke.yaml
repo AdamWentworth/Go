@@ -82,7 +82,17 @@ tags:
     direction: UP
 - tapOn: ↕ Arrange
 - assertVisible: Reorder Favorites
+- scrollUntilVisible:
+    element:
+      text: Reorder Shadow Shinies
+    direction: DOWN
+    timeout: 20000
 - assertVisible: Reorder Shadow Shinies
+- scrollUntilVisible:
+    element:
+      text: ✓ Save order
+    direction: UP
+    timeout: 20000
 - tapOn: ✓ Save order
 - extendedWaitUntil:
     visible: ↕ Arrange

@@ -44,6 +44,11 @@ name: Native Raid tool smoke
       text: "Ranking settings"
     direction: UP
 - tapOn: "Ranking settings"
+- scrollUntilVisible:
+    element:
+      text: "Raid setup"
+    direction: DOWN
+    timeout: 20000
 - tapOn: "Raid setup"
 - scrollUntilVisible:
     element:
