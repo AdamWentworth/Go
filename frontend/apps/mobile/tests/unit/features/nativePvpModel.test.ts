@@ -29,5 +29,13 @@ describe('native PvP model', () => {
     expect(result.cp).toBeLessThanOrEqual(1500);
     expect(result.rank).toBeGreaterThanOrEqual(1);
     expect(result.statProductPercent).toBeLessThanOrEqual(100);
+    expect(result.best.rank).toBe(1);
+    expect(result.nearby.some((spread) => spread.rank === result.rank)).toBe(true);
+  });
+
+  it('uses level 50 by default and only reaches level 51 for Best Buddy', () => {
+    const pokemon = { pokemon_id: 1, name: 'Bulbasaur', attack: 118, defense: 111, stamina: 128 } as BasePokemon;
+    expect(calculateNativePvpIvSummary(pokemon, { attack: 0, defense: 15, stamina: 15 }, 'master').level).toBe(50);
+    expect(calculateNativePvpIvSummary(pokemon, { attack: 0, defense: 15, stamina: 15 }, 'master', 51).level).toBe(51);
   });
 });

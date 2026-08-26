@@ -75,7 +75,10 @@ describe('NativePvpScreen', () => {
     expect(screen.getByText('Simulate a focused matchup')).toBeTruthy();
     expect(screen.queryByText(/web simulator/i)).toBeNull();
     fireEvent.press(screen.getByText('IV Rank'));
-    expect(screen.getByText('Rank one IV spread')).toBeTruthy();
+    expect(screen.getByText('Find the strongest IV spread for this league')).toBeTruthy();
+    fireEvent.press(screen.getByText('Bulbasaur'));
+    expect(screen.getByText('APPRAISAL IVS')).toBeTruthy();
+    expect(screen.getByText('RANK 1 SPREAD')).toBeTruthy();
   });
 
   it('runs the shared battle mechanics and renders a canonical result', () => {

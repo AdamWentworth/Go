@@ -20,10 +20,10 @@ import type {
   PokemonPvPRankingsPayload,
 } from "@pokemongonexus/shared-contracts/pokemon";
 import { NativePvpBattleLab } from "../components/tools/NativePvpBattleLab";
+import { NativePvpIvRank } from "../components/tools/NativePvpIvRank";
 import {
   analyzeNativePvpTeam,
   buildNativePvpFormats,
-  calculateNativePvpIvSummary,
   filterNativePvpEntries,
   pvpRoleScore,
   type NativePvpRole,
@@ -261,19 +261,6 @@ export const NativePvpScreen = ({
     )
       ? "pvpoke-legacy"
       : "current-2026");
-  const [ivPokemonId, setIvPokemonId] = useState<number | null>(null);
-  const ivPokemon =
-    catalog.find((pokemon) => pokemon.pokemon_id === ivPokemonId) ??
-    catalog.find((pokemon) =>
-      format?.entries.some((entry) => entry.pokemonId === pokemon.pokemon_id),
-    ) ??
-    null;
-  const [attackIv, setAttackIv] = useState("0");
-  const [defenseIv, setDefenseIv] = useState("15");
-  const [staminaIv, setStaminaIv] = useState("15");
-  const [ivResult, setIvResult] = useState<ReturnType<
-    typeof calculateNativePvpIvSummary
-  > | null>(null);
   const updateWorkspace = (next: NativePvpWorkspace) => {
     setWorkspace(next);
     setExpanded(null);
@@ -359,7 +346,6 @@ export const NativePvpScreen = ({
             onPress={() => {
               setFormatKey(key);
               setTeamKeys([]);
-              setIvResult(null);
               setCupOpen(false);
             }}
             style={[
@@ -406,7 +392,7 @@ export const NativePvpScreen = ({
           {cupOpen && cupFormats.length ? (
             <View style={[styles.cupOptions, light && styles.panelLight]}>
               {cupFormats.map((item) => (
-                <Pressable key={item.key} onPress={() => { setFormatKey(item.key); setCupOpen(false); setTeamKeys([]); setIvResult(null); }} style={styles.cupOption}>
+                <Pressable key={item.key} onPress={() => { setFormatKey(item.key); setCupOpen(false); setTeamKeys([]); }} style={styles.cupOption}>
                   <Text style={[styles.cupOptionText, light && styles.textLight]}>{item.label}</Text>
                 </Pressable>
               ))}
@@ -706,160 +692,16 @@ export const NativePvpScreen = ({
           }
         />
       ) : (
-        <>
-          <View style={[styles.workspacePanel, light && styles.panelLight]}>
-            <Text style={styles.eyebrow}>APPRAISAL COMPARISON</Text>
-            <Text style={[styles.resultsTitle, light && styles.textLight]}>
-              Rank one IV spread
-            </Text>
-            <Text style={[styles.stateCopy, light && styles.mutedLight]}>
-              Every 0–15 appraisal is powered to its highest legal half-level
-              and compared by battle-stat product.
-            </Text>
-            {ivPokemon ? (
-              <View style={styles.ivPokemon}>
-                <Image
-                  resizeMode="contain"
-                  source={{ uri: uri(assetBaseUrl, ivPokemon.image_url) }}
-                  style={styles.ivImage}
-                />
-                <View>
-                  <Text style={[styles.pokemonName, light && styles.textLight]}>
-                    {ivPokemon.name}
-                  </Text>
-                  <Text
-                    style={[styles.pokemonMeta, light && styles.mutedLight]}
-                  >
-                    {format?.label ?? "League"} ·{" "}
-                    {format?.cpLimit
-                      ? `${format.cpLimit.toLocaleString()} CP`
-                      : "No cap"}
-                  </Text>
-                </View>
-              </View>
-            ) : null}
-            <ScrollView
-              contentContainerStyle={styles.pickerRail}
-              horizontal
-              showsHorizontalScrollIndicator={false}
-            >
-              {catalog
-                .filter((pokemon) =>
-                  format?.entries.some(
-                    (entry) => entry.pokemonId === pokemon.pokemon_id,
-                  ),
-                )
-                .slice(0, 40)
-                .map((pokemon) => (
-                  <Pressable
-                    accessibilityRole="button"
-                    accessibilityLabel={`Select ${pokemon.name} for IV Rank`}
-                    key={pokemon.pokemon_id}
-                    onPress={() => {
-                      setIvPokemonId(pokemon.pokemon_id);
-                      setIvResult(null);
-                    }}
-                    style={[
-                      styles.picker,
-                      light && styles.controlLight,
-                      ivPokemon?.pokemon_id === pokemon.pokemon_id &&
-                        styles.candidateActive,
-                    ]}
-                  >
-                    <Image
-                      source={{ uri: uri(assetBaseUrl, pokemon.image_url) }}
-                      style={styles.pickerImage}
-                    />
-                    <Text
-                      numberOfLines={2}
-                      style={[styles.candidateName, light && styles.textLight]}
-                    >
-                      {pokemon.name}
-                    </Text>
-                  </Pressable>
-                ))}
-            </ScrollView>
-            <View style={styles.ivInputs}>
-              {(
-                [
-                  ["Attack", attackIv, setAttackIv],
-                  ["Defense", defenseIv, setDefenseIv],
-                  ["HP", staminaIv, setStaminaIv],
-                ] as const
-              ).map(([label, value, setter]) => (
-                <View key={label} style={styles.ivField}>
-                  <Text style={[styles.ivLabel, light && styles.mutedLight]}>
-                    {label}
-                  </Text>
-                  <TextInput
-                    accessibilityLabel={`${label} IV`}
-                    keyboardType="number-pad"
-                    maxLength={2}
-                    onChangeText={setter}
-                    style={[styles.ivInput, light && styles.inputLight]}
-                    value={value}
-                  />
-                </View>
-              ))}
-            </View>
-            <Pressable
-              accessibilityRole="button"
-              disabled={!ivPokemon}
-              onPress={() => {
-                if (!ivPokemon) return;
-                setIvResult(
-                  calculateNativePvpIvSummary(
-                    ivPokemon,
-                    {
-                      attack: Math.max(0, Math.min(15, Number(attackIv) || 0)),
-                      defense: Math.max(
-                        0,
-                        Math.min(15, Number(defenseIv) || 0),
-                      ),
-                      stamina: Math.max(
-                        0,
-                        Math.min(15, Number(staminaIv) || 0),
-                      ),
-                    },
-                    league,
-                  ),
-                );
-              }}
-              style={[styles.primary, !ivPokemon && styles.disabled]}
-            >
-              <Text style={styles.primaryText}>Calculate IV rank</Text>
-            </Pressable>
-            {ivResult ? (
-              <View accessibilityLiveRegion="polite" style={styles.ivResult}>
-                <Text style={styles.ivRank}>
-                  Rank #{ivResult.rank.toLocaleString()}
-                </Text>
-                <Text style={[styles.ivTotal, light && styles.mutedLight]}>
-                  of {ivResult.total.toLocaleString()} ·{" "}
-                  {ivResult.statProductPercent.toFixed(2)}% stat product
-                </Text>
-                <View style={styles.ivStats}>
-                  {[
-                    ["Level", ivResult.level],
-                    ["CP", ivResult.cp],
-                    ["Attack", ivResult.battleAttack.toFixed(1)],
-                    ["Defense", ivResult.battleDefense.toFixed(1)],
-                    ["HP", ivResult.battleHp],
-                  ].map(([label, value]) => (
-                    <View key={label}>
-                      <Text style={styles.ivStatValue}>{value}</Text>
-                      <Text
-                        style={[styles.ivStatLabel, light && styles.mutedLight]}
-                      >
-                        {label}
-                      </Text>
-                    </View>
-                  ))}
-                </View>
-              </View>
-            ) : null}
-          </View>
-        </>
+        <NativePvpIvRank
+          assetBaseUrl={assetBaseUrl}
+          catalog={catalog}
+          instances={instances}
+          league={league}
+          light={light}
+          scope={scope}
+          setScope={setScope}
+          signedIn={signedIn}
+        />
       )}
     </ScrollView>
   );

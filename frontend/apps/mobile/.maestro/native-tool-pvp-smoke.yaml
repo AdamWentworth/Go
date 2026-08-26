@@ -35,5 +35,13 @@ name: Native PvP tool smoke
     speed: 40
     timeout: 15000
 - tapOn: "IV Rank"
-- assertVisible: "Rank one IV spread"
+- assertVisible: "Find the strongest IV spread for this league"
+- tapOn: "Bulbasaur"
+- scrollUntilVisible:
+    element:
+      text: "RANK 1 SPREAD"
+    direction: DOWN
+    speed: 40
+    timeout: 15000
+- assertVisible: "RANK 1 SPREAD"
 - takeScreenshot: "native-pvp-iv-rank"

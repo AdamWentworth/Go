@@ -136,17 +136,21 @@ export type NativePvpIvSummary = {
   stamina: number;
   statProductPercent: number;
   total: number;
+  best: NativePvpIvSpread;
+  nearby: NativePvpIvSpread[];
+};
+export type NativePvpIvSpread = Omit<NativePvpIvSummary, "best" | "nearby" | "total"> & {
+  statProduct: number;
 };
 const legalIvBuild = (
   pokemon: BasePokemon,
   ivs: { attack: number; defense: number; stamina: number },
   league: PokemonPvPLeagueKey,
-): Omit<NativePvpIvSummary, "rank" | "statProductPercent" | "total"> & {
-  statProduct: number;
-} => {
+  maxLevel: 50 | 51,
+): Omit<NativePvpIvSpread, "rank" | "statProductPercent"> => {
   const cap = league === "great" ? 1500 : league === "ultra" ? 2500 : null;
   let selectedLevel = 1;
-  for (let level = 1; level <= 51; level += 0.5) {
+  for (let level = 1; level <= maxLevel; level += 0.5) {
     const cp = calculatePokemonCombatPower(pokemon, ivs, level);
     if (cp == null || (cap != null && cp > cap)) break;
     selectedLevel = level;
@@ -173,21 +177,37 @@ export const calculateNativePvpIvSummary = (
   pokemon: BasePokemon,
   selected: { attack: number; defense: number; stamina: number },
   league: PokemonPvPLeagueKey,
+  maxLevel: 50 | 51 = 50,
 ): NativePvpIvSummary => {
-  const chosen = legalIvBuild(pokemon, selected, league);
-  let rank = 1;
-  let maximum = chosen.statProduct;
+  const chosen = legalIvBuild(pokemon, selected, league, maxLevel);
+  const spreads: ReturnType<typeof legalIvBuild>[] = [];
   for (let attack = 0; attack <= 15; attack += 1)
     for (let defense = 0; defense <= 15; defense += 1)
       for (let stamina = 0; stamina <= 15; stamina += 1) {
-        const candidate = legalIvBuild(
-          pokemon,
-          { attack, defense, stamina },
-          league,
-        );
-        if (candidate.statProduct > chosen.statProduct + 0.00001) rank += 1;
-        maximum = Math.max(maximum, candidate.statProduct);
+        spreads.push(legalIvBuild(
+          pokemon, { attack, defense, stamina }, league, maxLevel,
+        ));
       }
+  spreads.sort((left, right) =>
+    right.statProduct - left.statProduct ||
+    (right.attack + right.defense + right.stamina) -
+      (left.attack + left.defense + left.stamina) ||
+    right.attack - left.attack ||
+    right.defense - left.defense ||
+    right.stamina - left.stamina,
+  );
+  const selectedIndex = spreads.findIndex((spread) =>
+    spread.attack === selected.attack &&
+    spread.defense === selected.defense &&
+    spread.stamina === selected.stamina,
+  );
+  const bestStatProduct = spreads[0]?.statProduct ?? chosen.statProduct;
+  const ranked = (spread: ReturnType<typeof legalIvBuild>, index: number): NativePvpIvSpread => ({
+    ...spread,
+    rank: index + 1,
+    statProductPercent: (spread.statProduct / bestStatProduct) * 100,
+  });
+  const chosenRank = Math.max(0, selectedIndex);
   return {
     attack: selected.attack,
     battleAttack: chosen.battleAttack,
@@ -196,10 +216,14 @@ export const calculateNativePvpIvSummary = (
     cp: chosen.cp,
     defense: selected.defense,
     level: chosen.level,
-    rank,
+    rank: chosenRank + 1,
     stamina: selected.stamina,
-    statProductPercent: (chosen.statProduct / maximum) * 100,
+    statProductPercent: (chosen.statProduct / bestStatProduct) * 100,
     total: 4096,
+    best: ranked(spreads[0] ?? chosen, 0),
+    nearby: spreads
+      .slice(Math.max(0, chosenRank - 2), Math.min(spreads.length, chosenRank + 3))
+      .map((spread, offset) => ranked(spread, Math.max(0, chosenRank - 2) + offset)),
   };
 };
 
