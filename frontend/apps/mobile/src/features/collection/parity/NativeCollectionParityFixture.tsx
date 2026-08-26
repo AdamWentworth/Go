@@ -482,10 +482,10 @@ export const NativeCollectionParityFixture = ({
         </View>
       </Pressable> : null}
 
-      {selectedIds.size === 0 ? (
+      {selectedIds.size === 0 && onActionMenuPress ? (
         <NativeActionMenuAnchor
           assetBaseUrl={assetBaseUrl}
-          onPress={onActionMenuPress ?? (() => undefined)}
+          onPress={onActionMenuPress}
         />
       ) : null}
 

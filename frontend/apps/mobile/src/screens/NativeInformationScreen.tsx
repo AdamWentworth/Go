@@ -89,7 +89,7 @@ const InformationSection = ({
   );
 };
 
-export const NativeInformationScreen = ({ assetBaseUrl, onBack, onNavigate, page }: Props) => {
+const NativeInformationPageScreen = ({ assetBaseUrl, onBack, onNavigate, page }: Props) => {
   const light = useColorScheme() === 'light';
   const insets = useSafeAreaInsets();
   const isFaq = page.slug === 'faq';
@@ -98,7 +98,10 @@ export const NativeInformationScreen = ({ assetBaseUrl, onBack, onNavigate, page
   ), [page.sections]);
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
   const [openIds, setOpenIds] = useState<Set<string>>(() => new Set());
-  const visibleSections = activeCategory
+  const validActiveCategory = activeCategory && categories.includes(activeCategory)
+    ? activeCategory
+    : null;
+  const visibleSections = validActiveCategory
     ? page.sections.filter(({ category }) => category === activeCategory)
     : page.sections;
 
@@ -136,8 +139,8 @@ export const NativeInformationScreen = ({ assetBaseUrl, onBack, onNavigate, page
             showsHorizontalScrollIndicator={false}
             style={styles.categoryRail}
           >
-            <Pressable accessibilityLabel="Show all FAQ categories" accessibilityRole="button" onPress={() => setActiveCategory(null)} style={[styles.category, !activeCategory && styles.categoryActive]}>
-              <Text style={[styles.categoryLabel, !activeCategory && styles.categoryLabelActive]}>All</Text>
+            <Pressable accessibilityLabel="Show all FAQ categories" accessibilityRole="button" onPress={() => setActiveCategory(null)} style={[styles.category, !validActiveCategory && styles.categoryActive]}>
+              <Text style={[styles.categoryLabel, !validActiveCategory && styles.categoryLabelActive]}>All</Text>
             </Pressable>
             {categories.map((category) => (
               <Pressable accessibilityLabel={`Filter FAQ by ${category}`} accessibilityRole="button" key={category} onPress={() => setActiveCategory(category)} style={[styles.category, activeCategory === category && styles.categoryActive]}>
@@ -179,6 +182,10 @@ export const NativeInformationScreen = ({ assetBaseUrl, onBack, onNavigate, page
     </View>
   );
 };
+
+export const NativeInformationScreen = (props: Props) => (
+  <NativeInformationPageScreen key={props.page.slug} {...props} />
+);
 
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: '#090d12' }, rootLight: { backgroundColor: '#eef4f7' },

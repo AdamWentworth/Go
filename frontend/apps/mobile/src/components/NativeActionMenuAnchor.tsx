@@ -17,6 +17,7 @@ export const NativeActionMenuAnchor = ({ assetBaseUrl, onPress }: Props) => {
       accessibilityLabel="Open action menu"
       accessibilityRole="button"
       onPress={onPress}
+      testID="native-action-menu-anchor"
       style={({ pressed }) => [
         styles.anchor,
         { bottom: Math.max(20, insets.bottom) },

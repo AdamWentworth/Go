@@ -13,6 +13,24 @@ name: Native information and legal routes smoke
 - openLink: "exp://10.0.2.2:8091/--/device-smoke/public?page=privacy"
 - assertVisible: "Privacy Policy"
 - assertVisible: "Last updated July 28, 2026"
+- openLink: "exp://10.0.2.2:8091/--/device-smoke/public?page=help"
+- assertVisible: "Find the right answer"
+- scrollUntilVisible:
+    element:
+      text: "Account Security"
+    direction: DOWN
+    timeout: 10000
+- assertVisible: "Account Security"
+- openLink: "exp://10.0.2.2:8091/--/device-smoke/public?page=about"
+- assertVisible: "About Pokémon Go Nexus"
+- assertVisible: "One connected model, not unrelated tools."
 - openLink: "exp://10.0.2.2:8091/--/device-smoke/public?page=safety"
 - assertVisible: "Trade Safety & Community Guidelines"
-- takeScreenshot: "native-information-safety"
+- assertVisible: "Pokémon Go Nexus plans the exchange; Pokémon GO performs it."
+- openLink: "exp://10.0.2.2:8091/--/device-smoke/public?page=terms"
+- assertVisible: "Terms of Service"
+- assertVisible: "Last updated July 28, 2026"
+- openLink: "exp://10.0.2.2:8091/--/device-smoke/public?page=data-deletion"
+- assertVisible: "User Data Deletion"
+- assertVisible: "Delete your account in Pokémon Go Nexus"
+- takeScreenshot: "native-information-all-routes"

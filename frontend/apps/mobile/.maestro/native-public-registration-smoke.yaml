@@ -17,3 +17,21 @@ name: Native registration workflow smoke
     visible: "PROTECT YOUR ACCOUNT"
     timeout: 15000
 - takeScreenshot: "native-registration-password-step"
+- tapOn: Password
+- inputText: "Strong_password_42"
+- tapOn: Confirm password
+- inputText: "Strong_password_42"
+- hideKeyboard
+- tapOn: "Continue ›"
+- assertVisible: "POKÉMON GO IDENTITY"
+- tapOn: "Continue ›"
+- assertVisible: "YOUR AREA"
+- tapOn: "Continue ›"
+- assertVisible: "READY TO JOIN"
+- assertVisible: "VisualTrainer"
+- assertVisible: "visual@example.invalid"
+- tapOn: "Create account ✓"
+- extendedWaitUntil:
+    visible: "Account created."
+    timeout: 10000
+- takeScreenshot: "native-registration-complete"

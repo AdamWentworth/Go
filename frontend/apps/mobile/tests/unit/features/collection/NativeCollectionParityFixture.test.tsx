@@ -29,7 +29,7 @@ describe('NativeCollectionParityFixture', () => {
   });
 
   it('preserves the canonical mobile collection hierarchy without native redesign copy', () => {
-    render(<NativeCollectionParityFixture />);
+    render(<NativeCollectionParityFixture onActionMenuPress={() => undefined} />);
 
     expect(screen.getByRole('tab', { name: /tags/i })).toBeTruthy();
     expect(screen.getByRole('tab', { name: /pokémon/i })).toBeTruthy();
@@ -42,7 +42,7 @@ describe('NativeCollectionParityFixture', () => {
   });
 
   it('renders all canonical card fixtures and their layered state signals', () => {
-    render(<NativeCollectionParityFixture />);
+    render(<NativeCollectionParityFixture onActionMenuPress={() => undefined} />);
 
     expect(screen.getAllByLabelText('Favorite')).toHaveLength(9);
     expect(screen.getAllByLabelText('Gigantamax')).toHaveLength(2);
@@ -175,6 +175,7 @@ describe('NativeCollectionParityFixture', () => {
     const onSelectionActionPress = jest.fn();
     render(
       <NativeCollectionParityFixture
+        onActionMenuPress={() => undefined}
         onSelectionActionPress={onSelectionActionPress}
         selectedIds={new Set([COLLECTION_PARITY_FIXTURES[0].id])}
         selectionAction="add"

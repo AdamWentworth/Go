@@ -157,7 +157,9 @@ export const NativeActionMenu = ({
   const topInset = Platform.OS === 'android' ? 16 : insets.top + 12;
   const bottomInset = Math.max(
     insets.bottom,
-    Platform.OS === 'android' ? 16 : 0,
+    // Full-screen Android modals can report a zero safe-area inset even when
+    // gesture navigation still reserves the bottom system strip.
+    Platform.OS === 'android' ? 40 : 0,
   ) + 16;
 
   useEffect(() => {

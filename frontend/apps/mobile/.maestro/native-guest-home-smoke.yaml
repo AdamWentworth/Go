@@ -1,0 +1,54 @@
+appId: host.exp.exponent
+name: Native guest landing parity smoke
+tags:
+  - android
+  - native-home
+  - guest
+---
+- openLink:
+    link: exp://10.0.2.2:8091/--/device-smoke/home?guest=1
+- runFlow:
+    when:
+      visible: "This is the developer menu.*"
+    commands:
+      - tapOn: Continue
+- runFlow:
+    when:
+      visible: React Native dev menu
+    commands:
+      - tapOn: Close
+- extendedWaitUntil:
+    visible: THE ULTIMATE TRAINER HUB
+    timeout: 45000
+- assertVisible: Bring every catch, wishlist, and trade into one connected place.
+- assertVisible: QUICK NAVIGATION
+- assertVisible: Tap the Poké Ball below to explore the app.
+- takeScreenshot: 01-guest-hero-and-hint
+- tapOn: Open action menu from tip
+- assertNotVisible: QUICK NAVIGATION
+- assertVisible: Navigate action-menu
+- scrollUntilVisible:
+    element:
+      text: One clear trading workflow
+    direction: DOWN
+    timeout: 10000
+- assertVisible: Exact collection
+- assertVisible: Reciprocal trading
+- scrollUntilVisible:
+    element:
+      text: Trainer tools
+    direction: DOWN
+    timeout: 10000
+- scrollUntilVisible:
+    element:
+      text: Trade Board
+    direction: DOWN
+    timeout: 10000
+- assertVisible: Trade Board
+- scrollUntilVisible:
+    element:
+      text: Bring your collection. Find the right trainer.
+    direction: DOWN
+    timeout: 10000
+- assertVisible: Quick start guide
+- takeScreenshot: 02-guest-features-and-footer

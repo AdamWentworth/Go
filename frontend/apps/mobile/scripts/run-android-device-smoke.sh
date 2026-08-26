@@ -13,6 +13,8 @@ artifact_dir="$(mktemp -d /tmp/pokegonexus-android-smoke.XXXXXX)"
 color_scheme="${POKEGONEXUS_SMOKE_COLOR_SCHEME:-light}"
 smoke_flow="${POKEGONEXUS_SMOKE_FLOW:-.maestro/native-collection-smoke.yaml}"
 smoke_density="${POKEGONEXUS_SMOKE_DENSITY:-520}"
+smoke_font_scale="${POKEGONEXUS_SMOKE_FONT_SCALE:-1.0}"
+smoke_reduce_motion="${POKEGONEXUS_SMOKE_REDUCE_MOTION:-false}"
 metro_pid=""
 metro_pgid=""
 fixture_pid=""
@@ -20,6 +22,11 @@ fixture_pgid=""
 device_id=""
 original_density_override=""
 density_changed="false"
+original_font_scale=""
+original_window_animation_scale=""
+original_transition_animation_scale=""
+original_animator_duration_scale=""
+accessibility_settings_changed="false"
 
 cleanup() {
   if [[ -n "${metro_pgid}" ]]; then
@@ -46,6 +53,12 @@ cleanup() {
     else
       "${adb_bin}" -s "${device_id}" shell wm density reset >/dev/null 2>&1 || true
     fi
+  fi
+  if [[ "${accessibility_settings_changed}" == "true" && -n "${device_id}" ]]; then
+    "${adb_bin}" -s "${device_id}" shell settings put system font_scale "${original_font_scale:-1.0}" >/dev/null 2>&1 || true
+    "${adb_bin}" -s "${device_id}" shell settings put global window_animation_scale "${original_window_animation_scale:-1}" >/dev/null 2>&1 || true
+    "${adb_bin}" -s "${device_id}" shell settings put global transition_animation_scale "${original_transition_animation_scale:-1}" >/dev/null 2>&1 || true
+    "${adb_bin}" -s "${device_id}" shell settings put global animator_duration_scale "${original_animator_duration_scale:-1}" >/dev/null 2>&1 || true
   fi
 }
 trap cleanup EXIT
@@ -109,6 +122,26 @@ original_density_override="$(
 )"
 "${adb_bin}" -s "${device_id}" shell wm density "${smoke_density}" >/dev/null
 density_changed="true"
+
+original_font_scale="$("${adb_bin}" -s "${device_id}" shell settings get system font_scale | tr -d '\r')"
+original_window_animation_scale="$("${adb_bin}" -s "${device_id}" shell settings get global window_animation_scale | tr -d '\r')"
+original_transition_animation_scale="$("${adb_bin}" -s "${device_id}" shell settings get global transition_animation_scale | tr -d '\r')"
+original_animator_duration_scale="$("${adb_bin}" -s "${device_id}" shell settings get global animator_duration_scale | tr -d '\r')"
+accessibility_settings_changed="true"
+"${adb_bin}" -s "${device_id}" shell settings put system font_scale "${smoke_font_scale}" >/dev/null
+case "${smoke_reduce_motion}" in
+  true)
+    "${adb_bin}" -s "${device_id}" shell settings put global window_animation_scale 0 >/dev/null
+    "${adb_bin}" -s "${device_id}" shell settings put global transition_animation_scale 0 >/dev/null
+    "${adb_bin}" -s "${device_id}" shell settings put global animator_duration_scale 0 >/dev/null
+    ;;
+  false)
+    ;;
+  *)
+    echo "Unsupported POKEGONEXUS_SMOKE_REDUCE_MOTION: ${smoke_reduce_motion} (expected true or false)." >&2
+    exit 1
+    ;;
+esac
 
 if ! "${adb_bin}" -s "${device_id}" shell pm list packages | grep -q '^package:host.exp.exponent$'; then
   "${adb_bin}" -s "${device_id}" install -r "${expo_go_apk}"

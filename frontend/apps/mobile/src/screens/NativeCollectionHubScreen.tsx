@@ -23,6 +23,7 @@ import {
 import { NativeCollectionParityScreen } from './NativeCollectionParityScreen';
 import { NativeTagsPanelScreen } from './NativeTagsPanelScreen';
 import { NativeActionMenu } from '../components/NativeActionMenu';
+import { NativeActionMenuAnchor } from '../components/NativeActionMenuAnchor';
 import { NativePokemonOrganizerSheet } from '../features/collection/NativePokemonOrganizerSheet';
 import type { NativePokemonOrganizerRequest } from '../features/collection/useNativePokemonOrganizerMutation';
 
@@ -189,7 +190,6 @@ export const NativeCollectionHubScreen = ({
       error={error}
       warning={warning}
       isLoading={isLoading}
-      onActionMenuPress={openActionMenu}
       onRetry={onRetry}
       onCreateTag={onCreateTag}
       onDeleteTag={onDeleteTag}
@@ -210,7 +210,6 @@ export const NativeCollectionHubScreen = ({
     inventoryCount,
     inventoryTags,
     isLoading,
-    openActionMenu,
     onRetry,
     onCreateTag,
     onDeleteTag,
@@ -237,7 +236,6 @@ export const NativeCollectionHubScreen = ({
       onViewChange={changeView}
       onOpenInstance={openEntry}
       onLongPressInstance={longPressEntry}
-      onOpenCanonicalCollection={openActionMenu}
       showHeader={false}
       selectedIds={selectedIds}
       onClearSelection={() => setSelectedIds(new Set())}
@@ -252,7 +250,6 @@ export const NativeCollectionHubScreen = ({
     clearTag,
     error,
     isLoading,
-    openActionMenu,
     onRetry,
     openEntry,
     query,
@@ -271,7 +268,6 @@ export const NativeCollectionHubScreen = ({
       collectionCount={inventoryCount}
       error={error}
       isLoading={isLoading}
-      onActionMenuPress={openActionMenu}
       onRetry={onRetry}
       onCreateTag={onCreateTag}
       onDeleteTag={onDeleteTag}
@@ -292,7 +288,6 @@ export const NativeCollectionHubScreen = ({
     error,
     inventoryCount,
     isLoading,
-    openActionMenu,
     onRetry,
     onCreateTag,
     onDeleteTag,
@@ -341,6 +336,12 @@ export const NativeCollectionHubScreen = ({
         {pokemonPanel}
         {wishlistPanel}
       </NativeHorizontalPageSlider>
+      {selectedIds.size === 0 ? (
+        <NativeActionMenuAnchor
+          assetBaseUrl={assetBaseUrl}
+          onPress={openActionMenu}
+        />
+      ) : null}
       {actionMenuOpen ? (
         <NativeActionMenu
           assetBaseUrl={assetBaseUrl}

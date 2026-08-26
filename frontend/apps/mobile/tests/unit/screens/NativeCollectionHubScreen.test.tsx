@@ -219,7 +219,8 @@ describe('NativeCollectionHubScreen', () => {
       </SafeAreaProvider>,
     );
 
-    fireEvent.press(screen.getAllByRole('button', { name: 'Open action menu' })[0]);
+    expect(screen.getAllByRole('button', { name: 'Open action menu' })).toHaveLength(1);
+    fireEvent.press(screen.getByRole('button', { name: 'Open action menu' }));
 
     expect(screen.getByTestId('native-action-menu')).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Pokémon' })).toBeTruthy();

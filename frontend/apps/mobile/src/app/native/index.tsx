@@ -31,8 +31,8 @@ import { resolveNativeActionMenuDestination } from '../../navigation/nativeActio
 import { NativeGuestHomeScreen } from '../../screens/NativeGuestHomeScreen';
 import { NativeHomeScreen } from '../../screens/NativeHomeScreen';
 
-const hintStorageKey = (userId: string): string => (
-  `pokegonexus-native-home-action-menu-hint:${userId}`
+const hintStorageKey = (userId: string | null): string => (
+  `pokegonexus-native-home-action-menu-hint:${userId ?? 'guest'}`
 );
 
 export default function NativeHomeRoute() {
@@ -134,7 +134,6 @@ export default function NativeHomeRoute() {
   };
 
   useEffect(() => {
-    if (!userId) return undefined;
     let active = true;
     void SecureStore.getItemAsync(hintStorageKey(userId))
       .then((value) => { if (active) setShowActionMenuHint(value !== 'dismissed'); })
@@ -188,9 +187,22 @@ export default function NativeHomeRoute() {
   }
 
   if (!session.user) {
+    const dismissGuestActionMenuHint = () => {
+      setShowActionMenuHint(false);
+      void SecureStore.setItemAsync(hintStorageKey(null), 'dismissed');
+    };
     return (
       <View style={styles.root}>
-        <NativeGuestHomeScreen assetBaseUrl={runtimeConfig.api.frontendAppUrl} onNavigate={navigate} />
+        <NativeGuestHomeScreen
+          assetBaseUrl={runtimeConfig.api.frontendAppUrl}
+          onDismissActionMenuHint={dismissGuestActionMenuHint}
+          onNavigate={navigate}
+          onOpenActionMenu={() => {
+            dismissGuestActionMenuHint();
+            setActionMenuOpen(true);
+          }}
+          showActionMenuHint={showActionMenuHint}
+        />
         <NativeActionMenuAnchor assetBaseUrl={runtimeConfig.api.frontendAppUrl} onPress={() => setActionMenuOpen(true)} />
         {actionMenuOpen ? (
           <NativeActionMenu
@@ -223,6 +235,10 @@ export default function NativeHomeRoute() {
         incomingFriends={friendsQuery.data?.incoming.length ?? 0}
         isLoading={collectionQuery.isPending || tradesQuery.isPending}
         onDismissActionMenuHint={dismissActionMenuHint}
+        onOpenActionMenu={() => {
+          dismissActionMenuHint();
+          setActionMenuOpen(true);
+        }}
         onNavigate={navigate}
         onRetry={() => {
           void collectionQuery.refetch();

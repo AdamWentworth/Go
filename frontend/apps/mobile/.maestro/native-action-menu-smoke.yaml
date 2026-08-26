@@ -19,12 +19,22 @@ tags:
 - extendedWaitUntil:
     visible: POKÉMON
     timeout: 45000
-- tapOn: Open action menu
+- tapOn:
+    id: native-action-menu-anchor
 - extendedWaitUntil:
     visible: Quick navigation
     timeout: 10000
 - assertVisible: Share Trade Board
 - assertVisible: Learn & support
+- assertVisible: Use dark theme
+- tapOn: Use dark theme
+- assertVisible: Use light theme
 - takeScreenshot: action-menu-system-window
 - tapOn: Close
 - assertNotVisible: Quick navigation
+- tapOn:
+    id: native-action-menu-anchor
+- assertVisible: Use light theme
+- tapOn: Use light theme
+- assertVisible: Use dark theme
+- tapOn: Close

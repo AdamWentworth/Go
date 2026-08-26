@@ -83,6 +83,9 @@ tags:
     text: ^NAME$
 - assertVisible: Sort by NAME ascending
 - tapOn: Sort by NAME ascending
+- extendedWaitUntil:
+    visible: NUMBER
+    timeout: 10000
 - tapOn:
     text: ^NUMBER$
 - assertVisible: Sort by NUMBER ascending

@@ -1,9 +1,10 @@
-import { Redirect } from 'expo-router';
+import { Redirect, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
 import { Text, View } from 'react-native';
 import { runtimeConfig } from '../../config/runtimeConfig';
 import type { NativeCollectionRow } from '../../features/collection/collectionModel';
 import { NativeHomeScreen } from '../../screens/NativeHomeScreen';
+import { NativeGuestHomeScreen } from '../../screens/NativeGuestHomeScreen';
 
 const RECENT_ROWS: NativeCollectionRow[] = [
   {
@@ -43,9 +44,33 @@ const RECENT_ROWS: NativeCollectionRow[] = [
 ];
 
 export default function DeviceSmokeHomeRoute() {
+  const params = useLocalSearchParams<{ guest?: string | string[] }>();
   const [showHint, setShowHint] = useState(true);
   const [lastPath, setLastPath] = useState('');
   if (!runtimeConfig.mobile.deviceSmokeMode) return <Redirect href="/" />;
+  const guest = (Array.isArray(params.guest) ? params.guest[0] : params.guest) === '1';
+
+  if (guest) {
+    return (
+      <View style={{ flex: 1 }}>
+        <NativeGuestHomeScreen
+          assetBaseUrl={runtimeConfig.api.frontendAppUrl}
+          onDismissActionMenuHint={() => setShowHint(false)}
+          onNavigate={setLastPath}
+          onOpenActionMenu={() => {
+            setShowHint(false);
+            setLastPath('action-menu');
+          }}
+          showActionMenuHint={showHint}
+        />
+        {lastPath ? (
+          <Text accessibilityLiveRegion="polite" style={{ position: 'absolute', width: 1, height: 1, opacity: 0.01 }}>
+            Navigate {lastPath}
+          </Text>
+        ) : null}
+      </View>
+    );
+  }
 
   return (
     <View style={{ flex: 1 }}>
@@ -55,6 +80,7 @@ export default function DeviceSmokeHomeRoute() {
         friendsState="ready"
         incomingFriends={1}
         onDismissActionMenuHint={() => setShowHint(false)}
+        onOpenActionMenu={() => setLastPath('action-menu')}
         onNavigate={setLastPath}
         onRetry={() => undefined}
         pokemonGoName="VisualTrainerGO"

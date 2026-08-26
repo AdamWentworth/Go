@@ -1,9 +1,10 @@
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View, useColorScheme } from 'react-native';
 import { theme } from '../../ui/theme';
 import { useNativeCollectionSync } from './NativeCollectionSyncProvider';
 
 export const NativeCollectionSyncStatusCard = () => {
   const sync = useNativeCollectionSync();
+  const light = useColorScheme() === 'light';
   const retainedCount = sync.pendingCount + sync.acceptedCount;
   if (!sync.isOffline && !sync.isSyncing && !sync.lastError && retainedCount === 0) {
     return null;
@@ -36,18 +37,18 @@ export const NativeCollectionSyncStatusCard = () => {
     sync.lastError != null || sync.pendingCount > 0 || sync.acceptedCount > 0
   );
   return (
-    <View accessibilityLiveRegion="polite" style={styles.card}>
+    <View accessibilityLiveRegion="polite" style={[styles.card, light && styles.cardLight]}>
       <View style={styles.copy}>
-        <Text style={styles.title}>{title}</Text>
-        <Text style={styles.body}>{body}</Text>
+        <Text style={[styles.title, light && styles.titleLight]}>{title}</Text>
+        <Text style={[styles.body, light && styles.bodyLight]}>{body}</Text>
       </View>
       {canRetry ? (
         <Pressable
           accessibilityRole="button"
           onPress={() => void sync.retry()}
-          style={({ pressed }) => [styles.retry, pressed && styles.retryPressed]}
+          style={({ pressed }) => [styles.retry, light && styles.retryLight, pressed && styles.retryPressed]}
         >
-          <Text style={styles.retryText}>{sync.acceptedCount > 0 && !sync.lastError ? 'Check' : 'Retry'}</Text>
+          <Text style={[styles.retryText, light && styles.retryTextLight]}>{sync.acceptedCount > 0 && !sync.lastError ? 'Check' : 'Retry'}</Text>
         </Pressable>
       ) : null}
     </View>
@@ -65,9 +66,12 @@ const styles = StyleSheet.create({
     padding: theme.spacing.sm,
     backgroundColor: '#10283a',
   },
+  cardLight: { borderColor: '#8fb8cb', backgroundColor: '#e7f5fb' },
   copy: { flex: 1, gap: 2 },
   title: { color: '#dff6ff', fontWeight: '900' },
+  titleLight: { color: '#173a4b' },
   body: { color: '#9fc4d8', fontSize: theme.type.caption, lineHeight: 18 },
+  bodyLight: { color: '#426b7e' },
   retry: {
     minWidth: 68,
     minHeight: 44,
@@ -80,4 +84,6 @@ const styles = StyleSheet.create({
   },
   retryPressed: { opacity: 0.7 },
   retryText: { color: '#fff', fontWeight: '900' },
+  retryLight: { borderColor: '#5094b7', backgroundColor: '#d3ebf6' },
+  retryTextLight: { color: '#173a4b' },
 });

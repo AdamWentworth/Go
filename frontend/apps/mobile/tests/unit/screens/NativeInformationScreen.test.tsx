@@ -37,4 +37,23 @@ describe('NativeInformationScreen', () => {
     fireEvent.press(screen.getByText('Open Pokémon'));
     expect(onNavigate).toHaveBeenCalledWith('/pokemon');
   });
+
+  it('does not carry an FAQ category filter into another information route', () => {
+    const view = renderPage('faq');
+    fireEvent.press(screen.getByRole('button', { name: 'Filter FAQ by TRADING' }));
+    expect(screen.queryByText('What are custom tags?')).toBeNull();
+
+    view.rerender(
+      <SafeAreaProvider initialMetrics={{ frame: { x: 0, y: 0, width: 390, height: 844 }, insets: { top: 24, right: 0, bottom: 20, left: 0 } }}>
+        <NativeInformationScreen
+          assetBaseUrl="https://pokegonexus.com"
+          onBack={jest.fn()}
+          onNavigate={jest.fn()}
+          page={NATIVE_INFORMATION_PAGES.help}
+        />
+      </SafeAreaProvider>,
+    );
+
+    expect(screen.getByText('Account Security')).toBeTruthy();
+  });
 });

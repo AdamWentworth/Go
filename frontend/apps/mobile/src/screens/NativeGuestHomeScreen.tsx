@@ -8,10 +8,14 @@ import {
   useColorScheme,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { NativeActionMenuHint } from '../components/NativeActionMenuHint';
 
 type Props = {
   assetBaseUrl: string;
+  onDismissActionMenuHint?: () => void;
   onNavigate: (path: string) => void;
+  onOpenActionMenu?: () => void;
+  showActionMenuHint?: boolean;
 };
 
 const FEATURES = [
@@ -36,7 +40,13 @@ const toAssetUrl = (baseUrl: string, path: string): string => (
   `${baseUrl.replace(/\/$/, '')}/${path.replace(/^\//, '')}`
 );
 
-export const NativeGuestHomeScreen = ({ assetBaseUrl, onNavigate }: Props) => {
+export const NativeGuestHomeScreen = ({
+  assetBaseUrl,
+  onDismissActionMenuHint = () => undefined,
+  onNavigate,
+  onOpenActionMenu = () => undefined,
+  showActionMenuHint = false,
+}: Props) => {
   const light = useColorScheme() === 'light';
   const insets = useSafeAreaInsets();
   return (
@@ -117,6 +127,14 @@ export const NativeGuestHomeScreen = ({ assetBaseUrl, onNavigate }: Props) => {
           </View>
         </View>
       </ScrollView>
+      {showActionMenuHint ? (
+        <NativeActionMenuHint
+          assetBaseUrl={assetBaseUrl}
+          audience="guest"
+          onDismiss={onDismissActionMenuHint}
+          onOpen={onOpenActionMenu}
+        />
+      ) : null}
     </View>
   );
 };

@@ -32,7 +32,7 @@ type NativeCollectionParityScreenProps = {
   onRetry: () => void;
   onOpenInstance: (instanceId: string, orderedInstanceIds: string[]) => void;
   onLongPressInstance?: (instanceId: string) => void;
-  onOpenCanonicalCollection: () => void;
+  onOpenCanonicalCollection?: () => void;
   onClearTag: () => void;
   onViewChange: (view: NativePokemonHubView) => void;
   showHeader?: boolean;

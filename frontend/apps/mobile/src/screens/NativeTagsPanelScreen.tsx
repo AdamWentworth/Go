@@ -39,7 +39,7 @@ type Props = {
   isLoading: boolean;
   parent: CustomTagParent;
   tags: NativeTagSummary[];
-  onActionMenuPress: () => void;
+  onActionMenuPress?: () => void;
   onRetry: () => void;
   onSelectTag: (tag: NativeTagSummary) => void;
   onViewChange: (view: NativePokemonHubView) => void;
@@ -506,19 +506,21 @@ export const NativeTagsPanelScreen = ({
           </Pressable>
         ) : null}
       />
-      <Pressable
-        accessibilityLabel="Open action menu"
-        accessibilityRole="button"
-        onPress={onActionMenuPress}
-        style={styles.actionMenuAnchor}
-      >
-        <Image
-          accessibilityElementsHidden
-          resizeMode="contain"
-          source={{ uri: toAssetUrl(assetBaseUrl, '/images/btn_action_menu.png') }}
-          style={styles.actionMenuBall}
-        />
-      </Pressable>
+      {onActionMenuPress ? (
+        <Pressable
+          accessibilityLabel="Open action menu"
+          accessibilityRole="button"
+          onPress={onActionMenuPress}
+          style={styles.actionMenuAnchor}
+        >
+          <Image
+            accessibilityElementsHidden
+            resizeMode="contain"
+            source={{ uri: toAssetUrl(assetBaseUrl, '/images/btn_action_menu.png') }}
+            style={styles.actionMenuBall}
+          />
+        </Pressable>
+      ) : null}
       {onCreateTag && onDeleteTag && onUpdateTag && (creating || editingTag) ? (
         <NativeCustomTagEditorSheet
           isSaving={isSaving}

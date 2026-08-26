@@ -14,6 +14,7 @@ import type {
   NativeHomeCollectionSummary,
   NativeHomeTradeSummary,
 } from '../features/home/nativeHomeDashboardModel';
+import { NativeActionMenuHint } from '../components/NativeActionMenuHint';
 
 type FriendsState = 'error' | 'loading' | 'ready';
 
@@ -25,6 +26,7 @@ type NativeHomeScreenProps = {
   incomingFriends: number;
   isLoading?: boolean;
   onDismissActionMenuHint: () => void;
+  onOpenActionMenu?: () => void;
   onNavigate: (path: string) => void;
   onRetry: () => void;
   pokemonGoName?: string | null;
@@ -168,6 +170,7 @@ export const NativeHomeScreen = ({
   incomingFriends,
   isLoading = false,
   onDismissActionMenuHint,
+  onOpenActionMenu = () => undefined,
   onNavigate,
   onRetry,
   pokemonGoName,
@@ -358,16 +361,11 @@ export const NativeHomeScreen = ({
       </ScrollView>
 
       {showActionMenuHint ? (
-        <View style={[styles.actionMenuHint, light && styles.actionMenuHintLight, { bottom: Math.max(82, insets.bottom + 70) }]}>
-          <Image source={{ uri: toAssetUrl(assetBaseUrl, '/images/logo/logo.png') }} style={styles.hintLogo} />
-          <View style={styles.hintCopy}>
-            <Text style={styles.eyebrow}>QUICK NAVIGATION</Text>
-            <Text style={[styles.hintText, light && styles.textLight]}>Tap the Poké Ball below for quick navigation.</Text>
-          </View>
-          <Pressable accessibilityLabel="Dismiss quick navigation hint" accessibilityRole="button" onPress={onDismissActionMenuHint} style={styles.hintDismiss}>
-            <Text style={[styles.hintDismissText, light && styles.textLight]}>×</Text>
-          </Pressable>
-        </View>
+        <NativeActionMenuHint
+          assetBaseUrl={assetBaseUrl}
+          onDismiss={onDismissActionMenuHint}
+          onOpen={onOpenActionMenu}
+        />
       ) : null}
     </View>
   );
@@ -460,13 +458,6 @@ const styles = StyleSheet.create({
   toolCopy: { minWidth: 0, flex: 1, gap: 2 },
   toolLabel: { color: '#f5fbfc', fontSize: 12, fontWeight: '900' },
   toolDetail: { color: '#9eadaf', fontSize: 9, lineHeight: 12 },
-  actionMenuHint: { position: 'absolute', left: 10, right: 10, zIndex: 18, minHeight: 66, flexDirection: 'row', alignItems: 'center', gap: 9, padding: 10, borderWidth: 1, borderColor: '#2b9be9', borderRadius: 14, backgroundColor: 'rgba(11, 30, 38, 0.97)' },
-  actionMenuHintLight: { backgroundColor: 'rgba(242, 250, 248, 0.98)' },
-  hintLogo: { width: 42, height: 42, resizeMode: 'contain' },
-  hintCopy: { minWidth: 0, flex: 1, gap: 2 },
-  hintText: { color: '#d4e2e4', fontSize: 11, lineHeight: 15 },
-  hintDismiss: { width: 42, height: 42, alignItems: 'center', justifyContent: 'center' },
-  hintDismissText: { color: '#ffffff', fontSize: 22, fontWeight: '900' },
   textLight: { color: '#193d40' },
   mutedLight: { color: '#597073' },
   pressed: { opacity: 0.78, transform: [{ scale: 0.985 }] },
