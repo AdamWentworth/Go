@@ -60,4 +60,19 @@ describe('native battle models', () => {
     expect(all).toHaveLength(2);
     expect(boosted[0]?.score).toBeGreaterThan(best[0]?.score ?? Infinity);
   });
+  it('applies boss behavior, dodging, Party Power timing, and shadow state to boss counters', () => {
+    const hydrated = { ...pokemon, moves: [fast, charged, secondCharged] } as BasePokemon;
+    const boss = buildNativeRaidBosses(hydrateNativeToolCatalog(
+      [hydrated],
+      [],
+      [{ pokemon_id: 1, raid_boss: [{ id: 1, pokemon_id: 1, name: 'Bulbasaur', form: 'Normal', type: 'one-star', boosted_weather: '', max_boosted_cp: 500, max_unboosted_cp: 400, min_boosted_cp: 300, min_unboosted_cp: 200, possible_shiny: 1, tier: 'one-star' }] }],
+    ))[0];
+    const expected = buildNativeRaidAttackers({ boss, catalog: [hydrated] })[0];
+    const favorableDodging = buildNativeRaidAttackers({ boss, catalog: [hydrated], settings: { bossMovesetMode: 'favorable', dodgeStrategy: 'charged' } })[0];
+    const hostileEnraged = buildNativeRaidAttackers({ boss, catalog: [hydrated], settings: { bossMovesetMode: 'hostile', shadowBossMode: 'enraged' } })[0];
+    const timedPartyPower = buildNativeRaidAttackers({ boss, catalog: [hydrated], settings: { partyPower: 'party4', partyPowerStrategy: 'strongest-charged' } })[0];
+    expect(favorableDodging?.tdo).toBeGreaterThan(expected?.tdo ?? Infinity);
+    expect(hostileEnraged?.score).toBeLessThan(expected?.score ?? 0);
+    expect(timedPartyPower?.score).toBeGreaterThan(expected?.score ?? Infinity);
+  });
 });

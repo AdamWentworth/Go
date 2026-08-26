@@ -28,7 +28,26 @@ name: Native Raid tool smoke
 - assertVisible: "Bulbasaur"
 - assertVisible: "Search raid bosses"
 - takeScreenshot: "native-tool-raid-boss"
+- tapOn: "Ranking settings"
+- scrollUntilVisible:
+    element:
+      text: "Dodging"
+    direction: DOWN
+- assertVisible: "Boss behavior"
+- scrollUntilVisible:
+    element:
+      text: "Shadow boss state"
+    direction: DOWN
+- takeScreenshot: "native-tool-raid-boss-settings"
+- scrollUntilVisible:
+    element:
+      text: "Ranking settings"
+    direction: UP
+- tapOn: "Ranking settings"
 - tapOn: "Raid setup"
-- assertVisible: "BOSS HP"
+- scrollUntilVisible:
+    element:
+      text: "BOSS HP"
+    direction: DOWN
 - assertVisible: "COMFORTABLE"
 - takeScreenshot: "native-tool-raid-setup"

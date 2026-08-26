@@ -1,14 +1,20 @@
 import { Pressable, StyleSheet, Text, View, useColorScheme } from 'react-native';
 import type {
   NativeRaidAttackerLevel,
+  NativeRaidBossMovesetMode,
+  NativeRaidDodgeStrategy,
   NativeRaidFriendship,
   NativeRaidMegaAlly,
   NativeRaidPartyPower,
+  NativeRaidPartyPowerStrategy,
   NativeRaidSettings,
+  NativeRaidShadowBossMode,
 } from '../../features/tools/nativeBattleModels';
 import { NATIVE_BATTLE_TYPES } from '../../features/tools/nativeBattleModels';
 
 type Props = {
+  includeBossControls?: boolean;
+  includeShadowControls?: boolean;
   onChange: (settings: NativeRaidSettings) => void;
   settings: NativeRaidSettings;
 };
@@ -52,7 +58,12 @@ const ChoiceRow = <T extends string | number>({
   );
 };
 
-export const NativeRaidSettingsPanel = ({ onChange, settings }: Props) => {
+export const NativeRaidSettingsPanel = ({
+  includeBossControls = false,
+  includeShadowControls = false,
+  onChange,
+  settings,
+}: Props) => {
   const light = useColorScheme() === 'light';
   const update = <K extends keyof NativeRaidSettings>(key: K, value: NativeRaidSettings[K]) => (
     onChange({ ...settings, [key]: value })
@@ -97,6 +108,19 @@ export const NativeRaidSettingsPanel = ({ onChange, settings }: Props) => {
         ]}
         value={settings.partyPower}
       />
+      {includeBossControls && settings.partyPower !== 'none' ? (
+        <ChoiceRow<NativeRaidPartyPowerStrategy>
+          label="Party Power timing"
+          onChange={(value) => update('partyPowerStrategy', value)}
+          options={[
+            { label: 'When ready', value: 'immediate' },
+            { label: 'Next Charged', value: 'next-charged' },
+            { label: 'Strongest Charged', value: 'strongest-charged' },
+            { label: 'Manual', value: 'manual' },
+          ]}
+          value={settings.partyPowerStrategy}
+        />
+      ) : null}
       <ChoiceRow<number>
         label="Relobby delay"
         onChange={(value) => update('relobbySeconds', value)}
@@ -112,6 +136,48 @@ export const NativeRaidSettingsPanel = ({ onChange, settings }: Props) => {
         ]}
         value={settings.weatherBoostedType}
       />
+      {includeBossControls ? (
+        <>
+          <ChoiceRow<NativeRaidDodgeStrategy>
+            label="Dodging"
+            onChange={(value) => update('dodgeStrategy', value)}
+            options={[
+              { label: 'No dodging', value: 'none' },
+              { label: 'Charged attacks', value: 'charged' },
+            ]}
+            value={settings.dodgeStrategy}
+          />
+          <ChoiceRow<NativeRaidBossMovesetMode>
+            label="Boss behavior"
+            onChange={(value) => update('bossMovesetMode', value)}
+            options={[
+              { label: 'Expected', value: 'expected' },
+              { label: 'Monte Carlo', value: 'monte-carlo' },
+              { label: 'Favorable', value: 'favorable' },
+              { label: 'Hostile', value: 'hostile' },
+            ]}
+            value={settings.bossMovesetMode}
+          />
+        </>
+      ) : null}
+      {includeShadowControls ? (
+        <View style={[styles.shadowSection, light && styles.shadowSectionLight]}>
+          <View style={styles.shadowHeading}>
+            <Text style={styles.shadowEyebrow}>SHADOW RAID</Text>
+            <Text style={[styles.shadowCopy, light && styles.mutedLight]}>Compare the enraged boss with its subdued state.</Text>
+          </View>
+          <ChoiceRow<NativeRaidShadowBossMode>
+            label="Shadow boss state"
+            onChange={(value) => update('shadowBossMode', value)}
+            options={[
+              { label: 'Normal', value: 'normal' },
+              { label: 'Enraged', value: 'enraged' },
+              { label: 'Subdued', value: 'subdued' },
+            ]}
+            value={settings.shadowBossMode}
+          />
+        </View>
+      ) : null}
     </View>
   );
 };
@@ -130,6 +196,11 @@ const styles = StyleSheet.create({
   choiceActive: { borderColor: '#2fd6d0', backgroundColor: '#45dbc4' },
   choiceText: { color: '#dce8e8', fontSize: 10, fontWeight: '900' },
   choiceTextActive: { color: '#071214' },
+  shadowSection: { gap: 8, borderWidth: 1, borderColor: '#7f5da8', borderRadius: 11, padding: 9, backgroundColor: '#271936' },
+  shadowSectionLight: { backgroundColor: '#f5edff' },
+  shadowHeading: { gap: 2 },
+  shadowEyebrow: { color: '#d8b7ff', fontSize: 8, fontWeight: '900', letterSpacing: .9 },
+  shadowCopy: { color: '#cbb5df', fontSize: 9.5, lineHeight: 13 },
   textLight: { color: '#142629' },
   mutedLight: { color: '#657879' },
 });

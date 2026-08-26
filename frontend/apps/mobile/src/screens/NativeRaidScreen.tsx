@@ -99,6 +99,10 @@ export const NativeRaidScreen = ({
     settings.friendship !== 'none',
     settings.megaAllyBonus !== 'none',
     settings.partyPower !== 'none',
+    settings.partyPower !== 'none' && settings.partyPowerStrategy !== 'immediate',
+    view === 'boss' && settings.dodgeStrategy !== 'none',
+    view === 'boss' && settings.bossMovesetMode !== 'expected',
+    view === 'boss' && settings.shadowBossMode !== 'normal',
     settings.relobbySeconds !== DEFAULT_NATIVE_RAID_SETTINGS.relobbySeconds,
     Boolean(settings.weatherBoostedType),
   ].filter(Boolean).length;
@@ -208,7 +212,7 @@ export const NativeRaidScreen = ({
           </Pressable>
         </View>
         <Pressable
-          accessibilityLabel="Ranking settings"
+          accessibilityLabel={`Ranking settings${customSettingCount ? `, ${customSettingCount} custom settings` : ''}`}
           accessibilityRole="button"
           accessibilityState={{ expanded: settingsOpen }}
           onPress={() => setSettingsOpen((current) => !current)}
@@ -217,7 +221,14 @@ export const NativeRaidScreen = ({
           <Text style={[styles.settingsText, light && styles.textLight]}>☷  SETTINGS{customSettingCount ? ` ${customSettingCount}` : ''} {settingsOpen ? '⌃' : '⌄'}</Text>
         </Pressable>
       </View>
-      {settingsOpen ? <NativeRaidSettingsPanel onChange={setSettings} settings={settings} /> : null}
+      {settingsOpen ? (
+        <NativeRaidSettingsPanel
+          includeBossControls={view === 'boss'}
+          includeShadowControls={view === 'boss'}
+          onChange={setSettings}
+          settings={settings}
+        />
+      ) : null}
     </View>
   );
 

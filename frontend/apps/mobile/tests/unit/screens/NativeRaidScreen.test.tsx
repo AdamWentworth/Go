@@ -50,4 +50,17 @@ describe('NativeRaidScreen', () => {
     fireEvent.press(screen.getByText('⚡ Simulate lobby'));
     expect(screen.getByText('Likely clear')).toBeTruthy();
   });
+  it('exposes the canonical advanced boss battle controls', () => {
+    renderRaid();
+    fireEvent.press(screen.getByText('Boss counters'));
+    fireEvent.press(screen.getByLabelText('Ranking settings'));
+    expect(screen.getByText('Dodging')).toBeTruthy();
+    expect(screen.getByText('Boss behavior')).toBeTruthy();
+    expect(screen.getByText('Shadow boss state')).toBeTruthy();
+    fireEvent.press(screen.getByText('2'));
+    expect(screen.getByText('Party Power timing')).toBeTruthy();
+    fireEvent.press(screen.getByText('Strongest Charged'));
+    fireEvent.press(screen.getByText('Enraged'));
+    expect(screen.getByLabelText('Ranking settings, 3 custom settings')).toBeTruthy();
+  });
 });

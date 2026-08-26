@@ -14,6 +14,10 @@ export type NativeRaidAttackerLevel = '40.0' | '50.0' | '51.0';
 export type NativeRaidFriendship = 'none' | 'good' | 'great' | 'ultra' | 'best';
 export type NativeRaidMegaAlly = 'none' | 'general' | 'matching';
 export type NativeRaidPartyPower = 'none' | 'party2' | 'party3' | 'party4';
+export type NativeRaidPartyPowerStrategy = 'immediate' | 'next-charged' | 'strongest-charged' | 'manual';
+export type NativeRaidDodgeStrategy = 'none' | 'charged';
+export type NativeRaidBossMovesetMode = 'expected' | 'monte-carlo' | 'favorable' | 'hostile';
+export type NativeRaidShadowBossMode = 'normal' | 'enraged' | 'subdued';
 
 export type NativeRaidSettings = {
   attackerLevel: NativeRaidAttackerLevel;
@@ -21,6 +25,10 @@ export type NativeRaidSettings = {
   friendship: NativeRaidFriendship;
   megaAllyBonus: NativeRaidMegaAlly;
   partyPower: NativeRaidPartyPower;
+  partyPowerStrategy: NativeRaidPartyPowerStrategy;
+  dodgeStrategy: NativeRaidDodgeStrategy;
+  bossMovesetMode: NativeRaidBossMovesetMode;
+  shadowBossMode: NativeRaidShadowBossMode;
   relobbySeconds: number;
   weatherBoostedType: string;
 };
@@ -31,6 +39,10 @@ export const DEFAULT_NATIVE_RAID_SETTINGS: NativeRaidSettings = {
   friendship: 'none',
   megaAllyBonus: 'none',
   partyPower: 'none',
+  partyPowerStrategy: 'immediate',
+  dodgeStrategy: 'none',
+  bossMovesetMode: 'expected',
+  shadowBossMode: 'normal',
   relobbySeconds: 10,
   weatherBoostedType: '',
 };
@@ -88,6 +100,20 @@ const PARTY_POWER_BONUS: Record<NativeRaidPartyPower, number> = {
   party2: 1.18,
   party3: 1.35,
   party4: 1.5,
+};
+
+const PARTY_POWER_STRATEGY_BONUS: Record<NativeRaidPartyPowerStrategy, number> = {
+  immediate: 1,
+  'next-charged': 1.025,
+  'strongest-charged': 1.05,
+  manual: 1,
+};
+
+const BOSS_INCOMING_PRESSURE: Record<NativeRaidBossMovesetMode, number> = {
+  expected: 1,
+  'monte-carlo': 1,
+  favorable: .84,
+  hostile: 1.18,
 };
 
 export const hydrateNativeToolCatalog = (
@@ -220,6 +246,9 @@ const scoreRaidPair = ({
   const friendship = FRIENDSHIP_BONUS[settings.friendship];
   const mega = MEGA_ALLY_BONUS[settings.megaAllyBonus];
   const party = PARTY_POWER_BONUS[settings.partyPower];
+  const partyStrategy = settings.partyPower === 'none'
+    ? 1
+    : PARTY_POWER_STRATEGY_BONUS[settings.partyPowerStrategy];
   const requestedLevel = Number(settings.attackerLevel);
   const level = instance?.level ?? requestedLevel;
   const levelScale = Math.sqrt(Math.max(1, level) / 50);
@@ -230,8 +259,12 @@ const scoreRaidPair = ({
   const defense = (Number(pokemon.defense || 1) + defenseIv) * levelScale;
   const stamina = (Number(pokemon.stamina || 1) + staminaIv) * levelScale;
   const combinedMoveDps = moveDps(fast) * .35 + moveDps(charged) * .65 * party;
-  const dps = attack * combinedMoveDps / 100 * friendship * mega;
-  const bulk = defense * Math.sqrt(stamina);
+  const shadowBossDefense = settings.shadowBossMode === 'enraged' ? 3 : 1;
+  const dps = attack * combinedMoveDps / 100 * friendship * mega * partyStrategy / shadowBossDefense;
+  const dodgeBulk = settings.dodgeStrategy === 'charged' ? 1.22 : 1;
+  const incomingPressure = BOSS_INCOMING_PRESSURE[settings.bossMovesetMode]
+    * (settings.shadowBossMode === 'enraged' ? 1.81 : 1);
+  const bulk = defense * Math.sqrt(stamina) * dodgeBulk / incomingPressure;
   const tdo = dps * bulk / 225;
   const activeSeconds = Math.max(1, tdo / Math.max(.1, dps));
   const effectiveDps = dps * activeSeconds / (activeSeconds + Math.max(0, settings.relobbySeconds));
