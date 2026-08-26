@@ -102,7 +102,7 @@ export const NativeCustomTagEditorSheet = ({
       visible={visible}
     >
       <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.backdrop}
       >
         <Pressable accessible={false} onPress={onClose} style={StyleSheet.absoluteFill} />

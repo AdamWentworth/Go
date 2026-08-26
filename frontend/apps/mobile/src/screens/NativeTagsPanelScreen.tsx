@@ -228,6 +228,8 @@ const NativeTagCard = memo(function NativeTagCard({
             onDragEnd={() => setDragging(false)}
             onDragStart={() => setDragging(true)}
             onMove={reorder.onMove}
+            tagKey={tag.key}
+            tagName={tag.name}
           />
         ) : tag.tone === 'custom' && onEditTag ? (
           <Pressable
@@ -257,6 +259,8 @@ const NativeTagDragGrip = ({
   onDragEnd,
   onDragStart,
   onMove,
+  tagKey,
+  tagName,
 }: {
   count: number;
   dragY: Animated.Value;
@@ -264,7 +268,17 @@ const NativeTagDragGrip = ({
   onDragEnd: () => void;
   onDragStart: () => void;
   onMove: (sourceIndex: number, targetIndex: number) => void;
+  tagKey: PokemonTagOrderKey;
+  tagName: string;
 }) => {
+  const settle = useCallback(() => {
+    Animated.spring(dragY, {
+      damping: 20,
+      stiffness: 220,
+      toValue: 0,
+      useNativeDriver: true,
+    }).start(onDragEnd);
+  }, [dragY, onDragEnd]);
   const panResponder = useMemo(() => PanResponder.create({
     onStartShouldSetPanResponder: () => true,
     onMoveShouldSetPanResponder: () => true,
@@ -279,20 +293,33 @@ const NativeTagDragGrip = ({
         LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
         onMove(index, targetIndex);
       }
-      Animated.spring(dragY, { toValue: 0, useNativeDriver: true }).start(onDragEnd);
+      settle();
     },
-    onPanResponderTerminate: () => {
-      Animated.spring(dragY, { toValue: 0, useNativeDriver: true }).start(onDragEnd);
-    },
-  }), [count, dragY, index, onDragEnd, onDragStart, onMove]);
+    onPanResponderTerminate: settle,
+    onPanResponderTerminationRequest: () => false,
+    onShouldBlockNativeResponder: () => true,
+  }), [count, dragY, index, onDragStart, onMove, settle]);
 
   return (
     <Animated.View
       {...panResponder.panHandlers}
+      accessibilityActions={[
+        ...(index > 0 ? [{ name: 'decrement' as const, label: 'Move tag earlier' }] : []),
+        ...(index < count - 1 ? [{ name: 'increment' as const, label: 'Move tag later' }] : []),
+      ]}
       accessibilityHint="Press and drag to move this tag"
-      accessibilityLabel="Reorder tag"
+      accessibilityLabel={`Reorder ${tagName}`}
+      onAccessibilityAction={(event) => {
+        if (event.nativeEvent.actionName === 'decrement' && index > 0) {
+          onMove(index, index - 1);
+        }
+        if (event.nativeEvent.actionName === 'increment' && index < count - 1) {
+          onMove(index, index + 1);
+        }
+      }}
       accessibilityRole="adjustable"
       style={styles.dragGrip}
+      testID={`native-tag-drag-${tagKey}`}
     >
       <Text style={styles.dragGripText}>⠿</Text>
     </Animated.View>

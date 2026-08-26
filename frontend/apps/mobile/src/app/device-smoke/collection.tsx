@@ -5,6 +5,12 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import type { BasePokemon } from '@pokemongonexus/shared-contracts/pokemon';
 import type { PokemonInstance } from '@pokemongonexus/shared-contracts/instances';
 import type {
+  CreateCustomTagRequest,
+  CustomTagParent,
+  PokemonTagOrderKey,
+  UpdateCustomTagRequest,
+} from '@pokemongonexus/shared-contracts/users';
+import type {
   NativeCollectionRow,
   NativeTagSummary,
 } from '../../features/collection/collectionModel';
@@ -312,6 +318,9 @@ export default function DeviceSmokeCollectionRoute() {
   const [catalogError, setCatalogError] = useState<string | null>(null);
   const [catalogLoading, setCatalogLoading] = useState(true);
   const [smokeInstances, setSmokeInstances] = useState(SMOKE_INSTANCES);
+  const [inventoryTags, setInventoryTags] = useState(INVENTORY_TAGS);
+  const [wishlistTags, setWishlistTags] = useState(WISHLIST_TAGS);
+  const [nextTagId, setNextTagId] = useState(1);
 
   useEffect(() => {
     if (!initialInstanceId) return;
@@ -364,6 +373,57 @@ export default function DeviceSmokeCollectionRoute() {
       orderedRows: current?.orderedRows ?? rowsWithStatus(row.status),
     }));
   };
+  const updateTags = (
+    parent: CustomTagParent,
+    update: (current: NativeTagSummary[]) => NativeTagSummary[],
+  ) => {
+    if (parent === 'wanted') setWishlistTags(update);
+    else setInventoryTags(update);
+  };
+  const createTag = async (request: CreateCustomTagRequest) => {
+    const tagId = `created-${nextTagId}`;
+    setNextTagId((current) => current + 1);
+    updateTags(request.parent, (current) => [...current, {
+      key: `custom:${tagId}`,
+      parent: request.parent,
+      name: request.name,
+      color: request.color,
+      tone: 'custom',
+      rows: [],
+    }]);
+  };
+  const deleteTag = async (tagId: string) => {
+    const remove = (current: NativeTagSummary[]) => current.filter(
+      (tag) => tag.key !== `custom:${tagId}`,
+    );
+    setInventoryTags(remove);
+    setWishlistTags(remove);
+  };
+  const updateTag = async (tagId: string, request: UpdateCustomTagRequest) => {
+    const replace = (current: NativeTagSummary[]) => current.map((tag) => (
+      tag.key === `custom:${tagId}`
+        ? {
+            ...tag,
+            name: request.name ?? tag.name,
+            color: request.color ?? tag.color,
+          }
+        : tag
+    ));
+    setInventoryTags(replace);
+    setWishlistTags(replace);
+  };
+  const saveTagOrder = async (
+    parent: CustomTagParent,
+    tagKeys: PokemonTagOrderKey[],
+  ) => {
+    updateTags(parent, (current) => {
+      const byKey = new Map(current.map((tag) => [tag.key, tag]));
+      return tagKeys.flatMap((key) => {
+        const tag = byKey.get(key);
+        return tag ? [tag] : [];
+      });
+    });
+  };
 
   return (
     <>
@@ -373,22 +433,22 @@ export default function DeviceSmokeCollectionRoute() {
         catalogRows={foreignMode ? ROWS : catalogRows}
         error={catalogError}
         initialTagKey={initialTagKey}
-        inventoryTags={INVENTORY_TAGS}
-        instances={SMOKE_INSTANCES}
+        inventoryTags={inventoryTags}
+        instances={smokeInstances}
         isLoading={catalogLoading}
         onActionMenuPress={() => undefined}
-        onCreateTag={async () => undefined}
-        onDeleteTag={async () => undefined}
+        onCreateTag={createTag}
+        onDeleteTag={deleteTag}
         onOpenEntry={(row, orderedRows) => setOpenedContext({ row, orderedRows })}
         onOrganizePokemon={async () => ({
           message: 'Pokémon organized in the device fixture.',
         })}
         onRetry={() => undefined}
         onReturnToContext={foreignMode ? () => undefined : undefined}
-        onSaveTagOrder={async () => undefined}
-        onUpdateTag={async () => undefined}
+        onSaveTagOrder={saveTagOrder}
+        onUpdateTag={updateTag}
         requireTagSelection={foreignMode}
-        wishlistTags={WISHLIST_TAGS}
+        wishlistTags={wishlistTags}
       />
       {openedRow ? (
         <Modal

@@ -120,11 +120,16 @@ describe('NativeTagsPanelScreen', () => {
 
     expect(screen.getByRole('button', { name: 'New inventory tag' })).toBeTruthy();
     fireEvent.press(screen.getByText('↕ Arrange'));
-    expect(screen.getAllByLabelText('Reorder tag')).toHaveLength(2);
+    expect(screen.getByLabelText('Reorder Trade')).toBeTruthy();
+    expect(screen.getByLabelText('Reorder Shadow Shinies')).toBeTruthy();
+    fireEvent(
+      screen.getByLabelText('Reorder Trade'),
+      'accessibilityAction',
+      { nativeEvent: { actionName: 'increment' } },
+    );
     fireEvent.press(screen.getByText('✓ Save order'));
     await act(async () => Promise.resolve());
-    expect(onSaveOrder).toHaveBeenCalledWith('caught', ['system:trade', 'custom:purple-tag']);
-
+    expect(onSaveOrder).toHaveBeenCalledWith('caught', ['custom:purple-tag', 'system:trade']);
   });
 
   it('provides the canonical custom-tag editor workflow', async () => {
