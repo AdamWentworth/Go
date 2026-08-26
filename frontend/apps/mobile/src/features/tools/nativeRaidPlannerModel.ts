@@ -1,12 +1,11 @@
 import type { NativeCombatEntry, NativeRaidBossEntry } from './nativeBattleModels';
+import {
+  RAID_TIER_PRESETS,
+  resolveRaidTierKey,
+  type RaidTierPreset,
+} from '@pokemongonexus/shared-domain/raid-rules';
 
-export type NativeRaidTier = {
-  hp: number;
-  key: string;
-  label: string;
-  note: string;
-  timeLimitSeconds: number;
-};
+export type NativeRaidTier = RaidTierPreset;
 
 export type NativeRaidGroupEstimate = {
   comfortableTrainers: number;
@@ -41,29 +40,10 @@ export type NativeRaidPartyResult = {
   trainers: NativeRaidPartyTrainerResult[];
 };
 
-const TIERS: Record<string, NativeRaidTier> = {
-  'one-star': { hp: 600, key: 'tier1', label: 'One-star Raid', note: 'Entry-level raid with a 180-second timer.', timeLimitSeconds: 180 },
-  'three-star': { hp: 3600, key: 'tier3', label: 'Three-star Raid', note: 'Standard three-star raid with a 180-second timer.', timeLimitSeconds: 180 },
-  mega: { hp: 9000, key: 'mega', label: 'Mega Raid', note: 'Mega raid with a 300-second timer.', timeLimitSeconds: 300 },
-  legendary: { hp: 15000, key: 'legendary', label: 'Legendary Raid', note: 'Five-star raid with a 300-second timer.', timeLimitSeconds: 300 },
-  'five-star': { hp: 15000, key: 'legendary', label: 'Legendary Raid', note: 'Five-star raid with a 300-second timer.', timeLimitSeconds: 300 },
-  'shadow-one-star': { hp: 600, key: 'shadow-tier1', label: 'Shadow One-star Raid', note: 'Shadow raid with enrage and Purified Gem mechanics.', timeLimitSeconds: 180 },
-  'shadow-three-star': { hp: 3600, key: 'shadow-tier3', label: 'Shadow Three-star Raid', note: 'Shadow raid with enrage and Purified Gem mechanics.', timeLimitSeconds: 180 },
-  'shadow-five-star': { hp: 15000, key: 'shadow-legendary', label: 'Shadow Legendary Raid', note: 'Shadow raid with enrage and Purified Gem mechanics.', timeLimitSeconds: 300 },
-};
-
-const normalizeTier = (value: string): string => value.trim().toLocaleLowerCase().replace(/[_\s]+/g, '-');
-
 export const resolveNativeRaidTier = (boss: NativeRaidBossEntry | null): NativeRaidTier => {
-  const normalized = normalizeTier(String(boss?.boss.tier || boss?.boss.type || 'legendary'));
-  if (TIERS[normalized]) return TIERS[normalized];
-  if (normalized.includes('shadow') && (normalized.includes('legend') || normalized.includes('five'))) return TIERS['shadow-five-star'];
-  if (normalized.includes('shadow') && normalized.includes('three')) return TIERS['shadow-three-star'];
-  if (normalized.includes('shadow')) return TIERS['shadow-one-star'];
-  if (normalized.includes('mega') || normalized.includes('primal')) return TIERS.mega;
-  if (normalized.includes('legend') || normalized.includes('five')) return TIERS.legendary;
-  if (normalized.includes('three')) return TIERS['three-star'];
-  return TIERS['one-star'];
+  const tier = String(boss?.boss.tier || boss?.boss.type || '5');
+  const context = [boss?.name, boss?.boss.form, boss?.boss.type].filter(Boolean).join(' ');
+  return RAID_TIER_PRESETS[resolveRaidTierKey(tier, context)];
 };
 
 export const getNativeRaidTeam = (scores: NativeCombatEntry[]): NativeCombatEntry[] => {
@@ -126,9 +106,9 @@ export const simulateNativeRaidParty = (
   const scoreById = new Map(scores.map((entry) => [entry.id, entry]));
   const trainerDps = trainers.map((trainer) => ({ trainer, dps: partyTrainerDps(trainer, scoreById) }));
   const dps = trainerDps.reduce((sum, row) => sum + row.dps, 0);
-  const seconds = dps > 0 ? tier.hp / dps : Infinity;
+  const seconds = dps > 0 ? tier.bossHp / dps : Infinity;
   const totalTdo = trainers.reduce((sum, trainer) => sum + trainer.memberIds.reduce((teamSum, id) => teamSum + (scoreById.get(id)?.tdo ?? 0), 0), 0);
-  const faintCycles = totalTdo > 0 ? Math.max(0, tier.hp / totalTdo - 1) : 0;
+  const faintCycles = totalTdo > 0 ? Math.max(0, tier.bossHp / totalTdo - 1) : 0;
   return {
     clears: Number.isFinite(seconds) && seconds <= tier.timeLimitSeconds,
     dps,
@@ -153,7 +133,7 @@ export const estimateNativeRaidGroup = (
     ? team.reduce((total, score) => total + score.score, 0) / team.length
     : 0;
   if (teamDps <= 0) return { comfortableTrainers: 0, minimumTrainers: 0, projectedTimeSeconds: Infinity, teamDps: 0 };
-  const projectedTimeSeconds = tier.hp / teamDps;
+  const projectedTimeSeconds = tier.bossHp / teamDps;
   const minimumTrainers = Math.max(1, Math.ceil(projectedTimeSeconds / tier.timeLimitSeconds));
   const comfortableTrainers = Math.max(minimumTrainers, Math.ceil(projectedTimeSeconds / (tier.timeLimitSeconds * .68)));
   return { comfortableTrainers, minimumTrainers, projectedTimeSeconds, teamDps };
@@ -166,7 +146,7 @@ export const simulateNativeRaidLobby = (
 ) => {
   const safeTrainerCount = Math.max(1, Math.round(trainerCount));
   const dps = estimate.teamDps * safeTrainerCount;
-  const seconds = dps > 0 ? tier.hp / dps : Infinity;
+  const seconds = dps > 0 ? tier.bossHp / dps : Infinity;
   return {
     clears: Number.isFinite(seconds) && seconds <= tier.timeLimitSeconds,
     dps,

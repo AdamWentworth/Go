@@ -16,7 +16,8 @@
     "./trade-activity": "./src/trade-activity.ts",
     "./trade-preferences": "./src/trade-preferences.ts",
     "./pvp-battle": "./src/pvp-battle.ts",
-    "./pvp-battle-protocol": "./src/pvp-battle-protocol.ts"
+    "./pvp-battle-protocol": "./src/pvp-battle-protocol.ts",
+    "./raid-rules": "./src/raid-rules.ts"
   },
   "dependencies": {
     "@pokemongonexus/shared-contracts": "file:../shared-contracts"

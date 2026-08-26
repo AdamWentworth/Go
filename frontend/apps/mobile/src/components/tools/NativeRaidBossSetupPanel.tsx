@@ -52,7 +52,7 @@ export const NativeRaidBossSetupPanel = ({ assetBaseUrl, boss, onObservedDodgeRa
                 <Text style={styles.eyebrow}>{tier.label.toLocaleUpperCase()}</Text>
                 <Text style={[styles.note, light && styles.mutedLight]}>{tier.note}</Text>
               </View>
-              <View style={styles.hp}><Text style={[styles.hpValue, light && styles.textLight]}>{tier.hp.toLocaleString()}</Text><Text style={styles.hpLabel}>BOSS HP</Text></View>
+              <View style={styles.hp}><Text style={[styles.hpValue, light && styles.textLight]}>{tier.bossHp.toLocaleString()}</Text><Text style={styles.hpLabel}>BOSS HP</Text></View>
             </View>
             <View style={styles.stats}>
               <View style={[styles.primaryStat, styles.stat]}><Text style={styles.statLabel}>MINIMUM</Text><Text style={styles.statValue}>{trainerLabel(estimate.minimumTrainers)}</Text></View>

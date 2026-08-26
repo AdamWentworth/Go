@@ -31,8 +31,11 @@ const boss = (tier: string) => ({ boss: { tier, type: tier } }) as NativeRaidBos
 
 describe('native raid planner model', () => {
   it('maps public raid tier labels to the canonical battle presets', () => {
-    expect(resolveNativeRaidTier(boss('one-star'))).toMatchObject({ hp: 600, timeLimitSeconds: 180 });
-    expect(resolveNativeRaidTier(boss('shadow legendary'))).toMatchObject({ hp: 15000, key: 'shadow-legendary' });
+    expect(resolveNativeRaidTier(boss('one-star'))).toMatchObject({ bossHp: 600, timeLimitSeconds: 180 });
+    expect(resolveNativeRaidTier(boss('shadow legendary'))).toMatchObject({ bossHp: 15000, key: 'shadow-legendary' });
+    expect(resolveNativeRaidTier(boss('4'))).toMatchObject({ bossHp: 9000, key: 'community-day' });
+    expect(resolveNativeRaidTier(boss('elite'))).toMatchObject({ bossHp: 20000, key: 'elite' });
+    expect(resolveNativeRaidTier(boss('super_mega'))).toMatchObject({ bossHp: 25000, key: 'super-mega' });
   });
   it('builds a distinct six-member team before estimating trainers', () => {
     const scores = [score('a-best', 1, 40), score('a-other-moves', 1, 35), score('b', 2, 30)];

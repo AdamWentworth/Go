@@ -1,4 +1,5 @@
 import { fireEvent, render, screen } from '@testing-library/react-native';
+import { RAID_TIER_PRESETS } from '@pokemongonexus/shared-domain/raid-rules';
 import type { NativeCombatEntry } from '../../../src/features/tools/nativeBattleModels';
 import { NativeRaidPartyBuilder } from '../../../src/components/tools/NativeRaidPartyBuilder';
 
@@ -21,7 +22,7 @@ const score = (index: number): NativeCombatEntry => ({
 });
 
 const scores = Array.from({ length: 8 }, (_, index) => score(index));
-const tier = { hp: 600, key: 'tier1', label: 'One-star Raid', note: 'Entry raid', timeLimitSeconds: 180 };
+const tier = RAID_TIER_PRESETS.tier1;
 
 describe('NativeRaidPartyBuilder', () => {
   it('edits independent trainers, team slots, and reports contribution', () => {
