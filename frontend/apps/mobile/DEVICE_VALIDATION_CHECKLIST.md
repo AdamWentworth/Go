@@ -77,6 +77,36 @@ Performance-budget tests must be rerun without an emulator, browser suite, or
 other CPU-heavy job competing for the host. Resource contention is not valid
 performance evidence.
 
+## Automated validation record — 2026-08-26
+
+The current `mobile/native-migration` candidate has completed the executable
+pre-review gates below. This record establishes a review-ready candidate; it
+does not replace the physical-device approval gate.
+
+- Every checked-in Android Maestro workflow passed in light mode.
+- Every checked-in Android Maestro workflow passed in dark mode.
+- The accessibility matrix passed with 1.3x text and reduced motion, including
+  the collection, account, custom-tag, search, action-menu, trade, and trainer
+  tool workflows.
+- Collection density passed at the narrow, wider-phone/tablet, and desktop
+  reference widths; the action menu also passed at each reference width.
+- Mobile Jest passed 647 tests. Canonical web Vitest passed 1,717 tests with two
+  intentional skips.
+- The full web browser matrix passed 735 tests with zero failures across
+  Chromium, Firefox, desktop WebKit, mobile Safari, and mobile Chrome. Its 390
+  skips are deliberate project gating for browser-specific visual,
+  accessibility, PWA, or capture cases.
+- TypeScript, ESLint, Stylelint, dead-code detection, shared-contract
+  verification, Expo Doctor (21/21), and Android and iOS exports passed.
+- The canonical web startup bundle remained within budget at 158.95 kB gzip
+  against a 180 kB budget, with every individual chunk below its 130 kB budget.
+
+Still unproven by automation: perceptual comparison on the physical Pixel,
+real-provider and process-relaunch behavior on that device, a real
+two-account/two-device trade, and physical iOS safe-area/input behavior. Do not
+describe the candidate as absolute or production-approved parity until those
+manual checks pass.
+
 ## Physical-device preconditions
 
 1. Use a preview or release build with the native-preview flag enabled. Do not
