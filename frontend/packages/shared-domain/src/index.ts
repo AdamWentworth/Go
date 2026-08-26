@@ -10,3 +10,4 @@ export * from './trade-activity';
 export * from './trade-preferences';
 export * from './raid-rules';
 export * from './type-effectiveness';
+export * from './raid-combat';

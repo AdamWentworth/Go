@@ -18,7 +18,8 @@
     "./pvp-battle": "./src/pvp-battle.ts",
     "./pvp-battle-protocol": "./src/pvp-battle-protocol.ts",
     "./raid-rules": "./src/raid-rules.ts",
-    "./type-effectiveness": "./src/type-effectiveness.ts"
+    "./type-effectiveness": "./src/type-effectiveness.ts",
+    "./raid-combat": "./src/raid-combat.ts"
   },
   "dependencies": {
     "@pokemongonexus/shared-contracts": "file:../shared-contracts"
