@@ -16,10 +16,12 @@ import {
   buildPvPBattleFighterFromRankingEntry,
   simulatePvPBattleLocally,
 } from "@pokemongonexus/shared-domain/pvp-battle";
+import { NativePvpTeamBattle } from "./NativePvpTeamBattle";
 
 type Props = {
   assetBaseUrl: string;
   entries: PokemonPvPRankingEntry[];
+  formatLabel: string;
   light: boolean;
   mechanics: PokemonPvPBattleMechanics;
   onResultLayout?: (offsetY: number) => void;
@@ -105,6 +107,7 @@ const ResultSide = ({
 export const NativePvpBattleLab = ({
   assetBaseUrl,
   entries,
+  formatLabel,
   light,
   mechanics,
   onResultLayout,
@@ -122,6 +125,7 @@ export const NativePvpBattleLab = ({
   const [energy, setEnergy] = useState<[number, number]>([0, 0]);
   const [result, setResult] = useState<PokemonPvPBattleResponse | null>(null);
   const [error, setError] = useState("");
+  const [mode, setMode] = useState<"single" | "team">("single");
 
   const left =
     readyEntries.find((entry) => entry.speciesId === leftId) ?? readyEntries[0];
@@ -208,6 +212,21 @@ export const NativePvpBattleLab = ({
 
   return (
     <>
+      <View style={styles.labHeader}>
+        <View style={styles.labTitleRow}>
+          <Text style={[styles.labIcon, light && styles.accentLight]}>⚗</Text>
+          <Text style={[styles.labTitle, light && styles.textLight]}>Battle Lab</Text>
+        </View>
+        <Text style={[styles.labMeta, light && styles.mutedLight]}>
+          {formatLabel} · {mode === "team" ? "switch-aware 3v3" : "focused 1v1"} · {mechanics === "current-2026" ? "current mechanics" : "legacy mechanics"}
+        </Text>
+      </View>
+      <View accessibilityLabel="Battle Lab mode" style={[styles.mode, light && styles.panelLight]}>
+        <Pressable accessibilityRole="button" accessibilityState={{ selected: mode === "single" }} onPress={() => { setMode("single"); setResult(null); setError(""); }} style={[styles.modeButton, mode === "single" && styles.modeButtonActive]}><Text style={[styles.modeText, light && styles.textLight, mode === "single" && styles.modeTextActive]}>⚗ Focused 1v1</Text></Pressable>
+        <Pressable accessibilityRole="button" accessibilityState={{ selected: mode === "team" }} onPress={() => { setMode("team"); setResult(null); setError(""); }} style={[styles.modeButton, mode === "team" && styles.modeButtonActive]}><Text style={[styles.modeText, light && styles.textLight, mode === "team" && styles.modeTextActive]}>♟ Team battle</Text></Pressable>
+      </View>
+      {mode === "single" ? (
+        <>
       <View style={[styles.panel, light && styles.panelLight]}>
         <Text style={styles.eyebrow}>BATTLE LAB</Text>
         <Text style={[styles.heading, light && styles.textLight]}>
@@ -410,11 +429,31 @@ export const NativePvpBattleLab = ({
           </Pressable>
         ))}
       </ScrollView>
+        </>
+      ) : (
+        <NativePvpTeamBattle
+          assetBaseUrl={assetBaseUrl}
+          entries={readyEntries}
+          light={light}
+          mechanics={mechanics}
+          onResultLayout={onResultLayout}
+        />
+      )}
     </>
   );
 };
 
 const styles = StyleSheet.create({
+  labHeader: { gap: 3, paddingHorizontal: 2, paddingTop: 2 },
+  labTitleRow: { flexDirection: "row", alignItems: "center", gap: 7 },
+  labIcon: { color: "#42d5c2", fontSize: 19 },
+  labTitle: { color: "#f5ffff", fontSize: 17, fontWeight: "900" },
+  labMeta: { color: "#9db6b8", fontSize: 9, lineHeight: 13 },
+  mode: { flexDirection: "row", gap: 5, borderWidth: 1, borderColor: "rgba(115,204,204,0.28)", borderRadius: 7, padding: 4, backgroundColor: "#101516" },
+  modeButton: { minHeight: 41, flex: 1, alignItems: "center", justifyContent: "center", borderRadius: 5 },
+  modeButtonActive: { backgroundColor: "#42d5c2" },
+  modeText: { color: "#9db6b8", fontSize: 10, fontWeight: "900" },
+  modeTextActive: { color: "#071313" },
   panel: {
     gap: 10,
     borderWidth: 1,
@@ -427,6 +466,7 @@ const styles = StyleSheet.create({
   controlLight: { borderColor: "#bdc9cf", backgroundColor: "#fff" },
   textLight: { color: "#14232a" },
   mutedLight: { color: "#5d6e76" },
+  accentLight: { color: "#08766b" },
   eyebrow: {
     color: "#299cf5",
     fontSize: 9,

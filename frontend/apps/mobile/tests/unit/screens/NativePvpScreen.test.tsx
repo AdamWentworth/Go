@@ -103,4 +103,20 @@ describe('NativePvpScreen', () => {
     expect(screen.getByText(/wins|draw/i)).toBeTruthy();
     expect(screen.getAllByText(/rating/)).toHaveLength(2);
   });
+
+  it('runs a switch-aware three-on-three team battle locally', async () => {
+    renderScreen();
+    fireEvent.press(screen.getByText('Battle Lab'));
+    fireEvent.press(screen.getByText('♟ Team battle'));
+    expect(screen.getByText('Switching')).toBeTruthy();
+    expect(screen.getByText('Current 45-second battle clock')).toBeTruthy();
+    expect(screen.getByLabelText('Edit your Lead: Bulbasaur')).toBeTruthy();
+    expect(screen.getByLabelText('Edit opponent Lead: Ivysaur')).toBeTruthy();
+    fireEvent.press(screen.getByLabelText('Run team battle'));
+    expect(await screen.findByText('SWITCH-AWARE 3V3 RESULT')).toBeTruthy();
+    expect(screen.getByText(/Your team wins|Opponent wins|Team battle ends in a draw/)).toBeTruthy();
+    fireEvent.press(screen.getByLabelText('Test meta teams'));
+    expect(await screen.findByText('ROLE-BALANCED META FIELD')).toBeTruthy();
+    expect(screen.getByText(/^[0-9]+-[0-9]+-[0-9]+$/)).toBeTruthy();
+  });
 });

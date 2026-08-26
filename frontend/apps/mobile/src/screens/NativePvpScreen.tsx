@@ -573,6 +573,7 @@ export const NativePvpScreen = ({
         <NativePvpBattleLab
           assetBaseUrl={assetBaseUrl}
           entries={entries}
+          formatLabel={format?.label ?? "Great League"}
           light={light}
           mechanics={mechanics}
           onResultLayout={(offsetY) =>
