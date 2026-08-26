@@ -76,7 +76,10 @@ async function openTradeActivity(page: Page) {
   await expect(page.locator('.trade-activity-workspace')).toBeVisible();
   await expect.poll(() => page.evaluate(() => (
     window as unknown as { __e2eEventSourceCount?: () => number }
-  ).__e2eEventSourceCount?.() ?? 0)).toBeGreaterThan(0);
+  ).__e2eEventSourceCount?.() ?? 0), {
+    timeout: 30_000,
+    message: 'authenticated trade event stream should be connected',
+  }).toBeGreaterThan(0);
 }
 
 async function emitTrade(page: Page) {

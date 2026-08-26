@@ -41,7 +41,11 @@ const consolidatedPageBaselines: ReadonlyArray<{
   { name: "max-battles", path: "/max" },
   { name: "pvp-tools", path: "/pvp" },
   { name: "community-rankings", path: "/rankings" },
-  { name: "trade-board-builder", path: "/trade-board" },
+  {
+    name: "trade-board-builder",
+    path: "/trade-board",
+    readySelector: ".trade-board-builder-page__empty",
+  },
   { name: "raid-methodology", path: "/raid/methodology" },
   { name: "pvp-methodology", path: "/pvp/methodology" },
   { name: "help-information", path: "/help" },
