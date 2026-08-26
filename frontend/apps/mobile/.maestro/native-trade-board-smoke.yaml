@@ -2,6 +2,17 @@ appId: host.exp.exponent
 name: Native Trade Board smoke
 ---
 - openLink: "exp://10.0.2.2:8091/--/device-smoke/public?page=trade-board"
+- waitForAnimationToEnd
+- runFlow:
+    when:
+      visible: "^Continue$"
+    commands:
+      - tapOn: "^Continue$"
+- runFlow:
+    when:
+      visible: React Native dev menu
+    commands:
+      - tapOn: Close
 - assertVisible: "Trade Board"
 - assertVisible: "Shiny Gigantamax Charizard"
 - assertVisible: "Gigantamax Blastoise"

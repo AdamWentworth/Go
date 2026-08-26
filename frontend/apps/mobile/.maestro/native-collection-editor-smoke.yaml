@@ -6,6 +6,17 @@ tags:
 ---
 - openLink:
     link: exp://10.0.2.2:8091/--/device-smoke/collection?instance=smoke-metagross
+- waitForAnimationToEnd
+- runFlow:
+    when:
+      visible: "^Continue$"
+    commands:
+      - tapOn: "^Continue$"
+- runFlow:
+    when:
+      visible: React Native dev menu
+    commands:
+      - tapOn: Close
 - runFlow:
     when:
       visible: "Something went wrong.*"

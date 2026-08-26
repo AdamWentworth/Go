@@ -7,11 +7,12 @@ tags:
 ---
 - openLink:
     link: exp://10.0.2.2:8091/--/device-smoke/trade-preferences
+- waitForAnimationToEnd
 - runFlow:
     when:
-      visible: "This is the developer menu.*"
+      visible: "^Continue$"
     commands:
-      - tapOn: Continue
+      - tapOn: "^Continue$"
 - runFlow:
     when:
       visible: React Native dev menu

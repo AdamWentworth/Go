@@ -153,7 +153,7 @@ export const NativeActionMenu = ({
     ? clamp(height * 0.22, 90, 126)
     : clamp(shortestSide * 0.22, 116, 220);
   const destinationWidth = Math.min(122, width / 3);
-  const destinationHeight = iconSize + 29;
+  const destinationHeight = iconSize + 45;
   const topInset = Platform.OS === 'android' ? 16 : insets.top + 12;
   const bottomInset = Math.max(
     insets.bottom,
@@ -230,7 +230,6 @@ export const NativeActionMenu = ({
         >
           <ShareGlyph color={palette.trade} />
           <Text
-            maxFontSizeMultiplier={1}
             numberOfLines={2}
             style={[styles.cornerLabel, styles.tradeBoardLabel, { color: palette.text }]}
           >
@@ -245,7 +244,7 @@ export const NativeActionMenu = ({
             onPress={() => navigate('/settings')}
             style={[styles.cornerButton, { backgroundColor: palette.surface, borderColor: palette.border }]}
           >
-            <Text maxFontSizeMultiplier={1} style={[styles.cornerLabel, { color: palette.text }]}>Settings</Text>
+            <Text numberOfLines={2} style={[styles.cornerLabel, { color: palette.text }]}>Settings</Text>
             <Image
               source={{ uri: toAssetUrl(assetBaseUrl, '/images/btn_settings.png') }}
               style={[styles.cornerImage, light && styles.cornerImageLight]}
@@ -292,8 +291,7 @@ export const NativeActionMenu = ({
                     style={{ height: iconSize, width: iconSize }}
                   />
                   <Text
-                    maxFontSizeMultiplier={1}
-                    numberOfLines={1}
+                    numberOfLines={2}
                     style={[styles.destinationLabel, { color: palette.text }]}
                   >
                     {destination.label}
@@ -314,7 +312,7 @@ export const NativeActionMenu = ({
             { backgroundColor: palette.surface, borderColor: palette.border, bottom: bottomInset },
           ]}
         >
-          <Text maxFontSizeMultiplier={1} style={[styles.cornerLabel, { color: palette.text }]}>Profile</Text>
+          <Text numberOfLines={2} style={[styles.cornerLabel, { color: palette.text }]}>Profile</Text>
           <Image
             source={{ uri: toAssetUrl(assetBaseUrl, '/images/profile-icon.png') }}
             style={[styles.cornerImage, light && styles.cornerImageLight]}
@@ -329,7 +327,7 @@ export const NativeActionMenu = ({
                 { backgroundColor: palette.panel, borderColor: palette.border },
               ]}
             >
-              <Text maxFontSizeMultiplier={1} style={[styles.supportEyebrow, { color: palette.focus }]}>LEARN &amp; SUPPORT</Text>
+              <Text style={[styles.supportEyebrow, { color: palette.focus }]}>LEARN &amp; SUPPORT</Text>
               {SUPPORT_DESTINATIONS.map(([label, path]) => (
                 <Pressable
                   accessibilityRole="button"
@@ -337,8 +335,8 @@ export const NativeActionMenu = ({
                   onPress={() => navigate(path)}
                   style={({ pressed }) => [styles.supportLink, pressed && styles.pressed]}
                 >
-                  <Text maxFontSizeMultiplier={1} style={[styles.supportLinkIcon, { color: palette.focus }]}>›</Text>
-                  <Text maxFontSizeMultiplier={1} style={[styles.supportLinkText, { color: palette.text }]}>{label}</Text>
+                  <Text style={[styles.supportLinkIcon, { color: palette.focus }]}>›</Text>
+                  <Text style={[styles.supportLinkText, { color: palette.text }]}>{label}</Text>
                 </Pressable>
               ))}
             </View>
@@ -351,7 +349,7 @@ export const NativeActionMenu = ({
             style={[styles.cornerButton, { backgroundColor: palette.surface, borderColor: palette.border }]}
           >
             <HelpGlyph color={palette.focus} ink={light ? '#ffffff' : '#07252a'} />
-            <Text maxFontSizeMultiplier={1} style={[styles.cornerLabel, { color: palette.text }]}>Learn &amp; support</Text>
+            <Text numberOfLines={2} style={[styles.cornerLabel, { color: palette.text }]}>Learn &amp; support</Text>
           </Pressable>
         </View>
 

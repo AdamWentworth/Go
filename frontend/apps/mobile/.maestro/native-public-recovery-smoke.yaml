@@ -2,6 +2,17 @@ appId: host.exp.exponent
 name: Native password recovery smoke
 ---
 - openLink: "exp://10.0.2.2:8091/--/device-smoke/public?page=reset"
+- waitForAnimationToEnd
+- runFlow:
+    when:
+      visible: "^Continue$"
+    commands:
+      - tapOn: "^Continue$"
+- runFlow:
+    when:
+      visible: React Native dev menu
+    commands:
+      - tapOn: Close
 - assertVisible: "Reset your password"
 - tapOn: "Username or email"
 - inputText: "visual@example.invalid"

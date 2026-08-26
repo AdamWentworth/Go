@@ -13,11 +13,12 @@ tags:
     commands:
       - tapOn:
           id: host.exp.exponent:id/reload_button
+- waitForAnimationToEnd
 - runFlow:
     when:
-      visible: "This is the developer menu.*"
+      visible: "^Continue$"
     commands:
-      - tapOn: Continue
+      - tapOn: "^Continue$"
 - runFlow:
     when:
       visible: React Native dev menu

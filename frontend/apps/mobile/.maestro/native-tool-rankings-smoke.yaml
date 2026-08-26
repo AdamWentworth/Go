@@ -2,6 +2,17 @@ appId: host.exp.exponent
 name: Native community rankings tool smoke
 ---
 - openLink: "exp://10.0.2.2:8091/--/device-smoke/tools?tool=rankings"
+- waitForAnimationToEnd
+- runFlow:
+    when:
+      visible: "^Continue$"
+    commands:
+      - tapOn: "^Continue$"
+- runFlow:
+    when:
+      visible: React Native dev menu
+    commands:
+      - tapOn: Close
 - assertVisible: "Community Rankings"
 - assertVisible: "Shiny Bulbasaur"
 - tapOn: "Search rankings"

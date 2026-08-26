@@ -217,13 +217,72 @@ if ! curl --silent --fail --max-time 1 http://127.0.0.1:8091/status | grep -q 'p
   exit 1
 fi
 
+android_text_bounds() {
+  local text_value="$1"
+  "${adb_bin}" -s "${device_id}" shell uiautomator dump /sdcard/pokegonexus-smoke-ui.xml >/dev/null 2>&1 || return 1
+  "${adb_bin}" -s "${device_id}" exec-out cat /sdcard/pokegonexus-smoke-ui.xml 2>/dev/null \
+    | python3 -c '
+import re
+import sys
+import xml.etree.ElementTree as ET
+
+needle = sys.argv[1]
+try:
+    root = ET.fromstring(sys.stdin.read())
+except ET.ParseError:
+    raise SystemExit(1)
+for node in root.iter("node"):
+    if node.attrib.get("text") == needle or node.attrib.get("content-desc") == needle:
+        bounds = node.attrib.get("bounds", "")
+        match = re.fullmatch(r"\[(\d+),(\d+)\]\[(\d+),(\d+)\]", bounds)
+        if match:
+            print(" ".join(match.groups()))
+            raise SystemExit(0)
+raise SystemExit(1)
+' "${text_value}"
+}
+
+tap_android_text_if_present() {
+  local text_value="$1"
+  local bounds
+  if ! bounds="$(android_text_bounds "${text_value}")"; then
+    return 1
+  fi
+  read -r left top right bottom <<<"${bounds}"
+  "${adb_bin}" -s "${device_id}" shell input tap "$(((left + right) / 2))" "$(((top + bottom) / 2))" >/dev/null
+}
+
+prepare_expo_go() {
+  # Clearing once keeps the suite deterministic. Complete Expo Go's own
+  # first-run developer prompt before Maestro begins so it cannot appear over
+  # an already interactive fixture several seconds later.
+  "${adb_bin}" -s "${device_id}" shell am force-stop host.exp.exponent
+  "${adb_bin}" -s "${device_id}" shell pm clear host.exp.exponent >/dev/null
+  "${adb_bin}" -s "${device_id}" shell am start \
+    -a android.intent.action.VIEW \
+    -d 'exp://10.0.2.2:8091/--/device-smoke/login' >/dev/null
+  for _attempt in $(seq 1 30); do
+    if tap_android_text_if_present 'Continue'; then
+      sleep 2
+      tap_android_text_if_present 'Close' || true
+      "${adb_bin}" -s "${device_id}" shell am force-stop host.exp.exponent
+      return 0
+    fi
+    sleep 1
+  done
+  echo "Expo Go onboarding did not expose its Continue action; proceeding because it may already be complete." >&2
+  "${adb_bin}" -s "${device_id}" shell am force-stop host.exp.exponent
+}
+
+prepare_expo_go
+
 run_maestro_flow() {
   local flow="$1"
   local output_name="$2"
-  # Expo Router deliberately preserves mounted route state. A directory run
-  # must therefore restart Expo Go between flows so each smoke validates a
-  # fresh user session rather than inheriting the preceding flow's modal,
-  # selected tag, or draft edits.
+  # A process boundary removes mounted Expo Router state between fixtures. App
+  # smoke mode supplies a deterministic theme and each fixture owns its domain
+  # state, while retaining Expo Go onboarding state for the remainder of this
+  # invocation.
   "${adb_bin}" -s "${device_id}" shell am force-stop host.exp.exponent
   # Expo Go occasionally relaunches before Android has fully torn down the
   # preceding React host. Give the process boundary time to settle so an
@@ -242,7 +301,7 @@ if [[ -d "${smoke_flow}" ]]; then
     flow_name="$(basename "${flow}" .yaml)"
     echo "Running isolated device smoke: ${flow_name}"
     if ! run_maestro_flow "${flow}" "${flow_name}"; then
-      echo "Retrying isolated device smoke once after a clean Expo Go restart: ${flow_name}"
+      echo "Retrying isolated device smoke once after an Expo Go restart: ${flow_name}"
       if ! run_maestro_flow "${flow}" "${flow_name}-retry"; then
         failed_flows+=("${flow_name}")
       fi
@@ -254,7 +313,11 @@ if [[ -d "${smoke_flow}" ]]; then
     exit 1
   fi
 else
-  run_maestro_flow "${smoke_flow}" "$(basename "${smoke_flow}" .yaml)"
+  flow_name="$(basename "${smoke_flow}" .yaml)"
+  if ! run_maestro_flow "${smoke_flow}" "${flow_name}"; then
+    echo "Retrying device smoke once after an Expo Go restart: ${flow_name}"
+    run_maestro_flow "${smoke_flow}" "${flow_name}-retry"
+  fi
 fi
 
 "${adb_bin}" -s "${device_id}" exec-out screencap -p >"${artifact_dir}/final-screen.png"
