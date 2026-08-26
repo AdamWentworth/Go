@@ -18,6 +18,16 @@ name: Native PvP tool smoke
 - takeScreenshot: "native-pvp-rankings"
 - tapOn: "Team Builder"
 - assertVisible: "THREE-POKÉMON TEAM"
+- runFlow:
+    when:
+      visible: "Remove Bulbasaur from Lead"
+    commands:
+      - tapOn: "Remove Bulbasaur from Lead"
+- runFlow:
+    when:
+      visible: "Remove Ivysaur from Safe Swap"
+    commands:
+      - tapOn: "Remove Ivysaur from Safe Swap"
 - assertVisible: "0 / 3"
 - takeScreenshot: "native-pvp-team-builder-empty"
 - scrollUntilVisible:
