@@ -90,7 +90,7 @@ does not replace the physical-device approval gate.
   tool workflows.
 - Collection density passed at the narrow, wider-phone/tablet, and desktop
   reference widths; the action menu also passed at each reference width.
-- Mobile Jest passed 647 tests. Canonical web Vitest passed 1,717 tests with two
+- Mobile Jest passed 652 tests. Canonical web Vitest passed 1,717 tests with two
   intentional skips.
 - The full web browser matrix passed 735 tests with zero failures across
   Chromium, Firefox, desktop WebKit, mobile Safari, and mobile Chrome. Its 390
