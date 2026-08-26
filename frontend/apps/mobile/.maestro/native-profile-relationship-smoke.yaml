@@ -6,11 +6,12 @@ tags:
 ---
 - openLink:
     link: exp://10.0.2.2:8091/--/device-smoke/profile-relationship
+- waitForAnimationToEnd
 - runFlow:
     when:
-      visible: "This is the developer menu.*"
+      visible: "^Continue$"
     commands:
-      - tapOn: Continue
+      - tapOn: "^Continue$"
 - runFlow:
     when:
       visible: React Native dev menu
@@ -25,4 +26,26 @@ tags:
 - assertVisible: TRAINER PROFILE
 - assertVisible: CeruleanLeader
 - assertVisible: Add friend
+- tapOn: Add friend
+- assertVisible: Friend request sent.
+- assertVisible: Request sent
+- tapOn: Request sent
+- assertVisible: Cancel friend request?
+- tapOn: Cancel request
+- assertVisible: Friend request canceled.
+- scrollUntilVisible:
+    element:
+      text: Block trainer
+    direction: DOWN
+    timeout: 10000
+- tapOn: Block trainer
+- assertVisible: Block Misty?
+- tapOn: Block trainer
+- assertVisible: Trainer blocked.
+- scrollUntilVisible:
+    element:
+      text: Blocked
+    direction: DOWN
+    timeout: 10000
+- assertVisible: Blocked
 - takeScreenshot: native-trainer-profile-relationship

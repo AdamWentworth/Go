@@ -91,4 +91,15 @@ describe('NativeTrainerSettingsScreen', () => {
     fireEvent.press(view.getByRole('button', { name: 'Retry' }));
     expect(retry).toHaveBeenCalledTimes(1);
   });
+
+  it('keeps command feedback visible and dismissible independently of scroll position', () => {
+    const onDismissFeedback = jest.fn();
+    const view = renderScreen({
+      feedback: { tone: 'success', text: 'Trade coordination settings saved.' },
+      onDismissFeedback,
+    });
+    expect(view.getByText('Trade coordination settings saved.')).toBeTruthy();
+    fireEvent.press(view.getByRole('button', { name: 'Dismiss message' }));
+    expect(onDismissFeedback).toHaveBeenCalledTimes(1);
+  });
 });

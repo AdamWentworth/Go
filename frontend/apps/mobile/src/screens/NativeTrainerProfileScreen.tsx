@@ -9,7 +9,7 @@ import {
   useColorScheme,
   useWindowDimensions,
 } from 'react-native';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { NativeCollectionRow } from '../features/collection/collectionModel';
 import { NativePokemonLocationBackdrop } from '../features/collection/parity/NativePokemonLocationBackdrop';
@@ -125,8 +125,14 @@ export const NativeTrainerProfileScreen = ({
   const light = useColorScheme() === 'light';
   const compactHeader = useWindowDimensions().width <= 520;
   const insets = useSafeAreaInsets();
+  const scrollRef = useRef<ScrollView>(null);
   const [confirmation, setConfirmation] = useState<'cancel-request' | 'remove-friend' | 'block' | null>(null);
   const [editingHighlightSlot, setEditingHighlightSlot] = useState<number | null>(null);
+
+  useEffect(() => {
+    if (!feedback) return;
+    scrollRef.current?.scrollTo({ y: 0, animated: true });
+  }, [feedback]);
 
   if (isLoading) {
     return (
@@ -226,6 +232,7 @@ export const NativeTrainerProfileScreen = ({
     <View style={[styles.screenRoot, light && styles.screenLight]}>
       <ScrollView
         contentContainerStyle={[styles.content, { paddingTop: Math.max(insets.top + 12, 24), paddingBottom: Math.max(insets.bottom + 100, 116) }]}
+        ref={scrollRef}
         style={styles.screen}
         testID="native-trainer-profile"
       >

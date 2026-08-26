@@ -1,9 +1,10 @@
 import type { AccountSecuritySummary, OAuthProvider } from '@pokemongonexus/shared-contracts/auth';
-import { Redirect } from 'expo-router';
+import { Redirect, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
 import { runtimeConfig } from '../../config/runtimeConfig';
 import {
   createNativeAccountSecurityDraft,
+  nativeOAuthProviderLabel,
   type NativeAccountSecurityDraft,
 } from '../../features/settings/nativeAccountSecurityModel';
 import { NativeAccountSecurityScreen } from '../../screens/NativeAccountSecurityScreen';
@@ -20,12 +21,26 @@ const INITIAL_SECURITY: AccountSecuritySummary = {
   }],
 };
 
+const OAUTH_ONLY_SECURITY: AccountSecuritySummary = {
+  activeSessions: 2,
+  email: 'trainer@example.com',
+  hasPassword: false,
+  providers: (['google', 'discord', 'facebook'] as OAuthProvider[]).map((provider) => ({
+    email: `${provider}@example.com`,
+    emailVerified: true,
+    linkedAt: '2026-08-24T12:00:00.000Z',
+    provider,
+  })),
+};
+
 export default function DeviceSmokeAccountRoute() {
+  const params = useLocalSearchParams<{ oauthOnly?: string | string[] }>();
+  const oauthOnly = (Array.isArray(params.oauthOnly) ? params.oauthOnly[0] : params.oauthOnly) === '1';
   const [draft, setDraft] = useState<NativeAccountSecurityDraft>(() => createNativeAccountSecurityDraft({
     email: INITIAL_SECURITY.email,
     username: 'TrainerOne',
   }));
-  const [security, setSecurity] = useState(INITIAL_SECURITY);
+  const [security, setSecurity] = useState(() => oauthOnly ? OAUTH_ONLY_SECURITY : INITIAL_SECURITY);
   const [feedback, setFeedback] = useState<{ tone: 'success'; text: string } | null>(null);
   if (!runtimeConfig.mobile.deviceSmokeMode) return <Redirect href="/" />;
 
@@ -39,7 +54,7 @@ export default function DeviceSmokeAccountRoute() {
         provider,
       }],
     }));
-    setFeedback({ tone: 'success', text: `${provider} connected.` });
+    setFeedback({ tone: 'success', text: `${nativeOAuthProviderLabel(provider)} connected.` });
   };
 
   return (
@@ -66,7 +81,7 @@ export default function DeviceSmokeAccountRoute() {
           ...current,
           providers: current.providers.filter((identity) => identity.provider !== provider),
         }));
-        setFeedback({ tone: 'success', text: `${provider} disconnected.` });
+        setFeedback({ tone: 'success', text: `${nativeOAuthProviderLabel(provider)} disconnected.` });
       }}
       security={security}
     />

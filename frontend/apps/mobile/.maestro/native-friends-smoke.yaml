@@ -6,11 +6,12 @@ tags:
 ---
 - openLink:
     link: exp://10.0.2.2:8091/--/device-smoke/friends
+- waitForAnimationToEnd
 - runFlow:
     when:
-      visible: "This is the developer menu.*"
+      visible: "^Continue$"
     commands:
-      - tapOn: Continue
+      - tapOn: "^Continue$"
 - runFlow:
     when:
       visible: React Native dev menu
@@ -20,16 +21,32 @@ tags:
     visible: Your friends
     timeout: 45000
 - assertVisible: CeruleanLeader
+- tapOn: Remove Misty
+- assertVisible: Remove Misty?
+- tapOn: Remove friend
+- assertVisible: Friend removed.
+- assertVisible: Your friends will appear here. Find a trainer to get started.
 - tapOn: Requests
 - assertVisible: Incoming requests
 - assertVisible: PewterLeader
 - tapOn: Accept Brock
 - assertVisible: Friend request accepted.
+- assertVisible: CeladonLeader
+- tapOn: Decline Erika
+- assertVisible: Friend request declined.
+- assertVisible: No incoming requests.
+- assertVisible: Blue
+- tapOn: Cancel request to Blue
+- assertVisible: Friend request canceled.
+- assertVisible: No sent requests.
 - tapOn: Find
 - assertVisible: Find trainers
 - assertVisible: PalletRival
 - tapOn: Add GaryOak
 - assertVisible: Friend request sent.
+- tapOn: Requests
+- assertVisible: PalletRival
+- tapOn: Find
 - tapOn: Blocked
 - assertVisible: Blocked trainers
 - assertVisible: Rocket

@@ -31,6 +31,15 @@ const INITIAL_OVERVIEW: NativeFriendsOverviewModel = {
     avatarLabel: 'B',
     team: 'valor',
     teamLabel: 'Team Valor',
+  }, {
+    ...baseFriend,
+    userId: 'user-erika',
+    friendshipId: 'friendship-erika',
+    username: 'Erika',
+    pokemonGoName: 'CeladonLeader',
+    avatarLabel: 'E',
+    team: 'instinct',
+    teamLabel: 'Team Instinct',
   }],
   outgoing: [{
     ...baseFriend,
@@ -79,7 +88,38 @@ export default function DeviceSmokeFriendsRoute() {
       setFeedback({ tone: 'success', text: 'Trainer unblocked.' });
       return;
     }
-    setFeedback({ tone: 'success', text: action.action === 'add' ? 'Friend request sent.' : 'Trainer network updated.' });
+    if (action.action === 'delete-request') {
+      setOverview((current) => ({
+        ...current,
+        incoming: current.incoming.filter((row) => row.friendshipId !== action.friendshipId),
+        outgoing: current.outgoing.filter((row) => row.friendshipId !== action.friendshipId),
+      }));
+      setFeedback({ tone: 'success', text: action.message });
+      return;
+    }
+    if (action.action === 'remove-friend') {
+      setOverview((current) => ({
+        ...current,
+        friends: current.friends.filter((row) => row.userId !== action.userId),
+      }));
+      setFeedback({ tone: 'success', text: 'Friend removed.' });
+      return;
+    }
+    setOverview((current) => ({
+      ...current,
+      outgoing: [...current.outgoing, {
+        ...baseFriend,
+        userId: 'user-gary',
+        friendshipId: 'friendship-gary',
+        username: action.username,
+        pokemonGoName: 'PalletRival',
+        avatarLabel: 'G',
+        team: 'instinct',
+        teamLabel: 'Team Instinct',
+        trainerLevel: 47,
+      }],
+    }));
+    setFeedback({ tone: 'success', text: 'Friend request sent.' });
   };
 
   return (

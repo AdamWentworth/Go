@@ -6,11 +6,12 @@ tags:
 ---
 - openLink:
     link: exp://10.0.2.2:8091/--/device-smoke/settings
+- waitForAnimationToEnd
 - runFlow:
     when:
-      visible: "This is the developer menu.*"
+      visible: "^Continue$"
     commands:
-      - tapOn: Continue
+      - tapOn: "^Continue$"
 - runFlow:
     when:
       visible: React Native dev menu
@@ -27,18 +28,46 @@ tags:
 - tapOn: Show profile location
 - tapOn: Save privacy
 - assertVisible: Privacy settings saved.
+- tapOn: Dismiss message
 - scrollUntilVisible:
     element:
       text: Trade coordination
     direction: DOWN
     timeout: 10000
-- assertVisible: Discord
 - scrollUntilVisible:
     element:
-      text: Display
+      text: Discord
+    direction: DOWN
+    timeout: 10000
+- assertVisible: Discord
+- tapOn: "Preferred coordination method, Discord"
+- assertVisible: Preferred coordination method
+- tapOn: Campfire
+- assertVisible: "Preferred coordination method, Campfire"
+- tapOn: Coordination handle
+- eraseText: 40
+- inputText: MistyCampfire
+- hideKeyboard
+- scrollUntilVisible:
+    element:
+      text: Save coordination
+    direction: DOWN
+    timeout: 10000
+- tapOn: Save coordination
+- assertVisible: Trade coordination settings saved.
+- tapOn: Dismiss message
+- scrollUntilVisible:
+    element:
+      text: "Color theme, Light"
     direction: DOWN
     timeout: 10000
 - assertVisible: Color theme
+- tapOn: "Color theme, Light"
+- tapOn: Dark
+- assertVisible: "Color theme, Dark"
+- tapOn: "Color theme, Dark"
+- tapOn: Light
+- assertVisible: "Color theme, Light"
 - scrollUntilVisible:
     element:
       text: Reduce motion

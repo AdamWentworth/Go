@@ -209,17 +209,6 @@ export const NativeTrainerSettingsScreen = ({
 
         <NativeSettingsWorkspaceNav active="settings" onOpenAccount={onOpenAccount} onOpenSettings={() => {}} />
 
-        {feedback ? (
-          <View accessibilityRole="alert" style={[styles.feedback, feedback.tone === 'success' ? styles.feedbackSuccess : styles.feedbackError]}>
-            <Text style={styles.feedbackText}>{feedback.text}</Text>
-            {onDismissFeedback ? (
-              <Pressable accessibilityLabel="Dismiss message" accessibilityRole="button" onPress={onDismissFeedback} style={styles.feedbackDismissButton}>
-                <Text style={styles.feedbackDismiss}>×</Text>
-              </Pressable>
-            ) : null}
-          </View>
-        ) : null}
-
         {isLoading ? (
           <View style={styles.status}><ActivityIndicator color="#35a8ff" /><Text style={[styles.statusText, light && styles.mutedLight]}>Loading settings…</Text></View>
         ) : null}
@@ -325,6 +314,25 @@ export const NativeTrainerSettingsScreen = ({
         </View>
       </ScrollView>
 
+      {feedback && !picker ? (
+        <View
+          accessibilityRole="alert"
+          style={[
+            styles.feedback,
+            styles.feedbackOverlay,
+            { bottom: insets.bottom + 12 },
+            feedback.tone === 'success' ? styles.feedbackSuccess : styles.feedbackError,
+          ]}
+        >
+          <Text style={styles.feedbackText}>{feedback.text}</Text>
+          {onDismissFeedback ? (
+            <Pressable accessibilityLabel="Dismiss message" accessibilityRole="button" onPress={onDismissFeedback} style={styles.feedbackDismissButton}>
+              <Text style={styles.feedbackDismiss}>×</Text>
+            </Pressable>
+          ) : null}
+        </View>
+      ) : null}
+
       <NativeOptionPicker
         onClose={() => setPicker(null)}
         onSelect={(entry) => { pickerConfig?.select(entry.key); setPicker(null); }}
@@ -349,6 +357,7 @@ const styles = StyleSheet.create({
   eyebrow: { color: '#35a8ff', fontSize: 10, fontWeight: '900', letterSpacing: 1.2 },
   title: { color: '#f7fbfa', fontSize: 25, fontWeight: '900' },
   feedback: { minHeight: 48, flexDirection: 'row', alignItems: 'center', gap: 8, paddingLeft: 12, borderWidth: 1, borderRadius: 10 },
+  feedbackOverlay: { position: 'absolute', right: 12, left: 12, maxWidth: 736, alignSelf: 'center', zIndex: 4 },
   feedbackSuccess: { borderColor: '#2fbd79', backgroundColor: '#13372b' },
   feedbackError: { borderColor: '#ef5b72', backgroundColor: '#3a1820' },
   feedbackText: { flex: 1, color: '#ffffff', fontSize: 13, fontWeight: '800' },

@@ -68,6 +68,12 @@ const HIGHLIGHTS = [
   highlight('mewtwo', 150, 'Armored Mewtwo', '/images/default/pokemon_150.png'),
 ];
 
+const HIGHLIGHT_CANDIDATES = [
+  ...HIGHLIGHTS,
+  highlight('suicune', 245, 'Shiny Suicune', '/images/shiny/shiny_pokemon_245.png'),
+  highlight('metagross', 376, 'Shiny Metagross', '/images/shiny/shiny_pokemon_376.png'),
+];
+
 const EDITOR_DRAFT: NativeTrainerProfileDraft = {
   trainerTitles: ['shiny-hunter', 'lucky-trader'],
   pokemonGoName: 'AdamGo',
@@ -83,20 +89,18 @@ const EDITOR_DRAFT: NativeTrainerProfileDraft = {
 export default function DeviceSmokeProfileRoute() {
   const [draft, setDraft] = useState<NativeTrainerProfileDraft | null>(null);
   const [feedback, setFeedback] = useState<{ tone: 'success'; text: string } | null>(null);
+  const [model, setModel] = useState(MODEL);
+  const [highlights, setHighlights] = useState(HIGHLIGHTS);
   if (!runtimeConfig.mobile.deviceSmokeMode) return <Redirect href="/" />;
   return (
     <NativeTrainerProfileScreen
       assetBaseUrl={ASSET_BASE_URL}
       editorDraft={draft}
       feedback={feedback}
-      highlights={HIGHLIGHTS}
-      highlightCandidates={[
-        ...HIGHLIGHTS,
-        highlight('suicune', 245, 'Shiny Suicune', '/images/shiny/shiny_pokemon_245.png'),
-        highlight('metagross', 376, 'Shiny Metagross', '/images/shiny/shiny_pokemon_376.png'),
-      ]}
+      highlights={highlights}
+      highlightCandidates={HIGHLIGHT_CANDIDATES}
       isOwner
-      model={MODEL}
+      model={model}
       onBeginEdit={() => setDraft({ ...EDITOR_DRAFT })}
       onCancelEdit={() => setDraft(null)}
       onChangeEditorDraft={setDraft}
@@ -104,6 +108,17 @@ export default function DeviceSmokeProfileRoute() {
       onOpenCollection={() => undefined}
       onOpenFriends={() => undefined}
       onSaveProfile={() => {
+        if (!draft) return;
+        setModel((current) => ({
+          ...current,
+          pokemonGoName: draft.pokemonGoName || current.pokemonGoName,
+          locationLabel: draft.location || current.locationLabel,
+        }));
+        const byId = new Map(HIGHLIGHT_CANDIDATES.map((row) => [row.id, row]));
+        setHighlights(draft.highlightInstanceIds.flatMap((id) => {
+          const row = byId.get(id);
+          return row ? [row] : [];
+        }));
         setDraft(null);
         setFeedback({ tone: 'success', text: 'Profile updated.' });
       }}

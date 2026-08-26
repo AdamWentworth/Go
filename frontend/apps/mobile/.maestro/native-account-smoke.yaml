@@ -6,11 +6,12 @@ tags:
 ---
 - openLink:
     link: exp://10.0.2.2:8091/--/device-smoke/account
+- waitForAnimationToEnd
 - runFlow:
     when:
-      visible: "This is the developer menu.*"
+      visible: "^Continue$"
     commands:
-      - tapOn: Continue
+      - tapOn: "^Continue$"
 - runFlow:
     when:
       visible: React Native dev menu
@@ -20,9 +21,47 @@ tags:
     visible: LOGIN IDENTITY
     timeout: 45000
 - assertVisible: Account details
+- tapOn: Username
+- eraseText: 20
+- inputText: TrainerTwo
+- hideKeyboard
 - assertVisible: Save username
 - tapOn: Save username
 - assertVisible: Username saved.
+- tapOn: Dismiss message
+- tapOn: Current password
+- inputText: Valid_password_42!
+- hideKeyboard
+- scrollUntilVisible:
+    element:
+      text: Send verification email
+    direction: DOWN
+    timeout: 10000
+- tapOn: Email address
+- eraseText: 40
+- inputText: trainer.updated@example.com
+- hideKeyboard
+- tapOn: Send verification email
+- assertVisible: Verification email sent.
+- tapOn: Dismiss message
+- scrollUntilVisible:
+    element:
+      text: Update password
+    direction: DOWN
+    timeout: 10000
+- tapOn: New password
+- inputText: Stronger_password_43!
+- scrollUntilVisible:
+    element:
+      text: Confirm new password
+    direction: DOWN
+    timeout: 10000
+- tapOn: Confirm new password
+- inputText: Stronger_password_43!
+- hideKeyboard
+- tapOn: Update password
+- assertVisible: Password change validated.
+- tapOn: Dismiss message
 - scrollUntilVisible:
     element:
       text: Connected accounts
@@ -34,8 +73,19 @@ tags:
     direction: DOWN
     timeout: 10000
 - assertVisible: trainer@gmail.com
+- tapOn: Disconnect Google
+- assertVisible: Disconnect Google?
+- assertVisible: Current password
+- tapOn: Disconnect
+- assertVisible: Google disconnected.
+- tapOn: Dismiss message
+- assertVisible: Connect Google
+- tapOn: Connect Google
+- assertVisible: Google connected.
+- tapOn: Dismiss message
 - tapOn: Connect Discord
-- assertVisible: discord connected.
+- assertVisible: Discord connected.
+- tapOn: Dismiss message
 - scrollUntilVisible:
     element:
       text: Sign out all devices
@@ -43,6 +93,7 @@ tags:
     timeout: 10000
 - tapOn: Sign out all devices
 - assertVisible: Sign out every device?
+- assertVisible: Current password
 - tapOn: Sign out all
 - assertVisible: All sessions revoked.
 - tapOn: Dismiss message

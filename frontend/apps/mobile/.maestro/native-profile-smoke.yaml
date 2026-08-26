@@ -6,11 +6,12 @@ tags:
 ---
 - openLink:
     link: exp://10.0.2.2:8091/--/device-smoke/profile
+- waitForAnimationToEnd
 - runFlow:
     when:
-      visible: "This is the developer menu.*"
+      visible: "^Continue$"
     commands:
-      - tapOn: Continue
+      - tapOn: "^Continue$"
 - runFlow:
     when:
       visible: React Native dev menu
@@ -30,6 +31,10 @@ tags:
     direction: DOWN
     timeout: 10000
 - assertVisible: POKÉMON GO NAME
+- tapOn: Pokémon GO name
+- eraseText: 20
+- inputText: AdamGoUpdated
+- hideKeyboard
 - takeScreenshot: native-trainer-profile-editor
 - scrollUntilVisible:
     element:
@@ -44,16 +49,17 @@ tags:
 - tapOn: Shiny Metagross
 - scrollUntilVisible:
     element:
-      text: Cancel
+      text: Save profile
     direction: UP
     timeout: 10000
-- tapOn: Cancel
+- tapOn: Save profile
+- assertVisible: Profile updated.
 - scrollUntilVisible:
     element:
-      text: AdamGo
+      text: AdamGoUpdated
     direction: UP
     timeout: 10000
-- assertVisible: AdamGo
+- assertVisible: AdamGoUpdated
 - scrollUntilVisible:
     element:
       text: Shiny Hunter
