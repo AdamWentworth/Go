@@ -2,7 +2,7 @@ import { fireEvent, render, screen } from '@testing-library/react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { NativePokedexScreen } from '../../../src/screens/NativePokedexScreen';
 
-const entry = { id: '0001-shiny', pokemonId: 1, pokedexNumber: 1, name: 'Shiny Bulbasaur', imageUri: '/bulbasaur.png', typeIconUris: [], maxKind: null, category: 'shiny' as const, generation: 1, registered: true, registeredFacets: [{}], registeredSpecies: true };
+const entry = { id: '0001-shiny', pokemonId: 1, pokedexNumber: 1, name: 'Shiny Bulbasaur', imageUri: '/bulbasaur.png', typeIconUris: [], maxKind: null, category: 'shiny' as const, generation: 1, instanceRegistered: true, manualRegistrationIds: [], registered: true, registeredFacets: [{}], registeredSpecies: true };
 
 describe('NativePokedexScreen', () => {
   it('supports region, category, and query filtering and opens an exact entry', () => {

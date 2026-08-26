@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Redirect, useLocalSearchParams } from "expo-router";
 import type {
   BasePokemon,
@@ -6,10 +7,12 @@ import type {
 } from "@pokemongonexus/shared-contracts/pokemon";
 import { runtimeConfig } from "../../config/runtimeConfig";
 import { NativeMaxScreen } from "../../screens/NativeMaxScreen";
+import { NativePokedexDetailScreen } from "../../screens/NativePokedexDetailScreen";
 import { NativePokedexScreen } from "../../screens/NativePokedexScreen";
 import { NativePvpScreen } from "../../screens/NativePvpScreen";
 import { NativeRaidScreen } from "../../screens/NativeRaidScreen";
 import { NativeRankingsScreen } from "../../screens/NativeRankingsScreen";
+import type { NativePokedexManualRegistration } from "../../features/tools/nativePokedexModel";
 
 const ASSET_BASE_URL = runtimeConfig.api.frontendAppUrl;
 const imageUri = `${ASSET_BASE_URL}/images/shiny/shiny_pokemon_1.png`;
@@ -217,6 +220,8 @@ const pokedexEntry = {
   maxKind: null,
   category: "shiny" as const,
   generation: 1,
+  instanceRegistered: true,
+  manualRegistrationIds: [],
   registered: true,
   registeredFacets: [{}],
   registeredSpecies: true,
@@ -227,6 +232,51 @@ const basePokedexEntry = {
   name: "Bulbasaur",
   category: "pokemon" as const,
 };
+const shadowPokedexEntry = {
+  ...pokedexEntry,
+  id: "0001-shadow",
+  name: "Shadow Bulbasaur",
+  imageUri: `${ASSET_BASE_URL}/images/shadow/shadow_pokemon_1.png`,
+  category: "shadow" as const,
+  instanceRegistered: false,
+  registered: false,
+  registeredFacets: [],
+  registeredSpecies: true,
+};
+const dynamaxPokedexEntry = {
+  ...pokedexEntry,
+  id: "0001-dynamax",
+  name: "Dynamax Bulbasaur",
+  imageUri: `${ASSET_BASE_URL}/images/dynamax/pokemon_1.png`,
+  maxKind: "dynamax" as const,
+  category: "dynamax" as const,
+  instanceRegistered: false,
+  registered: false,
+  registeredFacets: [],
+  registeredSpecies: true,
+};
+const detailPokemon = {
+  ...battleCatalog[0],
+  date_available: "2016-07-06",
+  date_shiny_available: "2018-03-25",
+  shiny_available: 1,
+  evolves_to: [2],
+  sizes: {
+    pokedex_height: 0.7,
+    pokedex_weight: 6.9,
+    height_standard_deviation: 0.1,
+    weight_standard_deviation: 1,
+    height_xxs_threshold: 0.45,
+    height_xs_threshold: 0.6,
+    height_xl_threshold: 0.85,
+    height_xxl_threshold: 1.05,
+    weight_xxs_threshold: 4,
+    weight_xs_threshold: 5.5,
+    weight_xl_threshold: 8,
+    weight_xxl_threshold: 10,
+  },
+} as BasePokemon;
+const detailEntries = [basePokedexEntry, pokedexEntry, shadowPokedexEntry, dynamaxPokedexEntry];
 const rankingRow = {
   caughtUsers: 3,
   entry: pokedexEntry,
@@ -237,6 +287,41 @@ const rankingRow = {
 };
 
 const noOp = () => undefined;
+
+function DeviceSmokePokedexDetail() {
+  const [registrations, setRegistrations] = useState<NativePokedexManualRegistration[]>([]);
+  const entries = detailEntries.map((candidate) => {
+    const candidateRegistrations = registrations.filter(({ entryId }) => entryId === candidate.id);
+    return {
+      ...candidate,
+      manualRegistrationIds: candidateRegistrations.map(({ registrationId }) => registrationId),
+      registered: candidate.instanceRegistered || candidateRegistrations.length > 0,
+      registeredFacets: [
+        ...(candidate.instanceRegistered ? candidate.registeredFacets : []),
+        ...candidateRegistrations.map(({ facets }) => facets),
+      ],
+    };
+  });
+  const current = entries.find(({ id }) => id === pokedexEntry.id) ?? pokedexEntry;
+
+  return (
+    <NativePokedexDetailScreen
+      allEntries={entries}
+      assetBaseUrl={ASSET_BASE_URL}
+      entry={current}
+      onBack={noOp}
+      onManage={noOp}
+      onOpenEntry={noOp}
+      onToggleRegistration={(registration, registered) => {
+        setRegistrations((existing) => registered
+          ? [...existing.filter(({ registrationId }) => registrationId !== registration.registrationId), registration]
+          : existing.filter(({ registrationId }) => registrationId !== registration.registrationId));
+      }}
+      pokemon={detailPokemon}
+      signedIn
+    />
+  );
+}
 
 export default function DeviceSmokeToolsRoute() {
   const params = useLocalSearchParams<{ tool?: string | string[] }>();
@@ -254,6 +339,7 @@ export default function DeviceSmokeToolsRoute() {
       />
     );
   }
+  if (tool === "pokedex-detail") return <DeviceSmokePokedexDetail />;
   if (tool === "raid") {
     return (
       <NativeRaidScreen

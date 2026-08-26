@@ -43,9 +43,17 @@ export type NativePokedexRegistrationFacets = {
   size?: NativePokedexSize;
 };
 
+export type NativePokedexManualRegistration = {
+  entryId: string;
+  facets: NativePokedexRegistrationFacets;
+  registrationId: string;
+};
+
 export type NativePokedexEntry = PokemonCatalogEntry & {
   category: NativePokedexCategory;
   generation: number;
+  instanceRegistered: boolean;
+  manualRegistrationIds: string[];
   registered: boolean;
   registeredFacets: NativePokedexRegistrationFacets[];
   registeredSpecies: boolean;
@@ -147,6 +155,7 @@ const isRegistrationSource = (instance: PokemonInstance): boolean => (
 export const buildNativePokedexEntries = (
   catalog: BasePokemon[],
   instances: Record<string, PokemonInstance> = {},
+  manualRegistrations: NativePokedexManualRegistration[] = [],
 ): NativePokedexEntry[] => {
   const generationByPokemon = new Map(catalog.map((pokemon) => [pokemon.pokemon_id, pokemon.generation]));
   const pokemonById = new Map(catalog.map((pokemon) => [pokemon.pokemon_id, pokemon]));
@@ -159,16 +168,47 @@ export const buildNativePokedexEntries = (
     current.push(instance);
     instancesByVariant.set(instance.variant_id, current);
   });
+  const manualByVariant = new Map<string, NativePokedexManualRegistration[]>();
+  manualRegistrations.forEach((registration) => {
+    const current = manualByVariant.get(registration.entryId) ?? [];
+    current.push(registration);
+    manualByVariant.set(registration.entryId, current);
+  });
+  const manuallyRegisteredPokemonIds = new Set(
+    buildPokemonCatalogEntries(catalog)
+      .filter((entry) => manualByVariant.has(entry.id))
+      .map((entry) => entry.pokemonId),
+  );
   return buildPokemonCatalogEntries(catalog).map((entry) => ({
     ...entry,
     category: categoryFor(entry),
     generation: generationByPokemon.get(entry.pokemonId) ?? 0,
-    registered: instancesByVariant.has(entry.id),
-    registeredFacets: (instancesByVariant.get(entry.id) ?? []).map((instance) => (
-      registrationFacetsFor(pokemonById.get(entry.pokemonId)!, instance)
-    )),
-    registeredSpecies: registeredPokemonIds.has(entry.pokemonId),
+    instanceRegistered: instancesByVariant.has(entry.id),
+    manualRegistrationIds: (manualByVariant.get(entry.id) ?? []).map(({ registrationId }) => registrationId),
+    registered: instancesByVariant.has(entry.id) || manualByVariant.has(entry.id),
+    registeredFacets: [
+      ...(instancesByVariant.get(entry.id) ?? []).map((instance) => (
+        registrationFacetsFor(pokemonById.get(entry.pokemonId)!, instance)
+      )),
+      ...(manualByVariant.get(entry.id) ?? []).map(({ facets }) => facets),
+    ],
+    registeredSpecies: registeredPokemonIds.has(entry.pokemonId) || manuallyRegisteredPokemonIds.has(entry.pokemonId),
   }));
+};
+
+const registrationFacetOrder: (keyof NativePokedexRegistrationFacets)[] = [
+  'size', 'lucky', 'purified', 'gender', 'appraisal',
+];
+
+export const buildNativePokedexRegistrationId = (
+  entryId: string,
+  facets: NativePokedexRegistrationFacets = {},
+): string => {
+  const suffix = registrationFacetOrder.flatMap((key) => {
+    const value = facets[key];
+    return value == null ? [] : [`${key}:${String(value).toLocaleLowerCase()}`];
+  }).join('|');
+  return suffix ? `${entryId}|${suffix}` : entryId;
 };
 
 export const filterNativePokedexEntries = ({

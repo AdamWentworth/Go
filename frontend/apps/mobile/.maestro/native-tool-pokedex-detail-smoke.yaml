@@ -1,0 +1,34 @@
+appId: host.exp.exponent
+name: Native Pokédex detail parity smoke
+---
+- openLink: "exp://10.0.2.2:8091/--/device-smoke/tools?tool=pokedex-detail"
+- waitForAnimationToEnd
+- runFlow:
+    when:
+      visible: "^Continue$"
+    commands:
+      - tapOn: "^Continue$"
+- runFlow:
+    when:
+      visible: React Native dev menu
+    commands:
+      - tapOn: Close
+- extendedWaitUntil:
+    visible: "Registration checklist"
+    timeout: 45000
+- assertVisible: "Shiny Bulbasaur"
+- assertVisible: "Registered"
+- takeScreenshot: "native-tool-pokedex-detail-registered"
+- tapOn: "Info"
+- assertVisible: "BASE STATS"
+- assertVisible: "1,000"
+- takeScreenshot: "native-tool-pokedex-detail-info"
+- tapOn: "Battle"
+- assertVisible: "Fast moves"
+- assertVisible: "Vine Whip"
+- takeScreenshot: "native-tool-pokedex-detail-battle"
+- tapOn: "More"
+- assertVisible: "Quality registrations"
+- tapOn: "Lucky"
+- assertVisible: "Registered"
+- takeScreenshot: "native-tool-pokedex-detail-more"
