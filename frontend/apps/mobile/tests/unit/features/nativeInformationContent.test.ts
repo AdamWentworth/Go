@@ -2,6 +2,7 @@ import {
   isNativeInformationSlug,
   NATIVE_INFORMATION_PAGES,
 } from '../../../src/features/information/nativeInformationContent';
+import { resolveNativeActionMenuDestination } from '../../../src/navigation/nativeActionMenuNavigation';
 
 describe('native information content', () => {
   it('keeps every canonical public information route available natively', () => {
@@ -22,5 +23,27 @@ describe('native information content', () => {
     expect(NATIVE_INFORMATION_PAGES['getting-started'].sections.map(({ id }) => id)).toEqual([
       'collection', 'wanted', 'for-trade', 'discovery', 'proposal', 'sharing',
     ]);
+  });
+
+  it('keeps the native FAQ synchronized with the complete web knowledge base', () => {
+    expect(NATIVE_INFORMATION_PAGES.faq.sections).toHaveLength(21);
+    expect(new Set(NATIVE_INFORMATION_PAGES.faq.sections.map(({ category }) => category))).toEqual(
+      new Set(['ACCOUNT', 'COLLECTION', 'TRADING', 'DISCOVERY']),
+    );
+  });
+
+  it('keeps every public information action inside the native experience', () => {
+    const specialNativePaths = new Set(['/settings/account']);
+    for (const page of Object.values(NATIVE_INFORMATION_PAGES)) {
+      for (const section of page.sections) {
+        for (const link of section.links ?? []) {
+          const [pathname = '/'] = link.path.split('?');
+          expect(
+            specialNativePaths.has(pathname)
+              || resolveNativeActionMenuDestination(pathname).kind === 'native',
+          ).toBe(true);
+        }
+      }
+    }
   });
 });

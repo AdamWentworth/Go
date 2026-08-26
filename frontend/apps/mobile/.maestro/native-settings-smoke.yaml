@@ -21,6 +21,7 @@ tags:
     visible: WHO CAN SEE YOU
     timeout: 45000
 - assertVisible: Privacy
+- takeScreenshot: native-trainer-settings-privacy
 - tapOn: "Profile visibility, Everyone"
 - assertVisible: Profile visibility
 - tapOn: Friends only

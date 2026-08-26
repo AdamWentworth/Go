@@ -41,7 +41,7 @@ type Destination = {
 
 const DESTINATIONS: Destination[] = [
   { icon: '/images/btn_raid.png', label: 'Raid', path: '/raid' },
-  { icon: '/images/btn_pokedex.png', label: 'Pokedex', path: '/pokedex' },
+  { icon: '/images/btn_pokedex.png', label: 'Pokédex', path: '/pokedex' },
   { icon: '/images/btn_pvp.png', label: 'PvP', path: '/pvp' },
   { icon: '/images/btn_search.png', label: 'Search', path: '/search' },
   { icon: '/images/btn_home.png', label: 'Home', path: '/' },

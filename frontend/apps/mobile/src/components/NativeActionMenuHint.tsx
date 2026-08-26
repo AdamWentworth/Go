@@ -33,7 +33,7 @@ export const NativeActionMenuHint = ({
       <Image
         accessibilityElementsHidden
         resizeMode="contain"
-        source={{ uri: toAssetUrl(assetBaseUrl, '/images/logo/logo.png') }}
+        source={{ uri: toAssetUrl(assetBaseUrl, '/images/btn_action_menu.png') }}
         style={styles.logo}
       />
       <Pressable

@@ -1,6 +1,6 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import { NativeActionMenu } from '../../components/NativeActionMenu';
 import { NativeActionMenuAnchor } from '../../components/NativeActionMenuAnchor';
 import { runtimeConfig } from '../../config/runtimeConfig';
@@ -30,27 +30,41 @@ export default function NativeNotFoundRoute() {
   return (
     <View style={[styles.root, light && styles.rootLight]} testID="native-not-found-screen">
       <View style={[styles.card, light && styles.cardLight]}>
+        <Image
+          accessibilityIgnoresInvertColors
+          resizeMode="contain"
+          source={{ uri: `${runtimeConfig.api.frontendAppUrl.replace(/\/$/, '')}/images/logo/lockup.png` }}
+          style={styles.logo}
+        />
         <Text style={styles.code}>404</Text>
         <Text accessibilityRole="header" style={[styles.title, light && styles.titleLight]}>
-          This route got away
+          That route wandered off.
         </Text>
         <Text style={[styles.copy, light && styles.copyLight]}>
-          The page may have moved, or the shared link may be incomplete.
+          No Pokémon Go Nexus page matches {requestedPath || 'this address'}. The link may be outdated, incomplete, or mistyped.
         </Text>
-        {requestedPath ? (
-          <Text numberOfLines={2} style={[styles.path, light && styles.pathLight]}>{requestedPath}</Text>
-        ) : null}
         <View style={styles.actions}>
+          <Pressable accessibilityRole="button" onPress={() => router.replace('/native')} style={styles.primary}>
+            <Text style={styles.primaryText}>⌂  Return home</Text>
+          </Pressable>
           <Pressable
             accessibilityRole="button"
             onPress={() => router.canGoBack() ? router.back() : router.replace('/native')}
             style={[styles.secondary, light && styles.secondaryLight]}
           >
-            <Text style={[styles.secondaryText, light && styles.titleLight]}>Go back</Text>
+            <Text style={[styles.secondaryText, light && styles.titleLight]}>←  Go back</Text>
           </Pressable>
-          <Pressable accessibilityRole="button" onPress={() => router.replace('/native')} style={styles.primary}>
-            <Text style={styles.primaryText}>Open home</Text>
-          </Pressable>
+        </View>
+        <View style={styles.recoveryLinks}>
+          {[
+            ['Getting Started', '/getting-started'],
+            ['Frequently asked questions', '/faq'],
+            ['Help & information', '/help'],
+          ].map(([label, path]) => (
+            <Pressable accessibilityRole="link" key={path} onPress={() => navigate(path)} style={styles.recoveryLink}>
+              <Text style={styles.recoveryLinkText}>◉  {label}</Text>
+            </Pressable>
+          ))}
         </View>
       </View>
       <NativeActionMenuAnchor
@@ -72,19 +86,21 @@ export default function NativeNotFoundRoute() {
 const styles = StyleSheet.create({
   root: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 20, backgroundColor: '#06131d' },
   rootLight: { backgroundColor: '#edf4f7' },
-  card: { width: '100%', maxWidth: 520, alignItems: 'center', gap: 12, borderWidth: 1, borderColor: '#314b58', borderRadius: 22, padding: 28, backgroundColor: '#121e25' },
+  card: { width: '100%', maxWidth: 520, alignItems: 'center', gap: 12, borderWidth: 1, borderColor: '#314b58', borderRadius: 22, padding: 22, backgroundColor: '#121e25' },
   cardLight: { borderColor: '#b8c7ce', backgroundColor: '#fff' },
-  code: { color: '#269df4', fontSize: 58, lineHeight: 62, fontWeight: '900' },
+  logo: { width: '88%', height: 118 },
+  code: { marginTop: 2, color: '#269df4', fontSize: 12, lineHeight: 17, fontWeight: '900', letterSpacing: 3 },
   title: { color: '#f5fbfd', fontSize: 25, fontWeight: '900', textAlign: 'center' },
   titleLight: { color: '#102129' },
   copy: { maxWidth: 400, color: '#a8bac2', fontSize: 15, lineHeight: 22, textAlign: 'center' },
   copyLight: { color: '#536970' },
-  path: { maxWidth: '100%', color: '#8ca4af', fontSize: 12, textAlign: 'center' },
-  pathLight: { color: '#64777f' },
-  actions: { width: '100%', flexDirection: 'row', gap: 10, marginTop: 8 },
-  primary: { flex: 1, minHeight: 48, alignItems: 'center', justifyContent: 'center', borderRadius: 12, backgroundColor: '#168ff0' },
+  actions: { width: '100%', gap: 10, marginTop: 8 },
+  primary: { minHeight: 48, alignItems: 'center', justifyContent: 'center', borderRadius: 12, backgroundColor: '#168ff0' },
   primaryText: { color: '#fff', fontWeight: '900' },
-  secondary: { flex: 1, minHeight: 48, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: '#4b626c', borderRadius: 12, backgroundColor: '#19272e' },
+  secondary: { minHeight: 48, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: '#4b626c', borderRadius: 12, backgroundColor: '#19272e' },
   secondaryLight: { borderColor: '#a9bbc2', backgroundColor: '#f4f8f9' },
   secondaryText: { color: '#eef6f8', fontWeight: '800' },
+  recoveryLinks: { width: '100%', gap: 6, marginTop: 8, borderTopWidth: 1, borderTopColor: '#314b58', paddingTop: 14 },
+  recoveryLink: { minHeight: 38, alignItems: 'center', justifyContent: 'center' },
+  recoveryLinkText: { color: '#168ff0', fontSize: 12, fontWeight: '900' },
 });

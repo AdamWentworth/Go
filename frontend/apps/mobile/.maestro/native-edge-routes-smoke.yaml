@@ -20,9 +20,12 @@ tags:
 - extendedWaitUntil:
     visible: "404"
     timeout: 45000
-- assertVisible: This route got away
-- assertVisible: /missing-trainer-tool
-- assertVisible: Open home
+- assertVisible: That route wandered off.
+- assertVisible: ".*missing-trainer-tool.*"
+- assertVisible: ".*Return home.*"
+- assertVisible: ".*Getting Started.*"
+- assertVisible: ".*Frequently asked questions.*"
+- assertVisible: ".*Help & information.*"
 - takeScreenshot: 01-not-found
 - openLink:
     link: exp://10.0.2.2:8091/--/native/verify-email-change

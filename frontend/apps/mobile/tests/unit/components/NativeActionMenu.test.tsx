@@ -38,7 +38,7 @@ describe('NativeActionMenu', () => {
     );
 
     for (const label of [
-      'Raid', 'Pokedex', 'PvP',
+      'Raid', 'Pokédex', 'PvP',
       'Search', 'Home', 'Trades',
       'Pokémon', 'Max Battles', 'Rankings',
     ]) {

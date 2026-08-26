@@ -15,33 +15,50 @@ name: Native information and legal routes smoke
       - tapOn: Close
 - assertVisible: "Your first useful trade, step by step."
 - assertVisible: "Start your collection"
+- takeScreenshot: "01-native-getting-started"
 - openLink: "exp://10.0.2.2:8091/--/device-smoke/public?page=faq"
 - assertVisible: "Frequently asked questions"
-- tapOn: "TRADING"
+- tapOn: "Browse Trading questions"
+- scrollUntilVisible:
+    element:
+      text: "How do I propose a trade?"
+    direction: DOWN
+    timeout: 10000
 - assertVisible: "How do I propose a trade?"
 - tapOn: "How do I propose a trade?"
 - assertVisible: ".*Open another trainer’s For Trade.*"
+- takeScreenshot: "02-native-faq"
 - openLink: "exp://10.0.2.2:8091/--/device-smoke/public?page=privacy"
 - assertVisible: "Privacy Policy"
-- assertVisible: "Last updated July 28, 2026"
+- assertVisible: "Last updated: July 28, 2026"
+- takeScreenshot: "03-native-privacy"
 - openLink: "exp://10.0.2.2:8091/--/device-smoke/public?page=help"
-- assertVisible: "Find the right answer"
+- assertVisible: "Help & information"
+- takeScreenshot: "04-native-help"
 - scrollUntilVisible:
     element:
-      text: "Account Security"
+      text: "Data deletion"
     direction: DOWN
     timeout: 10000
-- assertVisible: "Account Security"
+- assertVisible: "Data deletion"
 - openLink: "exp://10.0.2.2:8091/--/device-smoke/public?page=about"
 - assertVisible: "About Pokémon Go Nexus"
-- assertVisible: "One connected model, not unrelated tools."
+- takeScreenshot: "05-native-about"
+- scrollUntilVisible:
+    element:
+      text: "One connected model, not a pile of unrelated tools."
+    direction: DOWN
+    timeout: 10000
+- assertVisible: "One connected model, not a pile of unrelated tools."
 - openLink: "exp://10.0.2.2:8091/--/device-smoke/public?page=safety"
 - assertVisible: "Trade Safety & Community Guidelines"
 - assertVisible: "Pokémon Go Nexus plans the exchange; Pokémon GO performs it."
+- takeScreenshot: "06-native-safety"
 - openLink: "exp://10.0.2.2:8091/--/device-smoke/public?page=terms"
 - assertVisible: "Terms of Service"
-- assertVisible: "Last updated July 28, 2026"
+- assertVisible: "Last updated: July 28, 2026"
+- takeScreenshot: "07-native-terms"
 - openLink: "exp://10.0.2.2:8091/--/device-smoke/public?page=data-deletion"
 - assertVisible: "User Data Deletion"
 - assertVisible: "Delete your account in Pokémon Go Nexus"
-- takeScreenshot: "native-information-all-routes"
+- takeScreenshot: "08-native-data-deletion"
