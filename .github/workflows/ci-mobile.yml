@@ -51,3 +51,16 @@ jobs:
 
       - name: Test
         run: npm run test
+
+      - name: Verify Expo Dependency Health
+        run: npx expo-doctor
+
+      - name: Export Native Preview Android Bundle
+        env:
+          EXPO_PUBLIC_MOBILE_EXPERIENCE: native-preview
+        run: npx expo export --platform android --output-dir dist-ci-android
+
+      - name: Export Native Preview iOS Bundle
+        env:
+          EXPO_PUBLIC_MOBILE_EXPERIENCE: native-preview
+        run: npx expo export --platform ios --output-dir dist-ci-ios
