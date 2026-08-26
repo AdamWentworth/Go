@@ -1,4 +1,4 @@
-import { act, fireEvent, render, screen } from '@testing-library/react-native';
+import { act, cleanup, fireEvent, render, screen } from '@testing-library/react-native';
 import { NativeTagsPanelScreen } from '../../../src/screens/NativeTagsPanelScreen';
 
 const tag = {
@@ -38,6 +38,18 @@ const maxTag = {
     maxKind: 'gigantamax' as const,
   }],
 };
+
+beforeEach(() => {
+  jest.useFakeTimers();
+});
+
+afterEach(() => {
+  act(() => {
+    jest.runOnlyPendingTimers();
+  });
+  cleanup();
+  jest.useRealTimers();
+});
 
 describe('NativeTagsPanelScreen', () => {
   it('renders real tag membership and returns the selected tag to the Pokémon grid', () => {

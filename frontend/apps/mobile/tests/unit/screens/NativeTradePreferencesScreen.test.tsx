@@ -1,4 +1,4 @@
-import { fireEvent, render, waitFor } from '@testing-library/react-native';
+import { act, cleanup, fireEvent, render, waitFor } from '@testing-library/react-native';
 import type { PokemonInstance } from '@pokemongonexus/shared-contracts/instances';
 import type {
   NativeTradePreferenceCandidate,
@@ -17,6 +17,18 @@ jest.mock('react-native/Libraries/Utilities/useWindowDimensions', () => ({
   __esModule: true,
   default: () => mockUseWindowDimensions(),
 }));
+
+beforeEach(() => {
+  jest.useFakeTimers();
+});
+
+afterEach(() => {
+  act(() => {
+    jest.runOnlyPendingTimers();
+  });
+  cleanup();
+  jest.useRealTimers();
+});
 
 const instance = (
   id: string,
