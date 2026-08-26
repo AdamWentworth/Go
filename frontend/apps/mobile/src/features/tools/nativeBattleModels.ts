@@ -27,6 +27,7 @@ export type NativeRaidSettings = {
   partyPower: NativeRaidPartyPower;
   partyPowerStrategy: NativeRaidPartyPowerStrategy;
   dodgeStrategy: NativeRaidDodgeStrategy;
+  dodgeSuccessRate: number;
   bossMovesetMode: NativeRaidBossMovesetMode;
   shadowBossMode: NativeRaidShadowBossMode;
   relobbySeconds: number;
@@ -41,6 +42,7 @@ export const DEFAULT_NATIVE_RAID_SETTINGS: NativeRaidSettings = {
   partyPower: 'none',
   partyPowerStrategy: 'immediate',
   dodgeStrategy: 'none',
+  dodgeSuccessRate: 1,
   bossMovesetMode: 'expected',
   shadowBossMode: 'normal',
   relobbySeconds: 10,
@@ -261,7 +263,10 @@ const scoreRaidPair = ({
   const combinedMoveDps = moveDps(fast) * .35 + moveDps(charged) * .65 * party;
   const shadowBossDefense = settings.shadowBossMode === 'enraged' ? 3 : 1;
   const dps = attack * combinedMoveDps / 100 * friendship * mega * partyStrategy / shadowBossDefense;
-  const dodgeBulk = settings.dodgeStrategy === 'charged' ? 1.22 : 1;
+  const dodgeSuccessRate = Math.max(0, Math.min(1, settings.dodgeSuccessRate));
+  const dodgeBulk = settings.dodgeStrategy === 'charged'
+    ? 1 + .22 * dodgeSuccessRate
+    : 1;
   const incomingPressure = BOSS_INCOMING_PRESSURE[settings.bossMovesetMode]
     * (settings.shadowBossMode === 'enraged' ? 1.81 : 1);
   const bulk = defense * Math.sqrt(stamina) * dodgeBulk / incomingPressure;

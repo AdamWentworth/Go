@@ -75,4 +75,16 @@ describe('native battle models', () => {
     expect(hostileEnraged?.score).toBeLessThan(expected?.score ?? 0);
     expect(timedPartyPower?.score).toBeGreaterThan(expected?.score ?? Infinity);
   });
+  it('uses the calibrated dodge success rate instead of treating every dodge as successful', () => {
+    const hydrated = { ...pokemon, moves: [fast, charged, secondCharged] } as BasePokemon;
+    const alwaysDodges = buildNativeRaidAttackers({
+      catalog: [hydrated],
+      settings: { dodgeStrategy: 'charged', dodgeSuccessRate: 1 },
+    })[0];
+    const rarelyDodges = buildNativeRaidAttackers({
+      catalog: [hydrated],
+      settings: { dodgeStrategy: 'charged', dodgeSuccessRate: .25 },
+    })[0];
+    expect(alwaysDodges?.tdo).toBeGreaterThan(rarelyDodges?.tdo ?? Infinity);
+  });
 });

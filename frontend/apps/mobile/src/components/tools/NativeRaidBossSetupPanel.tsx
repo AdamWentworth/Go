@@ -13,12 +13,13 @@ import { NativeRaidPartyBuilder } from './NativeRaidPartyBuilder';
 type Props = {
   assetBaseUrl: string;
   boss: NativeRaidBossEntry;
+  onObservedDodgeRateChange?: (rate: number | null) => void;
   scores: NativeCombatEntry[];
 };
 
 const trainerLabel = (count: number) => count > 0 ? `${count} trainer${count === 1 ? '' : 's'}` : '—';
 
-export const NativeRaidBossSetupPanel = ({ assetBaseUrl, boss, scores }: Props) => {
+export const NativeRaidBossSetupPanel = ({ assetBaseUrl, boss, onObservedDodgeRateChange, scores }: Props) => {
   const light = useColorScheme() === 'light';
   const [open, setOpen] = useState(false);
   const [partyResult, setPartyResult] = useState<NativeRaidPartyResult | null>(null);
@@ -68,6 +69,7 @@ export const NativeRaidBossSetupPanel = ({ assetBaseUrl, boss, scores }: Props) 
 
           <NativeRaidCalibrationPanel
             disabled={scores.length === 0}
+            onObservedDodgeRateChange={onObservedDodgeRateChange}
             predictedCleared={calibrationPrediction.clears}
             predictedSeconds={Number.isFinite(calibrationPrediction.seconds) ? calibrationPrediction.seconds : null}
           />

@@ -21,6 +21,7 @@ import {
 
 type Props = {
   disabled?: boolean;
+  onObservedDodgeRateChange?: (rate: number | null) => void;
   predictedCleared: boolean;
   predictedSeconds: number | null;
 };
@@ -30,6 +31,7 @@ const newId = () => `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
 
 export const NativeRaidCalibrationPanel = ({
   disabled = false,
+  onObservedDodgeRateChange,
   predictedCleared,
   predictedSeconds,
 }: Props) => {
@@ -58,6 +60,17 @@ export const NativeRaidCalibrationPanel = ({
   }, []);
 
   const observedDodgesEnabled = profile.canApplyDodgeCalibration && useObservedDodges;
+
+  useEffect(() => {
+    onObservedDodgeRateChange?.(
+      observedDodgesEnabled ? profile.dodgeSuccessRate : null,
+    );
+  }, [observedDodgesEnabled, onObservedDodgeRateChange, profile.dodgeSuccessRate]);
+
+  useEffect(
+    () => () => onObservedDodgeRateChange?.(null),
+    [onObservedDodgeRateChange],
+  );
 
   const openLog = () => {
     setActualCleared(predictedCleared);

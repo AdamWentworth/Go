@@ -67,6 +67,11 @@ export const NativeRaidScreen = ({
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [settings, setSettings] = useState<NativeRaidSettings>(DEFAULT_NATIVE_RAID_SETTINGS);
+  const [observedDodgeSuccessRate, setObservedDodgeSuccessRate] = useState<number | null>(null);
+  const effectiveSettings = useMemo<NativeRaidSettings>(() => ({
+    ...settings,
+    dodgeSuccessRate: observedDodgeSuccessRate ?? settings.dodgeSuccessRate,
+  }), [observedDodgeSuccessRate, settings]);
   const bosses = useMemo(() => buildNativeRaidBosses(catalog), [catalog]);
   const selectedBoss = bosses.find((boss) => boss.id === bossId) ?? bosses[0] ?? null;
   const bossSuggestions = useMemo(() => {
@@ -85,14 +90,14 @@ export const NativeRaidScreen = ({
       instances,
       requiredType: view === 'rankings' ? selectedType : '',
       scope: effectiveScope,
-      settings,
+      settings: effectiveSettings,
     }).filter((entry) => !normalizedQuery || [
       entry.name,
       entry.fastMove?.name,
       entry.chargedMove?.name,
       ...entry.types,
     ].some((value) => value?.toLocaleLowerCase().includes(normalizedQuery))).slice(0, 100);
-  }, [catalog, effectiveScope, instances, query, selectedBoss, selectedType, settings, view]);
+  }, [catalog, effectiveScope, effectiveSettings, instances, query, selectedBoss, selectedType, view]);
 
   const customSettingCount = [
     settings.attackerLevel !== DEFAULT_NATIVE_RAID_SETTINGS.attackerLevel,
@@ -294,7 +299,7 @@ export const NativeRaidScreen = ({
         </Pressable>
       </View>
       {toolbar}
-      {view === 'boss' && selectedBoss ? <NativeRaidBossSetupPanel assetBaseUrl={assetBaseUrl} boss={selectedBoss} key={selectedBoss.id} scores={rankings} /> : null}
+      {view === 'boss' && selectedBoss ? <NativeRaidBossSetupPanel assetBaseUrl={assetBaseUrl} boss={selectedBoss} key={selectedBoss.id} onObservedDodgeRateChange={setObservedDodgeSuccessRate} scores={rankings} /> : null}
       {isLoading ? <View style={styles.state}><ActivityIndicator color="#2fd6d0" /><Text style={[styles.stateCopy, light && styles.mutedLight]}>Loading battle data…</Text></View> : null}
       {error ? (
         <View accessibilityRole="alert" style={styles.error}>
