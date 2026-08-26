@@ -6,6 +6,11 @@ import type {
   PokemonRaidDataChunk,
   RaidBoss,
 } from '@pokemongonexus/shared-contracts/pokemon';
+import type { PokemonVariant } from '@pokemongonexus/shared-contracts/variants';
+import {
+  rankMaxBattlePokemon,
+  type MaxRole,
+} from '@pokemongonexus/app-core/max-battle-model';
 import { getTypeEffectivenessMultiplier } from '@pokemongonexus/shared-domain/type-effectiveness';
 
 export const NATIVE_BATTLE_TYPES = ['bug', 'dark', 'dragon', 'electric', 'fairy', 'fighting', 'fire', 'flying', 'ghost', 'grass', 'ground', 'ice', 'normal', 'poison', 'psychic', 'rock', 'steel', 'water'] as const;
@@ -144,19 +149,6 @@ export const hydrateNativeMaxCatalog = (
     };
   });
 };
-
-const selectMoves = (pokemon: BasePokemon, targetTypes: string[] = [], requiredType = ''): { fast: Move | null; charged: Move | null; dps: number } => {
-  const ownTypes = [pokemon.type1_name, pokemon.type2_name].filter(Boolean).map((type) => type.toLocaleLowerCase());
-  const scoreMove = (move: Move) => Number(move.raid_power) / moveSeconds(move) * (ownTypes.includes(moveType(move)) ? 1.2 : 1) * nativeTypeEffectiveness(moveType(move), targetTypes);
-  const fast = [...validFastMoves(pokemon.moves ?? [])].filter((move) => !requiredType || moveType(move) === requiredType).sort((a, b) => scoreMove(b) - scoreMove(a))[0] ?? null;
-  const charged = [...validChargedMoves(pokemon.moves ?? [])].filter((move) => !requiredType || moveType(move) === requiredType).sort((a, b) => scoreMove(b) - scoreMove(a))[0] ?? null;
-  const fallbackFast = fast ?? [...validFastMoves(pokemon.moves ?? [])].sort((a, b) => scoreMove(b) - scoreMove(a))[0] ?? null;
-  const fallbackCharged = charged ?? [...validChargedMoves(pokemon.moves ?? [])].sort((a, b) => scoreMove(b) - scoreMove(a))[0] ?? null;
-  const combined = (fallbackFast ? scoreMove(fallbackFast) : 1) * .35 + (fallbackCharged ? scoreMove(fallbackCharged) : 1) * .65;
-  return { fast: fallbackFast, charged: fallbackCharged, dps: combined };
-};
-
-const ownedPokemonIds = (instances: Record<string, PokemonInstance>): Set<number> => new Set(Object.values(instances).filter((instance) => instance.is_caught && !instance.disabled).map((instance) => Number(instance.pokemon_id)));
 
 const resolveRecordedMove = (moves: Move[], moveId: number | null): Move | null => (
   moveId == null ? null : moves.find((move) => Number(move.move_id) === Number(moveId)) ?? null
@@ -326,27 +318,145 @@ export const buildNativeRaidAttackers = ({ boss, catalog, instances = {}, requir
 export const buildNativeRaidBosses = (catalog: BasePokemon[]): NativeRaidBossEntry[] => catalog.flatMap((pokemon) => (pokemon.raid_boss ?? []).map((boss) => ({ boss, id: `${pokemon.pokemon_id}-${boss.id}`, imageUri: pokemon.image_url, name: boss.name || pokemon.name, pokemon, types: [pokemon.type1_name, pokemon.type2_name].filter(Boolean).map((type) => type.toLocaleLowerCase()) }))).sort((a, b) => a.pokemon.pokedex_number - b.pokemon.pokedex_number);
 
 export type NativeMaxRole = 'damage' | 'tank' | 'healing';
+
+const maxVariant = (
+  pokemon: BasePokemon,
+  variantType: PokemonVariant['variantType'],
+  currentImage: string,
+  overrides: Partial<PokemonVariant> = {},
+): PokemonVariant => ({
+  ...pokemon,
+  currentImage,
+  name: pokemon.name,
+  species_name: pokemon.name,
+  variant_id: `${String(pokemon.pokemon_id).padStart(4, '0')}-${variantType}`,
+  variantType,
+  ...overrides,
+});
+
+export const buildNativeMaxVariants = (catalog: BasePokemon[]): PokemonVariant[] =>
+  catalog.flatMap((pokemon) => {
+    const variants: PokemonVariant[] = [];
+    const maxForms = pokemon.max ?? [];
+    if (maxForms.some((form) => Boolean(form.dynamax))) {
+      variants.push(maxVariant(pokemon, 'dynamax', pokemon.image_url));
+    }
+    maxForms.filter((form) => Boolean(form.gigantamax)).forEach((form) => {
+      variants.push(maxVariant(
+        pokemon,
+        'gigantamax',
+        form.gigantamax_image_url || pokemon.image_url,
+      ));
+    });
+    if (pokemon.pokemon_id === 890) {
+      variants.push(maxVariant(pokemon, 'default', pokemon.image_url));
+    }
+    if (pokemon.pokemon_id === 888 || pokemon.pokemon_id === 889) {
+      (pokemon.crownForms ?? []).forEach((crown) => {
+        const form = crown.form ?? (pokemon.pokemon_id === 888
+          ? 'crowned_sword'
+          : 'crowned_shield');
+        variants.push(maxVariant(pokemon, 'default', crown.image_url || pokemon.image_url, {
+          attack: crown.attack ?? pokemon.attack,
+          cp40: crown.cp40 ?? pokemon.cp40,
+          cp50: crown.cp50 ?? pokemon.cp50,
+          defense: crown.defense ?? pokemon.defense,
+          form,
+          moves: crown.moves?.length ? crown.moves : pokemon.moves,
+          name: crown.name || pokemon.name,
+          stamina: crown.stamina ?? pokemon.stamina,
+          type1_name: crown.type1_name ?? pokemon.type1_name,
+          type2_name: crown.type2_name ?? pokemon.type2_name,
+          variant_id: `${String(pokemon.pokemon_id).padStart(4, '0')}-${form}`,
+        }));
+      });
+    }
+    return variants;
+  });
+
+const personalizeNativeMaxVariants = (
+  variants: PokemonVariant[],
+  instances: Record<string, PokemonInstance>,
+): PokemonVariant[] => {
+  const candidatesByPokemon = new Map<number, PokemonVariant[]>();
+  variants.forEach((variant) => {
+    const candidates = candidatesByPokemon.get(variant.pokemon_id) ?? [];
+    candidates.push(variant);
+    candidatesByPokemon.set(variant.pokemon_id, candidates);
+  });
+  return Object.entries(instances).flatMap(([sourceKey, instance]) => {
+    if (!instance.is_caught || instance.disabled) return [];
+    const candidates = candidatesByPokemon.get(Number(instance.pokemon_id)) ?? [];
+    const requested = instance.crown
+      ? candidates.find((variant) => variant.form?.toLocaleLowerCase().includes('crowned'))
+      : instance.gigantamax
+        ? candidates.find((variant) => variant.variantType.includes('gigantamax'))
+        : instance.dynamax
+          ? candidates.find((variant) => variant.variantType.includes('dynamax'))
+          : candidates.find((variant) => variant.variantType === 'default');
+    if (!requested) return [];
+    const recordedFast = resolveRecordedMove(requested.moves ?? [], instance.fast_move_id);
+    const hasRecordedIvs = [instance.attack_iv, instance.defense_iv, instance.stamina_iv]
+      .every((value) => value != null && Number.isFinite(Number(value)));
+    const hasLevelOrCp = Number(instance.level) > 0 || Number(instance.cp) > 0;
+    if (!recordedFast || !hasRecordedIvs || !hasLevelOrCp) return [];
+    const instanceId = String(instance.instance_id || sourceKey);
+    return [{
+      ...requested,
+      instanceData: { ...instance, instance_id: instanceId },
+      moves: [
+        recordedFast,
+        ...(requested.moves ?? []).filter((move) => Number(move.is_fast) === 0),
+      ],
+      raidRoster: {
+        cpSource: Number(instance.cp) > 0 ? 'recorded' : 'calculated',
+        formSource: instance.crown ? 'crown' : 'base',
+        instanceId,
+        ivSource: 'recorded',
+        levelSource: Number(instance.level) > 0 ? 'recorded' : 'inferred',
+        moveSource: 'recorded',
+        source: 'caught',
+      },
+      variant_id: `${requested.variant_id}::max-caught::${instanceId}`,
+    } satisfies PokemonVariant];
+  });
+};
+
 export const buildNativeMaxRankings = ({ boss, catalog, instances = {}, role, scope = 'catalog', selectedType = '' }: {
   boss?: BasePokemon | null; catalog: BasePokemon[]; instances?: Record<string, PokemonInstance>; role: NativeMaxRole; scope?: NativeRosterScope; selectedType?: string;
 }): NativeCombatEntry[] => {
-  const owned = ownedPokemonIds(instances);
-  const targetTypes = boss ? [boss.type1_name, boss.type2_name].filter(Boolean).map((type) => type.toLocaleLowerCase()) : [];
-  return catalog.filter((pokemon) => pokemon.max?.some((form) => Boolean(form.dynamax || form.gigantamax)) && (scope === 'catalog' || owned.has(pokemon.pokemon_id))).flatMap((pokemon) => {
-    const forms = pokemon.max?.filter((form) => Boolean(form.dynamax || form.gigantamax)) ?? [];
-    return forms.flatMap((form) => {
-      const kind: NativeCombatEntry['maxKind'] = form.gigantamax ? 'gigantamax' : 'dynamax';
-      const selected = selectMoves(pokemon, targetTypes, selectedType);
-      if (!selected.fast) return [];
-      const maxType = kind === 'gigantamax' && form.gigantamax_move_type ? form.gigantamax_move_type.toLocaleLowerCase() : moveType(selected.fast);
-      if (selectedType && maxType !== selectedType) return [];
-      const attack = Number(pokemon.attack || 1);
-      const bulk = Number(pokemon.defense || 1) * Math.sqrt(Number(pokemon.stamina || 1));
-      const maxPower = kind === 'gigantamax' ? 450 : 350;
-      const effectiveness = nativeTypeEffectiveness(maxType, targetTypes);
-      const damage = attack * maxPower * effectiveness / 100;
-      const roleScore = role === 'damage' ? damage : role === 'tank' ? bulk : bulk * .65 + Number(pokemon.stamina || 0) * 1.6;
-      const imageUri = kind === 'gigantamax' ? form.gigantamax_image_url || pokemon.image_url : pokemon.image_url;
-      return [{ chargedMove: selected.charged, cp: pokemon.cp50 || pokemon.cp40 || 0, dps: damage, er: roleScore, fastMove: selected.fast, id: `${pokemon.pokemon_id}-${kind}`, imageUri, maxKind: kind, name: `${kind === 'gigantamax' ? 'Gigantamax' : 'Dynamax'} ${pokemon.name}`, pokemonId: pokemon.pokemon_id, rosterDetail: null, score: roleScore, sourceInstanceId: null, tdo: bulk, types: [pokemon.type1_name, pokemon.type2_name].filter(Boolean).map((type) => type.toLocaleLowerCase()) }];
-    });
-  }).sort((left, right) => right.score - left.score);
+  const catalogVariants = buildNativeMaxVariants(catalog);
+  const rankingVariants = scope === 'owned'
+    ? personalizeNativeMaxVariants(catalogVariants, instances)
+    : catalogVariants;
+  const bossVariant = boss
+    ? buildNativeMaxVariants([boss]).find((variant) => variant.variantType.includes('gigantamax'))
+      ?? buildNativeMaxVariants([boss])[0]
+      ?? null
+    : null;
+  return rankMaxBattlePokemon(rankingVariants, {
+    boss: bossVariant,
+    role: role as MaxRole,
+    selectedType,
+  }).map((entry) => ({
+    chargedMove: entry.chargedMove,
+    cp: entry.cp,
+    dps: entry.bossBenchmark?.maxHitDamage ?? entry.attackIndex,
+    er: entry.score,
+    fastMove: entry.fastMove,
+    id: entry.variant.variant_id,
+    imageUri: entry.variant.currentImage || entry.variant.image_url || null,
+    maxKind: entry.maxForm === 'special' ? null : entry.maxForm,
+    name: entry.displayName,
+    pokemonId: entry.variant.pokemon_id,
+    rosterDetail: entry.personalized
+      ? `Level ${entry.levelLabel}${entry.ivPercent == null ? '' : ` · ${entry.ivPercent}% IV`}`
+      : null,
+    score: entry.score,
+    sourceInstanceId: entry.variant.instanceData?.instance_id ?? null,
+    tdo: entry.effectiveBulk,
+    types: [entry.variant.type1_name, entry.variant.type2_name]
+      .filter(Boolean)
+      .map((type) => type.toLocaleLowerCase()),
+  }));
 };
