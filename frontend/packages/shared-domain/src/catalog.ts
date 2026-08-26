@@ -8,6 +8,8 @@ export type PokemonCatalogEntry = {
   imageUri: string | null;
   typeIconUris: string[];
   maxKind: 'dynamax' | 'gigantamax' | null;
+  evolvesFrom?: number[];
+  evolvesTo?: number[];
 };
 
 const titleCase = (value: string): string =>
@@ -69,6 +71,8 @@ export const buildPokemonCatalogEntries = (
       imageUri,
       typeIconUris: options.icons ?? baseTypeIcons(pokemon),
       maxKind: options.maxKind ?? null,
+      evolvesFrom: pokemon.evolves_from ?? pokemon.evolutionData?.evolves_from ?? [],
+      evolvesTo: pokemon.evolves_to ?? pokemon.evolutionData?.evolves_to ?? [],
     });
   };
 

@@ -54,6 +54,80 @@ const matchesCollection = (personal: NativeRankingPersonalStatus, filter: Native
   return true;
 };
 
+const collapsibleVariantClass = (entry: PokemonCatalogEntry): string | null => {
+  const suffix = entry.id.slice(entry.id.indexOf('-') + 1).toLocaleLowerCase();
+  return ['default', 'shiny', 'shadow', 'shiny_shadow', 'dynamax', 'shiny_dynamax', 'gigantamax', 'shiny_gigantamax'].includes(suffix)
+    ? suffix
+    : null;
+};
+
+const collapseRarestEvolutionFamilies = <T extends { entry: PokemonCatalogEntry }>(
+  rows: T[],
+  catalog: PokemonCatalogEntry[],
+): T[] => {
+  const species = new Map<number, PokemonCatalogEntry>();
+  catalog.forEach((entry) => {
+    if (!species.has(entry.pokemonId)) species.set(entry.pokemonId, entry);
+  });
+  const adjacency = new Map<number, Set<number>>();
+  const connect = (left: number, right: number) => {
+    if (!species.has(left) || !species.has(right)) return;
+    if (!adjacency.has(left)) adjacency.set(left, new Set());
+    if (!adjacency.has(right)) adjacency.set(right, new Set());
+    adjacency.get(left)?.add(right);
+    adjacency.get(right)?.add(left);
+  };
+  species.forEach((entry, pokemonId) => {
+    [...(entry.evolvesFrom ?? []), ...(entry.evolvesTo ?? [])]
+      .forEach((linkedId) => connect(pokemonId, Number(linkedId)));
+  });
+  const familyByPokemon = new Map<number, number>();
+  species.forEach((_entry, pokemonId) => {
+    if (familyByPokemon.has(pokemonId)) return;
+    const family = new Set<number>();
+    const pending = [pokemonId];
+    while (pending.length > 0) {
+      const current = pending.pop() as number;
+      if (family.has(current)) continue;
+      family.add(current);
+      adjacency.get(current)?.forEach((linked) => pending.push(linked));
+    }
+    const key = Math.min(...family);
+    family.forEach((member) => familyByPokemon.set(member, key));
+  });
+  const depthCache = new Map<number, number>();
+  const depth = (pokemonId: number, trail = new Set<number>()): number => {
+    const cached = depthCache.get(pokemonId);
+    if (cached != null) return cached;
+    const entry = species.get(pokemonId);
+    const parents = (entry?.evolvesFrom ?? []).filter((parent) => species.has(parent) && !trail.has(parent));
+    if (parents.length === 0) {
+      depthCache.set(pokemonId, 0);
+      return 0;
+    }
+    const nextTrail = new Set(trail).add(pokemonId);
+    const value = 1 + Math.min(...parents.map((parent) => depth(parent, nextTrail)));
+    depthCache.set(pokemonId, value);
+    return value;
+  };
+  const selected = new Map<string, T>();
+  rows.forEach((row) => {
+    const variantClass = collapsibleVariantClass(row.entry);
+    if (!variantClass) {
+      selected.set(`variant:${row.entry.id}`, row);
+      return;
+    }
+    const family = familyByPokemon.get(row.entry.pokemonId) ?? row.entry.pokemonId;
+    const key = `${family}:${variantClass}`;
+    const current = selected.get(key);
+    if (!current || depth(row.entry.pokemonId) < depth(current.entry.pokemonId)) {
+      selected.set(key, row);
+    }
+  });
+  const selectedIds = new Set([...selected.values()].map((row) => row.entry.id));
+  return rows.filter((row) => selectedIds.has(row.entry.id));
+};
+
 export const buildNativeRankingRows = ({ catalog, collectionFilter = 'all', instances = {}, category = 'all', mode, payload, query = '' }: {
   catalog: PokemonCatalogEntry[];
   collectionFilter?: NativeRankingCollectionFilter;
@@ -68,9 +142,15 @@ export const buildNativeRankingRows = ({ catalog, collectionFilter = 'all', inst
   const statuses = buildNativeRankingPersonalStatuses(instances);
   const normalized = query.trim().toLocaleLowerCase();
   const source = mode === 'wanted' ? payload.most_wanted : payload.rarest;
-  return source.flatMap((ranking, index) => {
+  const joined = source.flatMap((ranking) => {
     const entry = byId.get(ranking.variant_id);
     if (!entry) return [];
+    return [{ entry, ranking }];
+  });
+  const prepared = mode === 'rarest'
+    ? collapseRarestEvolutionFamilies(joined, catalog)
+    : joined;
+  return prepared.flatMap(({ entry, ranking }, index) => {
     if (mode === 'wanted' && entry.id.toLocaleLowerCase().includes('shadow')) return [];
     if (category !== 'all' && rankingCategory(entry) !== category) return [];
     if (normalized && !entry.name.toLocaleLowerCase().includes(normalized)
@@ -81,4 +161,3 @@ export const buildNativeRankingRows = ({ catalog, collectionFilter = 'all', inst
     return [{ caughtUsers: ranking.caught_users, entry, mostWantedUsers: ranking.most_wanted_users, personal, rank: index + 1, wantedUsers: ranking.wanted_users }];
   });
 };
-

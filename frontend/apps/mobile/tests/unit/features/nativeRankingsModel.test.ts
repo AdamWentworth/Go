@@ -13,4 +13,24 @@ describe('native rankings model', () => {
     expect(buildNativeRankingRows({ catalog: [...catalog], mode: 'rarest', payload, category: 'shiny', query: 'bulba' })[0]?.rank).toBe(1);
     expect(buildNativeRankingRows({ catalog: [...catalog], mode: 'rarest', payload, category: 'max' })).toEqual([]);
   });
+  it('collapses ordinary evolution families in rarity rankings while preserving collectibles', () => {
+    const familyCatalog = [
+      { ...catalog[0], evolvesFrom: [], evolvesTo: [2] },
+      { ...catalog[0], id: '0002-shiny', pokemonId: 2, pokedexNumber: 2, name: 'Shiny Ivysaur', evolvesFrom: [1], evolvesTo: [] },
+      { ...catalog[0], id: '0001-party_hat_shiny', name: 'Shiny Party Hat Bulbasaur', evolvesFrom: [], evolvesTo: [2] },
+    ];
+    const familyPayload = {
+      ...payload,
+      rarest: [
+        { variant_id: '0002-shiny', wanted_users: 1, most_wanted_users: 1, caught_users: 1 },
+        { variant_id: '0001-shiny', wanted_users: 2, most_wanted_users: 2, caught_users: 2 },
+        { variant_id: '0001-party_hat_shiny', wanted_users: 3, most_wanted_users: 3, caught_users: 3 },
+      ],
+    };
+    expect(buildNativeRankingRows({ catalog: familyCatalog, mode: 'rarest', payload: familyPayload }))
+      .toMatchObject([
+        { entry: { id: '0001-shiny' }, rank: 1 },
+        { entry: { id: '0001-party_hat_shiny' }, rank: 2 },
+      ]);
+  });
 });
