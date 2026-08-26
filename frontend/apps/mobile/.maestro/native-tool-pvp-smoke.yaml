@@ -106,6 +106,13 @@ name: Native PvP tool smoke
     speed: 40
     timeout: 15000
 - tapOn: "IV Rank"
+- runFlow:
+    when:
+      visible: "SDK version:.*"
+    commands:
+      - tapOn:
+          point: "90%,46%"
+      - tapOn: "IV Rank"
 - assertVisible: "Find the strongest IV spread for this league"
 - tapOn: "Bulbasaur"
 - scrollUntilVisible:
