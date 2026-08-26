@@ -17,7 +17,7 @@ describe('NativeRegisterScreen', () => {
       />,
     );
 
-    fireEvent.press(screen.getByText('✉  Continue with email'));
+    fireEvent.press(screen.getByText('Continue with email'));
 
     fireEvent.changeText(screen.getByPlaceholderText('Choose a unique username'), 'Misty_42');
     fireEvent.changeText(screen.getByPlaceholderText('you@example.com'), 'MISTY@example.com ');
@@ -64,7 +64,7 @@ describe('NativeRegisterScreen', () => {
       />,
     );
 
-    fireEvent.press(screen.getByText('✉  Continue with email'));
+    fireEvent.press(screen.getByText('Continue with email'));
 
     fireEvent.press(screen.getByText('Continue ›'));
     expect(screen.getByRole('alert')).toHaveTextContent(

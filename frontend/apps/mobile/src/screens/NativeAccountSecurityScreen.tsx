@@ -15,6 +15,7 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { NativeConfirmationDialog } from '../components/NativeConfirmationDialog';
+import { NativeSocialProviderIcon } from '../components/NativeSocialProviderIcon';
 import { NativeSettingsWorkspaceNav } from '../components/NativeSettingsWorkspaceNav';
 import {
   nativeOAuthProviderLabel,
@@ -85,12 +86,6 @@ const AccountField = ({
     {help ? <Text style={[styles.help, light && styles.mutedLight]}>{help}</Text> : null}
   </View>
 );
-
-const providerGlyph = (provider: OAuthProvider): string => {
-  if (provider === 'google') return 'G';
-  if (provider === 'discord') return '◉';
-  return 'f';
-};
 
 const providerGlyphStyle = (provider: OAuthProvider) => {
   if (provider === 'google') return styles.providerGoogle;
@@ -226,7 +221,7 @@ export const NativeAccountSecurityScreen = ({
             return (
               <View key={provider} style={[styles.provider, light && styles.providerLight]}>
                 <View style={[styles.providerGlyph, providerGlyphStyle(provider)]}>
-                  <Text style={[styles.providerGlyphText, provider !== 'google' && styles.providerGlyphTextOnColor]}>{providerGlyph(provider)}</Text>
+                  <NativeSocialProviderIcon provider={provider} size={21} />
                 </View>
                 <View style={styles.providerCopy}>
                   <Text style={[styles.providerTitle, light && styles.textLight]}>{label}</Text>
@@ -364,8 +359,6 @@ const styles = StyleSheet.create({
   providerGoogle: { backgroundColor: '#ffffff' },
   providerDiscord: { backgroundColor: '#5865f2' },
   providerFacebook: { backgroundColor: '#1877f2' },
-  providerGlyphText: { color: '#172124', fontSize: 19, fontWeight: '900' },
-  providerGlyphTextOnColor: { color: '#ffffff' },
   providerCopy: { flex: 1, minWidth: 0 },
   providerTitle: { color: '#f7fbfa', fontSize: 14, fontWeight: '900' },
   compactAction: { minHeight: 44, minWidth: 88, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 10, borderWidth: 1, borderColor: '#587174', borderRadius: 8, backgroundColor: '#171f20' },

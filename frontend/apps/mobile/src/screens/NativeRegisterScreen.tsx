@@ -11,14 +11,17 @@ import {
   TextInput,
   View,
   useColorScheme,
+  useWindowDimensions,
 } from 'react-native';
 import type { OAuthProvider } from '@pokemongonexus/shared-contracts/auth';
+import Svg, { Path } from 'react-native-svg';
 import {
   buildNativeRegistrationRequest,
   createNativeRegistrationDraft,
   validateNativeRegistrationStep,
 } from '../features/auth/nativeRegistrationModel';
 import { NativeLocationAutocompleteInput } from '../components/NativeLocationAutocompleteInput';
+import { NativeSocialProviderIcon } from '../components/NativeSocialProviderIcon';
 
 type Props = {
   onBackToLogin: () => void;
@@ -33,10 +36,10 @@ type Props = {
   onRegistered: () => void;
 };
 
-const SOCIAL_PROVIDERS: { provider: OAuthProvider; label: string; glyph: string }[] = [
-  { provider: 'google', label: 'Sign up with Google', glyph: 'G' },
-  { provider: 'discord', label: 'Sign up with Discord', glyph: '◉' },
-  { provider: 'facebook', label: 'Sign up with Facebook', glyph: 'f' },
+const SOCIAL_PROVIDERS: { provider: OAuthProvider; label: string }[] = [
+  { provider: 'google', label: 'Sign up with Google' },
+  { provider: 'discord', label: 'Sign up with Discord' },
+  { provider: 'facebook', label: 'Sign up with Facebook' },
 ];
 
 const STEP_COPY = [
@@ -57,6 +60,8 @@ export const NativeRegisterScreen = ({
   onRegistered,
 }: Props) => {
   const light = useColorScheme() === 'light';
+  const { width } = useWindowDimensions();
+  const compact = width < 600;
   const [draft, setDraft] = useState(createNativeRegistrationDraft);
   const [step, setStep] = useState(0);
   const [error, setError] = useState<string | null>(null);
@@ -121,14 +126,14 @@ export const NativeRegisterScreen = ({
   };
 
   return (
-    <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={[styles.root, light && styles.rootLight]}>
-      <ScrollView automaticallyAdjustKeyboardInsets contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
-        <View style={[styles.card, light && styles.cardLight]}>
+    <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={[styles.root, light && styles.rootLight, compact && styles.rootCompact, compact && light && styles.rootCompactLight]}>
+      <ScrollView automaticallyAdjustKeyboardInsets contentContainerStyle={[styles.content, compact && styles.contentCompact]} keyboardShouldPersistTaps="handled">
+        <View style={[styles.card, light && styles.cardLight, compact && styles.cardCompact, compact && light && styles.cardCompactLight]}>
           <View style={styles.header}>
             <View style={styles.headerCopy}>
               <Text style={styles.brandEyebrow}>TRAINER REGISTRATION</Text>
-              <Text accessibilityRole="header" style={[styles.title, light && styles.textLight]}>Create your account</Text>
-              <Text style={[styles.subtitle, light && styles.mutedLight]}>A few quick steps, then your trainer journey begins.</Text>
+              <Text accessibilityRole="header" style={[styles.title, compact && styles.titleCompact, light && styles.textLight]}>Create your account</Text>
+              {!compact || method ? <Text style={[styles.subtitle, light && styles.mutedLight]}>A few quick steps, then your trainer journey begins.</Text> : null}
             </View>
             <Pressable accessibilityRole="button" onPress={onBackToLogin} style={[styles.signInButton, light && styles.secondaryLight]}>
               <Text style={[styles.signInText, light && styles.textLight]}>Sign in</Text>
@@ -147,11 +152,13 @@ export const NativeRegisterScreen = ({
           ) : null}
 
           {!method ? (
-            <View style={styles.methodPicker}>
-              <Text style={styles.stepEyebrow}>CHOOSE A SIGN-UP METHOD</Text>
-              <Text style={[styles.methodTitle, light && styles.textLight]}>Start your trainer account</Text>
-              <Text style={[styles.stepDescription, light && styles.mutedLight]}>Use a trusted provider or your email address.</Text>
-              {SOCIAL_PROVIDERS.map(({ provider, label, glyph }) => (
+            <View style={[styles.methodPicker, compact && styles.methodPickerCompact]}>
+              {!compact ? <>
+                <Text style={styles.stepEyebrow}>CHOOSE A SIGN-UP METHOD</Text>
+                <Text style={[styles.methodTitle, light && styles.textLight]}>Start your trainer account</Text>
+                <Text style={[styles.stepDescription, light && styles.mutedLight]}>Use a trusted provider or your email address.</Text>
+              </> : null}
+              {SOCIAL_PROVIDERS.map(({ provider, label }) => (
                 <Pressable
                   accessibilityRole="button"
                   disabled={submitting}
@@ -159,19 +166,27 @@ export const NativeRegisterScreen = ({
                   onPress={() => void startOAuth(provider)}
                   style={[
                     styles.socialButton,
+                    compact && styles.methodButtonCompact,
                     provider === 'google' && styles.googleButton,
                     provider === 'discord' && styles.discordButton,
                     provider === 'facebook' && styles.facebookButton,
                   ]}
                 >
-                  <Text style={[styles.socialGlyph, provider === 'google' && styles.googleGlyph]}>{glyph}</Text>
+                  <View style={styles.socialGlyph}>
+                    <NativeSocialProviderIcon provider={provider} />
+                  </View>
                   <Text style={[styles.socialText, provider === 'google' && styles.googleText]}>{label}</Text>
                 </Pressable>
               ))}
-              <Pressable accessibilityRole="button" disabled={submitting} onPress={() => setMethod('email')} style={[styles.emailButton, light && styles.secondaryLight]}>
-                <Text style={[styles.emailButtonText, light && styles.textLight]}>✉  Continue with email</Text>
+              <Pressable accessibilityRole="button" disabled={submitting} onPress={() => setMethod('email')} style={[styles.emailButton, compact && styles.methodButtonCompact, light && styles.secondaryLight]}>
+                <View style={styles.emailButtonContent}>
+                  <Svg accessibilityElementsHidden height={18} viewBox="0 0 24 24" width={18}>
+                    <Path d="M20 4H4a2 2 0 0 0-2 2v12c0 1.1.9 2 2 2h16a2 2 0 0 0 2-2V6c0-1.1-.9-2-2-2Zm0 4-8 5-8-5V6l8 5 8-5v2Z" fill={light ? '#39504e' : '#ffffff'} />
+                  </Svg>
+                  <Text style={[styles.emailButtonText, light && styles.textLight]}>Continue with email</Text>
+                </View>
               </Pressable>
-              <Text style={[styles.providerNote, light && styles.mutedLight]}>Your provider verifies your email. You will still choose a Pokémon Go Nexus username.</Text>
+              <Text style={[styles.providerNote, compact && styles.providerNoteCompact, light && styles.mutedLight]}>Your provider verifies your email. You will still choose a Pokémon Go Nexus username.</Text>
             </View>
           ) : null}
 
@@ -314,12 +329,17 @@ const ReviewRow = ({ label, light, onPress, value }: { label: string; light: boo
 
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: '#07111e' }, rootLight: { backgroundColor: '#eef5f8' },
+  rootCompact: { backgroundColor: '#202224' }, rootCompactLight: { backgroundColor: '#eaf7f1' },
   content: { flexGrow: 1, justifyContent: 'center', paddingHorizontal: 12, paddingVertical: 28 },
+  contentCompact: { justifyContent: 'flex-start', paddingHorizontal: 16, paddingTop: 16 },
   card: { width: '100%', maxWidth: 760, alignSelf: 'center', borderWidth: 1, borderColor: '#4179a1', borderRadius: 20, padding: 18, backgroundColor: '#202428' },
   cardLight: { borderColor: '#9bc2df', backgroundColor: '#fff' },
+  cardCompact: { borderWidth: 0, borderRadius: 0, padding: 0, backgroundColor: 'transparent' },
+  cardCompactLight: { backgroundColor: 'transparent' },
   header: { flexDirection: 'row', alignItems: 'flex-start', gap: 10 }, headerCopy: { flex: 1 },
   brandEyebrow: { color: '#2098ff', fontSize: 10, fontWeight: '900', letterSpacing: 1.5 },
   title: { color: '#fff', fontSize: 30, fontWeight: '900' }, subtitle: { color: '#b3bec5', fontSize: 13, lineHeight: 18 },
+  titleCompact: { fontSize: 26 },
   signInButton: { minHeight: 42, justifyContent: 'center', borderWidth: 1, borderColor: '#68747b', borderRadius: 999, paddingHorizontal: 15, backgroundColor: '#282d31' }, signInText: { color: '#fff', fontWeight: '900' },
   progress: { flexDirection: 'row', gap: 5, marginVertical: 16 }, progressSegment: { flex: 1, height: 4, borderRadius: 2, backgroundColor: '#485157' }, progressActive: { backgroundColor: '#2098ff' },
   stepHeading: { marginBottom: 12 }, stepEyebrow: { color: '#2098ff', fontSize: 11, fontWeight: '900', letterSpacing: 1.2 }, stepDescription: { marginTop: 3, color: '#b3bec5', fontSize: 13 },
@@ -336,18 +356,21 @@ const styles = StyleSheet.create({
   continueButton: { minWidth: 142, minHeight: 48, alignItems: 'center', justifyContent: 'center', borderRadius: 11, paddingHorizontal: 18, backgroundColor: '#0b86ee' }, continueText: { color: '#fff', fontSize: 14, fontWeight: '900' },
   secondaryLight: { borderColor: '#b5c1c6', backgroundColor: '#f5f8f9' }, textLight: { color: '#142126' }, mutedLight: { color: '#5e7077' },
   methodPicker: { gap: 10, paddingTop: 4 },
+  methodPickerCompact: { gap: 14, paddingTop: 32 },
   methodTitle: { color: '#fff', fontSize: 23, fontWeight: '900', textAlign: 'center' },
   socialButton: { minHeight: 54, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10, borderRadius: 12, paddingHorizontal: 16 },
+  methodButtonCompact: { minHeight: 76, borderRadius: 15 },
   googleButton: { borderWidth: 1, borderColor: '#d9dee4', backgroundColor: '#fff' },
   discordButton: { backgroundColor: '#5865f2' },
   facebookButton: { backgroundColor: '#1877f2' },
-  socialGlyph: { minWidth: 25, color: '#fff', fontSize: 23, fontWeight: '900', textAlign: 'center' },
-  googleGlyph: { color: '#4285f4', fontSize: 20 },
+  socialGlyph: { width: 29, alignItems: 'center', justifyContent: 'center' },
   socialText: { color: '#fff', fontSize: 15, fontWeight: '900' },
   googleText: { color: '#202124' },
   emailButton: { minHeight: 54, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: '#68747b', borderRadius: 12, backgroundColor: '#282d31' },
+  emailButtonContent: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10 },
   emailButtonText: { color: '#fff', fontSize: 15, fontWeight: '900' },
   providerNote: { color: '#a7b6bd', fontSize: 11, lineHeight: 16, textAlign: 'center' },
+  providerNoteCompact: { marginTop: 17, paddingHorizontal: 4, fontWeight: '700' },
   verifiedEmail: { gap: 3, borderWidth: 1, borderColor: '#3d5964', borderRadius: 11, padding: 12, backgroundColor: '#172126' },
   methodLoading: { marginTop: 12 },
 });

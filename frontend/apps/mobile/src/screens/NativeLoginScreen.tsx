@@ -13,6 +13,7 @@ import {
 } from 'react-native';
 import { ApiClientError } from '@pokemongonexus/shared-api-client';
 import { theme } from '../ui/theme';
+import { NativeSocialProviderIcon } from '../components/NativeSocialProviderIcon';
 
 type NativeLoginScreenProps = {
   notice?: string | null;
@@ -26,13 +27,12 @@ type NativeLoginScreenProps = {
 export type NativeLoginProvider = 'google' | 'discord' | 'facebook';
 
 const SOCIAL_PROVIDERS: {
-  glyph: string;
   label: string;
   provider: NativeLoginProvider;
 }[] = [
-  { glyph: 'G', label: 'Login with Google', provider: 'google' },
-  { glyph: '◉', label: 'Login with Discord', provider: 'discord' },
-  { glyph: 'f', label: 'Login with Facebook', provider: 'facebook' },
+  { label: 'Login with Google', provider: 'google' },
+  { label: 'Login with Discord', provider: 'discord' },
+  { label: 'Login with Facebook', provider: 'facebook' },
 ];
 
 const errorMessage = (error: unknown): string => {
@@ -182,7 +182,7 @@ export const NativeLoginScreen = ({
           </Pressable>
 
           <View style={styles.socialButtons}>
-            {SOCIAL_PROVIDERS.map(({ glyph, label, provider }) => (
+            {SOCIAL_PROVIDERS.map(({ label, provider }) => (
               <Pressable
                 accessibilityRole="button"
                 disabled={isSubmitting}
@@ -196,10 +196,9 @@ export const NativeLoginScreen = ({
                   pressed && styles.socialPressed,
                 ]}
               >
-                <Text style={[
-                  styles.socialGlyph,
-                  provider === 'google' && styles.googleGlyph,
-                ]}>{glyph}</Text>
+                <View style={styles.socialGlyph}>
+                  <NativeSocialProviderIcon provider={provider} />
+                </View>
                 <Text style={[
                   styles.socialButtonText,
                   provider === 'google' && styles.googleButtonText,
@@ -301,8 +300,7 @@ const styles = StyleSheet.create({
   googleButton: { borderColor: '#d8dce1', backgroundColor: '#ffffff' },
   discordButton: { backgroundColor: '#5865f2' },
   facebookButton: { backgroundColor: '#1877f2' },
-  socialGlyph: { minWidth: 24, color: '#ffffff', fontSize: 24, fontWeight: '900', textAlign: 'center' },
-  googleGlyph: { color: '#4285f4', fontSize: 21 },
+  socialGlyph: { width: 29, alignItems: 'center', justifyContent: 'center' },
   socialButtonText: { color: '#ffffff', fontSize: 16, fontWeight: '800' },
   googleButtonText: { color: '#202124' },
   socialPressed: { opacity: 0.88, transform: [{ scale: 0.995 }] },

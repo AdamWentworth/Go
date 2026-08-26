@@ -17,6 +17,7 @@ name: Native registration workflow smoke
 - assertVisible: "Sign up with Google"
 - assertVisible: "Sign up with Discord"
 - assertVisible: "Sign up with Facebook"
+- takeScreenshot: "native-registration-method"
 - tapOn: ".*Continue with email.*"
 - assertVisible: "YOUR ACCOUNT"
 - tapOn: "Username"
