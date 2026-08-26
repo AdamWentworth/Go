@@ -246,16 +246,23 @@ tags:
 - takeScreenshot: 06e-location-background-selector
 - tapOn: Close background selector
 - assertVisible: Save Pokémon
-- scrollUntilVisible:
-    element:
-      text: Choose fast move
-    direction: DOWN
-    centerElement: true
-    timeout: 20000
+- swipe:
+    start: 50%, 82%
+    end: 50%, 52%
+    duration: 450
+- swipe:
+    start: 50%, 82%
+    end: 50%, 52%
+    duration: 450
+- swipe:
+    start: 50%, 82%
+    end: 50%, 62%
+    duration: 350
 - extendedWaitUntil:
     visible: MOVES
     timeout: 10000
-- tapOn: Choose fast move
+- tapOn:
+    id: native-move-selector-fast-move
 - assertVisible: MOVE SELECTOR
 - assertVisible: Bullet Punch
 - takeScreenshot: 06f-move-selector
@@ -278,7 +285,12 @@ tags:
 - extendedWaitUntil:
     visible: CAUGHT DETAILS
     timeout: 10000
-- assertVisible: LUCKY
+- scrollUntilVisible:
+    element:
+      text: LUCKY
+    direction: DOWN
+    speed: 40
+    timeout: 20000
 - scrollUntilVisible:
     element:
       text: OBTAINED IN A TRADE
@@ -321,7 +333,7 @@ tags:
 - assertVisible: Raid
 - assertVisible: Search
 - assertVisible: Pokémon
-- assertVisible: Pokedex
+- assertVisible: Pokédex
 - assertVisible: Home
 - assertVisible: PvP
 - assertVisible: Trades
