@@ -9,7 +9,9 @@ import type {
 import type { PokemonVariant } from '@pokemongonexus/shared-contracts/variants';
 import {
   rankMaxBattlePokemon,
+  type MaxRankingEntry,
   type MaxRole,
+  type MaxRoleCandidates,
 } from '@pokemongonexus/app-core/max-battle-model';
 import { getTypeEffectivenessMultiplier } from '@pokemongonexus/shared-domain/type-effectiveness';
 
@@ -324,15 +326,22 @@ const maxVariant = (
   variantType: PokemonVariant['variantType'],
   currentImage: string,
   overrides: Partial<PokemonVariant> = {},
-): PokemonVariant => ({
-  ...pokemon,
-  currentImage,
-  name: pokemon.name,
-  species_name: pokemon.name,
-  variant_id: `${String(pokemon.pokemon_id).padStart(4, '0')}-${variantType}`,
-  variantType,
-  ...overrides,
-});
+): PokemonVariant => {
+  const prefix = variantType === 'gigantamax'
+    ? 'Gigantamax '
+    : variantType === 'dynamax'
+      ? 'Dynamax '
+      : '';
+  return {
+    ...pokemon,
+    currentImage,
+    name: `${prefix}${pokemon.name}`,
+    species_name: pokemon.name,
+    variant_id: `${String(pokemon.pokemon_id).padStart(4, '0')}-${variantType}`,
+    variantType,
+    ...overrides,
+  };
+};
 
 export const buildNativeMaxVariants = (catalog: BasePokemon[]): PokemonVariant[] =>
   catalog.flatMap((pokemon) => {
@@ -422,23 +431,57 @@ const personalizeNativeMaxVariants = (
   });
 };
 
-export const buildNativeMaxRankings = ({ boss, catalog, instances = {}, role, scope = 'catalog', selectedType = '' }: {
-  boss?: BasePokemon | null; catalog: BasePokemon[]; instances?: Record<string, PokemonInstance>; role: NativeMaxRole; scope?: NativeRosterScope; selectedType?: string;
-}): NativeCombatEntry[] => {
+type NativeMaxRankingOptions = {
+  boss?: BasePokemon | null;
+  bossVariant?: PokemonVariant | null;
+  catalog: BasePokemon[];
+  instances?: Record<string, PokemonInstance>;
+  role: NativeMaxRole;
+  scope?: NativeRosterScope;
+  selectedType?: string;
+};
+
+export const buildNativeMaxBossVariant = (
+  boss?: BasePokemon | null,
+): PokemonVariant | null => {
+  if (!boss) return null;
+  const variants = buildNativeMaxVariants([boss]);
+  return variants.find((variant) => variant.variantType.includes('gigantamax'))
+    ?? variants[0]
+    ?? null;
+};
+
+export const buildNativeMaxCanonicalRankings = ({
+  boss,
+  bossVariant,
+  catalog,
+  instances = {},
+  role,
+  scope = 'catalog',
+  selectedType = '',
+}: NativeMaxRankingOptions): MaxRankingEntry[] => {
   const catalogVariants = buildNativeMaxVariants(catalog);
   const rankingVariants = scope === 'owned'
     ? personalizeNativeMaxVariants(catalogVariants, instances)
     : catalogVariants;
-  const bossVariant = boss
-    ? buildNativeMaxVariants([boss]).find((variant) => variant.variantType.includes('gigantamax'))
-      ?? buildNativeMaxVariants([boss])[0]
-      ?? null
-    : null;
   return rankMaxBattlePokemon(rankingVariants, {
-    boss: bossVariant,
+    boss: bossVariant ?? buildNativeMaxBossVariant(boss),
     role: role as MaxRole,
     selectedType,
-  }).map((entry) => ({
+  });
+};
+
+export const buildNativeMaxRoleCandidates = (
+  options: Omit<NativeMaxRankingOptions, 'role' | 'selectedType'>,
+): MaxRoleCandidates => ({
+  damage: buildNativeMaxCanonicalRankings({ ...options, role: 'damage' }),
+  tank: buildNativeMaxCanonicalRankings({ ...options, role: 'tank' }),
+  healing: buildNativeMaxCanonicalRankings({ ...options, role: 'healing' }),
+});
+
+export const buildNativeMaxRankings = (
+  options: NativeMaxRankingOptions,
+): NativeCombatEntry[] => buildNativeMaxCanonicalRankings(options).map((entry) => ({
     chargedMove: entry.chargedMove,
     cp: entry.cp,
     dps: entry.bossBenchmark?.maxHitDamage ?? entry.attackIndex,
@@ -459,4 +502,3 @@ export const buildNativeMaxRankings = ({ boss, catalog, instances = {}, role, sc
       .filter(Boolean)
       .map((type) => type.toLocaleLowerCase()),
   }));
-};

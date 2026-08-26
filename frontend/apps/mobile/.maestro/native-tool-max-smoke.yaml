@@ -17,7 +17,8 @@ name: Native Max Battles tool smoke
     visible: "Max Battles"
     timeout: 45000
 - tapOn: "Tank"
-- assertVisible: "Top tank rankings"
+- assertVisible: "Top tanks"
 - tapOn: "Boss teams"
-- assertVisible: "BOSS TEAM"
+- assertVisible: "RECOMMENDED PARTY"
+- assertVisible: "Standard play"
 - takeScreenshot: "native-tool-max"
