@@ -79,8 +79,9 @@ name: Native Raid tool smoke
 - takeScreenshot: "native-tool-raid-party"
 - scrollUntilVisible:
     element:
-      text: "Battle team"
+      text: "Trainer 1 team slot 1"
     direction: DOWN
+    timeout: 20000
 - assertVisible: "Trainer 1 team slot 1"
 - takeScreenshot: "native-tool-raid-party-trainer"
 - scrollUntilVisible:

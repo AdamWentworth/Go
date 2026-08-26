@@ -54,6 +54,11 @@ tags:
     direction: DOWN
     timeout: 10000
 - assertVisible: Trade preferences
+- scrollUntilVisible:
+    element:
+      text: Trade activity
+    direction: DOWN
+    timeout: 10000
 - assertVisible: Trade activity
 - scrollUntilVisible:
     element:
