@@ -62,6 +62,7 @@ type Props = {
   onReturnToContext?: () => void;
   requireTagSelection?: boolean;
   initialTagKey?: string | null;
+  initialQuery?: string;
   syncStatus?: ReactNode;
 };
 
@@ -90,11 +91,12 @@ export const NativeCollectionHubScreen = ({
   onReturnToContext,
   requireTagSelection = false,
   initialTagKey = null,
+  initialQuery = '',
   syncStatus = null,
 }: Props) => {
   const light = useColorScheme() === 'light';
   const { width } = useWindowDimensions();
-  const [query, setQuery] = useState('');
+  const [query, setQuery] = useState(initialQuery);
   const [activeView, setActiveView] = useState<NativePokemonHubView>('pokemon');
   const [selectedTagKey, setSelectedTagKey] = useState<string | null>(initialTagKey);
   const [actionMenuOpen, setActionMenuOpen] = useState(false);

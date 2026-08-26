@@ -13,6 +13,11 @@ import { NativePvpScreen } from "../../screens/NativePvpScreen";
 import { NativeRaidScreen } from "../../screens/NativeRaidScreen";
 import { NativeRankingsScreen } from "../../screens/NativeRankingsScreen";
 import type { NativePokedexManualRegistration } from "../../features/tools/nativePokedexModel";
+import type {
+  NativeRankingCategory,
+  NativeRankingCollectionFilter,
+  NativeRankingMode,
+} from "../../features/tools/nativeRankingsModel";
 
 const ASSET_BASE_URL = runtimeConfig.api.frontendAppUrl;
 const imageUri = `${ASSET_BASE_URL}/images/shiny/shiny_pokemon_1.png`;
@@ -328,6 +333,40 @@ function DeviceSmokePokedexDetail() {
   );
 }
 
+function DeviceSmokeRankings() {
+  const [category, setCategory] = useState<NativeRankingCategory>('all');
+  const [collectionFilter, setCollectionFilter] = useState<NativeRankingCollectionFilter>('all');
+  const [mode, setMode] = useState<NativeRankingMode>('wanted');
+  const [query, setQuery] = useState('');
+  const normalized = query.trim().toLocaleLowerCase();
+  const rows = (category === 'all' || category === 'shiny')
+    && (collectionFilter === 'all' || collectionFilter === 'owned' || collectionFilter === 'wanted')
+    && (!normalized || rankingRow.entry.name.toLocaleLowerCase().includes(normalized))
+    ? [rankingRow]
+    : [];
+  return (
+    <NativeRankingsScreen
+      assetBaseUrl={ASSET_BASE_URL}
+      collectionFilterCounts={{ all: 1, missing: 0, owned: 1, trade: 0, wanted: 1 }}
+      collectorCount={5}
+      onBack={noOp}
+      onChangeCategory={setCategory}
+      onChangeCollectionFilter={setCollectionFilter}
+      onChangeMode={setMode}
+      onChangeQuery={setQuery}
+      onOpenEntry={noOp}
+      onRetry={noOp}
+      privacyThreshold={3}
+      rows={rows}
+      selectedCategory={category}
+      selectedCollectionFilter={collectionFilter}
+      selectedMode={mode}
+      showCollectionFilters
+      snapshotLabel="Recently updated"
+    />
+  );
+}
+
 export default function DeviceSmokeToolsRoute() {
   const params = useLocalSearchParams<{ tool?: string | string[] }>();
   if (!runtimeConfig.mobile.deviceSmokeMode) return <Redirect href="/" />;
@@ -384,26 +423,7 @@ export default function DeviceSmokeToolsRoute() {
     );
   }
   if (tool === "rankings") {
-    return (
-      <NativeRankingsScreen
-        assetBaseUrl={ASSET_BASE_URL}
-        collectorCount={5}
-        onBack={noOp}
-        onChangeCategory={noOp}
-        onChangeCollectionFilter={noOp}
-        onChangeMode={noOp}
-        onChangeQuery={noOp}
-        onOpenEntry={noOp}
-        onRetry={noOp}
-        privacyThreshold={3}
-        rows={[rankingRow]}
-        selectedCategory="all"
-        selectedCollectionFilter="all"
-        selectedMode="wanted"
-        showCollectionFilters
-        snapshotLabel="Recently updated"
-      />
-    );
+    return <DeviceSmokeRankings />;
   }
   return <Redirect href="/device-smoke/home" />;
 }

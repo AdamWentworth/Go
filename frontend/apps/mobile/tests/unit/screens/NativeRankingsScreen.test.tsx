@@ -5,7 +5,17 @@ const row = { caughtUsers: 3, entry: { id: '0001-shiny', pokemonId: 1, pokedexNu
 describe('NativeRankingsScreen', () => {
   it('changes ranking controls and opens exact Pokémon', () => {
     const onChangeMode = jest.fn(); const onOpenEntry = jest.fn();
-    render(<SafeAreaProvider initialMetrics={{ frame: { x: 0, y: 0, width: 390, height: 844 }, insets: { top: 24, right: 0, bottom: 20, left: 0 } }}><NativeRankingsScreen assetBaseUrl="https://pokegonexus.com" collectorCount={5} onBack={jest.fn()} onChangeCategory={jest.fn()} onChangeCollectionFilter={jest.fn()} onChangeMode={onChangeMode} onChangeQuery={jest.fn()} onOpenEntry={onOpenEntry} onRetry={jest.fn()} privacyThreshold={3} rows={[row]} selectedCategory="all" selectedCollectionFilter="all" selectedMode="wanted" showCollectionFilters snapshotLabel="Recently updated" /></SafeAreaProvider>);
-    expect(screen.getByText('Community Rankings')).toBeTruthy(); fireEvent.press(screen.getByText('◆ Rarest owned')); expect(onChangeMode).toHaveBeenCalledWith('rarest'); fireEvent.press(screen.getByLabelText('Open rank 1, Shiny Bulbasaur')); expect(onOpenEntry).toHaveBeenCalledWith(row);
+    render(<SafeAreaProvider initialMetrics={{ frame: { x: 0, y: 0, width: 390, height: 844 }, insets: { top: 24, right: 0, bottom: 20, left: 0 } }}><NativeRankingsScreen assetBaseUrl="https://pokegonexus.com" collectionFilterCounts={{ all: 1, missing: 0, owned: 1, trade: 0, wanted: 1 }} collectorCount={5} onBack={jest.fn()} onChangeCategory={jest.fn()} onChangeCollectionFilter={jest.fn()} onChangeMode={onChangeMode} onChangeQuery={jest.fn()} onOpenEntry={onOpenEntry} onRetry={jest.fn()} privacyThreshold={3} rows={[row]} selectedCategory="all" selectedCollectionFilter="all" selectedMode="wanted" showCollectionFilters snapshotLabel="Recently updated" /></SafeAreaProvider>);
+    expect(screen.getByText('Community Rankings')).toBeTruthy(); fireEvent.press(screen.getByText('Rarest owned')); expect(onChangeMode).toHaveBeenCalledWith('rarest'); fireEvent.press(screen.getByLabelText('Open rank 1, Shiny Bulbasaur')); expect(onOpenEntry).toHaveBeenCalledWith(row);
+  });
+  it('exposes personal counts, methodology, and the canonical empty-state recovery', () => {
+    const onChangeCollectionFilter = jest.fn();
+    render(<SafeAreaProvider initialMetrics={{ frame: { x: 0, y: 0, width: 390, height: 844 }, insets: { top: 24, right: 0, bottom: 20, left: 0 } }}><NativeRankingsScreen assetBaseUrl="https://pokegonexus.com" collectionFilterCounts={{ all: 4, missing: 1, owned: 3, trade: 2, wanted: 1 }} collectorCount={5} onBack={jest.fn()} onChangeCategory={jest.fn()} onChangeCollectionFilter={onChangeCollectionFilter} onChangeMode={jest.fn()} onChangeQuery={jest.fn()} onOpenEntry={jest.fn()} onRetry={jest.fn()} privacyThreshold={3} rows={[]} selectedCategory="all" selectedCollectionFilter="trade" selectedMode="wanted" showCollectionFilters snapshotLabel="Recently updated" /></SafeAreaProvider>);
+    expect(screen.getByText('Nothing is listed for trade')).toBeTruthy();
+    expect(screen.getByText('2')).toBeTruthy();
+    fireEvent.press(screen.getByText('Show all rankings'));
+    expect(onChangeCollectionFilter).toHaveBeenCalledWith('all');
+    fireEvent.press(screen.getByText('How these rankings work'));
+    expect(screen.getByText(/Duplicate wanted copies do not add votes/)).toBeTruthy();
   });
 });

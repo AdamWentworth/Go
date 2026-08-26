@@ -24,9 +24,10 @@ const firstParam = (value: string | string[] | undefined): string => (
 
 export default function NativeCollectionRoute() {
   const router = useRouter();
-  const params = useLocalSearchParams<{ filter?: string | string[] }>();
+  const params = useLocalSearchParams<{ filter?: string | string[]; search?: string | string[] }>();
   const session = useNativeSession();
   const filter = firstParam(params.filter);
+  const search = firstParam(params.search);
   const initialTagKey = nativeCollectionTagKeyForFilter(filter);
   const snapshotQuery = useNativeCollectionSnapshotQuery(session.user?.user_id ?? null);
   const tagMutations = useNativeTagMutations(session.user?.user_id ?? 'signed-out');
@@ -68,8 +69,11 @@ export default function NativeCollectionRoute() {
   }, [instanceRows, snapshotQuery.data]);
 
   if (session.status !== 'signed-in' || !session.user) {
-    const returnTo = filter
-      ? `/native/collection?filter=${encodeURIComponent(filter)}`
+    const returnParams = new URLSearchParams();
+    if (filter) returnParams.set('filter', filter);
+    if (search) returnParams.set('search', search);
+    const returnTo = returnParams.size
+      ? `/native/collection?${returnParams.toString()}`
       : '/native/collection';
     return <Redirect href={`/native/login?returnTo=${encodeURIComponent(returnTo)}`} />;
   }
@@ -102,7 +106,8 @@ export default function NativeCollectionRoute() {
       inventoryTags={inventoryTags}
       instances={snapshotQuery.data?.instances ?? {}}
       initialTagKey={initialTagKey}
-      key={initialTagKey ?? 'full-catalog'}
+      initialQuery={search}
+      key={`${initialTagKey ?? 'full-catalog'}:${search}`}
       isLoading={snapshotQuery.isPending}
       onActionMenuNavigate={navigateFromActionMenu}
       onOpenEntry={openEntry}

@@ -54,6 +54,21 @@ const matchesCollection = (personal: NativeRankingPersonalStatus, filter: Native
   return true;
 };
 
+export const filterNativeRankingRowsByCollection = (
+  rows: NativeRankingRow[],
+  filter: NativeRankingCollectionFilter,
+): NativeRankingRow[] => rows.filter((row) => matchesCollection(row.personal, filter));
+
+export const countNativeRankingCollectionFilters = (
+  rows: NativeRankingRow[],
+): Record<NativeRankingCollectionFilter, number> => ({
+  all: rows.length,
+  owned: filterNativeRankingRowsByCollection(rows, 'owned').length,
+  trade: filterNativeRankingRowsByCollection(rows, 'trade').length,
+  wanted: filterNativeRankingRowsByCollection(rows, 'wanted').length,
+  missing: filterNativeRankingRowsByCollection(rows, 'missing').length,
+});
+
 const collapsibleVariantClass = (entry: PokemonCatalogEntry): string | null => {
   const suffix = entry.id.slice(entry.id.indexOf('-') + 1).toLocaleLowerCase();
   return ['default', 'shiny', 'shadow', 'shiny_shadow', 'dynamax', 'shiny_dynamax', 'gigantamax', 'shiny_gigantamax'].includes(suffix)
