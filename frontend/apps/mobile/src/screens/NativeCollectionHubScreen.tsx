@@ -1,4 +1,11 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import {
+  type ReactNode,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import { Animated, StyleSheet, Text, View, useColorScheme, useWindowDimensions } from 'react-native';
 import type {
   CreateCustomTagRequest,
@@ -55,6 +62,7 @@ type Props = {
   onReturnToContext?: () => void;
   requireTagSelection?: boolean;
   initialTagKey?: string | null;
+  syncStatus?: ReactNode;
 };
 
 export const NativeCollectionHubScreen = ({
@@ -82,6 +90,7 @@ export const NativeCollectionHubScreen = ({
   onReturnToContext,
   requireTagSelection = false,
   initialTagKey = null,
+  syncStatus = null,
 }: Props) => {
   const light = useColorScheme() === 'light';
   const { width } = useWindowDimensions();
@@ -321,6 +330,7 @@ export const NativeCollectionHubScreen = ({
         catalogOwner={catalogOwner}
         onReturnToContext={onReturnToContext}
       />
+      {syncStatus}
       {operationNotice ? (
         <View accessibilityLiveRegion="polite" style={styles.noticeBanner}>
           <Text style={styles.noticeText}>{operationNotice}</Text>

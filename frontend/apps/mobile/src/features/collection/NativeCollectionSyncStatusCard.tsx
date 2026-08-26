@@ -1,40 +1,53 @@
 import { Pressable, StyleSheet, Text, View, useColorScheme } from 'react-native';
 import { theme } from '../../ui/theme';
-import { useNativeCollectionSync } from './NativeCollectionSyncProvider';
+import {
+  type NativeCollectionSyncStatus,
+  useNativeCollectionSync,
+} from './NativeCollectionSyncProvider';
 
-export const NativeCollectionSyncStatusCard = () => {
-  const sync = useNativeCollectionSync();
+type Props = NativeCollectionSyncStatus & {
+  onRetry: () => void | Promise<void>;
+};
+
+export const NativeCollectionSyncStatusCardView = ({
+  acceptedCount,
+  isOffline,
+  isSyncing,
+  lastError,
+  onRetry,
+  pendingCount,
+}: Props) => {
   const light = useColorScheme() === 'light';
-  const retainedCount = sync.pendingCount + sync.acceptedCount;
-  if (!sync.isOffline && !sync.isSyncing && !sync.lastError && retainedCount === 0) {
+  const retainedCount = pendingCount + acceptedCount;
+  if (!isOffline && !isSyncing && !lastError && retainedCount === 0) {
     return null;
   }
 
   let title = 'Collection synchronization';
   let body = 'Checking retained changes…';
-  if (sync.lastError) {
+  if (lastError) {
     title = 'Sync needs attention';
-    body = sync.lastError;
-  } else if (sync.isOffline) {
+    body = lastError;
+  } else if (isOffline) {
     title = 'You are offline';
     body = retainedCount > 0
       ? `${retainedCount} ${retainedCount === 1 ? 'change is' : 'changes are'} safely retained on this device.`
       : 'Your saved collection copy remains available on this device.';
-  } else if (sync.isSyncing) {
+  } else if (isSyncing) {
     title = 'Syncing collection changes';
     body = retainedCount > 0
       ? `Checking ${retainedCount} retained ${retainedCount === 1 ? 'change' : 'changes'}…`
       : 'Checking Receiver and server reconciliation…';
-  } else if (sync.pendingCount > 0) {
+  } else if (pendingCount > 0) {
     title = 'Waiting to send';
-    body = `${sync.pendingCount} ${sync.pendingCount === 1 ? 'change is' : 'changes are'} retained on this device.`;
-  } else if (sync.acceptedCount > 0) {
+    body = `${pendingCount} ${pendingCount === 1 ? 'change is' : 'changes are'} retained on this device.`;
+  } else if (acceptedCount > 0) {
     title = 'Accepted by Receiver';
-    body = `${sync.acceptedCount} ${sync.acceptedCount === 1 ? 'change is' : 'changes are'} waiting for server confirmation.`;
+    body = `${acceptedCount} ${acceptedCount === 1 ? 'change is' : 'changes are'} waiting for server confirmation.`;
   }
 
-  const canRetry = !sync.isSyncing && (
-    sync.lastError != null || sync.pendingCount > 0 || sync.acceptedCount > 0
+  const canRetry = !isSyncing && (
+    lastError != null || pendingCount > 0 || acceptedCount > 0
   );
   return (
     <View accessibilityLiveRegion="polite" style={[styles.card, light && styles.cardLight]}>
@@ -45,13 +58,27 @@ export const NativeCollectionSyncStatusCard = () => {
       {canRetry ? (
         <Pressable
           accessibilityRole="button"
-          onPress={() => void sync.retry()}
+          onPress={() => void onRetry()}
           style={({ pressed }) => [styles.retry, light && styles.retryLight, pressed && styles.retryPressed]}
         >
-          <Text style={[styles.retryText, light && styles.retryTextLight]}>{sync.acceptedCount > 0 && !sync.lastError ? 'Check' : 'Retry'}</Text>
+          <Text style={[styles.retryText, light && styles.retryTextLight]}>{acceptedCount > 0 && !lastError ? 'Check' : 'Retry'}</Text>
         </Pressable>
       ) : null}
     </View>
+  );
+};
+
+export const NativeCollectionSyncStatusCard = () => {
+  const sync = useNativeCollectionSync();
+  return (
+    <NativeCollectionSyncStatusCardView
+      acceptedCount={sync.acceptedCount}
+      isOffline={sync.isOffline}
+      isSyncing={sync.isSyncing}
+      lastError={sync.lastError}
+      onRetry={sync.retry}
+      pendingCount={sync.pendingCount}
+    />
   );
 };
 
@@ -64,6 +91,8 @@ const styles = StyleSheet.create({
     borderColor: '#43708b',
     borderRadius: theme.radius.md,
     padding: theme.spacing.sm,
+    marginHorizontal: theme.spacing.sm,
+    marginBottom: theme.spacing.xs,
     backgroundColor: '#10283a',
   },
   cardLight: { borderColor: '#8fb8cb', backgroundColor: '#e7f5fb' },

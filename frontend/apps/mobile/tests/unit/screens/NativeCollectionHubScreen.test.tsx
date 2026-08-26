@@ -1,4 +1,5 @@
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react-native';
+import { Text } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import type { PokemonInstance } from '@pokemongonexus/shared-contracts/instances';
 import type {
@@ -137,6 +138,7 @@ describe('NativeCollectionHubScreen', () => {
         onActionMenuPress={jest.fn()}
         onOpenEntry={onOpenEntry}
         onRetry={jest.fn()}
+        syncStatus={<Text testID="sync-status-slot">Offline changes retained</Text>}
         wishlistTags={[wishlistTag]}
         />
       </SafeAreaProvider>,
@@ -144,6 +146,7 @@ describe('NativeCollectionHubScreen', () => {
 
     expect(screen.getByText('Bulbasaur')).toBeTruthy();
     expect(screen.getByText('Mewtwo')).toBeTruthy();
+    expect(screen.getByTestId('sync-status-slot')).toBeTruthy();
     expect(screen.queryByText('Shiny Bulbasaur')).toBeNull();
     expect(screen.queryByText('Shiny Mewtwo')).toBeNull();
 

@@ -16,6 +16,7 @@ import { NativeCollectionHubScreen } from '../../screens/NativeCollectionHubScre
 import { setNativeInstanceNavigationContext } from '../../features/collection/nativeInstanceNavigationContext';
 import { resolveNativeActionMenuDestination } from '../../navigation/nativeActionMenuNavigation';
 import { nativeCollectionTagKeyForFilter } from '../../features/collection/nativeCollectionRouteFilter';
+import { NativeCollectionSyncStatusCard } from '../../features/collection/NativeCollectionSyncStatusCard';
 
 const firstParam = (value: string | string[] | undefined): string => (
   Array.isArray(value) ? value[0] ?? '' : value ?? ''
@@ -116,6 +117,7 @@ export default function NativeCollectionRoute() {
       organizerError={pokemonOrganizer.error instanceof Error
         ? pokemonOrganizer.error.message
         : null}
+      syncStatus={<NativeCollectionSyncStatusCard />}
       warning={snapshotQuery.data?.tagLoadWarning ?? null}
       wishlistTags={wishlistTags}
     />
