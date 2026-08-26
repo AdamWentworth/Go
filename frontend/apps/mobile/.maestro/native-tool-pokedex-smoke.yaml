@@ -14,12 +14,15 @@ name: Native Pokédex tool smoke
     commands:
       - tapOn: Close
 - assertVisible: "Pokédex"
-- assertVisible: "Shiny Bulbasaur"
+- assertVisible: "Kanto"
+- assertVisible: "Advanced"
+- takeScreenshot: "native-tool-pokedex-regions"
 - tapOn: "Shiny"
+- tapOn: "Kanto"
 - tapOn: "Search Pokédex"
 - inputText: "bulba"
 - hideKeyboard
 - extendedWaitUntil:
     visible: "Shiny Bulbasaur"
     timeout: 15000
-- takeScreenshot: "native-tool-pokedex"
+- takeScreenshot: "native-tool-pokedex-region-detail"

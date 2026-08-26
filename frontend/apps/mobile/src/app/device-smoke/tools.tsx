@@ -218,6 +218,14 @@ const pokedexEntry = {
   category: "shiny" as const,
   generation: 1,
   registered: true,
+  registeredFacets: [{}],
+  registeredSpecies: true,
+};
+const basePokedexEntry = {
+  ...pokedexEntry,
+  id: "0001-default",
+  name: "Bulbasaur",
+  category: "pokemon" as const,
 };
 const rankingRow = {
   caughtUsers: 3,
@@ -239,7 +247,7 @@ export default function DeviceSmokeToolsRoute() {
     return (
       <NativePokedexScreen
         assetBaseUrl={ASSET_BASE_URL}
-        entries={[pokedexEntry]}
+        entries={[basePokedexEntry, pokedexEntry]}
         onBack={noOp}
         onOpenEntry={noOp}
         onRetry={noOp}

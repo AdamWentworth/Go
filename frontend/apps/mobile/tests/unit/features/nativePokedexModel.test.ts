@@ -17,12 +17,25 @@ describe('native Pokédex model', () => {
     } as never);
     expect(entries.find(({ id }) => id === '0025-shiny')?.registered).toBe(true);
     expect(entries.some(({ category }) => category === 'costume')).toBe(true);
-    expect(entries.some(({ category }) => category === 'max')).toBe(true);
+    expect(entries.some(({ category }) => category === 'dynamax')).toBe(true);
+    expect(entries.find(({ id }) => id === '0025-shiny')?.registeredSpecies).toBe(true);
   });
 
-  it('filters by region, variant category, name, and dex number', () => {
+  it('filters by region, exact variant category, name, and dex number', () => {
     const entries = buildNativePokedexEntries([base]);
     expect(filterNativePokedexEntries({ entries, category: 'shiny', generation: 1, query: '25' }).every(({ id }) => id.includes('shiny'))).toBe(true);
-    expect(filterNativePokedexEntries({ entries, category: 'all', generation: 2, query: '' })).toEqual([]);
+    expect(filterNativePokedexEntries({ entries, category: 'pokemon', generation: 2, query: '' })).toEqual([]);
+    expect(filterNativePokedexEntries({ entries, category: 'shiny costume', generation: 1, query: '' }).map(({ name }) => name)).toEqual(['Shiny Detective Pikachu']);
+  });
+
+  it('projects and filters the same quality facets used by the web Pokédex', () => {
+    const entries = buildNativePokedexEntries([base], {
+      caught: {
+        instance_id: 'caught', pokemon_id: 25, variant_id: '0025-shiny', is_caught: true,
+        attack_iv: 15, defense_iv: 15, stamina_iv: 15, gender: 'Female', lucky: true,
+      },
+    } as never);
+    expect(filterNativePokedexEntries({ entries, category: 'shiny', facets: ['lucky', 'perfect', 'female'], generation: 1, query: '' }).map(({ id }) => id)).toEqual(['0025-shiny']);
+    expect(filterNativePokedexEntries({ entries, category: 'shiny', facets: ['male'], generation: 1, query: '' })).toEqual([]);
   });
 });
