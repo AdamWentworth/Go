@@ -6,6 +6,7 @@ import {
   Text,
   View,
   useColorScheme,
+  useWindowDimensions,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { NativeActionMenuHint } from '../components/NativeActionMenuHint';
@@ -49,16 +50,20 @@ export const NativeGuestHomeScreen = ({
 }: Props) => {
   const light = useColorScheme() === 'light';
   const insets = useSafeAreaInsets();
+  const { width } = useWindowDimensions();
+  const compactNavigation = width < 560;
   return (
     <View style={[styles.root, light && styles.rootLight]} testID="native-guest-home-screen">
       <ScrollView contentContainerStyle={{ paddingBottom: insets.bottom + 106 }}>
         <View style={[styles.topbar, { paddingTop: insets.top + 8 }]}>
           <Pressable accessibilityRole="button" onPress={() => onNavigate('/')} style={styles.brand}>
             <Image source={{ uri: toAssetUrl(assetBaseUrl, '/images/logo/logo.png') }} style={styles.brandIcon} />
-            <Text style={[styles.brandText, light && styles.textLight]}>Pokémon Go Nexus</Text>
+            {!compactNavigation ? <Text style={[styles.brandText, light && styles.textLight]}>Pokémon Go Nexus</Text> : null}
           </Pressable>
           <View style={styles.topActions}>
-            <Pressable accessibilityRole="button" onPress={() => onNavigate('/login')} style={[styles.signIn, light && styles.signInLight]}><Text style={[styles.signInText, light && styles.textLight]}>Sign in</Text></Pressable>
+            <Pressable accessibilityRole="button" onPress={() => onNavigate('/help')} style={styles.navLink}><Text style={[styles.navLinkText, light && styles.textLight]}>Help</Text></Pressable>
+            <Pressable accessibilityRole="button" onPress={() => onNavigate('/login')} style={[styles.signIn, light && styles.signInLight]}><Text style={[styles.signInText, light && styles.textLight]}>Log in</Text></Pressable>
+            <Pressable accessibilityRole="button" onPress={() => onNavigate('/register')} style={styles.register}><Text style={styles.registerText}>Create account</Text></Pressable>
           </View>
         </View>
 
@@ -71,11 +76,41 @@ export const NativeGuestHomeScreen = ({
             style={styles.lockup}
           />
           <Text style={styles.eyebrow}>THE ULTIMATE TRAINER HUB</Text>
-          <Text accessibilityRole="header" style={[styles.title, light && styles.textLight]}>Bring every catch, wishlist, and trade into one connected place.</Text>
-          <Text style={[styles.lead, light && styles.mutedLight]}>Organize exact Pokémon. Discover trainers who fit. Plan exchanges both sides can understand before coordinating in Pokémon GO.</Text>
+          <Text accessibilityRole="header" style={[styles.title, light && styles.textLight]}>Build your collection.</Text>
+          <Text accessibilityRole="header" style={styles.titleAccent}>Find the right trade.</Text>
+          <Text style={[styles.lead, light && styles.mutedLight]}>Pokémon Go Nexus is the go-to platform for Pokémon GO trainers to catalog Pokémon, showcase rare catches, and find players whose For Trade and Wanted lists actually line up.</Text>
           <View style={styles.heroActions}>
-            <Pressable accessibilityRole="button" onPress={() => onNavigate('/register')} style={styles.primary}><Text style={styles.primaryText}>Create free account →</Text></Pressable>
-            <Pressable accessibilityRole="button" onPress={() => onNavigate('/getting-started')} style={[styles.secondary, light && styles.secondaryLight]}><Text style={[styles.secondaryText, light && styles.textLight]}>See how it works</Text></Pressable>
+            <Pressable accessibilityRole="button" onPress={() => onNavigate('/register')} style={styles.primary}><Text style={styles.primaryText}>Create your free account</Text></Pressable>
+            <Pressable accessibilityRole="button" onPress={() => onNavigate('/getting-started')} style={[styles.secondary, light && styles.secondaryLight]}><Text style={[styles.secondaryText, light && styles.textLight]}>Explore the app ↓</Text></Pressable>
+          </View>
+          <View accessibilityLabel="Product highlights" style={styles.proof}>
+            {['Exact variants and custom tags', 'Reciprocal trade matching', 'Built for mobile and desktop'].map((label) => (
+              <View key={label} style={styles.proofItem}><Text style={styles.proofCheck}>●</Text><Text style={[styles.proofText, light && styles.mutedLight]}>{label}</Text></View>
+            ))}
+          </View>
+          <View accessibilityLabel="Example reciprocal trade match" style={[styles.matchPreview, light && styles.matchPreviewLight]}>
+            <View style={styles.matchHeading}><Text style={styles.matchEyebrow}>RECIPROCAL MATCH</Text><Text style={[styles.matchTitle, light && styles.textLight]}>You each have what the other trainer wants</Text></View>
+            <View style={styles.exchange}>
+              <View style={[styles.exchangePokemon, styles.exchangePokemonTrade, light && styles.exchangePokemonLight]}>
+                <Text style={styles.tradeLabel}>YOU OFFER</Text>
+                <View style={styles.exchangeStage}>
+                  <Image resizeMode="contain" source={{ uri: toAssetUrl(assetBaseUrl, '/images/shiny_gigantamax/shiny_gigantamax_6.png') }} style={styles.exchangeImage} />
+                  <Image resizeMode="contain" source={{ uri: toAssetUrl(assetBaseUrl, '/images/gigantamax.png') }} style={styles.exchangeMaxIcon} />
+                </View>
+                <Text style={[styles.exchangeName, light && styles.textLight]}>Shiny Gigantamax Charizard</Text>
+                <Text style={[styles.exchangeMeta, light && styles.mutedLight]}>On your For Trade list</Text>
+              </View>
+              <Image resizeMode="contain" source={{ uri: toAssetUrl(assetBaseUrl, '/images/pogo_trade_icon.png') }} style={styles.exchangeIcon} />
+              <View style={[styles.exchangePokemon, styles.exchangePokemonWanted, light && styles.exchangePokemonLight]}>
+                <Text style={styles.wantedLabel}>YOU WANT</Text>
+                <View style={styles.exchangeStage}>
+                  <Image resizeMode="contain" source={{ uri: toAssetUrl(assetBaseUrl, '/images/costumes_shiny/pokemon_25_detective_shiny.png') }} style={styles.exchangeImage} />
+                </View>
+                <Text style={[styles.exchangeName, light && styles.textLight]}>Shiny Detective Pikachu</Text>
+                <Text style={[styles.exchangeMeta, light && styles.mutedLight]}>On your Wanted list</Text>
+              </View>
+            </View>
+            <View style={[styles.matchResult, light && styles.matchResultLight]}><Text style={styles.matchResultIcon}>↔</Text><View style={styles.matchResultCopy}><Text style={[styles.matchResultTitle, light && styles.textLight]}>Ready to review</Text><Text style={[styles.matchResultDetail, light && styles.mutedLight]}>Compare the exact Pokémon, friendship, eligibility, and Stardust cost.</Text></View></View>
           </View>
         </View>
 
@@ -141,9 +176,11 @@ export const NativeGuestHomeScreen = ({
 
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: '#090d12' }, rootLight: { backgroundColor: '#f1f5f7' }, textLight: { color: '#14232a' }, mutedLight: { color: '#576a73' },
-  topbar: { minHeight: 68, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16 }, brand: { flexDirection: 'row', alignItems: 'center', gap: 8 }, brandIcon: { width: 38, height: 38, resizeMode: 'contain' }, brandText: { color: '#fff', fontSize: 16, fontWeight: '900' }, topActions: { flexDirection: 'row' },
-  signIn: { minHeight: 44, justifyContent: 'center', borderWidth: 1, borderColor: '#66747d', borderRadius: 999, paddingHorizontal: 17, backgroundColor: '#171d22' }, signInLight: { borderColor: '#aebbc2', backgroundColor: '#fff' }, signInText: { color: '#fff', fontWeight: '900' },
-  hero: { minHeight: 530, alignItems: 'center', justifyContent: 'center', overflow: 'hidden', paddingHorizontal: 18, paddingVertical: 50 }, heroGlow: { position: 'absolute', width: 520, height: 520, borderRadius: 260, backgroundColor: '#0d4a7c', opacity: 0.28 }, lockup: { width: '92%', maxWidth: 560, height: 190 }, eyebrow: { color: '#299cf5', fontSize: 10, fontWeight: '900', letterSpacing: 1.5, textAlign: 'center' }, title: { maxWidth: 820, marginTop: 13, color: '#fff', fontSize: 34, lineHeight: 40, fontWeight: '900', textAlign: 'center' }, lead: { maxWidth: 720, marginTop: 13, color: '#b6c3ca', fontSize: 15, lineHeight: 22, textAlign: 'center' }, heroActions: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: 10, marginTop: 24 },
+  topbar: { minHeight: 68, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8, paddingHorizontal: 12 }, brand: { flexDirection: 'row', alignItems: 'center', gap: 8 }, brandIcon: { width: 38, height: 38, resizeMode: 'contain' }, brandText: { color: '#fff', fontSize: 16, fontWeight: '900' }, topActions: { flexDirection: 'row', alignItems: 'center', gap: 5 }, navLink: { minHeight: 40, justifyContent: 'center', paddingHorizontal: 7 }, navLinkText: { color: '#fff', fontSize: 11, fontWeight: '800' },
+  signIn: { minHeight: 40, justifyContent: 'center', borderWidth: 1, borderColor: '#66747d', borderRadius: 10, paddingHorizontal: 10, backgroundColor: '#171d22' }, signInLight: { borderColor: '#aebbc2', backgroundColor: '#fff' }, signInText: { color: '#fff', fontSize: 11, fontWeight: '900' }, register: { minHeight: 40, justifyContent: 'center', borderRadius: 10, paddingHorizontal: 10, backgroundColor: '#168ced' }, registerText: { color: '#fff', fontSize: 10.5, fontWeight: '900' },
+  hero: { minHeight: 530, alignItems: 'center', justifyContent: 'center', overflow: 'hidden', paddingHorizontal: 14, paddingVertical: 44 }, heroGlow: { position: 'absolute', width: 520, height: 520, borderRadius: 260, backgroundColor: '#0d4a7c', opacity: 0.28 }, lockup: { width: '92%', maxWidth: 560, height: 190 }, eyebrow: { color: '#299cf5', fontSize: 10, fontWeight: '900', letterSpacing: 1.5, textAlign: 'center' }, title: { maxWidth: 820, marginTop: 10, color: '#fff', fontSize: 34, lineHeight: 38, fontWeight: '900', letterSpacing: -1.1, textAlign: 'center' }, titleAccent: { maxWidth: 820, color: '#55c9ff', fontSize: 34, lineHeight: 39, fontWeight: '900', letterSpacing: -1.1, textAlign: 'center' }, lead: { maxWidth: 720, marginTop: 15, color: '#b6c3ca', fontSize: 15, lineHeight: 22, textAlign: 'center' }, heroActions: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: 10, marginTop: 24 },
+  proof: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: 10, marginTop: 18 }, proofItem: { flexDirection: 'row', alignItems: 'center', gap: 5 }, proofCheck: { color: '#299cf5', fontSize: 9 }, proofText: { color: '#aab9c1', fontSize: 10.5, fontWeight: '700' },
+  matchPreview: { width: '100%', maxWidth: 700, marginTop: 35, borderWidth: 1, borderColor: '#305d4e', borderRadius: 24, padding: 14, backgroundColor: '#15221f' }, matchPreviewLight: { borderColor: '#8acbb4', backgroundColor: '#f6fffb' }, matchHeading: { alignItems: 'center', gap: 4, paddingBottom: 12 }, matchEyebrow: { color: '#35c984', fontSize: 9, fontWeight: '900', letterSpacing: 1.2 }, matchTitle: { color: '#fff', fontSize: 15, lineHeight: 20, fontWeight: '900', textAlign: 'center' }, exchange: { flexDirection: 'row', alignItems: 'center', gap: 5 }, exchangePokemon: { minWidth: 0, flex: 1, minHeight: 205, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderRadius: 16, padding: 8, backgroundColor: '#101815' }, exchangePokemonLight: { backgroundColor: '#fff' }, exchangePokemonTrade: { borderColor: '#327e60' }, exchangePokemonWanted: { borderColor: '#9c465a' }, tradeLabel: { color: '#35c984', fontSize: 8.5, fontWeight: '900', letterSpacing: 1 }, wantedLabel: { color: '#f05a70', fontSize: 8.5, fontWeight: '900', letterSpacing: 1 }, exchangeStage: { width: '100%', height: 106, alignItems: 'center', justifyContent: 'center' }, exchangeImage: { width: '92%', height: '92%' }, exchangeMaxIcon: { position: 'absolute', right: 2, top: 2, width: 31, height: 31 }, exchangeIcon: { width: 36, height: 36 }, exchangeName: { minHeight: 36, color: '#fff', fontSize: 11.5, lineHeight: 16, fontWeight: '900', textAlign: 'center' }, exchangeMeta: { color: '#9caab1', fontSize: 8.5, textAlign: 'center' }, matchResult: { flexDirection: 'row', alignItems: 'center', gap: 9, marginTop: 10, borderRadius: 12, padding: 10, backgroundColor: '#0e3227' }, matchResultLight: { backgroundColor: '#e5f8f0' }, matchResultIcon: { color: '#35c984', fontSize: 22, fontWeight: '900' }, matchResultCopy: { minWidth: 0, flex: 1 }, matchResultTitle: { color: '#fff', fontSize: 12, fontWeight: '900' }, matchResultDetail: { color: '#a8bab2', fontSize: 9, lineHeight: 13 },
   primary: { minHeight: 48, alignItems: 'center', justifyContent: 'center', borderRadius: 11, paddingHorizontal: 20, backgroundColor: '#168ced' }, primaryText: { color: '#fff', fontWeight: '900' }, secondary: { minHeight: 48, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: '#66747d', borderRadius: 11, paddingHorizontal: 20, backgroundColor: '#161c21' }, secondaryLight: { borderColor: '#aebbc2', backgroundColor: '#fff' }, secondaryText: { color: '#fff', fontWeight: '900' },
   content: { width: '100%', maxWidth: 940, alignSelf: 'center', gap: 28, paddingHorizontal: 14 }, heading: { gap: 6 }, headingTitle: { color: '#fff', fontSize: 27, lineHeight: 32, fontWeight: '900', textAlign: 'center' }, headingDetail: { maxWidth: 720, alignSelf: 'center', color: '#afbdc5', fontSize: 14, lineHeight: 21, textAlign: 'center' },
   features: { gap: 10 }, feature: { minHeight: 100, flexDirection: 'row', alignItems: 'center', gap: 13, borderWidth: 1, borderColor: '#303b43', borderRadius: 16, padding: 14, backgroundColor: '#141a1f' }, surfaceLight: { borderColor: '#c6d1d6', backgroundColor: '#fff' }, featureGlyph: { width: 56, height: 56, alignItems: 'center', justifyContent: 'center', borderRadius: 14 }, featureGlyphText: { fontSize: 28, fontWeight: '900' }, featureCopy: { flex: 1, minWidth: 0 }, featureTitle: { color: '#fff', fontSize: 16, fontWeight: '900' }, featureDetail: { marginTop: 4, color: '#aebbc2', fontSize: 12, lineHeight: 17 }, arrow: { color: '#bdc6ca', fontSize: 26 }, pressed: { opacity: 0.77 },

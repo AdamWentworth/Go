@@ -21,7 +21,9 @@ tags:
 - extendedWaitUntil:
     visible: THE ULTIMATE TRAINER HUB
     timeout: 45000
-- assertVisible: Bring every catch, wishlist, and trade into one connected place.
+- assertVisible: Build your collection.
+- assertVisible: Find the right trade.
+- assertVisible: You each have what the other trainer wants
 - assertVisible: QUICK NAVIGATION
 - assertVisible: Tap the Poké Ball below to explore the app.
 - takeScreenshot: 01-guest-hero-and-hint

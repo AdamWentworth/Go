@@ -10,13 +10,17 @@ describe('NativeGuestHomeScreen', () => {
         <NativeGuestHomeScreen assetBaseUrl="https://pokegonexus.com" onNavigate={onNavigate} />
       </SafeAreaProvider>,
     );
-    expect(screen.getByText('Bring every catch, wishlist, and trade into one connected place.')).toBeTruthy();
+    expect(screen.getByText('Build your collection.')).toBeTruthy();
+    expect(screen.getByText('Find the right trade.')).toBeTruthy();
+    expect(screen.getByText('Exact variants and custom tags')).toBeTruthy();
+    expect(screen.getByText('Reciprocal trade matching')).toBeTruthy();
+    expect(screen.getByText('You each have what the other trainer wants')).toBeTruthy();
     expect(screen.getByText('Exact collection')).toBeTruthy();
     expect(screen.getByText('Reciprocal trading')).toBeTruthy();
     expect(screen.getByText('One clear trading workflow')).toBeTruthy();
 
-    fireEvent.press(screen.getByText('Create free account →'));
-    fireEvent.press(screen.getByText('See how it works'));
+    fireEvent.press(screen.getByText('Create your free account'));
+    fireEvent.press(screen.getByText('Explore the app ↓'));
     expect(onNavigate).toHaveBeenNthCalledWith(1, '/register');
     expect(onNavigate).toHaveBeenNthCalledWith(2, '/getting-started');
   });
