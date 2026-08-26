@@ -8,7 +8,11 @@ import {
   calculateSharedRaidBossCp,
   calculateSharedRaidBossMoveDamage,
   calculateSharedRaidBossStats,
+  calculateSharedRaidIncomingPressure,
   calculateSharedRaidMoveDamage,
+  buildSharedRaidIncomingPressureScenarios,
+  getSharedRaidAttackerIvPercent,
+  getSharedRaidAttackerLevelLabel,
   getSharedProcessedRaidMoveSeconds,
   type SharedRaidCounterSettings,
 } from '@pokemongonexus/shared-domain/raid-combat';
@@ -18,13 +22,19 @@ import {
   calculateRaidBossCp,
   calculateRaidBossMoveDamage,
   calculateRaidBossStats,
+  calculateRaidIncomingPressure,
   calculateRaidMoveDamage,
+  buildRaidIncomingPressureScenarios,
   getProcessedRaidMoveSeconds,
 } from '@/pages/Raid/utils/raidCombat';
 import {
   calculateRaidAttackerBattleStats,
 } from '@/pages/Raid/utils/raidTargetModel';
-import { calculateRaidAttackerCp } from '@/pages/Raid/utils/raidAttackerModel';
+import {
+  calculateRaidAttackerCp,
+  getRaidAttackerIvPercent,
+  getRaidAttackerLevelLabel,
+} from '@/pages/Raid/utils/raidAttackerModel';
 import type { RaidCounterSettings } from '@/pages/Raid/utils/raidTypes';
 
 const fastMove = {
@@ -143,5 +153,29 @@ describe('shared Raid combat primitives', () => {
   it('matches canonical relobby-adjusted DPS', () => {
     expect(calculateSharedEffectiveRaidDps({ dps: 42, relobbySeconds: 10, tdo: 520 }))
       .toBe(calculateEffectiveRaidDps({ dps: 42, relobbySeconds: 10, tdo: 520 }));
+  });
+
+  it('matches canonical attacker labels and incoming boss pressure', () => {
+    expect(getSharedRaidAttackerLevelLabel(attacker, settings.attackerLevel))
+      .toBe(getRaidAttackerLevelLabel(attacker, settings.attackerLevel));
+    expect(getSharedRaidAttackerIvPercent(attacker))
+      .toBe(getRaidAttackerIvPercent(attacker));
+    const sharedScenarios = buildSharedRaidIncomingPressureScenarios({
+      attackerTypes: ['psychic'],
+      boss,
+      bossAttack: 240,
+      weatherBoostedType: '',
+    });
+    const webScenarios = buildRaidIncomingPressureScenarios({
+      attackerTypes: ['psychic'],
+      boss,
+      bossAttack: 240,
+      weatherBoostedType: '',
+    });
+    expect(sharedScenarios).toEqual(webScenarios);
+    expect(calculateSharedRaidIncomingPressure(sharedScenarios, 200, 'expected'))
+      .toEqual(calculateRaidIncomingPressure(webScenarios, 200, 'expected'));
+    expect(calculateSharedRaidIncomingPressure(sharedScenarios, 200, 'hostile'))
+      .toEqual(calculateRaidIncomingPressure(webScenarios, 200, 'hostile'));
   });
 });

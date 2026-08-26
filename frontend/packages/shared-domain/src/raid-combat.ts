@@ -6,6 +6,7 @@ import {
   MEGA_ALLY_DAMAGE_BONUS,
   PARTY_POWER_CHARGED_DAMAGE_BONUS,
   RAID_ATTACKER_TEAM_SIZE,
+  RAID_BOSS_ACTION_DELAY_SECONDS,
   RAID_DODGE_DAMAGE_MULTIPLIER,
   SHADOW_ATTACKER_DAMAGE_BONUS,
   SHADOW_ATTACKER_DEFENSE_MULTIPLIER,
@@ -22,6 +23,7 @@ import { getTypeEffectivenessMultiplier } from './type-effectiveness';
 
 export type SharedRaidDodgeStrategy = 'none' | 'charged';
 export type SharedRaidShadowBossMode = 'normal' | 'enraged' | 'subdued';
+export type SharedRaidBossMovesetMode = 'expected' | 'favorable' | 'hostile';
 
 export type SharedRaidCounterSettings = {
   attackerLevel: string;
@@ -114,6 +116,19 @@ export const calculateSharedRaidAttackerCp = (
   return calculateCpAtLevel(attacker, resolveSharedRaidAttackerLevel(attacker, fallbackLevel));
 };
 
+export const getSharedRaidAttackerLevelLabel = (
+  attacker: PokemonVariant,
+  fallback: string,
+): string => String(resolveSharedRaidAttackerLevel(attacker, fallback)).replace(/\.0$/, '');
+
+export const getSharedRaidAttackerIvPercent = (
+  attacker: PokemonVariant,
+): number | null => {
+  if (attacker.raidRoster?.ivSource !== 'recorded') return null;
+  const ivs = getSharedRaidAttackerIvs(attacker);
+  return Math.round(((ivs.attack + ivs.defense + ivs.stamina) / 45) * 100);
+};
+
 export const calculateSharedRaidAttackerBattleStats = (
   attacker: PokemonVariant,
   settings: SharedRaidCounterSettings,
@@ -184,6 +199,158 @@ const getProcessedRaidMovePower = (move: Move): number => {
   const processedSeconds = getSharedProcessedRaidMoveSeconds(move);
   const timingAdjustment = (processedSeconds - rawSeconds) / processedSeconds;
   return Math.abs(timingAdjustment) >= .199 ? power * (1 + timingAdjustment) : power;
+};
+
+const getSharedLegalRaidMoves = (variant: PokemonVariant): Move[] => {
+  const moves = variant.moves ?? [];
+  if (variant.raidRoster?.moveSource !== 'recorded') return moves;
+
+  const recordedIds = new Set([
+    variant.instanceData?.fast_move_id,
+    variant.instanceData?.charged_move1_id,
+    variant.instanceData?.charged_move2_id,
+  ].filter((moveId): moveId is number => moveId != null));
+  const recordedMoves = moves.filter((move) => recordedIds.has(move.move_id));
+  return recordedMoves.some((move) => Number(move.is_fast) === 1)
+    && recordedMoves.some((move) => Number(move.is_fast) === 0)
+    ? recordedMoves
+    : moves;
+};
+
+const getSharedLegalRaidFastMoves = (variant: PokemonVariant): Move[] =>
+  getSharedLegalRaidMoves(variant).filter(
+    (move) => Number(move.is_fast) === 1 && Number(move.raid_power) > 0,
+  );
+
+const getSharedLegalRaidChargedMoves = (variant: PokemonVariant): Move[] =>
+  getSharedLegalRaidMoves(variant).filter(
+    (move) => Number(move.is_fast) === 0 && Number(move.raid_power) > 0,
+  );
+
+const calculateSharedIncomingRaidMoveDamageCoefficient = ({
+  attackerTypes,
+  boss,
+  bossAttack,
+  move,
+  weatherBoostedType,
+}: {
+  attackerTypes: string[];
+  boss: PokemonVariant;
+  bossAttack: number;
+  move: Move;
+  weatherBoostedType: string;
+}): number => {
+  const moveType = normalizeSharedRaidTypeName(move.type_name || move.type);
+  const stab = getSharedRaidVariantTypeNames(boss).includes(moveType)
+    ? STAB_DAMAGE_BONUS
+    : 1;
+  const effectiveness = getTypeEffectivenessMultiplier(moveType, attackerTypes);
+  const weather = weatherBoostedType === moveType ? WEATHER_DAMAGE_BONUS : 1;
+  return .5
+    * getProcessedRaidMovePower(move)
+    * bossAttack
+    * stab
+    * effectiveness
+    * weather;
+};
+
+export type SharedRaidIncomingPressureScenario = {
+  fastDamageCoefficient: number;
+  chargedDamageCoefficient: number;
+  fastUsesPerChargedMove: number;
+  cycleSeconds: number;
+};
+
+export type SharedRaidIncomingPressure = {
+  incomingDps: number;
+  incomingChargedDamage: number;
+};
+
+export const buildSharedRaidIncomingPressureScenarios = ({
+  attackerTypes,
+  boss,
+  bossAttack,
+  weatherBoostedType,
+}: {
+  attackerTypes: string[];
+  boss: PokemonVariant;
+  bossAttack: number;
+  weatherBoostedType: string;
+}): SharedRaidIncomingPressureScenario[] => {
+  const fastMoves = getSharedLegalRaidFastMoves(boss);
+  const chargedMoves = getSharedLegalRaidChargedMoves(boss);
+  if (!fastMoves.length || !chargedMoves.length) return [];
+
+  return fastMoves.flatMap((fastMove) => chargedMoves.map((chargedMove) => {
+    const fastDamageCoefficient = calculateSharedIncomingRaidMoveDamageCoefficient({
+      attackerTypes,
+      boss,
+      bossAttack,
+      move: fastMove,
+      weatherBoostedType,
+    });
+    const chargedDamageCoefficient = calculateSharedIncomingRaidMoveDamageCoefficient({
+      attackerTypes,
+      boss,
+      bossAttack,
+      move: chargedMove,
+      weatherBoostedType,
+    });
+    const chargedEnergyCost = Math.max(1, Math.abs(getSharedRaidMoveEnergy(chargedMove)));
+    const fastUsesPerChargedMove = chargedEnergyCost >= 100
+      ? 3
+      : chargedEnergyCost >= 50
+        ? 1.5
+        : 1;
+    const cycleSeconds = fastUsesPerChargedMove
+      * (getSharedProcessedRaidMoveSeconds(fastMove) + RAID_BOSS_ACTION_DELAY_SECONDS)
+      + getSharedProcessedRaidMoveSeconds(chargedMove)
+      + RAID_BOSS_ACTION_DELAY_SECONDS;
+    return {
+      chargedDamageCoefficient,
+      cycleSeconds,
+      fastDamageCoefficient,
+      fastUsesPerChargedMove,
+    };
+  }));
+};
+
+export const calculateSharedRaidIncomingPressure = (
+  scenarios: SharedRaidIncomingPressureScenario[],
+  attackerDefense: number,
+  mode: SharedRaidBossMovesetMode = 'expected',
+): SharedRaidIncomingPressure | null => {
+  if (!scenarios.length || attackerDefense <= 0) return null;
+  const pressures = scenarios.map((scenario) => {
+    const fastDamage = Math.floor(scenario.fastDamageCoefficient / attackerDefense) + 1;
+    const chargedDamage = Math.floor(scenario.chargedDamageCoefficient / attackerDefense) + 1;
+    return {
+      incomingChargedDamage: chargedDamage,
+      incomingDps: (
+        scenario.fastUsesPerChargedMove * fastDamage + chargedDamage
+      ) / scenario.cycleSeconds,
+    };
+  });
+
+  if (mode !== 'expected') {
+    return pressures.reduce((selected, candidate) => {
+      const replace = mode === 'hostile'
+        ? candidate.incomingDps > selected.incomingDps
+        : candidate.incomingDps < selected.incomingDps;
+      return replace ? candidate : selected;
+    });
+  }
+
+  return {
+    incomingChargedDamage: pressures.reduce(
+      (sum, pressure) => sum + pressure.incomingChargedDamage,
+      0,
+    ) / pressures.length,
+    incomingDps: pressures.reduce(
+      (sum, pressure) => sum + pressure.incomingDps,
+      0,
+    ) / pressures.length,
+  };
 };
 
 export const calculateSharedRaidMoveDamage = ({
