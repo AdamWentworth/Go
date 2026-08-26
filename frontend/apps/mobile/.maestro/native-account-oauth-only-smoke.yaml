@@ -24,7 +24,7 @@ tags:
 - assertVisible: Your recent provider sign-in confirms sensitive actions because this account has no password.
 - scrollUntilVisible:
     element:
-      text: Connected accounts
+      text: Disconnect Google
     direction: DOWN
     timeout: 10000
 - tapOn: Disconnect Google

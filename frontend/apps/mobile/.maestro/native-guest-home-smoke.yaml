@@ -48,8 +48,9 @@ tags:
 - assertVisible: Trade Board
 - scrollUntilVisible:
     element:
-      text: Bring your collection. Find the right trainer.
+      text: Quick start guide
     direction: DOWN
     timeout: 10000
+- assertVisible: Bring your collection. Find the right trainer.
 - assertVisible: Quick start guide
 - takeScreenshot: 02-guest-features-and-footer
