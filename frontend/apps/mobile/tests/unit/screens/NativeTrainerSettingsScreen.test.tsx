@@ -46,7 +46,7 @@ describe('NativeTrainerSettingsScreen', () => {
     expect(view.getByText('Trade coordination')).toBeTruthy();
     expect(view.getByText('Display')).toBeTruthy();
     expect(view.getByText('Pokémon synchronization')).toBeTruthy();
-    expect(view.getByText('Pokémon GO Nexus does not provide messaging. Choose how an accepted trade partner can connect with you.')).toBeTruthy();
+    expect(view.getByText('Pokémon Go Nexus does not provide messaging. Choose how an accepted trade partner can connect with you.')).toBeTruthy();
     expect(view.getByRole('tab', { name: 'Settings' }).props.accessibilityState.selected).toBe(true);
   });
 

@@ -316,18 +316,22 @@ export const NativePokemonSearchScreen = ({
               </View>
               <View accessibilityRole="tablist" style={[styles.displayModes, light && styles.displayModesLight]}>
                 <Pressable
+                  accessibilityLabel="List view"
                   accessibilityRole="tab"
                   accessibilityState={{ selected: displayMode === 'list' }}
                   onPress={() => changeDisplayMode('list')}
                   style={[styles.displayMode, displayMode === 'list' && styles.displayModeActive]}
+                  testID="native-search-list-view"
                 >
                   <Text style={[styles.displayModeText, light && styles.secondaryLight, displayMode === 'list' && styles.displayModeTextActive]}>☷  List</Text>
                 </Pressable>
                 <Pressable
+                  accessibilityLabel="Map view"
                   accessibilityRole="tab"
                   accessibilityState={{ selected: displayMode === 'map' }}
                   onPress={() => changeDisplayMode('map')}
                   style={[styles.displayMode, displayMode === 'map' && styles.displayModeActive]}
+                  testID="native-search-map-view"
                 >
                   <Text style={[styles.displayModeText, light && styles.secondaryLight, displayMode === 'map' && styles.displayModeTextActive]}>⌖  Map</Text>
                 </Pressable>

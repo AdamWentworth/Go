@@ -244,7 +244,7 @@ export const NativeTrainerSettingsScreen = ({
                 <View><Text style={styles.sectionEyebrow}>AFTER AN OFFER IS ACCEPTED</Text><Text style={[styles.sectionTitle, light && styles.textLight]}>Trade coordination</Text></View>
                 <Text style={styles.sectionIcon}>◌</Text>
               </View>
-              <Text style={[styles.sectionCopy, light && styles.mutedLight]}>Pokémon GO Nexus does not provide messaging. Choose how an accepted trade partner can connect with you.</Text>
+              <Text style={[styles.sectionCopy, light && styles.mutedLight]}>Pokémon Go Nexus does not provide messaging. Choose how an accepted trade partner can connect with you.</Text>
               <SelectionField label="Preferred coordination method" light={light} onPress={() => setPicker('coordinationMethod')} value={labelFor(COORDINATION_OPTIONS, draft.coordinationMethod)} description="Campfire is recommended for Niantic Friends and direct messages." />
               {draft.coordinationMethod !== 'none' ? (
                 <View style={styles.field}>
