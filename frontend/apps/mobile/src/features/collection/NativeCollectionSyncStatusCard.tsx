@@ -1,9 +1,10 @@
-import { Pressable, StyleSheet, Text, View, useColorScheme } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { theme } from '../../ui/theme';
 import {
   type NativeCollectionSyncStatus,
   useNativeCollectionSync,
 } from './NativeCollectionSyncProvider';
+import { useNativeColorScheme } from '../settings/useNativeColorScheme';
 
 type Props = NativeCollectionSyncStatus & {
   onRetry: () => void | Promise<void>;
@@ -17,7 +18,7 @@ export const NativeCollectionSyncStatusCardView = ({
   onRetry,
   pendingCount,
 }: Props) => {
-  const light = useColorScheme() === 'light';
+  const light = useNativeColorScheme() === 'light';
   const retainedCount = pendingCount + acceptedCount;
   if (!isOffline && !isSyncing && !lastError && retainedCount === 0) {
     return null;

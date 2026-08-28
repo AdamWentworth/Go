@@ -1,18 +1,14 @@
 import { Redirect } from 'expo-router';
 import { useState } from 'react';
-import {
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  View,
-  useColorScheme,
-} from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { runtimeConfig } from '../../config/runtimeConfig';
 import {
   NativeCollectionSyncStatusCardView,
 } from '../../features/collection/NativeCollectionSyncStatusCard';
-import type { NativeCollectionSyncStatus } from '../../features/collection/NativeCollectionSyncProvider';
+import type {
+  NativeCollectionSyncStatus,
+} from '../../features/collection/NativeCollectionSyncProvider';
+import { useNativeColorScheme } from '../../features/settings/useNativeColorScheme';
 
 const idleStatus: NativeCollectionSyncStatus = {
   acceptedCount: 0,
@@ -23,7 +19,7 @@ const idleStatus: NativeCollectionSyncStatus = {
 };
 
 export default function DeviceSmokeSyncRoute() {
-  const light = useColorScheme() === 'light';
+  const light = useNativeColorScheme() === 'light';
   const [status, setStatus] = useState<NativeCollectionSyncStatus>({
     ...idleStatus,
     isOffline: true,
@@ -34,6 +30,10 @@ export default function DeviceSmokeSyncRoute() {
   }
 
   const retry = () => {
+    if (status.acceptedCount > 0 && !status.lastError && status.pendingCount === 0) {
+      setStatus(idleStatus);
+      return;
+    }
     if (status.lastError || status.pendingCount > 0) {
       setStatus({
         ...idleStatus,
@@ -99,7 +99,7 @@ export default function DeviceSmokeSyncRoute() {
 
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: '#071012' },
-  screenLight: { backgroundColor: '#eef4f5' },
+  screenLight: { backgroundColor: '#f8fff9' },
   content: { flexGrow: 1, gap: 14, paddingHorizontal: 12, paddingTop: 28, paddingBottom: 36 },
   eyebrow: { color: '#45d6aa', fontSize: 11, fontWeight: '900', letterSpacing: 1.4 },
   eyebrowLight: { color: '#126e59' },

@@ -9,16 +9,16 @@ import {
   Text,
   TextInput,
   View,
-  useColorScheme,
 } from 'react-native';
+import { NativeUiIcon } from '../components/NativeUiIcon';
 import { ApiClientError } from '@pokemongonexus/shared-api-client';
 import { theme } from '../ui/theme';
 import { NativeSocialProviderIcon } from '../components/NativeSocialProviderIcon';
+import { useNativeColorScheme } from '../features/settings/useNativeColorScheme';
 
 type NativeLoginScreenProps = {
   notice?: string | null;
   onOpenPasswordReset: () => void;
-  onOpenRegister: () => void;
   onSignIn: (username: string, password: string) => Promise<void>;
   onSocialSignIn: (provider: NativeLoginProvider) => Promise<void>;
   onSignedIn: () => void;
@@ -46,22 +46,35 @@ const errorMessage = (error: unknown): string => {
 export const NativeLoginScreen = ({
   notice = null,
   onOpenPasswordReset,
-  onOpenRegister,
   onSignIn,
   onSocialSignIn,
   onSignedIn,
 }: NativeLoginScreenProps) => {
-  const light = useColorScheme() === 'light';
+  const light = useNativeColorScheme() === 'light';
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [passwordVisible, setPasswordVisible] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-  const canSubmit = username.trim().length >= 3 && password.length >= 6;
+  const [fieldErrors, setFieldErrors] = useState<{
+    password?: string;
+    username?: string;
+  }>({});
 
   const submit = async () => {
-    if (!canSubmit || isSubmitting) return;
+    if (isSubmitting) return;
+    const nextFieldErrors: typeof fieldErrors = {};
+    if (!username.trim()) {
+      nextFieldErrors.username = 'Username or Email is required.';
+    } else if (
+      username.includes('@')
+      && !/^([a-zA-Z0-9_.+-])+@([a-zA-Z0-9-]+\.)+([a-zA-Z0-9]{2,4})+$/.test(username)
+    ) {
+      nextFieldErrors.username = 'Please enter a valid email address.';
+    }
+    if (!password) nextFieldErrors.password = 'Password is required.';
+    setFieldErrors(nextFieldErrors);
+    if (Object.keys(nextFieldErrors).length > 0) return;
     setError(null);
     setIsSubmitting(true);
     try {
@@ -92,6 +105,7 @@ export const NativeLoginScreen = ({
     <KeyboardAvoidingView
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       style={[styles.screen, light && styles.screenLight]}
+      testID="native-login-screen"
     >
       <ScrollView
         automaticallyAdjustKeyboardInsets
@@ -118,6 +132,11 @@ export const NativeLoginScreen = ({
             style={styles.input}
             value={username}
           />
+          {fieldErrors.username ? (
+            <Text accessibilityLiveRegion="polite" role="alert" style={[styles.fieldError, light && styles.fieldErrorLight]}>
+              {fieldErrors.username}
+            </Text>
+          ) : null}
 
           <Text style={[styles.label, light && styles.labelLight]}>Password</Text>
           <View style={styles.passwordField}>
@@ -142,9 +161,14 @@ export const NativeLoginScreen = ({
               onPress={() => setPasswordVisible((visible) => !visible)}
               style={({ pressed }) => [styles.passwordToggle, pressed && styles.pressed]}
             >
-              <Text style={styles.passwordToggleText}>{passwordVisible ? '◉' : '⊙'}</Text>
+              <NativeUiIcon color="#536b75" name="eye" size={18} />
             </Pressable>
           </View>
+          {fieldErrors.password ? (
+            <Text accessibilityLiveRegion="polite" role="alert" style={[styles.fieldError, light && styles.fieldErrorLight]}>
+              {fieldErrors.password}
+            </Text>
+          ) : null}
 
           {error ? (
             <Text accessibilityLiveRegion="polite" role="alert" style={[styles.error, light && styles.errorLight]}>
@@ -154,9 +178,9 @@ export const NativeLoginScreen = ({
 
           <Pressable
             accessibilityRole="button"
-            disabled={!canSubmit || isSubmitting}
+            disabled={isSubmitting}
             onPress={() => void submit()}
-            style={[styles.primaryButton, (!canSubmit || isSubmitting) && styles.disabled]}
+            style={[styles.primaryButton, isSubmitting && styles.disabled]}
           >
             {isSubmitting ? (
               <ActivityIndicator color="#fff" />
@@ -164,13 +188,6 @@ export const NativeLoginScreen = ({
               <Text style={styles.primaryButtonText}>Login</Text>
             )}
           </Pressable>
-
-          <View style={styles.registerPrompt}>
-            <Text style={[styles.registerCopy, light && styles.labelLight]}>New to Pokémon Go Nexus?</Text>
-            <Pressable accessibilityRole="button" disabled={isSubmitting} onPress={onOpenRegister}>
-              <Text style={[styles.registerLink, light && styles.resetButtonTextLight]}>Create account</Text>
-            </Pressable>
-          </View>
 
           <Pressable
             accessibilityRole="button"
@@ -214,11 +231,11 @@ export const NativeLoginScreen = ({
 
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: '#0f0f0f' },
-  screenLight: { backgroundColor: '#f6fdf9' },
+  screenLight: { backgroundColor: '#f8fff9' },
   content: {
     flexGrow: 1,
-    justifyContent: 'center',
-    paddingHorizontal: 16,
+    justifyContent: 'flex-start',
+    paddingHorizontal: 32,
     paddingTop: 20,
     paddingBottom: 92,
   },
@@ -251,6 +268,8 @@ const styles = StyleSheet.create({
   passwordInput: { paddingRight: 52 },
   passwordToggle: { position: 'absolute', top: 5, right: 5, width: 44, height: 44, alignItems: 'center', justifyContent: 'center', borderRadius: 9 },
   passwordToggleText: { color: '#52606d', fontSize: 18, fontWeight: '900' },
+  fieldError: { color: '#fda4af', fontSize: 12, fontWeight: '800', lineHeight: 17 },
+  fieldErrorLight: { color: '#9f1239' },
   error: {
     marginTop: 8,
     borderWidth: 1,
@@ -292,9 +311,6 @@ const styles = StyleSheet.create({
   },
   resetButtonText: { color: '#58abff', fontSize: 15, fontWeight: '900' },
   resetButtonTextLight: { color: '#005bb5' },
-  registerPrompt: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 7, marginBottom: 5 },
-  registerCopy: { color: '#d9e1e5', fontSize: 13, fontWeight: '700' },
-  registerLink: { color: '#58abff', fontSize: 13, fontWeight: '900' },
   socialButtons: { gap: 12, marginTop: 1 },
   socialButton: { minHeight: 52, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10, paddingHorizontal: 16, borderWidth: 1, borderColor: 'transparent', borderRadius: 12 },
   googleButton: { borderColor: '#d8dce1', backgroundColor: '#ffffff' },

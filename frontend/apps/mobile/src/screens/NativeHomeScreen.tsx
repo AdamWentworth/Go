@@ -6,15 +6,17 @@ import {
   StyleSheet,
   Text,
   View,
-  useColorScheme,
 } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { NativeCollectionRow } from '../features/collection/collectionModel';
 import type {
   NativeHomeCollectionSummary,
+  NativeHomeOnboardingProgress,
   NativeHomeTradeSummary,
 } from '../features/home/nativeHomeDashboardModel';
 import { NativeActionMenuHint } from '../components/NativeActionMenuHint';
+import { NativeHomeOnboarding } from '../components/NativeHomeOnboarding';
+import { NativeUiIcon, type NativeUiIconName } from '../components/NativeUiIcon';
+import { useNativeColorScheme } from '../features/settings/useNativeColorScheme';
 
 type FriendsState = 'error' | 'loading' | 'ready';
 
@@ -26,9 +28,11 @@ type NativeHomeScreenProps = {
   incomingFriends: number;
   isLoading?: boolean;
   onDismissActionMenuHint: () => void;
+  onDismissOnboarding?: () => void;
   onOpenActionMenu?: () => void;
   onNavigate: (path: string) => void;
   onRetry: () => void;
+  onboardingProgress?: NativeHomeOnboardingProgress | null;
   pokemonGoName?: string | null;
   recentRows: NativeCollectionRow[];
   showActionMenuHint: boolean;
@@ -70,14 +74,14 @@ const SectionHeading = ({
 const ActionCard = ({
   accent,
   detail,
-  glyph,
+  icon,
   light,
   onPress,
   title,
 }: {
   accent: string;
   detail: string;
-  glyph: string;
+  icon: NativeUiIconName;
   light: boolean;
   onPress: () => void;
   title: string;
@@ -92,7 +96,7 @@ const ActionCard = ({
     ]}
   >
     <View style={[styles.actionIcon, { backgroundColor: `${accent}1f` }]}>
-      <Text maxFontSizeMultiplier={1} style={[styles.actionGlyph, { color: accent }]}>{glyph}</Text>
+      <NativeUiIcon color={accent} name={icon} size={20} />
     </View>
     <View style={styles.actionCopy}>
       <Text style={[styles.actionTitle, light && styles.textLight]}>{title}</Text>
@@ -105,6 +109,7 @@ const ActionCard = ({
 const StatCard = ({
   accent,
   detail,
+  icon,
   label,
   light,
   onPress,
@@ -112,6 +117,7 @@ const StatCard = ({
 }: {
   accent: string;
   detail?: string;
+  icon?: NativeUiIconName;
   label: string;
   light: boolean;
   onPress: () => void;
@@ -128,7 +134,10 @@ const StatCard = ({
     ]}
   >
     <Text style={[styles.statValue, { color: accent }]}>{value.toLocaleString()}</Text>
-    <Text style={[styles.statLabel, light && styles.textLight]}>{label}</Text>
+    <View style={styles.statLabelRow}>
+      {icon ? <NativeUiIcon color={accent} name={icon} size={13} /> : null}
+      <Text style={[styles.statLabel, light && styles.textLight]}>{label}</Text>
+    </View>
     {detail ? <Text style={[styles.statDetail, light && styles.mutedLight]}>{detail}</Text> : null}
   </Pressable>
 );
@@ -170,17 +179,18 @@ export const NativeHomeScreen = ({
   incomingFriends,
   isLoading = false,
   onDismissActionMenuHint,
+  onDismissOnboarding = () => undefined,
   onOpenActionMenu = () => undefined,
   onNavigate,
   onRetry,
+  onboardingProgress = null,
   pokemonGoName,
   recentRows,
   showActionMenuHint,
   trades,
   username,
 }: NativeHomeScreenProps) => {
-  const light = useColorScheme() === 'light';
-  const insets = useSafeAreaInsets();
+  const light = useNativeColorScheme() === 'light';
   const firstName = pokemonGoName?.trim() || username;
   const attentionCount = trades.needsResponse + trades.readyToConfirm + incomingFriends;
   const friendTitle = friendsState === 'loading'
@@ -196,7 +206,7 @@ export const NativeHomeScreen = ({
       <ScrollView
         contentContainerStyle={[
           styles.content,
-          { paddingTop: insets.top + 12, paddingBottom: insets.bottom + 108 },
+          { paddingTop: 12, paddingBottom: 108 },
         ]}
       >
         <View style={styles.brandHeader}>
@@ -217,12 +227,22 @@ export const NativeHomeScreen = ({
           </Pressable>
         </View>
 
+        {onboardingProgress ? (
+          <NativeHomeOnboarding
+            displayName={firstName}
+            light={light}
+            onDismiss={onDismissOnboarding}
+            onNavigate={onNavigate}
+            progress={onboardingProgress}
+          />
+        ) : (
+          <>
         <View style={styles.welcome}>
           <Text style={styles.eyebrow}>TRAINER DASHBOARD</Text>
           <Text accessibilityRole="header" style={[styles.title, light && styles.textLight]}>Welcome back,{`\n`}{firstName}</Text>
           <Text style={[styles.lead, light && styles.mutedLight]}>Your collection, trades, and trainer network—together in one place.</Text>
           <Pressable accessibilityRole="button" onPress={() => onNavigate('/search')} style={styles.primaryButton}>
-            <Text maxFontSizeMultiplier={1} style={styles.primaryGlyph}>⌕</Text>
+            <NativeUiIcon color="#04131f" name="search" size={18} />
             <Text style={styles.primaryButtonText}>Find Pokémon</Text>
           </Pressable>
         </View>
@@ -254,7 +274,7 @@ export const NativeHomeScreen = ({
             <ActionCard
               accent="#35c984"
               detail={trades.needsResponse ? 'A trainer is waiting for your response.' : 'New trade proposals will appear here.'}
-              glyph="↔"
+              icon="trade"
               light={light}
               onPress={() => onNavigate('/trades?section=activity')}
               title={trades.needsResponse ? `${trades.needsResponse} offer${trades.needsResponse === 1 ? '' : 's'} to review` : 'No new offers'}
@@ -262,7 +282,7 @@ export const NativeHomeScreen = ({
             <ActionCard
               accent="#35c984"
               detail={trades.waiting ? `${trades.waiting} active trade${trades.waiting === 1 ? '' : 's'} waiting on another trainer.` : 'Accepted trades will show up here.'}
-              glyph="✓"
+              icon="check"
               light={light}
               onPress={() => onNavigate('/trades?section=activity')}
               title={trades.readyToConfirm ? `${trades.readyToConfirm} trade${trades.readyToConfirm === 1 ? '' : 's'} ready to confirm` : 'No confirmations due'}
@@ -270,7 +290,7 @@ export const NativeHomeScreen = ({
             <ActionCard
               accent="#2389ed"
               detail={friendsState === 'error' ? 'Open Friends to try again.' : 'Grow your trusted trainer network.'}
-              glyph="♟"
+              icon="trainers"
               light={light}
               onPress={() => onNavigate('/profile/friends')}
               title={friendTitle}
@@ -289,15 +309,15 @@ export const NativeHomeScreen = ({
           <View style={styles.statGrid}>
             <StatCard accent="#299cf5" label="Caught" light={light} onPress={() => onNavigate('/pokemon?filter=caught')} value={collection.caught} />
             <StatCard accent="#e7bb1f" label="★ Favorites" light={light} onPress={() => onNavigate('/pokemon?filter=favorites')} value={collection.favorites} />
-            <StatCard accent="#35c984" label="↔ For Trade" light={light} onPress={() => onNavigate('/pokemon?filter=trade')} value={collection.forTrade} />
-            <StatCard accent="#f05a70" detail={collection.mostWanted ? `${collection.mostWanted} most wanted` : undefined} label="♥ Wanted" light={light} onPress={() => onNavigate('/pokemon?filter=wanted')} value={collection.wanted} />
+            <StatCard accent="#35c984" icon="trade" label="For Trade" light={light} onPress={() => onNavigate('/pokemon?filter=trade')} value={collection.forTrade} />
+            <StatCard accent="#f05a70" detail={collection.mostWanted ? `${collection.mostWanted} most wanted` : undefined} icon="heart" label="Wanted" light={light} onPress={() => onNavigate('/pokemon?filter=wanted')} value={collection.wanted} />
           </View>
           <View style={styles.panelActions}>
             <Pressable accessibilityRole="button" onPress={() => onNavigate('/pokemon')} style={[styles.panelAction, light && styles.panelActionLight]}>
               <Text style={[styles.panelActionText, light && styles.textLight]}>Open collection</Text><Text style={[styles.cardArrow, light && styles.mutedLight]}>›</Text>
             </Pressable>
             <Pressable accessibilityRole="button" onPress={() => onNavigate('/trade-board')} style={[styles.panelAction, light && styles.panelActionLight]}>
-              <Text style={[styles.panelActionText, light && styles.textLight]}>⌯ Share Trade Board</Text>
+              <View style={styles.panelActionLabel}><NativeUiIcon color={light ? '#183c40' : '#f8fcfd'} name="share" size={15} /><Text style={[styles.panelActionText, light && styles.textLight]}>Share Trade Board</Text></View>
             </Pressable>
           </View>
         </View>
@@ -310,9 +330,9 @@ export const NativeHomeScreen = ({
             <Text style={[styles.tradeMetric, light && styles.textLight]}><Text style={styles.tradeMetricValue}>{trades.completed}</Text> completed</Text>
           </View>
           <View style={styles.tradeLinks}>
-            <ActionCard accent="#f05a70" detail="Fine-tune what you offer and want." glyph="♥" light={light} onPress={() => onNavigate('/trades?section=preferences')} title="Trade preferences" />
-            <ActionCard accent="#35c984" detail="Review proposals and complete trades." glyph="◷" light={light} onPress={() => onNavigate('/trades?section=activity')} title="Trade activity" />
-            <ActionCard accent="#299cf5" detail="Create a shareable snapshot or live link." glyph="⌯" light={light} onPress={() => onNavigate('/trade-board')} title="Share Trade Board" />
+            <ActionCard accent="#f05a70" detail="Fine-tune what you offer and want." icon="sliders" light={light} onPress={() => onNavigate('/trades?section=preferences')} title="Trade preferences" />
+            <ActionCard accent="#35c984" detail="Review proposals and complete trades." icon="clock" light={light} onPress={() => onNavigate('/trades?section=activity')} title="Trade activity" />
+            <ActionCard accent="#299cf5" detail="Create a shareable snapshot or live link." icon="trade" light={light} onPress={() => onNavigate('/trade-board')} title="Share Trade Board" />
           </View>
         </View>
 
@@ -358,6 +378,8 @@ export const NativeHomeScreen = ({
             <ToolLink assetBaseUrl={assetBaseUrl} detail="Plan your team" icon="/images/btn_max.png" label="Max Battles" light={light} onPress={() => onNavigate('/max')} />
           </View>
         </View>
+          </>
+        )}
       </ScrollView>
 
       {showActionMenuHint ? (
@@ -373,7 +395,7 @@ export const NativeHomeScreen = ({
 
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: '#071012' },
-  rootLight: { backgroundColor: '#eef7f3' },
+  rootLight: { backgroundColor: '#f8fff9' },
   content: { width: '100%', maxWidth: 960, alignSelf: 'center', gap: 16, paddingHorizontal: 12 },
   brandHeader: { minHeight: 48, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12 },
   brand: { minWidth: 0, flex: 1, flexDirection: 'row', alignItems: 'center', gap: 8 },
@@ -421,11 +443,13 @@ const styles = StyleSheet.create({
   statCardLight: { borderColor: '#d0dcda', backgroundColor: 'rgba(255,255,255,0.72)' },
   statValue: { fontSize: 24, fontWeight: '900' },
   statLabel: { color: '#f5fbfc', fontSize: 13, fontWeight: '900' },
+  statLabelRow: { flexDirection: 'row', alignItems: 'center', gap: 5 },
   statDetail: { color: '#9eadaf', fontSize: 10 },
   panelActions: { flexDirection: 'row', gap: 9 },
   panelAction: { minHeight: 45, flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, paddingHorizontal: 8, borderWidth: 1, borderColor: '#48575a', borderRadius: 10 },
   panelActionLight: { borderColor: '#aebdbf' },
   panelActionText: { color: '#f5fbfc', fontSize: 11, fontWeight: '900' },
+  panelActionLabel: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   tradeSummary: { minHeight: 72, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-around', padding: 10, borderRadius: 11, backgroundColor: '#0c2520' },
   tradeSummaryLight: { backgroundColor: '#e0f7ee' },
   tradeMetric: { flex: 1, color: '#ecf8f4', fontSize: 13, fontWeight: '800', textAlign: 'center' },

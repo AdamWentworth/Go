@@ -1,5 +1,8 @@
 import type { PokemonInstance } from '@pokemongonexus/shared-contracts/instances';
-import type { BasePokemon } from '@pokemongonexus/shared-contracts/pokemon';
+import type {
+  BasePokemon,
+  PokemonPokedexSpecies,
+} from '@pokemongonexus/shared-contracts/pokemon';
 import {
   buildPokemonCatalogEntries,
   type PokemonCatalogEntry,
@@ -152,12 +155,48 @@ const isRegistrationSource = (instance: PokemonInstance): boolean => (
   Boolean(instance.registered || instance.is_caught || instance.is_for_trade)
 );
 
+/** Adds unreleased species to the native index exactly as the web Pokédex does. */
+export const mergeNativePokedexSpecies = (
+  releasedCatalog: BasePokemon[],
+  speciesCatalog: PokemonPokedexSpecies[] = [],
+): BasePokemon[] => {
+  if (speciesCatalog.length === 0) return releasedCatalog;
+  const releasedIds = new Set(releasedCatalog.map(({ pokemon_id: pokemonId }) => pokemonId));
+  const placeholders = speciesCatalog
+    .filter(({ pokemon_id: pokemonId }) => !releasedIds.has(pokemonId))
+    .map((species) => ({
+      pokemon_id: species.pokemon_id,
+      pokedex_number: species.pokedex_number,
+      name: species.name,
+      form: species.form,
+      generation: species.generation,
+      available: 0,
+      gender_rate: species.gender_rate ?? '',
+      image_url: species.image_url ?? '',
+      image_url_shiny: '',
+      image_url_shadow: '',
+      image_url_shiny_shadow: '',
+      type_1_icon: '',
+      type_2_icon: '',
+      type1_name: '',
+      type2_name: '',
+      shiny_available: 0,
+      costumes: [],
+      megaEvolutions: [],
+      fusion: [],
+      crownForms: [],
+      max: [],
+    }) as unknown as BasePokemon);
+  return [...releasedCatalog, ...placeholders];
+};
+
 export const buildNativePokedexEntries = (
   catalog: BasePokemon[],
   instances: Record<string, PokemonInstance> = {},
   manualRegistrations: NativePokedexManualRegistration[] = [],
 ): NativePokedexEntry[] => {
   const generationByPokemon = new Map(catalog.map((pokemon) => [pokemon.pokemon_id, pokemon.generation]));
+  const dexByPokemon = new Map(catalog.map((pokemon) => [pokemon.pokemon_id, pokemon.pokedex_number]));
   const pokemonById = new Map(catalog.map((pokemon) => [pokemon.pokemon_id, pokemon]));
   const registeredInstances = Object.values(instances).filter(isRegistrationSource);
   const instancesByVariant = new Map<string, PokemonInstance[]>();
@@ -179,6 +218,11 @@ export const buildNativePokedexEntries = (
       .filter((entry) => manualByVariant.has(entry.id))
       .map((entry) => entry.pokemonId),
   );
+  const registeredDexNumbers = new Set(
+    [...registeredPokemonIds, ...manuallyRegisteredPokemonIds]
+      .map((pokemonId) => dexByPokemon.get(pokemonId))
+      .filter((dexNumber): dexNumber is number => dexNumber != null),
+  );
   return buildPokemonCatalogEntries(catalog).map((entry) => ({
     ...entry,
     category: categoryFor(entry),
@@ -192,7 +236,10 @@ export const buildNativePokedexEntries = (
       )),
       ...(manualByVariant.get(entry.id) ?? []).map(({ facets }) => facets),
     ],
-    registeredSpecies: registeredPokemonIds.has(entry.pokemonId) || manuallyRegisteredPokemonIds.has(entry.pokemonId),
+    // The canonical Pokédex treats the base, shiny, and shadow indexes as
+    // species indexes. Registering any form of a species therefore registers
+    // the collapsed regional row for that Pokédex number.
+    registeredSpecies: registeredDexNumbers.has(entry.pokedexNumber),
   }));
 };
 
@@ -225,7 +272,7 @@ export const filterNativePokedexEntries = ({
   query: string;
 }): NativePokedexEntry[] => {
   const normalized = query.trim().toLocaleLowerCase();
-  return entries.filter((entry) => {
+  const filtered = entries.filter((entry) => {
     if (generation != null && entry.generation !== generation) return false;
     if (entry.category !== category) return false;
     if (facets.length > 0 && !entry.registeredFacets.some((registration) => (
@@ -234,4 +281,22 @@ export const filterNativePokedexEntries = ({
     return !normalized || entry.name.toLocaleLowerCase().includes(normalized)
       || String(entry.pokedexNumber).includes(normalized);
   });
+
+  if (category !== 'pokemon' && category !== 'shiny' && category !== 'shadow') {
+    return filtered;
+  }
+
+  // Pokémon data contains distinct records for regional and named forms that
+  // can share a Pokédex number. The web Pokédex deliberately displays one row
+  // per number in these three species-level categories. Preserve the first
+  // canonical candidate (the API orders the default form first), falling back
+  // to the lower stable Pokémon id if the input order differs.
+  const byDex = new Map<number, NativePokedexEntry>();
+  filtered.forEach((entry) => {
+    const current = byDex.get(entry.pokedexNumber);
+    if (!current || entry.pokemonId < current.pokemonId) {
+      byDex.set(entry.pokedexNumber, entry);
+    }
+  });
+  return [...byDex.values()];
 };

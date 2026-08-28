@@ -15,17 +15,20 @@ import {
   Text,
   TextInput,
   View,
-  useColorScheme,
   useWindowDimensions,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { NativeTradePreferencePokemonCard } from '../features/trades/NativeTradePreferencePokemonCard';
+import {
+  NativeTradePreferencePokemonCard,
+} from '../features/trades/NativeTradePreferencePokemonCard';
 import {
   resolveNativeTradePreferenceDraftCandidates,
   type NativeTradePreferenceEntry,
   type NativeTradePreferenceMode,
 } from '../features/trades/nativeTradePreferencesModel';
+import { useNativeModalAnimation } from '../features/settings/useNativeMotion';
+import { useNativeColorScheme } from '../features/settings/useNativeColorScheme';
 
 export type NativeTradePreferenceDraft = {
   filters: TradePreferenceFilters;
@@ -90,6 +93,7 @@ const filtersEqual = (
 
 const EntrySummary = ({
   assetBaseUrl,
+  compact = false,
   entry,
   light,
   mode,
@@ -97,6 +101,7 @@ const EntrySummary = ({
   selected = false,
 }: {
   assetBaseUrl: string;
+  compact?: boolean;
   entry: NativeTradePreferenceEntry;
   light: boolean;
   mode: NativeTradePreferenceMode;
@@ -111,8 +116,10 @@ const EntrySummary = ({
       onPress={onPress}
       style={[
         styles.entrySummary,
+        compact && styles.entrySummaryCompact,
         light && styles.surfaceLight,
-        selected && { borderColor: colors.accent, backgroundColor: colors.soft },
+        selected && !compact && { borderColor: colors.accent, backgroundColor: colors.soft },
+        compact && { borderColor: colors.accent },
       ]}
       testID={`preference-entry-${entry.collectionKey}`}
     >
@@ -130,17 +137,22 @@ const EntrySummary = ({
         ) : null}
       </View>
       <View style={styles.entryCopy}>
-        <Text style={[styles.eyebrow, { color: colors.accent }]}>
-          {mode === 'trade' ? 'TRADING AWAY' : 'LOOKING FOR'}
-        </Text>
+        {!compact ? (
+          <Text style={[styles.eyebrow, { color: colors.accent }]}>
+            {mode === 'trade' ? 'TRADING AWAY' : 'LOOKING FOR'}
+          </Text>
+        ) : null}
         <Text numberOfLines={2} style={[styles.entryName, light && styles.textLight]}>
           {entry.row.name}
         </Text>
         <Text style={[styles.entryMeta, light && styles.secondaryLight]}>
-          #{String(entry.row.pokedexNumber).padStart(4, '0')} · {entry.allowedCount} {mode === 'trade' ? 'targets' : 'offers'}
+          #{String(entry.row.pokedexNumber).padStart(4, '0')}
+          {!compact ? ` · ${entry.allowedCount} ${mode === 'trade' ? 'targets' : 'offers'}` : ''}
         </Text>
       </View>
-      <Text style={[styles.chevron, { color: colors.accent }]}>›</Text>
+      <Text style={[compact ? styles.changeLabel : styles.chevron, { color: colors.accent }]}>
+        {compact ? 'Change' : '›'}
+      </Text>
     </Pressable>
   );
 };
@@ -181,6 +193,7 @@ const RuleGroup = ({
         const selected = filters[key] === true;
         return (
           <Pressable
+            aria-checked={selected}
             accessibilityRole="checkbox"
             accessibilityState={{ checked: selected, disabled }}
             disabled={disabled}
@@ -222,7 +235,9 @@ export const NativeTradePreferencesScreen = ({
   showModeTabs = true,
 }: Props) => {
   const { width } = useWindowDimensions();
-  const light = useColorScheme() === 'light';
+  const light = useNativeColorScheme() === 'light';
+  const slideAnimation = useNativeModalAnimation('slide');
+  const fadeAnimation = useNativeModalAnimation('fade');
   const desktop = width >= 760;
   const initialEntry = entries[initialMode].find(
     (entry) => entry.collectionKey === initialEntryId,
@@ -385,6 +400,7 @@ export const NativeTradePreferencesScreen = ({
       {!desktop ? (
         <EntrySummary
           assetBaseUrl={assetBaseUrl}
+          compact
           entry={selectedEntry}
           light={light}
           mode={mode}
@@ -392,38 +408,46 @@ export const NativeTradePreferencesScreen = ({
           selected
         />
       ) : null}
-      <View style={styles.editorTitleRow}>
-        <View style={styles.editorTitleCopy}>
-          <Text style={[styles.eyebrow, { color: colors.accent }]}>
-            {mode === 'trade' ? 'DESIRED RETURN' : 'WANTED PREFERENCES'}
-          </Text>
-          <Text style={[styles.editorTitle, light && styles.textLight]}>
-            {mode === 'trade' ? 'Wanted Pokémon' : 'For Trade Pokémon'}
-          </Text>
-          <Text style={[styles.editorDescription, light && styles.secondaryLight]}>
-            {mode === 'trade'
-              ? 'Choose the Pokémon you would accept for this listing.'
-              : 'Choose which of your For Trade Pokémon can be offered for this wanted entry.'}
-          </Text>
-        </View>
-        {editing ? (
-          <View style={[styles.editingChip, { backgroundColor: colors.soft }]}>
-            <Text style={[styles.editingChipText, { color: colors.accent }]}>EDITING</Text>
+      {desktop ? (
+        <View style={styles.editorTitleRow}>
+          <View style={styles.editorTitleCopy}>
+            <Text style={[styles.eyebrow, { color: colors.accent }]}>
+              {mode === 'trade' ? 'DESIRED RETURN' : 'WANTED PREFERENCES'}
+            </Text>
+            <Text style={[styles.editorTitle, light && styles.textLight]}>
+              {mode === 'trade' ? 'Wanted Pokémon' : 'For Trade Pokémon'}
+            </Text>
+            <Text style={[styles.editorDescription, light && styles.secondaryLight]}>
+              {mode === 'trade'
+                ? 'Choose the Pokémon you would accept for this listing.'
+                : 'Choose which of your For Trade Pokémon can be offered for this wanted entry.'}
+            </Text>
           </View>
-        ) : (
-          <Pressable
-            accessibilityRole="button"
-            onPress={() => {
-              setSaveSuccess(false);
-              setEditing(true);
-            }}
-            style={[styles.editButton, { borderColor: colors.accent, backgroundColor: colors.soft }]}
-            testID="trade-preferences-edit"
-          >
-            <Text style={[styles.editButtonText, { color: colors.accent }]}>Edit preferences</Text>
-          </Pressable>
-        )}
-      </View>
+          {editing ? (
+            <View style={[styles.editingChip, { backgroundColor: colors.soft }]}>
+              <Text style={[styles.editingChipText, { color: colors.accent }]}>EDITING</Text>
+            </View>
+          ) : (
+            <Pressable
+              accessibilityRole="button"
+              onPress={() => {
+                setSaveSuccess(false);
+                setEditing(true);
+              }}
+              style={[styles.editButton, { borderColor: colors.accent, backgroundColor: colors.soft }]}
+              testID="trade-preferences-edit"
+            >
+              <Image
+                accessibilityElementsHidden
+                resizeMode="contain"
+                source={{ uri: toAssetUrl(assetBaseUrl, '/images/edit-icon.png') }}
+                style={[styles.editButtonIcon, { tintColor: colors.accent }]}
+              />
+              <Text style={[styles.editButtonText, { color: colors.accent }]}>Edit preferences</Text>
+            </Pressable>
+          )}
+        </View>
+      ) : null}
 
       {saveError || error ? (
         <View style={styles.errorBanner}>
@@ -432,25 +456,27 @@ export const NativeTradePreferencesScreen = ({
         </View>
       ) : null}
 
-      <View style={[styles.advanced, light && styles.surfaceLight]}>
-        <Pressable
-          accessibilityRole="button"
-          accessibilityState={{ expanded: advancedOpen }}
-          onPress={() => setAdvancedOpen((open) => !open)}
-          style={styles.advancedToggle}
-        >
-          <View>
-            <Text style={[styles.advancedLabel, { color: colors.accent }]}>ADVANCED MATCHING RULES</Text>
-            <Text style={[styles.advancedValue, light && styles.textLight]}>
-              {mirror ? 'Mirror trade enabled' : activeRuleCount ? `${activeRuleCount} active ${activeRuleCount === 1 ? 'rule' : 'rules'}` : 'No additional rules'}
-            </Text>
-          </View>
-          <Text style={[styles.advancedMark, light && styles.textLight]}>{advancedOpen ? '−' : '+'}</Text>
-        </Pressable>
-        {advancedOpen ? (
-          <View style={styles.ruleGroups}>
+      <View style={!desktop && !editing ? styles.mobileAdvancedRow : undefined}>
+        <View style={[styles.advanced, !desktop && !editing && styles.mobileAdvanced, light && styles.surfaceLight]}>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityState={{ expanded: advancedOpen }}
+            onPress={() => setAdvancedOpen((open) => !open)}
+            style={styles.advancedToggle}
+          >
+            <View>
+              <Text style={[styles.advancedLabel, { color: colors.accent }]}>ADVANCED MATCHING RULES</Text>
+              <Text style={[styles.advancedValue, light && styles.textLight]}>
+                {mirror ? 'Mirror trade enabled' : activeRuleCount ? `${activeRuleCount} active ${activeRuleCount === 1 ? 'rule' : 'rules'}` : 'No additional rules'}
+              </Text>
+            </View>
+            <Text style={[styles.advancedMark, light && styles.textLight]}>{advancedOpen ? '−' : '+'}</Text>
+          </Pressable>
+          {advancedOpen ? (
+            <View style={styles.ruleGroups}>
             {mode === 'trade' ? (
               <Pressable
+                aria-checked={mirror}
                 accessibilityRole="checkbox"
                 accessibilityState={{ checked: mirror, disabled: !editing }}
                 disabled={!editing}
@@ -506,7 +532,27 @@ export const NativeTradePreferencesScreen = ({
                 />
               </>
             ) : null}
-          </View>
+            </View>
+          ) : null}
+        </View>
+        {!desktop && !editing ? (
+          <Pressable
+            accessibilityRole="button"
+            onPress={() => {
+              setSaveSuccess(false);
+              setEditing(true);
+            }}
+            style={[styles.editButton, styles.mobileEditButton, { borderColor: colors.accent, backgroundColor: colors.soft }]}
+            testID="trade-preferences-edit"
+          >
+            <Image
+              accessibilityElementsHidden
+              resizeMode="contain"
+              source={{ uri: toAssetUrl(assetBaseUrl, '/images/edit-icon.png') }}
+              style={[styles.editButtonIcon, { tintColor: colors.accent }]}
+            />
+            <Text style={[styles.editButtonText, { color: colors.accent }]}>Edit preferences</Text>
+          </Pressable>
         ) : null}
       </View>
 
@@ -516,30 +562,36 @@ export const NativeTradePreferencesScreen = ({
             {mode === 'trade' ? 'WANTED POKÉMON' : 'FOR TRADE POKÉMON'}
           </Text>
           <Text style={[styles.listCount, light && styles.secondaryLight]}>
-            {allowedCount} {mode === 'trade' ? 'acceptable targets' : 'acceptable offers'}
+            {allowedCount} {mode === 'trade' ? 'wanted' : 'available'} · {activeRuleCount === 0
+              ? 'no advanced rules'
+              : `${activeRuleCount} advanced ${activeRuleCount === 1 ? 'rule' : 'rules'}`}
           </Text>
         </View>
-        {editing ? (
-          <Pressable
-            accessibilityRole="button"
-            onPress={() => resetDraft(selectedEntry)}
-            style={[styles.compactButton, light && styles.compactButtonLight]}
-          >
-            <Text style={[styles.compactButtonText, light && styles.textLight]}>↶ Reset</Text>
-          </Pressable>
-        ) : null}
+        <Pressable
+          accessibilityRole="button"
+          accessibilityState={{ disabled: !editing }}
+          disabled={!editing}
+          onPress={() => resetDraft(selectedEntry)}
+          style={[
+            styles.compactButton,
+            light && styles.compactButtonLight,
+            !editing && styles.disabled,
+          ]}
+        >
+          <Text style={[styles.compactButtonText, light && styles.textLight]}>↶ Reset</Text>
+        </Pressable>
       </View>
 
-      {editing ? (
-        <View style={styles.editTools}>
-          <TextInput
-            accessibilityLabel="Search preference Pokémon"
-            onChangeText={setQuery}
-            placeholder="Search Pokémon"
-            placeholderTextColor={light ? '#718087' : '#809398'}
-            style={[styles.search, light && styles.searchLight]}
-            value={query}
-          />
+      <View style={styles.editTools}>
+        <TextInput
+          accessibilityLabel="Search preference Pokémon"
+          onChangeText={setQuery}
+          placeholder="Search Pokémon"
+          placeholderTextColor={light ? '#718087' : '#809398'}
+          style={[styles.search, light && styles.searchLight]}
+          value={query}
+        />
+        {editing ? (
           <View style={styles.toolButtons}>
             <Pressable accessibilityRole="button"
               onPress={() => setShowAllowedOnly((value) => !value)}
@@ -564,8 +616,8 @@ export const NativeTradePreferencesScreen = ({
               <Text style={[styles.toolButtonText, light && styles.textLight]}>Clear all</Text>
             </Pressable>
           </View>
-        </View>
-      ) : null}
+        ) : null}
+      </View>
     </View>
   ) : null;
 
@@ -635,18 +687,18 @@ export const NativeTradePreferencesScreen = ({
     <View style={[styles.safe, light && styles.safeLight]} testID="native-trade-preferences-screen">
       {showModeTabs ? (
         <View style={[styles.topTabs, light && styles.topTabsLight]}>
-          <Pressable accessibilityRole="tab" accessibilityState={{ selected: true }} style={styles.topTab}>
+          <Pressable aria-selected accessibilityRole="tab" accessibilityState={{ selected: true }} style={styles.topTab}>
             <Text style={[styles.topTabText, light && styles.textLight]}>Trade Preferences</Text>
           </Pressable>
-          <Pressable accessibilityRole="tab" accessibilityState={{ selected: false }} onPress={onOpenActivity} style={[styles.topTab, styles.topTabInactive]}>
+          <Pressable aria-selected={false} accessibilityRole="tab" accessibilityState={{ selected: false }} onPress={onOpenActivity} style={[styles.topTab, styles.topTabInactive]}>
             <Text style={[styles.topTabText, styles.topTabInactiveText]}>Trade Activity</Text>
           </Pressable>
         </View>
       ) : null}
       <View style={styles.heading}>
-        <Text style={[styles.pageTitle, light && styles.textLight]}>Trade preferences</Text>
+        <Text style={[styles.pageTitle, light && styles.textLight]}>Trade Preferences</Text>
         <Text style={[styles.pageDescription, light && styles.secondaryLight]}>
-          Decide what you will trade away and what you want in return.
+          Choose acceptable matches for each For Trade and Wanted Pokémon.
         </Text>
       </View>
       <View style={[styles.modeTabs, light && styles.modeTabsLight]}>
@@ -655,6 +707,7 @@ export const NativeTradePreferencesScreen = ({
           const active = mode === option;
           return (
             <Pressable
+              aria-selected={active}
               accessibilityRole="tab"
               accessibilityState={{ selected: active }}
               key={option}
@@ -665,11 +718,8 @@ export const NativeTradePreferencesScreen = ({
               ]}
             >
               <Text style={[styles.modeTabLabel, active && { color: optionTone.accent }]}>
-                {optionTone.label}
+                {optionTone.label} ({entries[option].length})
               </Text>
-              <View style={[styles.modeCount, active && { backgroundColor: optionTone.accent }]}>
-                <Text style={[styles.modeCountText, active && styles.activeCountText]}>{entries[option].length}</Text>
-              </View>
             </Pressable>
           );
         })}
@@ -727,7 +777,7 @@ export const NativeTradePreferencesScreen = ({
         </View>
       ) : null}
 
-      <Modal animationType="slide" onRequestClose={() => setPickerOpen(false)} visible={pickerOpen}>
+      <Modal animationType={slideAnimation} onRequestClose={() => setPickerOpen(false)} visible={pickerOpen}>
         <SafeAreaView style={[styles.picker, light && styles.safeLight]}>
           <View style={[styles.pickerHeader, light && styles.pickerHeaderLight]}>
             <View>
@@ -756,7 +806,7 @@ export const NativeTradePreferencesScreen = ({
         </SafeAreaView>
       </Modal>
 
-      <Modal animationType="fade" onRequestClose={() => setDiscardOpen(false)} transparent visible={discardOpen}>
+      <Modal animationType={fadeAnimation} onRequestClose={() => setDiscardOpen(false)} transparent visible={discardOpen}>
         <View style={styles.modalScrim}>
           <View style={[styles.confirm, light && styles.confirmLight]}>
             <Text style={[styles.confirmEyebrow, { color: colors.accent }]}>UNSAVED PREFERENCES</Text>
@@ -789,8 +839,10 @@ export const NativeTradePreferencesScreen = ({
 };
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: '#071012' },
-  safeLight: { backgroundColor: '#eef4f5' },
+  // Reserve the floating action-menu lane so candidates and sticky save
+  // controls cannot land beneath the Poké Ball on narrow/large-text layouts.
+  safe: { flex: 1, paddingBottom: 86, backgroundColor: '#071012' },
+  safeLight: { backgroundColor: '#f8fff9' },
   topTabs: {
     marginHorizontal: 8,
     marginTop: 6,
@@ -836,21 +888,31 @@ const styles = StyleSheet.create({
   editorPaneDesktop: { alignItems: 'center' },
   editorList: { flex: 1, width: '100%' },
   editorContent: { gap: 8, paddingBottom: 110, alignSelf: 'center', width: '100%', maxWidth: 856 },
-  entrySummary: { minHeight: 74, borderRadius: 12, borderWidth: 1, borderColor: '#2a4145', backgroundColor: '#101c1e', flexDirection: 'row', alignItems: 'center', padding: 8, gap: 9, marginBottom: 8 },
+  entrySummary: { minHeight: 58, borderRadius: 10, borderWidth: 1, borderColor: '#2a4145', backgroundColor: '#101c1e', flexDirection: 'row', alignItems: 'center', padding: 7, gap: 8, marginBottom: 8 },
+  entrySummaryCompact: { minHeight: 58, backgroundColor: 'transparent' },
   surfaceLight: { backgroundColor: '#fff' },
-  entryImageStage: { width: 58, height: 58, borderRadius: 10, backgroundColor: '#1b2a2d', alignItems: 'center', justifyContent: 'center' },
-  entryImage: { width: 54, height: 54 },
-  entryMaxBadge: { position: 'absolute', width: 19, height: 19, right: 1, top: 1 },
+  entryImageStage: { width: 44, height: 44, borderRadius: 8, backgroundColor: '#1b2a2d', alignItems: 'center', justifyContent: 'center' },
+  entryImage: { width: 40, height: 40 },
+  entryMaxBadge: { position: 'absolute', width: 16, height: 16, right: 1, top: 1 },
   entryCopy: { flex: 1, minWidth: 0 },
   eyebrow: { fontSize: 10, lineHeight: 13, fontWeight: '900', letterSpacing: 1.2 },
-  entryName: { color: '#f4f9fa', fontSize: 16, lineHeight: 19, fontWeight: '900' },
+  entryName: { color: '#f4f9fa', fontSize: 14, lineHeight: 17, fontWeight: '900' },
   entryMeta: { color: '#9bb0b4', fontSize: 11, marginTop: 2 },
   chevron: { fontSize: 28, fontWeight: '400' },
+  changeLabel: {
+    width: 56,
+    flexShrink: 0,
+    fontSize: 11,
+    fontWeight: '900',
+    textAlign: 'right',
+    paddingRight: 2,
+  },
   editorTitleRow: { paddingTop: 6, paddingBottom: 10, flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'space-between', gap: 10 },
   editorTitleCopy: { flex: 1, minWidth: 0 },
   editorTitle: { color: '#f6fafb', fontSize: 24, lineHeight: 28, fontWeight: '900' },
   editorDescription: { color: '#9db0b4', fontSize: 13, lineHeight: 17, maxWidth: 520 },
-  editButton: { flexShrink: 0, minHeight: 44, maxWidth: 148, borderWidth: 1, borderRadius: 10, paddingHorizontal: 12, alignItems: 'center', justifyContent: 'center' },
+  editButton: { flexShrink: 0, minHeight: 44, maxWidth: 148, borderWidth: 1, borderRadius: 10, paddingHorizontal: 12, flexDirection: 'row', gap: 7, alignItems: 'center', justifyContent: 'center' },
+  editButtonIcon: { width: 20, height: 20 },
   editButtonText: { fontSize: 13, fontWeight: '900' },
   editingChip: { minHeight: 34, borderRadius: 999, paddingHorizontal: 12, alignItems: 'center', justifyContent: 'center' },
   editingChipText: { fontSize: 10, fontWeight: '900', letterSpacing: 1 },
@@ -858,6 +920,9 @@ const styles = StyleSheet.create({
   errorTitle: { color: '#ff7084', fontSize: 10, fontWeight: '900', letterSpacing: 1 },
   errorText: { color: '#f8dfe4', marginTop: 3, fontSize: 13 },
   advanced: { borderWidth: 1, borderColor: '#29494d', borderRadius: 12, backgroundColor: '#0e191b', overflow: 'hidden' },
+  mobileAdvancedRow: { flexDirection: 'row', alignItems: 'stretch', gap: 8 },
+  mobileAdvanced: { flex: 1, minWidth: 0 },
+  mobileEditButton: { flexBasis: 148, maxWidth: 148 },
   advancedToggle: { minHeight: 62, paddingHorizontal: 12, paddingVertical: 10, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   advancedLabel: { fontSize: 10, fontWeight: '900', letterSpacing: 1 },
   advancedValue: { color: '#f2f7f8', fontSize: 14, fontWeight: '800', marginTop: 2 },

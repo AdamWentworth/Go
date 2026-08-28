@@ -24,6 +24,7 @@ import {
 } from '../../../../../features/trades/tradeQueries';
 import { runtimeConfig } from '../../../../../config/runtimeConfig';
 import { NativeInstanceDetailScreen } from '../../../../../screens/NativeInstanceDetailScreen';
+import { NativeProtectedSessionGate } from '../../../../../components/NativeProtectedSessionGate';
 
 const firstParam = (value: string | string[] | undefined): string => (
   Array.isArray(value) ? value[0] ?? '' : value ?? ''
@@ -153,6 +154,16 @@ export default function NativeForeignInstanceRoute() {
         : !foreignQuery.isPending && success && !detail
           ? 'This listing is no longer available.'
           : null;
+
+  if (session.status === 'restoring' || session.status === 'unavailable') {
+    return (
+      <NativeProtectedSessionGate
+        message="Opening trade listing…"
+        onRetry={session.retrySession}
+        status={session.status}
+      />
+    );
+  }
 
   if (session.status !== 'signed-in' || !session.user) {
     return <Redirect href="/native" />;

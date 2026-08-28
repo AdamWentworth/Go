@@ -10,17 +10,13 @@ import {
   Pressable,
   ScrollView,
   StyleSheet,
-  Switch,
   Text,
   TextInput,
   View,
-  useColorScheme,
 } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import {
-  NativeOptionPicker,
-  type NativeOptionPickerEntry,
-} from '../components/NativeOptionPicker';
+import Svg, { Path } from 'react-native-svg';
+import { NativeBackIcon } from '../components/NativeBackIcon';
+import { NativeOptionPicker, type NativeOptionPickerEntry } from '../components/NativeOptionPicker';
 import { NativeSettingsWorkspaceNav } from '../components/NativeSettingsWorkspaceNav';
 import {
   changeNativeCoordinationMethod,
@@ -28,6 +24,7 @@ import {
 } from '../features/social/nativeTrainerPreferencesModel';
 import type { NativeColorTheme } from '../features/settings/nativeDevicePreferences';
 import type { NativeSyncSettingsSummary } from '../features/settings/nativeSyncSettingsModel';
+import { useNativeColorScheme } from '../features/settings/useNativeColorScheme';
 
 type PickerKey =
   | 'profileVisibility'
@@ -82,6 +79,21 @@ const labelFor = (options: NativeOptionPickerEntry[], value: string): string => 
   options.find((option) => option.key === value)?.label ?? value
 );
 
+const PrivacyShieldIcon = () => (
+  <Svg height={28} viewBox="0 0 24 24" width={28}>
+    <Path
+      d="M12 2.8 20 6v5.25c0 5.1-3.15 8.55-8 10.1-4.85-1.55-8-5-8-10.1V6l8-3.2Zm0 3.15L7 7.9v3.35c0 3.35 1.85 5.7 5 6.95V5.95Z"
+      fill="#42d7c6"
+    />
+  </Svg>
+);
+
+const PrivacyLockIcon = () => (
+  <Svg height={18} viewBox="0 0 24 24" width={18}>
+    <Path d="M7.5 10V7.8a4.5 4.5 0 0 1 9 0V10h1.2c.72 0 1.3.58 1.3 1.3v7.4c0 .72-.58 1.3-1.3 1.3H6.3c-.72 0-1.3-.58-1.3-1.3v-7.4c0-.72.58-1.3 1.3-1.3h1.2Zm2 0h5V7.8a2.5 2.5 0 0 0-5 0V10Z" fill="#9db5b4" />
+  </Svg>
+);
+
 type SelectionFieldProps = {
   description?: string;
   label: string;
@@ -116,20 +128,29 @@ type ToggleFieldProps = {
 };
 
 const ToggleField = ({ description, disabled, label, light, onChange, value }: ToggleFieldProps) => (
-  <View style={[styles.toggleRow, light && styles.toggleRowLight, disabled && styles.disabled]}>
+  <Pressable
+    aria-checked={value}
+    accessibilityLabel={label}
+    accessibilityRole="switch"
+    accessibilityState={{ checked: value, disabled }}
+    disabled={disabled}
+    onPress={() => onChange(!value)}
+    style={({ pressed }) => [styles.toggleRow, light && styles.toggleRowLight, disabled && styles.disabled, pressed && styles.pressed]}
+  >
     <View style={styles.toggleCopy}>
-      <Text style={[styles.toggleLabel, light && styles.textLight]}>{label}</Text>
+      <View style={styles.toggleLabelRow}>
+        <Svg height={17} viewBox="0 0 24 24" width={17}>
+          <Path d="M2.4 12s3.2-5 9.6-5 9.6 5 9.6 5-3.2 5-9.6 5-9.6-5-9.6-5Z" fill="none" stroke={light ? '#53666f' : '#dce9e6'} strokeWidth={1.9} />
+          <Path d="M12 9.2a2.8 2.8 0 1 0 0 5.6 2.8 2.8 0 0 0 0-5.6Z" fill={light ? '#53666f' : '#dce9e6'} />
+        </Svg>
+        <Text style={[styles.toggleLabel, light && styles.textLight]}>{label}</Text>
+      </View>
       {description ? <Text style={[styles.help, light && styles.mutedLight]}>{description}</Text> : null}
     </View>
-    <Switch
-      accessibilityLabel={label}
-      disabled={disabled}
-      onValueChange={onChange}
-      trackColor={{ false: light ? '#b6c0c2' : '#46595b', true: '#2cbba8' }}
-      thumbColor={value ? '#efffff' : '#e7eaeb'}
-      value={value}
-    />
-  </View>
+    <View style={[styles.toggleCheck, light && styles.toggleCheckLight, value && styles.toggleCheckActive]}>
+      {value ? <Text style={styles.toggleCheckMark}>✓</Text> : null}
+    </View>
+  </Pressable>
 );
 
 export const NativeTrainerSettingsScreen = ({
@@ -152,8 +173,7 @@ export const NativeTrainerSettingsScreen = ({
   reduceMotion,
   syncSummary,
 }: Props) => {
-  const light = useColorScheme() === 'light';
-  const insets = useSafeAreaInsets();
+  const light = useNativeColorScheme() === 'light';
   const [picker, setPicker] = useState<PickerKey | null>(null);
 
   const update = <K extends keyof NativeTrainerPreferencesDraft>(
@@ -194,15 +214,14 @@ export const NativeTrainerSettingsScreen = ({
   return (
     <View style={[styles.root, light && styles.rootLight]} testID="native-trainer-settings-screen">
       <ScrollView
-        contentContainerStyle={[styles.content, { paddingTop: insets.top + 12, paddingBottom: insets.bottom + 96 }]}
+        contentContainerStyle={[styles.content, { paddingTop: 12, paddingBottom: 96 }]}
         keyboardShouldPersistTaps="handled"
       >
         <View style={styles.header}>
           <Pressable accessibilityLabel="Back" accessibilityRole="button" onPress={onBack} style={[styles.back, light && styles.backLight]}>
-            <Text style={[styles.backText, light && styles.textLight]}>‹</Text>
+            <NativeBackIcon color={light ? '#172124' : '#ffffff'} size={20} />
           </Pressable>
           <View style={styles.headerCopy}>
-            <Text style={styles.eyebrow}>TRAINER CONTROLS</Text>
             <Text accessibilityRole="header" style={[styles.title, light && styles.textLight]}>Settings</Text>
           </View>
         </View>
@@ -224,7 +243,7 @@ export const NativeTrainerSettingsScreen = ({
             <View style={[styles.section, light && styles.sectionLight]}>
               <View style={styles.sectionHeader}>
                 <View><Text style={styles.sectionEyebrow}>WHO CAN SEE YOU</Text><Text style={[styles.sectionTitle, light && styles.textLight]}>Privacy</Text></View>
-                <Text style={styles.sectionIcon}>◈</Text>
+                <PrivacyShieldIcon />
               </View>
               <SelectionField label="Profile visibility" light={light} onPress={() => setPicker('profileVisibility')} value={labelFor(VISIBILITY_OPTIONS, draft.profileVisibility)} description="Controls your trainer card and profile statistics." />
               <SelectionField label="Pokémon visibility" light={light} onPress={() => setPicker('collectionVisibility')} value={labelFor(VISIBILITY_OPTIONS, draft.collectionVisibility)} description="Controls access to your public Pokémon catalog." />
@@ -237,7 +256,7 @@ export const NativeTrainerSettingsScreen = ({
               </Pressable>
             </View>
 
-            <View style={[styles.note, light && styles.noteLight]}><Text style={styles.noteIcon}>⌾</Text><Text style={[styles.noteText, light && styles.textLight]}>Private account data is never shown on public profiles.</Text></View>
+            <View style={[styles.note, light && styles.noteLight]}><PrivacyLockIcon /><Text style={[styles.noteText, light && styles.textLight]}>Private account data is never shown on public profiles.</Text></View>
 
             <View style={[styles.section, light && styles.sectionLight]}>
               <View style={styles.sectionHeader}>
@@ -320,7 +339,7 @@ export const NativeTrainerSettingsScreen = ({
           style={[
             styles.feedback,
             styles.feedbackOverlay,
-            { bottom: insets.bottom + 12 },
+            { bottom: 12 },
             feedback.tone === 'success' ? styles.feedbackSuccess : styles.feedbackError,
           ]}
         >
@@ -347,12 +366,11 @@ export const NativeTrainerSettingsScreen = ({
 
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: '#081012' },
-  rootLight: { backgroundColor: '#eef4f5' },
+  rootLight: { backgroundColor: '#f8fff9' },
   content: { width: '100%', maxWidth: 760, alignSelf: 'center', gap: 12, paddingHorizontal: 12 },
   header: { minHeight: 62, flexDirection: 'row', alignItems: 'center', gap: 11 },
   back: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: '#456265', borderRadius: 10, backgroundColor: '#171f20' },
-  backLight: { borderColor: '#aababc', backgroundColor: '#ffffff' },
-  backText: { color: '#ffffff', fontSize: 35, lineHeight: 35 },
+  backLight: { borderColor: '#9bb8b1', backgroundColor: '#f3faf5' },
   headerCopy: { flex: 1 },
   eyebrow: { color: '#35a8ff', fontSize: 10, fontWeight: '900', letterSpacing: 1.2 },
   title: { color: '#f7fbfa', fontSize: 25, fontWeight: '900' },
@@ -368,7 +386,7 @@ const styles = StyleSheet.create({
   status: { minHeight: 100, alignItems: 'center', justifyContent: 'center', gap: 8 },
   statusText: { color: '#9db5b4', fontWeight: '800' },
   section: { gap: 12, padding: 14, borderWidth: 1, borderColor: '#315052', borderRadius: 10, backgroundColor: '#171c1d' },
-  sectionLight: { borderColor: '#b1c0c2', backgroundColor: '#ffffff' },
+  sectionLight: { borderColor: '#9bb8b1', backgroundColor: '#f3faf5' },
   sectionHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   sectionEyebrow: { color: '#92c7cc', fontSize: 9, fontWeight: '900', letterSpacing: 1 },
   sectionTitle: { color: '#f7fbfa', fontSize: 21, fontWeight: '900' },
@@ -377,20 +395,25 @@ const styles = StyleSheet.create({
   field: { gap: 5 },
   fieldLabel: { color: '#92c7cc', fontSize: 10, fontWeight: '900', letterSpacing: 0.5, textTransform: 'uppercase' },
   select: { minHeight: 48, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 12, borderWidth: 1, borderColor: '#456265', borderRadius: 8, backgroundColor: '#202728' },
-  selectLight: { borderColor: '#aababc', backgroundColor: '#f6f9f9' },
+  selectLight: { borderColor: '#9bb8b1', backgroundColor: '#e3efe8' },
   selectText: { color: '#f7fbfa', fontSize: 14, fontWeight: '800' },
   chevron: { color: '#9db5b4', fontSize: 21 },
-  help: { color: '#9db5b4', fontSize: 11, lineHeight: 15 },
+  help: { color: '#9db5b4', fontSize: 11, lineHeight: 15, textAlign: 'right' },
   toggleRow: { minHeight: 58, flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 11, paddingVertical: 8, borderWidth: 1, borderColor: '#315052', borderRadius: 8, backgroundColor: '#202728' },
-  toggleRowLight: { borderColor: '#bbc7c9', backgroundColor: '#f6f9f9' },
+  toggleRowLight: { borderColor: '#9bb8b1', backgroundColor: '#e3efe8' },
   toggleCopy: { flex: 1, gap: 2 },
+  toggleLabelRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   toggleLabel: { color: '#f7fbfa', fontSize: 13, fontWeight: '900' },
+  toggleCheck: { width: 22, height: 22, flexShrink: 0, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: '#718284', borderRadius: 2, backgroundColor: '#263234' },
+  toggleCheckLight: { borderColor: '#9bb8b1', backgroundColor: '#f9fffa' },
+  toggleCheckActive: { borderColor: '#42d7c6', backgroundColor: '#42d7c6' },
+  toggleCheckMark: { color: '#0a3b39', fontSize: 17, lineHeight: 19, fontWeight: '900' },
   input: { minHeight: 48, paddingHorizontal: 12, borderWidth: 1, borderColor: '#456265', borderRadius: 8, backgroundColor: '#202728', color: '#f7fbfa', fontSize: 14, fontWeight: '700' },
-  inputLight: { borderColor: '#aababc', backgroundColor: '#f6f9f9' },
-  save: { minHeight: 48, alignItems: 'center', justifyContent: 'center', borderRadius: 8, backgroundColor: '#42d7c6' },
+  inputLight: { borderColor: '#9bb8b1', backgroundColor: '#f9fffa' },
+  save: { minWidth: 148, minHeight: 48, alignSelf: 'flex-end', alignItems: 'center', justifyContent: 'center', paddingHorizontal: 18, borderRadius: 8, backgroundColor: '#42d7c6' },
   saveText: { color: '#061617', fontSize: 14, fontWeight: '900' },
   note: { minHeight: 54, flexDirection: 'row', alignItems: 'center', gap: 10, padding: 11, borderWidth: 1, borderColor: '#315052', borderRadius: 9, backgroundColor: '#11191a' },
-  noteLight: { borderColor: '#b1c0c2', backgroundColor: '#ffffff' },
+  noteLight: { borderColor: '#9bb8b1', backgroundColor: '#f3faf5' },
   noteIcon: { color: '#42d7c6', fontSize: 23 },
   noteText: { flex: 1, color: '#f7fbfa', fontSize: 12, lineHeight: 17, fontWeight: '700' },
   coordinationNote: { padding: 11, borderLeftWidth: 3, borderLeftColor: '#42d7c6', borderRadius: 6, backgroundColor: '#102526' },
@@ -400,8 +423,9 @@ const styles = StyleSheet.create({
   syncRetry: { minHeight: 44, minWidth: 86, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 10, borderWidth: 1, borderColor: '#42d7c6', borderRadius: 8, backgroundColor: '#163b3a' },
   syncRetryLight: { backgroundColor: '#eaf8f6' },
   syncRetryText: { color: '#ffffff', fontSize: 12, fontWeight: '900' },
-  textLight: { color: '#172124' },
-  labelLight: { color: '#49666b' },
-  mutedLight: { color: '#5e6c6f' },
+  textLight: { color: '#2f4744' },
+  labelLight: { color: '#28636a' },
+  mutedLight: { color: '#4b625e' },
   disabled: { opacity: 0.5 },
+  pressed: { opacity: 0.78 },
 });

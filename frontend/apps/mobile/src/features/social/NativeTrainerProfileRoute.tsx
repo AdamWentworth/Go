@@ -5,6 +5,7 @@ import type { PokemonInstance } from '@pokemongonexus/shared-contracts/instances
 import { useNativeSession } from '../../auth/NativeSessionContext';
 import { NativeActionMenu } from '../../components/NativeActionMenu';
 import { NativeActionMenuAnchor } from '../../components/NativeActionMenuAnchor';
+import { NativeProtectedSessionGate } from '../../components/NativeProtectedSessionGate';
 import { runtimeConfig } from '../../config/runtimeConfig';
 import { buildNativeCollectionRows } from '../collection/collectionModel';
 import { useNativeCollectionSnapshotQuery } from '../collection/collectionQueries';
@@ -96,6 +97,16 @@ export const NativeTrainerProfileRoute = ({ username }: Props) => {
       runtimeConfig.api.frontendAppUrl,
     );
   }, [collectionQuery.data]);
+
+  if (session.status === 'restoring' || session.status === 'unavailable') {
+    return (
+      <NativeProtectedSessionGate
+        message="Opening trainer profile…"
+        onRetry={session.retrySession}
+        status={session.status}
+      />
+    );
+  }
 
   if (session.status !== 'signed-in' || !session.user) {
     const returnTo = normalizedUsername

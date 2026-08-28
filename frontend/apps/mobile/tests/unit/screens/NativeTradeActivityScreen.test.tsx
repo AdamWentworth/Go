@@ -1,4 +1,5 @@
 import { fireEvent, render, waitFor } from '@testing-library/react-native';
+import { StyleSheet } from 'react-native';
 import type { TradeRecord } from '@pokemongonexus/shared-contracts/trades';
 import type { NativeInstanceDetail } from '../../../src/features/collection/collectionModel';
 import { buildNativeTradeActivityModel } from '../../../src/features/trades/nativeTradeActivityModel';
@@ -87,7 +88,7 @@ const renderScreen = ({
 
 describe('NativeTradeActivityScreen', () => {
   it('renders the canonical five stages and starts with incoming offers', () => {
-    const { getByText, queryByTestId } = renderScreen();
+    const { getByTestId, getByText, queryByTestId } = renderScreen();
 
     expect(getByText('Your trades')).toBeTruthy();
     expect(getByText('Offers')).toBeTruthy();
@@ -97,6 +98,8 @@ describe('NativeTradeActivityScreen', () => {
     expect(getByText('Closed')).toBeTruthy();
     expect(queryByTestId('trade-card-incoming')).toBeTruthy();
     expect(queryByTestId('trade-card-sent')).toBeNull();
+    const listStyle = StyleSheet.flatten(getByTestId('trade-activity-list').props.contentContainerStyle);
+    expect(listStyle.paddingBottom).toBeGreaterThanOrEqual(90);
   });
 
   it('switches stages immediately and preserves mine-left/theirs-right labels', () => {

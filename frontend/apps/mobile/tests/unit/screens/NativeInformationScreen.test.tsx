@@ -34,7 +34,7 @@ describe('NativeInformationScreen', () => {
   it('routes guide actions through the native navigation adapter', () => {
     const onNavigate = jest.fn();
     renderPage('getting-started', onNavigate);
-    fireEvent.press(screen.getByText('Open Pokémon'));
+    fireEvent.press(screen.getByRole('button', { name: 'Open Pokémon' }));
     expect(onNavigate).toHaveBeenCalledWith('/pokemon');
   });
 

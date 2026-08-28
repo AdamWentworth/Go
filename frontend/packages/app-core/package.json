@@ -5,6 +5,8 @@
   "type": "module",
   "description": "Shared source-of-truth app core for web/mobile/desktop hosts.",
   "exports": {
+    "./pokemon-variants": "./src/features/variants/utils/createPokemonVariants.ts",
+    "./raid-model": "./src/pages/Raid/utils/raidRankings.ts",
     "./max-battle-model": "./src/pages/Max/utils/maxBattleModel.ts",
     "./max-battle-simulation": "./src/pages/Max/utils/maxBattleSimulation.ts"
   },

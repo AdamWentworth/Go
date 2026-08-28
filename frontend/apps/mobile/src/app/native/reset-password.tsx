@@ -1,5 +1,6 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { mobileSessionApi } from '../../auth/mobileSessionApi';
+import { NativeRouteActionMenu } from '../../components/NativeRouteActionMenu';
 import { NativePasswordResetScreen } from '../../screens/NativePasswordResetScreen';
 
 const firstParam = (value: string | string[] | undefined): string => (
@@ -11,11 +12,14 @@ export default function NativePasswordResetRoute() {
   const params = useLocalSearchParams<{ token?: string | string[] }>();
   const token = firstParam(params.token).trim();
   return (
-    <NativePasswordResetScreen
-      onBackToLogin={() => router.replace('/native/login')}
-      onConfirm={(nextToken, password) => mobileSessionApi.confirmPasswordReset({ token: nextToken, password })}
-      onRequest={(identifier) => mobileSessionApi.requestPasswordReset({ identifier })}
-      token={token}
-    />
+    <>
+      <NativePasswordResetScreen
+        onBackToLogin={() => router.replace('/native/login')}
+        onConfirm={(nextToken, password) => mobileSessionApi.confirmPasswordReset({ token: nextToken, password })}
+        onRequest={(identifier) => mobileSessionApi.requestPasswordReset({ identifier })}
+        token={token}
+      />
+      <NativeRouteActionMenu />
+    </>
   );
 }

@@ -5,4 +5,4 @@ export type {
   PokemonVariantCommon as VariantCommon,
   PokemonVariantKind as VariantKind,
   PokemonVariants as AllVariants,
-} from '@shared-contracts/variants';
+} from '@pokemongonexus/shared-contracts/variants';

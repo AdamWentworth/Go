@@ -1,5 +1,6 @@
-import { Image, Pressable, StyleSheet, Text, View, useColorScheme } from 'react-native';
+import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useNativeColorScheme } from '../features/settings/useNativeColorScheme';
 
 type Props = {
   assetBaseUrl: string;
@@ -18,7 +19,7 @@ export const NativeActionMenuHint = ({
   onDismiss,
   onOpen,
 }: Props) => {
-  const light = useColorScheme() === 'light';
+  const light = useNativeColorScheme() === 'light';
   const insets = useSafeAreaInsets();
   return (
     <View

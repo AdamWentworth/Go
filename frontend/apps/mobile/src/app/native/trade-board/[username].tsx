@@ -1,13 +1,11 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { useNativeSession } from '../../../auth/NativeSessionContext';
-import { NativeActionMenu } from '../../../components/NativeActionMenu';
 import { runtimeConfig } from '../../../config/runtimeConfig';
 import { buildNativeCollectionRows } from '../../../features/collection/collectionModel';
 import { useNativeForeignCollectionQuery } from '../../../features/collection/collectionQueries';
 import { useNativeTrainerProfileQuery } from '../../../features/social/socialQueries';
 import { buildNativeTradeBoardModel } from '../../../features/tradeBoard/nativeTradeBoardModel';
-import { resolveNativeActionMenuDestination } from '../../../navigation/nativeActionMenuNavigation';
 import { NativeTradeBoardScreen } from '../../../screens/NativeTradeBoardScreen';
 
 const firstParam = (value: string | string[] | undefined): string => (
@@ -20,7 +18,6 @@ export default function NativePublicTradeBoardRoute() {
   const session = useNativeSession();
   const username = firstParam(params.username).trim();
   const [generatedAt] = useState(() => new Date().toISOString());
-  const [actionMenuOpen, setActionMenuOpen] = useState(false);
   const viewerId = session.user?.user_id ?? null;
   const collectionQuery = useNativeForeignCollectionQuery(viewerId, username);
   const profileQuery = useNativeTrainerProfileQuery(viewerId, username);
@@ -43,53 +40,51 @@ export default function NativePublicTradeBoardRoute() {
   }, [generatedAt, profileQuery.data?.user.pokemonGoName, rows, success, username]);
   const resultError = collectionQuery.error instanceof Error
     ? collectionQuery.error.message
-    : profileQuery.error instanceof Error
-      ? profileQuery.error.message
-      : collectionQuery.data?.type === 'forbidden'
-        ? collectionQuery.data.message
-        : collectionQuery.data?.type === 'not-found'
-          ? 'This trainer could not be found.'
-          : null;
-
-  const navigateFromActionMenu = (path: string) => {
-    setActionMenuOpen(false);
-    const destination = resolveNativeActionMenuDestination(path);
-    if (destination.kind === 'current') return;
-    if (destination.kind === 'native') {
-      router.push(destination.pathname);
-      return;
-    }
-    router.push({ pathname: '/web', params: { path: destination.path } });
-  };
+    : collectionQuery.data?.type === 'forbidden'
+      ? collectionQuery.data.message
+      : collectionQuery.data?.type === 'not-found'
+        ? 'This trainer could not be found.'
+        : null;
+  const errorKind = collectionQuery.data?.type === 'forbidden'
+    ? 'private' as const
+    : collectionQuery.data?.type === 'not-found'
+      ? 'not-found' as const
+      : 'error' as const;
 
   return (
-    <>
-      <NativeTradeBoardScreen
-        assetBaseUrl={runtimeConfig.api.frontendAppUrl}
-        editable={false}
-        error={resultError}
-        isLoading={collectionQuery.isPending || profileQuery.isPending}
-        model={model}
-        onActionMenuPress={() => setActionMenuOpen(true)}
-        onBack={() => router.canGoBack() ? router.back() : router.replace('/native/search')}
-        onOpenCollection={() => router.push({
-          pathname: '/native/collection/trainer/[username]',
-          params: { username },
-        })}
-        onRetry={() => {
-          void collectionQuery.refetch();
-          void profileQuery.refetch();
-        }}
-        ownerUsername={username}
-      />
-      {actionMenuOpen ? (
-        <NativeActionMenu
-          assetBaseUrl={runtimeConfig.api.frontendAppUrl}
-          onClose={() => setActionMenuOpen(false)}
-          onNavigate={navigateFromActionMenu}
-          visible
-        />
-      ) : null}
-    </>
+    <NativeTradeBoardScreen
+      assetBaseUrl={runtimeConfig.api.frontendAppUrl}
+      editable={false}
+      error={resultError}
+      errorKind={errorKind}
+      isLoading={collectionQuery.isPending}
+      model={model}
+      onBack={() => router.canGoBack() ? router.back() : router.replace('/native/search')}
+      onOpenCreateBoard={() => router.push(session.user ? '/native/search' : '/native/register')}
+      onOpenHelp={() => router.push('/native/info/help')}
+      onOpenProfile={() => router.push({
+        pathname: '/native/profile/[username]',
+        params: { username },
+      })}
+      onOpenCollection={() => router.push({
+        pathname: '/native/collection/trainer/[username]',
+        params: { username },
+      })}
+      onOpenTradeListings={() => router.push({
+        pathname: '/native/collection/trainer/[username]',
+        params: { username, filter: 'trade' },
+      })}
+      onOpenWantedListings={() => router.push({
+        pathname: '/native/collection/trainer/[username]',
+        params: { username, filter: 'wanted' },
+      })}
+      onSearchTrainers={() => router.push({ pathname: '/native/search', params: { mode: 'trainers' } })}
+      onRetry={() => {
+        void collectionQuery.refetch();
+        void profileQuery.refetch();
+      }}
+      ownerUsername={username}
+      signedIn={Boolean(session.user)}
+    />
   );
 }

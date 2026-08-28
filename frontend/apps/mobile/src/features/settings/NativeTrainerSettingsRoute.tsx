@@ -1,9 +1,10 @@
 import { Redirect, useRouter } from 'expo-router';
 import { useMemo, useState } from 'react';
-import { StyleSheet, View, useColorScheme } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 import { useNativeSession } from '../../auth/NativeSessionContext';
 import { NativeActionMenu } from '../../components/NativeActionMenu';
 import { NativeActionMenuAnchor } from '../../components/NativeActionMenuAnchor';
+import { NativeProtectedSessionGate } from '../../components/NativeProtectedSessionGate';
 import { runtimeConfig } from '../../config/runtimeConfig';
 import { useNativeCollectionSync } from '../collection/NativeCollectionSyncProvider';
 import {
@@ -18,6 +19,7 @@ import { resolveNativeActionMenuDestination } from '../../navigation/nativeActio
 import { NativeTrainerSettingsScreen } from '../../screens/NativeTrainerSettingsScreen';
 import { useNativeDevicePreferences } from './NativeDevicePreferencesProvider';
 import { summarizeNativeSyncSettings } from './nativeSyncSettingsModel';
+import { useNativeColorScheme } from './useNativeColorScheme';
 
 type Feedback = { tone: 'success' | 'error'; text: string };
 
@@ -53,7 +55,7 @@ export const mergeNativeTrainerPreferenceGroup = ({
 
 export const NativeTrainerSettingsRoute = () => {
   const router = useRouter();
-  const light = useColorScheme() === 'light';
+  const light = useNativeColorScheme() === 'light';
   const session = useNativeSession();
   const viewerId = session.user?.user_id ?? null;
   const preferencesQuery = useNativeTrainerPreferencesQuery(viewerId);
@@ -69,6 +71,16 @@ export const NativeTrainerSettingsRoute = () => {
     : null);
 
   const syncSummary = useMemo(() => summarizeNativeSyncSettings(collectionSync), [collectionSync]);
+
+  if (session.status === 'restoring' || session.status === 'unavailable') {
+    return (
+      <NativeProtectedSessionGate
+        message="Opening settings…"
+        onRetry={session.retrySession}
+        status={session.status}
+      />
+    );
+  }
 
   if (session.status !== 'signed-in' || !session.user) {
     return <Redirect href="/native/login?returnTo=%2Fnative%2Fsettings" />;
@@ -151,5 +163,5 @@ export const NativeTrainerSettingsRoute = () => {
 
 const styles = StyleSheet.create({
   root: { flex: 1, minHeight: 0, backgroundColor: '#081012' },
-  rootLight: { backgroundColor: '#eef4f5' },
+  rootLight: { backgroundColor: '#f8fff9' },
 });

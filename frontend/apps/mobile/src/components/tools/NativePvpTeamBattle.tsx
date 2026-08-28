@@ -22,6 +22,7 @@ import type {
   PvPTeamGauntletResponse,
   PvPTeamSwitchPolicy,
 } from "@pokemongonexus/shared-domain/pvp-battle-protocol";
+import { NativeUiIcon, type NativeUiIconName } from "../NativeUiIcon";
 
 type TeamKeys = [string, string, string];
 type Props = {
@@ -59,11 +60,13 @@ const toFighter = (
 
 const Choice = ({
   active,
+  icon,
   label,
   light,
   onPress,
 }: {
   active: boolean;
+  icon?: NativeUiIconName;
   label: string;
   light: boolean;
   onPress: () => void;
@@ -74,7 +77,10 @@ const Choice = ({
     onPress={onPress}
     style={[styles.choice, light && styles.controlLight, active && styles.choiceActive]}
   >
-    <Text style={[styles.choiceText, light && styles.textLight, active && styles.choiceTextActive]}>{label}</Text>
+    <View style={styles.choiceContent}>
+      {icon ? <NativeUiIcon color={active ? '#071313' : light ? '#071d20' : '#f5ffff'} name={icon} size={13} /> : null}
+      <Text style={[styles.choiceText, light && styles.textLight, active && styles.choiceTextActive]}>{label}</Text>
+    </View>
   </Pressable>
 );
 
@@ -238,7 +244,7 @@ export const NativePvpTeamBattle = ({
         {([0, 1] as const).map((side) => (
           <View key={side} style={[styles.lineup, light && styles.panelLight]}>
             <View style={styles.lineupHeader}>
-              <Text style={[styles.lineupIcon, light && styles.accentLight]}>♟</Text>
+              <NativeUiIcon color={light ? '#08766b' : '#42d5c2'} name="trainers" size={18} />
               <View>
                 <Text style={[styles.lineupTitle, light && styles.textLight]}>{side === 0 ? "Your team" : "Opponent"}</Text>
                 <Text style={[styles.meta, light && styles.mutedLight]}>Lead, Safe Swap, and Closer</Text>
@@ -270,15 +276,15 @@ export const NativePvpTeamBattle = ({
 
       <View style={[styles.policy, light && styles.panelLight]}>
         <View style={styles.lineupHeader}>
-          <Text style={[styles.lineupIcon, light && styles.accentLight]}>◷</Text>
+          <NativeUiIcon color={light ? '#08766b' : '#42d5c2'} name="clock" size={18} />
           <View>
             <Text style={[styles.lineupTitle, light && styles.textLight]}>Switching</Text>
             <Text style={[styles.meta, light && styles.mutedLight]}>Current 45-second battle clock</Text>
           </View>
         </View>
         <View style={styles.policyChoices}>
-          <Choice active={policy === "adaptive"} label="↔ Adaptive" light={light} onPress={() => { setPolicy("adaptive"); setResult(null); }} />
-          <Choice active={policy === "fixed"} label="♟ Fixed order" light={light} onPress={() => { setPolicy("fixed"); setResult(null); }} />
+          <Choice active={policy === "adaptive"} icon="trade" label="Adaptive" light={light} onPress={() => { setPolicy("adaptive"); setResult(null); }} />
+          <Choice active={policy === "fixed"} icon="trainers" label="Fixed order" light={light} onPress={() => { setPolicy("fixed"); setResult(null); }} />
         </View>
         <Text style={[styles.meta, light && styles.mutedLight]}>{policy === "adaptive" ? "Escape clear losses and counter-switch." : "Lead, Safe Swap, then Closer."}</Text>
       </View>
@@ -302,7 +308,7 @@ export const NativePvpTeamBattle = ({
           <Text style={styles.primaryText}>▶ {busy === "battle" ? "Simulating team…" : "Run team battle"}</Text>
         </Pressable>
         <Pressable accessibilityRole="button" accessibilityLabel="Test meta teams" disabled={!complete || !representativeTeams.length || busy != null} onPress={() => void runField()} style={[styles.secondary, light && styles.secondaryLight, (!complete || !representativeTeams.length || busy != null) && styles.disabled]}>
-          <Text style={[styles.secondaryText, light && styles.accentLight]}>♜ {busy === "field" ? "Testing field…" : `Test ${representativeTeams.length} meta teams`}</Text>
+          <View style={styles.actionLabel}><NativeUiIcon color={light ? '#08766b' : '#42d5c2'} name="trophy" size={14} /><Text style={[styles.secondaryText, light && styles.accentLight]}>{busy === "field" ? "Testing field…" : `Test ${representativeTeams.length} meta teams`}</Text></View>
         </Pressable>
       </View>
       {error ? <Text accessibilityRole="alert" style={styles.error}>{error}</Text> : null}
@@ -346,7 +352,7 @@ export const NativePvpTeamBattle = ({
 
       <View style={styles.pickerSection}>
         <Text style={[styles.eyebrow, light && styles.accentLight]}>CHOOSE {activeSide === 0 ? "YOUR" : "OPPONENT"} {ROLES[activeSlot].toLocaleUpperCase()}</Text>
-        <View style={[styles.search, light && styles.inputLight]}><Text style={[styles.searchIcon, light && styles.mutedLight]}>⌕</Text><TextInput accessibilityLabel="Search Team Battle Pokémon" onChangeText={setQuery} placeholder="Find a Pokémon" placeholderTextColor="#78868e" style={[styles.searchInput, light && styles.textLight]} value={query} /></View>
+        <View style={[styles.search, light && styles.inputLight]}><NativeUiIcon color={light ? '#4c7073' : '#9db6b8'} name="search" size={18} /><TextInput accessibilityLabel="Search Team Battle Pokémon" onChangeText={setQuery} placeholder="Find a Pokémon" placeholderTextColor="#78868e" style={[styles.searchInput, light && styles.textLight]} value={query} /></View>
         <View style={styles.candidateGrid}>
           {choices.map((entry) => {
             const active = teams[activeSide][activeSlot] === entry.speciesId;
@@ -378,6 +384,7 @@ const styles = StyleSheet.create({
   policy: { gap: 7, borderWidth: 1, borderColor: "rgba(115,204,204,0.28)", borderRadius: 8, padding: 9, backgroundColor: "#151a1b" },
   policyChoices: { flexDirection: "row", gap: 6 },
   choice: { minWidth: 35, minHeight: 35, flex: 1, alignItems: "center", justifyContent: "center", borderWidth: 1, borderColor: "rgba(115,204,204,0.4)", borderRadius: 7, paddingHorizontal: 5, backgroundColor: "#101516" },
+  choiceContent: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 4 },
   choiceActive: { borderColor: "#42d5c2", backgroundColor: "#42d5c2" },
   choiceText: { color: "#9db6b8", fontSize: 9, fontWeight: "900" },
   choiceTextActive: { color: "#071313" },
@@ -385,6 +392,7 @@ const styles = StyleSheet.create({
   conditionRow: { flexDirection: "row", alignItems: "center", gap: 4 },
   conditionLabel: { width: 66, color: "#9db6b8", fontSize: 8, fontWeight: "900", textTransform: "uppercase" },
   actions: { flexDirection: "row", gap: 6 },
+  actionLabel: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 5 },
   primary: { minHeight: 48, flex: 1, alignItems: "center", justifyContent: "center", borderRadius: 7, backgroundColor: "#42d5c2" },
   primaryText: { color: "#071313", fontSize: 10, fontWeight: "900" },
   secondary: { minHeight: 48, flex: 1, alignItems: "center", justifyContent: "center", borderWidth: 1, borderColor: "rgba(115,204,204,0.5)", borderRadius: 7, backgroundColor: "rgba(66,213,194,0.06)" },

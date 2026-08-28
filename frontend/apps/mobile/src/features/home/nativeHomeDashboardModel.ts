@@ -18,6 +18,21 @@ export type NativeHomeTradeSummary = {
   active: number;
 };
 
+export type NativeHomeOnboardingTask = {
+  id: 'collection' | 'wanted' | 'trade' | 'connect';
+  title: string;
+  description: string;
+  action: string;
+  to: string;
+  complete: boolean;
+};
+
+export type NativeHomeOnboardingProgress = {
+  completed: number;
+  total: number;
+  tasks: NativeHomeOnboardingTask[];
+};
+
 export const EMPTY_NATIVE_HOME_COLLECTION: NativeHomeCollectionSummary = {
   caught: 0,
   favorites: 0,
@@ -104,3 +119,48 @@ export const selectNativeHomeRecentRows = (
   ))
   .slice(0, Math.max(0, limit));
 
+export const buildNativeHomeOnboardingProgress = (
+  collection: NativeHomeCollectionSummary,
+  connectionCount: number,
+): NativeHomeOnboardingProgress => {
+  const tasks: NativeHomeOnboardingTask[] = [
+    {
+      id: 'collection',
+      title: 'Add your first Pokémon',
+      description: 'Begin with something you have caught or already want.',
+      action: 'Open Pokémon',
+      to: '/pokemon',
+      complete: collection.caught + collection.wanted > 0,
+    },
+    {
+      id: 'wanted',
+      title: 'Create a Wanted listing',
+      description: 'Tell the app what you are looking for and which details matter.',
+      action: 'Open wishlist',
+      to: '/pokemon?filter=wanted',
+      complete: collection.wanted > 0,
+    },
+    {
+      id: 'trade',
+      title: 'List a Pokémon For Trade',
+      description: 'Choose an eligible caught Pokémon you would offer another trainer.',
+      action: 'Open collection',
+      to: '/pokemon?filter=trade',
+      complete: collection.forTrade > 0,
+    },
+    {
+      id: 'connect',
+      title: 'Make your first connection',
+      description: 'Find a trainer, add a friend, or begin a trade proposal.',
+      action: 'Find trainers',
+      to: '/search',
+      complete: connectionCount > 0,
+    },
+  ];
+
+  return {
+    completed: tasks.filter((task) => task.complete).length,
+    total: tasks.length,
+    tasks,
+  };
+};

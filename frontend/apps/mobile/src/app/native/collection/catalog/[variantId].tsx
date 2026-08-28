@@ -6,6 +6,7 @@ import { buildNativeCatalogRows } from '../../../../features/collection/collecti
 import { useNativeCollectionSnapshotQuery } from '../../../../features/collection/collectionQueries';
 import { useNativeCatalogAddition } from '../../../../features/collection/useNativeCatalogAddition';
 import { NativeCatalogDetailScreen } from '../../../../screens/NativeCatalogDetailScreen';
+import { NativeProtectedSessionGate } from '../../../../components/NativeProtectedSessionGate';
 
 export default function NativeCatalogDetailRoute() {
   const router = useRouter();
@@ -23,6 +24,16 @@ export default function NativeCatalogDetailRoute() {
       runtimeConfig.api.frontendAppUrl,
     ).find((candidate) => candidate.id === variantId) ?? null;
   }, [snapshotQuery.data, variantId]);
+
+  if (session.status === 'restoring' || session.status === 'unavailable') {
+    return (
+      <NativeProtectedSessionGate
+        message="Opening Pokémon…"
+        onRetry={session.retrySession}
+        status={session.status}
+      />
+    );
+  }
 
   if (session.status !== 'signed-in' || !session.user) {
     return <Redirect href="/native/login?returnTo=%2Fnative%2Fcollection" />;

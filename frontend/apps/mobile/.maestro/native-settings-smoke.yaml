@@ -26,6 +26,13 @@ tags:
 - assertVisible: Profile visibility
 - tapOn: Friends only
 - assertVisible: "Profile visibility, Friends only"
+- scrollUntilVisible:
+    element:
+      text: Show profile location
+    direction: DOWN
+    speed: 70
+    visibilityPercentage: 50
+    timeout: 30000
 - tapOn: Show profile location
 - tapOn: Save privacy
 - assertVisible: Privacy settings saved.

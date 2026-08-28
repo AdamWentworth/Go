@@ -5,6 +5,8 @@ import { runtimeConfig } from '../../config/runtimeConfig';
 import type { NativeCollectionRow } from '../../features/collection/collectionModel';
 import { NativeHomeScreen } from '../../screens/NativeHomeScreen';
 import { NativeGuestHomeScreen } from '../../screens/NativeGuestHomeScreen';
+import { NativeActionMenu } from '../../components/NativeActionMenu';
+import { NativeActionMenuAnchor } from '../../components/NativeActionMenuAnchor';
 
 const RECENT_ROWS: NativeCollectionRow[] = [
   {
@@ -47,6 +49,7 @@ export default function DeviceSmokeHomeRoute() {
   const params = useLocalSearchParams<{ guest?: string | string[] }>();
   const [showHint, setShowHint] = useState(true);
   const [lastPath, setLastPath] = useState('');
+  const [actionMenuOpen, setActionMenuOpen] = useState(false);
   if (!runtimeConfig.mobile.deviceSmokeMode) return <Redirect href="/" />;
   const guest = (Array.isArray(params.guest) ? params.guest[0] : params.guest) === '1';
 
@@ -59,10 +62,26 @@ export default function DeviceSmokeHomeRoute() {
           onNavigate={setLastPath}
           onOpenActionMenu={() => {
             setShowHint(false);
-            setLastPath('action-menu');
+            setActionMenuOpen(true);
           }}
           showActionMenuHint={showHint}
         />
+        <NativeActionMenuAnchor
+          assetBaseUrl={runtimeConfig.api.frontendAppUrl}
+          onPress={() => setActionMenuOpen(true)}
+        />
+        {actionMenuOpen ? (
+          <NativeActionMenu
+            assetBaseUrl={runtimeConfig.api.frontendAppUrl}
+            onClose={() => setActionMenuOpen(false)}
+            onNavigate={(path) => {
+              setActionMenuOpen(false);
+              setLastPath(path);
+            }}
+            signedIn={false}
+            visible
+          />
+        ) : null}
         {lastPath ? (
           <Text accessibilityLiveRegion="polite" style={{ position: 'absolute', width: 1, height: 1, opacity: 0.01 }}>
             Navigate {lastPath}
@@ -80,7 +99,10 @@ export default function DeviceSmokeHomeRoute() {
         friendsState="ready"
         incomingFriends={1}
         onDismissActionMenuHint={() => setShowHint(false)}
-        onOpenActionMenu={() => setLastPath('action-menu')}
+        onOpenActionMenu={() => {
+          setShowHint(false);
+          setActionMenuOpen(true);
+        }}
         onNavigate={setLastPath}
         onRetry={() => undefined}
         pokemonGoName="VisualTrainerGO"
@@ -89,6 +111,23 @@ export default function DeviceSmokeHomeRoute() {
         trades={{ needsResponse: 2, readyToConfirm: 1, waiting: 3, completed: 18, active: 6 }}
         username="VisualTrainer"
       />
+      <NativeActionMenuAnchor
+        assetBaseUrl={runtimeConfig.api.frontendAppUrl}
+        onPress={() => setActionMenuOpen(true)}
+      />
+      {actionMenuOpen ? (
+        <NativeActionMenu
+          assetBaseUrl={runtimeConfig.api.frontendAppUrl}
+          onClose={() => setActionMenuOpen(false)}
+          onNavigate={(path) => {
+            setActionMenuOpen(false);
+            setLastPath(path);
+            }}
+            pendingFriendCount={1}
+            signedIn
+            visible
+        />
+      ) : null}
       {lastPath ? (
         <Text accessibilityLiveRegion="polite" style={{ position: 'absolute', top: 2, left: 2, width: 1, height: 1, opacity: 0.01 }}>
           Navigate {lastPath}

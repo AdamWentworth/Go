@@ -10,6 +10,11 @@ import { useNativeForeignCollectionQuery } from '../../../../../features/collect
 import { DEFAULT_NATIVE_TAGS_ENVELOPE } from '../../../../../features/collection/nativeTagsEnvelope';
 import { setNativeInstanceNavigationContext } from '../../../../../features/collection/nativeInstanceNavigationContext';
 import { nativeCollectionTagKeyForFilter } from '../../../../../features/collection/nativeCollectionRouteFilter';
+import { NativeProtectedSessionGate } from '../../../../../components/NativeProtectedSessionGate';
+import {
+  patchNativeCollectionSession,
+  readNativeCollectionSession,
+} from '../../../../../features/collection/nativeCollectionSessionCache';
 import { runtimeConfig } from '../../../../../config/runtimeConfig';
 import { NativeCollectionHubScreen } from '../../../../../screens/NativeCollectionHubScreen';
 import { resolveNativeActionMenuDestination } from '../../../../../navigation/nativeActionMenuNavigation';
@@ -22,6 +27,8 @@ export default function NativeForeignCollectionRoute() {
   const router = useRouter();
   const params = useLocalSearchParams<{
     filter?: string | string[];
+    instanceId?: string | string[];
+    tag?: string | string[];
     username?: string | string[];
   }>();
   const session = useNativeSession();
@@ -51,8 +58,19 @@ export default function NativeForeignCollectionRoute() {
     DEFAULT_NATIVE_TAGS_ENVELOPE,
     'wanted',
   ), [rows, success?.instances]);
-  const initialTagKey = nativeCollectionTagKeyForFilter(firstParam(params.filter))
+  const requestedFilter = firstParam(params.filter) || firstParam(params.tag);
+  const requestedInstanceId = firstParam(params.instanceId).trim();
+  const sessionOwnerKey = `foreign:${session.user?.user_id ?? 'signed-out'}:${username.toLocaleLowerCase()}`;
+  const restoredCollectionSession = useMemo(
+    () => readNativeCollectionSession(sessionOwnerKey),
+    [sessionOwnerKey],
+  );
+  const initialTagKey = nativeCollectionTagKeyForFilter(requestedFilter)
+    ?? restoredCollectionSession?.selectedTagKey
     ?? 'system:caught';
+  const initialView = requestedFilter
+    ? 'pokemon'
+    : restoredCollectionSession?.activeView ?? 'pokemon';
   const resultError = foreignQuery.error instanceof Error
     ? foreignQuery.error.message
     : foreignQuery.data?.type === 'forbidden'
@@ -61,9 +79,27 @@ export default function NativeForeignCollectionRoute() {
         ? 'This trainer could not be found.'
         : null;
 
+  if (session.status === 'restoring' || session.status === 'unavailable') {
+    return (
+      <NativeProtectedSessionGate
+        message="Opening trainer catalog…"
+        onRetry={session.retrySession}
+        status={session.status}
+      />
+    );
+  }
+
   if (session.status !== 'signed-in' || !session.user) {
     const returnTo = encodeURIComponent(`/native/collection/trainer/${encodeURIComponent(username)}`);
     return <Redirect href={`/native/login?returnTo=${returnTo}`} />;
+  }
+
+  if (requestedInstanceId) {
+    return (
+      <Redirect
+        href={`/native/collection/trainer/${encodeURIComponent(username)}/${encodeURIComponent(requestedInstanceId)}`}
+      />
+    );
   }
 
   const returnToContext = () => {
@@ -95,6 +131,12 @@ export default function NativeForeignCollectionRoute() {
       catalogRows={rows}
       error={resultError}
       initialTagKey={initialTagKey}
+      initialQuery={restoredCollectionSession?.query ?? ''}
+      initialScrollOffset={restoredCollectionSession?.scrollOffset ?? 0}
+      initialShowEvolutionaryLine={restoredCollectionSession?.showEvolutionaryLine ?? false}
+      initialSort={restoredCollectionSession?.sort ?? 'number'}
+      initialSortDirection={restoredCollectionSession?.sortDirection ?? 'ascending'}
+      initialView={initialView}
       instances={success?.instances ?? {}}
       inventoryTags={inventoryTags}
       isLoading={foreignQuery.isPending}
@@ -104,6 +146,7 @@ export default function NativeForeignCollectionRoute() {
       onRetry={() => void foreignQuery.refetch()}
       onReturnToContext={returnToContext}
       requireTagSelection
+      onContextChange={(patch) => patchNativeCollectionSession(sessionOwnerKey, patch)}
       wishlistTags={wishlistTags}
     />
   );

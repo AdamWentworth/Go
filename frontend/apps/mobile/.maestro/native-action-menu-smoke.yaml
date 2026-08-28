@@ -29,9 +29,18 @@ tags:
 - assertVisible: Learn & support
 - assertVisible: Use (dark|light) theme
 - takeScreenshot: action-menu-system-window
+- tapOn: Learn & support
+- assertVisible: Getting Started
+- assertVisible: Trade Safety
+- takeScreenshot: action-menu-support-system-window
+- tapOn: Learn & support
 - tapOn: Use (dark|light) theme
 - assertVisible: Use (dark|light) theme
 - takeScreenshot: action-menu-toggled-system-window
+- tapOn: Learn & support
+- assertVisible: Help directory
+- takeScreenshot: action-menu-toggled-support-system-window
+- tapOn: Learn & support
 - tapOn: Close
 - assertNotVisible: Quick navigation
 - tapOn:

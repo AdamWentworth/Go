@@ -1,10 +1,16 @@
 import { Redirect, useLocalSearchParams } from 'expo-router';
-import { useState } from 'react';
+import { type ReactNode, useState } from 'react';
 import { Text, View } from 'react-native';
+import { NativeRouteActionMenu } from '../../components/NativeRouteActionMenu';
 import { runtimeConfig } from '../../config/runtimeConfig';
 import { NATIVE_INFORMATION_PAGES } from '../../features/information/nativeInformationContent';
+import {
+  pvpMethodologyContent,
+  raidMethodologyContent,
+} from '../../features/tools/nativeMethodologyContent';
 import type { NativeTradeBoardModel } from '../../features/tradeBoard/nativeTradeBoardModel';
 import { NativeInformationScreen } from '../../screens/NativeInformationScreen';
+import { NativeMethodologyScreen } from '../../screens/NativeMethodologyScreen';
 import { NativePasswordResetScreen } from '../../screens/NativePasswordResetScreen';
 import { NativeRegisterScreen } from '../../screens/NativeRegisterScreen';
 import { NativeTradeBoardScreen } from '../../screens/NativeTradeBoardScreen';
@@ -50,6 +56,17 @@ const LiveNotice = ({ children }: { children: string }) => (
   </Text>
 );
 
+const WithGlobalMenu = ({ children, currentPath, signedIn }: {
+  children: ReactNode;
+  currentPath?: string;
+  signedIn?: boolean;
+}) => (
+  <View style={{ flex: 1 }}>
+    {children}
+    <NativeRouteActionMenu currentPath={currentPath} signedIn={signedIn} />
+  </View>
+);
+
 export default function DeviceSmokePublicRoute() {
   const params = useLocalSearchParams<{ page?: string | string[] }>();
   const [notice, setNotice] = useState('');
@@ -58,7 +75,7 @@ export default function DeviceSmokePublicRoute() {
 
   if (page === 'register') {
     return (
-      <View style={{ flex: 1 }}>
+      <WithGlobalMenu>
         <NativeRegisterScreen
           onBackToLogin={noOp}
           onOpenPrivacy={noOp}
@@ -69,33 +86,66 @@ export default function DeviceSmokePublicRoute() {
           onRegistered={() => setNotice('Account created.')}
         />
         {notice ? <LiveNotice>{notice}</LiveNotice> : null}
-      </View>
+      </WithGlobalMenu>
     );
   }
   if (page === 'reset' || page === 'reset-confirm') {
     return (
-      <NativePasswordResetScreen
-        onBackToLogin={noOp}
-        onConfirm={async () => undefined}
-        onRequest={async () => undefined}
-        token={page === 'reset-confirm' ? 'smoke-token' : undefined}
-      />
+      <WithGlobalMenu>
+        <NativePasswordResetScreen
+          onBackToLogin={noOp}
+          onConfirm={async () => undefined}
+          onRequest={async () => undefined}
+          token={page === 'reset-confirm' ? 'smoke-token' : undefined}
+        />
+      </WithGlobalMenu>
     );
   }
-  if (page === 'trade-board') {
-    return (
+  if (page === 'trade-board' || page === 'public-trade-board') {
+    const publicBoard = page === 'public-trade-board';
+    const board = (
       <NativeTradeBoardScreen
         assetBaseUrl={ASSET_BASE_URL}
+        editable={!publicBoard}
         model={boardModel}
-        onActionMenuPress={noOp}
         onBack={noOp}
+        onOpenCreateBoard={publicBoard ? noOp : undefined}
+        onOpenHelp={publicBoard ? noOp : undefined}
+        onOpenLiveBoard={publicBoard ? undefined : noOp}
         onOpenCollection={noOp}
+        onOpenTradeListings={publicBoard ? noOp : undefined}
+        onOpenWantedListings={publicBoard ? noOp : undefined}
         onRetry={noOp}
+        ownerUsername={publicBoard ? boardModel.username : undefined}
       />
+    );
+    return publicBoard ? board : (
+      <WithGlobalMenu currentPath="/trade-board" signedIn>
+        {board}
+      </WithGlobalMenu>
+    );
+  }
+  if (page === 'raid-methodology' || page === 'pvp-methodology') {
+    return (
+      <WithGlobalMenu currentPath={page === 'raid-methodology' ? '/raid/methodology' : '/pvp/methodology'}>
+        <NativeMethodologyScreen
+          assetBaseUrl={ASSET_BASE_URL}
+          content={page === 'raid-methodology' ? raidMethodologyContent : pvpMethodologyContent}
+          onBack={noOp}
+        />
+      </WithGlobalMenu>
     );
   }
   const informationPage = page && Object.prototype.hasOwnProperty.call(NATIVE_INFORMATION_PAGES, page)
     ? NATIVE_INFORMATION_PAGES[page as keyof typeof NATIVE_INFORMATION_PAGES]
     : NATIVE_INFORMATION_PAGES['getting-started'];
-  return <NativeInformationScreen assetBaseUrl={ASSET_BASE_URL} onBack={noOp} onNavigate={(path) => setNotice(`Navigate ${path}`)} page={informationPage} />;
+  const legal = page === 'privacy' || page === 'terms' || page === 'data-deletion';
+  const informationScreen = (
+    <NativeInformationScreen assetBaseUrl={ASSET_BASE_URL} onBack={noOp} onNavigate={(path) => setNotice(`Navigate ${path}`)} page={informationPage} />
+  );
+  return legal ? informationScreen : (
+    <WithGlobalMenu currentPath={`/${page ?? 'getting-started'}`}>
+      {informationScreen}
+    </WithGlobalMenu>
+  );
 }

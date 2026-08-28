@@ -1,5 +1,6 @@
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import { Redirect, useLocalSearchParams } from "expo-router";
+import { StyleSheet, View } from "react-native";
 import type {
   BasePokemon,
   Move,
@@ -18,6 +19,7 @@ import type {
   NativeRankingCollectionFilter,
   NativeRankingMode,
 } from "../../features/tools/nativeRankingsModel";
+import { NativeRouteActionMenu } from "../../components/NativeRouteActionMenu";
 
 const ASSET_BASE_URL = runtimeConfig.api.frontendAppUrl;
 const imageUri = `${ASSET_BASE_URL}/images/shiny/shiny_pokemon_1.png`;
@@ -61,14 +63,14 @@ const battleCatalog = [
         pokemon_id: 1,
         name: "Bulbasaur",
         form: "Normal",
-        type: "one-star",
+        type: "1",
         boosted_weather: "",
         max_boosted_cp: 500,
         max_unboosted_cp: 400,
         min_boosted_cp: 300,
         min_unboosted_cp: 200,
         possible_shiny: 1,
-        tier: "one-star",
+        tier: "1",
       },
     ],
     max: [
@@ -311,7 +313,7 @@ const dynamaxPokedexEntry = {
   ...pokedexEntry,
   id: "0001-dynamax",
   name: "Dynamax Bulbasaur",
-  imageUri: `${ASSET_BASE_URL}/images/dynamax/pokemon_1.png`,
+  imageUri: `${ASSET_BASE_URL}/images/default/pokemon_1.png`,
   maxKind: "dynamax" as const,
   category: "dynamax" as const,
   instanceRegistered: false,
@@ -352,6 +354,13 @@ const rankingRow = {
 };
 
 const noOp = () => undefined;
+
+const DeviceSmokeToolChrome = ({ children, currentPath }: { children: ReactNode; currentPath: string }) => (
+  <View style={styles.screen}>
+    {children}
+    <NativeRouteActionMenu anchorInteractive={false} currentPath={currentPath} signedIn={false} />
+  </View>
+);
 
 function DeviceSmokePokedexDetail() {
   const [registrations, setRegistrations] = useState<NativePokedexManualRegistration[]>([]);
@@ -433,57 +442,76 @@ export default function DeviceSmokeToolsRoute() {
 
   if (tool === "pokedex") {
     return (
-      <NativePokedexScreen
-        assetBaseUrl={ASSET_BASE_URL}
-        entries={[basePokedexEntry, pokedexEntry]}
-        onBack={noOp}
-        onOpenEntry={noOp}
-        onRetry={noOp}
-        onSetRegistrations={noOp}
-      />
+      <DeviceSmokeToolChrome currentPath="/pokedex">
+        <NativePokedexScreen
+          assetBaseUrl={ASSET_BASE_URL}
+          entries={[basePokedexEntry, pokedexEntry]}
+          onBack={noOp}
+          onOpenEntry={noOp}
+          onRetry={noOp}
+          onSetRegistrations={noOp}
+        />
+      </DeviceSmokeToolChrome>
     );
   }
-  if (tool === "pokedex-detail") return <DeviceSmokePokedexDetail />;
+  if (tool === "pokedex-detail") return (
+    <DeviceSmokeToolChrome currentPath="/pokedex">
+      <DeviceSmokePokedexDetail />
+    </DeviceSmokeToolChrome>
+  );
   if (tool === "raid") {
     return (
-      <NativeRaidScreen
-        assetBaseUrl={ASSET_BASE_URL}
-        catalog={battleCatalog}
-        onBack={noOp}
-        onMethodology={noOp}
-        onOpenPokemon={noOp}
-        onRetry={noOp}
-        signedIn={false}
-      />
+      <DeviceSmokeToolChrome currentPath="/raid">
+        <NativeRaidScreen
+          assetBaseUrl={ASSET_BASE_URL}
+          catalog={battleCatalog}
+          onBack={noOp}
+          onMethodology={noOp}
+          onOpenPokemon={noOp}
+          onRetry={noOp}
+          signedIn={false}
+        />
+      </DeviceSmokeToolChrome>
     );
   }
   if (tool === "pvp") {
     return (
-      <NativePvpScreen
-        assetBaseUrl={ASSET_BASE_URL}
-        catalog={battleCatalog}
-        onBack={noOp}
-        onMethodology={noOp}
-        onRetry={noOp}
-        payload={pvpPayload}
-        signedIn={false}
-      />
+      <DeviceSmokeToolChrome currentPath="/pvp">
+        <NativePvpScreen
+          assetBaseUrl={ASSET_BASE_URL}
+          catalog={battleCatalog}
+          onBack={noOp}
+          onMethodology={noOp}
+          onRetry={noOp}
+          payload={pvpPayload}
+          persistTeamBuilder={false}
+          signedIn={false}
+        />
+      </DeviceSmokeToolChrome>
     );
   }
   if (tool === "max") {
     return (
-      <NativeMaxScreen
-        assetBaseUrl={ASSET_BASE_URL}
-        catalog={battleCatalog}
-        onBack={noOp}
-        onOpenPokemon={noOp}
-        onRetry={noOp}
-        signedIn={false}
-      />
+      <DeviceSmokeToolChrome currentPath="/max">
+        <NativeMaxScreen
+          assetBaseUrl={ASSET_BASE_URL}
+          catalog={battleCatalog}
+          onBack={noOp}
+          onOpenPokemon={noOp}
+          onRetry={noOp}
+          signedIn={false}
+        />
+      </DeviceSmokeToolChrome>
     );
   }
   if (tool === "rankings") {
-    return <DeviceSmokeRankings />;
+    return (
+      <DeviceSmokeToolChrome currentPath="/rankings">
+        <DeviceSmokeRankings />
+      </DeviceSmokeToolChrome>
+    );
   }
   return <Redirect href="/device-smoke/home" />;
 }
+
+const styles = StyleSheet.create({ screen: { flex: 1, minHeight: 0 } });

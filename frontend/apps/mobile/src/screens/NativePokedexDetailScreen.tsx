@@ -8,10 +8,9 @@ import {
   Text,
   TextInput,
   View,
-  useColorScheme,
 } from 'react-native';
+import { NativeBackIcon } from '../components/NativeBackIcon';
 import Svg, { Defs, LinearGradient, Rect, Stop } from 'react-native-svg';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { BasePokemon, Move } from '@pokemongonexus/shared-contracts/pokemon';
 import {
   buildNativePokedexCombinationSections,
@@ -27,6 +26,7 @@ import type {
   NativePokedexEntry,
   NativePokedexManualRegistration,
 } from '../features/tools/nativePokedexModel';
+import { useNativeColorScheme } from '../features/settings/useNativeColorScheme';
 
 type DetailTab = 'registered' | 'info' | 'battle' | 'more';
 
@@ -165,8 +165,7 @@ const CombinationCard = ({ assetBaseUrl, combo, light, onToggle, saving, signedI
 );
 
 export const NativePokedexDetailScreen = ({ allEntries, assetBaseUrl, entry, error = null, isSaving = false, onBack, onOpenEntry, onSetRegistrations, onToggleRegistration, pokemon, signedIn }: Props) => {
-  const light = useColorScheme() === 'light';
-  const insets = useSafeAreaInsets();
+  const light = useNativeColorScheme() === 'light';
   const [tab, setTab] = useState<DetailTab>('registered');
   const [comboSectionId, setComboSectionId] = useState<string | null>(null);
   const [comboQuery, setComboQuery] = useState('');
@@ -193,8 +192,8 @@ export const NativePokedexDetailScreen = ({ allEntries, assetBaseUrl, entry, err
 
   return (
     <View style={[styles.root, light && styles.rootLight]} testID="native-pokedex-detail-screen">
-      <ScrollView contentContainerStyle={[styles.content, { paddingTop: insets.top + 8, paddingBottom: insets.bottom + 100 }]}>
-        <View style={styles.topbar}><Pressable accessibilityLabel="Back to Pokédex" accessibilityRole="button" onPress={onBack} style={[styles.back, light && styles.backLight]}><Text style={[styles.backText, light && styles.textLight]}>‹</Text></Pressable><Text style={[styles.topTitle, light && styles.textLight]}>Pokédex entry</Text><View style={styles.backPlaceholder} /></View>
+      <ScrollView contentContainerStyle={[styles.content, { paddingTop: 8, paddingBottom: 100 }]}>
+        <View style={styles.topbar}><Pressable accessibilityLabel="Back to Pokédex" accessibilityRole="button" onPress={onBack} style={[styles.back, light && styles.backLight]}><NativeBackIcon color={light ? '#172124' : '#ffffff'} size={20} /></Pressable><Text style={[styles.topTitle, light && styles.textLight]}>Pokédex entry</Text><View style={styles.backPlaceholder} /></View>
         <View style={[styles.hero, light && styles.heroLight]}>
           <HeroBackdrop colors={colors} light={light} />
           <View style={styles.heroTop}><Text style={styles.dex}>#{String(entry.pokedexNumber).padStart(4, '0')}</Text><Text style={styles.heroVariant}>{entry.category.replace(/\b\w/g, (letter) => letter.toLocaleUpperCase())}</Text></View>
@@ -204,7 +203,7 @@ export const NativePokedexDetailScreen = ({ allEntries, assetBaseUrl, entry, err
           <View style={styles.registrationPill}><View style={styles.registrationPillCell}><Text style={styles.registrationPillLabel}>Registered</Text><Text style={styles.registrationPillValue}>{registeredCount}</Text></View><View style={styles.registrationPillDivider} /><View style={styles.registrationPillCell}><Text style={styles.registrationPillLabel}>Available</Text><Text style={styles.registrationPillValue}>{slots.length}</Text></View></View>
         </View>
 
-        <View accessibilityRole="tablist" style={[styles.tabs, light && styles.cardLight]}>{TABS.map(([value, label]) => <Pressable accessibilityRole="tab" accessibilityState={{ selected: tab === value }} key={value} onPress={() => setTab(value)} style={styles.tab}><Text style={[styles.tabText, light && styles.textLight, tab === value && styles.tabTextActive, light && tab === value && styles.tabTextActiveLight]}>{label}</Text>{tab === value ? <View style={[styles.tabIndicator, { backgroundColor: colors[0] }]} /> : null}</Pressable>)}</View>
+        <View accessibilityRole="tablist" style={[styles.tabs, light && styles.cardLight]}>{TABS.map(([value, label]) => <Pressable aria-selected={tab === value} accessibilityRole="tab" accessibilityState={{ selected: tab === value }} key={value} onPress={() => setTab(value)} style={styles.tab}><Text style={[styles.tabText, light && styles.textLight, tab === value && styles.tabTextActive, light && tab === value && styles.tabTextActiveLight]}>{label}</Text>{tab === value ? <View style={[styles.tabIndicator, { backgroundColor: colors[0] }]} /> : null}</Pressable>)}</View>
         {error ? <View accessibilityRole="alert" style={styles.error}><Text style={styles.errorText}>{error}</Text></View> : null}
         {isSaving ? <View style={styles.saving}><ActivityIndicator color={colors[0]} /><Text style={[styles.savingText, light && styles.mutedLight]}>Updating Pokédex…</Text></View> : null}
 
@@ -244,8 +243,8 @@ export const NativePokedexDetailScreen = ({ allEntries, assetBaseUrl, entry, err
 };
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: '#090d12' }, rootLight: { backgroundColor: '#eef4f7' }, content: { gap: 12, paddingHorizontal: 12 }, centered: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 14, padding: 20, backgroundColor: '#090d12' }, title: { color: '#fff', fontSize: 24, fontWeight: '900' }, textLight: { color: '#14232a' }, mutedLight: { color: '#586b74' }, cardLight: { borderColor: '#c2cdd3', backgroundColor: '#fff' }, softLight: { backgroundColor: '#eef4f7' }, darkIconLight: { tintColor: '#26363e' },
-  topbar: { minHeight: 52, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }, back: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: '#43515a', borderRadius: 22, backgroundColor: '#171d22' }, backLight: { borderColor: '#c1ccd2', backgroundColor: '#fff' }, backText: { marginTop: -4, color: '#fff', fontSize: 38 }, backPlaceholder: { width: 44, height: 44 }, topTitle: { color: '#fff', fontSize: 16, fontWeight: '900' },
+  root: { flex: 1, backgroundColor: '#090d12' }, rootLight: { backgroundColor: '#f8fff9' }, content: { gap: 12, paddingHorizontal: 12 }, centered: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 14, padding: 20, backgroundColor: '#090d12' }, title: { color: '#fff', fontSize: 24, fontWeight: '900' }, textLight: { color: '#14232a' }, mutedLight: { color: '#586b74' }, cardLight: { borderColor: '#c2cdd3', backgroundColor: '#fff' }, softLight: { backgroundColor: '#eef4f7' }, darkIconLight: { tintColor: '#26363e' },
+  topbar: { minHeight: 52, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }, back: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: '#43515a', borderRadius: 22, backgroundColor: '#171d22' }, backLight: { borderColor: '#c1ccd2', backgroundColor: '#fff' }, backPlaceholder: { width: 44, height: 44 }, topTitle: { color: '#fff', fontSize: 16, fontWeight: '900' },
   hero: { minHeight: 336, alignItems: 'center', gap: 9, overflow: 'hidden', borderWidth: 1, borderColor: '#5c7180', borderRadius: 18, backgroundColor: '#153144' }, heroLight: { borderColor: '#a9bdc7', backgroundColor: '#fff' }, heroTop: { width: '100%', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingTop: 14, paddingHorizontal: 14 }, dex: { color: '#fff', fontSize: 12, fontWeight: '900' }, heroVariant: { color: '#fff', fontSize: 9, fontWeight: '900', letterSpacing: 1 }, imageStage: { width: 146, height: 138, alignItems: 'center', justifyContent: 'center' }, image: { width: '100%', height: '100%' }, maxIcon: { position: 'absolute', right: 0, top: 0, width: 38, height: 38, resizeMode: 'contain' }, heroTitle: { color: '#fff', fontSize: 27, fontWeight: '800', textAlign: 'center', textTransform: 'uppercase' }, traits: { minHeight: 36, flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'center', gap: 7 }, gender: { width: 36, height: 36, alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: '#fff', borderRadius: 18 }, genderMale: { backgroundColor: '#377ed7' }, genderFemale: { backgroundColor: '#e34b71' }, genderIcon: { width: 20, height: 20, tintColor: '#fff' }, genderless: { color: '#fff', fontSize: 10, fontWeight: '900', textTransform: 'uppercase' }, typeChip: { minHeight: 36, flexDirection: 'row', alignItems: 'center', gap: 4, borderWidth: 2, borderColor: '#fff', borderRadius: 18, paddingHorizontal: 7, backgroundColor: '#ffffff33' }, type: { width: 22, height: 22 }, typeLabel: { color: '#fff', fontSize: 9, fontWeight: '900', textTransform: 'uppercase' }, registrationPill: { width: '84%', maxWidth: 360, height: 54, flexDirection: 'row', alignItems: 'center', marginBottom: 14, borderRadius: 13, backgroundColor: '#ffffff36' }, registrationPillCell: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 2 }, registrationPillDivider: { width: 1, height: 34, backgroundColor: '#ffffff66' }, registrationPillLabel: { color: '#fff', fontSize: 9, fontWeight: '900', textTransform: 'uppercase' }, registrationPillValue: { color: '#fff', fontSize: 18, fontWeight: '900' },
   tabs: { flexDirection: 'row', borderWidth: 1, borderColor: '#34424a', borderRadius: 14, backgroundColor: '#141a1f' }, tab: { position: 'relative', minHeight: 55, flex: 1, alignItems: 'center', justifyContent: 'center' }, tabText: { color: '#aeb9bf', fontSize: 11, fontWeight: '900', textTransform: 'uppercase' }, tabTextActive: { color: '#fff' }, tabTextActiveLight: { color: '#14232a' }, tabIndicator: { position: 'absolute', right: '18%', bottom: 0, left: '18%', height: 4, borderRadius: 3 }, tabPanel: { gap: 14 },
   bulkRow: { flexDirection: 'row', gap: 8 }, bulkButton: { minHeight: 42, flex: 1, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderRadius: 10, paddingHorizontal: 8 }, bulkRegister: { borderColor: '#31925f', backgroundColor: '#dff7e9' }, bulkRemove: { borderColor: '#ae4d5e', backgroundColor: '#fde7eb' }, bulkRegisterText: { color: '#1c7247', fontSize: 10, fontWeight: '900' }, bulkRemoveText: { color: '#9a3044', fontSize: 10, fontWeight: '900' }, slotSection: { gap: 9 }, slotSectionTitle: { color: '#fff', fontSize: 20, fontWeight: '900' }, variantGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 7 }, variantCard: { width: '23%', minHeight: 154, overflow: 'hidden', borderWidth: 1, borderColor: '#3b4850', borderRadius: 11, backgroundColor: '#10161a' }, variantCardRegistered: { borderColor: '#299cf5' }, variantOpen: { flex: 1, alignItems: 'center', padding: 4 }, variantStage: { width: '100%', height: 96, alignItems: 'center', justifyContent: 'center' }, variantImage: { width: '92%', height: '86%' }, variantIcon: { position: 'absolute', left: 5, top: 5, width: 21, height: 21, resizeMode: 'contain' }, variantName: { minHeight: 28, color: '#fff', fontSize: 8.5, lineHeight: 11, fontWeight: '900', textAlign: 'center', textTransform: 'uppercase' }, variantState: { color: '#8e9ca3', fontSize: 7, fontWeight: '800', textTransform: 'uppercase' }, variantStateRegistered: { color: '#299cf5' }, registrationToggle: { position: 'absolute', right: 4, top: 4, width: 28, height: 28, alignItems: 'center', justifyContent: 'center', borderRadius: 14, backgroundColor: '#168ced' }, registrationToggleActive: { backgroundColor: '#b8445a' }, registrationToggleDisabled: { opacity: 0.42 }, registrationToggleText: { color: '#fff', fontSize: 17, fontWeight: '900' },

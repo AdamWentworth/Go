@@ -1,14 +1,7 @@
 import type { PokemonSearchQueryParams } from '@pokemongonexus/shared-contracts/search';
 import type { MobileSessionUser } from '@pokemongonexus/shared-contracts/auth';
-import { Redirect, useRouter } from 'expo-router';
-import {
-  ActivityIndicator,
-  Animated,
-  StyleSheet,
-  Text,
-  View,
-  useColorScheme,
-} from 'react-native';
+import { Redirect, useLocalSearchParams, useRouter } from 'expo-router';
+import { ActivityIndicator, Animated, StyleSheet, Text, View } from 'react-native';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNativeSession } from '../../auth/NativeSessionContext';
 import { NativeActionMenu } from '../../components/NativeActionMenu';
@@ -41,8 +34,21 @@ import {
 import { NativePokemonSearchScreen } from '../../screens/NativePokemonSearchScreen';
 import { NativeTrainerSearchScreen } from '../../screens/NativeTrainerSearchScreen';
 import { resolveNativeActionMenuDestination } from '../../navigation/nativeActionMenuNavigation';
+import { useNativeColorScheme } from '../../features/settings/useNativeColorScheme';
+import { NativeProtectedSessionGate } from '../../components/NativeProtectedSessionGate';
 
 const SEARCH_VIEWS: NativeSearchHubView[] = ['pokemon', 'trainers'];
+
+const firstParam = (value: string | string[] | undefined): string => (
+  Array.isArray(value) ? value[0] ?? '' : value ?? ''
+);
+
+export const nativeSearchViewFromMode = (
+  value: string | string[] | undefined,
+): NativeSearchHubView | null => {
+  const normalized = firstParam(value).trim().toLocaleLowerCase();
+  return normalized === 'trainer' || normalized === 'trainers' ? 'trainers' : null;
+};
 
 const errorMessage = (error: unknown): string | null => (
   error instanceof Error ? error.message : error ? 'The request could not be completed.' : null
@@ -50,13 +56,15 @@ const errorMessage = (error: unknown): string | null => (
 
 const NativeSignedInSearchRoute = ({ user }: { user: MobileSessionUser }) => {
   const router = useRouter();
-  const light = useColorScheme() === 'light';
+  const params = useLocalSearchParams<{ mode?: string | string[] }>();
+  const light = useNativeColorScheme() === 'light';
   const snapshotQuery = useNativeCollectionSnapshotQuery(user.user_id);
   const [initialSession] = useState(() => readNativeSearchSession(user.user_id));
   const [restoredSession, setRestoredSession] = useState(initialSession);
   const [sessionHydrated, setSessionHydrated] = useState(Boolean(initialSession));
+  const requestedView = nativeSearchViewFromMode(params.mode);
   const [activeView, setActiveView] = useState<NativeSearchHubView>(
-    initialSession?.activeView ?? 'pokemon',
+    requestedView ?? initialSession?.activeView ?? 'pokemon',
   );
   const [pageScrollX] = useState(() => new Animated.Value(0));
   const sliderRef = useRef<NativeHorizontalPageSliderHandle>(null);
@@ -92,20 +100,23 @@ const NativeSignedInSearchRoute = ({ user }: { user: MobileSessionUser }) => {
       if (cancelled) return;
       if (restored) {
         setRestoredSession(restored);
-        setActiveView(restored.activeView);
+        setActiveView(requestedView ?? restored.activeView);
         setDraft(restored.draft);
         setExecutedDraft(restored.executedDraft);
         setPokemonQuery(restored.pokemonQuery);
         setTrainerQuery(restored.trainerQuery);
         setDebouncedTrainerQuery(restored.trainerQuery.trim());
-        sliderRef.current?.setPage(SEARCH_VIEWS.indexOf(restored.activeView), false);
+        sliderRef.current?.setPage(
+          SEARCH_VIEWS.indexOf(requestedView ?? restored.activeView),
+          false,
+        );
       }
       setSessionHydrated(true);
     });
     return () => {
       cancelled = true;
     };
-  }, [initialSession, user.user_id]);
+  }, [initialSession, requestedView, user.user_id]);
 
   useEffect(() => {
     const timer = setTimeout(() => setDebouncedTrainerQuery(trainerQuery.trim()), 250);
@@ -282,6 +293,15 @@ const NativeSignedInSearchRoute = ({ user }: { user: MobileSessionUser }) => {
 
 export default function NativeSearchRoute() {
   const session = useNativeSession();
+  if (session.status === 'restoring' || session.status === 'unavailable') {
+    return (
+      <NativeProtectedSessionGate
+        message="Opening search…"
+        onRetry={session.retrySession}
+        status={session.status}
+      />
+    );
+  }
   if (session.status !== 'signed-in' || !session.user) {
     return <Redirect href="/native/login?returnTo=%2Fnative%2Fsearch" />;
   }
@@ -290,7 +310,7 @@ export default function NativeSearchRoute() {
 
 const styles = StyleSheet.create({
   screen: { flex: 1, minHeight: 0, backgroundColor: '#080d0f' },
-  screenLight: { backgroundColor: '#eef4f5' },
+  screenLight: { backgroundColor: '#f8fff9' },
   state: {
     flex: 1,
     minHeight: 0,

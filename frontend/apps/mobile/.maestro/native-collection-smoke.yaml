@@ -238,29 +238,32 @@ tags:
 - tapOn: Edit Pokémon
 - assertVisible: Save Pokémon
 - assertVisible: Combat Power
-- assertVisible: Max Move Levels
+- scrollUntilVisible:
+    element:
+      text: Max Move Levels
+    direction: DOWN
+    timeout: 20000
 - takeScreenshot: 06d-caught-instance-editor
+- scrollUntilVisible:
+    element:
+      text: Choose location background
+    direction: UP
+    speed: 70
+    visibilityPercentage: 50
+    timeout: 30000
 - tapOn: Choose location background
 - assertVisible: Choose a background
 - assertVisible: Vancouver City Safari
 - takeScreenshot: 06e-location-background-selector
 - tapOn: Close background selector
 - assertVisible: Save Pokémon
-- swipe:
-    start: 50%, 82%
-    end: 50%, 52%
-    duration: 450
-- swipe:
-    start: 50%, 82%
-    end: 50%, 52%
-    duration: 450
-- swipe:
-    start: 50%, 82%
-    end: 50%, 62%
-    duration: 350
-- extendedWaitUntil:
-    visible: MOVES
-    timeout: 10000
+- scrollUntilVisible:
+    element:
+      id: native-move-selector-fast-move
+    direction: DOWN
+    speed: 70
+    visibilityPercentage: 50
+    timeout: 30000
 - tapOn:
     id: native-move-selector-fast-move
 - assertVisible: MOVE SELECTOR

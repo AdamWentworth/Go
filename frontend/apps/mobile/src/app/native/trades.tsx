@@ -1,10 +1,5 @@
 import { Redirect, useLocalSearchParams, useRouter } from 'expo-router';
-import {
-  Animated,
-  StyleSheet,
-  View,
-  useColorScheme,
-} from 'react-native';
+import { Animated, StyleSheet, View } from 'react-native';
 import { useCallback, useMemo, useRef, useState } from 'react';
 import {
   NativeHorizontalPageSlider,
@@ -21,7 +16,9 @@ import {
   type NativeTradeHubView,
 } from '../../features/trades/NativeTradeHubHeader';
 import { buildNativeTradeActivityRows } from '../../features/trades/nativeTradeActivityRows';
-import { executeNativeTradeActivityAction } from '../../features/trades/nativeTradeActivityCommands';
+import {
+  executeNativeTradeActivityAction,
+} from '../../features/trades/nativeTradeActivityCommands';
 import {
   buildNativeTradePreferenceEntries,
   resolveNativeTradePreferenceDraftCandidates,
@@ -33,7 +30,9 @@ import {
   useNativeTradesQuery,
   useNativeTradeSatisfactionMutation,
 } from '../../features/trades/tradeQueries';
-import { useNativeTradePreferenceMutation } from '../../features/trades/useNativeTradePreferenceMutation';
+import {
+  useNativeTradePreferenceMutation,
+} from '../../features/trades/useNativeTradePreferenceMutation';
 import { getNativeTradePartnerInfo } from '../../services/tradeApi';
 import { useNativeApiClients } from '../../services/useNativeApiClients';
 import { NativeTradeActivityScreen } from '../../screens/NativeTradeActivityScreen';
@@ -41,6 +40,8 @@ import { NativeTradePreferencesScreen } from '../../screens/NativeTradePreferenc
 import { NativeActionMenu } from '../../components/NativeActionMenu';
 import { NativeActionMenuAnchor } from '../../components/NativeActionMenuAnchor';
 import { resolveNativeActionMenuDestination } from '../../navigation/nativeActionMenuNavigation';
+import { useNativeColorScheme } from '../../features/settings/useNativeColorScheme';
+import { NativeProtectedSessionGate } from '../../components/NativeProtectedSessionGate';
 
 const TRADE_VIEWS: NativeTradeHubView[] = ['preferences', 'activity'];
 
@@ -67,7 +68,7 @@ export default function NativeTradesRoute() {
   }>();
   const session = useNativeSession();
   const clients = useNativeApiClients();
-  const light = useColorScheme() === 'light';
+  const light = useNativeColorScheme() === 'light';
   const userId = session.user?.user_id ?? 'signed-out';
   const tradesQuery = useNativeTradesQuery(session.user?.user_id ?? null);
   const collectionQuery = useNativeCollectionSnapshotQuery(session.user?.user_id ?? null);
@@ -127,6 +128,16 @@ export default function NativeTradesRoute() {
       ? 'selected'
       : collectionQuery.isPending ? 'loading' : 'missing'
     : collectionQuery.isPending ? 'loading' : 'default';
+
+  if (session.status === 'restoring' || session.status === 'unavailable') {
+    return (
+      <NativeProtectedSessionGate
+        message="Opening trades…"
+        onRetry={session.retrySession}
+        status={session.status}
+      />
+    );
+  }
 
   if (session.status !== 'signed-in' || !session.user) {
     return <Redirect href="/native/login?returnTo=%2Fnative%2Ftrades" />;
@@ -238,5 +249,5 @@ export default function NativeTradesRoute() {
 
 const styles = StyleSheet.create({
   screen: { flex: 1, minHeight: 0, backgroundColor: '#071012' },
-  screenLight: { backgroundColor: '#eef4f5' },
+  screenLight: { backgroundColor: '#f8fff9' },
 });

@@ -7,7 +7,6 @@ import {
   StyleSheet,
   Text,
   View,
-  useColorScheme,
 } from 'react-native';
 import { useMemo, useState } from 'react';
 import type { PokemonInstance } from '@pokemongonexus/shared-contracts/instances';
@@ -16,10 +15,14 @@ import type {
   TradeEnvelope,
 } from '@pokemongonexus/shared-contracts/trades';
 import { calculateTradeCost } from '@pokemongonexus/shared-domain/trade-cost';
-import { parseTradeVariantReference } from '@pokemongonexus/shared-domain/trade-proposal-candidates';
+import {
+  parseTradeVariantReference,
+} from '@pokemongonexus/shared-domain/trade-proposal-candidates';
 import { NativePokemonLocationBackdrop } from '../collection/parity/NativePokemonLocationBackdrop';
 import type { NativeInstanceDetail } from '../collection/collectionModel';
 import type { NativeTradeProposalSelection } from './nativeTradeProposalModel';
+import { useNativeModalAnimation } from '../settings/useNativeMotion';
+import { useNativeColorScheme } from '../settings/useNativeColorScheme';
 
 type Props = {
   assetBaseUrl: string;
@@ -210,7 +213,8 @@ export const NativeTradeProposalSheet = ({
   onSubmit,
   selection,
 }: Props) => {
-  const light = useColorScheme() === 'light';
+  const light = useNativeColorScheme() === 'light';
+  const animationType = useNativeModalAnimation('slide');
   const [selectedInstanceId, setSelectedInstanceId] = useState(
     offeredDetails[0]?.instance?.instance_id ?? '',
   );
@@ -311,7 +315,7 @@ export const NativeTradeProposalSheet = ({
 
   return (
     <Modal
-      animationType="slide"
+      animationType={animationType}
       onRequestClose={onClose}
       presentationStyle="overFullScreen"
       statusBarTranslucent

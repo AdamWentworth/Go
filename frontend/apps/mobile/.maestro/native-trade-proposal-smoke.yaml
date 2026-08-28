@@ -30,6 +30,13 @@ tags:
 - tapOn: Request Lucky trade
 - assertVisible: Lucky trade requested
 - takeScreenshot: 02-lucky-remote-independent
+- scrollUntilVisible:
+    element:
+      text: Propose trade
+    direction: DOWN
+    speed: 70
+    visibilityPercentage: 50
+    timeout: 30000
 - tapOn: Propose trade
 - extendedWaitUntil:
     visible: Proposal committed

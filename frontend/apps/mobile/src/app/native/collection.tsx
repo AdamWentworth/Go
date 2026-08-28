@@ -17,6 +17,11 @@ import { setNativeInstanceNavigationContext } from '../../features/collection/na
 import { resolveNativeActionMenuDestination } from '../../navigation/nativeActionMenuNavigation';
 import { nativeCollectionTagKeyForFilter } from '../../features/collection/nativeCollectionRouteFilter';
 import { NativeCollectionSyncStatusCard } from '../../features/collection/NativeCollectionSyncStatusCard';
+import { NativeProtectedSessionGate } from '../../components/NativeProtectedSessionGate';
+import {
+  patchNativeCollectionSession,
+  readNativeCollectionSession,
+} from '../../features/collection/nativeCollectionSessionCache';
 
 const firstParam = (value: string | string[] | undefined): string => (
   Array.isArray(value) ? value[0] ?? '' : value ?? ''
@@ -24,11 +29,28 @@ const firstParam = (value: string | string[] | undefined): string => (
 
 export default function NativeCollectionRoute() {
   const router = useRouter();
-  const params = useLocalSearchParams<{ filter?: string | string[]; search?: string | string[] }>();
+  const params = useLocalSearchParams<{
+    filter?: string | string[];
+    instanceId?: string | string[];
+    search?: string | string[];
+    tag?: string | string[];
+  }>();
   const session = useNativeSession();
-  const filter = firstParam(params.filter);
+  const filter = firstParam(params.filter) || firstParam(params.tag);
+  const instanceId = firstParam(params.instanceId).trim();
   const search = firstParam(params.search);
-  const initialTagKey = nativeCollectionTagKeyForFilter(filter);
+  const sessionOwnerKey = session.user ? `self:${session.user.user_id}` : 'signed-out';
+  const restoredCollectionSession = useMemo(
+    () => readNativeCollectionSession(sessionOwnerKey),
+    [sessionOwnerKey],
+  );
+  const initialTagKey = nativeCollectionTagKeyForFilter(filter)
+    ?? restoredCollectionSession?.selectedTagKey
+    ?? null;
+  const initialQuery = search || restoredCollectionSession?.query || '';
+  const initialView = filter || search
+    ? 'pokemon'
+    : restoredCollectionSession?.activeView ?? 'pokemon';
   const snapshotQuery = useNativeCollectionSnapshotQuery(session.user?.user_id ?? null);
   const tagMutations = useNativeTagMutations(session.user?.user_id ?? 'signed-out');
   const pokemonOrganizer = useNativePokemonOrganizerMutation(
@@ -68,6 +90,16 @@ export default function NativeCollectionRoute() {
     );
   }, [instanceRows, snapshotQuery.data]);
 
+  if (session.status === 'restoring' || session.status === 'unavailable') {
+    return (
+      <NativeProtectedSessionGate
+        message="Loading your collection…"
+        onRetry={session.retrySession}
+        status={session.status}
+      />
+    );
+  }
+
   if (session.status !== 'signed-in' || !session.user) {
     const returnParams = new URLSearchParams();
     if (filter) returnParams.set('filter', filter);
@@ -76,6 +108,10 @@ export default function NativeCollectionRoute() {
       ? `/native/collection?${returnParams.toString()}`
       : '/native/collection';
     return <Redirect href={`/native/login?returnTo=${encodeURIComponent(returnTo)}`} />;
+  }
+
+  if (instanceId) {
+    return <Redirect href={`/native/collection/${encodeURIComponent(instanceId)}`} />;
   }
 
   const openEntry = (row: NativeCollectionRow, orderedRows: NativeCollectionRow[]) => {
@@ -106,8 +142,13 @@ export default function NativeCollectionRoute() {
       inventoryTags={inventoryTags}
       instances={snapshotQuery.data?.instances ?? {}}
       initialTagKey={initialTagKey}
-      initialQuery={search}
-      key={`${initialTagKey ?? 'full-catalog'}:${search}`}
+      initialQuery={initialQuery}
+      initialScrollOffset={restoredCollectionSession?.scrollOffset ?? 0}
+      initialShowEvolutionaryLine={restoredCollectionSession?.showEvolutionaryLine ?? false}
+      initialSort={restoredCollectionSession?.sort ?? 'number'}
+      initialSortDirection={restoredCollectionSession?.sortDirection ?? 'ascending'}
+      initialView={initialView}
+      key={`${initialTagKey ?? 'full-catalog'}:${initialQuery}`}
       isLoading={snapshotQuery.isPending}
       onActionMenuNavigate={navigateFromActionMenu}
       onOpenEntry={openEntry}
@@ -122,6 +163,7 @@ export default function NativeCollectionRoute() {
       organizerError={pokemonOrganizer.error instanceof Error
         ? pokemonOrganizer.error.message
         : null}
+      onContextChange={(patch) => patchNativeCollectionSession(sessionOwnerKey, patch)}
       syncStatus={<NativeCollectionSyncStatusCard />}
       warning={snapshotQuery.data?.tagLoadWarning ?? null}
       wishlistTags={wishlistTags}

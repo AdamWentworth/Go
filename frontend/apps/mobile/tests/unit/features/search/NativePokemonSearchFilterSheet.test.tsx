@@ -51,22 +51,33 @@ describe('NativePokemonSearchFilterSheet', () => {
   beforeEach(() => jest.clearAllMocks());
 
   it('keeps the canonical three-stage filter workflow and sticky apply action', () => {
-    const view = render(<NativePokemonSearchFilterSheet {...baseProps} />);
+    const view = render(
+      <NativePokemonSearchFilterSheet
+        {...baseProps}
+        savedLocation={{
+          label: 'Burnaby, British Columbia, Canada',
+          latitude: 49.24,
+          longitude: -122.98,
+        }}
+      />,
+    );
     expect(view.getByRole('tab', { name: 'Pokémon' }).props.accessibilityState)
       .toEqual({ selected: true });
     expect(view.getByText('Choose the exact variant')).toBeTruthy();
     fireEvent.press(view.getByRole('tab', { name: 'Location' }));
     expect(view.getByText('Where should we look?')).toBeTruthy();
+    expect(view.getByRole('button', { name: /Use saved location/ })).toHaveStyle({
+      backgroundColor: '#e5f8f2',
+    });
     fireEvent.press(view.getByText(/Apply & search/));
     expect(baseProps.onApply).toHaveBeenCalledTimes(1);
   });
 
-  it('uses a contained native picker rather than a platform dropdown', () => {
+  it('keeps Pokémon selection in the primary search surface instead of duplicating it in filters', () => {
     const view = render(<NativePokemonSearchFilterSheet {...baseProps} />);
-    fireEvent.press(view.getByRole('button', { name: 'Choose Pokémon' }));
-    expect(view.getByTestId('native-option-picker')).toBeTruthy();
-    expect(view.getByLabelText('Search Choose a Pokémon')).toBeTruthy();
-    expect(view.getByText('#0025')).toBeTruthy();
+    expect(view.queryByRole('button', { name: 'Choose Pokémon' })).toBeNull();
+    expect(view.getByText('Choose the exact variant')).toBeTruthy();
+    expect(view.getByText('Every field is optional. Add only the details that matter.')).toBeTruthy();
   });
 
   it('supports five-heart remote trade matching without coupling it to lucky trades', () => {
@@ -90,5 +101,20 @@ describe('NativePokemonSearchFilterSheet', () => {
       friendshipLevel: 4,
       prefLucky: false,
     }));
+  });
+
+  it('uses adjustable sliders for search radius and result count', () => {
+    const view = render(<NativePokemonSearchFilterSheet {...baseProps} initialSection="location" />);
+    const radius = view.getByLabelText('Search radius');
+    const limit = view.getByLabelText('Maximum results');
+
+    expect(radius.props.accessibilityRole).toBe('adjustable');
+    expect(limit.props.accessibilityRole).toBe('adjustable');
+
+    fireEvent(radius, 'valueChange', 40);
+    fireEvent(limit, 'valueChange', 50);
+
+    expect(baseProps.onChange).toHaveBeenCalledWith(expect.objectContaining({ rangeKm: 40 }));
+    expect(baseProps.onChange).toHaveBeenCalledWith(expect.objectContaining({ limit: 50 }));
   });
 });

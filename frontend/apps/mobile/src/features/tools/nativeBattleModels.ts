@@ -7,6 +7,26 @@ import type {
   RaidBoss,
 } from '@pokemongonexus/shared-contracts/pokemon';
 import type { PokemonVariant } from '@pokemongonexus/shared-contracts/variants';
+import createPokemonVariants from '@pokemongonexus/app-core/pokemon-variants';
+import {
+  dedupeBestCounterPerVariant,
+  dedupeBestTypeDpsPerVariant,
+  getPrimaryRaidMetadataForVariant,
+  getRaidTierKeyForVariant,
+  isEligibleRaidAttacker,
+  isEligibleRaidBoss,
+  RAID_TIER_PRESETS,
+  scoreRaidCounters,
+  scoreBestRaidOverallAttackers,
+  scoreRaidOverallAttackers,
+  scoreRaidTypeDps,
+  type RaidCounterScore,
+  type RaidCounterSettings,
+  type RaidOverallScore,
+  type RaidTierKey,
+  type RaidTierPreset,
+  type RaidTypeDpsScore,
+} from '@pokemongonexus/app-core/raid-model';
 import {
   rankMaxBattlePokemon,
   type MaxRankingEntry,
@@ -59,6 +79,14 @@ export const DEFAULT_NATIVE_RAID_SETTINGS: NativeRaidSettings = {
 
 export type NativeCombatEntry = {
   chargedMove: Move | null;
+  counter?: {
+    dodges: number;
+    faints: number;
+    relobbies: number;
+    simulationWon: boolean;
+    soloTimeSeconds: number;
+    trainersNeeded: number;
+  } | null;
   cp: number;
   dps: number;
   er: number;
@@ -81,47 +109,13 @@ export type NativeRaidBossEntry = {
   imageUri: string | null;
   name: string;
   pokemon: BasePokemon;
+  tier: RaidTierPreset;
+  tierKey: RaidTierKey;
   types: string[];
+  variant: PokemonVariant;
 };
 
 export const nativeTypeEffectiveness = getTypeEffectivenessMultiplier;
-const moveType = (move: Move): string => String(move.type_name || move.type || '').toLocaleLowerCase();
-const moveSeconds = (move: Move): number => { const raw = Number(move.raid_cooldown); return Math.max(.1, raw > 20 ? raw / 1000 : raw); };
-const validFastMoves = (moves: Move[]) => moves.filter((move) => Number(move.is_fast) === 1 && Number(move.raid_power) > 0 && Number(move.raid_cooldown) > 0);
-const validChargedMoves = (moves: Move[]) => moves.filter((move) => Number(move.is_fast) === 0 && Number(move.raid_power) > 0 && Number(move.raid_cooldown) > 0);
-
-const FRIENDSHIP_BONUS: Record<NativeRaidFriendship, number> = {
-  none: 1,
-  good: 1.03,
-  great: 1.05,
-  ultra: 1.07,
-  best: 1.1,
-};
-const MEGA_ALLY_BONUS: Record<NativeRaidMegaAlly, number> = {
-  none: 1,
-  general: 1.1,
-  matching: 1.3,
-};
-const PARTY_POWER_BONUS: Record<NativeRaidPartyPower, number> = {
-  none: 1,
-  party2: 1.18,
-  party3: 1.35,
-  party4: 1.5,
-};
-
-const PARTY_POWER_STRATEGY_BONUS: Record<NativeRaidPartyPowerStrategy, number> = {
-  immediate: 1,
-  'next-charged': 1.025,
-  'strongest-charged': 1.05,
-  manual: 1,
-};
-
-const BOSS_INCOMING_PRESSURE: Record<NativeRaidBossMovesetMode, number> = {
-  expected: 1,
-  'monte-carlo': 1,
-  favorable: .84,
-  hostile: 1.18,
-};
 
 export const hydrateNativeToolCatalog = (
   catalog: BasePokemon[],
@@ -152,10 +146,6 @@ export const hydrateNativeMaxCatalog = (
   });
 };
 
-const resolveRecordedMove = (moves: Move[], moveId: number | null): Move | null => (
-  moveId == null ? null : moves.find((move) => Number(move.move_id) === Number(moveId)) ?? null
-);
-
 const describeInstance = (instance: PokemonInstance): string => {
   const details = [
     instance.level == null ? null : `Lv ${instance.level}`,
@@ -167,110 +157,163 @@ const describeInstance = (instance: PokemonInstance): string => {
   return details.length > 0 ? details.join(' · ') : 'Caught copy';
 };
 
-type RaidSource = {
-  instance: PokemonInstance | null;
-  pokemon: BasePokemon;
-  sourceKey: string | null;
-};
+const resolveRecordedMove = (moves: Move[], moveId: number | null): Move | null => (
+  moveId == null ? null : moves.find((move) => Number(move.move_id) === Number(moveId)) ?? null
+);
 
-const buildRaidSources = (
+const canonicalRaidSettings = (settings: NativeRaidSettings): RaidCounterSettings => ({
+  attackerLevel: settings.attackerLevel,
+  bossMovesetMode: settings.bossMovesetMode,
+  dodgeStrategy: settings.dodgeStrategy,
+  dodgeSuccessRate: settings.dodgeSuccessRate,
+  friendship: settings.friendship,
+  megaAllyBonus: settings.megaAllyBonus,
+  partyPower: settings.partyPower,
+  partyPowerStrategy: settings.partyPowerStrategy,
+  relobbySeconds: settings.relobbySeconds,
+  shadowBossMode: settings.shadowBossMode,
+  weatherBoostedType: settings.weatherBoostedType,
+});
+
+const hasRecordedRaidBuild = (instance: PokemonInstance): boolean => (
+  Number.isFinite(Number(instance.level))
+  && [instance.attack_iv, instance.defense_iv, instance.stamina_iv]
+    .every((value) => value != null && Number.isFinite(Number(value)))
+  && instance.fast_move_id != null
+  && (instance.charged_move1_id != null || instance.charged_move2_id != null)
+);
+
+const buildCanonicalRaidAttackers = (
   catalog: BasePokemon[],
   instances: Record<string, PokemonInstance>,
   scope: NativeRosterScope,
-): RaidSource[] => {
-  const available = catalog.filter((pokemon) => pokemon.available);
-  if (scope === 'catalog') return available.map((pokemon) => ({ instance: null, pokemon, sourceKey: null }));
-  const byPokemonId = new Map(available.map((pokemon) => [Number(pokemon.pokemon_id), pokemon]));
-  return Object.entries(instances).flatMap(([sourceKey, instance]) => {
-    if (!instance.is_caught || instance.disabled) return [];
-    const pokemon = byPokemonId.get(Number(instance.pokemon_id));
-    return pokemon ? [{ instance, pokemon, sourceKey }] : [];
+): { attackers: PokemonVariant[]; bossTargets: PokemonVariant[] } => {
+  const variants = createPokemonVariants(catalog);
+  const bossTargets = variants.filter(isEligibleRaidBoss);
+  if (scope === 'catalog') {
+    return { attackers: variants.filter(isEligibleRaidAttacker), bossTargets };
+  }
+
+  const variantsById = new Map(variants.map((variant) => [variant.variant_id, variant]));
+  const defaultByPokemonId = new Map(
+    variants
+      .filter((variant) => variant.variantType === 'default')
+      .map((variant) => [Number(variant.pokemon_id), variant]),
+  );
+  const attackers = Object.entries(instances).flatMap(([sourceKey, instance]) => {
+    if (!instance.is_caught || instance.disabled || !hasRecordedRaidBuild(instance)) return [];
+    const base = variantsById.get(String(instance.variant_id))
+      ?? defaultByPokemonId.get(Number(instance.pokemon_id));
+    if (!base) return [];
+    const sourceId = String(instance.instance_id || sourceKey);
+    const attacker: PokemonVariant = {
+      ...base,
+      instanceData: { ...instance, instance_id: sourceId },
+      raidRoster: {
+        cpSource: Number(instance.cp) > 0 ? 'recorded' : 'calculated',
+        formSource: 'base',
+        instanceId: sourceId,
+        ivSource: 'recorded',
+        levelSource: 'recorded',
+        moveSource: 'recorded',
+        source: 'caught',
+      },
+      variant_id: `${base.variant_id}::caught::${sourceId}`,
+    };
+    return isEligibleRaidAttacker(attacker) ? [attacker] : [];
   });
+  return { attackers, bossTargets };
 };
 
-const buildMovePairs = (
-  pokemon: BasePokemon,
-  instance: PokemonInstance | null,
-  requiredType: string,
-): { charged: Move; fast: Move }[] => {
-  const moves = pokemon.moves ?? [];
-  const recordedFast = instance ? resolveRecordedMove(moves, instance.fast_move_id) : null;
-  const recordedCharged = instance
-    ? [
-      resolveRecordedMove(moves, instance.charged_move1_id),
-      resolveRecordedMove(moves, instance.charged_move2_id),
-    ].filter((move): move is Move => move != null)
-    : [];
-  const fastMoves = recordedFast ? [recordedFast] : validFastMoves(moves);
-  const chargedMoves = recordedCharged.length > 0 ? recordedCharged : validChargedMoves(moves);
-  return fastMoves.flatMap((fast) => chargedMoves.flatMap((charged) => (
-    requiredType && moveType(fast) !== requiredType && moveType(charged) !== requiredType
-      ? []
-      : [{ charged, fast }]
-  )));
+const canonicalCombatEntry = (
+  score: RaidOverallScore | RaidTypeDpsScore,
+  settings: NativeRaidSettings,
+): NativeCombatEntry => {
+  const variant = score.variant;
+  const instance = variant.instanceData ?? null;
+  return {
+    chargedMove: score.chargedMove,
+    counter: null,
+    cp: score.cp,
+    dps: score.dps,
+    er: score.er,
+    fastMove: score.fastMove,
+    id: `${variant.variant_id}-${score.fastMove.move_id}-${score.chargedMove.move_id}`,
+    imageUri: variant.currentImage || variant.image_url || null,
+    maxKind: null,
+    name: instance?.nickname || variant.name,
+    pokemonId: variant.pokemon_id,
+    rosterDetail: instance ? describeInstance(instance) : `Level ${settings.attackerLevel.replace('.0', '')}`,
+    score: score.eDps,
+    sourceInstanceId: instance?.instance_id ?? null,
+    tdo: score.tdo,
+    types: [variant.type1_name, variant.type2_name]
+      .filter(Boolean)
+      .map((value) => value.toLocaleLowerCase()),
+  };
 };
 
-const scoreRaidPair = ({
-  bossTypes,
-  charged,
-  fast,
-  instance,
-  pokemon,
+const canonicalCounterEntry = (
+  score: RaidCounterScore,
+  tier: RaidTierPreset,
+  settings: NativeRaidSettings,
+): NativeCombatEntry => {
+  const variant = score.variant;
+  const instance = variant.instanceData ?? null;
+  const estimatedShare = tier.bossHp / Math.max(1, score.trainersNeeded);
+  return {
+    chargedMove: score.chargedMove,
+    counter: {
+      dodges: score.dodges,
+      faints: score.faints,
+      relobbies: score.relobbies,
+      simulationWon: score.simulationWon,
+      soloTimeSeconds: score.soloTimeSeconds,
+      trainersNeeded: score.trainersNeeded,
+    },
+    cp: score.cp,
+    dps: score.dps,
+    er: score.dps,
+    fastMove: score.fastMove,
+    id: `${variant.variant_id}-${score.fastMove.move_id}-${score.chargedMove.move_id}`,
+    imageUri: variant.currentImage || variant.image_url || null,
+    maxKind: null,
+    name: instance?.nickname || variant.name,
+    pokemonId: variant.pokemon_id,
+    rosterDetail: instance ? describeInstance(instance) : `Level ${settings.attackerLevel.replace('.0', '')}`,
+    score: score.dps,
+    sourceInstanceId: instance?.instance_id ?? null,
+    tdo: Math.max(0, estimatedShare),
+    types: [variant.type1_name, variant.type2_name]
+      .filter(Boolean)
+      .map((value) => value.toLocaleLowerCase()),
+  };
+};
+
+const buildCanonicalRaidRankings = ({
+  catalog,
+  instances,
+  requiredType,
+  scope,
   settings,
 }: {
-  bossTypes: string[];
-  charged: Move;
-  fast: Move;
-  instance: PokemonInstance | null;
-  pokemon: BasePokemon;
+  catalog: BasePokemon[];
+  instances: Record<string, PokemonInstance>;
+  requiredType: string;
+  scope: NativeRosterScope;
   settings: NativeRaidSettings;
-}) => {
-  const ownTypes = [pokemon.type1_name, pokemon.type2_name]
-    .filter(Boolean)
-    .map((value) => value.toLocaleLowerCase());
-  const moveDps = (move: Move) => {
-    const type = moveType(move);
-    const stab = ownTypes.includes(type) ? 1.2 : 1;
-    const weather = settings.weatherBoostedType === type ? 1.2 : 1;
-    return Number(move.raid_power) / moveSeconds(move)
-      * nativeTypeEffectiveness(type, bossTypes)
-      * stab
-      * weather;
-  };
-  const friendship = FRIENDSHIP_BONUS[settings.friendship];
-  const mega = MEGA_ALLY_BONUS[settings.megaAllyBonus];
-  const party = PARTY_POWER_BONUS[settings.partyPower];
-  const partyStrategy = settings.partyPower === 'none'
-    ? 1
-    : PARTY_POWER_STRATEGY_BONUS[settings.partyPowerStrategy];
-  const requestedLevel = Number(settings.attackerLevel);
-  const level = instance?.level ?? requestedLevel;
-  const levelScale = Math.sqrt(Math.max(1, level) / 50);
-  const attackIv = instance?.attack_iv ?? 15;
-  const defenseIv = instance?.defense_iv ?? 15;
-  const staminaIv = instance?.stamina_iv ?? 15;
-  const attack = (Number(pokemon.attack || 1) + attackIv) * levelScale;
-  const defense = (Number(pokemon.defense || 1) + defenseIv) * levelScale;
-  const stamina = (Number(pokemon.stamina || 1) + staminaIv) * levelScale;
-  const combinedMoveDps = moveDps(fast) * .35 + moveDps(charged) * .65 * party;
-  const shadowBossDefense = settings.shadowBossMode === 'enraged' ? 3 : 1;
-  const dps = attack * combinedMoveDps / 100 * friendship * mega * partyStrategy / shadowBossDefense;
-  const dodgeSuccessRate = Math.max(0, Math.min(1, settings.dodgeSuccessRate));
-  const dodgeBulk = settings.dodgeStrategy === 'charged'
-    ? 1 + .22 * dodgeSuccessRate
-    : 1;
-  const incomingPressure = BOSS_INCOMING_PRESSURE[settings.bossMovesetMode]
-    * (settings.shadowBossMode === 'enraged' ? 1.81 : 1);
-  const bulk = defense * Math.sqrt(stamina) * dodgeBulk / incomingPressure;
-  const tdo = dps * bulk / 225;
-  const activeSeconds = Math.max(1, tdo / Math.max(.1, dps));
-  const effectiveDps = dps * activeSeconds / (activeSeconds + Math.max(0, settings.relobbySeconds));
-  return {
-    dps,
-    er: Math.pow(effectiveDps, .75) * Math.pow(tdo, .25),
-    score: bossTypes.length > 0 ? effectiveDps : Math.pow(effectiveDps, .75) * Math.pow(tdo, .25),
-    tdo,
-  };
+}): NativeCombatEntry[] => {
+  const { attackers, bossTargets } = buildCanonicalRaidAttackers(catalog, instances, scope);
+  const canonicalSettings = canonicalRaidSettings(settings);
+  const scores = requiredType
+    ? scoreRaidTypeDps(attackers, requiredType, canonicalSettings, bossTargets)
+    : settings.bestOnly
+      ? scoreBestRaidOverallAttackers(attackers, canonicalSettings, bossTargets)
+      : scoreRaidOverallAttackers(attackers, canonicalSettings);
+  const selectedScores = requiredType && settings.bestOnly
+    ? dedupeBestTypeDpsPerVariant(scores as RaidTypeDpsScore[])
+    : scores;
+  return selectedScores.map((score) => canonicalCombatEntry(score, settings));
 };
 
 export const buildNativeRaidAttackers = ({ boss, catalog, instances = {}, requiredType = '', scope = 'catalog', settings }: {
@@ -282,42 +325,53 @@ export const buildNativeRaidAttackers = ({ boss, catalog, instances = {}, requir
   settings?: Partial<NativeRaidSettings>;
 }): NativeCombatEntry[] => {
   const resolvedSettings = { ...DEFAULT_NATIVE_RAID_SETTINGS, ...settings };
-  const scores = buildRaidSources(catalog, instances, scope).flatMap(({ instance, pokemon, sourceKey }) => {
-    const pairs = buildMovePairs(pokemon, instance, requiredType);
-    const rows = pairs.map(({ charged, fast }, pairIndex) => {
-      const metrics = scoreRaidPair({
-        bossTypes: boss?.types ?? [],
-        charged,
-        fast,
-        instance,
-        pokemon,
-        settings: resolvedSettings,
-      });
-      const sourceId = instance?.instance_id ?? sourceKey ?? null;
-      return {
-        chargedMove: charged,
-        cp: instance?.cp ?? (pokemon.cp50 || pokemon.cp40 || 0),
-        dps: metrics.dps,
-        er: metrics.er,
-        fastMove: fast,
-        id: `${sourceId ?? pokemon.pokemon_id}-${fast.move_id}-${charged.move_id}-${pairIndex}`,
-        imageUri: pokemon.image_url,
-        maxKind: null,
-        name: instance?.nickname || pokemon.name,
-        pokemonId: pokemon.pokemon_id,
-        rosterDetail: instance ? describeInstance(instance) : `Level ${resolvedSettings.attackerLevel.replace('.0', '')}`,
-        score: metrics.score,
-        sourceInstanceId: sourceId,
-        tdo: metrics.tdo,
-        types: [pokemon.type1_name, pokemon.type2_name].filter(Boolean).map((value) => value.toLocaleLowerCase()),
-      } satisfies NativeCombatEntry;
-    }).sort((left, right) => right.score - left.score);
-    return resolvedSettings.bestOnly ? rows.slice(0, 1) : rows;
-  });
-  return scores.sort((left, right) => right.score - left.score);
+  if (!boss) {
+    return buildCanonicalRaidRankings({
+      catalog,
+      instances,
+      requiredType,
+      scope,
+      settings: resolvedSettings,
+    });
+  }
+  const { attackers } = buildCanonicalRaidAttackers(catalog, instances, scope);
+  const scores = scoreRaidCounters(
+    attackers,
+    boss.variant,
+    boss.tier,
+    canonicalRaidSettings(resolvedSettings),
+  );
+  const selectedScores = resolvedSettings.bestOnly
+    ? dedupeBestCounterPerVariant(scores)
+    : scores;
+  return selectedScores.map((score) => canonicalCounterEntry(score, boss.tier, resolvedSettings));
 };
 
-export const buildNativeRaidBosses = (catalog: BasePokemon[]): NativeRaidBossEntry[] => catalog.flatMap((pokemon) => (pokemon.raid_boss ?? []).map((boss) => ({ boss, id: `${pokemon.pokemon_id}-${boss.id}`, imageUri: pokemon.image_url, name: boss.name || pokemon.name, pokemon, types: [pokemon.type1_name, pokemon.type2_name].filter(Boolean).map((type) => type.toLocaleLowerCase()) }))).sort((a, b) => a.pokemon.pokedex_number - b.pokemon.pokedex_number);
+export const buildNativeRaidBosses = (catalog: BasePokemon[]): NativeRaidBossEntry[] => {
+  const pokemonById = new Map(catalog.map((pokemon) => [Number(pokemon.pokemon_id), pokemon]));
+  return createPokemonVariants(catalog)
+    .filter(isEligibleRaidBoss)
+    .flatMap((variant) => {
+      const boss = getPrimaryRaidMetadataForVariant(variant);
+      const tierKey = getRaidTierKeyForVariant(variant);
+      const pokemon = pokemonById.get(Number(variant.pokemon_id));
+      if (!boss || !tierKey || !pokemon) return [];
+      return [{
+        boss,
+        id: variant.variant_id,
+        imageUri: variant.currentImage || variant.image_url || null,
+        name: variant.name,
+        pokemon,
+        tier: RAID_TIER_PRESETS[tierKey],
+        tierKey,
+        types: [variant.type1_name, variant.type2_name]
+          .filter(Boolean)
+          .map((type) => type.toLocaleLowerCase()),
+        variant,
+      } satisfies NativeRaidBossEntry];
+    })
+    .sort((a, b) => a.pokemon.pokedex_number - b.pokemon.pokedex_number || a.name.localeCompare(b.name));
+};
 
 export type NativeMaxRole = 'damage' | 'tank' | 'healing';
 

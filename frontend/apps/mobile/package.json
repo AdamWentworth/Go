@@ -13,10 +13,14 @@
     "typecheck": "tsc --noEmit",
     "test": "jest",
     "test:watch": "jest --watch",
+    "parity:smoke:web": "node scripts/run-native-web-parity-smoke.mjs",
+    "parity:routes:web": "node scripts/run-native-real-route-smoke.mjs",
+    "parity:audit:sheets": "node scripts/build-native-parity-contact-sheets.mjs",
     "device:smoke:android": "bash scripts/run-android-device-smoke.sh"
   },
   "dependencies": {
     "@babel/runtime": "^7.28.6",
+    "@expo/metro-runtime": "~57.0.14",
     "@maplibre/maplibre-react-native": "^11.3.7",
     "@pokemongonexus/app-core": "file:../../packages/app-core",
     "@pokemongonexus/shared-api-client": "file:../../packages/shared-api-client",
@@ -24,8 +28,10 @@
     "@pokemongonexus/shared-domain": "file:../../packages/shared-domain",
     "@pokemongonexus/shared-ui-tokens": "file:../../packages/shared-ui-tokens",
     "@react-native-community/netinfo": "12.0.1",
+    "@react-native-community/slider": "5.2.0",
     "@tanstack/react-query": "^5.102.2",
     "expo": "~57.0.17",
+    "expo-clipboard": "~57.0.1",
     "expo-constants": "~57.0.14",
     "expo-crypto": "~57.0.2",
     "expo-dev-client": "~57.0.16",
@@ -39,6 +45,7 @@
     "expo-system-ui": "~57.0.3",
     "expo-web-browser": "~57.0.2",
     "react": "19.2.8",
+    "react-dom": "19.2.8",
     "react-native": "0.86.3",
     "react-native-gesture-handler": "~2.32.0",
     "react-native-qrcode-svg": "^6.3.21",
@@ -47,6 +54,7 @@
     "react-native-sse": "^1.2.1",
     "react-native-svg": "15.15.4",
     "react-native-view-shot": "5.1.0",
+    "react-native-web": "^0.21.2",
     "react-native-webview": "13.16.1"
   },
   "devDependencies": {

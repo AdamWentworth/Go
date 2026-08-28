@@ -9,12 +9,28 @@ export type NativePokemonSearchRelatedRow = NativeCollectionRow & {
   match: boolean;
 };
 
+export type NativePokemonSearchListingDetails = {
+  gender: string | null;
+  weight: number | null;
+  height: number | null;
+  moves: string[];
+  attackIv: number | null;
+  defenseIv: number | null;
+  staminaIv: number | null;
+  locationCaught: string | null;
+  dateCaught: string | null;
+  friendshipLevel: number | null;
+  prefLucky: boolean;
+  wantedSizeLabels: string[];
+};
+
 export type NativePokemonSearchResult = {
   id: string;
   username: string;
   distanceKm: number | null;
   mode: NativePokemonSearchMode;
   row: NativeCollectionRow;
+  details: NativePokemonSearchListingDetails;
   relatedRows: NativePokemonSearchRelatedRow[];
   hasMutualMatch: boolean;
   mapCoordinate: [longitude: number, latitude: number] | null;
@@ -29,12 +45,58 @@ type RawSearchListing = SearchResultRow & Partial<PokemonInstance> & {
   latitude?: number | string | null;
   longitude?: number | string | null;
   boundary?: string | null;
+  pokemonInfo?: {
+    moves?: { move_id?: number; name?: string }[] | null;
+  } | null;
 };
 
 const finiteNumber = (value: unknown): number | null => {
   const numeric = typeof value === 'number' ? value : Number.parseFloat(String(value ?? ''));
   return Number.isFinite(numeric) ? numeric : null;
 };
+
+const nonEmptyString = (value: unknown): string | null => (
+  typeof value === 'string' && value.trim() ? value.trim() : null
+);
+
+const moveNamesForListing = (listing: RawSearchListing): string[] => {
+  const moveIds = [listing.fast_move_id, listing.charged_move1_id, listing.charged_move2_id]
+    .map(finiteNumber)
+    .filter((value): value is number => value != null);
+  const moveById = new Map((listing.pokemonInfo?.moves ?? []).flatMap((move) => {
+    const id = finiteNumber(move.move_id);
+    const name = nonEmptyString(move.name);
+    return id != null && name ? [[id, name] as const] : [];
+  }));
+  return moveIds.map((id) => moveById.get(id) ?? `Move #${id}`);
+};
+
+const wantedSizeLabelsForListing = (listing: RawSearchListing): string[] => {
+  const preferences = listing.wanted_size_preferences;
+  if (!preferences || typeof preferences !== 'object') return [];
+  return (['weight', 'height'] as const).flatMap((metric) => {
+    const range = preferences[metric];
+    const category = range && typeof range === 'object'
+      ? nonEmptyString(range.category)
+      : null;
+    return category ? [`${metric === 'weight' ? 'Weight' : 'Height'} ${category}`] : [];
+  });
+};
+
+const detailsForListing = (listing: RawSearchListing): NativePokemonSearchListingDetails => ({
+  gender: nonEmptyString(listing.gender),
+  weight: finiteNumber(listing.weight),
+  height: finiteNumber(listing.height),
+  moves: moveNamesForListing(listing),
+  attackIv: finiteNumber(listing.attack_iv),
+  defenseIv: finiteNumber(listing.defense_iv),
+  staminaIv: finiteNumber(listing.stamina_iv),
+  locationCaught: nonEmptyString(listing.location_caught),
+  dateCaught: nonEmptyString(listing.date_caught),
+  friendshipLevel: finiteNumber(listing.friendship_level),
+  prefLucky: Boolean(listing.pref_lucky),
+  wantedSizeLabels: wantedSizeLabelsForListing(listing),
+});
 
 export const mapCoordinateForSearchListing = (
   listing: Pick<RawSearchListing, 'boundary' | 'latitude' | 'longitude'>,
@@ -144,6 +206,7 @@ export const buildNativePokemonSearchResults = ({
       distanceKm: Number.isFinite(distance) ? distance : null,
       mode,
       row,
+      details: detailsForListing(listing),
       relatedRows: relatedRows.sort((left, right) => (
         Number(right.match) - Number(left.match)
         || left.pokedexNumber - right.pokedexNumber

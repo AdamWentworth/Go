@@ -1,5 +1,7 @@
 import { Redirect } from 'expo-router';
 import { useState } from 'react';
+import { StyleSheet, View } from 'react-native';
+import { NativeRouteActionMenu } from '../../components/NativeRouteActionMenu';
 import { runtimeConfig } from '../../config/runtimeConfig';
 import type { NativeCollectionRow } from '../../features/collection/collectionModel';
 import type { NativeTrainerProfileModel } from '../../features/social/nativeTrainerProfileModel';
@@ -93,35 +95,41 @@ export default function DeviceSmokeProfileRoute() {
   const [highlights, setHighlights] = useState(HIGHLIGHTS);
   if (!runtimeConfig.mobile.deviceSmokeMode) return <Redirect href="/" />;
   return (
-    <NativeTrainerProfileScreen
-      assetBaseUrl={ASSET_BASE_URL}
-      editorDraft={draft}
-      feedback={feedback}
-      highlights={highlights}
-      highlightCandidates={HIGHLIGHT_CANDIDATES}
-      isOwner
-      model={model}
-      onBeginEdit={() => setDraft({ ...EDITOR_DRAFT })}
-      onCancelEdit={() => setDraft(null)}
-      onChangeEditorDraft={setDraft}
-      onDismissFeedback={() => setFeedback(null)}
-      onOpenCollection={() => undefined}
-      onOpenFriends={() => undefined}
-      onSaveProfile={() => {
-        if (!draft) return;
-        setModel((current) => ({
-          ...current,
-          pokemonGoName: draft.pokemonGoName || current.pokemonGoName,
-          locationLabel: draft.location || current.locationLabel,
-        }));
-        const byId = new Map(HIGHLIGHT_CANDIDATES.map((row) => [row.id, row]));
-        setHighlights(draft.highlightInstanceIds.flatMap((id) => {
-          const row = byId.get(id);
-          return row ? [row] : [];
-        }));
-        setDraft(null);
-        setFeedback({ tone: 'success', text: 'Profile updated.' });
-      }}
-    />
+    <View style={styles.screen}>
+      <NativeTrainerProfileScreen
+        assetBaseUrl={ASSET_BASE_URL}
+        editorDraft={draft}
+        feedback={feedback}
+        highlights={highlights}
+        highlightCandidates={HIGHLIGHT_CANDIDATES}
+        isOwner
+        model={model}
+        onBack={() => undefined}
+        onBeginEdit={() => setDraft({ ...EDITOR_DRAFT })}
+        onCancelEdit={() => setDraft(null)}
+        onChangeEditorDraft={setDraft}
+        onDismissFeedback={() => setFeedback(null)}
+        onOpenCollection={() => undefined}
+        onOpenFriends={() => undefined}
+        onSaveProfile={() => {
+          if (!draft) return;
+          setModel((current) => ({
+            ...current,
+            pokemonGoName: draft.pokemonGoName || current.pokemonGoName,
+            locationLabel: draft.location || current.locationLabel,
+          }));
+          const byId = new Map(HIGHLIGHT_CANDIDATES.map((row) => [row.id, row]));
+          setHighlights(draft.highlightInstanceIds.flatMap((id) => {
+            const row = byId.get(id);
+            return row ? [row] : [];
+          }));
+          setDraft(null);
+          setFeedback({ tone: 'success', text: 'Profile updated.' });
+        }}
+      />
+      <NativeRouteActionMenu currentPath="/profile" signedIn />
+    </View>
   );
 }
+
+const styles = StyleSheet.create({ screen: { flex: 1, minHeight: 0 } });

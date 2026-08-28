@@ -20,6 +20,8 @@ const RootContent = () => {
     <GestureHandlerRootView style={styles.appShell}>
       <SafeAreaProvider>
         <StatusBar style={light ? 'dark' : 'light'} />
+        {/* The application shell owns top and bottom safe-area spacing. Screens
+            must not apply the same window insets a second time. */}
         <SafeAreaView style={[styles.appShell, light && styles.appShellLight]} edges={['top', 'bottom']}>
           <View style={[styles.appShell, light && styles.appShellLight]}>
             <MobileErrorBoundary>
@@ -45,5 +47,5 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#000',
   },
-  appShellLight: { backgroundColor: '#eef4f5' },
+  appShellLight: { backgroundColor: '#f8fff9' },
 });

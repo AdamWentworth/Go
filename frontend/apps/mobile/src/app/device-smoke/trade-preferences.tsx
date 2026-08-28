@@ -8,13 +8,17 @@ import {
   NativeHorizontalPageSlider,
   type NativeHorizontalPageSliderHandle,
 } from '../../components/NativeHorizontalPageSlider';
+import { NativeRouteActionMenu } from '../../components/NativeRouteActionMenu';
 import {
   NativeTradeHubHeader,
   type NativeTradeHubView,
 } from '../../features/trades/NativeTradeHubHeader';
-import { buildNativeTradePreferenceEntries } from '../../features/trades/nativeTradePreferencesModel';
+import {
+  buildNativeTradePreferenceEntries,
+} from '../../features/trades/nativeTradePreferencesModel';
 import { NativeTradeActivityScreen } from '../../screens/NativeTradeActivityScreen';
 import { NativeTradePreferencesScreen } from '../../screens/NativeTradePreferencesScreen';
+import { useNativeColorScheme } from '../../features/settings/useNativeColorScheme';
 
 const ASSET_BASE_URL = 'https://pokegonexus.com';
 
@@ -178,6 +182,7 @@ const INSTANCES: Record<string, PokemonInstance> = {
 };
 
 export default function DeviceSmokeTradePreferencesRoute() {
+  const light = useNativeColorScheme() === 'light';
   const [activeView, setActiveView] = useState<NativeTradeHubView>('preferences');
   const [pageScrollX] = useState(() => new Animated.Value(0));
   const sliderRef = useRef<NativeHorizontalPageSliderHandle>(null);
@@ -203,7 +208,7 @@ export default function DeviceSmokeTradePreferencesRoute() {
   if (!runtimeConfig.mobile.deviceSmokeMode) return <Redirect href="/" />;
 
   return (
-    <View style={styles.screen}>
+    <View style={[styles.screen, light && styles.screenLight]}>
       <NativeTradeHubHeader
         activeView={activeView}
         assetBaseUrl={ASSET_BASE_URL}
@@ -236,10 +241,12 @@ export default function DeviceSmokeTradePreferencesRoute() {
           showModeTabs={false}
         />
       </NativeHorizontalPageSlider>
+      <NativeRouteActionMenu currentPath="/trades" signedIn />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   screen: { flex: 1, minHeight: 0, backgroundColor: '#071012' },
+  screenLight: { backgroundColor: '#f8fff9' },
 });

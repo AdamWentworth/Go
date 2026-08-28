@@ -12,16 +12,20 @@ import {
   StyleSheet,
   Text,
   View,
-  useColorScheme,
 } from 'react-native';
 import { useMemo, useRef, useState } from 'react';
-import { NativePokemonLocationBackdrop } from '../features/collection/parity/NativePokemonLocationBackdrop';
+import {
+  NativePokemonLocationBackdrop,
+} from '../features/collection/parity/NativePokemonLocationBackdrop';
 import type { NativeInstanceDetail } from '../features/collection/collectionModel';
 import type { NativeTradeActivityRow } from '../features/trades/nativeTradeActivityRows';
 import type {
   NativeTradeActivityActionModel,
   NativeTradeActivityModel,
 } from '../features/trades/nativeTradeActivityModel';
+import { useNativeModalAnimation } from '../features/settings/useNativeMotion';
+import { useNativeColorScheme } from '../features/settings/useNativeColorScheme';
+import { NativeUiIcon } from '../components/NativeUiIcon';
 
 type Props = {
   assetBaseUrl: string;
@@ -44,6 +48,14 @@ const FILTER_LABELS: Record<TradeActivityFilter, { full: string; compact: string
   Pending: { full: 'Active', compact: 'Active' },
   Completed: { full: 'Completed', compact: 'Done' },
   Cancelled: { full: 'Closed', compact: 'Closed' },
+};
+
+const FILTER_TONES: Record<TradeActivityFilter, { border: string; surface: string; accent: string }> = {
+  Accepting: { border: '#a44d57', surface: '#3a2226', accent: '#dd5260' },
+  Proposed: { border: '#34794b', surface: '#173223', accent: '#3aa85f' },
+  Pending: { border: '#966b35', surface: '#392a18', accent: '#e39a3b' },
+  Completed: { border: '#376da8', surface: '#192b41', accent: '#438de0' },
+  Cancelled: { border: '#5e686c', surface: '#272e31', accent: '#808c91' },
 };
 
 const toAssetUrl = (baseUrl: string, path: string): string => (
@@ -337,7 +349,9 @@ export const NativeTradeActivityScreen = ({
   rows,
   showModeTabs = true,
 }: Props) => {
-  const light = useColorScheme() === 'light';
+  const light = useNativeColorScheme() === 'light';
+  const fadeAnimation = useNativeModalAnimation('fade');
+  const slideAnimation = useNativeModalAnimation('slide');
   const [selectedFilter, setSelectedFilter] = useState<TradeActivityFilter>('Accepting');
   const [pending, setPending] = useState<{
     row: NativeTradeActivityRow;
@@ -397,10 +411,10 @@ export const NativeTradeActivityScreen = ({
     <View style={[styles.screen, light && styles.screenLight]} testID="native-trade-activity-screen">
       {showModeTabs ? (
         <View style={[styles.modeTabs, light && styles.modeTabsLight]}>
-          <Pressable accessibilityRole="button" onPress={onOpenPreferences} style={styles.modeTab}>
+          <Pressable aria-selected={false} accessibilityRole="tab" accessibilityState={{ selected: false }} onPress={onOpenPreferences} style={styles.modeTab}>
             <Text style={[styles.modeTabText, light && styles.secondaryLight]}>Trade Preferences</Text>
           </Pressable>
-          <View accessibilityRole="tab" accessibilityState={{ selected: true }} style={[styles.modeTab, styles.activeModeTab]}>
+          <View aria-selected accessibilityRole="tab" accessibilityState={{ selected: true }} style={[styles.modeTab, styles.activeModeTab]}>
             <Text style={styles.activeModeText}>Trade Activity</Text>
           </View>
         </View>
@@ -418,8 +432,10 @@ export const NativeTradeActivityScreen = ({
       <View accessibilityRole="tablist" style={[styles.statusTabs, light && styles.statusTabsLight]}>
         {TRADE_ACTIVITY_FILTERS.map((filter) => {
           const selected = filter === selectedFilter;
+          const tone = FILTER_TONES[filter];
           return (
             <Pressable
+              aria-selected={selected}
               accessibilityRole="tab"
               accessibilityState={{ selected }}
               key={filter}
@@ -428,7 +444,11 @@ export const NativeTradeActivityScreen = ({
                 listRef.current?.scrollToOffset({ animated: false, offset: 0 });
                 setSelectedFilter(filter);
               }}
-              style={[styles.statusTab, selected && styles.activeStatusTab]}
+              style={[
+                styles.statusTab,
+                selected && styles.activeStatusTab,
+                selected && { borderColor: tone.border, backgroundColor: tone.surface },
+              ]}
               testID={`trade-filter-${filter}`}
             >
               <Text
@@ -438,7 +458,7 @@ export const NativeTradeActivityScreen = ({
               >
                 {FILTER_LABELS[filter].compact}
               </Text>
-              <View style={[styles.countBadge, selected && styles.activeCountBadge]}>
+              <View style={[styles.countBadge, selected && { backgroundColor: tone.accent }]}>
                 <Text style={styles.countText}>{counts[filter]}</Text>
               </View>
             </Pressable>
@@ -486,7 +506,7 @@ export const NativeTradeActivityScreen = ({
           keyExtractor={(row) => row.model.tradeId}
           ListEmptyComponent={error ? null : (
             <View style={[styles.emptyState, light && styles.cardLight]}>
-              <View style={styles.emptyIcon}><Text style={styles.emptyIconText}>↔</Text></View>
+              <View style={styles.emptyIcon}><NativeUiIcon color="#36c181" name="trade" size={22} /></View>
               <Text style={[styles.stateTitle, light && styles.textLight]}>No trades here</Text>
               <Text style={[styles.stateBody, light && styles.secondaryLight]}>
                 {selectedFilter === 'Accepting'
@@ -512,10 +532,11 @@ export const NativeTradeActivityScreen = ({
             />
           )}
           showsVerticalScrollIndicator={false}
+          testID="trade-activity-list"
         />
       )}
 
-      <Modal animationType="fade" onRequestClose={() => setPending(null)} transparent visible={Boolean(pending)}>
+      <Modal animationType={fadeAnimation} onRequestClose={() => setPending(null)} transparent visible={Boolean(pending)}>
         <View style={styles.modalOverlay}>
           {pending ? (
             <View style={[styles.modalCard, light && styles.modalCardLight]} testID="trade-action-confirmation">
@@ -539,7 +560,7 @@ export const NativeTradeActivityScreen = ({
         </View>
       </Modal>
 
-      <Modal animationType="slide" onRequestClose={() => setPartner(null)} transparent visible={Boolean(partner)}>
+      <Modal animationType={slideAnimation} onRequestClose={() => setPartner(null)} transparent visible={Boolean(partner)}>
         <View style={styles.modalOverlay}>
           {partner ? (
             <View style={[styles.partnerCard, light && styles.modalCardLight]} testID="trade-partner-information">
@@ -573,8 +594,11 @@ export const NativeTradeActivityScreen = ({
 };
 
 const styles = StyleSheet.create({
-  screen: { flex: 1, gap: 9, paddingTop: 7, backgroundColor: '#07100f' },
-  screenLight: { backgroundColor: '#f4f7f6' },
+  // Keep the persistent Poké Ball in its own visual lane. A scrollable action
+  // must never settle underneath the anchor, where the anchor would intercept
+  // the user's press (most visibly with large text on narrow phones).
+  screen: { flex: 1, gap: 9, paddingTop: 7, paddingBottom: 86, backgroundColor: '#07100f' },
+  screenLight: { backgroundColor: '#f8fff9' },
   modeTabs: { flexDirection: 'row', marginHorizontal: 8, borderWidth: 1, borderColor: '#1d4a43', borderRadius: 10, padding: 4, backgroundColor: '#081312' },
   modeTabsLight: { borderColor: '#9db8b2', backgroundColor: '#e8efed' },
   modeTab: { flex: 1, minHeight: 48, alignItems: 'center', justifyContent: 'center', borderRadius: 7, paddingHorizontal: 8 },
@@ -587,13 +611,15 @@ const styles = StyleSheet.create({
   statusTabs: { flexDirection: 'row', marginHorizontal: 8, borderWidth: 1, borderColor: '#1b403b', borderRadius: 12, padding: 4, backgroundColor: '#071211' },
   statusTabsLight: { borderColor: '#abc1bc', backgroundColor: '#eef3f2' },
   statusTab: { flex: 1, minHeight: 50, alignItems: 'center', justifyContent: 'center', gap: 2, borderRadius: 8, paddingHorizontal: 2 },
-  activeStatusTab: { borderWidth: 1, borderColor: '#36c181', backgroundColor: '#123329' },
+  activeStatusTab: { borderWidth: 1 },
   statusTabText: { color: '#a4b8b4', fontSize: 12, fontWeight: '800', textAlign: 'center' },
   activeStatusText: { color: '#ffffff' },
   countBadge: { minWidth: 22, height: 22, alignItems: 'center', justifyContent: 'center', borderRadius: 11, backgroundColor: '#182725' },
-  activeCountBadge: { backgroundColor: '#36c181' },
   countText: { color: '#e7f4f1', fontSize: 11, fontWeight: '900' },
-  listContent: { gap: 12, paddingHorizontal: 8, paddingBottom: 28 },
+  // Leave every terminal action scrollable above the persistent action-menu
+  // anchor. Without this clearance, the anchor can intercept a press on the
+  // final card action even though that action is technically visible.
+  listContent: { gap: 12, paddingHorizontal: 8, paddingBottom: 96 },
   emptyListContent: { paddingHorizontal: 8, paddingBottom: 92 },
   tradeCard: { overflow: 'hidden', borderWidth: 1, borderColor: '#24554d', borderRadius: 13, backgroundColor: '#111b1a' },
   cardLight: { borderColor: '#9ab7b0', backgroundColor: '#ffffff' },

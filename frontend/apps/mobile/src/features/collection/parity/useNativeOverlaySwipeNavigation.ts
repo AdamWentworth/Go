@@ -80,6 +80,10 @@ export const useNativeOverlaySwipeNavigation = ({
   }, [translateX]);
 
   const resetPosition = useCallback(() => {
+    if (reduceMotion) {
+      translateX.setValue(0);
+      return;
+    }
     Animated.spring(translateX, {
       toValue: 0,
       damping: 22,
@@ -87,7 +91,7 @@ export const useNativeOverlaySwipeNavigation = ({
       mass: 0.7,
       useNativeDriver: true,
     }).start();
-  }, [translateX]);
+  }, [reduceMotion, translateX]);
 
   const navigate = useCallback((direction: NativeOverlaySwipeDirection) => {
     if (disabled) return;

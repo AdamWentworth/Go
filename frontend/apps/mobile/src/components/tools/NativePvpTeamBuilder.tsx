@@ -14,19 +14,21 @@ import {
   saveNativePvpTeam,
   type NativePvpTeamSlots,
 } from "../../features/tools/nativePvpTeams";
+import { NativeUiIcon, type NativeUiIconName } from "../NativeUiIcon";
 
 type Props = {
   assetBaseUrl: string;
   entries: PokemonPvPRankingEntry[];
   light: boolean;
   onOpenBattleLab: () => void;
+  persistSelection?: boolean;
   storageKey: string;
 };
 
 const ROLES = [
-  { detail: "Even shields", icon: "⚑", label: "Lead" },
-  { detail: "Energy advantage", icon: "↔", label: "Safe Swap" },
-  { detail: "No shields", icon: "✊", label: "Closer" },
+  { detail: "Even shields", icon: "flag" as NativeUiIconName, label: "Lead" },
+  { detail: "Energy advantage", icon: "trade" as NativeUiIconName, label: "Safe Swap" },
+  { detail: "No shields", icon: "fist" as NativeUiIconName, label: "Closer" },
 ] as const;
 const EMPTY_TEAM: NativePvpTeamSlots = [null, null, null];
 
@@ -62,6 +64,7 @@ export const NativePvpTeamBuilder = ({
   entries,
   light,
   onOpenBattleLab,
+  persistSelection = true,
   storageKey,
 }: Props) => {
   const [activeSlot, setActiveSlot] = useState(0);
@@ -71,6 +74,10 @@ export const NativePvpTeamBuilder = ({
   const storageReady = useRef(false);
 
   useEffect(() => {
+    if (!persistSelection) {
+      storageReady.current = false;
+      return;
+    }
     let active = true;
     void loadNativePvpTeam(storageKey).then((slots) => {
       if (!active) return;
@@ -83,12 +90,12 @@ export const NativePvpTeamBuilder = ({
     return () => {
       active = false;
     };
-  }, [storageKey]);
+  }, [persistSelection, storageKey]);
 
   useEffect(() => {
-    if (storageReady.current)
+    if (persistSelection && storageReady.current)
       void saveNativePvpTeam(storageKey, selectedKeys);
-  }, [selectedKeys, storageKey]);
+  }, [persistSelection, selectedKeys, storageKey]);
 
   const entriesById = useMemo(
     () => new Map(entries.map((entry) => [entry.speciesId, entry])),
@@ -152,7 +159,7 @@ export const NativePvpTeamBuilder = ({
     <View accessibilityLabel="PvP Team Builder" style={styles.builder}>
       <View style={styles.builderHeader}>
         <View style={styles.headingIdentity}>
-          <Text style={[styles.headerIcon, light && styles.accentLight]}>♟</Text>
+          <NativeUiIcon color={light ? '#08766b' : '#42d5c2'} name="trainers" size={21} />
           <View>
             <Text style={[styles.eyebrow, light && styles.accentLight]}>THREE-POKÉMON TEAM</Text>
             <Text style={[styles.heading, light && styles.textLight]}>Team Builder</Text>
@@ -182,7 +189,7 @@ export const NativePvpTeamBuilder = ({
               ]}
             >
               <View style={styles.roleRow}>
-                <Text style={[styles.roleIcon, light && styles.accentLight]}>{role.icon}</Text>
+                <NativeUiIcon color={light ? '#08766b' : '#42d5c2'} name={role.icon} size={18} />
                 <View style={styles.roleCopy}>
                   <Text style={[styles.roleTitle, light && styles.accentLight]}>{role.label}</Text>
                   <Text style={[styles.roleDetail, light && styles.mutedLight]}>{role.detail}</Text>
@@ -230,7 +237,7 @@ export const NativePvpTeamBuilder = ({
         <View style={[styles.analysis, light && styles.analysisLight]}>
           <View style={styles.builderHeader}>
             <View style={styles.headingIdentity}>
-              <Text style={[styles.headerIcon, light && styles.accentLight]}>♜</Text>
+              <NativeUiIcon color={light ? '#08766b' : '#42d5c2'} name="chart" size={20} />
               <View>
                 <Text style={[styles.eyebrow, light && styles.accentLight]}>LOCAL ROLE FIELD TEST</Text>
                 <Text style={[styles.analysisHeading, light && styles.textLight]}>Team check</Text>
@@ -266,7 +273,7 @@ export const NativePvpTeamBuilder = ({
                   : "No shared threats in the published matchup evidence."}
               </Text>
               <Pressable accessibilityRole="button" onPress={onOpenBattleLab} style={[styles.battleButton, light && styles.battleButtonLight]}>
-                <Text style={[styles.battleButtonText, light && styles.accentLight]}>♜ Test a matchup in Battle Lab</Text>
+                <View style={styles.battleButtonContent}><NativeUiIcon color={light ? '#08766b' : '#42d5c2'} name="flask" size={15} /><Text style={[styles.battleButtonText, light && styles.accentLight]}>Test a matchup in Battle Lab</Text></View>
               </Pressable>
             </>
           )}
@@ -298,7 +305,7 @@ export const NativePvpTeamBuilder = ({
           <Text style={[styles.pickHint, light && styles.mutedLight]}>{team.length === 3 ? "Select to replace" : "Highest scoring first"}</Text>
         </View>
         <View style={[styles.searchWrap, light && styles.inputLight]}>
-          <Text style={[styles.searchIcon, light && styles.mutedLight]}>⌕</Text>
+          <NativeUiIcon color={light ? '#4c7073' : '#9db6b8'} name="search" size={18} />
           <TextInput
             accessibilityLabel="Search Team Builder Pokémon"
             onChangeText={setQuery}
@@ -380,6 +387,7 @@ const styles = StyleSheet.create({
   analysisLabel: { color: "#9db6b8", fontSize: 7.5, fontWeight: "900" },
   analysisValue: { color: "#42d5c2", fontSize: 14, fontWeight: "900" },
   battleButton: { minHeight: 42, alignItems: "center", justifyContent: "center", borderWidth: 1, borderColor: "rgba(115,204,204,0.5)", borderRadius: 6, backgroundColor: "rgba(66,213,194,0.07)" },
+  battleButtonContent: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6 },
   battleButtonLight: { backgroundColor: "#f6ffff" },
   battleButtonText: { color: "#42d5c2", fontSize: 10, fontWeight: "900" },
   suggestions: { gap: 5 },

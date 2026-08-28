@@ -22,10 +22,24 @@ const ownedInstance = {
   stamina_iv: 14,
   variant_id: '1-default',
 } as PokemonInstance;
+const raidBoss = {
+  id: 1,
+  pokemon_id: 1,
+  name: 'Bulbasaur',
+  form: 'Normal',
+  type: '1',
+  boosted_weather: '',
+  max_boosted_cp: 500,
+  max_unboosted_cp: 400,
+  min_boosted_cp: 300,
+  min_unboosted_cp: 200,
+  possible_shiny: 1,
+  tier: '1',
+};
 
 describe('native battle models', () => {
   it('hydrates move and raid chunks and ranks legal attackers', () => {
-    const hydrated = hydrateNativeToolCatalog([pokemon], [{ pokemon_id: 1, moves: [fast, charged], fusion: [], crownForms: [] }], [{ pokemon_id: 1, raid_boss: [{ id: 1, pokemon_id: 1, name: 'Bulbasaur', form: 'Normal', type: 'one-star', boosted_weather: '', max_boosted_cp: 500, max_unboosted_cp: 400, min_boosted_cp: 300, min_unboosted_cp: 200, possible_shiny: 1, tier: 'one-star' }] }]);
+    const hydrated = hydrateNativeToolCatalog([pokemon], [{ pokemon_id: 1, moves: [fast, charged], fusion: [], crownForms: [] }], [{ pokemon_id: 1, raid_boss: [raidBoss] }]);
     expect(buildNativeRaidBosses(hydrated)).toHaveLength(1);
     expect(buildNativeRaidAttackers({ catalog: hydrated })[0]?.fastMove?.name).toBe('Vine Whip');
     expect(buildNativeMaxRankings({ catalog: hydrated, role: 'damage' })[0]?.maxKind).toBe('dynamax');
@@ -65,26 +79,35 @@ describe('native battle models', () => {
     const boss = buildNativeRaidBosses(hydrateNativeToolCatalog(
       [hydrated],
       [],
-      [{ pokemon_id: 1, raid_boss: [{ id: 1, pokemon_id: 1, name: 'Bulbasaur', form: 'Normal', type: 'one-star', boosted_weather: '', max_boosted_cp: 500, max_unboosted_cp: 400, min_boosted_cp: 300, min_unboosted_cp: 200, possible_shiny: 1, tier: 'one-star' }] }],
+      [{ pokemon_id: 1, raid_boss: [raidBoss] }],
     ))[0];
     const expected = buildNativeRaidAttackers({ boss, catalog: [hydrated] })[0];
     const favorableDodging = buildNativeRaidAttackers({ boss, catalog: [hydrated], settings: { bossMovesetMode: 'favorable', dodgeStrategy: 'charged' } })[0];
     const hostileEnraged = buildNativeRaidAttackers({ boss, catalog: [hydrated], settings: { bossMovesetMode: 'hostile', shadowBossMode: 'enraged' } })[0];
     const timedPartyPower = buildNativeRaidAttackers({ boss, catalog: [hydrated], settings: { partyPower: 'party4', partyPowerStrategy: 'strongest-charged' } })[0];
-    expect(favorableDodging?.tdo).toBeGreaterThan(expected?.tdo ?? Infinity);
+    expect(favorableDodging?.counter).toBeTruthy();
+    expect(favorableDodging?.counter?.faints).toBeLessThanOrEqual(expected?.counter?.faints ?? -1);
     expect(hostileEnraged?.score).toBeLessThan(expected?.score ?? 0);
     expect(timedPartyPower?.score).toBeGreaterThan(expected?.score ?? Infinity);
   });
   it('uses the calibrated dodge success rate instead of treating every dodge as successful', () => {
     const hydrated = { ...pokemon, moves: [fast, charged, secondCharged] } as BasePokemon;
+    const boss = buildNativeRaidBosses(hydrateNativeToolCatalog(
+      [hydrated],
+      [],
+      [{ pokemon_id: 1, raid_boss: [raidBoss] }],
+    ))[0];
     const alwaysDodges = buildNativeRaidAttackers({
+      boss,
       catalog: [hydrated],
       settings: { dodgeStrategy: 'charged', dodgeSuccessRate: 1 },
     })[0];
     const rarelyDodges = buildNativeRaidAttackers({
+      boss,
       catalog: [hydrated],
       settings: { dodgeStrategy: 'charged', dodgeSuccessRate: .25 },
     })[0];
-    expect(alwaysDodges?.tdo).toBeGreaterThan(rarelyDodges?.tdo ?? Infinity);
+    expect(alwaysDodges?.counter).toBeTruthy();
+    expect(alwaysDodges?.counter?.faints).toBeLessThanOrEqual(rarelyDodges?.counter?.faints ?? -1);
   });
 });

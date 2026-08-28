@@ -9,7 +9,7 @@ import {
   View,
   useWindowDimensions,
 } from 'react-native';
-import { memo, useState } from 'react';
+import { memo, useEffect, useRef, useState } from 'react';
 import {
   collectionParityTokens,
   webCssVarTokens,
@@ -56,6 +56,9 @@ type NativeCollectionParityFixtureProps = {
   onSelectionActionPress?: () => void;
   activeView?: NativePokemonHubView;
   query?: string;
+  initialScrollOffset?: number;
+  onScrollOffsetChange?: (offset: number) => void;
+  scrollResetKey?: string;
   sortDirection?: 'ascending' | 'descending';
   sortIconPath?: string;
   sortLabel?: string;
@@ -270,6 +273,9 @@ export const NativeCollectionParityFixture = ({
   onSelectionActionPress,
   activeView = 'pokemon',
   query = '',
+  initialScrollOffset = 0,
+  onScrollOffsetChange,
+  scrollResetKey = '',
   sortDirection = 'ascending',
   sortIconPath = '/images/sorting/number.png',
   sortLabel = 'Sort by Pokédex number ascending',
@@ -283,6 +289,9 @@ export const NativeCollectionParityFixture = ({
 }: NativeCollectionParityFixtureProps) => {
   const { width } = useWindowDimensions();
   const [searchMenuVisible, setSearchMenuVisible] = useState(false);
+  const listRef = useRef<FlatList<CollectionParityCardFixture>>(null);
+  const restoredScrollRef = useRef(initialScrollOffset <= 0);
+  const previousResetKeyRef = useRef(scrollResetKey);
   const palette = theme === 'light' ? LIGHT : DARK;
   const columns = width < 481 ? 3 : width < 1024 ? 6 : 9;
   const cardWidth = Math.floor(
@@ -301,6 +310,13 @@ export const NativeCollectionParityFixture = ({
     onQueryChange?.(nextQuery);
     setSearchMenuVisible(false);
   };
+  useEffect(() => {
+    if (previousResetKeyRef.current === scrollResetKey) return;
+    previousResetKeyRef.current = scrollResetKey;
+    restoredScrollRef.current = true;
+    listRef.current?.scrollToOffset({ animated: false, offset: 0 });
+    onScrollOffsetChange?.(0);
+  }, [onScrollOffsetChange, scrollResetKey]);
   const renderCollectionControls = (includeSearchMenu: boolean) => (
     <View style={styles.collectionControls}>
       <NativeCollectionSearchControls
@@ -415,13 +431,21 @@ export const NativeCollectionParityFixture = ({
           columnWrapperStyle={styles.gridRow}
           contentContainerStyle={styles.listContent}
           data={cards}
+          ref={listRef}
           initialNumToRender={18}
           key={columns}
           keyExtractor={(item) => item.id}
           keyboardShouldPersistTaps="always"
           maxToRenderPerBatch={18}
           numColumns={columns}
+          onContentSizeChange={() => {
+            if (restoredScrollRef.current || initialScrollOffset <= 0 || cards.length === 0) return;
+            restoredScrollRef.current = true;
+            listRef.current?.scrollToOffset({ animated: false, offset: initialScrollOffset });
+          }}
+          onScroll={(event) => onScrollOffsetChange?.(event.nativeEvent.contentOffset.y)}
           removeClippedSubviews
+          scrollEventThrottle={80}
           testID="native-collection-grid"
           updateCellsBatchingPeriod={32}
           windowSize={5}

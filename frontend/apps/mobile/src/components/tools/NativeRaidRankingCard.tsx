@@ -1,5 +1,6 @@
-import { Image, Pressable, StyleSheet, Text, View, useColorScheme } from 'react-native';
+import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import type { NativeCombatEntry } from '../../features/tools/nativeBattleModels';
+import { useNativeColorScheme } from '../../features/settings/useNativeColorScheme';
 
 type Props = {
   assetBaseUrl: string;
@@ -7,6 +8,7 @@ type Props = {
   expanded: boolean;
   onOpenPokemon: () => void;
   onToggle: () => void;
+  primaryMetric?: 'cp' | 'dps' | 'edps' | 'er' | 'tdo';
   rank: number;
 };
 
@@ -15,8 +17,31 @@ const uri = (base: string, value: string | null) => {
   try { return new URL(value, base).toString(); } catch { return undefined; }
 };
 
-export const NativeRaidRankingCard = ({ assetBaseUrl, entry, expanded, onOpenPokemon, onToggle, rank }: Props) => {
-  const light = useColorScheme() === 'light';
+export const NativeRaidRankingCard = ({ assetBaseUrl, entry, expanded, onOpenPokemon, onToggle, primaryMetric = 'edps', rank }: Props) => {
+  const light = useNativeColorScheme() === 'light';
+  const counter = entry.counter ?? null;
+  const rankingMetric = {
+    cp: { label: 'CP', value: entry.cp.toLocaleString() },
+    dps: { label: 'DPS', value: entry.dps.toFixed(1) },
+    edps: { label: 'eDPS', value: entry.score.toFixed(1) },
+    er: { label: 'ER', value: entry.er.toFixed(1) },
+    tdo: { label: 'TDO', value: entry.tdo.toFixed(0) },
+  }[primaryMetric];
+  const primaryLabel = counter ? 'DPS' : rankingMetric.label;
+  const primaryValue = counter ? entry.score.toFixed(1) : rankingMetric.value;
+  const detailRows = counter
+    ? [
+      ['TRAINERS', String(counter.trainersNeeded)],
+      ['CLEAR', Number.isFinite(counter.soloTimeSeconds) ? `${Math.round(counter.soloTimeSeconds)}s` : '—'],
+      ['FAINTS', String(counter.faints)],
+      ['CP', entry.cp.toLocaleString()],
+    ]
+    : [
+      ['DPS', entry.dps.toFixed(1)],
+      ['TDO', entry.tdo.toFixed(0)],
+      ['ER', entry.er.toFixed(1)],
+      ['CP', entry.cp.toLocaleString()],
+    ];
   return (
     <View style={[styles.card, light && styles.cardLight]}>
       <Pressable
@@ -34,8 +59,9 @@ export const NativeRaidRankingCard = ({ assetBaseUrl, entry, expanded, onOpenPok
           {entry.rosterDetail ? <Text numberOfLines={1} style={styles.roster}>{entry.rosterDetail}</Text> : null}
         </View>
         <View style={styles.primaryMetric}>
-          <Text style={styles.metricLabel}>eDPS</Text>
-          <Text style={[styles.metricValue, light && styles.textLight]}>{entry.score.toFixed(1)}</Text>
+          <Text style={styles.metricLabel}>{primaryLabel}</Text>
+          <Text style={[styles.metricValue, light && styles.textLight]}>{primaryValue}</Text>
+          {counter ? <Text style={[styles.trainers, light && styles.mutedLight]}>{counter.trainersNeeded} trainer{counter.trainersNeeded === 1 ? '' : 's'}</Text> : null}
           <Text style={[styles.expandHint, light && styles.mutedLight]}>{expanded ? '⌃' : '⌄'}</Text>
         </View>
       </Pressable>
@@ -46,10 +72,7 @@ export const NativeRaidRankingCard = ({ assetBaseUrl, entry, expanded, onOpenPok
       </View>
       {expanded ? (
         <View style={[styles.details, light && styles.detailsLight]}>
-          {[
-            ['DPS', entry.dps.toFixed(1)], ['TDO', entry.tdo.toFixed(0)],
-            ['ER', entry.er.toFixed(1)], ['CP', entry.cp.toLocaleString()],
-          ].map(([label, value]) => (
+          {detailRows.map(([label, value]) => (
             <View key={label} style={styles.stat}><Text style={styles.statLabel}>{label}</Text><Text style={[styles.statValue, light && styles.textLight]}>{value}</Text></View>
           ))}
           <Pressable accessibilityRole="button" onPress={onOpenPokemon} style={styles.openButton}>
@@ -76,6 +99,7 @@ const styles = StyleSheet.create({
   primaryMetric: { minWidth: 47, alignItems: 'flex-end' },
   metricLabel: { color: '#62ded5', fontSize: 7.5, fontWeight: '900' },
   metricValue: { color: '#fff', fontSize: 16, fontWeight: '900' },
+  trainers: { marginTop: 1, color: '#9badad', fontSize: 7.5, fontWeight: '800' },
   expandHint: { color: '#91a2a3', fontSize: 12 },
   moves: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, minHeight: 31, marginHorizontal: 8, borderTopWidth: 1, borderTopColor: '#263b3c' },
   movesLight: { borderTopColor: '#d6e1e1' },

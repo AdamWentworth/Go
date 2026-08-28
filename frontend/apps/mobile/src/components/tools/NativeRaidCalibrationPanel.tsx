@@ -1,15 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import {
-  Modal,
-  Pressable,
-  Share,
-  StyleSheet,
-  Switch,
-  Text,
-  TextInput,
-  View,
-  useColorScheme,
-} from 'react-native';
+import { Modal, Pressable, Share, StyleSheet, Switch, Text, TextInput, View } from 'react-native';
 import {
   clearNativeRaidObservations,
   loadNativeRaidObservations,
@@ -18,6 +8,8 @@ import {
   summarizeNativeRaidCalibration,
   type NativeRaidObservation,
 } from '../../features/tools/nativeRaidCalibration';
+import { useNativeModalAnimation } from '../../features/settings/useNativeMotion';
+import { useNativeColorScheme } from '../../features/settings/useNativeColorScheme';
 
 type Props = {
   disabled?: boolean;
@@ -35,7 +27,9 @@ export const NativeRaidCalibrationPanel = ({
   predictedCleared,
   predictedSeconds,
 }: Props) => {
-  const light = useColorScheme() === 'light';
+  const light = useNativeColorScheme() === 'light';
+  const slideAnimation = useNativeModalAnimation('slide');
+  const fadeAnimation = useNativeModalAnimation('fade');
   const [observations, setObservations] = useState<NativeRaidObservation[]>([]);
   const [loaded, setLoaded] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -158,7 +152,7 @@ export const NativeRaidCalibrationPanel = ({
         ) : null}
       </View>
 
-      <Modal animationType="slide" onRequestClose={() => setDialogOpen(false)} transparent visible={dialogOpen}>
+      <Modal animationType={slideAnimation} onRequestClose={() => setDialogOpen(false)} transparent visible={dialogOpen}>
         <View style={styles.backdrop}>
           <View style={[styles.dialog, light && styles.dialogLight]}>
             <View style={styles.dialogHeading}><View><Text style={styles.eyebrow}>OBSERVED RAID</Text><Text style={[styles.dialogTitle, light && styles.textLight]}>Log the actual result</Text></View><Pressable accessibilityLabel="Close raid log" accessibilityRole="button" onPress={() => setDialogOpen(false)} style={[styles.close, light && styles.controlLight]}><Text style={[styles.closeText, light && styles.textLight]}>×</Text></Pressable></View>
@@ -179,7 +173,7 @@ export const NativeRaidCalibrationPanel = ({
         </View>
       </Modal>
 
-      <Modal animationType="fade" onRequestClose={() => setClearOpen(false)} transparent visible={clearOpen}>
+      <Modal animationType={fadeAnimation} onRequestClose={() => setClearOpen(false)} transparent visible={clearOpen}>
         <View style={styles.backdrop}><View style={[styles.confirm, light && styles.dialogLight]}><Text style={[styles.dialogTitle, light && styles.textLight]}>Clear raid observations?</Text><Text style={[styles.dialogLead, light && styles.mutedLight]}>This removes the private calibration log stored on this device.</Text><View style={styles.confirmActions}><Pressable accessibilityRole="button" onPress={() => setClearOpen(false)} style={[styles.cancel, light && styles.controlLight]}><Text style={[styles.cancelText, light && styles.textLight]}>Keep log</Text></Pressable><Pressable accessibilityRole="button" onPress={() => void clear()} style={styles.destructive}><Text style={styles.saveText}>Clear log</Text></Pressable></View></View></View>
       </Modal>
     </View>

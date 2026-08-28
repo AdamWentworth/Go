@@ -1,19 +1,9 @@
 import { useEffect, useState } from 'react';
-import {
-  Animated,
-  Image,
-  Modal,
-  Pressable,
-  StyleSheet,
-  Text,
-  View,
-  useColorScheme,
-} from 'react-native';
+import { Animated, Image, Modal, Pressable, StyleSheet, Text, View } from 'react-native';
 import Svg, { Defs, LinearGradient, Rect, Stop } from 'react-native-svg';
-import type {
-  NativeCollectionSort,
-  NativeCollectionSortDirection,
-} from '../collectionModel';
+import type { NativeCollectionSort, NativeCollectionSortDirection } from '../collectionModel';
+import { useOptionalNativeDevicePreferences } from '../../settings/NativeDevicePreferencesProvider';
+import { useNativeColorScheme } from '../../settings/useNativeColorScheme';
 
 export const NATIVE_SORT_OPTIONS: {
   key: NativeCollectionSort;
@@ -39,8 +29,8 @@ const SortBackdrop = ({ light }: { light: boolean }) => (
     <Svg height="100%" width="100%">
       <Defs>
         <LinearGradient id="sort-menu-gradient" x1="0%" x2="100%" y1="0%" y2="100%">
-          <Stop offset="0%" stopColor={light ? '#f5f7f5' : '#111111'} />
-          <Stop offset="100%" stopColor={light ? '#8cc9bd' : '#34807d'} />
+          <Stop offset="0%" stopColor={light ? '#e0f0e5' : '#111111'} />
+          <Stop offset="100%" stopColor="#34807d" />
         </LinearGradient>
       </Defs>
       <Rect fill="url(#sort-menu-gradient)" height="100%" width="100%" />
@@ -63,12 +53,17 @@ export const NativeCollectionSortMenu = ({
   open: boolean;
   sort: NativeCollectionSort;
 }) => {
-  const light = useColorScheme() === 'light';
+  const light = useNativeColorScheme() === 'light';
+  const reduceMotion = useOptionalNativeDevicePreferences()?.shouldReduceMotion ?? false;
   const [progress] = useState(() => new Animated.Value(0));
 
   useEffect(() => {
     if (!open) {
       progress.setValue(0);
+      return;
+    }
+    if (reduceMotion) {
+      progress.setValue(1);
       return;
     }
     Animated.spring(progress, {
@@ -78,11 +73,11 @@ export const NativeCollectionSortMenu = ({
       toValue: 1,
       useNativeDriver: true,
     }).start();
-  }, [open, progress]);
+  }, [open, progress, reduceMotion]);
 
   return (
     <Modal
-      animationType="fade"
+      animationType={reduceMotion ? 'none' : 'fade'}
       onRequestClose={onClose}
       statusBarTranslucent
       transparent
@@ -109,6 +104,7 @@ export const NativeCollectionSortMenu = ({
             return (
               <Animated.View key={option.key} style={animatedStyle}>
                 <Pressable
+                  aria-checked={selected}
                   accessibilityRole="radio"
                   accessibilityState={{ checked: selected }}
                   onPress={() => onSelect(option.key)}

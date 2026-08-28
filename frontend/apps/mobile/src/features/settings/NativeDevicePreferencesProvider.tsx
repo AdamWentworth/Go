@@ -32,6 +32,20 @@ type NativeDevicePreferencesContextValue = NativeDevicePreferences & {
 const normalizeTheme = (scheme: string | null | undefined): NativeColorTheme =>
   scheme === 'light' ? 'light' : 'dark';
 
+const applyColorScheme = (theme: NativeColorTheme): void => {
+  const appearance = Appearance as typeof Appearance & {
+    setColorScheme?: (scheme: NativeColorTheme) => void;
+  };
+  if (typeof appearance.setColorScheme === 'function') {
+    appearance.setColorScheme(theme);
+    return;
+  }
+  // react-native-web does not currently implement Appearance.setColorScheme.
+  // The native screens consume the provider value directly, while this keeps
+  // browser-owned controls and the document canvas in the same theme.
+  if (typeof document !== 'undefined') document.documentElement.style.colorScheme = theme;
+};
+
 const NativeDevicePreferencesContext = createContext<NativeDevicePreferencesContextValue | null>(null);
 
 export const useNativeDevicePreferences = (): NativeDevicePreferencesContextValue => {
@@ -62,7 +76,7 @@ export const NativeDevicePreferencesProvider = ({ children }: PropsWithChildren)
       .then((stored) => {
         if (!active) return;
         setPreferences(stored);
-        Appearance.setColorScheme(stored.colorTheme);
+        applyColorScheme(stored.colorTheme);
       })
       .catch((error: unknown) => {
         logWarn('device-preferences', 'Unable to restore native device preferences', error);
@@ -91,7 +105,7 @@ export const NativeDevicePreferencesProvider = ({ children }: PropsWithChildren)
   }, []);
 
   const setColorTheme = useCallback((colorTheme: NativeColorTheme) => {
-    Appearance.setColorScheme(colorTheme);
+    applyColorScheme(colorTheme);
     persist({ ...preferences, colorTheme });
   }, [persist, preferences]);
 

@@ -7,6 +7,10 @@ import { buildNativeTradeActivityModel } from '../../features/trades/nativeTrade
 import type { NativeTradeActivityRow } from '../../features/trades/nativeTradeActivityRows';
 import { NativeTradeActivityScreen } from '../../screens/NativeTradeActivityScreen';
 import { runtimeConfig } from '../../config/runtimeConfig';
+import { NativeRouteActionMenu } from '../../components/NativeRouteActionMenu';
+import { NativeTradeHubHeader } from '../../features/trades/NativeTradeHubHeader';
+import { useNativeColorScheme } from '../../features/settings/useNativeColorScheme';
+import { StyleSheet, View } from 'react-native';
 
 const ASSET_BASE_URL = 'https://pokegonexus.com';
 
@@ -202,6 +206,7 @@ const initialTrades: TradeRecord[] = [
 ];
 
 export default function DeviceSmokeTradeActivityRoute() {
+  const light = useNativeColorScheme() === 'light';
   const [trades, setTrades] = useState(initialTrades);
   const rows = useMemo(() => trades.flatMap<NativeTradeActivityRow>((trade) => {
     const model = buildNativeTradeActivityModel(trade, 'AdamZilla');
@@ -216,58 +221,73 @@ export default function DeviceSmokeTradeActivityRoute() {
   if (!runtimeConfig.mobile.deviceSmokeMode) return <Redirect href="/" />;
 
   return (
-    <NativeTradeActivityScreen
-      assetBaseUrl={ASSET_BASE_URL}
-      error={null}
-      isLoading={false}
-      onAction={async (model, action) => {
-        setTrades((current) => current.flatMap((trade) => {
-          if (trade.trade_id !== model.tradeId) return [trade];
-          if (action === 'delete') return [];
-          if (action === 'cancel') return [{ ...trade, trade_status: 'cancelled' }];
-          if (action === 'accept') return [{ ...trade, trade_status: 'pending' }];
-          if (action === 'deny') return [{ ...trade, trade_status: 'denied' }];
-          if (action === 'repropose') return [{ ...trade, trade_status: 'proposed' }];
-          if (action === 'complete') {
-            const proposerConfirmed = model.participantRole === 'proposer'
-              ? true
-              : trade.user_proposed_completion_confirmed;
-            const accepterConfirmed = model.participantRole === 'accepter'
-              ? true
-              : trade.user_accepting_completion_confirmed;
-            return [{
+    <View style={[styles.screen, light && styles.screenLight]}>
+      <NativeTradeHubHeader
+        activeView="activity"
+        assetBaseUrl={ASSET_BASE_URL}
+        onOpenTradeBoard={() => undefined}
+        onViewChange={() => undefined}
+      />
+      <NativeTradeActivityScreen
+        assetBaseUrl={ASSET_BASE_URL}
+        error={null}
+        isLoading={false}
+        onAction={async (model, action) => {
+          setTrades((current) => current.flatMap((trade) => {
+            if (trade.trade_id !== model.tradeId) return [trade];
+            if (action === 'delete') return [];
+            if (action === 'cancel') return [{ ...trade, trade_status: 'cancelled' }];
+            if (action === 'accept') return [{ ...trade, trade_status: 'pending' }];
+            if (action === 'deny') return [{ ...trade, trade_status: 'denied' }];
+            if (action === 'repropose') return [{ ...trade, trade_status: 'proposed' }];
+            if (action === 'complete') {
+              const proposerConfirmed = model.participantRole === 'proposer'
+                ? true
+                : trade.user_proposed_completion_confirmed;
+              const accepterConfirmed = model.participantRole === 'accepter'
+                ? true
+                : trade.user_accepting_completion_confirmed;
+              return [{
+                ...trade,
+                trade_status: proposerConfirmed && accepterConfirmed ? 'completed' : trade.trade_status,
+                trade_completed_date: proposerConfirmed && accepterConfirmed
+                  ? '2026-08-25T12:00:00.000Z'
+                  : trade.trade_completed_date,
+                user_proposed_completion_confirmed: proposerConfirmed,
+                user_accepting_completion_confirmed: accepterConfirmed,
+              }];
+            }
+            if (action === 'satisfy') return [{
               ...trade,
-              trade_status: proposerConfirmed && accepterConfirmed ? 'completed' : trade.trade_status,
-              trade_completed_date: proposerConfirmed && accepterConfirmed
-                ? '2026-08-25T12:00:00.000Z'
-                : trade.trade_completed_date,
-              user_proposed_completion_confirmed: proposerConfirmed,
-              user_accepting_completion_confirmed: accepterConfirmed,
+              user_1_trade_satisfaction: model.participantRole === 'proposer'
+                ? true
+                : trade.user_1_trade_satisfaction,
+              user_2_trade_satisfaction: model.participantRole === 'accepter'
+                ? true
+                : trade.user_2_trade_satisfaction,
             }];
-          }
-          if (action === 'satisfy') return [{
-            ...trade,
-            user_1_trade_satisfaction: model.participantRole === 'proposer'
-              ? true
-              : trade.user_1_trade_satisfaction,
-            user_2_trade_satisfaction: model.participantRole === 'accepter'
-              ? true
-              : trade.user_2_trade_satisfaction,
-          }];
-          return [trade];
-        }));
-      }}
-      onOpenPreferences={() => undefined}
-      onRetry={() => undefined}
-      onRevealPartner={async () => ({
-        sharingEnabled: true,
-        trainerCode: '1234 5678 9012',
-        pokemonGoName: 'OtherPogoName',
-        coordinationMethod: 'campfire',
-        coordinationHandle: 'OtherTrainer',
-        location: 'Burnaby, British Columbia, Canada',
-      })}
-      rows={rows}
-    />
+            return [trade];
+          }));
+        }}
+        onOpenPreferences={() => undefined}
+        onRetry={() => undefined}
+        onRevealPartner={async () => ({
+          sharingEnabled: true,
+          trainerCode: '1234 5678 9012',
+          pokemonGoName: 'OtherPogoName',
+          coordinationMethod: 'campfire',
+          coordinationHandle: 'OtherTrainer',
+          location: 'Burnaby, British Columbia, Canada',
+        })}
+        rows={rows}
+        showModeTabs={false}
+      />
+      <NativeRouteActionMenu currentPath="/trades" signedIn />
+    </View>
   );
 }
+
+const styles = StyleSheet.create({
+  screen: { flex: 1, minHeight: 0, backgroundColor: '#071012' },
+  screenLight: { backgroundColor: '#f8fff9' },
+});

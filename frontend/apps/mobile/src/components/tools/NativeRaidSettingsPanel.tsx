@@ -1,4 +1,4 @@
-import { Pressable, StyleSheet, Text, View, useColorScheme } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 import type {
   NativeRaidAttackerLevel,
   NativeRaidBossMovesetMode,
@@ -11,6 +11,7 @@ import type {
   NativeRaidShadowBossMode,
 } from '../../features/tools/nativeBattleModels';
 import { NATIVE_BATTLE_TYPES } from '../../features/tools/nativeBattleModels';
+import { useNativeColorScheme } from '../../features/settings/useNativeColorScheme';
 
 type Props = {
   includeBossControls?: boolean;
@@ -32,7 +33,7 @@ const ChoiceRow = <T extends string | number>({
   options: Choice<T>[];
   value: T;
 }) => {
-  const light = useColorScheme() === 'light';
+  const light = useNativeColorScheme() === 'light';
   return (
     <View style={styles.field}>
       <Text style={[styles.fieldLabel, light && styles.mutedLight]}>{label}</Text>
@@ -64,7 +65,7 @@ export const NativeRaidSettingsPanel = ({
   onChange,
   settings,
 }: Props) => {
-  const light = useColorScheme() === 'light';
+  const light = useNativeColorScheme() === 'light';
   const update = <K extends keyof NativeRaidSettings>(key: K, value: NativeRaidSettings[K]) => (
     onChange({ ...settings, [key]: value })
   );

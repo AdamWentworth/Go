@@ -1,11 +1,11 @@
 import { useMemo, useState } from 'react';
+import { StyleSheet, View } from 'react-native';
+import type {
+  CollectionParityCardFixture,
+} from '../features/collection/parity/collectionParityFixtures';
 import {
-  StyleSheet,
-  View,
-  useColorScheme,
-} from 'react-native';
-import type { CollectionParityCardFixture } from '../features/collection/parity/collectionParityFixtures';
-import { NativeCollectionParityFixture } from '../features/collection/parity/NativeCollectionParityFixture';
+  NativeCollectionParityFixture,
+} from '../features/collection/parity/NativeCollectionParityFixture';
 import {
   filterNativeCollectionRows,
   sortNativeCollectionRows,
@@ -19,6 +19,8 @@ import {
   NATIVE_SORT_OPTIONS,
   NativeCollectionSortMenu,
 } from '../features/collection/parity/NativeCollectionSortMenu';
+import { useNativeColorScheme } from '../features/settings/useNativeColorScheme';
+import type { NativeCollectionSession } from '../features/collection/nativeCollectionSessionCache';
 
 type NativeCollectionParityScreenProps = {
   assetBaseUrl: string;
@@ -26,6 +28,10 @@ type NativeCollectionParityScreenProps = {
   searchUniverseRows?: NativeCollectionRow[];
   activeTag: NativeTagSummary | null;
   query: string;
+  initialScrollOffset?: number;
+  initialShowEvolutionaryLine?: boolean;
+  initialSort?: NativeCollectionSort;
+  initialSortDirection?: NativeCollectionSortDirection;
   isLoading: boolean;
   error: string | null;
   onQueryChange: (query: string) => void;
@@ -42,6 +48,7 @@ type NativeCollectionParityScreenProps = {
   onSelectionActionPress?: () => void;
   selectionAction?: 'add' | 'organize';
   tagCanClear?: boolean;
+  onContextChange?: (patch: Partial<NativeCollectionSession>) => void;
 };
 
 const SORT_ICONS: Record<NativeCollectionSort, string> = {
@@ -79,6 +86,10 @@ export const NativeCollectionParityScreen = ({
   searchUniverseRows = rows,
   activeTag,
   query,
+  initialScrollOffset = 0,
+  initialShowEvolutionaryLine = false,
+  initialSort = 'number',
+  initialSortDirection = 'ascending',
   isLoading,
   error,
   onQueryChange,
@@ -95,12 +106,13 @@ export const NativeCollectionParityScreen = ({
   onSelectionActionPress,
   selectionAction = 'organize',
   tagCanClear = Boolean(activeTag),
+  onContextChange,
 }: NativeCollectionParityScreenProps) => {
-  const colorScheme = useColorScheme();
-  const [sort, setSort] = useState<NativeCollectionSort>('number');
-  const [direction, setDirection] = useState<NativeCollectionSortDirection>('ascending');
+  const colorScheme = useNativeColorScheme();
+  const [sort, setSort] = useState<NativeCollectionSort>(initialSort);
+  const [direction, setDirection] = useState<NativeCollectionSortDirection>(initialSortDirection);
   const [sortOpen, setSortOpen] = useState(false);
-  const [showEvolutionaryLine, setShowEvolutionaryLine] = useState(false);
+  const [showEvolutionaryLine, setShowEvolutionaryLine] = useState(initialShowEvolutionaryLine);
   const filteredRows = useMemo(
     () => filterNativeCollectionRows(rows, 'all', query, {
       showEvolutionaryLine,
@@ -134,7 +146,11 @@ export const NativeCollectionParityScreen = ({
         customTagColor={activeTag?.color}
         onClearTag={onClearTag}
         onQueryChange={onQueryChange}
-        onToggleEvolutionaryLine={() => setShowEvolutionaryLine((current) => !current)}
+        onToggleEvolutionaryLine={() => setShowEvolutionaryLine((current) => {
+          const next = !current;
+          onContextChange?.({ showEvolutionaryLine: next, scrollOffset: 0 });
+          return next;
+        })}
         onRetry={onRetry}
         onSortPress={() => setSortOpen(true)}
         onPokemonPress={() => onViewChange('pokemon')}
@@ -143,7 +159,10 @@ export const NativeCollectionParityScreen = ({
         onClearSelection={onClearSelection}
         onSelectAll={onSelectAll}
         onSelectionActionPress={onSelectionActionPress}
+        initialScrollOffset={initialScrollOffset}
+        onScrollOffsetChange={(scrollOffset) => onContextChange?.({ scrollOffset })}
         query={query}
+        scrollResetKey={`${activeTag?.key ?? 'catalog'}:${query}:${sort}:${direction}:${showEvolutionaryLine}`}
         sortDirection={direction}
         sortIconPath={SORT_ICONS[sort]}
         sortLabel={`Sort by ${sortLabel} ${direction}`}
@@ -162,10 +181,20 @@ export const NativeCollectionParityScreen = ({
         onClose={() => setSortOpen(false)}
         onSelect={(nextSort) => {
           if (nextSort === sort) {
-            setDirection((current) => current === 'ascending' ? 'descending' : 'ascending');
+            setDirection((current) => {
+              const nextDirection = current === 'ascending' ? 'descending' : 'ascending';
+              onContextChange?.({ sortDirection: nextDirection, scrollOffset: 0 });
+              return nextDirection;
+            });
           } else {
             setSort(nextSort);
-            setDirection(nextSort === 'favorite' ? 'descending' : 'ascending');
+            const nextDirection = nextSort === 'favorite' ? 'descending' : 'ascending';
+            setDirection(nextDirection);
+            onContextChange?.({
+              sort: nextSort,
+              sortDirection: nextDirection,
+              scrollOffset: 0,
+            });
           }
           setSortOpen(false);
         }}

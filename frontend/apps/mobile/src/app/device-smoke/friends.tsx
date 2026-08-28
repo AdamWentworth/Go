@@ -2,6 +2,7 @@ import { Redirect } from 'expo-router';
 import { Animated, StyleSheet, View } from 'react-native';
 import { useState } from 'react';
 import { runtimeConfig } from '../../config/runtimeConfig';
+import { NativeRouteActionMenu } from '../../components/NativeRouteActionMenu';
 import type { NativeFriendsOverviewModel } from '../../features/social/nativeFriendsModel';
 import {
   NativeFriendsScreen,
@@ -147,6 +148,7 @@ export default function DeviceSmokeFriendsRoute() {
           trainerLevel: 47,
         }]}
       />
+      <NativeRouteActionMenu currentPath="/profile/friends" signedIn />
     </View>
   );
 }

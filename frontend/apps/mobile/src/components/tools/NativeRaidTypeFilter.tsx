@@ -1,5 +1,6 @@
-import { Image, Pressable, StyleSheet, Text, View, useColorScheme } from 'react-native';
+import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import { NATIVE_BATTLE_TYPES } from '../../features/tools/nativeBattleModels';
+import { useNativeColorScheme } from '../../features/settings/useNativeColorScheme';
 
 type Props = {
   assetBaseUrl: string;
@@ -20,7 +21,7 @@ const assetUri = (base: string, type: string) => (
 );
 
 export const NativeRaidTypeFilter = ({ assetBaseUrl, onChange, selectedType }: Props) => {
-  const light = useColorScheme() === 'light';
+  const light = useNativeColorScheme() === 'light';
   return (
     <View
       accessibilityLabel="Attacker type filter"

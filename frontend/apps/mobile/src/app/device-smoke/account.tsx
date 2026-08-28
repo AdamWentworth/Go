@@ -1,6 +1,8 @@
 import type { AccountSecuritySummary, OAuthProvider } from '@pokemongonexus/shared-contracts/auth';
 import { Redirect, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
+import { StyleSheet, View } from 'react-native';
+import { NativeRouteActionMenu } from '../../components/NativeRouteActionMenu';
 import { runtimeConfig } from '../../config/runtimeConfig';
 import {
   createNativeAccountSecurityDraft,
@@ -58,32 +60,35 @@ export default function DeviceSmokeAccountRoute() {
   };
 
   return (
-    <NativeAccountSecurityScreen
-      draft={draft}
-      feedback={feedback}
-      onBack={() => undefined}
-      onChange={setDraft}
-      onChangePassword={() => setFeedback({ tone: 'success', text: 'Password change validated.' })}
-      onConnectProvider={connectProvider}
-      onDeleteAccount={() => setFeedback({ tone: 'success', text: 'Account deletion confirmed.' })}
-      onDismissFeedback={() => setFeedback(null)}
-      onOpenSettings={() => undefined}
-      onRequestEmailChange={() => setFeedback({ tone: 'success', text: 'Verification email sent.' })}
-      onRetry={() => undefined}
-      onRevokeAllSessions={() => {
-        setSecurity((current) => ({ ...current, activeSessions: 0 }));
-        setFeedback({ tone: 'success', text: 'All sessions revoked.' });
-      }}
-      onSaveUsername={() => setFeedback({ tone: 'success', text: 'Username saved.' })}
-      onSignOut={() => setFeedback({ tone: 'success', text: 'This device signed out.' })}
-      onUnlinkProvider={(provider) => {
-        setSecurity((current) => ({
-          ...current,
-          providers: current.providers.filter((identity) => identity.provider !== provider),
-        }));
-        setFeedback({ tone: 'success', text: `${nativeOAuthProviderLabel(provider)} disconnected.` });
-      }}
-      security={security}
-    />
+    <View style={styles.screen}>
+      <NativeAccountSecurityScreen
+        draft={draft}
+        feedback={feedback}
+        onBack={() => undefined}
+        onChange={setDraft}
+        onConnectProvider={connectProvider}
+        onDeleteAccount={() => setFeedback({ tone: 'success', text: 'Account deletion confirmed.' })}
+        onDismissFeedback={() => setFeedback(null)}
+        onOpenSettings={() => undefined}
+        onRetry={() => undefined}
+        onRevokeAllSessions={() => {
+          setSecurity((current) => ({ ...current, activeSessions: 0 }));
+          setFeedback({ tone: 'success', text: 'All sessions revoked.' });
+        }}
+        onSignOut={() => setFeedback({ tone: 'success', text: 'This device signed out.' })}
+        onUnlinkProvider={(provider) => {
+          setSecurity((current) => ({
+            ...current,
+            providers: current.providers.filter((identity) => identity.provider !== provider),
+          }));
+          setFeedback({ tone: 'success', text: `${nativeOAuthProviderLabel(provider)} disconnected.` });
+        }}
+        onUpdateAccount={() => setFeedback({ tone: 'success', text: 'Account updated.' })}
+        security={security}
+      />
+      <NativeRouteActionMenu currentPath="/settings/account" signedIn />
+    </View>
   );
 }
+
+const styles = StyleSheet.create({ screen: { flex: 1, minHeight: 0 } });

@@ -100,9 +100,43 @@ describe('NativeInstanceDetailScreen', () => {
       await new Promise<void>((resolve) => setTimeout(resolve, 240));
     });
     expect(screen.getByText('Wanted Pokémon')).toBeTruthy();
-    expect(screen.queryByText('15')).toBeNull();
+    expect(screen.getByText('CP2499')).toBeTruthy();
+    expect(screen.getByText('15')).toBeTruthy();
     fireEvent.press(screen.getByRole('button', { name: 'Edit Pokémon' }));
     expect(onEditInCurrentApp).toHaveBeenCalledTimes(1);
+  });
+
+  it('keeps every IV label on one line at constrained mobile widths', () => {
+    render(
+      <NativeInstanceDetailScreen
+        detail={{
+          ...detail,
+          ivs: [
+            { label: 'Attack', value: 15 },
+            { label: 'Defense', value: 14 },
+            { label: 'HP', value: 13 },
+          ],
+        }}
+        isLoading={false}
+        error={null}
+        cachedAt={null}
+        movesWarning={null}
+        saveNotice={null}
+        saveError={null}
+        isSaving={false}
+        onRetry={jest.fn()}
+        onBack={jest.fn()}
+        onToggleFavorite={jest.fn()}
+        onEditInCurrentApp={jest.fn()}
+        onSaveDetails={jest.fn()}
+      />,
+    );
+
+    expect(screen.getByText('Defense').props).toMatchObject({
+      adjustsFontSizeToFit: true,
+      minimumFontScale: 0.9,
+      numberOfLines: 1,
+    });
   });
 
   it('removes owner mutation controls from a foreign For Trade listing', () => {
@@ -240,6 +274,42 @@ describe('NativeInstanceDetailScreen', () => {
     expect(onToggleFavorite).toHaveBeenCalledWith(true);
     expect(screen.getByText('Saved on this device.')).toBeTruthy();
     expect(screen.getByText('Viewing an offline copy')).toBeTruthy();
+  });
+
+  it('treats legacy zero weight and height values as missing metadata', async () => {
+    render(
+      <NativeInstanceDetailScreen
+        detail={{
+          ...detail,
+          instance: {
+            weight: 0,
+            height: 0,
+          } as NonNullable<NativeInstanceDetail['instance']>,
+          row: { ...detail.row, status: 'caught' },
+        }}
+        isLoading={false}
+        error={null}
+        cachedAt={null}
+        movesWarning={null}
+        saveNotice={null}
+        saveError={null}
+        isSaving={false}
+        onRetry={jest.fn()}
+        onBack={jest.fn()}
+        onToggleFavorite={jest.fn()}
+        onEditInCurrentApp={jest.fn()}
+        onSaveDetails={jest.fn()}
+      />,
+    );
+
+    expect(screen.queryByText('0kg')).toBeNull();
+    expect(screen.queryByText('0m')).toBeNull();
+
+    fireEvent.press(screen.getByRole('button', { name: 'Edit Pokémon' }));
+    await waitFor(() => {
+      expect(screen.getByLabelText('Pokémon weight').props.value).toBe('');
+      expect(screen.getByLabelText('Pokémon height').props.value).toBe('');
+    });
   });
 
   it('preserves the canonical animated previous and next overlay controls', async () => {

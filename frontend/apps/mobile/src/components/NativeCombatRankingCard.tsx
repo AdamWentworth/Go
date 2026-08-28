@@ -1,10 +1,11 @@
-import { Image, Pressable, StyleSheet, Text, View, useColorScheme } from 'react-native';
+import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import type { NativeCombatEntry } from '../features/tools/nativeBattleModels';
+import { useNativeColorScheme } from '../features/settings/useNativeColorScheme';
 
 type Props = { assetBaseUrl: string; entry: NativeCombatEntry; metricLabel: string; rank: number; onPress?: () => void };
 const uri = (base: string, value: string | null) => { if (!value) return undefined; try { return new URL(value, base).toString(); } catch { return undefined; } };
 export const NativeCombatRankingCard = ({ assetBaseUrl, entry, metricLabel, rank, onPress }: Props) => {
-  const light = useColorScheme() === 'light';
+  const light = useNativeColorScheme() === 'light';
   return <Pressable accessibilityLabel={`Rank ${rank}, ${entry.name}`} accessibilityRole="button" disabled={!onPress} onPress={onPress} style={({ pressed }) => [styles.card, light && styles.cardLight, pressed && styles.pressed]}>
     <View style={[styles.rank, rank <= 3 && styles.rankTop]}><Text style={styles.rankText}>{rank}</Text></View>
     <View style={styles.stage}>{entry.imageUri ? <Image resizeMode="contain" source={{ uri: uri(assetBaseUrl, entry.imageUri) }} style={styles.image} /> : null}{entry.maxKind ? <Image resizeMode="contain" source={{ uri: uri(assetBaseUrl, `/images/${entry.maxKind}.png`) }} style={styles.maxIcon} /> : null}</View>

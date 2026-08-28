@@ -6,10 +6,10 @@ import {
   StyleSheet,
   Text,
   View,
-  useColorScheme,
 } from 'react-native';
 import type { NativeCollectionRow } from '../features/collection/collectionModel';
 import type { NativeCatalogDestination } from '../features/collection/nativeCatalogMutation';
+import { useNativeColorScheme } from '../features/settings/useNativeColorScheme';
 
 type Props = {
   row: NativeCollectionRow | null;
@@ -30,7 +30,7 @@ export const NativeCatalogDetailScreen = ({
   onBack,
   onAdd,
 }: Props) => {
-  const light = useColorScheme() === 'light';
+  const light = useNativeColorScheme() === 'light';
   if (isLoading) {
     return (
       <View style={[styles.centered, light && styles.screenLight]}>
@@ -55,6 +55,7 @@ export const NativeCatalogDetailScreen = ({
     <ScrollView
       contentContainerStyle={styles.content}
       style={[styles.screen, light && styles.screenLight]}
+      testID="native-catalog-detail-screen"
     >
       <View style={styles.topBar}>
         <Pressable accessibilityLabel="Back to Pokémon" accessibilityRole="button" onPress={onBack} style={styles.closeButton}>

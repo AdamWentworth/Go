@@ -6,6 +6,7 @@ import {
   NativeHorizontalPageSlider,
   type NativeHorizontalPageSliderHandle,
 } from '../../components/NativeHorizontalPageSlider';
+import { NativeRouteActionMenu } from '../../components/NativeRouteActionMenu';
 import { runtimeConfig } from '../../config/runtimeConfig';
 import {
   createNativePokemonSearchDraft,
@@ -18,6 +19,7 @@ import {
 } from '../../features/search/NativeSearchHubHeader';
 import { NativePokemonSearchScreen } from '../../screens/NativePokemonSearchScreen';
 import { NativeTrainerSearchScreen } from '../../screens/NativeTrainerSearchScreen';
+import { useNativeColorScheme } from '../../features/settings/useNativeColorScheme';
 
 const ASSET_BASE_URL = 'https://pokegonexus.com';
 const VIEWS: NativeSearchHubView[] = ['pokemon', 'trainers'];
@@ -91,6 +93,20 @@ const RESULTS: NativePokemonSearchResult[] = [{
   username: 'OtherTrainer',
   distanceKm: 1.2,
   mode: 'trade',
+  details: {
+    gender: 'Female',
+    weight: 6,
+    height: 0.4,
+    moves: ['Thunder Shock', 'Wild Charge'],
+    attackIv: 15,
+    defenseIv: 14,
+    staminaIv: 13,
+    locationCaught: 'Burnaby, British Columbia, Canada',
+    dateCaught: '2026-08-26',
+    friendshipLevel: null,
+    prefLucky: false,
+    wantedSizeLabels: [],
+  },
   row: row(
     'smoke-listing-pikachu',
     25,
@@ -115,6 +131,7 @@ const RESULTS: NativePokemonSearchResult[] = [{
 }];
 
 export default function DeviceSmokeSearchRoute() {
+  const light = useNativeColorScheme() === 'light';
   const [activeView, setActiveView] = useState<NativeSearchHubView>('pokemon');
   const [pageScrollX] = useState(() => new Animated.Value(0));
   const sliderRef = useRef<NativeHorizontalPageSliderHandle>(null);
@@ -146,7 +163,7 @@ export default function DeviceSmokeSearchRoute() {
   if (!runtimeConfig.mobile.deviceSmokeMode) return <Redirect href="/" />;
 
   return (
-    <View style={styles.screen}>
+    <View style={[styles.screen, light && styles.screenLight]}>
       <NativeSearchHubHeader
         activeView={activeView}
         onViewChange={changeView}
@@ -183,10 +200,12 @@ export default function DeviceSmokeSearchRoute() {
           query={trainerQuery}
         />
       </NativeHorizontalPageSlider>
+      <NativeRouteActionMenu currentPath="/search" signedIn />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   screen: { flex: 1, minHeight: 0, backgroundColor: '#080d0f' },
+  screenLight: { backgroundColor: '#f8fff9' },
 });

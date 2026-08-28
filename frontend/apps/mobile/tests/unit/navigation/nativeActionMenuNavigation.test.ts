@@ -11,11 +11,13 @@ describe('resolveNativeActionMenuDestination', () => {
     ['/max', '/native/max'],
     ['/profile', '/native/profile'],
     ['/profile/friends', '/native/friends'],
+    ['/login', '/native/login'],
     ['/pvp', '/native/pvp'],
     ['/pvp/methodology', '/native/pvp-methodology'],
     ['/raid', '/native/raid'],
     ['/raid/methodology', '/native/raid-methodology'],
     ['/rankings', '/native/rankings'],
+    ['/register', '/native/register'],
     ['/search', '/native/search'],
     ['/settings', '/native/settings'],
     ['/trade-board', '/native/trade-board'],
@@ -34,6 +36,8 @@ describe('resolveNativeActionMenuDestination', () => {
 
   test('does not reopen the route that is already visible', () => {
     expect(resolveNativeActionMenuDestination('/search', '/search')).toEqual({ kind: 'current' });
+    expect(resolveNativeActionMenuDestination('/login', '/login')).toEqual({ kind: 'current' });
+    expect(resolveNativeActionMenuDestination('/register', '/register')).toEqual({ kind: 'current' });
   });
 
   test('keeps unknown destinations in the canonical web app', () => {
@@ -77,6 +81,19 @@ describe('resolveNativeActionMenuDestination', () => {
     '/native/trade-board/OtherTrainer',
   ] as const)('returns a signed-in user to ready native route %s', (path) => {
     expect(resolveNativeLoginReturnTo(path)).toBe(path);
+  });
+
+  test.each([
+    ['/pokemon', '/native/collection'],
+    ['/pokemon?filter=wanted&search=Pikachu', '/native/collection?filter=wanted&search=Pikachu'],
+    ['/pokemon/Misty?filter=trade', '/native/collection/trainer/Misty?filter=trade'],
+    ['/pokemon/Misty?instanceId=trade%3A1', '/native/collection/trainer/Misty/trade%3A1'],
+    ['/trades?section=activity', '/native/trades?section=activity'],
+    ['/search?mode=trainers', '/native/search?mode=trainers'],
+    ['/native/collection?filter=favorites', '/native/collection?filter=favorites'],
+    ['https://pokegonexus.com/settings/account?oauth=linked', '/native/account?oauth=linked'],
+  ] as const)('normalizes canonical and filtered post-login destination %s', (path, expected) => {
+    expect(resolveNativeLoginReturnTo(path)).toBe(expected);
   });
 
   test('rejects arbitrary login return paths', () => {

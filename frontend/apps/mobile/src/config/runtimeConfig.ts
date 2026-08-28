@@ -1,4 +1,5 @@
 import Constants from 'expo-constants';
+import { Platform } from 'react-native';
 import {
   resolveMobileExperienceMode,
   type MobileExperienceMode,
@@ -81,6 +82,24 @@ const deriveDevFrontendAppUrl = (): string | null => {
 const DEFAULT_FRONTEND_APP_URL =
   deriveDevFrontendAppUrl() ?? DEFAULT_API_CONFIG.frontendAppUrl;
 
+const DEV_WEB_FRONTEND_APP_URL = __DEV__ && Platform.OS === 'web'
+  ? deriveDevFrontendAppUrl() ?? 'http://localhost:3000'
+  : null;
+
+const developmentWebApiUrl = (service: keyof Omit<RuntimeApiConfig, 'frontendAppUrl'>): string | null => {
+  if (!DEV_WEB_FRONTEND_APP_URL) return null;
+  const servicePath: Record<keyof Omit<RuntimeApiConfig, 'frontendAppUrl'>, string> = {
+    authApiUrl: 'auth',
+    usersApiUrl: 'users',
+    searchApiUrl: 'search',
+    pokemonApiUrl: 'pokemon',
+    locationApiUrl: 'location',
+    eventsApiUrl: 'events',
+    receiverApiUrl: 'receiver',
+  };
+  return `${DEV_WEB_FRONTEND_APP_URL.replace(/\/$/, '')}/api/${servicePath[service]}`;
+};
+
 const DEFAULT_OBSERVABILITY_CONFIG: RuntimeObservabilityConfig = {
   crashReportUrl: null,
   crashReportApiKey: null,
@@ -146,14 +165,14 @@ export const runtimeConfig: {
   mobile: RuntimeMobileConfig;
 } = {
   api: {
-    authApiUrl: sanitizeUrl(apiOverrides.authApiUrl, DEFAULT_API_CONFIG.authApiUrl),
-    usersApiUrl: sanitizeUrl(apiOverrides.usersApiUrl, DEFAULT_API_CONFIG.usersApiUrl),
-    searchApiUrl: sanitizeUrl(apiOverrides.searchApiUrl, DEFAULT_API_CONFIG.searchApiUrl),
-    pokemonApiUrl: sanitizeUrl(apiOverrides.pokemonApiUrl, DEFAULT_API_CONFIG.pokemonApiUrl),
-    locationApiUrl: sanitizeUrl(apiOverrides.locationApiUrl, DEFAULT_API_CONFIG.locationApiUrl),
-    eventsApiUrl: sanitizeUrl(apiOverrides.eventsApiUrl, DEFAULT_API_CONFIG.eventsApiUrl),
-    receiverApiUrl: sanitizeUrl(apiOverrides.receiverApiUrl, DEFAULT_API_CONFIG.receiverApiUrl),
-    frontendAppUrl: sanitizeUrl(apiOverrides.frontendAppUrl, DEFAULT_FRONTEND_APP_URL),
+    authApiUrl: developmentWebApiUrl('authApiUrl') ?? sanitizeUrl(apiOverrides.authApiUrl, DEFAULT_API_CONFIG.authApiUrl),
+    usersApiUrl: developmentWebApiUrl('usersApiUrl') ?? sanitizeUrl(apiOverrides.usersApiUrl, DEFAULT_API_CONFIG.usersApiUrl),
+    searchApiUrl: developmentWebApiUrl('searchApiUrl') ?? sanitizeUrl(apiOverrides.searchApiUrl, DEFAULT_API_CONFIG.searchApiUrl),
+    pokemonApiUrl: developmentWebApiUrl('pokemonApiUrl') ?? sanitizeUrl(apiOverrides.pokemonApiUrl, DEFAULT_API_CONFIG.pokemonApiUrl),
+    locationApiUrl: developmentWebApiUrl('locationApiUrl') ?? sanitizeUrl(apiOverrides.locationApiUrl, DEFAULT_API_CONFIG.locationApiUrl),
+    eventsApiUrl: developmentWebApiUrl('eventsApiUrl') ?? sanitizeUrl(apiOverrides.eventsApiUrl, DEFAULT_API_CONFIG.eventsApiUrl),
+    receiverApiUrl: developmentWebApiUrl('receiverApiUrl') ?? sanitizeUrl(apiOverrides.receiverApiUrl, DEFAULT_API_CONFIG.receiverApiUrl),
+    frontendAppUrl: DEV_WEB_FRONTEND_APP_URL ?? sanitizeUrl(apiOverrides.frontendAppUrl, DEFAULT_FRONTEND_APP_URL),
   },
   observability: {
     crashReportUrl:

@@ -1,4 +1,5 @@
-import { buildNativePokedexEntries, filterNativePokedexEntries } from '../../../src/features/tools/nativePokedexModel';
+import type { BasePokemon } from '@pokemongonexus/shared-contracts/pokemon';
+import { buildNativePokedexEntries, filterNativePokedexEntries, mergeNativePokedexSpecies } from '../../../src/features/tools/nativePokedexModel';
 
 const base = {
   pokemon_id: 25, name: 'Pikachu', pokedex_number: 25, generation: 1,
@@ -8,7 +9,7 @@ const base = {
   costumes: [{ costume_id: 1, name: 'detective', date_available: '2020-01-01', date_shiny_available: '2024-01-01', shiny_available: true, image_url: '/detective.png', image_url_shiny: '/detective-shiny.png' }],
   max: [{ pokemon_id: 25, dynamax: true, gigantamax: false, dynamax_release_date: '2024-01-01', gigantamax_release_date: null }],
   megaEvolutions: [], fusion: [], crownForms: [], type_1_icon: '/electric.png', type_2_icon: '',
-} as never;
+} as unknown as BasePokemon;
 
 describe('native Pokédex model', () => {
   it('projects every canonical variant and registration state', () => {
@@ -37,5 +38,52 @@ describe('native Pokédex model', () => {
     } as never);
     expect(filterNativePokedexEntries({ entries, category: 'shiny', facets: ['lucky', 'perfect', 'female'], generation: 1, query: '' }).map(({ id }) => id)).toEqual(['0025-shiny']);
     expect(filterNativePokedexEntries({ entries, category: 'shiny', facets: ['male'], generation: 1, query: '' })).toEqual([]);
+  });
+
+  it('collapses species-level categories by Pokédex number like the web index', () => {
+    const alternate = {
+      ...base,
+      pokemon_id: 1025,
+      name: 'Pikachu Alternate Form',
+      image_url: '/pikachu-alternate.png',
+      image_url_shiny: '/pikachu-alternate-shiny.png',
+    } as never;
+    const entries = buildNativePokedexEntries([alternate, base]);
+
+    expect(filterNativePokedexEntries({ entries, category: 'pokemon', generation: 1, query: '' }))
+      .toHaveLength(1);
+    expect(filterNativePokedexEntries({ entries, category: 'shiny', generation: 1, query: '' }))
+      .toHaveLength(1);
+    expect(filterNativePokedexEntries({ entries, category: 'costume', generation: 1, query: '' }).length)
+      .toBeGreaterThan(1);
+  });
+
+  it('aggregates species registration across alternate records sharing a dex number', () => {
+    const alternate = {
+      ...base,
+      pokemon_id: 1025,
+      name: 'Pikachu Alternate Form',
+    } as never;
+    const entries = buildNativePokedexEntries([base, alternate], {
+      caught: { instance_id: 'caught', pokemon_id: 1025, variant_id: '1025-default', is_caught: true },
+    } as never);
+
+    expect(entries.filter(({ pokedexNumber }) => pokedexNumber === 25))
+      .toEqual(expect.arrayContaining([
+        expect.objectContaining({ registeredSpecies: true }),
+      ]));
+    expect(entries.filter(({ pokedexNumber }) => pokedexNumber === 25).every(({ registeredSpecies }) => registeredSpecies))
+      .toBe(true);
+  });
+
+  it('adds unreleased species from the canonical Pokédex chunk without duplicating released rows', () => {
+    const merged = mergeNativePokedexSpecies([base], [
+      { pokemon_id: 25, pokedex_number: 25, name: 'Pikachu', generation: 1, form: null, gender_rate: 'M/F', image_url: '/pikachu.png', available: 1 },
+      { pokemon_id: 10000, pokedex_number: 999, name: 'Futuremon', generation: 10, form: null, gender_rate: null, image_url: '/future.png', available: 0 },
+    ]);
+    const entries = buildNativePokedexEntries(merged);
+    expect(filterNativePokedexEntries({ entries, category: 'pokemon', generation: null, query: '' }))
+      .toEqual(expect.arrayContaining([expect.objectContaining({ name: 'Futuremon', pokedexNumber: 999 })]));
+    expect(merged.filter(({ pokemon_id: pokemonId }) => pokemonId === 25)).toHaveLength(1);
   });
 });

@@ -38,7 +38,7 @@ describe('NativeRaidPartyBuilder', () => {
     fireEvent.press(screen.getByLabelText('Remote friend team slot 1'));
     expect(screen.getByText('Choose an attacker')).toBeTruthy();
     fireEvent.press(screen.getByText('Attacker 6'));
-    fireEvent.press(screen.getByText('⚡ Simulate'));
+    fireEvent.press(screen.getByText('Simulate'));
     expect(screen.getByLabelText('Raid party result')).toBeTruthy();
     expect(onResultChange).toHaveBeenLastCalledWith(expect.objectContaining({ trainers: expect.any(Array) }));
     fireEvent.press(screen.getByText('✦ Optimize'));

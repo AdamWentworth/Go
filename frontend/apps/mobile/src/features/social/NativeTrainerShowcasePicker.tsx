@@ -7,11 +7,12 @@ import {
   Text,
   TextInput,
   View,
-  useColorScheme,
 } from 'react-native';
 import { useMemo, useState } from 'react';
 import type { NativeCollectionRow } from '../collection/collectionModel';
 import { NativePokemonLocationBackdrop } from '../collection/parity/NativePokemonLocationBackdrop';
+import { useNativeModalAnimation } from '../settings/useNativeMotion';
+import { useNativeColorScheme } from '../settings/useNativeColorScheme';
 
 type Props = {
   assetBaseUrl: string;
@@ -34,7 +35,8 @@ export const NativeTrainerShowcasePicker = ({
   slotIndex,
   visible,
 }: Props) => {
-  const light = useColorScheme() === 'light';
+  const light = useNativeColorScheme() === 'light';
+  const animationType = useNativeModalAnimation('slide');
   const [query, setQuery] = useState('');
   const filtered = useMemo(() => {
     const normalized = query.trim().toLocaleLowerCase();
@@ -50,7 +52,7 @@ export const NativeTrainerShowcasePicker = ({
 
   return (
     <Modal
-      animationType="slide"
+      animationType={animationType}
       onRequestClose={onClose}
       presentationStyle="fullScreen"
       visible={visible}
@@ -142,7 +144,7 @@ export const NativeTrainerShowcasePicker = ({
 
 const styles = StyleSheet.create({
   screen: { flex: 1, paddingTop: 18, backgroundColor: '#081012' },
-  screenLight: { backgroundColor: '#eef4f5' },
+  screenLight: { backgroundColor: '#f8fff9' },
   header: { flexDirection: 'row', alignItems: 'flex-start', gap: 12, paddingHorizontal: 16, paddingBottom: 14, borderBottomWidth: 1, borderColor: '#315052' },
   headerCopy: { flex: 1, minWidth: 0 },
   eyebrow: { color: '#35a8ff', fontSize: 10, fontWeight: '900', letterSpacing: 1.1 },

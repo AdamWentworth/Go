@@ -9,9 +9,7 @@ import {
   Text,
   TextInput,
   View,
-  useColorScheme,
 } from "react-native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
 import type { PokemonInstance } from "@pokemongonexus/shared-contracts/instances";
 import type {
   BasePokemon,
@@ -29,6 +27,8 @@ import {
   type NativePvpRole,
   type NativePvpWorkspace,
 } from "../features/tools/nativePvpModel";
+import { useNativeColorScheme } from '../features/settings/useNativeColorScheme';
+import { NativeUiIcon, type NativeUiIconName } from '../components/NativeUiIcon';
 
 type Props = {
   assetBaseUrl: string;
@@ -40,22 +40,23 @@ type Props = {
   onMethodology: () => void;
   onRetry: () => void;
   payload: PokemonPvPRankingsPayload | null;
+  persistTeamBuilder?: boolean;
   signedIn: boolean;
 };
-const WORKSPACES: [NativePvpWorkspace, string, string][] = [
-  ["rankings", "Rankings", "☷"],
-  ["team", "Team Builder", "♟"],
-  ["battle", "Battle Lab", "♜"],
-  ["iv-rank", "IV Rank", "▣"],
+const WORKSPACES: [NativePvpWorkspace, string, NativeUiIconName][] = [
+  ["rankings", "Rankings", "list"],
+  ["team", "Team Builder", "trainers"],
+  ["battle", "Battle Lab", "flask"],
+  ["iv-rank", "IV Rank", "calculator"],
 ];
-const ROLES: [NativePvpRole, string, string][] = [
-  ["overall", "Overall", "⌁"],
-  ["lead", "Lead", "⚑"],
-  ["closer", "Closer", "✊"],
-  ["switch", "Switch", "↔"],
-  ["charger", "Charger", "ϟ"],
-  ["attacker", "Attacker", "✊"],
-  ["consistency", "Consistency", "⚖"],
+const ROLES: [NativePvpRole, string, NativeUiIconName][] = [
+  ["overall", "Overall", "chart"],
+  ["lead", "Lead", "flag"],
+  ["closer", "Closer", "fist"],
+  ["switch", "Switch", "trade"],
+  ["charger", "Charger", "bolt"],
+  ["attacker", "Attacker", "fist"],
+  ["consistency", "Consistency", "scale"],
 ];
 const LEAGUES: [PokemonPvPLeagueKey, string, string][] = [
   ["great", "Great", "1,500 CP"],
@@ -84,7 +85,7 @@ const PvpEntryCard = ({
   rank: number;
   role: NativePvpRole;
 }) => {
-  const light = useColorScheme() === "light";
+  const light = useNativeColorScheme() === "light";
   const typeIcon = (type: string) =>
     uri(assetBaseUrl, `/images/types/${type.toLocaleLowerCase()}.png`);
   return (
@@ -222,10 +223,10 @@ export const NativePvpScreen = ({
   onMethodology,
   onRetry,
   payload,
+  persistTeamBuilder = true,
   signedIn,
 }: Props) => {
-  const light = useColorScheme() === "light";
-  const insets = useSafeAreaInsets();
+  const light = useNativeColorScheme() === "light";
   const workspaceScrollRef = useRef<ScrollView>(null);
   const formats = useMemo(() => buildNativePvpFormats(payload), [payload]);
   const [workspace, setWorkspace] = useState<NativePvpWorkspace>("rankings");
@@ -308,6 +309,7 @@ export const NativePvpScreen = ({
       <View style={[styles.workspaceRail, light && styles.sectionLight]}>
         {WORKSPACES.map(([value, label, icon]) => (
           <Pressable
+            aria-selected={workspace === value}
             accessibilityRole="tab"
             accessibilityState={{ selected: workspace === value }}
             key={value}
@@ -319,7 +321,7 @@ export const NativePvpScreen = ({
             ]}
           >
             <View style={styles.workspaceLabel}>
-              <Text style={[styles.workspaceIcon, light && styles.textLight, workspace === value && styles.workspaceTextActive]}>{icon}</Text>
+              <NativeUiIcon color={workspace === value ? '#071313' : light ? '#172124' : '#e5f0ef'} name={icon} size={12} />
               <Text
               style={[
                 styles.workspaceText,
@@ -376,7 +378,7 @@ export const NativePvpScreen = ({
             onPress={() => setCupOpen((open) => !open)}
             style={[styles.cupPicker, light && styles.sectionLight]}
           >
-            <Text style={[styles.cupIcon, light && styles.accentLight]}>♜</Text>
+            <NativeUiIcon color={light ? '#08766b' : '#42d5c2'} name="trophy" size={18} />
             <View style={styles.cupCopy}>
               <Text style={[styles.cupLabel, light && styles.accentLight]}>CURRENT CUPS</Text>
               <Text style={[styles.cupValue, light && styles.textLight]}>{activeCup?.label ?? (cupFormats.length ? "Choose a cup" : "No cups available")}</Text>
@@ -421,15 +423,18 @@ export const NativePvpScreen = ({
                 value === "owned" && !signedIn && styles.disabled,
               ]}
             >
-              <Text
-                style={[
-                  styles.scopeText,
-                  light && styles.textLight,
-                  scope === value && styles.scopeTextActive,
-                ]}
-              >
-                {value === "catalog" ? "⚑" : "♟"} {label}
-              </Text>
+              <View style={styles.iconLabelRow}>
+                <NativeUiIcon color={scope === value ? '#071313' : light ? '#172124' : '#e5f0ef'} name={value === 'catalog' ? 'catalog' : 'trainers'} size={14} />
+                <Text
+                  style={[
+                    styles.scopeText,
+                    light && styles.textLight,
+                    scope === value && styles.scopeTextActive,
+                  ]}
+                >
+                  {label}
+                </Text>
+              </View>
             </Pressable>
           ))}
         </View>
@@ -466,8 +471,8 @@ export const NativePvpScreen = ({
         <FlatList
           contentContainerStyle={{
             paddingHorizontal: 12,
-            paddingTop: insets.top + 8,
-            paddingBottom: insets.bottom + 96,
+            paddingTop: 8,
+            paddingBottom: 96,
           }}
           data={entries.slice(0, 100)}
           keyExtractor={(entry) => entry.speciesId}
@@ -487,12 +492,13 @@ export const NativePvpScreen = ({
                     ]}
                   >
                     <View style={styles.roleLabel}>
-                      <Text style={[styles.roleIcon, light && styles.textLight, role === value && styles.roleTextActive]}>{icon}</Text>
+                      <NativeUiIcon color={role === value ? light ? '#174e78' : '#f5ffff' : light ? '#172124' : '#e5f0ef'} name={icon} size={12} />
                       <Text
                       style={[
                         styles.roleText,
                         light && styles.textLight,
                         role === value && styles.roleTextActive,
+                        role === value && light && styles.roleTextActiveLight,
                       ]}
                     >
                       {label}
@@ -507,7 +513,7 @@ export const NativePvpScreen = ({
                   <Text style={[styles.resultsTitle, light && styles.textLight]}>{format?.label ?? "Great League"}</Text>
                 </View>
                 <View style={[styles.searchWrap, light && styles.inputLight]}>
-                  <Text style={[styles.searchIcon, light && styles.mutedLight]}>⌕</Text>
+                  <NativeUiIcon color={light ? '#4c7073' : '#9db6b8'} name="search" size={18} />
                   <TextInput
                     accessibilityLabel="Search PvP rankings"
                     onChangeText={setQuery}
@@ -553,7 +559,7 @@ export const NativePvpScreen = ({
     <ScrollView
       contentContainerStyle={[
         styles.scrollContent,
-        { paddingTop: insets.top + 8, paddingBottom: insets.bottom + 96 },
+        { paddingTop: 8, paddingBottom: 96 },
       ]}
       ref={workspaceScrollRef}
       style={[styles.root, light && styles.rootLight]}
@@ -567,6 +573,7 @@ export const NativePvpScreen = ({
           key={`${format?.key ?? "great"}:${scope}`}
           light={light}
           onOpenBattleLab={() => updateWorkspace("battle")}
+          persistSelection={persistTeamBuilder}
           storageKey={`${format?.key ?? "great"}:${scope}`}
         />
       ) : workspace === "battle" ? (
@@ -601,7 +608,7 @@ export const NativePvpScreen = ({
 
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: "#0d1112" },
-  rootLight: { backgroundColor: "#edf7f7" },
+  rootLight: { backgroundColor: "#f8fff9" },
   scrollContent: { gap: 8, paddingHorizontal: 7 },
   textLight: { color: "#071d20" },
   mutedLight: { color: "#4c7073" },
@@ -784,6 +791,8 @@ const styles = StyleSheet.create({
   roleLabel: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 2 },
   roleIcon: { color: "#9db6b8", fontSize: 10 },
   roleTextActive: { color: "#f5ffff" },
+  roleTextActiveLight: { color: "#174e78" },
+  iconLabelRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6 },
   toolbar: { gap: 8, marginTop: 7, marginBottom: 8, borderWidth: 1, borderColor: "rgba(115,204,204,0.28)", borderRadius: 8, padding: 8, backgroundColor: "#151a1b" },
   toolbarLabel: { color: "#8fc6cb", fontSize: 9, fontWeight: "900" },
   searchWrap: { minHeight: 45, flexDirection: "row", alignItems: "center", gap: 7, borderWidth: 1, borderColor: "rgba(115,204,204,0.5)", borderRadius: 999, paddingHorizontal: 12, backgroundColor: "#101516" },

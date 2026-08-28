@@ -16,8 +16,9 @@ export const shouldClearNativeSessionCache = (
   nextUserId: string | null,
   status: ReturnType<typeof useNativeSession>['status'],
 ): boolean =>
-  status === 'signed-out' || Boolean(
-    previousUserId && nextUserId && previousUserId !== nextUserId,
+  Boolean(
+    previousUserId
+      && (status === 'signed-out' || (nextUserId && previousUserId !== nextUserId)),
   );
 
 const NativeSessionCacheBoundary = ({ children }: PropsWithChildren) => {

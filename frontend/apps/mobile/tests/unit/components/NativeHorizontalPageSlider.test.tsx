@@ -1,7 +1,10 @@
 import { AccessibilityInfo, Animated, Text } from 'react-native';
+import { createRef } from 'react';
 import { act, fireEvent, render } from '@testing-library/react-native';
 import {
+  NATIVE_HORIZONTAL_PAGE_TRANSITION_MS,
   NativeHorizontalPageSlider,
+  type NativeHorizontalPageSliderHandle,
   resolveNativeHorizontalPageOffset,
 } from '../../../src/components/NativeHorizontalPageSlider';
 
@@ -88,5 +91,94 @@ describe('NativeHorizontalPageSlider', () => {
     expect(typeof slider.props.onScroll).toBe('function');
     expect(slider.props.scrollEventThrottle).toBe(16);
     expect(slider.props.pagingEnabled).toBe(true);
+  });
+
+  it('keeps inactive pages out of touch and accessibility navigation', async () => {
+    const { getByTestId } = render(
+      <NativeHorizontalPageSlider activeIndex={1} onIndexChange={jest.fn()}>
+        <Text>Friends panel</Text>
+        <Text>Find panel</Text>
+        <Text>Blocked panel</Text>
+      </NativeHorizontalPageSlider>,
+    );
+
+    await act(async () => Promise.resolve());
+
+    expect(getByTestId('native-horizontal-page-0', { includeHiddenElements: true }).props).toEqual(
+      expect.objectContaining({
+        accessibilityElementsHidden: true,
+        'aria-hidden': true,
+        importantForAccessibility: 'no-hide-descendants',
+        pointerEvents: 'none',
+      }),
+    );
+    expect(getByTestId('native-horizontal-page-1').props).toEqual(
+      expect.objectContaining({
+        accessibilityElementsHidden: false,
+        'aria-hidden': false,
+        importantForAccessibility: 'auto',
+        pointerEvents: 'auto',
+      }),
+    );
+    expect(getByTestId('native-horizontal-page-2', { includeHiddenElements: true }).props).toEqual(
+      expect.objectContaining({
+        accessibilityElementsHidden: true,
+        'aria-hidden': true,
+        importantForAccessibility: 'no-hide-descendants',
+        pointerEvents: 'none',
+      }),
+    );
+  });
+
+  it('synchronizes shared header progress when a tab changes the page programmatically', async () => {
+    const scrollX = new Animated.Value(0);
+    const timing = jest.spyOn(Animated, 'timing');
+    const ref = createRef<NativeHorizontalPageSliderHandle>();
+    render(
+      <NativeHorizontalPageSlider
+        activeIndex={0}
+        onIndexChange={jest.fn()}
+        ref={ref}
+        scrollX={scrollX}
+      >
+        <Text>Trade Preferences</Text>
+        <Text>Trade Activity</Text>
+      </NativeHorizontalPageSlider>,
+    );
+
+    await act(async () => Promise.resolve());
+    act(() => ref.current?.setPage(1));
+    expect(timing).toHaveBeenCalledWith(scrollX, expect.objectContaining({
+      duration: NATIVE_HORIZONTAL_PAGE_TRANSITION_MS,
+      toValue: 412,
+      useNativeDriver: true,
+    }));
+    act(() => ref.current?.setPage(0));
+    expect(timing).toHaveBeenLastCalledWith(scrollX, expect.objectContaining({
+      duration: NATIVE_HORIZONTAL_PAGE_TRANSITION_MS,
+      toValue: 0,
+      useNativeDriver: true,
+    }));
+  });
+
+  it('updates the shared indicator immediately when reduced motion disables the page animation', async () => {
+    const scrollX = new Animated.Value(0);
+    const setValue = jest.spyOn(scrollX, 'setValue');
+    const ref = createRef<NativeHorizontalPageSliderHandle>();
+    render(
+      <NativeHorizontalPageSlider
+        activeIndex={0}
+        onIndexChange={jest.fn()}
+        ref={ref}
+        scrollX={scrollX}
+      >
+        <Text>Tags</Text>
+        <Text>Pokémon</Text>
+      </NativeHorizontalPageSlider>,
+    );
+
+    await act(async () => Promise.resolve());
+    act(() => ref.current?.setPage(1, false));
+    expect(setValue).toHaveBeenLastCalledWith(412);
   });
 });

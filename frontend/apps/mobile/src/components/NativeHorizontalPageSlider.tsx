@@ -28,6 +28,12 @@ export type NativeHorizontalPageSliderHandle = {
   setPage: (index: number, animated?: boolean) => void;
 };
 
+// Keep programmatic tab changes in step with the canonical Vite page slide.
+// This value is deliberately shared by the content offset and any header
+// indicator consuming `scrollX`; changing it in one place prevents the tab
+// underline from jumping ahead of the page body on native platforms.
+export const NATIVE_HORIZONTAL_PAGE_TRANSITION_MS = 240;
+
 const clampPageIndex = (index: number, panelCount: number): number =>
   Math.max(0, Math.min(index, Math.max(0, panelCount - 1)));
 
@@ -59,6 +65,7 @@ export const NativeHorizontalPageSlider = forwardRef<
   const safeIndex = clampPageIndex(activeIndex, panelCount);
   const scrollRef = useRef<ScrollView>(null);
   const renderedIndexRef = useRef(safeIndex);
+  const alignedInitialPageRef = useRef(false);
   const previousWidthRef = useRef(width);
   const [internalScrollX] = useState(() => new Animated.Value(safeIndex * width));
   const pageScrollX = scrollX ?? internalScrollX;
@@ -79,16 +86,40 @@ export const NativeHorizontalPageSlider = forwardRef<
   const setPage = useCallback((index: number, animated = !reduceMotion) => {
     const nextIndex = clampPageIndex(index, panelCount);
     renderedIndexRef.current = nextIndex;
+    // Android does not consistently emit a complete Animated onScroll sequence
+    // for programmatic scrollTo calls. Drive the shared progress value in
+    // parallel so the page and its coordinated header indicator move together
+    // instead of snapping to different states.
+    pageScrollX.stopAnimation();
+    if (animated) {
+      Animated.timing(pageScrollX, {
+        duration: NATIVE_HORIZONTAL_PAGE_TRANSITION_MS,
+        easing: undefined,
+        toValue: nextIndex * width,
+        useNativeDriver: true,
+      }).start();
+    } else {
+      pageScrollX.setValue(nextIndex * width);
+    }
     scrollRef.current?.scrollTo({
       x: nextIndex * width,
       y: 0,
       animated,
     });
-  }, [panelCount, reduceMotion, width]);
+  }, [pageScrollX, panelCount, reduceMotion, width]);
 
   useImperativeHandle(ref, () => ({ setPage }), [setPage]);
 
   useEffect(() => {
+    // `contentOffset` establishes the first page on iOS and Android, but
+    // react-native-web does not consistently apply it during hydration. Make
+    // the initial alignment explicit after the ref exists so the visible body
+    // can never disagree with the selected tab or underline.
+    if (!alignedInitialPageRef.current) {
+      alignedInitialPageRef.current = true;
+      setPage(safeIndex, false);
+      return;
+    }
     if (renderedIndexRef.current !== safeIndex) setPage(safeIndex);
   }, [safeIndex, setPage]);
 
@@ -130,6 +161,7 @@ export const NativeHorizontalPageSlider = forwardRef<
       {panels.map((panel, index) => (
         <View
           accessibilityElementsHidden={index !== safeIndex}
+          aria-hidden={index !== safeIndex}
           importantForAccessibility={index === safeIndex ? 'auto' : 'no-hide-descendants'}
           key={index}
           pointerEvents={index === safeIndex ? 'auto' : 'none'}

@@ -1,7 +1,8 @@
 import { Redirect, useLocalSearchParams, useRouter } from 'expo-router';
 import { Animated, StyleSheet, View } from 'react-native';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useNativeSession } from '../../auth/NativeSessionContext';
+import { NativeProtectedSessionGate } from '../../components/NativeProtectedSessionGate';
 import { NativeActionMenu } from '../../components/NativeActionMenu';
 import { NativeActionMenuAnchor } from '../../components/NativeActionMenuAnchor';
 import { runtimeConfig } from '../../config/runtimeConfig';
@@ -15,6 +16,12 @@ import {
   useNativeFriendsMutation,
   useNativeFriendsQuery,
 } from '../../features/social/socialQueries';
+import {
+  hydrateNativeFriendsSession,
+  patchNativeFriendsSession,
+  readNativeFriendsSession,
+  writeNativeFriendsSession,
+} from '../../features/social/nativeFriendsSessionCache';
 import { resolveNativeActionMenuDestination } from '../../navigation/nativeActionMenuNavigation';
 import {
   NativeFriendsScreen,
@@ -28,8 +35,8 @@ const firstParam = (value: string | string[] | undefined): string => (
   Array.isArray(value) ? value[0] ?? '' : value ?? ''
 );
 
-const validView = (value: string): NativeFriendsView => (
-  FRIEND_VIEWS.includes(value as NativeFriendsView) ? value as NativeFriendsView : 'friends'
+const validView = (value: string): NativeFriendsView | null => (
+  FRIEND_VIEWS.includes(value as NativeFriendsView) ? value as NativeFriendsView : null
 );
 
 const errorMessage = (error: unknown, fallback: string): string => (
@@ -45,10 +52,15 @@ const NativeSignedInFriendsRoute = ({
 }) => {
   const params = useLocalSearchParams<{ tab?: string | string[] }>();
   const router = useRouter();
-  const [activeView, setActiveView] = useState<NativeFriendsView>(() => validView(firstParam(params.tab)));
+  const requestedView = validView(firstParam(params.tab));
+  const [initialSession] = useState(() => readNativeFriendsSession(userId));
+  const [sessionHydrated, setSessionHydrated] = useState(Boolean(initialSession));
+  const [activeView, setActiveView] = useState<NativeFriendsView>(() => (
+    requestedView ?? initialSession?.activeView ?? 'friends'
+  ));
   const [pageScrollX] = useState(() => new Animated.Value(0));
-  const [query, setQuery] = useState('');
-  const [executedQuery, setExecutedQuery] = useState('');
+  const [query, setQuery] = useState(initialSession?.query ?? '');
+  const [executedQuery, setExecutedQuery] = useState(initialSession?.executedQuery ?? '');
   const [actionMenuOpen, setActionMenuOpen] = useState(false);
   const [feedback, setFeedback] = useState<{ tone: 'success' | 'error' | 'info'; text: string } | null>(null);
   const friendsQuery = useNativeFriendsQuery(userId);
@@ -63,6 +75,37 @@ const NativeSignedInFriendsRoute = ({
     entries: trainerSearch.data ?? [],
     username,
   }), [trainerSearch.data, username]);
+
+  useEffect(() => {
+    if (initialSession) return;
+    let cancelled = false;
+    void hydrateNativeFriendsSession(userId).then((restored) => {
+      if (cancelled) return;
+      if (restored) {
+        setActiveView(requestedView ?? restored.activeView);
+        setQuery(restored.query);
+        setExecutedQuery(restored.executedQuery);
+      }
+      setSessionHydrated(true);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [initialSession, requestedView, userId]);
+
+  useEffect(() => {
+    if (!sessionHydrated) return;
+    if (!readNativeFriendsSession(userId)) {
+      writeNativeFriendsSession({
+        activeView,
+        executedQuery,
+        ownerKey: userId,
+        query,
+      });
+      return;
+    }
+    patchNativeFriendsSession(userId, { activeView, executedQuery, query });
+  }, [activeView, executedQuery, query, sessionHydrated, userId]);
 
   const runCommand = async (command: NativeFriendsScreenCommand) => {
     try {
@@ -148,6 +191,15 @@ const NativeSignedInFriendsRoute = ({
 
 export default function NativeFriendsRoute() {
   const session = useNativeSession();
+  if (session.status === 'restoring' || session.status === 'unavailable') {
+    return (
+      <NativeProtectedSessionGate
+        message="Opening friends…"
+        onRetry={session.retrySession}
+        status={session.status}
+      />
+    );
+  }
   if (session.status !== 'signed-in' || !session.user) {
     return <Redirect href="/native/login?returnTo=%2Fnative%2Ffriends" />;
   }

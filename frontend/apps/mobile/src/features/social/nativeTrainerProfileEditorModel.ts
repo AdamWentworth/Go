@@ -145,9 +145,14 @@ export const buildNativeTrainerProfileSavePlan = (
     trainerCode: trainerCode || null,
     location: location || null,
   };
-  const authChanged = normalizedIdentity.pokemonGoName !== (sessionUser.pokemonGoName || null)
-    || normalizedIdentity.trainerCode !== (sessionUser.trainerCode || null)
-    || normalizedIdentity.location !== (sessionUser.location || null);
+  const currentIdentity = {
+    pokemonGoName: sessionUser.pokemonGoName?.trim() || null,
+    trainerCode: sessionUser.trainerCode?.replace(/\s+/g, '') || null,
+    location: sessionUser.location?.trim() || null,
+  };
+  const authChanged = normalizedIdentity.pokemonGoName !== currentIdentity.pokemonGoName
+    || normalizedIdentity.trainerCode !== currentIdentity.trainerCode
+    || normalizedIdentity.location !== currentIdentity.location;
 
   return {
     authUpdate: authChanged ? normalizedIdentity : null,

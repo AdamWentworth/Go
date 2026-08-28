@@ -1,12 +1,5 @@
-import {
-  type ReactNode,
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from 'react';
-import { Animated, StyleSheet, Text, View, useColorScheme, useWindowDimensions } from 'react-native';
+import { type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { Animated, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 import type {
   CreateCustomTagRequest,
   CustomTagParent,
@@ -21,6 +14,8 @@ import {
 } from '../components/NativeHorizontalPageSlider';
 import type {
   NativeCollectionRow,
+  NativeCollectionSort,
+  NativeCollectionSortDirection,
   NativeTagSummary,
 } from '../features/collection/collectionModel';
 import {
@@ -32,7 +27,11 @@ import { NativeTagsPanelScreen } from './NativeTagsPanelScreen';
 import { NativeActionMenu } from '../components/NativeActionMenu';
 import { NativeActionMenuAnchor } from '../components/NativeActionMenuAnchor';
 import { NativePokemonOrganizerSheet } from '../features/collection/NativePokemonOrganizerSheet';
-import type { NativePokemonOrganizerRequest } from '../features/collection/useNativePokemonOrganizerMutation';
+import type {
+  NativePokemonOrganizerRequest,
+} from '../features/collection/useNativePokemonOrganizerMutation';
+import { useNativeColorScheme } from '../features/settings/useNativeColorScheme';
+import type { NativeCollectionSession } from '../features/collection/nativeCollectionSessionCache';
 
 const VIEW_ORDER: NativePokemonHubView[] = ['inventory', 'pokemon', 'wishlist'];
 
@@ -63,6 +62,12 @@ type Props = {
   requireTagSelection?: boolean;
   initialTagKey?: string | null;
   initialQuery?: string;
+  initialScrollOffset?: number;
+  initialShowEvolutionaryLine?: boolean;
+  initialSort?: NativeCollectionSort;
+  initialSortDirection?: NativeCollectionSortDirection;
+  initialView?: NativePokemonHubView;
+  onContextChange?: (patch: Partial<NativeCollectionSession>) => void;
   syncStatus?: ReactNode;
 };
 
@@ -92,12 +97,18 @@ export const NativeCollectionHubScreen = ({
   requireTagSelection = false,
   initialTagKey = null,
   initialQuery = '',
+  initialScrollOffset = 0,
+  initialShowEvolutionaryLine = false,
+  initialSort = 'number',
+  initialSortDirection = 'ascending',
+  initialView = 'pokemon',
+  onContextChange,
   syncStatus = null,
 }: Props) => {
-  const light = useColorScheme() === 'light';
+  const light = useNativeColorScheme() === 'light';
   const { width } = useWindowDimensions();
   const [query, setQuery] = useState(initialQuery);
-  const [activeView, setActiveView] = useState<NativePokemonHubView>('pokemon');
+  const [activeView, setActiveView] = useState<NativePokemonHubView>(initialView);
   const [selectedTagKey, setSelectedTagKey] = useState<string | null>(initialTagKey);
   const [actionMenuOpen, setActionMenuOpen] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
@@ -146,15 +157,22 @@ export const NativeCollectionHubScreen = ({
     // follows pageScrollX continuously, so the visual indicator travels with
     // the native page rather than jumping ahead of it.
     setActiveView(view);
+    onContextChange?.({ activeView: view });
     sliderRef.current?.setPage(VIEW_ORDER.indexOf(view));
-  }, []);
+  }, [onContextChange]);
+
+  const changeQuery = useCallback((nextQuery: string) => {
+    setQuery(nextQuery);
+    onContextChange?.({ query: nextQuery, scrollOffset: 0 });
+  }, [onContextChange]);
 
   const selectTag = useCallback((tag: NativeTagSummary) => {
     setSelectedIds(new Set());
     setSelectedTagKey(tag.key);
-    setQuery('');
+    changeQuery('');
+    onContextChange?.({ selectedTagKey: tag.key, scrollOffset: 0 });
     changeView('pokemon');
-  }, [changeView]);
+  }, [changeQuery, changeView, onContextChange]);
 
   const toggleSelection = useCallback((entryId: string) => {
     setSelectedIds((current) => {
@@ -186,7 +204,8 @@ export const NativeCollectionHubScreen = ({
     if (requireTagSelection) return;
     setSelectedIds(new Set());
     setSelectedTagKey(null);
-  }, [requireTagSelection]);
+    onContextChange?.({ selectedTagKey: null, scrollOffset: 0 });
+  }, [onContextChange, requireTagSelection]);
   const openActionMenu = useCallback(() => setActionMenuOpen(true), []);
   useEffect(() => {
     if (!operationNotice) return undefined;
@@ -239,9 +258,13 @@ export const NativeCollectionHubScreen = ({
       rows={selectedRows}
       searchUniverseRows={catalogRows}
       query={query}
+      initialScrollOffset={initialScrollOffset}
+      initialShowEvolutionaryLine={initialShowEvolutionaryLine}
+      initialSort={initialSort}
+      initialSortDirection={initialSortDirection}
       isLoading={isLoading}
       error={error}
-      onQueryChange={setQuery}
+      onQueryChange={changeQuery}
       onRetry={onRetry}
       onClearTag={clearTag}
       onViewChange={changeView}
@@ -254,6 +277,7 @@ export const NativeCollectionHubScreen = ({
       onSelectionActionPress={() => setOrganizerOpen(true)}
       selectionAction={selectedRowsAreCatalog ? 'add' : 'organize'}
       tagCanClear={!requireTagSelection && Boolean(selectedTag)}
+      onContextChange={onContextChange}
     />
   ), [
     assetBaseUrl,
@@ -264,6 +288,7 @@ export const NativeCollectionHubScreen = ({
     onRetry,
     openEntry,
     query,
+    changeQuery,
     catalogRows,
     selectedRows,
     selectedTag,
@@ -271,6 +296,11 @@ export const NativeCollectionHubScreen = ({
     selectedRowsAreCatalog,
     requireTagSelection,
     longPressEntry,
+    initialScrollOffset,
+    initialShowEvolutionaryLine,
+    initialSort,
+    initialSortDirection,
+    onContextChange,
   ]);
   const wishlistPanel = useMemo(() => (
     <NativeTagsPanelScreen
@@ -340,7 +370,11 @@ export const NativeCollectionHubScreen = ({
       ) : null}
       <NativeHorizontalPageSlider
         activeIndex={activeIndex}
-        onIndexChange={(index) => setActiveView(VIEW_ORDER[index] ?? 'pokemon')}
+        onIndexChange={(index) => {
+          const view = VIEW_ORDER[index] ?? 'pokemon';
+          setActiveView(view);
+          onContextChange?.({ activeView: view });
+        }}
         ref={sliderRef}
         scrollX={pageScrollX}
       >
@@ -363,6 +397,7 @@ export const NativeCollectionHubScreen = ({
             if (path === '/pokemon') return;
             if (onActionMenuNavigate) onActionMenuNavigate(path);
           }}
+          signedIn
           visible
         />
       ) : null}

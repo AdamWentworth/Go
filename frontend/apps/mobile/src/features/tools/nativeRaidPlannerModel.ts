@@ -41,6 +41,7 @@ export type NativeRaidPartyResult = {
 };
 
 export const resolveNativeRaidTier = (boss: NativeRaidBossEntry | null): NativeRaidTier => {
+  if (boss?.tier) return boss.tier;
   const tier = String(boss?.boss.tier || boss?.boss.type || '5');
   const context = [boss?.name, boss?.boss.form, boss?.boss.type].filter(Boolean).join(' ');
   return RAID_TIER_PRESETS[resolveRaidTierKey(tier, context)];

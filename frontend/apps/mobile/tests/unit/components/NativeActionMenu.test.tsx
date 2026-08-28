@@ -1,8 +1,12 @@
 import { act, fireEvent, render } from '@testing-library/react-native';
-import { StyleSheet } from 'react-native';
-import { NativeActionMenu } from '../../../src/components/NativeActionMenu';
+import { Animated, StyleSheet } from 'react-native';
+import {
+  getNativeActionMenuGeometry,
+  NativeActionMenu,
+} from '../../../src/components/NativeActionMenu';
 
 const mockToggleColorTheme = jest.fn();
+let mockShouldReduceMotion = false;
 
 jest.mock('react-native/Libraries/Utilities/useWindowDimensions', () => ({
   __esModule: true,
@@ -14,17 +18,21 @@ jest.mock('react-native-safe-area-context', () => ({
 }));
 
 jest.mock('../../../src/features/settings/NativeDevicePreferencesProvider', () => ({
-  useOptionalNativeDevicePreferences: () => ({ toggleColorTheme: mockToggleColorTheme }),
+  useOptionalNativeDevicePreferences: () => ({
+    shouldReduceMotion: mockShouldReduceMotion,
+    toggleColorTheme: mockToggleColorTheme,
+  }),
 }));
 
 describe('NativeActionMenu', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     jest.useFakeTimers();
+    mockShouldReduceMotion = false;
   });
 
   afterEach(() => {
-    jest.runOnlyPendingTimers();
+    act(() => jest.runOnlyPendingTimers());
     jest.useRealTimers();
   });
 
@@ -47,7 +55,7 @@ describe('NativeActionMenu', () => {
     }
   });
 
-  it('routes corner actions and closes without falling through to another control', () => {
+  it('routes corner actions and reverses the fan before closing', () => {
     const onClose = jest.fn();
     const onNavigate = jest.fn();
     const { getByLabelText } = render(
@@ -55,15 +63,19 @@ describe('NativeActionMenu', () => {
         assetBaseUrl="https://pokegonexus.com"
         onClose={onClose}
         onNavigate={onNavigate}
+        signedIn
         visible
       />,
     );
 
+    act(() => jest.advanceTimersByTime(375));
+    fireEvent.press(getByLabelText('Close'));
+    expect(onClose).not.toHaveBeenCalled();
+    act(() => jest.advanceTimersByTime(300));
+    expect(onClose).toHaveBeenCalledTimes(1);
+
     fireEvent.press(getByLabelText('Share Trade Board'));
     expect(onNavigate).toHaveBeenCalledWith('/trade-board');
-
-    fireEvent.press(getByLabelText('Close'));
-    expect(onClose).toHaveBeenCalledTimes(1);
   });
 
   it('opens support links in place and preserves the canonical theme control', () => {
@@ -85,7 +97,7 @@ describe('NativeActionMenu', () => {
     expect(mockToggleColorTheme).toHaveBeenCalledTimes(1);
   });
 
-  it('starts destinations below the viewport and animates them into the radial grid', () => {
+  it('starts every destination at the Poké Ball and fans into the canonical radial grid', () => {
     const { getByTestId } = render(
       <NativeActionMenu
         assetBaseUrl="https://pokegonexus.com"
@@ -95,13 +107,54 @@ describe('NativeActionMenu', () => {
       />,
     );
 
-    expect(getByTestId('native-action-menu-destination-home')).toBeTruthy();
-    act(() => jest.runAllTimers());
-    expect(getByTestId('native-action-menu-destination-pokemon')).toBeTruthy();
+    const raid = StyleSheet.flatten(getByTestId('native-action-menu-item-raid').props.style);
+    const home = StyleSheet.flatten(getByTestId('native-action-menu-item-home').props.style);
+    const rankings = StyleSheet.flatten(getByTestId('native-action-menu-item-rankings').props.style);
+
+    expect(raid.left).toBe(home.left);
+    expect(raid.top).toBe(home.top);
+    expect(rankings.left).toBe(home.left);
+    expect(rankings.top).toBe(home.top);
+    expect(getNativeActionMenuGeometry(412, 915, 0)).toMatchObject({
+      closeBottom: 20,
+      closeSize: 50,
+      closedDestinationY: 432.5,
+      columnOffset: 112,
+      cornerBottom: 16,
+      cornerIconSize: 30,
+      destinationFontSize: 16.8,
+      rowOffset: 116,
+      supportPanelWidth: 396,
+    });
   });
 
   it('keeps the bottom corner actions clear of the centered close control', () => {
-    const { getByLabelText } = render(
+    const { getByLabelText, getByTestId } = render(
+      <NativeActionMenu
+        assetBaseUrl="https://pokegonexus.com"
+        onClose={jest.fn()}
+        onNavigate={jest.fn()}
+        signedIn
+        visible
+      />,
+    );
+
+    expect(StyleSheet.flatten(getByLabelText('Profile').props.style).maxWidth).toBe(157);
+    expect(StyleSheet.flatten(getByLabelText('Learn and support').props.style).maxWidth).toBe(157);
+    expect(StyleSheet.flatten(getByLabelText('Profile').props.style).bottom).toBe(16);
+    expect(StyleSheet.flatten(getByTestId('native-action-menu-profile-icon').props.style)).toMatchObject({
+      height: 30,
+      width: 30,
+    });
+    expect(StyleSheet.flatten(getByTestId('native-action-menu-close').props.style)).toMatchObject({
+      bottom: 20,
+      height: 50,
+      width: 50,
+    });
+  });
+
+  it('uses the canonical full-width mobile support panel and distinct support glyphs', () => {
+    const { getByLabelText, getByTestId } = render(
       <NativeActionMenu
         assetBaseUrl="https://pokegonexus.com"
         onClose={jest.fn()}
@@ -110,7 +163,69 @@ describe('NativeActionMenu', () => {
       />,
     );
 
-    expect(StyleSheet.flatten(getByLabelText('Profile').props.style).maxWidth).toBe(142);
-    expect(StyleSheet.flatten(getByLabelText('Learn and support').props.style).maxWidth).toBe(142);
+    fireEvent.press(getByLabelText('Learn and support'));
+    expect(StyleSheet.flatten(getByTestId('native-action-menu-support-panel').props.style)).toMatchObject({
+      marginRight: -8,
+      width: 396,
+    });
+    for (const glyph of ['compass', 'question', 'info', 'shield', 'book']) {
+      expect(getByTestId(`native-support-glyph-${glyph}`)).toBeTruthy();
+    }
+  });
+
+  it('matches the canonical pending friend-request badge and accessible profile label', () => {
+    const { getByLabelText, getByText } = render(
+      <NativeActionMenu
+        assetBaseUrl="https://pokegonexus.com"
+        onClose={jest.fn()}
+        onNavigate={jest.fn()}
+        pendingFriendCount={12}
+        signedIn
+        visible
+      />,
+    );
+
+    expect(getByLabelText('Profile, 12 pending friend requests')).toBeTruthy();
+    expect(getByText('9+', { includeHiddenElements: true })).toBeTruthy();
+  });
+
+  it('does not run the custom entrance animation when reduced motion is requested', () => {
+    mockShouldReduceMotion = true;
+    const timing = jest.spyOn(Animated, 'timing');
+
+    render(
+      <NativeActionMenu
+        assetBaseUrl="https://pokegonexus.com"
+        onClose={jest.fn()}
+        onNavigate={jest.fn()}
+        visible
+      />,
+    );
+
+    expect(timing).not.toHaveBeenCalled();
+    timing.mockRestore();
+  });
+
+  it('matches the canonical signed-out corner actions', () => {
+    const onNavigate = jest.fn();
+    const { getByLabelText, queryByLabelText } = render(
+      <NativeActionMenu
+        assetBaseUrl="https://pokegonexus.com"
+        onClose={jest.fn()}
+        onNavigate={onNavigate}
+        signedIn={false}
+        visible
+      />,
+    );
+
+    expect(getByLabelText('Register')).toBeTruthy();
+    expect(getByLabelText('Login')).toBeTruthy();
+    expect(queryByLabelText('Profile')).toBeNull();
+    expect(queryByLabelText('Share Trade Board')).toBeNull();
+
+    fireEvent.press(getByLabelText('Register'));
+    fireEvent.press(getByLabelText('Login'));
+    expect(onNavigate).toHaveBeenNthCalledWith(1, '/register');
+    expect(onNavigate).toHaveBeenNthCalledWith(2, '/login');
   });
 });

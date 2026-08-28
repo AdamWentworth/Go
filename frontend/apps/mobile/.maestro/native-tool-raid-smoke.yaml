@@ -33,7 +33,10 @@ name: Native Raid tool smoke
     element:
       text: "Dodging"
     direction: DOWN
-- assertVisible: "Boss behavior"
+- scrollUntilVisible:
+    element:
+      text: "Boss behavior"
+    direction: DOWN
 - scrollUntilVisible:
     element:
       text: "Shadow boss state"

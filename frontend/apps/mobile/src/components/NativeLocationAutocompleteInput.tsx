@@ -9,6 +9,7 @@ import {
 } from 'react-native';
 import type { LocationSuggestion } from '@pokemongonexus/shared-contracts/location';
 import { getNativeLocationSuggestions } from '../services/locationApi';
+import { NativeUiIcon } from './NativeUiIcon';
 
 type Props = {
   accessibilityLabel: string;
@@ -123,7 +124,7 @@ export const NativeLocationAutocompleteInput = ({
                 pressed && styles.suggestionPressed,
               ]}
             >
-              <Text style={styles.pin}>⌖</Text>
+              <NativeUiIcon color="#2098ff" name="map" size={16} />
               <Text style={[styles.suggestionText, light && styles.suggestionTextLight]}>{suggestion.displayName}</Text>
             </Pressable>
           ))}
@@ -156,7 +157,6 @@ const styles = StyleSheet.create({
   suggestion: { minHeight: 46, flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 12, paddingVertical: 9, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: '#33454d' },
   suggestionLight: { borderBottomColor: '#d2dcdf' },
   suggestionPressed: { opacity: 0.7, backgroundColor: '#153b5c' },
-  pin: { color: '#2098ff', fontSize: 16, fontWeight: '900' },
   suggestionText: { flex: 1, color: '#f7fafb', fontSize: 13, lineHeight: 18, fontWeight: '800' },
   suggestionTextLight: { color: '#152126' },
   error: { color: '#ef6077', fontSize: 11, lineHeight: 15, fontWeight: '700' },

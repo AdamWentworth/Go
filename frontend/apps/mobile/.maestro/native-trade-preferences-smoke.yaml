@@ -19,12 +19,12 @@ tags:
     commands:
       - tapOn: Close
 - extendedWaitUntil:
-    visible: Trade preferences
+    visible: Trade Preferences
     timeout: 45000
-- assertVisible: For Trade
-- assertVisible: Wanted
+- assertVisible: "^For Trade \\([0-9]+\\)$"
+- assertVisible: "^Wanted \\([0-9]+\\)$"
 - assertVisible: Shiny Bulbasaur
-- assertVisible: Wanted Pokémon
+- assertVisible: WANTED POKÉMON
 - assertVisible: Edit preferences
 - tapOn: Trade Activity
 - extendedWaitUntil:
@@ -34,38 +34,78 @@ tags:
 - takeScreenshot: 00-trade-activity-page
 - tapOn: Trade Preferences
 - extendedWaitUntil:
-    visible: Wanted Pokémon
+    visible: WANTED POKÉMON
     timeout: 10000
-- assertVisible: Shiny Charmander
+- swipe:
+    start: "50%,82%"
+    end: "50%,54%"
+    duration: 500
+- extendedWaitUntil:
+    visible: Shiny Charmander
+    timeout: 10000
 - assertNotVisible: Shiny Mewtwo
 - takeScreenshot: 01-for-trade-view
+- tapOn: "^Wanted \\([0-9]+\\)$"
+- tapOn: "^For Trade \\([0-9]+\\)$"
+- extendedWaitUntil:
+    visible: Edit preferences
+    timeout: 10000
 - tapOn: Edit preferences
 - assertVisible: Save changes
 - tapOn: No additional rules
 - assertVisible: Mirror trade
-- assertVisible: Must match
-- scrollUntilVisible:
-    element:
-      text: Leave out
-    direction: DOWN
-    timeout: 15000
+- swipe:
+    start: "50%,66%"
+    end: "50%,44%"
+    duration: 500
+- extendedWaitUntil:
+    visible: Must match
+    timeout: 10000
+- swipe:
+    start: "50%,66%"
+    end: "50%,40%"
+    duration: 500
+- extendedWaitUntil:
+    visible: Leave out
+    timeout: 10000
 - takeScreenshot: 02-for-trade-edit-rules
-- scrollUntilVisible:
-    element:
-      id: preference-candidate-wanted-mewtwo
-    direction: DOWN
-    timeout: 15000
+- swipe:
+    start: "50%,66%"
+    end: "50%,35%"
+    duration: 500
+- swipe:
+    start: "50%,66%"
+    end: "50%,35%"
+    duration: 500
+- swipe:
+    start: "50%,66%"
+    end: "50%,35%"
+    duration: 500
+- swipe:
+    start: "50%,66%"
+    end: "50%,35%"
+    duration: 500
+- extendedWaitUntil:
+    visible:
+      id: preference-candidate-wanted-metagross
+    timeout: 10000
 - tapOn:
-    id: preference-candidate-wanted-mewtwo
+    id: preference-candidate-wanted-metagross
 - tapOn: Save changes
 - extendedWaitUntil:
     visible: Preferences saved.
     timeout: 10000
 - tapOn:
-    text: ^Wanted$
+    text: "^Wanted \\([0-9]+\\)$"
 - extendedWaitUntil:
-    visible: For Trade Pokémon
+    visible: FOR TRADE POKÉMON
     timeout: 10000
-- assertVisible: Shiny Venusaur
+- swipe:
+    start: "50%,82%"
+    end: "50%,54%"
+    duration: 500
+- extendedWaitUntil:
+    visible: Shiny Bulbasaur
+    timeout: 10000
 - assertVisible: Shiny Gigantamax Charizard
 - takeScreenshot: 03-wanted-view

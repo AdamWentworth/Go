@@ -1,5 +1,7 @@
 import type { ReactNode } from 'react';
-import { Modal, Pressable, StyleSheet, Text, View, useColorScheme } from 'react-native';
+import { Modal, Pressable, StyleSheet, Text, View } from 'react-native';
+import { useNativeModalAnimation } from '../features/settings/useNativeMotion';
+import { useNativeColorScheme } from '../features/settings/useNativeColorScheme';
 
 type Props = {
   body: string;
@@ -24,17 +26,18 @@ export const NativeConfirmationDialog = ({
   tone = 'default',
   visible,
 }: Props) => {
-  const light = useColorScheme() === 'light';
+  const light = useNativeColorScheme() === 'light';
+  const animationType = useNativeModalAnimation('fade');
   return (
     <Modal
-      animationType="fade"
+      animationType={animationType}
       onRequestClose={onCancel}
       statusBarTranslucent
       transparent
       visible={visible}
     >
       <View accessibilityViewIsModal style={styles.backdrop}>
-        <View style={[styles.card, light && styles.cardLight]}>
+        <View style={[styles.card, light && styles.cardLight]} testID="native-confirmation-dialog">
           <Text style={styles.eyebrow}>TRAINER ACTION</Text>
           <Text style={[styles.title, light && styles.textLight]}>{title}</Text>
           <Text style={[styles.body, light && styles.mutedLight]}>{body}</Text>

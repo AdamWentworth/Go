@@ -1,14 +1,10 @@
 import Constants from 'expo-constants';
 import { useEffect, useMemo, useState, type ComponentType } from 'react';
-import {
-  Pressable,
-  StyleSheet,
-  Text,
-  View,
-  useColorScheme,
-} from 'react-native';
+import { Pressable, Platform, StyleSheet, Text, View } from 'react-native';
 import type { NativePokemonSearchResult } from './pokemonSearchModel';
 import type { NativeSearchMapLibreCanvasProps } from './NativeSearchMapLibreCanvas';
+import { useNativeColorScheme } from '../settings/useNativeColorScheme';
+import { NativeUiIcon } from '../../components/NativeUiIcon';
 
 type Props = {
   onOpenListing: (result: NativePokemonSearchResult) => void;
@@ -39,16 +35,20 @@ const initialCamera = (results: NativePokemonSearchResult[]) => {
 };
 
 export const NativeSearchMapView = ({ onOpenListing, onOpenProfile, results }: Props) => {
-  const light = useColorScheme() === 'light';
+  const light = useNativeColorScheme() === 'light';
   const mappable = useMemo(() => results.filter((result) => result.mapCoordinate), [results]);
   const [selectedId, setSelectedId] = useState<string | null>(() => mappable[0]?.id ?? null);
   const selected = mappable.find((result) => result.id === selectedId) ?? mappable[0] ?? null;
   const camera = useMemo(() => initialCamera(mappable), [mappable]);
   const [MapCanvas, setMapCanvas] = useState<ComponentType<NativeSearchMapLibreCanvasProps> | null>(null);
   const expoGo = Constants.appOwnership === 'expo';
+  const nativeMapAvailable = Platform.OS !== 'web' && !expoGo;
 
   useEffect(() => {
-    if (expoGo) return undefined;
+    // MapLibre's native package cannot be evaluated by react-native-web. The
+    // deterministic area preview is the intentional browser fallback, just as
+    // Expo Go uses it when the native module is unavailable.
+    if (!nativeMapAvailable) return undefined;
     let active = true;
     void import('./NativeSearchMapLibreCanvas').then((module) => {
       if (active) setMapCanvas(() => module.default);
@@ -56,12 +56,12 @@ export const NativeSearchMapView = ({ onOpenListing, onOpenProfile, results }: P
       if (active) setMapCanvas(null);
     });
     return () => { active = false; };
-  }, [expoGo]);
+  }, [nativeMapAvailable]);
 
   if (mappable.length === 0) {
     return (
       <View style={[styles.empty, light && styles.emptyLight]}>
-        <Text style={styles.emptyIcon}>⌖</Text>
+        <NativeUiIcon color="#2f9cff" name="map" size={36} />
         <Text style={[styles.emptyTitle, light && styles.textLight]}>No map locations available</Text>
         <Text style={[styles.emptyCopy, light && styles.mutedLight]}>
           These trainers have not shared even an approximate public area. Their listings remain available in List view.
@@ -132,7 +132,6 @@ const styles = StyleSheet.create({
   previewPrimaryText: { color: '#041312', fontSize: 12, fontWeight: '900' },
   empty: { minHeight: 260, alignItems: 'center', justifyContent: 'center', gap: 7, padding: 24, borderWidth: 1, borderColor: '#3d5256', borderRadius: 14, backgroundColor: '#151d1f' },
   emptyLight: { borderColor: '#b4c1c3', backgroundColor: '#ffffff' },
-  emptyIcon: { color: '#2f9cff', fontSize: 30, fontWeight: '900' },
   emptyTitle: { color: '#f7fbfc', fontSize: 17, fontWeight: '900', textAlign: 'center' },
   emptyCopy: { maxWidth: 420, color: '#9badb0', fontSize: 12, lineHeight: 18, textAlign: 'center' },
   textLight: { color: '#172124' },

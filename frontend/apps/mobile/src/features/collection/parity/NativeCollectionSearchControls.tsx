@@ -284,6 +284,7 @@ export const NativeCollectionSearchControls = ({
 
       {query.trim() ? (
         <Pressable
+          aria-checked={showEvolutionaryLine}
           accessibilityRole="checkbox"
           accessibilityState={{ checked: showEvolutionaryLine }}
           onPress={onToggleEvolutionaryLine}

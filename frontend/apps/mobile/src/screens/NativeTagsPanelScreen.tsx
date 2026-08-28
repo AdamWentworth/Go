@@ -4,15 +4,14 @@ import {
   FlatList,
   Image,
   LayoutAnimation,
-  PanResponder,
   Pressable,
   StyleSheet,
   Text,
   View,
-  useColorScheme,
   useWindowDimensions,
 } from 'react-native';
 import { memo, useCallback, useMemo, useState } from 'react';
+import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Svg, { Defs, LinearGradient, Rect, Stop } from 'react-native-svg';
 import type {
   CreateCustomTagRequest,
@@ -28,7 +27,13 @@ import {
   type NativePokemonHubView,
 } from '../features/collection/NativePokemonHubHeader';
 import { NativeCustomTagEditorSheet } from '../features/collection/NativeCustomTagEditorSheet';
-import { NativeCollectionPriorityStar } from '../features/collection/parity/NativeCollectionPriorityStar';
+import {
+  NativeCollectionPriorityStar,
+} from '../features/collection/parity/NativeCollectionPriorityStar';
+import {
+  useOptionalNativeDevicePreferences,
+} from '../features/settings/NativeDevicePreferencesProvider';
+import { useNativeColorScheme } from '../features/settings/useNativeColorScheme';
 
 type Props = {
   activeTagName: string | null;
@@ -92,17 +97,17 @@ const tagGradient = (tag: NativeTagSummary, cardSurface: string): TagGradient =>
   ];
 };
 
-const NativeTagPreviewBackground = ({ colors }: { colors: TagGradient }) => (
+const NativeTagPreviewBackground = ({ colors, gradientId }: { colors: TagGradient; gradientId: string }) => (
   <View pointerEvents="none" style={StyleSheet.absoluteFill}>
     <Svg height="100%" width="100%">
       <Defs>
-        <LinearGradient id="native-tag-gradient" x1="0%" x2="0%" y1="0%" y2="100%">
+        <LinearGradient id={gradientId} x1="0%" x2="0%" y1="0%" y2="100%">
           <Stop offset="0%" stopColor={colors[0]} />
           <Stop offset="45%" stopColor={colors[1]} />
           <Stop offset="100%" stopColor={colors[2]} />
         </LinearGradient>
       </Defs>
-      <Rect fill="url(#native-tag-gradient)" height="100%" width="100%" />
+      <Rect fill={`url(#${gradientId})`} height="100%" width="100%" />
     </Svg>
   </View>
 );
@@ -114,12 +119,14 @@ const NativeTagCard = memo(function NativeTagCard({
   onPressTag,
   onEditTag,
   reorder,
+  reduceMotion,
 }: {
   assetBaseUrl: string;
   light: boolean;
   tag: NativeTagSummary;
   onPressTag: (tag: NativeTagSummary) => void;
   onEditTag?: (tag: NativeTagSummary) => void;
+  reduceMotion: boolean;
   reorder?: {
     index: number;
     count: number;
@@ -140,25 +147,13 @@ const NativeTagCard = memo(function NativeTagCard({
       ? collectionParityTokens.tags.previewColumnsWide * collectionParityTokens.tags.previewRows
       : collectionParityTokens.tags.previewColumnsNarrow * collectionParityTokens.tags.previewRows,
   );
+  // SVG ids share a document namespace in Expo web. Reusing one id made every
+  // tag card resolve the first card's gradient (usually Favorites yellow).
+  const previewGradientId = `native-tag-gradient-${tag.key.replace(/[^a-z0-9_-]/gi, '-')}`;
   const [cardDragY] = useState(() => new Animated.Value(0));
   const [dragging, setDragging] = useState(false);
-  return (
-    <Animated.View
-      style={[
-        styles.tagCard,
-        { backgroundColor: cardSurface },
-        tag.tone === 'custom' ? { borderColor: `${tag.color}7a`, borderWidth: 1 } : null,
-        reorder ? { transform: [{ translateY: cardDragY }] } : null,
-        dragging && styles.draggingCard,
-      ]}
-    >
-      <Pressable
-        accessibilityLabel={`Open ${tag.name}, ${tag.rows.length} Pokémon`}
-        accessibilityRole="button"
-        disabled={Boolean(reorder)}
-        onPress={() => onPressTag(tag)}
-        style={({ pressed }) => pressed && !reorder ? styles.pressed : null}
-      >
+  const cardContents = (
+    <>
       <View
         style={[
           styles.preview,
@@ -166,7 +161,10 @@ const NativeTagCard = memo(function NativeTagCard({
         ]}
         pointerEvents="none"
       >
-        <NativeTagPreviewBackground colors={tagGradient(tag, cardSurface)} />
+        <NativeTagPreviewBackground
+          colors={tagGradient(tag, cardSurface)}
+          gradientId={previewGradientId}
+        />
         {previewRows.length ? previewRows.map((row) => (
           <View
             key={row.id}
@@ -228,26 +226,61 @@ const NativeTagCard = memo(function NativeTagCard({
             onDragEnd={() => setDragging(false)}
             onDragStart={() => setDragging(true)}
             onMove={reorder.onMove}
+            reduceMotion={reduceMotion}
             tagKey={tag.key}
             tagName={tag.name}
           />
         ) : tag.tone === 'custom' && onEditTag ? (
-          <Pressable
-            accessibilityLabel={`Edit ${tag.name}`}
-            accessibilityRole="button"
-            onPress={(event) => {
-              event?.stopPropagation?.();
-              onEditTag(tag);
-            }}
-            style={[styles.editButton, { borderColor: `${tag.color}8f`, backgroundColor: `${tag.color}24` }]}
-          >
-            <Text style={[styles.editText, { color: titleColor }]}>Edit</Text>
-          </Pressable>
+          <View style={styles.editButtonSpacer} />
         ) : tag.tone === 'favorites' ? (
           <NativeCollectionPriorityStar size={22} tone="favorite" />
         ) : null}
       </View>
-      </Pressable>
+    </>
+  );
+  return (
+    <Animated.View
+      style={[
+        styles.tagCard,
+        {
+          backgroundColor: cardSurface,
+          shadowColor: '#000000',
+          shadowOpacity: light ? 0.22 : 0.42,
+          elevation: 5,
+        },
+        tag.tone === 'custom' ? { borderColor: `${tag.color}7a`, borderWidth: 1 } : null,
+        reorder ? { transform: [{ translateY: cardDragY }] } : null,
+        dragging && styles.draggingCard,
+      ]}
+    >
+      {reorder ? (
+        <View>{cardContents}</View>
+      ) : (
+        <>
+          <Pressable
+            accessibilityLabel={`Open ${tag.name}, ${tag.rows.length} Pokémon`}
+            accessibilityRole="button"
+            onPress={() => onPressTag(tag)}
+            style={({ pressed }) => pressed ? styles.pressed : null}
+          >
+            {cardContents}
+          </Pressable>
+          {tag.tone === 'custom' && onEditTag ? (
+            <Pressable
+              accessibilityLabel={`Edit ${tag.name}`}
+              accessibilityRole="button"
+              onPress={() => onEditTag(tag)}
+              style={[
+                styles.editButton,
+                styles.editButtonOverlay,
+                { borderColor: `${tag.color}8f`, backgroundColor: `${tag.color}24` },
+              ]}
+            >
+              <Text style={[styles.editText, { color: titleColor }]}>Edit</Text>
+            </Pressable>
+          ) : null}
+        </>
+      )}
     </Animated.View>
   );
 });
@@ -259,6 +292,7 @@ const NativeTagDragGrip = ({
   onDragEnd,
   onDragStart,
   onMove,
+  reduceMotion,
   tagKey,
   tagName,
 }: {
@@ -268,61 +302,66 @@ const NativeTagDragGrip = ({
   onDragEnd: () => void;
   onDragStart: () => void;
   onMove: (sourceIndex: number, targetIndex: number) => void;
+  reduceMotion: boolean;
   tagKey: PokemonTagOrderKey;
   tagName: string;
 }) => {
   const settle = useCallback(() => {
-    Animated.spring(dragY, {
-      damping: 20,
-      stiffness: 220,
-      toValue: 0,
-      useNativeDriver: true,
-    }).start(onDragEnd);
+    // Reset the lifted card before changing the list order. If the reorder
+    // state is applied while the old card is still carrying its drag
+    // translation, React Native can recycle that view into the new slot and
+    // leave it visibly suspended after the finger has been released.
+    dragY.stopAnimation();
+    dragY.setValue(0);
+    onDragEnd();
   }, [dragY, onDragEnd]);
-  const panResponder = useMemo(() => PanResponder.create({
-    onStartShouldSetPanResponder: () => true,
-    onMoveShouldSetPanResponder: () => true,
-    onPanResponderGrant: () => {
+  const panGesture = useMemo(() => Gesture.Pan()
+    .minDistance(2)
+    .runOnJS(true)
+    .onBegin(() => {
       dragY.setValue(0);
       onDragStart();
-    },
-    onPanResponderMove: Animated.event([null, { dy: dragY }], { useNativeDriver: false }),
-    onPanResponderRelease: (_event, gesture) => {
-      const targetIndex = Math.max(0, Math.min(count - 1, index + Math.round(gesture.dy / TAG_CARD_STRIDE)));
+    })
+    .onUpdate((event) => {
+      dragY.setValue(event.translationY);
+    })
+    .onEnd((event) => {
+      const targetIndex = Math.max(0, Math.min(count - 1, index + Math.round(event.translationY / TAG_CARD_STRIDE)));
+      settle();
       if (targetIndex !== index) {
-        LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+        if (!reduceMotion) LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
         onMove(index, targetIndex);
       }
-      settle();
-    },
-    onPanResponderTerminate: settle,
-    onPanResponderTerminationRequest: () => false,
-    onShouldBlockNativeResponder: () => true,
-  }), [count, dragY, index, onDragStart, onMove, settle]);
+    })
+    .onFinalize((_event, success) => {
+      if (!success) settle();
+    }), [count, dragY, index, onDragStart, onMove, reduceMotion, settle]);
 
   return (
-    <Animated.View
-      {...panResponder.panHandlers}
-      accessibilityActions={[
-        ...(index > 0 ? [{ name: 'decrement' as const, label: 'Move tag earlier' }] : []),
-        ...(index < count - 1 ? [{ name: 'increment' as const, label: 'Move tag later' }] : []),
-      ]}
-      accessibilityHint="Press and drag to move this tag"
-      accessibilityLabel={`Reorder ${tagName}`}
-      onAccessibilityAction={(event) => {
-        if (event.nativeEvent.actionName === 'decrement' && index > 0) {
-          onMove(index, index - 1);
-        }
-        if (event.nativeEvent.actionName === 'increment' && index < count - 1) {
-          onMove(index, index + 1);
-        }
-      }}
-      accessibilityRole="adjustable"
-      style={styles.dragGrip}
-      testID={`native-tag-drag-${tagKey}`}
-    >
-      <Text style={styles.dragGripText}>⠿</Text>
-    </Animated.View>
+    <GestureDetector gesture={panGesture}>
+      <Animated.View
+        accessibilityActions={[
+          ...(index > 0 ? [{ name: 'decrement' as const, label: 'Move tag earlier' }] : []),
+          ...(index < count - 1 ? [{ name: 'increment' as const, label: 'Move tag later' }] : []),
+        ]}
+        accessibilityHint="Press and drag to move this tag"
+        accessibilityLabel={`Reorder ${tagName}, position ${index + 1} of ${count}`}
+        hitSlop={8}
+        onAccessibilityAction={(event) => {
+          if (event.nativeEvent.actionName === 'decrement' && index > 0) {
+            onMove(index, index - 1);
+          }
+          if (event.nativeEvent.actionName === 'increment' && index < count - 1) {
+            onMove(index, index + 1);
+          }
+        }}
+        accessibilityRole="adjustable"
+        style={styles.dragGrip}
+        testID={`native-tag-drag-${tagKey}`}
+      >
+        <Text style={styles.dragGripText}>⠿</Text>
+      </Animated.View>
+    </GestureDetector>
   );
 };
 
@@ -361,7 +400,8 @@ export const NativeTagsPanelScreen = ({
   isSaving = false,
   showHeader = true,
 }: Props) => {
-  const light = useColorScheme() === 'light';
+  const light = useNativeColorScheme() === 'light';
+  const reduceMotion = useOptionalNativeDevicePreferences()?.shouldReduceMotion ?? false;
   const palette = light
     ? collectionParityTokens.colors.light
     : collectionParityTokens.colors.dark;
@@ -487,6 +527,7 @@ export const NativeTagsPanelScreen = ({
             light={light}
             onPressTag={onSelectTag}
             onEditTag={item.tone === 'custom' ? openTagEditor : undefined}
+            reduceMotion={reduceMotion}
             reorder={reordering ? {
               index: orderedTags.findIndex((tag) => tag.key === item.key),
               count: orderedTags.length,
@@ -642,6 +683,8 @@ const styles = StyleSheet.create({
   tagCopy: { minWidth: 0, flex: 1 },
   tagDot: { width: 12, height: 12, marginRight: 7, borderWidth: 1, borderColor: '#ffffff99', borderRadius: 6 },
   editButton: { minWidth: 54, minHeight: 38, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderRadius: 19 },
+  editButtonSpacer: { width: 54, height: 38 },
+  editButtonOverlay: { position: 'absolute', right: 10, bottom: 10, zIndex: 2 },
   editText: { fontSize: 12, fontWeight: '900' },
   dragGrip: { width: 52, height: 44, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: '#ffffff47', borderRadius: 12, backgroundColor: '#ffffff12', zIndex: 10, elevation: 8 },
   dragGripText: { color: '#f5fffc', fontSize: 25, fontWeight: '900' },

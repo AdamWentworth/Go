@@ -5,6 +5,7 @@ import type { NativeInstanceDetail } from '../../features/collection/collectionM
 import { NativeTradeProposalSheet } from '../../features/trades/NativeTradeProposalSheet';
 import type { NativeTradeProposalSelection } from '../../features/trades/nativeTradeProposalModel';
 import { runtimeConfig } from '../../config/runtimeConfig';
+import { useNativeColorScheme } from '../../features/settings/useNativeColorScheme';
 
 const ASSET_BASE_URL = 'https://pokegonexus.com';
 
@@ -90,10 +91,11 @@ const selection: NativeTradeProposalSelection = {
 };
 
 export default function DeviceSmokeTradeProposalRoute() {
+  const light = useNativeColorScheme() === 'light';
   if (!runtimeConfig.mobile.deviceSmokeMode) return <Redirect href="/" />;
 
   return (
-    <View style={{ flex: 1, backgroundColor: '#061217' }}>
+    <View style={{ flex: 1, backgroundColor: light ? '#f4f7f8' : '#061217' }}>
       <NativeTradeProposalSheet
         assetBaseUrl={ASSET_BASE_URL}
         caughtDetails={[]}

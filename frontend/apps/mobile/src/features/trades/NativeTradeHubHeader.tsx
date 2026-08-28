@@ -5,9 +5,10 @@ import {
   StyleSheet,
   Text,
   View,
-  useColorScheme,
   useWindowDimensions,
 } from 'react-native';
+import { NativeUiIcon } from '../../components/NativeUiIcon';
+import { useNativeColorScheme } from '../settings/useNativeColorScheme';
 
 export type NativeTradeHubView = 'preferences' | 'activity';
 
@@ -28,7 +29,7 @@ export const NativeTradeHubHeader = ({
   onViewChange,
   scrollX,
 }: Props) => {
-  const light = useColorScheme() === 'light';
+  const light = useNativeColorScheme() === 'light';
   const { width } = useWindowDimensions();
   const tabWidth = Math.max(0, width - 28) / 2;
   const activeIndex = VIEW_ORDER.indexOf(activeView);
@@ -69,7 +70,7 @@ export const NativeTradeHubHeader = ({
           ]}
           testID="open-native-trade-board"
         >
-          <Text style={[styles.shareIcon, light && styles.titleLight]}>↗</Text>
+          <NativeUiIcon color={light ? '#13201e' : '#f6fbfa'} name="share" size={16} />
           <Text style={[styles.shareText, light && styles.titleLight]}>Share board</Text>
         </Pressable>
       ) : null}
@@ -89,8 +90,10 @@ export const NativeTradeHubHeader = ({
         />
         {VIEW_ORDER.map((view) => {
           const selected = activeView === view;
+          const iconColor = selected ? '#041411' : light ? '#60726f' : '#9eb8b3';
           return (
             <Pressable
+              aria-selected={selected}
               accessibilityLabel={view === 'preferences' ? 'Trade Preferences' : 'Trade Activity'}
               accessibilityRole="tab"
               accessibilityState={{ selected }}
@@ -98,13 +101,16 @@ export const NativeTradeHubHeader = ({
               onPress={() => onViewChange(view)}
               style={({ pressed }) => [styles.tab, pressed && styles.pressed]}
             >
-              <Text style={[
-                styles.label,
-                light && styles.labelLight,
-                selected && styles.selectedLabel,
-              ]}>
-                {view === 'preferences' ? '☷  Trade Preferences' : '↔  Trade Activity'}
-              </Text>
+              <View style={styles.labelRow}>
+                <NativeUiIcon color={iconColor} name={view === 'preferences' ? 'sliders' : 'trade'} size={14} />
+                <Text style={[
+                  styles.label,
+                  light && styles.labelLight,
+                  selected && styles.selectedLabel,
+                ]}>
+                  {view === 'preferences' ? 'Trade Preferences' : 'Trade Activity'}
+                </Text>
+              </View>
             </Pressable>
           );
         })}
@@ -125,7 +131,7 @@ const styles = StyleSheet.create({
     borderBottomColor: '#24464b',
     backgroundColor: '#071012',
   },
-  headerLight: { borderBottomColor: '#a8bbb7', backgroundColor: '#eef4f5' },
+  headerLight: { borderBottomColor: '#a8bbb7', backgroundColor: '#f8fff9' },
   productRow: { minHeight: 58, flexDirection: 'row', alignItems: 'center', gap: 11 },
   productIcon: { width: 44, height: 44, flexShrink: 0 },
   productCopy: { flex: 1, minWidth: 0 },
@@ -148,7 +154,6 @@ const styles = StyleSheet.create({
     backgroundColor: '#0b1718',
   },
   shareButtonLight: { borderColor: '#91aaa4', backgroundColor: '#ffffff' },
-  shareIcon: { color: '#f6fbfa', fontSize: 16, fontWeight: '900' },
   shareText: { color: '#f6fbfa', fontSize: 12, fontWeight: '900' },
   tabs: {
     position: 'relative',
@@ -168,7 +173,7 @@ const styles = StyleSheet.create({
     bottom: 4,
     left: 4,
     borderRadius: 7,
-    backgroundColor: '#36c5a4',
+    backgroundColor: '#14b9c8',
   },
   tab: {
     zIndex: 1,
@@ -178,6 +183,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     paddingHorizontal: 8,
   },
+  labelRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 7 },
   label: { color: '#9eb8b3', fontSize: 12, fontWeight: '800', textAlign: 'center' },
   labelLight: { color: '#60726f' },
   selectedLabel: { color: '#041411', fontWeight: '900' },

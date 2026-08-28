@@ -1,12 +1,6 @@
-import {
-  Animated,
-  Pressable,
-  StyleSheet,
-  Text,
-  View,
-  useColorScheme,
-  useWindowDimensions,
-} from 'react-native';
+import { Animated, Pressable, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
+import { NativeUiIcon } from '../../components/NativeUiIcon';
+import { useNativeColorScheme } from '../settings/useNativeColorScheme';
 
 export type NativeSearchHubView = 'pokemon' | 'trainers';
 
@@ -23,9 +17,10 @@ export const NativeSearchHubHeader = ({
   onViewChange,
   scrollX,
 }: Props) => {
-  const light = useColorScheme() === 'light';
+  const light = useNativeColorScheme() === 'light';
   const { width } = useWindowDimensions();
-  const tabWidth = Math.max(0, width - 20) / VIEW_ORDER.length;
+  const tabsWidth = Math.min(Math.max(0, width - 12), 520);
+  const tabWidth = Math.max(0, tabsWidth - 8) / VIEW_ORDER.length;
   const activeIndex = VIEW_ORDER.indexOf(activeView);
   const translateX = scrollX?.interpolate({
     inputRange: [0, Math.max(1, width)],
@@ -46,7 +41,7 @@ export const NativeSearchHubHeader = ({
       </View>
       <View
         accessibilityRole="tablist"
-        style={[styles.tabs, light && styles.tabsLight]}
+        style={[styles.tabs, { width: tabsWidth }, light && styles.tabsLight]}
         testID="native-search-hub-header"
       >
         <Animated.View
@@ -59,8 +54,10 @@ export const NativeSearchHubHeader = ({
         />
         {VIEW_ORDER.map((view) => {
           const selected = activeView === view;
+          const iconColor = selected ? '#ffffff' : light ? '#5c6a6d' : '#a7b1b3';
           return (
             <Pressable
+              aria-selected={selected}
               accessibilityLabel={view === 'pokemon' ? 'Pokémon search' : 'Trainer search'}
               accessibilityRole="tab"
               accessibilityState={{ selected }}
@@ -68,13 +65,16 @@ export const NativeSearchHubHeader = ({
               onPress={() => onViewChange(view)}
               style={({ pressed }) => [styles.tab, pressed && styles.pressed]}
             >
-              <Text style={[
-                styles.label,
-                light && styles.labelLight,
-                selected && styles.selectedLabel,
-              ]}>
-                {view === 'pokemon' ? '⌕  Pokémon' : '♟  Trainers'}
-              </Text>
+              <View style={styles.labelRow}>
+                <NativeUiIcon color={iconColor} name={view === 'trainers' ? 'trainers' : 'search'} size={15} />
+                <Text style={[
+                  styles.label,
+                  light && styles.labelLight,
+                  selected && styles.selectedLabel,
+                ]}>
+                  {view === 'pokemon' ? 'Pokémon' : 'Trainers'}
+                </Text>
+              </View>
             </Pressable>
           );
         })}
@@ -91,7 +91,7 @@ const styles = StyleSheet.create({
     paddingBottom: 5,
     backgroundColor: '#080d0f',
   },
-  headerLight: { backgroundColor: '#eef4f5' },
+  headerLight: { backgroundColor: '#f8fff9' },
   heading: { alignItems: 'center', paddingHorizontal: 12, paddingVertical: 7 },
   eyebrow: { color: '#2f9cff', fontSize: 10, fontWeight: '900', letterSpacing: 1.3 },
   title: { color: '#f8fcfd', fontSize: 29, fontWeight: '900' },
@@ -105,9 +105,9 @@ const styles = StyleSheet.create({
   },
   tabs: {
     position: 'relative',
+    alignSelf: 'center',
     flexDirection: 'row',
     minHeight: 54,
-    marginHorizontal: 6,
     borderWidth: 1,
     borderColor: '#35494d',
     borderRadius: 11,
@@ -134,6 +134,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     paddingHorizontal: 8,
   },
+  labelRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8 },
   label: { color: '#a7b1b3', fontSize: 14, fontWeight: '900', textAlign: 'center' },
   labelLight: { color: '#5c6a6d' },
   selectedLabel: { color: '#ffffff' },

@@ -1,15 +1,7 @@
-import {
-  FlatList,
-  Image,
-  Modal,
-  Pressable,
-  StyleSheet,
-  Text,
-  TextInput,
-  View,
-  useColorScheme,
-} from 'react-native';
+import { FlatList, Image, Modal, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useMemo, useState } from 'react';
+import { useNativeModalAnimation } from '../features/settings/useNativeMotion';
+import { useNativeColorScheme } from '../features/settings/useNativeColorScheme';
 
 export type NativeOptionPickerEntry = {
   key: string;
@@ -39,7 +31,8 @@ export const NativeOptionPicker = ({
   title,
   visible,
 }: Props) => {
-  const light = useColorScheme() === 'light';
+  const light = useNativeColorScheme() === 'light';
+  const animationType = useNativeModalAnimation('slide');
   const [query, setQuery] = useState('');
   const filtered = useMemo(() => {
     const normalized = query.trim().toLocaleLowerCase();
@@ -52,7 +45,7 @@ export const NativeOptionPicker = ({
 
   return (
     <Modal
-      animationType="slide"
+      animationType={animationType}
       hardwareAccelerated
       onRequestClose={onClose}
       presentationStyle="fullScreen"
@@ -125,7 +118,7 @@ export const NativeOptionPicker = ({
 
 const styles = StyleSheet.create({
   screen: { flex: 1, minHeight: 0, backgroundColor: '#090d0f' },
-  screenLight: { backgroundColor: '#eef4f5' },
+  screenLight: { backgroundColor: '#f8fff9' },
   header: { minHeight: 78, flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: '#334448', backgroundColor: '#101719' },
   headerLight: { borderBottomColor: '#b5c2c4', backgroundColor: '#ffffff' },
   headerCopy: { flex: 1, minWidth: 0 },

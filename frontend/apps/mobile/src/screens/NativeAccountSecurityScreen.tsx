@@ -1,7 +1,4 @@
-import type {
-  AccountSecuritySummary,
-  OAuthProvider,
-} from '@pokemongonexus/shared-contracts/auth';
+import type { AccountSecuritySummary, OAuthProvider } from '@pokemongonexus/shared-contracts/auth';
 import { useState } from 'react';
 import {
   ActivityIndicator,
@@ -11,16 +8,17 @@ import {
   Text,
   TextInput,
   View,
-  useColorScheme,
 } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { NativeBackIcon } from '../components/NativeBackIcon';
 import { NativeConfirmationDialog } from '../components/NativeConfirmationDialog';
 import { NativeSocialProviderIcon } from '../components/NativeSocialProviderIcon';
 import { NativeSettingsWorkspaceNav } from '../components/NativeSettingsWorkspaceNav';
+import { NativeUiIcon, type NativeUiIconName } from '../components/NativeUiIcon';
 import {
   nativeOAuthProviderLabel,
   type NativeAccountSecurityDraft,
 } from '../features/settings/nativeAccountSecurityModel';
+import { useNativeColorScheme } from '../features/settings/useNativeColorScheme';
 
 type Confirmation =
   | { kind: 'delete'; title: string; body: string; confirmLabel: string }
@@ -34,17 +32,15 @@ type Props = {
   isLoading?: boolean;
   onBack: () => void;
   onChange: (draft: NativeAccountSecurityDraft) => void;
-  onChangePassword: () => void;
   onConnectProvider: (provider: OAuthProvider) => void;
   onDeleteAccount: () => void;
   onDismissFeedback?: () => void;
   onOpenSettings: () => void;
-  onRequestEmailChange: () => void;
   onRetry: () => void;
   onRevokeAllSessions: () => void;
-  onSaveUsername: () => void;
   onSignOut: () => void;
   onUnlinkProvider: (provider: OAuthProvider) => void;
+  onUpdateAccount: () => void;
   pendingAction?: string | null;
   security: AccountSecuritySummary | null;
 };
@@ -52,6 +48,7 @@ type Props = {
 type FieldProps = {
   autoCapitalize?: 'none' | 'sentences' | 'words';
   help?: string;
+  icon?: NativeUiIconName;
   label: string;
   light: boolean;
   onChangeText: (value: string) => void;
@@ -63,6 +60,7 @@ type FieldProps = {
 const AccountField = ({
   autoCapitalize = 'none',
   help,
+  icon,
   label,
   light,
   onChangeText,
@@ -71,7 +69,10 @@ const AccountField = ({
   value,
 }: FieldProps) => (
   <View style={styles.field}>
-    <Text style={[styles.fieldLabel, light && styles.labelLight]}>{label}</Text>
+    <View style={styles.fieldLabelRow}>
+      {icon ? <NativeUiIcon color={light ? '#49666b' : '#92c7cc'} name={icon} size={13} /> : null}
+      <Text style={[styles.fieldLabel, light && styles.labelLight]}>{label}</Text>
+    </View>
     <TextInput
       accessibilityLabel={label}
       autoCapitalize={autoCapitalize}
@@ -100,22 +101,19 @@ export const NativeAccountSecurityScreen = ({
   isLoading = false,
   onBack,
   onChange,
-  onChangePassword,
   onConnectProvider,
   onDeleteAccount,
   onDismissFeedback,
   onOpenSettings,
-  onRequestEmailChange,
   onRetry,
   onRevokeAllSessions,
-  onSaveUsername,
   onSignOut,
   onUnlinkProvider,
+  onUpdateAccount,
   pendingAction = null,
   security,
 }: Props) => {
-  const light = useColorScheme() === 'light';
-  const insets = useSafeAreaInsets();
+  const light = useNativeColorScheme() === 'light';
   const [confirmation, setConfirmation] = useState<Confirmation | null>(null);
   const working = Boolean(pendingAction);
   const update = <K extends keyof NativeAccountSecurityDraft>(
@@ -135,15 +133,15 @@ export const NativeAccountSecurityScreen = ({
   return (
     <View style={[styles.root, light && styles.rootLight]} testID="native-account-security-screen">
       <ScrollView
-        contentContainerStyle={[styles.content, { paddingTop: insets.top + 12, paddingBottom: insets.bottom + 96 }]}
+        contentContainerStyle={[styles.content, { paddingTop: 12, paddingBottom: 144 }]}
         keyboardShouldPersistTaps="handled"
+        testID="native-account-security-content"
       >
         <View style={styles.header}>
           <Pressable accessibilityLabel="Back" accessibilityRole="button" onPress={onBack} style={[styles.back, light && styles.backLight]}>
-            <Text style={[styles.backText, light && styles.textLight]}>‹</Text>
+            <NativeBackIcon color={light ? '#172124' : '#ffffff'} size={20} />
           </Pressable>
           <View style={styles.headerCopy}>
-            <Text style={styles.eyebrow}>SIGN-IN &amp; SECURITY</Text>
             <Text accessibilityRole="header" style={[styles.title, light && styles.textLight]}>Account</Text>
           </View>
         </View>
@@ -163,15 +161,12 @@ export const NativeAccountSecurityScreen = ({
         <View style={[styles.section, light && styles.sectionLight]}>
           <View style={styles.sectionHeader}>
             <View><Text style={styles.sectionEyebrow}>LOGIN IDENTITY</Text><Text style={[styles.sectionTitle, light && styles.textLight]}>Account details</Text></View>
-            <Text style={styles.sectionIcon}>⌁</Text>
+            <NativeUiIcon color="#42d7c6" name="key" size={30} />
           </View>
-          <AccountField label="Username" light={light} onChangeText={(value) => update('username', value)} value={draft.username} />
-          <Pressable accessibilityRole="button" disabled={working} onPress={onSaveUsername} style={[styles.primary, working && styles.disabled]}>
-            <Text style={styles.primaryText}>{pendingAction === 'username' ? 'Saving…' : 'Save username'}</Text>
-          </Pressable>
+          <AccountField icon="user" label="Username" light={light} onChangeText={(value) => update('username', value)} value={draft.username} />
           {security?.hasPassword ? (
             <AccountField
-              help="Used only to confirm sensitive changes on this screen."
+              help="Required when changing your email or password, signing out every device, or deleting your account."
               label="Current password"
               light={light}
               onChangeText={(value) => update('currentPassword', value)}
@@ -182,37 +177,18 @@ export const NativeAccountSecurityScreen = ({
           ) : (
             <View style={[styles.info, light && styles.infoLight]}><Text style={[styles.infoText, light && styles.textLight]}>Your recent provider sign-in confirms sensitive actions because this account has no password.</Text></View>
           )}
-        </View>
-
-        <View style={[styles.section, light && styles.sectionLight]}>
-          <View style={styles.sectionHeader}>
-            <View><Text style={styles.sectionEyebrow}>VERIFIED DESTINATION</Text><Text style={[styles.sectionTitle, light && styles.textLight]}>Email</Text></View>
-            <Text style={styles.sectionIcon}>@</Text>
-          </View>
-          <Text style={[styles.sectionCopy, light && styles.mutedLight]}>A new address is not active until you follow the verification link sent there.</Text>
-          <AccountField label="Email address" light={light} onChangeText={(value) => update('email', value)} value={draft.email} />
-          <Pressable accessibilityRole="button" disabled={working} onPress={onRequestEmailChange} style={[styles.primary, working && styles.disabled]}>
-            <Text style={styles.primaryText}>{pendingAction === 'email' ? 'Sending…' : 'Send verification email'}</Text>
-          </Pressable>
-        </View>
-
-        <View style={[styles.section, light && styles.sectionLight]}>
-          <View style={styles.sectionHeader}>
-            <View><Text style={styles.sectionEyebrow}>SECURITY CREDENTIAL</Text><Text style={[styles.sectionTitle, light && styles.textLight]}>{security?.hasPassword ? 'Change password' : 'Add a password'}</Text></View>
-            <Text style={styles.sectionIcon}>◇</Text>
-          </View>
-          <Text style={[styles.sectionCopy, light && styles.mutedLight]}>Changing your password signs out every device, including this one.</Text>
-          <AccountField label="New password" light={light} onChangeText={(value) => update('newPassword', value)} placeholder="8+ characters, mixed types" secureTextEntry value={draft.newPassword} />
+          <AccountField icon="email" label="Email" light={light} onChangeText={(value) => update('email', value)} value={draft.email} />
+          <AccountField label="New password" light={light} onChangeText={(value) => update('newPassword', value)} placeholder="Leave blank to keep current password" secureTextEntry value={draft.newPassword} />
           <AccountField label="Confirm new password" light={light} onChangeText={(value) => update('confirmNewPassword', value)} secureTextEntry value={draft.confirmNewPassword} />
-          <Pressable accessibilityRole="button" disabled={working} onPress={onChangePassword} style={[styles.primary, working && styles.disabled]}>
-            <Text style={styles.primaryText}>{pendingAction === 'password' ? 'Updating…' : security?.hasPassword ? 'Update password' : 'Add password'}</Text>
+          <Pressable accessibilityRole="button" disabled={working} onPress={onUpdateAccount} style={[styles.primary, working && styles.disabled]}>
+            <View style={styles.buttonLabel}><NativeUiIcon color="#061617" name="key" size={15} /><Text style={styles.primaryText}>{pendingAction === 'account' ? 'Saving…' : 'Update account'}</Text></View>
           </Pressable>
         </View>
 
         <View style={[styles.section, light && styles.sectionLight]}>
           <View style={styles.sectionHeader}>
             <View><Text style={styles.sectionEyebrow}>SIGN-IN METHODS</Text><Text style={[styles.sectionTitle, light && styles.textLight]}>Connected accounts</Text></View>
-            <Text style={styles.sectionIcon}>◎</Text>
+            <NativeUiIcon color="#42d7c6" name="key" size={30} />
           </View>
           <Text style={[styles.sectionCopy, light && styles.mutedLight]}>Verified providers open this same Pokémon Go Nexus account.</Text>
           {(['google', 'discord', 'facebook'] as OAuthProvider[]).map((provider) => {
@@ -252,25 +228,28 @@ export const NativeAccountSecurityScreen = ({
         <View style={[styles.section, light && styles.sectionLight]}>
           <View style={styles.sectionHeader}>
             <View><Text style={styles.sectionEyebrow}>SESSION</Text><Text style={[styles.sectionTitle, light && styles.textLight]}>Sign out</Text></View>
-            <Text style={styles.sectionIcon}>↪</Text>
+            <NativeUiIcon color="#42d7c6" name="sign-out" size={30} />
           </View>
+          <Text style={[styles.sectionCopy, light && styles.mutedLight]}>End this session and clear locally stored account data from this device.</Text>
+          <Pressable accessibilityRole="button" disabled={working} onPress={onSignOut} style={[styles.secondary, light && styles.secondaryLight, working && styles.disabled]}>
+            <View style={styles.buttonLabel}><NativeUiIcon color={light ? '#172124' : '#ffffff'} name="sign-out" size={15} /><Text style={[styles.secondaryText, light && styles.textLight]}>Sign out</Text></View>
+          </Pressable>
           <View style={[styles.sessionSummary, light && styles.providerLight]}>
-            <Text style={styles.sessionCount}>{security?.activeSessions ?? '—'}</Text>
-            <View style={styles.providerCopy}><Text style={[styles.providerTitle, light && styles.textLight]}>active sessions</Text><Text style={[styles.help, light && styles.mutedLight]}>Includes this device while its session is active.</Text></View>
+            <NativeUiIcon color="#42d7c6" name="laptop" size={30} />
+            <View style={styles.providerCopy}><Text style={[styles.providerTitle, light && styles.textLight]}>{security?.activeSessions ?? '—'} active sessions</Text><Text style={[styles.help, light && styles.mutedLight]}>Includes this device while its session is active.</Text></View>
           </View>
-          <View style={styles.actionRow}>
-            <Pressable accessibilityRole="button" disabled={working} onPress={onSignOut} style={[styles.secondary, light && styles.secondaryLight, working && styles.disabled]}><Text style={[styles.secondaryText, light && styles.textLight]}>Sign out here</Text></Pressable>
-            <Pressable accessibilityLabel="Sign out all devices" accessibilityRole="button" disabled={working} onPress={() => setConfirmation({ kind: 'revoke', title: 'Sign out every device?', body: 'Every active session for this account will be revoked, including this device.', confirmLabel: 'Sign out all' })} style={[styles.secondary, light && styles.secondaryLight, working && styles.disabled]}><Text style={[styles.secondaryText, light && styles.textLight]}>Sign out all</Text></Pressable>
-          </View>
+          <Pressable accessibilityLabel="Sign out every device" accessibilityRole="button" disabled={working} onPress={() => setConfirmation({ kind: 'revoke', title: 'Sign out every device?', body: 'Every active session for this account will be revoked, including this device.', confirmLabel: 'Sign out every device' })} style={[styles.secondary, light && styles.secondaryLight, working && styles.disabled]}>
+            <View style={styles.buttonLabel}><NativeUiIcon color={light ? '#172124' : '#ffffff'} name="laptop" size={15} /><Text style={[styles.secondaryText, light && styles.textLight]}>{pendingAction === 'revoke' ? 'Signing out…' : 'Sign out every device'}</Text></View>
+          </Pressable>
         </View>
 
         <View style={[styles.section, styles.dangerSection, light && styles.dangerSectionLight]}>
           <View style={styles.sectionHeader}>
             <View><Text style={styles.dangerEyebrow}>PERMANENT ACTION</Text><Text style={[styles.sectionTitle, light && styles.textLight]}>Delete account</Text></View>
-            <Text style={styles.dangerIcon}>×</Text>
+            <NativeUiIcon color="#ef6a7e" name="trash" size={30} />
           </View>
           <Text style={[styles.sectionCopy, light && styles.mutedLight]}>Permanently remove your sign-in account, catalog, profile, trades, friendships, preferences, and active sessions.</Text>
-          <Pressable accessibilityLabel="Permanently delete account" accessibilityRole="button" disabled={working} onPress={() => setConfirmation({ kind: 'delete', title: 'Permanently delete your account?', body: 'Your account and all Pokémon Go Nexus data will be removed. This cannot be undone.', confirmLabel: 'Delete account' })} style={[styles.dangerButton, working && styles.disabled]} testID="native-account-delete-button"><Text style={styles.dangerButtonText}>{pendingAction === 'delete' ? 'Deleting…' : 'Delete account'}</Text></Pressable>
+          <Pressable accessibilityLabel="Permanently delete account" accessibilityRole="button" disabled={working} onPress={() => setConfirmation({ kind: 'delete', title: 'Permanently delete your account?', body: 'Your account and all Pokémon Go Nexus data will be removed. This cannot be undone.', confirmLabel: 'Delete account' })} style={[styles.dangerButton, working && styles.disabled]} testID="native-account-delete-button"><View style={styles.buttonLabel}><NativeUiIcon color="#ffffff" name="trash" size={15} /><Text style={styles.dangerButtonText}>{pendingAction === 'delete' ? 'Deleting…' : 'Delete account'}</Text></View></Pressable>
         </View>
       </ScrollView>
 
@@ -280,7 +259,7 @@ export const NativeAccountSecurityScreen = ({
           style={[
             styles.feedback,
             styles.feedbackOverlay,
-            { bottom: insets.bottom + 12 },
+            { bottom: 12 },
             feedback.tone === 'success' ? styles.feedbackSuccess : styles.feedbackError,
           ]}
         >
@@ -306,6 +285,7 @@ export const NativeAccountSecurityScreen = ({
         {confirmation && security?.hasPassword ? (
           <AccountField
             help="Required to confirm this security change."
+            icon="key"
             label="Current password"
             light={light}
             onChangeText={(value) => update('currentPassword', value)}
@@ -327,34 +307,33 @@ export const NativeAccountSecurityScreen = ({
 
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: '#081012' },
-  rootLight: { backgroundColor: '#eef4f5' },
+  rootLight: { backgroundColor: '#f8fff9' },
   content: { width: '100%', maxWidth: 760, alignSelf: 'center', gap: 12, paddingHorizontal: 12 },
   header: { minHeight: 62, flexDirection: 'row', alignItems: 'center', gap: 11 },
   back: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: '#456265', borderRadius: 10, backgroundColor: '#171f20' },
-  backLight: { borderColor: '#aababc', backgroundColor: '#ffffff' },
-  backText: { color: '#ffffff', fontSize: 35, lineHeight: 35 },
+  backLight: { borderColor: '#9bb8b1', backgroundColor: '#f3faf5' },
   headerCopy: { flex: 1 },
-  eyebrow: { color: '#35a8ff', fontSize: 10, fontWeight: '900', letterSpacing: 1.2 },
   title: { color: '#f7fbfa', fontSize: 25, fontWeight: '900' },
   section: { gap: 12, padding: 14, borderWidth: 1, borderColor: '#315052', borderRadius: 10, backgroundColor: '#171c1d' },
-  sectionLight: { borderColor: '#b1c0c2', backgroundColor: '#ffffff' },
+  sectionLight: { borderColor: '#9bb8b1', backgroundColor: '#f3faf5' },
   sectionHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 },
   sectionEyebrow: { color: '#92c7cc', fontSize: 9, fontWeight: '900', letterSpacing: 1 },
   sectionTitle: { color: '#f7fbfa', fontSize: 21, fontWeight: '900' },
-  sectionIcon: { color: '#42d7c6', fontSize: 28 },
   sectionCopy: { color: '#9db5b4', fontSize: 13, lineHeight: 18 },
   field: { gap: 5 },
+  fieldLabelRow: { minHeight: 16, flexDirection: 'row', alignItems: 'center', gap: 5 },
   fieldLabel: { color: '#92c7cc', fontSize: 10, fontWeight: '900', letterSpacing: 0.5, textTransform: 'uppercase' },
   input: { minHeight: 48, paddingHorizontal: 12, borderWidth: 1, borderColor: '#456265', borderRadius: 8, backgroundColor: '#202728', color: '#f7fbfa', fontSize: 14, fontWeight: '700' },
-  inputLight: { borderColor: '#aababc', backgroundColor: '#f6f9f9' },
+  inputLight: { borderColor: '#9bb8b1', backgroundColor: '#f9fffa' },
   help: { color: '#9db5b4', fontSize: 11, lineHeight: 15 },
-  primary: { minHeight: 48, alignItems: 'center', justifyContent: 'center', borderRadius: 8, backgroundColor: '#42d7c6' },
+  primary: { minWidth: 170, minHeight: 44, alignSelf: 'flex-end', alignItems: 'center', justifyContent: 'center', paddingHorizontal: 18, borderRadius: 8, backgroundColor: '#42d7c6' },
   primaryText: { color: '#061617', fontSize: 14, fontWeight: '900' },
+  buttonLabel: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 7 },
   info: { padding: 11, borderLeftWidth: 3, borderLeftColor: '#42d7c6', borderRadius: 6, backgroundColor: '#102526' },
   infoLight: { backgroundColor: '#eaf8f6' },
   infoText: { color: '#f7fbfa', fontSize: 12, lineHeight: 17, fontWeight: '700' },
   provider: { minHeight: 66, flexDirection: 'row', alignItems: 'center', gap: 10, padding: 10, borderWidth: 1, borderColor: '#315052', borderRadius: 9, backgroundColor: '#202728' },
-  providerLight: { borderColor: '#bbc7c9', backgroundColor: '#f6f9f9' },
+  providerLight: { borderColor: '#9bb8b1', backgroundColor: '#e3efe8' },
   providerGlyph: { width: 42, height: 42, alignItems: 'center', justifyContent: 'center', borderRadius: 21 },
   providerGoogle: { backgroundColor: '#ffffff' },
   providerDiscord: { backgroundColor: '#5865f2' },
@@ -362,18 +341,15 @@ const styles = StyleSheet.create({
   providerCopy: { flex: 1, minWidth: 0 },
   providerTitle: { color: '#f7fbfa', fontSize: 14, fontWeight: '900' },
   compactAction: { minHeight: 44, minWidth: 88, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 10, borderWidth: 1, borderColor: '#587174', borderRadius: 8, backgroundColor: '#171f20' },
-  compactActionLight: { borderColor: '#9dadaf', backgroundColor: '#ffffff' },
+  compactActionLight: { borderColor: '#9bb8b1', backgroundColor: '#f3faf5' },
   compactActionText: { color: '#f7fbfa', fontSize: 12, fontWeight: '900' },
   sessionSummary: { minHeight: 66, flexDirection: 'row', alignItems: 'center', gap: 12, padding: 10, borderWidth: 1, borderColor: '#315052', borderRadius: 9, backgroundColor: '#202728' },
-  sessionCount: { minWidth: 42, color: '#42d7c6', fontSize: 30, fontWeight: '900', textAlign: 'center' },
-  actionRow: { flexDirection: 'row', gap: 9 },
-  secondary: { flex: 1, minHeight: 48, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: '#536467', borderRadius: 8, backgroundColor: '#202728' },
-  secondaryLight: { borderColor: '#a5b3b5', backgroundColor: '#f6f9f9' },
+  secondary: { minHeight: 48, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: '#536467', borderRadius: 8, backgroundColor: '#202728' },
+  secondaryLight: { borderColor: '#9bb8b1', backgroundColor: '#e3efe8' },
   secondaryText: { color: '#ffffff', fontSize: 13, fontWeight: '900' },
   dangerSection: { borderColor: '#81414b', backgroundColor: '#23171a' },
   dangerSectionLight: { borderColor: '#d7939d', backgroundColor: '#fff7f8' },
   dangerEyebrow: { color: '#ef6a7e', fontSize: 9, fontWeight: '900', letterSpacing: 1 },
-  dangerIcon: { color: '#ef6a7e', fontSize: 32 },
   dangerButton: { minHeight: 48, alignItems: 'center', justifyContent: 'center', borderRadius: 8, backgroundColor: '#cf4057' },
   dangerButtonText: { color: '#ffffff', fontSize: 14, fontWeight: '900' },
   feedback: { minHeight: 48, flexDirection: 'row', alignItems: 'center', gap: 8, paddingLeft: 12, borderWidth: 1, borderRadius: 10 },
@@ -387,8 +363,8 @@ const styles = StyleSheet.create({
   retryText: { color: '#ffffff', fontWeight: '900' },
   status: { minHeight: 100, alignItems: 'center', justifyContent: 'center', gap: 8 },
   statusText: { color: '#9db5b4', fontWeight: '800' },
-  textLight: { color: '#172124' },
-  labelLight: { color: '#49666b' },
-  mutedLight: { color: '#5e6c6f' },
+  textLight: { color: '#2f4744' },
+  labelLight: { color: '#28636a' },
+  mutedLight: { color: '#4b625e' },
   disabled: { opacity: 0.5 },
 });

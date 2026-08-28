@@ -21,32 +21,26 @@ tags:
     visible: LOGIN IDENTITY
     timeout: 45000
 - assertVisible: Account details
+- takeScreenshot: native-account-security-initial
 - tapOn: Username
 - eraseText: 20
 - inputText: TrainerTwo
 - hideKeyboard
-- assertVisible: Save username
-- tapOn: Save username
-- assertVisible: Username saved.
-- tapOn: Dismiss message
 - tapOn: Current password
 - inputText: Valid_password_42!
 - hideKeyboard
 - scrollUntilVisible:
     element:
-      text: Send verification email
+      text: Email
     direction: DOWN
     timeout: 10000
-- tapOn: Email address
+- tapOn: Email
 - eraseText: 40
 - inputText: trainer.updated@example.com
 - hideKeyboard
-- tapOn: Send verification email
-- assertVisible: Verification email sent.
-- tapOn: Dismiss message
 - scrollUntilVisible:
     element:
-      text: Update password
+      text: New password
     direction: DOWN
     timeout: 10000
 - tapOn: New password
@@ -59,8 +53,8 @@ tags:
 - tapOn: Confirm new password
 - inputText: Stronger_password_43!
 - hideKeyboard
-- tapOn: Update password
-- assertVisible: Password change validated.
+- tapOn: Update account
+- assertVisible: Account updated.
 - tapOn: Dismiss message
 - scrollUntilVisible:
     element:
@@ -102,6 +96,7 @@ tags:
     element:
       id: native-account-delete-button
     direction: DOWN
+    centerElement: true
     timeout: 20000
 - tapOn:
     id: native-account-delete-button

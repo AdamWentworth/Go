@@ -62,6 +62,22 @@ describe('native trainer profile editor model', () => {
     });
   });
 
+  it('does not treat presentation spacing in the session trainer code as an identity change', () => {
+    const draft = createNativeTrainerProfileDraft(profile);
+    const formattedSession = {
+      ...sessionUser,
+      trainerCode: '1234 5678 9012',
+    };
+    draft.trainerLevel = '49';
+
+    expect(buildNativeTrainerProfileSavePlan(draft, formattedSession)).toEqual(
+      expect.objectContaining({
+        authUpdate: null,
+        profileUpdate: expect.objectContaining({ trainer_level: 49 }),
+      }),
+    );
+  });
+
   it('normalizes identity values and explicitly clears them in auth', () => {
     const draft = createNativeTrainerProfileDraft(profile);
     draft.pokemonGoName = '';

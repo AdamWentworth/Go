@@ -8,15 +8,15 @@ import {
   Text,
   TextInput,
   View,
-  useColorScheme,
 } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type {
   NativeRankingCategory,
   NativeRankingCollectionFilter,
   NativeRankingMode,
   NativeRankingRow,
 } from '../features/tools/nativeRankingsModel';
+import { NativeUiIcon } from '../components/NativeUiIcon';
+import { useNativeColorScheme } from '../features/settings/useNativeColorScheme';
 
 type Props = {
   assetBaseUrl: string;
@@ -24,6 +24,7 @@ type Props = {
   collectorCount: number;
   error?: string | null;
   hasSnapshot?: boolean;
+  initialQuery?: string;
   isLoading?: boolean;
   isRefreshing?: boolean;
   onBack: () => void;
@@ -127,9 +128,10 @@ export const NativeRankingsScreen = ({
   collectorCount,
   error = null,
   hasSnapshot = true,
+  initialQuery = '',
   isLoading = false,
   isRefreshing = false,
-  onBack,
+  onBack: _onBack,
   onChangeCategory,
   onChangeCollectionFilter,
   onChangeMode,
@@ -144,9 +146,8 @@ export const NativeRankingsScreen = ({
   showCollectionFilters,
   snapshotLabel,
 }: Props) => {
-  const light = useColorScheme() === 'light';
-  const insets = useSafeAreaInsets();
-  const [query, setQuery] = useState('');
+  const light = useNativeColorScheme() === 'light';
+  const [query, setQuery] = useState(initialQuery);
   const [methodOpen, setMethodOpen] = useState(false);
   const maximum = useMemo(
     () => Math.max(1, ...rows.map((row) => selectedMode === 'wanted' ? row.wantedUsers ?? 0 : row.caughtUsers)),
@@ -180,16 +181,13 @@ export const NativeRankingsScreen = ({
   const header = (
     <View>
       <View style={styles.productHeader}>
-        <Pressable accessibilityLabel="Go back" accessibilityRole="button" onPress={onBack} style={[styles.back, light && styles.controlLight]}>
-          <Text style={[styles.backText, light && styles.textLight]}>‹</Text>
-        </Pressable>
         <Image accessibilityElementsHidden resizeMode="contain" source={{ uri: absoluteUri(assetBaseUrl, '/images/btn_rankings.png') }} style={styles.productIcon} />
         <View style={styles.headerCopy}>
           <Text style={[styles.eyebrow, light && styles.accentLight]}>TRAINER COLLECTIONS</Text>
           <Text accessibilityRole="header" style={[styles.title, light && styles.textLight]}>Community Rankings</Text>
         </View>
         <View style={[styles.population, light && styles.populationLight]}>
-          <Text style={[styles.populationIcon, light && styles.accentLight]}>♟</Text>
+          <NativeUiIcon color={light ? '#08766b' : '#42d7c4'} name="trainers" size={19} />
           <View><Text style={[styles.populationValue, light && styles.textLight]}>{collectorCount.toLocaleString()}</Text><Text style={[styles.populationLabel, light && styles.mutedLight]}>TRAINERS</Text></View>
         </View>
       </View>
@@ -197,12 +195,12 @@ export const NativeRankingsScreen = ({
       <View accessibilityRole="tablist" style={[styles.segment, light && styles.panelLight]}>
         {([['wanted', '♥︎', 'Most wanted'], ['rarest', '◆', 'Rarest owned']] as const).map(([value, icon, label]) => {
           const selected = selectedMode === value;
-          return <Pressable accessibilityRole="tab" accessibilityState={{ selected }} key={value} onPress={() => onChangeMode(value)} style={[styles.segmentButton, selected && styles.segmentActive]}><Text style={[styles.segmentIcon, light && styles.textLight, selected && styles.segmentTextActive]}>{icon}</Text><Text style={[styles.segmentText, light && styles.textLight, selected && styles.segmentTextActive]}>{label}</Text></Pressable>;
+          return <Pressable aria-selected={selected} accessibilityRole="tab" accessibilityState={{ selected }} key={value} onPress={() => onChangeMode(value)} style={[styles.segmentButton, selected && styles.segmentActive]}><Text style={[styles.segmentIcon, light && styles.textLight, selected && styles.segmentTextActive]}>{icon}</Text><Text style={[styles.segmentText, light && styles.textLight, selected && styles.segmentTextActive]}>{label}</Text></Pressable>;
         })}
       </View>
 
       <View style={[styles.search, light && styles.inputLight]}>
-        <Text style={[styles.searchIcon, light && styles.accentLight]}>⌕</Text>
+        <NativeUiIcon color={light ? '#08766b' : '#42d7c4'} name="search" size={18} />
         <TextInput accessibilityLabel="Search rankings" autoCapitalize="none" onChangeText={setSearch} placeholder="Pokémon, number, or form" placeholderTextColor={light ? '#697c7c' : '#7f9395'} style={[styles.searchInput, light && styles.textLight]} value={query} />
         {query ? <Pressable accessibilityLabel="Clear ranking search" accessibilityRole="button" onPress={() => setSearch('')} style={styles.clearSearch}><Text style={[styles.clearSearchText, light && styles.mutedLight]}>×</Text></Pressable> : null}
       </View>
@@ -239,7 +237,7 @@ export const NativeRankingsScreen = ({
 
   const footer = hasSnapshot ? <View><View style={styles.snapshotFooter}><Text style={[styles.snapshotText, light && styles.mutedLight]}>{snapshotLabel}</Text><Pressable accessibilityLabel="Refresh community rankings" accessibilityRole="button" disabled={isRefreshing} onPress={onRetry} style={[styles.refresh, light && styles.controlLight, isRefreshing && styles.disabled]}>{isRefreshing ? <ActivityIndicator color={light ? '#08766b' : '#42d7c4'} size="small" /> : <Text style={[styles.refreshText, light && styles.accentLight]}>↻</Text>}</Pressable></View><View style={[styles.method, light && styles.panelLight]}><Pressable accessibilityRole="button" accessibilityState={{ expanded: methodOpen }} onPress={() => setMethodOpen((value) => !value)} style={styles.methodSummary}><Text style={[styles.methodInfo, light && styles.accentLight]}>ⓘ</Text><Text style={[styles.methodTitle, light && styles.textLight]}>How these rankings work</Text><Text style={[styles.methodChevron, light && styles.mutedLight]}>{methodOpen ? '⌃' : '⌄'}</Text></Pressable>{methodOpen ? <View style={[styles.methodBody, light && styles.methodBodyLight]}><Text style={[styles.methodCopy, light && styles.mutedLight]}><Text style={[styles.methodStrong, light && styles.textLight]}>Most wanted</Text> counts distinct trainer wishlists. Duplicate wanted copies do not add votes.</Text><Text style={[styles.methodCopy, light && styles.mutedLight]}><Text style={[styles.methodStrong, light && styles.textLight]}>Rarest owned</Text> counts trainers with a caught copy or Pokédex registration. Duplicate copies count once.</Text><Text style={[styles.methodCopy, light && styles.mutedLight]}>Ordinary evolution families are collapsed in rarity results, while collectible costumes remain separate. Small totals may be withheld to protect trainer privacy.</Text></View> : null}</View></View> : null;
 
-  return <View style={[styles.root, light && styles.rootLight]} testID="native-rankings-screen"><FlatList contentContainerStyle={{ paddingBottom: insets.bottom + 92, paddingHorizontal: 8, paddingTop: insets.top + 6 }} data={hasSnapshot ? rows : []} keyExtractor={(row) => row.entry.id} ListEmptyComponent={!isLoading && hasSnapshot ? <View style={[styles.empty, light && styles.panelLight]}><Text style={[styles.emptyIcon, light && styles.accentLight]}>⌕</Text><Text style={[styles.emptyTitle, light && styles.textLight]}>{empty.title}</Text><Text style={[styles.stateCopy, light && styles.mutedLight]}>{empty.body}</Text>{empty.action ? <Pressable accessibilityRole="button" onPress={clearEmptyState} style={styles.emptyAction}><Text style={styles.emptyActionText}>{empty.action}</Text></Pressable> : null}</View> : null} ListFooterComponent={footer} ListHeaderComponent={header} renderItem={({ index, item }) => {
+  return <View style={[styles.root, light && styles.rootLight]} testID="native-rankings-screen"><FlatList contentContainerStyle={{ paddingBottom: 92, paddingHorizontal: 8, paddingTop: 6 }} data={hasSnapshot ? rows : []} keyExtractor={(row) => row.entry.id} ListEmptyComponent={!isLoading && hasSnapshot ? <View style={[styles.empty, light && styles.panelLight]}><NativeUiIcon color={light ? '#08766b' : '#42d7c4'} name="search" size={28} /><Text style={[styles.emptyTitle, light && styles.textLight]}>{empty.title}</Text><Text style={[styles.stateCopy, light && styles.mutedLight]}>{empty.body}</Text>{empty.action ? <Pressable accessibilityRole="button" onPress={clearEmptyState} style={styles.emptyAction}><Text style={styles.emptyActionText}>{empty.action}</Text></Pressable> : null}</View> : null} ListFooterComponent={footer} ListHeaderComponent={header} renderItem={({ index, item }) => {
     const count = selectedMode === 'wanted' ? item.wantedUsers : item.caughtUsers;
     const progress = Math.max(0.04, Number(count ?? 0) / maximum);
     const countLabel = count == null ? selectedMode === 'wanted' ? `Fewer than ${privacyThreshold} trainers want this` : `Owned by fewer than ${privacyThreshold} trainers` : selectedMode === 'wanted' ? count === 1 ? '1 trainer wants this' : `${count.toLocaleString()} trainers want this` : count === 1 ? 'Owned by 1 trainer' : `Owned by ${count.toLocaleString()} trainers`;

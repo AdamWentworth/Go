@@ -1,0 +1,43 @@
+appId: host.exp.exponent
+name: Native global route chrome smoke
+tags:
+  - android
+  - native-route-chrome
+---
+- openLink:
+    link: exp://10.0.2.2:8091/--/device-smoke/home
+- waitForAnimationToEnd
+- assertVisible: Open action menu
+- openLink:
+    link: exp://10.0.2.2:8091/--/device-smoke/friends
+- assertVisible: Open action menu
+- openLink:
+    link: exp://10.0.2.2:8091/--/device-smoke/profile
+- assertVisible: Open action menu
+- openLink:
+    link: exp://10.0.2.2:8091/--/device-smoke/search
+- assertVisible: Open action menu
+- openLink:
+    link: exp://10.0.2.2:8091/--/device-smoke/settings
+- assertVisible: Open action menu
+- openLink:
+    link: exp://10.0.2.2:8091/--/device-smoke/account
+- assertVisible: Open action menu
+- openLink:
+    link: exp://10.0.2.2:8091/--/device-smoke/tools?tool=pvp
+- assertVisible: Open action menu
+- openLink:
+    link: exp://10.0.2.2:8091/--/device-smoke/trade-preferences
+- assertVisible: Open action menu
+- openLink:
+    link: exp://10.0.2.2:8091/--/device-smoke/public?page=help
+- assertVisible: Open action menu
+- openLink:
+    link: exp://10.0.2.2:8091/--/device-smoke/public?page=trade-board
+- assertVisible: Open action menu
+- openLink:
+    link: exp://10.0.2.2:8091/--/device-smoke/public?page=privacy
+- assertNotVisible: Open action menu
+- openLink:
+    link: exp://10.0.2.2:8091/--/device-smoke/public?page=public-trade-board
+- assertNotVisible: Open action menu

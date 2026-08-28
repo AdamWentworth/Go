@@ -1,7 +1,7 @@
 import { Redirect, useRouter } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { useNativeSession } from '../../auth/NativeSessionContext';
-import { NativeActionMenu } from '../../components/NativeActionMenu';
+import { NativeRouteActionMenu } from '../../components/NativeRouteActionMenu';
 import { runtimeConfig } from '../../config/runtimeConfig';
 import {
   buildNativeCollectionRows,
@@ -9,14 +9,13 @@ import {
 import { useNativeCollectionSnapshotQuery } from '../../features/collection/collectionQueries';
 import { useNativeTrainerProfileQuery } from '../../features/social/socialQueries';
 import { buildNativeTradeBoardModel } from '../../features/tradeBoard/nativeTradeBoardModel';
-import { resolveNativeActionMenuDestination } from '../../navigation/nativeActionMenuNavigation';
 import { NativeTradeBoardScreen } from '../../screens/NativeTradeBoardScreen';
+import { NativeProtectedSessionGate } from '../../components/NativeProtectedSessionGate';
 
 export default function NativeTradeBoardRoute() {
   const router = useRouter();
   const session = useNativeSession();
   const [generatedAt] = useState(() => new Date().toISOString());
-  const [actionMenuOpen, setActionMenuOpen] = useState(false);
   const userId = session.user?.user_id ?? null;
   const snapshotQuery = useNativeCollectionSnapshotQuery(userId);
   const profileQuery = useNativeTrainerProfileQuery(userId);
@@ -38,21 +37,20 @@ export default function NativeTradeBoardRoute() {
     });
   }, [generatedAt, profileQuery.data?.user.pokemonGoName, rows, session.user, snapshotQuery.data]);
 
+  if (session.status === 'restoring' || session.status === 'unavailable') {
+    return (
+      <NativeProtectedSessionGate
+        message="Preparing your Trade Board…"
+        onRetry={session.retrySession}
+        status={session.status}
+      />
+    );
+  }
+
   if (session.status !== 'signed-in' || !session.user) {
     return <Redirect href="/native/login?returnTo=%2Fnative%2Ftrade-board" />;
   }
 
-  const navigateFromActionMenu = (path: string) => {
-    setActionMenuOpen(false);
-    if (path === '/trade-board') return;
-    const destination = resolveNativeActionMenuDestination(path);
-    if (destination.kind === 'native') {
-      router.push(destination.pathname);
-      return;
-    }
-    if (destination.kind === 'current') return;
-    router.push({ pathname: '/web', params: { path: destination.path } });
-  };
   const error = [snapshotQuery.error, profileQuery.error]
     .find((value): value is Error => value instanceof Error)?.message ?? null;
 
@@ -63,25 +61,21 @@ export default function NativeTradeBoardRoute() {
         error={error}
         isLoading={snapshotQuery.isPending || profileQuery.isPending}
         model={model}
-        onActionMenuPress={() => setActionMenuOpen(true)}
         onBack={() => {
           if (router.canGoBack()) router.back();
           else router.replace('/native/trades');
         }}
+        onOpenLiveBoard={() => router.push({
+          pathname: '/native/trade-board/[username]',
+          params: { username: session.user?.username ?? '' },
+        })}
         onOpenCollection={() => router.push('/native/collection')}
         onRetry={() => {
           void snapshotQuery.refetch();
           void profileQuery.refetch();
         }}
       />
-      {actionMenuOpen ? (
-        <NativeActionMenu
-          assetBaseUrl={runtimeConfig.api.frontendAppUrl}
-          onClose={() => setActionMenuOpen(false)}
-          onNavigate={navigateFromActionMenu}
-          visible
-        />
-      ) : null}
+      <NativeRouteActionMenu currentPath="/trade-board" signedIn />
     </>
   );
 }

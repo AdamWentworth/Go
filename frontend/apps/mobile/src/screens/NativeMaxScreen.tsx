@@ -9,11 +9,10 @@ import {
   Text,
   TextInput,
   View,
-  useColorScheme,
 } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { PokemonInstance } from '@pokemongonexus/shared-contracts/instances';
 import type { BasePokemon } from '@pokemongonexus/shared-contracts/pokemon';
+import type { MaxBattleTier } from '@pokemongonexus/app-core/max-battle-simulation';
 import { NativeCombatRankingCard } from '../components/NativeCombatRankingCard';
 import { NativeMaxBattleSimulator } from '../components/tools/NativeMaxBattleSimulator';
 import {
@@ -24,12 +23,21 @@ import {
   type NativeMaxRole,
   type NativeRosterScope,
 } from '../features/tools/nativeBattleModels';
+import { useNativeColorScheme } from '../features/settings/useNativeColorScheme';
+import { NativeUiIcon } from '../components/NativeUiIcon';
 
 type Props = {
   assetBaseUrl: string;
   catalog: BasePokemon[];
   error?: string | null;
   instances?: Record<string, PokemonInstance>;
+  initialBossId?: string;
+  initialDifficulty?: MaxBattleTier | null;
+  initialRole?: NativeMaxRole;
+  initialScope?: NativeRosterScope;
+  initialSelectedType?: string;
+  initialTrainerCount?: number | null;
+  initialView?: MaxView;
   isLoading?: boolean;
   onBack: () => void;
   onOpenPokemon: (variantId: string) => void;
@@ -65,20 +73,28 @@ export const NativeMaxScreen = ({
   catalog,
   error = null,
   instances = {},
+  initialBossId = '',
+  initialDifficulty = null,
+  initialRole = 'damage',
+  initialScope,
+  initialSelectedType = '',
+  initialTrainerCount = null,
+  initialView = 'rankings',
   isLoading = false,
-  onBack,
+  onBack: _onBack,
   onOpenPokemon,
   onRetry,
   signedIn,
 }: Props) => {
-  const light = useColorScheme() === 'light';
-  const insets = useSafeAreaInsets();
-  const [view, setView] = useState<MaxView>('rankings');
-  const [scope, setScope] = useState<NativeRosterScope>(signedIn ? 'owned' : 'catalog');
-  const [role, setRole] = useState<NativeMaxRole>('damage');
-  const [selectedType, setSelectedType] = useState('');
+  const light = useNativeColorScheme() === 'light';
+  const [view, setView] = useState<MaxView>(initialView);
+  const [scope, setScope] = useState<NativeRosterScope>(
+    signedIn ? initialScope ?? 'owned' : 'catalog',
+  );
+  const [role, setRole] = useState<NativeMaxRole>(initialRole);
+  const [selectedType, setSelectedType] = useState(initialSelectedType);
   const [query, setQuery] = useState('');
-  const [bossId, setBossId] = useState('');
+  const [bossId, setBossId] = useState(initialBossId);
   const [methodOpen, setMethodOpen] = useState(false);
 
   const maxCatalog = useMemo(
@@ -128,18 +144,10 @@ export const NativeMaxScreen = ({
 
   const productHeader = (
     <View style={styles.productHeader}>
-      <Pressable
-        accessibilityLabel="Go back"
-        accessibilityRole="button"
-        onPress={onBack}
-        style={[styles.back, light && styles.controlLight]}
-      >
-        <Text style={[styles.backText, light && styles.textLight]}>‹</Text>
-      </Pressable>
       <Image
         accessibilityElementsHidden
         resizeMode="contain"
-        source={{ uri: absoluteUri(assetBaseUrl, '/images/btn_max.png') ?? absoluteUri(assetBaseUrl, '/images/dynamax.png') }}
+        source={{ uri: absoluteUri(assetBaseUrl, '/images/dynamax.png') }}
         style={styles.productIcon}
       />
       <View style={styles.headerCopy}>
@@ -152,15 +160,16 @@ export const NativeMaxScreen = ({
 
   const viewTabs = (
     <View accessibilityRole="tablist" style={[styles.viewTabs, light && styles.panelLight]}>
-      {([['rankings', '▥', 'Max rankings'], ['bosses', '◉', 'Boss teams']] as const).map(([value, icon, label]) => (
+      {([['rankings', 'Max rankings'], ['bosses', 'Boss teams']] as const).map(([value, label]) => (
         <Pressable
+          aria-selected={view === value}
           accessibilityRole="tab"
           accessibilityState={{ selected: view === value }}
           key={value}
           onPress={() => switchView(value)}
           style={[styles.viewButton, view === value && styles.viewActive]}
         >
-          <Text style={[styles.viewIcon, light && styles.textLight, view === value && styles.activeText]}>{icon}</Text>
+          <NativeUiIcon color={view === value ? '#06120f' : light ? '#172124' : '#ecf5f4'} name={value === 'rankings' ? 'chart' : 'target'} size={14} />
           <Text style={[styles.viewText, light && styles.textLight, view === value && styles.activeText]}>{label}</Text>
         </Pressable>
       ))}
@@ -169,7 +178,7 @@ export const NativeMaxScreen = ({
 
   const roster = (
     <View accessibilityLabel="Max Battle roster" style={[styles.roster, light && styles.panelLight]}>
-      {([['catalog', '▣  ALL POKÉMON'], ['owned', `♟  MY POKÉMON${effectiveScope === 'owned' ? `   ${ownedCount}` : ''}`]] as const).map(([value, label]) => (
+      {([['catalog', 'ALL POKÉMON'], ['owned', `MY POKÉMON${effectiveScope === 'owned' ? `   ${ownedCount}` : ''}`]] as const).map(([value, label]) => (
         <Pressable
           accessibilityRole="button"
           accessibilityState={{ disabled: value === 'owned' && !signedIn, selected: effectiveScope === value }}
@@ -183,7 +192,10 @@ export const NativeMaxScreen = ({
             value === 'owned' && !signedIn && styles.disabled,
           ]}
         >
-          <Text style={[styles.rosterText, light && styles.textLight, effectiveScope === value && styles.activeText]}>{label}</Text>
+          <View style={styles.iconLabelRow}>
+            <NativeUiIcon color={effectiveScope === value ? '#071410' : light ? '#172124' : '#edf6f5'} name={value === 'catalog' ? 'catalog' : 'trainers'} size={14} />
+            <Text style={[styles.rosterText, light && styles.textLight, effectiveScope === value && styles.activeText]}>{label}</Text>
+          </View>
         </Pressable>
       ))}
     </View>
@@ -191,7 +203,7 @@ export const NativeMaxScreen = ({
 
   const roleTabs = (
     <View accessibilityLabel="Max Battle role" style={styles.roleTabs}>
-      {([['damage', 'ϟ', 'Damage'], ['tank', '◆', 'Tank'], ['healing', '♥', 'Healing']] as const).map(([value, icon, label]) => (
+      {([['damage', 'bolt', 'Damage'], ['tank', 'diamond', 'Tank'], ['healing', 'heart', 'Healing']] as const).map(([value, icon, label]) => (
         <Pressable
           accessibilityRole="button"
           accessibilityState={{ selected: role === value }}
@@ -199,7 +211,11 @@ export const NativeMaxScreen = ({
           onPress={() => setRole(value)}
           style={[styles.roleButton, light && styles.controlLight, role === value && styles.roleActive]}
         >
-          <Text style={[styles.roleIcon, light && styles.textLight, role === value && styles.activeText]}>{icon}</Text>
+          <NativeUiIcon
+            color={role === value ? '#071110' : light ? '#102829' : '#edf5f4'}
+            name={icon}
+            size={13}
+          />
           <Text style={[styles.roleText, light && styles.textLight, role === value && styles.activeText]}>{label}</Text>
         </Pressable>
       ))}
@@ -311,7 +327,7 @@ export const NativeMaxScreen = ({
       {roster}
       {view === 'rankings'
         ? <>{roleTabs}{typeFilter}</>
-        : <>{bossPicker}{selectedBoss ? <NativeMaxBattleSimulator assetBaseUrl={assetBaseUrl} boss={selectedBoss} candidates={candidates} key={`${selectedBoss.variant_id}-${effectiveScope}`} rosterScope={effectiveScope} /> : null}{roleTabs}</>}
+        : <>{bossPicker}{selectedBoss ? <NativeMaxBattleSimulator assetBaseUrl={assetBaseUrl} boss={selectedBoss} candidates={candidates} initialDifficulty={initialDifficulty} initialTrainerCount={initialTrainerCount} key={`${selectedBoss.variant_id}-${effectiveScope}`} rosterScope={effectiveScope} /> : null}{roleTabs}</>}
       {resultsHeader}
     </View>
   );
@@ -335,7 +351,7 @@ export const NativeMaxScreen = ({
   return (
     <View style={[styles.root, light && styles.rootLight]} testID="native-max-screen">
       <FlatList
-        contentContainerStyle={{ paddingHorizontal: 7, paddingTop: insets.top + 3, paddingBottom: insets.bottom + 96 }}
+        contentContainerStyle={{ paddingHorizontal: 7, paddingTop: 3, paddingBottom: 96 }}
         data={rankings}
         keyExtractor={(entry) => entry.id}
         ListFooterComponent={footer}
@@ -362,7 +378,7 @@ export const NativeMaxScreen = ({
 
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: '#090d0d' },
-  rootLight: { backgroundColor: '#f0f7f6' },
+  rootLight: { backgroundColor: '#f8fff9' },
   textLight: { color: '#102829' },
   mutedLight: { color: '#617576' },
   panelLight: { borderColor: '#9fb8b8', backgroundColor: '#f8fcfb' },
@@ -389,12 +405,12 @@ const styles = StyleSheet.create({
   rosterButton: { flex: 1, minHeight: 40, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: '#435455', borderRadius: 999, backgroundColor: '#111919' },
   rosterActive: { borderColor: '#44d7ca', backgroundColor: '#44d7ca' },
   rosterText: { color: '#e7f1f0', fontSize: 10, fontWeight: '900' },
+  iconLabelRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6 },
   disabled: { opacity: .42 },
   roleTabs: { flexDirection: 'row', gap: 6 },
   roleButton: { flex: 1, minHeight: 44, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: '#334849', borderRadius: 6, backgroundColor: '#101819' },
   roleActive: { borderColor: '#de5a8a', backgroundColor: '#401629' },
   roleText: { color: '#edf5f4', fontSize: 10, fontWeight: '900' },
-  roleIcon: { marginRight: 5, color: '#edf5f4', fontSize: 10, fontWeight: '900' },
   typeDeck: { gap: 6, borderWidth: 1, borderColor: '#315253', borderRadius: 8, padding: 10, backgroundColor: '#0f1819' },
   fieldLabel: { color: '#69d9cf', fontSize: 8, fontWeight: '900', letterSpacing: .5 },
   allTypes: { minHeight: 38, alignItems: 'center', justifyContent: 'center', borderRadius: 6, backgroundColor: '#ddc064' },

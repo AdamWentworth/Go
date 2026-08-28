@@ -1,8 +1,14 @@
 import { fireEvent, render } from '@testing-library/react-native';
+import { StyleSheet } from 'react-native';
 import { NativeActionMenuAnchor } from '../../../src/components/NativeActionMenuAnchor';
 
 jest.mock('react-native-safe-area-context', () => ({
   useSafeAreaInsets: () => ({ top: 0, right: 0, bottom: 34, left: 0 }),
+}));
+
+jest.mock('react-native/Libraries/Utilities/useWindowDimensions', () => ({
+  __esModule: true,
+  default: () => ({ width: 412, height: 915, scale: 2.625, fontScale: 1 }),
 }));
 
 describe('NativeActionMenuAnchor', () => {
@@ -13,10 +19,14 @@ describe('NativeActionMenuAnchor', () => {
     );
 
     const anchor = getByLabelText('Open action menu');
-    expect(anchor.props.style).toEqual(expect.arrayContaining([
-      expect.objectContaining({ backgroundColor: 'transparent', borderRadius: 27 }),
-      { bottom: 34 },
-    ]));
+    expect(StyleSheet.flatten(anchor.props.style)).toMatchObject({
+      backgroundColor: 'transparent',
+      borderRadius: 25,
+      bottom: 34,
+      height: 50,
+      marginLeft: -25,
+      width: 50,
+    });
     fireEvent.press(anchor);
     expect(onPress).toHaveBeenCalledTimes(1);
   });

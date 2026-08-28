@@ -3,6 +3,7 @@ import {
   getNativeCommunityRankings,
   getNativeMaxData,
   getNativeMovesData,
+  getNativePokedexSpecies,
   getNativePvpData,
   getNativeRaidData,
   getNativeToolCatalog,
@@ -14,6 +15,7 @@ export const nativeToolQueryKeys = {
   raid: ['native', 'tools', 'raid'] as const,
   max: ['native', 'tools', 'max'] as const,
   moves: ['native', 'tools', 'moves'] as const,
+  pokedex: ['native', 'tools', 'pokedex'] as const,
   pvp: ['native', 'tools', 'pvp'] as const,
   rankings: ['native', 'tools', 'rankings'] as const,
 };
@@ -36,6 +38,11 @@ export const useNativeMaxDataQuery = () => {
 export const useNativeMovesDataQuery = () => {
   const { pokemon } = useNativeApiClients();
   return useQuery({ queryKey: nativeToolQueryKeys.moves, queryFn: () => getNativeMovesData(pokemon), staleTime: 24 * 60 * 60_000 });
+};
+
+export const useNativePokedexSpeciesQuery = () => {
+  const { pokemon } = useNativeApiClients();
+  return useQuery({ queryKey: nativeToolQueryKeys.pokedex, queryFn: () => getNativePokedexSpecies(pokemon), staleTime: 24 * 60 * 60_000 });
 };
 
 export const useNativePvpDataQuery = () => {

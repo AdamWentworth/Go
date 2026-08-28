@@ -59,14 +59,21 @@ export const resolveNativeDeepLink = (incoming: string): string => {
     return preserveQuery('/native/verify-email-change', query);
   }
   if (pathname === '/friends' || pathname === '/profile/friends') return '/native/friends';
-  if (pathname === '/account' || pathname === '/settings/account') return '/native/account';
+  if (pathname === '/account' || pathname === '/settings/account') {
+    return preserveQuery('/native/account', query);
+  }
   if (pathname === '/settings') return '/native/settings';
-  if (pathname === '/pokemon') return preserveQuery('/native/collection', query);
+  if (pathname === '/pokemon') {
+    const instanceId = new URLSearchParams(query).get('instanceId')?.trim();
+    return instanceId
+      ? `/native/collection/${canonicalSegment(instanceId)}`
+      : preserveQuery('/native/collection', query);
+  }
   if (pathname === '/profile') return '/native/profile';
   if (pathname === '/pokedex') return preserveQuery('/native/pokedex', query);
   if (pathname === '/raid') return '/native/raid';
   if (pathname === '/raid/methodology') return '/native/raid-methodology';
-  if (pathname === '/max') return '/native/max';
+  if (pathname === '/max') return preserveQuery('/native/max', query);
   if (pathname === '/pvp') return '/native/pvp';
   if (pathname === '/pvp/methodology') return '/native/pvp-methodology';
   if (pathname === '/rankings') return preserveQuery('/native/rankings', query);
@@ -81,6 +88,10 @@ export const resolveNativeDeepLink = (incoming: string): string => {
     return `/native/profile/${canonicalSegment(parts[1] ?? '')}`;
   }
   if (parts.length === 2 && parts[0] === 'pokemon') {
+    const instanceId = new URLSearchParams(query).get('instanceId')?.trim();
+    if (instanceId) {
+      return `/native/collection/trainer/${canonicalSegment(parts[1] ?? '')}/${canonicalSegment(instanceId)}`;
+    }
     return preserveQuery(
       `/native/collection/trainer/${canonicalSegment(parts[1] ?? '')}`,
       query,

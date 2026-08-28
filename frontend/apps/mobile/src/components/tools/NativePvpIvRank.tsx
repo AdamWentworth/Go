@@ -20,6 +20,7 @@ import {
   resolveNativePvpIvOptionForInstance,
   type NativePvpIvPokemonOption,
 } from "../../features/tools/nativePvpIvPokemon";
+import { NativeUiIcon } from "../NativeUiIcon";
 
 type IvField = "attack" | "defense" | "stamina";
 type Scope = "catalog" | "owned";
@@ -230,17 +231,17 @@ export const NativePvpIvRank = ({
 
       <View style={[styles.scope, light && styles.panelLight]}>
         <Pressable accessibilityRole="button" onPress={() => changeScope("catalog")} style={[styles.scopeButton, scope === "catalog" && styles.scopeActive]}>
-          <Text style={[styles.scopeText, light && styles.textLight, scope === "catalog" && styles.activeText]}>⚑ All Pokémon</Text>
+          <View style={styles.iconLabelRow}><NativeUiIcon color={scope === "catalog" ? '#071313' : light ? '#071d20' : '#f5ffff'} name="catalog" size={14} /><Text style={[styles.scopeText, light && styles.textLight, scope === "catalog" && styles.activeText]}>All Pokémon</Text></View>
         </Pressable>
         <Pressable accessibilityRole="button" disabled={!signedIn} onPress={() => changeScope("owned")} style={[styles.scopeButton, scope === "owned" && styles.scopeActive, !signedIn && styles.disabled]}>
-          <Text style={[styles.scopeText, light && styles.textLight, scope === "owned" && styles.activeText]}>♟ My Pokémon{signedIn ? `  ${owned.length}` : ""}</Text>
+          <View style={styles.iconLabelRow}><NativeUiIcon color={scope === "owned" ? '#071313' : light ? '#071d20' : '#f5ffff'} name="trainers" size={14} /><Text style={[styles.scopeText, light && styles.textLight, scope === "owned" && styles.activeText]}>My Pokémon{signedIn ? `  ${owned.length}` : ""}</Text></View>
         </Pressable>
       </View>
 
       <View style={[styles.controls, light && styles.panelLight]}>
         <Text style={[styles.searchLabel, light && styles.accentLight]}>{scope === "owned" ? "YOUR POKÉMON" : "POKÉMON OR POKÉDEX NUMBER"}</Text>
         <View style={[styles.searchBox, light && styles.inputLight]}>
-          <Text style={[styles.searchIcon, light && styles.mutedLight]}>⌕</Text>
+          <NativeUiIcon color={light ? '#4c7073' : '#9db6b8'} name="search" size={18} />
           <TextInput
             accessibilityLabel="Search IV Rank Pokémon"
             onChangeText={(value) => { setQuery(value); if (selectedOption) { setSelectedOptionId(null); setSelectedInstanceId(null); } }}
@@ -321,6 +322,7 @@ const styles = StyleSheet.create({
   leaguePillLight: { borderColor: "#7dbdb9", backgroundColor: "#f8ffff" },
   leagueText: { color: "#42d5c2", fontSize: 9, fontWeight: "900" },
   scope: { flexDirection: "row", gap: 5, borderWidth: 1, borderColor: "rgba(115,204,204,0.28)", borderRadius: 8, padding: 5, backgroundColor: "#101516" },
+  iconLabelRow: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6 },
   panelLight: { borderColor: "#b2d2d2", backgroundColor: "#fff" },
   scopeButton: { minWidth: 0, flex: 1, minHeight: 42, alignItems: "center", justifyContent: "center", borderRadius: 999 },
   scopeActive: { backgroundColor: "#42d5c2" }, scopeText: { color: "#f5ffff", fontSize: 11, fontWeight: "900" }, activeText: { color: "#071313" },

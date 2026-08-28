@@ -1,7 +1,8 @@
 import { Redirect, useLocalSearchParams } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { Modal } from 'react-native';
+import { Modal, Platform } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import type { BasePokemon } from '@pokemongonexus/shared-contracts/pokemon';
 import type { PokemonInstance } from '@pokemongonexus/shared-contracts/instances';
 import type {
@@ -20,7 +21,9 @@ import { NativeCollectionHubScreen } from '../../screens/NativeCollectionHubScre
 import { NativeInstanceDetailScreen } from '../../screens/NativeInstanceDetailScreen';
 
 const ASSET_BASE_URL = 'https://pokegonexus.com';
-const CATALOG_FIXTURE_URL = 'http://10.0.2.2:8092/pokemons.json';
+const CATALOG_FIXTURE_URL = Platform.OS === 'web'
+  ? 'http://127.0.0.1:8092/pokemons.json'
+  : 'http://10.0.2.2:8092/pokemons.json';
 
 const row = ({
   id,
@@ -81,7 +84,6 @@ const ROWS: NativeCollectionRow[] = [
     imagePath: '/images/shiny_gigantamax/shiny_gigantamax_6.png',
     status: 'trade',
     maxKind: 'gigantamax',
-    lucky: true,
     typeIconPaths: ['/images/types/fire.png', '/images/types/flying.png'],
   }),
   row({
@@ -455,11 +457,11 @@ export default function DeviceSmokeCollectionRoute() {
           animationType="slide"
           onRequestClose={() => setOpenedContext(null)}
           presentationStyle="fullScreen"
-          statusBarTranslucent
           visible
         >
           <GestureHandlerRootView style={{ flex: 1 }}>
-            <NativeInstanceDetailScreen
+            <SafeAreaView edges={['top', 'bottom']} style={{ flex: 1 }}>
+              <NativeInstanceDetailScreen
             assetBaseUrl={ASSET_BASE_URL}
             cachedAt={null}
             canEdit={!foreignMode}
@@ -473,17 +475,17 @@ export default function DeviceSmokeCollectionRoute() {
                   ? rowsWithStatus('wanted')
                   : [],
               traits: openedRow.name.includes('Shiny') ? ['Shiny'] : [],
-              stats: openedRow.status === 'caught'
+              stats: openedRow.status !== 'wanted'
                 ? [{ label: 'Level', value: '40' }]
                 : [],
-              ivs: openedRow.status === 'caught'
+              ivs: openedRow.status !== 'wanted'
                 ? [
                     { label: 'Attack', value: 15 },
                     { label: 'Defense', value: 12 },
                     { label: 'HP', value: 13 },
                   ]
                 : [],
-              moves: openedRow.status === 'caught'
+              moves: openedRow.status !== 'wanted'
                 ? openedRow.pokemonId === 376
                   ? [
                       { label: 'Fast move', value: 'Bullet Punch', typeName: 'Steel', typeIconUri: `${ASSET_BASE_URL}/images/types/steel.png`, raidPower: 9, pvpPower: 9 },
@@ -627,7 +629,8 @@ export default function DeviceSmokeCollectionRoute() {
             onToggleFavorite={() => undefined}
             saveError={null}
             saveNotice={null}
-            />
+              />
+            </SafeAreaView>
           </GestureHandlerRootView>
         </Modal>
       ) : null}

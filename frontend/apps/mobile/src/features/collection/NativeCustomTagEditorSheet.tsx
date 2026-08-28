@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import {
-  Alert,
   KeyboardAvoidingView,
   Modal,
   Platform,
@@ -10,7 +9,6 @@ import {
   Text,
   TextInput,
   View,
-  useColorScheme,
 } from 'react-native';
 import type {
   CreateCustomTagRequest,
@@ -18,6 +16,9 @@ import type {
   CustomTagParent,
   UpdateCustomTagRequest,
 } from '@pokemongonexus/shared-contracts/users';
+import { NativeConfirmationDialog } from '../../components/NativeConfirmationDialog';
+import { useNativeModalAnimation } from '../settings/useNativeMotion';
+import { useNativeColorScheme } from '../settings/useNativeColorScheme';
 
 const TAG_COLORS = [
   '#2563EB', '#0D9488', '#16A34A', '#CA8A04',
@@ -35,7 +36,7 @@ type Props = {
   onUpdate: (tagId: string, request: UpdateCustomTagRequest) => Promise<unknown>;
 };
 
-export const NativeCustomTagEditorSheet = ({
+const NativeCustomTagEditorForm = ({
   parent,
   tag = null,
   visible,
@@ -45,10 +46,13 @@ export const NativeCustomTagEditorSheet = ({
   onDelete,
   onUpdate,
 }: Props) => {
-  const light = useColorScheme() === 'light';
+  const light = useNativeColorScheme() === 'light';
+  const animationType = useNativeModalAnimation('slide');
   const [name, setName] = useState(tag?.name ?? '');
   const [color, setColor] = useState(tag?.color ?? (parent === 'wanted' ? '#E11D48' : '#2563EB'));
   const [error, setError] = useState<string | null>(null);
+  const [deleteConfirmationOpen, setDeleteConfirmationOpen] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
   const surface = light ? '#f7faf9' : '#252525';
   const text = light ? '#243b37' : '#f7fffc';
   const secondary = light ? '#50645f' : '#b7c3c0';
@@ -72,30 +76,29 @@ export const NativeCustomTagEditorSheet = ({
   };
 
   const confirmDelete = () => {
-    if (!tag || isSaving) return;
-    Alert.alert(
-      `Delete ${tag.name}?`,
-      'Pokémon will keep their collection status, but this custom tag will be removed from them.',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Delete',
-          style: 'destructive',
-          onPress: () => {
-            void onDelete(tag.tag_id)
-              .then(onClose)
-              .catch((caught: unknown) => setError(
-                caught instanceof Error ? caught.message : 'Could not delete this tag.',
-              ));
-          },
-        },
-      ],
-    );
+    if (!tag || isSaving || isDeleting) return;
+    setDeleteConfirmationOpen(true);
+  };
+
+  const deleteTag = async () => {
+    if (!tag || isSaving || isDeleting) return;
+    setIsDeleting(true);
+    setError(null);
+    try {
+      await onDelete(tag.tag_id);
+      setDeleteConfirmationOpen(false);
+      onClose();
+    } catch (caught) {
+      setDeleteConfirmationOpen(false);
+      setError(caught instanceof Error ? caught.message : 'Could not delete this tag.');
+    } finally {
+      setIsDeleting(false);
+    }
   };
 
   return (
     <Modal
-      animationType="slide"
+      animationType={animationType}
       onRequestClose={onClose}
       presentationStyle="overFullScreen"
       transparent
@@ -167,12 +170,12 @@ export const NativeCustomTagEditorSheet = ({
 
           <View style={[styles.footer, { borderTopColor: border }]}>
             {tag ? (
-              <Pressable accessibilityRole="button" disabled={isSaving} onPress={confirmDelete} style={styles.deleteButton}>
+              <Pressable accessibilityRole="button" disabled={isSaving || isDeleting} onPress={confirmDelete} style={styles.deleteButton}>
                 <Text style={styles.deleteText}>Delete</Text>
               </Pressable>
             ) : <View />}
             <Pressable accessibilityRole="button"
-              disabled={isSaving}
+              disabled={isSaving || isDeleting}
               onPress={() => void save()}
               style={[styles.saveButton, isSaving && styles.disabled]}
             >
@@ -183,7 +186,28 @@ export const NativeCustomTagEditorSheet = ({
           </View>
         </View>
       </KeyboardAvoidingView>
+      <NativeConfirmationDialog
+        body="Pokémon will keep their collection status, but this custom tag will be removed from them."
+        confirmLabel="Delete"
+        isPending={isDeleting}
+        onCancel={() => setDeleteConfirmationOpen(false)}
+        onConfirm={() => void deleteTag()}
+        title={`Delete ${tag?.name ?? 'tag'}?`}
+        tone="danger"
+        visible={deleteConfirmationOpen}
+      />
     </Modal>
+  );
+};
+
+export const NativeCustomTagEditorSheet = (props: Props) => {
+  if (!props.visible) return null;
+  return (
+    <NativeCustomTagEditorForm
+      {...props}
+      key={`${props.parent}:${props.tag?.tag_id ?? 'new'}`}
+      visible
+    />
   );
 };
 

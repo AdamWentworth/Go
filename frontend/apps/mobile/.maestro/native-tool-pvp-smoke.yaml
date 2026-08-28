@@ -110,8 +110,13 @@ name: Native PvP tool smoke
     when:
       visible: "SDK version:.*"
     commands:
+      # Expo Go can place its own unlabeled developer-tools close control over
+      # this tab. Target that control directly; a text selector can report a
+      # successful tap without dismissing the Expo-owned sheet.
       - tapOn:
           point: "90%,46%"
+      - waitForAnimationToEnd
+      - assertNotVisible: "SDK version:.*"
       - tapOn: "IV Rank"
 - assertVisible: "Find the strongest IV spread for this league"
 - tapOn: "Bulbasaur"

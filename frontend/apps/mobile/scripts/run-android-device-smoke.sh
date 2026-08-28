@@ -151,28 +151,30 @@ if curl --silent --fail --max-time 1 http://127.0.0.1:8091/status >/dev/null 2>&
   echo "Android smoke port 8091 is already in use; stop that Metro server and retry." >&2
   exit 1
 fi
-if curl --silent --fail --max-time 1 http://127.0.0.1:8092/pokemons.json >/dev/null 2>&1; then
-  echo "Android smoke fixture port 8092 is already in use; stop that server and retry." >&2
-  exit 1
-fi
-
 fixture_directory="$(cd ../../packages/app-core/tests/__helpers__/fixtures && pwd)"
-setsid python3 -m http.server 8092 \
-  --bind 127.0.0.1 \
-  --directory "${fixture_directory}" >"${artifact_dir}/fixture-server.log" 2>&1 &
-fixture_pid="$!"
-fixture_pgid="${fixture_pid}"
-for _attempt in $(seq 1 30); do
-  if curl --silent --fail --max-time 1 http://127.0.0.1:8092/pokemons.json >/dev/null 2>&1; then
-    break
-  fi
-  if ! kill -0 "${fixture_pid}" 2>/dev/null; then
-    echo "Catalog fixture server exited before the device smoke could start." >&2
-    cat "${artifact_dir}/fixture-server.log" >&2
-    exit 1
-  fi
-  sleep 0.2
-done
+if curl --silent --fail --max-time 1 http://127.0.0.1:8092/pokemons.json >/dev/null 2>&1; then
+  # A developer may already have the deterministic fixture server running for
+  # Expo Go. Reuse it when it exposes the expected catalog instead of forcing
+  # them to tear down a healthy preview merely to run native automation.
+  echo "Reusing catalog fixture server on port 8092."
+else
+  setsid python3 -m http.server 8092 \
+    --bind 127.0.0.1 \
+    --directory "${fixture_directory}" >"${artifact_dir}/fixture-server.log" 2>&1 &
+  fixture_pid="$!"
+  fixture_pgid="${fixture_pid}"
+  for _attempt in $(seq 1 30); do
+    if curl --silent --fail --max-time 1 http://127.0.0.1:8092/pokemons.json >/dev/null 2>&1; then
+      break
+    fi
+    if ! kill -0 "${fixture_pid}" 2>/dev/null; then
+      echo "Catalog fixture server exited before the device smoke could start." >&2
+      cat "${artifact_dir}/fixture-server.log" >&2
+      exit 1
+    fi
+    sleep 0.2
+  done
+fi
 if ! curl --silent --fail --max-time 1 http://127.0.0.1:8092/pokemons.json >/dev/null 2>&1; then
   echo "Catalog fixture server did not become ready." >&2
   cat "${artifact_dir}/fixture-server.log" >&2

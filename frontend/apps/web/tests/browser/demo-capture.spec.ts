@@ -13,6 +13,7 @@ type DemoInstance = Record<string, unknown> & {
 };
 
 const demoMediaDir = path.resolve(process.cwd(), '.artifacts/demo-media');
+const captureLightTheme = process.env.DEMO_CAPTURE_THEME === 'light';
 const captureDate = '2026-07-03T12:00:00.000Z';
 const demoUser = {
   user_id: 'demo-user-001',
@@ -352,18 +353,87 @@ async function installDemoRoutes(page: Page) {
     userInstances: { username: demoUser.username, instances: demoInstances },
     publicUser: { user: demoUser, instances: demoInstances },
     userOverview,
+    trainerProfile: {
+      user: {
+        ...demoUser,
+        app_joined_at: '2026-01-01T00:00:00.000Z',
+        bio: 'Collector, battler, and local trade coordinator.',
+        trainer_level: 50,
+        team: 'mystic',
+      },
+      trainer_titles: ['Lucky Trader', 'Kanto Collector'],
+      location: 'Vancouver, British Columbia, Canada',
+      trainer_code: demoUser.trainerCode,
+      stats: {
+        caught: 2255,
+        for_trade: 208,
+        wanted: 168,
+        favorites: 77,
+        registered: 846,
+      },
+      highlights: [charizard, gengarCaught, mewtwoCaught],
+      viewer: {
+        relationship: 'self',
+        can_view_profile: true,
+        can_view_collection: true,
+      },
+    },
+    friendsOverview: {
+      friends: [
+        {
+          user_id: 'partner-user-001',
+          username: 'HarbourMew',
+          pokemon_go_name: 'HarbourMewGO',
+        },
+      ],
+      incoming: [
+        {
+          user_id: 'partner-user-002',
+          username: 'GranvilleDex',
+          pokemon_go_name: 'GranvilleDexGO',
+        },
+      ],
+      outgoing: [],
+      blocked: [],
+    },
   });
+
+  for (const pattern of ['**/api/auth/account/security', '**/__e2e/auth/account/security']) {
+    await page.route(pattern, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          email: demoUser.email,
+          hasPassword: true,
+          providers: [
+            {
+              provider: 'google',
+              email: demoUser.email,
+              emailVerified: true,
+              linkedAt: '2026-07-01T00:00:00.000Z',
+            },
+            {
+              provider: 'discord',
+              email: demoUser.email,
+              emailVerified: true,
+              linkedAt: '2026-07-02T00:00:00.000Z',
+            },
+          ],
+          activeSessions: 2,
+        }),
+      });
+    });
+  }
 }
 
 async function seedDemoBrowserState(page: Page) {
-  await page.addInitScript(() => {
-    window.localStorage.clear();
-  });
   await page.goto('/login', { waitUntil: 'domcontentloaded' });
   await page.evaluate(
-    ({ user, instances, trades, relatedInstances }) =>
+    ({ user, instances, trades, relatedInstances, lightTheme }) =>
       new Promise<void>((resolve, reject) => {
         window.localStorage.clear();
+        window.localStorage.setItem('isLightMode', JSON.stringify(lightTheme));
         window.localStorage.setItem('user', JSON.stringify(user));
         window.localStorage.setItem(
           'location',
@@ -456,8 +526,15 @@ async function seedDemoBrowserState(page: Page) {
       instances: demoInstances,
       trades: demoTrades,
       relatedInstances: demoRelatedInstances,
+      lightTheme: captureLightTheme,
     },
   );
+}
+
+async function installPublicCaptureTheme(page: Page) {
+  await page.addInitScript((lightTheme) => {
+    window.localStorage.setItem('isLightMode', JSON.stringify(lightTheme));
+  }, captureLightTheme);
 }
 
 async function capture(page: Page, name: string, options: Parameters<Page['screenshot']>[0] = {}) {
@@ -474,7 +551,8 @@ async function capture(page: Page, name: string, options: Parameters<Page['scree
     }
   });
 
-  const screenshotPath = path.join(demoMediaDir, `${name}.png`);
+  const themedName = captureLightTheme ? `${name}-light` : name;
+  const screenshotPath = path.join(demoMediaDir, `${themedName}.png`);
   await page.screenshot({
     path: screenshotPath,
     fullPage: false,
@@ -483,8 +561,88 @@ async function capture(page: Page, name: string, options: Parameters<Page['scree
   });
 }
 
+async function chooseCapturePokemon(page: Page, name: string) {
+  await page.getByPlaceholder('Enter Pokemon name').fill(name);
+  const suggestion = page.getByRole('option', { name: new RegExp(name, 'i') }).first();
+  try {
+    await suggestion.waitFor({ state: 'visible', timeout: 1_000 });
+    await suggestion.click();
+  } catch {
+    // The Search control resolves an exact catalog name immediately once the
+    // catalog is warm, in which case no suggestion list remains to click.
+    await expect(page.locator('.selected-pokemon-preview__pokemon:visible').first()).toBeVisible({ timeout: 5_000 });
+  }
+}
+
 test.describe('demo media capture', () => {
   test.skip(process.env.DEMO_CAPTURE !== '1', 'Only run through npm run capture:demo');
+
+  test('captures canonical mobile public route references', async ({ page }, testInfo) => {
+    fs.mkdirSync(demoMediaDir, { recursive: true });
+    const diagnostics = attachBrowserDiagnostics(page, testInfo);
+    const routes = [
+      { path: '/getting-started', name: 'getting-started-mobile', heading: 'Your first useful trade, step by step.' },
+      { path: '/faq', name: 'faq-mobile', heading: 'Frequently asked questions' },
+      { path: '/help', name: 'help-mobile', heading: 'Help & information' },
+      { path: '/about', name: 'about-mobile', heading: 'About Pokémon Go Nexus' },
+      { path: '/safety', name: 'safety-mobile', heading: 'Trade Safety & Community Guidelines' },
+      { path: '/privacy', name: 'privacy-mobile', heading: 'Privacy Policy' },
+      { path: '/terms', name: 'terms-mobile', heading: 'Terms of Service' },
+      { path: '/data-deletion', name: 'data-deletion-mobile', heading: 'User Data Deletion' },
+    ] as const;
+
+    try {
+      await installDemoRoutes(page);
+      await installPublicCaptureTheme(page);
+      await page.setViewportSize({ width: 412, height: 915 });
+
+      await page.goto('/', { waitUntil: 'domcontentloaded' });
+      await expect(page.getByRole('heading', { name: 'Build your collection.' })).toBeVisible({
+        timeout: 20_000,
+      });
+      await expect(page.getByRole('heading', { name: 'Find the right trade.' })).toBeVisible();
+      await capture(page, 'home-guest-mobile');
+
+      for (const route of routes) {
+        await page.goto(route.path, { waitUntil: 'domcontentloaded' });
+        await expect(page.getByRole('heading', { name: route.heading }).first()).toBeVisible({
+          timeout: 20_000,
+        });
+        await capture(page, route.name);
+      }
+
+      await page.goto('/login', { waitUntil: 'domcontentloaded' });
+      await expect(page.getByRole('button', { name: 'Login', exact: true })).toBeVisible({
+        timeout: 20_000,
+      });
+      await capture(page, 'login-mobile');
+
+      await page.goto('/register', { waitUntil: 'domcontentloaded' });
+      await expect(page.getByRole('heading', { name: 'Create your account' })).toBeVisible({
+        timeout: 20_000,
+      });
+      await capture(page, 'registration-mobile');
+
+      await page.goto('/reset-password?token=demo-reset-token', { waitUntil: 'domcontentloaded' });
+      await expect(page.getByRole('heading', { name: 'Choose a new password' })).toBeVisible({
+        timeout: 20_000,
+      });
+      await capture(page, 'password-reset-mobile');
+
+      await page.goto('/missing-reference-route', { waitUntil: 'domcontentloaded' });
+      await expect(page.getByRole('heading', { name: 'That route wandered off.' })).toBeVisible({
+        timeout: 20_000,
+      });
+      await capture(page, 'not-found-mobile');
+    } finally {
+      await diagnostics.flush();
+    }
+
+    expect(
+      diagnostics.blockingErrors(),
+      'public route reference capture should not include runtime errors',
+    ).toEqual([]);
+  });
 
   test('captures canonical mobile collection references', async ({ page }, testInfo) => {
     fs.mkdirSync(demoMediaDir, { recursive: true });
@@ -557,7 +715,8 @@ test.describe('demo media capture', () => {
 
       await page.goto('/search', { waitUntil: 'domcontentloaded' });
       await page.getByRole('tab', { name: 'Pokémon' }).click();
-      await page.getByPlaceholder('Enter Pokemon name').fill('Pikachu');
+      await chooseCapturePokemon(page, 'Pikachu');
+      await page.getByRole('button', { name: 'For Trade', exact: true }).click();
       await page.getByRole('button', { name: /Location/ }).click();
       await page.getByPlaceholder('Search for a city').fill('Vancouver');
       await page.getByText('Vancouver, British Columbia, Canada').click();
@@ -588,6 +747,148 @@ test.describe('demo media capture', () => {
     expect(
       blockingErrors,
       `browser diagnostics should not include runtime errors:\n${JSON.stringify(blockingErrors, null, 2)}`,
+    ).toEqual([]);
+  });
+
+  test('captures canonical mobile trainer-tool references', async ({ page }, testInfo) => {
+    fs.mkdirSync(demoMediaDir, { recursive: true });
+    const diagnostics = attachBrowserDiagnostics(page, testInfo);
+
+    try {
+      await installDemoRoutes(page);
+      await seedDemoBrowserState(page);
+      await page.setViewportSize({ width: 412, height: 915 });
+
+      for (const [route, heading, filename] of [
+        ['/pokedex', 'Pokédex', 'pokedex-mobile'],
+        ['/raid', 'Raid Planner', 'raid-mobile'],
+        ['/max', 'Max Battles', 'max-mobile'],
+        ['/pvp', 'PvP Rankings', 'pvp-mobile'],
+        ['/rankings', 'Community Rankings', 'rankings-mobile'],
+      ] as const) {
+        await page.goto(route, { waitUntil: 'domcontentloaded' });
+        await expect(page.getByRole('heading', { name: heading }).first()).toBeVisible({
+          timeout: 30_000,
+        });
+        await expect(page.locator('.app-loading-overlay')).toHaveCount(0, { timeout: 30_000 });
+        await capture(page, filename);
+      }
+
+      await page.goto('/raid/methodology', { waitUntil: 'domcontentloaded' });
+      await expect(page.getByRole('heading', { name: 'How raid rankings work' })).toBeVisible({
+        timeout: 20_000,
+      });
+      await capture(page, 'raid-methodology-mobile');
+
+      await page.goto('/pvp/methodology', { waitUntil: 'domcontentloaded' });
+      await expect(page.getByRole('heading', { name: 'How PvP rankings work' })).toBeVisible({
+        timeout: 20_000,
+      });
+      await capture(page, 'pvp-methodology-mobile');
+    } finally {
+      await diagnostics.flush();
+    }
+
+    expect(
+      diagnostics.blockingErrors(),
+      'trainer-tool reference capture should not include runtime errors',
+    ).toEqual([]);
+  });
+
+  test('captures canonical mobile social, account, and trade references', async ({ page }, testInfo) => {
+    fs.mkdirSync(demoMediaDir, { recursive: true });
+    const diagnostics = attachBrowserDiagnostics(page, testInfo);
+
+    try {
+      await installDemoRoutes(page);
+      await seedDemoBrowserState(page);
+      await page.setViewportSize({ width: 412, height: 915 });
+
+      await page.goto('/', { waitUntil: 'domcontentloaded' });
+      await expect(page.getByRole('heading', { name: 'Welcome back, NexusDemo' })).toBeVisible({
+        timeout: 20_000,
+      });
+      await capture(page, 'home-authenticated-mobile');
+      await page.getByRole('button', { name: 'Action Menu', exact: true }).click();
+      await expect(page.getByRole('dialog', { name: 'Quick navigation' })).toBeVisible();
+      await capture(page, 'action-menu-mobile');
+      await page.getByRole('button', { name: 'Close' }).click();
+      await expect(page.getByRole('dialog', { name: 'Quick navigation' })).toHaveCount(0);
+
+      await page.goto('/search', { waitUntil: 'domcontentloaded' });
+      await page.getByRole('tab', { name: 'Pokémon' }).click();
+      await chooseCapturePokemon(page, 'Pikachu');
+      await page.getByRole('button', { name: 'For Trade', exact: true }).click();
+      await page.getByRole('button', { name: /Filters/ }).click();
+      await expect(page.getByRole('dialog', { name: 'Refine your search' })).toBeVisible();
+      await capture(page, 'search-filters-mobile');
+      await page.getByRole('tab', { name: 'Location' }).click();
+      await page.getByPlaceholder('Search for a city').fill('Vancouver');
+      await page.getByText('Vancouver, British Columbia, Canada').click();
+      await capture(page, 'search-filters-location-mobile');
+      await page.getByRole('button', { name: 'Close search filters' }).click();
+      await expect(page.getByRole('dialog', { name: 'Refine your search' })).toHaveCount(0);
+
+      // Re-enter through the established main Search path so this composite
+      // capture does not couple its result state to the two filter-sheet
+      // screenshots above. The Apply behavior has dedicated workflow coverage.
+      await page.goto('/search', { waitUntil: 'domcontentloaded' });
+      await page.getByRole('tab', { name: 'Pokémon' }).click();
+      await chooseCapturePokemon(page, 'Pikachu');
+      await page.getByRole('button', { name: 'For Trade', exact: true }).click();
+      await page.getByRole('button', { name: /Location/ }).click();
+      await page.getByPlaceholder('Search for a city').fill('Vancouver');
+      await page.getByText('Vancouver, British Columbia, Canada').click();
+      await page.getByRole('button', { name: 'Apply and search' }).click();
+      await expect(page.getByRole('dialog', { name: 'Refine your search' })).toHaveCount(0);
+      await expect(page.locator('.list-view-container')).toBeVisible({ timeout: 20_000 });
+      await expect(page.getByText('HarbourMew').first()).toBeVisible();
+      await capture(page, 'search-results-mobile');
+
+      await page.goto('/profile', { waitUntil: 'domcontentloaded' });
+      await expect(page.locator('.trainer-profile-card')).toBeVisible({ timeout: 20_000 });
+      await capture(page, 'trainer-profile-mobile');
+
+      await page.goto('/profile/friends', { waitUntil: 'domcontentloaded' });
+      await expect(page.getByRole('heading', { name: 'Friends', exact: true })).toBeVisible({
+        timeout: 20_000,
+      });
+      await expect(page.getByText('HarbourMew').first()).toBeVisible();
+      await capture(page, 'friends-mobile');
+
+      await page.goto('/settings', { waitUntil: 'domcontentloaded' });
+      await expect(page.getByRole('heading', { name: 'Settings' })).toBeVisible({ timeout: 20_000 });
+      await capture(page, 'trainer-settings-mobile');
+
+      await page.goto('/settings/account', { waitUntil: 'domcontentloaded' });
+      await expect(page.getByRole('heading', { name: 'Account details' })).toBeVisible({ timeout: 20_000 });
+      await expect(page.getByText('2 active sessions')).toBeVisible();
+      await capture(page, 'account-security-mobile');
+
+      await page.goto('/trades', { waitUntil: 'domcontentloaded' });
+      await expect(page.getByRole('heading', { name: 'Trade preferences' })).toBeVisible({ timeout: 20_000 });
+      await expect(page.getByText('Festival spare').first()).toBeVisible();
+      await capture(page, 'trade-preferences-mobile');
+      await page.getByRole('tab', { name: 'Trade Activity' }).click();
+      await expect(page.locator('.trade-activity-workspace')).toBeVisible({ timeout: 20_000 });
+      await capture(page, 'trade-activity-mobile');
+
+      await page.goto('/trade-board', { waitUntil: 'domcontentloaded' });
+      await expect(page.getByRole('heading', { name: 'Trade Board', exact: true })).toBeVisible({
+        timeout: 20_000,
+      });
+      await expect(page.getByText('Include on board', { exact: true })).toBeVisible({
+        timeout: 20_000,
+      });
+      await capture(page, 'trade-board-mobile');
+    } finally {
+      await diagnostics.flush();
+    }
+
+    const blockingErrors = diagnostics.blockingErrors();
+    expect(
+      blockingErrors,
+      `mobile reference capture should not include runtime errors:\n${JSON.stringify(blockingErrors, null, 2)}`,
     ).toEqual([]);
   });
 });

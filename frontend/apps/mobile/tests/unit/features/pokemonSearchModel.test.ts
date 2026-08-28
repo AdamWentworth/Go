@@ -49,7 +49,9 @@ describe('native Pokémon search model', () => {
         },
         {
           instance_id: 'match', pokemon_id: 25, username: 'Match', distance: 8,
-          shiny: true,
+          shiny: true, gender: 'Female', weight: 6, height: 0.4,
+          fast_move_id: 1, charged_move1_id: 2,
+          pokemonInfo: { moves: [{ move_id: 1, name: 'Thunder Shock' }, { move_id: 2, name: 'Wild Charge' }] },
           wanted_list: {
             wanted2: { instance_id: 'wanted2', pokemon_id: 6, is_wanted: true, match: true },
           },
@@ -60,6 +62,12 @@ describe('native Pokémon search model', () => {
     expect(results[0]).toEqual(expect.objectContaining({
       hasMutualMatch: true,
       row: expect.objectContaining({ name: 'Shiny Pikachu', imageUri: 'https://assets/shiny-Pikachu.png' }),
+      details: expect.objectContaining({
+        gender: 'Female',
+        weight: 6,
+        height: 0.4,
+        moves: ['Thunder Shock', 'Wild Charge'],
+      }),
       relatedRows: [expect.objectContaining({ name: 'Charizard', match: true })],
     }));
   });

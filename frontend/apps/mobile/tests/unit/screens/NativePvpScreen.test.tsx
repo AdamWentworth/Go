@@ -142,7 +142,7 @@ describe('NativePvpScreen', () => {
   it('runs a switch-aware three-on-three team battle locally', async () => {
     renderScreen();
     fireEvent.press(screen.getByText('Battle Lab'));
-    fireEvent.press(screen.getByText('♟ Team battle'));
+    fireEvent.press(screen.getByText('Team battle'));
     expect(screen.getByText('Switching')).toBeTruthy();
     expect(screen.getByText('Current 45-second battle clock')).toBeTruthy();
     expect(screen.getByLabelText('Edit your Lead: Bulbasaur')).toBeTruthy();

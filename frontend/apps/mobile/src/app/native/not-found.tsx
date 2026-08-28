@@ -85,7 +85,7 @@ export default function NativeNotFoundRoute() {
 
 const styles = StyleSheet.create({
   root: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 20, backgroundColor: '#06131d' },
-  rootLight: { backgroundColor: '#edf4f7' },
+  rootLight: { backgroundColor: '#f8fff9' },
   card: { width: '100%', maxWidth: 520, alignItems: 'center', gap: 12, borderWidth: 1, borderColor: '#314b58', borderRadius: 22, padding: 22, backgroundColor: '#121e25' },
   cardLight: { borderColor: '#b8c7ce', backgroundColor: '#fff' },
   logo: { width: '88%', height: 118 },

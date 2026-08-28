@@ -23,37 +23,68 @@ tags:
     timeout: 45000
 - assertVisible: Build your collection.
 - assertVisible: Find the right trade.
-- assertVisible: You each have what the other trainer wants
 - assertVisible: QUICK NAVIGATION
 - assertVisible: Tap the Poké Ball below to explore the app.
 - takeScreenshot: 01-guest-hero-and-hint
 - tapOn: Open action menu from tip
-- assertNotVisible: QUICK NAVIGATION
-- assertVisible: Navigate action-menu
+- assertVisible: Quick navigation
+- assertVisible: Register
+- assertVisible: Login
+- assertNotVisible: Share Trade Board
+- assertNotVisible: Profile
+- takeScreenshot: 01b-guest-action-menu
+- tapOn: Close
+- assertNotVisible: Quick navigation
 - scrollUntilVisible:
     element:
-      text: One clear trading workflow
+      text: You each have what the other trainer wants
     direction: DOWN
     visibilityPercentage: 50
     timeout: 10000
-- assertVisible: Exact collection
-- assertVisible: Reciprocal trading
+- scrollUntilVisible:
+    element:
+      text: Explore Pokémon Go Nexus
+    direction: DOWN
+    visibilityPercentage: 50
+    timeout: 10000
+- assertVisible: Pokémon collection
+- scrollUntilVisible:
+    element:
+      text: Search & discovery
+    direction: DOWN
+    visibilityPercentage: 50
+    timeout: 10000
+- scrollUntilVisible:
+    element:
+      text: Trades
+    direction: DOWN
+    visibilityPercentage: 50
+    timeout: 10000
+- scrollUntilVisible:
+    element:
+      text: The trade is the destination.*
+    direction: DOWN
+    visibilityPercentage: 20
+    timeout: 10000
 - scrollUntilVisible:
     element:
       text: Trainer tools
     direction: DOWN
-    timeout: 10000
+    visibilityPercentage: 40
+    timeout: 20000
 - scrollUntilVisible:
     element:
       text: Trade Board
     direction: DOWN
-    timeout: 10000
+    visibilityPercentage: 40
+    timeout: 20000
 - assertVisible: Trade Board
 - scrollUntilVisible:
     element:
       text: Quick start guide
     direction: DOWN
-    timeout: 10000
+    visibilityPercentage: 40
+    timeout: 20000
 - assertVisible: Bring your collection. Find the right trainer.
 - assertVisible: Quick start guide
 - takeScreenshot: 02-guest-features-and-footer

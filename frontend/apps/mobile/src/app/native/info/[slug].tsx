@@ -1,5 +1,6 @@
 import { Redirect, useLocalSearchParams, useRouter } from 'expo-router';
 import { useState } from 'react';
+import { useNativeSession } from '../../../auth/NativeSessionContext';
 import { NativeActionMenu } from '../../../components/NativeActionMenu';
 import { NativeActionMenuAnchor } from '../../../components/NativeActionMenuAnchor';
 import { runtimeConfig } from '../../../config/runtimeConfig';
@@ -10,17 +11,66 @@ import {
 import { resolveNativeActionMenuDestination } from '../../../navigation/nativeActionMenuNavigation';
 import { NativeInformationScreen } from '../../../screens/NativeInformationScreen';
 
+const LEGAL_INFORMATION_SLUGS = new Set(['privacy', 'terms', 'data-deletion']);
+
+export const nativeInformationShowsActionMenu = (slug: string): boolean => (
+  !LEGAL_INFORMATION_SLUGS.has(slug)
+);
+
+export const resolveNativeInformationContextLink = (path: string): {
+  pathname: '/native/collection' | '/native/trades';
+  params?: Record<string, string>;
+} | null => {
+  const [pathname = '/', query = ''] = path.split('?');
+  const searchParams = new URLSearchParams(query);
+  if (pathname === '/pokemon') {
+    const params = Object.fromEntries(
+      ['filter', 'search', 'tag']
+        .map((key) => [key, searchParams.get(key)?.trim() ?? ''] as const)
+        .filter(([, value]) => Boolean(value)),
+    );
+    return {
+      pathname: '/native/collection',
+      ...(Object.keys(params).length ? { params } : {}),
+    };
+  }
+  if (pathname === '/trades') {
+    const params = Object.fromEntries(
+      ['section', 'mode', 'instance']
+        .map((key) => [key, searchParams.get(key)?.trim() ?? ''] as const)
+        .filter(([, value]) => Boolean(value)),
+    );
+    return {
+      pathname: '/native/trades',
+      ...(Object.keys(params).length ? { params } : {}),
+    };
+  }
+  return null;
+};
+
 export default function NativeInformationRoute() {
   const router = useRouter();
+  const session = useNativeSession();
   const params = useLocalSearchParams<{ slug?: string | string[] }>();
   const [actionMenuOpen, setActionMenuOpen] = useState(false);
   const slug = Array.isArray(params.slug) ? params.slug[0] : params.slug;
   if (!slug || !isNativeInformationSlug(slug)) return <Redirect href="/native" />;
   const page = NATIVE_INFORMATION_PAGES[slug];
+  const showsActionMenu = nativeInformationShowsActionMenu(slug);
 
   const navigate = (path: string) => {
     setActionMenuOpen(false);
     const [pathname = '/'] = path.split('?');
+    const contextualDestination = resolveNativeInformationContextLink(path);
+    if (contextualDestination) {
+      router.push(contextualDestination.params
+        ? {
+            pathname: contextualDestination.pathname,
+            params: contextualDestination.params,
+          }
+        : contextualDestination.pathname);
+      return;
+    }
     if (pathname === '/') {
       router.push('/native');
       return;
@@ -54,12 +104,15 @@ export default function NativeInformationRoute() {
     <>
       <NativeInformationScreen
         assetBaseUrl={runtimeConfig.api.frontendAppUrl}
+        isLoggedIn={Boolean(session.user)}
         onBack={() => router.canGoBack() ? router.back() : router.replace('/native')}
         onNavigate={navigate}
         page={page}
       />
-      <NativeActionMenuAnchor assetBaseUrl={runtimeConfig.api.frontendAppUrl} onPress={() => setActionMenuOpen(true)} />
-      {actionMenuOpen ? (
+      {showsActionMenu ? (
+        <NativeActionMenuAnchor assetBaseUrl={runtimeConfig.api.frontendAppUrl} onPress={() => setActionMenuOpen(true)} />
+      ) : null}
+      {showsActionMenu && actionMenuOpen ? (
         <NativeActionMenu
           assetBaseUrl={runtimeConfig.api.frontendAppUrl}
           onClose={() => setActionMenuOpen(false)}

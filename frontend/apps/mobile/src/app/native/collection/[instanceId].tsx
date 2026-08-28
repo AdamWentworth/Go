@@ -14,6 +14,7 @@ import { useNativeFavoriteMutation } from '../../../features/collection/useNativ
 import { useNativeInstanceDetailMutation } from '../../../features/collection/useNativeInstanceDetailMutation';
 import { runtimeConfig } from '../../../config/runtimeConfig';
 import { NativeInstanceDetailScreen } from '../../../screens/NativeInstanceDetailScreen';
+import { NativeProtectedSessionGate } from '../../../components/NativeProtectedSessionGate';
 
 export default function NativeInstanceDetailRoute() {
   const router = useRouter();
@@ -55,6 +56,16 @@ export default function NativeInstanceDetailRoute() {
     pathname: '/native/collection/[instanceId]',
     params: { instanceId: nextInstanceId },
   });
+
+  if (session.status === 'restoring' || session.status === 'unavailable') {
+    return (
+      <NativeProtectedSessionGate
+        message="Opening Pokémon…"
+        onRetry={session.retrySession}
+        status={session.status}
+      />
+    );
+  }
 
   if (session.status !== 'signed-in' || !session.user) {
     return <Redirect href="/native" />;

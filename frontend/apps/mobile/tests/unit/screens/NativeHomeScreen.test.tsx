@@ -25,8 +25,10 @@ const baseProps = {
   incomingFriends: 0,
   isLoading: false,
   onDismissActionMenuHint: jest.fn(),
+  onDismissOnboarding: jest.fn(),
   onNavigate: jest.fn(),
   onRetry: jest.fn(),
+  onboardingProgress: null as import('../../../src/features/home/nativeHomeDashboardModel').NativeHomeOnboardingProgress | null,
   pokemonGoName: 'MistyGO',
   recentRows: [],
   showActionMenuHint: true,
@@ -76,5 +78,32 @@ describe('NativeHomeScreen', () => {
     expect(screen.getByText('Service unavailable')).toBeTruthy();
     fireEvent.press(screen.getByRole('button', { name: 'Retry' }));
     expect(onRetry).toHaveBeenCalledTimes(1);
+  });
+
+  it('replaces the dashboard with the canonical milestone onboarding until dismissed', () => {
+    const onDismissOnboarding = jest.fn();
+    const onNavigate = jest.fn();
+    renderHome({
+      ...baseProps,
+      onDismissOnboarding,
+      onNavigate,
+      onboardingProgress: {
+        completed: 1,
+        total: 4,
+        tasks: [
+          { id: 'collection', title: 'Add your first Pokémon', description: 'Begin.', action: 'Open Pokémon', to: '/pokemon', complete: true },
+          { id: 'wanted', title: 'Create a Wanted listing', description: 'Choose details.', action: 'Open wishlist', to: '/pokemon?filter=wanted', complete: false },
+          { id: 'trade', title: 'List a Pokémon For Trade', description: 'Choose an offer.', action: 'Open collection', to: '/pokemon?filter=trade', complete: false },
+          { id: 'connect', title: 'Make your first connection', description: 'Find trainers.', action: 'Find trainers', to: '/search', complete: false },
+        ],
+      },
+    });
+
+    expect(screen.getByText('Let’s make your account useful.')).toBeTruthy();
+    expect(screen.queryByText('You’re all caught up')).toBeNull();
+    fireEvent.press(screen.getByRole('button', { name: 'Open wishlist' }));
+    fireEvent.press(screen.getByRole('button', { name: 'Open trainer dashboard' }));
+    expect(onNavigate).toHaveBeenCalledWith('/pokemon?filter=wanted');
+    expect(onDismissOnboarding).toHaveBeenCalledTimes(1);
   });
 });

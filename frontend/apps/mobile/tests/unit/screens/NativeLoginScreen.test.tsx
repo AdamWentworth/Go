@@ -8,7 +8,6 @@ describe('NativeLoginScreen', () => {
       <NativeLoginScreen
         notice="Password updated. Sign in again on this device."
         onOpenPasswordReset={jest.fn()}
-        onOpenRegister={jest.fn()}
         onSignIn={jest.fn()}
         onSignedIn={jest.fn()}
         onSocialSignIn={jest.fn()}
@@ -23,7 +22,6 @@ describe('NativeLoginScreen', () => {
     render(
       <NativeLoginScreen
         onOpenPasswordReset={jest.fn()}
-        onOpenRegister={jest.fn()}
         onSignIn={onSignIn}
         onSignedIn={onSignedIn}
         onSocialSignIn={jest.fn()}
@@ -38,6 +36,29 @@ describe('NativeLoginScreen', () => {
     expect(onSignedIn).toHaveBeenCalledTimes(1);
   });
 
+  it('matches the canonical field validation instead of silently disabling submit', () => {
+    const onSignIn = jest.fn();
+    render(
+      <NativeLoginScreen
+        onOpenPasswordReset={jest.fn()}
+        onSignIn={onSignIn}
+        onSignedIn={jest.fn()}
+        onSocialSignIn={jest.fn()}
+      />,
+    );
+
+    fireEvent.press(screen.getByText('Login'));
+    expect(screen.getByText('Username or Email is required.')).toBeTruthy();
+    expect(screen.getByText('Password is required.')).toBeTruthy();
+    expect(onSignIn).not.toHaveBeenCalled();
+
+    fireEvent.changeText(screen.getByPlaceholderText('Username or Email'), 'not-an-email@');
+    fireEvent.changeText(screen.getByPlaceholderText('Password'), 'x');
+    fireEvent.press(screen.getByText('Login'));
+    expect(screen.getByText('Please enter a valid email address.')).toBeTruthy();
+    expect(onSignIn).not.toHaveBeenCalled();
+  });
+
   it('keeps the form visible and explains invalid credentials', async () => {
     const onSignIn = jest.fn().mockRejectedValue(
       new ApiClientError(401, 'Invalid credentials', { message: 'Invalid credentials' }),
@@ -45,7 +66,6 @@ describe('NativeLoginScreen', () => {
     render(
       <NativeLoginScreen
         onOpenPasswordReset={jest.fn()}
-        onOpenRegister={jest.fn()}
         onSignIn={onSignIn}
         onSignedIn={jest.fn()}
         onSocialSignIn={jest.fn()}
@@ -63,12 +83,10 @@ describe('NativeLoginScreen', () => {
 
   it('matches the canonical reset and provider actions', async () => {
     const onOpenPasswordReset = jest.fn();
-    const onOpenRegister = jest.fn();
     const onSocialSignIn = jest.fn();
     render(
       <NativeLoginScreen
         onOpenPasswordReset={onOpenPasswordReset}
-        onOpenRegister={onOpenRegister}
         onSignIn={jest.fn()}
         onSignedIn={jest.fn()}
         onSocialSignIn={onSocialSignIn}
@@ -76,7 +94,6 @@ describe('NativeLoginScreen', () => {
     );
 
     fireEvent.press(screen.getByText('Reset Password'));
-    fireEvent.press(screen.getByText('Create account'));
     fireEvent.press(screen.getByText('Login with Google'));
     await waitFor(() => expect(onSocialSignIn).toHaveBeenCalledTimes(1));
     fireEvent.press(screen.getByText('Login with Discord'));
@@ -85,7 +102,6 @@ describe('NativeLoginScreen', () => {
     await waitFor(() => expect(onSocialSignIn).toHaveBeenCalledTimes(3));
 
     expect(onOpenPasswordReset).toHaveBeenCalledTimes(1);
-    expect(onOpenRegister).toHaveBeenCalledTimes(1);
     expect(onSocialSignIn).toHaveBeenNthCalledWith(1, 'google');
     expect(onSocialSignIn).toHaveBeenNthCalledWith(2, 'discord');
     expect(onSocialSignIn).toHaveBeenNthCalledWith(3, 'facebook');

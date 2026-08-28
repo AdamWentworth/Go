@@ -143,6 +143,7 @@ export const NativePokemonHubHeader = ({
             : key === 'pokemon' ? `(${collectionCount})` : null;
           return (
             <Pressable
+              aria-selected={selectionAction ? undefined : selected}
               accessibilityRole={selectionAction ? 'button' : 'tab'}
               accessibilityState={selectionAction ? undefined : { selected }}
               key={key}

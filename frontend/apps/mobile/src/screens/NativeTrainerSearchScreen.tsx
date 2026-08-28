@@ -8,13 +8,14 @@ import {
   Text,
   TextInput,
   View,
-  useColorScheme,
 } from 'react-native';
 import { useCallback, useMemo, useRef } from 'react';
 import {
   buildNativeTrainerSearchRows,
   type NativeTrainerSearchRow,
 } from '../features/search/trainerSearchModel';
+import { NativeUiIcon } from '../components/NativeUiIcon';
+import { useNativeColorScheme } from '../features/settings/useNativeColorScheme';
 
 type Props = {
   entries: TrainerAutocompleteEntry[];
@@ -120,7 +121,7 @@ export const NativeTrainerSearchScreen = ({
   onScrollOffsetChange,
   query,
 }: Props) => {
-  const light = useColorScheme() === 'light';
+  const light = useNativeColorScheme() === 'light';
   const inputRef = useRef<TextInput>(null);
   const listRef = useRef<FlatList<NativeTrainerSearchRow>>(null);
   const restoredScrollRef = useRef(initialScrollOffset <= 0);
@@ -163,7 +164,9 @@ export const NativeTrainerSearchScreen = ({
             </Text>
             <Text style={[styles.label, light && styles.textLight]}>Trainer name</Text>
             <View style={[styles.inputShell, light && styles.inputShellLight]}>
-              <Text style={[styles.searchGlyph, light && styles.secondaryLight]}>⌕</Text>
+              <View style={styles.searchGlyph}>
+                <NativeUiIcon color={light ? '#6b7478' : '#9babad'} name="search" size={21} />
+              </View>
               <TextInput
                 accessibilityLabel="Trainer name"
                 autoCapitalize="none"
@@ -238,7 +241,7 @@ export const NativeTrainerSearchScreen = ({
           ) : null}
           {!isLoading && !error && hasQuery && rows.length === 0 ? (
             <View style={[styles.state, light && styles.panelLight]}>
-              <Text style={styles.emptyIcon}>⌕</Text>
+              <NativeUiIcon color="#42d7c6" name="search" size={27} />
               <Text style={[styles.stateTitle, light && styles.textLight]}>No trainers found</Text>
               <Text style={[styles.stateCopy, light && styles.secondaryLight]}>
                 Try a different Nexus username or Pokémon GO name.
@@ -247,7 +250,7 @@ export const NativeTrainerSearchScreen = ({
           ) : null}
           {!isLoading && !error && !hasQuery ? (
             <View style={[styles.state, light && styles.panelLight]}>
-              <Text style={styles.emptyIcon}>♟</Text>
+              <NativeUiIcon color="#42d7c6" name="trainers" size={29} />
               <Text style={[styles.stateTitle, light && styles.textLight]}>Find people you know</Text>
               <Text style={[styles.stateCopy, light && styles.secondaryLight]}>
                 Enter at least two characters to search the trainer community.
@@ -272,7 +275,7 @@ export const NativeTrainerSearchScreen = ({
 
 const styles = StyleSheet.create({
   screen: { flex: 1, minHeight: 0, backgroundColor: '#080d0f' },
-  screenLight: { backgroundColor: '#eef4f5' },
+  screenLight: { backgroundColor: '#f8fff9' },
   content: { width: '100%', maxWidth: 760, alignSelf: 'center', padding: 12, paddingBottom: 110, gap: 12 },
   intro: { padding: 18, borderWidth: 1, borderColor: '#2d4246', borderRadius: 14, backgroundColor: '#171d1f' },
   panelLight: { borderColor: '#b8c7c9', backgroundColor: '#ffffff' },
@@ -282,7 +285,7 @@ const styles = StyleSheet.create({
   label: { marginTop: 18, marginBottom: 7, color: '#edf4f5', fontSize: 13, fontWeight: '800' },
   inputShell: { minHeight: 52, flexDirection: 'row', alignItems: 'center', borderWidth: 1, borderColor: '#718286', borderRadius: 12, backgroundColor: '#0d1214' },
   inputShellLight: { borderColor: '#849397', backgroundColor: '#ffffff' },
-  searchGlyph: { marginLeft: 14, color: '#9babad', fontSize: 24 },
+  searchGlyph: { marginLeft: 14, alignItems: 'center', justifyContent: 'center' },
   input: { flex: 1, minWidth: 0, minHeight: 50, paddingHorizontal: 10, color: '#ffffff', fontSize: 16 },
   inputLight: { color: '#11191b' },
   clearButton: { minWidth: 48, minHeight: 48, alignItems: 'center', justifyContent: 'center' },

@@ -10,7 +10,6 @@ import {
   Text,
   TextInput,
   View,
-  useColorScheme,
   useWindowDimensions,
 } from 'react-native';
 import type { OAuthProvider } from '@pokemongonexus/shared-contracts/auth';
@@ -22,8 +21,10 @@ import {
 } from '../features/auth/nativeRegistrationModel';
 import { NativeLocationAutocompleteInput } from '../components/NativeLocationAutocompleteInput';
 import { NativeSocialProviderIcon } from '../components/NativeSocialProviderIcon';
+import { useNativeColorScheme } from '../features/settings/useNativeColorScheme';
 
 type Props = {
+  notice?: string | null;
   onBackToLogin: () => void;
   onOpenPrivacy: () => void;
   onOpenTerms: () => void;
@@ -51,6 +52,7 @@ const STEP_COPY = [
 ] as const;
 
 export const NativeRegisterScreen = ({
+  notice = null,
   onBackToLogin,
   onOpenPrivacy,
   onOpenTerms,
@@ -59,7 +61,7 @@ export const NativeRegisterScreen = ({
   onRegister,
   onRegistered,
 }: Props) => {
-  const light = useColorScheme() === 'light';
+  const light = useNativeColorScheme() === 'light';
   const { width } = useWindowDimensions();
   const compact = width < 600;
   const [draft, setDraft] = useState(createNativeRegistrationDraft);
@@ -126,7 +128,7 @@ export const NativeRegisterScreen = ({
   };
 
   return (
-    <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={[styles.root, light && styles.rootLight, compact && styles.rootCompact, compact && light && styles.rootCompactLight]}>
+    <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={[styles.root, light && styles.rootLight, compact && styles.rootCompact, compact && light && styles.rootCompactLight]} testID="native-register-screen">
       <ScrollView automaticallyAdjustKeyboardInsets contentContainerStyle={[styles.content, compact && styles.contentCompact]} keyboardShouldPersistTaps="handled">
         <View style={[styles.card, light && styles.cardLight, compact && styles.cardCompact, compact && light && styles.cardCompactLight]}>
           <View style={styles.header}>
@@ -139,6 +141,11 @@ export const NativeRegisterScreen = ({
               <Text style={[styles.signInText, light && styles.textLight]}>Sign in</Text>
             </Pressable>
           </View>
+          {notice ? (
+            <Text accessibilityLiveRegion="polite" style={[styles.notice, light && styles.noticeLight]}>
+              {notice}
+            </Text>
+          ) : null}
           {method ? (
             <>
               <View accessibilityLabel={`Step ${visibleStepIndex + 1} of ${visibleSteps.length}`} style={styles.progress}>
@@ -180,7 +187,7 @@ export const NativeRegisterScreen = ({
               ))}
               <Pressable accessibilityRole="button" disabled={submitting} onPress={() => setMethod('email')} style={[styles.emailButton, compact && styles.methodButtonCompact, light && styles.secondaryLight]}>
                 <View style={styles.emailButtonContent}>
-                  <Svg accessibilityElementsHidden height={18} viewBox="0 0 24 24" width={18}>
+                  <Svg height={18} viewBox="0 0 24 24" width={18}>
                     <Path d="M20 4H4a2 2 0 0 0-2 2v12c0 1.1.9 2 2 2h16a2 2 0 0 0 2-2V6c0-1.1-.9-2-2-2Zm0 4-8 5-8-5V6l8 5 8-5v2Z" fill={light ? '#39504e' : '#ffffff'} />
                   </Svg>
                   <Text style={[styles.emailButtonText, light && styles.textLight]}>Continue with email</Text>
@@ -328,7 +335,7 @@ const Field = ({ children, label, light }: { children: React.ReactNode; label: s
 const ReviewRow = ({ label, light, onPress, value }: { label: string; light: boolean; onPress: () => void; value: string }) => <Pressable accessibilityRole="button" onPress={onPress} style={[styles.reviewRow, light && styles.secondaryLight]}><View style={styles.reviewCopy}><Text style={styles.reviewLabel}>{label}</Text><Text numberOfLines={1} style={[styles.reviewValue, light && styles.textLight]}>{value}</Text></View><Text style={styles.edit}>Edit</Text></Pressable>;
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: '#07111e' }, rootLight: { backgroundColor: '#eef5f8' },
+  root: { flex: 1, backgroundColor: '#07111e' }, rootLight: { backgroundColor: '#f8fff9' },
   rootCompact: { backgroundColor: '#202224' }, rootCompactLight: { backgroundColor: '#eaf7f1' },
   content: { flexGrow: 1, justifyContent: 'center', paddingHorizontal: 12, paddingVertical: 28 },
   contentCompact: { justifyContent: 'flex-start', paddingHorizontal: 16, paddingTop: 16 },
@@ -351,6 +358,8 @@ const styles = StyleSheet.create({
   review: { gap: 8 }, reviewRow: { minHeight: 54, flexDirection: 'row', alignItems: 'center', gap: 8, borderWidth: 1, borderColor: '#414d52', borderRadius: 11, padding: 10, backgroundColor: '#181e21' }, reviewCopy: { flex: 1, minWidth: 0 }, reviewLabel: { color: '#2098ff', fontSize: 9, fontWeight: '900', letterSpacing: 1 }, reviewValue: { color: '#fff', fontSize: 14, fontWeight: '900' }, edit: { color: '#2098ff', fontWeight: '900' },
   agreement: { color: '#a7b6bd', fontSize: 11, lineHeight: 16, textAlign: 'center' }, link: { color: '#2098ff', fontWeight: '900' },
   error: { marginTop: 12, borderWidth: 1, borderColor: '#ef6077', borderRadius: 10, padding: 11, color: '#ffd5dc', backgroundColor: '#451923', fontWeight: '700' }, errorLight: { color: '#8f2638', backgroundColor: '#fff0f3' },
+  notice: { marginTop: 12, borderWidth: 1, borderColor: '#2dd4bf', borderRadius: 10, padding: 11, color: '#ccfbf1', backgroundColor: '#123b37', fontWeight: '700', lineHeight: 19 },
+  noticeLight: { color: '#155e55', backgroundColor: '#e7fff9' },
   actions: { minHeight: 52, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 10, marginTop: 16 },
   backButton: { minHeight: 48, justifyContent: 'center', borderWidth: 1, borderColor: '#56636a', borderRadius: 11, paddingHorizontal: 16, backgroundColor: '#252b2f' }, backText: { color: '#fff', fontWeight: '900' },
   continueButton: { minWidth: 142, minHeight: 48, alignItems: 'center', justifyContent: 'center', borderRadius: 11, paddingHorizontal: 18, backgroundColor: '#0b86ee' }, continueText: { color: '#fff', fontSize: 14, fontWeight: '900' },

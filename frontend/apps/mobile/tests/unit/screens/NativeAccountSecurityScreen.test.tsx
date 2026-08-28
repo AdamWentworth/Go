@@ -1,4 +1,5 @@
 import { fireEvent, render } from '@testing-library/react-native';
+import { StyleSheet } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import type { AccountSecuritySummary } from '@pokemongonexus/shared-contracts/auth';
 import { NativeAccountSecurityScreen } from '../../../src/screens/NativeAccountSecurityScreen';
@@ -33,16 +34,14 @@ const renderScreen = (props: Partial<React.ComponentProps<typeof NativeAccountSe
       draft={draft}
       onBack={jest.fn()}
       onChange={jest.fn()}
-      onChangePassword={jest.fn()}
       onConnectProvider={jest.fn()}
       onDeleteAccount={jest.fn()}
       onOpenSettings={jest.fn()}
-      onRequestEmailChange={jest.fn()}
       onRetry={jest.fn()}
       onRevokeAllSessions={jest.fn()}
-      onSaveUsername={jest.fn()}
       onSignOut={jest.fn()}
       onUnlinkProvider={jest.fn()}
+      onUpdateAccount={jest.fn()}
       security={security}
       {...props}
     />
@@ -50,42 +49,36 @@ const renderScreen = (props: Partial<React.ComponentProps<typeof NativeAccountSe
 );
 
 describe('NativeAccountSecurityScreen', () => {
-  it('renders separate canonical account-security workflows', () => {
+  it('renders the canonical combined account update workflow', () => {
     const view = renderScreen();
+    const flattenedContentStyle = StyleSheet.flatten(
+      view.getByTestId('native-account-security-content').props.contentContainerStyle,
+    );
+    expect(flattenedContentStyle.paddingBottom).toBeGreaterThanOrEqual(128);
     expect(view.getByText('Account details')).toBeTruthy();
     expect(view.getByText('Email')).toBeTruthy();
-    expect(view.getByText('Change password')).toBeTruthy();
+    expect(view.getByText('New password')).toBeTruthy();
     expect(view.getByText('Connected accounts')).toBeTruthy();
     expect(view.getAllByText('Delete account')).toHaveLength(2);
-    expect(view.getByText('3')).toBeTruthy();
+    expect(view.getByText('3 active sessions')).toBeTruthy();
     expect(view.getByRole('tab', { name: 'Account' }).props.accessibilityState.selected).toBe(true);
   });
 
-  it('updates identity fields and dispatches each save command independently', () => {
+  it('updates identity fields and dispatches one account update command', () => {
     const onChange = jest.fn();
-    const onSaveUsername = jest.fn();
-    const onRequestEmailChange = jest.fn();
-    const onChangePassword = jest.fn();
+    const onUpdateAccount = jest.fn();
     const view = renderScreen({
       onChange,
-      onChangePassword,
-      onRequestEmailChange,
-      onSaveUsername,
+      onUpdateAccount,
     });
 
     fireEvent.changeText(view.getByLabelText('Username'), 'TrainerTwo');
     expect(onChange).toHaveBeenCalledWith({ ...draft, username: 'TrainerTwo' });
-    fireEvent.press(view.getByRole('button', { name: 'Save username' }));
-    expect(onSaveUsername).toHaveBeenCalledTimes(1);
-
-    fireEvent.changeText(view.getByLabelText('Email address'), 'new@example.com');
+    fireEvent.changeText(view.getByLabelText('Email'), 'new@example.com');
     expect(onChange).toHaveBeenCalledWith({ ...draft, email: 'new@example.com' });
-    fireEvent.press(view.getByRole('button', { name: 'Send verification email' }));
-    expect(onRequestEmailChange).toHaveBeenCalledTimes(1);
-
     fireEvent.changeText(view.getByLabelText('New password'), 'Different_42!');
-    fireEvent.press(view.getByRole('button', { name: 'Update password' }));
-    expect(onChangePassword).toHaveBeenCalledTimes(1);
+    fireEvent.press(view.getByRole('button', { name: 'Update account' }));
+    expect(onUpdateAccount).toHaveBeenCalledTimes(1);
   });
 
   it('connects missing providers and confirms provider disconnection', () => {
@@ -115,9 +108,9 @@ describe('NativeAccountSecurityScreen', () => {
     const onRevokeAllSessions = jest.fn();
     const view = renderScreen({ onDeleteAccount, onRevokeAllSessions });
 
-    fireEvent.press(view.getByRole('button', { name: 'Sign out all devices' }));
+    fireEvent.press(view.getByRole('button', { name: 'Sign out every device' }));
     expect(view.getByText('Sign out every device?')).toBeTruthy();
-    const revokeConfirmations = view.getAllByRole('button', { name: 'Sign out all' });
+    const revokeConfirmations = view.getAllByRole('button', { name: 'Sign out every device' });
     fireEvent.press(revokeConfirmations[revokeConfirmations.length - 1]);
     expect(onRevokeAllSessions).toHaveBeenCalledTimes(1);
 
@@ -131,7 +124,7 @@ describe('NativeAccountSecurityScreen', () => {
   it('uses recent provider authentication instead of asking OAuth-only accounts for a password', () => {
     const view = renderScreen({ security: { ...security, hasPassword: false } });
     expect(view.queryByLabelText('Current password')).toBeNull();
-    expect(view.getByText('Add a password')).toBeTruthy();
+    expect(view.getByText('New password')).toBeTruthy();
     expect(view.getByText(/recent provider sign-in confirms sensitive actions/i)).toBeTruthy();
     fireEvent.press(view.getByRole('button', { name: 'Disconnect Google' }));
     expect(view.getByText(/you do not need a separate password/i)).toBeTruthy();

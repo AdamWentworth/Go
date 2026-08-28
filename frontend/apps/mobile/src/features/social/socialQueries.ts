@@ -75,6 +75,7 @@ export const useNativeFriendsQuery = (viewerId: string | null) => {
     queryKey: nativeSocialQueryKeys.friends(viewerId ?? 'signed-out'),
     queryFn: () => getNativeFriendsOverview(clients.users),
     enabled: Boolean(viewerId),
+    refetchOnMount: 'always',
     staleTime: 30_000,
   });
 };

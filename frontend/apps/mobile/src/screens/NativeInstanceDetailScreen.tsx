@@ -9,26 +9,31 @@ import {
   Text,
   TextInput,
   View,
-  useColorScheme,
   useWindowDimensions,
 } from 'react-native';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import Svg, { Circle, Path } from 'react-native-svg';
 import { GestureDetector } from 'react-native-gesture-handler';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type {
   NativeInstanceBackgroundOption,
   NativeInstanceDetail,
   NativeInstanceMoveOption,
 } from '../features/collection/collectionModel';
-import type { NativeInstanceDetailPatch } from '../features/collection/nativeInstanceDetailMutation';
+import type {
+  NativeInstanceDetailPatch,
+} from '../features/collection/nativeInstanceDetailMutation';
+import { NativeUiIcon } from '../components/NativeUiIcon';
 import type {
   PokemonSizeClass,
   WantedSizePreferences,
   WantedSizeRange,
 } from '@pokemongonexus/shared-contracts/instances';
-import { NativePokemonLocationBackdrop } from '../features/collection/parity/NativePokemonLocationBackdrop';
-import { useNativeOverlaySwipeNavigation } from '../features/collection/parity/useNativeOverlaySwipeNavigation';
+import {
+  NativePokemonLocationBackdrop,
+} from '../features/collection/parity/NativePokemonLocationBackdrop';
+import {
+  useNativeOverlaySwipeNavigation,
+} from '../features/collection/parity/useNativeOverlaySwipeNavigation';
 import { getNativeLocationSuggestions } from '../services/locationApi';
 import { getPokemonLevelArcProgress } from '@pokemongonexus/shared-domain/combat-power';
 import {
@@ -40,6 +45,11 @@ import {
   firstNativeCombatError,
   validateNativeCombatDraft,
 } from '../features/collection/nativeCombatPower';
+import {
+  useNativeModalAnimation,
+  useNativeReducedMotion,
+} from '../features/settings/useNativeMotion';
+import { useNativeColorScheme } from '../features/settings/useNativeColorScheme';
 
 type Props = {
   assetBaseUrl?: string;
@@ -110,6 +120,13 @@ const editableNumber = (value: unknown): string => (
   typeof value === 'number' && Number.isFinite(value) ? String(value) : ''
 );
 
+// Historic collection rows may contain zero for an unknown physical
+// measurement. The canonical overlay treats that as missing metadata, not as
+// a literal zero-kilogram or zero-metre Pokémon.
+const editablePhysicalMeasurement = (value: unknown): string => (
+  typeof value === 'number' && Number.isFinite(value) && value > 0 ? String(value) : ''
+);
+
 const resolveWantedSizeClass = (
   detail: NativeInstanceDetail,
   metric: 'weight' | 'height',
@@ -118,7 +135,7 @@ const resolveWantedSizeClass = (
   if (stored) return stored;
   const value = detail.instance?.[metric];
   const sizes = detail.sizeThresholds;
-  if (value == null || !sizes) return null;
+  if (value == null || value <= 0 || !sizes) return null;
   if (value < sizes[`${metric}_xxs_threshold`]) return 'XXS';
   if (value < sizes[`${metric}_xs_threshold`]) return 'XS';
   if (value > sizes[`${metric}_xxl_threshold`]) return 'XXL';
@@ -139,8 +156,8 @@ const createEditDraft = (detail: NativeInstanceDetail): NativeInstanceEditDraft 
   cp: editableNumber(detail.instance?.cp),
   level: editableNumber(detail.instance?.level),
   gender: detail.instance?.gender ?? null,
-  weight: editableNumber(detail.instance?.weight),
-  height: editableNumber(detail.instance?.height),
+  weight: editablePhysicalMeasurement(detail.instance?.weight),
+  height: editablePhysicalMeasurement(detail.instance?.height),
   attackIv: editableNumber(detail.instance?.attack_iv),
   defenseIv: editableNumber(detail.instance?.defense_iv),
   staminaIv: editableNumber(detail.instance?.stamina_iv),
@@ -292,7 +309,7 @@ const LevelArc = ({ level }: { level: number }) => {
   const pointX = 150 + (126 * Math.cos(angle));
   const pointY = 136 - (126 * Math.sin(angle));
   return (
-    <Svg accessibilityElementsHidden height={146} viewBox="0 0 300 146" width={300}>
+    <Svg height={146} viewBox="0 0 300 146" width={300}>
       <Path
         d="M24 136 A126 126 0 0 1 276 136"
         fill="none"
@@ -624,6 +641,7 @@ const NativeMoveModeTabs = ({
       const selected = mode === value;
       return (
         <Pressable
+          aria-selected={selected}
           accessibilityRole="tab"
           accessibilityState={{ selected }}
           key={value}
@@ -654,13 +672,18 @@ const NativeMovesPanel = ({
   moves: NativeInstanceDetail['moves'];
   palette: typeof LIGHT;
 }) => {
+  const reduceMotion = useNativeReducedMotion();
   const [mode, setMode] = useState<PokemonMoveDamageMode>('raid');
   const [slide] = useState(() => new Animated.Value(0));
   const changeMode = (nextMode: PokemonMoveDamageMode) => {
     if (nextMode === mode) return;
     slide.stopAnimation();
-    slide.setValue(nextMode === 'pvp' ? 18 : -18);
     setMode(nextMode);
+    if (reduceMotion) {
+      slide.setValue(0);
+      return;
+    }
+    slide.setValue(nextMode === 'pvp' ? 18 : -18);
     Animated.timing(slide, {
       duration: 220,
       toValue: 0,
@@ -733,6 +756,7 @@ const NativeMoveSelector = ({
   onChange: (value: number | null) => void;
 }) => {
   const [open, setOpen] = useState(false);
+  const animationType = useNativeModalAnimation('slide');
   const selected = options.find((option) => option.id === value);
   const selectorTestId = `native-move-selector-${label.toLowerCase().replace(/\s+/g, '-')}`;
   return (
@@ -763,7 +787,7 @@ const NativeMoveSelector = ({
         <Text style={[styles.choiceChevron, { color: palette.secondary }]}>⌄</Text>
       </Pressable>
       <Modal
-        animationType="slide"
+        animationType={animationType}
         onRequestClose={() => setOpen(false)}
         statusBarTranslucent
         transparent
@@ -889,9 +913,11 @@ const NativeBackgroundPicker = ({
   selectedId: string | null;
   onChange: (value: string | null) => void;
   onClose: () => void;
-}) => (
+}) => {
+  const animationType = useNativeModalAnimation('slide');
+  return (
   <Modal
-    animationType="slide"
+    animationType={animationType}
     onRequestClose={onClose}
     statusBarTranslucent
     transparent
@@ -954,7 +980,8 @@ const NativeBackgroundPicker = ({
       </View>
     </View>
   </Modal>
-);
+  );
+};
 
 const NativeToggleGroup = ({
   label,
@@ -1168,7 +1195,7 @@ const NativeCaughtMetadataControls = ({
                     pressed && styles.locationSuggestionPressed,
                   ]}
                 >
-                  <Text style={[styles.locationSuggestionPin, { color: '#38a9ff' }]}>⌖</Text>
+                  <NativeUiIcon color="#38a9ff" name="map" size={17} />
                   <Text style={[styles.locationSuggestionText, { color: palette.text }]}>{displayName}</Text>
                 </Pressable>
               ))}
@@ -1876,8 +1903,7 @@ export const NativeInstanceDetailScreen = ({
   onSaveDetails,
   canEdit = true,
 }: Props) => {
-  const light = useColorScheme() === 'light';
-  const insets = useSafeAreaInsets();
+  const light = useNativeColorScheme() === 'light';
   const { width } = useWindowDimensions();
   const shellWidth = Math.min(width * 0.95, 500);
   const palette = light ? LIGHT : DARK;
@@ -1946,8 +1972,12 @@ export const NativeInstanceDetailScreen = ({
     detail.stats.find((row) => row.label === 'Level')?.value ?? Number.NaN,
   );
   const cp = instance?.cp ?? detail.row.cp;
-  const weight = instance?.weight;
-  const height = instance?.height;
+  const weight = typeof instance?.weight === 'number' && instance.weight > 0
+    ? instance.weight
+    : null;
+  const height = typeof instance?.height === 'number' && instance.height > 0
+    ? instance.height
+    : null;
   const gender = instance?.gender;
   const maxBadge = detail.row.maxKind
     ? toAssetUrl(assetBaseUrl, `/images/${detail.row.maxKind}.png`)
@@ -1983,7 +2013,9 @@ export const NativeInstanceDetailScreen = ({
           ? selectedCrownOption.typeIconUris
           : detail.row.typeIconUris
     : detail.row.typeIconUris;
-  const showPhysicalRow = weight != null || height != null || displayTypeIconUris.length > 0;
+  const showPhysicalRow = weight != null
+    || height != null
+    || (isCaught && displayTypeIconUris.length > 0);
   const activeBackgroundOptions = selectedFusionOption?.backgroundOptions
     ?? detail.backgroundOptions
     ?? [];
@@ -2182,7 +2214,7 @@ export const NativeInstanceDetailScreen = ({
         <ScrollView
           contentContainerStyle={[
             styles.scrollContent,
-            { paddingTop: Math.max(30, insets.top + 12) },
+            { paddingTop: 30 },
           ]}
           directionalLockEnabled
           keyboardShouldPersistTaps="handled"
@@ -2232,7 +2264,7 @@ export const NativeInstanceDetailScreen = ({
                   />
                 </Pressable>
               ) : <View style={styles.iconButton} />}
-              {isCaught && cp != null && !editing ? (
+              {!isWanted && cp != null && !editing ? (
                 <Text style={styles.cpText}>CP{cp}</Text>
               ) : <View />}
               {editing ? (
@@ -2267,7 +2299,7 @@ export const NativeInstanceDetailScreen = ({
             </View>
           )}
 
-          {isCaught && showArc ? (
+          {!isWanted && showArc ? (
             <View style={styles.arc}>
               <LevelArc level={displayLevel} />
             </View>
@@ -2343,10 +2375,10 @@ export const NativeInstanceDetailScreen = ({
               </Text>
             )}
 
-            {!editing && (isCaught || gender) ? (
+            {!editing && ((!isWanted && showArc) || Boolean(gender)) ? (
               <View style={styles.levelGenderRow}>
                 <View style={styles.sideSlot} />
-                {isCaught && showArc ? (
+                {!isWanted && showArc ? (
                   <Text style={[styles.levelText, { color: palette.secondary }]}>LEVEL: {displayLevel}</Text>
                 ) : <View />}
                 <Text style={[styles.genderText, { color: gender === 'Female' ? '#ff3b87' : '#30a7ff' }]}>
@@ -2355,7 +2387,7 @@ export const NativeInstanceDetailScreen = ({
               </View>
             ) : null}
 
-            {!editing && isCaught && showPhysicalRow ? (
+            {!editing && !isWanted && showPhysicalRow ? (
               <View style={styles.physicalRow}>
                 <View style={styles.physicalValue}>
                   {weight != null ? (
@@ -2365,23 +2397,27 @@ export const NativeInstanceDetailScreen = ({
                     </>
                   ) : null}
                 </View>
-                <View style={[styles.pipe, { backgroundColor: palette.divider }]} />
-                <View
-                  accessibilityLabel={pokemonTypesAccessibilityLabel(displayTypeIconUris)}
-                  accessible
-                  style={styles.types}
-                  testID={pokemonTypesTestId(displayTypeIconUris)}
-                >
-                  {displayTypeIconUris.map((uri) => (
-                    <Image
-                      accessibilityLabel={`${uri.match(/\/([^/?]+)\.png(?:\?|$)/i)?.[1] ?? 'Pokémon'} type`}
-                      key={uri}
-                      source={{ uri }}
-                      style={styles.typeIcon}
-                    />
-                  ))}
-                </View>
-                <View style={[styles.pipe, { backgroundColor: palette.divider }]} />
+                {isCaught ? (
+                  <>
+                    <View style={[styles.pipe, { backgroundColor: palette.divider }]} />
+                    <View
+                      accessibilityLabel={pokemonTypesAccessibilityLabel(displayTypeIconUris)}
+                      accessible
+                      style={styles.types}
+                      testID={pokemonTypesTestId(displayTypeIconUris)}
+                    >
+                      {displayTypeIconUris.map((uri) => (
+                        <Image
+                          accessibilityLabel={`${uri.match(/\/([^/?]+)\.png(?:\?|$)/i)?.[1] ?? 'Pokémon'} type`}
+                          key={uri}
+                          source={{ uri }}
+                          style={styles.typeIcon}
+                        />
+                      ))}
+                    </View>
+                    <View style={[styles.pipe, { backgroundColor: palette.divider }]} />
+                  </>
+                ) : null}
                 <View style={styles.physicalValue}>
                   {height != null ? (
                     <>
@@ -2407,11 +2443,18 @@ export const NativeInstanceDetailScreen = ({
               </View>
             ) : null}
 
-            {!editing && isCaught && detail.ivs.length ? (
+            {!editing && !isWanted && detail.ivs.length ? (
               <View style={[styles.section, { borderTopColor: palette.divider }]}>
                 {detail.ivs.map((iv) => (
                   <View key={iv.label} style={styles.ivRow}>
-                    <Text style={styles.ivLabel}>{iv.label}</Text>
+                    <Text
+                      adjustsFontSizeToFit
+                      minimumFontScale={0.9}
+                      numberOfLines={1}
+                      style={styles.ivLabel}
+                    >
+                      {iv.label}
+                    </Text>
                     <View style={[styles.ivTrack, { backgroundColor: palette.track }]}>
                       <View style={[styles.ivFill, { width: `${Math.max(0, Math.min(15, iv.value)) / 15 * 100}%` }]} />
                       <View style={styles.ivThird} />
@@ -2480,7 +2523,7 @@ export const NativeInstanceDetailScreen = ({
             styles.floatingSaveButton,
             {
               left: Math.max(12, (width - shellWidth) / 2 + 12),
-              top: Math.max(30, insets.top + 12),
+              top: 30,
             },
           ]}
         >
@@ -2507,7 +2550,7 @@ export const NativeInstanceDetailScreen = ({
         accessibilityLabel="Close"
         accessibilityRole="button"
         onPress={onBack}
-        style={[styles.closeButton, { bottom: insets.bottom + 18 }]}
+        style={[styles.closeButton, { bottom: 18 }]}
       >
         <Image
           resizeMode="contain"
@@ -2525,7 +2568,7 @@ export const NativeInstanceDetailScreen = ({
           style={[
             styles.instanceNavigation,
             styles.previousInstance,
-            { bottom: insets.bottom + 24 },
+            { bottom: 24 },
           ]}
           testID="native-instance-previous"
         >
@@ -2542,7 +2585,7 @@ export const NativeInstanceDetailScreen = ({
           style={[
             styles.instanceNavigation,
             styles.nextInstance,
-            { bottom: insets.bottom + 24 },
+            { bottom: 24 },
           ]}
           testID="native-instance-next"
         >
@@ -2943,7 +2986,7 @@ const styles = StyleSheet.create({
   detailValue: { minWidth: 0, flex: 1, fontSize: 16, fontWeight: '800', textAlign: 'right' },
   warningText: { color: '#ffd18a', paddingHorizontal: 8, lineHeight: 19 },
   ivRow: { minHeight: 34, flexDirection: 'row', alignItems: 'center', gap: 7, paddingHorizontal: 4 },
-  ivLabel: { width: 66, color: '#ff9700', fontSize: 16, fontWeight: '700' },
+  ivLabel: { width: 82, color: '#ff9700', fontSize: 16, fontWeight: '700' },
   ivTrack: { flex: 1, height: 14, overflow: 'hidden', borderRadius: 7 },
   ivFill: { position: 'absolute', left: 0, top: 0, bottom: 0, borderRadius: 7, backgroundColor: '#ff9d23' },
   ivThird: { position: 'absolute', left: '33.333%', width: 2, top: 0, bottom: 0, backgroundColor: '#ffffff' },

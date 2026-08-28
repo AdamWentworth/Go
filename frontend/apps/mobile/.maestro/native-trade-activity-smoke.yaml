@@ -37,6 +37,13 @@ tags:
 - assertVisible: Shiny Dialga
 - assertVisible: Shiny Remoraid
 - takeScreenshot: 02-sent-lucky-trade
+- scrollUntilVisible:
+    element:
+      id: trade-action-cancel-sent
+    direction: DOWN
+    speed: 70
+    visibilityPercentage: 50
+    timeout: 30000
 - tapOn:
     id: trade-action-cancel-sent
 - assertVisible: Cancel this trade?
@@ -49,6 +56,13 @@ tags:
 - tapOn:
     id: trade-filter-Pending
 - assertVisible: Ready to confirm
+- scrollUntilVisible:
+    element:
+      id: trade-action-coordinate-active
+    direction: DOWN
+    speed: 70
+    visibilityPercentage: 50
+    timeout: 30000
 - tapOn:
     id: trade-action-coordinate-active
 - extendedWaitUntil:
@@ -61,6 +75,13 @@ tags:
 - tapOn: Done
 - tapOn:
     id: trade-filter-Accepting
+- scrollUntilVisible:
+    element:
+      id: trade-action-accept-incoming
+    direction: DOWN
+    speed: 70
+    visibilityPercentage: 50
+    timeout: 30000
 - tapOn:
     id: trade-action-accept-incoming
 - assertVisible: Accept this offer?
@@ -69,6 +90,13 @@ tags:
     visible: Trade updated from the server response.
     timeout: 10000
 - assertNotVisible: Shiny Mewtwo
+- scrollUntilVisible:
+    element:
+      id: trade-action-deny-incoming-deny
+    direction: DOWN
+    speed: 70
+    visibilityPercentage: 50
+    timeout: 30000
 - tapOn:
     id: trade-action-deny-incoming-deny
 - assertVisible: Deny this offer?
@@ -92,6 +120,13 @@ tags:
 - assertNotVisible: Shiny Rayquaza
 - tapOn:
     id: trade-filter-Completed
+- scrollUntilVisible:
+    element:
+      id: trade-action-satisfy-completed
+    direction: DOWN
+    speed: 70
+    visibilityPercentage: 50
+    timeout: 30000
 - tapOn:
     id: trade-action-satisfy-completed
 - assertVisible: Mark this trade as satisfying?
@@ -105,6 +140,7 @@ tags:
     element:
       id: trade-action-delete-completed-delete
     direction: DOWN
+    centerElement: true
 - tapOn:
     id: trade-action-delete-completed-delete
 - assertVisible: Remove this trade from history?
@@ -115,6 +151,13 @@ tags:
 - assertNotVisible: Shiny Lugia
 - tapOn:
     id: trade-filter-Cancelled
+- scrollUntilVisible:
+    element:
+      id: trade-action-repropose-sent
+    direction: DOWN
+    speed: 70
+    visibilityPercentage: 50
+    timeout: 30000
 - tapOn:
     id: trade-action-repropose-sent
 - assertVisible: Re-propose this trade?
@@ -127,6 +170,7 @@ tags:
     element:
       id: trade-action-delete-closed-delete
     direction: DOWN
+    centerElement: true
 - tapOn:
     id: trade-action-delete-closed-delete
 - assertVisible: Remove this trade from history?

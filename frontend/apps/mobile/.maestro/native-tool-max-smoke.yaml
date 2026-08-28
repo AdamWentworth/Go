@@ -16,6 +16,8 @@ name: Native Max Battles tool smoke
 - extendedWaitUntil:
     visible: "Max Battles"
     timeout: 45000
+- assertVisible: "Top damage dealers"
+- takeScreenshot: "native-tool-max-initial"
 - tapOn: "Tank"
 - assertVisible: "Top tanks"
 - tapOn: "Boss teams"

@@ -6,19 +6,24 @@ import {
   StyleSheet,
   Text,
   View,
-  useColorScheme,
   useWindowDimensions,
 } from 'react-native';
+import { NativeBackIcon } from '../components/NativeBackIcon';
 import { useEffect, useRef, useState } from 'react';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { NativeCollectionRow } from '../features/collection/collectionModel';
-import { NativePokemonLocationBackdrop } from '../features/collection/parity/NativePokemonLocationBackdrop';
+import {
+  NativePokemonLocationBackdrop,
+} from '../features/collection/parity/NativePokemonLocationBackdrop';
 import type { NativeTrainerProfileModel } from '../features/social/nativeTrainerProfileModel';
 import type { NativeTrainerProfileDraft } from '../features/social/nativeTrainerProfileEditorModel';
-import { NativeTrainerProfileEditorPanel } from '../features/social/NativeTrainerProfileEditorPanel';
+import {
+  NativeTrainerProfileEditorPanel,
+} from '../features/social/NativeTrainerProfileEditorPanel';
 import { NativeTrainerShowcasePicker } from '../features/social/NativeTrainerShowcasePicker';
 import { NativeConfirmationDialog } from '../components/NativeConfirmationDialog';
 import { NativeTrainerWorkspaceNav } from '../components/NativeTrainerWorkspaceNav';
+import { NativeUiIcon, type NativeUiIconName } from '../components/NativeUiIcon';
+import { useNativeColorScheme } from '../features/settings/useNativeColorScheme';
 
 export type NativeTrainerProfileAction =
   | 'add'
@@ -122,9 +127,8 @@ export const NativeTrainerProfileScreen = ({
   onChangeEditorDraft,
   onSaveProfile,
 }: Props) => {
-  const light = useColorScheme() === 'light';
+  const light = useNativeColorScheme() === 'light';
   const compactHeader = useWindowDimensions().width <= 520;
-  const insets = useSafeAreaInsets();
   const scrollRef = useRef<ScrollView>(null);
   const [confirmation, setConfirmation] = useState<'cancel-request' | 'remove-friend' | 'block' | null>(null);
   const [editingHighlightSlot, setEditingHighlightSlot] = useState<number | null>(null);
@@ -227,11 +231,23 @@ export const NativeTrainerProfileScreen = ({
     [nextIds[index], nextIds[destination]] = [nextIds[destination], nextIds[index]];
     updateHighlightIds(nextIds);
   };
+  const profileFacts: { icon: NativeUiIconName; label: string; value: string }[] = [
+    { icon: 'calendar', label: 'STARTED', value: model.startedLabel },
+    { icon: 'map', label: 'LOCATION', value: model.locationLabel },
+    { icon: 'id-card', label: 'TRAINER CODE', value: model.trainerCodeLabel },
+  ];
+  const statIcons: Record<NativeTrainerProfileModel['stats'][number]['key'], NativeUiIconName> = {
+    registered: 'catalog',
+    caught: 'pokeball',
+    trade: 'trade',
+    wanted: 'heart',
+    favorites: 'star',
+  };
 
   return (
     <View style={[styles.screenRoot, light && styles.screenLight]}>
       <ScrollView
-        contentContainerStyle={[styles.content, { paddingTop: Math.max(insets.top + 12, 24), paddingBottom: Math.max(insets.bottom + 100, 116) }]}
+        contentContainerStyle={[styles.content, { paddingTop: 24, paddingBottom: 116 }]}
         ref={scrollRef}
         style={styles.screen}
         testID="native-trainer-profile"
@@ -239,30 +255,41 @@ export const NativeTrainerProfileScreen = ({
       <View style={styles.productHeader}>
         {onBack ? (
           <Pressable accessibilityLabel="Back" accessibilityRole="button" onPress={onBack} style={[styles.backButton, light && styles.backButtonLight]}>
-            <Text style={[styles.backButtonText, light && styles.textLight]}>‹</Text>
+            <NativeBackIcon color={light ? '#172124' : '#f7fbfa'} size={20} />
           </Pressable>
         ) : null}
         <View style={styles.productHeaderCopy}>
           <Text style={styles.eyebrow}>{isOwner ? 'YOUR TRAINER CARD' : 'TRAINER PROFILE'}</Text>
           <Text numberOfLines={1} style={[styles.pageTitle, light && styles.textLight]}>{model.username}</Text>
-          <Text style={[styles.pageSubtitle, light && styles.mutedLight]}>
-            {isOwner ? 'Your Pokémon GO identity and collection showcase.' : `Meet @${model.username} and explore their shared collection.`}
-          </Text>
+          {!compactHeader ? (
+            <Text style={[styles.pageSubtitle, light && styles.mutedLight]}>
+              {isOwner ? 'Your Pokémon GO identity and collection showcase.' : `Meet @${model.username} and explore their shared collection.`}
+            </Text>
+          ) : null}
         </View>
         <View style={[styles.headerActions, compactHeader && styles.headerActionsCompact]}>
           {isOwner && onBeginEdit ? (
             <Pressable
+              accessibilityLabel={editorDraft ? 'Cancel' : 'Edit'}
               accessibilityRole="button"
               disabled={isProfileSaving}
               onPress={editorDraft ? onCancelEdit : onBeginEdit}
               style={[
                 styles.headerAction,
-                editorDraft ? styles.headerActionSecondary : styles.headerActionPrimary,
-                light && editorDraft && styles.backButtonLight,
+                styles.headerActionSecondary,
+                light && styles.backButtonLight,
               ]}
             >
-              <Text style={editorDraft ? [styles.headerActionText, light && styles.textLight] : styles.primaryButtonText}>
-                {editorDraft ? 'Cancel' : 'Edit profile'}
+              {!editorDraft ? (
+                <Image
+                  accessibilityElementsHidden
+                  resizeMode="contain"
+                  source={{ uri: `${assetBaseUrl.replace(/\/$/, '')}/images/edit-icon.png` }}
+                  style={[styles.headerActionIcon, { tintColor: light ? '#172124' : '#f7fbfa' }]}
+                />
+              ) : null}
+              <Text style={[styles.headerActionText, light && styles.textLight]}>
+                {editorDraft ? 'Cancel' : 'Edit'}
               </Text>
             </Pressable>
           ) : null}
@@ -307,23 +334,27 @@ export const NativeTrainerProfileScreen = ({
       <View style={[styles.card, { borderColor: team.accent }, light && styles.cardLight]}>
         <View style={[styles.identity, { backgroundColor: light ? `${team.accent}18` : team.soft, borderColor: `${team.accent}88` }]}>
           <Text style={[styles.cardLabel, { color: team.accent }]}>TRAINER CARD</Text>
-          <View style={styles.portraitWrap}>
-            <View style={[styles.portrait, { borderColor: team.accent }]}>
-              <Text style={styles.portraitText}>{model.avatarLabel}</Text>
+          <View style={styles.identityMain}>
+            <View style={styles.portraitWrap}>
+              <View style={[styles.portrait, { borderColor: team.accent }]}>
+                <Text style={styles.portraitText}>{model.avatarLabel}</Text>
+              </View>
+              <View style={[styles.levelBadge, { backgroundColor: team.accent }, light && styles.levelBadgeLight]}>
+                <Text style={styles.levelLabel}>LEVEL</Text>
+                <Text style={styles.levelValue}>{model.trainerLevel ?? '–'}</Text>
+              </View>
             </View>
-            <View style={[styles.levelBadge, { backgroundColor: team.accent }, light && styles.levelBadgeLight]}>
-              <Text style={styles.levelLabel}>LEVEL</Text>
-              <Text style={styles.levelValue}>{model.trainerLevel ?? '–'}</Text>
+            <View style={styles.identityCopy}>
+              <Text numberOfLines={1} style={[styles.pogoName, light && styles.textLight]}>{model.pokemonGoName}</Text>
+              <Text numberOfLines={1} style={[styles.username, light && styles.mutedLight]}>@{model.username}</Text>
+              <View style={styles.teamBlock}>
+                <Text style={[styles.teamName, { color: team.accent }]}>{model.teamLabel.toLocaleUpperCase()}</Text>
+                <Text style={[styles.xp, light && styles.textLight]}>{model.totalXpLabel}</Text>
+              </View>
             </View>
           </View>
-          <Text numberOfLines={1} style={[styles.pogoName, light && styles.textLight]}>{model.pokemonGoName}</Text>
-          <Text numberOfLines={1} style={[styles.username, light && styles.mutedLight]}>@{model.username}</Text>
-          <View style={styles.teamBlock}>
-            <Text style={[styles.teamName, { color: team.accent }]}>{model.teamLabel.toLocaleUpperCase()}</Text>
-            <Text style={[styles.xp, light && styles.textLight]}>{model.totalXpLabel}</Text>
-            <View style={[styles.levelTrack, light && styles.levelTrackLight]}>
-              <View style={[styles.levelTrackFill, { backgroundColor: team.accent, width: `${Math.min(100, Math.max(0, ((model.trainerLevel ?? 0) / 80) * 100))}%` }]} />
-            </View>
+          <View style={[styles.levelTrack, light && styles.levelTrackLight]}>
+            <View style={[styles.levelTrackFill, { backgroundColor: team.accent, width: `${Math.min(100, Math.max(0, ((model.trainerLevel ?? 0) / 80) * 100))}%` }]} />
           </View>
         </View>
 
@@ -351,7 +382,17 @@ export const NativeTrainerProfileScreen = ({
 
           <View accessibilityLabel="Featured Pokémon" style={styles.showcase}>
             {Array.from({ length: 6 }, (_, index) => (
-              <View key={`highlight-${index + 1}`} style={styles.highlightSlot}>
+              <View
+                key={`highlight-${index + 1}`}
+                style={[
+                  styles.highlightSlot,
+                  compactHeader && styles.highlightSlotCompact,
+                  compactHeader && index % 3 !== 2 && styles.gridRightBorder,
+                  compactHeader && index < 3 && styles.gridBottomBorder,
+                  !compactHeader && index < 5 && styles.gridRightBorder,
+                  light && styles.gridBorderLight,
+                ]}
+              >
                 {editorDraft ? (
                   <Pressable
                     accessibilityLabel={`${displayedHighlights[index]?.name ?? 'Open slot'}, edit showcase slot ${index + 1}`}
@@ -392,33 +433,55 @@ export const NativeTrainerProfileScreen = ({
             ))}
           </View>
 
-          <View style={[styles.facts, light && styles.dividerLight]}>
-            {[
-              ['STARTED', model.startedLabel],
-              ['LOCATION', model.locationLabel],
-              ['TRAINER CODE', model.trainerCodeLabel],
-            ].map(([label, value]) => (
-              <View key={label} style={styles.fact}>
-                <Text style={[styles.factLabel, { color: team.accent }]}>{label}</Text>
-                <Text numberOfLines={2} style={[styles.factValue, light && styles.textLight]}>{value}</Text>
+          <View style={[styles.facts, compactHeader && styles.factsCompact, light && styles.dividerLight]}>
+            {profileFacts.map(({ icon, label, value }, index) => (
+              <View
+                key={label}
+                style={[
+                  styles.fact,
+                  compactHeader && styles.factCompact,
+                  compactHeader && index < profileFacts.length - 1 && styles.gridBottomBorder,
+                  !compactHeader && index < profileFacts.length - 1 && styles.gridRightBorder,
+                  light && styles.gridBorderLight,
+                ]}
+              >
+                <NativeUiIcon color={team.accent} name={icon} size={18} />
+                <View style={styles.factCopy}>
+                  <Text style={[styles.factLabel, light && styles.mutedLight]}>{label}</Text>
+                  <Text numberOfLines={2} style={[styles.factValue, light && styles.textLight]}>{value}</Text>
+                </View>
               </View>
             ))}
           </View>
 
-          <View accessibilityLabel="Collection summary" style={styles.stats}>
-            {model.stats.map((stat) => {
+          <View accessibilityLabel="Collection summary" style={[styles.stats, light && styles.dividerLight]}>
+            {model.stats.map((stat, index) => {
               const filter = stat.key === 'registered' ? undefined : stat.key;
               const canOpen = model.canViewCollection && filter !== undefined;
+              const compactBottomRow = compactHeader && index >= 3;
+              const hasRightDivider = compactHeader
+                ? (index < 2 || index === 3)
+                : index < model.stats.length - 1;
               return (
                 <Pressable
                   accessibilityRole={canOpen ? 'button' : undefined}
                   disabled={!canOpen}
                   key={stat.key}
                   onPress={() => filter && onOpenCollection(filter)}
-                  style={[styles.stat, light && styles.statLight, canOpen && { borderColor: `${team.accent}88` }]}
+                  style={[
+                    styles.stat,
+                    compactHeader ? (compactBottomRow ? styles.statCompactBottom : styles.statCompactTop) : styles.statWide,
+                    hasRightDivider && styles.gridRightBorder,
+                    compactHeader && index < 3 && styles.gridBottomBorder,
+                    light && styles.gridBorderLight,
+                    canOpen && styles.statInteractive,
+                  ]}
                 >
-                  <Text style={[styles.statLabel, light && styles.mutedLight]}>{stat.label}</Text>
-                  <Text style={[styles.statValue, { color: team.accent }]}>{stat.value.toLocaleString('en-US')}</Text>
+                  <NativeUiIcon color={team.accent} name={statIcons[stat.key]} size={21} />
+                  <View style={styles.statCopy}>
+                    <Text numberOfLines={1} style={[styles.statLabel, light && styles.mutedLight]}>{stat.label}</Text>
+                    <Text style={[styles.statValue, { color: team.accent }]}>{stat.value.toLocaleString('en-US')}</Text>
+                  </View>
                 </Pressable>
               );
             })}
@@ -491,13 +554,14 @@ export const NativeTrainerProfileScreen = ({
 const styles = StyleSheet.create({
   screenRoot: { flex: 1, backgroundColor: '#081012' },
   screen: { flex: 1 },
-  screenLight: { backgroundColor: '#eef4f5' },
+  screenLight: { backgroundColor: '#f8fff9' },
   content: { width: '100%', maxWidth: 1060, alignSelf: 'center', paddingHorizontal: 14, gap: 14 },
   productHeader: { minHeight: 62, flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: 11 },
   productHeaderCopy: { flex: 1, minWidth: 0 },
   headerActions: { flexDirection: 'row', alignItems: 'center', gap: 7 },
-  headerActionsCompact: { width: '100%', justifyContent: 'flex-start', paddingLeft: 55 },
-  headerAction: { minHeight: 44, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 13, borderRadius: 9 },
+  headerActionsCompact: { width: '100%', justifyContent: 'flex-start' },
+  headerAction: { minHeight: 44, flexDirection: 'row', gap: 6, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 13, borderRadius: 9 },
+  headerActionIcon: { width: 17, height: 17 },
   headerActionPrimary: { backgroundColor: '#36c5a4' },
   headerActionSecondary: { borderWidth: 1, borderColor: '#536467', backgroundColor: '#171c1d' },
   headerActionText: { color: '#ffffff', fontSize: 12, fontWeight: '900' },
@@ -505,39 +569,44 @@ const styles = StyleSheet.create({
   pageTitle: { color: '#f7fbfa', fontSize: 28, lineHeight: 34, fontWeight: '900' },
   pageSubtitle: { maxWidth: 620, color: '#9db5b4', fontSize: 13, lineHeight: 19 },
   backButton: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: '#315052', borderRadius: 10, backgroundColor: '#171c1d' },
-  backButtonLight: { borderColor: '#acbabc', backgroundColor: '#ffffff' },
-  backButtonText: { color: '#f7fbfa', fontSize: 34, lineHeight: 36 },
+  backButtonLight: { borderColor: '#9bb8b1', backgroundColor: '#f3faf5' },
   card: { overflow: 'hidden', borderWidth: 1, borderRadius: 10, backgroundColor: '#171c1d' },
-  cardLight: { backgroundColor: '#ffffff' },
-  identity: { alignItems: 'center', padding: 18, borderBottomWidth: 1 },
+  cardLight: { backgroundColor: '#f3faf5' },
+  identity: { padding: 14, borderBottomWidth: 1 },
   cardLabel: { alignSelf: 'flex-start', fontSize: 11, fontWeight: '900', letterSpacing: 1.2 },
-  portraitWrap: { width: 144, height: 144, marginTop: 10, marginBottom: 10 },
-  portrait: { width: 136, height: 136, alignItems: 'center', justifyContent: 'center', borderWidth: 3, borderRadius: 68, backgroundColor: '#173436' },
-  portraitText: { color: '#ffffff', fontSize: 64, fontWeight: '900' },
-  levelBadge: { position: 'absolute', right: 0, bottom: 0, width: 58, height: 58, alignItems: 'center', justifyContent: 'center', borderWidth: 3, borderColor: '#171c1d', borderRadius: 29 },
-  levelBadgeLight: { borderColor: '#ffffff' },
+  identityMain: { flexDirection: 'row', alignItems: 'center', gap: 13, marginTop: 10 },
+  identityCopy: { flex: 1, minWidth: 0, alignItems: 'flex-start' },
+  portraitWrap: { width: 80, height: 80, flexShrink: 0 },
+  portrait: { width: 76, height: 76, alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderRadius: 38, backgroundColor: '#173436' },
+  portraitText: { color: '#ffffff', fontSize: 38, fontWeight: '900' },
+  levelBadge: { position: 'absolute', right: 0, bottom: 0, width: 42, height: 42, alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: '#171c1d', borderRadius: 21 },
+  levelBadgeLight: { borderColor: '#f3faf5' },
   levelLabel: { color: '#071516', fontSize: 8, lineHeight: 10, fontWeight: '900' },
-  levelValue: { color: '#071516', fontSize: 20, lineHeight: 22, fontWeight: '900' },
-  pogoName: { maxWidth: '100%', color: '#f7fbfa', fontSize: 24, lineHeight: 29, fontWeight: '900' },
+  levelValue: { color: '#071516', fontSize: 16, lineHeight: 18, fontWeight: '900' },
+  pogoName: { maxWidth: '100%', color: '#f7fbfa', fontSize: 21, lineHeight: 25, fontWeight: '900' },
   username: { color: '#9db5b4', fontSize: 13 },
-  teamBlock: { width: '100%', alignItems: 'center', gap: 3, marginTop: 18 },
+  teamBlock: { alignItems: 'flex-start', gap: 2, marginTop: 6 },
   teamName: { fontSize: 13, fontWeight: '900' },
   xp: { color: '#f7fbfa', fontSize: 13, fontWeight: '800' },
-  levelTrack: { width: '100%', height: 6, overflow: 'hidden', marginTop: 5, borderRadius: 3, backgroundColor: '#52626366' },
+  levelTrack: { width: '100%', height: 6, overflow: 'hidden', marginTop: 9, borderRadius: 3, backgroundColor: '#52626366' },
   levelTrackLight: { backgroundColor: '#aebbbc66' },
   levelTrackFill: { height: '100%', borderRadius: 3 },
-  cardBody: { gap: 14, padding: 16 },
+  cardBody: { padding: 16 },
   cardHeading: { flexDirection: 'row', justifyContent: 'space-between', gap: 12, paddingBottom: 12, borderBottomWidth: 1, borderColor: '#315052' },
   sectionTitle: { color: '#f7fbfa', fontSize: 22, fontWeight: '900' },
   memberBlock: { maxWidth: '45%', alignItems: 'flex-end' },
   memberLabel: { color: '#9db5b4', fontSize: 9, fontWeight: '900', letterSpacing: 0.7 },
   memberValue: { color: '#f7fbfa', fontSize: 12, fontWeight: '800', textAlign: 'right' },
-  showcase: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  highlightSlot: { width: '31.5%', gap: 4 },
+  showcase: { minHeight: 112, flexDirection: 'row', flexWrap: 'wrap', borderBottomWidth: 1, borderColor: '#315052' },
+  highlightSlot: { width: '16.6667%' },
+  highlightSlotCompact: { width: '33.3333%' },
+  gridRightBorder: { borderRightWidth: 1, borderRightColor: '#315052' },
+  gridBottomBorder: { borderBottomWidth: 1, borderBottomColor: '#315052' },
+  gridBorderLight: { borderColor: '#9bb8b1' },
   highlightEditButton: { width: '100%' },
-  highlight: { position: 'relative', width: '100%', minHeight: 128, overflow: 'hidden', alignItems: 'center', justifyContent: 'flex-end', padding: 7, borderWidth: 1, borderColor: '#315052', borderRadius: 8, backgroundColor: '#11191a' },
-  highlightLight: { borderColor: '#bdc8ca', backgroundColor: '#f6f9f9' },
-  highlightImage: { width: 74, height: 74, marginBottom: 2 },
+  highlight: { position: 'relative', width: '100%', minHeight: 112, overflow: 'hidden', alignItems: 'center', justifyContent: 'center', paddingHorizontal: 5, paddingVertical: 9 },
+  highlightLight: {},
+  highlightImage: { width: '100%', maxWidth: 74, height: 64, marginBottom: 2 },
   maxIcon: { position: 'absolute', top: 7, right: 7, width: 22, height: 22 },
   emptyStar: { marginBottom: 25, color: '#6f7c7e', fontSize: 34 },
   highlightName: { color: '#f7fbfa', fontSize: 11, lineHeight: 14, fontWeight: '900', textAlign: 'center' },
@@ -547,27 +616,40 @@ const styles = StyleSheet.create({
   highlightOrderButton: { minHeight: 34, flex: 1, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: '#456265', borderRadius: 6, backgroundColor: '#172526' },
   highlightOrderDisabled: { opacity: 0.3 },
   highlightOrderText: { color: '#ffffff', fontSize: 24, lineHeight: 24, fontWeight: '900' },
-  facts: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, paddingVertical: 13, borderTopWidth: 1, borderBottomWidth: 1, borderColor: '#315052' },
-  fact: { flexGrow: 1, flexBasis: 96, gap: 2 },
-  factLabel: { fontSize: 10, fontWeight: '900', letterSpacing: 0.6 },
+  facts: { flexDirection: 'row', flexWrap: 'wrap', borderBottomWidth: 1, borderColor: '#315052' },
+  factsCompact: { flexDirection: 'column' },
+  fact: { width: '33.3333%', minHeight: 64, flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 10, paddingVertical: 13 },
+  factCompact: { width: '100%', minHeight: 58, paddingVertical: 8 },
+  factCopy: { flex: 1, minWidth: 0, gap: 2 },
+  factLabel: { color: '#9db5b4', fontSize: 10, fontWeight: '900', letterSpacing: 0.6 },
   factValue: { color: '#f7fbfa', fontSize: 12, lineHeight: 16, fontWeight: '800' },
-  stats: { flexDirection: 'row', flexWrap: 'wrap', gap: 7 },
-  stat: { flexGrow: 1, flexBasis: 88, minHeight: 62, justifyContent: 'center', padding: 9, borderWidth: 1, borderColor: '#315052', borderRadius: 8, backgroundColor: '#11191a' },
-  statLight: { borderColor: '#bdc8ca', backgroundColor: '#f6f9f9' },
-  statLabel: { color: '#9db5b4', fontSize: 10, fontWeight: '800' },
-  statValue: { fontSize: 20, fontWeight: '900' },
-  footer: { gap: 10 },
+  stats: { flexDirection: 'row', flexWrap: 'wrap', borderBottomWidth: 1, borderColor: '#315052' },
+  stat: { minHeight: 62, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, paddingHorizontal: 6, paddingVertical: 10 },
+  statWide: { width: '20%' },
+  statCompactTop: { width: '33.3333%' },
+  statCompactBottom: { width: '50%' },
+  statInteractive: { backgroundColor: '#2f9cff0a' },
+  statCopy: { minWidth: 0, gap: 2 },
+  statLabel: {
+    color: '#9db5b4',
+    fontSize: 9,
+    fontWeight: '900',
+    letterSpacing: 0.35,
+    textTransform: 'uppercase',
+  },
+  statValue: { fontSize: 19, lineHeight: 21, fontWeight: '900' },
+  footer: { gap: 10, paddingTop: 13 },
   titlesBlock: { gap: 7 },
   titles: { flexDirection: 'row', flexWrap: 'wrap', gap: 7 },
   titleBadge: { minHeight: 36, flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 10, borderWidth: 1, borderRadius: 18, backgroundColor: '#11191a' },
-  titleBadgeLight: { backgroundColor: '#f6f9f9' },
+  titleBadgeLight: { backgroundColor: '#e3efe8' },
   titleBadgeText: { color: '#f7fbfa', fontSize: 11, fontWeight: '800' },
   noTitles: { color: '#9db5b4', fontSize: 12 },
   relationship: { alignSelf: 'flex-start', paddingHorizontal: 10, paddingVertical: 6, borderWidth: 1, borderRadius: 16 },
   relationshipText: { fontSize: 11, fontWeight: '900' },
-  primaryButton: { minHeight: 48, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 18, borderRadius: 8, backgroundColor: '#2f9cff' },
+  primaryButton: { minHeight: 48, alignItems: 'center', justifyContent: 'center', marginTop: 14, paddingHorizontal: 18, borderRadius: 8, backgroundColor: '#2f9cff' },
   primaryButtonText: { color: '#061617', fontSize: 14, fontWeight: '900' },
-  blockButton: { minHeight: 44, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: '#a9434d', borderRadius: 8, backgroundColor: '#6c252d' },
+  blockButton: { minHeight: 44, alignItems: 'center', justifyContent: 'center', marginTop: 10, borderWidth: 1, borderColor: '#a9434d', borderRadius: 8, backgroundColor: '#6c252d' },
   blockButtonText: { color: '#ffffff', fontSize: 13, fontWeight: '900' },
   feedback: { flexDirection: 'row', alignItems: 'center', gap: 8, padding: 11, borderWidth: 1, borderRadius: 10 },
   feedbackSuccess: { borderColor: '#2fbd79', backgroundColor: '#13372b' },
@@ -578,7 +660,7 @@ const styles = StyleSheet.create({
   stateTitle: { color: '#f7fbfa', fontSize: 20, fontWeight: '900', textAlign: 'center' },
   stateCopy: { maxWidth: 420, color: '#9db5b4', fontSize: 13, lineHeight: 19, textAlign: 'center' },
   errorIcon: { color: '#ff7082', fontSize: 30, fontWeight: '900' },
-  dividerLight: { borderColor: '#bdc8ca' },
-  textLight: { color: '#172124' },
-  mutedLight: { color: '#5e6c6f' },
+  dividerLight: { borderColor: '#9bb8b1' },
+  textLight: { color: '#2f4744' },
+  mutedLight: { color: '#4b625e' },
 });

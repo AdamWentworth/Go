@@ -8,6 +8,7 @@ import {
   View,
 } from 'react-native';
 import { useNativeSession } from '../../auth/NativeSessionContext';
+import { NativeRouteActionMenu } from '../../components/NativeRouteActionMenu';
 import { confirmNativeEmailChange } from '../../services/nativeAccountSecurityApi';
 import { useNativeApiClients } from '../../services/useNativeApiClients';
 import { useNativeDevicePreferences } from '../../features/settings/NativeDevicePreferencesProvider';
@@ -50,8 +51,9 @@ export default function NativeVerifyEmailChangeRoute() {
   }, [clients.auth, session, token]);
 
   return (
-    <View style={[styles.root, light && styles.rootLight]} testID="native-verify-email-change-screen">
-      <View accessibilityLiveRegion="polite" style={[styles.card, light && styles.cardLight]}>
+    <View style={styles.screen}>
+      <View style={[styles.root, light && styles.rootLight]} testID="native-verify-email-change-screen">
+        <View accessibilityLiveRegion="polite" style={[styles.card, light && styles.cardLight]}>
         <Text style={styles.brand}>POKÉMON GO NEXUS</Text>
         <View style={[styles.icon, state === 'error' && styles.iconError]}>
           {state === 'working'
@@ -75,12 +77,15 @@ export default function NativeVerifyEmailChangeRoute() {
             <Text style={styles.buttonText}>Continue to sign in</Text>
           </Pressable>
         ) : null}
+        </View>
       </View>
+      <NativeRouteActionMenu />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
+  screen: { flex: 1 },
   root: {
     flex: 1,
     alignItems: 'center',
@@ -88,7 +93,7 @@ const styles = StyleSheet.create({
     padding: 20,
     backgroundColor: '#06162f',
   },
-  rootLight: { backgroundColor: '#edf4f7' },
+  rootLight: { backgroundColor: '#f8fff9' },
   card: {
     width: '100%',
     maxWidth: 480,

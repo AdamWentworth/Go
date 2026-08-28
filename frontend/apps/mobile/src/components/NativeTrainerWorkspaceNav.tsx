@@ -1,4 +1,6 @@
-import { Pressable, StyleSheet, Text, View, useColorScheme } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
+import Svg, { Circle, Defs, LinearGradient, Path, Rect, Stop } from 'react-native-svg';
+import { useNativeColorScheme } from '../features/settings/useNativeColorScheme';
 
 type NativeTrainerWorkspace = 'profile' | 'friends';
 
@@ -13,7 +15,7 @@ export const NativeTrainerWorkspaceNav = ({
   onOpenFriends,
   onOpenProfile,
 }: Props) => {
-  const light = useColorScheme() === 'light';
+  const light = useNativeColorScheme() === 'light';
   return (
     <View
       accessibilityLabel="Profile pages"
@@ -28,6 +30,7 @@ export const NativeTrainerWorkspaceNav = ({
         const selected = workspace === active;
         return (
           <Pressable
+            aria-selected={selected}
             accessibilityRole="tab"
             accessibilityState={{ selected }}
             disabled={selected}
@@ -35,19 +38,48 @@ export const NativeTrainerWorkspaceNav = ({
             onPress={onPress}
             style={({ pressed }) => [
               styles.button,
-              selected && styles.buttonActive,
               pressed && styles.pressed,
             ]}
           >
+            {selected ? (
+              <Svg height="100%" pointerEvents="none" style={StyleSheet.absoluteFill} width="100%">
+                <Defs>
+                  <LinearGradient id={`trainer-workspace-${workspace}`} x1="0" x2="1" y1="0" y2="0">
+                    <Stop offset="0" stopColor="#14b9c8" />
+                    <Stop offset="1" stopColor="#63e2b4" />
+                  </LinearGradient>
+                </Defs>
+                <Rect fill={`url(#trainer-workspace-${workspace})`} height="100%" rx={7} width="100%" />
+              </Svg>
+            ) : null}
+            <View style={styles.labelRow}>
+              <WorkspaceIcon friends={workspace === 'friends'} selected={selected} />
             <Text style={[
               styles.label,
               light && styles.labelLight,
               selected && styles.labelActive,
             ]}>{label}</Text>
+            </View>
           </Pressable>
         );
       })}
     </View>
+  );
+};
+
+const WorkspaceIcon = ({ friends, selected }: { friends: boolean; selected: boolean }) => {
+  const color = selected ? '#071516' : '#9daaac';
+  return (
+    <Svg height={14} viewBox="0 0 24 24" width={14}>
+      <Circle cx={friends ? 8 : 12} cy={8} fill={color} r={3.2} />
+      {friends ? <Circle cx={16} cy={8.5} fill={color} r={2.7} /> : null}
+      <Path
+        d={friends
+          ? 'M2.5 19c.3-4.2 2.3-6.3 5.5-6.3s5.2 2.1 5.5 6.3H2.5Zm9.2 0c.2-3.5 1.7-5.3 4.4-5.3 2.8 0 4.5 1.8 4.8 5.3h-9.2Z'
+          : 'M5 20c.3-5.2 2.7-7.8 7-7.8s6.7 2.6 7 7.8H5Z'}
+        fill={color}
+      />
+    </Svg>
   );
 };
 
@@ -61,7 +93,7 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     backgroundColor: '#0e1517',
   },
-  navLight: { borderColor: '#9eafb2', backgroundColor: '#ffffff' },
+  navLight: { borderColor: '#9bb8b1', backgroundColor: '#e7f3eb' },
   button: {
     flex: 1,
     minWidth: 0,
@@ -70,9 +102,9 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     borderRadius: 7,
   },
-  buttonActive: { backgroundColor: '#1b6d62' },
+  labelRow: { zIndex: 1, flexDirection: 'row', alignItems: 'center', gap: 8 },
   label: { color: '#9daaac', fontSize: 13, fontWeight: '800' },
-  labelLight: { color: '#536164' },
-  labelActive: { color: '#ffffff', fontWeight: '900' },
+  labelLight: { color: '#4b625e' },
+  labelActive: { color: '#071516', fontWeight: '900' },
   pressed: { opacity: 0.66 },
 });

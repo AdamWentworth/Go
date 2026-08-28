@@ -31,23 +31,42 @@ tags:
 - assertVisible: MUTUAL MATCH
 - assertVisible: Gigantamax Charizard
 - takeScreenshot: search-01-results
+- scrollUntilVisible:
+    element:
+      id: native-search-map-view
+    direction: UP
+    timeout: 10000
 - tapOn:
     id: native-search-map-view
 - assertVisible:
     id: native-search-map
 - assertVisible: "1 on map"
+- scrollUntilVisible:
+    element:
+      text: "OtherTrainer"
+    direction: DOWN
+    timeout: 10000
 - assertVisible: "OtherTrainer"
 - takeScreenshot: search-01b-map
+- scrollUntilVisible:
+    element:
+      id: native-search-list-view
+    direction: UP
+    timeout: 10000
 - tapOn:
     id: native-search-list-view
 - assertNotVisible:
     id: native-search-map
 - scrollUntilVisible:
     element:
-      text: Modify
+      text: Modify search
     direction: UP
     timeout: 10000
-- tapOn: Modify
+- tapOn: Modify search
+- assertVisible: LOOKING FOR
+- assertVisible: Pikachu
+- takeScreenshot: search-01c-primary-controls
+- tapOn: Filters
 - extendedWaitUntil:
     visible: Refine your search
     timeout: 10000
@@ -56,6 +75,11 @@ tags:
 - assertVisible: ".*Matching.*"
 - assertVisible: Shiny
 - takeScreenshot: search-02-filters
+- tapOn: Location
+- assertVisible: Where should we look\?
+- assertVisible: City or place
+- assertVisible: Distance and results
+- takeScreenshot: search-02b-location-filters
 - tapOn: Matching
 - assertVisible: Mutual matches only
 - tapOn: Apply & search.*

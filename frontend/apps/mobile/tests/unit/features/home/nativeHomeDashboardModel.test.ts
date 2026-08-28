@@ -1,6 +1,7 @@
 import type { PokemonInstance } from '@pokemongonexus/shared-contracts/instances';
 import type { NativeCollectionRow } from '../../../../src/features/collection/collectionModel';
 import {
+  buildNativeHomeOnboardingProgress,
   selectNativeHomeRecentRows,
   summarizeNativeHomeCollection,
   summarizeNativeHomeTrades,
@@ -76,5 +77,24 @@ describe('nativeHomeDashboardModel', () => {
     };
 
     expect(selectNativeHomeRecentRows(rows, instances, 2).map((entry) => entry.id)).toEqual(['new', 'old']);
+  });
+
+  it('matches the canonical four onboarding milestones', () => {
+    const progress = buildNativeHomeOnboardingProgress({
+      caught: 2,
+      favorites: 0,
+      forTrade: 1,
+      wanted: 0,
+      mostWanted: 0,
+    }, 0);
+
+    expect(progress.completed).toBe(2);
+    expect(progress.total).toBe(4);
+    expect(progress.tasks.map(({ id, complete, to }) => ({ id, complete, to }))).toEqual([
+      { id: 'collection', complete: true, to: '/pokemon' },
+      { id: 'wanted', complete: false, to: '/pokemon?filter=wanted' },
+      { id: 'trade', complete: true, to: '/pokemon?filter=trade' },
+      { id: 'connect', complete: false, to: '/search' },
+    ]);
   });
 });

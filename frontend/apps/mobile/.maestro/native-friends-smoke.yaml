@@ -21,6 +21,7 @@ tags:
     visible: Your friends
     timeout: 45000
 - assertVisible: CeruleanLeader
+- takeScreenshot: native-friends-initial
 - tapOn: Remove Misty
 - assertVisible: Remove Misty?
 - tapOn: Remove friend

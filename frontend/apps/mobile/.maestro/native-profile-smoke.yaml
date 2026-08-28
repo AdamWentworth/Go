@@ -24,7 +24,8 @@ tags:
 - assertVisible: "@AdamZilla"
 - assertVisible: Shiny Gigantamax Charizard
 - assertVisible: Armored Mewtwo
-- tapOn: Edit profile
+- takeScreenshot: native-trainer-profile-initial
+- tapOn: Edit
 - scrollUntilVisible:
     element:
       text: Your trainer details
@@ -45,7 +46,9 @@ tags:
     element:
       id: native-profile-showcase-slot-1
     direction: DOWN
-    timeout: 15000
+    speed: 70
+    visibilityPercentage: 50
+    timeout: 30000
 - tapOn:
     id: native-profile-showcase-slot-1
 - assertVisible: Choose a caught Pokémon
@@ -72,5 +75,10 @@ tags:
     timeout: 10000
 - assertVisible: Shiny Hunter
 - assertVisible: Lucky Trader
+- scrollUntilVisible:
+    element:
+      text: View Pokémon
+    direction: DOWN
+    timeout: 10000
 - assertVisible: View Pokémon
 - takeScreenshot: native-trainer-profile

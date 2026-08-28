@@ -1,12 +1,5 @@
 import { useMemo, useState } from 'react';
-import {
-  Image,
-  Pressable,
-  StyleSheet,
-  Text,
-  View,
-  useColorScheme,
-} from 'react-native';
+import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import type {
   MaxRankingEntry,
   MaxRole,
@@ -24,11 +17,14 @@ import {
   type MaxBattleTier,
 } from '@pokemongonexus/app-core/max-battle-simulation';
 import type { PokemonVariant } from '@pokemongonexus/shared-contracts/variants';
+import { useNativeColorScheme } from '../../features/settings/useNativeColorScheme';
 
 type Props = {
   assetBaseUrl: string;
   boss: PokemonVariant;
   candidates: MaxRoleCandidates;
+  initialDifficulty?: MaxBattleTier | null;
+  initialTrainerCount?: number | null;
   rosterScope: 'catalog' | 'owned';
 };
 
@@ -107,11 +103,17 @@ export const NativeMaxBattleSimulator = ({
   assetBaseUrl,
   boss,
   candidates,
+  initialDifficulty = null,
+  initialTrainerCount = null,
   rosterScope,
 }: Props) => {
-  const light = useColorScheme() === 'light';
+  const light = useNativeColorScheme() === 'light';
   const difficultyOptions = useMemo(() => getMaxBattleTierOptions(boss), [boss]);
-  const defaultDifficulty = useMemo(() => getDefaultMaxBattleTier(boss), [boss]);
+  const defaultDifficulty = useMemo(() => (
+    initialDifficulty && difficultyOptions.includes(initialDifficulty)
+      ? initialDifficulty
+      : getDefaultMaxBattleTier(boss)
+  ), [boss, difficultyOptions, initialDifficulty]);
   const [difficulty, setDifficulty] = useState<MaxBattleTier>(defaultDifficulty);
   const preset = useMemo(
     () => getMaxBattleBossPreset(boss, difficulty),
@@ -119,9 +121,12 @@ export const NativeMaxBattleSimulator = ({
   );
   const defaults = useMemo(() => recommendedSelection(candidates), [candidates]);
   const [selection, setSelection] = useState<TeamSelection>(defaults);
-  const [trainerCount, setTrainerCount] = useState(
-    () => getMaxBattleBossPreset(boss, defaultDifficulty).defaultTrainers,
-  );
+  const [trainerCount, setTrainerCount] = useState(() => {
+    const initialPreset = getMaxBattleBossPreset(boss, defaultDifficulty);
+    return initialTrainerCount == null
+      ? initialPreset.defaultTrainers
+      : Math.min(initialPreset.maxTrainers, Math.max(1, Math.round(initialTrainerCount)));
+  });
   const [execution, setExecution] = useState<MaxBattleExecution>('standard');
   const [advanced, setAdvanced] = useState(false);
 

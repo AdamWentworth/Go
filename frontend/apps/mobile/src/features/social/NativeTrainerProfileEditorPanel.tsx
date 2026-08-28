@@ -1,14 +1,8 @@
 import { TRAINER_TITLE_OPTIONS, type TrainerTitle } from '@pokemongonexus/shared-contracts/users';
-import {
-  Pressable,
-  StyleSheet,
-  Text,
-  TextInput,
-  View,
-  useColorScheme,
-} from 'react-native';
+import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import type { NativeTrainerProfileDraft } from './nativeTrainerProfileEditorModel';
 import { NativeLocationAutocompleteInput } from '../../components/NativeLocationAutocompleteInput';
+import { useNativeColorScheme } from '../settings/useNativeColorScheme';
 
 type Props = {
   draft: NativeTrainerProfileDraft;
@@ -27,7 +21,7 @@ export const NativeTrainerProfileEditorPanel = ({
   onChange,
   onSave,
 }: Props) => {
-  const light = useColorScheme() === 'light';
+  const light = useNativeColorScheme() === 'light';
   const setField = <K extends keyof NativeTrainerProfileDraft>(
     field: K,
     value: NativeTrainerProfileDraft[K],
@@ -182,6 +176,7 @@ export const NativeTrainerProfileEditorPanel = ({
             const disabled = !selected && draft.trainerTitles.length >= 3;
             return (
               <Pressable
+                aria-checked={selected}
                 accessibilityRole="checkbox"
                 accessibilityState={{ checked: selected, disabled }}
                 disabled={disabled}

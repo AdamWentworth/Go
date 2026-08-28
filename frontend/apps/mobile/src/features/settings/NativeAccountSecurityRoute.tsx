@@ -1,10 +1,11 @@
 import type { OAuthProvider } from '@pokemongonexus/shared-contracts/auth';
 import { Redirect, useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, StyleSheet, Text, View, useColorScheme } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 import { useNativeSession } from '../../auth/NativeSessionContext';
 import { NativeActionMenu } from '../../components/NativeActionMenu';
 import { NativeActionMenuAnchor } from '../../components/NativeActionMenuAnchor';
+import { NativeProtectedSessionGate } from '../../components/NativeProtectedSessionGate';
 import { runtimeConfig } from '../../config/runtimeConfig';
 import { resolveNativeActionMenuDestination } from '../../navigation/nativeActionMenuNavigation';
 import { NativeAccountSecurityScreen } from '../../screens/NativeAccountSecurityScreen';
@@ -30,10 +31,9 @@ import {
   revokeNativeSessionsAndClearSession,
   saveNativeUsernameGraph,
 } from './nativeAccountSecurityCommands';
-import {
-  connectNativeOAuthProvider,
-  exchangeNativeOAuthLinkCode,
-} from './nativeOAuthProviderLink';
+import { connectNativeOAuthProvider, exchangeNativeOAuthLinkCode } from './nativeOAuthProviderLink';
+import { nativeAccountOAuthFeedback } from '../auth/nativeAuthRouteFeedback';
+import { useNativeColorScheme } from './useNativeColorScheme';
 
 type Feedback = { tone: 'success' | 'error'; text: string };
 
@@ -49,8 +49,12 @@ const firstParam = (value: string | string[] | undefined): string | null => {
 
 export const NativeAccountSecurityRoute = () => {
   const router = useRouter();
-  const params = useLocalSearchParams<{ oauth_code?: string | string[]; oauth_error?: string | string[] }>();
-  const light = useColorScheme() === 'light';
+  const params = useLocalSearchParams<{
+    oauth?: string | string[];
+    oauth_code?: string | string[];
+    oauth_error?: string | string[];
+  }>();
+  const light = useNativeColorScheme() === 'light';
   const session = useNativeSession();
   const clients = useNativeApiClients();
   const user = session.user;
@@ -61,9 +65,24 @@ export const NativeAccountSecurityRoute = () => {
   const [pendingSecondaryUsername, setPendingSecondaryUsername] = useState<string | null>(null);
   const [actionMenuOpen, setActionMenuOpen] = useState(false);
   const processedOAuthReturnRef = useRef<string | null>(null);
+  const processedCanonicalOAuthRef = useRef<string | null>(null);
 
+  const oauthStatus = firstParam(params.oauth);
   const oauthCode = firstParam(params.oauth_code);
   const oauthError = firstParam(params.oauth_error);
+
+  useEffect(() => {
+    if (session.status !== 'signed-in' || !oauthStatus
+        || processedCanonicalOAuthRef.current === oauthStatus) return;
+    processedCanonicalOAuthRef.current = oauthStatus;
+    router.setParams({ oauth: undefined });
+    const canonicalFeedback = nativeAccountOAuthFeedback(oauthStatus);
+    let active = true;
+    void Promise.resolve().then(() => {
+      if (active && canonicalFeedback) setFeedback(canonicalFeedback);
+    });
+    return () => { active = false; };
+  }, [oauthStatus, router, session.status]);
 
   useEffect(() => {
     const resultKey = oauthCode ? `code:${oauthCode}` : oauthError ? `error:${oauthError}` : null;
@@ -104,14 +123,13 @@ export const NativeAccountSecurityRoute = () => {
     return () => { active = false; };
   }, [clients.auth, oauthCode, oauthError, router, securityQuery, session.status]);
 
-  if (session.status === 'restoring') {
+  if (session.status === 'restoring' || session.status === 'unavailable') {
     return (
-      <View style={[styles.restoring, light && styles.rootLight]}>
-        <ActivityIndicator color="#35a8ff" />
-        <Text style={[styles.restoringText, light && styles.restoringTextLight]}>
-          Restoring account security…
-        </Text>
-      </View>
+      <NativeProtectedSessionGate
+        message="Restoring account security…"
+        onRetry={session.retrySession}
+        status={session.status}
+      />
     );
   }
 
@@ -138,85 +156,90 @@ export const NativeAccountSecurityRoute = () => {
     }
   };
 
-  const saveUsername = () => run('username', async () => {
+  const updateAccount = () => run('account', async () => {
+    if (!security) throw new Error('Account security is still loading.');
     const normalized = draft.username.trim();
-    if (pendingSecondaryUsername === normalized) {
-      await updateNativeSecondaryUsername(clients.users, user.user_id, normalized);
-      setPendingSecondaryUsername(null);
-      setFeedback({ tone: 'success', text: 'Username synchronized.' });
-      return;
-    }
-    const request = buildNativeUsernameUpdateRequest({
+    const usernameRequest = buildNativeUsernameUpdateRequest({
       currentEmail: user.email,
       currentUsername: user.username,
       username: draft.username,
     });
-    if (!request) {
-      setFeedback({ tone: 'success', text: 'Username is already up to date.' });
-      return;
-    }
-    let committedUsername: string | null = null;
-    try {
-      await saveNativeUsernameGraph({
-        auth: clients.auth,
-        onAuthUpdated: (updated) => {
-          committedUsername = updated.username;
-          session.replaceSessionUser(updated);
-          setDraftOverride((current) => ({
-            ...(current ?? draft),
-            username: updated.username,
-          }));
-          setPendingSecondaryUsername(updated.username);
-        },
-        request,
-        userId: user.user_id,
-        users: clients.users,
-      });
-      setPendingSecondaryUsername(null);
-      setFeedback({ tone: 'success', text: 'Username saved.' });
-    } catch (error) {
-      if (!committedUsername) throw error;
-      throw new Error(`Your sign-in username changed, but profile synchronization needs another try. ${errorMessage(error)}`);
-    }
-  });
-
-  const requestEmail = () => run('email', async () => {
-    if (!security) throw new Error('Account security is still loading.');
-    const request = buildNativeEmailChangeRequest({
+    const emailRequest = buildNativeEmailChangeRequest({
       currentEmail: security.email,
       currentPassword: draft.currentPassword,
       email: draft.email,
       hasPassword: security.hasPassword,
     });
-    if (!request) {
-      setFeedback({ tone: 'success', text: 'Email address is already up to date.' });
-      return;
-    }
-    await requestNativeEmailChange(clients.auth, request);
-    setDraftOverride({ ...draft, currentPassword: '' });
-    setFeedback({ tone: 'success', text: `Verification sent to ${request.email}.` });
-  });
-
-  const changePassword = () => run('password', async () => {
-    if (!security) throw new Error('Account security is still loading.');
-    const request = buildNativePasswordUpdateRequest({
+    const passwordRequest = buildNativePasswordUpdateRequest({
       confirmNewPassword: draft.confirmNewPassword,
       currentEmail: security.email,
       currentPassword: draft.currentPassword,
-      currentUsername: user.username,
+      currentUsername: usernameRequest?.username ?? user.username,
       hasPassword: security.hasPassword,
       newPassword: draft.newPassword,
     });
-    if (!request) throw new Error('Enter and confirm a new password.');
-    await changeNativePasswordAndClearSession({
-      auth: clients.auth,
-      clearSession: session.clearSession,
-      request,
-      userId: user.user_id,
+    let changed = false;
+
+    if (pendingSecondaryUsername === normalized) {
+      await updateNativeSecondaryUsername(clients.users, user.user_id, normalized);
+      setPendingSecondaryUsername(null);
+      changed = true;
+    } else if (usernameRequest) {
+      let committedUsername: string | null = null;
+      try {
+        await saveNativeUsernameGraph({
+          auth: clients.auth,
+          onAuthUpdated: (updated) => {
+            committedUsername = updated.username;
+            session.replaceSessionUser(updated);
+            setDraftOverride((current) => ({
+              ...(current ?? draft),
+              username: updated.username,
+            }));
+            setPendingSecondaryUsername(updated.username);
+          },
+          request: usernameRequest,
+          userId: user.user_id,
+          users: clients.users,
+        });
+        setPendingSecondaryUsername(null);
+        changed = true;
+      } catch (error) {
+        if (!committedUsername) throw error;
+        throw new Error(`Your sign-in username changed, but profile synchronization needs another try. ${errorMessage(error)}`);
+      }
+    }
+
+    if (emailRequest) {
+      await requestNativeEmailChange(clients.auth, emailRequest);
+      changed = true;
+    }
+
+    if (passwordRequest) {
+      await changeNativePasswordAndClearSession({
+        auth: clients.auth,
+        clearSession: session.clearSession,
+        request: passwordRequest,
+        userId: user.user_id,
+      });
+      router.replace({
+        pathname: '/native/login',
+        params: { notice: 'Password updated. Sign in again on this device.' },
+      });
+      return;
+    }
+
+    setDraftOverride({
+      ...draft,
+      currentPassword: '',
+      confirmNewPassword: '',
+      newPassword: '',
     });
-    router.replace({
-      pathname: '/native/login',
-      params: { notice: 'Password updated. Sign in again on this device.' },
+    setFeedback({
+      tone: 'success',
+      text: emailRequest
+        ? `Account updated. Verification sent to ${emailRequest.email}.`
+        : changed ? 'Account updated.' : 'Account is already up to date.',
     });
   });
 
@@ -313,17 +336,15 @@ export const NativeAccountSecurityRoute = () => {
         isLoading={securityQuery.isPending}
         onBack={() => router.canGoBack() ? router.back() : router.replace('/native/settings')}
         onChange={(next) => { setDraftOverride(next); setFeedback(null); }}
-        onChangePassword={() => void changePassword()}
         onConnectProvider={(provider) => void connectProvider(provider)}
         onDeleteAccount={() => void deleteAccount()}
         onDismissFeedback={() => setFeedback(null)}
         onOpenSettings={() => router.replace('/native/settings')}
-        onRequestEmailChange={() => void requestEmail()}
         onRetry={() => void retry()}
         onRevokeAllSessions={() => void revokeSessions()}
-        onSaveUsername={() => void saveUsername()}
         onSignOut={() => void signOut()}
         onUnlinkProvider={(provider) => void unlinkProvider(provider)}
+        onUpdateAccount={() => void updateAccount()}
         pendingAction={pendingAction}
         security={security}
       />
@@ -345,14 +366,5 @@ export const NativeAccountSecurityRoute = () => {
 
 const styles = StyleSheet.create({
   root: { flex: 1, minHeight: 0, backgroundColor: '#081012' },
-  rootLight: { backgroundColor: '#eef4f5' },
-  restoring: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 12,
-    backgroundColor: '#081012',
-  },
-  restoringText: { color: '#a8b9bc', fontSize: 14, fontWeight: '700' },
-  restoringTextLight: { color: '#5f7074' },
+  rootLight: { backgroundColor: '#f8fff9' },
 });

@@ -1,5 +1,6 @@
 import type { BasePokemon } from '@pokemongonexus/shared-contracts/pokemon';
 import { fireEvent, render } from '@testing-library/react-native';
+import { AccessibilityInfo } from 'react-native';
 import { NativePokemonSearchScreen } from '../../../src/screens/NativePokemonSearchScreen';
 import { createNativePokemonSearchDraft } from '../../../src/features/search/nativePokemonSearchDraft';
 import type { NativePokemonSearchResult } from '../../../src/features/search/pokemonSearchModel';
@@ -62,6 +63,20 @@ const result: NativePokemonSearchResult = {
   distanceKm: 1.2,
   mode: 'trade',
   row: row('listing-1', 'Shiny Detective Pikachu', 'trade'),
+  details: {
+    gender: 'Female',
+    weight: 6,
+    height: 0.4,
+    moves: ['Thunder Shock', 'Wild Charge'],
+    attackIv: 15,
+    defenseIv: 14,
+    staminaIv: 13,
+    locationCaught: 'Burnaby, British Columbia, Canada',
+    dateCaught: '2026-08-26',
+    friendshipLevel: null,
+    prefLucky: false,
+    wantedSizeLabels: [],
+  },
   relatedRows: [{ ...row('wanted-1', 'Gigantamax Charizard', 'wanted'), match: true }],
   hasMutualMatch: true,
   mapCoordinate: [-122.98, 49.24],
@@ -96,7 +111,7 @@ describe('NativePokemonSearchScreen', () => {
 
   it('runs a valid search immediately and publishes the exact canonical query', () => {
     const view = render(<NativePokemonSearchScreen {...baseProps} />);
-    fireEvent.press(view.getByText('Search community listings'));
+    fireEvent.press(view.getByRole('button', { name: 'Search' }));
     expect(baseProps.onSearch).toHaveBeenCalledWith(
       expect.objectContaining({
         pokemon_id: 25,
@@ -111,11 +126,29 @@ describe('NativePokemonSearchScreen', () => {
   it('keeps validation feedback inside the relevant filter stage', () => {
     const invalidDraft = { ...draft, latitude: null, longitude: null };
     const view = render(<NativePokemonSearchScreen {...baseProps} draft={invalidDraft} />);
-    fireEvent.press(view.getByText('Search community listings'));
+    fireEvent.press(view.getByRole('button', { name: 'Search' }));
     expect(view.getByTestId('native-pokemon-search-filter-sheet')).toBeTruthy();
     expect(view.getByText('Choose a location before searching.')).toBeTruthy();
     expect(view.getByText('Where should we look?')).toBeTruthy();
     expect(baseProps.onSearch).not.toHaveBeenCalled();
+  });
+
+  it('keeps Pokémon selection in the canonical primary search surface', () => {
+    const view = render(<NativePokemonSearchScreen {...baseProps} />);
+    fireEvent.press(view.getByRole('button', { name: 'Choose Pokémon' }));
+    expect(view.getByTestId('native-option-picker')).toBeTruthy();
+    expect(view.getByLabelText('Search Choose a Pokémon')).toBeTruthy();
+    expect(view.getByText('#0025')).toBeTruthy();
+  });
+
+  it('returns a submitted search to the complete primary controls before editing', () => {
+    const view = render(
+      <NativePokemonSearchScreen {...baseProps} hasSearched results={[result]} />,
+    );
+    expect(view.getByText('CURRENT SEARCH')).toBeTruthy();
+    fireEvent.press(view.getByText(/Modify/));
+    expect(view.getByText('LOOKING FOR')).toBeTruthy();
+    expect(view.getByRole('button', { name: 'Choose Pokémon' })).toBeTruthy();
   });
 
   it('renders reciprocal listings and preserves both explicit destinations', () => {
@@ -132,6 +165,10 @@ describe('NativePokemonSearchScreen', () => {
     );
     expect(view.getByText('MUTUAL MATCH')).toBeTruthy();
     expect(view.getByText('Gigantamax Charizard')).toBeTruthy();
+    expect(view.getByText('♀')).toBeTruthy();
+    fireEvent.press(view.getByRole('button', { name: 'Listing details' }));
+    expect(view.getByText('Thunder Shock · Wild Charge')).toBeTruthy();
+    expect(view.getAllByText(/Burnaby, British Columbia, Canada/).length).toBeGreaterThan(0);
     fireEvent.press(view.getByText('View trainer'));
     fireEvent.press(view.getByText('Open listing  →'));
     expect(onOpenProfile).toHaveBeenCalledWith('OtherTrainer');
@@ -160,5 +197,23 @@ describe('NativePokemonSearchScreen', () => {
     view.rerender(<NativePokemonSearchScreen {...baseProps} error="Search service unavailable." />);
     expect(view.getByText('Search couldn’t be completed')).toBeTruthy();
     expect(view.getByText('Search service unavailable.')).toBeTruthy();
+  });
+
+  it('announces successful searches without adding a redundant visual banner', () => {
+    const announce = jest.spyOn(AccessibilityInfo, 'announceForAccessibility').mockImplementation(() => undefined);
+    const view = render(
+      <NativePokemonSearchScreen
+        {...baseProps}
+        hasSearched
+        notice="Search complete. 1 listing found."
+        results={[result]}
+      />,
+    );
+
+    expect(announce).toHaveBeenCalledWith('Search complete. 1 listing found.');
+    expect(view.queryByText('Search complete. 1 listing found.')).toBeNull();
+    expect(view.getByText(/SEARCH COMPLETE/)).toBeTruthy();
+
+    announce.mockRestore();
   });
 });

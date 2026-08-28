@@ -22,6 +22,9 @@ expo-env.d.ts
 # Metro
 .metro-health-check*
 
+# Generated parity and device-smoke evidence
+.artifacts/
+
 # debug
 npm-debug.*
 yarn-debug.*

@@ -6,7 +6,6 @@ import {
   StyleSheet,
   Text,
   View,
-  useColorScheme,
 } from 'react-native';
 import { useMemo, useState } from 'react';
 import type { PokemonInstance } from '@pokemongonexus/shared-contracts/instances';
@@ -23,6 +22,8 @@ import type { NativePokemonOrganizerRequest } from './useNativePokemonOrganizerM
 import { NativeCollectionPriorityStar } from './parity/NativeCollectionPriorityStar';
 import { normalizeNativeTagIds } from './nativeInstanceNormalization';
 import { NativeCustomTagEditorSheet } from './NativeCustomTagEditorSheet';
+import { useNativeModalAnimation } from '../settings/useNativeMotion';
+import { useNativeColorScheme } from '../settings/useNativeColorScheme';
 
 type Props = {
   inventoryTags: NativeTagSummary[];
@@ -63,6 +64,7 @@ const CustomTagChoice = ({
   light: boolean;
 }) => (
   <Pressable
+    aria-checked={state === 'mixed' ? 'mixed' : state === 'checked'}
     accessibilityRole="checkbox"
     accessibilityState={{ checked: state === 'mixed' ? 'mixed' : state === 'checked' }}
     onPress={onPress}
@@ -95,7 +97,8 @@ export const NativePokemonOrganizerSheet = ({
   onClose,
   visible,
 }: Props) => {
-  const light = useColorScheme() === 'light';
+  const light = useNativeColorScheme() === 'light';
+  const animationType = useNativeModalAnimation('slide');
   const isCatalog = rows.length > 0 && rows.every((row) => row.source === 'catalog');
   const selectedInstances = useMemo(() => rows.flatMap((row) => {
     if (row.source === 'catalog') return [];
@@ -405,7 +408,7 @@ export const NativePokemonOrganizerSheet = ({
 
   return (
     <Modal
-      animationType="slide"
+      animationType={animationType}
       onRequestClose={isSaving ? undefined : onClose}
       transparent
       visible={visible}
@@ -442,6 +445,7 @@ export const NativePokemonOrganizerSheet = ({
                     const selected = destination === key;
                     return (
                       <Pressable
+                        aria-checked={selected}
                         accessibilityRole="radio"
                         accessibilityState={{ checked: selected }}
                         key={key}
@@ -470,6 +474,7 @@ export const NativePokemonOrganizerSheet = ({
                     ['trade', 'Caught and For Trade', 'Add to your collection and trade listings.'],
                   ] as const).map(([key, label, detail]) => (
                     <Pressable
+                      aria-checked={conversionDestination === key}
                       accessibilityRole="radio"
                       accessibilityState={{ checked: conversionDestination === key }}
                       key={key}

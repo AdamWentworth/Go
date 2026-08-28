@@ -58,7 +58,7 @@ describe('NativeTrainerSettingsScreen', () => {
     fireEvent.press(view.getByRole('button', { name: 'Color theme, Dark' }));
     fireEvent.press(view.getByRole('radio', { name: 'Light' }));
     expect(onChangeColorTheme).toHaveBeenCalledWith('light');
-    fireEvent(view.getByLabelText('Reduce motion'), 'valueChange', true);
+    fireEvent.press(view.getByRole('switch', { name: 'Reduce motion' }));
     expect(onChangeReduceMotion).toHaveBeenCalledWith(true);
     fireEvent.press(view.getByRole('button', { name: 'Retry now' }));
     expect(onRetrySync).toHaveBeenCalledTimes(1);
@@ -73,7 +73,7 @@ describe('NativeTrainerSettingsScreen', () => {
     fireEvent.press(view.getByRole('button', { name: 'Profile visibility, Everyone' }));
     fireEvent.press(view.getByRole('radio', { name: 'Friends only' }));
     expect(onChange).toHaveBeenCalledWith({ ...draft, profileVisibility: 'friends' });
-    fireEvent(view.getByLabelText('Show profile location'), 'valueChange', true);
+    fireEvent.press(view.getByRole('switch', { name: 'Show profile location' }));
     expect(onChange).toHaveBeenCalledWith({ ...draft, showLocation: true });
     fireEvent.changeText(view.getByLabelText('Coordination handle'), 'UpdatedTrainer');
     expect(onChange).toHaveBeenCalledWith({ ...draft, coordinationHandle: 'UpdatedTrainer' });

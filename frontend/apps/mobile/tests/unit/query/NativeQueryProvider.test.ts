@@ -6,5 +6,6 @@ describe('native session query cache boundary', () => {
     expect(shouldClearNativeSessionCache('user-1', 'user-2', 'signed-in')).toBe(true);
     expect(shouldClearNativeSessionCache('user-1', 'user-1', 'signed-in')).toBe(false);
     expect(shouldClearNativeSessionCache(null, 'user-1', 'signed-in')).toBe(false);
+    expect(shouldClearNativeSessionCache(null, null, 'signed-out')).toBe(false);
   });
 });

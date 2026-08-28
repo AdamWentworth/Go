@@ -2,6 +2,7 @@ import { Redirect } from 'expo-router';
 import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { NativeConfirmationDialog } from '../../components/NativeConfirmationDialog';
+import { NativeRouteActionMenu } from '../../components/NativeRouteActionMenu';
 import { runtimeConfig } from '../../config/runtimeConfig';
 import type { NativeTrainerProfileModel } from '../../features/social/nativeTrainerProfileModel';
 import {
@@ -81,6 +82,7 @@ export default function DeviceSmokeProfileRelationshipRoute() {
         title="Cancel friend request?"
         visible={confirmationOpen}
       />
+      <NativeRouteActionMenu currentPath="/profile/Misty" signedIn />
     </View>
   );
 }

@@ -1,8 +1,9 @@
-import { Image, Pressable, StyleSheet } from 'react-native';
+import { Image, Pressable, StyleSheet, useWindowDimensions } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 type Props = {
   assetBaseUrl: string;
+  disabled?: boolean;
   onPress: () => void;
 };
 
@@ -10,17 +11,31 @@ const toAssetUrl = (baseUrl: string, path: string): string => (
   `${baseUrl.replace(/\/$/, '')}/${path.replace(/^\//, '')}`
 );
 
-export const NativeActionMenuAnchor = ({ assetBaseUrl, onPress }: Props) => {
+export const NativeActionMenuAnchor = ({ assetBaseUrl, disabled = false, onPress }: Props) => {
   const insets = useSafeAreaInsets();
+  const { width } = useWindowDimensions();
+  const size = width <= 480
+    ? Math.min(80, Math.max(50, width * 0.12))
+    : width < 768
+      ? Math.min(90, Math.max(60, width * 0.1))
+      : Math.min(80, Math.max(60, width * 0.035));
   return (
     <Pressable
       accessibilityLabel="Open action menu"
       accessibilityRole="button"
+      disabled={disabled}
       onPress={onPress}
+      pointerEvents={disabled ? 'none' : 'auto'}
       testID="native-action-menu-anchor"
       style={({ pressed }) => [
         styles.anchor,
-        { bottom: Math.max(20, insets.bottom) },
+        {
+          borderRadius: size / 2,
+          bottom: Math.max(20, insets.bottom),
+          height: size,
+          marginLeft: -(size / 2),
+          width: size,
+        },
         pressed && styles.pressed,
       ]}
     >
@@ -28,7 +43,7 @@ export const NativeActionMenuAnchor = ({ assetBaseUrl, onPress }: Props) => {
         accessibilityElementsHidden
         resizeMode="contain"
         source={{ uri: toAssetUrl(assetBaseUrl, '/images/btn_action_menu.png') }}
-        style={styles.ball}
+        style={{ height: size, width: size }}
       />
     </Pressable>
   );
@@ -39,14 +54,9 @@ const styles = StyleSheet.create({
     position: 'absolute',
     left: '50%',
     zIndex: 21,
-    width: 54,
-    height: 54,
     alignItems: 'center',
     justifyContent: 'center',
-    marginLeft: -27,
-    borderRadius: 27,
     backgroundColor: 'transparent',
   },
-  ball: { width: 54, height: 54 },
   pressed: { opacity: 0.76, transform: [{ scale: 0.97 }] },
 });

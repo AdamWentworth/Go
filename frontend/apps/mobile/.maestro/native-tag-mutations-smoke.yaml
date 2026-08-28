@@ -81,13 +81,21 @@ tags:
       text: ↕ Arrange
     direction: UP
 - tapOn: ↕ Arrange
-- assertVisible: Reorder Favorites
+- assertVisible: "Reorder Favorites, position 1 of 4"
 - scrollUntilVisible:
     element:
-      text: Reorder Shadow Shinies
+      text: "Reorder Shadow Shinies, position 4 of 4"
     direction: DOWN
     timeout: 20000
-- assertVisible: Reorder Shadow Shinies
+- assertVisible: "Reorder Shadow Shinies, position 4 of 4"
+- swipe:
+    from:
+      id: native-tag-drag-custom:shadow-shinies
+    direction: UP
+    duration: 900
+- extendedWaitUntil:
+    visible: "Reorder Shadow Shinies, position [123] of 4"
+    timeout: 10000
 - scrollUntilVisible:
     element:
       text: ✓ Save order
@@ -97,4 +105,14 @@ tags:
 - extendedWaitUntil:
     visible: ↕ Arrange
     timeout: 10000
+- tapOn: ↕ Arrange
+- extendedWaitUntil:
+    visible: "Reorder Shadow Shinies, position [123] of 4"
+    timeout: 10000
+- scrollUntilVisible:
+    element:
+      text: × Cancel
+    direction: UP
+    timeout: 20000
+- tapOn: × Cancel
 - takeScreenshot: 04-order-saved

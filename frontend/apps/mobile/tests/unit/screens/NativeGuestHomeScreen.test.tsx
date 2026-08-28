@@ -15,13 +15,13 @@ describe('NativeGuestHomeScreen', () => {
     expect(screen.getByText('Exact variants and custom tags')).toBeTruthy();
     expect(screen.getByText('Reciprocal trade matching')).toBeTruthy();
     expect(screen.getByText('You each have what the other trainer wants')).toBeTruthy();
-    expect(screen.getByText('Exact collection')).toBeTruthy();
-    expect(screen.getByText('Reciprocal trading')).toBeTruthy();
-    expect(screen.getByText('One clear trading workflow')).toBeTruthy();
+    expect(screen.getByText('Catalog what you have')).toBeTruthy();
+    expect(screen.getByText('Find a real match')).toBeTruthy();
+    expect(screen.getByText('Propose with confidence')).toBeTruthy();
 
     fireEvent.press(screen.getByText('Create your free account'));
     fireEvent.press(screen.getByText('Explore the app ↓'));
     expect(onNavigate).toHaveBeenNthCalledWith(1, '/register');
-    expect(onNavigate).toHaveBeenNthCalledWith(2, '/getting-started');
+    expect(onNavigate).toHaveBeenCalledTimes(1);
   });
 });

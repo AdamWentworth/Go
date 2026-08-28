@@ -132,10 +132,10 @@ describe('NativeTagsPanelScreen', () => {
 
     expect(screen.getByRole('button', { name: 'New inventory tag' })).toBeTruthy();
     fireEvent.press(screen.getByText('↕ Arrange'));
-    expect(screen.getByLabelText('Reorder Trade')).toBeTruthy();
-    expect(screen.getByLabelText('Reorder Shadow Shinies')).toBeTruthy();
+    expect(screen.getByLabelText('Reorder Trade, position 1 of 2')).toBeTruthy();
+    expect(screen.getByLabelText('Reorder Shadow Shinies, position 2 of 2')).toBeTruthy();
     fireEvent(
-      screen.getByLabelText('Reorder Trade'),
+      screen.getByLabelText('Reorder Trade, position 1 of 2'),
       'accessibilityAction',
       { nativeEvent: { actionName: 'increment' } },
     );

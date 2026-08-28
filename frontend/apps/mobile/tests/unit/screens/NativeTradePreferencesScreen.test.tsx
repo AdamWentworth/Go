@@ -185,13 +185,17 @@ describe('NativeTradePreferencesScreen', () => {
   });
 
   it('starts with the canonical For Trade editor and hides disallowed targets outside edit mode', () => {
-    const { getByText, queryByText } = renderScreen();
+    const { getAllByText, getByLabelText, getByRole, getByText, queryByText } = renderScreen();
 
-    expect(getByText('Trade preferences')).toBeTruthy();
-    expect(getByText('Wanted Pokémon')).toBeTruthy();
+    expect(getAllByText('Trade Preferences')).toHaveLength(2);
+    expect(getByText('WANTED POKÉMON')).toBeTruthy();
     expect(getByText('Shiny Charizard')).toBeTruthy();
     expect(queryByText('Shiny Mewtwo')).toBeNull();
-    expect(getByText('1 acceptable targets')).toBeTruthy();
+    expect(getByText('1 wanted · no advanced rules')).toBeTruthy();
+    expect(getByLabelText('Search preference Pokémon')).toBeTruthy();
+    expect(getByRole('button', { name: '↶ Reset' }).props.accessibilityState).toEqual({
+      disabled: true,
+    });
   });
 
   it('hydrates saved rules and exclusions when live collection data arrives after mount', async () => {
@@ -218,7 +222,7 @@ describe('NativeTradePreferencesScreen', () => {
 
     await waitFor(() => expect(screen.getByText('Shiny Charizard')).toBeTruthy());
     expect(screen.queryByText('Shiny Mewtwo')).toBeNull();
-    expect(screen.getByText('1 acceptable targets')).toBeTruthy();
+    expect(screen.getByText('1 wanted · no advanced rules')).toBeTruthy();
   });
 
   it('opens the listing requested by contextual route navigation', () => {
@@ -242,10 +246,11 @@ describe('NativeTradePreferencesScreen', () => {
   it('switches to Wanted semantics without reusing For Trade copy', () => {
     const { getByText, queryByText } = renderScreen();
 
-    fireEvent.press(getByText('Wanted'));
-    expect(getByText('For Trade Pokémon')).toBeTruthy();
+    fireEvent.press(getByText(/^Wanted \(/));
+    expect(getByText(/^For Trade Pokémon$/i)).toBeTruthy();
     expect(getByText('Gigantamax Charizard')).toBeTruthy();
-    expect(queryByText('Wanted Pokémon')).toBeNull();
+    expect(getByText('1 available · no advanced rules')).toBeTruthy();
+    expect(queryByText(/^Wanted Pokémon$/i)).toBeNull();
   });
 
   it('uses a full-screen mobile listing picker', () => {
@@ -253,7 +258,7 @@ describe('NativeTradePreferencesScreen', () => {
 
     fireEvent.press(getAllByText('Shiny Bulbasaur')[0]);
     expect(getByText('SELECT A LISTING')).toBeTruthy();
-    expect(getByText('For Trade Pokémon')).toBeTruthy();
+    expect(getByText(/^For Trade Pokémon$/i)).toBeTruthy();
   });
 
   it('edits manual candidate access and saves the complete draft', async () => {
@@ -289,7 +294,7 @@ describe('NativeTradePreferencesScreen', () => {
 
     fireEvent.press(getByText('Edit preferences'));
     fireEvent.press(getByTestId('preference-candidate-wanted-charizard'));
-    fireEvent.press(getByText('Wanted'));
+    fireEvent.press(getByText(/^Wanted \(/));
     expect(getByText('Discard your changes?')).toBeTruthy();
     expect(getByText('Keep editing')).toBeTruthy();
   });

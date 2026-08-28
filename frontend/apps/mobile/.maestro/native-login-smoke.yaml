@@ -26,8 +26,9 @@ tags:
 - assertVisible: Login with Google
 - assertVisible: Login with Discord
 - assertVisible: Login with Facebook
+- takeScreenshot: native-login-initial
 - tapOn: Show password
 - assertVisible: Hide password
 - tapOn: Reset Password
 - assertVisible: Password reset opens the secure account recovery flow.
-- takeScreenshot: native-login
+- takeScreenshot: native-login-password-reset-feedback

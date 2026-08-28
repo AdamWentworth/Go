@@ -8,7 +8,6 @@ import {
   Text,
   TextInput,
   View,
-  useColorScheme,
 } from 'react-native';
 import type { NativeCombatEntry } from '../../features/tools/nativeBattleModels';
 import {
@@ -21,6 +20,9 @@ import {
   type NativeRaidPartyTrainerDraft,
   type NativeRaidTier,
 } from '../../features/tools/nativeRaidPlannerModel';
+import { useNativeModalAnimation } from '../../features/settings/useNativeMotion';
+import { useNativeColorScheme } from '../../features/settings/useNativeColorScheme';
+import { NativeUiIcon } from '../NativeUiIcon';
 
 type Props = {
   assetBaseUrl: string;
@@ -37,7 +39,8 @@ const assetUri = (base: string, value: string | null) => {
 const seconds = (value: number) => Number.isFinite(value) ? `${value.toFixed(1)}s` : 'No clear';
 
 export const NativeRaidPartyBuilder = ({ assetBaseUrl, onResultChange, scores, tier }: Props) => {
-  const light = useColorScheme() === 'light';
+  const light = useNativeColorScheme() === 'light';
+  const animationType = useNativeModalAnimation('slide');
   const [open, setOpen] = useState(false);
   const [trainers, setTrainers] = useState<NativeRaidPartyTrainerDraft[]>(() => createNativeRaidParty(scores));
   const [expandedId, setExpandedId] = useState('trainer-1');
@@ -94,7 +97,7 @@ export const NativeRaidPartyBuilder = ({ assetBaseUrl, onResultChange, scores, t
   return (
     <View style={[styles.panel, light && styles.panelLight]}>
       <Pressable accessibilityLabel="Custom raid party" accessibilityRole="button" accessibilityState={{ expanded: open }} onPress={() => setOpen((current) => !current)} style={styles.toggle}>
-        <Text style={styles.toggleIcon}>♟</Text>
+        <NativeUiIcon color={light ? '#08766b' : '#42d5c2'} name="trainers" size={18} />
         <View style={styles.flex}><Text style={[styles.toggleTitle, light && styles.textLight]}>Custom raid party</Text><Text style={[styles.meta, light && styles.mutedLight]}>Independent teams, dodges, relobbies, and contribution</Text></View>
         <Text style={[styles.chevron, light && styles.textLight]}>{open ? '⌃' : '⌄'}</Text>
       </Pressable>
@@ -108,7 +111,7 @@ export const NativeRaidPartyBuilder = ({ assetBaseUrl, onResultChange, scores, t
             </View>
             <View style={styles.lobbyActions}>
               <Pressable accessibilityLabel="Add Trainer" accessibilityRole="button" disabled={trainers.length >= 20} onPress={addTrainer} style={[styles.secondary, light && styles.controlLight]}><Text style={[styles.secondaryText, light && styles.textLight]}>＋ Add</Text></Pressable>
-              <Pressable accessibilityRole="button" disabled={scores.length === 0} onPress={run} style={styles.primary}><Text style={styles.primaryText}>⚡ Simulate</Text></Pressable>
+              <Pressable accessibilityRole="button" disabled={scores.length === 0} onPress={run} style={styles.primary}><View style={styles.primaryContent}><NativeUiIcon color="#061816" name="bolt" size={14} /><Text style={styles.primaryText}>Simulate</Text></View></Pressable>
               <Pressable accessibilityRole="button" disabled={scores.length === 0} onPress={optimize} style={styles.optimize}><Text style={styles.primaryText}>✦ Optimize</Text></Pressable>
             </View>
           </View>
@@ -164,7 +167,7 @@ export const NativeRaidPartyBuilder = ({ assetBaseUrl, onResultChange, scores, t
         </View>
       ) : null}
 
-      <Modal animationType="slide" onRequestClose={() => setPicker(null)} transparent visible={Boolean(picker)}>
+      <Modal animationType={animationType} onRequestClose={() => setPicker(null)} transparent visible={Boolean(picker)}>
         <View style={styles.backdrop}>
           <View style={[styles.picker, light && styles.pickerLight]}>
             <View style={styles.pickerHeader}><View style={styles.flex}><Text style={styles.eyebrow}>TEAM SLOT</Text><Text style={[styles.pickerTitle, light && styles.textLight]}>Choose an attacker</Text></View><Pressable accessibilityLabel="Close attacker picker" accessibilityRole="button" onPress={() => setPicker(null)} style={[styles.close, light && styles.controlLight]}><Text style={[styles.closeText, light && styles.textLight]}>×</Text></Pressable></View>
@@ -207,6 +210,7 @@ const styles = StyleSheet.create({
   secondary: { minHeight: 39, flex: 1, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: '#44595a', borderRadius: 999, backgroundColor: '#202b2c' },
   secondaryText: { color: '#fff', fontSize: 9, fontWeight: '900' },
   primary: { minHeight: 39, flex: 1, alignItems: 'center', justifyContent: 'center', borderRadius: 999, backgroundColor: '#2fd6d0' },
+  primaryContent: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 4 },
   optimize: { minHeight: 39, flex: 1, alignItems: 'center', justifyContent: 'center', borderRadius: 999, backgroundColor: '#8b63cf' },
   primaryText: { color: '#071214', fontSize: 9, fontWeight: '900' },
   trainers: { gap: 6 },

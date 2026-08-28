@@ -1,50 +1,54 @@
-import * as SecureStore from 'expo-secure-store';
 import { useRouter } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
-import {
-  ActivityIndicator,
-  Pressable,
-  StyleSheet,
-  Text,
-  View,
-  useColorScheme,
-} from 'react-native';
+import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useNativeSession } from '../../auth/NativeSessionContext';
 import { NativeActionMenu } from '../../components/NativeActionMenu';
 import { NativeActionMenuAnchor } from '../../components/NativeActionMenuAnchor';
 import { runtimeConfig } from '../../config/runtimeConfig';
-import {
-  buildNativeCollectionRows,
-} from '../../features/collection/collectionModel';
+import { buildNativeCollectionRows } from '../../features/collection/collectionModel';
 import { useNativeCollectionSnapshotQuery } from '../../features/collection/collectionQueries';
 import {
   EMPTY_NATIVE_HOME_COLLECTION,
   EMPTY_NATIVE_HOME_TRADES,
+  buildNativeHomeOnboardingProgress,
   selectNativeHomeRecentRows,
   summarizeNativeHomeCollection,
   summarizeNativeHomeTrades,
 } from '../../features/home/nativeHomeDashboardModel';
+import {
+  dismissNativeHomeActionMenuHint,
+  dismissNativeHomeOnboarding,
+  isNativeHomeActionMenuHintDismissed,
+  isNativeHomeOnboardingDismissed,
+} from '../../features/home/nativeHomePreferences';
 import { useNativeFriendsQuery } from '../../features/social/socialQueries';
 import { useNativeTradesQuery } from '../../features/trades/tradeQueries';
 import { isNativeInformationSlug } from '../../features/information/nativeInformationContent';
 import { resolveNativeActionMenuDestination } from '../../navigation/nativeActionMenuNavigation';
 import { NativeGuestHomeScreen } from '../../screens/NativeGuestHomeScreen';
 import { NativeHomeScreen } from '../../screens/NativeHomeScreen';
-
-const hintStorageKey = (userId: string | null): string => (
-  `pokegonexus-native-home-action-menu-hint:${userId ?? 'guest'}`
-);
+import { useNativeColorScheme } from '../../features/settings/useNativeColorScheme';
 
 export default function NativeHomeRoute() {
   const router = useRouter();
   const session = useNativeSession();
-  const light = useColorScheme() === 'light';
+  const light = useNativeColorScheme() === 'light';
   const userId = session.user?.user_id ?? null;
+  const onboardingOwnerKey = session.user
+    ? session.user.user_id || session.user.username
+    : null;
   const collectionQuery = useNativeCollectionSnapshotQuery(userId);
   const tradesQuery = useNativeTradesQuery(userId);
   const friendsQuery = useNativeFriendsQuery(userId);
   const [actionMenuOpen, setActionMenuOpen] = useState(false);
   const [showActionMenuHint, setShowActionMenuHint] = useState(false);
+  const [onboardingPreference, setOnboardingPreference] = useState<{
+    dismissed: boolean;
+    ownerKey: string;
+  } | null>(null);
+  const onboardingDismissed = onboardingPreference?.ownerKey === onboardingOwnerKey
+    ? onboardingPreference.dismissed
+    : null;
 
   const navigate = (path: string) => {
     setActionMenuOpen(false);
@@ -135,11 +139,26 @@ export default function NativeHomeRoute() {
 
   useEffect(() => {
     let active = true;
-    void SecureStore.getItemAsync(hintStorageKey(userId))
-      .then((value) => { if (active) setShowActionMenuHint(value !== 'dismissed'); })
+    void isNativeHomeActionMenuHintDismissed(userId)
+      .then((dismissed) => { if (active) setShowActionMenuHint(!dismissed); })
       .catch(() => { if (active) setShowActionMenuHint(true); });
     return () => { active = false; };
   }, [userId]);
+
+  useEffect(() => {
+    let active = true;
+    if (!onboardingOwnerKey) {
+      return () => { active = false; };
+    }
+    void isNativeHomeOnboardingDismissed(onboardingOwnerKey)
+      .then((dismissed) => {
+        if (active) setOnboardingPreference({ dismissed, ownerKey: onboardingOwnerKey });
+      })
+      .catch(() => {
+        if (active) setOnboardingPreference({ dismissed: false, ownerKey: onboardingOwnerKey });
+      });
+    return () => { active = false; };
+  }, [onboardingOwnerKey]);
 
   const rows = useMemo(() => {
     if (!collectionQuery.data) return [];
@@ -164,6 +183,13 @@ export default function NativeHomeRoute() {
       ? selectNativeHomeRecentRows(rows, collectionQuery.data.instances)
       : []
   ), [collectionQuery.data, rows]);
+  const onboardingProgress = useMemo(() => buildNativeHomeOnboardingProgress(
+    collection,
+    (friendsQuery.data?.friends.length ?? 0)
+      + (friendsQuery.data?.incoming.length ?? 0)
+      + (friendsQuery.data?.outgoing.length ?? 0)
+      + (tradesQuery.data?.trades.length ?? 0),
+  ), [collection, friendsQuery.data, tradesQuery.data]);
 
   if (session.status === 'restoring') {
     return (
@@ -189,7 +215,7 @@ export default function NativeHomeRoute() {
   if (!session.user) {
     const dismissGuestActionMenuHint = () => {
       setShowActionMenuHint(false);
-      void SecureStore.setItemAsync(hintStorageKey(null), 'dismissed');
+      void dismissNativeHomeActionMenuHint(null);
     };
     return (
       <View style={styles.root}>
@@ -215,10 +241,23 @@ export default function NativeHomeRoute() {
       </View>
     );
   }
+  if (onboardingDismissed === null) {
+    return (
+      <View style={[styles.status, light && styles.statusLight]}>
+        <ActivityIndicator color="#299cf5" size="large" />
+        <Text style={[styles.statusText, light && styles.statusTextLight]}>Preparing your trainer dashboard…</Text>
+      </View>
+    );
+  }
   const signedInUser = session.user;
   const dismissActionMenuHint = () => {
     setShowActionMenuHint(false);
-    void SecureStore.setItemAsync(hintStorageKey(signedInUser.user_id), 'dismissed');
+    void dismissNativeHomeActionMenuHint(signedInUser.user_id);
+  };
+  const dismissOnboarding = () => {
+    const ownerKey = signedInUser.user_id || signedInUser.username;
+    setOnboardingPreference({ dismissed: true, ownerKey });
+    void dismissNativeHomeOnboarding(ownerKey);
   };
   const queryErrors = [collectionQuery.error, tradesQuery.error]
     .filter((error): error is Error => error instanceof Error)
@@ -235,6 +274,7 @@ export default function NativeHomeRoute() {
         incomingFriends={friendsQuery.data?.incoming.length ?? 0}
         isLoading={collectionQuery.isPending || tradesQuery.isPending}
         onDismissActionMenuHint={dismissActionMenuHint}
+        onDismissOnboarding={dismissOnboarding}
         onOpenActionMenu={() => {
           dismissActionMenuHint();
           setActionMenuOpen(true);
@@ -245,6 +285,13 @@ export default function NativeHomeRoute() {
           void tradesQuery.refetch();
           void friendsQuery.refetch();
         }}
+        onboardingProgress={
+          !collectionQuery.isPending
+          && onboardingDismissed === false
+          && onboardingProgress.completed < onboardingProgress.total
+            ? onboardingProgress
+            : null
+        }
         pokemonGoName={signedInUser.pokemonGoName}
         recentRows={recentRows}
         showActionMenuHint={showActionMenuHint}
@@ -270,7 +317,7 @@ export default function NativeHomeRoute() {
 const styles = StyleSheet.create({
   root: { flex: 1, minHeight: 0 },
   status: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 14, padding: 24, backgroundColor: '#071012' },
-  statusLight: { backgroundColor: '#eef7f3' },
+  statusLight: { backgroundColor: '#f8fff9' },
   statusTitle: { color: '#f4fbfd', fontSize: 23, fontWeight: '900', textAlign: 'center' },
   statusText: { maxWidth: 420, color: '#bac8ca', fontSize: 15, lineHeight: 21, textAlign: 'center' },
   statusTextLight: { color: '#193d40' },

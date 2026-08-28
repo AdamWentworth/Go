@@ -9,9 +9,10 @@ import {
   Text,
   TextInput,
   View,
-  useColorScheme,
 } from "react-native";
+import Svg, { Circle, Path } from 'react-native-svg';
 import { validateNativePassword } from "../features/auth/nativeRegistrationModel";
+import { useNativeColorScheme } from '../features/settings/useNativeColorScheme';
 
 type Props = {
   onBackToLogin: () => void;
@@ -20,13 +21,32 @@ type Props = {
   token?: string | null;
 };
 
+const RecoveryGlyph = ({ complete }: { complete: boolean }) => (
+  <Svg height={32} viewBox="0 0 32 32" width={32}>
+    {complete ? (
+      <>
+        <Circle cx={16} cy={16} fill="#0b86ee" r={15} />
+        <Path d="m9 16.5 4.3 4.2L23 11" fill="none" stroke="#fff" strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} />
+      </>
+    ) : (
+      <Path d="M12.5 4a8.5 8.5 0 1 0 6.9 13.45L23 21v4h4v-4h3v-4h-8.3l-3.65-3.65A8.5 8.5 0 0 0 12.5 4Zm0 5.25a3.25 3.25 0 1 1 0 6.5 3.25 3.25 0 0 1 0-6.5Z" fill="#0b86ee" />
+    )}
+  </Svg>
+);
+
+const PasswordRuleGlyph = ({ color }: { color: string }) => (
+  <Svg height={15} viewBox="0 0 16 16" width={15}>
+    <Path d="M4.4 7V5.3a3.6 3.6 0 0 1 7.2 0V7h.7c.8 0 1.4.6 1.4 1.4v5.2c0 .8-.6 1.4-1.4 1.4H3.7c-.8 0-1.4-.6-1.4-1.4V8.4C2.3 7.6 3 7 3.7 7h.7Zm1.5 0h4.2V5.3a2.1 2.1 0 1 0-4.2 0V7Z" fill={color} />
+  </Svg>
+);
+
 const NativePasswordResetForm = ({
   onBackToLogin,
   onConfirm,
   onRequest,
   token = null,
 }: Props) => {
-  const light = useColorScheme() === "light";
+  const light = useNativeColorScheme() === "light";
   const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
   const [confirmation, setConfirmation] = useState("");
@@ -76,6 +96,7 @@ const NativePasswordResetForm = ({
     <KeyboardAvoidingView
       behavior={Platform.OS === "ios" ? "padding" : "height"}
       style={[styles.root, light && styles.rootLight]}
+      testID="native-password-reset-screen"
     >
       <ScrollView
         automaticallyAdjustKeyboardInsets
@@ -83,10 +104,10 @@ const NativePasswordResetForm = ({
         keyboardShouldPersistTaps="handled"
       >
         <View style={[styles.card, light && styles.cardLight]}>
+          <Text style={[styles.brand, light && styles.brandLight]}>POKÉMON GO NEXUS</Text>
           <View style={styles.icon}>
-            <Text style={styles.iconText}>{complete ? "✓" : "⚿"}</Text>
+            <RecoveryGlyph complete={complete} />
           </View>
-          <Text style={styles.eyebrow}>ACCOUNT RECOVERY</Text>
           <Text
             accessibilityRole="header"
             style={[styles.title, light && styles.textLight]}
@@ -136,8 +157,6 @@ const NativePasswordResetForm = ({
                   autoCapitalize="none"
                   autoComplete="new-password"
                   onChangeText={setPassword}
-                  placeholder="Create a strong password"
-                  placeholderTextColor="#718087"
                   secureTextEntry
                   style={[styles.input, light && styles.inputLight]}
                   value={password}
@@ -152,16 +171,17 @@ const NativePasswordResetForm = ({
                   autoCapitalize="none"
                   autoComplete="new-password"
                   onChangeText={setConfirmation}
-                  placeholder="Enter it again"
-                  placeholderTextColor="#718087"
                   secureTextEntry
                   style={[styles.input, light && styles.inputLight]}
                   value={confirmation}
                 />
               </View>
-              <Text style={[styles.rules, light && styles.mutedLight]}>
-                8+ characters with uppercase, lowercase, a number, and a symbol.
-              </Text>
+              <View style={styles.rulesRow}>
+                <PasswordRuleGlyph color={light ? '#5e7077' : '#a7b6bd'} />
+                <Text style={[styles.rules, light && styles.mutedLight]}>
+                  8+ characters with uppercase, lowercase, a number, and a symbol.
+                </Text>
+              </View>
             </View>
           ) : null}
           {error ? (
@@ -191,9 +211,9 @@ const NativePasswordResetForm = ({
           <Pressable
             accessibilityRole="button"
             onPress={onBackToLogin}
-            style={[styles.secondaryButton, light && styles.secondaryLight]}
+            style={styles.secondaryButton}
           >
-            <Text style={[styles.secondaryText, light && styles.textLight]}>
+            <Text style={[styles.secondaryText, light && styles.secondaryTextLight]}>
               Return to login
             </Text>
           </Pressable>
@@ -214,56 +234,45 @@ export const NativePasswordResetScreen = (props: Props) => (
 );
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: "#07111e" },
-  rootLight: { backgroundColor: "#eef5f8" },
-  content: { flexGrow: 1, justifyContent: "center", padding: 16 },
+  root: { flex: 1, backgroundColor: "#0f0f0f" },
+  rootLight: { backgroundColor: "#f8fff9" },
+  content: { flexGrow: 1 },
   card: {
     width: "100%",
-    maxWidth: 500,
+    minHeight: '100%',
     alignSelf: "center",
     alignItems: "stretch",
-    borderWidth: 1,
-    borderColor: "#4179a1",
-    borderRadius: 20,
-    padding: 22,
-    backgroundColor: "#202428",
+    paddingHorizontal: 26,
+    paddingTop: 26,
+    paddingBottom: 92,
+    backgroundColor: "#222",
   },
-  cardLight: { borderColor: "#9bc2df", backgroundColor: "#fff" },
+  cardLight: { backgroundColor: "#e5f5ec" },
+  brand: { color: '#58abff', fontSize: 13, fontWeight: '900', letterSpacing: 1.1 },
+  brandLight: { color: '#005bb5' },
   icon: {
-    width: 56,
-    height: 56,
+    width: 32,
+    height: 32,
     alignItems: "center",
     justifyContent: "center",
-    alignSelf: "center",
-    marginBottom: 10,
-    borderRadius: 28,
-    backgroundColor: "#0b86ee",
-  },
-  iconText: { color: "#fff", fontSize: 28, fontWeight: "900" },
-  eyebrow: {
-    color: "#2098ff",
-    fontSize: 10,
-    fontWeight: "900",
-    letterSpacing: 1.5,
-    textAlign: "center",
+    alignSelf: "flex-start",
+    marginTop: 24,
   },
   title: {
-    marginTop: 4,
+    marginTop: 12,
     color: "#fff",
-    fontSize: 27,
+    fontSize: 29,
     fontWeight: "900",
-    textAlign: "center",
   },
   intro: {
     marginTop: 8,
-    marginBottom: 18,
+    marginBottom: 28,
     color: "#b3bec5",
-    fontSize: 13,
-    lineHeight: 19,
-    textAlign: "center",
+    fontSize: 14,
+    lineHeight: 22,
   },
-  fields: { gap: 12 },
-  field: { gap: 5 },
+  fields: { gap: 18 },
+  field: { gap: 8 },
   label: { color: "#f7fafb", fontSize: 13, fontWeight: "900" },
   input: {
     minHeight: 52,
@@ -280,7 +289,8 @@ const styles = StyleSheet.create({
     color: "#152126",
     backgroundColor: "#fff",
   },
-  rules: { color: "#a7b6bd", fontSize: 11, lineHeight: 16 },
+  rulesRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 8 },
+  rules: { flex: 1, color: "#a7b6bd", fontSize: 11, lineHeight: 16 },
   error: {
     marginTop: 12,
     borderWidth: 1,
@@ -303,15 +313,13 @@ const styles = StyleSheet.create({
   primaryText: { color: "#fff", fontSize: 15, fontWeight: "900" },
   secondaryButton: {
     minHeight: 46,
-    alignItems: "center",
+    alignItems: "flex-start",
     justifyContent: "center",
+    alignSelf: 'flex-start',
     marginTop: 9,
-    borderWidth: 1,
-    borderColor: "#56636a",
-    borderRadius: 11,
-    backgroundColor: "#252b2f",
   },
-  secondaryText: { color: "#fff", fontWeight: "900" },
+  secondaryText: { color: "#58abff", fontWeight: "900", textDecorationLine: 'underline' },
+  secondaryTextLight: { color: '#005bb5' },
   privacy: {
     marginTop: 12,
     color: "#9caab0",
@@ -319,7 +327,6 @@ const styles = StyleSheet.create({
     lineHeight: 15,
     textAlign: "center",
   },
-  secondaryLight: { borderColor: "#b5c1c6", backgroundColor: "#f5f8f9" },
   textLight: { color: "#142126" },
   mutedLight: { color: "#5e7077" },
 });

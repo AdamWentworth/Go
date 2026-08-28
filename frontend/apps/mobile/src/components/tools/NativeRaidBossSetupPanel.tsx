@@ -1,6 +1,9 @@
 import { useMemo, useState } from 'react';
-import { Pressable, StyleSheet, Text, View, useColorScheme } from 'react-native';
-import type { NativeCombatEntry, NativeRaidBossEntry } from '../../features/tools/nativeBattleModels';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
+import type {
+  NativeCombatEntry,
+  NativeRaidBossEntry,
+} from '../../features/tools/nativeBattleModels';
 import {
   estimateNativeRaidGroup,
   resolveNativeRaidTier,
@@ -9,6 +12,7 @@ import {
 } from '../../features/tools/nativeRaidPlannerModel';
 import { NativeRaidCalibrationPanel } from './NativeRaidCalibrationPanel';
 import { NativeRaidPartyBuilder } from './NativeRaidPartyBuilder';
+import { useNativeColorScheme } from '../../features/settings/useNativeColorScheme';
 
 type Props = {
   assetBaseUrl: string;
@@ -20,7 +24,7 @@ type Props = {
 const trainerLabel = (count: number) => count > 0 ? `${count} trainer${count === 1 ? '' : 's'}` : '—';
 
 export const NativeRaidBossSetupPanel = ({ assetBaseUrl, boss, onObservedDodgeRateChange, scores }: Props) => {
-  const light = useColorScheme() === 'light';
+  const light = useNativeColorScheme() === 'light';
   const [open, setOpen] = useState(false);
   const [partyResult, setPartyResult] = useState<NativeRaidPartyResult | null>(null);
   const tier = useMemo(() => resolveNativeRaidTier(boss), [boss]);

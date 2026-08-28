@@ -260,3 +260,11 @@ export const useNativeSession = (): NativeSessionContextValue => {
   if (!value) throw new Error('useNativeSession must be used inside NativeSessionProvider');
   return value;
 };
+
+/** Components shared by live native routes and isolated visual/device fixtures
+ * may render outside the session provider. Let those components preserve the
+ * signed-out UI instead of throwing while live routes still consume the real
+ * session when one is available. */
+export const useOptionalNativeSession = (): NativeSessionContextValue | null => (
+  useContext(NativeSessionContext)
+);

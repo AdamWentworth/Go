@@ -2,6 +2,24 @@ import { fireEvent, render, screen, waitFor } from '@testing-library/react-nativ
 import { NativeRegisterScreen } from '../../../src/screens/NativeRegisterScreen';
 
 describe('NativeRegisterScreen', () => {
+  it('shows canonical provider registration guidance before a method is selected', () => {
+    render(
+      <NativeRegisterScreen
+        notice="No account exists for that provider email yet. Choose a sign-up method to register."
+        onBackToLogin={jest.fn()}
+        onOpenPrivacy={jest.fn()}
+        onOpenTerms={jest.fn()}
+        onOAuthRegister={jest.fn()}
+        onOAuthStart={jest.fn()}
+        onRegister={jest.fn()}
+        onRegistered={jest.fn()}
+      />,
+    );
+
+    expect(screen.getByText(/No account exists for that provider email yet/)).toBeTruthy();
+    expect(screen.getByText('Sign up with Google')).toBeTruthy();
+  });
+
   it('collects the canonical account fields and submits a normalized registration', async () => {
     const onRegister = jest.fn().mockResolvedValue(undefined);
     const onRegistered = jest.fn();

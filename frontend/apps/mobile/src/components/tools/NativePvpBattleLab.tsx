@@ -17,6 +17,7 @@ import {
   simulatePvPBattleLocally,
 } from "@pokemongonexus/shared-domain/pvp-battle";
 import { NativePvpTeamBattle } from "./NativePvpTeamBattle";
+import { NativeUiIcon } from "../NativeUiIcon";
 
 type Props = {
   assetBaseUrl: string;
@@ -214,7 +215,7 @@ export const NativePvpBattleLab = ({
     <>
       <View style={styles.labHeader}>
         <View style={styles.labTitleRow}>
-          <Text style={[styles.labIcon, light && styles.accentLight]}>⚗</Text>
+          <NativeUiIcon color={light ? '#08766b' : '#42d5c2'} name="flask" size={20} />
           <Text style={[styles.labTitle, light && styles.textLight]}>Battle Lab</Text>
         </View>
         <Text style={[styles.labMeta, light && styles.mutedLight]}>
@@ -222,8 +223,8 @@ export const NativePvpBattleLab = ({
         </Text>
       </View>
       <View accessibilityLabel="Battle Lab mode" style={[styles.mode, light && styles.panelLight]}>
-        <Pressable accessibilityRole="button" accessibilityState={{ selected: mode === "single" }} onPress={() => { setMode("single"); setResult(null); setError(""); }} style={[styles.modeButton, mode === "single" && styles.modeButtonActive]}><Text style={[styles.modeText, light && styles.textLight, mode === "single" && styles.modeTextActive]}>⚗ Focused 1v1</Text></Pressable>
-        <Pressable accessibilityRole="button" accessibilityState={{ selected: mode === "team" }} onPress={() => { setMode("team"); setResult(null); setError(""); }} style={[styles.modeButton, mode === "team" && styles.modeButtonActive]}><Text style={[styles.modeText, light && styles.textLight, mode === "team" && styles.modeTextActive]}>♟ Team battle</Text></Pressable>
+        <Pressable accessibilityRole="button" accessibilityState={{ selected: mode === "single" }} onPress={() => { setMode("single"); setResult(null); setError(""); }} style={[styles.modeButton, mode === "single" && styles.modeButtonActive]}><View style={styles.iconLabelRow}><NativeUiIcon color={mode === "single" ? '#071313' : light ? '#071d20' : '#f5ffff'} name="flask" size={14} /><Text style={[styles.modeText, light && styles.textLight, mode === "single" && styles.modeTextActive]}>Focused 1v1</Text></View></Pressable>
+        <Pressable accessibilityRole="button" accessibilityState={{ selected: mode === "team" }} onPress={() => { setMode("team"); setResult(null); setError(""); }} style={[styles.modeButton, mode === "team" && styles.modeButtonActive]}><View style={styles.iconLabelRow}><NativeUiIcon color={mode === "team" ? '#071313' : light ? '#071d20' : '#f5ffff'} name="trainers" size={14} /><Text style={[styles.modeText, light && styles.textLight, mode === "team" && styles.modeTextActive]}>Team battle</Text></View></Pressable>
       </View>
       {mode === "single" ? (
         <>
@@ -446,6 +447,7 @@ export const NativePvpBattleLab = ({
 const styles = StyleSheet.create({
   labHeader: { gap: 3, paddingHorizontal: 2, paddingTop: 2 },
   labTitleRow: { flexDirection: "row", alignItems: "center", gap: 7 },
+  iconLabelRow: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6 },
   labIcon: { color: "#42d5c2", fontSize: 19 },
   labTitle: { color: "#f5ffff", fontSize: 17, fontWeight: "900" },
   labMeta: { color: "#9db6b8", fontSize: 9, lineHeight: 13 },

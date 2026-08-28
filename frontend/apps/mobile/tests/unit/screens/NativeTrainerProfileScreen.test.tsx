@@ -165,7 +165,7 @@ describe('NativeTrainerProfileScreen', () => {
       highlightInstanceIds: ['highlight-1'],
     };
     const closed = renderScreen({ onBeginEdit });
-    fireEvent.press(closed.getByRole('button', { name: 'Edit profile' }));
+    fireEvent.press(closed.getByRole('button', { name: 'Edit' }));
     expect(onBeginEdit).toHaveBeenCalledTimes(1);
     closed.unmount();
 

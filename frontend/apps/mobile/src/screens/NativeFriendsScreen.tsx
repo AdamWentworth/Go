@@ -7,22 +7,24 @@ import {
   Text,
   TextInput,
   View,
-  useColorScheme,
   useWindowDimensions,
 } from 'react-native';
 import { useRef, useState } from 'react';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import Svg, { Path } from 'react-native-svg';
 import {
   NativeHorizontalPageSlider,
   type NativeHorizontalPageSliderHandle,
 } from '../components/NativeHorizontalPageSlider';
 import { NativeConfirmationDialog } from '../components/NativeConfirmationDialog';
 import { NativeTrainerWorkspaceNav } from '../components/NativeTrainerWorkspaceNav';
+import { NativeBackIcon } from '../components/NativeBackIcon';
+import { NativeUiIcon, type NativeUiIconName } from '../components/NativeUiIcon';
 import type {
   NativeFriendRow,
   NativeFriendsOverviewModel,
 } from '../features/social/nativeFriendsModel';
 import type { NativeTrainerSearchRow } from '../features/search/trainerSearchModel';
+import { useNativeColorScheme } from '../features/settings/useNativeColorScheme';
 
 export type NativeFriendsView = 'friends' | 'requests' | 'find' | 'blocked';
 export type NativeFriendsScreenCommand =
@@ -70,12 +72,14 @@ const viewLabel = (view: NativeFriendsView): string => ({
   requests: 'Requests',
 })[view];
 
-const viewIcon = (view: NativeFriendsView): string => ({
-  blocked: '⊘',
-  find: '⌕',
-  friends: '♟',
-  requests: '◷',
-})[view];
+const VIEW_ICONS: Record<NativeFriendsView, NativeUiIconName> = {
+  blocked: 'blocked',
+  find: 'search',
+  friends: 'trainers',
+  requests: 'clock',
+};
+
+const viewIcon = (view: NativeFriendsView): NativeUiIconName => VIEW_ICONS[view];
 
 const TrainerIdentity = ({
   light,
@@ -133,15 +137,30 @@ const TrainerRow = ({
   </View>
 );
 
+const TrashGlyph = () => (
+  <Svg height={18} viewBox="0 0 24 24" width={18}>
+    <Path
+      d="M4 7h16M9 7V4h6v3m3 0-1 13H7L6 7m4 4v5m4-5v5"
+      fill="none"
+      stroke="#ff7187"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      strokeWidth={2}
+    />
+  </Svg>
+);
+
 const RowAction = ({
   accessibilityLabel,
   disabled,
+  icon,
   label,
   onPress,
   tone = 'secondary',
 }: {
   accessibilityLabel: string;
   disabled?: boolean;
+  icon?: React.ReactNode;
   label: string;
   onPress: () => void;
   tone?: 'primary' | 'secondary' | 'danger';
@@ -153,22 +172,25 @@ const RowAction = ({
     onPress={onPress}
     style={({ pressed }) => [
       styles.rowAction,
+      icon != null && styles.rowActionIconOnly,
       tone === 'primary' && styles.rowActionPrimary,
       tone === 'danger' && styles.rowActionDanger,
       (pressed || disabled) && styles.pressed,
     ]}
   >
-    <Text style={[
-      styles.rowActionText,
-      tone === 'primary' && styles.rowActionPrimaryText,
-      tone === 'danger' && styles.rowActionDangerText,
-    ]}>{label}</Text>
+    {icon ?? (
+      <Text style={[
+        styles.rowActionText,
+        tone === 'primary' && styles.rowActionPrimaryText,
+        tone === 'danger' && styles.rowActionDangerText,
+      ]}>{label}</Text>
+    )}
   </Pressable>
 );
 
 const EmptyState = ({ children, light }: { children: string; light: boolean }) => (
   <View style={[styles.empty, light && styles.emptyLight]}>
-    <Text style={styles.emptyIcon}>↔</Text>
+    <NativeUiIcon color="#42d7c6" name="trade" size={26} />
     <Text style={[styles.emptyText, light && styles.mutedLight]}>{children}</Text>
   </View>
 );
@@ -202,8 +224,7 @@ export const NativeFriendsScreen = ({
   searchError = null,
   searchResults,
 }: Props) => {
-  const light = useColorScheme() === 'light';
-  const insets = useSafeAreaInsets();
+  const light = useNativeColorScheme() === 'light';
   const { width } = useWindowDimensions();
   const sliderRef = useRef<NativeHorizontalPageSliderHandle>(null);
   const [confirmation, setConfirmation] = useState<NativeFriendRow | null>(null);
@@ -227,7 +248,7 @@ export const NativeFriendsScreen = ({
   };
   const panelContentStyle = [
     styles.panelContent,
-    { paddingBottom: Math.max(insets.bottom + 105, 120) },
+    { paddingBottom: 120 },
   ];
 
   const loadingState = isLoading ? (
@@ -250,7 +271,7 @@ export const NativeFriendsScreen = ({
 
   return (
     <View style={[styles.screen, light && styles.screenLight]} testID="native-friends-screen">
-      <View style={[styles.header, light && styles.headerLight, { paddingTop: Math.max(insets.top + 6, 14) }]}>
+      <View style={[styles.header, light && styles.headerLight, { paddingTop: 14 }]}>
         <View style={styles.productHeader}>
           <Pressable
             accessibilityLabel="Back"
@@ -258,20 +279,18 @@ export const NativeFriendsScreen = ({
             onPress={onBack}
             style={[styles.backButton, light && styles.backButtonLight]}
           >
-            <Text style={[styles.backButtonText, light && styles.textLight]}>‹</Text>
+            <NativeBackIcon color={light ? '#172124' : '#ffffff'} size={20} />
           </Pressable>
           <View style={styles.productCopy}>
             <Text style={styles.eyebrow}>TRAINER NETWORK</Text>
-            <View style={styles.titleRow}>
-              <Text accessibilityRole="header" style={[styles.title, light && styles.textLight]}>Friends</Text>
-              {overview.incoming.length ? (
-                <Text accessibilityLabel={`${overview.incoming.length} incoming requests`} style={styles.requestBadge}>
-                  {overview.incoming.length} new
-                </Text>
-              ) : null}
-            </View>
+            <Text accessibilityRole="header" style={[styles.title, light && styles.textLight]}>Friends</Text>
           </View>
         </View>
+        {overview.incoming.length ? (
+          <Text accessibilityLabel={`${overview.incoming.length} incoming requests`} style={[styles.requestCount, light && styles.textLight]}>
+            {overview.incoming.length} request{overview.incoming.length === 1 ? '' : 's'}
+          </Text>
+        ) : null}
         <NativeTrainerWorkspaceNav
           active="friends"
           onOpenFriends={() => undefined}
@@ -280,11 +299,12 @@ export const NativeFriendsScreen = ({
         <View accessibilityRole="tablist" style={[styles.tabs, light && styles.tabsLight]}>
           <Animated.View
             pointerEvents="none"
-            style={[styles.tabIndicator, { width: tabWidth, transform: [{ translateX }] }]}
+            style={[styles.tabIndicator, light && styles.tabIndicatorLight, { width: tabWidth, transform: [{ translateX }] }]}
             testID="native-friends-tab-indicator"
           />
           {VIEWS.map((view) => (
             <Pressable
+              aria-selected={activeView === view}
               accessibilityLabel={`${viewLabel(view)} view`}
               accessibilityRole="tab"
               accessibilityState={{ selected: activeView === view }}
@@ -292,8 +312,12 @@ export const NativeFriendsScreen = ({
               onPress={() => changeView(view)}
               style={({ pressed }) => [styles.tab, pressed && styles.pressed]}
             >
-              <Text style={[styles.tabIcon, activeView === view && styles.tabSelected]}>{viewIcon(view)}</Text>
-              <Text numberOfLines={1} style={[styles.tabLabel, light && styles.tabLabelLight, activeView === view && styles.tabSelected]}>
+              <NativeUiIcon
+                color={activeView === view ? light ? '#172124' : '#ffffff' : light ? '#566467' : '#879699'}
+                name={viewIcon(view)}
+                size={14}
+              />
+              <Text numberOfLines={1} style={[styles.tabLabel, light && styles.tabLabelLight, activeView === view && styles.tabSelected, activeView === view && light && styles.tabSelectedLight]}>
                 {viewLabel(view)}
               </Text>
               {counts[view] !== null ? <Text style={styles.tabCount}>{counts[view]}</Text> : null}
@@ -329,7 +353,7 @@ export const NativeFriendsScreen = ({
               <View style={styles.peopleList}>
                 {overview.friends.map((row) => (
                   <TrainerRow
-                    action={<RowAction accessibilityLabel={`Remove ${row.username}`} disabled={isCommandPending} label="Remove" onPress={() => setConfirmation(row)} tone="danger" />}
+                    action={<RowAction accessibilityLabel={`Remove ${row.username}`} disabled={isCommandPending} icon={<TrashGlyph />} label="Remove" onPress={() => setConfirmation(row)} tone="danger" />}
                     key={row.userId}
                     light={light}
                     onOpen={() => onOpenProfile(row.username)}
@@ -462,26 +486,25 @@ export const NativeFriendsScreen = ({
 
 const styles = StyleSheet.create({
   screen: { flex: 1, minHeight: 0, backgroundColor: '#080d0f' },
-  screenLight: { backgroundColor: '#eef4f5' },
+  screenLight: { backgroundColor: '#f8fff9' },
   header: { zIndex: 2, paddingHorizontal: 10, paddingBottom: 7, backgroundColor: '#080d0f' },
-  headerLight: { backgroundColor: '#eef4f5' },
+  headerLight: { backgroundColor: '#f8fff9' },
   productHeader: { minHeight: 62, flexDirection: 'row', alignItems: 'center', gap: 11 },
   productCopy: { flex: 1, minWidth: 0 },
   backButton: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: '#35494d', borderRadius: 10, backgroundColor: '#171f20' },
-  backButtonLight: { borderColor: '#aababc', backgroundColor: '#ffffff' },
-  backButtonText: { color: '#ffffff', fontSize: 35, lineHeight: 35 },
+  backButtonLight: { borderColor: '#9bb8b1', backgroundColor: '#f3faf5' },
   eyebrow: { color: '#42d7c6', fontSize: 10, fontWeight: '900', letterSpacing: 1.25 },
-  titleRow: { flexDirection: 'row', alignItems: 'center', gap: 9 },
   title: { color: '#f7fbfc', fontSize: 27, fontWeight: '900' },
-  requestBadge: { overflow: 'hidden', paddingHorizontal: 9, paddingVertical: 4, color: '#071915', fontSize: 11, fontWeight: '900', borderRadius: 999, backgroundColor: '#42d7c6' },
+  requestCount: { marginTop: -2, marginBottom: 3, color: '#f7fbfc', fontSize: 13, fontWeight: '800' },
   tabs: { position: 'relative', flexDirection: 'row', minHeight: 58, marginTop: 8, padding: 4, overflow: 'hidden', borderWidth: 1, borderColor: '#35494d', borderRadius: 11, backgroundColor: '#0d1416' },
-  tabsLight: { borderColor: '#aab9bc', backgroundColor: '#ffffff' },
+  tabsLight: { borderColor: '#9bb8b1', backgroundColor: '#e7f3eb' },
   tabIndicator: { position: 'absolute', top: 4, bottom: 4, left: 4, borderWidth: 1, borderColor: '#36c5a4', borderRadius: 8, backgroundColor: '#153e39' },
+  tabIndicatorLight: { borderColor: '#9bb8b1', backgroundColor: '#f3faf5' },
   tab: { zIndex: 1, flex: 1, minWidth: 0, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 2 },
-  tabIcon: { color: '#879699', fontSize: 14, fontWeight: '900' },
   tabLabel: { color: '#9aa8aa', fontSize: 10, fontWeight: '900' },
-  tabLabelLight: { color: '#566467' },
+  tabLabelLight: { color: '#4b625e' },
   tabSelected: { color: '#ffffff' },
+  tabSelectedLight: { color: '#2f4744' },
   tabCount: { position: 'absolute', top: 3, right: 5, minWidth: 17, paddingHorizontal: 4, color: '#b9c5c7', fontSize: 9, fontWeight: '900', textAlign: 'center', borderRadius: 9, backgroundColor: '#283335' },
   feedback: { marginHorizontal: 10, marginTop: 3, minHeight: 46, flexDirection: 'row', alignItems: 'center', gap: 8, paddingLeft: 13, borderWidth: 1, borderRadius: 11 },
   feedbackSuccess: { borderColor: '#318b67', backgroundColor: '#17392e' },
@@ -494,12 +517,12 @@ const styles = StyleSheet.create({
   panelContent: { width: '100%', maxWidth: 760, alignSelf: 'center', padding: 10 },
   sectionStack: { gap: 10 },
   section: { padding: 13, borderWidth: 1, borderColor: '#2d4246', borderRadius: 14, backgroundColor: '#12191b' },
-  panelLight: { borderColor: '#b8c7c9', backgroundColor: '#ffffff' },
+  panelLight: { borderColor: '#9bb8b1', backgroundColor: '#f3faf5' },
   sectionHeading: { marginBottom: 11 },
   sectionTitle: { marginTop: 2, color: '#f7fbfc', fontSize: 20, fontWeight: '900' },
   peopleList: { gap: 8 },
   personRow: { minHeight: 72, flexDirection: 'row', alignItems: 'center', gap: 7, padding: 9, borderWidth: 1, borderColor: '#2e4448', borderRadius: 11, backgroundColor: '#0c1315' },
-  personRowLight: { borderColor: '#becacc', backgroundColor: '#f6f9f9' },
+  personRowLight: { borderColor: '#9bb8b1', backgroundColor: '#e3efe8' },
   identityButton: { flex: 1, minWidth: 0, minHeight: 50, flexDirection: 'row', alignItems: 'center', gap: 9 },
   avatar: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderRadius: 22 },
   avatarText: { fontSize: 18, fontWeight: '900' },
@@ -508,19 +531,20 @@ const styles = StyleSheet.create({
   identityMeta: { color: '#9fadaf', fontSize: 11 },
   rowActions: { flexDirection: 'row', alignItems: 'center', gap: 5 },
   rowAction: { minHeight: 44, minWidth: 62, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 10, borderWidth: 1, borderColor: '#596a6d', borderRadius: 9 },
+  rowActionIconOnly: { width: 44, minWidth: 44, paddingHorizontal: 0 },
   rowActionPrimary: { borderColor: '#36c5a4', backgroundColor: '#36c5a4' },
   rowActionDanger: { borderColor: '#a94858', backgroundColor: '#3c2027' },
   rowActionText: { color: '#e5edef', fontSize: 12, fontWeight: '900' },
   rowActionPrimaryText: { color: '#061612' },
   rowActionDangerText: { color: '#ff9cab' },
   empty: { alignItems: 'center', marginTop: 9, padding: 20, gap: 6, borderWidth: 1, borderStyle: 'dashed', borderColor: '#365055', borderRadius: 11, backgroundColor: '#0c1315' },
-  emptyLight: { borderColor: '#b7c5c7', backgroundColor: '#f6f9f9' },
+  emptyLight: { borderColor: '#9bb8b1', backgroundColor: '#e3efe8' },
   emptyIcon: { color: '#42d7c6', fontSize: 25, fontWeight: '900' },
   emptyText: { maxWidth: 360, color: '#a5b2b4', fontSize: 13, lineHeight: 19, textAlign: 'center' },
   searchCopy: { marginTop: -6, marginBottom: 10, color: '#a4b1b3', fontSize: 13, lineHeight: 18 },
   searchRow: { flexDirection: 'row', gap: 7, marginBottom: 10 },
   searchInput: { flex: 1, minWidth: 0, minHeight: 50, paddingHorizontal: 12, color: '#ffffff', fontSize: 14, borderWidth: 1, borderColor: '#617377', borderRadius: 10, backgroundColor: '#0c1214' },
-  searchInputLight: { color: '#142023', borderColor: '#849397', backgroundColor: '#ffffff' },
+  searchInputLight: { color: '#2f4744', borderColor: '#9bb8b1', backgroundColor: '#f9fffa' },
   searchButton: { minHeight: 50, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 14, borderRadius: 10, backgroundColor: '#2f9cff' },
   searchButtonText: { color: '#04131f', fontSize: 13, fontWeight: '900' },
   searchError: { marginBottom: 10, color: '#ff8193', fontSize: 13, fontWeight: '800' },
@@ -530,6 +554,6 @@ const styles = StyleSheet.create({
   stateTitle: { color: '#f7fbfc', fontSize: 18, fontWeight: '900', textAlign: 'center' },
   stateCopy: { color: '#a4b1b3', fontSize: 13, lineHeight: 19, textAlign: 'center' },
   pressed: { opacity: 0.65 },
-  textLight: { color: '#172124' },
-  mutedLight: { color: '#566467' },
+  textLight: { color: '#2f4744' },
+  mutedLight: { color: '#4b625e' },
 });
