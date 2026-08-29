@@ -4,9 +4,12 @@ import type {
   TradeCoordinationMethod,
   TrainerCodeVisibility,
 } from '@pokemongonexus/shared-contracts/users';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import {
   ActivityIndicator,
+  Keyboard,
+  KeyboardAvoidingView,
+  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -175,6 +178,18 @@ export const NativeTrainerSettingsScreen = ({
 }: Props) => {
   const light = useNativeColorScheme() === 'light';
   const [picker, setPicker] = useState<PickerKey | null>(null);
+  const coordinationHandleRef = useRef<TextInput>(null);
+
+  const clearTextInputFocus = () => {
+    const focusedInput = TextInput.State.currentlyFocusedInput();
+    if (focusedInput) TextInput.State.blurTextInput(focusedInput);
+    coordinationHandleRef.current?.blur();
+    Keyboard.dismiss();
+  };
+  const openPicker = (nextPicker: PickerKey) => {
+    clearTextInputFocus();
+    setPicker(nextPicker);
+  };
 
   const update = <K extends keyof NativeTrainerPreferencesDraft>(
     key: K,
@@ -212,10 +227,17 @@ export const NativeTrainerSettingsScreen = ({
   } as const)[picker] : null;
 
   return (
-    <View style={[styles.root, light && styles.rootLight]} testID="native-trainer-settings-screen">
+    <KeyboardAvoidingView
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      style={[styles.root, light && styles.rootLight]}
+      testID="native-trainer-settings-screen"
+    >
       <ScrollView
         contentContainerStyle={[styles.content, { paddingTop: 12, paddingBottom: 96 }]}
+        keyboardDismissMode="on-drag"
         keyboardShouldPersistTaps="handled"
+        onScrollBeginDrag={clearTextInputFocus}
+        testID="native-trainer-settings-content"
       >
         <View style={styles.header}>
           <Pressable accessibilityLabel="Back" accessibilityRole="button" onPress={onBack} style={[styles.back, light && styles.backLight]}>
@@ -245,13 +267,13 @@ export const NativeTrainerSettingsScreen = ({
                 <View><Text style={styles.sectionEyebrow}>WHO CAN SEE YOU</Text><Text style={[styles.sectionTitle, light && styles.textLight]}>Privacy</Text></View>
                 <PrivacyShieldIcon />
               </View>
-              <SelectionField label="Profile visibility" light={light} onPress={() => setPicker('profileVisibility')} value={labelFor(VISIBILITY_OPTIONS, draft.profileVisibility)} description="Controls your trainer card and profile statistics." />
-              <SelectionField label="Pokémon visibility" light={light} onPress={() => setPicker('collectionVisibility')} value={labelFor(VISIBILITY_OPTIONS, draft.collectionVisibility)} description="Controls access to your public Pokémon catalog." />
-              <SelectionField label="Friend requests" light={light} onPress={() => setPicker('friendRequestPermission')} value={labelFor(FRIEND_OPTIONS, draft.friendRequestPermission)} />
-              <SelectionField label="Trainer code visibility" light={light} onPress={() => setPicker('trainerCodeVisibility')} value={labelFor(VISIBILITY_OPTIONS, draft.trainerCodeVisibility)} description="Accepted-trade sharing is configured separately below." />
+              <SelectionField label="Profile visibility" light={light} onPress={() => openPicker('profileVisibility')} value={labelFor(VISIBILITY_OPTIONS, draft.profileVisibility)} description="Controls your trainer card and profile statistics." />
+              <SelectionField label="Pokémon visibility" light={light} onPress={() => openPicker('collectionVisibility')} value={labelFor(VISIBILITY_OPTIONS, draft.collectionVisibility)} description="Controls access to your public Pokémon catalog." />
+              <SelectionField label="Friend requests" light={light} onPress={() => openPicker('friendRequestPermission')} value={labelFor(FRIEND_OPTIONS, draft.friendRequestPermission)} />
+              <SelectionField label="Trainer code visibility" light={light} onPress={() => openPicker('trainerCodeVisibility')} value={labelFor(VISIBILITY_OPTIONS, draft.trainerCodeVisibility)} description="Accepted-trade sharing is configured separately below." />
               <ToggleField label="Show Pokémon GO name" light={light} onChange={(value) => update('showPokemonGoName', value)} value={draft.showPokemonGoName} />
               <ToggleField label="Show profile location" light={light} onChange={(value) => update('showLocation', value)} value={draft.showLocation} />
-              <Pressable accessibilityRole="button" disabled={isSaving} onPress={onSavePrivacy} style={[styles.save, isSaving && styles.disabled]}>
+              <Pressable accessibilityRole="button" disabled={isSaving} onPress={() => { clearTextInputFocus(); onSavePrivacy(); }} style={[styles.save, isSaving && styles.disabled]}>
                 <Text style={styles.saveText}>{isSaving ? 'Saving…' : 'Save privacy'}</Text>
               </Pressable>
             </View>
@@ -264,7 +286,7 @@ export const NativeTrainerSettingsScreen = ({
                 <Text style={styles.sectionIcon}>◌</Text>
               </View>
               <Text style={[styles.sectionCopy, light && styles.mutedLight]}>Pokémon Go Nexus does not provide messaging. Choose how an accepted trade partner can connect with you.</Text>
-              <SelectionField label="Preferred coordination method" light={light} onPress={() => setPicker('coordinationMethod')} value={labelFor(COORDINATION_OPTIONS, draft.coordinationMethod)} description="Campfire is recommended for Niantic Friends and direct messages." />
+              <SelectionField label="Preferred coordination method" light={light} onPress={() => openPicker('coordinationMethod')} value={labelFor(COORDINATION_OPTIONS, draft.coordinationMethod)} description="Campfire is recommended for Niantic Friends and direct messages." />
               {draft.coordinationMethod !== 'none' ? (
                 <View style={styles.field}>
                   <Text style={[styles.fieldLabel, light && styles.labelLight]}>{draft.coordinationMethod === 'campfire' ? 'Campfire username or Niantic ID (optional)' : draft.coordinationMethod === 'discord' ? 'Discord username' : 'Community or app handle'}</Text>
@@ -276,6 +298,7 @@ export const NativeTrainerSettingsScreen = ({
                     onChangeText={(value) => update('coordinationHandle', value)}
                     placeholder="Platform username—not an email or phone number"
                     placeholderTextColor={light ? '#69777a' : '#829397'}
+                    ref={coordinationHandleRef}
                     style={[styles.input, light && styles.inputLight, light && styles.textLight]}
                     value={draft.coordinationHandle}
                   />
@@ -283,7 +306,7 @@ export const NativeTrainerSettingsScreen = ({
               ) : null}
               <ToggleField disabled={draft.coordinationMethod === 'none'} label="Share with accepted trade partners" light={light} onChange={(value) => update('shareTradeContact', value)} value={draft.shareTradeContact} />
               <View style={[styles.coordinationNote, light && styles.coordinationNoteLight]}><Text style={[styles.noteText, light && styles.textLight]}>These details are never added to search results. They become available only while a trade is accepted and active.</Text></View>
-              <Pressable accessibilityRole="button" disabled={isSaving} onPress={onSaveCoordination} style={[styles.save, isSaving && styles.disabled]}>
+              <Pressable accessibilityRole="button" disabled={isSaving} onPress={() => { clearTextInputFocus(); onSaveCoordination(); }} style={[styles.save, isSaving && styles.disabled]}>
                 <Text style={styles.saveText}>{isSaving ? 'Saving…' : 'Save coordination'}</Text>
               </Pressable>
             </View>
@@ -299,7 +322,7 @@ export const NativeTrainerSettingsScreen = ({
             description="Stored on this device and shared by every native screen."
             label="Color theme"
             light={light}
-            onPress={() => setPicker('colorTheme')}
+            onPress={() => openPicker('colorTheme')}
             value={labelFor(COLOR_THEME_OPTIONS, colorTheme)}
           />
           <ToggleField
@@ -353,14 +376,14 @@ export const NativeTrainerSettingsScreen = ({
       ) : null}
 
       <NativeOptionPicker
-        onClose={() => setPicker(null)}
+        onClose={() => { clearTextInputFocus(); setPicker(null); }}
         onSelect={(entry) => { pickerConfig?.select(entry.key); setPicker(null); }}
         options={pickerConfig?.options ?? []}
         selectedKey={pickerConfig?.selected ?? null}
         title={pickerConfig?.title ?? 'Setting'}
         visible={Boolean(pickerConfig)}
       />
-    </View>
+    </KeyboardAvoidingView>
   );
 };
 

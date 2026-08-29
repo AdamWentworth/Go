@@ -1,7 +1,7 @@
-appId: host.exp.exponent
+appId: ${APP_ID}
 name: Native Max Battles tool smoke
 ---
-- openLink: "exp://10.0.2.2:8091/--/device-smoke/tools?tool=max"
+- openLink: "${APP_LINK_BASE}/device-smoke/tools?tool=max"
 - waitForAnimationToEnd
 - runFlow:
     when:

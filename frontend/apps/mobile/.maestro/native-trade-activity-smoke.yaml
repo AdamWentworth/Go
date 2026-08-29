@@ -1,11 +1,11 @@
-appId: host.exp.exponent
+appId: ${APP_ID}
 name: Native authoritative trade-activity smoke
 tags:
   - android
   - native-trades
 ---
 - openLink:
-    link: exp://10.0.2.2:8091/--/device-smoke/trade-activity
+    link: ${APP_LINK_BASE}/device-smoke/trade-activity
 - waitForAnimationToEnd
 - runFlow:
     when:

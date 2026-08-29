@@ -1,11 +1,11 @@
-appId: host.exp.exponent
+appId: ${APP_ID}
 name: Native trainer profile parity smoke
 tags:
   - android
   - native-profile
 ---
 - openLink:
-    link: exp://10.0.2.2:8091/--/device-smoke/profile
+    link: ${APP_LINK_BASE}/device-smoke/profile
 - waitForAnimationToEnd
 - runFlow:
     when:

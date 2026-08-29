@@ -1,10 +1,12 @@
 import {
   ActivityIndicator,
   Image,
+  Keyboard,
   Pressable,
   ScrollView,
   StyleSheet,
   Text,
+  TextInput,
   View,
   useWindowDimensions,
 } from 'react-native';
@@ -133,6 +135,12 @@ export const NativeTrainerProfileScreen = ({
   const [confirmation, setConfirmation] = useState<'cancel-request' | 'remove-friend' | 'block' | null>(null);
   const [editingHighlightSlot, setEditingHighlightSlot] = useState<number | null>(null);
 
+  const clearTextInputFocus = () => {
+    const focusedInput = TextInput.State.currentlyFocusedInput();
+    if (focusedInput) TextInput.State.blurTextInput(focusedInput);
+    Keyboard.dismiss();
+  };
+
   useEffect(() => {
     if (!feedback) return;
     scrollRef.current?.scrollTo({ y: 0, animated: true });
@@ -192,6 +200,7 @@ export const NativeTrainerProfileScreen = ({
           confirmLabel: 'Cancel request',
         };
   const requestAction = (action: NativeTrainerProfileAction) => {
+    clearTextInputFocus();
     if (action === 'cancel-request' || action === 'remove-friend' || action === 'block') {
       setConfirmation(action);
       return;
@@ -212,6 +221,7 @@ export const NativeTrainerProfileScreen = ({
   };
   const chooseHighlight = (instanceId: string) => {
     if (editingHighlightSlot === null) return;
+    clearTextInputFocus();
     const nextIds = Array.from({ length: 6 }, (_, index) => selectedHighlightIds[index] ?? '');
     nextIds[editingHighlightSlot] = instanceId;
     updateHighlightIds(nextIds);
@@ -219,6 +229,7 @@ export const NativeTrainerProfileScreen = ({
   };
   const clearHighlight = () => {
     if (editingHighlightSlot === null) return;
+    clearTextInputFocus();
     const nextIds = Array.from({ length: 6 }, (_, index) => selectedHighlightIds[index] ?? '');
     nextIds[editingHighlightSlot] = '';
     updateHighlightIds(nextIds);
@@ -273,7 +284,11 @@ export const NativeTrainerProfileScreen = ({
               accessibilityLabel={editorDraft ? 'Cancel' : 'Edit'}
               accessibilityRole="button"
               disabled={isProfileSaving}
-              onPress={editorDraft ? onCancelEdit : onBeginEdit}
+              onPress={() => {
+                clearTextInputFocus();
+                if (editorDraft) onCancelEdit?.();
+                else onBeginEdit();
+              }}
               style={[
                 styles.headerAction,
                 styles.headerActionSecondary,
@@ -374,9 +389,9 @@ export const NativeTrainerProfileScreen = ({
             <NativeTrainerProfileEditorPanel
               draft={editorDraft}
               isSaving={isProfileSaving}
-              onCancel={onCancelEdit}
+              onCancel={() => { clearTextInputFocus(); onCancelEdit(); }}
               onChange={onChangeEditorDraft}
-              onSave={onSaveProfile}
+              onSave={() => { clearTextInputFocus(); onSaveProfile(); }}
             />
           ) : null}
 
@@ -397,7 +412,10 @@ export const NativeTrainerProfileScreen = ({
                   <Pressable
                     accessibilityLabel={`${displayedHighlights[index]?.name ?? 'Open slot'}, edit showcase slot ${index + 1}`}
                     accessibilityRole="button"
-                    onPress={() => setEditingHighlightSlot(index)}
+                    onPress={() => {
+                      clearTextInputFocus();
+                      setEditingHighlightSlot(index);
+                    }}
                     style={styles.highlightEditButton}
                     testID={`native-profile-showcase-slot-${index + 1}`}
                   >
@@ -543,7 +561,7 @@ export const NativeTrainerProfileScreen = ({
         assetBaseUrl={assetBaseUrl}
         candidates={highlightCandidates}
         onClear={clearHighlight}
-        onClose={() => setEditingHighlightSlot(null)}
+        onClose={() => { clearTextInputFocus(); setEditingHighlightSlot(null); }}
         onSelect={chooseHighlight}
         selectedIds={selectedHighlightIds}
         slotIndex={editingHighlightSlot ?? 0}

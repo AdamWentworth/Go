@@ -1,7 +1,7 @@
-appId: host.exp.exponent
+appId: ${APP_ID}
 name: Native registration workflow smoke
 ---
-- openLink: "exp://10.0.2.2:8091/--/device-smoke/public?page=register"
+- openLink: "${APP_LINK_BASE}/device-smoke/public?page=register"
 - waitForAnimationToEnd
 - runFlow:
     when:

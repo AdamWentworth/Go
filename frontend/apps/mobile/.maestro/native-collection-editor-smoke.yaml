@@ -1,11 +1,11 @@
-appId: host.exp.exponent
+appId: ${APP_ID}
 name: Native collection editor interaction smoke
 tags:
   - android
   - native-collection
 ---
 - openLink:
-    link: exp://10.0.2.2:8091/--/device-smoke/collection?instance=smoke-metagross
+    link: ${APP_LINK_BASE}/device-smoke/collection?instance=smoke-metagross
 - waitForAnimationToEnd
 - runFlow:
     when:
@@ -24,7 +24,7 @@ tags:
       visible: "Something went wrong.*"
     commands:
       - tapOn:
-          id: host.exp.exponent:id/reload_button
+          id: ${APP_ID}:id/reload_button
 - extendedWaitUntil:
     visible: Shiny Metagross
     timeout: 45000

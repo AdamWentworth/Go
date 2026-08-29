@@ -1,4 +1,4 @@
-appId: host.exp.exponent
+appId: ${APP_ID}
 name: Native OAuth-only account disconnect smoke
 tags:
   - android
@@ -6,7 +6,7 @@ tags:
   - oauth
 ---
 - openLink:
-    link: exp://10.0.2.2:8091/--/device-smoke/account?oauthOnly=1
+    link: ${APP_LINK_BASE}/device-smoke/account?oauthOnly=1
 - waitForAnimationToEnd
 - runFlow:
     when:

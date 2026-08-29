@@ -1,43 +1,43 @@
-appId: host.exp.exponent
+appId: ${APP_ID}
 name: Native global route chrome smoke
 tags:
   - android
   - native-route-chrome
 ---
 - openLink:
-    link: exp://10.0.2.2:8091/--/device-smoke/home
+    link: ${APP_LINK_BASE}/device-smoke/home
 - waitForAnimationToEnd
 - assertVisible: Open action menu
 - openLink:
-    link: exp://10.0.2.2:8091/--/device-smoke/friends
+    link: ${APP_LINK_BASE}/device-smoke/friends
 - assertVisible: Open action menu
 - openLink:
-    link: exp://10.0.2.2:8091/--/device-smoke/profile
+    link: ${APP_LINK_BASE}/device-smoke/profile
 - assertVisible: Open action menu
 - openLink:
-    link: exp://10.0.2.2:8091/--/device-smoke/search
+    link: ${APP_LINK_BASE}/device-smoke/search
 - assertVisible: Open action menu
 - openLink:
-    link: exp://10.0.2.2:8091/--/device-smoke/settings
+    link: ${APP_LINK_BASE}/device-smoke/settings
 - assertVisible: Open action menu
 - openLink:
-    link: exp://10.0.2.2:8091/--/device-smoke/account
+    link: ${APP_LINK_BASE}/device-smoke/account
 - assertVisible: Open action menu
 - openLink:
-    link: exp://10.0.2.2:8091/--/device-smoke/tools?tool=pvp
+    link: ${APP_LINK_BASE}/device-smoke/tools?tool=pvp
 - assertVisible: Open action menu
 - openLink:
-    link: exp://10.0.2.2:8091/--/device-smoke/trade-preferences
+    link: ${APP_LINK_BASE}/device-smoke/trade-preferences
 - assertVisible: Open action menu
 - openLink:
-    link: exp://10.0.2.2:8091/--/device-smoke/public?page=help
+    link: ${APP_LINK_BASE}/device-smoke/public?page=help
 - assertVisible: Open action menu
 - openLink:
-    link: exp://10.0.2.2:8091/--/device-smoke/public?page=trade-board
+    link: ${APP_LINK_BASE}/device-smoke/public?page=trade-board
 - assertVisible: Open action menu
 - openLink:
-    link: exp://10.0.2.2:8091/--/device-smoke/public?page=privacy
+    link: ${APP_LINK_BASE}/device-smoke/public?page=privacy
 - assertNotVisible: Open action menu
 - openLink:
-    link: exp://10.0.2.2:8091/--/device-smoke/public?page=public-trade-board
+    link: ${APP_LINK_BASE}/device-smoke/public?page=public-trade-board
 - assertNotVisible: Open action menu

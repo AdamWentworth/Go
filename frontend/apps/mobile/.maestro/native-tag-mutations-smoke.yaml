@@ -1,4 +1,4 @@
-appId: host.exp.exponent
+appId: ${APP_ID}
 name: Native custom-tag mutation smoke
 tags:
   - android
@@ -6,13 +6,13 @@ tags:
   - native-tags
 ---
 - openLink:
-    link: exp://10.0.2.2:8091/--/device-smoke/collection
+    link: ${APP_LINK_BASE}/device-smoke/collection
 - runFlow:
     when:
       visible: "Something went wrong.*"
     commands:
       - tapOn:
-          id: host.exp.exponent:id/reload_button
+          id: ${APP_ID}:id/reload_button
 - waitForAnimationToEnd
 - runFlow:
     when:

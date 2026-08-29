@@ -1,12 +1,19 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+script_directory="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+mobile_directory="$(cd "${script_directory}/.." && pwd)"
+cd "${mobile_directory}"
+
 user_home="$(getent passwd "$(id -u)" | cut -d: -f6)"
 android_sdk_root="${ANDROID_SDK_ROOT:-${user_home}/Android/Sdk}"
 java_home="${JAVA_HOME:-${user_home}/.local/share/pokegonexus-android/jdk}"
 maestro_bin="${MAESTRO_BIN:-${user_home}/.maestro/bin/maestro}"
-expo_go_apk="${POKEGONEXUS_EXPO_GO_APK:-${user_home}/.local/share/pokegonexus-android/downloads/Expo-Go-57.0.9.apk}"
 avd_name="${POKEGONEXUS_ANDROID_AVD:-PokeGoNexus_Pixel_8_Pro_API_36}"
+app_id="${POKEGONEXUS_ANDROID_APP_ID:-com.pokegonexus.app}"
+app_scheme="${POKEGONEXUS_ANDROID_APP_SCHEME:-pokegonexus}"
+dev_client_url="${app_scheme}://expo-development-client/?url=http%3A%2F%2F10.0.2.2%3A8091"
+provided_android_apk="${POKEGONEXUS_ANDROID_APK:-${POKEGONEXUS_DEV_CLIENT_APK:-}}"
 adb_bin="${android_sdk_root}/platform-tools/adb"
 emulator_bin="${android_sdk_root}/emulator/emulator"
 artifact_dir="$(mktemp -d /tmp/pokegonexus-android-smoke.XXXXXX)"
@@ -15,6 +22,8 @@ smoke_flow="${POKEGONEXUS_SMOKE_FLOW:-.maestro/native-collection-smoke.yaml}"
 smoke_density="${POKEGONEXUS_SMOKE_DENSITY:-520}"
 smoke_font_scale="${POKEGONEXUS_SMOKE_FONT_SCALE:-1.0}"
 smoke_reduce_motion="${POKEGONEXUS_SMOKE_REDUCE_MOTION:-false}"
+smoke_runtime="${POKEGONEXUS_SMOKE_RUNTIME:-dev-client}"
+smoke_network="${POKEGONEXUS_SMOKE_NETWORK:-online}"
 metro_pid=""
 metro_pgid=""
 fixture_pid=""
@@ -27,6 +36,8 @@ original_window_animation_scale=""
 original_transition_animation_scale=""
 original_animator_duration_scale=""
 accessibility_settings_changed="false"
+network_settings_changed="false"
+original_airplane_mode=""
 
 cleanup() {
   if [[ -n "${metro_pgid}" ]]; then
@@ -60,16 +71,23 @@ cleanup() {
     "${adb_bin}" -s "${device_id}" shell settings put global transition_animation_scale "${original_transition_animation_scale:-1}" >/dev/null 2>&1 || true
     "${adb_bin}" -s "${device_id}" shell settings put global animator_duration_scale "${original_animator_duration_scale:-1}" >/dev/null 2>&1 || true
   fi
+  if [[ "${network_settings_changed}" == "true" && -n "${device_id}" ]]; then
+    if [[ "${original_airplane_mode}" == "enabled" ]]; then
+      "${adb_bin}" -s "${device_id}" shell cmd connectivity airplane-mode enable >/dev/null 2>&1 || true
+    else
+      "${adb_bin}" -s "${device_id}" shell cmd connectivity airplane-mode disable >/dev/null 2>&1 || true
+    fi
+  fi
 }
 trap cleanup EXIT
 
-for required in "${adb_bin}" "${emulator_bin}" "${java_home}/bin/java" "${maestro_bin}" "${expo_go_apk}"; do
+for required in "${adb_bin}" "${emulator_bin}" "${java_home}/bin/java" "${maestro_bin}"; do
   if [[ ! -e "${required}" ]]; then
     echo "Missing Android smoke dependency: ${required}" >&2
     exit 1
   fi
 done
-for required_command in curl python3 setsid; do
+for required_command in curl npx python3 setsid; do
   if ! command -v "${required_command}" >/dev/null 2>&1; then
     echo "Missing Android smoke command: ${required_command}" >&2
     exit 1
@@ -82,6 +100,82 @@ export JAVA_HOME="${java_home}"
 export PATH="${java_home}/bin:${android_sdk_root}/platform-tools:${PATH}"
 export MAESTRO_CLI_NO_ANALYTICS=1
 export MAESTRO_CLI_ANALYSIS_NOTIFICATION_DISABLED=true
+
+case "${smoke_runtime}" in
+  dev-client|standalone) ;;
+  *)
+    echo "Unsupported POKEGONEXUS_SMOKE_RUNTIME: ${smoke_runtime} (expected dev-client or standalone)." >&2
+    exit 1
+    ;;
+esac
+case "${smoke_network}" in
+  online|offline) ;;
+  *)
+    echo "Unsupported POKEGONEXUS_SMOKE_NETWORK: ${smoke_network} (expected online or offline)." >&2
+    exit 1
+    ;;
+esac
+if [[ "${smoke_runtime}" == "dev-client" && "${smoke_network}" == "offline" ]]; then
+  echo "Offline process-relaunch smoke requires the standalone runtime." >&2
+  exit 1
+fi
+
+# Reject flow definitions that can escape into Expo Go or target a stale
+# package. Native-module parity evidence is valid only when every route remains
+# inside the installed project-owned application.
+if grep -R -n -E 'exp://|host\.exp\.exponent' "${smoke_flow}"; then
+  echo "Android smoke flow contains an Expo Go route or package id: ${smoke_flow}" >&2
+  exit 1
+fi
+if [[ -d "${smoke_flow}" ]]; then
+  mapfile -t contract_flows < <(find "${smoke_flow}" -maxdepth 1 -type f -name '*.yaml' | sort)
+else
+  contract_flows=("${smoke_flow}")
+fi
+for contract_flow in "${contract_flows[@]}"; do
+  if ! grep -Fqx 'appId: ${APP_ID}' "${contract_flow}"; then
+    echo "Android smoke flow must target the injected project app id: ${contract_flow}" >&2
+    exit 1
+  fi
+done
+
+if [[ -n "${provided_android_apk}" ]]; then
+  android_apk="${provided_android_apk}"
+  if [[ ! -f "${android_apk}" ]]; then
+    echo "Provided Android APK does not exist: ${android_apk}" >&2
+    exit 1
+  fi
+else
+  if [[ "${smoke_runtime}" == "standalone" ]]; then
+    node_environment="production"
+    gradle_task="app:assembleRelease"
+    apk_variant="release"
+  else
+    node_environment="development"
+    gradle_task="app:assembleDebug"
+    apk_variant="debug"
+  fi
+  echo "Synchronizing the Android native project and ${smoke_runtime} APK."
+  env \
+    NODE_ENV="${node_environment}" \
+    EXPO_PUBLIC_MOBILE_EXPERIENCE=native-preview \
+    EXPO_PUBLIC_DEVICE_SMOKE_MODE=true \
+    EXPO_PUBLIC_DEVICE_SMOKE_COLOR_SCHEME="${color_scheme}" \
+    CI=1 \
+    npx expo prebuild --platform android --no-install
+  env \
+    NODE_ENV="${node_environment}" \
+    EXPO_PUBLIC_MOBILE_EXPERIENCE=native-preview \
+    EXPO_PUBLIC_DEVICE_SMOKE_MODE=true \
+    EXPO_PUBLIC_DEVICE_SMOKE_COLOR_SCHEME="${color_scheme}" \
+    CI=1 \
+    ./android/gradlew -p android "${gradle_task}" -PreactNativeArchitectures=x86_64
+  android_apk="${mobile_directory}/android/app/build/outputs/apk/${apk_variant}/app-${apk_variant}.apk"
+fi
+if [[ ! -f "${android_apk}" ]]; then
+  echo "Android APK was not produced: ${android_apk}" >&2
+  exit 1
+fi
 
 device_id="$(${adb_bin} devices | awk '/^emulator-[0-9]+[[:space:]]+device/ { print $1; exit }')"
 if [[ -z "${device_id}" ]]; then
@@ -143,18 +237,27 @@ case "${smoke_reduce_motion}" in
     ;;
 esac
 
-if ! "${adb_bin}" -s "${device_id}" shell pm list packages | grep -q '^package:host.exp.exponent$'; then
-  "${adb_bin}" -s "${device_id}" install -r "${expo_go_apk}"
+"${adb_bin}" -s "${device_id}" install -r -t "${android_apk}" >/dev/null
+if ! "${adb_bin}" -s "${device_id}" shell pm list packages | grep -Fqx "package:${app_id}"; then
+  echo "Android app did not install with expected application id: ${app_id}" >&2
+  exit 1
 fi
 
-if curl --silent --fail --max-time 1 http://127.0.0.1:8091/status >/dev/null 2>&1; then
+original_airplane_mode="$("${adb_bin}" -s "${device_id}" shell cmd connectivity airplane-mode | tr -d '\r')"
+if [[ "${smoke_network}" == "offline" ]]; then
+  "${adb_bin}" -s "${device_id}" shell cmd connectivity airplane-mode enable >/dev/null
+  network_settings_changed="true"
+fi
+
+if [[ "${smoke_runtime}" == "dev-client" ]] \
+  && curl --silent --fail --max-time 1 http://127.0.0.1:8091/status >/dev/null 2>&1; then
   echo "Android smoke port 8091 is already in use; stop that Metro server and retry." >&2
   exit 1
 fi
 fixture_directory="$(cd ../../packages/app-core/tests/__helpers__/fixtures && pwd)"
 if curl --silent --fail --max-time 1 http://127.0.0.1:8092/pokemons.json >/dev/null 2>&1; then
   # A developer may already have the deterministic fixture server running for
-  # Expo Go. Reuse it when it exposes the expected catalog instead of forcing
+  # a local preview. Reuse it when it exposes the expected catalog instead of forcing
   # them to tear down a healthy preview merely to run native automation.
   echo "Reusing catalog fixture server on port 8092."
 else
@@ -193,105 +296,113 @@ case "${color_scheme}" in
     exit 1
     ;;
 esac
-setsid env \
-  EXPO_PUBLIC_MOBILE_EXPERIENCE=native-preview \
-  EXPO_PUBLIC_DEVICE_SMOKE_MODE=true \
-  EXPO_PUBLIC_DEVICE_SMOKE_COLOR_SCHEME="${color_scheme}" \
-  CI=1 \
-  npx expo start --host localhost --port 8091 >"${artifact_dir}/metro.log" 2>&1 &
-metro_pid="$!"
-metro_pgid="${metro_pid}"
+if [[ "${smoke_runtime}" == "dev-client" ]]; then
+  setsid env \
+    REACT_NATIVE_PACKAGER_HOSTNAME=10.0.2.2 \
+    EXPO_PUBLIC_MOBILE_EXPERIENCE=native-preview \
+    EXPO_PUBLIC_DEVICE_SMOKE_MODE=true \
+    EXPO_PUBLIC_DEVICE_SMOKE_COLOR_SCHEME="${color_scheme}" \
+    CI=1 \
+    npx expo start --dev-client --host localhost --port 8091 >"${artifact_dir}/metro.log" 2>&1 &
+  metro_pid="$!"
+  metro_pgid="${metro_pid}"
 
-for _attempt in $(seq 1 90); do
-  if curl --silent --fail http://127.0.0.1:8091/status | grep -q 'packager-status:running'; then
-    break
-  fi
-  if ! kill -0 "${metro_pid}" 2>/dev/null; then
-    echo "Metro exited before the device smoke could start." >&2
-    tail -80 "${artifact_dir}/metro.log" >&2
-    exit 1
-  fi
-  sleep 1
-done
-if ! curl --silent --fail --max-time 1 http://127.0.0.1:8091/status | grep -q 'packager-status:running'; then
-  echo "Metro did not become ready for the Android smoke." >&2
-  tail -80 "${artifact_dir}/metro.log" >&2
-  exit 1
-fi
-
-android_text_bounds() {
-  local text_value="$1"
-  "${adb_bin}" -s "${device_id}" shell uiautomator dump /sdcard/pokegonexus-smoke-ui.xml >/dev/null 2>&1 || return 1
-  "${adb_bin}" -s "${device_id}" exec-out cat /sdcard/pokegonexus-smoke-ui.xml 2>/dev/null \
-    | python3 -c '
-import re
-import sys
-import xml.etree.ElementTree as ET
-
-needle = sys.argv[1]
-try:
-    root = ET.fromstring(sys.stdin.read())
-except ET.ParseError:
-    raise SystemExit(1)
-for node in root.iter("node"):
-    if node.attrib.get("text") == needle or node.attrib.get("content-desc") == needle:
-        bounds = node.attrib.get("bounds", "")
-        match = re.fullmatch(r"\[(\d+),(\d+)\]\[(\d+),(\d+)\]", bounds)
-        if match:
-            print(" ".join(match.groups()))
-            raise SystemExit(0)
-raise SystemExit(1)
-' "${text_value}"
-}
-
-tap_android_text_if_present() {
-  local text_value="$1"
-  local bounds
-  if ! bounds="$(android_text_bounds "${text_value}")"; then
-    return 1
-  fi
-  read -r left top right bottom <<<"${bounds}"
-  "${adb_bin}" -s "${device_id}" shell input tap "$(((left + right) / 2))" "$(((top + bottom) / 2))" >/dev/null
-}
-
-prepare_expo_go() {
-  # Clearing once keeps the suite deterministic. Complete Expo Go's own
-  # first-run developer prompt before Maestro begins so it cannot appear over
-  # an already interactive fixture several seconds later.
-  "${adb_bin}" -s "${device_id}" shell am force-stop host.exp.exponent
-  "${adb_bin}" -s "${device_id}" shell pm clear host.exp.exponent >/dev/null
-  "${adb_bin}" -s "${device_id}" shell am start \
-    -a android.intent.action.VIEW \
-    -d 'exp://10.0.2.2:8091/--/device-smoke/login' >/dev/null
-  for _attempt in $(seq 1 30); do
-    if tap_android_text_if_present 'Continue'; then
-      sleep 2
-      tap_android_text_if_present 'Close' || true
-      "${adb_bin}" -s "${device_id}" shell am force-stop host.exp.exponent
-      return 0
+  for _attempt in $(seq 1 90); do
+    if curl --silent --fail http://127.0.0.1:8091/status | grep -q 'packager-status:running'; then
+      break
+    fi
+    if ! kill -0 "${metro_pid}" 2>/dev/null; then
+      echo "Metro exited before the device smoke could start." >&2
+      tail -80 "${artifact_dir}/metro.log" >&2
+      exit 1
     fi
     sleep 1
   done
-  echo "Expo Go onboarding did not expose its Continue action; proceeding because it may already be complete." >&2
-  "${adb_bin}" -s "${device_id}" shell am force-stop host.exp.exponent
+  if ! curl --silent --fail --max-time 1 http://127.0.0.1:8091/status | grep -q 'packager-status:running'; then
+    echo "Metro did not become ready for the Android smoke." >&2
+    tail -80 "${artifact_dir}/metro.log" >&2
+    exit 1
+  fi
+fi
+
+prepare_dev_client() {
+  # Clear once for deterministic SecureStore/SQLite state, then connect the
+  # installed Pokémon Go Nexus development client to this isolated Metro
+  # server before Maestro starts opening fixture routes through the app's own
+  # URL scheme.
+  local fixture_url
+  fixture_url="${app_scheme}://device-smoke/login"
+  "${adb_bin}" -s "${device_id}" shell am force-stop "${app_id}"
+  "${adb_bin}" -s "${device_id}" shell pm clear "${app_id}" >/dev/null
+  "${adb_bin}" -s "${device_id}" shell am start \
+    -a android.intent.action.VIEW \
+    -d "${dev_client_url}" \
+    "${app_id}" >/dev/null
+  for _attempt in $(seq 1 90); do
+    if grep -q '^Android Bundled ' "${artifact_dir}/metro.log"; then
+      sleep 2
+      "${adb_bin}" -s "${device_id}" shell am force-stop "${app_id}"
+      return 0
+    fi
+    if (( _attempt >= 3 && _attempt % 3 == 0 )); then
+      "${adb_bin}" -s "${device_id}" shell am start \
+        -a android.intent.action.VIEW \
+        -d "${fixture_url}" \
+        "${app_id}" >/dev/null
+    fi
+    sleep 1
+  done
+  echo "Pokémon Go Nexus development client did not load the fixture route." >&2
+  tail -120 "${artifact_dir}/metro.log" >&2
+  "${adb_bin}" -s "${device_id}" logcat -d -t 200 '*:W' >&2 || true
+  exit 1
 }
 
-prepare_expo_go
+if [[ "${smoke_runtime}" == "dev-client" ]]; then
+  prepare_dev_client
+else
+  "${adb_bin}" -s "${device_id}" shell am force-stop "${app_id}"
+  "${adb_bin}" -s "${device_id}" shell pm clear "${app_id}" >/dev/null
+fi
 
 run_maestro_flow() {
   local flow="$1"
   local output_name="$2"
+  local bundles_before bundles_after
   # A process boundary removes mounted Expo Router state between fixtures. App
   # smoke mode supplies a deterministic theme and each fixture owns its domain
-  # state, while retaining Expo Go onboarding state for the remainder of this
-  # invocation.
-  "${adb_bin}" -s "${device_id}" shell am force-stop host.exp.exponent
-  # Expo Go occasionally relaunches before Android has fully torn down the
-  # preceding React host. Give the process boundary time to settle so an
-  # infrastructure splash/error screen cannot masquerade as an app failure.
-  sleep 1
+  # state, while the installed development client retains its Metro endpoint.
+  "${adb_bin}" -s "${device_id}" shell am force-stop "${app_id}"
+  if [[ "${smoke_runtime}" == "dev-client" ]]; then
+    bundles_before="$(grep -c '^Android Bundled ' "${artifact_dir}/metro.log" || true)"
+    "${adb_bin}" -s "${device_id}" shell am start \
+      -a android.intent.action.VIEW \
+      -d "${dev_client_url}" \
+      "${app_id}" >/dev/null
+    bundles_after="${bundles_before}"
+    for _attempt in $(seq 1 45); do
+      bundles_after="$(grep -c '^Android Bundled ' "${artifact_dir}/metro.log" || true)"
+      if (( bundles_after > bundles_before )); then
+        break
+      fi
+      sleep 1
+    done
+    if (( bundles_after <= bundles_before )); then
+      echo "Development client did not mount a fresh project bundle for ${output_name}." >&2
+      tail -120 "${artifact_dir}/metro.log" >&2
+      return 1
+    fi
+    # Give the retained development bundle a brief moment to mount before the
+    # flow delivers its app route. This still keeps a real process boundary
+    # between fixtures without dropping into the development-launcher home.
+    sleep 2
+  else
+    sleep 1
+  fi
   "${maestro_bin}" --device "${device_id}" test \
     --no-ansi \
+    -e "APP_ID=${app_id}" \
+    -e "APP_LINK_BASE=${app_scheme}:/" \
     --test-output-dir "${artifact_dir}/maestro/${output_name}" \
     "${flow}"
 }
@@ -303,7 +414,7 @@ if [[ -d "${smoke_flow}" ]]; then
     flow_name="$(basename "${flow}" .yaml)"
     echo "Running isolated device smoke: ${flow_name}"
     if ! run_maestro_flow "${flow}" "${flow_name}"; then
-      echo "Retrying isolated device smoke once after an Expo Go restart: ${flow_name}"
+      echo "Retrying isolated device smoke once after an app restart: ${flow_name}"
       if ! run_maestro_flow "${flow}" "${flow_name}-retry"; then
         failed_flows+=("${flow_name}")
       fi
@@ -317,7 +428,7 @@ if [[ -d "${smoke_flow}" ]]; then
 else
   flow_name="$(basename "${smoke_flow}" .yaml)"
   if ! run_maestro_flow "${smoke_flow}" "${flow_name}"; then
-    echo "Retrying device smoke once after an Expo Go restart: ${flow_name}"
+    echo "Retrying device smoke once after an app restart: ${flow_name}"
     run_maestro_flow "${smoke_flow}" "${flow_name}-retry"
   fi
 fi

@@ -1,11 +1,11 @@
-appId: host.exp.exponent
+appId: ${APP_ID}
 name: Native instance overlay swipe smoke
 tags:
   - android
   - native-instance
 ---
 - openLink:
-    link: exp://10.0.2.2:8091/--/device-smoke/collection?instance=smoke-gmax-charizard
+    link: ${APP_LINK_BASE}/device-smoke/collection?instance=smoke-gmax-charizard
 - waitForAnimationToEnd
 - runFlow:
     when:

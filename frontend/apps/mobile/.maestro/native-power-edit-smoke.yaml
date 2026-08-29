@@ -1,4 +1,4 @@
-appId: host.exp.exponent
+appId: ${APP_ID}
 name: Native caught transformation and Max Move smoke
 tags:
   - android
@@ -6,7 +6,7 @@ tags:
   - power-editing
 ---
 - openLink:
-    link: exp://10.0.2.2:8091/--/device-smoke/collection?instance=smoke-shadow-venusaur
+    link: ${APP_LINK_BASE}/device-smoke/collection?instance=smoke-shadow-venusaur
 - waitForAnimationToEnd
 - runFlow:
     when:
@@ -36,7 +36,7 @@ tags:
 - tapOn: Save Pokémon
 - assertNotVisible: Pokémon detail editor
 - openLink:
-    link: exp://10.0.2.2:8091/--/device-smoke/collection?instance=smoke-metagross
+    link: ${APP_LINK_BASE}/device-smoke/collection?instance=smoke-metagross
 - extendedWaitUntil:
     visible: Shiny Metagross
     timeout: 45000

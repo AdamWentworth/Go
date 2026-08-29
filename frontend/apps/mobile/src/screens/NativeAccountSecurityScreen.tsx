@@ -1,7 +1,10 @@
 import type { AccountSecuritySummary, OAuthProvider } from '@pokemongonexus/shared-contracts/auth';
-import { useState } from 'react';
+import { useRef, useState, type RefObject } from 'react';
 import {
   ActivityIndicator,
+  Keyboard,
+  KeyboardAvoidingView,
+  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -53,6 +56,7 @@ type FieldProps = {
   light: boolean;
   onChangeText: (value: string) => void;
   placeholder?: string;
+  inputRef?: RefObject<TextInput | null>;
   secureTextEntry?: boolean;
   value: string;
 };
@@ -65,6 +69,7 @@ const AccountField = ({
   light,
   onChangeText,
   placeholder,
+  inputRef,
   secureTextEntry,
   value,
 }: FieldProps) => (
@@ -80,6 +85,7 @@ const AccountField = ({
       onChangeText={onChangeText}
       placeholder={placeholder}
       placeholderTextColor={light ? '#69777a' : '#829397'}
+      ref={inputRef}
       secureTextEntry={secureTextEntry}
       style={[styles.input, light && styles.inputLight, light && styles.textLight]}
       value={value}
@@ -115,23 +121,42 @@ export const NativeAccountSecurityScreen = ({
 }: Props) => {
   const light = useNativeColorScheme() === 'light';
   const [confirmation, setConfirmation] = useState<Confirmation | null>(null);
+  const confirmationPasswordRef = useRef<TextInput>(null);
   const working = Boolean(pendingAction);
   const update = <K extends keyof NativeAccountSecurityDraft>(
     key: K,
     value: NativeAccountSecurityDraft[K],
   ) => onChange({ ...draft, [key]: value });
+  const clearTextInputFocus = () => {
+    const focusedInput = TextInput.State.currentlyFocusedInput();
+    if (focusedInput) TextInput.State.blurTextInput(focusedInput);
+    Keyboard.dismiss();
+  };
+  const beginConfirmation = (next: Confirmation) => {
+    clearTextInputFocus();
+    setConfirmation(next);
+  };
+  const dismissConfirmation = () => {
+    confirmationPasswordRef.current?.blur();
+    clearTextInputFocus();
+    setConfirmation(null);
+  };
 
   const confirmAction = () => {
     if (!confirmation) return;
     const action = confirmation;
-    setConfirmation(null);
+    dismissConfirmation();
     if (action.kind === 'delete') onDeleteAccount();
     if (action.kind === 'revoke') onRevokeAllSessions();
     if (action.kind === 'unlink') onUnlinkProvider(action.provider);
   };
 
   return (
-    <View style={[styles.root, light && styles.rootLight]} testID="native-account-security-screen">
+    <KeyboardAvoidingView
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      style={[styles.root, light && styles.rootLight]}
+      testID="native-account-security-screen"
+    >
       <ScrollView
         contentContainerStyle={[styles.content, { paddingTop: 12, paddingBottom: 144 }]}
         keyboardShouldPersistTaps="handled"
@@ -180,7 +205,7 @@ export const NativeAccountSecurityScreen = ({
           <AccountField icon="email" label="Email" light={light} onChangeText={(value) => update('email', value)} value={draft.email} />
           <AccountField label="New password" light={light} onChangeText={(value) => update('newPassword', value)} placeholder="Leave blank to keep current password" secureTextEntry value={draft.newPassword} />
           <AccountField label="Confirm new password" light={light} onChangeText={(value) => update('confirmNewPassword', value)} secureTextEntry value={draft.confirmNewPassword} />
-          <Pressable accessibilityRole="button" disabled={working} onPress={onUpdateAccount} style={[styles.primary, working && styles.disabled]}>
+          <Pressable accessibilityRole="button" disabled={working} onPress={() => { clearTextInputFocus(); onUpdateAccount(); }} style={[styles.primary, working && styles.disabled]}>
             <View style={styles.buttonLabel}><NativeUiIcon color="#061617" name="key" size={15} /><Text style={styles.primaryText}>{pendingAction === 'account' ? 'Saving…' : 'Update account'}</Text></View>
           </Pressable>
         </View>
@@ -207,15 +232,20 @@ export const NativeAccountSecurityScreen = ({
                   accessibilityLabel={`${identity ? 'Disconnect' : 'Connect'} ${label}`}
                   accessibilityRole="button"
                   disabled={working}
-                  onPress={() => identity
-                    ? setConfirmation({
+                  onPress={() => {
+                    if (identity) {
+                      beginConfirmation({
                         kind: 'unlink',
                         provider,
                         title: `Disconnect ${label}?`,
                         body: `You will no longer be able to sign in with ${label}.`,
                         confirmLabel: 'Disconnect',
-                      })
-                    : onConnectProvider(provider)}
+                      });
+                      return;
+                    }
+                    clearTextInputFocus();
+                    onConnectProvider(provider);
+                  }}
                   style={[styles.compactAction, light && styles.compactActionLight, working && styles.disabled]}
                 >
                   <Text style={[styles.compactActionText, light && styles.textLight]}>{pendingAction === `provider-${provider}` ? 'Working…' : identity ? 'Disconnect' : 'Connect'}</Text>
@@ -231,14 +261,14 @@ export const NativeAccountSecurityScreen = ({
             <NativeUiIcon color="#42d7c6" name="sign-out" size={30} />
           </View>
           <Text style={[styles.sectionCopy, light && styles.mutedLight]}>End this session and clear locally stored account data from this device.</Text>
-          <Pressable accessibilityRole="button" disabled={working} onPress={onSignOut} style={[styles.secondary, light && styles.secondaryLight, working && styles.disabled]}>
+          <Pressable accessibilityRole="button" disabled={working} onPress={() => { clearTextInputFocus(); onSignOut(); }} style={[styles.secondary, light && styles.secondaryLight, working && styles.disabled]}>
             <View style={styles.buttonLabel}><NativeUiIcon color={light ? '#172124' : '#ffffff'} name="sign-out" size={15} /><Text style={[styles.secondaryText, light && styles.textLight]}>Sign out</Text></View>
           </Pressable>
           <View style={[styles.sessionSummary, light && styles.providerLight]}>
             <NativeUiIcon color="#42d7c6" name="laptop" size={30} />
             <View style={styles.providerCopy}><Text style={[styles.providerTitle, light && styles.textLight]}>{security?.activeSessions ?? '—'} active sessions</Text><Text style={[styles.help, light && styles.mutedLight]}>Includes this device while its session is active.</Text></View>
           </View>
-          <Pressable accessibilityLabel="Sign out every device" accessibilityRole="button" disabled={working} onPress={() => setConfirmation({ kind: 'revoke', title: 'Sign out every device?', body: 'Every active session for this account will be revoked, including this device.', confirmLabel: 'Sign out every device' })} style={[styles.secondary, light && styles.secondaryLight, working && styles.disabled]}>
+          <Pressable accessibilityLabel="Sign out every device" accessibilityRole="button" disabled={working} onPress={() => beginConfirmation({ kind: 'revoke', title: 'Sign out every device?', body: 'Every active session for this account will be revoked, including this device.', confirmLabel: 'Sign out every device' })} style={[styles.secondary, light && styles.secondaryLight, working && styles.disabled]}>
             <View style={styles.buttonLabel}><NativeUiIcon color={light ? '#172124' : '#ffffff'} name="laptop" size={15} /><Text style={[styles.secondaryText, light && styles.textLight]}>{pendingAction === 'revoke' ? 'Signing out…' : 'Sign out every device'}</Text></View>
           </Pressable>
         </View>
@@ -249,7 +279,7 @@ export const NativeAccountSecurityScreen = ({
             <NativeUiIcon color="#ef6a7e" name="trash" size={30} />
           </View>
           <Text style={[styles.sectionCopy, light && styles.mutedLight]}>Permanently remove your sign-in account, catalog, profile, trades, friendships, preferences, and active sessions.</Text>
-          <Pressable accessibilityLabel="Permanently delete account" accessibilityRole="button" disabled={working} onPress={() => setConfirmation({ kind: 'delete', title: 'Permanently delete your account?', body: 'Your account and all Pokémon Go Nexus data will be removed. This cannot be undone.', confirmLabel: 'Delete account' })} style={[styles.dangerButton, working && styles.disabled]} testID="native-account-delete-button"><View style={styles.buttonLabel}><NativeUiIcon color="#ffffff" name="trash" size={15} /><Text style={styles.dangerButtonText}>{pendingAction === 'delete' ? 'Deleting…' : 'Delete account'}</Text></View></Pressable>
+          <Pressable accessibilityLabel="Permanently delete account" accessibilityRole="button" disabled={working} onPress={() => beginConfirmation({ kind: 'delete', title: 'Permanently delete your account?', body: 'Your account and all Pokémon Go Nexus data will be removed. This cannot be undone.', confirmLabel: 'Delete account' })} style={[styles.dangerButton, working && styles.disabled]} testID="native-account-delete-button"><View style={styles.buttonLabel}><NativeUiIcon color="#ffffff" name="trash" size={15} /><Text style={styles.dangerButtonText}>{pendingAction === 'delete' ? 'Deleting…' : 'Delete account'}</Text></View></Pressable>
         </View>
       </ScrollView>
 
@@ -276,7 +306,7 @@ export const NativeAccountSecurityScreen = ({
         body={confirmation?.body ?? ''}
         confirmLabel={confirmation?.confirmLabel ?? 'Confirm'}
         isPending={working}
-        onCancel={() => setConfirmation(null)}
+        onCancel={dismissConfirmation}
         onConfirm={confirmAction}
         title={confirmation?.title ?? 'Confirm action'}
         tone={confirmation?.kind === 'delete' ? 'danger' : 'default'}
@@ -290,6 +320,7 @@ export const NativeAccountSecurityScreen = ({
             light={light}
             onChangeText={(value) => update('currentPassword', value)}
             placeholder="Enter your account password"
+            inputRef={confirmationPasswordRef}
             secureTextEntry
             value={draft.currentPassword}
           />
@@ -301,7 +332,7 @@ export const NativeAccountSecurityScreen = ({
           </View>
         ) : null}
       </NativeConfirmationDialog>
-    </View>
+    </KeyboardAvoidingView>
   );
 };
 

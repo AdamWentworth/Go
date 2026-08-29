@@ -1,7 +1,7 @@
-appId: host.exp.exponent
+appId: ${APP_ID}
 name: Native collection and action-menu density smoke
 ---
-- openLink: exp://10.0.2.2:8091/--/device-smoke/collection
+- openLink: ${APP_LINK_BASE}/device-smoke/collection
 - waitForAnimationToEnd
 - runFlow:
     when:
@@ -23,7 +23,7 @@ name: Native collection and action-menu density smoke
 - assertVisible: "Inventory tags"
 - assertVisible: "Open Favorites, 3 Pokémon"
 - takeScreenshot: density-02-tags
-# Expo Go's test-only floating Tools button can overlap the right edge of this
+# The development client's test-only floating Tools button can overlap the right edge of this
 # tab at the narrowest density. Tap the label's clear left-side hit area while
 # retaining a selector that remains valid at tablet and desktop widths.
 - tapOn:

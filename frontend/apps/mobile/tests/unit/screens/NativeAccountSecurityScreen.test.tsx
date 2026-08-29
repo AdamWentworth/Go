@@ -1,5 +1,10 @@
 import { fireEvent, render } from '@testing-library/react-native';
-import { StyleSheet } from 'react-native';
+import {
+  Keyboard,
+  KeyboardAvoidingView,
+  Platform,
+  StyleSheet,
+} from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import type { AccountSecuritySummary } from '@pokemongonexus/shared-contracts/auth';
 import { NativeAccountSecurityScreen } from '../../../src/screens/NativeAccountSecurityScreen';
@@ -54,6 +59,9 @@ describe('NativeAccountSecurityScreen', () => {
     const flattenedContentStyle = StyleSheet.flatten(
       view.getByTestId('native-account-security-content').props.contentContainerStyle,
     );
+    expect(view.UNSAFE_getByType(KeyboardAvoidingView).props.behavior).toBe(
+      Platform.OS === 'ios' ? 'padding' : 'height',
+    );
     expect(flattenedContentStyle.paddingBottom).toBeGreaterThanOrEqual(128);
     expect(view.getByText('Account details')).toBeTruthy();
     expect(view.getByText('Email')).toBeTruthy();
@@ -82,6 +90,7 @@ describe('NativeAccountSecurityScreen', () => {
   });
 
   it('connects missing providers and confirms provider disconnection', () => {
+    const dismissKeyboard = jest.spyOn(Keyboard, 'dismiss').mockImplementation(() => undefined);
     const onChange = jest.fn();
     const onConnectProvider = jest.fn();
     const onUnlinkProvider = jest.fn();
@@ -100,7 +109,9 @@ describe('NativeAccountSecurityScreen', () => {
     });
     const disconnectConfirmations = view.getAllByRole('button', { name: 'Disconnect' });
     fireEvent.press(disconnectConfirmations[disconnectConfirmations.length - 1]);
+    expect(dismissKeyboard).toHaveBeenCalledTimes(3);
     expect(onUnlinkProvider).toHaveBeenCalledWith('google');
+    dismissKeyboard.mockRestore();
   });
 
   it('confirms session revocation and permanent deletion before dispatching', () => {

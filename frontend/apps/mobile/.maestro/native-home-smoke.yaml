@@ -1,11 +1,11 @@
-appId: host.exp.exponent
+appId: ${APP_ID}
 name: Native signed-in dashboard parity smoke
 tags:
   - android
   - native-home
 ---
 - openLink:
-    link: exp://10.0.2.2:8091/--/device-smoke/home
+    link: ${APP_LINK_BASE}/device-smoke/home
 - waitForAnimationToEnd
 - runFlow:
     when:

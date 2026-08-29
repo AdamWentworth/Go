@@ -1,11 +1,11 @@
-appId: host.exp.exponent
+appId: ${APP_ID}
 name: Native not-found and incomplete verification routes smoke
 tags:
   - android
   - native-routing
 ---
 - openLink:
-    link: exp://10.0.2.2:8091/--/native/not-found?path=%2Fmissing-trainer-tool
+    link: ${APP_LINK_BASE}/native/not-found?path=%2Fmissing-trainer-tool
 - waitForAnimationToEnd
 - runFlow:
     when:
@@ -30,7 +30,7 @@ tags:
 - assertVisible: ".*Help & information.*"
 - takeScreenshot: 01-not-found
 - openLink:
-    link: exp://10.0.2.2:8091/--/native/verify-email-change
+    link: ${APP_LINK_BASE}/native/verify-email-change
 - extendedWaitUntil:
     visible: Email not updated
     timeout: 15000

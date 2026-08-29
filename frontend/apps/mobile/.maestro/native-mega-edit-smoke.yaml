@@ -1,4 +1,4 @@
-appId: host.exp.exponent
+appId: ${APP_ID}
 name: Native Mega form editing smoke
 tags:
   - android
@@ -6,7 +6,7 @@ tags:
   - mega-editing
 ---
 - openLink:
-    link: exp://10.0.2.2:8091/--/device-smoke/collection?instance=smoke-metagross
+    link: ${APP_LINK_BASE}/device-smoke/collection?instance=smoke-metagross
 - waitForAnimationToEnd
 - runFlow:
     when:

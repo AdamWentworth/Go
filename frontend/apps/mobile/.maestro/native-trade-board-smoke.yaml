@@ -1,7 +1,7 @@
-appId: host.exp.exponent
+appId: ${APP_ID}
 name: Native Trade Board smoke
 ---
-- openLink: "exp://10.0.2.2:8091/--/device-smoke/public?page=trade-board"
+- openLink: "${APP_LINK_BASE}/device-smoke/public?page=trade-board"
 - waitForAnimationToEnd
 - runFlow:
     when:
@@ -55,7 +55,7 @@ name: Native Trade Board smoke
 - assertVisible: "Live Trade Board link copied."
 - tapOn: "Dismiss Trade Board message"
 - takeScreenshot: "native-trade-board"
-- openLink: "exp://10.0.2.2:8091/--/device-smoke/public?page=public-trade-board"
+- openLink: "${APP_LINK_BASE}/device-smoke/public?page=public-trade-board"
 - assertVisible: "LIVE COMMUNITY LISTING"
 - assertVisible: "@VisualTrainer’s Trade Board"
 - assertVisible: "Community Trade Board"

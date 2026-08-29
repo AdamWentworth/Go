@@ -33,19 +33,21 @@ const accentFor = (result: NativePokemonSearchResult): string => (
 
 export default function NativeSearchMapLibreCanvas({ camera, light, mappable, onSelect, selectedId }: NativeSearchMapLibreCanvasProps) {
   return (
-    <Map attribution compass mapStyle={light ? LIGHT_MAP_STYLE : DARK_MAP_STYLE} style={styles.map} touchPitch={false} touchRotate={false}>
-      <Camera initialViewState={{ center: camera.center, zoom: camera.zoom }} maxZoom={16} minZoom={2} />
-      {mappable.map((result) => {
-        const active = result.id === selectedId;
-        return (
-          <Marker anchor="center" id={result.id} key={result.id} lngLat={result.mapCoordinate!} onPress={() => onSelect(result.id)}>
-            <View accessibilityLabel={`${result.username}, ${result.row.name}${result.mapCoordinateIsApproximate ? ', approximate area' : ''}`} style={[styles.marker, { backgroundColor: accentFor(result) }, result.mapCoordinateIsApproximate && styles.approximateMarker, active && styles.markerActive]}>
-              <Text style={styles.markerText}>{result.username.slice(0, 1).toLocaleUpperCase()}</Text>
-            </View>
-          </Marker>
-        );
-      })}
-    </Map>
+    <View collapsable={false} style={styles.map} testID="native-search-maplibre">
+      <Map attribution compass mapStyle={light ? LIGHT_MAP_STYLE : DARK_MAP_STYLE} style={styles.map} touchPitch={false} touchRotate={false}>
+        <Camera initialViewState={{ center: camera.center, zoom: camera.zoom }} maxZoom={16} minZoom={2} />
+        {mappable.map((result) => {
+          const active = result.id === selectedId;
+          return (
+            <Marker anchor="center" id={result.id} key={result.id} lngLat={result.mapCoordinate!} onPress={() => onSelect(result.id)}>
+              <View accessibilityLabel={`${result.username}, ${result.row.name}${result.mapCoordinateIsApproximate ? ', approximate area' : ''}`} style={[styles.marker, { backgroundColor: accentFor(result) }, result.mapCoordinateIsApproximate && styles.approximateMarker, active && styles.markerActive]}>
+                <Text style={styles.markerText}>{result.username.slice(0, 1).toLocaleUpperCase()}</Text>
+              </View>
+            </Marker>
+          );
+        })}
+      </Map>
+    </View>
   );
 }
 

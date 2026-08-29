@@ -38,8 +38,9 @@ The deterministic Android suite lives in `.maestro/` and is run with:
 npm run device:smoke:android
 ```
 
-The runner starts a clean Expo Go process for each fixture and supports these
-matrix controls:
+The runner builds and installs the project-owned `com.pokegonexus.app`
+development client, starts a fresh project bundle for each fixture, and
+supports these matrix controls:
 
 ```bash
 POKEGONEXUS_SMOKE_COLOR_SCHEME=dark \
@@ -47,6 +48,13 @@ POKEGONEXUS_SMOKE_FONT_SCALE=1.3 \
 POKEGONEXUS_SMOKE_REDUCE_MOTION=true \
 POKEGONEXUS_SMOKE_DENSITY=520 \
 npm run device:smoke:android
+```
+
+Expo Go is not valid evidence for native-module parity. The separate standalone
+release lifecycle gate runs with airplane mode enabled and no Metro dependency:
+
+```bash
+npm run device:smoke:android:release-lifecycle
 ```
 
 Before physical-device approval, retain passing evidence for:
@@ -77,7 +85,7 @@ Performance-budget tests must be rerun without an emulator, browser suite, or
 other CPU-heavy job competing for the host. Resource contention is not valid
 performance evidence.
 
-## Automated validation record — 2026-08-28
+## Browser/static validation baseline — 2026-08-28
 
 The invalid 2026-08-27 record has been superseded. All browser parity captures
 below ran with `EXPO_PUBLIC_DEVICE_SMOKE_MODE=true`; unknown fixture routes were
@@ -94,16 +102,19 @@ treated as failures rather than redirecting to guest Home.
 - Corrected native browser capture passed 366 light/dark screenshots. The
   real-route harness passed 92 route/theme states, and all 82 generated contact
   sheets were inspected against their canonical Vite references.
-- All 42 Android Maestro flows passed independently in both light and dark
-  mode. The high-risk workflows also passed at 130% text with reduced motion,
-  and collection density passed at the 3/6/9-column targets.
+- The 42 Android Maestro flows passed independently in both light and dark
+  mode, with enlarged-text/reduced-motion and density variants. Those runs used
+  Expo Go, however, so they are retained only as JavaScript/UI evidence and are
+  explicitly excluded from native-module and installable-app parity evidence.
 - Expo Doctor passed all 21 checks, and final Android and iOS static exports
   completed successfully.
 
-This evidence supports 99% automated parity confidence for the native-preview
-candidate. It does not constitute production approval: the physical Pixel,
-two-account trade, and physical iOS/manual approval gates below remain required,
-and the canonical WebView remains the default experience.
+This baseline does not by itself establish the 99% native-preview target. A
+project-owned Android binary, native module, offline process-lifecycle, and
+fresh-bundle record must supersede its Expo Go device evidence. It also does
+not constitute production approval: the physical Pixel, two-account trade,
+and physical iOS/manual approval gates below remain required, and the canonical
+WebView remains the default experience.
 
 ## Physical-device preconditions
 

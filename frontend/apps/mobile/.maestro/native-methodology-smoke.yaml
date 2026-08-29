@@ -1,7 +1,7 @@
-appId: host.exp.exponent
+appId: ${APP_ID}
 name: Native methodology references smoke
 ---
-- openLink: "exp://10.0.2.2:8091/--/native/raid-methodology"
+- openLink: "${APP_LINK_BASE}/native/raid-methodology"
 - waitForAnimationToEnd
 - runFlow:
     when:
@@ -20,7 +20,7 @@ name: Native methodology references smoke
 - takeScreenshot: "native-raid-methodology"
 - tapOn: "Metrics"
 - assertVisible: "One table, several useful answers"
-- openLink: "exp://10.0.2.2:8091/--/native/pvp-methodology"
+- openLink: "${APP_LINK_BASE}/native/pvp-methodology"
 - waitForAnimationToEnd
 - assertVisible: "How PvP rankings work"
 - assertVisible: "Four tools"

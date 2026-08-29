@@ -1,11 +1,11 @@
-appId: host.exp.exponent
+appId: ${APP_ID}
 name: Native trainer settings parity smoke
 tags:
   - android
   - native-settings
 ---
 - openLink:
-    link: exp://10.0.2.2:8091/--/device-smoke/settings
+    link: ${APP_LINK_BASE}/device-smoke/settings
 - waitForAnimationToEnd
 - runFlow:
     when:
@@ -66,19 +66,19 @@ tags:
 - eraseText: 40
 - inputText: MistyCampfire
 - hideKeyboard
-- scrollUntilVisible:
-    element:
-      text: Save coordination
-    direction: DOWN
-    timeout: 10000
+- swipe:
+    start: "20%,78%"
+    end: "20%,42%"
+    duration: 500
+- assertVisible: Save coordination
 - tapOn: Save coordination
 - assertVisible: Trade coordination settings saved.
 - tapOn: Dismiss message
-- scrollUntilVisible:
-    element:
-      text: "Color theme, (Light|Dark)"
-    direction: DOWN
-    timeout: 10000
+- swipe:
+    start: "20%,78%"
+    end: "20%,42%"
+    duration: 500
+- assertVisible: "Color theme, (Light|Dark)"
 - assertVisible: Color theme
 - runFlow:
     when:
@@ -100,17 +100,13 @@ tags:
       - tapOn: "Color theme, Dark"
       - tapOn: Light
       - assertVisible: "Color theme, Light"
-- scrollUntilVisible:
-    element:
-      text: Reduce motion
-    direction: DOWN
-    timeout: 10000
+- assertVisible: Reduce motion
 - tapOn: Reduce motion
-- scrollUntilVisible:
-    element:
-      text: Up to date
-    direction: DOWN
-    timeout: 10000
+- swipe:
+    start: "20%,78%"
+    end: "20%,42%"
+    duration: 500
+- assertVisible: Up to date
 - assertVisible: Pokémon synchronization
 - assertVisible: Up to date
 - tapOn: Retry now

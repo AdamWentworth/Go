@@ -1,7 +1,7 @@
-appId: host.exp.exponent
+appId: ${APP_ID}
 name: Native password recovery smoke
 ---
-- openLink: "exp://10.0.2.2:8091/--/device-smoke/public?page=reset"
+- openLink: "${APP_LINK_BASE}/device-smoke/public?page=reset"
 - waitForAnimationToEnd
 - runFlow:
     when:
@@ -20,7 +20,7 @@ name: Native password recovery smoke
 - inputText: "visual@example.invalid"
 - tapOn: "Email reset link"
 - assertVisible: "Check your email"
-- openLink: "exp://10.0.2.2:8091/--/device-smoke/public?page=reset-confirm"
+- openLink: "${APP_LINK_BASE}/device-smoke/public?page=reset-confirm"
 - assertVisible: "Choose a new password"
 - assertVisible: "Update password"
 - takeScreenshot: "native-password-recovery"

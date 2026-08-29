@@ -1,7 +1,7 @@
-appId: host.exp.exponent
+appId: ${APP_ID}
 name: Native information and legal routes smoke
 ---
-- openLink: "exp://10.0.2.2:8091/--/device-smoke/public?page=getting-started"
+- openLink: "${APP_LINK_BASE}/device-smoke/public?page=getting-started"
 - waitForAnimationToEnd
 - runFlow:
     when:
@@ -18,7 +18,7 @@ name: Native information and legal routes smoke
 - assertVisible: "Your first useful trade, step by step."
 - assertVisible: "Start your collection"
 - takeScreenshot: "01-native-getting-started"
-- openLink: "exp://10.0.2.2:8091/--/device-smoke/public?page=faq"
+- openLink: "${APP_LINK_BASE}/device-smoke/public?page=faq"
 - assertVisible: "Frequently asked questions"
 - takeScreenshot: "02-native-faq-initial"
 - tapOn: "Browse Trading questions"
@@ -31,12 +31,12 @@ name: Native information and legal routes smoke
 - tapOn: "How do I propose a trade?"
 - assertVisible: ".*Open another trainer’s For Trade.*"
 - takeScreenshot: "02b-native-faq-trading"
-- openLink: "exp://10.0.2.2:8091/--/device-smoke/public?page=privacy"
+- openLink: "${APP_LINK_BASE}/device-smoke/public?page=privacy"
 - assertVisible: "Privacy Policy"
 - assertVisible: "Last updated: July 28, 2026"
 - assertNotVisible: "Open action menu"
 - takeScreenshot: "03-native-privacy"
-- openLink: "exp://10.0.2.2:8091/--/device-smoke/public?page=help"
+- openLink: "${APP_LINK_BASE}/device-smoke/public?page=help"
 - assertVisible: "Help & information"
 - takeScreenshot: "04-native-help"
 - scrollUntilVisible:
@@ -45,7 +45,7 @@ name: Native information and legal routes smoke
     direction: DOWN
     timeout: 10000
 - assertVisible: "Data deletion"
-- openLink: "exp://10.0.2.2:8091/--/device-smoke/public?page=about"
+- openLink: "${APP_LINK_BASE}/device-smoke/public?page=about"
 - assertVisible: "About Pokémon Go Nexus"
 - takeScreenshot: "05-native-about"
 - scrollUntilVisible:
@@ -54,25 +54,25 @@ name: Native information and legal routes smoke
     direction: DOWN
     timeout: 10000
 - assertVisible: "One connected model, not a pile of unrelated tools."
-- openLink: "exp://10.0.2.2:8091/--/device-smoke/public?page=safety"
+- openLink: "${APP_LINK_BASE}/device-smoke/public?page=safety"
 - assertVisible: "Trade Safety & Community Guidelines"
 - assertVisible: "Pokémon Go Nexus plans the exchange; Pokémon GO performs it."
 - takeScreenshot: "06-native-safety"
-- openLink: "exp://10.0.2.2:8091/--/device-smoke/public?page=terms"
+- openLink: "${APP_LINK_BASE}/device-smoke/public?page=terms"
 - assertVisible: "Terms of Service"
 - assertVisible: "Last updated: July 28, 2026"
 - assertNotVisible: "Open action menu"
 - takeScreenshot: "07-native-terms"
-- openLink: "exp://10.0.2.2:8091/--/device-smoke/public?page=data-deletion"
+- openLink: "${APP_LINK_BASE}/device-smoke/public?page=data-deletion"
 - assertVisible: "User Data Deletion"
 - assertVisible: "Delete your account in Pokémon Go Nexus"
 - assertNotVisible: "Open action menu"
 - takeScreenshot: "08-native-data-deletion"
-- openLink: "exp://10.0.2.2:8091/--/device-smoke/public?page=raid-methodology"
+- openLink: "${APP_LINK_BASE}/device-smoke/public?page=raid-methodology"
 - assertVisible: "How raid rankings work"
 - assertVisible: "Choose the ranking that matches the decision"
 - takeScreenshot: "09-native-raid-methodology"
-- openLink: "exp://10.0.2.2:8091/--/device-smoke/public?page=pvp-methodology"
+- openLink: "${APP_LINK_BASE}/device-smoke/public?page=pvp-methodology"
 - assertVisible: "How PvP rankings work"
 - assertVisible: "One workspace, four different jobs"
 - takeScreenshot: "10-native-pvp-methodology"

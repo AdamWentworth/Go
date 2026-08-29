@@ -1,7 +1,7 @@
-appId: host.exp.exponent
+appId: ${APP_ID}
 name: Native PvP tool smoke
 ---
-- openLink: "exp://10.0.2.2:8091/--/device-smoke/tools?tool=pvp"
+- openLink: "${APP_LINK_BASE}/device-smoke/tools?tool=pvp"
 - waitForAnimationToEnd
 - runFlow:
     when:
@@ -112,9 +112,9 @@ name: Native PvP tool smoke
     when:
       visible: "SDK version:.*"
     commands:
-      # Expo Go can place its own unlabeled developer-tools close control over
+      # The development client can place its own unlabeled developer-tools close control over
       # this tab. Target that control directly; a text selector can report a
-      # successful tap without dismissing the Expo-owned sheet.
+      # successful tap without dismissing the development-client sheet.
       - tapOn:
           point: "90%,46%"
       - waitForAnimationToEnd

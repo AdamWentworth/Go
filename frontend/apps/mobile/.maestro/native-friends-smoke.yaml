@@ -1,11 +1,11 @@
-appId: host.exp.exponent
+appId: ${APP_ID}
 name: Native friends workflow smoke
 tags:
   - android
   - native-friends
 ---
 - openLink:
-    link: exp://10.0.2.2:8091/--/device-smoke/friends
+    link: ${APP_LINK_BASE}/device-smoke/friends
 - waitForAnimationToEnd
 - runFlow:
     when:

@@ -1,4 +1,5 @@
 import { fireEvent, render } from '@testing-library/react-native';
+import { Keyboard } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { NativeTrainerProfileScreen } from '../../../src/screens/NativeTrainerProfileScreen';
 import type { NativeTrainerProfileModel } from '../../../src/features/social/nativeTrainerProfileModel';
@@ -189,6 +190,7 @@ describe('NativeTrainerProfileScreen', () => {
   });
 
   it('edits and reorders the six-slot showcase from caught Pokémon only', () => {
+    const dismissKeyboard = jest.spyOn(Keyboard, 'dismiss').mockImplementation(() => undefined);
     const onChangeEditorDraft = jest.fn();
     const editorDraft = {
       trainerTitles: [] as const,
@@ -230,6 +232,7 @@ describe('NativeTrainerProfileScreen', () => {
     }));
     expect(view.getByText('Choose a caught Pokémon')).toBeTruthy();
     fireEvent.press(view.getByRole('button', { name: 'Shiny Metagross' }));
+    expect(dismissKeyboard).toHaveBeenCalledTimes(2);
     expect(onChangeEditorDraft).toHaveBeenCalledWith({
       ...editorDraft,
       trainerTitles: [],
@@ -242,5 +245,6 @@ describe('NativeTrainerProfileScreen', () => {
       trainerTitles: [],
       highlightInstanceIds: ['highlight-2', 'highlight-1', '', '', '', ''],
     });
+    dismissKeyboard.mockRestore();
   });
 });

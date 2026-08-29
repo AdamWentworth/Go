@@ -1,4 +1,4 @@
-appId: host.exp.exponent
+appId: ${APP_ID}
 name: Native Crowned form and special Max smoke
 tags:
   - android
@@ -6,7 +6,7 @@ tags:
   - crown-editing
 ---
 - openLink:
-    link: exp://10.0.2.2:8091/--/device-smoke/collection?instance=smoke-zacian
+    link: ${APP_LINK_BASE}/device-smoke/collection?instance=smoke-zacian
 - waitForAnimationToEnd
 - runFlow:
     when:

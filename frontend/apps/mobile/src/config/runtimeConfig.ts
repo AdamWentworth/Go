@@ -197,12 +197,13 @@ export const runtimeConfig: {
     experienceMode: resolveMobileExperienceMode(
       mobileOverrides.experienceMode,
     ),
-    deviceSmokeMode: __DEV__ && sanitizeBoolean(
+    // Release smoke builds explicitly opt in through app.config. Ordinary
+    // production builds keep the default false value, while the standalone
+    // lifecycle gate can exercise the same binary shape users receive.
+    deviceSmokeMode: sanitizeBoolean(
       mobileOverrides.deviceSmokeMode,
       false,
     ),
-    deviceSmokeColorScheme: __DEV__
-      ? sanitizeColorScheme(mobileOverrides.deviceSmokeColorScheme)
-      : null,
+    deviceSmokeColorScheme: sanitizeColorScheme(mobileOverrides.deviceSmokeColorScheme),
   },
 };

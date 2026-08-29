@@ -8,6 +8,7 @@ import {
   runNativeTradeCommand,
   updateNativeTradeSatisfaction,
 } from '../../../src/services/tradeApi';
+import type { NativeUsersApiClient } from '../../../src/services/nativeApiClients';
 
 const proposal: AuthoritativeTradeProposalRequest = {
   username_accepting: 'OtherTrainer',
@@ -112,6 +113,79 @@ describe('native trade API', () => {
       tradesContract.endpoints.satisfaction('trade-1'),
       { satisfied: true },
     );
+  });
+
+  it('reconciles a two-account accept and dual-confirmation lifecycle from authoritative envelopes', async () => {
+    type Actor = 'proposer' | 'accepter';
+    const state = {
+      accepted: false,
+      accepterConfirmed: false,
+      proposerConfirmed: false,
+      owners: { 'mine-1': 'proposer', 'theirs-1': 'accepter' } as Record<string, Actor>,
+    };
+    const requests: Array<{ actor: Actor; endpoint: string }> = [];
+    const envelope = () => {
+      const completed = state.proposerConfirmed && state.accepterConfirmed;
+      return {
+        trade: {
+          trade_id: 'trade-1',
+          trade_status: completed ? 'completed' : state.accepted ? 'pending' : 'proposed',
+          user_proposed_completion_confirmed: state.proposerConfirmed,
+          user_accepting_completion_confirmed: state.accepterConfirmed,
+        },
+        affected_instances: completed ? {
+          'mine-1': { instance_id: 'mine-1', user_id: state.owners['mine-1'] },
+          'theirs-1': { instance_id: 'theirs-1', user_id: state.owners['theirs-1'] },
+        } : {},
+      };
+    };
+    const clientFor = (actor: Actor): Pick<NativeUsersApiClient, 'post'> => ({
+      post: async <T>(endpoint: string): Promise<T> => {
+        requests.push({ actor, endpoint });
+        if (endpoint === tradesContract.endpoints.accept('trade-1')) {
+          if (actor !== 'accepter' || state.accepted) throw new Error('invalid acceptance');
+          state.accepted = true;
+        } else if (endpoint === tradesContract.endpoints.complete('trade-1')) {
+          if (!state.accepted) throw new Error('trade is not active');
+          if (actor === 'proposer') state.proposerConfirmed = true;
+          else state.accepterConfirmed = true;
+          if (state.proposerConfirmed && state.accepterConfirmed) {
+            state.owners['mine-1'] = 'accepter';
+            state.owners['theirs-1'] = 'proposer';
+          }
+        }
+        return envelope() as unknown as T;
+      },
+    });
+    const proposer = clientFor('proposer');
+    const accepter = clientFor('accepter');
+
+    await expect(runNativeTradeCommand(accepter, 'accept', 'trade-1')).resolves.toEqual(
+      expect.objectContaining({ trade: expect.objectContaining({ trade_status: 'pending' }) }),
+    );
+    const firstConfirmation = await runNativeTradeCommand(proposer, 'complete', 'trade-1');
+    expect(firstConfirmation.trade).toEqual(expect.objectContaining({
+      trade_status: 'pending',
+      user_proposed_completion_confirmed: true,
+      user_accepting_completion_confirmed: false,
+    }));
+    expect(firstConfirmation.affected_instances).toEqual({});
+
+    const committed = await runNativeTradeCommand(accepter, 'complete', 'trade-1');
+    expect(committed.trade).toEqual(expect.objectContaining({
+      trade_status: 'completed',
+      user_proposed_completion_confirmed: true,
+      user_accepting_completion_confirmed: true,
+    }));
+    expect(committed.affected_instances).toEqual({
+      'mine-1': expect.objectContaining({ user_id: 'accepter' }),
+      'theirs-1': expect.objectContaining({ user_id: 'proposer' }),
+    });
+    expect(requests).toEqual([
+      { actor: 'accepter', endpoint: tradesContract.endpoints.accept('trade-1') },
+      { actor: 'proposer', endpoint: tradesContract.endpoints.complete('trade-1') },
+      { actor: 'accepter', endpoint: tradesContract.endpoints.complete('trade-1') },
+    ]);
   });
 
   it('deletes a terminal trade through the canonical endpoint', async () => {

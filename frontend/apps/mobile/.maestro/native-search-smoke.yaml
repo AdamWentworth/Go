@@ -1,11 +1,11 @@
-appId: host.exp.exponent
+appId: ${APP_ID}
 name: Native search workflow smoke
 tags:
   - android
   - native-search
 ---
 - openLink:
-    link: exp://10.0.2.2:8091/--/device-smoke/search
+    link: ${APP_LINK_BASE}/device-smoke/search
 - waitForAnimationToEnd
 - runFlow:
     when:
@@ -42,6 +42,10 @@ tags:
     id: native-search-map-view
 - assertVisible:
     id: native-search-map
+- extendedWaitUntil:
+    visible:
+      id: native-search-maplibre
+    timeout: 30000
 - assertVisible: "1 on map"
 - scrollUntilVisible:
     element:

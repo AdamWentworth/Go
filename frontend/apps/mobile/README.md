@@ -41,18 +41,26 @@ npm --workspace apps/mobile run typecheck
 npm --workspace apps/mobile run lint
 npm --workspace apps/mobile run test
 npm --workspace apps/mobile run device:smoke:android
+npm --workspace apps/mobile run device:smoke:android:release-lifecycle
 ```
 
 `device:smoke:android` boots or reuses the dedicated Pixel emulator, starts an
 isolated fixture API and Metro server with the full checked-in Pokémon catalog,
-then drives the real Expo/React Native runtime with Maestro. The checked-in
-matrix covers public/auth routes, dashboard and action-menu navigation,
-collection and editing variants, tags and wishlist, search, profiles and
+builds and installs the `com.pokegonexus.app` development client, then drives
+that project-owned React Native runtime with Maestro. It does not use Expo Go.
+The checked-in matrix covers public/auth routes, dashboard and action-menu
+navigation, collection and editing variants, tags and wishlist, search, profiles and
 friends, settings and account security, trade preferences/activity/proposals,
 Trade Board sharing, and every trainer tool. Set `POKEGONEXUS_SMOKE_FLOW` to a
 single YAML file for a focused run or `.maestro` for the complete matrix. The
 fixture route is disabled unless `EXPO_PUBLIC_DEVICE_SMOKE_MODE=true` and is
 unavailable in production bundles.
+
+`device:smoke:android:release-lifecycle` builds a standalone native-preview APK,
+enables airplane mode, and validates the real account-scoped SQLite collection
+cache and mutation outbox across force-stop/relaunch, account switching,
+Receiver acknowledgement, and canonical cleanup. The runner restores the
+device's prior network, density, font-scale, and animation settings on exit.
 
 ## Environment
 

@@ -1,11 +1,11 @@
-appId: host.exp.exponent
+appId: ${APP_ID}
 name: Native account security parity smoke
 tags:
   - android
   - native-account
 ---
 - openLink:
-    link: exp://10.0.2.2:8091/--/device-smoke/account
+    link: ${APP_LINK_BASE}/device-smoke/account
 - waitForAnimationToEnd
 - runFlow:
     when:
@@ -72,6 +72,9 @@ tags:
 - tapOn: Disconnect Google
 - assertVisible: Disconnect Google?
 - assertVisible: Current password
+- tapOn: Enter your account password
+- inputText: Stronger_password_43!
+- hideKeyboard
 - tapOn: Disconnect
 - assertVisible: Google disconnected.
 - tapOn: Dismiss message
@@ -90,6 +93,9 @@ tags:
 - tapOn: Sign out every device
 - assertVisible: Sign out every device?
 - assertVisible: Current password
+- tapOn: Enter your account password
+- inputText: Stronger_password_43!
+- hideKeyboard
 - tapOn: Sign out every device
 - assertVisible: All sessions revoked.
 - tapOn: Dismiss message

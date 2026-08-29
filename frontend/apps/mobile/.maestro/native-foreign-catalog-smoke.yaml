@@ -1,4 +1,4 @@
-appId: host.exp.exponent
+appId: ${APP_ID}
 name: Native foreign catalog context smoke
 tags:
   - android
@@ -6,7 +6,7 @@ tags:
   - foreign-catalog
 ---
 - openLink:
-    link: exp://10.0.2.2:8091/--/device-smoke/collection?foreign=1&tag=trade
+    link: ${APP_LINK_BASE}/device-smoke/collection?foreign=1&tag=trade
 - waitForAnimationToEnd
 - runFlow:
     when:

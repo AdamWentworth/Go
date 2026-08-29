@@ -67,6 +67,7 @@ describe('NativeSearchMapLibreCanvas', () => {
       />,
     );
 
+    expect(view.getByTestId('native-search-maplibre')).toBeTruthy();
     expect(view.getByTestId('map-canvas')).toBeTruthy();
     expect(view.getByTestId('map-camera')).toBeTruthy();
     expect(view.getByLabelText('OtherTrainer, Shiny Pikachu, approximate area')).toBeTruthy();

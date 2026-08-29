@@ -1,4 +1,4 @@
-appId: host.exp.exponent
+appId: ${APP_ID}
 name: Native trade-preferences parity smoke
 tags:
   - android
@@ -6,7 +6,7 @@ tags:
   - trade-preferences
 ---
 - openLink:
-    link: exp://10.0.2.2:8091/--/device-smoke/trade-preferences
+    link: ${APP_LINK_BASE}/device-smoke/trade-preferences
 - waitForAnimationToEnd
 - runFlow:
     when:
