@@ -513,10 +513,12 @@ export const NativeTrainerProfileScreen = ({
           ) : null}
           {!isOwner && model.relationship !== 'blocked' && onRelationshipAction ? (
             <Pressable
+              accessibilityLabel="Block trainer"
               accessibilityRole="button"
               disabled={isRelationshipPending}
               onPress={() => requestAction('block')}
               style={styles.blockButton}
+              testID="native-profile-block-trainer"
             >
               <Text style={styles.blockButtonText}>Block trainer</Text>
             </Pressable>

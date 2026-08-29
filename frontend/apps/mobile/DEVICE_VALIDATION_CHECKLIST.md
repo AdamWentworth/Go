@@ -69,27 +69,41 @@ npm run lint:dead-code
 npm test
 npm run test:browsers:web
 npm --workspace apps/mobile exec expo-doctor
-npm --workspace apps/mobile exec expo export --platform android
-npm --workspace apps/mobile exec expo export --platform ios
+npm exec --workspace apps/mobile -- expo export --platform android
+npm exec --workspace apps/mobile -- expo export --platform ios
 ```
 
 Performance-budget tests must be rerun without an emulator, browser suite, or
 other CPU-heavy job competing for the host. Resource contention is not valid
 performance evidence.
 
-## Validation status — parity work in progress
+## Automated validation record — 2026-08-28
 
-The earlier 2026-08-27 review-ready record is invalid. Its browser fixture was
-not running with `EXPO_PUBLIC_DEVICE_SMOKE_MODE=true`, so fixture URLs silently
-redirected to guest Home and did not exercise the requested native screens.
-The corrected fixture immediately found regressions in the collection pager
-and custom-tag markup that the earlier run had missed.
+The invalid 2026-08-27 record has been superseded. All browser parity captures
+below ran with `EXPO_PUBLIC_DEVICE_SMOKE_MODE=true`; unknown fixture routes were
+treated as failures rather than redirecting to guest Home.
 
-Do not describe this candidate as 99% parity, review-ready, or
-production-approved. A new validation record may be added only after the
-corrected deterministic native fixtures exercise every route and interaction,
-their screenshots are compared against canonical Vite references in light and
-dark mode, and all automated gates are rerun from the final candidate.
+- Repository type checks, ESLint, Stylelint, dead-code analysis, and diff
+  validation passed.
+- The shared web suite passed 1,718 tests across 344 files, and the native suite
+  passed 733 tests across 146 suites.
+- The functional browser matrix passed 730 tests across desktop Chromium,
+  Firefox, WebKit, mobile Safari, and mobile Chromium, with 405 intentional
+  project/capture skips and no retries. The isolated one-worker performance
+  budget also passed.
+- Corrected native browser capture passed 366 light/dark screenshots. The
+  real-route harness passed 92 route/theme states, and all 82 generated contact
+  sheets were inspected against their canonical Vite references.
+- All 42 Android Maestro flows passed independently in both light and dark
+  mode. The high-risk workflows also passed at 130% text with reduced motion,
+  and collection density passed at the 3/6/9-column targets.
+- Expo Doctor passed all 21 checks, and final Android and iOS static exports
+  completed successfully.
+
+This evidence supports 99% automated parity confidence for the native-preview
+candidate. It does not constitute production approval: the physical Pixel,
+two-account trade, and physical iOS/manual approval gates below remain required,
+and the canonical WebView remains the default experience.
 
 ## Physical-device preconditions
 

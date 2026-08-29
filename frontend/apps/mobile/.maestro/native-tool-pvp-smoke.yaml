@@ -7,7 +7,9 @@ name: Native PvP tool smoke
     when:
       visible: "^Continue$"
     commands:
-      - tapOn: "^Continue$"
+      - tapOn:
+          text: "^Continue$"
+          optional: true
 - runFlow:
     when:
       visible: React Native dev menu
@@ -64,11 +66,11 @@ name: Native PvP tool smoke
 - assertVisible: "SIMULATED RESULT"
 - scrollUntilVisible:
     element:
-      text: "♟ Team battle"
+      text: "Team battle"
     direction: UP
     speed: 40
     timeout: 15000
-- tapOn: "♟ Team battle"
+- tapOn: "Team battle"
 - assertVisible: "Switching"
 - scrollUntilVisible:
     element:

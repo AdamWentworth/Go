@@ -11,7 +11,9 @@ tags:
     when:
       visible: "^Continue$"
     commands:
-      - tapOn: "^Continue$"
+      - tapOn:
+          text: "^Continue$"
+          optional: true
 - runFlow:
     when:
       visible: React Native dev menu
@@ -82,13 +84,13 @@ tags:
 - tapOn: Dismiss message
 - scrollUntilVisible:
     element:
-      text: Sign out all devices
+      text: Sign out every device
     direction: DOWN
     timeout: 10000
-- tapOn: Sign out all devices
+- tapOn: Sign out every device
 - assertVisible: Sign out every device?
 - assertVisible: Current password
-- tapOn: Sign out all
+- tapOn: Sign out every device
 - assertVisible: All sessions revoked.
 - tapOn: Dismiss message
 - assertNotVisible: All sessions revoked.

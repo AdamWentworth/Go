@@ -7,7 +7,9 @@ name: Native Pokédex detail parity smoke
     when:
       visible: "^Continue$"
     commands:
-      - tapOn: "^Continue$"
+      - tapOn:
+          text: "^Continue$"
+          optional: true
 - runFlow:
     when:
       visible: React Native dev menu

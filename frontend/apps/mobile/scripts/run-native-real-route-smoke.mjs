@@ -403,11 +403,11 @@ const installRoutes = async (context, unhandledApis) => {
     }
     await route.fulfill({ contentType: 'application/json', json: response });
   });
-  await context.route('**/images/**', async (route) => {
+  await context.route(/\/(?:favicons|icons|images|media)\//, async (route) => {
     const pathname = decodeURIComponent(new URL(route.request().url()).pathname);
     const localPath = resolve(repositoryDirectory, `assets${pathname}`);
     if (localPath.startsWith(`${resolve(repositoryDirectory, 'assets')}/`) && existsSync(localPath)) {
-      const contentTypes = { '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.png': 'image/png', '.svg': 'image/svg+xml', '.webp': 'image/webp' };
+      const contentTypes = { '.avif': 'image/avif', '.gif': 'image/gif', '.ico': 'image/x-icon', '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.png': 'image/png', '.svg': 'image/svg+xml', '.webp': 'image/webp' };
       await route.fulfill({
         body: readFileSync(localPath),
         contentType: contentTypes[extname(localPath).toLocaleLowerCase()] ?? 'application/octet-stream',
@@ -419,9 +419,23 @@ const installRoutes = async (context, unhandledApis) => {
 };
 
 const trackRuntimeErrors = (page, errors) => {
+  const trackedResourceTypes = ['fetch', 'font', 'image', 'script', 'stylesheet', 'xhr'];
   page.on('pageerror', (error) => errors.push(`page: ${error.message}`));
   page.on('console', (message) => {
     if (message.type() === 'error') errors.push(`console: ${message.text()}`);
+  });
+  page.on('response', (response) => {
+    const resourceType = response.request().resourceType();
+    if (response.status() >= 400 && trackedResourceTypes.includes(resourceType)) {
+      errors.push(`${resourceType}: ${response.status()} ${response.url()}`);
+    }
+  });
+  page.on('requestfailed', (request) => {
+    const resourceType = request.resourceType();
+    if (request.failure()?.errorText === 'net::ERR_ABORTED') return;
+    if (trackedResourceTypes.includes(resourceType)) {
+      errors.push(`${resourceType}: ${request.failure()?.errorText ?? 'request failed'} ${request.url()}`);
+    }
   });
 };
 

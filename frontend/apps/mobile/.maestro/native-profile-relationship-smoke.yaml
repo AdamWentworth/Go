@@ -11,7 +11,9 @@ tags:
     when:
       visible: "^Continue$"
     commands:
-      - tapOn: "^Continue$"
+      - tapOn:
+          text: "^Continue$"
+          optional: true
 - runFlow:
     when:
       visible: React Native dev menu
@@ -35,10 +37,14 @@ tags:
 - assertVisible: Friend request canceled.
 - scrollUntilVisible:
     element:
-      text: Block trainer
+      id: native-profile-block-trainer
     direction: DOWN
+    visibilityPercentage: 50
     timeout: 10000
-- tapOn: Block trainer
+- tapOn:
+    id: native-profile-block-trainer
+    point: "50%,25%"
+    retryTapIfNoChange: true
 - assertVisible: Block Misty?
 - tapOn: Block trainer
 - assertVisible: Trainer blocked.

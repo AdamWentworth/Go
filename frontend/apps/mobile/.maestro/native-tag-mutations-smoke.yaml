@@ -18,7 +18,9 @@ tags:
     when:
       visible: "^Continue$"
     commands:
-      - tapOn: "^Continue$"
+      - tapOn:
+          text: "^Continue$"
+          optional: true
 - runFlow:
     when:
       visible: React Native dev menu

@@ -1,5 +1,5 @@
 import { spawn } from 'node:child_process';
-import { createReadStream, existsSync, mkdirSync } from 'node:fs';
+import { createReadStream, existsSync, mkdirSync, readFileSync } from 'node:fs';
 import { createServer } from 'node:http';
 import { dirname, extname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -8,6 +8,8 @@ import { chromium } from 'playwright';
 const scriptDirectory = dirname(fileURLToPath(import.meta.url));
 const mobileDirectory = resolve(scriptDirectory, '..');
 const workspaceDirectory = resolve(mobileDirectory, '../..');
+const repositoryDirectory = resolve(workspaceDirectory, '..');
+const assetDirectory = resolve(repositoryDirectory, 'assets');
 const fixtureDirectory = resolve(workspaceDirectory, 'packages/app-core/tests/__helpers__/fixtures');
 const artifactDirectory = resolve(mobileDirectory, '.artifacts/native-web-parity');
 // A per-process default prevents a long-running local Expo session from making
@@ -23,9 +25,9 @@ const routeCases = [
   ['home', 'native-home-screen'],
   ['home?guest=1', 'native-guest-home-screen'],
   ['collection', 'native-collection-hub'],
-  ['collection?instance=smoke-shadow-venusaur', 'native-instance-overlay'],
-  ['collection?instance=smoke-gmax-charizard', 'native-instance-overlay'],
-  ['collection?instance=smoke-gmax-blastoise', 'native-instance-overlay'],
+  ['collection?instance=0006-default_demo-charizard', 'native-instance-overlay'],
+  ['collection?instance=0025-party_hat_default_demo-trade', 'native-instance-overlay'],
+  ['collection?instance=0094-default_demo-wanted', 'native-instance-overlay'],
   ['collection?foreign=1&tag=trade', 'native-collection-hub'],
   ['collection?foreign=1&tag=wanted', 'native-collection-hub'],
   ['sync', 'device-smoke-sync'],
@@ -113,6 +115,64 @@ const startFixtureServer = () => new Promise((resolvePromise, reject) => {
   server.listen(fixturePort, '127.0.0.1', () => resolvePromise(server));
 });
 
+const assetContentTypes = new Map([
+  ['.avif', 'image/avif'],
+  ['.gif', 'image/gif'],
+  ['.ico', 'image/x-icon'],
+  ['.jpg', 'image/jpeg'],
+  ['.jpeg', 'image/jpeg'],
+  ['.png', 'image/png'],
+  ['.svg', 'image/svg+xml'],
+  ['.webp', 'image/webp'],
+]);
+
+const installAssetRoutes = async (context) => {
+  // Fulfill fixture JSON inside Playwright as well as hosting it over HTTP.
+  // This keeps browser captures deterministic when an already-running local
+  // fixture server owns port 8092 but does not emit CORS headers.
+  await context.route(`http://127.0.0.1:${fixturePort}/*.json`, async (route) => {
+    const filename = decodeURIComponent(new URL(route.request().url()).pathname).replace(/^\/+/, '');
+    const localPath = resolve(fixtureDirectory, filename);
+    if (!filename.endsWith('.json')
+        || !localPath.startsWith(`${fixtureDirectory}/`)
+        || !existsSync(localPath)) {
+      await route.continue();
+      return;
+    }
+    await route.fulfill({
+      body: readFileSync(localPath),
+      contentType: 'application/json',
+      headers: { 'Access-Control-Allow-Origin': '*' },
+    });
+  });
+  await context.route('**/api/location/autocomplete?*', async (route) => {
+    await route.fulfill({
+      contentType: 'application/json',
+      json: [{
+        city: 'Burnaby',
+        country: 'Canada',
+        latitude: 49.2488,
+        longitude: -122.9805,
+        name: 'Burnaby',
+        state_or_province: 'British Columbia',
+      }],
+    });
+  });
+  await context.route(/\/(?:favicons|icons|images|media)\//, async (route) => {
+    const pathname = decodeURIComponent(new URL(route.request().url()).pathname);
+    const localPath = resolve(assetDirectory, pathname.replace(/^\/+/, ''));
+    if (!localPath.startsWith(`${assetDirectory}/`) || !existsSync(localPath)) {
+      await route.continue();
+      return;
+    }
+    await route.fulfill({
+      body: readFileSync(localPath),
+      contentType: assetContentTypes.get(extname(localPath).toLocaleLowerCase())
+        ?? 'application/octet-stream',
+    });
+  });
+};
+
 const startExpo = async () => {
   try {
     await waitFor(`${baseUrl}/device-smoke/home`, 1_000);
@@ -167,6 +227,7 @@ const assertAccessibleControlState = async (page, route) => {
 };
 
 const trackPageFailures = (page, errors) => {
+  const trackedResourceTypes = ['fetch', 'font', 'image', 'script', 'stylesheet', 'xhr'];
   page.on('console', (message) => {
     if (message.type() === 'error') errors.push(`console: ${message.text()}`);
     if (message.type() === 'warning' && message.text().includes('[mobile:')) {
@@ -176,13 +237,13 @@ const trackPageFailures = (page, errors) => {
   page.on('pageerror', (error) => errors.push(`page: ${error.message}`));
   page.on('response', (response) => {
     const resourceType = response.request().resourceType();
-    if (response.status() >= 400 && ['font', 'image', 'script', 'stylesheet'].includes(resourceType)) {
+    if (response.status() >= 400 && trackedResourceTypes.includes(resourceType)) {
       errors.push(`${resourceType}: ${response.status()} ${response.url()}`);
     }
   });
   page.on('requestfailed', (request) => {
     const resourceType = request.resourceType();
-    if (['font', 'image', 'script', 'stylesheet'].includes(resourceType)) {
+    if (trackedResourceTypes.includes(resourceType)) {
       errors.push(`${resourceType}: ${request.failure()?.errorText ?? 'request failed'} ${request.url()}`);
     }
   });
@@ -199,6 +260,7 @@ const run = async () => {
         colorScheme,
         viewport: { width: 412, height: 915 },
       });
+      await installAssetRoutes(context);
       for (const [route, testId] of routeCases.filter(([route]) => routeMatches(route))) {
         const page = await context.newPage();
         const errors = [];
@@ -291,26 +353,23 @@ const run = async () => {
           await page.getByTestId('native-instance-overlay').waitFor({ state: 'detached' });
         }
 
-        if (route === 'collection?instance=smoke-shadow-venusaur') {
+        if (route === 'collection?instance=0006-default_demo-charizard') {
           await page.getByRole('button', { name: 'Edit Pokémon' }).click();
           await page.getByLabel('Pokémon detail editor').waitFor({ state: 'visible' });
-          await page.getByLabel('Pokémon nickname').fill('Parity Venusaur');
+          await page.getByLabel('Pokémon nickname').fill('Parity Charizard');
           await page.getByRole('button', { name: 'Save Pokémon' }).click();
           await page.getByLabel('Pokémon detail editor').waitFor({ state: 'detached' });
         }
 
-        if (route === 'collection?instance=smoke-gmax-charizard') {
+        if (route === 'collection?instance=0025-party_hat_default_demo-trade') {
           const overlay = page.getByTestId('native-instance-overlay');
           if (await overlay.getByRole('button', { name: /Favorite/i }).count()) {
             throw new Error('For Trade overlay exposed the caught-only Favorite action.');
           }
-          await page.getByRole('button', { name: 'Edit Pokémon' }).click();
-          await page.getByLabel('Pokémon detail editor').waitFor({ state: 'visible' });
-          await page.getByRole('button', { name: 'Save Pokémon' }).click();
-          await page.getByLabel('Pokémon detail editor').waitFor({ state: 'detached' });
+          await page.getByRole('button', { name: 'Edit Pokémon' }).waitFor({ state: 'visible' });
         }
 
-        if (route === 'collection?instance=smoke-gmax-blastoise') {
+        if (route === 'collection?instance=0094-default_demo-wanted') {
           await page.getByRole('button', { name: 'Edit wanted listing' }).click();
           await page.getByRole('button', { name: 'Set friendship to 5 hearts' }).click();
           await page.getByLabel('Remote trade available').waitFor({ state: 'visible' });
@@ -744,6 +803,7 @@ const run = async () => {
         colorScheme,
         viewport: { width: 360, height: 800 },
       });
+      await installAssetRoutes(context);
       for (const [route, testId] of routeCases.filter(([route]) => routeMatches(route))) {
         const page = await context.newPage();
         const errors = [];
@@ -775,6 +835,7 @@ const run = async () => {
         colorScheme,
         viewport: { width: 1440, height: 1000 },
       });
+      await installAssetRoutes(context);
       for (const [route, testId] of desktopRouteCases.filter(([route]) => routeMatches(route))) {
         const page = await context.newPage();
         const errors = [];

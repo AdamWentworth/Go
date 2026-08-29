@@ -12,7 +12,9 @@ tags:
     when:
       visible: "^Continue$"
     commands:
-      - tapOn: "^Continue$"
+      - tapOn:
+          text: "^Continue$"
+          optional: true
 - runFlow:
     when:
       visible: React Native dev menu
@@ -44,6 +46,12 @@ tags:
 - scrollUntilVisible:
     element:
       text: Explore Pokémon Go Nexus
+    direction: DOWN
+    visibilityPercentage: 50
+    timeout: 10000
+- scrollUntilVisible:
+    element:
+      text: Pokémon collection
     direction: DOWN
     visibilityPercentage: 50
     timeout: 10000

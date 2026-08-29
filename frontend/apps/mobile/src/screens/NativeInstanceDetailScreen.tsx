@@ -1968,6 +1968,10 @@ export const NativeInstanceDetailScreen = ({
   const isCaught = detail.row.status === 'caught';
   const isTrade = detail.row.status === 'trade';
   const isWanted = detail.row.status === 'wanted';
+  const caughtDate = !isWanted && detail.instance?.date_caught
+    ? detail.instance.date_caught.slice(0, 10)
+    : null;
+  const caughtDateParts = caughtDate?.match(/^(\d{4})-(\d{2})-(\d{2})$/) ?? null;
   const level = instance?.level ?? Number(
     detail.stats.find((row) => row.label === 'Level')?.value ?? Number.NaN,
   );
@@ -2354,6 +2358,23 @@ export const NativeInstanceDetailScreen = ({
             !isCaught && styles.compactDetailsPanel,
             { backgroundColor: palette.panel },
           ]}>
+            {!editing && caughtDateParts ? (
+              <View
+                accessibilityLabel={`Caught on ${caughtDate}`}
+                accessible
+                style={styles.caughtDateBadge}
+              >
+                <Image
+                  accessibilityElementsHidden
+                  source={{ uri: toAssetUrl(assetBaseUrl, '/images/balls/pokeball.png') }}
+                  style={styles.caughtDateBall}
+                />
+                <View>
+                  <Text style={styles.caughtDateYear}>{caughtDateParts[1]}</Text>
+                  <Text style={styles.caughtDateDay}>{caughtDateParts[2]}-{caughtDateParts[3]}</Text>
+                </View>
+              </View>
+            ) : null}
             {statusLabel ? (
               <Text style={[styles.statusEyebrow, { color: status.accent }]}>{statusLabel}</Text>
             ) : null}
@@ -2428,6 +2449,21 @@ export const NativeInstanceDetailScreen = ({
                 </View>
               </View>
             ) : null}
+
+            {!editing
+              && isCaught
+              && !instance?.mega
+              && !instance?.is_mega
+              && (detail.megaOptions?.length ?? 0) > 0 ? (
+                <View accessibilityLabel="Mega Evolution available" accessible style={styles.megaEligibility}>
+                  <Image
+                    accessibilityElementsHidden
+                    source={{ uri: toAssetUrl(assetBaseUrl, '/images/mega.png') }}
+                    style={styles.megaEligibilityIcon}
+                  />
+                  <Text style={styles.megaEligibilityText}>MEGA EVOLVE</Text>
+                </View>
+              ) : null}
 
             {!editing && (detail.moves.length || movesWarning) ? (
               <View style={[styles.section, { borderTopColor: palette.divider }]}>
@@ -2761,8 +2797,39 @@ const styles = StyleSheet.create({
   purifiedBadge: { position: 'absolute', zIndex: 5, bottom: 5, left: 5, width: 54, height: 54 },
   detailsPanel: { width: '100%', minHeight: 300, alignItems: 'center', marginTop: -36, paddingTop: 64, paddingBottom: 18, borderRadius: 12, overflow: 'hidden' },
   compactDetailsPanel: { marginTop: -47, paddingTop: 55 },
+  caughtDateBadge: {
+    position: 'absolute',
+    zIndex: 4,
+    top: 12,
+    right: 5,
+    minWidth: 67,
+    minHeight: 38,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 4,
+    paddingHorizontal: 6,
+    borderRadius: 12,
+    backgroundColor: '#f2b84b',
+  },
+  caughtDateBall: { width: 19, height: 19 },
+  caughtDateYear: { color: '#ffffff', fontSize: 12, lineHeight: 13, fontWeight: '900', textAlign: 'center' },
+  caughtDateDay: { color: '#ffffff', fontSize: 10, lineHeight: 11, fontWeight: '800', textAlign: 'center' },
   statusEyebrow: { marginBottom: 4, fontSize: 12, fontWeight: '900', letterSpacing: 1.7 },
   name: { maxWidth: '92%', fontSize: 32, lineHeight: 35, fontWeight: '500', textAlign: 'center' },
+  megaEligibility: {
+    minHeight: 31,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 7,
+    marginTop: 10,
+    paddingHorizontal: 16,
+    borderRadius: 999,
+    backgroundColor: '#319779',
+  },
+  megaEligibilityIcon: { width: 22, height: 22 },
+  megaEligibilityText: { color: '#c3eadb', fontSize: 11, fontWeight: '900', letterSpacing: 0.5 },
   editFields: { width: '94%', gap: 14, paddingTop: 3 },
   editFieldGroup: { width: '100%', gap: 6 },
   editFieldLabel: { fontSize: 10, fontWeight: '900', letterSpacing: 1.1 },

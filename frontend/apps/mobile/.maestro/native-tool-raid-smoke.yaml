@@ -7,7 +7,9 @@ name: Native Raid tool smoke
     when:
       visible: "^Continue$"
     commands:
-      - tapOn: "^Continue$"
+      - tapOn:
+          text: "^Continue$"
+          optional: true
 - runFlow:
     when:
       visible: React Native dev menu
@@ -76,9 +78,9 @@ name: Native Raid tool smoke
 - assertVisible: "Trainer 1"
 - scrollUntilVisible:
     element:
-      text: "⚡ Simulate"
+      text: "^Simulate$"
     direction: UP
-- tapOn: "⚡ Simulate"
+- tapOn: "^Simulate$"
 - scrollUntilVisible:
     element:
       text: "Likely clear"

@@ -206,14 +206,18 @@ test.describe("core responsive visual regression", () => {
           name: "Build your collection. Find the right trade.",
         }),
       ).toBeVisible();
-      await page.evaluate(() => window.dispatchEvent(new Event("offline")));
-      await expect(
-        page.getByRole("alert").filter({ hasText: "You’re offline" }),
-      ).toBeVisible();
-      await expectVisualBaseline(
-        page,
-        themedSnapshotName("offline-status.png", themeMode),
-      );
+      try {
+        await page.evaluate(() => window.dispatchEvent(new Event("offline")));
+        await expect(
+          page.getByRole("alert").filter({ hasText: "You’re offline" }),
+        ).toBeVisible();
+        await expectVisualBaseline(
+          page,
+          themedSnapshotName("offline-status.png", themeMode),
+        );
+      } finally {
+        await page.evaluate(() => window.dispatchEvent(new Event("online")));
+      }
     });
 
     test(`matches the ${themeMode} login baseline`, async ({ page }) => {

@@ -177,11 +177,61 @@ const ROWS: NativeCollectionRow[] = [
   }),
 ];
 
+// Keep the broad device-smoke inventory above for interaction coverage, while
+// giving visual parity captures the exact three states used by the canonical
+// Vite demo. These rows are intentionally direct-route-only so adding them does
+// not change the collection/tag screenshots or Maestro fixture ordering.
+const PARITY_REFERENCE_ROWS: NativeCollectionRow[] = [
+  row({
+    id: '0006-default_demo-charizard',
+    pokemonId: 6,
+    name: 'League Ace',
+    imagePath: '/images/default/pokemon_6.png',
+    status: 'caught',
+    cp: 2799,
+    favorite: true,
+    typeIconPaths: ['/images/types/fire.png', '/images/types/flying.png'],
+  }),
+  row({
+    id: '0025-party_hat_default_demo-trade',
+    pokemonId: 25,
+    name: 'Festival spare',
+    imagePath: '/images/costumes/pokemon_25_party_hat_default.png',
+    status: 'trade',
+    cp: 812,
+    typeIconPaths: ['/images/types/electric.png'],
+  }),
+  row({
+    id: '0094-default_demo-wanted',
+    pokemonId: 94,
+    name: 'Mirror target',
+    imagePath: '/images/default/pokemon_94.png',
+    status: 'wanted',
+    cp: null,
+    mostWanted: true,
+    typeIconPaths: ['/images/types/ghost.png', '/images/types/poison.png'],
+  }),
+];
+
+const ALL_FIXTURE_ROWS = [...ROWS, ...PARITY_REFERENCE_ROWS];
+
+const PARITY_REFERENCE_TARGET_ROWS = PARITY_REFERENCE_ROWS.map((referenceRow) => ({
+  ...referenceRow,
+  name: referenceRow.id === '0006-default_demo-charizard'
+    ? 'Charizard'
+    : referenceRow.id === '0025-party_hat_default_demo-trade'
+      ? 'Party Hat Pikachu'
+      : 'Gengar',
+}));
+
 const rowsWithStatus = (status: NativeCollectionRow['status']) =>
   ROWS.filter((candidate) => candidate.status === status);
 
 const combatStatsFor = (pokemonId: number) => {
   if (pokemonId === 3) return { attack: 198, defense: 189, stamina: 190 };
+  if (pokemonId === 6) return { attack: 223, defense: 173, stamina: 186 };
+  if (pokemonId === 25) return { attack: 112, defense: 96, stamina: 111 };
+  if (pokemonId === 94) return { attack: 261, defense: 149, stamina: 155 };
   if (pokemonId === 376) return { attack: 257, defense: 228, stamina: 190 };
   if (pokemonId === 800) return { attack: 251, defense: 195, stamina: 219 };
   if (pokemonId === 888) return { attack: 254, defense: 236, stamina: 192 };
@@ -245,7 +295,60 @@ const WISHLIST_TAGS: NativeTagSummary[] = [
   },
 ];
 
-const SMOKE_INSTANCES = Object.fromEntries(ROWS.map((entry) => [entry.id, {
+const PARITY_INSTANCE_OVERRIDES: Record<string, Partial<PokemonInstance>> = {
+  '0006-default_demo-charizard': {
+    variant_id: '0006-default',
+    nickname: 'League Ace',
+    // The canonical overlay recomputes the displayed CP from level and IVs.
+    // Store that derived value here so the native reference renders the same
+    // visible state rather than the stale raw demo payload value (2844).
+    cp: 2799,
+    level: 38,
+    attack_iv: 15,
+    defense_iv: 14,
+    stamina_iv: 15,
+    fast_move_id: 54,
+    charged_move1_id: 186,
+    charged_move2_id: 83,
+    favorite: true,
+    caught_tags: ['Raid team', 'Kanto'],
+    location_caught: 'Vancouver, BC',
+    date_caught: '2026-06-15',
+  },
+  '0025-party_hat_default_demo-trade': {
+    variant_id: '0025-party_hat_default',
+    nickname: 'Festival spare',
+    cp: 812,
+    level: null,
+    gender: null,
+    weight: null,
+    height: null,
+    attack_iv: 11,
+    defense_iv: 13,
+    stamina_iv: 14,
+    fast_move_id: null,
+    charged_move1_id: null,
+    charged_move2_id: null,
+    costume_id: 41,
+    trade_tags: ['Costume', 'Local trade'],
+    location_caught: 'Seattle, WA',
+    date_caught: '2026-05-28',
+  },
+  '0094-default_demo-wanted': {
+    variant_id: '0094-default',
+    nickname: 'Mirror target',
+    registered: false,
+    most_wanted: true,
+    wanted_tags: ['Lucky mirror', 'Ghost'],
+    fast_move_id: null,
+    charged_move1_id: null,
+    charged_move2_id: null,
+    friendship_level: 4,
+    pref_lucky: true,
+  },
+};
+
+const SMOKE_INSTANCES = Object.fromEntries(ALL_FIXTURE_ROWS.map((entry) => [entry.id, {
   instance_id: entry.id,
   variant_id: `${String(entry.pokemonId).padStart(4, '0')}-default`,
   pokemon_id: entry.pokemonId,
@@ -289,6 +392,7 @@ const SMOKE_INSTANCES = Object.fromEntries(ROWS.map((entry) => [entry.id, {
   max_guard: entry.maxKind ? 0 : null,
   max_spirit: entry.maxKind ? 0 : null,
   is_fused: false,
+  ...PARITY_INSTANCE_OVERRIDES[entry.id],
 } as unknown as PokemonInstance]));
 
 export default function DeviceSmokeCollectionRoute() {
@@ -308,7 +412,7 @@ export default function DeviceSmokeCollectionRoute() {
   const initialInstanceId = Array.isArray(params.instance)
     ? params.instance[0]
     : params.instance;
-  const initialRow = ROWS.find((entry) => entry.id === initialInstanceId) ?? null;
+  const initialRow = ALL_FIXTURE_ROWS.find((entry) => entry.id === initialInstanceId) ?? null;
   const [openedContext, setOpenedContext] = useState<{
     row: NativeCollectionRow;
     orderedRows: NativeCollectionRow[];
@@ -326,7 +430,7 @@ export default function DeviceSmokeCollectionRoute() {
 
   useEffect(() => {
     if (!initialInstanceId) return;
-    const requestedRow = ROWS.find((entry) => entry.id === initialInstanceId);
+    const requestedRow = ALL_FIXTURE_ROWS.find((entry) => entry.id === initialInstanceId);
     if (!requestedRow) return;
     const update = setTimeout(() => {
       setOpenedContext({
@@ -427,6 +531,75 @@ export default function DeviceSmokeCollectionRoute() {
     });
   };
 
+  const isParityCharizard = openedRow?.id === '0006-default_demo-charizard';
+  const isParityTrade = openedRow?.id === '0025-party_hat_default_demo-trade';
+  const isParityWanted = openedRow?.id === '0094-default_demo-wanted';
+  const targetRows = isParityTrade
+    ? PARITY_REFERENCE_TARGET_ROWS.filter((row) => row.id === '0094-default_demo-wanted')
+    : isParityWanted
+      ? PARITY_REFERENCE_TARGET_ROWS.filter((row) => row.id === '0025-party_hat_default_demo-trade')
+      : openedRow?.status === 'wanted'
+        ? rowsWithStatus('trade')
+        : openedRow?.status === 'trade'
+          ? rowsWithStatus('wanted')
+          : [];
+  const detailStats = isParityCharizard
+    ? [{ label: 'Level', value: '38' }]
+    : openedRow?.status !== 'wanted' && !isParityTrade
+      ? [{ label: 'Level', value: '40' }]
+      : [];
+  const detailIvs = isParityCharizard
+    ? [
+        { label: 'Attack', value: 15 },
+        { label: 'Defense', value: 14 },
+        { label: 'HP', value: 15 },
+      ]
+    : isParityTrade
+      ? [
+          { label: 'Attack', value: 11 },
+          { label: 'Defense', value: 13 },
+          { label: 'HP', value: 14 },
+        ]
+      : openedRow?.status !== 'wanted'
+        ? [
+            { label: 'Attack', value: 15 },
+            { label: 'Defense', value: 12 },
+            { label: 'HP', value: 13 },
+          ]
+        : [];
+  const detailMoves = isParityCharizard
+    ? [
+        { label: 'Fast move', value: 'Fire Spin', typeName: 'Fire', typeIconUri: `${ASSET_BASE_URL}/images/types/fire.png`, raidPower: 14, pvpPower: 9 },
+        { label: 'Charged move', value: 'Overheat', typeName: 'Fire', typeIconUri: `${ASSET_BASE_URL}/images/types/fire.png`, raidPower: 160, pvpPower: 130 },
+      ]
+    : openedRow?.status !== 'wanted' && !isParityTrade
+      ? openedRow?.pokemonId === 376
+        ? [
+            { label: 'Fast move', value: 'Bullet Punch', typeName: 'Steel', typeIconUri: `${ASSET_BASE_URL}/images/types/steel.png`, raidPower: 9, pvpPower: 9 },
+            { label: 'Charged move', value: 'Meteor Mash', legacy: true, typeName: 'Steel', typeIconUri: `${ASSET_BASE_URL}/images/types/steel.png`, raidPower: 100, pvpPower: 100 },
+          ]
+        : [
+            { label: 'Fast move', value: 'Vine Whip', typeName: 'Grass', typeIconUri: `${ASSET_BASE_URL}/images/types/grass.png`, raidPower: 7, pvpPower: 5 },
+            { label: 'Charged move', value: 'Frenzy Plant', legacy: true, typeName: 'Grass', typeIconUri: `${ASSET_BASE_URL}/images/types/grass.png`, raidPower: 100, pvpPower: 100 },
+          ]
+      : [];
+  const detailProvenance = isParityCharizard
+    ? [
+        { label: 'Caught near', value: 'Vancouver, BC' },
+        { label: 'Caught on', value: '2026-06-15' },
+      ]
+    : isParityTrade
+      ? [
+          { label: 'Caught near', value: 'Seattle, WA' },
+          { label: 'Caught on', value: '2026-05-28' },
+        ]
+      : openedRow?.status === 'caught'
+        ? [
+            { label: 'Caught near', value: 'Burnaby, British Columbia, Canada' },
+            { label: 'Caught on', value: '2026-08-24' },
+          ]
+        : [];
+
   return (
     <>
       <NativeCollectionHubScreen
@@ -469,33 +642,11 @@ export default function DeviceSmokeCollectionRoute() {
               instance: smokeInstances[openedRow.id],
               row: openedRow,
               baseStats: combatStatsFor(openedRow.pokemonId),
-              targetRows: openedRow.status === 'wanted'
-                ? rowsWithStatus('trade')
-                : openedRow.status === 'trade'
-                  ? rowsWithStatus('wanted')
-                  : [],
+              targetRows,
               traits: openedRow.name.includes('Shiny') ? ['Shiny'] : [],
-              stats: openedRow.status !== 'wanted'
-                ? [{ label: 'Level', value: '40' }]
-                : [],
-              ivs: openedRow.status !== 'wanted'
-                ? [
-                    { label: 'Attack', value: 15 },
-                    { label: 'Defense', value: 12 },
-                    { label: 'HP', value: 13 },
-                  ]
-                : [],
-              moves: openedRow.status !== 'wanted'
-                ? openedRow.pokemonId === 376
-                  ? [
-                      { label: 'Fast move', value: 'Bullet Punch', typeName: 'Steel', typeIconUri: `${ASSET_BASE_URL}/images/types/steel.png`, raidPower: 9, pvpPower: 9 },
-                      { label: 'Charged move', value: 'Meteor Mash', legacy: true, typeName: 'Steel', typeIconUri: `${ASSET_BASE_URL}/images/types/steel.png`, raidPower: 100, pvpPower: 100 },
-                    ]
-                  : [
-                      { label: 'Fast move', value: 'Vine Whip', typeName: 'Grass', typeIconUri: `${ASSET_BASE_URL}/images/types/grass.png`, raidPower: 7, pvpPower: 5 },
-                      { label: 'Charged move', value: 'Frenzy Plant', legacy: true, typeName: 'Grass', typeIconUri: `${ASSET_BASE_URL}/images/types/grass.png`, raidPower: 100, pvpPower: 100 },
-                    ]
-                : [],
+              stats: detailStats,
+              ivs: detailIvs,
+              moves: detailMoves,
               preferences: openedRow.status === 'wanted'
                 ? [
                     { label: 'Friendship', value: '4/5 hearts' },
@@ -525,7 +676,32 @@ export default function DeviceSmokeCollectionRoute() {
                   ? `${ASSET_BASE_URL}/images/shiny/shiny_pokemon_${openedRow.pokemonId}.png`
                   : `${ASSET_BASE_URL}/images/pokemon/pokemon_${openedRow.pokemonId}.png`,
               },
-              megaOptions: openedRow.pokemonId === 376
+              megaOptions: openedRow.pokemonId === 6
+                ? [
+                    {
+                      form: 'X',
+                      imageUri: `${ASSET_BASE_URL}/images/mega/mega_6_X.png`,
+                      label: 'Mega Charizard X',
+                      primal: false,
+                      stats: { attack: 273, defense: 213, stamina: 186 },
+                      typeIconUris: [
+                        `${ASSET_BASE_URL}/images/types/fire.png`,
+                        `${ASSET_BASE_URL}/images/types/dragon.png`,
+                      ],
+                    },
+                    {
+                      form: 'Y',
+                      imageUri: `${ASSET_BASE_URL}/images/mega/mega_6_Y.png`,
+                      label: 'Mega Charizard Y',
+                      primal: false,
+                      stats: { attack: 319, defense: 212, stamina: 186 },
+                      typeIconUris: [
+                        `${ASSET_BASE_URL}/images/types/fire.png`,
+                        `${ASSET_BASE_URL}/images/types/flying.png`,
+                      ],
+                    },
+                  ]
+                : openedRow.pokemonId === 376
                   ? [{
                     form: null,
                     imageUri: openedRow.imageUri,
@@ -600,12 +776,7 @@ export default function DeviceSmokeCollectionRoute() {
                 weight_xl_threshold: 115,
                 weight_xxl_threshold: 130,
               },
-              provenance: openedRow.status === 'caught'
-                ? [
-                    { label: 'Caught near', value: 'Burnaby, British Columbia, Canada' },
-                    { label: 'Caught on', value: '2026-08-24' },
-                  ]
-                : [],
+              provenance: detailProvenance,
             }}
             error={null}
             isLoading={false}
@@ -615,7 +786,7 @@ export default function DeviceSmokeCollectionRoute() {
             onEditInCurrentApp={() => undefined}
             onNext={openedRow.status !== 'wanted' && nextRow ? () => navigateWithinOverlay(nextRow) : undefined}
             onOpenTarget={(instanceId) => {
-              const target = ROWS.find((row) => row.id === instanceId);
+              const target = ALL_FIXTURE_ROWS.find((row) => row.id === instanceId);
               if (target) setOpenedContext({ row: target, orderedRows: [target] });
             }}
             onPrevious={openedRow.status !== 'wanted' && previousRow ? () => navigateWithinOverlay(previousRow) : undefined}

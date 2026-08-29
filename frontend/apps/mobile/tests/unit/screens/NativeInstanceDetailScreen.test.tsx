@@ -139,6 +139,44 @@ describe('NativeInstanceDetailScreen', () => {
     });
   });
 
+  it('shows canonical catch-date and Mega-eligibility signals', () => {
+    render(
+      <NativeInstanceDetailScreen
+        detail={{
+          ...detail,
+          instance: {
+            date_caught: '2026-06-15',
+            mega: false,
+            is_mega: false,
+          } as NonNullable<NativeInstanceDetail['instance']>,
+          row: { ...detail.row, status: 'caught' },
+          megaOptions: [{
+            form: 'X',
+            imageUri: 'https://pokegonexus.com/images/mega/mega_6_X.png',
+            label: 'Mega Charizard X',
+            primal: false,
+            stats: { attack: 273, defense: 213, stamina: 186 },
+            typeIconUris: [],
+          }],
+        }}
+        isLoading={false}
+        error={null}
+        cachedAt={null}
+        movesWarning={null}
+        saveNotice={null}
+        saveError={null}
+        isSaving={false}
+        onRetry={jest.fn()}
+        onBack={jest.fn()}
+        onToggleFavorite={jest.fn()}
+        onEditInCurrentApp={jest.fn()}
+      />,
+    );
+
+    expect(screen.getByLabelText('Caught on 2026-06-15')).toBeTruthy();
+    expect(screen.getByLabelText('Mega Evolution available')).toBeTruthy();
+  });
+
   it('removes owner mutation controls from a foreign For Trade listing', () => {
     render(
       <NativeInstanceDetailScreen

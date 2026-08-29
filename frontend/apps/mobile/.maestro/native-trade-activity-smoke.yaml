@@ -11,7 +11,9 @@ tags:
     when:
       visible: "^Continue$"
     commands:
-      - tapOn: "^Continue$"
+      - tapOn:
+          text: "^Continue$"
+          optional: true
 - runFlow:
     when:
       visible: React Native dev menu
@@ -56,15 +58,20 @@ tags:
 - tapOn:
     id: trade-filter-Pending
 - assertVisible: Ready to confirm
-- scrollUntilVisible:
-    element:
-      id: trade-action-coordinate-active
-    direction: DOWN
-    speed: 70
-    visibilityPercentage: 50
-    timeout: 30000
+- swipe:
+    start: 50%, 82%
+    end: 50%, 50%
+    duration: 450
+- swipe:
+    start: 50%, 82%
+    end: 50%, 42%
+    duration: 500
+- extendedWaitUntil:
+    visible: "^Coordinate trade$"
+    timeout: 10000
 - tapOn:
-    id: trade-action-coordinate-active
+    text: "^Coordinate trade$"
+    point: "50%,25%"
 - extendedWaitUntil:
     visible: COORDINATE EXTERNALLY
     timeout: 10000
@@ -75,28 +82,37 @@ tags:
 - tapOn: Done
 - tapOn:
     id: trade-filter-Accepting
-- scrollUntilVisible:
-    element:
-      id: trade-action-accept-incoming
-    direction: DOWN
-    speed: 70
-    visibilityPercentage: 50
-    timeout: 30000
+- extendedWaitUntil:
+    visible: Shiny Mewtwo
+    timeout: 10000
+- swipe:
+    start: 50%, 55%
+    end: 50%, 30%
+    duration: 500
+- extendedWaitUntil:
+    visible: "^Accept offer$"
+    timeout: 10000
 - tapOn:
-    id: trade-action-accept-incoming
+    text: "^Accept offer$"
+    point: "50%,25%"
 - assertVisible: Accept this offer?
 - tapOn: Accept offer
 - extendedWaitUntil:
     visible: Trade updated from the server response.
     timeout: 10000
 - assertNotVisible: Shiny Mewtwo
-- scrollUntilVisible:
-    element:
+- swipe:
+    start: 50%, 82%
+    end: 50%, 52%
+    duration: 450
+- swipe:
+    start: 50%, 82%
+    end: 50%, 42%
+    duration: 500
+- extendedWaitUntil:
+    visible:
       id: trade-action-deny-incoming-deny
-    direction: DOWN
-    speed: 70
-    visibilityPercentage: 50
-    timeout: 30000
+    timeout: 10000
 - tapOn:
     id: trade-action-deny-incoming-deny
 - assertVisible: Deny this offer?
@@ -106,12 +122,43 @@ tags:
     timeout: 10000
 - tapOn:
     id: trade-filter-Pending
-- scrollUntilVisible:
-    element:
-      id: trade-action-complete-active-completable
-    direction: DOWN
+- extendedWaitUntil:
+    visible: Shiny Mewtwo
+    timeout: 10000
+- swipe:
+    start: 50%, 55%
+    end: 50%, 30%
+    duration: 500
+- swipe:
+    start: 50%, 55%
+    end: 50%, 30%
+    duration: 500
+- swipe:
+    start: 50%, 55%
+    end: 50%, 30%
+    duration: 500
+- swipe:
+    start: 50%, 55%
+    end: 50%, 30%
+    duration: 500
+- swipe:
+    start: 50%, 55%
+    end: 50%, 30%
+    duration: 500
+- swipe:
+    start: 50%, 55%
+    end: 50%, 30%
+    duration: 500
+- swipe:
+    start: 50%, 55%
+    end: 50%, 30%
+    duration: 500
+- extendedWaitUntil:
+    visible: "^Confirm complete$"
+    timeout: 10000
 - tapOn:
-    id: trade-action-complete-active-completable
+    text: "^Confirm complete$"
+    point: "50%,25%"
 - assertVisible: Confirm the exchange happened?
 - tapOn: Confirm complete
 - extendedWaitUntil:
@@ -120,15 +167,19 @@ tags:
 - assertNotVisible: Shiny Rayquaza
 - tapOn:
     id: trade-filter-Completed
-- scrollUntilVisible:
-    element:
-      id: trade-action-satisfy-completed
-    direction: DOWN
-    speed: 70
-    visibilityPercentage: 50
-    timeout: 30000
+- extendedWaitUntil:
+    visible: Shiny Ho-Oh
+    timeout: 10000
+- swipe:
+    start: 50%, 55%
+    end: 50%, 30%
+    duration: 500
+- extendedWaitUntil:
+    visible: "^Mark as satisfying$"
+    timeout: 10000
 - tapOn:
-    id: trade-action-satisfy-completed
+    text: "^Mark as satisfying$"
+    point: "50%,25%"
 - assertVisible: Mark this trade as satisfying?
 - tapOn: Save feedback
 - extendedWaitUntil:
@@ -136,11 +187,26 @@ tags:
     timeout: 10000
 - assertNotVisible:
     id: trade-action-satisfy-completed
-- scrollUntilVisible:
-    element:
+- swipe:
+    start: 50%, 55%
+    end: 50%, 28%
+    duration: 500
+- swipe:
+    start: 50%, 55%
+    end: 50%, 25%
+    duration: 550
+- swipe:
+    start: 50%, 55%
+    end: 50%, 25%
+    duration: 550
+- swipe:
+    start: 50%, 55%
+    end: 50%, 25%
+    duration: 550
+- extendedWaitUntil:
+    visible:
       id: trade-action-delete-completed-delete
-    direction: DOWN
-    centerElement: true
+    timeout: 10000
 - tapOn:
     id: trade-action-delete-completed-delete
 - assertVisible: Remove this trade from history?
@@ -151,13 +217,17 @@ tags:
 - assertNotVisible: Shiny Lugia
 - tapOn:
     id: trade-filter-Cancelled
-- scrollUntilVisible:
-    element:
+- extendedWaitUntil:
+    visible: Shiny Dialga
+    timeout: 10000
+- swipe:
+    start: 50%, 55%
+    end: 50%, 30%
+    duration: 500
+- extendedWaitUntil:
+    visible:
       id: trade-action-repropose-sent
-    direction: DOWN
-    speed: 70
-    visibilityPercentage: 50
-    timeout: 30000
+    timeout: 10000
 - tapOn:
     id: trade-action-repropose-sent
 - assertVisible: Re-propose this trade?
@@ -166,11 +236,26 @@ tags:
     visible: Trade updated from the server response.
     timeout: 10000
 - assertNotVisible: Shiny Dialga
-- scrollUntilVisible:
-    element:
+- swipe:
+    start: 50%, 55%
+    end: 50%, 28%
+    duration: 500
+- swipe:
+    start: 50%, 55%
+    end: 50%, 25%
+    duration: 550
+- swipe:
+    start: 50%, 55%
+    end: 50%, 25%
+    duration: 550
+- swipe:
+    start: 50%, 55%
+    end: 50%, 25%
+    duration: 550
+- extendedWaitUntil:
+    visible:
       id: trade-action-delete-closed-delete
-    direction: DOWN
-    centerElement: true
+    timeout: 10000
 - tapOn:
     id: trade-action-delete-closed-delete
 - assertVisible: Remove this trade from history?

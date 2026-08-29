@@ -5,6 +5,7 @@ import type { Page, Route } from '@playwright/test';
 
 export type E2eRouteOptions = {
   mockImages?: boolean;
+  preserveBrowserConnectivity?: boolean;
   searchResults?: unknown[];
   communityRankings?: unknown;
   locationSuggestions?: unknown[];
@@ -366,6 +367,17 @@ export async function installE2eRoutes(page: Page, options: E2eRouteOptions = {}
   for (const pathPattern of ['**/api/events/getUpdates**', '**/__e2e/events/getUpdates**']) {
     await page.route(pathPattern, async (route) => {
       await fulfillJson(route, {});
+    });
+  }
+
+  if (!options.preserveBrowserConnectivity) {
+    // Mocked browser tests are intentionally self-contained and should not inherit a
+    // transient offline signal from the host or a neighboring Chromium context.
+    await page.addInitScript(() => {
+      Object.defineProperty(Navigator.prototype, 'onLine', {
+        configurable: true,
+        get: () => true,
+      });
     });
   }
 
