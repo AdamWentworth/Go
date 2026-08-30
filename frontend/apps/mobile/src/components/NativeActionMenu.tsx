@@ -5,7 +5,6 @@ import {
   Easing,
   Image,
   Modal,
-  Platform,
   Pressable,
   StyleSheet,
   Text,
@@ -13,15 +12,12 @@ import {
   useWindowDimensions,
 } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, {
   Circle,
-  Defs,
   Line,
-  LinearGradient,
   Path,
-  Rect,
-  Stop,
 } from 'react-native-svg';
 import {
   useOptionalNativeDevicePreferences,
@@ -388,7 +384,7 @@ export const NativeActionMenu = ({
     supportPanelWidth,
     utilityFontSize,
   } = getNativeActionMenuGeometry(width, height, insets.bottom);
-  const topInset = Platform.OS === 'android' ? 16 : Math.max(16, insets.top);
+  const topInset = Math.max(16, insets.top);
 
   useEffect(() => {
     if (!visible) {
@@ -488,15 +484,14 @@ export const NativeActionMenu = ({
         testID="native-action-menu"
       >
         <StatusBar hidden />
-        <Svg height="100%" pointerEvents="none" style={StyleSheet.absoluteFill} width="100%">
-          <Defs>
-            <LinearGradient id="action-menu-gradient" x1="0" x2="1" y1="0" y2="1">
-              <Stop offset="0" stopColor={palette.gradientStart} />
-              <Stop offset="1" stopColor={palette.gradientEnd} />
-            </LinearGradient>
-          </Defs>
-          <Rect fill="url(#action-menu-gradient)" height="100%" width="100%" />
-        </Svg>
+        <LinearGradient
+          colors={[palette.gradientStart, palette.gradientEnd]}
+          end={{ x: 1, y: 1 }}
+          pointerEvents="none"
+          start={{ x: 0, y: 0 }}
+          style={StyleSheet.absoluteFill}
+          testID="native-action-menu-background"
+        />
 
         {isSignedIn ? (
           <Pressable
@@ -530,7 +525,10 @@ export const NativeActionMenu = ({
           </Pressable>
         ) : null}
 
-        <View style={[styles.settingsCluster, { top: topInset }]}>
+        <View
+          style={[styles.settingsCluster, { top: topInset }]}
+          testID="native-action-menu-settings-cluster"
+        >
           <Pressable
             accessibilityLabel="Settings"
             accessibilityRole="button"
@@ -687,7 +685,10 @@ export const NativeActionMenu = ({
           </View>
         )}
 
-        <View style={[styles.supportCluster, { bottom: cornerBottom }]}>
+        <View
+          style={[styles.supportCluster, { bottom: cornerBottom }]}
+          testID="native-action-menu-support-cluster"
+        >
           {supportOpen ? (
             <Animated.View
               style={[

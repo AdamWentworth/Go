@@ -1,5 +1,6 @@
 import { FlatList, Image, Modal, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useMemo, useState } from 'react';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNativeModalAnimation } from '../features/settings/useNativeMotion';
 import { useNativeColorScheme } from '../features/settings/useNativeColorScheme';
 
@@ -51,7 +52,11 @@ export const NativeOptionPicker = ({
       presentationStyle="fullScreen"
       visible={visible}
     >
-      <View style={[styles.screen, light && styles.screenLight]} testID="native-option-picker">
+      <SafeAreaView
+        edges={['top', 'bottom']}
+        style={[styles.screen, light && styles.screenLight]}
+        testID="native-option-picker"
+      >
         <View style={[styles.header, light && styles.headerLight]}>
           <View style={styles.headerCopy}>
             <Text style={styles.eyebrow}>SELECT AN OPTION</Text>
@@ -111,7 +116,7 @@ export const NativeOptionPicker = ({
             );
           }}
         />
-      </View>
+      </SafeAreaView>
     </Modal>
   );
 };

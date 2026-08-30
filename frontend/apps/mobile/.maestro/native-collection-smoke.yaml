@@ -5,7 +5,7 @@ tags:
   - native-collection
 ---
 - openLink:
-    link: ${APP_LINK_BASE}/device-smoke/collection
+    link: ${APP_LINK_BASE}/device-smoke/collection?interaction=1
 - runFlow:
     when:
       visible: "Something went wrong.*"
@@ -181,7 +181,7 @@ tags:
     visible: WANTED CONDITIONS
     timeout: 10000
 - assertVisible: Gigantamax Blastoise
-- assertVisible: MOST WANTED
+- assertVisible: ★ Most Wanted
 - assertNotVisible: Previous Pokémon
 - assertNotVisible: Next Pokémon
 - takeScreenshot: 06-wanted-instance
@@ -259,6 +259,13 @@ tags:
 - takeScreenshot: 06e-location-background-selector
 - tapOn: Close background selector
 - assertVisible: Save Pokémon
+- repeat:
+    times: 4
+    commands:
+      - swipe:
+          start: 92%, 78%
+          end: 92%, 25%
+          duration: 500
 - scrollUntilVisible:
     element:
       id: native-move-selector-fast-move

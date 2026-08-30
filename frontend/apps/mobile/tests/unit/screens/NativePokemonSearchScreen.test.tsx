@@ -127,7 +127,10 @@ describe('NativePokemonSearchScreen', () => {
     const invalidDraft = { ...draft, latitude: null, longitude: null };
     const view = render(<NativePokemonSearchScreen {...baseProps} draft={invalidDraft} />);
     fireEvent.press(view.getByRole('button', { name: 'Search' }));
-    expect(view.getByTestId('native-pokemon-search-filter-sheet')).toBeTruthy();
+    expect(view.getByTestId('native-pokemon-search-filter-sheet').props.edges).toMatchObject({
+      bottom: 'additive',
+      top: 'additive',
+    });
     expect(view.getByText('Choose a location before searching.')).toBeTruthy();
     expect(view.getByText('Where should we look?')).toBeTruthy();
     expect(baseProps.onSearch).not.toHaveBeenCalled();
@@ -136,7 +139,10 @@ describe('NativePokemonSearchScreen', () => {
   it('keeps Pokémon selection in the canonical primary search surface', () => {
     const view = render(<NativePokemonSearchScreen {...baseProps} />);
     fireEvent.press(view.getByRole('button', { name: 'Choose Pokémon' }));
-    expect(view.getByTestId('native-option-picker')).toBeTruthy();
+    expect(view.getByTestId('native-option-picker').props.edges).toMatchObject({
+      bottom: 'additive',
+      top: 'additive',
+    });
     expect(view.getByLabelText('Search Choose a Pokémon')).toBeTruthy();
     expect(view.getByText('#0025')).toBeTruthy();
   });

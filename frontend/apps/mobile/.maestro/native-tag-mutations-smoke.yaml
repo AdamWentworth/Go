@@ -6,7 +6,7 @@ tags:
   - native-tags
 ---
 - openLink:
-    link: ${APP_LINK_BASE}/device-smoke/collection
+    link: ${APP_LINK_BASE}/device-smoke/collection?interaction=1
 - runFlow:
     when:
       visible: "Something went wrong.*"

@@ -42,6 +42,10 @@ describe('NativeTrainerShowcasePicker', () => {
       />,
     );
 
+    expect(view.getByTestId('native-trainer-showcase-picker').props.edges).toMatchObject({
+      bottom: 'additive',
+      top: 'additive',
+    });
     expect(view.getByRole('button', { name: 'Shiny Charizard, selected in this slot' })).toBeTruthy();
     expect(view.getByRole('button', { name: 'Shiny Suicune, already featured' }).props.accessibilityState.disabled).toBe(true);
     fireEvent.changeText(view.getByLabelText('Search caught Pokémon'), 'meta');

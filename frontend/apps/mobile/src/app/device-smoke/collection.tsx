@@ -251,7 +251,7 @@ const combatStatsFor = (pokemonId: number) => {
   return { attack: 200, defense: 200, stamina: 200 };
 };
 
-const INVENTORY_TAGS: NativeTagSummary[] = [
+const PARITY_INVENTORY_TAGS: NativeTagSummary[] = [
   {
     key: 'system:caught',
     parent: 'caught',
@@ -284,7 +284,7 @@ const INVENTORY_TAGS: NativeTagSummary[] = [
   },
 ];
 
-const WISHLIST_TAGS: NativeTagSummary[] = [
+const PARITY_WISHLIST_TAGS: NativeTagSummary[] = [
   {
     key: 'system:wanted',
     parent: 'wanted',
@@ -301,6 +301,67 @@ const WISHLIST_TAGS: NativeTagSummary[] = [
     color: '#ff704d',
     tone: 'most-wanted',
     rows: PARITY_WANTED_ROWS,
+  },
+];
+
+// The long-running Android interaction flows exercise a broader collection
+// than the compact Vite demo reference used by parity screenshots. Keep both
+// deterministic fixture sets available instead of making one test mode break
+// the other.
+const INTERACTION_INVENTORY_TAGS: NativeTagSummary[] = [
+  {
+    key: 'system:favorites',
+    parent: 'caught',
+    name: 'Favorites',
+    color: '#ffd45a',
+    tone: 'favorites',
+    rows: ROWS.filter((candidate) => candidate.favorite),
+  },
+  {
+    key: 'system:trade',
+    parent: 'caught',
+    name: 'For Trade',
+    filterName: 'Trade',
+    color: '#4bc574',
+    tone: 'trade',
+    rows: rowsWithStatus('trade'),
+  },
+  {
+    key: 'system:caught',
+    parent: 'caught',
+    name: 'All Caught',
+    filterName: 'Caught',
+    color: '#5798ff',
+    tone: 'caught',
+    rows: ROWS.filter((candidate) => candidate.status !== 'wanted'),
+  },
+  {
+    key: 'custom:shadow-shinies',
+    parent: 'caught',
+    name: 'Shadow Shinies',
+    color: '#6f35c5',
+    tone: 'custom',
+    rows: ROWS.filter((candidate) => candidate.name.includes('Shadow')),
+  },
+];
+
+const INTERACTION_WISHLIST_TAGS: NativeTagSummary[] = [
+  {
+    key: 'system:wanted',
+    parent: 'wanted',
+    name: 'All Wanted',
+    filterName: 'Wanted',
+    color: '#ef5b72',
+    tone: 'wanted',
+    rows: rowsWithStatus('wanted'),
+  },
+  {
+    key: 'system:most-wanted',
+    parent: 'wanted',
+    name: 'Most Wanted',
+    color: '#ff704d',
+    tone: 'most-wanted',
+    rows: ROWS.filter((candidate) => candidate.mostWanted),
   },
 ];
 
@@ -407,10 +468,12 @@ const SMOKE_INSTANCES = Object.fromEntries(ALL_FIXTURE_ROWS.map((entry) => [entr
 export default function DeviceSmokeCollectionRoute() {
   const params = useLocalSearchParams<{
     foreign?: string | string[];
+    interaction?: string | string[];
     instance?: string | string[];
     tag?: string | string[];
   }>();
   const foreignParam = Array.isArray(params.foreign) ? params.foreign[0] : params.foreign;
+  const interactionParam = Array.isArray(params.interaction) ? params.interaction[0] : params.interaction;
   const tagParam = Array.isArray(params.tag) ? params.tag[0] : params.tag;
   const foreignMode = foreignParam === '1';
   const initialTagKey = tagParam === 'trade'
@@ -421,6 +484,9 @@ export default function DeviceSmokeCollectionRoute() {
   const initialInstanceId = Array.isArray(params.instance)
     ? params.instance[0]
     : params.instance;
+  const interactionFixtures = interactionParam === '1'
+    || foreignMode
+    || initialInstanceId?.startsWith('smoke-') === true;
   const initialRow = ALL_FIXTURE_ROWS.find((entry) => entry.id === initialInstanceId) ?? null;
   const [openedContext, setOpenedContext] = useState<{
     row: NativeCollectionRow;
@@ -433,8 +499,12 @@ export default function DeviceSmokeCollectionRoute() {
   const [catalogError, setCatalogError] = useState<string | null>(null);
   const [catalogLoading, setCatalogLoading] = useState(true);
   const [smokeInstances, setSmokeInstances] = useState(SMOKE_INSTANCES);
-  const [inventoryTags, setInventoryTags] = useState(INVENTORY_TAGS);
-  const [wishlistTags, setWishlistTags] = useState(WISHLIST_TAGS);
+  const [inventoryTags, setInventoryTags] = useState(() => (
+    interactionFixtures ? INTERACTION_INVENTORY_TAGS : PARITY_INVENTORY_TAGS
+  ));
+  const [wishlistTags, setWishlistTags] = useState(() => (
+    interactionFixtures ? INTERACTION_WISHLIST_TAGS : PARITY_WISHLIST_TAGS
+  ));
   const [nextTagId, setNextTagId] = useState(1);
 
   useEffect(() => {

@@ -7,6 +7,7 @@ import {
 
 const mockToggleColorTheme = jest.fn();
 let mockShouldReduceMotion = false;
+let mockSafeAreaInsets = { top: 0, right: 0, bottom: 0, left: 0 };
 
 jest.mock('react-native/Libraries/Utilities/useWindowDimensions', () => ({
   __esModule: true,
@@ -14,7 +15,7 @@ jest.mock('react-native/Libraries/Utilities/useWindowDimensions', () => ({
 }));
 
 jest.mock('react-native-safe-area-context', () => ({
-  useSafeAreaInsets: () => ({ top: 0, right: 0, bottom: 0, left: 0 }),
+  useSafeAreaInsets: () => mockSafeAreaInsets,
 }));
 
 jest.mock('../../../src/features/settings/NativeDevicePreferencesProvider', () => ({
@@ -29,6 +30,7 @@ describe('NativeActionMenu', () => {
     jest.clearAllMocks();
     jest.useFakeTimers();
     mockShouldReduceMotion = false;
+    mockSafeAreaInsets = { top: 0, right: 0, bottom: 0, left: 0 };
   });
 
   afterEach(() => {
@@ -53,6 +55,25 @@ describe('NativeActionMenu', () => {
     ]) {
       expect(getByLabelText(label)).toBeTruthy();
     }
+  });
+
+  it('uses a full-parent native gradient instead of a percentage-sized SVG background', () => {
+    const { getByTestId } = render(
+      <NativeActionMenu
+        assetBaseUrl="https://pokegonexus.com"
+        onClose={jest.fn()}
+        onNavigate={jest.fn()}
+        visible
+      />,
+    );
+
+    expect(getByTestId('native-action-menu-background').props.colors).toHaveLength(2);
+    expect(StyleSheet.flatten(getByTestId('native-action-menu-background').props.style)).toMatchObject({
+      bottom: 0,
+      left: 0,
+      right: 0,
+      top: 0,
+    });
   });
 
   it('routes corner actions and reverses the fan before closing', () => {
@@ -151,6 +172,25 @@ describe('NativeActionMenu', () => {
       height: 50,
       width: 50,
     });
+  });
+
+  it('honors real top and bottom safe-area insets for every edge control', () => {
+    mockSafeAreaInsets = { top: 42, right: 0, bottom: 34, left: 0 };
+    const { getByLabelText, getByTestId } = render(
+      <NativeActionMenu
+        assetBaseUrl="https://pokegonexus.com"
+        onClose={jest.fn()}
+        onNavigate={jest.fn()}
+        signedIn
+        visible
+      />,
+    );
+
+    expect(StyleSheet.flatten(getByLabelText('Share Trade Board').props.style).top).toBe(42);
+    expect(StyleSheet.flatten(getByTestId('native-action-menu-settings-cluster').props.style).top).toBe(42);
+    expect(StyleSheet.flatten(getByLabelText('Profile').props.style).bottom).toBe(34);
+    expect(StyleSheet.flatten(getByTestId('native-action-menu-support-cluster').props.style).bottom).toBe(34);
+    expect(StyleSheet.flatten(getByTestId('native-action-menu-close').props.style).bottom).toBe(34);
   });
 
   it('uses the canonical full-width mobile support panel and distinct support glyphs', () => {

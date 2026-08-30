@@ -22,6 +22,7 @@ smoke_flow="${POKEGONEXUS_SMOKE_FLOW:-.maestro/native-collection-smoke.yaml}"
 smoke_density="${POKEGONEXUS_SMOKE_DENSITY:-520}"
 smoke_font_scale="${POKEGONEXUS_SMOKE_FONT_SCALE:-1.0}"
 smoke_reduce_motion="${POKEGONEXUS_SMOKE_REDUCE_MOTION:-false}"
+smoke_memory_mb="${POKEGONEXUS_SMOKE_MEMORY_MB:-2048}"
 smoke_runtime="${POKEGONEXUS_SMOKE_RUNTIME:-dev-client}"
 smoke_network="${POKEGONEXUS_SMOKE_NETWORK:-online}"
 metro_pid=""
@@ -87,12 +88,16 @@ for required in "${adb_bin}" "${emulator_bin}" "${java_home}/bin/java" "${maestr
     exit 1
   fi
 done
-for required_command in curl npx python3 setsid; do
+for required_command in curl nice npx python3 setsid; do
   if ! command -v "${required_command}" >/dev/null 2>&1; then
     echo "Missing Android smoke command: ${required_command}" >&2
     exit 1
   fi
 done
+if [[ ! "${smoke_memory_mb}" =~ ^[0-9]+$ ]] || (( smoke_memory_mb < 1536 )); then
+  echo "POKEGONEXUS_SMOKE_MEMORY_MB must be an integer of at least 1536." >&2
+  exit 1
+fi
 
 export ANDROID_HOME="${android_sdk_root}"
 export ANDROID_SDK_ROOT="${android_sdk_root}"
@@ -146,6 +151,12 @@ if [[ -n "${provided_android_apk}" ]]; then
     exit 1
   fi
 else
+  active_build_emulator="$(${adb_bin} devices | awk '/^emulator-[0-9]+[[:space:]]+device/ { print $1; exit }')"
+  if [[ -n "${active_build_emulator}" ]]; then
+    echo "Refusing to run Gradle while Android emulator ${active_build_emulator} is active." >&2
+    echo "Stop the emulator first, or pass POKEGONEXUS_ANDROID_APK to reuse an already-built APK." >&2
+    exit 1
+  fi
   if [[ "${smoke_runtime}" == "standalone" ]]; then
     node_environment="production"
     gradle_task="app:assembleRelease"
@@ -156,20 +167,33 @@ else
     apk_variant="debug"
   fi
   echo "Synchronizing the Android native project and ${smoke_runtime} APK."
-  env \
+  if ! env \
     NODE_ENV="${node_environment}" \
     EXPO_PUBLIC_MOBILE_EXPERIENCE=native-preview \
     EXPO_PUBLIC_DEVICE_SMOKE_MODE=true \
     EXPO_PUBLIC_DEVICE_SMOKE_COLOR_SCHEME="${color_scheme}" \
     CI=1 \
-    npx expo prebuild --platform android --no-install
-  env \
+    nice -n 10 npx expo prebuild --platform android --no-install \
+      >"${artifact_dir}/expo-prebuild.log" 2>&1; then
+    echo "Expo prebuild failed. Last output:" >&2
+    tail -120 "${artifact_dir}/expo-prebuild.log" >&2
+    exit 1
+  fi
+  if ! env \
     NODE_ENV="${node_environment}" \
     EXPO_PUBLIC_MOBILE_EXPERIENCE=native-preview \
     EXPO_PUBLIC_DEVICE_SMOKE_MODE=true \
     EXPO_PUBLIC_DEVICE_SMOKE_COLOR_SCHEME="${color_scheme}" \
     CI=1 \
-    ./android/gradlew -p android "${gradle_task}" -PreactNativeArchitectures=x86_64
+    nice -n 10 ./android/gradlew -p android "${gradle_task}" \
+      -PreactNativeArchitectures=x86_64 \
+      --no-daemon \
+      --max-workers=2 \
+      >"${artifact_dir}/gradle-build.log" 2>&1; then
+    echo "Android build failed. Last output:" >&2
+    tail -160 "${artifact_dir}/gradle-build.log" >&2
+    exit 1
+  fi
   android_apk="${mobile_directory}/android/app/build/outputs/apk/${apk_variant}/app-${apk_variant}.apk"
 fi
 if [[ ! -f "${android_apk}" ]]; then
@@ -181,6 +205,7 @@ device_id="$(${adb_bin} devices | awk '/^emulator-[0-9]+[[:space:]]+device/ { pr
 if [[ -z "${device_id}" ]]; then
   nohup "${emulator_bin}" \
     -avd "${avd_name}" \
+    -memory "${smoke_memory_mb}" \
     -no-snapshot-load \
     -no-boot-anim \
     -no-audio \
@@ -440,6 +465,18 @@ else
     run_maestro_flow "${smoke_flow}" "${flow_name}-retry"
   fi
 fi
+
+mapfile -t full_window_gradient_screenshots < <(
+  find "${artifact_dir}/maestro" \
+    -type f \
+    -path '*/takeScreenshot/*' \
+    \( -iname '*action-menu*.png' -o -iname '*sort-menu*.png' \) \
+    | sort
+)
+for full_window_gradient_screenshot in "${full_window_gradient_screenshots[@]}"; do
+  node "${mobile_directory}/scripts/assert-native-action-menu-window.mjs" \
+    "${full_window_gradient_screenshot}"
+done
 
 "${adb_bin}" -s "${device_id}" exec-out screencap -p >"${artifact_dir}/final-screen.png"
 echo "Android device smoke passed. Artifacts: ${artifact_dir}"

@@ -9,6 +9,7 @@ import {
   View,
 } from 'react-native';
 import { useMemo, useState } from 'react';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import type { NativeCollectionRow } from '../collection/collectionModel';
 import { NativePokemonLocationBackdrop } from '../collection/parity/NativePokemonLocationBackdrop';
 import { useNativeModalAnimation } from '../settings/useNativeMotion';
@@ -57,7 +58,11 @@ export const NativeTrainerShowcasePicker = ({
       presentationStyle="fullScreen"
       visible={visible}
     >
-      <View style={[styles.screen, light && styles.screenLight]}>
+      <SafeAreaView
+        edges={['top', 'bottom']}
+        style={[styles.screen, light && styles.screenLight]}
+        testID="native-trainer-showcase-picker"
+      >
         <View style={[styles.header, light && styles.dividerLight]}>
           <View style={styles.headerCopy}>
             <Text style={styles.eyebrow}>PROFILE SHOWCASE · SLOT {slotIndex + 1}</Text>
@@ -137,7 +142,7 @@ export const NativeTrainerShowcasePicker = ({
             </View>
           ) : null}
         </ScrollView>
-      </View>
+      </SafeAreaView>
     </Modal>
   );
 };

@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Animated, Image, Modal, Pressable, StyleSheet, Text, View } from 'react-native';
-import Svg, { Defs, LinearGradient, Rect, Stop } from 'react-native-svg';
+import { LinearGradient } from 'expo-linear-gradient';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { NativeCollectionSort, NativeCollectionSortDirection } from '../collectionModel';
 import { useOptionalNativeDevicePreferences } from '../../settings/NativeDevicePreferencesProvider';
 import { useNativeColorScheme } from '../../settings/useNativeColorScheme';
@@ -25,17 +26,14 @@ const toAssetUrl = (baseUrl: string, path: string): string => (
 );
 
 const SortBackdrop = ({ light }: { light: boolean }) => (
-  <View pointerEvents="none" style={StyleSheet.absoluteFill}>
-    <Svg height="100%" width="100%">
-      <Defs>
-        <LinearGradient id="sort-menu-gradient" x1="0%" x2="100%" y1="0%" y2="100%">
-          <Stop offset="0%" stopColor={light ? '#e0f0e5' : '#111111'} />
-          <Stop offset="100%" stopColor="#34807d" />
-        </LinearGradient>
-      </Defs>
-      <Rect fill="url(#sort-menu-gradient)" height="100%" width="100%" />
-    </Svg>
-  </View>
+  <LinearGradient
+    colors={[light ? '#e0f0e5' : '#111111', '#34807d']}
+    end={{ x: 1, y: 1 }}
+    pointerEvents="none"
+    start={{ x: 0, y: 0 }}
+    style={StyleSheet.absoluteFill}
+    testID="native-collection-sort-menu-background"
+  />
 );
 
 export const NativeCollectionSortMenu = ({
@@ -54,6 +52,7 @@ export const NativeCollectionSortMenu = ({
   sort: NativeCollectionSort;
 }) => {
   const light = useNativeColorScheme() === 'light';
+  const insets = useSafeAreaInsets();
   const reduceMotion = useOptionalNativeDevicePreferences()?.shouldReduceMotion ?? false;
   const [progress] = useState(() => new Animated.Value(0));
 
@@ -78,12 +77,18 @@ export const NativeCollectionSortMenu = ({
   return (
     <Modal
       animationType={reduceMotion ? 'none' : 'fade'}
+      navigationBarTranslucent
       onRequestClose={onClose}
+      presentationStyle="overFullScreen"
       statusBarTranslucent
       transparent
       visible={open}
     >
-      <View accessibilityViewIsModal style={styles.overlay}>
+      <View
+        accessibilityViewIsModal
+        style={[styles.overlay, { backgroundColor: light ? '#e0f0e5' : '#111111' }]}
+        testID="native-collection-sort-menu"
+      >
         <SortBackdrop light={light} />
         <View accessibilityLabel="Sort Pokémon" style={styles.optionList}>
           {NATIVE_SORT_OPTIONS.map((option, index) => {
@@ -137,7 +142,11 @@ export const NativeCollectionSortMenu = ({
           accessibilityLabel="Close sort menu"
           accessibilityRole="button"
           onPress={onClose}
-          style={({ pressed }) => [styles.closeButton, pressed && styles.pressed]}
+          style={({ pressed }) => [
+            styles.closeButton,
+            { bottom: Math.max(18, insets.bottom) },
+            pressed && styles.pressed,
+          ]}
         >
           <Text style={styles.closeText}>×</Text>
         </Pressable>

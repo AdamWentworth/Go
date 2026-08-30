@@ -12,6 +12,7 @@ import {
   TextInput,
   View,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useEffect, useMemo, useState } from 'react';
 import {
   NativeOptionPicker,
@@ -623,7 +624,11 @@ export const NativePokemonSearchFilterSheet = ({
 
   return (
     <Modal animationType={animationType} hardwareAccelerated onRequestClose={onClose} presentationStyle="fullScreen" visible={visible}>
-      <View style={[styles.screen, light && styles.screenLight]} testID="native-pokemon-search-filter-sheet">
+      <SafeAreaView
+        edges={['top', 'bottom']}
+        style={[styles.screen, light && styles.screenLight]}
+        testID="native-pokemon-search-filter-sheet"
+      >
         <View style={[styles.header, light && styles.headerLight]}>
           <View style={styles.headerCopy}>
             <View style={styles.eyebrowRow}>
@@ -665,7 +670,7 @@ export const NativePokemonSearchFilterSheet = ({
             visible
           />
         ) : null}
-      </View>
+      </SafeAreaView>
     </Modal>
   );
 };

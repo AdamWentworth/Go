@@ -22,10 +22,10 @@ tags:
 - extendedWaitUntil:
     visible: YOUR TRAINER CARD
     timeout: 45000
-- assertVisible: AdamGo
-- assertVisible: "@AdamZilla"
-- assertVisible: Shiny Gigantamax Charizard
-- assertVisible: Armored Mewtwo
+- assertVisible: NexusDemo
+- assertVisible: "@NexusDemo"
+- assertVisible: League Ace
+- assertVisible: Mewtwo
 - takeScreenshot: native-trainer-profile-initial
 - tapOn: Edit
 - scrollUntilVisible:
@@ -41,7 +41,7 @@ tags:
 - assertVisible: POKÉMON GO NAME
 - tapOn: Pokémon GO name
 - eraseText: 20
-- inputText: AdamGoUpdated
+- inputText: NexusGoUpdated
 - hideKeyboard
 - takeScreenshot: native-trainer-profile-editor
 - scrollUntilVisible:
@@ -66,17 +66,17 @@ tags:
 - assertVisible: Profile updated.
 - scrollUntilVisible:
     element:
-      text: AdamGoUpdated
+      text: NexusGoUpdated
     direction: UP
     timeout: 10000
-- assertVisible: AdamGoUpdated
+- assertVisible: NexusGoUpdated
 - scrollUntilVisible:
     element:
-      text: Shiny Hunter
+      text: Lucky Trader
     direction: DOWN
     timeout: 10000
-- assertVisible: Shiny Hunter
 - assertVisible: Lucky Trader
+- assertVisible: Kanto Collector
 - scrollUntilVisible:
     element:
       text: View Pokémon

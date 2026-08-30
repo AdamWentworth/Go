@@ -25,13 +25,7 @@ tags:
 - assertVisible: ".*Pokémon.*"
 - assertVisible: ".*Trainers.*"
 - assertVisible: Shiny Pikachu
-- scrollUntilVisible:
-    element:
-      text: MUTUAL MATCH
-    direction: DOWN
-    timeout: 10000
-- assertVisible: MUTUAL MATCH
-- assertVisible: Gigantamax Charizard
+- assertVisible: Open listing.*
 - takeScreenshot: search-01-results
 - scrollUntilVisible:
     element:
@@ -46,13 +40,13 @@ tags:
     visible:
       id: native-search-maplibre
     timeout: 30000
-- assertVisible: "1 on map"
+- assertVisible: "3 on map"
 - scrollUntilVisible:
     element:
-      text: "OtherTrainer"
+      text: "HarbourMew"
     direction: DOWN
     timeout: 10000
-- assertVisible: "OtherTrainer"
+- assertVisible: "HarbourMew"
 - takeScreenshot: search-01b-map
 - scrollUntilVisible:
     element:
