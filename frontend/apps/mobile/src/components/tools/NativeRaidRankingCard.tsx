@@ -56,10 +56,10 @@ export const NativeRaidRankingCard = ({ assetBaseUrl, entry, expanded, onOpenPok
         <View style={styles.copy}>
           <Text numberOfLines={1} style={[styles.name, light && styles.textLight]}>{entry.name}</Text>
           <Text numberOfLines={1} style={[styles.types, light && styles.mutedLight]}>{entry.types.join(' / ') || 'Unknown type'}</Text>
-          {entry.rosterDetail ? <Text numberOfLines={1} style={styles.roster}>{entry.rosterDetail}</Text> : null}
+          {entry.rosterDetail ? <Text numberOfLines={1} style={[styles.roster, light && styles.accentLight]}>{entry.rosterDetail}</Text> : null}
         </View>
         <View style={styles.primaryMetric}>
-          <Text style={styles.metricLabel}>{primaryLabel}</Text>
+          <Text style={[styles.metricLabel, light && styles.accentLight]}>{primaryLabel}</Text>
           <Text style={[styles.metricValue, light && styles.textLight]}>{primaryValue}</Text>
           {counter ? <Text style={[styles.trainers, light && styles.mutedLight]}>{counter.trainersNeeded} trainer{counter.trainersNeeded === 1 ? '' : 's'}</Text> : null}
           <Text style={[styles.expandHint, light && styles.mutedLight]}>{expanded ? '⌃' : '⌄'}</Text>
@@ -114,4 +114,5 @@ const styles = StyleSheet.create({
   openButtonText: { color: '#fff', fontSize: 9, fontWeight: '900' },
   textLight: { color: '#142629' },
   mutedLight: { color: '#657879' },
+  accentLight: { color: '#08766b' },
 });

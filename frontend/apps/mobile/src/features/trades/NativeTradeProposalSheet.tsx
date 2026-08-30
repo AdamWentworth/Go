@@ -78,7 +78,7 @@ const PokemonProposalCard = ({
       adjustsFontSizeToFit
       minimumFontScale={0.72}
       numberOfLines={1}
-      style={styles.partyLabel}
+      style={[styles.partyLabel, light && styles.accentLight]}
     >
       {label}
     </Text>
@@ -174,6 +174,7 @@ const FriendshipPicker = ({
         accessibilityLabel={friendshipLevel === 5
           ? 'Remote trade available'
           : 'Remote trade unlocks at five hearts'}
+        accessibilityRole="image"
         style={[styles.conditionIconButton, friendshipLevel < 5 && styles.conditionInactive]}
       >
         <Image
@@ -343,7 +344,7 @@ export const NativeTradeProposalSheet = ({
               </View>
             ) : committedTradeId ? (
               <View style={styles.successPanel}>
-                <Text style={styles.eyebrow}>TRADE PROPOSAL SENT</Text>
+                <Text style={[styles.eyebrow, light && styles.accentLight]}>TRADE PROPOSAL SENT</Text>
                 <Text style={[styles.title, light && styles.textLight]}>Proposal committed</Text>
                 <Text style={[styles.body, light && styles.secondaryLight]}>
                   {partnerUsername} can now review your offer. Trade #{committedTradeId.slice(0, 8)} is in Trade Activity.
@@ -354,7 +355,7 @@ export const NativeTradeProposalSheet = ({
               </View>
             ) : selection.kind === 'needsTradeSelection' ? (
               <>
-                <Text style={styles.eyebrow}>PREPARE YOUR OFFER</Text>
+                <Text style={[styles.eyebrow, light && styles.accentLight]}>PREPARE YOUR OFFER</Text>
                 <Text style={[styles.title, light && styles.textLight]}>Choose a caught copy</Text>
                 <Text style={[styles.body, light && styles.secondaryLight]}>
                   This Pokémon is caught but not listed For Trade. Pick the exact copy to list before proposing.
@@ -402,7 +403,7 @@ export const NativeTradeProposalSheet = ({
               </View>
             ) : selection.kind === 'proposalReady' && selectedOffer ? (
               <>
-                <Text style={[styles.eyebrow, styles.centeredEyebrow]}>TRADE PROPOSAL</Text>
+                <Text style={[styles.eyebrow, styles.centeredEyebrow, light && styles.accentLight]}>TRADE PROPOSAL</Text>
                 <Text style={[styles.title, light && styles.textLight]}>Review the exchange</Text>
                 <Text style={[styles.body, light && styles.secondaryLight]}>
                   Set friendship details, confirm both Pokémon, then send the proposal.
@@ -479,7 +480,7 @@ export const NativeTradeProposalSheet = ({
                 ) : null}
                 <View style={styles.actionRow}>
                   <View style={styles.costBlock}>
-                    <Text style={styles.eyebrow}>ESTIMATED COST</Text>
+                    <Text style={[styles.eyebrow, light && styles.accentLight]}>ESTIMATED COST</Text>
                     <View style={styles.costLine}>
                       <Text style={[styles.cost, light && styles.textLight]}>
                         {(tradeTerms?.stardustCost ?? 0).toLocaleString()} Stardust
@@ -550,6 +551,7 @@ const styles = StyleSheet.create({
   closeText: { color: '#ffffff', fontSize: 30, lineHeight: 32, fontWeight: '500' },
   controlLight: { backgroundColor: '#ffffff', borderColor: '#96aaa4' },
   eyebrow: { color: '#63d6a1', fontSize: 11, fontWeight: '900', letterSpacing: 1.2 },
+  accentLight: { color: '#087454' },
   centeredEyebrow: { textAlign: 'center' },
   title: { paddingHorizontal: 48, color: '#f4fbf8', fontSize: 25, lineHeight: 30, fontWeight: '900', textAlign: 'center' },
   body: { color: '#b7c9c9', fontSize: 13, lineHeight: 18, textAlign: 'center' },

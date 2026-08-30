@@ -301,7 +301,13 @@ const backgroundPath = (
 const STATUS = {
   caught: { accent: '#58c7eb', label: null },
   trade: { accent: '#53d39a', label: 'FOR TRADE' },
-  wanted: { accent: '#ff617d', label: 'WANTED' },
+  wanted: { accent: '#ff7189', label: 'WANTED' },
+} as const;
+
+const LIGHT_STATUS = {
+  caught: { accent: '#005bb5', label: null },
+  trade: { accent: '#087454', label: 'FOR TRADE' },
+  wanted: { accent: '#b0003b', label: 'WANTED' },
 } as const;
 
 const LevelArc = ({ level }: { level: number }) => {
@@ -340,6 +346,7 @@ const FriendshipConditions = ({
   canPickBackground,
   onOpenBackground,
   canEdit,
+  accent,
 }: {
   assetBaseUrl: string;
   detail: NativeInstanceDetail;
@@ -351,6 +358,7 @@ const FriendshipConditions = ({
   canPickBackground: boolean;
   onOpenBackground: () => void;
   canEdit: boolean;
+  accent: string;
 }) => {
   const friendship = editing ? draft.friendship : friendshipLevelFor(detail);
   const luckyRequested = editing
@@ -377,7 +385,7 @@ const FriendshipConditions = ({
           </Pressable>
         ) : null}
         <View style={styles.conditionsHeadingCopy}>
-          <Text style={styles.conditionsTitle}>WANTED CONDITIONS</Text>
+          <Text style={[styles.conditionsTitle, { color: accent }]}>WANTED CONDITIONS</Text>
           <Text style={[styles.conditionsSubtitle, { color: palette.secondary }]}>Friendship and eligibility</Text>
         </View>
         {editing && canPickBackground ? (
@@ -397,7 +405,7 @@ const FriendshipConditions = ({
         ) : null}
         <Pressable
           accessibilityLabel={mostWanted ? 'Remove Most Wanted' : 'Mark as Most Wanted'}
-          accessibilityRole={editing ? 'button' : undefined}
+          accessibilityRole="button"
           disabled={!editing}
           onPress={() => onDraftChange({ mostWanted: !mostWanted })}
           style={[styles.priorityBadge, mostWanted && styles.priorityBadgeActive]}
@@ -416,7 +424,7 @@ const FriendshipConditions = ({
           {Array.from({ length: 5 }, (_, index) => (
             <Pressable
               accessibilityLabel={`Set friendship to ${index + 1} hearts`}
-              accessibilityRole={editing ? 'button' : undefined}
+              accessibilityRole="button"
               disabled={!editing}
               key={index}
               onPress={() => onDraftChange({ friendship: index + 1 })}
@@ -437,7 +445,7 @@ const FriendshipConditions = ({
         </View>
         <Pressable
           accessibilityLabel={luckyRequested ? 'Lucky trade requested' : 'Lucky trade not requested'}
-          accessibilityRole={editing ? 'button' : undefined}
+          accessibilityRole="button"
           disabled={!editing}
           onPress={() => onDraftChange({ prefLucky: !luckyRequested })}
         >
@@ -595,7 +603,7 @@ const TargetSummary = ({
           onPress={onEdit}
           style={[
             styles.editPreferencesButton,
-            { backgroundColor: detail.row.status === 'wanted' ? '#873e50' : '#258758' },
+            { backgroundColor: detail.row.status === 'wanted' ? '#873e50' : '#20764c' },
           ]}
         >
           <Text style={styles.editPreferencesText}>Edit preferences</Text>
@@ -1964,7 +1972,7 @@ export const NativeInstanceDetailScreen = ({
   }
 
   const instance = detail.instance;
-  const status = STATUS[detail.row.status];
+  const status = (light ? LIGHT_STATUS : STATUS)[detail.row.status];
   const isCaught = detail.row.status === 'caught';
   const isTrade = detail.row.status === 'trade';
   const isWanted = detail.row.status === 'wanted';
@@ -2239,6 +2247,7 @@ export const NativeInstanceDetailScreen = ({
 
           {isWanted ? (
             <FriendshipConditions
+              accent={status.accent}
               assetBaseUrl={assetBaseUrl}
               detail={detail}
               draft={activeDraft}
@@ -2481,24 +2490,34 @@ export const NativeInstanceDetailScreen = ({
 
             {!editing && !isWanted && detail.ivs.length ? (
               <View style={[styles.section, { borderTopColor: palette.divider }]}>
-                {detail.ivs.map((iv) => (
+                {detail.ivs.map((iv) => {
+                  const full = iv.value >= 15;
+                  const ivTextColor = full
+                    ? light ? '#9b2e2e' : '#ef8582'
+                    : light ? '#8a4b00' : '#ef9219';
+                  return (
                   <View key={iv.label} style={styles.ivRow}>
                     <Text
                       adjustsFontSizeToFit
                       minimumFontScale={0.9}
                       numberOfLines={1}
-                      style={styles.ivLabel}
+                      style={[styles.ivLabel, { color: ivTextColor }]}
                     >
                       {iv.label}
                     </Text>
                     <View style={[styles.ivTrack, { backgroundColor: palette.track }]}>
-                      <View style={[styles.ivFill, { width: `${Math.max(0, Math.min(15, iv.value)) / 15 * 100}%` }]} />
+                      <View style={[
+                        styles.ivFill,
+                        full && styles.ivFillFull,
+                        { width: `${Math.max(0, Math.min(15, iv.value)) / 15 * 100}%` },
+                      ]} />
                       <View style={styles.ivThird} />
                       <View style={styles.ivTwoThirds} />
                     </View>
-                    <Text style={styles.ivNumber}>{iv.value}</Text>
+                    <Text style={[styles.ivNumber, { color: ivTextColor }]}>{iv.value}</Text>
                   </View>
-                ))}
+                  );
+                })}
               </View>
             ) : null}
 
@@ -2810,11 +2829,11 @@ const styles = StyleSheet.create({
     gap: 4,
     paddingHorizontal: 6,
     borderRadius: 12,
-    backgroundColor: '#f2b84b',
+    backgroundColor: '#f4be5c',
   },
   caughtDateBall: { width: 19, height: 19 },
-  caughtDateYear: { color: '#ffffff', fontSize: 12, lineHeight: 13, fontWeight: '900', textAlign: 'center' },
-  caughtDateDay: { color: '#ffffff', fontSize: 10, lineHeight: 11, fontWeight: '800', textAlign: 'center' },
+  caughtDateYear: { color: '#422b00', fontSize: 12, lineHeight: 13, fontWeight: '900', textAlign: 'center' },
+  caughtDateDay: { color: '#422b00', fontSize: 10, lineHeight: 11, fontWeight: '800', textAlign: 'center' },
   statusEyebrow: { marginBottom: 4, fontSize: 12, fontWeight: '900', letterSpacing: 1.7 },
   name: { maxWidth: '92%', fontSize: 32, lineHeight: 35, fontWeight: '500', textAlign: 'center' },
   megaEligibility: {
@@ -2829,7 +2848,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#319779',
   },
   megaEligibilityIcon: { width: 22, height: 22 },
-  megaEligibilityText: { color: '#c3eadb', fontSize: 11, fontWeight: '900', letterSpacing: 0.5 },
+  megaEligibilityText: { color: '#061f17', fontSize: 11, fontWeight: '900', letterSpacing: 0.5 },
   editFields: { width: '94%', gap: 14, paddingTop: 3 },
   editFieldGroup: { width: '100%', gap: 6 },
   editFieldLabel: { fontSize: 10, fontWeight: '900', letterSpacing: 1.1 },
@@ -3053,12 +3072,13 @@ const styles = StyleSheet.create({
   detailValue: { minWidth: 0, flex: 1, fontSize: 16, fontWeight: '800', textAlign: 'right' },
   warningText: { color: '#ffd18a', paddingHorizontal: 8, lineHeight: 19 },
   ivRow: { minHeight: 34, flexDirection: 'row', alignItems: 'center', gap: 7, paddingHorizontal: 4 },
-  ivLabel: { width: 82, color: '#ff9700', fontSize: 16, fontWeight: '700' },
+  ivLabel: { width: 82, fontSize: 16, fontWeight: '700' },
   ivTrack: { flex: 1, height: 14, overflow: 'hidden', borderRadius: 7 },
   ivFill: { position: 'absolute', left: 0, top: 0, bottom: 0, borderRadius: 7, backgroundColor: '#ff9d23' },
+  ivFillFull: { backgroundColor: '#d96562' },
   ivThird: { position: 'absolute', left: '33.333%', width: 2, top: 0, bottom: 0, backgroundColor: '#ffffff' },
   ivTwoThirds: { position: 'absolute', left: '66.666%', width: 2, top: 0, bottom: 0, backgroundColor: '#ffffff' },
-  ivNumber: { width: 24, color: '#ff9700', fontSize: 16, textAlign: 'right' },
+  ivNumber: { width: 24, fontSize: 16, textAlign: 'right' },
   preferencePanel: { width: '94%', marginTop: 14, gap: 4, padding: 10, borderWidth: 1, borderRadius: 12 },
   preferenceTitle: { fontSize: 11, fontWeight: '900', letterSpacing: 1.3 },
   metaPanel: { width: '94%', marginTop: 14, paddingVertical: 8, borderRadius: 10 },

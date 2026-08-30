@@ -3,6 +3,7 @@ import { createReadStream, existsSync, mkdirSync, readFileSync } from 'node:fs';
 import { createServer } from 'node:http';
 import { dirname, extname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { AxeBuilder } from '@axe-core/playwright';
 import { chromium } from 'playwright';
 
 const scriptDirectory = dirname(fileURLToPath(import.meta.url));
@@ -226,6 +227,25 @@ const assertAccessibleControlState = async (page, route) => {
   }
 };
 
+const assertWcagAccessibility = async (page, route) => {
+  const results = await new AxeBuilder({ page })
+    .withTags(['wcag2a', 'wcag2aa', 'wcag21aa', 'wcag22aa'])
+    .analyze();
+  const blocking = results.violations.filter(({ id, impact }) => (
+    impact === 'serious'
+    || impact === 'critical'
+    || id === 'target-size'
+  ));
+  if (blocking.length === 0) return;
+  const details = blocking.map((violation) => {
+    const nodes = violation.nodes.slice(0, 4).map((node) => (
+      `    ${node.target.join(' ')}: ${node.failureSummary ?? 'Rule failed'}\n      ${node.html}`
+    ));
+    return `- ${violation.id} (${violation.impact ?? 'unknown'}): ${violation.help}\n${nodes.join('\n')}`;
+  });
+  throw new Error(`${route} failed WCAG accessibility checks:\n${details.join('\n')}`);
+};
+
 const trackPageFailures = (page, errors) => {
   const trackedResourceTypes = ['fetch', 'font', 'image', 'script', 'stylesheet', 'xhr'];
   page.on('console', (message) => {
@@ -274,7 +294,9 @@ const run = async () => {
         if (await root.count() !== 1) {
           throw new Error(`${route} did not render ${testId}; current URL is ${page.url()}`);
         }
+        assertNoRuntimeErrors(route, errors);
         await assertAccessibleControlState(page, route);
+        await assertWcagAccessibility(page, route);
         const overflow = await page.evaluate(() => Math.max(
           document.documentElement.scrollWidth,
           document.body?.scrollWidth ?? 0,
@@ -814,6 +836,7 @@ const run = async () => {
         });
         await page.getByTestId(testId).waitFor({ state: 'visible', timeout: 15_000 });
         await assertAccessibleControlState(page, `narrow:${route}`);
+        await assertWcagAccessibility(page, `narrow:${route}`);
         const overflow = await page.evaluate(() => Math.max(
           document.documentElement.scrollWidth,
           document.body?.scrollWidth ?? 0,
@@ -833,7 +856,7 @@ const run = async () => {
     for (const colorScheme of ['dark', 'light']) {
       const context = await browser.newContext({
         colorScheme,
-        viewport: { width: 1440, height: 1000 },
+        viewport: { width: 1440, height: 900 },
       });
       await installAssetRoutes(context);
       for (const [route, testId] of desktopRouteCases.filter(([route]) => routeMatches(route))) {
@@ -847,6 +870,7 @@ const run = async () => {
         const root = page.getByTestId(testId);
         await root.waitFor({ state: 'visible', timeout: 15_000 });
         await assertAccessibleControlState(page, `desktop:${route}`);
+        await assertWcagAccessibility(page, `desktop:${route}`);
         const overflow = await page.evaluate(() => Math.max(
           document.documentElement.scrollWidth,
           document.body?.scrollWidth ?? 0,

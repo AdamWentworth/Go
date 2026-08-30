@@ -6,7 +6,6 @@ import {
   ScrollView,
   StyleSheet,
   Text,
-  TextInput,
   View,
   useWindowDimensions,
 } from 'react-native';
@@ -63,6 +62,13 @@ const TEAM_COLORS = {
   valor: { accent: '#ff6f74', soft: '#4a2429' },
   instinct: { accent: '#f2c94c', soft: '#463d1f' },
   neutral: { accent: '#42d7c6', soft: '#173739' },
+} as const;
+
+const LIGHT_TEAM_COLORS = {
+  mystic: { accent: '#005bb5', soft: '#18374f' },
+  valor: { accent: '#b00020', soft: '#4a2429' },
+  instinct: { accent: '#7a5700', soft: '#463d1f' },
+  neutral: { accent: '#006a61', soft: '#173739' },
 } as const;
 
 const relationshipLabel = (relationship: NativeTrainerProfileModel['relationship']): string | null => ({
@@ -136,8 +142,6 @@ export const NativeTrainerProfileScreen = ({
   const [editingHighlightSlot, setEditingHighlightSlot] = useState<number | null>(null);
 
   const clearTextInputFocus = () => {
-    const focusedInput = TextInput.State.currentlyFocusedInput();
-    if (focusedInput) TextInput.State.blurTextInput(focusedInput);
     Keyboard.dismiss();
   };
 
@@ -171,7 +175,7 @@ export const NativeTrainerProfileScreen = ({
     );
   }
 
-  const team = TEAM_COLORS[model.team];
+  const team = (light ? LIGHT_TEAM_COLORS : TEAM_COLORS)[model.team];
   const relationship = relationshipLabel(model.relationship);
   const relationshipAction = model.relationship === 'none'
     ? { action: 'add' as const, label: 'Add friend', tone: 'primary' as const }
@@ -270,7 +274,7 @@ export const NativeTrainerProfileScreen = ({
           </Pressable>
         ) : null}
         <View style={styles.productHeaderCopy}>
-          <Text style={styles.eyebrow}>{isOwner ? 'YOUR TRAINER CARD' : 'TRAINER PROFILE'}</Text>
+          <Text style={[styles.eyebrow, light && styles.eyebrowLight]}>{isOwner ? 'YOUR TRAINER CARD' : 'TRAINER PROFILE'}</Text>
           <Text numberOfLines={1} style={[styles.pageTitle, light && styles.textLight]}>{model.username}</Text>
           {!compactHeader ? (
             <Text style={[styles.pageSubtitle, light && styles.mutedLight]}>
@@ -355,8 +359,8 @@ export const NativeTrainerProfileScreen = ({
                 <Text style={styles.portraitText}>{model.avatarLabel}</Text>
               </View>
               <View style={[styles.levelBadge, { backgroundColor: team.accent }, light && styles.levelBadgeLight]}>
-                <Text style={styles.levelLabel}>LEVEL</Text>
-                <Text style={styles.levelValue}>{model.trainerLevel ?? '–'}</Text>
+                <Text style={[styles.levelLabel, light && styles.primaryButtonTextLight]}>LEVEL</Text>
+                <Text style={[styles.levelValue, light && styles.primaryButtonTextLight]}>{model.trainerLevel ?? '–'}</Text>
               </View>
             </View>
             <View style={styles.identityCopy}>
@@ -376,7 +380,7 @@ export const NativeTrainerProfileScreen = ({
         <View style={styles.cardBody}>
           <View style={[styles.cardHeading, light && styles.dividerLight]}>
             <View>
-              <Text style={styles.eyebrow}>POKÉMON GO NEXUS</Text>
+              <Text style={[styles.eyebrow, light && styles.eyebrowLight]}>POKÉMON GO NEXUS</Text>
               <Text style={[styles.sectionTitle, light && styles.textLight]}>Trainer card</Text>
             </View>
             <View style={styles.memberBlock}>
@@ -507,7 +511,7 @@ export const NativeTrainerProfileScreen = ({
 
           <View style={styles.footer}>
             <View style={styles.titlesBlock}>
-              <Text style={styles.eyebrow}>PLAY STYLES</Text>
+              <Text style={[styles.eyebrow, light && styles.eyebrowLight]}>PLAY STYLES</Text>
               <View style={styles.titles}>
                 {model.titles.length ? model.titles.map((title) => (
                   <View key={title.id} style={[styles.titleBadge, light && styles.titleBadgeLight, { borderColor: `${team.accent}88` }]}>
@@ -526,7 +530,7 @@ export const NativeTrainerProfileScreen = ({
 
           {model.canViewCollection ? (
             <Pressable accessibilityRole="button" onPress={() => onOpenCollection()} style={[styles.primaryButton, { backgroundColor: team.accent }]}>
-              <Text style={styles.primaryButtonText}>View Pokémon</Text>
+              <Text style={[styles.primaryButtonText, light && styles.primaryButtonTextLight]}>View Pokémon</Text>
             </Pressable>
           ) : null}
           {!isOwner && model.relationship !== 'blocked' && onRelationshipAction ? (
@@ -586,6 +590,7 @@ const styles = StyleSheet.create({
   headerActionSecondary: { borderWidth: 1, borderColor: '#536467', backgroundColor: '#171c1d' },
   headerActionText: { color: '#ffffff', fontSize: 12, fontWeight: '900' },
   eyebrow: { color: '#35a8ff', fontSize: 11, lineHeight: 15, fontWeight: '900', letterSpacing: 1.3 },
+  eyebrowLight: { color: '#005bb5' },
   pageTitle: { color: '#f7fbfa', fontSize: 28, lineHeight: 34, fontWeight: '900' },
   pageSubtitle: { maxWidth: 620, color: '#9db5b4', fontSize: 13, lineHeight: 19 },
   backButton: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: '#315052', borderRadius: 10, backgroundColor: '#171c1d' },
@@ -669,6 +674,7 @@ const styles = StyleSheet.create({
   relationshipText: { fontSize: 11, fontWeight: '900' },
   primaryButton: { minHeight: 48, alignItems: 'center', justifyContent: 'center', marginTop: 14, paddingHorizontal: 18, borderRadius: 8, backgroundColor: '#2f9cff' },
   primaryButtonText: { color: '#061617', fontSize: 14, fontWeight: '900' },
+  primaryButtonTextLight: { color: '#ffffff' },
   blockButton: { minHeight: 44, alignItems: 'center', justifyContent: 'center', marginTop: 10, borderWidth: 1, borderColor: '#a9434d', borderRadius: 8, backgroundColor: '#6c252d' },
   blockButtonText: { color: '#ffffff', fontSize: 13, fontWeight: '900' },
   feedback: { flexDirection: 'row', alignItems: 'center', gap: 8, padding: 11, borderWidth: 1, borderRadius: 10 },

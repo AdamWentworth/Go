@@ -134,7 +134,9 @@ const ResultCard = ({
   result: NativePokemonSearchResult;
 }) => {
   const [detailsOpen, setDetailsOpen] = useState(false);
-  const accent = result.mode === 'trade' ? '#35c680' : result.mode === 'wanted' ? '#f25f78' : '#2f9cff';
+  const accent = light
+    ? result.mode === 'trade' ? '#087454' : result.mode === 'wanted' ? '#b0003b' : '#005bb5'
+    : result.mode === 'trade' ? '#35c680' : result.mode === 'wanted' ? '#f25f78' : '#2f9cff';
   const relatedTitle = result.mode === 'trade' ? 'Trainer wants' : 'Trainer can offer';
   const relatedRows = [...result.relatedRows].sort(
     (left, right) => Number(Boolean(right.match)) - Number(Boolean(left.match)),
@@ -254,7 +256,9 @@ const ResultCard = ({
           <Text style={[styles.secondaryButtonText, light && styles.textLight]}>View trainer</Text>
         </Pressable>
         <Pressable accessibilityRole="button" onPress={() => onOpenListing(result)} style={[styles.primaryButton, { backgroundColor: accent }]}>
-          <Text style={styles.primaryButtonText}>{result.mode === 'caught' ? 'View Pokémon' : 'Open listing'}  →</Text>
+          <Text style={[styles.primaryButtonText, light && styles.primaryButtonTextLight]}>
+            {result.mode === 'caught' ? 'View Pokémon' : 'Open listing'}  →
+          </Text>
         </Pressable>
       </View>
     </View>
@@ -282,6 +286,7 @@ export const NativePokemonSearchScreen = ({
   savedLocation = null,
 }: Props) => {
   const light = useNativeColorScheme() === 'light';
+  const accent = light ? '#005bb5' : '#2f9cff';
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [filterSection, setFilterSection] = useState<NativeSearchFilterSection>('pokemon');
   const [filterError, setFilterError] = useState<string | null>(null);
@@ -486,7 +491,7 @@ export const NativePokemonSearchScreen = ({
                 ) : null}
               </View>
               <View style={styles.summaryCopy}>
-                <Text style={styles.summaryEyebrow}>CURRENT SEARCH</Text>
+                <Text style={[styles.summaryEyebrow, { color: accent }]}>CURRENT SEARCH</Text>
                 <Text numberOfLines={2} style={[styles.summaryTitle, light && styles.textLight]}>{[
                   draft.shiny ? 'Shiny' : '',
                   draft.shadow ? 'Shadow' : '',
@@ -565,8 +570,8 @@ export const NativePokemonSearchScreen = ({
               <View style={styles.resultsHeader}>
                 <View>
                   <View style={styles.resultsCompleteRow}>
-                    <NativeUiIcon color="#2f9cff" name="check" size={12} />
-                    <Text style={styles.resultsComplete}>SEARCH COMPLETE</Text>
+                    <NativeUiIcon color={accent} name="check" size={12} />
+                    <Text style={[styles.resultsComplete, { color: accent }]}>SEARCH COMPLETE</Text>
                   </View>
                   <Text style={[styles.resultsTitle, light && styles.textLight]}>{modeLabel(draft.ownership)} {draft.ownership === 'caught' ? 'Pokémon' : 'listings'}</Text>
                 </View>
@@ -592,7 +597,7 @@ export const NativePokemonSearchScreen = ({
           {!isLoading && !error && !hasSearched ? (
             <View style={styles.emptyState}>
               <NativeUiIcon color="#2f9cff" name="search" size={31} />
-              <Text style={styles.emptyEyebrow}>COMMUNITY LISTINGS</Text>
+              <Text style={[styles.emptyEyebrow, { color: accent }]}>COMMUNITY LISTINGS</Text>
               <Text style={[styles.stateTitle, light && styles.textLight]}>Find your next Pokémon</Text>
               <Text style={[styles.stateCopy, light && styles.secondaryLight]}>Choose a Pokémon and listing type above to discover nearby trainers.</Text>
             </View>
@@ -770,6 +775,7 @@ const styles = StyleSheet.create({
   secondaryButtonText: { color: '#ecf3f4', fontSize: 12, fontWeight: '900' },
   primaryButton: { flex: 1.15, minHeight: 46, alignItems: 'center', justifyContent: 'center', borderRadius: 9 },
   primaryButtonText: { color: '#04130d', fontSize: 12, fontWeight: '900' },
+  primaryButtonTextLight: { color: '#ffffff' },
   disabled: { opacity: 0.5 },
   textLight: { color: '#172124' },
   secondaryLight: { color: '#566467' },

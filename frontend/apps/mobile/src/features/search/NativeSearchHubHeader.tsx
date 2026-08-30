@@ -31,7 +31,7 @@ export const NativeSearchHubHeader = ({
   return (
     <View style={[styles.header, light && styles.headerLight]}>
       <View style={styles.heading}>
-        <Text style={styles.eyebrow}>COMMUNITY DISCOVERY</Text>
+        <Text style={[styles.eyebrow, light && styles.eyebrowLight]}>COMMUNITY DISCOVERY</Text>
         <Text accessibilityRole="header" style={[styles.title, light && styles.textLight]}>
           Search
         </Text>
@@ -94,6 +94,7 @@ const styles = StyleSheet.create({
   headerLight: { backgroundColor: '#f8fff9' },
   heading: { alignItems: 'center', paddingHorizontal: 12, paddingVertical: 7 },
   eyebrow: { color: '#2f9cff', fontSize: 10, fontWeight: '900', letterSpacing: 1.3 },
+  eyebrowLight: { color: '#005bb5' },
   title: { color: '#f8fcfd', fontSize: 29, fontWeight: '900' },
   description: {
     maxWidth: 520,

@@ -36,7 +36,7 @@ export default function NativeNotFoundRoute() {
           source={{ uri: `${runtimeConfig.api.frontendAppUrl.replace(/\/$/, '')}/images/logo/lockup.png` }}
           style={styles.logo}
         />
-        <Text style={styles.code}>404</Text>
+        <Text style={[styles.code, light && styles.accentLight]}>404</Text>
         <Text accessibilityRole="header" style={[styles.title, light && styles.titleLight]}>
           That route wandered off.
         </Text>
@@ -62,7 +62,7 @@ export default function NativeNotFoundRoute() {
             ['Help & information', '/help'],
           ].map(([label, path]) => (
             <Pressable accessibilityRole="link" key={path} onPress={() => navigate(path)} style={styles.recoveryLink}>
-              <Text style={styles.recoveryLinkText}>◉  {label}</Text>
+              <Text style={[styles.recoveryLinkText, light && styles.accentLight]}>◉  {label}</Text>
             </Pressable>
           ))}
         </View>
@@ -90,13 +90,14 @@ const styles = StyleSheet.create({
   cardLight: { borderColor: '#b8c7ce', backgroundColor: '#fff' },
   logo: { width: '88%', height: 118 },
   code: { marginTop: 2, color: '#269df4', fontSize: 12, lineHeight: 17, fontWeight: '900', letterSpacing: 3 },
+  accentLight: { color: '#005bb5' },
   title: { color: '#f5fbfd', fontSize: 25, fontWeight: '900', textAlign: 'center' },
   titleLight: { color: '#102129' },
   copy: { maxWidth: 400, color: '#a8bac2', fontSize: 15, lineHeight: 22, textAlign: 'center' },
   copyLight: { color: '#536970' },
   actions: { width: '100%', gap: 10, marginTop: 8 },
   primary: { minHeight: 48, alignItems: 'center', justifyContent: 'center', borderRadius: 12, backgroundColor: '#168ff0' },
-  primaryText: { color: '#fff', fontWeight: '900' },
+  primaryText: { color: '#04131f', fontWeight: '900' },
   secondary: { minHeight: 48, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: '#4b626c', borderRadius: 12, backgroundColor: '#19272e' },
   secondaryLight: { borderColor: '#a9bbc2', backgroundColor: '#f4f8f9' },
   secondaryText: { color: '#eef6f8', fontWeight: '800' },

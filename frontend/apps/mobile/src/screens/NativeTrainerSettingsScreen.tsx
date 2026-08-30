@@ -181,8 +181,6 @@ export const NativeTrainerSettingsScreen = ({
   const coordinationHandleRef = useRef<TextInput>(null);
 
   const clearTextInputFocus = () => {
-    const focusedInput = TextInput.State.currentlyFocusedInput();
-    if (focusedInput) TextInput.State.blurTextInput(focusedInput);
     coordinationHandleRef.current?.blur();
     Keyboard.dismiss();
   };
@@ -264,7 +262,7 @@ export const NativeTrainerSettingsScreen = ({
           <>
             <View style={[styles.section, light && styles.sectionLight]}>
               <View style={styles.sectionHeader}>
-                <View><Text style={styles.sectionEyebrow}>WHO CAN SEE YOU</Text><Text style={[styles.sectionTitle, light && styles.textLight]}>Privacy</Text></View>
+                <View><Text style={[styles.sectionEyebrow, light && styles.labelLight]}>WHO CAN SEE YOU</Text><Text style={[styles.sectionTitle, light && styles.textLight]}>Privacy</Text></View>
                 <PrivacyShieldIcon />
               </View>
               <SelectionField label="Profile visibility" light={light} onPress={() => openPicker('profileVisibility')} value={labelFor(VISIBILITY_OPTIONS, draft.profileVisibility)} description="Controls your trainer card and profile statistics." />
@@ -282,7 +280,7 @@ export const NativeTrainerSettingsScreen = ({
 
             <View style={[styles.section, light && styles.sectionLight]}>
               <View style={styles.sectionHeader}>
-                <View><Text style={styles.sectionEyebrow}>AFTER AN OFFER IS ACCEPTED</Text><Text style={[styles.sectionTitle, light && styles.textLight]}>Trade coordination</Text></View>
+                <View><Text style={[styles.sectionEyebrow, light && styles.labelLight]}>AFTER AN OFFER IS ACCEPTED</Text><Text style={[styles.sectionTitle, light && styles.textLight]}>Trade coordination</Text></View>
                 <Text style={styles.sectionIcon}>◌</Text>
               </View>
               <Text style={[styles.sectionCopy, light && styles.mutedLight]}>Pokémon Go Nexus does not provide messaging. Choose how an accepted trade partner can connect with you.</Text>
@@ -315,7 +313,7 @@ export const NativeTrainerSettingsScreen = ({
 
         <View style={[styles.section, light && styles.sectionLight]}>
           <View style={styles.sectionHeader}>
-            <View><Text style={styles.sectionEyebrow}>THIS DEVICE</Text><Text style={[styles.sectionTitle, light && styles.textLight]}>Display</Text></View>
+            <View><Text style={[styles.sectionEyebrow, light && styles.labelLight]}>THIS DEVICE</Text><Text style={[styles.sectionTitle, light && styles.textLight]}>Display</Text></View>
             <Text style={styles.sectionIcon}>{colorTheme === 'light' ? '☀' : '☾'}</Text>
           </View>
           <SelectionField
@@ -336,7 +334,7 @@ export const NativeTrainerSettingsScreen = ({
 
         <View style={[styles.section, light && styles.sectionLight]}>
           <View style={styles.sectionHeader}>
-            <View><Text style={styles.sectionEyebrow}>THIS DEVICE</Text><Text style={[styles.sectionTitle, light && styles.textLight]}>Pokémon synchronization</Text></View>
+            <View><Text style={[styles.sectionEyebrow, light && styles.labelLight]}>THIS DEVICE</Text><Text style={[styles.sectionTitle, light && styles.textLight]}>Pokémon synchronization</Text></View>
             <Text style={styles.sectionIcon}>↻</Text>
           </View>
           <View accessibilityLiveRegion="polite" style={[styles.syncRow, light && styles.toggleRowLight]}>

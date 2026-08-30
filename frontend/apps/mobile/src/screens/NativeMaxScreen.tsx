@@ -151,7 +151,7 @@ export const NativeMaxScreen = ({
         style={styles.productIcon}
       />
       <View style={styles.headerCopy}>
-        <Text style={styles.eyebrow}>POWER SPOT STRATEGY</Text>
+        <Text style={[styles.eyebrow, light && styles.accentLight]}>POWER SPOT STRATEGY</Text>
         <Text accessibilityRole="header" style={[styles.title, light && styles.textLight]}>Max Battles</Text>
       </View>
       <Text style={[styles.countPill, light && styles.countPillLight]}>{bossVariants.length} Max-ready Pokémon</Text>
@@ -212,11 +212,11 @@ export const NativeMaxScreen = ({
           style={[styles.roleButton, light && styles.controlLight, role === value && styles.roleActive]}
         >
           <NativeUiIcon
-            color={role === value ? '#071110' : light ? '#102829' : '#edf5f4'}
+            color={role === value ? '#ffd9e7' : light ? '#102829' : '#edf5f4'}
             name={icon}
             size={13}
           />
-          <Text style={[styles.roleText, light && styles.textLight, role === value && styles.activeText]}>{label}</Text>
+          <Text style={[styles.roleText, light && styles.textLight, role === value && styles.roleActiveText]}>{label}</Text>
         </Pressable>
       ))}
     </View>
@@ -291,8 +291,8 @@ export const NativeMaxScreen = ({
   const resultsHeader = (
     <View style={[styles.resultsPanel, light && styles.panelLight]}>
       <View style={styles.resultsContext}>
-        <Text style={styles.fieldLabel}>{view === 'bosses' ? 'ROLE ALTERNATIVES' : selectedType.toUpperCase() || 'ALL MAX POKÉMON'}</Text>
-        <Text style={styles.rankedPill}>{rankings.length} RANKED</Text>
+        <Text style={[styles.fieldLabel, light && styles.accentLight]}>{view === 'bosses' ? 'ROLE ALTERNATIVES' : selectedType.toUpperCase() || 'ALL MAX POKÉMON'}</Text>
+        <Text style={[styles.rankedPill, light && styles.rankedPillLight]}>{rankings.length} RANKED</Text>
       </View>
       <Text style={[styles.resultsTitle, light && styles.textLight]}>{heading}</Text>
       <Text style={[styles.assumptions, light && styles.mutedLight]}>{assumptions}</Text>
@@ -381,6 +381,7 @@ const styles = StyleSheet.create({
   rootLight: { backgroundColor: '#f8fff9' },
   textLight: { color: '#102829' },
   mutedLight: { color: '#617576' },
+  accentLight: { color: '#08766b' },
   panelLight: { borderColor: '#9fb8b8', backgroundColor: '#f8fcfb' },
   controlLight: { borderColor: '#9fb2b2', backgroundColor: '#fff' },
   cardLight: { borderColor: '#a8bcbc', backgroundColor: '#fff' },
@@ -410,6 +411,7 @@ const styles = StyleSheet.create({
   roleTabs: { flexDirection: 'row', gap: 6 },
   roleButton: { flex: 1, minHeight: 44, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: '#334849', borderRadius: 6, backgroundColor: '#101819' },
   roleActive: { borderColor: '#de5a8a', backgroundColor: '#401629' },
+  roleActiveText: { color: '#ffd9e7' },
   roleText: { color: '#edf5f4', fontSize: 10, fontWeight: '900' },
   typeDeck: { gap: 6, borderWidth: 1, borderColor: '#315253', borderRadius: 8, padding: 10, backgroundColor: '#0f1819' },
   fieldLabel: { color: '#69d9cf', fontSize: 8, fontWeight: '900', letterSpacing: .5 },
@@ -432,6 +434,7 @@ const styles = StyleSheet.create({
   resultsPanel: { gap: 4, marginTop: 2, borderWidth: 1, borderColor: '#315253', borderRadius: 8, padding: 9, backgroundColor: '#0e1718' },
   resultsContext: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   rankedPill: { borderWidth: 1, borderColor: '#3b5c5d', borderRadius: 999, paddingHorizontal: 6, paddingVertical: 2, color: '#a9c2c1', fontSize: 6.5, fontWeight: '900' },
+  rankedPillLight: { color: '#526568' },
   resultsTitle: { color: '#fff', fontSize: 18, lineHeight: 21, fontWeight: '900' },
   assumptions: { color: '#9bb0af', fontSize: 8, lineHeight: 11 },
   search: { minHeight: 45, marginTop: 6, borderWidth: 1, borderColor: '#3b5152', borderRadius: 999, paddingHorizontal: 15, color: '#fff', backgroundColor: '#091112', fontSize: 13, fontWeight: '700' },

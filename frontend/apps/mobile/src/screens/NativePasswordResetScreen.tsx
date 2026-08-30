@@ -10,7 +10,7 @@ import {
   TextInput,
   View,
 } from "react-native";
-import Svg, { Circle, Path } from 'react-native-svg';
+import Svg, { Circle, Defs, LinearGradient, Path, Rect, Stop } from 'react-native-svg';
 import { validateNativePassword } from "../features/auth/nativeRegistrationModel";
 import { useNativeColorScheme } from '../features/settings/useNativeColorScheme';
 
@@ -199,6 +199,15 @@ const NativePasswordResetForm = ({
               onPress={() => void submit()}
               style={styles.primaryButton}
             >
+              <Svg height="100%" style={StyleSheet.absoluteFill} width="100%">
+                <Defs>
+                  <LinearGradient id="password-reset-action" x1="0" x2="1" y1="0" y2="1">
+                    <Stop offset="0" stopColor="#6741d9" />
+                    <Stop offset="1" stopColor="#315ec9" />
+                  </LinearGradient>
+                </Defs>
+                <Rect fill="url(#password-reset-action)" height="100%" width="100%" />
+              </Svg>
               {submitting ? (
                 <ActivityIndicator color="#fff" />
               ) : (
@@ -307,8 +316,9 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     marginTop: 16,
+    overflow: "hidden",
     borderRadius: 11,
-    backgroundColor: "#0b86ee",
+    backgroundColor: "#315ec9",
   },
   primaryText: { color: "#fff", fontSize: 15, fontWeight: "900" },
   secondaryButton: {

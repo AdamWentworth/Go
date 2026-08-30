@@ -153,7 +153,7 @@ const PvpEntryCard = ({
             </View>
           </View>
           <View style={styles.buildMeta}>
-            <Text style={styles.score}>
+            <Text style={[styles.score, light && styles.accentLight]}>
               {pvpRoleScore(entry, role).toFixed(1)}
             </Text>
             <Text style={[styles.scoreLabel, light && styles.mutedLight]}>
@@ -276,7 +276,7 @@ export const NativePvpScreen = ({
           style={styles.productIcon}
         />
         <View style={styles.headerCopy}>
-          <Text style={styles.eyebrow}>TRAINER BATTLES</Text>
+          <Text style={[styles.eyebrow, light && styles.accentLight]}>TRAINER BATTLES</Text>
           <Text
             accessibilityRole="header"
             style={[styles.title, light && styles.textLight]}
@@ -306,7 +306,7 @@ export const NativePvpScreen = ({
           </View>
         </View>
       </View>
-      <View style={[styles.workspaceRail, light && styles.sectionLight]}>
+      <View accessibilityRole="tablist" style={[styles.workspaceRail, light && styles.sectionLight]}>
         {WORKSPACES.map(([value, label, icon]) => (
           <Pressable
             aria-selected={workspace === value}
@@ -398,7 +398,7 @@ export const NativePvpScreen = ({
       ) : null}
       {format?.rules.length ? (
         <View style={[styles.rules, light && styles.panelLight]}>
-          <Text style={styles.eyebrow}>FORMAT RULES</Text>
+          <Text style={[styles.eyebrow, light && styles.accentLight]}>FORMAT RULES</Text>
           <Text style={[styles.ruleText, light && styles.mutedLight]}>
             {format.rules.join(" · ")}
           </Text>

@@ -38,7 +38,7 @@ export const NativeConfirmationDialog = ({
     >
       <View accessibilityViewIsModal style={styles.backdrop}>
         <View style={[styles.card, light && styles.cardLight]} testID="native-confirmation-dialog">
-          <Text style={styles.eyebrow}>TRAINER ACTION</Text>
+          <Text style={[styles.eyebrow, light && styles.eyebrowLight]}>TRAINER ACTION</Text>
           <Text style={[styles.title, light && styles.textLight]}>{title}</Text>
           <Text style={[styles.body, light && styles.mutedLight]}>{body}</Text>
           {children}
@@ -61,6 +61,7 @@ const styles = StyleSheet.create({
   card: { width: '100%', maxWidth: 440, gap: 8, padding: 18, borderWidth: 1, borderColor: '#41757a', borderRadius: 16, backgroundColor: '#171f20' },
   cardLight: { borderColor: '#91aaae', backgroundColor: '#ffffff' },
   eyebrow: { color: '#37c8aa', fontSize: 11, fontWeight: '900', letterSpacing: 1.2 },
+  eyebrowLight: { color: '#087454' },
   title: { color: '#ffffff', fontSize: 22, fontWeight: '900' },
   body: { color: '#adbbbd', fontSize: 14, lineHeight: 20 },
   actions: { flexDirection: 'row', gap: 9, marginTop: 9 },

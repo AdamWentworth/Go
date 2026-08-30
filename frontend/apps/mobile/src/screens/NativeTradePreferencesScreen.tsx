@@ -68,9 +68,17 @@ const RULES: Record<TradePreferenceRuleKey, { image: string; label: string }> = 
   locationIconFilter: { image: '/images/location.png', label: 'Location card' },
 };
 
-const tone = (mode: NativeTradePreferenceMode) => mode === 'trade'
-  ? { accent: '#37bf78', soft: 'rgba(55,191,120,0.16)', label: 'For Trade' }
-  : { accent: '#ef5d72', soft: 'rgba(239,93,114,0.16)', label: 'Wanted' };
+const tone = (mode: NativeTradePreferenceMode, light = false) => mode === 'trade'
+  ? {
+      accent: light ? '#087454' : '#37bf78',
+      soft: light ? 'rgba(8,116,84,0.12)' : 'rgba(55,191,120,0.16)',
+      label: 'For Trade',
+    }
+  : {
+      accent: light ? '#b0003b' : '#ef5d72',
+      soft: light ? 'rgba(176,0,59,0.10)' : 'rgba(239,93,114,0.16)',
+      label: 'Wanted',
+    };
 
 const toAssetUrl = (baseUrl: string, path: string): string => (
   /^https?:\/\//i.test(path)
@@ -108,7 +116,7 @@ const EntrySummary = ({
   onPress: () => void;
   selected?: boolean;
 }) => {
-  const colors = tone(mode);
+  const colors = tone(mode, light);
   return (
     <Pressable
       accessibilityRole="button"
@@ -270,7 +278,7 @@ export const NativeTradePreferencesScreen = ({
   const selectedEntry = currentEntries.find(
     (entry) => entry.collectionKey === selectedKeys[mode],
   ) ?? currentEntries[0] ?? null;
-  const colors = tone(mode);
+  const colors = tone(mode, light);
 
   const resetDraft = (entry: NativeTradePreferenceEntry | null) => {
     setFilters(entry?.filters ?? {});
@@ -686,12 +694,12 @@ export const NativeTradePreferencesScreen = ({
   return (
     <View style={[styles.safe, light && styles.safeLight]} testID="native-trade-preferences-screen">
       {showModeTabs ? (
-        <View style={[styles.topTabs, light && styles.topTabsLight]}>
+        <View accessibilityRole="tablist" style={[styles.topTabs, light && styles.topTabsLight]}>
           <Pressable aria-selected accessibilityRole="tab" accessibilityState={{ selected: true }} style={styles.topTab}>
             <Text style={[styles.topTabText, light && styles.textLight]}>Trade Preferences</Text>
           </Pressable>
           <Pressable aria-selected={false} accessibilityRole="tab" accessibilityState={{ selected: false }} onPress={onOpenActivity} style={[styles.topTab, styles.topTabInactive]}>
-            <Text style={[styles.topTabText, styles.topTabInactiveText]}>Trade Activity</Text>
+            <Text style={[styles.topTabText, styles.topTabInactiveText, light && styles.secondaryLight]}>Trade Activity</Text>
           </Pressable>
         </View>
       ) : null}
@@ -701,9 +709,9 @@ export const NativeTradePreferencesScreen = ({
           Choose acceptable matches for each For Trade and Wanted Pokémon.
         </Text>
       </View>
-      <View style={[styles.modeTabs, light && styles.modeTabsLight]}>
+      <View accessibilityRole="tablist" style={[styles.modeTabs, light && styles.modeTabsLight]}>
         {(['trade', 'wanted'] as const).map((option) => {
-          const optionTone = tone(option);
+          const optionTone = tone(option, light);
           const active = mode === option;
           return (
             <Pressable
@@ -717,8 +725,8 @@ export const NativeTradePreferencesScreen = ({
                 active && { backgroundColor: optionTone.soft, borderColor: optionTone.accent },
               ]}
             >
-              <Text style={[styles.modeTabLabel, active && { color: optionTone.accent }]}>
-                {optionTone.label} ({entries[option].length})
+              <Text style={[styles.modeTabLabel, light && styles.modeTabLabelLight, active && { color: optionTone.accent }]}>
+                {`${optionTone.label} (${entries[option].length})`}
               </Text>
             </Pressable>
           );
@@ -862,7 +870,7 @@ const styles = StyleSheet.create({
   pageTitle: { color: '#f5fafb', fontSize: 24, lineHeight: 29, fontWeight: '900' },
   pageDescription: { color: '#9db0b4', fontSize: 14, lineHeight: 19, textAlign: 'center', maxWidth: 520 },
   textLight: { color: '#122328' },
-  secondaryLight: { color: '#61747a' },
+  secondaryLight: { color: '#52656a' },
   modeTabs: {
     flexDirection: 'row',
     gap: 8,
@@ -876,6 +884,7 @@ const styles = StyleSheet.create({
   modeTabsLight: { backgroundColor: '#fff' },
   modeTab: { flex: 1, minHeight: 45, borderRadius: 9, borderWidth: 1, borderColor: 'transparent', flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8 },
   modeTabLabel: { color: '#a8b5b7', fontSize: 14, fontWeight: '900' },
+  modeTabLabelLight: { color: '#566467' },
   modeCount: { minWidth: 23, height: 23, borderRadius: 12, backgroundColor: '#243337', alignItems: 'center', justifyContent: 'center', paddingHorizontal: 6 },
   modeCountText: { color: '#a8b5b7', fontSize: 11, fontWeight: '900' },
   activeCountText: { color: '#06110d' },

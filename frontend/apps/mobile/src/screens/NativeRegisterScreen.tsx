@@ -133,7 +133,7 @@ export const NativeRegisterScreen = ({
         <View style={[styles.card, light && styles.cardLight, compact && styles.cardCompact, compact && light && styles.cardCompactLight]}>
           <View style={styles.header}>
             <View style={styles.headerCopy}>
-              <Text style={styles.brandEyebrow}>TRAINER REGISTRATION</Text>
+              <Text style={[styles.brandEyebrow, light && styles.accentLight]}>TRAINER REGISTRATION</Text>
               <Text accessibilityRole="header" style={[styles.title, compact && styles.titleCompact, light && styles.textLight]}>Create your account</Text>
               {!compact || method ? <Text style={[styles.subtitle, light && styles.mutedLight]}>A few quick steps, then your trainer journey begins.</Text> : null}
             </View>
@@ -152,7 +152,7 @@ export const NativeRegisterScreen = ({
                 {visibleSteps.map((stepNumber, index) => <View key={stepNumber} style={[styles.progressSegment, index <= visibleStepIndex && styles.progressActive]} />)}
               </View>
               <View style={styles.stepHeading}>
-                <Text style={styles.stepEyebrow}>{eyebrow}</Text>
+                <Text style={[styles.stepEyebrow, light && styles.accentLight]}>{eyebrow}</Text>
                 <Text style={[styles.stepDescription, light && styles.mutedLight]}>{description}</Text>
               </View>
             </>
@@ -161,7 +161,7 @@ export const NativeRegisterScreen = ({
           {!method ? (
             <View style={[styles.methodPicker, compact && styles.methodPickerCompact]}>
               {!compact ? <>
-                <Text style={styles.stepEyebrow}>CHOOSE A SIGN-UP METHOD</Text>
+                <Text style={[styles.stepEyebrow, light && styles.accentLight]}>CHOOSE A SIGN-UP METHOD</Text>
                 <Text style={[styles.methodTitle, light && styles.textLight]}>Start your trainer account</Text>
                 <Text style={[styles.stepDescription, light && styles.mutedLight]}>Use a trusted provider or your email address.</Text>
               </> : null}
@@ -238,7 +238,7 @@ export const NativeRegisterScreen = ({
                 </Field>
               ) : (
                 <View style={[styles.verifiedEmail, light && styles.secondaryLight]}>
-                  <Text style={styles.reviewLabel}>{oauthProvider?.toLocaleUpperCase()} VERIFIED EMAIL</Text>
+                  <Text style={[styles.reviewLabel, light && styles.accentLight]}>{oauthProvider?.toLocaleUpperCase()} VERIFIED EMAIL</Text>
                   <Text style={[styles.reviewValue, light && styles.textLight]}>{draft.email}</Text>
                 </View>
               )}
@@ -305,7 +305,7 @@ export const NativeRegisterScreen = ({
               <ReviewRow label="TRAINER" light={light} onPress={() => setStep(2)} value={draft.pokemonGoName || 'Add later'} />
               <ReviewRow label="TRAINER CODE" light={light} onPress={() => setStep(2)} value={draft.trainerCode || 'Add later'} />
               <ReviewRow label="AREA" light={light} onPress={() => setStep(3)} value={draft.location || 'Add later'} />
-              <Text style={[styles.agreement, light && styles.mutedLight]}>By creating an account, you agree to the{' '}<Text accessibilityRole="link" onPress={onOpenTerms} style={styles.link}>Terms</Text>{' '}and acknowledge the{' '}<Text accessibilityRole="link" onPress={onOpenPrivacy} style={styles.link}>Privacy Policy</Text>.</Text>
+              <Text style={[styles.agreement, light && styles.mutedLight]}>By creating an account, you agree to the{' '}<Text accessibilityRole="link" onPress={onOpenTerms} style={[styles.link, light && styles.accentLight]}>Terms</Text>{' '}and acknowledge the{' '}<Text accessibilityRole="link" onPress={onOpenPrivacy} style={[styles.link, light && styles.accentLight]}>Privacy Policy</Text>.</Text>
             </View>
           ) : null}
 
@@ -332,7 +332,7 @@ export const NativeRegisterScreen = ({
 };
 
 const Field = ({ children, label, light }: { children: React.ReactNode; label: string; light: boolean }) => <View style={styles.field}><Text style={[styles.label, light && styles.textLight]}>{label}</Text>{children}</View>;
-const ReviewRow = ({ label, light, onPress, value }: { label: string; light: boolean; onPress: () => void; value: string }) => <Pressable accessibilityRole="button" onPress={onPress} style={[styles.reviewRow, light && styles.secondaryLight]}><View style={styles.reviewCopy}><Text style={styles.reviewLabel}>{label}</Text><Text numberOfLines={1} style={[styles.reviewValue, light && styles.textLight]}>{value}</Text></View><Text style={styles.edit}>Edit</Text></Pressable>;
+const ReviewRow = ({ label, light, onPress, value }: { label: string; light: boolean; onPress: () => void; value: string }) => <Pressable accessibilityRole="button" onPress={onPress} style={[styles.reviewRow, light && styles.secondaryLight]}><View style={styles.reviewCopy}><Text style={[styles.reviewLabel, light && styles.accentLight]}>{label}</Text><Text numberOfLines={1} style={[styles.reviewValue, light && styles.textLight]}>{value}</Text></View><Text style={[styles.edit, light && styles.accentLight]}>Edit</Text></Pressable>;
 
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: '#07111e' }, rootLight: { backgroundColor: '#f8fff9' },
@@ -345,6 +345,7 @@ const styles = StyleSheet.create({
   cardCompactLight: { backgroundColor: 'transparent' },
   header: { flexDirection: 'row', alignItems: 'flex-start', gap: 10 }, headerCopy: { flex: 1 },
   brandEyebrow: { color: '#2098ff', fontSize: 10, fontWeight: '900', letterSpacing: 1.5 },
+  accentLight: { color: '#005bb5' },
   title: { color: '#fff', fontSize: 30, fontWeight: '900' }, subtitle: { color: '#b3bec5', fontSize: 13, lineHeight: 18 },
   titleCompact: { fontSize: 26 },
   signInButton: { minHeight: 42, justifyContent: 'center', borderWidth: 1, borderColor: '#68747b', borderRadius: 999, paddingHorizontal: 15, backgroundColor: '#282d31' }, signInText: { color: '#fff', fontWeight: '900' },
@@ -371,7 +372,7 @@ const styles = StyleSheet.create({
   methodButtonCompact: { minHeight: 76, borderRadius: 15 },
   googleButton: { borderWidth: 1, borderColor: '#d9dee4', backgroundColor: '#fff' },
   discordButton: { backgroundColor: '#5865f2' },
-  facebookButton: { backgroundColor: '#1877f2' },
+  facebookButton: { backgroundColor: '#1265d6' },
   socialGlyph: { width: 29, alignItems: 'center', justifyContent: 'center' },
   socialText: { color: '#fff', fontSize: 15, fontWeight: '900' },
   googleText: { color: '#202124' },

@@ -84,7 +84,6 @@ export const NativePokemonHubHeader = ({
 
   return (
     <View
-      accessibilityRole="tablist"
       style={[
         styles.header,
         {
@@ -126,13 +125,12 @@ export const NativePokemonHubHeader = ({
           </View>
         </View>
       ) : null}
-      <View style={styles.controlsRow}>
+      <View accessibilityRole={hasSelection ? undefined : 'tablist'} style={styles.controlsRow}>
         {([
           ['inventory', 'TAGS'],
           ['pokemon', 'POKÉMON'],
           ['wishlist', 'WISHLIST'],
         ] as const).map(([key, label]) => {
-          const selectionAction = hasSelection && key !== 'pokemon';
           const selected = activeView === key;
           const tagBelongsHere = activeTag && (
             (key === 'inventory' && activeTagParent === 'caught')
@@ -143,9 +141,9 @@ export const NativePokemonHubHeader = ({
             : key === 'pokemon' ? `(${collectionCount})` : null;
           return (
             <Pressable
-              aria-selected={selectionAction ? undefined : selected}
-              accessibilityRole={selectionAction ? 'button' : 'tab'}
-              accessibilityState={selectionAction ? undefined : { selected }}
+              aria-selected={hasSelection ? undefined : selected}
+              accessibilityRole={hasSelection ? 'button' : 'tab'}
+              accessibilityState={hasSelection ? undefined : { selected }}
               key={key}
               onPress={() => {
                 if (hasSelection && key === 'inventory') onClearSelection?.();

@@ -29,7 +29,13 @@ const DetailItems = ({
   <View style={styles.detailList}>
     {items.map((item, index) => (
       <View key={item.title} style={[styles.detailItem, light && styles.dividerLight]}>
-        <Text style={[styles.detailIndex, item.marker && styles.detailMarker, pvp && styles.detailIndexPvp]}>
+        <Text style={[
+          styles.detailIndex,
+          item.marker && styles.detailMarker,
+          pvp && styles.detailIndexPvp,
+          light && styles.detailIndexLight,
+          light && pvp && styles.detailIndexPvpLight,
+        ]}>
           {item.marker ?? String(index + 1).padStart(2, '0')}
         </Text>
         <View style={styles.detailCopy}>
@@ -82,7 +88,7 @@ const Section = ({
       style={[styles.section, light && styles.sectionLight]}
       testID={`methodology-section-${index}`}
     >
-      <Text style={[styles.eyebrow, pvp && styles.eyebrowPvp]}>{section.eyebrow}</Text>
+      <Text style={[styles.eyebrow, pvp && styles.eyebrowPvp, light && styles.eyebrowLight]}>{section.eyebrow}</Text>
       <Text accessibilityRole="header" style={[styles.sectionTitle, light && styles.textLight]}>{section.title}</Text>
 
       {section.paragraphs?.map((paragraph) => (
@@ -178,14 +184,14 @@ export const NativeMethodologyScreen = ({ assetBaseUrl, content, onBack }: Props
             />
           </View>
           <View style={styles.headerCopy}>
-            <Text style={[styles.eyebrow, pvp && styles.eyebrowPvp]}>{content.eyebrow}</Text>
+            <Text style={[styles.eyebrow, pvp && styles.eyebrowPvp, light && styles.eyebrowLight]}>{content.eyebrow}</Text>
             <Text accessibilityRole="header" style={[styles.title, light && styles.textLight]}>{content.title}</Text>
             <Text style={[styles.lead, light && styles.bodyLight]}>{content.description}</Text>
           </View>
         </View>
         <Pressable accessibilityRole="button" onPress={onBack} style={[styles.back, pvp && styles.backPvp, light && styles.backLight]}>
-          <Text style={[styles.backArrow, pvp && styles.backArrowPvp]}>←</Text>
-          <Text style={[styles.backLabel, pvp && styles.backArrowPvp]}>{content.returnLabel}</Text>
+          <Text style={[styles.backArrow, light && styles.backArrowLight]}>←</Text>
+          <Text style={[styles.backLabel, light && styles.backArrowLight]}>{content.returnLabel}</Text>
         </Pressable>
       </View>
 
@@ -217,7 +223,7 @@ export const NativeMethodologyScreen = ({ assetBaseUrl, content, onBack }: Props
 
       <View style={styles.footer}>
         <Pressable accessibilityRole="button" onPress={onBack} style={[styles.returnButton, pvp && styles.returnButtonPvp, light && styles.returnButtonLight]}>
-          <Text style={[styles.returnButtonText, pvp && styles.returnButtonTextPvp]}>←  Return to {content.returnLabel.toLowerCase()}</Text>
+          <Text style={[styles.returnButtonText, light && styles.returnButtonTextPvp]}>←  Return to {content.returnLabel.toLowerCase()}</Text>
         </Pressable>
         <Text style={[styles.footerText, light && styles.bodyLight]}>{content.footer}</Text>
       </View>
@@ -241,12 +247,14 @@ const styles = StyleSheet.create({
   headerCopy: { minWidth: 0, flex: 1 },
   eyebrow: { color: '#75e6df', fontSize: 10, fontWeight: '900', letterSpacing: 1.1 },
   eyebrowPvp: { color: '#72e8dc' },
+  eyebrowLight: { color: '#087d91' },
   title: { marginTop: 3, color: '#f4ffff', fontSize: 23, lineHeight: 26, fontWeight: '900' },
   lead: { marginTop: 8, color: '#b1c4c9', fontSize: 13, lineHeight: 19 },
   back: { minHeight: 42, alignSelf: 'flex-start', flexDirection: 'row', alignItems: 'center', gap: 7, paddingHorizontal: 13, borderWidth: 1, borderColor: 'rgba(117,230,223,0.35)', borderRadius: 21, backgroundColor: 'rgba(117,230,223,0.07)' },
   backPvp: { borderColor: 'rgba(114,232,220,0.36)', backgroundColor: 'rgba(66,213,194,0.08)' },
   backLight: { backgroundColor: 'rgba(255,255,255,0.7)' },
   backArrow: { color: '#75e6df', fontSize: 18, fontWeight: '900' },
+  backArrowLight: { color: '#087d91' },
   backArrowPvp: { color: '#087d91' },
   backLabel: { color: '#75e6df', fontSize: 11, fontWeight: '900', letterSpacing: 0.4, textTransform: 'uppercase' },
   navigation: { flexDirection: 'row', flexWrap: 'wrap', gap: 1, marginTop: 10, padding: 5, borderWidth: 1, borderColor: 'rgba(102,220,220,0.18)', borderRadius: 13, backgroundColor: 'rgba(8,15,18,0.92)' },
@@ -268,6 +276,8 @@ const styles = StyleSheet.create({
   detailIndex: { width: 27, color: '#ffbd4a', fontSize: 11, fontWeight: '900' },
   detailMarker: { fontSize: 20, lineHeight: 23 },
   detailIndexPvp: { color: '#ed79aa' },
+  detailIndexLight: { color: '#7a5700' },
+  detailIndexPvpLight: { color: '#a3005b' },
   detailCopy: { minWidth: 0, flex: 1 },
   detailTitle: { color: '#f2ffff', fontSize: 17, fontWeight: '900' },
   detailSummary: { marginTop: 3, color: '#e4f4f5', fontSize: 13, lineHeight: 18, fontWeight: '800' },

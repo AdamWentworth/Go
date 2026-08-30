@@ -51,7 +51,7 @@ export const NativeTradeHubHeader = ({
           />
         ) : null}
         <View style={styles.productCopy}>
-          <Text style={styles.eyebrow}>TRAINER EXCHANGE</Text>
+          <Text style={[styles.eyebrow, light && styles.eyebrowLight]}>TRAINER EXCHANGE</Text>
           <Text accessibilityRole="header" style={[styles.title, light && styles.titleLight]}>Trades</Text>
           <Text style={[styles.description, light && styles.descriptionLight]}>
             Set your preferences, respond to offers, and follow every exchange.
@@ -136,6 +136,7 @@ const styles = StyleSheet.create({
   productIcon: { width: 44, height: 44, flexShrink: 0 },
   productCopy: { flex: 1, minWidth: 0 },
   eyebrow: { color: '#43d5c5', fontSize: 9, fontWeight: '900', letterSpacing: 1.2 },
+  eyebrowLight: { color: '#006a61' },
   title: { marginTop: 1, color: '#f6fbfa', fontSize: 23, lineHeight: 26, fontWeight: '900' },
   titleLight: { color: '#13201e' },
   description: { maxWidth: 560, marginTop: 3, color: '#9db6b2', fontSize: 12, lineHeight: 17 },

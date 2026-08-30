@@ -133,7 +133,7 @@ export const NativeGuestHomeScreen = ({
         <View style={styles.heroRegion}>
           <GuestHeroBackground light={light} />
           <View style={[styles.topbar, { paddingTop: 8 }]}>
-          <Pressable accessibilityRole="button" onPress={() => onNavigate('/')} style={styles.brand}>
+          <Pressable accessibilityLabel="Pokémon Go Nexus home" accessibilityRole="button" onPress={() => onNavigate('/')} style={styles.brand}>
             <Image source={{ uri: toAssetUrl(assetBaseUrl, '/images/logo/logo.png') }} style={styles.brandIcon} />
             {!compactNavigation ? <Text style={[styles.brandText, light && styles.textLight]}>Pokémon Go Nexus</Text> : null}
           </Pressable>
@@ -152,7 +152,7 @@ export const NativeGuestHomeScreen = ({
             source={{ uri: toAssetUrl(assetBaseUrl, '/images/logo/hero-lockup.png') }}
             style={[styles.lockup, compactNavigation && styles.lockupCompact]}
           />
-          <Text style={styles.eyebrow}>THE ULTIMATE TRAINER HUB</Text>
+          <Text style={[styles.eyebrow, light && styles.eyebrowLight]}>THE ULTIMATE TRAINER HUB</Text>
           <Text accessibilityRole="header" style={[styles.title, compactNavigation && styles.titleCompact, light && styles.textLight]}>Build your collection.</Text>
           <Text accessibilityRole="header" style={[styles.titleAccent, compactNavigation && styles.titleCompact]}>Find the right trade.</Text>
           <Text style={[styles.lead, light && styles.mutedLight]}>Pokémon Go Nexus is the go-to platform for Pokémon GO trainers to catalog Pokémon, showcase rare catches, and find players whose For Trade and Wanted lists actually line up.</Text>
@@ -166,10 +166,10 @@ export const NativeGuestHomeScreen = ({
             ))}
           </View>
           <View accessibilityLabel="Example reciprocal trade match" style={[styles.matchPreview, light && styles.matchPreviewLight]}>
-            <View style={styles.matchHeading}><Text style={styles.matchEyebrow}>RECIPROCAL MATCH</Text><Text style={[styles.matchTitle, light && styles.textLight]}>You each have what the other trainer wants</Text></View>
+            <View style={styles.matchHeading}><Text style={[styles.matchEyebrow, light && styles.matchEyebrowLight]}>RECIPROCAL MATCH</Text><Text style={[styles.matchTitle, light && styles.textLight]}>You each have what the other trainer wants</Text></View>
             <View style={styles.exchange}>
               <View style={[styles.exchangePokemon, styles.exchangePokemonTrade, light && styles.exchangePokemonLight]}>
-                <Text style={styles.tradeLabel}>YOU OFFER</Text>
+                <Text style={[styles.tradeLabel, light && styles.matchEyebrowLight]}>YOU OFFER</Text>
                 <View style={styles.exchangeStage}>
                   <Image resizeMode="contain" source={{ uri: toAssetUrl(assetBaseUrl, '/images/shiny_gigantamax/shiny_gigantamax_6.png') }} style={styles.exchangeImage} />
                   <Image resizeMode="contain" source={{ uri: toAssetUrl(assetBaseUrl, '/images/gigantamax.png') }} style={styles.exchangeMaxIcon} />
@@ -179,7 +179,7 @@ export const NativeGuestHomeScreen = ({
               </View>
               <Image resizeMode="contain" source={{ uri: toAssetUrl(assetBaseUrl, '/images/pogo_trade_icon.png') }} style={styles.exchangeIcon} />
               <View style={[styles.exchangePokemon, styles.exchangePokemonWanted, light && styles.exchangePokemonLight]}>
-                <Text style={styles.wantedLabel}>YOU WANT</Text>
+                <Text style={[styles.wantedLabel, light && styles.wantedLabelLight]}>YOU WANT</Text>
                 <View style={styles.exchangeStage}>
                   <Image resizeMode="contain" source={{ uri: toAssetUrl(assetBaseUrl, '/images/costumes_shiny/pokemon_25_detective_shiny.png') }} style={styles.exchangeImage} />
                 </View>
@@ -194,7 +194,7 @@ export const NativeGuestHomeScreen = ({
 
         <View onLayout={(event) => setFeatureDirectoryY(event.nativeEvent.layout.y)} style={styles.content}>
           <View style={styles.heading}>
-            <Text style={styles.eyebrow}>EVERYTHING IN ONE TRAINER HUB</Text>
+            <Text style={[styles.eyebrow, light && styles.eyebrowLight]}>EVERYTHING IN ONE TRAINER HUB</Text>
             <Text accessibilityRole="header" style={[styles.headingTitle, light && styles.textLight]}>Explore Pokémon Go Nexus</Text>
             <Text style={[styles.headingDetail, light && styles.mutedLight]}>Trading is the heart of the platform, supported by collection, discovery, social, and battle tools.</Text>
           </View>
@@ -209,7 +209,7 @@ export const NativeGuestHomeScreen = ({
           </View>
 
           <View style={[styles.workflow, light && styles.surfaceLight]}>
-            <View style={styles.heading}><Text style={styles.eyebrow}>TRADING, WITHOUT THE GUESSWORK</Text><Text style={[styles.headingTitle, light && styles.textLight]}>The trade is the destination.{`\n`}Your collection makes it possible.</Text><Text style={[styles.headingDetail, light && styles.mutedLight]}>Pokémon Go Nexus connects the pieces that usually live in screenshots, chat messages, and memory. Your collection, wishlist, and trade preferences work together to surface useful matches.</Text></View>
+            <View style={styles.heading}><Text style={[styles.eyebrow, light && styles.eyebrowLight]}>TRADING, WITHOUT THE GUESSWORK</Text><Text style={[styles.headingTitle, light && styles.textLight]}>The trade is the destination.{`\n`}Your collection makes it possible.</Text><Text style={[styles.headingDetail, light && styles.mutedLight]}>Pokémon Go Nexus connects the pieces that usually live in screenshots, chat messages, and memory. Your collection, wishlist, and trade preferences work together to surface useful matches.</Text></View>
             <View style={styles.steps}>
               {STEPS.map(([number, title, detail, kind]) => (
                 <View key={number} style={[styles.step, light && styles.stepLight]}>
@@ -232,18 +232,18 @@ export const NativeGuestHomeScreen = ({
 
           <View style={[styles.community, light && styles.communityLight]}>
             <View style={styles.communityIntro}>
-              <Text style={styles.eyebrow}>CONNECT AND SHARE</Text>
+              <Text style={[styles.eyebrow, light && styles.eyebrowLight]}>CONNECT AND SHARE</Text>
               <Text style={[styles.communityTitle, light && styles.textLight]}>Your collection can travel further.</Text>
               <Text style={[styles.communityDetail, light && styles.mutedLight]}>Build trusted connections inside Nexus, then take a polished trade list anywhere trainers gather.</Text>
             </View>
             <View style={styles.communityActions}>
               <Pressable accessibilityRole="button" onPress={() => onNavigate('/profile/friends')} style={[styles.communityCard, styles.communityFriends, light && styles.surfaceLight]}>
                 <View style={styles.communityIcon}><NativeUiIcon color="#299cf5" name="trainers" size={22} /></View>
-                <View style={styles.communityCopy}><Text style={styles.communityEyebrow}>TRAINER NETWORK</Text><Text style={[styles.communityCardTitle, light && styles.textLight]}>Friends</Text><Text style={[styles.communityCardDetail, light && styles.mutedLight]}>Manage trusted trainers, requests, privacy, and collection access.</Text></View><Text style={[styles.arrow, light && styles.mutedLight]}>›</Text>
+                <View style={styles.communityCopy}><Text style={[styles.communityEyebrow, light && styles.eyebrowLight]}>TRAINER NETWORK</Text><Text style={[styles.communityCardTitle, light && styles.textLight]}>Friends</Text><Text style={[styles.communityCardDetail, light && styles.mutedLight]}>Manage trusted trainers, requests, privacy, and collection access.</Text></View><Text style={[styles.arrow, light && styles.mutedLight]}>›</Text>
               </Pressable>
               <Pressable accessibilityRole="button" onPress={() => onNavigate('/trade-board')} style={[styles.communityCard, styles.communityBoard, light && styles.surfaceLight]}>
                 <View style={[styles.communityIcon, styles.communityBoardIcon]}><NativeUiIcon color="#35c984" name="share" size={22} /></View>
-                <View style={styles.communityCopy}><Text style={styles.communityEyebrow}>SHARE BEYOND NEXUS</Text><Text style={[styles.communityCardTitle, light && styles.textLight]}>Trade Board</Text><Text style={[styles.communityCardDetail, light && styles.mutedLight]}>Create one visual list or live link for Discord, chats, and communities.</Text></View><Text style={[styles.arrow, light && styles.mutedLight]}>›</Text>
+                <View style={styles.communityCopy}><Text style={[styles.communityEyebrow, light && styles.eyebrowLight]}>SHARE BEYOND NEXUS</Text><Text style={[styles.communityCardTitle, light && styles.textLight]}>Trade Board</Text><Text style={[styles.communityCardDetail, light && styles.mutedLight]}>Create one visual list or live link for Discord, chats, and communities.</Text></View><Text style={[styles.arrow, light && styles.mutedLight]}>›</Text>
               </Pressable>
             </View>
           </View>
@@ -259,7 +259,7 @@ export const NativeGuestHomeScreen = ({
 
           <View style={[styles.cta, light && styles.ctaLight]}>
             <Image source={{ uri: toAssetUrl(assetBaseUrl, '/images/logo/lockup.png') }} style={styles.ctaLogo} />
-            <View style={styles.ctaCopy}><Text style={styles.eyebrow}>READY TO TRADE SMARTER?</Text><Text style={[styles.ctaTitle, light && styles.textLight]}>Bring your collection. Find the right trainer.</Text><Text style={[styles.ctaDetail, light && styles.mutedLight]}>Create your free account, publish your trade list, and discover exchanges that work for both trainers.</Text></View>
+            <View style={styles.ctaCopy}><Text style={[styles.eyebrow, light && styles.eyebrowLight]}>READY TO TRADE SMARTER?</Text><Text style={[styles.ctaTitle, light && styles.textLight]}>Bring your collection. Find the right trainer.</Text><Text style={[styles.ctaDetail, light && styles.mutedLight]}>Create your free account, publish your trade list, and discover exchanges that work for both trainers.</Text></View>
             <View style={styles.ctaActions}><Pressable accessibilityRole="button" onPress={() => onNavigate('/register')} style={styles.primary}><Text style={styles.primaryText}>Create account →</Text></Pressable><Pressable accessibilityRole="button" onPress={() => onNavigate('/getting-started')} style={[styles.secondary, light && styles.secondaryLight]}><Text style={[styles.secondaryText, light && styles.textLight]}>Quick start guide</Text></Pressable></View>
           </View>
 
@@ -293,12 +293,13 @@ const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: '#090d12' }, rootLight: { backgroundColor: '#f8fff9' }, textLight: { color: '#14232a' }, mutedLight: { color: '#576a73' },
   heroRegion: { position: 'relative', overflow: 'hidden' },
   topbar: { minHeight: 68, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8, paddingHorizontal: 12 }, brand: { flexDirection: 'row', alignItems: 'center', gap: 8 }, brandIcon: { width: 38, height: 38, resizeMode: 'contain' }, brandText: { color: '#fff', fontSize: 16, fontWeight: '900' }, topActions: { flexDirection: 'row', alignItems: 'center', gap: 5 }, navLink: { minHeight: 40, justifyContent: 'center', paddingHorizontal: 7 }, navLinkText: { color: '#fff', fontSize: 11, fontWeight: '800' },
-  signIn: { minHeight: 40, justifyContent: 'center', borderWidth: 1, borderColor: '#66747d', borderRadius: 10, paddingHorizontal: 10, backgroundColor: '#171d22' }, signInLight: { borderColor: '#aebbc2', backgroundColor: '#fff' }, signInText: { color: '#fff', fontSize: 11, fontWeight: '900' }, register: { minHeight: 40, justifyContent: 'center', borderRadius: 10, paddingHorizontal: 10, backgroundColor: '#168ced' }, registerText: { color: '#fff', fontSize: 10.5, fontWeight: '900' },
+  signIn: { minHeight: 40, justifyContent: 'center', borderWidth: 1, borderColor: '#66747d', borderRadius: 10, paddingHorizontal: 10, backgroundColor: '#171d22' }, signInLight: { borderColor: '#aebbc2', backgroundColor: '#fff' }, signInText: { color: '#fff', fontSize: 11, fontWeight: '900' }, register: { minHeight: 40, justifyContent: 'center', borderRadius: 10, paddingHorizontal: 10, backgroundColor: '#168ced' }, registerText: { color: '#05111d', fontSize: 10.5, fontWeight: '900' },
   hero: { minHeight: 530, alignItems: 'center', justifyContent: 'center', overflow: 'hidden', paddingHorizontal: 14, paddingVertical: 44 },
   heroCompact: { minHeight: 0, paddingTop: 32, paddingBottom: 58 },
   lockup: { width: '92%', maxWidth: 560, height: 190 },
   lockupCompact: { width: '94%', height: 158, marginBottom: 8 },
   eyebrow: { color: '#299cf5', fontSize: 10, fontWeight: '900', letterSpacing: 1.5, textAlign: 'center' },
+  eyebrowLight: { color: '#005bb5' },
   title: { maxWidth: 820, marginTop: 10, color: '#fff', fontSize: 34, lineHeight: 38, fontWeight: '900', letterSpacing: -1.1, textAlign: 'center' },
   titleAccent: { maxWidth: 820, color: '#55c9ff', fontSize: 34, lineHeight: 39, fontWeight: '900', letterSpacing: -1.1, textAlign: 'center' },
   titleCompact: { maxWidth: 390, fontSize: 55, lineHeight: 58, letterSpacing: -2.5 },
@@ -307,8 +308,8 @@ const styles = StyleSheet.create({
   heroActionsCompact: { width: '100%', maxWidth: 300, flexDirection: 'column', alignItems: 'stretch' },
   heroActionCompact: { width: '100%' },
   proof: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: 10, marginTop: 18 }, proofItem: { flexDirection: 'row', alignItems: 'center', gap: 5 }, proofCheck: { color: '#299cf5', fontSize: 9 }, proofText: { color: '#aab9c1', fontSize: 10.5, fontWeight: '700' },
-  matchPreview: { width: '100%', maxWidth: 700, marginTop: 35, borderWidth: 1, borderColor: '#305d4e', borderRadius: 24, padding: 14, backgroundColor: '#15221f' }, matchPreviewLight: { borderColor: '#8acbb4', backgroundColor: '#f6fffb' }, matchHeading: { alignItems: 'center', gap: 4, paddingBottom: 12 }, matchEyebrow: { color: '#35c984', fontSize: 9, fontWeight: '900', letterSpacing: 1.2 }, matchTitle: { color: '#fff', fontSize: 15, lineHeight: 20, fontWeight: '900', textAlign: 'center' }, exchange: { flexDirection: 'row', alignItems: 'center', gap: 5 }, exchangePokemon: { minWidth: 0, flex: 1, minHeight: 205, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderRadius: 16, padding: 8, backgroundColor: '#101815' }, exchangePokemonLight: { backgroundColor: '#fff' }, exchangePokemonTrade: { borderColor: '#327e60' }, exchangePokemonWanted: { borderColor: '#9c465a' }, tradeLabel: { color: '#35c984', fontSize: 8.5, fontWeight: '900', letterSpacing: 1 }, wantedLabel: { color: '#f05a70', fontSize: 8.5, fontWeight: '900', letterSpacing: 1 }, exchangeStage: { width: '100%', height: 106, alignItems: 'center', justifyContent: 'center' }, exchangeImage: { width: '92%', height: '92%' }, exchangeMaxIcon: { position: 'absolute', right: 2, top: 2, width: 31, height: 31 }, exchangeIcon: { width: 36, height: 36 }, exchangeName: { minHeight: 36, color: '#fff', fontSize: 11.5, lineHeight: 16, fontWeight: '900', textAlign: 'center' }, exchangeMeta: { color: '#9caab1', fontSize: 8.5, textAlign: 'center' }, matchResult: { flexDirection: 'row', alignItems: 'center', gap: 9, marginTop: 10, borderRadius: 12, padding: 10, backgroundColor: '#0e3227' }, matchResultLight: { backgroundColor: '#e5f8f0' }, matchResultIcon: { color: '#35c984', fontSize: 22, fontWeight: '900' }, matchResultCopy: { minWidth: 0, flex: 1 }, matchResultTitle: { color: '#fff', fontSize: 12, fontWeight: '900' }, matchResultDetail: { color: '#a8bab2', fontSize: 9, lineHeight: 13 },
-  primary: { minHeight: 48, alignItems: 'center', justifyContent: 'center', borderRadius: 11, paddingHorizontal: 20, backgroundColor: '#168ced' }, primaryText: { color: '#fff', fontWeight: '900' }, secondary: { minHeight: 48, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: '#66747d', borderRadius: 11, paddingHorizontal: 20, backgroundColor: '#161c21' }, secondaryLight: { borderColor: '#aebbc2', backgroundColor: '#fff' }, secondaryText: { color: '#fff', fontWeight: '900' },
+  matchPreview: { width: '100%', maxWidth: 700, marginTop: 35, borderWidth: 1, borderColor: '#305d4e', borderRadius: 24, padding: 14, backgroundColor: '#15221f' }, matchPreviewLight: { borderColor: '#8acbb4', backgroundColor: '#f6fffb' }, matchHeading: { alignItems: 'center', gap: 4, paddingBottom: 12 }, matchEyebrow: { color: '#35c984', fontSize: 9, fontWeight: '900', letterSpacing: 1.2 }, matchEyebrowLight: { color: '#087454' }, matchTitle: { color: '#fff', fontSize: 15, lineHeight: 20, fontWeight: '900', textAlign: 'center' }, exchange: { flexDirection: 'row', alignItems: 'center', gap: 5 }, exchangePokemon: { minWidth: 0, flex: 1, minHeight: 205, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderRadius: 16, padding: 8, backgroundColor: '#101815' }, exchangePokemonLight: { backgroundColor: '#fff' }, exchangePokemonTrade: { borderColor: '#327e60' }, exchangePokemonWanted: { borderColor: '#9c465a' }, tradeLabel: { color: '#35c984', fontSize: 8.5, fontWeight: '900', letterSpacing: 1 }, wantedLabel: { color: '#f05a70', fontSize: 8.5, fontWeight: '900', letterSpacing: 1 }, wantedLabelLight: { color: '#b00020' }, exchangeStage: { width: '100%', height: 106, alignItems: 'center', justifyContent: 'center' }, exchangeImage: { width: '92%', height: '92%' }, exchangeMaxIcon: { position: 'absolute', right: 2, top: 2, width: 31, height: 31 }, exchangeIcon: { width: 36, height: 36 }, exchangeName: { minHeight: 36, color: '#fff', fontSize: 11.5, lineHeight: 16, fontWeight: '900', textAlign: 'center' }, exchangeMeta: { color: '#9caab1', fontSize: 8.5, textAlign: 'center' }, matchResult: { flexDirection: 'row', alignItems: 'center', gap: 9, marginTop: 10, borderRadius: 12, padding: 10, backgroundColor: '#0e3227' }, matchResultLight: { backgroundColor: '#e5f8f0' }, matchResultIcon: { color: '#35c984', fontSize: 22, fontWeight: '900' }, matchResultCopy: { minWidth: 0, flex: 1 }, matchResultTitle: { color: '#fff', fontSize: 12, fontWeight: '900' }, matchResultDetail: { color: '#a8bab2', fontSize: 9, lineHeight: 13 },
+  primary: { minHeight: 48, alignItems: 'center', justifyContent: 'center', borderRadius: 11, paddingHorizontal: 20, backgroundColor: '#168ced' }, primaryText: { color: '#05111d', fontWeight: '900' }, secondary: { minHeight: 48, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: '#66747d', borderRadius: 11, paddingHorizontal: 20, backgroundColor: '#161c21' }, secondaryLight: { borderColor: '#aebbc2', backgroundColor: '#fff' }, secondaryText: { color: '#fff', fontWeight: '900' },
   content: { width: '100%', maxWidth: 940, alignSelf: 'center', gap: 28, paddingHorizontal: 14 }, heading: { gap: 6 }, headingTitle: { color: '#fff', fontSize: 27, lineHeight: 32, fontWeight: '900', textAlign: 'center' }, headingDetail: { maxWidth: 720, alignSelf: 'center', color: '#afbdc5', fontSize: 14, lineHeight: 21, textAlign: 'center' },
   features: { gap: 10 }, feature: { minHeight: 100, flexDirection: 'row', alignItems: 'center', gap: 13, borderWidth: 1, borderColor: '#303b43', borderRadius: 16, padding: 14, backgroundColor: '#141a1f' }, surfaceLight: { borderColor: '#c6d1d6', backgroundColor: '#fff' }, featureGlyph: { width: 60, height: 60, alignItems: 'center', justifyContent: 'center', borderRadius: 15 }, featureImage: { width: 51, height: 51 }, featureCopy: { flex: 1, minWidth: 0 }, featureTitle: { color: '#fff', fontSize: 16, fontWeight: '900' }, featureDetail: { marginTop: 4, color: '#aebbc2', fontSize: 12, lineHeight: 17 }, arrow: { color: '#bdc6ca', fontSize: 26 }, pressed: { opacity: 0.77 },
   workflow: { gap: 18, borderWidth: 1, borderColor: '#334048', borderRadius: 20, padding: 18, backgroundColor: '#151b20' }, steps: { gap: 9 }, step: { borderLeftWidth: 3, borderLeftColor: '#299cf5', borderRadius: 10, padding: 13, backgroundColor: '#10161a' }, stepLight: { backgroundColor: '#f2f7fa' }, stepNumber: { color: '#299cf5', fontSize: 10, fontWeight: '900', letterSpacing: 1.2 }, stepVisual: { minHeight: 92, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 12, marginVertical: 6 }, stepPokemonStage: { width: 92, height: 86, alignItems: 'center', justifyContent: 'center' }, stepPokemon: { width: 92, height: 86 }, stepMaxIcon: { position: 'absolute', right: 0, top: 0, width: 27, height: 27 }, stepVisualGlyph: { color: '#58c3ff', fontSize: 27, fontWeight: '900' }, stepTitle: { marginTop: 3, color: '#fff', fontSize: 16, fontWeight: '900', textAlign: 'center' }, stepDetail: { marginTop: 4, color: '#acb8bf', fontSize: 12, lineHeight: 17, textAlign: 'center' }, workflowLink: { minHeight: 46, alignItems: 'center', justifyContent: 'center', borderRadius: 10, paddingHorizontal: 12, backgroundColor: '#123e62' }, workflowLinkText: { color: '#63baff', fontWeight: '900', textAlign: 'center' },

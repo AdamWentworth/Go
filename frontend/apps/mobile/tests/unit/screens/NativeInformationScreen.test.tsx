@@ -20,6 +20,16 @@ describe('NativeInformationScreen', () => {
     expect(screen.getByText('Privacy Policy')).toBeTruthy();
     expect(screen.getByText('Last updated: July 28, 2026')).toBeTruthy();
     expect(screen.getByText('What Pokémon Go Nexus collects')).toBeTruthy();
+    expect(screen.getByText(/We collect the account information you provide, such as your email address/)).toBeTruthy();
+  });
+
+  it('keeps the canonical data-deletion copy and inline Account Security link', () => {
+    const onNavigate = jest.fn();
+    renderPage('data-deletion', onNavigate);
+
+    expect(screen.getByText('Sign in to the Pokémon Go Nexus account you want to delete.')).toBeTruthy();
+    fireEvent.press(screen.getByRole('link', { name: 'Settings → Account Security' }));
+    expect(onNavigate).toHaveBeenCalledWith('/settings/account');
   });
 
   it('filters and expands categorized FAQ answers', () => {

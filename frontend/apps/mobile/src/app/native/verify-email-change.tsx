@@ -54,7 +54,7 @@ export default function NativeVerifyEmailChangeRoute() {
     <View style={styles.screen}>
       <View style={[styles.root, light && styles.rootLight]} testID="native-verify-email-change-screen">
         <View accessibilityLiveRegion="polite" style={[styles.card, light && styles.cardLight]}>
-        <Text style={styles.brand}>POKÉMON GO NEXUS</Text>
+        <Text style={[styles.brand, light && styles.brandLight]}>POKÉMON GO NEXUS</Text>
         <View style={[styles.icon, state === 'error' && styles.iconError]}>
           {state === 'working'
             ? <ActivityIndicator color="#06162f" size="small" />
@@ -108,6 +108,7 @@ const styles = StyleSheet.create({
   },
   cardLight: { borderColor: '#afc3ce', backgroundColor: '#fff' },
   brand: { color: '#39aaff', fontSize: 11, fontWeight: '900', letterSpacing: 1.7 },
+  brandLight: { color: '#005bb5' },
   icon: {
     width: 54,
     height: 54,
@@ -131,5 +132,5 @@ const styles = StyleSheet.create({
     borderRadius: 13,
     backgroundColor: '#168ff0',
   },
-  buttonText: { color: '#fff', fontSize: 15, fontWeight: '900' },
+  buttonText: { color: '#04131f', fontSize: 15, fontWeight: '900' },
 });

@@ -44,6 +44,14 @@ const toAssetUrl = (baseUrl: string, path: string): string => (
   `${baseUrl.replace(/\/$/, '')}/${path.replace(/^\//, '')}`
 );
 
+const accessibleLightAccent = (accent: string): string => ({
+  '#2389ed': '#005bb5',
+  '#299cf5': '#005bb5',
+  '#35c984': '#087454',
+  '#e7bb1f': '#745b00',
+  '#f05a70': '#b00020',
+}[accent.toLocaleLowerCase()] ?? accent);
+
 const SectionHeading = ({
   action,
   eyebrow,
@@ -59,7 +67,7 @@ const SectionHeading = ({
 }) => (
   <View style={styles.sectionHeading}>
     <View style={styles.sectionHeadingCopy}>
-      <Text style={styles.eyebrow}>{eyebrow.toLocaleUpperCase()}</Text>
+      <Text style={[styles.eyebrow, light && styles.eyebrowLight]}>{eyebrow.toLocaleUpperCase()}</Text>
       <Text accessibilityRole="header" style={[styles.sectionTitle, light && styles.textLight]}>{title}</Text>
     </View>
     {action && onAction ? (
@@ -96,7 +104,7 @@ const ActionCard = ({
     ]}
   >
     <View style={[styles.actionIcon, { backgroundColor: `${accent}1f` }]}>
-      <NativeUiIcon color={accent} name={icon} size={20} />
+      <NativeUiIcon color={light ? accessibleLightAccent(accent) : accent} name={icon} size={20} />
     </View>
     <View style={styles.actionCopy}>
       <Text style={[styles.actionTitle, light && styles.textLight]}>{title}</Text>
@@ -129,13 +137,13 @@ const StatCard = ({
     style={({ pressed }) => [
       styles.statCard,
       light && styles.statCardLight,
-      { borderTopColor: accent },
+      { borderTopColor: light ? accessibleLightAccent(accent) : accent },
       pressed && styles.pressed,
     ]}
   >
-    <Text style={[styles.statValue, { color: accent }]}>{value.toLocaleString()}</Text>
+    <Text style={[styles.statValue, { color: light ? accessibleLightAccent(accent) : accent }]}>{value.toLocaleString()}</Text>
     <View style={styles.statLabelRow}>
-      {icon ? <NativeUiIcon color={accent} name={icon} size={13} /> : null}
+      {icon ? <NativeUiIcon color={light ? accessibleLightAccent(accent) : accent} name={icon} size={13} /> : null}
       <Text style={[styles.statLabel, light && styles.textLight]}>{label}</Text>
     </View>
     {detail ? <Text style={[styles.statDetail, light && styles.mutedLight]}>{detail}</Text> : null}
@@ -238,7 +246,7 @@ export const NativeHomeScreen = ({
         ) : (
           <>
         <View style={styles.welcome}>
-          <Text style={styles.eyebrow}>TRAINER DASHBOARD</Text>
+          <Text style={[styles.eyebrow, light && styles.eyebrowLight]}>TRAINER DASHBOARD</Text>
           <Text accessibilityRole="header" style={[styles.title, light && styles.textLight]}>Welcome back,{`\n`}{firstName}</Text>
           <Text style={[styles.lead, light && styles.mutedLight]}>Your collection, trades, and trainer network—together in one place.</Text>
           <Pressable accessibilityRole="button" onPress={() => onNavigate('/search')} style={styles.primaryButton}>
@@ -325,9 +333,9 @@ export const NativeHomeScreen = ({
         <View style={[styles.panel, light && styles.panelLight]}>
           <SectionHeading eyebrow="Trading" light={light} title="Trade workspace" />
           <View style={[styles.tradeSummary, light && styles.tradeSummaryLight]}>
-            <Text style={[styles.tradeMetric, light && styles.textLight]}><Text style={styles.tradeMetricValue}>{trades.active}</Text> active</Text>
+            <Text style={[styles.tradeMetric, light && styles.textLight]}><Text style={[styles.tradeMetricValue, light && styles.tradeMetricValueLight]}>{trades.active}</Text> active</Text>
             <View style={[styles.metricDivider, light && styles.metricDividerLight]} />
-            <Text style={[styles.tradeMetric, light && styles.textLight]}><Text style={styles.tradeMetricValue}>{trades.completed}</Text> completed</Text>
+            <Text style={[styles.tradeMetric, light && styles.textLight]}><Text style={[styles.tradeMetricValue, light && styles.tradeMetricValueLight]}>{trades.completed}</Text> completed</Text>
           </View>
           <View style={styles.tradeLinks}>
             <ActionCard accent="#f05a70" detail="Fine-tune what you offer and want." icon="sliders" light={light} onPress={() => onNavigate('/trades?section=preferences')} title="Trade preferences" />
@@ -408,6 +416,7 @@ const styles = StyleSheet.create({
   profileUsername: { minWidth: 0, flexShrink: 1, color: '#f4fbfd', fontSize: 12, fontWeight: '900' },
   welcome: { gap: 7, paddingVertical: 9 },
   eyebrow: { color: '#299cf5', fontSize: 10, fontWeight: '900', letterSpacing: 1.25 },
+  eyebrowLight: { color: '#005bb5' },
   title: { color: '#ffffff', fontSize: 31, fontWeight: '900', letterSpacing: -0.8, lineHeight: 33 },
   lead: { color: '#a8b6b9', fontSize: 15, lineHeight: 21 },
   primaryButton: { minHeight: 48, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, marginTop: 8, borderRadius: 10, backgroundColor: '#299cf5' },
@@ -454,6 +463,7 @@ const styles = StyleSheet.create({
   tradeSummaryLight: { backgroundColor: '#e0f7ee' },
   tradeMetric: { flex: 1, color: '#ecf8f4', fontSize: 13, fontWeight: '800', textAlign: 'center' },
   tradeMetricValue: { color: '#35c984', fontSize: 22, fontWeight: '900' },
+  tradeMetricValueLight: { color: '#087454' },
   metricDivider: { width: 1, height: 38, backgroundColor: '#31534b' },
   metricDividerLight: { backgroundColor: '#a9d7c8' },
   tradeLinks: { gap: 9 },

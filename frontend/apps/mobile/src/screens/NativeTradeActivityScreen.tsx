@@ -133,7 +133,7 @@ const PokemonCard = ({
   light: boolean;
 }) => (
   <View style={[styles.pokemonCard, light && styles.surfaceLight]}>
-    <Text maxFontSizeMultiplier={1.25} numberOfLines={2} style={styles.partyLabel}>
+    <Text maxFontSizeMultiplier={1.25} numberOfLines={2} style={[styles.partyLabel, light && styles.accentLight]}>
       {label}
     </Text>
     <View style={styles.pokemonStage}>
@@ -188,7 +188,7 @@ const TradeConditions = ({
 }) => (
   <View style={[styles.conditions, light && styles.conditionsLight]}>
     <View style={styles.friendshipGroup}>
-      <Text style={styles.conditionLabel}>FRIENDSHIP</Text>
+      <Text style={[styles.conditionLabel, light && styles.accentLight]}>FRIENDSHIP</Text>
       <View
         accessibilityLabel={`${model.friendshipLevel} of 5 friendship hearts${model.isRemoteTrade ? ', remote trade available' : ''}`}
         style={styles.conditionIcons}
@@ -228,7 +228,7 @@ const TradeConditions = ({
       </View>
     </View>
     <View style={styles.costGroup}>
-      <Text style={styles.conditionLabel}>STARDUST</Text>
+      <Text style={[styles.conditionLabel, light && styles.accentLight]}>STARDUST</Text>
       <View style={styles.costValue}>
         <Image
           accessibilityElementsHidden
@@ -267,7 +267,7 @@ const TradeCard = ({
     <View style={[styles.tradeCard, light && styles.cardLight]} testID={`trade-card-${model.tradeId}`}>
       <View style={styles.tradeHeader}>
         <View style={styles.tradeHeaderCopy}>
-          <Text style={styles.statusLabel}>{model.label.toLocaleUpperCase()}</Text>
+          <Text style={[styles.statusLabel, light && styles.accentLight]}>{model.label.toLocaleUpperCase()}</Text>
           <Text maxFontSizeMultiplier={1.3} numberOfLines={2} style={[styles.tradeTitle, light && styles.textLight]}>
             {model.title}
           </Text>
@@ -410,7 +410,7 @@ export const NativeTradeActivityScreen = ({
   return (
     <View style={[styles.screen, light && styles.screenLight]} testID="native-trade-activity-screen">
       {showModeTabs ? (
-        <View style={[styles.modeTabs, light && styles.modeTabsLight]}>
+        <View accessibilityRole="tablist" style={[styles.modeTabs, light && styles.modeTabsLight]}>
           <Pressable aria-selected={false} accessibilityRole="tab" accessibilityState={{ selected: false }} onPress={onOpenPreferences} style={styles.modeTab}>
             <Text style={[styles.modeTabText, light && styles.secondaryLight]}>Trade Preferences</Text>
           </Pressable>
@@ -626,6 +626,7 @@ const styles = StyleSheet.create({
   tradeHeader: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', gap: 8, borderLeftWidth: 4, borderLeftColor: '#36c181', borderBottomWidth: 1, borderBottomColor: '#204640', padding: 11 },
   tradeHeaderCopy: { flex: 1, gap: 1 },
   statusLabel: { color: '#42d492', fontSize: 10, fontWeight: '900', letterSpacing: 1.1 },
+  accentLight: { color: '#087454' },
   tradeTitle: { color: '#f7fbfa', fontSize: 16, fontWeight: '900' },
   tradeDescription: { color: '#9fb7b2', fontSize: 12, lineHeight: 16 },
   date: { flexShrink: 0, color: '#99b3ae', fontSize: 11 },
@@ -667,7 +668,7 @@ const styles = StyleSheet.create({
   costText: { color: '#ffffff', fontSize: 13, fontWeight: '900' },
   actions: { flexDirection: 'row', flexWrap: 'wrap', gap: 7, padding: 8 },
   actionButton: { flexGrow: 1, minWidth: '46%', minHeight: 46, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 7, borderRadius: 8, paddingHorizontal: 10 },
-  primaryAction: { backgroundColor: '#2fbd79' },
+  primaryAction: { backgroundColor: '#287e52' },
   secondaryAction: { borderWidth: 1, borderColor: '#64817b', backgroundColor: 'transparent' },
   destructiveAction: { backgroundColor: '#a44250' },
   actionText: { color: '#ffffff', fontWeight: '900', textAlign: 'center' },

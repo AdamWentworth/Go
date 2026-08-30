@@ -156,7 +156,7 @@ export const NativeRaidScreen = ({
         style={styles.productIcon}
       />
       <View style={styles.headerCopy}>
-        <Text style={styles.eyebrow}>BATTLE PLANNING</Text>
+        <Text style={[styles.eyebrow, light && styles.accentLight]}>BATTLE PLANNING</Text>
         <Text accessibilityRole="header" style={[styles.title, light && styles.textLight]}>Raid Planner</Text>
         <Text style={[styles.lead, light && styles.mutedLight]}>Rank attackers, prepare counters, and build teams for current raid bosses.</Text>
       </View>
@@ -285,7 +285,7 @@ export const NativeRaidScreen = ({
         <View style={[styles.selectedBoss, light && styles.panelLight]}>
           <Image resizeMode="contain" source={{ uri: absoluteUri(assetBaseUrl, selectedBoss.imageUri) }} style={styles.selectedBossImage} />
           <View style={styles.bossSummaryCopy}>
-            <Text style={styles.eyebrow}>RAID BOSS</Text>
+            <Text style={[styles.eyebrow, light && styles.accentLight]}>RAID BOSS</Text>
             <Text style={[styles.bossTitle, light && styles.textLight]}>{selectedBoss.name}</Text>
             <Text style={[styles.bossMeta, light && styles.mutedLight]}>{selectedBoss.tier.shortLabel} · #{String(selectedBoss.pokemon.pokedex_number).padStart(4, '0')}</Text>
           </View>
@@ -337,7 +337,7 @@ export const NativeRaidScreen = ({
       <View style={styles.leaderboardHeading}>
         <Text style={[styles.resultsTitle, light && styles.textLight]}>{heading}</Text>
         <Pressable accessibilityLabel="How raid rankings work" accessibilityRole="button" onPress={onMethodology} style={[styles.info, light && styles.controlLight]}>
-          <Text style={styles.infoText}>ⓘ</Text>
+          <Text style={[styles.infoText, light && styles.accentLight]}>ⓘ</Text>
         </Pressable>
       </View>
       {toolbar}
@@ -387,6 +387,7 @@ const styles = StyleSheet.create({
   rootLight: { backgroundColor: '#f8fff9' },
   textLight: { color: '#142629' },
   mutedLight: { color: '#617476' },
+  accentLight: { color: '#08766b' },
   panelLight: { borderColor: '#b8cccc', backgroundColor: '#fff' },
   controlLight: { borderColor: '#b8c8c8', backgroundColor: '#fff' },
   inputLight: { borderColor: '#b8c8c8', color: '#142629', backgroundColor: '#fff' },

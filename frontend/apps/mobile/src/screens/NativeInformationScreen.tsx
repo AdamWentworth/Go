@@ -128,11 +128,11 @@ const GettingStartedScreen = ({
           </View>
 
           <View style={[styles.guideIndex, light && styles.guidePanelLight]}>
-            <Text style={styles.guideEyebrow}>ON THIS PAGE</Text>
+            <Text style={[styles.guideEyebrow, light && styles.guideBlueLight]}>ON THIS PAGE</Text>
             <View style={styles.guideIndexRows}>
               {page.sections.map((section) => (
                 <View key={section.id} style={[styles.guideIndexRow, light && styles.guideDividerLight]}>
-                  <Text style={styles.guideIndexNumber}>{section.category?.replace('STEP ', '')}</Text>
+                  <Text style={[styles.guideIndexNumber, light && styles.guideGreenLight]}>{section.category?.replace('STEP ', '')}</Text>
                   <Text style={[styles.guideIndexLabel, light && styles.mutedLight]}>{section.title}</Text>
                 </View>
               ))}
@@ -140,11 +140,11 @@ const GettingStartedScreen = ({
           </View>
 
           <View style={styles.guideHero}>
-            <Text style={styles.guideEyebrow}>{page.eyebrow}</Text>
+            <Text style={[styles.guideEyebrow, light && styles.guideBlueLight]}>{page.eyebrow}</Text>
             <Text accessibilityRole="header" style={[styles.guideTitle, light && styles.textLight]}>{page.title}</Text>
             <Text style={[styles.guideIntro, light && styles.mutedLight]}>This guide follows the same order you will use in the app. Read it straight through, or jump directly to the part of the workflow you need.</Text>
             <View style={[styles.guideStoryNote, light && styles.guideStoryNoteLight]}>
-              <Text style={[styles.guideStoryText, light && styles.mutedLight]}><Text style={styles.guideStoryStrong}>Running example:</Text> offer a Shiny Gigantamax Charizard for a Shiny Detective Pikachu.</Text>
+              <Text style={[styles.guideStoryText, light && styles.mutedLight]}><Text style={[styles.guideStoryStrong, light && styles.guideGreenLight]}>Running example:</Text> offer a Shiny Gigantamax Charizard for a Shiny Detective Pikachu.</Text>
             </View>
             <View style={styles.guideLegend}>
               {legend.map((item) => (
@@ -177,7 +177,7 @@ const GettingStartedScreen = ({
                 <View key={section.id} style={[styles.guideStep, light && styles.guidePanelLight]}>
                   <View style={[styles.guideStepVisual, visual.tone === 'wanted' && styles.guideStepVisualWanted, (visual.tone === 'trade' || visual.tone === 'proposal') && styles.guideStepVisualTrade, light && styles.guideStepVisualLight]}>
                     <Text style={[styles.guideVisualNumber, light && styles.guideVisualNumberLight]}>{section.category?.replace('STEP ', '')}</Text>
-                    <Text style={styles.guideVisualGlyph}>{visual.glyph}</Text>
+                    <Text style={[styles.guideVisualGlyph, light && styles.guideGreenLight]}>{visual.glyph}</Text>
                     <View style={styles.guideVisualPokemonRow}>
                       {visual.images.map((image, index) => (
                         <View key={`${image.path}-${index}`} style={[styles.guideVisualPokemonWrap, visual.images.length > 1 && styles.guideVisualPokemonWrapPair]}>
@@ -189,20 +189,20 @@ const GettingStartedScreen = ({
                     <Text numberOfLines={1} style={[styles.guideVisualLabel, light && styles.mutedLight]}>{visual.label}</Text>
                   </View>
                   <View style={styles.guideStepCopy}>
-                    <Text style={styles.guideEyebrow}>{section.category}</Text>
+                    <Text style={[styles.guideEyebrow, light && styles.guideBlueLight]}>{section.category}</Text>
                     <Text accessibilityRole="header" style={[styles.guideStepTitle, light && styles.textLight]}>{section.title}</Text>
                     <Text style={[styles.guideStepDetail, light && styles.mutedLight]}>{section.detail}</Text>
                     <View style={styles.guideBullets}>
                       {section.bullets?.map((bullet) => (
                         <View key={bullet} style={styles.guideBulletRow}>
-                          <Text style={styles.guideBulletMark}>✓</Text>
+                          <Text style={[styles.guideBulletMark, light && styles.guideGreenLight]}>✓</Text>
                           <Text style={[styles.guideBulletText, light && styles.mutedLight]}>{bullet}</Text>
                         </View>
                       ))}
                     </View>
                     {section.links?.map((link) => (
                       <Pressable accessibilityLabel={link.label} accessibilityRole="button" key={link.path} onPress={() => onNavigate(link.path)} style={styles.guideStepLink}>
-                        <Text style={styles.guideStepLinkText}>{link.label}  →</Text>
+                        <Text style={[styles.guideStepLinkText, light && styles.guideGreenLight]}>{link.label}  →</Text>
                       </Pressable>
                     ))}
                   </View>
@@ -213,7 +213,7 @@ const GettingStartedScreen = ({
 
           <View style={[styles.guideFinish, light && styles.guideFinishLight]}>
             <Image source={{ uri: toAssetUrl(assetBaseUrl, '/images/logo/logo.png') }} style={styles.guideFinishLogo} />
-            <Text style={styles.guideEyebrow}>YOU DO NOT NEED A COMPLETE CATALOG</Text>
+            <Text style={[styles.guideEyebrow, light && styles.guideBlueLight]}>YOU DO NOT NEED A COMPLETE CATALOG</Text>
             <Text style={[styles.guideFinishTitle, light && styles.textLight]}>Start small. Let the workflow grow with you.</Text>
             <Text style={[styles.guideFinishText, light && styles.mutedLight]}>Add one Pokémon today. Your signed-in Home will show the next useful milestone without forcing you through a tour.</Text>
             <Pressable accessibilityRole="button" onPress={() => onNavigate(isLoggedIn ? '/pokemon' : '/register')} style={styles.guideFinishButton}>
@@ -252,7 +252,7 @@ const InformationSection = ({
         style={styles.sectionHeader}
       >
         <View style={styles.sectionHeaderCopy}>
-          {section.category ? <Text style={styles.sectionCategory}>{section.category}</Text> : null}
+          {section.category ? <Text style={[styles.sectionCategory, light && styles.blueTextLight]}>{section.category}</Text> : null}
           <Text accessibilityRole="header" style={[styles.sectionTitle, light && styles.textLight]}>{section.title}</Text>
           {section.detail ? <Text style={[styles.sectionDetail, light && styles.mutedLight]}>{section.detail}</Text> : null}
         </View>
@@ -302,6 +302,54 @@ const InformationSection = ({
     </View>
   );
 };
+
+const NativeLegalSection = ({
+  light,
+  onNavigate,
+  page,
+  section,
+}: {
+  light: boolean;
+  onNavigate: (path: string) => void;
+  page: NativeInformationPage;
+  section: NativeInformationSection;
+}) => (
+  <View style={[styles.legalSection, light && styles.legalSectionLight]}>
+    <Text style={[styles.legalSectionTitle, light && styles.legalHeadingLight]}>{section.title}</Text>
+    {section.bullets?.map((bullet, index) => (
+      <View key={bullet} style={styles.legalOrderedRow}>
+        <Text style={[styles.legalOrderedNumber, light && styles.legalLinkLight]}>{index + 1}.</Text>
+        {page.slug === 'data-deletion' && section.id === 'delete' && index === 1 ? (
+          <Text style={[styles.legalParagraph, light && styles.legalParagraphLight]}>
+            Open{' '}
+            <Text
+              accessibilityRole="link"
+              onPress={() => onNavigate('/settings/account')}
+              style={[styles.legalLink, light && styles.legalLinkLight]}
+            >
+              Settings → Account Security
+            </Text>
+            .
+          </Text>
+        ) : page.slug === 'data-deletion' && section.id === 'delete' && index === 2 ? (
+          <Text style={[styles.legalParagraph, light && styles.legalParagraphLight]}>
+            Select <Text style={styles.legalStrong}>Delete account</Text> and confirm the request.
+          </Text>
+        ) : (
+          <Text style={[styles.legalParagraph, light && styles.legalParagraphLight]}>{bullet}</Text>
+        )}
+      </View>
+    ))}
+    {section.paragraphs?.map((paragraph) => (
+      <Text key={paragraph} style={[styles.legalParagraph, light && styles.legalParagraphLight]}>{paragraph}</Text>
+    ))}
+    {section.links?.map((link) => (
+      <Pressable accessibilityRole="link" key={link.path} onPress={() => onNavigate(link.path)}>
+        <Text style={[styles.legalLink, light && styles.legalLinkLight]}>{link.label}</Text>
+      </Pressable>
+    ))}
+  </View>
+);
 
 const NativeInformationPageScreen = ({ assetBaseUrl, isLoggedIn = false, onBack, onNavigate, page }: Props) => {
   const light = useNativeColorScheme() === 'light';
@@ -361,7 +409,7 @@ const NativeInformationPageScreen = ({ assetBaseUrl, isLoggedIn = false, onBack,
             <View style={[styles.faqHeroIcon, light && styles.faqHeroIconLight]}>
               <NativeUiIcon color="#299cf5" name="help" size={32} />
             </View>
-            <Text style={styles.eyebrow}>{page.eyebrow}</Text>
+            <Text style={[styles.eyebrow, light && styles.blueTextLight]}>{page.eyebrow}</Text>
             <Text accessibilityRole="header" style={[styles.faqTitle, light && styles.textLight]}>{page.title}</Text>
             <Text style={[styles.faqIntro, light && styles.mutedLight]}>{page.intro}</Text>
           </View>
@@ -397,7 +445,7 @@ const NativeInformationPageScreen = ({ assetBaseUrl, isLoggedIn = false, onBack,
 
           <View style={styles.faqResults}>
             <View style={styles.faqResultsHeader}>
-              <View style={styles.faqResultsCopy}><Text style={styles.sectionCategory}>KNOWLEDGE BASE</Text><Text style={[styles.faqResultsTitle, light && styles.textLight]}>{normalizedQuery ? 'Search results' : validActiveCategory ? faqCategoryLabel(validActiveCategory) : 'Common questions'}</Text><Text style={[styles.faqResultsDetail, light && styles.mutedLight]}>{visibleSections.length} {visibleSections.length === 1 ? 'question' : 'questions'}{normalizedQuery ? ` matching “${query.trim()}”` : ''}</Text></View>
+              <View style={styles.faqResultsCopy}><Text style={[styles.sectionCategory, light && styles.blueTextLight]}>KNOWLEDGE BASE</Text><Text style={[styles.faqResultsTitle, light && styles.textLight]}>{normalizedQuery ? 'Search results' : validActiveCategory ? faqCategoryLabel(validActiveCategory) : 'Common questions'}</Text><Text style={[styles.faqResultsDetail, light && styles.mutedLight]}>{visibleSections.length} {visibleSections.length === 1 ? 'question' : 'questions'}{normalizedQuery ? ` matching “${query.trim()}”` : ''}</Text></View>
               <View style={styles.faqResultsActions}>
                 {validActiveCategory && !normalizedQuery ? <Pressable accessibilityRole="button" onPress={() => setActiveCategory(null)} style={[styles.faqPill, light && styles.faqPillLight]}><Text style={styles.faqPillAccent}>‹ All topics</Text></Pressable> : null}
                 {visibleSections.length ? <Pressable accessibilityRole="button" onPress={() => setOpenIds((current) => { const next = new Set(current); visibleSections.forEach(({ id }) => { if (allVisibleOpen) next.delete(id); else next.add(id); }); return next; })} style={[styles.faqPill, light && styles.faqPillLight]}><Text style={[styles.faqPillText, light && styles.textLight]}>{allVisibleOpen ? 'Collapse answers' : 'Expand answers'}</Text></Pressable> : null}
@@ -417,41 +465,57 @@ const NativeInformationPageScreen = ({ assetBaseUrl, isLoggedIn = false, onBack,
   }
 
   return (
-    <View style={[styles.root, light && styles.rootLight]} testID={`native-information-${page.slug}`}>
+    <View
+      style={[
+        styles.root,
+        isLegal && styles.legalRoot,
+        light && styles.rootLight,
+        light && isLegal && styles.legalRootLight,
+      ]}
+      testID={`native-information-${page.slug}`}
+    >
       <ScrollView
         contentContainerStyle={{
-          paddingTop: 8,
-          paddingBottom: 96,
+          paddingTop: isLegal && compact ? 0 : 8,
+          paddingBottom: isLegal && compact ? 0 : 96,
           paddingHorizontal: 14,
         }}
       >
         <View style={!isLegal ? [styles.informationShell, light && styles.informationShellLight] : undefined}>
         <View style={[styles.hero, (isHelp || isAbout || isSafety) && styles.informationHeroCentered, !isLegal && styles.informationHeroWithinShell, isLegal && styles.legalHero, compact && isLegal && styles.legalHeroCompact, light && styles.heroLight, light && isLegal && styles.legalHeroLight, light && compact && isLegal && styles.legalHeroCompactLight]}>
           {isHelp ? <InformationHeroIcon kind="help" light={light} /> : isAbout ? <InformationHeroIcon kind="about" light={light} /> : isSafety ? <InformationHeroIcon kind="safety" light={light} /> : null}
-          <Text style={[styles.eyebrow, (isHelp || isAbout || isSafety) && styles.centeredText]}>{page.eyebrow}</Text>
-          <Text accessibilityRole="header" style={[styles.title, (isHelp || isAbout || isSafety) && styles.centeredText, isLegal && styles.legalTitle, light && styles.textLight]}>{page.title}</Text>
+          <Text style={[styles.eyebrow, (isHelp || isAbout || isSafety) && styles.centeredText, isLegal && styles.legalEyebrow, light && !isLegal && styles.blueTextLight, light && isLegal && styles.legalLinkLight]}>{page.eyebrow}</Text>
+          <Text accessibilityRole="header" style={[styles.title, (isHelp || isAbout || isSafety) && styles.centeredText, isLegal && styles.legalTitle, light && styles.textLight, light && isLegal && styles.legalHeadingLight]}>{page.title}</Text>
           {!isLegal ? <Text style={[styles.intro, (isHelp || isAbout || isSafety) && styles.centeredText, light && styles.mutedLight]}>{page.intro}</Text> : null}
-          {page.updated ? <Text style={[styles.updated, light && styles.mutedLight]}>Last updated: {page.updated}</Text> : null}
+          {page.updated ? <Text style={[styles.updated, isLegal && styles.legalUpdated, light && styles.mutedLight, light && isLegal && styles.legalParagraphLight]}>{`Last updated: ${page.updated}`}</Text> : null}
         </View>
 
         {isLegal ? (
           <View style={[styles.legalDocument, compact && styles.legalDocumentCompact, light && styles.legalDocumentLight]}>
-            {page.sections.map((section) => <View key={section.id} style={styles.legalSection}><Text style={[styles.legalSectionTitle, light && styles.textLight]}>{section.title}</Text>{section.bullets?.map((bullet, index) => <View key={bullet} style={styles.legalOrderedRow}><Text style={styles.legalOrderedNumber}>{index + 1}.</Text><Text style={[styles.legalParagraph, light && styles.mutedLight]}>{bullet}</Text></View>)}{section.paragraphs?.map((paragraph) => <Text key={paragraph} style={[styles.legalParagraph, light && styles.mutedLight]}>{paragraph}</Text>)}{section.links?.map((link) => <Pressable accessibilityRole="link" key={link.path} onPress={() => onNavigate(link.path)}><Text style={styles.legalLink}>{link.label}</Text></Pressable>)}</View>)}
-            <View style={styles.legalFooter}><Pressable accessibilityRole="link" onPress={() => onNavigate('/help')}><Text style={styles.legalLink}>Help &amp; information</Text></Pressable><Pressable accessibilityRole="link" onPress={() => onNavigate('/')}><Text style={styles.legalLink}>Return to Pokémon Go Nexus</Text></Pressable></View>
+            {page.sections.map((section) => (
+              <NativeLegalSection
+                key={section.id}
+                light={light}
+                onNavigate={onNavigate}
+                page={page}
+                section={section}
+              />
+            ))}
+            <View style={styles.legalFooter}><Pressable accessibilityRole="link" onPress={() => onNavigate('/help')}><Text style={[styles.legalLink, light && styles.legalLinkLight]}>Help &amp; information</Text></Pressable><Pressable accessibilityRole="link" onPress={() => onNavigate('/')}><Text style={[styles.legalLink, light && styles.legalLinkLight]}>Return to Pokémon Go Nexus</Text></Pressable></View>
           </View>
         ) : isAbout ? (
           <View style={[styles.aboutBody, styles.groupBodyWithinShell, light && styles.groupShellLight]}>
             <View style={[styles.aboutStory, light && styles.aboutStoryLight]}>
               <Image source={{ uri: toAssetUrl(assetBaseUrl, '/images/logo/lockup.png') }} style={styles.aboutStoryLogo} />
               <View style={styles.aboutStoryCopy}>
-                <Text style={styles.sectionCategory}>{page.sections[0]?.category}</Text>
+                <Text style={[styles.sectionCategory, light && styles.blueTextLight]}>{page.sections[0]?.category}</Text>
                 <Text style={[styles.aboutHeading, light && styles.textLight]}>{page.sections[0]?.title}</Text>
                 {page.sections[0]?.paragraphs?.map((paragraph) => <Text key={paragraph} style={[styles.paragraph, light && styles.mutedLight]}>{paragraph}</Text>)}
               </View>
             </View>
 
             <View style={styles.aboutGroup}>
-              <Text style={styles.sectionCategory}>PRODUCT PRINCIPLES</Text>
+              <Text style={[styles.sectionCategory, light && styles.blueTextLight]}>PRODUCT PRINCIPLES</Text>
               <Text style={[styles.aboutHeading, light && styles.textLight]}>One connected model, not a pile of unrelated tools.</Text>
               <View style={styles.aboutCards}>
                 {page.sections.filter(({ category }) => category === 'PRODUCT PRINCIPLES').map((section, index) => <View key={section.id} style={[styles.aboutCard, light && styles.sectionLight]}><View style={[styles.aboutCardIcon, light && styles.blueIconTileLight]}><Text style={styles.aboutCardIconText}>{['◆', '⌕', '✓'][index] ?? '◆'}</Text></View><Text style={[styles.aboutCardTitle, light && styles.textLight]}>{section.title}</Text>{section.paragraphs?.map((paragraph) => <Text key={paragraph} style={[styles.aboutCardText, light && styles.mutedLight]}>{paragraph}</Text>)}</View>)}
@@ -459,7 +523,7 @@ const NativeInformationPageScreen = ({ assetBaseUrl, isLoggedIn = false, onBack,
             </View>
 
             <View style={styles.aboutGroup}>
-              <Text style={styles.sectionCategory}>THE TRAINER HUB</Text>
+              <Text style={[styles.sectionCategory, light && styles.blueTextLight]}>THE TRAINER HUB</Text>
               <Text style={[styles.aboutHeading, light && styles.textLight]}>Move naturally from a collection to the right trainer.</Text>
               <View style={styles.aboutLinks}>
                 {page.sections.filter(({ category }) => category === 'THE TRAINER HUB').map((section, index) => <Pressable accessibilityRole="button" key={section.id} onPress={() => onNavigate(section.links?.[0]?.path ?? '/')} style={[styles.aboutLink, light && styles.sectionLight]}><View style={[styles.aboutLinkIcon, light && styles.blueIconTileLight]}><Text style={styles.aboutLinkIconText}>{['◆', '⌕', '↔', '♙'][index] ?? '◆'}</Text></View><View style={styles.aboutLinkCopy}><Text style={[styles.aboutLinkTitle, light && styles.textLight]}>{section.title}</Text><Text style={[styles.aboutLinkDetail, light && styles.mutedLight]}>{section.detail}</Text></View><Text style={[styles.aboutLinkArrow, light && styles.mutedLight]}>›</Text></Pressable>)}
@@ -468,7 +532,7 @@ const NativeInformationPageScreen = ({ assetBaseUrl, isLoggedIn = false, onBack,
 
             {page.sections.filter(({ id }) => id === 'independent').map((section) => <View key={section.id} style={[styles.aboutCallout, light && styles.aboutCalloutLight]}><View style={[styles.aboutCalloutIcon, light && styles.blueIconTileLight]}><Text style={styles.aboutCalloutIconText}>✓</Text></View><View style={styles.aboutCalloutCopy}><Text style={[styles.aboutCardTitle, light && styles.textLight]}>Independent by design</Text>{section.paragraphs?.map((paragraph) => <Text key={paragraph} style={[styles.aboutCardText, light && styles.mutedLight]}>{paragraph}</Text>)}</View></View>)}
 
-            <View style={[styles.aboutCta, light && styles.aboutCtaLight]}><View style={styles.aboutCtaCopy}><Text style={styles.sectionCategory}>SEE IT IN CONTEXT</Text><Text style={[styles.aboutHeading, light && styles.textLight]}>Follow the collection-to-trade workflow.</Text><Text style={[styles.aboutCardText, light && styles.mutedLight]}>The illustrated guide shows how the major parts of Pokémon Go Nexus fit together.</Text></View><View style={styles.aboutCtaActions}><Pressable accessibilityRole="button" onPress={() => onNavigate('/getting-started')} style={styles.aboutPrimaryButton}><Text style={styles.aboutPrimaryButtonText}>Getting Started  ›</Text></Pressable><Pressable accessibilityRole="button" onPress={() => onNavigate('/faq')} style={[styles.aboutSecondaryButton, light && styles.aboutSecondaryButtonLight]}><Text style={[styles.aboutSecondaryButtonText, light && styles.textLight]}>Read the FAQ</Text></Pressable></View></View>
+            <View style={[styles.aboutCta, light && styles.aboutCtaLight]}><View style={styles.aboutCtaCopy}><Text style={[styles.sectionCategory, light && styles.blueTextLight]}>SEE IT IN CONTEXT</Text><Text style={[styles.aboutHeading, light && styles.textLight]}>Follow the collection-to-trade workflow.</Text><Text style={[styles.aboutCardText, light && styles.mutedLight]}>The illustrated guide shows how the major parts of Pokémon Go Nexus fit together.</Text></View><View style={styles.aboutCtaActions}><Pressable accessibilityRole="button" onPress={() => onNavigate('/getting-started')} style={styles.aboutPrimaryButton}><Text style={styles.aboutPrimaryButtonText}>Getting Started  ›</Text></Pressable><Pressable accessibilityRole="button" onPress={() => onNavigate('/faq')} style={[styles.aboutSecondaryButton, light && styles.aboutSecondaryButtonLight]}><Text style={[styles.aboutSecondaryButtonText, light && styles.textLight]}>Read the FAQ</Text></Pressable></View></View>
           </View>
         ) : isHelp ? (
           <View style={[styles.helpDirectory, styles.groupBodyWithinShell, light && styles.groupShellLight]}>
@@ -477,9 +541,9 @@ const NativeInformationPageScreen = ({ assetBaseUrl, isLoggedIn = false, onBack,
         ) : isSafety ? (
           <View style={[styles.safetyBody, styles.groupBodyWithinShell, light && styles.groupShellLight]}>
             {page.sections.filter(({ id }) => id === 'boundary').map((section) => <View key={section.id} style={[styles.safetyImportant, light && styles.safetyImportantLight]}><View style={[styles.safetyImportantIcon, light && styles.safetyImportantIconLight]}><Text style={[styles.safetyImportantIconText, light && styles.safetyImportantIconTextLight]}>↔</Text></View><View style={styles.aboutCalloutCopy}><Text style={[styles.aboutCardTitle, light && styles.textLight]}>{section.title}</Text>{section.paragraphs?.map((paragraph) => <Text key={paragraph} style={[styles.aboutCardText, light && styles.mutedLight]}>{paragraph}</Text>)}</View></View>)}
-            <View style={styles.aboutGroup}><Text style={styles.sectionCategory}>BEFORE AND DURING A TRADE</Text><Text style={[styles.aboutHeading, light && styles.textLight]}>Keep the interaction clear, private, and voluntary.</Text><View style={styles.safetyCards}>{page.sections.filter(({ id, category }) => id !== 'boundary' && !category).map((section, index) => <View key={section.id} style={[styles.safetyCard, light && styles.sectionLight]}><View style={[styles.aboutCardIcon, light && styles.blueIconTileLight]}><Text style={styles.aboutCardIconText}>{['✓', '⌾', '⌖', '♙', '◌', '⊘', '!'][index] ?? '✓'}</Text></View><View style={styles.safetyCardCopy}><Text style={[styles.aboutCardTitle, light && styles.textLight]}>{section.title}</Text>{section.bullets?.map((bullet) => <View key={bullet} style={styles.safetyBullet}><Text style={styles.safetyBulletMark}>•</Text><Text style={[styles.aboutCardText, light && styles.mutedLight]}>{bullet}</Text></View>)}</View></View>)}</View></View>
-            <View style={[styles.safetyBoundaries, light && styles.safetyBoundariesLight]}><Text style={styles.sectionCategory}>KNOW THE BOUNDARY</Text><Text style={[styles.aboutHeading, light && styles.textLight]}>What the platform can—and cannot—establish.</Text>{page.sections.filter(({ category }) => category === 'KNOW THE BOUNDARY').map((section) => <View key={section.id} style={[styles.safetyBoundaryCard, light && styles.sectionLight]}><Text style={[styles.aboutCardTitle, light && styles.textLight]}>{section.title}</Text>{section.bullets?.map((bullet) => <View key={bullet} style={styles.safetyBullet}><Text style={styles.safetyBulletMark}>•</Text><Text style={[styles.aboutCardText, light && styles.mutedLight]}>{bullet}</Text></View>)}</View>)}</View>
-            {page.sections.filter(({ id }) => id === 'controls').map((section) => <View key={section.id} style={[styles.aboutCta, light && styles.aboutCtaLight]}><View style={styles.aboutCtaCopy}><Text style={styles.sectionCategory}>{section.category}</Text><Text style={[styles.aboutHeading, light && styles.textLight]}>{section.title}</Text><Text style={[styles.aboutCardText, light && styles.mutedLight]}>{section.detail}</Text></View><View style={styles.aboutCtaActions}>{section.links?.map((link) => <Pressable accessibilityRole="button" key={link.path} onPress={() => onNavigate(link.path)} style={link.primary ? styles.aboutPrimaryButton : [styles.aboutSecondaryButton, light && styles.aboutSecondaryButtonLight]}><Text style={link.primary ? styles.aboutPrimaryButtonText : [styles.aboutSecondaryButtonText, light && styles.textLight]}>{link.label}</Text></Pressable>)}</View></View>)}
+            <View style={styles.aboutGroup}><Text style={[styles.sectionCategory, light && styles.blueTextLight]}>BEFORE AND DURING A TRADE</Text><Text style={[styles.aboutHeading, light && styles.textLight]}>Keep the interaction clear, private, and voluntary.</Text><View style={styles.safetyCards}>{page.sections.filter(({ id, category }) => id !== 'boundary' && !category).map((section, index) => <View key={section.id} style={[styles.safetyCard, light && styles.sectionLight]}><View style={[styles.aboutCardIcon, light && styles.blueIconTileLight]}><Text style={styles.aboutCardIconText}>{['✓', '⌾', '⌖', '♙', '◌', '⊘', '!'][index] ?? '✓'}</Text></View><View style={styles.safetyCardCopy}><Text style={[styles.aboutCardTitle, light && styles.textLight]}>{section.title}</Text>{section.bullets?.map((bullet) => <View key={bullet} style={styles.safetyBullet}><Text style={styles.safetyBulletMark}>•</Text><Text style={[styles.aboutCardText, light && styles.mutedLight]}>{bullet}</Text></View>)}</View></View>)}</View></View>
+            <View style={[styles.safetyBoundaries, light && styles.safetyBoundariesLight]}><Text style={[styles.sectionCategory, light && styles.blueTextLight]}>KNOW THE BOUNDARY</Text><Text style={[styles.aboutHeading, light && styles.textLight]}>What the platform can—and cannot—establish.</Text>{page.sections.filter(({ category }) => category === 'KNOW THE BOUNDARY').map((section) => <View key={section.id} style={[styles.safetyBoundaryCard, light && styles.sectionLight]}><Text style={[styles.aboutCardTitle, light && styles.textLight]}>{section.title}</Text>{section.bullets?.map((bullet) => <View key={bullet} style={styles.safetyBullet}><Text style={styles.safetyBulletMark}>•</Text><Text style={[styles.aboutCardText, light && styles.mutedLight]}>{bullet}</Text></View>)}</View>)}</View>
+            {page.sections.filter(({ id }) => id === 'controls').map((section) => <View key={section.id} style={[styles.aboutCta, light && styles.aboutCtaLight]}><View style={styles.aboutCtaCopy}><Text style={[styles.sectionCategory, light && styles.blueTextLight]}>{section.category}</Text><Text style={[styles.aboutHeading, light && styles.textLight]}>{section.title}</Text><Text style={[styles.aboutCardText, light && styles.mutedLight]}>{section.detail}</Text></View><View style={styles.aboutCtaActions}>{section.links?.map((link) => <Pressable accessibilityRole="button" key={link.path} onPress={() => onNavigate(link.path)} style={link.primary ? styles.aboutPrimaryButton : [styles.aboutSecondaryButton, light && styles.aboutSecondaryButtonLight]}><Text style={link.primary ? styles.aboutPrimaryButtonText : [styles.aboutSecondaryButtonText, light && styles.textLight]}>{link.label}</Text></Pressable>)}</View></View>)}
           </View>
         ) : (
         <View style={styles.sections}>
@@ -523,6 +587,8 @@ export const NativeInformationScreen = (props: Props) => (
 
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: '#090d12' }, rootLight: { backgroundColor: '#f8fff9' },
+  legalRoot: { backgroundColor: '#222222' },
+  legalRootLight: { backgroundColor: '#e0f0e5' },
   informationShell: { overflow: 'hidden', borderWidth: 1, borderColor: '#344149', borderRadius: 18, backgroundColor: '#0d1114' },
   informationShellLight: { borderColor: '#9bb8b1', backgroundColor: '#f8fff9' },
   informationHeroWithinShell: { marginTop: 0, borderWidth: 0, borderRadius: 0, backgroundColor: 'transparent' },
@@ -542,6 +608,8 @@ const styles = StyleSheet.create({
   guideIndex: { marginTop: 38, borderWidth: 1, borderColor: '#3a4449', borderRadius: 17, padding: 17, backgroundColor: '#1b1b1b' },
   guidePanelLight: { borderColor: '#c5d0d5', backgroundColor: '#fff' },
   guideEyebrow: { color: '#299cf5', fontSize: 10, lineHeight: 14, fontWeight: '900', letterSpacing: 1.4 },
+  guideBlueLight: { color: '#005bb5' },
+  guideGreenLight: { color: '#087454' },
   guideIndexRows: { marginTop: 10 },
   guideIndexRow: { minHeight: 43, flexDirection: 'row', alignItems: 'center', gap: 7, borderTopWidth: 1, borderTopColor: '#343a3d' },
   guideDividerLight: { borderColor: '#c5d0d5' },
@@ -600,24 +668,32 @@ const styles = StyleSheet.create({
   informationHeroCentered: { alignItems: 'center', marginTop: 0, borderRadius: 18, paddingHorizontal: 16, paddingTop: 12, paddingBottom: 16 },
   centeredText: { textAlign: 'center' },
   heroLight: { borderColor: '#9bb8b1', backgroundColor: '#f8fff9' }, eyebrow: { color: '#299cf5', fontSize: 10, fontWeight: '900', letterSpacing: 1.5 },
+  blueTextLight: { color: '#005bb5' },
   informationHeroIcon: { width: 58, height: 58, alignSelf: 'center', alignItems: 'center', justifyContent: 'center', marginBottom: 10, borderWidth: 1, borderColor: '#285d82', borderRadius: 18, backgroundColor: '#10263a' },
   informationHeroIconLight: { borderColor: '#8dbddd', backgroundColor: '#e1f1fb' },
   title: { marginTop: 6, color: '#fff', fontSize: 25, lineHeight: 28, fontWeight: '900' }, intro: { marginTop: 7, maxWidth: 720, color: '#b6c2ca', fontSize: 13, lineHeight: 19 }, updated: { marginTop: 10, color: '#91a1ab', fontSize: 11, fontWeight: '700' },
   legalHero: { marginTop: 0, borderWidth: 0, borderRadius: 0, paddingHorizontal: 6, paddingTop: 18, paddingBottom: 18, backgroundColor: 'transparent' },
-  legalHeroCompact: { width: 'auto', alignSelf: 'stretch', marginHorizontal: -14, paddingHorizontal: 20, paddingTop: 24, backgroundColor: '#171d21' },
+  legalHeroCompact: { width: 'auto', alignSelf: 'stretch', marginHorizontal: -14, paddingHorizontal: 20, paddingTop: 24, backgroundColor: '#222222' },
   legalHeroLight: { backgroundColor: 'transparent' },
-  legalHeroCompactLight: { backgroundColor: '#fff' },
-  legalTitle: { marginTop: 5, fontSize: 39, lineHeight: 43, letterSpacing: -1.2 },
+  legalHeroCompactLight: { backgroundColor: '#e0f0e5' },
+  legalEyebrow: { fontSize: 12, letterSpacing: 1.1 },
+  legalTitle: { marginTop: 6, fontSize: 44, lineHeight: 46, letterSpacing: -1.75 },
+  legalHeadingLight: { color: '#2f4744' },
+  legalUpdated: { marginTop: 12, color: '#aaaaaa', fontSize: 16, lineHeight: 27, fontWeight: '400' },
   legalDocument: { maxWidth: 840, width: '100%', alignSelf: 'center', borderWidth: 1, borderColor: '#344149', borderRadius: 20, paddingHorizontal: 17, paddingBottom: 18, backgroundColor: '#171d21' },
-  legalDocumentCompact: { width: 'auto', alignSelf: 'stretch', marginHorizontal: -14, borderWidth: 0, borderRadius: 0, paddingHorizontal: 20 },
-  legalDocumentLight: { borderColor: '#c4d0d6', backgroundColor: '#fff' },
-  legalSection: { gap: 8, borderTopWidth: 1, borderTopColor: '#344149', paddingVertical: 18 },
-  legalSectionTitle: { color: '#fff', fontSize: 20, lineHeight: 24, fontWeight: '900' },
-  legalParagraph: { flex: 1, color: '#b8c3ca', fontSize: 13.5, lineHeight: 22 },
+  legalDocumentCompact: { width: 'auto', alignSelf: 'stretch', marginHorizontal: -14, borderWidth: 0, borderRadius: 0, paddingHorizontal: 20, backgroundColor: '#222222' },
+  legalDocumentLight: { borderColor: '#cccccc', backgroundColor: '#e0f0e5' },
+  legalSection: { gap: 8, borderTopWidth: 1, borderTopColor: '#cccccc', paddingVertical: 18 },
+  legalSectionLight: { borderTopColor: '#cccccc' },
+  legalSectionTitle: { color: '#ffffff', fontSize: 24, lineHeight: 29, fontWeight: '900' },
+  legalParagraph: { flex: 1, color: '#aaaaaa', fontSize: 16, lineHeight: 27 },
+  legalParagraphLight: { color: '#4b625e' },
+  legalStrong: { fontWeight: '900' },
   legalOrderedRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 8 },
-  legalOrderedNumber: { color: '#299cf5', fontSize: 13.5, lineHeight: 22, fontWeight: '900' },
-  legalLink: { color: '#299cf5', fontSize: 13, lineHeight: 20, fontWeight: '800' },
-  legalFooter: { gap: 14, borderTopWidth: 1, borderTopColor: '#344149', paddingTop: 20 },
+  legalOrderedNumber: { color: '#268cff', fontSize: 16, lineHeight: 27, fontWeight: '900' },
+  legalLink: { color: '#268cff', fontSize: 16, lineHeight: 27, fontWeight: '800' },
+  legalLinkLight: { color: '#005fbd' },
+  legalFooter: { gap: 14, borderTopWidth: 1, borderTopColor: '#cccccc', paddingTop: 26, marginTop: 18 },
   categoryRail: { maxWidth: 860, width: '100%', alignSelf: 'center', marginTop: 16 }, categoryContent: { gap: 8, paddingRight: 10 },
   category: { minHeight: 42, justifyContent: 'center', borderWidth: 1, borderColor: '#46535c', borderRadius: 999, paddingHorizontal: 16, backgroundColor: '#141a1f' }, categoryActive: { borderColor: '#299cf5', backgroundColor: '#123b61' }, categoryLabel: { color: '#b7c2c8', fontSize: 12, fontWeight: '900' }, categoryLabelActive: { color: '#fff' },
   sections: { maxWidth: 860, width: '100%', alignSelf: 'center', gap: 10, marginTop: 16 },

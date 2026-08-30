@@ -128,8 +128,6 @@ export const NativeAccountSecurityScreen = ({
     value: NativeAccountSecurityDraft[K],
   ) => onChange({ ...draft, [key]: value });
   const clearTextInputFocus = () => {
-    const focusedInput = TextInput.State.currentlyFocusedInput();
-    if (focusedInput) TextInput.State.blurTextInput(focusedInput);
     Keyboard.dismiss();
   };
   const beginConfirmation = (next: Confirmation) => {
@@ -185,7 +183,7 @@ export const NativeAccountSecurityScreen = ({
 
         <View style={[styles.section, light && styles.sectionLight]}>
           <View style={styles.sectionHeader}>
-            <View><Text style={styles.sectionEyebrow}>LOGIN IDENTITY</Text><Text style={[styles.sectionTitle, light && styles.textLight]}>Account details</Text></View>
+            <View><Text style={[styles.sectionEyebrow, light && styles.labelLight]}>LOGIN IDENTITY</Text><Text style={[styles.sectionTitle, light && styles.textLight]}>Account details</Text></View>
             <NativeUiIcon color="#42d7c6" name="key" size={30} />
           </View>
           <AccountField icon="user" label="Username" light={light} onChangeText={(value) => update('username', value)} value={draft.username} />
@@ -212,7 +210,7 @@ export const NativeAccountSecurityScreen = ({
 
         <View style={[styles.section, light && styles.sectionLight]}>
           <View style={styles.sectionHeader}>
-            <View><Text style={styles.sectionEyebrow}>SIGN-IN METHODS</Text><Text style={[styles.sectionTitle, light && styles.textLight]}>Connected accounts</Text></View>
+            <View><Text style={[styles.sectionEyebrow, light && styles.labelLight]}>SIGN-IN METHODS</Text><Text style={[styles.sectionTitle, light && styles.textLight]}>Connected accounts</Text></View>
             <NativeUiIcon color="#42d7c6" name="key" size={30} />
           </View>
           <Text style={[styles.sectionCopy, light && styles.mutedLight]}>Verified providers open this same Pokémon Go Nexus account.</Text>
@@ -257,7 +255,7 @@ export const NativeAccountSecurityScreen = ({
 
         <View style={[styles.section, light && styles.sectionLight]}>
           <View style={styles.sectionHeader}>
-            <View><Text style={styles.sectionEyebrow}>SESSION</Text><Text style={[styles.sectionTitle, light && styles.textLight]}>Sign out</Text></View>
+            <View><Text style={[styles.sectionEyebrow, light && styles.labelLight]}>SESSION</Text><Text style={[styles.sectionTitle, light && styles.textLight]}>Sign out</Text></View>
             <NativeUiIcon color="#42d7c6" name="sign-out" size={30} />
           </View>
           <Text style={[styles.sectionCopy, light && styles.mutedLight]}>End this session and clear locally stored account data from this device.</Text>

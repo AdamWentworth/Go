@@ -197,7 +197,7 @@ const EmptyState = ({ children, light }: { children: string; light: boolean }) =
 
 const SectionHeading = ({ eyebrow, light, title }: { eyebrow: string; light: boolean; title: string }) => (
   <View style={styles.sectionHeading}>
-    <Text style={styles.eyebrow}>{eyebrow}</Text>
+    <Text style={[styles.eyebrow, light && styles.eyebrowLight]}>{eyebrow}</Text>
     <Text accessibilityRole="header" style={[styles.sectionTitle, light && styles.textLight]}>{title}</Text>
   </View>
 );
@@ -282,7 +282,7 @@ export const NativeFriendsScreen = ({
             <NativeBackIcon color={light ? '#172124' : '#ffffff'} size={20} />
           </Pressable>
           <View style={styles.productCopy}>
-            <Text style={styles.eyebrow}>TRAINER NETWORK</Text>
+            <Text style={[styles.eyebrow, light && styles.eyebrowLight]}>TRAINER NETWORK</Text>
             <Text accessibilityRole="header" style={[styles.title, light && styles.textLight]}>Friends</Text>
           </View>
         </View>
@@ -494,6 +494,7 @@ const styles = StyleSheet.create({
   backButton: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: '#35494d', borderRadius: 10, backgroundColor: '#171f20' },
   backButtonLight: { borderColor: '#9bb8b1', backgroundColor: '#f3faf5' },
   eyebrow: { color: '#42d7c6', fontSize: 10, fontWeight: '900', letterSpacing: 1.25 },
+  eyebrowLight: { color: '#006a61' },
   title: { color: '#f7fbfc', fontSize: 27, fontWeight: '900' },
   requestCount: { marginTop: -2, marginBottom: 3, color: '#f7fbfc', fontSize: 13, fontWeight: '800' },
   tabs: { position: 'relative', flexDirection: 'row', minHeight: 58, marginTop: 8, padding: 4, overflow: 'hidden', borderWidth: 1, borderColor: '#35494d', borderRadius: 11, backgroundColor: '#0d1416' },

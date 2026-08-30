@@ -144,7 +144,7 @@ export const NativeTradeBoardScreen = ({
               <View style={[styles.shareLine, styles.shareLineBottom]} />
             </View>
             <View style={styles.headerCopy}>
-              <Text style={styles.eyebrow}>SHAREABLE COLLECTION</Text>
+              <Text style={[styles.eyebrow, light && styles.accentLight]}>SHAREABLE COLLECTION</Text>
               <Text accessibilityRole="header" style={[styles.title, light && styles.textLight]}>Trade Board</Text>
               <Text style={[styles.subtitle, light && styles.mutedLight]}>
                 {editable
@@ -159,7 +159,7 @@ export const NativeTradeBoardScreen = ({
             </Pressable>
             {editable && onOpenLiveBoard && model ? (
               <Pressable accessibilityRole="button" onPress={onOpenLiveBoard} style={[styles.headerAction, light && styles.controlLight]}>
-                <Text style={styles.liveActionText}>View live board  ↗</Text>
+                <Text style={[styles.liveActionText, light && styles.accentLight]}>View live board  ↗</Text>
               </Pressable>
             ) : null}
           </View>
@@ -247,7 +247,7 @@ export const NativeTradeBoardScreen = ({
           <>
             <View style={styles.publicIntro}>
               <View style={styles.publicIntroCopy}>
-                <Text style={styles.publicKicker}>LIVE COMMUNITY LISTING</Text>
+                <Text style={[styles.publicKicker, light && styles.successLight]}>LIVE COMMUNITY LISTING</Text>
                 <Text accessibilityRole="header" style={[styles.publicTitle, light && styles.textLight]}>@{visibleModel.username}’s Trade Board</Text>
                 <Text style={[styles.publicSubtitle, light && styles.mutedLight]}>These listings reflect the trainer’s current public Pokémon Go Nexus collection.</Text>
               </View>
@@ -271,7 +271,7 @@ export const NativeTradeBoardScreen = ({
             {!signedIn && onOpenCreateBoard ? (
               <View style={styles.publicCta}>
                 <View style={styles.publicCtaCopy}>
-                  <Text style={styles.publicKicker}>BUILD YOUR OWN COLLECTION</Text>
+                  <Text style={[styles.publicKicker, light && styles.successLight]}>BUILD YOUR OWN COLLECTION</Text>
                   <Text style={[styles.publicCtaTitle, light && styles.textLight]}>Trade smarter with Pokémon Go Nexus</Text>
                   <Text style={[styles.publicCtaBody, light && styles.mutedLight]}>Catalog what you have, match what you want, and share one live Trade Board.</Text>
                 </View>
@@ -285,7 +285,7 @@ export const NativeTradeBoardScreen = ({
           <>
             <View style={[styles.controls, light && styles.panelLight]}>
               <View style={styles.composerHeader}>
-                <Text style={styles.composerEyebrow}>SHARE YOUR COLLECTION</Text>
+                <Text style={[styles.composerEyebrow, light && styles.accentLight]}>SHARE YOUR COLLECTION</Text>
                 <Text style={[styles.composerTitle, light && styles.textLight]}>Share your Trade Board</Text>
                 <Text style={[styles.composerCopy, light && styles.mutedLight]}>One clear image for what you have and what you want.</Text>
               </View>
@@ -335,7 +335,11 @@ export const NativeTradeBoardScreen = ({
                       <View style={[styles.themeSwatch, option.id === 'brand-light' && styles.themeSwatchLight, option.id === 'minimal' && styles.themeSwatchMinimal]} />
                       <View style={styles.themeCopy}>
                         <Text style={[styles.themeText, light && styles.textLight, theme === option.id && styles.themeTextActive]}>{option.label}</Text>
-                        <Text style={[styles.themeDescription, light && styles.mutedLight]}>{option.description}</Text>
+                        <Text style={[
+                          styles.themeDescription,
+                          light && styles.mutedLight,
+                          theme === option.id && styles.themeDescriptionActive,
+                        ]}>{option.description}</Text>
                       </View>
                     </Pressable>
                   ))}
@@ -391,6 +395,7 @@ const styles = StyleSheet.create({
   publicIntro: { flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'space-between', gap: 14, paddingVertical: 2 },
   publicIntroCopy: { minWidth: 0, flex: 1 },
   publicKicker: { color: '#40d797', fontSize: 9, fontWeight: '900', letterSpacing: 1.3 },
+  successLight: { color: '#087454' },
   publicTitle: { marginTop: 3, color: '#f6fbfc', fontSize: 27, lineHeight: 31, fontWeight: '900' },
   publicSubtitle: { marginTop: 5, color: '#9db0b5', fontSize: 12, lineHeight: 17 },
   publicCopyButton: { minWidth: 44, minHeight: 44, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, paddingHorizontal: 12, borderWidth: 1, borderColor: '#405054', borderRadius: 10, backgroundColor: '#182124' },
@@ -422,6 +427,7 @@ const styles = StyleSheet.create({
   shareLineBottom: { bottom: 13, transform: [{ rotate: '28deg' }] },
   headerCopy: { flex: 1, minWidth: 0 },
   eyebrow: { color: '#2f9cff', fontSize: 10, fontWeight: '900', letterSpacing: 1.5 },
+  accentLight: { color: '#005bb5' },
   title: { color: '#f6fbfc', fontSize: 29, lineHeight: 34, fontWeight: '900' },
   subtitle: { maxWidth: 620, color: '#9db0b5', fontSize: 13, lineHeight: 19 },
   headerActions: { flexDirection: 'row', gap: 8 },
@@ -456,6 +462,7 @@ const styles = StyleSheet.create({
   themeText: { color: '#e8f0f1', fontSize: 12, fontWeight: '900' },
   themeTextActive: { color: '#fff' },
   themeDescription: { marginTop: 1, color: '#9db0b5', fontSize: 10, lineHeight: 13 },
+  themeDescriptionActive: { color: '#ffffff' },
   privacyNote: { flexDirection: 'row', alignItems: 'flex-start', gap: 8, margin: 10, padding: 10, borderWidth: 1, borderColor: '#367181', borderRadius: 9, backgroundColor: '#173039' },
   privacyNoteLight: { borderColor: '#73a7b1', backgroundColor: '#e8f7f8' },
   privacyIcon: { color: '#62d2e9', fontSize: 18, fontWeight: '900' },
@@ -476,7 +483,7 @@ const styles = StyleSheet.create({
   actionDockLight: { borderColor: '#aebdc1', backgroundColor: '#ffffff' },
   dockedButton: { flex: 1, minWidth: 0 },
   primaryButton: { minHeight: 48, alignItems: 'center', justifyContent: 'center', borderRadius: 11, paddingHorizontal: 18, backgroundColor: '#168ef0' },
-  primaryButtonText: { color: '#fff', fontSize: 14, fontWeight: '900' },
+  primaryButtonText: { color: '#04131f', fontSize: 14, fontWeight: '900' },
   secondaryButton: { minHeight: 48, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: '#43565a', borderRadius: 11, paddingHorizontal: 16, backgroundColor: '#182124' },
   secondaryButtonText: { color: '#eaf2f4', fontSize: 13, fontWeight: '800' },
   notice: { color: '#b9d1d7', fontSize: 12, textAlign: 'center' },

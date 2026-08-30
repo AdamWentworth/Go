@@ -315,7 +315,7 @@ const styles = StyleSheet.create({
   socialButton: { minHeight: 52, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10, paddingHorizontal: 16, borderWidth: 1, borderColor: 'transparent', borderRadius: 12 },
   googleButton: { borderColor: '#d8dce1', backgroundColor: '#ffffff' },
   discordButton: { backgroundColor: '#5865f2' },
-  facebookButton: { backgroundColor: '#1877f2' },
+  facebookButton: { backgroundColor: '#1265d6' },
   socialGlyph: { width: 29, alignItems: 'center', justifyContent: 'center' },
   socialButtonText: { color: '#ffffff', fontSize: 16, fontWeight: '800' },
   googleButtonText: { color: '#202124' },

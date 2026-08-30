@@ -43,7 +43,7 @@ export const NativeActionMenuHint = ({
         onPress={onOpen}
         style={({ pressed }) => [styles.copyButton, pressed && styles.pressed]}
       >
-        <Text style={styles.eyebrow}>QUICK NAVIGATION</Text>
+        <Text style={[styles.eyebrow, light && styles.eyebrowLight]}>QUICK NAVIGATION</Text>
         <Text style={[styles.copy, light && styles.copyLight]}>
           {audience === 'guest'
             ? 'Tap the Poké Ball below to explore the app.'
@@ -83,6 +83,7 @@ const styles = StyleSheet.create({
   logo: { width: 42, height: 42 },
   copyButton: { minHeight: 44, minWidth: 0, flex: 1, justifyContent: 'center', gap: 2 },
   eyebrow: { color: '#299cf5', fontSize: 10, fontWeight: '900', letterSpacing: 1.25 },
+  eyebrowLight: { color: '#005bb5' },
   copy: { color: '#d4e2e4', fontSize: 11, lineHeight: 15 },
   copyLight: { color: '#193d40' },
   dismiss: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
