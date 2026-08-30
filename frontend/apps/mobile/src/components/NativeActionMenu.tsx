@@ -25,6 +25,7 @@ import {
 import { useOptionalNativeSession } from '../auth/NativeSessionContext';
 import { useNativeFriendsQuery } from '../features/social/socialQueries';
 import { useNativeColorScheme } from '../features/settings/useNativeColorScheme';
+import { useNativeAppLoading } from './NativeAppLoadingProvider';
 
 type Props = {
   assetBaseUrl: string;
@@ -62,6 +63,8 @@ const SUPPORT_DESTINATIONS = [
   { glyph: 'shield', label: 'Trade Safety', path: '/safety' },
   { glyph: 'book', label: 'Help directory', path: '/help' },
 ] as const;
+
+const ACTION_MENU_NAVIGATION_SOURCE = 'action-menu-navigation';
 
 type SupportGlyphName = typeof SUPPORT_DESTINATIONS[number]['glyph'];
 
@@ -355,6 +358,7 @@ export const NativeActionMenu = ({
   const insets = useSafeAreaInsets();
   const scheme = useNativeColorScheme();
   const devicePreferences = useOptionalNativeDevicePreferences();
+  const { runWithLoading } = useNativeAppLoading();
   const session = useOptionalNativeSession();
   const isSignedIn = signedIn ?? Boolean(session?.user);
   const reduceMotion = devicePreferences?.shouldReduceMotion ?? false;
@@ -437,7 +441,7 @@ export const NativeActionMenu = ({
 
   const navigate = (path: string) => {
     setSupportOpen(false);
-    onNavigate(path);
+    runWithLoading(ACTION_MENU_NAVIGATION_SOURCE, () => onNavigate(path));
   };
   const close = () => {
     if (!closeEnabledRef.current || closingRef.current) return;

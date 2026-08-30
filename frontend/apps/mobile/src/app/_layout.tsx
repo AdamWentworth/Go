@@ -9,6 +9,7 @@ import {
   NativeDevicePreferencesProvider,
   useNativeDevicePreferences,
 } from '../features/settings/NativeDevicePreferencesProvider';
+import { NativeAppLoadingProvider } from '../components/NativeAppLoadingProvider';
 
 initializeObservability();
 
@@ -37,7 +38,9 @@ const RootContent = () => {
 export default function RootLayout() {
   return (
     <NativeDevicePreferencesProvider>
-      <RootContent />
+      <NativeAppLoadingProvider>
+        <RootContent />
+      </NativeAppLoadingProvider>
     </NativeDevicePreferencesProvider>
   );
 }

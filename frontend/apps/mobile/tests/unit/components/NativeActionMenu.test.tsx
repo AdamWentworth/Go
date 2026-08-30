@@ -4,6 +4,7 @@ import {
   getNativeActionMenuGeometry,
   NativeActionMenu,
 } from '../../../src/components/NativeActionMenu';
+import { NativeAppLoadingProvider } from '../../../src/components/NativeAppLoadingProvider';
 
 const mockToggleColorTheme = jest.fn();
 let mockShouldReduceMotion = false;
@@ -97,6 +98,27 @@ describe('NativeActionMenu', () => {
 
     fireEvent.press(getByLabelText('Share Trade Board'));
     expect(onNavigate).toHaveBeenCalledWith('/trade-board');
+  });
+
+  it('shows the canonical full-screen spinner before changing routes', () => {
+    const onNavigate = jest.fn();
+    const view = render(
+      <NativeAppLoadingProvider>
+        <NativeActionMenu
+          assetBaseUrl="https://pokegonexus.com"
+          onClose={jest.fn()}
+          onNavigate={onNavigate}
+          visible
+        />
+      </NativeAppLoadingProvider>,
+    );
+
+    fireEvent.press(view.getByLabelText('Search'));
+    expect(view.getByTestId('native-app-loading-overlay')).toBeTruthy();
+    expect(view.getByTestId(/native-loading-spinner-/, { includeHiddenElements: true })).toBeTruthy();
+    expect(onNavigate).not.toHaveBeenCalled();
+    act(() => jest.advanceTimersByTime(16));
+    expect(onNavigate).toHaveBeenCalledWith('/search');
   });
 
   it('opens support links in place and preserves the canonical theme control', () => {
