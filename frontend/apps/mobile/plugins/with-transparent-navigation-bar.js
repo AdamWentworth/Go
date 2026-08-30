@@ -1,20 +1,62 @@
 const { AndroidConfig, withAndroidStyles } = require('@expo/config-plugins');
 
+const FULL_SCREEN_MODAL_ITEMS = [
+  ['android:windowNoTitle', 'true'],
+  ['android:windowIsFloating', 'false'],
+  ['android:windowBackground', '@android:color/transparent'],
+  ['android:windowDrawsSystemBarBackgrounds', 'true'],
+  ['android:statusBarColor', '@android:color/transparent'],
+  ['android:navigationBarColor', '@android:color/transparent'],
+  ['android:enforceNavigationBarContrast', 'false'],
+];
+
+const assignStyleItems = (styles, parent, items) => items.reduce(
+  (current, [name, value]) => AndroidConfig.Styles.assignStylesValue(current, {
+    add: true,
+    name,
+    parent,
+    value,
+  }),
+  styles,
+);
+
+const ensureStyleGroup = (styles, name) => {
+  const next = AndroidConfig.Resources.ensureDefaultResourceXML(styles);
+  next.resources.style ??= [];
+  if (!AndroidConfig.Resources.findResourceGroup(next.resources.style, { name })) {
+    next.resources.style.push(AndroidConfig.Resources.buildResourceGroup({ name }));
+  }
+  return next;
+};
+
+const applyTransparentNavigationStyles = (styles) => {
+  let next = assignStyleItems(
+    styles,
+    AndroidConfig.Styles.getAppThemeGroup(),
+    [
+      ['android:navigationBarColor', '@android:color/transparent'],
+      ['android:enforceNavigationBarContrast', 'false'],
+    ],
+  );
+
+  // React Native Modal uses a ComponentDialog with Theme.FullScreenDialog,
+  // not AppTheme. Without a modal-specific override, physical Android builds
+  // can still insert an opaque navigation-area band even though the activity
+  // itself is correctly edge-to-edge. Redeclare React Native's required
+  // full-screen attributes and make that dialog window transparent too.
+  next = ensureStyleGroup(next, 'Theme.FullScreenDialog');
+  return assignStyleItems(next, { name: 'Theme.FullScreenDialog' }, FULL_SCREEN_MODAL_ITEMS);
+};
+
 /**
- * Android applies a contrast scrim behind three-button navigation by default,
- * which creates a false horizontal seam across full-window gradients. The app
- * already draws edge-to-edge and owns safe-area placement, so keep the system
- * navigation bar transparent in both gesture and three-button modes.
+ * Android can apply an opaque navigation background to both the activity and
+ * React Native's separate full-screen Modal window. The app already draws
+ * edge-to-edge and owns safe-area placement, so keep both windows transparent
+ * in gesture and three-button modes.
  */
 module.exports = (config) => withAndroidStyles(config, (stylesConfig) => {
-  stylesConfig.modResults = AndroidConfig.Styles.assignStylesValue(
-    stylesConfig.modResults,
-    {
-      add: true,
-      name: 'android:enforceNavigationBarContrast',
-      parent: AndroidConfig.Styles.getAppThemeGroup(),
-      value: 'false',
-    },
-  );
+  stylesConfig.modResults = applyTransparentNavigationStyles(stylesConfig.modResults);
   return stylesConfig;
 });
+
+module.exports.applyTransparentNavigationStyles = applyTransparentNavigationStyles;
