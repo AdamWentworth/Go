@@ -244,10 +244,18 @@ if ! "${adb_bin}" -s "${device_id}" shell pm list packages | grep -Fqx "package:
 fi
 
 original_airplane_mode="$("${adb_bin}" -s "${device_id}" shell cmd connectivity airplane-mode | tr -d '\r')"
-if [[ "${smoke_network}" == "offline" ]]; then
-  "${adb_bin}" -s "${device_id}" shell cmd connectivity airplane-mode enable >/dev/null
-  network_settings_changed="true"
-fi
+case "${smoke_network}" in
+  offline)
+    "${adb_bin}" -s "${device_id}" shell cmd connectivity airplane-mode enable >/dev/null
+    ;;
+  online)
+    # A previously interrupted offline proof can leave the reusable AVD in
+    # airplane mode. Online flows must establish their own network precondition
+    # and restore the developer's original setting during cleanup.
+    "${adb_bin}" -s "${device_id}" shell cmd connectivity airplane-mode disable >/dev/null
+    ;;
+esac
+network_settings_changed="true"
 
 if [[ "${smoke_runtime}" == "dev-client" ]] \
   && curl --silent --fail --max-time 1 http://127.0.0.1:8091/status >/dev/null 2>&1; then

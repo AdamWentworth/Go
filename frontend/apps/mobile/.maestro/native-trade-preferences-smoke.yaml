@@ -56,41 +56,28 @@ tags:
 - assertVisible: Save changes
 - tapOn: No additional rules
 - assertVisible: Mirror trade
-- swipe:
-    start: "50%,66%"
-    end: "50%,44%"
-    duration: 500
-- extendedWaitUntil:
-    visible: Must match
-    timeout: 10000
-- swipe:
-    start: "50%,66%"
-    end: "50%,40%"
-    duration: 500
-- extendedWaitUntil:
-    visible: Leave out
-    timeout: 10000
+- scrollUntilVisible:
+    element:
+      text: Must match
+    direction: DOWN
+    speed: 40
+    visibilityPercentage: 100
+    timeout: 20000
+- scrollUntilVisible:
+    element:
+      text: Leave out
+    direction: DOWN
+    speed: 40
+    visibilityPercentage: 100
+    timeout: 20000
 - takeScreenshot: 02-for-trade-edit-rules
-- swipe:
-    start: "50%,66%"
-    end: "50%,35%"
-    duration: 500
-- swipe:
-    start: "50%,66%"
-    end: "50%,35%"
-    duration: 500
-- swipe:
-    start: "50%,66%"
-    end: "50%,35%"
-    duration: 500
-- swipe:
-    start: "50%,66%"
-    end: "50%,35%"
-    duration: 500
-- extendedWaitUntil:
-    visible:
+- scrollUntilVisible:
+    element:
       id: preference-candidate-wanted-metagross
-    timeout: 10000
+    direction: DOWN
+    speed: 50
+    visibilityPercentage: 50
+    timeout: 30000
 - tapOn:
     id: preference-candidate-wanted-metagross
 - tapOn: Save changes

@@ -39,13 +39,23 @@ tags:
 - extendedWaitUntil:
     visible: CAUGHT DETAILS
     timeout: 15000
-- tapOn: Location caught
+- scrollUntilVisible:
+    element:
+      text: DATE CAUGHT
+    direction: DOWN
+    speed: 40
+    visibilityPercentage: 100
+    timeout: 20000
+- tapOn:
+    text: Caught location
+    point: "20%,50%"
+    retryTapIfNoChange: true
 - inputText: Burnaby
 - extendedWaitUntil:
-    visible: Burnaby, British Columbia, Canada
+    visible: Use location Burnaby, British Columbia, Canada
     timeout: 15000
 - takeScreenshot: location-01-suggestions
-- tapOn: Burnaby, British Columbia, Canada
+- tapOn: Use location Burnaby, British Columbia, Canada
 - assertVisible: Burnaby, British Columbia, Canada
 - hideKeyboard
 - takeScreenshot: location-02-selected

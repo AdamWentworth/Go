@@ -123,7 +123,7 @@ describe('native trade API', () => {
       proposerConfirmed: false,
       owners: { 'mine-1': 'proposer', 'theirs-1': 'accepter' } as Record<string, Actor>,
     };
-    const requests: Array<{ actor: Actor; endpoint: string }> = [];
+    const requests: { actor: Actor; endpoint: string }[] = [];
     const envelope = () => {
       const completed = state.proposerConfirmed && state.accepterConfirmed;
       return {

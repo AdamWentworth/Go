@@ -1,11 +1,9 @@
-import * as SQLite from 'expo-sqlite';
 import type { SQLiteBindParams, SQLiteRunResult } from 'expo-sqlite';
 import type {
   NativePokedexManualRegistration,
   NativePokedexRegistrationFacets,
 } from '../features/tools/nativePokedexModel';
-
-const DATABASE_NAME = 'pokegonexus-native.db';
+import { openNativeDatabase } from './nativeDatabase';
 
 type RegistrationRow = {
   entry_id: string;
@@ -38,7 +36,7 @@ const parseFacets = (value: string): NativePokedexRegistrationFacets => {
   }
 };
 
-const defaultOpenDatabase: OpenRegistrationDatabase = async () => SQLite.openDatabaseAsync(DATABASE_NAME);
+const defaultOpenDatabase: OpenRegistrationDatabase = openNativeDatabase;
 
 export const createNativePokedexRegistrationStore = (
   openDatabase: OpenRegistrationDatabase = defaultOpenDatabase,

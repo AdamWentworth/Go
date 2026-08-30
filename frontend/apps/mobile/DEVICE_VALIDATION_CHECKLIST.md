@@ -116,6 +116,50 @@ not constitute production approval: the physical Pixel, two-account trade,
 and physical iOS/manual approval gates below remain required, and the canonical
 WebView remains the default experience.
 
+## Standalone release-candidate evidence — 2026-08-29
+
+The current local implementation meets the automated 99% parity threshold for
+the complete current route surface. This record uses project-owned standalone
+release APKs, not Expo Go or a Metro-served development client:
+
+- The light release APK (`3974b8df872998abac976fa27dcec83b70303a1352df437ef7b860e4e6569396`)
+  passed all 43 Maestro flows with 130% system text and Android animations
+  disabled. The artifact contains 43 primary flow directories, zero retry
+  directories, zero failed command states, and zero app crash/ANR markers:
+  `/tmp/pokegonexus-android-smoke.fSVNJ2`.
+- A fresh dark release APK built from the same application source
+  (`aed7bf2aeafc3904abbeb52da78e178a80e67ce85d4e27bcec0114bf558720eb`)
+  passed all 43 flows. It likewise produced 43 command records, zero retries,
+  zero failed command states, and zero app crash/ANR markers:
+  `/tmp/pokegonexus-android-smoke.akLkGg`.
+- The light APK passed the real SQLite offline/process lifecycle twice without
+  retry (`/tmp/pokegonexus-android-smoke.uRmplt` and
+  `/tmp/pokegonexus-android-smoke.ucwPEv`). These runs began after `pm clear`
+  in airplane mode and proved cache/outbox persistence through process death,
+  account isolation, Receiver acknowledgement persistence, canonical outbox
+  cleanup, and retained cached collection data.
+- The responsive collection/action-menu fixture passed at 520 dpi in the full
+  matrices and independently at 420 dpi and 200 dpi without retry
+  (`/tmp/pokegonexus-android-smoke.iYKnvR` and
+  `/tmp/pokegonexus-android-smoke.Bs1kbX`).
+- Dynamic collection filtering, trade-preference editing, location
+  autocomplete, account session revocation, and the offline lifecycle were each
+  repeated in focused standalone runs after their final hardening changes.
+- The complete native Jest suite passed 730 tests across 146 suites. The shared
+  Vite suite passed 1,718 tests across 344 files, with only its two explicitly
+  opt-in live-catalog cases skipped. TypeScript, ESLint, Stylelint, dead-code
+  analysis, all seven Go modules, and Expo Doctor (21/21) passed.
+- Clean production-mode Expo exports produced Android and iOS Hermes bundles.
+  Android device behavior is covered by the installed APK evidence above; the
+  iOS export is build evidence only and does not replace the physical iOS gate.
+- Android config introspection proves cleartext traffic is `false` for ordinary
+  builds and enabled only for explicit deterministic device-smoke builds.
+
+This closes the local automated parity target; it does not waive the physical
+Pixel comparison, real two-account/two-device backend exercise, physical iOS
+review, or explicit rollout approval below. Those are production-release gates,
+not missing native-preview routes.
+
 ## Physical-device preconditions
 
 1. Use a preview or release build with the native-preview flag enabled. Do not

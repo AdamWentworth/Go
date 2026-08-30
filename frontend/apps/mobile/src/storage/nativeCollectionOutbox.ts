@@ -1,12 +1,10 @@
-import * as SQLite from 'expo-sqlite';
 import type { SQLiteBindParams, SQLiteRunResult } from 'expo-sqlite';
 import type {
   NativeCollectionSyncBatch,
   NativeCollectionSyncLocation,
 } from '../services/collectionSyncApi';
 import { createNativeCollectionSyncBatch } from '../services/collectionSyncApi';
-
-const DATABASE_NAME = 'pokegonexus-native.db';
+import { openNativeDatabase } from './nativeDatabase';
 
 export type NativeCollectionOutboxState = 'pending' | 'acknowledged';
 
@@ -79,8 +77,7 @@ const toEntry = (row: NativeCollectionOutboxRow): NativeCollectionOutboxEntry =>
   acknowledgedAt: row.acknowledged_at,
 });
 
-const defaultOpenDatabase: OpenOutboxDatabase = async () =>
-  SQLite.openDatabaseAsync(DATABASE_NAME);
+const defaultOpenDatabase: OpenOutboxDatabase = openNativeDatabase;
 
 export const createNativeCollectionOutbox = (
   openDatabase: OpenOutboxDatabase = defaultOpenDatabase,

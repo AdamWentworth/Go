@@ -36,6 +36,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
       'expo-status-bar',
       'expo-web-browser',
       '@maplibre/maplibre-react-native',
+      './plugins/with-device-smoke-cleartext',
       [
         'expo-splash-screen',
         {

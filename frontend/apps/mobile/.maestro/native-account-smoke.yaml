@@ -89,8 +89,12 @@ tags:
     element:
       text: Sign out every device
     direction: DOWN
+    centerElement: true
     timeout: 10000
-- tapOn: Sign out every device
+- tapOn:
+    text: Sign out every device
+    point: "15%,50%"
+    retryTapIfNoChange: true
 - assertVisible: Sign out every device?
 - assertVisible: Current password
 - tapOn: Enter your account password

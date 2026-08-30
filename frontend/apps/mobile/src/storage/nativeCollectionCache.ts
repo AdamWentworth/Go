@@ -1,12 +1,10 @@
 import type { PokemonInstance } from '@pokemongonexus/shared-contracts/instances';
 import type { BasePokemon } from '@pokemongonexus/shared-contracts/pokemon';
 import type { CustomTagsEnvelope } from '@pokemongonexus/shared-contracts/users';
-import * as SQLite from 'expo-sqlite';
 import type { SQLiteBindParams, SQLiteRunResult } from 'expo-sqlite';
 import { normalizeNativeTagsEnvelope } from '../features/collection/nativeTagsEnvelope';
 import { normalizeNativeInstances } from '../features/collection/nativeInstanceNormalization';
-
-const DATABASE_NAME = 'pokegonexus-native.db';
+import { openNativeDatabase } from './nativeDatabase';
 
 export type NativeCachedCollectionSnapshot = {
   instances: Record<string, PokemonInstance>;
@@ -75,8 +73,7 @@ const parseSnapshot = (snapshotJson: string): NativeCachedCollectionSnapshot => 
   };
 };
 
-const defaultOpenDatabase: OpenCollectionCacheDatabase = async () =>
-  SQLite.openDatabaseAsync(DATABASE_NAME);
+const defaultOpenDatabase: OpenCollectionCacheDatabase = openNativeDatabase;
 
 export const createNativeCollectionCache = (
   openDatabase: OpenCollectionCacheDatabase = defaultOpenDatabase,

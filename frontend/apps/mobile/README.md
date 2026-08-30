@@ -54,7 +54,9 @@ friends, settings and account security, trade preferences/activity/proposals,
 Trade Board sharing, and every trainer tool. Set `POKEGONEXUS_SMOKE_FLOW` to a
 single YAML file for a focused run or `.maestro` for the complete matrix. The
 fixture route is disabled unless `EXPO_PUBLIC_DEVICE_SMOKE_MODE=true` and is
-unavailable in production bundles.
+unavailable in ordinary production bundles. Explicit standalone smoke builds
+also opt into host-emulator cleartext access; normal Android builds write
+`usesCleartextTraffic=false`.
 
 `device:smoke:android:release-lifecycle` builds a standalone native-preview APK,
 enables airplane mode, and validates the real account-scoped SQLite collection
