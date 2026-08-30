@@ -31,8 +31,8 @@ frontend/apps/mobile/web-build/
 frontend/apps/mobile/expo-env.d.ts
 frontend/apps/mobile/*.tsbuildinfo
 
-# The Android app only consumes the mobile workspace and shared mobile-safe
-# packages. Exclude unrelated services, web-only code, tests, and large media.
+# The Android app only consumes the mobile workspace and shared source
+# packages. Exclude unrelated services, web-only assets, tests, and large media.
 /.github/
 /assets/
 /authentication/
@@ -51,5 +51,7 @@ frontend/apps/mobile/*.tsbuildinfo
 /tests/
 /frontend/apps/web/
 /frontend/docs/
-/frontend/packages/app-core/
+/frontend/packages/app-core/public/
+/frontend/packages/app-core/tests/
+/frontend/packages/app-core/index.html
 /frontend/ROADMAP.md
