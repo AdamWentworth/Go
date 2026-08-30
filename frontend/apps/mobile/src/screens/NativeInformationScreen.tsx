@@ -478,7 +478,7 @@ const NativeInformationPageScreen = ({ assetBaseUrl, isLoggedIn = false, onBack,
         contentContainerStyle={{
           paddingTop: isLegal && compact ? 0 : 8,
           paddingBottom: isLegal && compact ? 0 : 96,
-          paddingHorizontal: 14,
+          paddingHorizontal: isLegal ? 14 : 10,
         }}
       >
         <View style={!isLegal ? [styles.informationShell, light && styles.informationShellLight] : undefined}>
@@ -486,7 +486,7 @@ const NativeInformationPageScreen = ({ assetBaseUrl, isLoggedIn = false, onBack,
           {isHelp ? <InformationHeroIcon kind="help" light={light} /> : isAbout ? <InformationHeroIcon kind="about" light={light} /> : isSafety ? <InformationHeroIcon kind="safety" light={light} /> : null}
           <Text style={[styles.eyebrow, (isHelp || isAbout || isSafety) && styles.centeredText, isLegal && styles.legalEyebrow, light && !isLegal && styles.blueTextLight, light && isLegal && styles.legalLinkLight]}>{page.eyebrow}</Text>
           <Text accessibilityRole="header" style={[styles.title, (isHelp || isAbout || isSafety) && styles.centeredText, isLegal && styles.legalTitle, light && styles.textLight, light && isLegal && styles.legalHeadingLight]}>{page.title}</Text>
-          {!isLegal ? <Text style={[styles.intro, (isHelp || isAbout || isSafety) && styles.centeredText, light && styles.mutedLight]}>{page.intro}</Text> : null}
+          {!isLegal ? <Text style={[styles.intro, (isHelp || isAbout || isSafety) && styles.centeredText, isAbout && styles.aboutIntro, light && styles.mutedLight]}>{isAbout ? page.intro.replace('trade-planning hub', 'trade-planning\nhub').replace('Pokémon distinct.', 'Pokémon\ndistinct.') : page.intro}</Text> : null}
           {page.updated ? <Text style={[styles.updated, isLegal && styles.legalUpdated, light && styles.mutedLight, light && isLegal && styles.legalParagraphLight]}>{`Last updated: ${page.updated}`}</Text> : null}
         </View>
 
@@ -510,7 +510,7 @@ const NativeInformationPageScreen = ({ assetBaseUrl, isLoggedIn = false, onBack,
               <View style={styles.aboutStoryCopy}>
                 <Text style={[styles.sectionCategory, light && styles.blueTextLight]}>{page.sections[0]?.category}</Text>
                 <Text style={[styles.aboutHeading, light && styles.textLight]}>{page.sections[0]?.title}</Text>
-                {page.sections[0]?.paragraphs?.map((paragraph) => <Text key={paragraph} style={[styles.paragraph, light && styles.mutedLight]}>{paragraph}</Text>)}
+                {page.sections[0]?.paragraphs?.map((paragraph) => <Text key={paragraph} style={[styles.paragraph, styles.aboutParagraph, light && styles.mutedLight]}>{paragraph}</Text>)}
               </View>
             </View>
 
@@ -665,15 +665,16 @@ const styles = StyleSheet.create({
   guideFinishText: { color: '#b8c2c7', fontSize: 13, lineHeight: 19, textAlign: 'center' },
   guideFinishButton: { width: '100%', minHeight: 46, alignItems: 'center', justifyContent: 'center', marginTop: 6, borderRadius: 12, backgroundColor: '#299cf5' },
   hero: { maxWidth: 860, width: '100%', alignSelf: 'center', marginTop: 18, borderWidth: 1, borderColor: '#244e6f', borderRadius: 20, padding: 22, backgroundColor: '#121a23' },
-  informationHeroCentered: { alignItems: 'center', marginTop: 0, borderRadius: 18, paddingHorizontal: 16, paddingTop: 12, paddingBottom: 16 },
+  informationHeroCentered: { alignItems: 'center', marginTop: 0, borderRadius: 18, paddingHorizontal: 16, paddingTop: 12, paddingBottom: 11 },
   centeredText: { textAlign: 'center' },
   heroLight: { borderColor: '#9bb8b1', backgroundColor: '#f8fff9' }, eyebrow: { color: '#299cf5', fontSize: 10, fontWeight: '900', letterSpacing: 1.5 },
   blueTextLight: { color: '#005bb5' },
   informationHeroIcon: { width: 58, height: 58, alignSelf: 'center', alignItems: 'center', justifyContent: 'center', marginBottom: 10, borderWidth: 1, borderColor: '#285d82', borderRadius: 18, backgroundColor: '#10263a' },
   informationHeroIconLight: { borderColor: '#8dbddd', backgroundColor: '#e1f1fb' },
   title: { marginTop: 6, color: '#fff', fontSize: 25, lineHeight: 28, fontWeight: '900' }, intro: { marginTop: 7, maxWidth: 720, color: '#b6c2ca', fontSize: 13, lineHeight: 19 }, updated: { marginTop: 10, color: '#91a1ab', fontSize: 11, fontWeight: '700' },
+  aboutIntro: { fontSize: 13 },
   legalHero: { marginTop: 0, borderWidth: 0, borderRadius: 0, paddingHorizontal: 6, paddingTop: 18, paddingBottom: 18, backgroundColor: 'transparent' },
-  legalHeroCompact: { width: 'auto', alignSelf: 'stretch', marginHorizontal: -14, paddingHorizontal: 20, paddingTop: 24, backgroundColor: '#222222' },
+  legalHeroCompact: { width: 'auto', alignSelf: 'stretch', marginHorizontal: -14, paddingHorizontal: 20, paddingTop: 28, paddingBottom: 28, backgroundColor: '#222222' },
   legalHeroLight: { backgroundColor: 'transparent' },
   legalHeroCompactLight: { backgroundColor: '#e0f0e5' },
   legalEyebrow: { fontSize: 12, letterSpacing: 1.1 },
@@ -709,7 +710,7 @@ const styles = StyleSheet.create({
   faqHeroIcon: { width: 58, height: 58, alignItems: 'center', justifyContent: 'center', marginBottom: 8, borderWidth: 1, borderColor: '#285d82', borderRadius: 18, backgroundColor: '#10263a' },
   faqHeroIconLight: { borderColor: '#8dbddd', backgroundColor: '#e1f1fb' },
   faqTitle: { marginTop: 3, color: '#fff', fontSize: 25, lineHeight: 30, fontWeight: '900', textAlign: 'center' },
-  faqIntro: { maxWidth: 520, marginTop: 6, color: '#b6c2ca', fontSize: 13, lineHeight: 20, textAlign: 'center' },
+  faqIntro: { maxWidth: 350, marginTop: 6, color: '#b6c2ca', fontSize: 14, lineHeight: 22, textAlign: 'center' },
   faqTools: { gap: 14, borderTopWidth: 1, borderBottomWidth: 1, borderColor: '#2d3a42', paddingHorizontal: 12, paddingVertical: 16, backgroundColor: '#11171b' },
   faqToolsLight: { borderColor: '#9bb8b1', backgroundColor: '#f3f8f5' },
   faqSearch: { minHeight: 52, flexDirection: 'row', alignItems: 'center', gap: 10, borderWidth: 1, borderColor: '#35464f', borderRadius: 15, paddingHorizontal: 14, backgroundColor: '#0d1719' },
@@ -756,10 +757,11 @@ const styles = StyleSheet.create({
   faqGuideButtonText: { color: '#fff', fontSize: 12, fontWeight: '900' },
   aboutBody: { maxWidth: 860, width: '100%', alignSelf: 'center', overflow: 'hidden', marginTop: 14, borderWidth: 1, borderColor: '#344149', borderRadius: 18, backgroundColor: '#11171b' },
   groupShellLight: { borderColor: '#9bb8b1', backgroundColor: '#f8fff9' },
-  aboutStory: { alignItems: 'center', gap: 18, borderBottomWidth: 1, borderBottomColor: '#344149', padding: 20, backgroundColor: '#171d21' },
+  aboutStory: { alignItems: 'center', gap: 18, borderBottomWidth: 1, borderBottomColor: '#344149', paddingHorizontal: 12, paddingVertical: 20, backgroundColor: '#171d21' },
   aboutStoryLight: { borderBottomColor: '#9bb8b1', backgroundColor: '#eef6f1' },
-  aboutStoryLogo: { width: '86%', height: 148, resizeMode: 'contain' },
+  aboutStoryLogo: { width: '86%', height: 126, resizeMode: 'contain' },
   aboutStoryCopy: { width: '100%', gap: 7 },
+  aboutParagraph: { marginTop: 7, fontSize: 13, lineHeight: 21 },
   aboutHeading: { marginTop: 4, color: '#fff', fontSize: 21, lineHeight: 25, fontWeight: '900' },
   aboutGroup: { gap: 11, borderBottomWidth: 1, borderBottomColor: '#344149', padding: 17 },
   aboutCards: { gap: 10 },
@@ -791,18 +793,18 @@ const styles = StyleSheet.create({
   aboutSecondaryButton: { minHeight: 46, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: '#4a5962', borderRadius: 12, backgroundColor: '#20282d' },
   aboutSecondaryButtonLight: { borderColor: '#b5c4cb', backgroundColor: '#fff' },
   aboutSecondaryButtonText: { color: '#fff', fontSize: 12, fontWeight: '900' },
-  helpDirectory: { maxWidth: 860, width: '100%', alignSelf: 'center', gap: 18, marginTop: 16, borderWidth: 1, borderColor: '#344149', borderRadius: 18, padding: 13, backgroundColor: '#11171b' },
+  helpDirectory: { maxWidth: 860, width: '100%', alignSelf: 'center', gap: 18, marginTop: 16, borderWidth: 1, borderColor: '#344149', borderRadius: 18, paddingHorizontal: 13, paddingTop: 18, paddingBottom: 13, backgroundColor: '#11171b' },
   helpGroup: { gap: 11, borderBottomWidth: 1, borderBottomColor: '#344149', paddingBottom: 18 },
   helpGroupHeader: { alignItems: 'center', gap: 4, paddingHorizontal: 5 },
   helpGroupTitle: { color: '#fff', fontSize: 18, lineHeight: 22, fontWeight: '900', textAlign: 'center' },
-  helpGroupDetail: { color: '#aebac1', fontSize: 11, lineHeight: 16, textAlign: 'center' },
+  helpGroupDetail: { color: '#aebac1', fontSize: 13, lineHeight: 20, textAlign: 'center' },
   helpLinks: { gap: 9 },
   helpLink: { minHeight: 94, flexDirection: 'row', alignItems: 'center', gap: 11, borderWidth: 1, borderColor: '#344149', borderRadius: 15, padding: 12, backgroundColor: '#171d21' },
-  helpLinkIcon: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center', borderRadius: 13, backgroundColor: '#153653' },
+  helpLinkIcon: { width: 48, height: 48, alignItems: 'center', justifyContent: 'center', borderRadius: 13, backgroundColor: '#153653' },
   helpLinkIconText: { color: '#299cf5', fontSize: 20, fontWeight: '900' },
   helpLinkCopy: { minWidth: 0, flex: 1, gap: 4 },
-  helpLinkTitle: { color: '#fff', fontSize: 13, lineHeight: 17, fontWeight: '900' },
-  helpLinkDetail: { color: '#aebac1', fontSize: 10.5, lineHeight: 15 },
+  helpLinkTitle: { color: '#fff', fontSize: 14, lineHeight: 18, fontWeight: '900' },
+  helpLinkDetail: { color: '#aebac1', fontSize: 11.5, lineHeight: 16 },
   safetyBody: { maxWidth: 860, width: '100%', alignSelf: 'center', overflow: 'hidden', marginTop: 14, borderWidth: 1, borderColor: '#344149', borderRadius: 18, backgroundColor: '#11171b' },
   safetyImportant: { flexDirection: 'row', alignItems: 'flex-start', gap: 12, margin: 17, borderWidth: 1, borderColor: '#7d6130', borderRadius: 17, padding: 14, backgroundColor: '#2a2112' },
   safetyImportantLight: { borderColor: '#c9a45d', backgroundColor: '#fff7e4' },

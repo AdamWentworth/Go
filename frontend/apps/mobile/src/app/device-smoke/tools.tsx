@@ -1,11 +1,12 @@
-import { useState, type ReactNode } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { Redirect, useLocalSearchParams } from "expo-router";
-import { StyleSheet, View } from "react-native";
+import { Platform, StyleSheet, View } from "react-native";
 import type {
   BasePokemon,
   Move,
   PokemonPvPRankingsPayload,
 } from "@pokemongonexus/shared-contracts/pokemon";
+import type { PokemonInstance } from "@pokemongonexus/shared-contracts/instances";
 import { runtimeConfig } from "../../config/runtimeConfig";
 import { NativeMaxScreen } from "../../screens/NativeMaxScreen";
 import { NativePokedexDetailScreen } from "../../screens/NativePokedexDetailScreen";
@@ -14,6 +15,7 @@ import { NativePvpScreen } from "../../screens/NativePvpScreen";
 import { NativeRaidScreen } from "../../screens/NativeRaidScreen";
 import { NativeRankingsScreen } from "../../screens/NativeRankingsScreen";
 import type { NativePokedexManualRegistration } from "../../features/tools/nativePokedexModel";
+import { buildNativePokedexEntries } from "../../features/tools/nativePokedexModel";
 import type {
   NativeRankingCategory,
   NativeRankingCollectionFilter,
@@ -22,6 +24,9 @@ import type {
 import { NativeRouteActionMenu } from "../../components/NativeRouteActionMenu";
 
 const ASSET_BASE_URL = runtimeConfig.api.frontendAppUrl;
+const CATALOG_FIXTURE_URL = Platform.OS === "web"
+  ? "http://127.0.0.1:8092/pokemons.json"
+  : "http://10.0.2.2:8092/pokemons.json";
 const imageUri = `${ASSET_BASE_URL}/images/shiny/shiny_pokemon_1.png`;
 const fastMove = {
   move_id: 1,
@@ -42,7 +47,7 @@ const chargedMove = {
   raid_cooldown: 2.5,
   is_fast: 0,
 } as Move;
-const battleCatalog = [
+const FALLBACK_BATTLE_CATALOG = [
   {
     pokemon_id: 1,
     name: "Bulbasaur",
@@ -276,6 +281,85 @@ const pvpPayload = {
   },
   formats: [],
 } as PokemonPvPRankingsPayload;
+const CANONICAL_PVP_IDENTITIES = [
+  { chargedMove: "Earthquake", name: "Clodsire", pokemonId: 980, speciesId: "clodsire", type: "poison" },
+  { chargedMove: "Play Rough", name: "Azumarill", pokemonId: 184, speciesId: "azumarill", type: "water" },
+  { chargedMove: "Seed Bomb", name: "Bulbasaur", pokemonId: 1, speciesId: "bulbasaur", type: "grass" },
+] as const;
+const canonicalPvpPayload: PokemonPvPRankingsPayload = {
+  ...pvpPayload,
+  source: {
+    importedAt: "2026-07-23T00:00:00Z",
+    license: "MIT",
+    metadata: {},
+    name: "PvPoke",
+    url: "https://github.com/pvpoke/pvpoke",
+    version: "e2e-pvpoke",
+  },
+  leagues: {
+    ...pvpPayload.leagues,
+    great: {
+      ...pvpPayload.leagues.great,
+      label: "Great League",
+      entries: pvpPayload.leagues.great.entries.map((entry, index) => {
+        const identity = CANONICAL_PVP_IDENTITIES[index] ?? CANONICAL_PVP_IDENTITIES[0];
+        const rank = index + 1;
+        return {
+          ...entry,
+          attackIv: 0,
+          battleAttack: 100 + rank,
+          battleDefense: 130 - rank,
+          battleHp: 140 + rank,
+          categoryScores: rank === 1 ? [70, 72, 74, 76, 78, 80] : [90, 88, 86, 84, 82, 81],
+          counters: [{ speciesId: "lanturn", rating: 310 + rank }],
+          defenseIv: 15,
+          imageUrl: `/images/default/pokemon_${identity.pokemonId}.png`,
+          matchups: [{ speciesId: "talonflame", rating: 740 - rank }],
+          moveUsage: [{
+            id: `${identity.speciesId}-fast`,
+            kind: "fast",
+            name: "Quick Attack",
+            type: "normal",
+            uses: 120,
+          }],
+          moveset: [
+            {
+              ...entry.moveset[0],
+              id: `${identity.speciesId}-fast`,
+              name: "Quick Attack",
+              type: "normal",
+              power: 5,
+              energyGain: 8,
+              energyCost: 0,
+              turns: 2,
+            },
+            {
+              ...entry.moveset[1],
+              id: `${identity.speciesId}-charged`,
+              name: identity.chargedMove,
+              type: identity.type,
+              power: 80,
+              energyGain: 0,
+              energyCost: 50,
+              turns: 1,
+            },
+          ],
+          name: identity.name,
+          pokemonId: identity.pokemonId,
+          rank,
+          rating: 700,
+          recommendedLevel: 20 + rank / 2,
+          score: 96 - rank,
+          sourceRank: rank,
+          speciesId: identity.speciesId,
+          staminaIv: 15,
+          statProduct: (100 + rank) * (130 - rank) * (140 + rank),
+          types: [identity.type],
+        };
+      }),
+    },
+  },
+};
 const pokedexEntry = {
   id: "0001-shiny",
   pokemonId: 1,
@@ -322,7 +406,7 @@ const dynamaxPokedexEntry = {
   registeredSpecies: true,
 };
 const detailPokemon = {
-  ...battleCatalog[0],
+  ...FALLBACK_BATTLE_CATALOG[0],
   generation: 1,
   date_available: "2016-07-06",
   date_shiny_available: "2018-03-25",
@@ -344,20 +428,37 @@ const detailPokemon = {
   },
 } as BasePokemon;
 const detailEntries = [basePokedexEntry, pokedexEntry, shadowPokedexEntry, dynamaxPokedexEntry];
-const rankingRow = {
-  caughtUsers: 3,
-  entry: pokedexEntry,
-  mostWantedUsers: 2,
-  personal: { caughtCount: 1, registered: true, tradeCount: 0, wanted: true },
-  rank: 1,
-  wantedUsers: 4,
-};
-
+const POKEDEX_REGISTRATIONS: NativePokedexManualRegistration[] = [3, 6, 9, 25, 94, 133, 149, 150].map((pokemonId) => ({
+  entryId: `${String(pokemonId).padStart(4, "0")}-default`,
+  facets: {},
+  registrationId: `demo-${pokemonId}`,
+}));
+const RAID_INSTANCE = {
+  instance_id: "0006-default_demo-charizard",
+  variant_id: "0006-default",
+  pokemon_id: 6,
+  nickname: "League Ace",
+  cp: 2844,
+  level: 38,
+  attack_iv: 15,
+  defense_iv: 14,
+  stamina_iv: 15,
+  fast_move_id: 54,
+  charged_move1_id: 186,
+  charged_move2_id: 83,
+  is_caught: true,
+  is_for_trade: false,
+  is_wanted: false,
+  registered: true,
+  favorite: true,
+  disabled: false,
+} as PokemonInstance;
 const noOp = () => undefined;
 
-const DeviceSmokeToolChrome = ({ children, currentPath }: { children: ReactNode; currentPath: string }) => (
+const DeviceSmokeToolChrome = ({ children, currentPath, ready }: { children: ReactNode; currentPath: string; ready: boolean }) => (
   <View style={styles.screen}>
     {children}
+    {ready ? <View style={styles.readyMarker} testID="device-smoke-tools-ready" /> : null}
     <NativeRouteActionMenu anchorInteractive={false} currentPath={currentPath} signedIn={false} />
   </View>
 );
@@ -405,18 +506,12 @@ function DeviceSmokeRankings() {
   const [category, setCategory] = useState<NativeRankingCategory>('all');
   const [collectionFilter, setCollectionFilter] = useState<NativeRankingCollectionFilter>('all');
   const [mode, setMode] = useState<NativeRankingMode>('wanted');
-  const [query, setQuery] = useState('');
-  const normalized = query.trim().toLocaleLowerCase();
-  const rows = (category === 'all' || category === 'shiny')
-    && (collectionFilter === 'all' || collectionFilter === 'owned' || collectionFilter === 'wanted')
-    && (!normalized || rankingRow.entry.name.toLocaleLowerCase().includes(normalized))
-    ? [rankingRow]
-    : [];
+  const [, setQuery] = useState('');
   return (
     <NativeRankingsScreen
       assetBaseUrl={ASSET_BASE_URL}
-      collectionFilterCounts={{ all: 1, missing: 0, owned: 1, trade: 0, wanted: 1 }}
-      collectorCount={5}
+      collectionFilterCounts={{ all: 0, missing: 0, owned: 0, trade: 0, wanted: 0 }}
+      collectorCount={0}
       onBack={noOp}
       onChangeCategory={setCategory}
       onChangeCollectionFilter={setCollectionFilter}
@@ -424,28 +519,53 @@ function DeviceSmokeRankings() {
       onChangeQuery={setQuery}
       onOpenEntry={noOp}
       onRetry={noOp}
-      privacyThreshold={3}
-      rows={rows}
+      privacyThreshold={5}
+      rows={[]}
       selectedCategory={category}
       selectedCollectionFilter={collectionFilter}
       selectedMode={mode}
       showCollectionFilters
-      snapshotLabel="Recently updated"
+      snapshotLabel="Updated Jul 25, 2026, 5:00 AM"
     />
   );
 }
 
 export default function DeviceSmokeToolsRoute() {
   const params = useLocalSearchParams<{ tool?: string | string[] }>();
-  if (!runtimeConfig.mobile.deviceSmokeMode) return <Redirect href="/" />;
   const tool = Array.isArray(params.tool) ? params.tool[0] : params.tool;
+  const needsCatalog = tool === "pokedex" || tool === "raid" || tool === "max";
+  const [catalog, setCatalog] = useState<BasePokemon[]>(FALLBACK_BATTLE_CATALOG);
+  const [catalogReady, setCatalogReady] = useState(false);
+  useEffect(() => {
+    if (!runtimeConfig.mobile.deviceSmokeMode || !needsCatalog) return undefined;
+    const controller = new AbortController();
+    void fetch(CATALOG_FIXTURE_URL, { signal: controller.signal })
+      .then(async (response) => {
+        if (!response.ok) throw new Error(`Catalog fixture returned ${response.status}.`);
+        const payload: unknown = await response.json();
+        if (!Array.isArray(payload)) throw new Error("Catalog fixture is not an array.");
+        setCatalog(payload as BasePokemon[]);
+      })
+      .catch(() => {
+        if (!controller.signal.aborted) setCatalog(FALLBACK_BATTLE_CATALOG);
+      })
+      .finally(() => {
+        if (!controller.signal.aborted) setCatalogReady(true);
+      });
+    return () => controller.abort();
+  }, [needsCatalog]);
+  const parityPokedexEntries = useMemo(
+    () => buildNativePokedexEntries(catalog, {}, POKEDEX_REGISTRATIONS),
+    [catalog],
+  );
+  if (!runtimeConfig.mobile.deviceSmokeMode) return <Redirect href="/" />;
 
   if (tool === "pokedex") {
     return (
-      <DeviceSmokeToolChrome currentPath="/pokedex">
+      <DeviceSmokeToolChrome currentPath="/pokedex" ready={!needsCatalog || catalogReady}>
         <NativePokedexScreen
           assetBaseUrl={ASSET_BASE_URL}
-          entries={[basePokedexEntry, pokedexEntry]}
+          entries={parityPokedexEntries}
           onBack={noOp}
           onOpenEntry={noOp}
           onRetry={noOp}
@@ -455,35 +575,36 @@ export default function DeviceSmokeToolsRoute() {
     );
   }
   if (tool === "pokedex-detail") return (
-    <DeviceSmokeToolChrome currentPath="/pokedex">
+    <DeviceSmokeToolChrome currentPath="/pokedex" ready={!needsCatalog || catalogReady}>
       <DeviceSmokePokedexDetail />
     </DeviceSmokeToolChrome>
   );
   if (tool === "raid") {
     return (
-      <DeviceSmokeToolChrome currentPath="/raid">
+      <DeviceSmokeToolChrome currentPath="/raid" ready={!needsCatalog || catalogReady}>
         <NativeRaidScreen
           assetBaseUrl={ASSET_BASE_URL}
-          catalog={battleCatalog}
+          catalog={catalog}
+          instances={{ '0006-default_demo-charizard': RAID_INSTANCE }}
           onBack={noOp}
           onMethodology={noOp}
           onOpenPokemon={noOp}
           onRetry={noOp}
-          signedIn={false}
+          signedIn
         />
       </DeviceSmokeToolChrome>
     );
   }
   if (tool === "pvp") {
     return (
-      <DeviceSmokeToolChrome currentPath="/pvp">
+      <DeviceSmokeToolChrome currentPath="/pvp" ready={!needsCatalog || catalogReady}>
         <NativePvpScreen
           assetBaseUrl={ASSET_BASE_URL}
-          catalog={battleCatalog}
+          catalog={FALLBACK_BATTLE_CATALOG}
           onBack={noOp}
           onMethodology={noOp}
           onRetry={noOp}
-          payload={pvpPayload}
+          payload={canonicalPvpPayload}
           persistTeamBuilder={false}
           signedIn={false}
         />
@@ -492,21 +613,22 @@ export default function DeviceSmokeToolsRoute() {
   }
   if (tool === "max") {
     return (
-      <DeviceSmokeToolChrome currentPath="/max">
+      <DeviceSmokeToolChrome currentPath="/max" ready={!needsCatalog || catalogReady}>
         <NativeMaxScreen
           assetBaseUrl={ASSET_BASE_URL}
-          catalog={battleCatalog}
+          catalog={catalog}
+          instances={{}}
           onBack={noOp}
           onOpenPokemon={noOp}
           onRetry={noOp}
-          signedIn={false}
+          signedIn
         />
       </DeviceSmokeToolChrome>
     );
   }
   if (tool === "rankings") {
     return (
-      <DeviceSmokeToolChrome currentPath="/rankings">
+      <DeviceSmokeToolChrome currentPath="/rankings" ready={!needsCatalog || catalogReady}>
         <DeviceSmokeRankings />
       </DeviceSmokeToolChrome>
     );
@@ -514,4 +636,7 @@ export default function DeviceSmokeToolsRoute() {
   return <Redirect href="/device-smoke/home" />;
 }
 
-const styles = StyleSheet.create({ screen: { flex: 1, minHeight: 0 } });
+const styles = StyleSheet.create({
+  screen: { flex: 1, minHeight: 0 },
+  readyMarker: { position: "absolute", width: 1, height: 1, opacity: 0 },
+});

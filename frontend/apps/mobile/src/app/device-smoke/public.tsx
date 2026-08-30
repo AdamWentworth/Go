@@ -23,7 +23,7 @@ const boardModel: NativeTradeBoardModel = {
   includeTrade: true,
   includeWanted: true,
   pokemonGoName: 'VisualTrainerGO',
-  tradeCount: 2,
+  tradeCount: 1,
   tradeEntries: [{
     id: 'trade-charizard',
     imageUri: `${ASSET_BASE_URL}/images/shiny_gigantamax/shiny_gigantamax_6.png`,
@@ -33,7 +33,7 @@ const boardModel: NativeTradeBoardModel = {
     mostWanted: false,
     name: 'Shiny Gigantamax Charizard',
     pokedexNumber: 6,
-    quantity: 2,
+    quantity: 1,
   }],
   username: 'VisualTrainer',
   wantedCount: 1,

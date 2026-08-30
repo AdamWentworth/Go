@@ -2,6 +2,7 @@ import { useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Image,
+  Platform,
   Pressable,
   ScrollView,
   Share,
@@ -101,6 +102,16 @@ export const NativeTradeBoardScreen = ({
         quality: 1,
         result: 'tmpfile',
       });
+      if (Platform.OS === 'web' && typeof document !== 'undefined') {
+        const download = document.createElement('a');
+        download.href = uri;
+        download.download = `pokegonexus-${visibleModel.username}-trade-board.png`;
+        document.body.appendChild(download);
+        download.click();
+        download.remove();
+        setNotice('Trade Board PNG downloaded.');
+        return;
+      }
       if (await Sharing.isAvailableAsync()) {
         await Sharing.shareAsync(uri, {
           dialogTitle: `Share @${visibleModel.username}'s Trade Board`,
@@ -367,11 +378,24 @@ export const NativeTradeBoardScreen = ({
       ) : null}
       {editable && visibleModel ? (
         <View style={[styles.actions, styles.actionDock, { bottom: 82 }, light && styles.actionDockLight]}>
-          <Pressable accessibilityRole="button" onPress={() => void copyLiveLink()} style={[styles.secondaryButton, styles.dockedButton, light && styles.controlLight]}>
-            <Text style={[styles.secondaryButtonText, light && styles.textLight]}>Copy live link</Text>
+          <Pressable accessibilityLabel="Copy live link" accessibilityRole="button" onPress={() => void copyLiveLink()} style={[styles.secondaryButton, styles.copyDockButton, light && styles.controlLight]}>
+            <NativeUiIcon color={light ? '#102025' : '#eaf2f4'} name="link" size={18} />
+            <Text style={styles.copyDockLabel}>Copy live link</Text>
           </Pressable>
-          <Pressable accessibilityRole="button" disabled={sharing} onPress={() => void shareBoard()} style={[styles.primaryButton, styles.dockedButton]}>
-            <Text style={styles.primaryButtonText}>{sharing ? 'Preparing image…' : 'Share board image'}</Text>
+          <Pressable
+            accessibilityRole="button"
+            disabled={sharing}
+            onPress={() => void shareBoard()}
+            style={[
+              Platform.OS === 'web' ? styles.downloadDockButton : styles.primaryButton,
+              Platform.OS === 'web' && light && styles.downloadDockButtonLight,
+              styles.dockedButton,
+            ]}
+          >
+            <View style={styles.dockButtonContent}>
+              {Platform.OS === 'web' ? <NativeUiIcon color={light ? '#102025' : '#eaf2f4'} name="download" size={16} /> : null}
+              <Text style={[styles.primaryButtonText, Platform.OS === 'web' && styles.downloadDockText, Platform.OS === 'web' && light && styles.textLight]}>{sharing ? (Platform.OS === 'web' ? 'Creating…' : 'Preparing image…') : (Platform.OS === 'web' ? 'Download PNG' : 'Share board image')}</Text>
+            </View>
           </Pressable>
         </View>
       ) : null}
@@ -482,6 +506,12 @@ const styles = StyleSheet.create({
   actionDock: { position: 'absolute', zIndex: 20, right: 10, left: 10, padding: 8, borderWidth: 1, borderColor: '#43565a', borderRadius: 12, backgroundColor: '#1a2224' },
   actionDockLight: { borderColor: '#aebdc1', backgroundColor: '#ffffff' },
   dockedButton: { flex: 1, minWidth: 0 },
+  copyDockButton: { width: 44, minWidth: 44, flexBasis: 44, flexGrow: 0, flexShrink: 0, paddingHorizontal: 0 },
+  copyDockLabel: { position: 'absolute', width: 1, height: 1, opacity: 0 },
+  downloadDockButton: { minHeight: 48, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: '#596a6d', borderRadius: 11, paddingHorizontal: 16, backgroundColor: '#353a3b' },
+  downloadDockButtonLight: { borderColor: '#aebdc1', backgroundColor: '#e6efeb' },
+  downloadDockText: { color: '#eaf2f4' },
+  dockButtonContent: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8 },
   primaryButton: { minHeight: 48, alignItems: 'center', justifyContent: 'center', borderRadius: 11, paddingHorizontal: 18, backgroundColor: '#168ef0' },
   primaryButtonText: { color: '#04131f', fontSize: 14, fontWeight: '900' },
   secondaryButton: { minHeight: 48, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: '#43565a', borderRadius: 11, paddingHorizontal: 16, backgroundColor: '#182124' },

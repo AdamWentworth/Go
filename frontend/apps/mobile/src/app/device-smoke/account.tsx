@@ -12,15 +12,15 @@ import {
 import { NativeAccountSecurityScreen } from '../../screens/NativeAccountSecurityScreen';
 
 const INITIAL_SECURITY: AccountSecuritySummary = {
-  activeSessions: 3,
-  email: 'trainer@example.com',
+  activeSessions: 2,
+  email: 'demo@pokegonexus.local',
   hasPassword: true,
-  providers: [{
-    email: 'trainer@gmail.com',
+  providers: (['google', 'discord'] as OAuthProvider[]).map((provider) => ({
+    email: 'demo@pokegonexus.local',
     emailVerified: true,
-    linkedAt: '2026-08-24T12:00:00.000Z',
-    provider: 'google',
-  }],
+    linkedAt: provider === 'google' ? '2026-07-01T00:00:00.000Z' : '2026-07-02T00:00:00.000Z',
+    provider,
+  })),
 };
 
 const OAUTH_ONLY_SECURITY: AccountSecuritySummary = {
@@ -40,7 +40,7 @@ export default function DeviceSmokeAccountRoute() {
   const oauthOnly = (Array.isArray(params.oauthOnly) ? params.oauthOnly[0] : params.oauthOnly) === '1';
   const [draft, setDraft] = useState<NativeAccountSecurityDraft>(() => createNativeAccountSecurityDraft({
     email: INITIAL_SECURITY.email,
-    username: 'TrainerOne',
+    username: 'NexusDemo',
   }));
   const [security, setSecurity] = useState(() => oauthOnly ? OAUTH_ONLY_SECURITY : INITIAL_SECURITY);
   const [feedback, setFeedback] = useState<{ tone: 'success'; text: string } | null>(null);

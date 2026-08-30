@@ -23,6 +23,7 @@ export type NativeTradePreferenceCandidate = {
   excludedByRule: boolean;
   manuallyExcluded: boolean;
   traits: TradePreferenceCandidate;
+  displayName?: string;
 };
 
 export type NativeTradePreferenceEntry = {
@@ -35,6 +36,8 @@ export type NativeTradePreferenceEntry = {
   mirror: boolean;
   mode: NativeTradePreferenceMode;
   row: NativeCollectionRow;
+  displayName?: string;
+  nickname?: string | null;
 };
 
 export type NativeTradePreferencePatch = Partial<Pick<
@@ -144,10 +147,23 @@ export const buildNativeTradePreferenceEntries = ({
   mode: NativeTradePreferenceMode;
 }): NativeTradePreferenceEntry[] => {
   const rows = buildNativeCollectionRows(instances, catalog, assetOrigin);
+  const speciesRows = buildNativeCollectionRows(
+    Object.fromEntries(Object.entries(instances).map(([key, instance]) => [
+      key,
+      { ...instance, nickname: null },
+    ])),
+    catalog,
+    assetOrigin,
+  );
   const rowByCollectionKey = new Map<string, NativeCollectionRow>();
+  const speciesRowByCollectionKey = new Map<string, NativeCollectionRow>();
   for (const row of rows) {
     const collectionKey = resolveInstanceCollectionKey(instances, row.id);
     if (collectionKey) rowByCollectionKey.set(collectionKey, row);
+  }
+  for (const row of speciesRows) {
+    const collectionKey = resolveInstanceCollectionKey(instances, row.id);
+    if (collectionKey) speciesRowByCollectionKey.set(collectionKey, row);
   }
   const pokemonById = new Map(catalog.map((pokemon) => [pokemon.pokemon_id, pokemon]));
   const selectedStatus = mode === 'trade' ? 'trade' : 'wanted';
@@ -197,6 +213,7 @@ export const buildNativeTradePreferenceEntries = ({
         excludedByRule,
         manuallyExcluded: isManuallyExcluded,
         traits: candidateTraits[candidateKey],
+        displayName: speciesRowByCollectionKey.get(candidateKey)?.name ?? candidateRow.name,
       } satisfies NativeTradePreferenceCandidate];
     }).sort(compareRows);
 
@@ -210,6 +227,8 @@ export const buildNativeTradePreferenceEntries = ({
       mirror: mode === 'trade' && instance.mirror,
       mode,
       row,
+      displayName: speciesRowByCollectionKey.get(collectionKey)?.name ?? row.name,
+      nickname: instance.nickname?.trim() || null,
     } satisfies NativeTradePreferenceEntry];
   }).sort(entryCompare);
 };

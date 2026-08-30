@@ -224,7 +224,7 @@ describe('NativeInstanceDetailScreen', () => {
       />,
     );
 
-    expect(screen.getByText('MOST WANTED')).toBeTruthy();
+    expect(screen.getByText('WANTED')).toBeTruthy();
     expect(screen.queryByRole('button', { name: 'Edit wanted listing' })).toBeNull();
     expect(screen.queryByRole('button', { name: 'Edit preferences' })).toBeNull();
   });

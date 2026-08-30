@@ -506,7 +506,7 @@ export const NativeTradeActivityScreen = ({
           keyExtractor={(row) => row.model.tradeId}
           ListEmptyComponent={error ? null : (
             <View style={[styles.emptyState, light && styles.cardLight]}>
-              <View style={styles.emptyIcon}><NativeUiIcon color="#36c181" name="trade" size={22} /></View>
+              <View style={styles.emptyIcon}><NativeUiIcon color="#36c181" name="trade" size={17} /></View>
               <Text style={[styles.stateTitle, light && styles.textLight]}>No trades here</Text>
               <Text style={[styles.stateBody, light && styles.secondaryLight]}>
                 {selectedFilter === 'Accepting'
@@ -605,12 +605,12 @@ const styles = StyleSheet.create({
   activeModeTab: { backgroundColor: '#36c5a4' },
   modeTabText: { color: '#9eb8b3', fontWeight: '800', textAlign: 'center' },
   activeModeText: { color: '#041411', fontWeight: '900' },
-  pageHeading: { alignItems: 'center', gap: 3, paddingHorizontal: 18 },
-  pageTitle: { color: '#f4faf8', fontSize: 23, lineHeight: 27, fontWeight: '900', textAlign: 'center' },
+  pageHeading: { alignItems: 'center', gap: 3, paddingTop: 10, paddingBottom: 12, paddingHorizontal: 18 },
+  pageTitle: { color: '#f4faf8', fontSize: 30, lineHeight: 35, fontWeight: '900', textAlign: 'center' },
   pageDescription: { maxWidth: 420, color: '#9db6b2', fontSize: 13, lineHeight: 18, textAlign: 'center' },
   statusTabs: { flexDirection: 'row', marginHorizontal: 8, borderWidth: 1, borderColor: '#1b403b', borderRadius: 12, padding: 4, backgroundColor: '#071211' },
   statusTabsLight: { borderColor: '#abc1bc', backgroundColor: '#eef3f2' },
-  statusTab: { flex: 1, minHeight: 50, alignItems: 'center', justifyContent: 'center', gap: 2, borderRadius: 8, paddingHorizontal: 2 },
+  statusTab: { flex: 1, minHeight: 54, alignItems: 'center', justifyContent: 'center', gap: 2, borderRadius: 8, paddingHorizontal: 2 },
   activeStatusTab: { borderWidth: 1 },
   statusTabText: { color: '#a4b8b4', fontSize: 12, fontWeight: '800', textAlign: 'center' },
   activeStatusText: { color: '#ffffff' },
@@ -620,7 +620,7 @@ const styles = StyleSheet.create({
   // anchor. Without this clearance, the anchor can intercept a press on the
   // final card action even though that action is technically visible.
   listContent: { gap: 12, paddingHorizontal: 8, paddingBottom: 96 },
-  emptyListContent: { paddingHorizontal: 8, paddingBottom: 92 },
+  emptyListContent: { paddingTop: 4, paddingHorizontal: 8, paddingBottom: 92 },
   tradeCard: { overflow: 'hidden', borderWidth: 1, borderColor: '#24554d', borderRadius: 13, backgroundColor: '#111b1a' },
   cardLight: { borderColor: '#9ab7b0', backgroundColor: '#ffffff' },
   tradeHeader: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', gap: 8, borderLeftWidth: 4, borderLeftColor: '#36c181', borderBottomWidth: 1, borderBottomColor: '#204640', padding: 11 },
@@ -684,8 +684,8 @@ const styles = StyleSheet.create({
   retryButton: { minHeight: 40, justifyContent: 'center', borderRadius: 8, paddingHorizontal: 14, backgroundColor: '#ef5b72' },
   retryText: { color: '#ffffff', fontWeight: '900' },
   centerState: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 9, padding: 26 },
-  emptyState: { minHeight: 220, alignItems: 'center', justifyContent: 'center', gap: 7, borderWidth: 1, borderStyle: 'dashed', borderColor: '#2b5a53', borderRadius: 13, padding: 22, backgroundColor: '#111b1a' },
-  emptyIcon: { width: 52, height: 52, alignItems: 'center', justifyContent: 'center', borderRadius: 26, backgroundColor: '#19302d' },
+  emptyState: { minHeight: 210, alignItems: 'center', justifyContent: 'center', gap: 13, borderWidth: 1, borderStyle: 'dashed', borderColor: '#2b5a53', borderRadius: 13, padding: 22, backgroundColor: '#111b1a' },
+  emptyIcon: { width: 46, height: 46, alignItems: 'center', justifyContent: 'center', borderRadius: 23, backgroundColor: '#19302d' },
   emptyIconText: { color: '#42d4c4', fontSize: 22 },
   stateTitle: { color: '#ffffff', fontSize: 16, fontWeight: '900', textAlign: 'center' },
   stateBody: { maxWidth: 340, color: '#9fb7b2', fontSize: 12, lineHeight: 17, textAlign: 'center' },

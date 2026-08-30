@@ -16,6 +16,7 @@ const highlight = (
   name: string,
   image: string,
   maxKind: NativeCollectionRow['maxKind'] = null,
+  cp = 3000,
 ): NativeCollectionRow => ({
   id,
   pokemonId,
@@ -29,35 +30,35 @@ const highlight = (
   typeIconUris: [],
   status: 'caught',
   source: 'instance',
-  cp: 3000,
+  cp,
   favorite: true,
   mostWanted: false,
 });
 
 const MODEL: NativeTrainerProfileModel = {
   userId: 'user-1',
-  username: 'AdamZilla',
-  pokemonGoName: 'AdamGo',
-  avatarLabel: 'A',
+  username: 'NexusDemo',
+  pokemonGoName: 'NexusDemo',
+  avatarLabel: 'N',
   team: 'mystic',
-  teamLabel: 'Team Mystic',
+  teamLabel: 'Mystic',
   trainerLevel: 50,
-  totalXpLabel: '123,456,789 XP',
-  memberSinceLabel: 'Jan 2, 2026',
-  startedLabel: 'Jul 6, 2016',
-  locationLabel: 'Burnaby, British Columbia, Canada',
+  totalXpLabel: 'XP not shared',
+  memberSinceLabel: 'Dec 31, 2025',
+  startedLabel: 'Not shared',
+  locationLabel: 'Vancouver, British Columbia, Canada',
   trainerCodeLabel: '1234 5678 9012',
   titles: [
-    { id: 'shiny-hunter', label: 'Shiny Hunter', description: 'Hunting shiny Pokémon' },
     { id: 'lucky-trader', label: 'Lucky Trader', description: 'Trading and Lucky Pokémon' },
+    { id: 'pokedex-collector', label: 'Kanto Collector', description: 'Collecting Kanto Pokémon' },
   ],
   highlights: [],
   stats: [
     { key: 'registered', label: 'Registered', value: 846 },
     { key: 'caught', label: 'Caught', value: 2255 },
     { key: 'trade', label: 'For trade', value: 208 },
-    { key: 'wanted', label: 'Wanted', value: 77 },
-    { key: 'favorites', label: 'Favorites', value: 168 },
+    { key: 'wanted', label: 'Wanted', value: 168 },
+    { key: 'favorites', label: 'Favorites', value: 77 },
   ],
   relationship: 'self',
   friendshipId: null,
@@ -65,26 +66,28 @@ const MODEL: NativeTrainerProfileModel = {
 };
 
 const HIGHLIGHTS = [
-  highlight('charizard', 6, 'Shiny Gigantamax Charizard', '/images/shiny_gigantamax/shiny_gigantamax_6.png', 'gigantamax'),
-  highlight('venusaur', 3, 'Shiny Venusaur', '/images/shiny/shiny_pokemon_3.png'),
-  highlight('mewtwo', 150, 'Armored Mewtwo', '/images/default/pokemon_150.png'),
+  highlight('0006-default_demo-charizard', 6, 'League Ace', '/images/default/pokemon_6.png', null, 2844),
+  highlight('0094-default_demo-gengar', 94, 'Night shift', '/images/default/pokemon_94.png', null, 2567),
+  highlight('0150-default_demo-mewtwo', 150, 'Mewtwo', '/images/default/pokemon_150.png', null, 4188),
 ];
 
 const HIGHLIGHT_CANDIDATES = [
   ...HIGHLIGHTS,
+  highlight('0149-default_demo-dragonite', 149, 'Dragonite', '/images/default/pokemon_149.png', null, 3472),
+  highlight('0003-default_demo-venusaur', 3, 'Garden lead', '/images/default/pokemon_3.png', null, 2411),
   highlight('suicune', 245, 'Shiny Suicune', '/images/shiny/shiny_pokemon_245.png'),
   highlight('metagross', 376, 'Shiny Metagross', '/images/shiny/shiny_pokemon_376.png'),
 ];
 
 const EDITOR_DRAFT: NativeTrainerProfileDraft = {
-  trainerTitles: ['shiny-hunter', 'lucky-trader'],
-  pokemonGoName: 'AdamGo',
+  trainerTitles: ['lucky-trader', 'pokedex-collector'],
+  pokemonGoName: 'NexusDemo',
   trainerCode: '123456789012',
   team: 'Mystic',
   trainerLevel: '50',
-  totalXp: '123456789',
-  startedOn: '2016-07-06',
-  location: 'Burnaby, British Columbia, Canada',
+  totalXp: '',
+  startedOn: '',
+  location: 'Vancouver, British Columbia, Canada',
   highlightInstanceIds: HIGHLIGHTS.map(({ id }) => id),
 };
 

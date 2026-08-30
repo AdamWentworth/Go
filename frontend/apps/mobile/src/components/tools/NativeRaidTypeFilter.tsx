@@ -78,18 +78,19 @@ export const NativeRaidTypeFilter = ({ assetBaseUrl, onChange, selectedType }: P
 
 const styles = StyleSheet.create({
   panel: {
-    gap: 8,
+    gap: 6,
+    marginTop: 12,
     borderWidth: 1,
     borderColor: '#355052',
     borderRadius: 14,
-    padding: 8,
+    padding: 6,
     backgroundColor: '#101819',
   },
   panelLight: { borderColor: '#b9cdcd', backgroundColor: '#edf5f4' },
   all: {
     alignSelf: 'center',
     minWidth: 128,
-    minHeight: 36,
+    minHeight: 32,
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
@@ -104,7 +105,7 @@ const styles = StyleSheet.create({
   type: {
     width: '15.3%',
     minWidth: 43,
-    minHeight: 48,
+    minHeight: 42,
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
@@ -115,6 +116,8 @@ const styles = StyleSheet.create({
   },
   controlLight: { borderColor: '#b5c4c4', backgroundColor: '#fff' },
   icon: { width: 24, height: 24 },
-  label: { marginTop: 1, color: '#dceaea', fontSize: 7.5, fontWeight: '900', textTransform: 'uppercase' },
+  // The canonical compact raid grid is icon-only below the tablet
+  // breakpoint. Each button retains its accessibilityLabel.
+  label: { display: 'none', color: '#dceaea', fontSize: 7.5, fontWeight: '900', textTransform: 'uppercase' },
   textLight: { color: '#142629' },
 });

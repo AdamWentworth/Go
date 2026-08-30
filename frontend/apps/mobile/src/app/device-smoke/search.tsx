@@ -70,6 +70,7 @@ const row = (
   name: string,
   status: 'trade' | 'wanted',
   imageUri: string,
+  cp: number | null = null,
 ) => ({
   id,
   pokemonId,
@@ -83,50 +84,94 @@ const row = (
   typeIconUris: [],
   status,
   source: 'instance' as const,
-  cp: null,
+  cp,
   favorite: false,
   mostWanted: false,
 });
 
+const EMPTY_DETAILS = {
+  weight: null,
+  height: null,
+  moves: [],
+  attackIv: null,
+  defenseIv: null,
+  staminaIv: null,
+  friendshipLevel: null,
+  prefLucky: false,
+  wantedSizeLabels: [],
+};
+
 const RESULTS: NativePokemonSearchResult[] = [{
-  id: 'smoke-listing-pikachu',
-  username: 'OtherTrainer',
-  distanceKm: 1.2,
+  id: 'search-trade-pikachu',
+  username: 'HarbourMew',
+  distanceKm: 2.8,
   mode: 'trade',
   details: {
+    ...EMPTY_DETAILS,
     gender: 'Female',
-    weight: 6,
-    height: 0.4,
-    moves: ['Thunder Shock', 'Wild Charge'],
-    attackIv: 15,
-    defenseIv: 14,
-    staminaIv: 13,
-    locationCaught: 'Burnaby, British Columbia, Canada',
-    dateCaught: '2026-08-26',
-    friendshipLevel: null,
-    prefLucky: false,
-    wantedSizeLabels: [],
+    locationCaught: 'Coal Harbour',
+    dateCaught: '2026-06-18',
   },
   row: row(
-    'smoke-listing-pikachu',
+    'search-trade-pikachu',
     25,
     'Shiny Pikachu',
     'trade',
     `${ASSET_BASE_URL}/images/shiny/shiny_pokemon_25.png`,
+    821,
   ),
-  relatedRows: [{
-    ...row(
-      'smoke-wanted-charizard',
-      6,
-      'Gigantamax Charizard',
-      'wanted',
-      `${ASSET_BASE_URL}/images/gigantamax/gigantamax_6.png`,
-    ),
-    maxKind: 'gigantamax',
-    match: true,
-  }],
+  // The canonical Vite list capture cannot resolve this instance reference
+  // into its optional compatibility grid, so its initial card omits that
+  // section. Keep the native capture in that same rendered state.
+  relatedRows: [],
   hasMutualMatch: true,
-  mapCoordinate: [-122.98, 49.24],
+  mapCoordinate: [-123.119, 49.289],
+  mapCoordinateIsApproximate: false,
+}, {
+  id: 'search-trade-pikachu-2',
+  username: 'GranvilleDex',
+  distanceKm: 5.4,
+  mode: 'trade',
+  details: {
+    ...EMPTY_DETAILS,
+    gender: 'Male',
+    locationCaught: 'Granville Island',
+    dateCaught: '2026-06-10',
+  },
+  row: row(
+    'search-trade-pikachu-2',
+    25,
+    'Pikachu',
+    'trade',
+    `${ASSET_BASE_URL}/images/default/pokemon_25.png`,
+    744,
+  ),
+  relatedRows: [],
+  hasMutualMatch: false,
+  mapCoordinate: [-123.13, 49.276],
+  mapCoordinateIsApproximate: false,
+}, {
+  id: 'search-trade-pikachu-3',
+  username: 'KitsCollector',
+  distanceKm: 7.1,
+  mode: 'trade',
+  details: {
+    ...EMPTY_DETAILS,
+    gender: 'Female',
+    locationCaught: 'Kitsilano',
+    dateCaught: '2026-06-12',
+  },
+  row: row(
+    'search-trade-pikachu-3',
+    25,
+    'Pikachu',
+    'trade',
+    `${ASSET_BASE_URL}/images/default/pokemon_25.png`,
+    903,
+  ),
+  relatedRows: [],
+  hasMutualMatch: false,
+  mapCoordinate: [-123.155, 49.268],
   mapCoordinateIsApproximate: false,
 }];
 
@@ -137,15 +182,16 @@ export default function DeviceSmokeSearchRoute() {
   const sliderRef = useRef<NativeHorizontalPageSliderHandle>(null);
   const [draft, setDraft] = useState<NativePokemonSearchDraft>(() => ({
     ...createNativePokemonSearchDraft({
-      city: 'Burnaby, British Columbia, Canada',
-      latitude: 49.24,
-      longitude: -122.98,
+      city: 'Vancouver, British Columbia, Canada',
+      latitude: 49.2827,
+      longitude: -123.1207,
     }),
     pokemonId: 25,
     pokemonName: 'Pikachu',
     ownership: 'trade' as const,
-    shiny: true,
-    onlyMatchingTrades: true,
+    shiny: false,
+    onlyMatchingTrades: false,
+    limit: 5,
   }));
   const [hasSearched, setHasSearched] = useState(true);
   const [trainerQuery, setTrainerQuery] = useState('');
@@ -180,16 +226,16 @@ export default function DeviceSmokeSearchRoute() {
           catalog={CATALOG}
           draft={draft}
           hasSearched={hasSearched}
-          notice={hasSearched ? 'Search complete · 1 listing found.' : null}
+          notice={hasSearched ? 'Search complete · 3 listings found.' : null}
           onDraftChange={setDraft}
           onOpenListing={() => undefined}
           onOpenProfile={() => undefined}
           onSearch={() => setHasSearched(true)}
           results={hasSearched ? RESULTS : []}
           savedLocation={{
-            label: 'Burnaby, British Columbia, Canada',
-            latitude: 49.24,
-            longitude: -122.98,
+            label: 'Vancouver, British Columbia, Canada',
+            latitude: 49.2827,
+            longitude: -123.1207,
           }}
         />
         <NativeTrainerSearchScreen

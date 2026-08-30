@@ -104,7 +104,7 @@ const makePvPEntry = (
   name,
   pokemonId,
   variantKind: 'pokemon',
-  imageUrl: `/images/pokemon/${rank}.png`,
+  imageUrl: `/images/default/pokemon_${pokemonId}.png`,
   types: [type],
   moveset: [
     {
@@ -187,8 +187,8 @@ const pvpDataFixture = {
       label: 'Great League',
       cpLimit: 1_500,
       entries: [
-        makePvPEntry(1, 'clodsire', 'Clodsire', 'poison', 'Earthquake'),
-        makePvPEntry(2, 'azumarill', 'Azumarill', 'water', 'Play Rough'),
+        makePvPEntry(1, 'clodsire', 'Clodsire', 'poison', 'Earthquake', 980),
+        makePvPEntry(2, 'azumarill', 'Azumarill', 'water', 'Play Rough', 184),
         makePvPEntry(3, 'bulbasaur', 'Bulbasaur', 'grass', 'Seed Bomb', 1),
       ],
     },

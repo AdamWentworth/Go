@@ -196,7 +196,7 @@ const PARITY_REFERENCE_ROWS: NativeCollectionRow[] = [
     id: '0025-party_hat_default_demo-trade',
     pokemonId: 25,
     name: 'Festival spare',
-    imagePath: '/images/costumes/pokemon_25_party_hat_default.png',
+    imagePath: '/images/costumes/pokemon_25_party_default.png',
     status: 'trade',
     cp: 812,
     typeIconPaths: ['/images/types/electric.png'],
@@ -217,12 +217,25 @@ const ALL_FIXTURE_ROWS = [...ROWS, ...PARITY_REFERENCE_ROWS];
 
 const PARITY_REFERENCE_TARGET_ROWS = PARITY_REFERENCE_ROWS.map((referenceRow) => ({
   ...referenceRow,
+  lucky: referenceRow.id === '0094-default_demo-wanted' || referenceRow.lucky,
   name: referenceRow.id === '0006-default_demo-charizard'
     ? 'Charizard'
     : referenceRow.id === '0025-party_hat_default_demo-trade'
       ? 'Party Hat Pikachu'
       : 'Gengar',
 }));
+
+const PARITY_INVENTORY_ROWS: NativeCollectionRow[] = [
+  row({ id: '0003-default_demo-venusaur', pokemonId: 3, name: 'Garden lead', imagePath: '/images/default/pokemon_3.png', status: 'caught', cp: 2411, typeIconPaths: ['/images/types/grass.png', '/images/types/poison.png'] }),
+  { ...PARITY_REFERENCE_ROWS[0], name: 'League Ace', cp: 2844, favorite: true },
+  row({ id: '0009-default_demo-blastoise', pokemonId: 9, name: 'Blastoise', imagePath: '/images/default/pokemon_9.png', status: 'caught', cp: 2388, lucky: true, typeIconPaths: ['/images/types/water.png'] }),
+  { ...PARITY_REFERENCE_ROWS[1], name: 'Festival spare' },
+  row({ id: '0094-default_demo-gengar', pokemonId: 94, name: 'Night shift', imagePath: '/images/default/pokemon_94.png', status: 'caught', cp: 2567, favorite: true, typeIconPaths: ['/images/types/ghost.png', '/images/types/poison.png'] }),
+  row({ id: '0133-flower_crown_default_demo-eevee', pokemonId: 133, name: 'Flower trade', imagePath: '/images/costumes/pokemon_133_flower_default.png', status: 'caught', cp: 742, typeIconPaths: ['/images/types/normal.png'] }),
+  row({ id: '0149-default_demo-dragonite', pokemonId: 149, name: 'Dragonite', imagePath: '/images/default/pokemon_149.png', status: 'caught', cp: 3472, typeIconPaths: ['/images/types/dragon.png', '/images/types/flying.png'] }),
+  row({ id: '0150-default_demo-mewtwo', pokemonId: 150, name: 'Mewtwo', imagePath: '/images/default/pokemon_150.png', status: 'caught', cp: 4188, favorite: true, typeIconPaths: ['/images/types/psychic.png'] }),
+];
+const PARITY_WANTED_ROWS = [{ ...PARITY_REFERENCE_ROWS[2], name: 'Mirror target', mostWanted: true }];
 
 const rowsWithStatus = (status: NativeCollectionRow['status']) =>
   ROWS.filter((candidate) => candidate.status === status);
@@ -240,12 +253,25 @@ const combatStatsFor = (pokemonId: number) => {
 
 const INVENTORY_TAGS: NativeTagSummary[] = [
   {
+    key: 'system:caught',
+    parent: 'caught',
+    name: 'All Caught',
+    filterName: 'Caught',
+    color: '#5798ff',
+    tone: 'caught',
+    rows: PARITY_INVENTORY_ROWS,
+  },
+  {
     key: 'system:favorites',
     parent: 'caught',
     name: 'Favorites',
     color: '#ffd45a',
     tone: 'favorites',
-    rows: ROWS.filter((candidate) => candidate.favorite),
+    rows: [
+      PARITY_INVENTORY_ROWS.find((candidate) => candidate.pokemonId === 150)!,
+      PARITY_INVENTORY_ROWS.find((candidate) => candidate.pokemonId === 6)!,
+      PARITY_INVENTORY_ROWS.find((candidate) => candidate.pokemonId === 94)!,
+    ],
   },
   {
     key: 'system:trade',
@@ -254,24 +280,7 @@ const INVENTORY_TAGS: NativeTagSummary[] = [
     filterName: 'Trade',
     color: '#4bc574',
     tone: 'trade',
-    rows: rowsWithStatus('trade'),
-  },
-  {
-    key: 'system:caught',
-    parent: 'caught',
-    name: 'All Caught',
-    filterName: 'Caught',
-    color: '#5798ff',
-    tone: 'caught',
-    rows: ROWS.filter((candidate) => candidate.status !== 'wanted'),
-  },
-  {
-    key: 'custom:shadow-shinies',
-    parent: 'caught',
-    name: 'Shadow Shinies',
-    color: '#6f35c5',
-    tone: 'custom',
-    rows: ROWS.filter((candidate) => candidate.name.includes('Shadow')),
+    rows: PARITY_INVENTORY_ROWS.filter((candidate) => candidate.status === 'trade'),
   },
 ];
 
@@ -283,7 +292,7 @@ const WISHLIST_TAGS: NativeTagSummary[] = [
     filterName: 'Wanted',
     color: '#ef5b72',
     tone: 'wanted',
-    rows: rowsWithStatus('wanted'),
+    rows: PARITY_WANTED_ROWS,
   },
   {
     key: 'system:most-wanted',
@@ -291,7 +300,7 @@ const WISHLIST_TAGS: NativeTagSummary[] = [
     name: 'Most Wanted',
     color: '#ff704d',
     tone: 'most-wanted',
-    rows: ROWS.filter((candidate) => candidate.mostWanted),
+    rows: PARITY_WANTED_ROWS,
   },
 ];
 

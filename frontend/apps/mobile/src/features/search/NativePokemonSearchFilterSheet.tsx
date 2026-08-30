@@ -365,7 +365,7 @@ export const NativePokemonSearchFilterSheet = ({
         <View style={styles.choiceGrid}>
           <Choice active={draft.shiny} disabled={!pokemon} imageUri={`${assetBaseUrl.replace(/\/$/, '')}/images/shiny_icon.png`} label="Shiny" light={light} onPress={() => onChange({ ...draft, shiny: !draft.shiny })} />
           <Choice active={draft.shadow} disabled={!pokemon || draft.dynamax || draft.gigantamax} imageUri={`${assetBaseUrl.replace(/\/$/, '')}/images/shadow_icon.png`} label="Shadow" light={light} onPress={() => onChange({ ...draft, shadow: !draft.shadow })} />
-          <Choice active={draft.costumeId != null} disabled={!pokemon?.costumes?.length || draft.dynamax || draft.gigantamax} imageUri={`${assetBaseUrl.replace(/\/$/, '')}/images/costume_icon.png`} label="Costume" light={light} detail={selectedCostume?.name ?? 'Any'} onPress={() => pokemon && chooseSimple({
+          <Choice active={draft.costumeId != null} disabled={!pokemon?.costumes?.length || draft.dynamax || draft.gigantamax} imageUri={`${assetBaseUrl.replace(/\/$/, '')}/images/costume_icon.png`} label="Costume" light={light} detail={selectedCostume?.name ?? (!pokemon?.costumes?.length ? 'No costume' : 'Any')} onPress={() => pokemon && chooseSimple({
             title: 'Choose a costume', selectedKey: draft.costumeId == null ? '' : String(draft.costumeId),
             entries: [{ key: '', label: 'Any costume' }, ...(pokemon.costumes ?? []).map((costume) => ({ key: String(costume.costume_id), label: costume.name }))],
             onSelect: (key) => onChange({ ...draft, costumeId: key ? Number(key) : null, backgroundId: null }),
@@ -389,7 +389,7 @@ export const NativePokemonSearchFilterSheet = ({
                 onChange(normalizeNativePokemonSelection(draft, selected));
               },
             })} />
-            <SelectField label="Costume" light={light} value={selectedCostume?.name ?? 'Any costume'} onPress={() => chooseSimple({
+            <SelectField label="Costume" light={light} value={selectedCostume?.name ?? (!pokemon.costumes?.length ? 'No costume' : 'Any costume')} onPress={() => chooseSimple({
               title: 'Choose a costume', selectedKey: draft.costumeId == null ? '' : String(draft.costumeId),
               entries: [{ key: '', label: 'Any costume' }, ...(pokemon.costumes ?? []).map((costume) => ({ key: String(costume.costume_id), label: costume.name }))],
               onSelect: (key) => onChange({ ...draft, costumeId: key ? Number(key) : null, backgroundId: null }),

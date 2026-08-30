@@ -291,11 +291,13 @@ export const NativeFriendsScreen = ({
             {overview.incoming.length} request{overview.incoming.length === 1 ? '' : 's'}
           </Text>
         ) : null}
-        <NativeTrainerWorkspaceNav
-          active="friends"
-          onOpenFriends={() => undefined}
-          onOpenProfile={onOpenProfileHome}
-        />
+        <View style={styles.workspaceNav}>
+          <NativeTrainerWorkspaceNav
+            active="friends"
+            onOpenFriends={() => undefined}
+            onOpenProfile={onOpenProfileHome}
+          />
+        </View>
         <View accessibilityRole="tablist" style={[styles.tabs, light && styles.tabsLight]}>
           <Animated.View
             pointerEvents="none"
@@ -497,6 +499,7 @@ const styles = StyleSheet.create({
   eyebrowLight: { color: '#006a61' },
   title: { color: '#f7fbfc', fontSize: 27, fontWeight: '900' },
   requestCount: { marginTop: -2, marginBottom: 3, color: '#f7fbfc', fontSize: 13, fontWeight: '800' },
+  workspaceNav: { marginTop: 25 },
   tabs: { position: 'relative', flexDirection: 'row', minHeight: 58, marginTop: 8, padding: 4, overflow: 'hidden', borderWidth: 1, borderColor: '#35494d', borderRadius: 11, backgroundColor: '#0d1416' },
   tabsLight: { borderColor: '#9bb8b1', backgroundColor: '#e7f3eb' },
   tabIndicator: { position: 'absolute', top: 4, bottom: 4, left: 4, borderWidth: 1, borderColor: '#36c5a4', borderRadius: 8, backgroundColor: '#153e39' },
@@ -517,13 +520,13 @@ const styles = StyleSheet.create({
   panel: { flex: 1, minHeight: 0 },
   panelContent: { width: '100%', maxWidth: 760, alignSelf: 'center', padding: 10 },
   sectionStack: { gap: 10 },
-  section: { padding: 13, borderWidth: 1, borderColor: '#2d4246', borderRadius: 14, backgroundColor: '#12191b' },
+  section: { padding: 19, borderWidth: 1, borderColor: '#2d4246', borderRadius: 14, backgroundColor: '#12191b' },
   panelLight: { borderColor: '#9bb8b1', backgroundColor: '#f3faf5' },
-  sectionHeading: { marginBottom: 11 },
+  sectionHeading: { marginBottom: 17, paddingBottom: 17, borderBottomWidth: 1, borderBottomColor: '#2d4246' },
   sectionTitle: { marginTop: 2, color: '#f7fbfc', fontSize: 20, fontWeight: '900' },
   peopleList: { gap: 8 },
-  personRow: { minHeight: 72, flexDirection: 'row', alignItems: 'center', gap: 7, padding: 9, borderWidth: 1, borderColor: '#2e4448', borderRadius: 11, backgroundColor: '#0c1315' },
-  personRowLight: { borderColor: '#9bb8b1', backgroundColor: '#e3efe8' },
+  personRow: { minHeight: 72, flexDirection: 'row', alignItems: 'center', gap: 7, padding: 9 },
+  personRowLight: { backgroundColor: 'transparent' },
   identityButton: { flex: 1, minWidth: 0, minHeight: 50, flexDirection: 'row', alignItems: 'center', gap: 9 },
   avatar: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderRadius: 22 },
   avatarText: { fontSize: 18, fontWeight: '900' },

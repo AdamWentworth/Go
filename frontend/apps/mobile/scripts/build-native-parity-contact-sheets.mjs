@@ -35,7 +35,7 @@ const references = [
   ['search-results-list', 'search-results-list', 'desktop-search'],
   ['search-results-map', 'search-results-map', 'desktop-search-results-map'],
   ['trade-preferences-mobile', 'trade-preferences-mobile', 'trade-preferences-initial'],
-  ['trade-activity-mobile', 'trade-activity-mobile', 'trade-activity-empty'],
+  ['trade-activity-mobile', 'trade-activity-mobile', 'trade-activity-canonical-1-initial'],
   ['trainer-profile-mobile', 'trainer-profile-mobile', 'profile-initial'],
   ['friends-mobile', 'friends-mobile', 'friends-initial'],
   ['trainer-settings-mobile', 'trainer-settings-mobile', 'settings-initial'],

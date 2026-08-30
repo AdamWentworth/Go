@@ -17,9 +17,11 @@ export type NativeUiIconName =
   | 'heart'
   | 'help'
   | 'diamond'
+  | 'download'
   | 'info'
   | 'id-card'
   | 'key'
+  | 'link'
   | 'list'
   | 'laptop'
   | 'map'
@@ -84,6 +86,9 @@ export const NativeUiIcon = ({ color = '#ffffff', name, size = 16 }: Props) => (
     {name === 'diamond' ? (
       <Path d="M12 2.8 21.2 12 12 21.2 2.8 12 12 2.8Zm0 3L5.8 12l6.2 6.2 6.2-6.2L12 5.8Z" fill={color} />
     ) : null}
+    {name === 'download' ? (
+      <Path d="M11 3h2v10.2l3.1-3.1 1.4 1.4-5.5 5.5-5.5-5.5 1.4-1.4 3.1 3.1V3ZM4 18h16v3H4v-3Z" fill={color} />
+    ) : null}
     {name === 'trainers' ? (
       <>
         <Circle cx={8} cy={8} fill={color} r={3.2} />
@@ -121,6 +126,9 @@ export const NativeUiIcon = ({ color = '#ffffff', name, size = 16 }: Props) => (
     ) : null}
     {name === 'key' ? (
       <Path d="M14.8 3a6.2 6.2 0 0 0-5.9 8.1L2 18v4h4v-2h2v-2h2.1l1.7-1.7A6.2 6.2 0 1 0 14.8 3Zm0 2a4.2 4.2 0 1 1 0 8.4 4.2 4.2 0 0 1 0-8.4Zm1.5 1.8a1.5 1.5 0 1 0 0 3 1.5 1.5 0 0 0 0-3Z" fill={color} />
+    ) : null}
+    {name === 'link' ? (
+      <Path d="M9.6 14.4a1 1 0 0 1 0-1.4l3.4-3.4a1 1 0 1 1 1.4 1.4L11 14.4a1 1 0 0 1-1.4 0Zm-3.9 4a4 4 0 0 1 0-5.7l3-3a4 4 0 0 1 5.1-.5l-1.5 1.5a2 2 0 0 0-2.2.4l-3 3a2 2 0 1 0 2.8 2.8l3-3c.5-.5.7-1.3.4-2l1.5-1.5a4 4 0 0 1-.5 4.9l-3 3a4 4 0 0 1-5.6.1Zm4.5-3.6a4 4 0 0 1 .5-4.9l3-3a4 4 0 1 1 5.6 5.7l-3 3a4 4 0 0 1-5.1.5l1.5-1.5a2 2 0 0 0 2.2-.4l3-3a2 2 0 1 0-2.8-2.8l-3 3c-.5.5-.7 1.3-.4 2l-1.5 1.4Z" fill={color} />
     ) : null}
     {name === 'blocked' ? (
       <Path d="M12 3a9 9 0 1 0 9 9 9.01 9.01 0 0 0-9-9ZM5 12a7 7 0 0 1 11.4-5.45L6.55 16.4A6.97 6.97 0 0 1 5 12Zm2.6 5.45 9.85-9.85A7 7 0 0 1 7.6 17.45Z" fill={color} />

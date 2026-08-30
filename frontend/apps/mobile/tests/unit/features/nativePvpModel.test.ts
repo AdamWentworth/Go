@@ -11,6 +11,11 @@ const payload = { source: null, leagues: { great: { key: 'great', label: 'Great'
 describe('native PvP model', () => {
   it('builds formats and changes ordering with the selected role', () => {
     expect(buildNativePvpFormats(payload)[0]?.label).toBe('Great League');
+    const canonicalLabelPayload = {
+      ...payload,
+      leagues: { ...payload.leagues, great: { ...payload.leagues.great, label: 'Great League' } },
+    };
+    expect(buildNativePvpFormats(canonicalLabelPayload)[0]?.label).toBe('Great League');
     expect(filterNativePvpEntries({ entries: [azumarill, clodsire], role: 'overall' })[0]?.speciesId).toBe('Clodsire');
     expect(filterNativePvpEntries({ entries: [azumarill, clodsire], role: 'lead' })[0]?.speciesId).toBe('Azumarill');
     expect(pvpRoleScore(azumarill, 'lead')).toBe(98);

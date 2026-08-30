@@ -22,7 +22,7 @@ type Props = {
 };
 
 const RecoveryGlyph = ({ complete }: { complete: boolean }) => (
-  <Svg height={32} viewBox="0 0 32 32" width={32}>
+  <Svg height={38} viewBox="0 0 32 32" width={38}>
     {complete ? (
       <>
         <Circle cx={16} cy={16} fill="#0b86ee" r={15} />
@@ -260,31 +260,31 @@ const styles = StyleSheet.create({
   brand: { color: '#58abff', fontSize: 13, fontWeight: '900', letterSpacing: 1.1 },
   brandLight: { color: '#005bb5' },
   icon: {
-    width: 32,
-    height: 32,
+    width: 38,
+    height: 38,
     alignItems: "center",
     justifyContent: "center",
     alignSelf: "flex-start",
     marginTop: 24,
   },
   title: {
-    marginTop: 12,
+    marginTop: 24,
     color: "#fff",
     fontSize: 29,
     fontWeight: "900",
   },
   intro: {
-    marginTop: 8,
+    marginTop: 19,
     marginBottom: 28,
     color: "#b3bec5",
-    fontSize: 14,
-    lineHeight: 22,
+    fontSize: 16,
+    lineHeight: 26,
   },
   fields: { gap: 18 },
   field: { gap: 8 },
-  label: { color: "#f7fafb", fontSize: 13, fontWeight: "900" },
+  label: { color: "#f7fafb", fontSize: 16, fontWeight: "900" },
   input: {
-    minHeight: 52,
+    minHeight: 48,
     borderWidth: 1,
     borderColor: "#59666d",
     borderRadius: 11,
@@ -298,8 +298,8 @@ const styles = StyleSheet.create({
     color: "#152126",
     backgroundColor: "#fff",
   },
-  rulesRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 8 },
-  rules: { flex: 1, color: "#a7b6bd", fontSize: 11, lineHeight: 16 },
+  rulesRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 10 },
+  rules: { flex: 1, color: "#a7b6bd", fontSize: 14.4, lineHeight: 22 },
   error: {
     marginTop: 12,
     borderWidth: 1,
@@ -318,9 +318,9 @@ const styles = StyleSheet.create({
     marginTop: 16,
     overflow: "hidden",
     borderRadius: 11,
-    backgroundColor: "#315ec9",
+    backgroundColor: "#005bb5",
   },
-  primaryText: { color: "#fff", fontSize: 15, fontWeight: "900" },
+  primaryText: { color: "#fff", fontSize: 16, fontWeight: "900" },
   secondaryButton: {
     minHeight: 46,
     alignItems: "flex-start",

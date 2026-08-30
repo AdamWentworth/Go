@@ -151,10 +151,11 @@ const EntrySummary = ({
           </Text>
         ) : null}
         <Text numberOfLines={2} style={[styles.entryName, light && styles.textLight]}>
-          {entry.row.name}
+          {entry.displayName ?? entry.row.name}
         </Text>
         <Text style={[styles.entryMeta, light && styles.secondaryLight]}>
           #{String(entry.row.pokedexNumber).padStart(4, '0')}
+          {entry.nickname ? ` · ${entry.nickname}` : ''}
           {!compact ? ` · ${entry.allowedCount} ${mode === 'trade' ? 'targets' : 'offers'}` : ''}
         </Text>
       </View>
@@ -347,7 +348,8 @@ export const NativeTradePreferencesScreen = ({
     if (!editing && !candidate.allowed) return false;
     if (editing && showAllowedOnly && !candidate.allowed) return false;
     if (!normalizedQuery) return true;
-    return candidate.row.name.toLocaleLowerCase().includes(normalizedQuery)
+    return (candidate.displayName ?? candidate.row.name).toLocaleLowerCase().includes(normalizedQuery)
+      || candidate.row.name.toLocaleLowerCase().includes(normalizedQuery)
       || String(candidate.row.pokedexNumber).includes(normalizedQuery);
   });
   const allowedCount = draftCandidates.filter((candidate) => candidate.allowed).length;
@@ -866,15 +868,17 @@ const styles = StyleSheet.create({
   topTabInactive: { backgroundColor: 'transparent' },
   topTabText: { color: '#071012', fontSize: 14, fontWeight: '900' },
   topTabInactiveText: { color: '#a7b4b6' },
-  heading: { alignItems: 'center', paddingTop: 10, paddingHorizontal: 18 },
-  pageTitle: { color: '#f5fafb', fontSize: 24, lineHeight: 29, fontWeight: '900' },
-  pageDescription: { color: '#9db0b4', fontSize: 14, lineHeight: 19, textAlign: 'center', maxWidth: 520 },
+  heading: { alignItems: 'center', paddingTop: 20, paddingHorizontal: 18 },
+  pageTitle: { color: '#f5fafb', fontSize: 32, lineHeight: 37, fontWeight: '900' },
+  pageDescription: { marginTop: 5, color: '#9db0b4', fontSize: 14, lineHeight: 19, textAlign: 'center', maxWidth: 520 },
   textLight: { color: '#122328' },
   secondaryLight: { color: '#52656a' },
   modeTabs: {
     flexDirection: 'row',
     gap: 8,
     margin: 10,
+    marginTop: 20,
+    marginBottom: 29,
     padding: 4,
     backgroundColor: '#0b1618',
     borderRadius: 12,

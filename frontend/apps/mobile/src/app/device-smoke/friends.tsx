@@ -11,14 +11,14 @@ import {
 } from '../../screens/NativeFriendsScreen';
 
 const baseFriend = {
-  userId: 'user-misty',
-  friendshipId: 'friendship-misty',
-  username: 'Misty',
-  pokemonGoName: 'CeruleanLeader',
-  avatarLabel: 'M',
-  team: 'mystic' as const,
-  teamLabel: 'Team Mystic',
-  trainerLevel: 50,
+  userId: 'partner-user-001',
+  friendshipId: 'friendship-harbour',
+  username: 'HarbourMew',
+  pokemonGoName: 'HarbourMew',
+  avatarLabel: 'H',
+  team: 'neutral' as const,
+  teamLabel: null,
+  trainerLevel: null,
 };
 
 const INITIAL_OVERVIEW: NativeFriendsOverviewModel = {
@@ -32,34 +32,18 @@ const INITIAL_OVERVIEW: NativeFriendsOverviewModel = {
     avatarLabel: 'B',
     team: 'valor',
     teamLabel: 'Team Valor',
-  }, {
-    ...baseFriend,
-    userId: 'user-erika',
-    friendshipId: 'friendship-erika',
-    username: 'Erika',
-    pokemonGoName: 'CeladonLeader',
-    avatarLabel: 'E',
-    team: 'instinct',
-    teamLabel: 'Team Instinct',
   }],
-  outgoing: [{
-    ...baseFriend,
-    userId: 'user-blue',
-    friendshipId: 'friendship-blue',
-    username: 'Blue',
-    pokemonGoName: null,
-    avatarLabel: 'B',
-  }],
-  blocked: [{
-    ...baseFriend,
-    userId: 'user-rocket',
-    friendshipId: 'friendship-rocket',
-    username: 'Rocket',
-    pokemonGoName: null,
-    avatarLabel: 'R',
-    team: 'neutral',
-    teamLabel: null,
-  }],
+  outgoing: [],
+  blocked: [],
+};
+
+const BLOCKED_FIXTURE = {
+  ...baseFriend,
+  userId: 'user-rocket',
+  friendshipId: 'friendship-rocket',
+  username: 'Rocket',
+  pokemonGoName: null,
+  avatarLabel: 'R',
 };
 
 export default function DeviceSmokeFriendsRoute() {
@@ -122,6 +106,14 @@ export default function DeviceSmokeFriendsRoute() {
     }));
     setFeedback({ tone: 'success', text: 'Friend request sent.' });
   };
+  const changeView = (view: NativeFriendsView) => {
+    if (view === 'blocked') {
+      setOverview((current) => current.blocked.length
+        ? current
+        : { ...current, blocked: [BLOCKED_FIXTURE] });
+    }
+    setActiveView(view);
+  };
 
   return (
     <View style={styles.screen}>
@@ -135,7 +127,7 @@ export default function DeviceSmokeFriendsRoute() {
         onOpenProfileHome={() => undefined}
         onQueryChange={setQuery}
         onRunSearch={() => undefined}
-        onViewChange={setActiveView}
+        onViewChange={changeView}
         overview={overview}
         query={query}
         scrollX={scrollX}

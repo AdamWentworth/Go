@@ -1,4 +1,4 @@
-import { Redirect } from 'expo-router';
+import { Redirect, useLocalSearchParams } from 'expo-router';
 import { Animated, StyleSheet, View } from 'react-native';
 import { useCallback, useMemo, useRef, useState } from 'react';
 import type { PokemonInstance } from '@pokemongonexus/shared-contracts/instances';
@@ -181,7 +181,51 @@ const INSTANCES: Record<string, PokemonInstance> = {
   'wanted-metagross': instance({ id: 'wanted-metagross', pokemonId: 376, status: 'wanted', shiny: true }),
 };
 
+const PARITY_CATALOG = [
+  ...CATALOG.map((entry) => entry.pokemon_id === 25 ? {
+    ...entry,
+    costumes: [{
+      costume_id: 62,
+      name: 'party_hat',
+      image_url: '/images/costumes/pokemon_25_party_default.png',
+      image_url_shiny: '/images/costumes_shiny/pokemon_25_party_shiny.png',
+      shiny_available: 1,
+    }],
+  } as BasePokemon : entry),
+  pokemon(94, 'Gengar', '/images/default/pokemon_94.png', '/images/shiny/shiny_pokemon_94.png'),
+];
+const PARITY_INSTANCES: Record<string, PokemonInstance> = {
+  '0025-party_hat_default_demo-trade': instance({
+    id: '0025-party_hat_default_demo-trade',
+    pokemonId: 25,
+    status: 'trade',
+    patch: {
+      variant_id: '0025-party_hat_default',
+      costume_id: 62,
+      nickname: 'Festival spare',
+      cp: 812,
+    },
+  }),
+  '0094-default_demo-wanted': instance({
+    id: '0094-default_demo-wanted',
+    pokemonId: 94,
+    status: 'wanted',
+    patch: {
+      friendship_level: 4,
+      most_wanted: true,
+      nickname: 'Mirror target',
+      pref_lucky: true,
+      registered: false,
+      variant_id: '0094-default',
+    },
+  }),
+};
+
 export default function DeviceSmokeTradePreferencesRoute() {
+  const params = useLocalSearchParams<{ coverage?: string | string[] }>();
+  const coverage = (Array.isArray(params.coverage) ? params.coverage[0] : params.coverage) === '1';
+  const catalog = coverage ? CATALOG : PARITY_CATALOG;
+  const instances = coverage ? INSTANCES : PARITY_INSTANCES;
   const light = useNativeColorScheme() === 'light';
   const [activeView, setActiveView] = useState<NativeTradeHubView>('preferences');
   const [pageScrollX] = useState(() => new Animated.Value(0));
@@ -193,17 +237,17 @@ export default function DeviceSmokeTradePreferencesRoute() {
   const entries = useMemo(() => ({
     trade: buildNativeTradePreferenceEntries({
       assetOrigin: ASSET_BASE_URL,
-      catalog: CATALOG,
-      instances: INSTANCES,
+      catalog,
+      instances,
       mode: 'trade',
     }),
     wanted: buildNativeTradePreferenceEntries({
       assetOrigin: ASSET_BASE_URL,
-      catalog: CATALOG,
-      instances: INSTANCES,
+      catalog,
+      instances,
       mode: 'wanted',
     }),
-  }), []);
+  }), [catalog, instances]);
 
   if (!runtimeConfig.mobile.deviceSmokeMode) return <Redirect href="/" />;
 

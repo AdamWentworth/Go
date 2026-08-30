@@ -48,13 +48,16 @@ export const buildNativePvpFormats = (
     ["great", "ultra", "master"] as PokemonPvPLeagueKey[]
   ).flatMap((key) => {
     const league = payload.leagues[key];
+    const leagueLabel = league && /\bleague$/i.test(league.label.trim())
+      ? league.label.trim()
+      : league ? `${league.label} League` : '';
     return league
       ? [
           {
             key,
-            label: `${league.label} League`,
+            label: leagueLabel,
             league: key,
-            cup: `${league.label} League`,
+            cup: leagueLabel,
             cpLimit: league.cpLimit,
             rules: [] as string[],
             mechanics: "current-2026" as const,

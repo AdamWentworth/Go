@@ -57,8 +57,8 @@ describe('native battle models', () => {
       chargedMove: expect.objectContaining({ name: 'Sludge Bomb' }),
       cp: 987,
       fastMove: expect.objectContaining({ name: 'Vine Whip' }),
-      name: 'Leafy',
-      rosterDetail: 'Lv 37 · CP 987 · 12/13/14',
+      name: 'Bulbasaur',
+      rosterDetail: 'Leafy · Level 37 · 87% IV',
       sourceInstanceId: 'caught-bulbasaur',
     });
   });

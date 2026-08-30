@@ -317,6 +317,12 @@ export const NativeMaxScreen = ({
           <Pressable accessibilityRole="button" onPress={onRetry} style={styles.retry}><Text style={styles.retryText}>Try again</Text></Pressable>
         </View>
       ) : null}
+      {!isLoading && !error && rankings.length === 0 ? (
+        <View style={styles.resultsEmpty}>
+          <Text style={[styles.emptyTitle, light && styles.textLight]}>No eligible Max Pokémon</Text>
+          <Text style={[styles.stateCopy, light && styles.mutedLight]}>Try another role, type, boss, or roster.</Text>
+        </View>
+      ) : null}
     </View>
   );
 
@@ -356,12 +362,7 @@ export const NativeMaxScreen = ({
         keyExtractor={(entry) => entry.id}
         ListFooterComponent={footer}
         ListHeaderComponent={header}
-        ListEmptyComponent={!isLoading && !error ? (
-          <View style={[styles.empty, light && styles.panelLight]}>
-            <Text style={[styles.emptyTitle, light && styles.textLight]}>No eligible Max Pokémon</Text>
-            <Text style={[styles.stateCopy, light && styles.mutedLight]}>Try another role, type, boss, or roster.</Text>
-          </View>
-        ) : null}
+        ListEmptyComponent={null}
         renderItem={({ item, index }) => (
           <NativeCombatRankingCard
             assetBaseUrl={assetBaseUrl}
@@ -388,11 +389,11 @@ const styles = StyleSheet.create({
   inputLight: { borderColor: '#8ba2a3', color: '#102829', backgroundColor: '#fff' },
   activeText: { color: '#071110' },
   headerStack: { gap: 9 },
-  productHeader: { minHeight: 72, flexDirection: 'row', alignItems: 'center', gap: 8, borderBottomWidth: 1, borderBottomColor: '#2b4c4d', paddingHorizontal: 7, paddingBottom: 8 },
+  productHeader: { minHeight: 106, flexDirection: 'row', alignItems: 'center', gap: 8, borderBottomWidth: 1, borderBottomColor: '#2b4c4d', paddingHorizontal: 7, paddingBottom: 8 },
   back: { width: 34, height: 34, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: '#405354', borderRadius: 17, backgroundColor: '#11191a' },
   backText: { marginTop: -4, color: '#fff', fontSize: 31, lineHeight: 34 },
-  productIcon: { width: 42, height: 42 },
-  headerCopy: { minWidth: 0, flex: 1 },
+  productIcon: { width: 42, height: 42, transform: [{ translateY: -8 }] },
+  headerCopy: { minWidth: 0, flex: 1, transform: [{ translateY: -8 }] },
   eyebrow: { color: '#65ddd2', fontSize: 8.5, fontWeight: '900', letterSpacing: 1.2 },
   title: { marginTop: 2, color: '#fff', fontSize: 25, lineHeight: 28, fontWeight: '900' },
   countPill: { alignSelf: 'flex-end', marginBottom: 2, borderWidth: 1, borderColor: '#d45b89', borderRadius: 999, paddingHorizontal: 7, paddingVertical: 4, color: '#ffd9e7', fontSize: 7, fontWeight: '900' },
@@ -409,11 +410,11 @@ const styles = StyleSheet.create({
   iconLabelRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6 },
   disabled: { opacity: .42 },
   roleTabs: { flexDirection: 'row', gap: 6 },
-  roleButton: { flex: 1, minHeight: 44, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: '#334849', borderRadius: 6, backgroundColor: '#101819' },
+  roleButton: { flex: 1, minHeight: 53, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: '#334849', borderRadius: 6, backgroundColor: '#101819' },
   roleActive: { borderColor: '#de5a8a', backgroundColor: '#401629' },
   roleActiveText: { color: '#ffd9e7' },
   roleText: { color: '#edf5f4', fontSize: 10, fontWeight: '900' },
-  typeDeck: { gap: 6, borderWidth: 1, borderColor: '#315253', borderRadius: 8, padding: 10, backgroundColor: '#0f1819' },
+  typeDeck: { gap: 8, borderWidth: 1, borderColor: '#315253', borderRadius: 8, padding: 11, backgroundColor: '#0f1819' },
   fieldLabel: { color: '#69d9cf', fontSize: 8, fontWeight: '900', letterSpacing: .5 },
   allTypes: { minHeight: 38, alignItems: 'center', justifyContent: 'center', borderRadius: 6, backgroundColor: '#ddc064' },
   allTypesActive: { backgroundColor: '#f0d370' },
@@ -431,7 +432,7 @@ const styles = StyleSheet.create({
   bossImage: { width: '92%', height: '92%' },
   maxIcon: { position: 'absolute', right: 0, top: 0, width: 22, height: 22 },
   bossName: { minHeight: 30, color: '#eef6f5', fontSize: 9, lineHeight: 12, fontWeight: '900', textAlign: 'center' },
-  resultsPanel: { gap: 4, marginTop: 2, borderWidth: 1, borderColor: '#315253', borderRadius: 8, padding: 9, backgroundColor: '#0e1718' },
+  resultsPanel: { gap: 4, marginTop: 2, borderWidth: 1, borderColor: '#315253', borderRadius: 8, padding: 12, backgroundColor: '#0e1718' },
   resultsContext: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   rankedPill: { borderWidth: 1, borderColor: '#3b5c5d', borderRadius: 999, paddingHorizontal: 6, paddingVertical: 2, color: '#a9c2c1', fontSize: 6.5, fontWeight: '900' },
   rankedPillLight: { color: '#526568' },
@@ -445,7 +446,7 @@ const styles = StyleSheet.create({
   errorCopy: { color: '#ffb8c4', fontSize: 10 },
   retry: { alignSelf: 'flex-start', minHeight: 36, justifyContent: 'center', borderRadius: 7, paddingHorizontal: 12, backgroundColor: '#df5770' },
   retryText: { color: '#fff', fontWeight: '900' },
-  empty: { alignItems: 'center', gap: 4, marginVertical: 8, borderWidth: 1, borderColor: '#315253', borderRadius: 8, padding: 32, backgroundColor: '#0e1718' },
+  resultsEmpty: { minHeight: 176, alignItems: 'center', justifyContent: 'center', gap: 4 },
   emptyTitle: { color: '#fff', fontSize: 16, fontWeight: '900' },
   method: { gap: 6, minHeight: 43, justifyContent: 'center', borderTopWidth: 1, borderTopColor: '#315253', paddingHorizontal: 8, paddingVertical: 10 },
   methodTitle: { color: '#c8dcda', fontSize: 10, fontWeight: '900' },

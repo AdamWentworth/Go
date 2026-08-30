@@ -247,7 +247,7 @@ export const NativeHomeScreen = ({
           <>
         <View style={styles.welcome}>
           <Text style={[styles.eyebrow, light && styles.eyebrowLight]}>TRAINER DASHBOARD</Text>
-          <Text accessibilityRole="header" style={[styles.title, light && styles.textLight]}>Welcome back,{`\n`}{firstName}</Text>
+          <Text accessibilityRole="header" style={[styles.title, light && styles.textLight]}>Welcome back, {firstName}</Text>
           <Text style={[styles.lead, light && styles.mutedLight]}>Your collection, trades, and trainer network—together in one place.</Text>
           <Pressable accessibilityRole="button" onPress={() => onNavigate('/search')} style={styles.primaryButton}>
             <NativeUiIcon color="#04131f" name="search" size={18} />
@@ -404,7 +404,7 @@ export const NativeHomeScreen = ({
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: '#071012' },
   rootLight: { backgroundColor: '#f8fff9' },
-  content: { width: '100%', maxWidth: 960, alignSelf: 'center', gap: 16, paddingHorizontal: 12 },
+  content: { width: '100%', maxWidth: 960, alignSelf: 'center', gap: 16, paddingHorizontal: 10 },
   brandHeader: { minHeight: 48, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12 },
   brand: { minWidth: 0, flex: 1, flexDirection: 'row', alignItems: 'center', gap: 8 },
   brandLogo: { width: 38, height: 38, resizeMode: 'contain' },
@@ -414,10 +414,13 @@ const styles = StyleSheet.create({
   profileInitial: { width: 34, height: 34, alignItems: 'center', justifyContent: 'center', borderRadius: 17, backgroundColor: '#164d84' },
   profileInitialText: { color: '#ffffff', fontSize: 15, fontWeight: '900' },
   profileUsername: { minWidth: 0, flexShrink: 1, color: '#f4fbfd', fontSize: 12, fontWeight: '900' },
-  welcome: { gap: 7, paddingVertical: 9 },
+  welcome: { gap: 7, paddingTop: 18, paddingBottom: 9, paddingHorizontal: 4 },
   eyebrow: { color: '#299cf5', fontSize: 10, fontWeight: '900', letterSpacing: 1.25 },
   eyebrowLight: { color: '#005bb5' },
-  title: { color: '#ffffff', fontSize: 31, fontWeight: '900', letterSpacing: -0.8, lineHeight: 33 },
+  // Roboto renders a little narrower than the Android system face used by
+  // React Native. The adjusted native size preserves the canonical one-line
+  // mobile heading while retaining the same visual scale and line box.
+  title: { color: '#ffffff', fontSize: 29, fontWeight: '900', letterSpacing: -1, lineHeight: 33 },
   lead: { color: '#a8b6b9', fontSize: 15, lineHeight: 21 },
   primaryButton: { minHeight: 48, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, marginTop: 8, borderRadius: 10, backgroundColor: '#299cf5' },
   primaryGlyph: { color: '#071012', fontSize: 22, fontWeight: '900' },
@@ -432,14 +435,14 @@ const styles = StyleSheet.create({
   panelLight: { borderColor: '#c9d9d6', backgroundColor: 'rgba(255,255,255,0.56)' },
   sectionHeading: { minHeight: 40, flexDirection: 'row', alignItems: 'center', gap: 10 },
   sectionHeadingCopy: { minWidth: 0, flex: 1, gap: 2 },
-  sectionTitle: { color: '#f5fbfc', fontSize: 20, fontWeight: '900', lineHeight: 24 },
+  sectionTitle: { color: '#f5fbfc', fontSize: 18, fontWeight: '900', lineHeight: 22 },
   textAction: { minHeight: 40, maxWidth: '46%', flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-end', gap: 4 },
   textActionLabel: { color: '#b4c1c3', fontSize: 10, fontWeight: '900', textAlign: 'right' },
   textActionLabelLight: { color: '#345457' },
   textActionArrow: { color: '#b4c1c3', fontSize: 22, fontWeight: '900' },
   loader: { paddingVertical: 3 },
-  actionGrid: { gap: 10 },
-  actionCard: { minHeight: 86, flexDirection: 'row', alignItems: 'center', gap: 11, padding: 12, borderWidth: 1, borderColor: '#354044', borderRadius: 12, backgroundColor: '#101314' },
+  actionGrid: { gap: 14 },
+  actionCard: { minHeight: 102, flexDirection: 'row', alignItems: 'center', gap: 11, padding: 12, borderWidth: 1, borderColor: '#354044', borderRadius: 12, backgroundColor: '#101314' },
   actionCardLight: { borderColor: '#d0dcda', backgroundColor: 'rgba(255,255,255,0.68)' },
   actionIcon: { width: 42, height: 42, alignItems: 'center', justifyContent: 'center', borderRadius: 11 },
   actionGlyph: { fontSize: 20, fontWeight: '900' },

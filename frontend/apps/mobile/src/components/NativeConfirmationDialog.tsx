@@ -36,7 +36,12 @@ export const NativeConfirmationDialog = ({
       transparent
       visible={visible}
     >
-      <View accessibilityViewIsModal style={styles.backdrop}>
+      <View
+        accessibilityLabel={title}
+        accessibilityViewIsModal
+        role="dialog"
+        style={styles.backdrop}
+      >
         <View style={[styles.card, light && styles.cardLight]} testID="native-confirmation-dialog">
           <Text style={[styles.eyebrow, light && styles.eyebrowLight]}>TRAINER ACTION</Text>
           <Text style={[styles.title, light && styles.textLight]}>{title}</Text>

@@ -35,6 +35,7 @@ const routeCases = [
   ['search', 'native-pokemon-search'],
   ['trade-preferences', 'native-trade-preferences-screen'],
   ['trade-activity', 'native-trade-activity-screen'],
+  ['trade-activity?canonical=1', 'native-trade-activity-screen'],
   ['trade-proposal', 'native-trade-proposal-sheet'],
   ['profile', 'native-trainer-profile'],
   ['profile-relationship', 'native-trainer-profile'],
@@ -269,6 +270,14 @@ const trackPageFailures = (page, errors) => {
   });
 };
 
+const waitForDeterministicFixture = async (page, route) => {
+  if (!route.startsWith('tools?')) return;
+  await page.getByTestId('device-smoke-tools-ready').waitFor({
+    state: 'attached',
+    timeout: 30_000,
+  });
+};
+
 const run = async () => {
   mkdirSync(artifactDirectory, { recursive: true });
   const fixtureServer = await startFixtureServer();
@@ -291,6 +300,7 @@ const run = async () => {
         });
         const root = page.getByTestId(testId);
         await root.waitFor({ state: 'visible', timeout: 15_000 });
+        await waitForDeterministicFixture(page, route);
         if (await root.count() !== 1) {
           throw new Error(`${route} did not render ${testId}; current URL is ${page.url()}`);
         }
@@ -328,6 +338,11 @@ const run = async () => {
           await page.screenshot({
             fullPage: true,
             path: join(artifactDirectory, `${colorScheme}-collection-tags.png`),
+          });
+          await page.getByRole('button', { name: /Open All Caught, 8 Pokémon/i }).click();
+          await page.waitForFunction(() => {
+            const sliderElement = document.querySelector('[data-testid="native-horizontal-page-slider"]');
+            return sliderElement && Math.abs(sliderElement.scrollLeft - sliderElement.clientWidth) <= 2;
           });
           await page.getByRole('tab', { name: 'WISHLIST' }).click();
           await page.waitForFunction(() => {
@@ -550,11 +565,11 @@ const run = async () => {
         }
 
         if (route === 'account') {
-          await page.getByRole('button', { name: 'Connect Discord' }).click();
-          await page.getByText('Discord connected.').waitFor({ state: 'visible' });
+          await page.getByRole('button', { name: 'Connect Facebook' }).click();
+          await page.getByText('Facebook connected.').waitFor({ state: 'visible' });
           await page.getByRole('button', { name: 'Dismiss message' }).click();
-          await page.getByRole('button', { name: 'Disconnect Discord' }).click();
-          await page.getByText('Disconnect Discord?').waitFor({ state: 'visible' });
+          await page.getByRole('button', { name: 'Disconnect Facebook' }).click();
+          await page.getByText('Disconnect Facebook?').waitFor({ state: 'visible' });
           await page.getByLabel('Current password').last().waitFor({ state: 'visible' });
           await page.getByRole('button', { name: 'Cancel' }).click();
           await page.getByRole('button', { name: 'Sign out every device' }).click();
@@ -681,6 +696,7 @@ const run = async () => {
           await page.getByRole('button', { name: 'grass', exact: true }).click();
           await page.getByLabel('Search Max rankings').fill('Vine Whip');
           await page.getByRole('tab', { name: 'Boss teams' }).click();
+          await page.getByRole('button', { name: /ALL POKÉMON/ }).click();
           await page.getByRole('button', { name: /Select .*Bulbasaur Max boss/ }).click();
           await page.getByLabel('Max Battle simulator').waitFor({ state: 'visible' });
           await page.getByRole('button', { name: 'Add one Trainer' }).click();
@@ -835,6 +851,7 @@ const run = async () => {
           waitUntil: 'networkidle',
         });
         await page.getByTestId(testId).waitFor({ state: 'visible', timeout: 15_000 });
+        await waitForDeterministicFixture(page, route);
         await assertAccessibleControlState(page, `narrow:${route}`);
         await assertWcagAccessibility(page, `narrow:${route}`);
         const overflow = await page.evaluate(() => Math.max(
@@ -869,6 +886,24 @@ const run = async () => {
         });
         const root = page.getByTestId(testId);
         await root.waitFor({ state: 'visible', timeout: 15_000 });
+        await waitForDeterministicFixture(page, route);
+        if (route === 'collection') {
+          const slider = page.getByTestId('native-horizontal-page-slider');
+          await page.getByRole('tab', { name: 'TAGS' }).click();
+          await page.waitForFunction(() => {
+            const element = document.querySelector('[data-testid="native-horizontal-page-slider"]');
+            return element && Math.abs(element.scrollLeft) <= 2;
+          });
+          await page.getByRole('button', { name: /Open All Caught, 8 Pokémon/i }).click();
+          await page.waitForFunction(() => {
+            const element = document.querySelector('[data-testid="native-horizontal-page-slider"]');
+            return element && Math.abs(element.scrollLeft - element.clientWidth) <= 2;
+          });
+          const collectionOffset = await slider.evaluate((element) => element.scrollLeft);
+          if (Math.abs(collectionOffset - 1440) > 2) {
+            throw new Error(`Desktop Collection stopped at scroll offset ${collectionOffset}.`);
+          }
+        }
         await assertAccessibleControlState(page, `desktop:${route}`);
         await assertWcagAccessibility(page, `desktop:${route}`);
         const overflow = await page.evaluate(() => Math.max(

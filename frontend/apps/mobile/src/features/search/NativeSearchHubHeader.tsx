@@ -107,6 +107,7 @@ const styles = StyleSheet.create({
   tabs: {
     position: 'relative',
     alignSelf: 'center',
+    marginTop: 22,
     flexDirection: 'row',
     minHeight: 54,
     borderWidth: 1,

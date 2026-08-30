@@ -185,7 +185,7 @@ const CollectionParityCard = memo(function CollectionParityCard({
           />
         ) : null}
       </View>
-      <View style={styles.imageStage}>
+      <View style={[styles.imageStage, cardWidth >= 145 && styles.imageStageWide]}>
         {card.locationBackgroundPath ? (
           <NativePokemonLocationBackdrop
             uri={toAssetUrl(assetBaseUrl, card.locationBackgroundPath)}
@@ -652,6 +652,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  imageStageWide: { width: '100%', marginTop: 5, marginBottom: 13 },
   luckyBackground: { position: 'absolute', width: '100%', height: '100%', opacity: 0.85 },
   pokemonImage: { width: '100%', height: '100%' },
   maxBadge: {

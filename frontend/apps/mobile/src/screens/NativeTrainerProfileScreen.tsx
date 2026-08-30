@@ -82,19 +82,25 @@ const relationshipLabel = (relationship: NativeTrainerProfileModel['relationship
 
 const HighlightCard = ({
   assetBaseUrl,
+  compact,
   light,
   row,
 }: {
   assetBaseUrl: string;
+  compact: boolean;
   light: boolean;
   row?: NativeCollectionRow;
 }) => (
-  <View style={[styles.highlight, light && styles.highlightLight]}>
+  <View style={[
+    styles.highlight,
+    compact && !row && styles.highlightEmptyCompact,
+    light && styles.highlightLight,
+  ]}>
     {row?.locationBackgroundUri ? <NativePokemonLocationBackdrop uri={row.locationBackgroundUri} /> : null}
     {row?.imageUri ? (
       <Image resizeMode="contain" source={{ uri: row.imageUri }} style={styles.highlightImage} />
     ) : (
-      <Text style={[styles.emptyStar, light && styles.mutedLight]}>☆</Text>
+      <Text style={[styles.emptyStar, light && styles.mutedLight]}>★</Text>
     )}
     {row?.maxKind ? (
       <Image
@@ -106,9 +112,11 @@ const HighlightCard = ({
     <Text numberOfLines={2} style={[styles.highlightName, light && styles.textLight]}>
       {row?.name ?? 'Open slot'}
     </Text>
-    <Text style={[styles.highlightDetail, light && styles.mutedLight]}>
-      {row ? (row.cp ? `CP ${row.cp.toLocaleString('en-US')}` : 'Featured Pokémon') : 'Featured Pokémon'}
-    </Text>
+    {row ? (
+      <Text style={[styles.highlightDetail, light && styles.mutedLight]}>
+        {row.cp ? `CP ${row.cp.toLocaleString('en-US')}` : 'Featured Pokémon'}
+      </Text>
+    ) : null}
   </View>
 );
 
@@ -423,11 +431,11 @@ export const NativeTrainerProfileScreen = ({
                     style={styles.highlightEditButton}
                     testID={`native-profile-showcase-slot-${index + 1}`}
                   >
-                    <HighlightCard assetBaseUrl={assetBaseUrl} light={light} row={displayedHighlights[index]} />
+                    <HighlightCard assetBaseUrl={assetBaseUrl} compact={compactHeader} light={light} row={displayedHighlights[index]} />
                     <Text style={styles.highlightEditCue}>EDIT · SLOT {index + 1}</Text>
                   </Pressable>
                 ) : (
-                  <HighlightCard assetBaseUrl={assetBaseUrl} light={light} row={displayedHighlights[index]} />
+                  <HighlightCard assetBaseUrl={assetBaseUrl} compact={compactHeader} light={light} row={displayedHighlights[index]} />
                 )}
                 {editorDraft && displayedHighlights[index] ? (
                   <View style={styles.highlightOrderActions}>
@@ -630,10 +638,11 @@ const styles = StyleSheet.create({
   gridBorderLight: { borderColor: '#9bb8b1' },
   highlightEditButton: { width: '100%' },
   highlight: { position: 'relative', width: '100%', minHeight: 112, overflow: 'hidden', alignItems: 'center', justifyContent: 'center', paddingHorizontal: 5, paddingVertical: 9 },
+  highlightEmptyCompact: { minHeight: 54, paddingVertical: 2 },
   highlightLight: {},
   highlightImage: { width: '100%', maxWidth: 74, height: 64, marginBottom: 2 },
   maxIcon: { position: 'absolute', top: 7, right: 7, width: 22, height: 22 },
-  emptyStar: { marginBottom: 25, color: '#6f7c7e', fontSize: 34 },
+  emptyStar: { marginBottom: 1, color: '#669ab4', fontSize: 22, lineHeight: 24 },
   highlightName: { color: '#f7fbfa', fontSize: 11, lineHeight: 14, fontWeight: '900', textAlign: 'center' },
   highlightDetail: { color: '#9db5b4', fontSize: 9, lineHeight: 12, textAlign: 'center' },
   highlightEditCue: { position: 'absolute', top: 5, left: 5, paddingHorizontal: 4, paddingVertical: 2, borderRadius: 4, backgroundColor: '#1780c9', color: '#ffffff', fontSize: 7, fontWeight: '900' },

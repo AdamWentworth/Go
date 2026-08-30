@@ -95,7 +95,7 @@ export default function DeviceSmokeHomeRoute() {
     <View style={{ flex: 1 }}>
       <NativeHomeScreen
         assetBaseUrl={runtimeConfig.api.frontendAppUrl}
-        collection={{ caught: 2255, favorites: 168, forTrade: 208, wanted: 93, mostWanted: 12 }}
+        collection={{ caught: 2255, favorites: 77, forTrade: 208, wanted: 168, mostWanted: 1 }}
         friendsState="ready"
         incomingFriends={1}
         onDismissActionMenuHint={() => setShowHint(false)}
@@ -105,11 +105,11 @@ export default function DeviceSmokeHomeRoute() {
         }}
         onNavigate={setLastPath}
         onRetry={() => undefined}
-        pokemonGoName="VisualTrainerGO"
+        pokemonGoName="NexusDemo"
         recentRows={RECENT_ROWS}
         showActionMenuHint={showHint}
-        trades={{ needsResponse: 2, readyToConfirm: 1, waiting: 3, completed: 18, active: 6 }}
-        username="VisualTrainer"
+        trades={{ needsResponse: 0, readyToConfirm: 1, waiting: 1, completed: 0, active: 1 }}
+        username="NexusDemo"
       />
       <NativeActionMenuAnchor
         assetBaseUrl={runtimeConfig.api.frontendAppUrl}

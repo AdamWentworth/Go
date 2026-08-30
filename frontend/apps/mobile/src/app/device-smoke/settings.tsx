@@ -8,13 +8,13 @@ import { useNativeDevicePreferences } from '../../features/settings/NativeDevice
 import { NativeTrainerSettingsScreen } from '../../screens/NativeTrainerSettingsScreen';
 
 const INITIAL_DRAFT: NativeTrainerPreferencesDraft = {
-  collectionVisibility: 'friends',
-  coordinationHandle: 'MistyTrades',
-  coordinationMethod: 'discord',
+  collectionVisibility: 'public',
+  coordinationHandle: '',
+  coordinationMethod: 'none',
   friendRequestPermission: 'everyone',
   profileVisibility: 'public',
-  shareTradeContact: true,
-  showLocation: false,
+  shareTradeContact: false,
+  showLocation: true,
   showPokemonGoName: true,
   trainerCodeVisibility: 'friends',
 };

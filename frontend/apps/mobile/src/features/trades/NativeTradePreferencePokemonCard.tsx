@@ -32,7 +32,7 @@ export const NativeTradePreferencePokemonCard = ({
   const muted = unavailable || denied;
   return (
     <Pressable
-      accessibilityLabel={`${candidate.row.name}, ${candidate.allowed ? 'allowed' : unavailable ? 'excluded by matching rules' : 'not allowed'}`}
+      accessibilityLabel={`${candidate.displayName ?? candidate.row.name}, ${candidate.allowed ? 'allowed' : unavailable ? 'excluded by matching rules' : 'not allowed'}`}
       accessibilityRole="button"
       accessibilityState={{ disabled: !editing || unavailable, selected: candidate.allowed }}
       disabled={!editing || unavailable}
@@ -79,7 +79,7 @@ export const NativeTradePreferencePokemonCard = ({
         ) : null}
       </View>
       <Text maxFontSizeMultiplier={1.2} numberOfLines={3} style={[styles.name, light && styles.textLight]}>
-        {candidate.row.name}
+        {candidate.displayName ?? candidate.row.name}
       </Text>
       <Text style={[styles.number, light && styles.secondaryLight]}>
         #{String(candidate.row.pokedexNumber).padStart(4, '0')}

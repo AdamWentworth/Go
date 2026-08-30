@@ -559,57 +559,60 @@ const TargetSummary = ({
   const rows = detail.targetRows ?? [];
   if (detail.row.status === 'caught') return null;
   return (
-    <View
-      style={[
-        styles.targetsPanel,
-        {
-          borderColor: detail.row.status === 'wanted' ? '#98505e' : '#3f8068',
-          backgroundColor: palette.targetPanel,
-        },
-      ]}
-    >
-      <View style={styles.targetsHeading}>
-        <Text style={[styles.targetsTitle, { color: palette.text }]}>
-          {detail.row.status === 'wanted' ? 'For Trade Pokémon' : 'Wanted Pokémon'}
-        </Text>
-        <View style={[styles.targetCount, { backgroundColor: detail.row.status === 'wanted' ? '#75404a' : '#2d6a51' }]}>
-          <Text style={styles.targetCountText}>{rows.length}</Text>
-        </View>
-      </View>
-      {rows.length > 0 ? (
-        <ScrollView
-          nestedScrollEnabled
-          showsVerticalScrollIndicator
-          style={styles.targetGridViewport}
-        >
-          <View style={styles.targetGrid}>
-            {rows.map((row) => (
-              <TargetCard
-                assetBaseUrl={assetBaseUrl}
-                key={row.id}
-                onPress={onOpenTarget ? () => onOpenTarget(row.id) : undefined}
-                palette={palette}
-                row={row}
-              />
-            ))}
+    <>
+      <View
+        style={[
+          styles.targetsPanel,
+          detail.row.status === 'trade' && styles.targetsPanelTrade,
+          {
+            borderColor: detail.row.status === 'wanted' ? '#98505e' : '#3f8068',
+            backgroundColor: palette.targetPanel,
+          },
+        ]}
+      >
+        <View style={styles.targetsHeading}>
+          <Text style={[styles.targetsTitle, { color: palette.text }]}>
+            {detail.row.status === 'wanted' ? 'For Trade Pokémon' : 'Wanted Pokémon'}
+          </Text>
+          <View style={[styles.targetCount, { backgroundColor: detail.row.status === 'wanted' ? '#75404a' : '#2d6a51' }]}>
+            <Text style={styles.targetCountText}>{rows.length}</Text>
           </View>
-        </ScrollView>
-      ) : (
-        <Text style={[styles.noTargets, { color: palette.secondary }]}>No matching targets are configured.</Text>
-      )}
+        </View>
+        {rows.length > 0 ? (
+          <ScrollView
+            nestedScrollEnabled
+            showsVerticalScrollIndicator
+            style={styles.targetGridViewport}
+          >
+            <View style={styles.targetGrid}>
+              {rows.map((row) => (
+                <TargetCard
+                  assetBaseUrl={assetBaseUrl}
+                  key={row.id}
+                  onPress={onOpenTarget ? () => onOpenTarget(row.id) : undefined}
+                  palette={palette}
+                  row={row}
+                />
+              ))}
+            </View>
+          </ScrollView>
+        ) : (
+          <Text style={[styles.noTargets, { color: palette.secondary }]}>No matching targets are configured.</Text>
+        )}
+      </View>
       {canEdit ? (
         <Pressable
           accessibilityRole="button"
           onPress={onEdit}
           style={[
             styles.editPreferencesButton,
-            { backgroundColor: detail.row.status === 'wanted' ? '#873e50' : '#20764c' },
+            { backgroundColor: detail.row.status === 'wanted' ? '#f25770' : '#31b777' },
           ]}
         >
           <Text style={styles.editPreferencesText}>Edit preferences</Text>
         </Pressable>
       ) : null}
-    </View>
+    </>
   );
 };
 
@@ -1913,6 +1916,7 @@ export const NativeInstanceDetailScreen = ({
 }: Props) => {
   const light = useNativeColorScheme() === 'light';
   const { width } = useWindowDimensions();
+  const desktopLayout = width >= 768;
   const shellWidth = Math.min(width * 0.95, 500);
   const palette = light ? LIGHT : DARK;
   const [editingInstanceId, setEditingInstanceId] = useState<string | null>(null);
@@ -1994,9 +1998,7 @@ export const NativeInstanceDetailScreen = ({
   const maxBadge = detail.row.maxKind
     ? toAssetUrl(assetBaseUrl, `/images/${detail.row.maxKind}.png`)
     : null;
-  const statusLabel = detail.row.status === 'wanted' && detail.row.mostWanted
-    ? 'MOST WANTED'
-    : status.label;
+  const statusLabel = status.label;
   const editing = editingInstanceId === detail.row.id;
   const activeDraft = draftState?.instanceId === detail.row.id
     ? draftState.value
@@ -2226,7 +2228,7 @@ export const NativeInstanceDetailScreen = ({
         <ScrollView
           contentContainerStyle={[
             styles.scrollContent,
-            { paddingTop: 30 },
+            { paddingTop: isTrade ? 0 : isWanted ? 10 : 30 },
           ]}
           directionalLockEnabled
           keyboardShouldPersistTaps="handled"
@@ -2278,7 +2280,10 @@ export const NativeInstanceDetailScreen = ({
                 </Pressable>
               ) : <View style={styles.iconButton} />}
               {!isWanted && cp != null && !editing ? (
-                <Text style={styles.cpText}>CP{cp}</Text>
+                <Text style={styles.cpText}>
+                  <Text style={[styles.cpLabel, desktopLayout && styles.cpLabelDesktop]}>CP</Text>
+                  <Text style={[styles.cpValue, desktopLayout && styles.cpValueDesktop]}>{cp}</Text>
+                </Text>
               ) : <View />}
               {editing ? (
                 activeBackgroundOptions.length > 0 ? (
@@ -2320,7 +2325,7 @@ export const NativeInstanceDetailScreen = ({
 
           <View style={[
             styles.imageStage,
-            isWanted && styles.wantedImageStage,
+            isWanted && (desktopLayout ? styles.wantedImageStageDesktop : styles.wantedImageStage),
             isTrade && styles.tradeImageStage,
           ]}>
             {selectedLocationBackgroundUri ? (
@@ -2333,7 +2338,10 @@ export const NativeInstanceDetailScreen = ({
                 accessibilityElementsHidden
                 resizeMode="contain"
                 source={{ uri: toAssetUrl(assetBaseUrl, '/images/lucky.png') }}
-                style={[styles.luckyBackdrop, !isCaught && styles.compactLuckyBackdrop]}
+                style={[
+                  styles.luckyBackdrop,
+                  isWanted && (desktopLayout ? styles.wantedLuckyBackdropDesktop : styles.wantedLuckyBackdrop),
+                ]}
               />
             ) : null}
             {displayImageUri ? (
@@ -2341,7 +2349,11 @@ export const NativeInstanceDetailScreen = ({
                 accessibilityLabel={detail.row.name}
                 resizeMode="contain"
                 source={{ uri: displayImageUri }}
-                style={[styles.pokemonImage, !isCaught && styles.compactPokemonImage]}
+                style={[
+                  styles.pokemonImage,
+                  isWanted && (desktopLayout ? styles.wantedPokemonImageDesktop : styles.wantedPokemonImage),
+                  isTrade && styles.tradePokemonImage,
+                ]}
               />
             ) : null}
             {maxBadge ? (
@@ -2349,7 +2361,10 @@ export const NativeInstanceDetailScreen = ({
                 accessibilityLabel={detail.row.maxKind === 'gigantamax' ? 'Gigantamax' : 'Dynamax'}
                 resizeMode="contain"
                 source={{ uri: maxBadge }}
-                style={[styles.maxBadge, !isCaught && styles.compactMaxBadge]}
+                style={[
+                  styles.maxBadge,
+                  isWanted && (desktopLayout ? styles.wantedMaxBadgeDesktop : styles.wantedMaxBadge),
+                ]}
               />
             ) : null}
             {displayPurified ? (
@@ -2364,7 +2379,8 @@ export const NativeInstanceDetailScreen = ({
 
           <View style={[
             styles.detailsPanel,
-            !isCaught && styles.compactDetailsPanel,
+            isWanted && (desktopLayout ? styles.wantedDetailsPanelDesktop : styles.wantedDetailsPanel),
+            isTrade && styles.tradeDetailsPanel,
             { backgroundColor: palette.panel },
           ]}>
             {!editing && caughtDateParts ? (
@@ -2400,7 +2416,11 @@ export const NativeInstanceDetailScreen = ({
                 typeIconUris={displayTypeIconUris}
               />
             ) : (
-              <Text accessibilityRole="header" style={[styles.name, { color: palette.text }]}>
+              <Text accessibilityRole="header" style={[
+                styles.name,
+                desktopLayout && styles.nameDesktop,
+                { color: palette.text },
+              ]}>
                 {detail.row.name}
               </Text>
             )}
@@ -2531,8 +2551,26 @@ export const NativeInstanceDetailScreen = ({
             ) : null}
 
             {!editing && detail.provenance.length ? (
-              <View style={[styles.metaPanel, { backgroundColor: palette.meta }]}>
-                <DetailRows rows={detail.provenance} secondaryColor={palette.secondary} textColor={palette.text} />
+              <View style={[styles.metaSection, { borderTopColor: palette.divider }]}>
+                <View style={[styles.metaPanel, { backgroundColor: palette.meta }]}>
+                  {instance?.original_trainer_name ? (
+                    <View style={styles.metaSummaryBlock}>
+                      <Text style={[styles.metaSummaryLabel, { color: palette.secondary }]}>OBTAINED IN A TRADE</Text>
+                      <Text style={[styles.metaSummaryValue, { color: palette.text }]}>{instance.original_trainer_name}</Text>
+                    </View>
+                  ) : null}
+                  {instance?.location_caught || caughtDate ? (
+                    <View style={styles.metaSummaryBlock}>
+                      <Text style={[styles.metaSummaryLabel, { color: palette.secondary }]}>CAUGHT</Text>
+                      {instance?.location_caught ? (
+                        <Text style={[styles.metaSummaryValue, { color: palette.text }]}>{instance.location_caught}</Text>
+                      ) : null}
+                      {caughtDate ? (
+                        <Text style={[styles.metaSummaryLabel, { color: palette.secondary }]}>{caughtDate}</Text>
+                      ) : null}
+                    </View>
+                  ) : null}
+                </View>
               </View>
             ) : null}
 
@@ -2722,12 +2760,15 @@ const styles = StyleSheet.create({
   cpText: {
     paddingTop: 3,
     color: '#ffffff',
-    fontSize: 18,
     fontWeight: '700',
     textShadowColor: 'rgba(0,0,0,0.7)',
     textShadowOffset: { width: 0, height: 1 },
     textShadowRadius: 3,
   },
+  cpLabel: { fontSize: 16, lineHeight: 35 },
+  cpLabelDesktop: { fontSize: 24, lineHeight: 50 },
+  cpValue: { fontSize: 32, lineHeight: 35 },
+  cpValueDesktop: { fontSize: 46, lineHeight: 50 },
   favoriteIcon: { color: '#ffffff', fontSize: 48, lineHeight: 50, fontWeight: '300' },
   favoriteSelected: { color: '#ffd000' },
   wantedBadge: { minHeight: 40, justifyContent: 'center', marginTop: 1, paddingHorizontal: 12, borderWidth: 1, borderColor: '#8b9997', borderRadius: 999, backgroundColor: 'rgba(53,61,61,0.82)' },
@@ -2736,12 +2777,12 @@ const styles = StyleSheet.create({
   mostWantedBadgeText: { color: '#ff8a63' },
   conditionsPanel: {
     zIndex: 8,
-    width: '94%',
+    width: '96.5%',
     gap: 5,
     marginBottom: 3,
     paddingHorizontal: 10,
-    paddingTop: 8,
-    paddingBottom: 8,
+    paddingTop: 10,
+    paddingBottom: 11,
     borderWidth: 1,
     borderRadius: 12,
     shadowColor: '#000',
@@ -2803,19 +2844,26 @@ const styles = StyleSheet.create({
   },
   conditionChipText: { fontSize: 11 },
   arc: { position: 'absolute', zIndex: 1, top: 48, alignSelf: 'center' },
-  imageStage: { zIndex: 3, width: 272, height: 272, alignItems: 'center', justifyContent: 'center', marginTop: 16 },
-  wantedImageStage: { width: 194, height: 194, marginTop: 0 },
-  tradeImageStage: { width: 220, height: 220, marginTop: 4 },
+  imageStage: { zIndex: 3, width: 296, height: 296, alignItems: 'center', justifyContent: 'center', marginTop: -48 },
+  wantedImageStage: { width: 185, height: 185, marginTop: -8 },
+  wantedImageStageDesktop: { width: 238, height: 238, marginTop: -18 },
+  tradeImageStage: { width: 296, height: 296, marginTop: -48 },
   locationBackdrop: { position: 'absolute', top: -20, height: 292 },
-  luckyBackdrop: { position: 'absolute', zIndex: 2, width: 272, height: 272 },
-  compactLuckyBackdrop: { width: 205, height: 205 },
-  pokemonImage: { zIndex: 4, width: 267, height: 267 },
-  compactPokemonImage: { width: 190, height: 190 },
-  maxBadge: { position: 'absolute', zIndex: 5, top: 5, right: 5, width: 92, height: 92 },
-  compactMaxBadge: { top: 2, right: 2, width: 58, height: 58 },
+  luckyBackdrop: { position: 'absolute', zIndex: 2, width: 296, height: 296 },
+  wantedLuckyBackdrop: { width: 185, height: 185 },
+  wantedLuckyBackdropDesktop: { width: 238, height: 238 },
+  pokemonImage: { zIndex: 4, width: 290, height: 290 },
+  wantedPokemonImage: { width: 181, height: 181 },
+  wantedPokemonImageDesktop: { width: 233, height: 233 },
+  tradePokemonImage: { width: 290, height: 290 },
+  maxBadge: { position: 'absolute', zIndex: 5, top: 5, right: 5, width: 104, height: 104 },
+  wantedMaxBadge: { top: 2, right: 2, width: 65, height: 65 },
+  wantedMaxBadgeDesktop: { top: 3, right: 3, width: 83, height: 83 },
   purifiedBadge: { position: 'absolute', zIndex: 5, bottom: 5, left: 5, width: 54, height: 54 },
-  detailsPanel: { width: '100%', minHeight: 300, alignItems: 'center', marginTop: -36, paddingTop: 64, paddingBottom: 18, borderRadius: 12, overflow: 'hidden' },
-  compactDetailsPanel: { marginTop: -47, paddingTop: 55 },
+  detailsPanel: { width: '100%', minHeight: 300, alignItems: 'center', marginTop: -51, paddingTop: 64, paddingBottom: 18, borderRadius: 12, overflow: 'hidden' },
+  wantedDetailsPanel: { marginTop: -42, paddingTop: 43 },
+  wantedDetailsPanelDesktop: { marginTop: -85, paddingTop: 43 },
+  tradeDetailsPanel: { marginTop: -60, paddingTop: 67 },
   caughtDateBadge: {
     position: 'absolute',
     zIndex: 4,
@@ -2836,6 +2884,7 @@ const styles = StyleSheet.create({
   caughtDateDay: { color: '#422b00', fontSize: 10, lineHeight: 11, fontWeight: '800', textAlign: 'center' },
   statusEyebrow: { marginBottom: 4, fontSize: 12, fontWeight: '900', letterSpacing: 1.7 },
   name: { maxWidth: '92%', fontSize: 32, lineHeight: 35, fontWeight: '500', textAlign: 'center' },
+  nameDesktop: { fontSize: 52, lineHeight: 55 },
   megaEligibility: {
     minHeight: 31,
     flexDirection: 'row',
@@ -3081,7 +3130,11 @@ const styles = StyleSheet.create({
   ivNumber: { width: 24, fontSize: 16, textAlign: 'right' },
   preferencePanel: { width: '94%', marginTop: 14, gap: 4, padding: 10, borderWidth: 1, borderRadius: 12 },
   preferenceTitle: { fontSize: 11, fontWeight: '900', letterSpacing: 1.3 },
-  metaPanel: { width: '94%', marginTop: 14, paddingVertical: 8, borderRadius: 10 },
+  metaSection: { width: '94%', marginTop: 16, paddingTop: 18, borderTopWidth: 2 },
+  metaPanel: { width: '100%', gap: 8, paddingHorizontal: 12, paddingVertical: 10, borderRadius: 8 },
+  metaSummaryBlock: { width: '100%', alignItems: 'flex-start' },
+  metaSummaryLabel: { fontSize: 11, lineHeight: 14, fontWeight: '600', letterSpacing: 0.4 },
+  metaSummaryValue: { marginVertical: 3, fontSize: 16, lineHeight: 19 },
   targetsPanel: {
     width: '94%',
     marginTop: 14,
@@ -3089,6 +3142,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderRadius: 12,
   },
+  targetsPanelTrade: { marginTop: 29 },
   targetsHeading: { minHeight: 30, flexDirection: 'row', alignItems: 'center', gap: 8 },
   targetsTitle: { flex: 1, fontSize: 16, fontWeight: '900' },
   targetCount: { minWidth: 34, height: 26, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 8, borderRadius: 13 },
@@ -3097,7 +3151,7 @@ const styles = StyleSheet.create({
   targetGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 7, paddingBottom: 3 },
   targetCard: {
     width: '31.8%',
-    minHeight: 144,
+    minHeight: 161,
     alignItems: 'center',
     justifyContent: 'flex-start',
     paddingHorizontal: 4,
@@ -3107,15 +3161,15 @@ const styles = StyleSheet.create({
     borderRadius: 10,
   },
   targetCardPressed: { opacity: 0.72, transform: [{ scale: 0.98 }] },
-  targetImageStage: { width: '100%', height: 86, alignItems: 'center', justifyContent: 'center' },
-  targetLuckyBackdrop: { position: 'absolute', width: 88, height: 88 },
-  targetImage: { width: 82, height: 82 },
+  targetImageStage: { width: '100%', height: 101, alignItems: 'center', justifyContent: 'center' },
+  targetLuckyBackdrop: { position: 'absolute', width: 102, height: 102 },
+  targetImage: { width: 94, height: 94 },
   targetMaxBadge: { position: 'absolute', top: 0, right: 0, width: 31, height: 31 },
   targetName: { minHeight: 32, fontSize: 12, lineHeight: 15, fontWeight: '900', textAlign: 'center' },
   targetDex: { marginTop: 3, fontSize: 10 },
   noTargets: { paddingVertical: 18, textAlign: 'center' },
-  editPreferencesButton: { minHeight: 46, alignItems: 'center', justifyContent: 'center', marginTop: 10, borderRadius: 10 },
-  editPreferencesText: { color: '#fff', fontSize: 14, fontWeight: '900' },
+  editPreferencesButton: { width: '94%', minHeight: 40, alignSelf: 'center', alignItems: 'center', justifyContent: 'center', marginTop: 5, borderRadius: 10 },
+  editPreferencesText: { color: '#07130d', fontSize: 14, fontWeight: '900' },
   notice: { width: '94%', marginTop: 10, padding: 10, borderWidth: 1, borderColor: '#338b6b', borderRadius: 10, backgroundColor: '#102e26' },
   noticeText: { color: '#9ff0ca', fontWeight: '700', textAlign: 'center' },
   saveError: { width: '94%', marginTop: 10, padding: 10, borderWidth: 1, borderColor: '#b65b70', borderRadius: 10, backgroundColor: '#3b1722' },

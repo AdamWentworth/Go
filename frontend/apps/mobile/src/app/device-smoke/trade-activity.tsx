@@ -1,4 +1,4 @@
-import { Redirect } from 'expo-router';
+import { Redirect, useLocalSearchParams } from 'expo-router';
 import { useMemo, useState } from 'react';
 import type { PokemonInstance } from '@pokemongonexus/shared-contracts/instances';
 import type { TradeRecord } from '@pokemongonexus/shared-contracts/trades';
@@ -33,6 +33,8 @@ const imagePaths: Record<string, string> = {
   'theirs-completed-delete': '/images/shiny/shiny_pokemon_243.png',
   'mine-closed-delete': '/images/shiny/shiny_pokemon_448.png',
   'theirs-closed-delete': '/images/shiny/shiny_pokemon_475.png',
+  '0025-party_hat_default_demo-trade': '/images/costumes/pokemon_25_party_default.png',
+  '0150-default_demo-partner': '/images/default/pokemon_150.png',
 };
 
 const names: Record<string, string> = {
@@ -54,6 +56,8 @@ const names: Record<string, string> = {
   'theirs-completed-delete': 'Shiny Raikou',
   'mine-closed-delete': 'Shiny Lucario',
   'theirs-closed-delete': 'Shiny Gallade',
+  '0025-party_hat_default_demo-trade': 'Party Hat Pikachu',
+  '0150-default_demo-partner': 'Mewtwo',
 };
 
 const detail = (id: string): NativeInstanceDetail => ({
@@ -205,18 +209,43 @@ const initialTrades: TradeRecord[] = [
   },
 ];
 
+const canonicalTrades: TradeRecord[] = [{
+  trade_id: 'trade-demo-pending',
+  trade_status: 'pending',
+  username_proposed: 'HarbourMew',
+  username_accepting: 'NexusDemo',
+  pokemon_instance_id_user_proposed: '0150-default_demo-partner',
+  pokemon_instance_id_user_accepting: '0025-party_hat_default_demo-trade',
+  user_proposed_completion_confirmed: false,
+  user_accepting_completion_confirmed: false,
+  trade_accepted_date: '2026-06-29T18:00:00.000Z',
+  trade_completed_date: null,
+  trade_cancelled_date: null,
+  trade_cancelled_by: null,
+  trade_deleted_date: null,
+  trade_proposal_date: '2026-06-28T18:00:00.000Z',
+  trade_friendship_level: 'Best',
+  trade_dust_cost: 800,
+  is_lucky_trade: true,
+  user_1_trade_satisfaction: false,
+  user_2_trade_satisfaction: false,
+  last_update: Date.parse('2026-07-03T12:00:00.000Z'),
+}];
+
 export default function DeviceSmokeTradeActivityRoute() {
+  const params = useLocalSearchParams<{ canonical?: string | string[] }>();
+  const canonical = (Array.isArray(params.canonical) ? params.canonical[0] : params.canonical) === '1';
   const light = useNativeColorScheme() === 'light';
-  const [trades, setTrades] = useState(initialTrades);
+  const [trades, setTrades] = useState(() => canonical ? canonicalTrades : initialTrades);
   const rows = useMemo(() => trades.flatMap<NativeTradeActivityRow>((trade) => {
-    const model = buildNativeTradeActivityModel(trade, 'AdamZilla');
+    const model = buildNativeTradeActivityModel(trade, canonical ? 'NexusDemo' : 'AdamZilla');
     if (!model) return [];
     return [{
       model,
       currentUserPokemon: detail(model.currentUserInstanceId),
       partnerPokemon: detail(model.partnerInstanceId),
     }];
-  }), [trades]);
+  }), [canonical, trades]);
 
   if (!runtimeConfig.mobile.deviceSmokeMode) return <Redirect href="/" />;
 

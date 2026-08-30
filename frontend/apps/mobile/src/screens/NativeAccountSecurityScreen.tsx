@@ -181,8 +181,8 @@ export const NativeAccountSecurityScreen = ({
           </View>
         ) : null}
 
-        <View style={[styles.section, light && styles.sectionLight]}>
-          <View style={styles.sectionHeader}>
+        <View style={[styles.section, styles.firstSection, light && styles.sectionLight]}>
+          <View style={[styles.sectionHeader, light && styles.sectionHeaderLight]}>
             <View><Text style={[styles.sectionEyebrow, light && styles.labelLight]}>LOGIN IDENTITY</Text><Text style={[styles.sectionTitle, light && styles.textLight]}>Account details</Text></View>
             <NativeUiIcon color="#42d7c6" name="key" size={30} />
           </View>
@@ -209,7 +209,7 @@ export const NativeAccountSecurityScreen = ({
         </View>
 
         <View style={[styles.section, light && styles.sectionLight]}>
-          <View style={styles.sectionHeader}>
+          <View style={[styles.sectionHeader, light && styles.sectionHeaderLight]}>
             <View><Text style={[styles.sectionEyebrow, light && styles.labelLight]}>SIGN-IN METHODS</Text><Text style={[styles.sectionTitle, light && styles.textLight]}>Connected accounts</Text></View>
             <NativeUiIcon color="#42d7c6" name="key" size={30} />
           </View>
@@ -254,7 +254,7 @@ export const NativeAccountSecurityScreen = ({
         </View>
 
         <View style={[styles.section, light && styles.sectionLight]}>
-          <View style={styles.sectionHeader}>
+          <View style={[styles.sectionHeader, light && styles.sectionHeaderLight]}>
             <View><Text style={[styles.sectionEyebrow, light && styles.labelLight]}>SESSION</Text><Text style={[styles.sectionTitle, light && styles.textLight]}>Sign out</Text></View>
             <NativeUiIcon color="#42d7c6" name="sign-out" size={30} />
           </View>
@@ -272,7 +272,7 @@ export const NativeAccountSecurityScreen = ({
         </View>
 
         <View style={[styles.section, styles.dangerSection, light && styles.dangerSectionLight]}>
-          <View style={styles.sectionHeader}>
+          <View style={[styles.sectionHeader, light && styles.sectionHeaderLight]}>
             <View><Text style={styles.dangerEyebrow}>PERMANENT ACTION</Text><Text style={[styles.sectionTitle, light && styles.textLight]}>Delete account</Text></View>
             <NativeUiIcon color="#ef6a7e" name="trash" size={30} />
           </View>
@@ -343,16 +343,18 @@ const styles = StyleSheet.create({
   backLight: { borderColor: '#9bb8b1', backgroundColor: '#f3faf5' },
   headerCopy: { flex: 1 },
   title: { color: '#f7fbfa', fontSize: 25, fontWeight: '900' },
-  section: { gap: 12, padding: 14, borderWidth: 1, borderColor: '#315052', borderRadius: 10, backgroundColor: '#171c1d' },
+  section: { gap: 14, paddingTop: 20, paddingHorizontal: 14, paddingBottom: 14, borderWidth: 1, borderColor: '#315052', borderRadius: 10, backgroundColor: '#171c1d' },
+  firstSection: { marginTop: 4 },
   sectionLight: { borderColor: '#9bb8b1', backgroundColor: '#f3faf5' },
-  sectionHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 },
+  sectionHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8, paddingBottom: 13, borderBottomWidth: 1, borderBottomColor: '#315052' },
+  sectionHeaderLight: { borderBottomColor: '#9bb8b1' },
   sectionEyebrow: { color: '#92c7cc', fontSize: 9, fontWeight: '900', letterSpacing: 1 },
-  sectionTitle: { color: '#f7fbfa', fontSize: 21, fontWeight: '900' },
+  sectionTitle: { marginTop: 6, color: '#f7fbfa', fontSize: 21, fontWeight: '900' },
   sectionCopy: { color: '#9db5b4', fontSize: 13, lineHeight: 18 },
   field: { gap: 5 },
   fieldLabelRow: { minHeight: 16, flexDirection: 'row', alignItems: 'center', gap: 5 },
   fieldLabel: { color: '#92c7cc', fontSize: 10, fontWeight: '900', letterSpacing: 0.5, textTransform: 'uppercase' },
-  input: { minHeight: 48, paddingHorizontal: 12, borderWidth: 1, borderColor: '#456265', borderRadius: 8, backgroundColor: '#202728', color: '#f7fbfa', fontSize: 14, fontWeight: '700' },
+  input: { minHeight: 44, paddingHorizontal: 12, borderWidth: 1, borderColor: '#456265', borderRadius: 8, backgroundColor: '#202728', color: '#f7fbfa', fontSize: 14, fontWeight: '700' },
   inputLight: { borderColor: '#9bb8b1', backgroundColor: '#f9fffa' },
   help: { color: '#9db5b4', fontSize: 11, lineHeight: 15 },
   primary: { minWidth: 170, minHeight: 44, alignSelf: 'flex-end', alignItems: 'center', justifyContent: 'center', paddingHorizontal: 18, borderRadius: 8, backgroundColor: '#42d7c6' },

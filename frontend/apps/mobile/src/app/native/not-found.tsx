@@ -84,11 +84,11 @@ export default function NativeNotFoundRoute() {
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 20, backgroundColor: '#06131d' },
+  root: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingTop: 34, paddingHorizontal: 9, paddingBottom: 116, backgroundColor: '#06131d' },
   rootLight: { backgroundColor: '#f8fff9' },
-  card: { width: '100%', maxWidth: 520, alignItems: 'center', gap: 12, borderWidth: 1, borderColor: '#314b58', borderRadius: 22, padding: 22, backgroundColor: '#121e25' },
+  card: { width: '100%', maxWidth: 520, alignItems: 'center', gap: 12, borderWidth: 1, borderColor: '#314b58', borderRadius: 22, paddingHorizontal: 14, paddingTop: 22, paddingBottom: 36, backgroundColor: '#121e25' },
   cardLight: { borderColor: '#b8c7ce', backgroundColor: '#fff' },
-  logo: { width: '88%', height: 118 },
+  logo: { width: '82%', height: 118 },
   code: { marginTop: 2, color: '#269df4', fontSize: 12, lineHeight: 17, fontWeight: '900', letterSpacing: 3 },
   accentLight: { color: '#005bb5' },
   title: { color: '#f5fbfd', fontSize: 25, fontWeight: '900', textAlign: 'center' },

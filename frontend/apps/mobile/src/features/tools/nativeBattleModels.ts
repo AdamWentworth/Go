@@ -147,12 +147,14 @@ export const hydrateNativeMaxCatalog = (
 };
 
 const describeInstance = (instance: PokemonInstance): string => {
+  const ivValues = [instance.attack_iv, instance.defense_iv, instance.stamina_iv];
+  const ivPercent = ivValues.every((value) => value != null)
+    ? Math.round(ivValues.reduce<number>((total, value) => total + Number(value), 0) / 45 * 100)
+    : null;
   const details = [
-    instance.level == null ? null : `Lv ${instance.level}`,
-    instance.cp == null ? null : `CP ${instance.cp.toLocaleString()}`,
-    [instance.attack_iv, instance.defense_iv, instance.stamina_iv].every((value) => value != null)
-      ? `${instance.attack_iv}/${instance.defense_iv}/${instance.stamina_iv}`
-      : null,
+    instance.nickname?.trim() || null,
+    instance.level == null ? null : `Level ${instance.level}`,
+    ivPercent == null ? null : `${ivPercent}% IV`,
   ].filter(Boolean);
   return details.length > 0 ? details.join(' · ') : 'Caught copy';
 };
@@ -227,7 +229,7 @@ const buildCanonicalRaidAttackers = (
 
 const canonicalCombatEntry = (
   score: RaidOverallScore | RaidTypeDpsScore,
-  settings: NativeRaidSettings,
+  _settings: NativeRaidSettings,
 ): NativeCombatEntry => {
   const variant = score.variant;
   const instance = variant.instanceData ?? null;
@@ -241,9 +243,9 @@ const canonicalCombatEntry = (
     id: `${variant.variant_id}-${score.fastMove.move_id}-${score.chargedMove.move_id}`,
     imageUri: variant.currentImage || variant.image_url || null,
     maxKind: null,
-    name: instance?.nickname || variant.name,
+    name: variant.name,
     pokemonId: variant.pokemon_id,
-    rosterDetail: instance ? describeInstance(instance) : `Level ${settings.attackerLevel.replace('.0', '')}`,
+    rosterDetail: instance ? describeInstance(instance) : null,
     score: score.eDps,
     sourceInstanceId: instance?.instance_id ?? null,
     tdo: score.tdo,
@@ -256,7 +258,7 @@ const canonicalCombatEntry = (
 const canonicalCounterEntry = (
   score: RaidCounterScore,
   tier: RaidTierPreset,
-  settings: NativeRaidSettings,
+  _settings: NativeRaidSettings,
 ): NativeCombatEntry => {
   const variant = score.variant;
   const instance = variant.instanceData ?? null;
@@ -278,9 +280,9 @@ const canonicalCounterEntry = (
     id: `${variant.variant_id}-${score.fastMove.move_id}-${score.chargedMove.move_id}`,
     imageUri: variant.currentImage || variant.image_url || null,
     maxKind: null,
-    name: instance?.nickname || variant.name,
+    name: variant.name,
     pokemonId: variant.pokemon_id,
-    rosterDetail: instance ? describeInstance(instance) : `Level ${settings.attackerLevel.replace('.0', '')}`,
+    rosterDetail: instance ? describeInstance(instance) : null,
     score: score.dps,
     sourceInstanceId: instance?.instance_id ?? null,
     tdo: Math.max(0, estimatedShare),

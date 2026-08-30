@@ -617,7 +617,8 @@ const styles = StyleSheet.create({
   warningBody: { color: '#d9c79f', fontSize: 12, lineHeight: 17 },
   tagCard: {
     overflow: 'hidden',
-    marginVertical: collectionParityTokens.tags.cardMarginVertical,
+    marginTop: 2,
+    marginBottom: 18,
     borderRadius: collectionParityTokens.tags.cardRadius,
     padding: collectionParityTokens.tags.cardPadding,
     shadowColor: '#ffffff',
@@ -643,10 +644,8 @@ const styles = StyleSheet.create({
     paddingVertical: collectionParityTokens.tags.previewBlockInset,
   },
   previewNarrow: {
-    minHeight: 94,
-    paddingHorizontal:
-      collectionParityTokens.tags.cardPadding
-      + collectionParityTokens.tags.previewInlineInsetNarrow,
+    minHeight: 120,
+    paddingHorizontal: 0,
   },
   previewWide: {
     minHeight: 154,
@@ -658,11 +657,11 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     padding: 2,
   },
-  previewCellNarrow: { width: '16.666%', height: 39 },
+  previewCellNarrow: { width: '16.666%', height: 60 },
   previewCellWide: { width: '11.111%', height: 69 },
   previewImageNarrow: {
-    width: collectionParityTokens.tags.previewCellNarrow,
-    height: collectionParityTokens.tags.previewCellNarrow,
+    width: 44,
+    height: 44,
   },
   previewImageWide: {
     width: collectionParityTokens.tags.previewCellWide,
