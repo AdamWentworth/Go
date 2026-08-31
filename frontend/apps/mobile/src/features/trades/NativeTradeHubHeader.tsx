@@ -7,6 +7,7 @@ import {
   View,
   useWindowDimensions,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { NativeUiIcon } from '../../components/NativeUiIcon';
 import { useNativeColorScheme } from '../settings/useNativeColorScheme';
 
@@ -30,6 +31,7 @@ export const NativeTradeHubHeader = ({
   scrollX,
 }: Props) => {
   const light = useNativeColorScheme() === 'light';
+  const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
   const tabWidth = Math.max(0, width - 28) / 2;
   const activeIndex = VIEW_ORDER.indexOf(activeView);
@@ -40,7 +42,7 @@ export const NativeTradeHubHeader = ({
   }) ?? activeIndex * tabWidth;
 
   return (
-    <View style={[styles.header, light && styles.headerLight]}>
+    <View style={[styles.header, { paddingTop: 20 + insets.top }, light && styles.headerLight]}>
       <View style={styles.productRow}>
         {assetBaseUrl ? (
           <Image

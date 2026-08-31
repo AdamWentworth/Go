@@ -10,6 +10,7 @@ import {
   TextInput,
   View,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { NativeUiIcon } from '../components/NativeUiIcon';
 import { ApiClientError } from '@pokemongonexus/shared-api-client';
 import { theme } from '../ui/theme';
@@ -51,6 +52,7 @@ export const NativeLoginScreen = ({
   onSignedIn,
 }: NativeLoginScreenProps) => {
   const light = useNativeColorScheme() === 'light';
+  const insets = useSafeAreaInsets();
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [passwordVisible, setPasswordVisible] = useState(false);
@@ -109,7 +111,7 @@ export const NativeLoginScreen = ({
     >
       <ScrollView
         automaticallyAdjustKeyboardInsets
-        contentContainerStyle={styles.content}
+        contentContainerStyle={[styles.content, { paddingTop: 20 + insets.top, paddingBottom: 92 + insets.bottom }]}
         keyboardShouldPersistTaps="handled"
       >
         <View style={[styles.card, light && styles.cardLight]}>

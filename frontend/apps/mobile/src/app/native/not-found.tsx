@@ -1,6 +1,7 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useState } from 'react';
 import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { NativeActionMenu } from '../../components/NativeActionMenu';
 import { NativeActionMenuAnchor } from '../../components/NativeActionMenuAnchor';
 import { runtimeConfig } from '../../config/runtimeConfig';
@@ -16,6 +17,7 @@ export default function NativeNotFoundRoute() {
   const params = useLocalSearchParams<{ path?: string | string[] }>();
   const preferences = useNativeDevicePreferences();
   const light = preferences.colorTheme === 'light';
+  const insets = useSafeAreaInsets();
   const [menuOpen, setMenuOpen] = useState(false);
   const requestedPath = firstParam(params.path);
   const navigate = (path: string) => {
@@ -28,7 +30,7 @@ export default function NativeNotFoundRoute() {
   };
 
   return (
-    <View style={[styles.root, light && styles.rootLight]} testID="native-not-found-screen">
+    <View style={[styles.root, { paddingTop: 34 + insets.top, paddingBottom: 116 + insets.bottom }, light && styles.rootLight]} testID="native-not-found-screen">
       <View style={[styles.card, light && styles.cardLight]}>
         <Image
           accessibilityIgnoresInvertColors

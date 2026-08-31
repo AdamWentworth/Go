@@ -17,6 +17,7 @@ import {
   TextInput,
   View,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Path } from 'react-native-svg';
 import { NativeBackIcon } from '../components/NativeBackIcon';
 import { NativeOptionPicker, type NativeOptionPickerEntry } from '../components/NativeOptionPicker';
@@ -177,6 +178,7 @@ export const NativeTrainerSettingsScreen = ({
   syncSummary,
 }: Props) => {
   const light = useNativeColorScheme() === 'light';
+  const insets = useSafeAreaInsets();
   const [picker, setPicker] = useState<PickerKey | null>(null);
   const coordinationHandleRef = useRef<TextInput>(null);
 
@@ -231,7 +233,7 @@ export const NativeTrainerSettingsScreen = ({
       testID="native-trainer-settings-screen"
     >
       <ScrollView
-        contentContainerStyle={[styles.content, { paddingTop: 12, paddingBottom: 96 }]}
+        contentContainerStyle={[styles.content, { paddingTop: 12 + insets.top, paddingBottom: 96 + insets.bottom }]}
         keyboardDismissMode="on-drag"
         keyboardShouldPersistTaps="handled"
         onScrollBeginDrag={clearTextInputFocus}

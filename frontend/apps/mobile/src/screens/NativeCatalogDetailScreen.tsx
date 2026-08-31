@@ -7,6 +7,7 @@ import {
   Text,
   View,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { NativeCollectionRow } from '../features/collection/collectionModel';
 import type { NativeCatalogDestination } from '../features/collection/nativeCatalogMutation';
 import { useNativeColorScheme } from '../features/settings/useNativeColorScheme';
@@ -31,6 +32,7 @@ export const NativeCatalogDetailScreen = ({
   onAdd,
 }: Props) => {
   const light = useNativeColorScheme() === 'light';
+  const insets = useSafeAreaInsets();
   if (isLoading) {
     return (
       <View style={[styles.centered, light && styles.screenLight]}>
@@ -53,7 +55,7 @@ export const NativeCatalogDetailScreen = ({
 
   return (
     <ScrollView
-      contentContainerStyle={styles.content}
+      contentContainerStyle={[styles.content, { paddingTop: 14 + insets.top, paddingBottom: 36 + insets.bottom }]}
       style={[styles.screen, light && styles.screenLight]}
       testID="native-catalog-detail-screen"
     >

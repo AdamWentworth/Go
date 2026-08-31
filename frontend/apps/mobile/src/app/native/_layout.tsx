@@ -1,6 +1,5 @@
 import { Redirect, Stack } from 'expo-router';
 import { StyleSheet, View, useWindowDimensions } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import { NativeSessionProvider } from '../../auth/NativeSessionContext';
 import { runtimeConfig } from '../../config/runtimeConfig';
 import { NativeQueryProvider } from '../../query/NativeQueryProvider';
@@ -32,9 +31,7 @@ export default function NativeLayout() {
                     { backgroundColor: nativeRouteSurface(route.name, light, compact) },
                   ]}
                 >
-                  <SafeAreaView edges={['top', 'bottom']} style={styles.safeContent}>
-                    {children}
-                  </SafeAreaView>
+                  {children}
                 </View>
               )}
               screenOptions={({ route }) => ({
@@ -94,8 +91,5 @@ export default function NativeLayout() {
 }
 
 const styles = StyleSheet.create({
-  // The surface owns the complete navigator frame. SafeAreaView is deliberately
-  // a transparent child so only foreground content is inset.
-  safeContent: { flex: 1, minHeight: 0 },
   screenSurface: { flex: 1, backgroundColor: '#101a19' },
 });

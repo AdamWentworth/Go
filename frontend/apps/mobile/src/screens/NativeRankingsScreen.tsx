@@ -10,6 +10,7 @@ import {
   View,
   useWindowDimensions,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type {
   NativeRankingCategory,
   NativeRankingCollectionFilter,
@@ -148,6 +149,7 @@ export const NativeRankingsScreen = ({
   snapshotLabel,
 }: Props) => {
   const light = useNativeColorScheme() === 'light';
+  const insets = useSafeAreaInsets();
   const compact = useWindowDimensions().width <= 420;
   const [query, setQuery] = useState(initialQuery);
   const [methodOpen, setMethodOpen] = useState(false);
@@ -239,7 +241,7 @@ export const NativeRankingsScreen = ({
 
   const footer = hasSnapshot ? <View><View style={styles.snapshotFooter}><Text style={[styles.snapshotText, light && styles.mutedLight]}>{snapshotLabel}</Text><Pressable accessibilityLabel="Refresh community rankings" accessibilityRole="button" disabled={isRefreshing} onPress={onRetry} style={[styles.refresh, light && styles.controlLight, isRefreshing && styles.disabled]}>{isRefreshing ? <ActivityIndicator color={light ? '#08766b' : '#42d7c4'} size="small" /> : <Text style={[styles.refreshText, light && styles.accentLight]}>↻</Text>}</Pressable></View><View style={[styles.method, light && styles.panelLight]}><Pressable accessibilityRole="button" accessibilityState={{ expanded: methodOpen }} onPress={() => setMethodOpen((value) => !value)} style={styles.methodSummary}><Text style={[styles.methodInfo, light && styles.accentLight]}>ⓘ</Text><Text style={[styles.methodTitle, light && styles.textLight]}>How these rankings work</Text><Text style={[styles.methodChevron, light && styles.mutedLight]}>{methodOpen ? '⌃' : '⌄'}</Text></Pressable>{methodOpen ? <View style={[styles.methodBody, light && styles.methodBodyLight]}><Text style={[styles.methodCopy, light && styles.mutedLight]}><Text style={[styles.methodStrong, light && styles.textLight]}>Most wanted</Text> counts distinct trainer wishlists. Duplicate wanted copies do not add votes.</Text><Text style={[styles.methodCopy, light && styles.mutedLight]}><Text style={[styles.methodStrong, light && styles.textLight]}>Rarest owned</Text> counts trainers with a caught copy or Pokédex registration. Duplicate copies count once.</Text><Text style={[styles.methodCopy, light && styles.mutedLight]}>Ordinary evolution families are collapsed in rarity results, while collectible costumes remain separate. Small totals may be withheld to protect trainer privacy.</Text></View> : null}</View></View> : null;
 
-  return <View style={[styles.root, light && styles.rootLight]} testID="native-rankings-screen"><FlatList contentContainerStyle={{ paddingBottom: 92, paddingHorizontal: 8, paddingTop: 6 }} data={hasSnapshot ? rows : []} keyExtractor={(row) => row.entry.id} ListEmptyComponent={!isLoading && hasSnapshot ? <View style={[styles.empty, styles.emptyParity, light && styles.panelLight]}><NativeUiIcon color={light ? '#08766b' : '#42d7c4'} name="search" size={28} /><Text style={[styles.emptyTitle, light && styles.textLight]}>{empty.title}</Text><Text style={[styles.stateCopy, light && styles.mutedLight]}>{empty.body}</Text>{empty.action ? <Pressable accessibilityRole="button" onPress={clearEmptyState} style={styles.emptyAction}><Text style={styles.emptyActionText}>{empty.action}</Text></Pressable> : null}</View> : null} ListFooterComponent={footer} ListHeaderComponent={header} renderItem={({ index, item }) => {
+  return <View style={[styles.root, light && styles.rootLight]} testID="native-rankings-screen"><FlatList contentContainerStyle={{ paddingBottom: 92 + insets.bottom, paddingHorizontal: 8, paddingTop: 6 + insets.top }} data={hasSnapshot ? rows : []} keyExtractor={(row) => row.entry.id} ListEmptyComponent={!isLoading && hasSnapshot ? <View style={[styles.empty, styles.emptyParity, light && styles.panelLight]}><NativeUiIcon color={light ? '#08766b' : '#42d7c4'} name="search" size={28} /><Text style={[styles.emptyTitle, light && styles.textLight]}>{empty.title}</Text><Text style={[styles.stateCopy, light && styles.mutedLight]}>{empty.body}</Text>{empty.action ? <Pressable accessibilityRole="button" onPress={clearEmptyState} style={styles.emptyAction}><Text style={styles.emptyActionText}>{empty.action}</Text></Pressable> : null}</View> : null} ListFooterComponent={footer} ListHeaderComponent={header} renderItem={({ index, item }) => {
     const count = selectedMode === 'wanted' ? item.wantedUsers : item.caughtUsers;
     const progress = Math.max(0.04, Number(count ?? 0) / maximum);
     const countLabel = count == null ? selectedMode === 'wanted' ? `Fewer than ${privacyThreshold} trainers want this` : `Owned by fewer than ${privacyThreshold} trainers` : selectedMode === 'wanted' ? count === 1 ? '1 trainer wants this' : `${count.toLocaleString()} trainers want this` : count === 1 ? 'Owned by 1 trainer' : `Owned by ${count.toLocaleString()} trainers`;

@@ -9,6 +9,7 @@ import {
   TextInput,
   View,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useCallback, useMemo, useRef } from 'react';
 import {
   buildNativeTrainerSearchRows,
@@ -122,6 +123,7 @@ export const NativeTrainerSearchScreen = ({
   query,
 }: Props) => {
   const light = useNativeColorScheme() === 'light';
+  const insets = useSafeAreaInsets();
   const inputRef = useRef<TextInput>(null);
   const listRef = useRef<FlatList<NativeTrainerSearchRow>>(null);
   const restoredScrollRef = useRef(initialScrollOffset <= 0);
@@ -142,7 +144,7 @@ export const NativeTrainerSearchScreen = ({
 
   return (
     <FlatList
-      contentContainerStyle={styles.content}
+      contentContainerStyle={[styles.content, { paddingBottom: 110 + insets.bottom }]}
       data={!isLoading && !error ? rows : []}
       onContentSizeChange={restoreScrollPosition}
       onMomentumScrollEnd={reportScrollPosition}

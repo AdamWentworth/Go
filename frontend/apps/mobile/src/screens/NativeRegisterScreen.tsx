@@ -12,6 +12,7 @@ import {
   View,
   useWindowDimensions,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { OAuthProvider } from '@pokemongonexus/shared-contracts/auth';
 import Svg, { Path } from 'react-native-svg';
 import {
@@ -62,6 +63,7 @@ export const NativeRegisterScreen = ({
   onRegistered,
 }: Props) => {
   const light = useNativeColorScheme() === 'light';
+  const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
   const compact = width < 600;
   const [draft, setDraft] = useState(createNativeRegistrationDraft);
@@ -129,7 +131,7 @@ export const NativeRegisterScreen = ({
 
   return (
     <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={[styles.root, light && styles.rootLight, compact && styles.rootCompact, compact && light && styles.rootCompactLight]} testID="native-register-screen">
-      <ScrollView automaticallyAdjustKeyboardInsets contentContainerStyle={[styles.content, compact && styles.contentCompact]} keyboardShouldPersistTaps="handled">
+      <ScrollView automaticallyAdjustKeyboardInsets contentContainerStyle={[styles.content, compact && styles.contentCompact, { paddingTop: (compact ? 21 : 28) + insets.top, paddingBottom: 28 + insets.bottom }]} keyboardShouldPersistTaps="handled">
         <View style={[styles.card, light && styles.cardLight, compact && styles.cardCompact, compact && light && styles.cardCompactLight]}>
           <View style={styles.header}>
             <View style={styles.headerCopy}>

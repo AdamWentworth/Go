@@ -11,6 +11,7 @@ import {
   View,
   useWindowDimensions,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type {
   NativePokedexCategory,
   NativePokedexEntry,
@@ -213,6 +214,7 @@ const RegionCardBackdrop = ({
 
 export const NativePokedexScreen = ({ assetBaseUrl, entries, error = null, isLoading = false, isSaving = false, onBack: _onBack, onOpenEntry, onRetry, onSetRegistrations }: Props) => {
   const light = useNativeColorScheme() === 'light';
+  const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
   const columns = width >= 760 ? 5 : width >= 520 ? 4 : 3;
   const [advanced, setAdvanced] = useState(false);
@@ -279,7 +281,7 @@ export const NativePokedexScreen = ({ assetBaseUrl, entries, error = null, isLoa
   return (
     <View style={[styles.root, light && styles.rootLight]} testID="native-pokedex-screen">
       <FlatList
-        contentContainerStyle={{ paddingHorizontal: 12, paddingTop: 8, paddingBottom: 100 }}
+        contentContainerStyle={{ paddingHorizontal: 12, paddingTop: 8 + insets.top, paddingBottom: 100 + insets.bottom }}
         data={generation == null ? [] : filtered}
         key={columns}
         keyboardShouldPersistTaps="always"

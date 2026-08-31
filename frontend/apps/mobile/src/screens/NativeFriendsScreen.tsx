@@ -9,6 +9,7 @@ import {
   View,
   useWindowDimensions,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRef, useState } from 'react';
 import Svg, { Path } from 'react-native-svg';
 import {
@@ -224,6 +225,7 @@ export const NativeFriendsScreen = ({
   searchError = null,
   searchResults,
 }: Props) => {
+  const insets = useSafeAreaInsets();
   const light = useNativeColorScheme() === 'light';
   const { width } = useWindowDimensions();
   const sliderRef = useRef<NativeHorizontalPageSliderHandle>(null);
@@ -248,7 +250,7 @@ export const NativeFriendsScreen = ({
   };
   const panelContentStyle = [
     styles.panelContent,
-    { paddingBottom: 120 },
+    { paddingBottom: 120 + insets.bottom },
   ];
 
   const loadingState = isLoading ? (
@@ -271,7 +273,7 @@ export const NativeFriendsScreen = ({
 
   return (
     <View style={[styles.screen, light && styles.screenLight]} testID="native-friends-screen">
-      <View style={[styles.header, light && styles.headerLight, { paddingTop: 14 }]}>
+      <View style={[styles.header, light && styles.headerLight, { paddingTop: 14 + insets.top }]}>
         <View style={styles.productHeader}>
           <Pressable
             accessibilityLabel="Back"

@@ -9,6 +9,7 @@ import {
   View,
   useWindowDimensions,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Circle, Path } from 'react-native-svg';
 import {
   NativeUiIcon,
@@ -103,6 +104,7 @@ const GettingStartedScreen = ({
   onNavigate: (path: string) => void;
   page: NativeInformationPage;
 }) => {
+    const insets = useSafeAreaInsets();
     const charizardImage = toAssetUrl(assetBaseUrl, '/images/shiny_gigantamax/shiny_gigantamax_6.png');
     const pikachuImage = toAssetUrl(assetBaseUrl, '/images/costumes_shiny/pokemon_25_detective_shiny.png');
     const legend = [
@@ -112,7 +114,7 @@ const GettingStartedScreen = ({
     ];
     return (
       <View style={[styles.root, light && styles.rootLight]} testID="native-information-getting-started">
-        <ScrollView contentContainerStyle={[styles.guideContent, { paddingBottom: 104 }]}>
+        <ScrollView contentContainerStyle={[styles.guideContent, { paddingTop: insets.top, paddingBottom: 104 + insets.bottom }]}>
           <View style={[styles.guideTopbar, light && styles.guideDividerLight]}>
             <Pressable accessibilityLabel="Pokémon Go Nexus home" accessibilityRole="button" onPress={() => onNavigate('/')}>
               <Image source={{ uri: toAssetUrl(assetBaseUrl, '/images/logo/logo.png') }} style={styles.guideTopbarLogo} />
@@ -353,6 +355,7 @@ const NativeLegalSection = ({
 
 const NativeInformationPageScreen = ({ assetBaseUrl, isLoggedIn = false, onBack, onNavigate, page }: Props) => {
   const light = useNativeColorScheme() === 'light';
+  const insets = useSafeAreaInsets();
   const compact = useWindowDimensions().width < 600;
   const isFaq = page.slug === 'faq';
   const isAbout = page.slug === 'about';
@@ -403,7 +406,7 @@ const NativeInformationPageScreen = ({ assetBaseUrl, isLoggedIn = false, onBack,
   if (isFaq) {
     return (
       <View style={[styles.root, light && styles.rootLight]} testID="native-information-faq">
-        <ScrollView contentContainerStyle={{ paddingTop: 8, paddingBottom: 96, paddingHorizontal: 10 }} keyboardShouldPersistTaps="handled">
+        <ScrollView contentContainerStyle={{ paddingTop: 8 + insets.top, paddingBottom: 96 + insets.bottom, paddingHorizontal: 10 }} keyboardShouldPersistTaps="handled">
           <View style={[styles.informationShell, light && styles.informationShellLight]}>
           <View style={[styles.faqHero, light && styles.faqHeroLight]}>
             <View style={[styles.faqHeroIcon, light && styles.faqHeroIconLight]}>
@@ -476,8 +479,8 @@ const NativeInformationPageScreen = ({ assetBaseUrl, isLoggedIn = false, onBack,
     >
       <ScrollView
         contentContainerStyle={{
-          paddingTop: isLegal && compact ? 0 : 8,
-          paddingBottom: isLegal && compact ? 0 : 96,
+          paddingTop: (isLegal && compact ? 0 : 8) + insets.top,
+          paddingBottom: (isLegal && compact ? 0 : 96) + insets.bottom,
           paddingHorizontal: isLegal ? 14 : 10,
         }}
       >

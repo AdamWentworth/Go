@@ -9,6 +9,7 @@ import {
   TextInput,
   View,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { PokemonInstance } from '@pokemongonexus/shared-contracts/instances';
 import type { BasePokemon } from '@pokemongonexus/shared-contracts/pokemon';
 import { NativeRaidBossSetupPanel } from '../components/tools/NativeRaidBossSetupPanel';
@@ -63,6 +64,7 @@ export const NativeRaidScreen = ({
   signedIn,
 }: Props) => {
   const light = useNativeColorScheme() === 'light';
+  const insets = useSafeAreaInsets();
   const [view, setView] = useState<ViewMode>('rankings');
   const [scope, setScope] = useState<NativeRosterScope>(signedIn ? 'owned' : 'catalog');
   const [selectedType, setSelectedType] = useState('');
@@ -449,7 +451,7 @@ export const NativeRaidScreen = ({
   return (
     <View style={[styles.root, light && styles.rootLight]} testID="native-raid-screen">
       <FlatList
-        contentContainerStyle={{ paddingHorizontal: 8, paddingTop: 4, paddingBottom: 96 }}
+        contentContainerStyle={{ paddingHorizontal: 8, paddingTop: 4 + insets.top, paddingBottom: 96 + insets.bottom }}
         data={rankings}
         keyExtractor={(entry) => entry.id}
         keyboardShouldPersistTaps="always"

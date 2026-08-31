@@ -13,6 +13,7 @@ import {
   Text,
   View,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useMemo, useRef, useState, type ReactNode } from 'react';
 import {
   NativePokemonLocationBackdrop,
@@ -352,6 +353,7 @@ export const NativeTradeActivityScreen = ({
   showModeTabs = true,
 }: Props) => {
   const light = useNativeColorScheme() === 'light';
+  const insets = useSafeAreaInsets();
   const fadeAnimation = useNativeModalAnimation('fade');
   const slideAnimation = useNativeModalAnimation('slide');
   const [selectedFilter, setSelectedFilter] = useState<TradeActivityFilter>('Accepting');
@@ -417,7 +419,10 @@ export const NativeTradeActivityScreen = ({
     <View style={[styles.screen, light && styles.screenLight]} testID="native-trade-activity-screen">
       <FlatList
         ref={listRef}
-        contentContainerStyle={visibleRows.length && !isLoading ? styles.listContent : styles.emptyListContent}
+        contentContainerStyle={[
+          visibleRows.length && !isLoading ? styles.listContent : styles.emptyListContent,
+          { paddingBottom: 150 + insets.bottom },
+        ]}
         data={isLoading ? [] : visibleRows}
         keyExtractor={(row) => row.model.tradeId}
         keyboardShouldPersistTaps="always"

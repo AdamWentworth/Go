@@ -7,6 +7,7 @@ import {
   Text,
   View,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { NativeCollectionRow } from '../features/collection/collectionModel';
 import type {
   NativeHomeCollectionSummary,
@@ -199,6 +200,7 @@ export const NativeHomeScreen = ({
   username,
 }: NativeHomeScreenProps) => {
   const light = useNativeColorScheme() === 'light';
+  const insets = useSafeAreaInsets();
   const firstName = pokemonGoName?.trim() || username;
   const attentionCount = trades.needsResponse + trades.readyToConfirm + incomingFriends;
   const friendTitle = friendsState === 'loading'
@@ -214,7 +216,7 @@ export const NativeHomeScreen = ({
       <ScrollView
         contentContainerStyle={[
           styles.content,
-          { paddingTop: 12, paddingBottom: 108 },
+          { paddingTop: 12 + insets.top, paddingBottom: 108 + insets.bottom },
         ]}
       >
         <View style={styles.brandHeader}>

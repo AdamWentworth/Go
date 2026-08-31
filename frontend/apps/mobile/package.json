@@ -75,6 +75,9 @@
   },
   "jest": {
     "preset": "jest-expo",
+    "setupFilesAfterEnv": [
+      "<rootDir>/tests/setupTests.ts"
+    ],
     "moduleNameMapper": {
       "^react$": "<rootDir>/../../node_modules/react",
       "^react/(.*)$": "<rootDir>/../../node_modules/react/$1"

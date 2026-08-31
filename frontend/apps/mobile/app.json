@@ -2,7 +2,7 @@
   "expo": {
     "name": "mobile",
     "slug": "mobile",
-    "version": "1.0.1",
+    "version": "1.0.2",
     "scheme": "pokegonexus",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -13,7 +13,7 @@
     },
     "android": {
       "package": "com.pokegonexus.app",
-      "versionCode": 26083101,
+      "versionCode": 26083102,
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#06162f"

@@ -12,6 +12,7 @@ import {
   TextInput,
   View,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { NativeBackIcon } from '../components/NativeBackIcon';
 import { NativeConfirmationDialog } from '../components/NativeConfirmationDialog';
 import { NativeSocialProviderIcon } from '../components/NativeSocialProviderIcon';
@@ -120,6 +121,7 @@ export const NativeAccountSecurityScreen = ({
   security,
 }: Props) => {
   const light = useNativeColorScheme() === 'light';
+  const insets = useSafeAreaInsets();
   const [confirmation, setConfirmation] = useState<Confirmation | null>(null);
   const confirmationPasswordRef = useRef<TextInput>(null);
   const working = Boolean(pendingAction);
@@ -156,7 +158,7 @@ export const NativeAccountSecurityScreen = ({
       testID="native-account-security-screen"
     >
       <ScrollView
-        contentContainerStyle={[styles.content, { paddingTop: 12, paddingBottom: 144 }]}
+        contentContainerStyle={[styles.content, { paddingTop: 12 + insets.top, paddingBottom: 144 + insets.bottom }]}
         keyboardShouldPersistTaps="handled"
         testID="native-account-security-content"
       >

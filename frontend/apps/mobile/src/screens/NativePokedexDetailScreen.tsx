@@ -9,6 +9,7 @@ import {
   TextInput,
   View,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { NativeBackIcon } from '../components/NativeBackIcon';
 import Svg, { Defs, LinearGradient, Rect, Stop } from 'react-native-svg';
 import type { BasePokemon, Move } from '@pokemongonexus/shared-contracts/pokemon';
@@ -180,6 +181,7 @@ const CombinationCard = ({ assetBaseUrl, combo, gender, light, onToggle, saving,
 
 export const NativePokedexDetailScreen = ({ allEntries, assetBaseUrl, entry, error = null, initialGender, isLoading = false, isSaving = false, onBack, onOpenEntry, onSetRegistrations, onToggleRegistration, pokemon, signedIn }: Props) => {
   const light = useNativeColorScheme() === 'light';
+  const insets = useSafeAreaInsets();
   const [tab, setTab] = useState<DetailTab>('registered');
   const [selectedGender, setSelectedGender] = useState<'Male' | 'Female' | undefined>(initialGender);
   const [comboSectionId, setComboSectionId] = useState<string | null>(null);
@@ -214,7 +216,7 @@ export const NativePokedexDetailScreen = ({ allEntries, assetBaseUrl, entry, err
 
   return (
     <View style={[styles.root, light && styles.rootLight]} testID="native-pokedex-detail-screen">
-      <ScrollView contentContainerStyle={[styles.content, { paddingTop: 8, paddingBottom: 100 }]} keyboardShouldPersistTaps="always" nestedScrollEnabled>
+      <ScrollView contentContainerStyle={[styles.content, { paddingTop: 8 + insets.top, paddingBottom: 100 + insets.bottom }]} keyboardShouldPersistTaps="always" nestedScrollEnabled>
         <View style={styles.topbar}><Pressable accessibilityLabel="Back to Pokédex" accessibilityRole="button" onPress={onBack} style={[styles.back, light && styles.backLight]}><NativeBackIcon color={light ? '#172124' : '#ffffff'} size={20} /></Pressable><Text style={[styles.topTitle, light && styles.textLight]}>Pokédex entry</Text><View style={styles.backPlaceholder} /></View>
         <View style={[styles.hero, light && styles.heroLight]}>
           <HeroBackdrop colors={colors} light={light} />

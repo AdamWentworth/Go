@@ -11,6 +11,7 @@ import {
   View,
   useWindowDimensions,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Clipboard from 'expo-clipboard';
 import * as Sharing from 'expo-sharing';
 import { captureRef } from 'react-native-view-shot';
@@ -73,6 +74,7 @@ export const NativeTradeBoardScreen = ({
   signedIn = false,
 }: Props) => {
   const light = useNativeColorScheme() === 'light';
+  const insets = useSafeAreaInsets();
   const { width: viewportWidth } = useWindowDimensions();
   const compactPublicHeader = viewportWidth < 620;
   const boardRef = useRef<View>(null);
@@ -142,7 +144,7 @@ export const NativeTradeBoardScreen = ({
   return (
     <View style={[styles.root, light && styles.rootLight]} testID="native-trade-board-screen">
       <ScrollView
-        contentContainerStyle={[styles.content, { paddingTop: 8, paddingBottom: 112 }]}
+        contentContainerStyle={[styles.content, { paddingTop: 8 + insets.top, paddingBottom: 112 + insets.bottom }]}
         keyboardShouldPersistTaps="always"
         nestedScrollEnabled
       >

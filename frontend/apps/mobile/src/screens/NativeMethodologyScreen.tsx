@@ -1,5 +1,6 @@
 import { useRef } from 'react';
 import { Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type {
   NativeMethodologyItem,
   NativeMethodologyPage,
@@ -157,6 +158,7 @@ const Section = ({
 
 export const NativeMethodologyScreen = ({ assetBaseUrl, content, onBack }: Props) => {
   const light = useNativeColorScheme() === 'light';
+  const insets = useSafeAreaInsets();
   const pvp = content.kind === 'pvp';
   const scrollRef = useRef<ScrollView>(null);
   const sectionOffsets = useRef<Record<number, number>>({});
@@ -168,7 +170,7 @@ export const NativeMethodologyScreen = ({ assetBaseUrl, content, onBack }: Props
 
   return (
     <ScrollView
-      contentContainerStyle={styles.content}
+      contentContainerStyle={[styles.content, { paddingTop: 9 + insets.top, paddingBottom: 104 + insets.bottom }]}
       ref={scrollRef}
       style={[styles.root, light && styles.rootLight]}
       testID="native-methodology-screen"

@@ -10,6 +10,7 @@ import {
   TextInput,
   View,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { PokemonInstance } from '@pokemongonexus/shared-contracts/instances';
 import type { BasePokemon } from '@pokemongonexus/shared-contracts/pokemon';
 import type { MaxBattleTier } from '@pokemongonexus/app-core/max-battle-simulation';
@@ -89,6 +90,7 @@ export const NativeMaxScreen = ({
   signedIn,
 }: Props) => {
   const light = useNativeColorScheme() === 'light';
+  const insets = useSafeAreaInsets();
   const [view, setView] = useState<MaxView>(initialView);
   const [scope, setScope] = useState<NativeRosterScope>(
     signedIn ? initialScope ?? 'owned' : 'catalog',
@@ -369,7 +371,7 @@ export const NativeMaxScreen = ({
   return (
     <View style={[styles.root, light && styles.rootLight]} testID="native-max-screen">
       <FlatList
-        contentContainerStyle={{ paddingHorizontal: 7, paddingTop: 3, paddingBottom: 96 }}
+        contentContainerStyle={{ paddingHorizontal: 7, paddingTop: 3 + insets.top, paddingBottom: 96 + insets.bottom }}
         data={rankings}
         keyExtractor={(entry) => entry.id}
         keyboardShouldPersistTaps="always"

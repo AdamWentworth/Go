@@ -7,6 +7,7 @@ import {
   Text,
   View,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNativeSession } from '../../auth/NativeSessionContext';
 import { NativeRouteActionMenu } from '../../components/NativeRouteActionMenu';
 import { confirmNativeEmailChange } from '../../services/nativeAccountSecurityApi';
@@ -27,6 +28,7 @@ export default function NativeVerifyEmailChangeRoute() {
   const session = useNativeSession();
   const preferences = useNativeDevicePreferences();
   const light = preferences.colorTheme === 'light';
+  const insets = useSafeAreaInsets();
   const submittedToken = useRef<string | null>(null);
   const [state, setState] = useState<ConfirmationState>(token ? 'working' : 'error');
   const [message, setMessage] = useState(
@@ -52,7 +54,7 @@ export default function NativeVerifyEmailChangeRoute() {
 
   return (
     <View style={styles.screen}>
-      <View style={[styles.root, light && styles.rootLight]} testID="native-verify-email-change-screen">
+      <View style={[styles.root, { paddingTop: 20 + insets.top, paddingBottom: 20 + insets.bottom }, light && styles.rootLight]} testID="native-verify-email-change-screen">
         <View accessibilityLiveRegion="polite" style={[styles.card, light && styles.cardLight]}>
         <Text style={[styles.brand, light && styles.brandLight]}>POKÉMON GO NEXUS</Text>
         <View style={[styles.icon, state === 'error' && styles.iconError]}>

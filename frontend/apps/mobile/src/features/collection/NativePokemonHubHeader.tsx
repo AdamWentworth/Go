@@ -6,6 +6,7 @@ import {
   View,
   useWindowDimensions,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { CustomTagParent } from '@pokemongonexus/shared-contracts/users';
 import { collectionParityTokens } from '@pokemongonexus/shared-ui-tokens';
 import { NativeBackIcon } from '../../components/NativeBackIcon';
@@ -73,6 +74,7 @@ export const NativePokemonHubHeader = ({
   onReturnToContext,
 }: Props) => {
   const { width } = useWindowDimensions();
+  const insets = useSafeAreaInsets();
   const desktop = width >= 768;
   const selectedIndex = activeView === 'inventory' ? 0 : activeView === 'pokemon' ? 1 : 2;
   const hasSelection = selectionCount > 0;
@@ -92,6 +94,7 @@ export const NativePokemonHubHeader = ({
             ? selectionBackgroundColor
             : backgroundColor,
           paddingHorizontal: metrics.horizontalPadding,
+          paddingTop: collectionParityTokens.header.paddingTop + insets.top,
         },
       ]}
     >

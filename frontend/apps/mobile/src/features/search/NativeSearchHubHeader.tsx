@@ -1,4 +1,5 @@
 import { Animated, Pressable, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { NativeUiIcon } from '../../components/NativeUiIcon';
 import { useNativeColorScheme } from '../settings/useNativeColorScheme';
 
@@ -18,6 +19,7 @@ export const NativeSearchHubHeader = ({
   scrollX,
 }: Props) => {
   const light = useNativeColorScheme() === 'light';
+  const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
   const tabsWidth = Math.min(Math.max(0, width - 12), 520);
   const tabWidth = Math.max(0, tabsWidth - 8) / VIEW_ORDER.length;
@@ -29,7 +31,7 @@ export const NativeSearchHubHeader = ({
   }) ?? activeIndex * tabWidth;
 
   return (
-    <View style={[styles.header, light && styles.headerLight]}>
+    <View style={[styles.header, { paddingTop: 6 + insets.top }, light && styles.headerLight]}>
       <View style={styles.heading}>
         <Text style={[styles.eyebrow, light && styles.eyebrowLight]}>COMMUNITY DISCOVERY</Text>
         <Text accessibilityRole="header" style={[styles.title, light && styles.textLight]}>

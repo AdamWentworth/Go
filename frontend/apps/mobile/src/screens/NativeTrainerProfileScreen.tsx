@@ -9,6 +9,7 @@ import {
   View,
   useWindowDimensions,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { NativeBackIcon } from '../components/NativeBackIcon';
 import { useEffect, useRef, useState } from 'react';
 import type { NativeCollectionRow } from '../features/collection/collectionModel';
@@ -144,6 +145,7 @@ export const NativeTrainerProfileScreen = ({
   onSaveProfile,
 }: Props) => {
   const light = useNativeColorScheme() === 'light';
+  const insets = useSafeAreaInsets();
   const compactHeader = useWindowDimensions().width <= 520;
   const scrollRef = useRef<ScrollView>(null);
   const [confirmation, setConfirmation] = useState<'cancel-request' | 'remove-friend' | 'block' | null>(null);
@@ -270,7 +272,7 @@ export const NativeTrainerProfileScreen = ({
   return (
     <View style={[styles.screenRoot, light && styles.screenLight]}>
       <ScrollView
-        contentContainerStyle={[styles.content, { paddingTop: 24, paddingBottom: 116 }]}
+        contentContainerStyle={[styles.content, { paddingTop: 24 + insets.top, paddingBottom: 116 + insets.bottom }]}
         ref={scrollRef}
         style={styles.screen}
         testID="native-trainer-profile"

@@ -12,6 +12,7 @@ import {
   Text,
   View,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { NativePokemonSearchResult } from '../features/search/pokemonSearchModel';
 import {
@@ -286,6 +287,7 @@ export const NativePokemonSearchScreen = ({
   savedLocation = null,
 }: Props) => {
   const light = useNativeColorScheme() === 'light';
+  const insets = useSafeAreaInsets();
   const accent = light ? '#005bb5' : '#2f9cff';
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [filterSection, setFilterSection] = useState<NativeSearchFilterSection>('pokemon');
@@ -460,7 +462,7 @@ export const NativePokemonSearchScreen = ({
   return (
     <Fragment>
       <FlatList
-      contentContainerStyle={styles.content}
+      contentContainerStyle={[styles.content, { paddingBottom: 110 + insets.bottom }]}
       data={!isLoading && !error && displayMode === 'list' ? results : []}
       onContentSizeChange={restoreScrollPosition}
       onMomentumScrollEnd={reportScrollPosition}

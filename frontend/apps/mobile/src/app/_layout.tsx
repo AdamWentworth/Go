@@ -1,7 +1,7 @@
 import { Stack, usePathname } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { StyleSheet, View, useWindowDimensions } from 'react-native';
-import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { MobileErrorBoundary } from '../components/MobileErrorBoundary';
 import { initializeObservability } from '../observability/bootstrap';
@@ -30,17 +30,7 @@ const RootContent = () => {
         <StatusBar style={light ? 'dark' : 'light'} />
         <MobileErrorBoundary>
           <Stack
-            screenLayout={({ children, route }) => (
-              route.name === 'native'
-                ? children
-                : (
-                  <View style={[styles.windowSurface, { backgroundColor: windowSurface }]}>
-                    <SafeAreaView edges={['top', 'bottom']} style={styles.safeContent}>
-                      {children}
-                    </SafeAreaView>
-                  </View>
-                )
-            )}
+            screenLayout={({ children }) => children}
             screenOptions={{
               contentStyle: { backgroundColor: windowSurface },
               headerShown: false,
@@ -73,6 +63,5 @@ const styles = StyleSheet.create({
     backgroundColor: '#000',
   },
   appShellLight: { backgroundColor: '#f8fff9' },
-  safeContent: { flex: 1, minHeight: 0 },
   windowSurface: { flex: 1, minHeight: 0 },
 });

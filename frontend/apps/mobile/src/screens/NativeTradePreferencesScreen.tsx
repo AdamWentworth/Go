@@ -17,7 +17,7 @@ import {
   View,
   useWindowDimensions,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import {
   NativeTradePreferencePokemonCard,
@@ -247,6 +247,7 @@ export const NativeTradePreferencesScreen = ({
 }: Props) => {
   const { width } = useWindowDimensions();
   const light = useNativeColorScheme() === 'light';
+  const insets = useSafeAreaInsets();
   const slideAnimation = useNativeModalAnimation('slide');
   const fadeAnimation = useNativeModalAnimation('fade');
   const desktop = width >= 760;
@@ -718,7 +719,7 @@ export const NativeTradePreferencesScreen = ({
       columnWrapperStyle={columns > 1 ? { gap } : undefined}
       contentContainerStyle={[
         styles.editorContent,
-        { paddingHorizontal: horizontalPadding },
+        { paddingHorizontal: horizontalPadding, paddingBottom: 150 + insets.bottom },
       ]}
       data={isLoading || !selectedEntry ? [] : visibleCandidates}
       key={`${mode}:${columns}`}

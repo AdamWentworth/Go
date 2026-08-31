@@ -11,6 +11,7 @@ import {
   View,
   useWindowDimensions,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import Svg, { Circle, Path } from 'react-native-svg';
 import { GestureDetector } from 'react-native-gesture-handler';
@@ -1909,6 +1910,7 @@ export const NativeInstanceDetailScreen = ({
   canEdit = true,
 }: Props) => {
   const light = useNativeColorScheme() === 'light';
+  const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
   const desktopLayout = width >= 768;
   const shellWidth = Math.min(width * 0.95, 500);
@@ -2222,7 +2224,10 @@ export const NativeInstanceDetailScreen = ({
         <ScrollView
           contentContainerStyle={[
             styles.scrollContent,
-            { paddingTop: isTrade ? 0 : isWanted ? 10 : 30 },
+            {
+              paddingTop: insets.top + (isTrade ? 0 : isWanted ? 10 : 30),
+              paddingBottom: 104 + insets.bottom,
+            },
           ]}
           directionalLockEnabled
           keyboardShouldPersistTaps="always"

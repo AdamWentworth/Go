@@ -10,6 +10,7 @@ import {
   TextInput,
   View,
 } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import type { PokemonInstance } from "@pokemongonexus/shared-contracts/instances";
 import type {
   BasePokemon,
@@ -236,6 +237,7 @@ export const NativePvpScreen = ({
   signedIn,
 }: Props) => {
   const light = useNativeColorScheme() === "light";
+  const insets = useSafeAreaInsets();
   const workspaceScrollRef = useRef<ScrollView>(null);
   const formats = useMemo(() => buildNativePvpFormats(payload), [payload]);
   const [workspace, setWorkspace] = useState<NativePvpWorkspace>("rankings");
@@ -582,8 +584,8 @@ export const NativePvpScreen = ({
         <FlatList
           contentContainerStyle={{
             paddingHorizontal: 12,
-            paddingTop: 8,
-            paddingBottom: 96,
+            paddingTop: 8 + insets.top,
+            paddingBottom: 96 + insets.bottom,
           }}
           data={rankingRows.slice(0, 100)}
           keyExtractor={(row) => row.key}
@@ -674,7 +676,7 @@ export const NativePvpScreen = ({
     <ScrollView
       contentContainerStyle={[
         styles.scrollContent,
-        { paddingTop: 8, paddingBottom: 96 },
+        { paddingTop: 8 + insets.top, paddingBottom: 96 + insets.bottom },
       ]}
       keyboardShouldPersistTaps="always"
       ref={workspaceScrollRef}

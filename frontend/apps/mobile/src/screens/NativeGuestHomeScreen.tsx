@@ -8,6 +8,7 @@ import {
   View,
   useWindowDimensions,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, {
   Defs,
   LinearGradient,
@@ -116,6 +117,7 @@ export const NativeGuestHomeScreen = ({
   showActionMenuHint = false,
 }: Props) => {
   const light = useNativeColorScheme() === 'light';
+  const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
   const compactNavigation = width < 560;
   const reducedMotion = useNativeReducedMotion();
@@ -129,10 +131,10 @@ export const NativeGuestHomeScreen = ({
   };
   return (
     <View style={[styles.root, light && styles.rootLight]} testID="native-guest-home-screen">
-      <ScrollView contentContainerStyle={{ paddingBottom: 106 }} ref={scrollRef}>
+      <ScrollView contentContainerStyle={{ paddingBottom: 106 + insets.bottom }} ref={scrollRef}>
         <View style={styles.heroRegion}>
           <GuestHeroBackground light={light} />
-          <View style={[styles.topbar, { paddingTop: 8 }]}>
+          <View style={[styles.topbar, { paddingTop: 8 + insets.top }]}>
           <Pressable accessibilityLabel="Pokémon Go Nexus home" accessibilityRole="button" onPress={() => onNavigate('/')} style={styles.brand}>
             <Image source={{ uri: toAssetUrl(assetBaseUrl, '/images/logo/logo.png') }} style={styles.brandIcon} />
             {!compactNavigation ? <Text style={[styles.brandText, light && styles.textLight]}>Pokémon Go Nexus</Text> : null}

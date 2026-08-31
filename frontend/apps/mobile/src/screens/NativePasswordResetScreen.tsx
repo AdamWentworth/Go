@@ -10,6 +10,7 @@ import {
   TextInput,
   View,
 } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Svg, { Circle, Defs, LinearGradient, Path, Rect, Stop } from 'react-native-svg';
 import { validateNativePassword } from "../features/auth/nativeRegistrationModel";
 import { useNativeColorScheme } from '../features/settings/useNativeColorScheme';
@@ -47,6 +48,7 @@ const NativePasswordResetForm = ({
   token = null,
 }: Props) => {
   const light = useNativeColorScheme() === "light";
+  const insets = useSafeAreaInsets();
   const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
   const [confirmation, setConfirmation] = useState("");
@@ -100,7 +102,7 @@ const NativePasswordResetForm = ({
     >
       <ScrollView
         automaticallyAdjustKeyboardInsets
-        contentContainerStyle={styles.content}
+        contentContainerStyle={[styles.content, { paddingTop: insets.top, paddingBottom: insets.bottom }]}
         keyboardShouldPersistTaps="handled"
       >
         <View style={[styles.card, light && styles.cardLight]}>
