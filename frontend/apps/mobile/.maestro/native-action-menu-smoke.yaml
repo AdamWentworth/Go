@@ -5,7 +5,7 @@ tags:
   - native-action-menu
 ---
 - openLink:
-    link: ${APP_LINK_BASE}/device-smoke/collection
+    link: ${APP_LINK_BASE}/device-smoke/home
 - waitForAnimationToEnd
 - runFlow:
     when:
@@ -28,8 +28,13 @@ tags:
       - waitForAnimationToEnd
       - assertNotVisible: ".*version:.*"
 - extendedWaitUntil:
-    visible: POKÉMON
+    visible: TRAINER DASHBOARD
     timeout: 45000
+- runFlow:
+    when:
+      visible: Dismiss quick navigation hint
+    commands:
+      - tapOn: Dismiss quick navigation hint
 - tapOn:
     id: native-action-menu-anchor
 - extendedWaitUntil:
@@ -65,11 +70,12 @@ tags:
     visible: Quick navigation
     timeout: 10000
 - tapOn:
-    text: Raid
+    text: Pokémon
     waitToSettleTimeoutMs: 100
 - assertVisible: Loading
 - takeScreenshot: navigation-loading
 - extendedWaitUntil:
     notVisible: Loading
     timeout: 5000
-- assertVisible: Raid Planner
+- assertVisible: WISHLIST
+- assertVisible: TAGS

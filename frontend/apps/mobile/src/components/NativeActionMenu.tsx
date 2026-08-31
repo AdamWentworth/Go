@@ -11,7 +11,6 @@ import {
   View,
   useWindowDimensions,
 } from 'react-native';
-import { StatusBar } from 'expo-status-bar';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, {
@@ -440,8 +439,17 @@ export const NativeActionMenu = ({
   }, [reduceMotion, supportOpen, supportProgress]);
 
   const navigate = (path: string) => {
+    if (closingRef.current) return;
+    closingRef.current = true;
+    closeEnabledRef.current = false;
     setSupportOpen(false);
-    runWithLoading(ACTION_MENU_NAVIGATION_SOURCE, () => onNavigate(path));
+    runWithLoading(ACTION_MENU_NAVIGATION_SOURCE, () => {
+      // Do not leave the menu's separate Android window underneath the route
+      // loader. Gesture-navigation areas can expose the window below a
+      // transparent modal even when the loader content fills the viewport.
+      onClose();
+      onNavigate(path);
+    });
   };
   const close = () => {
     if (!closeEnabledRef.current || closingRef.current) return;
@@ -487,7 +495,6 @@ export const NativeActionMenu = ({
         ]}
         testID="native-action-menu"
       >
-        <StatusBar hidden />
         <LinearGradient
           colors={[palette.gradientStart, palette.gradientEnd]}
           end={{ x: 1, y: 1 }}

@@ -1,6 +1,6 @@
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { StyleSheet, View } from 'react-native';
+import { StyleSheet } from 'react-native';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { MobileErrorBoundary } from '../components/MobileErrorBoundary';
@@ -18,30 +18,43 @@ const RootContent = () => {
   const light = devicePreferences.colorTheme === 'light';
 
   return (
-    <GestureHandlerRootView style={styles.appShell}>
-      <SafeAreaProvider>
-        <StatusBar style={light ? 'dark' : 'light'} />
-        {/* The application shell owns top and bottom safe-area spacing. Screens
-            must not apply the same window insets a second time. */}
-        <SafeAreaView style={[styles.appShell, light && styles.appShellLight]} edges={['top', 'bottom']}>
-          <View style={[styles.appShell, light && styles.appShellLight]}>
-            <MobileErrorBoundary>
-              <Stack screenOptions={{ headerShown: false }} />
-            </MobileErrorBoundary>
-          </View>
-        </SafeAreaView>
-      </SafeAreaProvider>
-    </GestureHandlerRootView>
+    <>
+      <StatusBar style={light ? 'dark' : 'light'} />
+      <MobileErrorBoundary>
+        <Stack
+          screenLayout={({ children, route }) => (
+            route.name === 'native'
+              ? children
+              : (
+                <SafeAreaView
+                  edges={['top', 'bottom']}
+                  style={[styles.appShell, light && styles.appShellLight]}
+                >
+                  {children}
+                </SafeAreaView>
+              )
+          )}
+          screenOptions={{
+            contentStyle: light ? styles.appShellLight : styles.appShell,
+            headerShown: false,
+          }}
+        />
+      </MobileErrorBoundary>
+    </>
   );
 };
 
 export default function RootLayout() {
   return (
-    <NativeDevicePreferencesProvider>
-      <NativeAppLoadingProvider>
-        <RootContent />
-      </NativeAppLoadingProvider>
-    </NativeDevicePreferencesProvider>
+    <GestureHandlerRootView style={styles.appShell}>
+      <SafeAreaProvider>
+        <NativeDevicePreferencesProvider>
+          <NativeAppLoadingProvider>
+            <RootContent />
+          </NativeAppLoadingProvider>
+        </NativeDevicePreferencesProvider>
+      </SafeAreaProvider>
+    </GestureHandlerRootView>
   );
 }
 

@@ -1,5 +1,5 @@
 import { act, fireEvent, render } from '@testing-library/react-native';
-import { Animated, StyleSheet } from 'react-native';
+import { Animated, Modal, StyleSheet } from 'react-native';
 import {
   getNativeActionMenuGeometry,
   NativeActionMenu,
@@ -77,7 +77,26 @@ describe('NativeActionMenu', () => {
     });
   });
 
-  it('routes corner actions and reverses the fan before closing', () => {
+  it('reverses the fan before closing', () => {
+    const onClose = jest.fn();
+    const { getByLabelText } = render(
+      <NativeActionMenu
+        assetBaseUrl="https://pokegonexus.com"
+        onClose={onClose}
+        onNavigate={jest.fn()}
+        signedIn
+        visible
+      />,
+    );
+
+    act(() => jest.advanceTimersByTime(375));
+    fireEvent.press(getByLabelText('Close'));
+    expect(onClose).not.toHaveBeenCalled();
+    act(() => jest.advanceTimersByTime(300));
+    expect(onClose).toHaveBeenCalledTimes(1);
+  });
+
+  it('closes its Android modal before routing a corner action', () => {
     const onClose = jest.fn();
     const onNavigate = jest.fn();
     const { getByLabelText } = render(
@@ -90,23 +109,20 @@ describe('NativeActionMenu', () => {
       />,
     );
 
-    act(() => jest.advanceTimersByTime(375));
-    fireEvent.press(getByLabelText('Close'));
-    expect(onClose).not.toHaveBeenCalled();
-    act(() => jest.advanceTimersByTime(300));
-    expect(onClose).toHaveBeenCalledTimes(1);
-
     fireEvent.press(getByLabelText('Share Trade Board'));
+    expect(onClose).toHaveBeenCalledTimes(1);
+    expect(onClose.mock.invocationCallOrder[0]).toBeLessThan(onNavigate.mock.invocationCallOrder[0] ?? Infinity);
     expect(onNavigate).toHaveBeenCalledWith('/trade-board');
   });
 
   it('shows the canonical full-screen spinner before changing routes', () => {
+    const onClose = jest.fn();
     const onNavigate = jest.fn();
     const view = render(
       <NativeAppLoadingProvider>
         <NativeActionMenu
           assetBaseUrl="https://pokegonexus.com"
-          onClose={jest.fn()}
+          onClose={onClose}
           onNavigate={onNavigate}
           visible
         />
@@ -117,7 +133,11 @@ describe('NativeActionMenu', () => {
     expect(view.getByTestId('native-app-loading-overlay')).toBeTruthy();
     expect(view.getByTestId(/native-loading-spinner-/, { includeHiddenElements: true })).toBeTruthy();
     expect(onNavigate).not.toHaveBeenCalled();
-    act(() => jest.advanceTimersByTime(16));
+    const loadingModal = view.UNSAFE_getAllByType(Modal).find(({ props }) => props.transparent === false);
+    expect(loadingModal).toBeTruthy();
+    act(() => loadingModal?.props.onShow());
+    act(() => jest.advanceTimersByTime(32));
+    expect(onClose).toHaveBeenCalledTimes(1);
     expect(onNavigate).toHaveBeenCalledWith('/search');
   });
 
@@ -268,7 +288,10 @@ describe('NativeActionMenu', () => {
     timing.mockRestore();
   });
 
-  it('matches the canonical signed-out corner actions', () => {
+  it.each([
+    ['Register', '/register'],
+    ['Login', '/login'],
+  ] as const)('matches the canonical signed-out %s action', (label, path) => {
     const onNavigate = jest.fn();
     const { getByLabelText, queryByLabelText } = render(
       <NativeActionMenu
@@ -285,9 +308,7 @@ describe('NativeActionMenu', () => {
     expect(queryByLabelText('Profile')).toBeNull();
     expect(queryByLabelText('Share Trade Board')).toBeNull();
 
-    fireEvent.press(getByLabelText('Register'));
-    fireEvent.press(getByLabelText('Login'));
-    expect(onNavigate).toHaveBeenNthCalledWith(1, '/register');
-    expect(onNavigate).toHaveBeenNthCalledWith(2, '/login');
+    fireEvent.press(getByLabelText(label));
+    expect(onNavigate).toHaveBeenCalledWith(path);
   });
 });

@@ -1,5 +1,5 @@
 import { act, fireEvent, render } from '@testing-library/react-native';
-import { Pressable, StyleSheet, Text } from 'react-native';
+import { Modal, Pressable, StyleSheet, Text } from 'react-native';
 import {
   NativeAppLoadingProvider,
   useNativeAppLoading,
@@ -42,9 +42,16 @@ describe('NativeAppLoadingProvider', () => {
     fireEvent.press(view.getByLabelText('Navigate'));
     expect(view.getByTestId('native-app-loading-overlay')).toBeTruthy();
     expect(view.getByTestId('native-loading-spinner-dark', { includeHiddenElements: true })).toBeTruthy();
+    expect(view.UNSAFE_getByType(Modal).props).toMatchObject({
+      navigationBarTranslucent: true,
+      presentationStyle: 'overFullScreen',
+      statusBarTranslucent: true,
+      transparent: false,
+    });
     expect(action).not.toHaveBeenCalled();
 
-    act(() => jest.advanceTimersByTime(16));
+    act(() => view.UNSAFE_getByType(Modal).props.onShow());
+    act(() => jest.advanceTimersByTime(32));
     expect(action).toHaveBeenCalledTimes(1);
     expect(view.getByTestId('native-app-loading-overlay')).toBeTruthy();
 

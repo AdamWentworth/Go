@@ -1,4 +1,4 @@
-import { Redirect, useLocalSearchParams } from 'expo-router';
+import { Redirect, useLocalSearchParams, useRouter } from 'expo-router';
 import { useState } from 'react';
 import { Text, View } from 'react-native';
 import { runtimeConfig } from '../../config/runtimeConfig';
@@ -47,6 +47,7 @@ const RECENT_ROWS: NativeCollectionRow[] = [
 
 export default function DeviceSmokeHomeRoute() {
   const params = useLocalSearchParams<{ guest?: string | string[] }>();
+  const router = useRouter();
   const [showHint, setShowHint] = useState(true);
   const [lastPath, setLastPath] = useState('');
   const [actionMenuOpen, setActionMenuOpen] = useState(false);
@@ -121,11 +122,15 @@ export default function DeviceSmokeHomeRoute() {
           onClose={() => setActionMenuOpen(false)}
           onNavigate={(path) => {
             setActionMenuOpen(false);
+            if (path === '/pokemon') {
+              router.push('/device-smoke/collection');
+              return;
+            }
             setLastPath(path);
-            }}
-            pendingFriendCount={1}
-            signedIn
-            visible
+          }}
+          pendingFriendCount={1}
+          signedIn
+          visible
         />
       ) : null}
       {lastPath ? (

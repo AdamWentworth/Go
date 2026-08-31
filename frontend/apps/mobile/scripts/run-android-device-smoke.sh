@@ -25,6 +25,7 @@ smoke_reduce_motion="${POKEGONEXUS_SMOKE_REDUCE_MOTION:-false}"
 smoke_memory_mb="${POKEGONEXUS_SMOKE_MEMORY_MB:-2048}"
 smoke_runtime="${POKEGONEXUS_SMOKE_RUNTIME:-dev-client}"
 smoke_network="${POKEGONEXUS_SMOKE_NETWORK:-online}"
+smoke_navigation_mode="${POKEGONEXUS_SMOKE_NAVIGATION_MODE:-system}"
 metro_pid=""
 metro_pgid=""
 fixture_pid=""
@@ -39,6 +40,8 @@ original_animator_duration_scale=""
 accessibility_settings_changed="false"
 network_settings_changed="false"
 original_airplane_mode=""
+original_navigation_overlay=""
+navigation_overlay_changed="false"
 
 cleanup() {
   if [[ -n "${metro_pgid}" ]]; then
@@ -79,6 +82,10 @@ cleanup() {
       "${adb_bin}" -s "${device_id}" shell cmd connectivity airplane-mode disable >/dev/null 2>&1 || true
     fi
   fi
+  if [[ "${navigation_overlay_changed}" == "true" && -n "${device_id}" && -n "${original_navigation_overlay}" ]]; then
+    "${adb_bin}" -s "${device_id}" shell cmd overlay enable-exclusive \
+      --category "${original_navigation_overlay}" >/dev/null 2>&1 || true
+  fi
 }
 trap cleanup EXIT
 
@@ -117,6 +124,13 @@ case "${smoke_network}" in
   online|offline) ;;
   *)
     echo "Unsupported POKEGONEXUS_SMOKE_NETWORK: ${smoke_network} (expected online or offline)." >&2
+    exit 1
+    ;;
+esac
+case "${smoke_navigation_mode}" in
+  system|gesture|three-button) ;;
+  *)
+    echo "Unsupported POKEGONEXUS_SMOKE_NAVIGATION_MODE: ${smoke_navigation_mode} (expected system, gesture, or three-button)." >&2
     exit 1
     ;;
 esac
@@ -227,6 +241,34 @@ done
 if [[ "$("${adb_bin}" -s "${device_id}" shell getprop sys.boot_completed 2>/dev/null | tr -d '\r')" != "1" ]]; then
   echo "Android emulator did not finish booting." >&2
   exit 1
+fi
+
+# Exercise the system-window geometry that matters for the target phone. The
+# default AVD uses three-button navigation, which cannot reproduce leaks around
+# Android's bottom gesture handle. Preserve and restore the developer's active
+# overlay when a smoke explicitly selects a navigation mode.
+original_navigation_overlay="$(
+  "${adb_bin}" -s "${device_id}" shell cmd overlay list \
+    | tr -d '\r' \
+    | awk '/^\[x\] com\.android\.internal\.systemui\.navbar\./ { print $2; exit }'
+)"
+if [[ "${smoke_navigation_mode}" != "system" ]]; then
+  if [[ "${smoke_navigation_mode}" == "gesture" ]]; then
+    navigation_overlay="com.android.internal.systemui.navbar.gestural"
+  else
+    navigation_overlay="com.android.internal.systemui.navbar.threebutton"
+  fi
+  if ! "${adb_bin}" -s "${device_id}" shell cmd overlay list \
+    | grep -Fq "${navigation_overlay}"; then
+    echo "Android emulator does not expose the requested navigation overlay: ${navigation_overlay}" >&2
+    exit 1
+  fi
+  if [[ "${original_navigation_overlay}" != "${navigation_overlay}" ]]; then
+    "${adb_bin}" -s "${device_id}" shell cmd overlay enable-exclusive \
+      --category "${navigation_overlay}" >/dev/null
+    navigation_overlay_changed="true"
+    sleep 1
+  fi
 fi
 
 # The AVD's physical Pixel 8 Pro density produces a 448dp-wide window, while
@@ -486,6 +528,18 @@ mapfile -t full_window_gradient_screenshots < <(
 for full_window_gradient_screenshot in "${full_window_gradient_screenshots[@]}"; do
   node "${mobile_directory}/scripts/assert-native-action-menu-window.mjs" \
     "${full_window_gradient_screenshot}"
+done
+
+mapfile -t full_window_loading_screenshots < <(
+  find "${artifact_dir}/maestro" \
+    -type f \
+    -path '*/takeScreenshot/*' \
+    -iname '*navigation-loading*.png' \
+    | sort
+)
+for full_window_loading_screenshot in "${full_window_loading_screenshots[@]}"; do
+  node "${mobile_directory}/scripts/assert-native-loading-window.mjs" \
+    "${full_window_loading_screenshot}"
 done
 
 "${adb_bin}" -s "${device_id}" exec-out screencap -p >"${artifact_dir}/final-screen.png"

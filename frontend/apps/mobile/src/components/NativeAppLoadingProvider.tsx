@@ -8,10 +8,11 @@ import {
   useRef,
   useState,
 } from 'react';
-import { Image, InteractionManager, Modal, StyleSheet, View } from 'react-native';
+import { Image, Modal, StyleSheet, View } from 'react-native';
 import { useNativeColorScheme } from '../features/settings/useNativeColorScheme';
 
 type LoadingAction = () => void;
+type PendingLoadingAction = { action: LoadingAction; source: string };
 
 type NativeAppLoadingContextValue = {
   runWithLoading: (source: string, action: LoadingAction) => void;
@@ -21,8 +22,8 @@ type NativeAppLoadingContextValue = {
 const HIDE_DELAY_MS = 150;
 // Android may not decode the first frame of a bundled animated GIF before a
 // route transition finishes. Keep action-menu navigation covered after the
-// destination interaction settles so the canonical spinner is perceptible on
-// fast and slow devices instead of expiring mid-transition.
+// route mount starts so the canonical spinner is perceptible on fast and slow
+// devices instead of expiring mid-transition.
 const NAVIGATION_RELEASE_DELAY_MS = 1800;
 
 const NativeAppLoadingContext = createContext<NativeAppLoadingContextValue>({
@@ -36,6 +37,8 @@ export const NativeAppLoadingProvider = ({ children }: { children: ReactNode }) 
   const [activeSources, setActiveSources] = useState<Set<string>>(() => new Set());
   const [isVisible, setIsVisible] = useState(false);
   const hideTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const modalShownRef = useRef(false);
+  const pendingActionsRef = useRef<PendingLoadingAction[]>([]);
 
   const setLoadingSource = useCallback((source: string, active: boolean) => {
     if (active) setIsVisible(true);
@@ -71,23 +74,35 @@ export const NativeAppLoadingProvider = ({ children }: { children: ReactNode }) 
     };
   }, [activeSources]);
 
-  const runWithLoading = useCallback((source: string, action: LoadingAction) => {
-    setLoadingSource(source, true);
+  const flushPendingActions = useCallback(() => {
+    if (!modalShownRef.current || pendingActionsRef.current.length === 0) return;
+    const pending = pendingActionsRef.current.splice(0);
 
-    // Commit the overlay before changing routes. Navigation starts on the next
-    // frame, while release is scheduled only after React Navigation's active
-    // interaction has settled. The fixed delay is therefore a visible grace,
-    // not a race against slower route mounting.
-    requestAnimationFrame(() => {
-      try {
-        action();
-      } finally {
-        InteractionManager.runAfterInteractions(() => {
+    // Dialog.onShow means Android created the modal window. Wait two display
+    // frames as well so the opaque surface and first spinner frame are
+    // actually composited before a large destination mount can occupy the JS
+    // and UI threads.
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+      for (const { action, source } of pending) {
+        try {
+          action();
+        } finally {
           setTimeout(() => setLoadingSource(source, false), NAVIGATION_RELEASE_DELAY_MS);
-        });
+        }
       }
-    });
+    }));
   }, [setLoadingSource]);
+
+  const runWithLoading = useCallback((source: string, action: LoadingAction) => {
+    pendingActionsRef.current.push({ action, source });
+    setLoadingSource(source, true);
+    flushPendingActions();
+  }, [flushPendingActions, setLoadingSource]);
+
+  const handleModalShow = useCallback(() => {
+    modalShownRef.current = true;
+    flushPendingActions();
+  }, [flushPendingActions]);
 
   const value = useMemo(
     () => ({ runWithLoading, setLoadingSource }),
@@ -102,10 +117,12 @@ export const NativeAppLoadingProvider = ({ children }: { children: ReactNode }) 
           animationType="none"
           hardwareAccelerated
           navigationBarTranslucent
+          onDismiss={() => { modalShownRef.current = false; }}
           onRequestClose={() => undefined}
+          onShow={handleModalShow}
           presentationStyle="overFullScreen"
           statusBarTranslucent
-          transparent
+          transparent={false}
           visible
         >
           <View
