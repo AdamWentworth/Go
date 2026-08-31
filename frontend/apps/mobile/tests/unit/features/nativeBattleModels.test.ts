@@ -1,6 +1,6 @@
 import type { BasePokemon, Move } from '@pokemongonexus/shared-contracts/pokemon';
 import type { PokemonInstance } from '@pokemongonexus/shared-contracts/instances';
-import { buildNativeMaxRankings, buildNativeRaidAttackers, buildNativeRaidBosses, hydrateNativeToolCatalog, nativeTypeEffectiveness } from '../../../src/features/tools/nativeBattleModels';
+import { buildNativeMaxRankings, buildNativeRaidAttackers, buildNativeRaidBosses, buildNativeRaidCounterAttackersAsync, hydrateNativeToolCatalog, nativeTypeEffectiveness } from '../../../src/features/tools/nativeBattleModels';
 
 const fast = { move_id: 1, name: 'Vine Whip', type_id: 10, raid_power: 10, pvp_power: 5, raid_energy: 8, pvp_energy: 8, raid_cooldown: 1, pvp_turns: 2, is_fast: 1, type_name: 'grass', legacy: false, type: 'grass' } as Move;
 const charged = { ...fast, move_id: 2, name: 'Power Whip', raid_power: 90, raid_energy: -50, raid_cooldown: 2.5, is_fast: 0 } as Move;
@@ -20,7 +20,7 @@ const ownedInstance = {
   nickname: 'Leafy',
   pokemon_id: 1,
   stamina_iv: 14,
-  variant_id: '1-default',
+  variant_id: '0001-default',
 } as PokemonInstance;
 const raidBoss = {
   id: 1,
@@ -89,6 +89,17 @@ describe('native battle models', () => {
     expect(favorableDodging?.counter?.faints).toBeLessThanOrEqual(expected?.counter?.faints ?? -1);
     expect(hostileEnraged?.score).toBeLessThan(expected?.score ?? 0);
     expect(timedPartyPower?.score).toBeGreaterThan(expected?.score ?? Infinity);
+  });
+  it('cooperatively produces the same boss counter order and metrics as the canonical synchronous model', async () => {
+    const hydrated = { ...pokemon, moves: [fast, charged, secondCharged] } as BasePokemon;
+    const boss = buildNativeRaidBosses(hydrateNativeToolCatalog(
+      [hydrated],
+      [],
+      [{ pokemon_id: 1, raid_boss: [raidBoss] }],
+    ))[0];
+    const expected = buildNativeRaidAttackers({ boss, catalog: [hydrated] });
+    const actual = await buildNativeRaidCounterAttackersAsync({ boss, catalog: [hydrated] });
+    expect(actual).toEqual(expected);
   });
   it('uses the calibrated dodge success rate instead of treating every dodge as successful', () => {
     const hydrated = { ...pokemon, moves: [fast, charged, secondCharged] } as BasePokemon;

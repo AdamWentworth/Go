@@ -1,10 +1,30 @@
 import { act, fireEvent, render, screen } from '@testing-library/react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
+import type { PokemonInstance } from '@pokemongonexus/shared-contracts/instances';
 import type { BasePokemon, Move } from '@pokemongonexus/shared-contracts/pokemon';
 import { NativeMaxScreen } from '../../../src/screens/NativeMaxScreen';
 const fast = { move_id: 1, name: 'Vine Whip', raid_power: 10, raid_energy: 8, raid_cooldown: 1, is_fast: 1, type_name: 'grass', type: 'grass' } as Move;
 const charged = { ...fast, move_id: 2, name: 'Power Whip', raid_power: 90, raid_energy: -50, raid_cooldown: 2.5, is_fast: 0 } as Move;
 const catalog = [{ pokemon_id: 1, name: 'Bulbasaur', pokedex_number: 1, attack: 118, defense: 111, stamina: 128, available: 1, cp40: 1000, cp50: 1200, type1_name: 'grass', type2_name: 'poison', image_url: '/1.png', moves: [fast, charged], max: [{ pokemon_id: 1, dynamax: 1, gigantamax: 0, dynamax_release_date: null, gigantamax_release_date: null }] }] as BasePokemon[];
+const owned = {
+  instance_id: 'leafy',
+  variant_id: '0001-default',
+  pokemon_id: 1,
+  nickname: 'Leafy',
+  cp: 987,
+  level: 37,
+  attack_iv: 12,
+  defense_iv: 13,
+  stamina_iv: 14,
+  fast_move_id: 1,
+  charged_move1_id: 2,
+  is_caught: true,
+  dynamax: true,
+  max_attack: 2,
+  max_guard: 1,
+  max_spirit: 3,
+  disabled: false,
+} as PokemonInstance;
 describe('NativeMaxScreen', () => {
   beforeEach(() => jest.useFakeTimers());
   afterEach(() => {
@@ -20,5 +40,28 @@ describe('NativeMaxScreen', () => {
     fireEvent.press(screen.getByText('Boss teams'));
     expect(screen.getByText('Can this group beat Dynamax Bulbasaur?')).toBeTruthy();
     expect(screen.getByText('More help needed')).toBeTruthy();
+  });
+
+  it('renders the complete recorded copy and canonical Max-role metrics', () => {
+    render(
+      <SafeAreaProvider initialMetrics={{ frame: { x: 0, y: 0, width: 390, height: 844 }, insets: { top: 24, right: 0, bottom: 20, left: 0 } }}>
+        <NativeMaxScreen
+          assetBaseUrl="https://pokegonexus.com"
+          catalog={catalog}
+          instances={{ leafy: owned }}
+          onBack={jest.fn()}
+          onOpenPokemon={jest.fn()}
+          onRetry={jest.fn()}
+          signedIn
+        />
+      </SafeAreaProvider>,
+    );
+
+    expect(screen.getByText('1 Max-ready entries from 1 caught Max Pokémon. Uses each copy\'s recorded level, IVs, Fast Move, and Max Move levels.')).toBeTruthy();
+    expect(screen.getByText('Leafy')).toBeTruthy();
+    expect(screen.getByText('CP 987 · Level 37 · 87% IV')).toBeTruthy();
+    expect(screen.getByText('Max Move · Grass')).toBeTruthy();
+    expect(screen.getByText('Attack index')).toBeTruthy();
+    expect(screen.getByText('Max power')).toBeTruthy();
   });
 });

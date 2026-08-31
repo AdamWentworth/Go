@@ -19,6 +19,14 @@ tags:
       visible: React Native dev menu
     commands:
       - tapOn: Close
+- runFlow:
+    when:
+      visible: ".*version:.*"
+    commands:
+      - tapOn:
+          point: "90%,46%"
+      - waitForAnimationToEnd
+      - assertNotVisible: ".*version:.*"
 - extendedWaitUntil:
     visible: POKÉMON
     timeout: 45000
@@ -51,3 +59,17 @@ tags:
 - tapOn: Use (dark|light) theme
 - assertVisible: Use (dark|light) theme
 - tapOn: Close
+- tapOn:
+    id: native-action-menu-anchor
+- extendedWaitUntil:
+    visible: Quick navigation
+    timeout: 10000
+- tapOn:
+    text: Raid
+    waitToSettleTimeoutMs: 100
+- assertVisible: Loading
+- takeScreenshot: navigation-loading
+- extendedWaitUntil:
+    notVisible: Loading
+    timeout: 5000
+- assertVisible: Raid Planner

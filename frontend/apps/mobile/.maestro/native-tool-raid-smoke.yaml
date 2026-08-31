@@ -1,7 +1,7 @@
 appId: ${APP_ID}
 name: Native Raid tool smoke
 ---
-- openLink: "${APP_LINK_BASE}/device-smoke/tools?tool=raid"
+- openLink: "${APP_LINK_BASE}/device-smoke/tools?tool=raid&owned=1"
 - waitForAnimationToEnd
 - runFlow:
     when:
@@ -18,19 +18,30 @@ name: Native Raid tool smoke
 - assertVisible: "Raid Planner"
 - assertVisible: "Attacker rankings"
 - assertVisible: "ALL TYPES"
+- extendedWaitUntil:
+    visible: "Leafy.*Level 37.*87% IV"
+    timeout: 20000
+- assertVisible: "1 raid-ready entries from 1 caught.*"
+- assertVisible: "Your top raid attackers"
+- takeScreenshot: "native-tool-raid-owned-roster"
+- tapOn: "ALL POKÉMON"
 - assertVisible: "Top raid attackers"
 - takeScreenshot: "native-tool-raid-rankings"
-- tapOn: "Ranking settings"
+- tapOn:
+    id: raid-ranking-settings
 - assertVisible: "Ranking conditions"
 - assertVisible: "Attacker level"
 - takeScreenshot: "native-tool-raid-settings"
-- tapOn: "Ranking settings"
-- tapOn: "Boss counters"
+- tapOn:
+    id: raid-ranking-settings
+- tapOn:
+    id: raid-view-boss
 - assertVisible: "RAID BOSS"
 - assertVisible: "Bulbasaur"
 - assertVisible: "Search raid bosses"
 - takeScreenshot: "native-tool-raid-boss"
-- tapOn: "Ranking settings"
+- tapOn:
+    id: raid-ranking-settings
 - scrollUntilVisible:
     element:
       text: "Dodging"
@@ -46,14 +57,20 @@ name: Native Raid tool smoke
 - takeScreenshot: "native-tool-raid-boss-settings"
 - scrollUntilVisible:
     element:
-      text: "Ranking settings"
+      id: raid-ranking-settings
     direction: UP
-- tapOn: "Ranking settings"
+- tapOn:
+    id: raid-ranking-settings
+- scrollUntilVisible:
+    element:
+      text: "Tap for all stats"
+    direction: DOWN
+    timeout: 180000
 - scrollUntilVisible:
     element:
       text: "Raid setup"
-    direction: DOWN
-    timeout: 20000
+    direction: UP
+    timeout: 30000
 - tapOn: "Raid setup"
 - scrollUntilVisible:
     element:
@@ -70,6 +87,11 @@ name: Native Raid tool smoke
       text: "Custom raid party"
     direction: DOWN
 - tapOn: "Custom raid party"
+- scrollUntilVisible:
+    element:
+      text: "2 Trainers"
+    direction: DOWN
+    timeout: 30000
 - assertVisible: "2 Trainers"
 - scrollUntilVisible:
     element:

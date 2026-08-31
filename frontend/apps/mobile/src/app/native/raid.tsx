@@ -16,6 +16,12 @@ export default function NativeRaidRoute() {
   const catalog = useMemo(() => hydrateNativeToolCatalog(catalogQuery.data ?? [], movesQuery.data ?? [], raidQuery.data ?? []), [catalogQuery.data, movesQuery.data, raidQuery.data]);
   const error = [catalogQuery.error, movesQuery.error, raidQuery.error, snapshotQuery.error].find((value): value is Error => value instanceof Error)?.message ?? null;
   const navigate = (path: string) => { setMenu(false); const destination = resolveNativeActionMenuDestination(path, '/raid'); if (destination.kind === 'current') return; if (destination.kind === 'native') { router.push(destination.pathname); return; } router.push({ pathname: '/web', params: { path: destination.path } }); };
-  return <><NativeRaidScreen assetBaseUrl={runtimeConfig.api.frontendAppUrl} catalog={catalog} error={error} instances={snapshotQuery.data?.instances} isLoading={catalogQuery.isPending || movesQuery.isPending || raidQuery.isPending || Boolean(session.user && snapshotQuery.isPending)} onBack={() => router.canGoBack() ? router.back() : router.replace('/native')} onMethodology={() => router.push('/native/raid-methodology')} onOpenPokemon={(variantId) => router.push({ pathname: '/native/pokedex/[variantId]', params: { variantId } })} onRetry={() => { void catalogQuery.refetch(); void movesQuery.refetch(); void raidQuery.refetch(); if (session.user) void snapshotQuery.refetch(); }} signedIn={Boolean(session.user)} /><NativeActionMenuAnchor assetBaseUrl={runtimeConfig.api.frontendAppUrl} onPress={() => setMenu(true)} />{menu ? <NativeActionMenu assetBaseUrl={runtimeConfig.api.frontendAppUrl} onClose={() => setMenu(false)} onNavigate={navigate} visible /> : null}</>;
+  return <><NativeRaidScreen assetBaseUrl={runtimeConfig.api.frontendAppUrl} catalog={catalog} error={error} instances={snapshotQuery.data?.instances} isLoading={catalogQuery.isPending || movesQuery.isPending || raidQuery.isPending || Boolean(session.user && snapshotQuery.isPending)} onBack={() => router.canGoBack() ? router.back() : router.replace('/native')} onMethodology={() => router.push('/native/raid-methodology')} onOpenPokemon={(entry) => {
+    if (entry.sourceInstanceId) {
+      router.push({ pathname: '/native/collection/[instanceId]', params: { instanceId: entry.sourceInstanceId } });
+      return;
+    }
+    const variantId = entry.variantId ?? `${String(entry.pokemonId).padStart(4, '0')}-default`;
+    router.push({ pathname: '/native/pokedex/[variantId]', params: { variantId } });
+  }} onRetry={() => { void catalogQuery.refetch(); void movesQuery.refetch(); void raidQuery.refetch(); if (session.user) void snapshotQuery.refetch(); }} signedIn={Boolean(session.user)} /><NativeActionMenuAnchor assetBaseUrl={runtimeConfig.api.frontendAppUrl} onPress={() => setMenu(true)} />{menu ? <NativeActionMenu assetBaseUrl={runtimeConfig.api.frontendAppUrl} onClose={() => setMenu(false)} onNavigate={navigate} visible /> : null}</>;
 }
-

@@ -100,6 +100,7 @@ describe('NativeInstanceDetailScreen', () => {
       await new Promise<void>((resolve) => setTimeout(resolve, 240));
     });
     expect(screen.getByText('Wanted Pokémon')).toBeTruthy();
+    expect(screen.getByTestId('native-instance-scroll').props.nestedScrollEnabled).toBe(true);
     expect(screen.getByText('CP2499')).toBeTruthy();
     expect(screen.getByText('15')).toBeTruthy();
     fireEvent.press(screen.getByRole('button', { name: 'Edit Pokémon' }));

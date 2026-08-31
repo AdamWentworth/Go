@@ -91,6 +91,8 @@ describe('NativeHorizontalPageSlider', () => {
     expect(typeof slider.props.onScroll).toBe('function');
     expect(slider.props.scrollEventThrottle).toBe(16);
     expect(slider.props.pagingEnabled).toBe(true);
+    expect(slider.props.scrollEnabled).toBe(false);
+    expect(slider.props.keyboardShouldPersistTaps).toBe('always');
   });
 
   it('keeps inactive pages out of touch and accessibility navigation', async () => {

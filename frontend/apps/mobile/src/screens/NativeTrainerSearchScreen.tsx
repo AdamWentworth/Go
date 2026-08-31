@@ -151,6 +151,7 @@ export const NativeTrainerSearchScreen = ({
       ref={listRef}
       scrollEventThrottle={100}
       keyboardShouldPersistTaps="handled"
+      nestedScrollEnabled
       keyExtractor={(row) => row.username.toLocaleLowerCase()}
       ListHeaderComponent={(
         <>

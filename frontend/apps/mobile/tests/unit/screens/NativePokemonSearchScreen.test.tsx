@@ -147,6 +147,29 @@ describe('NativePokemonSearchScreen', () => {
     expect(view.getByText('#0025')).toBeTruthy();
   });
 
+  it('commits a Pokémon selection from the searchable picker', () => {
+    const onDraftChange = jest.fn();
+    const unselectedDraft = { ...draft, pokemonId: null, pokemonName: '', form: null };
+    const view = render(
+      <NativePokemonSearchScreen
+        {...baseProps}
+        draft={unselectedDraft}
+        onDraftChange={onDraftChange}
+      />,
+    );
+
+    fireEvent.press(view.getByRole('button', { name: 'Choose Pokémon' }));
+    fireEvent.changeText(view.getByLabelText('Search Choose a Pokémon'), 'Pika');
+    fireEvent.press(view.getByRole('radio', { name: 'Select Pikachu' }));
+
+    expect(onDraftChange).toHaveBeenCalledWith(expect.objectContaining({
+      pokemonId: 25,
+      pokemonName: 'Pikachu',
+      form: null,
+    }));
+    expect(view.queryByTestId('native-option-picker')).toBeNull();
+  });
+
   it('returns a submitted search to the complete primary controls before editing', () => {
     const view = render(
       <NativePokemonSearchScreen {...baseProps} hasSearched results={[result]} />,

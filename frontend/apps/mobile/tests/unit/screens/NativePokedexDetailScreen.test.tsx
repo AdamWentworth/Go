@@ -6,13 +6,13 @@ const baseEntry = {
   id: '0001-default', pokemonId: 1, pokedexNumber: 1, name: 'Bulbasaur',
   imageUri: '/bulbasaur.png', typeIconUris: ['/images/types/grass.png', '/images/types/poison.png'], maxKind: null,
   category: 'pokemon' as const, generation: 1, instanceRegistered: false,
-  manualRegistrationIds: [], registered: false, registeredFacets: [], registeredSpecies: false,
+  manualRegistrationIds: [], registered: false, registeredFacets: [], released: true, registeredSpecies: false,
 };
 const entry = {
   id: '0001-shiny', pokemonId: 1, pokedexNumber: 1, name: 'Shiny Bulbasaur',
   imageUri: '/bulbasaur.png', typeIconUris: ['/images/types/grass.png', '/images/types/poison.png'], maxKind: null,
   category: 'shiny' as const, generation: 1, instanceRegistered: false,
-  manualRegistrationIds: [], registered: false, registeredFacets: [], registeredSpecies: false,
+  manualRegistrationIds: [], registered: false, registeredFacets: [], released: true, registeredSpecies: false,
 };
 const pokemon = {
   pokemon_id: 1, name: 'Bulbasaur', pokedex_number: 1, generation: 1,
@@ -61,5 +61,19 @@ describe('NativePokedexDetailScreen', () => {
     const lockedCombination = screen.UNSAFE_getAllByProps({ accessibilityLabel: 'Unregister Shiny Lucky' })[0];
     expect(lockedCombination?.props.accessibilityState).toEqual(expect.objectContaining({ disabled: true }));
     expect(onToggleRegistration).not.toHaveBeenCalled();
+  });
+
+  it('uses the canonical female artwork when the gender selector changes', () => {
+    const genderEntry = {
+      ...entry,
+      femaleImageUri: '/female-shiny-bulbasaur.png',
+      supportedGenders: ['Male', 'Female'] as ('Male' | 'Female')[],
+    };
+    render(<SafeAreaProvider initialMetrics={{ frame: { x: 0, y: 0, width: 390, height: 844 }, insets: { top: 24, right: 0, bottom: 20, left: 0 } }}><NativePokedexDetailScreen allEntries={[baseEntry, genderEntry]} assetBaseUrl="https://pokegonexus.com" entry={genderEntry} onBack={jest.fn()} onOpenEntry={jest.fn()} onSetRegistrations={jest.fn()} onToggleRegistration={jest.fn()} pokemon={pokemon} signedIn /></SafeAreaProvider>);
+
+    fireEvent.press(screen.getByLabelText('Show Female Shiny Bulbasaur'));
+    expect(screen.getByTestId('native-pokedex-detail-hero-image').props.source).toEqual({
+      uri: 'https://pokegonexus.com/female-shiny-bulbasaur.png',
+    });
   });
 });

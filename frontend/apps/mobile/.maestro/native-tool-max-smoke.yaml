@@ -1,7 +1,7 @@
 appId: ${APP_ID}
 name: Native Max Battles tool smoke
 ---
-- openLink: "${APP_LINK_BASE}/device-smoke/tools?tool=max"
+- openLink: "${APP_LINK_BASE}/device-smoke/tools?tool=max&owned=1"
 - waitForAnimationToEnd
 - runFlow:
     when:
@@ -18,6 +18,17 @@ name: Native Max Battles tool smoke
 - extendedWaitUntil:
     visible: "Max Battles"
     timeout: 45000
+- extendedWaitUntil:
+    visible: "Leafy"
+    timeout: 20000
+- assertVisible: "CP 987.*Level 37.*87% IV"
+- assertVisible: "Max Move.*Grass"
+- assertVisible: "Attack index"
+- assertVisible: "Max power"
+- assertVisible: "1 Max-ready entries from 1 caught Max Pokémon.*"
+- assertVisible: "Recorded level.*recorded IVs.*recorded Fast Move.*"
+- takeScreenshot: "native-tool-max-owned-roster"
+- tapOn: "ALL POKÉMON"
 - assertVisible: "Top damage dealers"
 - takeScreenshot: "native-tool-max-initial"
 - tapOn: "Tank"

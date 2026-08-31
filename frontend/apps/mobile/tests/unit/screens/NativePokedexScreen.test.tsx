@@ -2,7 +2,18 @@ import { fireEvent, render, screen } from '@testing-library/react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { NativePokedexScreen } from '../../../src/screens/NativePokedexScreen';
 
-const entry = { id: '0001-shiny', pokemonId: 1, pokedexNumber: 1, name: 'Shiny Bulbasaur', imageUri: '/bulbasaur.png', typeIconUris: [], maxKind: null, category: 'shiny' as const, generation: 1, instanceRegistered: true, manualRegistrationIds: [], registered: true, registeredFacets: [{}], registeredSpecies: true };
+const entry = { id: '0001-shiny', pokemonId: 1, pokedexNumber: 1, name: 'Shiny Bulbasaur', imageUri: '/bulbasaur.png', typeIconUris: [], maxKind: null, category: 'shiny' as const, generation: 1, instanceRegistered: true, manualRegistrationIds: [], registered: true, registeredFacets: [{}], released: true, registeredSpecies: true, supportedGenders: ['Male', 'Female'] as ('Male' | 'Female')[] };
+const unreleasedEntry = {
+  ...entry,
+  id: '0002-shiny',
+  instanceRegistered: false,
+  name: 'Shiny Futuremon',
+  pokedexNumber: 2,
+  pokemonId: 2,
+  registered: false,
+  registeredFacets: [],
+  released: false,
+};
 
 describe('NativePokedexScreen', () => {
   it('supports region, category, and query filtering and opens an exact entry', () => {
@@ -21,6 +32,38 @@ describe('NativePokedexScreen', () => {
       expect.objectContaining({ entryId: entry.id, registrationId: entry.id }),
     ], true);
     fireEvent.press(screen.getByLabelText('Open Shiny Bulbasaur'));
-    expect(onOpenEntry).toHaveBeenCalledWith(entry);
+    expect(onOpenEntry).toHaveBeenCalledWith(entry, {});
+  });
+
+  it('keeps gender and size filters mutually exclusive like the web Pokédex', () => {
+    render(<SafeAreaProvider initialMetrics={{ frame: { x: 0, y: 0, width: 390, height: 844 }, insets: { top: 24, right: 0, bottom: 20, left: 0 } }}><NativePokedexScreen assetBaseUrl="https://pokegonexus.com" entries={[entry]} onBack={jest.fn()} onOpenEntry={jest.fn()} onRetry={jest.fn()} onSetRegistrations={jest.fn()} /></SafeAreaProvider>);
+    fireEvent.press(screen.getByLabelText('Advanced Pokédex filters'));
+    fireEvent.press(screen.getByRole('button', { name: 'Male' }));
+    expect(screen.getByRole('button', { name: 'Male' }).props.accessibilityState.selected).toBe(true);
+    fireEvent.press(screen.getByRole('button', { name: 'Female' }));
+    expect(screen.getByRole('button', { name: 'Male' }).props.accessibilityState.selected).toBe(false);
+    expect(screen.getByRole('button', { name: 'Female' }).props.accessibilityState.selected).toBe(true);
+    fireEvent.press(screen.getByRole('button', { name: 'XXS' }));
+    fireEvent.press(screen.getByRole('button', { name: 'XXL' }));
+    expect(screen.getByRole('button', { name: 'XXS' }).props.accessibilityState.selected).toBe(false);
+    expect(screen.getByRole('button', { name: 'XXL' }).props.accessibilityState.selected).toBe(true);
+  });
+
+  it('shows unreleased species without opening or manually registering them', () => {
+    const onOpenEntry = jest.fn();
+    const onSetRegistrations = jest.fn();
+    render(<SafeAreaProvider initialMetrics={{ frame: { x: 0, y: 0, width: 390, height: 844 }, insets: { top: 24, right: 0, bottom: 20, left: 0 } }}><NativePokedexScreen assetBaseUrl="https://pokegonexus.com" entries={[entry, unreleasedEntry]} onBack={jest.fn()} onOpenEntry={onOpenEntry} onRetry={jest.fn()} onSetRegistrations={onSetRegistrations} /></SafeAreaProvider>);
+    fireEvent.press(screen.getByText('Shiny'));
+    fireEvent.press(screen.getByLabelText('Open Kanto'));
+
+    expect(screen.getByText('Unreleased')).toBeTruthy();
+    expect(screen.getByLabelText('Open Shiny Futuremon').props.accessibilityState.disabled).toBe(true);
+    expect(screen.queryByLabelText('Register Shiny Futuremon')).toBeNull();
+    fireEvent.press(screen.getByText('Register all'));
+    fireEvent.press(screen.getAllByText('Register all')[1]);
+    expect(onSetRegistrations).toHaveBeenCalledWith([
+      expect.objectContaining({ entryId: entry.id }),
+    ], true);
+    expect(onOpenEntry).not.toHaveBeenCalled();
   });
 });

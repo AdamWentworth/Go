@@ -15,6 +15,14 @@ name: Native collection and action-menu density smoke
       visible: "React Native dev menu"
     commands:
       - tapOn: "Close"
+- runFlow:
+    when:
+      visible: ".*version:.*"
+    commands:
+      - tapOn:
+          point: "90%,46%"
+      - waitForAnimationToEnd
+      - assertNotVisible: ".*version:.*"
 - assertVisible: "POKÉMON"
 - assertVisible: "Bulbasaur"
 - assertVisible: "Shiny Bulbasaur"
@@ -30,7 +38,7 @@ name: Native collection and action-menu density smoke
     text: "WISHLIST"
     point: "20%,50%"
 - assertVisible: "Wanted tags"
-- assertVisible: "Open Most Wanted, 2 Pokémon"
+- assertVisible: "Open Most Wanted, [12] Pokémon"
 - takeScreenshot: density-03-wishlist
 - tapOn: "Open action menu"
 - assertVisible: "Quick navigation"

@@ -405,6 +405,40 @@ export const NativeTradePreferencesScreen = ({
     }
   };
 
+  const workspaceHeader = (
+    <>
+      <View style={styles.heading}>
+        <Text style={[styles.pageTitle, light && styles.textLight]}>Trade Preferences</Text>
+        <Text style={[styles.pageDescription, light && styles.secondaryLight]}>
+          Choose acceptable matches for each For Trade and Wanted Pokémon.
+        </Text>
+      </View>
+      <View accessibilityRole="tablist" style={[styles.modeTabs, light && styles.modeTabsLight]}>
+        {(['trade', 'wanted'] as const).map((option) => {
+          const optionTone = tone(option, light);
+          const active = mode === option;
+          return (
+            <Pressable
+              aria-selected={active}
+              accessibilityRole="tab"
+              accessibilityState={{ selected: active }}
+              key={option}
+              onPress={() => chooseMode(option)}
+              style={[
+                styles.modeTab,
+                active && { backgroundColor: optionTone.soft, borderColor: optionTone.accent },
+              ]}
+            >
+              <Text style={[styles.modeTabLabel, light && styles.modeTabLabelLight, active && { color: optionTone.accent }]}>
+                {`${optionTone.label} (${entries[option].length})`}
+              </Text>
+            </Pressable>
+          );
+        })}
+      </View>
+    </>
+  );
+
   const editorHeader = selectedEntry ? (
     <View>
       {!desktop ? (
@@ -649,6 +683,7 @@ export const NativeTradePreferencesScreen = ({
       data={visibleCandidates}
       key={`${mode}:${columns}`}
       keyExtractor={(candidate) => candidate.collectionKey}
+      keyboardShouldPersistTaps="always"
       ListEmptyComponent={(
         <View style={[styles.empty, light && styles.surfaceLight]}>
           <Text style={[styles.emptyTitle, light && styles.textLight]}>
@@ -661,8 +696,14 @@ export const NativeTradePreferencesScreen = ({
           </Text>
         </View>
       )}
-      ListHeaderComponent={editorHeader}
+      ListHeaderComponent={(
+        <>
+          {!desktop ? workspaceHeader : null}
+          {editorHeader}
+        </>
+      )}
       numColumns={columns}
+      nestedScrollEnabled
       renderItem={({ item }) => (
         <NativeTradePreferencePokemonCard
           assetBaseUrl={assetBaseUrl}
@@ -705,38 +746,10 @@ export const NativeTradePreferencesScreen = ({
           </Pressable>
         </View>
       ) : null}
-      <View style={styles.heading}>
-        <Text style={[styles.pageTitle, light && styles.textLight]}>Trade Preferences</Text>
-        <Text style={[styles.pageDescription, light && styles.secondaryLight]}>
-          Choose acceptable matches for each For Trade and Wanted Pokémon.
-        </Text>
-      </View>
-      <View accessibilityRole="tablist" style={[styles.modeTabs, light && styles.modeTabsLight]}>
-        {(['trade', 'wanted'] as const).map((option) => {
-          const optionTone = tone(option, light);
-          const active = mode === option;
-          return (
-            <Pressable
-              aria-selected={active}
-              accessibilityRole="tab"
-              accessibilityState={{ selected: active }}
-              key={option}
-              onPress={() => chooseMode(option)}
-              style={[
-                styles.modeTab,
-                active && { backgroundColor: optionTone.soft, borderColor: optionTone.accent },
-              ]}
-            >
-              <Text style={[styles.modeTabLabel, light && styles.modeTabLabelLight, active && { color: optionTone.accent }]}>
-                {`${optionTone.label} (${entries[option].length})`}
-              </Text>
-            </Pressable>
-          );
-        })}
-      </View>
+      {desktop || !selectedEntry || isLoading ? workspaceHeader : null}
       <View style={styles.workspace}>
         {desktop ? (
-          <ScrollView contentContainerStyle={styles.entryRail} style={[styles.entryRailViewport, light && styles.railLight]}>
+          <ScrollView contentContainerStyle={styles.entryRail} keyboardShouldPersistTaps="always" nestedScrollEnabled style={[styles.entryRailViewport, light && styles.railLight]}>
             <Text style={[styles.railHeading, { color: colors.accent }]}>{colors.label.toLocaleUpperCase()}</Text>
             {currentEntries.map((entry) => (
               <EntrySummary
@@ -802,6 +815,8 @@ export const NativeTradePreferencesScreen = ({
             contentContainerStyle={styles.pickerList}
             data={currentEntries}
             keyExtractor={(entry) => entry.collectionKey}
+            keyboardShouldPersistTaps="always"
+            nestedScrollEnabled
             renderItem={({ item }) => (
               <EntrySummary
                 assetBaseUrl={assetBaseUrl}

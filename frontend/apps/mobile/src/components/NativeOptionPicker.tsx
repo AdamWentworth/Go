@@ -83,13 +83,15 @@ export const NativeOptionPicker = ({
         <FlatList
           contentContainerStyle={styles.content}
           data={filtered}
-          keyboardShouldPersistTaps="handled"
+          keyboardShouldPersistTaps="always"
           keyExtractor={(option) => option.key}
           ListEmptyComponent={<Text style={[styles.empty, light && styles.secondaryLight]}>{emptyLabel}</Text>}
           renderItem={({ item }) => {
             const selected = item.key === selectedKey;
             return (
               <Pressable
+                accessible
+                accessibilityLabel={`Select ${item.label}`}
                 accessibilityRole="radio"
                 accessibilityState={{ selected }}
                 onPress={() => onSelect(item)}

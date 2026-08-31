@@ -579,23 +579,17 @@ const TargetSummary = ({
           </View>
         </View>
         {rows.length > 0 ? (
-          <ScrollView
-            nestedScrollEnabled
-            showsVerticalScrollIndicator
-            style={styles.targetGridViewport}
-          >
-            <View style={styles.targetGrid}>
-              {rows.map((row) => (
-                <TargetCard
-                  assetBaseUrl={assetBaseUrl}
-                  key={row.id}
-                  onPress={onOpenTarget ? () => onOpenTarget(row.id) : undefined}
-                  palette={palette}
-                  row={row}
-                />
-              ))}
-            </View>
-          </ScrollView>
+          <View style={[styles.targetGridViewport, styles.targetGrid]} testID="native-instance-target-list">
+            {rows.map((row) => (
+              <TargetCard
+                assetBaseUrl={assetBaseUrl}
+                key={row.id}
+                onPress={onOpenTarget ? () => onOpenTarget(row.id) : undefined}
+                palette={palette}
+                row={row}
+              />
+            ))}
+          </View>
         ) : (
           <Text style={[styles.noTargets, { color: palette.secondary }]}>No matching targets are configured.</Text>
         )}
@@ -1189,7 +1183,7 @@ const NativeCaughtMetadataControls = ({
           {locationSuggestions.length > 0 ? (
             <ScrollView
               accessibilityLabel="Location suggestions"
-              keyboardShouldPersistTaps="handled"
+              keyboardShouldPersistTaps="always"
               nestedScrollEnabled
               showsVerticalScrollIndicator={locationSuggestions.length > 4}
               style={[styles.locationSuggestions, { backgroundColor: palette.panel, borderColor: palette.border }]}
@@ -2231,10 +2225,12 @@ export const NativeInstanceDetailScreen = ({
             { paddingTop: isTrade ? 0 : isWanted ? 10 : 30 },
           ]}
           directionalLockEnabled
-          keyboardShouldPersistTaps="handled"
+          keyboardShouldPersistTaps="always"
+          nestedScrollEnabled
           ref={scrollRef}
           showsVerticalScrollIndicator={false}
           style={styles.scroll}
+          testID="native-instance-scroll"
         >
           <View
             style={[styles.shell, { width: shellWidth }]}
@@ -3147,7 +3143,7 @@ const styles = StyleSheet.create({
   targetsTitle: { flex: 1, fontSize: 16, fontWeight: '900' },
   targetCount: { minWidth: 34, height: 26, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 8, borderRadius: 13 },
   targetCountText: { color: '#fff', fontSize: 12, fontWeight: '900' },
-  targetGridViewport: { maxHeight: 346, marginTop: 5 },
+  targetGridViewport: { marginTop: 5 },
   targetGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 7, paddingBottom: 3 },
   targetCard: {
     width: '31.8%',

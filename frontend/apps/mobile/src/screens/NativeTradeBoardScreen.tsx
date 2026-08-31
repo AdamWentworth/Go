@@ -143,6 +143,8 @@ export const NativeTradeBoardScreen = ({
     <View style={[styles.root, light && styles.rootLight]} testID="native-trade-board-screen">
       <ScrollView
         contentContainerStyle={[styles.content, { paddingTop: 8, paddingBottom: 112 }]}
+        keyboardShouldPersistTaps="always"
+        nestedScrollEnabled
       >
         {editable ? (
         <View style={[styles.header, light && styles.headerLight]}>

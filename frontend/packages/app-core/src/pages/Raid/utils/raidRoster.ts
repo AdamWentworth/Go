@@ -1,5 +1,5 @@
-import type { InstancesMap, PokemonInstance } from "@/types/pokemonInstance";
-import type { PokemonVariant } from "@/types/pokemonVariants";
+import type { InstancesMap, PokemonInstance } from "../../../types/pokemonInstance";
+import type { PokemonVariant } from "../../../types/pokemonVariants";
 import {
   getLegalRaidChargedMoves,
   getLegalRaidFastMoves,

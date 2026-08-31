@@ -1,10 +1,10 @@
-import type { PokemonVariant } from '@/types/pokemonVariants';
+import type { PokemonVariant } from '../../../types/pokemonVariants';
 import type {
   Move,
   PokemonMovesChunk,
   PokemonPvPRankingEntry,
   PokemonPvPRankingMove,
-} from '@shared-contracts/pokemon';
+} from '@pokemongonexus/shared-contracts/pokemon';
 
 import { toPvPRankingMove } from './pvpRoster';
 

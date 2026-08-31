@@ -34,6 +34,9 @@ const fastMove = {
   raid_power: 10,
   raid_energy: 8,
   raid_cooldown: 1,
+  pvp_power: 5,
+  pvp_energy: 8,
+  pvp_turns: 2,
   is_fast: 1,
   type_name: "grass",
   type: "grass",
@@ -45,6 +48,9 @@ const chargedMove = {
   raid_power: 90,
   raid_energy: -50,
   raid_cooldown: 2.5,
+  pvp_power: 90,
+  pvp_energy: -50,
+  pvp_turns: 1,
   is_fast: 0,
 } as Move;
 const FALLBACK_BATTLE_CATALOG = [
@@ -374,6 +380,7 @@ const pokedexEntry = {
   manualRegistrationIds: [],
   registered: true,
   registeredFacets: [{}],
+  released: true,
   registeredSpecies: true,
 };
 const basePokedexEntry = {
@@ -438,7 +445,7 @@ const RAID_INSTANCE = {
   variant_id: "0006-default",
   pokemon_id: 6,
   nickname: "League Ace",
-  cp: 2844,
+  cp: 2_844,
   level: 38,
   attack_iv: 15,
   defense_iv: 14,
@@ -452,6 +459,46 @@ const RAID_INSTANCE = {
   registered: true,
   favorite: true,
   disabled: false,
+} as PokemonInstance;
+const OWNED_BATTLE_INSTANCE = {
+  instance_id: "0001-default_demo-leafy",
+  variant_id: "0001-default",
+  pokemon_id: 1,
+  nickname: "Leafy",
+  cp: 987,
+  level: 37,
+  attack_iv: 12,
+  defense_iv: 13,
+  stamina_iv: 14,
+  fast_move_id: 15,
+  charged_move1_id: 108,
+  charged_move2_id: null,
+  is_caught: true,
+  is_for_trade: false,
+  is_wanted: false,
+  registered: true,
+  favorite: true,
+  dynamax: true,
+  gigantamax: false,
+  max_attack: 2,
+  max_guard: 1,
+  max_spirit: 3,
+  disabled: false,
+} as PokemonInstance;
+const OWNED_PVP_INSTANCE = {
+  ...OWNED_BATTLE_INSTANCE,
+  instance_id: "0001-default_demo-pvp-leafy",
+  cp: 1_477,
+  level: 40,
+  attack_iv: 0,
+  defense_iv: 15,
+  stamina_iv: 15,
+  fast_move_id: 1,
+  charged_move1_id: 2,
+  dynamax: false,
+  max_attack: null,
+  max_guard: null,
+  max_spirit: null,
 } as PokemonInstance;
 const noOp = () => undefined;
 
@@ -531,8 +578,13 @@ function DeviceSmokeRankings() {
 }
 
 export default function DeviceSmokeToolsRoute() {
-  const params = useLocalSearchParams<{ tool?: string | string[] }>();
+  const params = useLocalSearchParams<{
+    owned?: string | string[];
+    tool?: string | string[];
+  }>();
   const tool = Array.isArray(params.tool) ? params.tool[0] : params.tool;
+  const ownedParam = Array.isArray(params.owned) ? params.owned[0] : params.owned;
+  const ownedFixture = ownedParam === "1";
   const needsCatalog = tool === "pokedex" || tool === "raid" || tool === "max";
   const [catalog, setCatalog] = useState<BasePokemon[]>(FALLBACK_BATTLE_CATALOG);
   const [catalogReady, setCatalogReady] = useState(false);
@@ -585,7 +637,9 @@ export default function DeviceSmokeToolsRoute() {
         <NativeRaidScreen
           assetBaseUrl={ASSET_BASE_URL}
           catalog={catalog}
-          instances={{ '0006-default_demo-charizard': RAID_INSTANCE }}
+          instances={ownedFixture
+            ? { "0001-default_demo-leafy": OWNED_BATTLE_INSTANCE }
+            : { "0006-default_demo-charizard": RAID_INSTANCE }}
           onBack={noOp}
           onMethodology={noOp}
           onOpenPokemon={noOp}
@@ -601,12 +655,13 @@ export default function DeviceSmokeToolsRoute() {
         <NativePvpScreen
           assetBaseUrl={ASSET_BASE_URL}
           catalog={FALLBACK_BATTLE_CATALOG}
+          instances={ownedFixture ? { "0001-default_demo-pvp-leafy": OWNED_PVP_INSTANCE } : {}}
           onBack={noOp}
           onMethodology={noOp}
           onRetry={noOp}
           payload={canonicalPvpPayload}
           persistTeamBuilder={false}
-          signedIn={false}
+          signedIn
         />
       </DeviceSmokeToolChrome>
     );
@@ -617,7 +672,7 @@ export default function DeviceSmokeToolsRoute() {
         <NativeMaxScreen
           assetBaseUrl={ASSET_BASE_URL}
           catalog={catalog}
-          instances={{}}
+          instances={ownedFixture ? { "0001-default_demo-leafy": OWNED_BATTLE_INSTANCE } : {}}
           onBack={noOp}
           onOpenPokemon={noOp}
           onRetry={noOp}

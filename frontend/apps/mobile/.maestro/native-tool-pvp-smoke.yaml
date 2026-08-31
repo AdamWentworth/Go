@@ -1,7 +1,7 @@
 appId: ${APP_ID}
 name: Native PvP tool smoke
 ---
-- openLink: "${APP_LINK_BASE}/device-smoke/tools?tool=pvp"
+- openLink: "${APP_LINK_BASE}/device-smoke/tools?tool=pvp&owned=1"
 - waitForAnimationToEnd
 - runFlow:
     when:
@@ -16,8 +16,29 @@ name: Native PvP tool smoke
     commands:
       - tapOn: Close
 - assertVisible: "PvP Rankings"
-- assertVisible: "Bulbasaur"
+- scrollUntilVisible:
+    element:
+      text: "Bulbasaur"
+    direction: DOWN
+    timeout: 15000
 - takeScreenshot: "native-pvp-rankings"
+- scrollUntilVisible:
+    element:
+      text: "My Pokémon"
+    direction: UP
+    timeout: 15000
+- tapOn: "My Pokémon"
+- extendedWaitUntil:
+    visible: "Leafy"
+    timeout: 10000
+- assertVisible: ".*1 fully detailed from 1 caught.*evaluated locally against 3 meta opponents.*"
+- extendedWaitUntil:
+    visible: ".*evaluated locally against 3 meta opponents.*"
+    timeout: 20000
+- assertVisible: "CP 1,477"
+- assertVisible: "0/15/15 IV"
+- takeScreenshot: "native-pvp-owned-roster"
+- tapOn: "All Pokémon"
 - tapOn: "Team Builder"
 - assertVisible: "THREE-POKÉMON TEAM"
 - runFlow:
@@ -41,11 +62,11 @@ name: Native PvP tool smoke
 - tapOn: "Add suggested Bulbasaur"
 - scrollUntilVisible:
     element:
-      text: "Add suggested Ivysaur"
+      text: "Add suggested Clodsire"
     direction: DOWN
     speed: 40
     timeout: 15000
-- tapOn: "Add suggested Ivysaur"
+- tapOn: "Add suggested Clodsire"
 - assertVisible: "2 / 3"
 - takeScreenshot: "native-pvp-team-builder-filled"
 - scrollUntilVisible:
@@ -110,7 +131,7 @@ name: Native PvP tool smoke
 - tapOn: "IV Rank"
 - runFlow:
     when:
-      visible: "SDK version:.*"
+      visible: ".*version:.*"
     commands:
       # The development client can place its own unlabeled developer-tools close control over
       # this tab. Target that control directly; a text selector can report a
@@ -118,7 +139,7 @@ name: Native PvP tool smoke
       - tapOn:
           point: "90%,46%"
       - waitForAnimationToEnd
-      - assertNotVisible: "SDK version:.*"
+      - assertNotVisible: ".*version:.*"
       - tapOn: "IV Rank"
 - assertVisible: "Find the strongest IV spread for this league"
 - tapOn: "Bulbasaur"

@@ -7,6 +7,13 @@ import {
   buildPokemonCatalogEntries,
   type PokemonCatalogEntry,
 } from '@pokemongonexus/shared-domain/catalog';
+import createPokemonVariants from '@pokemongonexus/app-core/pokemon-variants';
+import {
+  createManualPokedexRegistration,
+  projectPokedexRegistrations,
+  type PokedexRegistrationFacets,
+} from '@pokemongonexus/app-core/pokedex-registration';
+import { determineImageUrl } from '@pokemongonexus/app-core/image-helpers';
 
 export type NativePokedexCategory =
   | 'pokemon'
@@ -54,12 +61,17 @@ export type NativePokedexManualRegistration = {
 
 export type NativePokedexEntry = PokemonCatalogEntry & {
   category: NativePokedexCategory;
+  femaleImageUri?: string | null;
   generation: number;
   instanceRegistered: boolean;
   manualRegistrationIds: string[];
   registered: boolean;
+  registeredCategory?: boolean;
+  registeredCategoryFacets?: NativePokedexRegistrationFacets[];
   registeredFacets: NativePokedexRegistrationFacets[];
+  released: boolean;
   registeredSpecies: boolean;
+  supportedGenders?: ('Male' | 'Female')[];
 };
 
 const categoryFor = (entry: PokemonCatalogEntry): NativePokedexCategory => {
@@ -75,7 +87,9 @@ const categoryFor = (entry: PokemonCatalogEntry): NativePokedexCategory => {
   const shadow = suffix.includes('shadow');
   const isBase = suffix === 'default' || suffix === 'shiny' || isBaseShadow;
   const costume = !isBase;
-  if (shiny && shadow && costume) return 'shadow costume';
+  // Match Vite's precedence: a shiny shadow costume is represented in the
+  // Shiny Costume index, while non-shiny shadow costumes use Shadow Costume.
+  if (shiny && shadow && costume) return 'shiny costume';
   if (shiny && costume) return 'shiny costume';
   if (shadow && costume) return 'shadow costume';
   if (shiny && shadow) return 'shiny shadow';
@@ -83,61 +97,6 @@ const categoryFor = (entry: PokemonCatalogEntry): NativePokedexCategory => {
   if (shadow) return 'shadow';
   if (shiny) return 'shiny';
   return 'pokemon';
-};
-
-const finiteNumber = (value: unknown): number | null => {
-  if (value === null || value === undefined || value === '') return null;
-  const number = typeof value === 'number' ? value : Number(value);
-  return Number.isFinite(number) ? number : null;
-};
-
-const classifySize = (
-  value: number,
-  thresholds: { xxs: number; xs: number; xl: number; xxl: number },
-): NativePokedexSize => {
-  if (value <= thresholds.xxs) return 'xxs';
-  if (value <= thresholds.xs) return 'xs';
-  if (value >= thresholds.xxl) return 'xxl';
-  if (value >= thresholds.xl) return 'xl';
-  return 'normal';
-};
-
-const deriveSize = (pokemon: BasePokemon, instance: PokemonInstance): NativePokedexSize | undefined => {
-  const sizes = pokemon.sizes;
-  if (!sizes) return undefined;
-  const height = finiteNumber(instance.height);
-  if (height !== null) {
-    return classifySize(height, {
-      xxs: sizes.height_xxs_threshold,
-      xs: sizes.height_xs_threshold,
-      xl: sizes.height_xl_threshold,
-      xxl: sizes.height_xxl_threshold,
-    });
-  }
-  const weight = finiteNumber(instance.weight);
-  if (weight !== null) {
-    return classifySize(weight, {
-      xxs: sizes.weight_xxs_threshold,
-      xs: sizes.weight_xs_threshold,
-      xl: sizes.weight_xl_threshold,
-      xxl: sizes.weight_xxl_threshold,
-    });
-  }
-  return undefined;
-};
-
-const registrationFacetsFor = (
-  pokemon: BasePokemon,
-  instance: PokemonInstance,
-): NativePokedexRegistrationFacets => {
-  const facets: NativePokedexRegistrationFacets = {};
-  const size = deriveSize(pokemon, instance);
-  if (size) facets.size = size;
-  if (instance.lucky) facets.lucky = true;
-  if (instance.purified) facets.purified = true;
-  if (instance.gender === 'Male' || instance.gender === 'Female') facets.gender = instance.gender;
-  if (finiteNumber(instance.attack_iv) === 15 && finiteNumber(instance.defense_iv) === 15 && finiteNumber(instance.stamina_iv) === 15) facets.appraisal = '4-star';
-  return facets;
 };
 
 const matchesFacet = (
@@ -151,9 +110,36 @@ const matchesFacet = (
   return facets.size === facet;
 };
 
-const isRegistrationSource = (instance: PokemonInstance): boolean => (
-  Boolean(instance.registered || instance.is_caught || instance.is_for_trade)
-);
+const supportedGendersFor = (pokemon: BasePokemon): ('Male' | 'Female')[] => {
+  const genderRate = String(pokemon.gender_rate ?? '').trim();
+  if (!genderRate) return ['Male', 'Female'];
+
+  const maleRate = genderRate.match(/(\d+)M/)?.[1];
+  const femaleRate = genderRate.match(/(\d+)F/)?.[1];
+  if (maleRate !== undefined || femaleRate !== undefined) {
+    const supported: ('Male' | 'Female')[] = [];
+    if (Number(maleRate ?? 0) > 0) supported.push('Male');
+    if (Number(femaleRate ?? 0) > 0) supported.push('Female');
+    return supported;
+  }
+
+  if (genderRate === 'M/M') return ['Male'];
+  if (genderRate === 'F/F') return ['Female'];
+  if (genderRate === 'M/F' || genderRate === 'F/M') return ['Male', 'Female'];
+  return [];
+};
+
+const nativeFacetsFromCanonical = (
+  facets: PokedexRegistrationFacets,
+): NativePokedexRegistrationFacets => {
+  const result: NativePokedexRegistrationFacets = {};
+  if (facets.size === 'xxs' || facets.size === 'xs' || facets.size === 'normal' || facets.size === 'xl' || facets.size === 'xxl') result.size = facets.size;
+  if (facets.gender === 'Male' || facets.gender === 'Female') result.gender = facets.gender;
+  if (facets.lucky === true) result.lucky = true;
+  if (facets.purified === true) result.purified = true;
+  if (facets.appraisal === '4-star') result.appraisal = '4-star';
+  return result;
+};
 
 /** Adds unreleased species to the native index exactly as the web Pokédex does. */
 export const mergeNativePokedexSpecies = (
@@ -172,7 +158,7 @@ export const mergeNativePokedexSpecies = (
       generation: species.generation,
       available: 0,
       gender_rate: species.gender_rate ?? '',
-      image_url: species.image_url ?? '',
+      image_url: species.image_url || `/images/disabled/disabled_${species.pokemon_id}.png`,
       image_url_shiny: '',
       image_url_shadow: '',
       image_url_shiny_shadow: '',
@@ -196,51 +182,65 @@ export const buildNativePokedexEntries = (
   manualRegistrations: NativePokedexManualRegistration[] = [],
 ): NativePokedexEntry[] => {
   const generationByPokemon = new Map(catalog.map((pokemon) => [pokemon.pokemon_id, pokemon.generation]));
-  const dexByPokemon = new Map(catalog.map((pokemon) => [pokemon.pokemon_id, pokemon.pokedex_number]));
   const pokemonById = new Map(catalog.map((pokemon) => [pokemon.pokemon_id, pokemon]));
-  const registeredInstances = Object.values(instances).filter(isRegistrationSource);
-  const instancesByVariant = new Map<string, PokemonInstance[]>();
-  const registeredPokemonIds = new Set<number>();
-  registeredInstances.forEach((instance) => {
-    registeredPokemonIds.add(instance.pokemon_id);
-    const current = instancesByVariant.get(instance.variant_id) ?? [];
-    current.push(instance);
-    instancesByVariant.set(instance.variant_id, current);
-  });
+  const catalogEntries = buildPokemonCatalogEntries(catalog);
+  const catalogEntryById = new Map(catalogEntries.map((entry) => [entry.id, entry]));
+  const variants = createPokemonVariants(catalog);
+  const variantById = new Map(variants.map((variant) => [variant.variant_id, variant]));
   const manualByVariant = new Map<string, NativePokedexManualRegistration[]>();
   manualRegistrations.forEach((registration) => {
     const current = manualByVariant.get(registration.entryId) ?? [];
     current.push(registration);
     manualByVariant.set(registration.entryId, current);
   });
-  const manuallyRegisteredPokemonIds = new Set(
-    buildPokemonCatalogEntries(catalog)
-      .filter((entry) => manualByVariant.has(entry.id))
-      .map((entry) => entry.pokemonId),
+  const canonicalManualRegistrations = manualRegistrations.flatMap((registration) => {
+    const variant = variantById.get(registration.entryId);
+    return variant
+      ? [createManualPokedexRegistration(variant, registration.facets)]
+      : [];
+  });
+  const projectedRegistrations = projectPokedexRegistrations(
+    variants,
+    instances,
+    canonicalManualRegistrations,
   );
-  const registeredDexNumbers = new Set(
-    [...registeredPokemonIds, ...manuallyRegisteredPokemonIds]
-      .map((pokemonId) => dexByPokemon.get(pokemonId))
-      .filter((dexNumber): dexNumber is number => dexNumber != null),
-  );
-  return buildPokemonCatalogEntries(catalog).map((entry) => ({
-    ...entry,
-    category: categoryFor(entry),
-    generation: generationByPokemon.get(entry.pokemonId) ?? 0,
-    instanceRegistered: instancesByVariant.has(entry.id),
-    manualRegistrationIds: (manualByVariant.get(entry.id) ?? []).map(({ registrationId }) => registrationId),
-    registered: instancesByVariant.has(entry.id) || manualByVariant.has(entry.id),
-    registeredFacets: [
-      ...(instancesByVariant.get(entry.id) ?? []).map((instance) => (
-        registrationFacetsFor(pokemonById.get(entry.pokemonId)!, instance)
-      )),
-      ...(manualByVariant.get(entry.id) ?? []).map(({ facets }) => facets),
-    ],
-    // The canonical Pokédex treats the base, shiny, and shadow indexes as
-    // species indexes. Registering any form of a species therefore registers
-    // the collapsed regional row for that Pokédex number.
-    registeredSpecies: registeredDexNumbers.has(entry.pokedexNumber),
-  }));
+  const registeredByVariant = new Map<string, typeof projectedRegistrations>();
+  const registeredCategoryFacets = new Map<string, NativePokedexRegistrationFacets[]>();
+  projectedRegistrations.filter(({ is_registered: registered }) => registered).forEach((registration) => {
+    const current = registeredByVariant.get(registration.base_variant_id) ?? [];
+    current.push(registration);
+    registeredByVariant.set(registration.base_variant_id, current);
+
+    const catalogEntry = catalogEntryById.get(registration.base_variant_id);
+    if (!catalogEntry) return;
+    const key = `${categoryFor(catalogEntry)}:${catalogEntry.pokedexNumber}`;
+    registeredCategoryFacets.set(key, [
+      ...(registeredCategoryFacets.get(key) ?? []),
+      nativeFacetsFromCanonical(registration.facets),
+    ]);
+  });
+
+  return catalogEntries.map((entry) => {
+    const category = categoryFor(entry);
+    const projectedForVariant = registeredByVariant.get(entry.id) ?? [];
+    const categoryFacets = registeredCategoryFacets.get(`${category}:${entry.pokedexNumber}`) ?? [];
+    const variant = variantById.get(entry.id);
+    return {
+      ...entry,
+      category,
+      femaleImageUri: variant ? determineImageUrl(true, variant) : entry.imageUri,
+      generation: generationByPokemon.get(entry.pokemonId) ?? 0,
+      instanceRegistered: projectedForVariant.some(({ source }) => source === 'instance'),
+      manualRegistrationIds: (manualByVariant.get(entry.id) ?? []).map(({ registrationId }) => registrationId),
+      registered: projectedForVariant.length > 0,
+      registeredCategory: categoryFacets.length > 0,
+      registeredCategoryFacets: categoryFacets,
+      registeredFacets: projectedForVariant.map(({ facets }) => nativeFacetsFromCanonical(facets)),
+      released: Number(pokemonById.get(entry.pokemonId)?.available ?? 1) !== 0,
+      registeredSpecies: (registeredCategoryFacets.get(`pokemon:${entry.pokedexNumber}`) ?? []).length > 0,
+      supportedGenders: supportedGendersFor(pokemonById.get(entry.pokemonId)!),
+    };
+  });
 };
 
 const registrationFacetOrder: (keyof NativePokedexRegistrationFacets)[] = [
@@ -256,6 +256,19 @@ export const buildNativePokedexRegistrationId = (
     return value == null ? [] : [`${key}:${String(value).toLocaleLowerCase()}`];
   }).join('|');
   return suffix ? `${entryId}|${suffix}` : entryId;
+};
+
+export const nativePokedexEntryIsRegistered = (
+  entry: NativePokedexEntry,
+  category: NativePokedexCategory,
+  facets: NativePokedexFacet[] = [],
+): boolean => {
+  const registrations = category === 'pokemon' || category === 'shiny' || category === 'shadow'
+    ? entry.registeredCategoryFacets ?? entry.registeredFacets
+    : entry.registeredFacets;
+  return registrations.some((registration) => (
+    facets.every((facet) => matchesFacet(registration, facet))
+  ));
 };
 
 export const filterNativePokedexEntries = ({
@@ -275,9 +288,9 @@ export const filterNativePokedexEntries = ({
   const filtered = entries.filter((entry) => {
     if (generation != null && entry.generation !== generation) return false;
     if (entry.category !== category) return false;
-    if (facets.length > 0 && !entry.registeredFacets.some((registration) => (
-      facets.every((facet) => matchesFacet(registration, facet))
-    ))) return false;
+    if (facets.includes('male') && entry.supportedGenders && !entry.supportedGenders.includes('Male')) return false;
+    if (facets.includes('female') && entry.supportedGenders && !entry.supportedGenders.includes('Female')) return false;
+    if (category.includes('shadow') && (facets.includes('lucky') || facets.includes('purified'))) return false;
     return !normalized || entry.name.toLocaleLowerCase().includes(normalized)
       || String(entry.pokedexNumber).includes(normalized);
   });

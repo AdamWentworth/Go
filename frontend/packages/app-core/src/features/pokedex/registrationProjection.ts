@@ -1,6 +1,6 @@
-import type { PokemonInstance } from '@/types/pokemonInstance';
-import type { PokemonVariant } from '@/types/pokemonVariants';
-import type { Instances } from '@/types/instances';
+import type { PokemonInstance } from '../../types/pokemonInstance';
+import type { PokemonVariant } from '../../types/pokemonVariants';
+import type { Instances } from '../../types/instances';
 
 export type PokedexRegistrationFacetValue = string | number | boolean | null;
 export type PokedexRegistrationFacets = Record<string, PokedexRegistrationFacetValue>;

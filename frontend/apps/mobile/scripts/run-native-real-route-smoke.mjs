@@ -866,7 +866,7 @@ const assertSignedInSettingsAccountWorkflow = async (context) => {
 
     await page.getByRole('button', { name: 'Profile visibility, Everyone', exact: true }).click();
     await page.getByTestId('native-option-picker').waitFor({ state: 'visible', timeout: 10_000 });
-    await page.getByRole('radio', { name: 'Friends only', exact: true }).click();
+    await page.getByRole('radio', { name: 'Select Friends only', exact: true }).click();
     await page.getByRole('button', { name: 'Save privacy', exact: true }).click();
     await page.getByText('Privacy settings saved.', { exact: true })
       .waitFor({ state: 'visible', timeout: 15_000 });

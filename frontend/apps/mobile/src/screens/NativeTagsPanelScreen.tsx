@@ -470,6 +470,7 @@ export const NativeTagsPanelScreen = ({
         data={orderedTags}
         initialNumToRender={3}
         keyExtractor={(tag) => tag.key}
+        nestedScrollEnabled
         maxToRenderPerBatch={3}
         removeClippedSubviews
         updateCellsBatchingPeriod={48}

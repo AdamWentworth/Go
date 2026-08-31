@@ -10,7 +10,7 @@ import type { NativePokedexEntry } from '../../../src/features/tools/nativePoked
 const entry = (overrides: Partial<NativePokedexEntry>): NativePokedexEntry => ({
   id: '0001-default', pokemonId: 1, pokedexNumber: 1, name: 'Bulbasaur', imageUri: '/bulbasaur.png',
   typeIconUris: [], maxKind: null, category: 'pokemon', generation: 1, instanceRegistered: false,
-  manualRegistrationIds: [], registered: false, registeredFacets: [], registeredSpecies: false,
+  manualRegistrationIds: [], registered: false, registeredFacets: [], released: true, registeredSpecies: false,
   ...overrides,
 });
 const pokemon = { pokemon_id: 1, gender_rate: 'M/F' } as BasePokemon;

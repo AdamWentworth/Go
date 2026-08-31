@@ -8,6 +8,7 @@ import {
 } from 'react-native';
 import type { CustomTagParent } from '@pokemongonexus/shared-contracts/users';
 import { collectionParityTokens } from '@pokemongonexus/shared-ui-tokens';
+import { NativeBackIcon } from '../../components/NativeBackIcon';
 
 export type NativePokemonHubView = 'inventory' | 'pokemon' | 'wishlist';
 
@@ -100,6 +101,7 @@ export const NativePokemonHubHeader = ({
             <Pressable
               accessibilityLabel="Back to results"
               accessibilityRole="button"
+              hitSlop={6}
               onPress={onReturnToContext}
               style={({ pressed }) => [
                 styles.catalogBack,
@@ -107,7 +109,7 @@ export const NativePokemonHubHeader = ({
                 pressed && styles.pressedTab,
               ]}
             >
-              <Text style={[styles.catalogBackIcon, { color: textColor }]}>←</Text>
+              <NativeBackIcon color={textColor} size={17} />
               {desktop ? (
                 <Text style={[styles.catalogBackText, { color: textColor }]}>Back to results</Text>
               ) : null}
@@ -221,17 +223,16 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   catalogBack: {
-    minWidth: 40,
-    minHeight: 40,
+    minWidth: 36,
+    minHeight: 36,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: 5,
-    paddingHorizontal: 10,
+    paddingHorizontal: 9,
     borderWidth: 1,
     borderRadius: 999,
   },
-  catalogBackIcon: { fontSize: 20, fontWeight: '900' },
   catalogBackText: { fontSize: 12, fontWeight: '800' },
   catalogOwner: {
     minWidth: 0,

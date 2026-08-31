@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   FlatList,
@@ -17,8 +17,11 @@ import { NativeRaidSettingsPanel } from '../components/tools/NativeRaidSettingsP
 import { NativeRaidTypeFilter } from '../components/tools/NativeRaidTypeFilter';
 import {
   buildNativeRaidAttackers,
+  buildNativeRaidCounterAttackersAsync,
   buildNativeRaidBosses,
+  buildNativeRaidRosterSummary,
   DEFAULT_NATIVE_RAID_SETTINGS,
+  type NativeCombatEntry,
   type NativeRaidSettings,
   type NativeRosterScope,
 } from '../features/tools/nativeBattleModels';
@@ -33,13 +36,14 @@ type Props = {
   isLoading?: boolean;
   onBack: () => void;
   onMethodology: () => void;
-  onOpenPokemon: (variantId: string) => void;
+  onOpenPokemon: (entry: NativeCombatEntry) => void;
   onRetry: () => void;
   signedIn: boolean;
 };
 type ViewMode = 'rankings' | 'boss';
 type RankingMetric = 'cp' | 'dps' | 'edps' | 'er' | 'tdo';
 type SortDirection = 'ascending' | 'descending';
+const EMPTY_INSTANCES: Record<string, PokemonInstance> = {};
 
 const absoluteUri = (base: string, value: string | null) => {
   if (!value) return undefined;
@@ -50,7 +54,7 @@ export const NativeRaidScreen = ({
   assetBaseUrl,
   catalog,
   error = null,
-  instances = {},
+  instances = EMPTY_INSTANCES,
   isLoading = false,
   onBack: _onBack,
   onMethodology,
@@ -71,6 +75,14 @@ export const NativeRaidScreen = ({
   const [sortDirection, setSortDirection] = useState<SortDirection>('descending');
   const [settings, setSettings] = useState<NativeRaidSettings>(DEFAULT_NATIVE_RAID_SETTINGS);
   const [observedDodgeSuccessRate, setObservedDodgeSuccessRate] = useState<number | null>(null);
+  const [bossCounterEntries, setBossCounterEntries] = useState<NativeCombatEntry[]>([]);
+  const [bossCountersLoading, setBossCountersLoading] = useState(false);
+  const bossCounterCacheRef = useRef<{
+    catalog: BasePokemon[];
+    entries: NativeCombatEntry[];
+    instances: Record<string, PokemonInstance>;
+    key: string;
+  } | null>(null);
   const effectiveSettings = useMemo<NativeRaidSettings>(() => ({
     ...settings,
     dodgeSuccessRate: observedDodgeSuccessRate ?? settings.dodgeSuccessRate,
@@ -82,19 +94,68 @@ export const NativeRaidScreen = ({
     if (!normalized) return [];
     return bosses.filter((boss) => `${boss.name} ${boss.pokemon.pokedex_number}`.toLocaleLowerCase().includes(normalized)).slice(0, 6);
   }, [bossQuery, bosses]);
-  const ownedCount = useMemo(() => Object.values(instances).filter((instance) => instance.is_caught && !instance.disabled).length, [instances]);
+  const rosterSummary = useMemo(
+    () => buildNativeRaidRosterSummary(catalog, instances),
+    [catalog, instances],
+  );
   const effectiveScope = signedIn ? scope : 'catalog';
+  const bossCounterKey = `${selectedBoss?.id ?? ''}:${effectiveScope}:${JSON.stringify(effectiveSettings)}`;
+
+  useEffect(() => {
+    if (view !== 'boss' || !selectedBoss) return undefined;
+    const cached = bossCounterCacheRef.current;
+    if (
+      cached?.catalog === catalog
+      && cached.instances === instances
+      && cached.key === bossCounterKey
+    ) return undefined;
+    let cancelled = false;
+    const timer = setTimeout(() => {
+      if (cancelled) return;
+      setBossCounterEntries([]);
+      setBossCountersLoading(true);
+      void buildNativeRaidCounterAttackersAsync({
+        boss: selectedBoss,
+        catalog,
+        instances,
+        scope: effectiveScope,
+        settings: effectiveSettings,
+        shouldCancel: () => cancelled,
+      }).then((entries) => {
+        if (!cancelled) {
+          bossCounterCacheRef.current = {
+            catalog,
+            entries,
+            instances,
+            key: bossCounterKey,
+          };
+          setBossCounterEntries(entries);
+          setBossCountersLoading(false);
+        }
+      }).catch(() => {
+        if (!cancelled) {
+          setBossCounterEntries([]);
+          setBossCountersLoading(false);
+        }
+      });
+    }, 0);
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
+  }, [bossCounterKey, catalog, effectiveScope, effectiveSettings, instances, selectedBoss, view]);
 
   const rankings = useMemo(() => {
     const normalizedQuery = query.trim().toLocaleLowerCase();
-    const rows = buildNativeRaidAttackers({
-      boss: view === 'boss' ? selectedBoss : null,
-      catalog,
-      instances,
-      requiredType: view === 'rankings' ? selectedType : '',
-      scope: effectiveScope,
-      settings: effectiveSettings,
-    }).filter((entry) => !normalizedQuery || [
+    const rows = (view === 'boss'
+      ? [...bossCounterEntries]
+      : buildNativeRaidAttackers({
+          catalog,
+          instances,
+          requiredType: selectedType,
+          scope: effectiveScope,
+          settings: effectiveSettings,
+        })).filter((entry) => !normalizedQuery || [
       entry.name,
       entry.fastMove?.name,
       entry.chargedMove?.name,
@@ -113,7 +174,7 @@ export const NativeRaidScreen = ({
       ));
     }
     return rows.slice(0, 100);
-  }, [catalog, effectiveScope, effectiveSettings, instances, query, rankingMetric, selectedBoss, selectedType, sortDirection, view]);
+  }, [bossCounterEntries, catalog, effectiveScope, effectiveSettings, instances, query, rankingMetric, selectedType, sortDirection, view]);
 
   const customSettingCount = [
     settings.attackerLevel !== DEFAULT_NATIVE_RAID_SETTINGS.attackerLevel,
@@ -129,6 +190,22 @@ export const NativeRaidScreen = ({
   ].filter(Boolean).length;
 
   const switchView = (next: ViewMode) => {
+    if (next === 'boss') {
+      const cached = bossCounterCacheRef.current;
+      if (
+        cached?.catalog === catalog
+        && cached.instances === instances
+        && cached.key === bossCounterKey
+      ) {
+        setBossCounterEntries(cached.entries);
+        setBossCountersLoading(false);
+      } else {
+        setBossCounterEntries([]);
+        setBossCountersLoading(true);
+      }
+    } else {
+      setBossCountersLoading(false);
+    }
     setView(next);
     setExpandedId(null);
     setQuery('');
@@ -173,6 +250,7 @@ export const NativeRaidScreen = ({
           key={value}
           onPress={() => switchView(value)}
           style={[styles.modeButton, view === value && styles.modeActive]}
+          testID={`raid-view-${value}`}
         >
           <NativeUiIcon color={view === value ? '#06120f' : light ? '#172124' : '#ecf5f4'} name={value === 'rankings' ? 'chart' : 'target'} size={14} />
           <Text style={[styles.modeText, light && styles.textLight, view === value && styles.modeTextActive]}>{label}</Text>
@@ -183,7 +261,7 @@ export const NativeRaidScreen = ({
 
   const roster = (
     <View accessibilityLabel="Raid attacker roster" style={[styles.roster, light && styles.panelLight]}>
-      {([['catalog', 'ALL POKÉMON'], ['owned', `MY POKÉMON${effectiveScope === 'owned' ? `   ${ownedCount}` : ''}`]] as const).map(([value, label]) => (
+      {([['catalog', 'ALL POKÉMON'], ['owned', `MY POKÉMON${effectiveScope === 'owned' ? `   ${isLoading ? '…' : rosterSummary.eligibleCount}` : ''}`]] as const).map(([value, label]) => (
         <Pressable
           accessibilityRole="button"
           accessibilityState={{ disabled: value === 'owned' && !signedIn, selected: effectiveScope === value }}
@@ -203,6 +281,20 @@ export const NativeRaidScreen = ({
           </View>
         </Pressable>
       ))}
+      {effectiveScope === 'owned' ? (
+        <Text accessibilityLiveRegion="polite" style={[styles.rosterDescription, light && styles.mutedLight]}>
+          {isLoading
+            ? 'Loading your raid roster'
+            : [
+              `${rosterSummary.eligibleCount} raid-ready entries from ${rosterSummary.caughtCount} caught.`,
+              "Uses each copy's current level, IVs, CP, and recorded moves.",
+              rosterSummary.projectedFormCount > 0 ? `${rosterSummary.projectedFormCount} available fusion, crowned, or Mega form entries included.` : '',
+              rosterSummary.incompleteEntryCount > 0 ? `${rosterSummary.incompleteEntryCount} caught entries need complete battle details before ranking.` : '',
+              rosterSummary.hiddenPowerEstimatedCount > 0 ? `${rosterSummary.hiddenPowerEstimatedCount} Hidden Power rolls use a marked type estimate.` : '',
+              rosterSummary.unmappedCount > 0 ? `${rosterSummary.unmappedCount} could not be matched to the current catalog.` : '',
+            ].filter(Boolean).join(' ')}
+        </Text>
+      ) : null}
     </View>
   );
 
@@ -242,6 +334,7 @@ export const NativeRaidScreen = ({
           accessibilityState={{ expanded: settingsOpen }}
           onPress={() => setSettingsOpen((current) => !current)}
           style={[styles.settingsButton, light && styles.controlLight, settingsOpen && styles.settingsActive]}
+          testID="raid-ranking-settings"
         >
           <View style={styles.iconLabelRow}>
             <NativeUiIcon color={light ? '#172124' : '#edf6f5'} name="filters" size={14} />
@@ -342,7 +435,7 @@ export const NativeRaidScreen = ({
       </View>
       {toolbar}
       {view === 'boss' && selectedBoss ? <NativeRaidBossSetupPanel assetBaseUrl={assetBaseUrl} boss={selectedBoss} key={selectedBoss.id} onObservedDodgeRateChange={setObservedDodgeSuccessRate} scores={rankings} /> : null}
-      {isLoading ? <View style={styles.state}><ActivityIndicator color="#2fd6d0" /><Text style={[styles.stateCopy, light && styles.mutedLight]}>Loading battle data…</Text></View> : null}
+      {isLoading || bossCountersLoading ? <View accessibilityRole="progressbar" style={styles.state}><ActivityIndicator color="#2fd6d0" /><Text style={[styles.stateCopy, light && styles.mutedLight]}>{bossCountersLoading ? 'Modeling raid timelines…' : 'Loading battle data…'}</Text></View> : null}
       {error ? (
         <View accessibilityRole="alert" style={styles.error}>
           <Text style={styles.errorTitle}>Raid Planner unavailable</Text>
@@ -359,8 +452,10 @@ export const NativeRaidScreen = ({
         contentContainerStyle={{ paddingHorizontal: 8, paddingTop: 4, paddingBottom: 96 }}
         data={rankings}
         keyExtractor={(entry) => entry.id}
+        keyboardShouldPersistTaps="always"
+        nestedScrollEnabled
         ListHeaderComponent={header}
-        ListEmptyComponent={!isLoading && !error ? (
+        ListEmptyComponent={!isLoading && !bossCountersLoading && !error ? (
           <View style={[styles.empty, light && styles.emptyLight]}>
             <Text style={[styles.emptyTitle, light && styles.textLight]}>No compatible attackers</Text>
             <Text style={[styles.stateCopy, light && styles.mutedLight]}>{effectiveScope === 'owned' ? 'No caught attackers match the current filters. Add level, IV, CP, and move details to improve personalized rankings.' : 'Try another boss, type, or search.'}</Text>
@@ -371,7 +466,7 @@ export const NativeRaidScreen = ({
             assetBaseUrl={assetBaseUrl}
             entry={item}
             expanded={expandedId === item.id}
-            onOpenPokemon={() => onOpenPokemon(`${item.pokemonId}-default`)}
+            onOpenPokemon={() => onOpenPokemon(item)}
             onToggle={() => setExpandedId((current) => current === item.id ? null : item.id)}
             primaryMetric={view === 'rankings' ? rankingMetric : 'dps'}
             rank={index + 1}
@@ -406,12 +501,13 @@ const styles = StyleSheet.create({
   modeIcon: { color: '#d5e5e5', fontSize: 11, fontWeight: '900' },
   modeText: { color: '#d5e5e5', fontSize: 10.5, fontWeight: '900' },
   modeTextActive: { color: '#071214' },
-  roster: { flexDirection: 'row', gap: 5, borderWidth: 1, borderColor: '#355153', borderRadius: 13, padding: 5, backgroundColor: '#101819' },
+  roster: { flexDirection: 'row', flexWrap: 'wrap', gap: 5, borderWidth: 1, borderColor: '#355153', borderRadius: 13, padding: 5, backgroundColor: '#101819' },
   rosterButton: { flex: 1, minHeight: 37, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: '#435758', borderRadius: 999, backgroundColor: '#1b2526' },
   rosterActive: { borderColor: '#2fd6d0', backgroundColor: '#45dbc4' },
   rosterText: { color: '#e6f1f1', fontSize: 9.5, fontWeight: '900' },
   iconLabelRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6 },
   rosterTextActive: { color: '#071214' },
+  rosterDescription: { width: '100%', paddingHorizontal: 7, paddingVertical: 4, color: '#a3b5b6', fontSize: 9.5, lineHeight: 14, textAlign: 'center' },
   disabled: { opacity: .45 },
   toolbar: { gap: 7 },
   fieldLabel: { color: '#a3b5b6', fontSize: 9, fontWeight: '900', letterSpacing: .8 },

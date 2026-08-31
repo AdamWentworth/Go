@@ -1,5 +1,5 @@
 import type { BasePokemon } from '@pokemongonexus/shared-contracts/pokemon';
-import { buildNativePokedexEntries, filterNativePokedexEntries, mergeNativePokedexSpecies } from '../../../src/features/tools/nativePokedexModel';
+import { buildNativePokedexEntries, filterNativePokedexEntries, mergeNativePokedexSpecies, nativePokedexEntryIsRegistered } from '../../../src/features/tools/nativePokedexModel';
 
 const base = {
   pokemon_id: 25, name: 'Pikachu', pokedex_number: 25, generation: 1,
@@ -29,15 +29,58 @@ describe('native Pokédex model', () => {
     expect(filterNativePokedexEntries({ entries, category: 'shiny costume', generation: 1, query: '' }).map(({ name }) => name)).toEqual(['Shiny Detective Pikachu']);
   });
 
-  it('projects and filters the same quality facets used by the web Pokédex', () => {
+  it('keeps missing species visible while qualities change the registration state like the web Pokédex', () => {
     const entries = buildNativePokedexEntries([base], {
       caught: {
         instance_id: 'caught', pokemon_id: 25, variant_id: '0025-shiny', is_caught: true,
         attack_iv: 15, defense_iv: 15, stamina_iv: 15, gender: 'Female', lucky: true,
       },
     } as never);
-    expect(filterNativePokedexEntries({ entries, category: 'shiny', facets: ['lucky', 'perfect', 'female'], generation: 1, query: '' }).map(({ id }) => id)).toEqual(['0025-shiny']);
-    expect(filterNativePokedexEntries({ entries, category: 'shiny', facets: ['male'], generation: 1, query: '' })).toEqual([]);
+    const visible = filterNativePokedexEntries({ entries, category: 'shiny', facets: ['lucky', 'perfect', 'female'], generation: 1, query: '' });
+    const missingQuality = filterNativePokedexEntries({ entries, category: 'shiny', facets: ['male'], generation: 1, query: '' });
+    expect(visible.map(({ id }) => id)).toEqual(['0025-shiny']);
+    expect(nativePokedexEntryIsRegistered(visible[0]!, 'shiny', ['lucky', 'perfect', 'female'])).toBe(true);
+    expect(missingQuality.map(({ id }) => id)).toEqual(['0025-shiny']);
+    expect(nativePokedexEntryIsRegistered(missingQuality[0]!, 'shiny', ['male'])).toBe(false);
+  });
+
+  it('removes only species that cannot support the selected gender', () => {
+    const femaleOnly = { ...base, gender_rate: '0M/100F' } as unknown as BasePokemon;
+    const entries = buildNativePokedexEntries([femaleOnly]);
+    expect(filterNativePokedexEntries({ entries, category: 'pokemon', facets: ['male'], generation: 1, query: '' })).toEqual([]);
+    expect(filterNativePokedexEntries({ entries, category: 'pokemon', facets: ['female'], generation: 1, query: '' })).toHaveLength(1);
+  });
+
+  it('derives parent registrations from an exact collectible variant like Vite', () => {
+    const collectible = buildNativePokedexEntries([base]).find(({ category }) => category === 'shiny costume');
+    expect(collectible).toBeTruthy();
+    const entries = buildNativePokedexEntries([base], {
+      caught: {
+        instance_id: 'caught-costume',
+        pokemon_id: 25,
+        variant_id: collectible!.id,
+        is_caught: true,
+        lucky: true,
+        attack_iv: 15,
+        defense_iv: 15,
+        stamina_iv: 15,
+      },
+    } as never);
+    const shiny = entries.find(({ category }) => category === 'shiny');
+
+    expect(collectible?.id).toContain('shiny');
+    expect(shiny).toMatchObject({
+      registered: true,
+      registeredCategory: true,
+      registeredSpecies: true,
+    });
+    expect(filterNativePokedexEntries({
+      entries,
+      category: 'shiny',
+      facets: ['lucky', 'perfect'],
+      generation: 1,
+      query: '',
+    })).toHaveLength(1);
   });
 
   it('collapses species-level categories by Pokédex number like the web index', () => {
@@ -83,7 +126,8 @@ describe('native Pokédex model', () => {
     ]);
     const entries = buildNativePokedexEntries(merged);
     expect(filterNativePokedexEntries({ entries, category: 'pokemon', generation: null, query: '' }))
-      .toEqual(expect.arrayContaining([expect.objectContaining({ name: 'Futuremon', pokedexNumber: 999 })]));
+      .toEqual(expect.arrayContaining([expect.objectContaining({ name: 'Futuremon', pokedexNumber: 999, released: false })]));
+    expect(entries.find(({ name }) => name === 'Pikachu')?.released).toBe(true);
     expect(merged.filter(({ pokemon_id: pokemonId }) => pokemonId === 25)).toHaveLength(1);
   });
 });

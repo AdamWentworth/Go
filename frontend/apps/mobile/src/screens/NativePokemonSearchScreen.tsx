@@ -469,6 +469,7 @@ export const NativePokemonSearchScreen = ({
       ref={listRef}
       scrollEventThrottle={100}
       keyboardShouldPersistTaps="handled"
+      nestedScrollEnabled
       keyExtractor={(result) => result.id}
       ListHeaderComponent={(
         <>

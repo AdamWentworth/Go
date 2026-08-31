@@ -21,6 +21,7 @@ import type {
 import {
   buildNativePokedexRegistrationId,
   filterNativePokedexEntries,
+  nativePokedexEntryIsRegistered,
 } from '../features/tools/nativePokedexModel';
 import { NativeConfirmationDialog } from '../components/NativeConfirmationDialog';
 import Svg, {
@@ -41,7 +42,7 @@ type Props = {
   isLoading?: boolean;
   isSaving?: boolean;
   onBack: () => void;
-  onOpenEntry: (entry: NativePokedexEntry) => void;
+  onOpenEntry: (entry: NativePokedexEntry, facets?: NativePokedexRegistrationFacets) => void;
   onRetry: () => void;
   onSetRegistrations: (
     registrations: NativePokedexManualRegistration[],
@@ -143,10 +144,6 @@ const absoluteUri = (base: string, value: string | null): string | null => {
   try { return new URL(value, base).toString(); } catch { return null; }
 };
 
-const entryIsRegistered = (entry: NativePokedexEntry, category: NativePokedexCategory): boolean => (
-  category === 'pokemon' ? entry.registeredSpecies : entry.registered
-);
-
 const registrationFacetsFromSelection = (
   facets: NativePokedexFacet[],
 ): NativePokedexRegistrationFacets => facets.reduce<NativePokedexRegistrationFacets>((draft, facet) => {
@@ -237,14 +234,31 @@ export const NativePokedexScreen = ({ assetBaseUrl, entries, error = null, isLoa
   const categoryEntries = useMemo(() => REGIONS.flatMap(({ generation: regionGeneration }) => (
     filterNativePokedexEntries({ category, entries, facets, generation: regionGeneration, query: '' })
   )), [category, entries, facets]);
-  const registeredCount = categoryEntries.filter((entry) => entryIsRegistered(entry, category)).length;
+  const registeredCount = categoryEntries.filter((entry) => nativePokedexEntryIsRegistered(entry, category, facets)).length;
   const selectedRegistrationFacets = useMemo(() => registrationFacetsFromSelection(facets), [facets]);
-  const visibleRegistrations = useMemo<NativePokedexManualRegistration[]>(() => filtered.map((entry) => ({
+  const useFemaleImages = facets.includes('female');
+  const activeFacetBadges = qualityFacets.filter(({ value }) => facets.includes(value));
+  const visibleRegistrations = useMemo<NativePokedexManualRegistration[]>(() => filtered.filter(({ released }) => released).map((entry) => ({
     entryId: entry.id,
     facets: selectedRegistrationFacets,
     registrationId: buildNativePokedexRegistrationId(entry.id, selectedRegistrationFacets),
   })), [filtered, selectedRegistrationFacets]);
-  const toggleFacet = (value: NativePokedexFacet) => setFacets((current) => current.includes(value) ? current.filter((facet) => facet !== value) : [...current, value]);
+  const toggleFacet = (value: NativePokedexFacet) => setFacets((current) => {
+    if (current.includes(value)) return current.filter((facet) => facet !== value);
+    const group = value === 'male' || value === 'female'
+      ? 'gender'
+      : value === 'xxs' || value === 'xs' || value === 'xl' || value === 'xxl'
+        ? 'size'
+        : value;
+    return [
+      ...current.filter((facet) => {
+        if (group === 'gender') return facet !== 'male' && facet !== 'female';
+        if (group === 'size') return facet !== 'xxs' && facet !== 'xs' && facet !== 'xl' && facet !== 'xxl';
+        return true;
+      }),
+      value,
+    ];
+  });
   const selectCategory = (value: NativePokedexCategory) => {
     setCategory(value);
     if (value.includes('shadow')) setFacets((current) => current.filter((facet) => facet !== 'lucky' && facet !== 'purified'));
@@ -259,7 +273,7 @@ export const NativePokedexScreen = ({ assetBaseUrl, entries, error = null, isLoa
   const regionCards = REGIONS.map((region) => {
     const regionEntries = filterNativePokedexEntries({ category, entries, facets, generation: region.generation, query: '' });
     const previews = [...region.starters.map((dex) => regionEntries.find(({ pokedexNumber }) => pokedexNumber === dex)).filter((entry): entry is NativePokedexEntry => Boolean(entry)), ...regionEntries].filter((entry, index, list) => list.findIndex(({ id }) => id === entry.id) === index).slice(0, 3);
-    return { ...region, entries: regionEntries, previews, registered: regionEntries.filter((entry) => entryIsRegistered(entry, category)).length };
+    return { ...region, entries: regionEntries, previews, registered: regionEntries.filter((entry) => nativePokedexEntryIsRegistered(entry, category, facets)).length };
   }).filter(({ entries: regionEntries }) => regionEntries.length > 0);
 
   return (
@@ -268,6 +282,8 @@ export const NativePokedexScreen = ({ assetBaseUrl, entries, error = null, isLoa
         contentContainerStyle={{ paddingHorizontal: 12, paddingTop: 8, paddingBottom: 100 }}
         data={generation == null ? [] : filtered}
         key={columns}
+        keyboardShouldPersistTaps="always"
+        nestedScrollEnabled
         keyExtractor={(entry) => entry.id}
         numColumns={columns}
         ListHeaderComponent={<View>
@@ -288,13 +304,60 @@ export const NativePokedexScreen = ({ assetBaseUrl, entries, error = null, isLoa
           {error ? <View accessibilityRole="alert" style={styles.error}><Text style={styles.errorTitle}>Pokédex unavailable</Text><Text style={styles.errorText}>{error}</Text><Pressable accessibilityRole="button" onPress={onRetry} style={styles.retry}><Text style={styles.retryText}>Retry</Text></Pressable></View> : null}
           {isLoading ? <View style={styles.loading}><ActivityIndicator color="#299cf5" /><Text style={[styles.loadingText, light && styles.mutedLight]}>Opening Pokédex…</Text></View> : null}
           {!isLoading && !error && generation == null ? <View accessibilityLabel={`${activeCategory.label} regions`} style={styles.regions}>
-            {regionCards.map((region) => { const complete = region.entries.length > 0 && region.registered >= region.entries.length; return <Pressable accessibilityLabel={`Open ${region.label}`} accessibilityRole="button" key={region.label} onPress={() => { setGeneration(region.generation); setQuery(''); }} style={[styles.regionCard, light && styles.regionCardLight, { borderColor: `${region.accent}bb` }]}><RegionCardBackdrop accent={region.accent} light={light} secondary={region.secondary} tertiary={region.tertiary} /><View style={styles.regionCopy}><Text style={[styles.regionName, { color: region.text }]}>{region.label}</Text><Text style={[styles.regionStatus, light && styles.mutedLight]}>{complete ? 'Complete!' : 'In progress'}</Text><Text style={[styles.regionCount, light && styles.textLight]}>{region.registered} / {region.entries.length}</Text><View style={[styles.regionBadge, { borderColor: `${region.accent}aa` }]}><Text style={[styles.regionBadgeText, { color: complete ? region.text : '#f0b429' }]}>{complete ? '✓' : '!'}</Text></View></View><View style={styles.regionArt}>{region.previews.map((entry, index) => <View key={entry.id} style={[styles.regionPreview, { left: `${8 + index * 31}%`, zIndex: index + 1 }]}>{entry.imageUri ? <Image resizeMode="contain" source={{ uri: absoluteUri(assetBaseUrl, entry.imageUri) ?? undefined }} style={styles.regionPokemon} /> : null}{entry.maxKind ? <Image source={{ uri: absoluteUri(assetBaseUrl, `/images/${entry.maxKind}.png`) ?? undefined }} style={styles.regionMaxIcon} /> : null}</View>)}</View></Pressable>; })}
+            {regionCards.map((region) => { const complete = region.entries.length > 0 && region.registered >= region.entries.length; return <Pressable accessibilityLabel={`Open ${region.label}`} accessibilityRole="button" key={region.label} onPress={() => { setGeneration(region.generation); setQuery(''); }} style={[styles.regionCard, light && styles.regionCardLight, { borderColor: `${region.accent}bb` }]}><RegionCardBackdrop accent={region.accent} light={light} secondary={region.secondary} tertiary={region.tertiary} /><View style={styles.regionCopy}><Text style={[styles.regionName, { color: region.text }]}>{region.label}</Text><Text style={[styles.regionStatus, light && styles.mutedLight]}>{complete ? 'Complete!' : 'In progress'}</Text><Text style={[styles.regionCount, light && styles.textLight]}>{region.registered} / {region.entries.length}</Text><View style={[styles.regionBadge, { borderColor: `${region.accent}aa` }]}><Text style={[styles.regionBadgeText, { color: complete ? region.text : '#f0b429' }]}>{complete ? '✓' : '!'}</Text></View></View><View style={styles.regionArt}>{region.previews.map((entry, index) => { const imageUri = useFemaleImages ? entry.femaleImageUri : entry.imageUri; return <View key={entry.id} style={[styles.regionPreview, { left: `${8 + index * 31}%`, zIndex: index + 1 }]}>{imageUri ? <Image resizeMode="contain" source={{ uri: absoluteUri(assetBaseUrl, imageUri) ?? undefined }} style={styles.regionPokemon} /> : null}{entry.maxKind ? <Image source={{ uri: absoluteUri(assetBaseUrl, `/images/${entry.maxKind}.png`) ?? undefined }} style={styles.regionMaxIcon} /> : null}</View>; })}</View></Pressable>; })}
             {regionCards.length === 0 ? <View style={styles.empty}><Text style={[styles.emptyTitle, light && styles.textLight]}>No regions match</Text><Text style={[styles.emptyText, light && styles.mutedLight]}>Try another category or clear a quality filter.</Text></View> : null}
           </View> : null}
-          {generation != null ? <View style={styles.detailToolbar}><View style={styles.detailHeading}><Pressable accessibilityRole="button" onPress={() => { setGeneration(null); setQuery(''); }} style={[styles.regionsBack, light && styles.chipLight]}><Text style={[styles.regionsBackText, light && styles.textLight]}>‹ All regions</Text></Pressable><Text style={[styles.resultsTitle, light && styles.textLight]}>{REGIONS.find((region) => region.generation === generation)?.label} · {activeCategory.label}</Text><Text style={[styles.resultsDetail, light && styles.mutedLight]}>{filtered.filter((entry) => entryIsRegistered(entry, category)).length} / {filtered.length} registered</Text></View><TextInput accessibilityLabel="Search Pokédex" autoCapitalize="none" onChangeText={setQuery} placeholder="Pokémon or number" placeholderTextColor="#75838c" style={[styles.search, light && styles.searchLight]} value={query} /><View accessibilityLabel="Visible registration actions" style={[styles.registrationTray, light && styles.registrationTrayLight]}><View style={styles.registrationCopy}><Text style={[styles.registrationLabel, light && styles.mutedLight]}>VISIBLE</Text><Text style={[styles.registrationCount, light && styles.textLight]}>{visibleRegistrations.length}</Text></View><View style={styles.registrationActions}><Pressable accessibilityRole="button" disabled={isSaving || visibleRegistrations.length === 0} onPress={() => setBulkConfirmation({ registered: true, registrations: visibleRegistrations })} style={[styles.bulkButton, styles.bulkRegister, (isSaving || visibleRegistrations.length === 0) && styles.savingDisabled]}><Text style={styles.bulkRegisterText}>Register all</Text></Pressable><Pressable accessibilityRole="button" disabled={isSaving || visibleRegistrations.length === 0} onPress={() => setBulkConfirmation({ registered: false, registrations: visibleRegistrations })} style={[styles.bulkButton, styles.bulkClear, (isSaving || visibleRegistrations.length === 0) && styles.savingDisabled]}><Text style={styles.bulkClearText}>Unregister all</Text></Pressable></View></View></View> : null}
+          {generation != null ? <View style={styles.detailToolbar}><View style={styles.detailHeading}><Pressable accessibilityRole="button" onPress={() => { setGeneration(null); setQuery(''); }} style={[styles.regionsBack, light && styles.chipLight]}><Text style={[styles.regionsBackText, light && styles.textLight]}>‹ All regions</Text></Pressable><Text style={[styles.resultsTitle, light && styles.textLight]}>{REGIONS.find((region) => region.generation === generation)?.label} · {activeCategory.label}</Text><Text style={[styles.resultsDetail, light && styles.mutedLight]}>{filtered.filter((entry) => nativePokedexEntryIsRegistered(entry, category, facets)).length} / {filtered.length} registered</Text></View><TextInput accessibilityLabel="Search Pokédex" autoCapitalize="none" onChangeText={setQuery} placeholder="Pokémon or number" placeholderTextColor="#75838c" style={[styles.search, light && styles.searchLight]} value={query} /><View accessibilityLabel="Visible registration actions" style={[styles.registrationTray, light && styles.registrationTrayLight]}><View style={styles.registrationCopy}><Text style={[styles.registrationLabel, light && styles.mutedLight]}>VISIBLE</Text><Text style={[styles.registrationCount, light && styles.textLight]}>{visibleRegistrations.length}</Text></View><View style={styles.registrationActions}><Pressable accessibilityRole="button" disabled={isSaving || visibleRegistrations.length === 0} onPress={() => setBulkConfirmation({ registered: true, registrations: visibleRegistrations })} style={[styles.bulkButton, styles.bulkRegister, (isSaving || visibleRegistrations.length === 0) && styles.savingDisabled]}><Text style={styles.bulkRegisterText}>Register all</Text></Pressable><Pressable accessibilityRole="button" disabled={isSaving || visibleRegistrations.length === 0} onPress={() => setBulkConfirmation({ registered: false, registrations: visibleRegistrations })} style={[styles.bulkButton, styles.bulkClear, (isSaving || visibleRegistrations.length === 0) && styles.savingDisabled]}><Text style={styles.bulkClearText}>Unregister all</Text></Pressable></View></View></View> : null}
         </View>}
         ListEmptyComponent={generation != null && !isLoading && !error ? <View style={styles.empty}><Text style={[styles.emptyTitle, light && styles.textLight]}>No Pokémon match</Text><Text style={[styles.emptyText, light && styles.mutedLight]}>Try another region, category, quality, or search term.</Text></View> : null}
-        renderItem={({ item }) => { const registered = entryIsRegistered(item, category); const manualRegistration: NativePokedexManualRegistration = { entryId: item.id, facets: selectedRegistrationFacets, registrationId: buildNativePokedexRegistrationId(item.id, selectedRegistrationFacets) }; return <View style={[styles.cardCell, { width: `${100 / columns}%` }]}><View style={styles.cardWrap}><Pressable accessibilityLabel={`Open ${item.name}`} accessibilityRole="button" onPress={() => onOpenEntry(item)} style={({ pressed }) => [styles.card, light && styles.cardLight, registered && styles.cardRegistered, pressed && styles.pressed]}><View style={styles.imageStage}>{item.imageUri ? <Image resizeMode="contain" source={{ uri: absoluteUri(assetBaseUrl, item.imageUri) ?? undefined }} style={styles.image} /> : null}{item.maxKind ? <Image resizeMode="contain" source={{ uri: absoluteUri(assetBaseUrl, `/images/${item.maxKind}.png`) ?? undefined }} style={styles.maxIcon} /> : null}</View><Text numberOfLines={2} style={[styles.name, light && styles.textLight]}>{item.name}</Text><Text style={[styles.dex, light && styles.mutedLight]}>#{String(item.pokedexNumber).padStart(4, '0')}</Text><Text style={[styles.state, registered && styles.stateRegistered]}>{registered ? 'Registered' : 'Missing'}</Text></Pressable><Pressable accessibilityLabel={`${registered ? 'Clear' : 'Register'} ${item.name}`} accessibilityRole="button" accessibilityState={{ selected: registered }} disabled={isSaving} onPress={() => onSetRegistrations([manualRegistration], !registered)} style={[styles.registrationToggle, registered && styles.registrationToggleActive, isSaving && styles.savingDisabled]}><Text style={styles.registrationToggleText}>{registered ? '✓' : '+'}</Text></Pressable></View></View>; }}
+        renderItem={({ item }) => {
+          const registered = nativePokedexEntryIsRegistered(item, category, facets);
+          const imageUri = useFemaleImages ? item.femaleImageUri : item.imageUri;
+          const manualRegistration: NativePokedexManualRegistration = {
+            entryId: item.id,
+            facets: selectedRegistrationFacets,
+            registrationId: buildNativePokedexRegistrationId(item.id, selectedRegistrationFacets),
+          };
+          return <View style={[styles.cardCell, { width: `${100 / columns}%` }]}>
+            <View style={styles.cardWrap}>
+              <Pressable
+                accessibilityLabel={`Open ${item.name}`}
+                accessibilityRole="button"
+                accessibilityState={{ disabled: !item.released }}
+                disabled={!item.released}
+                onPress={() => onOpenEntry(item, selectedRegistrationFacets)}
+                style={({ pressed }) => [
+                  styles.card,
+                  light && styles.cardLight,
+                  registered && styles.cardRegistered,
+                  !item.released && styles.cardUnreleased,
+                  pressed && styles.pressed,
+                ]}
+              >
+                <View style={styles.imageStage}>
+                  {imageUri ? <Image resizeMode="contain" source={{ uri: absoluteUri(assetBaseUrl, imageUri) ?? undefined }} style={styles.image} /> : null}
+                  {activeFacetBadges.length > 0 ? <View pointerEvents="none" style={styles.facetBadgeStack}>
+                    {activeFacetBadges.map((facet) => <View key={facet.value} style={[styles.facetBadge, light && styles.facetBadgeLight]}>
+                      <Image source={{ uri: absoluteUri(assetBaseUrl, facet.icon) ?? undefined }} style={[styles.facetBadgeIcon, light && DARK_ON_LIGHT_FACET_ICONS.has(facet.icon) && styles.darkFacetIcon]} />
+                    </View>)}
+                  </View> : null}
+                  {item.maxKind ? <Image resizeMode="contain" source={{ uri: absoluteUri(assetBaseUrl, `/images/${item.maxKind}.png`) ?? undefined }} style={styles.maxIcon} /> : null}
+                </View>
+                <Text numberOfLines={2} style={[styles.name, light && styles.textLight]}>{item.name}</Text>
+                <Text style={[styles.dex, light && styles.mutedLight]}>#{String(item.pokedexNumber).padStart(4, '0')}</Text>
+                <Text style={[styles.state, registered && styles.stateRegistered, !item.released && styles.stateUnreleased]}>{item.released ? (registered ? 'Registered' : 'Missing') : 'Unreleased'}</Text>
+              </Pressable>
+              {item.released ? <Pressable
+                accessibilityLabel={`${registered ? 'Clear' : 'Register'} ${item.name}`}
+                accessibilityRole="button"
+                accessibilityState={{ selected: registered }}
+                disabled={isSaving}
+                onPress={() => onSetRegistrations([manualRegistration], !registered)}
+                style={[styles.registrationToggle, registered && styles.registrationToggleActive, isSaving && styles.savingDisabled]}
+              ><Text style={styles.registrationToggleText}>{registered ? '✓' : '+'}</Text></Pressable> : null}
+            </View>
+          </View>;
+        }}
       />
       <NativeConfirmationDialog
         body={bulkConfirmation?.registered
@@ -323,6 +386,6 @@ const styles = StyleSheet.create({
   railContent: { gap: 7, paddingLeft: 12, paddingRight: 12, paddingBottom: 23 }, qualityRail: { gap: 7, paddingLeft: 12, paddingRight: 12, paddingBottom: 52 }, categoryChip: { minHeight: 44, minWidth: 110, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, borderWidth: 1, borderColor: '#43515a', borderRadius: 999, paddingHorizontal: 14, backgroundColor: '#161c21' }, chipLight: { borderColor: '#bec9cf', backgroundColor: '#fff' }, iconStack: { minWidth: 22, flexDirection: 'row', alignItems: 'center', justifyContent: 'center' }, categoryIcon: { width: 20, height: 20, marginHorizontal: -1, resizeMode: 'contain' }, chipText: { color: '#bdc7cc', fontSize: 13, fontWeight: '900', textTransform: 'uppercase' }, facetChip: { minHeight: 42, minWidth: 96, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 5, borderWidth: 1, borderColor: '#43515a', borderRadius: 999, paddingHorizontal: 11, backgroundColor: '#161c21' }, facetIcon: { width: 22, height: 22, resizeMode: 'contain' }, darkFacetIcon: { tintColor: '#26333a' }, facetText: { color: '#bdc7cc', fontSize: 12.5, fontWeight: '900' }, disabled: { opacity: 0.35 },
   regions: { gap: 18 }, regionCard: { minHeight: 168, flexDirection: 'row', overflow: 'hidden', borderWidth: 4, borderRadius: 22, backgroundColor: '#141a1f' }, regionCardLight: { backgroundColor: '#fff' }, regionCopy: { width: '34%', justifyContent: 'center', gap: 7, paddingLeft: 18, paddingVertical: 16 }, regionName: { fontSize: 28, lineHeight: 30, fontWeight: '900', textTransform: 'uppercase' }, regionStatus: { color: '#a4b0b6', fontSize: 16, fontWeight: '800' }, regionCount: { color: '#fff', fontSize: 19, fontWeight: '900' }, regionBadge: { width: 34, height: 34, alignItems: 'center', justifyContent: 'center', borderWidth: 3, borderRadius: 17, backgroundColor: '#141a1f' }, regionBadgeText: { fontSize: 15, fontWeight: '900' }, regionArt: { flex: 1, minWidth: 0, justifyContent: 'center' }, regionPreview: { position: 'absolute', bottom: -15, width: '26%', height: 118, alignItems: 'center', justifyContent: 'flex-end' }, regionPokemon: { width: '100%', height: '100%' }, regionMaxIcon: { position: 'absolute', right: 3, top: 3, width: 29, height: 29, resizeMode: 'contain' },
   detailToolbar: { gap: 10, marginBottom: 8 }, detailHeading: { gap: 4 }, regionsBack: { alignSelf: 'flex-start', minHeight: 38, justifyContent: 'center', borderWidth: 1, borderColor: '#43515a', borderRadius: 999, paddingHorizontal: 13, backgroundColor: '#161c21' }, regionsBackText: { color: '#fff', fontSize: 11, fontWeight: '900' }, resultsTitle: { color: '#fff', fontSize: 20, fontWeight: '900' }, resultsDetail: { color: '#89989f', fontSize: 10 }, search: { minHeight: 48, borderWidth: 1, borderColor: '#46545d', borderRadius: 12, paddingHorizontal: 14, color: '#fff', backgroundColor: '#161c21', fontSize: 15 }, searchLight: { borderColor: '#b8c6cd', color: '#14232a', backgroundColor: '#fff' }, registrationTray: { flexDirection: 'row', alignItems: 'center', gap: 10, borderWidth: 1, borderColor: '#34464e', borderRadius: 13, padding: 9, backgroundColor: '#12191d' }, registrationTrayLight: { borderColor: '#c1ccd1', backgroundColor: '#fff' }, registrationCopy: { minWidth: 46, alignItems: 'center' }, registrationLabel: { color: '#89989f', fontSize: 8, fontWeight: '900', letterSpacing: 0.8 }, registrationCount: { color: '#fff', fontSize: 17, fontWeight: '900' }, registrationActions: { minWidth: 0, flex: 1, flexDirection: 'row', gap: 7 }, bulkButton: { minHeight: 42, flex: 1, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderRadius: 9, paddingHorizontal: 8 }, bulkRegister: { borderColor: '#2dc4a6', backgroundColor: '#17483f' }, bulkClear: { borderColor: '#d85b70', backgroundColor: '#431c24' }, bulkRegisterText: { color: '#7df0d9', fontSize: 11, fontWeight: '900' }, bulkClearText: { color: '#ff9bab', fontSize: 11, fontWeight: '900' },
-  cardCell: { padding: 4 }, cardWrap: { position: 'relative' }, card: { minHeight: 174, alignItems: 'center', overflow: 'hidden', borderWidth: 1, borderColor: '#324149', borderRadius: 12, padding: 7, backgroundColor: '#151b20' }, cardLight: { borderColor: '#c2cdd3', backgroundColor: '#fff' }, cardRegistered: { borderColor: '#299cf5' }, imageStage: { width: '100%', aspectRatio: 1, alignItems: 'center', justifyContent: 'center' }, image: { width: '86%', height: '86%' }, maxIcon: { position: 'absolute', top: '5%', right: '5%', width: '23%', height: '23%' }, name: { minHeight: 30, color: '#fff', fontSize: 11.5, lineHeight: 15, fontWeight: '900', textAlign: 'center' }, dex: { color: '#89979e', fontSize: 9.5, fontWeight: '700' }, state: { marginTop: 2, color: '#89979e', fontSize: 9, fontWeight: '900', textTransform: 'uppercase' }, stateRegistered: { color: '#4ad8c7' }, registrationToggle: { position: 'absolute', right: 5, top: 5, zIndex: 3, width: 30, height: 30, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: '#50616a', borderRadius: 15, backgroundColor: '#1c252a' }, registrationToggleActive: { borderColor: '#4ad8c7', backgroundColor: '#127a69' }, registrationToggleText: { color: '#fff', fontSize: 18, fontWeight: '900' }, savingDisabled: { opacity: 0.45 }, pressed: { opacity: 0.72 },
+  cardCell: { padding: 4 }, cardWrap: { position: 'relative' }, card: { minHeight: 174, alignItems: 'center', overflow: 'hidden', borderWidth: 1, borderColor: '#324149', borderRadius: 12, padding: 7, backgroundColor: '#151b20' }, cardLight: { borderColor: '#c2cdd3', backgroundColor: '#fff' }, cardRegistered: { borderColor: '#299cf5' }, cardUnreleased: { opacity: 0.46 }, imageStage: { width: '100%', aspectRatio: 1, alignItems: 'center', justifyContent: 'center' }, image: { width: '86%', height: '86%' }, facetBadgeStack: { position: 'absolute', left: '2%', top: '2%', zIndex: 2, flexDirection: 'row', flexWrap: 'wrap', gap: 2, maxWidth: '68%' }, facetBadge: { width: 22, height: 22, alignItems: 'center', justifyContent: 'center', borderRadius: 11, backgroundColor: '#11191fd9' }, facetBadgeLight: { backgroundColor: '#ffffffdd' }, facetBadgeIcon: { width: 16, height: 16, resizeMode: 'contain' }, maxIcon: { position: 'absolute', top: '5%', right: '5%', width: '23%', height: '23%' }, name: { minHeight: 30, color: '#fff', fontSize: 11.5, lineHeight: 15, fontWeight: '900', textAlign: 'center' }, dex: { color: '#89979e', fontSize: 9.5, fontWeight: '700' }, state: { marginTop: 2, color: '#89979e', fontSize: 9, fontWeight: '900', textTransform: 'uppercase' }, stateRegistered: { color: '#4ad8c7' }, stateUnreleased: { color: '#b8c0c4' }, registrationToggle: { position: 'absolute', right: 5, top: 5, zIndex: 3, width: 30, height: 30, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: '#50616a', borderRadius: 15, backgroundColor: '#1c252a' }, registrationToggleActive: { borderColor: '#4ad8c7', backgroundColor: '#127a69' }, registrationToggleText: { color: '#fff', fontSize: 18, fontWeight: '900' }, savingDisabled: { opacity: 0.45 }, pressed: { opacity: 0.72 },
   loading: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 9, padding: 20 }, loadingText: { color: '#aab8bf', fontWeight: '700' }, error: { gap: 7, borderWidth: 1, borderColor: '#df5770', borderRadius: 12, padding: 13, backgroundColor: '#39151e' }, errorTitle: { color: '#ffd8df', fontSize: 15, fontWeight: '900' }, errorText: { color: '#ffb8c4', fontSize: 12 }, retry: { alignSelf: 'flex-start', minHeight: 40, justifyContent: 'center', borderRadius: 8, paddingHorizontal: 14, backgroundColor: '#df5770' }, retryText: { color: '#fff', fontWeight: '900' }, empty: { alignItems: 'center', gap: 5, padding: 40 }, emptyTitle: { color: '#fff', fontSize: 18, fontWeight: '900' }, emptyText: { color: '#9aa8af', textAlign: 'center' },
 });

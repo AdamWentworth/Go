@@ -133,7 +133,7 @@ if grep -R -n -E 'exp://|host\.exp\.exponent' "${smoke_flow}"; then
   exit 1
 fi
 if [[ -d "${smoke_flow}" ]]; then
-  mapfile -t contract_flows < <(find "${smoke_flow}" -maxdepth 1 -type f -name '*.yaml' | sort)
+  mapfile -t contract_flows < <(find -L "${smoke_flow}" -maxdepth 1 -type f -name '*.yaml' | sort)
 else
   contract_flows=("${smoke_flow}")
 fi
@@ -262,7 +262,17 @@ case "${smoke_reduce_motion}" in
     ;;
 esac
 
-"${adb_bin}" -s "${device_id}" install -r -t "${android_apk}" >/dev/null
+install_output=""
+if ! install_output="$("${adb_bin}" -s "${device_id}" install -r -t "${android_apk}" 2>&1)"; then
+  if grep -Fq 'INSTALL_FAILED_UPDATE_INCOMPATIBLE' <<<"${install_output}"; then
+    echo "Removing an incompatible prior ${app_id} test install and retrying."
+    "${adb_bin}" -s "${device_id}" uninstall "${app_id}" >/dev/null
+    "${adb_bin}" -s "${device_id}" install -r -t "${android_apk}" >/dev/null
+  else
+    echo "${install_output}" >&2
+    exit 1
+  fi
+fi
 if ! "${adb_bin}" -s "${device_id}" shell pm list packages | grep -Fqx "package:${app_id}"; then
   echo "Android app did not install with expected application id: ${app_id}" >&2
   exit 1
@@ -441,7 +451,7 @@ run_maestro_flow() {
 }
 
 if [[ -d "${smoke_flow}" ]]; then
-  mapfile -t smoke_flows < <(find "${smoke_flow}" -maxdepth 1 -type f -name '*.yaml' | sort)
+  mapfile -t smoke_flows < <(find -L "${smoke_flow}" -maxdepth 1 -type f -name '*.yaml' | sort)
   failed_flows=()
   for flow in "${smoke_flows[@]}"; do
     flow_name="$(basename "${flow}" .yaml)"

@@ -6,7 +6,7 @@ tags:
   - trade-preferences
 ---
 - openLink:
-    link: ${APP_LINK_BASE}/device-smoke/trade-preferences
+    link: ${APP_LINK_BASE}/device-smoke/trade-preferences?coverage=1
 - waitForAnimationToEnd
 - runFlow:
     when:
@@ -47,6 +47,13 @@ tags:
     timeout: 10000
 - assertNotVisible: Shiny Mewtwo
 - takeScreenshot: 01-for-trade-view
+- scrollUntilVisible:
+    element:
+      text: "^Wanted \\([0-9]+\\)$"
+    direction: UP
+    speed: 40
+    visibilityPercentage: 100
+    timeout: 20000
 - tapOn: "^Wanted \\([0-9]+\\)$"
 - tapOn: "^For Trade \\([0-9]+\\)$"
 - extendedWaitUntil:
@@ -84,6 +91,13 @@ tags:
 - extendedWaitUntil:
     visible: Preferences saved.
     timeout: 10000
+- scrollUntilVisible:
+    element:
+      text: "^Wanted \\([0-9]+\\)$"
+    direction: UP
+    speed: 40
+    visibilityPercentage: 100
+    timeout: 20000
 - tapOn:
     text: "^Wanted \\([0-9]+\\)$"
 - extendedWaitUntil:

@@ -12,6 +12,15 @@ const renderRaid = (props: Partial<React.ComponentProps<typeof NativeRaidScreen>
   </SafeAreaProvider>,
 );
 
+const flushRaidCalculation = async () => {
+  for (let step = 0; step < 6; step += 1) {
+    await act(async () => {
+      jest.runOnlyPendingTimers();
+      await Promise.resolve();
+    });
+  }
+};
+
 describe('NativeRaidScreen', () => {
   beforeEach(() => jest.useFakeTimers());
   afterEach(() => {
@@ -40,9 +49,14 @@ describe('NativeRaidScreen', () => {
     expect(screen.getAllByText('TDO').length).toBeGreaterThan(0);
     expect(screen.getAllByText('ER').length).toBeGreaterThan(0);
   });
-  it('expands boss setup and simulates a custom raid party', () => {
+  it('expands boss setup and simulates a custom raid party', async () => {
     renderRaid();
     fireEvent.press(screen.getByText('Boss counters'));
+    await flushRaidCalculation();
+    expect(screen.queryByText('Modeling raid timelines…')).toBeNull();
+    fireEvent.press(screen.getByText('Attacker rankings'));
+    fireEvent.press(screen.getByText('Boss counters'));
+    expect(screen.queryByText('Modeling raid timelines…')).toBeNull();
     fireEvent.press(screen.getByLabelText('Raid setup'));
     expect(screen.getByText('BOSS HP')).toBeTruthy();
     expect(screen.getByText('COMFORTABLE')).toBeTruthy();

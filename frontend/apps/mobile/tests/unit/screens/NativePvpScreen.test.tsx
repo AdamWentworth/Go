@@ -60,6 +60,10 @@ const catalog = [
     image_url_shiny: '/1-shiny.png',
     type1_name: 'Grass',
     type2_name: 'Poison',
+    moves: [
+      { move_id: 1, name: 'Vine Whip', type_name: 'grass', is_fast: 1, pvp_power: 5, pvp_energy: 8, pvp_turns: 2 },
+      { move_id: 2, name: 'Power Whip', type_name: 'grass', is_fast: 0, pvp_power: 90, pvp_energy: -50, pvp_turns: 1 },
+    ],
     fusion: [],
     crownForms: [{
       id: 11,
@@ -128,6 +132,40 @@ describe('NativePvpScreen', () => {
     expect(screen.getByText('SIMULATED RESULT')).toBeTruthy();
     expect(screen.getByText(/wins|draw/i)).toBeTruthy();
     expect(screen.getAllByText(/rating/)).toHaveLength(2);
+  });
+
+  it('uses and locally evaluates the actual caught copy in rankings and IV Rank', async () => {
+    const instances = { leafy: {
+      instance_id: 'leafy',
+      variant_id: '0001-default',
+      pokemon_id: 1,
+      is_caught: true,
+      disabled: false,
+      cp: 1477,
+      level: 40,
+      attack_iv: 0,
+      defense_iv: 15,
+      stamina_iv: 15,
+      fast_move_id: 1,
+      charged_move1_id: 2,
+      charged_move2_id: null,
+      nickname: 'Leafy',
+      favorite: true,
+    }} as never;
+    render(
+      <SafeAreaProvider initialMetrics={{ frame: { x: 0, y: 0, width: 390, height: 844 }, insets: { top: 24, right: 0, bottom: 20, left: 0 } }}>
+        <NativePvpScreen assetBaseUrl="https://pokegonexus.com" catalog={catalog} instances={instances} onBack={jest.fn()} onMethodology={jest.fn()} onRetry={jest.fn()} payload={payload} signedIn />
+      </SafeAreaProvider>,
+    );
+
+    fireEvent.press(screen.getByRole('button', { name: /My Pokémon/ }));
+    expect(screen.getByText('Leafy')).toBeTruthy();
+    expect(screen.getByText(/1 fully detailed from 1 caught/)).toBeTruthy();
+    expect(await screen.findByText(/evaluated locally against 3 meta opponents/)).toBeTruthy();
+    fireEvent.press(screen.getByText('IV Rank'));
+    expect(screen.getByText(/1 eligible for Great League/)).toBeTruthy();
+    expect(screen.getAllByText(/Leafy/).length).toBeGreaterThan(0);
+    expect(screen.getByText(/0\/15\/15 IV/)).toBeTruthy();
   });
 
   it('offers exact crowned forms in the IV Rank catalog', () => {

@@ -151,7 +151,11 @@ export const useNativeOverlaySwipeNavigation = ({
 
   const gesture = useMemo(() => Gesture.Pan()
     .enabled(!disabled && !isAnimating && Boolean(onNext || onPrevious))
-    .minDistance(AXIS_LOCK_DELTA)
+    // Require a deliberate horizontal drag and fail immediately once the user
+    // establishes vertical intent. A generic minDistance gesture activates on
+    // vertical swipes too and starves the overlay's ScrollViews on Android.
+    .activeOffsetX([-AXIS_LOCK_DELTA, AXIS_LOCK_DELTA])
+    .failOffsetY([-AXIS_LOCK_DELTA, AXIS_LOCK_DELTA])
     .runOnJS(true)
     .onBegin(() => {
       translateX.stopAnimation();

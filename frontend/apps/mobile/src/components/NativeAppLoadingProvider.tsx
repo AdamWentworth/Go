@@ -8,7 +8,7 @@ import {
   useRef,
   useState,
 } from 'react';
-import { Image, StyleSheet, View } from 'react-native';
+import { Image, InteractionManager, Modal, StyleSheet, View } from 'react-native';
 import { useNativeColorScheme } from '../features/settings/useNativeColorScheme';
 
 type LoadingAction = () => void;
@@ -19,6 +19,11 @@ type NativeAppLoadingContextValue = {
 };
 
 const HIDE_DELAY_MS = 150;
+// Android may not decode the first frame of a bundled animated GIF before a
+// route transition finishes. Keep action-menu navigation covered after the
+// destination interaction settles so the canonical spinner is perceptible on
+// fast and slow devices instead of expiring mid-transition.
+const NAVIGATION_RELEASE_DELAY_MS = 1800;
 
 const NativeAppLoadingContext = createContext<NativeAppLoadingContextValue>({
   runWithLoading: (_source, action) => action(),
@@ -69,14 +74,17 @@ export const NativeAppLoadingProvider = ({ children }: { children: ReactNode }) 
   const runWithLoading = useCallback((source: string, action: LoadingAction) => {
     setLoadingSource(source, true);
 
-    // Commit the overlay before changing routes. Release it one frame after
-    // navigation so the destination replaces the previous screen underneath,
-    // then retain the canonical 150 ms hide grace period.
+    // Commit the overlay before changing routes. Navigation starts on the next
+    // frame, while release is scheduled only after React Navigation's active
+    // interaction has settled. The fixed delay is therefore a visible grace,
+    // not a race against slower route mounting.
     requestAnimationFrame(() => {
       try {
         action();
       } finally {
-        requestAnimationFrame(() => setLoadingSource(source, false));
+        InteractionManager.runAfterInteractions(() => {
+          setTimeout(() => setLoadingSource(source, false), NAVIGATION_RELEASE_DELAY_MS);
+        });
       }
     });
   }, [setLoadingSource]);
@@ -90,11 +98,22 @@ export const NativeAppLoadingProvider = ({ children }: { children: ReactNode }) 
     <NativeAppLoadingContext.Provider value={value}>
       <View style={[styles.root, light && styles.rootLight]}>
         {children}
-        {isVisible ? (
+        {isVisible ? <Modal
+          animationType="none"
+          hardwareAccelerated
+          navigationBarTranslucent
+          onRequestClose={() => undefined}
+          presentationStyle="overFullScreen"
+          statusBarTranslucent
+          transparent
+          visible
+        >
           <View
+            accessible
             accessibilityLabel="Loading"
             accessibilityLiveRegion="polite"
             accessibilityRole="progressbar"
+            accessibilityViewIsModal
             style={[styles.overlay, light && styles.overlayLight]}
             testID="native-app-loading-overlay"
           >
@@ -109,7 +128,7 @@ export const NativeAppLoadingProvider = ({ children }: { children: ReactNode }) 
               testID={light ? 'native-loading-spinner-light' : 'native-loading-spinner-dark'}
             />
           </View>
-        ) : null}
+        </Modal> : null}
       </View>
     </NativeAppLoadingContext.Provider>
   );
@@ -123,13 +142,7 @@ const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: '#101a19' },
   rootLight: { backgroundColor: '#f8fff9' },
   overlay: {
-    position: 'absolute',
-    top: 0,
-    right: 0,
-    bottom: 0,
-    left: 0,
-    zIndex: 100000,
-    elevation: 100000,
+    flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: '#101a19',

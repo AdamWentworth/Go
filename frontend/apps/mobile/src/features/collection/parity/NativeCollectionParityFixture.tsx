@@ -431,6 +431,7 @@ export const NativeCollectionParityFixture = ({
           columnWrapperStyle={styles.gridRow}
           contentContainerStyle={styles.listContent}
           data={cards}
+          nestedScrollEnabled
           ref={listRef}
           initialNumToRender={18}
           key={columns}

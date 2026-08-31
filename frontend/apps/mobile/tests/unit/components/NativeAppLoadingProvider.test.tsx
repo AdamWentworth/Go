@@ -48,9 +48,13 @@ describe('NativeAppLoadingProvider', () => {
     expect(action).toHaveBeenCalledTimes(1);
     expect(view.getByTestId('native-app-loading-overlay')).toBeTruthy();
 
-    act(() => jest.advanceTimersByTime(149));
+    act(() => jest.advanceTimersByTime(1799));
     expect(view.getByTestId('native-app-loading-overlay')).toBeTruthy();
     act(() => jest.advanceTimersByTime(1));
+    expect(view.getByTestId('native-app-loading-overlay')).toBeTruthy();
+    act(() => jest.advanceTimersByTime(100));
+    expect(view.getByTestId('native-app-loading-overlay')).toBeTruthy();
+    act(() => jest.advanceTimersByTime(100));
     expect(view.queryByTestId('native-app-loading-overlay')).toBeNull();
   });
 

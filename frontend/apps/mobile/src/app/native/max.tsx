@@ -80,10 +80,20 @@ export default function NativeMaxRoute() {
         || maxQuery.isPending
         || Boolean(session.user && snapshotQuery.isPending)}
       onBack={() => router.canGoBack() ? router.back() : router.replace('/native')}
-      onOpenPokemon={(variantId) => router.push({
-        pathname: '/native/pokedex/[variantId]',
-        params: { variantId },
-      })}
+      onOpenPokemon={(entry) => {
+        if (entry.sourceInstanceId) {
+          router.push({
+            pathname: '/native/collection/[instanceId]',
+            params: { instanceId: entry.sourceInstanceId },
+          });
+          return;
+        }
+        const variantId = entry.variantId ?? `${String(entry.pokemonId).padStart(4, '0')}-default`;
+        router.push({
+          pathname: '/native/pokedex/[variantId]',
+          params: { variantId },
+        });
+      }}
       onRetry={() => {
         void catalogQuery.refetch();
         void movesQuery.refetch();

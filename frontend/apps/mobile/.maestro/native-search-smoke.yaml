@@ -65,6 +65,16 @@ tags:
 - tapOn: Modify search
 - assertVisible: LOOKING FOR
 - assertVisible: Pikachu
+- tapOn: Choose Pokémon
+- extendedWaitUntil:
+    visible: Choose a Pokémon
+    timeout: 10000
+- tapOn: Search Choose a Pokémon
+- inputText: Char
+- tapOn: Select Charizard
+- assertNotVisible: Choose a Pokémon
+- assertVisible: Charizard
+- takeScreenshot: search-01d-pokemon-selection
 - takeScreenshot: search-01c-primary-controls
 - tapOn: Filters
 - extendedWaitUntil:

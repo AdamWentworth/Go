@@ -504,6 +504,7 @@ export const NativeTradeActivityScreen = ({
           contentContainerStyle={visibleRows.length ? styles.listContent : styles.emptyListContent}
           data={visibleRows}
           keyExtractor={(row) => row.model.tradeId}
+          nestedScrollEnabled
           ListEmptyComponent={error ? null : (
             <View style={[styles.emptyState, light && styles.cardLight]}>
               <View style={styles.emptyIcon}><NativeUiIcon color="#36c181" name="trade" size={17} /></View>

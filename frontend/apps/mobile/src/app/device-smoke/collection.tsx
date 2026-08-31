@@ -1,4 +1,4 @@
-import { Redirect, useLocalSearchParams } from 'expo-router';
+import { Redirect, useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { Modal, Platform } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
@@ -224,6 +224,26 @@ const PARITY_REFERENCE_TARGET_ROWS = PARITY_REFERENCE_ROWS.map((referenceRow) =>
       ? 'Party Hat Pikachu'
       : 'Gengar',
 }));
+
+// The real trade-preference overlays can contain long candidate grids. Keep the
+// direct-route fixture long enough to require nested Android scrolling so the
+// smoke test cannot pass while only exercising a single, non-scrollable row.
+const SCROLLABLE_WANTED_TARGET_ROWS: NativeCollectionRow[] = [
+  PARITY_REFERENCE_TARGET_ROWS.find((candidate) => candidate.status === 'wanted'),
+  ...ROWS.filter((candidate) => candidate.status === 'wanted'),
+  ...ROWS.filter((candidate) => candidate.status === 'caught').slice(0, 4).map((candidate) => ({
+    ...candidate,
+    status: 'wanted' as const,
+  })),
+].filter((candidate): candidate is NativeCollectionRow => Boolean(candidate));
+const SCROLLABLE_TRADE_TARGET_ROWS: NativeCollectionRow[] = [
+  PARITY_REFERENCE_TARGET_ROWS.find((candidate) => candidate.status === 'trade'),
+  ...ROWS.filter((candidate) => candidate.status === 'trade'),
+  ...ROWS.filter((candidate) => candidate.status === 'caught').slice(0, 4).map((candidate) => ({
+    ...candidate,
+    status: 'trade' as const,
+  })),
+].filter((candidate): candidate is NativeCollectionRow => Boolean(candidate));
 
 const PARITY_INVENTORY_ROWS: NativeCollectionRow[] = [
   row({ id: '0003-default_demo-venusaur', pokemonId: 3, name: 'Garden lead', imagePath: '/images/default/pokemon_3.png', status: 'caught', cp: 2411, typeIconPaths: ['/images/types/grass.png', '/images/types/poison.png'] }),
@@ -466,15 +486,21 @@ const SMOKE_INSTANCES = Object.fromEntries(ALL_FIXTURE_ROWS.map((entry) => [entr
 } as unknown as PokemonInstance]));
 
 export default function DeviceSmokeCollectionRoute() {
+  const router = useRouter();
   const params = useLocalSearchParams<{
     foreign?: string | string[];
     interaction?: string | string[];
     instance?: string | string[];
     tag?: string | string[];
+    targetScroll?: string | string[];
   }>();
   const foreignParam = Array.isArray(params.foreign) ? params.foreign[0] : params.foreign;
   const interactionParam = Array.isArray(params.interaction) ? params.interaction[0] : params.interaction;
   const tagParam = Array.isArray(params.tag) ? params.tag[0] : params.tag;
+  const targetScrollParam = Array.isArray(params.targetScroll)
+    ? params.targetScroll[0]
+    : params.targetScroll;
+  const scrollableTargets = targetScrollParam === '1';
   const foreignMode = foreignParam === '1';
   const initialTagKey = tagParam === 'trade'
     ? 'system:trade'
@@ -614,9 +640,13 @@ export default function DeviceSmokeCollectionRoute() {
   const isParityTrade = openedRow?.id === '0025-party_hat_default_demo-trade';
   const isParityWanted = openedRow?.id === '0094-default_demo-wanted';
   const targetRows = isParityTrade
-    ? PARITY_REFERENCE_TARGET_ROWS.filter((row) => row.id === '0094-default_demo-wanted')
+    ? scrollableTargets
+      ? SCROLLABLE_WANTED_TARGET_ROWS
+      : PARITY_REFERENCE_TARGET_ROWS.filter((row) => row.id === '0094-default_demo-wanted')
     : isParityWanted
-      ? PARITY_REFERENCE_TARGET_ROWS.filter((row) => row.id === '0025-party_hat_default_demo-trade')
+      ? scrollableTargets
+        ? SCROLLABLE_TRADE_TARGET_ROWS
+        : PARITY_REFERENCE_TARGET_ROWS.filter((row) => row.id === '0025-party_hat_default_demo-trade')
       : openedRow?.status === 'wanted'
         ? rowsWithStatus('trade')
         : openedRow?.status === 'trade'
@@ -690,6 +720,11 @@ export default function DeviceSmokeCollectionRoute() {
         inventoryTags={inventoryTags}
         instances={smokeInstances}
         isLoading={catalogLoading}
+        onActionMenuNavigate={(path) => {
+          if (path === '/raid') {
+            router.push({ pathname: '/device-smoke/tools', params: { tool: 'raid' } });
+          }
+        }}
         onActionMenuPress={() => undefined}
         onCreateTag={createTag}
         onDeleteTag={deleteTag}

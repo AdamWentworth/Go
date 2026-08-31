@@ -1,15 +1,27 @@
 import type { PokemonInstance } from "@pokemongonexus/shared-contracts/instances";
 import type {
   BasePokemon,
+  PokemonPvPBattleMechanics,
   PokemonPvPFormat,
   PokemonPvPLeagueKey,
   PokemonPvPRankingEntry,
   PokemonPvPRankingsPayload,
+  PokemonPvPRosterEvaluationResponse,
 } from "@pokemongonexus/shared-contracts/pokemon";
 import {
   calculatePokemonCombatPower,
   getPokemonCpMultiplier,
 } from "@pokemongonexus/shared-domain/combat-power";
+import createPokemonVariants from "@pokemongonexus/app-core/pokemon-variants";
+import {
+  buildOwnedPvPRoster,
+  type OwnedPvPRoster,
+} from "@pokemongonexus/app-core/pvp-roster";
+import {
+  applyPvPRosterEvaluation,
+  buildPvPRosterEvaluationPlan,
+  type PvPRosterEvaluationPlan,
+} from "@pokemongonexus/app-core/pvp-roster-evaluation";
 
 export type NativePvpWorkspace = "rankings" | "team" | "battle" | "iv-rank";
 export type NativePvpRole =
@@ -125,6 +137,110 @@ export const filterNativePvpEntries = ({
             .includes(normalized)),
     )
     .sort((a, b) => pvpRoleScore(b, role) - pvpRoleScore(a, role));
+};
+
+export type NativePvpRankingRow = {
+  cp?: number;
+  entry: PokemonPvPRankingEntry;
+  key: string;
+  nickname: string | null;
+  personalBuild: boolean;
+};
+
+const EMPTY_OWNED_PVP_ROSTER: OwnedPvPRoster = {
+  entries: [],
+  caughtCount: 0,
+  eligibleCount: 0,
+  incompleteCount: 0,
+  missingCpCount: 0,
+  missingLevelOrIvCount: 0,
+  missingMoveCount: 0,
+  overCapCount: 0,
+  unmatchedCount: 0,
+};
+
+export const buildNativePvpRankingRows = ({
+  catalog,
+  cpLimit,
+  entries,
+  evaluation = null,
+  instances = {},
+  query = "",
+  role = "overall",
+  scope = "catalog",
+}: {
+  catalog: BasePokemon[];
+  cpLimit: number | null;
+  entries: PokemonPvPRankingEntry[];
+  evaluation?: PokemonPvPRosterEvaluationResponse | null;
+  instances?: Record<string, PokemonInstance>;
+  query?: string;
+  role?: NativePvpRole;
+  scope?: "catalog" | "owned";
+}): { rows: NativePvpRankingRow[]; summary: OwnedPvPRoster } => {
+  const summary = scope === "owned"
+    ? buildOwnedPvPRoster(entries, createPokemonVariants(catalog), instances, cpLimit)
+    : EMPTY_OWNED_PVP_ROSTER;
+  const evaluatedEntries = scope === "owned"
+    ? applyPvPRosterEvaluation(summary.entries, evaluation)
+    : [];
+  const source: NativePvpRankingRow[] = scope === "owned"
+    ? evaluatedEntries.map((owned) => ({
+      cp: owned.cp,
+      entry: owned.entry,
+      key: owned.instanceId,
+      nickname: owned.nickname,
+      personalBuild: true,
+    }))
+    : entries.map((entry) => ({
+      entry,
+      key: entry.speciesId,
+      nickname: null,
+      personalBuild: false,
+    }));
+  const normalized = query.trim().toLocaleLowerCase();
+  return {
+    rows: source
+      .filter(({ entry, nickname }) => !normalized || [
+        entry.name,
+        entry.speciesId,
+        nickname ?? "",
+        ...entry.types,
+        ...entry.moveset.flatMap((move) => [move.name, move.type]),
+      ].join(" ").toLocaleLowerCase().includes(normalized))
+      .sort((left, right) => (
+        pvpRoleScore(right.entry, role) - pvpRoleScore(left.entry, role)
+        || left.entry.rank - right.entry.rank
+        || left.entry.name.localeCompare(right.entry.name)
+      )),
+    summary,
+  };
+};
+
+export const buildNativePvpRosterEvaluationPlan = ({
+  catalog,
+  cpLimit,
+  entries,
+  formatKey,
+  instances = {},
+  mechanics,
+}: {
+  catalog: BasePokemon[];
+  cpLimit: number | null;
+  entries: PokemonPvPRankingEntry[];
+  formatKey: string;
+  instances?: Record<string, PokemonInstance>;
+  mechanics: PokemonPvPBattleMechanics;
+}): PvPRosterEvaluationPlan | null => {
+  const variants = createPokemonVariants(catalog);
+  const roster = buildOwnedPvPRoster(entries, variants, instances, cpLimit);
+  return buildPvPRosterEvaluationPlan(
+    roster.entries,
+    entries,
+    variants,
+    formatKey,
+    mechanics,
+  );
 };
 
 export type NativePvpIvSummary = {

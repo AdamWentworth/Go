@@ -1,5 +1,5 @@
 import type { BasePokemon, PokemonPvPRankingEntry, PokemonPvPRankingsPayload } from '@pokemongonexus/shared-contracts/pokemon';
-import { analyzeNativePvpTeam, buildNativePvpFormats, calculateNativePvpIvSummary, filterNativePvpEntries, pvpRoleScore } from '../../../src/features/tools/nativePvpModel';
+import { analyzeNativePvpTeam, buildNativePvpFormats, buildNativePvpRankingRows, calculateNativePvpIvSummary, filterNativePvpEntries, pvpRoleScore } from '../../../src/features/tools/nativePvpModel';
 
 const entry = (speciesId: string, pokemonId: number, score: number, lead: number, counter = 'lanturn'): PokemonPvPRankingEntry => ({
   rank: 1, sourceRank: 1, speciesId, name: speciesId, pokemonId, variantKind: 'pokemon', imageUrl: `/${pokemonId}.png`, types: ['water'], moveset: [{ id: 'fast', name: 'Quick Attack', type: 'normal', kind: 'fast' }], score, rating: 700, categoryScores: [lead, 1, 1, 1, 1, 1], matchups: [], counters: [{ speciesId: counter, rating: 300 }], moveUsage: [], recommendedLevel: 20, attackIv: 0, defenseIv: 15, staminaIv: 15,
@@ -26,6 +26,64 @@ describe('native PvP model', () => {
     expect(filterNativePvpEntries({ entries: [azumarill, clodsire], instances, scope: 'owned' })).toEqual([azumarill]);
     expect(analyzeNativePvpTeam([azumarill, clodsire]).sharedThreats).toEqual(['lanturn']);
     expect(analyzeNativePvpTeam([azumarill, clodsire]).coveredThreats).toBe(0);
+  });
+
+  it('projects each complete caught copy with its recorded PvP build', () => {
+    const fast = { move_id: 1, name: 'Bubble', is_fast: 1, pvp_power: 8, pvp_energy: 11, pvp_turns: 3, type_name: 'water' };
+    const charged = { move_id: 2, name: 'Play Rough', is_fast: 0, pvp_power: 90, pvp_energy: -60, type_name: 'fairy' };
+    const catalog = [{
+      pokemon_id: 184,
+      pokedex_number: 184,
+      name: 'Azumarill',
+      attack: 112,
+      defense: 152,
+      stamina: 225,
+      image_url: '/184.png',
+      image_url_shiny: '/184-shiny.png',
+      type1_name: 'water',
+      type2_name: 'fairy',
+      moves: [fast, charged],
+    }] as unknown as BasePokemon[];
+    const instances = { azu: {
+      instance_id: 'azu',
+      variant_id: '0184-default',
+      pokemon_id: 184,
+      is_caught: true,
+      disabled: false,
+      cp: 1491,
+      level: 40,
+      attack_iv: 0,
+      defense_iv: 15,
+      stamina_iv: 15,
+      fast_move_id: 1,
+      charged_move1_id: 2,
+      charged_move2_id: null,
+      nickname: 'Blue Tank',
+    }} as never;
+
+    const result = buildNativePvpRankingRows({
+      catalog,
+      cpLimit: 1500,
+      entries: [azumarill],
+      instances,
+      scope: 'owned',
+    });
+
+    expect(result.summary.eligibleCount).toBe(1);
+    expect(result.rows).toHaveLength(1);
+    expect(result.rows[0]).toMatchObject({
+      cp: 1491,
+      key: 'azu',
+      nickname: 'Blue Tank',
+      personalBuild: true,
+      entry: {
+        attackIv: 0,
+        defenseIv: 15,
+        staminaIv: 15,
+        recommendedLevel: 40,
+        moveset: [expect.objectContaining({ name: 'Bubble' }), expect.objectContaining({ name: 'Play Rough' })],
+      },
+    });
   });
 
   it('ranks a selected appraisal against all legal spreads', () => {

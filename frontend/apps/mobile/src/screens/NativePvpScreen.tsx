@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator,
   FlatList,
@@ -16,13 +16,16 @@ import type {
   PokemonPvPLeagueKey,
   PokemonPvPRankingEntry,
   PokemonPvPRankingsPayload,
+  PokemonPvPRosterEvaluationResponse,
 } from "@pokemongonexus/shared-contracts/pokemon";
+import { evaluatePvPRosterLocally } from "@pokemongonexus/shared-domain/pvp-battle";
 import { NativePvpBattleLab } from "../components/tools/NativePvpBattleLab";
 import { NativePvpIvRank } from "../components/tools/NativePvpIvRank";
 import { NativePvpTeamBuilder } from "../components/tools/NativePvpTeamBuilder";
 import {
   buildNativePvpFormats,
-  filterNativePvpEntries,
+  buildNativePvpRankingRows,
+  buildNativePvpRosterEvaluationPlan,
   pvpRoleScore,
   type NativePvpRole,
   type NativePvpWorkspace,
@@ -73,14 +76,18 @@ const uri = (base: string, value: string) => {
 const PvpEntryCard = ({
   assetBaseUrl,
   entry,
+  cp,
   expanded,
+  nickname,
   onPress,
   rank,
   role,
 }: {
   assetBaseUrl: string;
   entry: PokemonPvPRankingEntry;
+  cp?: number;
   expanded: boolean;
+  nickname?: string | null;
   onPress: () => void;
   rank: number;
   role: NativePvpRole;
@@ -122,6 +129,7 @@ const PvpEntryCard = ({
             <Text style={[styles.pokemonName, light && styles.textLight]}>
               {entry.name}
             </Text>
+            {nickname ? <Text numberOfLines={1} style={[styles.nickname, light && styles.mutedLight]}>{nickname}</Text> : null}
             <View style={styles.typeRow}>
               {entry.types.map((type) => (
                 <Image
@@ -162,6 +170,7 @@ const PvpEntryCard = ({
             <Text style={[styles.level, light && styles.textLight]}>
               Level {entry.recommendedLevel}
             </Text>
+            {cp != null ? <Text style={[styles.ivs, light && styles.mutedLight]}>CP {cp.toLocaleString()}</Text> : null}
             <Text style={[styles.ivs, light && styles.mutedLight]}>
               {entry.attackIv}/{entry.defenseIv}/{entry.staminaIv} IV
             </Text>
@@ -233,23 +242,6 @@ export const NativePvpScreen = ({
   const [formatKey, setFormatKey] = useState("great");
   const format =
     formats.find((item) => item.key === formatKey) ?? formats[0] ?? null;
-  const league = (format?.league ?? "great") as PokemonPvPLeagueKey;
-  const [scope, setScope] = useState<"catalog" | "owned">("catalog");
-  const [cupOpen, setCupOpen] = useState(false);
-  const [role, setRole] = useState<NativePvpRole>("overall");
-  const [query, setQuery] = useState("");
-  const [expanded, setExpanded] = useState<string | null>(null);
-  const entries = useMemo(
-    () =>
-      filterNativePvpEntries({
-        entries: format?.entries ?? [],
-        instances,
-        query,
-        role,
-        scope,
-      }),
-    [format?.entries, instances, query, role, scope],
-  );
   const mechanics =
     format?.mechanics ??
     (/\bcompetitors?\b/i.test(
@@ -257,6 +249,120 @@ export const NativePvpScreen = ({
     )
       ? "pvpoke-legacy"
       : "current-2026");
+  const league = (format?.league ?? "great") as PokemonPvPLeagueKey;
+  const [scope, setScope] = useState<"catalog" | "owned">("catalog");
+  const [cupOpen, setCupOpen] = useState(false);
+  const [role, setRole] = useState<NativePvpRole>("overall");
+  const [query, setQuery] = useState("");
+  const [expanded, setExpanded] = useState<string | null>(null);
+  const evaluationPlan = useMemo(() => (
+    scope === 'owned' && workspace !== 'iv-rank'
+      ? buildNativePvpRosterEvaluationPlan({
+        catalog,
+        cpLimit: format?.cpLimit ?? null,
+        entries: format?.entries ?? [],
+        formatKey: format?.key ?? 'great',
+        instances,
+        mechanics,
+      })
+      : null
+  ), [catalog, format?.cpLimit, format?.entries, format?.key, instances, mechanics, scope, workspace]);
+  const [ownedEvaluation, setOwnedEvaluation] = useState<{
+    error: string | null;
+    key: string | null;
+    loading: boolean;
+    response: PokemonPvPRosterEvaluationResponse | null;
+  }>({ error: null, key: null, loading: false, response: null });
+  const activeOwnedEvaluation = evaluationPlan && ownedEvaluation.key === evaluationPlan.cacheKey
+    ? ownedEvaluation
+    : {
+      error: null,
+      key: evaluationPlan?.cacheKey ?? null,
+      loading: Boolean(evaluationPlan),
+      response: null,
+    };
+
+  useEffect(() => {
+    let cancelled = false;
+    let timer: ReturnType<typeof setTimeout> | null = null;
+    if (!evaluationPlan) return undefined;
+
+    timer = setTimeout(() => {
+      void (async () => {
+        try {
+          setOwnedEvaluation({
+            error: null,
+            key: evaluationPlan.cacheKey,
+            loading: true,
+            response: null,
+          });
+          const results: PokemonPvPRosterEvaluationResponse['results'] = [];
+          for (const candidate of evaluationPlan.request.candidates) {
+            if (cancelled) return;
+            // Yield between recorded copies so large collections do not freeze
+            // the native UI while using the same local battle model as Vite.
+            await new Promise<void>((resolve) => setTimeout(resolve, 0));
+            const response = evaluatePvPRosterLocally({
+              ...evaluationPlan.request,
+              candidates: [candidate],
+            });
+            results.push(...response.results);
+          }
+          if (cancelled) return;
+          setOwnedEvaluation({
+            error: null,
+            key: evaluationPlan.cacheKey,
+            loading: false,
+            response: {
+              mechanics: evaluationPlan.request.mechanics,
+              fieldSize: evaluationPlan.request.opponents.length,
+              results,
+            },
+          });
+        } catch (error: unknown) {
+          if (cancelled) return;
+          setOwnedEvaluation({
+            error: error instanceof Error ? error.message : 'Exact build evaluation is unavailable.',
+            key: evaluationPlan.cacheKey,
+            loading: false,
+            response: null,
+          });
+        }
+      })();
+    }, 0);
+    return () => {
+      cancelled = true;
+      if (timer) clearTimeout(timer);
+    };
+  }, [evaluationPlan]);
+
+  const roster = useMemo(() => buildNativePvpRankingRows({
+    catalog,
+    cpLimit: format?.cpLimit ?? null,
+    entries: format?.entries ?? [],
+    evaluation: activeOwnedEvaluation.response,
+    instances,
+    query,
+    role,
+    scope,
+  }), [activeOwnedEvaluation.response, catalog, format?.cpLimit, format?.entries, instances, query, role, scope]);
+  const rankingRows = roster.rows;
+  const entries = useMemo(() => rankingRows.map(({ entry }) => entry), [rankingRows]);
+  const rosterDetails = [
+    `${roster.summary.eligibleCount} fully detailed from ${roster.summary.caughtCount} caught`,
+    activeOwnedEvaluation.loading
+      ? 'evaluating levels, IVs, and moves on this device'
+      : activeOwnedEvaluation.response
+        ? `evaluated locally against ${activeOwnedEvaluation.response.fieldSize} meta opponents`
+        : activeOwnedEvaluation.error
+          ? 'species baseline shown; local build evaluation unavailable'
+          : '',
+    roster.summary.overCapCount > 0 ? `${roster.summary.overCapCount} over the format cap` : '',
+    roster.summary.missingCpCount > 0 ? `${roster.summary.missingCpCount} need CP` : '',
+    roster.summary.missingLevelOrIvCount > 0 ? `${roster.summary.missingLevelOrIvCount} need level or IVs` : '',
+    roster.summary.missingMoveCount > 0 ? `${roster.summary.missingMoveCount} need a Fast and Charged Move` : '',
+    roster.summary.unmatchedCount > 0 ? `${roster.summary.unmatchedCount} unavailable in this format ranking` : '',
+  ].filter(Boolean).join(' · ');
   const updateWorkspace = (next: NativePvpWorkspace) => {
     setWorkspace(next);
     setExpanded(null);
@@ -266,7 +372,7 @@ export const NativePvpScreen = ({
     (item) => !["great", "ultra", "master"].includes(item.key),
   );
   const activeCup = cupFormats.find((item) => item.key === format?.key) ?? null;
-  const rankedCount = workspace === "iv-rank" ? 4096 : entries.length;
+  const rankedCount = workspace === "iv-rank" ? 4096 : rankingRows.length;
   const header = (
     <View>
       <View style={styles.topbar}>
@@ -432,11 +538,16 @@ export const NativePvpScreen = ({
                     scope === value && styles.scopeTextActive,
                   ]}
                 >
-                  {label}
+                  {label}{value === 'owned' && scope === 'owned' ? `   ${isLoading ? '…' : roster.summary.eligibleCount}` : ''}
                 </Text>
               </View>
             </Pressable>
           ))}
+          {scope === 'owned' ? (
+            <Text accessibilityLiveRegion="polite" style={[styles.scopeDescription, light && styles.mutedLight]}>
+              {isLoading ? 'Loading your caught Pokémon…' : rosterDetails}
+            </Text>
+          ) : null}
         </View>
       ) : null}
       {isLoading ? (
@@ -474,8 +585,10 @@ export const NativePvpScreen = ({
             paddingTop: 8,
             paddingBottom: 96,
           }}
-          data={entries.slice(0, 100)}
-          keyExtractor={(entry) => entry.speciesId}
+          data={rankingRows.slice(0, 100)}
+          keyExtractor={(row) => row.key}
+          keyboardShouldPersistTaps="always"
+          nestedScrollEnabled
           ListHeaderComponent={
             <>
               {header}
@@ -541,11 +654,13 @@ export const NativePvpScreen = ({
           renderItem={({ item, index }) => (
             <PvpEntryCard
               assetBaseUrl={assetBaseUrl}
-              entry={item}
-              expanded={expanded === item.speciesId}
+              cp={item.cp}
+              entry={item.entry}
+              expanded={expanded === item.key}
+              nickname={item.nickname}
               onPress={() =>
                 setExpanded((current) =>
-                  current === item.speciesId ? null : item.speciesId,
+                  current === item.key ? null : item.key,
                 )
               }
               rank={index + 1}
@@ -561,7 +676,9 @@ export const NativePvpScreen = ({
         styles.scrollContent,
         { paddingTop: 8, paddingBottom: 96 },
       ]}
+      keyboardShouldPersistTaps="always"
       ref={workspaceScrollRef}
+      nestedScrollEnabled
       style={[styles.root, light && styles.rootLight]}
       testID="native-pvp-screen"
     >
@@ -594,9 +711,12 @@ export const NativePvpScreen = ({
         <NativePvpIvRank
           assetBaseUrl={assetBaseUrl}
           catalog={catalog}
+          cpLimit={format?.cpLimit ?? null}
           instances={instances}
+          isLoading={Boolean(isLoading)}
           league={league}
           light={light}
+          rankings={format?.entries ?? []}
           scope={scope}
           setScope={setScope}
           signedIn={signedIn}
@@ -752,6 +872,7 @@ const styles = StyleSheet.create({
   scopeRow: {
     flexDirection: "row",
     alignItems: "center",
+    flexWrap: "wrap",
     gap: 5,
     marginTop: 7,
     borderWidth: 1,
@@ -774,6 +895,7 @@ const styles = StyleSheet.create({
   scopeActive: { borderColor: "#42d5c2", backgroundColor: "#42d5c2" },
   scopeText: { color: "#f5ffff", fontSize: 11, fontWeight: "900" },
   scopeTextActive: { color: "#071313" },
+  scopeDescription: { width: '100%', paddingHorizontal: 7, paddingVertical: 4, color: '#9db6b8', fontSize: 9.5, lineHeight: 14, textAlign: 'center' },
   roleRail: { flexDirection: "row", flexWrap: "wrap", gap: 4, paddingTop: 7 },
   role: {
     width: "24%",
@@ -843,6 +965,7 @@ const styles = StyleSheet.create({
   buildRow: { minWidth: 0, flexDirection: "row", alignItems: "center", gap: 7 },
   identity: { minWidth: 0, flex: 1 },
   pokemonName: { color: "#f5ffff", fontSize: 13, fontWeight: "900" },
+  nickname: { marginTop: 1, color: '#99a7ae', fontSize: 9, fontWeight: '700' },
   pokemonMeta: { marginTop: 2, color: "#99a7ae", fontSize: 9 },
   typeRow: { flexDirection: "row", gap: 3, marginTop: 2 },
   typeIcon: { width: 14, height: 14 },

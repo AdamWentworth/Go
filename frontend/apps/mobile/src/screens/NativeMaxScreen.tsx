@@ -17,10 +17,12 @@ import { NativeCombatRankingCard } from '../components/NativeCombatRankingCard';
 import { NativeMaxBattleSimulator } from '../components/tools/NativeMaxBattleSimulator';
 import {
   buildNativeMaxRankings,
+  buildNativeMaxRosterSummary,
   buildNativeMaxRoleCandidates,
   buildNativeMaxVariants,
   NATIVE_BATTLE_TYPES,
   type NativeMaxRole,
+  type NativeCombatEntry,
   type NativeRosterScope,
 } from '../features/tools/nativeBattleModels';
 import { useNativeColorScheme } from '../features/settings/useNativeColorScheme';
@@ -40,7 +42,7 @@ type Props = {
   initialView?: MaxView;
   isLoading?: boolean;
   onBack: () => void;
-  onOpenPokemon: (variantId: string) => void;
+  onOpenPokemon: (entry: NativeCombatEntry) => void;
   onRetry: () => void;
   signedIn: boolean;
 };
@@ -97,33 +99,31 @@ export const NativeMaxScreen = ({
   const [bossId, setBossId] = useState(initialBossId);
   const [methodOpen, setMethodOpen] = useState(false);
 
-  const maxCatalog = useMemo(
-    () => catalog.filter((pokemon) => pokemon.max?.some((form) => Boolean(form.dynamax || form.gigantamax))),
-    [catalog],
-  );
-  const bossVariants = useMemo(() => buildNativeMaxVariants(maxCatalog), [maxCatalog]);
+  // Canonical Max eligibility also includes special attackers such as crowned
+  // Zacian/Zamazenta and Eternatus; they are not guaranteed to carry max[].
+  const bossVariants = useMemo(() => buildNativeMaxVariants(catalog), [catalog]);
   const selectedBoss = bossVariants.find((boss) => boss.variant_id === bossId)
     ?? bossVariants[0]
     ?? null;
   const effectiveScope = signedIn ? scope : 'catalog';
-  const ownedCount = useMemo(
-    () => Object.values(instances).filter((instance) => instance.is_caught && !instance.disabled && (instance.dynamax || instance.gigantamax || instance.crown)).length,
-    [instances],
+  const rosterSummary = useMemo(
+    () => buildNativeMaxRosterSummary(catalog, instances),
+    [catalog, instances],
   );
   const candidates = useMemo(
     () => buildNativeMaxRoleCandidates({
       bossVariant: selectedBoss,
-      catalog: maxCatalog,
+      catalog,
       instances,
       scope: effectiveScope,
     }),
-    [effectiveScope, instances, maxCatalog, selectedBoss],
+    [catalog, effectiveScope, instances, selectedBoss],
   );
   const rankings = useMemo(() => {
     const normalized = query.trim().toLocaleLowerCase();
     const entries = buildNativeMaxRankings({
       bossVariant: view === 'bosses' ? selectedBoss : null,
-      catalog: maxCatalog,
+      catalog,
       instances,
       role,
       scope: effectiveScope,
@@ -135,7 +135,7 @@ export const NativeMaxScreen = ({
       entry.chargedMove?.name,
       ...entry.types,
     ].some((value) => value?.toLocaleLowerCase().includes(normalized))).slice(0, 50);
-  }, [effectiveScope, instances, maxCatalog, query, role, selectedBoss, selectedType, view]);
+  }, [catalog, effectiveScope, instances, query, role, selectedBoss, selectedType, view]);
 
   const switchView = (next: MaxView) => {
     setView(next);
@@ -178,7 +178,7 @@ export const NativeMaxScreen = ({
 
   const roster = (
     <View accessibilityLabel="Max Battle roster" style={[styles.roster, light && styles.panelLight]}>
-      {([['catalog', 'ALL POKÉMON'], ['owned', `MY POKÉMON${effectiveScope === 'owned' ? `   ${ownedCount}` : ''}`]] as const).map(([value, label]) => (
+      {([['catalog', 'ALL POKÉMON'], ['owned', `MY POKÉMON${effectiveScope === 'owned' ? `   ${isLoading ? '…' : rosterSummary.eligibleCount}` : ''}`]] as const).map(([value, label]) => (
         <Pressable
           accessibilityRole="button"
           accessibilityState={{ disabled: value === 'owned' && !signedIn, selected: effectiveScope === value }}
@@ -198,6 +198,18 @@ export const NativeMaxScreen = ({
           </View>
         </Pressable>
       ))}
+      {effectiveScope === 'owned' ? (
+        <Text accessibilityLiveRegion="polite" style={[styles.rosterDescription, light && styles.mutedLight]}>
+          {isLoading
+            ? 'Loading your Max roster'
+            : [
+              `${rosterSummary.eligibleCount} Max-ready entries from ${rosterSummary.caughtCount} caught Max Pokémon.`,
+              "Uses each copy's recorded level, IVs, Fast Move, and Max Move levels.",
+              rosterSummary.incompleteEntryCount > 0 ? `${rosterSummary.incompleteEntryCount} need complete battle details before ranking.` : '',
+              rosterSummary.unmappedCount > 0 ? `${rosterSummary.unmappedCount} could not be matched to the current catalog.` : '',
+            ].filter(Boolean).join(' ')}
+        </Text>
+      ) : null}
     </View>
   );
 
@@ -360,6 +372,8 @@ export const NativeMaxScreen = ({
         contentContainerStyle={{ paddingHorizontal: 7, paddingTop: 3, paddingBottom: 96 }}
         data={rankings}
         keyExtractor={(entry) => entry.id}
+        keyboardShouldPersistTaps="always"
+        nestedScrollEnabled
         ListFooterComponent={footer}
         ListHeaderComponent={header}
         ListEmptyComponent={null}
@@ -368,7 +382,7 @@ export const NativeMaxScreen = ({
             assetBaseUrl={assetBaseUrl}
             entry={item}
             metricLabel={roleMetric(role)}
-            onPress={() => onOpenPokemon(item.id)}
+            onPress={() => onOpenPokemon(item)}
             rank={index + 1}
           />
         )}
@@ -403,10 +417,11 @@ const styles = StyleSheet.create({
   viewActive: { backgroundColor: '#44d7ca' },
   viewText: { color: '#aebdbc', fontSize: 11, fontWeight: '900' },
   viewIcon: { marginRight: 5, color: '#aebdbc', fontSize: 11, fontWeight: '900' },
-  roster: { flexDirection: 'row', gap: 5, borderWidth: 1, borderColor: '#315253', borderRadius: 9, padding: 5, backgroundColor: '#101919' },
+  roster: { flexDirection: 'row', flexWrap: 'wrap', gap: 5, borderWidth: 1, borderColor: '#315253', borderRadius: 9, padding: 5, backgroundColor: '#101919' },
   rosterButton: { flex: 1, minHeight: 40, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: '#435455', borderRadius: 999, backgroundColor: '#111919' },
   rosterActive: { borderColor: '#44d7ca', backgroundColor: '#44d7ca' },
   rosterText: { color: '#e7f1f0', fontSize: 10, fontWeight: '900' },
+  rosterDescription: { width: '100%', paddingHorizontal: 7, paddingVertical: 4, color: '#9bb0af', fontSize: 9.5, lineHeight: 14, textAlign: 'center' },
   iconLabelRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6 },
   disabled: { opacity: .42 },
   roleTabs: { flexDirection: 'row', gap: 6 },

@@ -6,6 +6,7 @@ import {
   View,
   useWindowDimensions,
 } from 'react-native';
+import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import {
   Children,
   forwardRef,
@@ -13,6 +14,7 @@ import {
   useCallback,
   useEffect,
   useImperativeHandle,
+  useMemo,
   useRef,
   useState,
 } from 'react';
@@ -67,6 +69,7 @@ export const NativeHorizontalPageSlider = forwardRef<
   const renderedIndexRef = useRef(safeIndex);
   const alignedInitialPageRef = useRef(false);
   const previousWidthRef = useRef(width);
+  const dragStartOffsetRef = useRef(safeIndex * width);
   const [internalScrollX] = useState(() => new Animated.Value(safeIndex * width));
   const pageScrollX = scrollX ?? internalScrollX;
   const devicePreferences = useOptionalNativeDevicePreferences();
@@ -130,13 +133,55 @@ export const NativeHorizontalPageSlider = forwardRef<
     setPage(safeIndex, false);
   }, [safeIndex, setPage, width]);
 
+  const settleDrag = useCallback((translationX: number, velocityX: number) => {
+    const currentIndex = renderedIndexRef.current;
+    const projectedTranslation = translationX + (velocityX * 0.08);
+    const shouldChangePage = Math.abs(projectedTranslation) >= Math.max(54, width * 0.16);
+    const requestedIndex = shouldChangePage
+      ? currentIndex + (projectedTranslation < 0 ? 1 : -1)
+      : currentIndex;
+    const nextIndex = clampPageIndex(requestedIndex, panelCount);
+    setPage(nextIndex);
+    if (nextIndex !== safeIndex) onIndexChange(nextIndex);
+  }, [onIndexChange, panelCount, safeIndex, setPage, width]);
+
+  const pageGesture = useMemo(() => Gesture.Pan()
+    .enabled(panelCount > 1)
+    // Do not let a page swipe enter BEGAN/ACTIVE during a vertical list drag.
+    // Android's nested ScrollView responder otherwise steals diagonal swipes
+    // from FlatList children before they can establish vertical direction.
+    .activeOffsetX([-18, 18])
+    .failOffsetY([-10, 10])
+    .runOnJS(true)
+    .onStart(() => {
+      dragStartOffsetRef.current = renderedIndexRef.current * width;
+      pageScrollX.stopAnimation();
+    })
+    .onUpdate((event) => {
+      const maxOffset = Math.max(0, (panelCount - 1) * width);
+      const offset = Math.max(
+        0,
+        Math.min(maxOffset, dragStartOffsetRef.current - event.translationX),
+      );
+      pageScrollX.setValue(offset);
+      scrollRef.current?.scrollTo({ animated: false, x: offset, y: 0 });
+    })
+    .onEnd((event) => settleDrag(event.translationX, event.velocityX)), [
+      pageScrollX,
+      panelCount,
+      settleDrag,
+      width,
+    ]);
+
   return (
-    <Animated.ScrollView
+    <GestureDetector gesture={pageGesture}>
+      <Animated.ScrollView
       bounces={false}
       contentOffset={{ x: safeIndex * width, y: 0 }}
       decelerationRate="fast"
       directionalLockEnabled
       horizontal
+      keyboardShouldPersistTaps="always"
       nestedScrollEnabled
       onScroll={Animated.event(
         [{ nativeEvent: { contentOffset: { x: pageScrollX } } }],
@@ -153,13 +198,14 @@ export const NativeHorizontalPageSlider = forwardRef<
       }}
       pagingEnabled
       ref={scrollRef}
+      scrollEnabled={false}
       scrollEventThrottle={16}
       showsHorizontalScrollIndicator={false}
       style={styles.viewport}
       testID="native-horizontal-page-slider"
-    >
-      {panels.map((panel, index) => (
-        <View
+      >
+        {panels.map((panel, index) => (
+          <View
           accessibilityElementsHidden={index !== safeIndex}
           aria-hidden={index !== safeIndex}
           importantForAccessibility={index === safeIndex ? 'auto' : 'no-hide-descendants'}
@@ -167,11 +213,12 @@ export const NativeHorizontalPageSlider = forwardRef<
           pointerEvents={index === safeIndex ? 'auto' : 'none'}
           style={[styles.panel, { width }]}
           testID={`native-horizontal-page-${index}`}
-        >
-          {panel}
-        </View>
-      ))}
-    </Animated.ScrollView>
+          >
+            {panel}
+          </View>
+        ))}
+      </Animated.ScrollView>
+    </GestureDetector>
   );
 });
 
