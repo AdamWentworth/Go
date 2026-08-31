@@ -18,7 +18,7 @@ import {
   useWindowDimensions,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import {
   NativeTradePreferencePokemonCard,
 } from '../features/trades/NativeTradePreferencePokemonCard';
@@ -44,6 +44,7 @@ type Props = {
   initialMode?: NativeTradePreferenceMode;
   isLoading?: boolean;
   onOpenActivity: () => void;
+  pageHeader?: ReactNode;
   onSave: (
     entry: NativeTradePreferenceEntry,
     draft: NativeTradePreferenceDraft,
@@ -240,6 +241,7 @@ export const NativeTradePreferencesScreen = ({
   initialMode = 'trade',
   isLoading = false,
   onOpenActivity,
+  pageHeader = null,
   onSave,
   showModeTabs = true,
 }: Props) => {
@@ -665,26 +667,81 @@ export const NativeTradePreferencesScreen = ({
     </View>
   ) : null;
 
-  const candidateList = isLoading ? (
-    <View style={styles.loadingState}>
-      <ActivityIndicator color="#31cfd1" size="large" />
-      <Text style={[styles.emptyTitle, light && styles.textLight]}>Loading trade preferences</Text>
-      <Text style={[styles.emptyBody, light && styles.secondaryLight]}>
-        Reading your For Trade and Wanted Pokémon…
-      </Text>
+  const topTabs = showModeTabs ? (
+    <View accessibilityRole="tablist" style={[styles.topTabs, light && styles.topTabsLight]}>
+      <Pressable aria-selected accessibilityRole="tab" accessibilityState={{ selected: true }} style={styles.topTab}>
+        <Text style={[styles.topTabText, light && styles.textLight]}>Trade Preferences</Text>
+      </Pressable>
+      <Pressable aria-selected={false} accessibilityRole="tab" accessibilityState={{ selected: false }} onPress={onOpenActivity} style={[styles.topTab, styles.topTabInactive]}>
+        <Text style={[styles.topTabText, styles.topTabInactiveText, light && styles.secondaryLight]}>Trade Activity</Text>
+      </Pressable>
     </View>
-  ) : selectedEntry ? (
+  ) : null;
+
+  const saveFeedback = saveSuccess && !editing ? (
+    <View accessibilityLiveRegion="polite" style={styles.saveSuccess} testID="trade-preferences-save-success">
+      <Text style={styles.saveSuccessMark}>✓</Text>
+      <Text style={styles.saveSuccessText}>Preferences saved.</Text>
+      <Pressable accessibilityRole="button" accessibilityLabel="Dismiss saved message" onPress={() => setSaveSuccess(false)}>
+        <Text style={styles.saveSuccessDismiss}>×</Text>
+      </Pressable>
+    </View>
+  ) : null;
+
+  const editActions = editing && selectedEntry ? (
+    <View style={[styles.editActions, light && styles.editActionsLight]}>
+      <Pressable
+        accessibilityRole="button"
+        disabled={saving}
+        onPress={() => {
+          resetDraft(selectedEntry);
+          setEditing(false);
+        }}
+        style={[styles.stickyCancel, saving && styles.disabled]}
+      >
+        <Text style={[styles.stickyCancelText, light && styles.textLight]}>Cancel</Text>
+      </Pressable>
+      <Pressable
+        accessibilityRole="button"
+        disabled={saving}
+        onPress={() => void saveDraft()}
+        style={[styles.stickySave, { backgroundColor: colors.accent }, saving && styles.disabled]}
+        testID="trade-preferences-save"
+      >
+        <Text style={styles.stickySaveText}>{saving ? 'Saving…' : 'Save changes'}</Text>
+      </Pressable>
+    </View>
+  ) : null;
+
+  const candidateList = (
     <FlatList
       columnWrapperStyle={columns > 1 ? { gap } : undefined}
       contentContainerStyle={[
         styles.editorContent,
         { paddingHorizontal: horizontalPadding },
       ]}
-      data={visibleCandidates}
+      data={isLoading || !selectedEntry ? [] : visibleCandidates}
       key={`${mode}:${columns}`}
       keyExtractor={(candidate) => candidate.collectionKey}
       keyboardShouldPersistTaps="always"
-      ListEmptyComponent={(
+      ListEmptyComponent={isLoading ? (
+        <View style={styles.loadingState}>
+          <ActivityIndicator color="#31cfd1" size="large" />
+          <Text style={[styles.emptyTitle, light && styles.textLight]}>Loading trade preferences</Text>
+          <Text style={[styles.emptyBody, light && styles.secondaryLight]}>
+            Reading your For Trade and Wanted Pokémon…
+          </Text>
+        </View>
+      ) : !selectedEntry ? (
+        <View style={styles.noListings}>
+          <Text style={[styles.emptyTitle, light && styles.textLight]}>
+            No {colors.label} Pokémon yet
+          </Text>
+          <Text style={[styles.emptyBody, light && styles.secondaryLight]}>
+            Add Pokémon to {colors.label} from your collection before setting preferences.
+          </Text>
+        </View>
+      ) : (
         <View style={[styles.empty, light && styles.surfaceLight]}>
           <Text style={[styles.emptyTitle, light && styles.textLight]}>
             {query ? 'No Pokémon match this search' : 'No Pokémon available'}
@@ -698,10 +755,18 @@ export const NativeTradePreferencesScreen = ({
       )}
       ListHeaderComponent={(
         <>
+          {!desktop ? pageHeader : null}
+          {!desktop ? topTabs : null}
           {!desktop ? workspaceHeader : null}
           {editorHeader}
         </>
       )}
+      ListFooterComponent={!desktop ? (
+        <>
+          {saveFeedback}
+          {editActions}
+        </>
+      ) : null}
       numColumns={columns}
       nestedScrollEnabled
       renderItem={({ item }) => (
@@ -723,30 +788,13 @@ export const NativeTradePreferencesScreen = ({
       showsVerticalScrollIndicator={false}
       style={styles.editorList}
     />
-  ) : (
-    <View style={styles.noListings}>
-      <Text style={[styles.emptyTitle, light && styles.textLight]}>
-        No {colors.label} Pokémon yet
-      </Text>
-      <Text style={[styles.emptyBody, light && styles.secondaryLight]}>
-        Add Pokémon to {colors.label} from your collection before setting preferences.
-      </Text>
-    </View>
   );
 
   return (
     <View style={[styles.safe, light && styles.safeLight]} testID="native-trade-preferences-screen">
-      {showModeTabs ? (
-        <View accessibilityRole="tablist" style={[styles.topTabs, light && styles.topTabsLight]}>
-          <Pressable aria-selected accessibilityRole="tab" accessibilityState={{ selected: true }} style={styles.topTab}>
-            <Text style={[styles.topTabText, light && styles.textLight]}>Trade Preferences</Text>
-          </Pressable>
-          <Pressable aria-selected={false} accessibilityRole="tab" accessibilityState={{ selected: false }} onPress={onOpenActivity} style={[styles.topTab, styles.topTabInactive]}>
-            <Text style={[styles.topTabText, styles.topTabInactiveText, light && styles.secondaryLight]}>Trade Activity</Text>
-          </Pressable>
-        </View>
-      ) : null}
-      {desktop || !selectedEntry || isLoading ? workspaceHeader : null}
+      {desktop ? pageHeader : null}
+      {desktop ? topTabs : null}
+      {desktop ? workspaceHeader : null}
       <View style={styles.workspace}>
         {desktop ? (
           <ScrollView contentContainerStyle={styles.entryRail} keyboardShouldPersistTaps="always" nestedScrollEnabled style={[styles.entryRailViewport, light && styles.railLight]}>
@@ -766,39 +814,8 @@ export const NativeTradePreferencesScreen = ({
         ) : null}
         <View style={[styles.editorPane, desktop && styles.editorPaneDesktop]}>{candidateList}</View>
       </View>
-      {saveSuccess && !editing ? (
-        <View accessibilityLiveRegion="polite" style={styles.saveSuccess} testID="trade-preferences-save-success">
-          <Text style={styles.saveSuccessMark}>✓</Text>
-          <Text style={styles.saveSuccessText}>Preferences saved.</Text>
-          <Pressable accessibilityRole="button" accessibilityLabel="Dismiss saved message" onPress={() => setSaveSuccess(false)}>
-            <Text style={styles.saveSuccessDismiss}>×</Text>
-          </Pressable>
-        </View>
-      ) : null}
-      {editing && selectedEntry ? (
-        <View style={[styles.stickyEditActions, light && styles.stickyEditActionsLight]}>
-          <Pressable
-            accessibilityRole="button"
-            disabled={saving}
-            onPress={() => {
-              resetDraft(selectedEntry);
-              setEditing(false);
-            }}
-            style={[styles.stickyCancel, saving && styles.disabled]}
-          >
-            <Text style={[styles.stickyCancelText, light && styles.textLight]}>Cancel</Text>
-          </Pressable>
-          <Pressable
-            accessibilityRole="button"
-            disabled={saving}
-            onPress={() => void saveDraft()}
-            style={[styles.stickySave, { backgroundColor: colors.accent }, saving && styles.disabled]}
-            testID="trade-preferences-save"
-          >
-            <Text style={styles.stickySaveText}>{saving ? 'Saving…' : 'Save changes'}</Text>
-          </Pressable>
-        </View>
-      ) : null}
+      {desktop ? saveFeedback : null}
+      {desktop ? editActions : null}
 
       <Modal animationType={slideAnimation} onRequestClose={() => setPickerOpen(false)} visible={pickerOpen}>
         <SafeAreaView style={[styles.picker, light && styles.safeLight]}>
@@ -864,9 +881,7 @@ export const NativeTradePreferencesScreen = ({
 };
 
 const styles = StyleSheet.create({
-  // Reserve the floating action-menu lane so candidates and sticky save
-  // controls cannot land beneath the Poké Ball on narrow/large-text layouts.
-  safe: { flex: 1, paddingBottom: 86, backgroundColor: '#071012' },
+  safe: { flex: 1, backgroundColor: '#071012' },
   safeLight: { backgroundColor: '#f8fff9' },
   topTabs: {
     marginHorizontal: 8,
@@ -915,7 +930,7 @@ const styles = StyleSheet.create({
   editorPane: { flex: 1, minWidth: 0 },
   editorPaneDesktop: { alignItems: 'center' },
   editorList: { flex: 1, width: '100%' },
-  editorContent: { gap: 8, paddingBottom: 110, alignSelf: 'center', width: '100%', maxWidth: 856 },
+  editorContent: { flexGrow: 1, gap: 8, paddingBottom: 150, alignSelf: 'center', width: '100%', maxWidth: 856 },
   entrySummary: { minHeight: 58, borderRadius: 10, borderWidth: 1, borderColor: '#2a4145', backgroundColor: '#101c1e', flexDirection: 'row', alignItems: 'center', padding: 7, gap: 8, marginBottom: 8 },
   entrySummaryCompact: { minHeight: 58, backgroundColor: 'transparent' },
   surfaceLight: { backgroundColor: '#fff' },
@@ -993,8 +1008,8 @@ const styles = StyleSheet.create({
   saveSuccessMark: { color: '#53db94', fontSize: 18, fontWeight: '900' },
   saveSuccessText: { flex: 1, color: '#f2fff8', fontSize: 13, fontWeight: '900' },
   saveSuccessDismiss: { color: '#f2fff8', fontSize: 23, lineHeight: 26 },
-  stickyEditActions: { flexShrink: 0, minHeight: 72, flexDirection: 'row', gap: 9, paddingHorizontal: 12, paddingTop: 9, paddingBottom: 15, borderTopWidth: 1, borderTopColor: '#28464b', backgroundColor: 'rgba(7,16,18,0.97)' },
-  stickyEditActionsLight: { backgroundColor: 'rgba(255,255,255,0.98)' },
+  editActions: { minHeight: 72, flexDirection: 'row', gap: 9, marginTop: 9, paddingHorizontal: 12, paddingTop: 9, paddingBottom: 15, borderTopWidth: 1, borderTopColor: '#28464b', backgroundColor: '#071012' },
+  editActionsLight: { backgroundColor: '#ffffff' },
   stickyCancel: { flex: 0.8, minHeight: 48, borderRadius: 12, borderWidth: 1, borderColor: '#4a6065', alignItems: 'center', justifyContent: 'center' },
   stickyCancelText: { color: '#e7eff0', fontWeight: '900' },
   stickySave: { flex: 1.2, minHeight: 48, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },

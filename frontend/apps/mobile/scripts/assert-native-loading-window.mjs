@@ -46,7 +46,10 @@ for (const screenshotPath of screenshotPaths) {
   ];
   const ys = [
     1,
-    Math.round(png.height * 0.08),
+    // Expo's Android development client owns a floating native gear over the
+    // upper-right of debug builds. The physical top row still proves status-
+    // bar coverage; sample below that dev-only control for interior coverage.
+    Math.round(png.height * 0.16),
     Math.round(png.height * 0.35),
     Math.round(png.height * 0.65),
     Math.round(png.height * 0.92),

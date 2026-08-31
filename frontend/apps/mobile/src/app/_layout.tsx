@@ -1,4 +1,4 @@
-import { Stack } from 'expo-router';
+import { Stack, usePathname } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { StyleSheet } from 'react-native';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
@@ -9,16 +9,20 @@ import {
   NativeDevicePreferencesProvider,
   useNativeDevicePreferences,
 } from '../features/settings/NativeDevicePreferencesProvider';
-import { NativeAppLoadingProvider } from '../components/NativeAppLoadingProvider';
+import {
+  NativeAppLoadingOverlay,
+  NativeAppLoadingProvider,
+} from '../components/NativeAppLoadingProvider';
 
 initializeObservability();
 
 const RootContent = () => {
   const devicePreferences = useNativeDevicePreferences();
   const light = devicePreferences.colorTheme === 'light';
+  const pathname = usePathname();
 
   return (
-    <>
+    <NativeAppLoadingProvider navigationPath={pathname}>
       <StatusBar style={light ? 'dark' : 'light'} />
       <MobileErrorBoundary>
         <Stack
@@ -31,6 +35,7 @@ const RootContent = () => {
                   style={[styles.appShell, light && styles.appShellLight]}
                 >
                   {children}
+                  <NativeAppLoadingOverlay />
                 </SafeAreaView>
               )
           )}
@@ -40,7 +45,7 @@ const RootContent = () => {
           }}
         />
       </MobileErrorBoundary>
-    </>
+    </NativeAppLoadingProvider>
   );
 };
 
@@ -49,9 +54,7 @@ export default function RootLayout() {
     <GestureHandlerRootView style={styles.appShell}>
       <SafeAreaProvider>
         <NativeDevicePreferencesProvider>
-          <NativeAppLoadingProvider>
-            <RootContent />
-          </NativeAppLoadingProvider>
+          <RootContent />
         </NativeDevicePreferencesProvider>
       </SafeAreaProvider>
     </GestureHandlerRootView>

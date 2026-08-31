@@ -251,12 +251,6 @@ export default function DeviceSmokeTradeActivityRoute() {
 
   return (
     <View style={[styles.screen, light && styles.screenLight]}>
-      <NativeTradeHubHeader
-        activeView="activity"
-        assetBaseUrl={ASSET_BASE_URL}
-        onOpenTradeBoard={() => undefined}
-        onViewChange={() => undefined}
-      />
       <NativeTradeActivityScreen
         assetBaseUrl={ASSET_BASE_URL}
         error={null}
@@ -308,6 +302,14 @@ export default function DeviceSmokeTradeActivityRoute() {
           coordinationHandle: 'OtherTrainer',
           location: 'Burnaby, British Columbia, Canada',
         })}
+        pageHeader={(
+          <NativeTradeHubHeader
+            activeView="activity"
+            assetBaseUrl={ASSET_BASE_URL}
+            onOpenTradeBoard={() => undefined}
+            onViewChange={() => undefined}
+          />
+        )}
         rows={rows}
         showModeTabs={false}
       />

@@ -60,7 +60,7 @@ tags:
     visible: Edit preferences
     timeout: 10000
 - tapOn: Edit preferences
-- assertVisible: Save changes
+- assertNotVisible: Save changes
 - tapOn: No additional rules
 - assertVisible: Mirror trade
 - scrollUntilVisible:
@@ -83,11 +83,25 @@ tags:
       id: preference-candidate-wanted-metagross
     direction: DOWN
     speed: 50
-    visibilityPercentage: 50
+    visibilityPercentage: 100
+    centerElement: true
     timeout: 30000
 - tapOn:
     id: preference-candidate-wanted-metagross
-- tapOn: Save changes
+- swipe:
+    start: "20%,82%"
+    end: "20%,44%"
+    duration: 500
+- swipe:
+    start: "20%,82%"
+    end: "20%,44%"
+    duration: 500
+- extendedWaitUntil:
+    visible:
+      id: trade-preferences-save
+    timeout: 10000
+- tapOn:
+    id: trade-preferences-save
 - extendedWaitUntil:
     visible: Preferences saved.
     timeout: 10000

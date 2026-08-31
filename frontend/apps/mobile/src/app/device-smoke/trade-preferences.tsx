@@ -253,13 +253,6 @@ export default function DeviceSmokeTradePreferencesRoute() {
 
   return (
     <View style={[styles.screen, light && styles.screenLight]}>
-      <NativeTradeHubHeader
-        activeView={activeView}
-        assetBaseUrl={ASSET_BASE_URL}
-        onOpenTradeBoard={() => undefined}
-        onViewChange={changeView}
-        scrollX={pageScrollX}
-      />
       <NativeHorizontalPageSlider
         activeIndex={activeView === 'preferences' ? 0 : 1}
         onIndexChange={(index) => setActiveView(index === 1 ? 'activity' : 'preferences')}
@@ -271,6 +264,15 @@ export default function DeviceSmokeTradePreferencesRoute() {
           entries={entries}
           onOpenActivity={() => changeView('activity')}
           onSave={async () => new Promise((resolve) => setTimeout(resolve, 250))}
+          pageHeader={(
+            <NativeTradeHubHeader
+              activeView={activeView}
+              assetBaseUrl={ASSET_BASE_URL}
+              onOpenTradeBoard={() => undefined}
+              onViewChange={changeView}
+              scrollX={pageScrollX}
+            />
+          )}
           showModeTabs={false}
         />
         <NativeTradeActivityScreen
@@ -281,6 +283,15 @@ export default function DeviceSmokeTradePreferencesRoute() {
           onOpenPreferences={() => changeView('preferences')}
           onRetry={() => undefined}
           onRevealPartner={async () => { throw new Error('No fixture partner.'); }}
+          pageHeader={(
+            <NativeTradeHubHeader
+              activeView={activeView}
+              assetBaseUrl={ASSET_BASE_URL}
+              onOpenTradeBoard={() => undefined}
+              onViewChange={changeView}
+              scrollX={pageScrollX}
+            />
+          )}
           rows={[]}
           showModeTabs={false}
         />

@@ -8,6 +8,8 @@ import { NativeCollectionSyncProvider } from '../../features/collection/NativeCo
 import { NativeRealtimeProvider } from '../../features/realtime/NativeRealtimeProvider';
 import { useNativeDevicePreferences } from '../../features/settings/NativeDevicePreferencesProvider';
 import { nativeRouteAnimation } from '../../navigation/nativeRouteMotion';
+import { nativeRouteSurface } from '../../navigation/nativeRouteSurface';
+import { NativeAppLoadingOverlay } from '../../components/NativeAppLoadingProvider';
 
 export default function NativeLayout() {
   const { colorTheme, shouldReduceMotion } = useNativeDevicePreferences();
@@ -22,18 +24,22 @@ export default function NativeLayout() {
         <NativeCollectionSyncProvider>
           <NativeRealtimeProvider>
             <Stack
-              screenLayout={({ children }) => (
+              screenLayout={({ children, route }) => (
                 <SafeAreaView
                   edges={['top', 'bottom']}
-                  style={[styles.screenSurface, light && styles.screenSurfaceLight]}
+                  style={[
+                    styles.screenSurface,
+                    { backgroundColor: nativeRouteSurface(route.name, light) },
+                  ]}
                 >
                   {children}
+                  <NativeAppLoadingOverlay />
                 </SafeAreaView>
               )}
-              screenOptions={{
-                contentStyle: light ? styles.screenSurfaceLight : styles.screenSurface,
+              screenOptions={({ route }) => ({
+                contentStyle: { backgroundColor: nativeRouteSurface(route.name, light) },
                 headerShown: false,
-              }}
+              })}
             >
               <Stack.Screen name="index" options={{ animation: 'none' }} />
               <Stack.Screen name="login" options={{ animation: nativeRouteAnimation('slide_from_bottom', shouldReduceMotion) }} />
@@ -89,5 +95,4 @@ const styles = StyleSheet.create({
   // internal padding, so the page background continues behind the camera and
   // gesture navigation while page controls remain usable.
   screenSurface: { flex: 1, backgroundColor: '#101a19' },
-  screenSurfaceLight: { backgroundColor: '#f8fff9' },
 });

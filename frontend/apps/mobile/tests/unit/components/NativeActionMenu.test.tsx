@@ -1,10 +1,13 @@
 import { act, fireEvent, render } from '@testing-library/react-native';
-import { Animated, Modal, StyleSheet } from 'react-native';
+import { Animated, StyleSheet } from 'react-native';
 import {
   getNativeActionMenuGeometry,
   NativeActionMenu,
 } from '../../../src/components/NativeActionMenu';
-import { NativeAppLoadingProvider } from '../../../src/components/NativeAppLoadingProvider';
+import {
+  NativeAppLoadingOverlay,
+  NativeAppLoadingProvider,
+} from '../../../src/components/NativeAppLoadingProvider';
 
 const mockToggleColorTheme = jest.fn();
 let mockShouldReduceMotion = false;
@@ -126,18 +129,19 @@ describe('NativeActionMenu', () => {
           onNavigate={onNavigate}
           visible
         />
+        <NativeAppLoadingOverlay />
       </NativeAppLoadingProvider>,
     );
 
     fireEvent.press(view.getByLabelText('Search'));
     expect(view.getByTestId('native-app-loading-overlay')).toBeTruthy();
     expect(view.getByTestId(/native-loading-spinner-/, { includeHiddenElements: true })).toBeTruthy();
-    expect(onNavigate).not.toHaveBeenCalled();
-    const loadingModal = view.UNSAFE_getAllByType(Modal).find(({ props }) => props.transparent === false);
-    expect(loadingModal).toBeTruthy();
-    act(() => loadingModal?.props.onShow());
-    act(() => jest.advanceTimersByTime(32));
     expect(onClose).toHaveBeenCalledTimes(1);
+    expect(onNavigate).not.toHaveBeenCalled();
+    fireEvent(view.getByTestId('native-app-loading-overlay'), 'layout', {
+      nativeEvent: { layout: { height: 915, width: 412, x: 0, y: 0 } },
+    });
+    act(() => jest.advanceTimersByTime(32));
     expect(onNavigate).toHaveBeenCalledWith('/search');
   });
 

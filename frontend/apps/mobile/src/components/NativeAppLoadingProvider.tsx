@@ -8,13 +8,20 @@ import {
   useRef,
   useState,
 } from 'react';
-import { Image, Modal, StyleSheet, View } from 'react-native';
+import { Image, StyleSheet, View } from 'react-native';
 import { useNativeColorScheme } from '../features/settings/useNativeColorScheme';
 
 type LoadingAction = () => void;
-type PendingLoadingAction = { action: LoadingAction; source: string };
+type PendingLoadingAction = {
+  action: LoadingAction;
+  source: string;
+  startPath: string | null;
+};
 
 type NativeAppLoadingContextValue = {
+  handleOverlayLayout: () => void;
+  isVisible: boolean;
+  light: boolean;
   runWithLoading: (source: string, action: LoadingAction) => void;
   setLoadingSource: (source: string, active: boolean) => void;
 };
@@ -24,21 +31,33 @@ const HIDE_DELAY_MS = 150;
 // route transition finishes. Keep action-menu navigation covered after the
 // route mount starts so the canonical spinner is perceptible on fast and slow
 // devices instead of expiring mid-transition.
-const NAVIGATION_RELEASE_DELAY_MS = 1800;
+const POST_NAVIGATION_PAINT_HOLD_MS = 1200;
+const PATH_CHANGE_FALLBACK_MS = 3000;
 
 const NativeAppLoadingContext = createContext<NativeAppLoadingContextValue>({
+  handleOverlayLayout: () => undefined,
+  isVisible: false,
+  light: false,
   runWithLoading: (_source, action) => action(),
   setLoadingSource: () => undefined,
 });
 
-export const NativeAppLoadingProvider = ({ children }: { children: ReactNode }) => {
+export const NativeAppLoadingProvider = ({
+  children,
+  navigationPath = null,
+}: {
+  children: ReactNode;
+  navigationPath?: string | null;
+}) => {
   const scheme = useNativeColorScheme();
   const light = scheme === 'light';
   const [activeSources, setActiveSources] = useState<Set<string>>(() => new Set());
   const [isVisible, setIsVisible] = useState(false);
   const hideTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const modalShownRef = useRef(false);
+  const overlayReadyRef = useRef(false);
   const pendingActionsRef = useRef<PendingLoadingAction[]>([]);
+  const navigationReleasesRef = useRef<Map<string, string | null>>(new Map());
+  const fallbackTimersRef = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map());
 
   const setLoadingSource = useCallback((source: string, active: boolean) => {
     if (active) setIsVisible(true);
@@ -74,80 +93,123 @@ export const NativeAppLoadingProvider = ({ children }: { children: ReactNode }) 
     };
   }, [activeSources]);
 
-  const flushPendingActions = useCallback(() => {
-    if (!modalShownRef.current || pendingActionsRef.current.length === 0) return;
-    const pending = pendingActionsRef.current.splice(0);
+  useEffect(() => {
+    if (!isVisible) overlayReadyRef.current = false;
+  }, [isVisible]);
 
-    // Dialog.onShow means Android created the modal window. Wait two display
-    // frames as well so the opaque surface and first spinner frame are
-    // actually composited before a large destination mount can occupy the JS
-    // and UI threads.
+  const releaseAfterDestinationPaint = useCallback((source: string) => {
+    if (!navigationReleasesRef.current.has(source)) return;
+    navigationReleasesRef.current.delete(source);
+    const fallback = fallbackTimersRef.current.get(source);
+    if (fallback) clearTimeout(fallback);
+    fallbackTimersRef.current.delete(source);
     requestAnimationFrame(() => requestAnimationFrame(() => {
-      for (const { action, source } of pending) {
-        try {
-          action();
-        } finally {
-          setTimeout(() => setLoadingSource(source, false), NAVIGATION_RELEASE_DELAY_MS);
-        }
-      }
+      setTimeout(
+        () => setLoadingSource(source, false),
+        POST_NAVIGATION_PAINT_HOLD_MS,
+      );
     }));
   }, [setLoadingSource]);
 
+  useEffect(() => {
+    for (const [source, startPath] of navigationReleasesRef.current) {
+      if (startPath !== null && navigationPath !== null && navigationPath !== startPath) {
+        releaseAfterDestinationPaint(source);
+      }
+    }
+  }, [navigationPath, releaseAfterDestinationPaint]);
+
+  useEffect(() => () => {
+    for (const timer of fallbackTimersRef.current.values()) clearTimeout(timer);
+    fallbackTimersRef.current.clear();
+  }, []);
+
+  const flushPendingActions = useCallback(() => {
+    if (!overlayReadyRef.current || pendingActionsRef.current.length === 0) return;
+    const pending = pendingActionsRef.current.splice(0);
+
+    // onLayout confirms the Activity-owned overlay is mounted. Wait two
+    // display frames so its opaque surface and first spinner frame are
+    // composited before a large destination mount can occupy the JS/UI threads.
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+      for (const { action, source, startPath } of pending) {
+        navigationReleasesRef.current.set(source, startPath);
+        try {
+          action();
+        } finally {
+          // A path change is the authoritative signal that the destination
+          // committed. The fallback also waits for paint, covering a no-op
+          // destination or navigation failure without leaving the overlay up.
+          const priorFallback = fallbackTimersRef.current.get(source);
+          if (priorFallback) clearTimeout(priorFallback);
+          fallbackTimersRef.current.set(source, setTimeout(
+            () => releaseAfterDestinationPaint(source),
+            PATH_CHANGE_FALLBACK_MS,
+          ));
+        }
+      }
+    }));
+  }, [releaseAfterDestinationPaint]);
+
   const runWithLoading = useCallback((source: string, action: LoadingAction) => {
-    pendingActionsRef.current.push({ action, source });
+    pendingActionsRef.current.push({ action, source, startPath: navigationPath });
     setLoadingSource(source, true);
     flushPendingActions();
-  }, [flushPendingActions, setLoadingSource]);
+  }, [flushPendingActions, navigationPath, setLoadingSource]);
 
-  const handleModalShow = useCallback(() => {
-    modalShownRef.current = true;
+  const handleOverlayLayout = useCallback(() => {
+    overlayReadyRef.current = true;
     flushPendingActions();
   }, [flushPendingActions]);
 
   const value = useMemo(
-    () => ({ runWithLoading, setLoadingSource }),
-    [runWithLoading, setLoadingSource],
+    () => ({
+      handleOverlayLayout,
+      isVisible,
+      light,
+      runWithLoading,
+      setLoadingSource,
+    }),
+    [handleOverlayLayout, isVisible, light, runWithLoading, setLoadingSource],
   );
 
   return (
     <NativeAppLoadingContext.Provider value={value}>
-      <View style={[styles.root, light && styles.rootLight]}>
-        {children}
-        {isVisible ? <Modal
-          animationType="none"
-          hardwareAccelerated
-          navigationBarTranslucent
-          onDismiss={() => { modalShownRef.current = false; }}
-          onRequestClose={() => undefined}
-          onShow={handleModalShow}
-          presentationStyle="overFullScreen"
-          statusBarTranslucent
-          transparent={false}
-          visible
-        >
-          <View
-            accessible
-            accessibilityLabel="Loading"
-            accessibilityLiveRegion="polite"
-            accessibilityRole="progressbar"
-            accessibilityViewIsModal
-            style={[styles.overlay, light && styles.overlayLight]}
-            testID="native-app-loading-overlay"
-          >
-            <Image
-              accessibilityElementsHidden
-              importantForAccessibility="no-hide-descendants"
-              resizeMode="contain"
-              source={light
-                ? require('../../assets/loading-spinner-light.gif')
-                : require('../../assets/loading-spinner-dark.gif')}
-              style={styles.spinner}
-              testID={light ? 'native-loading-spinner-light' : 'native-loading-spinner-dark'}
-            />
-          </View>
-        </Modal> : null}
-      </View>
+      {children}
     </NativeAppLoadingContext.Provider>
+  );
+};
+
+// Native-stack screens can be composited above ordinary provider siblings on
+// Android. Mount the loader inside every active screen layout so it remains
+// above that screen's header and content while still occupying the Activity's
+// full edge-to-edge bounds.
+export const NativeAppLoadingOverlay = () => {
+  const { handleOverlayLayout, isVisible, light } = useContext(NativeAppLoadingContext);
+  if (!isVisible) return null;
+  return (
+    <View
+      accessible
+      accessibilityLabel="Loading"
+      accessibilityLiveRegion="polite"
+      accessibilityRole="progressbar"
+      accessibilityViewIsModal
+      importantForAccessibility="yes"
+      onLayout={handleOverlayLayout}
+      style={[StyleSheet.absoluteFill, styles.overlay, light && styles.overlayLight]}
+      testID="native-app-loading-overlay"
+    >
+      <Image
+        accessibilityElementsHidden
+        importantForAccessibility="no-hide-descendants"
+        resizeMode="contain"
+        source={light
+          ? require('../../assets/loading-spinner-light.gif')
+          : require('../../assets/loading-spinner-dark.gif')}
+        style={styles.spinner}
+        testID={light ? 'native-loading-spinner-light' : 'native-loading-spinner-dark'}
+      />
+    </View>
   );
 };
 
@@ -156,13 +218,12 @@ export const useNativeAppLoading = (): NativeAppLoadingContextValue => (
 );
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: '#101a19' },
-  rootLight: { backgroundColor: '#f8fff9' },
   overlay: {
-    flex: 1,
+    zIndex: 100000,
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: '#101a19',
+    elevation: 100000,
   },
   overlayLight: { backgroundColor: '#f8fff9' },
   spinner: { width: 50, height: 50 },

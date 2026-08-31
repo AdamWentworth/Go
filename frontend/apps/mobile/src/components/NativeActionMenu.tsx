@@ -443,11 +443,11 @@ export const NativeActionMenu = ({
     closingRef.current = true;
     closeEnabledRef.current = false;
     setSupportOpen(false);
+    // Remove the separate Android dialog first. The app-owned loader then
+    // paints in the edge-to-edge Activity window without competing with a
+    // modal window over the status or gesture-navigation regions.
+    onClose();
     runWithLoading(ACTION_MENU_NAVIGATION_SOURCE, () => {
-      // Do not leave the menu's separate Android window underneath the route
-      // loader. Gesture-navigation areas can expose the window below a
-      // transparent modal even when the loader content fills the viewport.
-      onClose();
       onNavigate(path);
     });
   };

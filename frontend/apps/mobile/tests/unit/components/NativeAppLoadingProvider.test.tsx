@@ -1,6 +1,7 @@
 import { act, fireEvent, render } from '@testing-library/react-native';
-import { Modal, Pressable, StyleSheet, Text } from 'react-native';
+import { Pressable, StyleSheet, Text } from 'react-native';
 import {
+  NativeAppLoadingOverlay,
   NativeAppLoadingProvider,
   useNativeAppLoading,
 } from '../../../src/components/NativeAppLoadingProvider';
@@ -34,28 +35,40 @@ describe('NativeAppLoadingProvider', () => {
   it('covers navigation with the canonical spinner through the hide grace period', () => {
     const action = jest.fn();
     const view = render(
-      <NativeAppLoadingProvider>
+      <NativeAppLoadingProvider navigationPath="/native">
         <Harness action={action} />
+        <NativeAppLoadingOverlay />
       </NativeAppLoadingProvider>,
     );
 
     fireEvent.press(view.getByLabelText('Navigate'));
     expect(view.getByTestId('native-app-loading-overlay')).toBeTruthy();
     expect(view.getByTestId('native-loading-spinner-dark', { includeHiddenElements: true })).toBeTruthy();
-    expect(view.UNSAFE_getByType(Modal).props).toMatchObject({
-      navigationBarTranslucent: true,
-      presentationStyle: 'overFullScreen',
-      statusBarTranslucent: true,
-      transparent: false,
+    expect(StyleSheet.flatten(view.getByTestId('native-app-loading-overlay').props.style)).toMatchObject({
+      bottom: 0,
+      elevation: 100000,
+      left: 0,
+      right: 0,
+      top: 0,
+      zIndex: 100000,
     });
     expect(action).not.toHaveBeenCalled();
 
-    act(() => view.UNSAFE_getByType(Modal).props.onShow());
+    fireEvent(view.getByTestId('native-app-loading-overlay'), 'layout', {
+      nativeEvent: { layout: { height: 915, width: 412, x: 0, y: 0 } },
+    });
     act(() => jest.advanceTimersByTime(32));
     expect(action).toHaveBeenCalledTimes(1);
     expect(view.getByTestId('native-app-loading-overlay')).toBeTruthy();
 
-    act(() => jest.advanceTimersByTime(1799));
+    view.rerender(
+      <NativeAppLoadingProvider navigationPath="/native/collection">
+        <Harness action={action} />
+        <NativeAppLoadingOverlay />
+      </NativeAppLoadingProvider>,
+    );
+    act(() => jest.advanceTimersByTime(32));
+    act(() => jest.advanceTimersByTime(1199));
     expect(view.getByTestId('native-app-loading-overlay')).toBeTruthy();
     act(() => jest.advanceTimersByTime(1));
     expect(view.getByTestId('native-app-loading-overlay')).toBeTruthy();
@@ -70,6 +83,7 @@ describe('NativeAppLoadingProvider', () => {
     const view = render(
       <NativeAppLoadingProvider>
         <Harness action={action} />
+        <NativeAppLoadingOverlay />
       </NativeAppLoadingProvider>,
     );
 
@@ -83,9 +97,9 @@ describe('NativeAppLoadingProvider', () => {
     view.rerender(
       <NativeAppLoadingProvider>
         <Harness action={action} />
+        <NativeAppLoadingOverlay />
       </NativeAppLoadingProvider>,
     );
-    fireEvent.press(view.getByLabelText('Navigate'));
     expect(view.getByTestId('native-loading-spinner-light', { includeHiddenElements: true })).toBeTruthy();
     expect(StyleSheet.flatten(view.getByTestId('native-app-loading-overlay').props.style)).toMatchObject({
       backgroundColor: '#f8fff9',

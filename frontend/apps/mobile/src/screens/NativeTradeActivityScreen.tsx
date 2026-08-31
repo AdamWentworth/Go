@@ -13,7 +13,7 @@ import {
   Text,
   View,
 } from 'react-native';
-import { useMemo, useRef, useState } from 'react';
+import { useMemo, useRef, useState, type ReactNode } from 'react';
 import {
   NativePokemonLocationBackdrop,
 } from '../features/collection/parity/NativePokemonLocationBackdrop';
@@ -38,6 +38,7 @@ type Props = {
   onOpenPreferences: () => void;
   onRetry: () => void;
   onRevealPartner: (tradeId: string) => Promise<PartnerInfo>;
+  pageHeader?: ReactNode;
   rows: NativeTradeActivityRow[];
   showModeTabs?: boolean;
 };
@@ -346,6 +347,7 @@ export const NativeTradeActivityScreen = ({
   onOpenPreferences,
   onRetry,
   onRevealPartner,
+  pageHeader = null,
   rows,
   showModeTabs = true,
 }: Props) => {
@@ -387,6 +389,10 @@ export const NativeTradeActivityScreen = ({
       });
     } finally {
       setWorkingAction(null);
+      // Feedback now lives in the continuous page header instead of a fixed
+      // strip. Return to it after every authoritative command so the result is
+      // immediately visible rather than silently changing an offscreen card.
+      requestAnimationFrame(() => listRef.current?.scrollToOffset({ animated: true, offset: 0 }));
     }
   };
   const revealPartner = async (row: NativeTradeActivityRow) => {
@@ -409,133 +415,137 @@ export const NativeTradeActivityScreen = ({
 
   return (
     <View style={[styles.screen, light && styles.screenLight]} testID="native-trade-activity-screen">
-      {showModeTabs ? (
-        <View accessibilityRole="tablist" style={[styles.modeTabs, light && styles.modeTabsLight]}>
-          <Pressable aria-selected={false} accessibilityRole="tab" accessibilityState={{ selected: false }} onPress={onOpenPreferences} style={styles.modeTab}>
-            <Text style={[styles.modeTabText, light && styles.secondaryLight]}>Trade Preferences</Text>
-          </Pressable>
-          <View aria-selected accessibilityRole="tab" accessibilityState={{ selected: true }} style={[styles.modeTab, styles.activeModeTab]}>
-            <Text style={styles.activeModeText}>Trade Activity</Text>
-          </View>
-        </View>
-      ) : null}
-
-      <View style={styles.pageHeading}>
-        <Text accessibilityRole="header" maxFontSizeMultiplier={1.25} style={[styles.pageTitle, light && styles.textLight]}>
-          Your trades
-        </Text>
-        <Text maxFontSizeMultiplier={1.25} style={[styles.pageDescription, light && styles.secondaryLight]}>
-          Respond to offers, track active trades, and revisit past exchanges.
-        </Text>
-      </View>
-
-      <View accessibilityRole="tablist" style={[styles.statusTabs, light && styles.statusTabsLight]}>
-        {TRADE_ACTIVITY_FILTERS.map((filter) => {
-          const selected = filter === selectedFilter;
-          const tone = FILTER_TONES[filter];
-          return (
-            <Pressable
-              aria-selected={selected}
-              accessibilityRole="tab"
-              accessibilityState={{ selected }}
-              key={filter}
-              onPress={() => {
-                setFeedback(null);
-                listRef.current?.scrollToOffset({ animated: false, offset: 0 });
-                setSelectedFilter(filter);
-              }}
-              style={[
-                styles.statusTab,
-                selected && styles.activeStatusTab,
-                selected && { borderColor: tone.border, backgroundColor: tone.surface },
-              ]}
-              testID={`trade-filter-${filter}`}
-            >
-              <Text
-                maxFontSizeMultiplier={1.15}
-                numberOfLines={2}
-                style={[styles.statusTabText, light && styles.secondaryLight, selected && styles.activeStatusText]}
-              >
-                {FILTER_LABELS[filter].compact}
-              </Text>
-              <View style={[styles.countBadge, selected && { backgroundColor: tone.accent }]}>
-                <Text style={styles.countText}>{counts[filter]}</Text>
+      <FlatList
+        ref={listRef}
+        contentContainerStyle={visibleRows.length && !isLoading ? styles.listContent : styles.emptyListContent}
+        data={isLoading ? [] : visibleRows}
+        keyExtractor={(row) => row.model.tradeId}
+        keyboardShouldPersistTaps="always"
+        nestedScrollEnabled
+        ListHeaderComponent={(
+          <>
+            {pageHeader}
+            {showModeTabs ? (
+              <View accessibilityRole="tablist" style={[styles.modeTabs, light && styles.modeTabsLight]}>
+                <Pressable aria-selected={false} accessibilityRole="tab" accessibilityState={{ selected: false }} onPress={onOpenPreferences} style={styles.modeTab}>
+                  <Text style={[styles.modeTabText, light && styles.secondaryLight]}>Trade Preferences</Text>
+                </Pressable>
+                <View aria-selected accessibilityRole="tab" accessibilityState={{ selected: true }} style={[styles.modeTab, styles.activeModeTab]}>
+                  <Text style={styles.activeModeText}>Trade Activity</Text>
+                </View>
               </View>
-            </Pressable>
-          );
-        })}
-      </View>
+            ) : null}
 
-      {feedback ? (
-        <View
-          accessibilityLiveRegion="assertive"
-          accessibilityRole="alert"
-          style={[styles.feedback, feedback.tone === 'success' ? styles.feedbackSuccess : styles.feedbackError]}
-          testID="trade-activity-feedback"
-        >
-          <Text style={styles.feedbackText}>{feedback.text}</Text>
-          <Pressable accessibilityLabel="Dismiss message" accessibilityRole="button" onPress={() => setFeedback(null)}>
-            <Text style={styles.feedbackDismiss}>×</Text>
-          </Pressable>
-        </View>
-      ) : null}
-
-      {error ? (
-        <View accessibilityRole="alert" style={[styles.feedback, styles.feedbackError]}>
-          <View style={styles.errorCopy}>
-            <Text style={styles.feedbackTitle}>Trades unavailable</Text>
-            <Text style={styles.feedbackText}>{error}</Text>
-          </View>
-          <Pressable accessibilityRole="button" onPress={onRetry} style={styles.retryButton}>
-            <Text style={styles.retryText}>Retry</Text>
-          </Pressable>
-        </View>
-      ) : null}
-
-      {isLoading ? (
-        <View style={styles.centerState}>
-          <ActivityIndicator color="#36c181" size="large" />
-          <Text style={[styles.stateTitle, light && styles.textLight]}>Loading trades</Text>
-          <Text style={[styles.stateBody, light && styles.secondaryLight]}>Checking the server for your current activity…</Text>
-        </View>
-      ) : (
-        <FlatList
-          ref={listRef}
-          contentContainerStyle={visibleRows.length ? styles.listContent : styles.emptyListContent}
-          data={visibleRows}
-          keyExtractor={(row) => row.model.tradeId}
-          nestedScrollEnabled
-          ListEmptyComponent={error ? null : (
-            <View style={[styles.emptyState, light && styles.cardLight]}>
-              <View style={styles.emptyIcon}><NativeUiIcon color="#36c181" name="trade" size={17} /></View>
-              <Text style={[styles.stateTitle, light && styles.textLight]}>No trades here</Text>
-              <Text style={[styles.stateBody, light && styles.secondaryLight]}>
-                {selectedFilter === 'Accepting'
-                  ? 'New offers that need your response will appear here.'
-                  : selectedFilter === 'Proposed'
-                    ? 'Sent proposals will appear here.'
-                    : selectedFilter === 'Pending'
-                      ? 'Accepted trades stay here until both trainers confirm completion.'
-                      : selectedFilter === 'Completed'
-                        ? 'Completed exchanges will appear here.'
-                        : 'Cancelled and denied proposals appear here.'}
+            <View style={styles.pageHeading}>
+              <Text accessibilityRole="header" maxFontSizeMultiplier={1.25} style={[styles.pageTitle, light && styles.textLight]}>
+                Your trades
+              </Text>
+              <Text maxFontSizeMultiplier={1.25} style={[styles.pageDescription, light && styles.secondaryLight]}>
+                Respond to offers, track active trades, and revisit past exchanges.
               </Text>
             </View>
-          )}
-          renderItem={({ item }) => (
-            <TradeCard
-              assetBaseUrl={assetBaseUrl}
-              light={light}
-              onRequestAction={(row, action) => setPending({ row, action })}
-              onRevealPartner={(row) => void revealPartner(row)}
-              row={item}
-              workingAction={workingAction}
-            />
-          )}
-          showsVerticalScrollIndicator={false}
-          testID="trade-activity-list"
-        />
-      )}
+
+            <View accessibilityRole="tablist" style={[styles.statusTabs, light && styles.statusTabsLight]}>
+              {TRADE_ACTIVITY_FILTERS.map((filter) => {
+                const selected = filter === selectedFilter;
+                const filterTone = FILTER_TONES[filter];
+                return (
+                  <Pressable
+                    aria-selected={selected}
+                    accessibilityRole="tab"
+                    accessibilityState={{ selected }}
+                    key={filter}
+                    onPress={() => {
+                      setFeedback(null);
+                      listRef.current?.scrollToOffset({ animated: false, offset: 0 });
+                      setSelectedFilter(filter);
+                    }}
+                    style={[
+                      styles.statusTab,
+                      selected && styles.activeStatusTab,
+                      selected && { borderColor: filterTone.border, backgroundColor: filterTone.surface },
+                    ]}
+                    testID={`trade-filter-${filter}`}
+                  >
+                    <Text
+                      maxFontSizeMultiplier={1.15}
+                      numberOfLines={2}
+                      style={[styles.statusTabText, light && styles.secondaryLight, selected && styles.activeStatusText]}
+                    >
+                      {FILTER_LABELS[filter].compact}
+                    </Text>
+                    <View style={[styles.countBadge, selected && { backgroundColor: filterTone.accent }]}>
+                      <Text style={styles.countText}>{counts[filter]}</Text>
+                    </View>
+                  </Pressable>
+                );
+              })}
+            </View>
+
+            {feedback ? (
+              <View
+                accessibilityLiveRegion="assertive"
+                accessibilityRole="alert"
+                style={[styles.feedback, feedback.tone === 'success' ? styles.feedbackSuccess : styles.feedbackError]}
+                testID="trade-activity-feedback"
+              >
+                <Text style={styles.feedbackText}>{feedback.text}</Text>
+                <Pressable accessibilityLabel="Dismiss message" accessibilityRole="button" onPress={() => setFeedback(null)}>
+                  <Text style={styles.feedbackDismiss}>×</Text>
+                </Pressable>
+              </View>
+            ) : null}
+
+            {error ? (
+              <View accessibilityRole="alert" style={[styles.feedback, styles.feedbackError]}>
+                <View style={styles.errorCopy}>
+                  <Text style={styles.feedbackTitle}>Trades unavailable</Text>
+                  <Text style={styles.feedbackText}>{error}</Text>
+                </View>
+                <Pressable accessibilityRole="button" onPress={onRetry} style={styles.retryButton}>
+                  <Text style={styles.retryText}>Retry</Text>
+                </Pressable>
+              </View>
+            ) : null}
+          </>
+        )}
+        ListEmptyComponent={isLoading ? (
+          <View style={styles.centerState}>
+            <ActivityIndicator color="#36c181" size="large" />
+            <Text style={[styles.stateTitle, light && styles.textLight]}>Loading trades</Text>
+            <Text style={[styles.stateBody, light && styles.secondaryLight]}>Checking the server for your current activity…</Text>
+          </View>
+        ) : error ? null : (
+          <View style={[styles.emptyState, light && styles.cardLight]}>
+            <View style={styles.emptyIcon}><NativeUiIcon color="#36c181" name="trade" size={17} /></View>
+            <Text style={[styles.stateTitle, light && styles.textLight]}>No trades here</Text>
+            <Text style={[styles.stateBody, light && styles.secondaryLight]}>
+              {selectedFilter === 'Accepting'
+                ? 'New offers that need your response will appear here.'
+                : selectedFilter === 'Proposed'
+                  ? 'Sent proposals will appear here.'
+                  : selectedFilter === 'Pending'
+                    ? 'Accepted trades stay here until both trainers confirm completion.'
+                    : selectedFilter === 'Completed'
+                      ? 'Completed exchanges will appear here.'
+                      : 'Cancelled and denied proposals appear here.'}
+            </Text>
+          </View>
+        )}
+        renderItem={({ item }) => (
+          <TradeCard
+            assetBaseUrl={assetBaseUrl}
+            light={light}
+            onRequestAction={(row, action) => setPending({ row, action })}
+            onRevealPartner={(row) => void revealPartner(row)}
+            row={item}
+            workingAction={workingAction}
+          />
+        )}
+        showsVerticalScrollIndicator={false}
+        style={styles.activityList}
+        testID="trade-activity-list"
+      />
 
       <Modal animationType={fadeAnimation} onRequestClose={() => setPending(null)} transparent visible={Boolean(pending)}>
         <View style={styles.modalOverlay}>
@@ -595,11 +605,9 @@ export const NativeTradeActivityScreen = ({
 };
 
 const styles = StyleSheet.create({
-  // Keep the persistent Poké Ball in its own visual lane. A scrollable action
-  // must never settle underneath the anchor, where the anchor would intercept
-  // the user's press (most visibly with large text on narrow phones).
-  screen: { flex: 1, gap: 9, paddingTop: 7, paddingBottom: 86, backgroundColor: '#07100f' },
+  screen: { flex: 1, backgroundColor: '#07100f' },
   screenLight: { backgroundColor: '#f8fff9' },
+  activityList: { flex: 1 },
   modeTabs: { flexDirection: 'row', marginHorizontal: 8, borderWidth: 1, borderColor: '#1d4a43', borderRadius: 10, padding: 4, backgroundColor: '#081312' },
   modeTabsLight: { borderColor: '#9db8b2', backgroundColor: '#e8efed' },
   modeTab: { flex: 1, minHeight: 48, alignItems: 'center', justifyContent: 'center', borderRadius: 7, paddingHorizontal: 8 },
@@ -620,8 +628,8 @@ const styles = StyleSheet.create({
   // Leave every terminal action scrollable above the persistent action-menu
   // anchor. Without this clearance, the anchor can intercept a press on the
   // final card action even though that action is technically visible.
-  listContent: { gap: 12, paddingHorizontal: 8, paddingBottom: 96 },
-  emptyListContent: { paddingTop: 4, paddingHorizontal: 8, paddingBottom: 92 },
+  listContent: { gap: 12, paddingTop: 7, paddingHorizontal: 8, paddingBottom: 150 },
+  emptyListContent: { flexGrow: 1, gap: 9, paddingTop: 7, paddingHorizontal: 8, paddingBottom: 150 },
   tradeCard: { overflow: 'hidden', borderWidth: 1, borderColor: '#24554d', borderRadius: 13, backgroundColor: '#111b1a' },
   cardLight: { borderColor: '#9ab7b0', backgroundColor: '#ffffff' },
   tradeHeader: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', gap: 8, borderLeftWidth: 4, borderLeftColor: '#36c181', borderBottomWidth: 1, borderBottomColor: '#204640', padding: 11 },

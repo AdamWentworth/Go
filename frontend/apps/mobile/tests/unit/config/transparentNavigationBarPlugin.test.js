@@ -1,4 +1,5 @@
 const {
+  applyEdgeToEdgeMainActivity,
   applyTransparentNavigationStyles,
 } = require('../../../plugins/with-transparent-navigation-bar');
 const { describe, expect, it } = require('@jest/globals');
@@ -42,5 +43,21 @@ describe('with-transparent-navigation-bar', () => {
 
     expect(styles.resources.style.filter((style) => style.$.name === 'AppTheme')).toHaveLength(1);
     expect(styles.resources.style.filter((style) => style.$.name === 'Theme.FullScreenDialog')).toHaveLength(1);
+  });
+
+  it('forces the main Activity content to occupy the same edge-to-edge window as modals', () => {
+    const source = `package com.pokegonexus.app
+import android.os.Bundle
+
+class MainActivity {
+  override fun onCreate(savedInstanceState: Bundle?) {
+    super.onCreate(null)
+  }
+}`;
+    const transformed = applyEdgeToEdgeMainActivity(source);
+
+    expect(transformed).toContain('import androidx.core.view.WindowCompat');
+    expect(transformed).toContain('WindowCompat.setDecorFitsSystemWindows(window, false)');
+    expect(applyEdgeToEdgeMainActivity(transformed)).toBe(transformed);
   });
 });
