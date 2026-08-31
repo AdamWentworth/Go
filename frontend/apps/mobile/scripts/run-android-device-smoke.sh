@@ -542,5 +542,17 @@ for full_window_loading_screenshot in "${full_window_loading_screenshots[@]}"; d
     "${full_window_loading_screenshot}"
 done
 
+mapfile -t full_window_route_screenshots < <(
+  find "${artifact_dir}/maestro" \
+    -type f \
+    -path '*/takeScreenshot/*' \
+    -iname '*-route-window*.png' \
+    | sort
+)
+for full_window_route_screenshot in "${full_window_route_screenshots[@]}"; do
+  node "${mobile_directory}/scripts/assert-native-route-window.mjs" \
+    "${full_window_route_screenshot}"
+done
+
 "${adb_bin}" -s "${device_id}" exec-out screencap -p >"${artifact_dir}/final-screen.png"
 echo "Android device smoke passed. Artifacts: ${artifact_dir}"

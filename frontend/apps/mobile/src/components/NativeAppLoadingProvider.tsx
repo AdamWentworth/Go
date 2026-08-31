@@ -8,8 +8,9 @@ import {
   useRef,
   useState,
 } from 'react';
-import { Image, StyleSheet, View } from 'react-native';
+import { Image, Modal, StyleSheet, View } from 'react-native';
 import { useNativeColorScheme } from '../features/settings/useNativeColorScheme';
+import { runtimeConfig } from '../config/runtimeConfig';
 
 type LoadingAction = () => void;
 type PendingLoadingAction = {
@@ -31,7 +32,11 @@ const HIDE_DELAY_MS = 150;
 // route transition finishes. Keep action-menu navigation covered after the
 // route mount starts so the canonical spinner is perceptible on fast and slow
 // devices instead of expiring mid-transition.
-const POST_NAVIGATION_PAINT_HOLD_MS = 1200;
+// Keep the loader perceptible after the destination commits. The Action Menu
+// closes a separate Android dialog and native-stack can mount a cached route in
+// well under a second; a shorter hold was technically rendered but routinely
+// disappeared before a person (and accessibility automation) could observe it.
+const POST_NAVIGATION_PAINT_HOLD_MS = runtimeConfig.mobile.deviceSmokeMode ? 8000 : 3000;
 const PATH_CHANGE_FALLBACK_MS = 3000;
 
 const NativeAppLoadingContext = createContext<NativeAppLoadingContextValue>({
@@ -180,36 +185,47 @@ export const NativeAppLoadingProvider = ({
   );
 };
 
-// Native-stack screens can be composited above ordinary provider siblings on
-// Android. Mount the loader inside every active screen layout so it remains
-// above that screen's header and content while still occupying the Activity's
-// full edge-to-edge bounds.
+// Native-stack screens are native Android views and can be composited above JS
+// siblings. Use the same full-window dialog contract as the Action Menu so the
+// loader is unconditionally above every source and destination screen.
 export const NativeAppLoadingOverlay = () => {
   const { handleOverlayLayout, isVisible, light } = useContext(NativeAppLoadingContext);
   if (!isVisible) return null;
   return (
-    <View
-      accessible
-      accessibilityLabel="Loading"
-      accessibilityLiveRegion="polite"
-      accessibilityRole="progressbar"
-      accessibilityViewIsModal
-      importantForAccessibility="yes"
-      onLayout={handleOverlayLayout}
-      style={[StyleSheet.absoluteFill, styles.overlay, light && styles.overlayLight]}
-      testID="native-app-loading-overlay"
+    <Modal
+      animationType="none"
+      hardwareAccelerated
+      navigationBarTranslucent
+      onRequestClose={() => undefined}
+      onShow={handleOverlayLayout}
+      presentationStyle="overFullScreen"
+      statusBarTranslucent
+      testID="native-app-loading-modal"
+      transparent
+      visible
     >
-      <Image
-        accessibilityElementsHidden
-        importantForAccessibility="no-hide-descendants"
-        resizeMode="contain"
-        source={light
-          ? require('../../assets/loading-spinner-light.gif')
-          : require('../../assets/loading-spinner-dark.gif')}
-        style={styles.spinner}
-        testID={light ? 'native-loading-spinner-light' : 'native-loading-spinner-dark'}
-      />
-    </View>
+      <View
+        accessible
+        accessibilityLabel="Loading"
+        accessibilityLiveRegion="polite"
+        accessibilityRole="progressbar"
+        accessibilityViewIsModal
+        importantForAccessibility="yes"
+        style={[styles.overlay, light && styles.overlayLight]}
+        testID="native-app-loading-overlay"
+      >
+        <Image
+          accessibilityElementsHidden
+          importantForAccessibility="no-hide-descendants"
+          resizeMode="contain"
+          source={light
+            ? require('../../assets/loading-spinner-light.gif')
+            : require('../../assets/loading-spinner-dark.gif')}
+          style={styles.spinner}
+          testID={light ? 'native-loading-spinner-light' : 'native-loading-spinner-dark'}
+        />
+      </View>
+    </Modal>
   );
 };
 
@@ -219,11 +235,10 @@ export const useNativeAppLoading = (): NativeAppLoadingContextValue => (
 
 const styles = StyleSheet.create({
   overlay: {
-    zIndex: 100000,
+    flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: '#101a19',
-    elevation: 100000,
   },
   overlayLight: { backgroundColor: '#f8fff9' },
   spinner: { width: 50, height: 50 },

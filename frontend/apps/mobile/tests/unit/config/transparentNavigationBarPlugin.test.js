@@ -58,6 +58,26 @@ class MainActivity {
 
     expect(transformed).toContain('import androidx.core.view.WindowCompat');
     expect(transformed).toContain('WindowCompat.setDecorFitsSystemWindows(window, false)');
+    expect(transformed.indexOf('WindowCompat.setDecorFitsSystemWindows(window, false)'))
+      .toBeLessThan(transformed.indexOf('super.onCreate(null)'));
     expect(applyEdgeToEdgeMainActivity(transformed)).toBe(transformed);
+  });
+
+  it('moves an older post-create edge-to-edge call before ReactRootView creation', () => {
+    const source = `package com.pokegonexus.app
+import android.os.Bundle
+import androidx.core.view.WindowCompat
+
+class MainActivity {
+  override fun onCreate(savedInstanceState: Bundle?) {
+    super.onCreate(null)
+    WindowCompat.setDecorFitsSystemWindows(window, false)
+  }
+}`;
+    const transformed = applyEdgeToEdgeMainActivity(source);
+
+    expect(transformed.match(/WindowCompat\.setDecorFitsSystemWindows/g)).toHaveLength(1);
+    expect(transformed.indexOf('WindowCompat.setDecorFitsSystemWindows(window, false)'))
+      .toBeLessThan(transformed.indexOf('super.onCreate(null)'));
   });
 });

@@ -60,12 +60,17 @@ const applyEdgeToEdgeMainActivity = (contents) => {
       'import android.os.Bundle\nimport androidx.core.view.WindowCompat',
     );
   }
-  if (!next.includes('WindowCompat.setDecorFitsSystemWindows(window, false)')) {
-    next = next.replace(
-      'super.onCreate(null)',
-      'super.onCreate(null)\n    WindowCompat.setDecorFitsSystemWindows(window, false)',
-    );
-  }
+  // This must run before ReactActivity creates and attaches the ReactRootView.
+  // Calling it after super.onCreate leaves the Activity content measured inside
+  // the system bars while a React Native Modal still occupies the whole window.
+  next = next.replace(
+    /\n\s*WindowCompat\.setDecorFitsSystemWindows\(window, false\)/g,
+    '',
+  );
+  next = next.replace(
+    'super.onCreate(null)',
+    'WindowCompat.setDecorFitsSystemWindows(window, false)\n    super.onCreate(null)',
+  );
   return next;
 };
 

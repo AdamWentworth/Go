@@ -138,9 +138,7 @@ describe('NativeActionMenu', () => {
     expect(view.getByTestId(/native-loading-spinner-/, { includeHiddenElements: true })).toBeTruthy();
     expect(onClose).toHaveBeenCalledTimes(1);
     expect(onNavigate).not.toHaveBeenCalled();
-    fireEvent(view.getByTestId('native-app-loading-overlay'), 'layout', {
-      nativeEvent: { layout: { height: 915, width: 412, x: 0, y: 0 } },
-    });
+    fireEvent(view.getByTestId('native-app-loading-modal'), 'show');
     act(() => jest.advanceTimersByTime(32));
     expect(onNavigate).toHaveBeenCalledWith('/search');
   });

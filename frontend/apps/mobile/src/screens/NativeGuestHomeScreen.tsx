@@ -290,7 +290,7 @@ export const NativeGuestHomeScreen = ({
 };
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: '#090d12' }, rootLight: { backgroundColor: '#f8fff9' }, textLight: { color: '#14232a' }, mutedLight: { color: '#576a73' },
+  root: { flex: 1, backgroundColor: '#071012' }, rootLight: { backgroundColor: '#f8fff9' }, textLight: { color: '#14232a' }, mutedLight: { color: '#576a73' },
   heroRegion: { position: 'relative', overflow: 'hidden' },
   topbar: { minHeight: 68, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8, paddingHorizontal: 12 }, brand: { flexDirection: 'row', alignItems: 'center', gap: 8 }, brandIcon: { width: 38, height: 38, resizeMode: 'contain' }, brandText: { color: '#fff', fontSize: 16, fontWeight: '900' }, topActions: { flexDirection: 'row', alignItems: 'center', gap: 5 }, navLink: { minHeight: 40, justifyContent: 'center', paddingHorizontal: 7 }, navLinkText: { color: '#fff', fontSize: 11, fontWeight: '800' },
   signIn: { minHeight: 40, justifyContent: 'center', borderWidth: 1, borderColor: '#66747d', borderRadius: 10, paddingHorizontal: 10, backgroundColor: '#171d22' }, signInLight: { borderColor: '#aebbc2', backgroundColor: '#fff' }, signInText: { color: '#fff', fontSize: 11, fontWeight: '900' }, register: { minHeight: 40, justifyContent: 'center', borderRadius: 10, paddingHorizontal: 10, backgroundColor: '#168ced' }, registerText: { color: '#05111d', fontSize: 10.5, fontWeight: '900' },

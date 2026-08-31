@@ -45,18 +45,12 @@ describe('NativeAppLoadingProvider', () => {
     expect(view.getByTestId('native-app-loading-overlay')).toBeTruthy();
     expect(view.getByTestId('native-loading-spinner-dark', { includeHiddenElements: true })).toBeTruthy();
     expect(StyleSheet.flatten(view.getByTestId('native-app-loading-overlay').props.style)).toMatchObject({
-      bottom: 0,
-      elevation: 100000,
-      left: 0,
-      right: 0,
-      top: 0,
-      zIndex: 100000,
+      backgroundColor: '#101a19',
+      flex: 1,
     });
     expect(action).not.toHaveBeenCalled();
 
-    fireEvent(view.getByTestId('native-app-loading-overlay'), 'layout', {
-      nativeEvent: { layout: { height: 915, width: 412, x: 0, y: 0 } },
-    });
+    fireEvent(view.getByTestId('native-app-loading-modal'), 'show');
     act(() => jest.advanceTimersByTime(32));
     expect(action).toHaveBeenCalledTimes(1);
     expect(view.getByTestId('native-app-loading-overlay')).toBeTruthy();
@@ -68,7 +62,7 @@ describe('NativeAppLoadingProvider', () => {
       </NativeAppLoadingProvider>,
     );
     act(() => jest.advanceTimersByTime(32));
-    act(() => jest.advanceTimersByTime(1199));
+    act(() => jest.advanceTimersByTime(2999));
     expect(view.getByTestId('native-app-loading-overlay')).toBeTruthy();
     act(() => jest.advanceTimersByTime(1));
     expect(view.getByTestId('native-app-loading-overlay')).toBeTruthy();

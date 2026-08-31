@@ -1,5 +1,5 @@
 import { Redirect, Stack } from 'expo-router';
-import { StyleSheet } from 'react-native';
+import { StyleSheet, View, useWindowDimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { NativeSessionProvider } from '../../auth/NativeSessionContext';
 import { runtimeConfig } from '../../config/runtimeConfig';
@@ -9,11 +9,12 @@ import { NativeRealtimeProvider } from '../../features/realtime/NativeRealtimePr
 import { useNativeDevicePreferences } from '../../features/settings/NativeDevicePreferencesProvider';
 import { nativeRouteAnimation } from '../../navigation/nativeRouteMotion';
 import { nativeRouteSurface } from '../../navigation/nativeRouteSurface';
-import { NativeAppLoadingOverlay } from '../../components/NativeAppLoadingProvider';
 
 export default function NativeLayout() {
   const { colorTheme, shouldReduceMotion } = useNativeDevicePreferences();
   const light = colorTheme === 'light';
+  const { width } = useWindowDimensions();
+  const compact = width < 600;
   if (runtimeConfig.mobile.experienceMode !== 'native-preview') {
     return <Redirect href="/" />;
   }
@@ -25,20 +26,22 @@ export default function NativeLayout() {
           <NativeRealtimeProvider>
             <Stack
               screenLayout={({ children, route }) => (
-                <SafeAreaView
-                  edges={['top', 'bottom']}
+                <View
                   style={[
                     styles.screenSurface,
-                    { backgroundColor: nativeRouteSurface(route.name, light) },
+                    { backgroundColor: nativeRouteSurface(route.name, light, compact) },
                   ]}
                 >
-                  {children}
-                  <NativeAppLoadingOverlay />
-                </SafeAreaView>
+                  <SafeAreaView edges={['top', 'bottom']} style={styles.safeContent}>
+                    {children}
+                  </SafeAreaView>
+                </View>
               )}
               screenOptions={({ route }) => ({
-                contentStyle: { backgroundColor: nativeRouteSurface(route.name, light) },
+                contentStyle: { backgroundColor: nativeRouteSurface(route.name, light, compact) },
                 headerShown: false,
+                navigationBarTranslucent: true,
+                statusBarTranslucent: true,
               })}
             >
               <Stack.Screen name="index" options={{ animation: 'none' }} />
@@ -91,8 +94,8 @@ export default function NativeLayout() {
 }
 
 const styles = StyleSheet.create({
-  // These surfaces fill the Android window. SafeAreaView applies its insets as
-  // internal padding, so the page background continues behind the camera and
-  // gesture navigation while page controls remain usable.
+  // The surface owns the complete navigator frame. SafeAreaView is deliberately
+  // a transparent child so only foreground content is inset.
+  safeContent: { flex: 1, minHeight: 0 },
   screenSurface: { flex: 1, backgroundColor: '#101a19' },
 });

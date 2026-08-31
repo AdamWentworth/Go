@@ -76,6 +76,6 @@ tags:
 - takeScreenshot: navigation-loading
 - extendedWaitUntil:
     notVisible: Loading
-    timeout: 5000
+    timeout: 12000
 - assertVisible: WISHLIST
 - assertVisible: TAGS
