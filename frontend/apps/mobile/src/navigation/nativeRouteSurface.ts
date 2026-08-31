@@ -60,7 +60,7 @@ export const nativeRouteSurface = (
   return light ? surface.light : surface.dark;
 };
 
-const NATIVE_PATH_ROUTES: ReadonlyArray<readonly [RegExp, string]> = [
+const NATIVE_PATH_ROUTES: readonly (readonly [RegExp, string])[] = [
   // Device fixtures render the same production screens and provide a signed-in
   // collection without mutating a real account. Keep their outer window surface
   // identical so Android smoke tests exercise the production geometry.

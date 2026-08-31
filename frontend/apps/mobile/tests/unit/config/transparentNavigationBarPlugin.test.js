@@ -22,6 +22,9 @@ describe('with-transparent-navigation-bar', () => {
     expect(styleItems(styles, 'AppTheme')).toMatchObject({
       'android:enforceNavigationBarContrast': 'false',
       'android:navigationBarColor': '@android:color/transparent',
+      'android:statusBarColor': '@android:color/transparent',
+      'android:windowDrawsSystemBarBackgrounds': 'true',
+      'android:windowLayoutInDisplayCutoutMode': 'shortEdges',
     });
     expect(styleItems(styles, 'Theme.FullScreenDialog')).toEqual({
       'android:enforceNavigationBarContrast': 'false',
@@ -31,6 +34,7 @@ describe('with-transparent-navigation-bar', () => {
       'android:windowDrawsSystemBarBackgrounds': 'true',
       'android:windowIsFloating': 'false',
       'android:windowNoTitle': 'true',
+      'android:windowLayoutInDisplayCutoutMode': 'shortEdges',
     });
   });
 
@@ -57,9 +61,14 @@ class MainActivity {
     const transformed = applyEdgeToEdgeMainActivity(source);
 
     expect(transformed).toContain('import androidx.core.view.WindowCompat');
+    expect(transformed).toContain('private fun enforceEdgeToEdgeWindow()');
     expect(transformed).toContain('WindowCompat.setDecorFitsSystemWindows(window, false)');
-    expect(transformed.indexOf('WindowCompat.setDecorFitsSystemWindows(window, false)'))
+    expect(transformed.indexOf('enforceEdgeToEdgeWindow()'))
       .toBeLessThan(transformed.indexOf('super.onCreate(null)'));
+    expect(transformed).toContain('override fun onResume()');
+    expect(transformed).toContain('override fun onWindowFocusChanged(hasFocus: Boolean)');
+    expect(transformed).toContain('LAYOUT_IN_DISPLAY_CUTOUT_MODE_ALWAYS');
+    expect(transformed).toContain('window.isNavigationBarContrastEnforced = false');
     expect(applyEdgeToEdgeMainActivity(transformed)).toBe(transformed);
   });
 
@@ -77,7 +86,7 @@ class MainActivity {
     const transformed = applyEdgeToEdgeMainActivity(source);
 
     expect(transformed.match(/WindowCompat\.setDecorFitsSystemWindows/g)).toHaveLength(1);
-    expect(transformed.indexOf('WindowCompat.setDecorFitsSystemWindows(window, false)'))
+    expect(transformed.indexOf('enforceEdgeToEdgeWindow()'))
       .toBeLessThan(transformed.indexOf('super.onCreate(null)'));
   });
 });
