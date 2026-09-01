@@ -132,13 +132,17 @@ tags:
     timeout: 10000
 - tapOn: Cancel
 - tapOn:
-    id: native-action-menu-anchor
+    # The anchor and the open-menu close button deliberately share this exact
+    # bottom-centre geometry. A coordinate avoids Maestro spending up to two
+    # minutes waiting for the menu's perpetual cloud/star animation to make an
+    # accessibility selector "settle" before it injects the tap.
+    point: 50%, 94%
     waitToSettleTimeoutMs: 100
 - extendedWaitUntil:
     visible: Quick navigation
     timeout: 10000
 - tapOn:
-    id: native-action-menu-close
+    point: 50%, 94%
     waitToSettleTimeoutMs: 100
 - extendedWaitUntil:
     notVisible: Quick navigation

@@ -540,6 +540,16 @@ preceding 222/234/298 ms run to 183/179/205 ms, with complete transitions at
 464/455/547 ms. The workflow passed every budget. The full suite is now 160
 suites and 853 tests, with typecheck and the complete lint pass clean.
 
+The Android performance flow no longer mistakes the action menu's intentional
+perpetual cloud/star motion for an unresponsive close button. Maestro's
+selector tap spent as long as 116 seconds waiting for that animated hierarchy
+to settle even though the app's own trace showed a 68 ms open paint and 407 ms
+completed fan. The probe now taps the exact shared bottom-centre geometry used
+by both the closed anchor and open close button, then retains its visible/not-
+visible accessibility assertions. The next workflow completed those steps
+normally and passed, with tag touch paths at 71--90 ms and instance targets at
+158--240 ms.
+
 ## Remaining approval gate
 
 The latest bundle still needs a short physical-phone pass for perceived frame
