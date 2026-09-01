@@ -254,6 +254,107 @@ describe('NativeCollectionParityScreen', () => {
     expect(screen.getByLabelText('Sort by NAME descending')).toBeTruthy();
   });
 
+  it('stages a sort destination before release adopts the sort control', () => {
+    const sortRows = [
+      row({ id: 'zubat', name: 'Zubat', pokedexNumber: 1 }),
+      row({ id: 'abra', name: 'Abra', pokedexNumber: 2 }),
+    ];
+    const view = render(
+      <NativeCollectionParityScreen
+        activeTag={null}
+        assetBaseUrl="https://pokegonexus.com"
+        error={null}
+        isLoading={false}
+        onClearTag={jest.fn()}
+        onOpenInstance={jest.fn()}
+        onQueryChange={jest.fn()}
+        onRetry={jest.fn()}
+        onViewChange={jest.fn()}
+        query=""
+        rows={sortRows}
+      />,
+    );
+    expect(view.UNSAFE_getByType(FlatList).props.data).toEqual(sortRows);
+    fireEvent.press(view.getByLabelText('Sort by NUMBER ascending'));
+    const nameSort = view.getByRole('radio', { name: /name/i });
+
+    fireEvent(nameSort, 'pressIn');
+
+    expect(view.UNSAFE_getByType(FlatList).props.data).toEqual([
+      sortRows[1],
+      sortRows[0],
+    ]);
+
+    fireEvent(nameSort, 'pressOut');
+    act(() => jest.advanceTimersByTime(0));
+    expect(view.UNSAFE_getByType(FlatList).props.data).toEqual(sortRows);
+
+    fireEvent(nameSort, 'pressIn');
+    fireEvent(nameSort, 'pressOut');
+    fireEvent.press(nameSort);
+
+    expect(view.getByLabelText('Sort by NAME ascending')).toBeTruthy();
+    expect(view.UNSAFE_getByType(FlatList).props.data).toEqual([
+      sortRows[1],
+      sortRows[0],
+    ]);
+  });
+
+  it('prepares an evolutionary family on press-in before checking the control', () => {
+    const familyRows = [
+      row({
+        id: 'bulbasaur-family',
+        name: 'Bulbasaur',
+        pokedexNumber: 1,
+        pokemonId: 1,
+        evolutionFamilyIds: [1, 2],
+        searchTerms: ['Bulbasaur'],
+      }),
+      row({
+        id: 'ivysaur-family',
+        name: 'Ivysaur',
+        pokedexNumber: 2,
+        pokemonId: 2,
+        evolutionFamilyIds: [1, 2],
+        searchTerms: ['Ivysaur'],
+      }),
+    ];
+    const view = render(
+      <NativeCollectionParityScreen
+        activeTag={null}
+        assetBaseUrl="https://pokegonexus.com"
+        error={null}
+        isLoading={false}
+        onClearTag={jest.fn()}
+        onOpenInstance={jest.fn()}
+        onQueryChange={jest.fn()}
+        onRetry={jest.fn()}
+        onViewChange={jest.fn()}
+        query="Ivysaur"
+        rows={familyRows}
+      />,
+    );
+    const toggle = view.getByRole('checkbox');
+    expect(view.UNSAFE_getByType(FlatList).props.data).toEqual([familyRows[1]]);
+    expect(toggle.props.accessibilityState.checked).toBe(false);
+
+    fireEvent(toggle, 'pressIn');
+
+    expect(view.UNSAFE_getByType(FlatList).props.data).toEqual(familyRows);
+    expect(toggle.props.accessibilityState.checked).toBe(false);
+
+    fireEvent(toggle, 'pressOut');
+    act(() => jest.advanceTimersByTime(0));
+    expect(view.UNSAFE_getByType(FlatList).props.data).toEqual([familyRows[1]]);
+
+    fireEvent(toggle, 'pressIn');
+    fireEvent(toggle, 'pressOut');
+    fireEvent.press(toggle);
+
+    expect(view.getByRole('checkbox').props.accessibilityState.checked).toBe(true);
+    expect(view.UNSAFE_getByType(FlatList).props.data).toEqual(familyRows);
+  });
+
   it('keeps the action menu callback available', () => {
     const onOpenCanonicalCollection = jest.fn();
     render(<Harness onOpenCanonicalCollection={onOpenCanonicalCollection} />);

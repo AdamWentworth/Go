@@ -197,6 +197,8 @@ export const NativeCollectionSearchControls = memo(forwardRef<
     menuVisible: boolean;
     onMenuVisibleChange: (visible: boolean) => void;
     onQueryChange: (query: string) => void;
+    onEvolutionPressIn?: () => void;
+    onEvolutionPressOut?: () => void;
     onToggleEvolutionaryLine: () => void;
     query: string;
     showEvolutionaryLine: boolean;
@@ -209,6 +211,8 @@ export const NativeCollectionSearchControls = memo(forwardRef<
   menuVisible,
   onMenuVisibleChange,
   onQueryChange,
+  onEvolutionPressIn,
+  onEvolutionPressOut,
   onToggleEvolutionaryLine,
   query,
   showEvolutionaryLine,
@@ -336,6 +340,8 @@ export const NativeCollectionSearchControls = memo(forwardRef<
           accessibilityRole="checkbox"
           accessibilityState={{ checked: showEvolutionaryLine }}
           onPress={onToggleEvolutionaryLine}
+          onPressIn={onEvolutionPressIn}
+          onPressOut={onEvolutionPressOut}
           style={styles.evolutionToggle}
         >
           <View style={[styles.evolutionCheckbox, { borderColor: textColor }]}>

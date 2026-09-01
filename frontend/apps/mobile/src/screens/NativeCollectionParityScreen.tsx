@@ -2,7 +2,6 @@ import {
   forwardRef,
   memo,
   useCallback,
-  useDeferredValue,
   useEffect,
   useLayoutEffect,
   useMemo,
@@ -50,7 +49,7 @@ type NativeCollectionParityScreenProps = {
   initialSortDirection?: NativeCollectionSortDirection;
   isLoading: boolean;
   error: string | null;
-  onQueryChange: (query: string) => void;
+  onQueryChange: (query: string, source?: 'filter' | 'typing') => void;
   onRetry: () => void;
   onOpenInstance: (row: NativeCollectionRow, orderedRows: NativeCollectionRow[]) => void;
   onLongPressInstance?: (row: NativeCollectionRow) => void;
@@ -97,6 +96,17 @@ const EMPTY_SELECTED_IDS: ReadonlySet<string> = new Set<string>();
 const COLLECTION_IMAGE_REVEAL_BATCH = 1;
 const COLLECTION_INITIAL_VIEWPORT_IMAGE_COUNT = 18;
 const COLLECTION_IMAGE_REVEAL_WINDOW = 54;
+
+const resolveSortSelection = (
+  sort: NativeCollectionSort,
+  direction: NativeCollectionSortDirection,
+  nextSort: NativeCollectionSort,
+): { sort: NativeCollectionSort; direction: NativeCollectionSortDirection } => ({
+  sort: nextSort,
+  direction: nextSort === sort
+    ? direction === 'ascending' ? 'descending' : 'ascending'
+    : nextSort === 'favorite' ? 'descending' : 'ascending',
+});
 
 const catalogOnlyRowsCache = new WeakMap<NativeCollectionRow[], boolean>();
 const containsOnlyCatalogRows = (rows: NativeCollectionRow[]): boolean => {
@@ -147,31 +157,49 @@ export const NativeCollectionParityScreen = memo(forwardRef<
   const [sortOpen, setSortOpen] = useState(false);
   const [showEvolutionaryLine, setShowEvolutionaryLine] = useState(initialShowEvolutionaryLine);
   const [stagedQuery, setStagedQuery] = useState<string | null>(null);
+  const [stagedSort, setStagedSort] = useState<{
+    sort: NativeCollectionSort;
+    direction: NativeCollectionSortDirection;
+  } | null>(null);
+  const [stagedShowEvolutionaryLine, setStagedShowEvolutionaryLine] = useState<boolean | null>(null);
   const [collectionImageRevealCount, setCollectionImageRevealCount] = useState<number | null>(null);
-  const [collectionImageRevealQuery, setCollectionImageRevealQuery] = useState<string | null>(null);
+  const [collectionImageRevealInteraction, setCollectionImageRevealInteraction] = useState<string | null>(null);
   const stagedQueryRef = useRef<string | null>(null);
   const stagedQueryCancelTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const stagedSortRef = useRef<{
+    sort: NativeCollectionSort;
+    direction: NativeCollectionSortDirection;
+  } | null>(null);
+  const stagedSortCancelTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const stagedEvolutionRef = useRef<boolean | null>(null);
+  const stagedEvolutionCancelTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const stagedQueryTraceRef = useRef<{
     paintedAt: number | null;
     query: string;
     startedAt: number;
   } | null>(null);
+  const projectionInteractionTraceRef = useRef<{
+    event: 'collection_evolution_result_painted' | 'collection_sort_result_painted';
+    startedAt: number;
+  } | null>(null);
   const effectiveQuery = stagedQuery ?? query;
-  const deferredShowEvolutionaryLine = useDeferredValue(showEvolutionaryLine);
+  const effectiveSort = stagedSort?.sort ?? sort;
+  const effectiveDirection = stagedSort?.direction ?? direction;
+  const effectiveShowEvolutionaryLine = stagedShowEvolutionaryLine ?? showEvolutionaryLine;
   // Match Vite's architecture: one virtualized grid receives a new immutable
   // projection when the tag changes. Sorting and card projection are cached,
   // so this changes the small visible window without retaining a hidden image
   // grid for every tag in the native view hierarchy.
   const filteredRows = useMemo(
     () => filterNativeCollectionRows(rows, 'all', effectiveQuery, {
-      showEvolutionaryLine: deferredShowEvolutionaryLine,
+      showEvolutionaryLine: effectiveShowEvolutionaryLine,
       universeRows: searchUniverseRows,
     }),
-    [deferredShowEvolutionaryLine, effectiveQuery, rows, searchUniverseRows],
+    [effectiveQuery, effectiveShowEvolutionaryLine, rows, searchUniverseRows],
   );
   const visibleRows = useMemo(
-    () => sortNativeCollectionRows(filteredRows, sort, direction),
-    [direction, filteredRows, sort],
+    () => sortNativeCollectionRows(filteredRows, effectiveSort, effectiveDirection),
+    [effectiveDirection, effectiveSort, filteredRows],
   );
   const visibleRowsRef = useRef(visibleRows);
   useLayoutEffect(() => {
@@ -180,6 +208,16 @@ export const NativeCollectionParityScreen = memo(forwardRef<
     // can now start its native-driven track in the same paint, just as Vite's
     // filter and CSS transform take effect in one commit.
     onRowsCommitted?.(visibleRows.length, effectiveQuery);
+    const projectionTrace = projectionInteractionTraceRef.current;
+    if (projectionTrace) {
+      projectionInteractionTraceRef.current = null;
+      requestAnimationFrame(() => {
+        markNativeUiPerformance(projectionTrace.event, {
+          interactionLatencyMs: Date.now() - projectionTrace.startedAt,
+          rowCount: visibleRows.length,
+        });
+      });
+    }
     const trace = stagedQueryTraceRef.current;
     if (stagedQuery !== null && trace?.query === effectiveQuery && trace.paintedAt === null) {
       requestAnimationFrame(() => {
@@ -192,22 +230,32 @@ export const NativeCollectionParityScreen = memo(forwardRef<
         });
       });
     }
-  }, [effectiveQuery, onRowsCommitted, stagedQuery, visibleRows]);
+  }, [
+    direction,
+    effectiveQuery,
+    onRowsCommitted,
+    showEvolutionaryLine,
+    sort,
+    stagedQuery,
+    stagedShowEvolutionaryLine,
+    stagedSort,
+    visibleRows,
+  ]);
   useEffect(() => {
-    if (collectionImageRevealQuery === null) return undefined;
+    if (collectionImageRevealInteraction === null) return undefined;
     const startedAt = Date.now();
     const target = Math.min(COLLECTION_IMAGE_REVEAL_WINDOW, visibleRows.length);
     let revealed = 0;
     let frame: number | null = null;
     let cancelled = false;
     const finishReveal = () => {
-      markNativeUiPerformance('collection_query_images_revealed', {
+      markNativeUiPerformance('collection_projection_images_revealed', {
         interactionLatencyMs: Date.now() - startedAt,
-        query: collectionImageRevealQuery,
+        interaction: collectionImageRevealInteraction,
         rowCount: visibleRows.length,
       });
       setCollectionImageRevealCount(null);
-      setCollectionImageRevealQuery(null);
+      setCollectionImageRevealInteraction(null);
     };
     const revealNextBatch = () => {
       frame = requestAnimationFrame(() => {
@@ -217,9 +265,9 @@ export const NativeCollectionParityScreen = memo(forwardRef<
         if (revealed === Math.min(COLLECTION_INITIAL_VIEWPORT_IMAGE_COUNT, target)) {
           frame = requestAnimationFrame(() => {
             if (cancelled) return;
-            markNativeUiPerformance('collection_query_viewport_images_revealed', {
+            markNativeUiPerformance('collection_projection_viewport_images_revealed', {
               interactionLatencyMs: Date.now() - startedAt,
-              query: collectionImageRevealQuery,
+              interaction: collectionImageRevealInteraction,
               rowCount: visibleRows.length,
             });
             if (revealed < target) revealNextBatch();
@@ -239,7 +287,7 @@ export const NativeCollectionParityScreen = memo(forwardRef<
     };
     if (target === 0) {
       setCollectionImageRevealCount(null);
-      setCollectionImageRevealQuery(null);
+      setCollectionImageRevealInteraction(null);
       return undefined;
     }
     revealNextBatch();
@@ -247,7 +295,7 @@ export const NativeCollectionParityScreen = memo(forwardRef<
       cancelled = true;
       if (frame !== null) cancelAnimationFrame(frame);
     };
-  }, [collectionImageRevealQuery, visibleRows.length]);
+  }, [collectionImageRevealInteraction, visibleRows.length]);
   const handleRowPress = useCallback(
     (row: NativeCollectionRow) => onOpenInstance(row, visibleRowsRef.current),
     [onOpenInstance],
@@ -260,13 +308,47 @@ export const NativeCollectionParityScreen = memo(forwardRef<
   );
   const sortLabel = NATIVE_SORT_OPTIONS.find((option) => option.key === sort)?.label ?? 'NUMBER';
   const theme = colorScheme === 'light' ? 'light' : 'dark';
+  const previewEvolutionaryLine = useCallback(() => {
+    if (stagedEvolutionCancelTimerRef.current) {
+      clearTimeout(stagedEvolutionCancelTimerRef.current);
+      stagedEvolutionCancelTimerRef.current = null;
+    }
+    const next = !showEvolutionaryLine;
+    stagedEvolutionRef.current = next;
+    setStagedShowEvolutionaryLine(next);
+    setCollectionImageRevealCount(0);
+    setCollectionImageRevealInteraction(null);
+  }, [showEvolutionaryLine]);
+  const cancelEvolutionaryLinePreview = useCallback(() => {
+    if (stagedEvolutionCancelTimerRef.current) {
+      clearTimeout(stagedEvolutionCancelTimerRef.current);
+    }
+    stagedEvolutionCancelTimerRef.current = setTimeout(() => {
+      stagedEvolutionCancelTimerRef.current = null;
+      stagedEvolutionRef.current = null;
+      setStagedShowEvolutionaryLine(null);
+      setCollectionImageRevealCount(null);
+      setCollectionImageRevealInteraction(null);
+    }, 0);
+  }, []);
   const handleToggleEvolutionaryLine = useCallback(() => {
-    setShowEvolutionaryLine((current) => {
-      const next = !current;
-      onContextChange?.({ showEvolutionaryLine: next, scrollOffset: 0 });
-      return next;
-    });
-  }, [onContextChange]);
+    if (stagedEvolutionCancelTimerRef.current) {
+      clearTimeout(stagedEvolutionCancelTimerRef.current);
+      stagedEvolutionCancelTimerRef.current = null;
+    }
+    const next = stagedEvolutionRef.current ?? !showEvolutionaryLine;
+    projectionInteractionTraceRef.current = {
+      event: 'collection_evolution_result_painted',
+      startedAt: Date.now(),
+    };
+    markNativeUiPerformance('collection_evolution_toggled', { enabled: next });
+    stagedEvolutionRef.current = null;
+    setStagedShowEvolutionaryLine(null);
+    setShowEvolutionaryLine(next);
+    setCollectionImageRevealCount(0);
+    setCollectionImageRevealInteraction(`evolution:${next ? 'on' : 'off'}`);
+    onContextChange?.({ showEvolutionaryLine: next });
+  }, [onContextChange, showEvolutionaryLine]);
   const handleScrollOffsetChange = useCallback((scrollOffset: number) => {
     onContextChange?.({ scrollOffset });
   }, [onContextChange]);
@@ -282,7 +364,7 @@ export const NativeCollectionParityScreen = memo(forwardRef<
     };
     markNativeUiPerformance('collection_query_preview_started', { query: nextQuery });
     setCollectionImageRevealCount(0);
-    setCollectionImageRevealQuery(null);
+    setCollectionImageRevealInteraction(null);
     stagedQueryRef.current = nextQuery;
     setStagedQuery(nextQuery);
   }, []);
@@ -293,12 +375,15 @@ export const NativeCollectionParityScreen = memo(forwardRef<
       if (stagedQueryRef.current !== nextQuery) return;
       stagedQueryTraceRef.current = null;
       setCollectionImageRevealCount(null);
-      setCollectionImageRevealQuery(null);
+      setCollectionImageRevealInteraction(null);
       stagedQueryRef.current = null;
       setStagedQuery(null);
     }, 0);
   }, []);
-  const changeQuery = useCallback((nextQuery: string) => {
+  const changeQuery = useCallback((
+    nextQuery: string,
+    source: 'filter' | 'typing' = 'typing',
+  ) => {
     if (stagedQueryCancelTimerRef.current) {
       clearTimeout(stagedQueryCancelTimerRef.current);
       stagedQueryCancelTimerRef.current = null;
@@ -311,47 +396,79 @@ export const NativeCollectionParityScreen = memo(forwardRef<
         query: trace.query,
       });
       setCollectionImageRevealCount(0);
-      setCollectionImageRevealQuery(nextQuery);
+      setCollectionImageRevealInteraction(`filter:${nextQuery}`);
+    } else if (source === 'typing' && nextQuery.trim()) {
+      setCollectionImageRevealCount(0);
+      setCollectionImageRevealInteraction(`typing:${nextQuery}`);
     } else {
       setCollectionImageRevealCount(null);
-      setCollectionImageRevealQuery(null);
+      setCollectionImageRevealInteraction(null);
     }
     stagedQueryTraceRef.current = null;
     stagedQueryRef.current = null;
     setStagedQuery(null);
-    onQueryChange(nextQuery);
+    onQueryChange(nextQuery, source);
   }, [onQueryChange]);
   useEffect(() => () => {
     if (stagedQueryCancelTimerRef.current) clearTimeout(stagedQueryCancelTimerRef.current);
+    if (stagedSortCancelTimerRef.current) clearTimeout(stagedSortCancelTimerRef.current);
+    if (stagedEvolutionCancelTimerRef.current) clearTimeout(stagedEvolutionCancelTimerRef.current);
   }, []);
   const openSortMenu = useCallback(() => setSortOpen(true), []);
   const closeSortMenu = useCallback(() => setSortOpen(false), []);
-  const selectSort = useCallback((nextSort: NativeCollectionSort) => {
-    setSortOpen(false);
-    // Match Vite's immediate visible-list update.
-    if (nextSort === sort) {
-      setDirection((current) => {
-        const nextDirection = current === 'ascending' ? 'descending' : 'ascending';
-        onContextChange?.({ sortDirection: nextDirection, scrollOffset: 0 });
-        return nextDirection;
-      });
-      return;
+  const previewSort = useCallback((nextSort: NativeCollectionSort) => {
+    if (stagedSortCancelTimerRef.current) {
+      clearTimeout(stagedSortCancelTimerRef.current);
+      stagedSortCancelTimerRef.current = null;
     }
-    setSort(nextSort);
-    const nextDirection = nextSort === 'favorite' ? 'descending' : 'ascending';
-    setDirection(nextDirection);
+    const next = resolveSortSelection(sort, direction, nextSort);
+    stagedSortRef.current = next;
+    setStagedSort(next);
+    setCollectionImageRevealCount(0);
+    setCollectionImageRevealInteraction(null);
+  }, [direction, sort]);
+  const cancelSortPreview = useCallback((nextSort: NativeCollectionSort) => {
+    if (stagedSortCancelTimerRef.current) clearTimeout(stagedSortCancelTimerRef.current);
+    stagedSortCancelTimerRef.current = setTimeout(() => {
+      stagedSortCancelTimerRef.current = null;
+      if (stagedSortRef.current?.sort !== nextSort) return;
+      stagedSortRef.current = null;
+      setStagedSort(null);
+      setCollectionImageRevealCount(null);
+      setCollectionImageRevealInteraction(null);
+    }, 0);
+  }, []);
+  const selectSort = useCallback((nextSort: NativeCollectionSort) => {
+    if (stagedSortCancelTimerRef.current) {
+      clearTimeout(stagedSortCancelTimerRef.current);
+      stagedSortCancelTimerRef.current = null;
+    }
+    const next = stagedSortRef.current?.sort === nextSort
+      ? stagedSortRef.current
+      : resolveSortSelection(sort, direction, nextSort);
+    projectionInteractionTraceRef.current = {
+      event: 'collection_sort_result_painted',
+      startedAt: Date.now(),
+    };
+    markNativeUiPerformance('collection_sort_changed', next);
+    stagedSortRef.current = null;
+    setStagedSort(null);
+    setSortOpen(false);
+    setSort(next.sort);
+    setDirection(next.direction);
+    setCollectionImageRevealCount(0);
+    setCollectionImageRevealInteraction(`sort:${next.sort}:${next.direction}`);
     onContextChange?.({
-      sort: nextSort,
-      sortDirection: nextDirection,
-      scrollOffset: 0,
+      sort: next.sort,
+      sortDirection: next.direction,
     });
-  }, [onContextChange, sort]);
+  }, [direction, onContextChange, sort]);
   const openPokemon = useCallback(() => onViewChange('pokemon'), [onViewChange]);
   const openTags = useCallback(() => onViewChange('inventory'), [onViewChange]);
   const openWishlist = useCallback(() => onViewChange('wishlist'), [onViewChange]);
   const containsOnlyCatalog = containsOnlyCatalogRows(rows);
   const projectedSelectionAction = containsOnlyCatalog ? 'add' : selectionAction;
-  const scrollResetKey = `${activeTag?.key ?? 'catalog'}:${sort}:${direction}:${showEvolutionaryLine}`;
+  const scrollResetKey = activeTag?.key ?? 'catalog';
 
   return (
     <View style={styles.screen} testID="native-collection-parity-screen">
@@ -371,6 +488,8 @@ export const NativeCollectionParityScreen = memo(forwardRef<
         onQueryChange={changeQuery}
         onQueryPreview={previewQuery}
         onCancelQueryPreview={cancelQueryPreview}
+        onEvolutionPressIn={previewEvolutionaryLine}
+        onEvolutionPressOut={cancelEvolutionaryLinePreview}
         onToggleEvolutionaryLine={handleToggleEvolutionaryLine}
         onRetry={onRetry}
         onSortPress={openSortMenu}
@@ -402,6 +521,8 @@ export const NativeCollectionParityScreen = memo(forwardRef<
         assetBaseUrl={assetBaseUrl}
         direction={direction}
         onClose={closeSortMenu}
+        onCancelPreview={cancelSortPreview}
+        onPreview={previewSort}
         onSelect={selectSort}
         open={sortOpen}
         sort={sort}

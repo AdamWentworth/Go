@@ -39,6 +39,28 @@ tags:
 - extendedWaitUntil:
     visible: Bulbasaur
     timeout: 10000
+- tapOn: Sort by NUMBER ascending
+- extendedWaitUntil:
+    visible:
+      id: native-collection-sort-menu
+    timeout: 10000
+- tapOn: NAME
+- extendedWaitUntil:
+    visible: Abomasnow
+    timeout: 10000
+- tapOn: Search Pokémon
+- inputText: Ivysaur
+- extendedWaitUntil:
+    visible: Ivysaur
+    timeout: 10000
+- tapOn: SHOW EVOLUTIONARY LINE
+- extendedWaitUntil:
+    visible: Bulbasaur
+    timeout: 10000
+- tapOn: Close Pokémon search
+- extendedWaitUntil:
+    visible: Abomasnow
+    timeout: 10000
 - tapOn: TAGS
 - extendedWaitUntil:
     visible: Inventory tags

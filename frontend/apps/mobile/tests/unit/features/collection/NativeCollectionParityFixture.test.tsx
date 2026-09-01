@@ -232,7 +232,7 @@ describe('NativeCollectionParityFixture', () => {
     fireEvent(view.getByLabelText('Search Pokémon'), 'focus');
     fireEvent.press(view.getByLabelText('Filter by Shiny'));
 
-    expect(onQueryChange).toHaveBeenCalledWith('Shiny');
+    expect(onQueryChange).toHaveBeenCalledWith('Shiny', 'filter');
     expect(dismissKeyboard).not.toHaveBeenCalled();
     act(() => jest.runAllTimers());
     expect(dismissKeyboard).toHaveBeenCalled();

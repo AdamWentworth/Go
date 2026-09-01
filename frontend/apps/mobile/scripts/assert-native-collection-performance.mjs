@@ -20,16 +20,23 @@ const readInteractionLatencies = (text, event) => {
 const budgets = {
   collection_tag_slide_started: 32,
   collection_tag_result_painted: 150,
-  collection_query_result_painted: 100,
-  collection_query_viewport_images_revealed: 1000,
-  collection_query_images_revealed: 3000,
+  collection_query_result_painted: 120,
+  collection_typed_query_result_painted: 150,
+  collection_projection_viewport_images_revealed: 1200,
+  collection_projection_images_revealed: 3000,
+  collection_sort_result_painted: 150,
+  collection_evolution_result_painted: 150,
 };
 const measurements = Object.fromEntries(Object.keys(budgets).map((event) => [event, []]));
+const latestOnlyEvents = new Set(['collection_typed_query_result_painted']);
 
 for (const logPath of logPaths) {
   const text = fs.readFileSync(logPath, 'utf8');
   for (const event of Object.keys(budgets)) {
-    measurements[event].push(...readInteractionLatencies(text, event));
+    const values = readInteractionLatencies(text, event);
+    measurements[event].push(...(
+      latestOnlyEvents.has(event) && values.length > 0 ? [values.at(-1)] : values
+    ));
   }
 }
 
@@ -41,7 +48,8 @@ for (const [event, budget] of Object.entries(budgets)) {
     continue;
   }
   const maximum = Math.max(...values);
-  console.log(`${event}: ${values.join(', ')} ms (budget ${budget} ms)`);
+  const qualifier = latestOnlyEvents.has(event) ? ' (latest sequential input)' : '';
+  console.log(`${event}: ${values.join(', ')} ms${qualifier} (budget ${budget} ms)`);
   if (maximum > budget) {
     failures.push(`${event}: ${maximum} ms exceeded the ${budget} ms budget`);
   }

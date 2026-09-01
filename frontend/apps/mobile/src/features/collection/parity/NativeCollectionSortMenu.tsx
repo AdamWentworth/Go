@@ -35,6 +35,8 @@ export const NativeCollectionSortMenu = memo(function NativeCollectionSortMenu({
   assetBaseUrl,
   direction,
   onClose,
+  onCancelPreview,
+  onPreview,
   onSelect,
   open,
   sort,
@@ -42,6 +44,8 @@ export const NativeCollectionSortMenu = memo(function NativeCollectionSortMenu({
   assetBaseUrl: string;
   direction: NativeCollectionSortDirection;
   onClose: () => void;
+  onCancelPreview?: (sort: NativeCollectionSort) => void;
+  onPreview?: (sort: NativeCollectionSort) => void;
   onSelect: (sort: NativeCollectionSort) => void;
   open: boolean;
   sort: NativeCollectionSort;
@@ -108,6 +112,8 @@ export const NativeCollectionSortMenu = memo(function NativeCollectionSortMenu({
                   accessibilityRole="radio"
                   accessibilityState={{ checked: selected }}
                   onPress={() => onSelect(option.key)}
+                  onPressIn={onPreview ? () => onPreview(option.key) : undefined}
+                  onPressOut={onCancelPreview ? () => onCancelPreview(option.key) : undefined}
                   style={({ pressed }) => [styles.option, pressed && styles.pressed]}
                 >
                   <Text style={styles.optionLabel}>{option.label}</Text>

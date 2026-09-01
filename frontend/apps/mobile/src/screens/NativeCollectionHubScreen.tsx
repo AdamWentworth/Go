@@ -161,7 +161,11 @@ export const NativeCollectionHubScreen = memo(function NativeCollectionHubScreen
   const sliderRef = useRef<NativeHorizontalPageSliderHandle>(null);
   const collectionSurfaceRef = useRef<NativeCollectionParityScreenHandle>(null);
   const tagSelectionTraceRef = useRef<{ key: string; startedAt: number } | null>(null);
-  const querySelectionTraceRef = useRef<{ query: string; startedAt: number } | null>(null);
+  const querySelectionTraceRef = useRef<{
+    event: 'collection_query_result_painted' | 'collection_typed_query_result_painted';
+    query: string;
+    startedAt: number;
+  } | null>(null);
   const pendingTagMotionRef = useRef<{
     delaySidePanelTag: boolean;
     key: string;
@@ -383,7 +387,7 @@ export const NativeCollectionHubScreen = memo(function NativeCollectionHubScreen
       if (trace?.query === query) {
         querySelectionTraceRef.current = null;
         requestAnimationFrame(() => {
-          markNativeUiPerformance('collection_query_result_painted', {
+          markNativeUiPerformance(trace.event, {
             interactionLatencyMs: Date.now() - trace.startedAt,
             query: trace.query,
             rowCount: visibleRowCount,
@@ -394,10 +398,20 @@ export const NativeCollectionHubScreen = memo(function NativeCollectionHubScreen
     startPendingTagMotion();
   }, [query, startPendingTagMotion]);
 
-  const changeQuery = useCallback((nextQuery: string) => {
+  const changeQuery = useCallback((
+    nextQuery: string,
+    source: 'filter' | 'typing' = 'typing',
+  ) => {
     if (nextQuery.trim()) {
-      querySelectionTraceRef.current = { query: nextQuery, startedAt: Date.now() };
-      markNativeUiPerformance('collection_query_changed', { query: nextQuery });
+      const event = source === 'filter'
+        ? 'collection_query_result_painted'
+        : 'collection_typed_query_result_painted';
+      querySelectionTraceRef.current = {
+        event,
+        query: nextQuery,
+        startedAt: Date.now(),
+      };
+      markNativeUiPerformance('collection_query_changed', { query: nextQuery, source });
     } else {
       querySelectionTraceRef.current = null;
     }

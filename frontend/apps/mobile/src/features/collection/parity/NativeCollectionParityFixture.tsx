@@ -72,9 +72,11 @@ type NativeCollectionParityFixtureProps = {
   onCollectionRowPress?: (row: NativeCollectionRow) => void;
   onCollectionRowLongPress?: (row: NativeCollectionRow) => void;
   onClearTag?: () => void;
-  onQueryChange?: (query: string) => void;
+  onQueryChange?: (query: string, source?: 'filter' | 'typing') => void;
   onQueryPreview?: (query: string) => void;
   onCancelQueryPreview?: (query: string) => void;
+  onEvolutionPressIn?: () => void;
+  onEvolutionPressOut?: () => void;
   onToggleEvolutionaryLine?: () => void;
   onPokemonPress?: () => void;
   onRetry?: () => void;
@@ -351,6 +353,8 @@ export const NativeCollectionParityFixture = memo(forwardRef<
   onQueryChange,
   onQueryPreview,
   onCancelQueryPreview,
+  onEvolutionPressIn,
+  onEvolutionPressOut,
   onToggleEvolutionaryLine,
   onPokemonPress,
   onRetry,
@@ -450,7 +454,7 @@ export const NativeCollectionParityFixture = memo(forwardRef<
     // Android commit before the destination could paint.
     searchControlsRef.current?.commitQueryValue(nextQuery);
     setSearchMenuVisible(false);
-    onQueryChange?.(nextQuery);
+    onQueryChange?.(nextQuery, 'filter');
     // Preserve Vite's blur while ensuring Android's window resize cannot delay
     // the already-committed destination frame.
     dismissKeyboardAfterResultPaint();
@@ -470,7 +474,7 @@ export const NativeCollectionParityFixture = memo(forwardRef<
     setSearchMenuVisible(visible);
   }, []);
   const changeQuery = useCallback(
-    (value: string) => onQueryChange?.(value),
+    (value: string) => onQueryChange?.(value, 'typing'),
     [onQueryChange],
   );
   const toggleEvolutionaryLine = useCallback(
@@ -525,6 +529,8 @@ export const NativeCollectionParityFixture = memo(forwardRef<
         menuVisible={searchMenuVisible}
         onMenuVisibleChange={changeSearchMenuVisibility}
         onQueryChange={changeQuery}
+        onEvolutionPressIn={onEvolutionPressIn}
+        onEvolutionPressOut={onEvolutionPressOut}
         onToggleEvolutionaryLine={toggleEvolutionaryLine}
         query={query}
         ref={searchControlsRef}
@@ -589,6 +595,8 @@ export const NativeCollectionParityFixture = memo(forwardRef<
     changeSearchMenuVisibility,
     error,
     onClearTag,
+    onEvolutionPressIn,
+    onEvolutionPressOut,
     onRetry,
     palette.search,
     palette.searchText,

@@ -58,7 +58,7 @@ mounts complete collection and Pokédex route trees in the background.
 
 Passing evidence for this checkpoint:
 
-- native Jest: 158 suites, 833 tests;
+- native Jest: 158 suites, 835 tests;
 - mobile and web TypeScript and ESLint;
 - native real-route smoke: 92 guest/signed-in, light/dark route states;
 - focused Vite mobile-Chromium browser coverage: 9 tests;
@@ -252,11 +252,28 @@ images are revealed one card per frame across FlatList's three-viewport window,
 matching Vite's asynchronous lazy-image pipeline without a final all-at-once
 decode burst. The latest production-mode Pixel run measured 47 ms from release
 to result, 849 ms for the first eighteen images, and 2,054 ms for all fifty-four
-window images. Device logcat now enforces 100 ms, 1,000 ms, and 3,000 ms budgets
+window images. Device logcat now enforces 120 ms, 1,200 ms, and 3,000 ms budgets
 for those stages respectively. The separate production browser proxy measured
 93.7 ms sequential search, 76.3 ms dispatched tag response, 7.5 ms to first
 motion, twenty distinct positions, and a 33.4 ms maximum sampled gap; all 92
 route/theme states also passed.
+
+The same preparation model now covers every expensive collection projection,
+not only filter tiles. Sort options and the evolutionary-line checkbox build
+their destination rows during press-in, cancel that preview on an abandoned
+press, and adopt the already-painted result on release. Typed search also keeps
+its urgent local input and destination image release in a single interaction,
+so Android never has to reconcile card content and decode a complete viewport
+in the release frame. The expanded production-mode Pixel smoke exercises a
+filter, sorting by name, sequentially typing Ivysaur, enabling its evolutionary
+line, and the existing tag slide. Sorting improved from the initially measured
+763 ms to 55–72 ms, while the evolutionary-line toggle improved from 173 ms to
+39–52 ms. Its latest complete run painted the filter in 53 ms, the final typed
+query in 120 ms, sort in 72 ms, and the evolutionary-line result in 39 ms. The
+first destination image window completed in at most 877 ms and the full retained
+window in at most 2,432 ms. Device logcat enforces 150 ms result ceilings for
+typed search, sort, and evolutionary-line changes in addition to the existing
+filter, tag, motion, and progressive-image budgets.
 
 ## Remaining approval gate
 
