@@ -1936,6 +1936,7 @@ export const NativeInstanceDetailScreen = ({
     });
   }, []);
   const overlaySwipe = useNativeOverlaySwipeNavigation({
+    activeItemKey: detail?.row.id ?? null,
     disabled: !detail
       || editingInstanceId === detail.row.id
       || backgroundPickerInstanceId === detail.row.id,

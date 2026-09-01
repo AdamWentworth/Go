@@ -18,6 +18,16 @@ export const homeExperienceParityContract = {
 
 export const collectionExperienceParityContract = {
   initialView: 'pokemon',
+  instanceOverlaySwipe: {
+    axisLockDelta: 10,
+    enterOffset: 110,
+    entryTransitionMs: 220,
+    exitOffset: 140,
+    maxDragOffset: 180,
+    navigationDelta: 56,
+    swapDelayMs: 120,
+    transitionEasing: [0.22, 1, 0.36, 1] as const,
+  },
   pageTransitionEasing: [0.25, 0.46, 0.45, 0.94] as const,
   pageTransitionMs: 300,
   viewOrder: ['inventory', 'pokemon', 'wishlist'] as const,

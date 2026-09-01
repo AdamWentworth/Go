@@ -354,7 +354,7 @@ describe('NativeInstanceDetailScreen', () => {
   it('preserves the canonical animated previous and next overlay controls', async () => {
     const onPrevious = jest.fn();
     const onNext = jest.fn();
-    render(
+    const view = render(
       <NativeInstanceDetailScreen
         detail={detail}
         isLoading={false}
@@ -375,6 +375,28 @@ describe('NativeInstanceDetailScreen', () => {
 
     fireEvent.press(screen.getByRole('button', { name: 'Previous Pokémon' }));
     await waitFor(() => expect(onPrevious).toHaveBeenCalledTimes(1));
+
+    view.rerender(
+      <NativeInstanceDetailScreen
+        detail={{ ...detail, row: { ...detail.row, id: 'instance-2' } }}
+        isLoading={false}
+        error={null}
+        cachedAt={null}
+        movesWarning={null}
+        saveNotice={null}
+        saveError={null}
+        isSaving={false}
+        onRetry={jest.fn()}
+        onBack={jest.fn()}
+        onPrevious={onPrevious}
+        onNext={onNext}
+        onToggleFavorite={jest.fn()}
+        onEditInCurrentApp={jest.fn()}
+      />,
+    );
+    await waitFor(() => expect(
+      screen.getByRole('button', { name: 'Next Pokémon' }).props.accessibilityState?.disabled,
+    ).toBe(false));
     fireEvent.press(screen.getByRole('button', { name: 'Next Pokémon' }));
     await waitFor(() => expect(onNext).toHaveBeenCalledTimes(1));
   });

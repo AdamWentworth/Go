@@ -1,16 +1,25 @@
 import {
   AccessibilityInfo,
   Animated,
+  Easing,
 } from 'react-native';
 import { Gesture } from 'react-native-gesture-handler';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { collectionExperienceParityContract } from '@pokemongonexus/shared-ui-tokens';
+import {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import { useOptionalNativeDevicePreferences } from '../../settings/NativeDevicePreferencesProvider';
 
 export type NativeOverlaySwipeDirection = 'previous' | 'next';
 
-const AXIS_LOCK_DELTA = 10;
-const NAVIGATION_DELTA = 56;
-const MAX_DRAG_OFFSET = 180;
+const { instanceOverlaySwipe } = collectionExperienceParityContract;
+const ROUTE_HANDOFF_TIMEOUT_MS = 1000;
+const swipeEasing = Easing.bezier(...instanceOverlaySwipe.transitionEasing);
 
 export const resolveNativeOverlaySwipeDirection = ({
   deltaX,
@@ -19,7 +28,7 @@ export const resolveNativeOverlaySwipeDirection = ({
   deltaX: number;
   deltaY: number;
 }): NativeOverlaySwipeDirection | null => {
-  if (Math.abs(deltaX) < NAVIGATION_DELTA) return null;
+  if (Math.abs(deltaX) < instanceOverlaySwipe.navigationDelta) return null;
   if (Math.abs(deltaX) < Math.abs(deltaY) * 0.9) return null;
   return deltaX < 0 ? 'next' : 'previous';
 };
@@ -31,15 +40,19 @@ export const shouldCaptureNativeOverlaySwipe = ({
   deltaX: number;
   deltaY: number;
 }): boolean => (
-  Math.abs(deltaX) >= AXIS_LOCK_DELTA
+  Math.abs(deltaX) >= instanceOverlaySwipe.axisLockDelta
   && Math.abs(deltaX) >= Math.abs(deltaY) * 0.9
 );
 
 const clampDragOffset = (deltaX: number): number => (
-  Math.max(-MAX_DRAG_OFFSET, Math.min(MAX_DRAG_OFFSET, deltaX))
+  Math.max(
+    -instanceOverlaySwipe.maxDragOffset,
+    Math.min(instanceOverlaySwipe.maxDragOffset, deltaX),
+  )
 );
 
 type Args = {
+  activeItemKey: string | null;
   disabled?: boolean;
   onNext?: () => void;
   onPrevious?: () => void;
@@ -54,6 +67,7 @@ type Result = {
 };
 
 export const useNativeOverlaySwipeNavigation = ({
+  activeItemKey,
   disabled = false,
   onNext,
   onPrevious,
@@ -61,6 +75,14 @@ export const useNativeOverlaySwipeNavigation = ({
   const [translateX] = useState(() => new Animated.Value(0));
   const [isAnimating, setIsAnimating] = useState(false);
   const [pendingNavigation, setPendingNavigation] = useState<NativeOverlaySwipeDirection | null>(null);
+  const isAnimatingRef = useRef(false);
+  const activeAnimationRef = useRef<Animated.CompositeAnimation | null>(null);
+  const entranceFrameRef = useRef<ReturnType<typeof requestAnimationFrame> | null>(null);
+  const routeHandoffTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const awaitingContentRef = useRef<{
+    direction: NativeOverlaySwipeDirection;
+    outgoingKey: string | null;
+  } | null>(null);
   const devicePreferences = useOptionalNativeDevicePreferences();
   const [systemReduceMotion, setSystemReduceMotion] = useState(false);
 
@@ -75,7 +97,57 @@ export const useNativeOverlaySwipeNavigation = ({
 
   const reduceMotion = devicePreferences?.shouldReduceMotion ?? systemReduceMotion;
 
+  const finishNavigation = useCallback(() => {
+    isAnimatingRef.current = false;
+    setIsAnimating(false);
+  }, []);
+
+  const startEntrance = useCallback((direction: NativeOverlaySwipeDirection) => {
+    if (routeHandoffTimerRef.current !== null) {
+      clearTimeout(routeHandoffTimerRef.current);
+      routeHandoffTimerRef.current = null;
+    }
+    awaitingContentRef.current = null;
+
+    const enterOffset = direction === 'next'
+      ? instanceOverlaySwipe.enterOffset
+      : -instanceOverlaySwipe.enterOffset;
+    translateX.setValue(enterOffset);
+    entranceFrameRef.current = requestAnimationFrame(() => {
+      entranceFrameRef.current = null;
+      const animation = Animated.timing(translateX, {
+        toValue: 0,
+        duration: instanceOverlaySwipe.entryTransitionMs,
+        easing: swipeEasing,
+        useNativeDriver: true,
+      });
+      activeAnimationRef.current = animation;
+      animation.start(() => {
+        activeAnimationRef.current = null;
+        finishNavigation();
+      });
+    });
+  }, [finishNavigation, translateX]);
+
+  useLayoutEffect(() => {
+    const awaitingContent = awaitingContentRef.current;
+    if (
+      !awaitingContent
+      || !activeItemKey
+      || activeItemKey === awaitingContent.outgoingKey
+    ) return;
+
+    startEntrance(awaitingContent.direction);
+  }, [activeItemKey, startEntrance]);
+
   useEffect(() => () => {
+    activeAnimationRef.current?.stop();
+    if (entranceFrameRef.current !== null) {
+      cancelAnimationFrame(entranceFrameRef.current);
+    }
+    if (routeHandoffTimerRef.current !== null) {
+      clearTimeout(routeHandoffTimerRef.current);
+    }
     translateX.stopAnimation();
   }, [translateX]);
 
@@ -95,7 +167,7 @@ export const useNativeOverlaySwipeNavigation = ({
 
   const navigate = useCallback((direction: NativeOverlaySwipeDirection) => {
     if (disabled) return;
-    if (isAnimating) {
+    if (isAnimatingRef.current) {
       setPendingNavigation(direction);
       return;
     }
@@ -111,33 +183,50 @@ export const useNativeOverlaySwipeNavigation = ({
       return;
     }
 
+    isAnimatingRef.current = true;
     setIsAnimating(true);
-    const finishNavigation = () => {
-      setIsAnimating(false);
-    };
-    const exitOffset = direction === 'next' ? -140 : 140;
-    const enterOffset = direction === 'next' ? 110 : -110;
-    Animated.timing(translateX, {
+    const exitOffset = direction === 'next'
+      ? -instanceOverlaySwipe.exitOffset
+      : instanceOverlaySwipe.exitOffset;
+    const animation = Animated.timing(translateX, {
       toValue: exitOffset,
-      duration: 120,
+      duration: instanceOverlaySwipe.swapDelayMs,
+      easing: swipeEasing,
       useNativeDriver: true,
-    }).start(({ finished }) => {
+    });
+    activeAnimationRef.current = animation;
+    animation.start(({ finished }) => {
+      activeAnimationRef.current = null;
       if (!finished) {
         finishNavigation();
         resetPosition();
         return;
       }
+
+      // Expo Router commits setParams asynchronously. Keep the outgoing item
+      // offscreen until the screen confirms that the target item replaced it;
+      // otherwise the old item visibly slides back in before the route updates.
+      awaitingContentRef.current = {
+        direction,
+        outgoingKey: activeItemKey,
+      };
       callback();
-      translateX.setValue(enterOffset);
-      Animated.timing(translateX, {
-        toValue: 0,
-        duration: 220,
-        useNativeDriver: true,
-      }).start(() => {
-        finishNavigation();
-      });
+      routeHandoffTimerRef.current = setTimeout(() => {
+        const awaitingContent = awaitingContentRef.current;
+        if (awaitingContent) startEntrance(awaitingContent.direction);
+      }, ROUTE_HANDOFF_TIMEOUT_MS);
     });
-  }, [disabled, isAnimating, onNext, onPrevious, reduceMotion, resetPosition, translateX]);
+  }, [
+    activeItemKey,
+    disabled,
+    finishNavigation,
+    onNext,
+    onPrevious,
+    reduceMotion,
+    resetPosition,
+    startEntrance,
+    translateX,
+  ]);
 
   useEffect(() => {
     if (isAnimating || !pendingNavigation) return undefined;
@@ -154,8 +243,14 @@ export const useNativeOverlaySwipeNavigation = ({
     // Require a deliberate horizontal drag and fail immediately once the user
     // establishes vertical intent. A generic minDistance gesture activates on
     // vertical swipes too and starves the overlay's ScrollViews on Android.
-    .activeOffsetX([-AXIS_LOCK_DELTA, AXIS_LOCK_DELTA])
-    .failOffsetY([-AXIS_LOCK_DELTA, AXIS_LOCK_DELTA])
+    .activeOffsetX([
+      -instanceOverlaySwipe.axisLockDelta,
+      instanceOverlaySwipe.axisLockDelta,
+    ])
+    .failOffsetY([
+      -instanceOverlaySwipe.axisLockDelta,
+      instanceOverlaySwipe.axisLockDelta,
+    ])
     .runOnJS(true)
     .onBegin(() => {
       translateX.stopAnimation();
@@ -172,6 +267,9 @@ export const useNativeOverlaySwipeNavigation = ({
       const offset = clampDragOffset(event.translationX);
       translateX.setValue(hasDestination ? offset : offset * 0.24);
     })
+    // Gesture Handler stores this worklet callback for a future native event;
+    // it does not invoke navigate (or read its refs) during React render.
+    // eslint-disable-next-line react-hooks/refs
     .onEnd((event) => {
       const direction = resolveNativeOverlaySwipeDirection({
         deltaX: event.translationX,
