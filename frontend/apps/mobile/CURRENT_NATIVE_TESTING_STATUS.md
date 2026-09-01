@@ -136,7 +136,10 @@ straight from Gesture Handler into the native Animated graph instead of
 crossing to JavaScript on every frame. It uses Vite's shared 30% peek limit and
 100 px navigation threshold, and transfers the exact drag position into the
 settling animation so the current page cannot flash or reload before moving to
-the next one.
+the next one. Prepainted destination lists now retain only one viewport while
+hidden; the active list alone gets Vite's multi-row scroll buffer and faster
+cell batches. This keeps the instant destination paint without making every
+tag maintain a full scrolling window offscreen.
 
 The real-route collection budget measures the first interactive destination
 card before separately asserting the deliberately delayed header sublabel. The

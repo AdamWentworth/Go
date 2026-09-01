@@ -538,6 +538,7 @@ export const NativeCollectionParityScreen = forwardRef<
               showHeader={showHeader}
               selectedIds={isActive && selectedIds.size > 0 ? selectedIds : EMPTY_SELECTED_IDS}
               selectionAction={projectedSelectionAction}
+              surfaceActive={isActive}
             />
           </View>
         );

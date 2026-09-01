@@ -1,5 +1,12 @@
 import { createRef, useState } from 'react';
-import { act, cleanup, fireEvent, render, screen } from '@testing-library/react-native';
+import {
+  act,
+  cleanup,
+  fireEvent,
+  render,
+  screen,
+  within,
+} from '@testing-library/react-native';
 import type {
   NativeCollectionRow,
   NativeTagSummary,
@@ -135,6 +142,19 @@ describe('NativeCollectionParityScreen', () => {
       'native-collection-surface-system:favorites',
       { includeHiddenElements: true },
     )).toHaveStyle({ opacity: 0 });
+    expect(screen.getByTestId('native-collection-grid').props.windowSize).toBe(3);
+    const hiddenFavorites = screen.getByTestId(
+      'native-collection-surface-system:favorites',
+      { includeHiddenElements: true },
+    );
+    expect(within(hiddenFavorites).getByTestId(
+      'native-collection-grid',
+      { includeHiddenElements: true },
+    ).props).toEqual(expect.objectContaining({
+      maxToRenderPerBatch: 6,
+      updateCellsBatchingPeriod: 48,
+      windowSize: 1,
+    }));
     expect(ref.current?.revealSurface('system:favorites')).toBe(true);
     expect(ref.current?.revealSurface('system:missing')).toBe(false);
   });

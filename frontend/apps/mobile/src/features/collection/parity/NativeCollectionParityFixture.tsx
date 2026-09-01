@@ -79,6 +79,7 @@ type NativeCollectionParityFixtureProps = {
   showHeader?: boolean;
   selectedIds?: ReadonlySet<string>;
   selectionAction?: 'add' | 'organize';
+  surfaceActive?: boolean;
 };
 
 export type NativeCollectionParityFixtureHandle = {
@@ -305,6 +306,7 @@ export const NativeCollectionParityFixture = memo(forwardRef<
   showHeader = true,
   selectedIds = EMPTY_SELECTED_IDS,
   selectionAction = 'organize',
+  surfaceActive = true,
 }, ref) {
   const { width } = useWindowDimensions();
   const [searchMenuVisible, setSearchMenuVisible] = useState(false);
@@ -472,7 +474,7 @@ export const NativeCollectionParityFixture = memo(forwardRef<
           key={columns}
           keyExtractor={(item) => item.id}
           keyboardShouldPersistTaps="always"
-          maxToRenderPerBatch={12}
+          maxToRenderPerBatch={surfaceActive ? 12 : 6}
           numColumns={columns}
           onContentSizeChange={() => {
             if (restoredScrollRef.current || initialScrollOffset <= 0 || cards.length === 0) return;
@@ -486,8 +488,8 @@ export const NativeCollectionParityFixture = memo(forwardRef<
           onScrollEndDrag={persistSettledScrollOffset}
           removeClippedSubviews={false}
           testID="native-collection-grid"
-          updateCellsBatchingPeriod={16}
-          windowSize={3}
+          updateCellsBatchingPeriod={surfaceActive ? 16 : 48}
+          windowSize={surfaceActive ? 3 : 1}
           ListHeaderComponent={renderCollectionControls(false)}
           ListEmptyComponent={(
             <View style={styles.emptyState}>
