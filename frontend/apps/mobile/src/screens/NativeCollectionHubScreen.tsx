@@ -43,6 +43,7 @@ import {
 } from '../features/collection/NativePokemonHubHeader';
 import {
   NativeCollectionParityScreen,
+  type NativeCollectionParityScreenHandle,
   prepareNativeCollectionParityRows,
 } from './NativeCollectionParityScreen';
 import { NativeTagsPanelScreen } from './NativeTagsPanelScreen';
@@ -165,6 +166,7 @@ export const NativeCollectionHubScreen = memo(function NativeCollectionHubScreen
   const [clearTagConfirmationOpen, setClearTagConfirmationOpen] = useState(false);
   const [operationNotice, setOperationNotice] = useState<string | null>(null);
   const sliderRef = useRef<NativeHorizontalPageSliderHandle>(null);
+  const collectionSurfaceRef = useRef<NativeCollectionParityScreenHandle>(null);
   const tagSelectionTraceRef = useRef<{ key: string; startedAt: number } | null>(null);
   const tagPageMotionFrameRef = useRef<number | null>(null);
   const sidePanelTagTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -337,6 +339,10 @@ export const NativeCollectionHubScreen = memo(function NativeCollectionHubScreen
     // cached tag projection commits now and the UI-thread track moves on the
     // next frame. Keeping one grid avoids hundreds of image/card views from
     // invisible prewarmed lists competing with the animation.
+    // Reset the already-mounted offscreen grid before changing its data. This
+    // prevents FlatList from reconciling both a previously scrolled window and
+    // its pinned top window, then discarding the former in a layout effect.
+    collectionSurfaceRef.current?.resetScroll();
     const pokemonIndex = VIEW_ORDER.indexOf('pokemon');
     // Reserve the destination so the state commit can update the middle grid
     // before motion begins on the following frame.
@@ -433,6 +439,7 @@ export const NativeCollectionHubScreen = memo(function NativeCollectionHubScreen
   }, [operationNotice]);
   const inventoryPanel = useMemo(() => (
     <NativeTagsPanelScreen
+      key="inventory"
       activeTagName={null}
       assetBaseUrl={assetBaseUrl}
       collectionCount={inventoryCount}
@@ -471,11 +478,13 @@ export const NativeCollectionHubScreen = memo(function NativeCollectionHubScreen
   ]);
   const pokemonPanel = useMemo(() => (
     <NativeCollectionParityScreen
+      key="pokemon"
       activeTag={selectedTag}
       assetBaseUrl={assetBaseUrl}
       rows={selectedRows}
       searchUniverseRows={catalogRows}
       query={query}
+      ref={collectionSurfaceRef}
       initialScrollOffset={initialScrollOffset}
       initialShowEvolutionaryLine={initialShowEvolutionaryLine}
       initialSort={initialSort}
@@ -525,6 +534,7 @@ export const NativeCollectionHubScreen = memo(function NativeCollectionHubScreen
   ]);
   const wishlistPanel = useMemo(() => (
     <NativeTagsPanelScreen
+      key="wishlist"
       activeTagName={null}
       assetBaseUrl={assetBaseUrl}
       collectionCount={inventoryCount}
@@ -561,6 +571,14 @@ export const NativeCollectionHubScreen = memo(function NativeCollectionHubScreen
     warning,
     wishlistTags,
   ]);
+  // Multiple JSX children normally allocate a new array on every Hub render,
+  // which defeats NativeHorizontalPageSlider's memo even when every panel is
+  // unchanged. Preserve the exact children reference so overlays, notices,
+  // and delayed header-label updates cannot reconcile the paging surface.
+  const pagePanels = useMemo(
+    () => [inventoryPanel, pokemonPanel, wishlistPanel],
+    [inventoryPanel, pokemonPanel, wishlistPanel],
+  );
 
   return (
     <View style={[styles.screen, { backgroundColor: background }]} testID="native-collection-hub">
@@ -596,9 +614,7 @@ export const NativeCollectionHubScreen = memo(function NativeCollectionHubScreen
         scrollX={pageScrollX}
         dragX={pageDragX}
       >
-        {inventoryPanel}
-        {pokemonPanel}
-        {wishlistPanel}
+        {pagePanels}
       </NativeHorizontalPageSlider>
       {selectedIds.size === 0 ? (
         <NativeActionMenuAnchor
@@ -642,16 +658,18 @@ export const NativeCollectionHubScreen = memo(function NativeCollectionHubScreen
           wishlistTags={wishlistTags}
         />
       ) : null}
-      <NativeConfirmationDialog
-        body={buildClearActiveTagMessage(
-          selectedTag?.filterName ?? selectedTag?.name ?? 'selected',
-        )}
-        confirmLabel={collectionExperienceParityContract.clearTagConfirmation.confirmLabel}
-        onCancel={() => setClearTagConfirmationOpen(false)}
-        onConfirm={confirmClearTag}
-        title={collectionExperienceParityContract.clearTagConfirmation.title}
-        visible={clearTagConfirmationOpen}
-      />
+      {clearTagConfirmationOpen ? (
+        <NativeConfirmationDialog
+          body={buildClearActiveTagMessage(
+            selectedTag?.filterName ?? selectedTag?.name ?? 'selected',
+          )}
+          confirmLabel={collectionExperienceParityContract.clearTagConfirmation.confirmLabel}
+          onCancel={() => setClearTagConfirmationOpen(false)}
+          onConfirm={confirmClearTag}
+          title={collectionExperienceParityContract.clearTagConfirmation.title}
+          visible
+        />
+      ) : null}
     </View>
   );
 });

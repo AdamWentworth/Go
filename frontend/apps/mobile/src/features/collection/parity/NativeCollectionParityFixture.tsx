@@ -156,7 +156,14 @@ const EMPTY_SELECTED_IDS: ReadonlySet<string> = new Set<string>();
 // keeps the optimization isolated and removable when the declaration catches
 // up, while preventing data-only tag swaps from rebuilding the row renderer.
 const NATIVE_FLAT_LIST_RENDERER_OPTIMIZATION = { strictMode: true } as const;
-const COLLECTION_STICKY_HEADER_INDICES = [0];
+// FlatList turns `numColumns` data into virtual rows before applying these
+// budgets. Twelve therefore meant twelve rows (36 cards on a phone), and that
+// entire permanently pinned first batch had to reconcile on every tag swap.
+// Six rows still cover even a tall phone/tablet collection viewport, while
+// bounding the synchronous destination update to 18 cards. The three-viewport
+// window then supplies the same roughly five-row overscan Vite uses.
+const COLLECTION_INITIAL_ROW_BUDGET = 6;
+const COLLECTION_ROW_BATCH_BUDGET = 6;
 // FlatList combines each item key into a key for its generated multi-column
 // row. Keying by Pokémon identity therefore tears down every visible native
 // row whenever a tag changes its contents. Vite deliberately keys those outer
@@ -328,6 +335,8 @@ export const NativeCollectionParityFixture = memo(forwardRef<
   const restoredScrollRef = useRef(initialScrollOffset <= 0);
   const previousResetKeyRef = useRef(scrollResetKey);
   const currentScrollOffsetRef = useRef(initialScrollOffset);
+  const cardsLengthRef = useRef(cards.length);
+  cardsLengthRef.current = cards.length;
   const palette = theme === 'light' ? LIGHT : DARK;
   const columns = width < 481 ? 3 : width < 1024 ? 6 : 9;
   const cardWidth = Math.floor(
@@ -346,6 +355,14 @@ export const NativeCollectionParityFixture = memo(forwardRef<
     onQueryChange?.(nextQuery);
     setSearchMenuVisible(false);
   }, [onQueryChange, query]);
+  const changeQuery = useCallback(
+    (value: string) => onQueryChange?.(value),
+    [onQueryChange],
+  );
+  const toggleEvolutionaryLine = useCallback(
+    () => onToggleEvolutionaryLine?.(),
+    [onToggleEvolutionaryLine],
+  );
   const resetScroll = useCallback(() => {
     restoredScrollRef.current = true;
     if (currentScrollOffsetRef.current > 0.5) {
@@ -361,6 +378,15 @@ export const NativeCollectionParityFixture = memo(forwardRef<
     currentScrollOffsetRef.current = offset;
     onScrollOffsetChange?.(offset);
   }, [onScrollOffsetChange]);
+  const restoreInitialScroll = useCallback(() => {
+    if (
+      restoredScrollRef.current
+      || initialScrollOffset <= 0
+      || cardsLengthRef.current === 0
+    ) return;
+    restoredScrollRef.current = true;
+    listRef.current?.scrollToOffset({ animated: false, offset: initialScrollOffset });
+  }, [initialScrollOffset]);
   useImperativeHandle(ref, () => ({ resetScroll }), [resetScroll]);
   useLayoutEffect(() => {
     if (previousResetKeyRef.current === scrollResetKey) return;
@@ -375,8 +401,8 @@ export const NativeCollectionParityFixture = memo(forwardRef<
         inputTextColor={palette.searchText}
         menuVisible={searchMenuVisible}
         onMenuVisibleChange={setSearchMenuVisible}
-        onQueryChange={(value) => onQueryChange?.(value)}
-        onToggleEvolutionaryLine={() => onToggleEvolutionaryLine?.()}
+        onQueryChange={changeQuery}
+        onToggleEvolutionaryLine={toggleEvolutionaryLine}
         query={query}
         showEvolutionaryLine={showEvolutionaryLine}
         textColor={palette.text}
@@ -443,11 +469,10 @@ export const NativeCollectionParityFixture = memo(forwardRef<
     activeTag,
     appendFilter,
     assetBaseUrl,
+    changeQuery,
     error,
     onClearTag,
-    onQueryChange,
     onRetry,
-    onToggleEvolutionaryLine,
     palette.search,
     palette.searchText,
     palette.background,
@@ -462,11 +487,23 @@ export const NativeCollectionParityFixture = memo(forwardRef<
     tagColors.contrast,
     tagColors.surface,
     tagTone,
+    toggleEvolutionaryLine,
   ]);
-  const listHeader = useMemo(
-    () => renderCollectionControls(false),
-    [renderCollectionControls],
-  );
+  const emptyState = useMemo(() => (
+    <View style={styles.emptyState}>
+      {isLoading ? (
+        <>
+          <ActivityIndicator color="#34807d" size="large" />
+          <Text style={[styles.emptyTitle, { color: palette.text }]}>Loading your collection…</Text>
+        </>
+      ) : !error ? (
+        <>
+          <Text style={[styles.emptyTitle, { color: palette.text }]}>No Pokémon found</Text>
+          <Text style={[styles.emptyBody, { color: palette.secondaryText }]}>Try another search or tag.</Text>
+        </>
+      ) : null}
+    </View>
+  ), [error, isLoading, palette.secondaryText, palette.text]);
   const renderCard = useCallback(({
     item,
   }: ListRenderItemInfo<CollectionParityCardFixture>) => (
@@ -524,53 +561,37 @@ export const NativeCollectionParityFixture = memo(forwardRef<
           {renderCollectionControls(true)}
         </ScrollView>
       ) : (
-        <FlatList
-          columnWrapperStyle={styles.gridRow}
-          contentContainerStyle={styles.listContent}
-          data={cards}
-          extraData={selectedIds}
-          nestedScrollEnabled
-          ref={listRef}
-          initialNumToRender={12}
-          key={columns}
-          keyExtractor={collectionCardKeyExtractor}
-          keyboardShouldPersistTaps="always"
-          maxToRenderPerBatch={12}
-          numColumns={columns}
-          onContentSizeChange={() => {
-            if (restoredScrollRef.current || initialScrollOffset <= 0 || cards.length === 0) return;
-            restoredScrollRef.current = true;
-            listRef.current?.scrollToOffset({ animated: false, offset: initialScrollOffset });
-          }}
-          // The native list owns every movement frame. Persist only settled
-          // offsets so ordinary vertical scrolling never schedules recurring
-          // JS/cache work while the user is trying to keep 60 fps.
-          onMomentumScrollEnd={persistSettledScrollOffset}
-          onScrollEndDrag={persistSettledScrollOffset}
-          removeClippedSubviews={false}
-          stickyHeaderIndices={COLLECTION_STICKY_HEADER_INDICES}
-          {...NATIVE_FLAT_LIST_RENDERER_OPTIMIZATION}
-          testID="native-collection-grid"
-          updateCellsBatchingPeriod={16}
-          windowSize={3}
-          ListHeaderComponent={listHeader}
-          ListEmptyComponent={(
-            <View style={styles.emptyState}>
-              {isLoading ? (
-                <>
-                  <ActivityIndicator color="#34807d" size="large" />
-                  <Text style={[styles.emptyTitle, { color: palette.text }]}>Loading your collection…</Text>
-                </>
-              ) : !error ? (
-                <>
-                  <Text style={[styles.emptyTitle, { color: palette.text }]}>No Pokémon found</Text>
-                  <Text style={[styles.emptyBody, { color: palette.secondaryText }]}>Try another search or tag.</Text>
-                </>
-              ) : null}
-            </View>
-          )}
-          renderItem={renderCard}
-        />
+        <>
+          {renderCollectionControls(false)}
+          <FlatList
+            columnWrapperStyle={styles.gridRow}
+            contentContainerStyle={styles.listContent}
+            data={cards}
+            extraData={selectedIds}
+            nestedScrollEnabled
+            ref={listRef}
+            initialNumToRender={COLLECTION_INITIAL_ROW_BUDGET}
+            key={columns}
+            keyExtractor={collectionCardKeyExtractor}
+            keyboardShouldPersistTaps="always"
+            maxToRenderPerBatch={COLLECTION_ROW_BATCH_BUDGET}
+            numColumns={columns}
+            onContentSizeChange={restoreInitialScroll}
+            // The native list owns every movement frame. Persist only settled
+            // offsets so ordinary vertical scrolling never schedules recurring
+            // JS/cache work while the user is trying to keep 60 fps.
+            onMomentumScrollEnd={persistSettledScrollOffset}
+            onScrollEndDrag={persistSettledScrollOffset}
+            removeClippedSubviews={false}
+            {...NATIVE_FLAT_LIST_RENDERER_OPTIMIZATION}
+            style={styles.gridList}
+            testID="native-collection-grid"
+            updateCellsBatchingPeriod={16}
+            windowSize={3}
+            ListEmptyComponent={emptyState}
+            renderItem={renderCard}
+          />
+        </>
       )}
 
       {selectedIds.size === 0 ? <Pressable
@@ -657,11 +678,15 @@ const styles = StyleSheet.create({
   },
   searchMenuContent: {
     flexGrow: 1,
-    paddingHorizontal: GRID_HORIZONTAL_PADDING,
     paddingBottom: 92,
   },
+  gridList: { flex: 1, minHeight: 0 },
   gridRow: { gap: GRID_GAP },
-  collectionControls: { alignItems: 'center', paddingBottom: 6 },
+  collectionControls: {
+    alignItems: 'center',
+    paddingHorizontal: GRID_HORIZONTAL_PADDING,
+    paddingBottom: 6,
+  },
   activeTagChip: {
     minHeight: 31,
     flexDirection: 'row',

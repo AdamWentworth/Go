@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { memo, useEffect, useState } from 'react';
 import { Animated, Image, Modal, Pressable, StyleSheet, Text, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -31,7 +31,7 @@ const SortBackdrop = ({ light }: { light: boolean }) => (
   />
 );
 
-export const NativeCollectionSortMenu = ({
+export const NativeCollectionSortMenu = memo(function NativeCollectionSortMenu({
   assetBaseUrl,
   direction,
   onClose,
@@ -45,7 +45,7 @@ export const NativeCollectionSortMenu = ({
   onSelect: (sort: NativeCollectionSort) => void;
   open: boolean;
   sort: NativeCollectionSort;
-}) => {
+}) {
   const light = useNativeColorScheme() === 'light';
   const insets = useSafeAreaInsets();
   const reduceMotion = useOptionalNativeDevicePreferences()?.shouldReduceMotion ?? false;
@@ -148,7 +148,7 @@ export const NativeCollectionSortMenu = ({
       </View>
     </Modal>
   );
-};
+});
 
 const styles = StyleSheet.create({
   overlay: { flex: 1, justifyContent: 'flex-end' },

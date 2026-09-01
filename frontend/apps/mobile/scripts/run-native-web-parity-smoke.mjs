@@ -278,6 +278,30 @@ const waitForDeterministicFixture = async (page, route) => {
   });
 };
 
+// Collection now mirrors Vite with one translated three-panel track. Other
+// legacy smoke fixtures still use horizontal ScrollViews, so keep this helper
+// scoped to Collection rather than teaching their assertions the wrong model.
+const readCollectionPageOffset = (page) => page
+  .getByTestId('native-horizontal-page-track')
+  .evaluate((element) => {
+    const transform = getComputedStyle(element).transform;
+    if (!transform || transform === 'none') return 0;
+    return -new DOMMatrixReadOnly(transform).m41;
+  });
+
+const waitForCollectionPageOffset = (page, expectedOffset) => page.waitForFunction(
+  ({ expected }) => {
+    const element = document.querySelector('[data-testid="native-horizontal-page-track"]');
+    if (!element) return false;
+    const transform = getComputedStyle(element).transform;
+    const offset = !transform || transform === 'none'
+      ? 0
+      : -new DOMMatrixReadOnly(transform).m41;
+    return Math.abs(offset - expected) <= 2;
+  },
+  { expected: expectedOffset },
+);
+
 const run = async () => {
   mkdirSync(artifactDirectory, { recursive: true });
   const fixtureServer = await startFixtureServer();
@@ -319,57 +343,41 @@ const run = async () => {
         });
 
         if (route === 'collection') {
-          const slider = page.getByTestId('native-horizontal-page-slider');
-          const initialOffset = await slider.evaluate((element) => element.scrollLeft);
+          const initialOffset = await readCollectionPageOffset(page);
           if (Math.abs(initialOffset - 412) > 2) {
-            throw new Error(`Collection opened at scroll offset ${initialOffset}; Pokémon must be the initial page.`);
+            throw new Error(`Collection opened at track offset ${initialOffset}; Pokémon must be the initial page.`);
           }
           await page.screenshot({
             fullPage: true,
             path: join(artifactDirectory, `${colorScheme}-collection-catalog.png`),
           });
           await page.getByRole('tab', { name: 'TAGS' }).click();
-          await page.waitForFunction(() => {
-            const sliderElement = document.querySelector('[data-testid="native-horizontal-page-slider"]');
-            return sliderElement && Math.abs(sliderElement.scrollLeft) <= 2;
-          });
-          const tagsOffset = await slider.evaluate((element) => element.scrollLeft);
-          if (Math.abs(tagsOffset) > 2) throw new Error(`Tags tab stopped at scroll offset ${tagsOffset}.`);
+          await waitForCollectionPageOffset(page, 0);
+          const tagsOffset = await readCollectionPageOffset(page);
+          if (Math.abs(tagsOffset) > 2) throw new Error(`Tags tab stopped at track offset ${tagsOffset}.`);
           await page.screenshot({
             fullPage: true,
             path: join(artifactDirectory, `${colorScheme}-collection-tags.png`),
           });
           await page.getByRole('button', { name: /Open All Caught, 8 Pokémon/i }).click();
-          await page.waitForFunction(() => {
-            const sliderElement = document.querySelector('[data-testid="native-horizontal-page-slider"]');
-            return sliderElement && Math.abs(sliderElement.scrollLeft - sliderElement.clientWidth) <= 2;
-          });
+          await waitForCollectionPageOffset(page, 412);
           await page.getByRole('tab', { name: 'WISHLIST' }).click();
-          await page.waitForFunction(() => {
-            const sliderElement = document.querySelector('[data-testid="native-horizontal-page-slider"]');
-            return sliderElement && Math.abs(sliderElement.scrollLeft - 824) <= 2;
-          });
-          const wishlistOffset = await slider.evaluate((element) => element.scrollLeft);
-          if (Math.abs(wishlistOffset - 824) > 2) throw new Error(`Wishlist tab stopped at scroll offset ${wishlistOffset}.`);
+          await waitForCollectionPageOffset(page, 824);
+          const wishlistOffset = await readCollectionPageOffset(page);
+          if (Math.abs(wishlistOffset - 824) > 2) throw new Error(`Wishlist tab stopped at track offset ${wishlistOffset}.`);
           await page.screenshot({
             fullPage: true,
             path: join(artifactDirectory, `${colorScheme}-collection-wishlist-tags.png`),
           });
           await page.getByRole('tab', { name: 'TAGS' }).click();
-          await page.waitForFunction(() => {
-            const element = document.querySelector('[data-testid="native-horizontal-page-slider"]');
-            return element && Math.abs(element.scrollLeft) <= 2;
-          });
+          await waitForCollectionPageOffset(page, 0);
           await page.getByRole('button', { name: 'New inventory tag' }).click();
           await page.getByLabel('Tag name').fill('Parity Check');
           await page.getByRole('button', { name: 'Use #7C3AED' }).click();
           await page.getByRole('button', { name: 'Create tag' }).click();
           await page.getByRole('button', { name: /Open Parity Check, 0 Pokémon/i }).waitFor({ state: 'visible' });
           await page.getByRole('tab', { name: 'POKÉMON' }).click();
-          await page.waitForFunction(() => {
-            const element = document.querySelector('[data-testid="native-horizontal-page-slider"]');
-            return element && Math.abs(element.scrollLeft - element.clientWidth) <= 2;
-          });
+          await waitForCollectionPageOffset(page, 412);
         }
 
         if (route.startsWith('collection?foreign=1')) {
@@ -888,20 +896,13 @@ const run = async () => {
         await root.waitFor({ state: 'visible', timeout: 15_000 });
         await waitForDeterministicFixture(page, route);
         if (route === 'collection') {
-          const slider = page.getByTestId('native-horizontal-page-slider');
           await page.getByRole('tab', { name: 'TAGS' }).click();
-          await page.waitForFunction(() => {
-            const element = document.querySelector('[data-testid="native-horizontal-page-slider"]');
-            return element && Math.abs(element.scrollLeft) <= 2;
-          });
+          await waitForCollectionPageOffset(page, 0);
           await page.getByRole('button', { name: /Open All Caught, 8 Pokémon/i }).click();
-          await page.waitForFunction(() => {
-            const element = document.querySelector('[data-testid="native-horizontal-page-slider"]');
-            return element && Math.abs(element.scrollLeft - element.clientWidth) <= 2;
-          });
-          const collectionOffset = await slider.evaluate((element) => element.scrollLeft);
+          await waitForCollectionPageOffset(page, 1440);
+          const collectionOffset = await readCollectionPageOffset(page);
           if (Math.abs(collectionOffset - 1440) > 2) {
-            throw new Error(`Desktop Collection stopped at scroll offset ${collectionOffset}.`);
+            throw new Error(`Desktop Collection stopped at track offset ${collectionOffset}.`);
           }
         }
         await assertAccessibleControlState(page, `desktop:${route}`);

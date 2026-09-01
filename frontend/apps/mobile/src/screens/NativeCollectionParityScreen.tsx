@@ -1,4 +1,6 @@
 import {
+  forwardRef,
+  memo,
   useCallback,
   useDeferredValue,
   useLayoutEffect,
@@ -12,6 +14,7 @@ import type {
 } from '../features/collection/parity/collectionParityFixtures';
 import {
   NativeCollectionParityFixture,
+  type NativeCollectionParityFixtureHandle,
 } from '../features/collection/parity/NativeCollectionParityFixture';
 import {
   filterNativeCollectionRows,
@@ -150,7 +153,12 @@ const containsOnlyCatalogRows = (rows: NativeCollectionRow[]): boolean => {
   return result;
 };
 
-export const NativeCollectionParityScreen = ({
+export type NativeCollectionParityScreenHandle = NativeCollectionParityFixtureHandle;
+
+export const NativeCollectionParityScreen = memo(forwardRef<
+  NativeCollectionParityScreenHandle,
+  NativeCollectionParityScreenProps
+>(function NativeCollectionParityScreen({
   assetBaseUrl,
   rows,
   searchUniverseRows = rows,
@@ -177,7 +185,7 @@ export const NativeCollectionParityScreen = ({
   selectionAction = 'organize',
   tagCanClear = Boolean(activeTag),
   onContextChange,
-}: NativeCollectionParityScreenProps) => {
+}, ref) {
   const colorScheme = useNativeColorScheme();
   const [sort, setSort] = useState<NativeCollectionSort>(initialSort);
   const [direction, setDirection] = useState<NativeCollectionSortDirection>(initialSortDirection);
@@ -234,6 +242,27 @@ export const NativeCollectionParityScreen = ({
     onContextChange?.({ scrollOffset });
   }, [onContextChange]);
   const openSortMenu = useCallback(() => setSortOpen(true), []);
+  const closeSortMenu = useCallback(() => setSortOpen(false), []);
+  const selectSort = useCallback((nextSort: NativeCollectionSort) => {
+    setSortOpen(false);
+    // Match Vite's immediate visible-list update.
+    if (nextSort === sort) {
+      setDirection((current) => {
+        const nextDirection = current === 'ascending' ? 'descending' : 'ascending';
+        onContextChange?.({ sortDirection: nextDirection, scrollOffset: 0 });
+        return nextDirection;
+      });
+      return;
+    }
+    setSort(nextSort);
+    const nextDirection = nextSort === 'favorite' ? 'descending' : 'ascending';
+    setDirection(nextDirection);
+    onContextChange?.({
+      sort: nextSort,
+      sortDirection: nextDirection,
+      scrollOffset: 0,
+    });
+  }, [onContextChange, sort]);
   const openPokemon = useCallback(() => onViewChange('pokemon'), [onViewChange]);
   const openTags = useCallback(() => onViewChange('inventory'), [onViewChange]);
   const openWishlist = useCallback(() => onViewChange('wishlist'), [onViewChange]);
@@ -268,6 +297,7 @@ export const NativeCollectionParityScreen = ({
         initialScrollOffset={initialScrollOffset}
         onScrollOffsetChange={handleScrollOffsetChange}
         query={query}
+        ref={ref}
         scrollResetKey={scrollResetKey}
         sortDirection={direction}
         sortIconPath={SORT_ICONS[sort]}
@@ -284,33 +314,14 @@ export const NativeCollectionParityScreen = ({
       <NativeCollectionSortMenu
         assetBaseUrl={assetBaseUrl}
         direction={direction}
-        onClose={() => setSortOpen(false)}
-        onSelect={(nextSort) => {
-          setSortOpen(false);
-          // Match Vite's immediate visible-list update.
-          if (nextSort === sort) {
-            setDirection((current) => {
-              const nextDirection = current === 'ascending' ? 'descending' : 'ascending';
-              onContextChange?.({ sortDirection: nextDirection, scrollOffset: 0 });
-              return nextDirection;
-            });
-          } else {
-            setSort(nextSort);
-            const nextDirection = nextSort === 'favorite' ? 'descending' : 'ascending';
-            setDirection(nextDirection);
-            onContextChange?.({
-              sort: nextSort,
-              sortDirection: nextDirection,
-              scrollOffset: 0,
-            });
-          }
-        }}
+        onClose={closeSortMenu}
+        onSelect={selectSort}
         open={sortOpen}
         sort={sort}
       />
     </View>
   );
-};
+}));
 
 const styles = StyleSheet.create({
   screen: { flex: 1 },

@@ -370,8 +370,10 @@ describe('NativeCollectionHubScreen', () => {
     expect(screen.getByText('Caught')).toBeTruthy();
     expect(screen.getByText('Shiny Bulbasaur')).toBeTruthy();
     expect(screen.queryByText('Mewtwo')).toBeNull();
-    expect(screen.getByTestId('native-collection-grid').props.removeClippedSubviews).toBe(false);
-    expect(screen.getByTestId('native-collection-grid').props.windowSize).toBe(3);
+    const grid = screen.getByTestId('native-collection-grid');
+    expect(grid.props.removeClippedSubviews).toBe(false);
+    expect(grid.props.windowSize).toBe(3);
+    expect(grid.props.ListHeaderComponent).toBeUndefined();
   });
 
   it('selects catalog variants in place and opens the canonical organizer', () => {

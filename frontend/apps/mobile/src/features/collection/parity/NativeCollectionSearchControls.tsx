@@ -1,4 +1,4 @@
-import { useRef } from 'react';
+import { memo, useRef } from 'react';
 import {
   Image,
   Keyboard,
@@ -66,7 +66,7 @@ const REGION_GRADIENTS: Record<string, readonly [string, string, string]> = {
   Paldea: ['#b80000', '#7f3fbf', '#ffd966'],
 };
 
-const RegionGradient = ({ name }: { name: string }) => {
+const RegionGradient = memo(function RegionGradient({ name }: { name: string }) {
   const colors = REGION_GRADIENTS[name];
   if (!colors) return null;
   return (
@@ -80,9 +80,9 @@ const RegionGradient = ({ name }: { name: string }) => {
       testID={`native-region-gradient-${name.toLowerCase()}`}
     />
   );
-};
+});
 
-const FilterTile = ({
+const FilterTile = memo(function FilterTile({
   assetBaseUrl,
   filter,
   onPress,
@@ -94,7 +94,7 @@ const FilterTile = ({
   onPress: () => void;
   section: FilterSection;
   textColor: string;
-}) => {
+}) {
   const assetPath = section === 'Region'
     ? `/images/${filter.toLowerCase()}_search.png`
     : section === 'Types'
@@ -125,9 +125,9 @@ const FilterTile = ({
       <Text numberOfLines={1} style={[styles.filterLabel, { color: textColor }]}>{filter}</Text>
     </Pressable>
   );
-};
+});
 
-export const NativeCollectionSearchMenu = ({
+export const NativeCollectionSearchMenu = memo(function NativeCollectionSearchMenu({
   assetBaseUrl,
   onFilterPress,
   textColor,
@@ -135,7 +135,8 @@ export const NativeCollectionSearchMenu = ({
   assetBaseUrl: string;
   onFilterPress: (filter: string) => void;
   textColor: string;
-}) => (
+}) {
+  return (
   <View accessibilityLabel="Pokémon search filters" style={styles.searchMenu}>
     {(Object.keys(FILTER_SECTIONS) as FilterSection[]).map((section) => (
       <View key={section} style={styles.filterSection}>
@@ -157,9 +158,10 @@ export const NativeCollectionSearchMenu = ({
       </View>
     ))}
   </View>
-);
+  );
+});
 
-export const NativeCollectionSearchControls = ({
+export const NativeCollectionSearchControls = memo(function NativeCollectionSearchControls({
   assetBaseUrl,
   inputBackground,
   inputTextColor,
@@ -181,7 +183,7 @@ export const NativeCollectionSearchControls = ({
   query: string;
   showEvolutionaryLine: boolean;
   textColor: string;
-}) => {
+}) {
   const inputRef = useRef<TextInput>(null);
   const expanded = menuVisible || Boolean(query.trim());
   const closeSearch = () => {
@@ -291,7 +293,7 @@ export const NativeCollectionSearchControls = ({
       ) : null}
     </View>
   );
-};
+});
 
 const styles = StyleSheet.create({
   searchSection: { width: '100%', alignItems: 'center', paddingVertical: 15 },

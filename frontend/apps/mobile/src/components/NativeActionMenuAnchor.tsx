@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { memo, useEffect, useMemo } from 'react';
 import { Image, Pressable, StyleSheet, useWindowDimensions } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
@@ -13,7 +13,11 @@ type Props = {
   onPress: () => void;
 };
 
-export const NativeActionMenuAnchor = ({ assetBaseUrl, disabled = false, onPress }: Props) => {
+export const NativeActionMenuAnchor = memo(function NativeActionMenuAnchor({
+  assetBaseUrl,
+  disabled = false,
+  onPress,
+}: Props) {
   const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
   useEffect(() => {
@@ -28,6 +32,10 @@ export const NativeActionMenuAnchor = ({ assetBaseUrl, disabled = false, onPress
     : width < 768
       ? Math.min(90, Math.max(60, width * 0.1))
       : Math.min(80, Math.max(60, width * 0.035));
+  const imageSource = useMemo(() => ({
+    cache: 'force-cache' as const,
+    uri: toNativeActionMenuAssetUrl(assetBaseUrl, '/images/btn_action_menu.png'),
+  }), [assetBaseUrl]);
   return (
     <Pressable
       accessibilityLabel="Open action menu"
@@ -54,12 +62,12 @@ export const NativeActionMenuAnchor = ({ assetBaseUrl, disabled = false, onPress
       <Image fadeDuration={0}
         accessibilityElementsHidden
         resizeMode="contain"
-        source={{ uri: toNativeActionMenuAssetUrl(assetBaseUrl, '/images/btn_action_menu.png') }}
+        source={imageSource}
         style={{ height: size, width: size }}
       />
     </Pressable>
   );
-};
+});
 
 const styles = StyleSheet.create({
   anchor: {

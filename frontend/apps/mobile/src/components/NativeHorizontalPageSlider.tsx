@@ -246,13 +246,16 @@ export const NativeHorizontalPageSlider = memo(forwardRef<
     // A caller that has just changed offscreen content can reserve the
     // destination before React's layout effects run, then launch motion on the
     // following frame after Android has had one paint opportunity. This keeps
-    // the activeIndex effect from starting an eager duplicate animation.
+    // the activeIndex effect from starting an eager duplicate animation. Hold
+    // background work now, but do not rasterize the track while its destination
+    // children are still changing: that would pay one stale offscreen draw and
+    // invalidate it immediately. `setPage` enables the texture after the React
+    // commit, when the track is actually static for the transform animation.
     renderedIndexRef.current = clampPageIndex(index, panelCount);
     if (!reduceMotion) {
       reservePageInteraction();
-      setTrackRasterized(true);
     }
-  }, [panelCount, reduceMotion, reservePageInteraction, setTrackRasterized]);
+  }, [panelCount, reduceMotion, reservePageInteraction]);
 
   useImperativeHandle(ref, () => ({ preparePage, setPage }), [preparePage, setPage]);
 

@@ -1,4 +1,5 @@
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react-native';
+import { Image } from 'react-native';
 import { NativeTagsPanelScreen } from '../../../src/screens/NativeTagsPanelScreen';
 
 const tag = {
@@ -103,6 +104,35 @@ describe('NativeTagsPanelScreen', () => {
     expect(screen.UNSAFE_getByProps({ testID: 'native-tag-preview-gigantamax' })).toBeTruthy();
     expect(screen.queryByText('Inventory tags')).toBeNull();
     expect(screen.queryByText('›')).toBeNull();
+  });
+
+  it('warms Vite\'s hidden preview sources without mounting extra native images', () => {
+    const prefetch = jest.spyOn(Image, 'prefetch').mockResolvedValue(true);
+    const rows = Array.from({ length: 18 }, (_, index) => ({
+      ...tag.rows[0],
+      id: `instance-${index + 1}`,
+      imageUri: `https://pokegonexus.com/images/pokemon-${index + 1}.png`,
+    }));
+
+    render(
+      <NativeTagsPanelScreen
+        activeTagName={null}
+        assetBaseUrl="https://pokegonexus.com"
+        collectionCount={18}
+        error={null}
+        isLoading={false}
+        onRetry={jest.fn()}
+        onSelectTag={jest.fn()}
+        onViewChange={jest.fn()}
+        parent="caught"
+        tags={[{ ...tag, rows }]}
+      />,
+    );
+
+    expect(prefetch.mock.calls.map(([uri]) => uri)).toEqual(
+      rows.slice(12).map((row) => row.imageUri),
+    );
+    prefetch.mockRestore();
   });
 
   it('provides the canonical arrange workflow', async () => {

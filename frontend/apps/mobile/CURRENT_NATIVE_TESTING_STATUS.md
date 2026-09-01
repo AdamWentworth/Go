@@ -53,7 +53,7 @@ mounts complete collection and Pokédex route trees in the background.
 
 Passing evidence for this checkpoint:
 
-- native Jest: 158 suites, 821 tests;
+- native Jest: 158 suites, 822 tests;
 - mobile and web TypeScript and ESLint;
 - native real-route smoke: 92 guest/signed-in, light/dark route states;
 - focused Vite mobile-Chromium browser coverage: 9 tests;
@@ -102,26 +102,32 @@ No background timer can add hidden grids later.
 Filtering, sorting, tag summaries, per-row cards, image source objects, row-ID
 projections, and lookup maps remain cached. Background work warms only those
 plain projections and waits for the app-owned interaction scheduler; it never
-mounts an offscreen list. The actual tag gallery already loads the destination's
-preview images before a user can tap it, matching Vite's useful image warm-up
-without retaining duplicate grids. The active FlatList keeps a Vite-sized
-three-viewport window and twelve-row initial/batch budget, a stable key
-extractor, stable header and card renderers, and React Native 0.86's renderer
-memoization flag. Its search/tag header is sticky and opaque like Vite's fixed
-search header. Tag changes reset scroll in a layout effect before paint, while
-ordinary vertical movement persists session state only after drag or momentum
-settles. Remote image source objects are reused across theme, selection, and
-tag updates, use Android's force-cache policy, and downsample only genuinely
-oversized badges and tiny type glyphs. The multi-column FlatList now keys its
-outer native rows by stable absolute slots, matching Vite's `row-${row}`
-reconciliation instead of tearing down every visible row when Pokémon IDs
-change during a tag swap. Static card layers are memoized, and tag cards no
-longer apply the non-Vite shrink transform on press.
+mounts an offscreen list. The tag gallery loads the twelve phone-visible preview
+images and, like Vite's eighteen-source preview, prefetches the six CSS-hidden
+sources without mounting hidden native image views. The active FlatList keeps
+a Vite-sized three-viewport window and six-row initial/batch budget. React
+Native applies that budget after grouping columns, so this pins 18 rather than
+the previous 36 phone cards while still covering a tall viewport. It also uses
+a stable key extractor, stable card renderer, and React Native 0.86's renderer
+memoization flag. The search/tag controls now sit outside the virtualized list,
+matching Vite's fixed-header topology and keeping header cells out of every
+data reconciliation. Tag changes reset the offscreen grid before changing its
+data, while ordinary vertical movement persists session state only after drag
+or momentum settles. Remote image source objects are reused across theme,
+selection, and tag updates, use Android's force-cache policy, and downsample
+only genuinely oversized badges and tiny type glyphs. The multi-column
+FlatList keys its outer native rows by stable absolute slots, matching Vite's
+`row-${row}` reconciliation instead of tearing down every visible row when
+Pokémon IDs change during a tag swap. Static card layers and search/sort
+controls are memoized, and tag cards no longer apply the non-Vite shrink
+transform on press.
 
 The collection route now also preserves its navigation, retry, organizer, and
 tag-mutation callback identities, while the Hub and three-panel slider are
-memoized. Cache-to-network query bookkeeping and unrelated overlay state can no
-longer invalidate the active Pokémon grid or make all three panels reconcile.
+memoized. The Hub passes a stable keyed panel array, so ordinary JSX child-array
+allocation no longer defeats that memo. Cache-to-network query bookkeeping,
+the action menu, notices, and unrelated dialog state can no longer invalidate
+the active Pokémon grid or make all three panels reconcile.
 Tag-mutation pending state still updates the controls that need it without
 recreating the card renderer. A dedicated hook regression test pins those
 callback identities across route rerenders.
@@ -132,8 +138,9 @@ peek limit and 100 px threshold, and hands the exact drag position to the
 settling animation so the current page cannot flash or reload first. The
 Pokémon result and selected tab commit together before the canonical 300 ms
 slide; only the offscreen Tags/Wishlist sublabel waits until that slide ends,
-matching Vite. The track is rasterized only while moving and released
-afterward. React Native 0.86's deprecated InteractionManager is a stub, so an
+matching Vite. The track is rasterized only after the destination commit and
+while moving, avoiding a stale offscreen draw before the grid changes, then is
+released afterward. React Native 0.86's deprecated InteractionManager is a stub, so an
 app-owned scheduler tied to this real slider lifecycle protects animation
 frames from projection warming.
 
@@ -146,7 +153,7 @@ latency gap with Vite's already-populated client store.
 
 The real-route collection budget measures the first interactive destination
 card before separately asserting the deliberately delayed header sublabel. The
-latest complete matrix passed all 92 route/theme states and measured 541 ms for
+latest complete matrix passed all 92 route/theme states and measured 522 ms for
 the For Trade workflow, including the canonical 300 ms slide.
 
 ## Remaining approval gate

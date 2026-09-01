@@ -10,7 +10,7 @@ import {
   View,
   useWindowDimensions,
 } from 'react-native';
-import { memo, useCallback, useMemo, useState } from 'react';
+import { memo, useCallback, useEffect, useMemo, useState } from 'react';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import type {
@@ -35,6 +35,7 @@ import {
 } from '../features/settings/NativeDevicePreferencesProvider';
 import { useNativeColorScheme } from '../features/settings/useNativeColorScheme';
 import {
+  toNativeCollectionAssetUrl,
   toNativeCollectionImageSource,
 } from '../features/collection/parity/nativeCollectionImageSource';
 
@@ -61,6 +62,7 @@ type Props = {
 };
 
 type TagGradient = readonly [string, string, string];
+const VITE_TAG_PREVIEW_SOURCE_LIMIT = 18;
 
 const SYSTEM_TAG_GRADIENTS: Record<Exclude<NativeTagSummary['tone'], 'custom'>, TagGradient> = {
   favorites: ['#ffd77a', '#fff1aa', '#fff9dc'],
@@ -139,12 +141,22 @@ const NativeTagCard = memo(function NativeTagCard({
   const cardSurface = palette.tagSurface;
   const titleColor = palette.tagTitle;
   const subtitleColor = palette.tagSubtitle;
-  const previewRows = tag.rows.slice(
-    0,
-    widePreview
-      ? collectionParityTokens.tags.previewColumnsWide * collectionParityTokens.tags.previewRows
-      : collectionParityTokens.tags.previewColumnsNarrow * collectionParityTokens.tags.previewRows,
-  );
+  const visiblePreviewLimit = widePreview
+    ? collectionParityTokens.tags.previewColumnsWide * collectionParityTokens.tags.previewRows
+    : collectionParityTokens.tags.previewColumnsNarrow * collectionParityTokens.tags.previewRows;
+  const previewRows = tag.rows.slice(0, visiblePreviewLimit);
+  useEffect(() => {
+    // Vite creates eighteen <img> sources for every tag, then CSS hides the
+    // third six-image row on a phone. Those hidden sources warm the remainder
+    // of its first result viewport. Preserve that useful behavior without
+    // mounting clipped native Image views into the page-animation texture.
+    for (const row of tag.rows.slice(visiblePreviewLimit, VITE_TAG_PREVIEW_SOURCE_LIMIT)) {
+      if (!row.imageUri) continue;
+      void Promise.resolve(Image.prefetch(
+        toNativeCollectionAssetUrl(assetBaseUrl, row.imageUri),
+      )).catch(() => undefined);
+    }
+  }, [assetBaseUrl, tag.rows, visiblePreviewLimit]);
   const previewGradientTestId = `native-tag-gradient-${tag.key.replace(/[^a-z0-9_-]/gi, '-')}`;
   const [cardDragY] = useState(() => new Animated.Value(0));
   const [dragging, setDragging] = useState(false);

@@ -181,10 +181,8 @@ describe('NativeCollectionParityFixture', () => {
       <NativeCollectionParityFixture cards={COLLECTION_PARITY_FIXTURES.slice(0, 3)} />,
     );
     const initialGrid = view.UNSAFE_getByType(FlatList);
-    const initialHeader = initialGrid.props.ListHeaderComponent;
     const initialKeyExtractor = initialGrid.props.keyExtractor;
     const initialRenderItem = initialGrid.props.renderItem;
-    const initialStickyHeaders = initialGrid.props.stickyHeaderIndices;
 
     view.rerender(
       <NativeCollectionParityFixture cards={COLLECTION_PARITY_FIXTURES.slice(3, 6)} />,
@@ -192,7 +190,7 @@ describe('NativeCollectionParityFixture', () => {
 
     const updatedGrid = view.UNSAFE_getByType(FlatList);
     expect(updatedGrid).toBe(initialGrid);
-    expect(updatedGrid.props.ListHeaderComponent).toBe(initialHeader);
+    expect(updatedGrid.props.ListHeaderComponent).toBeUndefined();
     expect(updatedGrid.props.keyExtractor).toBe(initialKeyExtractor);
     expect(initialKeyExtractor(COLLECTION_PARITY_FIXTURES[0], 0)).toBe(
       initialKeyExtractor(COLLECTION_PARITY_FIXTURES[3], 0),
@@ -201,9 +199,10 @@ describe('NativeCollectionParityFixture', () => {
       initialKeyExtractor(COLLECTION_PARITY_FIXTURES[1], 1),
     );
     expect(updatedGrid.props.renderItem).toBe(initialRenderItem);
-    expect(updatedGrid.props.stickyHeaderIndices).toBe(initialStickyHeaders);
-    expect(updatedGrid.props.stickyHeaderIndices).toEqual([0]);
+    expect(updatedGrid.props.stickyHeaderIndices).toBeUndefined();
     expect(updatedGrid.props.strictMode).toBe(true);
+    expect(updatedGrid.props.initialNumToRender).toBe(6);
+    expect(updatedGrid.props.maxToRenderPerBatch).toBe(6);
     expect(updatedGrid.props.windowSize).toBe(3);
     const firstPokemonImage = screen.getByLabelText(COLLECTION_PARITY_FIXTURES[3].name);
     expect(firstPokemonImage.props.resizeMethod).toBeUndefined();
