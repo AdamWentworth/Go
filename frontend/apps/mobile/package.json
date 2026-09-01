@@ -18,6 +18,7 @@
     "test:watch": "jest --watch",
     "parity:smoke:web": "node scripts/run-native-web-parity-smoke.mjs",
     "parity:routes:web": "node scripts/run-native-real-route-smoke.mjs",
+    "parity:routes:web:performance": "cross-env POKEGONEXUS_REAL_ROUTE_PERFORMANCE=true node scripts/run-native-real-route-smoke.mjs",
     "parity:audit:sheets": "node scripts/build-native-parity-contact-sheets.mjs",
     "device:smoke:android": "bash scripts/run-android-device-smoke.sh",
     "device:smoke:android:release-lifecycle": "cross-env POKEGONEXUS_SMOKE_RUNTIME=standalone POKEGONEXUS_SMOKE_NETWORK=offline POKEGONEXUS_SMOKE_FLOW=.maestro-release/native-persistence-lifecycle.yaml bash scripts/run-android-device-smoke.sh"

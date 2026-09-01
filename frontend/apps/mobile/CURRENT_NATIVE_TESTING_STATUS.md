@@ -26,6 +26,11 @@ checks on the same installed development client: it serves a production-mode,
 minified bundle without compiling an APK. Development-only performance traces
 are intentionally unavailable in that mode.
 
+`parity:routes:web:performance` applies that same production/minified mode to
+the real-route browser harness. It remains a browser proxy rather than Android
+frame evidence, but prevents React development overhead from being mistaken
+for release-bundle latency.
+
 Never describe a Metro QR as installing an APK. Never combine multiple Android
 artifacts behind one QR without explicitly identifying which single file the
 user should install.
@@ -174,6 +179,14 @@ are stable objects across data swaps, and the CP label/value use one native text
 surface. Tag previews also warm the first result window's type glyphs, while a
 tag reset no longer emits a redundant session update when the grid is already
 at the top.
+
+The production/minified harness now measures from the browser-dispatched pointer
+event separately from Playwright's pre-click actionability wait. Its focused For
+Trade run painted the first destination result in 72 ms, began track movement in
+4 ms, produced 20 distinct sampled positions, and kept its largest sampled frame
+gap to 33.3 ms. The harness enforces 150 ms response/start ceilings, at least 12
+visual steps, and no sampled gap above 80 ms. These generous CI thresholds catch
+regressions without pretending a headless browser proves physical Android fps.
 
 ## Remaining approval gate
 

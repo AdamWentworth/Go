@@ -23,6 +23,7 @@ const refreshTokenKey = 'pokegonexus.mobile.refresh-token';
 const routeFilter = process.env.POKEGONEXUS_REAL_ROUTE_FILTER?.trim() ?? '';
 const workflowsOnly = process.env.POKEGONEXUS_REAL_WORKFLOWS_ONLY === 'true';
 const workflowFilter = process.env.POKEGONEXUS_REAL_WORKFLOW_FILTER?.trim() ?? '';
+const performanceMode = process.env.POKEGONEXUS_REAL_ROUTE_PERFORMANCE === 'true';
 
 const readJson = (name) => JSON.parse(
   readFileSync(resolve(fixtureDirectory, name), 'utf8').replace(/^\uFEFF/, ''),
@@ -279,7 +280,9 @@ const waitFor = async (url, timeoutMs = 180_000) => {
 
 const startExpo = async () => {
   const command = join(workspaceDirectory, 'node_modules/.bin/expo');
-  const child = spawn(command, ['start', '--web', '--port', String(expoPort), '--clear'], {
+  const args = ['start', '--web', '--port', String(expoPort), '--clear'];
+  if (performanceMode) args.push('--no-dev', '--minify');
+  const child = spawn(command, args, {
     cwd: mobileDirectory,
     env: {
       ...process.env,
@@ -772,6 +775,36 @@ const assertSignedInCollectionWorkflow = async (context) => {
     await page.getByLabel(/^Open All Caught, \d+ Pokémon$/).waitFor({ state: 'visible', timeout: 10_000 });
     const tradeTag = page.getByLabel(/^Open For Trade, \d+ Pokémon$/).first();
     await tradeTag.waitFor({ state: 'visible', timeout: 10_000 });
+    if (performanceMode) {
+      await page.evaluate(() => {
+        const track = document.querySelector('[data-testid="native-horizontal-page-track"]');
+        if (!(track instanceof HTMLElement)) return;
+        const probe = {
+          baseline: getComputedStyle(track).transform,
+          pressAt: null,
+          samples: [],
+        };
+        window.__nativeCollectionMotionProbe = probe;
+        document.addEventListener('pointerdown', (event) => {
+          const target = event.target instanceof Element
+            ? event.target.closest('[aria-label^="Open For Trade"]')
+            : null;
+          if (target) probe.pressAt = performance.now();
+        }, { capture: true, once: true });
+        const sample = (timestamp) => {
+          if (probe.pressAt != null) {
+            probe.samples.push({
+              timestamp,
+              transform: getComputedStyle(track).transform,
+            });
+          }
+          if (probe.pressAt == null || timestamp - probe.pressAt < 500) {
+            requestAnimationFrame(sample);
+          }
+        };
+        requestAnimationFrame(sample);
+      });
+    }
     const tagStartedAt = Date.now();
     await tradeTag.click();
     const firstTradeCard = page.getByTestId(/^parity-card-/).first();
@@ -782,6 +815,56 @@ const assertSignedInCollectionWorkflow = async (context) => {
       throw new Error(
         `For Trade tag took ${tagElapsedMs} ms to paint an interactive result; the parity budget is 750 ms.`,
       );
+    }
+    if (performanceMode) {
+      const dispatchedResultMs = await page.evaluate(() => {
+        const pressAt = window.__nativeCollectionMotionProbe?.pressAt;
+        return pressAt == null ? null : performance.now() - pressAt;
+      });
+      console.log(
+        `[collection workflow] dispatched tap painted the first result in ${dispatchedResultMs} ms.`,
+      );
+      if (dispatchedResultMs == null || dispatchedResultMs > 150) {
+        throw new Error(`For Trade result did not react within 150 ms: ${dispatchedResultMs}.`);
+      }
+      // The first destination pixel is enough for Playwright's visibility
+      // check. Let the canonical 300 ms transition finish before judging its
+      // frame cadence.
+      await page.waitForTimeout(450);
+      const motion = await page.evaluate(() => {
+        const probe = window.__nativeCollectionMotionProbe;
+        if (!probe?.samples.length || probe.pressAt == null) return null;
+        const firstMotionIndex = probe.samples.findIndex(
+          (sample) => sample.transform !== probe.baseline,
+        );
+        const motionSamples = firstMotionIndex < 0
+          ? []
+          : probe.samples.slice(firstMotionIndex);
+        const frameGaps = motionSamples.slice(1).map(
+          (sample, index) => sample.timestamp - motionSamples[index].timestamp,
+        );
+        return {
+          distinctPositions: new Set(motionSamples.map((sample) => sample.transform)).size,
+          durationMs: motionSamples.length > 1
+            ? motionSamples.at(-1).timestamp - motionSamples[0].timestamp
+            : 0,
+          firstMotionMs: firstMotionIndex < 0
+            ? null
+            : motionSamples[0].timestamp - probe.pressAt,
+          maxFrameGapMs: frameGaps.length ? Math.max(...frameGaps) : null,
+          sampleCount: motionSamples.length,
+        };
+      });
+      console.log('[collection workflow] production motion profile', motion);
+      if (!motion || motion.firstMotionMs == null || motion.firstMotionMs > 150) {
+        throw new Error(`For Trade motion did not begin within 150 ms: ${JSON.stringify(motion)}.`);
+      }
+      if (motion.distinctPositions < 12) {
+        throw new Error(`For Trade motion produced too few visual steps: ${JSON.stringify(motion)}.`);
+      }
+      if (motion.maxFrameGapMs == null || motion.maxFrameGapMs > 80) {
+        throw new Error(`For Trade motion dropped an excessive frame gap: ${JSON.stringify(motion)}.`);
+      }
     }
     // Vite intentionally delays only the side-panel/header tag identity until
     // its 300 ms track transition is complete. Keep that parity assertion, but
