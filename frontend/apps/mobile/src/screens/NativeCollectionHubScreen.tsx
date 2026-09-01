@@ -42,7 +42,6 @@ import {
 } from '../features/collection/NativePokemonHubHeader';
 import {
   NativeCollectionParityScreen,
-  type NativeCollectionParityScreenHandle,
   prepareNativeCollectionParityRows,
 } from './NativeCollectionParityScreen';
 import { NativeTagsPanelScreen } from './NativeTagsPanelScreen';
@@ -165,7 +164,6 @@ export const NativeCollectionHubScreen = ({
   const [clearTagConfirmationOpen, setClearTagConfirmationOpen] = useState(false);
   const [operationNotice, setOperationNotice] = useState<string | null>(null);
   const sliderRef = useRef<NativeHorizontalPageSliderHandle>(null);
-  const collectionSurfaceRef = useRef<NativeCollectionParityScreenHandle>(null);
   const tagSelectionTraceRef = useRef<{ key: string; startedAt: number } | null>(null);
   const tagPageMotionFrameRef = useRef<number | null>(null);
   const sidePanelTagTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -333,24 +331,14 @@ export const NativeCollectionHubScreen = ({
         sidePanelTagTimerRef.current = null;
       }, NATIVE_HORIZONTAL_PAGE_TRANSITION_MS);
     }
-    // The browser swaps the Pokémon projection before its compositor starts
-    // the page transform. Do the same without putting a React reconciliation
-    // in front of the gesture: warmed native tag surfaces can be revealed
-    // directly, then the already-correct middle panel begins moving in this
-    // same press frame. The state update below makes that visual state
-    // canonical without changing it halfway through the slide.
-    const hasSearchQuery = queryRef.current.trim().length > 0;
-    // A warmed unfiltered surface can be shown immediately. When a search is
-    // active, keep that Vite search term and let React commit the tag+query
-    // projection offscreen first; revealing the unfiltered warm surface would
-    // produce the exact mid-slide content swap this path exists to prevent.
-    if (hasSearchQuery) collectionSurfaceRef.current?.resetSurface(tag.key);
-    else collectionSurfaceRef.current?.revealSurface(tag.key);
+    // Vite changes the immutable data projection in its one virtualized grid,
+    // then starts the compositor slide. Native follows that same order: the
+    // cached tag projection commits now and the UI-thread track moves on the
+    // next frame. Keeping one grid avoids hundreds of image/card views from
+    // invisible prewarmed lists competing with the animation.
     const pokemonIndex = VIEW_ORDER.indexOf('pokemon');
-    // Reserve the destination even if this uncommon surface has not completed
-    // background warming yet. The state commit below can mount/update it, then
-    // the following frame begins motion with the right content already in the
-    // middle panel.
+    // Reserve the destination so the state commit can update the middle grid
+    // before motion begins on the following frame.
     sliderRef.current?.preparePage(pokemonIndex);
     if (tagPageMotionFrameRef.current != null) {
       cancelAnimationFrame(tagPageMotionFrameRef.current);
@@ -481,14 +469,11 @@ export const NativeCollectionHubScreen = ({
     warning,
   ]);
   const pokemonPanel = useMemo(() => (
-      <NativeCollectionParityScreen
-        activeTag={selectedTag}
-        assetBaseUrl={assetBaseUrl}
-        ref={collectionSurfaceRef}
+    <NativeCollectionParityScreen
+      activeTag={selectedTag}
+      assetBaseUrl={assetBaseUrl}
       rows={selectedRows}
       searchUniverseRows={catalogRows}
-      warmCatalogRows={requireTagSelection ? undefined : catalogRows}
-      warmTags={availableTags}
       query={query}
       initialScrollOffset={initialScrollOffset}
       initialShowEvolutionaryLine={initialShowEvolutionaryLine}
@@ -522,7 +507,6 @@ export const NativeCollectionHubScreen = ({
     query,
     changeQuery,
     catalogRows,
-    availableTags,
     selectedRows,
     selectedTag,
     selectedIds,

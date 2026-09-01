@@ -633,7 +633,7 @@ const styles = StyleSheet.create({
     shadowRadius: 22,
     shadowOffset: { width: 0, height: 16 },
   },
-  pressed: { opacity: 0.78, transform: [{ scale: 0.99 }] },
+  pressed: { opacity: 0.88 },
   preview: {
     flexDirection: 'row',
     flexWrap: 'wrap',

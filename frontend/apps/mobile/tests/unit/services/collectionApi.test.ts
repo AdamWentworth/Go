@@ -1,12 +1,71 @@
 import { pokemonContract } from '@pokemongonexus/shared-contracts/pokemon';
 import { usersContract } from '@pokemongonexus/shared-contracts/users';
 import {
+  getCachedNativeCollectionSnapshot,
   getNativeCollectionSnapshot,
   getNativePokemonMoves,
   getReconciledNativeCollectionSnapshot,
 } from '../../../src/services/collectionApi';
 
 describe('getNativeCollectionSnapshot', () => {
+  it('projects retained edits into a durable snapshot without acknowledging them', async () => {
+    const cachedInstance = { instance_id: 'instance-1', pokemon_id: 1, last_update: 100 };
+    const retainedInstance = {
+      ...cachedInstance,
+      cp: 777,
+      is_caught: true,
+      is_for_trade: false,
+      is_wanted: false,
+      last_update: 200,
+    };
+    const outbox = {
+      list: jest.fn().mockResolvedValue([{
+        userId: 'user-1',
+        batch: { sync_batch_id: 'batch-1', location: null, pokemonUpdates: [retainedInstance] },
+        state: 'pending' as const,
+        createdAt: 100,
+        updatedAt: 100,
+        attemptCount: 0,
+        lastError: null,
+        acknowledgedAt: null,
+      }]),
+    };
+    const cache = {
+      read: jest.fn().mockResolvedValue({
+        snapshot: { instances: { 'instance-1': cachedInstance }, catalog: [] },
+        savedAt: 1234,
+      }),
+    };
+
+    await expect(getCachedNativeCollectionSnapshot(
+      outbox,
+      cache,
+      'user-1',
+    )).resolves.toEqual(expect.objectContaining({
+      cachedAt: 1234,
+      source: 'cache',
+      instances: expect.objectContaining({
+        'instance-1': expect.objectContaining({
+          cp: 777,
+        }),
+      }),
+    }));
+    expect(cache.read).toHaveBeenCalledWith('user-1');
+    expect(outbox.list).toHaveBeenCalledWith('user-1');
+  });
+
+  it('does no outbox work when there is no durable snapshot to paint', async () => {
+    const outbox = { list: jest.fn() };
+    const cache = { read: jest.fn().mockResolvedValue(null) };
+
+    await expect(getCachedNativeCollectionSnapshot(
+      outbox,
+      cache,
+      'user-1',
+    )).resolves.toBeNull();
+    expect(outbox.list).not.toHaveBeenCalled();
+  });
+
   it('loads canonical instances and the image-bearing catalog together', async () => {
     const instances = { 'instance-1': { pokemon_id: 1 } };
     const catalog = [{ pokemon_id: 1, name: 'Bulbasaur' }];
@@ -258,6 +317,39 @@ describe('getNativeCollectionSnapshot', () => {
     await expect(getReconciledNativeCollectionSnapshot(
       usersClient, pokemonClient, outbox, cache, 'user-1',
     )).resolves.toEqual({ instances: {}, catalog: [], tags, source: 'network', cachedAt: null });
+  });
+
+  it('paints the online collection before a slow replaceable cache write finishes', async () => {
+    let finishWrite!: () => void;
+    const write = new Promise<void>((resolve) => {
+      finishWrite = resolve;
+    });
+    const tags = { tags: [], orders: { caught: [], wanted: [] } };
+    const usersClient = { get: jest.fn()
+      .mockResolvedValueOnce({ instances: {} })
+      .mockResolvedValueOnce(tags) };
+    const pokemonClient = { get: jest.fn().mockResolvedValue([]) };
+    const outbox = {
+      list: jest.fn().mockResolvedValue([]),
+      removeAcknowledged: jest.fn().mockResolvedValue(undefined),
+    };
+    const cache = {
+      read: jest.fn(),
+      write: jest.fn().mockReturnValue(write),
+    };
+
+    await expect(getReconciledNativeCollectionSnapshot(
+      usersClient, pokemonClient, outbox, cache, 'user-1',
+    )).resolves.toEqual({
+      instances: {},
+      catalog: [],
+      tags,
+      source: 'network',
+      cachedAt: null,
+    });
+    expect(cache.write).toHaveBeenCalledTimes(1);
+    finishWrite();
+    await write;
   });
 
   it('preserves the network failure when no cached copy exists', async () => {

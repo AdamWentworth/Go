@@ -176,21 +176,32 @@ describe('NativeCollectionParityFixture', () => {
     expect(screen.getByTestId('native-collection-grid').props.keyboardShouldPersistTaps).toBe('always');
   });
 
-  it('keeps grid render work stable when a prepainted surface becomes active', () => {
-    const view = render(<NativeCollectionParityFixture surfaceActive={false} />);
-    const hiddenGrid = view.UNSAFE_getByType(FlatList);
-    const hiddenHeader = hiddenGrid.props.ListHeaderComponent;
-    const hiddenRenderItem = hiddenGrid.props.renderItem;
+  it('keeps grid render work stable when the Vite-style data projection changes', () => {
+    const view = render(
+      <NativeCollectionParityFixture cards={COLLECTION_PARITY_FIXTURES.slice(0, 3)} />,
+    );
+    const initialGrid = view.UNSAFE_getByType(FlatList);
+    const initialHeader = initialGrid.props.ListHeaderComponent;
+    const initialKeyExtractor = initialGrid.props.keyExtractor;
+    const initialRenderItem = initialGrid.props.renderItem;
+    const initialStickyHeaders = initialGrid.props.stickyHeaderIndices;
 
-    view.rerender(<NativeCollectionParityFixture surfaceActive />);
+    view.rerender(
+      <NativeCollectionParityFixture cards={COLLECTION_PARITY_FIXTURES.slice(3, 6)} />,
+    );
 
-    const activeGrid = view.UNSAFE_getByType(FlatList);
-    expect(activeGrid.props.ListHeaderComponent).toBe(hiddenHeader);
-    expect(activeGrid.props.renderItem).toBe(hiddenRenderItem);
-    expect(activeGrid.props.windowSize).toBe(3);
+    const updatedGrid = view.UNSAFE_getByType(FlatList);
+    expect(updatedGrid).toBe(initialGrid);
+    expect(updatedGrid.props.ListHeaderComponent).toBe(initialHeader);
+    expect(updatedGrid.props.keyExtractor).toBe(initialKeyExtractor);
+    expect(updatedGrid.props.renderItem).toBe(initialRenderItem);
+    expect(updatedGrid.props.stickyHeaderIndices).toBe(initialStickyHeaders);
+    expect(updatedGrid.props.stickyHeaderIndices).toEqual([0]);
+    expect(updatedGrid.props.strictMode).toBe(true);
+    expect(updatedGrid.props.windowSize).toBe(3);
   });
 
-  it('resets a warmed destination grid before it returns from a side tag page', () => {
+  it('resets the active destination grid before it returns from a side tag page', () => {
     const ref = createRef<NativeCollectionParityFixtureHandle>();
     const onScrollOffsetChange = jest.fn();
     render(

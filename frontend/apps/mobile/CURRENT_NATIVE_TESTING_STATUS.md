@@ -53,7 +53,7 @@ mounts complete collection and Pokédex route trees in the background.
 
 Passing evidence for this checkpoint:
 
-- native Jest: 155 suites, 813 tests;
+- native Jest: 156 suites, 818 tests;
 - mobile and web TypeScript and ESLint;
 - native real-route smoke: 92 guest/signed-in, light/dark route states;
 - focused Vite mobile-Chromium browser coverage: 9 tests;
@@ -89,72 +89,53 @@ Vite-sized three-screen list window. Ownership glows use one precomputed tinted
 bitmap per card instead of rebuilding a multi-node SVG gradient. The focused
 real-route workflow measured 519 ms including the canonical 300 ms slide.
 
-The 2026-09-01 exhaustive `/pokemon` fluidity audit now mirrors the remaining
-Vite scheduling details more directly. Vite keeps its three page panels warm,
-memoizes filtering/sorting/cards, virtualizes only the visible grid plus a row
-buffer, changes the middle result before starting its compositor transform,
-and delays side-panel tag-label synchronization until the 300 ms slide is over.
-Native now keeps reusable tag result surfaces pre-painted, reuses sorted row,
-row-id, card, and lookup-map projections, and reveals the destination surface
-imperatively before reserving the middle page. It gives Android one frame to
-paint that offscreen result, then starts the canonical native-driven slide;
-React state catches up without changing the result partway through motion.
-Animated multiply/interpolation nodes and gesture callbacks stay stable across
-the tag commit, and a destination list is reset to the top while still
-offscreen, matching Vite without waking two FlatLists. The three-screen track
-is rasterized only during horizontal motion and released afterward, avoiding
-the previous permanent giant texture invalidation during ordinary vertical
-list scrolling. Automated coverage pins the pre-motion reveal and offscreen
-scroll reset; the complete matrix remains 92 passing route/theme states.
+The final 2026-09-01 `/pokemon` architecture audit found that the previous
+native optimization had moved away from Vite in an expensive direction. Vite
+mounts three page panels but only one virtualized Pokémon grid. Native had begun
+mounting as many as twelve independent image grids to prepaint tag results.
+Because FlatList's multi-column batch counts represent rows rather than cards,
+that could retain hundreds of hidden card/image views and make Android compose
+them during every page slide. Native now mirrors Vite again: one grid receives
+a cached immutable tag projection before the native-driven track starts moving.
+No background timer can add hidden grids later.
 
-The next renderer pass keeps that instant warmed-tag path without charging its
-entire cost to route entry. Native paints only the active collection grid in
-the first commit, then mounts one hidden tag destination per short background
-slice. Sort changes update the visible surface first while hidden surfaces
-consume deferred sort values, and stable per-surface refs avoid detaching and
-reattaching every warmed list during a tag commit. Existing search text now
-survives tag selection exactly as it does in Vite. Vertical FlatList movement
-no longer calls session persistence throughout the gesture; it records the
-offset only when drag or momentum settles, leaving scrolling frames native.
-Coverage pins active-first warming, the one-frame tag-motion boundary, search
-preservation, and settled-only scroll persistence.
+Filtering, sorting, tag summaries, per-row cards, image source objects, row-ID
+projections, and lookup maps remain cached. Background work warms only those
+plain projections and waits for the app-owned interaction scheduler; it never
+mounts an offscreen list. The actual tag gallery already loads the destination's
+preview images before a user can tap it, matching Vite's useful image warm-up
+without retaining duplicate grids. The active FlatList keeps a Vite-sized
+three-viewport window and twelve-row initial/batch budget, a stable key
+extractor, stable header and card renderers, and React Native 0.86's renderer
+memoization flag. Its search/tag header is sticky and opaque like Vite's fixed
+search header. Tag changes reset scroll in a layout effect before paint, while
+ordinary vertical movement persists session state only after drag or momentum
+settles. Remote image source objects are reused across theme, selection, and
+tag updates, and tag cards no longer apply the non-Vite shrink transform on
+press.
 
-The staged warm-up now prepares immutable tag rows/cards in short JS slices
-before each hidden native list mounts, while ordered overlay IDs remain lazy
-until an owned card is actually opened. Tag-card and region-filter backgrounds
-use Expo's compiled native gradient view instead of mounting repeated SVG
-definition trees. As in Vite, the destination Pokémon/tag chip is ready before
-horizontal motion begins, but the offscreen Tags/Wishlist header sublabel waits
-until the canonical 300 ms slide completes; this avoids a competing text/layout
-mutation during the animation. Background preparation and mounted hidden grids
-are capped at eleven destinations plus the active grid, so accounts with many
-custom tags cannot accumulate an unbounded number of offscreen FlatLists. Each
-background slice also waits for active gestures and page animations to finish;
-fixed warm-up timers can no longer interrupt a swipe or compete with its native
-300 ms transform. This uses an app-owned scheduler tied to the actual slider
-lifecycle because React Native 0.86's deprecated InteractionManager is only a
-stub and does not provide that guarantee. The collection page drag itself
-streams finger movement straight from Gesture Handler into the native Animated
-graph instead of
-crossing to JavaScript on every frame. It uses Vite's shared 30% peek limit and
-100 px navigation threshold, and transfers the exact drag position into the
-settling animation so the current page cannot flash or reload before moving to
-the next one. Prepainted destination lists now retain only one viewport while
-hidden; the active list alone gets Vite's multi-row scroll buffer and faster
-cell batches. This keeps the instant destination paint without making every
-tag maintain a full scrolling window offscreen. Native tag summaries are also
-cached by the immutable collection snapshot, and custom memberships are now
-projected in one pass across the instances instead of rescanning the entire
-collection once per custom tag. Returning to `/pokemon` can therefore reuse the
-same tag rows immediately, while accounts with many tags avoid multiplicative
-route-entry work. Each grid also keeps stable header and card-render callbacks
-when only its active/hidden window policy changes, so revealing a warmed tag
-does not invalidate every visible cell just as page motion begins.
+The three-panel collection swipe continues to stream finger movement directly
+from Gesture Handler into the native Animated graph, uses Vite's shared 30%
+peek limit and 100 px threshold, and hands the exact drag position to the
+settling animation so the current page cannot flash or reload first. The
+Pokémon result and selected tab commit together before the canonical 300 ms
+slide; only the offscreen Tags/Wishlist sublabel waits until that slide ends,
+matching Vite. The track is rasterized only while moving and released
+afterward. React Native 0.86's deprecated InteractionManager is a stub, so an
+app-owned scheduler tied to this real slider lifecycle protects animation
+frames from projection warming.
+
+Route entry is now cache-first and network-authoritative. A durable collection
+snapshot, including retained offline edits, can paint while the canonical
+network refresh continues. A slower SQLite read can never overwrite an already
+completed network response, and writing a replaceable refreshed snapshot no
+longer delays the first interactive grid. This closes a separate cold/open
+latency gap with Vite's already-populated client store.
 
 The real-route collection budget measures the first interactive destination
 card before separately asserting the deliberately delayed header sublabel. The
-latest full-matrix run measured 521 ms and then confirmed the header identity after
-the slide; this avoids counting intentional Vite motion as result latency.
+latest complete matrix passed all 92 route/theme states and measured 517 ms for
+the For Trade workflow, including the canonical 300 ms slide.
 
 ## Remaining approval gate
 

@@ -113,11 +113,13 @@ export const getReconciledNativeCollectionSnapshot = async (
       }
     }
     try {
-      await cache.write(userId, {
+      // The durable copy is replaceable and must not sit on the critical path
+      // between a completed network response and the first interactive grid.
+      void cache.write(userId, {
         instances: canonical.instances,
         catalog: canonical.catalog,
         tags: canonical.tags,
-      });
+      }).catch(() => undefined);
     } catch {
       // A replaceable read cache must never block a successful online collection load.
     }
@@ -151,6 +153,31 @@ export const getReconciledNativeCollectionSnapshot = async (
     instances: projectNativeCollectionOutbox(canonical.instances, retained),
     source,
     cachedAt,
+  };
+};
+
+/**
+ * Resolve the last durable collection immediately while the canonical network
+ * query refreshes in parallel. Unlike the network reconciliation path this
+ * never acknowledges outbox entries: only a server response can do that.
+ */
+export const getCachedNativeCollectionSnapshot = async (
+  outbox: Pick<typeof nativeCollectionOutbox, 'list'>,
+  cache: Pick<typeof nativeCollectionCache, 'read'>,
+  userId: string,
+): Promise<NativeResolvedCollectionSnapshot | null> => {
+  const cached = await cache.read(userId);
+  if (!cached) return null;
+  const retained = await outbox.list(userId);
+  return {
+    ...cached.snapshot,
+    instances: projectNativeCollectionOutbox(
+      normalizeNativeInstances(cached.snapshot.instances),
+      retained,
+    ),
+    tags: normalizeNativeTagsEnvelope(cached.snapshot.tags),
+    source: 'cache',
+    cachedAt: cached.savedAt,
   };
 };
 

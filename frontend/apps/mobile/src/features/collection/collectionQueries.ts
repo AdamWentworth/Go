@@ -1,5 +1,7 @@
-import { useQuery } from '@tanstack/react-query';
+import { useEffect } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import {
+  getCachedNativeCollectionSnapshot,
   getReconciledNativeCollectionSnapshot,
   getNativePokemonMoves,
 } from '../../services/collectionApi';
@@ -72,8 +74,10 @@ export const useNativeCollectionSnapshotQuery = (
   userId: string | null,
 ) => {
   const clients = useNativeApiClients();
-  return useQuery({
-    queryKey: nativeCollectionQueryKeys.snapshot(userId ?? 'signed-out'),
+  const queryClient = useQueryClient();
+  const resolvedUserId = userId ?? 'signed-out';
+  const query = useQuery({
+    queryKey: nativeCollectionQueryKeys.snapshot(resolvedUserId),
     queryFn: () => getReconciledNativeCollectionSnapshot(
       clients.users,
       clients.pokemon,
@@ -84,4 +88,28 @@ export const useNativeCollectionSnapshotQuery = (
     enabled: Boolean(userId),
     staleTime: 5 * 60_000,
   });
+  useEffect(() => {
+    if (!userId) return undefined;
+    const queryKey = nativeCollectionQueryKeys.snapshot(userId);
+    if (queryClient.getQueryData(queryKey) !== undefined) return undefined;
+    let cancelled = false;
+    void getCachedNativeCollectionSnapshot(
+      nativeCollectionOutbox,
+      nativeCollectionCache,
+      userId,
+    ).then((cached) => {
+      if (cancelled || !cached) return;
+      // The network is authoritative. Never let a slower SQLite read replace a
+      // response that completed while the local snapshot was being decoded.
+      if (queryClient.getQueryData(queryKey) !== undefined) return;
+      queryClient.setQueryData(queryKey, cached, { updatedAt: cached.cachedAt ?? 0 });
+    }).catch(() => {
+      // The in-flight network query and its existing offline fallback remain
+      // responsible for surfacing a real error if both sources are unavailable.
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [queryClient, userId]);
+  return query;
 };

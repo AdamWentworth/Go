@@ -1,19 +1,15 @@
-import { createRef, useState } from 'react';
+import { useState } from 'react';
+import { FlatList } from 'react-native';
 import {
   act,
   cleanup,
   fireEvent,
   render,
   screen,
-  within,
 } from '@testing-library/react-native';
-import type {
-  NativeCollectionRow,
-  NativeTagSummary,
-} from '../../../src/features/collection/collectionModel';
+import type { NativeCollectionRow } from '../../../src/features/collection/collectionModel';
 import {
   NativeCollectionParityScreen,
-  type NativeCollectionParityScreenHandle,
   projectNativeCollectionParityCards,
 } from '../../../src/screens/NativeCollectionParityScreen';
 
@@ -103,8 +99,7 @@ describe('NativeCollectionParityScreen', () => {
     expect(secondTagCards[1]).toBe(firstTagCards[0]);
   });
 
-  it('prepares a warmed tag surface for a same-frame reveal before page motion', () => {
-    const ref = createRef<NativeCollectionParityScreenHandle>();
+  it('reuses one Vite-style virtualized grid when the active tag changes', () => {
     const favorites = {
       key: 'system:favorites' as const,
       parent: 'caught' as const,
@@ -113,63 +108,7 @@ describe('NativeCollectionParityScreen', () => {
       tone: 'favorites' as const,
       rows: [rows[0]],
     };
-    render(
-      <NativeCollectionParityScreen
-        activeTag={null}
-        assetBaseUrl="https://pokegonexus.com"
-        error={null}
-        isLoading={false}
-        onClearTag={jest.fn()}
-        onOpenInstance={jest.fn()}
-        onQueryChange={jest.fn()}
-        onRetry={jest.fn()}
-        onViewChange={jest.fn()}
-        query=""
-        ref={ref}
-        rows={rows}
-        warmCatalogRows={rows}
-        warmTags={[favorites]}
-      />,
-    );
-
-    expect(screen.queryByTestId(
-      'native-collection-surface-system:favorites',
-      { includeHiddenElements: true },
-    )).toBeNull();
-    act(() => jest.advanceTimersByTime(240));
-
-    expect(screen.getByTestId(
-      'native-collection-surface-system:favorites',
-      { includeHiddenElements: true },
-    )).toHaveStyle({ opacity: 0 });
-    expect(screen.getByTestId('native-collection-grid').props.windowSize).toBe(3);
-    const hiddenFavorites = screen.getByTestId(
-      'native-collection-surface-system:favorites',
-      { includeHiddenElements: true },
-    );
-    expect(within(hiddenFavorites).getByTestId(
-      'native-collection-grid',
-      { includeHiddenElements: true },
-    ).props).toEqual(expect.objectContaining({
-      maxToRenderPerBatch: 6,
-      updateCellsBatchingPeriod: 48,
-      windowSize: 1,
-    }));
-    expect(ref.current?.revealSurface('system:favorites')).toBe(true);
-    expect(ref.current?.revealSurface('system:missing')).toBe(false);
-  });
-
-  it('bounds staged hidden grids when an account has many custom tags', () => {
-    const warmTags: NativeTagSummary[] = Array.from({ length: 15 }, (_, index) => ({
-      key: `custom:${index}`,
-      parent: 'caught',
-      name: `Custom ${index}`,
-      color: '#9f7aea',
-      tone: 'custom',
-      rows: [rows[index % rows.length]],
-    }));
-
-    render(
+    const view = render(
       <NativeCollectionParityScreen
         activeTag={null}
         assetBaseUrl="https://pokegonexus.com"
@@ -182,25 +121,37 @@ describe('NativeCollectionParityScreen', () => {
         onViewChange={jest.fn()}
         query=""
         rows={rows}
-        warmCatalogRows={rows}
-        warmTags={warmTags}
+      />,
+    );
+    const initialGrid = view.UNSAFE_getByType(FlatList);
+    expect(screen.queryAllByTestId('native-collection-grid')).toHaveLength(1);
+    expect(screen.getByText('Charizard')).toBeTruthy();
+
+    view.rerender(
+      <NativeCollectionParityScreen
+        activeTag={favorites}
+        assetBaseUrl="https://pokegonexus.com"
+        error={null}
+        isLoading={false}
+        onClearTag={jest.fn()}
+        onOpenInstance={jest.fn()}
+        onQueryChange={jest.fn()}
+        onRetry={jest.fn()}
+        onViewChange={jest.fn()}
+        query=""
+        rows={favorites.rows}
       />,
     );
 
-    act(() => jest.advanceTimersByTime(1_000));
-
+    expect(view.UNSAFE_getByType(FlatList)).toBe(initialGrid);
+    expect(screen.queryAllByTestId('native-collection-grid')).toHaveLength(1);
     expect(screen.queryAllByTestId(
       /^native-collection-surface-/,
       { includeHiddenElements: true },
-    )).toHaveLength(12);
-    expect(screen.getByTestId(
-      'native-collection-surface-custom:10',
-      { includeHiddenElements: true },
-    )).toBeTruthy();
-    expect(screen.queryByTestId(
-      'native-collection-surface-custom:11',
-      { includeHiddenElements: true },
-    )).toBeNull();
+    )).toHaveLength(0);
+    expect(screen.getByText('Favorites')).toBeTruthy();
+    expect(screen.getByText('Bulbasaur')).toBeTruthy();
+    expect(screen.queryByText('Charizard')).toBeNull();
   });
 
   it('starts in the complete catalog context', () => {

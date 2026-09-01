@@ -16,8 +16,8 @@ import {
   forwardRef,
   memo,
   useCallback,
-  useEffect,
   useImperativeHandle,
+  useLayoutEffect,
   useMemo,
   useRef,
   useState,
@@ -81,7 +81,6 @@ type NativeCollectionParityFixtureProps = {
   showHeader?: boolean;
   selectedIds?: ReadonlySet<string>;
   selectionAction?: 'add' | 'organize';
-  surfaceActive?: boolean;
 };
 
 export type NativeCollectionParityFixtureHandle = {
@@ -148,10 +147,29 @@ const customTagSurface = (color: string): string =>
   /^#[0-9a-f]{6}$/i.test(color) ? `${color}2e` : TAG_TONES.custom.surface;
 
 const EMPTY_SELECTED_IDS: ReadonlySet<string> = new Set<string>();
+// React Native 0.86 implements this FlatList renderer memoization flag in the
+// runtime before it appears in the public TypeScript declaration. A spread
+// keeps the optimization isolated and removable when the declaration catches
+// up, while preventing data-only tag swaps from rebuilding the row renderer.
+const NATIVE_FLAT_LIST_RENDERER_OPTIMIZATION = { strictMode: true } as const;
+const COLLECTION_STICKY_HEADER_INDICES = [0];
+const collectionCardKeyExtractor = (
+  card: CollectionParityCardFixture,
+): string => card.id;
 
 const toAssetUrl = (baseUrl: string, path: string): string => {
   if (/^https?:\/\//i.test(path)) return path;
   return `${baseUrl.replace(/\/$/, '')}/${path.replace(/^\//, '')}`;
+};
+
+const collectionImageSourceCache = new Map<string, { uri: string }>();
+const toCollectionImageSource = (baseUrl: string, path: string): { uri: string } => {
+  const uri = toAssetUrl(baseUrl, path);
+  const cached = collectionImageSourceCache.get(uri);
+  if (cached) return cached;
+  const source = { uri };
+  collectionImageSourceCache.set(uri, source);
+  return source;
 };
 
 const CollectionParityCard = memo(function CollectionParityCard({
@@ -214,28 +232,26 @@ const CollectionParityCard = memo(function CollectionParityCard({
           <Image fadeDuration={0}
             accessibilityElementsHidden
             resizeMode="contain"
-            source={{ uri: toAssetUrl(assetBaseUrl, '/images/lucky.png') }}
+            source={toCollectionImageSource(assetBaseUrl, '/images/lucky.png')}
             style={styles.luckyBackground}
           />
         ) : null}
         <Image fadeDuration={0}
           accessibilityLabel={card.name}
           resizeMode="contain"
-          source={{ uri: toAssetUrl(assetBaseUrl, card.imagePath) }}
+          source={toCollectionImageSource(assetBaseUrl, card.imagePath)}
           style={styles.pokemonImage}
         />
         {card.maxKind ? (
           <Image fadeDuration={0}
             accessibilityLabel={card.maxKind === 'gigantamax' ? 'Gigantamax' : 'Dynamax'}
             resizeMode="contain"
-            source={{
-              uri: toAssetUrl(
-                assetBaseUrl,
-                card.maxKind === 'gigantamax'
-                  ? '/images/gigantamax.png'
-                  : '/images/dynamax.png',
-              ),
-            }}
+            source={toCollectionImageSource(
+              assetBaseUrl,
+              card.maxKind === 'gigantamax'
+                ? '/images/gigantamax.png'
+                : '/images/dynamax.png',
+            )}
             style={styles.maxBadge}
           />
         ) : null}
@@ -243,7 +259,7 @@ const CollectionParityCard = memo(function CollectionParityCard({
           <Image fadeDuration={0}
             accessibilityLabel="Purified"
             resizeMode="contain"
-            source={{ uri: toAssetUrl(assetBaseUrl, '/images/purified.png') }}
+            source={toCollectionImageSource(assetBaseUrl, '/images/purified.png')}
             style={styles.purifiedBadge}
           />
         ) : null}
@@ -256,7 +272,7 @@ const CollectionParityCard = memo(function CollectionParityCard({
           <Image fadeDuration={0}
             accessibilityElementsHidden
             key={path}
-            source={{ uri: toAssetUrl(assetBaseUrl, path) }}
+            source={toCollectionImageSource(assetBaseUrl, path)}
             style={styles.typeIcon}
           />
         ))}
@@ -308,7 +324,6 @@ export const NativeCollectionParityFixture = memo(forwardRef<
   showHeader = true,
   selectedIds = EMPTY_SELECTED_IDS,
   selectionAction = 'organize',
-  surfaceActive = true,
 }, ref) {
   const { width } = useWindowDimensions();
   const [searchMenuVisible, setSearchMenuVisible] = useState(false);
@@ -350,13 +365,13 @@ export const NativeCollectionParityFixture = memo(forwardRef<
     onScrollOffsetChange?.(offset);
   }, [onScrollOffsetChange]);
   useImperativeHandle(ref, () => ({ resetScroll }), [resetScroll]);
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (previousResetKeyRef.current === scrollResetKey) return;
     previousResetKeyRef.current = scrollResetKey;
     resetScroll();
   }, [resetScroll, scrollResetKey]);
   const renderCollectionControls = useCallback((includeSearchMenu: boolean) => (
-    <View style={styles.collectionControls}>
+    <View style={[styles.collectionControls, { backgroundColor: palette.background }]}>
       <NativeCollectionSearchControls
         assetBaseUrl={assetBaseUrl}
         inputBackground={palette.search}
@@ -438,6 +453,7 @@ export const NativeCollectionParityFixture = memo(forwardRef<
     onToggleEvolutionaryLine,
     palette.search,
     palette.searchText,
+    palette.background,
     palette.secondaryText,
     palette.tagText,
     palette.text,
@@ -520,9 +536,9 @@ export const NativeCollectionParityFixture = memo(forwardRef<
           ref={listRef}
           initialNumToRender={12}
           key={columns}
-          keyExtractor={(item) => item.id}
+          keyExtractor={collectionCardKeyExtractor}
           keyboardShouldPersistTaps="always"
-          maxToRenderPerBatch={surfaceActive ? 12 : 6}
+          maxToRenderPerBatch={12}
           numColumns={columns}
           onContentSizeChange={() => {
             if (restoredScrollRef.current || initialScrollOffset <= 0 || cards.length === 0) return;
@@ -535,9 +551,11 @@ export const NativeCollectionParityFixture = memo(forwardRef<
           onMomentumScrollEnd={persistSettledScrollOffset}
           onScrollEndDrag={persistSettledScrollOffset}
           removeClippedSubviews={false}
+          stickyHeaderIndices={COLLECTION_STICKY_HEADER_INDICES}
+          {...NATIVE_FLAT_LIST_RENDERER_OPTIMIZATION}
           testID="native-collection-grid"
-          updateCellsBatchingPeriod={surfaceActive ? 16 : 48}
-          windowSize={surfaceActive ? 3 : 1}
+          updateCellsBatchingPeriod={16}
+          windowSize={3}
           ListHeaderComponent={listHeader}
           ListEmptyComponent={(
             <View style={styles.emptyState}>
@@ -568,7 +586,7 @@ export const NativeCollectionParityFixture = memo(forwardRef<
           <View style={styles.sortInnerRing} />
           <Image fadeDuration={0}
             resizeMode="contain"
-            source={{ uri: toAssetUrl(assetBaseUrl, sortIconPath) }}
+            source={toCollectionImageSource(assetBaseUrl, sortIconPath)}
             style={styles.sortTypeImage}
           />
         </View>
@@ -576,7 +594,7 @@ export const NativeCollectionParityFixture = memo(forwardRef<
           <View style={styles.sortModeInnerRing} />
           <Image fadeDuration={0}
             resizeMode="contain"
-            source={{ uri: toAssetUrl(assetBaseUrl, '/images/sorting/arrow.png') }}
+            source={toCollectionImageSource(assetBaseUrl, '/images/sorting/arrow.png')}
             style={[
               styles.sortArrowImage,
               sortDirection === 'descending' ? styles.sortArrowDescending : null,

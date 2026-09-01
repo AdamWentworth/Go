@@ -195,7 +195,7 @@ describe('NativeCollectionHubScreen', () => {
     expect(screen.getByText('Most Wanted')).toBeTruthy();
   });
 
-  it('slides the warm page track back to Pokémon when either side selects a tag', () => {
+  it('updates one virtualized grid before sliding back to Pokémon from either side', () => {
     const timing = jest.spyOn(Animated, 'timing');
     render(
       <SafeAreaProvider initialMetrics={{
@@ -218,30 +218,32 @@ describe('NativeCollectionHubScreen', () => {
 
     expect(screen.getAllByText('Favorites', { includeHiddenElements: true }).length).toBeGreaterThan(0);
     expect(screen.getAllByText('Most Wanted', { includeHiddenElements: true }).length).toBeGreaterThan(0);
-    expect(screen.queryByTestId(
-      'native-collection-surface-system:favorites',
+    expect(screen.queryAllByTestId(
+      'native-collection-grid',
       { includeHiddenElements: true },
-    )).toBeNull();
+    )).toHaveLength(1);
     act(() => jest.advanceTimersByTime(360));
-    const favoritesSurface = screen.getByTestId(
-      'native-collection-surface-system:favorites',
-      { includeHiddenElements: true },
-    );
-    expect(favoritesSurface).toHaveStyle({ opacity: 0 });
-    expect(screen.getByTestId(
-      'native-collection-surface-system:most-wanted',
-      { includeHiddenElements: true },
-    )).toBeTruthy();
     expect(screen.getAllByTestId(
-      'parity-card-caught-bulbasaur',
+      'parity-card-0001-default',
       { includeHiddenElements: true },
-    ).length).toBeGreaterThan(0);
+    )).toHaveLength(1);
 
     fireEvent.press(screen.getByRole('tab', { name: /tags/i }));
     timing.mockClear();
     fireEvent.press(screen.getByRole('button', { name: /Open Favorites/i }));
 
-    expect(favoritesSurface).not.toHaveStyle({ opacity: 0 });
+    expect(screen.queryAllByTestId(
+      'native-collection-grid',
+      { includeHiddenElements: true },
+    )).toHaveLength(1);
+    expect(screen.getByTestId(
+      'parity-card-caught-bulbasaur',
+      { includeHiddenElements: true },
+    )).toBeTruthy();
+    expect(screen.queryByTestId(
+      'parity-card-0150-default',
+      { includeHiddenElements: true },
+    )).toBeNull();
     expect(screen.queryByText('(FAVORITES)')).toBeNull();
     expect(timing).not.toHaveBeenCalled();
     act(() => jest.advanceTimersByTime(17));
