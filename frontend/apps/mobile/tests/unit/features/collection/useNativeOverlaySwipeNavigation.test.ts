@@ -7,6 +7,12 @@ import {
   useNativeOverlaySwipeNavigation,
 } from '../../../../src/features/collection/parity/useNativeOverlaySwipeNavigation';
 
+const mockParallelAnimations = () => jest.spyOn(Animated, 'parallel').mockImplementation(() => ({
+  start: jest.fn(),
+  stop: jest.fn(),
+  reset: jest.fn(),
+}) as unknown as Animated.CompositeAnimation);
+
 describe('native instance overlay swipe navigation', () => {
   afterEach(() => {
     jest.restoreAllMocks();
@@ -36,6 +42,7 @@ describe('native instance overlay swipe navigation', () => {
       stop: jest.fn(),
       reset: jest.fn(),
     }) as unknown as Animated.CompositeAnimation);
+    mockParallelAnimations();
     const animationFrame = jest.spyOn(global, 'requestAnimationFrame').mockImplementation((callback) => {
       callback(0);
       return 1;
@@ -80,6 +87,7 @@ describe('native instance overlay swipe navigation', () => {
       stop: jest.fn(),
       reset: jest.fn(),
     }) as unknown as Animated.CompositeAnimation);
+    mockParallelAnimations();
     jest.spyOn(global, 'requestAnimationFrame').mockImplementation((callback) => {
       callback(0);
       return 1;

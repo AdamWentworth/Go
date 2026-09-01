@@ -401,6 +401,34 @@ describe('NativeInstanceDetailScreen', () => {
     await waitFor(() => expect(onNext).toHaveBeenCalledTimes(1));
   });
 
+  it('keeps the full-bleed background outside the horizontally moving content layer', () => {
+    render(
+      <NativeInstanceDetailScreen
+        detail={detail}
+        isLoading={false}
+        error={null}
+        cachedAt={null}
+        movesWarning={null}
+        saveNotice={null}
+        saveError={null}
+        isSaving={false}
+        onRetry={jest.fn()}
+        onBack={jest.fn()}
+        onPrevious={jest.fn()}
+        onNext={jest.fn()}
+        onToggleFavorite={jest.fn()}
+        onEditInCurrentApp={jest.fn()}
+      />,
+    );
+
+    const motionLayer = screen.getByTestId('native-instance-motion-layer');
+    expect(motionLayer.findAllByProps({ testID: 'native-instance-background' })).toHaveLength(0);
+    expect(screen.getByTestId(
+      'native-instance-background-layer',
+      { includeHiddenElements: true },
+    ).props.pointerEvents).toBe('none');
+  });
+
   it('opens a configured target directly from the listing summary', () => {
     const onOpenTarget = jest.fn();
     render(

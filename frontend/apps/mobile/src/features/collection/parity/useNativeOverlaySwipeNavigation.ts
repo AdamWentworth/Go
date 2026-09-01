@@ -20,6 +20,7 @@ export type NativeOverlaySwipeDirection = 'previous' | 'next';
 const { instanceOverlaySwipe } = collectionExperienceParityContract;
 const ROUTE_HANDOFF_TIMEOUT_MS = 1000;
 const swipeEasing = Easing.bezier(...instanceOverlaySwipe.transitionEasing);
+const backgroundEasing = Easing.bezier(0.25, 0.1, 0.25, 1);
 
 export const resolveNativeOverlaySwipeDirection = ({
   deltaX,
@@ -59,6 +60,10 @@ type Args = {
 };
 
 type Result = {
+  backgroundMotionStyle: {
+    opacity: Animated.Value;
+    transform: { scale: Animated.Value }[];
+  };
   isAnimating: boolean;
   motionStyle: { transform: { translateX: Animated.Value }[] };
   navigateNext: () => void;
@@ -73,10 +78,15 @@ export const useNativeOverlaySwipeNavigation = ({
   onPrevious,
 }: Args): Result => {
   const [translateX] = useState(() => new Animated.Value(0));
+  const [backgroundOpacity] = useState(() => new Animated.Value(1));
+  const [backgroundScale] = useState(() => new Animated.Value(
+    instanceOverlaySwipe.backgroundBaseScale,
+  ));
   const [isAnimating, setIsAnimating] = useState(false);
   const [pendingNavigation, setPendingNavigation] = useState<NativeOverlaySwipeDirection | null>(null);
   const isAnimatingRef = useRef(false);
   const activeAnimationRef = useRef<Animated.CompositeAnimation | null>(null);
+  const backgroundAnimationRef = useRef<Animated.CompositeAnimation | null>(null);
   const entranceFrameRef = useRef<ReturnType<typeof requestAnimationFrame> | null>(null);
   const routeHandoffTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const awaitingContentRef = useRef<{
@@ -97,10 +107,37 @@ export const useNativeOverlaySwipeNavigation = ({
 
   const reduceMotion = devicePreferences?.shouldReduceMotion ?? systemReduceMotion;
 
+  const animateBackground = useCallback((transitioning: boolean) => {
+    backgroundAnimationRef.current?.stop();
+    const animation = Animated.parallel([
+      Animated.timing(backgroundOpacity, {
+        toValue: transitioning ? instanceOverlaySwipe.backgroundTransitionOpacity : 1,
+        duration: instanceOverlaySwipe.backgroundOpacityTransitionMs,
+        easing: backgroundEasing,
+        useNativeDriver: true,
+      }),
+      Animated.timing(backgroundScale, {
+        toValue: transitioning
+          ? instanceOverlaySwipe.backgroundTransitionScale
+          : instanceOverlaySwipe.backgroundBaseScale,
+        duration: instanceOverlaySwipe.backgroundScaleTransitionMs,
+        easing: backgroundEasing,
+        useNativeDriver: true,
+      }),
+    ]);
+    backgroundAnimationRef.current = animation;
+    animation.start(({ finished }) => {
+      if (finished && backgroundAnimationRef.current === animation) {
+        backgroundAnimationRef.current = null;
+      }
+    });
+  }, [backgroundOpacity, backgroundScale]);
+
   const finishNavigation = useCallback(() => {
     isAnimatingRef.current = false;
     setIsAnimating(false);
-  }, []);
+    animateBackground(false);
+  }, [animateBackground]);
 
   const startEntrance = useCallback((direction: NativeOverlaySwipeDirection) => {
     if (routeHandoffTimerRef.current !== null) {
@@ -142,14 +179,17 @@ export const useNativeOverlaySwipeNavigation = ({
 
   useEffect(() => () => {
     activeAnimationRef.current?.stop();
+    backgroundAnimationRef.current?.stop();
     if (entranceFrameRef.current !== null) {
       cancelAnimationFrame(entranceFrameRef.current);
     }
     if (routeHandoffTimerRef.current !== null) {
       clearTimeout(routeHandoffTimerRef.current);
     }
+    backgroundOpacity.stopAnimation();
+    backgroundScale.stopAnimation();
     translateX.stopAnimation();
-  }, [translateX]);
+  }, [backgroundOpacity, backgroundScale, translateX]);
 
   const resetPosition = useCallback(() => {
     if (reduceMotion) {
@@ -178,6 +218,8 @@ export const useNativeOverlaySwipeNavigation = ({
     }
 
     if (reduceMotion) {
+      backgroundOpacity.setValue(1);
+      backgroundScale.setValue(instanceOverlaySwipe.backgroundBaseScale);
       translateX.setValue(0);
       callback();
       return;
@@ -185,6 +227,7 @@ export const useNativeOverlaySwipeNavigation = ({
 
     isAnimatingRef.current = true;
     setIsAnimating(true);
+    animateBackground(true);
     const exitOffset = direction === 'next'
       ? -instanceOverlaySwipe.exitOffset
       : instanceOverlaySwipe.exitOffset;
@@ -218,6 +261,9 @@ export const useNativeOverlaySwipeNavigation = ({
     });
   }, [
     activeItemKey,
+    animateBackground,
+    backgroundOpacity,
+    backgroundScale,
     disabled,
     finishNavigation,
     onNext,
@@ -283,6 +329,10 @@ export const useNativeOverlaySwipeNavigation = ({
     }), [disabled, isAnimating, navigate, onNext, onPrevious, resetPosition, translateX]);
 
   return {
+    backgroundMotionStyle: {
+      opacity: backgroundOpacity,
+      transform: [{ scale: backgroundScale }],
+    },
     gesture,
     isAnimating,
     motionStyle: { transform: [{ translateX }] },

@@ -2197,11 +2197,11 @@ export const NativeInstanceDetailScreen = ({
 
   return (
     <View style={styles.overlay} testID="native-instance-overlay">
-      <GestureDetector gesture={overlaySwipe.gesture}>
-        <Animated.View
-          style={[styles.motionLayer, overlaySwipe.motionStyle]}
-          testID="native-instance-motion-layer"
-        >
+      <Animated.View
+        pointerEvents="none"
+        style={[styles.backgroundLayer, overlaySwipe.backgroundMotionStyle]}
+        testID="native-instance-background-layer"
+      >
         <Image
           accessibilityElementsHidden
           blurRadius={3}
@@ -2220,8 +2220,14 @@ export const NativeInstanceDetailScreen = ({
           style={styles.fullBackground}
           testID="native-instance-background"
         />
-        <View style={styles.backgroundTint} />
+      </Animated.View>
+      <View pointerEvents="none" style={styles.backgroundTint} />
 
+      <GestureDetector gesture={overlaySwipe.gesture}>
+        <Animated.View
+          style={[styles.motionLayer, overlaySwipe.motionStyle]}
+          testID="native-instance-motion-layer"
+        >
         <ScrollView
           contentContainerStyle={[
             styles.scrollContent,
@@ -2720,9 +2726,10 @@ const LIGHT = {
 };
 
 const styles = StyleSheet.create({
-  overlay: { flex: 1, backgroundColor: '#0f2b2b' },
+  overlay: { flex: 1, overflow: 'hidden', backgroundColor: '#0f2b2b' },
   motionLayer: { flex: 1, overflow: 'hidden' },
-  fullBackground: { ...StyleSheet.absoluteFill, width: '106%', height: '106%', left: '-3%', top: '-3%' },
+  backgroundLayer: { ...StyleSheet.absoluteFill, overflow: 'hidden' },
+  fullBackground: { ...StyleSheet.absoluteFill },
   backgroundTint: { ...StyleSheet.absoluteFill, backgroundColor: 'rgba(15,43,43,0.08)' },
   scroll: { flex: 1 },
   scrollContent: { alignItems: 'center', paddingTop: 30, paddingBottom: 104 },

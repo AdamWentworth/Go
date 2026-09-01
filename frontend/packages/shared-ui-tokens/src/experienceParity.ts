@@ -20,6 +20,11 @@ export const collectionExperienceParityContract = {
   initialView: 'pokemon',
   instanceOverlaySwipe: {
     axisLockDelta: 10,
+    backgroundBaseScale: 1.06,
+    backgroundOpacityTransitionMs: 220,
+    backgroundScaleTransitionMs: 280,
+    backgroundTransitionOpacity: 0.58,
+    backgroundTransitionScale: 1.09,
     enterOffset: 110,
     entryTransitionMs: 220,
     exitOffset: 140,
