@@ -550,6 +550,18 @@ visible accessibility assertions. The next workflow completed those steps
 normally and passed, with tag touch paths at 71--90 ms and instance targets at
 158--240 ms.
 
+The retained tag galleries now admit one remote preview bitmap per panel and
+frame instead of three. Vite can finish independent browser image decodes
+without putting a synchronous burst on its compositor, while React Native's
+legacy Android image path can perform that decode work on HWUI's render path.
+The galleries remain mounted and warm before selection, but the two offscreen
+panels can no longer introduce a combined six-bitmap background spike into one
+display frame. A component test pins the one-source cadence. The confirming
+minified Android workflow passed every collection budget: four tag releases
+started the page track in 0--1 ms, their complete touch paths measured
+67--101 ms, and the action menu painted in 84 ms. The full suite is now 160
+suites and 854 tests, with typecheck and the complete lint pass clean.
+
 ## Remaining approval gate
 
 The latest bundle still needs a short physical-phone pass for perceived frame

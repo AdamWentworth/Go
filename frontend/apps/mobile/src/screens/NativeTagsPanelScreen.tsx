@@ -73,7 +73,14 @@ type Props = {
 type TagGradient = readonly [string, string, string];
 const VITE_TAG_PREVIEW_SOURCE_LIMIT = 18;
 export const NATIVE_TAG_PREVIEW_PRESS_DELAY_MS = 16;
-const TAG_PREVIEW_REVEAL_BATCH = 3;
+// Core Image on Android can decode these remote sprites on HWUI's render
+// path. The browser is free to finish several <img> decodes independently,
+// but admitting the same three-source burst on each retained native tag page
+// can put six new bitmaps into one display frame while the user is scrolling
+// or while a page animation is about to begin. One source per panel/frame
+// preserves the warm retained galleries without manufacturing a recurring
+// render-thread spike that Vite does not have.
+export const NATIVE_TAG_PREVIEW_REVEAL_BATCH = 1;
 // Cold mount priority mirrors what a browser's image scheduler effectively
 // gives Vite: paint the visible collection, then warm the retained search
 // controls, and only then decode sprites in the two offscreen tag panels.
@@ -516,7 +523,7 @@ export const NativeTagsPanelScreen = memo(function NativeTagsPanelScreen({
       interactionTask = runAfterNativeUiInteractions(() => {
         interactionTask = null;
         if (cancelled) return;
-        revealed = Math.min(target, revealed + TAG_PREVIEW_REVEAL_BATCH);
+        revealed = Math.min(target, revealed + NATIVE_TAG_PREVIEW_REVEAL_BATCH);
         previewImageRevealController.setRevealCount(revealed);
         if (revealed < target) {
           timer = setTimeout(revealNext, TAG_PREVIEW_REVEAL_PERIOD_MS);

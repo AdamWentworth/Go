@@ -1,6 +1,7 @@
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react-native';
 import { Image } from 'react-native';
 import {
+  NATIVE_TAG_PREVIEW_REVEAL_BATCH,
   NATIVE_TAG_PREVIEW_PRESS_DELAY_MS,
   NativeTagsPanelScreen,
 } from '../../../src/screens/NativeTagsPanelScreen';
@@ -131,6 +132,39 @@ describe('NativeTagsPanelScreen', () => {
     )).toBeTruthy();
     expect(screen.queryByText('Inventory tags')).toBeNull();
     expect(screen.queryByText('›')).toBeNull();
+  });
+
+  it('admits retained tag-preview bitmaps one per Android frame', () => {
+    expect(NATIVE_TAG_PREVIEW_REVEAL_BATCH).toBe(1);
+    const rows = Array.from({ length: 3 }, (_, index) => ({
+      ...maxTag.rows[0],
+      id: `instance-${index + 1}`,
+      imageUri: `https://pokegonexus.com/images/pokemon-${index + 1}.png`,
+      maxKind: null,
+    }));
+
+    render(
+      <NativeTagsPanelScreen
+        activeTagName={null}
+        assetBaseUrl="https://pokegonexus.com"
+        collectionCount={3}
+        error={null}
+        isLoading={false}
+        onRetry={jest.fn()}
+        onSelectTag={jest.fn()}
+        onViewChange={jest.fn()}
+        parent="caught"
+        tags={[{ ...maxTag, rows }]}
+      />,
+    );
+
+    expect(screen.UNSAFE_queryAllByType(Image)).toHaveLength(0);
+    act(() => jest.advanceTimersByTime(1_201));
+    expect(screen.UNSAFE_queryAllByType(Image)).toHaveLength(1);
+    act(() => jest.advanceTimersByTime(17));
+    expect(screen.UNSAFE_queryAllByType(Image)).toHaveLength(2);
+    act(() => jest.advanceTimersByTime(17));
+    expect(screen.UNSAFE_queryAllByType(Image)).toHaveLength(3);
   });
 
   it('warms Vite\'s hidden preview sources without mounting extra native images', () => {
