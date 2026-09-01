@@ -9,7 +9,7 @@ import {
   useRef,
   useState,
 } from 'react';
-import { Platform, StyleSheet, View } from 'react-native';
+import { InteractionManager, Platform, StyleSheet, View } from 'react-native';
 import type {
   CollectionParityCardFixture,
 } from '../features/collection/parity/collectionParityFixtures';
@@ -263,11 +263,17 @@ export const NativeCollectionParityScreen = forwardRef<
     if (Platform.OS === 'web') return undefined;
     let cancelled = false;
     let timer: ReturnType<typeof setTimeout> | null = null;
+    let interactionTask: ReturnType<typeof InteractionManager.runAfterInteractions> | null = null;
     const pendingKeys = allSurfaceContexts
       .map((context) => context.key)
       .filter((key) => key !== activeSurfaceKey)
       .slice(0, MAX_STAGED_SURFACE_COUNT - 1);
     let index = 0;
+    const scheduleNext = (delay: number) => {
+      timer = setTimeout(() => {
+        interactionTask = InteractionManager.runAfterInteractions(warmNextSurface);
+      }, delay);
+    };
     const warmNextSurface = () => {
       if (cancelled) return;
       const surfaceKey = pendingKeys[index];
@@ -279,15 +285,16 @@ export const NativeCollectionParityScreen = forwardRef<
         return next;
       });
       index += 1;
-      timer = setTimeout(warmNextSurface, SURFACE_WARM_INTERVAL_MS);
+      scheduleNext(SURFACE_WARM_INTERVAL_MS);
     };
     // Mounting six independent image grids in the first collection commit was
     // making route entry do all future tag work up front. Paint the active
     // grid first, then prepare one offscreen destination per short idle slice.
-    timer = setTimeout(warmNextSurface, SURFACE_WARM_START_DELAY_MS);
+    scheduleNext(SURFACE_WARM_START_DELAY_MS);
     return () => {
       cancelled = true;
       if (timer) clearTimeout(timer);
+      interactionTask?.cancel();
     };
   }, [activeSurfaceKey, allSurfaceContexts]);
   const surfaceContexts = useMemo(() => {

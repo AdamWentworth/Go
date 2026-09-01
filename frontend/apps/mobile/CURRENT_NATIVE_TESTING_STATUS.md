@@ -128,7 +128,10 @@ horizontal motion begins, but the offscreen Tags/Wishlist header sublabel waits
 until the canonical 300 ms slide completes; this avoids a competing text/layout
 mutation during the animation. Background preparation and mounted hidden grids
 are capped at eleven destinations plus the active grid, so accounts with many
-custom tags cannot accumulate an unbounded number of offscreen FlatLists.
+custom tags cannot accumulate an unbounded number of offscreen FlatLists. Each
+background slice also waits for active gestures and page animations to finish;
+fixed warm-up timers can no longer interrupt a swipe or compete with its native
+300 ms transform.
 
 The real-route collection budget measures the first interactive destination
 card before separately asserting the deliberately delayed header sublabel. The

@@ -8,6 +8,7 @@ import {
 } from 'react';
 import {
   Animated,
+  InteractionManager,
   StyleSheet,
   Text,
   View,
@@ -227,8 +228,14 @@ export const NativeCollectionHubScreen = ({
   useEffect(() => {
     let cancelled = false;
     let timer: ReturnType<typeof setTimeout> | null = null;
+    let interactionTask: ReturnType<typeof InteractionManager.runAfterInteractions> | null = null;
     const tagsToPrepare = availableTags.slice(0, 24);
     let index = 0;
+    const scheduleNext = (delay: number) => {
+      timer = setTimeout(() => {
+        interactionTask = InteractionManager.runAfterInteractions(prepareNext);
+      }, delay);
+    };
     const prepareNext = () => {
       if (cancelled) return;
       const tag = tagsToPrepare[index];
@@ -236,16 +243,17 @@ export const NativeCollectionHubScreen = ({
       prepareNativeCollectionParityRows(tag.rows);
       collectionRowsById(tag.rows);
       index += 1;
-      timer = setTimeout(prepareNext, 16);
+      scheduleNext(16);
     };
     // The active grid has committed before effects run. Prepare immutable tag
     // data in short JS slices just ahead of the parity screen's staged native
     // mounts, so each hidden FlatList receives cached rows/cards instead of
     // sorting and projecting during its layout frame.
-    timer = setTimeout(prepareNext, 96);
+    scheduleNext(96);
     return () => {
       cancelled = true;
       if (timer) clearTimeout(timer);
+      interactionTask?.cancel();
     };
   }, [availableTags]);
 
