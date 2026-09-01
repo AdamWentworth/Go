@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useDeferredValue, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
   FlatList,
@@ -48,6 +48,8 @@ type Props = {
   signedIn: boolean;
 };
 type MaxView = 'rankings' | 'bosses';
+
+const EMPTY_MAX_ROLE_CANDIDATES = { damage: [], healing: [], tank: [] };
 
 const absoluteUri = (base: string, value?: string | null) => {
   if (!value) return undefined;
@@ -108,28 +110,35 @@ export const NativeMaxScreen = ({
     ?? bossVariants[0]
     ?? null;
   const effectiveScope = signedIn ? scope : 'catalog';
+  const deferredBoss = useDeferredValue(selectedBoss);
+  const deferredQuery = useDeferredValue(query);
+  const deferredRole = useDeferredValue(role);
+  const deferredScope = useDeferredValue(effectiveScope);
+  const deferredSelectedType = useDeferredValue(selectedType);
   const rosterSummary = useMemo(
     () => buildNativeMaxRosterSummary(catalog, instances),
     [catalog, instances],
   );
   const candidates = useMemo(
-    () => buildNativeMaxRoleCandidates({
-      bossVariant: selectedBoss,
-      catalog,
-      instances,
-      scope: effectiveScope,
-    }),
-    [catalog, effectiveScope, instances, selectedBoss],
+    () => view === 'bosses' && deferredBoss
+      ? buildNativeMaxRoleCandidates({
+          bossVariant: deferredBoss,
+          catalog,
+          instances,
+          scope: deferredScope,
+        })
+      : EMPTY_MAX_ROLE_CANDIDATES,
+    [catalog, deferredBoss, deferredScope, instances, view],
   );
   const rankings = useMemo(() => {
-    const normalized = query.trim().toLocaleLowerCase();
+    const normalized = deferredQuery.trim().toLocaleLowerCase();
     const entries = buildNativeMaxRankings({
-      bossVariant: view === 'bosses' ? selectedBoss : null,
+      bossVariant: view === 'bosses' ? deferredBoss : null,
       catalog,
       instances,
-      role,
-      scope: effectiveScope,
-      selectedType: view === 'rankings' ? selectedType : '',
+      role: deferredRole,
+      scope: deferredScope,
+      selectedType: view === 'rankings' ? deferredSelectedType : '',
     });
     return entries.filter((entry) => !normalized || [
       entry.name,
@@ -137,7 +146,7 @@ export const NativeMaxScreen = ({
       entry.chargedMove?.name,
       ...entry.types,
     ].some((value) => value?.toLocaleLowerCase().includes(normalized))).slice(0, 50);
-  }, [catalog, effectiveScope, instances, query, role, selectedBoss, selectedType, view]);
+  }, [catalog, deferredBoss, deferredQuery, deferredRole, deferredScope, deferredSelectedType, instances, view]);
 
   const switchView = (next: MaxView) => {
     setView(next);
@@ -146,7 +155,7 @@ export const NativeMaxScreen = ({
 
   const productHeader = (
     <View style={styles.productHeader}>
-      <Image
+      <Image fadeDuration={0}
         accessibilityElementsHidden
         resizeMode="contain"
         source={{ uri: absoluteUri(assetBaseUrl, '/images/dynamax.png') }}
@@ -259,7 +268,7 @@ export const NativeMaxScreen = ({
               onPress={() => setSelectedType(type)}
               style={[styles.typeButton, light && styles.typeButtonLight, selected && styles.typeActive]}
             >
-              <Image source={{ uri: absoluteUri(assetBaseUrl, `/images/types/${type}.png`) }} style={styles.typeIcon} />
+              <Image fadeDuration={0} source={{ uri: absoluteUri(assetBaseUrl, `/images/types/${type}.png`) }} style={styles.typeIcon} />
             </Pressable>
           );
         })}
@@ -284,8 +293,8 @@ export const NativeMaxScreen = ({
               style={[styles.bossCard, light && styles.cardLight, selected && styles.bossActive]}
             >
               <View style={styles.bossStage}>
-                <Image resizeMode="contain" source={{ uri: absoluteUri(assetBaseUrl, boss.currentImage || boss.image_url) }} style={styles.bossImage} />
-                <Image resizeMode="contain" source={{ uri: absoluteUri(assetBaseUrl, `/images/${maxKind}.png`) }} style={styles.maxIcon} />
+                <Image fadeDuration={0} resizeMode="contain" source={{ uri: absoluteUri(assetBaseUrl, boss.currentImage || boss.image_url) }} style={styles.bossImage} />
+                <Image fadeDuration={0} resizeMode="contain" source={{ uri: absoluteUri(assetBaseUrl, `/images/${maxKind}.png`) }} style={styles.maxIcon} />
               </View>
               <Text numberOfLines={2} style={[styles.bossName, light && styles.textLight, selected && styles.activeText]}>{boss.name}</Text>
             </Pressable>
@@ -347,7 +356,7 @@ export const NativeMaxScreen = ({
       {roster}
       {view === 'rankings'
         ? <>{roleTabs}{typeFilter}</>
-        : <>{bossPicker}{selectedBoss ? <NativeMaxBattleSimulator assetBaseUrl={assetBaseUrl} boss={selectedBoss} candidates={candidates} initialDifficulty={initialDifficulty} initialTrainerCount={initialTrainerCount} key={`${selectedBoss.variant_id}-${effectiveScope}`} rosterScope={effectiveScope} /> : null}{roleTabs}</>}
+        : <>{bossPicker}{deferredBoss ? <NativeMaxBattleSimulator assetBaseUrl={assetBaseUrl} boss={deferredBoss} candidates={candidates} initialDifficulty={initialDifficulty} initialTrainerCount={initialTrainerCount} key={`${deferredBoss.variant_id}-${deferredScope}`} rosterScope={deferredScope} /> : null}{roleTabs}</>}
       {resultsHeader}
     </View>
   );

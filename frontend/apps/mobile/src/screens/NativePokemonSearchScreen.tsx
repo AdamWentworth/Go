@@ -102,17 +102,17 @@ const SearchArtwork = ({
     !backgroundUri && !lucky && styles.artworkTransparent,
     size === 'small' && styles.artworkSmall,
   ]}>
-    {backgroundUri ? <Image resizeMode="cover" source={{ uri: backgroundUri }} style={StyleSheet.absoluteFill} /> : null}
+    {backgroundUri ? <Image fadeDuration={0} resizeMode="cover" source={{ uri: backgroundUri }} style={StyleSheet.absoluteFill} /> : null}
     {!backgroundUri && lucky ? (
-      <Image
+      <Image fadeDuration={0}
         resizeMode="cover"
         source={{ uri: `${assetBaseUrl.replace(/\/$/, '')}/images/lucky.png` }}
         style={StyleSheet.absoluteFill}
       />
     ) : null}
-    {imageUri ? <Image resizeMode="contain" source={{ uri: imageUri }} style={styles.artworkPokemon} /> : <Text style={styles.imageFallback}>No image</Text>}
+    {imageUri ? <Image fadeDuration={0} resizeMode="contain" source={{ uri: imageUri }} style={styles.artworkPokemon} /> : <Text style={styles.imageFallback}>No image</Text>}
     {maxKind ? (
-      <Image
+      <Image fadeDuration={0}
         resizeMode="contain"
         source={{ uri: `${assetBaseUrl.replace(/\/$/, '')}/images/${maxKind}.png` }}
         style={[styles.artworkMax, size === 'small' && styles.artworkMaxSmall]}
@@ -479,14 +479,14 @@ export const NativePokemonSearchScreen = ({
             <View style={[styles.summary, light && styles.summaryLight]}>
               <View style={styles.summaryImageFrame}>
                 {previewImage ? (
-                  <Image
+                  <Image fadeDuration={0}
                     resizeMode="contain"
                     source={{ uri: absoluteUri(previewImage, assetBaseUrl) ?? previewImage }}
                     style={styles.summaryImage}
                   />
                 ) : null}
                 {draft.gigantamax || draft.dynamax ? (
-                  <Image
+                  <Image fadeDuration={0}
                     resizeMode="contain"
                     source={{ uri: `${assetBaseUrl.replace(/\/$/, '')}/images/${draft.gigantamax ? 'gigantamax' : 'dynamax'}.png` }}
                     style={styles.summaryMaxBadge}

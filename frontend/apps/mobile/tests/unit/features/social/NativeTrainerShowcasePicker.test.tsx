@@ -1,4 +1,5 @@
 import { fireEvent, render } from '@testing-library/react-native';
+import { FlatList } from 'react-native';
 import type { NativeCollectionRow } from '../../../../src/features/collection/collectionModel';
 import { NativeTrainerShowcasePicker } from '../../../../src/features/social/NativeTrainerShowcasePicker';
 
@@ -45,6 +46,12 @@ describe('NativeTrainerShowcasePicker', () => {
     expect(view.getByTestId('native-trainer-showcase-picker').props.edges).toMatchObject({
       bottom: 'additive',
       top: 'additive',
+    });
+    expect(view.UNSAFE_getByType(FlatList).props).toMatchObject({
+      initialNumToRender: 18,
+      maxToRenderPerBatch: 18,
+      numColumns: 3,
+      removeClippedSubviews: true,
     });
     expect(view.getByRole('button', { name: 'Shiny Charizard, selected in this slot' })).toBeTruthy();
     expect(view.getByRole('button', { name: 'Shiny Suicune, already featured' }).props.accessibilityState.disabled).toBe(true);

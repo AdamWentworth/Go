@@ -172,7 +172,7 @@ const ToolLink = ({
     onPress={onPress}
     style={({ pressed }) => [styles.tool, light && styles.toolLight, pressed && styles.pressed]}
   >
-    <Image resizeMode="contain" source={{ uri: toAssetUrl(assetBaseUrl, icon) }} style={styles.toolIcon} />
+    <Image fadeDuration={0} resizeMode="contain" source={{ uri: toAssetUrl(assetBaseUrl, icon) }} style={styles.toolIcon} />
     <View style={styles.toolCopy}>
       <Text style={[styles.toolLabel, light && styles.textLight]}>{label}</Text>
       <Text style={[styles.toolDetail, light && styles.mutedLight]}>{detail}</Text>
@@ -222,7 +222,7 @@ export const NativeHomeScreen = ({
       >
         <View style={styles.brandHeader}>
           <Pressable accessibilityRole="button" onPress={() => onNavigate('/')} style={styles.brand}>
-            <Image source={{ uri: toAssetUrl(assetBaseUrl, '/images/logo/logo.png') }} style={styles.brandLogo} />
+            <Image fadeDuration={0} source={{ uri: toAssetUrl(assetBaseUrl, '/images/logo/logo.png') }} style={styles.brandLogo} />
             <Text style={[styles.brandName, light && styles.textLight]}>Pokémon Go Nexus</Text>
           </Pressable>
           <Pressable
@@ -360,8 +360,8 @@ export const NativeHomeScreen = ({
                   style={({ pressed }) => [styles.recentRow, light && styles.recentRowLight, pressed && styles.pressed]}
                 >
                   <View style={[styles.recentImageWrap, light && styles.recentImageWrapLight]}>
-                    {row.locationBackgroundUri ? <Image source={{ uri: row.locationBackgroundUri }} style={StyleSheet.absoluteFill} /> : null}
-                    {row.imageUri ? <Image resizeMode="contain" source={{ uri: row.imageUri }} style={styles.recentImage} /> : null}
+                    {row.locationBackgroundUri ? <Image fadeDuration={0} source={{ uri: row.locationBackgroundUri }} style={StyleSheet.absoluteFill} /> : null}
+                    {row.imageUri ? <Image fadeDuration={0} resizeMode="contain" source={{ uri: row.imageUri }} style={styles.recentImage} /> : null}
                   </View>
                   <View style={styles.recentCopy}>
                     <Text numberOfLines={2} style={[styles.recentName, light && styles.textLight]}>{row.name}</Text>

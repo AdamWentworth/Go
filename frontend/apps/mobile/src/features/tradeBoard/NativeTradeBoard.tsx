@@ -68,7 +68,7 @@ const BoardEntry = ({
   ]}>
     <View style={styles.artworkStage}>
       {entry.locationBackgroundUri ? (
-        <Image
+        <Image fadeDuration={0}
           accessibilityElementsHidden
           resizeMode="cover"
           source={{ uri: toAssetUrl(assetBaseUrl, entry.locationBackgroundUri) }}
@@ -76,21 +76,21 @@ const BoardEntry = ({
         />
       ) : null}
       {entry.luckyRequested ? (
-        <Image
+        <Image fadeDuration={0}
           accessibilityElementsHidden
           resizeMode="contain"
           source={{ uri: toAssetUrl(assetBaseUrl, '/images/lucky.png') }}
           style={styles.luckyBackground}
         />
       ) : null}
-      <Image
+      <Image fadeDuration={0}
         accessibilityLabel={entry.name}
         resizeMode="contain"
         source={{ uri: toAssetUrl(assetBaseUrl, entry.imageUri ?? '/images/default_pokemon.png') }}
         style={styles.artwork}
       />
       {entry.maxKind ? (
-        <Image
+        <Image fadeDuration={0}
           accessibilityLabel={entry.maxKind === 'gigantamax' ? 'Gigantamax' : 'Dynamax'}
           resizeMode="contain"
           source={{
@@ -176,7 +176,7 @@ export const NativeTradeBoard = forwardRef<View, Props>(function NativeTradeBoar
       <View style={styles.hero}>
         <View style={styles.heroTop}>
           <View style={styles.brandLockup}>
-            <Image
+            <Image fadeDuration={0}
               accessibilityLabel="Pokémon Go Nexus"
               resizeMode="contain"
               source={{ uri: toAssetUrl(assetBaseUrl, '/icons/icon-192x192.png') }}

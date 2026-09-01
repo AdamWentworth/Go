@@ -55,7 +55,7 @@ export const NativeRaidTypeFilter = ({ assetBaseUrl, onChange, selectedType }: P
                 selected && { backgroundColor: TYPE_COLORS[type], borderColor: TYPE_COLORS[type] },
               ]}
             >
-              <Image
+              <Image fadeDuration={0}
                 accessibilityElementsHidden
                 resizeMode="contain"
                 source={{ uri: assetUri(assetBaseUrl, type) }}

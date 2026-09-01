@@ -1,5 +1,5 @@
 import { FlatList, Image, Modal, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
-import { useMemo, useState } from 'react';
+import { useDeferredValue, useMemo, useState } from 'react';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNativeModalAnimation } from '../features/settings/useNativeMotion';
 import { useNativeColorScheme } from '../features/settings/useNativeColorScheme';
@@ -35,14 +35,15 @@ export const NativeOptionPicker = ({
   const light = useNativeColorScheme() === 'light';
   const animationType = useNativeModalAnimation('slide');
   const [query, setQuery] = useState('');
+  const deferredQuery = useDeferredValue(query);
   const filtered = useMemo(() => {
-    const normalized = query.trim().toLocaleLowerCase();
+    const normalized = deferredQuery.trim().toLocaleLowerCase();
     if (!normalized) return options;
     return options.filter((option) => (
       option.label.toLocaleLowerCase().includes(normalized)
       || option.description?.toLocaleLowerCase().includes(normalized)
     ));
-  }, [options, query]);
+  }, [deferredQuery, options]);
 
   return (
     <Modal
@@ -103,7 +104,7 @@ export const NativeOptionPicker = ({
                 ]}
               >
                 {item.imageUri ? (
-                  <Image resizeMode="contain" source={{ uri: item.imageUri }} style={styles.image} />
+                  <Image fadeDuration={0} resizeMode="contain" source={{ uri: item.imageUri }} style={styles.image} />
                 ) : null}
                 <View style={styles.optionCopy}>
                   <Text numberOfLines={2} style={[styles.optionLabel, light && styles.textLight]}>{item.label}</Text>

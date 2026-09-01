@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useDeferredValue, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
   Image,
@@ -139,7 +139,7 @@ const HeroBackdrop = ({ colors, light }: { colors: [string, string]; light: bool
 
 const MoveRow = ({ assetBaseUrl, light, move }: { assetBaseUrl: string; light: boolean; move: Move }) => (
   <View style={[styles.moveRow, light && styles.softLight]}>
-    <Image source={{ uri: absoluteUri(assetBaseUrl, `/images/types/${move.type_name?.toLocaleLowerCase()}.png`) ?? undefined }} style={styles.moveType} />
+    <Image fadeDuration={0} source={{ uri: absoluteUri(assetBaseUrl, `/images/types/${move.type_name?.toLocaleLowerCase()}.png`) ?? undefined }} style={styles.moveType} />
     <View style={styles.moveCopy}><Text style={[styles.moveName, light && styles.textLight]}>{move.name}{move.legacy ? '*' : ''}</Text><Text style={[styles.moveMeta, light && styles.mutedLight]}>{move.type_name} · {move.is_fast ? 'Fast' : 'Charged'}</Text></View>
     <View style={styles.moveNumbers}><Text style={[styles.movePower, light && styles.textLight]}>{move.pvp_power || move.raid_power || '—'}</Text><Text style={[styles.moveMeta, light && styles.mutedLight]}>power</Text></View>
   </View>
@@ -153,8 +153,8 @@ const RegistrationCard = ({ assetBaseUrl, gender, light, onOpen, onToggle, savin
   return <View style={[styles.variantCard, light && styles.softLight, slot.registered && styles.variantCardRegistered]}>
     <Pressable accessibilityLabel={`View ${slot.label}`} accessibilityRole="button" onPress={onOpen} style={styles.variantOpen}>
       <View style={styles.variantStage}>
-        {imageUri ? <Image resizeMode="contain" source={{ uri: absoluteUri(assetBaseUrl, imageUri) ?? undefined }} style={styles.variantImage} /> : null}
-        {slot.icon ? <Image source={{ uri: absoluteUri(assetBaseUrl, slot.icon) ?? undefined }} style={[styles.variantIcon, light && DARK_ON_LIGHT.has(slot.icon) && styles.darkIconLight]} /> : null}
+        {imageUri ? <Image fadeDuration={0} resizeMode="contain" source={{ uri: absoluteUri(assetBaseUrl, imageUri) ?? undefined }} style={styles.variantImage} /> : null}
+        {slot.icon ? <Image fadeDuration={0} source={{ uri: absoluteUri(assetBaseUrl, slot.icon) ?? undefined }} style={[styles.variantIcon, light && DARK_ON_LIGHT.has(slot.icon) && styles.darkIconLight]} /> : null}
       </View>
       <Text numberOfLines={2} style={[styles.variantName, light && styles.textLight]}>{slot.label}</Text>
       <Text style={[styles.variantState, light && styles.variantStateLight, slot.registered && styles.variantStateRegistered, light && slot.registered && styles.variantStateRegisteredLight]}>{slot.lockedByInstance ? 'In collection' : slot.registered ? 'Registered' : 'Missing'}</Text>
@@ -171,8 +171,8 @@ const CombinationCard = ({ assetBaseUrl, combo, gender, light, onToggle, saving,
   const imageUri = comboGender === 'Female' ? combo.entry.femaleImageUri : combo.entry.imageUri;
   return <Pressable accessibilityLabel={`${combo.registered ? 'Unregister' : 'Register'} ${combo.label}`} accessibilityRole="button" accessibilityState={{ checked: combo.registered, disabled: combo.lockedByInstance }} disabled={!signedIn || combo.lockedByInstance || saving} onPress={onToggle} style={[styles.comboCard, light && styles.softLight, combo.registered && styles.comboCardRegistered, light && combo.registered && styles.comboCardRegisteredLight, combo.lockedByInstance && styles.registrationToggleDisabled]}>
     <View style={styles.comboStage}>
-      {imageUri ? <Image resizeMode="contain" source={{ uri: absoluteUri(assetBaseUrl, imageUri) ?? undefined }} style={styles.comboImage} /> : null}
-      <View style={styles.comboBadges}>{facetBadges(combo).map((badge) => <Image accessibilityLabel={badge.label} key={`${combo.id}-${badge.label}`} source={{ uri: absoluteUri(assetBaseUrl, badge.icon) ?? undefined }} style={[styles.comboBadge, light && DARK_ON_LIGHT.has(badge.icon) && styles.darkIconLight]} />)}</View>
+      {imageUri ? <Image fadeDuration={0} resizeMode="contain" source={{ uri: absoluteUri(assetBaseUrl, imageUri) ?? undefined }} style={styles.comboImage} /> : null}
+      <View style={styles.comboBadges}>{facetBadges(combo).map((badge) => <Image fadeDuration={0} accessibilityLabel={badge.label} key={`${combo.id}-${badge.label}`} source={{ uri: absoluteUri(assetBaseUrl, badge.icon) ?? undefined }} style={[styles.comboBadge, light && DARK_ON_LIGHT.has(badge.icon) && styles.darkIconLight]} />)}</View>
     </View>
     <Text numberOfLines={2} style={[styles.comboLabel, light && styles.textLight]}>{combo.label}</Text>
     <Text style={[styles.comboState, light && styles.variantStateLight, combo.registered && styles.variantStateRegistered, light && combo.registered && styles.variantStateRegisteredLight]}>{combo.lockedByInstance ? 'In collection' : combo.registered ? 'Registered' : 'Missing'}</Text>
@@ -190,22 +190,80 @@ export const NativePokedexDetailScreen = ({ allEntries, assetBaseUrl, entry, err
   const slots = useMemo(() => entry ? buildNativePokedexRegistrationSlots(allEntries, entry.pokemonId) : [], [allEntries, entry]);
   const comboSections = useMemo(() => pokemon ? buildNativePokedexCombinationSections(allEntries, pokemon) : [], [allEntries, pokemon]);
   const genders = useMemo(() => entry?.supportedGenders ?? (pokemon ? genderOptions(pokemon) : []), [entry?.supportedGenders, pokemon]);
+  const deferredComboFilters = useDeferredValue(comboFilters);
+  const deferredComboQuery = useDeferredValue(comboQuery);
+  const groupedSlots = useMemo(
+    () => SECTION_ORDER
+      .map(([key, label]) => ({
+        key,
+        label,
+        slots: slots.filter((slot) => slot.section === key),
+      }))
+      .filter((section) => section.slots.length > 0),
+    [slots],
+  );
+  const activeComboSection = useMemo(
+    () => comboSections.find(({ id }) => id === comboSectionId) ?? comboSections[0],
+    [comboSectionId, comboSections],
+  );
+  const filteredCombos = useMemo(
+    () => filterNativePokedexCombinations(
+      activeComboSection?.combinations ?? [],
+      deferredComboQuery,
+      deferredComboFilters,
+    ),
+    [activeComboSection, deferredComboFilters, deferredComboQuery],
+  );
+  const registerableSlots = useMemo(
+    () => slots.filter(({ registered }) => !registered).map(({ registration }) => registration),
+    [slots],
+  );
+  const removableSlots = useMemo(
+    () => slots
+      .filter(({ registered, lockedByInstance }) => registered && !lockedByInstance)
+      .map(({ registration }) => registration),
+    [slots],
+  );
+  const registerableCombos = useMemo(
+    () => filteredCombos
+      .filter(({ registered }) => !registered)
+      .map(({ registration }) => registration),
+    [filteredCombos],
+  );
+  const removableCombos = useMemo(
+    () => filteredCombos
+      .filter(({ registered, lockedByInstance }) => registered && !lockedByInstance)
+      .map(({ registration }) => registration),
+    [filteredCombos],
+  );
+  const registeredCount = useMemo(
+    () => slots.filter(({ registered }) => registered).length,
+    [slots],
+  );
+  const fastMoves = useMemo(
+    () => (pokemon?.moves ?? []).filter((move) => Boolean(move.is_fast)),
+    [pokemon?.moves],
+  );
+  const chargedMoves = useMemo(
+    () => (pokemon?.moves ?? []).filter((move) => !move.is_fast),
+    [pokemon?.moves],
+  );
+  const evolutionEntries = useMemo(() => {
+    if (!pokemon) return [];
+    const evolutionIds = new Set([
+      ...(pokemon.evolves_from ?? []),
+      ...(pokemon.evolves_to ?? []),
+      ...(pokemon.evolutionData?.evolves_from ?? []),
+      ...(pokemon.evolutionData?.evolves_to ?? []),
+    ]);
+    return allEntries.filter((candidate) => (
+      candidate.category === 'pokemon' && evolutionIds.has(candidate.pokemonId)
+    ));
+  }, [allEntries, pokemon]);
   if (isLoading && (!entry || !pokemon)) return <View style={[styles.centered, light && styles.rootLight]}><ActivityIndicator color="#299cf5" size="large" /><Text style={[styles.body, light && styles.mutedLight]}>Opening Pokédex entry…</Text></View>;
   if (!entry || !pokemon) return <View style={[styles.centered, light && styles.rootLight]}><Text style={[styles.title, light && styles.textLight]}>Pokémon unavailable</Text>{error ? <Text style={styles.errorText}>{error}</Text> : null}<Pressable accessibilityRole="button" onPress={onBack} style={styles.primary}><Text style={styles.primaryText}>Back to Pokédex</Text></Pressable></View>;
 
-  const groupedSlots = SECTION_ORDER.map(([key, label]) => ({ key, label, slots: slots.filter((slot) => slot.section === key) })).filter((section) => section.slots.length > 0);
-  const activeComboSection = comboSections.find(({ id }) => id === comboSectionId) ?? comboSections[0];
-  const filteredCombos = filterNativePokedexCombinations(activeComboSection?.combinations ?? [], comboQuery, comboFilters);
-  const registerableSlots = slots.filter(({ registered }) => !registered).map(({ registration }) => registration);
-  const removableSlots = slots.filter(({ registered, lockedByInstance }) => registered && !lockedByInstance).map(({ registration }) => registration);
-  const registerableCombos = filteredCombos.filter(({ registered }) => !registered).map(({ registration }) => registration);
-  const removableCombos = filteredCombos.filter(({ registered, lockedByInstance }) => registered && !lockedByInstance).map(({ registration }) => registration);
-  const registeredCount = slots.filter(({ registered }) => registered).length;
   const stats = [['Attack', pokemon.attack], ['Defense', pokemon.defense], ['Stamina', pokemon.stamina], ['CP 40', pokemon.cp40], ['CP 50', pokemon.cp50]] as const;
-  const fastMoves = (pokemon.moves ?? []).filter((move) => Boolean(move.is_fast));
-  const chargedMoves = (pokemon.moves ?? []).filter((move) => !move.is_fast);
-  const evolutionIds = new Set([...(pokemon.evolves_from ?? []), ...(pokemon.evolves_to ?? []), ...(pokemon.evolutionData?.evolves_from ?? []), ...(pokemon.evolutionData?.evolves_to ?? [])]);
-  const evolutionEntries = allEntries.filter((candidate) => candidate.category === 'pokemon' && evolutionIds.has(candidate.pokemonId));
   const colors = categoryTheme(entry);
   const visibleGender = selectedGender && genders.includes(selectedGender)
     ? selectedGender
@@ -221,9 +279,9 @@ export const NativePokedexDetailScreen = ({ allEntries, assetBaseUrl, entry, err
         <View style={[styles.hero, light && styles.heroLight]}>
           <HeroBackdrop colors={colors} light={light} />
           <View style={styles.heroTop}><Text style={styles.dex}>#{String(entry.pokedexNumber).padStart(4, '0')}</Text><Text style={styles.heroVariant}>{entry.category.replace(/\b\w/g, (letter) => letter.toLocaleUpperCase())}</Text></View>
-          <View style={styles.imageStage}>{heroImageUri ? <Image resizeMode="contain" source={{ uri: absoluteUri(assetBaseUrl, heroImageUri) ?? undefined }} style={styles.image} testID="native-pokedex-detail-hero-image" /> : null}{entry.maxKind ? <Image source={{ uri: absoluteUri(assetBaseUrl, `/images/${entry.maxKind}.png`) ?? undefined }} style={styles.maxIcon} /> : null}</View>
+          <View style={styles.imageStage}>{heroImageUri ? <Image fadeDuration={0} resizeMode="contain" source={{ uri: absoluteUri(assetBaseUrl, heroImageUri) ?? undefined }} style={styles.image} testID="native-pokedex-detail-hero-image" /> : null}{entry.maxKind ? <Image fadeDuration={0} source={{ uri: absoluteUri(assetBaseUrl, `/images/${entry.maxKind}.png`) ?? undefined }} style={styles.maxIcon} /> : null}</View>
           <Text accessibilityRole="header" style={styles.heroTitle}>{entry.name}</Text>
-          <View style={styles.traits}>{genders.length > 0 ? genders.map((gender) => <Pressable accessibilityLabel={`Show ${gender} ${entry.name}`} accessibilityRole="button" accessibilityState={{ selected: visibleGender === gender }} key={gender} onPress={() => setSelectedGender(gender)} style={[styles.gender, gender === 'Male' ? styles.genderMale : styles.genderFemale, visibleGender === gender && styles.genderSelected]}><Image source={{ uri: absoluteUri(assetBaseUrl, `/images/${gender.toLocaleLowerCase()}-icon.png`) ?? undefined }} style={styles.genderIcon} /></Pressable>) : <Text style={styles.genderless}>Genderless</Text>}{entry.typeIconUris.map((uri, index) => <View key={uri} style={styles.typeChip}><Image source={{ uri: absoluteUri(assetBaseUrl, uri) ?? undefined }} style={styles.type} /><Text style={styles.typeLabel}>{index === 0 ? pokemon.type1_name : pokemon.type2_name}</Text></View>)}</View>
+          <View style={styles.traits}>{genders.length > 0 ? genders.map((gender) => <Pressable accessibilityLabel={`Show ${gender} ${entry.name}`} accessibilityRole="button" accessibilityState={{ selected: visibleGender === gender }} key={gender} onPress={() => setSelectedGender(gender)} style={[styles.gender, gender === 'Male' ? styles.genderMale : styles.genderFemale, visibleGender === gender && styles.genderSelected]}><Image fadeDuration={0} source={{ uri: absoluteUri(assetBaseUrl, `/images/${gender.toLocaleLowerCase()}-icon.png`) ?? undefined }} style={styles.genderIcon} /></Pressable>) : <Text style={styles.genderless}>Genderless</Text>}{entry.typeIconUris.map((uri, index) => <View key={uri} style={styles.typeChip}><Image fadeDuration={0} source={{ uri: absoluteUri(assetBaseUrl, uri) ?? undefined }} style={styles.type} /><Text style={styles.typeLabel}>{index === 0 ? pokemon.type1_name : pokemon.type2_name}</Text></View>)}</View>
           <View style={styles.registrationPill}><View style={styles.registrationPillCell}><Text style={styles.registrationPillLabel}>Registered</Text><Text style={styles.registrationPillValue}>{registeredCount}</Text></View><View style={styles.registrationPillDivider} /><View style={styles.registrationPillCell}><Text style={styles.registrationPillLabel}>Available</Text><Text style={styles.registrationPillValue}>{slots.length}</Text></View></View>
         </View>
 
@@ -239,8 +297,8 @@ export const NativePokedexDetailScreen = ({ allEntries, assetBaseUrl, entry, err
         {tab === 'info' ? <View style={styles.tabPanel}>
           <View style={[styles.cardSection, light && styles.cardLight]}><Text style={styles.eyebrow}>BASE STATS</Text><View style={styles.stats}>{stats.map(([label, value]) => <View key={label} style={[styles.stat, light && styles.softLight]}><Text style={styles.statValue}>{formatValue(value, 0)}</Text><Text style={[styles.statLabel, light && styles.mutedLight]}>{label}</Text></View>)}</View></View>
           <View style={[styles.cardSection, light && styles.cardLight]}><Text style={styles.eyebrow}>AVAILABILITY</Text><Text style={[styles.body, light && styles.mutedLight]}>Released {pokemon.date_available || 'date unavailable'}</Text><Text style={[styles.body, light && styles.mutedLight]}>Shiny {pokemon.shiny_available ? `available since ${pokemon.date_shiny_available || 'release'}` : 'not available'}</Text><Text style={[styles.body, light && styles.mutedLight]}>{pokemon.costumes?.length ?? 0} costumes · {pokemon.megaEvolutions?.length ?? 0} Mega forms · {pokemon.max?.length ?? 0} Max forms</Text></View>
-          {pokemon.sizes ? <View style={[styles.cardSection, light && styles.cardLight]}><Text style={styles.eyebrow}>SIZE RANGES</Text><View style={styles.sizeGrid}><View style={[styles.sizeCard, light && styles.softLight]}><Image source={{ uri: absoluteUri(assetBaseUrl, '/images/height.png') ?? undefined }} style={[styles.sizeIcon, light && styles.darkIconLight]} /><Text style={[styles.sizeTitle, light && styles.textLight]}>Height</Text><Text style={[styles.sizeValue, light && styles.mutedLight]}>Base {formatValue(pokemon.sizes.pokedex_height)} m</Text><Text style={[styles.sizeValue, light && styles.mutedLight]}>XXS ≤ {formatValue(pokemon.sizes.height_xxs_threshold)} · XXL ≥ {formatValue(pokemon.sizes.height_xxl_threshold)}</Text></View><View style={[styles.sizeCard, light && styles.softLight]}><Image source={{ uri: absoluteUri(assetBaseUrl, '/images/weight.png') ?? undefined }} style={[styles.sizeIcon, light && styles.darkIconLight]} /><Text style={[styles.sizeTitle, light && styles.textLight]}>Weight</Text><Text style={[styles.sizeValue, light && styles.mutedLight]}>Base {formatValue(pokemon.sizes.pokedex_weight)} kg</Text><Text style={[styles.sizeValue, light && styles.mutedLight]}>XXS ≤ {formatValue(pokemon.sizes.weight_xxs_threshold)} · XXL ≥ {formatValue(pokemon.sizes.weight_xxl_threshold)}</Text></View></View></View> : null}
-          {evolutionEntries.length > 0 ? <View style={[styles.cardSection, light && styles.cardLight]}><Text style={styles.eyebrow}>EVOLUTION</Text><View style={styles.evolutionRail}>{evolutionEntries.map((candidate) => { const imageUri = visibleGender === 'Female' ? candidate.femaleImageUri : candidate.imageUri; return <Pressable accessibilityRole="button" key={candidate.id} onPress={() => onOpenEntry(candidate, visibleGender)} style={[styles.evolutionCard, light && styles.softLight]}>{imageUri ? <Image source={{ uri: absoluteUri(assetBaseUrl, imageUri) ?? undefined }} style={styles.evolutionImage} /> : null}<Text style={[styles.evolutionName, light && styles.textLight]}>{candidate.name}</Text></Pressable>; })}</View></View> : null}
+          {pokemon.sizes ? <View style={[styles.cardSection, light && styles.cardLight]}><Text style={styles.eyebrow}>SIZE RANGES</Text><View style={styles.sizeGrid}><View style={[styles.sizeCard, light && styles.softLight]}><Image fadeDuration={0} source={{ uri: absoluteUri(assetBaseUrl, '/images/height.png') ?? undefined }} style={[styles.sizeIcon, light && styles.darkIconLight]} /><Text style={[styles.sizeTitle, light && styles.textLight]}>Height</Text><Text style={[styles.sizeValue, light && styles.mutedLight]}>Base {formatValue(pokemon.sizes.pokedex_height)} m</Text><Text style={[styles.sizeValue, light && styles.mutedLight]}>XXS ≤ {formatValue(pokemon.sizes.height_xxs_threshold)} · XXL ≥ {formatValue(pokemon.sizes.height_xxl_threshold)}</Text></View><View style={[styles.sizeCard, light && styles.softLight]}><Image fadeDuration={0} source={{ uri: absoluteUri(assetBaseUrl, '/images/weight.png') ?? undefined }} style={[styles.sizeIcon, light && styles.darkIconLight]} /><Text style={[styles.sizeTitle, light && styles.textLight]}>Weight</Text><Text style={[styles.sizeValue, light && styles.mutedLight]}>Base {formatValue(pokemon.sizes.pokedex_weight)} kg</Text><Text style={[styles.sizeValue, light && styles.mutedLight]}>XXS ≤ {formatValue(pokemon.sizes.weight_xxs_threshold)} · XXL ≥ {formatValue(pokemon.sizes.weight_xxl_threshold)}</Text></View></View></View> : null}
+          {evolutionEntries.length > 0 ? <View style={[styles.cardSection, light && styles.cardLight]}><Text style={styles.eyebrow}>EVOLUTION</Text><View style={styles.evolutionRail}>{evolutionEntries.map((candidate) => { const imageUri = visibleGender === 'Female' ? candidate.femaleImageUri : candidate.imageUri; return <Pressable accessibilityRole="button" key={candidate.id} onPress={() => onOpenEntry(candidate, visibleGender)} style={[styles.evolutionCard, light && styles.softLight]}>{imageUri ? <Image fadeDuration={0} source={{ uri: absoluteUri(assetBaseUrl, imageUri) ?? undefined }} style={styles.evolutionImage} /> : null}<Text style={[styles.evolutionName, light && styles.textLight]}>{candidate.name}</Text></Pressable>; })}</View></View> : null}
         </View> : null}
 
         {tab === 'battle' ? <View style={styles.tabPanel}>
@@ -250,8 +308,8 @@ export const NativePokedexDetailScreen = ({ allEntries, assetBaseUrl, entry, err
         </View> : null}
 
         {tab === 'more' ? <View style={styles.tabPanel}>
-          <View style={[styles.comboHeader, light && styles.cardLight]}>{activeComboSection?.entries[0] ? <Image source={{ uri: absoluteUri(assetBaseUrl, visibleGender === 'Female' ? activeComboSection.entries[0].femaleImageUri ?? activeComboSection.entries[0].imageUri : activeComboSection.entries[0].imageUri) ?? undefined }} style={styles.comboHeaderImage} /> : null}<View><Text style={[styles.sectionTitle, light && styles.textLight]}>Variant combinations</Text><Text style={[styles.body, light && styles.mutedLight]}>{activeComboSection?.registeredCount ?? 0} / {activeComboSection?.combinations.length ?? 0} registered</Text></View></View>
-          <View style={styles.comboSections}>{comboSections.map((section) => { const imageUri = visibleGender === 'Female' ? section.entries[0]?.femaleImageUri ?? section.entries[0]?.imageUri : section.entries[0]?.imageUri; return <Pressable accessibilityLabel={`Open combination group ${section.label}`} accessibilityRole="button" accessibilityState={{ expanded: section.id === activeComboSection?.id }} key={section.id} onPress={() => { setComboSectionId(section.id); setComboQuery(''); setComboFilters([]); }} style={[styles.comboSectionButton, light && styles.cardLight, section.id === activeComboSection?.id && styles.comboSectionButtonActive, light && section.id === activeComboSection?.id && styles.comboSectionButtonActiveLight]}>{imageUri ? <Image source={{ uri: absoluteUri(assetBaseUrl, imageUri) ?? undefined }} style={styles.comboSectionImage} /> : null}<Text numberOfLines={2} style={[styles.comboSectionLabel, light && styles.textLight]}>{section.label}</Text><Text style={[styles.comboSectionCount, light && styles.mutedLight]}>{section.registeredCount} / {section.combinations.length}</Text></Pressable>; })}</View>
+          <View style={[styles.comboHeader, light && styles.cardLight]}>{activeComboSection?.entries[0] ? <Image fadeDuration={0} source={{ uri: absoluteUri(assetBaseUrl, visibleGender === 'Female' ? activeComboSection.entries[0].femaleImageUri ?? activeComboSection.entries[0].imageUri : activeComboSection.entries[0].imageUri) ?? undefined }} style={styles.comboHeaderImage} /> : null}<View><Text style={[styles.sectionTitle, light && styles.textLight]}>Variant combinations</Text><Text style={[styles.body, light && styles.mutedLight]}>{activeComboSection?.registeredCount ?? 0} / {activeComboSection?.combinations.length ?? 0} registered</Text></View></View>
+          <View style={styles.comboSections}>{comboSections.map((section) => { const imageUri = visibleGender === 'Female' ? section.entries[0]?.femaleImageUri ?? section.entries[0]?.imageUri : section.entries[0]?.imageUri; return <Pressable accessibilityLabel={`Open combination group ${section.label}`} accessibilityRole="button" accessibilityState={{ expanded: section.id === activeComboSection?.id }} key={section.id} onPress={() => { setComboSectionId(section.id); setComboQuery(''); setComboFilters([]); }} style={[styles.comboSectionButton, light && styles.cardLight, section.id === activeComboSection?.id && styles.comboSectionButtonActive, light && section.id === activeComboSection?.id && styles.comboSectionButtonActiveLight]}>{imageUri ? <Image fadeDuration={0} source={{ uri: absoluteUri(assetBaseUrl, imageUri) ?? undefined }} style={styles.comboSectionImage} /> : null}<Text numberOfLines={2} style={[styles.comboSectionLabel, light && styles.textLight]}>{section.label}</Text><Text style={[styles.comboSectionCount, light && styles.mutedLight]}>{section.registeredCount} / {section.combinations.length}</Text></Pressable>; })}</View>
           <View style={[styles.comboControls, light && styles.cardLight]}>
             <Text style={styles.eyebrow}>SEARCH COMBINATIONS</Text>
             <TextInput accessibilityLabel="Search combinations" autoCapitalize="none" onChangeText={setComboQuery} placeholder="Search shiny, female, XXL, lucky, 100%…" placeholderTextColor={light ? '#64757d' : '#7f8e95'} style={[styles.comboSearch, light && styles.comboSearchLight]} value={comboQuery} />

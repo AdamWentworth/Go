@@ -45,7 +45,7 @@ export const NativeTradeHubHeader = ({
     <View style={[styles.header, { paddingTop: 20 + insets.top }, light && styles.headerLight]}>
       <View style={styles.productRow}>
         {assetBaseUrl ? (
-          <Image
+          <Image fadeDuration={0}
             accessibilityElementsHidden
             resizeMode="contain"
             source={{ uri: `${assetBaseUrl.replace(/\/$/, '')}/images/btn_trades.png` }}

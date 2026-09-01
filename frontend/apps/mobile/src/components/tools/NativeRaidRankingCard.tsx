@@ -53,7 +53,7 @@ export const NativeRaidRankingCard = ({ assetBaseUrl, entry, expanded, onOpenPok
         style={[styles.summary, compact && styles.summaryCompact]}
       >
         <View style={[styles.rank, compact && styles.rankCompact, rank <= 3 && styles.rankTop]}><Text style={styles.rankText}>{rank}</Text></View>
-        <Image resizeMode="contain" source={{ uri: uri(assetBaseUrl, entry.imageUri) }} style={styles.image} />
+        <Image fadeDuration={0} resizeMode="contain" source={{ uri: uri(assetBaseUrl, entry.imageUri) }} style={styles.image} />
         <View style={styles.copy}>
           <Text numberOfLines={1} style={[styles.name, compact && styles.nameCompact, light && styles.textLight]}>{entry.name}</Text>
           <Text numberOfLines={1} style={[styles.types, compact && styles.typesCompact, light && styles.mutedLight]}>{entry.types.join(' / ') || 'Unknown type'}</Text>
@@ -76,7 +76,7 @@ export const NativeRaidRankingCard = ({ assetBaseUrl, entry, expanded, onOpenPok
         {[entry.fastMove, entry.chargedMove].map((move, index) => (
           <View key={`${move?.move_id ?? 'move'}-${index}`} style={styles.moveCell}>
             {move?.type_name ? (
-              <Image
+              <Image fadeDuration={0}
                 accessibilityElementsHidden
                 source={{ uri: uri(assetBaseUrl, `/images/types/${move.type_name.toLocaleLowerCase()}.png`) }}
                 style={styles.moveType}

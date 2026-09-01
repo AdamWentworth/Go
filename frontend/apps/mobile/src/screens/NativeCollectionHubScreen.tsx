@@ -1,4 +1,11 @@
-import { type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import {
+  type ReactNode,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import { Animated, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 import type {
   CreateCustomTagRequest,
@@ -124,6 +131,7 @@ export const NativeCollectionHubScreen = ({
   const [clearTagConfirmationOpen, setClearTagConfirmationOpen] = useState(false);
   const [operationNotice, setOperationNotice] = useState<string | null>(null);
   const sliderRef = useRef<NativeHorizontalPageSliderHandle>(null);
+  const tagSelectionTraceRef = useRef<{ key: string; startedAt: number } | null>(null);
   const [pageScrollX] = useState(() => new Animated.Value(width));
   const availableTags = useMemo(
     () => [...inventoryTags, ...wishlistTags],
@@ -140,8 +148,24 @@ export const NativeCollectionHubScreen = ({
     () => selectedTag?.rows ?? (requireTagSelection ? [] : catalogRows),
     [catalogRows, requireTagSelection, selectedTag],
   );
+  const selectedRowsById = useMemo(
+    () => new Map(selectedRows.map((row) => [row.id, row])),
+    [selectedRows],
+  );
+  const selectedRowsByIdRef = useRef(selectedRowsById);
+  const selectedCountRef = useRef(selectedIds.size);
+  useEffect(() => {
+    selectedRowsByIdRef.current = selectedRowsById;
+    selectedCountRef.current = selectedIds.size;
+  }, [selectedIds.size, selectedRowsById]);
+  const selectedRowIds = useMemo(
+    () => selectedRows.map((row) => row.id),
+    [selectedRows],
+  );
   const selectedOrganizerRows = useMemo(
-    () => selectedRows.filter((row) => selectedIds.has(row.id)),
+    () => selectedIds.size === 0
+      ? []
+      : selectedRows.filter((row) => selectedIds.has(row.id)),
     [selectedIds, selectedRows],
   );
   const selectedRowsAreCatalog = selectedOrganizerRows.length > 0
@@ -169,6 +193,20 @@ export const NativeCollectionHubScreen = ({
     });
   }, [activeView, initialTagKey, selectedRows.length, selectedTag?.key]);
 
+  useEffect(() => {
+    const trace = tagSelectionTraceRef.current;
+    if (!trace || trace.key !== selectedTag?.key || activeView !== 'pokemon') return undefined;
+    const frame = requestAnimationFrame(() => {
+      markNativeUiPerformance('collection_tag_result_painted', {
+        interactionLatencyMs: Date.now() - trace.startedAt,
+        rowCount: selectedRows.length,
+        tagKey: trace.key,
+      });
+      tagSelectionTraceRef.current = null;
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [activeView, selectedRows.length, selectedTag?.key]);
+
   const changeView = useCallback((view: NativePokemonHubView) => {
     // Commit the destination immediately so taps never wait for momentum to
     // settle before the selected tab becomes responsive. The underline still
@@ -185,12 +223,27 @@ export const NativeCollectionHubScreen = ({
   }, [onContextChange]);
 
   const selectTag = useCallback((tag: NativeTagSummary) => {
-    setSelectedIds(new Set());
+    tagSelectionTraceRef.current = { key: tag.key, startedAt: Date.now() };
+    markNativeUiPerformance('collection_tag_pressed', {
+      rowCount: tag.rows.length,
+      tagKey: tag.key,
+    });
+    if (selectedIds.size > 0) setSelectedIds(new Set());
+
+    // The model caches tag projections, so selecting a tag is cheap enough to
+    // commit in the press event. Deferring this state made React wait behind
+    // the page animation before painting the selected tag.
+    setActiveView('pokemon');
+    setQuery('');
     setSelectedTagKey(tag.key);
-    changeQuery('');
-    onContextChange?.({ selectedTagKey: tag.key, scrollOffset: 0 });
-    changeView('pokemon');
-  }, [changeQuery, changeView, onContextChange]);
+    sliderRef.current?.setPage(VIEW_ORDER.indexOf('pokemon'));
+    onContextChange?.({
+      activeView: 'pokemon',
+      query: '',
+      selectedTagKey: tag.key,
+      scrollOffset: 0,
+    });
+  }, [onContextChange, selectedIds.size]);
 
   const toggleSelection = useCallback((entryId: string) => {
     setSelectedIds((current) => {
@@ -201,22 +254,28 @@ export const NativeCollectionHubScreen = ({
     });
   }, []);
   const openEntry = useCallback((entryId: string, orderedEntryIds: string[]) => {
-    const row = selectedRows.find((candidate) => candidate.id === entryId);
+    const rowById = selectedRowsByIdRef.current;
+    const row = rowById.get(entryId);
     if (!row) return;
-    if (selectedIds.size > 0 || row.source === 'catalog') {
+    if (selectedCountRef.current > 0 || row.source === 'catalog') {
       toggleSelection(entryId);
       return;
     }
     const orderedRows = orderedEntryIds.flatMap((id) => {
-      const candidate = selectedRows.find((entry) => entry.id === id);
+      const candidate = rowById.get(id);
       return candidate && candidate.source !== 'catalog' ? [candidate] : [];
     });
     onOpenEntry(row, orderedRows);
-  }, [onOpenEntry, selectedIds.size, selectedRows, toggleSelection]);
+  }, [onOpenEntry, toggleSelection]);
   const longPressEntry = useCallback((entryId: string) => {
-    const row = selectedRows.find((candidate) => candidate.id === entryId);
+    const row = selectedRowsByIdRef.current.get(entryId);
     if (row) toggleSelection(entryId);
-  }, [selectedRows, toggleSelection]);
+  }, [toggleSelection]);
+  const clearSelection = useCallback(() => setSelectedIds(new Set()), []);
+  const selectAll = useCallback(
+    () => setSelectedIds(new Set(selectedRowIds)),
+    [selectedRowIds],
+  );
 
   const requestClearTag = useCallback(() => {
     if (requireTagSelection || !selectedTag) return;
@@ -237,7 +296,7 @@ export const NativeCollectionHubScreen = ({
   }, [operationNotice]);
   const inventoryPanel = useMemo(() => (
     <NativeTagsPanelScreen
-      activeTagName={selectedTag?.parent === 'caught' ? selectedTag.name : null}
+      activeTagName={null}
       assetBaseUrl={assetBaseUrl}
       collectionCount={inventoryCount}
       error={error}
@@ -271,7 +330,6 @@ export const NativeCollectionHubScreen = ({
     isSavingTags,
     tagEditingEnabled,
     selectTag,
-    selectedTag,
     warning,
   ]);
   const pokemonPanel = useMemo(() => (
@@ -295,8 +353,8 @@ export const NativeCollectionHubScreen = ({
       onLongPressInstance={longPressEntry}
       showHeader={false}
       selectedIds={selectedIds}
-      onClearSelection={() => setSelectedIds(new Set())}
-      onSelectAll={() => setSelectedIds(new Set(selectedRows.map((row) => row.id)))}
+      onClearSelection={clearSelection}
+      onSelectAll={selectAll}
       onSelectionActionPress={() => setOrganizerOpen(true)}
       selectionAction={selectedRowsAreCatalog ? 'add' : 'organize'}
       tagCanClear={!requireTagSelection && Boolean(selectedTag)}
@@ -317,6 +375,8 @@ export const NativeCollectionHubScreen = ({
     selectedTag,
     selectedIds,
     selectedRowsAreCatalog,
+    clearSelection,
+    selectAll,
     requireTagSelection,
     longPressEntry,
     initialScrollOffset,
@@ -327,7 +387,7 @@ export const NativeCollectionHubScreen = ({
   ]);
   const wishlistPanel = useMemo(() => (
     <NativeTagsPanelScreen
-      activeTagName={selectedTag?.parent === 'wanted' ? selectedTag.name : null}
+      activeTagName={null}
       assetBaseUrl={assetBaseUrl}
       collectionCount={inventoryCount}
       error={error}
@@ -360,7 +420,6 @@ export const NativeCollectionHubScreen = ({
     isSavingTags,
     tagEditingEnabled,
     selectTag,
-    selectedTag,
     warning,
     wishlistTags,
   ]);
@@ -378,8 +437,8 @@ export const NativeCollectionHubScreen = ({
         scrollX={pageScrollX}
         selectionBackgroundColor={light ? '#e3f7dc' : '#34807d'}
         selectionCount={selectedIds.size}
-        onClearSelection={() => setSelectedIds(new Set())}
-        onSelectAll={() => setSelectedIds(new Set(selectedRows.map((row) => row.id)))}
+        onClearSelection={clearSelection}
+        onSelectAll={selectAll}
         secondaryTextColor={secondary}
         textColor={text}
         catalogOwner={catalogOwner}

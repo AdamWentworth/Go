@@ -1,4 +1,10 @@
-import { useMemo, useState } from 'react';
+import {
+  useCallback,
+  useDeferredValue,
+  useMemo,
+  useState,
+  useTransition,
+} from 'react';
 import { StyleSheet, View } from 'react-native';
 import type {
   CollectionParityCardFixture,
@@ -80,6 +86,29 @@ const toParityCard = (
   purified: row.purified,
 });
 
+const ownedCardProjectionCache = new WeakMap<
+  NativeCollectionRow[],
+  CollectionParityCardFixture[]
+>();
+const catalogCardProjectionCache = new WeakMap<
+  NativeCollectionRow[],
+  CollectionParityCardFixture[]
+>();
+
+const toParityCards = (
+  rows: NativeCollectionRow[],
+  showOwnership: boolean,
+): CollectionParityCardFixture[] => {
+  const cache = showOwnership ? ownedCardProjectionCache : catalogCardProjectionCache;
+  const cached = cache.get(rows);
+  if (cached) return cached;
+  const cards = rows.map((row) => toParityCard(row, showOwnership));
+  cache.set(rows, cards);
+  return cards;
+};
+
+const EMPTY_SELECTED_IDS: ReadonlySet<string> = new Set<string>();
+
 export const NativeCollectionParityScreen = ({
   assetBaseUrl,
   rows,
@@ -100,7 +129,7 @@ export const NativeCollectionParityScreen = ({
   onClearTag,
   onViewChange,
   showHeader = true,
-  selectedIds = new Set<string>(),
+  selectedIds = EMPTY_SELECTED_IDS,
   onClearSelection,
   onSelectAll,
   onSelectionActionPress,
@@ -113,20 +142,37 @@ export const NativeCollectionParityScreen = ({
   const [direction, setDirection] = useState<NativeCollectionSortDirection>(initialSortDirection);
   const [sortOpen, setSortOpen] = useState(false);
   const [showEvolutionaryLine, setShowEvolutionaryLine] = useState(initialShowEvolutionaryLine);
+  const [, startResultTransition] = useTransition();
+  const deferredQuery = useDeferredValue(query);
+  const deferredShowEvolutionaryLine = useDeferredValue(showEvolutionaryLine);
   const filteredRows = useMemo(
-    () => filterNativeCollectionRows(rows, 'all', query, {
-      showEvolutionaryLine,
+    () => filterNativeCollectionRows(rows, 'all', deferredQuery, {
+      showEvolutionaryLine: deferredShowEvolutionaryLine,
       universeRows: searchUniverseRows,
     }),
-    [query, rows, searchUniverseRows, showEvolutionaryLine],
+    [deferredQuery, deferredShowEvolutionaryLine, rows, searchUniverseRows],
   );
   const visibleRows = useMemo(
     () => sortNativeCollectionRows(filteredRows, sort, direction),
     [direction, filteredRows, sort],
   );
   const cards = useMemo(
-    () => visibleRows.map((row) => toParityCard(row, Boolean(activeTag))),
+    () => toParityCards(visibleRows, Boolean(activeTag)),
     [activeTag, visibleRows],
+  );
+  const visibleRowIds = useMemo(
+    () => visibleRows.map((row) => row.id),
+    [visibleRows],
+  );
+  const handleCardPress = useCallback(
+    (card: CollectionParityCardFixture) => onOpenInstance(card.id, visibleRowIds),
+    [onOpenInstance, visibleRowIds],
+  );
+  const handleCardLongPress = useMemo(
+    () => onLongPressInstance
+      ? (card: CollectionParityCardFixture) => onLongPressInstance(card.id)
+      : undefined,
+    [onLongPressInstance],
   );
   const sortLabel = NATIVE_SORT_OPTIONS.find((option) => option.key === sort)?.label ?? 'NUMBER';
   const theme = colorScheme === 'light' ? 'light' : 'dark';
@@ -141,8 +187,8 @@ export const NativeCollectionParityScreen = ({
         error={error}
         isLoading={isLoading}
         onActionMenuPress={onOpenCanonicalCollection}
-        onCardPress={(card) => onOpenInstance(card.id, visibleRows.map((row) => row.id))}
-        onCardLongPress={onLongPressInstance ? (card) => onLongPressInstance(card.id) : undefined}
+        onCardPress={handleCardPress}
+        onCardLongPress={handleCardLongPress}
         customTagColor={activeTag?.color}
         onClearTag={onClearTag}
         onQueryChange={onQueryChange}
@@ -162,7 +208,7 @@ export const NativeCollectionParityScreen = ({
         initialScrollOffset={initialScrollOffset}
         onScrollOffsetChange={(scrollOffset) => onContextChange?.({ scrollOffset })}
         query={query}
-        scrollResetKey={`${activeTag?.key ?? 'catalog'}:${query}:${sort}:${direction}:${showEvolutionaryLine}`}
+        scrollResetKey={`${activeTag?.key ?? 'catalog'}:${deferredQuery}:${sort}:${direction}:${deferredShowEvolutionaryLine}`}
         sortDirection={direction}
         sortIconPath={SORT_ICONS[sort]}
         sortLabel={`Sort by ${sortLabel} ${direction}`}
@@ -180,23 +226,25 @@ export const NativeCollectionParityScreen = ({
         direction={direction}
         onClose={() => setSortOpen(false)}
         onSelect={(nextSort) => {
-          if (nextSort === sort) {
-            setDirection((current) => {
-              const nextDirection = current === 'ascending' ? 'descending' : 'ascending';
-              onContextChange?.({ sortDirection: nextDirection, scrollOffset: 0 });
-              return nextDirection;
-            });
-          } else {
-            setSort(nextSort);
-            const nextDirection = nextSort === 'favorite' ? 'descending' : 'ascending';
-            setDirection(nextDirection);
-            onContextChange?.({
-              sort: nextSort,
-              sortDirection: nextDirection,
-              scrollOffset: 0,
-            });
-          }
           setSortOpen(false);
+          startResultTransition(() => {
+            if (nextSort === sort) {
+              setDirection((current) => {
+                const nextDirection = current === 'ascending' ? 'descending' : 'ascending';
+                onContextChange?.({ sortDirection: nextDirection, scrollOffset: 0 });
+                return nextDirection;
+              });
+            } else {
+              setSort(nextSort);
+              const nextDirection = nextSort === 'favorite' ? 'descending' : 'ascending';
+              setDirection(nextDirection);
+              onContextChange?.({
+                sort: nextSort,
+                sortDirection: nextDirection,
+                scrollOffset: 0,
+              });
+            }
+          });
         }}
         open={sortOpen}
         sort={sort}

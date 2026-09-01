@@ -51,9 +51,8 @@ export const NativeActionMenuAnchor = ({ assetBaseUrl, disabled = false, onPress
         pressed && styles.pressed,
       ]}
     >
-      <Image
+      <Image fadeDuration={0}
         accessibilityElementsHidden
-        fadeDuration={0}
         resizeMode="contain"
         source={{ uri: toNativeActionMenuAssetUrl(assetBaseUrl, '/images/btn_action_menu.png') }}
         style={{ height: size, width: size }}

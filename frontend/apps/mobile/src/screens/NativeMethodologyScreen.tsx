@@ -178,7 +178,7 @@ export const NativeMethodologyScreen = ({ assetBaseUrl, content, onBack }: Props
       <View style={[styles.hero, pvp && styles.heroPvp, light && styles.heroLight]}>
         <View style={styles.heroMain}>
           <View style={[styles.iconShell, light && styles.iconShellLight]}>
-            <Image
+            <Image fadeDuration={0}
               accessibilityIgnoresInvertColors
               resizeMode="contain"
               source={{ uri: toAssetUrl(assetBaseUrl, content.iconPath) }}

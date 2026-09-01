@@ -122,7 +122,7 @@ const FilterTile = ({
           : null,
       ]}>
         {section === 'Region' ? <RegionGradient name={filter} /> : null}
-        <Image
+        <Image fadeDuration={0}
           accessibilityElementsHidden
           resizeMode="contain"
           source={{ uri: toAssetUrl(assetBaseUrl, assetPath) }}
@@ -214,7 +214,7 @@ export const NativeCollectionSearchControls = ({
             onPress={closeSearch}
             style={styles.backButton}
           >
-            <Image
+            <Image fadeDuration={0}
               accessibilityElementsHidden
               resizeMode="contain"
               source={{ uri: toAssetUrl(assetBaseUrl, '/images/arrow_right.png') }}
@@ -230,7 +230,7 @@ export const NativeCollectionSearchControls = ({
           ]}
         >
           {expanded ? (
-            <Image
+            <Image fadeDuration={0}
               accessibilityElementsHidden
               source={{ uri: toAssetUrl(assetBaseUrl, '/images/search_icon.png') }}
               style={[styles.searchIconLeft, { tintColor: inputTextColor }]}
@@ -254,7 +254,7 @@ export const NativeCollectionSearchControls = ({
           />
           {!expanded ? (
             <View pointerEvents="none" style={styles.placeholder}>
-              <Image
+              <Image fadeDuration={0}
                 accessibilityElementsHidden
                 source={{ uri: toAssetUrl(assetBaseUrl, '/images/search_icon.png') }}
                 style={[styles.placeholderIcon, { tintColor: '#666666' }]}
@@ -271,7 +271,7 @@ export const NativeCollectionSearchControls = ({
               style={styles.clearButton}
             >
               <View style={styles.clearDivider} />
-              <Image
+              <Image fadeDuration={0}
                 accessibilityElementsHidden
                 resizeMode="contain"
                 source={{ uri: toAssetUrl(assetBaseUrl, '/images/close.png') }}

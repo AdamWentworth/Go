@@ -42,14 +42,10 @@ type OrganizerStage = 'main' | 'wanted-copy' | 'caught-conversion' | 'remove';
 type BuiltInKey = 'favorite' | 'forTrade' | 'mostWanted';
 type ToggleState = 'checked' | 'mixed' | 'unchecked';
 
-const bulkState = (
-  selected: PokemonInstance[],
-  predicate: (instance: PokemonInstance) => boolean,
-): ToggleState => {
-  if (selected.length === 0) return 'unchecked';
-  const count = selected.filter(predicate).length;
+const countState = (count: number, total: number): ToggleState => {
+  if (total === 0) return 'unchecked';
   if (count === 0) return 'unchecked';
-  return count === selected.length ? 'checked' : 'mixed';
+  return count === total ? 'checked' : 'mixed';
 };
 
 const CustomTagChoice = ({
@@ -113,6 +109,30 @@ export const NativePokemonOrganizerSheet = ({
     () => selectedInstances.filter((instance) => instance.is_wanted),
     [selectedInstances],
   );
+  const caughtSelectionState = useMemo(() => {
+    const tagCounts = new Map<string, number>();
+    let favorite = 0;
+    let forTrade = 0;
+    caughtInstances.forEach((instance) => {
+      if (instance.favorite) favorite += 1;
+      if (instance.is_for_trade) forTrade += 1;
+      normalizeNativeTagIds(instance.caught_tags).forEach((tagId) => {
+        tagCounts.set(tagId, (tagCounts.get(tagId) ?? 0) + 1);
+      });
+    });
+    return { favorite, forTrade, tagCounts };
+  }, [caughtInstances]);
+  const wantedSelectionState = useMemo(() => {
+    const tagCounts = new Map<string, number>();
+    let mostWanted = 0;
+    wantedInstances.forEach((instance) => {
+      if (instance.most_wanted) mostWanted += 1;
+      normalizeNativeTagIds(instance.wanted_tags).forEach((tagId) => {
+        tagCounts.set(tagId, (tagCounts.get(tagId) ?? 0) + 1);
+      });
+    });
+    return { mostWanted, tagCounts };
+  }, [wantedInstances]);
   const selectionKind = isCatalog
     ? 'catalog'
     : caughtInstances.length > 0 && wantedInstances.length > 0
@@ -158,12 +178,13 @@ export const NativePokemonOrganizerSheet = ({
     }
     const parent = key === 'mostWanted' ? 'wanted' : 'caught';
     if (isProspectiveParent(parent)) return 'unchecked';
-    const selected = parent === 'wanted' ? wantedInstances : caughtInstances;
-    return bulkState(selected, (instance) => {
-      if (key === 'favorite') return instance.favorite;
-      if (key === 'forTrade') return instance.is_for_trade;
-      return instance.most_wanted;
-    });
+    if (key === 'favorite') {
+      return countState(caughtSelectionState.favorite, caughtInstances.length);
+    }
+    if (key === 'forTrade') {
+      return countState(caughtSelectionState.forTrade, caughtInstances.length);
+    }
+    return countState(wantedSelectionState.mostWanted, wantedInstances.length);
   };
 
   const setBuiltIn = (key: BuiltInKey) => {
@@ -187,9 +208,10 @@ export const NativePokemonOrganizerSheet = ({
     }
     if (isProspectiveParent(parent)) return 'unchecked';
     const selected = parent === 'wanted' ? wantedInstances : caughtInstances;
-    return bulkState(selected, (instance) => normalizeNativeTagIds(
-      parent === 'wanted' ? instance.wanted_tags : instance.caught_tags,
-    ).includes(tagId));
+    const tagCounts = parent === 'wanted'
+      ? wantedSelectionState.tagCounts
+      : caughtSelectionState.tagCounts;
+    return countState(tagCounts.get(tagId) ?? 0, selected.length);
   };
 
   const toggleCustomTag = (parent: 'caught' | 'wanted', tagId: string) => {

@@ -148,12 +148,12 @@ const HighlightCard = ({
   ]}>
     {row?.locationBackgroundUri ? <NativePokemonLocationBackdrop uri={row.locationBackgroundUri} /> : null}
     {row?.imageUri ? (
-      <Image resizeMode="contain" source={{ uri: row.imageUri }} style={styles.highlightImage} />
+      <Image fadeDuration={0} resizeMode="contain" source={{ uri: row.imageUri }} style={styles.highlightImage} />
     ) : (
       <Text style={[styles.emptyStar, light && styles.mutedLight]}>★</Text>
     )}
     {row?.maxKind ? (
-      <Image
+      <Image fadeDuration={0}
         resizeMode="contain"
         source={{ uri: `${assetBaseUrl.replace(/\/$/, '')}/images/${row.maxKind}.png` }}
         style={styles.maxIcon}
@@ -359,7 +359,7 @@ export const NativeTrainerProfileScreen = ({
               ]}
             >
               {!editorDraft ? (
-                <Image
+                <Image fadeDuration={0}
                   accessibilityElementsHidden
                   resizeMode="contain"
                   source={{ uri: `${assetBaseUrl.replace(/\/$/, '')}/images/edit-icon.png` }}

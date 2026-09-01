@@ -1,14 +1,14 @@
 import {
+  FlatList,
   Image,
   Modal,
   Pressable,
-  ScrollView,
   StyleSheet,
   Text,
   TextInput,
   View,
 } from 'react-native';
-import { useMemo, useState } from 'react';
+import { useDeferredValue, useMemo, useState } from 'react';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import type { NativeCollectionRow } from '../collection/collectionModel';
 import { NativePokemonLocationBackdrop } from '../collection/parity/NativePokemonLocationBackdrop';
@@ -39,21 +39,26 @@ export const NativeTrainerShowcasePicker = ({
   const light = useNativeColorScheme() === 'light';
   const animationType = useNativeModalAnimation('slide');
   const [query, setQuery] = useState('');
+  const deferredQuery = useDeferredValue(query);
   const filtered = useMemo(() => {
-    const normalized = query.trim().toLocaleLowerCase();
+    const normalized = deferredQuery.trim().toLocaleLowerCase();
     if (!normalized) return candidates;
     return candidates.filter((row) => (
       row.name.toLocaleLowerCase().includes(normalized)
       || String(row.pokedexNumber).includes(normalized)
       || String(row.cp ?? '').includes(normalized)
     ));
-  }, [candidates, query]);
-  const selected = new Set(selectedIds.filter(Boolean));
+  }, [candidates, deferredQuery]);
+  const selected = useMemo(
+    () => new Set(selectedIds.filter(Boolean)),
+    [selectedIds],
+  );
   const currentId = selectedIds[slotIndex] ?? '';
 
   return (
     <Modal
       animationType={animationType}
+      hardwareAccelerated
       onRequestClose={onClose}
       presentationStyle="fullScreen"
       visible={visible}
@@ -96,8 +101,18 @@ export const NativeTrainerShowcasePicker = ({
         <Text style={[styles.resultCount, light && styles.mutedLight]}>
           {filtered.length.toLocaleString('en-US')} caught Pokémon
         </Text>
-        <ScrollView contentContainerStyle={styles.grid} keyboardShouldPersistTaps="handled">
-          {filtered.map((row) => {
+        <FlatList
+          columnWrapperStyle={styles.gridRow}
+          contentContainerStyle={styles.grid}
+          data={filtered}
+          initialNumToRender={18}
+          keyboardShouldPersistTaps="handled"
+          keyExtractor={(row) => row.id}
+          maxToRenderPerBatch={18}
+          numColumns={3}
+          removeClippedSubviews
+          testID="native-trainer-showcase-grid"
+          renderItem={({ item: row }) => {
             const isCurrent = row.id === currentId;
             const usedElsewhere = !isCurrent && selected.has(row.id);
             return (
@@ -105,7 +120,6 @@ export const NativeTrainerShowcasePicker = ({
                 accessibilityLabel={`${row.name}${isCurrent ? ', selected in this slot' : usedElsewhere ? ', already featured' : ''}`}
                 accessibilityRole="button"
                 disabled={usedElsewhere}
-                key={row.id}
                 onPress={() => onSelect(row.id)}
                 style={[
                   styles.card,
@@ -115,9 +129,10 @@ export const NativeTrainerShowcasePicker = ({
                 ]}
               >
                 {row.locationBackgroundUri ? <NativePokemonLocationBackdrop uri={row.locationBackgroundUri} /> : null}
-                {row.imageUri ? <Image resizeMode="contain" source={{ uri: row.imageUri }} style={styles.image} /> : null}
+                {row.imageUri ? <Image fadeDuration={0} resizeMode="contain" source={{ uri: row.imageUri }} style={styles.image} /> : null}
                 {row.maxKind ? (
                   <Image
+                    fadeDuration={0}
                     resizeMode="contain"
                     source={{ uri: `${assetBaseUrl.replace(/\/$/, '')}/images/${row.maxKind}.png` }}
                     style={styles.maxIcon}
@@ -134,14 +149,16 @@ export const NativeTrainerShowcasePicker = ({
                 ) : null}
               </Pressable>
             );
-          })}
-          {filtered.length === 0 ? (
+          }}
+          updateCellsBatchingPeriod={24}
+          windowSize={7}
+          ListEmptyComponent={(
             <View style={styles.empty}>
               <Text style={[styles.emptyTitle, light && styles.textLight]}>No caught Pokémon match</Text>
               <Text style={[styles.copy, light && styles.mutedLight]}>Try another name, number, or CP.</Text>
             </View>
-          ) : null}
-        </ScrollView>
+          )}
+        />
       </SafeAreaView>
     </Modal>
   );
@@ -166,8 +183,9 @@ const styles = StyleSheet.create({
   clearButtonLight: { backgroundColor: '#fff2f3' },
   clearText: { color: '#ff9ba8', fontSize: 11, fontWeight: '900' },
   resultCount: { paddingHorizontal: 17, paddingVertical: 9, color: '#9db5b4', fontSize: 11, fontWeight: '800' },
-  grid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, paddingHorizontal: 14, paddingBottom: 40 },
-  card: { position: 'relative', width: '31.5%', minHeight: 144, overflow: 'hidden', alignItems: 'center', justifyContent: 'flex-end', padding: 7, borderWidth: 1, borderColor: '#315052', borderRadius: 9, backgroundColor: '#11191a' },
+  grid: { flexGrow: 1, gap: 8, paddingHorizontal: 14, paddingBottom: 40 },
+  gridRow: { gap: 8 },
+  card: { position: 'relative', width: '31.5%', minWidth: 0, minHeight: 144, overflow: 'hidden', alignItems: 'center', justifyContent: 'flex-end', padding: 7, borderWidth: 1, borderColor: '#315052', borderRadius: 9, backgroundColor: '#11191a' },
   cardLight: { borderColor: '#bdc8ca', backgroundColor: '#ffffff' },
   cardSelected: { borderWidth: 2, borderColor: '#35a8ff', backgroundColor: '#12324b' },
   cardDisabled: { opacity: 0.42 },

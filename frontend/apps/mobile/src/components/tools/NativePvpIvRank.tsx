@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useDeferredValue, useMemo, useState } from "react";
 import {
   ActivityIndicator,
   Image,
@@ -139,6 +139,8 @@ export const NativePvpIvRank = ({
   const [selectedInstanceId, setSelectedInstanceId] = useState<string | null>(null);
   const [ivs, setIvs] = useState({ attack: 0, defense: 15, stamina: 15 });
   const [bestBuddy, setBestBuddy] = useState(false);
+  const deferredBestBuddy = useDeferredValue(bestBuddy);
+  const deferredQuery = useDeferredValue(query);
   const variants = useMemo(
     () => createPokemonVariants(catalog),
     [catalog],
@@ -155,10 +157,10 @@ export const NativePvpIvRank = ({
     () => rankOwnedPvPIvEntries(
       ownedRoster.entries,
       league,
-      bestBuddy ? 51 : 50,
+      deferredBestBuddy ? 51 : 50,
       cpLimit,
     ),
-    [bestBuddy, cpLimit, league, ownedRoster.entries],
+    [cpLimit, deferredBestBuddy, league, ownedRoster.entries],
   );
   const ownedOptions = useMemo(() => {
     const unique = new Map<string, PvPIvPokemonOption>();
@@ -169,7 +171,8 @@ export const NativePvpIvRank = ({
   const selectedOption = selectedOptionId == null
     ? null
     : availableOptions.find((option) => option.id === selectedOptionId) ?? null;
-  const normalizedQuery = query.trim().toLocaleLowerCase();
+  const deferredSelectedOption = useDeferredValue(selectedOption);
+  const normalizedQuery = deferredQuery.trim().toLocaleLowerCase();
   const matchingCatalog = useMemo(
     () => pokemonOptions
       .filter((option) =>
@@ -190,18 +193,18 @@ export const NativePvpIvRank = ({
     [normalizedQuery, rankedOwnedEntries],
   );
   const ivRankings = useMemo(
-    () => selectedOption
+    () => deferredSelectedOption?.id === selectedOption?.id && deferredSelectedOption
       ? buildPvPIvRankings(
           {
-            attack: selectedOption.attack,
-            defense: selectedOption.defense,
-            stamina: selectedOption.stamina,
+            attack: deferredSelectedOption.attack,
+            defense: deferredSelectedOption.defense,
+            stamina: deferredSelectedOption.stamina,
           },
           league,
-          bestBuddy ? 51 : 50,
+          deferredBestBuddy ? 51 : 50,
         )
       : [],
-    [bestBuddy, league, selectedOption],
+    [deferredBestBuddy, deferredSelectedOption, league, selectedOption?.id],
   );
   const rankedOwnedCopies = useMemo(() => {
     if (!selectedOption || scope !== "owned") return [];
@@ -221,9 +224,10 @@ export const NativePvpIvRank = ({
   const evaluatedIvs = scope === "owned" && selectedOwnedCopy
     ? selectedOwnedCopy.entry.ivs
     : ivs;
+  const deferredEvaluatedIvs = useDeferredValue(evaluatedIvs);
   const result = useMemo(
-    () => rankPvPIvSpread(ivRankings, evaluatedIvs),
-    [evaluatedIvs, ivRankings],
+    () => rankPvPIvSpread(ivRankings, deferredEvaluatedIvs),
+    [deferredEvaluatedIvs, ivRankings],
   );
   const changeScope = (next: Scope) => {
     if (next === "owned" && !signedIn) return;
@@ -309,12 +313,12 @@ export const NativePvpIvRank = ({
                   ? matchingOwned.map((rankedEntry) => {
                       const { entry } = rankedEntry;
                       return <Pressable accessibilityLabel={`Check ${entry.nickname || entry.pokemon.name}, ${entry.pokemon.name}, IV ${entry.ivs.attack}/${entry.ivs.defense}/${entry.ivs.stamina}, ${entry.metaRank == null ? "not meta ranked" : `Meta rank ${entry.metaRank}`}, IV rank ${rankedEntry.ivRank}`} accessibilityRole="button" key={entry.instanceId} onPress={() => chooseOwned(entry)} style={[styles.option, light && styles.controlLight]}>
-                        <Image resizeMode="contain" source={{ uri: absoluteUri(assetBaseUrl, entry.imageUrl) }} style={styles.optionImage} />
+                        <Image fadeDuration={0} resizeMode="contain" source={{ uri: absoluteUri(assetBaseUrl, entry.imageUrl) }} style={styles.optionImage} />
                         <View style={styles.optionCopy}><Text style={[styles.optionNumber, light && styles.mutedLight]}>#{String(entry.pokemon.pokedexNumber).padStart(4, "0")} {entry.pokemon.name}</Text><Text numberOfLines={2} style={[styles.optionName, light && styles.textLight]}>{entry.nickname || entry.pokemon.name}{entry.favorite ? "  ★" : ""}</Text><Text style={[styles.optionMeta, light && styles.mutedLight]}>{formatCurrentDetails(entry)}</Text><Text style={[styles.optionMeta, light && styles.mutedLight]}>{entry.ivs.attack}/{entry.ivs.defense}/{entry.ivs.stamina} IV</Text><View style={styles.rankPills}><Text style={[styles.rankPill, entry.metaRank == null && styles.rankPillMuted]}>{entry.metaRank == null ? "Not ranked" : `Meta #${entry.metaRank}`}</Text><Text style={styles.rankPill}>IV #{rankedEntry.ivRank}</Text></View></View>
                       </Pressable>;
                     })
                   : matchingCatalog.map((option) => <Pressable accessibilityRole="button" key={option.id} onPress={() => chooseCatalog(option)} style={[styles.option, light && styles.controlLight]}>
-                      <Image resizeMode="contain" source={{ uri: absoluteUri(assetBaseUrl, option.imageUrl) }} style={styles.optionImage} />
+                      <Image fadeDuration={0} resizeMode="contain" source={{ uri: absoluteUri(assetBaseUrl, option.imageUrl) }} style={styles.optionImage} />
                       <View style={styles.optionCopy}><Text style={[styles.optionNumber, light && styles.mutedLight]}>#{String(option.pokedexNumber).padStart(4, "0")}</Text><Text numberOfLines={2} style={[styles.optionName, light && styles.textLight]}>{option.name}</Text></View>
                     </Pressable>)}
               </View>
@@ -323,7 +327,7 @@ export const NativePvpIvRank = ({
         ) : (
           <>
             <View style={[styles.selected, light && styles.controlLight]}>
-              <Image resizeMode="contain" source={{ uri: absoluteUri(assetBaseUrl, selectedOwnedCopy?.entry.imageUrl ?? selectedOption.imageUrl) }} style={styles.selectedImage} />
+              <Image fadeDuration={0} resizeMode="contain" source={{ uri: absoluteUri(assetBaseUrl, selectedOwnedCopy?.entry.imageUrl ?? selectedOption.imageUrl) }} style={styles.selectedImage} />
               <View style={styles.selectedCopy}><Text style={[styles.optionNumber, light && styles.mutedLight]}>#{String(selectedOption.pokedexNumber).padStart(4, "0")}</Text><Text style={[styles.selectedName, light && styles.textLight]}>{selectedOption.name}</Text><Text style={[styles.optionMeta, light && styles.mutedLight]}>{selectedOption.types.join(" / ")}</Text><Text style={[styles.optionMeta, light && styles.mutedLight]}>{scope === "owned" ? `${rankedOwnedCopies.length} ${rankedOwnedCopies.length === 1 ? "caught copy" : "caught copies"} with complete IVs` : `${selectedOption.attack} ATK · ${selectedOption.defense} DEF · ${selectedOption.stamina} STA`}</Text></View>
             </View>
             {scope === "catalog" ? <View style={styles.ivInputs}>
@@ -339,7 +343,7 @@ export const NativePvpIvRank = ({
                 {rankedOwnedCopies.map(({ entry, result: copyResult }) => {
                   const active = selectedOwnedCopy?.entry.instanceId === entry.instanceId;
                   return <Pressable accessibilityLabel={`View ${entry.nickname || entry.pokemon.name}, IV Rank ${copyResult.selected.rank}`} accessibilityRole="button" key={entry.instanceId} onPress={() => setSelectedInstanceId(entry.instanceId)} style={[styles.copy, light && styles.controlLight, active && styles.copyActive]}>
-                    <Image resizeMode="contain" source={{ uri: absoluteUri(assetBaseUrl, entry.imageUrl) }} style={styles.copyImage} />
+                    <Image fadeDuration={0} resizeMode="contain" source={{ uri: absoluteUri(assetBaseUrl, entry.imageUrl) }} style={styles.copyImage} />
                     <View style={styles.optionCopy}><Text style={[styles.optionName, light && styles.textLight]}>{entry.nickname || entry.pokemon.name}{entry.favorite ? "  ★" : ""}</Text><Text style={[styles.optionMeta, light && styles.mutedLight]}>{formatCurrentDetails(entry)}</Text><Text style={[styles.optionMeta, light && styles.mutedLight]}>{entry.ivs.attack}/{entry.ivs.defense}/{entry.ivs.stamina} IV</Text></View>
                     <Text style={styles.copyRank}>#{copyResult.selected.rank}</Text>
                   </Pressable>;

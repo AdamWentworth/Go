@@ -136,7 +136,7 @@ export const NativeGuestHomeScreen = ({
           <GuestHeroBackground light={light} />
           <View style={[styles.topbar, { paddingTop: 8 + insets.top }]}>
           <Pressable accessibilityLabel="Pokémon Go Nexus home" accessibilityRole="button" onPress={() => onNavigate('/')} style={styles.brand}>
-            <Image source={{ uri: toAssetUrl(assetBaseUrl, '/images/logo/logo.png') }} style={styles.brandIcon} />
+            <Image fadeDuration={0} source={{ uri: toAssetUrl(assetBaseUrl, '/images/logo/logo.png') }} style={styles.brandIcon} />
             {!compactNavigation ? <Text style={[styles.brandText, light && styles.textLight]}>Pokémon Go Nexus</Text> : null}
           </Pressable>
           <View style={styles.topActions}>
@@ -148,7 +148,7 @@ export const NativeGuestHomeScreen = ({
           </View>
 
           <View style={[styles.hero, compactNavigation && styles.heroCompact]}>
-          <Image
+          <Image fadeDuration={0}
             accessibilityLabel="Pokémon Go Nexus"
             resizeMode="contain"
             source={{ uri: toAssetUrl(assetBaseUrl, '/images/logo/hero-lockup.png') }}
@@ -173,17 +173,17 @@ export const NativeGuestHomeScreen = ({
               <View style={[styles.exchangePokemon, styles.exchangePokemonTrade, light && styles.exchangePokemonLight]}>
                 <Text style={[styles.tradeLabel, light && styles.matchEyebrowLight]}>YOU OFFER</Text>
                 <View style={styles.exchangeStage}>
-                  <Image resizeMode="contain" source={{ uri: toAssetUrl(assetBaseUrl, '/images/shiny_gigantamax/shiny_gigantamax_6.png') }} style={styles.exchangeImage} />
-                  <Image resizeMode="contain" source={{ uri: toAssetUrl(assetBaseUrl, '/images/gigantamax.png') }} style={styles.exchangeMaxIcon} />
+                  <Image fadeDuration={0} resizeMode="contain" source={{ uri: toAssetUrl(assetBaseUrl, '/images/shiny_gigantamax/shiny_gigantamax_6.png') }} style={styles.exchangeImage} />
+                  <Image fadeDuration={0} resizeMode="contain" source={{ uri: toAssetUrl(assetBaseUrl, '/images/gigantamax.png') }} style={styles.exchangeMaxIcon} />
                 </View>
                 <Text style={[styles.exchangeName, light && styles.textLight]}>Shiny Gigantamax Charizard</Text>
                 <Text style={[styles.exchangeMeta, light && styles.mutedLight]}>On your For Trade list</Text>
               </View>
-              <Image resizeMode="contain" source={{ uri: toAssetUrl(assetBaseUrl, '/images/pogo_trade_icon.png') }} style={styles.exchangeIcon} />
+              <Image fadeDuration={0} resizeMode="contain" source={{ uri: toAssetUrl(assetBaseUrl, '/images/pogo_trade_icon.png') }} style={styles.exchangeIcon} />
               <View style={[styles.exchangePokemon, styles.exchangePokemonWanted, light && styles.exchangePokemonLight]}>
                 <Text style={[styles.wantedLabel, light && styles.wantedLabelLight]}>YOU WANT</Text>
                 <View style={styles.exchangeStage}>
-                  <Image resizeMode="contain" source={{ uri: toAssetUrl(assetBaseUrl, '/images/costumes_shiny/pokemon_25_detective_shiny.png') }} style={styles.exchangeImage} />
+                  <Image fadeDuration={0} resizeMode="contain" source={{ uri: toAssetUrl(assetBaseUrl, '/images/costumes_shiny/pokemon_25_detective_shiny.png') }} style={styles.exchangeImage} />
                 </View>
                 <Text style={[styles.exchangeName, light && styles.textLight]}>Shiny Detective Pikachu</Text>
                 <Text style={[styles.exchangeMeta, light && styles.mutedLight]}>On your Wanted list</Text>
@@ -203,7 +203,7 @@ export const NativeGuestHomeScreen = ({
           <View style={styles.features}>
             {CORE_FEATURES.map((feature) => (
               <Pressable key={feature.title} accessibilityRole="button" onPress={() => onNavigate(feature.path)} style={({ pressed }) => [styles.feature, light && styles.surfaceLight, pressed && styles.pressed]}>
-                <View style={[styles.featureGlyph, { backgroundColor: `${feature.accent}24` }]}><Image resizeMode="contain" source={{ uri: toAssetUrl(assetBaseUrl, feature.image) }} style={styles.featureImage} /></View>
+                <View style={[styles.featureGlyph, { backgroundColor: `${feature.accent}24` }]}><Image fadeDuration={0} resizeMode="contain" source={{ uri: toAssetUrl(assetBaseUrl, feature.image) }} style={styles.featureImage} /></View>
                 <View style={styles.featureCopy}><Text style={[styles.featureTitle, light && styles.textLight]}>{feature.title}</Text><Text style={[styles.featureDetail, light && styles.mutedLight]}>{feature.detail}</Text></View>
                 <Text style={[styles.arrow, light && styles.mutedLight]}>›</Text>
               </Pressable>
@@ -218,11 +218,11 @@ export const NativeGuestHomeScreen = ({
                   <Text style={styles.stepNumber}>{number}</Text>
                   <View style={styles.stepVisual}>
                     <View style={styles.stepPokemonStage}>
-                      <Image resizeMode="contain" source={{ uri: toAssetUrl(assetBaseUrl, '/images/shiny_gigantamax/shiny_gigantamax_6.png') }} style={styles.stepPokemon} />
-                      <Image resizeMode="contain" source={{ uri: toAssetUrl(assetBaseUrl, '/images/gigantamax.png') }} style={styles.stepMaxIcon} />
+                      <Image fadeDuration={0} resizeMode="contain" source={{ uri: toAssetUrl(assetBaseUrl, '/images/shiny_gigantamax/shiny_gigantamax_6.png') }} style={styles.stepPokemon} />
+                      <Image fadeDuration={0} resizeMode="contain" source={{ uri: toAssetUrl(assetBaseUrl, '/images/gigantamax.png') }} style={styles.stepMaxIcon} />
                     </View>
                     <NativeUiIcon color="#299cf5" name={(kind === 'collection' ? 'catalog' : kind === 'match' ? 'search' : 'trade') as NativeUiIconName} size={22} />
-                    {kind !== 'collection' ? <Image resizeMode="contain" source={{ uri: toAssetUrl(assetBaseUrl, '/images/costumes_shiny/pokemon_25_detective_shiny.png') }} style={styles.stepPokemon} /> : null}
+                    {kind !== 'collection' ? <Image fadeDuration={0} resizeMode="contain" source={{ uri: toAssetUrl(assetBaseUrl, '/images/costumes_shiny/pokemon_25_detective_shiny.png') }} style={styles.stepPokemon} /> : null}
                   </View>
                   <Text style={[styles.stepTitle, light && styles.textLight]}>{title}</Text>
                   <Text style={[styles.stepDetail, light && styles.mutedLight]}>{detail}</Text>
@@ -254,13 +254,13 @@ export const NativeGuestHomeScreen = ({
             <View style={styles.toolsHeading}><Text style={[styles.blockTitle, light && styles.textLight]}>Trainer tools</Text><Text style={[styles.toolsDetail, light && styles.mutedLight]}>Jump directly to the reference and planning tools you need.</Text></View>
             <View style={styles.tools}>
               {TOOLS.map(([label, detail, icon, path]) => (
-                <Pressable accessibilityRole="button" key={path} onPress={() => onNavigate(path)} style={[styles.tool, light && styles.surfaceLight]}><Image resizeMode="contain" source={{ uri: toAssetUrl(assetBaseUrl, icon) }} style={styles.toolIcon} /><View style={styles.toolCopy}><Text style={[styles.toolText, light && styles.textLight]}>{label}</Text><Text style={[styles.toolDetail, light && styles.mutedLight]}>{detail}</Text></View><Text style={[styles.arrow, light && styles.mutedLight]}>›</Text></Pressable>
+                <Pressable accessibilityRole="button" key={path} onPress={() => onNavigate(path)} style={[styles.tool, light && styles.surfaceLight]}><Image fadeDuration={0} resizeMode="contain" source={{ uri: toAssetUrl(assetBaseUrl, icon) }} style={styles.toolIcon} /><View style={styles.toolCopy}><Text style={[styles.toolText, light && styles.textLight]}>{label}</Text><Text style={[styles.toolDetail, light && styles.mutedLight]}>{detail}</Text></View><Text style={[styles.arrow, light && styles.mutedLight]}>›</Text></Pressable>
               ))}
             </View>
           </View>
 
           <View style={[styles.cta, light && styles.ctaLight]}>
-            <Image source={{ uri: toAssetUrl(assetBaseUrl, '/images/logo/lockup.png') }} style={styles.ctaLogo} />
+            <Image fadeDuration={0} source={{ uri: toAssetUrl(assetBaseUrl, '/images/logo/lockup.png') }} style={styles.ctaLogo} />
             <View style={styles.ctaCopy}><Text style={[styles.eyebrow, light && styles.eyebrowLight]}>READY TO TRADE SMARTER?</Text><Text style={[styles.ctaTitle, light && styles.textLight]}>Bring your collection. Find the right trainer.</Text><Text style={[styles.ctaDetail, light && styles.mutedLight]}>Create your free account, publish your trade list, and discover exchanges that work for both trainers.</Text></View>
             <View style={styles.ctaActions}><Pressable accessibilityRole="button" onPress={() => onNavigate('/register')} style={styles.primary}><Text style={styles.primaryText}>Create account →</Text></Pressable><Pressable accessibilityRole="button" onPress={() => onNavigate('/getting-started')} style={[styles.secondary, light && styles.secondaryLight]}><Text style={[styles.secondaryText, light && styles.textLight]}>Quick start guide</Text></Pressable></View>
           </View>

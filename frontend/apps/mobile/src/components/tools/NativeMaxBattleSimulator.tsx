@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useDeferredValue, useMemo, useState } from 'react';
 import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import type {
   MaxRankingEntry,
@@ -134,22 +134,25 @@ export const NativeMaxBattleSimulator = ({
     () => resolveTeam(candidates, selection),
     [candidates, selection],
   );
-  const scenarios = useMemo(() => team ? {
+  const deferredDifficulty = useDeferredValue(difficulty);
+  const deferredTeam = useDeferredValue(team);
+  const deferredTrainerCount = useDeferredValue(trainerCount);
+  const scenarios = useMemo(() => deferredTeam ? {
     standard: simulateMaxBattle({
       boss,
       execution: 'standard',
-      trainerCount,
-      team,
-      tier: difficulty,
+      trainerCount: deferredTrainerCount,
+      team: deferredTeam,
+      tier: deferredDifficulty,
     }),
     'stress-test': simulateMaxBattle({
       boss,
       execution: 'stress-test',
-      trainerCount,
-      team,
-      tier: difficulty,
+      trainerCount: deferredTrainerCount,
+      team: deferredTeam,
+      tier: deferredDifficulty,
     }),
-  } : null, [boss, difficulty, team, trainerCount]);
+  } : null, [boss, deferredDifficulty, deferredTeam, deferredTrainerCount]);
   const result = scenarios?.[execution] ?? null;
 
   const cycleCandidate = (role: MaxRole) => {
@@ -249,7 +252,7 @@ export const NativeMaxBattleSimulator = ({
                   style={[styles.member, light && styles.memberLight]}
                 >
                   <Text style={[styles.role, styles[`role_${role}`]]}>{ROLE_ICONS[role]} {ROLE_LABELS[role]}</Text>
-                  <Image
+                  <Image fadeDuration={0}
                     resizeMode="contain"
                     source={{ uri: absoluteUri(assetBaseUrl, entry.variant.currentImage || entry.variant.image_url) }}
                     style={styles.image}

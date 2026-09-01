@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from '@testing-library/react-native';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import type {
   BasePokemon,
@@ -125,11 +125,12 @@ describe('NativePvpScreen', () => {
     expect(screen.getByText('RANK 1 SPREAD')).toBeTruthy();
   });
 
-  it('runs the shared battle mechanics and renders a canonical result', () => {
+  it('paints pending feedback before running shared battle mechanics', async () => {
     renderScreen();
     fireEvent.press(screen.getByText('Battle Lab'));
     fireEvent.press(screen.getByLabelText('Simulate battle'));
-    expect(screen.getByText('SIMULATED RESULT')).toBeTruthy();
+    expect(screen.getByText('Simulating…')).toBeTruthy();
+    await waitFor(() => expect(screen.getByText('SIMULATED RESULT')).toBeTruthy());
     expect(screen.getByText(/wins|draw/i)).toBeTruthy();
     expect(screen.getAllByText(/rating/)).toHaveLength(2);
   });

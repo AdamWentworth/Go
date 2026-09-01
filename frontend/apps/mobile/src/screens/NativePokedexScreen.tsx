@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useDeferredValue, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
   FlatList,
@@ -216,6 +216,7 @@ export const NativePokedexScreen = ({ assetBaseUrl, entries, error = null, isLoa
   const [facets, setFacets] = useState<NativePokedexFacet[]>([]);
   const [generation, setGeneration] = useState<number | null>(null);
   const [query, setQuery] = useState('');
+  const deferredQuery = useDeferredValue(query);
   const [bulkConfirmation, setBulkConfirmation] = useState<{
     registered: boolean;
     registrations: NativePokedexManualRegistration[];
@@ -223,13 +224,28 @@ export const NativePokedexScreen = ({ assetBaseUrl, entries, error = null, isLoa
   const categories = advanced ? [...BASE_CATEGORIES, ...COMBO_CATEGORIES] : BASE_CATEGORIES;
   const qualityFacets = advanced ? ADVANCED_FACETS : BASE_FACETS;
   const activeCategory = categories.find(({ value }) => value === category) ?? BASE_CATEGORIES[0];
-  const filtered = useMemo(() => filterNativePokedexEntries({ category, entries, facets, generation, query }), [category, entries, facets, generation, query]);
+  const entriesByGeneration = useMemo(() => {
+    const grouped = new Map<number, NativePokedexEntry[]>();
+    entries.forEach((entry) => {
+      const rows = grouped.get(entry.generation) ?? [];
+      rows.push(entry);
+      grouped.set(entry.generation, rows);
+    });
+    return grouped;
+  }, [entries]);
+  const filtered = useMemo(() => filterNativePokedexEntries({
+    category,
+    entries: generation == null ? entries : entriesByGeneration.get(generation) ?? [],
+    facets,
+    generation: null,
+    query: deferredQuery,
+  }), [category, deferredQuery, entries, entriesByGeneration, facets, generation]);
   const regionCards = useMemo(() => REGIONS.map((region) => {
     const regionEntries = filterNativePokedexEntries({
       category,
-      entries,
+      entries: entriesByGeneration.get(region.generation) ?? [],
       facets,
-      generation: region.generation,
+      generation: null,
       query: '',
     });
     const previews: NativePokedexEntry[] = [];
@@ -251,7 +267,7 @@ export const NativePokedexScreen = ({ assetBaseUrl, entries, error = null, isLoa
     };
   }).filter(({ entries: regionEntries }) => regionEntries.length > 0), [
     category,
-    entries,
+    entriesByGeneration,
     facets,
   ]);
   // Regional forms can share a national dex number while belonging to a
@@ -312,7 +328,7 @@ export const NativePokedexScreen = ({ assetBaseUrl, entries, error = null, isLoa
         numColumns={columns}
         ListHeaderComponent={<View>
           <View style={styles.topbar}>
-            <Image source={{ uri: absoluteUri(assetBaseUrl, '/images/pokedex-icon.png') ?? undefined }} style={styles.headerIcon} />
+            <Image fadeDuration={0} source={{ uri: absoluteUri(assetBaseUrl, '/images/pokedex-icon.png') ?? undefined }} style={styles.headerIcon} />
             <View style={styles.headerCopy}><Text style={[styles.eyebrow, light && styles.eyebrowLight]}>TRAINER REFERENCE</Text><Text accessibilityRole="header" style={[styles.title, light && styles.textLight]}>Pokédex</Text><Text style={[styles.headerDetail, light && styles.mutedLight]}>Explore every released species, form, and collectible variant.</Text></View>
           </View>
           <View style={styles.headerTools}>
@@ -320,15 +336,15 @@ export const NativePokedexScreen = ({ assetBaseUrl, entries, error = null, isLoa
             <Pressable aria-checked={advanced} accessibilityLabel="Advanced Pokédex filters" accessibilityRole="switch" accessibilityState={{ checked: advanced }} onPress={toggleAdvanced} style={[styles.advanced, light && styles.chipLight, advanced && styles.advancedActive]}><Text style={[styles.advancedText, light && styles.textLight, advanced && styles.activeText]}>Advanced</Text><View style={[styles.switchTrack, advanced && styles.switchTrackActive]}><View style={[styles.switchThumb, advanced && styles.switchThumbActive]} /></View></Pressable>
           </View>
           <ScrollView accessibilityLabel="Pokédex variant category" accessibilityRole="tablist" contentContainerStyle={styles.railContent} horizontal showsHorizontalScrollIndicator={false}>
-            {categories.map((definition) => { const active = category === definition.value; return <Pressable aria-selected={active} accessibilityRole="tab" accessibilityState={{ selected: active }} key={definition.value} onPress={() => selectCategory(definition.value)} style={[styles.categoryChip, light && styles.chipLight, active && { borderColor: definition.accent, backgroundColor: `${definition.accent}35` }]}><View style={styles.iconStack}>{definition.icons.map((icon) => <Image key={icon} source={{ uri: absoluteUri(assetBaseUrl, icon) ?? undefined }} style={styles.categoryIcon} />)}</View><Text style={[styles.chipText, light && styles.textLight, active && { color: light ? readableLightAccent(definition.accent) : definition.accent }]}>{definition.label}</Text></Pressable>; })}
+            {categories.map((definition) => { const active = category === definition.value; return <Pressable aria-selected={active} accessibilityRole="tab" accessibilityState={{ selected: active }} key={definition.value} onPress={() => selectCategory(definition.value)} style={[styles.categoryChip, light && styles.chipLight, active && { borderColor: definition.accent, backgroundColor: `${definition.accent}35` }]}><View style={styles.iconStack}>{definition.icons.map((icon) => <Image fadeDuration={0} key={icon} source={{ uri: absoluteUri(assetBaseUrl, icon) ?? undefined }} style={styles.categoryIcon} />)}</View><Text style={[styles.chipText, light && styles.textLight, active && { color: light ? readableLightAccent(definition.accent) : definition.accent }]}>{definition.label}</Text></Pressable>; })}
           </ScrollView>
           <ScrollView accessibilityLabel="Pokédex quality facets" contentContainerStyle={styles.qualityRail} horizontal showsHorizontalScrollIndicator={false}>
-            {qualityFacets.map((facet) => { const active = facets.includes(facet.value); const disabled = category.includes('shadow') && (facet.value === 'lucky' || facet.value === 'purified'); return <Pressable accessibilityRole="button" accessibilityState={{ disabled, selected: active }} disabled={disabled} key={facet.value} onPress={() => toggleFacet(facet.value)} style={[styles.facetChip, light && styles.chipLight, active && { borderColor: facet.accent, backgroundColor: `${facet.accent}35` }, disabled && styles.disabled]}><Image source={{ uri: absoluteUri(assetBaseUrl, facet.icon) ?? undefined }} style={[styles.facetIcon, light && DARK_ON_LIGHT_FACET_ICONS.has(facet.icon) && styles.darkFacetIcon]} /><Text style={[styles.facetText, light && styles.textLight, active && { color: light ? readableLightAccent(facet.accent) : facet.accent }]}>{facet.label}</Text></Pressable>; })}
+            {qualityFacets.map((facet) => { const active = facets.includes(facet.value); const disabled = category.includes('shadow') && (facet.value === 'lucky' || facet.value === 'purified'); return <Pressable accessibilityRole="button" accessibilityState={{ disabled, selected: active }} disabled={disabled} key={facet.value} onPress={() => toggleFacet(facet.value)} style={[styles.facetChip, light && styles.chipLight, active && { borderColor: facet.accent, backgroundColor: `${facet.accent}35` }, disabled && styles.disabled]}><Image fadeDuration={0} source={{ uri: absoluteUri(assetBaseUrl, facet.icon) ?? undefined }} style={[styles.facetIcon, light && DARK_ON_LIGHT_FACET_ICONS.has(facet.icon) && styles.darkFacetIcon]} /><Text style={[styles.facetText, light && styles.textLight, active && { color: light ? readableLightAccent(facet.accent) : facet.accent }]}>{facet.label}</Text></Pressable>; })}
           </ScrollView>
           {error ? <View accessibilityRole="alert" style={styles.error}><Text style={styles.errorTitle}>Pokédex unavailable</Text><Text style={styles.errorText}>{error}</Text><Pressable accessibilityRole="button" onPress={onRetry} style={styles.retry}><Text style={styles.retryText}>Retry</Text></Pressable></View> : null}
           {isLoading ? <View style={styles.loading}><ActivityIndicator color="#299cf5" /><Text style={[styles.loadingText, light && styles.mutedLight]}>Opening Pokédex…</Text></View> : null}
           {!isLoading && !error && generation == null ? <View accessibilityLabel={`${activeCategory.label} regions`} style={styles.regions}>
-            {regionCards.map((region) => { const complete = region.entries.length > 0 && region.registered >= region.entries.length; return <Pressable accessibilityLabel={`Open ${region.label}`} accessibilityRole="button" key={region.label} onPress={() => { setGeneration(region.generation); setQuery(''); }} style={[styles.regionCard, light && styles.regionCardLight, { borderColor: `${region.accent}bb` }]}><RegionCardBackdrop accent={region.accent} light={light} secondary={region.secondary} tertiary={region.tertiary} /><View style={styles.regionCopy}><Text style={[styles.regionName, { color: region.text }]}>{region.label}</Text><Text style={[styles.regionStatus, light && styles.mutedLight]}>{complete ? 'Complete!' : 'In progress'}</Text><Text style={[styles.regionCount, light && styles.textLight]}>{region.registered} / {region.entries.length}</Text><View style={[styles.regionBadge, { borderColor: `${region.accent}aa` }]}><Text style={[styles.regionBadgeText, { color: complete ? region.text : '#f0b429' }]}>{complete ? '✓' : '!'}</Text></View></View><View style={styles.regionArt}>{region.previews.map((entry, index) => { const imageUri = useFemaleImages ? entry.femaleImageUri : entry.imageUri; return <View key={entry.id} style={[styles.regionPreview, { left: `${8 + index * 31}%`, zIndex: index + 1 }]}>{imageUri ? <Image resizeMode="contain" source={{ uri: absoluteUri(assetBaseUrl, imageUri) ?? undefined }} style={styles.regionPokemon} /> : null}{entry.maxKind ? <Image source={{ uri: absoluteUri(assetBaseUrl, `/images/${entry.maxKind}.png`) ?? undefined }} style={styles.regionMaxIcon} /> : null}</View>; })}</View></Pressable>; })}
+            {regionCards.map((region) => { const complete = region.entries.length > 0 && region.registered >= region.entries.length; return <Pressable accessibilityLabel={`Open ${region.label}`} accessibilityRole="button" key={region.label} onPress={() => { setGeneration(region.generation); setQuery(''); }} style={[styles.regionCard, light && styles.regionCardLight, { borderColor: `${region.accent}bb` }]}><RegionCardBackdrop accent={region.accent} light={light} secondary={region.secondary} tertiary={region.tertiary} /><View style={styles.regionCopy}><Text style={[styles.regionName, { color: region.text }]}>{region.label}</Text><Text style={[styles.regionStatus, light && styles.mutedLight]}>{complete ? 'Complete!' : 'In progress'}</Text><Text style={[styles.regionCount, light && styles.textLight]}>{region.registered} / {region.entries.length}</Text><View style={[styles.regionBadge, { borderColor: `${region.accent}aa` }]}><Text style={[styles.regionBadgeText, { color: complete ? region.text : '#f0b429' }]}>{complete ? '✓' : '!'}</Text></View></View><View style={styles.regionArt}>{region.previews.map((entry, index) => { const imageUri = useFemaleImages ? entry.femaleImageUri : entry.imageUri; return <View key={entry.id} style={[styles.regionPreview, { left: `${8 + index * 31}%`, zIndex: index + 1 }]}>{imageUri ? <Image fadeDuration={0} resizeMode="contain" source={{ uri: absoluteUri(assetBaseUrl, imageUri) ?? undefined }} style={styles.regionPokemon} /> : null}{entry.maxKind ? <Image fadeDuration={0} source={{ uri: absoluteUri(assetBaseUrl, `/images/${entry.maxKind}.png`) ?? undefined }} style={styles.regionMaxIcon} /> : null}</View>; })}</View></Pressable>; })}
             {regionCards.length === 0 ? <View style={styles.empty}><Text style={[styles.emptyTitle, light && styles.textLight]}>No regions match</Text><Text style={[styles.emptyText, light && styles.mutedLight]}>Try another category or clear a quality filter.</Text></View> : null}
           </View> : null}
           {generation != null ? <View style={styles.detailToolbar}><View style={styles.detailHeading}><Pressable accessibilityRole="button" onPress={() => { setGeneration(null); setQuery(''); }} style={[styles.regionsBack, light && styles.chipLight]}><Text style={[styles.regionsBackText, light && styles.textLight]}>‹ All regions</Text></Pressable><Text style={[styles.resultsTitle, light && styles.textLight]}>{REGIONS.find((region) => region.generation === generation)?.label} · {activeCategory.label}</Text><Text style={[styles.resultsDetail, light && styles.mutedLight]}>{filtered.filter((entry) => nativePokedexEntryIsRegistered(entry, category, facets)).length} / {filtered.length} registered</Text></View><TextInput accessibilityLabel="Search Pokédex" autoCapitalize="none" onChangeText={setQuery} placeholder="Pokémon or number" placeholderTextColor="#75838c" style={[styles.search, light && styles.searchLight]} value={query} /><View accessibilityLabel="Visible registration actions" style={[styles.registrationTray, light && styles.registrationTrayLight]}><View style={styles.registrationCopy}><Text style={[styles.registrationLabel, light && styles.mutedLight]}>VISIBLE</Text><Text style={[styles.registrationCount, light && styles.textLight]}>{visibleRegistrations.length}</Text></View><View style={styles.registrationActions}><Pressable accessibilityRole="button" disabled={isSaving || visibleRegistrations.length === 0} onPress={() => setBulkConfirmation({ registered: true, registrations: visibleRegistrations })} style={[styles.bulkButton, styles.bulkRegister, (isSaving || visibleRegistrations.length === 0) && styles.savingDisabled]}><Text style={styles.bulkRegisterText}>Register all</Text></Pressable><Pressable accessibilityRole="button" disabled={isSaving || visibleRegistrations.length === 0} onPress={() => setBulkConfirmation({ registered: false, registrations: visibleRegistrations })} style={[styles.bulkButton, styles.bulkClear, (isSaving || visibleRegistrations.length === 0) && styles.savingDisabled]}><Text style={styles.bulkClearText}>Unregister all</Text></Pressable></View></View></View> : null}
@@ -359,13 +375,13 @@ export const NativePokedexScreen = ({ assetBaseUrl, entries, error = null, isLoa
                 ]}
               >
                 <View style={styles.imageStage}>
-                  {imageUri ? <Image resizeMode="contain" source={{ uri: absoluteUri(assetBaseUrl, imageUri) ?? undefined }} style={styles.image} /> : null}
+                  {imageUri ? <Image fadeDuration={0} resizeMode="contain" source={{ uri: absoluteUri(assetBaseUrl, imageUri) ?? undefined }} style={styles.image} /> : null}
                   {activeFacetBadges.length > 0 ? <View pointerEvents="none" style={styles.facetBadgeStack}>
                     {activeFacetBadges.map((facet) => <View key={facet.value} style={[styles.facetBadge, light && styles.facetBadgeLight]}>
-                      <Image source={{ uri: absoluteUri(assetBaseUrl, facet.icon) ?? undefined }} style={[styles.facetBadgeIcon, light && DARK_ON_LIGHT_FACET_ICONS.has(facet.icon) && styles.darkFacetIcon]} />
+                      <Image fadeDuration={0} source={{ uri: absoluteUri(assetBaseUrl, facet.icon) ?? undefined }} style={[styles.facetBadgeIcon, light && DARK_ON_LIGHT_FACET_ICONS.has(facet.icon) && styles.darkFacetIcon]} />
                     </View>)}
                   </View> : null}
-                  {item.maxKind ? <Image resizeMode="contain" source={{ uri: absoluteUri(assetBaseUrl, `/images/${item.maxKind}.png`) ?? undefined }} style={styles.maxIcon} /> : null}
+                  {item.maxKind ? <Image fadeDuration={0} resizeMode="contain" source={{ uri: absoluteUri(assetBaseUrl, `/images/${item.maxKind}.png`) ?? undefined }} style={styles.maxIcon} /> : null}
                 </View>
                 <Text numberOfLines={2} style={[styles.name, light && styles.textLight]}>{item.name}</Text>
                 <Text style={[styles.dex, light && styles.mutedLight]}>#{String(item.pokedexNumber).padStart(4, '0')}</Text>

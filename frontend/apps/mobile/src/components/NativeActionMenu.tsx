@@ -580,7 +580,6 @@ export const NativeActionMenu = ({
   const [menuProgress] = useState(() => new Animated.Value(0));
   const [navigationOverlayProgress] = useState(() => new Animated.Value(0));
   const [supportProgress] = useState(() => new Animated.Value(0));
-  const closeEnabledRef = useRef(false);
   const closingRef = useRef(false);
   const navigationSpinnerRef = useRef<NativeLoadingSpinnerHandle | null>(null);
   const themeCommitFrameRef = useRef<number | null>(null);
@@ -632,19 +631,16 @@ export const NativeActionMenu = ({
       menuProgress.setValue(0);
       navigationOverlayProgress.setValue(0);
       navigationSpinnerRef.current?.stop();
-      closeEnabledRef.current = false;
       closingRef.current = false;
       return undefined;
     }
 
     if (reduceMotion) {
       menuProgress.setValue(1);
-      closeEnabledRef.current = true;
       return undefined;
     }
 
     closingRef.current = false;
-    closeEnabledRef.current = false;
     menuProgress.setValue(0);
     markNativeUiPerformance('action_menu_animation_started');
     const animation = Animated.timing(menuProgress, {
@@ -660,7 +656,6 @@ export const NativeActionMenu = ({
     });
     animation.start(({ finished }) => {
       if (finished) {
-        closeEnabledRef.current = true;
         markNativeUiPerformance('action_menu_animation_finished');
       }
     });
@@ -689,7 +684,6 @@ export const NativeActionMenu = ({
   const navigate = (path: string) => {
     if (closingRef.current) return;
     closingRef.current = true;
-    closeEnabledRef.current = false;
     setSupportOpen(false);
     markNativeUiPerformance('action_menu_destination_pressed', { path });
     // The menu surface is already composited. Reveal its pre-mounted loader
@@ -707,9 +701,8 @@ export const NativeActionMenu = ({
     }));
   };
   const close = useCallback(() => {
-    if (!closeEnabledRef.current || closingRef.current) return;
+    if (closingRef.current) return;
     closingRef.current = true;
-    closeEnabledRef.current = false;
     setSupportOpen(false);
     if (reduceMotion) {
       onClose();

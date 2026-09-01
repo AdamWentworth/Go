@@ -174,7 +174,7 @@ const NativeTagCard = memo(function NativeTagCard({
             ]}
           >
             {row.imageUri ? (
-              <Image
+              <Image fadeDuration={0}
                 accessibilityElementsHidden
                 resizeMode="contain"
                 source={{ uri: row.imageUri }}
@@ -184,7 +184,7 @@ const NativeTagCard = memo(function NativeTagCard({
               />
             ) : null}
             {row.maxKind ? (
-              <Image
+              <Image fadeDuration={0}
                 accessibilityElementsHidden
                 resizeMode="contain"
                 source={{
@@ -555,7 +555,7 @@ export const NativeTagsPanelScreen = ({
           onPress={onActionMenuPress}
           style={styles.actionMenuAnchor}
         >
-          <Image
+          <Image fadeDuration={0}
             accessibilityElementsHidden
             resizeMode="contain"
             source={{ uri: toAssetUrl(assetBaseUrl, '/images/btn_action_menu.png') }}

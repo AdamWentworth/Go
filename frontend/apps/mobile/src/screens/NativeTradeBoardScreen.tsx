@@ -182,7 +182,7 @@ export const NativeTradeBoardScreen = ({
         ) : (
           <View style={styles.publicHeader}>
             <Pressable accessibilityLabel="Pokémon Go Nexus home" accessibilityRole="button" onPress={onBack} style={styles.publicBrand}>
-              <Image
+              <Image fadeDuration={0}
                 accessibilityElementsHidden
                 resizeMode="contain"
                 source={{ uri: `${assetBaseUrl.replace(/\/$/, '')}/icons/icon-192x192.png` }}

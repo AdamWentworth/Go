@@ -1,5 +1,5 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useMemo, useState } from 'react';
+import { useDeferredValue, useMemo, useState } from 'react';
 import { buildPokemonCatalogEntries } from '@pokemongonexus/shared-domain/catalog';
 
 import { useNativeSession } from '../../auth/NativeSessionContext';
@@ -47,17 +47,25 @@ export default function NativeRankingsRoute() {
   );
   const [query, setQuery] = useState(routeState.query);
   const [menu, setMenu] = useState(false);
+  const rankingCatalog = useMemo(
+    () => buildPokemonCatalogEntries(catalogQuery.data ?? []),
+    [catalogQuery.data],
+  );
+  const deferredCategory = useDeferredValue(category);
+  const deferredCollectionFilter = useDeferredValue(collectionFilter);
+  const deferredMode = useDeferredValue(mode);
+  const deferredQuery = useDeferredValue(query);
   const rowsBeforeCollectionFilter = useMemo(
     () => buildNativeRankingRows({
-      catalog: buildPokemonCatalogEntries(catalogQuery.data ?? []),
-      category,
+      catalog: rankingCatalog,
+      category: deferredCategory,
       collectionFilter: 'all',
       instances: snapshotQuery.data?.instances,
-      mode,
+      mode: deferredMode,
       payload: rankingsQuery.data,
-      query,
+      query: deferredQuery,
     }),
-    [catalogQuery.data, category, mode, query, rankingsQuery.data, snapshotQuery.data?.instances],
+    [deferredCategory, deferredMode, deferredQuery, rankingCatalog, rankingsQuery.data, snapshotQuery.data?.instances],
   );
   const collectionFilterCounts = useMemo(
     () => countNativeRankingCollectionFilters(rowsBeforeCollectionFilter),
@@ -66,9 +74,9 @@ export default function NativeRankingsRoute() {
   const rows = useMemo(
     () => filterNativeRankingRowsByCollection(
       rowsBeforeCollectionFilter,
-      session.user ? collectionFilter : 'all',
+      session.user ? deferredCollectionFilter : 'all',
     ),
-    [collectionFilter, rowsBeforeCollectionFilter, session.user],
+    [deferredCollectionFilter, rowsBeforeCollectionFilter, session.user],
   );
   const error = [
     catalogQuery.error,

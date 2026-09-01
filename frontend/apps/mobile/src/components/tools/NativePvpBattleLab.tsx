@@ -127,6 +127,7 @@ export const NativePvpBattleLab = ({
   const [result, setResult] = useState<PokemonPvPBattleResponse | null>(null);
   const [error, setError] = useState("");
   const [mode, setMode] = useState<"single" | "team">("single");
+  const [simulating, setSimulating] = useState(false);
 
   const left =
     readyEntries.find((entry) => entry.speciesId === leftId) ?? readyEntries[0];
@@ -154,7 +155,7 @@ export const NativePvpBattleLab = ({
     setError("");
   };
 
-  const simulate = () => {
+  const simulate = async () => {
     if (!left || !right) return;
     const fighters = [
       buildPvPBattleFighterFromRankingEntry(left, left.speciesId),
@@ -166,6 +167,10 @@ export const NativePvpBattleLab = ({
       );
       return;
     }
+    setSimulating(true);
+    setResult(null);
+    setError("");
+    await new Promise<void>((resolve) => setTimeout(resolve, 0));
     try {
       setResult(
         simulatePvPBattleLocally({
@@ -184,6 +189,8 @@ export const NativePvpBattleLab = ({
           ? caught.message
           : "The battle could not be simulated.",
       );
+    } finally {
+      setSimulating(false);
     }
   };
 
@@ -250,7 +257,7 @@ export const NativePvpBattleLab = ({
               style={[styles.battleSide, light && styles.controlLight]}
             >
               <Text style={styles.eyebrow}>{label.toUpperCase()}</Text>
-              <Image
+              <Image fadeDuration={0}
                 resizeMode="contain"
                 source={{ uri: assetUri(assetBaseUrl, entry.imageUrl) }}
                 style={styles.battleImage}
@@ -313,10 +320,11 @@ export const NativePvpBattleLab = ({
         <Pressable
           accessibilityRole="button"
           accessibilityLabel="Simulate battle"
-          onPress={simulate}
-          style={styles.primary}
+          disabled={simulating}
+          onPress={() => void simulate()}
+          style={[styles.primary, simulating && styles.disabled]}
         >
-          <Text style={styles.primaryText}>Simulate battle</Text>
+          <Text style={styles.primaryText}>{simulating ? 'Simulating…' : 'Simulate battle'}</Text>
         </Pressable>
         {error ? (
           <Text accessibilityRole="alert" style={styles.error}>
@@ -382,7 +390,7 @@ export const NativePvpBattleLab = ({
               left.speciesId === entry.speciesId && styles.pickerActive,
             ]}
           >
-            <Image
+            <Image fadeDuration={0}
               resizeMode="contain"
               source={{ uri: assetUri(assetBaseUrl, entry.imageUrl) }}
               style={styles.pickerImage}
@@ -416,7 +424,7 @@ export const NativePvpBattleLab = ({
               right.speciesId === entry.speciesId && styles.pickerActive,
             ]}
           >
-            <Image
+            <Image fadeDuration={0}
               resizeMode="contain"
               source={{ uri: assetUri(assetBaseUrl, entry.imageUrl) }}
               style={styles.pickerImage}
@@ -543,6 +551,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#168ced",
   },
   primaryText: { color: "#fff", fontSize: 14, fontWeight: "900" },
+  disabled: { opacity: 0.55 },
   error: {
     color: "#ff9bad",
     fontSize: 11,

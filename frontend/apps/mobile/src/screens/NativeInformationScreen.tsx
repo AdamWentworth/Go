@@ -117,7 +117,7 @@ const GettingStartedScreen = ({
         <ScrollView contentContainerStyle={[styles.guideContent, { paddingTop: insets.top, paddingBottom: 104 + insets.bottom }]}>
           <View style={[styles.guideTopbar, light && styles.guideDividerLight]}>
             <Pressable accessibilityLabel="Pokémon Go Nexus home" accessibilityRole="button" onPress={() => onNavigate('/')}>
-              <Image source={{ uri: toAssetUrl(assetBaseUrl, '/images/logo/logo.png') }} style={styles.guideTopbarLogo} />
+              <Image fadeDuration={0} source={{ uri: toAssetUrl(assetBaseUrl, '/images/logo/logo.png') }} style={styles.guideTopbarLogo} />
             </Pressable>
             <View style={styles.guideTopbarActions}>
               <Pressable accessibilityRole="button" onPress={onBack} style={styles.guideHomeLink}>
@@ -159,8 +159,8 @@ const GettingStartedScreen = ({
                         ? styles.guideToneTrade
                         : styles.guideToneWanted,
                   ]}>
-                    <Image resizeMode="contain" source={{ uri: item.image }} style={styles.guideLegendArtwork} />
-                    {item.maxKind ? <Image resizeMode="contain" source={{ uri: toAssetUrl(assetBaseUrl, `/images/${item.maxKind}.png`) }} style={styles.guideLegendMax} /> : null}
+                    <Image fadeDuration={0} resizeMode="contain" source={{ uri: item.image }} style={styles.guideLegendArtwork} />
+                    {item.maxKind ? <Image fadeDuration={0} resizeMode="contain" source={{ uri: toAssetUrl(assetBaseUrl, `/images/${item.maxKind}.png`) }} style={styles.guideLegendMax} /> : null}
                     <Text style={styles.guideLegendMark}>{item.mark}</Text>
                   </View>
                   <View style={styles.guideLegendCopy}>
@@ -183,8 +183,8 @@ const GettingStartedScreen = ({
                     <View style={styles.guideVisualPokemonRow}>
                       {visual.images.map((image, index) => (
                         <View key={`${image.path}-${index}`} style={[styles.guideVisualPokemonWrap, visual.images.length > 1 && styles.guideVisualPokemonWrapPair]}>
-                          <Image resizeMode="contain" source={{ uri: toAssetUrl(assetBaseUrl, image.path) }} style={styles.guideVisualPokemon} />
-                          {image.maxKind ? <Image resizeMode="contain" source={{ uri: toAssetUrl(assetBaseUrl, `/images/${image.maxKind}.png`) }} style={styles.guideVisualMax} /> : null}
+                          <Image fadeDuration={0} resizeMode="contain" source={{ uri: toAssetUrl(assetBaseUrl, image.path) }} style={styles.guideVisualPokemon} />
+                          {image.maxKind ? <Image fadeDuration={0} resizeMode="contain" source={{ uri: toAssetUrl(assetBaseUrl, `/images/${image.maxKind}.png`) }} style={styles.guideVisualMax} /> : null}
                         </View>
                       ))}
                     </View>
@@ -214,7 +214,7 @@ const GettingStartedScreen = ({
           </View>
 
           <View style={[styles.guideFinish, light && styles.guideFinishLight]}>
-            <Image source={{ uri: toAssetUrl(assetBaseUrl, '/images/logo/logo.png') }} style={styles.guideFinishLogo} />
+            <Image fadeDuration={0} source={{ uri: toAssetUrl(assetBaseUrl, '/images/logo/logo.png') }} style={styles.guideFinishLogo} />
             <Text style={[styles.guideEyebrow, light && styles.guideBlueLight]}>YOU DO NOT NEED A COMPLETE CATALOG</Text>
             <Text style={[styles.guideFinishTitle, light && styles.textLight]}>Start small. Let the workflow grow with you.</Text>
             <Text style={[styles.guideFinishText, light && styles.mutedLight]}>Add one Pokémon today. Your signed-in Home will show the next useful milestone without forcing you through a tour.</Text>
@@ -509,7 +509,7 @@ const NativeInformationPageScreen = ({ assetBaseUrl, isLoggedIn = false, onBack,
         ) : isAbout ? (
           <View style={[styles.aboutBody, styles.groupBodyWithinShell, light && styles.groupShellLight]}>
             <View style={[styles.aboutStory, light && styles.aboutStoryLight]}>
-              <Image source={{ uri: toAssetUrl(assetBaseUrl, '/images/logo/lockup.png') }} style={styles.aboutStoryLogo} />
+              <Image fadeDuration={0} source={{ uri: toAssetUrl(assetBaseUrl, '/images/logo/lockup.png') }} style={styles.aboutStoryLogo} />
               <View style={styles.aboutStoryCopy}>
                 <Text style={[styles.sectionCategory, light && styles.blueTextLight]}>{page.sections[0]?.category}</Text>
                 <Text style={[styles.aboutHeading, light && styles.textLight]}>{page.sections[0]?.title}</Text>
@@ -571,7 +571,7 @@ const NativeInformationPageScreen = ({ assetBaseUrl, isLoggedIn = false, onBack,
         </View>
 
         {!isLegal ? <View style={[styles.footer, light && styles.footerLight]}>
-          <Image source={{ uri: toAssetUrl(assetBaseUrl, '/images/logo/lockup.png') }} style={styles.footerLogo} />
+          <Image fadeDuration={0} source={{ uri: toAssetUrl(assetBaseUrl, '/images/logo/lockup.png') }} style={styles.footerLogo} />
           <Text style={[styles.footerText, light && styles.mutedLight]}>An independent community project. Pokémon and related marks belong to their respective owners.</Text>
           <View style={styles.footerLinks}>
             {(['help', 'privacy', 'terms', 'safety'] as const).map((slug) => (

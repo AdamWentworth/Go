@@ -204,8 +204,11 @@ describe('native collection model', () => {
     expect(filterNativeCollectionRows(rows, 'most-wanted', '')).toEqual([
       expect.objectContaining({ id: 'wanted', mostWanted: true }),
     ]);
+    expect(filterNativeCollectionRows(rows, 'all', '')).toBe(rows);
     expect(filterNativeCollectionRows(rows, 'all', '0006')).toHaveLength(0);
     expect(filterNativeCollectionRows(rows, 'all', '6')).toHaveLength(2);
+    const sortedByName = sortNativeCollectionRows(rows, 'name', 'ascending');
+    expect(sortNativeCollectionRows(rows, 'name', 'ascending')).toBe(sortedByName);
     expect(buildNativeCollectionRows(instances, catalog, 'https://pokegonexus.com')).toBe(rows);
   });
 

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
 import {
   Image,
   Pressable,
@@ -69,6 +69,7 @@ export const NativePvpTeamBuilder = ({
 }: Props) => {
   const [activeSlot, setActiveSlot] = useState(0);
   const [query, setQuery] = useState("");
+  const deferredQuery = useDeferredValue(query);
   const [selectedKeys, setSelectedKeys] =
     useState<NativePvpTeamSlots>(EMPTY_TEAM);
   const storageReady = useRef(false);
@@ -101,28 +102,36 @@ export const NativePvpTeamBuilder = ({
     () => new Map(entries.map((entry) => [entry.speciesId, entry])),
     [entries],
   );
-  const members = selectedKeys.map((key) =>
-    key ? entriesById.get(key) : undefined,
+  const members = useMemo(
+    () => selectedKeys.map((key) => key ? entriesById.get(key) : undefined),
+    [entriesById, selectedKeys],
   );
-  const team = members.filter(
-    (entry): entry is PokemonPvPRankingEntry => entry != null,
+  const team = useMemo(
+    () => members.filter((entry): entry is PokemonPvPRankingEntry => entry != null),
+    [members],
   );
-  const selected = new Set(team.map((entry) => entry.speciesId));
-  const analysis = analyzeNativePvpTeam(team);
-  const normalized = query.trim().toLocaleLowerCase();
-  const visibleEntries = entries
-    .filter((entry) => !normalized || entrySearchText(entry).includes(normalized))
-    .slice(0, 40);
-  const suggestions = entries
+  const selected = useMemo(
+    () => new Set(team.map((entry) => entry.speciesId)),
+    [team],
+  );
+  const analysis = useMemo(() => analyzeNativePvpTeam(team), [team]);
+  const normalized = deferredQuery.trim().toLocaleLowerCase();
+  const visibleEntries = useMemo(
+    () => entries
+      .filter((entry) => !normalized || entrySearchText(entry).includes(normalized))
+      .slice(0, 40),
+    [entries, normalized],
+  );
+  const suggestions = useMemo(() => entries
     .filter((entry) => !selected.has(entry.speciesId))
     .map((entry) => ({
       entry,
-      coverage: (entry.matchups ?? []).filter((matchup) =>
-        analysis.sharedThreats.includes(matchup.speciesId),
-      ).length,
+      coverage: (entry.matchups ?? []).filter((matchup) => (
+        analysis.sharedThreats.includes(matchup.speciesId)
+      )).length,
     }))
     .sort((left, right) => right.coverage - left.coverage || right.entry.score - left.entry.score)
-    .slice(0, 3);
+    .slice(0, 3), [analysis.sharedThreats, entries, selected]);
 
   const choose = (speciesId: string) => {
     setSelectedKeys((current) => {
@@ -211,7 +220,7 @@ export const NativePvpTeamBuilder = ({
               </View>
               {member ? (
                 <View style={styles.memberRow}>
-                  <Image
+                  <Image fadeDuration={0}
                     resizeMode="contain"
                     source={{ uri: assetUri(assetBaseUrl, member.imageUrl) }}
                     style={styles.memberImage}
@@ -285,7 +294,7 @@ export const NativePvpTeamBuilder = ({
           <Text style={[styles.sectionLabel, light && styles.mutedLight]}>BEST ADDITIONS FOR {ROLES[activeSlot].label.toLocaleUpperCase()}</Text>
           {suggestions.map(({ entry, coverage }) => (
             <Pressable accessibilityRole="button" accessibilityLabel={`Add suggested ${entry.name}`} key={entry.speciesId} onPress={() => choose(entry.speciesId)} style={[styles.suggestion, light && styles.panelLight]}>
-              <Image resizeMode="contain" source={{ uri: assetUri(assetBaseUrl, entry.imageUrl) }} style={styles.suggestionImage} />
+              <Image fadeDuration={0} resizeMode="contain" source={{ uri: assetUri(assetBaseUrl, entry.imageUrl) }} style={styles.suggestionImage} />
               <View style={styles.memberCopy}>
                 <Text numberOfLines={1} style={[styles.memberName, light && styles.textLight]}>{entry.name}</Text>
                 <Text style={[styles.memberMeta, light && styles.mutedLight]}>{coverage ? `Covers ${coverage} open threat${coverage === 1 ? "" : "s"}` : `${entry.score.toFixed(1)} overall`}</Text>
@@ -326,7 +335,7 @@ export const NativePvpTeamBuilder = ({
                 onPress={() => choose(entry.speciesId)}
                 style={[styles.candidate, light && styles.panelLight, isSelected && styles.candidateSelected]}
               >
-                <Image resizeMode="contain" source={{ uri: assetUri(assetBaseUrl, entry.imageUrl) }} style={styles.candidateImage} />
+                <Image fadeDuration={0} resizeMode="contain" source={{ uri: assetUri(assetBaseUrl, entry.imageUrl) }} style={styles.candidateImage} />
                 <View style={styles.candidateCopy}>
                   <Text numberOfLines={1} style={[styles.candidateName, light && styles.textLight]}>{entry.name}</Text>
                   <Text numberOfLines={1} style={[styles.candidateMeta, light && styles.mutedLight]}>{entry.score.toFixed(1)} overall</Text>

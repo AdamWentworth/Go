@@ -87,7 +87,7 @@ const PokemonProposalCard = ({
         <NativePokemonLocationBackdrop uri={detail.row.locationBackgroundUri} />
       ) : null}
       {luckyRequested ? (
-        <Image
+        <Image fadeDuration={0}
           accessibilityElementsHidden
           resizeMode="contain"
           source={{ uri: toAssetUrl(assetBaseUrl, '/images/lucky.png') }}
@@ -95,7 +95,7 @@ const PokemonProposalCard = ({
         />
       ) : null}
       {detail.row.imageUri ? (
-        <Image
+        <Image fadeDuration={0}
           accessibilityLabel={detail.row.name}
           resizeMode="contain"
           source={{ uri: detail.row.imageUri }}
@@ -103,7 +103,7 @@ const PokemonProposalCard = ({
         />
       ) : null}
       {detail.row.maxKind ? (
-        <Image
+        <Image fadeDuration={0}
           accessibilityLabel={detail.row.maxKind === 'gigantamax' ? 'Gigantamax' : 'Dynamax'}
           resizeMode="contain"
           source={{ uri: toAssetUrl(assetBaseUrl, `/images/${detail.row.maxKind}.png`) }}
@@ -143,7 +143,7 @@ const FriendshipPicker = ({
             onPress={() => onFriendshipChange(level)}
             style={styles.heartButton}
           >
-            <Image
+            <Image fadeDuration={0}
               accessibilityElementsHidden
               resizeMode="contain"
               source={{
@@ -163,7 +163,7 @@ const FriendshipPicker = ({
         onPress={() => onLuckyChange(!luckyRequested)}
         style={[styles.conditionIconButton, !luckyRequested && styles.conditionInactive]}
       >
-        <Image
+        <Image fadeDuration={0}
           accessibilityElementsHidden
           resizeMode="contain"
           source={{ uri: toAssetUrl(assetBaseUrl, '/images/lucky_friend_icon.png') }}
@@ -177,7 +177,7 @@ const FriendshipPicker = ({
         accessibilityRole="image"
         style={[styles.conditionIconButton, friendshipLevel < 5 && styles.conditionInactive]}
       >
-        <Image
+        <Image fadeDuration={0}
           accessibilityElementsHidden
           resizeMode="contain"
           source={{ uri: toAssetUrl(assetBaseUrl, '/images/remote_trade_icon.png') }}
@@ -364,7 +364,7 @@ export const NativeTradeProposalSheet = ({
                   {caughtDetails.map((candidate) => (
                     <View key={candidate.instance?.instance_id} style={[styles.candidateRow, light && styles.pokemonCardLight]}>
                       {candidate.row.imageUri ? (
-                        <Image resizeMode="contain" source={{ uri: candidate.row.imageUri }} style={styles.candidateImage} />
+                        <Image fadeDuration={0} resizeMode="contain" source={{ uri: candidate.row.imageUri }} style={styles.candidateImage} />
                       ) : null}
                       <View style={styles.candidateCopy}>
                         <Text numberOfLines={2} style={[styles.candidateName, light && styles.textLight]}>{candidate.row.name}</Text>
@@ -424,7 +424,7 @@ export const NativeTradeProposalSheet = ({
                     light={light}
                     luckyRequested={luckyRequested}
                   />
-                  <Image
+                  <Image fadeDuration={0}
                     accessibilityElementsHidden
                     resizeMode="contain"
                     source={{ uri: toAssetUrl(assetBaseUrl, '/images/pogo_trade_icon.png') }}
@@ -485,7 +485,7 @@ export const NativeTradeProposalSheet = ({
                       <Text style={[styles.cost, light && styles.textLight]}>
                         {(tradeTerms?.stardustCost ?? 0).toLocaleString()} Stardust
                       </Text>
-                      <Image
+                      <Image fadeDuration={0}
                         accessibilityElementsHidden
                         resizeMode="contain"
                         source={{ uri: toAssetUrl(assetBaseUrl, '/images/stardust.png') }}

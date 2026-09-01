@@ -130,6 +130,8 @@ const TAG_TONES = {
 const customTagSurface = (color: string): string =>
   /^#[0-9a-f]{6}$/i.test(color) ? `${color}2e` : TAG_TONES.custom.surface;
 
+const EMPTY_SELECTED_IDS: ReadonlySet<string> = new Set<string>();
+
 const toAssetUrl = (baseUrl: string, path: string): string => {
   if (/^https?:\/\//i.test(path)) return path;
   return `${baseUrl.replace(/\/$/, '')}/${path.replace(/^\//, '')}`;
@@ -192,22 +194,21 @@ const CollectionParityCard = memo(function CollectionParityCard({
           />
         ) : null}
         {card.lucky ? (
-          <Image
+          <Image fadeDuration={0}
             accessibilityElementsHidden
             resizeMode="contain"
             source={{ uri: toAssetUrl(assetBaseUrl, '/images/lucky.png') }}
             style={styles.luckyBackground}
           />
         ) : null}
-        <Image
+        <Image fadeDuration={0}
           accessibilityLabel={card.name}
-          fadeDuration={0}
           resizeMode="contain"
           source={{ uri: toAssetUrl(assetBaseUrl, card.imagePath) }}
           style={styles.pokemonImage}
         />
         {card.maxKind ? (
-          <Image
+          <Image fadeDuration={0}
             accessibilityLabel={card.maxKind === 'gigantamax' ? 'Gigantamax' : 'Dynamax'}
             resizeMode="contain"
             source={{
@@ -222,7 +223,7 @@ const CollectionParityCard = memo(function CollectionParityCard({
           />
         ) : null}
         {card.purified ? (
-          <Image
+          <Image fadeDuration={0}
             accessibilityLabel="Purified"
             resizeMode="contain"
             source={{ uri: toAssetUrl(assetBaseUrl, '/images/purified.png') }}
@@ -235,9 +236,8 @@ const CollectionParityCard = memo(function CollectionParityCard({
       </Text>
       <View style={styles.typeIcons}>
         {card.typeIconPaths.map((path) => (
-          <Image
+          <Image fadeDuration={0}
             accessibilityElementsHidden
-            fadeDuration={0}
             key={path}
             source={{ uri: toAssetUrl(assetBaseUrl, path) }}
             style={styles.typeIcon}
@@ -286,7 +286,7 @@ export const NativeCollectionParityFixture = ({
   tagTone = 'favorites',
   theme = 'dark',
   showHeader = true,
-  selectedIds = new Set<string>(),
+  selectedIds = EMPTY_SELECTED_IDS,
   selectionAction = 'organize',
 }: NativeCollectionParityFixtureProps) => {
   const { width } = useWindowDimensions();
@@ -433,6 +433,7 @@ export const NativeCollectionParityFixture = ({
           columnWrapperStyle={styles.gridRow}
           contentContainerStyle={styles.listContent}
           data={cards}
+          extraData={selectedIds}
           nestedScrollEnabled
           ref={listRef}
           initialNumToRender={18}
@@ -490,7 +491,7 @@ export const NativeCollectionParityFixture = ({
       >
         <View style={[styles.sortCircle, styles.sortTypeCircle]}>
           <View style={styles.sortInnerRing} />
-          <Image
+          <Image fadeDuration={0}
             resizeMode="contain"
             source={{ uri: toAssetUrl(assetBaseUrl, sortIconPath) }}
             style={styles.sortTypeImage}
@@ -498,7 +499,7 @@ export const NativeCollectionParityFixture = ({
         </View>
         <View style={[styles.sortCircle, styles.sortModeCircle]}>
           <View style={styles.sortModeInnerRing} />
-          <Image
+          <Image fadeDuration={0}
             resizeMode="contain"
             source={{ uri: toAssetUrl(assetBaseUrl, '/images/sorting/arrow.png') }}
             style={[

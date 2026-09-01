@@ -150,7 +150,7 @@ const Choice = ({
       pressed && styles.pressed,
     ]}
   >
-    {imageUri ? <Image resizeMode="contain" source={{ uri: imageUri }} style={styles.choiceIcon} /> : null}
+    {imageUri ? <Image fadeDuration={0} resizeMode="contain" source={{ uri: imageUri }} style={styles.choiceIcon} /> : null}
     <Text style={[styles.choiceLabel, light && styles.textLight]}>{label}</Text>
     <Text style={[styles.choiceDetail, light && styles.secondaryLight]}>{detail ?? (active ? 'Required' : 'Any')}</Text>
   </Pressable>
@@ -350,10 +350,10 @@ export const NativePokemonSearchFilterSheet = ({
           background?.image_url ? { backgroundColor: '#14282c' } : null,
         ]}
       >
-        {background?.image_url ? <Image resizeMode="cover" source={{ uri: absoluteUri(background.image_url, assetBaseUrl) ?? '' }} style={StyleSheet.absoluteFill} /> : null}
-        {imageUri ? <Image resizeMode="contain" source={{ uri: absoluteUri(imageUri, assetBaseUrl) ?? imageUri }} style={styles.previewImage} /> : <Text style={styles.previewPlaceholder}>Select a Pokémon</Text>}
+        {background?.image_url ? <Image fadeDuration={0} resizeMode="cover" source={{ uri: absoluteUri(background.image_url, assetBaseUrl) ?? '' }} style={StyleSheet.absoluteFill} /> : null}
+        {imageUri ? <Image fadeDuration={0} resizeMode="contain" source={{ uri: absoluteUri(imageUri, assetBaseUrl) ?? imageUri }} style={styles.previewImage} /> : <Text style={styles.previewPlaceholder}>Select a Pokémon</Text>}
         {draft.gigantamax || draft.dynamax ? (
-          <Image
+          <Image fadeDuration={0}
             resizeMode="contain"
             source={{ uri: `${assetBaseUrl.replace(/\/$/, '')}/images/${draft.gigantamax ? 'gigantamax' : 'dynamax'}.png` }}
             style={styles.maxBadge}

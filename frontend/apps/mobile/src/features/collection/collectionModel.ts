@@ -727,6 +727,32 @@ export const buildNativeTagSummaries = (
   });
 };
 
+const normalizeNativeCollectionSearchValue = (value: string): string => value
+  .toLowerCase()
+  .normalize('NFKD')
+  .replace(/[\u0300-\u036f]/g, '')
+  .replace(/[^a-z0-9%]+/g, ' ')
+  .trim();
+
+const nativeCollectionSearchProjectionCache = new WeakMap<
+  NativeCollectionRow,
+  { dexNumber: string; searchable: string[] }
+>();
+
+const nativeCollectionSearchProjection = (
+  row: NativeCollectionRow,
+): { dexNumber: string; searchable: string[] } => {
+  const cached = nativeCollectionSearchProjectionCache.get(row);
+  if (cached) return cached;
+  const projection = {
+    dexNumber: String(row.pokedexNumber),
+    searchable: [row.name, ...(row.searchTerms ?? [])]
+      .map(normalizeNativeCollectionSearchValue),
+  };
+  nativeCollectionSearchProjectionCache.set(row, projection);
+  return projection;
+};
+
 export const filterNativeCollectionRows = (
   rows: NativeCollectionRow[],
   filter: NativeCollectionFilter,
@@ -736,20 +762,16 @@ export const filterNativeCollectionRows = (
     universeRows?: NativeCollectionRow[];
   } = {},
 ): NativeCollectionRow[] => {
-  const normalize = (value: string): string => value
-    .toLowerCase()
-    .normalize('NFKD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .replace(/[^a-z0-9%]+/g, ' ')
-    .trim();
   const matchesTerm = (row: NativeCollectionRow, rawTerm: string): boolean => {
     const negated = rawTerm.startsWith('!');
-    const term = normalize(negated ? rawTerm.slice(1) : rawTerm);
+    const term = normalizeNativeCollectionSearchValue(
+      negated ? rawTerm.slice(1) : rawTerm,
+    );
     if (!term) return true;
-    const searchable = [row.name, ...(row.searchTerms ?? [])].map(normalize);
+    const { dexNumber, searchable } = nativeCollectionSearchProjection(row);
     const matched = searchable.some((candidate) => (
       candidate === term || candidate.split(' ').some((word) => word.startsWith(term))
-    )) || String(row.pokedexNumber).includes(term);
+    )) || dexNumber.includes(term);
     return negated ? !matched : matched;
   };
   const matchesQuery = (row: NativeCollectionRow, rawQuery: string): boolean => rawQuery
@@ -762,6 +784,7 @@ export const filterNativeCollectionRows = (
       .filter(Boolean)
       .every((term) => matchesTerm(row, term)));
   const normalizedQuery = query.trim();
+  if (filter === 'all' && !normalizedQuery) return rows;
   const universe = options.universeRows ?? rows;
   const queryGroups = normalizedQuery
     .split(',')
@@ -811,13 +834,22 @@ const compareNullableNumber = (
   return left - right;
 };
 
+const nativeCollectionSortCache = new WeakMap<
+  NativeCollectionRow[],
+  Map<string, NativeCollectionRow[]>
+>();
+
 export const sortNativeCollectionRows = (
   rows: NativeCollectionRow[],
   sort: NativeCollectionSort,
   direction: NativeCollectionSortDirection,
 ): NativeCollectionRow[] => {
+  const cacheKey = `${sort}:${direction}`;
+  const cachedBySort = nativeCollectionSortCache.get(rows);
+  const cached = cachedBySort?.get(cacheKey);
+  if (cached) return cached;
   const multiplier = direction === 'ascending' ? 1 : -1;
-  return [...rows].sort((left, right) => {
+  const sorted = [...rows].sort((left, right) => {
     let comparison = 0;
     if (sort === 'releaseDate') {
       comparison = compareNullableNumber(left.releaseTimestamp ?? null, right.releaseTimestamp ?? null);
@@ -843,6 +875,10 @@ export const sortNativeCollectionRows = (
     if (comparison !== 0) return comparison * multiplier;
     return left.pokedexNumber - right.pokedexNumber || left.name.localeCompare(right.name);
   });
+  const nextCache = cachedBySort ?? new Map<string, NativeCollectionRow[]>();
+  nextCache.set(cacheKey, sorted);
+  if (!cachedBySort) nativeCollectionSortCache.set(rows, nextCache);
+  return sorted;
 };
 
 const formatNumber = (value: number): string =>

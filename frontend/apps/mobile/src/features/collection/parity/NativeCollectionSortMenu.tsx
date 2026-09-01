@@ -116,14 +116,14 @@ export const NativeCollectionSortMenu = ({
                   style={({ pressed }) => [styles.option, pressed && styles.pressed]}
                 >
                   <Text style={styles.optionLabel}>{option.label}</Text>
-                  <Image
+                  <Image fadeDuration={0}
                     accessibilityElementsHidden
                     resizeMode="contain"
                     source={{ uri: toAssetUrl(assetBaseUrl, option.icon) }}
                     style={styles.optionIcon}
                   />
                   {selected ? (
-                    <Image
+                    <Image fadeDuration={0}
                       accessibilityLabel={direction === 'ascending' ? 'Ascending' : 'Descending'}
                       resizeMode="contain"
                       source={{ uri: toAssetUrl(assetBaseUrl, '/images/sorting/arrow.png') }}

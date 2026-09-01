@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useDeferredValue, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   FlatList,
@@ -89,6 +89,12 @@ export const NativeRaidScreen = ({
     ...settings,
     dodgeSuccessRate: observedDodgeSuccessRate ?? settings.dodgeSuccessRate,
   }), [observedDodgeSuccessRate, settings]);
+  const deferredEffectiveSettings = useDeferredValue(effectiveSettings);
+  const deferredQuery = useDeferredValue(query);
+  const deferredRankingMetric = useDeferredValue(rankingMetric);
+  const deferredScope = useDeferredValue(scope);
+  const deferredSelectedType = useDeferredValue(selectedType);
+  const deferredSortDirection = useDeferredValue(sortDirection);
   const bosses = useMemo(() => buildNativeRaidBosses(catalog), [catalog]);
   const selectedBoss = bosses.find((boss) => boss.id === bossId) ?? bosses[0] ?? null;
   const bossSuggestions = useMemo(() => {
@@ -148,15 +154,15 @@ export const NativeRaidScreen = ({
   }, [bossCounterKey, catalog, effectiveScope, effectiveSettings, instances, selectedBoss, view]);
 
   const rankings = useMemo(() => {
-    const normalizedQuery = query.trim().toLocaleLowerCase();
+    const normalizedQuery = deferredQuery.trim().toLocaleLowerCase();
     const rows = (view === 'boss'
       ? [...bossCounterEntries]
       : buildNativeRaidAttackers({
           catalog,
           instances,
-          requiredType: selectedType,
-          scope: effectiveScope,
-          settings: effectiveSettings,
+          requiredType: deferredSelectedType,
+          scope: signedIn ? deferredScope : 'catalog',
+          settings: deferredEffectiveSettings,
         })).filter((entry) => !normalizedQuery || [
       entry.name,
       entry.fastMove?.name,
@@ -165,18 +171,30 @@ export const NativeRaidScreen = ({
     ].some((value) => value?.toLocaleLowerCase().includes(normalizedQuery)));
     if (view === 'rankings') {
       const metricValue = (entry: typeof rows[number]) => {
-        if (rankingMetric === 'cp') return entry.cp;
-        if (rankingMetric === 'dps') return entry.dps;
-        if (rankingMetric === 'tdo') return entry.tdo;
-        if (rankingMetric === 'er') return entry.er;
+        if (deferredRankingMetric === 'cp') return entry.cp;
+        if (deferredRankingMetric === 'dps') return entry.dps;
+        if (deferredRankingMetric === 'tdo') return entry.tdo;
+        if (deferredRankingMetric === 'er') return entry.er;
         return entry.score;
       };
       rows.sort((left, right) => (
-        (metricValue(right) - metricValue(left)) * (sortDirection === 'descending' ? 1 : -1)
+        (metricValue(right) - metricValue(left)) * (deferredSortDirection === 'descending' ? 1 : -1)
       ));
     }
     return rows.slice(0, 100);
-  }, [bossCounterEntries, catalog, effectiveScope, effectiveSettings, instances, query, rankingMetric, selectedType, sortDirection, view]);
+  }, [
+    bossCounterEntries,
+    catalog,
+    deferredEffectiveSettings,
+    deferredQuery,
+    deferredRankingMetric,
+    deferredScope,
+    deferredSelectedType,
+    deferredSortDirection,
+    instances,
+    signedIn,
+    view,
+  ]);
 
   const customSettingCount = [
     settings.attackerLevel !== DEFAULT_NATIVE_RAID_SETTINGS.attackerLevel,
@@ -228,7 +246,7 @@ export const NativeRaidScreen = ({
 
   const productHeader = (
     <View style={styles.productHeader}>
-      <Image
+      <Image fadeDuration={0}
         accessibilityElementsHidden
         resizeMode="contain"
         source={{ uri: absoluteUri(assetBaseUrl, '/images/btn_raid.png') }}
@@ -378,7 +396,7 @@ export const NativeRaidScreen = ({
     <View style={styles.bossSection}>
       {selectedBoss ? (
         <View style={[styles.selectedBoss, light && styles.panelLight]}>
-          <Image resizeMode="contain" source={{ uri: absoluteUri(assetBaseUrl, selectedBoss.imageUri) }} style={styles.selectedBossImage} />
+          <Image fadeDuration={0} resizeMode="contain" source={{ uri: absoluteUri(assetBaseUrl, selectedBoss.imageUri) }} style={styles.selectedBossImage} />
           <View style={styles.bossSummaryCopy}>
             <Text style={[styles.eyebrow, light && styles.accentLight]}>RAID BOSS</Text>
             <Text style={[styles.bossTitle, light && styles.textLight]}>{selectedBoss.name}</Text>
@@ -405,7 +423,7 @@ export const NativeRaidScreen = ({
               onPress={() => selectBoss(boss.id)}
               style={[styles.bossSuggestion, selectedBoss?.id === boss.id && styles.bossSuggestionActive]}
             >
-              <Image resizeMode="contain" source={{ uri: absoluteUri(assetBaseUrl, boss.imageUri) }} style={styles.bossSuggestionImage} />
+              <Image fadeDuration={0} resizeMode="contain" source={{ uri: absoluteUri(assetBaseUrl, boss.imageUri) }} style={styles.bossSuggestionImage} />
               <Text numberOfLines={1} style={[styles.bossSuggestionName, light && styles.textLight]}>{boss.name}</Text>
               <Text style={[styles.bossSuggestionNumber, light && styles.mutedLight]}>#{String(boss.pokemon.pokedex_number).padStart(4, '0')}</Text>
             </Pressable>

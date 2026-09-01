@@ -82,8 +82,8 @@ export const NativeCombatRankingCard = ({ assetBaseUrl, entry, metricLabel, rank
       <View style={styles.topRow}>
         <View style={[styles.rank, rank <= 3 && styles.rankTop]}><Text style={styles.rankText}>{rank}</Text></View>
         <View style={styles.stage}>
-          {entry.imageUri ? <Image resizeMode="contain" source={{ uri: uri(assetBaseUrl, entry.imageUri) }} style={styles.image} /> : null}
-          {entry.maxKind ? <Image resizeMode="contain" source={{ uri: uri(assetBaseUrl, `/images/${entry.maxKind}.png`) }} style={styles.maxIcon} /> : null}
+          {entry.imageUri ? <Image fadeDuration={0} resizeMode="contain" source={{ uri: uri(assetBaseUrl, entry.imageUri) }} style={styles.image} /> : null}
+          {entry.maxKind ? <Image fadeDuration={0} resizeMode="contain" source={{ uri: uri(assetBaseUrl, `/images/${entry.maxKind}.png`) }} style={styles.maxIcon} /> : null}
         </View>
         <View style={styles.copy}>
           <Text numberOfLines={2} style={[styles.name, light && styles.textLight]}>{entry.name}</Text>
@@ -97,7 +97,7 @@ export const NativeCombatRankingCard = ({ assetBaseUrl, entry, metricLabel, rank
           ) : null}
           {summary ? (
             <View style={[styles.maxMove, light && styles.maxMoveLight]}>
-              {summary.icon ? <Image resizeMode="contain" source={{ uri: uri(assetBaseUrl, summary.icon) }} style={styles.moveTypeIcon} /> : null}
+              {summary.icon ? <Image fadeDuration={0} resizeMode="contain" source={{ uri: uri(assetBaseUrl, summary.icon) }} style={styles.moveTypeIcon} /> : null}
               <Text numberOfLines={1} style={[styles.maxMoveText, light && styles.textLight]}>{summary.label}</Text>
             </View>
           ) : (
@@ -106,7 +106,7 @@ export const NativeCombatRankingCard = ({ assetBaseUrl, entry, metricLabel, rank
           {max ? (
             <View style={styles.fastMove}>
               <Text style={[styles.fastLabel, light && styles.mutedLight]}>FAST</Text>
-              <Image resizeMode="contain" source={{ uri: uri(assetBaseUrl, `/images/types/${fastType}.png`) }} style={styles.fastIcon} />
+              <Image fadeDuration={0} resizeMode="contain" source={{ uri: uri(assetBaseUrl, `/images/types/${fastType}.png`) }} style={styles.fastIcon} />
               <Text numberOfLines={1} style={[styles.fastName, light && styles.textLight]}>{max.fastMove.name}</Text>
               <Text style={[styles.fastSeconds, light && styles.mutedLight]}>{decimal(max.meterSeconds)}s</Text>
             </View>

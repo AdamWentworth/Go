@@ -501,11 +501,12 @@ const assertRoute = async (page, routeCase, theme, authState) => {
   }
   if (expectsActionMenu) {
     await page.locator('[data-testid="native-action-menu-anchor"]:visible').last().click();
-    const menu = page.locator('[data-testid="native-action-menu"]:visible').last();
-    await menu.waitFor({ state: 'visible', timeout: 10_000 });
-    // The menu deliberately ignores the opening tap until its 375 ms reveal
-    // has completed so the anchor tap cannot fall through to the close button.
-    await page.waitForTimeout(425);
+    // The home route keeps its menu mounted at opacity zero so its first tap
+    // never pays mount cost. `:visible` therefore cannot distinguish the open
+    // accessibility surface from that warm hidden tree.
+    await page.waitForFunction(() => Array.from(
+      document.querySelectorAll('[data-testid="native-action-menu"]'),
+    ).some((element) => getComputedStyle(element).pointerEvents !== 'none'), null, { timeout: 10_000 });
     if (path === '/native') {
       await page.screenshot({
         fullPage: true,
@@ -513,7 +514,9 @@ const assertRoute = async (page, routeCase, theme, authState) => {
       });
     }
     await page.locator('[data-testid="native-action-menu-close"]:visible').last().click();
-    await menu.waitFor({ state: 'hidden', timeout: 10_000 });
+    await page.waitForFunction(() => Array.from(
+      document.querySelectorAll('[data-testid="native-action-menu"]'),
+    ).every((element) => getComputedStyle(element).pointerEvents === 'none'), null, { timeout: 10_000 });
   }
   const overflow = await page.evaluate(() => Math.max(
     document.documentElement.scrollWidth,
@@ -769,9 +772,18 @@ const assertSignedInCollectionWorkflow = async (context) => {
     await page.getByLabel(/^Open All Caught, \d+ Pokémon$/).waitFor({ state: 'visible', timeout: 10_000 });
     const tradeTag = page.getByLabel(/^Open For Trade, \d+ Pokémon$/).first();
     await tradeTag.waitFor({ state: 'visible', timeout: 10_000 });
+    const tagStartedAt = Date.now();
     await tradeTag.click();
     await page.getByText('(TRADE)', { exact: true }).waitFor({ state: 'visible', timeout: 10_000 });
     const firstTradeCard = page.getByTestId(/^parity-card-/).first();
+    await firstTradeCard.waitFor({ state: 'visible', timeout: 10_000 });
+    const tagElapsedMs = Date.now() - tagStartedAt;
+    console.log(`[collection workflow] For Trade tag painted an interactive result in ${tagElapsedMs} ms.`);
+    if (tagElapsedMs > 750) {
+      throw new Error(
+        `For Trade tag took ${tagElapsedMs} ms to paint an interactive result; the parity budget is 750 ms.`,
+      );
+    }
     await firstTradeCard.click();
     await page.getByTestId('native-instance-overlay').waitFor({ state: 'visible', timeout: 25_000 });
     await page.goBack({ waitUntil: 'domcontentloaded' });

@@ -143,7 +143,7 @@ const PokemonCard = ({
         <NativePokemonLocationBackdrop uri={detail.row.locationBackgroundUri} />
       ) : null}
       {isLuckyTrade ? (
-        <Image
+        <Image fadeDuration={0}
           accessibilityElementsHidden
           resizeMode="contain"
           source={{ uri: toAssetUrl(assetBaseUrl, '/images/lucky.png') }}
@@ -151,7 +151,7 @@ const PokemonCard = ({
         />
       ) : null}
       {detail?.row.imageUri ? (
-        <Image
+        <Image fadeDuration={0}
           accessibilityLabel={detail.row.name}
           resizeMode="contain"
           source={{ uri: detail.row.imageUri }}
@@ -161,7 +161,7 @@ const PokemonCard = ({
         <Text style={[styles.missingPokemon, light && styles.secondaryLight]}>No image</Text>
       )}
       {detail?.row.maxKind ? (
-        <Image
+        <Image fadeDuration={0}
           accessibilityLabel={detail.row.maxKind === 'gigantamax' ? 'Gigantamax' : 'Dynamax'}
           resizeMode="contain"
           source={{ uri: toAssetUrl(assetBaseUrl, `/images/${detail.row.maxKind}.png`) }}
@@ -197,7 +197,7 @@ const TradeConditions = ({
       >
         <View style={styles.hearts}>
           {[1, 2, 3, 4, 5].map((level) => (
-            <Image
+            <Image fadeDuration={0}
               accessibilityElementsHidden
               key={level}
               resizeMode="contain"
@@ -212,7 +212,7 @@ const TradeConditions = ({
           ))}
         </View>
         <View style={styles.conditionIconTile}>
-          <Image
+          <Image fadeDuration={0}
             accessibilityLabel={model.isLuckyTrade ? 'Lucky trade' : 'Not a Lucky trade'}
             resizeMode="contain"
             source={{ uri: toAssetUrl(assetBaseUrl, '/images/lucky_friend_icon.png') }}
@@ -220,7 +220,7 @@ const TradeConditions = ({
           />
         </View>
         <View style={styles.conditionIconTile}>
-          <Image
+          <Image fadeDuration={0}
             accessibilityLabel={model.isRemoteTrade ? 'Remote trade available' : 'Remote trade unavailable'}
             resizeMode="contain"
             source={{ uri: toAssetUrl(assetBaseUrl, '/images/remote_trade_icon.png') }}
@@ -232,7 +232,7 @@ const TradeConditions = ({
     <View style={styles.costGroup}>
       <Text style={[styles.conditionLabel, light && styles.accentLight]}>STARDUST</Text>
       <View style={styles.costValue}>
-        <Image
+        <Image fadeDuration={0}
           accessibilityElementsHidden
           resizeMode="contain"
           source={{ uri: toAssetUrl(assetBaseUrl, '/images/stardust.png') }}
@@ -289,7 +289,7 @@ const TradeCard = ({
           light={light}
         />
         <View style={styles.exchangeIconWrap}>
-          <Image
+          <Image fadeDuration={0}
             accessibilityLabel="Trade exchange"
             resizeMode="contain"
             source={{ uri: toAssetUrl(assetBaseUrl, '/images/pogo_trade_icon.png') }}

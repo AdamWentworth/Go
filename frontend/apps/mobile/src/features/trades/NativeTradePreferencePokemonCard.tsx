@@ -52,7 +52,7 @@ export const NativeTradePreferencePokemonCard = ({
           <NativePokemonLocationBackdrop uri={candidate.row.locationBackgroundUri} />
         ) : null}
         {candidate.row.lucky ? (
-          <Image
+          <Image fadeDuration={0}
             accessibilityElementsHidden
             resizeMode="contain"
             source={{ uri: toAssetUrl(assetBaseUrl, '/images/lucky.png') }}
@@ -60,7 +60,7 @@ export const NativeTradePreferencePokemonCard = ({
           />
         ) : null}
         {candidate.row.imageUri ? (
-          <Image
+          <Image fadeDuration={0}
             accessibilityElementsHidden
             resizeMode="contain"
             source={{ uri: candidate.row.imageUri }}
@@ -70,7 +70,7 @@ export const NativeTradePreferencePokemonCard = ({
           <Text style={[styles.noImage, light && styles.secondaryLight]}>No image</Text>
         )}
         {candidate.row.maxKind ? (
-          <Image
+          <Image fadeDuration={0}
             accessibilityLabel={candidate.row.maxKind === 'gigantamax' ? 'Gigantamax' : 'Dynamax'}
             resizeMode="contain"
             source={{ uri: toAssetUrl(assetBaseUrl, `/images/${candidate.row.maxKind}.png`) }}

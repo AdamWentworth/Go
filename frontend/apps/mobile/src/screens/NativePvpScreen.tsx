@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator,
   FlatList,
@@ -121,7 +121,7 @@ const PvpEntryCard = ({
       </View>
       <View style={styles.rankingCopy}>
         <View style={styles.buildRow}>
-          <Image
+          <Image fadeDuration={0}
             resizeMode="contain"
             source={{ uri: uri(assetBaseUrl, entry.imageUrl) }}
             style={styles.pokemonImage}
@@ -133,7 +133,7 @@ const PvpEntryCard = ({
             {nickname ? <Text numberOfLines={1} style={[styles.nickname, light && styles.mutedLight]}>{nickname}</Text> : null}
             <View style={styles.typeRow}>
               {entry.types.map((type) => (
-                <Image
+                <Image fadeDuration={0}
                   accessibilityIgnoresInvertColors
                   key={type}
                   resizeMode="contain"
@@ -145,7 +145,7 @@ const PvpEntryCard = ({
             <View style={styles.moves}>
               {entry.moveset.map((move) => (
                 <View key={`${move.kind}-${move.id}`} style={styles.moveRow}>
-                  <Image
+                  <Image fadeDuration={0}
                     accessibilityIgnoresInvertColors
                     resizeMode="contain"
                     source={{ uri: typeIcon(move.type) }}
@@ -257,18 +257,24 @@ export const NativePvpScreen = ({
   const [role, setRole] = useState<NativePvpRole>("overall");
   const [query, setQuery] = useState("");
   const [expanded, setExpanded] = useState<string | null>(null);
+  const deferredFormat = useDeferredValue(format);
+  const deferredMechanics = useDeferredValue(mechanics);
+  const deferredQuery = useDeferredValue(query);
+  const deferredRole = useDeferredValue(role);
+  const deferredScope = useDeferredValue(scope);
+  const deferredWorkspace = useDeferredValue(workspace);
   const evaluationPlan = useMemo(() => (
-    scope === 'owned' && workspace !== 'iv-rank'
+    deferredScope === 'owned' && deferredWorkspace !== 'iv-rank'
       ? buildNativePvpRosterEvaluationPlan({
         catalog,
-        cpLimit: format?.cpLimit ?? null,
-        entries: format?.entries ?? [],
-        formatKey: format?.key ?? 'great',
+        cpLimit: deferredFormat?.cpLimit ?? null,
+        entries: deferredFormat?.entries ?? [],
+        formatKey: deferredFormat?.key ?? 'great',
         instances,
-        mechanics,
+        mechanics: deferredMechanics,
       })
       : null
-  ), [catalog, format?.cpLimit, format?.entries, format?.key, instances, mechanics, scope, workspace]);
+  ), [catalog, deferredFormat, deferredMechanics, deferredScope, deferredWorkspace, instances]);
   const [ownedEvaluation, setOwnedEvaluation] = useState<{
     error: string | null;
     key: string | null;
@@ -340,14 +346,14 @@ export const NativePvpScreen = ({
 
   const roster = useMemo(() => buildNativePvpRankingRows({
     catalog,
-    cpLimit: format?.cpLimit ?? null,
-    entries: format?.entries ?? [],
+    cpLimit: deferredFormat?.cpLimit ?? null,
+    entries: deferredFormat?.entries ?? [],
     evaluation: activeOwnedEvaluation.response,
     instances,
-    query,
-    role,
-    scope,
-  }), [activeOwnedEvaluation.response, catalog, format?.cpLimit, format?.entries, instances, query, role, scope]);
+    query: deferredQuery,
+    role: deferredRole,
+    scope: deferredScope,
+  }), [activeOwnedEvaluation.response, catalog, deferredFormat, deferredQuery, deferredRole, deferredScope, instances]);
   const rankingRows = roster.rows;
   const entries = useMemo(() => rankingRows.map(({ entry }) => entry), [rankingRows]);
   const rosterDetails = [
@@ -378,7 +384,7 @@ export const NativePvpScreen = ({
   const header = (
     <View>
       <View style={styles.topbar}>
-        <Image
+        <Image fadeDuration={0}
           resizeMode="contain"
           source={{ uri: uri(assetBaseUrl, "/images/btn_pvp.png") }}
           style={styles.productIcon}
@@ -575,7 +581,7 @@ export const NativePvpScreen = ({
       ) : null}
     </View>
   );
-  if (workspace === "rankings")
+  if (deferredWorkspace === "rankings")
     return (
       <View
         style={[styles.root, light && styles.rootLight]}
@@ -685,7 +691,7 @@ export const NativePvpScreen = ({
       testID="native-pvp-screen"
     >
       {header}
-      {workspace === "team" ? (
+      {deferredWorkspace === "team" ? (
         <NativePvpTeamBuilder
           assetBaseUrl={assetBaseUrl}
           entries={entries}
@@ -695,7 +701,7 @@ export const NativePvpScreen = ({
           persistSelection={persistTeamBuilder}
           storageKey={`${format?.key ?? "great"}:${scope}`}
         />
-      ) : workspace === "battle" ? (
+      ) : deferredWorkspace === "battle" ? (
         <NativePvpBattleLab
           assetBaseUrl={assetBaseUrl}
           entries={entries}

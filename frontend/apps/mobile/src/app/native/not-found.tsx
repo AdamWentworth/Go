@@ -32,7 +32,7 @@ export default function NativeNotFoundRoute() {
   return (
     <View style={[styles.root, { paddingTop: 34 + insets.top, paddingBottom: 116 + insets.bottom }, light && styles.rootLight]} testID="native-not-found-screen">
       <View style={[styles.card, light && styles.cardLight]}>
-        <Image
+        <Image fadeDuration={0}
           accessibilityIgnoresInvertColors
           resizeMode="contain"
           source={{ uri: `${runtimeConfig.api.frontendAppUrl.replace(/\/$/, '')}/images/logo/lockup.png` }}

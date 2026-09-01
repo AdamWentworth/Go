@@ -31,7 +31,7 @@ export const NativeActionMenuHint = ({
         { bottom: Math.max(82, insets.bottom + 70) },
       ]}
     >
-      <Image
+      <Image fadeDuration={0}
         accessibilityElementsHidden
         resizeMode="contain"
         source={{ uri: toAssetUrl(assetBaseUrl, '/images/btn_action_menu.png') }}

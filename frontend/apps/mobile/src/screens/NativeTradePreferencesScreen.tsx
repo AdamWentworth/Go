@@ -18,7 +18,14 @@ import {
   useWindowDimensions,
 } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import {
+  useDeferredValue,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type ReactNode,
+} from 'react';
 import {
   NativeTradePreferencePokemonCard,
 } from '../features/trades/NativeTradePreferencePokemonCard';
@@ -134,10 +141,10 @@ const EntrySummary = ({
     >
       <View style={styles.entryImageStage}>
         {entry.row.imageUri ? (
-          <Image resizeMode="contain" source={{ uri: entry.row.imageUri }} style={styles.entryImage} />
+          <Image fadeDuration={0} resizeMode="contain" source={{ uri: entry.row.imageUri }} style={styles.entryImage} />
         ) : null}
         {entry.row.maxKind ? (
-          <Image
+          <Image fadeDuration={0}
             accessibilityLabel={entry.row.maxKind === 'gigantamax' ? 'Gigantamax' : 'Dynamax'}
             resizeMode="contain"
             source={{ uri: toAssetUrl(assetBaseUrl, `/images/${entry.row.maxKind}.png`) }}
@@ -216,7 +223,7 @@ const RuleGroup = ({
               disabled && styles.disabled,
             ]}
           >
-            <Image
+            <Image fadeDuration={0}
               accessibilityElementsHidden
               resizeMode="contain"
               source={{ uri: toAssetUrl(assetBaseUrl, RULES[key].image) }}
@@ -282,6 +289,12 @@ export const NativeTradePreferencesScreen = ({
   const selectedEntry = currentEntries.find(
     (entry) => entry.collectionKey === selectedKeys[mode],
   ) ?? currentEntries[0] ?? null;
+  const deferredFilters = useDeferredValue(filters);
+  const deferredManualExclusions = useDeferredValue(manualExclusions);
+  const deferredMirror = useDeferredValue(mirror);
+  const deferredQuery = useDeferredValue(query);
+  const deferredSelectedEntry = useDeferredValue(selectedEntry);
+  const deferredShowAllowedOnly = useDeferredValue(showAllowedOnly);
   const colors = tone(mode, light);
 
   const resetDraft = (entry: NativeTradePreferenceEntry | null) => {
@@ -338,24 +351,27 @@ export const NativeTradePreferencesScreen = ({
     change();
   };
 
-  const draftCandidates = useMemo(() => selectedEntry
+  const draftCandidates = useMemo(() => deferredSelectedEntry
     ? resolveNativeTradePreferenceDraftCandidates({
-        entry: selectedEntry,
-        filters,
-        manuallyExcludedIds: manualExclusions,
-        mirror,
+        entry: deferredSelectedEntry,
+        filters: deferredFilters,
+        manuallyExcludedIds: deferredManualExclusions,
+        mirror: deferredMirror,
       })
-    : [], [filters, manualExclusions, mirror, selectedEntry]);
-  const normalizedQuery = query.trim().toLocaleLowerCase();
-  const visibleCandidates = draftCandidates.filter((candidate) => {
+    : [], [deferredFilters, deferredManualExclusions, deferredMirror, deferredSelectedEntry]);
+  const normalizedQuery = deferredQuery.trim().toLocaleLowerCase();
+  const visibleCandidates = useMemo(() => draftCandidates.filter((candidate) => {
     if (!editing && !candidate.allowed) return false;
-    if (editing && showAllowedOnly && !candidate.allowed) return false;
+    if (editing && deferredShowAllowedOnly && !candidate.allowed) return false;
     if (!normalizedQuery) return true;
     return (candidate.displayName ?? candidate.row.name).toLocaleLowerCase().includes(normalizedQuery)
       || candidate.row.name.toLocaleLowerCase().includes(normalizedQuery)
       || String(candidate.row.pokedexNumber).includes(normalizedQuery);
-  });
-  const allowedCount = draftCandidates.filter((candidate) => candidate.allowed).length;
+  }), [deferredShowAllowedOnly, draftCandidates, editing, normalizedQuery]);
+  const allowedCount = useMemo(
+    () => draftCandidates.filter((candidate) => candidate.allowed).length,
+    [draftCandidates],
+  );
   const activeRuleCount = Object.keys(RULES).filter(
     (key) => filters[key as TradePreferenceRuleKey],
   ).length;
@@ -484,7 +500,7 @@ export const NativeTradePreferencesScreen = ({
               style={[styles.editButton, { borderColor: colors.accent, backgroundColor: colors.soft }]}
               testID="trade-preferences-edit"
             >
-              <Image
+              <Image fadeDuration={0}
                 accessibilityElementsHidden
                 resizeMode="contain"
                 source={{ uri: toAssetUrl(assetBaseUrl, '/images/edit-icon.png') }}
@@ -535,7 +551,7 @@ export const NativeTradePreferencesScreen = ({
                   !editing && styles.disabled,
                 ]}
               >
-                <Image
+                <Image fadeDuration={0}
                   resizeMode="contain"
                   source={{ uri: toAssetUrl(assetBaseUrl, '/images/mirror.png') }}
                   style={styles.mirrorImage}
@@ -592,7 +608,7 @@ export const NativeTradePreferencesScreen = ({
             style={[styles.editButton, styles.mobileEditButton, { borderColor: colors.accent, backgroundColor: colors.soft }]}
             testID="trade-preferences-edit"
           >
-            <Image
+            <Image fadeDuration={0}
               accessibilityElementsHidden
               resizeMode="contain"
               source={{ uri: toAssetUrl(assetBaseUrl, '/images/edit-icon.png') }}

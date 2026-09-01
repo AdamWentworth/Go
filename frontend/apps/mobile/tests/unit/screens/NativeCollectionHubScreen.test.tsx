@@ -341,7 +341,8 @@ describe('NativeCollectionHubScreen', () => {
     fireEvent(screen.getByTestId('native-horizontal-page-slider'), 'momentumScrollEnd', {
       nativeEvent: { contentOffset: { x: 412, y: 0 } },
     });
-    fireEvent(screen.getByRole('button', { name: 'View Shiny Bulbasaur' }), 'longPress');
+    const caughtCard = screen.getByRole('button', { name: 'View Shiny Bulbasaur' });
+    fireEvent(caughtCard, 'longPress');
 
     expect(onOpenEntry).not.toHaveBeenCalled();
     expect(screen.getByRole('button', { name: /Organize \(1\)/i })).toBeTruthy();

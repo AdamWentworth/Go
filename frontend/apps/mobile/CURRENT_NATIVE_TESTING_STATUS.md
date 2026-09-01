@@ -47,8 +47,9 @@ mounts complete collection and Pokédex route trees in the background.
 
 Passing evidence for this checkpoint:
 
-- native Jest: 154 suites, 798 tests;
+- native Jest: 154 suites, 800 tests;
 - mobile and web TypeScript and ESLint;
+- native real-route smoke: 92 guest/signed-in, light/dark route states;
 - focused Vite mobile-Chromium browser coverage: 9 tests;
 - all signed-in native real-route workflows, including Home summary links to
   Caught, Favorites, For Trade, and Wanted collection states, plus enforcement
@@ -61,6 +62,14 @@ The Home workflow requires the loader to clear and an interactive collection
 card image to render within two seconds. This protects against the broken,
 unresponsive filtered navigation previously seen on the phone, but it is not a
 substitute for physical-device performance review.
+
+The 2026-08-31 responsiveness pass also caches collection filtering/sorting,
+virtualizes the trainer showcase picker, defers expensive battle/ranking/search
+projections until controls can paint, removes Android's default image fade from
+all 192 native image surfaces, and makes the action-menu close control respond
+during its reveal. The real rendered collection workflow now enforces a 750 ms
+tag-to-interactive-card ceiling; the final full-matrix run measured 416 ms,
+including the canonical 300 ms page slide.
 
 ## Remaining approval gate
 

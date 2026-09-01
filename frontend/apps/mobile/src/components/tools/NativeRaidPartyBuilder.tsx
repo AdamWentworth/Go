@@ -143,7 +143,7 @@ export const NativeRaidPartyBuilder = ({ assetBaseUrl, onResultChange, scores, t
                           return (
                             <Pressable accessibilityLabel={`${trainer.label} team slot ${slotIndex + 1}`} accessibilityRole="button" key={`${trainer.id}-${slotIndex}`} onPress={() => setPicker({ slotIndex, trainerId: trainer.id })} style={[styles.teamSlot, light && styles.teamSlotLight]}>
                               <Text style={[styles.slotNumber, light && styles.mutedLight]}>{slotIndex + 1}</Text>
-                              {member ? <Image resizeMode="contain" source={{ uri: assetUri(assetBaseUrl, member.imageUri) }} style={styles.teamImage} /> : <Text style={[styles.emptySlot, light && styles.mutedLight]}>＋</Text>}
+                              {member ? <Image fadeDuration={0} resizeMode="contain" source={{ uri: assetUri(assetBaseUrl, member.imageUri) }} style={styles.teamImage} /> : <Text style={[styles.emptySlot, light && styles.mutedLight]}>＋</Text>}
                               <Text numberOfLines={1} style={[styles.teamName, light && styles.textLight]}>{member?.name ?? 'Empty'}</Text>
                             </Pressable>
                           );
@@ -175,7 +175,7 @@ export const NativeRaidPartyBuilder = ({ assetBaseUrl, onResultChange, scores, t
               <Pressable accessibilityRole="button" onPress={() => selectMember(null)} style={[styles.candidate, light && styles.controlLight]}><Text style={[styles.candidateName, light && styles.textLight]}>Empty slot</Text></Pressable>
               {candidates.map((entry) => {
                 const selectedElsewhere = selectedTrainer?.memberIds.some((id, index) => id === entry.id && index !== picker?.slotIndex);
-                return <Pressable accessibilityRole="button" disabled={selectedElsewhere} key={entry.id} onPress={() => selectMember(entry)} style={[styles.candidate, light && styles.controlLight, selectedElsewhere && styles.disabled]}><Image resizeMode="contain" source={{ uri: assetUri(assetBaseUrl, entry.imageUri) }} style={styles.candidateImage} /><View style={styles.flex}><Text numberOfLines={1} style={[styles.candidateName, light && styles.textLight]}>{entry.name}</Text><Text numberOfLines={1} style={[styles.meta, light && styles.mutedLight]}>{entry.fastMove?.name ?? '—'} · {entry.chargedMove?.name ?? '—'}</Text></View><Text style={styles.score}>{entry.score.toFixed(1)}</Text></Pressable>;
+                return <Pressable accessibilityRole="button" disabled={selectedElsewhere} key={entry.id} onPress={() => selectMember(entry)} style={[styles.candidate, light && styles.controlLight, selectedElsewhere && styles.disabled]}><Image fadeDuration={0} resizeMode="contain" source={{ uri: assetUri(assetBaseUrl, entry.imageUri) }} style={styles.candidateImage} /><View style={styles.flex}><Text numberOfLines={1} style={[styles.candidateName, light && styles.textLight]}>{entry.name}</Text><Text numberOfLines={1} style={[styles.meta, light && styles.mutedLight]}>{entry.fastMove?.name ?? '—'} · {entry.chargedMove?.name ?? '—'}</Text></View><Text style={styles.score}>{entry.score.toFixed(1)}</Text></Pressable>;
               })}
             </ScrollView>
           </View>

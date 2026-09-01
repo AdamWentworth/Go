@@ -70,10 +70,10 @@ export const NativeCatalogDetailScreen = ({
         </Text>
         <View style={styles.imageStage}>
           {row.imageUri ? (
-            <Image accessibilityLabel={row.name} resizeMode="contain" source={{ uri: row.imageUri }} style={styles.image} />
+            <Image fadeDuration={0} accessibilityLabel={row.name} resizeMode="contain" source={{ uri: row.imageUri }} style={styles.image} />
           ) : null}
           {row.maxKind ? (
-            <Image
+            <Image fadeDuration={0}
               accessibilityLabel={row.maxKind === 'gigantamax' ? 'Gigantamax' : 'Dynamax'}
               resizeMode="contain"
               source={{ uri: `https://pokegonexus.com/images/${row.maxKind}.png` }}
@@ -84,7 +84,7 @@ export const NativeCatalogDetailScreen = ({
         <Text accessibilityRole="header" style={[styles.name, light && styles.textLight]}>{row.name}</Text>
         <View style={styles.types}>
           {row.typeIconUris.map((uri) => (
-            <Image accessibilityElementsHidden key={uri} source={{ uri }} style={styles.typeIcon} />
+            <Image fadeDuration={0} accessibilityElementsHidden key={uri} source={{ uri }} style={styles.typeIcon} />
           ))}
         </View>
       </View>

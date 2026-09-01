@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useDeferredValue, useMemo, useState } from "react";
 import {
   Image,
   Pressable,
@@ -106,6 +106,7 @@ export const NativePvpTeamBattle = ({
   const [activeSide, setActiveSide] = useState<0 | 1>(0);
   const [activeSlot, setActiveSlot] = useState(0);
   const [query, setQuery] = useState("");
+  const deferredQuery = useDeferredValue(query);
   const [policy, setPolicy] = useState<PvPTeamSwitchPolicy>("adaptive");
   const [shields, setShields] = useState<[number, number]>([2, 2]);
   const [energy, setEnergy] = useState<[number, number]>([0, 0]);
@@ -113,11 +114,12 @@ export const NativePvpTeamBattle = ({
   const [gauntlet, setGauntlet] = useState<PvPTeamGauntletResponse | null>(null);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState<"battle" | "field" | null>(null);
-  const normalized = query.trim().toLocaleLowerCase();
-  const unavailable = new Set(
-    teams[activeSide].filter((_, index) => index !== activeSlot),
+  const normalized = deferredQuery.trim().toLocaleLowerCase();
+  const unavailable = useMemo(
+    () => new Set(teams[activeSide].filter((_, index) => index !== activeSlot)),
+    [activeSide, activeSlot, teams],
   );
-  const choices = ready
+  const choices = useMemo(() => ready
     .filter((entry) =>
       (!unavailable.has(entry.speciesId) || teams[activeSide][activeSlot] === entry.speciesId) &&
       (!normalized || [
@@ -127,9 +129,10 @@ export const NativePvpTeamBattle = ({
         ...entry.moveset.map((move) => move.name),
       ].join(" ").toLocaleLowerCase().includes(normalized)),
     )
-    .slice(0, 40);
-  const selectedTeams = teams.map((team) =>
-    team.map((key) => entryById.get(key)),
+    .slice(0, 40), [activeSide, activeSlot, normalized, ready, teams, unavailable]);
+  const selectedTeams = useMemo(
+    () => teams.map((team) => team.map((key) => entryById.get(key))),
+    [entryById, teams],
   );
   const complete = selectedTeams.every((team) =>
     team.length === 3 && team.every(Boolean) && new Set(team.map((entry) => entry?.speciesId)).size === 3,
@@ -264,7 +267,7 @@ export const NativePvpTeamBattle = ({
                     style={[styles.slot, light && styles.controlLight, active && styles.slotActive]}
                   >
                     <Text style={[styles.role, light && styles.accentLight]}>{role}</Text>
-                    {entry ? <Image resizeMode="contain" source={{ uri: assetUri(assetBaseUrl, entry.imageUrl) }} style={styles.slotImage} /> : null}
+                    {entry ? <Image fadeDuration={0} resizeMode="contain" source={{ uri: assetUri(assetBaseUrl, entry.imageUrl) }} style={styles.slotImage} /> : null}
                     <Text numberOfLines={2} style={[styles.slotName, light && styles.textLight]}>{entry?.name ?? "Choose"}</Text>
                   </Pressable>
                 );
@@ -327,7 +330,7 @@ export const NativePvpTeamBattle = ({
                 const hp = member.maxHp ? Math.max(0, (member.hp / member.maxHp) * 100) : 0;
                 return (
                   <View key={member.fighterId} style={[styles.resultMember, member.fainted && styles.fainted]}>
-                    {entry ? <Image resizeMode="contain" source={{ uri: assetUri(assetBaseUrl, entry.imageUrl) }} style={styles.resultImage} /> : null}
+                    {entry ? <Image fadeDuration={0} resizeMode="contain" source={{ uri: assetUri(assetBaseUrl, entry.imageUrl) }} style={styles.resultImage} /> : null}
                     <View style={styles.resultCopy}>
                       <Text style={[styles.resultName, light && styles.textLight]}>{entry?.name ?? ROLES[index]}</Text>
                       <View style={[styles.hpTrack, light && styles.hpTrackLight]}><View style={[styles.hpFill, { width: `${hp}%` }]} /></View>
@@ -356,7 +359,7 @@ export const NativePvpTeamBattle = ({
         <View style={styles.candidateGrid}>
           {choices.map((entry) => {
             const active = teams[activeSide][activeSlot] === entry.speciesId;
-            return <Pressable accessibilityRole="button" accessibilityLabel={`Choose ${entry.name} for ${activeSide === 0 ? "your" : "opponent"} ${ROLES[activeSlot]}`} key={entry.speciesId} onPress={() => changeTeamMember(entry)} style={[styles.candidate, light && styles.controlLight, active && styles.candidateActive]}><Image resizeMode="contain" source={{ uri: assetUri(assetBaseUrl, entry.imageUrl) }} style={styles.candidateImage} /><View style={styles.candidateCopy}><Text numberOfLines={1} style={[styles.candidateName, light && styles.textLight]}>{entry.name}</Text><Text style={[styles.meta, light && styles.mutedLight]}>Level {entry.recommendedLevel}</Text></View><Text style={[styles.check, active && styles.checkActive]}>{active ? "✓" : "+"}</Text></Pressable>;
+            return <Pressable accessibilityRole="button" accessibilityLabel={`Choose ${entry.name} for ${activeSide === 0 ? "your" : "opponent"} ${ROLES[activeSlot]}`} key={entry.speciesId} onPress={() => changeTeamMember(entry)} style={[styles.candidate, light && styles.controlLight, active && styles.candidateActive]}><Image fadeDuration={0} resizeMode="contain" source={{ uri: assetUri(assetBaseUrl, entry.imageUrl) }} style={styles.candidateImage} /><View style={styles.candidateCopy}><Text numberOfLines={1} style={[styles.candidateName, light && styles.textLight]}>{entry.name}</Text><Text style={[styles.meta, light && styles.mutedLight]}>Level {entry.recommendedLevel}</Text></View><Text style={[styles.check, active && styles.checkActive]}>{active ? "✓" : "+"}</Text></Pressable>;
           })}
         </View>
       </View>

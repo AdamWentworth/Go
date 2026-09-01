@@ -377,7 +377,7 @@ const FriendshipConditions = ({
             onPress={onEdit}
             style={styles.conditionEditButton}
           >
-            <Image
+            <Image fadeDuration={0}
               accessibilityElementsHidden
               resizeMode="contain"
               source={{ uri: toAssetUrl(assetBaseUrl, editing ? '/images/save-icon.png' : '/images/edit-icon.png') }}
@@ -396,7 +396,7 @@ const FriendshipConditions = ({
             onPress={onOpenBackground}
             style={styles.conditionBackgroundButton}
           >
-            <Image
+            <Image fadeDuration={0}
               accessibilityElementsHidden
               resizeMode="contain"
               source={{ uri: toAssetUrl(assetBaseUrl, '/images/location.png') }}
@@ -430,7 +430,7 @@ const FriendshipConditions = ({
               key={index}
               onPress={() => onDraftChange({ friendship: index + 1 })}
             >
-              <Image
+              <Image fadeDuration={0}
                 accessibilityElementsHidden
                 resizeMode="contain"
                 source={{
@@ -450,14 +450,14 @@ const FriendshipConditions = ({
           disabled={!editing}
           onPress={() => onDraftChange({ prefLucky: !luckyRequested })}
         >
-          <Image
+          <Image fadeDuration={0}
             accessibilityElementsHidden
             resizeMode="contain"
             source={{ uri: toAssetUrl(assetBaseUrl, '/images/lucky_friend_icon.png') }}
             style={[styles.friendshipBadgeIcon, !luckyRequested && styles.inactiveConditionIcon]}
           />
         </Pressable>
-        <Image
+        <Image fadeDuration={0}
           accessibilityLabel={friendship >= 5 ? 'Remote trade available' : 'Remote trade unavailable'}
           resizeMode="contain"
           source={{ uri: toAssetUrl(assetBaseUrl, '/images/remote_trade_icon.png') }}
@@ -513,7 +513,7 @@ const TargetCard = ({
   >
     <View style={styles.targetImageStage}>
       {row.lucky ? (
-        <Image
+        <Image fadeDuration={0}
           accessibilityElementsHidden
           resizeMode="contain"
           source={{ uri: toAssetUrl(assetBaseUrl, '/images/lucky.png') }}
@@ -521,7 +521,7 @@ const TargetCard = ({
         />
       ) : null}
       {row.imageUri ? (
-        <Image
+        <Image fadeDuration={0}
           accessibilityLabel={row.name}
           resizeMode="contain"
           source={{ uri: row.imageUri }}
@@ -529,7 +529,7 @@ const TargetCard = ({
         />
       ) : null}
       {row.maxKind ? (
-        <Image
+        <Image fadeDuration={0}
           accessibilityLabel={row.maxKind === 'gigantamax' ? 'Gigantamax' : 'Dynamax'}
           resizeMode="contain"
           source={{ uri: toAssetUrl(assetBaseUrl, `/images/${row.maxKind}.png`) }}
@@ -711,7 +711,7 @@ const NativeMovesPanel = ({
               <View accessibilityLabel={`${move.label}: ${move.value}`} style={styles.nativeMoveRow}>
                 <View style={styles.nativeMoveIdentity}>
                   {move.typeIconUri ? (
-                    <Image
+                    <Image fadeDuration={0}
                       accessibilityLabel={`${move.typeName ?? 'Normal'} type`}
                       source={{ uri: move.typeIconUri }}
                       style={styles.nativeMoveTypeIcon}
@@ -729,7 +729,7 @@ const NativeMovesPanel = ({
               {isShadow ? (
                 <View accessibilityLabel="Shadow bonus" style={styles.nativeShadowBonusRow}>
                   <View style={styles.nativeShadowBonusIconBadge}>
-                    <Image
+                    <Image fadeDuration={0}
                       accessibilityElementsHidden
                       source={{ uri: toAssetUrl(assetBaseUrl, '/media/images/shadow_icon.png') }}
                       style={styles.nativeShadowBonusIcon}
@@ -775,7 +775,7 @@ const NativeMoveSelector = ({
         testID={selectorTestId}
       >
         {selected?.typeIconUri ? (
-          <Image
+          <Image fadeDuration={0}
             accessibilityLabel={`${selected.typeName} type`}
             source={{ uri: selected.typeIconUri }}
             style={styles.choiceFieldTypeIcon}
@@ -835,7 +835,7 @@ const NativeMoveSelector = ({
                   ]}
                 >
                   {option.typeIconUri ? (
-                    <Image
+                    <Image fadeDuration={0}
                       accessibilityLabel={`${option.typeName} type`}
                       source={{ uri: option.typeIconUri }}
                       style={styles.choiceOptionTypeIcon}
@@ -955,7 +955,7 @@ const NativeBackgroundPicker = ({
               { backgroundColor: palette.input, borderColor: selectedId == null ? '#38a9ff' : palette.border },
             ]}
           >
-            <Image
+            <Image fadeDuration={0}
               accessibilityElementsHidden
               resizeMode="contain"
               source={{ uri: toAssetUrl(assetBaseUrl, '/images/location.png') }}
@@ -1350,7 +1350,7 @@ const PowerFormOption = ({
     ]}
   >
     {imageUri ? (
-      <Image
+      <Image fadeDuration={0}
         accessibilityElementsHidden
         resizeMode="contain"
         source={{ uri: imageUri }}
@@ -1606,7 +1606,7 @@ const NativePowerControls = ({
       {supportsMaxMoves ? (
         <View style={styles.maxMovesPanel}>
           <View style={styles.maxMovesHeading}>
-            <Image
+            <Image fadeDuration={0}
               accessibilityElementsHidden
               resizeMode="contain"
               source={{ uri: toAssetUrl(assetBaseUrl, `/images/${detail.row.maxKind ?? 'dynamax'}.png`) }}
@@ -1789,7 +1789,7 @@ const NativeInstanceEditFields = ({
             testID={pokemonTypesTestId(typeIconUris)}
           >
             {typeIconUris.map((uri) => (
-              <Image
+              <Image fadeDuration={0}
                 accessibilityLabel={`${uri.match(/\/([^/?]+)\.png(?:\?|$)/i)?.[1] ?? 'Pokémon'} type`}
                 key={uri}
                 source={{ uri }}
@@ -2202,7 +2202,7 @@ export const NativeInstanceDetailScreen = ({
         style={[styles.backgroundLayer, overlaySwipe.backgroundMotionStyle]}
         testID="native-instance-background-layer"
       >
-        <Image
+        <Image fadeDuration={0}
           accessibilityElementsHidden
           blurRadius={3}
           resizeMode="cover"
@@ -2279,7 +2279,7 @@ export const NativeInstanceDetailScreen = ({
                   onPress={() => void toggleEdit()}
                   style={styles.iconButton}
                 >
-                  <Image
+                  <Image fadeDuration={0}
                     accessibilityElementsHidden
                     resizeMode="contain"
                     source={{ uri: toAssetUrl(assetBaseUrl, '/images/edit-icon.png') }}
@@ -2301,7 +2301,7 @@ export const NativeInstanceDetailScreen = ({
                     onPress={() => setBackgroundPickerInstanceId(detail.row.id)}
                     style={styles.iconButton}
                   >
-                    <Image
+                    <Image fadeDuration={0}
                       accessibilityElementsHidden
                       resizeMode="contain"
                       source={{ uri: toAssetUrl(assetBaseUrl, '/images/location.png') }}
@@ -2342,7 +2342,7 @@ export const NativeInstanceDetailScreen = ({
               </View>
             ) : null}
             {displayLucky ? (
-              <Image
+              <Image fadeDuration={0}
                 accessibilityElementsHidden
                 resizeMode="contain"
                 source={{ uri: toAssetUrl(assetBaseUrl, '/images/lucky.png') }}
@@ -2353,7 +2353,7 @@ export const NativeInstanceDetailScreen = ({
               />
             ) : null}
             {displayImageUri ? (
-              <Image
+              <Image fadeDuration={0}
                 accessibilityLabel={detail.row.name}
                 resizeMode="contain"
                 source={{ uri: displayImageUri }}
@@ -2365,7 +2365,7 @@ export const NativeInstanceDetailScreen = ({
               />
             ) : null}
             {maxBadge ? (
-              <Image
+              <Image fadeDuration={0}
                 accessibilityLabel={detail.row.maxKind === 'gigantamax' ? 'Gigantamax' : 'Dynamax'}
                 resizeMode="contain"
                 source={{ uri: maxBadge }}
@@ -2376,7 +2376,7 @@ export const NativeInstanceDetailScreen = ({
               />
             ) : null}
             {displayPurified ? (
-              <Image
+              <Image fadeDuration={0}
                 accessibilityLabel="Purified"
                 resizeMode="contain"
                 source={{ uri: toAssetUrl(assetBaseUrl, '/images/purified.png') }}
@@ -2397,7 +2397,7 @@ export const NativeInstanceDetailScreen = ({
                 accessible
                 style={styles.caughtDateBadge}
               >
-                <Image
+                <Image fadeDuration={0}
                   accessibilityElementsHidden
                   source={{ uri: toAssetUrl(assetBaseUrl, '/images/balls/pokeball.png') }}
                   style={styles.caughtDateBall}
@@ -2465,7 +2465,7 @@ export const NativeInstanceDetailScreen = ({
                       testID={pokemonTypesTestId(displayTypeIconUris)}
                     >
                       {displayTypeIconUris.map((uri) => (
-                        <Image
+                        <Image fadeDuration={0}
                           accessibilityLabel={`${uri.match(/\/([^/?]+)\.png(?:\?|$)/i)?.[1] ?? 'Pokémon'} type`}
                           key={uri}
                           source={{ uri }}
@@ -2493,7 +2493,7 @@ export const NativeInstanceDetailScreen = ({
               && !instance?.is_mega
               && (detail.megaOptions?.length ?? 0) > 0 ? (
                 <View accessibilityLabel="Mega Evolution available" accessible style={styles.megaEligibility}>
-                  <Image
+                  <Image fadeDuration={0}
                     accessibilityElementsHidden
                     source={{ uri: toAssetUrl(assetBaseUrl, '/images/mega.png') }}
                     style={styles.megaEligibilityIcon}
@@ -2628,7 +2628,7 @@ export const NativeInstanceDetailScreen = ({
             },
           ]}
         >
-          <Image
+          <Image fadeDuration={0}
             accessibilityElementsHidden
             resizeMode="contain"
             source={{ uri: toAssetUrl(assetBaseUrl, '/images/save-icon.png') }}
@@ -2653,7 +2653,7 @@ export const NativeInstanceDetailScreen = ({
         onPress={onBack}
         style={[styles.closeButton, { bottom: 18 }]}
       >
-        <Image
+        <Image fadeDuration={0}
           resizeMode="contain"
           source={{ uri: toAssetUrl(assetBaseUrl, light ? '/images/close-button-light.png' : '/images/close-button.png') }}
           style={styles.closeImage}
