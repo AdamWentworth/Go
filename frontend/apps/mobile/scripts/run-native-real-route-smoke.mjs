@@ -22,6 +22,7 @@ const baseUrl = `http://127.0.0.1:${expoPort}`;
 const refreshTokenKey = 'pokegonexus.mobile.refresh-token';
 const routeFilter = process.env.POKEGONEXUS_REAL_ROUTE_FILTER?.trim() ?? '';
 const workflowsOnly = process.env.POKEGONEXUS_REAL_WORKFLOWS_ONLY === 'true';
+const workflowFilter = process.env.POKEGONEXUS_REAL_WORKFLOW_FILTER?.trim() ?? '';
 
 const readJson = (name) => JSON.parse(
   readFileSync(resolve(fixtureDirectory, name), 'utf8').replace(/^\uFEFF/, ''),
@@ -30,7 +31,18 @@ const readJson = (name) => JSON.parse(
 const catalog = readJson('pokemons.json');
 const allInstances = readJson('instances.json');
 const instanceEntries = Object.entries(allInstances).slice(0, 180);
-const instances = Object.fromEntries(instanceEntries);
+const instances = Object.fromEntries(instanceEntries.map(([instanceId, instance], index) => {
+  if (index === 0) return [instanceId, { ...instance, favorite: true }];
+  if (index === 1) {
+    return [instanceId, {
+      ...instance,
+      is_caught: false,
+      is_for_trade: false,
+      is_wanted: true,
+    }];
+  }
+  return [instanceId, instance];
+}));
 const firstInstanceId = instanceEntries[0]?.[0] ?? '';
 const firstVariantId = catalog[0]?.variants?.[0]?.variant_id ?? '0001-default';
 const foreignInstances = {
@@ -488,8 +500,8 @@ const assertRoute = async (page, routeCase, theme, authState) => {
     throw new Error(`${path} rendered an action-menu anchor where the canonical route omits it.`);
   }
   if (expectsActionMenu) {
-    await page.getByTestId('native-action-menu-anchor').click();
-    const menu = page.getByTestId('native-action-menu');
+    await page.locator('[data-testid="native-action-menu-anchor"]:visible').last().click();
+    const menu = page.locator('[data-testid="native-action-menu"]:visible').last();
     await menu.waitFor({ state: 'visible', timeout: 10_000 });
     // The menu deliberately ignores the opening tap until its 375 ms reveal
     // has completed so the anchor tap cannot fall through to the close button.
@@ -500,7 +512,7 @@ const assertRoute = async (page, routeCase, theme, authState) => {
         path: join(artifactDirectory, `${theme}-${authState}-native-action-menu.png`),
       });
     }
-    await page.getByTestId('native-action-menu-close').click();
+    await page.locator('[data-testid="native-action-menu-close"]:visible').last().click();
     await menu.waitFor({ state: 'hidden', timeout: 10_000 });
   }
   const overflow = await page.evaluate(() => Math.max(
@@ -527,15 +539,35 @@ const signedInActionMenuDestinations = [
   ['rankings', '/native/rankings', 'native-rankings-screen'],
 ];
 
+const visibleTestId = (page, testId) => (
+  page.getByTestId(testId).filter({ visible: true }).last()
+);
+
+const releaseEmptyExpoErrorToast = async (page) => {
+  const errorToast = page.locator('#error-toast');
+  if (!(await errorToast.count())) return;
+  const errorText = await errorToast.evaluate((host) => {
+    const visibleToast = host.shadowRoot?.querySelector('[role="button"]');
+    if (visibleToast) return visibleToast.textContent?.trim() || 'Unknown Expo development error';
+    host.style.pointerEvents = 'none';
+    return '';
+  });
+  if (errorText) throw new Error(`Expo development overlay reported: ${errorText}`);
+};
+
 const openActionMenu = async (page) => {
-  await page.getByTestId('native-action-menu-anchor').click();
-  await page.getByTestId('native-action-menu').waitFor({ state: 'visible', timeout: 10_000 });
+  await visibleTestId(page, 'native-action-menu-anchor').click();
+  await visibleTestId(page, 'native-action-menu').waitFor({
+    state: 'visible',
+    timeout: 10_000,
+  });
   await page.waitForTimeout(425);
+  await releaseEmptyExpoErrorToast(page);
 };
 
 const assertNativeDestination = async (page, expectedPath, expectedTestId) => {
   await page.waitForURL((url) => url.pathname === expectedPath, { timeout: 25_000 });
-  await page.getByTestId(expectedTestId).waitFor({ state: 'visible', timeout: 25_000 });
+  await visibleTestId(page, expectedTestId).waitFor({ state: 'visible', timeout: 25_000 });
   await waitForRouteToSettle(page);
   const pathname = await page.evaluate(() => window.location.pathname);
   if (pathname !== expectedPath) {
@@ -554,7 +586,7 @@ const assertSignedInActionMenuNavigation = async (context) => {
       await page.getByTestId('native-home-screen').waitFor({ state: 'visible', timeout: 25_000 });
       await waitForRouteToSettle(page);
       await openActionMenu(page);
-      await page.getByTestId(`native-action-menu-destination-${destinationId}`).click();
+      await visibleTestId(page, `native-action-menu-destination-${destinationId}`).click();
       await assertNativeDestination(page, expectedPath, expectedTestId);
     } catch (error) {
       await page.screenshot({
@@ -579,7 +611,7 @@ const assertSignedInActionMenuNavigation = async (context) => {
       await page.getByTestId('native-home-screen').waitFor({ state: 'visible', timeout: 25_000 });
       await waitForRouteToSettle(page);
       await openActionMenu(page);
-      await page.getByLabel(label, { exact: true }).click();
+      await page.getByLabel(label, { exact: true }).filter({ visible: true }).last().click();
       await assertNativeDestination(page, expectedPath, expectedTestId);
     } finally {
       await page.close();
@@ -592,7 +624,7 @@ const assertSignedInActionMenuNavigation = async (context) => {
     await profilePage.getByTestId('native-home-screen').waitFor({ state: 'visible', timeout: 25_000 });
     await waitForRouteToSettle(profilePage);
     await openActionMenu(profilePage);
-    await profilePage.getByTestId('native-action-menu-profile').click();
+    await visibleTestId(profilePage, 'native-action-menu-profile').click();
     await assertNativeDestination(profilePage, '/native/profile', 'native-trainer-profile');
   } finally {
     await profilePage.close();
@@ -604,8 +636,10 @@ const assertSignedInActionMenuNavigation = async (context) => {
     await supportPage.getByTestId('native-home-screen').waitFor({ state: 'visible', timeout: 25_000 });
     await waitForRouteToSettle(supportPage);
     await openActionMenu(supportPage);
-    await supportPage.getByLabel('Learn and support', { exact: true }).click();
-    await supportPage.getByText('Getting Started', { exact: true }).click();
+    await supportPage.getByLabel('Learn and support', { exact: true })
+      .filter({ visible: true }).last().click();
+    await supportPage.getByText('Getting Started', { exact: true })
+      .filter({ visible: true }).last().click();
     await assertNativeDestination(
       supportPage,
       '/native/info/getting-started',
@@ -613,6 +647,100 @@ const assertSignedInActionMenuNavigation = async (context) => {
     );
   } finally {
     await supportPage.close();
+  }
+};
+
+const assertSignedInHomeCollectionWorkflow = async (context) => {
+  const page = await context.newPage();
+  const summaryCases = [
+    ['Caught', 'Caught'],
+    ['Favorites', 'Favorites'],
+    ['For Trade', 'Trade'],
+    ['Wanted', 'Wanted'],
+  ];
+  try {
+    await page.goto(`${baseUrl}/native`, { timeout: 60_000, waitUntil: 'domcontentloaded' });
+    await page.getByTestId('native-home-screen').waitFor({ state: 'visible', timeout: 25_000 });
+    await waitForRouteToSettle(page);
+    if (await page.getByTestId('native-home-screen').count() !== 1
+        || await page.getByTestId('native-collection-hub').count() !== 0
+        || await page.getByTestId('native-pokedex-screen').count() !== 0) {
+      throw new Error('Home mounted duplicate or prefetched primary route trees.');
+    }
+
+    for (const [homeLabel, activeTagLabel] of summaryCases) {
+      const startedAt = Date.now();
+      await page.getByRole('button', { name: new RegExp(homeLabel) }).first().click();
+      await page.waitForURL((url) => url.pathname === '/native/collection', { timeout: 10_000 });
+      await page.getByTestId('native-collection-hub').waitFor({
+        state: 'visible',
+        timeout: 10_000,
+      });
+      const collectionScreenCount = await page.getByTestId('native-collection-hub').count();
+      if (collectionScreenCount !== 1) {
+        throw new Error(
+          `${homeLabel} retained ${collectionScreenCount} collection route trees instead of one.`,
+        );
+      }
+      const clearTag = page.getByRole('button', {
+        name: `Clear ${activeTagLabel} tag filter`,
+        exact: true,
+      });
+      await clearTag.waitFor({ state: 'visible', timeout: 10_000 });
+      await page.getByTestId('native-app-loading-overlay').waitFor({
+        state: 'hidden',
+        timeout: 2_000,
+      });
+
+      const firstCard = page.getByTestId(/^parity-card-/).first();
+      await firstCard.waitFor({ state: 'visible', timeout: 10_000 });
+      const imageReady = await firstCard.locator('img').first().evaluate(async (image) => {
+        if (!(image instanceof HTMLImageElement)) return false;
+        if (!image.complete) {
+          await new Promise((resolveImage) => {
+            image.addEventListener('load', resolveImage, { once: true });
+            image.addEventListener('error', resolveImage, { once: true });
+          });
+        }
+        return image.naturalWidth > 0;
+      });
+      if (!imageReady) throw new Error(`${homeLabel} rendered a collection card without its image.`);
+      const elapsedMs = Date.now() - startedAt;
+      if (elapsedMs > 2_000) {
+        throw new Error(
+          `${homeLabel} took ${elapsedMs} ms to render an interactive card and image; the parity budget is 2000 ms.`,
+        );
+      }
+
+      if (homeLabel === 'Caught') {
+        await clearTag.click();
+        const confirmation = page.getByTestId('native-confirmation-dialog');
+        await confirmation.waitFor({ state: 'visible', timeout: 5_000 });
+        await confirmation.getByText(
+          'Clear the Caught tag? This returns you to browsing all available Pokémon and forms in Pokémon GO, without using your personal tag lists.',
+          { exact: true },
+        ).waitFor({ state: 'visible' });
+        await confirmation.getByRole('button', { name: 'Cancel', exact: true }).click();
+        await clearTag.waitFor({ state: 'visible' });
+      }
+
+      await openActionMenu(page);
+      await visibleTestId(page, 'native-action-menu-destination-home').click();
+      await assertNativeDestination(page, '/native', 'native-home-screen');
+      const homeScreenCount = await page.getByTestId('native-home-screen').count();
+      if (homeScreenCount !== 1) {
+        throw new Error(`${homeLabel} retained ${homeScreenCount} Home route trees instead of one.`);
+      }
+    }
+  } catch (error) {
+    await page.screenshot({
+      fullPage: true,
+      path: join(artifactDirectory, 'dark-signed-in-home-collection-workflow-failure.png'),
+    }).catch(() => undefined);
+    const message = error instanceof Error ? error.message : String(error);
+    throw new Error(`[home/collection workflow] ${message}`);
+  } finally {
+    await page.close();
   }
 };
 
@@ -934,13 +1062,17 @@ const runContext = async (browser, { authState, routes, theme }) => {
       }
     }
     if (!routeFilter && authState === 'signed-in' && theme === 'dark') {
-      await assertSignedInActionMenuNavigation(context);
-      await assertSignedInCollectionWorkflow(context);
-      await assertSignedInSearchWorkflow(context);
-      await assertSignedInTradesWorkflow(context);
-      await assertSignedInFriendsWorkflow(context);
-      await assertSignedInProfileWorkflow(context);
-      await assertSignedInSettingsAccountWorkflow(context);
+      const shouldRunWorkflow = (name) => !workflowFilter || name.includes(workflowFilter);
+      if (shouldRunWorkflow('action-menu')) await assertSignedInActionMenuNavigation(context);
+      if (shouldRunWorkflow('home-collection')) await assertSignedInHomeCollectionWorkflow(context);
+      if (shouldRunWorkflow('collection')) await assertSignedInCollectionWorkflow(context);
+      if (shouldRunWorkflow('search')) await assertSignedInSearchWorkflow(context);
+      if (shouldRunWorkflow('trades')) await assertSignedInTradesWorkflow(context);
+      if (shouldRunWorkflow('friends')) await assertSignedInFriendsWorkflow(context);
+      if (shouldRunWorkflow('profile')) await assertSignedInProfileWorkflow(context);
+      if (shouldRunWorkflow('settings-account')) {
+        await assertSignedInSettingsAccountWorkflow(context);
+      }
     }
     if (unhandledApis.size > 0) {
       throw new Error(`Real-route smoke encountered unhandled APIs:\n${[...unhandledApis].sort().join('\n')}`);

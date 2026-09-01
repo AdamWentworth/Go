@@ -1,14 +1,8 @@
-export const NATIVE_ACTION_MENU_DESTINATIONS = [
-  { icon: '/images/btn_raid.png', label: 'Raid', path: '/raid' },
-  { icon: '/images/btn_pokedex.png', label: 'Pokédex', path: '/pokedex' },
-  { icon: '/images/btn_pvp.png', label: 'PvP', path: '/pvp' },
-  { icon: '/images/btn_search.png', label: 'Search', path: '/search' },
-  { icon: '/images/btn_home.png', label: 'Home', path: '/' },
-  { icon: '/images/btn_trades.png', label: 'Trades', path: '/trades' },
-  { icon: '/images/btn_pokemon.png', label: 'Pokémon', path: '/pokemon' },
-  { icon: '/images/btn_max.png', label: 'Max Battles', path: '/max' },
-  { icon: '/images/btn_rankings.png', label: 'Rankings', path: '/rankings' },
-] as const;
+import { actionMenuExperienceParityContract } from '@pokemongonexus/shared-ui-tokens';
+
+export const NATIVE_ACTION_MENU_DESTINATIONS = (
+  actionMenuExperienceParityContract.primaryDestinations
+);
 
 export const NATIVE_ACTION_MENU_ASSET_PATHS = [
   '/images/btn_action_menu.png',

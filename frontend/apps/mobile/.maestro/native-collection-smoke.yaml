@@ -350,7 +350,7 @@ tags:
 - assertVisible: Raid
 - assertVisible: Search
 - assertVisible: Pokémon
-- assertVisible: Pokédex
+- assertVisible: Pokedex
 - assertVisible: Home
 - assertVisible: PvP
 - assertVisible: Trades

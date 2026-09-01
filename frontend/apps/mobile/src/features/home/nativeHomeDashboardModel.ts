@@ -1,6 +1,7 @@
 import type { PokemonInstance } from '@pokemongonexus/shared-contracts/instances';
 import type { TradeRecord } from '@pokemongonexus/shared-contracts/trades';
 import type { NativeCollectionRow } from '../collection/collectionModel';
+import { homeExperienceParityContract } from '@pokemongonexus/shared-ui-tokens';
 
 export type NativeHomeCollectionSummary = {
   caught: number;
@@ -129,7 +130,7 @@ export const buildNativeHomeOnboardingProgress = (
       title: 'Add your first Pokémon',
       description: 'Begin with something you have caught or already want.',
       action: 'Open Pokémon',
-      to: '/pokemon',
+      to: homeExperienceParityContract.collectionPath,
       complete: collection.caught + collection.wanted > 0,
     },
     {
@@ -137,7 +138,7 @@ export const buildNativeHomeOnboardingProgress = (
       title: 'Create a Wanted listing',
       description: 'Tell the app what you are looking for and which details matter.',
       action: 'Open wishlist',
-      to: '/pokemon?filter=wanted',
+      to: homeExperienceParityContract.collectionSummaryPaths.wanted,
       complete: collection.wanted > 0,
     },
     {
@@ -145,7 +146,7 @@ export const buildNativeHomeOnboardingProgress = (
       title: 'List a Pokémon For Trade',
       description: 'Choose an eligible caught Pokémon you would offer another trainer.',
       action: 'Open collection',
-      to: '/pokemon?filter=trade',
+      to: homeExperienceParityContract.collectionSummaryPaths.trade,
       complete: collection.forTrade > 0,
     },
     {

@@ -770,7 +770,7 @@ const run = async () => {
         if (!(menu instanceof HTMLElement)) return false;
         return Number.parseFloat(window.getComputedStyle(menu).opacity || '0') >= 0.99;
       });
-      for (const label of ['Raid', 'Pokédex', 'PvP', 'Search', 'Home', 'Trades', 'Pokémon', 'Max Battles', 'Rankings']) {
+      for (const label of ['Raid', 'Pokedex', 'PvP', 'Search', 'Home', 'Trades', 'Pokémon', 'Max Battles', 'Rankings']) {
         if (await actionMenu.getByRole('button', { name: label, exact: true }).count() !== 1) {
           throw new Error(`Action menu is missing ${label}.`);
         }
@@ -786,7 +786,7 @@ const run = async () => {
       });
       const actionDestinations = [
         ['Raid', '/raid'],
-        ['Pokédex', '/pokedex'],
+        ['Pokedex', '/pokedex'],
         ['PvP', '/pvp'],
         ['Search', '/search'],
         ['Home', '/'],

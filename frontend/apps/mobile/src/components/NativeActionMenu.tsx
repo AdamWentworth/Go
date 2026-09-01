@@ -11,6 +11,7 @@ import {
   BackHandler,
   Easing,
   Image,
+  Platform,
   Pressable,
   StyleSheet,
   Text,
@@ -40,6 +41,10 @@ import {
   NativeLoadingSpinner,
   type NativeLoadingSpinnerHandle,
 } from './NativeLoadingSpinner';
+import {
+  actionMenuExperienceParityContract,
+  themeSwitchExperienceParityContract,
+} from '@pokemongonexus/shared-ui-tokens';
 
 type Props = {
   assetBaseUrl: string;
@@ -52,13 +57,14 @@ type Props = {
   visible: boolean;
 };
 
-const SUPPORT_DESTINATIONS = [
-  { glyph: 'compass', label: 'Getting Started', path: '/getting-started' },
-  { glyph: 'question', label: 'FAQ', path: '/faq' },
-  { glyph: 'info', label: 'About', path: '/about' },
-  { glyph: 'shield', label: 'Trade Safety', path: '/safety' },
-  { glyph: 'book', label: 'Help directory', path: '/help' },
-] as const;
+const SUPPORT_GLYPHS = ['compass', 'question', 'info', 'shield', 'book'] as const;
+type SupportGlyphName = typeof SUPPORT_GLYPHS[number];
+const SUPPORT_DESTINATIONS = actionMenuExperienceParityContract.supportDestinations.map(
+  (destination, index) => ({
+    ...destination,
+    glyph: SUPPORT_GLYPHS[index] ?? 'book',
+  }),
+);
 
 const ACTION_MENU_NAVIGATION_SOURCE = 'action-menu-navigation';
 const CSS_EASE = Easing.bezier(0.25, 0.1, 0.25, 1);
@@ -79,14 +85,6 @@ const THEME_CLOUDS = [
   { color: '#eeeeee', delay: 0, left: 36, size: 40, top: 18 },
   { color: '#eeeeee', delay: 0, left: 48, size: 20, top: 14 },
   { color: '#eeeeee', delay: 0, left: 22, size: 30, top: 26 },
-] as const;
-
-type SupportGlyphName = typeof SUPPORT_DESTINATIONS[number]['glyph'];
-
-const RADIAL_POSITIONS = [
-  [-1, -1], [0, -1], [1, -1],
-  [-1, 0], [0, 0], [1, 0],
-  [-1, 1], [0, 1], [1, 1],
 ] as const;
 
 const clamp = (value: number, minimum: number, maximum: number): number => (
@@ -236,7 +234,7 @@ const NativeThemeSwitch = ({
     slideRef.current = Animated.parallel([
       // Vite: .sun-moon { transition: transform 0.5s ease; }
       Animated.timing(progress, {
-        duration: 500,
+        duration: themeSwitchExperienceParityContract.slideTransitionMs,
         easing: CSS_EASE,
         isInteraction: false,
         toValue: nextDark ? 1 : 0,
@@ -244,7 +242,7 @@ const NativeThemeSwitch = ({
       }),
       // Vite's track, stars, and moon dots transition over 0.4s ease.
       Animated.timing(decorationProgress, {
-        duration: 400,
+        duration: themeSwitchExperienceParityContract.decorationTransitionMs,
         easing: CSS_EASE,
         isInteraction: false,
         toValue: nextDark ? 1 : 0,
@@ -253,9 +251,9 @@ const NativeThemeSwitch = ({
     ]);
     rotationRef.current = nextDark
       ? Animated.sequence([
-        Animated.delay(500),
+        Animated.delay(themeSwitchExperienceParityContract.moonRotationDelayMs),
         Animated.timing(moonRotation, {
-          duration: 600,
+          duration: themeSwitchExperienceParityContract.moonRotationMs,
           easing: CSS_EASE_IN_OUT,
           isInteraction: false,
           toValue: 1,
@@ -655,7 +653,7 @@ export const NativeActionMenu = ({
       // entrance aligned with Vite instead of adding its browser-only delay a
       // second time on native.
       delay: 0,
-      duration: 300,
+      duration: actionMenuExperienceParityContract.motion.openMs,
       easing: Easing.out(Easing.cubic),
       toValue: 1,
       useNativeDriver: true,
@@ -718,7 +716,7 @@ export const NativeActionMenu = ({
       return;
     }
     Animated.timing(menuProgress, {
-      duration: 300,
+      duration: actionMenuExperienceParityContract.motion.closeMs,
       easing: Easing.in(Easing.cubic),
       toValue: 0,
       useNativeDriver: true,
@@ -728,7 +726,7 @@ export const NativeActionMenu = ({
   }, [menuProgress, onClose, reduceMotion]);
 
   useEffect(() => {
-    if (!visible) return undefined;
+    if (!visible || Platform.OS === 'web') return undefined;
     const subscription = BackHandler.addEventListener('hardwareBackPress', () => {
       if (supportOpen) {
         setSupportOpen(false);
@@ -864,8 +862,8 @@ export const NativeActionMenu = ({
         </View>
 
         <View pointerEvents="box-none" style={StyleSheet.absoluteFill}>
-          {DESTINATIONS.map((destination, index) => {
-            const [column, row] = RADIAL_POSITIONS[index] ?? [0, 0];
+          {DESTINATIONS.map((destination) => {
+            const [column, row] = destination.position;
             const left = (width / 2) - (destinationWidth / 2);
             const top = (height / 2) - (destinationHeight / 2);
             return (
@@ -1195,19 +1193,22 @@ const styles = StyleSheet.create({
     gap: 7,
   },
   themeSwitch: {
-    width: 60,
-    minHeight: 44,
+    width: themeSwitchExperienceParityContract.trackWidth,
+    minHeight: themeSwitchExperienceParityContract.touchHeight,
     alignItems: 'center',
     justifyContent: 'center',
   },
   themeTrack: {
-    width: 60,
-    height: 34,
+    width: themeSwitchExperienceParityContract.trackWidth,
+    height: themeSwitchExperienceParityContract.trackHeight,
     overflow: 'hidden',
-    borderRadius: 17,
+    borderRadius: themeSwitchExperienceParityContract.trackHeight / 2,
     backgroundColor: '#2196f3',
   },
-  themeDarkTrack: { borderRadius: 17, backgroundColor: '#000000' },
+  themeDarkTrack: {
+    borderRadius: themeSwitchExperienceParityContract.trackHeight / 2,
+    backgroundColor: '#000000',
+  },
   themeOrbMover: { position: 'absolute', top: 4, left: 4, width: 26, height: 26 },
   themeOrbRotation: { width: 26, height: 26 },
   themeSunDisc: {
@@ -1235,7 +1236,7 @@ const styles = StyleSheet.create({
     top: 0,
     left: 0,
     width: 34,
-    height: 34,
+    height: themeSwitchExperienceParityContract.trackHeight,
   },
   themeLightRay: {
     position: 'absolute',

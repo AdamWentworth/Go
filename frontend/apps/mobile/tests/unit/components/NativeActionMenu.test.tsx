@@ -13,6 +13,10 @@ import {
   NativeAppLoadingOverlay,
   NativeAppLoadingProvider,
 } from '../../../src/components/NativeAppLoadingProvider';
+import {
+  actionMenuExperienceParityContract,
+  themeSwitchExperienceParityContract,
+} from '@pokemongonexus/shared-ui-tokens';
 
 const mockToggleColorTheme = jest.fn();
 let mockColorTheme: 'dark' | 'light' = 'light';
@@ -60,11 +64,7 @@ describe('NativeActionMenu', () => {
       />,
     );
 
-    for (const label of [
-      'Raid', 'Pokédex', 'PvP',
-      'Search', 'Home', 'Trades',
-      'Pokémon', 'Max Battles', 'Rankings',
-    ]) {
+    for (const { label } of actionMenuExperienceParityContract.primaryDestinations) {
       expect(getByLabelText(label)).toBeTruthy();
     }
   });
@@ -103,7 +103,7 @@ describe('NativeActionMenu', () => {
       expect.anything(),
       expect.objectContaining({
         delay: 0,
-        duration: 300,
+        duration: actionMenuExperienceParityContract.motion.openMs,
         useNativeDriver: true,
       }),
     );
@@ -125,7 +125,7 @@ describe('NativeActionMenu', () => {
     act(() => jest.advanceTimersByTime(375));
     fireEvent.press(getByLabelText('Close'));
     expect(onClose).not.toHaveBeenCalled();
-    act(() => jest.advanceTimersByTime(300));
+    act(() => jest.advanceTimersByTime(actionMenuExperienceParityContract.motion.closeMs));
     expect(onClose).toHaveBeenCalledTimes(1);
   });
 
@@ -224,7 +224,7 @@ describe('NativeActionMenu', () => {
     expect(timing).toHaveBeenCalledWith(
       expect.anything(),
       expect.objectContaining({
-        duration: 500,
+        duration: themeSwitchExperienceParityContract.slideTransitionMs,
         isInteraction: false,
         toValue: 1,
         useNativeDriver: true,
@@ -233,13 +233,15 @@ describe('NativeActionMenu', () => {
     expect(timing).toHaveBeenCalledWith(
       expect.anything(),
       expect.objectContaining({
-        duration: 400,
+        duration: themeSwitchExperienceParityContract.decorationTransitionMs,
         isInteraction: false,
         toValue: 1,
         useNativeDriver: true,
       }),
     );
-    const slideConfig = timing.mock.calls.find(([, config]) => config.duration === 500)?.[1];
+    const slideConfig = timing.mock.calls.find(
+      ([, config]) => config.duration === themeSwitchExperienceParityContract.slideTransitionMs,
+    )?.[1];
     const cssEase = Easing.bezier(0.25, 0.1, 0.25, 1);
     expect(slideConfig?.easing?.(0.25)).toBeCloseTo(cssEase(0.25), 6);
     expect(slideConfig?.easing?.(0.5)).toBeCloseTo(cssEase(0.5), 6);
@@ -260,13 +262,13 @@ describe('NativeActionMenu', () => {
     );
 
     expect(StyleSheet.flatten(view.getByTestId('native-theme-switch').props.style)).toMatchObject({
-      minHeight: 44,
-      width: 60,
+      minHeight: themeSwitchExperienceParityContract.touchHeight,
+      width: themeSwitchExperienceParityContract.trackWidth,
     });
     expect(StyleSheet.flatten(view.getByTestId('native-theme-switch-track').props.style)).toMatchObject({
       borderRadius: 17,
-      height: 34,
-      width: 60,
+      height: themeSwitchExperienceParityContract.trackHeight,
+      width: themeSwitchExperienceParityContract.trackWidth,
     });
     expect(view.getAllByTestId(/native-theme-light-ray-/)).toHaveLength(3);
     expect(view.getAllByTestId(/native-theme-cloud-/)).toHaveLength(6);

@@ -8,10 +8,20 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { CustomTagParent } from '@pokemongonexus/shared-contracts/users';
-import { collectionParityTokens } from '@pokemongonexus/shared-ui-tokens';
+import {
+  collectionExperienceParityContract,
+  collectionParityTokens,
+} from '@pokemongonexus/shared-ui-tokens';
 import { NativeBackIcon } from '../../components/NativeBackIcon';
 
 export type NativePokemonHubView = 'inventory' | 'pokemon' | 'wishlist';
+
+const NATIVE_POKEMON_HUB_TABS = collectionExperienceParityContract.viewOrder.map(
+  (key, index) => ({
+    key,
+    label: collectionExperienceParityContract.viewLabels[index]!,
+  }),
+);
 
 export const resolveNativePokemonHubIndicatorMetrics = (
   width: number,
@@ -131,11 +141,7 @@ export const NativePokemonHubHeader = ({
         </View>
       ) : null}
       <View accessibilityRole={hasSelection ? undefined : 'tablist'} style={styles.controlsRow}>
-        {([
-          ['inventory', 'TAGS'],
-          ['pokemon', 'POKÉMON'],
-          ['wishlist', 'WISHLIST'],
-        ] as const).map(([key, label]) => {
+        {NATIVE_POKEMON_HUB_TABS.map(({ key, label }) => {
           const selected = activeView === key;
           const tagBelongsHere = activeTag && (
             (key === 'inventory' && activeTagParent === 'caught')

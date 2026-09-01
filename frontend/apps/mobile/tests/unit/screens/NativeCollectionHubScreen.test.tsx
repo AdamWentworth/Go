@@ -7,6 +7,7 @@ import type {
   NativeTagSummary,
 } from '../../../src/features/collection/collectionModel';
 import { NativeCollectionHubScreen } from '../../../src/screens/NativeCollectionHubScreen';
+import { buildClearActiveTagMessage } from '@pokemongonexus/shared-ui-tokens';
 
 jest.mock('react-native/Libraries/Utilities/useWindowDimensions', () => ({
   __esModule: true,
@@ -178,9 +179,7 @@ describe('NativeCollectionHubScreen', () => {
 
     fireEvent.press(screen.getByRole('button', { name: /Clear Favorites tag filter/i }));
     expect(screen.getByTestId('native-confirmation-dialog')).toBeTruthy();
-    expect(screen.getByText(
-      'Clear the Favorites tag? This returns you to browsing all available Pokémon and forms in Pokémon GO, without using your personal tag lists.',
-    )).toBeTruthy();
+    expect(screen.getByText(buildClearActiveTagMessage('Favorites'))).toBeTruthy();
     expect(screen.getByText('Shiny Bulbasaur')).toBeTruthy();
     fireEvent.press(screen.getByRole('button', { name: 'Cancel' }));
     expect(screen.queryByTestId('native-confirmation-dialog')).toBeNull();

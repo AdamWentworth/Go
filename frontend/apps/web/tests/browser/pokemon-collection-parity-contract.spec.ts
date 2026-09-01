@@ -1,6 +1,9 @@
 import { expect, test } from '@playwright/test';
 
-import { collectionParityTokens } from '../../../../packages/shared-ui-tokens/src/index';
+import {
+  collectionExperienceParityContract,
+  collectionParityTokens,
+} from '../../../../packages/shared-ui-tokens/src/index';
 import { expectActivePokemonView, openPokemonPage } from './support/pokemonApp';
 
 const closeTo = (actual: number, expected: number, tolerance = 1) => {
@@ -99,7 +102,7 @@ test.describe('canonical Pokémon collection parity contract', () => {
     );
     expect(pokemonGeometry.sliderTransitionProperty).toContain('transform');
     expect(pokemonGeometry.sliderTransitionDuration).toContain(
-      `${collectionParityTokens.header.transitionMs / 1_000}s`,
+      `${collectionExperienceParityContract.pageTransitionMs / 1_000}s`,
     );
 
     await page.getByText('TAGS', { exact: true }).click();

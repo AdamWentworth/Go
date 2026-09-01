@@ -1,6 +1,7 @@
 import {
   AccessibilityInfo,
   Animated,
+  Easing,
   ScrollView,
   StyleSheet,
   View,
@@ -18,6 +19,7 @@ import {
   useRef,
   useState,
 } from 'react';
+import { collectionExperienceParityContract } from '@pokemongonexus/shared-ui-tokens';
 import { useOptionalNativeDevicePreferences } from '../features/settings/NativeDevicePreferencesProvider';
 
 type Props = PropsWithChildren<{
@@ -34,7 +36,9 @@ export type NativeHorizontalPageSliderHandle = {
 // This value is deliberately shared by the content offset and any header
 // indicator consuming `scrollX`; changing it in one place prevents the tab
 // underline from jumping ahead of the page body on native platforms.
-export const NATIVE_HORIZONTAL_PAGE_TRANSITION_MS = 240;
+export const NATIVE_HORIZONTAL_PAGE_TRANSITION_MS = (
+  collectionExperienceParityContract.pageTransitionMs
+);
 
 const clampPageIndex = (index: number, panelCount: number): number =>
   Math.max(0, Math.min(index, Math.max(0, panelCount - 1)));
@@ -70,33 +74,45 @@ export const NativeHorizontalPageSlider = forwardRef<
   const alignedInitialPageRef = useRef(false);
   const previousWidthRef = useRef(width);
   const dragStartOffsetRef = useRef(safeIndex * width);
+  const mountedIndexesRef = useRef<Set<number>>(new Set([safeIndex]));
   const [mountedIndexes, setMountedIndexes] = useState<Set<number>>(
-    () => new Set([safeIndex]),
+    () => mountedIndexesRef.current,
   );
   const [internalScrollX] = useState(() => new Animated.Value(safeIndex * width));
   const pageScrollX = scrollX ?? internalScrollX;
   const devicePreferences = useOptionalNativeDevicePreferences();
+  const systemReduceMotionRef = useRef(false);
   const [systemReduceMotion, setSystemReduceMotion] = useState(false);
 
+  const updateSystemReduceMotion = useCallback((enabled: boolean) => {
+    if (systemReduceMotionRef.current === enabled) return;
+    systemReduceMotionRef.current = enabled;
+    setSystemReduceMotion(enabled);
+  }, []);
+
   useEffect(() => {
-    void AccessibilityInfo.isReduceMotionEnabled().then(setSystemReduceMotion);
+    void AccessibilityInfo.isReduceMotionEnabled().then(updateSystemReduceMotion);
     const subscription = AccessibilityInfo.addEventListener(
       'reduceMotionChanged',
-      setSystemReduceMotion,
+      updateSystemReduceMotion,
     );
     return () => subscription.remove();
-  }, []);
+  }, [updateSystemReduceMotion]);
 
   const reduceMotion = devicePreferences?.shouldReduceMotion ?? systemReduceMotion;
 
+  const mountPageIndexes = useCallback((indexes: number[]) => {
+    const missingIndexes = indexes.filter((index) => !mountedIndexesRef.current.has(index));
+    if (missingIndexes.length === 0) return;
+    const next = new Set(mountedIndexesRef.current);
+    for (const index of missingIndexes) next.add(index);
+    mountedIndexesRef.current = next;
+    setMountedIndexes(next);
+  }, []);
+
   useEffect(() => {
-    setMountedIndexes((current) => {
-      if (current.has(safeIndex)) return current;
-      const next = new Set(current);
-      next.add(safeIndex);
-      return next;
-    });
-  }, [safeIndex]);
+    mountPageIndexes([safeIndex]);
+  }, [mountPageIndexes, safeIndex]);
 
   const setPage = useCallback((index: number, animated = !reduceMotion) => {
     const nextIndex = clampPageIndex(index, panelCount);
@@ -109,7 +125,7 @@ export const NativeHorizontalPageSlider = forwardRef<
     if (animated) {
       Animated.timing(pageScrollX, {
         duration: NATIVE_HORIZONTAL_PAGE_TRANSITION_MS,
-        easing: undefined,
+        easing: Easing.bezier(...collectionExperienceParityContract.pageTransitionEasing),
         toValue: nextIndex * width,
         useNativeDriver: true,
       }).start();
@@ -166,15 +182,12 @@ export const NativeHorizontalPageSlider = forwardRef<
     .failOffsetY([-10, 10])
     .runOnJS(true)
     .onStart(() => {
-      setMountedIndexes((current) => {
-        const next = new Set(current);
-        next.add(renderedIndexRef.current);
-        if (renderedIndexRef.current > 0) next.add(renderedIndexRef.current - 1);
-        if (renderedIndexRef.current < panelCount - 1) {
-          next.add(renderedIndexRef.current + 1);
-        }
-        return next;
-      });
+      const indexes = [renderedIndexRef.current];
+      if (renderedIndexRef.current > 0) indexes.push(renderedIndexRef.current - 1);
+      if (renderedIndexRef.current < panelCount - 1) {
+        indexes.push(renderedIndexRef.current + 1);
+      }
+      mountPageIndexes(indexes);
       dragStartOffsetRef.current = renderedIndexRef.current * width;
       pageScrollX.stopAnimation();
     })
@@ -189,6 +202,7 @@ export const NativeHorizontalPageSlider = forwardRef<
     })
     .onEnd((event) => settleDrag(event.translationX, event.velocityX)), [
       pageScrollX,
+      mountPageIndexes,
       panelCount,
       settleDrag,
       width,

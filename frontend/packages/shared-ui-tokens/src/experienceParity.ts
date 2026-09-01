@@ -1,0 +1,73 @@
+/**
+ * User-visible behavior measured from the canonical Vite application.
+ *
+ * Both the browser and React Native suites consume these values. A product
+ * behavior change must update this contract deliberately; native code must not
+ * carry a second, independently guessed copy of the same expectation.
+ */
+export const homeExperienceParityContract = {
+  collectionPath: '/pokemon',
+  collectionSummaryPaths: {
+    caught: '/pokemon?filter=caught',
+    favorites: '/pokemon?filter=favorites',
+    trade: '/pokemon?filter=trade',
+    wanted: '/pokemon?filter=wanted',
+  },
+  recentPokemonPath: '/pokemon',
+} as const;
+
+export const collectionExperienceParityContract = {
+  initialView: 'pokemon',
+  pageTransitionEasing: [0.25, 0.46, 0.45, 0.94] as const,
+  pageTransitionMs: 300,
+  viewOrder: ['inventory', 'pokemon', 'wishlist'] as const,
+  viewLabels: ['TAGS', 'POKÉMON', 'WISHLIST'] as const,
+  clearTagConfirmation: {
+    cancelLabel: 'Cancel',
+    confirmLabel: 'OK',
+    title: 'Confirm action',
+  },
+} as const;
+
+export const buildClearActiveTagMessage = (displayName: string): string => (
+  `Clear the ${displayName} tag? This returns you to browsing all available Pokémon and forms in Pokémon GO, without using your personal tag lists.`
+);
+
+export const actionMenuExperienceParityContract = {
+  primaryDestinations: [
+    { id: 'raid', icon: '/images/btn_raid.png', label: 'Raid', path: '/raid', position: [-1, -1] },
+    { id: 'pokedex', icon: '/images/btn_pokedex.png', label: 'Pokedex', path: '/pokedex', position: [0, -1] },
+    { id: 'pvp', icon: '/images/btn_pvp.png', label: 'PvP', path: '/pvp', position: [1, -1] },
+    { id: 'search', icon: '/images/btn_search.png', label: 'Search', path: '/search', position: [-1, 0] },
+    { id: 'home', icon: '/images/btn_home.png', label: 'Home', path: '/', position: [0, 0] },
+    { id: 'trades', icon: '/images/btn_trades.png', label: 'Trades', path: '/trades', position: [1, 0] },
+    { id: 'pokemon', icon: '/images/btn_pokemon.png', label: 'Pokémon', path: '/pokemon', position: [-1, 1] },
+    { id: 'max', icon: '/images/btn_max.png', label: 'Max Battles', path: '/max', position: [0, 1] },
+    { id: 'rankings', icon: '/images/btn_rankings.png', label: 'Rankings', path: '/rankings', position: [1, 1] },
+  ],
+  supportDestinations: [
+    { label: 'Getting Started', path: '/getting-started' },
+    { label: 'FAQ', path: '/faq' },
+    { label: 'About', path: '/about' },
+    { label: 'Trade Safety', path: '/safety' },
+    { label: 'Help directory', path: '/help' },
+  ],
+  motion: {
+    closeMs: 300,
+    openMs: 300,
+  },
+} as const;
+
+export const themeSwitchExperienceParityContract = {
+  decorationTransitionMs: 400,
+  moonRotationDelayMs: 500,
+  moonRotationMs: 600,
+  slideTransitionMs: 500,
+  touchHeight: 44,
+  trackHeight: 34,
+  trackWidth: 60,
+} as const;
+
+export const loadingExperienceParityContract = {
+  hideDelayMs: 150,
+} as const;

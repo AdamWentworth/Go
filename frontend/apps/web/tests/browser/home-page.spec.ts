@@ -2,6 +2,7 @@ import { expect, test } from '@playwright/test';
 
 import { attachBrowserDiagnostics } from './support/diagnostics';
 import { installE2eRoutes } from './support/e2eRoutes';
+import { homeExperienceParityContract } from '../../../../packages/shared-ui-tokens/src/index';
 
 const dashboardInstance = (
   instanceId: string,
@@ -295,6 +296,28 @@ test.describe('Home page', () => {
       await expect(page.getByRole('link', { name: /1 For Trade/ })).toBeVisible();
       await expect(page.getByRole('link', { name: /1 Wanted/ })).toBeVisible();
       await expect(page.getByRole('heading', { name: 'Your latest Pokémon' })).toBeVisible();
+      await expect(page.locator('.home-stat--caught')).toHaveAttribute(
+        'href',
+        homeExperienceParityContract.collectionSummaryPaths.caught,
+      );
+      await expect(page.locator('.home-stat--favorite')).toHaveAttribute(
+        'href',
+        homeExperienceParityContract.collectionSummaryPaths.favorites,
+      );
+      await expect(page.locator('.home-stat--trade')).toHaveAttribute(
+        'href',
+        homeExperienceParityContract.collectionSummaryPaths.trade,
+      );
+      await expect(page.locator('.home-stat--wanted')).toHaveAttribute(
+        'href',
+        homeExperienceParityContract.collectionSummaryPaths.wanted,
+      );
+      for (const recentLink of await page.locator('.home-recent-pokemon a').all()) {
+        await expect(recentLink).toHaveAttribute(
+          'href',
+          homeExperienceParityContract.recentPokemonPath,
+        );
+      }
       await expect(page.getByRole('link', { name: /Help & guides/i })).toBeVisible();
 
       const widths = await page.evaluate(() => ({

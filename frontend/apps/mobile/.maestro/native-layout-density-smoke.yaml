@@ -43,7 +43,7 @@ name: Native collection and action-menu density smoke
 - tapOn: "Open action menu"
 - assertVisible: "Quick navigation"
 - assertVisible: "Raid"
-- assertVisible: "Pokédex"
+- assertVisible: "Pokedex"
 - assertVisible: "PvP"
 - assertVisible: "Search"
 - assertVisible: "Home"

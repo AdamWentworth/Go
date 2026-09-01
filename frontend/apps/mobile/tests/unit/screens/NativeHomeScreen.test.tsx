@@ -1,6 +1,8 @@
 import { fireEvent, render, screen } from '@testing-library/react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { NativeHomeScreen } from '../../../src/screens/NativeHomeScreen';
+import { homeExperienceParityContract } from '@pokemongonexus/shared-ui-tokens';
+import type { NativeCollectionRow } from '../../../src/features/collection/collectionModel';
 
 const renderHome = (props = baseProps) => render(
   <SafeAreaProvider initialMetrics={{
@@ -30,7 +32,7 @@ const baseProps = {
   onRetry: jest.fn(),
   onboardingProgress: null as import('../../../src/features/home/nativeHomeDashboardModel').NativeHomeOnboardingProgress | null,
   pokemonGoName: 'MistyGO',
-  recentRows: [],
+  recentRows: [] as NativeCollectionRow[],
   showActionMenuHint: true,
   trades: {
     needsResponse: 0,
@@ -40,6 +42,24 @@ const baseProps = {
     active: 0,
   },
   username: 'misty',
+};
+
+const recentRow: NativeCollectionRow = {
+  id: 'caught-bulbasaur',
+  pokemonId: 1,
+  pokedexNumber: 1,
+  name: 'Bulbasaur',
+  imageUri: 'https://pokegonexus.com/images/default/pokemon_1.png',
+  locationBackgroundUri: null,
+  maxKind: null,
+  purified: false,
+  lucky: false,
+  typeIconUris: [],
+  status: 'caught',
+  source: 'instance',
+  cp: 500,
+  favorite: false,
+  mostWanted: false,
 };
 
 describe('NativeHomeScreen', () => {
@@ -80,12 +100,20 @@ describe('NativeHomeScreen', () => {
     fireEvent.press(screen.getByRole('button', { name: /For Trade/ }));
     fireEvent.press(screen.getByRole('button', { name: /Wanted/ }));
 
-    expect(onNavigate.mock.calls).toEqual([
-      ['/pokemon?filter=caught'],
-      ['/pokemon?filter=favorites'],
-      ['/pokemon?filter=trade'],
-      ['/pokemon?filter=wanted'],
-    ]);
+    expect(onNavigate.mock.calls).toEqual(
+      Object.values(homeExperienceParityContract.collectionSummaryPaths).map((path) => [path]),
+    );
+  });
+
+  it('opens recent Pokémon through the same collection link as Vite', () => {
+    const onNavigate = jest.fn();
+    renderHome({ ...baseProps, onNavigate, recentRows: [recentRow] });
+
+    fireEvent.press(screen.getByRole('button', {
+      name: 'Open Bulbasaur in your Pokémon collection',
+    }));
+
+    expect(onNavigate).toHaveBeenCalledWith(homeExperienceParityContract.recentPokemonPath);
   });
 
   it('puts a combined dashboard failure next to a retry action', () => {

@@ -186,15 +186,9 @@ export default function NativeHomeRoute() {
     return () => { active = false; };
   }, [onboardingOwnerKey]);
 
-  useEffect(() => {
-    if (!session.user) return undefined;
-    const idleCallback = requestIdleCallback(() => {
-      router.prefetch('/native/collection');
-      router.prefetch('/native/pokedex');
-    });
-    return () => cancelIdleCallback(idleCallback);
-  }, [router, session.user]);
-
+  // The Home query already warms collection data. Expo Router route preloading
+  // also mounts the full destination tree offscreen, which duplicates the
+  // collection/Pokédex UI and competes with Home and action-menu interactions.
   const rows = useMemo(() => {
     if (!collectionQuery.data) return [];
     return buildNativeCollectionRows(

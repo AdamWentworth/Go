@@ -8,7 +8,7 @@ import {
   useRef,
   useState,
 } from 'react';
-import { Image, StyleSheet, View } from 'react-native';
+import { Image, Platform, StyleSheet, View } from 'react-native';
 import { useNativeColorScheme } from '../features/settings/useNativeColorScheme';
 import { runtimeConfig } from '../config/runtimeConfig';
 import {
@@ -16,6 +16,7 @@ import {
   NATIVE_LOADING_SPINNER_SOURCES,
 } from './NativeLoadingSpinner';
 import { markNativeUiPerformance } from '../observability/nativeUiPerformanceTrace';
+import { loadingExperienceParityContract } from '@pokemongonexus/shared-ui-tokens';
 
 type LoadingAction = () => void;
 
@@ -27,7 +28,7 @@ type NativeAppLoadingContextValue = {
   setLoadingSource: (source: string, active: boolean) => void;
 };
 
-const HIDE_DELAY_MS = 150;
+const HIDE_DELAY_MS = loadingExperienceParityContract.hideDelayMs;
 // Deterministic device screenshots may hold the loader, but real navigation
 // must follow Vite and release as soon as the destination has painted.
 const POST_NAVIGATION_PAINT_HOLD_MS = runtimeConfig.mobile.deviceSmokeMode ? 8000 : 0;
@@ -57,6 +58,9 @@ export const NativeAppLoadingProvider = ({
   const fallbackTimersRef = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map());
 
   useEffect(() => {
+    // react-native-web's Image implementation does not expose the native asset
+    // resolver. Browser bundling already emits these required assets as URLs.
+    if (Platform.OS === 'web' || typeof Image.resolveAssetSource !== 'function') return;
     for (const source of NATIVE_LOADING_SPINNER_SOURCES) {
       const uri = Image.resolveAssetSource(source)?.uri;
       if (uri) void Promise.resolve(Image.prefetch(uri)).catch(() => undefined);

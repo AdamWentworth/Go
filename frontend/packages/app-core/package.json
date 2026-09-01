@@ -29,6 +29,7 @@
     "@fontsource-variable/roboto": "^5.3.0",
     "@pokemongonexus/shared-contracts": "file:../shared-contracts",
     "@pokemongonexus/shared-domain": "file:../shared-domain",
+    "@pokemongonexus/shared-ui-tokens": "file:../shared-ui-tokens",
     "@tanstack/react-query": "^5.101.4"
   }
 }

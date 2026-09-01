@@ -7,6 +7,7 @@ import {
   type NativeHorizontalPageSliderHandle,
   resolveNativeHorizontalPageOffset,
 } from '../../../src/components/NativeHorizontalPageSlider';
+import { collectionExperienceParityContract } from '@pokemongonexus/shared-ui-tokens';
 
 jest.mock('react-native/Libraries/Utilities/useWindowDimensions', () => ({
   __esModule: true,
@@ -19,6 +20,12 @@ describe('NativeHorizontalPageSlider', () => {
   });
 
   afterEach(() => jest.restoreAllMocks());
+
+  it('uses the canonical Vite page transition duration', () => {
+    expect(NATIVE_HORIZONTAL_PAGE_TRANSITION_MS).toBe(
+      collectionExperienceParityContract.pageTransitionMs,
+    );
+  });
 
   it('opens on the active page instead of rendering a mismatched tab body', async () => {
     const { getByTestId, queryByText } = render(

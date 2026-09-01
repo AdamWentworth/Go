@@ -7,7 +7,11 @@ import type {
   UpdateCustomTagRequest,
 } from '@pokemongonexus/shared-contracts/users';
 import type { PokemonInstance } from '@pokemongonexus/shared-contracts/instances';
-import { collectionParityTokens } from '@pokemongonexus/shared-ui-tokens';
+import {
+  buildClearActiveTagMessage,
+  collectionExperienceParityContract,
+  collectionParityTokens,
+} from '@pokemongonexus/shared-ui-tokens';
 import {
   NativeHorizontalPageSlider,
   type NativeHorizontalPageSliderHandle,
@@ -35,7 +39,9 @@ import { useNativeColorScheme } from '../features/settings/useNativeColorScheme'
 import type { NativeCollectionSession } from '../features/collection/nativeCollectionSessionCache';
 import { markNativeUiPerformance } from '../observability/nativeUiPerformanceTrace';
 
-const VIEW_ORDER: NativePokemonHubView[] = ['inventory', 'pokemon', 'wishlist'];
+const VIEW_ORDER: readonly NativePokemonHubView[] = (
+  collectionExperienceParityContract.viewOrder
+);
 
 type Props = {
   assetBaseUrl: string;
@@ -442,11 +448,13 @@ export const NativeCollectionHubScreen = ({
         />
       ) : null}
       <NativeConfirmationDialog
-        body={`Clear the ${selectedTag?.filterName ?? selectedTag?.name ?? 'selected'} tag? This returns you to browsing all available Pokémon and forms in Pokémon GO, without using your personal tag lists.`}
-        confirmLabel="OK"
+        body={buildClearActiveTagMessage(
+          selectedTag?.filterName ?? selectedTag?.name ?? 'selected',
+        )}
+        confirmLabel={collectionExperienceParityContract.clearTagConfirmation.confirmLabel}
         onCancel={() => setClearTagConfirmationOpen(false)}
         onConfirm={confirmClearTag}
-        title="Confirm action"
+        title={collectionExperienceParityContract.clearTagConfirmation.title}
         visible={clearTagConfirmationOpen}
       />
     </View>

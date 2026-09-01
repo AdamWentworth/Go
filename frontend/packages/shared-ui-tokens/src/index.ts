@@ -1,3 +1,7 @@
+import { collectionExperienceParityContract } from './experienceParity';
+
+export * from './experienceParity';
+
 export const colorTokens = {
   background: '#f3f4f6',
   surface: '#ffffff',
@@ -131,7 +135,7 @@ export const collectionParityTokens = {
     underlineRadius: 3,
     narrowLabelSize: 11.2,
     wideLabelSize: 20,
-    transitionMs: 300,
+    transitionMs: collectionExperienceParityContract.pageTransitionMs,
   },
   grid: {
     gap: 8,

@@ -1,5 +1,10 @@
 # Mobile Device Validation Checklist
 
+For the current install/build/Metro state and the latest automated checkpoint,
+read `CURRENT_NATIVE_TESTING_STATUS.md` first. The dated APK records below are
+historical evidence for those exact binaries, not proof that later Metro-served
+changes are present in an installed standalone APK.
+
 This is the release checklist for the React Native parity implementation. The
 canonical web application remains the product specification and the stable
 default. Native parity is enabled only with

@@ -18,6 +18,7 @@ import { NativeActionMenuHint } from '../components/NativeActionMenuHint';
 import { NativeHomeOnboarding } from '../components/NativeHomeOnboarding';
 import { NativeUiIcon, type NativeUiIconName } from '../components/NativeUiIcon';
 import { useNativeColorScheme } from '../features/settings/useNativeColorScheme';
+import { homeExperienceParityContract } from '@pokemongonexus/shared-ui-tokens';
 
 type FriendsState = 'error' | 'loading' | 'ready';
 
@@ -313,17 +314,17 @@ export const NativeHomeScreen = ({
             action="Manage Pokémon"
             eyebrow="Your collection"
             light={light}
-            onAction={() => onNavigate('/pokemon')}
+            onAction={() => onNavigate(homeExperienceParityContract.collectionPath)}
             title="At a glance"
           />
           <View style={styles.statGrid}>
-            <StatCard accent="#299cf5" label="Caught" light={light} onPress={() => onNavigate('/pokemon?filter=caught')} value={collection.caught} />
-            <StatCard accent="#e7bb1f" label="★ Favorites" light={light} onPress={() => onNavigate('/pokemon?filter=favorites')} value={collection.favorites} />
-            <StatCard accent="#35c984" icon="trade" label="For Trade" light={light} onPress={() => onNavigate('/pokemon?filter=trade')} value={collection.forTrade} />
-            <StatCard accent="#f05a70" detail={collection.mostWanted ? `${collection.mostWanted} most wanted` : undefined} icon="heart" label="Wanted" light={light} onPress={() => onNavigate('/pokemon?filter=wanted')} value={collection.wanted} />
+            <StatCard accent="#299cf5" label="Caught" light={light} onPress={() => onNavigate(homeExperienceParityContract.collectionSummaryPaths.caught)} value={collection.caught} />
+            <StatCard accent="#e7bb1f" label="★ Favorites" light={light} onPress={() => onNavigate(homeExperienceParityContract.collectionSummaryPaths.favorites)} value={collection.favorites} />
+            <StatCard accent="#35c984" icon="trade" label="For Trade" light={light} onPress={() => onNavigate(homeExperienceParityContract.collectionSummaryPaths.trade)} value={collection.forTrade} />
+            <StatCard accent="#f05a70" detail={collection.mostWanted ? `${collection.mostWanted} most wanted` : undefined} icon="heart" label="Wanted" light={light} onPress={() => onNavigate(homeExperienceParityContract.collectionSummaryPaths.wanted)} value={collection.wanted} />
           </View>
           <View style={styles.panelActions}>
-            <Pressable accessibilityRole="button" onPress={() => onNavigate('/pokemon')} style={[styles.panelAction, light && styles.panelActionLight]}>
+            <Pressable accessibilityRole="button" onPress={() => onNavigate(homeExperienceParityContract.collectionPath)} style={[styles.panelAction, light && styles.panelActionLight]}>
               <Text style={[styles.panelActionText, light && styles.textLight]}>Open collection</Text><Text style={[styles.cardArrow, light && styles.mutedLight]}>›</Text>
             </Pressable>
             <Pressable accessibilityRole="button" onPress={() => onNavigate('/trade-board')} style={[styles.panelAction, light && styles.panelActionLight]}>
@@ -347,7 +348,7 @@ export const NativeHomeScreen = ({
         </View>
 
         <View style={[styles.panel, light && styles.panelLight]}>
-          <SectionHeading action="View all" eyebrow="Recently updated" light={light} onAction={() => onNavigate('/pokemon')} title="Your latest Pokémon" />
+          <SectionHeading action="View all" eyebrow="Recently updated" light={light} onAction={() => onNavigate(homeExperienceParityContract.collectionPath)} title="Your latest Pokémon" />
           {recentRows.length ? (
             <View style={styles.recentList}>
               {recentRows.map((row) => (
@@ -355,7 +356,7 @@ export const NativeHomeScreen = ({
                   accessibilityLabel={`Open ${row.name} in your Pokémon collection`}
                   accessibilityRole="button"
                   key={row.id}
-                  onPress={() => onNavigate(`/pokemon?filter=${row.status}&instanceId=${encodeURIComponent(row.id)}`)}
+                  onPress={() => onNavigate(homeExperienceParityContract.recentPokemonPath)}
                   style={({ pressed }) => [styles.recentRow, light && styles.recentRowLight, pressed && styles.pressed]}
                 >
                   <View style={[styles.recentImageWrap, light && styles.recentImageWrapLight]}>
@@ -374,7 +375,7 @@ export const NativeHomeScreen = ({
             <View style={[styles.emptyState, light && styles.emptyStateLight]}>
               <Text style={styles.emptyPlus}>＋</Text>
               <View style={styles.emptyCopy}><Text style={[styles.emptyTitle, light && styles.textLight]}>Start your collection</Text><Text style={[styles.actionDetail, light && styles.mutedLight]}>Add your first caught or wanted Pokémon to see recent updates here.</Text></View>
-              <Pressable accessibilityRole="button" onPress={() => onNavigate('/pokemon')} style={styles.emptyButton}><Text style={styles.emptyButtonText}>Open Pokémon</Text></Pressable>
+              <Pressable accessibilityRole="button" onPress={() => onNavigate(homeExperienceParityContract.collectionPath)} style={styles.emptyButton}><Text style={styles.emptyButtonText}>Open Pokémon</Text></Pressable>
             </View>
           )}
         </View>
