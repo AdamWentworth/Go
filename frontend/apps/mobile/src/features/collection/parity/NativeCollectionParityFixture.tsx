@@ -61,7 +61,7 @@ import { markNativeUiPerformance } from '../../../observability/nativeUiPerforma
 import { beginNativeUiInteraction } from '../../../interaction/nativeUiInteractionScheduler';
 import {
   type NativeCollectionImageRevealController,
-  useNativeCollectionImageReveal,
+  useNativeCollectionImageRevealState,
 } from './nativeCollectionImageRevealController';
 
 type NativeCollectionParityFixtureProps = {
@@ -246,11 +246,13 @@ const CollectionParityCard = memo(function CollectionParityCard({
   imageRevealController?: NativeCollectionImageRevealController;
   index: number;
 }) {
-  const imagesEnabled = useNativeCollectionImageReveal({
+  const imageRevealState = useNativeCollectionImageRevealState({
     controller: imageRevealController,
     fallbackEnabled: fallbackImagesEnabled,
     index,
   });
+  const imagesEnabled = imageRevealState === 1;
+  const staticImageLayersEnabled = imageRevealState !== 0;
   const cardThemeStyles = COLLECTION_CARD_THEME_STYLES[theme];
   return (
     <Pressable
@@ -266,7 +268,9 @@ const CollectionParityCard = memo(function CollectionParityCard({
       style={selected ? [cardStyle, styles.selectedCard] : cardStyle}
       testID={`parity-card-${card.id}`}
     >
-      <NativePokemonStatusGlow ownership={card.ownership} />
+      {staticImageLayersEnabled ? (
+        <NativePokemonStatusGlow ownership={card.ownership} />
+      ) : null}
       <View style={styles.cardTopLine}>
         <Text
           accessibilityLabel={card.cp == null ? undefined : `CP ${card.cp}`}

@@ -333,6 +333,9 @@ describe('NativeCollectionHubScreen', () => {
       toValue: 412,
       useNativeDriver: true,
     }));
+    expect(timing.mock.invocationCallOrder[0]).toBeLessThan(
+      onContextChange.mock.invocationCallOrder[0] ?? Number.POSITIVE_INFINITY,
+    );
     expect(onContextChange).toHaveBeenCalledWith(expect.objectContaining({
       activeView: 'pokemon',
       selectedTagKey: 'system:favorites',

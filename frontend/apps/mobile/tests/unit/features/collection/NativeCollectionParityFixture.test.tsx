@@ -126,19 +126,15 @@ describe('NativeCollectionParityFixture', () => {
     },
   );
 
-  it('keeps Vite\'s inactive glow layer mounted across catalog-to-tag swaps', () => {
-    const view = render(
+  it('does not allocate a bitmap for Vite\'s visually absent inactive glow', () => {
+    render(
       <NativeCollectionParityFixture
         activeTag={null}
         cards={[{ ...COLLECTION_PARITY_FIXTURES[0], ownership: undefined }]}
       />,
     );
-    const inactiveGlow = view.getByTestId(
-      'native-inactive-status-glow',
-      { includeHiddenElements: true },
-    );
 
-    expect(inactiveGlow).toHaveStyle({ opacity: 0 });
+    expect(screen.queryByTestId('native-inactive-status-glow')).toBeNull();
   });
 
   it('keeps incomplete mobile rows at the canonical three-column width', () => {
@@ -343,7 +339,10 @@ describe('NativeCollectionParityFixture', () => {
   });
 
   it('reveals each image without changing FlatList props or reconciling its parent', () => {
-    const cards = COLLECTION_PARITY_FIXTURES.slice(0, 3);
+    const cards = COLLECTION_PARITY_FIXTURES.slice(0, 3).map((card, index) => ({
+      ...card,
+      ownership: (['caught', 'trade', 'wanted'] as const)[index],
+    }));
     const imageRevealController = createNativeCollectionImageRevealController(1);
     const view = render(
       <NativeCollectionParityFixture
@@ -357,6 +356,10 @@ describe('NativeCollectionParityFixture', () => {
 
     expect(view.getByLabelText(cards[0].name)).toBeTruthy();
     expect(view.queryByLabelText(cards[1].name)).toBeNull();
+    expect(view.queryAllByTestId(
+      /^native-(?:caught|trade|wanted)-status-glow$/,
+      { includeHiddenElements: true },
+    )).toHaveLength(1);
 
     act(() => imageRevealController.setRevealCount(2));
 
@@ -366,6 +369,16 @@ describe('NativeCollectionParityFixture', () => {
     expect(updatedGrid).toBe(initialGrid);
     expect(updatedGrid.props.extraData).toBe(initialExtraData);
     expect(updatedGrid.props.renderItem).toBe(initialRenderItem);
+    expect(view.queryAllByTestId(
+      /^native-(?:caught|trade|wanted)-status-glow$/,
+      { includeHiddenElements: true },
+    )).toHaveLength(2);
+
+    act(() => imageRevealController.setRevealCount(0));
+    expect(view.queryAllByTestId(
+      /^native-(?:caught|trade|wanted)-status-glow$/,
+      { includeHiddenElements: true },
+    )).toHaveLength(2);
   });
 
   it('resets the active destination grid before it returns from a side tag page', () => {

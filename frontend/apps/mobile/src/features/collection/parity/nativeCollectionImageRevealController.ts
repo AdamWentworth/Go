@@ -1,6 +1,9 @@
 import { useCallback, useSyncExternalStore } from 'react';
 
+export type NativeCollectionImageRevealState = 0 | 1 | 2;
+
 export type NativeCollectionImageRevealController = {
+  getRevealState: (index: number) => NativeCollectionImageRevealState;
   isEnabled: (index: number) => boolean;
   setRevealCount: (count: number | null) => void;
   subscribe: (index: number, listener: () => void) => () => void;
@@ -8,6 +11,14 @@ export type NativeCollectionImageRevealController = {
 
 const isEnabledAtCount = (count: number | null, index: number): boolean => (
   count === null || index < count
+);
+
+const resolveRevealState = (
+  count: number | null,
+  everEnabled: boolean,
+  index: number,
+): NativeCollectionImageRevealState => (
+  isEnabledAtCount(count, index) ? 1 : everEnabled ? 2 : 0
 );
 
 /**
@@ -22,8 +33,12 @@ export const createNativeCollectionImageRevealController = (
 ): NativeCollectionImageRevealController => {
   let revealCount = initialRevealCount;
   const listenersByIndex = new Map<number, Set<() => void>>();
+  const everEnabledIndices = new Set<number>();
 
   return {
+    getRevealState(index) {
+      return resolveRevealState(revealCount, everEnabledIndices.has(index), index);
+    },
     isEnabled(index) {
       return isEnabledAtCount(revealCount, index);
     },
@@ -32,10 +47,23 @@ export const createNativeCollectionImageRevealController = (
       const previousCount = revealCount;
       revealCount = nextCount;
       listenersByIndex.forEach((listeners, index) => {
+        const previousState = resolveRevealState(
+          previousCount,
+          everEnabledIndices.has(index),
+          index,
+        );
         if (
           isEnabledAtCount(previousCount, index)
-          === isEnabledAtCount(nextCount, index)
-        ) return;
+          || isEnabledAtCount(nextCount, index)
+        ) {
+          everEnabledIndices.add(index);
+        }
+        const nextState = resolveRevealState(
+          nextCount,
+          everEnabledIndices.has(index),
+          index,
+        );
+        if (previousState === nextState) return;
         listeners.forEach((listener) => listener());
       });
     },
@@ -63,12 +91,29 @@ export const useNativeCollectionImageReveal = ({
   fallbackEnabled?: boolean;
   index: number;
 }): boolean => {
+  const state = useNativeCollectionImageRevealState({
+    controller,
+    fallbackEnabled,
+    index,
+  });
+  return state === 1;
+};
+
+export const useNativeCollectionImageRevealState = ({
+  controller,
+  fallbackEnabled = true,
+  index,
+}: {
+  controller?: NativeCollectionImageRevealController;
+  fallbackEnabled?: boolean;
+  index: number;
+}): NativeCollectionImageRevealState => {
   const subscribe = useCallback(
     (listener: () => void) => controller?.subscribe(index, listener) ?? (() => undefined),
     [controller, index],
   );
   const getSnapshot = useCallback(
-    () => controller?.isEnabled(index) ?? fallbackEnabled,
+    () => controller?.getRevealState(index) ?? (fallbackEnabled ? 1 : 0),
     [controller, fallbackEnabled, index],
   );
   return useSyncExternalStore(subscribe, getSnapshot, getSnapshot);

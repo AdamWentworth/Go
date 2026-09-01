@@ -11,12 +11,16 @@ describe('nativeCollectionImageRevealController', () => {
     controller.subscribe(3, fourth);
 
     expect(controller.isEnabled(0)).toBe(true);
+    expect(controller.getRevealState(0)).toBe(1);
     controller.setRevealCount(0);
+    expect(controller.getRevealState(0)).toBe(2);
     expect(first).toHaveBeenCalledTimes(1);
     expect(second).toHaveBeenCalledTimes(1);
     expect(fourth).toHaveBeenCalledTimes(1);
 
     controller.setRevealCount(1);
+    expect(controller.getRevealState(0)).toBe(1);
+    expect(controller.getRevealState(1)).toBe(2);
     expect(first).toHaveBeenCalledTimes(2);
     expect(second).toHaveBeenCalledTimes(1);
     expect(fourth).toHaveBeenCalledTimes(1);

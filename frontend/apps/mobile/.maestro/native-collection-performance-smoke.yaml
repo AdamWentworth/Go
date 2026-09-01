@@ -98,6 +98,24 @@ tags:
     timeout: 10000
 - tapOn:
     text: Close
+- tapOn: TAGS
+- extendedWaitUntil:
+    visible: Inventory tags
+    timeout: 10000
+- tapOn: "Open Favorites, 3 Pokémon"
+- extendedWaitUntil:
+    visible: "(FAVORITES)"
+    timeout: 10000
+- assertVisible: Shiny Shadow Venusaur
+- tapOn: TAGS
+- extendedWaitUntil:
+    visible: Inventory tags
+    timeout: 10000
+- tapOn: "Open For Trade, 3 Pokémon"
+- extendedWaitUntil:
+    visible: "(TRADE)"
+    timeout: 10000
+- assertVisible: Shiny Gigantamax Charizard
 - tapOn: WISHLIST
 - extendedWaitUntil:
     visible: Wanted tags

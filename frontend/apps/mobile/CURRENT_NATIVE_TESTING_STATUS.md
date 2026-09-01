@@ -361,6 +361,15 @@ destination viewport releases ranged from 97 to 576 ms and every complete
 retained window stayed below 773 ms. Result content remains inside its 150 ms
 target while decode work no longer invalidates the parent list.
 
+Static card bitmaps now join that same per-slot coordinator. Real
+caught/trade/wanted glows enter with a slot's first image slice and remain
+mounted across later tag projections, avoiding both a cold decode burst and a
+second card commit. Catalog cards no longer allocate an opacity-zero glow
+Image at all: Vite's inactive pseudo-element is visually absent, while Android
+was still decoding and exposing hundreds of useless invisible image nodes to
+Fabric. The production smoke continues to preserve the three visible ownership
+glows and now verifies the inactive path without paying that native-only cost.
+
 That coordinator also gates cold collection images in three-card slices, so
 text and controls can paint before Android begins remote-image decoding. Both
 retained tag panels keep their full structure and touch targets mounted, but
@@ -374,11 +383,22 @@ production traces prove both tested tags were committed before release. Across
 the latest two complete workflows, tag motion began in 7--16 ms and results
 painted in 38--98 ms.
 
+The interaction workflow now also performs a repeated Trade → Favorites →
+Trade → Most Wanted sequence instead of measuring only one inventory and one
+wishlist selection. That exposed a remaining one-to-three-frame wait in the
+parent selected-tag commit even though press-in had already reconciled the
+destination grid. A prepared destination now starts the shared native-driver
+track synchronously on release and lets identical header/session bookkeeping
+commit behind the UI-thread animation. All four rapid slides began in 0--1 ms
+in the latest production-mode run, while their result commits remained 71--113
+ms and the canonical 300 ms motion contract stayed unchanged.
+
 The Android parser now distinguishes desired performance targets from
-software-emulator hard ceilings for the three callback measurements that have
-shown isolated SwiftShader/Hermes dispatch jitter. Sort-menu paint still
-targets 150 ms with a 200 ms ceiling, filter reveal targets 100 ms with a 200
-ms ceiling, and overlay completion targets 550 ms with a 600 ms ceiling. It
+software-emulator hard ceilings for callback measurements that have shown
+isolated SwiftShader/Hermes dispatch jitter. Sort-menu and committed-query
+paint still target 150 ms with 200 ms ceilings, filter reveal targets 100 ms
+with a 200 ms ceiling, and overlay completion targets 550 ms with a 600 ms
+ceiling. It
 prints a warning when a target is missed and still fails a genuine ceiling
 breach. In the latest run, filter reveal was 96 ms, tag slides 14--16 ms, tag
 results 56--98 ms, sort result 98 ms, evolutionary expansion 40 ms, and all

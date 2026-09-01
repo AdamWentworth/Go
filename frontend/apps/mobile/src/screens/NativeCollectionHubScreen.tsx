@@ -542,6 +542,12 @@ export const NativeCollectionHubScreen = memo(function NativeCollectionHubScreen
       startedAt,
     };
     pendingTagMotionReadyRef.current = destinationAlreadyCommitted;
+    // Press-in has already reconciled this tag into the concealed middle
+    // grid. Start the UI-thread transform directly on release instead of
+    // spending another one-to-three frames waiting for the selected-tag/header
+    // bookkeeping commit. The rendered destination remains the staged tag
+    // until React atomically adopts the identical selected tag below.
+    if (destinationAlreadyCommitted) startPendingTagMotion();
     if (selectedCountRef.current > 0) setSelectedIds(new Set());
 
     if (selectedTagKeyRef.current === tag.key) {
@@ -564,7 +570,7 @@ export const NativeCollectionHubScreen = memo(function NativeCollectionHubScreen
       selectedTagKey: tag.key,
       scrollOffset: 0,
     });
-  }, [onContextChange, query]);
+  }, [onContextChange, query, startPendingTagMotion]);
 
   const toggleSelection = useCallback((entryId: string) => {
     setSelectedIds((current) => {
