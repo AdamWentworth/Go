@@ -509,6 +509,18 @@ new query snapshot, so mutations cannot expose stale details. Focused model
 tests pin both reuse and invalidation; typecheck and the complete lint pass are
 clean.
 
+The shared horizontal page slider no longer registers its 300 ms compositor
+motion as a React Native framework interaction. That framework handle made
+`VirtualizedList` postpone destination cell batches until the animation ended,
+even though the app's narrower interaction-aware scheduler was already holding
+unrelated cache/decode work. Vite continues filling its virtualized grid during
+the CSS transform, so native now does the same while retaining the UI-thread
+animation and custom foreground reservation. Tests pin `isInteraction: false`.
+The confirming minified Android workflow passed every budget: four tag slides
+started in 0--1 ms, their result windows committed in 83--136 ms, typed search
+committed in 100 ms, all three instance targets committed in 176--241 ms, and
+the action menu painted in 85 ms.
+
 ## Remaining approval gate
 
 The latest bundle still needs a short physical-phone pass for perceived frame

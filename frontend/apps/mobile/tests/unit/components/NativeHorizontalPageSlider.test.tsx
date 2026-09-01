@@ -233,14 +233,14 @@ describe('NativeHorizontalPageSlider', () => {
     act(() => ref.current?.setPage(1));
     expect(timing).toHaveBeenCalledWith(scrollX, expect.objectContaining({
       duration: NATIVE_HORIZONTAL_PAGE_TRANSITION_MS,
-      isInteraction: true,
+      isInteraction: false,
       toValue: 412,
       useNativeDriver: true,
     }));
     act(() => ref.current?.setPage(0));
     expect(timing).toHaveBeenLastCalledWith(scrollX, expect.objectContaining({
       duration: NATIVE_HORIZONTAL_PAGE_TRANSITION_MS,
-      isInteraction: true,
+      isInteraction: false,
       toValue: 0,
       useNativeDriver: true,
     }));

@@ -210,7 +210,13 @@ export const NativeHorizontalPageSlider = memo(forwardRef<
       Animated.timing(pageScrollX, {
         duration: NATIVE_HORIZONTAL_PAGE_TRANSITION_MS,
         easing: NATIVE_HORIZONTAL_PAGE_EASING,
-        isInteraction: true,
+        // Animated's framework interaction handle makes VirtualizedList defer
+        // cell batches until the full 300 ms transition ends. Vite keeps its
+        // virtualized destination filling while CSS moves the page, and this
+        // slider already reserves only our own background-work queue above.
+        // Keep the compositor animation native-driven without globally
+        // starving the destination FlatList.
+        isInteraction: false,
         toValue: nextIndex * width,
         useNativeDriver: true,
       }).start(() => {
