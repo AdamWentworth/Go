@@ -1,5 +1,5 @@
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react-native';
-import { Animated, Text } from 'react-native';
+import { Animated, Modal, Text } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import type { PokemonInstance } from '@pokemongonexus/shared-contracts/instances';
 import type {
@@ -127,6 +127,35 @@ const caughtInstance = {
 } as unknown as PokemonInstance;
 
 describe('NativeCollectionHubScreen', () => {
+  it('hosts the Vite-style sort overlay at the edge-to-edge hub root', () => {
+    render(
+      <SafeAreaProvider initialMetrics={{
+        frame: { x: 0, y: 0, width: 412, height: 915 },
+        insets: { top: 24, right: 0, bottom: 20, left: 0 },
+      }}>
+        <NativeCollectionHubScreen
+          assetBaseUrl="https://pokegonexus.com"
+          catalogRows={[catalogBulbasaur, catalogMewtwo]}
+          error={null}
+          inventoryTags={[inventoryTag, allCaughtTag]}
+          instances={{}}
+          isLoading={false}
+          onOpenEntry={jest.fn()}
+          onRetry={jest.fn()}
+          wishlistTags={[wishlistTag]}
+        />
+      </SafeAreaProvider>,
+    );
+
+    fireEvent.press(screen.getByLabelText('Sort by NUMBER ascending'));
+
+    expect(screen.getByTestId('native-collection-sort-menu')).toBeTruthy();
+    expect(screen.UNSAFE_queryByType(Modal)).toBeNull();
+    expect(screen.getByTestId('native-collection-hub')).toContainElement(
+      screen.getByTestId('native-collection-sort-menu'),
+    );
+  });
+
   it('uses one stateful hub for tab changes, tag selection, and opening entries', () => {
     const onOpenEntry = jest.fn();
     render(

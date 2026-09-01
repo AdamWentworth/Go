@@ -29,6 +29,7 @@ import type { NativePokemonHubView } from '../features/collection/NativePokemonH
 import {
   NATIVE_SORT_OPTIONS,
   NativeCollectionSortMenu,
+  type NativeCollectionSortMenuContentProps,
 } from '../features/collection/parity/NativeCollectionSortMenu';
 import { useNativeColorScheme } from '../features/settings/useNativeColorScheme';
 import type { NativeCollectionSession } from '../features/collection/nativeCollectionSessionCache';
@@ -42,6 +43,11 @@ import { createNativeCollectionImageRevealController } from '../features/collect
 export {
   projectNativeCollectionParityCards,
 } from '../features/collection/parity/nativeCollectionCardProjection';
+
+export type NativeCollectionSortMenuHost = {
+  dismiss: () => void;
+  present: (props: NativeCollectionSortMenuContentProps) => void;
+};
 
 type NativeCollectionParityScreenProps = {
   assetBaseUrl: string;
@@ -71,6 +77,7 @@ type NativeCollectionParityScreenProps = {
   tagCanClear?: boolean;
   onContextChange?: (patch: Partial<NativeCollectionSession>) => void;
   onRowsCommitted?: (visibleRowCount: number, committedQuery: string) => void;
+  sortMenuHost?: NativeCollectionSortMenuHost;
 };
 
 const SORT_ICONS: Record<NativeCollectionSort, string> = {
@@ -158,6 +165,7 @@ export const NativeCollectionParityScreen = memo(forwardRef<
   tagCanClear = Boolean(activeTag),
   onContextChange,
   onRowsCommitted,
+  sortMenuHost,
 }, ref) {
   const colorScheme = useNativeColorScheme();
   const [sort, setSort] = useState<NativeCollectionSort>(initialSort);
@@ -501,39 +509,17 @@ export const NativeCollectionParityScreen = memo(forwardRef<
     sortMenuInteractionReleaseRef.current?.();
     sortMenuInteractionReleaseRef.current = null;
   }, []);
-  const openSortMenu = useCallback(() => {
-    if (sortMenuCloseTimerRef.current) {
-      clearTimeout(sortMenuCloseTimerRef.current);
-      sortMenuCloseTimerRef.current = null;
-    }
-    sortMenuRequestStartedAtRef.current = Date.now();
-    markNativeUiPerformance('collection_sort_menu_requested');
-    sortMenuInteractionReleaseRef.current?.();
-    sortMenuInteractionReleaseRef.current = beginNativeUiInteraction();
-    setSortVisible(true);
-    setSortOpen(true);
-  }, []);
   const closeSortMenu = useCallback(() => {
     setSortOpen(false);
+    sortMenuHost?.dismiss();
     if (sortMenuCloseTimerRef.current) clearTimeout(sortMenuCloseTimerRef.current);
     sortMenuCloseTimerRef.current = setTimeout(() => {
       sortMenuCloseTimerRef.current = null;
-      setSortVisible(false);
+      if (!sortMenuHost) setSortVisible(false);
       sortMenuInteractionReleaseRef.current?.();
       sortMenuInteractionReleaseRef.current = null;
     }, collectionExperienceParityContract.sortMenuTransitionMs);
-  }, []);
-  useLayoutEffect(() => {
-    if (!sortOpen || sortMenuRequestStartedAtRef.current === null) return undefined;
-    const startedAt = sortMenuRequestStartedAtRef.current;
-    sortMenuRequestStartedAtRef.current = null;
-    const frame = requestAnimationFrame(() => {
-      markNativeUiPerformance('collection_sort_menu_painted', {
-        interactionLatencyMs: Date.now() - startedAt,
-      });
-    });
-    return () => cancelAnimationFrame(frame);
-  }, [sortOpen]);
+  }, [sortMenuHost]);
   const previewSort = useCallback((nextSort: NativeCollectionSort) => {
     if (stagedSortCancelTimerRef.current) {
       clearTimeout(stagedSortCancelTimerRef.current);
@@ -581,6 +567,52 @@ export const NativeCollectionParityScreen = memo(forwardRef<
       sortDirection: next.direction,
     });
   }, [closeSortMenu, direction, onContextChange, setCollectionImageRevealCount, sort]);
+  const openSortMenu = useCallback(() => {
+    if (sortMenuCloseTimerRef.current) {
+      clearTimeout(sortMenuCloseTimerRef.current);
+      sortMenuCloseTimerRef.current = null;
+    }
+    sortMenuRequestStartedAtRef.current = Date.now();
+    markNativeUiPerformance('collection_sort_menu_requested', {
+      presentation: sortMenuHost ? 'inline' : 'modal',
+    });
+    sortMenuInteractionReleaseRef.current?.();
+    sortMenuInteractionReleaseRef.current = beginNativeUiInteraction();
+    if (sortMenuHost) {
+      sortMenuHost.present({
+        assetBaseUrl,
+        direction,
+        onCancelPreview: cancelSortPreview,
+        onClose: closeSortMenu,
+        onPreview: previewSort,
+        onSelect: selectSort,
+        sort,
+      });
+    } else {
+      setSortVisible(true);
+    }
+    setSortOpen(true);
+  }, [
+    assetBaseUrl,
+    cancelSortPreview,
+    closeSortMenu,
+    direction,
+    previewSort,
+    selectSort,
+    sort,
+    sortMenuHost,
+  ]);
+  useLayoutEffect(() => {
+    if (!sortOpen || sortMenuRequestStartedAtRef.current === null) return undefined;
+    const startedAt = sortMenuRequestStartedAtRef.current;
+    sortMenuRequestStartedAtRef.current = null;
+    const frame = requestAnimationFrame(() => {
+      markNativeUiPerformance('collection_sort_menu_painted', {
+        interactionLatencyMs: Date.now() - startedAt,
+      });
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [sortOpen]);
   const openPokemon = useCallback(() => onViewChange('pokemon'), [onViewChange]);
   const openTags = useCallback(() => onViewChange('inventory'), [onViewChange]);
   const openWishlist = useCallback(() => onViewChange('wishlist'), [onViewChange]);
@@ -635,17 +667,19 @@ export const NativeCollectionParityScreen = memo(forwardRef<
         selectionAction={projectedSelectionAction}
       />
 
-      <NativeCollectionSortMenu
-        assetBaseUrl={assetBaseUrl}
-        direction={direction}
-        onClose={closeSortMenu}
-        onCancelPreview={cancelSortPreview}
-        onPreview={previewSort}
-        onSelect={selectSort}
-        open={sortOpen}
-        sort={sort}
-        visible={sortVisible}
-      />
+      {!sortMenuHost ? (
+        <NativeCollectionSortMenu
+          assetBaseUrl={assetBaseUrl}
+          direction={direction}
+          onClose={closeSortMenu}
+          onCancelPreview={cancelSortPreview}
+          onPreview={previewSort}
+          onSelect={selectSort}
+          open={sortOpen}
+          sort={sort}
+          visible={sortVisible}
+        />
+      ) : null}
     </View>
   );
 }));

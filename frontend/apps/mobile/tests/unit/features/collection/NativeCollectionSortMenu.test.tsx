@@ -50,6 +50,31 @@ describe('NativeCollectionSortMenu', () => {
     });
   });
 
+  it('can use the existing full-screen host without creating an Android window', () => {
+    const view = render(
+      <NativeCollectionSortMenu
+        assetBaseUrl="https://pokegonexus.com"
+        direction="ascending"
+        onClose={jest.fn()}
+        onSelect={jest.fn()}
+        open
+        presentation="inline"
+        sort="number"
+      />,
+    );
+
+    expect(view.UNSAFE_queryByType(Modal)).toBeNull();
+    expect(StyleSheet.flatten(view.getByTestId('native-collection-sort-menu').props.style)).toMatchObject({
+      bottom: 0,
+      elevation: 24,
+      left: 0,
+      position: 'absolute',
+      right: 0,
+      top: 0,
+      zIndex: 2000,
+    });
+  });
+
   it('keeps the close control above a real bottom safe-area inset', () => {
     mockSafeAreaInsets = { top: 42, right: 0, bottom: 34, left: 0 };
     const onClose = jest.fn();

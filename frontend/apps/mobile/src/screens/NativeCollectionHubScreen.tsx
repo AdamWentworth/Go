@@ -47,8 +47,13 @@ import {
 import {
   NativeCollectionParityScreen,
   type NativeCollectionParityScreenHandle,
+  type NativeCollectionSortMenuHost,
   prepareNativeCollectionParityRows,
 } from './NativeCollectionParityScreen';
+import {
+  NativeCollectionSortMenu,
+  type NativeCollectionSortMenuContentProps,
+} from '../features/collection/parity/NativeCollectionSortMenu';
 import { NativeTagsPanelScreen } from './NativeTagsPanelScreen';
 import { NativeActionMenu } from '../components/NativeActionMenu';
 import { NativeActionMenuAnchor } from '../components/NativeActionMenuAnchor';
@@ -159,6 +164,9 @@ export const NativeCollectionHubScreen = memo(function NativeCollectionHubScreen
   });
   const [actionMenuOpen, setActionMenuOpen] = useState(false);
   const [actionMenuPrepared, setActionMenuPrepared] = useState(false);
+  const [hostedSortMenu, setHostedSortMenu] = useState<(
+    NativeCollectionSortMenuContentProps & { open: boolean }
+  ) | null>(null);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [organizerOpen, setOrganizerOpen] = useState(false);
   const [organizerPrepared, setOrganizerPrepared] = useState(false);
@@ -190,6 +198,7 @@ export const NativeCollectionHubScreen = memo(function NativeCollectionHubScreen
   const selectionRequestStartedAtRef = useRef<number | null>(null);
   const organizerRequestStartedAtRef = useRef<number | null>(null);
   const actionMenuRequestStartedAtRef = useRef<number | null>(null);
+  const hostedSortMenuCloseTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const activeViewRef = useRef<NativePokemonHubView>(initialView);
   const selectedTagKeyRef = useRef<string | null>(resolvedInitialTagKey);
   const [pageScrollX] = useState(() => new Animated.Value(width));
@@ -319,12 +328,42 @@ export const NativeCollectionHubScreen = memo(function NativeCollectionHubScreen
     };
   }, [actionMenuPrepared, catalogRows.length, isLoading]);
 
+  const presentSortMenu = useCallback((props: NativeCollectionSortMenuContentProps) => {
+    if (hostedSortMenuCloseTimerRef.current) {
+      clearTimeout(hostedSortMenuCloseTimerRef.current);
+      hostedSortMenuCloseTimerRef.current = null;
+    }
+    // Vite portals into the existing document instead of creating a second
+    // browser window. Host the native overlay at this already-mounted screen
+    // root for the same reason: its first gradient frame can commit with the
+    // tap while still covering the camera and gesture-bar regions.
+    setHostedSortMenu({ ...props, open: true });
+  }, []);
+  const dismissSortMenu = useCallback(() => {
+    setHostedSortMenu((current) => current ? { ...current, open: false } : null);
+    if (hostedSortMenuCloseTimerRef.current) {
+      clearTimeout(hostedSortMenuCloseTimerRef.current);
+    }
+    hostedSortMenuCloseTimerRef.current = setTimeout(() => {
+      hostedSortMenuCloseTimerRef.current = null;
+      setHostedSortMenu(null);
+    }, collectionExperienceParityContract.sortMenuTransitionMs);
+  }, []);
+  const sortMenuHost = useMemo<NativeCollectionSortMenuHost>(() => ({
+    dismiss: dismissSortMenu,
+    present: presentSortMenu,
+  }), [dismissSortMenu, presentSortMenu]);
+
   useEffect(() => () => {
     pendingTagMotionRef.current = null;
     if (stagedTagCancelTimerRef.current) clearTimeout(stagedTagCancelTimerRef.current);
     if (sidePanelTagTimerRef.current) clearTimeout(sidePanelTagTimerRef.current);
     stagedTagInteractionReleaseRef.current?.();
     stagedTagInteractionReleaseRef.current = null;
+    if (hostedSortMenuCloseTimerRef.current) {
+      clearTimeout(hostedSortMenuCloseTimerRef.current);
+      hostedSortMenuCloseTimerRef.current = null;
+    }
   }, []);
 
   useEffect(() => {
@@ -792,6 +831,7 @@ export const NativeCollectionHubScreen = memo(function NativeCollectionHubScreen
       tagCanClear={!requireTagSelection}
       onContextChange={onContextChange}
       onRowsCommitted={commitCollectionRows}
+      sortMenuHost={sortMenuHost}
     />
   ), [
     assetBaseUrl,
@@ -819,6 +859,7 @@ export const NativeCollectionHubScreen = memo(function NativeCollectionHubScreen
     onContextChange,
     commitCollectionRows,
     openOrganizer,
+    sortMenuHost,
   ]);
   const wishlistPanel = useMemo(() => (
     <NativeTagsPanelScreen
@@ -960,6 +1001,13 @@ export const NativeCollectionHubScreen = memo(function NativeCollectionHubScreen
           title={collectionExperienceParityContract.clearTagConfirmation.title}
           visible
           presentation="inline"
+        />
+      ) : null}
+      {hostedSortMenu ? (
+        <NativeCollectionSortMenu
+          {...hostedSortMenu}
+          presentation="inline"
+          visible
         />
       ) : null}
     </View>

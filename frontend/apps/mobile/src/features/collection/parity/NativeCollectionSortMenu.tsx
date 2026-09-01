@@ -1,5 +1,16 @@
 import { memo, useEffect, useState } from 'react';
-import { Animated, Easing, Image, Modal, Pressable, StyleSheet, Text, View } from 'react-native';
+import {
+  Animated,
+  BackHandler,
+  Easing,
+  Image,
+  Modal,
+  Platform,
+  Pressable,
+  StyleSheet,
+  Text,
+  View,
+} from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { collectionExperienceParityContract } from '@pokemongonexus/shared-ui-tokens';
@@ -32,6 +43,22 @@ const SortBackdrop = ({ light }: { light: boolean }) => (
   />
 );
 
+export type NativeCollectionSortMenuContentProps = {
+  assetBaseUrl: string;
+  direction: NativeCollectionSortDirection;
+  onClose: () => void;
+  onCancelPreview?: (sort: NativeCollectionSort) => void;
+  onPreview?: (sort: NativeCollectionSort) => void;
+  onSelect: (sort: NativeCollectionSort) => void;
+  sort: NativeCollectionSort;
+};
+
+type NativeCollectionSortMenuProps = NativeCollectionSortMenuContentProps & {
+  open: boolean;
+  presentation?: 'modal' | 'inline';
+  visible?: boolean;
+};
+
 export const NativeCollectionSortMenu = memo(function NativeCollectionSortMenu({
   assetBaseUrl,
   direction,
@@ -40,19 +67,10 @@ export const NativeCollectionSortMenu = memo(function NativeCollectionSortMenu({
   onPreview,
   onSelect,
   open,
+  presentation = 'modal',
   sort,
   visible = open,
-}: {
-  assetBaseUrl: string;
-  direction: NativeCollectionSortDirection;
-  onClose: () => void;
-  onCancelPreview?: (sort: NativeCollectionSort) => void;
-  onPreview?: (sort: NativeCollectionSort) => void;
-  onSelect: (sort: NativeCollectionSort) => void;
-  open: boolean;
-  sort: NativeCollectionSort;
-  visible?: boolean;
-}) {
+}: NativeCollectionSortMenuProps) {
   const light = useNativeColorScheme() === 'light';
   const insets = useSafeAreaInsets();
   const reduceMotion = useOptionalNativeDevicePreferences()?.shouldReduceMotion ?? false;
@@ -110,28 +128,24 @@ export const NativeCollectionSortMenu = memo(function NativeCollectionSortMenu({
     return () => closing.stop();
   }, [backdropProgress, open, progress, reduceMotion]);
 
-  return (
-    <Modal
-      // Own the canonical 250 ms opacity transition on the native driver. An
-      // Android Modal fade delayed mounting before this content could begin
-      // its own motion, producing a visible dead tap.
-      animationType="none"
-      hardwareAccelerated
-      navigationBarTranslucent
-      onRequestClose={onClose}
-      presentationStyle="overFullScreen"
-      statusBarTranslucent
-      transparent
-      visible={visible}
+  useEffect(() => {
+    if (presentation !== 'inline' || !open || Platform.OS === 'web') return undefined;
+    const subscription = BackHandler.addEventListener('hardwareBackPress', () => {
+      onClose();
+      return true;
+    });
+    return () => subscription.remove();
+  }, [onClose, open, presentation]);
+
+  const content = (
+    <View
+      accessibilityElementsHidden={!open}
+      accessibilityViewIsModal
+      importantForAccessibility={open ? 'auto' : 'no-hide-descendants'}
+      pointerEvents={open ? 'auto' : 'none'}
+      style={[styles.overlay, presentation === 'inline' ? styles.inlineOverlay : null]}
+      testID="native-collection-sort-menu"
     >
-      <View
-        accessibilityElementsHidden={!open}
-        accessibilityViewIsModal
-        importantForAccessibility={open ? 'auto' : 'no-hide-descendants'}
-        pointerEvents={open ? 'auto' : 'none'}
-        style={styles.overlay}
-        testID="native-collection-sort-menu"
-      >
         <Animated.View
           pointerEvents="none"
           style={[StyleSheet.absoluteFill, { opacity: backdropProgress }]}
@@ -200,13 +214,41 @@ export const NativeCollectionSortMenu = memo(function NativeCollectionSortMenu({
         >
           <Text style={styles.closeText}>×</Text>
         </Pressable>
-      </View>
+    </View>
+  );
+
+  if (presentation === 'inline') return visible ? content : null;
+
+  return (
+    <Modal
+      // Own the canonical 250 ms opacity transition on the native driver. An
+      // Android Modal fade delayed mounting before this content could begin
+      // its own motion, producing a visible dead tap.
+      animationType="none"
+      hardwareAccelerated
+      navigationBarTranslucent
+      onRequestClose={onClose}
+      presentationStyle="overFullScreen"
+      statusBarTranslucent
+      transparent
+      visible={visible}
+    >
+      {content}
     </Modal>
   );
 });
 
 const styles = StyleSheet.create({
   overlay: { flex: 1, justifyContent: 'flex-end' },
+  inlineOverlay: {
+    position: 'absolute',
+    top: 0,
+    right: 0,
+    bottom: 0,
+    left: 0,
+    zIndex: 2000,
+    elevation: 24,
+  },
   optionList: {
     alignSelf: 'center',
     width: '82%',

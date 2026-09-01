@@ -270,6 +270,42 @@ describe('NativeCollectionParityScreen', () => {
     expect(screen.getByLabelText('Sort by NAME descending')).toBeTruthy();
   });
 
+  it('presents the sort menu through a full-screen parent host when supplied', () => {
+    const sortMenuHost = {
+      dismiss: jest.fn(),
+      present: jest.fn(),
+    };
+    render(
+      <NativeCollectionParityScreen
+        activeTag={null}
+        assetBaseUrl="https://pokegonexus.com"
+        error={null}
+        isLoading={false}
+        onClearTag={jest.fn()}
+        onOpenInstance={jest.fn()}
+        onQueryChange={jest.fn()}
+        onRetry={jest.fn()}
+        onViewChange={jest.fn()}
+        query=""
+        rows={rows}
+        sortMenuHost={sortMenuHost}
+      />,
+    );
+
+    fireEvent.press(screen.getByLabelText('Sort by NUMBER ascending'));
+
+    expect(sortMenuHost.present).toHaveBeenCalledTimes(1);
+    expect(sortMenuHost.present).toHaveBeenCalledWith(expect.objectContaining({
+      direction: 'ascending',
+      sort: 'number',
+    }));
+    expect(screen.queryByRole('radio', { name: /name/i })).toBeNull();
+
+    const presentation = sortMenuHost.present.mock.calls[0][0];
+    act(() => presentation.onClose());
+    expect(sortMenuHost.dismiss).toHaveBeenCalledTimes(1);
+  });
+
   it('stages a sort destination before release adopts the sort control', () => {
     const sortRows = [
       row({ id: 'zubat', name: 'Zubat', pokedexNumber: 1 }),

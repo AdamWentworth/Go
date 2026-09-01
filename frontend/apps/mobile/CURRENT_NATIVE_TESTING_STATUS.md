@@ -466,6 +466,21 @@ their destination result commits were 94--118 ms. A separate 32 ms Android
 budget now prevents the indicator handoff from drifting back behind session
 or selected-tag bookkeeping. The full suite is now 159 suites and 845 tests.
 
+The sort overlay now matches Vite's portal architecture instead of opening a
+new Android system window on every tap. The Pokémon page owns the sort state,
+but hands the visible overlay to the already-mounted Hub root; that root covers
+the complete edge-to-edge route just like the action menu, including the camera
+and gesture-bar regions. Standalone fixtures retain the Modal fallback. Tests
+pin all three boundaries: inline presentation creates no `Modal`, the Pokémon
+screen delegates presentation and dismissal, and the Hub renders the overlay
+as its own full-screen descendant. On the first complete Android workflow after
+the change, the sort menu painted in 105 ms (down from the preceding 246 ms
+system-window outlier), the selected sort result painted in 48 ms, all four tag
+slides began in 0--1 ms, and their results painted in 102--116 ms. The workflow
+completed every UI assertion; its overall parser failed only because one
+instance-overlay target/entrance sample reached 286/287 ms against the existing
+280 ms hard budget. The full suite is now 159 suites and 848 tests.
+
 ## Remaining approval gate
 
 The latest bundle still needs a short physical-phone pass for perceived frame
