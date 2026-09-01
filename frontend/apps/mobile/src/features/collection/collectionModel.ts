@@ -786,6 +786,19 @@ const nativeCollectionSearchProjection = (
   return projection;
 };
 
+export const prepareNativeCollectionSearchRows = (
+  rows: NativeCollectionRow[],
+  startIndex: number,
+  limit: number,
+): number => {
+  const endIndex = Math.min(rows.length, startIndex + Math.max(0, limit));
+  for (let index = startIndex; index < endIndex; index += 1) {
+    const row = rows[index];
+    if (row) nativeCollectionSearchProjection(row);
+  }
+  return endIndex;
+};
+
 type NativeCollectionCompiledSearchTerm = {
   negated: boolean;
   value: string;
@@ -823,6 +836,12 @@ const matchesNativeCollectionSearch = (
   return negated ? !matched : matched;
 }));
 
+const nativeCollectionFilterCache = new WeakMap<
+  NativeCollectionRow[],
+  Map<string, NativeCollectionRow[]>
+>();
+const NATIVE_COLLECTION_FILTER_CACHE_LIMIT = 32;
+
 export const filterNativeCollectionRows = (
   rows: NativeCollectionRow[],
   filter: NativeCollectionFilter,
@@ -835,6 +854,26 @@ export const filterNativeCollectionRows = (
   const normalizedQuery = query.trim();
   if (filter === 'all' && !normalizedQuery) return rows;
   const universe = options.universeRows ?? rows;
+  // The ordinary catalog search is monotonic while a user extends one plain
+  // term. Reuse the previous prefix result instead of rescanning the complete
+  // catalog on every key, and retain exact results so backspace/re-entry is a
+  // reference-stable cache hit. Complex union/family syntax keeps the full
+  // canonical evaluation below.
+  const cacheEligible = !options.showEvolutionaryLine && universe === rows;
+  const filterCache = cacheEligible
+    ? nativeCollectionFilterCache.get(rows) ?? new Map<string, NativeCollectionRow[]>()
+    : null;
+  if (filterCache && !nativeCollectionFilterCache.has(rows)) {
+    nativeCollectionFilterCache.set(rows, filterCache);
+  }
+  const cacheKey = `${filter}:${normalizedQuery}`;
+  const cachedResult = filterCache?.get(cacheKey);
+  if (cachedResult) return cachedResult;
+  const simplePositiveQuery = normalizedQuery.length > 1
+    && !/[,&+!]/.test(normalizedQuery);
+  const previousPrefixRows = simplePositiveQuery
+    ? filterCache?.get(`${filter}:${normalizedQuery.slice(0, -1)}`)
+    : undefined;
   const queryGroups = normalizedQuery
     .split(',')
     .map((term) => term.trim())
@@ -871,13 +910,21 @@ export const filterNativeCollectionRows = (
     }
     return matchesNativeCollectionSearch(row, compiledQuery);
   };
-  return rows.filter((row) =>
+  const result = (previousPrefixRows ?? rows).filter((row) =>
     (filter === 'all' ||
       row.status === filter ||
       (filter === 'favorites' && row.favorite) ||
       (filter === 'most-wanted' && row.status === 'wanted' && row.mostWanted)) &&
     matchesSearch(row),
   );
+  if (filterCache) {
+    if (filterCache.size >= NATIVE_COLLECTION_FILTER_CACHE_LIMIT) {
+      const oldestKey = filterCache.keys().next().value;
+      if (oldestKey !== undefined) filterCache.delete(oldestKey);
+    }
+    filterCache.set(cacheKey, result);
+  }
+  return result;
 };
 
 const compareNullableNumber = (

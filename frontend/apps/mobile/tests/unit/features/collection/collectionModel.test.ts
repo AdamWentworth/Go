@@ -8,6 +8,7 @@ import {
   buildNativeInstanceDetail,
   buildNativeTagSummaries,
   filterNativeCollectionRows,
+  prepareNativeCollectionSearchRows,
   resolveNativeInstanceImage,
   sortNativeCollectionRows,
 } from '../../../../src/features/collection/collectionModel';
@@ -296,12 +297,18 @@ describe('native collection model', () => {
       },
     ];
 
+    expect(prepareNativeCollectionSearchRows(searchableRows, 0, 2)).toBe(2);
+    expect(prepareNativeCollectionSearchRows(searchableRows, 2, 128)).toBe(4);
     expect(filterNativeCollectionRows(searchableRows, 'all', 'bulb,char')).toEqual([
       searchableRows[0], searchableRows[3],
     ]);
-    expect(filterNativeCollectionRows(searchableRows, 'all', 'grass&shiny')).toEqual([
+    const grassAndShiny = filterNativeCollectionRows(searchableRows, 'all', 'grass&shiny');
+    expect(grassAndShiny).toEqual([
       searchableRows[2],
     ]);
+    expect(filterNativeCollectionRows(searchableRows, 'all', 'grass&shiny')).toBe(
+      grassAndShiny,
+    );
     expect(filterNativeCollectionRows(searchableRows, 'all', 'grass&!shiny')).toEqual([
       searchableRows[0], searchableRows[1],
     ]);

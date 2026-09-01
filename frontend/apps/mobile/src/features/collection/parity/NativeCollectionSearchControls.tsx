@@ -1,6 +1,6 @@
 import {
   memo,
-  useEffect,
+  useLayoutEffect,
   useRef,
   useState,
   useTransition,
@@ -197,7 +197,7 @@ export const NativeCollectionSearchControls = memo(function NativeCollectionSear
   // for the full route and grid tree to reconcile before it could paint.
   const [inputValue, setInputValue] = useState(query);
   const [, startTransition] = useTransition();
-  useEffect(() => {
+  useLayoutEffect(() => {
     setInputValue((current) => (current === query ? current : query));
   }, [query]);
   const commitQuery = (value: string) => {

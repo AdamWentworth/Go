@@ -787,7 +787,7 @@ const assertSignedInCollectionWorkflow = async (context) => {
         }, { capture: true });
       });
     }
-    await collectionSearch.fill('char');
+    await collectionSearch.pressSequentially('char');
     const charizardResult = page.getByRole('button', { name: /Select Charizard/ }).first();
     await charizardResult.waitFor({ state: 'visible', timeout: 5_000 });
     if (performanceMode) {

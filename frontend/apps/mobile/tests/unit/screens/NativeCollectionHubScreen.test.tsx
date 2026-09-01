@@ -279,6 +279,37 @@ describe('NativeCollectionHubScreen', () => {
     timeout.mockRestore();
   });
 
+  it('does not animate or persist a tap on the already-selected tab', () => {
+    const timing = jest.spyOn(Animated, 'timing');
+    const onContextChange = jest.fn();
+    render(
+      <SafeAreaProvider initialMetrics={{
+        frame: { x: 0, y: 0, width: 412, height: 915 },
+        insets: { top: 24, right: 0, bottom: 20, left: 0 },
+      }}>
+        <NativeCollectionHubScreen
+          assetBaseUrl="https://pokegonexus.com"
+          catalogRows={[catalogBulbasaur, catalogMewtwo]}
+          error={null}
+          inventoryTags={[inventoryTag, allCaughtTag]}
+          instances={{}}
+          isLoading={false}
+          onContextChange={onContextChange}
+          onOpenEntry={jest.fn()}
+          onRetry={jest.fn()}
+          wishlistTags={[wishlistTag]}
+        />
+      </SafeAreaProvider>,
+    );
+    act(() => jest.advanceTimersByTime(1));
+    timing.mockClear();
+
+    fireEvent.press(screen.getByRole('tab', { name: /pokémon/i }));
+
+    expect(timing).not.toHaveBeenCalled();
+    expect(onContextChange).not.toHaveBeenCalled();
+  });
+
   it('preserves the active search when selecting a tag like Vite', () => {
     const onContextChange = jest.fn();
     render(
@@ -303,6 +334,7 @@ describe('NativeCollectionHubScreen', () => {
     );
 
     expect(screen.getByLabelText('Search Pokémon').props.value).toBe('bulba');
+    expect(screen.getByText('(1)')).toBeTruthy();
     fireEvent.press(screen.getByRole('tab', { name: /wishlist/i }));
     fireEvent.press(screen.getByRole('button', { name: /Open Most Wanted/i }));
     act(() => jest.advanceTimersByTime(17));
@@ -310,6 +342,7 @@ describe('NativeCollectionHubScreen', () => {
     expect(screen.getByLabelText('Search Pokémon').props.value).toBe('bulba');
     expect(screen.queryByText('Shiny Mewtwo')).toBeNull();
     expect(screen.getByText('No Pokémon found')).toBeTruthy();
+    expect(screen.getByText('(0)')).toBeTruthy();
     expect(onContextChange).not.toHaveBeenCalledWith(expect.objectContaining({ query: '' }));
   });
 

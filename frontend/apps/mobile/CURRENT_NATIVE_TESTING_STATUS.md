@@ -58,7 +58,7 @@ mounts complete collection and Pokédex route trees in the background.
 
 Passing evidence for this checkpoint:
 
-- native Jest: 158 suites, 827 tests;
+- native Jest: 158 suites, 828 tests;
 - mobile and web TypeScript and ESLint;
 - native real-route smoke: 92 guest/signed-in, light/dark route states;
 - focused Vite mobile-Chromium browser coverage: 9 tests;
@@ -207,6 +207,21 @@ native-driven Vite timing/transform while reducing the normal tag-to-Pokémon
 snapshot area by one third and avoiding an unnecessarily wide GPU surface. The
 post-change production proxy measured the tag result at 74–81 ms, motion start
 at 5–8 ms, 20–21 distinct positions, and a 16.7–33.5 ms largest sampled gap.
+
+The follow-up interaction pass removes the remaining redundant work on common
+paths. Tapping the already-selected tab is now a true no-op, matching React's
+same-state behavior in Vite instead of starting another 300 ms animation and
+allocating panel textures. After the visible tag-card window is prepared, the
+idle interaction scheduler also warms normalized search projections in bounded
+128-row slices. Exact searches reuse reference-stable results, while ordinary
+positive typing narrows the preceding prefix result rather than rescanning all
+3,285 catalog rows for every key. The production guard now sends real sequential
+key events through that path. It measured the final-key-to-Charizard paint at
+81 ms. The filtered count is committed with the visible result window before
+paint, restoring Vite's count behavior without adding state work to the
+empty-query tag-swap path. The same run began track motion in 2.5 ms, painted the
+tag result in 92 ms, produced 19 sampled positions, and kept the largest sampled
+gap to 33.3 ms.
 
 ## Remaining approval gate
 

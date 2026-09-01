@@ -31,11 +31,12 @@ import {
   NATIVE_HORIZONTAL_PAGE_TRANSITION_MS,
   type NativeHorizontalPageSliderHandle,
 } from '../components/NativeHorizontalPageSlider';
-import type {
-  NativeCollectionRow,
-  NativeCollectionSort,
-  NativeCollectionSortDirection,
-  NativeTagSummary,
+import {
+  prepareNativeCollectionSearchRows,
+  type NativeCollectionRow,
+  type NativeCollectionSort,
+  type NativeCollectionSortDirection,
+  type NativeTagSummary,
 } from '../features/collection/collectionModel';
 import {
   NativePokemonHubHeader,
@@ -145,6 +146,11 @@ export const NativeCollectionHubScreen = memo(function NativeCollectionHubScreen
   const [activeView, setActiveView] = useState<NativePokemonHubView>(initialView);
   const [selectedTagKey, setSelectedTagKey] = useState<string | null>(resolvedInitialTagKey);
   const [sidePanelTagKey, setSidePanelTagKey] = useState<string | null>(resolvedInitialTagKey);
+  const [visibleCollectionCount, setVisibleCollectionCount] = useState(() => {
+    const initialTag = [...inventoryTags, ...wishlistTags]
+      .find((tag) => tag.key === resolvedInitialTagKey);
+    return initialTag?.rows.length ?? (requireTagSelection ? 0 : catalogRows.length);
+  });
   const [actionMenuOpen, setActionMenuOpen] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [organizerOpen, setOrganizerOpen] = useState(false);
@@ -214,7 +220,10 @@ export const NativeCollectionHubScreen = memo(function NativeCollectionHubScreen
     let timer: ReturnType<typeof setTimeout> | null = null;
     let interactionTask: ReturnType<typeof runAfterNativeUiInteractions> | null = null;
     const tagsToPrepare = availableTags.slice(0, 24);
-    let index = 0;
+    const searchRowGroups = [catalogRows, ...tagsToPrepare.map((tag) => tag.rows)];
+    let tagIndex = 0;
+    let searchGroupIndex = 0;
+    let searchRowIndex = 0;
     const scheduleNext = (delay: number) => {
       timer = setTimeout(() => {
         interactionTask = runAfterNativeUiInteractions(prepareNext);
@@ -222,10 +231,24 @@ export const NativeCollectionHubScreen = memo(function NativeCollectionHubScreen
     };
     const prepareNext = () => {
       if (cancelled) return;
-      const tag = tagsToPrepare[index];
-      if (!tag) return;
-      prepareNativeCollectionParityRows(tag.rows);
-      index += 1;
+      const tag = tagsToPrepare[tagIndex];
+      if (tag) {
+        prepareNativeCollectionParityRows(tag.rows);
+        tagIndex += 1;
+        scheduleNext(16);
+        return;
+      }
+      const searchRows = searchRowGroups[searchGroupIndex];
+      if (!searchRows) return;
+      searchRowIndex = prepareNativeCollectionSearchRows(
+        searchRows,
+        searchRowIndex,
+        128,
+      );
+      if (searchRowIndex >= searchRows.length) {
+        searchGroupIndex += 1;
+        searchRowIndex = 0;
+      }
       scheduleNext(16);
     };
     // The active grid has committed before effects run. Prepare immutable tag
@@ -238,7 +261,7 @@ export const NativeCollectionHubScreen = memo(function NativeCollectionHubScreen
       if (timer) clearTimeout(timer);
       interactionTask?.cancel();
     };
-  }, [availableTags]);
+  }, [availableTags, catalogRows]);
 
   useEffect(() => () => {
     pendingTagMotionRef.current = null;
@@ -269,6 +292,10 @@ export const NativeCollectionHubScreen = memo(function NativeCollectionHubScreen
   }, [activeView, selectedRows.length, selectedTag?.key]);
 
   const changeView = useCallback((view: NativePokemonHubView) => {
+    // Vite's same-value state update is a no-op. Avoid starting a 300 ms
+    // native animation and allocating panel textures when the selected tab is
+    // tapped again.
+    if (activeViewRef.current === view) return;
     // Commit the destination immediately so taps never wait for momentum to
     // settle before the selected tab becomes responsive. The underline still
     // follows pageScrollX continuously, so the visual indicator travels with
@@ -303,6 +330,15 @@ export const NativeCollectionHubScreen = memo(function NativeCollectionHubScreen
     });
     sliderRef.current?.setPage(VIEW_ORDER.indexOf('pokemon'));
   }, []);
+
+  const commitCollectionRows = useCallback((visibleRowCount: number) => {
+    if (query.trim()) {
+      setVisibleCollectionCount((current) => (
+        current === visibleRowCount ? current : visibleRowCount
+      ));
+    }
+    startPendingTagMotion();
+  }, [query, startPendingTagMotion]);
 
   const changeQuery = useCallback((nextQuery: string) => {
     setQuery(nextQuery);
@@ -490,7 +526,7 @@ export const NativeCollectionHubScreen = memo(function NativeCollectionHubScreen
       selectionAction={selectedRowsAreCatalog ? 'add' : 'organize'}
       tagCanClear={!requireTagSelection}
       onContextChange={onContextChange}
-      onRowsCommitted={startPendingTagMotion}
+      onRowsCommitted={commitCollectionRows}
     />
   ), [
     assetBaseUrl,
@@ -516,7 +552,7 @@ export const NativeCollectionHubScreen = memo(function NativeCollectionHubScreen
     initialSort,
     initialSortDirection,
     onContextChange,
-    startPendingTagMotion,
+    commitCollectionRows,
     openOrganizer,
   ]);
   const wishlistPanel = useMemo(() => (
@@ -574,7 +610,7 @@ export const NativeCollectionHubScreen = memo(function NativeCollectionHubScreen
         activeTagParent={sidePanelTag?.parent ?? null}
         activeView={activeView}
         backgroundColor={background}
-        collectionCount={selectedRows.length}
+        collectionCount={query.trim() ? visibleCollectionCount : selectedRows.length}
         inactiveTextColor={palette.headerInactive}
         onViewChange={changeView}
         scrollX={pageScrollX}
