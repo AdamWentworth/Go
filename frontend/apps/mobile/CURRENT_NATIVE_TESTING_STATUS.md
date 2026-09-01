@@ -150,7 +150,7 @@ does not invalidate every visible cell just as page motion begins.
 
 The real-route collection budget measures the first interactive destination
 card before separately asserting the deliberately delayed header sublabel. The
-latest focused run measured 506 ms and then confirmed the header identity after
+latest focused run measured 511 ms and then confirmed the header identity after
 the slide; this avoids counting intentional Vite motion as result latency.
 
 ## Remaining approval gate
