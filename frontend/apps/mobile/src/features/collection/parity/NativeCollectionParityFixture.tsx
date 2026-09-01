@@ -2,6 +2,7 @@ import {
   ActivityIndicator,
   FlatList,
   Image,
+  type ListRenderItemInfo,
   type NativeScrollEvent,
   type NativeSyntheticEvent,
   Pressable,
@@ -17,6 +18,7 @@ import {
   useCallback,
   useEffect,
   useImperativeHandle,
+  useMemo,
   useRef,
   useState,
 } from 'react';
@@ -327,11 +329,11 @@ export const NativeCollectionParityFixture = memo(forwardRef<
         surface: customTagSurface(customTagColor),
       }
     : baseTagColors;
-  const appendFilter = (filter: string) => {
+  const appendFilter = useCallback((filter: string) => {
     const nextQuery = query.trim() ? `${query}&${filter}` : filter;
     onQueryChange?.(nextQuery);
     setSearchMenuVisible(false);
-  };
+  }, [onQueryChange, query]);
   const resetScroll = useCallback(() => {
     restoredScrollRef.current = true;
     if (currentScrollOffsetRef.current > 0.5) {
@@ -353,7 +355,7 @@ export const NativeCollectionParityFixture = memo(forwardRef<
     previousResetKeyRef.current = scrollResetKey;
     resetScroll();
   }, [resetScroll, scrollResetKey]);
-  const renderCollectionControls = (includeSearchMenu: boolean) => (
+  const renderCollectionControls = useCallback((includeSearchMenu: boolean) => (
     <View style={styles.collectionControls}>
       <NativeCollectionSearchControls
         assetBaseUrl={assetBaseUrl}
@@ -425,7 +427,53 @@ export const NativeCollectionParityFixture = memo(forwardRef<
         />
       ) : null}
     </View>
+  ), [
+    activeTag,
+    appendFilter,
+    assetBaseUrl,
+    error,
+    onClearTag,
+    onQueryChange,
+    onRetry,
+    onToggleEvolutionaryLine,
+    palette.search,
+    palette.searchText,
+    palette.secondaryText,
+    palette.tagText,
+    palette.text,
+    query,
+    searchMenuVisible,
+    showEvolutionaryLine,
+    tagCanClear,
+    tagColors.accent,
+    tagColors.contrast,
+    tagColors.surface,
+    tagTone,
+  ]);
+  const listHeader = useMemo(
+    () => renderCollectionControls(false),
+    [renderCollectionControls],
   );
+  const renderCard = useCallback(({
+    item,
+  }: ListRenderItemInfo<CollectionParityCardFixture>) => (
+    <CollectionParityCard
+      assetBaseUrl={assetBaseUrl}
+      card={item}
+      cardWidth={cardWidth}
+      onPressCard={onCardPress}
+      onLongPressCard={onCardLongPress}
+      selected={selectedIds.has(item.id)}
+      theme={theme}
+    />
+  ), [
+    assetBaseUrl,
+    cardWidth,
+    onCardLongPress,
+    onCardPress,
+    selectedIds,
+    theme,
+  ]);
 
   return (
     <View
@@ -490,7 +538,7 @@ export const NativeCollectionParityFixture = memo(forwardRef<
           testID="native-collection-grid"
           updateCellsBatchingPeriod={surfaceActive ? 16 : 48}
           windowSize={surfaceActive ? 3 : 1}
-          ListHeaderComponent={renderCollectionControls(false)}
+          ListHeaderComponent={listHeader}
           ListEmptyComponent={(
             <View style={styles.emptyState}>
               {isLoading ? (
@@ -506,17 +554,7 @@ export const NativeCollectionParityFixture = memo(forwardRef<
               ) : null}
             </View>
           )}
-          renderItem={({ item }) => (
-            <CollectionParityCard
-              assetBaseUrl={assetBaseUrl}
-              card={item}
-              cardWidth={cardWidth}
-              onPressCard={onCardPress}
-              onLongPressCard={onCardLongPress}
-              selected={selectedIds.has(item.id)}
-              theme={theme}
-            />
-          )}
+          renderItem={renderCard}
         />
       )}
 

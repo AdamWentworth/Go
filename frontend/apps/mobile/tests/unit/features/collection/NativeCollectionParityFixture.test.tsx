@@ -1,4 +1,5 @@
 import { createRef } from 'react';
+import { FlatList } from 'react-native';
 import { act, fireEvent, render, screen } from '@testing-library/react-native';
 import {
   NativeCollectionParityFixture,
@@ -173,6 +174,20 @@ describe('NativeCollectionParityFixture', () => {
     render(<NativeCollectionParityFixture />);
 
     expect(screen.getByTestId('native-collection-grid').props.keyboardShouldPersistTaps).toBe('always');
+  });
+
+  it('keeps grid render work stable when a prepainted surface becomes active', () => {
+    const view = render(<NativeCollectionParityFixture surfaceActive={false} />);
+    const hiddenGrid = view.UNSAFE_getByType(FlatList);
+    const hiddenHeader = hiddenGrid.props.ListHeaderComponent;
+    const hiddenRenderItem = hiddenGrid.props.renderItem;
+
+    view.rerender(<NativeCollectionParityFixture surfaceActive />);
+
+    const activeGrid = view.UNSAFE_getByType(FlatList);
+    expect(activeGrid.props.ListHeaderComponent).toBe(hiddenHeader);
+    expect(activeGrid.props.renderItem).toBe(hiddenRenderItem);
+    expect(activeGrid.props.windowSize).toBe(3);
   });
 
   it('resets a warmed destination grid before it returns from a side tag page', () => {

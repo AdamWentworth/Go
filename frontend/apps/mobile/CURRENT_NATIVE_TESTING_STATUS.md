@@ -53,7 +53,7 @@ mounts complete collection and Pokédex route trees in the background.
 
 Passing evidence for this checkpoint:
 
-- native Jest: 154 suites, 809 tests;
+- native Jest: 154 suites, 810 tests;
 - mobile and web TypeScript and ESLint;
 - native real-route smoke: 92 guest/signed-in, light/dark route states;
 - focused Vite mobile-Chromium browser coverage: 9 tests;
@@ -144,7 +144,9 @@ cached by the immutable collection snapshot, and custom memberships are now
 projected in one pass across the instances instead of rescanning the entire
 collection once per custom tag. Returning to `/pokemon` can therefore reuse the
 same tag rows immediately, while accounts with many tags avoid multiplicative
-route-entry work.
+route-entry work. Each grid also keeps stable header and card-render callbacks
+when only its active/hidden window policy changes, so revealing a warmed tag
+does not invalidate every visible cell just as page motion begins.
 
 The real-route collection budget measures the first interactive destination
 card before separately asserting the deliberately delayed header sublabel. The
