@@ -53,7 +53,7 @@ mounts complete collection and Pokédex route trees in the background.
 
 Passing evidence for this checkpoint:
 
-- native Jest: 158 suites, 822 tests;
+- native Jest: 158 suites, 823 tests;
 - mobile and web TypeScript and ESLint;
 - native real-route smoke: 92 guest/signed-in, light/dark route states;
 - focused Vite mobile-Chromium browser coverage: 9 tests;
@@ -123,7 +123,12 @@ FlatList keys its outer native rows by stable absolute slots, matching Vite's
 `row-${row}` reconciliation instead of tearing down every visible row when
 Pokémon IDs change during a tag swap. Static card layers and search/sort
 controls are memoized, and tag cards no longer apply the non-Vite shrink
-transform on press.
+transform or alpha fade on press. The ownership glow now stays mounted on every
+visible card, as Vite's pseudo-element does, and toggles opacity instead of
+mounting an image layer during a catalog-to-tag transition. The delayed
+Tags/Wishlist sublabel clock starts with the actual native-driven slide rather
+than with the preceding data commit, keeping that header update off the final
+motion frame.
 
 The collection route now also preserves its navigation, retry, organizer, and
 tag-mutation callback identities, while the Hub and three-panel slider are

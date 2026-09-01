@@ -121,6 +121,21 @@ describe('NativeCollectionParityFixture', () => {
     },
   );
 
+  it('keeps Vite\'s inactive glow layer mounted across catalog-to-tag swaps', () => {
+    const view = render(
+      <NativeCollectionParityFixture
+        activeTag={null}
+        cards={[{ ...COLLECTION_PARITY_FIXTURES[0], ownership: undefined }]}
+      />,
+    );
+    const inactiveGlow = view.getByTestId(
+      'native-inactive-status-glow',
+      { includeHiddenElements: true },
+    );
+
+    expect(inactiveGlow).toHaveStyle({ opacity: 0 });
+  });
+
   it('keeps incomplete mobile rows at the canonical three-column width', () => {
     render(<NativeCollectionParityFixture cards={COLLECTION_PARITY_FIXTURES.slice(0, 1)} />);
 

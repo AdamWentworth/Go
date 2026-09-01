@@ -74,7 +74,12 @@ describe('NativeTagsPanelScreen', () => {
 
     expect(screen.getByText('Shadow Shinies')).toBeTruthy();
     expect(screen.getByText('1 Pokémon have this tag.')).toBeTruthy();
-    fireEvent.press(screen.getByRole('button', { name: /Open Shadow Shinies/i }));
+    const openTag = screen.getByRole('button', { name: /Open Shadow Shinies/i });
+    // Vite does not alpha-fade the image-heavy tag card on touch. Keeping the
+    // native Pressable free of an opacity style avoids an Android offscreen
+    // alpha-compositing pass on the exact frame that starts page motion.
+    expect(openTag.props.style).toBeUndefined();
+    fireEvent.press(openTag);
     expect(onSelectTag).toHaveBeenCalledWith(tag);
     fireEvent.press(screen.getByRole('tab', { name: /wishlist/i }));
     expect(onViewChange).toHaveBeenCalledWith('wishlist');

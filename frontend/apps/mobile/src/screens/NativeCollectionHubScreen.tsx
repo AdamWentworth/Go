@@ -301,16 +301,9 @@ export const NativeCollectionHubScreen = memo(function NativeCollectionHubScreen
       clearTimeout(sidePanelTagTimerRef.current);
       sidePanelTagTimerRef.current = null;
     }
-    if (activeViewRef.current === 'pokemon') {
+    const delaySidePanelTag = activeViewRef.current !== 'pokemon';
+    if (!delaySidePanelTag) {
       setSidePanelTagKey(tag.key);
-    } else {
-      // Vite deliberately keeps the old Tags/Wishlist sublabel stable while
-      // the three-panel track moves. The Pokémon result itself changes before
-      // motion; only this offscreen header identity catches up after 300 ms.
-      sidePanelTagTimerRef.current = setTimeout(() => {
-        setSidePanelTagKey(tag.key);
-        sidePanelTagTimerRef.current = null;
-      }, NATIVE_HORIZONTAL_PAGE_TRANSITION_MS);
     }
     // Vite changes the immutable data projection in its one virtualized grid,
     // then starts the compositor slide. Native follows that same order: the
@@ -330,6 +323,16 @@ export const NativeCollectionHubScreen = memo(function NativeCollectionHubScreen
     }
     tagPageMotionFrameRef.current = requestAnimationFrame(() => {
       tagPageMotionFrameRef.current = null;
+      if (delaySidePanelTag) {
+        // Vite starts this delay with its CSS transform. Native intentionally
+        // waits one frame for the destination data commit, so start the label
+        // clock here as well. Starting it at press time changed the header on
+        // Android's final motion frame and made the slide visibly hitch.
+        sidePanelTagTimerRef.current = setTimeout(() => {
+          setSidePanelTagKey(tag.key);
+          sidePanelTagTimerRef.current = null;
+        }, NATIVE_HORIZONTAL_PAGE_TRANSITION_MS);
+      }
       markNativeUiPerformance('collection_tag_slide_started', {
         interactionLatencyMs: Date.now() - startedAt,
         tagKey: tag.key,

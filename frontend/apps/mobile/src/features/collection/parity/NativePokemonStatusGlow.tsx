@@ -18,8 +18,7 @@ export const NativePokemonStatusGlow = memo(function NativePokemonStatusGlow({
 }: {
   ownership: CollectionParityCardFixture['ownership'];
 }) {
-  if (!ownership) return null;
-  const color = OWNERSHIP_GLOW[ownership];
+  const color = ownership ? OWNERSHIP_GLOW[ownership] : '#ffffff';
 
   return (
     <Image
@@ -27,8 +26,8 @@ export const NativePokemonStatusGlow = memo(function NativePokemonStatusGlow({
       fadeDuration={0}
       resizeMode="stretch"
       source={STATUS_GLOW_SOURCE}
-      style={[styles.glow, { tintColor: color }]}
-      testID={`native-${ownership}-status-glow`}
+      style={[styles.glow, { opacity: ownership ? 1 : 0, tintColor: color }]}
+      testID={ownership ? `native-${ownership}-status-glow` : 'native-inactive-status-glow'}
     />
   );
 });

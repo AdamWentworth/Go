@@ -268,7 +268,6 @@ const NativeTagCard = memo(function NativeTagCard({
             accessibilityLabel={`Open ${tag.name}, ${tag.rows.length} Pokémon`}
             accessibilityRole="button"
             onPress={() => onPressTag(tag)}
-            style={({ pressed }) => pressed ? styles.pressed : null}
           >
             {cardContents}
           </Pressable>
@@ -642,7 +641,6 @@ const styles = StyleSheet.create({
     shadowRadius: 22,
     shadowOffset: { width: 0, height: 16 },
   },
-  pressed: { opacity: 0.88 },
   preview: {
     flexDirection: 'row',
     flexWrap: 'wrap',

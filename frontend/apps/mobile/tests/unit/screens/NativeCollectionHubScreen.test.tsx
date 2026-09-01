@@ -197,6 +197,7 @@ describe('NativeCollectionHubScreen', () => {
 
   it('updates one virtualized grid before sliding back to Pokémon from either side', () => {
     const timing = jest.spyOn(Animated, 'timing');
+    const timeout = jest.spyOn(global, 'setTimeout');
     render(
       <SafeAreaProvider initialMetrics={{
         frame: { x: 0, y: 0, width: 412, height: 915 },
@@ -230,6 +231,7 @@ describe('NativeCollectionHubScreen', () => {
 
     fireEvent.press(screen.getByRole('tab', { name: /tags/i }));
     timing.mockClear();
+    timeout.mockClear();
     fireEvent.press(screen.getByRole('button', { name: /Open Favorites/i }));
 
     expect(screen.queryAllByTestId(
@@ -246,12 +248,20 @@ describe('NativeCollectionHubScreen', () => {
     )).toBeNull();
     expect(screen.queryByText('(FAVORITES)')).toBeNull();
     expect(timing).not.toHaveBeenCalled();
+    expect(timeout).not.toHaveBeenCalledWith(
+      expect.any(Function),
+      NATIVE_HORIZONTAL_PAGE_TRANSITION_MS,
+    );
     act(() => jest.advanceTimersByTime(17));
     expect(timing).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({
       duration: NATIVE_HORIZONTAL_PAGE_TRANSITION_MS,
       toValue: 412,
       useNativeDriver: true,
     }));
+    expect(timeout).toHaveBeenCalledWith(
+      expect.any(Function),
+      NATIVE_HORIZONTAL_PAGE_TRANSITION_MS,
+    );
     act(() => jest.advanceTimersByTime(NATIVE_HORIZONTAL_PAGE_TRANSITION_MS - 17));
     expect(screen.getByText('(FAVORITES)')).toBeTruthy();
     expect(screen.getByRole('tab', { name: /pokémon/i }).props.accessibilityState).toEqual({
@@ -272,6 +282,7 @@ describe('NativeCollectionHubScreen', () => {
     }));
     act(() => jest.advanceTimersByTime(NATIVE_HORIZONTAL_PAGE_TRANSITION_MS - 17));
     expect(screen.getByText('(MOST WANTED)')).toBeTruthy();
+    timeout.mockRestore();
   });
 
   it('preserves the active search when selecting a tag like Vite', () => {
