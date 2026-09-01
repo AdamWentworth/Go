@@ -236,7 +236,6 @@ export const NativeCollectionHubScreen = ({
     setActiveView('pokemon');
     setQuery('');
     setSelectedTagKey(tag.key);
-    sliderRef.current?.setPage(VIEW_ORDER.indexOf('pokemon'));
     onContextChange?.({
       activeView: 'pokemon',
       query: '',
