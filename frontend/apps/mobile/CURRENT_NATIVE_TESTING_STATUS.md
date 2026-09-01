@@ -139,7 +139,12 @@ settling animation so the current page cannot flash or reload before moving to
 the next one. Prepainted destination lists now retain only one viewport while
 hidden; the active list alone gets Vite's multi-row scroll buffer and faster
 cell batches. This keeps the instant destination paint without making every
-tag maintain a full scrolling window offscreen.
+tag maintain a full scrolling window offscreen. Native tag summaries are also
+cached by the immutable collection snapshot, and custom memberships are now
+projected in one pass across the instances instead of rescanning the entire
+collection once per custom tag. Returning to `/pokemon` can therefore reuse the
+same tag rows immediately, while accounts with many tags avoid multiplicative
+route-entry work.
 
 The real-route collection budget measures the first interactive destination
 card before separately asserting the deliberately delayed header sublabel. The

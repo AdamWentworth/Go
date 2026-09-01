@@ -679,15 +679,50 @@ const rowsForSystemTag = (
   }
 };
 
+type NativeTagSummaryCacheEntry = {
+  envelope: CustomTagsEnvelope | null | undefined;
+  instances: Record<string, PokemonInstance>;
+  parent: CustomTagParent;
+  summaries: NativeTagSummary[];
+};
+
+const nativeTagSummariesCache = new WeakMap<
+  NativeCollectionRow[],
+  NativeTagSummaryCacheEntry[]
+>();
+
 export const buildNativeTagSummaries = (
   rows: NativeCollectionRow[],
   instances: Record<string, PokemonInstance>,
   envelope: CustomTagsEnvelope | null | undefined,
   parent: CustomTagParent,
 ): NativeTagSummary[] => {
+  const cachedEntries = nativeTagSummariesCache.get(rows);
+  const cached = cachedEntries?.find((entry) => (
+    entry.instances === instances
+    && entry.envelope === envelope
+    && entry.parent === parent
+  ));
+  if (cached) return cached.summaries;
+
   const normalizedEnvelope = normalizeNativeTagsEnvelope(envelope);
   const rowById = new Map(rows.map((row) => [row.id, row]));
   const customDefinitions = normalizedEnvelope.tags.filter((tag) => tag.parent === parent);
+  const customTagIds = new Set(customDefinitions.map((tag) => tag.tag_id));
+  const customRowsByTagId = new Map<string, NativeCollectionRow[]>();
+  for (const [instanceKey, instance] of Object.entries(instances)) {
+    const row = rowById.get(instance.instance_id ?? instanceKey);
+    if (!row) continue;
+    const memberships = normalizeNativeTagIds(
+      parent === 'caught' ? instance.caught_tags : instance.wanted_tags,
+    );
+    for (const tagId of memberships) {
+      if (!customTagIds.has(tagId)) continue;
+      const tagRows = customRowsByTagId.get(tagId) ?? [];
+      tagRows.push(row);
+      customRowsByTagId.set(tagId, tagRows);
+    }
+  }
   const customKeys = customDefinitions.map(
     (tag) => `custom:${tag.tag_id}` as PokemonTagOrderKey,
   );
@@ -698,7 +733,7 @@ export const buildNativeTagSummaries = (
     ...customKeys,
   ].filter((key, index, all) => allowed.has(key) && all.indexOf(key) === index);
 
-  return orderedKeys.flatMap((key) => {
+  const summaries = orderedKeys.flatMap((key) => {
     const system = SYSTEM_TAGS[key];
     if (system && system.parent === parent) {
       return [{ ...system, rows: rowsForSystemTag(key, rows) }];
@@ -707,14 +742,6 @@ export const buildNativeTagSummaries = (
     const tagId = key.slice('custom:'.length);
     const definition = customDefinitions.find((tag) => tag.tag_id === tagId);
     if (!definition) return [];
-    const tagRows = Object.entries(instances).flatMap(([instanceKey, instance]) => {
-      const memberships = normalizeNativeTagIds(
-        parent === 'caught' ? instance.caught_tags : instance.wanted_tags,
-      );
-      if (!memberships.includes(tagId)) return [];
-      const row = rowById.get(instance.instance_id ?? instanceKey);
-      return row ? [row] : [];
-    });
     return [{
       key,
       parent,
@@ -722,9 +749,13 @@ export const buildNativeTagSummaries = (
       filterName: definition.name,
       color: definition.color,
       tone: 'custom',
-      rows: tagRows,
+      rows: customRowsByTagId.get(tagId) ?? [],
     } satisfies NativeTagSummary];
   });
+  const nextCacheEntries = cachedEntries ?? [];
+  nextCacheEntries.push({ envelope, instances, parent, summaries });
+  if (!cachedEntries) nativeTagSummariesCache.set(rows, nextCacheEntries);
+  return summaries;
 };
 
 const normalizeNativeCollectionSearchValue = (value: string): string => value

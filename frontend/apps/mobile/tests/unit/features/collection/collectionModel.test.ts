@@ -349,6 +349,9 @@ describe('native collection model', () => {
     const caught = buildNativeTagSummaries(rows, instances, envelope, 'caught');
     const wanted = buildNativeTagSummaries(rows, instances, envelope, 'wanted');
 
+    expect(buildNativeTagSummaries(rows, instances, envelope, 'caught')).toBe(caught);
+    expect(buildNativeTagSummaries(rows, instances, envelope, 'wanted')).toBe(wanted);
+
     expect(caught.map((tag) => tag.name)).toEqual([
       'Favorites', 'Shadow Shinies', 'All Caught', 'For Trade',
     ]);
