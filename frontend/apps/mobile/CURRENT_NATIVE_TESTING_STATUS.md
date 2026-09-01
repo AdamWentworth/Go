@@ -20,6 +20,12 @@ TypeScript, layout, navigation, and animation changes. A new APK is needed only
 when the native dependency set, Android project, Expo config plugin output, or
 other compiled native code changes.
 
+Use `start:native-preview` while instrumenting or using Fast Refresh. Use
+`start:native-preview:performance` for release-like perceived-performance
+checks on the same installed development client: it serves a production-mode,
+minified bundle without compiling an APK. Development-only performance traces
+are intentionally unavailable in that mode.
+
 Never describe a Metro QR as installing an APK. Never combine multiple Android
 artifacts behind one QR without explicitly identifying which single file the
 user should install.
