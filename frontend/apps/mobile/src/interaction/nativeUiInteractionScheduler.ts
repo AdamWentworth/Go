@@ -50,7 +50,21 @@ const flushPendingWork = () => {
   if (activeInteractionCount > 0 || pendingWork.size === 0) return;
   const ready = [...pendingWork];
   pendingWork.clear();
-  ready.forEach(scheduleWork);
+  // A page/overlay animation can accumulate work from the visible collection,
+  // both retained tag panels, cache warming, and realtime updates. Releasing
+  // every callback into the same Android frame recreates the decode/reconcile
+  // burst this scheduler is meant to prevent. Admit one queued source per
+  // frame. The first keeps the platform idle path; later tasks already have a
+  // frame delay and still requeue if another interaction begins meanwhile.
+  ready.forEach((work, index) => {
+    if (index === 0) {
+      scheduleWork(work);
+      return;
+    }
+    work.timer = setTimeout(() => {
+      runScheduledWork(work);
+    }, index * 16);
+  });
 };
 
 /**

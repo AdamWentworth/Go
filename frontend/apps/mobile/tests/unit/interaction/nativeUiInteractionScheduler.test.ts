@@ -39,6 +39,30 @@ describe('nativeUiInteractionScheduler', () => {
     expect(task).toHaveBeenCalledTimes(1);
   });
 
+  it('spreads a post-interaction backlog across separate frame turns', () => {
+    const first = jest.fn();
+    const second = jest.fn();
+    const third = jest.fn();
+    const release = beginNativeUiInteraction();
+
+    runAfterNativeUiInteractions(first);
+    runAfterNativeUiInteractions(second);
+    runAfterNativeUiInteractions(third);
+    release();
+
+    jest.advanceTimersByTime(0);
+    expect(first).toHaveBeenCalledTimes(1);
+    expect(second).not.toHaveBeenCalled();
+    expect(third).not.toHaveBeenCalled();
+
+    jest.advanceTimersByTime(16);
+    expect(second).toHaveBeenCalledTimes(1);
+    expect(third).not.toHaveBeenCalled();
+
+    jest.advanceTimersByTime(16);
+    expect(third).toHaveBeenCalledTimes(1);
+  });
+
   it('cancels queued work without leaking it into the next idle period', () => {
     const task = jest.fn();
     const release = beginNativeUiInteraction();

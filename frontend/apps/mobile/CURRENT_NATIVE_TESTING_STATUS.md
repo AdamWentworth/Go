@@ -329,8 +329,12 @@ windows. This removes a window handoff from their first response while
 preserving focus, dismissal, and accessibility behavior. Image-release work is
 also admitted only through the app-owned interaction scheduler, so queued
 projection warming cannot start a React update inside an active page or overlay
-animation. Long press consumes the same shared 300 ms threshold in Vite and
-Native.
+animation. When an animation ends, a backlog from the visible collection,
+retained tag panels, cache warming, and realtime updates is now admitted one
+source per 16 ms frame instead of all callbacks bursting into the first frame.
+The rapid four-tag Android run retained 0--1 ms slide starts, 56--95 ms result
+commits, and 80 ms for its latest typed query with that post-animation pacing.
+Long press consumes the same shared 300 ms threshold in Vite and Native.
 
 The complete minified Android probe currently reports: 53--82 ms to open
 search, 65 ms to open sort, 52 ms for filter release, 9--10 ms to begin a tag
