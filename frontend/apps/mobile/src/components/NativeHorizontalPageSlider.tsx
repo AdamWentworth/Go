@@ -194,6 +194,7 @@ export const NativeHorizontalPageSlider = forwardRef<
       Animated.timing(pageScrollX, {
         duration: NATIVE_HORIZONTAL_PAGE_TRANSITION_MS,
         easing: NATIVE_HORIZONTAL_PAGE_EASING,
+        isInteraction: true,
         toValue: nextIndex * width,
         useNativeDriver: true,
       }).start(() => setTrackRasterized(false));
