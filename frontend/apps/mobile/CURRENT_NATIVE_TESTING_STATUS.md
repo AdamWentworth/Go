@@ -99,10 +99,13 @@ them during every page slide. Native now mirrors Vite again: one grid receives
 a cached immutable tag projection before the native-driven track starts moving.
 No background timer can add hidden grids later.
 
-Filtering, sorting, tag summaries, per-row cards, image source objects, row-ID
-projections, and lookup maps remain cached. Background work warms only those
-plain projections and waits for the app-owned interaction scheduler; it never
-mounts an offscreen list. The tag gallery loads the twelve phone-visible preview
+Filtering, sorting, tag summaries, per-visible-row cards, and image source
+objects remain cached. The canonical collection rows now enter FlatList
+directly; Native no longer projects all 3,285 catalog entries into duplicate
+card objects or constructs a full row-ID lookup map before virtualization can
+take effect. Background work warms only the first eighteen plain card
+projections and waits for the app-owned interaction scheduler; it never mounts
+an offscreen list. The tag gallery loads the twelve phone-visible preview
 images and, like Vite's eighteen-source preview, prefetches the six CSS-hidden
 sources without mounting hidden native image views. The active FlatList keeps
 a Vite-sized three-viewport window and six-row initial/batch budget. React
@@ -153,7 +156,7 @@ latency gap with Vite's already-populated client store.
 
 The real-route collection budget measures the first interactive destination
 card before separately asserting the deliberately delayed header sublabel. The
-latest complete matrix passed all 92 route/theme states and measured 522 ms for
+latest complete matrix passed all 92 route/theme states and measured 513 ms for
 the For Trade workflow, including the canonical 300 ms slide.
 
 ## Remaining approval gate

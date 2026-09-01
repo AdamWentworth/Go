@@ -30,7 +30,11 @@ import type {
   CollectionParityCardFixture,
   CollectionParityTheme,
 } from './collectionParityFixtures';
+import type { NativeCollectionRow } from '../collectionModel';
 import { COLLECTION_PARITY_FIXTURES } from './collectionParityFixtures';
+import {
+  projectNativeCollectionParityCard,
+} from './nativeCollectionCardProjection';
 import {
   NativePokemonHubHeader,
   type NativePokemonHubView,
@@ -52,6 +56,7 @@ type NativeCollectionParityFixtureProps = {
   assetBaseUrl?: string;
   activeTag?: string | null;
   cards?: CollectionParityCardFixture[];
+  collectionRows?: NativeCollectionRow[];
   collectionCount?: number;
   customTagColor?: string;
   error?: string | null;
@@ -59,6 +64,8 @@ type NativeCollectionParityFixtureProps = {
   onActionMenuPress?: () => void;
   onCardPress?: (card: CollectionParityCardFixture) => void;
   onCardLongPress?: (card: CollectionParityCardFixture) => void;
+  onCollectionRowPress?: (row: NativeCollectionRow) => void;
+  onCollectionRowLongPress?: (row: NativeCollectionRow) => void;
   onClearTag?: () => void;
   onQueryChange?: (query: string) => void;
   onToggleEvolutionaryLine?: () => void;
@@ -83,6 +90,7 @@ type NativeCollectionParityFixtureProps = {
   tagTone?: 'caught' | 'trade' | 'favorites' | 'wanted' | 'most-wanted' | 'custom';
   theme?: CollectionParityTheme;
   showHeader?: boolean;
+  showOwnership?: boolean;
   selectedIds?: ReadonlySet<string>;
   selectionAction?: 'add' | 'organize';
 };
@@ -164,6 +172,7 @@ const NATIVE_FLAT_LIST_RENDERER_OPTIMIZATION = { strictMode: true } as const;
 // window then supplies the same roughly five-row overscan Vite uses.
 const COLLECTION_INITIAL_ROW_BUDGET = 6;
 const COLLECTION_ROW_BATCH_BUDGET = 6;
+type CollectionCardSource = CollectionParityCardFixture | NativeCollectionRow;
 // FlatList combines each item key into a key for its generated multi-column
 // row. Keying by Pokémon identity therefore tears down every visible native
 // row whenever a tag changes its contents. Vite deliberately keys those outer
@@ -172,24 +181,34 @@ const COLLECTION_ROW_BATCH_BUDGET = 6;
 // update the already-mounted row views instead of remounting the entire visible
 // grid while the horizontal page transition is beginning.
 const collectionCardKeyExtractor = (
-  _card: CollectionParityCardFixture,
+  _card: CollectionCardSource,
   index: number,
 ): string => `collection-slot-${index}`;
+
+const isParityCardFixture = (
+  source: CollectionCardSource,
+): source is CollectionParityCardFixture => 'imagePath' in source;
 
 const CollectionParityCard = memo(function CollectionParityCard({
   assetBaseUrl,
   card,
   cardWidth,
+  collectionRow,
   onPressCard,
   onLongPressCard,
+  onPressCollectionRow,
+  onLongPressCollectionRow,
   selected,
   theme,
 }: {
   assetBaseUrl: string;
   card: CollectionParityCardFixture;
   cardWidth: number;
+  collectionRow?: NativeCollectionRow;
   onPressCard?: (card: CollectionParityCardFixture) => void;
   onLongPressCard?: (card: CollectionParityCardFixture) => void;
+  onPressCollectionRow?: (row: NativeCollectionRow) => void;
+  onLongPressCollectionRow?: (row: NativeCollectionRow) => void;
   selected: boolean;
   theme: CollectionParityTheme;
 }) {
@@ -199,8 +218,12 @@ const CollectionParityCard = memo(function CollectionParityCard({
       accessibilityLabel={`${card.interaction === 'select' ? 'Select' : 'View'} ${card.name}`}
       accessibilityRole="button"
       delayLongPress={450}
-      onLongPress={onLongPressCard ? () => onLongPressCard(card) : undefined}
-      onPress={onPressCard ? () => onPressCard(card) : undefined}
+      onLongPress={collectionRow && onLongPressCollectionRow
+        ? () => onLongPressCollectionRow(collectionRow)
+        : onLongPressCard ? () => onLongPressCard(card) : undefined}
+      onPress={collectionRow && onPressCollectionRow
+        ? () => onPressCollectionRow(collectionRow)
+        : onPressCard ? () => onPressCard(card) : undefined}
       style={[styles.card, selected && styles.selectedCard, { width: cardWidth }]}
       testID={`parity-card-${card.id}`}
     >
@@ -295,6 +318,7 @@ export const NativeCollectionParityFixture = memo(forwardRef<
   assetBaseUrl = 'https://pokegonexus.com',
   activeTag = 'Favorites',
   cards = COLLECTION_PARITY_FIXTURES,
+  collectionRows,
   collectionCount = 168,
   customTagColor = TAG_TONES.custom.accent,
   error = null,
@@ -302,6 +326,8 @@ export const NativeCollectionParityFixture = memo(forwardRef<
   onActionMenuPress,
   onCardPress,
   onCardLongPress,
+  onCollectionRowPress,
+  onCollectionRowLongPress,
   onClearTag,
   onQueryChange,
   onToggleEvolutionaryLine,
@@ -326,17 +352,20 @@ export const NativeCollectionParityFixture = memo(forwardRef<
   tagTone = 'favorites',
   theme = 'dark',
   showHeader = true,
+  showOwnership,
   selectedIds = EMPTY_SELECTED_IDS,
   selectionAction = 'organize',
 }, ref) {
   const { width } = useWindowDimensions();
   const [searchMenuVisible, setSearchMenuVisible] = useState(false);
-  const listRef = useRef<FlatList<CollectionParityCardFixture>>(null);
+  const listRef = useRef<FlatList<CollectionCardSource>>(null);
   const restoredScrollRef = useRef(initialScrollOffset <= 0);
   const previousResetKeyRef = useRef(scrollResetKey);
   const currentScrollOffsetRef = useRef(initialScrollOffset);
-  const cardsLengthRef = useRef(cards.length);
-  cardsLengthRef.current = cards.length;
+  const collectionItems: CollectionCardSource[] = collectionRows ?? cards;
+  const cardsLengthRef = useRef(collectionItems.length);
+  cardsLengthRef.current = collectionItems.length;
+  const resolvedShowOwnership = showOwnership ?? Boolean(activeTag);
   const palette = theme === 'light' ? LIGHT : DARK;
   const columns = width < 481 ? 3 : width < 1024 ? 6 : 9;
   const cardWidth = Math.floor(
@@ -506,21 +535,33 @@ export const NativeCollectionParityFixture = memo(forwardRef<
   ), [error, isLoading, palette.secondaryText, palette.text]);
   const renderCard = useCallback(({
     item,
-  }: ListRenderItemInfo<CollectionParityCardFixture>) => (
-    <CollectionParityCard
-      assetBaseUrl={assetBaseUrl}
-      card={item}
-      cardWidth={cardWidth}
-      onPressCard={onCardPress}
-      onLongPressCard={onCardLongPress}
-      selected={selectedIds.has(item.id)}
-      theme={theme}
-    />
-  ), [
+  }: ListRenderItemInfo<CollectionCardSource>) => {
+    const fixture = isParityCardFixture(item);
+    const card = fixture
+      ? item
+      : projectNativeCollectionParityCard(item, resolvedShowOwnership);
+    return (
+      <CollectionParityCard
+        assetBaseUrl={assetBaseUrl}
+        card={card}
+        cardWidth={cardWidth}
+        collectionRow={fixture ? undefined : item}
+        onPressCard={onCardPress}
+        onLongPressCard={onCardLongPress}
+        onPressCollectionRow={onCollectionRowPress}
+        onLongPressCollectionRow={onCollectionRowLongPress}
+        selected={selectedIds.has(card.id)}
+        theme={theme}
+      />
+    );
+  }, [
     assetBaseUrl,
     cardWidth,
     onCardLongPress,
     onCardPress,
+    onCollectionRowLongPress,
+    onCollectionRowPress,
+    resolvedShowOwnership,
     selectedIds,
     theme,
   ]);
@@ -566,7 +607,7 @@ export const NativeCollectionParityFixture = memo(forwardRef<
           <FlatList
             columnWrapperStyle={styles.gridRow}
             contentContainerStyle={styles.listContent}
-            data={cards}
+            data={collectionItems}
             extraData={selectedIds}
             nestedScrollEnabled
             ref={listRef}

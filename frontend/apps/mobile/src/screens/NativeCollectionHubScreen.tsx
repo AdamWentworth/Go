@@ -63,21 +63,6 @@ const VIEW_ORDER: readonly NativePokemonHubView[] = (
   collectionExperienceParityContract.viewOrder
 );
 
-const collectionRowsByIdCache = new WeakMap<
-  NativeCollectionRow[],
-  Map<string, NativeCollectionRow>
->();
-
-const collectionRowsById = (
-  rows: NativeCollectionRow[],
-): Map<string, NativeCollectionRow> => {
-  const cached = collectionRowsByIdCache.get(rows);
-  if (cached) return cached;
-  const byId = new Map(rows.map((row) => [row.id, row]));
-  collectionRowsByIdCache.set(rows, byId);
-  return byId;
-};
-
 type Props = {
   assetBaseUrl: string;
   catalogRows: NativeCollectionRow[];
@@ -195,16 +180,10 @@ export const NativeCollectionHubScreen = memo(function NativeCollectionHubScreen
     () => selectedTag?.rows ?? (requireTagSelection ? [] : catalogRows),
     [catalogRows, requireTagSelection, selectedTag],
   );
-  const selectedRowsById = useMemo(
-    () => collectionRowsById(selectedRows),
-    [selectedRows],
-  );
-  const selectedRowsByIdRef = useRef(selectedRowsById);
+  const selectedRowsRef = useRef(selectedRows);
   const selectedCountRef = useRef(selectedIds.size);
-  useEffect(() => {
-    selectedRowsByIdRef.current = selectedRowsById;
-    selectedCountRef.current = selectedIds.size;
-  }, [selectedIds.size, selectedRowsById]);
+  selectedRowsRef.current = selectedRows;
+  selectedCountRef.current = selectedIds.size;
   const selectedOrganizerRows = useMemo(
     () => selectedIds.size === 0
       ? []
@@ -243,7 +222,6 @@ export const NativeCollectionHubScreen = memo(function NativeCollectionHubScreen
       const tag = tagsToPrepare[index];
       if (!tag) return;
       prepareNativeCollectionParityRows(tag.rows);
-      collectionRowsById(tag.rows);
       index += 1;
       scheduleNext(16);
     };
@@ -389,27 +367,25 @@ export const NativeCollectionHubScreen = memo(function NativeCollectionHubScreen
       return next;
     });
   }, []);
-  const openEntry = useCallback((entryId: string, orderedEntryIds: string[]) => {
-    const rowById = selectedRowsByIdRef.current;
-    const row = rowById.get(entryId);
-    if (!row) return;
+  const openEntry = useCallback((
+    row: NativeCollectionRow,
+    orderedRows: NativeCollectionRow[],
+  ) => {
     if (selectedCountRef.current > 0 || row.source === 'catalog') {
-      toggleSelection(entryId);
+      toggleSelection(row.id);
       return;
     }
-    const orderedRows = orderedEntryIds.flatMap((id) => {
-      const candidate = rowById.get(id);
-      return candidate && candidate.source !== 'catalog' ? [candidate] : [];
-    });
-    onOpenEntry(row, orderedRows);
+    onOpenEntry(
+      row,
+      orderedRows.filter((candidate) => candidate.source !== 'catalog'),
+    );
   }, [onOpenEntry, toggleSelection]);
-  const longPressEntry = useCallback((entryId: string) => {
-    const row = selectedRowsByIdRef.current.get(entryId);
-    if (row) toggleSelection(entryId);
+  const longPressEntry = useCallback((row: NativeCollectionRow) => {
+    toggleSelection(row.id);
   }, [toggleSelection]);
   const clearSelection = useCallback(() => setSelectedIds(new Set()), []);
   const selectAll = useCallback(
-    () => setSelectedIds(new Set(selectedRowsByIdRef.current.keys())),
+    () => setSelectedIds(new Set(selectedRowsRef.current.map((row) => row.id))),
     [],
   );
 

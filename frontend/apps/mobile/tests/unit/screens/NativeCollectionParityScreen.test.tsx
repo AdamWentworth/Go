@@ -124,6 +124,8 @@ describe('NativeCollectionParityScreen', () => {
       />,
     );
     const initialGrid = view.UNSAFE_getByType(FlatList);
+    expect(initialGrid.props.data[0]).toBe(rows[0]);
+    expect(initialGrid.props.data[0].imagePath).toBeUndefined();
     expect(screen.queryAllByTestId('native-collection-grid')).toHaveLength(1);
     expect(screen.getByText('Charizard')).toBeTruthy();
 
@@ -169,7 +171,7 @@ describe('NativeCollectionParityScreen', () => {
     expect(screen.queryByText('Bulbasaur')).toBeNull();
     expect(screen.getByText('Charizard')).toBeTruthy();
     fireEvent.press(screen.getByRole('button', { name: 'View Charizard' }));
-    expect(onOpenInstance).toHaveBeenCalledWith('charizard', ['charizard']);
+    expect(onOpenInstance).toHaveBeenCalledWith(rows[1], [rows[1]]);
   });
 
   it('matches the canonical focus-to-filter and filter-to-results workflow', () => {

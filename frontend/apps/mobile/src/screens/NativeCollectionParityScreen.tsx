@@ -9,13 +9,13 @@ import {
   useState,
 } from 'react';
 import { StyleSheet, View } from 'react-native';
-import type {
-  CollectionParityCardFixture,
-} from '../features/collection/parity/collectionParityFixtures';
 import {
   NativeCollectionParityFixture,
   type NativeCollectionParityFixtureHandle,
 } from '../features/collection/parity/NativeCollectionParityFixture';
+import {
+  projectNativeCollectionParityCard,
+} from '../features/collection/parity/nativeCollectionCardProjection';
 import {
   filterNativeCollectionRows,
   sortNativeCollectionRows,
@@ -32,6 +32,10 @@ import {
 import { useNativeColorScheme } from '../features/settings/useNativeColorScheme';
 import type { NativeCollectionSession } from '../features/collection/nativeCollectionSessionCache';
 
+export {
+  projectNativeCollectionParityCards,
+} from '../features/collection/parity/nativeCollectionCardProjection';
+
 type NativeCollectionParityScreenProps = {
   assetBaseUrl: string;
   rows: NativeCollectionRow[];
@@ -46,8 +50,8 @@ type NativeCollectionParityScreenProps = {
   error: string | null;
   onQueryChange: (query: string) => void;
   onRetry: () => void;
-  onOpenInstance: (instanceId: string, orderedInstanceIds: string[]) => void;
-  onLongPressInstance?: (instanceId: string) => void;
+  onOpenInstance: (row: NativeCollectionRow, orderedRows: NativeCollectionRow[]) => void;
+  onLongPressInstance?: (row: NativeCollectionRow) => void;
   onOpenCanonicalCollection?: () => void;
   onClearTag: () => void;
   onViewChange: (view: NativePokemonHubView) => void;
@@ -70,76 +74,15 @@ const SORT_ICONS: Record<NativeCollectionSort, string> = {
   combatPower: '/images/sorting/cp.png',
 };
 
-const toParityCard = (
-  row: NativeCollectionRow,
-  showOwnership: boolean,
-): CollectionParityCardFixture => ({
-  id: row.id,
-  cp: row.cp,
-  dexNumber: row.pokedexNumber,
-  name: row.name,
-  imagePath: row.imageUri ?? `/images/disabled/disabled_${row.pokemonId}.png`,
-  interaction: row.source === 'catalog' ? 'select' : 'view',
-  typeIconPaths: row.typeIconUris,
-  favorite: row.favorite,
-  mostWanted: row.mostWanted,
-  lucky: row.lucky,
-  locationBackgroundPath: row.locationBackgroundUri ?? undefined,
-  maxKind: row.maxKind ?? undefined,
-  ownership: showOwnership && row.source !== 'catalog' ? row.status : undefined,
-  purified: row.purified,
-});
-
-const ownedCardCache = new WeakMap<
-  NativeCollectionRow,
-  CollectionParityCardFixture
->();
-const catalogCardCache = new WeakMap<
-  NativeCollectionRow,
-  CollectionParityCardFixture
->();
-const ownedCardListCache = new WeakMap<
-  NativeCollectionRow[],
-  CollectionParityCardFixture[]
->();
-const catalogCardListCache = new WeakMap<
-  NativeCollectionRow[],
-  CollectionParityCardFixture[]
->();
-const rowIdProjectionCache = new WeakMap<NativeCollectionRow[], string[]>();
-
-export const projectNativeCollectionParityCards = (
-  rows: NativeCollectionRow[],
-  showOwnership: boolean,
-): CollectionParityCardFixture[] => {
-  const listCache = showOwnership ? ownedCardListCache : catalogCardListCache;
-  const cachedList = listCache.get(rows);
-  if (cachedList) return cachedList;
-  const cardCache = showOwnership ? ownedCardCache : catalogCardCache;
-  const cards = rows.map((row) => {
-    const cachedCard = cardCache.get(row);
-    if (cachedCard) return cachedCard;
-    const card = toParityCard(row, showOwnership);
-    cardCache.set(row, card);
-    return card;
-  });
-  listCache.set(rows, cards);
-  return cards;
-};
-
-const toVisibleRowIds = (rows: NativeCollectionRow[]): string[] => {
-  const cached = rowIdProjectionCache.get(rows);
-  if (cached) return cached;
-  const ids = rows.map((row) => row.id);
-  rowIdProjectionCache.set(rows, ids);
-  return ids;
-};
-
 export const prepareNativeCollectionParityRows = (
   rows: NativeCollectionRow[],
 ): void => {
   const sortedRows = sortNativeCollectionRows(rows, 'number', 'ascending');
-  projectNativeCollectionParityCards(sortedRows, true);
+  // Vite virtualizes before rendering cards. Warm only the first six native
+  // phone rows (18 cards), not every item in a potentially 3,000-entry tag.
+  sortedRows.slice(0, 18).forEach((row) => {
+    projectNativeCollectionParityCard(row, true);
+  });
 };
 
 const EMPTY_SELECTED_IDS: ReadonlySet<string> = new Set<string>();
@@ -208,24 +151,17 @@ export const NativeCollectionParityScreen = memo(forwardRef<
     () => sortNativeCollectionRows(filteredRows, sort, direction),
     [direction, filteredRows, sort],
   );
-  const cards = useMemo(
-    () => projectNativeCollectionParityCards(visibleRows, Boolean(activeTag)),
-    [activeTag, visibleRows],
-  );
   const visibleRowsRef = useRef(visibleRows);
   useLayoutEffect(() => {
     visibleRowsRef.current = visibleRows;
   }, [visibleRows]);
-  const handleCardPress = useCallback(
-    (card: CollectionParityCardFixture) => onOpenInstance(
-      card.id,
-      toVisibleRowIds(visibleRowsRef.current),
-    ),
+  const handleRowPress = useCallback(
+    (row: NativeCollectionRow) => onOpenInstance(row, visibleRowsRef.current),
     [onOpenInstance],
   );
-  const handleCardLongPress = useMemo(
+  const handleRowLongPress = useMemo(
     () => onLongPressInstance
-      ? (card: CollectionParityCardFixture) => onLongPressInstance(card.id)
+      ? (row: NativeCollectionRow) => onLongPressInstance(row)
       : undefined,
     [onLongPressInstance],
   );
@@ -275,13 +211,13 @@ export const NativeCollectionParityScreen = memo(forwardRef<
       <NativeCollectionParityFixture
         activeTag={activeTag?.filterName ?? activeTag?.name ?? null}
         assetBaseUrl={assetBaseUrl}
-        cards={cards}
+        collectionRows={visibleRows}
         collectionCount={visibleRows.length}
         error={error}
         isLoading={isLoading}
         onActionMenuPress={onOpenCanonicalCollection}
-        onCardPress={handleCardPress}
-        onCardLongPress={handleCardLongPress}
+        onCollectionRowPress={handleRowPress}
+        onCollectionRowLongPress={handleRowLongPress}
         customTagColor={activeTag?.color}
         onClearTag={onClearTag}
         onQueryChange={onQueryChange}
@@ -307,6 +243,7 @@ export const NativeCollectionParityScreen = memo(forwardRef<
         tagTone={activeTag?.tone ?? 'caught'}
         theme={theme}
         showHeader={showHeader}
+        showOwnership={Boolean(activeTag)}
         selectedIds={selectedIds}
         selectionAction={projectedSelectionAction}
       />
