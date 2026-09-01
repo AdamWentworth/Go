@@ -152,7 +152,7 @@ export const prepareNativeCollectionParityRows = (
 };
 
 const EMPTY_SELECTED_IDS: ReadonlySet<string> = new Set<string>();
-const EMPTY_ROW_IDS: string[] = [];
+const EMPTY_ROWS: NativeCollectionRow[] = [];
 const CATALOG_SURFACE_KEY = 'catalog';
 const SURFACE_WARM_START_DELAY_MS = 180;
 const SURFACE_WARM_INTERVAL_MS = 48;
@@ -161,7 +161,6 @@ type NativeCollectionSurfaceProjection = {
   cards: CollectionParityCardFixture[];
   containsOnlyCatalogRows: boolean;
   key: string;
-  rowIds: string[];
   rows: NativeCollectionRow[];
   tag: NativeTagSummary | null;
 };
@@ -308,7 +307,6 @@ export const NativeCollectionParityScreen = forwardRef<
         cards: projectNativeCollectionParityCards(visibleRows, Boolean(context.tag)),
         containsOnlyCatalogRows: containsOnlyCatalogRows(context.rows),
         key: context.key,
-        rowIds: toVisibleRowIds(visibleRows),
         rows: visibleRows,
         tag: context.tag,
       };
@@ -328,7 +326,6 @@ export const NativeCollectionParityScreen = forwardRef<
       cards: projectNativeCollectionParityCards(visibleRows, Boolean(context.tag)),
       containsOnlyCatalogRows: containsOnlyCatalogRows(context.rows),
       key: context.key,
-      rowIds: toVisibleRowIds(visibleRows),
       rows: visibleRows,
       tag: context.tag,
     };
@@ -421,13 +418,16 @@ export const NativeCollectionParityScreen = forwardRef<
   useLayoutEffect(() => {
     revealedSurfaceKeyRef.current = activeSurfaceKey;
   }, [activeSurfaceKey]);
-  const visibleRowIds = activeProjection?.rowIds ?? EMPTY_ROW_IDS;
-  const visibleRowIdsRef = useRef(visibleRowIds);
+  const visibleRows = activeProjection?.rows ?? EMPTY_ROWS;
+  const visibleRowsRef = useRef(visibleRows);
   useLayoutEffect(() => {
-    visibleRowIdsRef.current = visibleRowIds;
-  }, [visibleRowIds]);
+    visibleRowsRef.current = visibleRows;
+  }, [visibleRows]);
   const handleCardPress = useCallback(
-    (card: CollectionParityCardFixture) => onOpenInstance(card.id, visibleRowIdsRef.current),
+    (card: CollectionParityCardFixture) => onOpenInstance(
+      card.id,
+      toVisibleRowIds(visibleRowsRef.current),
+    ),
     [onOpenInstance],
   );
   const handleCardLongPress = useMemo(

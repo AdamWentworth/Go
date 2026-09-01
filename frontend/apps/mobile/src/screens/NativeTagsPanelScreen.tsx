@@ -11,8 +11,8 @@ import {
   useWindowDimensions,
 } from 'react-native';
 import { memo, useCallback, useMemo, useState } from 'react';
+import { LinearGradient } from 'expo-linear-gradient';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
-import Svg, { Defs, LinearGradient, Rect, Stop } from 'react-native-svg';
 import type {
   CreateCustomTagRequest,
   CustomTagDefinition,
@@ -97,19 +97,19 @@ const tagGradient = (tag: NativeTagSummary, cardSurface: string): TagGradient =>
   ];
 };
 
-const NativeTagPreviewBackground = ({ colors, gradientId }: { colors: TagGradient; gradientId: string }) => (
-  <View pointerEvents="none" style={StyleSheet.absoluteFill}>
-    <Svg height="100%" width="100%">
-      <Defs>
-        <LinearGradient id={gradientId} x1="0%" x2="0%" y1="0%" y2="100%">
-          <Stop offset="0%" stopColor={colors[0]} />
-          <Stop offset="45%" stopColor={colors[1]} />
-          <Stop offset="100%" stopColor={colors[2]} />
-        </LinearGradient>
-      </Defs>
-      <Rect fill={`url(#${gradientId})`} height="100%" width="100%" />
-    </Svg>
-  </View>
+const NativeTagPreviewBackground = ({ colors, testID }: {
+  colors: TagGradient;
+  testID: string;
+}) => (
+  <LinearGradient
+    colors={colors}
+    end={{ x: 0.5, y: 1 }}
+    locations={[0, 0.45, 1]}
+    pointerEvents="none"
+    start={{ x: 0.5, y: 0 }}
+    style={StyleSheet.absoluteFill}
+    testID={testID}
+  />
 );
 
 const NativeTagCard = memo(function NativeTagCard({
@@ -147,9 +147,7 @@ const NativeTagCard = memo(function NativeTagCard({
       ? collectionParityTokens.tags.previewColumnsWide * collectionParityTokens.tags.previewRows
       : collectionParityTokens.tags.previewColumnsNarrow * collectionParityTokens.tags.previewRows,
   );
-  // SVG ids share a document namespace in Expo web. Reusing one id made every
-  // tag card resolve the first card's gradient (usually Favorites yellow).
-  const previewGradientId = `native-tag-gradient-${tag.key.replace(/[^a-z0-9_-]/gi, '-')}`;
+  const previewGradientTestId = `native-tag-gradient-${tag.key.replace(/[^a-z0-9_-]/gi, '-')}`;
   const [cardDragY] = useState(() => new Animated.Value(0));
   const [dragging, setDragging] = useState(false);
   const cardContents = (
@@ -163,7 +161,7 @@ const NativeTagCard = memo(function NativeTagCard({
       >
         <NativeTagPreviewBackground
           colors={tagGradient(tag, cardSurface)}
-          gradientId={previewGradientId}
+          testID={previewGradientTestId}
         />
         {previewRows.length ? previewRows.map((row) => (
           <View

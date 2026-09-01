@@ -119,6 +119,20 @@ offset only when drag or momentum settles, leaving scrolling frames native.
 Coverage pins active-first warming, the one-frame tag-motion boundary, search
 preservation, and settled-only scroll persistence.
 
+The staged warm-up now prepares immutable tag rows/cards in short JS slices
+before each hidden native list mounts, while ordered overlay IDs remain lazy
+until an owned card is actually opened. Tag-card and region-filter backgrounds
+use Expo's compiled native gradient view instead of mounting repeated SVG
+definition trees. As in Vite, the destination Pokémon/tag chip is ready before
+horizontal motion begins, but the offscreen Tags/Wishlist header sublabel waits
+until the canonical 300 ms slide completes; this avoids a competing text/layout
+mutation during the animation.
+
+The real-route collection budget measures the first interactive destination
+card before separately asserting the deliberately delayed header sublabel. The
+latest focused run measured 506 ms and then confirmed the header identity after
+the slide; this avoids counting intentional Vite motion as result latency.
+
 ## Remaining approval gate
 
 The latest bundle still needs a short physical-phone pass for perceived frame

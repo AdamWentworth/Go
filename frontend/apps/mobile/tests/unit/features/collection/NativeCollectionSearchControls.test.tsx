@@ -12,6 +12,7 @@ describe('NativeCollectionSearchMenu', () => {
       />,
     );
 
+    expect(getByTestId('native-region-gradient-kanto')).toBeTruthy();
     fireEvent.press(getByTestId('native-collection-filter-shiny'));
     expect(onFilterPress).toHaveBeenCalledWith('Shiny');
   });

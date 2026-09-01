@@ -27,6 +27,7 @@ import {
 } from '@pokemongonexus/shared-ui-tokens';
 import {
   NativeHorizontalPageSlider,
+  NATIVE_HORIZONTAL_PAGE_TRANSITION_MS,
   type NativeHorizontalPageSliderHandle,
 } from '../components/NativeHorizontalPageSlider';
 import type {
@@ -145,11 +146,18 @@ export const NativeCollectionHubScreen = ({
   onContextChange,
   syncStatus = null,
 }: Props) => {
+  const resolvedInitialTagKey = initialTagKey ?? (requireTagSelection
+    ? inventoryTags.find((tag) => tag.key === 'system:caught')?.key
+      ?? inventoryTags[0]?.key
+      ?? wishlistTags[0]?.key
+      ?? null
+    : null);
   const light = useNativeColorScheme() === 'light';
   const { width } = useWindowDimensions();
   const [query, setQuery] = useState(initialQuery);
   const [activeView, setActiveView] = useState<NativePokemonHubView>(initialView);
-  const [selectedTagKey, setSelectedTagKey] = useState<string | null>(initialTagKey);
+  const [selectedTagKey, setSelectedTagKey] = useState<string | null>(resolvedInitialTagKey);
+  const [sidePanelTagKey, setSidePanelTagKey] = useState<string | null>(resolvedInitialTagKey);
   const [actionMenuOpen, setActionMenuOpen] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [organizerOpen, setOrganizerOpen] = useState(false);
@@ -159,8 +167,10 @@ export const NativeCollectionHubScreen = ({
   const collectionSurfaceRef = useRef<NativeCollectionParityScreenHandle>(null);
   const tagSelectionTraceRef = useRef<{ key: string; startedAt: number } | null>(null);
   const tagPageMotionFrameRef = useRef<number | null>(null);
+  const sidePanelTagTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const activeViewRef = useRef<NativePokemonHubView>(initialView);
   const queryRef = useRef(initialQuery);
-  const selectedTagKeyRef = useRef<string | null>(initialTagKey);
+  const selectedTagKeyRef = useRef<string | null>(resolvedInitialTagKey);
   const [pageScrollX] = useState(() => new Animated.Value(width));
   const availableTags = useMemo(
     () => [...inventoryTags, ...wishlistTags],
@@ -172,6 +182,11 @@ export const NativeCollectionHubScreen = ({
         ? availableTags.find((tag) => tag.key === 'system:caught') ?? availableTags[0] ?? null
         : null),
     [availableTags, requireTagSelection, selectedTagKey],
+  );
+  const sidePanelTag = useMemo(
+    () => availableTags.find((tag) => tag.key === sidePanelTagKey)
+      ?? (sidePanelTagKey === selectedTag?.key ? selectedTag : null),
+    [availableTags, selectedTag, sidePanelTagKey],
   );
   const selectedRows = useMemo(
     () => selectedTag?.rows ?? (requireTagSelection ? [] : catalogRows),
@@ -223,9 +238,11 @@ export const NativeCollectionHubScreen = ({
       index += 1;
       timer = setTimeout(prepareNext, 16);
     };
-    // Let initial navigation and the first collection paint finish before
-    // warming one tag projection per turn of the event loop.
-    timer = setTimeout(prepareNext, 250);
+    // The active grid has committed before effects run. Prepare immutable tag
+    // data in short JS slices just ahead of the parity screen's staged native
+    // mounts, so each hidden FlatList receives cached rows/cards instead of
+    // sorting and projecting during its layout frame.
+    timer = setTimeout(prepareNext, 96);
     return () => {
       cancelled = true;
       if (timer) clearTimeout(timer);
@@ -236,6 +253,7 @@ export const NativeCollectionHubScreen = ({
     if (tagPageMotionFrameRef.current != null) {
       cancelAnimationFrame(tagPageMotionFrameRef.current);
     }
+    if (sidePanelTagTimerRef.current) clearTimeout(sidePanelTagTimerRef.current);
   }, []);
 
   useEffect(() => {
@@ -266,12 +284,14 @@ export const NativeCollectionHubScreen = ({
     // settle before the selected tab becomes responsive. The underline still
     // follows pageScrollX continuously, so the visual indicator travels with
     // the native page rather than jumping ahead of it.
+    activeViewRef.current = view;
     setActiveView(view);
     onContextChange?.({ activeView: view });
     sliderRef.current?.setPage(VIEW_ORDER.indexOf(view));
   }, [onContextChange]);
   const settlePageIndex = useCallback((index: number) => {
     const view = VIEW_ORDER[index] ?? 'pokemon';
+    activeViewRef.current = view;
     setActiveView(view);
     onContextChange?.({ activeView: view });
   }, [onContextChange]);
@@ -289,6 +309,21 @@ export const NativeCollectionHubScreen = ({
       rowCount: tag.rows.length,
       tagKey: tag.key,
     });
+    if (sidePanelTagTimerRef.current) {
+      clearTimeout(sidePanelTagTimerRef.current);
+      sidePanelTagTimerRef.current = null;
+    }
+    if (activeViewRef.current === 'pokemon') {
+      setSidePanelTagKey(tag.key);
+    } else {
+      // Vite deliberately keeps the old Tags/Wishlist sublabel stable while
+      // the three-panel track moves. The Pokémon result itself changes before
+      // motion; only this offscreen header identity catches up after 300 ms.
+      sidePanelTagTimerRef.current = setTimeout(() => {
+        setSidePanelTagKey(tag.key);
+        sidePanelTagTimerRef.current = null;
+      }, NATIVE_HORIZONTAL_PAGE_TRANSITION_MS);
+    }
     // The browser swaps the Pokémon projection before its compositor starts
     // the page transform. Do the same without putting a React reconciliation
     // in front of the gesture: warmed native tag surfaces can be revealed
@@ -333,6 +368,7 @@ export const NativeCollectionHubScreen = ({
     // front of the interaction.
     selectedTagKeyRef.current = tag.key;
     setSelectedTagKey(tag.key);
+    activeViewRef.current = 'pokemon';
     setActiveView('pokemon');
     onContextChange?.({
       activeView: 'pokemon',
@@ -381,6 +417,11 @@ export const NativeCollectionHubScreen = ({
     if (requireTagSelection) return;
     setClearTagConfirmationOpen(false);
     setSelectedIds(new Set());
+    if (sidePanelTagTimerRef.current) {
+      clearTimeout(sidePanelTagTimerRef.current);
+      sidePanelTagTimerRef.current = null;
+    }
+    setSidePanelTagKey(null);
     selectedTagKeyRef.current = null;
     setSelectedTagKey(null);
     onContextChange?.({ selectedTagKey: null, scrollOffset: 0 });
@@ -530,8 +571,8 @@ export const NativeCollectionHubScreen = ({
   return (
     <View style={[styles.screen, { backgroundColor: background }]} testID="native-collection-hub">
       <NativePokemonHubHeader
-        activeTag={selectedTag?.filterName ?? selectedTag?.name ?? null}
-        activeTagParent={selectedTag?.parent ?? null}
+        activeTag={sidePanelTag?.filterName ?? sidePanelTag?.name ?? null}
+        activeTagParent={sidePanelTag?.parent ?? null}
         activeView={activeView}
         backgroundColor={background}
         collectionCount={selectedRows.length}

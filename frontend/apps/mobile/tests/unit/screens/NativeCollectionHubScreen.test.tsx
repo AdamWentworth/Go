@@ -242,6 +242,7 @@ describe('NativeCollectionHubScreen', () => {
     fireEvent.press(screen.getByRole('button', { name: /Open Favorites/i }));
 
     expect(favoritesSurface).not.toHaveStyle({ opacity: 0 });
+    expect(screen.queryByText('(FAVORITES)')).toBeNull();
     expect(timing).not.toHaveBeenCalled();
     act(() => jest.advanceTimersByTime(17));
     expect(timing).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({
@@ -249,6 +250,8 @@ describe('NativeCollectionHubScreen', () => {
       toValue: 412,
       useNativeDriver: true,
     }));
+    act(() => jest.advanceTimersByTime(NATIVE_HORIZONTAL_PAGE_TRANSITION_MS - 17));
+    expect(screen.getByText('(FAVORITES)')).toBeTruthy();
     expect(screen.getByRole('tab', { name: /pokémon/i }).props.accessibilityState).toEqual({
       selected: true,
     });
@@ -256,6 +259,8 @@ describe('NativeCollectionHubScreen', () => {
     fireEvent.press(screen.getByRole('tab', { name: /wishlist/i }));
     timing.mockClear();
     fireEvent.press(screen.getByRole('button', { name: /Open Most Wanted/i }));
+    expect(screen.getByText('(FAVORITES)')).toBeTruthy();
+    expect(screen.queryByText('(MOST WANTED)')).toBeNull();
     expect(timing).not.toHaveBeenCalled();
     act(() => jest.advanceTimersByTime(17));
     expect(timing).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({
@@ -263,6 +268,8 @@ describe('NativeCollectionHubScreen', () => {
       toValue: 412,
       useNativeDriver: true,
     }));
+    act(() => jest.advanceTimersByTime(NATIVE_HORIZONTAL_PAGE_TRANSITION_MS - 17));
+    expect(screen.getByText('(MOST WANTED)')).toBeTruthy();
   });
 
   it('preserves the active search when selecting a tag like Vite', () => {

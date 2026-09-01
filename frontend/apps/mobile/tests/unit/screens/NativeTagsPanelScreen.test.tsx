@@ -99,6 +99,7 @@ describe('NativeTagsPanelScreen', () => {
     expect(screen.getByLabelText('Inventory tags')).toBeTruthy();
     expect(screen.getByText('1 Pokémon')).toBeTruthy();
     expect(screen.getByLabelText('Open Trade, 1 Pokémon')).toBeTruthy();
+    expect(screen.getByTestId('native-tag-gradient-system-trade')).toBeTruthy();
     expect(screen.UNSAFE_getByProps({ testID: 'native-tag-preview-gigantamax' })).toBeTruthy();
     expect(screen.queryByText('Inventory tags')).toBeNull();
     expect(screen.queryByText('›')).toBeNull();

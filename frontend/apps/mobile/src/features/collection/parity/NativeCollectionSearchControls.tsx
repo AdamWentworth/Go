@@ -8,7 +8,7 @@ import {
   TextInput,
   View,
 } from 'react-native';
-import Svg, { Defs, LinearGradient, Rect, Stop } from 'react-native-svg';
+import { LinearGradient } from 'expo-linear-gradient';
 
 type FilterSection = 'Variants' | 'Qualities' | 'Rarity' | 'Region' | 'Types';
 
@@ -74,18 +74,15 @@ const RegionGradient = ({ name }: { name: string }) => {
   const colors = REGION_GRADIENTS[name];
   if (!colors) return null;
   return (
-    <View pointerEvents="none" style={StyleSheet.absoluteFill}>
-      <Svg height="100%" width="100%">
-        <Defs>
-          <LinearGradient id={`region-${name}`} x1="0%" x2="100%" y1="0%" y2="100%">
-            <Stop offset="0%" stopColor={colors[0]} />
-            <Stop offset="50%" stopColor={colors[1]} />
-            <Stop offset="100%" stopColor={colors[2]} />
-          </LinearGradient>
-        </Defs>
-        <Rect fill={`url(#region-${name})`} height="100%" width="100%" />
-      </Svg>
-    </View>
+    <LinearGradient
+      colors={colors}
+      end={{ x: 1, y: 1 }}
+      locations={[0, 0.5, 1]}
+      pointerEvents="none"
+      start={{ x: 0, y: 0 }}
+      style={StyleSheet.absoluteFill}
+      testID={`native-region-gradient-${name.toLowerCase()}`}
+    />
   );
 };
 
