@@ -379,7 +379,7 @@ const definitionFromSummary = (tag: NativeTagSummary): CustomTagDefinition | nul
   };
 };
 
-export const NativeTagsPanelScreen = ({
+export const NativeTagsPanelScreen = memo(function NativeTagsPanelScreen({
   activeTagName,
   assetBaseUrl,
   collectionCount,
@@ -399,7 +399,7 @@ export const NativeTagsPanelScreen = ({
   isEditable = false,
   isSaving = false,
   showHeader = true,
-}: Props) => {
+}: Props) {
   const light = useNativeColorScheme() === 'light';
   const reduceMotion = useOptionalNativeDevicePreferences()?.shouldReduceMotion ?? false;
   const palette = light
@@ -581,7 +581,7 @@ export const NativeTagsPanelScreen = ({
       ) : null}
     </View>
   );
-};
+});
 
 const styles = StyleSheet.create({
   screen: { flex: 1 },

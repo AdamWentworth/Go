@@ -1,6 +1,7 @@
-import { StyleSheet, View } from 'react-native';
-import Svg, { Defs, RadialGradient, Rect, Stop } from 'react-native-svg';
+import { Image, StyleSheet } from 'react-native';
 import type { CollectionParityCardFixture } from './collectionParityFixtures';
+
+const STATUS_GLOW_SOURCE = require('../../../../assets/collection-status-glow.png');
 
 const OWNERSHIP_GLOW: Record<
   NonNullable<CollectionParityCardFixture['ownership']>,
@@ -20,24 +21,14 @@ export const NativePokemonStatusGlow = ({
   const color = OWNERSHIP_GLOW[ownership];
 
   return (
-    <View
+    <Image
       accessibilityElementsHidden
-      pointerEvents="none"
-      style={styles.glow}
+      fadeDuration={0}
+      resizeMode="stretch"
+      source={STATUS_GLOW_SOURCE}
+      style={[styles.glow, { tintColor: color }]}
       testID={`native-${ownership}-status-glow`}
-    >
-      <Svg height="100%" width="100%">
-        <Defs>
-          <RadialGradient cx="50%" cy="50%" id={`ownership-${ownership}`} r="50%">
-            <Stop offset="0%" stopColor={color} stopOpacity="0.4" />
-            <Stop offset="10%" stopColor={color} stopOpacity="0.4" />
-            <Stop offset="50%" stopColor={color} stopOpacity="0" />
-            <Stop offset="100%" stopColor={color} stopOpacity="0" />
-          </RadialGradient>
-        </Defs>
-        <Rect fill={`url(#ownership-${ownership})`} height="100%" width="100%" />
-      </Svg>
-    </View>
+    />
   );
 };
 

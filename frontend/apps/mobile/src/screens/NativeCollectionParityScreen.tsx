@@ -1,7 +1,9 @@
 import {
   useCallback,
   useDeferredValue,
+  useLayoutEffect,
   useMemo,
+  useRef,
   useState,
   useTransition,
 } from 'react';
@@ -55,7 +57,6 @@ type NativeCollectionParityScreenProps = {
   selectionAction?: 'add' | 'organize';
   tagCanClear?: boolean;
   onContextChange?: (patch: Partial<NativeCollectionSession>) => void;
-  onContentPrepared?: (tagKey: string) => void;
 };
 
 const SORT_ICONS: Record<NativeCollectionSort, string> = {
@@ -87,25 +88,40 @@ const toParityCard = (
   purified: row.purified,
 });
 
-const ownedCardProjectionCache = new WeakMap<
+const ownedCardCache = new WeakMap<
+  NativeCollectionRow,
+  CollectionParityCardFixture
+>();
+const catalogCardCache = new WeakMap<
+  NativeCollectionRow,
+  CollectionParityCardFixture
+>();
+const ownedCardListCache = new WeakMap<
   NativeCollectionRow[],
   CollectionParityCardFixture[]
 >();
-const catalogCardProjectionCache = new WeakMap<
+const catalogCardListCache = new WeakMap<
   NativeCollectionRow[],
   CollectionParityCardFixture[]
 >();
 const rowIdProjectionCache = new WeakMap<NativeCollectionRow[], string[]>();
 
-const toParityCards = (
+export const projectNativeCollectionParityCards = (
   rows: NativeCollectionRow[],
   showOwnership: boolean,
 ): CollectionParityCardFixture[] => {
-  const cache = showOwnership ? ownedCardProjectionCache : catalogCardProjectionCache;
-  const cached = cache.get(rows);
-  if (cached) return cached;
-  const cards = rows.map((row) => toParityCard(row, showOwnership));
-  cache.set(rows, cards);
+  const listCache = showOwnership ? ownedCardListCache : catalogCardListCache;
+  const cachedList = listCache.get(rows);
+  if (cachedList) return cachedList;
+  const cardCache = showOwnership ? ownedCardCache : catalogCardCache;
+  const cards = rows.map((row) => {
+    const cachedCard = cardCache.get(row);
+    if (cachedCard) return cachedCard;
+    const card = toParityCard(row, showOwnership);
+    cardCache.set(row, card);
+    return card;
+  });
+  listCache.set(rows, cards);
   return cards;
 };
 
@@ -121,7 +137,7 @@ export const prepareNativeCollectionParityRows = (
   rows: NativeCollectionRow[],
 ): void => {
   const sortedRows = sortNativeCollectionRows(rows, 'number', 'ascending');
-  toParityCards(sortedRows, true);
+  projectNativeCollectionParityCards(sortedRows, true);
   toVisibleRowIds(sortedRows);
 };
 
@@ -154,7 +170,6 @@ export const NativeCollectionParityScreen = ({
   selectionAction = 'organize',
   tagCanClear = Boolean(activeTag),
   onContextChange,
-  onContentPrepared,
 }: NativeCollectionParityScreenProps) => {
   const colorScheme = useNativeColorScheme();
   const [sort, setSort] = useState<NativeCollectionSort>(initialSort);
@@ -176,16 +191,20 @@ export const NativeCollectionParityScreen = ({
     [direction, filteredRows, sort],
   );
   const cards = useMemo(
-    () => toParityCards(visibleRows, Boolean(activeTag)),
+    () => projectNativeCollectionParityCards(visibleRows, Boolean(activeTag)),
     [activeTag, visibleRows],
   );
   const visibleRowIds = useMemo(
     () => toVisibleRowIds(visibleRows),
     [visibleRows],
   );
+  const visibleRowIdsRef = useRef(visibleRowIds);
+  useLayoutEffect(() => {
+    visibleRowIdsRef.current = visibleRowIds;
+  }, [visibleRowIds]);
   const handleCardPress = useCallback(
-    (card: CollectionParityCardFixture) => onOpenInstance(card.id, visibleRowIds),
-    [onOpenInstance, visibleRowIds],
+    (card: CollectionParityCardFixture) => onOpenInstance(card.id, visibleRowIdsRef.current),
+    [onOpenInstance],
   );
   const handleCardLongPress = useMemo(
     () => onLongPressInstance
@@ -195,10 +214,7 @@ export const NativeCollectionParityScreen = ({
   );
   const sortLabel = NATIVE_SORT_OPTIONS.find((option) => option.key === sort)?.label ?? 'NUMBER';
   const theme = colorScheme === 'light' ? 'light' : 'dark';
-  const contentVersion = `${activeTag?.key ?? 'catalog'}:${deferredQuery}:${sort}:${direction}:${deferredShowEvolutionaryLine}`;
-  const handleContentPrepared = useCallback(() => {
-    if (activeTag) onContentPrepared?.(activeTag.key);
-  }, [activeTag, onContentPrepared]);
+  const scrollResetKey = `${activeTag?.key ?? 'catalog'}:${sort}:${direction}:${deferredShowEvolutionaryLine}`;
 
   return (
     <View style={styles.screen} testID="native-collection-parity-screen">
@@ -230,10 +246,8 @@ export const NativeCollectionParityScreen = ({
         onSelectionActionPress={onSelectionActionPress}
         initialScrollOffset={initialScrollOffset}
         onScrollOffsetChange={(scrollOffset) => onContextChange?.({ scrollOffset })}
-        contentVersion={contentVersion}
-        onContentPrepared={handleContentPrepared}
         query={query}
-        scrollResetKey={contentVersion}
+        scrollResetKey={scrollResetKey}
         sortDirection={direction}
         sortIconPath={SORT_ICONS[sort]}
         sortLabel={`Sort by ${sortLabel} ${direction}`}

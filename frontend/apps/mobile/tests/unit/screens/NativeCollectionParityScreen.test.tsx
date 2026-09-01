@@ -1,7 +1,10 @@
 import { useState } from 'react';
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react-native';
 import type { NativeCollectionRow } from '../../../src/features/collection/collectionModel';
-import { NativeCollectionParityScreen } from '../../../src/screens/NativeCollectionParityScreen';
+import {
+  NativeCollectionParityScreen,
+  projectNativeCollectionParityCards,
+} from '../../../src/screens/NativeCollectionParityScreen';
 
 jest.mock('react-native/Libraries/Utilities/useWindowDimensions', () => ({
   __esModule: true,
@@ -81,6 +84,14 @@ const Harness = ({
 };
 
 describe('NativeCollectionParityScreen', () => {
+  it('reuses the same card projection when a Pokémon appears in multiple tags', () => {
+    const sharedRow = rows[0];
+    const firstTagCards = projectNativeCollectionParityCards([sharedRow], true);
+    const secondTagCards = projectNativeCollectionParityCards([rows[1], sharedRow], true);
+
+    expect(secondTagCards[1]).toBe(firstTagCards[0]);
+  });
+
   it('starts in the complete catalog context', () => {
     render(<Harness />);
 

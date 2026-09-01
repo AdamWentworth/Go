@@ -1,6 +1,6 @@
 # Current Native Testing Status
 
-Last revalidated: 2026-08-31
+Last revalidated: 2026-09-01
 
 This is the short source of truth for continuing the Vite-to-native migration.
 The canonical Vite application defines user-visible behavior. Native may use
@@ -47,7 +47,7 @@ mounts complete collection and Pokédex route trees in the background.
 
 Passing evidence for this checkpoint:
 
-- native Jest: 154 suites, 801 tests;
+- native Jest: 154 suites, 802 tests;
 - mobile and web TypeScript and ESLint;
 - native real-route smoke: 92 guest/signed-in, light/dark route states;
 - focused Vite mobile-Chromium browser coverage: 9 tests;
@@ -74,11 +74,14 @@ three-panel track, keeps all three Vite-equivalent panels warm, and explicitly
 slides from either side tag page back to Pokémon. Its final full-matrix run
 measured 528 ms, including the canonical 300 ms page slide.
 
-The follow-up fluidity pass stages a newly filtered Pokémon list while it is
-still offscreen, waits for its first card/content layout before moving, warms
-common tag projections in idle-sized batches, and hardware-composites the page
-track. The focused real-route check measured 547 ms including the slide, with
-no list reconciliation permitted during the motion.
+The follow-up tag-swap pass removed the offscreen layout/readiness wait because
+the canonical Vite handler commits the selected filter and Pokémon destination
+together. Native now does the same, starts the native-driven slide immediately
+after that commit, keeps both tag galleries memoized, reuses card projections
+for rows shared across tags, keeps card callbacks stable, and retains a
+Vite-sized three-screen list window. Ownership glows use one precomputed tinted
+bitmap per card instead of rebuilding a multi-node SVG gradient. The focused
+real-route workflow measured 519 ms including the canonical 300 ms slide.
 
 ## Remaining approval gate
 

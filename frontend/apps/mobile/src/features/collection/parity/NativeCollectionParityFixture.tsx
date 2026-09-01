@@ -9,7 +9,7 @@ import {
   View,
   useWindowDimensions,
 } from 'react-native';
-import { memo, useCallback, useEffect, useRef, useState } from 'react';
+import { memo, useEffect, useRef, useState } from 'react';
 import {
   collectionParityTokens,
   webCssVarTokens,
@@ -37,14 +37,12 @@ type NativeCollectionParityFixtureProps = {
   activeTag?: string | null;
   cards?: CollectionParityCardFixture[];
   collectionCount?: number;
-  contentVersion?: string;
   customTagColor?: string;
   error?: string | null;
   isLoading?: boolean;
   onActionMenuPress?: () => void;
   onCardPress?: (card: CollectionParityCardFixture) => void;
   onCardLongPress?: (card: CollectionParityCardFixture) => void;
-  onContentPrepared?: (contentVersion: string) => void;
   onClearTag?: () => void;
   onQueryChange?: (query: string) => void;
   onToggleEvolutionaryLine?: () => void;
@@ -145,7 +143,6 @@ const CollectionParityCard = memo(function CollectionParityCard({
   cardWidth,
   onPressCard,
   onLongPressCard,
-  onLayout,
   selected,
   theme,
 }: {
@@ -154,7 +151,6 @@ const CollectionParityCard = memo(function CollectionParityCard({
   cardWidth: number;
   onPressCard?: (card: CollectionParityCardFixture) => void;
   onLongPressCard?: (card: CollectionParityCardFixture) => void;
-  onLayout?: () => void;
   selected: boolean;
   theme: CollectionParityTheme;
 }) {
@@ -164,7 +160,6 @@ const CollectionParityCard = memo(function CollectionParityCard({
       accessibilityLabel={`${card.interaction === 'select' ? 'Select' : 'View'} ${card.name}`}
       accessibilityRole="button"
       delayLongPress={450}
-      onLayout={onLayout}
       onLongPress={onLongPressCard ? () => onLongPressCard(card) : undefined}
       onPress={onPressCard ? () => onPressCard(card) : undefined}
       style={[styles.card, selected && styles.selectedCard, { width: cardWidth }]}
@@ -261,14 +256,12 @@ export const NativeCollectionParityFixture = ({
   activeTag = 'Favorites',
   cards = COLLECTION_PARITY_FIXTURES,
   collectionCount = 168,
-  contentVersion = '',
   customTagColor = TAG_TONES.custom.accent,
   error = null,
   isLoading = false,
   onActionMenuPress,
   onCardPress,
   onCardLongPress,
-  onContentPrepared,
   onClearTag,
   onQueryChange,
   onToggleEvolutionaryLine,
@@ -301,8 +294,7 @@ export const NativeCollectionParityFixture = ({
   const listRef = useRef<FlatList<CollectionParityCardFixture>>(null);
   const restoredScrollRef = useRef(initialScrollOffset <= 0);
   const previousResetKeyRef = useRef(scrollResetKey);
-  const preparedContentVersionRef = useRef<string | null>(null);
-  const preparedFrameRef = useRef<number | null>(null);
+  const currentScrollOffsetRef = useRef(initialScrollOffset);
   const palette = theme === 'light' ? LIGHT : DARK;
   const columns = width < 481 ? 3 : width < 1024 ? 6 : 9;
   const cardWidth = Math.floor(
@@ -321,35 +313,14 @@ export const NativeCollectionParityFixture = ({
     onQueryChange?.(nextQuery);
     setSearchMenuVisible(false);
   };
-  const reportContentPrepared = useCallback(() => {
-    if (!contentVersion || preparedContentVersionRef.current === contentVersion) return;
-    if (preparedFrameRef.current !== null) cancelAnimationFrame(preparedFrameRef.current);
-    preparedFrameRef.current = requestAnimationFrame(() => {
-      preparedFrameRef.current = null;
-      if (preparedContentVersionRef.current === contentVersion) return;
-      preparedContentVersionRef.current = contentVersion;
-      onContentPrepared?.(contentVersion);
-    });
-  }, [contentVersion, onContentPrepared]);
-  useEffect(() => {
-    let secondFrame: number | null = null;
-    const firstFrame = requestAnimationFrame(() => {
-      secondFrame = requestAnimationFrame(reportContentPrepared);
-    });
-    return () => {
-      cancelAnimationFrame(firstFrame);
-      if (secondFrame !== null) cancelAnimationFrame(secondFrame);
-      if (preparedFrameRef.current !== null) {
-        cancelAnimationFrame(preparedFrameRef.current);
-        preparedFrameRef.current = null;
-      }
-    };
-  }, [cards, contentVersion, reportContentPrepared]);
   useEffect(() => {
     if (previousResetKeyRef.current === scrollResetKey) return;
     previousResetKeyRef.current = scrollResetKey;
     restoredScrollRef.current = true;
-    listRef.current?.scrollToOffset({ animated: false, offset: 0 });
+    if (currentScrollOffsetRef.current > 0.5) {
+      listRef.current?.scrollToOffset({ animated: false, offset: 0 });
+    }
+    currentScrollOffsetRef.current = 0;
     onScrollOffsetChange?.(0);
   }, [onScrollOffsetChange, scrollResetKey]);
   const renderCollectionControls = (includeSearchMenu: boolean) => (
@@ -476,20 +447,23 @@ export const NativeCollectionParityFixture = ({
           maxToRenderPerBatch={12}
           numColumns={columns}
           onContentSizeChange={() => {
-            reportContentPrepared();
             if (restoredScrollRef.current || initialScrollOffset <= 0 || cards.length === 0) return;
             restoredScrollRef.current = true;
             listRef.current?.scrollToOffset({ animated: false, offset: initialScrollOffset });
           }}
-          onScroll={(event) => onScrollOffsetChange?.(event.nativeEvent.contentOffset.y)}
+          onScroll={(event) => {
+            const offset = event.nativeEvent.contentOffset.y;
+            currentScrollOffsetRef.current = offset;
+            onScrollOffsetChange?.(offset);
+          }}
           removeClippedSubviews={false}
           scrollEventThrottle={80}
           testID="native-collection-grid"
           updateCellsBatchingPeriod={16}
-          windowSize={5}
+          windowSize={3}
           ListHeaderComponent={renderCollectionControls(false)}
           ListEmptyComponent={(
-            <View onLayout={reportContentPrepared} style={styles.emptyState}>
+            <View style={styles.emptyState}>
               {isLoading ? (
                 <>
                   <ActivityIndicator color="#34807d" size="large" />
@@ -503,14 +477,13 @@ export const NativeCollectionParityFixture = ({
               ) : null}
             </View>
           )}
-          renderItem={({ index, item }) => (
+          renderItem={({ item }) => (
             <CollectionParityCard
               assetBaseUrl={assetBaseUrl}
               card={item}
               cardWidth={cardWidth}
               onPressCard={onCardPress}
               onLongPressCard={onCardLongPress}
-              onLayout={index === 0 ? reportContentPrepared : undefined}
               selected={selectedIds.has(item.id)}
               theme={theme}
             />

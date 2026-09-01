@@ -110,6 +110,12 @@ export default function NativeCollectionRoute() {
       'wanted',
     );
   }, [instanceRows, snapshotQuery.data]);
+  const updateCollectionContext = useCallback(
+    (patch: Parameters<typeof patchNativeCollectionSession>[1]) => {
+      patchNativeCollectionSession(sessionOwnerKey, patch);
+    },
+    [sessionOwnerKey],
+  );
 
   useLayoutEffect(() => {
     markNativeUiPerformance('collection_route_committed', {
@@ -177,7 +183,6 @@ export default function NativeCollectionRoute() {
     }
     router.push({ pathname: '/web', params: { path: destination.path } });
   };
-
   return (
     <NativeCollectionHubScreen
       assetBaseUrl={runtimeConfig.api.frontendAppUrl}
@@ -192,7 +197,7 @@ export default function NativeCollectionRoute() {
       initialSort={restoredCollectionSession?.sort ?? 'number'}
       initialSortDirection={restoredCollectionSession?.sortDirection ?? 'ascending'}
       initialView={initialView}
-      key={`${initialTagKey ?? 'full-catalog'}:${initialQuery}`}
+      key={`${filter || 'restored'}:${search}:${sessionRevision}`}
       isLoading={snapshotQuery.isPending}
       onActionMenuNavigate={navigateFromActionMenu}
       onOpenEntry={openEntry}
@@ -207,7 +212,7 @@ export default function NativeCollectionRoute() {
       organizerError={pokemonOrganizer.error instanceof Error
         ? pokemonOrganizer.error.message
         : null}
-      onContextChange={(patch) => patchNativeCollectionSession(sessionOwnerKey, patch)}
+      onContextChange={updateCollectionContext}
       syncStatus={<NativeCollectionSyncStatusCard />}
       warning={snapshotQuery.data?.tagLoadWarning ?? null}
       wishlistTags={wishlistTags}

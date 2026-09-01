@@ -1,5 +1,5 @@
 import { Redirect, useLocalSearchParams, useRouter } from 'expo-router';
-import { useMemo } from 'react';
+import { useCallback, useMemo } from 'react';
 import { useNativeSession } from '../../../../../auth/NativeSessionContext';
 import {
   buildNativeCollectionRows,
@@ -78,6 +78,12 @@ export default function NativeForeignCollectionRoute() {
       : foreignQuery.data?.type === 'not-found'
         ? 'This trainer could not be found.'
         : null;
+  const updateCollectionContext = useCallback(
+    (patch: Parameters<typeof patchNativeCollectionSession>[1]) => {
+      patchNativeCollectionSession(sessionOwnerKey, patch);
+    },
+    [sessionOwnerKey],
+  );
 
   if (session.status === 'restoring' || session.status === 'unavailable') {
     return (
@@ -123,7 +129,6 @@ export default function NativeForeignCollectionRoute() {
     }
     router.push({ pathname: '/web', params: { path: destination.path } });
   };
-
   return (
     <NativeCollectionHubScreen
       assetBaseUrl={runtimeConfig.api.frontendAppUrl}
@@ -140,13 +145,13 @@ export default function NativeForeignCollectionRoute() {
       instances={success?.instances ?? {}}
       inventoryTags={inventoryTags}
       isLoading={foreignQuery.isPending}
-      key={initialTagKey}
+      key={`${requestedFilter || 'restored'}:${username.toLocaleLowerCase()}`}
       onActionMenuNavigate={navigateFromActionMenu}
       onOpenEntry={openEntry}
       onRetry={() => void foreignQuery.refetch()}
       onReturnToContext={returnToContext}
       requireTagSelection
-      onContextChange={(patch) => patchNativeCollectionSession(sessionOwnerKey, patch)}
+      onContextChange={updateCollectionContext}
       wishlistTags={wishlistTags}
     />
   );

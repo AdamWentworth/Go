@@ -139,9 +139,10 @@ export const NativeCollectionHubScreen = ({
   const [organizerOpen, setOrganizerOpen] = useState(false);
   const [clearTagConfirmationOpen, setClearTagConfirmationOpen] = useState(false);
   const [operationNotice, setOperationNotice] = useState<string | null>(null);
-  const [pendingTagNavigationKey, setPendingTagNavigationKey] = useState<string | null>(null);
   const sliderRef = useRef<NativeHorizontalPageSliderHandle>(null);
   const tagSelectionTraceRef = useRef<{ key: string; startedAt: number } | null>(null);
+  const queryRef = useRef(initialQuery);
+  const selectedTagKeyRef = useRef<string | null>(initialTagKey);
   const [pageScrollX] = useState(() => new Animated.Value(width));
   const availableTags = useMemo(
     () => [...inventoryTags, ...wishlistTags],
@@ -244,27 +245,16 @@ export const NativeCollectionHubScreen = ({
     // settle before the selected tab becomes responsive. The underline still
     // follows pageScrollX continuously, so the visual indicator travels with
     // the native page rather than jumping ahead of it.
-    setPendingTagNavigationKey(null);
     setActiveView(view);
     onContextChange?.({ activeView: view });
     sliderRef.current?.setPage(VIEW_ORDER.indexOf(view));
   }, [onContextChange]);
 
   const changeQuery = useCallback((nextQuery: string) => {
+    queryRef.current = nextQuery;
     setQuery(nextQuery);
     onContextChange?.({ query: nextQuery, scrollOffset: 0 });
   }, [onContextChange]);
-
-  const handlePokemonContentPrepared = useCallback((tagKey: string) => {
-    if (!pendingTagNavigationKey || tagKey !== pendingTagNavigationKey) return;
-    markNativeUiPerformance('collection_tag_content_prepared', {
-      rowCount: selectedRows.length,
-      tagKey,
-    });
-    setPendingTagNavigationKey(null);
-    setActiveView('pokemon');
-    onContextChange?.({ activeView: 'pokemon' });
-  }, [onContextChange, pendingTagNavigationKey, selectedRows.length]);
 
   const selectTag = useCallback((tag: NativeTagSummary) => {
     tagSelectionTraceRef.current = { key: tag.key, startedAt: Date.now() };
@@ -272,31 +262,30 @@ export const NativeCollectionHubScreen = ({
       rowCount: tag.rows.length,
       tagKey: tag.key,
     });
-    if (selectedIds.size > 0) setSelectedIds(new Set());
+    if (selectedCountRef.current > 0) setSelectedIds(new Set());
 
-    if (selectedTag?.key === tag.key && !query.trim()) {
-      markNativeUiPerformance('collection_tag_content_prepared', {
-        rowCount: tag.rows.length,
-        tagKey: tag.key,
-      });
-      setPendingTagNavigationKey(null);
+    if (selectedTagKeyRef.current === tag.key && !queryRef.current.trim()) {
       setActiveView('pokemon');
       onContextChange?.({ activeView: 'pokemon', scrollOffset: 0 });
       return;
     }
 
-    // Prepare the filtered middle panel while it is still offscreen. The
-    // readiness effect advances to Pokémon only after two painted frames, so
-    // list reconciliation and image/layout work cannot interrupt the slide.
+    // Match Vite's handleTagSelect: commit the filter and destination in one
+    // update. The slider's layout effect begins the native-driven page motion
+    // immediately after that commit; no list-layout readiness gate sits in
+    // front of the interaction.
+    queryRef.current = '';
+    selectedTagKeyRef.current = tag.key;
     setQuery('');
     setSelectedTagKey(tag.key);
-    setPendingTagNavigationKey(tag.key);
+    setActiveView('pokemon');
     onContextChange?.({
+      activeView: 'pokemon',
       query: '',
       selectedTagKey: tag.key,
       scrollOffset: 0,
     });
-  }, [onContextChange, query, selectedIds.size, selectedTag?.key]);
+  }, [onContextChange]);
 
   const toggleSelection = useCallback((entryId: string) => {
     setSelectedIds((current) => {
@@ -338,6 +327,7 @@ export const NativeCollectionHubScreen = ({
     if (requireTagSelection) return;
     setClearTagConfirmationOpen(false);
     setSelectedIds(new Set());
+    selectedTagKeyRef.current = null;
     setSelectedTagKey(null);
     onContextChange?.({ selectedTagKey: null, scrollOffset: 0 });
   }, [onContextChange, requireTagSelection]);
@@ -412,7 +402,6 @@ export const NativeCollectionHubScreen = ({
       selectionAction={selectedRowsAreCatalog ? 'add' : 'organize'}
       tagCanClear={!requireTagSelection && Boolean(selectedTag)}
       onContextChange={onContextChange}
-      onContentPrepared={handlePokemonContentPrepared}
     />
   ), [
     assetBaseUrl,
@@ -438,7 +427,6 @@ export const NativeCollectionHubScreen = ({
     initialSort,
     initialSortDirection,
     onContextChange,
-    handlePokemonContentPrepared,
   ]);
   const wishlistPanel = useMemo(() => (
     <NativeTagsPanelScreen
