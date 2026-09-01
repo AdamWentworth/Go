@@ -435,6 +435,22 @@ three overlay transitions 478--509 ms. The sole warning was a 161 ms sort-menu
 callback; its canonical 250 ms native-driver visual contract remains pinned by
 component tests.
 
+The loading animation now avoids a native-only composition mismatch as well.
+Vite decodes an 84 px, 36-frame WebM at 30 fps on a 1.2-second loop. Native had
+interpolated that source to 72 frames, but presented it by translating a
+1,800 dp-wide PNG strip inside a 50 dp viewport. Android therefore had to keep
+an extremely wide animated compositor layer alive for a tiny visible result.
+The same 72 interpolated frames are now encoded as an 84 px, 1.2-second GIF and
+played by the platform animated-image decoder. Its background is composited to
+the exact dark/light loading surface so the alpha edge remains visually stable,
+and the imperative start/stop contract unmounts the decoder while the retained
+action-menu loading feedback is idle. A dedicated smoke route permits isolated
+Android frame recordings, while unit tests inspect both files and require 72
+frames totaling exactly 1,200 ms. The complete minified Android workflow passed
+after the change: tag motion began in 0--1 ms, all four tag result commits were
+86--135 ms, and the action menu painted in 72 ms. The full suite is now 159
+suites and 844 tests.
+
 ## Remaining approval gate
 
 The latest bundle still needs a short physical-phone pass for perceived frame
