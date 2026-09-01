@@ -156,6 +156,7 @@ const EMPTY_ROWS: NativeCollectionRow[] = [];
 const CATALOG_SURFACE_KEY = 'catalog';
 const SURFACE_WARM_START_DELAY_MS = 180;
 const SURFACE_WARM_INTERVAL_MS = 48;
+const MAX_STAGED_SURFACE_COUNT = 12;
 
 type NativeCollectionSurfaceProjection = {
   cards: CollectionParityCardFixture[];
@@ -264,7 +265,8 @@ export const NativeCollectionParityScreen = forwardRef<
     let timer: ReturnType<typeof setTimeout> | null = null;
     const pendingKeys = allSurfaceContexts
       .map((context) => context.key)
-      .filter((key) => key !== activeSurfaceKey);
+      .filter((key) => key !== activeSurfaceKey)
+      .slice(0, MAX_STAGED_SURFACE_COUNT - 1);
     let index = 0;
     const warmNextSurface = () => {
       if (cancelled) return;
@@ -288,9 +290,17 @@ export const NativeCollectionParityScreen = forwardRef<
       if (timer) clearTimeout(timer);
     };
   }, [activeSurfaceKey, allSurfaceContexts]);
-  const surfaceContexts = useMemo(() => allSurfaceContexts.filter(
-    (context) => context.key === activeSurfaceKey || preparedSurfaceKeys.has(context.key),
-  ), [activeSurfaceKey, allSurfaceContexts, preparedSurfaceKeys]);
+  const surfaceContexts = useMemo(() => {
+    let remainingHiddenSurfaceSlots = MAX_STAGED_SURFACE_COUNT - 1;
+    return allSurfaceContexts.filter((context) => {
+      if (context.key === activeSurfaceKey) return true;
+      if (!preparedSurfaceKeys.has(context.key) || remainingHiddenSurfaceSlots <= 0) {
+        return false;
+      }
+      remainingHiddenSurfaceSlots -= 1;
+      return true;
+    });
+  }, [activeSurfaceKey, allSurfaceContexts, preparedSurfaceKeys]);
   // Vite keeps the three page panels mounted and only changes the Pokémon
   // projection selected by the tag. Keep every warmed native projection
   // independent of the active key too: switching tags should only flip two

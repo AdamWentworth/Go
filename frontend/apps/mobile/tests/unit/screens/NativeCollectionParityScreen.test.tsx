@@ -1,6 +1,9 @@
 import { createRef, useState } from 'react';
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react-native';
-import type { NativeCollectionRow } from '../../../src/features/collection/collectionModel';
+import type {
+  NativeCollectionRow,
+  NativeTagSummary,
+} from '../../../src/features/collection/collectionModel';
 import {
   NativeCollectionParityScreen,
   type NativeCollectionParityScreenHandle,
@@ -93,7 +96,7 @@ describe('NativeCollectionParityScreen', () => {
     expect(secondTagCards[1]).toBe(firstTagCards[0]);
   });
 
-  it('prepares every warmed tag surface for a same-frame reveal before page motion', () => {
+  it('prepares a warmed tag surface for a same-frame reveal before page motion', () => {
     const ref = createRef<NativeCollectionParityScreenHandle>();
     const favorites = {
       key: 'system:favorites' as const,
@@ -134,6 +137,50 @@ describe('NativeCollectionParityScreen', () => {
     )).toHaveStyle({ opacity: 0 });
     expect(ref.current?.revealSurface('system:favorites')).toBe(true);
     expect(ref.current?.revealSurface('system:missing')).toBe(false);
+  });
+
+  it('bounds staged hidden grids when an account has many custom tags', () => {
+    const warmTags: NativeTagSummary[] = Array.from({ length: 15 }, (_, index) => ({
+      key: `custom:${index}`,
+      parent: 'caught',
+      name: `Custom ${index}`,
+      color: '#9f7aea',
+      tone: 'custom',
+      rows: [rows[index % rows.length]],
+    }));
+
+    render(
+      <NativeCollectionParityScreen
+        activeTag={null}
+        assetBaseUrl="https://pokegonexus.com"
+        error={null}
+        isLoading={false}
+        onClearTag={jest.fn()}
+        onOpenInstance={jest.fn()}
+        onQueryChange={jest.fn()}
+        onRetry={jest.fn()}
+        onViewChange={jest.fn()}
+        query=""
+        rows={rows}
+        warmCatalogRows={rows}
+        warmTags={warmTags}
+      />,
+    );
+
+    act(() => jest.advanceTimersByTime(1_000));
+
+    expect(screen.queryAllByTestId(
+      /^native-collection-surface-/,
+      { includeHiddenElements: true },
+    )).toHaveLength(12);
+    expect(screen.getByTestId(
+      'native-collection-surface-custom:10',
+      { includeHiddenElements: true },
+    )).toBeTruthy();
+    expect(screen.queryByTestId(
+      'native-collection-surface-custom:11',
+      { includeHiddenElements: true },
+    )).toBeNull();
   });
 
   it('starts in the complete catalog context', () => {

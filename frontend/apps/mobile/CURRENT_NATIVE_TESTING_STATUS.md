@@ -53,7 +53,7 @@ mounts complete collection and Pokédex route trees in the background.
 
 Passing evidence for this checkpoint:
 
-- native Jest: 154 suites, 805 tests;
+- native Jest: 154 suites, 806 tests;
 - mobile and web TypeScript and ESLint;
 - native real-route smoke: 92 guest/signed-in, light/dark route states;
 - focused Vite mobile-Chromium browser coverage: 9 tests;
@@ -126,7 +126,9 @@ use Expo's compiled native gradient view instead of mounting repeated SVG
 definition trees. As in Vite, the destination Pokémon/tag chip is ready before
 horizontal motion begins, but the offscreen Tags/Wishlist header sublabel waits
 until the canonical 300 ms slide completes; this avoids a competing text/layout
-mutation during the animation.
+mutation during the animation. Background preparation and mounted hidden grids
+are capped at eleven destinations plus the active grid, so accounts with many
+custom tags cannot accumulate an unbounded number of offscreen FlatLists.
 
 The real-route collection budget measures the first interactive destination
 card before separately asserting the deliberately delayed header sublabel. The
