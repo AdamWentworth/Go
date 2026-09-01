@@ -148,7 +148,6 @@ export const prepareNativeCollectionParityRows = (
 ): void => {
   const sortedRows = sortNativeCollectionRows(rows, 'number', 'ascending');
   projectNativeCollectionParityCards(sortedRows, true);
-  toVisibleRowIds(sortedRows);
 };
 
 const EMPTY_SELECTED_IDS: ReadonlySet<string> = new Set<string>();
