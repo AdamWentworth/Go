@@ -77,6 +77,8 @@ export default function NativeCollectionRoute() {
   const pokemonOrganizer = useNativePokemonOrganizerMutation(
     session.user?.user_id ?? 'signed-out',
   );
+  const organizePokemonMutation = pokemonOrganizer.mutateAsync;
+  const refetchSnapshot = snapshotQuery.refetch;
   const instanceRows = useMemo<NativeCollectionRow[]>(() => {
     if (!snapshotQuery.data) return [];
     return buildNativeCollectionRows(
@@ -116,6 +118,38 @@ export default function NativeCollectionRoute() {
     },
     [sessionOwnerKey],
   );
+  const openEntry = useCallback((
+    row: NativeCollectionRow,
+    orderedRows: NativeCollectionRow[],
+  ) => {
+    setNativeInstanceNavigationContext(orderedRows.map((entry) => entry.id));
+    router.push(row.source === 'catalog' ? {
+      pathname: '/native/collection/catalog/[variantId]',
+      params: { variantId: row.id },
+    } : {
+      pathname: '/native/collection/[instanceId]',
+      params: { instanceId: row.id },
+    });
+  }, [router]);
+  const navigateFromActionMenu = useCallback((path: string) => {
+    const destination = resolveNativeActionMenuDestination(path, '/pokemon');
+    if (destination.kind === 'current') return;
+    if (destination.kind === 'native') {
+      router.push(destination.pathname);
+      return;
+    }
+    router.push({ pathname: '/web', params: { path: destination.path } });
+  }, [router]);
+  const organizePokemon = useCallback(
+    (request: Parameters<typeof organizePokemonMutation>[0]) =>
+      organizePokemonMutation(request),
+    [organizePokemonMutation],
+  );
+  const retrySnapshot = useCallback(
+    () => { void refetchSnapshot(); },
+    [refetchSnapshot],
+  );
+  const syncStatus = useMemo(() => <NativeCollectionSyncStatusCard />, []);
 
   useLayoutEffect(() => {
     markNativeUiPerformance('collection_route_committed', {
@@ -164,25 +198,6 @@ export default function NativeCollectionRoute() {
     return <Redirect href={`/native/collection/${encodeURIComponent(instanceId)}`} />;
   }
 
-  const openEntry = (row: NativeCollectionRow, orderedRows: NativeCollectionRow[]) => {
-    setNativeInstanceNavigationContext(orderedRows.map((entry) => entry.id));
-    router.push(row?.source === 'catalog' ? {
-      pathname: '/native/collection/catalog/[variantId]',
-      params: { variantId: row.id },
-    } : {
-      pathname: '/native/collection/[instanceId]',
-      params: { instanceId: row.id },
-    });
-  };
-  const navigateFromActionMenu = (path: string) => {
-    const destination = resolveNativeActionMenuDestination(path, '/pokemon');
-    if (destination.kind === 'current') return;
-    if (destination.kind === 'native') {
-      router.push(destination.pathname);
-      return;
-    }
-    router.push({ pathname: '/web', params: { path: destination.path } });
-  };
   return (
     <NativeCollectionHubScreen
       assetBaseUrl={runtimeConfig.api.frontendAppUrl}
@@ -201,8 +216,8 @@ export default function NativeCollectionRoute() {
       isLoading={snapshotQuery.isPending}
       onActionMenuNavigate={navigateFromActionMenu}
       onOpenEntry={openEntry}
-      onOrganizePokemon={(request) => pokemonOrganizer.mutateAsync(request)}
-      onRetry={() => void snapshotQuery.refetch()}
+      onOrganizePokemon={organizePokemon}
+      onRetry={retrySnapshot}
       onCreateTag={tagMutations.createTag}
       onDeleteTag={tagMutations.deleteTag}
       onSaveTagOrder={tagMutations.saveOrder}
@@ -213,7 +228,7 @@ export default function NativeCollectionRoute() {
         ? pokemonOrganizer.error.message
         : null}
       onContextChange={updateCollectionContext}
-      syncStatus={<NativeCollectionSyncStatusCard />}
+      syncStatus={syncStatus}
       warning={snapshotQuery.data?.tagLoadWarning ?? null}
       wishlistTags={wishlistTags}
     />

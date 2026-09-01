@@ -17,6 +17,7 @@ import {
 import {
   Children,
   forwardRef,
+  memo,
   type PropsWithChildren,
   useCallback,
   useEffect,
@@ -100,7 +101,7 @@ export const resolveNativeHorizontalDragHandoffOffset = ({
   Math.min(maxPeekDistance, translationX),
 );
 
-export const NativeHorizontalPageSlider = forwardRef<
+export const NativeHorizontalPageSlider = memo(forwardRef<
   NativeHorizontalPageSliderHandle,
   Props
 >(function NativeHorizontalPageSlider({
@@ -416,7 +417,7 @@ export const NativeHorizontalPageSlider = forwardRef<
       {viewport}
     </GestureDetector>
   );
-});
+}));
 
 const styles = StyleSheet.create({
   viewport: { flex: 1, minHeight: 0, overflow: 'hidden' },

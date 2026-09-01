@@ -1,5 +1,6 @@
 import {
   type ReactNode,
+  memo,
   useCallback,
   useEffect,
   useMemo,
@@ -112,7 +113,7 @@ type Props = {
   syncStatus?: ReactNode;
 };
 
-export const NativeCollectionHubScreen = ({
+export const NativeCollectionHubScreen = memo(function NativeCollectionHubScreen({
   assetBaseUrl,
   catalogRows,
   instances,
@@ -145,7 +146,7 @@ export const NativeCollectionHubScreen = ({
   initialView = 'pokemon',
   onContextChange,
   syncStatus = null,
-}: Props) => {
+}: Props) {
   const resolvedInitialTagKey = initialTagKey ?? (requireTagSelection
     ? inventoryTags.find((tag) => tag.key === 'system:caught')?.key
       ?? inventoryTags[0]?.key
@@ -653,7 +654,7 @@ export const NativeCollectionHubScreen = ({
       />
     </View>
   );
-};
+});
 
 const styles = StyleSheet.create({
   screen: { flex: 1, minHeight: 0 },

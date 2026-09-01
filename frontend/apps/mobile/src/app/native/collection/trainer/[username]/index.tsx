@@ -37,6 +37,7 @@ export default function NativeForeignCollectionRoute() {
     session.user?.user_id ?? null,
     username,
   );
+  const refetchForeignCollection = foreignQuery.refetch;
   const success = foreignQuery.data?.type === 'success' ? foreignQuery.data : null;
   const rows = useMemo<NativeCollectionRow[]>(() => {
     if (!success) return [];
@@ -84,6 +85,34 @@ export default function NativeForeignCollectionRoute() {
     },
     [sessionOwnerKey],
   );
+  const returnToContext = useCallback(() => {
+    if (router.canGoBack()) router.back();
+    else router.replace('/native/collection');
+  }, [router]);
+  const openEntry = useCallback((
+    row: NativeCollectionRow,
+    orderedRows: NativeCollectionRow[],
+  ) => {
+    if (row.source === 'catalog') return;
+    setNativeInstanceNavigationContext(orderedRows.map((entry) => entry.id));
+    router.push({
+      pathname: '/native/collection/trainer/[username]/[instanceId]',
+      params: { username: success?.username ?? username, instanceId: row.id },
+    });
+  }, [router, success?.username, username]);
+  const navigateFromActionMenu = useCallback((path: string) => {
+    const destination = resolveNativeActionMenuDestination(path);
+    if (destination.kind === 'current') return;
+    if (destination.kind === 'native') {
+      router.push(destination.pathname);
+      return;
+    }
+    router.push({ pathname: '/web', params: { path: destination.path } });
+  }, [router]);
+  const retryCollection = useCallback(
+    () => { void refetchForeignCollection(); },
+    [refetchForeignCollection],
+  );
 
   if (session.status === 'restoring' || session.status === 'unavailable') {
     return (
@@ -108,27 +137,6 @@ export default function NativeForeignCollectionRoute() {
     );
   }
 
-  const returnToContext = () => {
-    if (router.canGoBack()) router.back();
-    else router.replace('/native/collection');
-  };
-  const openEntry = (row: NativeCollectionRow, orderedRows: NativeCollectionRow[]) => {
-    if (row.source === 'catalog') return;
-    setNativeInstanceNavigationContext(orderedRows.map((entry) => entry.id));
-    router.push({
-      pathname: '/native/collection/trainer/[username]/[instanceId]',
-      params: { username: success?.username ?? username, instanceId: row.id },
-    });
-  };
-  const navigateFromActionMenu = (path: string) => {
-    const destination = resolveNativeActionMenuDestination(path);
-    if (destination.kind === 'current') return;
-    if (destination.kind === 'native') {
-      router.push(destination.pathname);
-      return;
-    }
-    router.push({ pathname: '/web', params: { path: destination.path } });
-  };
   return (
     <NativeCollectionHubScreen
       assetBaseUrl={runtimeConfig.api.frontendAppUrl}
@@ -148,7 +156,7 @@ export default function NativeForeignCollectionRoute() {
       key={`${requestedFilter || 'restored'}:${username.toLocaleLowerCase()}`}
       onActionMenuNavigate={navigateFromActionMenu}
       onOpenEntry={openEntry}
-      onRetry={() => void foreignQuery.refetch()}
+      onRetry={retryCollection}
       onReturnToContext={returnToContext}
       requireTagSelection
       onContextChange={updateCollectionContext}

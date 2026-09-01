@@ -1,4 +1,5 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useCallback } from 'react';
 import type {
   CreateCustomTagRequest,
   CustomTagParent,
@@ -17,8 +18,12 @@ import { nativeCollectionQueryKeys } from './collectionQueries';
 export const useNativeTagMutations = (userId: string) => {
   const clients = useNativeApiClients();
   const queryClient = useQueryClient();
-  const queryKey = nativeCollectionQueryKeys.snapshot(userId);
-  const refresh = () => queryClient.invalidateQueries({ queryKey });
+  const refresh = useCallback(
+    () => queryClient.invalidateQueries({
+      queryKey: nativeCollectionQueryKeys.snapshot(userId),
+    }),
+    [queryClient, userId],
+  );
 
   const create = useMutation({
     mutationFn: (request: CreateCustomTagRequest) =>
@@ -39,14 +44,24 @@ export const useNativeTagMutations = (userId: string) => {
       updateNativePokemonTagOrder(clients.users, { parent, tag_keys: tagKeys }),
     onSuccess: refresh,
   });
+  const updateMutation = update.mutateAsync;
+  const reorderMutation = reorder.mutateAsync;
+  const updateTag = useCallback(
+    (tagId: string, request: UpdateCustomTagRequest) =>
+      updateMutation({ tagId, request }),
+    [updateMutation],
+  );
+  const saveOrder = useCallback(
+    (parent: CustomTagParent, tagKeys: PokemonTagOrderKey[]) =>
+      reorderMutation({ parent, tagKeys }),
+    [reorderMutation],
+  );
 
   return {
     createTag: create.mutateAsync,
-    updateTag: (tagId: string, request: UpdateCustomTagRequest) =>
-      update.mutateAsync({ tagId, request }),
+    updateTag,
     deleteTag: remove.mutateAsync,
-    saveOrder: (parent: CustomTagParent, tagKeys: PokemonTagOrderKey[]) =>
-      reorder.mutateAsync({ parent, tagKeys }),
+    saveOrder,
     isPending: create.isPending || update.isPending || remove.isPending || reorder.isPending,
   };
 };

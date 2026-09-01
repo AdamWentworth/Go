@@ -53,7 +53,7 @@ mounts complete collection and Pokédex route trees in the background.
 
 Passing evidence for this checkpoint:
 
-- native Jest: 157 suites, 820 tests;
+- native Jest: 158 suites, 821 tests;
 - mobile and web TypeScript and ESLint;
 - native real-route smoke: 92 guest/signed-in, light/dark route states;
 - focused Vite mobile-Chromium browser coverage: 9 tests;
@@ -118,6 +118,14 @@ reconciliation instead of tearing down every visible row when Pokémon IDs
 change during a tag swap. Static card layers are memoized, and tag cards no
 longer apply the non-Vite shrink transform on press.
 
+The collection route now also preserves its navigation, retry, organizer, and
+tag-mutation callback identities, while the Hub and three-panel slider are
+memoized. Cache-to-network query bookkeeping and unrelated overlay state can no
+longer invalidate the active Pokémon grid or make all three panels reconcile.
+Tag-mutation pending state still updates the controls that need it without
+recreating the card renderer. A dedicated hook regression test pins those
+callback identities across route rerenders.
+
 The three-panel collection swipe continues to stream finger movement directly
 from Gesture Handler into the native Animated graph, uses Vite's shared 30%
 peek limit and 100 px threshold, and hands the exact drag position to the
@@ -138,7 +146,7 @@ latency gap with Vite's already-populated client store.
 
 The real-route collection budget measures the first interactive destination
 card before separately asserting the deliberately delayed header sublabel. The
-latest complete matrix passed all 92 route/theme states and measured 549 ms for
+latest complete matrix passed all 92 route/theme states and measured 541 ms for
 the For Trade workflow, including the canonical 300 ms slide.
 
 ## Remaining approval gate
