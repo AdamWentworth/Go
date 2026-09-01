@@ -16,6 +16,7 @@ import { useNativeSession } from '../../auth/NativeSessionContext';
 import { runtimeConfig } from '../../config/runtimeConfig';
 import { nativeCollectionQueryKeys } from '../collection/collectionQueries';
 import { nativeCollectionCache, type NativeCachedCollectionSnapshot } from '../../storage/nativeCollectionCache';
+import { runAfterNativeUiInteractions } from '../../interaction/nativeUiInteractionScheduler';
 import { nativeSocialQueryKeys } from '../social/socialQueries';
 import { nativeTradeQueryKeys } from '../trades/tradeQueries';
 import { useNativeApiClients } from '../../services/useNativeApiClients';
@@ -82,7 +83,10 @@ export const NativeRealtimeProvider = ({ children }: PropsWithChildren) => {
       },
     );
     if (nextSnapshot) {
-      void nativeCollectionCache.write(userId, nextSnapshot).catch(() => undefined);
+      const snapshotToPersist = nextSnapshot;
+      runAfterNativeUiInteractions(() => {
+        void nativeCollectionCache.write(userId, snapshotToPersist).catch(() => undefined);
+      });
       void queryClient.invalidateQueries({ queryKey: nativeCollectionQueryKeys.summary(userId) });
     }
 

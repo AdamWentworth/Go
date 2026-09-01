@@ -7,6 +7,10 @@ import {
   getReconciledNativeCollectionSnapshot,
 } from '../../../src/services/collectionApi';
 
+const flushDeferredPersistence = () => new Promise<void>((resolve) => {
+  setTimeout(resolve, 0);
+});
+
 describe('getNativeCollectionSnapshot', () => {
   it('projects retained edits into a durable snapshot without acknowledging them', async () => {
     const cachedInstance = { instance_id: 'instance-1', pokemon_id: 1, last_update: 100 };
@@ -207,6 +211,7 @@ describe('getNativeCollectionSnapshot', () => {
     const snapshot = await getReconciledNativeCollectionSnapshot(
       usersClient, pokemonClient, outbox, cache, 'user-1',
     );
+    await flushDeferredPersistence();
     expect(snapshot.instances['instance-1']?.cp).toBe(501);
     expect(snapshot).toEqual(expect.objectContaining({ source: 'network', cachedAt: null }));
     expect(cache.write).toHaveBeenCalledWith('user-1', {
@@ -242,6 +247,7 @@ describe('getNativeCollectionSnapshot', () => {
     const snapshot = await getReconciledNativeCollectionSnapshot(
       usersClient, pokemonClient, outbox, cache, 'user-1',
     );
+    await flushDeferredPersistence();
 
     expect(snapshot).toEqual(expect.objectContaining({
       source: 'network',
@@ -347,6 +353,7 @@ describe('getNativeCollectionSnapshot', () => {
       source: 'network',
       cachedAt: null,
     });
+    await flushDeferredPersistence();
     expect(cache.write).toHaveBeenCalledTimes(1);
     finishWrite();
     await write;

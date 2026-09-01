@@ -24,6 +24,7 @@ import {
   normalizeNativeTagsEnvelope,
 } from '../features/collection/nativeTagsEnvelope';
 import { normalizeNativeInstances } from '../features/collection/nativeInstanceNormalization';
+import { runAfterNativeUiInteractions } from '../interaction/nativeUiInteractionScheduler';
 
 export type NativeCollectionSnapshot = {
   instances: Record<string, PokemonInstance>;
@@ -112,17 +113,20 @@ export const getReconciledNativeCollectionSnapshot = async (
         // System tags remain available if optional cached custom tags are unavailable.
       }
     }
-    try {
-      // The durable copy is replaceable and must not sit on the critical path
-      // between a completed network response and the first interactive grid.
-      void cache.write(userId, {
-        instances: canonical.instances,
-        catalog: canonical.catalog,
-        tags: canonical.tags,
-      }).catch(() => undefined);
-    } catch {
-      // A replaceable read cache must never block a successful online collection load.
-    }
+    // JSON serialization for a full collection is synchronous even though the
+    // SQLite API is async. Keep the replaceable durable copy outside the first
+    // paint and any active page gesture/animation.
+    runAfterNativeUiInteractions(() => {
+      try {
+        void cache.write(userId, {
+          instances: canonical.instances,
+          catalog: canonical.catalog,
+          tags: canonical.tags,
+        }).catch(() => undefined);
+      } catch {
+        // A replaceable read cache must never block a successful online collection load.
+      }
+    });
   } catch (networkError) {
     try {
       const cached = await cache.read(userId);
