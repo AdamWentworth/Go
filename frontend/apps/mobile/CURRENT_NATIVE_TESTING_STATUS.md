@@ -521,6 +521,25 @@ started in 0--1 ms, their result windows committed in 83--136 ms, typed search
 committed in 100 ms, all three instance targets committed in 176--241 ms, and
 the action menu painted in 85 ms.
 
+Tag performance now has an end-to-end touch guardrail in addition to the
+release-callback timing. The new measurement begins at Pressable press-in,
+includes preparation of the concealed destination grid, and ends when the
+native page slide starts. This prevents synchronous work under the finger from
+making a tap feel delayed while an onPress-only metric still reports zero. The
+confirming Android workflow measured all four full touch paths at 79--91 ms;
+the post-release slides themselves still began in 0--1 ms.
+
+Instance overlays now split their incoming commit at the same presentation
+boundary the user can see. At a settled top position, the outgoing read-only
+moves, IV, provenance, and target subtree remains memoized while the incoming
+art/name/stats stage commits and starts its native-driver entrance. The lower
+subtree adopts the incoming detail on the following frame; a component test
+pins that exact ordering, and scrolled or editing overlays retain the complete
+eager detail path. The repeated Android overlay targets improved from the
+preceding 222/234/298 ms run to 183/179/205 ms, with complete transitions at
+464/455/547 ms. The workflow passed every budget. The full suite is now 160
+suites and 853 tests, with typecheck and the complete lint pass clean.
+
 ## Remaining approval gate
 
 The latest bundle still needs a short physical-phone pass for perceived frame

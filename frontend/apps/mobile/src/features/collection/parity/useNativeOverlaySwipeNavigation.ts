@@ -62,6 +62,9 @@ type Args = {
   disabled?: boolean;
   onNext?: () => void;
   onPrevious?: () => void;
+  onTargetCommitted?: () => void;
+  onTransitionEnd?: () => void;
+  onTransitionStart?: () => void;
 };
 
 type Result = {
@@ -83,6 +86,9 @@ export const useNativeOverlaySwipeNavigation = ({
   disabled = false,
   onNext,
   onPrevious,
+  onTargetCommitted,
+  onTransitionEnd,
+  onTransitionStart,
 }: Args): Result => {
   const [translateX] = useState(() => new Animated.Value(0));
   const [dragX] = useState(() => new Animated.Value(0));
@@ -165,7 +171,8 @@ export const useNativeOverlaySwipeNavigation = ({
     animateBackground(false);
     interactionReleaseRef.current?.();
     interactionReleaseRef.current = null;
-  }, [animateBackground]);
+    onTransitionEnd?.();
+  }, [animateBackground, onTransitionEnd]);
 
   const startEntrance = useCallback((direction: NativeOverlaySwipeDirection) => {
     if (exitHandoffTimerRef.current !== null) {
@@ -222,7 +229,8 @@ export const useNativeOverlaySwipeNavigation = ({
     }
 
     startEntrance(awaitingContent.direction);
-  }, [activeItemKey, startEntrance]);
+    onTargetCommitted?.();
+  }, [activeItemKey, onTargetCommitted, startEntrance]);
 
   useEffect(() => () => {
     activeAnimationRef.current?.stop();
@@ -272,12 +280,14 @@ export const useNativeOverlaySwipeNavigation = ({
       direction,
       outgoingKey: activeItemKey,
     });
+    onTransitionStart?.();
 
     if (reduceMotion) {
       backgroundOpacity.setValue(1);
       backgroundScale.setValue(instanceOverlaySwipe.backgroundBaseScale);
       translateX.setValue(0);
       callback();
+      finishNavigation();
       return;
     }
 
@@ -357,6 +367,7 @@ export const useNativeOverlaySwipeNavigation = ({
     finishNavigation,
     onNext,
     onPrevious,
+    onTransitionStart,
     reduceMotion,
     resetPosition,
     startEntrance,

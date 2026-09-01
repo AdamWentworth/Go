@@ -48,11 +48,20 @@ describe('native instance overlay swipe navigation', () => {
       return 1;
     });
     const onNext = jest.fn();
+    const onTargetCommitted = jest.fn();
+    const onTransitionEnd = jest.fn();
+    const onTransitionStart = jest.fn();
     const { result, rerender, unmount } = renderHook<
       ReturnType<typeof useNativeOverlaySwipeNavigation>,
       { activeItemKey: string }
     >(
-      ({ activeItemKey }) => useNativeOverlaySwipeNavigation({ activeItemKey, onNext }),
+      ({ activeItemKey }) => useNativeOverlaySwipeNavigation({
+        activeItemKey,
+        onNext,
+        onTargetCommitted,
+        onTransitionEnd,
+        onTransitionStart,
+      }),
       { initialProps: { activeItemKey: 'instance-1' } },
     );
 
@@ -61,6 +70,7 @@ describe('native instance overlay swipe navigation', () => {
     act(() => {
       result.current.navigateNext();
     });
+    expect(onTransitionStart).toHaveBeenCalledTimes(1);
     expect(timing).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({
       duration: collectionExperienceParityContract.instanceOverlaySwipe.swapDelayMs,
       toValue: -collectionExperienceParityContract.instanceOverlaySwipe.exitOffset,
@@ -74,6 +84,7 @@ describe('native instance overlay swipe navigation', () => {
     expect(result.current.isAnimating).toBe(true);
 
     rerender({ activeItemKey: 'instance-2' });
+    expect(onTargetCommitted).toHaveBeenCalledTimes(1);
     expect(timing).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({
       duration: collectionExperienceParityContract.instanceOverlaySwipe.entryTransitionMs,
       toValue: 0,
@@ -82,6 +93,7 @@ describe('native instance overlay swipe navigation', () => {
     expect(animationCompletions).toHaveLength(1);
     act(() => animationCompletions.shift()?.({ finished: true }));
     expect(result.current.isAnimating).toBe(false);
+    expect(onTransitionEnd).toHaveBeenCalledTimes(1);
 
     animationFrame.mockRestore();
     unmount();

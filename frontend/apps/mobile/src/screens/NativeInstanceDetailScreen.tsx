@@ -3,6 +3,8 @@ import {
   Animated,
   Image,
   Modal,
+  type NativeScrollEvent,
+  type NativeSyntheticEvent,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -19,6 +21,7 @@ import {
   useEffect,
   useRef,
   useState,
+  startTransition,
 } from 'react';
 import Svg, { Circle, Path } from 'react-native-svg';
 import { PanGestureHandler } from 'react-native-gesture-handler';
@@ -1896,6 +1899,129 @@ const NativeInstanceEditFields = ({
   );
 };
 
+const NativeInstanceReadOnlyDetailSections = memo(function NativeInstanceReadOnlyDetailSections({
+  assetBaseUrl,
+  canEdit,
+  caughtDate,
+  detail,
+  light,
+  movesWarning,
+  onEditPreferences,
+  onOpenTarget,
+  palette,
+  statusAccent,
+}: {
+  assetBaseUrl: string;
+  canEdit: boolean;
+  caughtDate: string | null;
+  detail: NativeInstanceDetail;
+  light: boolean;
+  movesWarning: string | null;
+  onEditPreferences?: () => void;
+  onOpenTarget?: (instanceId: string) => void;
+  palette: typeof LIGHT;
+  statusAccent: string;
+}) {
+  const instance = detail.instance;
+  const isWanted = detail.row.status === 'wanted';
+  return (
+    <>
+      {detail.moves.length || movesWarning ? (
+        <View style={[styles.section, { borderTopColor: palette.divider }]}>
+          {detail.moves.length ? (
+            <NativeMovesPanel
+              assetBaseUrl={assetBaseUrl}
+              isShadow={Boolean(detail.instance?.shadow)}
+              moves={detail.moves}
+              palette={palette}
+            />
+          ) : null}
+          {movesWarning ? <Text style={styles.warningText}>{movesWarning}</Text> : null}
+        </View>
+      ) : null}
+
+      {!isWanted && detail.ivs.length ? (
+        <View style={[styles.section, { borderTopColor: palette.divider }]}>
+          {detail.ivs.map((iv) => {
+            const full = iv.value >= 15;
+            const ivTextColor = full
+              ? light ? '#9b2e2e' : '#ef8582'
+              : light ? '#8a4b00' : '#ef9219';
+            return (
+              <View key={iv.label} style={styles.ivRow}>
+                <Text
+                  adjustsFontSizeToFit
+                  minimumFontScale={0.9}
+                  numberOfLines={1}
+                  style={[styles.ivLabel, { color: ivTextColor }]}
+                >
+                  {iv.label}
+                </Text>
+                <View style={[styles.ivTrack, { backgroundColor: palette.track }]}>
+                  <View style={[
+                    styles.ivFill,
+                    full && styles.ivFillFull,
+                    { width: `${Math.max(0, Math.min(15, iv.value)) / 15 * 100}%` },
+                  ]} />
+                  <View style={styles.ivThird} />
+                  <View style={styles.ivTwoThirds} />
+                </View>
+                <Text style={[styles.ivNumber, { color: ivTextColor }]}>{iv.value}</Text>
+              </View>
+            );
+          })}
+        </View>
+      ) : null}
+
+      {!isWanted && detail.preferences.length ? (
+        <View style={[styles.preferencePanel, { borderColor: statusAccent }]}>
+          <Text style={[styles.preferenceTitle, { color: statusAccent }]}>
+            {detail.row.status === 'wanted' ? 'WANTED CONDITIONS' : 'TRADE CONDITIONS'}
+          </Text>
+          <DetailRows
+            rows={detail.preferences}
+            secondaryColor={palette.secondary}
+            textColor={palette.text}
+          />
+        </View>
+      ) : null}
+
+      {detail.provenance.length ? (
+        <View style={[styles.metaSection, { borderTopColor: palette.divider }]}>
+          <View style={[styles.metaPanel, { backgroundColor: palette.meta }]}>
+            {instance?.original_trainer_name ? (
+              <View style={styles.metaSummaryBlock}>
+                <Text style={[styles.metaSummaryLabel, { color: palette.secondary }]}>OBTAINED IN A TRADE</Text>
+                <Text style={[styles.metaSummaryValue, { color: palette.text }]}>{instance.original_trainer_name}</Text>
+              </View>
+            ) : null}
+            {instance?.location_caught || caughtDate ? (
+              <View style={styles.metaSummaryBlock}>
+                <Text style={[styles.metaSummaryLabel, { color: palette.secondary }]}>CAUGHT</Text>
+                {instance?.location_caught ? (
+                  <Text style={[styles.metaSummaryValue, { color: palette.text }]}>{instance.location_caught}</Text>
+                ) : null}
+                {caughtDate ? (
+                  <Text style={[styles.metaSummaryLabel, { color: palette.secondary }]}>{caughtDate}</Text>
+                ) : null}
+              </View>
+            ) : null}
+          </View>
+        </View>
+      ) : null}
+
+      <TargetSummary
+        assetBaseUrl={assetBaseUrl}
+        canEdit={canEdit}
+        detail={detail}
+        onEdit={() => onEditPreferences?.()}
+        onOpenTarget={onOpenTarget}
+        palette={palette}
+      />
+    </>
+  );
+});
+
 const NativeInstanceSwipeFrame = memo(function NativeInstanceSwipeFrame({
   activeItemKey,
   background,
@@ -1903,6 +2029,9 @@ const NativeInstanceSwipeFrame = memo(function NativeInstanceSwipeFrame({
   disabled,
   onNext,
   onPrevious,
+  onTargetCommitted,
+  onTransitionEnd,
+  onTransitionStart,
 }: {
   activeItemKey: string;
   background: ReactNode;
@@ -1910,12 +2039,18 @@ const NativeInstanceSwipeFrame = memo(function NativeInstanceSwipeFrame({
   disabled: boolean;
   onNext?: () => void;
   onPrevious?: () => void;
+  onTargetCommitted?: () => void;
+  onTransitionEnd?: () => void;
+  onTransitionStart?: () => void;
 }) {
   const overlaySwipe = useNativeOverlaySwipeNavigation({
     activeItemKey,
     disabled,
     onNext,
     onPrevious,
+    onTargetCommitted,
+    onTransitionEnd,
+    onTransitionStart,
   });
   const axisLockDelta = collectionExperienceParityContract.instanceOverlaySwipe.axisLockDelta;
 
@@ -2010,7 +2145,42 @@ export const NativeInstanceDetailScreen = ({
     message: string;
   } | null>(null);
   const [backgroundPickerInstanceId, setBackgroundPickerInstanceId] = useState<string | null>(null);
+  const [frozenLowerDetail, setFrozenLowerDetail] = useState<NativeInstanceDetail | null>(null);
+  const lowerDetailReleaseFrameRef = useRef<number | null>(null);
+  const onEditPreferencesRef = useRef(onEditPreferences);
+  const onOpenTargetRef = useRef(onOpenTarget);
+  const settledScrollOffsetRef = useRef(0);
   const scrollRef = useRef<ScrollView>(null);
+  useEffect(() => {
+    onEditPreferencesRef.current = onEditPreferences;
+    onOpenTargetRef.current = onOpenTarget;
+  }, [onEditPreferences, onOpenTarget]);
+  const editPreferences = useCallback(() => onEditPreferencesRef.current?.(), []);
+  const openTarget = useCallback((instanceId: string) => {
+    onOpenTargetRef.current?.(instanceId);
+  }, []);
+  const rememberSettledScrollOffset = useCallback((
+    event: NativeSyntheticEvent<NativeScrollEvent>,
+  ) => {
+    settledScrollOffsetRef.current = event.nativeEvent.contentOffset.y;
+  }, []);
+  const releaseLowerDetail = useCallback(() => {
+    if (lowerDetailReleaseFrameRef.current !== null) return;
+    lowerDetailReleaseFrameRef.current = requestAnimationFrame(() => {
+      lowerDetailReleaseFrameRef.current = null;
+      startTransition(() => setFrozenLowerDetail(null));
+    });
+  }, []);
+  const beginInstanceTransition = useCallback(() => {
+    if (detail && Math.abs(settledScrollOffsetRef.current) <= 8) {
+      setFrozenLowerDetail(detail);
+    }
+  }, [detail]);
+  useEffect(() => () => {
+    if (lowerDetailReleaseFrameRef.current !== null) {
+      cancelAnimationFrame(lowerDetailReleaseFrameRef.current);
+    }
+  }, []);
   const requestKeyboardFieldVisibility = useCallback((target: number) => {
     requestAnimationFrame(() => {
       scrollRef.current?.scrollResponderScrollNativeHandleToKeyboard(
@@ -2082,6 +2252,7 @@ export const NativeInstanceDetailScreen = ({
   const displayLevel = editing ? Number(activeDraft.level) : level;
   const showArc = Number.isFinite(displayLevel);
   const backgroundPickerOpen = backgroundPickerInstanceId === detail.row.id;
+  const lowerDetail = frozenLowerDetail ?? detail;
   const selectedFusionOption = activeDraft.fused
     ? detail.fusionOptions?.find((option) => option.id === activeDraft.fusionId) ?? null
     : null;
@@ -2299,6 +2470,9 @@ export const NativeInstanceDetailScreen = ({
           || backgroundPickerInstanceId === detail.row.id}
         onNext={onNext}
         onPrevious={onPrevious}
+        onTargetCommitted={releaseLowerDetail}
+        onTransitionEnd={releaseLowerDetail}
+        onTransitionStart={beginInstanceTransition}
       >
         <ScrollView
           contentContainerStyle={[
@@ -2311,6 +2485,8 @@ export const NativeInstanceDetailScreen = ({
           directionalLockEnabled
           keyboardShouldPersistTaps="always"
           nestedScrollEnabled
+          onMomentumScrollEnd={rememberSettledScrollOffset}
+          onScrollEndDrag={rememberSettledScrollOffset}
           ref={scrollRef}
           showsVerticalScrollIndicator={false}
           style={styles.scroll}
@@ -2574,94 +2750,22 @@ export const NativeInstanceDetailScreen = ({
                 </View>
               ) : null}
 
-            {!editing && (detail.moves.length || movesWarning) ? (
-              <View style={[styles.section, { borderTopColor: palette.divider }]}>
-                {detail.moves.length ? (
-                  <NativeMovesPanel
-                    assetBaseUrl={assetBaseUrl}
-                    isShadow={Boolean(detail.instance?.shadow)}
-                    moves={detail.moves}
-                    palette={palette}
-                  />
-                ) : null}
-                {movesWarning ? <Text style={styles.warningText}>{movesWarning}</Text> : null}
-              </View>
-            ) : null}
-
-            {!editing && !isWanted && detail.ivs.length ? (
-              <View style={[styles.section, { borderTopColor: palette.divider }]}>
-                {detail.ivs.map((iv) => {
-                  const full = iv.value >= 15;
-                  const ivTextColor = full
-                    ? light ? '#9b2e2e' : '#ef8582'
-                    : light ? '#8a4b00' : '#ef9219';
-                  return (
-                  <View key={iv.label} style={styles.ivRow}>
-                    <Text
-                      adjustsFontSizeToFit
-                      minimumFontScale={0.9}
-                      numberOfLines={1}
-                      style={[styles.ivLabel, { color: ivTextColor }]}
-                    >
-                      {iv.label}
-                    </Text>
-                    <View style={[styles.ivTrack, { backgroundColor: palette.track }]}>
-                      <View style={[
-                        styles.ivFill,
-                        full && styles.ivFillFull,
-                        { width: `${Math.max(0, Math.min(15, iv.value)) / 15 * 100}%` },
-                      ]} />
-                      <View style={styles.ivThird} />
-                      <View style={styles.ivTwoThirds} />
-                    </View>
-                    <Text style={[styles.ivNumber, { color: ivTextColor }]}>{iv.value}</Text>
-                  </View>
-                  );
-                })}
-              </View>
-            ) : null}
-
-            {!editing && !isWanted && detail.preferences.length ? (
-              <View style={[styles.preferencePanel, { borderColor: status.accent }]}>
-                <Text style={[styles.preferenceTitle, { color: status.accent }]}>
-                  {detail.row.status === 'wanted' ? 'WANTED CONDITIONS' : 'TRADE CONDITIONS'}
-                </Text>
-                <DetailRows rows={detail.preferences} secondaryColor={palette.secondary} textColor={palette.text} />
-              </View>
-            ) : null}
-
-            {!editing && detail.provenance.length ? (
-              <View style={[styles.metaSection, { borderTopColor: palette.divider }]}>
-                <View style={[styles.metaPanel, { backgroundColor: palette.meta }]}>
-                  {instance?.original_trainer_name ? (
-                    <View style={styles.metaSummaryBlock}>
-                      <Text style={[styles.metaSummaryLabel, { color: palette.secondary }]}>OBTAINED IN A TRADE</Text>
-                      <Text style={[styles.metaSummaryValue, { color: palette.text }]}>{instance.original_trainer_name}</Text>
-                    </View>
-                  ) : null}
-                  {instance?.location_caught || caughtDate ? (
-                    <View style={styles.metaSummaryBlock}>
-                      <Text style={[styles.metaSummaryLabel, { color: palette.secondary }]}>CAUGHT</Text>
-                      {instance?.location_caught ? (
-                        <Text style={[styles.metaSummaryValue, { color: palette.text }]}>{instance.location_caught}</Text>
-                      ) : null}
-                      {caughtDate ? (
-                        <Text style={[styles.metaSummaryLabel, { color: palette.secondary }]}>{caughtDate}</Text>
-                      ) : null}
-                    </View>
-                  ) : null}
-                </View>
-              </View>
-            ) : null}
-
             {!editing ? (
-              <TargetSummary
+              <NativeInstanceReadOnlyDetailSections
                 assetBaseUrl={assetBaseUrl}
-                detail={detail}
-                onEdit={() => onEditPreferences?.()}
-                onOpenTarget={onOpenTarget}
-                palette={palette}
                 canEdit={canEdit}
+                caughtDate={lowerDetail === detail
+                  ? caughtDate
+                  : !isWanted && lowerDetail.instance?.date_caught
+                    ? lowerDetail.instance.date_caught.slice(0, 10)
+                    : null}
+                detail={lowerDetail}
+                light={light}
+                movesWarning={movesWarning}
+                onEditPreferences={editPreferences}
+                onOpenTarget={openTarget}
+                palette={palette}
+                statusAccent={(light ? LIGHT_STATUS : STATUS)[lowerDetail.row.status].accent}
               />
             ) : null}
 

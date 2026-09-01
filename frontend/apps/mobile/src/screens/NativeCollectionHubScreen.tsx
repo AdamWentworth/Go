@@ -185,6 +185,7 @@ export const NativeCollectionHubScreen = memo(function NativeCollectionHubScreen
     delaySidePanelTag: boolean;
     key: string;
     startedAt: number;
+    touchStartedAt: number | null;
   } | null>(null);
   const pendingTagMotionReadyRef = useRef(false);
   const stagedTagKeyRef = useRef<string | null>(null);
@@ -428,6 +429,12 @@ export const NativeCollectionHubScreen = memo(function NativeCollectionHubScreen
       interactionLatencyMs: Date.now() - pending.startedAt,
       tagKey: pending.key,
     });
+    if (pending.touchStartedAt !== null) {
+      markNativeUiPerformance('collection_tag_touch_to_slide_started', {
+        interactionLatencyMs: Date.now() - pending.touchStartedAt,
+        tagKey: pending.key,
+      });
+    }
     headerRef.current?.setView('pokemon', pending.startedAt);
     sliderRef.current?.setPage(VIEW_ORDER.indexOf('pokemon'));
   }, []);
@@ -544,6 +551,7 @@ export const NativeCollectionHubScreen = memo(function NativeCollectionHubScreen
 
   const selectTag = useCallback((tag: NativeTagSummary) => {
     const startedAt = Date.now();
+    const touchStartedAt = stagedTagPreviewStartedAtRef.current;
     tagSelectionTraceRef.current = { key: tag.key, startedAt };
     if (stagedTagCancelTimerRef.current) {
       clearTimeout(stagedTagCancelTimerRef.current);
@@ -601,6 +609,7 @@ export const NativeCollectionHubScreen = memo(function NativeCollectionHubScreen
       delaySidePanelTag,
       key: tag.key,
       startedAt,
+      touchStartedAt,
     };
     pendingTagMotionReadyRef.current = destinationAlreadyCommitted;
     // Press-in has already reconciled this tag into the concealed middle

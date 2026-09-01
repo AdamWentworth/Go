@@ -30,6 +30,10 @@ const budgets = {
   collection_sort_menu_painted: 200,
   collection_filter_result_revealed: 200,
   collection_tag_slide_started: 32,
+  // Includes the ordinary physical press interval plus hidden destination
+  // preparation. This closes the blind spot where onPress-to-motion was fast
+  // but synchronous press-in work made the tap itself feel unresponsive.
+  collection_tag_touch_to_slide_started: 180,
   collection_tag_header_indicator_started: 32,
   collection_tag_result_painted: 150,
   collection_query_result_painted: 200,
@@ -56,6 +60,7 @@ const performanceTargets = {
   collection_query_result_painted: 150,
   instance_overlay_navigation_finished: 550,
   action_menu_surface_painted: 100,
+  collection_tag_touch_to_slide_started: 120,
 };
 const measurements = Object.fromEntries(Object.keys(budgets).map((event) => [event, []]));
 const latestOnlyEvents = new Set(['collection_typed_query_result_painted']);

@@ -1,4 +1,5 @@
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react-native';
+import { AccessibilityInfo, Animated } from 'react-native';
 import type { NativeInstanceDetail } from '../../../src/features/collection/collectionModel';
 import { NativeInstanceDetailScreen } from '../../../src/screens/NativeInstanceDetailScreen';
 import { getNativeLocationSuggestions } from '../../../src/services/locationApi';
@@ -70,6 +71,74 @@ const detail = {
 describe('NativeInstanceDetailScreen', () => {
   beforeEach(() => {
     mockGetNativeLocationSuggestions.mockReset();
+  });
+
+  it('starts the incoming instance stage before reconciling its lower detail sections', async () => {
+    const animationCompletions: ((result: { finished: boolean }) => void)[] = [];
+    const deferredFrames: FrameRequestCallback[] = [];
+    jest.spyOn(AccessibilityInfo, 'isReduceMotionEnabled').mockResolvedValue(false);
+    jest.spyOn(Animated, 'timing').mockImplementation(() => ({
+      start: (completion?: (result: { finished: boolean }) => void) => {
+        if (completion) animationCompletions.push(completion);
+      },
+      stop: jest.fn(),
+      reset: jest.fn(),
+    }) as unknown as Animated.CompositeAnimation);
+    jest.spyOn(Animated, 'parallel').mockImplementation(() => ({
+      start: jest.fn(),
+      stop: jest.fn(),
+      reset: jest.fn(),
+    }) as unknown as Animated.CompositeAnimation);
+    jest.spyOn(global, 'requestAnimationFrame').mockImplementation((callback) => {
+      deferredFrames.push(callback);
+      return deferredFrames.length;
+    });
+    const onNext = jest.fn();
+    const commonProps = {
+      cachedAt: null,
+      error: null,
+      isLoading: false,
+      isSaving: false,
+      movesWarning: null,
+      onBack: jest.fn(),
+      onNext,
+      onRetry: jest.fn(),
+      onToggleFavorite: jest.fn(),
+      saveError: null,
+      saveNotice: null,
+    };
+    const { rerender } = render(
+      <NativeInstanceDetailScreen {...commonProps} detail={detail} />,
+    );
+    await act(async () => Promise.resolve());
+
+    fireEvent.press(screen.getByTestId('native-instance-next'));
+    act(() => animationCompletions.shift()?.({ finished: true }));
+    expect(onNext).toHaveBeenCalledTimes(1);
+
+    const incomingDetail: NativeInstanceDetail = {
+      ...detail,
+      row: { ...detail.row, id: 'instance-2', name: 'Shiny Squirtle' },
+      moves: [{
+        ...detail.moves[0],
+        value: 'Water Gun',
+        typeName: 'Water',
+        typeIconUri: 'https://pokegonexus.com/images/types/water.png',
+      }],
+    };
+    rerender(<NativeInstanceDetailScreen {...commonProps} detail={incomingDetail} />);
+
+    expect(screen.getByText('Shiny Squirtle')).toBeTruthy();
+    expect(screen.getByText('Fire Spin')).toBeTruthy();
+    expect(screen.queryByText('Water Gun')).toBeNull();
+    expect(deferredFrames).toHaveLength(1);
+
+    act(() => deferredFrames.shift()?.(0));
+    expect(screen.getByText('Water Gun')).toBeTruthy();
+    expect(screen.queryByText('Fire Spin')).toBeNull();
+
+    act(() => animationCompletions.shift()?.({ finished: true }));
+    jest.restoreAllMocks();
   });
 
   it('renders canonical Pokémon details and keeps editing behind the fallback', async () => {
