@@ -165,7 +165,9 @@ export const NativeCollectionParityScreen = memo(forwardRef<
   const [collectionImageRevealCount, setCollectionImageRevealCount] = useState<number | null>(null);
   const [collectionImageRevealInteraction, setCollectionImageRevealInteraction] = useState<string | null>(null);
   const stagedQueryRef = useRef<string | null>(null);
+  const adoptedStagedQueryRef = useRef<string | null>(null);
   const stagedQueryCancelTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const filterReleaseFrameRef = useRef<number | null>(null);
   const stagedSortRef = useRef<{
     sort: NativeCollectionSort;
     direction: NativeCollectionSortDirection;
@@ -389,14 +391,14 @@ export const NativeCollectionParityScreen = memo(forwardRef<
       stagedQueryCancelTimerRef.current = null;
     }
     const trace = stagedQueryTraceRef.current;
-    if (trace?.query === nextQuery) {
+    const adoptingPreview = trace?.query === nextQuery
+      && stagedQueryRef.current === nextQuery;
+    if (adoptingPreview) {
       markNativeUiPerformance('collection_query_preview_released', {
         previewLeadMs: Date.now() - trace.startedAt,
         previewPaintedBeforeRelease: trace.paintedAt !== null,
         query: trace.query,
       });
-      setCollectionImageRevealCount(0);
-      setCollectionImageRevealInteraction(`filter:${nextQuery}`);
     } else if (source === 'typing' && nextQuery.trim()) {
       setCollectionImageRevealCount(0);
       setCollectionImageRevealInteraction(`typing:${nextQuery}`);
@@ -405,11 +407,41 @@ export const NativeCollectionParityScreen = memo(forwardRef<
       setCollectionImageRevealInteraction(null);
     }
     stagedQueryTraceRef.current = null;
+    if (adoptingPreview) {
+      // The destination is already committed behind the filter overlay. Keep
+      // that staged projection as the urgent visible source, then commit the
+      // Hub's query/count/session bookkeeping after the release frame.
+      // Clearing it here used to put that parent reconciliation in front of
+      // the menu-close paint even though none of it changed the visible cards.
+      adoptedStagedQueryRef.current = nextQuery;
+      if (filterReleaseFrameRef.current !== null) {
+        cancelAnimationFrame(filterReleaseFrameRef.current);
+      }
+      filterReleaseFrameRef.current = requestAnimationFrame(() => {
+        filterReleaseFrameRef.current = null;
+        setCollectionImageRevealCount(0);
+        setCollectionImageRevealInteraction(`filter:${nextQuery}`);
+        onQueryChange(nextQuery, source);
+      });
+      return;
+    }
+    adoptedStagedQueryRef.current = null;
     stagedQueryRef.current = null;
     setStagedQuery(null);
     onQueryChange(nextQuery, source);
   }, [onQueryChange]);
+  useEffect(() => {
+    if (
+      stagedQuery === null
+      || adoptedStagedQueryRef.current !== stagedQuery
+      || query !== stagedQuery
+    ) return;
+    adoptedStagedQueryRef.current = null;
+    stagedQueryRef.current = null;
+    setStagedQuery(null);
+  }, [query, stagedQuery]);
   useEffect(() => () => {
+    if (filterReleaseFrameRef.current !== null) cancelAnimationFrame(filterReleaseFrameRef.current);
     if (stagedQueryCancelTimerRef.current) clearTimeout(stagedQueryCancelTimerRef.current);
     if (stagedSortCancelTimerRef.current) clearTimeout(stagedSortCancelTimerRef.current);
     if (stagedEvolutionCancelTimerRef.current) clearTimeout(stagedEvolutionCancelTimerRef.current);

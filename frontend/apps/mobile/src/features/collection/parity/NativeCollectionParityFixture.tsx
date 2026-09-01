@@ -19,6 +19,7 @@ import {
   forwardRef,
   memo,
   useCallback,
+  useEffect,
   useImperativeHandle,
   useLayoutEffect,
   useMemo,
@@ -46,7 +47,7 @@ import { NativePokemonStatusGlow } from './NativePokemonStatusGlow';
 import { NativePokemonLocationBackdrop } from './NativePokemonLocationBackdrop';
 import {
   NativeCollectionSearchControls,
-  NativeCollectionSearchMenu,
+  NativeRetainedCollectionSearchMenu,
   type NativeCollectionSearchControlsHandle,
 } from './NativeCollectionSearchControls';
 import { NativeCollectionPriorityStar } from './NativeCollectionPriorityStar';
@@ -55,6 +56,7 @@ import {
   toNativeCollectionAssetUrl,
   toNativeCollectionImageSource,
 } from './nativeCollectionImageSource';
+import { markNativeUiPerformance } from '../../../observability/nativeUiPerformanceTrace';
 
 type NativeCollectionParityFixtureProps = {
   assetBaseUrl?: string;
@@ -386,10 +388,14 @@ export const NativeCollectionParityFixture = memo(forwardRef<
   const [searchMenuMounted, setSearchMenuMounted] = useState(false);
   const searchControlsRef = useRef<NativeCollectionSearchControlsHandle>(null);
   const listRef = useRef<FlatList<CollectionCardSource>>(null);
+  const searchMenuOverlayRef = useRef<ScrollView>(null);
   const restoredScrollRef = useRef(initialScrollOffset <= 0);
   const previousResetKeyRef = useRef(scrollResetKey);
   const currentScrollOffsetRef = useRef(initialScrollOffset);
   const keyboardDismissFrameRef = useRef<number | null>(null);
+  const searchMenuRequestStartedAtRef = useRef<number | null>(null);
+  const filterReleaseStartedAtRef = useRef<number | null>(null);
+  const filterReleaseFrameRef = useRef<number | null>(null);
   const queryRef = useRef(query);
   queryRef.current = query;
   const collectionItems: CollectionCardSource[] = collectionRows ?? cards;
@@ -449,15 +455,35 @@ export const NativeCollectionParityFixture = memo(forwardRef<
   const appendFilter = useCallback((filter: string) => {
     const currentQuery = queryRef.current;
     const nextQuery = currentQuery.trim() ? `${currentQuery}&${filter}` : filter;
-    // Adopt the input's urgent local value in the same event as the route
-    // query. Waiting for the controlled prop's layout effect required a second
-    // Android commit before the destination could paint.
+    // The result rows are already committed behind this overlay. Hide that
+    // overlay imperatively on release so Fabric can reveal them without
+    // waiting for forty retained filter controls and the Hub bookkeeping to
+    // reconcile. React adopts the exact same state on the following frame.
+    filterReleaseStartedAtRef.current = Date.now();
     searchControlsRef.current?.commitQueryValue(nextQuery);
-    setSearchMenuVisible(false);
+    searchMenuOverlayRef.current?.setNativeProps({
+      pointerEvents: 'none',
+      style: { opacity: 0 },
+    });
+    listRef.current?.setNativeProps({ pointerEvents: 'auto' });
     onQueryChange?.(nextQuery, 'filter');
-    // Preserve Vite's blur while ensuring Android's window resize cannot delay
-    // the already-committed destination frame.
-    dismissKeyboardAfterResultPaint();
+    if (filterReleaseFrameRef.current !== null) {
+      cancelAnimationFrame(filterReleaseFrameRef.current);
+    }
+    filterReleaseFrameRef.current = requestAnimationFrame(() => {
+      filterReleaseFrameRef.current = null;
+      const startedAt = filterReleaseStartedAtRef.current;
+      filterReleaseStartedAtRef.current = null;
+      if (startedAt !== null) {
+        markNativeUiPerformance('collection_filter_result_revealed', {
+          interactionLatencyMs: Date.now() - startedAt,
+        });
+      }
+      setSearchMenuVisible(false);
+      // Preserve Vite's blur while ensuring Android's window resize cannot
+      // delay the already-visible destination frame.
+      dismissKeyboardAfterResultPaint();
+    });
   }, [dismissKeyboardAfterResultPaint, onQueryChange]);
   const previewFilter = useCallback((filter: string) => {
     const currentQuery = queryRef.current;
@@ -470,9 +496,24 @@ export const NativeCollectionParityFixture = memo(forwardRef<
     onCancelQueryPreview?.(nextQuery);
   }, [onCancelQueryPreview]);
   const changeSearchMenuVisibility = useCallback((visible: boolean) => {
-    if (visible) setSearchMenuMounted(true);
+    if (visible) {
+      searchMenuRequestStartedAtRef.current = Date.now();
+      markNativeUiPerformance('collection_search_menu_requested');
+      setSearchMenuMounted(true);
+    }
     setSearchMenuVisible(visible);
   }, []);
+  useLayoutEffect(() => {
+    if (!searchMenuVisible || searchMenuRequestStartedAtRef.current === null) return undefined;
+    const startedAt = searchMenuRequestStartedAtRef.current;
+    searchMenuRequestStartedAtRef.current = null;
+    const frame = requestAnimationFrame(() => {
+      markNativeUiPerformance('collection_search_menu_painted', {
+        interactionLatencyMs: Date.now() - startedAt,
+      });
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [searchMenuVisible]);
   const changeQuery = useCallback(
     (value: string) => onQueryChange?.(value, 'typing'),
     [onQueryChange],
@@ -511,10 +552,22 @@ export const NativeCollectionParityFixture = memo(forwardRef<
   }, [initialScrollOffset]);
   useImperativeHandle(ref, () => ({ resetScroll }), [resetScroll]);
   useLayoutEffect(() => () => {
+    if (filterReleaseFrameRef.current !== null) {
+      cancelAnimationFrame(filterReleaseFrameRef.current);
+    }
     if (keyboardDismissFrameRef.current !== null) {
       cancelAnimationFrame(keyboardDismissFrameRef.current);
     }
   }, []);
+  useEffect(() => {
+    if (searchMenuMounted || isLoading || collectionItems.length === 0) return undefined;
+    // Vite lets the browser create/decode filter assets outside its input
+    // event. Spread the native menu's forty image controls over idle frames as
+    // well, so the first focus reveals a warm surface instead of performing a
+    // quarter-second view/decode burst on the tap.
+    const timer = setTimeout(() => setSearchMenuMounted(true), 500);
+    return () => clearTimeout(timer);
+  }, [collectionItems.length, isLoading, searchMenuMounted]);
   useLayoutEffect(() => {
     if (previousResetKeyRef.current === scrollResetKey) return;
     previousResetKeyRef.current = scrollResetKey;
@@ -736,6 +789,7 @@ export const NativeCollectionParityFixture = memo(forwardRef<
             importantForAccessibility={searchMenuVisible ? 'auto' : 'no-hide-descendants'}
             keyboardShouldPersistTaps="always"
             pointerEvents={searchMenuVisible ? 'auto' : 'none'}
+            ref={searchMenuOverlayRef}
             style={[
               styles.searchMenuOverlay,
               { backgroundColor: palette.background },
@@ -743,12 +797,13 @@ export const NativeCollectionParityFixture = memo(forwardRef<
             ]}
             testID="native-collection-filter-scroll"
           >
-            <NativeCollectionSearchMenu
+            <NativeRetainedCollectionSearchMenu
               assetBaseUrl={assetBaseUrl}
               onFilterPress={appendFilter}
               onFilterPressIn={previewFilter}
               onFilterPressOut={cancelFilterPreview}
               textColor={palette.text}
+              visible={searchMenuVisible}
             />
           </ScrollView>
         ) : null}

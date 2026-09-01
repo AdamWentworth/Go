@@ -1,5 +1,7 @@
 import {
   useCallback,
+  type ComponentProps,
+  useEffect,
   forwardRef,
   memo,
   useImperativeHandle,
@@ -29,6 +31,11 @@ const FILTER_SECTIONS: Record<FilterSection, string[]> = {
   Region: ['Kanto', 'Johto', 'Hoenn', 'Sinnoh', 'Unova', 'Kalos', 'Alola', 'Galar', 'Hisui', 'Paldea'],
   Types: ['Normal', 'Fighting', 'Flying', 'Poison', 'Ground', 'Rock', 'Bug', 'Ghost', 'Steel', 'Fire', 'Water', 'Grass', 'Electric', 'Psychic', 'Ice', 'Dragon', 'Dark', 'Fairy'],
 };
+const FILTER_TILE_COUNT = Object.values(FILTER_SECTIONS).reduce(
+  (total, filters) => total + filters.length,
+  0,
+);
+const FILTER_TILE_WARM_BATCH = 4;
 
 const FILTER_ASSETS: Record<string, string> = {
   Shiny: '/images/shiny_search.png',
@@ -102,9 +109,9 @@ const FilterTile = memo(function FilterTile({
 }: {
   assetBaseUrl: string;
   filter: string;
-  onPress: () => void;
-  onPressIn?: () => void;
-  onPressOut?: () => void;
+  onPress: (filter: string) => void;
+  onPressIn?: (filter: string) => void;
+  onPressOut?: (filter: string) => void;
   section: FilterSection;
   textColor: string;
 }) {
@@ -117,10 +124,10 @@ const FilterTile = memo(function FilterTile({
     <Pressable
       accessibilityLabel={`Filter by ${filter}`}
       accessibilityRole="button"
-      onPress={onPress}
-      onPressIn={onPressIn}
-      onPressOut={onPressOut}
-      style={({ pressed }) => [styles.filterTile, pressed ? styles.pressed : null]}
+      onPress={() => onPress(filter)}
+      onPressIn={onPressIn ? () => onPressIn(filter) : undefined}
+      onPressOut={onPressOut ? () => onPressOut(filter) : undefined}
+      style={styles.filterTile}
       testID={`native-collection-filter-${filter.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`}
       unstable_pressDelay={onPressIn ? 16 : undefined}
     >
@@ -149,13 +156,16 @@ export const NativeCollectionSearchMenu = memo(function NativeCollectionSearchMe
   onFilterPressIn,
   onFilterPressOut,
   textColor,
+  tileLimit = FILTER_TILE_COUNT,
 }: {
   assetBaseUrl: string;
   onFilterPress: (filter: string) => void;
   onFilterPressIn?: (filter: string) => void;
   onFilterPressOut?: (filter: string) => void;
   textColor: string;
+  tileLimit?: number;
 }) {
+  let tileIndex = 0;
   return (
   <View accessibilityLabel="Pokémon search filters" style={styles.searchMenu}>
     {(Object.keys(FILTER_SECTIONS) as FilterSection[]).map((section) => (
@@ -164,23 +174,49 @@ export const NativeCollectionSearchMenu = memo(function NativeCollectionSearchMe
           {section}
         </Text>
         <View style={styles.filterGrid}>
-          {FILTER_SECTIONS[section].map((filter) => (
-            <FilterTile
-              assetBaseUrl={assetBaseUrl}
-              filter={filter}
-              key={filter}
-              onPress={() => onFilterPress(filter)}
-              onPressIn={onFilterPressIn ? () => onFilterPressIn(filter) : undefined}
-              onPressOut={onFilterPressOut ? () => onFilterPressOut(filter) : undefined}
-              section={section}
-              textColor={textColor}
-            />
-          ))}
+          {FILTER_SECTIONS[section].map((filter) => {
+            const visible = tileIndex < tileLimit;
+            tileIndex += 1;
+            return visible ? (
+              <FilterTile
+                assetBaseUrl={assetBaseUrl}
+                filter={filter}
+                key={filter}
+                onPress={onFilterPress}
+                onPressIn={onFilterPressIn}
+                onPressOut={onFilterPressOut}
+                section={section}
+                textColor={textColor}
+              />
+            ) : null;
+          })}
         </View>
       </View>
     ))}
   </View>
   );
+});
+
+export const NativeRetainedCollectionSearchMenu = memo(function NativeRetainedCollectionSearchMenu({
+  visible,
+  ...props
+}: ComponentProps<typeof NativeCollectionSearchMenu> & { visible: boolean }) {
+  const [tileLimit, setTileLimit] = useState(() => visible ? FILTER_TILE_COUNT : 0);
+  useEffect(() => {
+    if (visible) {
+      setTileLimit(FILTER_TILE_COUNT);
+      return undefined;
+    }
+    if (tileLimit >= FILTER_TILE_COUNT) return undefined;
+    const frame = requestAnimationFrame(() => {
+      setTileLimit((current) => Math.min(
+        FILTER_TILE_COUNT,
+        current + FILTER_TILE_WARM_BATCH,
+      ));
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [tileLimit, visible]);
+  return <NativeCollectionSearchMenu {...props} tileLimit={tileLimit} />;
 });
 
 export type NativeCollectionSearchControlsHandle = {
@@ -423,7 +459,6 @@ const styles = StyleSheet.create({
   sectionTitle: { marginBottom: 8, fontSize: 16, fontWeight: '700' },
   filterGrid: { flexDirection: 'row', flexWrap: 'wrap', rowGap: 8 },
   filterTile: { width: '25%', alignItems: 'center', justifyContent: 'center' },
-  pressed: { opacity: 0.72, transform: [{ scale: 0.96 }] },
   filterImageCircle: { overflow: 'hidden', width: 42, height: 42, alignItems: 'center', justifyContent: 'center', marginBottom: 3, borderRadius: 21 },
   filterImage: { width: 27, height: 27 },
   typeFilterImage: { width: '100%', height: '100%' },

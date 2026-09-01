@@ -196,6 +196,7 @@ describe('NativeCollectionParityScreen', () => {
     expect(screen.queryByText('Bulbasaur')).toBeNull();
 
     fireEvent.press(screen.getByRole('button', { name: 'Filter by Fire' }));
+    act(() => jest.advanceTimersByTime(17));
     expect(screen.queryByLabelText('Pokémon search filters')).toBeNull();
     expect(screen.getByLabelText('Clear Pokémon search')).toBeTruthy();
     expect(screen.getByRole('checkbox')).toBeTruthy();
@@ -221,6 +222,10 @@ describe('NativeCollectionParityScreen', () => {
     fireEvent(filter, 'pressOut');
     fireEvent.press(filter);
 
+    // The already-staged grid is revealed imperatively on release. Adopt the
+    // query/menu state on the following frame so the retained filter tree does
+    // not sit in front of that visible response.
+    act(() => jest.advanceTimersByTime(17));
     expect(onQueryChange).toHaveBeenCalledWith('Shiny');
     expect(view.getByLabelText('Search Pokémon').props.value).toBe('Shiny');
     expect(view.UNSAFE_getByType(FlatList).props.data).toEqual([rows[0]]);

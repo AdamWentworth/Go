@@ -10,17 +10,20 @@ if (logPaths.length === 0) {
 }
 
 const readInteractionLatencies = (text, event) => {
-  const pattern = new RegExp(
-    `\\[mobile:ui-perf\\] ${event}[^\\n]*\\n(?:[^\\n]*\\n){0,5}?[^\\n]*interactionLatencyMs:\\s*(\\d+)`,
-    'g',
-  );
-  return [...text.matchAll(pattern)].map((match) => Number(match[1]));
+  const eventPattern = new RegExp(`\\[mobile:ui-perf\\] ${event}(?![a-zA-Z0-9_])`, 'g');
+  return [...text.matchAll(eventPattern)].flatMap((match) => {
+    const block = text.slice(match.index, match.index + 1_200).split('\n').slice(0, 6).join('\n');
+    const latency = block.match(/interactionLatencyMs:\s*(\d+)/);
+    return latency ? [Number(latency[1])] : [];
+  });
 };
 
 const budgets = {
+  collection_search_menu_painted: 150,
+  collection_filter_result_revealed: 100,
   collection_tag_slide_started: 32,
   collection_tag_result_painted: 150,
-  collection_query_result_painted: 120,
+  collection_query_result_painted: 150,
   collection_typed_query_result_painted: 150,
   collection_projection_viewport_images_revealed: 1200,
   collection_projection_images_revealed: 3000,

@@ -242,9 +242,9 @@ budgets from device logcat rather than relying on the browser proxy.
 The search-filter follow-up applies the same preparation model to the Vite tile
 menu. Press-in stages the immutable filtered rows without adopting the query;
 a cancelled drag restores the catalog, while release keeps the staged result
-and updates the input/query in one commit. The menu is mounted only on first
-focus and then retained invisibly and accessibly, so release does not delete
-and rebuild its roughly forty native image controls. Android keyboard dismissal
+and updates the input/query without rebuilding the result. The menu is retained
+invisibly and accessibly, so release does not delete and rebuild its roughly
+forty native image controls. Android keyboard dismissal
 begins after the result frame instead of synchronously resizing the window in
 front of it. Because React Native's legacy Android Image view decodes on the
 render thread, the correct destination card content paints first and its cached
@@ -274,6 +274,21 @@ first destination image window completed in at most 877 ms and the full retained
 window in at most 2,432 ms. Device logcat enforces 150 ms result ceilings for
 typed search, sort, and evolutionary-line changes in addition to the existing
 filter, tag, motion, and progressive-image budgets.
+
+The first-focus audit then measured a separate 263 ms stall before any filter
+was selected: Android was creating and decoding all forty filter controls on
+the search tap. Native now creates those controls in four-tile hidden batches
+after the active grid has painted and retains their memoized callbacks. The
+first opening fell to 54 ms in the latest production-mode Pixel run and the
+repeat opening to 31 ms. Filter release now hides that retained surface through
+Fabric first, reveals the already-staged card window, and adopts the matching
+React/accessibility/query state on the following frame. This keeps bookkeeping
+out of the visible release without creating a second source of truth. The same
+run revealed the filter result in 48 ms, committed its count/query in 93 ms,
+painted the final sequential input in 65 ms, sorted in 52 ms, and expanded the
+evolutionary line in 53 ms. The Android guard independently enforces 150 ms for
+opening search, 100 ms for the visible filter release, and 150 ms for the
+resulting query/count commit.
 
 ## Remaining approval gate
 
