@@ -6,7 +6,13 @@ import {
   useRef,
   useState,
 } from 'react';
-import { Animated, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
+import {
+  Animated,
+  StyleSheet,
+  Text,
+  View,
+  useWindowDimensions,
+} from 'react-native';
 import type {
   CreateCustomTagRequest,
   CustomTagParent,
@@ -33,7 +39,10 @@ import {
   NativePokemonHubHeader,
   type NativePokemonHubView,
 } from '../features/collection/NativePokemonHubHeader';
-import { NativeCollectionParityScreen } from './NativeCollectionParityScreen';
+import {
+  NativeCollectionParityScreen,
+  prepareNativeCollectionParityRows,
+} from './NativeCollectionParityScreen';
 import { NativeTagsPanelScreen } from './NativeTagsPanelScreen';
 import { NativeActionMenu } from '../components/NativeActionMenu';
 import { NativeActionMenuAnchor } from '../components/NativeActionMenuAnchor';
@@ -130,6 +139,7 @@ export const NativeCollectionHubScreen = ({
   const [organizerOpen, setOrganizerOpen] = useState(false);
   const [clearTagConfirmationOpen, setClearTagConfirmationOpen] = useState(false);
   const [operationNotice, setOperationNotice] = useState<string | null>(null);
+  const [pendingTagNavigationKey, setPendingTagNavigationKey] = useState<string | null>(null);
   const sliderRef = useRef<NativeHorizontalPageSliderHandle>(null);
   const tagSelectionTraceRef = useRef<{ key: string; startedAt: number } | null>(null);
   const [pageScrollX] = useState(() => new Animated.Value(width));
@@ -185,6 +195,28 @@ export const NativeCollectionHubScreen = ({
   );
 
   useEffect(() => {
+    let cancelled = false;
+    let timer: ReturnType<typeof setTimeout> | null = null;
+    const tagsToPrepare = availableTags.slice(0, 24);
+    let index = 0;
+    const prepareNext = () => {
+      if (cancelled) return;
+      const tag = tagsToPrepare[index];
+      if (!tag) return;
+      prepareNativeCollectionParityRows(tag.rows);
+      index += 1;
+      timer = setTimeout(prepareNext, 16);
+    };
+    // Let initial navigation and the first collection paint finish before
+    // warming one tag projection per turn of the event loop.
+    timer = setTimeout(prepareNext, 250);
+    return () => {
+      cancelled = true;
+      if (timer) clearTimeout(timer);
+    };
+  }, [availableTags]);
+
+  useEffect(() => {
     markNativeUiPerformance('collection_hub_filter_resolved', {
       activeView,
       requestedTagKey: initialTagKey,
@@ -212,6 +244,7 @@ export const NativeCollectionHubScreen = ({
     // settle before the selected tab becomes responsive. The underline still
     // follows pageScrollX continuously, so the visual indicator travels with
     // the native page rather than jumping ahead of it.
+    setPendingTagNavigationKey(null);
     setActiveView(view);
     onContextChange?.({ activeView: view });
     sliderRef.current?.setPage(VIEW_ORDER.indexOf(view));
@@ -222,6 +255,17 @@ export const NativeCollectionHubScreen = ({
     onContextChange?.({ query: nextQuery, scrollOffset: 0 });
   }, [onContextChange]);
 
+  const handlePokemonContentPrepared = useCallback((tagKey: string) => {
+    if (!pendingTagNavigationKey || tagKey !== pendingTagNavigationKey) return;
+    markNativeUiPerformance('collection_tag_content_prepared', {
+      rowCount: selectedRows.length,
+      tagKey,
+    });
+    setPendingTagNavigationKey(null);
+    setActiveView('pokemon');
+    onContextChange?.({ activeView: 'pokemon' });
+  }, [onContextChange, pendingTagNavigationKey, selectedRows.length]);
+
   const selectTag = useCallback((tag: NativeTagSummary) => {
     tagSelectionTraceRef.current = { key: tag.key, startedAt: Date.now() };
     markNativeUiPerformance('collection_tag_pressed', {
@@ -230,19 +274,29 @@ export const NativeCollectionHubScreen = ({
     });
     if (selectedIds.size > 0) setSelectedIds(new Set());
 
-    // The model caches tag projections, so selecting a tag is cheap enough to
-    // commit in the press event. Deferring this state made React wait behind
-    // the page animation before painting the selected tag.
-    setActiveView('pokemon');
+    if (selectedTag?.key === tag.key && !query.trim()) {
+      markNativeUiPerformance('collection_tag_content_prepared', {
+        rowCount: tag.rows.length,
+        tagKey: tag.key,
+      });
+      setPendingTagNavigationKey(null);
+      setActiveView('pokemon');
+      onContextChange?.({ activeView: 'pokemon', scrollOffset: 0 });
+      return;
+    }
+
+    // Prepare the filtered middle panel while it is still offscreen. The
+    // readiness effect advances to Pokémon only after two painted frames, so
+    // list reconciliation and image/layout work cannot interrupt the slide.
     setQuery('');
     setSelectedTagKey(tag.key);
+    setPendingTagNavigationKey(tag.key);
     onContextChange?.({
-      activeView: 'pokemon',
       query: '',
       selectedTagKey: tag.key,
       scrollOffset: 0,
     });
-  }, [onContextChange, selectedIds.size]);
+  }, [onContextChange, query, selectedIds.size, selectedTag?.key]);
 
   const toggleSelection = useCallback((entryId: string) => {
     setSelectedIds((current) => {
@@ -358,6 +412,7 @@ export const NativeCollectionHubScreen = ({
       selectionAction={selectedRowsAreCatalog ? 'add' : 'organize'}
       tagCanClear={!requireTagSelection && Boolean(selectedTag)}
       onContextChange={onContextChange}
+      onContentPrepared={handlePokemonContentPrepared}
     />
   ), [
     assetBaseUrl,
@@ -383,6 +438,7 @@ export const NativeCollectionHubScreen = ({
     initialSort,
     initialSortDirection,
     onContextChange,
+    handlePokemonContentPrepared,
   ]);
   const wishlistPanel = useMemo(() => (
     <NativeTagsPanelScreen

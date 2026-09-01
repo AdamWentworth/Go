@@ -74,6 +74,12 @@ three-panel track, keeps all three Vite-equivalent panels warm, and explicitly
 slides from either side tag page back to Pokémon. Its final full-matrix run
 measured 528 ms, including the canonical 300 ms page slide.
 
+The follow-up fluidity pass stages a newly filtered Pokémon list while it is
+still offscreen, waits for its first card/content layout before moving, warms
+common tag projections in idle-sized batches, and hardware-composites the page
+track. The focused real-route check measured 547 ms including the slide, with
+no list reconciliation permitted during the motion.
+
 ## Remaining approval gate
 
 The latest bundle still needs a short physical-phone pass for perceived frame

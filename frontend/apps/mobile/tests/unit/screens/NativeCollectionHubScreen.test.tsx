@@ -27,6 +27,12 @@ afterEach(() => {
   jest.useRealTimers();
 });
 
+const finishPreparedTagTransition = () => {
+  act(() => {
+    jest.advanceTimersByTime(64);
+  });
+};
+
 const caughtRow: NativeCollectionRow = {
   id: 'caught-bulbasaur',
   pokemonId: 1,
@@ -164,6 +170,7 @@ describe('NativeCollectionHubScreen', () => {
     });
     expect(screen.getByText('1 Pokémon')).toBeTruthy();
     fireEvent.press(screen.getByRole('button', { name: /Open Favorites/i }));
+    finishPreparedTagTransition();
 
     expect(screen.getByText('Favorites')).toBeTruthy();
     expect(screen.getByText('Shiny Bulbasaur')).toBeTruthy();
@@ -188,6 +195,7 @@ describe('NativeCollectionHubScreen', () => {
 
     fireEvent.press(screen.getByRole('tab', { name: /tags/i }));
     fireEvent.press(screen.getByRole('button', { name: /Open All Caught/i }));
+    finishPreparedTagTransition();
     expect(screen.getByText('Caught')).toBeTruthy();
 
     fireEvent.press(screen.getByRole('tab', { name: /wishlist/i }));
@@ -223,6 +231,12 @@ describe('NativeCollectionHubScreen', () => {
     timing.mockClear();
     fireEvent.press(screen.getByRole('button', { name: /Open Favorites/i }));
 
+    expect(timing).not.toHaveBeenCalled();
+    expect(screen.getByRole('tab', { name: /tags/i }).props.accessibilityState).toEqual({
+      selected: true,
+    });
+    finishPreparedTagTransition();
+
     expect(timing).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({
       duration: NATIVE_HORIZONTAL_PAGE_TRANSITION_MS,
       toValue: 412,
@@ -235,6 +249,8 @@ describe('NativeCollectionHubScreen', () => {
     fireEvent.press(screen.getByRole('tab', { name: /wishlist/i }));
     timing.mockClear();
     fireEvent.press(screen.getByRole('button', { name: /Open Most Wanted/i }));
+    expect(timing).not.toHaveBeenCalled();
+    finishPreparedTagTransition();
     expect(timing).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({
       duration: NATIVE_HORIZONTAL_PAGE_TRANSITION_MS,
       toValue: 412,
@@ -368,6 +384,7 @@ describe('NativeCollectionHubScreen', () => {
 
     fireEvent.press(screen.getByRole('tab', { name: /tags/i }));
     fireEvent.press(screen.getByRole('button', { name: /Open All Caught/i }));
+    finishPreparedTagTransition();
     const caughtCard = screen.getByRole('button', { name: 'View Shiny Bulbasaur' });
     fireEvent(caughtCard, 'longPress');
 

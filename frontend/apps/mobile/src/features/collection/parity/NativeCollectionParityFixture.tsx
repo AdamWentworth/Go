@@ -9,7 +9,7 @@ import {
   View,
   useWindowDimensions,
 } from 'react-native';
-import { memo, useEffect, useRef, useState } from 'react';
+import { memo, useCallback, useEffect, useRef, useState } from 'react';
 import {
   collectionParityTokens,
   webCssVarTokens,
@@ -37,12 +37,14 @@ type NativeCollectionParityFixtureProps = {
   activeTag?: string | null;
   cards?: CollectionParityCardFixture[];
   collectionCount?: number;
+  contentVersion?: string;
   customTagColor?: string;
   error?: string | null;
   isLoading?: boolean;
   onActionMenuPress?: () => void;
   onCardPress?: (card: CollectionParityCardFixture) => void;
   onCardLongPress?: (card: CollectionParityCardFixture) => void;
+  onContentPrepared?: (contentVersion: string) => void;
   onClearTag?: () => void;
   onQueryChange?: (query: string) => void;
   onToggleEvolutionaryLine?: () => void;
@@ -143,6 +145,7 @@ const CollectionParityCard = memo(function CollectionParityCard({
   cardWidth,
   onPressCard,
   onLongPressCard,
+  onLayout,
   selected,
   theme,
 }: {
@@ -151,6 +154,7 @@ const CollectionParityCard = memo(function CollectionParityCard({
   cardWidth: number;
   onPressCard?: (card: CollectionParityCardFixture) => void;
   onLongPressCard?: (card: CollectionParityCardFixture) => void;
+  onLayout?: () => void;
   selected: boolean;
   theme: CollectionParityTheme;
 }) {
@@ -160,6 +164,7 @@ const CollectionParityCard = memo(function CollectionParityCard({
       accessibilityLabel={`${card.interaction === 'select' ? 'Select' : 'View'} ${card.name}`}
       accessibilityRole="button"
       delayLongPress={450}
+      onLayout={onLayout}
       onLongPress={onLongPressCard ? () => onLongPressCard(card) : undefined}
       onPress={onPressCard ? () => onPressCard(card) : undefined}
       style={[styles.card, selected && styles.selectedCard, { width: cardWidth }]}
@@ -256,12 +261,14 @@ export const NativeCollectionParityFixture = ({
   activeTag = 'Favorites',
   cards = COLLECTION_PARITY_FIXTURES,
   collectionCount = 168,
+  contentVersion = '',
   customTagColor = TAG_TONES.custom.accent,
   error = null,
   isLoading = false,
   onActionMenuPress,
   onCardPress,
   onCardLongPress,
+  onContentPrepared,
   onClearTag,
   onQueryChange,
   onToggleEvolutionaryLine,
@@ -294,6 +301,8 @@ export const NativeCollectionParityFixture = ({
   const listRef = useRef<FlatList<CollectionParityCardFixture>>(null);
   const restoredScrollRef = useRef(initialScrollOffset <= 0);
   const previousResetKeyRef = useRef(scrollResetKey);
+  const preparedContentVersionRef = useRef<string | null>(null);
+  const preparedFrameRef = useRef<number | null>(null);
   const palette = theme === 'light' ? LIGHT : DARK;
   const columns = width < 481 ? 3 : width < 1024 ? 6 : 9;
   const cardWidth = Math.floor(
@@ -312,6 +321,30 @@ export const NativeCollectionParityFixture = ({
     onQueryChange?.(nextQuery);
     setSearchMenuVisible(false);
   };
+  const reportContentPrepared = useCallback(() => {
+    if (!contentVersion || preparedContentVersionRef.current === contentVersion) return;
+    if (preparedFrameRef.current !== null) cancelAnimationFrame(preparedFrameRef.current);
+    preparedFrameRef.current = requestAnimationFrame(() => {
+      preparedFrameRef.current = null;
+      if (preparedContentVersionRef.current === contentVersion) return;
+      preparedContentVersionRef.current = contentVersion;
+      onContentPrepared?.(contentVersion);
+    });
+  }, [contentVersion, onContentPrepared]);
+  useEffect(() => {
+    let secondFrame: number | null = null;
+    const firstFrame = requestAnimationFrame(() => {
+      secondFrame = requestAnimationFrame(reportContentPrepared);
+    });
+    return () => {
+      cancelAnimationFrame(firstFrame);
+      if (secondFrame !== null) cancelAnimationFrame(secondFrame);
+      if (preparedFrameRef.current !== null) {
+        cancelAnimationFrame(preparedFrameRef.current);
+        preparedFrameRef.current = null;
+      }
+    };
+  }, [cards, contentVersion, reportContentPrepared]);
   useEffect(() => {
     if (previousResetKeyRef.current === scrollResetKey) return;
     previousResetKeyRef.current = scrollResetKey;
@@ -436,13 +469,14 @@ export const NativeCollectionParityFixture = ({
           extraData={selectedIds}
           nestedScrollEnabled
           ref={listRef}
-          initialNumToRender={18}
+          initialNumToRender={12}
           key={columns}
           keyExtractor={(item) => item.id}
           keyboardShouldPersistTaps="always"
-          maxToRenderPerBatch={18}
+          maxToRenderPerBatch={12}
           numColumns={columns}
           onContentSizeChange={() => {
+            reportContentPrepared();
             if (restoredScrollRef.current || initialScrollOffset <= 0 || cards.length === 0) return;
             restoredScrollRef.current = true;
             listRef.current?.scrollToOffset({ animated: false, offset: initialScrollOffset });
@@ -451,11 +485,11 @@ export const NativeCollectionParityFixture = ({
           removeClippedSubviews={false}
           scrollEventThrottle={80}
           testID="native-collection-grid"
-          updateCellsBatchingPeriod={32}
+          updateCellsBatchingPeriod={16}
           windowSize={5}
           ListHeaderComponent={renderCollectionControls(false)}
           ListEmptyComponent={(
-            <View style={styles.emptyState}>
+            <View onLayout={reportContentPrepared} style={styles.emptyState}>
               {isLoading ? (
                 <>
                   <ActivityIndicator color="#34807d" size="large" />
@@ -469,13 +503,14 @@ export const NativeCollectionParityFixture = ({
               ) : null}
             </View>
           )}
-          renderItem={({ item }) => (
+          renderItem={({ index, item }) => (
             <CollectionParityCard
               assetBaseUrl={assetBaseUrl}
               card={item}
               cardWidth={cardWidth}
               onPressCard={onCardPress}
               onLongPressCard={onCardLongPress}
+              onLayout={index === 0 ? reportContentPrepared : undefined}
               selected={selectedIds.has(item.id)}
               theme={theme}
             />

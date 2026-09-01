@@ -55,6 +55,7 @@ type NativeCollectionParityScreenProps = {
   selectionAction?: 'add' | 'organize';
   tagCanClear?: boolean;
   onContextChange?: (patch: Partial<NativeCollectionSession>) => void;
+  onContentPrepared?: (tagKey: string) => void;
 };
 
 const SORT_ICONS: Record<NativeCollectionSort, string> = {
@@ -94,6 +95,7 @@ const catalogCardProjectionCache = new WeakMap<
   NativeCollectionRow[],
   CollectionParityCardFixture[]
 >();
+const rowIdProjectionCache = new WeakMap<NativeCollectionRow[], string[]>();
 
 const toParityCards = (
   rows: NativeCollectionRow[],
@@ -105,6 +107,22 @@ const toParityCards = (
   const cards = rows.map((row) => toParityCard(row, showOwnership));
   cache.set(rows, cards);
   return cards;
+};
+
+const toVisibleRowIds = (rows: NativeCollectionRow[]): string[] => {
+  const cached = rowIdProjectionCache.get(rows);
+  if (cached) return cached;
+  const ids = rows.map((row) => row.id);
+  rowIdProjectionCache.set(rows, ids);
+  return ids;
+};
+
+export const prepareNativeCollectionParityRows = (
+  rows: NativeCollectionRow[],
+): void => {
+  const sortedRows = sortNativeCollectionRows(rows, 'number', 'ascending');
+  toParityCards(sortedRows, true);
+  toVisibleRowIds(sortedRows);
 };
 
 const EMPTY_SELECTED_IDS: ReadonlySet<string> = new Set<string>();
@@ -136,6 +154,7 @@ export const NativeCollectionParityScreen = ({
   selectionAction = 'organize',
   tagCanClear = Boolean(activeTag),
   onContextChange,
+  onContentPrepared,
 }: NativeCollectionParityScreenProps) => {
   const colorScheme = useNativeColorScheme();
   const [sort, setSort] = useState<NativeCollectionSort>(initialSort);
@@ -161,7 +180,7 @@ export const NativeCollectionParityScreen = ({
     [activeTag, visibleRows],
   );
   const visibleRowIds = useMemo(
-    () => visibleRows.map((row) => row.id),
+    () => toVisibleRowIds(visibleRows),
     [visibleRows],
   );
   const handleCardPress = useCallback(
@@ -176,6 +195,10 @@ export const NativeCollectionParityScreen = ({
   );
   const sortLabel = NATIVE_SORT_OPTIONS.find((option) => option.key === sort)?.label ?? 'NUMBER';
   const theme = colorScheme === 'light' ? 'light' : 'dark';
+  const contentVersion = `${activeTag?.key ?? 'catalog'}:${deferredQuery}:${sort}:${direction}:${deferredShowEvolutionaryLine}`;
+  const handleContentPrepared = useCallback(() => {
+    if (activeTag) onContentPrepared?.(activeTag.key);
+  }, [activeTag, onContentPrepared]);
 
   return (
     <View style={styles.screen} testID="native-collection-parity-screen">
@@ -207,8 +230,10 @@ export const NativeCollectionParityScreen = ({
         onSelectionActionPress={onSelectionActionPress}
         initialScrollOffset={initialScrollOffset}
         onScrollOffsetChange={(scrollOffset) => onContextChange?.({ scrollOffset })}
+        contentVersion={contentVersion}
+        onContentPrepared={handleContentPrepared}
         query={query}
-        scrollResetKey={`${activeTag?.key ?? 'catalog'}:${deferredQuery}:${sort}:${direction}:${deferredShowEvolutionaryLine}`}
+        scrollResetKey={contentVersion}
         sortDirection={direction}
         sortIconPath={SORT_ICONS[sort]}
         sortLabel={`Sort by ${sortLabel} ${direction}`}

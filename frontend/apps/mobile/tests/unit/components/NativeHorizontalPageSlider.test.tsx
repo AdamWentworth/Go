@@ -105,8 +105,11 @@ describe('NativeHorizontalPageSlider', () => {
 
     await act(async () => Promise.resolve());
     const slider = getByTestId('native-horizontal-page-slider');
-    const trackStyle = StyleSheet.flatten(getByTestId('native-horizontal-page-track').props.style);
+    const track = getByTestId('native-horizontal-page-track');
+    const trackStyle = StyleSheet.flatten(track.props.style);
     expect(slider.props.onScroll).toBeUndefined();
+    expect(track.props.renderToHardwareTextureAndroid).toBe(true);
+    expect(track.props.shouldRasterizeIOS).toBe(true);
     expect(trackStyle.transform[0].translateX).toBeDefined();
     expect(multiply).toHaveBeenCalledWith(scrollX, -1);
   });

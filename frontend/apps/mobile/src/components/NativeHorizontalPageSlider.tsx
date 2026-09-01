@@ -177,6 +177,8 @@ export const NativeHorizontalPageSlider = forwardRef<
     <GestureDetector gesture={pageGesture}>
       <View style={styles.viewport} testID="native-horizontal-page-slider">
         <Animated.View
+          renderToHardwareTextureAndroid
+          shouldRasterizeIOS
           style={[
             styles.track,
             {
