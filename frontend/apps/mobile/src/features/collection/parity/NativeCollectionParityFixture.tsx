@@ -58,6 +58,11 @@ import {
   toNativeCollectionImageSource,
 } from './nativeCollectionImageSource';
 import { markNativeUiPerformance } from '../../../observability/nativeUiPerformanceTrace';
+import { beginNativeUiInteraction } from '../../../interaction/nativeUiInteractionScheduler';
+import {
+  type NativeCollectionImageRevealController,
+  useNativeCollectionImageReveal,
+} from './nativeCollectionImageRevealController';
 
 type NativeCollectionParityFixtureProps = {
   assetBaseUrl?: string;
@@ -66,6 +71,7 @@ type NativeCollectionParityFixtureProps = {
   collectionRows?: NativeCollectionRow[];
   collectionCount?: number;
   collectionImageRevealCount?: number | null;
+  collectionImageRevealController?: NativeCollectionImageRevealController;
   customTagColor?: string;
   error?: string | null;
   isLoading?: boolean;
@@ -221,7 +227,9 @@ const CollectionParityCard = memo(function CollectionParityCard({
   onLongPressCollectionRow,
   selected,
   theme,
-  imagesEnabled,
+  fallbackImagesEnabled,
+  imageRevealController,
+  index,
 }: {
   assetBaseUrl: string;
   card: CollectionParityCardFixture;
@@ -234,8 +242,15 @@ const CollectionParityCard = memo(function CollectionParityCard({
   onLongPressCollectionRow?: (row: NativeCollectionRow) => void;
   selected: boolean;
   theme: CollectionParityTheme;
-  imagesEnabled: boolean;
+  fallbackImagesEnabled: boolean;
+  imageRevealController?: NativeCollectionImageRevealController;
+  index: number;
 }) {
+  const imagesEnabled = useNativeCollectionImageReveal({
+    controller: imageRevealController,
+    fallbackEnabled: fallbackImagesEnabled,
+    index,
+  });
   const cardThemeStyles = COLLECTION_CARD_THEME_STYLES[theme];
   return (
     <Pressable
@@ -344,6 +359,7 @@ export const NativeCollectionParityFixture = memo(forwardRef<
   collectionRows,
   collectionCount = 168,
   collectionImageRevealCount = null,
+  collectionImageRevealController,
   customTagColor = TAG_TONES.custom.accent,
   error = null,
   isLoading = false,
@@ -397,15 +413,24 @@ export const NativeCollectionParityFixture = memo(forwardRef<
   const searchMenuRequestStartedAtRef = useRef<number | null>(null);
   const filterReleaseStartedAtRef = useRef<number | null>(null);
   const filterReleaseFrameRef = useRef<number | null>(null);
+  const filterInteractionReleaseRef = useRef<(() => void) | null>(null);
+  const filterInteractionCancelTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const queryRef = useRef(query);
-  queryRef.current = query;
   const collectionItems: CollectionCardSource[] = collectionRows ?? cards;
   const listExtraData = useMemo(
-    () => ({ collectionImageRevealCount, selectedIds }),
-    [collectionImageRevealCount, selectedIds],
+    () => ({
+      collectionImageRevealCount: collectionImageRevealController
+        ? null
+        : collectionImageRevealCount,
+      selectedIds,
+    }),
+    [collectionImageRevealController, collectionImageRevealCount, selectedIds],
   );
   const cardsLengthRef = useRef(collectionItems.length);
-  cardsLengthRef.current = collectionItems.length;
+  useLayoutEffect(() => {
+    queryRef.current = query;
+    cardsLengthRef.current = collectionItems.length;
+  }, [collectionItems.length, query]);
   const resolvedShowOwnership = showOwnership ?? Boolean(activeTag);
   const palette = theme === 'light' ? LIGHT : DARK;
   const columns = width < 481 ? 3 : width < 1024 ? 6 : 9;
@@ -454,6 +479,10 @@ export const NativeCollectionParityFixture = memo(forwardRef<
     });
   }, []);
   const appendFilter = useCallback((filter: string) => {
+    if (filterInteractionCancelTimerRef.current) {
+      clearTimeout(filterInteractionCancelTimerRef.current);
+      filterInteractionCancelTimerRef.current = null;
+    }
     const currentQuery = queryRef.current;
     const nextQuery = currentQuery.trim() ? `${currentQuery}&${filter}` : filter;
     // The result rows are already committed behind this overlay. Hide that
@@ -481,12 +510,20 @@ export const NativeCollectionParityFixture = memo(forwardRef<
         });
       }
       setSearchMenuVisible(false);
+      filterInteractionReleaseRef.current?.();
+      filterInteractionReleaseRef.current = null;
       // Preserve Vite's blur while ensuring Android's window resize cannot
       // delay the already-visible destination frame.
       dismissKeyboardAfterResultPaint();
     });
   }, [dismissKeyboardAfterResultPaint, onQueryChange]);
   const previewFilter = useCallback((filter: string) => {
+    if (filterInteractionCancelTimerRef.current) {
+      clearTimeout(filterInteractionCancelTimerRef.current);
+      filterInteractionCancelTimerRef.current = null;
+    }
+    filterInteractionReleaseRef.current?.();
+    filterInteractionReleaseRef.current = beginNativeUiInteraction();
     const currentQuery = queryRef.current;
     const nextQuery = currentQuery.trim() ? `${currentQuery}&${filter}` : filter;
     onQueryPreview?.(nextQuery);
@@ -495,6 +532,17 @@ export const NativeCollectionParityFixture = memo(forwardRef<
     const currentQuery = queryRef.current;
     const nextQuery = currentQuery.trim() ? `${currentQuery}&${filter}` : filter;
     onCancelQueryPreview?.(nextQuery);
+    // Pressable emits press-out immediately before onPress on a successful
+    // tap. Defer release one turn so appendFilter can retain this reservation
+    // through the already-staged result's first visible frame.
+    if (filterInteractionCancelTimerRef.current) {
+      clearTimeout(filterInteractionCancelTimerRef.current);
+    }
+    filterInteractionCancelTimerRef.current = setTimeout(() => {
+      filterInteractionCancelTimerRef.current = null;
+      filterInteractionReleaseRef.current?.();
+      filterInteractionReleaseRef.current = null;
+    }, 0);
   }, [onCancelQueryPreview]);
   const changeSearchMenuVisibility = useCallback((visible: boolean) => {
     if (visible) {
@@ -559,6 +607,11 @@ export const NativeCollectionParityFixture = memo(forwardRef<
     if (keyboardDismissFrameRef.current !== null) {
       cancelAnimationFrame(keyboardDismissFrameRef.current);
     }
+    if (filterInteractionCancelTimerRef.current) {
+      clearTimeout(filterInteractionCancelTimerRef.current);
+    }
+    filterInteractionReleaseRef.current?.();
+    filterInteractionReleaseRef.current = null;
   }, []);
   useEffect(() => {
     if (searchMenuMounted || isLoading || collectionItems.length === 0) return undefined;
@@ -704,12 +757,17 @@ export const NativeCollectionParityFixture = memo(forwardRef<
         onLongPressCollectionRow={onCollectionRowLongPress}
         selected={selectedIds.has(card.id)}
         theme={theme}
-        imagesEnabled={collectionImageRevealCount === null || index < collectionImageRevealCount}
+        fallbackImagesEnabled={(
+          collectionImageRevealCount === null || index < collectionImageRevealCount
+        )}
+        imageRevealController={collectionImageRevealController}
+        index={index}
       />
     );
   }, [
     assetBaseUrl,
     cardStyle,
+    collectionImageRevealController,
     collectionImageRevealCount,
     imageStageStyle,
     onCardLongPress,

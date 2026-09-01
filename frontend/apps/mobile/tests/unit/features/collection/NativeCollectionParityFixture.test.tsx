@@ -7,6 +7,8 @@ import {
   type NativeCollectionParityFixtureHandle,
   resolveNativeCollectionCardHeight,
 } from '../../../../src/features/collection/parity/NativeCollectionParityFixture';
+import { createNativeCollectionImageRevealController } from '../../../../src/features/collection/parity/nativeCollectionImageRevealController';
+import { runAfterNativeUiInteractions } from '../../../../src/interaction/nativeUiInteractionScheduler';
 import { COLLECTION_PARITY_FIXTURES } from '../../../../src/features/collection/parity/collectionParityFixtures';
 
 const mockUseWindowDimensions = jest.fn(() => ({
@@ -252,6 +254,34 @@ describe('NativeCollectionParityFixture', () => {
     jest.useRealTimers();
   });
 
+  it('holds background image work through a staged filter release frame', () => {
+    jest.useFakeTimers();
+    const view = render(
+      <NativeCollectionParityFixture
+        onCancelQueryPreview={jest.fn()}
+        onQueryChange={jest.fn()}
+        onQueryPreview={jest.fn()}
+      />,
+    );
+    fireEvent(view.getByLabelText('Search Pokémon'), 'focus');
+    const shiny = view.getByLabelText('Filter by Shiny');
+    fireEvent(shiny, 'pressIn');
+    const backgroundTask = jest.fn();
+    runAfterNativeUiInteractions(backgroundTask);
+    act(() => jest.runOnlyPendingTimers());
+    expect(backgroundTask).not.toHaveBeenCalled();
+
+    fireEvent(shiny, 'pressOut');
+    fireEvent.press(shiny);
+    act(() => {
+      jest.runOnlyPendingTimers();
+      jest.runOnlyPendingTimers();
+    });
+
+    expect(backgroundTask).toHaveBeenCalledTimes(1);
+    jest.useRealTimers();
+  });
+
   it('keeps grid render work stable when the Vite-style data projection changes', () => {
     const view = render(
       <NativeCollectionParityFixture cards={COLLECTION_PARITY_FIXTURES.slice(0, 3)} />,
@@ -310,6 +340,32 @@ describe('NativeCollectionParityFixture', () => {
 
     expect(view.getByLabelText(cards[1].name)).toBeTruthy();
     expect(view.queryByLabelText(cards[2].name)).toBeNull();
+  });
+
+  it('reveals each image without changing FlatList props or reconciling its parent', () => {
+    const cards = COLLECTION_PARITY_FIXTURES.slice(0, 3);
+    const imageRevealController = createNativeCollectionImageRevealController(1);
+    const view = render(
+      <NativeCollectionParityFixture
+        cards={cards}
+        collectionImageRevealController={imageRevealController}
+      />,
+    );
+    const initialGrid = view.UNSAFE_getByType(FlatList);
+    const initialExtraData = initialGrid.props.extraData;
+    const initialRenderItem = initialGrid.props.renderItem;
+
+    expect(view.getByLabelText(cards[0].name)).toBeTruthy();
+    expect(view.queryByLabelText(cards[1].name)).toBeNull();
+
+    act(() => imageRevealController.setRevealCount(2));
+
+    const updatedGrid = view.UNSAFE_getByType(FlatList);
+    expect(view.getByLabelText(cards[1].name)).toBeTruthy();
+    expect(view.queryByLabelText(cards[2].name)).toBeNull();
+    expect(updatedGrid).toBe(initialGrid);
+    expect(updatedGrid.props.extraData).toBe(initialExtraData);
+    expect(updatedGrid.props.renderItem).toBe(initialRenderItem);
   });
 
   it('resets the active destination grid before it returns from a side tag page', () => {

@@ -59,7 +59,10 @@ import type {
 import { useNativeColorScheme } from '../features/settings/useNativeColorScheme';
 import type { NativeCollectionSession } from '../features/collection/nativeCollectionSessionCache';
 import { markNativeUiPerformance } from '../observability/nativeUiPerformanceTrace';
-import { runAfterNativeUiInteractions } from '../interaction/nativeUiInteractionScheduler';
+import {
+  beginNativeUiInteraction,
+  runAfterNativeUiInteractions,
+} from '../interaction/nativeUiInteractionScheduler';
 
 const VIEW_ORDER: readonly NativePokemonHubView[] = (
   collectionExperienceParityContract.viewOrder
@@ -176,7 +179,9 @@ export const NativeCollectionHubScreen = memo(function NativeCollectionHubScreen
   const stagedTagKeyRef = useRef<string | null>(null);
   const stagedTagReadyRef = useRef(false);
   const stagedVisibleRowCountRef = useRef(0);
+  const stagedTagPreviewStartedAtRef = useRef<number | null>(null);
   const stagedTagCancelTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const stagedTagInteractionReleaseRef = useRef<(() => void) | null>(null);
   const sidePanelTagTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const clearTagRequestStartedAtRef = useRef<number | null>(null);
   const selectionRequestStartedAtRef = useRef<number | null>(null);
@@ -298,6 +303,8 @@ export const NativeCollectionHubScreen = memo(function NativeCollectionHubScreen
     pendingTagMotionRef.current = null;
     if (stagedTagCancelTimerRef.current) clearTimeout(stagedTagCancelTimerRef.current);
     if (sidePanelTagTimerRef.current) clearTimeout(sidePanelTagTimerRef.current);
+    stagedTagInteractionReleaseRef.current?.();
+    stagedTagInteractionReleaseRef.current = null;
   }, []);
 
   useEffect(() => {
@@ -439,6 +446,13 @@ export const NativeCollectionHubScreen = memo(function NativeCollectionHubScreen
       clearTimeout(stagedTagCancelTimerRef.current);
       stagedTagCancelTimerRef.current = null;
     }
+    stagedTagInteractionReleaseRef.current?.();
+    stagedTagInteractionReleaseRef.current = beginNativeUiInteraction();
+    stagedTagPreviewStartedAtRef.current = Date.now();
+    markNativeUiPerformance('collection_tag_preview_started', {
+      rowCount: tag.rows.length,
+      tagKey: tag.key,
+    });
     // Pressable reports press-in before release. Use that otherwise idle finger
     // interval to reconcile the hidden middle grid, exactly as Vite keeps its
     // offscreen DOM ready. No selected-tag or page state changes yet, so a
@@ -460,17 +474,16 @@ export const NativeCollectionHubScreen = memo(function NativeCollectionHubScreen
       stagedTagKeyRef.current = null;
       stagedTagReadyRef.current = false;
       stagedVisibleRowCountRef.current = 0;
+      stagedTagPreviewStartedAtRef.current = null;
       setStagedTagKey(null);
+      stagedTagInteractionReleaseRef.current?.();
+      stagedTagInteractionReleaseRef.current = null;
     }, 0);
   }, []);
 
   const selectTag = useCallback((tag: NativeTagSummary) => {
     const startedAt = Date.now();
     tagSelectionTraceRef.current = { key: tag.key, startedAt };
-    markNativeUiPerformance('collection_tag_pressed', {
-      rowCount: tag.rows.length,
-      tagKey: tag.key,
-    });
     if (stagedTagCancelTimerRef.current) {
       clearTimeout(stagedTagCancelTimerRef.current);
       stagedTagCancelTimerRef.current = null;
@@ -480,10 +493,19 @@ export const NativeCollectionHubScreen = memo(function NativeCollectionHubScreen
     );
     const destinationAlreadyCommitted = stagedDestinationAlreadyCommitted
       || selectedTagKeyRef.current === tag.key;
+    markNativeUiPerformance('collection_tag_pressed', {
+      destinationAlreadyCommitted,
+      previewLeadMs: stagedTagPreviewStartedAtRef.current === null
+        ? null
+        : startedAt - stagedTagPreviewStartedAtRef.current,
+      rowCount: tag.rows.length,
+      tagKey: tag.key,
+    });
     const stagedVisibleRowCount = stagedVisibleRowCountRef.current;
     stagedTagKeyRef.current = null;
     stagedTagReadyRef.current = false;
     stagedVisibleRowCountRef.current = 0;
+    stagedTagPreviewStartedAtRef.current = null;
     setStagedTagKey(null);
     if (stagedDestinationAlreadyCommitted && query.trim()) {
       setVisibleCollectionCount(stagedVisibleRowCount);
@@ -509,6 +531,11 @@ export const NativeCollectionHubScreen = memo(function NativeCollectionHubScreen
     // Reserve the destination so the state commit can update the middle grid
     // before its layout effect begins motion.
     sliderRef.current?.preparePage(pokemonIndex);
+    // preparePage has now reserved the complete track animation. Hand off the
+    // press-in reservation so background cache/image work stays paused without
+    // leaving two overlapping scheduler holds alive for the same gesture.
+    stagedTagInteractionReleaseRef.current?.();
+    stagedTagInteractionReleaseRef.current = null;
     pendingTagMotionRef.current = {
       delaySidePanelTag,
       key: tag.key,

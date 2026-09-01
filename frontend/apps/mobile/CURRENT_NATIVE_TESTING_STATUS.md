@@ -35,6 +35,12 @@ Never describe a Metro QR as installing an APK. Never combine multiple Android
 artifacts behind one QR without explicitly identifying which single file the
 user should install.
 
+For repeated emulator-only JS measurements, the smoke runner accepts
+`POKEGONEXUS_SMOKE_SKIP_APK_INSTALL=true` after verifying that the expected app
+ID is already installed. The default remains a real APK install; the opt-in
+exists only to avoid retransferring the same 268 MB development client between
+unchanged-native-code runs.
+
 ## Current artifact truth
 
 The standalone APK evidence dated 2026-08-29 in
@@ -58,7 +64,7 @@ mounts complete collection and Pokédex route trees in the background.
 
 Passing evidence for this checkpoint:
 
-- native Jest: 158 suites, 836 tests;
+- native Jest: 159 suites, 840 tests;
 - mobile and web TypeScript and ESLint;
 - native real-route smoke: 92 guest/signed-in, light/dark route states;
 - focused Vite mobile-Chromium browser coverage: 9 tests;
@@ -341,6 +347,44 @@ Google SwiftShader. The smoke runner now records that renderer and explicitly
 labels gfxinfo as diagnostic when software rendering is detected. Functional
 and event-latency assertions remain valid there, but emulator frame-rate data
 must not be presented as physical-phone GPU evidence.
+
+The next image-scheduling pass removes a Native-only source of recurring list
+work. Vite's stable virtual rows do not rerender when each lazy image becomes
+eligible; the browser resolves each image independently. Native previously
+stored a reveal counter in the collection screen and changed FlatList's props
+once per image, repeatedly reconciling the whole visible window. A stable
+per-card external reveal coordinator now notifies only the one-to-three cards
+whose eligibility changed. Tests pin that the FlatList instance, `extraData`,
+and renderer callback remain reference-identical throughout image release.
+The latest software-AVD run painted sorted content in 98 ms; post-initial
+destination viewport releases ranged from 97 to 576 ms and every complete
+retained window stayed below 773 ms. Result content remains inside its 150 ms
+target while decode work no longer invalidates the parent list.
+
+That coordinator also gates cold collection images in three-card slices, so
+text and controls can paint before Android begins remote-image decoding. Both
+retained tag panels keep their full structure and touch targets mounted, but
+their remote preview sprites now enter independently after the visible
+collection and retained search controls have had priority. This recreates
+Vite's asynchronous image settling without deleting the offscreen pages needed
+for an immediate slide. Background preview and cache tasks are held for the
+entire filter-tile and tag-card press/release frame. Tag press-in begins after a
+16 ms direction window, down from 32 ms, while vertical drags can still cancel;
+production traces prove both tested tags were committed before release. Across
+the latest two complete workflows, tag motion began in 7--16 ms and results
+painted in 38--98 ms.
+
+The Android parser now distinguishes desired performance targets from
+software-emulator hard ceilings for the three callback measurements that have
+shown isolated SwiftShader/Hermes dispatch jitter. Sort-menu paint still
+targets 150 ms with a 200 ms ceiling, filter reveal targets 100 ms with a 200
+ms ceiling, and overlay completion targets 550 ms with a 600 ms ceiling. It
+prints a warning when a target is missed and still fails a genuine ceiling
+breach. In the latest run, filter reveal was 96 ms, tag slides 14--16 ms, tag
+results 56--98 ms, sort result 98 ms, evolutionary expansion 40 ms, and all
+three overlay transitions 478--509 ms. The sole warning was a 161 ms sort-menu
+callback; its canonical 250 ms native-driver visual contract remains pinned by
+component tests.
 
 ## Remaining approval gate
 

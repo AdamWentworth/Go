@@ -38,6 +38,12 @@ import {
   toNativeCollectionAssetUrl,
   toNativeCollectionImageSource,
 } from '../features/collection/parity/nativeCollectionImageSource';
+import {
+  createNativeCollectionImageRevealController,
+  type NativeCollectionImageRevealController,
+  useNativeCollectionImageReveal,
+} from '../features/collection/parity/nativeCollectionImageRevealController';
+import { runAfterNativeUiInteractions } from '../interaction/nativeUiInteractionScheduler';
 
 type Props = {
   activeTagName: string | null;
@@ -65,6 +71,13 @@ type Props = {
 
 type TagGradient = readonly [string, string, string];
 const VITE_TAG_PREVIEW_SOURCE_LIMIT = 18;
+export const NATIVE_TAG_PREVIEW_PRESS_DELAY_MS = 16;
+const TAG_PREVIEW_REVEAL_BATCH = 3;
+// Cold mount priority mirrors what a browser's image scheduler effectively
+// gives Vite: paint the visible collection, then warm the retained search
+// controls, and only then decode sprites in the two offscreen tag panels.
+const TAG_PREVIEW_REVEAL_DELAY_MS = 1_200;
+const TAG_PREVIEW_REVEAL_PERIOD_MS = 16;
 const requestedTagResultAssets = new Set<string>();
 
 const prefetchTagResultAsset = (uri: string): void => {
@@ -124,6 +137,57 @@ const NativeTagPreviewBackground = ({ colors, testID }: {
   />
 );
 
+const NativeTagPreviewSprite = memo(function NativeTagPreviewSprite({
+  assetBaseUrl,
+  controller,
+  controllerIndex,
+  row,
+  widePreview,
+}: {
+  assetBaseUrl: string;
+  controller: NativeCollectionImageRevealController;
+  controllerIndex: number;
+  row: NativeTagSummary['rows'][number];
+  widePreview: boolean;
+}) {
+  const imagesEnabled = useNativeCollectionImageReveal({
+    controller,
+    index: controllerIndex,
+  });
+  return (
+    <View
+      style={[
+        styles.previewCell,
+        widePreview ? styles.previewCellWide : styles.previewCellNarrow,
+      ]}
+    >
+      {imagesEnabled && row.imageUri ? (
+        <Image fadeDuration={0}
+          accessibilityElementsHidden
+          resizeMode="contain"
+          source={toNativeCollectionImageSource(assetBaseUrl, row.imageUri)}
+          style={widePreview ? styles.previewImageWide : styles.previewImageNarrow}
+        />
+      ) : null}
+      {imagesEnabled && row.maxKind ? (
+        <Image fadeDuration={0}
+          accessibilityElementsHidden
+          resizeMode="contain"
+          resizeMethod="resize"
+          source={toNativeCollectionImageSource(
+            assetBaseUrl,
+            row.maxKind === 'gigantamax'
+              ? '/images/gigantamax.png'
+              : '/images/dynamax.png',
+          )}
+          style={styles.previewMaxBadge}
+          testID={`native-tag-preview-${row.maxKind}`}
+        />
+      ) : null}
+    </View>
+  );
+});
+
 const NativeTagCard = memo(function NativeTagCard({
   assetBaseUrl,
   light,
@@ -134,6 +198,8 @@ const NativeTagCard = memo(function NativeTagCard({
   onEditTag,
   reorder,
   reduceMotion,
+  imageRevealController,
+  previewSlotOffset,
 }: {
   assetBaseUrl: string;
   light: boolean;
@@ -143,6 +209,8 @@ const NativeTagCard = memo(function NativeTagCard({
   onPressOutTag?: (tag: NativeTagSummary) => void;
   onEditTag?: (tag: NativeTagSummary) => void;
   reduceMotion: boolean;
+  imageRevealController: NativeCollectionImageRevealController;
+  previewSlotOffset: number;
   reorder?: {
     index: number;
     count: number;
@@ -196,40 +264,15 @@ const NativeTagCard = memo(function NativeTagCard({
           colors={tagGradient(tag, cardSurface)}
           testID={previewGradientTestId}
         />
-        {previewRows.length ? previewRows.map((row) => (
-          <View
+        {previewRows.length ? previewRows.map((row, previewIndex) => (
+          <NativeTagPreviewSprite
+            assetBaseUrl={assetBaseUrl}
+            controller={imageRevealController}
+            controllerIndex={previewSlotOffset + previewIndex}
             key={row.id}
-            style={[
-              styles.previewCell,
-              widePreview ? styles.previewCellWide : styles.previewCellNarrow,
-            ]}
-          >
-            {row.imageUri ? (
-              <Image fadeDuration={0}
-                accessibilityElementsHidden
-                resizeMode="contain"
-                source={toNativeCollectionImageSource(assetBaseUrl, row.imageUri)}
-                style={[
-                  widePreview ? styles.previewImageWide : styles.previewImageNarrow,
-                ]}
-              />
-            ) : null}
-            {row.maxKind ? (
-              <Image fadeDuration={0}
-                accessibilityElementsHidden
-                resizeMode="contain"
-                resizeMethod="resize"
-                source={toNativeCollectionImageSource(
-                  assetBaseUrl,
-                  row.maxKind === 'gigantamax'
-                    ? '/images/gigantamax.png'
-                    : '/images/dynamax.png',
-                )}
-                style={styles.previewMaxBadge}
-                testID={`native-tag-preview-${row.maxKind}`}
-              />
-            ) : null}
-          </View>
+            row={row}
+            widePreview={widePreview}
+          />
         )) : (
           <View style={styles.emptyPreview}>
             <Text style={styles.emptyPreviewText}>No Pokémon in this tag.</Text>
@@ -296,7 +339,7 @@ const NativeTagCard = memo(function NativeTagCard({
             // Let a vertical drag establish itself before doing hidden-grid
             // staging. A normal tap still leaves ample finger-down time for
             // the destination commit, while tag-list scrolling stays inert.
-            unstable_pressDelay={onPressInTag ? 32 : undefined}
+            unstable_pressDelay={onPressInTag ? NATIVE_TAG_PREVIEW_PRESS_DELAY_MS : undefined}
           >
             {cardContents}
           </Pressable>
@@ -450,6 +493,9 @@ export const NativeTagsPanelScreen = memo(function NativeTagsPanelScreen({
   const [editingTag, setEditingTag] = useState<CustomTagDefinition | null>(null);
   const [creating, setCreating] = useState(false);
   const [operationError, setOperationError] = useState<string | null>(null);
+  const [previewImageRevealController] = useState(
+    () => createNativeCollectionImageRevealController(0),
+  );
   const orderedTags = useMemo(() => {
     if (!reordering) return tags;
     const byKey = new Map(tags.map((tag) => [tag.key, tag]));
@@ -458,6 +504,37 @@ export const NativeTagsPanelScreen = memo(function NativeTagsPanelScreen({
       return tag ? [tag] : [];
     });
   }, [draftKeys, reordering, tags]);
+  useEffect(() => {
+    const target = orderedTags.length * VITE_TAG_PREVIEW_SOURCE_LIMIT;
+    let revealed = 0;
+    let cancelled = false;
+    let timer: ReturnType<typeof setTimeout> | null = null;
+    let interactionTask: ReturnType<typeof runAfterNativeUiInteractions> | null = null;
+    const revealNext = () => {
+      interactionTask = runAfterNativeUiInteractions(() => {
+        interactionTask = null;
+        if (cancelled) return;
+        revealed = Math.min(target, revealed + TAG_PREVIEW_REVEAL_BATCH);
+        previewImageRevealController.setRevealCount(revealed);
+        if (revealed < target) {
+          timer = setTimeout(revealNext, TAG_PREVIEW_REVEAL_PERIOD_MS);
+        } else {
+          previewImageRevealController.setRevealCount(null);
+        }
+      });
+    };
+    previewImageRevealController.setRevealCount(0);
+    if (target > 0) {
+      timer = setTimeout(revealNext, TAG_PREVIEW_REVEAL_DELAY_MS);
+    } else {
+      previewImageRevealController.setRevealCount(null);
+    }
+    return () => {
+      cancelled = true;
+      if (timer) clearTimeout(timer);
+      interactionTask?.cancel();
+    };
+  }, [orderedTags.length, previewImageRevealController]);
   const openTagEditor = useCallback((tag: NativeTagSummary) => {
     setEditingTag(definitionFromSummary(tag));
   }, []);
@@ -559,15 +636,17 @@ export const NativeTagsPanelScreen = memo(function NativeTagsPanelScreen({
             ) : null}
           </View>
         )}
-        renderItem={({ item }) => (
+        renderItem={({ item, index }) => (
           <NativeTagCard
             assetBaseUrl={assetBaseUrl}
+            imageRevealController={previewImageRevealController}
             light={light}
             onPressTag={onSelectTag}
             onPressInTag={onPreviewTag}
             onPressOutTag={onCancelPreviewTag}
             onEditTag={item.tone === 'custom' ? openTagEditor : undefined}
             reduceMotion={reduceMotion}
+            previewSlotOffset={index * VITE_TAG_PREVIEW_SOURCE_LIMIT}
             reorder={reordering ? {
               index: orderedTags.findIndex((tag) => tag.key === item.key),
               count: orderedTags.length,

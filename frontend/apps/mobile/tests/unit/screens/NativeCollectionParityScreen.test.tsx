@@ -177,6 +177,17 @@ describe('NativeCollectionParityScreen', () => {
     expect(screen.getByText('Charizard')).toBeTruthy();
   });
 
+  it('paints cold card content before progressively admitting its images', () => {
+    render(<Harness />);
+
+    expect(screen.getByText('Bulbasaur')).toBeTruthy();
+    expect(screen.queryByLabelText('Bulbasaur')).toBeNull();
+
+    act(() => jest.advanceTimersByTime(1_000));
+
+    expect(screen.getByLabelText('Bulbasaur')).toBeTruthy();
+  });
+
   it('searches the connected rows and opens a real instance', () => {
     const onOpenInstance = jest.fn();
     render(<Harness onOpenInstance={onOpenInstance} />);

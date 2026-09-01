@@ -37,6 +37,7 @@ import {
   beginNativeUiInteraction,
   runAfterNativeUiInteractions,
 } from '../interaction/nativeUiInteractionScheduler';
+import { createNativeCollectionImageRevealController } from '../features/collection/parity/nativeCollectionImageRevealController';
 
 export {
   projectNativeCollectionParityCards,
@@ -99,6 +100,7 @@ const EMPTY_SELECTED_IDS: ReadonlySet<string> = new Set<string>();
 // frame keeps each decode slice small; three viewports cover FlatList's window
 // before the ordinary unrestricted renderer resumes.
 const COLLECTION_IMAGE_REVEAL_BATCH = 1;
+const COLLECTION_INITIAL_IMAGE_REVEAL_BATCH = 3;
 const COLLECTION_OFFSCREEN_IMAGE_REVEAL_BATCH = 3;
 const COLLECTION_INITIAL_VIEWPORT_IMAGE_COUNT = 18;
 const COLLECTION_IMAGE_REVEAL_WINDOW = 54;
@@ -169,8 +171,16 @@ export const NativeCollectionParityScreen = memo(forwardRef<
     direction: NativeCollectionSortDirection;
   } | null>(null);
   const [stagedShowEvolutionaryLine, setStagedShowEvolutionaryLine] = useState<boolean | null>(null);
-  const [collectionImageRevealCount, setCollectionImageRevealCount] = useState<number | null>(null);
-  const [collectionImageRevealInteraction, setCollectionImageRevealInteraction] = useState<string | null>(null);
+  const [collectionImageRevealController] = useState(
+    () => createNativeCollectionImageRevealController(0),
+  );
+  const setCollectionImageRevealCount = useCallback(
+    (count: number | null) => collectionImageRevealController.setRevealCount(count),
+    [collectionImageRevealController],
+  );
+  const [collectionImageRevealInteraction, setCollectionImageRevealInteraction] = useState<string | null>(
+    'initial',
+  );
   const stagedQueryRef = useRef<string | null>(null);
   const adoptedStagedQueryRef = useRef<string | null>(null);
   const stagedQueryCancelTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -275,7 +285,9 @@ export const NativeCollectionParityScreen = memo(forwardRef<
         scheduledTask = null;
         if (cancelled) return;
         const batchSize = revealed < COLLECTION_INITIAL_VIEWPORT_IMAGE_COUNT
-          ? COLLECTION_IMAGE_REVEAL_BATCH
+          ? collectionImageRevealInteraction === 'initial'
+            ? COLLECTION_INITIAL_IMAGE_REVEAL_BATCH
+            : COLLECTION_IMAGE_REVEAL_BATCH
           : COLLECTION_OFFSCREEN_IMAGE_REVEAL_BATCH;
         revealed = Math.min(target, revealed + batchSize);
         setCollectionImageRevealCount(revealed);
@@ -318,6 +330,10 @@ export const NativeCollectionParityScreen = memo(forwardRef<
       });
     };
     if (target === 0) {
+      // Keep the cold-mount gate armed while data is still resolving. Once a
+      // cached or network snapshot arrives, its first image window should use
+      // the same bounded lazy-release path instead of decoding in one burst.
+      if (isLoading) return undefined;
       setCollectionImageRevealCount(null);
       setCollectionImageRevealInteraction(null);
       return undefined;
@@ -328,7 +344,12 @@ export const NativeCollectionParityScreen = memo(forwardRef<
       if (frame !== null) cancelAnimationFrame(frame);
       scheduledTask?.cancel();
     };
-  }, [collectionImageRevealInteraction, visibleRows.length]);
+  }, [
+    collectionImageRevealInteraction,
+    isLoading,
+    setCollectionImageRevealCount,
+    visibleRows.length,
+  ]);
   const handleRowPress = useCallback(
     (row: NativeCollectionRow) => onOpenInstance(row, visibleRowsRef.current),
     [onOpenInstance],
@@ -351,7 +372,7 @@ export const NativeCollectionParityScreen = memo(forwardRef<
     setStagedShowEvolutionaryLine(next);
     setCollectionImageRevealCount(0);
     setCollectionImageRevealInteraction(null);
-  }, [showEvolutionaryLine]);
+  }, [setCollectionImageRevealCount, showEvolutionaryLine]);
   const cancelEvolutionaryLinePreview = useCallback(() => {
     if (stagedEvolutionCancelTimerRef.current) {
       clearTimeout(stagedEvolutionCancelTimerRef.current);
@@ -363,7 +384,7 @@ export const NativeCollectionParityScreen = memo(forwardRef<
       setCollectionImageRevealCount(null);
       setCollectionImageRevealInteraction(null);
     }, 0);
-  }, []);
+  }, [setCollectionImageRevealCount]);
   const handleToggleEvolutionaryLine = useCallback(() => {
     if (stagedEvolutionCancelTimerRef.current) {
       clearTimeout(stagedEvolutionCancelTimerRef.current);
@@ -381,7 +402,7 @@ export const NativeCollectionParityScreen = memo(forwardRef<
     setCollectionImageRevealCount(0);
     setCollectionImageRevealInteraction(`evolution:${next ? 'on' : 'off'}`);
     onContextChange?.({ showEvolutionaryLine: next });
-  }, [onContextChange, showEvolutionaryLine]);
+  }, [onContextChange, setCollectionImageRevealCount, showEvolutionaryLine]);
   const handleScrollOffsetChange = useCallback((scrollOffset: number) => {
     onContextChange?.({ scrollOffset });
   }, [onContextChange]);
@@ -400,7 +421,7 @@ export const NativeCollectionParityScreen = memo(forwardRef<
     setCollectionImageRevealInteraction(null);
     stagedQueryRef.current = nextQuery;
     setStagedQuery(nextQuery);
-  }, []);
+  }, [setCollectionImageRevealCount]);
   const cancelQueryPreview = useCallback((nextQuery: string) => {
     if (stagedQueryCancelTimerRef.current) clearTimeout(stagedQueryCancelTimerRef.current);
     stagedQueryCancelTimerRef.current = setTimeout(() => {
@@ -412,7 +433,7 @@ export const NativeCollectionParityScreen = memo(forwardRef<
       stagedQueryRef.current = null;
       setStagedQuery(null);
     }, 0);
-  }, []);
+  }, [setCollectionImageRevealCount]);
   const changeQuery = useCallback((
     nextQuery: string,
     source: 'filter' | 'typing' = 'typing',
@@ -460,7 +481,7 @@ export const NativeCollectionParityScreen = memo(forwardRef<
     stagedQueryRef.current = null;
     setStagedQuery(null);
     onQueryChange(nextQuery, source);
-  }, [onQueryChange]);
+  }, [onQueryChange, setCollectionImageRevealCount]);
   useEffect(() => {
     if (
       stagedQuery === null
@@ -523,7 +544,7 @@ export const NativeCollectionParityScreen = memo(forwardRef<
     setStagedSort(next);
     setCollectionImageRevealCount(0);
     setCollectionImageRevealInteraction(null);
-  }, [direction, sort]);
+  }, [direction, setCollectionImageRevealCount, sort]);
   const cancelSortPreview = useCallback((nextSort: NativeCollectionSort) => {
     if (stagedSortCancelTimerRef.current) clearTimeout(stagedSortCancelTimerRef.current);
     stagedSortCancelTimerRef.current = setTimeout(() => {
@@ -534,7 +555,7 @@ export const NativeCollectionParityScreen = memo(forwardRef<
       setCollectionImageRevealCount(null);
       setCollectionImageRevealInteraction(null);
     }, 0);
-  }, []);
+  }, [setCollectionImageRevealCount]);
   const selectSort = useCallback((nextSort: NativeCollectionSort) => {
     if (stagedSortCancelTimerRef.current) {
       clearTimeout(stagedSortCancelTimerRef.current);
@@ -559,7 +580,7 @@ export const NativeCollectionParityScreen = memo(forwardRef<
       sort: next.sort,
       sortDirection: next.direction,
     });
-  }, [closeSortMenu, direction, onContextChange, sort]);
+  }, [closeSortMenu, direction, onContextChange, setCollectionImageRevealCount, sort]);
   const openPokemon = useCallback(() => onViewChange('pokemon'), [onViewChange]);
   const openTags = useCallback(() => onViewChange('inventory'), [onViewChange]);
   const openWishlist = useCallback(() => onViewChange('wishlist'), [onViewChange]);
@@ -574,7 +595,7 @@ export const NativeCollectionParityScreen = memo(forwardRef<
         assetBaseUrl={assetBaseUrl}
         collectionRows={visibleRows}
         collectionCount={visibleRows.length}
-        collectionImageRevealCount={collectionImageRevealCount}
+        collectionImageRevealController={collectionImageRevealController}
         error={error}
         isLoading={isLoading}
         onActionMenuPress={onOpenCanonicalCollection}

@@ -1,6 +1,9 @@
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react-native';
 import { Image } from 'react-native';
-import { NativeTagsPanelScreen } from '../../../src/screens/NativeTagsPanelScreen';
+import {
+  NATIVE_TAG_PREVIEW_PRESS_DELAY_MS,
+  NativeTagsPanelScreen,
+} from '../../../src/screens/NativeTagsPanelScreen';
 
 const tag = {
   key: 'custom:purple-tag' as const,
@@ -83,6 +86,9 @@ describe('NativeTagsPanelScreen', () => {
     // native Pressable free of an opacity style avoids an Android offscreen
     // alpha-compositing pass on the exact frame that starts page motion.
     expect(openTag.props.style).toBeUndefined();
+    expect(screen.UNSAFE_getByProps({
+      unstable_pressDelay: NATIVE_TAG_PREVIEW_PRESS_DELAY_MS,
+    })).toBeTruthy();
     fireEvent(openTag, 'pressIn');
     expect(onPreviewTag).toHaveBeenCalledWith(tag);
     fireEvent(openTag, 'pressOut');
@@ -114,7 +120,15 @@ describe('NativeTagsPanelScreen', () => {
     expect(screen.getByText('1 Pokémon')).toBeTruthy();
     expect(screen.getByLabelText('Open Trade, 1 Pokémon')).toBeTruthy();
     expect(screen.getByTestId('native-tag-gradient-system-trade')).toBeTruthy();
-    expect(screen.UNSAFE_getByProps({ testID: 'native-tag-preview-gigantamax' })).toBeTruthy();
+    expect(screen.queryByTestId(
+      'native-tag-preview-gigantamax',
+      { includeHiddenElements: true },
+    )).toBeNull();
+    act(() => jest.advanceTimersByTime(1_500));
+    expect(screen.getByTestId(
+      'native-tag-preview-gigantamax',
+      { includeHiddenElements: true },
+    )).toBeTruthy();
     expect(screen.queryByText('Inventory tags')).toBeNull();
     expect(screen.queryByText('›')).toBeNull();
   });

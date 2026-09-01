@@ -27,6 +27,7 @@ smoke_runtime="${POKEGONEXUS_SMOKE_RUNTIME:-dev-client}"
 smoke_network="${POKEGONEXUS_SMOKE_NETWORK:-online}"
 smoke_navigation_mode="${POKEGONEXUS_SMOKE_NAVIGATION_MODE:-system}"
 smoke_performance="${POKEGONEXUS_SMOKE_PERFORMANCE:-false}"
+smoke_skip_apk_install="${POKEGONEXUS_SMOKE_SKIP_APK_INSTALL:-false}"
 metro_pid=""
 metro_pgid=""
 fixture_pid=""
@@ -139,6 +140,13 @@ case "${smoke_performance}" in
   true|false) ;;
   *)
     echo "Unsupported POKEGONEXUS_SMOKE_PERFORMANCE: ${smoke_performance} (expected true or false)." >&2
+    exit 1
+    ;;
+esac
+case "${smoke_skip_apk_install}" in
+  true|false) ;;
+  *)
+    echo "Unsupported POKEGONEXUS_SMOKE_SKIP_APK_INSTALL: ${smoke_skip_apk_install} (expected true or false)." >&2
     exit 1
     ;;
 esac
@@ -313,13 +321,21 @@ case "${smoke_reduce_motion}" in
 esac
 
 install_output=""
-if ! install_output="$("${adb_bin}" -s "${device_id}" install -r -t "${android_apk}" 2>&1)"; then
-  if grep -Fq 'INSTALL_FAILED_UPDATE_INCOMPATIBLE' <<<"${install_output}"; then
-    echo "Removing an incompatible prior ${app_id} test install and retrying."
-    "${adb_bin}" -s "${device_id}" uninstall "${app_id}" >/dev/null
-    "${adb_bin}" -s "${device_id}" install -r -t "${android_apk}" >/dev/null
-  else
-    echo "${install_output}" >&2
+if [[ "${smoke_skip_apk_install}" == "false" ]]; then
+  if ! install_output="$("${adb_bin}" -s "${device_id}" install -r -t "${android_apk}" 2>&1)"; then
+    if grep -Fq 'INSTALL_FAILED_UPDATE_INCOMPATIBLE' <<<"${install_output}"; then
+      echo "Removing an incompatible prior ${app_id} test install and retrying."
+      "${adb_bin}" -s "${device_id}" uninstall "${app_id}" >/dev/null
+      "${adb_bin}" -s "${device_id}" install -r -t "${android_apk}" >/dev/null
+    else
+      echo "${install_output}" >&2
+      exit 1
+    fi
+  fi
+else
+  echo "Reusing the development client already installed on ${device_id}."
+  if ! "${adb_bin}" -s "${device_id}" shell pm path "${app_id}" >/dev/null; then
+    echo "POKEGONEXUS_SMOKE_SKIP_APK_INSTALL=true requires ${app_id} to be installed first." >&2
     exit 1
   fi
 fi

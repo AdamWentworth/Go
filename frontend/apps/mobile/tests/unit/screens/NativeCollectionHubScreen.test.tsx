@@ -9,6 +9,7 @@ import type {
 import { NativeCollectionHubScreen } from '../../../src/screens/NativeCollectionHubScreen';
 import { NATIVE_HORIZONTAL_PAGE_TRANSITION_MS } from '../../../src/components/NativeHorizontalPageSlider';
 import { buildClearActiveTagMessage } from '@pokemongonexus/shared-ui-tokens';
+import { runAfterNativeUiInteractions } from '../../../src/interaction/nativeUiInteractionScheduler';
 
 jest.mock('react-native/Libraries/Utilities/useWindowDimensions', () => ({
   __esModule: true,
@@ -293,6 +294,7 @@ describe('NativeCollectionHubScreen', () => {
           error={null}
           inventoryTags={[inventoryTag, allCaughtTag]}
           instances={{}}
+          initialView="inventory"
           isLoading={false}
           onContextChange={onContextChange}
           onOpenEntry={jest.fn()}
@@ -302,8 +304,6 @@ describe('NativeCollectionHubScreen', () => {
       </SafeAreaProvider>,
     );
 
-    fireEvent.press(screen.getByRole('tab', { name: /tags/i }));
-    act(() => jest.advanceTimersByTime(NATIVE_HORIZONTAL_PAGE_TRANSITION_MS));
     timing.mockClear();
     onContextChange.mockClear();
 
@@ -352,6 +352,7 @@ describe('NativeCollectionHubScreen', () => {
           error={null}
           inventoryTags={[inventoryTag, allCaughtTag]}
           instances={{}}
+          initialView="inventory"
           isLoading={false}
           onOpenEntry={jest.fn()}
           onRetry={jest.fn()}
@@ -360,13 +361,18 @@ describe('NativeCollectionHubScreen', () => {
       </SafeAreaProvider>,
     );
 
-    fireEvent.press(screen.getByRole('tab', { name: /tags/i }));
-    act(() => jest.advanceTimersByTime(NATIVE_HORIZONTAL_PAGE_TRANSITION_MS));
     timing.mockClear();
     const favorites = screen.getByRole('button', { name: /Open Favorites/i });
     fireEvent(favorites, 'pressIn');
+    const backgroundTask = jest.fn();
+    runAfterNativeUiInteractions(backgroundTask);
+    act(() => jest.runOnlyPendingTimers());
+    expect(backgroundTask).not.toHaveBeenCalled();
     fireEvent(favorites, 'pressOut');
-    act(() => jest.advanceTimersByTime(0));
+    act(() => {
+      jest.advanceTimersByTime(0);
+      jest.runOnlyPendingTimers();
+    });
 
     expect(screen.getByTestId(
       'parity-card-0150-default',
@@ -376,6 +382,7 @@ describe('NativeCollectionHubScreen', () => {
       selected: true,
     });
     expect(timing).not.toHaveBeenCalled();
+    expect(backgroundTask).toHaveBeenCalledTimes(1);
   });
 
   it('does not animate or persist a tap on the already-selected tab', () => {
