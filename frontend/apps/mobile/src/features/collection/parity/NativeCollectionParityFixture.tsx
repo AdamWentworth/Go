@@ -59,6 +59,7 @@ import {
 } from './nativeCollectionImageSource';
 import { markNativeUiPerformance } from '../../../observability/nativeUiPerformanceTrace';
 import { beginNativeUiInteraction } from '../../../interaction/nativeUiInteractionScheduler';
+import { useNativeScrollInteractionReservation } from '../../../interaction/useNativeScrollInteractionReservation';
 import {
   type NativeCollectionImageRevealController,
   useNativeCollectionImageRevealState,
@@ -415,11 +416,13 @@ export const NativeCollectionParityFixture = memo(forwardRef<
   const currentScrollOffsetRef = useRef(initialScrollOffset);
   const keyboardDismissFrameRef = useRef<number | null>(null);
   const searchMenuRequestStartedAtRef = useRef<number | null>(null);
+  const searchMenuInteractionReleaseRef = useRef<(() => void) | null>(null);
   const filterReleaseStartedAtRef = useRef<number | null>(null);
   const filterReleaseFrameRef = useRef<number | null>(null);
   const filterInteractionReleaseRef = useRef<(() => void) | null>(null);
   const filterInteractionCancelTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const queryRef = useRef(query);
+  const scrollInteraction = useNativeScrollInteractionReservation();
   const collectionItems: CollectionCardSource[] = collectionRows ?? cards;
   const listExtraData = useMemo(
     () => ({
@@ -552,7 +555,12 @@ export const NativeCollectionParityFixture = memo(forwardRef<
     if (visible) {
       searchMenuRequestStartedAtRef.current = Date.now();
       markNativeUiPerformance('collection_search_menu_requested');
+      searchMenuInteractionReleaseRef.current?.();
+      searchMenuInteractionReleaseRef.current = beginNativeUiInteraction();
       setSearchMenuMounted(true);
+    } else {
+      searchMenuInteractionReleaseRef.current?.();
+      searchMenuInteractionReleaseRef.current = null;
     }
     setSearchMenuVisible(visible);
   }, []);
@@ -564,6 +572,8 @@ export const NativeCollectionParityFixture = memo(forwardRef<
       markNativeUiPerformance('collection_search_menu_painted', {
         interactionLatencyMs: Date.now() - startedAt,
       });
+      searchMenuInteractionReleaseRef.current?.();
+      searchMenuInteractionReleaseRef.current = null;
     });
     return () => cancelAnimationFrame(frame);
   }, [searchMenuVisible]);
@@ -594,6 +604,18 @@ export const NativeCollectionParityFixture = memo(forwardRef<
     currentScrollOffsetRef.current = offset;
     onScrollOffsetChange?.(offset);
   }, [onScrollOffsetChange]);
+  const handleMomentumScrollEnd = useCallback((
+    event: NativeSyntheticEvent<NativeScrollEvent>,
+  ) => {
+    persistSettledScrollOffset(event);
+    scrollInteraction.onMomentumScrollEnd();
+  }, [persistSettledScrollOffset, scrollInteraction]);
+  const handleScrollEndDrag = useCallback((
+    event: NativeSyntheticEvent<NativeScrollEvent>,
+  ) => {
+    persistSettledScrollOffset(event);
+    scrollInteraction.onScrollEndDrag();
+  }, [persistSettledScrollOffset, scrollInteraction]);
   const restoreInitialScroll = useCallback(() => {
     if (
       restoredScrollRef.current
@@ -616,6 +638,8 @@ export const NativeCollectionParityFixture = memo(forwardRef<
     }
     filterInteractionReleaseRef.current?.();
     filterInteractionReleaseRef.current = null;
+    searchMenuInteractionReleaseRef.current?.();
+    searchMenuInteractionReleaseRef.current = null;
   }, []);
   useEffect(() => {
     if (searchMenuMounted || isLoading || collectionItems.length === 0) return undefined;
@@ -833,8 +857,10 @@ export const NativeCollectionParityFixture = memo(forwardRef<
           // The native list owns every movement frame. Persist only settled
           // offsets so ordinary vertical scrolling never schedules recurring
           // JS/cache work while the user is trying to keep 60 fps.
-          onMomentumScrollEnd={persistSettledScrollOffset}
-          onScrollEndDrag={persistSettledScrollOffset}
+          onMomentumScrollBegin={scrollInteraction.onMomentumScrollBegin}
+          onMomentumScrollEnd={handleMomentumScrollEnd}
+          onScrollBeginDrag={scrollInteraction.onScrollBeginDrag}
+          onScrollEndDrag={handleScrollEndDrag}
           pointerEvents={searchMenuVisible ? 'none' : 'auto'}
           removeClippedSubviews={false}
           {...NATIVE_FLAT_LIST_RENDERER_OPTIMIZATION}

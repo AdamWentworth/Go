@@ -45,6 +45,7 @@ import {
   actionMenuExperienceParityContract,
   themeSwitchExperienceParityContract,
 } from '@pokemongonexus/shared-ui-tokens';
+import { beginNativeUiInteraction } from '../interaction/nativeUiInteractionScheduler';
 
 type Props = {
   assetBaseUrl: string;
@@ -581,6 +582,7 @@ export const NativeActionMenu = ({
   const [navigationOverlayProgress] = useState(() => new Animated.Value(0));
   const [supportProgress] = useState(() => new Animated.Value(0));
   const closingRef = useRef(false);
+  const menuInteractionReleaseRef = useRef<(() => void) | null>(null);
   const navigationSpinnerRef = useRef<NativeLoadingSpinnerHandle | null>(null);
   const themeCommitFrameRef = useRef<number | null>(null);
   const previousSchemeRef = useRef(scheme);
@@ -628,6 +630,8 @@ export const NativeActionMenu = ({
 
   useEffect(() => {
     if (!visible) {
+      menuInteractionReleaseRef.current?.();
+      menuInteractionReleaseRef.current = null;
       menuProgress.setValue(0);
       navigationOverlayProgress.setValue(0);
       navigationSpinnerRef.current?.stop();
@@ -635,9 +639,20 @@ export const NativeActionMenu = ({
       return undefined;
     }
 
+    menuInteractionReleaseRef.current?.();
+    menuInteractionReleaseRef.current = beginNativeUiInteraction();
+
     if (reduceMotion) {
       menuProgress.setValue(1);
-      return undefined;
+      const frame = requestAnimationFrame(() => {
+        menuInteractionReleaseRef.current?.();
+        menuInteractionReleaseRef.current = null;
+      });
+      return () => {
+        cancelAnimationFrame(frame);
+        menuInteractionReleaseRef.current?.();
+        menuInteractionReleaseRef.current = null;
+      };
     }
 
     closingRef.current = false;
@@ -655,11 +670,17 @@ export const NativeActionMenu = ({
       useNativeDriver: true,
     });
     animation.start(({ finished }) => {
+      menuInteractionReleaseRef.current?.();
+      menuInteractionReleaseRef.current = null;
       if (finished) {
         markNativeUiPerformance('action_menu_animation_finished');
       }
     });
-    return () => animation.stop();
+    return () => {
+      animation.stop();
+      menuInteractionReleaseRef.current?.();
+      menuInteractionReleaseRef.current = null;
+    };
   }, [menuProgress, navigationOverlayProgress, reduceMotion, visible]);
 
   useEffect(() => {
@@ -708,12 +729,16 @@ export const NativeActionMenu = ({
       onClose();
       return;
     }
+    menuInteractionReleaseRef.current?.();
+    menuInteractionReleaseRef.current = beginNativeUiInteraction();
     Animated.timing(menuProgress, {
       duration: actionMenuExperienceParityContract.motion.closeMs,
       easing: Easing.in(Easing.cubic),
       toValue: 0,
       useNativeDriver: true,
     }).start(({ finished }) => {
+      menuInteractionReleaseRef.current?.();
+      menuInteractionReleaseRef.current = null;
       if (finished) onClose();
     });
   }, [menuProgress, onClose, reduceMotion]);

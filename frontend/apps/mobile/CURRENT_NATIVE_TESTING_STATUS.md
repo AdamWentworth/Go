@@ -481,6 +481,22 @@ completed every UI assertion; its overall parser failed only because one
 instance-overlay target/entrance sample reached 286/287 ms against the existing
 280 ms hard budget. The full suite is now 159 suites and 848 tests.
 
+Background native work now yields to the same gestures Vite leaves to the
+browser compositor. Both the collection grid and retained tag lists reserve the
+foreground from drag start through momentum end, including an 80 ms end-drag
+grace so queued image/search work cannot slip into Android's momentum handoff.
+The action menu similarly holds the custom queue for its complete native-driver
+open/close animation, and the search overlay holds it through its first paint.
+Hidden filter controls no longer mount four Android Image views on every rAF;
+their small batches use an interaction-aware task mode that pauses immediately
+for input but completes promptly instead of starving behind repeated idle
+callbacks. The confirming Android workflow measured search opens at 86/35 ms,
+sort open at 80 ms, filter reveal at 45 ms, all four tag slides at 0--1 ms, all
+four tag result commits at 70--104 ms, and the action menu at 91 ms. Every
+collection budget passed; that workflow's overall parser failed only on a
+separate first instance-overlay sample (316/318/609 ms). The full suite is now
+160 suites and 851 tests.
+
 ## Remaining approval gate
 
 The latest bundle still needs a short physical-phone pass for perceived frame

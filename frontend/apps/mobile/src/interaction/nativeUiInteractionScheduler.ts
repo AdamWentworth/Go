@@ -11,6 +11,7 @@ type IdleSchedulerGlobal = typeof globalThis & {
 type ScheduledWork = {
   cancelled: boolean;
   idleHandle: IdleCallbackHandle | null;
+  preferIdle: boolean;
   task: () => void;
   timer: ReturnType<typeof setTimeout> | null;
 };
@@ -36,7 +37,7 @@ const scheduleWork = (work: ScheduledWork) => {
     return;
   }
   const idleGlobal = globalThis as IdleSchedulerGlobal;
-  if (idleGlobal.requestIdleCallback) {
+  if (work.preferIdle && idleGlobal.requestIdleCallback) {
     work.idleHandle = idleGlobal.requestIdleCallback(
       () => runScheduledWork(work),
       { timeout: 250 },
@@ -82,10 +83,14 @@ export const beginNativeUiInteraction = (): (() => void) => {
   };
 };
 
-export const runAfterNativeUiInteractions = (task: () => void): { cancel: () => void } => {
+export const runAfterNativeUiInteractions = (
+  task: () => void,
+  options: { preferIdle?: boolean } = {},
+): { cancel: () => void } => {
   const work: ScheduledWork = {
     cancelled: false,
     idleHandle: null,
+    preferIdle: options.preferIdle ?? true,
     task,
     timer: null,
   };

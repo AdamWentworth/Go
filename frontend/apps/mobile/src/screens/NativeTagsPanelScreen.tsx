@@ -44,6 +44,7 @@ import {
   useNativeCollectionImageReveal,
 } from '../features/collection/parity/nativeCollectionImageRevealController';
 import { runAfterNativeUiInteractions } from '../interaction/nativeUiInteractionScheduler';
+import { useNativeScrollInteractionReservation } from '../interaction/useNativeScrollInteractionReservation';
 
 type Props = {
   activeTagName: string | null;
@@ -496,6 +497,7 @@ export const NativeTagsPanelScreen = memo(function NativeTagsPanelScreen({
   const [previewImageRevealController] = useState(
     () => createNativeCollectionImageRevealController(0),
   );
+  const scrollInteraction = useNativeScrollInteractionReservation();
   const orderedTags = useMemo(() => {
     if (!reordering) return tags;
     const byKey = new Map(tags.map((tag) => [tag.key, tag]));
@@ -586,6 +588,10 @@ export const NativeTagsPanelScreen = memo(function NativeTagsPanelScreen({
         keyExtractor={(tag) => tag.key}
         nestedScrollEnabled
         maxToRenderPerBatch={3}
+        onMomentumScrollBegin={scrollInteraction.onMomentumScrollBegin}
+        onMomentumScrollEnd={scrollInteraction.onMomentumScrollEnd}
+        onScrollBeginDrag={scrollInteraction.onScrollBeginDrag}
+        onScrollEndDrag={scrollInteraction.onScrollEndDrag}
         removeClippedSubviews
         updateCellsBatchingPeriod={48}
         windowSize={3}

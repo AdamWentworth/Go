@@ -21,6 +21,7 @@ import {
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { toNativeCollectionImageSource } from './nativeCollectionImageSource';
+import { runAfterNativeUiInteractions } from '../../../interaction/nativeUiInteractionScheduler';
 
 type FilterSection = 'Variants' | 'Qualities' | 'Rarity' | 'Region' | 'Types';
 
@@ -208,13 +209,18 @@ export const NativeRetainedCollectionSearchMenu = memo(function NativeRetainedCo
       return undefined;
     }
     if (tileLimit >= FILTER_TILE_COUNT) return undefined;
-    const frame = requestAnimationFrame(() => {
+    // This tree is invisible preparation, not animation. An ordinary rAF made
+    // four Android Image views decode on each foreground frame even while the
+    // user was scrolling or changing pages. Admit each small batch through
+    // the interaction-aware task queue; unlike requestIdleCallback, this warm
+    // path also finishes promptly before the user's likely first tap.
+    const task = runAfterNativeUiInteractions(() => {
       setTileLimit((current) => Math.min(
         FILTER_TILE_COUNT,
         current + FILTER_TILE_WARM_BATCH,
       ));
-    });
-    return () => cancelAnimationFrame(frame);
+    }, { preferIdle: false });
+    return task.cancel;
   }, [tileLimit, visible]);
   return <NativeCollectionSearchMenu {...props} tileLimit={tileLimit} />;
 });

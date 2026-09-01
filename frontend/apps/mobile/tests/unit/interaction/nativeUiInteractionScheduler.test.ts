@@ -74,4 +74,21 @@ describe('nativeUiInteractionScheduler', () => {
 
     expect(task).not.toHaveBeenCalled();
   });
+
+  it('can finish small warm-up batches promptly without entering an idle callback', () => {
+    const idleCallback = jest.fn(() => 1);
+    const originalIdleCallback = globalThis.requestIdleCallback;
+    globalThis.requestIdleCallback = idleCallback;
+    const task = jest.fn();
+
+    try {
+      runAfterNativeUiInteractions(task, { preferIdle: false });
+      jest.runOnlyPendingTimers();
+
+      expect(task).toHaveBeenCalledTimes(1);
+      expect(idleCallback).not.toHaveBeenCalled();
+    } finally {
+      globalThis.requestIdleCallback = originalIdleCallback;
+    }
+  });
 });
