@@ -28,6 +28,7 @@ import {
 } from 'react';
 import { collectionExperienceParityContract } from '@pokemongonexus/shared-ui-tokens';
 import { useOptionalNativeDevicePreferences } from '../features/settings/NativeDevicePreferencesProvider';
+import { beginNativeUiInteraction } from '../interaction/nativeUiInteractionScheduler';
 
 type Props = PropsWithChildren<{
   activeIndex: number;
@@ -120,6 +121,8 @@ export const NativeHorizontalPageSlider = forwardRef<
   const alignedInitialPageRef = useRef(false);
   const previousWidthRef = useRef(width);
   const dragStartOffsetRef = useRef(safeIndex * width);
+  const interactionGenerationRef = useRef(0);
+  const interactionReleaseRef = useRef<(() => void) | null>(null);
   const [internalScrollX] = useState(() => new Animated.Value(safeIndex * width));
   const pageScrollX = scrollX ?? internalScrollX;
   const maxPeekDistance = width * collectionExperienceParityContract.pageSwipeMaxPeekRatio;
@@ -169,6 +172,24 @@ export const NativeHorizontalPageSlider = forwardRef<
 
   const reduceMotion = devicePreferences?.shouldReduceMotion ?? systemReduceMotion;
 
+  const reservePageInteraction = useCallback(() => {
+    interactionGenerationRef.current += 1;
+    if (!interactionReleaseRef.current) {
+      interactionReleaseRef.current = beginNativeUiInteraction();
+    }
+    return interactionGenerationRef.current;
+  }, []);
+
+  const releasePageInteraction = useCallback(() => {
+    interactionReleaseRef.current?.();
+    interactionReleaseRef.current = null;
+  }, []);
+
+  useEffect(() => () => {
+    interactionGenerationRef.current += 1;
+    releasePageInteraction();
+  }, [releasePageInteraction]);
+
   const setTrackRasterized = useCallback((enabled: boolean) => {
     // React Native Web exposes the host DOM node here rather than a native
     // component handle. GPU layer hints are only useful on the device and its
@@ -190,6 +211,7 @@ export const NativeHorizontalPageSlider = forwardRef<
     nativeDrivenDrag?.setValue(0);
     pageScrollX.stopAnimation();
     if (animated) {
+      const interactionGeneration = reservePageInteraction();
       setTrackRasterized(true);
       Animated.timing(pageScrollX, {
         duration: NATIVE_HORIZONTAL_PAGE_TRANSITION_MS,
@@ -197,12 +219,27 @@ export const NativeHorizontalPageSlider = forwardRef<
         isInteraction: true,
         toValue: nextIndex * width,
         useNativeDriver: true,
-      }).start(() => setTrackRasterized(false));
+      }).start(() => {
+        if (interactionGeneration !== interactionGenerationRef.current) return;
+        setTrackRasterized(false);
+        releasePageInteraction();
+      });
     } else {
+      interactionGenerationRef.current += 1;
+      releasePageInteraction();
       setTrackRasterized(false);
       pageScrollX.setValue(nextIndex * width);
     }
-  }, [nativeDrivenDrag, pageScrollX, panelCount, reduceMotion, setTrackRasterized, width]);
+  }, [
+    nativeDrivenDrag,
+    pageScrollX,
+    panelCount,
+    reduceMotion,
+    releasePageInteraction,
+    reservePageInteraction,
+    setTrackRasterized,
+    width,
+  ]);
 
   const preparePage = useCallback((index: number) => {
     // A caller that has just changed offscreen content can reserve the
@@ -210,8 +247,11 @@ export const NativeHorizontalPageSlider = forwardRef<
     // following frame after Android has had one paint opportunity. This keeps
     // the activeIndex effect from starting an eager duplicate animation.
     renderedIndexRef.current = clampPageIndex(index, panelCount);
-    if (!reduceMotion) setTrackRasterized(true);
-  }, [panelCount, reduceMotion, setTrackRasterized]);
+    if (!reduceMotion) {
+      reservePageInteraction();
+      setTrackRasterized(true);
+    }
+  }, [panelCount, reduceMotion, reservePageInteraction, setTrackRasterized]);
 
   useImperativeHandle(ref, () => ({ preparePage, setPage }), [preparePage, setPage]);
 
@@ -260,6 +300,7 @@ export const NativeHorizontalPageSlider = forwardRef<
     if (!nativeDrivenDrag) return;
     const { oldState, state, translationX, velocityX } = event.nativeEvent;
     if (state === State.ACTIVE) {
+      reservePageInteraction();
       dragStartOffsetRef.current = renderedIndexRef.current * width;
       pageScrollX.stopAnimation((currentOffset) => {
         dragStartOffsetRef.current = currentOffset;
@@ -287,6 +328,7 @@ export const NativeHorizontalPageSlider = forwardRef<
     maxPeekDistance,
     nativeDrivenDrag,
     pageScrollX,
+    reservePageInteraction,
     setPage,
     setTrackRasterized,
     settleDrag,
@@ -302,6 +344,7 @@ export const NativeHorizontalPageSlider = forwardRef<
     .failOffsetY([-10, 10])
     .runOnJS(true)
     .onStart(() => {
+      reservePageInteraction();
       dragStartOffsetRef.current = renderedIndexRef.current * width;
       pageScrollX.stopAnimation();
       setTrackRasterized(true);
@@ -320,6 +363,7 @@ export const NativeHorizontalPageSlider = forwardRef<
     }), [
       pageScrollX,
       panelCount,
+      reservePageInteraction,
       setTrackRasterized,
       setPage,
       settleDrag,

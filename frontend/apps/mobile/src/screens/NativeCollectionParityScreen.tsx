@@ -9,7 +9,7 @@ import {
   useRef,
   useState,
 } from 'react';
-import { InteractionManager, Platform, StyleSheet, View } from 'react-native';
+import { Platform, StyleSheet, View } from 'react-native';
 import type {
   CollectionParityCardFixture,
 } from '../features/collection/parity/collectionParityFixtures';
@@ -32,6 +32,7 @@ import {
 } from '../features/collection/parity/NativeCollectionSortMenu';
 import { useNativeColorScheme } from '../features/settings/useNativeColorScheme';
 import type { NativeCollectionSession } from '../features/collection/nativeCollectionSessionCache';
+import { runAfterNativeUiInteractions } from '../interaction/nativeUiInteractionScheduler';
 
 type NativeCollectionParityScreenProps = {
   assetBaseUrl: string;
@@ -262,7 +263,7 @@ export const NativeCollectionParityScreen = forwardRef<
     if (Platform.OS === 'web') return undefined;
     let cancelled = false;
     let timer: ReturnType<typeof setTimeout> | null = null;
-    let interactionTask: ReturnType<typeof InteractionManager.runAfterInteractions> | null = null;
+    let interactionTask: ReturnType<typeof runAfterNativeUiInteractions> | null = null;
     const pendingKeys = allSurfaceContexts
       .map((context) => context.key)
       .filter((key) => key !== activeSurfaceKey)
@@ -270,7 +271,7 @@ export const NativeCollectionParityScreen = forwardRef<
     let index = 0;
     const scheduleNext = (delay: number) => {
       timer = setTimeout(() => {
-        interactionTask = InteractionManager.runAfterInteractions(warmNextSurface);
+        interactionTask = runAfterNativeUiInteractions(warmNextSurface);
       }, delay);
     };
     const warmNextSurface = () => {

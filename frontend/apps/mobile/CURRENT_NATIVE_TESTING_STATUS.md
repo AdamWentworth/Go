@@ -53,7 +53,7 @@ mounts complete collection and Pokédex route trees in the background.
 
 Passing evidence for this checkpoint:
 
-- native Jest: 154 suites, 810 tests;
+- native Jest: 155 suites, 813 tests;
 - mobile and web TypeScript and ESLint;
 - native real-route smoke: 92 guest/signed-in, light/dark route states;
 - focused Vite mobile-Chromium browser coverage: 9 tests;
@@ -131,7 +131,10 @@ are capped at eleven destinations plus the active grid, so accounts with many
 custom tags cannot accumulate an unbounded number of offscreen FlatLists. Each
 background slice also waits for active gestures and page animations to finish;
 fixed warm-up timers can no longer interrupt a swipe or compete with its native
-300 ms transform. The collection page drag itself now streams finger movement
+300 ms transform. This uses an app-owned scheduler tied to the actual slider
+lifecycle because React Native 0.86's deprecated InteractionManager is only a
+stub and does not provide that guarantee. The collection page drag itself now
+streams finger movement
 straight from Gesture Handler into the native Animated graph instead of
 crossing to JavaScript on every frame. It uses Vite's shared 30% peek limit and
 100 px navigation threshold, and transfers the exact drag position into the

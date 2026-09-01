@@ -8,7 +8,6 @@ import {
 } from 'react';
 import {
   Animated,
-  InteractionManager,
   StyleSheet,
   Text,
   View,
@@ -57,6 +56,7 @@ import type {
 import { useNativeColorScheme } from '../features/settings/useNativeColorScheme';
 import type { NativeCollectionSession } from '../features/collection/nativeCollectionSessionCache';
 import { markNativeUiPerformance } from '../observability/nativeUiPerformanceTrace';
+import { runAfterNativeUiInteractions } from '../interaction/nativeUiInteractionScheduler';
 
 const VIEW_ORDER: readonly NativePokemonHubView[] = (
   collectionExperienceParityContract.viewOrder
@@ -229,12 +229,12 @@ export const NativeCollectionHubScreen = ({
   useEffect(() => {
     let cancelled = false;
     let timer: ReturnType<typeof setTimeout> | null = null;
-    let interactionTask: ReturnType<typeof InteractionManager.runAfterInteractions> | null = null;
+    let interactionTask: ReturnType<typeof runAfterNativeUiInteractions> | null = null;
     const tagsToPrepare = availableTags.slice(0, 24);
     let index = 0;
     const scheduleNext = (delay: number) => {
       timer = setTimeout(() => {
-        interactionTask = InteractionManager.runAfterInteractions(prepareNext);
+        interactionTask = runAfterNativeUiInteractions(prepareNext);
       }, delay);
     };
     const prepareNext = () => {
