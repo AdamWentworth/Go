@@ -9,6 +9,7 @@ import {
   View,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
+import { toNativeCollectionImageSource } from './nativeCollectionImageSource';
 
 type FilterSection = 'Variants' | 'Qualities' | 'Rarity' | 'Region' | 'Types';
 
@@ -65,11 +66,6 @@ const REGION_GRADIENTS: Record<string, readonly [string, string, string]> = {
   Paldea: ['#b80000', '#7f3fbf', '#ffd966'],
 };
 
-const toAssetUrl = (baseUrl: string, path: string): string => {
-  if (/^https?:\/\//i.test(path)) return path;
-  return `${baseUrl.replace(/\/$/, '')}/${path.replace(/^\//, '')}`;
-};
-
 const RegionGradient = ({ name }: { name: string }) => {
   const colors = REGION_GRADIENTS[name];
   if (!colors) return null;
@@ -122,7 +118,7 @@ const FilterTile = ({
         <Image fadeDuration={0}
           accessibilityElementsHidden
           resizeMode="contain"
-          source={{ uri: toAssetUrl(assetBaseUrl, assetPath) }}
+          source={toNativeCollectionImageSource(assetBaseUrl, assetPath)}
           style={section === 'Types' ? styles.typeFilterImage : styles.filterImage}
         />
       </View>
@@ -214,7 +210,7 @@ export const NativeCollectionSearchControls = ({
             <Image fadeDuration={0}
               accessibilityElementsHidden
               resizeMode="contain"
-              source={{ uri: toAssetUrl(assetBaseUrl, '/images/arrow_right.png') }}
+              source={toNativeCollectionImageSource(assetBaseUrl, '/images/arrow_right.png')}
               style={[styles.backIcon, { tintColor: textColor }]}
             />
           </Pressable>
@@ -229,7 +225,7 @@ export const NativeCollectionSearchControls = ({
           {expanded ? (
             <Image fadeDuration={0}
               accessibilityElementsHidden
-              source={{ uri: toAssetUrl(assetBaseUrl, '/images/search_icon.png') }}
+              source={toNativeCollectionImageSource(assetBaseUrl, '/images/search_icon.png')}
               style={[styles.searchIconLeft, { tintColor: inputTextColor }]}
             />
           ) : null}
@@ -253,7 +249,7 @@ export const NativeCollectionSearchControls = ({
             <View pointerEvents="none" style={styles.placeholder}>
               <Image fadeDuration={0}
                 accessibilityElementsHidden
-                source={{ uri: toAssetUrl(assetBaseUrl, '/images/search_icon.png') }}
+                source={toNativeCollectionImageSource(assetBaseUrl, '/images/search_icon.png')}
                 style={[styles.placeholderIcon, { tintColor: '#666666' }]}
               />
               <Text style={styles.placeholderText}>Search</Text>
@@ -271,7 +267,7 @@ export const NativeCollectionSearchControls = ({
               <Image fadeDuration={0}
                 accessibilityElementsHidden
                 resizeMode="contain"
-                source={{ uri: toAssetUrl(assetBaseUrl, '/images/close.png') }}
+                source={toNativeCollectionImageSource(assetBaseUrl, '/images/close.png')}
                 style={styles.clearIcon}
               />
             </Pressable>

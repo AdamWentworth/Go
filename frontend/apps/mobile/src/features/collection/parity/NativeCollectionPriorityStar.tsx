@@ -1,3 +1,4 @@
+import { memo } from 'react';
 import type { StyleProp, ViewStyle } from 'react-native';
 import { View } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
@@ -15,12 +16,12 @@ const COLORS = {
 } as const;
 
 /** Native rendering of the canonical web CollectionPriorityStar SVG. */
-export const NativeCollectionPriorityStar = ({
+export const NativeCollectionPriorityStar = memo(function NativeCollectionPriorityStar({
   label,
   size,
   style,
   tone,
-}: Props) => {
+}: Props) {
   const color = COLORS[tone];
   return (
     <View
@@ -40,4 +41,4 @@ export const NativeCollectionPriorityStar = ({
       </Svg>
     </View>
   );
-};
+});

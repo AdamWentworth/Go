@@ -34,6 +34,9 @@ import {
   useOptionalNativeDevicePreferences,
 } from '../features/settings/NativeDevicePreferencesProvider';
 import { useNativeColorScheme } from '../features/settings/useNativeColorScheme';
+import {
+  toNativeCollectionImageSource,
+} from '../features/collection/parity/nativeCollectionImageSource';
 
 type Props = {
   activeTagName: string | null;
@@ -55,11 +58,6 @@ type Props = {
   isEditable?: boolean;
   isSaving?: boolean;
   showHeader?: boolean;
-};
-
-const toAssetUrl = (baseUrl: string, path: string): string => {
-  if (/^https?:\/\//i.test(path)) return path;
-  return `${baseUrl.replace(/\/$/, '')}/${path.replace(/^\//, '')}`;
 };
 
 type TagGradient = readonly [string, string, string];
@@ -175,7 +173,7 @@ const NativeTagCard = memo(function NativeTagCard({
               <Image fadeDuration={0}
                 accessibilityElementsHidden
                 resizeMode="contain"
-                source={{ uri: row.imageUri }}
+                source={toNativeCollectionImageSource(assetBaseUrl, row.imageUri)}
                 style={[
                   widePreview ? styles.previewImageWide : styles.previewImageNarrow,
                 ]}
@@ -185,14 +183,13 @@ const NativeTagCard = memo(function NativeTagCard({
               <Image fadeDuration={0}
                 accessibilityElementsHidden
                 resizeMode="contain"
-                source={{
-                  uri: toAssetUrl(
-                    assetBaseUrl,
-                    row.maxKind === 'gigantamax'
-                      ? '/images/gigantamax.png'
-                      : '/images/dynamax.png',
-                  ),
-                }}
+                resizeMethod="resize"
+                source={toNativeCollectionImageSource(
+                  assetBaseUrl,
+                  row.maxKind === 'gigantamax'
+                    ? '/images/gigantamax.png'
+                    : '/images/dynamax.png',
+                )}
                 style={styles.previewMaxBadge}
                 testID={`native-tag-preview-${row.maxKind}`}
               />
@@ -556,7 +553,7 @@ export const NativeTagsPanelScreen = memo(function NativeTagsPanelScreen({
           <Image fadeDuration={0}
             accessibilityElementsHidden
             resizeMode="contain"
-            source={{ uri: toAssetUrl(assetBaseUrl, '/images/btn_action_menu.png') }}
+            source={toNativeCollectionImageSource(assetBaseUrl, '/images/btn_action_menu.png')}
             style={styles.actionMenuBall}
           />
         </Pressable>

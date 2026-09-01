@@ -43,6 +43,10 @@ import {
 } from './NativeCollectionSearchControls';
 import { NativeCollectionPriorityStar } from './NativeCollectionPriorityStar';
 import { NativeActionMenuAnchor } from '../../../components/NativeActionMenuAnchor';
+import {
+  toNativeCollectionAssetUrl,
+  toNativeCollectionImageSource,
+} from './nativeCollectionImageSource';
 
 type NativeCollectionParityFixtureProps = {
   assetBaseUrl?: string;
@@ -153,24 +157,17 @@ const EMPTY_SELECTED_IDS: ReadonlySet<string> = new Set<string>();
 // up, while preventing data-only tag swaps from rebuilding the row renderer.
 const NATIVE_FLAT_LIST_RENDERER_OPTIMIZATION = { strictMode: true } as const;
 const COLLECTION_STICKY_HEADER_INDICES = [0];
+// FlatList combines each item key into a key for its generated multi-column
+// row. Keying by Pokémon identity therefore tears down every visible native
+// row whenever a tag changes its contents. Vite deliberately keys those outer
+// rows by their absolute position (`row-${row}`) and reconciles the cards
+// inside them. Keep the native slots stable for the same reason: tag swaps can
+// update the already-mounted row views instead of remounting the entire visible
+// grid while the horizontal page transition is beginning.
 const collectionCardKeyExtractor = (
-  card: CollectionParityCardFixture,
-): string => card.id;
-
-const toAssetUrl = (baseUrl: string, path: string): string => {
-  if (/^https?:\/\//i.test(path)) return path;
-  return `${baseUrl.replace(/\/$/, '')}/${path.replace(/^\//, '')}`;
-};
-
-const collectionImageSourceCache = new Map<string, { uri: string }>();
-const toCollectionImageSource = (baseUrl: string, path: string): { uri: string } => {
-  const uri = toAssetUrl(baseUrl, path);
-  const cached = collectionImageSourceCache.get(uri);
-  if (cached) return cached;
-  const source = { uri };
-  collectionImageSourceCache.set(uri, source);
-  return source;
-};
+  _card: CollectionParityCardFixture,
+  index: number,
+): string => `collection-slot-${index}`;
 
 const CollectionParityCard = memo(function CollectionParityCard({
   assetBaseUrl,
@@ -215,9 +212,7 @@ const CollectionParityCard = memo(function CollectionParityCard({
           <NativeCollectionPriorityStar
             label={card.favorite ? 'Favorite' : 'Most Wanted'}
             size={18}
-            style={[
-              styles.priorityStar,
-            ]}
+            style={styles.priorityStar}
             tone={card.favorite ? 'favorite' : 'most-wanted'}
           />
         ) : null}
@@ -225,28 +220,29 @@ const CollectionParityCard = memo(function CollectionParityCard({
       <View style={[styles.imageStage, cardWidth >= 145 && styles.imageStageWide]}>
         {card.locationBackgroundPath ? (
           <NativePokemonLocationBackdrop
-            uri={toAssetUrl(assetBaseUrl, card.locationBackgroundPath)}
+            uri={toNativeCollectionAssetUrl(assetBaseUrl, card.locationBackgroundPath)}
           />
         ) : null}
         {card.lucky ? (
           <Image fadeDuration={0}
             accessibilityElementsHidden
             resizeMode="contain"
-            source={toCollectionImageSource(assetBaseUrl, '/images/lucky.png')}
+            source={toNativeCollectionImageSource(assetBaseUrl, '/images/lucky.png')}
             style={styles.luckyBackground}
           />
         ) : null}
         <Image fadeDuration={0}
           accessibilityLabel={card.name}
           resizeMode="contain"
-          source={toCollectionImageSource(assetBaseUrl, card.imagePath)}
+          source={toNativeCollectionImageSource(assetBaseUrl, card.imagePath)}
           style={styles.pokemonImage}
         />
         {card.maxKind ? (
           <Image fadeDuration={0}
             accessibilityLabel={card.maxKind === 'gigantamax' ? 'Gigantamax' : 'Dynamax'}
             resizeMode="contain"
-            source={toCollectionImageSource(
+            resizeMethod="resize"
+            source={toNativeCollectionImageSource(
               assetBaseUrl,
               card.maxKind === 'gigantamax'
                 ? '/images/gigantamax.png'
@@ -259,7 +255,7 @@ const CollectionParityCard = memo(function CollectionParityCard({
           <Image fadeDuration={0}
             accessibilityLabel="Purified"
             resizeMode="contain"
-            source={toCollectionImageSource(assetBaseUrl, '/images/purified.png')}
+            source={toNativeCollectionImageSource(assetBaseUrl, '/images/purified.png')}
             style={styles.purifiedBadge}
           />
         ) : null}
@@ -272,7 +268,8 @@ const CollectionParityCard = memo(function CollectionParityCard({
           <Image fadeDuration={0}
             accessibilityElementsHidden
             key={path}
-            source={toCollectionImageSource(assetBaseUrl, path)}
+            resizeMethod="resize"
+            source={toNativeCollectionImageSource(assetBaseUrl, path)}
             style={styles.typeIcon}
           />
         ))}
@@ -586,7 +583,7 @@ export const NativeCollectionParityFixture = memo(forwardRef<
           <View style={styles.sortInnerRing} />
           <Image fadeDuration={0}
             resizeMode="contain"
-            source={toCollectionImageSource(assetBaseUrl, sortIconPath)}
+            source={toNativeCollectionImageSource(assetBaseUrl, sortIconPath)}
             style={styles.sortTypeImage}
           />
         </View>
@@ -594,7 +591,7 @@ export const NativeCollectionParityFixture = memo(forwardRef<
           <View style={styles.sortModeInnerRing} />
           <Image fadeDuration={0}
             resizeMode="contain"
-            source={toCollectionImageSource(assetBaseUrl, '/images/sorting/arrow.png')}
+            source={toNativeCollectionImageSource(assetBaseUrl, '/images/sorting/arrow.png')}
             style={[
               styles.sortArrowImage,
               sortDirection === 'descending' ? styles.sortArrowDescending : null,

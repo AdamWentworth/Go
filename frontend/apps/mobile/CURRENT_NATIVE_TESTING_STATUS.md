@@ -53,7 +53,7 @@ mounts complete collection and Pokédex route trees in the background.
 
 Passing evidence for this checkpoint:
 
-- native Jest: 156 suites, 818 tests;
+- native Jest: 157 suites, 820 tests;
 - mobile and web TypeScript and ESLint;
 - native real-route smoke: 92 guest/signed-in, light/dark route states;
 - focused Vite mobile-Chromium browser coverage: 9 tests;
@@ -111,8 +111,12 @@ memoization flag. Its search/tag header is sticky and opaque like Vite's fixed
 search header. Tag changes reset scroll in a layout effect before paint, while
 ordinary vertical movement persists session state only after drag or momentum
 settles. Remote image source objects are reused across theme, selection, and
-tag updates, and tag cards no longer apply the non-Vite shrink transform on
-press.
+tag updates, use Android's force-cache policy, and downsample only genuinely
+oversized badges and tiny type glyphs. The multi-column FlatList now keys its
+outer native rows by stable absolute slots, matching Vite's `row-${row}`
+reconciliation instead of tearing down every visible row when Pokémon IDs
+change during a tag swap. Static card layers are memoized, and tag cards no
+longer apply the non-Vite shrink transform on press.
 
 The three-panel collection swipe continues to stream finger movement directly
 from Gesture Handler into the native Animated graph, uses Vite's shared 30%
@@ -134,7 +138,7 @@ latency gap with Vite's already-populated client store.
 
 The real-route collection budget measures the first interactive destination
 card before separately asserting the deliberately delayed header sublabel. The
-latest complete matrix passed all 92 route/theme states and measured 517 ms for
+latest complete matrix passed all 92 route/theme states and measured 549 ms for
 the For Trade workflow, including the canonical 300 ms slide.
 
 ## Remaining approval gate

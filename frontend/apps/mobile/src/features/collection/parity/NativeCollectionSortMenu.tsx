@@ -5,6 +5,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { NativeCollectionSort, NativeCollectionSortDirection } from '../collectionModel';
 import { useOptionalNativeDevicePreferences } from '../../settings/NativeDevicePreferencesProvider';
 import { useNativeColorScheme } from '../../settings/useNativeColorScheme';
+import { toNativeCollectionImageSource } from './nativeCollectionImageSource';
 
 export const NATIVE_SORT_OPTIONS: {
   key: NativeCollectionSort;
@@ -18,12 +19,6 @@ export const NATIVE_SORT_OPTIONS: {
   { key: 'name', label: 'NAME', icon: '/images/sorting/name.png' },
   { key: 'combatPower', label: 'COMBAT POWER', icon: '/images/sorting/cp.png' },
 ];
-
-const toAssetUrl = (baseUrl: string, path: string): string => (
-  /^https?:\/\//i.test(path)
-    ? path
-    : `${baseUrl.replace(/\/$/, '')}/${path.replace(/^\//, '')}`
-);
 
 const SortBackdrop = ({ light }: { light: boolean }) => (
   <LinearGradient
@@ -119,14 +114,14 @@ export const NativeCollectionSortMenu = ({
                   <Image fadeDuration={0}
                     accessibilityElementsHidden
                     resizeMode="contain"
-                    source={{ uri: toAssetUrl(assetBaseUrl, option.icon) }}
+                    source={toNativeCollectionImageSource(assetBaseUrl, option.icon)}
                     style={styles.optionIcon}
                   />
                   {selected ? (
                     <Image fadeDuration={0}
                       accessibilityLabel={direction === 'ascending' ? 'Ascending' : 'Descending'}
                       resizeMode="contain"
-                      source={{ uri: toAssetUrl(assetBaseUrl, '/images/sorting/arrow.png') }}
+                      source={toNativeCollectionImageSource(assetBaseUrl, '/images/sorting/arrow.png')}
                       style={[
                         styles.optionArrow,
                         direction === 'descending' ? styles.descending : null,

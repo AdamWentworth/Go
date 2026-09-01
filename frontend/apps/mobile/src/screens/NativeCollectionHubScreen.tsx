@@ -245,9 +245,9 @@ export const NativeCollectionHubScreen = ({
       scheduleNext(16);
     };
     // The active grid has committed before effects run. Prepare immutable tag
-    // data in short JS slices just ahead of the parity screen's staged native
-    // mounts, so each hidden FlatList receives cached rows/cards instead of
-    // sorting and projecting during its layout frame.
+    // data in short idle slices so a later tag press only gives the one active
+    // FlatList an already-sorted card projection. No native views are mounted
+    // by this warm-up.
     scheduleNext(96);
     return () => {
       cancelled = true;

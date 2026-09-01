@@ -194,11 +194,21 @@ describe('NativeCollectionParityFixture', () => {
     expect(updatedGrid).toBe(initialGrid);
     expect(updatedGrid.props.ListHeaderComponent).toBe(initialHeader);
     expect(updatedGrid.props.keyExtractor).toBe(initialKeyExtractor);
+    expect(initialKeyExtractor(COLLECTION_PARITY_FIXTURES[0], 0)).toBe(
+      initialKeyExtractor(COLLECTION_PARITY_FIXTURES[3], 0),
+    );
+    expect(initialKeyExtractor(COLLECTION_PARITY_FIXTURES[0], 0)).not.toBe(
+      initialKeyExtractor(COLLECTION_PARITY_FIXTURES[1], 1),
+    );
     expect(updatedGrid.props.renderItem).toBe(initialRenderItem);
     expect(updatedGrid.props.stickyHeaderIndices).toBe(initialStickyHeaders);
     expect(updatedGrid.props.stickyHeaderIndices).toEqual([0]);
     expect(updatedGrid.props.strictMode).toBe(true);
     expect(updatedGrid.props.windowSize).toBe(3);
+    const firstPokemonImage = screen.getByLabelText(COLLECTION_PARITY_FIXTURES[3].name);
+    expect(firstPokemonImage.props.resizeMethod).toBeUndefined();
+    expect(firstPokemonImage.props.source.cache).toBe('force-cache');
+    expect(screen.getByLabelText('Gigantamax').props.resizeMethod).toBe('resize');
   });
 
   it('resets the active destination grid before it returns from a side tag page', () => {

@@ -1,3 +1,4 @@
+import { memo } from 'react';
 import { Image, StyleSheet } from 'react-native';
 import type { CollectionParityCardFixture } from './collectionParityFixtures';
 
@@ -12,11 +13,11 @@ const OWNERSHIP_GLOW: Record<
   wanted: '#dc3545',
 };
 
-export const NativePokemonStatusGlow = ({
+export const NativePokemonStatusGlow = memo(function NativePokemonStatusGlow({
   ownership,
 }: {
   ownership: CollectionParityCardFixture['ownership'];
-}) => {
+}) {
   if (!ownership) return null;
   const color = OWNERSHIP_GLOW[ownership];
 
@@ -30,7 +31,7 @@ export const NativePokemonStatusGlow = ({
       testID={`native-${ownership}-status-glow`}
     />
   );
-};
+});
 
 const styles = StyleSheet.create({
   glow: {
