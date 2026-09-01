@@ -62,6 +62,7 @@ type NativeCollectionParityFixtureProps = {
   cards?: CollectionParityCardFixture[];
   collectionRows?: NativeCollectionRow[];
   collectionCount?: number;
+  collectionImageRevealCount?: number | null;
   customTagColor?: string;
   error?: string | null;
   isLoading?: boolean;
@@ -72,6 +73,8 @@ type NativeCollectionParityFixtureProps = {
   onCollectionRowLongPress?: (row: NativeCollectionRow) => void;
   onClearTag?: () => void;
   onQueryChange?: (query: string) => void;
+  onQueryPreview?: (query: string) => void;
+  onCancelQueryPreview?: (query: string) => void;
   onToggleEvolutionaryLine?: () => void;
   onPokemonPress?: () => void;
   onRetry?: () => void;
@@ -213,6 +216,7 @@ const CollectionParityCard = memo(function CollectionParityCard({
   onLongPressCollectionRow,
   selected,
   theme,
+  imagesEnabled,
 }: {
   assetBaseUrl: string;
   card: CollectionParityCardFixture;
@@ -225,6 +229,7 @@ const CollectionParityCard = memo(function CollectionParityCard({
   onLongPressCollectionRow?: (row: NativeCollectionRow) => void;
   selected: boolean;
   theme: CollectionParityTheme;
+  imagesEnabled: boolean;
 }) {
   const cardThemeStyles = COLLECTION_CARD_THEME_STYLES[theme];
   return (
@@ -261,12 +266,12 @@ const CollectionParityCard = memo(function CollectionParityCard({
         ) : null}
       </View>
       <View style={imageStageStyle}>
-        {card.locationBackgroundPath ? (
+        {imagesEnabled && card.locationBackgroundPath ? (
           <NativePokemonLocationBackdrop
             uri={toNativeCollectionAssetUrl(assetBaseUrl, card.locationBackgroundPath)}
           />
         ) : null}
-        {card.lucky ? (
+        {imagesEnabled && card.lucky ? (
           <Image fadeDuration={0}
             accessibilityElementsHidden
             resizeMode="contain"
@@ -274,13 +279,13 @@ const CollectionParityCard = memo(function CollectionParityCard({
             style={styles.luckyBackground}
           />
         ) : null}
-        <Image fadeDuration={0}
+        {imagesEnabled ? <Image fadeDuration={0}
           accessibilityLabel={card.name}
           resizeMode="contain"
           source={toNativeCollectionImageSource(assetBaseUrl, card.imagePath)}
           style={styles.pokemonImage}
-        />
-        {card.maxKind ? (
+        /> : null}
+        {imagesEnabled && card.maxKind ? (
           <Image fadeDuration={0}
             accessibilityLabel={card.maxKind === 'gigantamax' ? 'Gigantamax' : 'Dynamax'}
             resizeMode="contain"
@@ -294,7 +299,7 @@ const CollectionParityCard = memo(function CollectionParityCard({
             style={styles.maxBadge}
           />
         ) : null}
-        {card.purified ? (
+        {imagesEnabled && card.purified ? (
           <Image fadeDuration={0}
             accessibilityLabel="Purified"
             resizeMode="contain"
@@ -307,7 +312,7 @@ const CollectionParityCard = memo(function CollectionParityCard({
         #{card.dexNumber}
       </Text>
       <View style={styles.typeIcons}>
-        {card.typeIconPaths.map((path) => (
+        {imagesEnabled ? card.typeIconPaths.map((path) => (
           <Image fadeDuration={0}
             accessibilityElementsHidden
             key={path}
@@ -315,7 +320,7 @@ const CollectionParityCard = memo(function CollectionParityCard({
             source={toNativeCollectionImageSource(assetBaseUrl, path)}
             style={styles.typeIcon}
           />
-        ))}
+        )) : null}
       </View>
       <Text numberOfLines={2} style={cardThemeStyles.name}>
         {card.name}
@@ -333,6 +338,7 @@ export const NativeCollectionParityFixture = memo(forwardRef<
   cards = COLLECTION_PARITY_FIXTURES,
   collectionRows,
   collectionCount = 168,
+  collectionImageRevealCount = null,
   customTagColor = TAG_TONES.custom.accent,
   error = null,
   isLoading = false,
@@ -343,6 +349,8 @@ export const NativeCollectionParityFixture = memo(forwardRef<
   onCollectionRowLongPress,
   onClearTag,
   onQueryChange,
+  onQueryPreview,
+  onCancelQueryPreview,
   onToggleEvolutionaryLine,
   onPokemonPress,
   onRetry,
@@ -371,12 +379,20 @@ export const NativeCollectionParityFixture = memo(forwardRef<
 }, ref) {
   const { width } = useWindowDimensions();
   const [searchMenuVisible, setSearchMenuVisible] = useState(false);
+  const [searchMenuMounted, setSearchMenuMounted] = useState(false);
   const searchControlsRef = useRef<NativeCollectionSearchControlsHandle>(null);
   const listRef = useRef<FlatList<CollectionCardSource>>(null);
   const restoredScrollRef = useRef(initialScrollOffset <= 0);
   const previousResetKeyRef = useRef(scrollResetKey);
   const currentScrollOffsetRef = useRef(initialScrollOffset);
+  const keyboardDismissFrameRef = useRef<number | null>(null);
+  const queryRef = useRef(query);
+  queryRef.current = query;
   const collectionItems: CollectionCardSource[] = collectionRows ?? cards;
+  const listExtraData = useMemo(
+    () => ({ collectionImageRevealCount, selectedIds }),
+    [collectionImageRevealCount, selectedIds],
+  );
   const cardsLengthRef = useRef(collectionItems.length);
   cardsLengthRef.current = collectionItems.length;
   const resolvedShowOwnership = showOwnership ?? Boolean(activeTag);
@@ -412,14 +428,47 @@ export const NativeCollectionParityFixture = memo(forwardRef<
         surface: customTagSurface(customTagColor),
       }
     : baseTagColors;
+  const dismissKeyboardAfterResultPaint = useCallback(() => {
+    if (keyboardDismissFrameRef.current !== null) {
+      cancelAnimationFrame(keyboardDismissFrameRef.current);
+    }
+    // Android IME dismissal can synchronously relayout the window. Give the
+    // committed result one native frame first, then begin the keyboard
+    // animation on the following frame.
+    keyboardDismissFrameRef.current = requestAnimationFrame(() => {
+      keyboardDismissFrameRef.current = requestAnimationFrame(() => {
+        keyboardDismissFrameRef.current = null;
+        searchControlsRef.current?.dismissKeyboard();
+      });
+    });
+  }, []);
   const appendFilter = useCallback((filter: string) => {
-    const nextQuery = query.trim() ? `${query}&${filter}` : filter;
-    onQueryChange?.(nextQuery);
-    // Canonical Vite handleFilterClick blurs the input before closing its menu.
-    // Do the same so the keyboard does not resize the freshly filtered grid.
-    searchControlsRef.current?.dismissKeyboard();
+    const currentQuery = queryRef.current;
+    const nextQuery = currentQuery.trim() ? `${currentQuery}&${filter}` : filter;
+    // Adopt the input's urgent local value in the same event as the route
+    // query. Waiting for the controlled prop's layout effect required a second
+    // Android commit before the destination could paint.
+    searchControlsRef.current?.commitQueryValue(nextQuery);
     setSearchMenuVisible(false);
-  }, [onQueryChange, query]);
+    onQueryChange?.(nextQuery);
+    // Preserve Vite's blur while ensuring Android's window resize cannot delay
+    // the already-committed destination frame.
+    dismissKeyboardAfterResultPaint();
+  }, [dismissKeyboardAfterResultPaint, onQueryChange]);
+  const previewFilter = useCallback((filter: string) => {
+    const currentQuery = queryRef.current;
+    const nextQuery = currentQuery.trim() ? `${currentQuery}&${filter}` : filter;
+    onQueryPreview?.(nextQuery);
+  }, [onQueryPreview]);
+  const cancelFilterPreview = useCallback((filter: string) => {
+    const currentQuery = queryRef.current;
+    const nextQuery = currentQuery.trim() ? `${currentQuery}&${filter}` : filter;
+    onCancelQueryPreview?.(nextQuery);
+  }, [onCancelQueryPreview]);
+  const changeSearchMenuVisibility = useCallback((visible: boolean) => {
+    if (visible) setSearchMenuMounted(true);
+    setSearchMenuVisible(visible);
+  }, []);
   const changeQuery = useCallback(
     (value: string) => onQueryChange?.(value),
     [onQueryChange],
@@ -457,6 +506,11 @@ export const NativeCollectionParityFixture = memo(forwardRef<
     listRef.current?.scrollToOffset({ animated: false, offset: initialScrollOffset });
   }, [initialScrollOffset]);
   useImperativeHandle(ref, () => ({ resetScroll }), [resetScroll]);
+  useLayoutEffect(() => () => {
+    if (keyboardDismissFrameRef.current !== null) {
+      cancelAnimationFrame(keyboardDismissFrameRef.current);
+    }
+  }, []);
   useLayoutEffect(() => {
     if (previousResetKeyRef.current === scrollResetKey) return;
     previousResetKeyRef.current = scrollResetKey;
@@ -469,7 +523,7 @@ export const NativeCollectionParityFixture = memo(forwardRef<
         inputBackground={palette.search}
         inputTextColor={palette.searchText}
         menuVisible={searchMenuVisible}
-        onMenuVisibleChange={setSearchMenuVisible}
+        onMenuVisibleChange={changeSearchMenuVisibility}
         onQueryChange={changeQuery}
         onToggleEvolutionaryLine={toggleEvolutionaryLine}
         query={query}
@@ -532,6 +586,7 @@ export const NativeCollectionParityFixture = memo(forwardRef<
     activeTag,
     assetBaseUrl,
     changeQuery,
+    changeSearchMenuVisibility,
     error,
     onClearTag,
     onRetry,
@@ -568,6 +623,7 @@ export const NativeCollectionParityFixture = memo(forwardRef<
   ), [error, isLoading, palette.secondaryText, palette.text]);
   const renderCard = useCallback(({
     item,
+    index,
   }: ListRenderItemInfo<CollectionCardSource>) => {
     const fixture = isParityCardFixture(item);
     const card = fixture
@@ -586,11 +642,13 @@ export const NativeCollectionParityFixture = memo(forwardRef<
         onLongPressCollectionRow={onCollectionRowLongPress}
         selected={selectedIds.has(card.id)}
         theme={theme}
+        imagesEnabled={collectionImageRevealCount === null || index < collectionImageRevealCount}
       />
     );
   }, [
     assetBaseUrl,
     cardStyle,
+    collectionImageRevealCount,
     imageStageStyle,
     onCardLongPress,
     onCardPress,
@@ -636,7 +694,7 @@ export const NativeCollectionParityFixture = memo(forwardRef<
           columnWrapperStyle={styles.gridRow}
           contentContainerStyle={styles.listContent}
           data={collectionItems}
-          extraData={selectedIds}
+          extraData={listExtraData}
           getItemLayout={getItemLayout}
           importantForAccessibility={searchMenuVisible ? 'no-hide-descendants' : 'auto'}
           nestedScrollEnabled
@@ -656,23 +714,32 @@ export const NativeCollectionParityFixture = memo(forwardRef<
           pointerEvents={searchMenuVisible ? 'none' : 'auto'}
           removeClippedSubviews={false}
           {...NATIVE_FLAT_LIST_RENDERER_OPTIMIZATION}
-          style={[styles.gridList, searchMenuVisible ? styles.concealedGrid : null]}
+          style={styles.gridList}
           testID="native-collection-grid"
           updateCellsBatchingPeriod={16}
           windowSize={3}
           ListEmptyComponent={emptyState}
           renderItem={renderCard}
         />
-        {searchMenuVisible ? (
+        {searchMenuMounted ? (
           <ScrollView
+            accessibilityElementsHidden={!searchMenuVisible}
             contentContainerStyle={styles.searchMenuContent}
+            importantForAccessibility={searchMenuVisible ? 'auto' : 'no-hide-descendants'}
             keyboardShouldPersistTaps="always"
-            style={[styles.searchMenuOverlay, { backgroundColor: palette.background }]}
+            pointerEvents={searchMenuVisible ? 'auto' : 'none'}
+            style={[
+              styles.searchMenuOverlay,
+              { backgroundColor: palette.background },
+              !searchMenuVisible ? styles.hiddenSearchMenu : null,
+            ]}
             testID="native-collection-filter-scroll"
           >
             <NativeCollectionSearchMenu
               assetBaseUrl={assetBaseUrl}
               onFilterPress={appendFilter}
+              onFilterPressIn={previewFilter}
+              onFilterPressOut={cancelFilterPreview}
               textColor={palette.text}
             />
           </ScrollView>
@@ -766,7 +833,6 @@ const styles = StyleSheet.create({
     paddingBottom: 92,
   },
   collectionBody: { position: 'relative', flex: 1, minHeight: 0 },
-  concealedGrid: { opacity: 0 },
   gridList: { flex: 1, minHeight: 0 },
   searchMenuOverlay: {
     position: 'absolute',
@@ -776,6 +842,7 @@ const styles = StyleSheet.create({
     left: 0,
     zIndex: 2,
   },
+  hiddenSearchMenu: { opacity: 0 },
   gridRow: { gap: GRID_GAP },
   collectionControls: {
     alignItems: 'center',

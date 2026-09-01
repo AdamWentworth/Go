@@ -3,6 +3,7 @@ import {
   memo,
   useCallback,
   useDeferredValue,
+  useEffect,
   useLayoutEffect,
   useMemo,
   useRef,
@@ -31,6 +32,7 @@ import {
 } from '../features/collection/parity/NativeCollectionSortMenu';
 import { useNativeColorScheme } from '../features/settings/useNativeColorScheme';
 import type { NativeCollectionSession } from '../features/collection/nativeCollectionSessionCache';
+import { markNativeUiPerformance } from '../observability/nativeUiPerformanceTrace';
 
 export {
   projectNativeCollectionParityCards,
@@ -63,7 +65,7 @@ type NativeCollectionParityScreenProps = {
   selectionAction?: 'add' | 'organize';
   tagCanClear?: boolean;
   onContextChange?: (patch: Partial<NativeCollectionSession>) => void;
-  onRowsCommitted?: (visibleRowCount: number) => void;
+  onRowsCommitted?: (visibleRowCount: number, committedQuery: string) => void;
 };
 
 const SORT_ICONS: Record<NativeCollectionSort, string> = {
@@ -87,6 +89,14 @@ export const prepareNativeCollectionParityRows = (
 };
 
 const EMPTY_SELECTED_IDS: ReadonlySet<string> = new Set<string>();
+// React Native's legacy Android Image view decodes on the render thread. Vite's
+// browser pipeline lets cached lazy images complete independently, so never
+// hand Android an entire mounted FlatList window in one frame. One card per
+// frame keeps each decode slice small; three viewports cover FlatList's window
+// before the ordinary unrestricted renderer resumes.
+const COLLECTION_IMAGE_REVEAL_BATCH = 1;
+const COLLECTION_INITIAL_VIEWPORT_IMAGE_COUNT = 18;
+const COLLECTION_IMAGE_REVEAL_WINDOW = 54;
 
 const catalogOnlyRowsCache = new WeakMap<NativeCollectionRow[], boolean>();
 const containsOnlyCatalogRows = (rows: NativeCollectionRow[]): boolean => {
@@ -136,17 +146,28 @@ export const NativeCollectionParityScreen = memo(forwardRef<
   const [direction, setDirection] = useState<NativeCollectionSortDirection>(initialSortDirection);
   const [sortOpen, setSortOpen] = useState(false);
   const [showEvolutionaryLine, setShowEvolutionaryLine] = useState(initialShowEvolutionaryLine);
+  const [stagedQuery, setStagedQuery] = useState<string | null>(null);
+  const [collectionImageRevealCount, setCollectionImageRevealCount] = useState<number | null>(null);
+  const [collectionImageRevealQuery, setCollectionImageRevealQuery] = useState<string | null>(null);
+  const stagedQueryRef = useRef<string | null>(null);
+  const stagedQueryCancelTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const stagedQueryTraceRef = useRef<{
+    paintedAt: number | null;
+    query: string;
+    startedAt: number;
+  } | null>(null);
+  const effectiveQuery = stagedQuery ?? query;
   const deferredShowEvolutionaryLine = useDeferredValue(showEvolutionaryLine);
   // Match Vite's architecture: one virtualized grid receives a new immutable
   // projection when the tag changes. Sorting and card projection are cached,
   // so this changes the small visible window without retaining a hidden image
   // grid for every tag in the native view hierarchy.
   const filteredRows = useMemo(
-    () => filterNativeCollectionRows(rows, 'all', query, {
+    () => filterNativeCollectionRows(rows, 'all', effectiveQuery, {
       showEvolutionaryLine: deferredShowEvolutionaryLine,
       universeRows: searchUniverseRows,
     }),
-    [deferredShowEvolutionaryLine, query, rows, searchUniverseRows],
+    [deferredShowEvolutionaryLine, effectiveQuery, rows, searchUniverseRows],
   );
   const visibleRows = useMemo(
     () => sortNativeCollectionRows(filteredRows, sort, direction),
@@ -158,8 +179,75 @@ export const NativeCollectionParityScreen = memo(forwardRef<
     // React has committed the destination card window at this point. The Hub
     // can now start its native-driven track in the same paint, just as Vite's
     // filter and CSS transform take effect in one commit.
-    onRowsCommitted?.(visibleRows.length);
-  }, [onRowsCommitted, visibleRows]);
+    onRowsCommitted?.(visibleRows.length, effectiveQuery);
+    const trace = stagedQueryTraceRef.current;
+    if (stagedQuery !== null && trace?.query === effectiveQuery && trace.paintedAt === null) {
+      requestAnimationFrame(() => {
+        if (stagedQueryTraceRef.current !== trace || trace.paintedAt !== null) return;
+        trace.paintedAt = Date.now();
+        markNativeUiPerformance('collection_query_preview_painted', {
+          interactionLatencyMs: trace.paintedAt - trace.startedAt,
+          query: trace.query,
+          rowCount: visibleRows.length,
+        });
+      });
+    }
+  }, [effectiveQuery, onRowsCommitted, stagedQuery, visibleRows]);
+  useEffect(() => {
+    if (collectionImageRevealQuery === null) return undefined;
+    const startedAt = Date.now();
+    const target = Math.min(COLLECTION_IMAGE_REVEAL_WINDOW, visibleRows.length);
+    let revealed = 0;
+    let frame: number | null = null;
+    let cancelled = false;
+    const finishReveal = () => {
+      markNativeUiPerformance('collection_query_images_revealed', {
+        interactionLatencyMs: Date.now() - startedAt,
+        query: collectionImageRevealQuery,
+        rowCount: visibleRows.length,
+      });
+      setCollectionImageRevealCount(null);
+      setCollectionImageRevealQuery(null);
+    };
+    const revealNextBatch = () => {
+      frame = requestAnimationFrame(() => {
+        if (cancelled) return;
+        revealed = Math.min(target, revealed + COLLECTION_IMAGE_REVEAL_BATCH);
+        setCollectionImageRevealCount(revealed);
+        if (revealed === Math.min(COLLECTION_INITIAL_VIEWPORT_IMAGE_COUNT, target)) {
+          frame = requestAnimationFrame(() => {
+            if (cancelled) return;
+            markNativeUiPerformance('collection_query_viewport_images_revealed', {
+              interactionLatencyMs: Date.now() - startedAt,
+              query: collectionImageRevealQuery,
+              rowCount: visibleRows.length,
+            });
+            if (revealed < target) revealNextBatch();
+            else finishReveal();
+          });
+          return;
+        }
+        if (revealed < target) {
+          revealNextBatch();
+          return;
+        }
+        frame = requestAnimationFrame(() => {
+          if (cancelled) return;
+          finishReveal();
+        });
+      });
+    };
+    if (target === 0) {
+      setCollectionImageRevealCount(null);
+      setCollectionImageRevealQuery(null);
+      return undefined;
+    }
+    revealNextBatch();
+    return () => {
+      cancelled = true;
+      if (frame !== null) cancelAnimationFrame(frame);
+    };
+  }, [collectionImageRevealQuery, visibleRows.length]);
   const handleRowPress = useCallback(
     (row: NativeCollectionRow) => onOpenInstance(row, visibleRowsRef.current),
     [onOpenInstance],
@@ -182,6 +270,60 @@ export const NativeCollectionParityScreen = memo(forwardRef<
   const handleScrollOffsetChange = useCallback((scrollOffset: number) => {
     onContextChange?.({ scrollOffset });
   }, [onContextChange]);
+  const previewQuery = useCallback((nextQuery: string) => {
+    if (stagedQueryCancelTimerRef.current) {
+      clearTimeout(stagedQueryCancelTimerRef.current);
+      stagedQueryCancelTimerRef.current = null;
+    }
+    stagedQueryTraceRef.current = {
+      paintedAt: null,
+      query: nextQuery,
+      startedAt: Date.now(),
+    };
+    markNativeUiPerformance('collection_query_preview_started', { query: nextQuery });
+    setCollectionImageRevealCount(0);
+    setCollectionImageRevealQuery(null);
+    stagedQueryRef.current = nextQuery;
+    setStagedQuery(nextQuery);
+  }, []);
+  const cancelQueryPreview = useCallback((nextQuery: string) => {
+    if (stagedQueryCancelTimerRef.current) clearTimeout(stagedQueryCancelTimerRef.current);
+    stagedQueryCancelTimerRef.current = setTimeout(() => {
+      stagedQueryCancelTimerRef.current = null;
+      if (stagedQueryRef.current !== nextQuery) return;
+      stagedQueryTraceRef.current = null;
+      setCollectionImageRevealCount(null);
+      setCollectionImageRevealQuery(null);
+      stagedQueryRef.current = null;
+      setStagedQuery(null);
+    }, 0);
+  }, []);
+  const changeQuery = useCallback((nextQuery: string) => {
+    if (stagedQueryCancelTimerRef.current) {
+      clearTimeout(stagedQueryCancelTimerRef.current);
+      stagedQueryCancelTimerRef.current = null;
+    }
+    const trace = stagedQueryTraceRef.current;
+    if (trace?.query === nextQuery) {
+      markNativeUiPerformance('collection_query_preview_released', {
+        previewLeadMs: Date.now() - trace.startedAt,
+        previewPaintedBeforeRelease: trace.paintedAt !== null,
+        query: trace.query,
+      });
+      setCollectionImageRevealCount(0);
+      setCollectionImageRevealQuery(nextQuery);
+    } else {
+      setCollectionImageRevealCount(null);
+      setCollectionImageRevealQuery(null);
+    }
+    stagedQueryTraceRef.current = null;
+    stagedQueryRef.current = null;
+    setStagedQuery(null);
+    onQueryChange(nextQuery);
+  }, [onQueryChange]);
+  useEffect(() => () => {
+    if (stagedQueryCancelTimerRef.current) clearTimeout(stagedQueryCancelTimerRef.current);
+  }, []);
   const openSortMenu = useCallback(() => setSortOpen(true), []);
   const closeSortMenu = useCallback(() => setSortOpen(false), []);
   const selectSort = useCallback((nextSort: NativeCollectionSort) => {
@@ -218,6 +360,7 @@ export const NativeCollectionParityScreen = memo(forwardRef<
         assetBaseUrl={assetBaseUrl}
         collectionRows={visibleRows}
         collectionCount={visibleRows.length}
+        collectionImageRevealCount={collectionImageRevealCount}
         error={error}
         isLoading={isLoading}
         onActionMenuPress={onOpenCanonicalCollection}
@@ -225,7 +368,9 @@ export const NativeCollectionParityScreen = memo(forwardRef<
         onCollectionRowLongPress={handleRowLongPress}
         customTagColor={activeTag?.color}
         onClearTag={onClearTag}
-        onQueryChange={onQueryChange}
+        onQueryChange={changeQuery}
+        onQueryPreview={previewQuery}
+        onCancelQueryPreview={cancelQueryPreview}
         onToggleEvolutionaryLine={handleToggleEvolutionaryLine}
         onRetry={onRetry}
         onSortPress={openSortMenu}

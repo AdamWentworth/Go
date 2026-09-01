@@ -201,6 +201,7 @@ describe('NativeCollectionParityFixture', () => {
     const initialInput = view.getByLabelText('Search Pokémon');
 
     fireEvent(initialInput, 'focus');
+    const initialSearchMenu = view.getByLabelText('Pokémon search filters');
 
     expect(view.UNSAFE_getByType(FlatList)).toBe(initialGrid);
     expect(view.getByLabelText('Search Pokémon')).toBe(initialInput);
@@ -214,9 +215,14 @@ describe('NativeCollectionParityFixture', () => {
     expect(view.getByLabelText('Search Pokémon')).toBe(initialInput);
     expect(initialGrid.props.pointerEvents).toBe('auto');
     expect(view.queryByLabelText('Pokémon search filters')).toBeNull();
+    expect(view.getByLabelText(
+      'Pokémon search filters',
+      { includeHiddenElements: true },
+    )).toBe(initialSearchMenu);
   });
 
   it('dismisses the keyboard when a Vite search-filter tile is selected', () => {
+    jest.useFakeTimers();
     const dismissKeyboard = jest.spyOn(Keyboard, 'dismiss').mockImplementation(jest.fn());
     const onQueryChange = jest.fn();
     const view = render(
@@ -227,8 +233,12 @@ describe('NativeCollectionParityFixture', () => {
     fireEvent.press(view.getByLabelText('Filter by Shiny'));
 
     expect(onQueryChange).toHaveBeenCalledWith('Shiny');
+    expect(dismissKeyboard).not.toHaveBeenCalled();
+    act(() => jest.runAllTimers());
     expect(dismissKeyboard).toHaveBeenCalled();
     expect(view.queryByLabelText('Pokémon search filters')).toBeNull();
+    dismissKeyboard.mockRestore();
+    jest.useRealTimers();
   });
 
   it('keeps grid render work stable when the Vite-style data projection changes', () => {
@@ -270,6 +280,25 @@ describe('NativeCollectionParityFixture', () => {
     expect(firstPokemonImage.props.resizeMethod).toBeUndefined();
     expect(firstPokemonImage.props.source.cache).toBe('force-cache');
     expect(screen.getByLabelText('Gigantamax').props.resizeMethod).toBe('resize');
+  });
+
+  it('can reveal a destination grid image-by-image without withholding card content', () => {
+    const cards = COLLECTION_PARITY_FIXTURES.slice(0, 3);
+    const view = render(
+      <NativeCollectionParityFixture cards={cards} collectionImageRevealCount={1} />,
+    );
+
+    expect(view.getByText(cards[0].name)).toBeTruthy();
+    expect(view.getByText(cards[1].name)).toBeTruthy();
+    expect(view.getByLabelText(cards[0].name)).toBeTruthy();
+    expect(view.queryByLabelText(cards[1].name)).toBeNull();
+
+    view.rerender(
+      <NativeCollectionParityFixture cards={cards} collectionImageRevealCount={2} />,
+    );
+
+    expect(view.getByLabelText(cards[1].name)).toBeTruthy();
+    expect(view.queryByLabelText(cards[2].name)).toBeNull();
   });
 
   it('resets the active destination grid before it returns from a side tag page', () => {

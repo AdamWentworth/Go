@@ -58,7 +58,7 @@ mounts complete collection and Pokédex route trees in the background.
 
 Passing evidence for this checkpoint:
 
-- native Jest: 158 suites, 830 tests;
+- native Jest: 158 suites, 833 tests;
 - mobile and web TypeScript and ESLint;
 - native real-route smoke: 92 guest/signed-in, light/dark route states;
 - focused Vite mobile-Chromium browser coverage: 9 tests;
@@ -238,6 +238,25 @@ On the 3,285-row Pixel smoke catalog this reduced release-to-motion from 60 ms
 to 6 ms and release-to-painted-result from 92 ms to 64 ms. The reusable
 minified Android performance smoke now enforces respective 32 ms and 150 ms
 budgets from device logcat rather than relying on the browser proxy.
+
+The search-filter follow-up applies the same preparation model to the Vite tile
+menu. Press-in stages the immutable filtered rows without adopting the query;
+a cancelled drag restores the catalog, while release keeps the staged result
+and updates the input/query in one commit. The menu is mounted only on first
+focus and then retained invisibly and accessibly, so release does not delete
+and rebuild its roughly forty native image controls. Android keyboard dismissal
+begins after the result frame instead of synchronously resizing the window in
+front of it. Because React Native's legacy Android Image view decodes on the
+render thread, the correct destination card content paints first and its cached
+images are revealed one card per frame across FlatList's three-viewport window,
+matching Vite's asynchronous lazy-image pipeline without a final all-at-once
+decode burst. The latest production-mode Pixel run measured 47 ms from release
+to result, 849 ms for the first eighteen images, and 2,054 ms for all fifty-four
+window images. Device logcat now enforces 100 ms, 1,000 ms, and 3,000 ms budgets
+for those stages respectively. The separate production browser proxy measured
+93.7 ms sequential search, 76.3 ms dispatched tag response, 7.5 ms to first
+motion, twenty distinct positions, and a 33.4 ms maximum sampled gap; all 92
+route/theme states also passed.
 
 ## Remaining approval gate
 

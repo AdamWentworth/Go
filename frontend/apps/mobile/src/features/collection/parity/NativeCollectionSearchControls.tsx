@@ -95,12 +95,16 @@ const FilterTile = memo(function FilterTile({
   assetBaseUrl,
   filter,
   onPress,
+  onPressIn,
+  onPressOut,
   section,
   textColor,
 }: {
   assetBaseUrl: string;
   filter: string;
   onPress: () => void;
+  onPressIn?: () => void;
+  onPressOut?: () => void;
   section: FilterSection;
   textColor: string;
 }) {
@@ -114,8 +118,11 @@ const FilterTile = memo(function FilterTile({
       accessibilityLabel={`Filter by ${filter}`}
       accessibilityRole="button"
       onPress={onPress}
+      onPressIn={onPressIn}
+      onPressOut={onPressOut}
       style={({ pressed }) => [styles.filterTile, pressed ? styles.pressed : null]}
       testID={`native-collection-filter-${filter.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`}
+      unstable_pressDelay={onPressIn ? 16 : undefined}
     >
       <View style={[
         styles.filterImageCircle,
@@ -139,10 +146,14 @@ const FilterTile = memo(function FilterTile({
 export const NativeCollectionSearchMenu = memo(function NativeCollectionSearchMenu({
   assetBaseUrl,
   onFilterPress,
+  onFilterPressIn,
+  onFilterPressOut,
   textColor,
 }: {
   assetBaseUrl: string;
   onFilterPress: (filter: string) => void;
+  onFilterPressIn?: (filter: string) => void;
+  onFilterPressOut?: (filter: string) => void;
   textColor: string;
 }) {
   return (
@@ -159,6 +170,8 @@ export const NativeCollectionSearchMenu = memo(function NativeCollectionSearchMe
               filter={filter}
               key={filter}
               onPress={() => onFilterPress(filter)}
+              onPressIn={onFilterPressIn ? () => onFilterPressIn(filter) : undefined}
+              onPressOut={onFilterPressOut ? () => onFilterPressOut(filter) : undefined}
               section={section}
               textColor={textColor}
             />
@@ -171,6 +184,7 @@ export const NativeCollectionSearchMenu = memo(function NativeCollectionSearchMe
 });
 
 export type NativeCollectionSearchControlsHandle = {
+  commitQueryValue: (query: string) => void;
   dismissKeyboard: () => void;
 };
 
@@ -207,16 +221,22 @@ export const NativeCollectionSearchControls = memo(forwardRef<
   // for the full route and grid tree to reconcile before it could paint.
   const [inputValue, setInputValue] = useState(query);
   const [, startTransition] = useTransition();
+  const commitQueryValue = useCallback((value: string) => {
+    setInputValue(value);
+  }, []);
   const dismissKeyboard = useCallback(() => {
-    inputRef.current?.blur();
     Keyboard.dismiss();
   }, []);
-  useImperativeHandle(ref, () => ({ dismissKeyboard }), [dismissKeyboard]);
+  useImperativeHandle(
+    ref,
+    () => ({ commitQueryValue, dismissKeyboard }),
+    [commitQueryValue, dismissKeyboard],
+  );
   useLayoutEffect(() => {
     setInputValue((current) => (current === query ? current : query));
   }, [query]);
   const commitQuery = (value: string) => {
-    setInputValue(value);
+    commitQueryValue(value);
     startTransition(() => onQueryChange(value));
   };
   const expanded = menuVisible || Boolean(inputValue.trim());

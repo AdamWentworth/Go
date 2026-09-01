@@ -20,6 +20,9 @@ const readInteractionLatencies = (text, event) => {
 const budgets = {
   collection_tag_slide_started: 32,
   collection_tag_result_painted: 150,
+  collection_query_result_painted: 100,
+  collection_query_viewport_images_revealed: 1000,
+  collection_query_images_revealed: 3000,
 };
 const measurements = Object.fromEntries(Object.keys(budgets).map((event) => [event, []]));
 

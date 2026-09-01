@@ -53,13 +53,19 @@ const row = (patch: Partial<NativeCollectionRow>): NativeCollectionRow => ({
 });
 
 const rows = [
-  row({ id: 'bulbasaur', name: 'Bulbasaur', favorite: true }),
+  row({
+    id: 'bulbasaur',
+    name: 'Bulbasaur',
+    favorite: true,
+    searchTerms: ['Grass', 'Shiny'],
+  }),
   row({
     id: 'charizard',
     pokemonId: 6,
     pokedexNumber: 6,
     name: 'Charizard',
     favorite: false,
+    searchTerms: ['Fire'],
     status: 'trade',
   }),
 ];
@@ -67,9 +73,13 @@ const rows = [
 const Harness = ({
   onOpenCanonicalCollection = jest.fn(),
   onOpenInstance = jest.fn(),
+  onQueryChange = jest.fn(),
+  onRowsCommitted = jest.fn(),
 }: {
   onOpenCanonicalCollection?: jest.Mock;
   onOpenInstance?: jest.Mock;
+  onQueryChange?: jest.Mock;
+  onRowsCommitted?: jest.Mock;
 }) => {
   const [query, setQuery] = useState('');
   return (
@@ -80,7 +90,11 @@ const Harness = ({
       query={query}
       isLoading={false}
       error={null}
-      onQueryChange={setQuery}
+      onQueryChange={(nextQuery) => {
+        onQueryChange(nextQuery);
+        setQuery(nextQuery);
+      }}
+      onRowsCommitted={onRowsCommitted}
       onRetry={jest.fn()}
       onOpenInstance={onOpenInstance}
       onOpenCanonicalCollection={onOpenCanonicalCollection}
@@ -185,6 +199,48 @@ describe('NativeCollectionParityScreen', () => {
     expect(screen.queryByLabelText('Pokémon search filters')).toBeNull();
     expect(screen.getByLabelText('Clear Pokémon search')).toBeTruthy();
     expect(screen.getByRole('checkbox')).toBeTruthy();
+  });
+
+  it('stages a filter result behind the search menu before release adopts it', () => {
+    const onQueryChange = jest.fn();
+    const onRowsCommitted = jest.fn();
+    const view = render(
+      <Harness onQueryChange={onQueryChange} onRowsCommitted={onRowsCommitted} />,
+    );
+    fireEvent(view.getByLabelText('Search Pokémon'), 'focus');
+    const filter = view.getByRole('button', { name: 'Filter by Shiny' });
+    onRowsCommitted.mockClear();
+
+    fireEvent(filter, 'pressIn');
+
+    expect(view.UNSAFE_getByType(FlatList).props.data).toEqual([rows[0]]);
+    expect(view.getByLabelText('Search Pokémon').props.value).toBe('');
+    expect(onQueryChange).not.toHaveBeenCalled();
+    expect(onRowsCommitted).toHaveBeenLastCalledWith(1, 'Shiny');
+
+    fireEvent(filter, 'pressOut');
+    fireEvent.press(filter);
+
+    expect(onQueryChange).toHaveBeenCalledWith('Shiny');
+    expect(view.getByLabelText('Search Pokémon').props.value).toBe('Shiny');
+    expect(view.UNSAFE_getByType(FlatList).props.data).toEqual([rows[0]]);
+  });
+
+  it('restores the catalog when a staged filter press is cancelled', () => {
+    const onQueryChange = jest.fn();
+    const view = render(<Harness onQueryChange={onQueryChange} />);
+    fireEvent(view.getByLabelText('Search Pokémon'), 'focus');
+    const filter = view.getByRole('button', { name: 'Filter by Shiny' });
+
+    fireEvent(filter, 'pressIn');
+    expect(view.UNSAFE_getByType(FlatList).props.data).toEqual([rows[0]]);
+
+    fireEvent(filter, 'pressOut');
+    act(() => jest.advanceTimersByTime(0));
+
+    expect(view.UNSAFE_getByType(FlatList).props.data).toEqual(rows);
+    expect(onQueryChange).not.toHaveBeenCalled();
+    expect(view.getByLabelText('Search Pokémon').props.value).toBe('');
   });
 
   it('lets the user choose an actual sort and direction', () => {

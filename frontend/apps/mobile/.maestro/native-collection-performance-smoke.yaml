@@ -26,6 +26,19 @@ tags:
 - extendedWaitUntil:
     visible: Bulbasaur
     timeout: 45000
+- tapOn: Search Pokémon
+- extendedWaitUntil:
+    visible: Variants
+    timeout: 10000
+- tapOn:
+    id: native-collection-filter-shiny
+- extendedWaitUntil:
+    visible: Shiny Bulbasaur
+    timeout: 10000
+- tapOn: Close Pokémon search
+- extendedWaitUntil:
+    visible: Bulbasaur
+    timeout: 10000
 - tapOn: TAGS
 - extendedWaitUntil:
     visible: Inventory tags
@@ -35,12 +48,3 @@ tags:
     visible: "(TRADE)"
     timeout: 10000
 - assertVisible: Shiny Gigantamax Charizard
-- tapOn: Search Pokémon
-- extendedWaitUntil:
-    visible: Variants
-    timeout: 10000
-- tapOn:
-    id: native-collection-filter-shiny
-- extendedWaitUntil:
-    visible: Shiny Gigantamax Charizard
-    timeout: 10000

@@ -161,6 +161,7 @@ export const NativeCollectionHubScreen = memo(function NativeCollectionHubScreen
   const sliderRef = useRef<NativeHorizontalPageSliderHandle>(null);
   const collectionSurfaceRef = useRef<NativeCollectionParityScreenHandle>(null);
   const tagSelectionTraceRef = useRef<{ key: string; startedAt: number } | null>(null);
+  const querySelectionTraceRef = useRef<{ query: string; startedAt: number } | null>(null);
   const pendingTagMotionRef = useRef<{
     delaySidePanelTag: boolean;
     key: string;
@@ -360,21 +361,46 @@ export const NativeCollectionHubScreen = memo(function NativeCollectionHubScreen
     startPendingTagMotion();
   }, [activeView, selectedTag?.key, startPendingTagMotion]);
 
-  const commitCollectionRows = useCallback((visibleRowCount: number) => {
+  const commitCollectionRows = useCallback((
+    visibleRowCount: number,
+    committedQuery: string,
+  ) => {
     if (stagedTagKeyRef.current && !pendingTagMotionRef.current) {
       stagedTagReadyRef.current = true;
       stagedVisibleRowCountRef.current = visibleRowCount;
       return;
     }
+    // Filter tiles stage their immutable result into the concealed grid during
+    // press-in. Do not publish its count or performance result until onPress
+    // adopts the same query; the visible search UI remains unchanged if the
+    // press turns into a vertical drag and is cancelled.
+    if (committedQuery !== query) return;
     if (query.trim()) {
       setVisibleCollectionCount((current) => (
         current === visibleRowCount ? current : visibleRowCount
       ));
+      const trace = querySelectionTraceRef.current;
+      if (trace?.query === query) {
+        querySelectionTraceRef.current = null;
+        requestAnimationFrame(() => {
+          markNativeUiPerformance('collection_query_result_painted', {
+            interactionLatencyMs: Date.now() - trace.startedAt,
+            query: trace.query,
+            rowCount: visibleRowCount,
+          });
+        });
+      }
     }
     startPendingTagMotion();
   }, [query, startPendingTagMotion]);
 
   const changeQuery = useCallback((nextQuery: string) => {
+    if (nextQuery.trim()) {
+      querySelectionTraceRef.current = { query: nextQuery, startedAt: Date.now() };
+      markNativeUiPerformance('collection_query_changed', { query: nextQuery });
+    } else {
+      querySelectionTraceRef.current = null;
+    }
     setQuery(nextQuery);
     onContextChange?.({ query: nextQuery, scrollOffset: 0 });
   }, [onContextChange]);
