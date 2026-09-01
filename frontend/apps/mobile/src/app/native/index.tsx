@@ -1,12 +1,20 @@
-import { useRouter } from 'expo-router';
+import { type Href, useRouter } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
+import {
+  ActivityIndicator,
+  Pressable,
+  StyleSheet,
+  Text,
+  View,
+} from 'react-native';
 import { useNativeSession } from '../../auth/NativeSessionContext';
 import { NativeActionMenu } from '../../components/NativeActionMenu';
 import { NativeActionMenuAnchor } from '../../components/NativeActionMenuAnchor';
+import { useNativeAppLoading } from '../../components/NativeAppLoadingProvider';
 import { runtimeConfig } from '../../config/runtimeConfig';
 import { buildNativeCollectionRows } from '../../features/collection/collectionModel';
 import { useNativeCollectionSnapshotQuery } from '../../features/collection/collectionQueries';
+import { primeNativeCollectionSession } from '../../features/collection/nativeCollectionSessionCache';
 import {
   EMPTY_NATIVE_HOME_COLLECTION,
   EMPTY_NATIVE_HOME_TRADES,
@@ -25,13 +33,19 @@ import { useNativeFriendsQuery } from '../../features/social/socialQueries';
 import { useNativeTradesQuery } from '../../features/trades/tradeQueries';
 import { isNativeInformationSlug } from '../../features/information/nativeInformationContent';
 import { resolveNativeActionMenuDestination } from '../../navigation/nativeActionMenuNavigation';
+import {
+  resolveNativeHomeCollectionEntry,
+  runNativeHomeNavigationWithLoading,
+} from '../../navigation/nativeHomeNavigation';
 import { NativeGuestHomeScreen } from '../../screens/NativeGuestHomeScreen';
 import { NativeHomeScreen } from '../../screens/NativeHomeScreen';
 import { useNativeColorScheme } from '../../features/settings/useNativeColorScheme';
+import { markNativeUiPerformance } from '../../observability/nativeUiPerformanceTrace';
 
 export default function NativeHomeRoute() {
   const router = useRouter();
   const session = useNativeSession();
+  const { runWithLoading } = useNativeAppLoading();
   const light = useNativeColorScheme() === 'light';
   const userId = session.user?.user_id ?? null;
   const onboardingOwnerKey = session.user
@@ -54,74 +68,86 @@ export default function NativeHomeRoute() {
     setActionMenuOpen(false);
     const [pathname = '/', search = ''] = path.split('?');
     const params = new URLSearchParams(search);
+    markNativeUiPerformance('home_link_pressed', {
+      canonicalPath: path,
+      collectionHasData: Boolean(collectionQuery.data),
+      collectionIsPending: collectionQuery.isPending,
+    });
 
     if (pathname === '/') return;
-    if (isNativeInformationSlug(pathname.slice(1))) {
-      router.push({ pathname: '/native/info/[slug]', params: { slug: pathname.slice(1) } });
-      return;
-    }
-    if (pathname === '/login') {
-      router.push('/native/login');
-      return;
-    }
-    if (pathname === '/register') {
-      router.push('/native/register');
-      return;
-    }
-    if (pathname === '/pokemon') {
-      const instanceId = params.get('instanceId');
-      if (instanceId) {
-        router.push({ pathname: '/native/collection/[instanceId]', params: { instanceId } });
+    runNativeHomeNavigationWithLoading(runWithLoading, () => {
+      if (isNativeInformationSlug(pathname.slice(1))) {
+        router.push({ pathname: '/native/info/[slug]', params: { slug: pathname.slice(1) } });
         return;
       }
-      const filter = params.get('filter');
-      router.push(filter
-        ? { pathname: '/native/collection', params: { filter } }
-        : '/native/collection');
-      return;
-    }
-    if (pathname === '/pokedex') {
-      router.push('/native/pokedex');
-      return;
-    }
-    if (pathname === '/trades') {
-      const section = params.get('section');
-      router.push(section
-        ? { pathname: '/native/trades', params: { section } }
-        : '/native/trades');
-      return;
-    }
-    if (pathname === '/profile/friends') {
-      router.push('/native/friends');
-      return;
-    }
-    if (pathname === '/profile') {
-      router.push('/native/profile');
-      return;
-    }
-    if (pathname === '/search') {
-      router.push('/native/search');
-      return;
-    }
-    if (pathname === '/settings') {
-      router.push('/native/settings');
-      return;
-    }
-    if (pathname === '/settings/account') {
-      router.push('/native/account');
-      return;
-    }
-    if (pathname === '/trade-board') {
-      router.push('/native/trade-board');
-      return;
-    }
-    const destination = resolveNativeActionMenuDestination(pathname);
-    if (destination.kind === 'native') {
-      router.push(destination.pathname);
-      return;
-    }
-    if (destination.kind === 'current') return;
-    router.push({ pathname: '/web', params: { path } });
+      if (pathname === '/login') {
+        router.push('/native/login');
+        return;
+      }
+      if (pathname === '/register') {
+        router.push('/native/register');
+        return;
+      }
+      if (pathname === '/pokemon') {
+        const collectionEntry = resolveNativeHomeCollectionEntry(path);
+        if (collectionEntry.selectedTagKey && session.user) {
+          primeNativeCollectionSession(`self:${session.user.user_id}`, {
+            activeView: 'pokemon',
+            query: '',
+            scrollOffset: 0,
+            selectedTagKey: collectionEntry.selectedTagKey,
+          });
+        }
+        markNativeUiPerformance('home_collection_navigation_started', {
+          destination: collectionEntry.destination,
+          selectedTagKey: collectionEntry.selectedTagKey,
+        });
+        router.push(collectionEntry.destination as Href);
+        return;
+      }
+      if (pathname === '/pokedex') {
+        router.push('/native/pokedex');
+        return;
+      }
+      if (pathname === '/trades') {
+        const section = params.get('section');
+        router.push(section
+          ? { pathname: '/native/trades', params: { section } }
+          : '/native/trades');
+        return;
+      }
+      if (pathname === '/profile/friends') {
+        router.push('/native/friends');
+        return;
+      }
+      if (pathname === '/profile') {
+        router.push('/native/profile');
+        return;
+      }
+      if (pathname === '/search') {
+        router.push('/native/search');
+        return;
+      }
+      if (pathname === '/settings') {
+        router.push('/native/settings');
+        return;
+      }
+      if (pathname === '/settings/account') {
+        router.push('/native/account');
+        return;
+      }
+      if (pathname === '/trade-board') {
+        router.push('/native/trade-board');
+        return;
+      }
+      const destination = resolveNativeActionMenuDestination(pathname);
+      if (destination.kind === 'native') {
+        router.push(destination.pathname);
+        return;
+      }
+      if (destination.kind === 'current') return;
+      router.push({ pathname: '/web', params: { path } });
+    });
   };
   const navigateFromActionMenu = (path: string) => {
     const destination = resolveNativeActionMenuDestination(path, '/');
@@ -159,6 +185,15 @@ export default function NativeHomeRoute() {
       });
     return () => { active = false; };
   }, [onboardingOwnerKey]);
+
+  useEffect(() => {
+    if (!session.user) return undefined;
+    const idleCallback = requestIdleCallback(() => {
+      router.prefetch('/native/collection');
+      router.prefetch('/native/pokedex');
+    });
+    return () => cancelIdleCallback(idleCallback);
+  }, [router, session.user]);
 
   const rows = useMemo(() => {
     if (!collectionQuery.data) return [];
@@ -230,14 +265,12 @@ export default function NativeHomeRoute() {
           showActionMenuHint={showActionMenuHint}
         />
         <NativeActionMenuAnchor assetBaseUrl={runtimeConfig.api.frontendAppUrl} onPress={() => setActionMenuOpen(true)} />
-        {actionMenuOpen ? (
-          <NativeActionMenu
-            assetBaseUrl={runtimeConfig.api.frontendAppUrl}
-            onClose={() => setActionMenuOpen(false)}
-            onNavigate={navigateFromActionMenu}
-            visible
-          />
-        ) : null}
+        <NativeActionMenu
+          assetBaseUrl={runtimeConfig.api.frontendAppUrl}
+          onClose={() => setActionMenuOpen(false)}
+          onNavigate={navigateFromActionMenu}
+          visible={actionMenuOpen}
+        />
       </View>
     );
   }
@@ -302,14 +335,12 @@ export default function NativeHomeRoute() {
         assetBaseUrl={runtimeConfig.api.frontendAppUrl}
         onPress={() => setActionMenuOpen(true)}
       />
-      {actionMenuOpen ? (
-        <NativeActionMenu
-          assetBaseUrl={runtimeConfig.api.frontendAppUrl}
-          onClose={() => setActionMenuOpen(false)}
-          onNavigate={navigateFromActionMenu}
-          visible
-        />
-      ) : null}
+      <NativeActionMenu
+        assetBaseUrl={runtimeConfig.api.frontendAppUrl}
+        onClose={() => setActionMenuOpen(false)}
+        onNavigate={navigateFromActionMenu}
+        visible={actionMenuOpen}
+      />
     </View>
   );
 }

@@ -70,6 +70,9 @@ export const NativeHorizontalPageSlider = forwardRef<
   const alignedInitialPageRef = useRef(false);
   const previousWidthRef = useRef(width);
   const dragStartOffsetRef = useRef(safeIndex * width);
+  const [mountedIndexes, setMountedIndexes] = useState<Set<number>>(
+    () => new Set([safeIndex]),
+  );
   const [internalScrollX] = useState(() => new Animated.Value(safeIndex * width));
   const pageScrollX = scrollX ?? internalScrollX;
   const devicePreferences = useOptionalNativeDevicePreferences();
@@ -85,6 +88,15 @@ export const NativeHorizontalPageSlider = forwardRef<
   }, []);
 
   const reduceMotion = devicePreferences?.shouldReduceMotion ?? systemReduceMotion;
+
+  useEffect(() => {
+    setMountedIndexes((current) => {
+      if (current.has(safeIndex)) return current;
+      const next = new Set(current);
+      next.add(safeIndex);
+      return next;
+    });
+  }, [safeIndex]);
 
   const setPage = useCallback((index: number, animated = !reduceMotion) => {
     const nextIndex = clampPageIndex(index, panelCount);
@@ -154,6 +166,15 @@ export const NativeHorizontalPageSlider = forwardRef<
     .failOffsetY([-10, 10])
     .runOnJS(true)
     .onStart(() => {
+      setMountedIndexes((current) => {
+        const next = new Set(current);
+        next.add(renderedIndexRef.current);
+        if (renderedIndexRef.current > 0) next.add(renderedIndexRef.current - 1);
+        if (renderedIndexRef.current < panelCount - 1) {
+          next.add(renderedIndexRef.current + 1);
+        }
+        return next;
+      });
       dragStartOffsetRef.current = renderedIndexRef.current * width;
       pageScrollX.stopAnimation();
     })
@@ -214,7 +235,7 @@ export const NativeHorizontalPageSlider = forwardRef<
           style={[styles.panel, { width }]}
           testID={`native-horizontal-page-${index}`}
           >
-            {panel}
+            {mountedIndexes.has(index) || index === safeIndex ? panel : null}
           </View>
         ))}
       </Animated.ScrollView>

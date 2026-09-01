@@ -1,6 +1,7 @@
 import {
   clearNativeInstanceNavigationContext,
   getNativeInstanceNavigationContext,
+  navigateNativeInstanceSibling,
   resolveNativeInstanceNeighbors,
   setNativeInstanceNavigationContext,
 } from '../../../../src/features/collection/nativeInstanceNavigationContext';
@@ -27,5 +28,17 @@ describe('native instance navigation context', () => {
       instanceId: 'second',
       fallbackIds: ['first', 'second', 'third'],
     })).toEqual({ previousId: 'first', nextId: 'third' });
+  });
+
+  it('updates sibling instance parameters in place so the overlay owns the entire swipe animation', () => {
+    const router = {
+      replace: jest.fn(),
+      setParams: jest.fn(),
+    };
+
+    navigateNativeInstanceSibling(router, 'next-instance');
+
+    expect(router.setParams).toHaveBeenCalledWith({ instanceId: 'next-instance' });
+    expect(router.replace).not.toHaveBeenCalled();
   });
 });

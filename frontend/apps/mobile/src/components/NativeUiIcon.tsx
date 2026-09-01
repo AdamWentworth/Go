@@ -25,7 +25,9 @@ export type NativeUiIconName =
   | 'list'
   | 'laptop'
   | 'map'
+  | 'medal'
   | 'search'
+  | 'ruler'
   | 'scale'
   | 'share'
   | 'sliders'
@@ -114,6 +116,16 @@ export const NativeUiIcon = ({ color = '#ffffff', name, size = 16 }: Props) => (
     ) : null}
     {name === 'map' ? (
       <Path d="M12 2.7a6.3 6.3 0 0 0-6.3 6.3c0 4.6 6.3 12.2 6.3 12.2S18.3 13.6 18.3 9A6.3 6.3 0 0 0 12 2.7Zm0 3.5A2.8 2.8 0 1 1 12 11.8 2.8 2.8 0 0 1 12 6.2Z" fill={color} />
+    ) : null}
+    {name === 'medal' ? (
+      <>
+        <Path d="M6 2h4.2l1.8 4 1.8-4H18l-3.2 7.1H9.2L6 2Z" fill={color} />
+        <Circle cx={12} cy={15} fill="none" r={6} stroke={color} strokeWidth={2.4} />
+        <Path d="m12 11.4 1.1 2.2 2.5.4-1.8 1.8.4 2.5-2.2-1.2-2.2 1.2.4-2.5L8.4 14l2.5-.4 1.1-2.2Z" fill={color} />
+      </>
+    ) : null}
+    {name === 'ruler' ? (
+      <Path d="M14.2 2.8a2 2 0 0 1 2.8 0L21.2 7a2 2 0 0 1 0 2.8L9.8 21.2a2 2 0 0 1-2.8 0L2.8 17a2 2 0 0 1 0-2.8L14.2 2.8Zm1.4 1.4L4.2 15.6l4.2 4.2 1.4-1.4-2.1-2.1 1.4-1.4 1.4 1.4 1.4-1.4-2.1-2.1 1.4-1.4 1.4 1.4L14 11.4l-2.1-2.1 1.4-1.4 1.4 1.4 1.4-1.4L14 5.6l1.6-1.4Z" fill={color} />
     ) : null}
     {name === 'clock' ? (
       <Path d="M12 3a9 9 0 1 0 9 9 9.01 9.01 0 0 0-9-9Zm0 2a7 7 0 1 1-7 7 7.01 7.01 0 0 1 7-7Zm-1 2v6h5v-2h-3V7h-2Z" fill={color} />

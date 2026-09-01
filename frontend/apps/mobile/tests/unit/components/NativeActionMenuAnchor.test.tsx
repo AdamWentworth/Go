@@ -1,5 +1,5 @@
 import { fireEvent, render } from '@testing-library/react-native';
-import { StyleSheet } from 'react-native';
+import { Image, StyleSheet } from 'react-native';
 import { NativeActionMenuAnchor } from '../../../src/components/NativeActionMenuAnchor';
 
 jest.mock('react-native-safe-area-context', () => ({
@@ -14,6 +14,7 @@ jest.mock('react-native/Libraries/Utilities/useWindowDimensions', () => ({
 describe('NativeActionMenuAnchor', () => {
   it('uses the canonical transparent Poké Ball control and respects the bottom safe area', () => {
     const onPress = jest.fn();
+    const prefetch = jest.spyOn(Image, 'prefetch').mockResolvedValue(true);
     const { getByLabelText } = render(
       <NativeActionMenuAnchor assetBaseUrl="https://pokegonexus.com" onPress={onPress} />,
     );
@@ -29,5 +30,8 @@ describe('NativeActionMenuAnchor', () => {
     });
     fireEvent.press(anchor);
     expect(onPress).toHaveBeenCalledTimes(1);
+    expect(prefetch).toHaveBeenCalledWith('https://pokegonexus.com/images/btn_raid.png');
+    expect(prefetch).toHaveBeenCalledWith('https://pokegonexus.com/images/close-button-light.png');
+    prefetch.mockRestore();
   });
 });

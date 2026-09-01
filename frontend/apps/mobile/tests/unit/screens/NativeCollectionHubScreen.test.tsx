@@ -177,6 +177,17 @@ describe('NativeCollectionHubScreen', () => {
     expect(onOpenEntry).toHaveBeenCalledWith(caughtRow, [caughtRow]);
 
     fireEvent.press(screen.getByRole('button', { name: /Clear Favorites tag filter/i }));
+    expect(screen.getByTestId('native-confirmation-dialog')).toBeTruthy();
+    expect(screen.getByText(
+      'Clear the Favorites tag? This returns you to browsing all available Pokémon and forms in Pokémon GO, without using your personal tag lists.',
+    )).toBeTruthy();
+    expect(screen.getByText('Shiny Bulbasaur')).toBeTruthy();
+    fireEvent.press(screen.getByRole('button', { name: 'Cancel' }));
+    expect(screen.queryByTestId('native-confirmation-dialog')).toBeNull();
+    expect(screen.getByText('Shiny Bulbasaur')).toBeTruthy();
+
+    fireEvent.press(screen.getByRole('button', { name: /Clear Favorites tag filter/i }));
+    fireEvent.press(screen.getByRole('button', { name: 'OK' }));
     expect(screen.getByText('Bulbasaur')).toBeTruthy();
     expect(screen.getByText('Mewtwo')).toBeTruthy();
     expect(screen.queryByText('Shiny Bulbasaur')).toBeNull();
@@ -231,7 +242,37 @@ describe('NativeCollectionHubScreen', () => {
     expect(screen.getByRole('button', { name: 'Trades' })).toBeTruthy();
 
     fireEvent.press(screen.getByRole('button', { name: 'Search' }));
+    expect(screen.getByTestId('native-action-menu-navigation-feedback')).toBeTruthy();
+    expect(onActionMenuNavigate).not.toHaveBeenCalled();
+    act(() => jest.advanceTimersByTime(32));
     expect(onActionMenuNavigate).toHaveBeenCalledWith('/search');
+  });
+
+  it('applies a routed system tag before the first Pokémon page paint', () => {
+    render(
+      <SafeAreaProvider initialMetrics={{
+        frame: { x: 0, y: 0, width: 412, height: 915 },
+        insets: { top: 24, right: 0, bottom: 20, left: 0 },
+      }}>
+        <NativeCollectionHubScreen
+          assetBaseUrl="https://pokegonexus.com"
+          catalogRows={[catalogBulbasaur, catalogMewtwo]}
+          error={null}
+          initialTagKey="system:caught"
+          inventoryTags={[inventoryTag, allCaughtTag]}
+          instances={{ [caughtRow.id]: caughtInstance }}
+          isLoading={false}
+          onOpenEntry={jest.fn()}
+          onRetry={jest.fn()}
+          wishlistTags={[wishlistTag]}
+        />
+      </SafeAreaProvider>,
+    );
+
+    expect(screen.getByText('Caught')).toBeTruthy();
+    expect(screen.getByText('Shiny Bulbasaur')).toBeTruthy();
+    expect(screen.queryByText('Mewtwo')).toBeNull();
+    expect(screen.getByTestId('native-collection-grid').props.removeClippedSubviews).toBe(false);
   });
 
   it('selects catalog variants in place and opens the canonical organizer', () => {

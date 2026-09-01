@@ -76,7 +76,6 @@ export const NativeDevicePreferencesProvider = ({ children }: PropsWithChildren)
       .then((stored) => {
         if (!active) return;
         setPreferences(stored);
-        applyColorScheme(stored.colorTheme);
       })
       .catch((error: unknown) => {
         logWarn('device-preferences', 'Unable to restore native device preferences', error);
@@ -97,6 +96,14 @@ export const NativeDevicePreferencesProvider = ({ children }: PropsWithChildren)
     };
   }, [smokeColorTheme]);
 
+  // Match Vite's ThemeProvider ordering: commit the app-owned theme state
+  // first, then synchronize the platform appearance as a post-commit effect.
+  // Appearance.setColorScheme can cross the native boundary and must not hold
+  // up the React palette update that the person is waiting to see.
+  useEffect(() => {
+    applyColorScheme(preferences.colorTheme);
+  }, [preferences.colorTheme]);
+
   const persist = useCallback((next: NativeDevicePreferences) => {
     setPreferences(next);
     void writeNativeDevicePreferences(next).catch((error: unknown) => {
@@ -105,7 +112,6 @@ export const NativeDevicePreferencesProvider = ({ children }: PropsWithChildren)
   }, []);
 
   const setColorTheme = useCallback((colorTheme: NativeColorTheme) => {
-    applyColorScheme(colorTheme);
     persist({ ...preferences, colorTheme });
   }, [persist, preferences]);
 

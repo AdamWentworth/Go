@@ -26,6 +26,10 @@ import { NativeConfirmationDialog } from '../components/NativeConfirmationDialog
 import { NativeTrainerWorkspaceNav } from '../components/NativeTrainerWorkspaceNav';
 import { NativeUiIcon, type NativeUiIconName } from '../components/NativeUiIcon';
 import { useNativeColorScheme } from '../features/settings/useNativeColorScheme';
+import {
+  TRAINER_TITLE_VISUALS,
+  type TrainerTitle,
+} from '@pokemongonexus/shared-contracts/users';
 
 export type NativeTrainerProfileAction =
   | 'add'
@@ -71,6 +75,51 @@ const LIGHT_TEAM_COLORS = {
   instinct: { accent: '#7a5700', soft: '#463d1f' },
   neutral: { accent: '#006a61', soft: '#173739' },
 } as const;
+
+const trainerTitleFallbackIcon = {
+  medal: 'medal',
+  ruler: 'ruler',
+  users: 'trainers',
+} as const satisfies Record<'medal' | 'ruler' | 'users', NativeUiIconName>;
+
+const toAssetUrl = (baseUrl: string, path: string): string => (
+  `${baseUrl.replace(/\/$/, '')}/${path.replace(/^\//, '')}`
+);
+
+const NativeTrainerTitleVisual = ({
+  assetBaseUrl,
+  color,
+  title,
+}: {
+  assetBaseUrl: string;
+  color: string;
+  title: TrainerTitle;
+}) => {
+  const visual = TRAINER_TITLE_VISUALS[title];
+  return (
+    <View
+      accessibilityElementsHidden
+      importantForAccessibility="no-hide-descendants"
+      style={styles.titleVisual}
+      testID={`native-trainer-title-icon-${title}`}
+    >
+      {'masks' in visual ? visual.masks.map((mask, index) => (
+        <Image
+          fadeDuration={0}
+          key={mask}
+          resizeMode="contain"
+          source={{ uri: toAssetUrl(assetBaseUrl, mask) }}
+          style={[styles.titleVisualImage, { tintColor: color }]}
+          testID={`native-trainer-title-image-${title}-${index}`}
+        />
+      )) : (
+        <View testID={`native-trainer-title-fallback-${title}`}>
+          <NativeUiIcon color={color} name={trainerTitleFallbackIcon[visual.icon]} size={19} />
+        </View>
+      )}
+    </View>
+  );
+};
 
 const relationshipLabel = (relationship: NativeTrainerProfileModel['relationship']): string | null => ({
   friend: 'Friends',
@@ -525,7 +574,11 @@ export const NativeTrainerProfileScreen = ({
               <View style={styles.titles}>
                 {model.titles.length ? model.titles.map((title) => (
                   <View key={title.id} style={[styles.titleBadge, light && styles.titleBadgeLight, { borderColor: `${team.accent}88` }]}>
-                    <Text style={{ color: team.accent }}>◆</Text>
+                    <NativeTrainerTitleVisual
+                      assetBaseUrl={assetBaseUrl}
+                      color={team.accent}
+                      title={title.id}
+                    />
                     <Text style={[styles.titleBadgeText, light && styles.textLight]}>{title.label}</Text>
                   </View>
                 )) : <Text style={[styles.noTitles, light && styles.mutedLight]}>No play styles selected</Text>}
@@ -677,9 +730,11 @@ const styles = StyleSheet.create({
   footer: { gap: 10, paddingTop: 13 },
   titlesBlock: { gap: 7 },
   titles: { flexDirection: 'row', flexWrap: 'wrap', gap: 7 },
-  titleBadge: { minHeight: 36, flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 10, borderWidth: 1, borderRadius: 18, backgroundColor: '#11191a' },
+  titleBadge: { minHeight: 30, flexDirection: 'row', alignItems: 'center', gap: 6, paddingVertical: 5, paddingHorizontal: 9, borderWidth: 1, borderRadius: 6, backgroundColor: '#11191a' },
   titleBadgeLight: { backgroundColor: '#e3efe8' },
   titleBadgeText: { color: '#f7fbfa', fontSize: 11, fontWeight: '800' },
+  titleVisual: { width: 20, height: 20, flexDirection: 'row', alignItems: 'center', justifyContent: 'center' },
+  titleVisualImage: { width: 19, height: 19 },
   noTitles: { color: '#9db5b4', fontSize: 12 },
   relationship: { alignSelf: 'flex-start', paddingHorizontal: 10, paddingVertical: 6, borderWidth: 1, borderRadius: 16 },
   relationshipText: { fontSize: 11, fontWeight: '900' },

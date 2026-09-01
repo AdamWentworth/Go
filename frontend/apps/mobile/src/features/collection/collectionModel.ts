@@ -389,6 +389,47 @@ const buildEvolutionFamilyMap = (catalog: BasePokemon[]): Map<number, number[]> 
   return families;
 };
 
+type NativeCollectionCatalogProjection = {
+  catalogEntries: ReturnType<typeof buildPokemonCatalogEntries>;
+  catalogOrder: Map<string, number>;
+  evolutionFamilies: Map<number, number[]>;
+  pokemonById: Map<number, BasePokemon>;
+};
+
+// React Query preserves the catalog array while its snapshot is fresh. Keep the
+// expensive, immutable catalog projection beside that array so Home, Pokémon,
+// and subsequent route mounts do not rebuild the same variant order and
+// evolution graph independently.
+const nativeCollectionCatalogProjectionCache = new WeakMap<
+  BasePokemon[],
+  NativeCollectionCatalogProjection
+>();
+const nativeCatalogRowsCache = new WeakMap<
+  BasePokemon[],
+  Map<string, NativeCollectionRow[]>
+>();
+const nativeCollectionRowsCache = new WeakMap<
+  Record<string, PokemonInstance>,
+  WeakMap<BasePokemon[], Map<string, NativeCollectionRow[]>>
+>();
+
+const getNativeCollectionCatalogProjection = (
+  catalog: BasePokemon[],
+): NativeCollectionCatalogProjection => {
+  const cached = nativeCollectionCatalogProjectionCache.get(catalog);
+  if (cached) return cached;
+
+  const catalogEntries = buildPokemonCatalogEntries(catalog);
+  const projection = {
+    catalogEntries,
+    catalogOrder: new Map(catalogEntries.map((entry, index) => [entry.id, index])),
+    evolutionFamilies: buildEvolutionFamilyMap(catalog),
+    pokemonById: new Map(catalog.map((pokemon) => [pokemon.pokemon_id, pokemon])),
+  };
+  nativeCollectionCatalogProjectionCache.set(catalog, projection);
+  return projection;
+};
+
 const instanceSearchTerms = (instance: PokemonInstance, pokemon: BasePokemon): string[] => {
   const terms = [
     pokemon.name,
@@ -459,13 +500,15 @@ export const buildNativeCollectionRows = (
   catalog: BasePokemon[],
   assetOrigin: string,
 ): NativeCollectionRow[] => {
-  const pokemonById = new Map(catalog.map((pokemon) => [pokemon.pokemon_id, pokemon]));
-  const evolutionFamilies = buildEvolutionFamilyMap(catalog);
-  const catalogOrder = new Map(
-    buildPokemonCatalogEntries(catalog).map((entry, index) => [entry.id, index]),
-  );
+  const byCatalog = nativeCollectionRowsCache.get(instances) ?? new WeakMap();
+  const byOrigin = byCatalog.get(catalog) ?? new Map();
+  const cached = byOrigin.get(assetOrigin);
+  if (cached) return cached;
 
-  return Object.entries(instances)
+  const { catalogOrder, evolutionFamilies, pokemonById } =
+    getNativeCollectionCatalogProjection(catalog);
+
+  const rows = Object.entries(instances)
     .flatMap(([key, instance]) => {
       if (instance.disabled) return [];
       const status = statusForInstance(instance);
@@ -510,15 +553,23 @@ export const buildNativeCollectionRows = (
     .sort((left, right) =>
       left.pokedexNumber - right.pokedexNumber || left.name.localeCompare(right.name),
     );
+  byOrigin.set(assetOrigin, rows);
+  byCatalog.set(catalog, byOrigin);
+  nativeCollectionRowsCache.set(instances, byCatalog);
+  return rows;
 };
 
 export const buildNativeCatalogRows = (
   catalog: BasePokemon[],
   assetOrigin: string,
 ): NativeCollectionRow[] => {
-  const pokemonById = new Map(catalog.map((pokemon) => [pokemon.pokemon_id, pokemon]));
-  const evolutionFamilies = buildEvolutionFamilyMap(catalog);
-  return buildPokemonCatalogEntries(catalog).map((entry, variantOrder) => {
+  const rowsByOrigin = nativeCatalogRowsCache.get(catalog) ?? new Map();
+  const cached = rowsByOrigin.get(assetOrigin);
+  if (cached) return cached;
+
+  const { catalogEntries, evolutionFamilies, pokemonById } =
+    getNativeCollectionCatalogProjection(catalog);
+  const rows = catalogEntries.map((entry, variantOrder) => {
     const pokemon = pokemonById.get(entry.pokemonId);
     const costume = pokemon?.costumes?.some((candidate) => entry.id.includes(candidate.name));
     return {
@@ -555,6 +606,9 @@ export const buildNativeCatalogRows = (
       ].filter((term): term is string => Boolean(term?.trim())),
     } satisfies NativeCollectionRow;
   });
+  rowsByOrigin.set(assetOrigin, rows);
+  nativeCatalogRowsCache.set(catalog, rowsByOrigin);
+  return rows;
 };
 
 const DEFAULT_TAG_ORDER: Record<CustomTagParent, PokemonTagOrderKey[]> = {

@@ -28,7 +28,7 @@ import { NativeConfirmationDialog } from '../components/NativeConfirmationDialog
 import Svg, {
   Defs,
   LinearGradient,
-  Line,
+  Path,
   Polygon,
   RadialGradient,
   Rect,
@@ -140,6 +140,17 @@ const readableLightAccent = (accent: string): string => (
   LIGHT_ACCENTS[accent.toLocaleLowerCase()] ?? '#005bb5'
 );
 
+const REGION_GRID_PATH = [
+  ...Array.from({ length: 18 }, (_, index) => {
+    const x = 128 + (index * 16);
+    return `M ${x} 0 V 132`;
+  }),
+  ...Array.from({ length: 9 }, (_, index) => {
+    const y = index * 16;
+    return `M 104 ${y} H 400`;
+  }),
+].join(' ');
+
 const absoluteUri = (base: string, value: string | null): string | null => {
   if (!value) return null;
   try { return new URL(value, base).toString(); } catch { return null; }
@@ -183,30 +194,13 @@ const RegionCardBackdrop = ({
     </Defs>
     <Polygon fill={`url(#${gradientId})`} points="122,0 400,0 400,132 88,132" />
     <Polygon fill={`url(#${glowId})`} points="122,0 400,0 400,132 88,132" />
-    {Array.from({ length: 18 }, (_, index) => (
-      <Line
-        key={`vertical-${index}`}
-        opacity={light ? 0.16 : 0.13}
-        stroke="#ffffff"
-        strokeWidth="1"
-        x1={128 + (index * 16)}
-        x2={128 + (index * 16)}
-        y1="0"
-        y2="132"
-      />
-    ))}
-    {Array.from({ length: 9 }, (_, index) => (
-      <Line
-        key={`horizontal-${index}`}
-        opacity={light ? 0.16 : 0.13}
-        stroke="#ffffff"
-        strokeWidth="1"
-        x1="104"
-        x2="400"
-        y1={index * 16}
-        y2={index * 16}
-      />
-    ))}
+    <Path
+      d={REGION_GRID_PATH}
+      fill="none"
+      opacity={light ? 0.16 : 0.13}
+      stroke="#ffffff"
+      strokeWidth="1"
+    />
     <Polygon fill="#ffffff" opacity={light ? 0.34 : 0.64} points="135,0 158,0 118,132 98,132" />
     <Rect fill="#ffffff" height="132" opacity={light ? 0.08 : 0.04} width="400" />
   </Svg>;
@@ -230,13 +224,47 @@ export const NativePokedexScreen = ({ assetBaseUrl, entries, error = null, isLoa
   const qualityFacets = advanced ? ADVANCED_FACETS : BASE_FACETS;
   const activeCategory = categories.find(({ value }) => value === category) ?? BASE_CATEGORIES[0];
   const filtered = useMemo(() => filterNativePokedexEntries({ category, entries, facets, generation, query }), [category, entries, facets, generation, query]);
+  const regionCards = useMemo(() => REGIONS.map((region) => {
+    const regionEntries = filterNativePokedexEntries({
+      category,
+      entries,
+      facets,
+      generation: region.generation,
+      query: '',
+    });
+    const previews: NativePokedexEntry[] = [];
+    const appendPreview = (entry: NativePokedexEntry | undefined) => {
+      if (!entry || previews.some(({ id }) => id === entry.id) || previews.length >= 3) return;
+      previews.push(entry);
+    };
+    region.starters.forEach((dex) => {
+      appendPreview(regionEntries.find(({ pokedexNumber }) => pokedexNumber === dex));
+    });
+    regionEntries.forEach(appendPreview);
+    return {
+      ...region,
+      entries: regionEntries,
+      previews,
+      registered: regionEntries.filter((entry) => (
+        nativePokedexEntryIsRegistered(entry, category, facets)
+      )).length,
+    };
+  }).filter(({ entries: regionEntries }) => regionEntries.length > 0), [
+    category,
+    entries,
+    facets,
+  ]);
   // Regional forms can share a national dex number while belonging to a
   // different generation. The canonical header totals each regional index,
   // rather than collapsing those rows globally across all regions.
-  const categoryEntries = useMemo(() => REGIONS.flatMap(({ generation: regionGeneration }) => (
-    filterNativePokedexEntries({ category, entries, facets, generation: regionGeneration, query: '' })
-  )), [category, entries, facets]);
-  const registeredCount = categoryEntries.filter((entry) => nativePokedexEntryIsRegistered(entry, category, facets)).length;
+  const categoryEntries = useMemo(
+    () => regionCards.flatMap(({ entries: regionEntries }) => regionEntries),
+    [regionCards],
+  );
+  const registeredCount = useMemo(
+    () => regionCards.reduce((total, region) => total + region.registered, 0),
+    [regionCards],
+  );
   const selectedRegistrationFacets = useMemo(() => registrationFacetsFromSelection(facets), [facets]);
   const useFemaleImages = facets.includes('female');
   const activeFacetBadges = qualityFacets.filter(({ value }) => facets.includes(value));
@@ -272,12 +300,6 @@ export const NativePokedexScreen = ({ assetBaseUrl, entries, error = null, isLoa
       return !current;
     });
   };
-  const regionCards = REGIONS.map((region) => {
-    const regionEntries = filterNativePokedexEntries({ category, entries, facets, generation: region.generation, query: '' });
-    const previews = [...region.starters.map((dex) => regionEntries.find(({ pokedexNumber }) => pokedexNumber === dex)).filter((entry): entry is NativePokedexEntry => Boolean(entry)), ...regionEntries].filter((entry, index, list) => list.findIndex(({ id }) => id === entry.id) === index).slice(0, 3);
-    return { ...region, entries: regionEntries, previews, registered: regionEntries.filter((entry) => nativePokedexEntryIsRegistered(entry, category, facets)).length };
-  }).filter(({ entries: regionEntries }) => regionEntries.length > 0);
-
   return (
     <View style={[styles.root, light && styles.rootLight]} testID="native-pokedex-screen">
       <FlatList

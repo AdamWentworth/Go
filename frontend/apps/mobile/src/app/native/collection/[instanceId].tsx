@@ -9,7 +9,10 @@ import {
   buildNativeCollectionRows,
   buildNativeInstanceDetail,
 } from '../../../features/collection/collectionModel';
-import { resolveNativeInstanceNeighbors } from '../../../features/collection/nativeInstanceNavigationContext';
+import {
+  navigateNativeInstanceSibling,
+  resolveNativeInstanceNeighbors,
+} from '../../../features/collection/nativeInstanceNavigationContext';
 import { useNativeFavoriteMutation } from '../../../features/collection/useNativeFavoriteMutation';
 import { useNativeInstanceDetailMutation } from '../../../features/collection/useNativeInstanceDetailMutation';
 import { runtimeConfig } from '../../../config/runtimeConfig';
@@ -52,10 +55,13 @@ export default function NativeInstanceDetailRoute() {
     ).map((row) => row.id);
     return resolveNativeInstanceNeighbors({ instanceId, fallbackIds });
   }, [instanceId, snapshotQuery.data]);
-  const navigateToInstance = (nextInstanceId: string) => router.replace({
+  const openInstance = (nextInstanceId: string) => router.replace({
     pathname: '/native/collection/[instanceId]',
     params: { instanceId: nextInstanceId },
   });
+  const navigateToSibling = (nextInstanceId: string) => {
+    navigateNativeInstanceSibling(router, nextInstanceId);
+  };
 
   if (session.status === 'restoring' || session.status === 'unavailable') {
     return (
@@ -91,9 +97,9 @@ export default function NativeInstanceDetailRoute() {
     isSaving={favoriteMutation.isPending || detailMutation.isPending}
     onRetry={() => void Promise.all([snapshotQuery.refetch(), movesQuery.refetch()])}
     onBack={() => router.canGoBack() ? router.back() : router.replace('/native/collection')}
-    onNext={supportsSiblingNavigation && neighbors.nextId ? () => navigateToInstance(neighbors.nextId!) : undefined}
-    onOpenTarget={navigateToInstance}
-    onPrevious={supportsSiblingNavigation && neighbors.previousId ? () => navigateToInstance(neighbors.previousId!) : undefined}
+    onNext={supportsSiblingNavigation && neighbors.nextId ? () => navigateToSibling(neighbors.nextId!) : undefined}
+    onOpenTarget={openInstance}
+    onPrevious={supportsSiblingNavigation && neighbors.previousId ? () => navigateToSibling(neighbors.previousId!) : undefined}
     onToggleFavorite={(favorite) => favoriteMutation.mutate(favorite)}
     onSaveDetails={(patch) => detailMutation.mutateAsync(patch)}
     onEditPreferences={() => router.push({

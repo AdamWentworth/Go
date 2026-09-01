@@ -74,6 +74,34 @@ export type NativePokedexEntry = PokemonCatalogEntry & {
   supportedGenders?: ('Male' | 'Female')[];
 };
 
+type NativePokedexStaticEntry = PokemonCatalogEntry & Pick<
+  NativePokedexEntry,
+  'category' | 'femaleImageUri' | 'generation' | 'released' | 'supportedGenders'
+>;
+
+type NativePokedexCatalogProjection = {
+  entries: NativePokedexStaticEntry[];
+  entryById: Map<string, NativePokedexStaticEntry>;
+  variantById: Map<string, ReturnType<typeof createPokemonVariants>[number]>;
+  variants: ReturnType<typeof createPokemonVariants>;
+};
+
+const nativePokedexMergedCatalogCache = new WeakMap<
+  BasePokemon[],
+  WeakMap<PokemonPokedexSpecies[], BasePokemon[]>
+>();
+const nativePokedexCatalogProjectionCache = new WeakMap<
+  BasePokemon[],
+  NativePokedexCatalogProjection
+>();
+const nativePokedexEntriesCache = new WeakMap<
+  BasePokemon[],
+  WeakMap<
+    Record<string, PokemonInstance>,
+    WeakMap<NativePokedexManualRegistration[], NativePokedexEntry[]>
+  >
+>();
+
 const categoryFor = (entry: PokemonCatalogEntry): NativePokedexCategory => {
   const id = entry.id.toLocaleLowerCase();
   const suffix = id.slice(id.indexOf('-') + 1);
@@ -147,6 +175,11 @@ export const mergeNativePokedexSpecies = (
   speciesCatalog: PokemonPokedexSpecies[] = [],
 ): BasePokemon[] => {
   if (speciesCatalog.length === 0) return releasedCatalog;
+  const cached = nativePokedexMergedCatalogCache
+    .get(releasedCatalog)
+    ?.get(speciesCatalog);
+  if (cached) return cached;
+
   const releasedIds = new Set(releasedCatalog.map(({ pokemon_id: pokemonId }) => pokemonId));
   const placeholders = speciesCatalog
     .filter(({ pokemon_id: pokemonId }) => !releasedIds.has(pokemonId))
@@ -173,7 +206,45 @@ export const mergeNativePokedexSpecies = (
       crownForms: [],
       max: [],
     }) as unknown as BasePokemon);
-  return [...releasedCatalog, ...placeholders];
+  const merged = [...releasedCatalog, ...placeholders];
+  const bySpecies = nativePokedexMergedCatalogCache.get(releasedCatalog) ?? new WeakMap();
+  bySpecies.set(speciesCatalog, merged);
+  nativePokedexMergedCatalogCache.set(releasedCatalog, bySpecies);
+  return merged;
+};
+
+const getNativePokedexCatalogProjection = (
+  catalog: BasePokemon[],
+): NativePokedexCatalogProjection => {
+  const cached = nativePokedexCatalogProjectionCache.get(catalog);
+  if (cached) return cached;
+
+  const generationByPokemon = new Map(
+    catalog.map((pokemon) => [pokemon.pokemon_id, pokemon.generation]),
+  );
+  const pokemonById = new Map(catalog.map((pokemon) => [pokemon.pokemon_id, pokemon]));
+  const variants = createPokemonVariants(catalog);
+  const variantById = new Map(variants.map((variant) => [variant.variant_id, variant]));
+  const entries = buildPokemonCatalogEntries(catalog).map((entry) => {
+    const pokemon = pokemonById.get(entry.pokemonId)!;
+    const variant = variantById.get(entry.id);
+    return {
+      ...entry,
+      category: categoryFor(entry),
+      femaleImageUri: variant ? determineImageUrl(true, variant) : entry.imageUri,
+      generation: generationByPokemon.get(entry.pokemonId) ?? 0,
+      released: Number(pokemon.available ?? 1) !== 0,
+      supportedGenders: supportedGendersFor(pokemon),
+    } satisfies NativePokedexStaticEntry;
+  });
+  const projection = {
+    entries,
+    entryById: new Map(entries.map((entry) => [entry.id, entry])),
+    variantById,
+    variants,
+  };
+  nativePokedexCatalogProjectionCache.set(catalog, projection);
+  return projection;
 };
 
 export const buildNativePokedexEntries = (
@@ -181,12 +252,13 @@ export const buildNativePokedexEntries = (
   instances: Record<string, PokemonInstance> = {},
   manualRegistrations: NativePokedexManualRegistration[] = [],
 ): NativePokedexEntry[] => {
-  const generationByPokemon = new Map(catalog.map((pokemon) => [pokemon.pokemon_id, pokemon.generation]));
-  const pokemonById = new Map(catalog.map((pokemon) => [pokemon.pokemon_id, pokemon]));
-  const catalogEntries = buildPokemonCatalogEntries(catalog);
-  const catalogEntryById = new Map(catalogEntries.map((entry) => [entry.id, entry]));
-  const variants = createPokemonVariants(catalog);
-  const variantById = new Map(variants.map((variant) => [variant.variant_id, variant]));
+  const byInstances = nativePokedexEntriesCache.get(catalog) ?? new WeakMap();
+  const byRegistrations = byInstances.get(instances) ?? new WeakMap();
+  const cached = byRegistrations.get(manualRegistrations);
+  if (cached) return cached;
+
+  const { entries, entryById, variantById, variants } =
+    getNativePokedexCatalogProjection(catalog);
   const manualByVariant = new Map<string, NativePokedexManualRegistration[]>();
   manualRegistrations.forEach((registration) => {
     const current = manualByVariant.get(registration.entryId) ?? [];
@@ -203,6 +275,10 @@ export const buildNativePokedexEntries = (
     variants,
     instances,
     canonicalManualRegistrations,
+    {
+      includeCatalogRegistrations: false,
+      includeFacetSubsets: false,
+    },
   );
   const registeredByVariant = new Map<string, typeof projectedRegistrations>();
   const registeredCategoryFacets = new Map<string, NativePokedexRegistrationFacets[]>();
@@ -211,36 +287,34 @@ export const buildNativePokedexEntries = (
     current.push(registration);
     registeredByVariant.set(registration.base_variant_id, current);
 
-    const catalogEntry = catalogEntryById.get(registration.base_variant_id);
+    const catalogEntry = entryById.get(registration.base_variant_id);
     if (!catalogEntry) return;
-    const key = `${categoryFor(catalogEntry)}:${catalogEntry.pokedexNumber}`;
+    const key = `${catalogEntry.category}:${catalogEntry.pokedexNumber}`;
     registeredCategoryFacets.set(key, [
       ...(registeredCategoryFacets.get(key) ?? []),
       nativeFacetsFromCanonical(registration.facets),
     ]);
   });
 
-  return catalogEntries.map((entry) => {
-    const category = categoryFor(entry);
+  const projectedEntries = entries.map((entry) => {
+    const { category } = entry;
     const projectedForVariant = registeredByVariant.get(entry.id) ?? [];
     const categoryFacets = registeredCategoryFacets.get(`${category}:${entry.pokedexNumber}`) ?? [];
-    const variant = variantById.get(entry.id);
     return {
       ...entry,
-      category,
-      femaleImageUri: variant ? determineImageUrl(true, variant) : entry.imageUri,
-      generation: generationByPokemon.get(entry.pokemonId) ?? 0,
       instanceRegistered: projectedForVariant.some(({ source }) => source === 'instance'),
       manualRegistrationIds: (manualByVariant.get(entry.id) ?? []).map(({ registrationId }) => registrationId),
       registered: projectedForVariant.length > 0,
       registeredCategory: categoryFacets.length > 0,
       registeredCategoryFacets: categoryFacets,
       registeredFacets: projectedForVariant.map(({ facets }) => nativeFacetsFromCanonical(facets)),
-      released: Number(pokemonById.get(entry.pokemonId)?.available ?? 1) !== 0,
       registeredSpecies: (registeredCategoryFacets.get(`pokemon:${entry.pokedexNumber}`) ?? []).length > 0,
-      supportedGenders: supportedGendersFor(pokemonById.get(entry.pokemonId)!),
     };
   });
+  byRegistrations.set(manualRegistrations, projectedEntries);
+  byInstances.set(instances, byRegistrations);
+  nativePokedexEntriesCache.set(catalog, byInstances);
+  return projectedEntries;
 };
 
 const registrationFacetOrder: (keyof NativePokedexRegistrationFacets)[] = [

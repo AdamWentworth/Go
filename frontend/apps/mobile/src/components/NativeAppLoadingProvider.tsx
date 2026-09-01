@@ -8,16 +8,16 @@ import {
   useRef,
   useState,
 } from 'react';
-import { Image, Modal, StyleSheet, View } from 'react-native';
+import { Image, StyleSheet, View } from 'react-native';
 import { useNativeColorScheme } from '../features/settings/useNativeColorScheme';
 import { runtimeConfig } from '../config/runtimeConfig';
+import {
+  NativeLoadingSpinner,
+  NATIVE_LOADING_SPINNER_SOURCES,
+} from './NativeLoadingSpinner';
+import { markNativeUiPerformance } from '../observability/nativeUiPerformanceTrace';
 
 type LoadingAction = () => void;
-type PendingLoadingAction = {
-  action: LoadingAction;
-  source: string;
-  startPath: string | null;
-};
 
 type NativeAppLoadingContextValue = {
   handleOverlayLayout: () => void;
@@ -28,15 +28,9 @@ type NativeAppLoadingContextValue = {
 };
 
 const HIDE_DELAY_MS = 150;
-// Android may not decode the first frame of a bundled animated GIF before a
-// route transition finishes. Keep action-menu navigation covered after the
-// route mount starts so the canonical spinner is perceptible on fast and slow
-// devices instead of expiring mid-transition.
-// Keep the loader perceptible after the destination commits. The Action Menu
-// closes a separate Android dialog and native-stack can mount a cached route in
-// well under a second; a shorter hold was technically rendered but routinely
-// disappeared before a person (and accessibility automation) could observe it.
-const POST_NAVIGATION_PAINT_HOLD_MS = runtimeConfig.mobile.deviceSmokeMode ? 8000 : 3000;
+// Deterministic device screenshots may hold the loader, but real navigation
+// must follow Vite and release as soon as the destination has painted.
+const POST_NAVIGATION_PAINT_HOLD_MS = runtimeConfig.mobile.deviceSmokeMode ? 8000 : 0;
 const PATH_CHANGE_FALLBACK_MS = 3000;
 
 const NativeAppLoadingContext = createContext<NativeAppLoadingContextValue>({
@@ -59,10 +53,15 @@ export const NativeAppLoadingProvider = ({
   const [activeSources, setActiveSources] = useState<Set<string>>(() => new Set());
   const [isVisible, setIsVisible] = useState(false);
   const hideTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const overlayReadyRef = useRef(false);
-  const pendingActionsRef = useRef<PendingLoadingAction[]>([]);
   const navigationReleasesRef = useRef<Map<string, string | null>>(new Map());
   const fallbackTimersRef = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map());
+
+  useEffect(() => {
+    for (const source of NATIVE_LOADING_SPINNER_SOURCES) {
+      const uri = Image.resolveAssetSource(source)?.uri;
+      if (uri) void Promise.resolve(Image.prefetch(uri)).catch(() => undefined);
+    }
+  }, []);
 
   const setLoadingSource = useCallback((source: string, active: boolean) => {
     if (active) setIsVisible(true);
@@ -87,6 +86,7 @@ export const NativeAppLoadingProvider = ({
 
     hideTimerRef.current = setTimeout(() => {
       setIsVisible(false);
+      markNativeUiPerformance('loading_overlay_hidden');
       hideTimerRef.current = null;
     }, HIDE_DELAY_MS);
 
@@ -98,27 +98,29 @@ export const NativeAppLoadingProvider = ({
     };
   }, [activeSources]);
 
-  useEffect(() => {
-    if (!isVisible) overlayReadyRef.current = false;
-  }, [isVisible]);
-
   const releaseAfterDestinationPaint = useCallback((source: string) => {
     if (!navigationReleasesRef.current.has(source)) return;
     navigationReleasesRef.current.delete(source);
     const fallback = fallbackTimersRef.current.get(source);
     if (fallback) clearTimeout(fallback);
     fallbackTimersRef.current.delete(source);
-    requestAnimationFrame(() => requestAnimationFrame(() => {
+    requestAnimationFrame(() => {
+      markNativeUiPerformance('loading_source_released', { source });
       setTimeout(
         () => setLoadingSource(source, false),
         POST_NAVIGATION_PAINT_HOLD_MS,
       );
-    }));
+    });
   }, [setLoadingSource]);
 
   useEffect(() => {
     for (const [source, startPath] of navigationReleasesRef.current) {
       if (startPath !== null && navigationPath !== null && navigationPath !== startPath) {
+        markNativeUiPerformance('destination_path_committed', {
+          destinationPath: navigationPath,
+          source,
+          startPath,
+        });
         releaseAfterDestinationPaint(source);
       }
     }
@@ -129,43 +131,30 @@ export const NativeAppLoadingProvider = ({
     fallbackTimersRef.current.clear();
   }, []);
 
-  const flushPendingActions = useCallback(() => {
-    if (!overlayReadyRef.current || pendingActionsRef.current.length === 0) return;
-    const pending = pendingActionsRef.current.splice(0);
-
-    // onLayout confirms the Activity-owned overlay is mounted. Wait two
-    // display frames so its opaque surface and first spinner frame are
-    // composited before a large destination mount can occupy the JS/UI threads.
-    requestAnimationFrame(() => requestAnimationFrame(() => {
-      for (const { action, source, startPath } of pending) {
-        navigationReleasesRef.current.set(source, startPath);
-        try {
-          action();
-        } finally {
-          // A path change is the authoritative signal that the destination
-          // committed. The fallback also waits for paint, covering a no-op
-          // destination or navigation failure without leaving the overlay up.
-          const priorFallback = fallbackTimersRef.current.get(source);
-          if (priorFallback) clearTimeout(priorFallback);
-          fallbackTimersRef.current.set(source, setTimeout(
-            () => releaseAfterDestinationPaint(source),
-            PATH_CHANGE_FALLBACK_MS,
-          ));
-        }
-      }
-    }));
-  }, [releaseAfterDestinationPaint]);
-
   const runWithLoading = useCallback((source: string, action: LoadingAction) => {
-    pendingActionsRef.current.push({ action, source, startPath: navigationPath });
+    markNativeUiPerformance('loading_overlay_requested', { source });
+    const startPath = navigationPath;
     setLoadingSource(source, true);
-    flushPendingActions();
-  }, [flushPendingActions, navigationPath, setLoadingSource]);
+    navigationReleasesRef.current.set(source, startPath);
+    markNativeUiPerformance('navigation_action_started', { source, startPath });
+    try {
+      action();
+    } finally {
+      // Match Vite by starting navigation in the interaction that enables the
+      // loader. Path commit remains the authoritative release signal; this
+      // fallback covers a no-op destination or navigation failure.
+      const priorFallback = fallbackTimersRef.current.get(source);
+      if (priorFallback) clearTimeout(priorFallback);
+      fallbackTimersRef.current.set(source, setTimeout(
+        () => releaseAfterDestinationPaint(source),
+        PATH_CHANGE_FALLBACK_MS,
+      ));
+    }
+  }, [navigationPath, releaseAfterDestinationPaint, setLoadingSource]);
 
   const handleOverlayLayout = useCallback(() => {
-    overlayReadyRef.current = true;
-    flushPendingActions();
-  }, [flushPendingActions]);
+    markNativeUiPerformance('loading_overlay_laid_out');
+  }, []);
 
   const value = useMemo(
     () => ({
@@ -185,24 +174,18 @@ export const NativeAppLoadingProvider = ({
   );
 };
 
-// Native-stack screens are native Android views and can be composited above JS
-// siblings. Use the same full-window dialog contract as the Action Menu so the
-// loader is unconditionally above every source and destination screen.
+// RootLayout renders this after the Stack inside the edge-to-edge window root.
+// Keeping it in that tree avoids Android's separate dialog-window startup,
+// which can otherwise finish after a fast destination has already committed.
 export const NativeAppLoadingOverlay = () => {
   const { handleOverlayLayout, isVisible, light } = useContext(NativeAppLoadingContext);
   if (!isVisible) return null;
   return (
-    <Modal
-      animationType="none"
-      hardwareAccelerated
-      navigationBarTranslucent
-      onRequestClose={() => undefined}
-      onShow={handleOverlayLayout}
-      presentationStyle="overFullScreen"
-      statusBarTranslucent
-      testID="native-app-loading-modal"
-      transparent
-      visible
+    <View
+      onLayout={handleOverlayLayout}
+      pointerEvents="auto"
+      style={styles.overlayHost}
+      testID="native-app-loading-host"
     >
       <View
         accessible
@@ -214,18 +197,9 @@ export const NativeAppLoadingOverlay = () => {
         style={[styles.overlay, light && styles.overlayLight]}
         testID="native-app-loading-overlay"
       >
-        <Image
-          accessibilityElementsHidden
-          importantForAccessibility="no-hide-descendants"
-          resizeMode="contain"
-          source={light
-            ? require('../../assets/loading-spinner-light.gif')
-            : require('../../assets/loading-spinner-dark.gif')}
-          style={styles.spinner}
-          testID={light ? 'native-loading-spinner-light' : 'native-loading-spinner-dark'}
-        />
+        <NativeLoadingSpinner light={light} />
       </View>
-    </Modal>
+    </View>
   );
 };
 
@@ -234,6 +208,15 @@ export const useNativeAppLoading = (): NativeAppLoadingContextValue => (
 );
 
 const styles = StyleSheet.create({
+  overlayHost: {
+    position: 'absolute',
+    top: 0,
+    right: 0,
+    bottom: 0,
+    left: 0,
+    zIndex: 10000,
+    elevation: 10000,
+  },
   overlay: {
     flex: 1,
     alignItems: 'center',
@@ -241,5 +224,4 @@ const styles = StyleSheet.create({
     backgroundColor: '#101a19',
   },
   overlayLight: { backgroundColor: '#f8fff9' },
-  spinner: { width: 50, height: 50 },
 });

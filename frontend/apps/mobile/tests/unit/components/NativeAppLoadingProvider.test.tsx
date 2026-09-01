@@ -48,11 +48,9 @@ describe('NativeAppLoadingProvider', () => {
       backgroundColor: '#101a19',
       flex: 1,
     });
-    expect(action).not.toHaveBeenCalled();
-
-    fireEvent(view.getByTestId('native-app-loading-modal'), 'show');
-    act(() => jest.advanceTimersByTime(32));
     expect(action).toHaveBeenCalledTimes(1);
+
+    fireEvent(view.getByTestId('native-app-loading-host'), 'layout');
     expect(view.getByTestId('native-app-loading-overlay')).toBeTruthy();
 
     view.rerender(
@@ -61,14 +59,10 @@ describe('NativeAppLoadingProvider', () => {
         <NativeAppLoadingOverlay />
       </NativeAppLoadingProvider>,
     );
-    act(() => jest.advanceTimersByTime(32));
-    act(() => jest.advanceTimersByTime(2999));
+    act(() => jest.advanceTimersByTime(16));
+    act(() => jest.advanceTimersByTime(149));
     expect(view.getByTestId('native-app-loading-overlay')).toBeTruthy();
     act(() => jest.advanceTimersByTime(1));
-    expect(view.getByTestId('native-app-loading-overlay')).toBeTruthy();
-    act(() => jest.advanceTimersByTime(100));
-    expect(view.getByTestId('native-app-loading-overlay')).toBeTruthy();
-    act(() => jest.advanceTimersByTime(100));
     expect(view.queryByTestId('native-app-loading-overlay')).toBeNull();
   });
 

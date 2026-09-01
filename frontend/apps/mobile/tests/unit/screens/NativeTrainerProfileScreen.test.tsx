@@ -1,6 +1,10 @@
 import { fireEvent, render } from '@testing-library/react-native';
-import { Keyboard } from 'react-native';
+import { Keyboard, StyleSheet } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
+import {
+  TRAINER_TITLE_OPTIONS,
+  TRAINER_TITLE_VISUALS,
+} from '@pokemongonexus/shared-contracts/users';
 import { NativeTrainerProfileScreen } from '../../../src/screens/NativeTrainerProfileScreen';
 import type { NativeTrainerProfileModel } from '../../../src/features/social/nativeTrainerProfileModel';
 import type { NativeCollectionRow } from '../../../src/features/collection/collectionModel';
@@ -74,6 +78,40 @@ describe('NativeTrainerProfileScreen', () => {
     expect(view.getByText('Shiny Gigantamax Charizard')).toBeTruthy();
     expect(view.getByText('Shiny Hunter')).toBeTruthy();
     expect(view.getByText('1234 5678 9012')).toBeTruthy();
+  });
+
+  it('renders the exact shared Vite artwork for every trainer play style', () => {
+    const allTitles = TRAINER_TITLE_OPTIONS.map(({ id, label, description }) => ({
+      id,
+      label,
+      description,
+    }));
+    const view = renderScreen({ model: { ...model, titles: allTitles } });
+
+    for (const title of TRAINER_TITLE_OPTIONS) {
+      expect(view.getByTestId(
+        `native-trainer-title-icon-${title.id}`,
+        { includeHiddenElements: true },
+      )).toBeTruthy();
+      const visual = TRAINER_TITLE_VISUALS[title.id];
+      if ('masks' in visual) {
+        visual.masks.forEach((mask, index) => {
+          const image = view.getByTestId(
+            `native-trainer-title-image-${title.id}-${index}`,
+            { includeHiddenElements: true },
+          );
+          expect(image.props.source).toEqual({ uri: `https://pokegonexus.com${mask}` });
+          const imageStyle = StyleSheet.flatten(image.props.style);
+          expect(imageStyle).toMatchObject({ height: 19, width: 19 });
+          expect(['#5eb1f4', '#005bb5']).toContain(imageStyle.tintColor);
+        });
+      } else {
+        expect(view.getByTestId(
+          `native-trainer-title-fallback-${title.id}`,
+          { includeHiddenElements: true },
+        )).toBeTruthy();
+      }
+    }
   });
 
   it('opens the exact collection filter from a collection stat', () => {

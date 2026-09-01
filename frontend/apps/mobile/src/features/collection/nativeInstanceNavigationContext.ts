@@ -20,6 +20,22 @@ export const clearNativeInstanceNavigationContext = (): void => {
   currentContext = null;
 };
 
+type NativeInstanceSiblingRouter = {
+  setParams: (params: { instanceId: string }) => void;
+};
+
+/**
+ * Change the instance inside the current overlay route without dispatching a
+ * native-stack transition. The overlay owns the canonical horizontal motion;
+ * replacing the route here would add a second bottom-up animation afterward.
+ */
+export const navigateNativeInstanceSibling = (
+  router: NativeInstanceSiblingRouter,
+  instanceId: string,
+): void => {
+  router.setParams({ instanceId });
+};
+
 export const resolveNativeInstanceNeighbors = ({
   instanceId,
   fallbackIds,

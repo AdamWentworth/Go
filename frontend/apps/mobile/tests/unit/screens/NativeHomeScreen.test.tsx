@@ -71,6 +71,23 @@ describe('NativeHomeScreen', () => {
     expect(baseProps.onDismissActionMenuHint).toHaveBeenCalledTimes(1);
   });
 
+  it('preserves every collection summary filter in its canonical Pokémon link', () => {
+    const onNavigate = jest.fn();
+    renderHome({ ...baseProps, onNavigate });
+
+    fireEvent.press(screen.getByRole('button', { name: /Caught/ }));
+    fireEvent.press(screen.getByRole('button', { name: /Favorites/ }));
+    fireEvent.press(screen.getByRole('button', { name: /For Trade/ }));
+    fireEvent.press(screen.getByRole('button', { name: /Wanted/ }));
+
+    expect(onNavigate.mock.calls).toEqual([
+      ['/pokemon?filter=caught'],
+      ['/pokemon?filter=favorites'],
+      ['/pokemon?filter=trade'],
+      ['/pokemon?filter=wanted'],
+    ]);
+  });
+
   it('puts a combined dashboard failure next to a retry action', () => {
     const onRetry = jest.fn();
     renderHome({ ...baseProps, error: 'Service unavailable', onRetry });

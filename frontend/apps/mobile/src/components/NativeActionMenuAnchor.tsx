@@ -1,5 +1,11 @@
+import { useEffect } from 'react';
 import { Image, Pressable, StyleSheet, useWindowDimensions } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import {
+  NATIVE_ACTION_MENU_ASSET_PATHS,
+  toNativeActionMenuAssetUrl,
+} from './nativeActionMenuAssets';
+import { markNativeUiPerformance } from '../observability/nativeUiPerformanceTrace';
 
 type Props = {
   assetBaseUrl: string;
@@ -7,13 +13,16 @@ type Props = {
   onPress: () => void;
 };
 
-const toAssetUrl = (baseUrl: string, path: string): string => (
-  `${baseUrl.replace(/\/$/, '')}/${path.replace(/^\//, '')}`
-);
-
 export const NativeActionMenuAnchor = ({ assetBaseUrl, disabled = false, onPress }: Props) => {
   const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
+  useEffect(() => {
+    for (const path of NATIVE_ACTION_MENU_ASSET_PATHS) {
+      void Promise.resolve(
+        Image.prefetch(toNativeActionMenuAssetUrl(assetBaseUrl, path)),
+      ).catch(() => undefined);
+    }
+  }, [assetBaseUrl]);
   const size = width <= 480
     ? Math.min(80, Math.max(50, width * 0.12))
     : width < 768
@@ -24,7 +33,10 @@ export const NativeActionMenuAnchor = ({ assetBaseUrl, disabled = false, onPress
       accessibilityLabel="Open action menu"
       accessibilityRole="button"
       disabled={disabled}
-      onPress={onPress}
+      onPress={() => {
+        markNativeUiPerformance('action_menu_anchor_pressed');
+        onPress();
+      }}
       pointerEvents={disabled ? 'none' : 'auto'}
       testID="native-action-menu-anchor"
       style={({ pressed }) => [
@@ -41,8 +53,9 @@ export const NativeActionMenuAnchor = ({ assetBaseUrl, disabled = false, onPress
     >
       <Image
         accessibilityElementsHidden
+        fadeDuration={0}
         resizeMode="contain"
-        source={{ uri: toAssetUrl(assetBaseUrl, '/images/btn_action_menu.png') }}
+        source={{ uri: toNativeActionMenuAssetUrl(assetBaseUrl, '/images/btn_action_menu.png') }}
         style={{ height: size, width: size }}
       />
     </Pressable>

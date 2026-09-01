@@ -110,14 +110,15 @@ describe('native collection model', () => {
   });
 
   it('builds the complete catalog separately from collection instances', () => {
-    const rows = buildNativeCatalogRows([
+    const catalog = [
       {
         ...pokemon,
         shiny_available: 1,
         date_shadow_available: '2020-01-01',
         date_shiny_shadow_available: '2020-01-01',
       } as BasePokemon,
-    ], 'https://pokegonexus.com');
+    ];
+    const rows = buildNativeCatalogRows(catalog, 'https://pokegonexus.com');
 
     expect(rows).toEqual(expect.arrayContaining([
       expect.objectContaining({ id: '0006-default', name: 'Charizard', source: 'catalog' }),
@@ -142,6 +143,7 @@ describe('native collection model', () => {
       '0006-dynamax',
       '0006-shiny_dynamax',
     ]);
+    expect(buildNativeCatalogRows(catalog, 'https://pokegonexus.com')).toBe(rows);
   });
 
   it('uses the exact shiny Gigantamax artwork when that form is selected', () => {
@@ -179,11 +181,13 @@ describe('native collection model', () => {
   });
 
   it('builds stable rows, excludes disabled data, and resolves relative artwork', () => {
-    const rows = buildNativeCollectionRows({
+    const instances = {
       caught: instance({ instance_id: 'caught', favorite: true }),
       wanted: instance({ instance_id: 'wanted', is_caught: false, is_wanted: true, most_wanted: true }),
       disabled: instance({ instance_id: 'disabled', disabled: true }),
-    }, [pokemon], 'https://pokegonexus.com');
+    };
+    const catalog = [pokemon];
+    const rows = buildNativeCollectionRows(instances, catalog, 'https://pokegonexus.com');
 
     expect(rows).toHaveLength(2);
     expect(rows[0]).toEqual(expect.objectContaining({
@@ -202,6 +206,7 @@ describe('native collection model', () => {
     ]);
     expect(filterNativeCollectionRows(rows, 'all', '0006')).toHaveLength(0);
     expect(filterNativeCollectionRows(rows, 'all', '6')).toHaveLength(2);
+    expect(buildNativeCollectionRows(instances, catalog, 'https://pokegonexus.com')).toBe(rows);
   });
 
   it('preserves costume names, type icons, and the costume-specific location background', () => {

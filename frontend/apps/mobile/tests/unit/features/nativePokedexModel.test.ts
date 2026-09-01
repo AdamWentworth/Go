@@ -120,14 +120,17 @@ describe('native Pokédex model', () => {
   });
 
   it('adds unreleased species from the canonical Pokédex chunk without duplicating released rows', () => {
-    const merged = mergeNativePokedexSpecies([base], [
+    const releasedCatalog = [base];
+    const speciesCatalog = [
       { pokemon_id: 25, pokedex_number: 25, name: 'Pikachu', generation: 1, form: null, gender_rate: 'M/F', image_url: '/pikachu.png', available: 1 },
       { pokemon_id: 10000, pokedex_number: 999, name: 'Futuremon', generation: 10, form: null, gender_rate: null, image_url: '/future.png', available: 0 },
-    ]);
+    ];
+    const merged = mergeNativePokedexSpecies(releasedCatalog, speciesCatalog);
     const entries = buildNativePokedexEntries(merged);
     expect(filterNativePokedexEntries({ entries, category: 'pokemon', generation: null, query: '' }))
       .toEqual(expect.arrayContaining([expect.objectContaining({ name: 'Futuremon', pokedexNumber: 999, released: false })]));
     expect(entries.find(({ name }) => name === 'Pikachu')?.released).toBe(true);
     expect(merged.filter(({ pokemon_id: pokemonId }) => pokemonId === 25)).toHaveLength(1);
+    expect(mergeNativePokedexSpecies(releasedCatalog, speciesCatalog)).toBe(merged);
   });
 });

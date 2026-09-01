@@ -1,5 +1,10 @@
 import { act, fireEvent, render } from '@testing-library/react-native';
-import { Animated, StyleSheet } from 'react-native';
+import {
+  Animated,
+  Easing,
+  StyleSheet,
+  processColor,
+} from 'react-native';
 import {
   getNativeActionMenuGeometry,
   NativeActionMenu,
@@ -10,6 +15,7 @@ import {
 } from '../../../src/components/NativeAppLoadingProvider';
 
 const mockToggleColorTheme = jest.fn();
+let mockColorTheme: 'dark' | 'light' = 'light';
 let mockShouldReduceMotion = false;
 let mockSafeAreaInsets = { top: 0, right: 0, bottom: 0, left: 0 };
 
@@ -24,6 +30,7 @@ jest.mock('react-native-safe-area-context', () => ({
 
 jest.mock('../../../src/features/settings/NativeDevicePreferencesProvider', () => ({
   useOptionalNativeDevicePreferences: () => ({
+    colorTheme: mockColorTheme,
     shouldReduceMotion: mockShouldReduceMotion,
     toggleColorTheme: mockToggleColorTheme,
   }),
@@ -33,6 +40,7 @@ describe('NativeActionMenu', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     jest.useFakeTimers();
+    mockColorTheme = 'light';
     mockShouldReduceMotion = false;
     mockSafeAreaInsets = { top: 0, right: 0, bottom: 0, left: 0 };
   });
@@ -80,6 +88,28 @@ describe('NativeActionMenu', () => {
     });
   });
 
+  it('starts immediately after Android presents the modal and fans on the native UI thread', () => {
+    const timing = jest.spyOn(Animated, 'timing');
+    render(
+      <NativeActionMenu
+        assetBaseUrl="https://pokegonexus.com"
+        onClose={jest.fn()}
+        onNavigate={jest.fn()}
+        visible
+      />,
+    );
+
+    expect(timing).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({
+        delay: 0,
+        duration: 300,
+        useNativeDriver: true,
+      }),
+    );
+    timing.mockRestore();
+  });
+
   it('reverses the fan before closing', () => {
     const onClose = jest.fn();
     const { getByLabelText } = render(
@@ -99,7 +129,7 @@ describe('NativeActionMenu', () => {
     expect(onClose).toHaveBeenCalledTimes(1);
   });
 
-  it('closes its Android modal before routing a corner action', () => {
+  it('paints navigation feedback before closing the menu and routing a corner action', () => {
     const onClose = jest.fn();
     const onNavigate = jest.fn();
     const { getByLabelText } = render(
@@ -113,12 +143,14 @@ describe('NativeActionMenu', () => {
     );
 
     fireEvent.press(getByLabelText('Share Trade Board'));
+    expect(onClose).not.toHaveBeenCalled();
+    act(() => jest.advanceTimersByTime(32));
     expect(onClose).toHaveBeenCalledTimes(1);
     expect(onClose.mock.invocationCallOrder[0]).toBeLessThan(onNavigate.mock.invocationCallOrder[0] ?? Infinity);
     expect(onNavigate).toHaveBeenCalledWith('/trade-board');
   });
 
-  it('shows the canonical full-screen spinner before changing routes', () => {
+  it('shows pre-mounted feedback before enabling the root loader and routing', () => {
     const onClose = jest.fn();
     const onNavigate = jest.fn();
     const view = render(
@@ -134,13 +166,15 @@ describe('NativeActionMenu', () => {
     );
 
     fireEvent.press(view.getByLabelText('Search'));
-    expect(view.getByTestId('native-app-loading-overlay')).toBeTruthy();
-    expect(view.getByTestId(/native-loading-spinner-/, { includeHiddenElements: true })).toBeTruthy();
-    expect(onClose).toHaveBeenCalledTimes(1);
+    expect(view.getByTestId('native-action-menu-navigation-feedback')).toBeTruthy();
+    expect(onClose).not.toHaveBeenCalled();
     expect(onNavigate).not.toHaveBeenCalled();
-    fireEvent(view.getByTestId('native-app-loading-modal'), 'show');
     act(() => jest.advanceTimersByTime(32));
+    expect(view.getByTestId('native-app-loading-overlay')).toBeTruthy();
+    expect(view.getAllByTestId(/native-loading-spinner-/, { includeHiddenElements: true })).toHaveLength(2);
+    expect(onClose).toHaveBeenCalledTimes(1);
     expect(onNavigate).toHaveBeenCalledWith('/search');
+    fireEvent(view.getByTestId('native-app-loading-host'), 'layout');
   });
 
   it('opens support links in place and preserves the canonical theme control', () => {
@@ -156,10 +190,87 @@ describe('NativeActionMenu', () => {
 
     fireEvent.press(getByLabelText('Learn and support'));
     fireEvent.press(getByText('FAQ'));
+    act(() => jest.advanceTimersByTime(32));
     expect(onNavigate).toHaveBeenCalledWith('/faq');
 
     fireEvent.press(getByLabelText(/Use .* theme/));
+    expect(mockToggleColorTheme).not.toHaveBeenCalled();
+    act(() => jest.advanceTimersByTime(17));
     expect(mockToggleColorTheme).toHaveBeenCalledTimes(1);
+  });
+
+  it('paints and slides immediately before synchronizing the expensive route tree', () => {
+    const timing = jest.spyOn(Animated, 'timing');
+    const view = render(
+      <NativeActionMenu
+        assetBaseUrl="https://pokegonexus.com"
+        onClose={jest.fn()}
+        onNavigate={jest.fn()}
+        visible
+      />,
+    );
+    timing.mockClear();
+    expect(view.getByTestId('native-action-menu-background').props.colors).toEqual([
+      processColor('#f8fbff'),
+      processColor('#8fcfc7'),
+    ]);
+
+    fireEvent.press(view.getByTestId('native-theme-switch'));
+
+    expect(view.getByTestId('native-action-menu-background').props.colors).toEqual([
+      processColor('#111111'),
+      processColor('#34807d'),
+    ]);
+    expect(timing).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({
+        duration: 500,
+        isInteraction: false,
+        toValue: 1,
+        useNativeDriver: true,
+      }),
+    );
+    expect(timing).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({
+        duration: 400,
+        isInteraction: false,
+        toValue: 1,
+        useNativeDriver: true,
+      }),
+    );
+    const slideConfig = timing.mock.calls.find(([, config]) => config.duration === 500)?.[1];
+    const cssEase = Easing.bezier(0.25, 0.1, 0.25, 1);
+    expect(slideConfig?.easing?.(0.25)).toBeCloseTo(cssEase(0.25), 6);
+    expect(slideConfig?.easing?.(0.5)).toBeCloseTo(cssEase(0.5), 6);
+    expect(mockToggleColorTheme).not.toHaveBeenCalled();
+    act(() => jest.advanceTimersByTime(17));
+    expect(mockToggleColorTheme).toHaveBeenCalledTimes(1);
+    timing.mockRestore();
+  });
+
+  it('matches the canonical Vite theme-switch layers and touch geometry', () => {
+    const view = render(
+      <NativeActionMenu
+        assetBaseUrl="https://pokegonexus.com"
+        onClose={jest.fn()}
+        onNavigate={jest.fn()}
+        visible
+      />,
+    );
+
+    expect(StyleSheet.flatten(view.getByTestId('native-theme-switch').props.style)).toMatchObject({
+      minHeight: 44,
+      width: 60,
+    });
+    expect(StyleSheet.flatten(view.getByTestId('native-theme-switch-track').props.style)).toMatchObject({
+      borderRadius: 17,
+      height: 34,
+      width: 60,
+    });
+    expect(view.getAllByTestId(/native-theme-light-ray-/)).toHaveLength(3);
+    expect(view.getAllByTestId(/native-theme-cloud-/)).toHaveLength(6);
+    expect(view.getAllByTestId(/native-theme-star-/)).toHaveLength(4);
   });
 
   it('starts every destination at the Poké Ball and fans into the canonical radial grid', () => {
@@ -311,6 +422,7 @@ describe('NativeActionMenu', () => {
     expect(queryByLabelText('Share Trade Board')).toBeNull();
 
     fireEvent.press(getByLabelText(label));
+    act(() => jest.advanceTimersByTime(32));
     expect(onNavigate).toHaveBeenCalledWith(path);
   });
 });

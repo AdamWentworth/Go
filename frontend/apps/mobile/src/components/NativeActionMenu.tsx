@@ -1,10 +1,16 @@
-import { useEffect, useRef, useState } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from 'react';
 import {
   Animated,
   Appearance,
+  BackHandler,
   Easing,
   Image,
-  Modal,
   Pressable,
   StyleSheet,
   Text,
@@ -25,6 +31,15 @@ import { useOptionalNativeSession } from '../auth/NativeSessionContext';
 import { useNativeFriendsQuery } from '../features/social/socialQueries';
 import { useNativeColorScheme } from '../features/settings/useNativeColorScheme';
 import { useNativeAppLoading } from './NativeAppLoadingProvider';
+import {
+  NATIVE_ACTION_MENU_DESTINATIONS as DESTINATIONS,
+  toNativeActionMenuAssetUrl as toAssetUrl,
+} from './nativeActionMenuAssets';
+import { markNativeUiPerformance } from '../observability/nativeUiPerformanceTrace';
+import {
+  NativeLoadingSpinner,
+  type NativeLoadingSpinnerHandle,
+} from './NativeLoadingSpinner';
 
 type Props = {
   assetBaseUrl: string;
@@ -37,24 +52,6 @@ type Props = {
   visible: boolean;
 };
 
-type Destination = {
-  icon: string;
-  label: string;
-  path: string;
-};
-
-const DESTINATIONS: Destination[] = [
-  { icon: '/images/btn_raid.png', label: 'Raid', path: '/raid' },
-  { icon: '/images/btn_pokedex.png', label: 'Pokédex', path: '/pokedex' },
-  { icon: '/images/btn_pvp.png', label: 'PvP', path: '/pvp' },
-  { icon: '/images/btn_search.png', label: 'Search', path: '/search' },
-  { icon: '/images/btn_home.png', label: 'Home', path: '/' },
-  { icon: '/images/btn_trades.png', label: 'Trades', path: '/trades' },
-  { icon: '/images/btn_pokemon.png', label: 'Pokémon', path: '/pokemon' },
-  { icon: '/images/btn_max.png', label: 'Max Battles', path: '/max' },
-  { icon: '/images/btn_rankings.png', label: 'Rankings', path: '/rankings' },
-];
-
 const SUPPORT_DESTINATIONS = [
   { glyph: 'compass', label: 'Getting Started', path: '/getting-started' },
   { glyph: 'question', label: 'FAQ', path: '/faq' },
@@ -64,6 +61,25 @@ const SUPPORT_DESTINATIONS = [
 ] as const;
 
 const ACTION_MENU_NAVIGATION_SOURCE = 'action-menu-navigation';
+const CSS_EASE = Easing.bezier(0.25, 0.1, 0.25, 1);
+const CSS_EASE_IN_OUT = Easing.bezier(0.42, 0, 0.58, 1);
+const THEME_STAR_PATH = 'M 0 10 C 10 10,10 10,0 10 C 10 10,10 10,10 20 C 10 10,10 10,20 10 C 10 10,10 10,10 0 C 10 10,10 10,0 10 Z';
+
+const THEME_STARS = [
+  { delay: 300, left: 3, size: 20, top: 2 },
+  { delay: 0, left: 3, size: 6, top: 16 },
+  { delay: 600, left: 10, size: 12, top: 20 },
+  { delay: 1300, left: 18, size: 18, top: 0 },
+] as const;
+
+const THEME_CLOUDS = [
+  { color: '#cccccc', delay: 1000, left: 30, size: 40, top: 15 },
+  { color: '#cccccc', delay: 1000, left: 44, size: 20, top: 10 },
+  { color: '#cccccc', delay: 1000, left: 18, size: 30, top: 24 },
+  { color: '#eeeeee', delay: 0, left: 36, size: 40, top: 18 },
+  { color: '#eeeeee', delay: 0, left: 48, size: 20, top: 14 },
+  { color: '#eeeeee', delay: 0, left: 22, size: 30, top: 26 },
+] as const;
 
 type SupportGlyphName = typeof SUPPORT_DESTINATIONS[number]['glyph'];
 
@@ -116,12 +132,6 @@ export const getNativeActionMenuGeometry = (
     utilityFontSize: width <= 520 ? 14.4 : clamp(width * 0.015, 15.2, 20),
   };
 };
-
-const toAssetUrl = (baseUrl: string, path: string): string => (
-  /^https?:\/\//i.test(path)
-    ? path
-    : `${baseUrl.replace(/\/$/, '')}/${path.replace(/^\//, '')}`
-);
 
 const ShareGlyph = ({ color }: { color: string }) => (
   <Svg height={20} viewBox="0 0 24 24" width={20}>
@@ -185,30 +195,171 @@ const SupportGlyph = ({ color, name }: { color: string; name: SupportGlyphName }
 };
 
 const NativeThemeSwitch = ({
+  active,
   dark,
   onPress,
   reduceMotion,
 }: {
+  active: boolean;
   dark: boolean;
   onPress: () => void;
   reduceMotion: boolean;
 }) => {
   const [progress] = useState(() => new Animated.Value(dark ? 1 : 0));
+  const [decorationProgress] = useState(() => new Animated.Value(dark ? 1 : 0));
+  const [moonRotation] = useState(() => new Animated.Value(dark ? 1 : 0));
+  const [orbColorProgress] = useState(() => new Animated.Value(dark ? 1 : 0));
+  const [lightCloudProgress] = useState(() => new Animated.Value(0));
+  const [darkCloudProgress] = useState(() => new Animated.Value(0));
+  const [starProgress] = useState(() => THEME_STARS.map(() => new Animated.Value(0)));
+  const slideRef = useRef<Animated.CompositeAnimation | null>(null);
+  const rotationRef = useRef<Animated.CompositeAnimation | null>(null);
+  const targetDarkRef = useRef(dark);
 
-  useEffect(() => {
-    if (reduceMotion) {
-      progress.setValue(dark ? 1 : 0);
+  const animateToTheme = useCallback((nextDark: boolean) => {
+    targetDarkRef.current = nextDark;
+    // Vite does not declare a background-color transition on .sun-moon.
+    orbColorProgress.setValue(nextDark ? 1 : 0);
+    slideRef.current?.stop();
+    rotationRef.current?.stop();
+
+    if (!active || reduceMotion) {
+      progress.setValue(nextDark ? 1 : 0);
+      decorationProgress.setValue(nextDark ? 1 : 0);
+      moonRotation.setValue(nextDark ? 1 : 0);
       return;
     }
-    const animation = Animated.timing(progress, {
-      duration: 500,
-      easing: Easing.inOut(Easing.ease),
-      toValue: dark ? 1 : 0,
-      useNativeDriver: false,
+
+    // The global theme change repaints most of the app. Restrict this
+    // transition to opacity and transform so Android can keep it moving on
+    // the native animation thread while React performs that repaint.
+    slideRef.current = Animated.parallel([
+      // Vite: .sun-moon { transition: transform 0.5s ease; }
+      Animated.timing(progress, {
+        duration: 500,
+        easing: CSS_EASE,
+        isInteraction: false,
+        toValue: nextDark ? 1 : 0,
+        useNativeDriver: true,
+      }),
+      // Vite's track, stars, and moon dots transition over 0.4s ease.
+      Animated.timing(decorationProgress, {
+        duration: 400,
+        easing: CSS_EASE,
+        isInteraction: false,
+        toValue: nextDark ? 1 : 0,
+        useNativeDriver: true,
+      }),
+    ]);
+    rotationRef.current = nextDark
+      ? Animated.sequence([
+        Animated.delay(500),
+        Animated.timing(moonRotation, {
+          duration: 600,
+          easing: CSS_EASE_IN_OUT,
+          isInteraction: false,
+          toValue: 1,
+          useNativeDriver: true,
+        }),
+      ])
+      : Animated.timing(moonRotation, {
+        duration: 0,
+        isInteraction: false,
+        toValue: 0,
+        useNativeDriver: true,
     });
-    animation.start();
-    return () => animation.stop();
-  }, [dark, progress, reduceMotion]);
+    slideRef.current.start();
+    rotationRef.current.start();
+    markNativeUiPerformance('theme_switch_animation_started', {
+      targetTheme: nextDark ? 'dark' : 'light',
+    });
+  }, [active, decorationProgress, moonRotation, orbColorProgress, progress, reduceMotion]);
+
+  useLayoutEffect(() => {
+    if (!active) {
+      targetDarkRef.current = dark;
+      slideRef.current?.stop();
+      rotationRef.current?.stop();
+      progress.setValue(dark ? 1 : 0);
+      decorationProgress.setValue(dark ? 1 : 0);
+      moonRotation.setValue(dark ? 1 : 0);
+      orbColorProgress.setValue(dark ? 1 : 0);
+      return;
+    }
+
+    // A press starts the visual transition before it asks the provider to
+    // repaint the app. Do not restart that transition when the provider's
+    // matching prop update arrives on the following frame.
+    if (targetDarkRef.current !== dark) animateToTheme(dark);
+  }, [active, animateToTheme, dark, decorationProgress, moonRotation, orbColorProgress, progress]);
+
+  useEffect(() => () => {
+    slideRef.current?.stop();
+    rotationRef.current?.stop();
+  }, []);
+
+  useEffect(() => {
+    const ambientValues = [lightCloudProgress, darkCloudProgress, ...starProgress];
+    if (!active || reduceMotion) {
+      ambientValues.forEach((value) => value.setValue(0));
+      return undefined;
+    }
+
+    const timers: ReturnType<typeof setTimeout>[] = [];
+    const animations: Animated.CompositeAnimation[] = [];
+    const startCloudLoop = (value: Animated.Value, delay: number) => {
+      const start = () => {
+        const animation = Animated.loop(Animated.sequence([
+          Animated.timing(value, { duration: 2400, easing: Easing.linear, toValue: 1, useNativeDriver: true }),
+          Animated.timing(value, { duration: 2400, easing: Easing.linear, toValue: -1, useNativeDriver: true }),
+          Animated.timing(value, { duration: 1200, easing: Easing.linear, toValue: 0, useNativeDriver: true }),
+        ]));
+        animations.push(animation);
+        animation.start();
+      };
+      if (delay > 0) timers.push(setTimeout(start, delay));
+      else start();
+    };
+    // Let the canonical 300 ms menu fan claim the interaction frame first;
+    // these purely ambient loops can begin once every control is in place.
+    timers.push(setTimeout(() => {
+      startCloudLoop(lightCloudProgress, 0);
+      startCloudLoop(darkCloudProgress, 1000);
+
+      starProgress.forEach((value, index) => {
+        const start = () => {
+          const animation = Animated.loop(Animated.timing(value, {
+            duration: 2000,
+            easing: Easing.linear,
+            toValue: 1,
+            useNativeDriver: true,
+          }));
+          animations.push(animation);
+          animation.start();
+        };
+        const delay = THEME_STARS[index]?.delay ?? 0;
+        if (delay > 0) timers.push(setTimeout(start, delay));
+        else start();
+      });
+    }, 320));
+
+    return () => {
+      timers.forEach(clearTimeout);
+      animations.forEach((animation) => animation.stop());
+    };
+  }, [active, darkCloudProgress, lightCloudProgress, reduceMotion, starProgress]);
+
+  const cloudTranslate = (delay: number) => (
+    delay > 0 ? darkCloudProgress : lightCloudProgress
+  ).interpolate({ inputRange: [-1, 0, 1], outputRange: [-4, 0, 4] });
+
+  const handlePress = () => {
+    const nextDark = !targetDarkRef.current;
+    onPress();
+    // Give the control immediate native-thread feedback. The matching prop
+    // update from the menu's optimistic palette will not restart this motion.
+    animateToTheme(nextDark);
+  };
 
   return (
     <Pressable
@@ -216,54 +367,117 @@ const NativeThemeSwitch = ({
       accessibilityLabel={`Use ${dark ? 'light' : 'dark'} theme`}
       accessibilityRole="switch"
       accessibilityState={{ checked: dark }}
-      onPress={onPress}
+      onPress={handlePress}
       style={styles.themeSwitch}
+      testID="native-theme-switch"
     >
-      <Animated.View
+      <View
         pointerEvents="none"
-        style={[
-          StyleSheet.absoluteFill,
-          styles.themeTrack,
-          {
-            backgroundColor: progress.interpolate({
-              inputRange: [0, 1],
-              outputRange: ['#2196f3', '#000000'],
-            }),
-          },
-        ]}
+        style={styles.themeTrack}
+        testID="native-theme-switch-track"
       >
-        <Animated.View style={[styles.themeStars, { opacity: progress }]}>
-          <Text maxFontSizeMultiplier={1} style={[styles.themeStar, styles.themeStarOne]}>✦</Text>
-          <Text maxFontSizeMultiplier={1} style={[styles.themeStar, styles.themeStarTwo]}>✦</Text>
-          <Text maxFontSizeMultiplier={1} style={[styles.themeStar, styles.themeStarThree]}>✦</Text>
-          <Text maxFontSizeMultiplier={1} style={[styles.themeStar, styles.themeStarFour]}>✦</Text>
-        </Animated.View>
-        <Svg height={22} style={styles.themeCloud} viewBox="0 0 36 22" width={36}>
-          <Path
-            d="M3 19h28c2 0 3-1.5 3-3.3 0-2-1.5-3.5-3.5-3.5h-1C29 8.1 26 5 22 5c-3.5 0-6.4 2.2-7.5 5.3A6.2 6.2 0 0 0 4 12.8C1.5 13 0 14.5 0 16.5 0 18 1.2 19 3 19Z"
-            fill={dark ? '#cccccc' : '#eeeeee'}
-            opacity={0.92}
-          />
-        </Svg>
+        <Animated.View
+          style={[StyleSheet.absoluteFill, styles.themeDarkTrack, { opacity: decorationProgress }]}
+          testID="native-theme-switch-dark-track"
+        />
         <Animated.View
           style={[
-            styles.themeOrb,
+            styles.themeStars,
             {
-              backgroundColor: progress.interpolate({
-                inputRange: [0, 1],
-                outputRange: ['#fff200', '#f8fbff'],
-              }),
+              opacity: decorationProgress,
+              transform: [{
+                translateY: decorationProgress.interpolate({ inputRange: [0, 1], outputRange: [-32, 0] }),
+              }],
+            },
+          ]}
+          testID="native-theme-stars"
+        >
+          {THEME_STARS.map((star, index) => (
+            <Animated.View
+              key={`${star.left}:${star.top}:${star.size}`}
+              style={{
+                position: 'absolute',
+                left: star.left,
+                top: star.top,
+                transform: [{
+                  scale: starProgress[index].interpolate({
+                    inputRange: [0, 0.4, 0.8, 1],
+                    outputRange: [1, 1.2, 0.8, 1],
+                  }),
+                }],
+              }}
+              testID={`native-theme-star-${index + 1}`}
+            >
+              <Svg height={star.size} viewBox="0 0 20 20" width={star.size}>
+                <Path d={THEME_STAR_PATH} fill="#ffffff" />
+              </Svg>
+            </Animated.View>
+          ))}
+        </Animated.View>
+        <Animated.View
+          style={[
+            styles.themeOrbMover,
+            {
               transform: [{
                 translateX: progress.interpolate({ inputRange: [0, 1], outputRange: [0, 26] }),
               }],
             },
           ]}
+          testID="native-theme-sun-moon"
         >
-          <Animated.View style={[styles.moonCrater, styles.moonCraterOne, { opacity: progress }]} />
-          <Animated.View style={[styles.moonCrater, styles.moonCraterTwo, { opacity: progress }]} />
-          <Animated.View style={[styles.moonCrater, styles.moonCraterThree, { opacity: progress }]} />
+          <Animated.View
+            style={[
+              styles.themeOrbRotation,
+              {
+                transform: [{
+                  rotate: moonRotation.interpolate({
+                    inputRange: [0, 1],
+                    outputRange: ['0deg', '360deg'],
+                  }),
+                }],
+              },
+            ]}
+          >
+            {[43, 55, 60].map((size, index) => (
+              <View
+                key={size}
+                style={[
+                  styles.themeLightRay,
+                  {
+                    height: size,
+                    left: [-8, -13, -18][index],
+                    top: [-8, -13, -18][index],
+                    width: size,
+                  },
+                ]}
+                testID={`native-theme-light-ray-${index + 1}`}
+              />
+            ))}
+            <View style={styles.themeSunDisc} />
+            <Animated.View style={[styles.themeMoonDisc, { opacity: orbColorProgress }]} />
+            {THEME_CLOUDS.map((cloud, index) => (
+              <Animated.View
+                key={`${cloud.color}:${cloud.left}:${cloud.top}:${cloud.size}`}
+                style={{
+                  position: 'absolute',
+                  left: cloud.left,
+                  top: cloud.top,
+                  zIndex: 2,
+                  width: cloud.size,
+                  height: cloud.size,
+                  borderRadius: cloud.size / 2,
+                  backgroundColor: cloud.color,
+                  transform: [{ translateX: cloudTranslate(cloud.delay) }],
+                }}
+                testID={`native-theme-cloud-${index + 1}`}
+              />
+            ))}
+            <Animated.View style={[styles.moonCrater, styles.moonCraterOne, { opacity: decorationProgress }]} />
+            <Animated.View style={[styles.moonCrater, styles.moonCraterTwo, { opacity: decorationProgress }]} />
+            <Animated.View style={[styles.moonCrater, styles.moonCraterThree, { opacity: decorationProgress }]} />
+          </Animated.View>
         </Animated.View>
-      </Animated.View>
+      </View>
     </Pressable>
   );
 };
@@ -321,6 +535,7 @@ const NativeProfileButton = ({
       </Text>
       <View style={styles.profileImageWrap}>
         <Image
+          fadeDuration={0}
           source={{ uri: toAssetUrl(assetBaseUrl, '/images/profile-icon.png') }}
           style={[
             styles.cornerImage,
@@ -361,13 +576,20 @@ export const NativeActionMenu = ({
   const session = useOptionalNativeSession();
   const isSignedIn = signedIn ?? Boolean(session?.user);
   const reduceMotion = devicePreferences?.shouldReduceMotion ?? false;
-  const light = scheme === 'light';
   const { height, width } = useWindowDimensions();
   const [supportOpen, setSupportOpen] = useState(false);
+  const [optimisticScheme, setOptimisticScheme] = useState<'dark' | 'light' | null>(null);
   const [menuProgress] = useState(() => new Animated.Value(0));
+  const [navigationOverlayProgress] = useState(() => new Animated.Value(0));
   const [supportProgress] = useState(() => new Animated.Value(0));
   const closeEnabledRef = useRef(false);
   const closingRef = useRef(false);
+  const navigationSpinnerRef = useRef<NativeLoadingSpinnerHandle | null>(null);
+  const themeCommitFrameRef = useRef<number | null>(null);
+  const previousSchemeRef = useRef(scheme);
+  const displayedScheme = optimisticScheme ?? scheme;
+  const previousDisplayedSchemeRef = useRef(displayedScheme);
+  const light = displayedScheme === 'light';
 
   const palette = light ? LIGHT : DARK;
   const {
@@ -389,9 +611,29 @@ export const NativeActionMenu = ({
   } = getNativeActionMenuGeometry(width, height, insets.bottom);
   const topInset = Math.max(16, insets.top);
 
+  useLayoutEffect(() => {
+    if (previousSchemeRef.current === scheme) return;
+    previousSchemeRef.current = scheme;
+    markNativeUiPerformance('theme_palette_committed', { theme: scheme });
+  }, [scheme]);
+
+  useLayoutEffect(() => {
+    if (previousDisplayedSchemeRef.current === displayedScheme) return;
+    previousDisplayedSchemeRef.current = displayedScheme;
+    markNativeUiPerformance('theme_visible_palette_committed', { theme: displayedScheme });
+  }, [displayedScheme]);
+
+  useEffect(() => () => {
+    if (themeCommitFrameRef.current !== null) {
+      cancelAnimationFrame(themeCommitFrameRef.current);
+    }
+  }, []);
+
   useEffect(() => {
     if (!visible) {
       menuProgress.setValue(0);
+      navigationOverlayProgress.setValue(0);
+      navigationSpinnerRef.current?.stop();
       closeEnabledRef.current = false;
       closingRef.current = false;
       return undefined;
@@ -406,18 +648,26 @@ export const NativeActionMenu = ({
     closingRef.current = false;
     closeEnabledRef.current = false;
     menuProgress.setValue(0);
+    markNativeUiPerformance('action_menu_animation_started');
     const animation = Animated.timing(menuProgress, {
-      delay: 75,
+      // Android has already paid the separate Modal-window presentation cost
+      // by the time this effect runs. Beginning immediately keeps the perceived
+      // entrance aligned with Vite instead of adding its browser-only delay a
+      // second time on native.
+      delay: 0,
       duration: 300,
       easing: Easing.out(Easing.cubic),
       toValue: 1,
       useNativeDriver: true,
     });
     animation.start(({ finished }) => {
-      if (finished) closeEnabledRef.current = true;
+      if (finished) {
+        closeEnabledRef.current = true;
+        markNativeUiPerformance('action_menu_animation_finished');
+      }
     });
     return () => animation.stop();
-  }, [menuProgress, reduceMotion, visible]);
+  }, [menuProgress, navigationOverlayProgress, reduceMotion, visible]);
 
   useEffect(() => {
     if (!supportOpen) {
@@ -443,15 +693,22 @@ export const NativeActionMenu = ({
     closingRef.current = true;
     closeEnabledRef.current = false;
     setSupportOpen(false);
-    // Remove the separate Android dialog first. The app-owned loader then
-    // paints in the edge-to-edge Activity window without competing with a
-    // modal window over the status or gesture-navigation regions.
-    onClose();
-    runWithLoading(ACTION_MENU_NAVIGATION_SOURCE, () => {
-      onNavigate(path);
-    });
+    markNativeUiPerformance('action_menu_destination_pressed', { path });
+    // The menu surface is already composited. Reveal its pre-mounted loader
+    // imperatively, allow one actual paint between two frame callbacks, then
+    // start the expensive destination render. This prevents a tapped menu from
+    // appearing frozen while React prepares the root loading overlay.
+    navigationSpinnerRef.current?.start();
+    navigationOverlayProgress.setValue(1);
+    markNativeUiPerformance('action_menu_navigation_feedback_started', { path });
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+      onClose();
+      runWithLoading(ACTION_MENU_NAVIGATION_SOURCE, () => {
+        onNavigate(path);
+      });
+    }));
   };
-  const close = () => {
+  const close = useCallback(() => {
     if (!closeEnabledRef.current || closingRef.current) return;
     closingRef.current = true;
     closeEnabledRef.current = false;
@@ -468,33 +725,62 @@ export const NativeActionMenu = ({
     }).start(({ finished }) => {
       if (finished) onClose();
     });
+  }, [menuProgress, onClose, reduceMotion]);
+
+  useEffect(() => {
+    if (!visible) return undefined;
+    const subscription = BackHandler.addEventListener('hardwareBackPress', () => {
+      if (supportOpen) {
+        setSupportOpen(false);
+        return true;
+      }
+      close();
+      return true;
+    });
+    return () => subscription.remove();
+  }, [close, supportOpen, visible]);
+  const toggleTheme = () => {
+    const nextTheme = light ? 'dark' : 'light';
+    markNativeUiPerformance('theme_switch_pressed', {
+      currentTheme: displayedScheme,
+      reduceMotion,
+    });
+    // The full-screen menu is the only visible surface. Paint its next palette
+    // in this input update, then let the much more expensive route tree catch
+    // up on the following frame behind it.
+    setOptimisticScheme(nextTheme);
+    if (themeCommitFrameRef.current !== null) {
+      cancelAnimationFrame(themeCommitFrameRef.current);
+    }
+    themeCommitFrameRef.current = requestAnimationFrame(() => {
+      themeCommitFrameRef.current = null;
+      if (devicePreferences?.setColorTheme) devicePreferences.setColorTheme(nextTheme);
+      else if (devicePreferences) devicePreferences.toggleColorTheme();
+      else Appearance.setColorScheme(nextTheme);
+      // This update is batched with the provider update. The already-painted
+      // optimistic palette remains on screen while the route tree renders.
+      setOptimisticScheme(null);
+    });
   };
-  const toggleTheme = devicePreferences?.toggleColorTheme
-    ?? (() => Appearance.setColorScheme(light ? 'dark' : 'light'));
 
   return (
-    <Modal
-      animationType="none"
-      hardwareAccelerated
-      navigationBarTranslucent
-      onRequestClose={supportOpen ? () => setSupportOpen(false) : close}
-      presentationStyle="overFullScreen"
-      statusBarTranslucent
-      transparent
-      visible={visible}
+    <Animated.View
+      accessibilityElementsHidden={!visible}
+      accessibilityLabel="Quick navigation"
+      accessibilityViewIsModal={visible}
+      importantForAccessibility={visible ? 'yes' : 'no-hide-descendants'}
+      pointerEvents={visible ? 'auto' : 'none'}
+      style={[
+        styles.overlay,
+        {
+          backgroundColor: palette.gradientEnd,
+          elevation: visible ? 24 : -1,
+          opacity: menuProgress,
+          zIndex: visible ? 2000 : -1,
+        },
+      ]}
+      testID="native-action-menu"
     >
-      <Animated.View
-        accessibilityLabel="Quick navigation"
-        accessibilityViewIsModal
-        style={[
-          styles.overlay,
-          {
-            backgroundColor: palette.gradientEnd,
-            opacity: menuProgress,
-          },
-        ]}
-        testID="native-action-menu"
-      >
         <LinearGradient
           colors={[palette.gradientStart, palette.gradientEnd]}
           end={{ x: 1, y: 1 }}
@@ -560,6 +846,7 @@ export const NativeActionMenu = ({
               Settings
             </Text>
             <Image
+              fadeDuration={0}
               source={{ uri: toAssetUrl(assetBaseUrl, '/images/btn_settings.png') }}
               style={[
                 styles.cornerImage,
@@ -568,7 +855,12 @@ export const NativeActionMenu = ({
               ]}
             />
           </Pressable>
-          <NativeThemeSwitch dark={!light} onPress={toggleTheme} reduceMotion={reduceMotion} />
+          <NativeThemeSwitch
+            active={visible}
+            dark={!light}
+            onPress={toggleTheme}
+            reduceMotion={reduceMotion}
+          />
         </View>
 
         <View pointerEvents="box-none" style={StyleSheet.absoluteFill}>
@@ -613,6 +905,7 @@ export const NativeActionMenu = ({
                   testID={`native-action-menu-destination-${destination.path === '/' ? 'home' : destination.path.slice(1)}`}
                 >
                   <Image
+                    fadeDuration={0}
                     resizeMode="contain"
                     source={{ uri: toAssetUrl(assetBaseUrl, destination.icon) }}
                     style={{ height: iconSize, width: iconSize }}
@@ -688,6 +981,7 @@ export const NativeActionMenu = ({
                   {label}
                 </Text>
                 <Image
+                  fadeDuration={0}
                   source={{ uri: toAssetUrl(assetBaseUrl, icon) }}
                   style={[styles.guestAuthImage, light && styles.cornerImageLight]}
                 />
@@ -785,6 +1079,7 @@ export const NativeActionMenu = ({
           testID="native-action-menu-close"
         >
           <Image
+            fadeDuration={0}
             resizeMode="contain"
             source={{
               uri: toAssetUrl(
@@ -795,8 +1090,24 @@ export const NativeActionMenu = ({
             style={{ height: closeSize, width: closeSize }}
           />
         </Pressable>
-      </Animated.View>
-    </Modal>
+        <Animated.View
+          pointerEvents="none"
+          style={[
+            styles.navigationOverlay,
+            {
+              backgroundColor: light ? '#f8fff9' : '#101a19',
+              opacity: navigationOverlayProgress,
+            },
+          ]}
+          testID="native-action-menu-navigation-feedback"
+        >
+          <NativeLoadingSpinner
+            autoStart={false}
+            light={light}
+            ref={navigationSpinnerRef}
+          />
+        </Animated.View>
+    </Animated.View>
   );
 };
 
@@ -823,7 +1134,25 @@ const LIGHT = {
 };
 
 const styles = StyleSheet.create({
-  overlay: { flex: 1 },
+  overlay: {
+    position: 'absolute',
+    top: 0,
+    right: 0,
+    bottom: 0,
+    left: 0,
+    overflow: 'hidden',
+  },
+  navigationOverlay: {
+    position: 'absolute',
+    top: 0,
+    right: 0,
+    bottom: 0,
+    left: 0,
+    zIndex: 50,
+    elevation: 50,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   destination: { position: 'absolute' },
   destinationPressable: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   destinationLabel: {
@@ -865,9 +1194,42 @@ const styles = StyleSheet.create({
     alignItems: 'flex-end',
     gap: 7,
   },
-  themeSwitch: { width: 60, height: 34, overflow: 'hidden', borderRadius: 999 },
-  themeTrack: { overflow: 'hidden', borderRadius: 999 },
-  themeOrb: { position: 'absolute', top: 4, width: 26, height: 26, borderRadius: 13 },
+  themeSwitch: {
+    width: 60,
+    minHeight: 44,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  themeTrack: {
+    width: 60,
+    height: 34,
+    overflow: 'hidden',
+    borderRadius: 17,
+    backgroundColor: '#2196f3',
+  },
+  themeDarkTrack: { borderRadius: 17, backgroundColor: '#000000' },
+  themeOrbMover: { position: 'absolute', top: 4, left: 4, width: 26, height: 26 },
+  themeOrbRotation: { width: 26, height: 26 },
+  themeSunDisc: {
+    position: 'absolute',
+    top: 0,
+    right: 0,
+    bottom: 0,
+    left: 0,
+    zIndex: 1,
+    borderRadius: 13,
+    backgroundColor: '#fff200',
+  },
+  themeMoonDisc: {
+    position: 'absolute',
+    top: 0,
+    right: 0,
+    bottom: 0,
+    left: 0,
+    zIndex: 1,
+    borderRadius: 13,
+    backgroundColor: '#f8fbff',
+  },
   themeStars: {
     position: 'absolute',
     top: 0,
@@ -875,18 +1237,18 @@ const styles = StyleSheet.create({
     width: 34,
     height: 34,
   },
-  themeStar: {
+  themeLightRay: {
     position: 'absolute',
-    color: '#ffffff',
-    fontWeight: '900',
-    lineHeight: 16,
+    zIndex: 0,
+    borderRadius: 999,
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
   },
-  themeStarOne: { top: 1, left: 3, fontSize: 17 },
-  themeStarTwo: { top: 14, left: 3, fontSize: 6 },
-  themeStarThree: { top: 18, left: 10, fontSize: 10 },
-  themeStarFour: { top: -1, left: 18, fontSize: 15 },
-  themeCloud: { position: 'absolute', right: -3, bottom: -3 },
-  moonCrater: { position: 'absolute', borderRadius: 999, backgroundColor: '#8b9299' },
+  moonCrater: {
+    position: 'absolute',
+    zIndex: 4,
+    borderRadius: 999,
+    backgroundColor: '#8b9299',
+  },
   moonCraterOne: { top: 3, left: 10, width: 6, height: 6 },
   moonCraterTwo: { top: 10, left: 2, width: 10, height: 10 },
   moonCraterThree: { top: 18, left: 16, width: 3, height: 3 },

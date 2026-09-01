@@ -201,6 +201,7 @@ const CollectionParityCard = memo(function CollectionParityCard({
         ) : null}
         <Image
           accessibilityLabel={card.name}
+          fadeDuration={0}
           resizeMode="contain"
           source={{ uri: toAssetUrl(assetBaseUrl, card.imagePath) }}
           style={styles.pokemonImage}
@@ -236,6 +237,7 @@ const CollectionParityCard = memo(function CollectionParityCard({
         {card.typeIconPaths.map((path) => (
           <Image
             accessibilityElementsHidden
+            fadeDuration={0}
             key={path}
             source={{ uri: toAssetUrl(assetBaseUrl, path) }}
             style={styles.typeIcon}
@@ -445,7 +447,7 @@ export const NativeCollectionParityFixture = ({
             listRef.current?.scrollToOffset({ animated: false, offset: initialScrollOffset });
           }}
           onScroll={(event) => onScrollOffsetChange?.(event.nativeEvent.contentOffset.y)}
-          removeClippedSubviews
+          removeClippedSubviews={false}
           scrollEventThrottle={80}
           testID="native-collection-grid"
           updateCellsBatchingPeriod={32}

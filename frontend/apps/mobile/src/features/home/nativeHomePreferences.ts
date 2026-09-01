@@ -1,11 +1,15 @@
 import * as SecureStore from 'expo-secure-store';
 
+const secureStoreSegment = (value: string): string => (
+  value.trim().replace(/[^a-zA-Z0-9._-]/g, '_') || 'guest'
+);
+
 const actionMenuHintKey = (userId: string | null): string => (
-  `pokegonexus-native-home-action-menu-hint:${userId ?? 'guest'}`
+  `pokegonexus-native-home-action-menu-hint.${secureStoreSegment(userId ?? 'guest')}`
 );
 
 const onboardingKey = (ownerKey: string): string => (
-  `pokegonexus-home-onboarding:${ownerKey}`
+  `pokegonexus-home-onboarding.${secureStoreSegment(ownerKey)}`
 );
 
 export const isNativeHomeActionMenuHintDismissed = async (

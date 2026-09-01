@@ -21,7 +21,7 @@ describe('NativeHorizontalPageSlider', () => {
   afterEach(() => jest.restoreAllMocks());
 
   it('opens on the active page instead of rendering a mismatched tab body', async () => {
-    const { getByTestId } = render(
+    const { getByTestId, queryByText } = render(
       <NativeHorizontalPageSlider activeIndex={1} onIndexChange={jest.fn()}>
         <Text>Tags panel</Text>
         <Text>Pokémon panel</Text>
@@ -34,6 +34,9 @@ describe('NativeHorizontalPageSlider', () => {
       x: 412,
       y: 0,
     });
+    expect(queryByText('Tags panel')).toBeNull();
+    expect(queryByText('Pokémon panel')).toBeTruthy();
+    expect(queryByText('Wishlist panel')).toBeNull();
   });
 
   it('lets the native pager report the canonical Tags, Pokémon, and Wishlist page', async () => {

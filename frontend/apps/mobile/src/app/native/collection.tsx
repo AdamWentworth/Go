@@ -1,5 +1,10 @@
 import { Redirect, useLocalSearchParams, useRouter } from 'expo-router';
-import { useMemo } from 'react';
+import {
+  useCallback,
+  useLayoutEffect,
+  useMemo,
+  useSyncExternalStore,
+} from 'react';
 import {
   buildNativeCatalogRows,
   buildNativeCollectionRows,
@@ -21,7 +26,10 @@ import { NativeProtectedSessionGate } from '../../components/NativeProtectedSess
 import {
   patchNativeCollectionSession,
   readNativeCollectionSession,
+  readNativeCollectionSessionRevision,
+  subscribeNativeCollectionSession,
 } from '../../features/collection/nativeCollectionSessionCache';
+import { markNativeUiPerformance } from '../../observability/nativeUiPerformanceTrace';
 
 const firstParam = (value: string | string[] | undefined): string => (
   Array.isArray(value) ? value[0] ?? '' : value ?? ''
@@ -40,9 +48,22 @@ export default function NativeCollectionRoute() {
   const instanceId = firstParam(params.instanceId).trim();
   const search = firstParam(params.search);
   const sessionOwnerKey = session.user ? `self:${session.user.user_id}` : 'signed-out';
+  const subscribeToSession = useCallback(
+    (listener: () => void) => subscribeNativeCollectionSession(sessionOwnerKey, listener),
+    [sessionOwnerKey],
+  );
+  const getSessionRevision = useCallback(
+    () => readNativeCollectionSessionRevision(sessionOwnerKey),
+    [sessionOwnerKey],
+  );
+  const sessionRevision = useSyncExternalStore(
+    subscribeToSession,
+    getSessionRevision,
+    getSessionRevision,
+  );
   const restoredCollectionSession = useMemo(
     () => readNativeCollectionSession(sessionOwnerKey),
-    [sessionOwnerKey],
+    [sessionOwnerKey, sessionRevision],
   );
   const initialTagKey = nativeCollectionTagKeyForFilter(filter)
     ?? restoredCollectionSession?.selectedTagKey
@@ -89,6 +110,29 @@ export default function NativeCollectionRoute() {
       'wanted',
     );
   }, [instanceRows, snapshotQuery.data]);
+
+  useLayoutEffect(() => {
+    markNativeUiPerformance('collection_route_committed', {
+      catalogRows: catalogRows.length,
+      filter: filter || null,
+      hasSnapshot: Boolean(snapshotQuery.data),
+      initialTagKey,
+      instanceRows: instanceRows.length,
+      firstInstanceImageUri: instanceRows[0]?.imageUri ?? null,
+      isPending: snapshotQuery.isPending,
+      queryStatus: snapshotQuery.status,
+      sessionStatus: session.status,
+    });
+  }, [
+    catalogRows.length,
+    filter,
+    initialTagKey,
+    instanceRows.length,
+    session.status,
+    snapshotQuery.data,
+    snapshotQuery.isPending,
+    snapshotQuery.status,
+  ]);
 
   if (session.status === 'restoring' || session.status === 'unavailable') {
     return (

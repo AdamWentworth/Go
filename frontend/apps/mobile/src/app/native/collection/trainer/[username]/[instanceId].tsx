@@ -11,7 +11,10 @@ import {
   useNativeCollectionSnapshotQuery,
   useNativePokemonMovesQuery,
 } from '../../../../../features/collection/collectionQueries';
-import { resolveNativeInstanceNeighbors } from '../../../../../features/collection/nativeInstanceNavigationContext';
+import {
+  navigateNativeInstanceSibling,
+  resolveNativeInstanceNeighbors,
+} from '../../../../../features/collection/nativeInstanceNavigationContext';
 import { useNativePokemonOrganizerMutation } from '../../../../../features/collection/useNativePokemonOrganizerMutation';
 import { NativeTradeProposalSheet } from '../../../../../features/trades/NativeTradeProposalSheet';
 import {
@@ -169,10 +172,9 @@ export default function NativeForeignInstanceRoute() {
     return <Redirect href="/native" />;
   }
 
-  const navigateToInstance = (nextInstanceId: string) => router.replace({
-    pathname: '/native/collection/trainer/[username]/[instanceId]',
-    params: { username: success?.username ?? username, instanceId: nextInstanceId },
-  });
+  const navigateToSibling = (nextInstanceId: string) => {
+    navigateNativeInstanceSibling(router, nextInstanceId);
+  };
   const returnToCatalog = () => {
     if (router.canGoBack()) router.back();
     else router.replace({
@@ -203,9 +205,9 @@ export default function NativeForeignInstanceRoute() {
         ? 'Move names are temporarily unavailable. The rest of this Pokémon is still current.'
         : null}
       onBack={returnToCatalog}
-      onNext={neighbors.nextId ? () => navigateToInstance(neighbors.nextId!) : undefined}
+      onNext={neighbors.nextId ? () => navigateToSibling(neighbors.nextId!) : undefined}
       onOpenTarget={setProposalTargetId}
-      onPrevious={neighbors.previousId ? () => navigateToInstance(neighbors.previousId!) : undefined}
+      onPrevious={neighbors.previousId ? () => navigateToSibling(neighbors.previousId!) : undefined}
       onRetry={() => void Promise.all([foreignQuery.refetch(), movesQuery.refetch()])}
       onToggleFavorite={() => undefined}
       saveError={null}

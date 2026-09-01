@@ -26,12 +26,14 @@ import { NativeCollectionParityScreen } from './NativeCollectionParityScreen';
 import { NativeTagsPanelScreen } from './NativeTagsPanelScreen';
 import { NativeActionMenu } from '../components/NativeActionMenu';
 import { NativeActionMenuAnchor } from '../components/NativeActionMenuAnchor';
+import { NativeConfirmationDialog } from '../components/NativeConfirmationDialog';
 import { NativePokemonOrganizerSheet } from '../features/collection/NativePokemonOrganizerSheet';
 import type {
   NativePokemonOrganizerRequest,
 } from '../features/collection/useNativePokemonOrganizerMutation';
 import { useNativeColorScheme } from '../features/settings/useNativeColorScheme';
 import type { NativeCollectionSession } from '../features/collection/nativeCollectionSessionCache';
+import { markNativeUiPerformance } from '../observability/nativeUiPerformanceTrace';
 
 const VIEW_ORDER: NativePokemonHubView[] = ['inventory', 'pokemon', 'wishlist'];
 
@@ -113,6 +115,7 @@ export const NativeCollectionHubScreen = ({
   const [actionMenuOpen, setActionMenuOpen] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [organizerOpen, setOrganizerOpen] = useState(false);
+  const [clearTagConfirmationOpen, setClearTagConfirmationOpen] = useState(false);
   const [operationNotice, setOperationNotice] = useState<string | null>(null);
   const sliderRef = useRef<NativeHorizontalPageSliderHandle>(null);
   const [pageScrollX] = useState(() => new Animated.Value(width));
@@ -150,6 +153,15 @@ export const NativeCollectionHubScreen = ({
   const tagEditingEnabled = Boolean(
     onCreateTag && onDeleteTag && onSaveTagOrder && onUpdateTag,
   );
+
+  useEffect(() => {
+    markNativeUiPerformance('collection_hub_filter_resolved', {
+      activeView,
+      requestedTagKey: initialTagKey,
+      resolvedTagKey: selectedTag?.key ?? null,
+      selectedRowCount: selectedRows.length,
+    });
+  }, [activeView, initialTagKey, selectedRows.length, selectedTag?.key]);
 
   const changeView = useCallback((view: NativePokemonHubView) => {
     // Commit the destination immediately so taps never wait for momentum to
@@ -200,8 +212,13 @@ export const NativeCollectionHubScreen = ({
     if (row) toggleSelection(entryId);
   }, [selectedRows, toggleSelection]);
 
-  const clearTag = useCallback(() => {
+  const requestClearTag = useCallback(() => {
+    if (requireTagSelection || !selectedTag) return;
+    setClearTagConfirmationOpen(true);
+  }, [requireTagSelection, selectedTag]);
+  const confirmClearTag = useCallback(() => {
     if (requireTagSelection) return;
+    setClearTagConfirmationOpen(false);
     setSelectedIds(new Set());
     setSelectedTagKey(null);
     onContextChange?.({ selectedTagKey: null, scrollOffset: 0 });
@@ -266,7 +283,7 @@ export const NativeCollectionHubScreen = ({
       error={error}
       onQueryChange={changeQuery}
       onRetry={onRetry}
-      onClearTag={clearTag}
+      onClearTag={requestClearTag}
       onViewChange={changeView}
       onOpenInstance={openEntry}
       onLongPressInstance={longPressEntry}
@@ -282,7 +299,7 @@ export const NativeCollectionHubScreen = ({
   ), [
     assetBaseUrl,
     changeView,
-    clearTag,
+    requestClearTag,
     error,
     isLoading,
     onRetry,
@@ -424,6 +441,14 @@ export const NativeCollectionHubScreen = ({
           wishlistTags={wishlistTags}
         />
       ) : null}
+      <NativeConfirmationDialog
+        body={`Clear the ${selectedTag?.filterName ?? selectedTag?.name ?? 'selected'} tag? This returns you to browsing all available Pokémon and forms in Pokémon GO, without using your personal tag lists.`}
+        confirmLabel="OK"
+        onCancel={() => setClearTagConfirmationOpen(false)}
+        onConfirm={confirmClearTag}
+        title="Confirm action"
+        visible={clearTagConfirmationOpen}
+      />
     </View>
   );
 };
