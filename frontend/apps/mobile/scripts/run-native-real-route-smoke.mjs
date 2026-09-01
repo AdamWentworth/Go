@@ -769,6 +769,43 @@ const assertSignedInCollectionWorkflow = async (context) => {
     await page.getByText('Add Pokémon', { exact: true }).waitFor({ state: 'hidden', timeout: 10_000 });
     await page.getByRole('button', { name: 'X', exact: true }).click();
 
+    // Vite keeps the controlled input urgent and runs the collection search
+    // as a transition. Exercise that exact real route before tag navigation so
+    // a future change cannot make typing block behind the 3,000-entry catalog.
+    const collectionSearch = page.getByLabel('Search Pokémon', { exact: true });
+    await collectionSearch.click();
+    await page.getByLabel('Pokémon search filters', { exact: true })
+      .waitFor({ state: 'visible', timeout: 5_000 });
+    if (performanceMode) {
+      await page.evaluate(() => {
+        window.__nativeCollectionSearchProbe = { inputAt: null };
+        document.addEventListener('input', (event) => {
+          const target = event.target;
+          if (!(target instanceof HTMLInputElement)
+              || target.getAttribute('aria-label') !== 'Search Pokémon') return;
+          window.__nativeCollectionSearchProbe.inputAt = performance.now();
+        }, { capture: true });
+      });
+    }
+    await collectionSearch.fill('char');
+    const charizardResult = page.getByRole('button', { name: /Select Charizard/ }).first();
+    await charizardResult.waitFor({ state: 'visible', timeout: 5_000 });
+    if (performanceMode) {
+      const searchResultMs = await page.evaluate(() => {
+        const inputAt = window.__nativeCollectionSearchProbe?.inputAt;
+        return inputAt == null ? null : performance.now() - inputAt;
+      });
+      console.log(
+        `[collection workflow] dispatched search painted Charizard in ${searchResultMs} ms.`,
+      );
+      if (searchResultMs == null || searchResultMs > 150) {
+        throw new Error(`Collection search did not react within 150 ms: ${searchResultMs}.`);
+      }
+    }
+    await page.getByLabel('Clear Pokémon search', { exact: true }).click();
+    await page.getByLabel('Close Pokémon search', { exact: true }).click();
+    await firstCatalogCard.waitFor({ state: 'visible', timeout: 5_000 });
+
     // System-tag selection must carry its context into the catalog header and
     // survive an instance-overlay push/back cycle.
     await page.getByRole('tab', { name: 'TAGS', exact: true }).click();

@@ -136,18 +136,17 @@ export const NativeCollectionParityScreen = memo(forwardRef<
   const [direction, setDirection] = useState<NativeCollectionSortDirection>(initialSortDirection);
   const [sortOpen, setSortOpen] = useState(false);
   const [showEvolutionaryLine, setShowEvolutionaryLine] = useState(initialShowEvolutionaryLine);
-  const deferredQuery = useDeferredValue(query);
   const deferredShowEvolutionaryLine = useDeferredValue(showEvolutionaryLine);
   // Match Vite's architecture: one virtualized grid receives a new immutable
   // projection when the tag changes. Sorting and card projection are cached,
   // so this changes the small visible window without retaining a hidden image
   // grid for every tag in the native view hierarchy.
   const filteredRows = useMemo(
-    () => filterNativeCollectionRows(rows, 'all', deferredQuery, {
+    () => filterNativeCollectionRows(rows, 'all', query, {
       showEvolutionaryLine: deferredShowEvolutionaryLine,
       universeRows: searchUniverseRows,
     }),
-    [deferredQuery, deferredShowEvolutionaryLine, rows, searchUniverseRows],
+    [deferredShowEvolutionaryLine, query, rows, searchUniverseRows],
   );
   const visibleRows = useMemo(
     () => sortNativeCollectionRows(filteredRows, sort, direction),

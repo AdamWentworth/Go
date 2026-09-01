@@ -101,6 +101,29 @@ export const resolveNativeHorizontalDragHandoffOffset = ({
   Math.min(maxPeekDistance, translationX),
 );
 
+export const resolveNativeHorizontalRasterizedIndexes = ({
+  fromIndex,
+  panelCount,
+  toIndex,
+}: {
+  fromIndex: number;
+  panelCount: number;
+  toIndex: number;
+}): number[] => {
+  const firstIndex = Math.min(
+    clampPageIndex(fromIndex, panelCount),
+    clampPageIndex(toIndex, panelCount),
+  );
+  const lastIndex = Math.max(
+    clampPageIndex(fromIndex, panelCount),
+    clampPageIndex(toIndex, panelCount),
+  );
+  return Array.from(
+    { length: lastIndex - firstIndex + 1 },
+    (_, offset) => firstIndex + offset,
+  );
+};
+
 export const NativeHorizontalPageSlider = memo(forwardRef<
   NativeHorizontalPageSliderHandle,
   Props
@@ -117,8 +140,9 @@ export const NativeHorizontalPageSlider = memo(forwardRef<
   const safeIndex = clampPageIndex(activeIndex, panelCount);
   const safeIndexRef = useRef(safeIndex);
   const onIndexChangeRef = useRef(onIndexChange);
-  const trackRef = useRef<View>(null);
+  const panelRefs = useRef<Array<View | null>>([]);
   const renderedIndexRef = useRef(safeIndex);
+  const preparedFromIndexRef = useRef<number | null>(null);
   const alignedInitialPageRef = useRef(false);
   const previousWidthRef = useRef(width);
   const dragStartOffsetRef = useRef(safeIndex * width);
@@ -191,19 +215,27 @@ export const NativeHorizontalPageSlider = memo(forwardRef<
     releasePageInteraction();
   }, [releasePageInteraction]);
 
-  const setTrackRasterized = useCallback((enabled: boolean) => {
+  const setPanelsRasterized = useCallback((
+    enabled: boolean,
+    indexes: readonly number[] = [],
+  ) => {
     // React Native Web exposes the host DOM node here rather than a native
     // component handle. GPU layer hints are only useful on the device and its
     // host node does not implement setNativeProps.
     if (Platform.OS === 'web') return;
-    trackRef.current?.setNativeProps({
-      renderToHardwareTextureAndroid: enabled,
-      shouldRasterizeIOS: enabled,
+    const selectedIndexes = new Set(indexes);
+    panelRefs.current.forEach((panel, index) => {
+      panel?.setNativeProps({
+        renderToHardwareTextureAndroid: enabled && selectedIndexes.has(index),
+        shouldRasterizeIOS: enabled && selectedIndexes.has(index),
+      });
     });
   }, []);
 
   const setPage = useCallback((index: number, animated = !reduceMotion) => {
     const nextIndex = clampPageIndex(index, panelCount);
+    const previousIndex = preparedFromIndexRef.current ?? renderedIndexRef.current;
+    preparedFromIndexRef.current = null;
     renderedIndexRef.current = nextIndex;
     // Vite moves one three-panel track. Drive the native track and every header
     // indicator from this same value so Android cannot make the body and
@@ -213,7 +245,15 @@ export const NativeHorizontalPageSlider = memo(forwardRef<
     pageScrollX.stopAnimation();
     if (animated) {
       const interactionGeneration = reservePageInteraction();
-      setTrackRasterized(true);
+      // A three-screen-wide Android texture is expensive to allocate and can
+      // exceed conservative GPU texture widths on high-resolution devices.
+      // Cache only the panels that are actually crossing the viewport. The
+      // parent track remains the one native-driven transform clock.
+      setPanelsRasterized(true, resolveNativeHorizontalRasterizedIndexes({
+        fromIndex: previousIndex,
+        panelCount,
+        toIndex: nextIndex,
+      }));
       Animated.timing(pageScrollX, {
         duration: NATIVE_HORIZONTAL_PAGE_TRANSITION_MS,
         easing: NATIVE_HORIZONTAL_PAGE_EASING,
@@ -222,13 +262,13 @@ export const NativeHorizontalPageSlider = memo(forwardRef<
         useNativeDriver: true,
       }).start(() => {
         if (interactionGeneration !== interactionGenerationRef.current) return;
-        setTrackRasterized(false);
+        setPanelsRasterized(false);
         releasePageInteraction();
       });
     } else {
       interactionGenerationRef.current += 1;
       releasePageInteraction();
-      setTrackRasterized(false);
+      setPanelsRasterized(false);
       pageScrollX.setValue(nextIndex * width);
     }
   }, [
@@ -238,7 +278,7 @@ export const NativeHorizontalPageSlider = memo(forwardRef<
     reduceMotion,
     releasePageInteraction,
     reservePageInteraction,
-    setTrackRasterized,
+    setPanelsRasterized,
     width,
   ]);
 
@@ -249,9 +289,14 @@ export const NativeHorizontalPageSlider = memo(forwardRef<
     // the activeIndex effect from starting an eager duplicate animation. Hold
     // background work now, but do not rasterize the track while its destination
     // children are still changing: that would pay one stale offscreen draw and
-    // invalidate it immediately. `setPage` enables the texture after the React
-    // commit, when the track is actually static for the transform animation.
-    renderedIndexRef.current = clampPageIndex(index, panelCount);
+    // invalidate it immediately. `setPage` enables the two relevant panel
+    // textures after the React commit, when their contents are static for the
+    // transform animation.
+    const nextIndex = clampPageIndex(index, panelCount);
+    if (renderedIndexRef.current !== nextIndex) {
+      preparedFromIndexRef.current = renderedIndexRef.current;
+    }
+    renderedIndexRef.current = nextIndex;
     if (!reduceMotion) {
       reservePageInteraction();
     }
@@ -311,7 +356,12 @@ export const NativeHorizontalPageSlider = memo(forwardRef<
         pageScrollX.setValue(currentOffset);
         nativeDrivenDrag.setValue(0);
       });
-      setTrackRasterized(true);
+      const currentIndex = renderedIndexRef.current;
+      setPanelsRasterized(true, resolveNativeHorizontalRasterizedIndexes({
+        fromIndex: currentIndex - 1,
+        panelCount,
+        toIndex: currentIndex + 1,
+      }));
       return;
     }
     if (oldState === State.ACTIVE) {
@@ -334,7 +384,7 @@ export const NativeHorizontalPageSlider = memo(forwardRef<
     pageScrollX,
     reservePageInteraction,
     setPage,
-    setTrackRasterized,
+    setPanelsRasterized,
     settleDrag,
     width,
   ]);
@@ -351,7 +401,12 @@ export const NativeHorizontalPageSlider = memo(forwardRef<
       reservePageInteraction();
       dragStartOffsetRef.current = renderedIndexRef.current * width;
       pageScrollX.stopAnimation();
-      setTrackRasterized(true);
+      const currentIndex = renderedIndexRef.current;
+      setPanelsRasterized(true, resolveNativeHorizontalRasterizedIndexes({
+        fromIndex: currentIndex - 1,
+        panelCount,
+        toIndex: currentIndex + 1,
+      }));
     })
     .onUpdate((event) => {
       const maxOffset = Math.max(0, (panelCount - 1) * width);
@@ -368,7 +423,7 @@ export const NativeHorizontalPageSlider = memo(forwardRef<
       pageScrollX,
       panelCount,
       reservePageInteraction,
-      setTrackRasterized,
+      setPanelsRasterized,
       setPage,
       settleDrag,
       width,
@@ -377,7 +432,6 @@ export const NativeHorizontalPageSlider = memo(forwardRef<
   const viewport = (
     <Animated.View style={styles.viewport} testID="native-horizontal-page-slider">
       <Animated.View
-        ref={trackRef}
         renderToHardwareTextureAndroid={false}
         shouldRasterizeIOS={false}
         style={trackStyle}
@@ -390,6 +444,11 @@ export const NativeHorizontalPageSlider = memo(forwardRef<
             importantForAccessibility={index === safeIndex ? 'auto' : 'no-hide-descendants'}
             key={index}
             pointerEvents={index === safeIndex ? 'auto' : 'none'}
+            ref={(panel) => {
+              panelRefs.current[index] = panel;
+            }}
+            renderToHardwareTextureAndroid={false}
+            shouldRasterizeIOS={false}
             style={panelStyle}
             testID={`native-horizontal-page-${index}`}
           >

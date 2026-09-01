@@ -1,4 +1,10 @@
-import { memo, useRef } from 'react';
+import {
+  memo,
+  useEffect,
+  useRef,
+  useState,
+  useTransition,
+} from 'react';
 import {
   Image,
   Keyboard,
@@ -185,15 +191,28 @@ export const NativeCollectionSearchControls = memo(function NativeCollectionSear
   textColor: string;
 }) {
   const inputRef = useRef<TextInput>(null);
-  const expanded = menuVisible || Boolean(query.trim());
+  // Match Vite's SearchUI: the input owns an urgent local value while the
+  // collection projection is allowed to update at transition priority. A
+  // controlled TextInput tied directly to the Hub made every keystroke wait
+  // for the full route and grid tree to reconcile before it could paint.
+  const [inputValue, setInputValue] = useState(query);
+  const [, startTransition] = useTransition();
+  useEffect(() => {
+    setInputValue((current) => (current === query ? current : query));
+  }, [query]);
+  const commitQuery = (value: string) => {
+    setInputValue(value);
+    startTransition(() => onQueryChange(value));
+  };
+  const expanded = menuVisible || Boolean(inputValue.trim());
   const closeSearch = () => {
     onMenuVisibleChange(false);
-    onQueryChange('');
+    commitQuery('');
     inputRef.current?.blur();
     Keyboard.dismiss();
   };
   const clearSearch = () => {
-    onQueryChange('');
+    commitQuery('');
     onMenuVisibleChange(true);
     inputRef.current?.focus();
   };
@@ -235,7 +254,7 @@ export const NativeCollectionSearchControls = memo(function NativeCollectionSear
             accessibilityLabel="Search Pokémon"
             autoCapitalize="none"
             onChangeText={(value) => {
-              onQueryChange(value);
+              commitQuery(value);
               onMenuVisibleChange(false);
             }}
             onFocus={() => onMenuVisibleChange(true)}
@@ -245,7 +264,7 @@ export const NativeCollectionSearchControls = memo(function NativeCollectionSear
               expanded ? styles.searchInputExpanded : null,
               { color: inputTextColor },
             ]}
-            value={query}
+            value={inputValue}
           />
           {!expanded ? (
             <View pointerEvents="none" style={styles.placeholder}>
@@ -257,7 +276,7 @@ export const NativeCollectionSearchControls = memo(function NativeCollectionSear
               <Text style={styles.placeholderText}>Search</Text>
             </View>
           ) : null}
-          {query.trim() ? (
+          {inputValue.trim() ? (
             <Pressable
               accessibilityLabel="Clear Pokémon search"
               accessibilityRole="button"
@@ -277,7 +296,7 @@ export const NativeCollectionSearchControls = memo(function NativeCollectionSear
         </View>
       </View>
 
-      {query.trim() ? (
+      {inputValue.trim() ? (
         <Pressable
           aria-checked={showEvolutionaryLine}
           accessibilityRole="checkbox"

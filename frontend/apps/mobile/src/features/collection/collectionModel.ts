@@ -767,22 +767,61 @@ const normalizeNativeCollectionSearchValue = (value: string): string => value
 
 const nativeCollectionSearchProjectionCache = new WeakMap<
   NativeCollectionRow,
-  { dexNumber: string; searchable: string[] }
+  { dexNumber: string; searchable: string[]; words: string[] }
 >();
 
 const nativeCollectionSearchProjection = (
   row: NativeCollectionRow,
-): { dexNumber: string; searchable: string[] } => {
+): { dexNumber: string; searchable: string[]; words: string[] } => {
   const cached = nativeCollectionSearchProjectionCache.get(row);
   if (cached) return cached;
+  const searchable = [row.name, ...(row.searchTerms ?? [])]
+    .map(normalizeNativeCollectionSearchValue);
   const projection = {
     dexNumber: String(row.pokedexNumber),
-    searchable: [row.name, ...(row.searchTerms ?? [])]
-      .map(normalizeNativeCollectionSearchValue),
+    searchable,
+    words: searchable.flatMap((candidate) => candidate.split(' ')),
   };
   nativeCollectionSearchProjectionCache.set(row, projection);
   return projection;
 };
+
+type NativeCollectionCompiledSearchTerm = {
+  negated: boolean;
+  value: string;
+};
+
+type NativeCollectionCompiledSearch = NativeCollectionCompiledSearchTerm[][];
+
+const compileNativeCollectionSearch = (
+  rawQuery: string,
+): NativeCollectionCompiledSearch => rawQuery
+  .split(',')
+  .map((union) => union
+    .split('&')
+    .map((rawTerm) => {
+      const trimmed = rawTerm.trim();
+      const negated = trimmed.startsWith('!');
+      return {
+        negated,
+        value: normalizeNativeCollectionSearchValue(
+          negated ? trimmed.slice(1) : trimmed,
+        ),
+      };
+    })
+    .filter((term) => Boolean(term.value)))
+  .filter((union) => union.length > 0);
+
+const matchesNativeCollectionSearch = (
+  row: NativeCollectionRow,
+  compiledQuery: NativeCollectionCompiledSearch,
+): boolean => compiledQuery.some((union) => union.every(({ negated, value }) => {
+  const { dexNumber, searchable, words } = nativeCollectionSearchProjection(row);
+  const matched = searchable.some((candidate) => candidate === value)
+    || words.some((word) => word.startsWith(value))
+    || dexNumber.includes(value);
+  return negated ? !matched : matched;
+}));
 
 export const filterNativeCollectionRows = (
   rows: NativeCollectionRow[],
@@ -793,27 +832,6 @@ export const filterNativeCollectionRows = (
     universeRows?: NativeCollectionRow[];
   } = {},
 ): NativeCollectionRow[] => {
-  const matchesTerm = (row: NativeCollectionRow, rawTerm: string): boolean => {
-    const negated = rawTerm.startsWith('!');
-    const term = normalizeNativeCollectionSearchValue(
-      negated ? rawTerm.slice(1) : rawTerm,
-    );
-    if (!term) return true;
-    const { dexNumber, searchable } = nativeCollectionSearchProjection(row);
-    const matched = searchable.some((candidate) => (
-      candidate === term || candidate.split(' ').some((word) => word.startsWith(term))
-    )) || dexNumber.includes(term);
-    return negated ? !matched : matched;
-  };
-  const matchesQuery = (row: NativeCollectionRow, rawQuery: string): boolean => rawQuery
-    .split(',')
-    .map((union) => union.trim())
-    .filter(Boolean)
-    .some((union) => union
-      .split('&')
-      .map((term) => term.trim())
-      .filter(Boolean)
-      .every((term) => matchesTerm(row, term)));
   const normalizedQuery = query.trim();
   if (filter === 'all' && !normalizedQuery) return rows;
   const universe = options.universeRows ?? rows;
@@ -831,9 +849,15 @@ export const filterNativeCollectionRows = (
   const familyQuery = options.showEvolutionaryLine
     ? queryGroups.map((term) => term.replace(/^\+/, '')).join(',')
     : explicitFamilyTerms.join(',');
+  // Query syntax and Unicode normalization do not vary by row. Compile each
+  // expression once so typing does not repeat string splitting and NFKD work
+  // thousands of times on Android's JavaScript thread.
+  const compiledQuery = compileNativeCollectionSearch(normalizedQuery);
+  const compiledOrdinaryQuery = compileNativeCollectionSearch(ordinaryQuery);
+  const compiledFamilyQuery = compileNativeCollectionSearch(familyQuery);
   const familyIds = familyQuery
     ? new Set(universe
-      .filter((row) => matchesQuery(row, familyQuery))
+      .filter((row) => matchesNativeCollectionSearch(row, compiledFamilyQuery))
       .flatMap((row) => row.evolutionFamilyIds ?? [row.pokemonId]))
     : null;
   const matchesSearch = (row: NativeCollectionRow): boolean => {
@@ -841,10 +865,11 @@ export const filterNativeCollectionRows = (
     if (options.showEvolutionaryLine) return Boolean(familyIds?.has(row.pokemonId));
     if (explicitFamilyTerms.length > 0) {
       return Boolean(familyIds?.has(row.pokemonId)) || (
-        Boolean(ordinaryQuery) && matchesQuery(row, ordinaryQuery)
+        Boolean(ordinaryQuery)
+        && matchesNativeCollectionSearch(row, compiledOrdinaryQuery)
       );
     }
-    return matchesQuery(row, normalizedQuery);
+    return matchesNativeCollectionSearch(row, compiledQuery);
   };
   return rows.filter((row) =>
     (filter === 'all' ||

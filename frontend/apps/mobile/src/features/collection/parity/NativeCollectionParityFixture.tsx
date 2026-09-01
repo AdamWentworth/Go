@@ -457,7 +457,7 @@ export const NativeCollectionParityFixture = memo(forwardRef<
     previousResetKeyRef.current = scrollResetKey;
     resetScroll();
   }, [resetScroll, scrollResetKey]);
-  const renderCollectionControls = useCallback((includeSearchMenu: boolean) => (
+  const collectionControls = useMemo(() => (
     <View style={[styles.collectionControls, { backgroundColor: palette.background }]}>
       <NativeCollectionSearchControls
         assetBaseUrl={assetBaseUrl}
@@ -521,17 +521,9 @@ export const NativeCollectionParityFixture = memo(forwardRef<
           ) : null}
         </View>
       ) : null}
-      {includeSearchMenu ? (
-        <NativeCollectionSearchMenu
-          assetBaseUrl={assetBaseUrl}
-          onFilterPress={appendFilter}
-          textColor={palette.text}
-        />
-      ) : null}
     </View>
   ), [
     activeTag,
-    appendFilter,
     assetBaseUrl,
     changeQuery,
     error,
@@ -630,48 +622,56 @@ export const NativeCollectionParityFixture = memo(forwardRef<
         />
       ) : null}
 
-      {searchMenuVisible ? (
-        <ScrollView
-          contentContainerStyle={styles.searchMenuContent}
+      {collectionControls}
+      <View style={styles.collectionBody}>
+        <FlatList
+          accessibilityElementsHidden={searchMenuVisible}
+          aria-hidden={searchMenuVisible}
+          columnWrapperStyle={styles.gridRow}
+          contentContainerStyle={styles.listContent}
+          data={collectionItems}
+          extraData={selectedIds}
+          getItemLayout={getItemLayout}
+          importantForAccessibility={searchMenuVisible ? 'no-hide-descendants' : 'auto'}
+          nestedScrollEnabled
+          ref={listRef}
+          initialNumToRender={COLLECTION_INITIAL_ROW_BUDGET}
+          key={columns}
+          keyExtractor={collectionCardKeyExtractor}
           keyboardShouldPersistTaps="always"
-          testID="native-collection-filter-scroll"
-        >
-          {renderCollectionControls(true)}
-        </ScrollView>
-      ) : (
-        <>
-          {renderCollectionControls(false)}
-          <FlatList
-            columnWrapperStyle={styles.gridRow}
-            contentContainerStyle={styles.listContent}
-            data={collectionItems}
-            extraData={selectedIds}
-            getItemLayout={getItemLayout}
-            nestedScrollEnabled
-            ref={listRef}
-            initialNumToRender={COLLECTION_INITIAL_ROW_BUDGET}
-            key={columns}
-            keyExtractor={collectionCardKeyExtractor}
+          maxToRenderPerBatch={COLLECTION_ROW_BATCH_BUDGET}
+          numColumns={columns}
+          onContentSizeChange={restoreInitialScroll}
+          // The native list owns every movement frame. Persist only settled
+          // offsets so ordinary vertical scrolling never schedules recurring
+          // JS/cache work while the user is trying to keep 60 fps.
+          onMomentumScrollEnd={persistSettledScrollOffset}
+          onScrollEndDrag={persistSettledScrollOffset}
+          pointerEvents={searchMenuVisible ? 'none' : 'auto'}
+          removeClippedSubviews={false}
+          {...NATIVE_FLAT_LIST_RENDERER_OPTIMIZATION}
+          style={[styles.gridList, searchMenuVisible ? styles.concealedGrid : null]}
+          testID="native-collection-grid"
+          updateCellsBatchingPeriod={16}
+          windowSize={3}
+          ListEmptyComponent={emptyState}
+          renderItem={renderCard}
+        />
+        {searchMenuVisible ? (
+          <ScrollView
+            contentContainerStyle={styles.searchMenuContent}
             keyboardShouldPersistTaps="always"
-            maxToRenderPerBatch={COLLECTION_ROW_BATCH_BUDGET}
-            numColumns={columns}
-            onContentSizeChange={restoreInitialScroll}
-            // The native list owns every movement frame. Persist only settled
-            // offsets so ordinary vertical scrolling never schedules recurring
-            // JS/cache work while the user is trying to keep 60 fps.
-            onMomentumScrollEnd={persistSettledScrollOffset}
-            onScrollEndDrag={persistSettledScrollOffset}
-            removeClippedSubviews={false}
-            {...NATIVE_FLAT_LIST_RENDERER_OPTIMIZATION}
-            style={styles.gridList}
-            testID="native-collection-grid"
-            updateCellsBatchingPeriod={16}
-            windowSize={3}
-            ListEmptyComponent={emptyState}
-            renderItem={renderCard}
-          />
-        </>
-      )}
+            style={[styles.searchMenuOverlay, { backgroundColor: palette.background }]}
+            testID="native-collection-filter-scroll"
+          >
+            <NativeCollectionSearchMenu
+              assetBaseUrl={assetBaseUrl}
+              onFilterPress={appendFilter}
+              textColor={palette.text}
+            />
+          </ScrollView>
+        ) : null}
+      </View>
 
       {selectedIds.size === 0 ? <Pressable
         accessibilityLabel={sortLabel}
@@ -759,7 +759,17 @@ const styles = StyleSheet.create({
     flexGrow: 1,
     paddingBottom: 92,
   },
+  collectionBody: { position: 'relative', flex: 1, minHeight: 0 },
+  concealedGrid: { opacity: 0 },
   gridList: { flex: 1, minHeight: 0 },
+  searchMenuOverlay: {
+    position: 'absolute',
+    top: 0,
+    right: 0,
+    bottom: 0,
+    left: 0,
+    zIndex: 2,
+  },
   gridRow: { gap: GRID_GAP },
   collectionControls: {
     alignItems: 'center',

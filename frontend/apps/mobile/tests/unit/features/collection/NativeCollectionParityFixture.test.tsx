@@ -195,6 +195,27 @@ describe('NativeCollectionParityFixture', () => {
     expect(screen.getByTestId('native-collection-grid').props.keyboardShouldPersistTaps).toBe('always');
   });
 
+  it('keeps the input and virtualized grid mounted while the search menu is open', () => {
+    const view = render(<NativeCollectionParityFixture />);
+    const initialGrid = view.UNSAFE_getByType(FlatList);
+    const initialInput = view.getByLabelText('Search Pokémon');
+
+    fireEvent(initialInput, 'focus');
+
+    expect(view.UNSAFE_getByType(FlatList)).toBe(initialGrid);
+    expect(view.getByLabelText('Search Pokémon')).toBe(initialInput);
+    expect(initialGrid.props.pointerEvents).toBe('none');
+    expect(initialGrid.props.importantForAccessibility).toBe('no-hide-descendants');
+    expect(view.getByLabelText('Pokémon search filters')).toBeTruthy();
+
+    fireEvent.changeText(initialInput, 'char');
+
+    expect(view.UNSAFE_getByType(FlatList)).toBe(initialGrid);
+    expect(view.getByLabelText('Search Pokémon')).toBe(initialInput);
+    expect(initialGrid.props.pointerEvents).toBe('auto');
+    expect(view.queryByLabelText('Pokémon search filters')).toBeNull();
+  });
+
   it('keeps grid render work stable when the Vite-style data projection changes', () => {
     const view = render(
       <NativeCollectionParityFixture cards={COLLECTION_PARITY_FIXTURES.slice(0, 3)} />,

@@ -58,7 +58,7 @@ mounts complete collection and Pokédex route trees in the background.
 
 Passing evidence for this checkpoint:
 
-- native Jest: 158 suites, 823 tests;
+- native Jest: 158 suites, 827 tests;
 - mobile and web TypeScript and ESLint;
 - native real-route smoke: 92 guest/signed-in, light/dark route states;
 - focused Vite mobile-Chromium browser coverage: 9 tests;
@@ -151,9 +151,9 @@ peek limit and 100 px threshold, and hands the exact drag position to the
 settling animation so the current page cannot flash or reload first. The
 Pokémon result and selected tab commit together before the canonical 300 ms
 slide; only the offscreen Tags/Wishlist sublabel waits until that slide ends,
-matching Vite. The track is rasterized only after the destination commit and
-while moving, avoiding a stale offscreen draw before the grid changes, then is
-released afterward. React Native 0.86's deprecated InteractionManager is a stub, so an
+matching Vite. The current and destination panels are rasterized only after the
+destination commit and while moving, avoiding a stale offscreen draw before the
+grid changes, then are released afterward. React Native 0.86's deprecated InteractionManager is a stub, so an
 app-owned scheduler tied to this real slider lifecycle protects animation
 frames from projection warming.
 
@@ -166,7 +166,7 @@ latency gap with Vite's already-populated client store.
 
 The real-route collection budget measures the first interactive destination
 card before separately asserting the deliberately delayed header sublabel. The
-latest complete matrix passed all 92 route/theme states and measured 505 ms for
+latest complete matrix passed all 92 route/theme states and measured 509 ms for
 the For Trade workflow, including the canonical 300 ms slide.
 
 The next transition-frame pass now supplies FlatList with the exact deterministic
@@ -187,6 +187,26 @@ Trade run painted the first destination result in 72 ms, began track movement in
 gap to 33.3 ms. The harness enforces 150 ms response/start ceilings, at least 12
 visual steps, and no sampled gap above 80 ms. These generous CI thresholds catch
 regressions without pretending a headless browser proves physical Android fps.
+
+The latest input-latency pass found another native-only lifecycle mismatch:
+focusing search unmounted its TextInput and FlatList, then the first character
+rebuilt both. The search control now remains mounted like Vite's SearchUI, owns
+an urgent local value, and sends the collection update through one React
+transition rather than transition plus deferred-value commits. The grid remains
+warm and inaccessible beneath the filter overlay. Search expressions are
+compiled once per update and normalized row tokens/words are cached instead of
+repeating that string work for every Pokémon. A new production guardrail
+requires a dispatched catalog search to paint its matching card within 150 ms;
+repeat runs measured 88–120 ms, down from the initial measured 231 ms.
+
+Android page motion no longer rasterizes the entire three-screen-wide track as
+one texture. Only the current and destination panels receive temporary hardware
+textures during programmatic slides (with adjacent candidates covered during a
+finger drag), and all are released when motion ends. This preserves the single
+native-driven Vite timing/transform while reducing the normal tag-to-Pokémon
+snapshot area by one third and avoiding an unnecessarily wide GPU surface. The
+post-change production proxy measured the tag result at 74–81 ms, motion start
+at 5–8 ms, 20–21 distinct positions, and a 16.7–33.5 ms largest sampled gap.
 
 ## Remaining approval gate
 
