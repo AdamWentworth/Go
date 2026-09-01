@@ -1,6 +1,6 @@
-import { AccessibilityInfo, Animated, Text } from 'react-native';
+import { AccessibilityInfo, Animated, StyleSheet, Text } from 'react-native';
 import { createRef } from 'react';
-import { act, fireEvent, render } from '@testing-library/react-native';
+import { act, render } from '@testing-library/react-native';
 import {
   NATIVE_HORIZONTAL_PAGE_TRANSITION_MS,
   NativeHorizontalPageSlider,
@@ -27,8 +27,8 @@ describe('NativeHorizontalPageSlider', () => {
     );
   });
 
-  it('opens on the active page instead of rendering a mismatched tab body', async () => {
-    const { getByTestId, queryByText } = render(
+  it('opens on the active page while keeping all Vite-parity panels warm', async () => {
+    const { getByTestId, getByText, queryByText } = render(
       <NativeHorizontalPageSlider activeIndex={1} onIndexChange={jest.fn()}>
         <Text>Tags panel</Text>
         <Text>Pokémon panel</Text>
@@ -37,18 +37,17 @@ describe('NativeHorizontalPageSlider', () => {
     );
 
     await act(async () => Promise.resolve());
-    expect(getByTestId('native-horizontal-page-slider').props.contentOffset).toEqual({
-      x: 412,
-      y: 0,
-    });
     expect(queryByText('Tags panel')).toBeNull();
     expect(queryByText('Pokémon panel')).toBeTruthy();
     expect(queryByText('Wishlist panel')).toBeNull();
+    expect(getByText('Tags panel', { includeHiddenElements: true })).toBeTruthy();
+    expect(getByText('Wishlist panel', { includeHiddenElements: true })).toBeTruthy();
+    expect(getByTestId('native-horizontal-page-1').props.pointerEvents).toBe('auto');
   });
 
-  it('lets the native pager report the canonical Tags, Pokémon, and Wishlist page', async () => {
+  it('moves accessibility and touch ownership with the canonical active page', async () => {
     const onIndexChange = jest.fn();
-    const { getByTestId } = render(
+    const view = render(
       <NativeHorizontalPageSlider activeIndex={0} onIndexChange={onIndexChange}>
         <Text>Tags panel</Text>
         <Text>Pokémon panel</Text>
@@ -57,11 +56,18 @@ describe('NativeHorizontalPageSlider', () => {
     );
 
     await act(async () => Promise.resolve());
-    fireEvent(getByTestId('native-horizontal-page-slider'), 'momentumScrollEnd', {
-      nativeEvent: { contentOffset: { x: 824, y: 0 } },
-    });
+    view.rerender(
+      <NativeHorizontalPageSlider activeIndex={2} onIndexChange={onIndexChange}>
+        <Text>Tags panel</Text>
+        <Text>Pokémon panel</Text>
+        <Text>Wishlist panel</Text>
+      </NativeHorizontalPageSlider>,
+    );
 
-    expect(onIndexChange).toHaveBeenCalledWith(2);
+    expect(view.getByTestId('native-horizontal-page-0', { includeHiddenElements: true })
+      .props.pointerEvents).toBe('none');
+    expect(view.getByTestId('native-horizontal-page-2').props.pointerEvents).toBe('auto');
+    expect(onIndexChange).not.toHaveBeenCalled();
   });
 
   it('resolves native scroll offsets to bounded page indexes', () => {
@@ -82,8 +88,9 @@ describe('NativeHorizontalPageSlider', () => {
     })).toBe(2);
   });
 
-  it('publishes native drag progress for the coordinated header underline', async () => {
+  it('uses one shared animated value for the page track and coordinated underline', async () => {
     const scrollX = new Animated.Value(412);
+    const multiply = jest.spyOn(Animated, 'multiply');
     const { getByTestId } = render(
       <NativeHorizontalPageSlider
         activeIndex={1}
@@ -98,11 +105,10 @@ describe('NativeHorizontalPageSlider', () => {
 
     await act(async () => Promise.resolve());
     const slider = getByTestId('native-horizontal-page-slider');
-    expect(typeof slider.props.onScroll).toBe('function');
-    expect(slider.props.scrollEventThrottle).toBe(16);
-    expect(slider.props.pagingEnabled).toBe(true);
-    expect(slider.props.scrollEnabled).toBe(false);
-    expect(slider.props.keyboardShouldPersistTaps).toBe('always');
+    const trackStyle = StyleSheet.flatten(getByTestId('native-horizontal-page-track').props.style);
+    expect(slider.props.onScroll).toBeUndefined();
+    expect(trackStyle.transform[0].translateX).toBeDefined();
+    expect(multiply).toHaveBeenCalledWith(scrollX, -1);
   });
 
   it('keeps inactive pages out of touch and accessibility navigation', async () => {

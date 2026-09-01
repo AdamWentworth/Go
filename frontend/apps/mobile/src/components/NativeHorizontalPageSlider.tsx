@@ -2,7 +2,6 @@ import {
   AccessibilityInfo,
   Animated,
   Easing,
-  ScrollView,
   StyleSheet,
   View,
   useWindowDimensions,
@@ -15,6 +14,7 @@ import {
   useCallback,
   useEffect,
   useImperativeHandle,
+  useLayoutEffect,
   useMemo,
   useRef,
   useState,
@@ -33,9 +33,9 @@ export type NativeHorizontalPageSliderHandle = {
 };
 
 // Keep programmatic tab changes in step with the canonical Vite page slide.
-// This value is deliberately shared by the content offset and any header
-// indicator consuming `scrollX`; changing it in one place prevents the tab
-// underline from jumping ahead of the page body on native platforms.
+// This value is deliberately shared by the track transform and any header
+// indicator consuming `scrollX`; one native-driven clock keeps the underline
+// and page body together.
 export const NATIVE_HORIZONTAL_PAGE_TRANSITION_MS = (
   collectionExperienceParityContract.pageTransitionMs
 );
@@ -69,15 +69,10 @@ export const NativeHorizontalPageSlider = forwardRef<
   const panelCount = panels.length;
   const { width } = useWindowDimensions();
   const safeIndex = clampPageIndex(activeIndex, panelCount);
-  const scrollRef = useRef<ScrollView>(null);
   const renderedIndexRef = useRef(safeIndex);
   const alignedInitialPageRef = useRef(false);
   const previousWidthRef = useRef(width);
   const dragStartOffsetRef = useRef(safeIndex * width);
-  const mountedIndexesRef = useRef<Set<number>>(new Set([safeIndex]));
-  const [mountedIndexes, setMountedIndexes] = useState<Set<number>>(
-    () => mountedIndexesRef.current,
-  );
   const [internalScrollX] = useState(() => new Animated.Value(safeIndex * width));
   const pageScrollX = scrollX ?? internalScrollX;
   const devicePreferences = useOptionalNativeDevicePreferences();
@@ -101,26 +96,12 @@ export const NativeHorizontalPageSlider = forwardRef<
 
   const reduceMotion = devicePreferences?.shouldReduceMotion ?? systemReduceMotion;
 
-  const mountPageIndexes = useCallback((indexes: number[]) => {
-    const missingIndexes = indexes.filter((index) => !mountedIndexesRef.current.has(index));
-    if (missingIndexes.length === 0) return;
-    const next = new Set(mountedIndexesRef.current);
-    for (const index of missingIndexes) next.add(index);
-    mountedIndexesRef.current = next;
-    setMountedIndexes(next);
-  }, []);
-
-  useEffect(() => {
-    mountPageIndexes([safeIndex]);
-  }, [mountPageIndexes, safeIndex]);
-
   const setPage = useCallback((index: number, animated = !reduceMotion) => {
     const nextIndex = clampPageIndex(index, panelCount);
     renderedIndexRef.current = nextIndex;
-    // Android does not consistently emit a complete Animated onScroll sequence
-    // for programmatic scrollTo calls. Drive the shared progress value in
-    // parallel so the page and its coordinated header indicator move together
-    // instead of snapping to different states.
+    // Vite moves one three-panel track. Drive the native track and every header
+    // indicator from this same value so Android cannot make the body and
+    // underline race each other with two different animation clocks.
     pageScrollX.stopAnimation();
     if (animated) {
       Animated.timing(pageScrollX, {
@@ -132,20 +113,12 @@ export const NativeHorizontalPageSlider = forwardRef<
     } else {
       pageScrollX.setValue(nextIndex * width);
     }
-    scrollRef.current?.scrollTo({
-      x: nextIndex * width,
-      y: 0,
-      animated,
-    });
   }, [pageScrollX, panelCount, reduceMotion, width]);
 
   useImperativeHandle(ref, () => ({ setPage }), [setPage]);
 
-  useEffect(() => {
-    // `contentOffset` establishes the first page on iOS and Android, but
-    // react-native-web does not consistently apply it during hydration. Make
-    // the initial alignment explicit after the ref exists so the visible body
-    // can never disagree with the selected tab or underline.
+  useLayoutEffect(() => {
+    // Align before paint when a caller supplies its own shared progress value.
     if (!alignedInitialPageRef.current) {
       alignedInitialPageRef.current = true;
       setPage(safeIndex, false);
@@ -154,7 +127,7 @@ export const NativeHorizontalPageSlider = forwardRef<
     if (renderedIndexRef.current !== safeIndex) setPage(safeIndex);
   }, [safeIndex, setPage]);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     // Preserve the selected page across rotations without animating from the old width.
     if (previousWidthRef.current === width) return;
     previousWidthRef.current = width;
@@ -182,12 +155,6 @@ export const NativeHorizontalPageSlider = forwardRef<
     .failOffsetY([-10, 10])
     .runOnJS(true)
     .onStart(() => {
-      const indexes = [renderedIndexRef.current];
-      if (renderedIndexRef.current > 0) indexes.push(renderedIndexRef.current - 1);
-      if (renderedIndexRef.current < panelCount - 1) {
-        indexes.push(renderedIndexRef.current + 1);
-      }
-      mountPageIndexes(indexes);
       dragStartOffsetRef.current = renderedIndexRef.current * width;
       pageScrollX.stopAnimation();
     })
@@ -198,11 +165,9 @@ export const NativeHorizontalPageSlider = forwardRef<
         Math.min(maxOffset, dragStartOffsetRef.current - event.translationX),
       );
       pageScrollX.setValue(offset);
-      scrollRef.current?.scrollTo({ animated: false, x: offset, y: 0 });
     })
     .onEnd((event) => settleDrag(event.translationX, event.velocityX)), [
       pageScrollX,
-      mountPageIndexes,
       panelCount,
       settleDrag,
       width,
@@ -210,54 +175,38 @@ export const NativeHorizontalPageSlider = forwardRef<
 
   return (
     <GestureDetector gesture={pageGesture}>
-      <Animated.ScrollView
-      bounces={false}
-      contentOffset={{ x: safeIndex * width, y: 0 }}
-      decelerationRate="fast"
-      directionalLockEnabled
-      horizontal
-      keyboardShouldPersistTaps="always"
-      nestedScrollEnabled
-      onScroll={Animated.event(
-        [{ nativeEvent: { contentOffset: { x: pageScrollX } } }],
-        { useNativeDriver: true },
-      )}
-      onMomentumScrollEnd={(event) => {
-        const nextIndex = resolveNativeHorizontalPageOffset({
-          offsetX: event.nativeEvent.contentOffset.x,
-          panelCount,
-          width,
-        });
-        renderedIndexRef.current = nextIndex;
-        if (nextIndex !== safeIndex) onIndexChange(nextIndex);
-      }}
-      pagingEnabled
-      ref={scrollRef}
-      scrollEnabled={false}
-      scrollEventThrottle={16}
-      showsHorizontalScrollIndicator={false}
-      style={styles.viewport}
-      testID="native-horizontal-page-slider"
-      >
-        {panels.map((panel, index) => (
-          <View
-          accessibilityElementsHidden={index !== safeIndex}
-          aria-hidden={index !== safeIndex}
-          importantForAccessibility={index === safeIndex ? 'auto' : 'no-hide-descendants'}
-          key={index}
-          pointerEvents={index === safeIndex ? 'auto' : 'none'}
-          style={[styles.panel, { width }]}
-          testID={`native-horizontal-page-${index}`}
-          >
-            {mountedIndexes.has(index) || index === safeIndex ? panel : null}
-          </View>
-        ))}
-      </Animated.ScrollView>
+      <View style={styles.viewport} testID="native-horizontal-page-slider">
+        <Animated.View
+          style={[
+            styles.track,
+            {
+              transform: [{ translateX: Animated.multiply(pageScrollX, -1) }],
+              width: width * panelCount,
+            },
+          ]}
+          testID="native-horizontal-page-track"
+        >
+          {panels.map((panel, index) => (
+            <View
+              accessibilityElementsHidden={index !== safeIndex}
+              aria-hidden={index !== safeIndex}
+              importantForAccessibility={index === safeIndex ? 'auto' : 'no-hide-descendants'}
+              key={index}
+              pointerEvents={index === safeIndex ? 'auto' : 'none'}
+              style={[styles.panel, { width }]}
+              testID={`native-horizontal-page-${index}`}
+            >
+              {panel}
+            </View>
+          ))}
+        </Animated.View>
+      </View>
     </GestureDetector>
   );
 });
 
 const styles = StyleSheet.create({
-  viewport: { flex: 1, minHeight: 0 },
-  panel: { flex: 1, minHeight: 0 },
+  viewport: { flex: 1, minHeight: 0, overflow: 'hidden' },
+  track: { flex: 1, flexDirection: 'row', minHeight: 0 },
+  panel: { minHeight: 0 },
 });

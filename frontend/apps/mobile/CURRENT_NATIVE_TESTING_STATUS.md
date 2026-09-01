@@ -47,7 +47,7 @@ mounts complete collection and Pokédex route trees in the background.
 
 Passing evidence for this checkpoint:
 
-- native Jest: 154 suites, 800 tests;
+- native Jest: 154 suites, 801 tests;
 - mobile and web TypeScript and ESLint;
 - native real-route smoke: 92 guest/signed-in, light/dark route states;
 - focused Vite mobile-Chromium browser coverage: 9 tests;
@@ -68,8 +68,11 @@ virtualizes the trainer showcase picker, defers expensive battle/ranking/search
 projections until controls can paint, removes Android's default image fade from
 all 192 native image surfaces, and makes the action-menu close control respond
 during its reveal. The real rendered collection workflow now enforces a 750 ms
-tag-to-interactive-card ceiling; the final full-matrix run measured 416 ms,
-including the canonical 300 ms page slide.
+tag-to-interactive-card ceiling. The 2026-09-01 transition-parity pass replaced
+the competing ScrollView/body and indicator animations with one native-driven
+three-panel track, keeps all three Vite-equivalent panels warm, and explicitly
+slides from either side tag page back to Pokémon. Its final full-matrix run
+measured 528 ms, including the canonical 300 ms page slide.
 
 ## Remaining approval gate
 

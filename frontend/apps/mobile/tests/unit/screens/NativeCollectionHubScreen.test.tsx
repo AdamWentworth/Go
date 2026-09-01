@@ -1,5 +1,5 @@
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react-native';
-import { Text } from 'react-native';
+import { Animated, Text } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import type { PokemonInstance } from '@pokemongonexus/shared-contracts/instances';
 import type {
@@ -7,6 +7,7 @@ import type {
   NativeTagSummary,
 } from '../../../src/features/collection/collectionModel';
 import { NativeCollectionHubScreen } from '../../../src/screens/NativeCollectionHubScreen';
+import { NATIVE_HORIZONTAL_PAGE_TRANSITION_MS } from '../../../src/components/NativeHorizontalPageSlider';
 import { buildClearActiveTagMessage } from '@pokemongonexus/shared-ui-tokens';
 
 jest.mock('react-native/Libraries/Utilities/useWindowDimensions', () => ({
@@ -158,17 +159,11 @@ describe('NativeCollectionHubScreen', () => {
     expect(screen.getByRole('tab', { name: /tags/i }).props.accessibilityState).toEqual({
       selected: true,
     });
-    fireEvent(screen.getByTestId('native-horizontal-page-slider'), 'momentumScrollEnd', {
-      nativeEvent: { contentOffset: { x: 0, y: 0 } },
-    });
     expect(screen.getByRole('tab', { name: /tags/i }).props.accessibilityState).toEqual({
       selected: true,
     });
     expect(screen.getByText('1 Pokémon')).toBeTruthy();
     fireEvent.press(screen.getByRole('button', { name: /Open Favorites/i }));
-    fireEvent(screen.getByTestId('native-horizontal-page-slider'), 'momentumScrollEnd', {
-      nativeEvent: { contentOffset: { x: 412, y: 0 } },
-    });
 
     expect(screen.getByText('Favorites')).toBeTruthy();
     expect(screen.getByText('Shiny Bulbasaur')).toBeTruthy();
@@ -192,21 +187,59 @@ describe('NativeCollectionHubScreen', () => {
     expect(screen.queryByText('Shiny Bulbasaur')).toBeNull();
 
     fireEvent.press(screen.getByRole('tab', { name: /tags/i }));
-    fireEvent(screen.getByTestId('native-horizontal-page-slider'), 'momentumScrollEnd', {
-      nativeEvent: { contentOffset: { x: 0, y: 0 } },
-    });
     fireEvent.press(screen.getByRole('button', { name: /Open All Caught/i }));
-    fireEvent(screen.getByTestId('native-horizontal-page-slider'), 'momentumScrollEnd', {
-      nativeEvent: { contentOffset: { x: 412, y: 0 } },
-    });
     expect(screen.getByText('Caught')).toBeTruthy();
 
     fireEvent.press(screen.getByRole('tab', { name: /wishlist/i }));
-    fireEvent(screen.getByTestId('native-horizontal-page-slider'), 'momentumScrollEnd', {
-      nativeEvent: { contentOffset: { x: 824, y: 0 } },
-    });
     expect(screen.getByLabelText('Wanted tags')).toBeTruthy();
     expect(screen.getByText('Most Wanted')).toBeTruthy();
+  });
+
+  it('slides the warm page track back to Pokémon when either side selects a tag', () => {
+    const timing = jest.spyOn(Animated, 'timing');
+    render(
+      <SafeAreaProvider initialMetrics={{
+        frame: { x: 0, y: 0, width: 412, height: 915 },
+        insets: { top: 24, right: 0, bottom: 20, left: 0 },
+      }}>
+        <NativeCollectionHubScreen
+          assetBaseUrl="https://pokegonexus.com"
+          catalogRows={[catalogBulbasaur, catalogMewtwo]}
+          error={null}
+          inventoryTags={[inventoryTag, allCaughtTag]}
+          instances={{}}
+          isLoading={false}
+          onOpenEntry={jest.fn()}
+          onRetry={jest.fn()}
+          wishlistTags={[wishlistTag]}
+        />
+      </SafeAreaProvider>,
+    );
+
+    expect(screen.getByText('Favorites', { includeHiddenElements: true })).toBeTruthy();
+    expect(screen.getByText('Most Wanted', { includeHiddenElements: true })).toBeTruthy();
+
+    fireEvent.press(screen.getByRole('tab', { name: /tags/i }));
+    timing.mockClear();
+    fireEvent.press(screen.getByRole('button', { name: /Open Favorites/i }));
+
+    expect(timing).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({
+      duration: NATIVE_HORIZONTAL_PAGE_TRANSITION_MS,
+      toValue: 412,
+      useNativeDriver: true,
+    }));
+    expect(screen.getByRole('tab', { name: /pokémon/i }).props.accessibilityState).toEqual({
+      selected: true,
+    });
+
+    fireEvent.press(screen.getByRole('tab', { name: /wishlist/i }));
+    timing.mockClear();
+    fireEvent.press(screen.getByRole('button', { name: /Open Most Wanted/i }));
+    expect(timing).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({
+      duration: NATIVE_HORIZONTAL_PAGE_TRANSITION_MS,
+      toValue: 412,
+      useNativeDriver: true,
+    }));
   });
 
   it('opens the canonical quick-navigation menu instead of replacing the collection', () => {
@@ -334,13 +367,7 @@ describe('NativeCollectionHubScreen', () => {
     );
 
     fireEvent.press(screen.getByRole('tab', { name: /tags/i }));
-    fireEvent(screen.getByTestId('native-horizontal-page-slider'), 'momentumScrollEnd', {
-      nativeEvent: { contentOffset: { x: 0, y: 0 } },
-    });
     fireEvent.press(screen.getByRole('button', { name: /Open All Caught/i }));
-    fireEvent(screen.getByTestId('native-horizontal-page-slider'), 'momentumScrollEnd', {
-      nativeEvent: { contentOffset: { x: 412, y: 0 } },
-    });
     const caughtCard = screen.getByRole('button', { name: 'View Shiny Bulbasaur' });
     fireEvent(caughtCard, 'longPress');
 
