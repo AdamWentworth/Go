@@ -156,6 +156,7 @@ export const NativeCollectionHubScreen = memo(function NativeCollectionHubScreen
   const [actionMenuOpen, setActionMenuOpen] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [organizerOpen, setOrganizerOpen] = useState(false);
+  const [organizerPrepared, setOrganizerPrepared] = useState(false);
   const [clearTagConfirmationOpen, setClearTagConfirmationOpen] = useState(false);
   const [operationNotice, setOperationNotice] = useState<string | null>(null);
   const sliderRef = useRef<NativeHorizontalPageSliderHandle>(null);
@@ -177,6 +178,9 @@ export const NativeCollectionHubScreen = memo(function NativeCollectionHubScreen
   const stagedVisibleRowCountRef = useRef(0);
   const stagedTagCancelTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const sidePanelTagTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const clearTagRequestStartedAtRef = useRef<number | null>(null);
+  const selectionRequestStartedAtRef = useRef<number | null>(null);
+  const organizerRequestStartedAtRef = useRef<number | null>(null);
   const activeViewRef = useRef<NativePokemonHubView>(initialView);
   const selectedTagKeyRef = useRef<string | null>(resolvedInitialTagKey);
   const [pageScrollX] = useState(() => new Animated.Value(width));
@@ -222,6 +226,12 @@ export const NativeCollectionHubScreen = memo(function NativeCollectionHubScreen
   );
   const selectedRowsAreCatalog = selectedOrganizerRows.length > 0
     && selectedOrganizerRows.every((row) => row.source === 'catalog');
+  useEffect(() => {
+    const task = runAfterNativeUiInteractions(() => {
+      setOrganizerPrepared(selectedIds.size > 0);
+    });
+    return task.cancel;
+  }, [selectedIds.size]);
   const inventoryCount = inventoryTags.find(
     (tag) => tag.key === 'system:caught',
   )?.rows.length ?? 0;
@@ -556,8 +566,24 @@ export const NativeCollectionHubScreen = memo(function NativeCollectionHubScreen
     );
   }, [onOpenEntry, toggleSelection]);
   const longPressEntry = useCallback((row: NativeCollectionRow) => {
+    selectionRequestStartedAtRef.current = Date.now();
+    markNativeUiPerformance('collection_selection_requested', { entryId: row.id });
     toggleSelection(row.id);
   }, [toggleSelection]);
+  useLayoutEffect(() => {
+    if (selectedIds.size === 0 || selectionRequestStartedAtRef.current === null) {
+      return undefined;
+    }
+    const startedAt = selectionRequestStartedAtRef.current;
+    selectionRequestStartedAtRef.current = null;
+    const frame = requestAnimationFrame(() => {
+      markNativeUiPerformance('collection_selection_painted', {
+        interactionLatencyMs: Date.now() - startedAt,
+        selectedCount: selectedIds.size,
+      });
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [selectedIds.size]);
   const clearSelection = useCallback(() => setSelectedIds(new Set()), []);
   const selectAll = useCallback(
     () => setSelectedIds(new Set(selectedRowsRef.current.map((row) => row.id))),
@@ -566,8 +592,23 @@ export const NativeCollectionHubScreen = memo(function NativeCollectionHubScreen
 
   const requestClearTag = useCallback(() => {
     if (requireTagSelection || !selectedTagKeyRef.current) return;
+    clearTagRequestStartedAtRef.current = Date.now();
+    markNativeUiPerformance('collection_clear_tag_dialog_requested');
     setClearTagConfirmationOpen(true);
   }, [requireTagSelection]);
+  useLayoutEffect(() => {
+    if (!clearTagConfirmationOpen || clearTagRequestStartedAtRef.current === null) {
+      return undefined;
+    }
+    const startedAt = clearTagRequestStartedAtRef.current;
+    clearTagRequestStartedAtRef.current = null;
+    const frame = requestAnimationFrame(() => {
+      markNativeUiPerformance('collection_clear_tag_dialog_painted', {
+        interactionLatencyMs: Date.now() - startedAt,
+      });
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [clearTagConfirmationOpen]);
   const confirmClearTag = useCallback(() => {
     if (requireTagSelection) return;
     setClearTagConfirmationOpen(false);
@@ -582,7 +623,25 @@ export const NativeCollectionHubScreen = memo(function NativeCollectionHubScreen
     onContextChange?.({ selectedTagKey: null, scrollOffset: 0 });
   }, [onContextChange, requireTagSelection]);
   const openActionMenu = useCallback(() => setActionMenuOpen(true), []);
-  const openOrganizer = useCallback(() => setOrganizerOpen(true), []);
+  const openOrganizer = useCallback(() => {
+    organizerRequestStartedAtRef.current = Date.now();
+    markNativeUiPerformance('collection_organizer_requested', {
+      selectedCount: selectedCountRef.current,
+    });
+    setOrganizerPrepared(true);
+    setOrganizerOpen(true);
+  }, []);
+  useLayoutEffect(() => {
+    if (!organizerOpen || organizerRequestStartedAtRef.current === null) return undefined;
+    const startedAt = organizerRequestStartedAtRef.current;
+    organizerRequestStartedAtRef.current = null;
+    const frame = requestAnimationFrame(() => {
+      markNativeUiPerformance('collection_organizer_painted', {
+        interactionLatencyMs: Date.now() - startedAt,
+      });
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [organizerOpen]);
   useEffect(() => {
     if (!operationNotice) return undefined;
     const timer = setTimeout(() => setOperationNotice(null), 4200);
@@ -796,7 +855,7 @@ export const NativeCollectionHubScreen = memo(function NativeCollectionHubScreen
           visible
         />
       ) : null}
-      {onOrganizePokemon && organizerOpen && selectedOrganizerRows.length > 0 ? (
+      {onOrganizePokemon && organizerPrepared && selectedOrganizerRows.length > 0 ? (
         <NativePokemonOrganizerSheet
           error={organizerError}
           inventoryTags={inventoryTags}
@@ -815,7 +874,7 @@ export const NativeCollectionHubScreen = memo(function NativeCollectionHubScreen
           onCreateTag={onCreateTag}
           onClose={() => setOrganizerOpen(false)}
           rows={selectedOrganizerRows}
-          visible
+          visible={organizerOpen}
           wishlistTags={wishlistTags}
         />
       ) : null}
@@ -829,6 +888,7 @@ export const NativeCollectionHubScreen = memo(function NativeCollectionHubScreen
           onConfirm={confirmClearTag}
           title={collectionExperienceParityContract.clearTagConfirmation.title}
           visible
+          presentation="inline"
         />
       ) : null}
     </View>

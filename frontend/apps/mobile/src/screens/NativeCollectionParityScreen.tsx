@@ -9,6 +9,7 @@ import {
   useState,
 } from 'react';
 import { StyleSheet, View } from 'react-native';
+import { collectionExperienceParityContract } from '@pokemongonexus/shared-ui-tokens';
 import {
   NativeCollectionParityFixture,
   type NativeCollectionParityFixtureHandle,
@@ -32,6 +33,10 @@ import {
 import { useNativeColorScheme } from '../features/settings/useNativeColorScheme';
 import type { NativeCollectionSession } from '../features/collection/nativeCollectionSessionCache';
 import { markNativeUiPerformance } from '../observability/nativeUiPerformanceTrace';
+import {
+  beginNativeUiInteraction,
+  runAfterNativeUiInteractions,
+} from '../interaction/nativeUiInteractionScheduler';
 
 export {
   projectNativeCollectionParityCards,
@@ -94,6 +99,7 @@ const EMPTY_SELECTED_IDS: ReadonlySet<string> = new Set<string>();
 // frame keeps each decode slice small; three viewports cover FlatList's window
 // before the ordinary unrestricted renderer resumes.
 const COLLECTION_IMAGE_REVEAL_BATCH = 1;
+const COLLECTION_OFFSCREEN_IMAGE_REVEAL_BATCH = 3;
 const COLLECTION_INITIAL_VIEWPORT_IMAGE_COUNT = 18;
 const COLLECTION_IMAGE_REVEAL_WINDOW = 54;
 
@@ -155,6 +161,7 @@ export const NativeCollectionParityScreen = memo(forwardRef<
   const [sort, setSort] = useState<NativeCollectionSort>(initialSort);
   const [direction, setDirection] = useState<NativeCollectionSortDirection>(initialSortDirection);
   const [sortOpen, setSortOpen] = useState(false);
+  const [sortVisible, setSortVisible] = useState(false);
   const [showEvolutionaryLine, setShowEvolutionaryLine] = useState(initialShowEvolutionaryLine);
   const [stagedQuery, setStagedQuery] = useState<string | null>(null);
   const [stagedSort, setStagedSort] = useState<{
@@ -175,6 +182,9 @@ export const NativeCollectionParityScreen = memo(forwardRef<
   const stagedSortCancelTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const stagedEvolutionRef = useRef<boolean | null>(null);
   const stagedEvolutionCancelTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const sortMenuRequestStartedAtRef = useRef<number | null>(null);
+  const sortMenuCloseTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const sortMenuInteractionReleaseRef = useRef<(() => void) | null>(null);
   const stagedQueryTraceRef = useRef<{
     paintedAt: number | null;
     query: string;
@@ -249,6 +259,7 @@ export const NativeCollectionParityScreen = memo(forwardRef<
     const target = Math.min(COLLECTION_IMAGE_REVEAL_WINDOW, visibleRows.length);
     let revealed = 0;
     let frame: number | null = null;
+    let scheduledTask: ReturnType<typeof runAfterNativeUiInteractions> | null = null;
     let cancelled = false;
     const finishReveal = () => {
       markNativeUiPerformance('collection_projection_images_revealed', {
@@ -260,20 +271,31 @@ export const NativeCollectionParityScreen = memo(forwardRef<
       setCollectionImageRevealInteraction(null);
     };
     const revealNextBatch = () => {
-      frame = requestAnimationFrame(() => {
+      scheduledTask = runAfterNativeUiInteractions(() => {
+        scheduledTask = null;
         if (cancelled) return;
-        revealed = Math.min(target, revealed + COLLECTION_IMAGE_REVEAL_BATCH);
+        const batchSize = revealed < COLLECTION_INITIAL_VIEWPORT_IMAGE_COUNT
+          ? COLLECTION_IMAGE_REVEAL_BATCH
+          : COLLECTION_OFFSCREEN_IMAGE_REVEAL_BATCH;
+        revealed = Math.min(target, revealed + batchSize);
         setCollectionImageRevealCount(revealed);
         if (revealed === Math.min(COLLECTION_INITIAL_VIEWPORT_IMAGE_COUNT, target)) {
           frame = requestAnimationFrame(() => {
             if (cancelled) return;
+            frame = null;
             markNativeUiPerformance('collection_projection_viewport_images_revealed', {
               interactionLatencyMs: Date.now() - startedAt,
               interaction: collectionImageRevealInteraction,
               rowCount: visibleRows.length,
             });
-            if (revealed < target) revealNextBatch();
-            else finishReveal();
+            if (revealed < target) {
+              revealNextBatch();
+            } else {
+              scheduledTask = runAfterNativeUiInteractions(() => {
+                scheduledTask = null;
+                if (!cancelled) finishReveal();
+              });
+            }
           });
           return;
         }
@@ -281,9 +303,17 @@ export const NativeCollectionParityScreen = memo(forwardRef<
           revealNextBatch();
           return;
         }
+        // Wait for the final enabled-image batch to paint, then re-enter the
+        // interaction-aware scheduler before removing the reveal gate. A bare
+        // rAF here could already be queued when a swipe began and launch a
+        // large FlatList update in the middle of its 120 ms handoff.
         frame = requestAnimationFrame(() => {
           if (cancelled) return;
-          finishReveal();
+          frame = null;
+          scheduledTask = runAfterNativeUiInteractions(() => {
+            scheduledTask = null;
+            if (!cancelled) finishReveal();
+          });
         });
       });
     };
@@ -296,6 +326,7 @@ export const NativeCollectionParityScreen = memo(forwardRef<
     return () => {
       cancelled = true;
       if (frame !== null) cancelAnimationFrame(frame);
+      scheduledTask?.cancel();
     };
   }, [collectionImageRevealInteraction, visibleRows.length]);
   const handleRowPress = useCallback(
@@ -445,9 +476,43 @@ export const NativeCollectionParityScreen = memo(forwardRef<
     if (stagedQueryCancelTimerRef.current) clearTimeout(stagedQueryCancelTimerRef.current);
     if (stagedSortCancelTimerRef.current) clearTimeout(stagedSortCancelTimerRef.current);
     if (stagedEvolutionCancelTimerRef.current) clearTimeout(stagedEvolutionCancelTimerRef.current);
+    if (sortMenuCloseTimerRef.current) clearTimeout(sortMenuCloseTimerRef.current);
+    sortMenuInteractionReleaseRef.current?.();
+    sortMenuInteractionReleaseRef.current = null;
   }, []);
-  const openSortMenu = useCallback(() => setSortOpen(true), []);
-  const closeSortMenu = useCallback(() => setSortOpen(false), []);
+  const openSortMenu = useCallback(() => {
+    if (sortMenuCloseTimerRef.current) {
+      clearTimeout(sortMenuCloseTimerRef.current);
+      sortMenuCloseTimerRef.current = null;
+    }
+    sortMenuRequestStartedAtRef.current = Date.now();
+    markNativeUiPerformance('collection_sort_menu_requested');
+    sortMenuInteractionReleaseRef.current?.();
+    sortMenuInteractionReleaseRef.current = beginNativeUiInteraction();
+    setSortVisible(true);
+    setSortOpen(true);
+  }, []);
+  const closeSortMenu = useCallback(() => {
+    setSortOpen(false);
+    if (sortMenuCloseTimerRef.current) clearTimeout(sortMenuCloseTimerRef.current);
+    sortMenuCloseTimerRef.current = setTimeout(() => {
+      sortMenuCloseTimerRef.current = null;
+      setSortVisible(false);
+      sortMenuInteractionReleaseRef.current?.();
+      sortMenuInteractionReleaseRef.current = null;
+    }, collectionExperienceParityContract.sortMenuTransitionMs);
+  }, []);
+  useLayoutEffect(() => {
+    if (!sortOpen || sortMenuRequestStartedAtRef.current === null) return undefined;
+    const startedAt = sortMenuRequestStartedAtRef.current;
+    sortMenuRequestStartedAtRef.current = null;
+    const frame = requestAnimationFrame(() => {
+      markNativeUiPerformance('collection_sort_menu_painted', {
+        interactionLatencyMs: Date.now() - startedAt,
+      });
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [sortOpen]);
   const previewSort = useCallback((nextSort: NativeCollectionSort) => {
     if (stagedSortCancelTimerRef.current) {
       clearTimeout(stagedSortCancelTimerRef.current);
@@ -485,7 +550,7 @@ export const NativeCollectionParityScreen = memo(forwardRef<
     markNativeUiPerformance('collection_sort_changed', next);
     stagedSortRef.current = null;
     setStagedSort(null);
-    setSortOpen(false);
+    closeSortMenu();
     setSort(next.sort);
     setDirection(next.direction);
     setCollectionImageRevealCount(0);
@@ -494,7 +559,7 @@ export const NativeCollectionParityScreen = memo(forwardRef<
       sort: next.sort,
       sortDirection: next.direction,
     });
-  }, [direction, onContextChange, sort]);
+  }, [closeSortMenu, direction, onContextChange, sort]);
   const openPokemon = useCallback(() => onViewChange('pokemon'), [onViewChange]);
   const openTags = useCallback(() => onViewChange('inventory'), [onViewChange]);
   const openWishlist = useCallback(() => onViewChange('wishlist'), [onViewChange]);
@@ -558,6 +623,7 @@ export const NativeCollectionParityScreen = memo(forwardRef<
         onSelect={selectSort}
         open={sortOpen}
         sort={sort}
+        visible={sortVisible}
       />
     </View>
   );

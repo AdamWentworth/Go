@@ -1,7 +1,8 @@
 import { memo, useEffect, useState } from 'react';
-import { Animated, Image, Modal, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Animated, Easing, Image, Modal, Pressable, StyleSheet, Text, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { collectionExperienceParityContract } from '@pokemongonexus/shared-ui-tokens';
 import type { NativeCollectionSort, NativeCollectionSortDirection } from '../collectionModel';
 import { useOptionalNativeDevicePreferences } from '../../settings/NativeDevicePreferencesProvider';
 import { useNativeColorScheme } from '../../settings/useNativeColorScheme';
@@ -40,6 +41,7 @@ export const NativeCollectionSortMenu = memo(function NativeCollectionSortMenu({
   onSelect,
   open,
   sort,
+  visible = open,
 }: {
   assetBaseUrl: string;
   direction: NativeCollectionSortDirection;
@@ -49,46 +51,92 @@ export const NativeCollectionSortMenu = memo(function NativeCollectionSortMenu({
   onSelect: (sort: NativeCollectionSort) => void;
   open: boolean;
   sort: NativeCollectionSort;
+  visible?: boolean;
 }) {
   const light = useNativeColorScheme() === 'light';
   const insets = useSafeAreaInsets();
   const reduceMotion = useOptionalNativeDevicePreferences()?.shouldReduceMotion ?? false;
   const [progress] = useState(() => new Animated.Value(0));
+  const [backdropProgress] = useState(() => new Animated.Value(0));
 
   useEffect(() => {
-    if (!open) {
+    if (open) {
       progress.setValue(0);
-      return;
+      backdropProgress.setValue(0);
+      if (reduceMotion) {
+        progress.setValue(1);
+        backdropProgress.setValue(1);
+        return undefined;
+      }
+      const frame = requestAnimationFrame(() => {
+        Animated.parallel([
+          Animated.spring(progress, {
+            damping: 19,
+            mass: 0.85,
+            stiffness: 145,
+            toValue: 1,
+            useNativeDriver: true,
+          }),
+          Animated.timing(backdropProgress, {
+            duration: collectionExperienceParityContract.sortMenuTransitionMs,
+            easing: Easing.inOut(Easing.ease),
+            toValue: 1,
+            useNativeDriver: true,
+          }),
+        ]).start();
+      });
+      return () => cancelAnimationFrame(frame);
     }
     if (reduceMotion) {
-      progress.setValue(1);
-      return;
+      progress.setValue(0);
+      backdropProgress.setValue(0);
+      return undefined;
     }
-    Animated.spring(progress, {
-      damping: 19,
-      mass: 0.85,
-      stiffness: 145,
-      toValue: 1,
-      useNativeDriver: true,
-    }).start();
-  }, [open, progress, reduceMotion]);
+    const closing = Animated.parallel([
+      Animated.timing(progress, {
+        duration: 180,
+        easing: Easing.in(Easing.ease),
+        toValue: 0,
+        useNativeDriver: true,
+      }),
+      Animated.timing(backdropProgress, {
+        duration: collectionExperienceParityContract.sortMenuTransitionMs,
+        easing: Easing.inOut(Easing.ease),
+        toValue: 0,
+        useNativeDriver: true,
+      }),
+    ]);
+    closing.start();
+    return () => closing.stop();
+  }, [backdropProgress, open, progress, reduceMotion]);
 
   return (
     <Modal
-      animationType={reduceMotion ? 'none' : 'fade'}
+      // Own the canonical 250 ms opacity transition on the native driver. An
+      // Android Modal fade delayed mounting before this content could begin
+      // its own motion, producing a visible dead tap.
+      animationType="none"
       navigationBarTranslucent
       onRequestClose={onClose}
       presentationStyle="overFullScreen"
       statusBarTranslucent
       transparent
-      visible={open}
+      visible={visible}
     >
       <View
+        accessibilityElementsHidden={!open}
         accessibilityViewIsModal
-        style={[styles.overlay, { backgroundColor: light ? '#e0f0e5' : '#111111' }]}
+        importantForAccessibility={open ? 'auto' : 'no-hide-descendants'}
+        pointerEvents={open ? 'auto' : 'none'}
+        style={styles.overlay}
         testID="native-collection-sort-menu"
       >
-        <SortBackdrop light={light} />
+        <Animated.View
+          pointerEvents="none"
+          style={[StyleSheet.absoluteFill, { opacity: backdropProgress }]}
+        >
+          <SortBackdrop light={light} />
+        </Animated.View>
         <View accessibilityLabel="Sort Pokémon" style={styles.optionList}>
           {NATIVE_SORT_OPTIONS.map((option, index) => {
             const selected = option.key === sort;

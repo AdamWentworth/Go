@@ -466,7 +466,7 @@ fi
 run_maestro_flow() {
   local flow="$1"
   local output_name="$2"
-  local bundles_before bundles_after
+  local bundles_before bundles_after maestro_status
   # A process boundary removes mounted Expo Router state between fixtures. App
   # smoke mode supplies a deterministic theme and each fixture owns its domain
   # state, while the installed development client retains its Metro endpoint.
@@ -497,12 +497,21 @@ run_maestro_flow() {
   else
     sleep 1
   fi
+  if [[ "${smoke_performance}" == "true" ]]; then
+    "${adb_bin}" -s "${device_id}" shell dumpsys gfxinfo "${app_id}" reset >/dev/null 2>&1 || true
+  fi
+  maestro_status=0
   "${maestro_bin}" --device "${device_id}" test \
     --no-ansi \
     -e "APP_ID=${app_id}" \
     -e "APP_LINK_BASE=${app_scheme}:/" \
     --test-output-dir "${artifact_dir}/maestro/${output_name}" \
-    "${flow}"
+    "${flow}" || maestro_status="$?"
+  if [[ "${smoke_performance}" == "true" ]]; then
+    "${adb_bin}" -s "${device_id}" shell dumpsys gfxinfo "${app_id}" framestats \
+      >"${artifact_dir}/maestro/${output_name}-gfxinfo.txt" 2>&1 || true
+  fi
+  return "${maestro_status}"
 }
 
 if [[ -d "${smoke_flow}" ]]; then
@@ -532,6 +541,19 @@ else
 fi
 
 if [[ "${smoke_performance}" == "true" ]]; then
+  {
+    echo "ro.hardware.egl=$(${adb_bin} -s "${device_id}" shell getprop ro.hardware.egl | tr -d '\r')"
+    echo "ro.boot.qemu.gles=$(${adb_bin} -s "${device_id}" shell getprop ro.boot.qemu.gles | tr -d '\r')"
+    echo "debug.hwui.renderer=$(${adb_bin} -s "${device_id}" shell getprop debug.hwui.renderer | tr -d '\r')"
+    "${adb_bin}" -s "${device_id}" shell dumpsys SurfaceFlinger 2>/dev/null \
+      | tr -d '\r' \
+      | grep -E -m 4 'GLES:|GL_RENDERER|Vulkan' \
+      || true
+  } >"${artifact_dir}/graphics-runtime.txt"
+  if grep -Eiq 'swiftshader|lavapipe|llvmpipe|software' \
+    "${artifact_dir}/graphics-runtime.txt" "${artifact_dir}/emulator.log" 2>/dev/null; then
+    echo "Android performance smoke is software-rendered; gfxinfo is diagnostic only."
+  fi
   mapfile -t performance_device_logs < <(
     find "${artifact_dir}/maestro" -type f -name 'device-logcat.txt' | sort
   )

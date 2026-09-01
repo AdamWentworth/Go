@@ -27,6 +27,7 @@ import {
   useState,
 } from 'react';
 import {
+  collectionExperienceParityContract,
   collectionParityTokens,
   webCssVarTokens,
 } from '@pokemongonexus/shared-ui-tokens';
@@ -240,7 +241,7 @@ const CollectionParityCard = memo(function CollectionParityCard({
     <Pressable
       accessibilityLabel={`${card.interaction === 'select' ? 'Select' : 'View'} ${card.name}`}
       accessibilityRole="button"
-      delayLongPress={450}
+      delayLongPress={collectionExperienceParityContract.cardLongPressMs}
       onLongPress={collectionRow && onLongPressCollectionRow
         ? () => onLongPressCollectionRow(collectionRow)
         : onLongPressCard ? () => onLongPressCard(card) : undefined}

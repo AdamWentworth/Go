@@ -82,5 +82,43 @@ tags:
 - extendedWaitUntil:
     visible: Shiny Rayquaza
     timeout: 10000
+- swipe:
+    start: 80%, 50%
+    end: 20%, 50%
+    duration: 350
+- extendedWaitUntil:
+    visible: Shiny Suicune
+    timeout: 10000
+- swipe:
+    start: 20%, 50%
+    end: 80%, 50%
+    duration: 350
+- extendedWaitUntil:
+    visible: Shiny Rayquaza
+    timeout: 10000
 - tapOn:
     text: Close
+- tapOn: WISHLIST
+- extendedWaitUntil:
+    visible: Wanted tags
+    timeout: 10000
+- tapOn: "Open Most Wanted, 2 Pokémon"
+- extendedWaitUntil:
+    visible: "(MOST WANTED)"
+    timeout: 10000
+- assertVisible: Gigantamax Blastoise
+- tapOn: Clear Most Wanted tag filter
+- extendedWaitUntil:
+    visible:
+      id: native-confirmation-dialog
+    timeout: 10000
+- tapOn: Cancel
+- longPressOn: "View Gigantamax Blastoise"
+- extendedWaitUntil:
+    visible: "Organize (1)"
+    timeout: 10000
+- tapOn: "Organize (1)"
+- extendedWaitUntil:
+    visible: Organize Pokémon
+    timeout: 10000
+- tapOn: Close Pokémon organizer

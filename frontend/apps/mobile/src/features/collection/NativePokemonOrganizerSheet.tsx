@@ -1,13 +1,13 @@
 import {
   ActivityIndicator,
-  Modal,
+  BackHandler,
   Pressable,
   ScrollView,
   StyleSheet,
   Text,
   View,
 } from 'react-native';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import type { PokemonInstance } from '@pokemongonexus/shared-contracts/instances';
 import type {
   CreateCustomTagRequest,
@@ -22,7 +22,6 @@ import type { NativePokemonOrganizerRequest } from './useNativePokemonOrganizerM
 import { NativeCollectionPriorityStar } from './parity/NativeCollectionPriorityStar';
 import { normalizeNativeTagIds } from './nativeInstanceNormalization';
 import { NativeCustomTagEditorSheet } from './NativeCustomTagEditorSheet';
-import { useNativeModalAnimation } from '../settings/useNativeMotion';
 import { useNativeColorScheme } from '../settings/useNativeColorScheme';
 
 type Props = {
@@ -94,7 +93,14 @@ export const NativePokemonOrganizerSheet = ({
   visible,
 }: Props) => {
   const light = useNativeColorScheme() === 'light';
-  const animationType = useNativeModalAnimation('slide');
+  useEffect(() => {
+    if (!visible || isSaving) return undefined;
+    const subscription = BackHandler.addEventListener('hardwareBackPress', () => {
+      onClose();
+      return true;
+    });
+    return () => subscription.remove();
+  }, [isSaving, onClose, visible]);
   const isCatalog = rows.length > 0 && rows.every((row) => row.source === 'catalog');
   const selectedInstances = useMemo(() => rows.flatMap((row) => {
     if (row.source === 'catalog') return [];
@@ -429,11 +435,13 @@ export const NativePokemonOrganizerSheet = ({
           : `Apply to ${selectedInstances.length}`;
 
   return (
-    <Modal
-      animationType={animationType}
-      onRequestClose={isSaving ? undefined : onClose}
-      transparent
-      visible={visible}
+    <View
+      accessibilityElementsHidden={!visible}
+      accessibilityViewIsModal
+      importantForAccessibility={visible ? 'auto' : 'no-hide-descendants'}
+      pointerEvents={visible ? 'auto' : 'none'}
+      role="dialog"
+      style={[styles.inlineRoot, !visible && styles.hiddenInline]}
     >
       <View style={styles.backdrop}>
         <View style={[styles.sheet, light && styles.sheetLight]}>
@@ -613,7 +621,7 @@ export const NativePokemonOrganizerSheet = ({
           </View>
         </View>
       </View>
-      {creatingParent && onCreateTag ? (
+      {visible && creatingParent && onCreateTag ? (
         <NativeCustomTagEditorSheet
           isSaving={isCreatingTag}
           key={`organizer-new:${creatingParent}`}
@@ -643,7 +651,7 @@ export const NativePokemonOrganizerSheet = ({
           visible
         />
       ) : null}
-    </Modal>
+    </View>
   );
 };
 
@@ -656,6 +664,16 @@ const isCustomTagDefinition = (value: unknown): value is CustomTagDefinition => 
 };
 
 const styles = StyleSheet.create({
+  inlineRoot: {
+    position: 'absolute',
+    top: 0,
+    right: 0,
+    bottom: 0,
+    left: 0,
+    zIndex: 80,
+    elevation: 80,
+  },
+  hiddenInline: { opacity: 0, transform: [{ translateY: 10_000 }] },
   backdrop: { flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(0,0,0,0.72)' },
   sheet: { width: '100%', maxHeight: '94%', borderTopLeftRadius: 20, borderTopRightRadius: 20, backgroundColor: '#171c1d', overflow: 'hidden' },
   sheetLight: { backgroundColor: '#f8fff9' },

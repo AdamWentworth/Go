@@ -3,7 +3,10 @@ import {
   Animated,
   Easing,
 } from 'react-native';
-import { Gesture } from 'react-native-gesture-handler';
+import {
+  State,
+  type PanGestureHandlerStateChangeEvent,
+} from 'react-native-gesture-handler';
 import { collectionExperienceParityContract } from '@pokemongonexus/shared-ui-tokens';
 import {
   useCallback,
@@ -15,6 +18,7 @@ import {
 } from 'react';
 import { useOptionalNativeDevicePreferences } from '../../settings/NativeDevicePreferencesProvider';
 import { markNativeUiPerformance } from '../../../observability/nativeUiPerformanceTrace';
+import { beginNativeUiInteraction } from '../../../interaction/nativeUiInteractionScheduler';
 
 export type NativeOverlaySwipeDirection = 'previous' | 'next';
 
@@ -66,10 +70,12 @@ type Result = {
     transform: { scale: Animated.Value }[];
   };
   isAnimating: boolean;
-  motionStyle: { transform: { translateX: Animated.Value }[] };
+  motionStyle: { transform: { translateX: Animated.AnimatedAddition<number> }[] };
   navigateNext: () => void;
   navigatePrevious: () => void;
-  gesture: ReturnType<typeof Gesture.Pan>;
+  panEnabled: boolean;
+  panGestureEvent: ReturnType<typeof Animated.event>;
+  onPanHandlerStateChange: (event: PanGestureHandlerStateChangeEvent) => void;
 };
 
 export const useNativeOverlaySwipeNavigation = ({
@@ -79,6 +85,7 @@ export const useNativeOverlaySwipeNavigation = ({
   onPrevious,
 }: Args): Result => {
   const [translateX] = useState(() => new Animated.Value(0));
+  const [dragX] = useState(() => new Animated.Value(0));
   const [backgroundOpacity] = useState(() => new Animated.Value(1));
   const [backgroundScale] = useState(() => new Animated.Value(
     instanceOverlaySwipe.backgroundBaseScale,
@@ -88,12 +95,14 @@ export const useNativeOverlaySwipeNavigation = ({
   const isAnimatingRef = useRef(false);
   const activeAnimationRef = useRef<Animated.CompositeAnimation | null>(null);
   const backgroundAnimationRef = useRef<Animated.CompositeAnimation | null>(null);
+  const exitHandoffTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const routeHandoffTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const awaitingContentRef = useRef<{
     direction: NativeOverlaySwipeDirection;
     outgoingKey: string | null;
   } | null>(null);
   const navigationStartedAtRef = useRef<number | null>(null);
+  const interactionReleaseRef = useRef<(() => void) | null>(null);
   const devicePreferences = useOptionalNativeDevicePreferences();
   const [systemReduceMotion, setSystemReduceMotion] = useState(false);
 
@@ -107,6 +116,15 @@ export const useNativeOverlaySwipeNavigation = ({
   }, []);
 
   const reduceMotion = devicePreferences?.shouldReduceMotion ?? systemReduceMotion;
+  const clampedDragX = useMemo(() => dragX.interpolate({
+    extrapolate: 'clamp',
+    inputRange: [-instanceOverlaySwipe.maxDragOffset, 0, instanceOverlaySwipe.maxDragOffset],
+    outputRange: [-instanceOverlaySwipe.maxDragOffset, 0, instanceOverlaySwipe.maxDragOffset],
+  }), [dragX]);
+  const renderedTranslateX = useMemo(
+    () => Animated.add(translateX, clampedDragX),
+    [clampedDragX, translateX],
+  );
 
   const animateBackground = useCallback((transitioning: boolean) => {
     backgroundAnimationRef.current?.stop();
@@ -145,9 +163,15 @@ export const useNativeOverlaySwipeNavigation = ({
     isAnimatingRef.current = false;
     setIsAnimating(false);
     animateBackground(false);
+    interactionReleaseRef.current?.();
+    interactionReleaseRef.current = null;
   }, [animateBackground]);
 
   const startEntrance = useCallback((direction: NativeOverlaySwipeDirection) => {
+    if (exitHandoffTimerRef.current !== null) {
+      clearTimeout(exitHandoffTimerRef.current);
+      exitHandoffTimerRef.current = null;
+    }
     if (routeHandoffTimerRef.current !== null) {
       clearTimeout(routeHandoffTimerRef.current);
       routeHandoffTimerRef.current = null;
@@ -206,10 +230,16 @@ export const useNativeOverlaySwipeNavigation = ({
     if (routeHandoffTimerRef.current !== null) {
       clearTimeout(routeHandoffTimerRef.current);
     }
+    if (exitHandoffTimerRef.current !== null) {
+      clearTimeout(exitHandoffTimerRef.current);
+    }
     backgroundOpacity.stopAnimation();
     backgroundScale.stopAnimation();
+    dragX.stopAnimation();
     translateX.stopAnimation();
-  }, [backgroundOpacity, backgroundScale, translateX]);
+    interactionReleaseRef.current?.();
+    interactionReleaseRef.current = null;
+  }, [backgroundOpacity, backgroundScale, dragX, translateX]);
 
   const resetPosition = useCallback(() => {
     if (reduceMotion) {
@@ -252,7 +282,8 @@ export const useNativeOverlaySwipeNavigation = ({
     }
 
     isAnimatingRef.current = true;
-    setIsAnimating(true);
+    interactionReleaseRef.current?.();
+    interactionReleaseRef.current = beginNativeUiInteraction();
     animateBackground(true);
     const exitOffset = direction === 'next'
       ? -instanceOverlaySwipe.exitOffset
@@ -264,14 +295,14 @@ export const useNativeOverlaySwipeNavigation = ({
       useNativeDriver: true,
     });
     activeAnimationRef.current = animation;
-    animation.start(({ finished }) => {
-      activeAnimationRef.current = null;
-      if (!finished) {
-        finishNavigation();
-        resetPosition();
-        return;
+    let handedOff = false;
+    const handOffRoute = () => {
+      if (handedOff || !isAnimatingRef.current) return;
+      handedOff = true;
+      if (exitHandoffTimerRef.current !== null) {
+        clearTimeout(exitHandoffTimerRef.current);
+        exitHandoffTimerRef.current = null;
       }
-
       // Expo Router commits setParams asynchronously. Keep the outgoing item
       // offscreen until the screen confirms that the target item replaced it;
       // otherwise the old item visibly slides back in before the route updates.
@@ -279,11 +310,43 @@ export const useNativeOverlaySwipeNavigation = ({
         direction,
         outgoingKey: activeItemKey,
       };
+      const startedAt = navigationStartedAtRef.current;
+      if (startedAt !== null) {
+        markNativeUiPerformance('instance_overlay_exit_finished', {
+          interactionLatencyMs: Date.now() - startedAt,
+        });
+      }
+      // Keep the canonical handoff timer free of even the small React update
+      // that disables controls. The ref already guards re-entry; publish the
+      // accessible disabled state only as the target route is handed off.
+      setIsAnimating(true);
       callback();
       routeHandoffTimerRef.current = setTimeout(() => {
         const awaitingContent = awaitingContentRef.current;
         if (awaitingContent) startEntrance(awaitingContent.direction);
       }, ROUTE_HANDOFF_TIMEOUT_MS);
+    };
+    // Vite performs the content handoff from this canonical timer, not from a
+    // CSS transitionend event. Animated's Android completion callback crosses
+    // back to JS one or more frames late under load, so use the same clock and
+    // let the native transform finish independently on the UI thread.
+    exitHandoffTimerRef.current = setTimeout(
+      handOffRoute,
+      instanceOverlaySwipe.swapDelayMs,
+    );
+    animation.start(({ finished }) => {
+      if (activeAnimationRef.current === animation) activeAnimationRef.current = null;
+      if (!finished) {
+        if (exitHandoffTimerRef.current !== null) {
+          clearTimeout(exitHandoffTimerRef.current);
+          exitHandoffTimerRef.current = null;
+        }
+        if (handedOff) return;
+        finishNavigation();
+        resetPosition();
+        return;
+      }
+      handOffRoute();
     });
   }, [
     activeItemKey,
@@ -310,59 +373,57 @@ export const useNativeOverlaySwipeNavigation = ({
     return () => cancelAnimationFrame(frame);
   }, [isAnimating, navigate, pendingNavigation]);
 
-  const gesture = useMemo(() => Gesture.Pan()
-    .enabled(!disabled && !isAnimating && Boolean(onNext || onPrevious))
-    // Require a deliberate horizontal drag and fail immediately once the user
-    // establishes vertical intent. A generic minDistance gesture activates on
-    // vertical swipes too and starves the overlay's ScrollViews on Android.
-    .activeOffsetX([
-      -instanceOverlaySwipe.axisLockDelta,
-      instanceOverlaySwipe.axisLockDelta,
-    ])
-    .failOffsetY([
-      -instanceOverlaySwipe.axisLockDelta,
-      instanceOverlaySwipe.axisLockDelta,
-    ])
-    .runOnJS(true)
-    .onBegin(() => {
+  // Vite hands drag frames to the browser compositor. Route every Android
+  // sample directly into Animated's native graph too. The previous
+  // runOnJS(true) gesture made this large detail screen compete with every
+  // finger-move frame on the JS thread.
+  const panGestureEvent = useMemo(() => Animated.event(
+    [{ nativeEvent: { translationX: dragX } }],
+    { useNativeDriver: true },
+  ), [dragX]);
+  const onPanHandlerStateChange = useCallback((
+    event: PanGestureHandlerStateChangeEvent,
+  ) => {
+    const { oldState, state, translationX: rawTranslationX, translationY } = event.nativeEvent;
+    if (isAnimatingRef.current) {
+      dragX.setValue(0);
+      return;
+    }
+    if (state === State.ACTIVE) {
       translateX.stopAnimation();
-    })
-    .onUpdate((event) => {
-      if (!shouldCaptureNativeOverlaySwipe({
-        deltaX: event.translationX,
-        deltaY: event.translationY,
-      })) return;
-      const movingNext = event.translationX < 0;
-      const hasDestination = movingNext
-        ? Boolean(onNext)
-        : Boolean(onPrevious);
-      const offset = clampDragOffset(event.translationX);
-      translateX.setValue(hasDestination ? offset : offset * 0.24);
-    })
-    // Gesture Handler stores this worklet callback for a future native event;
-    // it does not invoke navigate (or read its refs) during React render.
-    // eslint-disable-next-line react-hooks/refs
-    .onEnd((event) => {
-      const direction = resolveNativeOverlaySwipeDirection({
-        deltaX: event.translationX,
-        deltaY: event.translationY,
-      });
-      if (direction) navigate(direction);
-      else resetPosition();
-    })
-    .onFinalize((_event, success) => {
-      if (!success) resetPosition();
-    }), [disabled, isAnimating, navigate, onNext, onPrevious, resetPosition, translateX]);
+      return;
+    }
+    if (oldState !== State.ACTIVE) return;
+
+    // Transfer the native drag presentation into the transition clock before
+    // clearing the gesture clock. Exit/reset motion therefore continues from
+    // the finger instead of flashing back to the current instance first.
+    const translationX = clampDragOffset(rawTranslationX);
+    translateX.setValue(translationX);
+    dragX.setValue(0);
+    if (state !== State.END) {
+      resetPosition();
+      return;
+    }
+    const direction = resolveNativeOverlaySwipeDirection({
+      deltaX: rawTranslationX,
+      deltaY: translationY,
+    });
+    if (direction) navigate(direction);
+    else resetPosition();
+  }, [dragX, navigate, resetPosition, translateX]);
 
   return {
     backgroundMotionStyle: {
       opacity: backgroundOpacity,
       transform: [{ scale: backgroundScale }],
     },
-    gesture,
     isAnimating,
-    motionStyle: { transform: [{ translateX }] },
+    motionStyle: { transform: [{ translateX: renderedTranslateX }] },
     navigateNext: () => navigate('next'),
     navigatePrevious: () => navigate('previous'),
+    onPanHandlerStateChange,
+    panEnabled: !disabled && !isAnimating && Boolean(onNext || onPrevious),
+    panGestureEvent,
   };
 };

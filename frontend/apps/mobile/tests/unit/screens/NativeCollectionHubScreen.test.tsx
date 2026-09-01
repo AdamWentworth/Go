@@ -175,7 +175,7 @@ describe('NativeCollectionHubScreen', () => {
     fireEvent.press(screen.getByRole('button', { name: /Clear Favorites tag filter/i }));
     expect(screen.getByTestId('native-confirmation-dialog')).toBeTruthy();
     expect(screen.getByText(buildClearActiveTagMessage('Favorites'))).toBeTruthy();
-    expect(screen.getByText('Shiny Bulbasaur')).toBeTruthy();
+    expect(screen.getByText('Shiny Bulbasaur', { includeHiddenElements: true })).toBeTruthy();
     fireEvent.press(screen.getByRole('button', { name: 'Cancel' }));
     expect(screen.queryByTestId('native-confirmation-dialog')).toBeNull();
     expect(screen.getByText('Shiny Bulbasaur')).toBeTruthy();

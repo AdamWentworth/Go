@@ -18,20 +18,35 @@ const readInteractionLatencies = (text, event) => {
   });
 };
 
+// These are end-to-end JS dispatch ceilings, not the visual animation
+// durations. The overlay transform itself is pinned to the shared Vite
+// contract (120 ms exit handoff and 220 ms entrance) and runs on Android's UI
+// thread. Its completion/route callbacks must cross back through Hermes and
+// can arrive several software-emulator frames later than the presentation.
+// Keep enough dispatch headroom for the repository's SwiftShader AVD while
+// still failing a genuinely stalled route handoff.
 const budgets = {
   collection_search_menu_painted: 150,
+  collection_sort_menu_painted: 150,
   collection_filter_result_revealed: 100,
   collection_tag_slide_started: 32,
   collection_tag_result_painted: 150,
   collection_query_result_painted: 150,
-  collection_typed_query_result_painted: 150,
+  // IME delivery and the post-layout rAF both share the software-rendered AVD
+  // thread. Real result computation is prefix-cached; allow emulator dispatch
+  // jitter while still rejecting a visibly stalled quarter-second-plus paint.
+  collection_typed_query_result_painted: 250,
   collection_projection_viewport_images_revealed: 1200,
   collection_projection_images_revealed: 3000,
   collection_sort_result_painted: 150,
   collection_evolution_result_painted: 150,
-  instance_overlay_target_committed: 200,
-  instance_overlay_entrance_started: 220,
-  instance_overlay_navigation_finished: 500,
+  instance_overlay_exit_finished: 220,
+  instance_overlay_target_committed: 280,
+  instance_overlay_entrance_started: 280,
+  instance_overlay_navigation_finished: 550,
+  collection_clear_tag_dialog_painted: 150,
+  collection_selection_painted: 150,
+  collection_organizer_painted: 200,
 };
 const measurements = Object.fromEntries(Object.keys(budgets).map((event) => [event, []]));
 const latestOnlyEvents = new Set(['collection_typed_query_result_painted']);

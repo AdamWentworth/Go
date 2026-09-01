@@ -12,9 +12,16 @@ import {
   useWindowDimensions,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import {
+  type ReactNode,
+  memo,
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+} from 'react';
 import Svg, { Circle, Path } from 'react-native-svg';
-import { GestureDetector } from 'react-native-gesture-handler';
+import { PanGestureHandler } from 'react-native-gesture-handler';
 import type {
   NativeInstanceBackgroundOption,
   NativeInstanceDetail,
@@ -29,6 +36,7 @@ import type {
   WantedSizePreferences,
   WantedSizeRange,
 } from '@pokemongonexus/shared-contracts/instances';
+import { collectionExperienceParityContract } from '@pokemongonexus/shared-ui-tokens';
 import {
   NativePokemonLocationBackdrop,
 } from '../features/collection/parity/NativePokemonLocationBackdrop';
@@ -1888,6 +1896,83 @@ const NativeInstanceEditFields = ({
   );
 };
 
+const NativeInstanceSwipeFrame = memo(function NativeInstanceSwipeFrame({
+  activeItemKey,
+  background,
+  children,
+  disabled,
+  onNext,
+  onPrevious,
+}: {
+  activeItemKey: string;
+  background: ReactNode;
+  children: ReactNode;
+  disabled: boolean;
+  onNext?: () => void;
+  onPrevious?: () => void;
+}) {
+  const overlaySwipe = useNativeOverlaySwipeNavigation({
+    activeItemKey,
+    disabled,
+    onNext,
+    onPrevious,
+  });
+  const axisLockDelta = collectionExperienceParityContract.instanceOverlaySwipe.axisLockDelta;
+
+  return (
+    <>
+      <Animated.View
+        pointerEvents="none"
+        style={[styles.backgroundLayer, overlaySwipe.backgroundMotionStyle]}
+        testID="native-instance-background-layer"
+      >
+        {background}
+      </Animated.View>
+      <View pointerEvents="none" style={styles.backgroundTint} />
+      <PanGestureHandler
+        activeOffsetX={[-axisLockDelta, axisLockDelta]}
+        enabled={overlaySwipe.panEnabled}
+        failOffsetY={[-axisLockDelta, axisLockDelta]}
+        onGestureEvent={overlaySwipe.panGestureEvent}
+        onHandlerStateChange={overlaySwipe.onPanHandlerStateChange}
+      >
+        <Animated.View
+          style={[styles.motionLayer, overlaySwipe.motionStyle]}
+          testID="native-instance-motion-layer"
+        >
+          {children}
+        </Animated.View>
+      </PanGestureHandler>
+      {onPrevious ? (
+        <Pressable
+          accessibilityLabel="Previous Pokémon"
+          accessibilityRole="button"
+          accessibilityState={{ disabled: overlaySwipe.isAnimating }}
+          disabled={overlaySwipe.isAnimating}
+          onPress={overlaySwipe.navigatePrevious}
+          style={[styles.instanceNavigation, styles.previousInstance, { bottom: 24 }]}
+          testID="native-instance-previous"
+        >
+          <Text style={styles.instanceNavigationIcon}>◀</Text>
+        </Pressable>
+      ) : null}
+      {onNext ? (
+        <Pressable
+          accessibilityLabel="Next Pokémon"
+          accessibilityRole="button"
+          accessibilityState={{ disabled: overlaySwipe.isAnimating }}
+          disabled={overlaySwipe.isAnimating}
+          onPress={overlaySwipe.navigateNext}
+          style={[styles.instanceNavigation, styles.nextInstance, { bottom: 24 }]}
+          testID="native-instance-next"
+        >
+          <Text style={styles.instanceNavigationIcon}>▶</Text>
+        </Pressable>
+      ) : null}
+    </>
+  );
+});
+
 export const NativeInstanceDetailScreen = ({
   assetBaseUrl = 'https://pokegonexus.com',
   detail,
@@ -1935,15 +2020,6 @@ export const NativeInstanceDetailScreen = ({
       );
     });
   }, []);
-  const overlaySwipe = useNativeOverlaySwipeNavigation({
-    activeItemKey: detail?.row.id ?? null,
-    disabled: !detail
-      || editingInstanceId === detail.row.id
-      || backgroundPickerInstanceId === detail.row.id,
-    onNext,
-    onPrevious,
-  });
-
   if (isLoading) {
     return (
       <View style={[styles.centered, { backgroundColor: palette.fallbackBackground }]}>
@@ -2197,12 +2273,10 @@ export const NativeInstanceDetailScreen = ({
 
   return (
     <View style={styles.overlay} testID="native-instance-overlay">
-      <Animated.View
-        pointerEvents="none"
-        style={[styles.backgroundLayer, overlaySwipe.backgroundMotionStyle]}
-        testID="native-instance-background-layer"
-      >
-        <Image fadeDuration={0}
+      <NativeInstanceSwipeFrame
+        activeItemKey={detail.row.id}
+        background={(
+          <Image fadeDuration={0}
           accessibilityElementsHidden
           blurRadius={3}
           resizeMode="cover"
@@ -2219,15 +2293,13 @@ export const NativeInstanceDetailScreen = ({
           }}
           style={styles.fullBackground}
           testID="native-instance-background"
-        />
-      </Animated.View>
-      <View pointerEvents="none" style={styles.backgroundTint} />
-
-      <GestureDetector gesture={overlaySwipe.gesture}>
-        <Animated.View
-          style={[styles.motionLayer, overlaySwipe.motionStyle]}
-          testID="native-instance-motion-layer"
-        >
+          />
+        )}
+        disabled={editingInstanceId === detail.row.id
+          || backgroundPickerInstanceId === detail.row.id}
+        onNext={onNext}
+        onPrevious={onPrevious}
+      >
         <ScrollView
           contentContainerStyle={[
             styles.scrollContent,
@@ -2611,8 +2683,7 @@ export const NativeInstanceDetailScreen = ({
           </View>
           </View>
         </ScrollView>
-        </Animated.View>
-      </GestureDetector>
+      </NativeInstanceSwipeFrame>
 
       {editing && !isWanted && canEdit ? (
         <Pressable
@@ -2659,40 +2730,6 @@ export const NativeInstanceDetailScreen = ({
           style={styles.closeImage}
         />
       </Pressable>
-      {onPrevious ? (
-        <Pressable
-          accessibilityLabel="Previous Pokémon"
-          accessibilityRole="button"
-          accessibilityState={{ disabled: overlaySwipe.isAnimating }}
-          disabled={overlaySwipe.isAnimating}
-          onPress={overlaySwipe.navigatePrevious}
-          style={[
-            styles.instanceNavigation,
-            styles.previousInstance,
-            { bottom: 24 },
-          ]}
-          testID="native-instance-previous"
-        >
-          <Text style={styles.instanceNavigationIcon}>◀</Text>
-        </Pressable>
-      ) : null}
-      {onNext ? (
-        <Pressable
-          accessibilityLabel="Next Pokémon"
-          accessibilityRole="button"
-          accessibilityState={{ disabled: overlaySwipe.isAnimating }}
-          disabled={overlaySwipe.isAnimating}
-          onPress={overlaySwipe.navigateNext}
-          style={[
-            styles.instanceNavigation,
-            styles.nextInstance,
-            { bottom: 24 },
-          ]}
-          testID="native-instance-next"
-        >
-          <Text style={styles.instanceNavigationIcon}>▶</Text>
-        </Pressable>
-      ) : null}
     </View>
   );
 };

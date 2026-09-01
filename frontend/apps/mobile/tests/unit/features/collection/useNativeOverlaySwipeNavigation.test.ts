@@ -35,7 +35,7 @@ describe('native instance overlay swipe navigation', () => {
   it('does not slide the outgoing instance back in before the target instance is committed', async () => {
     const animationCompletions: ((result: { finished: boolean }) => void)[] = [];
     jest.spyOn(AccessibilityInfo, 'isReduceMotionEnabled').mockResolvedValue(false);
-    jest.spyOn(Animated, 'timing').mockImplementation(() => ({
+    const timing = jest.spyOn(Animated, 'timing').mockImplementation(() => ({
       start: (completion?: (result: { finished: boolean }) => void) => {
         if (completion) animationCompletions.push(completion);
       },
@@ -61,6 +61,11 @@ describe('native instance overlay swipe navigation', () => {
     act(() => {
       result.current.navigateNext();
     });
+    expect(timing).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({
+      duration: collectionExperienceParityContract.instanceOverlaySwipe.swapDelayMs,
+      toValue: -collectionExperienceParityContract.instanceOverlaySwipe.exitOffset,
+      useNativeDriver: true,
+    }));
     expect(animationCompletions).toHaveLength(1);
 
     act(() => animationCompletions.shift()?.({ finished: true }));
@@ -69,6 +74,11 @@ describe('native instance overlay swipe navigation', () => {
     expect(result.current.isAnimating).toBe(true);
 
     rerender({ activeItemKey: 'instance-2' });
+    expect(timing).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({
+      duration: collectionExperienceParityContract.instanceOverlaySwipe.entryTransitionMs,
+      toValue: 0,
+      useNativeDriver: true,
+    }));
     expect(animationCompletions).toHaveLength(1);
     act(() => animationCompletions.shift()?.({ finished: true }));
     expect(result.current.isAnimating).toBe(false);

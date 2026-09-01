@@ -1,15 +1,17 @@
 import { fireEvent, render } from '@testing-library/react-native';
-import { StyleSheet } from 'react-native';
+import { Animated, StyleSheet } from 'react-native';
+import { collectionExperienceParityContract } from '@pokemongonexus/shared-ui-tokens';
 import { NativeCollectionSortMenu } from '../../../../src/features/collection/parity/NativeCollectionSortMenu';
 
 let mockSafeAreaInsets = { top: 0, right: 0, bottom: 0, left: 0 };
+let mockReduceMotion = true;
 
 jest.mock('react-native-safe-area-context', () => ({
   useSafeAreaInsets: () => mockSafeAreaInsets,
 }));
 
 jest.mock('../../../../src/features/settings/NativeDevicePreferencesProvider', () => ({
-  useOptionalNativeDevicePreferences: () => ({ shouldReduceMotion: true }),
+  useOptionalNativeDevicePreferences: () => ({ shouldReduceMotion: mockReduceMotion }),
 }));
 
 jest.mock('../../../../src/features/settings/useNativeColorScheme', () => ({
@@ -19,6 +21,11 @@ jest.mock('../../../../src/features/settings/useNativeColorScheme', () => ({
 describe('NativeCollectionSortMenu', () => {
   beforeEach(() => {
     mockSafeAreaInsets = { top: 0, right: 0, bottom: 0, left: 0 };
+    mockReduceMotion = true;
+  });
+
+  afterEach(() => {
+    jest.restoreAllMocks();
   });
 
   it('uses a full-parent native gradient through the Android system window', () => {
@@ -62,5 +69,48 @@ describe('NativeCollectionSortMenu', () => {
     expect(onSelect).toHaveBeenCalledWith('name');
     fireEvent.press(getByLabelText('Close sort menu'));
     expect(onClose).toHaveBeenCalledTimes(1);
+  });
+
+  it('owns the exact Vite backdrop duration on the native driver', () => {
+    mockReduceMotion = false;
+    jest.spyOn(global, 'requestAnimationFrame').mockImplementation((callback) => {
+      callback(0);
+      return 1;
+    });
+    const timing = jest.spyOn(Animated, 'timing');
+    const { rerender } = render(
+      <NativeCollectionSortMenu
+        assetBaseUrl="https://pokegonexus.com"
+        direction="ascending"
+        onClose={jest.fn()}
+        onSelect={jest.fn()}
+        open
+        sort="number"
+        visible
+      />,
+    );
+
+    expect(timing).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({
+      duration: collectionExperienceParityContract.sortMenuTransitionMs,
+      toValue: 1,
+      useNativeDriver: true,
+    }));
+
+    rerender(
+      <NativeCollectionSortMenu
+        assetBaseUrl="https://pokegonexus.com"
+        direction="ascending"
+        onClose={jest.fn()}
+        onSelect={jest.fn()}
+        open={false}
+        sort="number"
+        visible
+      />,
+    );
+    expect(timing).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({
+      duration: collectionExperienceParityContract.sortMenuTransitionMs,
+      toValue: 0,
+      useNativeDriver: true,
+    }));
   });
 });

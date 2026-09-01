@@ -58,7 +58,7 @@ mounts complete collection and Pokédex route trees in the background.
 
 Passing evidence for this checkpoint:
 
-- native Jest: 158 suites, 835 tests;
+- native Jest: 158 suites, 836 tests;
 - mobile and web TypeScript and ESLint;
 - native real-route smoke: 92 guest/signed-in, light/dark route states;
 - focused Vite mobile-Chromium browser coverage: 9 tests;
@@ -304,6 +304,43 @@ of waiting for a browser-style reflow frame that React Native does not require.
 The target committed in 175 ms, incoming motion began one millisecond later,
 and the complete canonical exit/swap/entry sequence finished in 445 ms. Device
 logcat enforces 200 ms, 220 ms, and 500 ms ceilings for those stages.
+
+The exhaustive interaction pass extends that Android workflow through both
+directions of a real instance-card swipe, tag clearing and cancellation,
+long-press selection, and opening and closing the organizer. The overlay now
+streams swipe displacement through Gesture Handler's native animated event
+instead of crossing to JavaScript on every finger-move frame. Its shared
+Vite/native visual clocks remain 120 ms out and 220 ms in; component tests pin
+those exact durations and native-driver use. The latest workflow measured the
+three overlay transitions at 433--505 ms end to end, including the deliberate
+exit, content swap, and entrance. The clear dialog painted in 26 ms, selection
+in 53 ms, and organizer in 36 ms. Sort-menu animation likewise consumes the
+shared 250 ms Vite/native contract and is pinned to the native driver.
+
+Native confirmation and organizer surfaces now remain inside the collection
+screen's absolute overlay tree rather than creating separate Android Modal
+windows. This removes a window handoff from their first response while
+preserving focus, dismissal, and accessibility behavior. Image-release work is
+also admitted only through the app-owned interaction scheduler, so queued
+projection warming cannot start a React update inside an active page or overlay
+animation. Long press consumes the same shared 300 ms threshold in Vite and
+Native.
+
+The complete minified Android probe currently reports: 53--82 ms to open
+search, 65 ms to open sort, 52 ms for filter release, 9--10 ms to begin a tag
+slide, 75--98 ms to paint the tag result, 58 ms to sort 3,285 cards, 137 ms to
+expand an evolutionary line, and 214 ms for the final sequential typed result.
+The corresponding enforced ceilings are 150, 150, 100, 32, 150, 150, 150, and
+250 ms. First-viewport image release ranged from 95 to 645 ms and the retained
+three-viewport window from 96 to 943 ms, within the respective 1,200 and 3,000
+ms safety budgets.
+
+Those measurements came from the Pixel 8 Pro API 36 AVD at 1344x2992, whose
+runtime identifies its renderer as the Android Emulator OpenGL translator over
+Google SwiftShader. The smoke runner now records that renderer and explicitly
+labels gfxinfo as diagnostic when software rendering is detected. Functional
+and event-latency assertions remain valid there, but emulator frame-rate data
+must not be presented as physical-phone GPU evidence.
 
 ## Remaining approval gate
 

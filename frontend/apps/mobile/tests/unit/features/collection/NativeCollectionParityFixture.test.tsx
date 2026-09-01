@@ -1,6 +1,7 @@
 import { createRef } from 'react';
 import { FlatList, Keyboard, StyleSheet } from 'react-native';
 import { act, fireEvent, render, screen } from '@testing-library/react-native';
+import { collectionExperienceParityContract } from '@pokemongonexus/shared-ui-tokens';
 import {
   NativeCollectionParityFixture,
   type NativeCollectionParityFixtureHandle,
@@ -59,6 +60,7 @@ describe('NativeCollectionParityFixture', () => {
       expect(screen.getByTestId(`parity-card-${card.id}`)).toBeTruthy();
       expect(screen.getByText(card.name)).toBeTruthy();
     }
+    expect(collectionExperienceParityContract.cardLongPressMs).toBe(300);
   });
 
   it('supports the remaining canonical card layers and non-clearable wanted context', () => {
