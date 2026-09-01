@@ -116,6 +116,7 @@ export const NativeCollectionSortMenu = memo(function NativeCollectionSortMenu({
       // Android Modal fade delayed mounting before this content could begin
       // its own motion, producing a visible dead tap.
       animationType="none"
+      hardwareAccelerated
       navigationBarTranslucent
       onRequestClose={onClose}
       presentationStyle="overFullScreen"

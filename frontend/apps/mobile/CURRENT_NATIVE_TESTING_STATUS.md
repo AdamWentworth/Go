@@ -64,7 +64,7 @@ mounts complete collection and Pokédex route trees in the background.
 
 Passing evidence for this checkpoint:
 
-- native Jest: 159 suites, 840 tests;
+- native Jest: 159 suites, 842 tests;
 - mobile and web TypeScript and ESLint;
 - native real-route smoke: 92 guest/signed-in, light/dark route states;
 - focused Vite mobile-Chromium browser coverage: 9 tests;
@@ -396,6 +396,14 @@ track synchronously on release and lets identical header/session bookkeeping
 commit behind the UI-thread animation. All four rapid slides began in 0--1 ms
 in the latest production-mode run, while their result commits remained 71--113
 ms and the canonical 300 ms motion contract stayed unchanged.
+
+Direct TAGS / POKÉMON / WISHLIST header taps use the same visual-first order:
+the native-driver track and its shared underline clock start before session
+persistence or parent state bookkeeping. A call-order test prevents that work
+from returning in front of the animation. The full-screen sort window is also
+explicitly hardware accelerated; its six-option Vite-parity motion retained the
+250 ms contract and opened in 120 ms in the latest Android workflow, after a
+software-emulator window-handoff outlier had exposed the missing flag.
 
 The Android parser now distinguishes desired performance targets from
 software-emulator hard ceilings for callback measurements that have shown

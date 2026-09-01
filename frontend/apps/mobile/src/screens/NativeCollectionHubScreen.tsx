@@ -339,10 +339,10 @@ export const NativeCollectionHubScreen = memo(function NativeCollectionHubScreen
     // settle before the selected tab becomes responsive. The underline still
     // follows pageScrollX continuously, so the visual indicator travels with
     // the native page rather than jumping ahead of it.
+    sliderRef.current?.setPage(VIEW_ORDER.indexOf(view));
     activeViewRef.current = view;
     setActiveView(view);
     onContextChange?.({ activeView: view });
-    sliderRef.current?.setPage(VIEW_ORDER.indexOf(view));
   }, [onContextChange]);
   const settlePageIndex = useCallback((index: number) => {
     const view = VIEW_ORDER[index] ?? 'pokemon';

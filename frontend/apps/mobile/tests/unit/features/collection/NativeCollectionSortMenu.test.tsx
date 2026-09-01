@@ -1,5 +1,5 @@
 import { fireEvent, render } from '@testing-library/react-native';
-import { Animated, StyleSheet } from 'react-native';
+import { Animated, Modal, StyleSheet } from 'react-native';
 import { collectionExperienceParityContract } from '@pokemongonexus/shared-ui-tokens';
 import { NativeCollectionSortMenu } from '../../../../src/features/collection/parity/NativeCollectionSortMenu';
 
@@ -29,7 +29,7 @@ describe('NativeCollectionSortMenu', () => {
   });
 
   it('uses a full-parent native gradient through the Android system window', () => {
-    const { getByTestId } = render(
+    const view = render(
       <NativeCollectionSortMenu
         assetBaseUrl="https://pokegonexus.com"
         direction="ascending"
@@ -40,8 +40,9 @@ describe('NativeCollectionSortMenu', () => {
       />,
     );
 
-    expect(getByTestId('native-collection-sort-menu-background').props.colors).toHaveLength(2);
-    expect(StyleSheet.flatten(getByTestId('native-collection-sort-menu-background').props.style)).toMatchObject({
+    expect(view.UNSAFE_getByType(Modal).props.hardwareAccelerated).toBe(true);
+    expect(view.getByTestId('native-collection-sort-menu-background').props.colors).toHaveLength(2);
+    expect(StyleSheet.flatten(view.getByTestId('native-collection-sort-menu-background').props.style)).toMatchObject({
       bottom: 0,
       left: 0,
       right: 0,

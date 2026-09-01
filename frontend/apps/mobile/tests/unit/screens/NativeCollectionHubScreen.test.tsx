@@ -419,6 +419,42 @@ describe('NativeCollectionHubScreen', () => {
     expect(onContextChange).not.toHaveBeenCalled();
   });
 
+  it('starts a header-tab track before persisting its destination', () => {
+    const timing = jest.spyOn(Animated, 'timing');
+    const onContextChange = jest.fn();
+    render(
+      <SafeAreaProvider initialMetrics={{
+        frame: { x: 0, y: 0, width: 412, height: 915 },
+        insets: { top: 24, right: 0, bottom: 20, left: 0 },
+      }}>
+        <NativeCollectionHubScreen
+          assetBaseUrl="https://pokegonexus.com"
+          catalogRows={[catalogBulbasaur, catalogMewtwo]}
+          error={null}
+          inventoryTags={[inventoryTag, allCaughtTag]}
+          instances={{}}
+          isLoading={false}
+          onContextChange={onContextChange}
+          onOpenEntry={jest.fn()}
+          onRetry={jest.fn()}
+          wishlistTags={[wishlistTag]}
+        />
+      </SafeAreaProvider>,
+    );
+    timing.mockClear();
+    onContextChange.mockClear();
+
+    fireEvent.press(screen.getByRole('tab', { name: /tags/i }));
+
+    expect(timing).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({
+      toValue: 0,
+      useNativeDriver: true,
+    }));
+    expect(timing.mock.invocationCallOrder[0]).toBeLessThan(
+      onContextChange.mock.invocationCallOrder[0] ?? Number.POSITIVE_INFINITY,
+    );
+  });
+
   it('preserves the active search when selecting a tag like Vite', () => {
     const onContextChange = jest.fn();
     render(
