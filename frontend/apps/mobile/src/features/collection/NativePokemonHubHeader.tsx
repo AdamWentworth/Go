@@ -8,6 +8,7 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { CustomTagParent } from '@pokemongonexus/shared-contracts/users';
+import { useMemo } from 'react';
 import {
   collectionExperienceParityContract,
   collectionParityTokens,
@@ -89,24 +90,50 @@ export const NativePokemonHubHeader = ({
   const selectedIndex = activeView === 'inventory' ? 0 : activeView === 'pokemon' ? 1 : 2;
   const hasSelection = selectionCount > 0;
   const metrics = resolveNativePokemonHubIndicatorMetrics(width, selectedIndex);
-  const indicatorTranslateX = scrollX?.interpolate({
+  const animatedIndicatorTranslateX = useMemo(() => scrollX?.interpolate({
     inputRange: [0, Math.max(1, width * 2)],
     outputRange: [0, metrics.tabWidth * 2],
     extrapolate: 'clamp',
-  }) ?? metrics.indicatorTranslateX;
+  }), [metrics.tabWidth, scrollX, width]);
+  const indicatorTranslateX = animatedIndicatorTranslateX ?? metrics.indicatorTranslateX;
+  const indicatorStyle = useMemo(() => [
+    styles.activeUnderline,
+    {
+      backgroundColor: textColor,
+      left: metrics.indicatorLeft,
+      width: metrics.indicatorWidth,
+      transform: [{
+        translateX: hasSelection ? metrics.tabWidth : indicatorTranslateX,
+      }],
+    },
+  ], [
+    hasSelection,
+    indicatorTranslateX,
+    metrics.indicatorLeft,
+    metrics.indicatorWidth,
+    metrics.tabWidth,
+    textColor,
+  ]);
+  const headerStyle = useMemo(() => [
+    styles.header,
+    {
+      backgroundColor: hasSelection && selectionBackgroundColor
+        ? selectionBackgroundColor
+        : backgroundColor,
+      paddingHorizontal: metrics.horizontalPadding,
+      paddingTop: collectionParityTokens.header.paddingTop + insets.top,
+    },
+  ], [
+    backgroundColor,
+    hasSelection,
+    insets.top,
+    metrics.horizontalPadding,
+    selectionBackgroundColor,
+  ]);
 
   return (
     <View
-      style={[
-        styles.header,
-        {
-          backgroundColor: hasSelection && selectionBackgroundColor
-            ? selectionBackgroundColor
-            : backgroundColor,
-          paddingHorizontal: metrics.horizontalPadding,
-          paddingTop: collectionParityTokens.header.paddingTop + insets.top,
-        },
-      ]}
+      style={headerStyle}
     >
       {!hasSelection && catalogOwner ? (
         <View style={styles.catalogContext}>
@@ -189,17 +216,7 @@ export const NativePokemonHubHeader = ({
       </View>
       <Animated.View
         pointerEvents="none"
-        style={[
-          styles.activeUnderline,
-          {
-            backgroundColor: textColor,
-            left: metrics.indicatorLeft,
-            width: metrics.indicatorWidth,
-            transform: [{
-              translateX: hasSelection ? metrics.tabWidth : indicatorTranslateX,
-            }],
-          },
-        ]}
+        style={indicatorStyle}
         testID="native-pokemon-hub-indicator"
       />
     </View>

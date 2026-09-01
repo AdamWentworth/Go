@@ -216,13 +216,29 @@ describe('NativeCollectionHubScreen', () => {
       </SafeAreaProvider>,
     );
 
-    expect(screen.getByText('Favorites', { includeHiddenElements: true })).toBeTruthy();
-    expect(screen.getByText('Most Wanted', { includeHiddenElements: true })).toBeTruthy();
+    expect(screen.getAllByText('Favorites', { includeHiddenElements: true }).length).toBeGreaterThan(0);
+    expect(screen.getAllByText('Most Wanted', { includeHiddenElements: true }).length).toBeGreaterThan(0);
+    const favoritesSurface = screen.getByTestId(
+      'native-collection-surface-system:favorites',
+      { includeHiddenElements: true },
+    );
+    expect(favoritesSurface).toHaveStyle({ opacity: 0 });
+    expect(screen.getByTestId(
+      'native-collection-surface-system:most-wanted',
+      { includeHiddenElements: true },
+    )).toBeTruthy();
+    expect(screen.getAllByTestId(
+      'parity-card-caught-bulbasaur',
+      { includeHiddenElements: true },
+    ).length).toBeGreaterThan(0);
 
     fireEvent.press(screen.getByRole('tab', { name: /tags/i }));
     timing.mockClear();
     fireEvent.press(screen.getByRole('button', { name: /Open Favorites/i }));
 
+    expect(favoritesSurface).not.toHaveStyle({ opacity: 0 });
+    expect(timing).not.toHaveBeenCalled();
+    act(() => jest.advanceTimersByTime(17));
     expect(timing).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({
       duration: NATIVE_HORIZONTAL_PAGE_TRANSITION_MS,
       toValue: 412,
@@ -235,6 +251,8 @@ describe('NativeCollectionHubScreen', () => {
     fireEvent.press(screen.getByRole('tab', { name: /wishlist/i }));
     timing.mockClear();
     fireEvent.press(screen.getByRole('button', { name: /Open Most Wanted/i }));
+    expect(timing).not.toHaveBeenCalled();
+    act(() => jest.advanceTimersByTime(17));
     expect(timing).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({
       duration: NATIVE_HORIZONTAL_PAGE_TRANSITION_MS,
       toValue: 412,

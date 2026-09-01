@@ -88,7 +88,7 @@ describe('NativeHorizontalPageSlider', () => {
     })).toBe(2);
   });
 
-  it('uses one shared animated value for the page track and coordinated underline', async () => {
+  it('uses one shared animated value without permanently rasterizing scrolling pages', async () => {
     const scrollX = new Animated.Value(412);
     const multiply = jest.spyOn(Animated, 'multiply');
     const { getByTestId } = render(
@@ -108,8 +108,8 @@ describe('NativeHorizontalPageSlider', () => {
     const track = getByTestId('native-horizontal-page-track');
     const trackStyle = StyleSheet.flatten(track.props.style);
     expect(slider.props.onScroll).toBeUndefined();
-    expect(track.props.renderToHardwareTextureAndroid).toBe(true);
-    expect(track.props.shouldRasterizeIOS).toBe(true);
+    expect(track.props.renderToHardwareTextureAndroid).toBe(false);
+    expect(track.props.shouldRasterizeIOS).toBe(false);
     expect(trackStyle.transform[0].translateX).toBeDefined();
     expect(multiply).toHaveBeenCalledWith(scrollX, -1);
   });

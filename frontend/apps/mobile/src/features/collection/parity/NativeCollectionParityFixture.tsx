@@ -9,7 +9,15 @@ import {
   View,
   useWindowDimensions,
 } from 'react-native';
-import { memo, useEffect, useRef, useState } from 'react';
+import {
+  forwardRef,
+  memo,
+  useCallback,
+  useEffect,
+  useImperativeHandle,
+  useRef,
+  useState,
+} from 'react';
 import {
   collectionParityTokens,
   webCssVarTokens,
@@ -69,6 +77,10 @@ type NativeCollectionParityFixtureProps = {
   showHeader?: boolean;
   selectedIds?: ReadonlySet<string>;
   selectionAction?: 'add' | 'organize';
+};
+
+export type NativeCollectionParityFixtureHandle = {
+  resetScroll: () => void;
 };
 
 const LIGHT = {
@@ -251,7 +263,10 @@ const CollectionParityCard = memo(function CollectionParityCard({
   );
 });
 
-export const NativeCollectionParityFixture = ({
+export const NativeCollectionParityFixture = memo(forwardRef<
+  NativeCollectionParityFixtureHandle,
+  NativeCollectionParityFixtureProps
+>(function NativeCollectionParityFixture({
   assetBaseUrl = 'https://pokegonexus.com',
   activeTag = 'Favorites',
   cards = COLLECTION_PARITY_FIXTURES,
@@ -288,7 +303,7 @@ export const NativeCollectionParityFixture = ({
   showHeader = true,
   selectedIds = EMPTY_SELECTED_IDS,
   selectionAction = 'organize',
-}: NativeCollectionParityFixtureProps) => {
+}, ref) {
   const { width } = useWindowDimensions();
   const [searchMenuVisible, setSearchMenuVisible] = useState(false);
   const listRef = useRef<FlatList<CollectionParityCardFixture>>(null);
@@ -313,16 +328,20 @@ export const NativeCollectionParityFixture = ({
     onQueryChange?.(nextQuery);
     setSearchMenuVisible(false);
   };
-  useEffect(() => {
-    if (previousResetKeyRef.current === scrollResetKey) return;
-    previousResetKeyRef.current = scrollResetKey;
+  const resetScroll = useCallback(() => {
     restoredScrollRef.current = true;
     if (currentScrollOffsetRef.current > 0.5) {
       listRef.current?.scrollToOffset({ animated: false, offset: 0 });
     }
     currentScrollOffsetRef.current = 0;
     onScrollOffsetChange?.(0);
-  }, [onScrollOffsetChange, scrollResetKey]);
+  }, [onScrollOffsetChange]);
+  useImperativeHandle(ref, () => ({ resetScroll }), [resetScroll]);
+  useEffect(() => {
+    if (previousResetKeyRef.current === scrollResetKey) return;
+    previousResetKeyRef.current = scrollResetKey;
+    resetScroll();
+  }, [resetScroll, scrollResetKey]);
   const renderCollectionControls = (includeSearchMenu: boolean) => (
     <View style={styles.collectionControls}>
       <NativeCollectionSearchControls
@@ -541,7 +560,7 @@ export const NativeCollectionParityFixture = ({
       ) : null}
     </View>
   );
-};
+}));
 
 const styles = StyleSheet.create({
   screen: { flex: 1 },

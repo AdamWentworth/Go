@@ -53,7 +53,7 @@ mounts complete collection and Pokédex route trees in the background.
 
 Passing evidence for this checkpoint:
 
-- native Jest: 154 suites, 802 tests;
+- native Jest: 154 suites, 804 tests;
 - mobile and web TypeScript and ESLint;
 - native real-route smoke: 92 guest/signed-in, light/dark route states;
 - focused Vite mobile-Chromium browser coverage: 9 tests;
@@ -88,6 +88,24 @@ for rows shared across tags, keeps card callbacks stable, and retains a
 Vite-sized three-screen list window. Ownership glows use one precomputed tinted
 bitmap per card instead of rebuilding a multi-node SVG gradient. The focused
 real-route workflow measured 519 ms including the canonical 300 ms slide.
+
+The 2026-09-01 exhaustive `/pokemon` fluidity audit now mirrors the remaining
+Vite scheduling details more directly. Vite keeps its three page panels warm,
+memoizes filtering/sorting/cards, virtualizes only the visible grid plus a row
+buffer, changes the middle result before starting its compositor transform,
+and delays side-panel tag-label synchronization until the 300 ms slide is over.
+Native now keeps reusable tag result surfaces pre-painted, reuses sorted row,
+row-id, card, and lookup-map projections, and reveals the destination surface
+imperatively before reserving the middle page. It gives Android one frame to
+paint that offscreen result, then starts the canonical native-driven slide;
+React state catches up without changing the result partway through motion.
+Animated multiply/interpolation nodes and gesture callbacks stay stable across
+the tag commit, and a destination list is reset to the top while still
+offscreen, matching Vite without waking two FlatLists. The three-screen track
+is rasterized only during horizontal motion and released afterward, avoiding
+the previous permanent giant texture invalidation during ordinary vertical
+list scrolling. Automated coverage pins the pre-motion reveal and offscreen
+scroll reset; the complete matrix remains 92 passing route/theme states.
 
 ## Remaining approval gate
 

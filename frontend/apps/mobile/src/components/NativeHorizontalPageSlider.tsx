@@ -2,6 +2,7 @@ import {
   AccessibilityInfo,
   Animated,
   Easing,
+  Platform,
   StyleSheet,
   View,
   useWindowDimensions,
@@ -29,6 +30,7 @@ type Props = PropsWithChildren<{
 }>;
 
 export type NativeHorizontalPageSliderHandle = {
+  preparePage: (index: number) => void;
   setPage: (index: number, animated?: boolean) => void;
 };
 
@@ -38,6 +40,9 @@ export type NativeHorizontalPageSliderHandle = {
 // and page body together.
 export const NATIVE_HORIZONTAL_PAGE_TRANSITION_MS = (
   collectionExperienceParityContract.pageTransitionMs
+);
+const NATIVE_HORIZONTAL_PAGE_EASING = Easing.bezier(
+  ...collectionExperienceParityContract.pageTransitionEasing,
 );
 
 const clampPageIndex = (index: number, panelCount: number): number =>
@@ -69,12 +74,27 @@ export const NativeHorizontalPageSlider = forwardRef<
   const panelCount = panels.length;
   const { width } = useWindowDimensions();
   const safeIndex = clampPageIndex(activeIndex, panelCount);
+  const safeIndexRef = useRef(safeIndex);
+  const onIndexChangeRef = useRef(onIndexChange);
+  const trackRef = useRef<View>(null);
   const renderedIndexRef = useRef(safeIndex);
   const alignedInitialPageRef = useRef(false);
   const previousWidthRef = useRef(width);
   const dragStartOffsetRef = useRef(safeIndex * width);
   const [internalScrollX] = useState(() => new Animated.Value(safeIndex * width));
   const pageScrollX = scrollX ?? internalScrollX;
+  const trackTranslateX = useMemo(
+    () => Animated.multiply(pageScrollX, -1),
+    [pageScrollX],
+  );
+  const trackStyle = useMemo(() => [
+    styles.track,
+    {
+      transform: [{ translateX: trackTranslateX }],
+      width: width * panelCount,
+    },
+  ], [panelCount, trackTranslateX, width]);
+  const panelStyle = useMemo(() => [styles.panel, { width }], [width]);
   const devicePreferences = useOptionalNativeDevicePreferences();
   const systemReduceMotionRef = useRef(false);
   const [systemReduceMotion, setSystemReduceMotion] = useState(false);
@@ -96,6 +116,17 @@ export const NativeHorizontalPageSlider = forwardRef<
 
   const reduceMotion = devicePreferences?.shouldReduceMotion ?? systemReduceMotion;
 
+  const setTrackRasterized = useCallback((enabled: boolean) => {
+    // React Native Web exposes the host DOM node here rather than a native
+    // component handle. GPU layer hints are only useful on the device and its
+    // host node does not implement setNativeProps.
+    if (Platform.OS === 'web') return;
+    trackRef.current?.setNativeProps({
+      renderToHardwareTextureAndroid: enabled,
+      shouldRasterizeIOS: enabled,
+    });
+  }, []);
+
   const setPage = useCallback((index: number, animated = !reduceMotion) => {
     const nextIndex = clampPageIndex(index, panelCount);
     renderedIndexRef.current = nextIndex;
@@ -104,18 +135,34 @@ export const NativeHorizontalPageSlider = forwardRef<
     // underline race each other with two different animation clocks.
     pageScrollX.stopAnimation();
     if (animated) {
+      setTrackRasterized(true);
       Animated.timing(pageScrollX, {
         duration: NATIVE_HORIZONTAL_PAGE_TRANSITION_MS,
-        easing: Easing.bezier(...collectionExperienceParityContract.pageTransitionEasing),
+        easing: NATIVE_HORIZONTAL_PAGE_EASING,
         toValue: nextIndex * width,
         useNativeDriver: true,
-      }).start();
+      }).start(() => setTrackRasterized(false));
     } else {
+      setTrackRasterized(false);
       pageScrollX.setValue(nextIndex * width);
     }
-  }, [pageScrollX, panelCount, reduceMotion, width]);
+  }, [pageScrollX, panelCount, reduceMotion, setTrackRasterized, width]);
 
-  useImperativeHandle(ref, () => ({ setPage }), [setPage]);
+  const preparePage = useCallback((index: number) => {
+    // A caller that has just changed offscreen content can reserve the
+    // destination before React's layout effects run, then launch motion on the
+    // following frame after Android has had one paint opportunity. This keeps
+    // the activeIndex effect from starting an eager duplicate animation.
+    renderedIndexRef.current = clampPageIndex(index, panelCount);
+    if (!reduceMotion) setTrackRasterized(true);
+  }, [panelCount, reduceMotion, setTrackRasterized]);
+
+  useImperativeHandle(ref, () => ({ preparePage, setPage }), [preparePage, setPage]);
+
+  useLayoutEffect(() => {
+    safeIndexRef.current = safeIndex;
+    onIndexChangeRef.current = onIndexChange;
+  }, [onIndexChange, safeIndex]);
 
   useLayoutEffect(() => {
     // Align before paint when a caller supplies its own shared progress value.
@@ -143,8 +190,8 @@ export const NativeHorizontalPageSlider = forwardRef<
       : currentIndex;
     const nextIndex = clampPageIndex(requestedIndex, panelCount);
     setPage(nextIndex);
-    if (nextIndex !== safeIndex) onIndexChange(nextIndex);
-  }, [onIndexChange, panelCount, safeIndex, setPage, width]);
+    if (nextIndex !== safeIndexRef.current) onIndexChangeRef.current(nextIndex);
+  }, [panelCount, setPage, width]);
 
   const pageGesture = useMemo(() => Gesture.Pan()
     .enabled(panelCount > 1)
@@ -157,6 +204,7 @@ export const NativeHorizontalPageSlider = forwardRef<
     .onStart(() => {
       dragStartOffsetRef.current = renderedIndexRef.current * width;
       pageScrollX.stopAnimation();
+      setTrackRasterized(true);
     })
     .onUpdate((event) => {
       const maxOffset = Math.max(0, (panelCount - 1) * width);
@@ -166,9 +214,14 @@ export const NativeHorizontalPageSlider = forwardRef<
       );
       pageScrollX.setValue(offset);
     })
-    .onEnd((event) => settleDrag(event.translationX, event.velocityX)), [
+    .onEnd((event) => settleDrag(event.translationX, event.velocityX))
+    .onFinalize((_event, success) => {
+      if (!success) setPage(renderedIndexRef.current);
+    }), [
       pageScrollX,
       panelCount,
+      setTrackRasterized,
+      setPage,
       settleDrag,
       width,
     ]);
@@ -177,15 +230,10 @@ export const NativeHorizontalPageSlider = forwardRef<
     <GestureDetector gesture={pageGesture}>
       <View style={styles.viewport} testID="native-horizontal-page-slider">
         <Animated.View
-          renderToHardwareTextureAndroid
-          shouldRasterizeIOS
-          style={[
-            styles.track,
-            {
-              transform: [{ translateX: Animated.multiply(pageScrollX, -1) }],
-              width: width * panelCount,
-            },
-          ]}
+          ref={trackRef}
+          renderToHardwareTextureAndroid={false}
+          shouldRasterizeIOS={false}
+          style={trackStyle}
           testID="native-horizontal-page-track"
         >
           {panels.map((panel, index) => (
@@ -195,7 +243,7 @@ export const NativeHorizontalPageSlider = forwardRef<
               importantForAccessibility={index === safeIndex ? 'auto' : 'no-hide-descendants'}
               key={index}
               pointerEvents={index === safeIndex ? 'auto' : 'none'}
-              style={[styles.panel, { width }]}
+              style={panelStyle}
               testID={`native-horizontal-page-${index}`}
             >
               {panel}

@@ -1,8 +1,9 @@
-import { useState } from 'react';
+import { createRef, useState } from 'react';
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react-native';
 import type { NativeCollectionRow } from '../../../src/features/collection/collectionModel';
 import {
   NativeCollectionParityScreen,
+  type NativeCollectionParityScreenHandle,
   projectNativeCollectionParityCards,
 } from '../../../src/screens/NativeCollectionParityScreen';
 
@@ -90,6 +91,43 @@ describe('NativeCollectionParityScreen', () => {
     const secondTagCards = projectNativeCollectionParityCards([rows[1], sharedRow], true);
 
     expect(secondTagCards[1]).toBe(firstTagCards[0]);
+  });
+
+  it('prepares every warmed tag surface for a same-frame reveal before page motion', () => {
+    const ref = createRef<NativeCollectionParityScreenHandle>();
+    const favorites = {
+      key: 'system:favorites' as const,
+      parent: 'caught' as const,
+      name: 'Favorites',
+      color: '#ffd45a',
+      tone: 'favorites' as const,
+      rows: [rows[0]],
+    };
+    render(
+      <NativeCollectionParityScreen
+        activeTag={null}
+        assetBaseUrl="https://pokegonexus.com"
+        error={null}
+        isLoading={false}
+        onClearTag={jest.fn()}
+        onOpenInstance={jest.fn()}
+        onQueryChange={jest.fn()}
+        onRetry={jest.fn()}
+        onViewChange={jest.fn()}
+        query=""
+        ref={ref}
+        rows={rows}
+        warmCatalogRows={rows}
+        warmTags={[favorites]}
+      />,
+    );
+
+    expect(screen.getByTestId(
+      'native-collection-surface-system:favorites',
+      { includeHiddenElements: true },
+    )).toHaveStyle({ opacity: 0 });
+    expect(ref.current?.revealSurface('system:favorites')).toBe(true);
+    expect(ref.current?.revealSurface('system:missing')).toBe(false);
   });
 
   it('starts in the complete catalog context', () => {

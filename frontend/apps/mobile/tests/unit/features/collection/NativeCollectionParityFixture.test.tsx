@@ -1,5 +1,9 @@
-import { fireEvent, render, screen } from '@testing-library/react-native';
-import { NativeCollectionParityFixture } from '../../../../src/features/collection/parity/NativeCollectionParityFixture';
+import { createRef } from 'react';
+import { act, fireEvent, render, screen } from '@testing-library/react-native';
+import {
+  NativeCollectionParityFixture,
+  type NativeCollectionParityFixtureHandle,
+} from '../../../../src/features/collection/parity/NativeCollectionParityFixture';
 import { COLLECTION_PARITY_FIXTURES } from '../../../../src/features/collection/parity/collectionParityFixtures';
 
 const mockUseWindowDimensions = jest.fn(() => ({
@@ -169,6 +173,28 @@ describe('NativeCollectionParityFixture', () => {
     render(<NativeCollectionParityFixture />);
 
     expect(screen.getByTestId('native-collection-grid').props.keyboardShouldPersistTaps).toBe('always');
+  });
+
+  it('resets a warmed destination grid before it returns from a side tag page', () => {
+    const ref = createRef<NativeCollectionParityFixtureHandle>();
+    const onScrollOffsetChange = jest.fn();
+    render(
+      <NativeCollectionParityFixture
+        onScrollOffsetChange={onScrollOffsetChange}
+        ref={ref}
+      />,
+    );
+    fireEvent.scroll(screen.getByTestId('native-collection-grid'), {
+      nativeEvent: {
+        contentOffset: { x: 0, y: 240 },
+        contentSize: { width: 412, height: 2000 },
+        layoutMeasurement: { width: 412, height: 700 },
+      },
+    });
+
+    act(() => ref.current?.resetScroll());
+
+    expect(onScrollOffsetChange).toHaveBeenLastCalledWith(0);
   });
 
   it('replaces floating controls with the canonical selection action', () => {
