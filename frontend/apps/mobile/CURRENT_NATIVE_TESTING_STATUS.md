@@ -290,6 +290,21 @@ evolutionary line in 53 ms. The Android guard independently enforces 150 ms for
 opening search, 100 ms for the visible filter release, and 150 ms for the
 resulting query/count commit.
 
+The retained-search and instance-overlay pass then caught an Android Fabric
+hit-testing bug that was invisible in component tests: after search closed, its
+transparent retained ScrollView could still receive a Pokémon-card press. The
+warm menu now stays laid out but is translated fully offscreen while hidden, in
+addition to disabling pointer events and accessibility. This preserves both
+correct card activation and the prewarmed first-open path; the latest minified
+Pixel run opened search in 114 ms cold and 62 ms warm, and then opened the exact
+Charizard card rather than re-triggering its hidden Shiny tile. The same smoke
+now exercises the instance overlay and its next-Pokémon control. Native
+Animated starts the incoming slide directly when the new detail commits instead
+of waiting for a browser-style reflow frame that React Native does not require.
+The target committed in 175 ms, incoming motion began one millisecond later,
+and the complete canonical exit/swap/entry sequence finished in 445 ms. Device
+logcat enforces 200 ms, 220 ms, and 500 ms ceilings for those stages.
+
 ## Remaining approval gate
 
 The latest bundle still needs a short physical-phone pass for perceived frame

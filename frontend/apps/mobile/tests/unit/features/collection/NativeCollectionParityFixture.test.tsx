@@ -1,5 +1,5 @@
 import { createRef } from 'react';
-import { FlatList, Keyboard } from 'react-native';
+import { FlatList, Keyboard, StyleSheet } from 'react-native';
 import { act, fireEvent, render, screen } from '@testing-library/react-native';
 import {
   NativeCollectionParityFixture,
@@ -215,10 +215,19 @@ describe('NativeCollectionParityFixture', () => {
     expect(view.getByLabelText('Search Pokémon')).toBe(initialInput);
     expect(initialGrid.props.pointerEvents).toBe('auto');
     expect(view.queryByLabelText('Pokémon search filters')).toBeNull();
-    expect(view.getByLabelText(
+    const retainedSearchMenu = view.getByLabelText(
       'Pokémon search filters',
       { includeHiddenElements: true },
-    )).toBe(initialSearchMenu);
+    );
+    expect(retainedSearchMenu).toBe(initialSearchMenu);
+    const retainedSearchScroll = view.getByTestId(
+      'native-collection-filter-scroll',
+      { includeHiddenElements: true },
+    );
+    expect(retainedSearchScroll.props.pointerEvents).toBe('none');
+    expect(StyleSheet.flatten(retainedSearchScroll.props.style).transform).toEqual([
+      { translateY: 10_000 },
+    ]);
   });
 
   it('dismisses the keyboard when a Vite search-filter tile is selected', () => {

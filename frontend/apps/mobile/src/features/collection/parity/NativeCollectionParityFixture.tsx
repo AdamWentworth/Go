@@ -463,7 +463,7 @@ export const NativeCollectionParityFixture = memo(forwardRef<
     searchControlsRef.current?.commitQueryValue(nextQuery);
     searchMenuOverlayRef.current?.setNativeProps({
       pointerEvents: 'none',
-      style: { opacity: 0 },
+      style: { opacity: 0, transform: [{ translateY: 10_000 }] },
     });
     listRef.current?.setNativeProps({ pointerEvents: 'auto' });
     onQueryChange?.(nextQuery, 'filter');
@@ -905,7 +905,11 @@ const styles = StyleSheet.create({
     left: 0,
     zIndex: 2,
   },
-  hiddenSearchMenu: { opacity: 0 },
+  // Fabric's Android ScrollView can leave descendant Pressables in the native
+  // hit-test path after a pointerEvents-only update. Keep the warmed tree fully
+  // laid out for instant reuse, but translate every native hit box well beyond
+  // the screen while hidden so a transparent tile cannot steal a card tap.
+  hiddenSearchMenu: { opacity: 0, transform: [{ translateY: 10_000 }] },
   gridRow: { gap: GRID_GAP },
   collectionControls: {
     alignItems: 'center',

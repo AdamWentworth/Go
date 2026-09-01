@@ -14,6 +14,7 @@ import {
   useState,
 } from 'react';
 import { useOptionalNativeDevicePreferences } from '../../settings/NativeDevicePreferencesProvider';
+import { markNativeUiPerformance } from '../../../observability/nativeUiPerformanceTrace';
 
 export type NativeOverlaySwipeDirection = 'previous' | 'next';
 
@@ -87,12 +88,12 @@ export const useNativeOverlaySwipeNavigation = ({
   const isAnimatingRef = useRef(false);
   const activeAnimationRef = useRef<Animated.CompositeAnimation | null>(null);
   const backgroundAnimationRef = useRef<Animated.CompositeAnimation | null>(null);
-  const entranceFrameRef = useRef<ReturnType<typeof requestAnimationFrame> | null>(null);
   const routeHandoffTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const awaitingContentRef = useRef<{
     direction: NativeOverlaySwipeDirection;
     outgoingKey: string | null;
   } | null>(null);
+  const navigationStartedAtRef = useRef<number | null>(null);
   const devicePreferences = useOptionalNativeDevicePreferences();
   const [systemReduceMotion, setSystemReduceMotion] = useState(false);
 
@@ -134,6 +135,13 @@ export const useNativeOverlaySwipeNavigation = ({
   }, [backgroundOpacity, backgroundScale]);
 
   const finishNavigation = useCallback(() => {
+    const startedAt = navigationStartedAtRef.current;
+    if (startedAt !== null) {
+      markNativeUiPerformance('instance_overlay_navigation_finished', {
+        interactionLatencyMs: Date.now() - startedAt,
+      });
+      navigationStartedAtRef.current = null;
+    }
     isAnimatingRef.current = false;
     setIsAnimating(false);
     animateBackground(false);
@@ -150,19 +158,26 @@ export const useNativeOverlaySwipeNavigation = ({
       ? instanceOverlaySwipe.enterOffset
       : -instanceOverlaySwipe.enterOffset;
     translateX.setValue(enterOffset);
-    entranceFrameRef.current = requestAnimationFrame(() => {
-      entranceFrameRef.current = null;
-      const animation = Animated.timing(translateX, {
-        toValue: 0,
-        duration: instanceOverlaySwipe.entryTransitionMs,
-        easing: swipeEasing,
-        useNativeDriver: true,
+    const startedAt = navigationStartedAtRef.current;
+    if (startedAt !== null) {
+      markNativeUiPerformance('instance_overlay_entrance_started', {
+        interactionLatencyMs: Date.now() - startedAt,
       });
-      activeAnimationRef.current = animation;
-      animation.start(() => {
-        activeAnimationRef.current = null;
-        finishNavigation();
-      });
+    }
+    // Unlike CSS, Animated.timing does not need a browser reflow frame between
+    // setting its start value and starting a native-driver animation. Waiting
+    // for rAF here let the incoming detail tree's image/layout work postpone
+    // motion even after the route had committed.
+    const animation = Animated.timing(translateX, {
+      toValue: 0,
+      duration: instanceOverlaySwipe.entryTransitionMs,
+      easing: swipeEasing,
+      useNativeDriver: true,
+    });
+    activeAnimationRef.current = animation;
+    animation.start(() => {
+      activeAnimationRef.current = null;
+      finishNavigation();
     });
   }, [finishNavigation, translateX]);
 
@@ -174,15 +189,20 @@ export const useNativeOverlaySwipeNavigation = ({
       || activeItemKey === awaitingContent.outgoingKey
     ) return;
 
+    const startedAt = navigationStartedAtRef.current;
+    if (startedAt !== null) {
+      markNativeUiPerformance('instance_overlay_target_committed', {
+        interactionLatencyMs: Date.now() - startedAt,
+        targetKey: activeItemKey,
+      });
+    }
+
     startEntrance(awaitingContent.direction);
   }, [activeItemKey, startEntrance]);
 
   useEffect(() => () => {
     activeAnimationRef.current?.stop();
     backgroundAnimationRef.current?.stop();
-    if (entranceFrameRef.current !== null) {
-      cancelAnimationFrame(entranceFrameRef.current);
-    }
     if (routeHandoffTimerRef.current !== null) {
       clearTimeout(routeHandoffTimerRef.current);
     }
@@ -216,6 +236,12 @@ export const useNativeOverlaySwipeNavigation = ({
       resetPosition();
       return;
     }
+
+    navigationStartedAtRef.current = Date.now();
+    markNativeUiPerformance('instance_overlay_navigation_started', {
+      direction,
+      outgoingKey: activeItemKey,
+    });
 
     if (reduceMotion) {
       backgroundOpacity.setValue(1);

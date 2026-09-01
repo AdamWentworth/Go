@@ -70,3 +70,17 @@ tags:
     visible: "(TRADE)"
     timeout: 10000
 - assertVisible: Shiny Gigantamax Charizard
+- waitForAnimationToEnd
+- tapOn:
+    id: parity-card-smoke-gmax-charizard
+- extendedWaitUntil:
+    visible:
+      id: native-instance-overlay
+    timeout: 10000
+- tapOn:
+    id: native-instance-next
+- extendedWaitUntil:
+    visible: Shiny Rayquaza
+    timeout: 10000
+- tapOn:
+    text: Close

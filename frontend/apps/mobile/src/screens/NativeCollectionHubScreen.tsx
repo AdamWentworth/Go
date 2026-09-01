@@ -541,6 +541,11 @@ export const NativeCollectionHubScreen = memo(function NativeCollectionHubScreen
     row: NativeCollectionRow,
     orderedRows: NativeCollectionRow[],
   ) => {
+    markNativeUiPerformance('collection_card_pressed', {
+      entryId: row.id,
+      rowSource: row.source,
+      selectedCount: selectedCountRef.current,
+    });
     if (selectedCountRef.current > 0 || row.source === 'catalog') {
       toggleSelection(row.id);
       return;

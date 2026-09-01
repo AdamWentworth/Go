@@ -29,6 +29,9 @@ const budgets = {
   collection_projection_images_revealed: 3000,
   collection_sort_result_painted: 150,
   collection_evolution_result_painted: 150,
+  instance_overlay_target_committed: 200,
+  instance_overlay_entrance_started: 220,
+  instance_overlay_navigation_finished: 500,
 };
 const measurements = Object.fromEntries(Object.keys(budgets).map((event) => [event, []]));
 const latestOnlyEvents = new Set(['collection_typed_query_result_painted']);
