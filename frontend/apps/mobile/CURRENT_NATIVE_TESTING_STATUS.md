@@ -64,7 +64,7 @@ mounts complete collection and Pokédex route trees in the background.
 
 Passing evidence for this checkpoint:
 
-- native Jest: 159 suites, 842 tests;
+- native Jest: 159 suites, 843 tests;
 - mobile and web TypeScript and ESLint;
 - native real-route smoke: 92 guest/signed-in, light/dark route states;
 - focused Vite mobile-Chromium browser coverage: 9 tests;
@@ -404,6 +404,23 @@ from returning in front of the animation. The full-screen sort window is also
 explicitly hardware accelerated; its six-option Vite-parity motion retained the
 250 ms contract and opened in 120 ms in the latest Android workflow, after a
 software-emulator window-handoff outlier had exposed the missing flag.
+
+The collection action menu now follows Vite's retained-overlay lifecycle too.
+After the active grid settles, its complete native view tree is prepared behind
+the page while the existing anchor prefetches its image assets. A tap therefore
+only promotes the retained surface and begins its native-driver fan instead of
+constructing controls, SVGs, and layout in the input update. The Android probe
+now gates that first visible frame; the latest full workflow measured 71 ms and
+kept every collection result budget intact.
+
+The rendering-cadence audit also found a compiled-Android gap that JavaScript
+changes cannot repair in the currently installed development client. Chrome can
+present the Vite PWA at a phone's 90/120 Hz mode, while React Native still leaves
+some Android windows at the ordinary 60 Hz preference. The Expo config plugin
+now asks Android for a 120 Hz window preference and the Android 15 high frame-rate
+category, allowing the OS to choose the closest supported rate or lower it for
+battery and thermal policy. This is preserved through future Expo prebuilds but
+requires the next APK before it can affect physical-phone motion or the spinner.
 
 The Android parser now distinguishes desired performance targets from
 software-emulator hard ceilings for callback measurements that have shown

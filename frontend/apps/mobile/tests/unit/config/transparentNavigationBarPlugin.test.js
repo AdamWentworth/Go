@@ -69,6 +69,8 @@ class MainActivity {
     expect(transformed).toContain('override fun onWindowFocusChanged(hasFocus: Boolean)');
     expect(transformed).toContain('LAYOUT_IN_DISPLAY_CUTOUT_MODE_ALWAYS');
     expect(transformed).toContain('window.isNavigationBarContrastEnforced = false');
+    expect(transformed).toContain('preferredRefreshRate = 120f');
+    expect(transformed).toContain('View.REQUESTED_FRAME_RATE_CATEGORY_HIGH');
     expect(applyEdgeToEdgeMainActivity(transformed)).toBe(transformed);
   });
 

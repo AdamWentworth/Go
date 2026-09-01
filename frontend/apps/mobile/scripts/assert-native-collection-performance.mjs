@@ -47,12 +47,14 @@ const budgets = {
   collection_clear_tag_dialog_painted: 150,
   collection_selection_painted: 150,
   collection_organizer_painted: 200,
+  action_menu_surface_painted: 150,
 };
 const performanceTargets = {
   collection_sort_menu_painted: 150,
   collection_filter_result_revealed: 100,
   collection_query_result_painted: 150,
   instance_overlay_navigation_finished: 550,
+  action_menu_surface_painted: 100,
 };
 const measurements = Object.fromEntries(Object.keys(budgets).map((event) => [event, []]));
 const latestOnlyEvents = new Set(['collection_typed_query_result_painted']);

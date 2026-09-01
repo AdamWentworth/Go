@@ -8,7 +8,10 @@ import type {
 } from '../../../src/features/collection/collectionModel';
 import { NativeCollectionHubScreen } from '../../../src/screens/NativeCollectionHubScreen';
 import { NATIVE_HORIZONTAL_PAGE_TRANSITION_MS } from '../../../src/components/NativeHorizontalPageSlider';
-import { buildClearActiveTagMessage } from '@pokemongonexus/shared-ui-tokens';
+import {
+  actionMenuExperienceParityContract,
+  buildClearActiveTagMessage,
+} from '@pokemongonexus/shared-ui-tokens';
 import { runAfterNativeUiInteractions } from '../../../src/interaction/nativeUiInteractionScheduler';
 
 jest.mock('react-native/Libraries/Utilities/useWindowDimensions', () => ({
@@ -527,6 +530,46 @@ describe('NativeCollectionHubScreen', () => {
     expect(onActionMenuNavigate).not.toHaveBeenCalled();
     act(() => jest.advanceTimersByTime(32));
     expect(onActionMenuNavigate).toHaveBeenCalledWith('/search');
+  });
+
+  it('retains a prepared action menu so later opens only toggle visibility', () => {
+    render(
+      <SafeAreaProvider initialMetrics={{
+        frame: { x: 0, y: 0, width: 412, height: 915 },
+        insets: { top: 24, right: 0, bottom: 20, left: 0 },
+      }}>
+        <NativeCollectionHubScreen
+          assetBaseUrl="https://pokegonexus.com"
+          catalogRows={[catalogBulbasaur]}
+          error={null}
+          inventoryTags={[inventoryTag, allCaughtTag]}
+          instances={{}}
+          isLoading={false}
+          onOpenEntry={jest.fn()}
+          onRetry={jest.fn()}
+          wishlistTags={[wishlistTag]}
+        />
+      </SafeAreaProvider>,
+    );
+
+    act(() => {
+      jest.advanceTimersByTime(700);
+      jest.runOnlyPendingTimers();
+    });
+    const preparedMenu = screen.getByTestId('native-action-menu', {
+      includeHiddenElements: true,
+    });
+    expect(preparedMenu.props.pointerEvents).toBe('none');
+
+    fireEvent.press(screen.getByRole('button', { name: 'Open action menu' }));
+    expect(screen.getByTestId('native-action-menu')).toBe(preparedMenu);
+    expect(screen.getByTestId('native-action-menu').props.pointerEvents).toBe('auto');
+
+    fireEvent.press(screen.getByRole('button', { name: 'Close' }));
+    act(() => jest.advanceTimersByTime(actionMenuExperienceParityContract.motion.closeMs));
+    expect(screen.getByTestId('native-action-menu', {
+      includeHiddenElements: true,
+    }).props.pointerEvents).toBe('none');
   });
 
   it('applies a routed system tag before the first Pokémon page paint', () => {

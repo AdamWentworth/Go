@@ -157,6 +157,7 @@ export const NativeCollectionHubScreen = memo(function NativeCollectionHubScreen
     return initialTag?.rows.length ?? (requireTagSelection ? 0 : catalogRows.length);
   });
   const [actionMenuOpen, setActionMenuOpen] = useState(false);
+  const [actionMenuPrepared, setActionMenuPrepared] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [organizerOpen, setOrganizerOpen] = useState(false);
   const [organizerPrepared, setOrganizerPrepared] = useState(false);
@@ -186,6 +187,7 @@ export const NativeCollectionHubScreen = memo(function NativeCollectionHubScreen
   const clearTagRequestStartedAtRef = useRef<number | null>(null);
   const selectionRequestStartedAtRef = useRef<number | null>(null);
   const organizerRequestStartedAtRef = useRef<number | null>(null);
+  const actionMenuRequestStartedAtRef = useRef<number | null>(null);
   const activeViewRef = useRef<NativePokemonHubView>(initialView);
   const selectedTagKeyRef = useRef<string | null>(resolvedInitialTagKey);
   const [pageScrollX] = useState(() => new Animated.Value(width));
@@ -298,6 +300,22 @@ export const NativeCollectionHubScreen = memo(function NativeCollectionHubScreen
       interactionTask?.cancel();
     };
   }, [availableTags, catalogRows]);
+
+  useEffect(() => {
+    if (actionMenuPrepared || isLoading || catalogRows.length === 0) return undefined;
+    // The action button is present on every collection page. Build its
+    // retained native view tree outside the tap, after the active grid has
+    // committed, just as Vite keeps its overlay DOM ready and only changes
+    // visibility. Its remote images are already prefetched by the anchor.
+    let task: ReturnType<typeof runAfterNativeUiInteractions> | null = null;
+    const timer = setTimeout(() => {
+      task = runAfterNativeUiInteractions(() => setActionMenuPrepared(true));
+    }, 700);
+    return () => {
+      clearTimeout(timer);
+      task?.cancel();
+    };
+  }, [actionMenuPrepared, catalogRows.length, isLoading]);
 
   useEffect(() => () => {
     pendingTagMotionRef.current = null;
@@ -655,7 +673,24 @@ export const NativeCollectionHubScreen = memo(function NativeCollectionHubScreen
     setSelectedTagKey(null);
     onContextChange?.({ selectedTagKey: null, scrollOffset: 0 });
   }, [onContextChange, requireTagSelection]);
-  const openActionMenu = useCallback(() => setActionMenuOpen(true), []);
+  const openActionMenu = useCallback(() => {
+    actionMenuRequestStartedAtRef.current = Date.now();
+    markNativeUiPerformance('action_menu_surface_requested', { route: 'collection' });
+    setActionMenuPrepared(true);
+    setActionMenuOpen(true);
+  }, []);
+  useLayoutEffect(() => {
+    if (!actionMenuOpen || actionMenuRequestStartedAtRef.current === null) return undefined;
+    const startedAt = actionMenuRequestStartedAtRef.current;
+    actionMenuRequestStartedAtRef.current = null;
+    const frame = requestAnimationFrame(() => {
+      markNativeUiPerformance('action_menu_surface_painted', {
+        interactionLatencyMs: Date.now() - startedAt,
+        route: 'collection',
+      });
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [actionMenuOpen]);
   const openOrganizer = useCallback(() => {
     organizerRequestStartedAtRef.current = Date.now();
     markNativeUiPerformance('collection_organizer_requested', {
@@ -875,7 +910,7 @@ export const NativeCollectionHubScreen = memo(function NativeCollectionHubScreen
           onPress={openActionMenu}
         />
       ) : null}
-      {actionMenuOpen ? (
+      {actionMenuPrepared ? (
         <NativeActionMenu
           assetBaseUrl={assetBaseUrl}
           onClose={() => setActionMenuOpen(false)}
@@ -885,7 +920,7 @@ export const NativeCollectionHubScreen = memo(function NativeCollectionHubScreen
             if (onActionMenuNavigate) onActionMenuNavigate(path);
           }}
           signedIn
-          visible
+          visible={actionMenuOpen}
         />
       ) : null}
       {onOrganizePokemon && organizerPrepared && selectedOrganizerRows.length > 0 ? (

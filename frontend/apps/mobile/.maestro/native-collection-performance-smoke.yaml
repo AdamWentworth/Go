@@ -131,6 +131,18 @@ tags:
       id: native-confirmation-dialog
     timeout: 10000
 - tapOn: Cancel
+- tapOn:
+    id: native-action-menu-anchor
+    waitToSettleTimeoutMs: 100
+- extendedWaitUntil:
+    visible: Quick navigation
+    timeout: 10000
+- tapOn:
+    id: native-action-menu-close
+    waitToSettleTimeoutMs: 100
+- extendedWaitUntil:
+    notVisible: Quick navigation
+    timeout: 10000
 - longPressOn: "View Gigantamax Blastoise"
 - extendedWaitUntil:
     visible: "Organize (1)"

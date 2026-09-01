@@ -61,6 +61,19 @@ const applyTransparentNavigationStyles = (styles) => {
 const applyEdgeToEdgeMainActivity = (contents) => {
   let next = contents;
   if (next.includes('// @generated begin pokegonexus-edge-to-edge')) {
+    if (!next.includes('preferredRefreshRate = 120f')) {
+      next = next.replace(
+        '    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {',
+        `    // Match the Vite PWA's presentation cadence on high-refresh phones.
+    window.attributes = window.attributes.apply {
+      preferredRefreshRate = 120f
+    }
+    if (Build.VERSION.SDK_INT >= 35) {
+      window.decorView.requestedFrameRate = View.REQUESTED_FRAME_RATE_CATEGORY_HIGH
+    }
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {`,
+      );
+    }
     return next;
   }
   if (!next.includes('import android.graphics.Color')) {
@@ -112,6 +125,17 @@ const applyEdgeToEdgeMainActivity = (contents) => {
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
       window.isStatusBarContrastEnforced = false
       window.isNavigationBarContrastEnforced = false
+    }
+    // Chrome already asks high-refresh phones for their fast display mode.
+    // React Native still leaves the Android window at the ordinary 60 Hz
+    // preference on some devices, which makes identical 300 ms motion look
+    // less fluid than the Vite PWA. Give the whole app window a stable 120 Hz
+    // preference; Android safely selects the closest mode the device supports.
+    window.attributes = window.attributes.apply {
+      preferredRefreshRate = 120f
+    }
+    if (Build.VERSION.SDK_INT >= 35) {
+      window.decorView.requestedFrameRate = View.REQUESTED_FRAME_RATE_CATEGORY_HIGH
     }
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
       window.attributes = window.attributes.apply {
