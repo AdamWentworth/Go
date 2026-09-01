@@ -497,6 +497,18 @@ collection budget passed; that workflow's overall parser failed only on a
 separate first instance-overlay sample (316/318/609 ms). The full suite is now
 160 suites and 851 tests.
 
+Instance-detail navigation now retains the same prepared-data advantage as the
+Vite overlay. The browser overlay receives its neighboring Pokémon as existing
+objects, while the native route was rebuilding the complete detail projection
+after every parameter change: collection resolution, move metadata, targets,
+forms, and background choices. Native detail projections are now cached by the
+immutable React Query snapshot, and the previous/next projections are prepared
+through the interaction-aware idle queue while the current overlay is open.
+The cache invalidates naturally whenever instances, catalog, or moves receive a
+new query snapshot, so mutations cannot expose stale details. Focused model
+tests pin both reuse and invalidation; typecheck and the complete lint pass are
+clean.
+
 ## Remaining approval gate
 
 The latest bundle still needs a short physical-phone pass for perceived frame

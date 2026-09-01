@@ -1,5 +1,5 @@
 import type { PokemonInstance } from '@pokemongonexus/shared-contracts/instances';
-import type { BasePokemon } from '@pokemongonexus/shared-contracts/pokemon';
+import type { BasePokemon, PokemonMovesChunk } from '@pokemongonexus/shared-contracts/pokemon';
 import type { CustomTagsEnvelope } from '@pokemongonexus/shared-contracts/users';
 import {
   buildCanonicalCollectionInstancePath,
@@ -145,6 +145,34 @@ describe('native collection model', () => {
       '0006-shiny_dynamax',
     ]);
     expect(buildNativeCatalogRows(catalog, 'https://pokegonexus.com')).toBe(rows);
+  });
+
+  it('reuses prepared instance details while the query snapshots are unchanged', () => {
+    const instances = { caught: instance({ instance_id: 'caught' }) };
+    const catalog = [pokemon];
+    const moves: PokemonMovesChunk = [];
+    const first = buildNativeInstanceDetail(
+      instances,
+      catalog,
+      moves,
+      'caught',
+      'https://pokegonexus.com',
+    );
+
+    expect(buildNativeInstanceDetail(
+      instances,
+      catalog,
+      moves,
+      'caught',
+      'https://pokegonexus.com',
+    )).toBe(first);
+    expect(buildNativeInstanceDetail(
+      { ...instances },
+      catalog,
+      moves,
+      'caught',
+      'https://pokegonexus.com',
+    )).not.toBe(first);
   });
 
   it('uses the exact shiny Gigantamax artwork when that form is selected', () => {

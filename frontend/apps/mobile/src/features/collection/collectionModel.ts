@@ -412,6 +412,13 @@ const nativeCollectionRowsCache = new WeakMap<
   Record<string, PokemonInstance>,
   WeakMap<BasePokemon[], Map<string, NativeCollectionRow[]>>
 >();
+const nativeInstanceDetailCache = new WeakMap<
+  Record<string, PokemonInstance>,
+  WeakMap<
+    BasePokemon[],
+    WeakMap<PokemonMovesChunk, Map<string, NativeInstanceDetail | null>>
+  >
+>();
 
 const getNativeCollectionCatalogProjection = (
   catalog: BasePokemon[],
@@ -1013,16 +1020,41 @@ export const buildNativeInstanceDetail = (
   requestedInstanceId: string,
   assetOrigin: string,
 ): NativeInstanceDetail | null => {
+  const detailCacheKey = `${assetOrigin}\u0000${requestedInstanceId}`;
+  const byCatalog = nativeInstanceDetailCache.get(instances);
+  const byMoves = byCatalog?.get(catalog);
+  const cachedDetails = byMoves?.get(moves);
+  if (cachedDetails?.has(detailCacheKey)) {
+    return cachedDetails.get(detailCacheKey) ?? null;
+  }
+
+  const cacheDetail = (detail: NativeInstanceDetail | null): NativeInstanceDetail | null => {
+    const nextByCatalog = byCatalog ?? new WeakMap<
+      BasePokemon[],
+      WeakMap<PokemonMovesChunk, Map<string, NativeInstanceDetail | null>>
+    >();
+    const nextByMoves = byMoves ?? new WeakMap<
+      PokemonMovesChunk,
+      Map<string, NativeInstanceDetail | null>
+    >();
+    const nextDetails = cachedDetails ?? new Map<string, NativeInstanceDetail | null>();
+    nextDetails.set(detailCacheKey, detail);
+    nextByMoves.set(moves, nextDetails);
+    nextByCatalog.set(catalog, nextByMoves);
+    nativeInstanceDetailCache.set(instances, nextByCatalog);
+    return detail;
+  };
+
   const collectionKey = resolveInstanceCollectionKey(instances, requestedInstanceId);
-  if (!collectionKey) return null;
+  if (!collectionKey) return cacheDetail(null);
   const instance = instances[collectionKey];
   const pokemon = catalog.find((entry) => entry.pokemon_id === instance.pokemon_id);
-  if (!pokemon) return null;
+  if (!pokemon) return cacheDetail(null);
   const collectionRows = buildNativeCollectionRows(instances, catalog, assetOrigin);
   const row = collectionRows.find((candidate) => (
     candidate.id === instance.instance_id || candidate.id === collectionKey
   ));
-  if (!row) return null;
+  if (!row) return cacheDetail(null);
 
   const traits = compactRows([
     instance.shiny ? 'Shiny' : null,
@@ -1345,7 +1377,7 @@ export const buildNativeInstanceDetail = (
     && !instance.dynamax
     && !instance.gigantamax;
 
-  return {
+  return cacheDetail({
     row,
     instance,
     baseStats: {
@@ -1370,5 +1402,5 @@ export const buildNativeInstanceDetail = (
     specialMaxBaseEligible,
     sizeThresholds: pokemon.sizes,
     rarity: pokemon.rarity,
-  };
+  });
 };
