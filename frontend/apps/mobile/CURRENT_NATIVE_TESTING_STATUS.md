@@ -451,6 +451,21 @@ after the change: tag motion began in 0--1 ms, all four tag result commits were
 86--135 ms, and the action menu painted in 72 ms. The full suite is now 159
 suites and 844 tests.
 
+The header underline now follows the actual Vite lifecycle instead of an
+invented shared-track behavior. Vite changes the selected tab and runs the
+underline's own 300 ms CSS `ease`; its underline does not follow the finger
+during a drag and does not share the page body's custom cubic Bézier. Native
+previously derived both body and underline from the same page offset. The
+underline now owns a native-driver `ease` animation and stays on the settled
+tab until a swipe releases. Waiting for the parent React commit initially put
+that animation 22--65 ms behind the already-prepared page track on the
+software AVD, so the Hub now starts it through an imperative visual handle in
+the same release path as the page. The next repeated-tag run reduced that gap
+to 0--2 ms after the page marker; all four page starts remained 1--4 ms and
+their destination result commits were 94--118 ms. A separate 32 ms Android
+budget now prevents the indicator handoff from drifting back behind session
+or selected-tag bookkeeping. The full suite is now 159 suites and 845 tests.
+
 ## Remaining approval gate
 
 The latest bundle still needs a short physical-phone pass for perceived frame

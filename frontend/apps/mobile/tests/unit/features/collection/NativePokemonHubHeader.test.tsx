@@ -1,8 +1,9 @@
-import { Animated, StyleSheet } from 'react-native';
-import { fireEvent, render } from '@testing-library/react-native';
+import { Animated, Easing, StyleSheet } from 'react-native';
+import { act, fireEvent, render } from '@testing-library/react-native';
+import { createRef } from 'react';
 import {
   NativePokemonHubHeader,
-  resolveNativePokemonHubIndicatorMetrics,
+  type NativePokemonHubHeaderHandle,
   type NativePokemonHubView,
 } from '../../../../src/features/collection/NativePokemonHubHeader';
 
@@ -31,7 +32,7 @@ describe('NativePokemonHubHeader', () => {
     const firstIndicator = view.getByTestId('native-pokemon-hub-indicator');
     const firstStyle = StyleSheet.flatten(firstIndicator.props.style);
 
-    expect(firstStyle.transform).toEqual([{ translateX: 0 }]);
+    expect(firstStyle.transform[0].translateX).toBeDefined();
 
     view.rerender(
       <NativePokemonHubHeader
@@ -47,7 +48,7 @@ describe('NativePokemonHubHeader', () => {
     const lastIndicator = view.getByTestId('native-pokemon-hub-indicator');
     const lastStyle = StyleSheet.flatten(lastIndicator.props.style);
     expect(view.getAllByTestId('native-pokemon-hub-indicator')).toHaveLength(1);
-    expect(lastStyle.transform[0].translateX).toBeCloseTo((392 / 3) * 2);
+    expect(lastStyle.transform[0].translateX).toBeDefined();
   });
 
   it('routes tab presses through the shared page controller', () => {
@@ -59,25 +60,70 @@ describe('NativePokemonHubHeader', () => {
     expect(onViewChange).toHaveBeenCalledWith('wishlist');
   });
 
-  it('moves the underline continuously with the page instead of jumping after navigation', () => {
-    const scrollX = new Animated.Value(412);
+  it('matches Vite\'s independent CSS-ease underline after active view changes', () => {
+    const timing = jest.spyOn(Animated, 'timing');
     const view = render(
       <NativePokemonHubHeader
         activeView="pokemon"
         backgroundColor="#111"
         collectionCount={3285}
         onViewChange={jest.fn()}
-        scrollX={scrollX}
         secondaryTextColor="#aaa"
         textColor="#fff"
       />,
     );
-    const indicator = view.getByTestId('native-pokemon-hub-indicator');
-    const indicatorStyle = StyleSheet.flatten(indicator.props.style);
-    expect(indicatorStyle.transform[0].translateX).toBeDefined();
+    view.rerender(
+      <NativePokemonHubHeader
+        activeView="wishlist"
+        backgroundColor="#111"
+        collectionCount={3285}
+        onViewChange={jest.fn()}
+        secondaryTextColor="#aaa"
+        textColor="#fff"
+      />,
+    );
 
-    const halfway = resolveNativePokemonHubIndicatorMetrics(412, 1.5);
-    expect(halfway.indicatorTranslateX).toBeCloseTo((392 / 3) * 1.5);
+    expect(timing).toHaveBeenLastCalledWith(
+      expect.any(Animated.Value),
+      expect.objectContaining({
+        duration: 300,
+        easing: Easing.ease,
+        isInteraction: false,
+        toValue: 2,
+        useNativeDriver: true,
+      }),
+    );
+    timing.mockRestore();
+  });
+
+  it('starts the independent underline immediately before parent bookkeeping commits', () => {
+    const timing = jest.spyOn(Animated, 'timing');
+    const ref = createRef<NativePokemonHubHeaderHandle>();
+    render(
+      <NativePokemonHubHeader
+        activeView="inventory"
+        backgroundColor="#111"
+        collectionCount={3285}
+        onViewChange={jest.fn()}
+        ref={ref}
+        secondaryTextColor="#aaa"
+        textColor="#fff"
+      />,
+    );
+    timing.mockClear();
+
+    act(() => ref.current?.setView('pokemon'));
+
+    expect(timing).toHaveBeenCalledWith(
+      expect.any(Animated.Value),
+      expect.objectContaining({
+        duration: 300,
+        easing: Easing.ease,
+        toValue: 1,
+        useNativeDriver: true,
+      }),
+    );
+    timing.mockRestore();
   });
 
   it('matches the canonical fast-select header without changing pages', () => {

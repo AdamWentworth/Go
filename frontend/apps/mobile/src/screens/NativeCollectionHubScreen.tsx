@@ -41,6 +41,7 @@ import {
 } from '../features/collection/collectionModel';
 import {
   NativePokemonHubHeader,
+  type NativePokemonHubHeaderHandle,
   type NativePokemonHubView,
 } from '../features/collection/NativePokemonHubHeader';
 import {
@@ -164,6 +165,7 @@ export const NativeCollectionHubScreen = memo(function NativeCollectionHubScreen
   const [clearTagConfirmationOpen, setClearTagConfirmationOpen] = useState(false);
   const [operationNotice, setOperationNotice] = useState<string | null>(null);
   const sliderRef = useRef<NativeHorizontalPageSliderHandle>(null);
+  const headerRef = useRef<NativePokemonHubHeaderHandle>(null);
   const collectionSurfaceRef = useRef<NativeCollectionParityScreenHandle>(null);
   const tagSelectionTraceRef = useRef<{ key: string; startedAt: number } | null>(null);
   const querySelectionTraceRef = useRef<{
@@ -353,10 +355,10 @@ export const NativeCollectionHubScreen = memo(function NativeCollectionHubScreen
     // native animation and allocating panel textures when the selected tab is
     // tapped again.
     if (activeViewRef.current === view) return;
-    // Commit the destination immediately so taps never wait for momentum to
-    // settle before the selected tab becomes responsive. The underline still
-    // follows pageScrollX continuously, so the visual indicator travels with
-    // the native page rather than jumping ahead of it.
+    // Commit both Vite animations before session bookkeeping: the underline
+    // runs its independent CSS-ease equivalent while the body uses the page
+    // transform's custom Bézier.
+    headerRef.current?.setView(view);
     sliderRef.current?.setPage(VIEW_ORDER.indexOf(view));
     activeViewRef.current = view;
     setActiveView(view);
@@ -364,6 +366,7 @@ export const NativeCollectionHubScreen = memo(function NativeCollectionHubScreen
   }, [onContextChange]);
   const settlePageIndex = useCallback((index: number) => {
     const view = VIEW_ORDER[index] ?? 'pokemon';
+    headerRef.current?.setView(view);
     activeViewRef.current = view;
     setActiveView(view);
     onContextChange?.({ activeView: view });
@@ -386,6 +389,7 @@ export const NativeCollectionHubScreen = memo(function NativeCollectionHubScreen
       interactionLatencyMs: Date.now() - pending.startedAt,
       tagKey: pending.key,
     });
+    headerRef.current?.setView('pokemon', pending.startedAt);
     sliderRef.current?.setPage(VIEW_ORDER.indexOf('pokemon'));
   }, []);
 
@@ -878,8 +882,7 @@ export const NativeCollectionHubScreen = memo(function NativeCollectionHubScreen
         collectionCount={query.trim() ? visibleCollectionCount : selectedRows.length}
         inactiveTextColor={palette.headerInactive}
         onViewChange={changeView}
-        scrollX={pageScrollX}
-        dragX={pageDragX}
+        ref={headerRef}
         selectionBackgroundColor={light ? '#e3f7dc' : '#34807d'}
         selectionCount={selectedIds.size}
         onClearSelection={clearSelection}

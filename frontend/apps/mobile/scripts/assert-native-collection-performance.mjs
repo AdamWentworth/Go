@@ -30,6 +30,7 @@ const budgets = {
   collection_sort_menu_painted: 200,
   collection_filter_result_revealed: 200,
   collection_tag_slide_started: 32,
+  collection_tag_header_indicator_started: 32,
   collection_tag_result_painted: 150,
   collection_query_result_painted: 200,
   // IME delivery and the post-layout rAF both share the software-rendered AVD

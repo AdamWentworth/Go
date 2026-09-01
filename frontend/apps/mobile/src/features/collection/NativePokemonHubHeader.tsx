@@ -1,5 +1,6 @@
 import {
   Animated,
+  Easing,
   Pressable,
   StyleSheet,
   Text,
@@ -8,12 +9,23 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { CustomTagParent } from '@pokemongonexus/shared-contracts/users';
-import { memo, useMemo } from 'react';
+import {
+  forwardRef,
+  memo,
+  useCallback,
+  useEffect,
+  useImperativeHandle,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import {
   collectionExperienceParityContract,
   collectionParityTokens,
 } from '@pokemongonexus/shared-ui-tokens';
 import { NativeBackIcon } from '../../components/NativeBackIcon';
+import { useOptionalNativeDevicePreferences } from '../settings/NativeDevicePreferencesProvider';
+import { markNativeUiPerformance } from '../../observability/nativeUiPerformanceTrace';
 
 export type NativePokemonHubView = 'inventory' | 'pokemon' | 'wishlist';
 
@@ -56,8 +68,6 @@ type Props = {
   textColor: string;
   secondaryTextColor: string;
   inactiveTextColor?: string;
-  scrollX?: Animated.Value;
-  dragX?: Animated.Value;
   onViewChange: (view: NativePokemonHubView) => void;
   selectionCount?: number;
   selectionBackgroundColor?: string;
@@ -67,7 +77,18 @@ type Props = {
   onReturnToContext?: () => void;
 };
 
-export const NativePokemonHubHeader = memo(function NativePokemonHubHeader({
+export type NativePokemonHubHeaderHandle = {
+  setView: (view: NativePokemonHubView, interactionStartedAt?: number) => void;
+};
+
+const viewIndex = (view: NativePokemonHubView): number => (
+  view === 'inventory' ? 0 : view === 'pokemon' ? 1 : 2
+);
+
+export const NativePokemonHubHeader = memo(forwardRef<
+  NativePokemonHubHeaderHandle,
+  Props
+>(function NativePokemonHubHeader({
   activeView,
   activeTag,
   activeTagParent = null,
@@ -76,8 +97,6 @@ export const NativePokemonHubHeader = memo(function NativePokemonHubHeader({
   textColor,
   secondaryTextColor,
   inactiveTextColor = secondaryTextColor,
-  scrollX,
-  dragX,
   onViewChange,
   selectionCount = 0,
   selectionBackgroundColor,
@@ -85,27 +104,59 @@ export const NativePokemonHubHeader = memo(function NativePokemonHubHeader({
   onSelectAll,
   catalogOwner = null,
   onReturnToContext,
-}: Props) {
+}, ref) {
   const { width } = useWindowDimensions();
   const insets = useSafeAreaInsets();
+  const reduceMotion = useOptionalNativeDevicePreferences()?.shouldReduceMotion ?? false;
   const desktop = width >= 768;
-  const selectedIndex = activeView === 'inventory' ? 0 : activeView === 'pokemon' ? 1 : 2;
+  const selectedIndex = viewIndex(activeView);
   const hasSelection = selectionCount > 0;
   const metrics = resolveNativePokemonHubIndicatorMetrics(width, selectedIndex);
-  const indicatorScrollX = useMemo(() => {
-    if (!scrollX || !dragX) return scrollX;
-    const maxPeek = width * collectionExperienceParityContract.pageSwipeMaxPeekRatio;
-    return Animated.add(
-      scrollX,
-      Animated.multiply(Animated.diffClamp(dragX, -maxPeek, maxPeek), -1),
+  const [indicatorPosition] = useState(() => new Animated.Value(selectedIndex));
+  const previousSelectedIndexRef = useRef(selectedIndex);
+  const startIndicatorMotion = useCallback((
+    nextView: NativePokemonHubView,
+    interactionStartedAt?: number,
+  ) => {
+    const nextIndex = viewIndex(nextView);
+    previousSelectedIndexRef.current = nextIndex;
+    indicatorPosition.stopAnimation();
+    if (reduceMotion) {
+      indicatorPosition.setValue(nextIndex);
+      return;
+    }
+    // Vite changes activeView first, then HeaderUI's effect updates `left`.
+    // Its underline therefore runs an independent 300 ms CSS `ease` after
+    // the page transform starts; it does not follow the finger while swiping.
+    Animated.timing(indicatorPosition, {
+      duration: collectionExperienceParityContract.pageTransitionMs,
+      easing: Easing.ease,
+      isInteraction: false,
+      toValue: nextIndex,
+      useNativeDriver: true,
+    }).start();
+    markNativeUiPerformance(
+      interactionStartedAt === undefined
+        ? 'collection_header_indicator_started'
+        : 'collection_tag_header_indicator_started',
+      {
+        activeView: nextView,
+        ...(interactionStartedAt === undefined ? {} : {
+          interactionLatencyMs: Date.now() - interactionStartedAt,
+        }),
+      },
     );
-  }, [dragX, scrollX, width]);
-  const animatedIndicatorTranslateX = useMemo(() => indicatorScrollX?.interpolate({
-    inputRange: [0, Math.max(1, width * 2)],
-    outputRange: [0, metrics.tabWidth * 2],
-    extrapolate: 'clamp',
-  }), [indicatorScrollX, metrics.tabWidth, width]);
-  const indicatorTranslateX = animatedIndicatorTranslateX ?? metrics.indicatorTranslateX;
+  }, [indicatorPosition, reduceMotion]);
+  useImperativeHandle(ref, () => ({ setView: startIndicatorMotion }), [startIndicatorMotion]);
+  useEffect(() => {
+    const previousIndex = previousSelectedIndexRef.current;
+    if (previousIndex === selectedIndex && !reduceMotion) return;
+    startIndicatorMotion(activeView);
+  }, [activeView, reduceMotion, selectedIndex, startIndicatorMotion]);
+  const indicatorTranslateX = useMemo(
+    () => Animated.multiply(indicatorPosition, metrics.tabWidth),
+    [indicatorPosition, metrics.tabWidth],
+  );
   const indicatorStyle = useMemo(() => [
     styles.activeUnderline,
     {
@@ -231,7 +282,7 @@ export const NativePokemonHubHeader = memo(function NativePokemonHubHeader({
       />
     </View>
   );
-});
+}));
 
 const styles = StyleSheet.create({
   header: {
