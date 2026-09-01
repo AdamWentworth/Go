@@ -295,21 +295,30 @@ export const NativeCollectionHubScreen = ({
     // directly, then the already-correct middle panel begins moving in this
     // same press frame. The state update below makes that visual state
     // canonical without changing it halfway through the slide.
-    if (collectionSurfaceRef.current?.revealSurface(tag.key)) {
-      const pokemonIndex = VIEW_ORDER.indexOf('pokemon');
-      sliderRef.current?.preparePage(pokemonIndex);
-      if (tagPageMotionFrameRef.current != null) {
-        cancelAnimationFrame(tagPageMotionFrameRef.current);
-      }
-      tagPageMotionFrameRef.current = requestAnimationFrame(() => {
-        tagPageMotionFrameRef.current = null;
-        markNativeUiPerformance('collection_tag_slide_started', {
-          interactionLatencyMs: Date.now() - startedAt,
-          tagKey: tag.key,
-        });
-        sliderRef.current?.setPage(pokemonIndex);
-      });
+    const hasSearchQuery = queryRef.current.trim().length > 0;
+    // A warmed unfiltered surface can be shown immediately. When a search is
+    // active, keep that Vite search term and let React commit the tag+query
+    // projection offscreen first; revealing the unfiltered warm surface would
+    // produce the exact mid-slide content swap this path exists to prevent.
+    if (hasSearchQuery) collectionSurfaceRef.current?.resetSurface(tag.key);
+    else collectionSurfaceRef.current?.revealSurface(tag.key);
+    const pokemonIndex = VIEW_ORDER.indexOf('pokemon');
+    // Reserve the destination even if this uncommon surface has not completed
+    // background warming yet. The state commit below can mount/update it, then
+    // the following frame begins motion with the right content already in the
+    // middle panel.
+    sliderRef.current?.preparePage(pokemonIndex);
+    if (tagPageMotionFrameRef.current != null) {
+      cancelAnimationFrame(tagPageMotionFrameRef.current);
     }
+    tagPageMotionFrameRef.current = requestAnimationFrame(() => {
+      tagPageMotionFrameRef.current = null;
+      markNativeUiPerformance('collection_tag_slide_started', {
+        interactionLatencyMs: Date.now() - startedAt,
+        tagKey: tag.key,
+      });
+      sliderRef.current?.setPage(pokemonIndex);
+    });
     if (selectedCountRef.current > 0) setSelectedIds(new Set());
 
     if (selectedTagKeyRef.current === tag.key && !queryRef.current.trim()) {
@@ -322,14 +331,11 @@ export const NativeCollectionHubScreen = ({
     // update. The slider's layout effect begins the native-driven page motion
     // immediately after that commit; no list-layout readiness gate sits in
     // front of the interaction.
-    queryRef.current = '';
     selectedTagKeyRef.current = tag.key;
-    setQuery('');
     setSelectedTagKey(tag.key);
     setActiveView('pokemon');
     onContextChange?.({
       activeView: 'pokemon',
-      query: '',
       selectedTagKey: tag.key,
       scrollOffset: 0,
     });

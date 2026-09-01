@@ -61,10 +61,10 @@ export default function NativeCollectionRoute() {
     getSessionRevision,
     getSessionRevision,
   );
-  const restoredCollectionSession = useMemo(
-    () => readNativeCollectionSession(sessionOwnerKey),
-    [sessionOwnerKey, sessionRevision],
-  );
+  // `sessionRevision` subscribes this route to externally primed collection
+  // state. Read the tiny in-memory snapshot directly on that rerender; wrapping
+  // the read in useMemo obscures the intentional revision dependency.
+  const restoredCollectionSession = readNativeCollectionSession(sessionOwnerKey);
   const initialTagKey = nativeCollectionTagKeyForFilter(filter)
     ?? restoredCollectionSession?.selectedTagKey
     ?? null;
@@ -133,7 +133,7 @@ export default function NativeCollectionRoute() {
     catalogRows.length,
     filter,
     initialTagKey,
-    instanceRows.length,
+    instanceRows,
     session.status,
     snapshotQuery.data,
     snapshotQuery.isPending,

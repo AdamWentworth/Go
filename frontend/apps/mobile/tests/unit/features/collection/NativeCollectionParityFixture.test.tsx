@@ -184,13 +184,23 @@ describe('NativeCollectionParityFixture', () => {
         ref={ref}
       />,
     );
-    fireEvent.scroll(screen.getByTestId('native-collection-grid'), {
+    const grid = screen.getByTestId('native-collection-grid');
+    fireEvent.scroll(grid, {
+      nativeEvent: {
+        contentOffset: { x: 0, y: 120 },
+        contentSize: { width: 412, height: 2000 },
+        layoutMeasurement: { width: 412, height: 700 },
+      },
+    });
+    expect(onScrollOffsetChange).not.toHaveBeenCalled();
+    fireEvent(grid, 'momentumScrollEnd', {
       nativeEvent: {
         contentOffset: { x: 0, y: 240 },
         contentSize: { width: 412, height: 2000 },
         layoutMeasurement: { width: 412, height: 700 },
       },
     });
+    expect(onScrollOffsetChange).toHaveBeenLastCalledWith(240);
 
     act(() => ref.current?.resetScroll());
 

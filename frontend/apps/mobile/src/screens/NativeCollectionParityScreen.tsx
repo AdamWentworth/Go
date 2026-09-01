@@ -2,12 +2,12 @@ import {
   forwardRef,
   useCallback,
   useDeferredValue,
+  useEffect,
   useImperativeHandle,
   useLayoutEffect,
   useMemo,
   useRef,
   useState,
-  useTransition,
 } from 'react';
 import { Platform, StyleSheet, View } from 'react-native';
 import type {
@@ -65,6 +65,7 @@ type NativeCollectionParityScreenProps = {
 };
 
 export type NativeCollectionParityScreenHandle = {
+  resetSurface: (surfaceKey: string) => boolean;
   revealSurface: (surfaceKey: string) => boolean;
 };
 
@@ -153,13 +154,25 @@ export const prepareNativeCollectionParityRows = (
 const EMPTY_SELECTED_IDS: ReadonlySet<string> = new Set<string>();
 const EMPTY_ROW_IDS: string[] = [];
 const CATALOG_SURFACE_KEY = 'catalog';
+const SURFACE_WARM_START_DELAY_MS = 180;
+const SURFACE_WARM_INTERVAL_MS = 48;
 
 type NativeCollectionSurfaceProjection = {
   cards: CollectionParityCardFixture[];
+  containsOnlyCatalogRows: boolean;
   key: string;
   rowIds: string[];
   rows: NativeCollectionRow[];
   tag: NativeTagSummary | null;
+};
+
+const catalogOnlyRowsCache = new WeakMap<NativeCollectionRow[], boolean>();
+const containsOnlyCatalogRows = (rows: NativeCollectionRow[]): boolean => {
+  const cached = catalogOnlyRowsCache.get(rows);
+  if (cached !== undefined) return cached;
+  const result = rows.length > 0 && rows.every((row) => row.source === 'catalog');
+  catalogOnlyRowsCache.set(rows, result);
+  return result;
 };
 
 export const NativeCollectionParityScreen = forwardRef<
@@ -200,8 +213,9 @@ export const NativeCollectionParityScreen = forwardRef<
   const [direction, setDirection] = useState<NativeCollectionSortDirection>(initialSortDirection);
   const [sortOpen, setSortOpen] = useState(false);
   const [showEvolutionaryLine, setShowEvolutionaryLine] = useState(initialShowEvolutionaryLine);
-  const [, startResultTransition] = useTransition();
   const deferredQuery = useDeferredValue(query);
+  const deferredSort = useDeferredValue(sort);
+  const deferredDirection = useDeferredValue(direction);
   const deferredShowEvolutionaryLine = useDeferredValue(showEvolutionaryLine);
   const activeSurfaceKey = activeTag?.key ?? CATALOG_SURFACE_KEY;
   const [initialSurfaceKey] = useState(activeSurfaceKey);
@@ -221,7 +235,7 @@ export const NativeCollectionParityScreen = forwardRef<
     warmTags.forEach((tag) => append(tag.key, tag.rows, tag));
     return contexts;
   }, [warmCatalogRows, warmTags]);
-  const surfaceContexts = useMemo(() => {
+  const allSurfaceContexts = useMemo(() => {
     if (warmSurfaceContexts.some((context) => context.key === activeSurfaceKey)) {
       return warmSurfaceContexts;
     }
@@ -234,6 +248,50 @@ export const NativeCollectionParityScreen = forwardRef<
       },
     ];
   }, [activeSurfaceKey, activeTag, rows, warmSurfaceContexts]);
+  const [preparedSurfaceKeys, setPreparedSurfaceKeys] = useState<ReadonlySet<string>>(
+    () => new Set([activeSurfaceKey]),
+  );
+  useEffect(() => {
+    setPreparedSurfaceKeys((current) => {
+      if (current.has(activeSurfaceKey)) return current;
+      const next = new Set(current);
+      next.add(activeSurfaceKey);
+      return next;
+    });
+  }, [activeSurfaceKey]);
+  useEffect(() => {
+    if (Platform.OS === 'web') return undefined;
+    let cancelled = false;
+    let timer: ReturnType<typeof setTimeout> | null = null;
+    const pendingKeys = allSurfaceContexts
+      .map((context) => context.key)
+      .filter((key) => key !== activeSurfaceKey);
+    let index = 0;
+    const warmNextSurface = () => {
+      if (cancelled) return;
+      const surfaceKey = pendingKeys[index];
+      if (!surfaceKey) return;
+      setPreparedSurfaceKeys((current) => {
+        if (current.has(surfaceKey)) return current;
+        const next = new Set(current);
+        next.add(surfaceKey);
+        return next;
+      });
+      index += 1;
+      timer = setTimeout(warmNextSurface, SURFACE_WARM_INTERVAL_MS);
+    };
+    // Mounting six independent image grids in the first collection commit was
+    // making route entry do all future tag work up front. Paint the active
+    // grid first, then prepare one offscreen destination per short idle slice.
+    timer = setTimeout(warmNextSurface, SURFACE_WARM_START_DELAY_MS);
+    return () => {
+      cancelled = true;
+      if (timer) clearTimeout(timer);
+    };
+  }, [activeSurfaceKey, allSurfaceContexts]);
+  const surfaceContexts = useMemo(() => allSurfaceContexts.filter(
+    (context) => context.key === activeSurfaceKey || preparedSurfaceKeys.has(context.key),
+  ), [activeSurfaceKey, allSurfaceContexts, preparedSurfaceKeys]);
   // Vite keeps the three page panels mounted and only changes the Pokémon
   // projection selected by the tag. Keep every warmed native projection
   // independent of the active key too: switching tags should only flip two
@@ -241,27 +299,34 @@ export const NativeCollectionParityScreen = forwardRef<
   // begin.
   const baseSurfaceProjections = useMemo<NativeCollectionSurfaceProjection[]>(() => (
     surfaceContexts.map((context) => {
-      const visibleRows = sortNativeCollectionRows(context.rows, sort, direction);
+      const visibleRows = sortNativeCollectionRows(
+        context.rows,
+        deferredSort,
+        deferredDirection,
+      );
       return {
         cards: projectNativeCollectionParityCards(visibleRows, Boolean(context.tag)),
+        containsOnlyCatalogRows: containsOnlyCatalogRows(context.rows),
         key: context.key,
         rowIds: toVisibleRowIds(visibleRows),
         rows: visibleRows,
         tag: context.tag,
       };
     })
-  ), [direction, sort, surfaceContexts]);
-  const activeQueryProjection = useMemo<NativeCollectionSurfaceProjection | null>(() => {
-    if (!deferredQuery.trim()) return null;
+  ), [deferredDirection, deferredSort, surfaceContexts]);
+  const activeSurfaceProjection = useMemo<NativeCollectionSurfaceProjection | null>(() => {
     const context = surfaceContexts.find((candidate) => candidate.key === activeSurfaceKey);
     if (!context) return null;
-    const filteredRows = filterNativeCollectionRows(context.rows, 'all', deferredQuery, {
-      showEvolutionaryLine: deferredShowEvolutionaryLine,
-      universeRows: searchUniverseRows,
-    });
+    const filteredRows = deferredQuery.trim()
+      ? filterNativeCollectionRows(context.rows, 'all', deferredQuery, {
+          showEvolutionaryLine: deferredShowEvolutionaryLine,
+          universeRows: searchUniverseRows,
+        })
+      : context.rows;
     const visibleRows = sortNativeCollectionRows(filteredRows, sort, direction);
     return {
       cards: projectNativeCollectionParityCards(visibleRows, Boolean(context.tag)),
+      containsOnlyCatalogRows: containsOnlyCatalogRows(context.rows),
       key: context.key,
       rowIds: toVisibleRowIds(visibleRows),
       rows: visibleRows,
@@ -277,14 +342,12 @@ export const NativeCollectionParityScreen = forwardRef<
     surfaceContexts,
   ]);
   const surfaceProjections = useMemo(() => {
-    if (!activeQueryProjection) return baseSurfaceProjections;
+    if (!activeSurfaceProjection) return baseSurfaceProjections;
     return baseSurfaceProjections.map((projection) => (
-      projection.key === activeQueryProjection.key ? activeQueryProjection : projection
+      projection.key === activeSurfaceProjection.key ? activeSurfaceProjection : projection
     ));
-  }, [activeQueryProjection, baseSurfaceProjections]);
-  const activeProjection = surfaceProjections.find(
-    (projection) => projection.key === activeSurfaceKey,
-  ) ?? surfaceProjections[0];
+  }, [activeSurfaceProjection, baseSurfaceProjections]);
+  const activeProjection = activeSurfaceProjection ?? surfaceProjections[0];
   const renderedProjections = useMemo(() => (
     Platform.OS === 'web'
       ? activeProjection ? [activeProjection] : []
@@ -293,20 +356,40 @@ export const NativeCollectionParityScreen = forwardRef<
   const surfaceNodesRef = useRef(new Map<string, View>());
   const fixtureNodesRef = useRef(new Map<string, NativeCollectionParityFixtureHandle>());
   const revealedSurfaceKeyRef = useRef(activeSurfaceKey);
-  const surfaceRefCallbacks = useMemo(() => new Map(renderedProjections.map((projection) => [
-    projection.key,
-    (node: View | null) => {
-      if (node) surfaceNodesRef.current.set(projection.key, node);
-      else surfaceNodesRef.current.delete(projection.key);
-    },
-  ])), [renderedProjections]);
-  const fixtureRefCallbacks = useMemo(() => new Map(renderedProjections.map((projection) => [
-    projection.key,
-    (node: NativeCollectionParityFixtureHandle | null) => {
-      if (node) fixtureNodesRef.current.set(projection.key, node);
-      else fixtureNodesRef.current.delete(projection.key);
-    },
-  ])), [renderedProjections]);
+  const surfaceRefCallbacksRef = useRef(new Map<
+    string,
+    (node: View | null) => void
+  >());
+  const fixtureRefCallbacksRef = useRef(new Map<
+    string,
+    (node: NativeCollectionParityFixtureHandle | null) => void
+  >());
+  const getSurfaceRef = useCallback((surfaceKey: string) => {
+    const cached = surfaceRefCallbacksRef.current.get(surfaceKey);
+    if (cached) return cached;
+    const callback = (node: View | null) => {
+      if (node) surfaceNodesRef.current.set(surfaceKey, node);
+      else surfaceNodesRef.current.delete(surfaceKey);
+    };
+    surfaceRefCallbacksRef.current.set(surfaceKey, callback);
+    return callback;
+  }, []);
+  const getFixtureRef = useCallback((surfaceKey: string) => {
+    const cached = fixtureRefCallbacksRef.current.get(surfaceKey);
+    if (cached) return cached;
+    const callback = (node: NativeCollectionParityFixtureHandle | null) => {
+      if (node) fixtureNodesRef.current.set(surfaceKey, node);
+      else fixtureNodesRef.current.delete(surfaceKey);
+    };
+    fixtureRefCallbacksRef.current.set(surfaceKey, callback);
+    return callback;
+  }, []);
+  const resetSurface = useCallback((surfaceKey: string): boolean => {
+    const fixture = fixtureNodesRef.current.get(surfaceKey);
+    if (!fixture) return false;
+    fixture.resetScroll();
+    return true;
+  }, []);
   const revealSurface = useCallback((surfaceKey: string): boolean => {
     if (Platform.OS === 'web') return false;
     const nextNode = surfaceNodesRef.current.get(surfaceKey);
@@ -315,7 +398,7 @@ export const NativeCollectionParityScreen = forwardRef<
     // user back to the middle page. Reset the already-mounted destination list
     // imperatively while it is still offscreen, avoiding an active/inactive
     // prop that would wake two large FlatLists during every tag swap.
-    fixtureNodesRef.current.get(surfaceKey)?.resetScroll();
+    resetSurface(surfaceKey);
     const previousKey = revealedSurfaceKeyRef.current;
     if (previousKey !== surfaceKey) {
       surfaceNodesRef.current.get(previousKey)?.setNativeProps({
@@ -329,8 +412,12 @@ export const NativeCollectionParityScreen = forwardRef<
       revealedSurfaceKeyRef.current = surfaceKey;
     }
     return true;
-  }, []);
-  useImperativeHandle(ref, () => ({ revealSurface }), [revealSurface]);
+  }, [resetSurface]);
+  useImperativeHandle(
+    ref,
+    () => ({ resetSurface, revealSurface }),
+    [resetSurface, revealSurface],
+  );
   useLayoutEffect(() => {
     revealedSurfaceKeyRef.current = activeSurfaceKey;
   }, [activeSurfaceKey]);
@@ -350,6 +437,9 @@ export const NativeCollectionParityScreen = forwardRef<
     [onLongPressInstance],
   );
   const sortLabel = NATIVE_SORT_OPTIONS.find((option) => option.key === sort)?.label ?? 'NUMBER';
+  const deferredSortLabel = NATIVE_SORT_OPTIONS.find(
+    (option) => option.key === deferredSort,
+  )?.label ?? 'NUMBER';
   const theme = colorScheme === 'light' ? 'light' : 'dark';
   const handleToggleEvolutionaryLine = useCallback(() => {
     setShowEvolutionaryLine((current) => {
@@ -370,8 +460,13 @@ export const NativeCollectionParityScreen = forwardRef<
     <View style={styles.screen} testID="native-collection-parity-screen">
       {renderedProjections.map((projection) => {
         const isActive = projection.key === activeSurfaceKey;
-        const projectedSelectionAction = projection.rows.length > 0
-          && projection.rows.every((row) => row.source === 'catalog')
+        const projectedDirection = isActive ? direction : deferredDirection;
+        const projectedShowEvolutionaryLine = isActive
+          ? showEvolutionaryLine
+          : deferredShowEvolutionaryLine;
+        const projectedSort = isActive ? sort : deferredSort;
+        const projectedSortLabel = isActive ? sortLabel : deferredSortLabel;
+        const projectedSelectionAction = projection.containsOnlyCatalogRows
           ? 'add'
           : selectionAction;
         return (
@@ -381,8 +476,10 @@ export const NativeCollectionParityScreen = forwardRef<
             importantForAccessibility={isActive ? 'auto' : 'no-hide-descendants'}
             key={projection.key}
             pointerEvents={isActive ? 'auto' : 'none'}
-            ref={surfaceRefCallbacks.get(projection.key)}
-            style={[styles.surface, !isActive && styles.inactiveSurface]}
+            ref={getSurfaceRef(projection.key)}
+            style={isActive
+              ? styles.positionedActiveSurface
+              : styles.positionedInactiveSurface}
             testID={`native-collection-surface-${projection.key}`}
           >
             <NativeCollectionParityFixture
@@ -412,12 +509,12 @@ export const NativeCollectionParityScreen = forwardRef<
                 : 0}
               onScrollOffsetChange={handleScrollOffsetChange}
               query={isActive ? query : ''}
-              ref={fixtureRefCallbacks.get(projection.key)}
-              scrollResetKey={`${projection.key}:${sort}:${direction}:${deferredShowEvolutionaryLine}`}
-              sortDirection={direction}
-              sortIconPath={SORT_ICONS[sort]}
-              sortLabel={`Sort by ${sortLabel} ${direction}`}
-              showEvolutionaryLine={showEvolutionaryLine}
+              ref={getFixtureRef(projection.key)}
+              scrollResetKey={`${projection.key}:${projectedSort}:${projectedDirection}:${projectedShowEvolutionaryLine}`}
+              sortDirection={projectedDirection}
+              sortIconPath={SORT_ICONS[projectedSort]}
+              sortLabel={`Sort by ${projectedSortLabel} ${projectedDirection}`}
+              showEvolutionaryLine={projectedShowEvolutionaryLine}
               tagCanClear={Boolean(projection.tag) && tagCanClear}
               tagTone={projection.tag?.tone ?? 'caught'}
               theme={theme}
@@ -435,24 +532,25 @@ export const NativeCollectionParityScreen = forwardRef<
         onClose={() => setSortOpen(false)}
         onSelect={(nextSort) => {
           setSortOpen(false);
-          startResultTransition(() => {
-            if (nextSort === sort) {
-              setDirection((current) => {
-                const nextDirection = current === 'ascending' ? 'descending' : 'ascending';
-                onContextChange?.({ sortDirection: nextDirection, scrollOffset: 0 });
-                return nextDirection;
-              });
-            } else {
-              setSort(nextSort);
-              const nextDirection = nextSort === 'favorite' ? 'descending' : 'ascending';
-              setDirection(nextDirection);
-              onContextChange?.({
-                sort: nextSort,
-                sortDirection: nextDirection,
-                scrollOffset: 0,
-              });
-            }
-          });
+          // Match Vite's immediate visible-list update. Hidden warmed surfaces
+          // consume deferred sort values, so React can paint the active grid
+          // first and quietly catch the offscreen lists up afterward.
+          if (nextSort === sort) {
+            setDirection((current) => {
+              const nextDirection = current === 'ascending' ? 'descending' : 'ascending';
+              onContextChange?.({ sortDirection: nextDirection, scrollOffset: 0 });
+              return nextDirection;
+            });
+          } else {
+            setSort(nextSort);
+            const nextDirection = nextSort === 'favorite' ? 'descending' : 'ascending';
+            setDirection(nextDirection);
+            onContextChange?.({
+              sort: nextSort,
+              sortDirection: nextDirection,
+              scrollOffset: 0,
+            });
+          }
         }}
         open={sortOpen}
         sort={sort}
@@ -463,7 +561,22 @@ export const NativeCollectionParityScreen = forwardRef<
 
 const styles = StyleSheet.create({
   screen: { flex: 1 },
-  surface: { position: 'absolute', top: 0, right: 0, bottom: 0, left: 0 },
+  positionedActiveSurface: {
+    position: 'absolute',
+    top: 0,
+    right: 0,
+    bottom: 0,
+    left: 0,
+    opacity: 1,
+  },
+  positionedInactiveSurface: {
+    position: 'absolute',
+    top: 0,
+    right: 0,
+    bottom: 0,
+    left: 0,
+    opacity: 0,
+  },
   activeSurface: { opacity: 1 },
   inactiveSurface: { opacity: 0 },
 });

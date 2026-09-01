@@ -8,7 +8,7 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { CustomTagParent } from '@pokemongonexus/shared-contracts/users';
-import { useMemo } from 'react';
+import { memo, useMemo } from 'react';
 import {
   collectionExperienceParityContract,
   collectionParityTokens,
@@ -66,7 +66,7 @@ type Props = {
   onReturnToContext?: () => void;
 };
 
-export const NativePokemonHubHeader = ({
+export const NativePokemonHubHeader = memo(function NativePokemonHubHeader({
   activeView,
   activeTag,
   activeTagParent = null,
@@ -83,7 +83,7 @@ export const NativePokemonHubHeader = ({
   onSelectAll,
   catalogOwner = null,
   onReturnToContext,
-}: Props) => {
+}: Props) {
   const { width } = useWindowDimensions();
   const insets = useSafeAreaInsets();
   const desktop = width >= 768;
@@ -221,7 +221,7 @@ export const NativePokemonHubHeader = ({
       />
     </View>
   );
-};
+});
 
 const styles = StyleSheet.create({
   header: {

@@ -2,6 +2,8 @@ import {
   ActivityIndicator,
   FlatList,
   Image,
+  type NativeScrollEvent,
+  type NativeSyntheticEvent,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -336,6 +338,13 @@ export const NativeCollectionParityFixture = memo(forwardRef<
     currentScrollOffsetRef.current = 0;
     onScrollOffsetChange?.(0);
   }, [onScrollOffsetChange]);
+  const persistSettledScrollOffset = useCallback((
+    event: NativeSyntheticEvent<NativeScrollEvent>,
+  ) => {
+    const offset = event.nativeEvent.contentOffset.y;
+    currentScrollOffsetRef.current = offset;
+    onScrollOffsetChange?.(offset);
+  }, [onScrollOffsetChange]);
   useImperativeHandle(ref, () => ({ resetScroll }), [resetScroll]);
   useEffect(() => {
     if (previousResetKeyRef.current === scrollResetKey) return;
@@ -470,13 +479,12 @@ export const NativeCollectionParityFixture = memo(forwardRef<
             restoredScrollRef.current = true;
             listRef.current?.scrollToOffset({ animated: false, offset: initialScrollOffset });
           }}
-          onScroll={(event) => {
-            const offset = event.nativeEvent.contentOffset.y;
-            currentScrollOffsetRef.current = offset;
-            onScrollOffsetChange?.(offset);
-          }}
+          // The native list owns every movement frame. Persist only settled
+          // offsets so ordinary vertical scrolling never schedules recurring
+          // JS/cache work while the user is trying to keep 60 fps.
+          onMomentumScrollEnd={persistSettledScrollOffset}
+          onScrollEndDrag={persistSettledScrollOffset}
           removeClippedSubviews={false}
-          scrollEventThrottle={80}
           testID="native-collection-grid"
           updateCellsBatchingPeriod={16}
           windowSize={3}

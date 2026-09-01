@@ -218,6 +218,11 @@ describe('NativeCollectionHubScreen', () => {
 
     expect(screen.getAllByText('Favorites', { includeHiddenElements: true }).length).toBeGreaterThan(0);
     expect(screen.getAllByText('Most Wanted', { includeHiddenElements: true }).length).toBeGreaterThan(0);
+    expect(screen.queryByTestId(
+      'native-collection-surface-system:favorites',
+      { includeHiddenElements: true },
+    )).toBeNull();
+    act(() => jest.advanceTimersByTime(360));
     const favoritesSurface = screen.getByTestId(
       'native-collection-surface-system:favorites',
       { includeHiddenElements: true },
@@ -258,6 +263,40 @@ describe('NativeCollectionHubScreen', () => {
       toValue: 412,
       useNativeDriver: true,
     }));
+  });
+
+  it('preserves the active search when selecting a tag like Vite', () => {
+    const onContextChange = jest.fn();
+    render(
+      <SafeAreaProvider initialMetrics={{
+        frame: { x: 0, y: 0, width: 412, height: 915 },
+        insets: { top: 24, right: 0, bottom: 20, left: 0 },
+      }}>
+        <NativeCollectionHubScreen
+          assetBaseUrl="https://pokegonexus.com"
+          catalogRows={[catalogBulbasaur, catalogMewtwo]}
+          error={null}
+          initialQuery="bulba"
+          inventoryTags={[inventoryTag, allCaughtTag]}
+          instances={{}}
+          isLoading={false}
+          onContextChange={onContextChange}
+          onOpenEntry={jest.fn()}
+          onRetry={jest.fn()}
+          wishlistTags={[wishlistTag]}
+        />
+      </SafeAreaProvider>,
+    );
+
+    expect(screen.getByLabelText('Search Pokémon').props.value).toBe('bulba');
+    fireEvent.press(screen.getByRole('tab', { name: /wishlist/i }));
+    fireEvent.press(screen.getByRole('button', { name: /Open Most Wanted/i }));
+    act(() => jest.advanceTimersByTime(17));
+
+    expect(screen.getByLabelText('Search Pokémon').props.value).toBe('bulba');
+    expect(screen.queryByText('Shiny Mewtwo')).toBeNull();
+    expect(screen.getByText('No Pokémon found')).toBeTruthy();
+    expect(onContextChange).not.toHaveBeenCalledWith(expect.objectContaining({ query: '' }));
   });
 
   it('opens the canonical quick-navigation menu instead of replacing the collection', () => {

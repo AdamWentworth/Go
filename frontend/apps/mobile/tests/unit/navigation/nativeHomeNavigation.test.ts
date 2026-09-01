@@ -39,7 +39,7 @@ describe('resolveNativeHomeCollectionEntry', () => {
 
 describe('runNativeHomeNavigationWithLoading', () => {
   it('paints the shared loader for a full frame before starting navigation', () => {
-    const frames: Array<() => void> = [];
+    const frames: (() => void)[] = [];
     const navigate = jest.fn();
     const scheduleFrame = jest.fn((callback: () => void) => {
       frames.push(callback);

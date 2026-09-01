@@ -122,6 +122,12 @@ describe('NativeCollectionParityScreen', () => {
       />,
     );
 
+    expect(screen.queryByTestId(
+      'native-collection-surface-system:favorites',
+      { includeHiddenElements: true },
+    )).toBeNull();
+    act(() => jest.advanceTimersByTime(240));
+
     expect(screen.getByTestId(
       'native-collection-surface-system:favorites',
       { includeHiddenElements: true },

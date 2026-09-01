@@ -53,7 +53,7 @@ mounts complete collection and Pokédex route trees in the background.
 
 Passing evidence for this checkpoint:
 
-- native Jest: 154 suites, 804 tests;
+- native Jest: 154 suites, 805 tests;
 - mobile and web TypeScript and ESLint;
 - native real-route smoke: 92 guest/signed-in, light/dark route states;
 - focused Vite mobile-Chromium browser coverage: 9 tests;
@@ -106,6 +106,18 @@ is rasterized only during horizontal motion and released afterward, avoiding
 the previous permanent giant texture invalidation during ordinary vertical
 list scrolling. Automated coverage pins the pre-motion reveal and offscreen
 scroll reset; the complete matrix remains 92 passing route/theme states.
+
+The next renderer pass keeps that instant warmed-tag path without charging its
+entire cost to route entry. Native paints only the active collection grid in
+the first commit, then mounts one hidden tag destination per short background
+slice. Sort changes update the visible surface first while hidden surfaces
+consume deferred sort values, and stable per-surface refs avoid detaching and
+reattaching every warmed list during a tag commit. Existing search text now
+survives tag selection exactly as it does in Vite. Vertical FlatList movement
+no longer calls session persistence throughout the gesture; it records the
+offset only when drag or momentum settles, leaving scrolling frames native.
+Coverage pins active-first warming, the one-frame tag-motion boundary, search
+preservation, and settled-only scroll persistence.
 
 ## Remaining approval gate
 
