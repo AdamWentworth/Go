@@ -63,6 +63,16 @@ type Props = {
 
 type TagGradient = readonly [string, string, string];
 const VITE_TAG_PREVIEW_SOURCE_LIMIT = 18;
+const requestedTagResultAssets = new Set<string>();
+
+const prefetchTagResultAsset = (uri: string): void => {
+  if (requestedTagResultAssets.has(uri)) return;
+  requestedTagResultAssets.add(uri);
+  void Promise.resolve(Image.prefetch(uri)).catch(() => {
+    // A transient failure should not permanently suppress a later retry.
+    requestedTagResultAssets.delete(uri);
+  });
+};
 
 const SYSTEM_TAG_GRADIENTS: Record<Exclude<NativeTagSummary['tone'], 'custom'>, TagGradient> = {
   favorites: ['#ffd77a', '#fff1aa', '#fff9dc'],
@@ -152,9 +162,16 @@ const NativeTagCard = memo(function NativeTagCard({
     // mounting clipped native Image views into the page-animation texture.
     for (const row of tag.rows.slice(visiblePreviewLimit, VITE_TAG_PREVIEW_SOURCE_LIMIT)) {
       if (!row.imageUri) continue;
-      void Promise.resolve(Image.prefetch(
-        toNativeCollectionAssetUrl(assetBaseUrl, row.imageUri),
-      )).catch(() => undefined);
+      prefetchTagResultAsset(toNativeCollectionAssetUrl(assetBaseUrl, row.imageUri));
+    }
+    // Preview cards do not render type glyphs, but result cards do. Warm the
+    // small shared set used by the same first eighteen rows so Android does not
+    // start image-cache lookups for those glyphs on the transition frame.
+    const typeIconUris = new Set(tag.rows
+      .slice(0, VITE_TAG_PREVIEW_SOURCE_LIMIT)
+      .flatMap((row) => row.typeIconUris));
+    for (const uri of typeIconUris) {
+      prefetchTagResultAsset(toNativeCollectionAssetUrl(assetBaseUrl, uri));
     }
   }, [assetBaseUrl, tag.rows, visiblePreviewLimit]);
   const previewGradientTestId = `native-tag-gradient-${tag.key.replace(/[^a-z0-9_-]/gi, '-')}`;

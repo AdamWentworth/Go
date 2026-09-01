@@ -4,6 +4,7 @@ import { act, fireEvent, render, screen } from '@testing-library/react-native';
 import {
   NativeCollectionParityFixture,
   type NativeCollectionParityFixtureHandle,
+  resolveNativeCollectionCardHeight,
 } from '../../../../src/features/collection/parity/NativeCollectionParityFixture';
 import { COLLECTION_PARITY_FIXTURES } from '../../../../src/features/collection/parity/collectionParityFixtures';
 
@@ -139,7 +140,10 @@ describe('NativeCollectionParityFixture', () => {
   it('keeps incomplete mobile rows at the canonical three-column width', () => {
     render(<NativeCollectionParityFixture cards={COLLECTION_PARITY_FIXTURES.slice(0, 1)} />);
 
-    expect(screen.getByTestId('parity-card-shiny-shadow-venusaur')).toHaveStyle({ width: 126 });
+    expect(screen.getByTestId('parity-card-shiny-shadow-venusaur')).toHaveStyle({
+      height: resolveNativeCollectionCardHeight(126),
+      width: 126,
+    });
   });
 
   it.each([
@@ -196,6 +200,7 @@ describe('NativeCollectionParityFixture', () => {
       <NativeCollectionParityFixture cards={COLLECTION_PARITY_FIXTURES.slice(0, 3)} />,
     );
     const initialGrid = view.UNSAFE_getByType(FlatList);
+    const initialGetItemLayout = initialGrid.props.getItemLayout;
     const initialKeyExtractor = initialGrid.props.keyExtractor;
     const initialRenderItem = initialGrid.props.renderItem;
 
@@ -207,6 +212,12 @@ describe('NativeCollectionParityFixture', () => {
     expect(updatedGrid).toBe(initialGrid);
     expect(updatedGrid.props.ListHeaderComponent).toBeUndefined();
     expect(updatedGrid.props.keyExtractor).toBe(initialKeyExtractor);
+    expect(updatedGrid.props.getItemLayout).toBe(initialGetItemLayout);
+    expect(initialGetItemLayout(COLLECTION_PARITY_FIXTURES, 2)).toEqual({
+      index: 2,
+      length: resolveNativeCollectionCardHeight(126),
+      offset: resolveNativeCollectionCardHeight(126) * 2,
+    });
     expect(initialKeyExtractor(COLLECTION_PARITY_FIXTURES[0], 0)).toBe(
       initialKeyExtractor(COLLECTION_PARITY_FIXTURES[3], 0),
     );

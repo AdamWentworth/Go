@@ -161,8 +161,19 @@ latency gap with Vite's already-populated client store.
 
 The real-route collection budget measures the first interactive destination
 card before separately asserting the deliberately delayed header sublabel. The
-latest complete matrix passed all 92 route/theme states and measured 513 ms for
+latest complete matrix passed all 92 route/theme states and measured 505 ms for
 the For Trade workflow, including the canonical 300 ms slide.
+
+The next transition-frame pass now supplies FlatList with the exact deterministic
+card-row geometry, mirroring Vite's explicit virtualizer row-height model rather
+than waiting for Yoga measurements. It starts the native-driven track from the
+destination grid's layout commit instead of inserting another animation frame;
+development traces moved touch-to-motion from roughly 81–85 ms to 57–71 ms.
+Card dimensions, image-stage styles, theme text styles, and ownership-glow styles
+are stable objects across data swaps, and the CP label/value use one native text
+surface. Tag previews also warm the first result window's type glyphs, while a
+tag reset no longer emits a redundant session update when the grid is already
+at the top.
 
 ## Remaining approval gate
 

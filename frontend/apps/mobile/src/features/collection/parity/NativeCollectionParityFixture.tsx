@@ -7,8 +7,11 @@ import {
   type NativeSyntheticEvent,
   Pressable,
   ScrollView,
+  type StyleProp,
   StyleSheet,
   Text,
+  type TextStyle,
+  type ViewStyle,
   View,
   useWindowDimensions,
 } from 'react-native';
@@ -172,6 +175,14 @@ const NATIVE_FLAT_LIST_RENDERER_OPTIMIZATION = { strictMode: true } as const;
 // window then supplies the same roughly five-row overscan Vite uses.
 const COLLECTION_INITIAL_ROW_BUDGET = 6;
 const COLLECTION_ROW_BATCH_BUDGET = 6;
+// Every collection card row has deterministic geometry: its text bands have
+// fixed minimum heights and the image stage is a square derived from card
+// width. Vite gives its virtualizer the same kind of row-height model.
+export const resolveNativeCollectionCardHeight = (cardWidth: number): number => (
+  cardWidth >= 145
+    ? cardWidth + 86
+    : 76 + (Math.max(0, cardWidth - 8) * 0.65)
+);
 type CollectionCardSource = CollectionParityCardFixture | NativeCollectionRow;
 // FlatList combines each item key into a key for its generated multi-column
 // row. Keying by Pokémon identity therefore tears down every visible native
@@ -192,7 +203,8 @@ const isParityCardFixture = (
 const CollectionParityCard = memo(function CollectionParityCard({
   assetBaseUrl,
   card,
-  cardWidth,
+  cardStyle,
+  imageStageStyle,
   collectionRow,
   onPressCard,
   onLongPressCard,
@@ -203,7 +215,8 @@ const CollectionParityCard = memo(function CollectionParityCard({
 }: {
   assetBaseUrl: string;
   card: CollectionParityCardFixture;
-  cardWidth: number;
+  cardStyle: StyleProp<ViewStyle>;
+  imageStageStyle: StyleProp<ViewStyle>;
   collectionRow?: NativeCollectionRow;
   onPressCard?: (card: CollectionParityCardFixture) => void;
   onLongPressCard?: (card: CollectionParityCardFixture) => void;
@@ -212,7 +225,7 @@ const CollectionParityCard = memo(function CollectionParityCard({
   selected: boolean;
   theme: CollectionParityTheme;
 }) {
-  const palette = theme === 'light' ? LIGHT : DARK;
+  const cardThemeStyles = COLLECTION_CARD_THEME_STYLES[theme];
   return (
     <Pressable
       accessibilityLabel={`${card.interaction === 'select' ? 'Select' : 'View'} ${card.name}`}
@@ -224,20 +237,19 @@ const CollectionParityCard = memo(function CollectionParityCard({
       onPress={collectionRow && onPressCollectionRow
         ? () => onPressCollectionRow(collectionRow)
         : onPressCard ? () => onPressCard(card) : undefined}
-      style={[styles.card, selected && styles.selectedCard, { width: cardWidth }]}
+      style={selected ? [cardStyle, styles.selectedCard] : cardStyle}
       testID={`parity-card-${card.id}`}
     >
       <NativePokemonStatusGlow ownership={card.ownership} />
       <View style={styles.cardTopLine}>
-        <View
+        <Text
           accessibilityLabel={card.cp == null ? undefined : `CP ${card.cp}`}
-          style={[styles.cpDisplay, card.cp == null ? styles.hidden : null]}
+          style={card.cp == null ? cardThemeStyles.hiddenCp : cardThemeStyles.cp}
         >
-          <Text style={[styles.cpLabel, { color: palette.text }]}>CP</Text>
-          <Text style={[styles.cpValue, { color: palette.text }]}>
-            {card.cp ?? '000'}
-          </Text>
-        </View>
+          <Text style={styles.cpLabel}>CP</Text>
+          {' '}
+          <Text style={styles.cpValue}>{card.cp ?? '000'}</Text>
+        </Text>
         {card.favorite || card.mostWanted ? (
           <NativeCollectionPriorityStar
             label={card.favorite ? 'Favorite' : 'Most Wanted'}
@@ -247,7 +259,7 @@ const CollectionParityCard = memo(function CollectionParityCard({
           />
         ) : null}
       </View>
-      <View style={[styles.imageStage, cardWidth >= 145 && styles.imageStageWide]}>
+      <View style={imageStageStyle}>
         {card.locationBackgroundPath ? (
           <NativePokemonLocationBackdrop
             uri={toNativeCollectionAssetUrl(assetBaseUrl, card.locationBackgroundPath)}
@@ -290,7 +302,7 @@ const CollectionParityCard = memo(function CollectionParityCard({
           />
         ) : null}
       </View>
-      <Text style={[styles.dexNumber, { color: palette.secondaryText }]}>
+      <Text style={cardThemeStyles.dexNumber}>
         #{card.dexNumber}
       </Text>
       <View style={styles.typeIcons}>
@@ -304,7 +316,7 @@ const CollectionParityCard = memo(function CollectionParityCard({
           />
         ))}
       </View>
-      <Text numberOfLines={2} style={[styles.name, { color: palette.text }]}>
+      <Text numberOfLines={2} style={cardThemeStyles.name}>
         {card.name}
       </Text>
     </Pressable>
@@ -371,6 +383,25 @@ export const NativeCollectionParityFixture = memo(forwardRef<
   const cardWidth = Math.floor(
     (width - (GRID_HORIZONTAL_PADDING * 2) - (GRID_GAP * (columns - 1))) / columns,
   );
+  const cardHeight = resolveNativeCollectionCardHeight(cardWidth);
+  const cardStyle = useMemo<StyleProp<ViewStyle>>(
+    () => [styles.card, { height: cardHeight, width: cardWidth }],
+    [cardHeight, cardWidth],
+  );
+  const imageStageStyle = useMemo<StyleProp<ViewStyle>>(
+    () => cardWidth >= 145
+      ? [styles.imageStage, styles.imageStageWide]
+      : styles.imageStage,
+    [cardWidth],
+  );
+  const getItemLayout = useCallback((
+    _data: ArrayLike<CollectionCardSource> | null | undefined,
+    index: number,
+  ) => ({
+    index,
+    length: cardHeight,
+    offset: cardHeight * index,
+  }), [cardHeight]);
   const baseTagColors = TAG_TONES[tagTone];
   const tagColors = tagTone === 'custom'
     ? {
@@ -393,12 +424,16 @@ export const NativeCollectionParityFixture = memo(forwardRef<
     [onToggleEvolutionaryLine],
   );
   const resetScroll = useCallback(() => {
+    const hadSettledOffset = currentScrollOffsetRef.current > 0.5;
     restoredScrollRef.current = true;
-    if (currentScrollOffsetRef.current > 0.5) {
+    if (hadSettledOffset) {
       listRef.current?.scrollToOffset({ animated: false, offset: 0 });
     }
     currentScrollOffsetRef.current = 0;
-    onScrollOffsetChange?.(0);
+    // Tag selection already persists `scrollOffset: 0` in its one context
+    // patch. Avoid emitting a second session update when the list is already
+    // at the top, including the layout-effect reset after data changes.
+    if (hadSettledOffset) onScrollOffsetChange?.(0);
   }, [onScrollOffsetChange]);
   const persistSettledScrollOffset = useCallback((
     event: NativeSyntheticEvent<NativeScrollEvent>,
@@ -544,7 +579,8 @@ export const NativeCollectionParityFixture = memo(forwardRef<
       <CollectionParityCard
         assetBaseUrl={assetBaseUrl}
         card={card}
-        cardWidth={cardWidth}
+        cardStyle={cardStyle}
+        imageStageStyle={imageStageStyle}
         collectionRow={fixture ? undefined : item}
         onPressCard={onCardPress}
         onLongPressCard={onCardLongPress}
@@ -556,7 +592,8 @@ export const NativeCollectionParityFixture = memo(forwardRef<
     );
   }, [
     assetBaseUrl,
-    cardWidth,
+    cardStyle,
+    imageStageStyle,
     onCardLongPress,
     onCardPress,
     onCollectionRowLongPress,
@@ -609,6 +646,7 @@ export const NativeCollectionParityFixture = memo(forwardRef<
             contentContainerStyle={styles.listContent}
             data={collectionItems}
             extraData={selectedIds}
+            getItemLayout={getItemLayout}
             nestedScrollEnabled
             ref={listRef}
             initialNumToRender={COLLECTION_INITIAL_ROW_BUDGET}
@@ -801,7 +839,7 @@ const styles = StyleSheet.create({
   },
   selectedCard: { borderRadius: 8, backgroundColor: '#34807d' },
   cardTopLine: { width: '100%', height: 20, alignItems: 'center', justifyContent: 'center' },
-  cpDisplay: { flexDirection: 'row', alignItems: 'baseline', gap: 2 },
+  cpDisplay: { lineHeight: 18, textAlign: 'center' },
   cpLabel: { fontSize: 10, lineHeight: 12 },
   cpValue: { fontSize: 15, fontWeight: '700', lineHeight: 18 },
   hidden: { opacity: 0 },
@@ -840,6 +878,10 @@ const styles = StyleSheet.create({
     lineHeight: 12,
     textAlign: 'center',
   },
+  lightPrimaryText: { color: LIGHT.text },
+  lightSecondaryText: { color: LIGHT.secondaryText },
+  darkPrimaryText: { color: DARK.text },
+  darkSecondaryText: { color: DARK.secondaryText },
   sortAnchor: {
     position: 'absolute',
     right: 7,
@@ -911,3 +953,23 @@ const styles = StyleSheet.create({
   },
   selectionActionText: { color: '#ffffff', fontSize: 16, fontWeight: '900' },
 });
+
+const COLLECTION_CARD_THEME_STYLES: Record<CollectionParityTheme, {
+  cp: StyleProp<TextStyle>;
+  hiddenCp: StyleProp<TextStyle>;
+  dexNumber: StyleProp<TextStyle>;
+  name: StyleProp<TextStyle>;
+}> = {
+  light: {
+    cp: [styles.cpDisplay, styles.lightPrimaryText],
+    hiddenCp: [styles.cpDisplay, styles.lightPrimaryText, styles.hidden],
+    dexNumber: [styles.dexNumber, styles.lightSecondaryText],
+    name: [styles.name, styles.lightPrimaryText],
+  },
+  dark: {
+    cp: [styles.cpDisplay, styles.darkPrimaryText],
+    hiddenCp: [styles.cpDisplay, styles.darkPrimaryText, styles.hidden],
+    dexNumber: [styles.dexNumber, styles.darkSecondaryText],
+    name: [styles.name, styles.darkPrimaryText],
+  },
+};

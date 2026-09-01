@@ -153,10 +153,13 @@ export const NativeCollectionHubScreen = memo(function NativeCollectionHubScreen
   const sliderRef = useRef<NativeHorizontalPageSliderHandle>(null);
   const collectionSurfaceRef = useRef<NativeCollectionParityScreenHandle>(null);
   const tagSelectionTraceRef = useRef<{ key: string; startedAt: number } | null>(null);
-  const tagPageMotionFrameRef = useRef<number | null>(null);
+  const pendingTagMotionRef = useRef<{
+    delaySidePanelTag: boolean;
+    key: string;
+    startedAt: number;
+  } | null>(null);
   const sidePanelTagTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const activeViewRef = useRef<NativePokemonHubView>(initialView);
-  const queryRef = useRef(initialQuery);
   const selectedTagKeyRef = useRef<string | null>(resolvedInitialTagKey);
   const [pageScrollX] = useState(() => new Animated.Value(width));
   const [pageDragX] = useState(() => new Animated.Value(0));
@@ -238,9 +241,7 @@ export const NativeCollectionHubScreen = memo(function NativeCollectionHubScreen
   }, [availableTags]);
 
   useEffect(() => () => {
-    if (tagPageMotionFrameRef.current != null) {
-      cancelAnimationFrame(tagPageMotionFrameRef.current);
-    }
+    pendingTagMotionRef.current = null;
     if (sidePanelTagTimerRef.current) clearTimeout(sidePanelTagTimerRef.current);
   }, []);
 
@@ -284,8 +285,26 @@ export const NativeCollectionHubScreen = memo(function NativeCollectionHubScreen
     onContextChange?.({ activeView: view });
   }, [onContextChange]);
 
+  const startPendingTagMotion = useCallback(() => {
+    const pending = pendingTagMotionRef.current;
+    if (!pending) return;
+    pendingTagMotionRef.current = null;
+    if (pending.delaySidePanelTag) {
+      // Vite starts this delay with its CSS transform. Keep the old side-panel
+      // identity throughout motion and update it after the shared 300 ms.
+      sidePanelTagTimerRef.current = setTimeout(() => {
+        setSidePanelTagKey(pending.key);
+        sidePanelTagTimerRef.current = null;
+      }, NATIVE_HORIZONTAL_PAGE_TRANSITION_MS);
+    }
+    markNativeUiPerformance('collection_tag_slide_started', {
+      interactionLatencyMs: Date.now() - pending.startedAt,
+      tagKey: pending.key,
+    });
+    sliderRef.current?.setPage(VIEW_ORDER.indexOf('pokemon'));
+  }, []);
+
   const changeQuery = useCallback((nextQuery: string) => {
-    queryRef.current = nextQuery;
     setQuery(nextQuery);
     onContextChange?.({ query: nextQuery, scrollOffset: 0 });
   }, [onContextChange]);
@@ -307,8 +326,8 @@ export const NativeCollectionHubScreen = memo(function NativeCollectionHubScreen
     }
     // Vite changes the immutable data projection in its one virtualized grid,
     // then starts the compositor slide. Native follows that same order: the
-    // cached tag projection commits now and the UI-thread track moves on the
-    // next frame. Keeping one grid avoids hundreds of image/card views from
+    // cached tag projection and the UI-thread track enter one native commit.
+    // Keeping one grid avoids hundreds of image/card views from
     // invisible prewarmed lists competing with the animation.
     // Reset the already-mounted offscreen grid before changing its data. This
     // prevents FlatList from reconciling both a previously scrolled window and
@@ -316,34 +335,21 @@ export const NativeCollectionHubScreen = memo(function NativeCollectionHubScreen
     collectionSurfaceRef.current?.resetScroll();
     const pokemonIndex = VIEW_ORDER.indexOf('pokemon');
     // Reserve the destination so the state commit can update the middle grid
-    // before motion begins on the following frame.
+    // before its layout effect begins motion.
     sliderRef.current?.preparePage(pokemonIndex);
-    if (tagPageMotionFrameRef.current != null) {
-      cancelAnimationFrame(tagPageMotionFrameRef.current);
-    }
-    tagPageMotionFrameRef.current = requestAnimationFrame(() => {
-      tagPageMotionFrameRef.current = null;
-      if (delaySidePanelTag) {
-        // Vite starts this delay with its CSS transform. Native intentionally
-        // waits one frame for the destination data commit, so start the label
-        // clock here as well. Starting it at press time changed the header on
-        // Android's final motion frame and made the slide visibly hitch.
-        sidePanelTagTimerRef.current = setTimeout(() => {
-          setSidePanelTagKey(tag.key);
-          sidePanelTagTimerRef.current = null;
-        }, NATIVE_HORIZONTAL_PAGE_TRANSITION_MS);
-      }
-      markNativeUiPerformance('collection_tag_slide_started', {
-        interactionLatencyMs: Date.now() - startedAt,
-        tagKey: tag.key,
-      });
-      sliderRef.current?.setPage(pokemonIndex);
-    });
+    pendingTagMotionRef.current = {
+      delaySidePanelTag,
+      key: tag.key,
+      startedAt,
+    };
     if (selectedCountRef.current > 0) setSelectedIds(new Set());
 
-    if (selectedTagKeyRef.current === tag.key && !queryRef.current.trim()) {
+    if (selectedTagKeyRef.current === tag.key) {
       setActiveView('pokemon');
       onContextChange?.({ activeView: 'pokemon', scrollOffset: 0 });
+      // No destination data changes for a repeated tag, so no child layout
+      // effect will run. Its existing card window is already ready to move.
+      startPendingTagMotion();
       return;
     }
 
@@ -360,7 +366,7 @@ export const NativeCollectionHubScreen = memo(function NativeCollectionHubScreen
       selectedTagKey: tag.key,
       scrollOffset: 0,
     });
-  }, [onContextChange]);
+  }, [onContextChange, startPendingTagMotion]);
 
   const toggleSelection = useCallback((entryId: string) => {
     setSelectedIds((current) => {
@@ -484,6 +490,7 @@ export const NativeCollectionHubScreen = memo(function NativeCollectionHubScreen
       selectionAction={selectedRowsAreCatalog ? 'add' : 'organize'}
       tagCanClear={!requireTagSelection}
       onContextChange={onContextChange}
+      onRowsCommitted={startPendingTagMotion}
     />
   ), [
     assetBaseUrl,
@@ -509,6 +516,7 @@ export const NativeCollectionHubScreen = memo(function NativeCollectionHubScreen
     initialSort,
     initialSortDirection,
     onContextChange,
+    startPendingTagMotion,
     openOrganizer,
   ]);
   const wishlistPanel = useMemo(() => (

@@ -63,6 +63,7 @@ type NativeCollectionParityScreenProps = {
   selectionAction?: 'add' | 'organize';
   tagCanClear?: boolean;
   onContextChange?: (patch: Partial<NativeCollectionSession>) => void;
+  onRowsCommitted?: () => void;
 };
 
 const SORT_ICONS: Record<NativeCollectionSort, string> = {
@@ -128,6 +129,7 @@ export const NativeCollectionParityScreen = memo(forwardRef<
   selectionAction = 'organize',
   tagCanClear = Boolean(activeTag),
   onContextChange,
+  onRowsCommitted,
 }, ref) {
   const colorScheme = useNativeColorScheme();
   const [sort, setSort] = useState<NativeCollectionSort>(initialSort);
@@ -154,7 +156,11 @@ export const NativeCollectionParityScreen = memo(forwardRef<
   const visibleRowsRef = useRef(visibleRows);
   useLayoutEffect(() => {
     visibleRowsRef.current = visibleRows;
-  }, [visibleRows]);
+    // React has committed the destination card window at this point. The Hub
+    // can now start its native-driven track in the same paint, just as Vite's
+    // filter and CSS transform take effect in one commit.
+    onRowsCommitted?.();
+  }, [onRowsCommitted, visibleRows]);
   const handleRowPress = useCallback(
     (row: NativeCollectionRow) => onOpenInstance(row, visibleRowsRef.current),
     [onOpenInstance],

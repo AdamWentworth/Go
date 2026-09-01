@@ -117,6 +117,10 @@ describe('NativeTagsPanelScreen', () => {
       ...tag.rows[0],
       id: `instance-${index + 1}`,
       imageUri: `https://pokegonexus.com/images/pokemon-${index + 1}.png`,
+      typeIconUris: [
+        'https://pokegonexus.com/images/types/fire-prefetch-test.png',
+        'https://pokegonexus.com/images/types/flying-prefetch-test.png',
+      ],
     }));
 
     render(
@@ -135,7 +139,10 @@ describe('NativeTagsPanelScreen', () => {
     );
 
     expect(prefetch.mock.calls.map(([uri]) => uri)).toEqual(
-      rows.slice(12).map((row) => row.imageUri),
+      [
+        ...rows.slice(12).map((row) => row.imageUri),
+        ...rows[0].typeIconUris,
+      ],
     );
     prefetch.mockRestore();
   });

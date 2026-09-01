@@ -247,12 +247,8 @@ describe('NativeCollectionHubScreen', () => {
       { includeHiddenElements: true },
     )).toBeNull();
     expect(screen.queryByText('(FAVORITES)')).toBeNull();
-    expect(timing).not.toHaveBeenCalled();
-    expect(timeout).not.toHaveBeenCalledWith(
-      expect.any(Function),
-      NATIVE_HORIZONTAL_PAGE_TRANSITION_MS,
-    );
-    act(() => jest.advanceTimersByTime(17));
+    // The new card window has committed before the child layout effect starts
+    // motion, so there is no extra blank frame between touch and animation.
     expect(timing).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({
       duration: NATIVE_HORIZONTAL_PAGE_TRANSITION_MS,
       toValue: 412,
@@ -262,7 +258,7 @@ describe('NativeCollectionHubScreen', () => {
       expect.any(Function),
       NATIVE_HORIZONTAL_PAGE_TRANSITION_MS,
     );
-    act(() => jest.advanceTimersByTime(NATIVE_HORIZONTAL_PAGE_TRANSITION_MS - 17));
+    act(() => jest.advanceTimersByTime(NATIVE_HORIZONTAL_PAGE_TRANSITION_MS));
     expect(screen.getByText('(FAVORITES)')).toBeTruthy();
     expect(screen.getByRole('tab', { name: /pokémon/i }).props.accessibilityState).toEqual({
       selected: true,
@@ -273,14 +269,12 @@ describe('NativeCollectionHubScreen', () => {
     fireEvent.press(screen.getByRole('button', { name: /Open Most Wanted/i }));
     expect(screen.getByText('(FAVORITES)')).toBeTruthy();
     expect(screen.queryByText('(MOST WANTED)')).toBeNull();
-    expect(timing).not.toHaveBeenCalled();
-    act(() => jest.advanceTimersByTime(17));
     expect(timing).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({
       duration: NATIVE_HORIZONTAL_PAGE_TRANSITION_MS,
       toValue: 412,
       useNativeDriver: true,
     }));
-    act(() => jest.advanceTimersByTime(NATIVE_HORIZONTAL_PAGE_TRANSITION_MS - 17));
+    act(() => jest.advanceTimersByTime(NATIVE_HORIZONTAL_PAGE_TRANSITION_MS));
     expect(screen.getByText('(MOST WANTED)')).toBeTruthy();
     timeout.mockRestore();
   });

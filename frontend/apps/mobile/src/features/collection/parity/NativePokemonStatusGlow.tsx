@@ -1,32 +1,26 @@
 import { memo } from 'react';
-import { Image, StyleSheet } from 'react-native';
+import {
+  Image,
+  type ImageStyle,
+  type StyleProp,
+  StyleSheet,
+} from 'react-native';
 import type { CollectionParityCardFixture } from './collectionParityFixtures';
 
 const STATUS_GLOW_SOURCE = require('../../../../assets/collection-status-glow.png');
-
-const OWNERSHIP_GLOW: Record<
-  NonNullable<CollectionParityCardFixture['ownership']>,
-  string
-> = {
-  caught: '#0077ff',
-  trade: '#28a745',
-  wanted: '#dc3545',
-};
 
 export const NativePokemonStatusGlow = memo(function NativePokemonStatusGlow({
   ownership,
 }: {
   ownership: CollectionParityCardFixture['ownership'];
 }) {
-  const color = ownership ? OWNERSHIP_GLOW[ownership] : '#ffffff';
-
   return (
     <Image
       accessibilityElementsHidden
       fadeDuration={0}
       resizeMode="stretch"
       source={STATUS_GLOW_SOURCE}
-      style={[styles.glow, { opacity: ownership ? 1 : 0, tintColor: color }]}
+      style={STATUS_GLOW_STYLES[ownership ?? 'inactive']}
       testID={ownership ? `native-${ownership}-status-glow` : 'native-inactive-status-glow'}
     />
   );
@@ -45,4 +39,18 @@ const styles = StyleSheet.create({
     width: '70%',
     height: '70%',
   },
+  inactive: { opacity: 0, tintColor: '#ffffff' },
+  caught: { opacity: 1, tintColor: '#0077ff' },
+  trade: { opacity: 1, tintColor: '#28a745' },
+  wanted: { opacity: 1, tintColor: '#dc3545' },
 });
+
+const STATUS_GLOW_STYLES: Record<
+  NonNullable<CollectionParityCardFixture['ownership']> | 'inactive',
+  StyleProp<ImageStyle>
+> = {
+  inactive: [styles.glow, styles.inactive],
+  caught: [styles.glow, styles.caught],
+  trade: [styles.glow, styles.trade],
+  wanted: [styles.glow, styles.wanted],
+};
