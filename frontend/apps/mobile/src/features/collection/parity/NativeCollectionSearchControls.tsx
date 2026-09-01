@@ -1,5 +1,8 @@
 import {
+  useCallback,
+  forwardRef,
   memo,
+  useImperativeHandle,
   useLayoutEffect,
   useRef,
   useState,
@@ -167,7 +170,25 @@ export const NativeCollectionSearchMenu = memo(function NativeCollectionSearchMe
   );
 });
 
-export const NativeCollectionSearchControls = memo(function NativeCollectionSearchControls({
+export type NativeCollectionSearchControlsHandle = {
+  dismissKeyboard: () => void;
+};
+
+export const NativeCollectionSearchControls = memo(forwardRef<
+  NativeCollectionSearchControlsHandle,
+  {
+    assetBaseUrl: string;
+    inputBackground: string;
+    inputTextColor: string;
+    menuVisible: boolean;
+    onMenuVisibleChange: (visible: boolean) => void;
+    onQueryChange: (query: string) => void;
+    onToggleEvolutionaryLine: () => void;
+    query: string;
+    showEvolutionaryLine: boolean;
+    textColor: string;
+  }
+>(function NativeCollectionSearchControls({
   assetBaseUrl,
   inputBackground,
   inputTextColor,
@@ -178,18 +199,7 @@ export const NativeCollectionSearchControls = memo(function NativeCollectionSear
   query,
   showEvolutionaryLine,
   textColor,
-}: {
-  assetBaseUrl: string;
-  inputBackground: string;
-  inputTextColor: string;
-  menuVisible: boolean;
-  onMenuVisibleChange: (visible: boolean) => void;
-  onQueryChange: (query: string) => void;
-  onToggleEvolutionaryLine: () => void;
-  query: string;
-  showEvolutionaryLine: boolean;
-  textColor: string;
-}) {
+}, ref) {
   const inputRef = useRef<TextInput>(null);
   // Match Vite's SearchUI: the input owns an urgent local value while the
   // collection projection is allowed to update at transition priority. A
@@ -197,6 +207,11 @@ export const NativeCollectionSearchControls = memo(function NativeCollectionSear
   // for the full route and grid tree to reconcile before it could paint.
   const [inputValue, setInputValue] = useState(query);
   const [, startTransition] = useTransition();
+  const dismissKeyboard = useCallback(() => {
+    inputRef.current?.blur();
+    Keyboard.dismiss();
+  }, []);
+  useImperativeHandle(ref, () => ({ dismissKeyboard }), [dismissKeyboard]);
   useLayoutEffect(() => {
     setInputValue((current) => (current === query ? current : query));
   }, [query]);
@@ -208,8 +223,7 @@ export const NativeCollectionSearchControls = memo(function NativeCollectionSear
   const closeSearch = () => {
     onMenuVisibleChange(false);
     commitQuery('');
-    inputRef.current?.blur();
-    Keyboard.dismiss();
+    dismissKeyboard();
   };
   const clearSearch = () => {
     commitQuery('');
@@ -312,7 +326,7 @@ export const NativeCollectionSearchControls = memo(function NativeCollectionSear
       ) : null}
     </View>
   );
-});
+}));
 
 const styles = StyleSheet.create({
   searchSection: { width: '100%', alignItems: 'center', paddingVertical: 15 },

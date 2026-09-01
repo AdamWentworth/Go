@@ -151,11 +151,11 @@ peek limit and 100 px threshold, and hands the exact drag position to the
 settling animation so the current page cannot flash or reload first. The
 Pokémon result and selected tab commit together before the canonical 300 ms
 slide; only the offscreen Tags/Wishlist sublabel waits until that slide ends,
-matching Vite. The current and destination panels are rasterized only after the
-destination commit and while moving, avoiding a stale offscreen draw before the
-grid changes, then are released afterward. React Native 0.86's deprecated InteractionManager is a stub, so an
-app-owned scheduler tied to this real slider lifecycle protects animation
-frames from projection warming.
+matching Vite. The track uses React Native's native hardware display-list
+composition rather than allocating bitmap copies of its full-height pages.
+React Native 0.86's deprecated InteractionManager is a stub, so an app-owned
+scheduler tied to this real slider lifecycle protects animation frames from
+projection warming.
 
 Route entry is now cache-first and network-authoritative. A durable collection
 snapshot, including retained offline edits, can paint while the canonical
@@ -199,19 +199,23 @@ repeating that string work for every Pokémon. A new production guardrail
 requires a dispatched catalog search to paint its matching card within 150 ms;
 repeat runs measured 88–120 ms, down from the initial measured 231 ms.
 
-Android page motion no longer rasterizes the entire three-screen-wide track as
-one texture. Only the current and destination panels receive temporary hardware
-textures during programmatic slides (with adjacent candidates covered during a
-finger drag), and all are released when motion ends. This preserves the single
-native-driven Vite timing/transform while reducing the normal tag-to-Pokémon
-snapshot area by one third and avoiding an unnecessarily wide GPU surface. The
-post-change production proxy measured the tag result at 74–81 ms, motion start
-at 5–8 ms, 20–21 distinct positions, and a 16.7–33.5 ms largest sampled gap.
+An Android development-client A/B run exposed a composition bottleneck the web
+proxy could not see. Forcing the current and destination pages into bitmap
+textures allocated about 56 MB of scratch render targets at Pixel 8 Pro smoke
+density and produced six missed-deadline frames, including a 113 ms frame.
+Leaving the same native-driven transform on Android's existing hardware display
+lists removed that allocation. The corresponding tab slide produced two
+missed-deadline frames with a 40 ms maximum, while an actual tag-data swap plus
+slide produced one missed-deadline frame with a 36 ms maximum. This keeps the
+Vite timing and one-track architecture without paying a synchronous full-screen
+snapshot cost at touch time. SurfaceFlinger independently recorded exactly 18
+presented frames for each 300 ms motion: the plain slide's largest presentation
+gap was 20.99 ms and the tag-data slide's largest in-motion gap was 21.7 ms.
 
 The follow-up interaction pass removes the remaining redundant work on common
 paths. Tapping the already-selected tab is now a true no-op, matching React's
-same-state behavior in Vite instead of starting another 300 ms animation and
-allocating panel textures. After the visible tag-card window is prepared, the
+same-state behavior in Vite instead of scheduling another 300 ms animation.
+After the visible tag-card window is prepared, the
 idle interaction scheduler also warms normalized search projections in bounded
 128-row slices. Exact searches reuse reference-stable results, while ordinary
 positive typing narrows the preceding prefix result rather than rescanning all

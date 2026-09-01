@@ -1,5 +1,5 @@
 import { createRef } from 'react';
-import { FlatList } from 'react-native';
+import { FlatList, Keyboard } from 'react-native';
 import { act, fireEvent, render, screen } from '@testing-library/react-native';
 import {
   NativeCollectionParityFixture,
@@ -213,6 +213,21 @@ describe('NativeCollectionParityFixture', () => {
     expect(view.UNSAFE_getByType(FlatList)).toBe(initialGrid);
     expect(view.getByLabelText('Search Pokémon')).toBe(initialInput);
     expect(initialGrid.props.pointerEvents).toBe('auto');
+    expect(view.queryByLabelText('Pokémon search filters')).toBeNull();
+  });
+
+  it('dismisses the keyboard when a Vite search-filter tile is selected', () => {
+    const dismissKeyboard = jest.spyOn(Keyboard, 'dismiss').mockImplementation(jest.fn());
+    const onQueryChange = jest.fn();
+    const view = render(
+      <NativeCollectionParityFixture onQueryChange={onQueryChange} />,
+    );
+
+    fireEvent(view.getByLabelText('Search Pokémon'), 'focus');
+    fireEvent.press(view.getByLabelText('Filter by Shiny'));
+
+    expect(onQueryChange).toHaveBeenCalledWith('Shiny');
+    expect(dismissKeyboard).toHaveBeenCalled();
     expect(view.queryByLabelText('Pokémon search filters')).toBeNull();
   });
 

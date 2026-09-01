@@ -47,6 +47,7 @@ import { NativePokemonLocationBackdrop } from './NativePokemonLocationBackdrop';
 import {
   NativeCollectionSearchControls,
   NativeCollectionSearchMenu,
+  type NativeCollectionSearchControlsHandle,
 } from './NativeCollectionSearchControls';
 import { NativeCollectionPriorityStar } from './NativeCollectionPriorityStar';
 import { NativeActionMenuAnchor } from '../../../components/NativeActionMenuAnchor';
@@ -370,6 +371,7 @@ export const NativeCollectionParityFixture = memo(forwardRef<
 }, ref) {
   const { width } = useWindowDimensions();
   const [searchMenuVisible, setSearchMenuVisible] = useState(false);
+  const searchControlsRef = useRef<NativeCollectionSearchControlsHandle>(null);
   const listRef = useRef<FlatList<CollectionCardSource>>(null);
   const restoredScrollRef = useRef(initialScrollOffset <= 0);
   const previousResetKeyRef = useRef(scrollResetKey);
@@ -413,6 +415,9 @@ export const NativeCollectionParityFixture = memo(forwardRef<
   const appendFilter = useCallback((filter: string) => {
     const nextQuery = query.trim() ? `${query}&${filter}` : filter;
     onQueryChange?.(nextQuery);
+    // Canonical Vite handleFilterClick blurs the input before closing its menu.
+    // Do the same so the keyboard does not resize the freshly filtered grid.
+    searchControlsRef.current?.dismissKeyboard();
     setSearchMenuVisible(false);
   }, [onQueryChange, query]);
   const changeQuery = useCallback(
@@ -468,6 +473,7 @@ export const NativeCollectionParityFixture = memo(forwardRef<
         onQueryChange={changeQuery}
         onToggleEvolutionaryLine={toggleEvolutionaryLine}
         query={query}
+        ref={searchControlsRef}
         showEvolutionaryLine={showEvolutionaryLine}
         textColor={palette.text}
       />

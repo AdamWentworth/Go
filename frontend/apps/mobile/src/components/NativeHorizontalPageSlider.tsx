@@ -101,29 +101,6 @@ export const resolveNativeHorizontalDragHandoffOffset = ({
   Math.min(maxPeekDistance, translationX),
 );
 
-export const resolveNativeHorizontalRasterizedIndexes = ({
-  fromIndex,
-  panelCount,
-  toIndex,
-}: {
-  fromIndex: number;
-  panelCount: number;
-  toIndex: number;
-}): number[] => {
-  const firstIndex = Math.min(
-    clampPageIndex(fromIndex, panelCount),
-    clampPageIndex(toIndex, panelCount),
-  );
-  const lastIndex = Math.max(
-    clampPageIndex(fromIndex, panelCount),
-    clampPageIndex(toIndex, panelCount),
-  );
-  return Array.from(
-    { length: lastIndex - firstIndex + 1 },
-    (_, offset) => firstIndex + offset,
-  );
-};
-
 export const NativeHorizontalPageSlider = memo(forwardRef<
   NativeHorizontalPageSliderHandle,
   Props
@@ -140,12 +117,11 @@ export const NativeHorizontalPageSlider = memo(forwardRef<
   const safeIndex = clampPageIndex(activeIndex, panelCount);
   const safeIndexRef = useRef(safeIndex);
   const onIndexChangeRef = useRef(onIndexChange);
-  const panelRefs = useRef<Array<View | null>>([]);
   const renderedIndexRef = useRef(safeIndex);
-  const preparedFromIndexRef = useRef<number | null>(null);
   const alignedInitialPageRef = useRef(false);
   const previousWidthRef = useRef(width);
   const dragStartOffsetRef = useRef(safeIndex * width);
+  const pageAnimationActiveRef = useRef(false);
   const interactionGenerationRef = useRef(0);
   const interactionReleaseRef = useRef<(() => void) | null>(null);
   const [internalScrollX] = useState(() => new Animated.Value(safeIndex * width));
@@ -215,27 +191,8 @@ export const NativeHorizontalPageSlider = memo(forwardRef<
     releasePageInteraction();
   }, [releasePageInteraction]);
 
-  const setPanelsRasterized = useCallback((
-    enabled: boolean,
-    indexes: readonly number[] = [],
-  ) => {
-    // React Native Web exposes the host DOM node here rather than a native
-    // component handle. GPU layer hints are only useful on the device and its
-    // host node does not implement setNativeProps.
-    if (Platform.OS === 'web') return;
-    const selectedIndexes = new Set(indexes);
-    panelRefs.current.forEach((panel, index) => {
-      panel?.setNativeProps({
-        renderToHardwareTextureAndroid: enabled && selectedIndexes.has(index),
-        shouldRasterizeIOS: enabled && selectedIndexes.has(index),
-      });
-    });
-  }, []);
-
   const setPage = useCallback((index: number, animated = !reduceMotion) => {
     const nextIndex = clampPageIndex(index, panelCount);
-    const previousIndex = preparedFromIndexRef.current ?? renderedIndexRef.current;
-    preparedFromIndexRef.current = null;
     renderedIndexRef.current = nextIndex;
     // Vite moves one three-panel track. Drive the native track and every header
     // indicator from this same value so Android cannot make the body and
@@ -244,16 +201,12 @@ export const NativeHorizontalPageSlider = memo(forwardRef<
     nativeDrivenDrag?.setValue(0);
     pageScrollX.stopAnimation();
     if (animated) {
+      pageAnimationActiveRef.current = true;
       const interactionGeneration = reservePageInteraction();
-      // A three-screen-wide Android texture is expensive to allocate and can
-      // exceed conservative GPU texture widths on high-resolution devices.
-      // Cache only the panels that are actually crossing the viewport. The
-      // parent track remains the one native-driven transform clock.
-      setPanelsRasterized(true, resolveNativeHorizontalRasterizedIndexes({
-        fromIndex: previousIndex,
-        panelCount,
-        toIndex: nextIndex,
-      }));
+      // Android already records transformed native subtrees into hardware
+      // display lists. Do not force the two full-height pages into eager bitmap
+      // snapshots: at Pixel 8 Pro smoke density those transient render targets
+      // consumed roughly 56 MB and made the first transition frames slower.
       Animated.timing(pageScrollX, {
         duration: NATIVE_HORIZONTAL_PAGE_TRANSITION_MS,
         easing: NATIVE_HORIZONTAL_PAGE_EASING,
@@ -262,13 +215,13 @@ export const NativeHorizontalPageSlider = memo(forwardRef<
         useNativeDriver: true,
       }).start(() => {
         if (interactionGeneration !== interactionGenerationRef.current) return;
-        setPanelsRasterized(false);
+        pageAnimationActiveRef.current = false;
         releasePageInteraction();
       });
     } else {
+      pageAnimationActiveRef.current = false;
       interactionGenerationRef.current += 1;
       releasePageInteraction();
-      setPanelsRasterized(false);
       pageScrollX.setValue(nextIndex * width);
     }
   }, [
@@ -278,7 +231,6 @@ export const NativeHorizontalPageSlider = memo(forwardRef<
     reduceMotion,
     releasePageInteraction,
     reservePageInteraction,
-    setPanelsRasterized,
     width,
   ]);
 
@@ -287,15 +239,8 @@ export const NativeHorizontalPageSlider = memo(forwardRef<
     // destination before React's layout effects run, then launch motion on the
     // following frame after Android has had one paint opportunity. This keeps
     // the activeIndex effect from starting an eager duplicate animation. Hold
-    // background work now, but do not rasterize the track while its destination
-    // children are still changing: that would pay one stale offscreen draw and
-    // invalidate it immediately. `setPage` enables the two relevant panel
-    // textures after the React commit, when their contents are static for the
-    // transform animation.
+    // background work now while its destination children are changing.
     const nextIndex = clampPageIndex(index, panelCount);
-    if (renderedIndexRef.current !== nextIndex) {
-      preparedFromIndexRef.current = renderedIndexRef.current;
-    }
     renderedIndexRef.current = nextIndex;
     if (!reduceMotion) {
       reservePageInteraction();
@@ -351,17 +296,20 @@ export const NativeHorizontalPageSlider = memo(forwardRef<
     if (state === State.ACTIVE) {
       reservePageInteraction();
       dragStartOffsetRef.current = renderedIndexRef.current * width;
-      pageScrollX.stopAnimation((currentOffset) => {
-        dragStartOffsetRef.current = currentOffset;
-        pageScrollX.setValue(currentOffset);
-        nativeDrivenDrag.setValue(0);
-      });
-      const currentIndex = renderedIndexRef.current;
-      setPanelsRasterized(true, resolveNativeHorizontalRasterizedIndexes({
-        fromIndex: currentIndex - 1,
-        panelCount,
-        toIndex: currentIndex + 1,
-      }));
+      if (pageAnimationActiveRef.current) {
+        // Only ask the UI thread for its current presentation offset when the
+        // finger actually interrupts a settling animation. On the ordinary
+        // idle path, an asynchronous stop callback used to reset dragX after
+        // the first native gesture events had already arrived, producing a
+        // one-frame snap back to the current page before following the finger.
+        pageScrollX.stopAnimation((currentOffset) => {
+          pageAnimationActiveRef.current = false;
+          dragStartOffsetRef.current = currentOffset;
+          pageScrollX.setValue(currentOffset);
+        });
+      } else {
+        pageScrollX.stopAnimation();
+      }
       return;
     }
     if (oldState === State.ACTIVE) {
@@ -384,7 +332,6 @@ export const NativeHorizontalPageSlider = memo(forwardRef<
     pageScrollX,
     reservePageInteraction,
     setPage,
-    setPanelsRasterized,
     settleDrag,
     width,
   ]);
@@ -401,12 +348,6 @@ export const NativeHorizontalPageSlider = memo(forwardRef<
       reservePageInteraction();
       dragStartOffsetRef.current = renderedIndexRef.current * width;
       pageScrollX.stopAnimation();
-      const currentIndex = renderedIndexRef.current;
-      setPanelsRasterized(true, resolveNativeHorizontalRasterizedIndexes({
-        fromIndex: currentIndex - 1,
-        panelCount,
-        toIndex: currentIndex + 1,
-      }));
     })
     .onUpdate((event) => {
       const maxOffset = Math.max(0, (panelCount - 1) * width);
@@ -423,7 +364,6 @@ export const NativeHorizontalPageSlider = memo(forwardRef<
       pageScrollX,
       panelCount,
       reservePageInteraction,
-      setPanelsRasterized,
       setPage,
       settleDrag,
       width,
@@ -432,8 +372,6 @@ export const NativeHorizontalPageSlider = memo(forwardRef<
   const viewport = (
     <Animated.View style={styles.viewport} testID="native-horizontal-page-slider">
       <Animated.View
-        renderToHardwareTextureAndroid={false}
-        shouldRasterizeIOS={false}
         style={trackStyle}
         testID="native-horizontal-page-track"
       >
@@ -444,11 +382,6 @@ export const NativeHorizontalPageSlider = memo(forwardRef<
             importantForAccessibility={index === safeIndex ? 'auto' : 'no-hide-descendants'}
             key={index}
             pointerEvents={index === safeIndex ? 'auto' : 'none'}
-            ref={(panel) => {
-              panelRefs.current[index] = panel;
-            }}
-            renderToHardwareTextureAndroid={false}
-            shouldRasterizeIOS={false}
             style={panelStyle}
             testID={`native-horizontal-page-${index}`}
           >

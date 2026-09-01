@@ -7,7 +7,6 @@ import {
   type NativeHorizontalPageSliderHandle,
   resolveNativeHorizontalDragHandoffOffset,
   resolveNativeHorizontalPageOffset,
-  resolveNativeHorizontalRasterizedIndexes,
   resolveNativeHorizontalSwipeIndex,
 } from '../../../src/components/NativeHorizontalPageSlider';
 import { collectionExperienceParityContract } from '@pokemongonexus/shared-ui-tokens';
@@ -147,25 +146,7 @@ describe('NativeHorizontalPageSlider', () => {
     })).toBe(535.6);
   });
 
-  it('rasterizes only the panels crossing the viewport during a page slide', () => {
-    expect(resolveNativeHorizontalRasterizedIndexes({
-      fromIndex: 0,
-      panelCount: 3,
-      toIndex: 1,
-    })).toEqual([0, 1]);
-    expect(resolveNativeHorizontalRasterizedIndexes({
-      fromIndex: 2,
-      panelCount: 3,
-      toIndex: 1,
-    })).toEqual([1, 2]);
-    expect(resolveNativeHorizontalRasterizedIndexes({
-      fromIndex: -1,
-      panelCount: 3,
-      toIndex: 3,
-    })).toEqual([0, 1, 2]);
-  });
-
-  it('uses one shared animated value without permanently rasterizing scrolling pages', async () => {
+  it('uses one shared animated value without forcing full-page bitmap snapshots', async () => {
     const scrollX = new Animated.Value(412);
     const multiply = jest.spyOn(Animated, 'multiply');
     const { getByTestId } = render(
@@ -185,12 +166,12 @@ describe('NativeHorizontalPageSlider', () => {
     const track = getByTestId('native-horizontal-page-track');
     const trackStyle = StyleSheet.flatten(track.props.style);
     expect(slider.props.onScroll).toBeUndefined();
-    expect(track.props.renderToHardwareTextureAndroid).toBe(false);
-    expect(track.props.shouldRasterizeIOS).toBe(false);
+    expect(track.props.renderToHardwareTextureAndroid).not.toBe(true);
+    expect(track.props.shouldRasterizeIOS).not.toBe(true);
     expect(getByTestId('native-horizontal-page-0', { includeHiddenElements: true })
-      .props.renderToHardwareTextureAndroid).toBe(false);
+      .props.renderToHardwareTextureAndroid).not.toBe(true);
     expect(getByTestId('native-horizontal-page-1')
-      .props.renderToHardwareTextureAndroid).toBe(false);
+      .props.renderToHardwareTextureAndroid).not.toBe(true);
     expect(trackStyle.transform[0].translateX).toBeDefined();
     expect(multiply).toHaveBeenCalledWith(scrollX, -1);
   });
