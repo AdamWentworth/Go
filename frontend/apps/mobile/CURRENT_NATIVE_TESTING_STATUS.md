@@ -133,9 +133,9 @@ background slice also waits for active gestures and page animations to finish;
 fixed warm-up timers can no longer interrupt a swipe or compete with its native
 300 ms transform. This uses an app-owned scheduler tied to the actual slider
 lifecycle because React Native 0.86's deprecated InteractionManager is only a
-stub and does not provide that guarantee. The collection page drag itself now
-streams finger movement
-straight from Gesture Handler into the native Animated graph instead of
+stub and does not provide that guarantee. The collection page drag itself
+streams finger movement straight from Gesture Handler into the native Animated
+graph instead of
 crossing to JavaScript on every frame. It uses Vite's shared 30% peek limit and
 100 px navigation threshold, and transfers the exact drag position into the
 settling animation so the current page cannot flash or reload before moving to
@@ -153,7 +153,7 @@ does not invalidate every visible cell just as page motion begins.
 
 The real-route collection budget measures the first interactive destination
 card before separately asserting the deliberately delayed header sublabel. The
-latest focused run measured 511 ms and then confirmed the header identity after
+latest full-matrix run measured 521 ms and then confirmed the header identity after
 the slide; this avoids counting intentional Vite motion as result latency.
 
 ## Remaining approval gate
