@@ -173,6 +173,7 @@ export const NativeCollectionHubScreen = ({
   const queryRef = useRef(initialQuery);
   const selectedTagKeyRef = useRef<string | null>(resolvedInitialTagKey);
   const [pageScrollX] = useState(() => new Animated.Value(width));
+  const [pageDragX] = useState(() => new Animated.Value(0));
   const availableTags = useMemo(
     () => [...inventoryTags, ...wishlistTags],
     [inventoryTags, wishlistTags],
@@ -587,6 +588,7 @@ export const NativeCollectionHubScreen = ({
         inactiveTextColor={palette.headerInactive}
         onViewChange={changeView}
         scrollX={pageScrollX}
+        dragX={pageDragX}
         selectionBackgroundColor={light ? '#e3f7dc' : '#34807d'}
         selectionCount={selectedIds.size}
         onClearSelection={clearSelection}
@@ -607,6 +609,7 @@ export const NativeCollectionHubScreen = ({
         onIndexChange={settlePageIndex}
         ref={sliderRef}
         scrollX={pageScrollX}
+        dragX={pageDragX}
       >
         {inventoryPanel}
         {pokemonPanel}

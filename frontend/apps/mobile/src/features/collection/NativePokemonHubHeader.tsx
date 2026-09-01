@@ -57,6 +57,7 @@ type Props = {
   secondaryTextColor: string;
   inactiveTextColor?: string;
   scrollX?: Animated.Value;
+  dragX?: Animated.Value;
   onViewChange: (view: NativePokemonHubView) => void;
   selectionCount?: number;
   selectionBackgroundColor?: string;
@@ -76,6 +77,7 @@ export const NativePokemonHubHeader = memo(function NativePokemonHubHeader({
   secondaryTextColor,
   inactiveTextColor = secondaryTextColor,
   scrollX,
+  dragX,
   onViewChange,
   selectionCount = 0,
   selectionBackgroundColor,
@@ -90,11 +92,19 @@ export const NativePokemonHubHeader = memo(function NativePokemonHubHeader({
   const selectedIndex = activeView === 'inventory' ? 0 : activeView === 'pokemon' ? 1 : 2;
   const hasSelection = selectionCount > 0;
   const metrics = resolveNativePokemonHubIndicatorMetrics(width, selectedIndex);
-  const animatedIndicatorTranslateX = useMemo(() => scrollX?.interpolate({
+  const indicatorScrollX = useMemo(() => {
+    if (!scrollX || !dragX) return scrollX;
+    const maxPeek = width * collectionExperienceParityContract.pageSwipeMaxPeekRatio;
+    return Animated.add(
+      scrollX,
+      Animated.multiply(Animated.diffClamp(dragX, -maxPeek, maxPeek), -1),
+    );
+  }, [dragX, scrollX, width]);
+  const animatedIndicatorTranslateX = useMemo(() => indicatorScrollX?.interpolate({
     inputRange: [0, Math.max(1, width * 2)],
     outputRange: [0, metrics.tabWidth * 2],
     extrapolate: 'clamp',
-  }), [metrics.tabWidth, scrollX, width]);
+  }), [indicatorScrollX, metrics.tabWidth, width]);
   const indicatorTranslateX = animatedIndicatorTranslateX ?? metrics.indicatorTranslateX;
   const indicatorStyle = useMemo(() => [
     styles.activeUnderline,

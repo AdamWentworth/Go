@@ -5,7 +5,9 @@ import {
   NATIVE_HORIZONTAL_PAGE_TRANSITION_MS,
   NativeHorizontalPageSlider,
   type NativeHorizontalPageSliderHandle,
+  resolveNativeHorizontalDragHandoffOffset,
   resolveNativeHorizontalPageOffset,
+  resolveNativeHorizontalSwipeIndex,
 } from '../../../src/components/NativeHorizontalPageSlider';
 import { collectionExperienceParityContract } from '@pokemongonexus/shared-ui-tokens';
 
@@ -86,6 +88,62 @@ describe('NativeHorizontalPageSlider', () => {
       panelCount: 3,
       width: 412,
     })).toBe(2);
+  });
+
+  it('uses Vite\'s exact swipe threshold and keeps edge swipes bounded', () => {
+    expect(resolveNativeHorizontalSwipeIndex({
+      currentIndex: 1,
+      panelCount: 3,
+      translationX: -100,
+    })).toBe(1);
+    expect(resolveNativeHorizontalSwipeIndex({
+      currentIndex: 1,
+      panelCount: 3,
+      translationX: -101,
+    })).toBe(2);
+    expect(resolveNativeHorizontalSwipeIndex({
+      currentIndex: 0,
+      panelCount: 3,
+      translationX: 150,
+    })).toBe(0);
+  });
+
+  it('streams collection drag frames through the native Animated driver', async () => {
+    const scrollX = new Animated.Value(412);
+    const dragX = new Animated.Value(0);
+    const animatedEvent = jest.spyOn(Animated, 'event');
+    const { getByTestId } = render(
+      <NativeHorizontalPageSlider
+        activeIndex={1}
+        dragX={dragX}
+        onIndexChange={jest.fn()}
+        scrollX={scrollX}
+      >
+        <Text>Tags panel</Text>
+        <Text>Pokémon panel</Text>
+        <Text>Wishlist panel</Text>
+      </NativeHorizontalPageSlider>,
+    );
+
+    await act(async () => Promise.resolve());
+    expect(animatedEvent).toHaveBeenCalledWith(
+      [{ nativeEvent: { translationX: dragX } }],
+      { useNativeDriver: true },
+    );
+    expect(getByTestId('native-horizontal-page-pan')).toBeTruthy();
+  });
+
+  it('hands settling off from the clamped finger position instead of the old page', () => {
+    expect(resolveNativeHorizontalDragHandoffOffset({
+      baseOffset: 412,
+      maxPeekDistance: 123.6,
+      translationX: -120,
+    })).toBe(532);
+    expect(resolveNativeHorizontalDragHandoffOffset({
+      baseOffset: 412,
+      maxPeekDistance: 123.6,
+      translationX: -500,
+    })).toBe(535.6);
   });
 
   it('uses one shared animated value without permanently rasterizing scrolling pages', async () => {

@@ -33,6 +33,8 @@ export const collectionExperienceParityContract = {
     swapDelayMs: 120,
     transitionEasing: [0.22, 1, 0.36, 1] as const,
   },
+  pageSwipeMaxPeekRatio: 0.3,
+  pageSwipeThresholdPx: 100,
   pageTransitionEasing: [0.25, 0.46, 0.45, 0.94] as const,
   pageTransitionMs: 300,
   viewOrder: ['inventory', 'pokemon', 'wishlist'] as const,
