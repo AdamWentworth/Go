@@ -279,6 +279,105 @@ describe('NativeCollectionHubScreen', () => {
     timeout.mockRestore();
   });
 
+  it('commits a pressed tag into the hidden grid before release starts the slide', () => {
+    const timing = jest.spyOn(Animated, 'timing');
+    const onContextChange = jest.fn();
+    render(
+      <SafeAreaProvider initialMetrics={{
+        frame: { x: 0, y: 0, width: 412, height: 915 },
+        insets: { top: 24, right: 0, bottom: 20, left: 0 },
+      }}>
+        <NativeCollectionHubScreen
+          assetBaseUrl="https://pokegonexus.com"
+          catalogRows={[catalogBulbasaur, catalogMewtwo]}
+          error={null}
+          inventoryTags={[inventoryTag, allCaughtTag]}
+          instances={{}}
+          isLoading={false}
+          onContextChange={onContextChange}
+          onOpenEntry={jest.fn()}
+          onRetry={jest.fn()}
+          wishlistTags={[wishlistTag]}
+        />
+      </SafeAreaProvider>,
+    );
+
+    fireEvent.press(screen.getByRole('tab', { name: /tags/i }));
+    act(() => jest.advanceTimersByTime(NATIVE_HORIZONTAL_PAGE_TRANSITION_MS));
+    timing.mockClear();
+    onContextChange.mockClear();
+
+    const favorites = screen.getByRole('button', { name: /Open Favorites/i });
+    fireEvent(favorites, 'pressIn');
+
+    expect(screen.getByTestId(
+      'parity-card-caught-bulbasaur',
+      { includeHiddenElements: true },
+    )).toBeTruthy();
+    expect(screen.queryByTestId(
+      'parity-card-0150-default',
+      { includeHiddenElements: true },
+    )).toBeNull();
+    expect(screen.getByRole('tab', { name: /tags/i }).props.accessibilityState).toEqual({
+      selected: true,
+    });
+    expect(timing).not.toHaveBeenCalled();
+    expect(onContextChange).not.toHaveBeenCalled();
+
+    // A successful Pressable release emits press-out immediately before press.
+    fireEvent(favorites, 'pressOut');
+    fireEvent.press(favorites);
+
+    expect(timing).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({
+      duration: NATIVE_HORIZONTAL_PAGE_TRANSITION_MS,
+      toValue: 412,
+      useNativeDriver: true,
+    }));
+    expect(onContextChange).toHaveBeenCalledWith(expect.objectContaining({
+      activeView: 'pokemon',
+      selectedTagKey: 'system:favorites',
+    }));
+  });
+
+  it('restores the hidden grid without navigation when a tag press is cancelled', () => {
+    const timing = jest.spyOn(Animated, 'timing');
+    render(
+      <SafeAreaProvider initialMetrics={{
+        frame: { x: 0, y: 0, width: 412, height: 915 },
+        insets: { top: 24, right: 0, bottom: 20, left: 0 },
+      }}>
+        <NativeCollectionHubScreen
+          assetBaseUrl="https://pokegonexus.com"
+          catalogRows={[catalogBulbasaur, catalogMewtwo]}
+          error={null}
+          inventoryTags={[inventoryTag, allCaughtTag]}
+          instances={{}}
+          isLoading={false}
+          onOpenEntry={jest.fn()}
+          onRetry={jest.fn()}
+          wishlistTags={[wishlistTag]}
+        />
+      </SafeAreaProvider>,
+    );
+
+    fireEvent.press(screen.getByRole('tab', { name: /tags/i }));
+    act(() => jest.advanceTimersByTime(NATIVE_HORIZONTAL_PAGE_TRANSITION_MS));
+    timing.mockClear();
+    const favorites = screen.getByRole('button', { name: /Open Favorites/i });
+    fireEvent(favorites, 'pressIn');
+    fireEvent(favorites, 'pressOut');
+    act(() => jest.advanceTimersByTime(0));
+
+    expect(screen.getByTestId(
+      'parity-card-0150-default',
+      { includeHiddenElements: true },
+    )).toBeTruthy();
+    expect(screen.getByRole('tab', { name: /tags/i }).props.accessibilityState).toEqual({
+      selected: true,
+    });
+    expect(timing).not.toHaveBeenCalled();
+  });
+
   it('does not animate or persist a tap on the already-selected tab', () => {
     const timing = jest.spyOn(Animated, 'timing');
     const onContextChange = jest.fn();

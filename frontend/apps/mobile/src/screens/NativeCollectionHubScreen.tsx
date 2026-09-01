@@ -3,6 +3,7 @@ import {
   memo,
   useCallback,
   useEffect,
+  useLayoutEffect,
   useMemo,
   useRef,
   useState,
@@ -145,6 +146,7 @@ export const NativeCollectionHubScreen = memo(function NativeCollectionHubScreen
   const [query, setQuery] = useState(initialQuery);
   const [activeView, setActiveView] = useState<NativePokemonHubView>(initialView);
   const [selectedTagKey, setSelectedTagKey] = useState<string | null>(resolvedInitialTagKey);
+  const [stagedTagKey, setStagedTagKey] = useState<string | null>(null);
   const [sidePanelTagKey, setSidePanelTagKey] = useState<string | null>(resolvedInitialTagKey);
   const [visibleCollectionCount, setVisibleCollectionCount] = useState(() => {
     const initialTag = [...inventoryTags, ...wishlistTags]
@@ -164,6 +166,11 @@ export const NativeCollectionHubScreen = memo(function NativeCollectionHubScreen
     key: string;
     startedAt: number;
   } | null>(null);
+  const pendingTagMotionReadyRef = useRef(false);
+  const stagedTagKeyRef = useRef<string | null>(null);
+  const stagedTagReadyRef = useRef(false);
+  const stagedVisibleRowCountRef = useRef(0);
+  const stagedTagCancelTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const sidePanelTagTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const activeViewRef = useRef<NativePokemonHubView>(initialView);
   const selectedTagKeyRef = useRef<string | null>(resolvedInitialTagKey);
@@ -180,6 +187,11 @@ export const NativeCollectionHubScreen = memo(function NativeCollectionHubScreen
         : null),
     [availableTags, requireTagSelection, selectedTagKey],
   );
+  const stagedTag = useMemo(
+    () => availableTags.find((tag) => tag.key === stagedTagKey) ?? null,
+    [availableTags, stagedTagKey],
+  );
+  const collectionTag = stagedTag ?? selectedTag;
   const sidePanelTag = useMemo(
     () => availableTags.find((tag) => tag.key === sidePanelTagKey)
       ?? (sidePanelTagKey === selectedTag?.key ? selectedTag : null),
@@ -188,6 +200,10 @@ export const NativeCollectionHubScreen = memo(function NativeCollectionHubScreen
   const selectedRows = useMemo(
     () => selectedTag?.rows ?? (requireTagSelection ? [] : catalogRows),
     [catalogRows, requireTagSelection, selectedTag],
+  );
+  const collectionRows = useMemo(
+    () => collectionTag?.rows ?? (requireTagSelection ? [] : catalogRows),
+    [catalogRows, collectionTag, requireTagSelection],
   );
   const selectedRowsRef = useRef(selectedRows);
   const selectedCountRef = useRef(selectedIds.size);
@@ -265,6 +281,7 @@ export const NativeCollectionHubScreen = memo(function NativeCollectionHubScreen
 
   useEffect(() => () => {
     pendingTagMotionRef.current = null;
+    if (stagedTagCancelTimerRef.current) clearTimeout(stagedTagCancelTimerRef.current);
     if (sidePanelTagTimerRef.current) clearTimeout(sidePanelTagTimerRef.current);
   }, []);
 
@@ -316,6 +333,7 @@ export const NativeCollectionHubScreen = memo(function NativeCollectionHubScreen
     const pending = pendingTagMotionRef.current;
     if (!pending) return;
     pendingTagMotionRef.current = null;
+    pendingTagMotionReadyRef.current = false;
     if (pending.delaySidePanelTag) {
       // Vite starts this delay with its CSS transform. Keep the old side-panel
       // identity throughout motion and update it after the shared 300 ms.
@@ -331,7 +349,23 @@ export const NativeCollectionHubScreen = memo(function NativeCollectionHubScreen
     sliderRef.current?.setPage(VIEW_ORDER.indexOf('pokemon'));
   }, []);
 
+  useLayoutEffect(() => {
+    const pending = pendingTagMotionRef.current;
+    if (
+      !pending
+      || !pendingTagMotionReadyRef.current
+      || activeView !== 'pokemon'
+      || selectedTag?.key !== pending.key
+    ) return;
+    startPendingTagMotion();
+  }, [activeView, selectedTag?.key, startPendingTagMotion]);
+
   const commitCollectionRows = useCallback((visibleRowCount: number) => {
+    if (stagedTagKeyRef.current && !pendingTagMotionRef.current) {
+      stagedTagReadyRef.current = true;
+      stagedVisibleRowCountRef.current = visibleRowCount;
+      return;
+    }
     if (query.trim()) {
       setVisibleCollectionCount((current) => (
         current === visibleRowCount ? current : visibleRowCount
@@ -345,6 +379,41 @@ export const NativeCollectionHubScreen = memo(function NativeCollectionHubScreen
     onContextChange?.({ query: nextQuery, scrollOffset: 0 });
   }, [onContextChange]);
 
+  const previewTag = useCallback((tag: NativeTagSummary) => {
+    if (
+      activeViewRef.current === 'pokemon'
+      || selectedTagKeyRef.current === tag.key
+      || stagedTagKeyRef.current === tag.key
+    ) return;
+    if (stagedTagCancelTimerRef.current) {
+      clearTimeout(stagedTagCancelTimerRef.current);
+      stagedTagCancelTimerRef.current = null;
+    }
+    // Pressable reports press-in before release. Use that otherwise idle finger
+    // interval to reconcile the hidden middle grid, exactly as Vite keeps its
+    // offscreen DOM ready. No selected-tag or page state changes yet, so a
+    // cancelled press cannot navigate or alter the visible tag panel.
+    collectionSurfaceRef.current?.resetScroll();
+    stagedTagKeyRef.current = tag.key;
+    stagedTagReadyRef.current = false;
+    stagedVisibleRowCountRef.current = 0;
+    setStagedTagKey(tag.key);
+  }, []);
+
+  const cancelTagPreview = useCallback((tag: NativeTagSummary) => {
+    if (stagedTagCancelTimerRef.current) clearTimeout(stagedTagCancelTimerRef.current);
+    // RN dispatches press-out immediately before onPress for a successful tap.
+    // Defer cancellation one turn so onPress can adopt the staged rows first.
+    stagedTagCancelTimerRef.current = setTimeout(() => {
+      stagedTagCancelTimerRef.current = null;
+      if (stagedTagKeyRef.current !== tag.key) return;
+      stagedTagKeyRef.current = null;
+      stagedTagReadyRef.current = false;
+      stagedVisibleRowCountRef.current = 0;
+      setStagedTagKey(null);
+    }, 0);
+  }, []);
+
   const selectTag = useCallback((tag: NativeTagSummary) => {
     const startedAt = Date.now();
     tagSelectionTraceRef.current = { key: tag.key, startedAt };
@@ -352,6 +421,23 @@ export const NativeCollectionHubScreen = memo(function NativeCollectionHubScreen
       rowCount: tag.rows.length,
       tagKey: tag.key,
     });
+    if (stagedTagCancelTimerRef.current) {
+      clearTimeout(stagedTagCancelTimerRef.current);
+      stagedTagCancelTimerRef.current = null;
+    }
+    const stagedDestinationAlreadyCommitted = (
+      stagedTagKeyRef.current === tag.key && stagedTagReadyRef.current
+    );
+    const destinationAlreadyCommitted = stagedDestinationAlreadyCommitted
+      || selectedTagKeyRef.current === tag.key;
+    const stagedVisibleRowCount = stagedVisibleRowCountRef.current;
+    stagedTagKeyRef.current = null;
+    stagedTagReadyRef.current = false;
+    stagedVisibleRowCountRef.current = 0;
+    setStagedTagKey(null);
+    if (stagedDestinationAlreadyCommitted && query.trim()) {
+      setVisibleCollectionCount(stagedVisibleRowCount);
+    }
     if (sidePanelTagTimerRef.current) {
       clearTimeout(sidePanelTagTimerRef.current);
       sidePanelTagTimerRef.current = null;
@@ -378,14 +464,13 @@ export const NativeCollectionHubScreen = memo(function NativeCollectionHubScreen
       key: tag.key,
       startedAt,
     };
+    pendingTagMotionReadyRef.current = destinationAlreadyCommitted;
     if (selectedCountRef.current > 0) setSelectedIds(new Set());
 
     if (selectedTagKeyRef.current === tag.key) {
+      activeViewRef.current = 'pokemon';
       setActiveView('pokemon');
       onContextChange?.({ activeView: 'pokemon', scrollOffset: 0 });
-      // No destination data changes for a repeated tag, so no child layout
-      // effect will run. Its existing card window is already ready to move.
-      startPendingTagMotion();
       return;
     }
 
@@ -402,7 +487,7 @@ export const NativeCollectionHubScreen = memo(function NativeCollectionHubScreen
       selectedTagKey: tag.key,
       scrollOffset: 0,
     });
-  }, [onContextChange, startPendingTagMotion]);
+  }, [onContextChange, query]);
 
   const toggleSelection = useCallback((entryId: string) => {
     setSelectedIds((current) => {
@@ -472,6 +557,8 @@ export const NativeCollectionHubScreen = memo(function NativeCollectionHubScreen
       onDeleteTag={onDeleteTag}
       onSaveOrder={onSaveTagOrder}
       onSelectTag={selectTag}
+      onPreviewTag={previewTag}
+      onCancelPreviewTag={cancelTagPreview}
       onUpdateTag={onUpdateTag}
       onViewChange={changeView}
       parent="caught"
@@ -488,6 +575,8 @@ export const NativeCollectionHubScreen = memo(function NativeCollectionHubScreen
     inventoryTags,
     isLoading,
     onRetry,
+    previewTag,
+    cancelTagPreview,
     onCreateTag,
     onDeleteTag,
     onSaveTagOrder,
@@ -500,9 +589,9 @@ export const NativeCollectionHubScreen = memo(function NativeCollectionHubScreen
   const pokemonPanel = useMemo(() => (
     <NativeCollectionParityScreen
       key="pokemon"
-      activeTag={selectedTag}
+      activeTag={collectionTag}
       assetBaseUrl={assetBaseUrl}
-      rows={selectedRows}
+      rows={collectionRows}
       searchUniverseRows={catalogRows}
       query={query}
       ref={collectionSurfaceRef}
@@ -539,8 +628,8 @@ export const NativeCollectionHubScreen = memo(function NativeCollectionHubScreen
     query,
     changeQuery,
     catalogRows,
-    selectedRows,
-    selectedTag,
+    collectionRows,
+    collectionTag,
     selectedIds,
     selectedRowsAreCatalog,
     clearSelection,
@@ -568,6 +657,8 @@ export const NativeCollectionHubScreen = memo(function NativeCollectionHubScreen
       onDeleteTag={onDeleteTag}
       onSaveOrder={onSaveTagOrder}
       onSelectTag={selectTag}
+      onPreviewTag={previewTag}
+      onCancelPreviewTag={cancelTagPreview}
       onUpdateTag={onUpdateTag}
       onViewChange={changeView}
       parent="wanted"
@@ -584,6 +675,8 @@ export const NativeCollectionHubScreen = memo(function NativeCollectionHubScreen
     inventoryCount,
     isLoading,
     onRetry,
+    previewTag,
+    cancelTagPreview,
     onCreateTag,
     onDeleteTag,
     onSaveTagOrder,

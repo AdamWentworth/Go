@@ -58,7 +58,7 @@ mounts complete collection and Pokédex route trees in the background.
 
 Passing evidence for this checkpoint:
 
-- native Jest: 158 suites, 828 tests;
+- native Jest: 158 suites, 830 tests;
 - mobile and web TypeScript and ESLint;
 - native real-route smoke: 92 guest/signed-in, light/dark route states;
 - focused Vite mobile-Chromium browser coverage: 9 tests;
@@ -226,6 +226,18 @@ paint, restoring Vite's count behavior without adding state work to the
 empty-query tag-swap path. The same run began track motion in 2.5 ms, painted the
 tag result in 92 ms, produced 19 sampled positions, and kept the largest sampled
 gap to 33.3 ms.
+
+A production-mode Android timing split then identified the last post-release
+tag hesitation. Even with cached data, reconciling the hidden grid after
+`onPress` delayed motion by 60 ms. Tag cards now use their otherwise idle
+finger-down interval to stage the destination grid without changing the visible
+selection; release adopts that already-committed page and starts the same Vite
+slide. A 32 ms direction window lets vertical tag-list drags cancel before any
+staging work, and a cancelled press restores the hidden grid without navigation.
+On the 3,285-row Pixel smoke catalog this reduced release-to-motion from 60 ms
+to 6 ms and release-to-painted-result from 92 ms to 64 ms. The reusable
+minified Android performance smoke now enforces respective 32 ms and 150 ms
+budgets from device logcat rather than relying on the browser proxy.
 
 ## Remaining approval gate
 

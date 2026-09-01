@@ -55,6 +55,8 @@ afterEach(() => {
 describe('NativeTagsPanelScreen', () => {
   it('renders real tag membership and returns the selected tag to the Pokémon grid', () => {
     const onSelectTag = jest.fn();
+    const onPreviewTag = jest.fn();
+    const onCancelPreviewTag = jest.fn();
     const onViewChange = jest.fn();
     render(
       <NativeTagsPanelScreen
@@ -66,6 +68,8 @@ describe('NativeTagsPanelScreen', () => {
         onActionMenuPress={jest.fn()}
         onRetry={jest.fn()}
         onSelectTag={onSelectTag}
+        onPreviewTag={onPreviewTag}
+        onCancelPreviewTag={onCancelPreviewTag}
         onViewChange={onViewChange}
         parent="caught"
         tags={[tag]}
@@ -79,6 +83,10 @@ describe('NativeTagsPanelScreen', () => {
     // native Pressable free of an opacity style avoids an Android offscreen
     // alpha-compositing pass on the exact frame that starts page motion.
     expect(openTag.props.style).toBeUndefined();
+    fireEvent(openTag, 'pressIn');
+    expect(onPreviewTag).toHaveBeenCalledWith(tag);
+    fireEvent(openTag, 'pressOut');
+    expect(onCancelPreviewTag).toHaveBeenCalledWith(tag);
     fireEvent.press(openTag);
     expect(onSelectTag).toHaveBeenCalledWith(tag);
     fireEvent.press(screen.getByRole('tab', { name: /wishlist/i }));

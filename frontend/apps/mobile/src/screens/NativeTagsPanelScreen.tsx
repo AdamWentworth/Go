@@ -51,6 +51,8 @@ type Props = {
   onActionMenuPress?: () => void;
   onRetry: () => void;
   onSelectTag: (tag: NativeTagSummary) => void;
+  onPreviewTag?: (tag: NativeTagSummary) => void;
+  onCancelPreviewTag?: (tag: NativeTagSummary) => void;
   onViewChange: (view: NativePokemonHubView) => void;
   onCreateTag?: (request: CreateCustomTagRequest) => Promise<unknown>;
   onDeleteTag?: (tagId: string) => Promise<unknown>;
@@ -127,6 +129,8 @@ const NativeTagCard = memo(function NativeTagCard({
   light,
   tag,
   onPressTag,
+  onPressInTag,
+  onPressOutTag,
   onEditTag,
   reorder,
   reduceMotion,
@@ -135,6 +139,8 @@ const NativeTagCard = memo(function NativeTagCard({
   light: boolean;
   tag: NativeTagSummary;
   onPressTag: (tag: NativeTagSummary) => void;
+  onPressInTag?: (tag: NativeTagSummary) => void;
+  onPressOutTag?: (tag: NativeTagSummary) => void;
   onEditTag?: (tag: NativeTagSummary) => void;
   reduceMotion: boolean;
   reorder?: {
@@ -285,6 +291,12 @@ const NativeTagCard = memo(function NativeTagCard({
             accessibilityLabel={`Open ${tag.name}, ${tag.rows.length} Pokémon`}
             accessibilityRole="button"
             onPress={() => onPressTag(tag)}
+            onPressIn={onPressInTag ? () => onPressInTag(tag) : undefined}
+            onPressOut={onPressOutTag ? () => onPressOutTag(tag) : undefined}
+            // Let a vertical drag establish itself before doing hidden-grid
+            // staging. A normal tap still leaves ample finger-down time for
+            // the destination commit, while tag-list scrolling stays inert.
+            unstable_pressDelay={onPressInTag ? 32 : undefined}
           >
             {cardContents}
           </Pressable>
@@ -414,6 +426,8 @@ export const NativeTagsPanelScreen = memo(function NativeTagsPanelScreen({
   onActionMenuPress,
   onRetry,
   onSelectTag,
+  onPreviewTag,
+  onCancelPreviewTag,
   onViewChange,
   onCreateTag,
   onDeleteTag,
@@ -550,6 +564,8 @@ export const NativeTagsPanelScreen = memo(function NativeTagsPanelScreen({
             assetBaseUrl={assetBaseUrl}
             light={light}
             onPressTag={onSelectTag}
+            onPressInTag={onPreviewTag}
+            onPressOutTag={onCancelPreviewTag}
             onEditTag={item.tone === 'custom' ? openTagEditor : undefined}
             reduceMotion={reduceMotion}
             reorder={reordering ? {

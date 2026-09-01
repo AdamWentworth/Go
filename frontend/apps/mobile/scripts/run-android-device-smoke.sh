@@ -26,6 +26,7 @@ smoke_memory_mb="${POKEGONEXUS_SMOKE_MEMORY_MB:-2048}"
 smoke_runtime="${POKEGONEXUS_SMOKE_RUNTIME:-dev-client}"
 smoke_network="${POKEGONEXUS_SMOKE_NETWORK:-online}"
 smoke_navigation_mode="${POKEGONEXUS_SMOKE_NAVIGATION_MODE:-system}"
+smoke_performance="${POKEGONEXUS_SMOKE_PERFORMANCE:-false}"
 metro_pid=""
 metro_pgid=""
 fixture_pid=""
@@ -131,6 +132,13 @@ case "${smoke_navigation_mode}" in
   system|gesture|three-button) ;;
   *)
     echo "Unsupported POKEGONEXUS_SMOKE_NAVIGATION_MODE: ${smoke_navigation_mode} (expected system, gesture, or three-button)." >&2
+    exit 1
+    ;;
+esac
+case "${smoke_performance}" in
+  true|false) ;;
+  *)
+    echo "Unsupported POKEGONEXUS_SMOKE_PERFORMANCE: ${smoke_performance} (expected true or false)." >&2
     exit 1
     ;;
 esac
@@ -382,13 +390,18 @@ case "${color_scheme}" in
     ;;
 esac
 if [[ "${smoke_runtime}" == "dev-client" ]]; then
+  metro_performance_args=()
+  if [[ "${smoke_performance}" == "true" ]]; then
+    metro_performance_args+=(--no-dev --minify)
+  fi
   setsid env \
     REACT_NATIVE_PACKAGER_HOSTNAME=10.0.2.2 \
     EXPO_PUBLIC_MOBILE_EXPERIENCE=native-preview \
     EXPO_PUBLIC_DEVICE_SMOKE_MODE=true \
     EXPO_PUBLIC_DEVICE_SMOKE_COLOR_SCHEME="${color_scheme}" \
     CI=1 \
-    npx expo start --dev-client --host localhost --port 8091 >"${artifact_dir}/metro.log" 2>&1 &
+    npx expo start --dev-client --host localhost --port 8091 \
+      "${metro_performance_args[@]}" >"${artifact_dir}/metro.log" 2>&1 &
   metro_pid="$!"
   metro_pgid="${metro_pid}"
 
@@ -516,6 +529,14 @@ else
     echo "Retrying device smoke once after an app restart: ${flow_name}"
     run_maestro_flow "${smoke_flow}" "${flow_name}-retry"
   fi
+fi
+
+if [[ "${smoke_performance}" == "true" ]]; then
+  mapfile -t performance_device_logs < <(
+    find "${artifact_dir}/maestro" -type f -name 'device-logcat.txt' | sort
+  )
+  node "${mobile_directory}/scripts/assert-native-collection-performance.mjs" \
+    "${performance_device_logs[@]}"
 fi
 
 mapfile -t full_window_gradient_screenshots < <(
