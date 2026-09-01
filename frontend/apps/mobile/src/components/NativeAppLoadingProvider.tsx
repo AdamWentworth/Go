@@ -4,16 +4,16 @@ import {
   useCallback,
   useContext,
   useEffect,
+  useLayoutEffect,
   useMemo,
   useRef,
   useState,
 } from 'react';
-import { Image, Platform, StyleSheet, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 import { useNativeColorScheme } from '../features/settings/useNativeColorScheme';
 import { runtimeConfig } from '../config/runtimeConfig';
 import {
   NativeLoadingSpinner,
-  NATIVE_LOADING_SPINNER_SOURCES,
 } from './NativeLoadingSpinner';
 import { markNativeUiPerformance } from '../observability/nativeUiPerformanceTrace';
 import { loadingExperienceParityContract } from '@pokemongonexus/shared-ui-tokens';
@@ -56,16 +56,6 @@ export const NativeAppLoadingProvider = ({
   const hideTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const navigationReleasesRef = useRef<Map<string, string | null>>(new Map());
   const fallbackTimersRef = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map());
-
-  useEffect(() => {
-    // react-native-web's Image implementation does not expose the native asset
-    // resolver. Browser bundling already emits these required assets as URLs.
-    if (Platform.OS === 'web' || typeof Image.resolveAssetSource !== 'function') return;
-    for (const source of NATIVE_LOADING_SPINNER_SOURCES) {
-      const uri = Image.resolveAssetSource(source)?.uri;
-      if (uri) void Promise.resolve(Image.prefetch(uri)).catch(() => undefined);
-    }
-  }, []);
 
   const setLoadingSource = useCallback((source: string, active: boolean) => {
     if (active) setIsVisible(true);
@@ -183,25 +173,29 @@ export const NativeAppLoadingProvider = ({
 // which can otherwise finish after a fast destination has already committed.
 export const NativeAppLoadingOverlay = () => {
   const { handleOverlayLayout, isVisible, light } = useContext(NativeAppLoadingContext);
-  if (!isVisible) return null;
+  useLayoutEffect(() => {
+    if (isVisible) handleOverlayLayout();
+  }, [handleOverlayLayout, isVisible]);
+
   return (
     <View
-      onLayout={handleOverlayLayout}
-      pointerEvents="auto"
-      style={styles.overlayHost}
-      testID="native-app-loading-host"
+      accessibilityElementsHidden={!isVisible}
+      importantForAccessibility={isVisible ? 'auto' : 'no-hide-descendants'}
+      pointerEvents={isVisible ? 'auto' : 'none'}
+      style={[styles.overlayHost, !isVisible && styles.hiddenOverlayHost]}
+      testID={isVisible ? 'native-app-loading-host' : 'native-app-loading-retained-host'}
     >
       <View
-        accessible
-        accessibilityLabel="Loading"
-        accessibilityLiveRegion="polite"
+        accessible={isVisible}
+        accessibilityLabel={isVisible ? 'Loading' : undefined}
+        accessibilityLiveRegion={isVisible ? 'polite' : 'none'}
         accessibilityRole="progressbar"
-        accessibilityViewIsModal
+        accessibilityViewIsModal={isVisible}
         importantForAccessibility="yes"
         style={[styles.overlay, light && styles.overlayLight]}
-        testID="native-app-loading-overlay"
+        testID={isVisible ? 'native-app-loading-overlay' : undefined}
       >
-        <NativeLoadingSpinner light={light} />
+        <NativeLoadingSpinner autoStart={isVisible} light={light} />
       </View>
     </View>
   );
@@ -228,4 +222,5 @@ const styles = StyleSheet.create({
     backgroundColor: '#101a19',
   },
   overlayLight: { backgroundColor: '#f8fff9' },
+  hiddenOverlayHost: { opacity: 0 },
 });

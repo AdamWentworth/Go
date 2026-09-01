@@ -435,21 +435,28 @@ three overlay transitions 478--509 ms. The sole warning was a 161 ms sort-menu
 callback; its canonical 250 ms native-driver visual contract remains pinned by
 component tests.
 
-The loading animation now avoids a native-only composition mismatch as well.
-Vite decodes an 84 px, 36-frame WebM at 30 fps on a 1.2-second loop. Native had
-interpolated that source to 72 frames, but presented it by translating a
-1,800 dp-wide PNG strip inside a 50 dp viewport. Android therefore had to keep
-an extremely wide animated compositor layer alive for a tiny visible result.
-The same 72 interpolated frames are now encoded as an 84 px, 1.2-second GIF and
-played by the platform animated-image decoder. Its background is composited to
-the exact dark/light loading surface so the alpha edge remains visually stable,
-and the imperative start/stop contract unmounts the decoder while the retained
-action-menu loading feedback is idle. A dedicated smoke route permits isolated
-Android frame recordings, while unit tests inspect both files and require 72
-frames totaling exactly 1,200 ms. The complete minified Android workflow passed
-after the change: tag motion began in 0--1 ms, all four tag result commits were
-86--135 ms, and the action menu painted in 72 ms. The full suite is now 159
-suites and 844 tests.
+The loading animation no longer relies on GIF scheduling. Vite's canonical
+source contains 36 timeline frames at 30 fps on a 1.2-second loop; Native had
+inserted 36 synthetic blends and encoded the resulting 72 frames with a
+20/20/10 ms GIF cadence. Those 10 ms frames cannot be presented consistently
+at ordinary display refresh intervals. Native now encodes the untouched source
+pixels as lossless animated WebP with the exact 33/33/34 ms source timeline.
+Twelve source frames are genuine adjacent duplicate holds, so WebP losslessly
+collapses them into 24 encoded frames with alternating 33/67 ms durations while
+preserving the complete 1,200 ms visual sequence. The dark/light runtime assets
+are 66/40 KB instead of the previous 168/81 KB GIFs.
+
+`expo-image` owns playback natively, and both theme resources remain mounted
+and decoded with autoplay disabled. Hidden playback is stopped rather than
+unmounted; the application-root loading surface also remains laid out at zero
+opacity. Action-menu navigation reveals that single retained root surface
+before destination work instead of starting a local spinner and handing off to
+a second phase-resetting instance. Unit tests compare every decoded WebP pixel
+with the canonical source sheet, pin the exact 1,200 ms delays, and require the
+native start/stop lifecycle without React remounts. The dedicated device-smoke
+route can deliberately block JavaScript for one second while playback remains
+visible. Production Android export includes only the two compact WebPs, and the
+complete suite is now 160 suites and 855 tests with typecheck and lint clean.
 
 The header underline now follows the actual Vite lifecycle instead of an
 invented shared-track behavior. Vite changes the selected tab and runs the

@@ -555,7 +555,6 @@ describe('NativeCollectionHubScreen', () => {
     expect(screen.getByRole('button', { name: 'Trades' })).toBeTruthy();
 
     fireEvent.press(screen.getByRole('button', { name: 'Search' }));
-    expect(screen.getByTestId('native-action-menu-navigation-feedback')).toBeTruthy();
     expect(onActionMenuNavigate).not.toHaveBeenCalled();
     act(() => jest.advanceTimersByTime(32));
     expect(onActionMenuNavigate).toHaveBeenCalledWith('/search');

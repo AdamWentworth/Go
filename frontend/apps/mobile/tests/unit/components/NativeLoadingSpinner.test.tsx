@@ -2,6 +2,9 @@ import { act, render } from '@testing-library/react-native';
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import { createRef } from 'react';
+import { Image as ExpoImage } from 'expo-image';
+import { PNG } from 'pngjs';
+import sharp from 'sharp';
 import { StyleSheet } from 'react-native';
 import {
   NativeLoadingSpinner,
@@ -10,57 +13,129 @@ import {
   NATIVE_LOADING_SPINNER_SOURCES,
 } from '../../../src/components/NativeLoadingSpinner';
 
-const readGifFrameDelays = (fileName: string): number[] => {
-  const bytes = readFileSync(path.resolve(__dirname, `../../../assets/${fileName}`));
-  const delays: number[] = [];
-  for (let index = 0; index < bytes.length - 7; index += 1) {
-    if (bytes[index] !== 0x21 || bytes[index + 1] !== 0xf9 || bytes[index + 2] !== 0x04) {
-      continue;
+const FRAME_COUNT = 36;
+const FRAME_SIZE = 84;
+const FRAME_DELAYS_MS = Array.from(
+  { length: FRAME_COUNT },
+  (_, frame) => (frame % 3 === 2 ? 34 : 33),
+);
+
+const readCanonicalFrames = (fileName: string): Buffer[] => {
+  const sheet = PNG.sync.read(readFileSync(path.resolve(__dirname, `../../../assets/${fileName}`)));
+  expect(sheet.width).toBe(FRAME_COUNT * FRAME_SIZE);
+  expect(sheet.height).toBe(FRAME_SIZE);
+  return Array.from({ length: FRAME_COUNT }, (_, frame) => {
+    const pixels = Buffer.alloc(FRAME_SIZE * FRAME_SIZE * 4);
+    for (let y = 0; y < FRAME_SIZE; y += 1) {
+      const sourceStart = ((y * sheet.width) + (frame * FRAME_SIZE)) * 4;
+      sheet.data.copy(
+        pixels,
+        y * FRAME_SIZE * 4,
+        sourceStart,
+        sourceStart + (FRAME_SIZE * 4),
+      );
     }
-    delays.push(bytes[index + 4] | (bytes[index + 5] << 8));
-  }
-  return delays;
+    return pixels;
+  });
+};
+
+const collapseDuplicateFrames = (frames: Buffer[]) => {
+  const compactFrames: Buffer[] = [];
+  const compactDelays: number[] = [];
+  frames.forEach((frame, index) => {
+    if (compactFrames.at(-1)?.equals(frame)) {
+      compactDelays[compactDelays.length - 1] += FRAME_DELAYS_MS[index];
+    } else {
+      compactFrames.push(frame);
+      compactDelays.push(FRAME_DELAYS_MS[index]);
+    }
+  });
+  return { compactDelays, compactFrames };
 };
 
 describe('NativeLoadingSpinner', () => {
-  it('plays the compact native-decoded canonical animation', () => {
+  beforeEach(() => {
+    jest.spyOn(ExpoImage.prototype, 'startAnimating').mockResolvedValue();
+    jest.spyOn(ExpoImage.prototype, 'stopAnimating').mockResolvedValue();
+  });
+
+  afterEach(() => {
+    jest.restoreAllMocks();
+  });
+
+  it('renders the compact native-decoded WebP at canonical geometry', () => {
     const view = render(<NativeLoadingSpinner light={false} />);
 
-    const strip = view.getByTestId('native-loading-spinner-dark', { includeHiddenElements: true });
-    expect(StyleSheet.flatten(strip.props.style)).toMatchObject({
+    const image = view.getByTestId('native-loading-spinner-dark', { includeHiddenElements: true });
+    expect(StyleSheet.flatten(image.props.style)).toMatchObject({
       height: 50,
       width: 50,
     });
-    expect(strip.props.source).toBe(NATIVE_LOADING_SPINNER_SOURCES[0]);
+    expect(image.props.source).toEqual([NATIVE_LOADING_SPINNER_SOURCES[0]]);
 
     view.unmount();
   });
 
-  it('selects the light sprite without changing its geometry', () => {
-    const view = render(<NativeLoadingSpinner light />);
-    const spinner = view.getByTestId('native-loading-spinner-light', { includeHiddenElements: true });
-    expect(StyleSheet.flatten(spinner.props.style)).toMatchObject({ height: 50, width: 50 });
-    expect(spinner.props.source).toBe(NATIVE_LOADING_SPINNER_SOURCES[1]);
+  it('preloads both themes and switches the visible native image without remounting', () => {
+    const view = render(<NativeLoadingSpinner light={false} />);
+    expect(view.UNSAFE_getAllByType(ExpoImage)).toHaveLength(2);
+    const darkImages = view.UNSAFE_getAllByType(ExpoImage);
+
+    view.rerender(<NativeLoadingSpinner light />);
+    const light = view.getByTestId('native-loading-spinner-light', { includeHiddenElements: true });
+    expect(light.props.source).toEqual([NATIVE_LOADING_SPINNER_SOURCES[1]]);
+    expect(view.UNSAFE_getAllByType(ExpoImage)).toEqual(darkImages);
+
     view.unmount();
   });
 
-  it('mounts and releases the native animation through its imperative handle', () => {
+  it('retains decoded images while its imperative handle controls native playback', () => {
     const ref = createRef<NativeLoadingSpinnerHandle>();
+    const startAnimating = jest.spyOn(ExpoImage.prototype, 'startAnimating');
+    const stopAnimating = jest.spyOn(ExpoImage.prototype, 'stopAnimating');
     const view = render(<NativeLoadingSpinner autoStart={false} light={false} ref={ref} />);
-    expect(view.queryByTestId('native-loading-spinner-dark', { includeHiddenElements: true })).toBeNull();
+    const retainedImage = view.getByTestId('native-loading-spinner-dark', {
+      includeHiddenElements: true,
+    });
+    expect(stopAnimating).toHaveBeenCalled();
+
     act(() => ref.current?.start());
-    expect(view.getByTestId('native-loading-spinner-dark', { includeHiddenElements: true })).toBeTruthy();
+    expect(startAnimating).toHaveBeenCalled();
+    expect(view.getByTestId('native-loading-spinner-dark', {
+      includeHiddenElements: true,
+    })).toBe(retainedImage);
+
     act(() => ref.current?.stop());
-    expect(view.queryByTestId('native-loading-spinner-dark', { includeHiddenElements: true })).toBeNull();
+    expect(stopAnimating.mock.calls.length).toBeGreaterThanOrEqual(4);
+    expect(view.getByTestId('native-loading-spinner-dark', {
+      includeHiddenElements: true,
+    })).toBe(retainedImage);
     view.unmount();
   });
 
-  it('ships 72 native-decoded frames on the canonical 1.2-second loop', () => {
-    for (const fileName of ['loading-spinner-dark.gif', 'loading-spinner-light.gif']) {
-      const centisecondDelays = readGifFrameDelays(fileName);
-      expect(centisecondDelays).toHaveLength(72);
-      expect(centisecondDelays.reduce((total, delay) => total + delay, 0) * 10)
+  it('ships the lossless canonical pixels on the exact 1.2-second timeline', async () => {
+    const variants = [
+      ['loading-spinner-dark-strip.png', 'loading-spinner-dark.webp'],
+      ['loading-spinner-light-strip.png', 'loading-spinner-light.webp'],
+    ] as const;
+
+    for (const [stripFileName, webpFileName] of variants) {
+      const expected = collapseDuplicateFrames(readCanonicalFrames(stripFileName));
+      const webpPath = path.resolve(__dirname, `../../../assets/${webpFileName}`);
+      const metadata = await sharp(webpPath, { animated: true }).metadata();
+      expect(metadata.width).toBe(FRAME_SIZE);
+      expect(metadata.pageHeight).toBe(FRAME_SIZE);
+      expect(metadata.pages).toBe(expected.compactFrames.length);
+      expect(metadata.delay).toEqual(expected.compactDelays);
+      expect(metadata.delay?.reduce((total, delay) => total + delay, 0))
         .toBe(NATIVE_LOADING_SPINNER_DURATION_MS);
+      expect(Math.min(...(metadata.delay ?? []))).toBeGreaterThanOrEqual(30);
+
+      const decoded = await sharp(webpPath, { animated: true })
+        .ensureAlpha()
+        .raw()
+        .toBuffer();
+      expect(decoded).toEqual(Buffer.concat(expected.compactFrames));
     }
   });
 });

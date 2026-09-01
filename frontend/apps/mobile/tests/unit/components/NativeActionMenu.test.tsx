@@ -150,7 +150,7 @@ describe('NativeActionMenu', () => {
     expect(onNavigate).toHaveBeenCalledWith('/trade-board');
   });
 
-  it('shows pre-mounted feedback before enabling the root loader and routing', () => {
+  it('reveals the single retained root loader before closing and routing', () => {
     const onClose = jest.fn();
     const onNavigate = jest.fn();
     const view = render(
@@ -165,13 +165,18 @@ describe('NativeActionMenu', () => {
       </NativeAppLoadingProvider>,
     );
 
+    expect(view.getByTestId('native-app-loading-retained-host', {
+      includeHiddenElements: true,
+    })).toBeTruthy();
+    expect(view.queryByTestId('native-app-loading-overlay')).toBeNull();
     fireEvent.press(view.getByLabelText('Search'));
-    expect(view.getByTestId('native-action-menu-navigation-feedback')).toBeTruthy();
+    expect(view.getByTestId('native-app-loading-overlay')).toBeTruthy();
+    expect(view.getAllByTestId(/native-loading-spinner-/, { includeHiddenElements: true }))
+      .toHaveLength(1);
     expect(onClose).not.toHaveBeenCalled();
     expect(onNavigate).not.toHaveBeenCalled();
     act(() => jest.advanceTimersByTime(32));
     expect(view.getByTestId('native-app-loading-overlay')).toBeTruthy();
-    expect(view.getAllByTestId(/native-loading-spinner-/, { includeHiddenElements: true })).toHaveLength(2);
     expect(onClose).toHaveBeenCalledTimes(1);
     expect(onNavigate).toHaveBeenCalledWith('/search');
     fireEvent(view.getByTestId('native-app-loading-host'), 'layout');

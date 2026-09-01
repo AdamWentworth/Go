@@ -41,6 +41,13 @@ describe('NativeAppLoadingProvider', () => {
       </NativeAppLoadingProvider>,
     );
 
+    expect(view.getByTestId('native-app-loading-retained-host', {
+      includeHiddenElements: true,
+    })).toBeTruthy();
+    expect(view.queryByTestId('native-app-loading-overlay')).toBeNull();
+    expect(view.getByTestId('native-loading-spinner-dark', {
+      includeHiddenElements: true,
+    })).toBeTruthy();
     fireEvent.press(view.getByLabelText('Navigate'));
     expect(view.getByTestId('native-app-loading-overlay')).toBeTruthy();
     expect(view.getByTestId('native-loading-spinner-dark', { includeHiddenElements: true })).toBeTruthy();
@@ -64,6 +71,12 @@ describe('NativeAppLoadingProvider', () => {
     expect(view.getByTestId('native-app-loading-overlay')).toBeTruthy();
     act(() => jest.advanceTimersByTime(1));
     expect(view.queryByTestId('native-app-loading-overlay')).toBeNull();
+    expect(view.getByTestId('native-app-loading-retained-host', {
+      includeHiddenElements: true,
+    })).toBeTruthy();
+    expect(view.getByTestId('native-loading-spinner-dark', {
+      includeHiddenElements: true,
+    })).toBeTruthy();
   });
 
   it('matches the canonical dark and light overlay surfaces', () => {

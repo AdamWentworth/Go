@@ -38,10 +38,6 @@ import {
 } from './nativeActionMenuAssets';
 import { markNativeUiPerformance } from '../observability/nativeUiPerformanceTrace';
 import {
-  NativeLoadingSpinner,
-  type NativeLoadingSpinnerHandle,
-} from './NativeLoadingSpinner';
-import {
   actionMenuExperienceParityContract,
   themeSwitchExperienceParityContract,
 } from '@pokemongonexus/shared-ui-tokens';
@@ -571,7 +567,7 @@ export const NativeActionMenu = ({
   const insets = useSafeAreaInsets();
   const scheme = useNativeColorScheme();
   const devicePreferences = useOptionalNativeDevicePreferences();
-  const { runWithLoading } = useNativeAppLoading();
+  const { runWithLoading, setLoadingSource } = useNativeAppLoading();
   const session = useOptionalNativeSession();
   const isSignedIn = signedIn ?? Boolean(session?.user);
   const reduceMotion = devicePreferences?.shouldReduceMotion ?? false;
@@ -579,11 +575,9 @@ export const NativeActionMenu = ({
   const [supportOpen, setSupportOpen] = useState(false);
   const [optimisticScheme, setOptimisticScheme] = useState<'dark' | 'light' | null>(null);
   const [menuProgress] = useState(() => new Animated.Value(0));
-  const [navigationOverlayProgress] = useState(() => new Animated.Value(0));
   const [supportProgress] = useState(() => new Animated.Value(0));
   const closingRef = useRef(false);
   const menuInteractionReleaseRef = useRef<(() => void) | null>(null);
-  const navigationSpinnerRef = useRef<NativeLoadingSpinnerHandle | null>(null);
   const themeCommitFrameRef = useRef<number | null>(null);
   const previousSchemeRef = useRef(scheme);
   const displayedScheme = optimisticScheme ?? scheme;
@@ -633,8 +627,6 @@ export const NativeActionMenu = ({
       menuInteractionReleaseRef.current?.();
       menuInteractionReleaseRef.current = null;
       menuProgress.setValue(0);
-      navigationOverlayProgress.setValue(0);
-      navigationSpinnerRef.current?.stop();
       closingRef.current = false;
       return undefined;
     }
@@ -681,7 +673,7 @@ export const NativeActionMenu = ({
       menuInteractionReleaseRef.current?.();
       menuInteractionReleaseRef.current = null;
     };
-  }, [menuProgress, navigationOverlayProgress, reduceMotion, visible]);
+  }, [menuProgress, reduceMotion, visible]);
 
   useEffect(() => {
     if (!supportOpen) {
@@ -707,12 +699,10 @@ export const NativeActionMenu = ({
     closingRef.current = true;
     setSupportOpen(false);
     markNativeUiPerformance('action_menu_destination_pressed', { path });
-    // The menu surface is already composited. Reveal its pre-mounted loader
-    // imperatively, allow one actual paint between two frame callbacks, then
-    // start the expensive destination render. This prevents a tapped menu from
-    // appearing frozen while React prepares the root loading overlay.
-    navigationSpinnerRef.current?.start();
-    navigationOverlayProgress.setValue(1);
+    // The root loader is permanently mounted and decoded. Reveal that single
+    // retained surface, allow it one actual paint, then start destination work.
+    // This avoids a phase-resetting handoff between menu and root spinners.
+    setLoadingSource(ACTION_MENU_NAVIGATION_SOURCE, true);
     markNativeUiPerformance('action_menu_navigation_feedback_started', { path });
     requestAnimationFrame(() => requestAnimationFrame(() => {
       onClose();
@@ -1106,23 +1096,6 @@ export const NativeActionMenu = ({
             style={{ height: closeSize, width: closeSize }}
           />
         </Pressable>
-        <Animated.View
-          pointerEvents="none"
-          style={[
-            styles.navigationOverlay,
-            {
-              backgroundColor: light ? '#f8fff9' : '#101a19',
-              opacity: navigationOverlayProgress,
-            },
-          ]}
-          testID="native-action-menu-navigation-feedback"
-        >
-          <NativeLoadingSpinner
-            autoStart={false}
-            light={light}
-            ref={navigationSpinnerRef}
-          />
-        </Animated.View>
     </Animated.View>
   );
 };
@@ -1157,17 +1130,6 @@ const styles = StyleSheet.create({
     bottom: 0,
     left: 0,
     overflow: 'hidden',
-  },
-  navigationOverlay: {
-    position: 'absolute',
-    top: 0,
-    right: 0,
-    bottom: 0,
-    left: 0,
-    zIndex: 50,
-    elevation: 50,
-    alignItems: 'center',
-    justifyContent: 'center',
   },
   destination: { position: 'absolute' },
   destinationPressable: { flex: 1, alignItems: 'center', justifyContent: 'center' },
