@@ -344,7 +344,7 @@ func parseAndUpsertPokemon(
 		updates = filterInstanceColumns(updates)
 
 		if errors.Is(tx.Error, gorm.ErrRecordNotFound) {
-			createFields := make(map[string]interface{}, len(updates)+3)
+			createFields := make(map[string]interface{}, len(updates))
 			for k, v := range updates {
 				createFields[k] = v
 			}
