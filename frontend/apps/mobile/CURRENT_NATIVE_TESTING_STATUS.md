@@ -435,28 +435,29 @@ three overlay transitions 478--509 ms. The sole warning was a 161 ms sort-menu
 callback; its canonical 250 ms native-driver visual contract remains pinned by
 component tests.
 
-The loading animation no longer relies on GIF scheduling. Vite's canonical
-source contains 36 timeline frames at 30 fps on a 1.2-second loop; Native had
-inserted 36 synthetic blends and encoded the resulting 72 frames with a
-20/20/10 ms GIF cadence. Those 10 ms frames cannot be presented consistently
-at ordinary display refresh intervals. Native now encodes the untouched source
-pixels as lossless animated WebP with the exact 33/33/34 ms source timeline.
-Twelve source frames are genuine adjacent duplicate holds, so WebP losslessly
-collapses them into 24 encoded frames with alternating 33/67 ms durations while
-preserving the complete 1,200 ms visual sequence. The dark/light runtime assets
-are 66/40 KB instead of the previous 168/81 KB GIFs.
+The loading animation no longer relies on GIF scheduling. A physical-phone
+comparison exposed that the first WebP extraction had sampled Vite's 30 fps
+video on presentation boundaries: 12 of its 36 slots were accidental adjacent
+duplicates, leaving only 24 distinct native images in the 1.2-second loop.
+Native's asset generator now decodes the two canonical Vite WebMs in Chromium
+at the middle of every presentation interval. All 36 Vite frames are retained,
+and alpha-correct intermediate frames produce a 72-frame, lossless animated
+WebP with a 17/17/16 ms cadence. Both runtime assets therefore have 72 encoded
+pages and an exact 1,200 ms loop instead of stretching 24 images across it.
 
 `expo-image` owns playback natively, and both theme resources remain mounted
 and decoded with autoplay disabled. Hidden playback is stopped rather than
 unmounted; the application-root loading surface also remains laid out at zero
 opacity. Action-menu navigation reveals that single retained root surface
 before destination work instead of starting a local spinner and handing off to
-a second phase-resetting instance. Unit tests compare every decoded WebP pixel
-with the canonical source sheet, pin the exact 1,200 ms delays, and require the
-native start/stop lifecycle without React remounts. The dedicated device-smoke
+a second phase-resetting instance. Unit tests reject a canonical source with
+fewer than 35 distinct frames, regenerate the alpha-correct intermediate
+pixels, compare every decoded WebP page, pin the exact 1,200 ms timeline, and
+require native start/stop without React remounts. The dedicated device-smoke
 route can deliberately block JavaScript for one second while playback remains
-visible. Production Android export includes only the two compact WebPs, and the
-complete suite is now 160 suites and 855 tests with typecheck and lint clean.
+visible. Production Android export includes only the two 301/133 KB WebPs, and
+the complete suite remains 160 suites and 855 tests with typecheck and lint
+clean.
 
 The header underline now follows the actual Vite lifecycle instead of an
 invented shared-track behavior. Vite changes the selected tab and runs the

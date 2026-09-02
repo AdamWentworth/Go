@@ -13,18 +13,19 @@ import {
   NATIVE_LOADING_SPINNER_SOURCES,
 } from '../../../src/components/NativeLoadingSpinner';
 
-const FRAME_COUNT = 36;
-const FRAME_SIZE = 84;
+const SOURCE_FRAME_COUNT = 36;
+const OUTPUT_FRAME_COUNT = SOURCE_FRAME_COUNT * 2;
+const FRAME_SIZE = 85;
 const FRAME_DELAYS_MS = Array.from(
-  { length: FRAME_COUNT },
-  (_, frame) => (frame % 3 === 2 ? 34 : 33),
+  { length: OUTPUT_FRAME_COUNT },
+  (_, frame) => (frame % 3 === 2 ? 16 : 17),
 );
 
 const readCanonicalFrames = (fileName: string): Buffer[] => {
   const sheet = PNG.sync.read(readFileSync(path.resolve(__dirname, `../../../assets/${fileName}`)));
-  expect(sheet.width).toBe(FRAME_COUNT * FRAME_SIZE);
+  expect(sheet.width).toBe(SOURCE_FRAME_COUNT * FRAME_SIZE);
   expect(sheet.height).toBe(FRAME_SIZE);
-  return Array.from({ length: FRAME_COUNT }, (_, frame) => {
+  return Array.from({ length: SOURCE_FRAME_COUNT }, (_, frame) => {
     const pixels = Buffer.alloc(FRAME_SIZE * FRAME_SIZE * 4);
     for (let y = 0; y < FRAME_SIZE; y += 1) {
       const sourceStart = ((y * sheet.width) + (frame * FRAME_SIZE)) * 4;
@@ -38,6 +39,34 @@ const readCanonicalFrames = (fileName: string): Buffer[] => {
     return pixels;
   });
 };
+
+const blendFrames = (current: Buffer, next: Buffer): Buffer => {
+  const blended = Buffer.alloc(FRAME_SIZE * FRAME_SIZE * 4);
+  for (let offset = 0; offset < blended.length; offset += 4) {
+    const currentAlpha = current[offset + 3] / 255;
+    const nextAlpha = next[offset + 3] / 255;
+    const alphaWeight = currentAlpha + nextAlpha;
+    if (alphaWeight === 0) continue;
+    blended[offset] = Math.round(
+      ((current[offset] * currentAlpha) + (next[offset] * nextAlpha)) / alphaWeight,
+    );
+    blended[offset + 1] = Math.round(
+      ((current[offset + 1] * currentAlpha) + (next[offset + 1] * nextAlpha))
+      / alphaWeight,
+    );
+    blended[offset + 2] = Math.round(
+      ((current[offset + 2] * currentAlpha) + (next[offset + 2] * nextAlpha))
+      / alphaWeight,
+    );
+    blended[offset + 3] = Math.round((alphaWeight / 2) * 255);
+  }
+  return blended;
+};
+
+const interpolateFrames = (frames: Buffer[]): Buffer[] => frames.flatMap((frame, index) => [
+  frame,
+  blendFrames(frame, frames[(index + 1) % SOURCE_FRAME_COUNT]),
+]);
 
 const collapseDuplicateFrames = (frames: Buffer[]) => {
   const compactFrames: Buffer[] = [];
@@ -113,14 +142,17 @@ describe('NativeLoadingSpinner', () => {
     view.unmount();
   });
 
-  it('ships the lossless canonical pixels on the exact 1.2-second timeline', async () => {
+  it('ships every Vite frame plus native 60 Hz interpolation on the exact timeline', async () => {
     const variants = [
       ['loading-spinner-dark-strip.png', 'loading-spinner-dark.webp'],
       ['loading-spinner-light-strip.png', 'loading-spinner-light.webp'],
     ] as const;
 
     for (const [stripFileName, webpFileName] of variants) {
-      const expected = collapseDuplicateFrames(readCanonicalFrames(stripFileName));
+      const sourceFrames = readCanonicalFrames(stripFileName);
+      expect(new Set(sourceFrames.map((frame) => frame.toString('base64'))).size)
+        .toBeGreaterThanOrEqual(35);
+      const expected = collapseDuplicateFrames(interpolateFrames(sourceFrames));
       const webpPath = path.resolve(__dirname, `../../../assets/${webpFileName}`);
       const metadata = await sharp(webpPath, { animated: true }).metadata();
       expect(metadata.width).toBe(FRAME_SIZE);
@@ -129,7 +161,7 @@ describe('NativeLoadingSpinner', () => {
       expect(metadata.delay).toEqual(expected.compactDelays);
       expect(metadata.delay?.reduce((total, delay) => total + delay, 0))
         .toBe(NATIVE_LOADING_SPINNER_DURATION_MS);
-      expect(Math.min(...(metadata.delay ?? []))).toBeGreaterThanOrEqual(30);
+      expect(Math.min(...(metadata.delay ?? []))).toBeGreaterThanOrEqual(16);
 
       const decoded = await sharp(webpPath, { animated: true })
         .ensureAlpha()
@@ -137,5 +169,5 @@ describe('NativeLoadingSpinner', () => {
         .toBuffer();
       expect(decoded).toEqual(Buffer.concat(expected.compactFrames));
     }
-  });
+  }, 30_000);
 });

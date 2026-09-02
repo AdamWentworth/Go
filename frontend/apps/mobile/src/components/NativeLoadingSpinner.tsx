@@ -12,8 +12,8 @@ import {
 } from 'react-native';
 import { markNativeUiPerformance } from '../observability/nativeUiPerformanceTrace';
 
-const FRAME_COUNT = 36;
-const FRAME_DURATION_MS = 1000 / 30;
+const FRAME_COUNT = 72;
+const FRAME_DURATION_MS = 1000 / 60;
 const FRAME_SIZE = 50;
 
 const DARK_SPINNER_SOURCE = require('../../assets/loading-spinner-dark.webp');
