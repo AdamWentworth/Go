@@ -179,6 +179,7 @@ export const NativeAppLoadingOverlay = () => {
 
   return (
     <View
+      aria-hidden={!isVisible}
       accessibilityElementsHidden={!isVisible}
       importantForAccessibility={isVisible ? 'auto' : 'no-hide-descendants'}
       pointerEvents={isVisible ? 'auto' : 'none'}
@@ -189,9 +190,9 @@ export const NativeAppLoadingOverlay = () => {
         accessible={isVisible}
         accessibilityLabel={isVisible ? 'Loading' : undefined}
         accessibilityLiveRegion={isVisible ? 'polite' : 'none'}
-        accessibilityRole="progressbar"
+        accessibilityRole={isVisible ? 'progressbar' : undefined}
         accessibilityViewIsModal={isVisible}
-        importantForAccessibility="yes"
+        importantForAccessibility={isVisible ? 'yes' : 'no-hide-descendants'}
         style={[styles.overlay, light && styles.overlayLight]}
         testID={isVisible ? 'native-app-loading-overlay' : undefined}
       >

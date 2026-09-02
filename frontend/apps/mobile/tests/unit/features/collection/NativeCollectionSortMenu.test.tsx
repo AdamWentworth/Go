@@ -1,5 +1,5 @@
 import { fireEvent, render } from '@testing-library/react-native';
-import { Animated, Modal, StyleSheet } from 'react-native';
+import { Animated, Image, Modal, StyleSheet } from 'react-native';
 import { collectionExperienceParityContract } from '@pokemongonexus/shared-ui-tokens';
 import { NativeCollectionSortMenu } from '../../../../src/features/collection/parity/NativeCollectionSortMenu';
 
@@ -97,6 +97,57 @@ describe('NativeCollectionSortMenu', () => {
     expect(onClose).toHaveBeenCalledTimes(1);
   });
 
+  it('pins the rendered Vite phone geometry and themed close artwork', () => {
+    const view = render(
+      <NativeCollectionSortMenu
+        assetBaseUrl="https://pokegonexus.com"
+        direction="ascending"
+        onClose={jest.fn()}
+        onSelect={jest.fn()}
+        open
+        sort="number"
+      />,
+    );
+
+    expect(StyleSheet.flatten(view.getByLabelText('Sort Pokémon').props.style)).toMatchObject({
+      gap: 20,
+      maxWidth: '86%',
+      transform: [{ translateY: 91 }],
+      width: 250,
+    });
+    expect(StyleSheet.flatten(view.getByRole('radio', { name: 'RECENT' }).props.style)).toMatchObject({
+      gap: 10,
+      padding: 15,
+    });
+    const nameIcon = view.UNSAFE_getAllByType(Image).find((node) => (
+      node.props.source.uri.includes('/images/sorting/name.png')
+    ));
+    expect(StyleSheet.flatten(nameIcon?.props.style)).toMatchObject({ height: 16, width: 35 });
+    const closeImage = view.getByLabelText('Close sort menu').findByType(Image);
+    expect(closeImage.props.source.uri).toContain('/images/close-button.png');
+    expect(StyleSheet.flatten(closeImage.props.style)).toEqual({ height: 50, width: 50 });
+  });
+
+  it('dismisses when the empty Vite backdrop is pressed', () => {
+    const onClose = jest.fn();
+    const view = render(
+      <NativeCollectionSortMenu
+        assetBaseUrl="https://pokegonexus.com"
+        direction="ascending"
+        onClose={onClose}
+        onSelect={jest.fn()}
+        open
+        sort="number"
+      />,
+    );
+
+    fireEvent.press(view.getByTestId(
+      'native-collection-sort-backdrop',
+      { includeHiddenElements: true },
+    ));
+    expect(onClose).toHaveBeenCalledTimes(1);
+  });
+
   it('owns the exact Vite backdrop duration on the native driver', () => {
     mockReduceMotion = false;
     jest.spyOn(global, 'requestAnimationFrame').mockImplementation((callback) => {
@@ -104,6 +155,7 @@ describe('NativeCollectionSortMenu', () => {
       return 1;
     });
     const timing = jest.spyOn(Animated, 'timing');
+    const stagger = jest.spyOn(Animated, 'stagger');
     const { rerender } = render(
       <NativeCollectionSortMenu
         assetBaseUrl="https://pokegonexus.com"
@@ -121,6 +173,10 @@ describe('NativeCollectionSortMenu', () => {
       toValue: 1,
       useNativeDriver: true,
     }));
+    expect(stagger).toHaveBeenCalledWith(50, expect.any(Array));
+    expect(timing.mock.calls.filter(([, config]) => (
+      config.duration === 150 && config.toValue === 1 && config.useNativeDriver === true
+    ))).toHaveLength(6);
 
     rerender(
       <NativeCollectionSortMenu

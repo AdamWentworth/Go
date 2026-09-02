@@ -657,6 +657,13 @@ test.describe('demo media capture', () => {
       await expect(page.locator('.app-loading-overlay')).toHaveCount(0);
       await capture(page, 'collection-catalog-mobile');
 
+      await page.locator('.sort-button').click();
+      await expect(page.locator('.sort-menu-overlay.visible')).toBeVisible({ timeout: 10_000 });
+      await page.waitForTimeout(425);
+      await capture(page, 'collection-sort-menu-mobile');
+      await page.locator('.sort-menu-overlay .close-button').click();
+      await expect(page.locator('.sort-menu-overlay')).toHaveCount(0, { timeout: 10_000 });
+
       await page.getByText('TAGS', { exact: true }).click();
       await expect(page.locator('.tag-item[data-tag="Caught"]')).toBeVisible({ timeout: 15_000 });
       await capture(page, 'collection-tags-mobile');
@@ -664,6 +671,16 @@ test.describe('demo media capture', () => {
       await page.locator('.tag-item[data-tag="Caught"]').click();
       await expect(page.locator('.pokemon-card').first()).toBeVisible({ timeout: 15_000 });
       await capture(page, 'collection-mobile');
+      await page.locator('[role="button"][aria-label^="View "]').first().click();
+      await expect(page.locator('.instance-overlay')).toBeVisible({ timeout: 15_000 });
+      await page.getByRole('button', { name: 'Edit' }).click();
+      await expect(page.locator('.caught-instance .name-editable-content.editable')).toBeVisible({ timeout: 10_000 });
+      await capture(page, 'collection-caught-overlay-edit-mobile');
+      await page.locator('.instance-overlay').evaluate((element) => {
+        element.scrollTop = element.scrollHeight;
+      });
+      await capture(page, 'collection-caught-overlay-edit-bottom-mobile');
+      await page.getByRole('button', { name: 'Close' }).click();
 
       await page.getByText('WISHLIST', { exact: true }).click();
       await expect(page.locator('.tag-item[data-tag="Wanted"]')).toBeVisible({ timeout: 15_000 });
@@ -673,6 +690,13 @@ test.describe('demo media capture', () => {
       await page.locator('[role="button"][aria-label^="View Gengar"]').first().click();
       await expect(page.locator('.instance-overlay')).toBeVisible({ timeout: 15_000 });
       await capture(page, 'collection-wanted-overlay-mobile');
+      await page.getByRole('button', { name: 'Edit wanted listing' }).click();
+      await expect(page.getByRole('button', { name: 'Save wanted listing' })).toBeVisible({ timeout: 10_000 });
+      await capture(page, 'collection-wanted-overlay-edit-mobile');
+      await page.locator('.instance-overlay').evaluate((element) => {
+        element.scrollTop = element.scrollHeight;
+      });
+      await capture(page, 'collection-wanted-overlay-edit-bottom-mobile');
       await page.getByRole('button', { name: 'Close' }).click();
 
       await page.getByText('TAGS', { exact: true }).click();
@@ -680,6 +704,13 @@ test.describe('demo media capture', () => {
       await page.locator('[role="button"][aria-label^="View Party Hat Pikachu"]').first().click();
       await expect(page.locator('.instance-overlay')).toBeVisible({ timeout: 15_000 });
       await capture(page, 'collection-trade-overlay-mobile');
+      await page.getByRole('button', { name: 'Edit' }).click();
+      await expect(page.getByRole('button', { name: 'Save' })).toBeVisible({ timeout: 10_000 });
+      await capture(page, 'collection-trade-overlay-edit-mobile');
+      await page.locator('.instance-overlay').evaluate((element) => {
+        element.scrollTop = element.scrollHeight;
+      });
+      await capture(page, 'collection-trade-overlay-edit-bottom-mobile');
     } finally {
       await diagnostics.flush();
     }

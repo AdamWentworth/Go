@@ -1,5 +1,5 @@
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react-native';
-import { AccessibilityInfo, Animated } from 'react-native';
+import { AccessibilityInfo, Animated, StyleSheet } from 'react-native';
 import type { NativeInstanceDetail } from '../../../src/features/collection/collectionModel';
 import { NativeInstanceDetailScreen } from '../../../src/screens/NativeInstanceDetailScreen';
 import { getNativeLocationSuggestions } from '../../../src/services/locationApi';
@@ -546,6 +546,7 @@ describe('NativeInstanceDetailScreen', () => {
             original_trainer_name: null,
             traded_date: null,
             pokeball: null,
+            date_caught: '2026-08-23',
           } as NonNullable<NativeInstanceDetail['instance']>,
           row: { ...detail.row, status: 'caught' },
         }}
@@ -565,6 +566,19 @@ describe('NativeInstanceDetailScreen', () => {
     );
 
     fireEvent.press(screen.getByRole('button', { name: 'Edit Pokémon' }));
+    expect(screen.getByLabelText('Pokémon inline identity editor')).toBeTruthy();
+    expect(screen.getByLabelText('Caught on 2026-08-23')).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Mark as Favorite' })).toBeTruthy();
+    expect(screen.queryByText('NAME')).toBeNull();
+    expect(screen.queryByText('GENDER')).toBeNull();
+    expect(screen.queryByText('MOVES')).toBeNull();
+    expect(screen.queryByText('APPRAISAL IVS')).toBeNull();
+    expect(screen.getByText('CAUGHT')).toBeTruthy();
+    expect(['#ef8582', '#9b2e2e']).toContain(
+      StyleSheet.flatten(screen.getByLabelText('Attack IV').props.style).color,
+    );
+    fireEvent.changeText(screen.getByLabelText('Defense IV'), '99');
+    expect(screen.getByLabelText('Defense IV').props.value).toBe('15');
     fireEvent.changeText(screen.getByLabelText('Pokémon nickname'), 'Fire Partner');
     fireEvent.changeText(screen.getByLabelText('Combat Power'), '2500');
     fireEvent.press(screen.getByRole('button', { name: 'LUCKY: YES' }));
@@ -591,6 +605,46 @@ describe('NativeInstanceDetailScreen', () => {
       pokeball: 'beast_ball',
     }));
     expect(screen.queryByLabelText('Pokémon detail editor')).toBeNull();
+  });
+
+  it('keeps compact For Trade editing free of invented level-arc and type metadata', () => {
+    render(
+      <NativeInstanceDetailScreen
+        detail={{
+          ...detail,
+          instance: {
+            nickname: 'Festival spare',
+            cp: 812,
+            level: null,
+            weight: null,
+            height: null,
+          } as NonNullable<NativeInstanceDetail['instance']>,
+          row: {
+            ...detail.row,
+            typeIconUris: ['https://pokegonexus.com/images/types/electric.png'],
+          },
+        }}
+        isLoading={false}
+        error={null}
+        cachedAt={null}
+        movesWarning={null}
+        saveNotice={null}
+        saveError={null}
+        isSaving={false}
+        onRetry={jest.fn()}
+        onBack={jest.fn()}
+        onSaveDetails={jest.fn()}
+        onToggleFavorite={jest.fn()}
+      />,
+    );
+
+    fireEvent.press(screen.getByRole('button', { name: 'Edit Pokémon' }));
+    expect(screen.getByLabelText('Pokémon level').props.value).toBe('');
+    expect(screen.getByLabelText('Pokémon level').props.placeholder).toBe('1-51 (0.5 steps)');
+    expect(screen.queryByLabelText('Pokémon types: electric')).toBeNull();
+    expect(screen.getByRole('button', { name: 'Add second charged move' })).toBeTruthy();
+    expect(screen.getByTestId('native-instance-target-list')).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Edit preferences' })).toBeTruthy();
   });
 
   it('recalculates caught CP from level and IVs before saving', async () => {
@@ -755,6 +809,7 @@ describe('NativeInstanceDetailScreen', () => {
             purified: false,
             lucky: false,
             is_traded: false,
+            location_caught: 'Vancouver, BC',
           } as NonNullable<NativeInstanceDetail['instance']>,
           row: { ...detail.row, status: 'caught' },
         }}
@@ -776,12 +831,13 @@ describe('NativeInstanceDetailScreen', () => {
     fireEvent.press(screen.getByRole('button', { name: 'Edit Pokémon' }));
 
     expect(screen.queryByRole('button', { name: 'LUCKY: YES' })).toBeNull();
-    expect(screen.getByRole('button', { name: 'OBTAINED IN A TRADE: YES' })
+    expect(screen.getByRole('button', { name: 'TRADED: YES' })
       .props.accessibilityState.disabled).toBe(true);
     expect(screen.getByText('Shadow Pokémon cannot be traded until purified.')).toBeTruthy();
     await act(async () => {
       await new Promise<void>((resolve) => setTimeout(resolve, 300));
     });
+    expect(mockGetNativeLocationSuggestions).not.toHaveBeenCalled();
   });
 
   it('purifies and restores a caught Shadow Pokémon with canonical trade invariants', async () => {
@@ -871,6 +927,7 @@ describe('NativeInstanceDetailScreen', () => {
     );
 
     fireEvent.press(screen.getByRole('button', { name: 'Edit Pokémon' }));
+    fireEvent.press(screen.getByRole('button', { name: 'Open Max Move upgrades' }));
     fireEvent.press(screen.getByRole('button', { name: 'Max Attack: 3' }));
     fireEvent.press(screen.getByRole('button', { name: 'Max Guard: 2' }));
     fireEvent.press(screen.getByRole('button', { name: 'Max Spirit: 1' }));
@@ -945,10 +1002,10 @@ describe('NativeInstanceDetailScreen', () => {
     await act(async () => {
       fireEvent.press(screen.getByRole('button', { name: 'Edit Pokémon' }));
     });
-    const megaYButton = await screen.findByRole('button', { name: 'Power form: Mega Y' });
     await act(async () => {
-      fireEvent.press(megaYButton);
+      fireEvent.press(screen.getByRole('button', { name: 'Mega Evolve' }));
     });
+    fireEvent.press(await screen.findByRole('button', { name: 'Change Mega form' }));
     expect(screen.getByLabelText('Pokémon types: dragon')).toBeTruthy();
     expect(screen.getByTestId('native-instance-types-dragon')).toBeTruthy();
     expect(screen.getByTestId(
@@ -1173,6 +1230,7 @@ describe('NativeInstanceDetailScreen', () => {
     fireEvent.press(screen.getByRole('button', { name: 'Edit Pokémon' }));
     expect(screen.queryByText('Max Move Levels')).toBeNull();
     fireEvent.press(screen.getByRole('button', { name: 'Power form: Crowned Sword' }));
+    fireEvent.press(screen.getByRole('button', { name: 'Open Max Move upgrades' }));
     expect(screen.getByText('Max Move Levels')).toBeTruthy();
     fireEvent.press(screen.getByRole('button', { name: 'Max Attack: 3' }));
     await act(async () => {
@@ -1344,6 +1402,11 @@ describe('NativeInstanceDetailScreen', () => {
     );
 
     fireEvent.press(screen.getByRole('button', { name: 'Edit wanted listing' }));
+    expect(screen.getByLabelText('Friendship level')).toBeTruthy();
+    expect(screen.getByLabelText('Wanted weight')).toBeTruthy();
+    expect(screen.getByLabelText('Wanted height')).toBeTruthy();
+    expect(screen.getByTestId('native-instance-target-list')).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Edit preferences' })).toBeTruthy();
     fireEvent.press(screen.getByRole('button', { name: 'Set friendship to 5 hearts' }));
     fireEvent.press(screen.getByRole('button', { name: 'Lucky trade not requested' }));
     fireEvent.press(screen.getByRole('button', { name: 'Mark as Most Wanted' }));

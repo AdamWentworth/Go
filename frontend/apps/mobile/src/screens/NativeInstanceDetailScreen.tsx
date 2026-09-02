@@ -14,6 +14,7 @@ import {
   useWindowDimensions,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import Slider from '@react-native-community/slider';
 import {
   type ReactNode,
   memo,
@@ -214,7 +215,7 @@ const createEditDraft = (detail: NativeInstanceDetail): NativeInstanceEditDraft 
 });
 
 const BALL_OPTIONS = [
-  ['poke_ball', 'POKÉ BALL'],
+  ['poke_ball', 'POKE BALL'],
   ['great_ball', 'GREAT BALL'],
   ['ultra_ball', 'ULTRA BALL'],
   ['premier_ball', 'PREMIER BALL'],
@@ -222,6 +223,16 @@ const BALL_OPTIONS = [
   ['safari_ball', 'SAFARI BALL'],
   ['beast_ball', 'BEAST BALL'],
 ] as const;
+
+const BALL_IMAGE_FILES: Record<string, string> = {
+  poke_ball: 'pokeball.png',
+  great_ball: 'greatball.png',
+  ultra_ball: 'ultraball.png',
+  premier_ball: 'premierball.png',
+  master_ball: 'masterball.png',
+  safari_ball: 'safariball.png',
+  beast_ball: 'beastball.png',
+};
 
 const nullableNumber = (value: string): number | null => {
   const trimmed = value.trim();
@@ -496,6 +507,22 @@ const FriendshipConditions = ({
           </Text>
         </View>
       </View>
+      {editing ? (
+        <Slider
+          accessibilityLabel="Friendship level"
+          maximumTrackTintColor={palette.border}
+          maximumValue={5}
+          minimumTrackTintColor="#58cfc1"
+          minimumValue={0}
+          onValueChange={(friendshipValue) => onDraftChange({
+            friendship: Math.round(friendshipValue),
+          })}
+          step={1}
+          style={styles.friendshipSlider}
+          thumbTintColor="#58cfc1"
+          value={friendship}
+        />
+      ) : null}
     </View>
   );
 };
@@ -778,31 +805,29 @@ const NativeMoveSelector = ({
   const selectorTestId = `native-move-selector-${label.toLowerCase().replace(/\s+/g, '-')}`;
   return (
     <>
-      <Pressable
-        accessibilityLabel={`Choose ${label.toLowerCase()}`}
-        accessibilityRole="button"
-        onPress={() => setOpen(true)}
-        style={[styles.choiceField, { backgroundColor: palette.input, borderColor: palette.border }]}
-        testID={selectorTestId}
-      >
+      <View style={styles.choiceFieldRow}>
         {selected?.typeIconUri ? (
           <Image fadeDuration={0}
             accessibilityLabel={`${selected.typeName} type`}
             source={{ uri: selected.typeIconUri }}
             style={styles.choiceFieldTypeIcon}
           />
-        ) : null}
-        <View style={styles.choiceFieldCopy}>
-          <Text style={[styles.editFieldLabel, { color: palette.secondary }]}>{label.toUpperCase()}</Text>
+        ) : <View style={styles.choiceFieldTypeSpacer} />}
+        <Pressable
+          accessibilityLabel={`Choose ${label.toLowerCase()}`}
+          accessibilityRole="button"
+          onPress={() => setOpen(true)}
+          style={[styles.choiceField, { backgroundColor: palette.input, borderColor: palette.border }]}
+          testID={selectorTestId}
+        >
           <Text numberOfLines={1} style={[styles.choiceFieldValue, { color: palette.text }]}>
             {selected?.name ?? 'Unselected move'}
           </Text>
-        </View>
+        </Pressable>
         <Text style={[styles.choiceFieldPower, { color: palette.text }]}>
-          {selected ? (damageMode === 'raid' ? selected.raidPower : selected.pvpPower) ?? '-' : ''}
+          {selected ? (damageMode === 'raid' ? selected.raidPower : selected.pvpPower) ?? '-' : '-'}
         </Text>
-        <Text style={[styles.choiceChevron, { color: palette.secondary }]}>⌄</Text>
-      </Pressable>
+      </View>
       <Modal
         animationType={animationType}
         onRequestClose={() => setOpen(false)}
@@ -873,21 +898,32 @@ const NativeMoveSelector = ({
 };
 
 const NativeWantedSizeControls = ({
+  assetBaseUrl,
   draft,
   palette,
   onChange,
 }: {
+  assetBaseUrl: string;
   draft: NativeInstanceEditDraft;
   palette: typeof LIGHT;
   onChange: (patch: Partial<NativeInstanceEditDraft>) => void;
 }) => (
-  <View style={styles.editFieldGroup}>
+  <View style={styles.wantedSizeGrid}>
     {([
       ['WEIGHT', 'weightSize'],
       ['HEIGHT', 'heightSize'],
     ] as const).map(([label, field]) => (
       <View key={field} style={styles.sizePreferenceRow}>
-        <Text style={[styles.editFieldLabel, styles.sizePreferenceLabel, { color: palette.secondary }]}>{label}</Text>
+        <View style={styles.sizePreferenceHeading}>
+          <Image
+            fadeDuration={0}
+            accessibilityElementsHidden
+            resizeMode="contain"
+            source={{ uri: toAssetUrl(assetBaseUrl, `/images/${label.toLowerCase()}.png`) }}
+            style={styles.sizePreferenceIcon}
+          />
+          <Text style={[styles.editFieldLabel, styles.sizePreferenceLabel, { color: palette.secondary }]}>{label}</Text>
+        </View>
         <View accessibilityLabel={`Wanted ${label.toLowerCase()}`} style={styles.sizeOptions}>
           {(['XXS', 'XS', null, 'XL', 'XXL'] as const).map((option) => {
             const selected = draft[field] === option;
@@ -1020,7 +1056,7 @@ const NativeToggleGroup = ({
         const selected = option.value === value;
         return (
           <Pressable
-            accessibilityLabel={`${label}: ${option.label}`}
+            accessibilityLabel={`${label.replace(/:$/, '')}: ${option.label}`}
             accessibilityRole="button"
             accessibilityState={{ disabled: option.disabled, selected }}
             disabled={option.disabled}
@@ -1028,7 +1064,7 @@ const NativeToggleGroup = ({
             onPress={() => onChange(option.value)}
             style={[
               styles.booleanOption,
-              { borderColor: selected ? '#38a9ff' : palette.border },
+              { borderColor: selected ? palette.text : palette.border },
               selected && styles.booleanOptionSelected,
               option.disabled && styles.disabledOption,
             ]}
@@ -1042,14 +1078,14 @@ const NativeToggleGroup = ({
 );
 
 const NativeCaughtMetadataControls = ({
-  detail,
+  assetBaseUrl,
   draft,
   isCaught,
   palette,
   onChange,
   onRequestLocationVisibility,
 }: {
-  detail: NativeInstanceDetail;
+  assetBaseUrl: string;
   draft: NativeInstanceEditDraft;
   isCaught: boolean;
   palette: typeof LIGHT;
@@ -1062,14 +1098,19 @@ const NativeCaughtMetadataControls = ({
   const locationRequestRef = useRef(0);
   const locationInputTargetRef = useRef<number | null>(null);
   const acceptedLocationRef = useRef<string | null>(null);
+  const locationLookupRequestedRef = useRef(false);
   const inputStyle = [
     styles.editInput,
     { backgroundColor: palette.input, borderColor: palette.border, color: palette.text },
   ];
   const isShadow = Boolean(draft.shadow && !draft.purified);
-  const canToggleLucky = isCaught && !isShadow && detail.rarity !== 'Mythic';
+  const ballImageFile = draft.pokeball ? BALL_IMAGE_FILES[draft.pokeball] : null;
+  const hasCaughtSummary = Boolean(draft.locationCaught || draft.dateCaught || ballImageFile);
 
   useEffect(() => {
+    // Vite only asks for suggestions after the trainer changes the field.
+    // Opening an editor with a saved location must not start network work.
+    if (!locationLookupRequestedRef.current) return undefined;
     const query = draft.locationCaught.trim();
     const requestId = ++locationRequestRef.current;
 
@@ -1117,6 +1158,7 @@ const NativeCaughtMetadataControls = ({
 
   const selectLocationSuggestion = (displayName: string) => {
     locationRequestRef.current += 1;
+    locationLookupRequestedRef.current = false;
     acceptedLocationRef.current = displayName;
     setLocationSuggestions([]);
     setLocationSuggestionError(null);
@@ -1126,24 +1168,41 @@ const NativeCaughtMetadataControls = ({
 
   return (
     <View style={styles.editMetaPanel}>
-      <Text style={[styles.editFieldLabel, { color: palette.secondary }]}>CAUGHT DETAILS</Text>
+      {hasCaughtSummary ? (
+        <>
+          <View style={styles.editMetaSummary}>
+            <View style={styles.editMetaSummaryCopy}>
+              <Text style={[styles.editFieldLabel, { color: palette.secondary }]}>CAUGHT</Text>
+              {draft.locationCaught ? (
+                <Text style={[styles.editMetaSummaryValue, { color: palette.text }]}>{draft.locationCaught}</Text>
+              ) : null}
+              {draft.dateCaught ? (
+                <Text style={[styles.editMetaSummaryDate, { color: palette.secondary }]}>{draft.dateCaught}</Text>
+              ) : null}
+            </View>
+            {ballImageFile ? (
+              <Image
+                fadeDuration={0}
+                accessibilityElementsHidden
+                resizeMode="contain"
+                source={{ uri: toAssetUrl(assetBaseUrl, `/media/images/balls/${ballImageFile}`) }}
+                style={[
+                  styles.editMetaBall,
+                  draft.pokeball === 'beast_ball' || draft.pokeball === 'safari_ball'
+                    ? styles.editMetaBallLarge
+                    : null,
+                ]}
+              />
+            ) : null}
+          </View>
+          <View style={[styles.editMetaDivider, { backgroundColor: palette.divider }]} />
+        </>
+      ) : null}
 
       {isCaught ? (
         <>
-          {canToggleLucky ? (
-            <NativeToggleGroup
-              label="LUCKY"
-              onChange={(lucky) => onChange({ lucky, isTraded: lucky || draft.isTraded })}
-              options={[
-                { label: 'YES', value: true },
-                { label: 'NO', value: false },
-              ]}
-              palette={palette}
-              value={draft.lucky}
-            />
-          ) : null}
           <NativeToggleGroup
-            label="OBTAINED IN A TRADE"
+            label="TRADED:"
             onChange={(isTraded) => onChange({ isTraded })}
             options={[
               { label: 'YES', value: true, disabled: isShadow },
@@ -1160,7 +1219,7 @@ const NativeCaughtMetadataControls = ({
           ) : null}
           {draft.isTraded ? (
             <View style={styles.editFieldGroup}>
-              <Text style={[styles.editFieldLabel, { color: palette.secondary }]}>ORIGINAL TRAINER</Text>
+              <Text style={[styles.editFieldLabel, { color: palette.secondary }]}>ORIGINAL TRAINER NAME:</Text>
               <TextInput
                 accessibilityLabel="Original trainer name"
                 autoCapitalize="none"
@@ -1173,7 +1232,7 @@ const NativeCaughtMetadataControls = ({
                 style={inputStyle}
                 value={draft.originalTrainerName}
               />
-              <Text style={[styles.editFieldLabel, { color: palette.secondary }]}>TRADED DATE</Text>
+              <Text style={[styles.editFieldLabel, { color: palette.secondary }]}>TRADED DATE:</Text>
               <TextInput
                 accessibilityLabel="Traded date"
                 keyboardType="numbers-and-punctuation"
@@ -1190,7 +1249,7 @@ const NativeCaughtMetadataControls = ({
       ) : null}
 
       <View style={styles.editFieldGroup}>
-        <Text style={[styles.editFieldLabel, { color: palette.secondary }]}>LOCATION CAUGHT</Text>
+        <Text style={[styles.editFieldLabel, { color: palette.secondary }]}>LOCATION CAUGHT:</Text>
         <View style={styles.locationInputWrapper}>
           {locationSuggestions.length > 0 ? (
             <ScrollView
@@ -1224,6 +1283,7 @@ const NativeCaughtMetadataControls = ({
             autoComplete="off"
             onChangeText={(locationCaught) => {
               locationRequestRef.current += 1;
+              locationLookupRequestedRef.current = true;
               acceptedLocationRef.current = null;
               setLocationSuggestions([]);
               setLocationSuggestionError(null);
@@ -1249,7 +1309,7 @@ const NativeCaughtMetadataControls = ({
         {locationSuggestionError ? (
           <Text accessibilityRole="alert" style={styles.locationSuggestionError}>{locationSuggestionError}</Text>
         ) : null}
-        <Text style={[styles.editFieldLabel, { color: palette.secondary }]}>DATE CAUGHT</Text>
+        <Text style={[styles.editFieldLabel, { color: palette.secondary }]}>DATE CAUGHT:</Text>
         <TextInput
           accessibilityLabel="Caught date"
           keyboardType="numbers-and-punctuation"
@@ -1263,7 +1323,7 @@ const NativeCaughtMetadataControls = ({
       </View>
 
       <View style={styles.editFieldGroup}>
-        <Text style={[styles.editFieldLabel, { color: palette.secondary }]}>BALL CAUGHT</Text>
+        <Text style={[styles.ballCaughtLabel, { color: palette.text }]}>Ball Caught</Text>
         <View accessibilityLabel="Ball Caught" style={styles.ballOptions}>
           {[...BALL_OPTIONS, [null, 'UNKNOWN'] as const].map(([value, label]) => {
             const selected = draft.pokeball === value;
@@ -1275,7 +1335,7 @@ const NativeCaughtMetadataControls = ({
                 onPress={() => onChange({ pokeball: value })}
                 style={[
                   styles.ballOption,
-                  { borderColor: selected ? '#38a9ff' : palette.border },
+                  { borderColor: selected ? palette.text : palette.border },
                   selected && styles.booleanOptionSelected,
                 ]}
               >
@@ -1389,12 +1449,7 @@ const NativePowerControls = ({
   palette: typeof LIGHT;
   onChange: (patch: Partial<NativeInstanceEditDraft>) => void;
 }) => {
-  const supportsShadowState = isCaught && Boolean(
-    detail.instance?.shadow
-    || detail.instance?.purified
-    || draft.shadow
-    || draft.purified,
-  );
+  const [showMaxOptions, setShowMaxOptions] = useState(false);
   const supportsMega = !isWanted
     && !draft.shadow
     && !draft.fused
@@ -1431,64 +1486,114 @@ const NativePowerControls = ({
       ? draft.locationCard
       : null,
   });
-  if (!supportsShadowState && !supportsMega && !supportsCrown && !supportsFusion && !supportsMaxMoves) return null;
+  const nextMegaState = () => {
+    const megaOptions = detail.megaOptions ?? [];
+    if (!draft.megaEnabled) {
+      const next = megaOptions[0] ?? null;
+      return { enabled: Boolean(next), form: next?.form ?? null, option: next };
+    }
+    const currentIndex = megaOptions.findIndex((option) => option.form === draft.megaForm);
+    const nextIndex = (Math.max(0, currentIndex) + 1) % (megaOptions.length + 1);
+    const next = nextIndex < megaOptions.length ? megaOptions[nextIndex] : null;
+    return { enabled: Boolean(next), form: next?.form ?? null, option: next };
+  };
+  const nextMega = nextMegaState();
+  const activeCrown = detail.crownOptions?.find((option) => option.form === draft.crownForm)
+    ?? detail.crownOptions?.[0]
+    ?? null;
+  if (!supportsMega && !supportsCrown && !supportsFusion && !supportsMaxMoves) return null;
 
   return (
-    <View style={[styles.powerPanel, { borderColor: palette.border }]}>
-      <Text style={[styles.editFieldLabel, { color: palette.secondary }]}>FORM &amp; POWER</Text>
-      {supportsShadowState ? (
-        <View style={styles.editFieldGroup}>
-          <Text style={[styles.powerTitle, { color: palette.text }]}>Shadow state</Text>
-          <View accessibilityLabel="Shadow state" style={styles.booleanOptions}>
-            {([
-              { label: 'SHADOW', shadow: true, purified: false },
-              { label: 'PURIFIED', shadow: false, purified: true },
-            ] as const).map((option) => {
-              const selected = option.shadow ? draft.shadow : draft.purified;
-              return (
-                <Pressable
-                  accessibilityLabel={`Shadow state: ${option.label === 'SHADOW' ? 'Shadow' : 'Purified'}`}
-                  accessibilityRole="button"
-                  accessibilityState={{ selected }}
-                  key={option.label}
-                  onPress={() => onChange(option.shadow
-                    ? {
-                        shadow: true,
-                        purified: false,
-                        lucky: false,
-                        isTraded: false,
-                        originalTrainerId: null,
-                        originalTrainerName: '',
-                        tradedDate: '',
-                        fused: false,
-                        fusionId: null,
-                        fusionForm: null,
-                        fusedWith: null,
-                        megaEnabled: false,
-                        megaForm: null,
-                        crowned: false,
-                      }
-                    : { shadow: false, purified: true })}
-                  style={[
-                    styles.booleanOption,
-                    { borderColor: selected ? '#8f72e8' : palette.border },
-                    selected && styles.shadowOptionSelected,
-                  ]}
-                >
-                  <Text style={[styles.booleanOptionText, { color: palette.text }]}>{option.label}</Text>
-                </Pressable>
-              );
+    <View style={[styles.powerPanel, { borderColor: palette.divider }]}>
+      <View style={styles.powerActionRow}>
+        {supportsMaxMoves ? (
+          <Pressable
+            accessibilityLabel={`${showMaxOptions ? 'Close' : 'Open'} Max Move upgrades`}
+            accessibilityRole="button"
+            accessibilityState={{ expanded: showMaxOptions }}
+            onPress={() => setShowMaxOptions((current) => !current)}
+            style={styles.maxPowerButton}
+          >
+            <Image
+              fadeDuration={0}
+              accessibilityElementsHidden
+              resizeMode="contain"
+              source={{ uri: toAssetUrl(assetBaseUrl, `/images/${detail.row.maxKind === 'gigantamax' ? 'gigantamax-icon' : 'dynamax-icon'}.png`) }}
+              style={styles.maxPowerIcon}
+            />
+          </Pressable>
+        ) : null}
+        {supportsMega ? (
+          <Pressable
+            accessibilityLabel={draft.megaEnabled ? 'Change Mega form' : 'Mega Evolve'}
+            accessibilityRole="button"
+            onPress={() => onChange({
+              megaEnabled: nextMega.enabled,
+              megaForm: nextMega.form,
+              fused: false,
+              fusionId: null,
+              fusionForm: null,
+              fusedWith: null,
             })}
-          </View>
-          <Text style={[styles.editHelpText, { color: palette.secondary }]}>
-            Reverting to Shadow clears Lucky and traded status, matching Pokémon GO rules.
-          </Text>
-        </View>
-      ) : null}
+            style={styles.powerActionPill}
+          >
+            <Image
+              fadeDuration={0}
+              accessibilityElementsHidden
+              resizeMode="contain"
+              source={{
+                uri: toAssetUrl(
+                  assetBaseUrl,
+                  nextMega.enabled ? '/media/images/mega.png' : '/images/default_pokemon.png',
+                ),
+              }}
+              style={styles.powerActionGlyph}
+            />
+            <Text style={styles.powerActionText}>{draft.megaEnabled ? 'CHANGE FORM' : 'MEGA EVOLVE'}</Text>
+            {nextMega.option?.imageUri ? (
+              <Image
+                fadeDuration={0}
+                accessibilityElementsHidden
+                resizeMode="contain"
+                source={{ uri: nextMega.option.imageUri }}
+                style={styles.powerActionTarget}
+              />
+            ) : null}
+          </Pressable>
+        ) : null}
+        {supportsCrown && activeCrown ? (
+          <Pressable
+            accessibilityLabel={`Power form: ${draft.crowned ? 'Hero form' : activeCrown.label}`}
+            accessibilityRole="button"
+            onPress={() => onChange({
+              crowned: !draft.crowned,
+              crownForm: draft.crowned ? null : activeCrown.form,
+              fused: false,
+              fusionId: null,
+              fusionForm: null,
+              fusedWith: null,
+              ...compatibleMovePatch(draft.crowned
+                ? detail.moveOptions
+                : activeCrown.moveOptions ?? detail.moveOptions),
+            })}
+            style={styles.powerActionPill}
+          >
+            <Image
+              fadeDuration={0}
+              accessibilityElementsHidden
+              resizeMode="contain"
+              source={{
+                uri: (draft.crowned ? detail.row.imageUri : activeCrown.imageUri)
+                  ?? toAssetUrl(assetBaseUrl, '/images/default_pokemon.png'),
+              }}
+              style={styles.powerActionTarget}
+            />
+            <Text style={styles.powerActionText}>CHANGE FORM</Text>
+          </Pressable>
+        ) : null}
+      </View>
       {supportsFusion ? (
         <View style={styles.editFieldGroup}>
-          <Text style={[styles.powerTitle, { color: palette.text }]}>Fusion</Text>
-          <Text style={[styles.editHelpText, { color: palette.secondary }]}>Choose a form and the caught partner it consumes.</Text>
           <View style={styles.powerFormOptions}>
             <PowerFormOption
               imageUri={detail.appearanceImageUris?.base ?? detail.row.imageUri}
@@ -1548,73 +1653,7 @@ const NativePowerControls = ({
           ) : null}
         </View>
       ) : null}
-      {supportsMega ? (
-        <View style={styles.editFieldGroup}>
-          <Text style={[styles.powerTitle, { color: palette.text }]}>Mega Evolution</Text>
-          <View style={styles.powerFormOptions}>
-            <PowerFormOption
-              imageUri={detail.appearanceImageUris?.base ?? detail.row.imageUri}
-              label="Base form"
-              onPress={() => onChange({ megaEnabled: false, megaForm: null })}
-              palette={palette}
-              selected={!draft.megaEnabled}
-            />
-            {(detail.megaOptions ?? []).map((option) => (
-              <PowerFormOption
-                imageUri={option.imageUri}
-                key={`${option.label}-${option.form ?? 'default'}`}
-                label={option.label}
-                onPress={() => onChange({
-                  megaEnabled: true,
-                  megaForm: option.form,
-                  fused: false,
-                  fusionId: null,
-                  fusionForm: null,
-                  fusedWith: null,
-                })}
-                palette={palette}
-                selected={draft.megaEnabled && draft.megaForm === option.form}
-              />
-            ))}
-          </View>
-        </View>
-      ) : null}
-      {supportsCrown ? (
-        <View style={styles.editFieldGroup}>
-          <Text style={[styles.powerTitle, { color: palette.text }]}>Crowned Form</Text>
-          <View style={styles.powerFormOptions}>
-            <PowerFormOption
-              imageUri={detail.appearanceImageUris?.base ?? detail.row.imageUri}
-              label="Hero form"
-              onPress={() => onChange({
-                crowned: false,
-                ...compatibleMovePatch(detail.moveOptions),
-              })}
-              palette={palette}
-              selected={!draft.crowned}
-            />
-            {(detail.crownOptions ?? []).map((option) => (
-              <PowerFormOption
-                imageUri={option.imageUri}
-                key={`${option.label}-${option.form ?? 'default'}`}
-                label={option.label}
-                onPress={() => onChange({
-                  crowned: true,
-                  crownForm: option.form,
-                  fused: false,
-                  fusionId: null,
-                  fusionForm: null,
-                  fusedWith: null,
-                  ...compatibleMovePatch(option.moveOptions ?? detail.moveOptions),
-                })}
-                palette={palette}
-                selected={draft.crowned && draft.crownForm === option.form}
-              />
-            ))}
-          </View>
-        </View>
-      ) : null}
-      {supportsMaxMoves ? (
+      {supportsMaxMoves && showMaxOptions ? (
         <View style={styles.maxMovesPanel}>
           <View style={styles.maxMovesHeading}>
             <Image fadeDuration={0}
@@ -1655,7 +1694,13 @@ const NativePowerControls = ({
   );
 };
 
-const NativeInstanceEditFields = ({
+const nextEditableGender = (gender: string | null): string | null => {
+  const options: (string | null)[] = ['Male', 'Female', null];
+  const currentIndex = options.indexOf(gender);
+  return options[(currentIndex + 1) % options.length] ?? null;
+};
+
+const NativeInlineInstanceEditor = ({
   assetBaseUrl,
   detail,
   draft,
@@ -1664,7 +1709,6 @@ const NativeInstanceEditFields = ({
   palette,
   typeIconUris,
   onChange,
-  onRequestLocationVisibility,
 }: {
   assetBaseUrl: string;
   detail: NativeInstanceDetail;
@@ -1674,13 +1718,233 @@ const NativeInstanceEditFields = ({
   palette: typeof LIGHT;
   typeIconUris: string[];
   onChange: (patch: Partial<NativeInstanceEditDraft>) => void;
+}) => {
+  const isShadow = Boolean(draft.shadow && !draft.purified);
+  const canToggleLucky = isCaught && !isShadow && detail.rarity !== 'Mythic';
+  const genderIcon = draft.gender === 'Male'
+    ? '/images/male-icon.png'
+    : draft.gender === 'Female'
+      ? '/images/female-icon.png'
+      : '/images/neutral-icon.png';
+  const measurementInputStyle = [
+    styles.inlineMeasurementInput,
+    { borderColor: palette.border, color: palette.text },
+  ];
+  const [nameInputWidth, setNameInputWidth] = useState(() => (
+    Math.max(50, Math.min(274, (draft.nickname.length * 13) + 8))
+  ));
+
+  return (
+    <View accessibilityLabel="Pokémon inline identity editor" style={styles.inlineEditor}>
+      <View style={styles.inlineIdentityRow}>
+        <View style={[styles.inlineIdentitySide, styles.inlineIdentitySideLeft]}>
+          {canToggleLucky ? (
+            <Pressable
+              accessibilityLabel="LUCKY: YES"
+              accessibilityRole="button"
+              onPress={() => onChange({
+                lucky: !draft.lucky,
+                isTraded: !draft.lucky || draft.isTraded,
+              })}
+              style={styles.inlineIdentityButton}
+            >
+              <Image
+                fadeDuration={0}
+                accessibilityElementsHidden
+                resizeMode="contain"
+                source={{ uri: toAssetUrl(assetBaseUrl, '/images/lucky-icon.png') }}
+                style={[styles.inlineIdentityIcon, !draft.lucky && styles.inlineIconInactive]}
+              />
+            </Pressable>
+          ) : null}
+        </View>
+        <View style={styles.inlineNameSlot}>
+          <Text
+            accessibilityElementsHidden
+            importantForAccessibility="no-hide-descendants"
+            onLayout={(event) => {
+              const measuredWidth = Math.ceil(event.nativeEvent.layout.width) + 12;
+              setNameInputWidth(Math.max(50, Math.min(274, measuredWidth)));
+            }}
+            pointerEvents="none"
+            style={styles.inlineNameMeasure}
+          >
+            {draft.nickname || detail.row.name}
+          </Text>
+          <TextInput
+            accessibilityLabel="Pokémon nickname"
+            autoCapitalize="words"
+            maxLength={12}
+            onChangeText={(nickname) => onChange({ nickname })}
+            placeholder={detail.row.name}
+            placeholderTextColor={palette.text}
+            selectTextOnFocus
+            style={[
+              styles.inlineNameInput,
+              { borderColor: palette.border, color: palette.text, width: nameInputWidth },
+            ]}
+            value={draft.nickname}
+          />
+        </View>
+        <View style={[styles.inlineIdentitySide, styles.inlineIdentitySideRight]}>
+          {isCaught && (draft.shadow || draft.purified) ? (
+            <Pressable
+              accessibilityLabel={draft.purified ? 'Shadow state: Shadow' : 'Shadow state: Purified'}
+              accessibilityRole="button"
+              onPress={() => onChange(draft.purified
+                ? {
+                    purified: false,
+                    shadow: true,
+                    lucky: false,
+                    isTraded: false,
+                    originalTrainerId: null,
+                    originalTrainerName: '',
+                    tradedDate: '',
+                  }
+                : { purified: true, shadow: false })}
+              style={styles.inlineIdentityButton}
+            >
+              <Image
+                fadeDuration={0}
+                accessibilityElementsHidden
+                resizeMode="contain"
+                source={{
+                  uri: toAssetUrl(
+                    assetBaseUrl,
+                    draft.purified ? '/images/shadow_icon_middle_ground.png' : '/images/purify.png',
+                  ),
+                }}
+                style={styles.inlineIdentityIcon}
+              />
+            </Pressable>
+          ) : null}
+        </View>
+      </View>
+
+      <View style={styles.inlineLevelGenderRow}>
+        {!isWanted ? (
+          <View style={styles.inlineLevelControl}>
+            <Text style={[styles.inlineLevelLabel, { color: palette.secondary }]}>LEVEL:</Text>
+            <TextInput
+              accessibilityLabel="Pokémon level"
+              keyboardType="decimal-pad"
+              onChangeText={(level) => onChange({ level })}
+              onEndEditing={() => {
+                if (!draft.level.trim()) return;
+                const parsed = Number(draft.level);
+                if (!Number.isFinite(parsed)) return;
+                const level = Math.min(51, Math.max(1, Math.round(parsed * 2) / 2));
+                onChange({ level: String(level) });
+              }}
+              placeholder="1-51 (0.5 steps)"
+              placeholderTextColor={palette.secondary}
+              selectTextOnFocus
+              style={[styles.inlineLevelInput, { borderColor: palette.border, color: palette.text }]}
+              value={draft.level}
+            />
+          </View>
+        ) : null}
+        <Pressable
+          accessibilityLabel={`Gender: ${draft.gender ?? (isWanted ? 'Any' : 'Unspecified')}`}
+          accessibilityRole="button"
+          onPress={() => onChange({ gender: nextEditableGender(draft.gender) })}
+          style={styles.inlineGenderButton}
+        >
+          <Image
+            fadeDuration={0}
+            accessibilityElementsHidden
+            resizeMode="contain"
+            source={{ uri: toAssetUrl(assetBaseUrl, genderIcon) }}
+            style={styles.inlineGenderIcon}
+          />
+        </Pressable>
+      </View>
+
+      {isWanted ? (
+        <NativeWantedSizeControls
+          assetBaseUrl={assetBaseUrl}
+          draft={draft}
+          onChange={onChange}
+          palette={palette}
+        />
+      ) : (
+        <View style={styles.inlineMeasurementsRow}>
+          <View style={styles.inlineMeasurement}>
+            <View style={styles.inlineMeasurementValue}>
+              <TextInput
+                accessibilityLabel="Pokémon weight"
+                keyboardType="decimal-pad"
+                onChangeText={(weight) => onChange({ weight })}
+                selectTextOnFocus
+                style={measurementInputStyle}
+                value={draft.weight}
+              />
+              <Text style={[styles.inlineMeasurementSuffix, { color: palette.text }]}>kg</Text>
+            </View>
+            <Text style={[styles.inlineMeasurementLabel, { color: palette.secondary }]}>WEIGHT</Text>
+          </View>
+          {isCaught ? (
+            <>
+              <View style={[styles.inlinePipe, { backgroundColor: palette.divider }]} />
+              <View
+                accessibilityLabel={pokemonTypesAccessibilityLabel(typeIconUris)}
+                accessible
+                style={styles.inlineTypes}
+                testID={pokemonTypesTestId(typeIconUris)}
+              >
+                {typeIconUris.map((uri) => (
+                  <Image
+                    fadeDuration={0}
+                    accessibilityLabel={`${uri.match(/\/([^/?]+)\.png(?:\?|$)/i)?.[1] ?? 'Pokémon'} type`}
+                    key={uri}
+                    source={{ uri }}
+                    style={styles.inlineTypeIcon}
+                  />
+                ))}
+              </View>
+              <View style={[styles.inlinePipe, { backgroundColor: palette.divider }]} />
+            </>
+          ) : null}
+          <View style={styles.inlineMeasurement}>
+            <View style={styles.inlineMeasurementValue}>
+              <TextInput
+                accessibilityLabel="Pokémon height"
+                keyboardType="decimal-pad"
+                onChangeText={(height) => onChange({ height })}
+                selectTextOnFocus
+                style={measurementInputStyle}
+                value={draft.height}
+              />
+              <Text style={[styles.inlineMeasurementSuffix, { color: palette.text }]}>m</Text>
+            </View>
+            <Text style={[styles.inlineMeasurementLabel, { color: palette.secondary }]}>HEIGHT</Text>
+          </View>
+        </View>
+      )}
+    </View>
+  );
+};
+
+const NativeInstanceEditFields = ({
+  assetBaseUrl,
+  detail,
+  draft,
+  isCaught,
+  isWanted,
+  palette,
+  onChange,
+  onRequestLocationVisibility,
+}: {
+  assetBaseUrl: string;
+  detail: NativeInstanceDetail;
+  draft: NativeInstanceEditDraft;
+  isCaught: boolean;
+  isWanted: boolean;
+  palette: typeof LIGHT;
+  onChange: (patch: Partial<NativeInstanceEditDraft>) => void;
   onRequestLocationVisibility: (target: number) => void;
 }) => {
   const [moveDamageMode, setMoveDamageMode] = useState<PokemonMoveDamageMode>('raid');
-  const inputStyle = [
-    styles.editInput,
-    { backgroundColor: palette.input, borderColor: palette.border, color: palette.text },
-  ];
   const selectedFusionMoves = draft.fused
     ? detail.fusionOptions?.find((option) => option.id === draft.fusionId)?.moveOptions
     : null;
@@ -1688,54 +1952,19 @@ const NativeInstanceEditFields = ({
     ? detail.crownOptions?.find((option) => option.form === draft.crownForm)?.moveOptions
     : null;
   const editMoveOptions = selectedFusionMoves ?? selectedCrownMoves ?? detail.moveOptions ?? [];
+  const hasPowerPanel = Boolean(
+    (!isWanted && !draft.shadow && !draft.fused && (detail.megaOptions?.length ?? 0) > 0)
+    || (!isWanted && !draft.shadow && !draft.fused && (detail.crownOptions?.length ?? 0) > 0)
+    || (isCaught && !draft.shadow && !draft.megaEnabled && !draft.crowned
+      && (detail.fusionOptions?.length ?? 0) > 0)
+    || (!isWanted && Boolean(detail.row.maxKind || detail.specialMaxBaseEligible || draft.crowned)
+      && !draft.shadow && !draft.purified && detail.instance?.costume_id == null),
+  );
+  const availableSecondChargedMove = editMoveOptions.find((move) => (
+    move.kind === 'charged' && move.id !== draft.chargedMove1
+  )) ?? null;
   return (
     <View accessibilityLabel="Pokémon detail editor" style={styles.editFields}>
-      <View style={styles.editFieldGroup}>
-        <Text style={[styles.editFieldLabel, { color: palette.secondary }]}>NAME</Text>
-        <TextInput
-          accessibilityLabel="Pokémon nickname"
-          autoCapitalize="words"
-          maxLength={12}
-          onChangeText={(nickname) => onChange({ nickname })}
-          placeholder="Pokémon name"
-          placeholderTextColor={palette.secondary}
-          selectTextOnFocus
-          style={[...inputStyle, styles.editNameInput]}
-          value={draft.nickname}
-        />
-      </View>
-
-      {!isWanted ? (
-        <View style={styles.editTwoColumns}>
-          <View style={styles.editColumn}>
-            <Text style={[styles.editFieldLabel, { color: palette.secondary }]}>CP</Text>
-            <TextInput
-              accessibilityLabel="Combat Power"
-              keyboardType="number-pad"
-              onChangeText={(cp) => onChange({ cp })}
-              placeholder="CP"
-              placeholderTextColor={palette.secondary}
-              selectTextOnFocus
-              style={inputStyle}
-              value={draft.cp}
-            />
-          </View>
-          <View style={styles.editColumn}>
-            <Text style={[styles.editFieldLabel, { color: palette.secondary }]}>LEVEL</Text>
-            <TextInput
-              accessibilityLabel="Pokémon level"
-              keyboardType="decimal-pad"
-              onChangeText={(level) => onChange({ level })}
-              placeholder="1–51"
-              placeholderTextColor={palette.secondary}
-              selectTextOnFocus
-              style={inputStyle}
-              value={draft.level}
-            />
-          </View>
-        </View>
-      ) : null}
-
       <NativePowerControls
         assetBaseUrl={assetBaseUrl}
         detail={detail}
@@ -1746,86 +1975,12 @@ const NativeInstanceEditFields = ({
         palette={palette}
       />
 
-      <View style={styles.editFieldGroup}>
-        <Text style={[styles.editFieldLabel, { color: palette.secondary }]}>GENDER</Text>
-        <View style={styles.genderOptions}>
-          {[
-            { label: 'Any', value: null },
-            { label: '♂ Male', value: 'Male' },
-            { label: '♀ Female', value: 'Female' },
-            { label: 'Genderless', value: 'Genderless' },
-          ].map((option) => {
-            const selected = draft.gender === option.value;
-            return (
-              <Pressable
-                accessibilityRole="button"
-                key={option.label}
-                onPress={() => onChange({ gender: option.value })}
-                style={[
-                  styles.genderOption,
-                  { borderColor: selected ? '#38a9ff' : palette.border },
-                  selected && styles.genderOptionSelected,
-                ]}
-              >
-                <Text style={[styles.genderOptionText, { color: palette.text }]}>{option.label}</Text>
-              </Pressable>
-            );
-          })}
-        </View>
-      </View>
-
-      {isWanted ? (
-        <NativeWantedSizeControls draft={draft} onChange={onChange} palette={palette} />
-      ) : null}
-
-      {!isWanted ? (
-        <View style={styles.editMeasurements}>
-          <View style={styles.editColumn}>
-            <Text style={[styles.editFieldLabel, { color: palette.secondary }]}>WEIGHT (KG)</Text>
-            <TextInput
-              accessibilityLabel="Pokémon weight"
-              keyboardType="decimal-pad"
-              onChangeText={(weight) => onChange({ weight })}
-              placeholder="Optional"
-              placeholderTextColor={palette.secondary}
-              selectTextOnFocus
-              style={inputStyle}
-              value={draft.weight}
-            />
-          </View>
-          <View
-            accessibilityLabel={pokemonTypesAccessibilityLabel(typeIconUris)}
-            accessible
-            style={styles.editTypes}
-            testID={pokemonTypesTestId(typeIconUris)}
-          >
-            {typeIconUris.map((uri) => (
-              <Image fadeDuration={0}
-                accessibilityLabel={`${uri.match(/\/([^/?]+)\.png(?:\?|$)/i)?.[1] ?? 'Pokémon'} type`}
-                key={uri}
-                source={{ uri }}
-                style={styles.editTypeIcon}
-              />
-            ))}
-          </View>
-          <View style={styles.editColumn}>
-            <Text style={[styles.editFieldLabel, { color: palette.secondary }]}>HEIGHT (M)</Text>
-            <TextInput
-              accessibilityLabel="Pokémon height"
-              keyboardType="decimal-pad"
-              onChangeText={(height) => onChange({ height })}
-              placeholder="Optional"
-              placeholderTextColor={palette.secondary}
-              selectTextOnFocus
-              style={inputStyle}
-              value={draft.height}
-            />
-          </View>
-        </View>
-      ) : null}
-
-      <View style={styles.editFieldGroup}>
-        <Text style={[styles.editFieldLabel, { color: palette.secondary }]}>MOVES</Text>
+      <View style={[
+        styles.editFieldGroup,
+        styles.editMovesGroup,
+        !hasPowerPanel && { borderTopColor: palette.divider, borderTopWidth: 2 },
+        { borderBottomColor: palette.divider },
+      ]}>
         <NativeMoveModeTabs
           mode={moveDamageMode}
           onChange={setMoveDamageMode}
@@ -1847,46 +2002,83 @@ const NativeInstanceEditFields = ({
           palette={palette}
           value={draft.chargedMove1}
         />
-        <NativeMoveSelector
-          damageMode={moveDamageMode}
-          label="Second charged move"
-          onChange={(chargedMove2) => onChange({ chargedMove2 })}
-          options={editMoveOptions.filter((move) => move.kind === 'charged')}
-          palette={palette}
-          value={draft.chargedMove2}
-        />
+        {draft.chargedMove2 != null ? (
+          <NativeMoveSelector
+            damageMode={moveDamageMode}
+            label="Second charged move"
+            onChange={(chargedMove2) => onChange({ chargedMove2 })}
+            options={editMoveOptions.filter((move) => move.kind === 'charged')}
+            palette={palette}
+            value={draft.chargedMove2}
+          />
+        ) : (
+          <Pressable
+            accessibilityLabel="Add second charged move"
+            accessibilityRole="button"
+            accessibilityState={{ disabled: availableSecondChargedMove == null }}
+            disabled={availableSecondChargedMove == null}
+            onPress={() => onChange({ chargedMove2: availableSecondChargedMove?.id ?? null })}
+            style={styles.addMoveButton}
+          >
+            <Text style={[styles.addMoveText, { color: palette.text }]}>+</Text>
+          </Pressable>
+        )}
       </View>
 
       {!isWanted ? (
         <>
           <View style={styles.editFieldGroup}>
-            <Text style={[styles.editFieldLabel, { color: palette.secondary }]}>APPRAISAL IVS</Text>
-            <View style={styles.editThreeColumns}>
+            <View style={styles.editIvRows}>
               {[
                 { label: 'Attack', key: 'attackIv' as const },
                 { label: 'Defense', key: 'defenseIv' as const },
                 { label: 'HP', key: 'staminaIv' as const },
-              ].map((field) => (
-                <View key={field.key} style={styles.editColumn}>
-                  <Text style={[styles.inlineInputLabel, { color: palette.secondary }]}>{field.label}</Text>
-                  <TextInput
-                    accessibilityLabel={`${field.label} IV`}
-                    keyboardType="number-pad"
-                    maxLength={2}
-                    onChangeText={(value) => onChange({ [field.key]: value })}
-                    placeholder="0–15"
-                    placeholderTextColor={palette.secondary}
-                    selectTextOnFocus
-                    style={inputStyle}
-                    value={draft[field.key]}
-                  />
-                </View>
-              ))}
+              ].map((field) => {
+                const value = Math.max(0, Math.min(15, Number(draft[field.key]) || 0));
+                const full = value >= 15;
+                const ivTextColor = full
+                  ? palette === LIGHT ? '#9b2e2e' : '#ef8582'
+                  : palette === LIGHT ? '#8a4b00' : '#ef9219';
+                return (
+                  <View key={field.key} style={styles.editIvRow}>
+                    <Text style={[styles.editIvLabel, { color: ivTextColor }]}>{field.label}</Text>
+                    <View style={[styles.editIvTrack, { backgroundColor: palette.track }]}>
+                      <View style={[
+                        styles.ivFill,
+                        full && styles.ivFillFull,
+                        { width: `${value / 15 * 100}%` },
+                      ]} />
+                      <View style={styles.ivThird} />
+                      <View style={styles.ivTwoThirds} />
+                    </View>
+                    <TextInput
+                      accessibilityLabel={`${field.label} IV`}
+                      keyboardType="number-pad"
+                      maxLength={2}
+                      onChangeText={(nextValue) => {
+                        if (nextValue.trim() === '') {
+                          onChange({ [field.key]: '' });
+                          return;
+                        }
+                        const parsed = Number.parseInt(nextValue, 10);
+                        onChange({
+                          [field.key]: Number.isNaN(parsed)
+                            ? ''
+                            : String(Math.min(15, Math.max(0, parsed))),
+                        });
+                      }}
+                      selectTextOnFocus
+                      style={[styles.editIvInput, { borderColor: palette.border, color: ivTextColor }]}
+                      value={draft[field.key]}
+                    />
+                  </View>
+                );
+              })}
             </View>
           </View>
 
           <NativeCaughtMetadataControls
-            detail={detail}
+            assetBaseUrl={assetBaseUrl}
             draft={draft}
             isCaught={isCaught}
             onChange={onChange}
@@ -2249,7 +2441,9 @@ export const NativeInstanceDetailScreen = ({
   const editError = editErrorState?.instanceId === detail.row.id
     ? editErrorState.message
     : null;
-  const displayLevel = editing ? Number(activeDraft.level) : level;
+  const displayLevel = editing
+    ? activeDraft.level.trim() ? Number(activeDraft.level) : Number.NaN
+    : level;
   const showArc = Number.isFinite(displayLevel);
   const backgroundPickerOpen = backgroundPickerInstanceId === detail.row.id;
   const lowerDetail = frozenLowerDetail ?? detail;
@@ -2519,9 +2713,9 @@ export const NativeInstanceDetailScreen = ({
             />
           ) : (
             <View style={styles.headerRow}>
-              {canEdit && !editing ? (
+              {canEdit ? (
                 <Pressable
-                  accessibilityLabel="Edit Pokémon"
+                  accessibilityLabel={editing ? 'Save Pokémon' : 'Edit Pokémon'}
                   accessibilityRole="button"
                   disabled={isSaving}
                   onPress={() => void toggleEdit()}
@@ -2530,19 +2724,52 @@ export const NativeInstanceDetailScreen = ({
                   <Image fadeDuration={0}
                     accessibilityElementsHidden
                     resizeMode="contain"
-                    source={{ uri: toAssetUrl(assetBaseUrl, '/images/edit-icon.png') }}
+                    source={{
+                      uri: toAssetUrl(
+                        assetBaseUrl,
+                        editing ? '/images/save-icon.png' : '/images/edit-icon.png',
+                      ),
+                    }}
                     style={[styles.editImage, styles.stageHeaderIcon]}
                   />
                 </Pressable>
               ) : <View style={styles.iconButton} />}
-              {!isWanted && cp != null && !editing ? (
-                <Text style={styles.cpText}>
-                  <Text style={[styles.cpLabel, desktopLayout && styles.cpLabelDesktop]}>CP</Text>
-                  <Text style={[styles.cpValue, desktopLayout && styles.cpValueDesktop]}>{cp}</Text>
-                </Text>
+              {!isWanted && (cp != null || editing) ? (
+                editing ? (
+                  <View style={styles.inlineCpEditor}>
+                    <Text style={[styles.cpLabel, desktopLayout && styles.cpLabelDesktop]}>CP</Text>
+                    <TextInput
+                      accessibilityLabel="Combat Power"
+                      keyboardType="number-pad"
+                      onChangeText={(draftCp) => updateDraft({ cp: draftCp })}
+                      selectTextOnFocus
+                      style={[
+                        styles.inlineCpInput,
+                        desktopLayout && styles.inlineCpInputDesktop,
+                      ]}
+                      value={activeDraft.cp}
+                    />
+                  </View>
+                ) : (
+                  <Text style={styles.cpText}>
+                    <Text style={[styles.cpLabel, desktopLayout && styles.cpLabelDesktop]}>CP</Text>
+                    <Text style={[styles.cpValue, desktopLayout && styles.cpValueDesktop]}>{cp}</Text>
+                  </Text>
+                )
               ) : <View />}
-              {editing ? (
-                activeBackgroundOptions.length > 0 ? (
+              {isCaught && canEdit ? (
+                <Pressable
+                  accessibilityLabel={detail.row.favorite ? 'Remove Favorite' : 'Mark as Favorite'}
+                  accessibilityRole="button"
+                  disabled={isSaving}
+                  onPress={() => onToggleFavorite(!detail.row.favorite)}
+                  style={styles.iconButton}
+                >
+                  <Text style={[styles.favoriteIcon, detail.row.favorite && styles.favoriteSelected]}>
+                    {detail.row.favorite ? '★' : '☆'}
+                  </Text>
+                </Pressable>
+              ) : editing && activeBackgroundOptions.length > 0 ? (
                   <Pressable
                     accessibilityLabel="Choose location background"
                     accessibilityRole="button"
@@ -2556,22 +2783,28 @@ export const NativeInstanceDetailScreen = ({
                       style={[styles.editImage, styles.stageHeaderIcon]}
                     />
                   </Pressable>
-                ) : <View style={styles.iconButton} />
-              ) : isCaught && canEdit ? (
-                <Pressable
-                  accessibilityLabel={detail.row.favorite ? 'Remove Favorite' : 'Mark as Favorite'}
-                  accessibilityRole="button"
-                  disabled={isSaving}
-                  onPress={() => onToggleFavorite(!detail.row.favorite)}
-                  style={styles.iconButton}
-                >
-                  <Text style={[styles.favoriteIcon, detail.row.favorite && styles.favoriteSelected]}>
-                    {detail.row.favorite ? '★' : '☆'}
-                  </Text>
-                </Pressable>
               ) : <View style={styles.iconButton} />}
             </View>
           )}
+
+          {editing && isCaught && activeBackgroundOptions.length > 0 ? (
+            <View style={styles.inlineBackgroundRow}>
+              <Pressable
+                accessibilityLabel="Choose location background"
+                accessibilityRole="button"
+                onPress={() => setBackgroundPickerInstanceId(detail.row.id)}
+                style={styles.iconButton}
+              >
+                <Image
+                  fadeDuration={0}
+                  accessibilityElementsHidden
+                  resizeMode="contain"
+                  source={{ uri: toAssetUrl(assetBaseUrl, '/images/location.png') }}
+                  style={[styles.editImage, styles.stageHeaderIcon]}
+                />
+              </Pressable>
+            </View>
+          ) : null}
 
           {!isWanted && showArc ? (
             <View style={styles.arc}>
@@ -2639,7 +2872,7 @@ export const NativeInstanceDetailScreen = ({
             isTrade && styles.tradeDetailsPanel,
             { backgroundColor: palette.panel },
           ]}>
-            {!editing && caughtDateParts ? (
+            {caughtDateParts ? (
               <View
                 accessibilityLabel={`Caught on ${caughtDate}`}
                 accessible
@@ -2660,14 +2893,13 @@ export const NativeInstanceDetailScreen = ({
               <Text style={[styles.statusEyebrow, { color: status.accent }]}>{statusLabel}</Text>
             ) : null}
             {editing ? (
-              <NativeInstanceEditFields
+              <NativeInlineInstanceEditor
                 assetBaseUrl={assetBaseUrl}
                 detail={detail}
                 draft={activeDraft}
                 isCaught={isCaught}
                 isWanted={isWanted}
                 onChange={updateDraft}
-                onRequestLocationVisibility={requestKeyboardFieldVisibility}
                 palette={palette}
                 typeIconUris={displayTypeIconUris}
               />
@@ -2735,6 +2967,30 @@ export const NativeInstanceDetailScreen = ({
               </View>
             ) : null}
 
+            {editing ? (
+              <NativeInstanceEditFields
+                assetBaseUrl={assetBaseUrl}
+                detail={detail}
+                draft={activeDraft}
+                isCaught={isCaught}
+                isWanted={isWanted}
+                onChange={updateDraft}
+                onRequestLocationVisibility={requestKeyboardFieldVisibility}
+                palette={palette}
+              />
+            ) : null}
+
+            {editing && !isCaught ? (
+              <TargetSummary
+                assetBaseUrl={assetBaseUrl}
+                canEdit={canEdit}
+                detail={detail}
+                onEdit={editPreferences}
+                onOpenTarget={openTarget}
+                palette={palette}
+              />
+            ) : null}
+
             {!editing
               && isCaught
               && !instance?.mega
@@ -2788,29 +3044,6 @@ export const NativeInstanceDetailScreen = ({
           </View>
         </ScrollView>
       </NativeInstanceSwipeFrame>
-
-      {editing && !isWanted && canEdit ? (
-        <Pressable
-          accessibilityLabel="Save Pokémon"
-          accessibilityRole="button"
-          disabled={isSaving}
-          onPress={() => void toggleEdit()}
-          style={[
-            styles.floatingSaveButton,
-            {
-              left: Math.max(12, (width - shellWidth) / 2 + 12),
-              top: 30,
-            },
-          ]}
-        >
-          <Image fadeDuration={0}
-            accessibilityElementsHidden
-            resizeMode="contain"
-            source={{ uri: toAssetUrl(assetBaseUrl, '/images/save-icon.png') }}
-            style={[styles.editImage, styles.stageHeaderIcon]}
-          />
-        </Pressable>
-      ) : null}
 
       <NativeBackgroundPicker
         assetBaseUrl={assetBaseUrl}
@@ -2887,18 +3120,6 @@ const styles = StyleSheet.create({
   offlineBody: { color: '#f7d99b', fontSize: 12, textAlign: 'center' },
   headerRow: { zIndex: 7, width: '100%', minHeight: 52, flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', paddingHorizontal: 12 },
   iconButton: { minWidth: 48, minHeight: 48, alignItems: 'center', justifyContent: 'center' },
-  floatingSaveButton: {
-    position: 'absolute',
-    zIndex: 30,
-    top: 30,
-    width: 48,
-    height: 48,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderRadius: 12,
-    backgroundColor: 'rgba(20,35,35,0.46)',
-    elevation: 8,
-  },
   editImage: { width: 42, height: 42 },
   stageHeaderIcon: {
     tintColor: '#ffffff',
@@ -2919,12 +3140,38 @@ const styles = StyleSheet.create({
   cpLabelDesktop: { fontSize: 24, lineHeight: 50 },
   cpValue: { fontSize: 32, lineHeight: 35 },
   cpValueDesktop: { fontSize: 46, lineHeight: 50 },
+  inlineCpEditor: {
+    minWidth: 74,
+    minHeight: 40,
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    justifyContent: 'center',
+    gap: 2,
+  },
+  inlineCpInput: {
+    width: 62,
+    height: 34,
+    padding: 0,
+    borderWidth: 1,
+    borderColor: '#a3a3a3',
+    borderRadius: 2,
+    color: '#ffffff',
+    fontSize: 26,
+    lineHeight: 30,
+    fontWeight: '700',
+    textAlign: 'center',
+  },
+  inlineCpInputDesktop: { width: 92, height: 50, fontSize: 38, lineHeight: 44 },
   favoriteIcon: { color: '#ffffff', fontSize: 48, lineHeight: 50, fontWeight: '300' },
   favoriteSelected: { color: '#ffd000' },
-  wantedBadge: { minHeight: 40, justifyContent: 'center', marginTop: 1, paddingHorizontal: 12, borderWidth: 1, borderColor: '#8b9997', borderRadius: 999, backgroundColor: 'rgba(53,61,61,0.82)' },
-  mostWantedBadge: { borderColor: '#ff704d' },
-  wantedBadgeText: { color: '#c5cdcb', fontSize: 12, fontWeight: '900' },
-  mostWantedBadgeText: { color: '#ff8a63' },
+  inlineBackgroundRow: {
+    zIndex: 8,
+    width: '100%',
+    height: 43,
+    alignItems: 'flex-end',
+    marginTop: -9,
+    paddingHorizontal: 12,
+  },
   conditionsPanel: {
     zIndex: 8,
     width: '96.5%',
@@ -2985,6 +3232,7 @@ const styles = StyleSheet.create({
   remoteTradeIcon: { width: 39, height: 39, marginLeft: 2 },
   inactiveConditionIcon: { opacity: 0.32 },
   friendshipStatus: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: 5 },
+  friendshipSlider: { width: 280, maxWidth: '100%', height: 25, alignSelf: 'center' },
   conditionChip: {
     paddingHorizontal: 8,
     paddingVertical: 3,
@@ -3048,86 +3296,220 @@ const styles = StyleSheet.create({
   },
   megaEligibilityIcon: { width: 22, height: 22 },
   megaEligibilityText: { color: '#061f17', fontSize: 11, fontWeight: '900', letterSpacing: 0.5 },
-  editFields: { width: '94%', gap: 14, paddingTop: 3 },
-  editFieldGroup: { width: '100%', gap: 6 },
-  editFieldLabel: { fontSize: 10, fontWeight: '900', letterSpacing: 1.1 },
-  editInput: {
-    minHeight: 44,
-    paddingHorizontal: 11,
-    paddingVertical: 8,
-    borderWidth: 1,
-    borderRadius: 8,
-    fontSize: 16,
-    fontWeight: '700',
-  },
-  editNameInput: { minHeight: 48, fontSize: 25, textAlign: 'center' },
-  editTwoColumns: { width: '100%', flexDirection: 'row', gap: 10 },
-  editMeasurements: { width: '100%', flexDirection: 'row', alignItems: 'flex-end', gap: 8 },
-  editThreeColumns: { width: '100%', flexDirection: 'row', gap: 8 },
-  editColumn: { flex: 1, minWidth: 0, gap: 4 },
-  editTypes: {
-    width: 58,
+  inlineEditor: { width: '100%', alignItems: 'center' },
+  inlineIdentityRow: {
+    position: 'relative',
+    width: '100%',
     minHeight: 48,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 4,
   },
-  editTypeIcon: { width: 24, height: 24 },
-  inlineInputLabel: { fontSize: 11, fontWeight: '800', textAlign: 'center' },
-  genderOptions: { flexDirection: 'row', flexWrap: 'wrap', gap: 7 },
-  genderOption: {
-    minHeight: 42,
-    flexGrow: 1,
+  inlineIdentitySide: {
+    position: 'absolute',
+    top: 2,
+    width: 54,
+    minHeight: 44,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingHorizontal: 9,
-    borderWidth: 1,
-    borderRadius: 9,
   },
-  genderOptionSelected: { backgroundColor: 'rgba(40,137,226,0.23)' },
-  genderOptionText: { fontSize: 12, fontWeight: '900' },
+  inlineIdentitySideLeft: { left: 0 },
+  inlineIdentitySideRight: { right: 0 },
+  inlineIdentityButton: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
+  inlineIdentityIcon: { width: 34, height: 34 },
+  inlineIconInactive: { opacity: 0.28 },
+  inlineNameSlot: { maxWidth: '72%', alignItems: 'center', gap: 2 },
+  inlineNameMeasure: {
+    position: 'absolute',
+    opacity: 0,
+    fontSize: 30,
+    lineHeight: 34,
+    fontWeight: '500',
+  },
+  inlineNameInput: {
+    minWidth: 50,
+    maxWidth: '100%',
+    height: 42,
+    paddingHorizontal: 3,
+    paddingVertical: 0,
+    borderWidth: 1,
+    borderRadius: 2,
+    backgroundColor: 'transparent',
+    fontSize: 30,
+    lineHeight: 34,
+    fontWeight: '500',
+    textAlign: 'center',
+  },
+  inlineLevelGenderRow: {
+    width: '100%',
+    minHeight: 35,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 4,
+    paddingHorizontal: 22,
+  },
+  inlineLevelControl: { flexDirection: 'row', alignItems: 'center', gap: 3 },
+  inlineLevelLabel: { fontSize: 11, fontWeight: '700' },
+  inlineLevelInput: {
+    width: 50,
+    height: 24,
+    padding: 1,
+    borderWidth: 1,
+    borderRadius: 3,
+    backgroundColor: 'transparent',
+    fontSize: 13,
+    lineHeight: 17,
+    textAlign: 'center',
+  },
+  inlineGenderButton: {
+    position: 'absolute',
+    right: 22,
+    width: 40,
+    height: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  inlineGenderIcon: { width: 30, height: 30 },
+  inlineMeasurementsRow: {
+    width: '100%',
+    minHeight: 55,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 28,
+  },
+  inlineMeasurement: { flex: 1, alignItems: 'center' },
+  inlineMeasurementValue: { flexDirection: 'row', alignItems: 'baseline', justifyContent: 'center' },
+  inlineMeasurementInput: {
+    width: 45,
+    height: 23,
+    padding: 1,
+    borderWidth: 1,
+    borderRadius: 2,
+    backgroundColor: 'transparent',
+    fontSize: 16,
+    lineHeight: 19,
+    fontWeight: '500',
+    textAlign: 'right',
+  },
+  inlineMeasurementSuffix: { marginLeft: -1, fontSize: 15, fontWeight: '500' },
+  inlineMeasurementLabel: { marginTop: 1, fontSize: 10, fontWeight: '700' },
+  inlinePipe: { width: 2, height: 38 },
+  inlineTypes: { minWidth: 82, flexDirection: 'row', justifyContent: 'center', gap: 4, paddingHorizontal: 9 },
+  inlineTypeIcon: { width: 24, height: 24 },
+  editFields: { width: '94%', gap: 12, paddingTop: 6 },
+  editFieldGroup: { width: '100%', gap: 4 },
+  editMovesGroup: { paddingTop: 9, paddingBottom: 10, borderBottomWidth: 2 },
+  editFieldLabel: { fontSize: 10, fontWeight: '900', letterSpacing: 1.1 },
+  editInput: {
+    minHeight: 34,
+    paddingHorizontal: 8,
+    paddingVertical: 5,
+    borderWidth: 1,
+    borderRadius: 4,
+    fontSize: 14,
+    fontWeight: '400',
+  },
+  editIvRows: { width: '100%' },
+  editIvRow: {
+    position: 'relative',
+    width: '100%',
+    height: 30,
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    justifyContent: 'space-between',
+    paddingHorizontal: 2,
+  },
+  editIvLabel: { fontSize: 15, fontWeight: '500' },
+  editIvTrack: {
+    position: 'absolute',
+    left: '12.5%',
+    bottom: 0,
+    width: '75%',
+    height: 15,
+    overflow: 'hidden',
+    borderRadius: 7.5,
+  },
+  editIvInput: {
+    width: 22,
+    height: 22,
+    padding: 0,
+    borderWidth: 1,
+    borderRadius: 3,
+    backgroundColor: 'transparent',
+    fontSize: 16,
+    lineHeight: 20,
+    textAlign: 'center',
+  },
+  addMoveButton: {
+    width: 26,
+    height: 26,
+    alignSelf: 'center',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 4,
+    borderWidth: 2,
+    borderColor: '#ffffff',
+    borderRadius: 13,
+  },
+  addMoveText: { marginTop: -2, fontSize: 24, lineHeight: 25, fontWeight: '400' },
   booleanOptions: { flexDirection: 'row', gap: 7 },
   booleanOption: {
-    minHeight: 42,
+    minHeight: 27,
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
-    borderRadius: 9,
+    borderRadius: 14,
   },
-  booleanOptionSelected: { backgroundColor: 'rgba(40,137,226,0.23)' },
-  booleanOptionText: { fontSize: 12, fontWeight: '900' },
+  booleanOptionSelected: { backgroundColor: 'rgba(224,240,229,0.2)' },
+  booleanOptionText: { fontSize: 10, fontWeight: '900' },
   disabledOption: { opacity: 0.42 },
   editHelpText: { fontSize: 12, lineHeight: 17 },
   powerPanel: {
     width: '100%',
-    gap: 12,
-    padding: 11,
-    borderWidth: 1,
-    borderRadius: 10,
-    backgroundColor: 'rgba(127,145,141,0.09)',
+    gap: 8,
+    paddingVertical: 8,
+    borderTopWidth: 2,
+    borderBottomWidth: 2,
   },
+  powerActionRow: { minHeight: 46, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 12 },
+  powerActionPill: {
+    minHeight: 42,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 999,
+    backgroundColor: '#8be39e',
+  },
+  powerActionText: { color: '#061f17', fontSize: 12, lineHeight: 14, fontWeight: '700', letterSpacing: 0.4 },
+  powerActionGlyph: { width: 27, height: 27 },
+  powerActionTarget: { width: 34, height: 34 },
+  maxPowerButton: { width: 42, height: 42, alignItems: 'center', justifyContent: 'center' },
+  maxPowerIcon: { width: 35, height: 35 },
   powerTitle: { fontSize: 14, fontWeight: '900' },
   powerFormOptions: { flexDirection: 'row', flexWrap: 'wrap', gap: 7 },
   powerFormOption: {
-    width: '31.8%',
-    minWidth: 92,
-    minHeight: 104,
+    minWidth: 148,
+    minHeight: 46,
+    flexGrow: 1,
+    flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 3,
-    paddingHorizontal: 5,
-    paddingVertical: 6,
+    gap: 7,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
     borderWidth: 1,
-    borderRadius: 9,
+    borderRadius: 999,
   },
   powerFormOptionSelected: { backgroundColor: 'rgba(40,137,226,0.18)' },
   powerFormOptionDisabled: { opacity: 0.45 },
-  powerFormImage: { width: 62, height: 62 },
+  powerFormImage: { width: 34, height: 34 },
   powerFormLabel: { fontSize: 11, lineHeight: 13, fontWeight: '900', textAlign: 'center' },
   fusionPartnerPanel: { gap: 7, paddingTop: 2 },
-  shadowOptionSelected: { backgroundColor: 'rgba(103,76,184,0.25)' },
   maxMovesPanel: { width: '100%', gap: 9 },
   maxMovesHeading: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   maxMovesIcon: { width: 34, height: 34 },
@@ -3147,11 +3529,18 @@ const styles = StyleSheet.create({
   maxMoveOptionText: { fontSize: 11, fontWeight: '900' },
   editMetaPanel: {
     width: '100%',
-    gap: 12,
-    padding: 10,
-    borderRadius: 10,
-    backgroundColor: 'rgba(127,145,141,0.09)',
+    gap: 9,
+    padding: 9,
+    borderRadius: 7,
+    backgroundColor: 'rgba(170,170,170,0.22)',
   },
+  editMetaSummary: { minHeight: 44, flexDirection: 'row', alignItems: 'flex-start' },
+  editMetaSummaryCopy: { flex: 1, minWidth: 0, alignItems: 'flex-start' },
+  editMetaSummaryValue: { marginVertical: 3, fontSize: 16, lineHeight: 19 },
+  editMetaSummaryDate: { fontSize: 11, lineHeight: 14, fontWeight: '600', letterSpacing: 0.4 },
+  editMetaBall: { width: 30, height: 30, marginTop: 1, marginRight: 2 },
+  editMetaBallLarge: { transform: [{ scale: 1.4 }] },
+  editMetaDivider: { width: '100%', height: StyleSheet.hairlineWidth },
   locationSuggestionStatus: { minHeight: 30, flexDirection: 'row', alignItems: 'center', gap: 8 },
   locationSuggestionStatusText: { fontSize: 12, fontWeight: '700' },
   locationSuggestionError: { color: '#ff7188', fontSize: 12, lineHeight: 17, fontWeight: '700' },
@@ -3172,35 +3561,39 @@ const styles = StyleSheet.create({
     borderBottomWidth: StyleSheet.hairlineWidth,
   },
   locationSuggestionPressed: { backgroundColor: 'rgba(56,169,255,0.14)' },
-  locationSuggestionPin: { width: 18, fontSize: 20, lineHeight: 22, fontWeight: '900', textAlign: 'center' },
   locationSuggestionText: { flex: 1, minWidth: 0, fontSize: 14, lineHeight: 19, fontWeight: '800' },
-  ballOptions: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
+  ballOptions: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: 6 },
   ballOption: {
-    minHeight: 38,
-    flexGrow: 1,
-    minWidth: '30%',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingHorizontal: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
     borderWidth: 1,
-    borderRadius: 8,
+    borderRadius: 999,
   },
-  ballOptionText: { fontSize: 10, fontWeight: '900' },
-  choiceField: {
-    minHeight: 52,
+  ballCaughtLabel: { marginBottom: 1, fontSize: 12, textAlign: 'center' },
+  ballOptionText: { fontSize: 10, lineHeight: 11, fontWeight: '400', letterSpacing: 0.4 },
+  choiceFieldRow: {
+    width: '100%',
+    minHeight: 25,
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 10,
-    paddingHorizontal: 11,
-    paddingVertical: 7,
-    borderWidth: 1,
-    borderRadius: 9,
+    justifyContent: 'space-between',
   },
-  choiceFieldTypeIcon: { width: 24, height: 24, flexShrink: 0 },
-  choiceFieldCopy: { flex: 1, minWidth: 0, gap: 2 },
-  choiceFieldValue: { fontSize: 15, fontWeight: '800' },
-  choiceFieldPower: { minWidth: 34, fontSize: 14, fontWeight: '800', textAlign: 'right' },
-  choiceChevron: { fontSize: 25, lineHeight: 26 },
+  choiceField: {
+    width: '70%',
+    minHeight: 25,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 6,
+    paddingVertical: 1,
+    borderWidth: 1,
+    borderRadius: 4,
+  },
+  choiceFieldTypeIcon: { width: 20, height: 20, flexShrink: 0 },
+  choiceFieldTypeSpacer: { width: 0, height: 0 },
+  choiceFieldValue: { fontSize: 14, fontWeight: '600', textAlign: 'center' },
+  choiceFieldPower: { minWidth: 44, fontSize: 16, fontWeight: '400', textAlign: 'right' },
   choiceModalBackdrop: { flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(0,0,0,0.66)' },
   choiceModalSheet: {
     maxHeight: '82%',
@@ -3225,12 +3618,21 @@ const styles = StyleSheet.create({
   choiceOptionMeta: { marginTop: 2, fontSize: 12 },
   choiceOptionPower: { minWidth: 34, fontSize: 14, fontWeight: '900', textAlign: 'right' },
   choiceCheck: { color: '#43c995', fontSize: 22, fontWeight: '900' },
-  sizePreferenceRow: { gap: 5 },
-  sizePreferenceLabel: { paddingLeft: 2 },
-  sizeOptions: { flexDirection: 'row', gap: 5 },
-  sizeOption: { minHeight: 42, flex: 1, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderRadius: 8 },
+  wantedSizeGrid: {
+    width: '100%',
+    flexDirection: 'row',
+    gap: 10,
+    marginTop: 5,
+    paddingHorizontal: 10,
+  },
+  sizePreferenceRow: { flex: 1, minWidth: 0, gap: 5 },
+  sizePreferenceHeading: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 5 },
+  sizePreferenceIcon: { width: 18, height: 18, opacity: 0.78 },
+  sizePreferenceLabel: { paddingLeft: 0 },
+  sizeOptions: { flexDirection: 'row', gap: 3 },
+  sizeOption: { minHeight: 36, flex: 1, minWidth: 0, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderRadius: 7 },
   sizeOptionSelected: { backgroundColor: 'rgba(255,97,125,0.16)' },
-  sizeOptionText: { fontSize: 12, fontWeight: '900' },
+  sizeOptionText: { fontSize: 9, fontWeight: '900' },
   backgroundGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, paddingTop: 10, paddingBottom: 20 },
   backgroundOption: { width: '48.5%', height: 150, overflow: 'hidden', alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderRadius: 12 },
   backgroundOptionCaption: { position: 'absolute', left: 0, right: 0, bottom: 0, minHeight: 40, justifyContent: 'center', paddingHorizontal: 7, backgroundColor: 'rgba(0,0,0,0.72)' },

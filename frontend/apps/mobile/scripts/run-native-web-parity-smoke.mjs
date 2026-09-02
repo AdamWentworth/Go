@@ -351,6 +351,17 @@ const run = async () => {
             fullPage: true,
             path: join(artifactDirectory, `${colorScheme}-collection-catalog.png`),
           });
+          await page.getByRole('button', { name: /^Sort by / }).click();
+          await page.getByTestId('native-collection-sort-menu').waitFor({ state: 'visible' });
+          // The canonical six rows arrive 50 ms apart and each owns a 150 ms
+          // transition. Capture only after the final option has settled.
+          await page.waitForTimeout(425);
+          await page.screenshot({
+            fullPage: true,
+            path: join(artifactDirectory, `${colorScheme}-collection-sort-menu.png`),
+          });
+          await page.getByRole('button', { name: 'Close sort menu' }).click();
+          await page.getByTestId('native-collection-sort-menu').waitFor({ state: 'detached' });
           await page.getByRole('tab', { name: 'TAGS' }).click();
           await waitForCollectionPageOffset(page, 0);
           const tagsOffset = await readCollectionPageOffset(page);
@@ -394,13 +405,28 @@ const run = async () => {
           if (await page.getByRole('button', { name: 'Edit preferences' }).count()) {
             throw new Error(`Foreign ${expectedTag} listing exposed preference editing controls.`);
           }
-          await page.getByRole('button', { name: 'Close' }).click();
+          await page.getByTestId('native-instance-overlay').getByRole('button', { name: 'Close' }).click();
           await page.getByTestId('native-instance-overlay').waitFor({ state: 'detached' });
         }
 
         if (route === 'collection?instance=0006-default_demo-charizard') {
           await page.getByRole('button', { name: 'Edit Pokémon' }).click();
           await page.getByLabel('Pokémon detail editor').waitFor({ state: 'visible' });
+          await page.screenshot({
+            fullPage: true,
+            path: join(artifactDirectory, `${colorScheme}-collection-caught-overlay-edit.png`),
+          });
+          await page.getByTestId('native-instance-scroll').evaluate((element) => {
+            element.scrollTop = element.scrollHeight;
+          });
+          await page.waitForTimeout(100);
+          await page.screenshot({
+            fullPage: true,
+            path: join(artifactDirectory, `${colorScheme}-collection-caught-overlay-edit-bottom.png`),
+          });
+          await page.getByTestId('native-instance-scroll').evaluate((element) => {
+            element.scrollTop = 0;
+          });
           await page.getByLabel('Pokémon nickname').fill('Parity Charizard');
           await page.getByRole('button', { name: 'Save Pokémon' }).click();
           await page.getByLabel('Pokémon detail editor').waitFor({ state: 'detached' });
@@ -412,12 +438,41 @@ const run = async () => {
             throw new Error('For Trade overlay exposed the caught-only Favorite action.');
           }
           await page.getByRole('button', { name: 'Edit Pokémon' }).waitFor({ state: 'visible' });
+          await page.getByRole('button', { name: 'Edit Pokémon' }).click();
+          await page.getByLabel('Pokémon detail editor').waitFor({ state: 'visible' });
+          await page.screenshot({
+            fullPage: true,
+            path: join(artifactDirectory, `${colorScheme}-collection-trade-overlay-edit.png`),
+          });
+          await page.getByTestId('native-instance-scroll').evaluate((element) => {
+            element.scrollTop = element.scrollHeight;
+          });
+          await page.waitForTimeout(100);
+          await page.screenshot({
+            fullPage: true,
+            path: join(artifactDirectory, `${colorScheme}-collection-trade-overlay-edit-bottom.png`),
+          });
         }
 
         if (route === 'collection?instance=0094-default_demo-wanted') {
           await page.getByRole('button', { name: 'Edit wanted listing' }).click();
           await page.getByRole('button', { name: 'Set friendship to 5 hearts' }).click();
           await page.getByLabel('Remote trade available').waitFor({ state: 'visible' });
+          await page.screenshot({
+            fullPage: true,
+            path: join(artifactDirectory, `${colorScheme}-collection-wanted-overlay-edit.png`),
+          });
+          await page.getByTestId('native-instance-scroll').evaluate((element) => {
+            element.scrollTop = element.scrollHeight;
+          });
+          await page.waitForTimeout(100);
+          await page.screenshot({
+            fullPage: true,
+            path: join(artifactDirectory, `${colorScheme}-collection-wanted-overlay-edit-bottom.png`),
+          });
+          await page.getByTestId('native-instance-scroll').evaluate((element) => {
+            element.scrollTop = 0;
+          });
           await page.getByRole('button', { name: 'Save wanted listing' }).click();
           await page.getByLabel('5 of 5 friendship hearts').waitFor({ state: 'visible' });
         }

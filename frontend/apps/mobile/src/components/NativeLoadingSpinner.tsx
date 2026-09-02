@@ -94,6 +94,8 @@ export const NativeLoadingSpinner = forwardRef<NativeLoadingSpinnerHandle, Props
   return (
     <View pointerEvents="none" style={styles.viewport}>
       <ExpoImage
+        accessible={false}
+        accessibilityLabel="Loading animation"
         accessibilityElementsHidden
         autoplay={false}
         cachePolicy="memory"
@@ -109,6 +111,8 @@ export const NativeLoadingSpinner = forwardRef<NativeLoadingSpinnerHandle, Props
         useAppleWebpCodec={false}
       />
       <ExpoImage
+        accessible={false}
+        accessibilityLabel="Loading animation"
         accessibilityElementsHidden
         autoplay={false}
         cachePolicy="memory"

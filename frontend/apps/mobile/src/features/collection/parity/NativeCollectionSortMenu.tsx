@@ -23,13 +23,14 @@ export const NATIVE_SORT_OPTIONS: {
   key: NativeCollectionSort;
   label: string;
   icon: string;
+  iconHeight: number;
 }[] = [
-  { key: 'releaseDate', label: 'RECENT', icon: '/images/sorting/recent.png' },
-  { key: 'favorite', label: 'FAVORITE', icon: '/images/sorting/favorite.png' },
-  { key: 'number', label: 'NUMBER', icon: '/images/sorting/number.png' },
-  { key: 'hp', label: 'HP', icon: '/images/sorting/hp.png' },
-  { key: 'name', label: 'NAME', icon: '/images/sorting/name.png' },
-  { key: 'combatPower', label: 'COMBAT POWER', icon: '/images/sorting/cp.png' },
+  { key: 'releaseDate', label: 'RECENT', icon: '/images/sorting/recent.png', iconHeight: 35 },
+  { key: 'favorite', label: 'FAVORITE', icon: '/images/sorting/favorite.png', iconHeight: 35 },
+  { key: 'number', label: 'NUMBER', icon: '/images/sorting/number.png', iconHeight: 34 },
+  { key: 'hp', label: 'HP', icon: '/images/sorting/hp.png', iconHeight: 32 },
+  { key: 'name', label: 'NAME', icon: '/images/sorting/name.png', iconHeight: 16 },
+  { key: 'combatPower', label: 'COMBAT POWER', icon: '/images/sorting/cp.png', iconHeight: 22 },
 ];
 
 const SortBackdrop = ({ light }: { light: boolean }) => (
@@ -74,27 +75,28 @@ export const NativeCollectionSortMenu = memo(function NativeCollectionSortMenu({
   const light = useNativeColorScheme() === 'light';
   const insets = useSafeAreaInsets();
   const reduceMotion = useOptionalNativeDevicePreferences()?.shouldReduceMotion ?? false;
-  const [progress] = useState(() => new Animated.Value(0));
+  const [optionProgress] = useState(() => (
+    NATIVE_SORT_OPTIONS.map(() => new Animated.Value(0))
+  ));
   const [backdropProgress] = useState(() => new Animated.Value(0));
 
   useEffect(() => {
     if (open) {
-      progress.setValue(0);
+      optionProgress.forEach((progress) => progress.setValue(0));
       backdropProgress.setValue(0);
       if (reduceMotion) {
-        progress.setValue(1);
+        optionProgress.forEach((progress) => progress.setValue(1));
         backdropProgress.setValue(1);
         return undefined;
       }
       const frame = requestAnimationFrame(() => {
         Animated.parallel([
-          Animated.spring(progress, {
-            damping: 19,
-            mass: 0.85,
-            stiffness: 145,
+          Animated.stagger(50, optionProgress.map((progress) => Animated.timing(progress, {
+            duration: 150,
+            easing: Easing.ease,
             toValue: 1,
             useNativeDriver: true,
-          }),
+          }))),
           Animated.timing(backdropProgress, {
             duration: collectionExperienceParityContract.sortMenuTransitionMs,
             easing: Easing.inOut(Easing.ease),
@@ -106,17 +108,17 @@ export const NativeCollectionSortMenu = memo(function NativeCollectionSortMenu({
       return () => cancelAnimationFrame(frame);
     }
     if (reduceMotion) {
-      progress.setValue(0);
+      optionProgress.forEach((progress) => progress.setValue(0));
       backdropProgress.setValue(0);
       return undefined;
     }
     const closing = Animated.parallel([
-      Animated.timing(progress, {
-        duration: 180,
-        easing: Easing.in(Easing.ease),
+      Animated.stagger(50, optionProgress.map((progress) => Animated.timing(progress, {
+        duration: 150,
+        easing: Easing.ease,
         toValue: 0,
         useNativeDriver: true,
-      }),
+      }))),
       Animated.timing(backdropProgress, {
         duration: collectionExperienceParityContract.sortMenuTransitionMs,
         easing: Easing.inOut(Easing.ease),
@@ -126,7 +128,7 @@ export const NativeCollectionSortMenu = memo(function NativeCollectionSortMenu({
     ]);
     closing.start();
     return () => closing.stop();
-  }, [backdropProgress, open, progress, reduceMotion]);
+  }, [backdropProgress, open, optionProgress, reduceMotion]);
 
   useEffect(() => {
     if (presentation !== 'inline' || !open || Platform.OS === 'web') return undefined;
@@ -152,19 +154,28 @@ export const NativeCollectionSortMenu = memo(function NativeCollectionSortMenu({
         >
           <SortBackdrop light={light} />
         </Animated.View>
+        <Pressable
+          accessibilityElementsHidden
+          accessibilityLabel="Dismiss sort menu"
+          accessibilityRole="button"
+          importantForAccessibility="no-hide-descendants"
+          onPress={onClose}
+          style={StyleSheet.absoluteFill}
+          testID="native-collection-sort-backdrop"
+        />
         <View accessibilityLabel="Sort Pokémon" style={styles.optionList}>
           {NATIVE_SORT_OPTIONS.map((option, index) => {
             const selected = option.key === sort;
+            const progress = optionProgress[index];
             const animatedStyle = {
-              opacity: progress.interpolate({
-                inputRange: [Math.min(index * 0.06, 0.3), 1],
-                outputRange: [0, 1],
-                extrapolate: 'clamp' as const,
-              }),
+              opacity: progress,
               transform: [{
                 translateY: progress.interpolate({
                   inputRange: [0, 1],
-                  outputRange: [240 + (index * 34), 0],
+                  // CSS starts every canonical row one full viewport below
+                  // its final position. A large fixed native translation is
+                  // equivalent and stays on the compositor.
+                  outputRange: [1_000, 0],
                 }),
               }],
             };
@@ -184,7 +195,7 @@ export const NativeCollectionSortMenu = memo(function NativeCollectionSortMenu({
                     accessibilityElementsHidden
                     resizeMode="contain"
                     source={toNativeCollectionImageSource(assetBaseUrl, option.icon)}
-                    style={styles.optionIcon}
+                    style={[styles.optionIcon, { height: option.iconHeight }]}
                   />
                   {selected ? (
                     <Image fadeDuration={0}
@@ -196,7 +207,7 @@ export const NativeCollectionSortMenu = memo(function NativeCollectionSortMenu({
                         direction === 'descending' ? styles.descending : null,
                       ]}
                     />
-                  ) : <View style={styles.optionArrow} />}
+                  ) : <View style={styles.optionArrowSpacer} />}
                 </Pressable>
               </Animated.View>
             );
@@ -208,11 +219,20 @@ export const NativeCollectionSortMenu = memo(function NativeCollectionSortMenu({
           onPress={onClose}
           style={({ pressed }) => [
             styles.closeButton,
-            { bottom: Math.max(18, insets.bottom) },
+            { bottom: Math.max(14, insets.bottom) },
             pressed && styles.pressed,
           ]}
         >
-          <Text style={styles.closeText}>×</Text>
+          <Image
+            fadeDuration={0}
+            accessibilityElementsHidden
+            resizeMode="contain"
+            source={toNativeCollectionImageSource(
+              assetBaseUrl,
+              light ? '/images/close-button-light.png' : '/images/close-button.png',
+            )}
+            style={styles.closeImage}
+          />
         </Pressable>
     </View>
   );
@@ -239,7 +259,7 @@ export const NativeCollectionSortMenu = memo(function NativeCollectionSortMenu({
 });
 
 const styles = StyleSheet.create({
-  overlay: { flex: 1, justifyContent: 'flex-end' },
+  overlay: { flex: 1, alignItems: 'flex-end', justifyContent: 'center', overflow: 'hidden' },
   inlineOverlay: {
     position: 'absolute',
     top: 0,
@@ -250,45 +270,41 @@ const styles = StyleSheet.create({
     elevation: 24,
   },
   optionList: {
-    alignSelf: 'center',
-    width: '82%',
-    maxWidth: 420,
-    gap: 12,
-    marginBottom: '18%',
+    // Vite lets its three-column grid size to the longest label. At phone
+    // width that resolves to 250 px and keeps COMBAT POWER on one line.
+    width: 250,
+    maxWidth: '86%',
+    gap: 20,
+    // WindowOverlay's inherited column layout vertically centers the Vite
+    // grid, aligns it to the right, then moves it down by 20% of its height.
+    transform: [{ translateY: 91 }],
   },
   option: {
-    minHeight: 52,
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 12,
+    padding: 15,
+    gap: 10,
   },
   optionLabel: {
     flex: 1,
     color: '#deffe1',
-    fontSize: 20,
+    fontSize: 16,
     fontWeight: '500',
     textAlign: 'right',
   },
-  optionIcon: { width: 46, height: 46, marginLeft: 12 },
-  optionArrow: { width: 25, height: 25, marginLeft: 10 },
+  optionIcon: { width: 35 },
+  optionArrow: { width: 20, height: 20 },
+  optionArrowSpacer: { width: 20, height: 0 },
   descending: { transform: [{ rotate: '180deg' }] },
   closeButton: {
     position: 'absolute',
-    right: 22,
-    bottom: 18,
-    width: 54,
-    height: 54,
+    right: 29,
+    bottom: 14,
+    width: 50,
+    height: 50,
     alignItems: 'center',
     justifyContent: 'center',
-    borderWidth: 4,
-    borderColor: '#d9ffff',
-    borderRadius: 27,
-    backgroundColor: '#eefdfb',
-    shadowColor: '#ffffff',
-    shadowOpacity: 0.75,
-    shadowRadius: 4,
-    elevation: 5,
   },
-  closeText: { color: '#168d97', fontSize: 34, fontWeight: '300', lineHeight: 38 },
+  closeImage: { width: 50, height: 50 },
   pressed: { opacity: 0.72, transform: [{ scale: 0.97 }] },
 });
