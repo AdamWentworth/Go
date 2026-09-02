@@ -287,26 +287,13 @@ Notes:
 - MongoDB is not host-exposed by default.
 - Auth host exposure is loopback-only (`127.0.0.1:3002`).
 
-## 🚀 Production Deploy (Manual CD)
+## 🚀 Production Deployment
 
-Workflow:
-
-- `deploy-auth-prod`
-
-Manual inputs:
-
-- `image_ref` (for example `latest` or `sha-<commit>`)
-- `deploy_root` (default `/srv/pokegonexus`)
-- `service_name` (default `auth_service`)
-
-Deploy behavior:
-
-- Syncs prod repo to selected branch
-- Validates `authentication/.env` keys (`DATABASE_URL`, `JWT_SECRET`)
-- Ensures `kafka_default` network exists
-- Pulls target image and recreates `auth_service`
-- Health-checks with `GET /readyz` (`200` expected)
-- Rolls back on failure (when previous image exists)
+The private HomeOps `deploy-pokegonexus-service` workflow deploys Auth. It
+accepts only the current full PokeGoNexus `master` SHA, verifies the image's
+embedded revision, deploys its immutable digest, checks `/readyz`, and rolls
+back a failed replacement. This public repository never runs deployment code
+on the production runner.
 
 ## 🛡 Security Notes
 
