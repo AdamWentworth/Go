@@ -190,7 +190,13 @@ const NATIVE_FLAT_LIST_RENDERER_OPTIMIZATION = { strictMode: true } as const;
 // bounding the synchronous destination update to 18 cards. The three-viewport
 // window then supplies the same roughly five-row overscan Vite uses.
 const COLLECTION_INITIAL_ROW_BUDGET = 6;
-const COLLECTION_ROW_BATCH_BUDGET = 6;
+// Once the first viewport is present, admit only two new virtual rows (six
+// phone cards) per display interval. The previous six-row batch could attach
+// eighteen new remote Image views at once after the initial retained window,
+// whereas Vite's lazy images settle independently inside its five-row buffer.
+// A three-viewport native window leaves ample scroll runway for this smaller
+// batch while bounding Android's per-frame mount/decode work.
+const COLLECTION_ROW_BATCH_BUDGET = 2;
 // Every collection card row has deterministic geometry: its text bands have
 // fixed minimum heights and the image stage is a square derived from card
 // width. Vite gives its virtualizer the same kind of row-height model.

@@ -311,7 +311,7 @@ describe('NativeCollectionParityFixture', () => {
     expect(updatedGrid.props.stickyHeaderIndices).toBeUndefined();
     expect(updatedGrid.props.strictMode).toBe(true);
     expect(updatedGrid.props.initialNumToRender).toBe(6);
-    expect(updatedGrid.props.maxToRenderPerBatch).toBe(6);
+    expect(updatedGrid.props.maxToRenderPerBatch).toBe(2);
     expect(updatedGrid.props.windowSize).toBe(3);
     const firstPokemonImage = screen.getByLabelText(COLLECTION_PARITY_FIXTURES[3].name);
     expect(firstPokemonImage.props.resizeMethod).toBeUndefined();

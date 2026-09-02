@@ -1,9 +1,12 @@
 import { useState } from 'react';
-import { Text } from 'react-native';
-import { fireEvent, render } from '@testing-library/react-native';
+import { Image, Text } from 'react-native';
+import { act, cleanup, fireEvent, render } from '@testing-library/react-native';
 import {
+  NATIVE_FILTER_TILE_WARM_BATCH,
+  NATIVE_FILTER_TILE_WARM_PERIOD_MS,
   NativeCollectionSearchControls,
   NativeCollectionSearchMenu,
+  NativeRetainedCollectionSearchMenu,
 } from '../../../../src/features/collection/parity/NativeCollectionSearchControls';
 
 const controls = (query: string, onQueryChange: (value: string) => void) => (
@@ -22,6 +25,18 @@ const controls = (query: string, onQueryChange: (value: string) => void) => (
 );
 
 describe('NativeCollectionSearchMenu', () => {
+  beforeEach(() => {
+    jest.useFakeTimers();
+  });
+
+  afterEach(() => {
+    act(() => {
+      jest.runOnlyPendingTimers();
+    });
+    cleanup();
+    jest.useRealTimers();
+  });
+
   it('exposes filter tiles as real native controls and reports the selected filter', () => {
     const onFilterPress = jest.fn();
     const { getByTestId } = render(
@@ -35,6 +50,24 @@ describe('NativeCollectionSearchMenu', () => {
     expect(getByTestId('native-region-gradient-kanto')).toBeTruthy();
     fireEvent.press(getByTestId('native-collection-filter-shiny'));
     expect(onFilterPress).toHaveBeenCalledWith('Shiny');
+  });
+
+  it('warms concealed native filter images in bounded display-frame batches', () => {
+    const view = render(
+      <NativeRetainedCollectionSearchMenu
+        assetBaseUrl="https://pokegonexus.com"
+        onFilterPress={jest.fn()}
+        textColor="#ffffff"
+        visible={false}
+      />,
+    );
+
+    expect(NATIVE_FILTER_TILE_WARM_BATCH).toBe(2);
+    expect(view.UNSAFE_queryAllByType(Image)).toHaveLength(0);
+    act(() => jest.advanceTimersByTime(NATIVE_FILTER_TILE_WARM_PERIOD_MS + 1));
+    expect(view.UNSAFE_queryAllByType(Image)).toHaveLength(2);
+    act(() => jest.advanceTimersByTime(NATIVE_FILTER_TILE_WARM_PERIOD_MS + 1));
+    expect(view.UNSAFE_queryAllByType(Image)).toHaveLength(4);
   });
 });
 

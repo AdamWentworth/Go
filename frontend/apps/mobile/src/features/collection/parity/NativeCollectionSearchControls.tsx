@@ -36,7 +36,11 @@ const FILTER_TILE_COUNT = Object.values(FILTER_SECTIONS).reduce(
   (total, filters) => total + filters.length,
   0,
 );
-const FILTER_TILE_WARM_BATCH = 4;
+// Each tile owns a native Image. Pace the concealed warmup by real display
+// frames instead of allowing a chain of zero-delay React commits to mount the
+// complete menu before Android has painted once.
+export const NATIVE_FILTER_TILE_WARM_BATCH = 2;
+export const NATIVE_FILTER_TILE_WARM_PERIOD_MS = 16;
 
 const FILTER_ASSETS: Record<string, string> = {
   Shiny: '/images/shiny_search.png',
@@ -209,18 +213,24 @@ export const NativeRetainedCollectionSearchMenu = memo(function NativeRetainedCo
       return undefined;
     }
     if (tileLimit >= FILTER_TILE_COUNT) return undefined;
-    // This tree is invisible preparation, not animation. An ordinary rAF made
-    // four Android Image views decode on each foreground frame even while the
-    // user was scrolling or changing pages. Admit each small batch through
-    // the interaction-aware task queue; unlike requestIdleCallback, this warm
-    // path also finishes promptly before the user's likely first tap.
-    const task = runAfterNativeUiInteractions(() => {
-      setTileLimit((current) => Math.min(
-        FILTER_TILE_COUNT,
-        current + FILTER_TILE_WARM_BATCH,
-      ));
-    }, { preferIdle: false });
-    return task.cancel;
+    // This tree is invisible preparation, not animation. A bare sequence of
+    // zero-delay tasks can still produce several React commits and Android
+    // image decodes inside one display frame. Put an actual frame interval in
+    // front of the interaction-aware queue; the queue then pauses immediately
+    // if a foreground gesture begins during that interval.
+    let task: ReturnType<typeof runAfterNativeUiInteractions> | null = null;
+    const timer = setTimeout(() => {
+      task = runAfterNativeUiInteractions(() => {
+        setTileLimit((current) => Math.min(
+          FILTER_TILE_COUNT,
+          current + NATIVE_FILTER_TILE_WARM_BATCH,
+        ));
+      }, { preferIdle: false });
+    }, NATIVE_FILTER_TILE_WARM_PERIOD_MS);
+    return () => {
+      clearTimeout(timer);
+      task?.cancel();
+    };
   }, [tileLimit, visible]);
   return <NativeCollectionSearchMenu {...props} tileLimit={tileLimit} />;
 });
