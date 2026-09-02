@@ -11,7 +11,8 @@ RUN CGO_ENABLED=0 go build -trimpath -ldflags="-s -w" -o /out/receiver_service .
 
 FROM alpine:3.23
 
-RUN apk add --no-cache ca-certificates tzdata \
+RUN apk upgrade --no-cache \
+    && apk add --no-cache ca-certificates tzdata \
     && addgroup -S app \
     && adduser -S -G app app \
     && mkdir -p /app \
