@@ -11,6 +11,11 @@ RUN CGO_ENABLED=0 go build -trimpath -ldflags="-s -w" -o /out/storage_service .
 RUN CGO_ENABLED=0 go build -trimpath -ldflags="-s -w" -o /out/storage_migrate ./cmd/storage-migrate
 
 FROM alpine:3.23
+
+ARG POKEGONEXUS_BUILD_SHA=unknown
+LABEL org.opencontainers.image.source="https://github.com/AdamWentworth/PokeGoNexus" \
+      org.opencontainers.image.revision="${POKEGONEXUS_BUILD_SHA}"
+
 WORKDIR /app
 
 RUN apk upgrade --no-cache \

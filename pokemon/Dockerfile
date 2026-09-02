@@ -13,9 +13,14 @@ RUN go mod download
 
 COPY . .
 RUN go build -trimpath -ldflags="-s -w" -o /out/pokemon_data ./cmd/pokemon
+RUN go build -trimpath -ldflags="-s -w" -o /out/catalog_migrate ./cmd/catalog-migrate
 
 # Runtime stage
 FROM alpine:3.23
+
+ARG POKEGONEXUS_BUILD_SHA=unknown
+LABEL org.opencontainers.image.source="https://github.com/AdamWentworth/PokeGoNexus" \
+      org.opencontainers.image.revision="${POKEGONEXUS_BUILD_SHA}"
 
 WORKDIR /usr/src/app
 RUN apk upgrade --no-cache \
@@ -24,6 +29,7 @@ RUN apk upgrade --no-cache \
     && adduser -S -G app app
 
 COPY --from=build /out/pokemon_data /usr/local/bin/pokemon_data
+COPY --from=build /out/catalog_migrate /usr/local/bin/catalog_migrate
 
 USER app
 

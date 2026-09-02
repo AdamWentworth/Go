@@ -404,14 +404,13 @@ Application metrics:
 ## 🚀 CI/CD
 
 - CI: `.github/workflows/ci-storage.yml`
-- Deploy: `.github/workflows/deploy-storage-prod.yml`
+- Production deployment: private HomeOps `deploy-pokegonexus-service`
 
 Deploy workflow includes:
 
-- prod repo sync
 - preflight env/compose/network checks
-- deploy with selected image
-- process-health validation
+- migration from the exact revision-labelled image
+- immutable-digest deployment and readiness validation
 - rollback on failure
 
 ## 🔐 Security Notes
