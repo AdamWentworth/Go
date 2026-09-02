@@ -13,7 +13,8 @@ RUN CGO_ENABLED=0 go build -trimpath -ldflags="-s -w" -o /out/storage_migrate ./
 FROM alpine:3.23
 WORKDIR /app
 
-RUN apk add --no-cache ca-certificates tzdata mariadb-client \
+RUN apk upgrade --no-cache \
+    && apk add --no-cache ca-certificates tzdata mariadb-client \
     && addgroup -S app \
     && adduser -S -G app app \
     && mkdir -p /app/backups \

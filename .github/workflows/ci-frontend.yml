@@ -7,7 +7,6 @@ on:
       - "assets/**"
       - "nginx/**"
       - ".github/workflows/ci-frontend.yml"
-      - ".github/workflows/deploy-frontend-prod.yml"
       - ".github/workflows/smoke-frontend-prod.yml"
   push:
     branches: ["main", "master"]
@@ -16,7 +15,6 @@ on:
       - "assets/**"
       - "nginx/**"
       - ".github/workflows/ci-frontend.yml"
-      - ".github/workflows/deploy-frontend-prod.yml"
       - ".github/workflows/smoke-frontend-prod.yml"
   schedule:
     # Full Firefox/WebKit/Safari proofing runs nightly; pushes keep the two
@@ -333,7 +331,11 @@ jobs:
           cp -R assets/. nginx/canonical-assets/
 
       - name: Build Container Image
-        run: docker build --pull -t frontend_nginx:ci-${{ github.sha }} ./nginx
+        run: |
+          docker build --pull \
+            --build-arg "POKEGONEXUS_BUILD_SHA=${GITHUB_SHA}" \
+            -t frontend_nginx:ci-${GITHUB_SHA} \
+            ./nginx
 
       - name: Stage Web Runtime Dependency Manifest
         shell: bash

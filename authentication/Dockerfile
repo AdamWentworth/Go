@@ -5,7 +5,8 @@ FROM node:24-alpine3.23
 WORKDIR /usr/src/app
 
 # mongodump is used by backup tasks.
-RUN apk add --no-cache mongodb-tools \
+RUN apk upgrade --no-cache \
+    && apk add --no-cache mongodb-tools \
     && addgroup -S adam \
     && adduser -S -D -H -G adam adam
 

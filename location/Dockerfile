@@ -9,7 +9,8 @@ RUN CGO_ENABLED=0 go build -trimpath -ldflags="-s -w" -o /out/location_service .
 
 FROM alpine:3.23
 WORKDIR /app
-RUN apk add --no-cache ca-certificates tzdata \
+RUN apk upgrade --no-cache \
+    && apk add --no-cache ca-certificates tzdata \
     && addgroup -S app \
     && adduser -S -G app app
 COPY --from=builder /out/location_service /usr/local/bin/location_service

@@ -24,7 +24,8 @@ FROM alpine:3.23
 
 WORKDIR /usr/src/app
 
-RUN apk add --no-cache ca-certificates tzdata \
+RUN apk upgrade --no-cache \
+    && apk add --no-cache ca-certificates tzdata \
     && addgroup -S app \
     && adduser -S -G app app
 
