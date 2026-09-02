@@ -72,9 +72,6 @@ const verifyDiscordFlow = (token) => jwt.verify(token, secret(), {
   algorithms: ['HS256'],
   issuer: 'pokemongonexus-discord-oauth'
 });
-const discordCookieOptions = {
-  ...cookieOptions
-};
 const signFacebookFlow = (payload) => jwt.sign(payload, secret(), {
   expiresIn: FLOW_TTL,
   algorithm: 'HS256',
@@ -84,9 +81,6 @@ const verifyFacebookFlow = (token) => jwt.verify(token, secret(), {
   algorithms: ['HS256'],
   issuer: 'pokemongonexus-facebook-oauth'
 });
-const facebookCookieOptions = {
-  ...cookieOptions
-};
 const safeFrontendOrigin = (candidate) =>
   allowedFrontendOrigins.has(candidate) ? candidate : fallbackFrontendOrigin;
 const redirectWithStatus = (res, origin, path, status) =>
@@ -394,7 +388,7 @@ router.get('/discord', (req, res) => {
       ...flowIdentity,
       nonce: crypto.randomBytes(24).toString('base64url')
     });
-    res.cookie(DISCORD_STATE_COOKIE, state, discordCookieOptions);
+    res.cookie(DISCORD_STATE_COOKIE, state, cookieOptions);
     return res.redirect(302, discordOAuth.createAuthorizationUrl({ state }));
   } catch (error) {
     return res.status(error.status || 500).json({
@@ -425,7 +419,7 @@ router.get('/discord/callback', async (req, res) => {
       throw new Error('OAuth state mismatch.');
     }
     flow = verifyDiscordFlow(state);
-    res.clearCookie(DISCORD_STATE_COOKIE, { ...discordCookieOptions, maxAge: undefined });
+    res.clearCookie(DISCORD_STATE_COOKIE, { ...cookieOptions, maxAge: undefined });
 
     if (typeof req.query.code !== 'string') {
       throw new Error('Discord authorization was not completed.');
@@ -490,7 +484,7 @@ router.get('/discord/callback', async (req, res) => {
       email: discordIdentity.email,
       emailVerified: true,
       deviceId: flow.deviceId
-    }), discordCookieOptions);
+    }), cookieOptions);
     return redirectWithStatus(res, flow.returnOrigin, '/register', 'discord');
   } catch (error) {
     logger.warn(`Discord OAuth callback failed: ${error.message}`);
@@ -579,7 +573,7 @@ router.post('/discord/complete-registration', async (req, res, next) => {
     res.locals.user = user;
     res.locals.tokens = tokens;
     res.clearCookie(DISCORD_PENDING_COOKIE, {
-      ...discordCookieOptions,
+      ...cookieOptions,
       maxAge: undefined
     });
     next();
@@ -626,7 +620,7 @@ router.get('/facebook', (req, res) => {
       ...flowIdentity,
       nonce: crypto.randomBytes(24).toString('base64url')
     });
-    res.cookie(FACEBOOK_STATE_COOKIE, state, facebookCookieOptions);
+    res.cookie(FACEBOOK_STATE_COOKIE, state, cookieOptions);
     const authorizationUrl = facebookOAuth.createAuthorizationUrl({ state });
     if (req.query.response_mode === 'json') {
       return res.json({ authorizationUrl });
@@ -662,7 +656,7 @@ router.get('/facebook/callback', async (req, res) => {
     }
     flow = verifyFacebookFlow(state);
     res.clearCookie(FACEBOOK_STATE_COOKIE, {
-      ...facebookCookieOptions,
+      ...cookieOptions,
       maxAge: undefined
     });
 
@@ -729,7 +723,7 @@ router.get('/facebook/callback', async (req, res) => {
       email: identity.email,
       emailVerified: true,
       deviceId: flow.deviceId
-    }), facebookCookieOptions);
+    }), cookieOptions);
     return redirectWithStatus(res, flow.returnOrigin, '/register', 'facebook');
   } catch (error) {
     logger.warn(`Facebook OAuth callback failed: ${error.message}`);
@@ -822,7 +816,7 @@ router.post('/facebook/complete-registration', async (req, res, next) => {
     res.locals.user = user;
     res.locals.tokens = tokens;
     res.clearCookie(FACEBOOK_PENDING_COOKIE, {
-      ...facebookCookieOptions,
+      ...cookieOptions,
       maxAge: undefined
     });
     next();

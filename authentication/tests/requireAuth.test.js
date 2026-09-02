@@ -30,7 +30,7 @@ describe('requireAuth', () => {
       name: 'bearer header',
       request: {
         cookies: {},
-        get: jest.fn(() => 'Bearer mobile-token')
+        get: jest.fn(() => 'bEaReR \t mobile-token ')
       },
       expectedToken: 'mobile-token'
     }
@@ -56,10 +56,15 @@ describe('requireAuth', () => {
     expect(next).toHaveBeenCalledTimes(1);
   });
 
-  test('rejects a missing or malformed bearer session', () => {
+  test.each([
+    'Basic credentials',
+    'Bearer-token',
+    'Bearer',
+    `Bearer ${' '.repeat(20_000)}`
+  ])('rejects a missing or malformed bearer session', (authorization) => {
     const req = {
       cookies: {},
-      get: jest.fn(() => 'Basic credentials')
+      get: jest.fn(() => authorization)
     };
     const res = response();
 

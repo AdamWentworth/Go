@@ -11,8 +11,12 @@ const readAccessToken = (req) => {
     : req.headers?.authorization;
   if (typeof authorization !== 'string') return '';
 
-  const match = authorization.trim().match(/^Bearer\s+(.+)$/i);
-  return match?.[1]?.trim() || '';
+  const normalized = authorization.trim();
+  if (normalized.length < 8 || normalized.slice(0, 6).toLowerCase() !== 'bearer') {
+    return '';
+  }
+  if (normalized[6].trim()) return '';
+  return normalized.slice(7).trim();
 };
 
 module.exports = (req, res, next) => {

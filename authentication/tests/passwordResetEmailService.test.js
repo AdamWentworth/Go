@@ -24,7 +24,7 @@ describe('password reset email service', () => {
     expect(email.subject).toBe('Reset your Pokémon Go Nexus password');
     expect(email.html).toContain('Reset my password');
     expect(email.html).toContain('30 minutes');
-    expect(email.html).toContain(resetUrl.replace('&', '&amp;'));
+    expect(email.html).toContain(resetUrl.replaceAll('&', '&amp;'));
     expect(email.text).toContain(resetUrl);
     expect(email.text).toContain('can only be used once');
     expect(email.html).not.toMatch(/click|track/i);
