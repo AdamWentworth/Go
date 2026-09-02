@@ -69,7 +69,11 @@ jobs:
       - uses: actions/checkout@v5
 
       - name: Build Container Image
-        run: docker build --pull -t location_service:ci-${{ github.sha }} ./location
+        run: >-
+          docker build --pull
+          --build-arg POKEGONEXUS_BUILD_SHA=${{ github.sha }}
+          -t location_service:ci-${{ github.sha }}
+          ./location
 
       - name: Trivy Filesystem Scan
         shell: bash

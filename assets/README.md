@@ -54,7 +54,8 @@ Deploy flow (current CI/CD):
 
 1. Commit and push changes under `assets/**`, `nginx/**`, or `frontend/**`.
 2. `ci-frontend` rebuilds the frontend nginx image and now stages `assets/**` into the image.
-3. Run `deploy-frontend-prod` workflow to roll out `frontend_nginx`.
+3. Run the private HomeOps `deploy-pokegonexus-frontend` workflow with the
+   current full `master` SHA to roll out `frontend_nginx`.
 4. Verify from prod:
    - `curl -I https://pokegonexus.com/media/images/alola_search.png`
    - Expect `200` with `Cache-Control: public, max-age=31536000, immutable`.

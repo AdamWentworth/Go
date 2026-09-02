@@ -268,9 +268,12 @@ Events Service → Notifies connected clients via SSE
 
 ## 🌐 Production Deployment
 
-- Served via **NGINX on Windows**
-- TLS certs via **Certbot**
-- Frontend build output in `/build`
+- Served by **NGINX containers on Ubuntu**
+- TLS certificates are renewed by **Certbot** on the production host
+- GitHub-hosted CI tests the public repository and publishes immutable images tagged by commit
+- The private **HomeOps** repository owns frontend, backend, database, Kafka, and monitoring production controls
+- HomeOps accepts only the current `master` SHA, verifies each application image's embedded source revision, deploys its immutable digest, health-checks it, and rolls back failed replacements
+- The production runner does not check out or execute deployment code from this public repository
 - Reverse proxy maps `/api/*` routes to correct services
 - SSE and CORS handled in proxy config
 

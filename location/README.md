@@ -81,7 +81,7 @@ Python backup helpers in this folder read:
 ## 🔁 CI/CD
 
 - CI: `.github/workflows/ci-location.yml`
-- CD: `.github/workflows/deploy-location-prod.yml`
+- Production deployment: private HomeOps `deploy-pokegonexus-service`
 
 CD preflight checks:
 
