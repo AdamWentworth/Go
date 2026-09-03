@@ -96,8 +96,24 @@ const commonEnvironment = {
   POKEGONEXUS_ANDROID_DEVICE_ID: device,
   POKEGONEXUS_PERFORMANCE_SAMPLES: process.env.POKEGONEXUS_PERFORMANCE_SAMPLES || '5',
 };
+const originalStayAwake = run(adb, [
+  '-s', device, 'shell', 'settings', 'get', 'global', 'stay_on_while_plugged_in',
+], process.env, { capture: true }).trim();
 
 try {
+  run(adb, [
+    '-s', device, 'shell', 'settings', 'put', 'global', 'stay_on_while_plugged_in', '2',
+  ]);
+  run(adb, ['-s', device, 'shell', 'input', 'keyevent', 'KEYCODE_WAKEUP']);
+  run(adb, ['-s', device, 'shell', 'wm', 'dismiss-keyguard']);
+  const windowState = run(adb, [
+    '-s', device, 'shell', 'dumpsys', 'window',
+  ], process.env, { capture: true });
+  if (/isKeyguardShowing=true|mDreamingLockscreen=true/.test(windowState)) {
+    throw new Error(
+      'Unlock the physical phone before running parity; its secure keyguard cannot be dismissed through ADB.',
+    );
+  }
   run('npm', ['--workspace', 'apps/web', 'run', 'performance:parity:report:android'], {
     ...commonEnvironment,
     POKEGONEXUS_PERFORMANCE_REPORT: viteReport,
@@ -121,6 +137,13 @@ try {
     stdio: 'ignore',
   });
   spawnSync(adb, ['-s', device, 'reverse', '--remove', 'tcp:3100'], {
+    cwd: frontendDirectory,
+    stdio: 'ignore',
+  });
+  const restoreStayAwakeArgs = originalStayAwake === 'null' || originalStayAwake === ''
+    ? ['-s', device, 'shell', 'settings', 'delete', 'global', 'stay_on_while_plugged_in']
+    : ['-s', device, 'shell', 'settings', 'put', 'global', 'stay_on_while_plugged_in', originalStayAwake];
+  spawnSync(adb, restoreStayAwakeArgs, {
     cwd: frontendDirectory,
     stdio: 'ignore',
   });

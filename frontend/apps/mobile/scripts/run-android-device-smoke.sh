@@ -40,6 +40,7 @@ metro_pid=""
 metro_pgid=""
 fixture_pid=""
 fixture_pgid=""
+performance_logcat_pid=""
 device_id=""
 device_kind=""
 device_smoke_host="10.0.2.2"
@@ -58,6 +59,10 @@ original_navigation_overlay=""
 navigation_overlay_changed="false"
 
 cleanup() {
+  if [[ -n "${performance_logcat_pid}" ]] && kill -0 "${performance_logcat_pid}" 2>/dev/null; then
+    kill "${performance_logcat_pid}" 2>/dev/null || true
+    wait "${performance_logcat_pid}" 2>/dev/null || true
+  fi
   if [[ -n "${metro_pgid}" ]]; then
     kill -- "-${metro_pgid}" 2>/dev/null || true
     for _attempt in $(seq 1 20); do
@@ -75,6 +80,10 @@ cleanup() {
     kill -KILL -- "-${fixture_pgid}" 2>/dev/null || true
   elif [[ -n "${fixture_pid}" ]] && kill -0 "${fixture_pid}" 2>/dev/null; then
     kill "${fixture_pid}" 2>/dev/null || true
+  fi
+  if [[ "${device_kind}" == "physical" && -n "${device_id}" ]]; then
+    "${adb_bin}" -s "${device_id}" reverse --remove tcp:8091 >/dev/null 2>&1 || true
+    "${adb_bin}" -s "${device_id}" reverse --remove tcp:8092 >/dev/null 2>&1 || true
   fi
   if [[ "${density_changed}" == "true" && -n "${device_id}" ]]; then
     if [[ -n "${original_density_override}" ]]; then
@@ -578,6 +587,11 @@ run_maestro_flow() {
     sleep 1
   fi
   if [[ "${smoke_performance}" == "true" ]]; then
+    mkdir -p "${artifact_dir}/maestro"
+    "${adb_bin}" -s "${device_id}" logcat -c >/dev/null 2>&1 || true
+    "${adb_bin}" -s "${device_id}" logcat -v threadtime \
+      >"${artifact_dir}/maestro/${output_name}-logcat.txt" 2>&1 &
+    performance_logcat_pid="$!"
     "${adb_bin}" -s "${device_id}" shell dumpsys gfxinfo "${app_id}" reset >/dev/null 2>&1 || true
   fi
   maestro_status=0
@@ -588,6 +602,12 @@ run_maestro_flow() {
     --test-output-dir "${artifact_dir}/maestro/${output_name}" \
     "${flow}" || maestro_status="$?"
   if [[ "${smoke_performance}" == "true" ]]; then
+    sleep 0.2
+    if kill -0 "${performance_logcat_pid}" 2>/dev/null; then
+      kill "${performance_logcat_pid}" 2>/dev/null || true
+      wait "${performance_logcat_pid}" 2>/dev/null || true
+    fi
+    performance_logcat_pid=""
     "${adb_bin}" -s "${device_id}" shell dumpsys gfxinfo "${app_id}" framestats \
       >"${artifact_dir}/maestro/${output_name}-gfxinfo.txt" 2>&1 || true
     "${adb_bin}" -s "${device_id}" shell dumpsys meminfo "${app_id}" \
@@ -670,9 +690,7 @@ if [[ "${smoke_performance}" == "true" ]]; then
   performance_gfx_logs=()
   performance_memory_logs=()
   for successful_output in "${successful_smoke_outputs[@]}"; do
-    while IFS= read -r performance_log; do
-      performance_device_logs+=("${performance_log}")
-    done < <(find "${artifact_dir}/maestro/${successful_output}" -type f -name 'device-logcat.txt' | sort)
+    performance_device_logs+=("${artifact_dir}/maestro/${successful_output}-logcat.txt")
     performance_gfx_logs+=("${artifact_dir}/maestro/${successful_output}-gfxinfo.txt")
     performance_memory_logs+=("${artifact_dir}/maestro/${successful_output}-meminfo.txt")
   done

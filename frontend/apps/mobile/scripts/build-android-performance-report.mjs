@@ -54,6 +54,10 @@ const eventScenarios = {
   collection_organizer_painted: 'interaction.collection.organizer',
   instance_overlay_target_committed: 'interaction.instance.navigate',
 };
+const eventSampleSelection = {
+  collection_search_menu_painted: 'first',
+  collection_typed_query_result_painted: 'last',
+};
 
 const samples = [];
 const indexes = new Map();
@@ -77,7 +81,14 @@ const readInteractionLatencies = (text, event) => {
 for (const logPath of listArgs.get('--logcat') ?? []) {
   const text = readFileSync(resolve(logPath), 'utf8');
   for (const [event, scenarioId] of Object.entries(eventScenarios)) {
-    for (const latency of readInteractionLatencies(text, event)) {
+    const latencies = readInteractionLatencies(text, event);
+    const selection = eventSampleSelection[event];
+    const selectedLatencies = selection === 'first'
+      ? latencies.slice(0, 1)
+      : selection === 'last'
+        ? latencies.slice(-1)
+        : latencies;
+    for (const latency of selectedLatencies) {
       addSample(scenarioId, 'interaction_ready_ms', latency);
     }
   }
@@ -94,6 +105,7 @@ const parseFrameStats = (text) => {
     const headers = lines[index].split(',');
     const intendedIndex = headers.indexOf('IntendedVsync');
     const completedIndex = headers.indexOf('FrameCompleted');
+    const workloadTargetIndex = headers.indexOf('WorkloadTarget');
     if (intendedIndex < 0 || completedIndex < 0) continue;
     for (const row of lines.slice(index + 1)) {
       if (row === '---PROFILEDATA---') break;
@@ -101,7 +113,15 @@ const parseFrameStats = (text) => {
       const values = row.split(',').map(Number);
       if (values[0] !== 0) continue;
       const durationMs = (values[completedIndex] - values[intendedIndex]) / 1_000_000;
-      if (Number.isFinite(durationMs) && durationMs >= 0 && durationMs < 10_000) frames.push(durationMs);
+      const workloadTarget = workloadTargetIndex >= 0 ? values[workloadTargetIndex] : NaN;
+      if (Number.isFinite(durationMs) && durationMs >= 0 && durationMs < 10_000) {
+        frames.push({
+          budgetMs: Number.isFinite(workloadTarget) && workloadTarget > 0
+            ? workloadTarget / 1_000_000
+            : null,
+          durationMs,
+        });
+      }
     }
   }
   return frames;
@@ -117,8 +137,10 @@ const frames = (listArgs.get('--gfxinfo') ?? []).flatMap(
   (gfxPath) => parseFrameStats(readFileSync(resolve(gfxPath), 'utf8')),
 );
 if (frames.length) {
-  const p95 = percentile(frames, 0.95);
-  const jankyPercent = frames.filter((duration) => duration > frameBudgetMs).length / frames.length * 100;
+  const p95 = percentile(frames.map((frame) => frame.durationMs), 0.95);
+  const jankyPercent = frames.filter(
+    (frame) => frame.durationMs > (frame.budgetMs ?? frameBudgetMs),
+  ).length / frames.length * 100;
   addSample('global.runtime', 'frame_time_p95_ms', p95);
   addSample('global.runtime', 'janky_frames_percent', jankyPercent, 'percent');
 }

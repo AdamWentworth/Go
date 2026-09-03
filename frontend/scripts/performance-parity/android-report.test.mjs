@@ -28,15 +28,27 @@ test('builds interaction, frame, jank, and memory evidence from Android diagnost
       '[mobile:ui-perf] instance_overlay_target_committed {',
       '  interactionLatencyMs: 116,',
       '}',
+      '[mobile:ui-perf] collection_search_menu_painted {',
+      '  interactionLatencyMs: 21,',
+      '}',
+      '[mobile:ui-perf] collection_search_menu_painted {',
+      '  interactionLatencyMs: 31,',
+      '}',
+      '[mobile:ui-perf] collection_typed_query_result_painted {',
+      '  interactionLatencyMs: 91,',
+      '}',
+      '[mobile:ui-perf] collection_typed_query_result_painted {',
+      '  interactionLatencyMs: 29,',
+      '}',
       '[mobile:ui-perf] global_touch_next_frame {',
       '  interactionLatencyMs: 8,',
       '}',
     ].join('\n'));
     writeFileSync(gfxinfo, [
       '---PROFILEDATA---',
-      'Flags,IntendedVsync,FrameCompleted',
-      '0,1000000000,1010000000',
-      '0,2000000000,2020000000',
+      'Flags,IntendedVsync,WorkloadTarget,FrameCompleted',
+      '0,1000000000,8000000,1010000000',
+      '0,2000000000,25000000,2020000000',
       '---PROFILEDATA---',
     ].join('\n'));
     writeFileSync(meminfo, 'TOTAL PSS: 123,456 KB\n');
@@ -79,6 +91,18 @@ test('builds interaction, frame, jank, and memory evidence from Android diagnost
         && metric === 'interaction_ready_ms'
         && value === 116
     )));
+    assert.deepEqual(
+      report.samples.filter(({ scenarioId }) => (
+        scenarioId === 'interaction.collection.search-open'
+      )).map(({ value }) => value),
+      [21],
+    );
+    assert.deepEqual(
+      report.samples.filter(({ scenarioId }) => (
+        scenarioId === 'interaction.collection.typed-query'
+      )).map(({ value }) => value),
+      [29],
+    );
     assert.ok(report.samples.some(({ metric, value }) => (
       metric === 'frame_time_p95_ms' && value === 20
     )));

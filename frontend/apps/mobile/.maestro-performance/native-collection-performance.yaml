@@ -107,7 +107,7 @@ tags:
 - tapOn:
     id: native-instance-next
 - extendedWaitUntil:
-    visible: Dynamax Bulbasaur
+    visible: Butterfree
     timeout: 10000
 - tapOn:
     id: native-instance-previous

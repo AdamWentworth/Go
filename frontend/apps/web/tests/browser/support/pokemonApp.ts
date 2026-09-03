@@ -29,7 +29,10 @@ type TouchPoint = {
 export async function openPokemonPage(page: Page, routeOptions: E2eRouteOptions = {}) {
   await installE2eRoutes(page, routeOptions);
 
-  const response = await page.goto('/pokemon', { waitUntil: 'domcontentloaded' });
+  const pokemonUrl = routeOptions.baseUrl
+    ? new URL('/pokemon', routeOptions.baseUrl).href
+    : '/pokemon';
+  const response = await page.goto(pokemonUrl, { waitUntil: 'domcontentloaded' });
   expect(response?.ok(), '/pokemon document response should be OK').toBe(true);
 
   const firstCard = page.locator(cardSelector).first();
@@ -56,7 +59,10 @@ export async function openCaughtPokemonList(
     .poll(() => markFirstInstancesCaught(page, 12), { timeout: 10_000 })
     .toBeGreaterThan(0);
 
-  const response = await page.goto('/pokemon', { waitUntil: 'domcontentloaded' });
+  const pokemonUrl = routeOptions.baseUrl
+    ? new URL('/pokemon', routeOptions.baseUrl).href
+    : '/pokemon';
+  const response = await page.goto(pokemonUrl, { waitUntil: 'domcontentloaded' });
   expect(response?.ok(), '/pokemon reload response should be OK').toBe(true);
   await expect(page.locator(cardSelector).first()).toBeVisible({ timeout: 30_000 });
   await expect(page.locator('.app-loading-overlay')).toHaveCount(0);

@@ -4,6 +4,7 @@ import path from 'node:path';
 import type { Page, Route } from '@playwright/test';
 
 export type E2eRouteOptions = {
+  baseUrl?: string;
   mockImages?: boolean;
   preserveBrowserConnectivity?: boolean;
   searchResults?: unknown[];

@@ -20,9 +20,10 @@ can stand in for Android's renderer and scheduler:
    React Native Web renderer variance into a failed Android release verdict.
 2. `physical-android` runs the shared Vite interactions in Chrome and the
    dedicated native interaction flows from a standalone release APK on the
-   same Android phone. It is the release authority for input response, frame
-   pacing, memory, and native rendering. The comparator rejects emulators,
-   development clients, different devices, and different fixture sizes.
+   same Android phone, with the same real image assets. It is the release
+   authority for input response, frame pacing, memory, and native rendering.
+   The comparator rejects emulators, development clients, different devices,
+   and different fixture sizes.
 
 Reports use `report.schema.json`. The comparator is deliberately strict:
 
@@ -59,6 +60,14 @@ From `frontend/`:
   the default five repetitions. Each native flow runs in a fresh app process;
   a failed attempt is retried once but only the successful attempt contributes
   evidence.
+
+Native performance events are streamed from logcat for the duration of each
+flow instead of relying on Maestro's end-of-flow ring-buffer dump. This keeps
+early search and sort measurements intact during long collection flows. Jank
+uses each Android frame's `WorkloadTarget` when available, rather than assuming
+the panel's maximum refresh rate is every app frame's deadline. Chrome memory
+is the summed PSS of its browser, renderer, GPU/privileged, and zygote
+processes; comparing only Chrome's main process would undercount the Vite app.
 
 The second command is the hard release gate: it exits non-zero if any required
 native median or p95 is slower than Vite, or if evidence is missing or invalid.

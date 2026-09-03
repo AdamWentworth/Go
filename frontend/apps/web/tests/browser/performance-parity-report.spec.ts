@@ -128,6 +128,8 @@ const performanceInstances = Object.fromEntries(
   }),
 );
 const performanceRouteOptions = {
+  baseUrl: webBaseUrl,
+  mockImages: false,
   syncInstances: performanceInstances,
   userInstances: {
     instances: performanceInstances,
@@ -402,7 +404,7 @@ const collectSharedInteractions = async (
 ) => {
   const home = await createMeasuredPage(context, 'signed-in', 'dark');
   try {
-    await home.goto('/', { waitUntil: 'domcontentloaded' });
+    await home.goto(`${webBaseUrl}/`, { waitUntil: 'domcontentloaded' });
     await waitUntilVisuallyReady(home);
     await home.getByRole('button', { name: 'Action Menu', exact: true }).click();
     await home.getByRole('dialog', { name: 'Quick navigation' }).waitFor({ state: 'visible' });
@@ -536,6 +538,29 @@ const waitForHttp = async (url: string, timeoutMs = 20_000) => {
   throw lastError ?? new Error(`Timed out waiting for ${url}`);
 };
 
+const closeUninitializedAndroidChromeTargets = async (timeoutMs = 10_000) => {
+  const targetListUrl = `${androidCdpUrl}/json/list`;
+  const deadline = Date.now() + timeoutMs;
+  while (Date.now() < deadline) {
+    const response = await fetch(targetListUrl);
+    if (!response.ok) throw new Error(`${targetListUrl} returned ${response.status}`);
+    const targets = await response.json() as Array<{
+      id?: string;
+      type?: string;
+      url?: string;
+    }>;
+    const uninitializedTargets = targets.filter(
+      (target) => target.type === 'page' && target.url === '' && target.id,
+    );
+    if (uninitializedTargets.length === 0) return;
+    await Promise.all(uninitializedTargets.map(async (target) => {
+      await fetch(`${androidCdpUrl}/json/close/${encodeURIComponent(target.id!)}`);
+    }));
+    await new Promise((resolveWait) => setTimeout(resolveWait, 100));
+  }
+  throw new Error('Android Chrome retained uninitialized DevTools targets.');
+};
+
 const prepareAndroidChrome = async () => {
   if (!androidDeviceId) {
     throw new Error('POKEGONEXUS_ANDROID_DEVICE_ID is required for physical-android performance.');
@@ -553,12 +578,19 @@ const prepareAndroidChrome = async () => {
   ]);
   execFileSync(adbPath, ['-s', androidDeviceId, 'shell', 'am', 'force-stop', androidChromePackage]);
   execFileSync(adbPath, [
+    '-s', androidDeviceId, 'shell', 'rm', '-f', '/data/local/tmp/chrome-command-line',
+  ]);
+  execFileSync(adbPath, [
     '-s', androidDeviceId, 'shell', 'am', 'start',
     '-a', 'android.intent.action.VIEW',
     '-d', `http://127.0.0.1:${port}/`,
     androidChromePackage,
   ]);
   await waitForHttp(`${androidCdpUrl}/json/version`);
+  // Chrome 152 can expose empty page targets that never answer CDP initialization
+  // commands. Playwright waits for every attached target, so remove only these
+  // target-less tabs before connecting while preserving real user tabs.
+  await closeUninitializedAndroidChromeTargets();
   execFileSync(adbPath, [
     '-s', androidDeviceId, 'shell', 'dumpsys', 'gfxinfo', androidChromePackage, 'reset',
   ]);
@@ -566,12 +598,13 @@ const prepareAndroidChrome = async () => {
 
 const parseFrameStats = (text: string) => {
   const lines = text.split(/\r?\n/);
-  const frames: number[] = [];
+  const frames: Array<{ budgetMs: number | null; durationMs: number }> = [];
   for (let index = 0; index < lines.length; index += 1) {
     if (!lines[index].startsWith('Flags,')) continue;
     const headers = lines[index].split(',');
     const intendedIndex = headers.indexOf('IntendedVsync');
     const completedIndex = headers.indexOf('FrameCompleted');
+    const workloadTargetIndex = headers.indexOf('WorkloadTarget');
     if (intendedIndex < 0 || completedIndex < 0) continue;
     for (const row of lines.slice(index + 1)) {
       if (row === '---PROFILEDATA---') break;
@@ -579,10 +612,31 @@ const parseFrameStats = (text: string) => {
       const values = row.split(',').map(Number);
       if (values[0] !== 0) continue;
       const duration = (values[completedIndex] - values[intendedIndex]) / 1_000_000;
-      if (Number.isFinite(duration) && duration >= 0 && duration < 10_000) frames.push(duration);
+      const workloadTarget = workloadTargetIndex >= 0 ? values[workloadTargetIndex] : NaN;
+      if (Number.isFinite(duration) && duration >= 0 && duration < 10_000) {
+        frames.push({
+          budgetMs: Number.isFinite(workloadTarget) && workloadTarget > 0
+            ? workloadTarget / 1_000_000
+            : null,
+          durationMs: duration,
+        });
+      }
     }
   }
   return frames;
+};
+
+const parseChromeProcessPssBytes = (text: string) => {
+  const processSection = text.split('Total PSS by process:')[1]
+    ?.split('Total PSS by OOM adjustment:')[0]
+    ?? '';
+  const totalKilobytes = processSection.split(/\r?\n/).reduce((total, line) => {
+    const match = line.match(
+      /^\s*([\d,]+)K:\s+com\.android\.chrome(?=\s|:|_zygote_native)/,
+    );
+    return total + (match ? Number(match[1].replaceAll(',', '')) : 0);
+  }, 0);
+  return totalKilobytes > 0 ? totalKilobytes * 1024 : null;
 };
 
 const collectAndroidChromeSystemMetrics = () => {
@@ -597,7 +651,7 @@ const collectAndroidChromeSystemMetrics = () => {
   const refreshHz = Number(displayText.match(/refreshRate[=: ]+([\d.]+)/)?.[1] ?? 60);
   const frameBudgetMs = Number.isFinite(refreshHz) && refreshHz > 0 ? 1_000 / refreshHz : 16.67;
   if (frames.length) {
-    const sorted = [...frames].sort((left, right) => left - right);
+    const sorted = frames.map((frame) => frame.durationMs).sort((left, right) => left - right);
     const p95 = sorted[Math.max(0, Math.ceil(sorted.length * 0.95) - 1)];
     addMetric('global.runtime', 'frame_time_p95_ms', p95, 0, {
       direction: 'lower', unit: 'ms',
@@ -605,21 +659,21 @@ const collectAndroidChromeSystemMetrics = () => {
     addMetric(
       'global.runtime',
       'janky_frames_percent',
-      frames.filter((duration) => duration > frameBudgetMs).length / frames.length * 100,
+      frames.filter((frame) => frame.durationMs > (frame.budgetMs ?? frameBudgetMs)).length
+        / frames.length * 100,
       0,
       { direction: 'lower', unit: 'percent' },
     );
   }
   const memoryText = execFileSync(adbPath, [
-    '-s', androidDeviceId, 'shell', 'dumpsys', 'meminfo', androidChromePackage,
-  ], { encoding: 'utf8', maxBuffer: 8 * 1024 * 1024 });
-  const totalPss = memoryText.match(/TOTAL PSS:\s*([\d,]+)\s*(?:KB|kB)?/i)
-    ?? memoryText.match(/^\s*TOTAL\s+([\d,]+)/m);
-  if (totalPss) {
+    '-s', androidDeviceId, 'shell', 'dumpsys', 'meminfo',
+  ], { encoding: 'utf8', maxBuffer: 32 * 1024 * 1024 });
+  const totalPssBytes = parseChromeProcessPssBytes(memoryText);
+  if (totalPssBytes !== null) {
     addMetric(
       'global.runtime',
       'memory_pss_bytes',
-      Number(totalPss[1].replaceAll(',', '')) * 1024,
+      totalPssBytes,
       0,
       { direction: 'lower', unit: 'bytes' },
     );
@@ -653,7 +707,9 @@ const writeReport = () => {
 test.describe('Vite performance parity report', () => {
   test.setTimeout(15 * 60_000);
 
-  test('@parity-performance records every comparable route and shared interaction', async ({}, testInfo) => {
+  test('@parity-performance records every comparable route and shared interaction', async ({
+    browserName: _browserName,
+  }, testInfo) => {
     test.skip(testInfo.project.name !== 'mobile-chrome', 'The contract uses the Pixel Chromium viewport.');
     let ownedBrowser: Browser | null = null;
     let physicalContext: BrowserContext | null = null;
@@ -692,7 +748,7 @@ test.describe('Vite performance parity report', () => {
                   const page = await createMeasuredPage(routeContext, route.auth, theme);
                   try {
                     const warmPath = route.vite === '/about' ? '/faq' : '/about';
-                    const response = await page.goto(warmPath, {
+                    const response = await page.goto(new URL(warmPath, `${webBaseUrl}/`).href, {
                       timeout: 60_000,
                       waitUntil: 'domcontentloaded',
                     });
