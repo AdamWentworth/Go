@@ -43,6 +43,7 @@ tags:
 - extendedWaitUntil:
     visible: Leafy
     timeout: 10000
+- hideKeyboard
 - tapOn: ALL MOVESETS
 - extendedWaitUntil:
     visible: ALL MOVESETS
@@ -91,6 +92,7 @@ tags:
 - extendedWaitUntil:
     visible: Select Ivysaur raid boss
     timeout: 10000
+- hideKeyboard
 - tapOn: Select Ivysaur raid boss
 - extendedWaitUntil:
     notVisible: Modeling raid timelines…
