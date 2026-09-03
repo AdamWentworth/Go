@@ -147,10 +147,14 @@ tags:
     element:
       text: "✦ Optimize"
     direction: UP
+    centerElement: true
     timeout: 30000
 - tapOn: "✦ Optimize"
-- extendedWaitUntil:
-    visible: Lobby optimized
+- scrollUntilVisible:
+    element:
+      text: Lobby optimized
+    direction: DOWN
+    centerElement: true
     timeout: 120000
 - scrollUntilVisible:
     element:
