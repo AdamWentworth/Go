@@ -69,7 +69,7 @@ name: Native Raid tool smoke
     element:
       text: "Boss behavior"
     direction: DOWN
-- assertVisible: "Monte Carlo"
+- assertVisible: "Monte Carlo distribution (32+ trials)"
 - tapOn: "Shadow raid"
 - assertVisible: "Shadow boss state"
 - takeScreenshot: "native-tool-raid-boss-settings"
