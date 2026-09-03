@@ -1,5 +1,6 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react-native';
 import * as SecureStore from 'expo-secure-store';
+import { Share } from 'react-native';
 import { NativeRaidCalibrationPanel } from '../../../src/components/tools/NativeRaidCalibrationPanel';
 import { createNativeRaidObservation, type NativeRaidObservationActual } from '../../../src/features/tools/nativeRaidCalibration';
 
@@ -93,5 +94,40 @@ describe('NativeRaidCalibrationPanel', () => {
     await waitFor(() => expect(onObservedDodgeRateChange).toHaveBeenLastCalledWith(.6));
     fireEvent(screen.getByLabelText('Use observed dodges'), 'valueChange', false);
     await waitFor(() => expect(onObservedDodgeRateChange).toHaveBeenLastCalledWith(null));
+  });
+
+  it('exports observations and requires confirmation before clearing the device log', async () => {
+    const observation = buildObservation({
+      outcome: 'cleared',
+      trainerCount: 2,
+      clearTimeSeconds: 100,
+      remainingBossHpPercent: null,
+      faints: 1,
+      relobbies: 0,
+      dodgeAttempts: 0,
+      successfulDodges: 0,
+      latencyMs: null,
+    });
+    secureStore.getItemAsync.mockResolvedValue(JSON.stringify([observation]));
+    const share = jest.spyOn(Share, 'share').mockResolvedValue({ action: Share.sharedAction });
+    renderPanel();
+    await waitFor(() => expect(screen.getByText('1')).toBeTruthy());
+
+    fireEvent.press(screen.getByLabelText('Export observed raid data'));
+    await waitFor(() => expect(share).toHaveBeenCalledWith(expect.objectContaining({
+      message: expect.stringContaining('Bulbasaur'),
+    })));
+
+    fireEvent.press(screen.getByLabelText('Clear observed raid data'));
+    expect(screen.getByText('Clear raid observations?')).toBeTruthy();
+    fireEvent.press(screen.getByText('Keep log'));
+    expect(screen.queryByText('Clear raid observations?')).toBeNull();
+    fireEvent.press(screen.getByLabelText('Clear observed raid data'));
+    fireEvent.press(screen.getByText('Clear log'));
+    await waitFor(() => expect(secureStore.setItemAsync).toHaveBeenLastCalledWith(
+      expect.stringContaining('raid-observations.v2'),
+      '[]',
+    ));
+    expect(screen.getByText('No raids logged on this device')).toBeTruthy();
   });
 });
