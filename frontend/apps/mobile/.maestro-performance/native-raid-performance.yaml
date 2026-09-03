@@ -35,7 +35,7 @@ tags:
 # sorting, and mobile row expansion.
 - tapOn: Grass
 - extendedWaitUntil:
-    visible: Your top Grass attackers
+    visible: Your top Grass raid attackers
     timeout: 30000
 - tapOn: Search raid rankings
 - inputText: Leafy
