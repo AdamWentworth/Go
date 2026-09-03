@@ -23,5 +23,5 @@ export default function NativeRaidRoute() {
     }
     const variantId = entry.variantId ?? `${String(entry.pokemonId).padStart(4, '0')}-default`;
     router.push({ pathname: '/native/pokedex/[variantId]', params: { variantId } });
-  }} onRetry={() => { void catalogQuery.refetch(); void movesQuery.refetch(); void raidQuery.refetch(); if (session.user) void snapshotQuery.refetch(); }} signedIn={Boolean(session.user)} /><NativeActionMenuAnchor assetBaseUrl={runtimeConfig.api.frontendAppUrl} onPress={() => setMenu(true)} />{menu ? <NativeActionMenu assetBaseUrl={runtimeConfig.api.frontendAppUrl} onClose={() => setMenu(false)} onNavigate={navigate} visible /> : null}</>;
+  }} onRetry={() => { void catalogQuery.refetch(); void movesQuery.refetch(); void raidQuery.refetch(); if (session.user) void snapshotQuery.refetch(); }} ownerKey={session.user?.user_id ?? 'signed-out-device'} signedIn={Boolean(session.user)} /><NativeActionMenuAnchor assetBaseUrl={runtimeConfig.api.frontendAppUrl} onPress={() => setMenu(true)} />{menu ? <NativeActionMenu assetBaseUrl={runtimeConfig.api.frontendAppUrl} onClose={() => setMenu(false)} onNavigate={navigate} visible /> : null}</>;
 }

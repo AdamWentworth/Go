@@ -1,3 +1,4 @@
+import { useEffect, useRef, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import type {
   NativeRaidAttackerLevel,
@@ -12,12 +13,23 @@ import type {
 } from '../../features/tools/nativeBattleModels';
 import { NATIVE_BATTLE_TYPES } from '../../features/tools/nativeBattleModels';
 import { useNativeColorScheme } from '../../features/settings/useNativeColorScheme';
+import { markNativeUiPerformanceAfterPaint } from '../../observability/nativeUiInteractionTiming';
 
 type Props = {
+  collapsible?: boolean;
+  includeAttackerLevel?: boolean;
   includeBossControls?: boolean;
+  includeMonteCarloOption?: boolean;
+  includeRelobbyControls?: boolean;
   includeShadowControls?: boolean;
   onChange: (settings: NativeRaidSettings) => void;
+  onShadowBossModeChange?: (mode: NativeRaidShadowBossMode) => void;
+  onShadowRaidChange?: (enabled: boolean) => void;
+  selectedBossIsShadowRaid?: boolean;
   settings: NativeRaidSettings;
+  shadowBossMode?: NativeRaidShadowBossMode;
+  shadowMechanicsEnabled?: boolean;
+  shadowRaid?: boolean;
 };
 
 type Choice<T extends string | number> = { label: string; value: T };
@@ -60,27 +72,55 @@ const ChoiceRow = <T extends string | number>({
 };
 
 export const NativeRaidSettingsPanel = ({
+  collapsible = false,
+  includeAttackerLevel = true,
   includeBossControls = false,
+  includeMonteCarloOption = false,
+  includeRelobbyControls = true,
   includeShadowControls = false,
   onChange,
+  onShadowBossModeChange,
+  onShadowRaidChange,
+  selectedBossIsShadowRaid = false,
   settings,
+  shadowBossMode = 'subdued',
+  shadowMechanicsEnabled = false,
+  shadowRaid = false,
 }: Props) => {
   const light = useNativeColorScheme() === 'light';
+  const [open, setOpen] = useState(!collapsible);
+  const openStartedAtRef = useRef<number | null>(null);
+  useEffect(() => {
+    if (!collapsible || !open || openStartedAtRef.current == null) return;
+    markNativeUiPerformanceAfterPaint('raid_battle_settings_painted', openStartedAtRef.current);
+    openStartedAtRef.current = null;
+  }, [collapsible, open]);
   const update = <K extends keyof NativeRaidSettings>(key: K, value: NativeRaidSettings[K]) => (
     onChange({ ...settings, [key]: value })
   );
-  return (
+  const customSettingCount = [
+    includeAttackerLevel && settings.attackerLevel !== '50.0',
+    settings.friendship !== 'none',
+    settings.megaAllyBonus !== 'none',
+    settings.partyPower !== 'none',
+    Boolean(settings.weatherBoostedType),
+    includeRelobbyControls && settings.relobbySeconds !== 10,
+    includeBossControls && settings.dodgeStrategy !== 'none',
+    includeBossControls && settings.bossMovesetMode !== 'expected',
+    includeShadowControls && shadowMechanicsEnabled,
+  ].filter(Boolean).length;
+  const fields = (
     <View accessibilityLabel="Ranking settings" style={[styles.panel, light && styles.panelLight]}>
       <View style={styles.heading}>
         <Text style={styles.eyebrow}>BATTLE SETTINGS</Text>
         <Text style={[styles.title, light && styles.textLight]}>Ranking conditions</Text>
       </View>
-      <ChoiceRow<NativeRaidAttackerLevel>
+      {includeAttackerLevel ? <ChoiceRow<NativeRaidAttackerLevel>
         label="Attacker level"
         onChange={(value) => update('attackerLevel', value)}
         options={['40.0', '50.0', '51.0'].map((value) => ({ label: `Lv ${value.replace('.0', '')}`, value: value as NativeRaidAttackerLevel }))}
         value={settings.attackerLevel}
-      />
+      /> : null}
       <ChoiceRow<NativeRaidFriendship>
         label="Friendship"
         onChange={(value) => update('friendship', value)}
@@ -122,12 +162,12 @@ export const NativeRaidSettingsPanel = ({
           value={settings.partyPowerStrategy}
         />
       ) : null}
-      <ChoiceRow<number>
+      {includeRelobbyControls ? <ChoiceRow<number>
         label="Relobby delay"
         onChange={(value) => update('relobbySeconds', value)}
         options={[0, 5, 10, 15, 20].map((value) => ({ label: value === 0 ? 'None' : `${value}s`, value }))}
         value={settings.relobbySeconds}
-      />
+      /> : null}
       <ChoiceRow<string>
         label="Weather boost"
         onChange={(value) => update('weatherBoostedType', value)}
@@ -153,7 +193,7 @@ export const NativeRaidSettingsPanel = ({
             onChange={(value) => update('bossMovesetMode', value)}
             options={[
               { label: 'Expected', value: 'expected' },
-              { label: 'Monte Carlo', value: 'monte-carlo' },
+              ...(includeMonteCarloOption ? [{ label: 'Monte Carlo', value: 'monte-carlo' } as const] : []),
               { label: 'Favorable', value: 'favorable' },
               { label: 'Hostile', value: 'hostile' },
             ]}
@@ -167,18 +207,24 @@ export const NativeRaidSettingsPanel = ({
             <Text style={styles.shadowEyebrow}>SHADOW RAID</Text>
             <Text style={[styles.shadowCopy, light && styles.mutedLight]}>Compare the enraged boss with its subdued state.</Text>
           </View>
-          <ChoiceRow<NativeRaidShadowBossMode>
+          <Pressable accessibilityRole="button" accessibilityState={{ disabled: selectedBossIsShadowRaid, selected: shadowMechanicsEnabled }} disabled={selectedBossIsShadowRaid} onPress={() => onShadowRaidChange?.(!shadowRaid)} style={[styles.shadowToggle, shadowMechanicsEnabled && styles.choiceActive, selectedBossIsShadowRaid && styles.disabled]}><Text style={[styles.choiceText, shadowMechanicsEnabled && styles.choiceTextActive]}>{selectedBossIsShadowRaid ? 'Shadow raid data' : 'Shadow raid'}</Text></Pressable>
+          {shadowMechanicsEnabled ? <ChoiceRow<NativeRaidShadowBossMode>
             label="Shadow boss state"
-            onChange={(value) => update('shadowBossMode', value)}
-            options={[
-              { label: 'Normal', value: 'normal' },
-              { label: 'Enraged', value: 'enraged' },
-              { label: 'Subdued', value: 'subdued' },
-            ]}
-            value={settings.shadowBossMode}
-          />
+            onChange={(value) => onShadowBossModeChange?.(value)}
+            options={[{ label: 'Subdued', value: 'subdued' }, { label: 'Enraged', value: 'enraged' }]}
+            value={shadowBossMode}
+          /> : null}
         </View>
       ) : null}
+    </View>
+  );
+  if (!collapsible) return fields;
+  return (
+    <View style={[styles.collapsible, light && styles.panelLight]}>
+      <Pressable accessibilityLabel="Battle settings" accessibilityRole="button" accessibilityState={{ expanded: open }} onPress={() => { if (!open) openStartedAtRef.current = Date.now(); setOpen((current) => !current); }} style={styles.collapsibleToggle}>
+        <Text style={styles.collapsibleIcon}>☷</Text><View style={styles.collapsibleCopy}><Text style={[styles.collapsibleTitle, light && styles.textLight]}>Battle settings</Text><Text style={[styles.collapsibleMeta, light && styles.mutedLight]}>{customSettingCount === 0 ? 'Standard conditions' : `${customSettingCount} custom setting${customSettingCount === 1 ? '' : 's'}`}</Text></View><Text style={[styles.collapsibleChevron, light && styles.textLight]}>{open ? '⌃' : '⌄'}</Text>
+      </Pressable>
+      {open ? fields : null}
     </View>
   );
 };
@@ -202,6 +248,15 @@ const styles = StyleSheet.create({
   shadowHeading: { gap: 2 },
   shadowEyebrow: { color: '#d8b7ff', fontSize: 8, fontWeight: '900', letterSpacing: .9 },
   shadowCopy: { color: '#cbb5df', fontSize: 9.5, lineHeight: 13 },
+  shadowToggle: { minHeight: 36, alignSelf: 'flex-start', justifyContent: 'center', borderWidth: 1, borderColor: '#7f5da8', borderRadius: 999, paddingHorizontal: 12, backgroundColor: '#3b2750' },
+  disabled: { opacity: .55 },
+  collapsible: { overflow: 'hidden', borderWidth: 1, borderColor: '#355052', borderRadius: 11, backgroundColor: '#172223' },
+  collapsibleToggle: { minHeight: 54, flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 10 },
+  collapsibleIcon: { color: '#50ddd4', fontSize: 18 },
+  collapsibleCopy: { minWidth: 0, flex: 1 },
+  collapsibleTitle: { color: '#fff', fontSize: 12, fontWeight: '900' },
+  collapsibleMeta: { color: '#9fb1b2', fontSize: 8.5 },
+  collapsibleChevron: { color: '#fff', fontSize: 12, fontWeight: '900' },
   textLight: { color: '#142629' },
   mutedLight: { color: '#657879' },
 });

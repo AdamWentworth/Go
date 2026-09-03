@@ -1,4 +1,4 @@
-import { useDeferredValue, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useDeferredValue, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   FlatList,
@@ -12,6 +12,7 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { PokemonInstance } from '@pokemongonexus/shared-contracts/instances';
 import type { BasePokemon } from '@pokemongonexus/shared-contracts/pokemon';
+import { calculateRaidBossStats } from '@pokemongonexus/app-core/raid-combat';
 import { NativeRaidBossSetupPanel } from '../components/tools/NativeRaidBossSetupPanel';
 import { NativeRaidRankingCard } from '../components/tools/NativeRaidRankingCard';
 import { NativeRaidSettingsPanel } from '../components/tools/NativeRaidSettingsPanel';
@@ -28,6 +29,7 @@ import {
 } from '../features/tools/nativeBattleModels';
 import { useNativeColorScheme } from '../features/settings/useNativeColorScheme';
 import { NativeUiIcon } from '../components/NativeUiIcon';
+import { markNativeUiPerformanceAfterPaint } from '../observability/nativeUiInteractionTiming';
 
 type Props = {
   assetBaseUrl: string;
@@ -39,6 +41,7 @@ type Props = {
   onMethodology: () => void;
   onOpenPokemon: (entry: NativeCombatEntry) => void;
   onRetry: () => void;
+  ownerKey?: string;
   signedIn: boolean;
 };
 type ViewMode = 'rankings' | 'boss';
@@ -59,8 +62,9 @@ export const NativeRaidScreen = ({
   isLoading = false,
   onBack: _onBack,
   onMethodology,
-  onOpenPokemon,
+  onOpenPokemon: _onOpenPokemon,
   onRetry,
+  ownerKey = 'signed-out-device',
   signedIn,
 }: Props) => {
   const light = useNativeColorScheme() === 'light';
@@ -76,6 +80,8 @@ export const NativeRaidScreen = ({
   const [rankingMetric, setRankingMetric] = useState<RankingMetric>('edps');
   const [sortDirection, setSortDirection] = useState<SortDirection>('descending');
   const [settings, setSettings] = useState<NativeRaidSettings>(DEFAULT_NATIVE_RAID_SETTINGS);
+  const [shadowRaid, setShadowRaid] = useState(false);
+  const [shadowBossMode, setShadowBossMode] = useState<NativeRaidSettings['shadowBossMode']>('subdued');
   const [observedDodgeSuccessRate, setObservedDodgeSuccessRate] = useState<number | null>(null);
   const [bossCounterEntries, setBossCounterEntries] = useState<NativeCombatEntry[]>([]);
   const [bossCountersLoading, setBossCountersLoading] = useState(false);
@@ -85,11 +91,16 @@ export const NativeRaidScreen = ({
     instances: Record<string, PokemonInstance>;
     key: string;
   } | null>(null);
-  const effectiveSettings = useMemo<NativeRaidSettings>(() => ({
-    ...settings,
-    dodgeSuccessRate: observedDodgeSuccessRate ?? settings.dodgeSuccessRate,
-  }), [observedDodgeSuccessRate, settings]);
-  const deferredEffectiveSettings = useDeferredValue(effectiveSettings);
+  const performanceStartsRef = useRef(new Map<string, number>());
+  const beginPerformance = useCallback((event: string) => {
+    performanceStartsRef.current.set(event, Date.now());
+  }, []);
+  const finishPerformance = useCallback((event: string) => {
+    const startedAt = performanceStartsRef.current.get(event);
+    if (startedAt == null) return;
+    performanceStartsRef.current.delete(event);
+    markNativeUiPerformanceAfterPaint(event, startedAt);
+  }, []);
   const deferredQuery = useDeferredValue(query);
   const deferredRankingMetric = useDeferredValue(rankingMetric);
   // Cold starts render once while the persisted session is restoring. Derive
@@ -100,6 +111,17 @@ export const NativeRaidScreen = ({
   const deferredSortDirection = useDeferredValue(sortDirection);
   const bosses = useMemo(() => buildNativeRaidBosses(catalog), [catalog]);
   const selectedBoss = bosses.find((boss) => boss.id === bossId) ?? bosses[0] ?? null;
+  const selectedBossIsShadowRaid = Boolean(selectedBoss?.tier.key.startsWith('shadow'));
+  const shadowMechanicsEnabled = selectedBossIsShadowRaid || shadowRaid;
+  const effectiveSettings = useMemo<NativeRaidSettings>(() => ({
+    ...settings,
+    dodgeSuccessRate: observedDodgeSuccessRate ?? settings.dodgeSuccessRate,
+    shadowBossMode: shadowMechanicsEnabled ? shadowBossMode : 'normal',
+  }), [observedDodgeSuccessRate, settings, shadowBossMode, shadowMechanicsEnabled]);
+  const deferredEffectiveSettings = useDeferredValue(effectiveSettings);
+  const selectedBossStats = useMemo(() => selectedBoss
+    ? calculateRaidBossStats(selectedBoss.variant, selectedBoss.tier, effectiveSettings.shadowBossMode)
+    : null, [effectiveSettings.shadowBossMode, selectedBoss]);
   const bossSuggestions = useMemo(() => {
     const normalized = bossQuery.trim().toLocaleLowerCase();
     if (!normalized) return [];
@@ -183,7 +205,7 @@ export const NativeRaidScreen = ({
         (metricValue(right) - metricValue(left)) * (deferredSortDirection === 'descending' ? 1 : -1)
       ));
     }
-    return rows.slice(0, 100);
+    return rows.slice(0, 30);
   }, [
     bossCounterEntries,
     catalog,
@@ -197,6 +219,46 @@ export const NativeRaidScreen = ({
     signedIn,
     view,
   ]);
+  const customPartyScores = useMemo(() => {
+    const seen = new Set<string>();
+    return bossCounterEntries.filter((entry) => {
+      const key = entry.variantId ?? entry.id;
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+  }, [bossCounterEntries]);
+
+  useEffect(() => {
+    if (view === 'boss') finishPerformance('raid_boss_mode_painted');
+  }, [finishPerformance, view]);
+  useEffect(() => {
+    if (selectedType === deferredSelectedType) finishPerformance('raid_type_result_painted');
+  }, [deferredSelectedType, finishPerformance, rankings.length, selectedType]);
+  useEffect(() => {
+    if (query === deferredQuery) finishPerformance('raid_search_result_painted');
+  }, [deferredQuery, finishPerformance, query, rankings.length]);
+  useEffect(() => {
+    if (rankingMetric === deferredRankingMetric && sortDirection === deferredSortDirection) {
+      finishPerformance('raid_sort_result_painted');
+    }
+  }, [deferredRankingMetric, deferredSortDirection, finishPerformance, rankingMetric, rankings.length, sortDirection]);
+  useEffect(() => {
+    if (!bossCountersLoading && deferredEffectiveSettings === effectiveSettings) {
+      finishPerformance('raid_moveset_result_painted');
+      finishPerformance('raid_modifier_result_painted');
+      finishPerformance('raid_boss_selected_result_painted');
+    }
+  }, [bossCounterEntries.length, bossCountersLoading, deferredEffectiveSettings, effectiveSettings, finishPerformance, rankings.length]);
+  useEffect(() => {
+    if (bossQuery.trim() && bossSuggestions.length >= 0) finishPerformance('raid_boss_search_result_painted');
+  }, [bossQuery, bossSuggestions.length, finishPerformance]);
+  useEffect(() => {
+    if (settingsOpen) finishPerformance('raid_settings_painted');
+  }, [finishPerformance, settingsOpen]);
+  useEffect(() => {
+    if (expandedId) finishPerformance('raid_row_detail_painted');
+  }, [expandedId, finishPerformance]);
 
   const customSettingCount = [
     settings.attackerLevel !== DEFAULT_NATIVE_RAID_SETTINGS.attackerLevel,
@@ -204,14 +266,14 @@ export const NativeRaidScreen = ({
     settings.megaAllyBonus !== 'none',
     settings.partyPower !== 'none',
     settings.partyPower !== 'none' && settings.partyPowerStrategy !== 'immediate',
-    view === 'boss' && settings.dodgeStrategy !== 'none',
-    view === 'boss' && settings.bossMovesetMode !== 'expected',
-    view === 'boss' && settings.shadowBossMode !== 'normal',
+    Boolean(selectedType) && settings.dodgeStrategy !== 'none',
+    Boolean(selectedType) && settings.bossMovesetMode !== 'expected',
     settings.relobbySeconds !== DEFAULT_NATIVE_RAID_SETTINGS.relobbySeconds,
     Boolean(settings.weatherBoostedType),
   ].filter(Boolean).length;
 
   const switchView = (next: ViewMode) => {
+    if (next === 'boss') beginPerformance('raid_boss_mode_painted');
     if (next === 'boss') {
       const cached = bossCounterCacheRef.current;
       if (
@@ -233,17 +295,27 @@ export const NativeRaidScreen = ({
     setQuery('');
   };
   const selectBoss = (id: string) => {
+    beginPerformance('raid_boss_selected_result_painted');
     setBossId(id);
     setBossQuery('');
     setExpandedId(null);
   };
   const selectRankingMetric = (metric: RankingMetric) => {
+    beginPerformance('raid_sort_result_painted');
     if (rankingMetric === metric) {
       setSortDirection((current) => current === 'descending' ? 'ascending' : 'descending');
       return;
     }
     setRankingMetric(metric);
     setSortDirection('descending');
+  };
+  const changeSettings = (next: NativeRaidSettings) => {
+    beginPerformance('raid_modifier_result_painted');
+    setSettings(next);
+  };
+  const changeMovesetDetail = (bestOnly: boolean) => {
+    beginPerformance('raid_moveset_result_painted');
+    setSettings((current) => ({ ...current, bestOnly }));
   };
 
   const productHeader = (
@@ -325,7 +397,7 @@ export const NativeRaidScreen = ({
       <Text style={[styles.fieldLabel, light && styles.mutedLight]}>{view === 'boss' ? 'COUNTER SEARCH' : 'ATTACKER SEARCH'}</Text>
       <TextInput
         accessibilityLabel={view === 'boss' ? 'Search raid counters' : 'Search raid rankings'}
-        onChangeText={setQuery}
+        onChangeText={(value) => { beginPerformance('raid_search_result_painted'); setQuery(value); }}
         placeholder="Pokémon, type, or move"
         placeholderTextColor={light ? '#708183' : '#809294'}
         style={[styles.search, light && styles.inputLight]}
@@ -336,7 +408,7 @@ export const NativeRaidScreen = ({
           <Pressable
             accessibilityRole="button"
             accessibilityState={{ selected: settings.bestOnly }}
-            onPress={() => setSettings((current) => ({ ...current, bestOnly: true }))}
+            onPress={() => changeMovesetDetail(true)}
             style={[styles.movesetButton, settings.bestOnly && styles.movesetActive]}
           >
             <Text style={[styles.movesetText, light && styles.textLight, settings.bestOnly && styles.movesetTextActive]}>BEST MOVESET</Text>
@@ -344,17 +416,17 @@ export const NativeRaidScreen = ({
           <Pressable
             accessibilityRole="button"
             accessibilityState={{ selected: !settings.bestOnly }}
-            onPress={() => setSettings((current) => ({ ...current, bestOnly: false }))}
+            onPress={() => changeMovesetDetail(false)}
             style={[styles.movesetButton, !settings.bestOnly && styles.movesetActive]}
           >
             <Text style={[styles.movesetText, light && styles.textLight, !settings.bestOnly && styles.movesetTextActive]}>ALL MOVESETS</Text>
           </Pressable>
         </View>
-        <Pressable
+        {view === 'rankings' ? <Pressable
           accessibilityLabel={`Ranking settings${customSettingCount ? `, ${customSettingCount} custom settings` : ''}`}
           accessibilityRole="button"
           accessibilityState={{ expanded: settingsOpen }}
-          onPress={() => setSettingsOpen((current) => !current)}
+          onPress={() => { beginPerformance('raid_settings_painted'); setSettingsOpen((current) => !current); }}
           style={[styles.settingsButton, light && styles.controlLight, settingsOpen && styles.settingsActive]}
           testID="raid-ranking-settings"
         >
@@ -362,13 +434,14 @@ export const NativeRaidScreen = ({
             <NativeUiIcon color={light ? '#172124' : '#edf6f5'} name="filters" size={14} />
             <Text style={[styles.settingsText, light && styles.textLight]}>SETTINGS{customSettingCount ? ` ${customSettingCount}` : ''} {settingsOpen ? '⌃' : '⌄'}</Text>
           </View>
-        </Pressable>
+        </Pressable> : null}
       </View>
-      {settingsOpen ? (
+      {view === 'rankings' && settingsOpen ? (
         <NativeRaidSettingsPanel
-          includeBossControls={view === 'boss'}
-          includeShadowControls={view === 'boss'}
-          onChange={setSettings}
+          includeAttackerLevel={effectiveScope !== 'owned'}
+          includeBossControls={Boolean(selectedType)}
+          includeRelobbyControls
+          onChange={changeSettings}
           settings={settings}
         />
       ) : null}
@@ -402,13 +475,13 @@ export const NativeRaidScreen = ({
           <View style={styles.bossSummaryCopy}>
             <Text style={[styles.eyebrow, light && styles.accentLight]}>RAID BOSS</Text>
             <Text style={[styles.bossTitle, light && styles.textLight]}>{selectedBoss.name}</Text>
-            <Text style={[styles.bossMeta, light && styles.mutedLight]}>{selectedBoss.tier.shortLabel} · #{String(selectedBoss.pokemon.pokedex_number).padStart(4, '0')}</Text>
+            <Text style={[styles.bossMeta, light && styles.mutedLight]}>{selectedBossStats ? `CP ${selectedBossStats.bossCp.toLocaleString()} · ` : ''}{selectedBoss.variant.type1_name}{selectedBoss.variant.type2_name ? ` / ${selectedBoss.variant.type2_name}` : ''}</Text>
           </View>
         </View>
       ) : null}
       <TextInput
         accessibilityLabel="Find boss"
-        onChangeText={setBossQuery}
+        onChangeText={(value) => { beginPerformance('raid_boss_search_result_painted'); setBossQuery(value); }}
         placeholder="Search raid bosses"
         placeholderTextColor={light ? '#708183' : '#809294'}
         style={[styles.search, styles.bossSearch, light && styles.inputLight]}
@@ -448,7 +521,7 @@ export const NativeRaidScreen = ({
       {productHeader}
       {modeTabs}
       {roster}
-      {view === 'rankings' ? <NativeRaidTypeFilter assetBaseUrl={assetBaseUrl} onChange={setSelectedType} selectedType={selectedType} /> : bossPicker}
+      {view === 'rankings' ? <NativeRaidTypeFilter assetBaseUrl={assetBaseUrl} onChange={(type) => { beginPerformance('raid_type_result_painted'); setSelectedType(type); }} selectedType={selectedType} /> : bossPicker}
       <View style={styles.leaderboardHeading}>
         <Text style={[styles.resultsTitle, light && styles.textLight]}>{heading}</Text>
         <Pressable accessibilityLabel="How raid rankings work" accessibilityRole="button" onPress={onMethodology} style={[styles.info, light && styles.controlLight]}>
@@ -456,7 +529,7 @@ export const NativeRaidScreen = ({
         </Pressable>
       </View>
       {toolbar}
-      {view === 'boss' && selectedBoss ? <NativeRaidBossSetupPanel assetBaseUrl={assetBaseUrl} boss={selectedBoss} key={selectedBoss.id} onObservedDodgeRateChange={setObservedDodgeSuccessRate} scores={rankings} /> : null}
+      {view === 'boss' && selectedBoss ? <NativeRaidBossSetupPanel assetBaseUrl={assetBaseUrl} boss={selectedBoss} dodgeCalibrationApplied={observedDodgeSuccessRate != null} includeAttackerLevel={effectiveScope !== 'owned'} key={selectedBoss.id} onObservedDodgeRateChange={setObservedDodgeSuccessRate} onSettingsChange={changeSettings} onShadowBossModeChange={(mode) => { beginPerformance('raid_modifier_result_painted'); setShadowBossMode(mode); }} onShadowRaidChange={(enabled) => { beginPerformance('raid_modifier_result_painted'); setShadowRaid(enabled); }} ownerKey={ownerKey} scores={customPartyScores} selectedBossIsShadowRaid={selectedBossIsShadowRaid} settings={effectiveSettings} shadowBossMode={shadowBossMode} shadowMechanicsEnabled={shadowMechanicsEnabled} shadowRaid={shadowRaid} /> : null}
       {isLoading || bossCountersLoading ? <View accessibilityRole="progressbar" style={styles.state}><ActivityIndicator color="#2fd6d0" /><Text style={[styles.stateCopy, light && styles.mutedLight]}>{bossCountersLoading ? 'Modeling raid timelines…' : 'Loading battle data…'}</Text></View> : null}
       {error ? (
         <View accessibilityRole="alert" style={styles.error}>
@@ -488,8 +561,7 @@ export const NativeRaidScreen = ({
             assetBaseUrl={assetBaseUrl}
             entry={item}
             expanded={expandedId === item.id}
-            onOpenPokemon={() => onOpenPokemon(item)}
-            onToggle={() => setExpandedId((current) => current === item.id ? null : item.id)}
+            onToggle={() => { beginPerformance('raid_row_detail_painted'); setExpandedId((current) => current === item.id ? null : item.id); }}
             primaryMetric={view === 'rankings' ? rankingMetric : 'dps'}
             rank={index + 1}
           />

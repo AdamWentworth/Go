@@ -1,6 +1,7 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react-native';
 import * as SecureStore from 'expo-secure-store';
 import { NativeRaidCalibrationPanel } from '../../../src/components/tools/NativeRaidCalibrationPanel';
+import { createNativeRaidObservation, type NativeRaidObservationActual } from '../../../src/features/tools/nativeRaidCalibration';
 
 jest.mock('expo-secure-store', () => ({
   deleteItemAsync: jest.fn(),
@@ -9,6 +10,29 @@ jest.mock('expo-secure-store', () => ({
 }));
 
 const secureStore = jest.mocked(SecureStore);
+const buildObservation = (actual: NativeRaidObservationActual) => createNativeRaidObservation({
+  ownerKey: 'trainer-a',
+  modelVersion: 10,
+  catalogVersion: 'catalog-1',
+  bossVariantId: 'bulbasaur-default',
+  bossName: 'Bulbasaur',
+  tierKey: 'tier1',
+  predictionSource: 'group-estimate',
+  scenarioKey: `group-estimate-${actual.trainerCount}`,
+  dodgeCalibrationApplied: false,
+  predicted: {
+    clearTimeSeconds: 95.4,
+    faints: 1,
+    relobbies: 0,
+    winRate: 1,
+    p10ClearTimeSeconds: 90,
+    p90ClearTimeSeconds: 105,
+  },
+  actual,
+});
+const renderPanel = (props: Partial<React.ComponentProps<typeof NativeRaidCalibrationPanel>> = {}) => render(
+  <NativeRaidCalibrationPanel bossName="Bulbasaur" buildObservation={buildObservation} defaultTrainerCount={2} modelVersion={10} ownerKey="trainer-a" {...props} />,
+);
 
 describe('NativeRaidCalibrationPanel', () => {
   beforeEach(() => {
@@ -16,55 +40,54 @@ describe('NativeRaidCalibrationPanel', () => {
     secureStore.getItemAsync.mockResolvedValue(null);
   });
 
-  it('logs a validated observed raid to device storage', async () => {
-    render(<NativeRaidCalibrationPanel predictedCleared predictedSeconds={95.4} />);
+  it('logs every canonical observed-raid field to device storage', async () => {
+    renderPanel();
     await waitFor(() => expect(screen.getByText('No raids logged on this device')).toBeTruthy());
     fireEvent.press(screen.getByText('◷  Log raid'));
-    expect(screen.getByText('Log the actual result')).toBeTruthy();
-    fireEvent.changeText(screen.getByLabelText('Actual clear time'), '102.5');
-    fireEvent.changeText(screen.getByLabelText('Dodge attempts'), '4');
-    fireEvent.changeText(screen.getByLabelText('Successful dodges'), '3');
-    fireEvent.press(screen.getByText('Save raid observation'));
+    expect(screen.getByText('Bulbasaur')).toBeTruthy();
+    fireEvent.changeText(screen.getByLabelText('battle time (seconds)'), '102.5');
+    fireEvent.changeText(screen.getByLabelText('faints'), '2');
+    fireEvent.changeText(screen.getByLabelText('relobbies'), '1');
+    fireEvent.changeText(screen.getByLabelText('dodges attempted'), '4');
+    fireEvent.changeText(screen.getByLabelText('dodges successful'), '3');
+    fireEvent.changeText(screen.getByLabelText('measured latency (ms, optional)'), '80');
+    fireEvent.press(screen.getByText('Save result'));
     await waitFor(() => expect(secureStore.setItemAsync).toHaveBeenCalledWith(
-      expect.stringContaining('raid-observations'),
+      expect.stringContaining('raid-observations.v2'),
       expect.stringContaining('102.5'),
     ));
-    expect(screen.queryByText('Log the actual result')).toBeNull();
+    expect(screen.queryByText('OBSERVED BATTLE')).toBeNull();
   });
 
-  it('rejects impossible dodge evidence', async () => {
-    render(<NativeRaidCalibrationPanel predictedCleared predictedSeconds={95.4} />);
+  it('captures timed-out boss HP and rejects impossible dodge evidence', async () => {
+    renderPanel();
     await waitFor(() => expect(screen.getByText('No raids logged on this device')).toBeTruthy());
     fireEvent.press(screen.getByText('◷  Log raid'));
-    fireEvent.changeText(screen.getByLabelText('Dodge attempts'), '2');
-    fireEvent.changeText(screen.getByLabelText('Successful dodges'), '3');
-    fireEvent.press(screen.getByText('Save raid observation'));
-    expect(screen.getByText('Successful dodges cannot exceed dodge attempts.')).toBeTruthy();
+    fireEvent.press(screen.getByText('Timed out'));
+    fireEvent.changeText(screen.getByLabelText('battle time (seconds)'), '180');
+    fireEvent.changeText(screen.getByLabelText('boss hp left % (optional)'), '35');
+    fireEvent.changeText(screen.getByLabelText('dodges attempted'), '2');
+    fireEvent.changeText(screen.getByLabelText('dodges successful'), '3');
+    fireEvent.press(screen.getByText('Save result'));
+    expect(screen.getByText('Successful dodges cannot exceed attempted dodges.')).toBeTruthy();
     expect(secureStore.setItemAsync).not.toHaveBeenCalled();
   });
 
-  it('applies and removes a sufficiently supported observed dodge rate', async () => {
-    const observations = Array.from({ length: 5 }, (_, index) => ({
-      actualCleared: true,
-      actualSeconds: 100,
-      createdAt: `2026-08-2${index}T00:00:00.000Z`,
+  it('applies and removes a sufficiently supported owner/model dodge rate', async () => {
+    const observations = Array.from({ length: 5 }, (_, index) => buildObservation({
+      outcome: 'cleared',
+      trainerCount: 2,
+      clearTimeSeconds: 100,
+      remainingBossHpPercent: null,
+      faints: 1,
+      relobbies: 0,
       dodgeAttempts: 2,
-      dodgeSuccesses: index < 3 ? 2 : 0,
-      exactParty: true,
-      id: `raid-${index}`,
+      successfulDodges: index < 3 ? 2 : 0,
       latencyMs: null,
-      predictedCleared: true,
-      predictedSeconds: 98,
     }));
     secureStore.getItemAsync.mockResolvedValue(JSON.stringify(observations));
     const onObservedDodgeRateChange = jest.fn();
-    render(
-      <NativeRaidCalibrationPanel
-        onObservedDodgeRateChange={onObservedDodgeRateChange}
-        predictedCleared
-        predictedSeconds={98}
-      />,
-    );
+    renderPanel({ onObservedDodgeRateChange });
     await waitFor(() => expect(screen.getByLabelText('Use observed dodges').props.disabled).toBe(false));
     fireEvent(screen.getByLabelText('Use observed dodges'), 'valueChange', true);
     await waitFor(() => expect(onObservedDodgeRateChange).toHaveBeenLastCalledWith(.6));

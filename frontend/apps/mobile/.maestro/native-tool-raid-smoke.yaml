@@ -40,32 +40,6 @@ name: Native Raid tool smoke
 - assertVisible: "Bulbasaur"
 - assertVisible: "Search raid bosses"
 - takeScreenshot: "native-tool-raid-boss"
-- tapOn:
-    id: raid-ranking-settings
-- scrollUntilVisible:
-    element:
-      text: "Dodging"
-    direction: DOWN
-- scrollUntilVisible:
-    element:
-      text: "Boss behavior"
-    direction: DOWN
-- scrollUntilVisible:
-    element:
-      text: "Shadow boss state"
-    direction: DOWN
-- takeScreenshot: "native-tool-raid-boss-settings"
-- scrollUntilVisible:
-    element:
-      id: raid-ranking-settings
-    direction: UP
-- tapOn:
-    id: raid-ranking-settings
-- scrollUntilVisible:
-    element:
-      text: "Tap for all stats"
-    direction: DOWN
-    timeout: 180000
 - scrollUntilVisible:
     element:
       text: "Raid setup"
@@ -82,6 +56,23 @@ name: Native Raid tool smoke
     direction: DOWN
 - assertVisible: "COMFORTABLE"
 - takeScreenshot: "native-tool-raid-setup"
+- scrollUntilVisible:
+    element:
+      text: "Battle settings"
+    direction: DOWN
+- tapOn: "Battle settings"
+- scrollUntilVisible:
+    element:
+      text: "Dodging"
+    direction: DOWN
+- scrollUntilVisible:
+    element:
+      text: "Boss behavior"
+    direction: DOWN
+- assertVisible: "Monte Carlo"
+- tapOn: "Shadow raid"
+- assertVisible: "Shadow boss state"
+- takeScreenshot: "native-tool-raid-boss-settings"
 - scrollUntilVisible:
     element:
       text: "Custom raid party"
@@ -105,9 +96,9 @@ name: Native Raid tool smoke
 - tapOn: "^Simulate$"
 - scrollUntilVisible:
     element:
-      text: "Likely clear"
+      text: "Raid party result"
     direction: DOWN
-- assertVisible: "Likely clear"
+- assertVisible: "Raid party result"
 - takeScreenshot: "native-tool-raid-party"
 - scrollUntilVisible:
     element:
@@ -125,7 +116,7 @@ name: Native Raid tool smoke
       text: "◷  Log raid"
     direction: DOWN
 - tapOn: "◷  Log raid"
-- assertVisible: "Log the actual result"
-- assertVisible: "ACTUAL CLEAR TIME (SECONDS)"
+- assertVisible: "OBSERVED BATTLE"
+- assertVisible: "BATTLE TIME (SECONDS)"
 - takeScreenshot: "native-tool-raid-log"
 - tapOn: "Close raid log"

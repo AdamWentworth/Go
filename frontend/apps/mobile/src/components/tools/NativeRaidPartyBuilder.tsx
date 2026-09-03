@@ -1,5 +1,6 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import {
+  ActivityIndicator,
   Image,
   Modal,
   Pressable,
@@ -9,13 +10,22 @@ import {
   TextInput,
   View,
 } from 'react-native';
-import type { NativeCombatEntry } from '../../features/tools/nativeBattleModels';
+import type {
+  NativeCombatEntry,
+  NativeRaidBossEntry,
+  NativeRaidSettings,
+} from '../../features/tools/nativeBattleModels';
 import {
+  applyNativeRaidOptimization,
   createNativeRaidParty,
   createNativeRaidPartyTrainer,
   getNativeRaidTeam,
+  getNativeRaidPartyScenarioKey,
+  getNativeRaidScoreKey,
+  nativeRaidEntryUsesMegaSlot,
   optimizeNativeRaidParty,
   simulateNativeRaidParty,
+  type NativeRaidPartyOptimizationResult,
   type NativeRaidPartyResult,
   type NativeRaidPartyTrainerDraft,
   type NativeRaidTier,
@@ -23,11 +33,18 @@ import {
 import { useNativeModalAnimation } from '../../features/settings/useNativeMotion';
 import { useNativeColorScheme } from '../../features/settings/useNativeColorScheme';
 import { NativeUiIcon } from '../NativeUiIcon';
+import { markNativeUiPerformanceAfterPaint } from '../../observability/nativeUiInteractionTiming';
 
 type Props = {
   assetBaseUrl: string;
-  onResultChange: (result: NativeRaidPartyResult | null) => void;
+  boss: NativeRaidBossEntry;
+  onResultChange: (
+    result: NativeRaidPartyResult | null,
+    source?: 'custom-party' | 'optimized-party',
+    scenarioKey?: string,
+  ) => void;
   scores: NativeCombatEntry[];
+  settings: NativeRaidSettings;
   tier: NativeRaidTier;
 };
 
@@ -38,65 +55,156 @@ const assetUri = (base: string, value: string | null) => {
 };
 const seconds = (value: number) => Number.isFinite(value) ? `${value.toFixed(1)}s` : 'No clear';
 
-export const NativeRaidPartyBuilder = ({ assetBaseUrl, onResultChange, scores, tier }: Props) => {
+export const NativeRaidPartyBuilder = ({ assetBaseUrl, boss, onResultChange, scores, settings, tier }: Props) => {
   const light = useNativeColorScheme() === 'light';
   const animationType = useNativeModalAnimation('slide');
   const [open, setOpen] = useState(false);
-  const [trainers, setTrainers] = useState<NativeRaidPartyTrainerDraft[]>(() => createNativeRaidParty(scores));
+  const [trainers, setTrainers] = useState<NativeRaidPartyTrainerDraft[]>(() => createNativeRaidParty(scores, settings));
   const [expandedId, setExpandedId] = useState('trainer-1');
   const [picker, setPicker] = useState<Picker>(null);
   const [result, setResult] = useState<NativeRaidPartyResult | null>(null);
-  const candidates = useMemo(() => getNativeRaidTeam(scores).length > 0 ? scores.slice(0, 80) : [], [scores]);
-  const scoreById = useMemo(() => new Map(scores.map((entry) => [entry.id, entry])), [scores]);
+  const [optimization, setOptimization] = useState<NativeRaidPartyOptimizationResult | null>(null);
+  const [running, setRunning] = useState(false);
+  const [optimizing, setOptimizing] = useState(false);
+  const [error, setError] = useState('');
+  const workTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const openStartedAtRef = useRef<number | null>(null);
+  const onResultChangeRef = useRef(onResultChange);
+  const previousInputsRef = useRef({ scores, settings });
+  const candidates = useMemo(() => scores.slice(0, 80), [scores]);
+  const scoreById = useMemo(() => new Map(candidates.map((entry) => [getNativeRaidScoreKey(entry), entry])), [candidates]);
   const selectedTrainer = picker ? trainers.find((trainer) => trainer.id === picker.trainerId) ?? null : null;
+  const winRate = result?.distribution.winRate ?? 0;
+  const outcome = !result
+    ? null
+    : winRate >= 1
+      ? { label: 'Clear', style: styles.success }
+      : winRate <= 0
+        ? { label: 'Time expired', style: styles.failure }
+        : winRate >= 0.5
+          ? { label: 'Likely clear', style: styles.success }
+          : { label: 'Risky', style: styles.risky };
+
+  useEffect(() => {
+    onResultChangeRef.current = onResultChange;
+  }, [onResultChange]);
+
+  useEffect(() => {
+    if (previousInputsRef.current.scores === scores && previousInputsRef.current.settings === settings) return undefined;
+    previousInputsRef.current = { scores, settings };
+    const reconcileTimer = setTimeout(() => {
+      if (workTimerRef.current) clearTimeout(workTimerRef.current);
+      setRunning(false);
+      setOptimizing(false);
+      const availableIds = new Set(scores.map(getNativeRaidScoreKey));
+      const defaults = getNativeRaidTeam(scores).map(getNativeRaidScoreKey);
+      setTrainers((current) => current.map((trainer) => {
+        const memberVariantIds = trainer.memberVariantIds.filter((id) => availableIds.has(id));
+        defaults.forEach((id) => {
+          if (memberVariantIds.length < 6 && !memberVariantIds.includes(id)) memberVariantIds.push(id);
+        });
+        return { ...trainer, memberVariantIds };
+      }));
+      setResult(null);
+      setOptimization(null);
+      setError('');
+      onResultChangeRef.current(null);
+    }, 0);
+    return () => clearTimeout(reconcileTimer);
+  }, [scores, settings]);
+
+  useEffect(() => {
+    if (!open || openStartedAtRef.current == null) return;
+    markNativeUiPerformanceAfterPaint('raid_party_painted', openStartedAtRef.current);
+    openStartedAtRef.current = null;
+  }, [open]);
+
+  useEffect(() => () => {
+    if (workTimerRef.current) clearTimeout(workTimerRef.current);
+  }, []);
 
   const updateTrainer = (id: string, update: (trainer: NativeRaidPartyTrainerDraft) => NativeRaidPartyTrainerDraft) => {
     setTrainers((current) => current.map((trainer) => trainer.id === id ? update(trainer) : trainer));
     setResult(null);
-    onResultChange(null);
+    setOptimization(null);
+    setError('');
+    onResultChangeRef.current(null);
   };
   const run = () => {
-    const next = simulateNativeRaidParty(trainers, scores, tier);
-    setResult(next);
-    onResultChange(next);
+    const startedAt = Date.now();
+    if (workTimerRef.current) clearTimeout(workTimerRef.current);
+    setRunning(true);
+    setOptimization(null);
+    setError('');
+    workTimerRef.current = setTimeout(() => {
+      workTimerRef.current = null;
+      const request = { boss, drafts: trainers, scores, settings, tier };
+      const next = simulateNativeRaidParty(request);
+      const scenarioKey = getNativeRaidPartyScenarioKey(request);
+      if (!next || !scenarioKey) {
+        setError('Every Trainer needs at least one valid team member.');
+      } else {
+        setResult(next);
+        onResultChangeRef.current(next, 'custom-party', scenarioKey);
+      }
+      setRunning(false);
+      markNativeUiPerformanceAfterPaint('raid_party_result_painted', startedAt);
+    }, 0);
   };
   const optimize = () => {
-    const optimized = optimizeNativeRaidParty(trainers, scores);
-    const next = simulateNativeRaidParty(optimized, scores, tier);
-    setTrainers(optimized);
-    setResult(next);
-    onResultChange(next);
+    const startedAt = Date.now();
+    if (workTimerRef.current) clearTimeout(workTimerRef.current);
+    setOptimizing(true);
+    setError('');
+    workTimerRef.current = setTimeout(() => {
+      workTimerRef.current = null;
+      const request = { boss, drafts: trainers, scores, settings, tier };
+      const next = optimizeNativeRaidParty(request);
+      if (!next) {
+        setError('The optimizer could not build a legal raid party.');
+      } else {
+        const optimizedDrafts = applyNativeRaidOptimization(trainers, next);
+        const scenarioKey = getNativeRaidPartyScenarioKey({ ...request, drafts: optimizedDrafts });
+        setTrainers(optimizedDrafts);
+        setOptimization(next);
+        setResult(next.result);
+        onResultChangeRef.current(next.result, 'optimized-party', scenarioKey ?? undefined);
+      }
+      setOptimizing(false);
+      markNativeUiPerformanceAfterPaint('raid_party_optimization_painted', startedAt);
+    }, 0);
   };
   const addTrainer = () => {
     if (trainers.length >= 20) return;
     const nextIndex = Math.max(0, ...trainers.map((trainer) => Number(trainer.id.match(/(\d+)$/)?.[1]) || 0));
-    const next = createNativeRaidPartyTrainer(nextIndex, scores);
+    const next = createNativeRaidPartyTrainer(nextIndex, scores, settings);
     setTrainers((current) => [...current, next]);
     setExpandedId(next.id);
     setResult(null);
-    onResultChange(null);
+    setOptimization(null);
+    onResultChangeRef.current(null);
   };
   const removeTrainer = (id: string) => {
     if (trainers.length <= 1) return;
     setTrainers((current) => current.filter((trainer) => trainer.id !== id));
     if (expandedId === id) setExpandedId('');
     setResult(null);
-    onResultChange(null);
+    setOptimization(null);
+    onResultChangeRef.current(null);
   };
   const selectMember = (entry: NativeCombatEntry | null) => {
     if (!picker) return;
     updateTrainer(picker.trainerId, (trainer) => {
-      const memberIds = [...trainer.memberIds];
-      if (entry) memberIds[picker.slotIndex] = entry.id;
-      else memberIds.splice(picker.slotIndex, 1);
-      return { ...trainer, memberIds };
+      const memberVariantIds = [...trainer.memberVariantIds];
+      memberVariantIds[picker.slotIndex] = entry ? getNativeRaidScoreKey(entry) : '';
+      return { ...trainer, memberVariantIds };
     });
     setPicker(null);
   };
 
   return (
     <View style={[styles.panel, light && styles.panelLight]}>
-      <Pressable accessibilityLabel="Custom raid party" accessibilityRole="button" accessibilityState={{ expanded: open }} onPress={() => setOpen((current) => !current)} style={styles.toggle}>
+      <Pressable accessibilityLabel="Custom raid party" accessibilityRole="button" accessibilityState={{ expanded: open }} onPress={() => { if (!open) openStartedAtRef.current = Date.now(); setOpen((current) => !current); }} style={styles.toggle}>
         <NativeUiIcon color={light ? '#08766b' : '#42d5c2'} name="trainers" size={18} />
         <View style={styles.flex}><Text style={[styles.toggleTitle, light && styles.textLight]}>Custom raid party</Text><Text style={[styles.meta, light && styles.mutedLight]}>Independent teams, dodges, relobbies, and contribution</Text></View>
         <Text style={[styles.chevron, light && styles.textLight]}>{open ? '⌃' : '⌄'}</Text>
@@ -107,24 +215,24 @@ export const NativeRaidPartyBuilder = ({ assetBaseUrl, onResultChange, scores, t
           <View style={[styles.lobby, light && styles.controlLight]}>
             <View style={styles.lobbySummary}>
               <View><Text style={[styles.lobbyCount, light && styles.textLight]}>{trainers.length} Trainer{trainers.length === 1 ? '' : 's'}</Text><Text style={[styles.meta, light && styles.mutedLight]}>Lobby size</Text></View>
-              <View style={styles.outcome}><Text style={[styles.outcomeTitle, result?.clears ? styles.success : result ? styles.failure : light && styles.textLight]}>{result ? result.clears ? 'Likely clear' : 'Time expired' : 'Ready to test'}</Text><Text style={[styles.meta, light && styles.mutedLight]}>{result ? `${seconds(result.seconds)} · ${result.dps.toFixed(1)} DPS` : 'Build and simulate this lobby'}</Text></View>
+              <View style={styles.outcome}><Text style={[styles.outcomeTitle, outcome?.style, !result && light && styles.textLight]}>{outcome?.label ?? 'Ready to test'}</Text><Text style={[styles.meta, light && styles.mutedLight]}>{result ? `${seconds(result.projectedTimeToWinSeconds)} · ${Math.round(winRate * 100)}% clear` : 'Build and simulate this lobby'}</Text></View>
             </View>
             <View style={styles.lobbyActions}>
-              <Pressable accessibilityLabel="Add Trainer" accessibilityRole="button" disabled={trainers.length >= 20} onPress={addTrainer} style={[styles.secondary, light && styles.controlLight]}><Text style={[styles.secondaryText, light && styles.textLight]}>＋ Add</Text></Pressable>
-              <Pressable accessibilityRole="button" disabled={scores.length === 0} onPress={run} style={styles.primary}><View style={styles.primaryContent}><NativeUiIcon color="#061816" name="bolt" size={14} /><Text style={styles.primaryText}>Simulate</Text></View></Pressable>
-              <Pressable accessibilityRole="button" disabled={scores.length === 0} onPress={optimize} style={styles.optimize}><Text style={styles.primaryText}>✦ Optimize</Text></Pressable>
+              <Pressable accessibilityLabel="Add Trainer" accessibilityRole="button" disabled={trainers.length >= 20 || running || optimizing} onPress={addTrainer} style={[styles.secondary, light && styles.controlLight, (running || optimizing) && styles.disabled]}><Text style={[styles.secondaryText, light && styles.textLight]}>＋ Add</Text></Pressable>
+              <Pressable accessibilityRole="button" disabled={scores.length === 0 || running || optimizing} onPress={run} style={[styles.primary, (running || optimizing) && styles.disabled]}><View style={styles.primaryContent}>{running ? <ActivityIndicator color="#061816" size="small" /> : <NativeUiIcon color="#061816" name="bolt" size={14} />}<Text style={styles.primaryText}>{running ? 'Running…' : 'Simulate'}</Text></View></Pressable>
+              <Pressable accessibilityRole="button" disabled={scores.length === 0 || running || optimizing} onPress={optimize} style={[styles.optimize, (running || optimizing) && styles.disabled]}>{optimizing ? <ActivityIndicator color="#071214" size="small" /> : null}<Text style={styles.primaryText}>{optimizing ? 'Optimizing…' : '✦ Optimize'}</Text></Pressable>
             </View>
           </View>
 
           <View style={styles.trainers}>
             {trainers.map((trainer, trainerIndex) => {
               const expanded = expandedId === trainer.id;
-              const members = trainer.memberIds.flatMap((id) => scoreById.get(id) ?? []);
+              const members = trainer.memberVariantIds.flatMap((id) => scoreById.get(id) ?? []);
               return (
                 <View key={trainer.id} style={[styles.trainer, light && styles.controlLight]}>
                   <Pressable accessibilityLabel={`${trainer.label} settings`} accessibilityRole="button" accessibilityState={{ expanded }} onPress={() => setExpandedId(expanded ? '' : trainer.id)} style={styles.trainerHeader}>
                     <View style={styles.number}><Text style={styles.numberText}>{trainerIndex + 1}</Text></View>
-                    <View style={styles.flex}><Text style={[styles.trainerTitle, light && styles.textLight]}>{trainer.label}</Text><Text style={[styles.meta, light && styles.mutedLight]}>{members.length} Pokémon{members.some((entry) => entry.name.toLocaleLowerCase().includes('mega') || entry.name.toLocaleLowerCase().includes('primal')) ? ' · Mega/Primal' : ''}</Text></View>
+                    <View style={styles.flex}><Text style={[styles.trainerTitle, light && styles.textLight]}>{trainer.label}</Text><Text style={[styles.meta, light && styles.mutedLight]}>{members.length} Pokémon{members.some(nativeRaidEntryUsesMegaSlot) ? ' · Mega/Primal' : ''}</Text></View>
                     <Text style={[styles.chevron, light && styles.textLight]}>{expanded ? '⌃' : '⌄'}</Text>
                   </Pressable>
                   {expanded ? (
@@ -136,10 +244,10 @@ export const NativeRaidPartyBuilder = ({ assetBaseUrl, onResultChange, scores, t
                         <Setting label="Relobby" light={light} options={[["5s", 5], ["10s", 10], ["15s", 15], ["20s", 20]]} value={trainer.relobbySeconds} onChange={(value) => updateTrainer(trainer.id, (current) => ({ ...current, relobbySeconds: value as NativeRaidPartyTrainerDraft['relobbySeconds'] }))} />
                         <Setting label="Action delay" light={light} options={[["None", 0], ["0.5s", .5], ["1.0s", 1]]} value={trainer.actionDelaySeconds} onChange={(value) => updateTrainer(trainer.id, (current) => ({ ...current, actionDelaySeconds: value as NativeRaidPartyTrainerDraft['actionDelaySeconds'] }))} />
                       </View>
-                      <View style={styles.teamHeading}><Text style={[styles.trainerTitle, light && styles.textLight]}>Battle team</Text><Pressable accessibilityRole="button" onPress={() => updateTrainer(trainer.id, (current) => ({ ...current, memberIds: getNativeRaidTeam(scores).map((entry) => entry.id) }))}><Text style={styles.autoFill}>↻ Auto fill</Text></Pressable></View>
+                      <View style={styles.teamHeading}><Text style={[styles.trainerTitle, light && styles.textLight]}>Battle team</Text><Pressable accessibilityRole="button" onPress={() => updateTrainer(trainer.id, (current) => ({ ...current, memberVariantIds: getNativeRaidTeam(scores).map(getNativeRaidScoreKey) }))}><Text style={styles.autoFill}>↻ Auto fill</Text></Pressable></View>
                       <View accessibilityLabel={`${trainer.label} battle team`} style={styles.team}>
                         {Array.from({ length: 6 }, (_, slotIndex) => {
-                          const member = scoreById.get(trainer.memberIds[slotIndex] ?? '');
+                          const member = scoreById.get(trainer.memberVariantIds[slotIndex] ?? '');
                           return (
                             <Pressable accessibilityLabel={`${trainer.label} team slot ${slotIndex + 1}`} accessibilityRole="button" key={`${trainer.id}-${slotIndex}`} onPress={() => setPicker({ slotIndex, trainerId: trainer.id })} style={[styles.teamSlot, light && styles.teamSlotLight]}>
                               <Text style={[styles.slotNumber, light && styles.mutedLight]}>{slotIndex + 1}</Text>
@@ -157,10 +265,15 @@ export const NativeRaidPartyBuilder = ({ assetBaseUrl, onResultChange, scores, t
             })}
           </View>
 
+          {error ? <Text accessibilityRole="alert" style={styles.error}>{error}</Text> : null}
+
           {result ? (
-            <View accessibilityLabel="Raid party result" style={[styles.result, result.clears ? styles.resultClear : styles.resultFailed]}>
-              <Text style={styles.resultTitle}>{result.clears ? 'Likely clear' : 'Time expired'} · {seconds(result.seconds)}</Text>
-              <Text style={styles.resultMeta}>{result.dps.toFixed(1)} DPS · {result.faints} faints · {result.relobbies} relobbies</Text>
+            <View accessibilityLabel="Raid party result" style={[styles.result, winRate > 0 ? styles.resultClear : styles.resultFailed]}>
+              <Text style={styles.resultTitle}>{outcome?.label} · {seconds(result.projectedTimeToWinSeconds)}</Text>
+              <Text style={styles.resultMeta}>{result.dps.toFixed(1)} DPS · {Math.round(result.faints)} faints · {Math.round(result.relobbies)} relobbies</Text>
+              {result.distribution.sampleCount > 1 ? <Text style={styles.resultMeta}>{Math.round(winRate * 100)}% of modeled outcomes clear</Text> : null}
+              {result.superMega ? <Text style={styles.resultMeta}>{Math.round(result.superMega.shieldsBroken)} / {result.superMega.shieldCount} shields broken · {result.superMega.eligibleMegaTrainers} Mega-ready Trainers</Text> : null}
+              {optimization ? <View style={styles.optimization}><Text style={styles.optimizationTitle}>Lobby optimized</Text><Text style={styles.resultMeta}>{optimization.evaluatedLineups} coordinated lineups checked · {optimization.beamWidth}-wide search</Text><Text style={styles.resultMeta}>{optimization.changedTrainerCount} teams changed{optimization.timeSavedSeconds >= .05 ? ` · ${optimization.timeSavedSeconds.toFixed(1)}s faster` : ''}{optimization.faintReduction >= .5 ? ` · ${optimization.faintReduction.toFixed(1)} fewer faints` : ''}{optimization.relobbyReduction >= .5 ? ` · ${optimization.relobbyReduction.toFixed(1)} fewer relobbies` : ''}</Text>{optimization.trainerChanges.map((change) => <Text key={change.trainerId} style={styles.resultMeta}>{change.label}: {change.reasons.join(' · ')}</Text>)}</View> : null}
               {result.trainers.map((trainer) => <View key={trainer.id} style={styles.contribution}><View style={styles.contributionCopy}><Text style={styles.contributionName}>{trainer.label}</Text><Text style={styles.contributionMeta}>{trainer.dps.toFixed(1)} DPS · {Math.round(trainer.damageShare * 100)}%</Text></View><View style={styles.track}><View style={[styles.fill, { width: `${Math.max(2, trainer.damageShare * 100)}%` }]} /></View></View>)}
             </View>
           ) : null}
@@ -174,8 +287,15 @@ export const NativeRaidPartyBuilder = ({ assetBaseUrl, onResultChange, scores, t
             <ScrollView contentContainerStyle={styles.candidateList}>
               <Pressable accessibilityRole="button" onPress={() => selectMember(null)} style={[styles.candidate, light && styles.controlLight]}><Text style={[styles.candidateName, light && styles.textLight]}>Empty slot</Text></Pressable>
               {candidates.map((entry) => {
-                const selectedElsewhere = selectedTrainer?.memberIds.some((id, index) => id === entry.id && index !== picker?.slotIndex);
-                return <Pressable accessibilityRole="button" disabled={selectedElsewhere} key={entry.id} onPress={() => selectMember(entry)} style={[styles.candidate, light && styles.controlLight, selectedElsewhere && styles.disabled]}><Image fadeDuration={0} resizeMode="contain" source={{ uri: assetUri(assetBaseUrl, entry.imageUri) }} style={styles.candidateImage} /><View style={styles.flex}><Text numberOfLines={1} style={[styles.candidateName, light && styles.textLight]}>{entry.name}</Text><Text numberOfLines={1} style={[styles.meta, light && styles.mutedLight]}>{entry.fastMove?.name ?? '—'} · {entry.chargedMove?.name ?? '—'}</Text></View><Text style={styles.score}>{entry.score.toFixed(1)}</Text></Pressable>;
+                const id = getNativeRaidScoreKey(entry);
+                const selectedId = selectedTrainer?.memberVariantIds[picker?.slotIndex ?? -1] ?? '';
+                const anotherMegaSelected = selectedTrainer?.memberVariantIds.some((memberId, index) => {
+                  const member = scoreById.get(memberId);
+                  return index !== picker?.slotIndex && Boolean(member && nativeRaidEntryUsesMegaSlot(member));
+                });
+                const selectedElsewhere = selectedTrainer?.memberVariantIds.some((memberId, index) => memberId === id && index !== picker?.slotIndex);
+                const disabled = Boolean(selectedElsewhere || (nativeRaidEntryUsesMegaSlot(entry) && anotherMegaSelected && selectedId !== id));
+                return <Pressable accessibilityRole="button" disabled={disabled} key={id} onPress={() => selectMember(entry)} style={[styles.candidate, light && styles.controlLight, disabled && styles.disabled]}><Image fadeDuration={0} resizeMode="contain" source={{ uri: assetUri(assetBaseUrl, entry.imageUri) }} style={styles.candidateImage} /><View style={styles.flex}><Text numberOfLines={1} style={[styles.candidateName, light && styles.textLight]}>{entry.name}</Text><Text numberOfLines={1} style={[styles.meta, light && styles.mutedLight]}>{entry.fastMove?.name ?? '—'} · {entry.chargedMove?.name ?? '—'}</Text></View><Text style={styles.score}>{entry.score.toFixed(1)}</Text></Pressable>;
               })}
             </ScrollView>
           </View>
@@ -206,12 +326,13 @@ const styles = StyleSheet.create({
   outcomeTitle: { color: '#fff', fontSize: 11, fontWeight: '900' },
   success: { color: '#4be0ad' },
   failure: { color: '#ff8197' },
+  risky: { color: '#ffd166' },
   lobbyActions: { flexDirection: 'row', gap: 5 },
   secondary: { minHeight: 39, flex: 1, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: '#44595a', borderRadius: 999, backgroundColor: '#202b2c' },
   secondaryText: { color: '#fff', fontSize: 9, fontWeight: '900' },
   primary: { minHeight: 39, flex: 1, alignItems: 'center', justifyContent: 'center', borderRadius: 999, backgroundColor: '#2fd6d0' },
   primaryContent: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 4 },
-  optimize: { minHeight: 39, flex: 1, alignItems: 'center', justifyContent: 'center', borderRadius: 999, backgroundColor: '#8b63cf' },
+  optimize: { minHeight: 39, flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 4, borderRadius: 999, backgroundColor: '#8b63cf' },
   primaryText: { color: '#071214', fontSize: 9, fontWeight: '900' },
   trainers: { gap: 6 },
   trainer: { overflow: 'hidden', borderWidth: 1, borderColor: '#3d5253', borderRadius: 10, backgroundColor: '#101819' },
@@ -248,6 +369,9 @@ const styles = StyleSheet.create({
   resultFailed: { borderColor: '#df5770', backgroundColor: '#39151e' },
   resultTitle: { color: '#fff', fontSize: 12, fontWeight: '900' },
   resultMeta: { color: '#dbe8e8', fontSize: 8.5 },
+  error: { color: '#ff9bad', fontSize: 9, fontWeight: '800' },
+  optimization: { gap: 3, borderRadius: 8, padding: 7, backgroundColor: 'rgba(139,99,207,.22)' },
+  optimizationTitle: { color: '#fff', fontSize: 9.5, fontWeight: '900' },
   contribution: { gap: 3 },
   contributionCopy: { flexDirection: 'row', justifyContent: 'space-between', gap: 6 },
   contributionName: { color: '#fff', fontSize: 8.5, fontWeight: '900' },

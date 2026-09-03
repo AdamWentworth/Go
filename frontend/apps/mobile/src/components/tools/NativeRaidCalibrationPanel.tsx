@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useState } from 'react';
-import { Modal, Pressable, Share, StyleSheet, Switch, Text, TextInput, View } from 'react-native';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { Modal, Pressable, ScrollView, Share, StyleSheet, Switch, Text, TextInput, View } from 'react-native';
 import {
   clearNativeRaidObservations,
   loadNativeRaidObservations,
@@ -7,107 +7,155 @@ import {
   serializeNativeRaidObservations,
   summarizeNativeRaidCalibration,
   type NativeRaidObservation,
+  type NativeRaidObservationActual,
 } from '../../features/tools/nativeRaidCalibration';
 import { useNativeModalAnimation } from '../../features/settings/useNativeMotion';
 import { useNativeColorScheme } from '../../features/settings/useNativeColorScheme';
+import { markNativeUiPerformanceAfterPaint } from '../../observability/nativeUiInteractionTiming';
 
 type Props = {
+  bossName: string;
+  buildObservation: (actual: NativeRaidObservationActual) => NativeRaidObservation | null;
+  defaultTrainerCount: number;
   disabled?: boolean;
+  modelVersion: number;
   onObservedDodgeRateChange?: (rate: number | null) => void;
-  predictedCleared: boolean;
-  predictedSeconds: number | null;
+  ownerKey: string;
+};
+
+type Form = {
+  outcome: NativeRaidObservationActual['outcome'];
+  trainerCount: string;
+  battleSeconds: string;
+  remainingBossHpPercent: string;
+  faints: string;
+  relobbies: string;
+  dodgeAttempts: string;
+  successfulDodges: string;
+  latencyMs: string;
 };
 
 const percent = (value: number) => `${Math.round(value * 100)}%`;
-const newId = () => `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+const wholeNumber = (value: string) => Math.max(0, Math.floor(Number(value) || 0));
+const initialForm = (trainerCount: number): Form => ({
+  outcome: 'cleared',
+  trainerCount: String(Math.max(1, trainerCount)),
+  battleSeconds: '',
+  remainingBossHpPercent: '',
+  faints: '0',
+  relobbies: '0',
+  dodgeAttempts: '0',
+  successfulDodges: '0',
+  latencyMs: '',
+});
 
 export const NativeRaidCalibrationPanel = ({
+  bossName,
+  buildObservation,
+  defaultTrainerCount,
   disabled = false,
+  modelVersion,
   onObservedDodgeRateChange,
-  predictedCleared,
-  predictedSeconds,
+  ownerKey,
 }: Props) => {
   const light = useNativeColorScheme() === 'light';
   const slideAnimation = useNativeModalAnimation('slide');
   const fadeAnimation = useNativeModalAnimation('fade');
-  const [observations, setObservations] = useState<NativeRaidObservation[]>([]);
+  const [allObservations, setAllObservations] = useState<NativeRaidObservation[]>([]);
   const [loaded, setLoaded] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [clearOpen, setClearOpen] = useState(false);
-  const [actualCleared, setActualCleared] = useState(predictedCleared);
-  const [actualSeconds, setActualSeconds] = useState(predictedSeconds == null ? '' : predictedSeconds.toFixed(1));
-  const [exactParty, setExactParty] = useState(true);
-  const [dodgeAttempts, setDodgeAttempts] = useState('0');
-  const [dodgeSuccesses, setDodgeSuccesses] = useState('0');
+  const [form, setForm] = useState<Form>(() => initialForm(defaultTrainerCount));
   const [useObservedDodges, setUseObservedDodges] = useState(false);
   const [error, setError] = useState('');
+  const dialogStartedAtRef = useRef<number | null>(null);
+  const observations = useMemo(() => allObservations.filter(
+    (row) => row.ownerKey === ownerKey && row.modelVersion === modelVersion,
+  ), [allObservations, modelVersion, ownerKey]);
   const profile = useMemo(() => summarizeNativeRaidCalibration(observations), [observations]);
 
   useEffect(() => {
     let active = true;
     void loadNativeRaidObservations().then((rows) => {
       if (!active) return;
-      setObservations(rows);
+      setAllObservations(rows);
       setLoaded(true);
     });
     return () => { active = false; };
   }, []);
 
   const observedDodgesEnabled = profile.canApplyDodgeCalibration && useObservedDodges;
-
   useEffect(() => {
-    onObservedDodgeRateChange?.(
-      observedDodgesEnabled ? profile.dodgeSuccessRate : null,
-    );
+    onObservedDodgeRateChange?.(observedDodgesEnabled ? profile.dodgeSuccessRate : null);
   }, [observedDodgesEnabled, onObservedDodgeRateChange, profile.dodgeSuccessRate]);
+  useEffect(() => () => onObservedDodgeRateChange?.(null), [onObservedDodgeRateChange]);
+  useEffect(() => {
+    if (!dialogOpen || dialogStartedAtRef.current == null) return;
+    markNativeUiPerformanceAfterPaint('raid_calibration_dialog_painted', dialogStartedAtRef.current);
+    dialogStartedAtRef.current = null;
+  }, [dialogOpen]);
 
-  useEffect(
-    () => () => onObservedDodgeRateChange?.(null),
-    [onObservedDodgeRateChange],
-  );
-
+  const setField = (field: keyof Form, value: string) => {
+    setForm((current) => ({ ...current, [field]: value }));
+  };
   const openLog = () => {
-    setActualCleared(predictedCleared);
-    setActualSeconds(predictedSeconds == null ? '' : predictedSeconds.toFixed(1));
-    setExactParty(true);
-    setDodgeAttempts('0');
-    setDodgeSuccesses('0');
+    dialogStartedAtRef.current = Date.now();
+    setForm(initialForm(defaultTrainerCount));
     setError('');
     setDialogOpen(true);
   };
-
   const save = async () => {
-    const seconds = actualCleared ? Number(actualSeconds) : null;
-    const attempts = Math.max(0, Math.round(Number(dodgeAttempts) || 0));
-    const successes = Math.max(0, Math.round(Number(dodgeSuccesses) || 0));
-    if (actualCleared && (!Number.isFinite(seconds) || Number(seconds) <= 0)) {
-      setError('Enter the actual clear time in seconds.');
+    const trainerCount = wholeNumber(form.trainerCount);
+    const clearTimeSeconds = Number(form.battleSeconds);
+    const dodgeAttempts = wholeNumber(form.dodgeAttempts);
+    const successfulDodges = wholeNumber(form.successfulDodges);
+    const latencyMs = form.latencyMs.trim() ? Number(form.latencyMs) : null;
+    const remainingBossHpPercent = form.remainingBossHpPercent.trim()
+      ? Number(form.remainingBossHpPercent)
+      : null;
+    if (trainerCount < 1 || trainerCount > 20) {
+      setError('Trainer count must be between 1 and 20.');
       return;
     }
-    if (successes > attempts) {
-      setError('Successful dodges cannot exceed dodge attempts.');
+    if (!Number.isFinite(clearTimeSeconds) || clearTimeSeconds < 1 || clearTimeSeconds > 1800) {
+      setError('Battle time must be between 1 and 1800 seconds.');
       return;
     }
-    const next = [...observations, {
-      actualCleared,
-      actualSeconds: seconds,
-      createdAt: new Date().toISOString(),
-      dodgeAttempts: attempts,
-      dodgeSuccesses: successes,
-      exactParty,
-      id: newId(),
-      latencyMs: null,
-      predictedCleared,
-      predictedSeconds,
-    } satisfies NativeRaidObservation].slice(-100);
-    await saveNativeRaidObservations(next);
-    setObservations(next);
+    if (successfulDodges > dodgeAttempts) {
+      setError('Successful dodges cannot exceed attempted dodges.');
+      return;
+    }
+    if (latencyMs != null && (!Number.isFinite(latencyMs) || latencyMs < 0 || latencyMs > 5000)) {
+      setError('Latency must be between 0 and 5000 ms.');
+      return;
+    }
+    if (remainingBossHpPercent != null && (
+      !Number.isFinite(remainingBossHpPercent) || remainingBossHpPercent < 0 || remainingBossHpPercent > 100
+    )) {
+      setError('Remaining boss HP must be between 0 and 100%.');
+      return;
+    }
+    const observation = buildObservation({
+      outcome: form.outcome,
+      trainerCount,
+      clearTimeSeconds,
+      remainingBossHpPercent: form.outcome === 'timed-out' ? remainingBossHpPercent : null,
+      faints: wholeNumber(form.faints),
+      relobbies: wholeNumber(form.relobbies),
+      dodgeAttempts,
+      successfulDodges,
+      latencyMs,
+    });
+    if (!observation) {
+      setError('A prediction could not be produced for this raid.');
+      return;
+    }
+    setAllObservations(await saveNativeRaidObservations([observation, ...allObservations]));
     setDialogOpen(false);
   };
-
   const clear = async () => {
-    await clearNativeRaidObservations();
-    setObservations([]);
+    setAllObservations(await clearNativeRaidObservations(ownerKey));
+    setUseObservedDodges(false);
     setClearOpen(false);
   };
 
@@ -140,45 +188,44 @@ export const NativeRaidCalibrationPanel = ({
 
       <View style={styles.actions}>
         <Pressable accessibilityRole="button" disabled={disabled} onPress={openLog} style={[styles.log, disabled && styles.disabled]}><Text style={styles.logText}>◷  Log raid</Text></Pressable>
-        {profile.sampleCount > 0 ? (
-          <>
-            <View style={[styles.observedToggle, light && styles.controlLight]}>
-              <Text style={[styles.observedText, light && styles.textLight]}>Use observed dodges</Text>
-              <Switch accessibilityLabel="Use observed dodges" disabled={!profile.canApplyDodgeCalibration} onValueChange={setUseObservedDodges} value={observedDodgesEnabled} />
-            </View>
-            <Pressable accessibilityLabel="Export observed raid data" accessibilityRole="button" onPress={() => Share.share({ message: serializeNativeRaidObservations(observations), title: 'Pokémon Go Nexus raid observations' })} style={[styles.iconButton, light && styles.controlLight]}><Text style={[styles.iconButtonText, light && styles.textLight]}>⇧</Text></Pressable>
-            <Pressable accessibilityLabel="Clear observed raid data" accessibilityRole="button" onPress={() => setClearOpen(true)} style={[styles.iconButton, light && styles.controlLight]}><Text style={styles.clearText}>⌫</Text></Pressable>
-          </>
-        ) : null}
+        {profile.sampleCount > 0 ? <>
+          <View style={[styles.observedToggle, light && styles.controlLight]}><Text style={[styles.observedText, light && styles.textLight]}>Use observed dodges</Text><Switch accessibilityLabel="Use observed dodges" disabled={!profile.canApplyDodgeCalibration} onValueChange={setUseObservedDodges} value={observedDodgesEnabled} /></View>
+          <Pressable accessibilityLabel="Export observed raid data" accessibilityRole="button" onPress={() => void Share.share({ message: serializeNativeRaidObservations(observations, modelVersion), title: 'Pokémon Go Nexus raid observations' })} style={[styles.iconButton, light && styles.controlLight]}><Text style={[styles.iconButtonText, light && styles.textLight]}>⇧</Text></Pressable>
+          <Pressable accessibilityLabel="Clear observed raid data" accessibilityRole="button" onPress={() => setClearOpen(true)} style={[styles.iconButton, light && styles.controlLight]}><Text style={styles.clearText}>⌫</Text></Pressable>
+        </> : null}
       </View>
 
       <Modal animationType={slideAnimation} onRequestClose={() => setDialogOpen(false)} transparent visible={dialogOpen}>
         <View style={styles.backdrop}>
           <View style={[styles.dialog, light && styles.dialogLight]}>
-            <View style={styles.dialogHeading}><View><Text style={styles.eyebrow}>OBSERVED RAID</Text><Text style={[styles.dialogTitle, light && styles.textLight]}>Log the actual result</Text></View><Pressable accessibilityLabel="Close raid log" accessibilityRole="button" onPress={() => setDialogOpen(false)} style={[styles.close, light && styles.controlLight]}><Text style={[styles.closeText, light && styles.textLight]}>×</Text></Pressable></View>
-            <Text style={[styles.dialogLead, light && styles.mutedLight]}>This stays on this device and helps compare predictions with your real raids.</Text>
-            <View style={styles.segmented}>
-              <Pressable accessibilityRole="button" accessibilityState={{ selected: actualCleared }} onPress={() => setActualCleared(true)} style={[styles.segment, actualCleared && styles.segmentActive]}><Text style={[styles.segmentText, actualCleared && styles.segmentTextActive]}>Raid cleared</Text></Pressable>
-              <Pressable accessibilityRole="button" accessibilityState={{ selected: !actualCleared }} onPress={() => setActualCleared(false)} style={[styles.segment, !actualCleared && styles.segmentFailed]}><Text style={styles.segmentText}>Time expired</Text></Pressable>
-            </View>
-            {actualCleared ? <View style={styles.field}><Text style={[styles.fieldLabel, light && styles.mutedLight]}>ACTUAL CLEAR TIME (SECONDS)</Text><TextInput accessibilityLabel="Actual clear time" keyboardType="decimal-pad" onChangeText={setActualSeconds} placeholder="120.5" placeholderTextColor="#718284" style={[styles.input, light && styles.inputLight]} value={actualSeconds} /></View> : null}
-            <View style={[styles.checkRow, light && styles.controlLight]}><View style={styles.headingCopy}><Text style={[styles.checkTitle, light && styles.textLight]}>Exact party</Text><Text style={[styles.checkCopy, light && styles.mutedLight]}>Team and settings matched the prediction.</Text></View><Switch accessibilityLabel="Exact party" onValueChange={setExactParty} value={exactParty} /></View>
-            <View style={styles.inputRow}>
-              <View style={[styles.field, styles.half]}><Text style={[styles.fieldLabel, light && styles.mutedLight]}>DODGE ATTEMPTS</Text><TextInput accessibilityLabel="Dodge attempts" keyboardType="number-pad" onChangeText={setDodgeAttempts} style={[styles.input, light && styles.inputLight]} value={dodgeAttempts} /></View>
-              <View style={[styles.field, styles.half]}><Text style={[styles.fieldLabel, light && styles.mutedLight]}>SUCCESSFUL</Text><TextInput accessibilityLabel="Successful dodges" keyboardType="number-pad" onChangeText={setDodgeSuccesses} style={[styles.input, light && styles.inputLight]} value={dodgeSuccesses} /></View>
-            </View>
-            {error ? <Text accessibilityRole="alert" style={styles.error}>{error}</Text> : null}
-            <Pressable accessibilityRole="button" onPress={() => void save()} style={styles.save}><Text style={styles.saveText}>Save raid observation</Text></Pressable>
+            <View style={styles.dialogHeading}><View style={styles.headingCopy}><Text style={styles.eyebrow}>OBSERVED BATTLE</Text><Text numberOfLines={1} style={[styles.dialogTitle, light && styles.textLight]}>{bossName}</Text></View><Pressable accessibilityLabel="Close raid log" accessibilityRole="button" onPress={() => setDialogOpen(false)} style={[styles.close, light && styles.controlLight]}><Text style={[styles.closeText, light && styles.textLight]}>×</Text></Pressable></View>
+            <ScrollView contentContainerStyle={styles.form} keyboardShouldPersistTaps="handled">
+              <View accessibilityLabel="Raid outcome" style={styles.segmented}>
+                <Pressable accessibilityRole="button" accessibilityState={{ selected: form.outcome === 'cleared' }} onPress={() => setField('outcome', 'cleared')} style={[styles.segment, form.outcome === 'cleared' && styles.segmentActive]}><Text style={[styles.segmentText, form.outcome === 'cleared' && styles.segmentTextActive]}>Cleared</Text></Pressable>
+                <Pressable accessibilityRole="button" accessibilityState={{ selected: form.outcome === 'timed-out' }} onPress={() => setField('outcome', 'timed-out')} style={[styles.segment, form.outcome === 'timed-out' && styles.segmentFailed]}><Text style={styles.segmentText}>Timed out</Text></Pressable>
+              </View>
+              <View style={styles.inputRow}><NumberField label="TRAINERS" light={light} onChange={(value) => setField('trainerCount', value)} value={form.trainerCount} /><NumberField decimal label="BATTLE TIME (SECONDS)" light={light} onChange={(value) => setField('battleSeconds', value)} value={form.battleSeconds} /></View>
+              {form.outcome === 'timed-out' ? <NumberField decimal label="BOSS HP LEFT % (OPTIONAL)" light={light} onChange={(value) => setField('remainingBossHpPercent', value)} value={form.remainingBossHpPercent} /> : null}
+              <View style={styles.inputRow}><NumberField label="FAINTS" light={light} onChange={(value) => setField('faints', value)} value={form.faints} /><NumberField label="RELOBBIES" light={light} onChange={(value) => setField('relobbies', value)} value={form.relobbies} /></View>
+              <View style={styles.inputRow}><NumberField label="DODGES ATTEMPTED" light={light} onChange={(value) => setField('dodgeAttempts', value)} value={form.dodgeAttempts} /><NumberField label="DODGES SUCCESSFUL" light={light} onChange={(value) => setField('successfulDodges', value)} value={form.successfulDodges} /></View>
+              <NumberField label="MEASURED LATENCY (MS, OPTIONAL)" light={light} onChange={(value) => setField('latencyMs', value)} value={form.latencyMs} />
+              {error ? <Text accessibilityRole="alert" style={styles.error}>{error}</Text> : null}
+              <View style={styles.footer}><Text style={[styles.saved, light && styles.mutedLight]}>Saved only on this device</Text><Pressable accessibilityRole="button" onPress={() => void save()} style={styles.save}><Text style={styles.saveText}>Save result</Text></Pressable></View>
+            </ScrollView>
           </View>
         </View>
       </Modal>
 
       <Modal animationType={fadeAnimation} onRequestClose={() => setClearOpen(false)} transparent visible={clearOpen}>
-        <View style={styles.backdrop}><View style={[styles.confirm, light && styles.dialogLight]}><Text style={[styles.dialogTitle, light && styles.textLight]}>Clear raid observations?</Text><Text style={[styles.dialogLead, light && styles.mutedLight]}>This removes the private calibration log stored on this device.</Text><View style={styles.confirmActions}><Pressable accessibilityRole="button" onPress={() => setClearOpen(false)} style={[styles.cancel, light && styles.controlLight]}><Text style={[styles.cancelText, light && styles.textLight]}>Keep log</Text></Pressable><Pressable accessibilityRole="button" onPress={() => void clear()} style={styles.destructive}><Text style={styles.saveText}>Clear log</Text></Pressable></View></View></View>
+        <View style={styles.backdrop}><View style={[styles.confirm, light && styles.dialogLight]}><Text style={[styles.dialogTitle, light && styles.textLight]}>Clear raid observations?</Text><Text style={[styles.dialogLead, light && styles.mutedLight]}>This removes your private calibration log stored on this device.</Text><View style={styles.confirmActions}><Pressable accessibilityRole="button" onPress={() => setClearOpen(false)} style={[styles.cancel, light && styles.controlLight]}><Text style={[styles.cancelText, light && styles.textLight]}>Keep log</Text></Pressable><Pressable accessibilityRole="button" onPress={() => void clear()} style={styles.destructive}><Text style={styles.saveText}>Clear log</Text></Pressable></View></View></View>
       </Modal>
     </View>
   );
 };
+
+const NumberField = ({ decimal = false, label, light, onChange, value }: { decimal?: boolean; label: string; light: boolean; onChange: (value: string) => void; value: string }) => (
+  <View style={styles.field}><Text style={[styles.fieldLabel, light && styles.mutedLight]}>{label}</Text><TextInput accessibilityLabel={label.toLocaleLowerCase()} keyboardType={decimal ? 'decimal-pad' : 'number-pad'} onChangeText={onChange} style={[styles.input, light && styles.inputLight]} value={value} /></View>
+);
 
 const styles = StyleSheet.create({
   panel: { gap: 10, borderWidth: 1, borderColor: '#355052', borderRadius: 11, padding: 10, backgroundColor: '#172223' },
@@ -202,7 +249,7 @@ const styles = StyleSheet.create({
   clearText: { color: '#f07186', fontSize: 18, fontWeight: '900' },
   disabled: { opacity: .4 },
   backdrop: { flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(0, 0, 0, .72)' },
-  dialog: { gap: 12, borderTopLeftRadius: 22, borderTopRightRadius: 22, padding: 16, paddingBottom: 32, backgroundColor: '#101819' },
+  dialog: { maxHeight: '92%', gap: 10, borderTopLeftRadius: 22, borderTopRightRadius: 22, padding: 16, paddingBottom: 24, backgroundColor: '#101819' },
   dialogLight: { backgroundColor: '#fff' },
   dialogHeading: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   eyebrow: { color: '#4edcd3', fontSize: 8, fontWeight: '900', letterSpacing: 1 },
@@ -210,24 +257,23 @@ const styles = StyleSheet.create({
   dialogLead: { color: '#9fb1b2', fontSize: 10.5, lineHeight: 15 },
   close: { width: 42, height: 42, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: '#435657', borderRadius: 21, backgroundColor: '#202a2b' },
   closeText: { color: '#fff', fontSize: 25 },
+  form: { gap: 10, paddingBottom: 8 },
   segmented: { flexDirection: 'row', gap: 5, borderRadius: 12, padding: 4, backgroundColor: '#202a2b' },
   segment: { minHeight: 44, flex: 1, alignItems: 'center', justifyContent: 'center', borderRadius: 9 },
   segmentActive: { backgroundColor: '#2bbf8c' },
   segmentFailed: { backgroundColor: '#7e2c3b' },
   segmentText: { color: '#fff', fontSize: 10, fontWeight: '900' },
   segmentTextActive: { color: '#061314' },
-  field: { gap: 5 },
-  fieldLabel: { color: '#91a4a5', fontSize: 7.5, fontWeight: '900', letterSpacing: .6 },
+  inputRow: { flexDirection: 'row', gap: 8 },
+  field: { minWidth: 0, flex: 1, gap: 5 },
+  fieldLabel: { color: '#91a4a5', fontSize: 7.5, fontWeight: '900', letterSpacing: .5 },
   input: { minHeight: 46, borderWidth: 1, borderColor: '#45595a', borderRadius: 10, paddingHorizontal: 12, color: '#fff', backgroundColor: '#1b2526', fontSize: 13, fontWeight: '800' },
   inputLight: { borderColor: '#b9caca', color: '#142629', backgroundColor: '#f2f7f7' },
-  checkRow: { flexDirection: 'row', alignItems: 'center', gap: 8, borderWidth: 1, borderColor: '#405354', borderRadius: 10, padding: 9, backgroundColor: '#172223' },
-  checkTitle: { color: '#fff', fontSize: 11, fontWeight: '900' },
-  checkCopy: { color: '#9fb1b2', fontSize: 8.5 },
-  inputRow: { flexDirection: 'row', gap: 8 },
-  half: { flex: 1 },
   error: { color: '#ff9bad', fontSize: 10, fontWeight: '800' },
-  save: { minHeight: 48, alignItems: 'center', justifyContent: 'center', borderRadius: 999, backgroundColor: '#2fd6d0' },
-  saveText: { color: '#071214', fontSize: 11, fontWeight: '900' },
+  footer: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  saved: { minWidth: 0, flex: 1, color: '#91a4a5', fontSize: 8.5 },
+  save: { minHeight: 44, justifyContent: 'center', borderRadius: 999, paddingHorizontal: 17, backgroundColor: '#2fd6d0' },
+  saveText: { color: '#071214', fontSize: 10, fontWeight: '900' },
   confirm: { gap: 10, margin: 14, marginBottom: 24, borderRadius: 16, padding: 15, backgroundColor: '#172223' },
   confirmActions: { flexDirection: 'row', gap: 8 },
   cancel: { minHeight: 44, flex: 1, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: '#46595a', borderRadius: 999, backgroundColor: '#202a2b' },

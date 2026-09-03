@@ -91,6 +91,22 @@
     { "id": "interaction.collection.clear-tag-dialog", "vite": "confirmation visible", "nativeEvent": "collection_clear_tag_dialog_painted" },
     { "id": "interaction.collection.selection", "vite": "selection state visible", "nativeEvent": "collection_selection_painted" },
     { "id": "interaction.collection.organizer", "vite": "organizer visible", "nativeEvent": "collection_organizer_painted" },
-    { "id": "interaction.instance.navigate", "vite": "adjacent instance content committed", "nativeEvent": "instance_overlay_target_committed" }
+    { "id": "interaction.instance.navigate", "vite": "adjacent instance content committed", "nativeEvent": "instance_overlay_target_committed" },
+    { "id": "interaction.raid.mode-boss", "vite": "boss picker surface visible", "nativeEvent": "raid_boss_mode_painted" },
+    { "id": "interaction.raid.type-result", "vite": "selected type ranking visible", "nativeEvent": "raid_type_result_painted" },
+    { "id": "interaction.raid.search-result", "vite": "matching attacker or counter visible", "nativeEvent": "raid_search_result_painted" },
+    { "id": "interaction.raid.moveset-result", "vite": "requested moveset detail visible", "nativeEvent": "raid_moveset_result_painted" },
+    { "id": "interaction.raid.settings-open", "vite": "ranking settings visible", "nativeEvent": "raid_settings_painted" },
+    { "id": "interaction.raid.modifier-result", "vite": "modified ranking or counter result visible", "nativeEvent": "raid_modifier_result_painted" },
+    { "id": "interaction.raid.sort-result", "vite": "requested metric order visible", "nativeEvent": "raid_sort_result_painted" },
+    { "id": "interaction.raid.row-detail", "vite": "expanded ranking metrics visible", "nativeEvent": "raid_row_detail_painted" },
+    { "id": "interaction.raid.boss-search", "vite": "boss suggestions visible", "nativeEvent": "raid_boss_search_result_painted" },
+    { "id": "interaction.raid.boss-selected", "vite": "selected boss counters visible", "nativeEvent": "raid_boss_selected_result_painted" },
+    { "id": "interaction.raid.setup-open", "vite": "Raid setup content visible", "nativeEvent": "raid_setup_painted" },
+    { "id": "interaction.raid.party-open", "vite": "custom party controls visible", "nativeEvent": "raid_party_painted" },
+    { "id": "interaction.raid.party-simulate", "vite": "party simulation result visible", "nativeEvent": "raid_party_result_painted" },
+    { "id": "interaction.raid.party-optimize", "vite": "optimized party result visible", "nativeEvent": "raid_party_optimization_painted" },
+    { "id": "interaction.raid.calibration-open", "vite": "observed Raid dialog visible", "nativeEvent": "raid_calibration_dialog_painted" },
+    { "id": "interaction.raid.battle-settings-open", "vite": "boss battle settings visible", "nativeEvent": "raid_battle_settings_painted" }
   ]
 }

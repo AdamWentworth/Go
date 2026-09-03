@@ -6,7 +6,6 @@ type Props = {
   assetBaseUrl: string;
   entry: NativeCombatEntry;
   expanded: boolean;
-  onOpenPokemon: () => void;
   onToggle: () => void;
   primaryMetric?: 'cp' | 'dps' | 'edps' | 'er' | 'tdo';
   rank: number;
@@ -17,7 +16,7 @@ const uri = (base: string, value: string | null) => {
   try { return new URL(value, base).toString(); } catch { return undefined; }
 };
 
-export const NativeRaidRankingCard = ({ assetBaseUrl, entry, expanded, onOpenPokemon, onToggle, primaryMetric = 'edps', rank }: Props) => {
+export const NativeRaidRankingCard = ({ assetBaseUrl, entry, expanded, onToggle, primaryMetric = 'edps', rank }: Props) => {
   const light = useNativeColorScheme() === 'light';
   const compact = useWindowDimensions().width <= 520;
   const counter = entry.counter ?? null;
@@ -28,21 +27,38 @@ export const NativeRaidRankingCard = ({ assetBaseUrl, entry, expanded, onOpenPok
     er: { label: 'ER', value: entry.er.toFixed(1) },
     tdo: { label: 'TDO', value: entry.tdo.toFixed(0) },
   }[primaryMetric];
-  const primaryLabel = counter ? 'DPS' : rankingMetric.label;
-  const primaryValue = counter ? entry.score.toFixed(1) : rankingMetric.value;
-  const detailRows = counter
-    ? [
-      ['TRAINERS', String(counter.trainersNeeded)],
-      ['CLEAR', Number.isFinite(counter.soloTimeSeconds) ? `${Math.round(counter.soloTimeSeconds)}s` : '—'],
-      ['FAINTS', String(counter.faints)],
-      ['CP', entry.cp.toLocaleString()],
-    ]
-    : [
-      ['DPS', entry.dps.toFixed(1)],
-      ['TDO', entry.tdo.toFixed(0)],
-      ['ER', entry.er.toFixed(1)],
-      ['CP', entry.cp.toLocaleString()],
-    ];
+  const primaryLabel = rankingMetric.label;
+  const primaryValue = rankingMetric.value;
+  const detailRows = [
+    ['DPS', entry.dps.toFixed(1)],
+    ['TDO', entry.tdo.toFixed(0)],
+    ['ER', entry.er.toFixed(1)],
+    ['CP', entry.cp.toLocaleString()],
+  ];
+  if (counter) {
+    const distribution = entry.raidCounterScore?.simulationDistribution;
+    const clearSeconds = distribution?.timeToWinSeconds.p50 ?? counter.soloTimeSeconds;
+    const faints = distribution?.faints.p50 ?? counter.faints;
+    const relobbies = distribution?.relobbies.p50 ?? counter.relobbies;
+    const formatCount = (value: number, singular: string) => `${Number.isInteger(value) ? value : value.toFixed(1)} ${value === 1 ? singular : singular.endsWith('y') ? `${singular.slice(0, -1)}ies` : `${singular}s`}`;
+    return (
+      <View accessibilityLabel={`Rank ${rank}, ${entry.name} raid counter`} style={[styles.counterCard, light && styles.cardLight]}>
+        <View style={[styles.rank, rank <= 3 && styles.rankTop]}><Text style={styles.rankText}>{rank}</Text></View>
+        <Image fadeDuration={0} resizeMode="contain" source={{ uri: uri(assetBaseUrl, entry.imageUri) }} style={styles.counterImage} />
+        <View style={styles.counterMain}>
+          <Text numberOfLines={1} style={[styles.counterName, light && styles.textLight]}>{entry.name}</Text>
+          <View style={styles.counterMoves}>{[entry.fastMove, entry.chargedMove].map((move, index) => <View accessibilityLabel={`${index === 0 ? 'Fast' : 'Charged'} move: ${move?.name ?? 'Unknown'}, ${move?.type_name ?? 'unknown'} type`} key={`${move?.move_id ?? 'move'}-${index}`} style={styles.counterMove}>{move?.type_name ? <Image fadeDuration={0} accessibilityElementsHidden source={{ uri: uri(assetBaseUrl, `/images/types/${move.type_name.toLocaleLowerCase()}.png`) }} style={styles.moveType} /> : null}<Text numberOfLines={1} style={[styles.counterMoveName, light && styles.textLight]}>{move?.name ?? '—'}</Text></View>)}</View>
+          <Text numberOfLines={1} style={[styles.counterMeta, light && styles.mutedLight]}>CP {entry.cp.toLocaleString()}{entry.rosterDetail ? ` · ${entry.rosterDetail}` : ''}</Text>
+        </View>
+        <View style={styles.counterStats}>
+          <View style={styles.counterStat}><Text style={[styles.statLabel, light && styles.mutedLight]}>DPS</Text><Text style={[styles.counterStatValue, light && styles.textLight]}>{entry.score.toFixed(1)}</Text></View>
+          <View style={styles.counterStat}><Text style={[styles.statLabel, light && styles.mutedLight]}>TRAINERS</Text><Text style={[styles.counterStatValue, light && styles.textLight]}>{counter.trainersNeeded}</Text></View>
+          <View style={styles.counterStat}><Text style={[styles.statLabel, light && styles.mutedLight]}>CLEAR</Text><Text style={[styles.counterStatValue, light && styles.textLight]}>{Number.isFinite(clearSeconds) ? `${Math.round(clearSeconds)}s` : '—'}</Text></View>
+          <View style={styles.counterStat}><Text style={[styles.statLabel, light && styles.mutedLight]}>FAINTS</Text><Text style={[styles.counterStatValue, light && styles.textLight]}>{formatCount(faints, 'faint')}</Text>{relobbies > 0 ? <Text style={[styles.counterRelobbies, light && styles.mutedLight]}>{formatCount(relobbies, 'relobby')}</Text> : null}</View>
+        </View>
+      </View>
+    );
+  }
   return (
     <View style={[styles.card, light && styles.cardLight]}>
       <Pressable
@@ -62,7 +78,6 @@ export const NativeRaidRankingCard = ({ assetBaseUrl, entry, expanded, onOpenPok
         <View style={[styles.primaryMetric, compact && styles.primaryMetricCompact]}>
           <Text style={[styles.metricLabel, light && styles.accentLight]}>{primaryLabel}</Text>
           <Text style={[styles.metricValue, light && styles.textLight]}>{primaryValue}</Text>
-          {counter ? <Text style={[styles.trainers, light && styles.mutedLight]}>{counter.trainersNeeded} trainer{counter.trainersNeeded === 1 ? '' : 's'}</Text> : null}
           <Text style={[styles.expandHint, light && styles.mutedLight]}>{expanded ? '⌃' : '⌄'}</Text>
         </View>
       </Pressable>
@@ -91,9 +106,6 @@ export const NativeRaidRankingCard = ({ assetBaseUrl, entry, expanded, onOpenPok
           {detailRows.map(([label, value]) => (
             <View key={label} style={styles.stat}><Text style={styles.statLabel}>{label}</Text><Text style={[styles.statValue, light && styles.textLight]}>{value}</Text></View>
           ))}
-          <Pressable accessibilityRole="button" onPress={onOpenPokemon} style={styles.openButton}>
-            <Text style={styles.openButtonText}>Open Pokédex entry</Text>
-          </Pressable>
         </View>
       ) : null}
     </View>
@@ -101,6 +113,18 @@ export const NativeRaidRankingCard = ({ assetBaseUrl, entry, expanded, onOpenPok
 };
 
 const styles = StyleSheet.create({
+  counterCard: { marginBottom: 7, flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: 7, borderWidth: 1, borderColor: '#334c4e', borderRadius: 12, padding: 8, backgroundColor: '#11191a' },
+  counterImage: { width: 52, height: 52 },
+  counterMain: { minWidth: 0, flex: 1 },
+  counterName: { color: '#fff', fontSize: 14, fontWeight: '900' },
+  counterMoves: { flexDirection: 'row', gap: 6, marginTop: 3 },
+  counterMove: { minWidth: 0, flexDirection: 'row', alignItems: 'center', gap: 3 },
+  counterMoveName: { maxWidth: 92, color: '#dce9e9', fontSize: 8.5, fontWeight: '800' },
+  counterMeta: { marginTop: 3, color: '#9badad', fontSize: 8.5 },
+  counterStats: { width: '100%', flexDirection: 'row', borderTopWidth: 1, borderTopColor: '#263b3c', paddingTop: 7 },
+  counterStat: { minWidth: 0, flex: 1, gap: 1, alignItems: 'center' },
+  counterStatValue: { color: '#fff', fontSize: 10, fontWeight: '900', textAlign: 'center' },
+  counterRelobbies: { color: '#9badad', fontSize: 7.5, textAlign: 'center' },
   card: { marginTop: 1, marginBottom: 7, overflow: 'hidden', borderWidth: 1, borderColor: '#334c4e', borderRadius: 12, paddingBottom: 8, backgroundColor: '#11191a' },
   cardLight: { borderColor: '#bccdcd', backgroundColor: '#fff' },
   summary: { minHeight: 80, flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 8, paddingTop: 7 },

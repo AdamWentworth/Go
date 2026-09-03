@@ -53,10 +53,28 @@ const eventScenarios = {
   collection_selection_painted: 'interaction.collection.selection',
   collection_organizer_painted: 'interaction.collection.organizer',
   instance_overlay_target_committed: 'interaction.instance.navigate',
+  raid_boss_mode_painted: 'interaction.raid.mode-boss',
+  raid_type_result_painted: 'interaction.raid.type-result',
+  raid_search_result_painted: 'interaction.raid.search-result',
+  raid_moveset_result_painted: 'interaction.raid.moveset-result',
+  raid_settings_painted: 'interaction.raid.settings-open',
+  raid_modifier_result_painted: 'interaction.raid.modifier-result',
+  raid_sort_result_painted: 'interaction.raid.sort-result',
+  raid_row_detail_painted: 'interaction.raid.row-detail',
+  raid_boss_search_result_painted: 'interaction.raid.boss-search',
+  raid_boss_selected_result_painted: 'interaction.raid.boss-selected',
+  raid_setup_painted: 'interaction.raid.setup-open',
+  raid_party_painted: 'interaction.raid.party-open',
+  raid_party_result_painted: 'interaction.raid.party-simulate',
+  raid_party_optimization_painted: 'interaction.raid.party-optimize',
+  raid_calibration_dialog_painted: 'interaction.raid.calibration-open',
+  raid_battle_settings_painted: 'interaction.raid.battle-settings-open',
 };
 const eventSampleSelection = {
   collection_search_menu_painted: 'first',
   collection_typed_query_result_painted: 'last',
+  raid_search_result_painted: 'last',
+  raid_boss_search_result_painted: 'last',
 };
 
 const samples = [];

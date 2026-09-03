@@ -172,6 +172,8 @@ export type NativeCombatEntry = {
   tdo: number;
   types: string[];
   variantId?: string;
+  /** Canonical Raid score retained for the shared group and party simulators. */
+  raidCounterScore?: RaidCounterScore;
 };
 
 export type NativeRaidBossEntry = {
@@ -230,7 +232,7 @@ const describeInstance = (instance: PokemonInstance): string => {
   return details.length > 0 ? details.join(' · ') : 'Caught copy';
 };
 
-const canonicalRaidSettings = (settings: NativeRaidSettings): RaidCounterSettings => ({
+export const canonicalNativeRaidSettings = (settings: NativeRaidSettings): RaidCounterSettings => ({
   attackerLevel: settings.attackerLevel,
   bossMovesetMode: settings.bossMovesetMode,
   dodgeStrategy: settings.dodgeStrategy,
@@ -320,13 +322,14 @@ const canonicalCounterEntry = (
     name: variant.name,
     pokemonId: variant.pokemon_id,
     rosterDetail: instance ? describeInstance(instance) : null,
-    score: score.dps,
+    score: score.sustainedDps ?? score.dps,
     sourceInstanceId: instance?.instance_id ?? null,
     tdo: Math.max(0, estimatedShare),
     types: [variant.type1_name, variant.type2_name]
       .filter(Boolean)
       .map((value) => value.toLocaleLowerCase()),
     variantId: variant.variant_id,
+    raidCounterScore: score,
   };
 };
 
@@ -344,7 +347,7 @@ const buildCanonicalRaidRankings = ({
   settings: NativeRaidSettings;
 }): NativeCombatEntry[] => {
   const { attackers, bossTargets } = buildCanonicalRaidAttackers(catalog, instances, scope);
-  const canonicalSettings = canonicalRaidSettings(settings);
+  const canonicalSettings = canonicalNativeRaidSettings(settings);
   const scores = requiredType
     ? scoreRaidTypeDps(attackers, requiredType, canonicalSettings, bossTargets)
     : settings.bestOnly
@@ -379,7 +382,7 @@ export const buildNativeRaidAttackers = ({ boss, catalog, instances = {}, requir
     attackers,
     boss.variant,
     boss.tier,
-    canonicalRaidSettings(resolvedSettings),
+    canonicalNativeRaidSettings(resolvedSettings),
   );
   const selectedScores = resolvedSettings.bestOnly
     ? dedupeBestCounterPerVariant(scores)
@@ -427,7 +430,7 @@ export const buildNativeRaidCounterAttackersAsync = async ({
   if (shouldCancel()) return [];
 
   const { attackers } = buildCanonicalRaidAttackers(catalog, instances, scope);
-  const canonicalSettings = canonicalRaidSettings(resolvedSettings);
+  const canonicalSettings = canonicalNativeRaidSettings(resolvedSettings);
   await yieldNativeRaidCalculation();
   if (shouldCancel()) return [];
 

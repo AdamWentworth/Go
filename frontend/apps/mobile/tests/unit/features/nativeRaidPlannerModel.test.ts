@@ -1,4 +1,9 @@
-import type { NativeCombatEntry, NativeRaidBossEntry } from '../../../src/features/tools/nativeBattleModels';
+import { estimateRaidGroup, simulateRaidGroupAtTrainerCount } from '@pokemongonexus/app-core/raid-model';
+import { buildRaidPartyTrainers } from '@pokemongonexus/app-core/raid-party';
+import { optimizeRaidParty } from '@pokemongonexus/app-core/raid-party-optimizer';
+import { simulateHeterogeneousRaidPartyAcrossBossMovesets } from '@pokemongonexus/app-core/raid-party-simulation';
+import type { NativeRaidBossEntry } from '../../../src/features/tools/nativeBattleModels';
+import { canonicalNativeRaidSettings } from '../../../src/features/tools/nativeBattleModels';
 import {
   createNativeRaidParty,
   estimateNativeRaidGroup,
@@ -8,62 +13,54 @@ import {
   simulateNativeRaidLobby,
   simulateNativeRaidParty,
 } from '../../../src/features/tools/nativeRaidPlannerModel';
+import { createNativeRaidFixture } from '../../nativeRaidFixtures';
 
-const score = (id: string, pokemonId: number, value: number): NativeCombatEntry => ({
-  chargedMove: null,
-  cp: 4000,
-  dps: value,
-  er: value,
-  fastMove: null,
-  id,
-  imageUri: null,
-  maxKind: null,
-  name: `Attacker ${id}`,
-  pokemonId,
-  rosterDetail: null,
-  score: value,
-  sourceInstanceId: null,
-  tdo: value * 10,
-  types: [],
-});
+const fallbackBoss = (tier: string) => ({ boss: { tier, type: tier } }) as NativeRaidBossEntry;
 
-const boss = (tier: string) => ({ boss: { tier, type: tier } }) as NativeRaidBossEntry;
-
-describe('native raid planner model', () => {
+describe('native raid planner canonical adapter', () => {
   it('maps public raid tier labels to the canonical battle presets', () => {
-    expect(resolveNativeRaidTier(boss('one-star'))).toMatchObject({ bossHp: 600, timeLimitSeconds: 180 });
-    expect(resolveNativeRaidTier(boss('shadow legendary'))).toMatchObject({ bossHp: 15000, key: 'shadow-legendary' });
-    expect(resolveNativeRaidTier(boss('4'))).toMatchObject({ bossHp: 9000, key: 'community-day' });
-    expect(resolveNativeRaidTier(boss('elite'))).toMatchObject({ bossHp: 20000, key: 'elite' });
-    expect(resolveNativeRaidTier(boss('super_mega'))).toMatchObject({ bossHp: 25000, key: 'super-mega' });
+    expect(resolveNativeRaidTier(fallbackBoss('one-star'))).toMatchObject({ bossHp: 600, timeLimitSeconds: 180 });
+    expect(resolveNativeRaidTier(fallbackBoss('shadow legendary'))).toMatchObject({ bossHp: 15000, key: 'shadow-legendary' });
+    expect(resolveNativeRaidTier(fallbackBoss('4'))).toMatchObject({ bossHp: 9000, key: 'community-day' });
+    expect(resolveNativeRaidTier(fallbackBoss('elite'))).toMatchObject({ bossHp: 20000, key: 'elite' });
+    expect(resolveNativeRaidTier(fallbackBoss('super_mega'))).toMatchObject({ bossHp: 25000, key: 'super-mega' });
   });
-  it('builds a distinct six-member team before estimating trainers', () => {
-    const scores = [score('a-best', 1, 40), score('a-other-moves', 1, 35), score('b', 2, 30)];
-    expect(getNativeRaidTeam(scores).map(({ id }) => id)).toEqual(['a-best', 'b']);
-    const estimate = estimateNativeRaidGroup(scores, resolveNativeRaidTier(boss('one-star')));
-    expect(estimate.teamDps).toBe(35);
-    expect(estimate.minimumTrainers).toBe(1);
+
+  it('uses the same legal default team and group estimate as Vite', () => {
+    const { boss, scores, settings, tier } = createNativeRaidFixture();
+    const canonicalScores = scores.flatMap((entry) => entry.raidCounterScore ? [entry.raidCounterScore] : []);
+    expect(new Set(getNativeRaidTeam(scores).map((entry) => entry.variantId)).size).toBe(getNativeRaidTeam(scores).length);
+    expect(estimateNativeRaidGroup(scores, boss, settings, tier)).toEqual(
+      estimateRaidGroup(canonicalScores, boss.variant, tier, canonicalNativeRaidSettings(settings)),
+    );
   });
-  it('simulates the selected lobby size without mutating the estimate', () => {
-    const tier = resolveNativeRaidTier(boss('legendary'));
-    const estimate = estimateNativeRaidGroup([score('a', 1, 40)], tier);
-    expect(simulateNativeRaidLobby(estimate, tier, 1).clears).toBe(false);
-    expect(simulateNativeRaidLobby(estimate, tier, 2).seconds).toBeLessThan(simulateNativeRaidLobby(estimate, tier, 1).seconds);
+
+  it('returns the exact canonical fixed-lobby simulation', () => {
+    const { boss, scores, settings, tier } = createNativeRaidFixture();
+    const canonicalScores = scores.flatMap((entry) => entry.raidCounterScore ? [entry.raidCounterScore] : []);
+    expect(simulateNativeRaidLobby(scores, boss, settings, 2, tier)).toEqual(
+      simulateRaidGroupAtTrainerCount(canonicalScores, boss.variant, tier, canonicalNativeRaidSettings(settings), 2),
+    );
   });
-  it('models independent trainer teams and reports their contribution', () => {
-    const scores = [score('a', 1, 60), score('b', 2, 40), score('c', 3, 20)];
-    const party = createNativeRaidParty(scores, 2);
-    party[1] = { ...party[1], actionDelaySeconds: 1, dodgeStrategy: 'charged', memberIds: ['c'] };
-    const result = simulateNativeRaidParty(party, scores, resolveNativeRaidTier(boss('one-star')));
-    expect(result.trainers).toHaveLength(2);
-    expect(result.trainers[0]?.damageShare).toBeGreaterThan(result.trainers[1]?.damageShare ?? 1);
-    expect(result.dps).toBeGreaterThan(0);
+
+  it('returns the exact canonical heterogeneous-party simulation', () => {
+    const { boss, scores, settings, tier } = createNativeRaidFixture();
+    const drafts = createNativeRaidParty(scores, settings, 2);
+    drafts[1] = { ...drafts[1], actionDelaySeconds: 1, dodgeStrategy: 'charged' };
+    const canonicalScores = scores.flatMap((entry) => entry.raidCounterScore ? [entry.raidCounterScore] : []);
+    const trainers = buildRaidPartyTrainers(drafts, canonicalScores, canonicalNativeRaidSettings(settings));
+    expect(simulateNativeRaidParty({ boss, drafts, scores, settings, tier })).toEqual(
+      simulateHeterogeneousRaidPartyAcrossBossMovesets({ trainers, boss: boss.variant, tier }),
+    );
   });
-  it('optimizes every trainer with a legal distinct six-member team', () => {
-    const scores = Array.from({ length: 8 }, (_, index) => score(`score-${index}`, index + 1, 80 - index));
-    const party = createNativeRaidParty(scores, 2).map((trainer) => ({ ...trainer, memberIds: [] }));
-    const optimized = optimizeNativeRaidParty(party, scores);
-    expect(optimized).toHaveLength(2);
-    expect(new Set(optimized[0]?.memberIds).size).toBe(6);
+
+  it('returns the exact canonical bounded-beam optimization', () => {
+    const { boss, scores, settings, tier } = createNativeRaidFixture();
+    const drafts = createNativeRaidParty(scores, settings, 2);
+    const canonicalScores = scores.flatMap((entry) => entry.raidCounterScore ? [entry.raidCounterScore] : []);
+    const trainers = buildRaidPartyTrainers(drafts, canonicalScores, canonicalNativeRaidSettings(settings));
+    expect(optimizeNativeRaidParty({ boss, drafts, scores, settings, tier })).toEqual(
+      optimizeRaidParty({ trainers, scores: canonicalScores.slice(0, 80), boss: boss.variant, tier }),
+    );
   });
 });

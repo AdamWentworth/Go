@@ -520,6 +520,99 @@ const collectSharedInteractions = async (
   } finally {
     await instance.close();
   }
+
+  await collectRaidInteractions(context, sampleIndex);
+};
+
+const collectRaidInteractions = async (
+  context: BrowserContext,
+  sampleIndex: number,
+) => {
+  const page = await createMeasuredPage(context, 'signed-in', 'dark');
+  try {
+    await page.goto(`${webBaseUrl}/raid`, { waitUntil: 'domcontentloaded' });
+    await waitUntilVisuallyReady(page);
+    await expect(page.getByRole('heading', { name: /top raid attackers/i })).toBeVisible();
+
+    await page.getByRole('button', { name: 'Electric', exact: true }).click();
+    await expect(page.getByRole('heading', { name: /Electric raid attackers/i })).toBeVisible();
+    await recordInteraction(page, 'interaction.raid.type-result', sampleIndex);
+
+    await page.getByRole('button', { name: 'All types', exact: true }).click();
+    await expect(page.getByRole('heading', { name: /top raid attackers/i })).toBeVisible();
+    const firstAttackerName = await page.locator('.raid-type-table-pokemon-copy strong').first().textContent();
+    if (!firstAttackerName) throw new Error('Raid performance roster produced no searchable attacker.');
+    const attackerSearch = page.getByLabel('Attacker search');
+    await attackerSearch.fill(firstAttackerName);
+    await expect(page.getByLabel(/raid attackers/i).getByText(firstAttackerName, { exact: true }).first()).toBeVisible();
+    await recordInteraction(page, 'interaction.raid.search-result', sampleIndex);
+    await attackerSearch.fill('');
+
+    await page.getByRole('button', { name: 'All movesets', exact: true }).click();
+    await expect(page.getByRole('button', { name: 'All movesets', exact: true })).toHaveAttribute('aria-pressed', 'true');
+    await recordInteraction(page, 'interaction.raid.moveset-result', sampleIndex);
+
+    await page.getByRole('button', { name: /Settings/i }).click();
+    await page.getByLabel('Ranking settings').waitFor({ state: 'visible' });
+    await recordInteraction(page, 'interaction.raid.settings-open', sampleIndex);
+
+    await page.getByLabel('Friendship').selectOption('best');
+    await expect(page.getByLabel('Friendship')).toHaveValue('best');
+    await recordInteraction(page, 'interaction.raid.modifier-result', sampleIndex);
+
+    const dpsSort = page.getByRole('button', { name: 'Sort by DPS', exact: true });
+    await dpsSort.click();
+    await expect(page.locator('th.raid-sort-header').nth(1)).toHaveAttribute('aria-sort', 'descending');
+    await recordInteraction(page, 'interaction.raid.sort-result', sampleIndex);
+
+    const rowToggle = page.locator('.raid-ranking-mobile-details-toggle').first();
+    await rowToggle.click();
+    await expect(rowToggle).toHaveAttribute('aria-expanded', 'true');
+    await recordInteraction(page, 'interaction.raid.row-detail', sampleIndex);
+
+    await page.getByRole('button', { name: 'Boss counters', exact: true }).click();
+    await page.getByLabel('Raid boss picker').waitFor({ state: 'visible' });
+    await recordInteraction(page, 'interaction.raid.mode-boss', sampleIndex);
+    await expect(page.getByText('Modeling raid timelines…')).toBeHidden({ timeout: 30_000 });
+
+    const bossSearch = page.getByLabel('Find boss');
+    await bossSearch.fill('Ivysaur');
+    const bossSuggestion = page.getByRole('button', { name: /Ivysaur/i }).first();
+    await bossSuggestion.waitFor({ state: 'visible' });
+    await recordInteraction(page, 'interaction.raid.boss-search', sampleIndex);
+    await bossSuggestion.click();
+    await expect(page.getByText('Modeling raid timelines…')).toBeHidden({ timeout: 30_000 });
+    await page.getByLabel('Raid counters').locator('article').first().waitFor({ state: 'visible' });
+    await recordInteraction(page, 'interaction.raid.boss-selected', sampleIndex);
+
+    await page.getByText('Raid setup', { exact: true }).click();
+    await page.getByLabel('Raid summary').waitFor({ state: 'visible' });
+    await recordInteraction(page, 'interaction.raid.setup-open', sampleIndex);
+
+    await page.getByText('Battle settings', { exact: true }).click();
+    await page.getByLabel('Raid modifiers').waitFor({ state: 'visible' });
+    await recordInteraction(page, 'interaction.raid.battle-settings-open', sampleIndex);
+
+    const party = page.getByLabel('Custom raid party');
+    await party.getByRole('button', { name: /Custom raid party/i }).click();
+    await party.getByLabel('Lobby controls').waitFor({ state: 'visible' });
+    await recordInteraction(page, 'interaction.raid.party-open', sampleIndex);
+
+    await party.getByRole('button', { name: 'Simulate', exact: true }).click();
+    await party.getByLabel('Raid party result').waitFor({ state: 'visible', timeout: 30_000 });
+    await recordInteraction(page, 'interaction.raid.party-simulate', sampleIndex);
+
+    await party.getByRole('button', { name: 'Optimize', exact: true }).click();
+    await party.getByText('Lobby optimized').waitFor({ state: 'visible', timeout: 60_000 });
+    await recordInteraction(page, 'interaction.raid.party-optimize', sampleIndex);
+
+    const calibration = page.getByLabel('Observed raid calibration');
+    await calibration.getByRole('button', { name: 'Log raid' }).click();
+    await page.getByRole('dialog', { name: /Log .* raid/i }).waitFor({ state: 'visible' });
+    await recordInteraction(page, 'interaction.raid.calibration-open', sampleIndex);
+  } finally {
+    await page.close();
+  }
 };
 
 const waitForHttp = async (url: string, timeoutMs = 20_000) => {

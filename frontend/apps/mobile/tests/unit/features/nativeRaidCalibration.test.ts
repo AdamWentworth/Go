@@ -1,10 +1,12 @@
 import * as SecureStore from 'expo-secure-store';
 import {
   clearNativeRaidObservations,
+  createNativeRaidObservation,
   loadNativeRaidObservations,
   saveNativeRaidObservations,
   serializeNativeRaidObservations,
   summarizeNativeRaidCalibration,
+  type CreateNativeRaidObservationInput,
   type NativeRaidObservation,
 } from '../../../src/features/tools/nativeRaidCalibration';
 
@@ -15,25 +17,47 @@ jest.mock('expo-secure-store', () => ({
 }));
 
 const secureStore = jest.mocked(SecureStore);
-const observation = (overrides: Partial<NativeRaidObservation> = {}): NativeRaidObservation => ({
-  actualCleared: true,
-  actualSeconds: 110,
-  createdAt: '2026-08-26T00:00:00.000Z',
-  dodgeAttempts: 3,
-  dodgeSuccesses: 2,
-  exactParty: true,
-  id: 'raid-1',
-  latencyMs: 120,
-  predictedCleared: true,
-  predictedSeconds: 100,
+const observationInput = (
+  overrides: Partial<CreateNativeRaidObservationInput> = {},
+): CreateNativeRaidObservationInput => ({
+  ownerKey: 'trainer-a',
+  modelVersion: 10,
+  catalogVersion: 'catalog-1',
+  bossVariantId: 'bulbasaur-default',
+  bossName: 'Bulbasaur',
+  tierKey: 'tier1',
+  predictionSource: 'custom-party',
+  scenarioKey: 'party-2-test',
+  dodgeCalibrationApplied: false,
+  predicted: {
+    clearTimeSeconds: 100,
+    faints: 4,
+    relobbies: 0,
+    winRate: 1,
+    p10ClearTimeSeconds: 90,
+    p90ClearTimeSeconds: 115,
+  },
+  actual: {
+    outcome: 'cleared',
+    trainerCount: 2,
+    clearTimeSeconds: 110,
+    remainingBossHpPercent: null,
+    faints: 5,
+    relobbies: 1,
+    dodgeAttempts: 3,
+    successfulDodges: 2,
+    latencyMs: 120,
+  },
   ...overrides,
 });
+const observation = (overrides: Partial<CreateNativeRaidObservationInput> = {}): NativeRaidObservation =>
+  createNativeRaidObservation(observationInput(overrides));
 
-describe('native raid calibration', () => {
+describe('native raid calibration canonical storage adapter', () => {
   beforeEach(() => jest.clearAllMocks());
 
-  it('summarizes prediction accuracy, timing error, and dodge evidence', () => {
-    const rows = Array.from({ length: 5 }, (_, index) => observation({ id: `raid-${index}`, dodgeAttempts: 3, dodgeSuccesses: 2 }));
+  it('uses the shared calibration analysis for timing, outcomes, and dodge evidence', () => {
+    const rows = Array.from({ length: 5 }, (_, index) => observation({ id: `raid-${index}` }));
     const profile = summarizeNativeRaidCalibration(rows);
     expect(profile).toMatchObject({
       canApplyDodgeCalibration: true,
@@ -47,13 +71,25 @@ describe('native raid calibration', () => {
     expect(profile.meanAbsoluteTimingErrorPercent).toBeCloseTo(10 / 110);
   });
 
-  it('loads, stores, clears, and exports a bounded device-only log', async () => {
-    secureStore.getItemAsync.mockResolvedValue(JSON.stringify([observation()]));
-    expect(await loadNativeRaidObservations()).toHaveLength(1);
-    await saveNativeRaidObservations([observation()]);
-    expect(secureStore.setItemAsync).toHaveBeenCalledWith(expect.stringContaining('raid-observations'), expect.stringContaining('raid-1'));
+  it('loads, stores, clears, and exports the canonical schema-v2 device log', async () => {
+    const row = observation({ id: 'raid-1' });
+    secureStore.getItemAsync.mockResolvedValue(JSON.stringify([row]));
+    expect(await loadNativeRaidObservations()).toEqual([row]);
+    await saveNativeRaidObservations([row]);
+    expect(secureStore.setItemAsync).toHaveBeenCalledWith(expect.stringContaining('raid-observations.v2'), expect.stringContaining('raid-1'));
     await clearNativeRaidObservations();
-    expect(secureStore.deleteItemAsync).toHaveBeenCalledWith(expect.stringContaining('raid-observations'));
-    expect(serializeNativeRaidObservations([observation()])).toContain('"schemaVersion": 1');
+    expect(secureStore.deleteItemAsync).toHaveBeenCalledWith(expect.stringContaining('raid-observations.v2'));
+    expect(serializeNativeRaidObservations([row], 10)).toContain('"schemaVersion": 2');
+  });
+
+  it('clears only the active owner while retaining other device profiles', async () => {
+    const own = observation({ id: 'own' });
+    const other = observation({ id: 'other', ownerKey: 'trainer-b' });
+    secureStore.getItemAsync.mockResolvedValue(JSON.stringify([own, other]));
+    expect(await clearNativeRaidObservations('trainer-a')).toEqual([other]);
+    expect(secureStore.setItemAsync).toHaveBeenCalledWith(
+      expect.stringContaining('raid-observations.v2'),
+      expect.stringContaining('trainer-b'),
+    );
   });
 });

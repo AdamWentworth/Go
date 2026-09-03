@@ -65,19 +65,25 @@ describe('NativeRaidScreen', () => {
     expect(screen.getByLabelText('Trainer 1 battle team')).toBeTruthy();
     expect(screen.getByLabelText('Trainer 2 settings')).toBeTruthy();
     fireEvent.press(screen.getByText('Simulate'));
-    expect(screen.getByText('Likely clear')).toBeTruthy();
+    await act(async () => { jest.runOnlyPendingTimers(); });
+    expect(screen.getByLabelText('Raid party result')).toBeTruthy();
   });
-  it('exposes the canonical advanced boss battle controls', () => {
+  it('exposes canonical advanced boss controls inside Raid setup', async () => {
     renderRaid();
     fireEvent.press(screen.getByText('Boss counters'));
-    fireEvent.press(screen.getByLabelText('Ranking settings'));
+    await flushRaidCalculation();
+    expect(screen.queryByLabelText('Ranking settings')).toBeNull();
+    fireEvent.press(screen.getByLabelText('Raid setup'));
+    fireEvent.press(screen.getByLabelText('Battle settings'));
     expect(screen.getByText('Dodging')).toBeTruthy();
     expect(screen.getByText('Boss behavior')).toBeTruthy();
+    expect(screen.getByText('Monte Carlo')).toBeTruthy();
+    fireEvent.press(screen.getByText('Shadow raid'));
     expect(screen.getByText('Shadow boss state')).toBeTruthy();
     fireEvent.press(screen.getByText('2'));
     expect(screen.getByText('Party Power timing')).toBeTruthy();
     fireEvent.press(screen.getByText('Strongest Charged'));
     fireEvent.press(screen.getByText('Enraged'));
-    expect(screen.getByLabelText('Ranking settings, 3 custom settings')).toBeTruthy();
+    expect(screen.getByText(/custom settings/)).toBeTruthy();
   });
 });

@@ -1,44 +1,50 @@
-import type { NativeCombatEntry, NativeRaidBossEntry } from './nativeBattleModels';
 import {
-  RAID_TIER_PRESETS,
-  resolveRaidTierKey,
-  type RaidTierPreset,
-} from '@pokemongonexus/shared-domain/raid-rules';
+  estimateRaidGroup,
+  simulateRaidGroupAtTrainerCount,
+  type RaidCounterScore,
+  type RaidGroupEstimate,
+} from '@pokemongonexus/app-core/raid-model';
+import {
+  applyRaidPartyTrainersToDrafts,
+  buildRaidPartyTrainers,
+  createRaidPartyTrainerDraft,
+  getDefaultRaidPartyMemberIds,
+  getRaidPartyScenarioKey,
+  getRaidPartyScoreKey,
+  type RaidPartyTrainerDraft,
+} from '@pokemongonexus/app-core/raid-party';
+import { optimizeRaidParty } from '@pokemongonexus/app-core/raid-party-optimizer';
+import { simulateHeterogeneousRaidPartyAcrossBossMovesets } from '@pokemongonexus/app-core/raid-party-simulation';
+import { variantUsesRaidMegaSlot } from '@pokemongonexus/app-core/raid-team-selection';
+import type {
+  RaidBattleSimulationResult,
+  RaidPartyOptimizationResult,
+  RaidPartySimulationResult,
+  RaidTierPreset,
+} from '@pokemongonexus/app-core/raid-types';
+import { RAID_TIER_PRESETS, resolveRaidTierKey } from '@pokemongonexus/shared-domain/raid-rules';
+import {
+  DEFAULT_NATIVE_RAID_SETTINGS,
+  canonicalNativeRaidSettings,
+  type NativeCombatEntry,
+  type NativeRaidBossEntry,
+  type NativeRaidSettings,
+} from './nativeBattleModels';
 
 export type NativeRaidTier = RaidTierPreset;
+export type NativeRaidGroupEstimate = RaidGroupEstimate;
+export type NativeRaidPartyTrainerDraft = RaidPartyTrainerDraft;
+export type NativeRaidPartyResult = RaidPartySimulationResult;
+export type NativeRaidPartyOptimizationResult = RaidPartyOptimizationResult;
+export type NativeRaidLobbyResult = RaidBattleSimulationResult;
 
-export type NativeRaidGroupEstimate = {
-  comfortableTrainers: number;
-  minimumTrainers: number;
-  projectedTimeSeconds: number;
-  teamDps: number;
-};
+const canonicalScores = (scores: NativeCombatEntry[]): RaidCounterScore[] => (
+  scores.flatMap((score) => score.raidCounterScore ? [score.raidCounterScore] : [])
+);
 
-export type NativeRaidPartyTrainerDraft = {
-  actionDelaySeconds: 0 | .5 | 1;
-  dodgeStrategy: 'none' | 'charged';
-  dodgeSuccessRate: .25 | .5 | .75 | 1;
-  id: string;
-  label: string;
-  memberIds: string[];
-  relobbySeconds: 5 | 10 | 15 | 20;
-};
-
-export type NativeRaidPartyTrainerResult = {
-  damageShare: number;
-  dps: number;
-  id: string;
-  label: string;
-};
-
-export type NativeRaidPartyResult = {
-  clears: boolean;
-  dps: number;
-  faints: number;
-  relobbies: number;
-  seconds: number;
-  trainers: NativeRaidPartyTrainerResult[];
-};
+const resolvedSettings = (settings?: NativeRaidSettings) => (
+  canonicalNativeRaidSettings(settings ?? DEFAULT_NATIVE_RAID_SETTINGS)
+);
 
 export const resolveNativeRaidTier = (boss: NativeRaidBossEntry | null): NativeRaidTier => {
   if (boss?.tier) return boss.tier;
@@ -47,111 +53,123 @@ export const resolveNativeRaidTier = (boss: NativeRaidBossEntry | null): NativeR
   return RAID_TIER_PRESETS[resolveRaidTierKey(tier, context)];
 };
 
+export const getNativeRaidScoreKey = (score: NativeCombatEntry): string => (
+  score.raidCounterScore
+    ? getRaidPartyScoreKey(score.raidCounterScore)
+    : score.variantId ?? score.id
+);
+
+export const nativeRaidEntryUsesMegaSlot = (score: NativeCombatEntry): boolean => (
+  Boolean(score.raidCounterScore && variantUsesRaidMegaSlot(score.raidCounterScore.variant))
+);
+
 export const getNativeRaidTeam = (scores: NativeCombatEntry[]): NativeCombatEntry[] => {
-  const seen = new Set<string>();
-  return scores.filter((score) => {
-    const key = score.sourceInstanceId ?? String(score.pokemonId);
-    if (seen.has(key)) return false;
-    seen.add(key);
-    return true;
-  }).slice(0, 6);
+  const scoreByKey = new Map(scores.map((score) => [getNativeRaidScoreKey(score), score]));
+  return getDefaultRaidPartyMemberIds(canonicalScores(scores))
+    .flatMap((id) => scoreByKey.get(id) ?? []);
 };
 
 export const createNativeRaidPartyTrainer = (
   index: number,
   scores: NativeCombatEntry[],
-): NativeRaidPartyTrainerDraft => ({
-  actionDelaySeconds: 0,
-  dodgeStrategy: 'none',
-  dodgeSuccessRate: 1,
-  id: `trainer-${index + 1}`,
-  label: `Trainer ${index + 1}`,
-  memberIds: getNativeRaidTeam(scores).map((entry) => entry.id),
-  relobbySeconds: 10,
-});
+  settings: NativeRaidSettings = DEFAULT_NATIVE_RAID_SETTINGS,
+): NativeRaidPartyTrainerDraft => createRaidPartyTrainerDraft(
+  index,
+  canonicalScores(scores),
+  resolvedSettings(settings),
+);
 
 export const createNativeRaidParty = (
   scores: NativeCombatEntry[],
+  settings: NativeRaidSettings = DEFAULT_NATIVE_RAID_SETTINGS,
   trainerCount = 2,
 ): NativeRaidPartyTrainerDraft[] => Array.from(
   { length: Math.max(1, Math.min(20, trainerCount)) },
-  (_, index) => createNativeRaidPartyTrainer(index, scores),
+  (_, index) => createNativeRaidPartyTrainer(index, scores, settings),
 );
 
-export const optimizeNativeRaidParty = (
-  trainers: NativeRaidPartyTrainerDraft[],
-  scores: NativeCombatEntry[],
-): NativeRaidPartyTrainerDraft[] => {
-  const defaultIds = getNativeRaidTeam(scores).map((entry) => entry.id);
-  return trainers.map((trainer) => ({ ...trainer, memberIds: defaultIds }));
+type NativeRaidPartyRequest = {
+  boss: NativeRaidBossEntry;
+  drafts: NativeRaidPartyTrainerDraft[];
+  scores: NativeCombatEntry[];
+  settings: NativeRaidSettings;
+  tier?: NativeRaidTier;
 };
 
-const partyTrainerDps = (
-  trainer: NativeRaidPartyTrainerDraft,
-  scoreById: Map<string, NativeCombatEntry>,
-): number => {
-  const members = trainer.memberIds.flatMap((id) => scoreById.get(id) ?? []);
-  if (members.length === 0) return 0;
-  const base = members.reduce((sum, member) => sum + member.score, 0) / members.length;
-  const dodgeDelay = trainer.dodgeStrategy === 'charged' ? .94 : 1;
-  const actionDelay = 1 / (1 + trainer.actionDelaySeconds * .09);
-  const relobbyUptime = 180 / (180 + trainer.relobbySeconds);
-  return base * dodgeDelay * actionDelay * relobbyUptime;
+const buildCanonicalParty = ({ drafts, scores, settings }: NativeRaidPartyRequest) => {
+  const raidScores = canonicalScores(scores);
+  const trainers = buildRaidPartyTrainers(drafts, raidScores, resolvedSettings(settings));
+  return { raidScores, trainers };
 };
 
 export const simulateNativeRaidParty = (
-  trainers: NativeRaidPartyTrainerDraft[],
-  scores: NativeCombatEntry[],
-  tier: NativeRaidTier,
-): NativeRaidPartyResult => {
-  const scoreById = new Map(scores.map((entry) => [entry.id, entry]));
-  const trainerDps = trainers.map((trainer) => ({ trainer, dps: partyTrainerDps(trainer, scoreById) }));
-  const dps = trainerDps.reduce((sum, row) => sum + row.dps, 0);
-  const seconds = dps > 0 ? tier.bossHp / dps : Infinity;
-  const totalTdo = trainers.reduce((sum, trainer) => sum + trainer.memberIds.reduce((teamSum, id) => teamSum + (scoreById.get(id)?.tdo ?? 0), 0), 0);
-  const faintCycles = totalTdo > 0 ? Math.max(0, tier.bossHp / totalTdo - 1) : 0;
-  return {
-    clears: Number.isFinite(seconds) && seconds <= tier.timeLimitSeconds,
-    dps,
-    faints: Math.max(0, Math.round(faintCycles * trainers.length * 6)),
-    relobbies: Math.max(0, Math.floor(faintCycles) * trainers.length),
-    seconds,
-    trainers: trainerDps.map(({ trainer, dps: trainerDamage }) => ({
-      damageShare: dps > 0 ? trainerDamage / dps : 0,
-      dps: trainerDamage,
-      id: trainer.id,
-      label: trainer.label,
-    })),
-  };
+  request: NativeRaidPartyRequest,
+): NativeRaidPartyResult | null => {
+  const { trainers } = buildCanonicalParty(request);
+  if (trainers.length !== request.drafts.length) return null;
+  return simulateHeterogeneousRaidPartyAcrossBossMovesets({
+    trainers,
+    boss: request.boss.variant,
+    tier: request.tier ?? resolveNativeRaidTier(request.boss),
+  });
+};
+
+export const optimizeNativeRaidParty = (
+  request: NativeRaidPartyRequest,
+): NativeRaidPartyOptimizationResult | null => {
+  const { raidScores, trainers } = buildCanonicalParty(request);
+  if (trainers.length !== request.drafts.length) return null;
+  return optimizeRaidParty({
+    trainers,
+    scores: raidScores.slice(0, 80),
+    boss: request.boss.variant,
+    tier: request.tier ?? resolveNativeRaidTier(request.boss),
+  });
+};
+
+export const applyNativeRaidOptimization = (
+  drafts: NativeRaidPartyTrainerDraft[],
+  optimization: NativeRaidPartyOptimizationResult,
+): NativeRaidPartyTrainerDraft[] => applyRaidPartyTrainersToDrafts(
+  drafts,
+  optimization.trainers,
+);
+
+export const getNativeRaidPartyScenarioKey = (
+  request: NativeRaidPartyRequest,
+): string | null => {
+  const { trainers } = buildCanonicalParty(request);
+  return trainers.length === request.drafts.length
+    ? getRaidPartyScenarioKey(trainers)
+    : null;
 };
 
 export const estimateNativeRaidGroup = (
   scores: NativeCombatEntry[],
-  tier: NativeRaidTier,
-): NativeRaidGroupEstimate => {
-  const team = getNativeRaidTeam(scores);
-  const teamDps = team.length > 0
-    ? team.reduce((total, score) => total + score.score, 0) / team.length
-    : 0;
-  if (teamDps <= 0) return { comfortableTrainers: 0, minimumTrainers: 0, projectedTimeSeconds: Infinity, teamDps: 0 };
-  const projectedTimeSeconds = tier.bossHp / teamDps;
-  const minimumTrainers = Math.max(1, Math.ceil(projectedTimeSeconds / tier.timeLimitSeconds));
-  const comfortableTrainers = Math.max(minimumTrainers, Math.ceil(projectedTimeSeconds / (tier.timeLimitSeconds * .68)));
-  return { comfortableTrainers, minimumTrainers, projectedTimeSeconds, teamDps };
+  boss: NativeRaidBossEntry,
+  settings: NativeRaidSettings,
+  tier: NativeRaidTier = resolveNativeRaidTier(boss),
+): NativeRaidGroupEstimate | null => {
+  const raidScores = canonicalScores(scores);
+  if (raidScores.length === 0) return null;
+  return estimateRaidGroup(
+    raidScores,
+    boss.variant,
+    tier,
+    resolvedSettings(settings),
+  );
 };
 
 export const simulateNativeRaidLobby = (
-  estimate: NativeRaidGroupEstimate,
-  tier: NativeRaidTier,
+  scores: NativeCombatEntry[],
+  boss: NativeRaidBossEntry,
+  settings: NativeRaidSettings,
   trainerCount: number,
-) => {
-  const safeTrainerCount = Math.max(1, Math.round(trainerCount));
-  const dps = estimate.teamDps * safeTrainerCount;
-  const seconds = dps > 0 ? tier.bossHp / dps : Infinity;
-  return {
-    clears: Number.isFinite(seconds) && seconds <= tier.timeLimitSeconds,
-    dps,
-    seconds,
-    trainerCount: safeTrainerCount,
-  };
-};
+  tier: NativeRaidTier = resolveNativeRaidTier(boss),
+): NativeRaidLobbyResult | null => simulateRaidGroupAtTrainerCount(
+  canonicalScores(scores),
+  boss.variant,
+  tier,
+  resolvedSettings(settings),
+  trainerCount,
+);
