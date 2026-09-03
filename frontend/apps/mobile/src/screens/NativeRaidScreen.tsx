@@ -142,10 +142,10 @@ export const NativeRaidScreen = ({
       && cached.instances === instances
     ) return undefined;
     let cancelled = false;
+    setBossCounterEntries([]);
+    setBossCountersLoading(true);
     const timer = setTimeout(() => {
       if (cancelled) return;
-      setBossCounterEntries([]);
-      setBossCountersLoading(true);
       void buildNativeRaidCounterAttackersAsync({
         boss: selectedBoss,
         catalog,

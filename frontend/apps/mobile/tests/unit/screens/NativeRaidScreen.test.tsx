@@ -112,6 +112,7 @@ describe('NativeRaidScreen', () => {
     expect(screen.getByText('Monte Carlo distribution (32+ trials)')).toBeTruthy();
     fireEvent.press(screen.getByText('Shadow raid'));
     expect(screen.getByText('Shadow boss state')).toBeTruthy();
+    expect(screen.getByText('Modeling raid timelines…')).toBeTruthy();
     fireEvent.press(screen.getByText('Party of 2'));
     expect(screen.getByText('Party Power timing')).toBeTruthy();
     fireEvent.press(screen.getByText('Save for strongest Charged Attack'));
