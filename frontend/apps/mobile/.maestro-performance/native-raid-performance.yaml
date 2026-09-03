@@ -22,12 +22,12 @@ tags:
     visible: Your top raid attackers
     timeout: 45000
 - tapOn:
-    point: "18%,17%"
+    point: "26%,25%"
 - extendedWaitUntil:
     visible: Top raid attackers
     timeout: 30000
 - tapOn:
-    point: "75%,17%"
+    point: "74%,25%"
 - extendedWaitUntil:
     visible: Your top raid attackers
     timeout: 30000

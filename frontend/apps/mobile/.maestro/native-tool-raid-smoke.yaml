@@ -25,7 +25,7 @@ name: Native Raid tool smoke
 - assertVisible: "Your top raid attackers"
 - takeScreenshot: "native-tool-raid-owned-roster"
 - tapOn:
-    point: "18%,17%"
+    point: "26%,25%"
     retryTapIfNoChange: true
 - extendedWaitUntil:
     visible: "Top raid attackers"
