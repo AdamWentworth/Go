@@ -39,9 +39,9 @@ tags:
     visible: Your top Grass raid attackers
     timeout: 30000
 - tapOn: Search raid rankings
-- inputText: Leafy
+- inputText: Bulbasaur
 - extendedWaitUntil:
-    visible: Leafy
+    visible: Bulbasaur
     timeout: 10000
 - hideKeyboard
 - tapOn: ALL MOVESETS
@@ -65,12 +65,12 @@ tags:
 - tapOn: DPS
 - scrollUntilVisible:
     element:
-      text: Show all raid stats for Leafy
+      text: Show all raid stats for Bulbasaur
     direction: DOWN
     timeout: 30000
-- tapOn: Show all raid stats for Leafy
+- tapOn: Show all raid stats for Bulbasaur
 - extendedWaitUntil:
-    visible: Hide all raid stats for Leafy
+    visible: Hide all raid stats for Bulbasaur
     timeout: 10000
 
 # Boss picker and canonical counter recalculation.
