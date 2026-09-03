@@ -74,7 +74,7 @@ name: Native Raid tool smoke
 - scrollUntilVisible:
     element:
       text: "Shadow boss state"
-    direction: DOWN
+    direction: UP
 - assertVisible: "Shadow boss state"
 - takeScreenshot: "native-tool-raid-boss-settings"
 - scrollUntilVisible:
