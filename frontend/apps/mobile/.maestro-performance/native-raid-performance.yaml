@@ -21,12 +21,13 @@ tags:
 - extendedWaitUntil:
     visible: Your top raid attackers
     timeout: 45000
-- tapOn: ALL POKÉMON
+- tapOn:
+    point: "18%,17%"
 - extendedWaitUntil:
     visible: Top raid attackers
     timeout: 30000
 - tapOn:
-    text: "MY POKÉMON.*"
+    point: "75%,17%"
 - extendedWaitUntil:
     visible: Your top raid attackers
     timeout: 30000
