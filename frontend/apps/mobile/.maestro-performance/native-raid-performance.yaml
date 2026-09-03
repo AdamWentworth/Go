@@ -132,8 +132,10 @@ tags:
     direction: UP
     timeout: 30000
 - tapOn: "^Simulate$"
-- extendedWaitUntil:
-    visible: Raid party result
+- scrollUntilVisible:
+    element:
+      text: "^(Clear|Likely clear|Risky|Time expired) · .*$"
+    direction: DOWN
     timeout: 60000
 - scrollUntilVisible:
     element:

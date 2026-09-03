@@ -101,9 +101,9 @@ name: Native Raid tool smoke
 - tapOn: "^Simulate$"
 - scrollUntilVisible:
     element:
-      text: "Raid party result"
+      text: "^(Clear|Likely clear|Risky|Time expired) · .*$"
     direction: DOWN
-- assertVisible: "Raid party result"
+- assertVisible: "^(Clear|Likely clear|Risky|Time expired) · .*$"
 - takeScreenshot: "native-tool-raid-party"
 - scrollUntilVisible:
     element:
