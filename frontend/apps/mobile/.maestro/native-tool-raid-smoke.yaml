@@ -24,8 +24,12 @@ name: Native Raid tool smoke
 - assertVisible: "1 raid-ready entries from 1 caught.*"
 - assertVisible: "Your top raid attackers"
 - takeScreenshot: "native-tool-raid-owned-roster"
-- tapOn: "ALL POKÉMON"
-- assertVisible: "Top raid attackers"
+- tapOn:
+    text: "ALL POKÉMON"
+    retryTapIfNoChange: true
+- extendedWaitUntil:
+    visible: "Top raid attackers"
+    timeout: 10000
 - takeScreenshot: "native-tool-raid-rankings"
 - tapOn:
     id: raid-ranking-settings
