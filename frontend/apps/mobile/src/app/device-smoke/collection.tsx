@@ -15,7 +15,11 @@ import type {
   NativeCollectionRow,
   NativeTagSummary,
 } from '../../features/collection/collectionModel';
-import { buildNativeCatalogRows } from '../../features/collection/collectionModel';
+import {
+  buildNativeCatalogRows,
+  buildNativeCollectionRows,
+  buildNativeTagSummaries,
+} from '../../features/collection/collectionModel';
 import { runtimeConfig } from '../../config/runtimeConfig';
 import { NativeCollectionHubScreen } from '../../screens/NativeCollectionHubScreen';
 import { NativeInstanceDetailScreen } from '../../screens/NativeInstanceDetailScreen';
@@ -23,7 +27,38 @@ import { NativeInstanceDetailScreen } from '../../screens/NativeInstanceDetailSc
 const ASSET_BASE_URL = 'https://pokegonexus.com';
 const CATALOG_FIXTURE_URL = Platform.OS === 'web'
   ? 'http://127.0.0.1:8092/pokemons.json'
-  : 'http://10.0.2.2:8092/pokemons.json';
+  : `http://${runtimeConfig.mobile.deviceSmokeHost}:8092/pokemons.json`;
+const INSTANCES_FIXTURE_URL = Platform.OS === 'web'
+  ? 'http://127.0.0.1:8092/instances.json'
+  : `http://${runtimeConfig.mobile.deviceSmokeHost}:8092/instances.json`;
+const PERFORMANCE_INSTANCE_LIMIT = 180;
+
+const normalizePerformanceInstances = (
+  value: Record<string, PokemonInstance>,
+): Record<string, PokemonInstance> => Object.fromEntries(
+  Object.entries(value).slice(0, PERFORMANCE_INSTANCE_LIMIT).map(
+    ([instanceId, instance], index) => {
+      const normalized = {
+        ...instance,
+        instance_id: instance.instance_id ?? instanceId,
+        variant_id: instance.variant_id ?? instanceId.replace(
+          /_[0-9a-f]{8}-[0-9a-f-]{27}$/i,
+          '',
+        ),
+      };
+      if (index === 0) return [instanceId, { ...normalized, favorite: true }];
+      if (index === 1) {
+        return [instanceId, {
+          ...normalized,
+          is_caught: false,
+          is_for_trade: false,
+          is_wanted: true,
+        }];
+      }
+      return [instanceId, normalized];
+    },
+  ),
+);
 
 const row = ({
   id,
@@ -491,11 +526,15 @@ export default function DeviceSmokeCollectionRoute() {
     foreign?: string | string[];
     interaction?: string | string[];
     instance?: string | string[];
+    performance?: string | string[];
     tag?: string | string[];
     targetScroll?: string | string[];
   }>();
   const foreignParam = Array.isArray(params.foreign) ? params.foreign[0] : params.foreign;
   const interactionParam = Array.isArray(params.interaction) ? params.interaction[0] : params.interaction;
+  const performanceParam = Array.isArray(params.performance)
+    ? params.performance[0]
+    : params.performance;
   const tagParam = Array.isArray(params.tag) ? params.tag[0] : params.tag;
   const targetScrollParam = Array.isArray(params.targetScroll)
     ? params.targetScroll[0]
@@ -513,6 +552,7 @@ export default function DeviceSmokeCollectionRoute() {
   const interactionFixtures = interactionParam === '1'
     || foreignMode
     || initialInstanceId?.startsWith('smoke-') === true;
+  const performanceFixtures = performanceParam === '1';
   const initialRow = ALL_FIXTURE_ROWS.find((entry) => entry.id === initialInstanceId) ?? null;
   const [openedContext, setOpenedContext] = useState<{
     row: NativeCollectionRow;
@@ -549,12 +589,53 @@ export default function DeviceSmokeCollectionRoute() {
   useEffect(() => {
     if (!runtimeConfig.mobile.deviceSmokeMode) return undefined;
     const controller = new AbortController();
-    void fetch(CATALOG_FIXTURE_URL, { signal: controller.signal })
-      .then(async (response) => {
-        if (!response.ok) throw new Error(`Catalog fixture returned ${response.status}.`);
-        const payload: unknown = await response.json();
-        if (!Array.isArray(payload)) throw new Error('Catalog fixture is not an array.');
-        setCatalogRows(buildNativeCatalogRows(payload as BasePokemon[], ASSET_BASE_URL));
+    const loadFixture = async () => {
+      const [catalogResponse, instancesResponse] = await Promise.all([
+        fetch(CATALOG_FIXTURE_URL, { signal: controller.signal }),
+        performanceFixtures
+          ? fetch(INSTANCES_FIXTURE_URL, { signal: controller.signal })
+          : Promise.resolve(null),
+      ]);
+      if (!catalogResponse.ok) {
+        throw new Error(`Catalog fixture returned ${catalogResponse.status}.`);
+      }
+      const catalogPayload: unknown = await catalogResponse.json();
+      if (!Array.isArray(catalogPayload)) throw new Error('Catalog fixture is not an array.');
+      const catalog = catalogPayload as BasePokemon[];
+      setCatalogRows(buildNativeCatalogRows(catalog, ASSET_BASE_URL));
+      if (instancesResponse) {
+        if (!instancesResponse.ok) {
+          throw new Error(`Instances fixture returned ${instancesResponse.status}.`);
+        }
+        const instancesPayload: unknown = await instancesResponse.json();
+        if (!instancesPayload || typeof instancesPayload !== 'object' || Array.isArray(instancesPayload)) {
+          throw new Error('Instances fixture is not an object.');
+        }
+        const normalizedInstances = normalizePerformanceInstances(
+          instancesPayload as Record<string, PokemonInstance>,
+        );
+        const collectionRows = buildNativeCollectionRows(
+          normalizedInstances,
+          catalog,
+          ASSET_BASE_URL,
+        );
+        setSmokeInstances(normalizedInstances);
+        setInventoryTags(buildNativeTagSummaries(
+          collectionRows,
+          normalizedInstances,
+          null,
+          'caught',
+        ));
+        setWishlistTags(buildNativeTagSummaries(
+          collectionRows,
+          normalizedInstances,
+          null,
+          'wanted',
+        ));
+      }
+    };
+    void loadFixture()
+      .then(() => {
         setCatalogError(null);
       })
       .catch((error: unknown) => {
@@ -565,7 +646,7 @@ export default function DeviceSmokeCollectionRoute() {
         if (!controller.signal.aborted) setCatalogLoading(false);
       });
     return () => controller.abort();
-  }, []);
+  }, [performanceFixtures]);
 
   if (!runtimeConfig.mobile.deviceSmokeMode) return <Redirect href="/" />;
 

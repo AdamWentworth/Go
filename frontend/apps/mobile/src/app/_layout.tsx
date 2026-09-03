@@ -1,5 +1,6 @@
 import { Stack, usePathname } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
+import { useRef } from 'react';
 import { StyleSheet, View, useWindowDimensions } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
@@ -14,6 +15,8 @@ import {
   NativeAppLoadingProvider,
 } from '../components/NativeAppLoadingProvider';
 import { nativePathSurface } from '../navigation/nativeRouteSurface';
+import { runtimeConfig } from '../config/runtimeConfig';
+import { markNativeUiPerformance } from '../observability/nativeUiPerformanceTrace';
 
 initializeObservability();
 
@@ -23,9 +26,28 @@ const RootContent = () => {
   const pathname = usePathname();
   const { width } = useWindowDimensions();
   const windowSurface = nativePathSurface(pathname, light, width < 600);
+  const touchStartedAtRef = useRef<number | null>(null);
+
+  const performanceTouchProps = runtimeConfig.mobile.deviceSmokeMode ? {
+    onTouchStart: () => {
+      const startedAt = Date.now();
+      touchStartedAtRef.current = startedAt;
+      requestAnimationFrame(() => {
+        if (touchStartedAtRef.current !== startedAt) return;
+        touchStartedAtRef.current = null;
+        markNativeUiPerformance('global_touch_next_frame', {
+          interactionLatencyMs: Date.now() - startedAt,
+          routePath: pathname,
+        });
+      });
+    },
+  } : {};
 
   return (
-    <View style={[styles.windowSurface, { backgroundColor: windowSurface }]}>
+    <View
+      {...performanceTouchProps}
+      style={[styles.windowSurface, { backgroundColor: windowSurface }]}
+    >
       <NativeAppLoadingProvider navigationPath={pathname}>
         <StatusBar style={light ? 'dark' : 'light'} />
         <MobileErrorBoundary>

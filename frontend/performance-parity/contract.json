@@ -1,0 +1,96 @@
+{
+  "schemaVersion": 1,
+  "profiles": {
+    "browser-proxy": {
+      "referenceImplementation": "vite",
+      "candidateImplementation": "native-web",
+      "requiredEnvironmentMatches": [
+        "repetitions",
+        "workloadId",
+        "catalogEntries",
+        "instanceEntries",
+        "pvpEntries"
+      ],
+      "minimumSamplesFromEnvironment": "repetitions",
+      "requiredRouteMetrics": [
+        "route_ready_ms",
+        "main_thread_blocking_ms",
+        "max_frame_gap_ms"
+      ],
+      "requiredInteractionMetrics": ["interaction_ready_ms"]
+    },
+    "physical-android": {
+      "referenceImplementation": "vite",
+      "candidateImplementation": "native-android",
+      "requiredEnvironmentMatches": [
+        "repetitions",
+        "deviceIdentity",
+        "workloadId",
+        "catalogEntries",
+        "instanceEntries",
+        "pvpEntries"
+      ],
+      "minimumSamplesFromEnvironment": "repetitions",
+      "requiredRouteMetrics": [],
+      "requiredInteractionMetrics": ["interaction_ready_ms"],
+      "requiredGlobalMetrics": [
+        "frame_time_p95_ms",
+        "janky_frames_percent",
+        "memory_pss_bytes"
+      ]
+    }
+  },
+  "routes": [
+    { "id": "route.home.guest", "auth": "guest", "vite": "/", "native": "/native" },
+    { "id": "route.login", "auth": "guest", "vite": "/login", "native": "/native/login" },
+    { "id": "route.register", "auth": "guest", "vite": "/register", "native": "/native/register" },
+    { "id": "route.reset-password", "auth": "guest", "vite": "/reset-password", "native": "/native/reset-password" },
+    { "id": "route.getting-started", "auth": "guest", "vite": "/getting-started", "native": "/native/info/getting-started" },
+    { "id": "route.help", "auth": "guest", "vite": "/help", "native": "/native/info/help" },
+    { "id": "route.faq", "auth": "guest", "vite": "/faq", "native": "/native/info/faq" },
+    { "id": "route.about", "auth": "guest", "vite": "/about", "native": "/native/info/about" },
+    { "id": "route.safety", "auth": "guest", "vite": "/safety", "native": "/native/info/safety" },
+    { "id": "route.privacy", "auth": "guest", "vite": "/privacy", "native": "/native/info/privacy" },
+    { "id": "route.terms", "auth": "guest", "vite": "/terms", "native": "/native/info/terms" },
+    { "id": "route.data-deletion", "auth": "guest", "vite": "/data-deletion", "native": "/native/info/data-deletion" },
+    { "id": "route.pokedex.guest", "auth": "guest", "vite": "/pokedex", "native": "/native/pokedex" },
+    { "id": "route.raid.guest", "auth": "guest", "vite": "/raid", "native": "/native/raid" },
+    { "id": "route.max.guest", "auth": "guest", "vite": "/max", "native": "/native/max" },
+    { "id": "route.pvp.guest", "auth": "guest", "vite": "/pvp", "native": "/native/pvp" },
+    { "id": "route.pvp-methodology", "auth": "guest", "vite": "/pvp/methodology", "native": "/native/pvp-methodology" },
+    { "id": "route.raid-methodology", "auth": "guest", "vite": "/raid/methodology", "native": "/native/raid-methodology" },
+    { "id": "route.rankings.guest", "auth": "guest", "vite": "/rankings", "native": "/native/rankings" },
+    { "id": "route.home.signed-in", "auth": "signed-in", "vite": "/", "native": "/native" },
+    { "id": "route.collection", "auth": "signed-in", "vite": "/pokemon", "native": "/native/collection" },
+    { "id": "route.search", "auth": "signed-in", "vite": "/search", "native": "/native/search" },
+    { "id": "route.trades", "auth": "signed-in", "vite": "/trades", "native": "/native/trades" },
+    { "id": "route.profile.self", "auth": "signed-in", "vite": "/profile", "native": "/native/profile" },
+    { "id": "route.profile.friend", "auth": "signed-in", "vite": "/profile/NexusFriend", "native": "/native/profile/NexusFriend" },
+    { "id": "route.friends", "auth": "signed-in", "vite": "/friends", "native": "/native/friends" },
+    { "id": "route.settings", "auth": "signed-in", "vite": "/settings", "native": "/native/settings" },
+    { "id": "route.account", "auth": "signed-in", "vite": "/account", "native": "/native/account" },
+    { "id": "route.trade-board", "auth": "signed-in", "vite": "/trade-board", "native": "/native/trade-board" },
+    { "id": "route.pokedex.signed-in", "auth": "signed-in", "vite": "/pokedex", "native": "/native/pokedex" },
+    { "id": "route.raid.signed-in", "auth": "signed-in", "vite": "/raid", "native": "/native/raid" },
+    { "id": "route.max.signed-in", "auth": "signed-in", "vite": "/max", "native": "/native/max" },
+    { "id": "route.pvp.signed-in", "auth": "signed-in", "vite": "/pvp", "native": "/native/pvp" },
+    { "id": "route.rankings.signed-in", "auth": "signed-in", "vite": "/rankings", "native": "/native/rankings" }
+  ],
+  "interactions": [
+    { "id": "interaction.action-menu.open", "vite": "action-menu dialog visible", "nativeEvent": "action_menu_surface_painted" },
+    { "id": "interaction.theme.toggle", "vite": "visible theme palette changed", "nativeEvent": "theme_visible_palette_committed" },
+    { "id": "interaction.collection.search-open", "vite": "search controls visible", "nativeEvent": "collection_search_menu_painted" },
+    { "id": "interaction.collection.sort-open", "vite": "sort menu visible", "nativeEvent": "collection_sort_menu_painted" },
+    { "id": "interaction.collection.filter", "vite": "filtered result visible", "nativeEvent": "collection_filter_result_revealed" },
+    { "id": "interaction.collection.tag-slide", "vite": "tag slide started", "nativeEvent": "collection_tag_touch_to_slide_started" },
+    { "id": "interaction.collection.tag-result", "vite": "tag result visible", "nativeEvent": "collection_tag_result_painted" },
+    { "id": "interaction.collection.query-result", "vite": "filter query projection visible", "nativeEvent": "collection_query_result_painted" },
+    { "id": "interaction.collection.typed-query", "vite": "typed query projection visible", "nativeEvent": "collection_typed_query_result_painted" },
+    { "id": "interaction.collection.sort-result", "vite": "sorted result visible", "nativeEvent": "collection_sort_result_painted" },
+    { "id": "interaction.collection.evolution-result", "vite": "evolution result visible", "nativeEvent": "collection_evolution_result_painted" },
+    { "id": "interaction.collection.clear-tag-dialog", "vite": "confirmation visible", "nativeEvent": "collection_clear_tag_dialog_painted" },
+    { "id": "interaction.collection.selection", "vite": "selection state visible", "nativeEvent": "collection_selection_painted" },
+    { "id": "interaction.collection.organizer", "vite": "organizer visible", "nativeEvent": "collection_organizer_painted" },
+    { "id": "interaction.instance.navigate", "vite": "adjacent instance content committed", "nativeEvent": "instance_overlay_target_committed" }
+  ]
+}

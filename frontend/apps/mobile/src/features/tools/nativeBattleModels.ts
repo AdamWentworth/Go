@@ -58,6 +58,64 @@ export type NativeRaidDodgeStrategy = 'none' | 'charged';
 export type NativeRaidBossMovesetMode = 'expected' | 'monte-carlo' | 'favorable' | 'hostile';
 export type NativeRaidShadowBossMode = 'normal' | 'enraged' | 'subdued';
 
+const nativeCatalogVariantCache = new WeakMap<BasePokemon[], PokemonVariant[]>();
+const nativeCatalogVariants = (catalog: BasePokemon[]): PokemonVariant[] => {
+  const cached = nativeCatalogVariantCache.get(catalog);
+  if (cached) return cached;
+  const variants = createPokemonVariants(catalog);
+  nativeCatalogVariantCache.set(catalog, variants);
+  return variants;
+};
+
+const nativeRaidRosterCache = new WeakMap<
+  PokemonVariant[],
+  WeakMap<Record<string, PokemonInstance>, RaidRosterSummary>
+>();
+const nativeRaidRoster = (
+  variants: PokemonVariant[],
+  instances: Record<string, PokemonInstance>,
+): RaidRosterSummary => {
+  const byInstances = nativeRaidRosterCache.get(variants) ?? new WeakMap();
+  const cached = byInstances.get(instances);
+  if (cached) return cached;
+  const roster = buildRaidRoster(variants, instances);
+  byInstances.set(instances, roster);
+  nativeRaidRosterCache.set(variants, byInstances);
+  return roster;
+};
+
+const nativeMaxRosterCache = new WeakMap<
+  PokemonVariant[],
+  WeakMap<Record<string, PokemonInstance>, MaxRosterSummary>
+>();
+const nativeMaxRoster = (
+  variants: PokemonVariant[],
+  instances: Record<string, PokemonInstance>,
+): MaxRosterSummary => {
+  const byInstances = nativeMaxRosterCache.get(variants) ?? new WeakMap();
+  const cached = byInstances.get(instances);
+  if (cached) return cached;
+  const roster = buildMaxRoster(variants, instances);
+  byInstances.set(instances, roster);
+  nativeMaxRosterCache.set(variants, byInstances);
+  return roster;
+};
+
+const nativeRaidCatalogProjectionCache = new WeakMap<
+  PokemonVariant[],
+  { attackers: PokemonVariant[]; bossTargets: PokemonVariant[] }
+>();
+const nativeRaidCatalogProjection = (variants: PokemonVariant[]) => {
+  const cached = nativeRaidCatalogProjectionCache.get(variants);
+  if (cached) return cached;
+  const projection = {
+    attackers: variants.filter(isEligibleRaidAttacker),
+    bossTargets: variants.filter(isEligibleRaidBoss),
+  };
+  nativeRaidCatalogProjectionCache.set(variants, projection);
+  return projection;
+};
+
 export type NativeRaidSettings = {
   attackerLevel: NativeRaidAttackerLevel;
   bestOnly: boolean;
@@ -191,19 +249,19 @@ const buildCanonicalRaidAttackers = (
   instances: Record<string, PokemonInstance>,
   scope: NativeRosterScope,
 ): { attackers: PokemonVariant[]; bossTargets: PokemonVariant[] } => {
-  const variants = createPokemonVariants(catalog);
-  const bossTargets = variants.filter(isEligibleRaidBoss);
+  const variants = nativeCatalogVariants(catalog);
+  const { attackers: catalogAttackers, bossTargets } = nativeRaidCatalogProjection(variants);
   if (scope === 'catalog') {
-    return { attackers: variants.filter(isEligibleRaidAttacker), bossTargets };
+    return { attackers: catalogAttackers, bossTargets };
   }
 
-  return { attackers: buildRaidRoster(variants, instances).attackers, bossTargets };
+  return { attackers: nativeRaidRoster(variants, instances).attackers, bossTargets };
 };
 
 export const buildNativeRaidRosterSummary = (
   catalog: BasePokemon[],
   instances: Record<string, PokemonInstance>,
-): RaidRosterSummary => buildRaidRoster(createPokemonVariants(catalog), instances);
+): RaidRosterSummary => nativeRaidRoster(nativeCatalogVariants(catalog), instances);
 
 const canonicalCombatEntry = (
   score: RaidOverallScore | RaidTypeDpsScore,
@@ -405,7 +463,7 @@ export const buildNativeRaidCounterAttackersAsync = async ({
 
 export const buildNativeRaidBosses = (catalog: BasePokemon[]): NativeRaidBossEntry[] => {
   const pokemonById = new Map(catalog.map((pokemon) => [Number(pokemon.pokemon_id), pokemon]));
-  return createPokemonVariants(catalog)
+  return nativeCatalogVariants(catalog)
     .filter(isEligibleRaidBoss)
     .flatMap((variant) => {
       const boss = getPrimaryRaidMetadataForVariant(variant);
@@ -432,12 +490,12 @@ export const buildNativeRaidBosses = (catalog: BasePokemon[]): NativeRaidBossEnt
 export type NativeMaxRole = 'damage' | 'tank' | 'healing';
 
 export const buildNativeMaxVariants = (catalog: BasePokemon[]): PokemonVariant[] =>
-  getMaxBattleCatalog(createPokemonVariants(catalog));
+  getMaxBattleCatalog(nativeCatalogVariants(catalog));
 
 export const buildNativeMaxRosterSummary = (
   catalog: BasePokemon[],
   instances: Record<string, PokemonInstance>,
-): MaxRosterSummary => buildMaxRoster(createPokemonVariants(catalog), instances);
+): MaxRosterSummary => nativeMaxRoster(nativeCatalogVariants(catalog), instances);
 
 type NativeMaxRankingOptions = {
   boss?: BasePokemon | null;
@@ -468,9 +526,9 @@ export const buildNativeMaxCanonicalRankings = ({
   scope = 'catalog',
   selectedType = '',
 }: NativeMaxRankingOptions): MaxRankingEntry[] => {
-  const variants = createPokemonVariants(catalog);
+  const variants = nativeCatalogVariants(catalog);
   const rankingVariants = scope === 'owned'
-    ? buildMaxRoster(variants, instances).pokemon
+    ? nativeMaxRoster(variants, instances).pokemon
     : getMaxBattleCatalog(variants);
   return rankMaxBattlePokemon(rankingVariants, {
     boss: bossVariant ?? buildNativeMaxBossVariant(boss),

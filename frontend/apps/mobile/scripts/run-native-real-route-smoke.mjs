@@ -6,6 +6,7 @@ import {
   readdirSync,
   readFileSync,
   unlinkSync,
+  writeFileSync,
 } from 'node:fs';
 import { dirname, extname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -24,25 +25,96 @@ const routeFilter = process.env.POKEGONEXUS_REAL_ROUTE_FILTER?.trim() ?? '';
 const workflowsOnly = process.env.POKEGONEXUS_REAL_WORKFLOWS_ONLY === 'true';
 const workflowFilter = process.env.POKEGONEXUS_REAL_WORKFLOW_FILTER?.trim() ?? '';
 const performanceMode = process.env.POKEGONEXUS_REAL_ROUTE_PERFORMANCE === 'true';
+const performanceRepetitions = performanceMode
+  ? Math.max(1, Number(process.env.POKEGONEXUS_PERFORMANCE_SAMPLES ?? 3))
+  : 1;
+const performanceReportPath = resolve(
+  process.env.POKEGONEXUS_PERFORMANCE_REPORT
+    ?? join(artifactDirectory, 'native-web-browser-proxy.json'),
+);
+const performanceContract = JSON.parse(readFileSync(
+  resolve(workspaceDirectory, 'performance-parity/contract.json'),
+  'utf8',
+));
+const performanceSamples = [];
+const performanceSampleIndexes = new Map();
+
+const nextPerformanceSampleIndex = (scenarioId, metric) => {
+  const key = `${scenarioId}\u0000${metric}`;
+  const current = performanceSampleIndexes.get(key) ?? 0;
+  performanceSampleIndexes.set(key, current + 1);
+  return current;
+};
+
+const addPerformanceMetric = (
+  scenarioId,
+  metric,
+  value,
+  { diagnostic = false, direction = 'lower', unit = 'ms' } = {},
+) => {
+  if (!performanceMode || value == null || !Number.isFinite(value) || value < 0) return;
+  performanceSamples.push({
+    scenarioId,
+    metric,
+    value,
+    sampleIndex: nextPerformanceSampleIndex(scenarioId, metric),
+    direction,
+    unit,
+    ...(diagnostic ? { diagnostic: true } : {}),
+  });
+};
+
+const routeScenarioId = (path, authState) => performanceContract.routes.find(
+  (route) => route.native === path && route.auth === authState,
+)?.id ?? null;
 
 const readJson = (name) => JSON.parse(
   readFileSync(resolve(fixtureDirectory, name), 'utf8').replace(/^\uFEFF/, ''),
 );
 
-const catalog = readJson('pokemons.json');
+const rawCatalog = readJson('pokemons.json');
+const asRecords = (value) => Array.isArray(value)
+  ? value.filter((entry) => entry && typeof entry === 'object')
+  : [];
+const stripMovePools = (value) => asRecords(value).map((entry) => ({
+  ...entry,
+  moves: [],
+}));
+// Match the production API split and the Vite parity fixture exactly. Sending
+// the complete source catalog from every endpoint made the native proxy parse
+// and hydrate moves, raids, and Max data several times while Vite received the
+// real endpoint-specific projections.
+const catalog = rawCatalog.map((pokemon) => ({
+  ...pokemon,
+  crownForms: stripMovePools(pokemon.crownForms),
+  fusion: stripMovePools(pokemon.fusion),
+  moves: [],
+  raid_boss: [],
+}));
+const maxData = rawCatalog.filter((pokemon) => (
+  asRecords(pokemon.max).length > 0 || [888, 889, 890].includes(Number(pokemon.pokemon_id))
+));
 const allInstances = readJson('instances.json');
 const instanceEntries = Object.entries(allInstances).slice(0, 180);
 const instances = Object.fromEntries(instanceEntries.map(([instanceId, instance], index) => {
-  if (index === 0) return [instanceId, { ...instance, favorite: true }];
+  const normalized = {
+    ...instance,
+    instance_id: instance.instance_id ?? instanceId,
+    variant_id: instance.variant_id ?? instanceId.replace(
+      /_[0-9a-f]{8}-[0-9a-f-]{27}$/i,
+      '',
+    ),
+  };
+  if (index === 0) return [instanceId, { ...normalized, favorite: true }];
   if (index === 1) {
     return [instanceId, {
-      ...instance,
+      ...normalized,
       is_caught: false,
       is_for_trade: false,
       is_wanted: true,
     }];
   }
-  return [instanceId, instance];
+  return [instanceId, normalized];
 }));
 const firstInstanceId = instanceEntries[0]?.[0] ?? '';
 const firstVariantId = catalog[0]?.variants?.[0]?.variant_id ?? '0001-default';
@@ -56,7 +128,7 @@ const foreignInstances = {
   },
 };
 const [routeTradeProposedInstanceId, routeTradeAcceptingInstanceId] = Object.keys(foreignInstances);
-let routeTrade = {
+const initialRouteTrade = {
   is_lucky_trade: false,
   pokemon_instance_id_user_accepting: routeTradeAcceptingInstanceId,
   pokemon_instance_id_user_proposed: routeTradeProposedInstanceId,
@@ -70,6 +142,7 @@ let routeTrade = {
   username_accepting: 'NexusFriend',
   username_proposed: 'NexusRoute',
 };
+let routeTrade = { ...initialRouteTrade };
 const routeTradesEnvelope = () => ({
   related_instances: Object.fromEntries(
     Object.entries(foreignInstances).slice(0, 2).map(([instanceId, instance]) => [
@@ -172,26 +245,126 @@ const tags = {
   }],
 };
 
-const moves = catalog.map((pokemon) => ({
+const moves = rawCatalog.map((pokemon) => ({
   crownForms: (pokemon.crownForms ?? []).map(({ id, moves: formMoves }) => ({ id, moves: formMoves })),
   fusion: (pokemon.fusion ?? []).map(({ fusion_id: fusionId, moves: fusionMoves }) => ({ fusion_id: fusionId, moves: fusionMoves })),
   moves: pokemon.moves ?? [],
   pokemon_id: pokemon.pokemon_id,
 }));
 
-const raidData = catalog.map((pokemon) => ({
+const raidData = rawCatalog.map((pokemon) => ({
   pokemon_id: pokemon.pokemon_id,
   raid_boss: pokemon.raid_boss ?? [],
 }));
 
+const makePvpEntry = (rank, speciesId, name, type, moveName, pokemonId = rank) => ({
+  attackIv: 0,
+  battleAttack: 100 + rank,
+  battleDefense: 130 - rank,
+  battleHp: 140 + rank,
+  categoryScores: rank === 1
+    ? [70, 72, 74, 76, 78, 80]
+    : [90, 88, 86, 84, 82, 81],
+  counters: [{ rating: 310 + rank, speciesId: 'lanturn' }],
+  defenseIv: 15,
+  imageUrl: `/images/default/pokemon_${pokemonId}.png`,
+  matchups: [{ rating: 740 - rank, speciesId: 'talonflame' }],
+  moveset: [
+    {
+      buff: {
+        attackerAttack: 0,
+        attackerDefense: 0,
+        chance: 0,
+        targetAttack: 0,
+        targetDefense: 0,
+      },
+      energyCost: 0,
+      energyGain: 8,
+      id: `${speciesId}-fast`,
+      kind: 'fast',
+      name: 'Quick Attack',
+      power: 5,
+      turns: 2,
+      type: 'normal',
+    },
+    {
+      buff: {
+        attackerAttack: 0,
+        attackerDefense: 0,
+        chance: 0,
+        targetAttack: 0,
+        targetDefense: 0,
+      },
+      energyCost: 50,
+      energyGain: 0,
+      id: `${speciesId}-charged`,
+      kind: 'charged',
+      name: moveName,
+      power: 80,
+      turns: 1,
+      type,
+    },
+  ],
+  moveUsage: [{
+    id: `${speciesId}-fast`,
+    kind: 'fast',
+    name: 'Quick Attack',
+    type: 'normal',
+    uses: 120,
+  }],
+  name,
+  pokemonId,
+  rank,
+  rating: 700,
+  recommendedLevel: 20 + rank / 2,
+  score: 96 - rank,
+  sourceRank: rank,
+  speciesId,
+  staminaIv: 15,
+  statProduct: (100 + rank) * (130 - rank) * (140 + rank),
+  types: [type],
+  variantKind: 'pokemon',
+});
+
 const pvpPayload = {
-  formats: [],
   leagues: {
-    great: { cpLimit: 1500, entries: [], key: 'great', label: 'Great League' },
-    master: { cpLimit: null, entries: [], key: 'master', label: 'Master League' },
-    ultra: { cpLimit: 2500, entries: [], key: 'ultra', label: 'Ultra League' },
+    great: {
+      cpLimit: 1_500,
+      entries: [
+        makePvpEntry(1, 'clodsire', 'Clodsire', 'poison', 'Earthquake', 980),
+        makePvpEntry(2, 'azumarill', 'Azumarill', 'water', 'Play Rough', 184),
+        makePvpEntry(3, 'bulbasaur', 'Bulbasaur', 'grass', 'Seed Bomb', 1),
+      ],
+      key: 'great',
+      label: 'Great League',
+    },
+    master: {
+      cpLimit: null,
+      entries: [makePvpEntry(
+        1,
+        'zacian_crowned_sword',
+        'Zacian Crowned Sword',
+        'steel',
+        'Behemoth Blade',
+      )],
+      key: 'master',
+      label: 'Master League',
+    },
+    ultra: {
+      cpLimit: 2_500,
+      entries: [makePvpEntry(1, 'feraligatr', 'Feraligatr', 'water', 'Hydro Cannon')],
+      key: 'ultra',
+      label: 'Ultra League',
+    },
   },
-  source: null,
+  source: {
+    importedAt: '2026-07-23T00:00:00Z',
+    license: 'MIT',
+    metadata: {},
+    name: 'PvPoke',
+    url: 'https://github.com/pvpoke/pvpoke',
+    version: 'e2e-pvpoke',
+  },
 };
 
 const rankings = {
@@ -354,7 +527,7 @@ const apiResponse = (url, method = 'GET') => {
   if (pathname === '/api/pokemon/catalog') return catalog;
   if (pathname === '/api/pokemon/moves') return moves;
   if (pathname === '/api/pokemon/raid-data') return raidData;
-  if (pathname === '/api/pokemon/max-data') return catalog;
+  if (pathname === '/api/pokemon/max-data') return maxData;
   if (pathname === '/api/pokemon/pvp-data') return pvpPayload;
   if (pathname === '/api/pokemon/pokedex') {
     return catalog.map(({ female_unique: femaleUnique, form, gender_rate: genderRate, generation, image_url: imageUrl, name, pokedex_number: pokedexNumber, pokemon_id: pokemonId }) => ({
@@ -476,25 +649,128 @@ const routeLoadingLabels = [
 ];
 
 const waitForRouteToSettle = async (page) => {
+  // Native route shells mount before their React Query payloads. Requiring
+  // deterministic fixture traffic to settle prevents a fast empty shell from
+  // being compared with Vite's fully populated destination (or vice versa).
+  await page.waitForLoadState('networkidle', { timeout: 30_000 });
   for (const label of routeLoadingLabels) {
     const loading = page.getByText(label, { exact: true });
     if (await loading.count()) {
       await loading.first().waitFor({ state: 'hidden', timeout: 25_000 });
     }
   }
+  await page.evaluate(() => new Promise((resolvePaint) => {
+    requestAnimationFrame(() => requestAnimationFrame(resolvePaint));
+  }));
+};
+
+const waitForScreenshotSettle = async (page) => {
   // Allow the final query-cache render and route animation to paint before
   // layout, chrome, and screenshots are inspected.
   await page.waitForTimeout(250);
+};
+
+const resetBrowserPerformanceProbe = async (page) => page.evaluate(() => {
+  const probe = window.__performanceParityProbe;
+  if (!probe) return;
+  probe.frameTimes = [];
+  probe.longTasks = [];
+  probe.largestContentfulPaint = null;
+  probe.measurementStartedAt = performance.now();
+});
+
+const takeBrowserPerformanceSnapshot = async (page) => page.evaluate(() => {
+  const probe = window.__performanceParityProbe;
+  const measurementStartedAt = probe?.measurementStartedAt ?? 0;
+  const frameGaps = (probe?.frameTimes ?? []).slice(1).map(
+    (timestamp, index) => timestamp - (probe?.frameTimes[index] ?? timestamp),
+  );
+  const firstContentfulPaint = performance.getEntriesByName('first-contentful-paint').at(-1);
+  const memory = performance.memory;
+  return {
+    routeReadyMs: performance.now() - measurementStartedAt,
+    mainThreadBlockingMs: (probe?.longTasks ?? []).reduce(
+      (total, duration) => total + Math.max(0, duration - 50),
+      0,
+    ),
+    maxFrameGapMs: frameGaps.length ? Math.max(...frameGaps) : 0,
+    firstContentfulPaintMs: firstContentfulPaint && firstContentfulPaint.startTime >= measurementStartedAt
+      ? firstContentfulPaint.startTime - measurementStartedAt
+      : null,
+    largestContentfulPaintMs: probe?.largestContentfulPaint != null
+      ? Math.max(0, probe.largestContentfulPaint - measurementStartedAt)
+      : null,
+    transferSizeBytes: performance.getEntriesByType('resource').reduce(
+      (total, entry) => total + (entry.startTime >= measurementStartedAt ? entry.transferSize || 0 : 0),
+      0,
+    ),
+    domNodeCount: document.getElementsByTagName('*').length,
+    jsHeapBytes: memory?.usedJSHeapSize ?? null,
+  };
+});
+
+const recordRoutePerformance = async (page, path, authState) => {
+  const scenarioId = routeScenarioId(path, authState);
+  if (!scenarioId) return;
+  const snapshot = await takeBrowserPerformanceSnapshot(page);
+  addPerformanceMetric(scenarioId, 'route_ready_ms', snapshot.routeReadyMs);
+  addPerformanceMetric(scenarioId, 'main_thread_blocking_ms', snapshot.mainThreadBlockingMs);
+  addPerformanceMetric(scenarioId, 'max_frame_gap_ms', snapshot.maxFrameGapMs);
+  addPerformanceMetric(scenarioId, 'first_contentful_paint_ms', snapshot.firstContentfulPaintMs, {
+    diagnostic: true,
+  });
+  addPerformanceMetric(scenarioId, 'largest_contentful_paint_ms', snapshot.largestContentfulPaintMs, {
+    diagnostic: true,
+  });
+  addPerformanceMetric(scenarioId, 'transfer_size_bytes', snapshot.transferSizeBytes, {
+    diagnostic: true,
+    unit: 'bytes',
+  });
+  addPerformanceMetric(scenarioId, 'dom_node_count', snapshot.domNodeCount, {
+    diagnostic: true,
+    unit: 'count',
+  });
+  addPerformanceMetric(scenarioId, 'js_heap_bytes', snapshot.jsHeapBytes, {
+    diagnostic: true,
+    unit: 'bytes',
+  });
+};
+
+const inputLatency = async (page) => page.evaluate(() => {
+  const inputAt = window.__performanceParityProbe?.lastInputAt;
+  return inputAt == null ? null : performance.now() - inputAt;
+});
+
+const recordInteractionPerformance = async (page, scenarioId) => {
+  addPerformanceMetric(scenarioId, 'interaction_ready_ms', await inputLatency(page));
 };
 
 const assertRoute = async (page, routeCase, theme, authState) => {
   const [path, testId, expectsActionMenu] = routeCase;
   const errors = [];
   trackRuntimeErrors(page, errors);
-  await page.goto(`${baseUrl}${path}`, { timeout: 60_000, waitUntil: 'domcontentloaded' });
+  if (performanceMode) {
+    const warmPath = path === '/native/info/about'
+      ? '/native/info/faq'
+      : '/native/info/about';
+    await page.goto(`${baseUrl}${warmPath}`, {
+      timeout: 60_000,
+      waitUntil: 'domcontentloaded',
+    });
+    await waitForRouteToSettle(page);
+    await resetBrowserPerformanceProbe(page);
+    await page.evaluate((destination) => {
+      window.history.pushState({}, '', destination);
+      window.dispatchEvent(new PopStateEvent('popstate'));
+    }, path);
+  } else {
+    await page.goto(`${baseUrl}${path}`, { timeout: 60_000, waitUntil: 'domcontentloaded' });
+  }
   const root = page.getByTestId(testId);
   await root.waitFor({ state: 'visible', timeout: 25_000 });
   await waitForRouteToSettle(page);
+  await recordRoutePerformance(page, path, authState);
+  await waitForScreenshotSettle(page);
   const actionMenuCount = await page.getByTestId('native-action-menu-anchor').count();
   if (expectsActionMenu && actionMenuCount !== 1) {
     throw new Error(`${path} rendered ${actionMenuCount} action-menu anchors; expected exactly one.`);
@@ -510,11 +786,33 @@ const assertRoute = async (page, routeCase, theme, authState) => {
     await page.waitForFunction(() => Array.from(
       document.querySelectorAll('[data-testid="native-action-menu"]'),
     ).some((element) => getComputedStyle(element).pointerEvents !== 'none'), null, { timeout: 10_000 });
+    if (performanceMode && path === '/native' && authState === 'signed-in' && theme === 'dark') {
+      // Record exactly one matched action-menu sample per repetition. Other
+      // route checks also open this menu to validate its global availability,
+      // but folding those functional checks into one performance scenario
+      // would bias the native median with dozens of unrelated samples.
+      await recordInteractionPerformance(page, 'interaction.action-menu.open');
+    }
     if (path === '/native') {
       await page.screenshot({
         fullPage: true,
         path: join(artifactDirectory, `${theme}-${authState}-native-action-menu.png`),
       });
+    }
+    if (performanceMode && path === '/native' && authState === 'signed-in' && theme === 'dark') {
+      const themeSwitch = visibleTestId(page, 'native-theme-switch');
+      const priorLabel = await themeSwitch.getAttribute('aria-label');
+      await themeSwitch.click();
+      await page.waitForFunction((label) => {
+        const control = document.querySelector('[data-testid="native-theme-switch"]');
+        return control?.getAttribute('aria-label') !== label;
+      }, priorLabel, { timeout: 5_000 });
+      await recordInteractionPerformance(page, 'interaction.theme.toggle');
+      await themeSwitch.click();
+      await page.waitForFunction((label) => {
+        const control = document.querySelector('[data-testid="native-theme-switch"]');
+        return control?.getAttribute('aria-label') === label;
+      }, priorLabel, { timeout: 5_000 });
     }
     await page.locator('[data-testid="native-action-menu-close"]:visible').last().click();
     await page.waitForFunction(() => Array.from(
@@ -563,10 +861,9 @@ const releaseEmptyExpoErrorToast = async (page) => {
 
 const openActionMenu = async (page) => {
   await visibleTestId(page, 'native-action-menu-anchor').click();
-  await visibleTestId(page, 'native-action-menu').waitFor({
-    state: 'visible',
-    timeout: 10_000,
-  });
+  await page.waitForFunction(() => Array.from(
+    document.querySelectorAll('[data-testid="native-action-menu"]'),
+  ).some((element) => getComputedStyle(element).pointerEvents !== 'none'), null, { timeout: 10_000 });
   await page.waitForTimeout(425);
   await releaseEmptyExpoErrorToast(page);
 };
@@ -722,6 +1019,10 @@ const assertSignedInHomeCollectionWorkflow = async (context) => {
         await clearTag.click();
         const confirmation = page.getByTestId('native-confirmation-dialog');
         await confirmation.waitFor({ state: 'visible', timeout: 5_000 });
+        await recordInteractionPerformance(
+          page,
+          'interaction.collection.clear-tag-dialog',
+        );
         await confirmation.getByText(
           'Clear the Caught tag? This returns you to browsing all available Pokémon and forms in Pokémon GO, without using your personal tag lists.',
           { exact: true },
@@ -763,10 +1064,16 @@ const assertSignedInCollectionWorkflow = async (context) => {
     const firstCatalogCard = page.getByTestId(/^parity-card-0001-default$/).first();
     await firstCatalogCard.waitFor({ state: 'visible', timeout: 15_000 });
     await firstCatalogCard.click();
+    await page.getByLabel('Add (1)', { exact: true }).waitFor({ state: 'visible' });
+    await recordInteractionPerformance(page, 'interaction.collection.selection');
     await page.getByLabel('Add (1)', { exact: true }).click();
     await page.getByText('Add Pokémon', { exact: true }).waitFor({ state: 'visible', timeout: 10_000 });
+    await recordInteractionPerformance(page, 'interaction.collection.organizer');
     await page.getByLabel('Close Pokémon organizer', { exact: true }).click();
-    await page.getByText('Add Pokémon', { exact: true }).waitFor({ state: 'hidden', timeout: 10_000 });
+    await page.waitForFunction(() => {
+      const organizer = document.querySelector('[data-testid="native-pokemon-organizer"]');
+      return organizer && getComputedStyle(organizer).pointerEvents === 'none';
+    }, null, { timeout: 10_000 });
     await page.getByRole('button', { name: 'X', exact: true }).click();
 
     // Vite keeps the controlled input urgent and runs the collection search
@@ -776,6 +1083,15 @@ const assertSignedInCollectionWorkflow = async (context) => {
     await collectionSearch.click();
     await page.getByLabel('Pokémon search filters', { exact: true })
       .waitFor({ state: 'visible', timeout: 5_000 });
+    await recordInteractionPerformance(page, 'interaction.collection.search-open');
+    const shinyFilter = visibleTestId(page, 'native-collection-filter-shiny');
+    await shinyFilter.click();
+    await page.locator('[data-testid="parity-card-0001-shiny"]:visible').first()
+      .waitFor({ state: 'visible', timeout: 5_000 });
+    await recordInteractionPerformance(page, 'interaction.collection.filter');
+    await recordInteractionPerformance(page, 'interaction.collection.query-result');
+    await page.getByLabel('Clear Pokémon search', { exact: true }).click();
+    await firstCatalogCard.waitFor({ state: 'visible', timeout: 5_000 });
     if (performanceMode) {
       await page.evaluate(() => {
         window.__nativeCollectionSearchProbe = { inputAt: null };
@@ -787,24 +1103,38 @@ const assertSignedInCollectionWorkflow = async (context) => {
         }, { capture: true });
       });
     }
-    await collectionSearch.pressSequentially('char');
-    const charizardResult = page.getByRole('button', { name: /Select Charizard/ }).first();
-    await charizardResult.waitFor({ state: 'visible', timeout: 5_000 });
+    await collectionSearch.pressSequentially('Ivysaur');
+    const ivysaurResult = page.getByRole('button', { name: /Select Ivysaur/ }).first();
+    await ivysaurResult.waitFor({ state: 'visible', timeout: 5_000 });
+    await recordInteractionPerformance(page, 'interaction.collection.typed-query');
     if (performanceMode) {
       const searchResultMs = await page.evaluate(() => {
         const inputAt = window.__nativeCollectionSearchProbe?.inputAt;
         return inputAt == null ? null : performance.now() - inputAt;
       });
       console.log(
-        `[collection workflow] dispatched search painted Charizard in ${searchResultMs} ms.`,
+        `[collection workflow] dispatched search painted Ivysaur in ${searchResultMs} ms.`,
       );
       if (searchResultMs == null || searchResultMs > 150) {
         throw new Error(`Collection search did not react within 150 ms: ${searchResultMs}.`);
       }
     }
+    await page.getByText('SHOW EVOLUTIONARY LINE', { exact: true }).click();
+    await page.locator('[data-testid="parity-card-0001-default"]:visible').first()
+      .waitFor({ state: 'visible', timeout: 5_000 });
+    await recordInteractionPerformance(page, 'interaction.collection.evolution-result');
     await page.getByLabel('Clear Pokémon search', { exact: true }).click();
     await page.getByLabel('Close Pokémon search', { exact: true }).click();
     await firstCatalogCard.waitFor({ state: 'visible', timeout: 5_000 });
+
+    await page.getByLabel(/^Sort by /).click();
+    await page.getByTestId('native-collection-sort-menu')
+      .waitFor({ state: 'visible', timeout: 5_000 });
+    await recordInteractionPerformance(page, 'interaction.collection.sort-open');
+    await page.getByText('NAME', { exact: true }).click();
+    await page.getByRole('button', { name: /Select Abomasnow/ }).first()
+      .waitFor({ state: 'visible', timeout: 5_000 });
+    await recordInteractionPerformance(page, 'interaction.collection.sort-result');
 
     // System-tag selection must carry its context into the catalog header and
     // survive an instance-overlay push/back cycle.
@@ -848,6 +1178,7 @@ const assertSignedInCollectionWorkflow = async (context) => {
     await firstTradeCard.waitFor({ state: 'visible', timeout: 10_000 });
     const tagElapsedMs = Date.now() - tagStartedAt;
     console.log(`[collection workflow] For Trade tag painted an interactive result in ${tagElapsedMs} ms.`);
+    await recordInteractionPerformance(page, 'interaction.collection.tag-result');
     if (tagElapsedMs > 750) {
       throw new Error(
         `For Trade tag took ${tagElapsedMs} ms to paint an interactive result; the parity budget is 750 ms.`,
@@ -902,6 +1233,11 @@ const assertSignedInCollectionWorkflow = async (context) => {
       if (motion.maxFrameGapMs == null || motion.maxFrameGapMs > 80) {
         throw new Error(`For Trade motion dropped an excessive frame gap: ${JSON.stringify(motion)}.`);
       }
+      addPerformanceMetric(
+        'interaction.collection.tag-slide',
+        'interaction_ready_ms',
+        motion.firstMotionMs,
+      );
     }
     // Vite intentionally delays only the side-panel/header tag identity until
     // its 300 ms track transition is complete. Keep that parity assertion, but
@@ -909,6 +1245,22 @@ const assertSignedInCollectionWorkflow = async (context) => {
     await page.getByText('(TRADE)', { exact: true }).waitFor({ state: 'visible', timeout: 10_000 });
     await firstTradeCard.click();
     await page.getByTestId('native-instance-overlay').waitFor({ state: 'visible', timeout: 25_000 });
+    const instanceSurface = page.getByTestId('native-instance-swipe-surface');
+    const initialInstanceText = await instanceSurface.evaluate(
+      (surface) => surface.textContent ?? '',
+    );
+    await page.getByTestId('native-instance-next').click();
+    await page.waitForFunction((before) => {
+      const surface = document.querySelector('[data-testid="native-instance-swipe-surface"]');
+      return Boolean(surface?.textContent && surface.textContent !== before);
+    }, initialInstanceText, { timeout: 10_000 });
+    await recordInteractionPerformance(page, 'interaction.instance.navigate');
+    await page.getByTestId('native-instance-previous').click();
+    await page.waitForFunction((before) => {
+      const surface = document.querySelector('[data-testid="native-instance-swipe-surface"]');
+      return surface?.textContent === before;
+    }, initialInstanceText, { timeout: 10_000 });
+    await recordInteractionPerformance(page, 'interaction.instance.navigate');
     await page.goBack({ waitUntil: 'domcontentloaded' });
     await page.getByTestId('native-collection-hub').waitFor({ state: 'visible', timeout: 25_000 });
     await page.getByText('(TRADE)', { exact: true }).waitFor({ state: 'visible', timeout: 10_000 });
@@ -994,6 +1346,7 @@ const assertSignedInSearchWorkflow = async (context) => {
 };
 
 const assertSignedInTradesWorkflow = async (context) => {
+  routeTrade = { ...initialRouteTrade };
   const page = await context.newPage();
   try {
     await page.goto(`${baseUrl}/native/trades`, { timeout: 60_000, waitUntil: 'domcontentloaded' });
@@ -1172,14 +1525,65 @@ const runContext = async (browser, { authState, routes, theme }) => {
   });
   const unhandledApis = new Set();
   await installRoutes(context, unhandledApis);
+  if (performanceMode) {
+    await context.addInitScript(() => {
+      const state = {
+        frameTimes: [],
+        longTasks: [],
+        largestContentfulPaint: null,
+        lastInputAt: null,
+        lastPointerDownAt: null,
+        measurementStartedAt: 0,
+      };
+      Object.defineProperty(window, '__performanceParityProbe', {
+        configurable: true,
+        value: state,
+      });
+      document.addEventListener('pointerdown', () => {
+        state.lastPointerDownAt = performance.now();
+      }, { capture: true });
+      document.addEventListener('click', () => {
+        state.lastInputAt = performance.now();
+      }, { capture: true });
+      document.addEventListener('input', () => {
+        state.lastInputAt = performance.now();
+      }, { capture: true });
+      try {
+        new PerformanceObserver((list) => {
+          for (const entry of list.getEntries()) state.longTasks.push(entry.duration);
+        }).observe({ type: 'longtask', buffered: true });
+      } catch {
+        // React Native Web can run in browsers without the Long Task API.
+      }
+      try {
+        new PerformanceObserver((list) => {
+          const last = list.getEntries().at(-1);
+          if (last) state.largestContentfulPaint = last.startTime;
+        }).observe({ type: 'largest-contentful-paint', buffered: true });
+      } catch {
+        // LCP is diagnostic and optional.
+      }
+      const frame = (timestamp) => {
+        state.frameTimes.push(timestamp);
+        if (state.frameTimes.length > 2_000) state.frameTimes.shift();
+        requestAnimationFrame(frame);
+      };
+      requestAnimationFrame(frame);
+    });
+  }
   await context.addInitScript(({ key, signedIn }) => {
     window.localStorage.clear();
     if (signedIn) window.localStorage.setItem(key, 'native-real-route-refresh-token');
   }, { key: refreshTokenKey, signedIn: authState === 'signed-in' });
   try {
-    for (const routeCase of routes.filter(([path]) => (
-      !workflowsOnly && (!routeFilter || path.includes(routeFilter))
-    ))) {
+    for (const routeCase of routes.filter(([path]) => {
+      const scenarioId = routeScenarioId(path, authState);
+      return !workflowsOnly && (
+        !routeFilter
+        || path.includes(routeFilter)
+        || scenarioId?.includes(routeFilter)
+      );
+    })) {
       const page = await context.newPage();
       try {
         await assertRoute(page, routeCase, theme, authState);
@@ -1217,6 +1621,32 @@ const runContext = async (browser, { authState, routes, theme }) => {
   }
 };
 
+const warmPerformanceBundle = async (browser) => {
+  if (!performanceMode) return;
+  const context = await browser.newContext({
+    colorScheme: 'dark',
+    viewport: { height: 915, width: 412 },
+  });
+  const unhandledApis = new Set();
+  await installRoutes(context, unhandledApis);
+  const page = await context.newPage();
+  try {
+    // Expo's production-mode development server compiles its web bundle on
+    // the first browser request. That server compilation does not exist in an
+    // installed native bundle, so complete it before opening any measured
+    // context. Each recorded route still receives a fresh browser context and
+    // pays its own JavaScript parse, application boot, data, and render work.
+    await page.goto(`${baseUrl}/native`, { timeout: 180_000, waitUntil: 'domcontentloaded' });
+    await page.getByTestId('native-guest-home-screen').waitFor({
+      state: 'visible',
+      timeout: 180_000,
+    });
+    await waitForRouteToSettle(page);
+  } finally {
+    await context.close();
+  }
+};
+
 const run = async () => {
   mkdirSync(artifactDirectory, { recursive: true });
   if (!routeFilter && !workflowsOnly) {
@@ -1225,23 +1655,61 @@ const run = async () => {
     }
   }
   const expo = await startExpo();
-  const browser = await chromium.launch({ headless: true });
+  const browser = await chromium.launch({
+    headless: true,
+    ...(process.env.E2E_CHROMIUM_EXECUTABLE_PATH
+      ? { executablePath: process.env.E2E_CHROMIUM_EXECUTABLE_PATH }
+      : {}),
+  });
   try {
-    for (const theme of workflowsOnly ? ['dark'] : ['dark', 'light']) {
-      if (!workflowsOnly) {
-        await runContext(browser, { authState: 'guest', routes: guestRoutes, theme });
+    await warmPerformanceBundle(browser);
+    for (let repetition = 0; repetition < performanceRepetitions; repetition += 1) {
+      for (const theme of workflowsOnly ? ['dark'] : ['dark', 'light']) {
+        if (!workflowsOnly) {
+          await runContext(browser, { authState: 'guest', routes: guestRoutes, theme });
+        }
+        await runContext(browser, { authState: 'signed-in', routes: signedInRoutes, theme });
       }
-      await runContext(browser, { authState: 'signed-in', routes: signedInRoutes, theme });
     }
   } finally {
     await browser.close();
     expo.kill('SIGTERM');
   }
-  const routeCount = [...guestRoutes, ...signedInRoutes]
-    .filter(([path]) => !routeFilter || path.includes(routeFilter)).length;
+  if (performanceMode) {
+    mkdirSync(dirname(performanceReportPath), { recursive: true });
+    writeFileSync(performanceReportPath, `${JSON.stringify({
+      schemaVersion: 1,
+      implementation: 'native-web',
+      profile: 'browser-proxy',
+      createdAt: new Date().toISOString(),
+      commit: process.env.GITHUB_SHA ?? null,
+      environment: {
+        browser: 'chromium',
+        project: 'react-native-web',
+        viewport: '412x915',
+        repetitions: performanceRepetitions,
+        workloadId: 'canonical-performance-fixtures-v1',
+        catalogEntries: catalog.length,
+        instanceEntries: Object.keys(instances).length,
+        pvpEntries: Object.values(pvpPayload.leagues).reduce(
+          (total, league) => total + league.entries.length,
+          0,
+        ),
+      },
+      samples: performanceSamples,
+    }, null, 2)}\n`);
+    process.stdout.write(`Performance report: ${performanceReportPath}\n`);
+  }
+  const routeCount = [
+    ...guestRoutes.map((route) => ({ authState: 'guest', route })),
+    ...signedInRoutes.map((route) => ({ authState: 'signed-in', route })),
+  ].filter(({ authState, route: [path] }) => {
+    const scenarioId = routeScenarioId(path, authState);
+    return !routeFilter || path.includes(routeFilter) || scenarioId?.includes(routeFilter);
+  }).length;
   process.stdout.write(workflowsOnly
     ? 'Native real-route workflow smoke passed.\n'
-    : `Native real-route smoke passed ${2 * routeCount} route/theme states.\n`);
+    : `Native real-route smoke passed ${2 * routeCount * performanceRepetitions} route/theme states.\n`);
 };
 
 await run();

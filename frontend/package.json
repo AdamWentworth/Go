@@ -8,6 +8,10 @@
   ],
   "scripts": {
     "postinstall": "patch-package",
+    "performance:parity:test": "node --test scripts/performance-parity/*.test.mjs",
+    "performance:parity:compare": "node scripts/performance-parity/compare.mjs",
+    "performance:parity:browser": "node scripts/performance-parity/run-browser-proxy.mjs",
+    "performance:parity:android": "node scripts/performance-parity/run-physical-android.mjs",
     "test": "npm run test:web && npm run test:mobile",
     "test:web": "npm --workspace apps/web run test",
     "test:browsers:web": "npm --workspace apps/web run test:browsers",

@@ -78,6 +78,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
       experienceMode: readMobileExperience(),
       deviceSmokeMode: readBool('EXPO_PUBLIC_DEVICE_SMOKE_MODE', false),
       deviceSmokeColorScheme: readDeviceSmokeColorScheme(),
+      deviceSmokeHost: readEnv('EXPO_PUBLIC_DEVICE_SMOKE_HOST', '10.0.2.2'),
     },
   },
 });

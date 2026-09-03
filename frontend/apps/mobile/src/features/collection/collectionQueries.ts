@@ -72,6 +72,7 @@ export const useNativeCollectionSummaryQuery = (
 
 export const useNativeCollectionSnapshotQuery = (
   userId: string | null,
+  enabled = true,
 ) => {
   const clients = useNativeApiClients();
   const queryClient = useQueryClient();
@@ -85,11 +86,11 @@ export const useNativeCollectionSnapshotQuery = (
       nativeCollectionCache,
       userId ?? '',
     ),
-    enabled: Boolean(userId),
+    enabled: Boolean(userId) && enabled,
     staleTime: 5 * 60_000,
   });
   useEffect(() => {
-    if (!userId) return undefined;
+    if (!userId || !enabled) return undefined;
     const queryKey = nativeCollectionQueryKeys.snapshot(userId);
     if (queryClient.getQueryData(queryKey) !== undefined) return undefined;
     let cancelled = false;
@@ -110,6 +111,6 @@ export const useNativeCollectionSnapshotQuery = (
     return () => {
       cancelled = true;
     };
-  }, [queryClient, userId]);
+  }, [enabled, queryClient, userId]);
   return query;
 };

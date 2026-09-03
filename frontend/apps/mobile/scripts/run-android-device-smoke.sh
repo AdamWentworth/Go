@@ -12,11 +12,18 @@ maestro_bin="${MAESTRO_BIN:-${user_home}/.maestro/bin/maestro}"
 avd_name="${POKEGONEXUS_ANDROID_AVD:-PokeGoNexus_Pixel_8_Pro_API_36}"
 app_id="${POKEGONEXUS_ANDROID_APP_ID:-com.pokegonexus.app}"
 app_scheme="${POKEGONEXUS_ANDROID_APP_SCHEME:-pokegonexus}"
-dev_client_url="${app_scheme}://expo-development-client/?url=http%3A%2F%2F10.0.2.2%3A8091"
 provided_android_apk="${POKEGONEXUS_ANDROID_APK:-${POKEGONEXUS_DEV_CLIENT_APK:-}}"
+requested_device_id="${POKEGONEXUS_ANDROID_DEVICE_ID:-}"
+require_physical="${POKEGONEXUS_ANDROID_REQUIRE_PHYSICAL:-false}"
 adb_bin="${android_sdk_root}/platform-tools/adb"
 emulator_bin="${android_sdk_root}/emulator/emulator"
-artifact_dir="$(mktemp -d /tmp/pokegonexus-android-smoke.XXXXXX)"
+artifact_dir="${POKEGONEXUS_SMOKE_ARTIFACT_DIR:-}"
+if [[ -z "${artifact_dir}" ]]; then
+  artifact_dir="$(mktemp -d /tmp/pokegonexus-android-smoke.XXXXXX)"
+else
+  mkdir -p "${artifact_dir}"
+  artifact_dir="$(cd "${artifact_dir}" && pwd)"
+fi
 color_scheme="${POKEGONEXUS_SMOKE_COLOR_SCHEME:-light}"
 smoke_flow="${POKEGONEXUS_SMOKE_FLOW:-.maestro/native-collection-smoke.yaml}"
 smoke_density="${POKEGONEXUS_SMOKE_DENSITY:-520}"
@@ -27,12 +34,17 @@ smoke_runtime="${POKEGONEXUS_SMOKE_RUNTIME:-dev-client}"
 smoke_network="${POKEGONEXUS_SMOKE_NETWORK:-online}"
 smoke_navigation_mode="${POKEGONEXUS_SMOKE_NAVIGATION_MODE:-system}"
 smoke_performance="${POKEGONEXUS_SMOKE_PERFORMANCE:-false}"
+performance_samples="${POKEGONEXUS_PERFORMANCE_SAMPLES:-5}"
 smoke_skip_apk_install="${POKEGONEXUS_SMOKE_SKIP_APK_INSTALL:-false}"
 metro_pid=""
 metro_pgid=""
 fixture_pid=""
 fixture_pgid=""
 device_id=""
+device_kind=""
+device_smoke_host="10.0.2.2"
+packager_host="10.0.2.2"
+dev_client_url=""
 original_density_override=""
 density_changed="false"
 original_font_scale=""
@@ -91,7 +103,7 @@ cleanup() {
 }
 trap cleanup EXIT
 
-for required in "${adb_bin}" "${emulator_bin}" "${java_home}/bin/java" "${maestro_bin}"; do
+for required in "${adb_bin}" "${java_home}/bin/java" "${maestro_bin}"; do
   if [[ ! -e "${required}" ]]; then
     echo "Missing Android smoke dependency: ${required}" >&2
     exit 1
@@ -143,10 +155,21 @@ case "${smoke_performance}" in
     exit 1
     ;;
 esac
+if [[ ! "${performance_samples}" =~ ^[1-9][0-9]*$ ]]; then
+  echo "POKEGONEXUS_PERFORMANCE_SAMPLES must be a positive integer." >&2
+  exit 1
+fi
 case "${smoke_skip_apk_install}" in
   true|false) ;;
   *)
     echo "Unsupported POKEGONEXUS_SMOKE_SKIP_APK_INSTALL: ${smoke_skip_apk_install} (expected true or false)." >&2
+    exit 1
+    ;;
+esac
+case "${require_physical}" in
+  true|false) ;;
+  *)
+    echo "Unsupported POKEGONEXUS_ANDROID_REQUIRE_PHYSICAL: ${require_physical} (expected true or false)." >&2
     exit 1
     ;;
 esac
@@ -174,7 +197,9 @@ for contract_flow in "${contract_flows[@]}"; do
   fi
 done
 
-if [[ -n "${provided_android_apk}" ]]; then
+if [[ "${smoke_skip_apk_install}" == "true" ]]; then
+  android_apk=""
+elif [[ -n "${provided_android_apk}" ]]; then
   android_apk="${provided_android_apk}"
   if [[ ! -f "${android_apk}" ]]; then
     echo "Provided Android APK does not exist: ${android_apk}" >&2
@@ -226,13 +251,30 @@ else
   fi
   android_apk="${mobile_directory}/android/app/build/outputs/apk/${apk_variant}/app-${apk_variant}.apk"
 fi
-if [[ ! -f "${android_apk}" ]]; then
+if [[ "${smoke_skip_apk_install}" == "false" && ! -f "${android_apk}" ]]; then
   echo "Android APK was not produced: ${android_apk}" >&2
   exit 1
 fi
 
-device_id="$(${adb_bin} devices | awk '/^emulator-[0-9]+[[:space:]]+device/ { print $1; exit }')"
+if [[ -n "${requested_device_id}" ]]; then
+  if ! "${adb_bin}" devices | awk -v requested="${requested_device_id}" \
+    '$1 == requested && $2 == "device" { found = 1 } END { exit(found ? 0 : 1) }'; then
+    echo "Requested Android device is not connected and authorized: ${requested_device_id}" >&2
+    exit 1
+  fi
+  device_id="${requested_device_id}"
+else
+  device_id="$(${adb_bin} devices | awk '$2 == "device" { print $1; exit }')"
+fi
 if [[ -z "${device_id}" ]]; then
+  if [[ "${require_physical}" == "true" ]]; then
+    echo "No authorized physical Android device is connected; refusing to start an emulator." >&2
+    exit 1
+  fi
+  if [[ ! -e "${emulator_bin}" ]]; then
+    echo "Missing Android emulator dependency: ${emulator_bin}" >&2
+    exit 1
+  fi
   nohup "${emulator_bin}" \
     -avd "${avd_name}" \
     -memory "${smoke_memory_mb}" \
@@ -246,6 +288,25 @@ if [[ -z "${device_id}" ]]; then
     >"${artifact_dir}/emulator.log" 2>&1 &
   "${adb_bin}" wait-for-device
   device_id="$(${adb_bin} devices | awk '/^emulator-[0-9]+[[:space:]]+device/ { print $1; exit }')"
+fi
+
+if [[ "${device_id}" == emulator-* ]]; then
+  device_kind="emulator"
+else
+  device_kind="physical"
+fi
+if [[ "${require_physical}" == "true" && "${device_kind}" != "physical" ]]; then
+  echo "Performance release evidence requires a physical device; selected ${device_id}." >&2
+  exit 1
+fi
+if [[ "${device_kind}" == "physical" ]]; then
+  device_smoke_host="127.0.0.1"
+  packager_host="127.0.0.1"
+  dev_client_url="${app_scheme}://expo-development-client/?url=http%3A%2F%2F127.0.0.1%3A8091"
+  "${adb_bin}" -s "${device_id}" reverse tcp:8091 tcp:8091 >/dev/null
+  "${adb_bin}" -s "${device_id}" reverse tcp:8092 tcp:8092 >/dev/null
+else
+  dev_client_url="${app_scheme}://expo-development-client/?url=http%3A%2F%2F10.0.2.2%3A8091"
 fi
 
 for _attempt in $(seq 1 120); do
@@ -292,13 +353,15 @@ fi
 # the web parity suite and the real-device review. Normalize the density for
 # deterministic screenshots and restore the developer's prior override when
 # the smoke exits.
-original_density_override="$(
-  "${adb_bin}" -s "${device_id}" shell wm density \
-    | tr -d '\r' \
-    | awk -F': ' '/Override density/ { print $2; exit }'
-)"
-"${adb_bin}" -s "${device_id}" shell wm density "${smoke_density}" >/dev/null
-density_changed="true"
+if [[ "${device_kind}" == "emulator" ]]; then
+  original_density_override="$(
+    "${adb_bin}" -s "${device_id}" shell wm density \
+      | tr -d '\r' \
+      | awk -F': ' '/Override density/ { print $2; exit }'
+  )"
+  "${adb_bin}" -s "${device_id}" shell wm density "${smoke_density}" >/dev/null
+  density_changed="true"
+fi
 
 original_font_scale="$("${adb_bin}" -s "${device_id}" shell settings get system font_scale | tr -d '\r')"
 original_window_animation_scale="$("${adb_bin}" -s "${device_id}" shell settings get global window_animation_scale | tr -d '\r')"
@@ -411,10 +474,11 @@ if [[ "${smoke_runtime}" == "dev-client" ]]; then
     metro_performance_args+=(--no-dev --minify)
   fi
   setsid env \
-    REACT_NATIVE_PACKAGER_HOSTNAME=10.0.2.2 \
+    REACT_NATIVE_PACKAGER_HOSTNAME="${packager_host}" \
     EXPO_PUBLIC_MOBILE_EXPERIENCE=native-preview \
     EXPO_PUBLIC_DEVICE_SMOKE_MODE=true \
     EXPO_PUBLIC_DEVICE_SMOKE_COLOR_SCHEME="${color_scheme}" \
+    EXPO_PUBLIC_DEVICE_SMOKE_HOST="${device_smoke_host}" \
     CI=1 \
     npx expo start --dev-client --host localhost --port 8091 \
       "${metro_performance_args[@]}" >"${artifact_dir}/metro.log" 2>&1 &
@@ -526,22 +590,40 @@ run_maestro_flow() {
   if [[ "${smoke_performance}" == "true" ]]; then
     "${adb_bin}" -s "${device_id}" shell dumpsys gfxinfo "${app_id}" framestats \
       >"${artifact_dir}/maestro/${output_name}-gfxinfo.txt" 2>&1 || true
+    "${adb_bin}" -s "${device_id}" shell dumpsys meminfo "${app_id}" \
+      >"${artifact_dir}/maestro/${output_name}-meminfo.txt" 2>&1 || true
   fi
   return "${maestro_status}"
 }
 
+successful_smoke_outputs=()
 if [[ -d "${smoke_flow}" ]]; then
   mapfile -t smoke_flows < <(find -L "${smoke_flow}" -maxdepth 1 -type f -name '*.yaml' | sort)
   failed_flows=()
   for flow in "${smoke_flows[@]}"; do
     flow_name="$(basename "${flow}" .yaml)"
-    echo "Running isolated device smoke: ${flow_name}"
-    if ! run_maestro_flow "${flow}" "${flow_name}"; then
-      echo "Retrying isolated device smoke once after an app restart: ${flow_name}"
-      if ! run_maestro_flow "${flow}" "${flow_name}-retry"; then
-        failed_flows+=("${flow_name}")
-      fi
+    flow_samples=1
+    if [[ "${smoke_performance}" == "true" ]]; then
+      flow_samples="${performance_samples}"
     fi
+    for sample_number in $(seq 1 "${flow_samples}"); do
+      output_name="${flow_name}"
+      if (( flow_samples > 1 )); then
+        output_name="${flow_name}-sample-${sample_number}"
+      fi
+      echo "Running isolated device smoke: ${output_name}"
+      if run_maestro_flow "${flow}" "${output_name}"; then
+        successful_smoke_outputs+=("${output_name}")
+      else
+        retry_name="${output_name}-retry"
+        echo "Retrying isolated device smoke once after an app restart: ${output_name}"
+        if run_maestro_flow "${flow}" "${retry_name}"; then
+          successful_smoke_outputs+=("${retry_name}")
+        else
+          failed_flows+=("${output_name}")
+        fi
+      fi
+    done
   done
   if (( ${#failed_flows[@]} > 0 )); then
     echo "Android device smoke failures: ${failed_flows[*]}" >&2
@@ -550,10 +632,24 @@ if [[ -d "${smoke_flow}" ]]; then
   fi
 else
   flow_name="$(basename "${smoke_flow}" .yaml)"
-  if ! run_maestro_flow "${smoke_flow}" "${flow_name}"; then
-    echo "Retrying device smoke once after an app restart: ${flow_name}"
-    run_maestro_flow "${smoke_flow}" "${flow_name}-retry"
+  flow_samples=1
+  if [[ "${smoke_performance}" == "true" ]]; then
+    flow_samples="${performance_samples}"
   fi
+  for sample_number in $(seq 1 "${flow_samples}"); do
+    output_name="${flow_name}"
+    if (( flow_samples > 1 )); then
+      output_name="${flow_name}-sample-${sample_number}"
+    fi
+    if run_maestro_flow "${smoke_flow}" "${output_name}"; then
+      successful_smoke_outputs+=("${output_name}")
+    else
+      echo "Retrying device smoke once after an app restart: ${output_name}"
+      retry_name="${output_name}-retry"
+      run_maestro_flow "${smoke_flow}" "${retry_name}"
+      successful_smoke_outputs+=("${retry_name}")
+    fi
+  done
 fi
 
 if [[ "${smoke_performance}" == "true" ]]; then
@@ -570,11 +666,51 @@ if [[ "${smoke_performance}" == "true" ]]; then
     "${artifact_dir}/graphics-runtime.txt" "${artifact_dir}/emulator.log" 2>/dev/null; then
     echo "Android performance smoke is software-rendered; gfxinfo is diagnostic only."
   fi
-  mapfile -t performance_device_logs < <(
-    find "${artifact_dir}/maestro" -type f -name 'device-logcat.txt' | sort
-  )
+  performance_device_logs=()
+  performance_gfx_logs=()
+  performance_memory_logs=()
+  for successful_output in "${successful_smoke_outputs[@]}"; do
+    while IFS= read -r performance_log; do
+      performance_device_logs+=("${performance_log}")
+    done < <(find "${artifact_dir}/maestro/${successful_output}" -type f -name 'device-logcat.txt' | sort)
+    performance_gfx_logs+=("${artifact_dir}/maestro/${successful_output}-gfxinfo.txt")
+    performance_memory_logs+=("${artifact_dir}/maestro/${successful_output}-meminfo.txt")
+  done
   node "${mobile_directory}/scripts/assert-native-collection-performance.mjs" \
     "${performance_device_logs[@]}"
+  performance_profile="android-diagnostic"
+  if [[ "${device_kind}" == "physical" && "${smoke_runtime}" == "standalone" ]]; then
+    performance_profile="physical-android"
+  fi
+  refresh_rate="$(${adb_bin} -s "${device_id}" shell dumpsys display 2>/dev/null \
+    | tr -d '\r' \
+    | sed -n -E 's/.*refreshRate[=: ]+([0-9]+([.][0-9]+)?).*/\1/p' \
+    | head -n 1)"
+  refresh_rate="${refresh_rate:-60}"
+  report_args=(
+    --output "${artifact_dir}/native-android-performance.json"
+    --profile "${performance_profile}"
+    --device-id "${device_id}"
+    --device-kind "${device_kind}"
+    --runtime "${smoke_runtime}"
+    --repetitions "${performance_samples}"
+    --refresh-hz "${refresh_rate}"
+    --workload-id "canonical-performance-fixtures-v1"
+    --catalog-entries "1097"
+    --instance-entries "180"
+    --pvp-entries "5"
+  )
+  for performance_log in "${performance_device_logs[@]}"; do
+    report_args+=(--logcat "${performance_log}")
+  done
+  for performance_gfx in "${performance_gfx_logs[@]}"; do
+    report_args+=(--gfxinfo "${performance_gfx}")
+  done
+  for performance_memory in "${performance_memory_logs[@]}"; do
+    report_args+=(--meminfo "${performance_memory}")
+  done
+  node "${mobile_directory}/scripts/build-android-performance-report.mjs" \
+    "${report_args[@]}"
 fi
 
 mapfile -t full_window_gradient_screenshots < <(

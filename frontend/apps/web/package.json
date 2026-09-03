@@ -45,6 +45,8 @@
     "test:browsers": "npm run test:browsers:functional && npm run test:browsers:performance",
     "test:browsers:functional": "node scripts/run-playwright-clean-env.mjs test --grep-invert @performance --workers 2",
     "test:browsers:performance": "node scripts/run-playwright-clean-env.mjs test --grep @performance --project chromium-desktop --workers 1",
+    "performance:parity:report": "node scripts/run-playwright-clean-env.mjs test tests/browser/performance-parity-report.spec.ts --project mobile-chrome --workers 1 --reporter=list",
+    "performance:parity:report:android": "cross-env POKEGONEXUS_PERFORMANCE_PROFILE=physical-android node scripts/run-playwright-clean-env.mjs test tests/browser/performance-parity-report.spec.ts --project mobile-chrome --workers 1 --reporter=list",
     "test:browsers:ci": "node scripts/run-playwright-clean-env.mjs test --reporter=list",
     "test:browsers:safari": "node scripts/run-playwright-clean-env.mjs test --project=webkit-desktop --project=mobile-safari --workers=2",
     "test:browsers:headed": "node scripts/run-playwright-clean-env.mjs test --headed",

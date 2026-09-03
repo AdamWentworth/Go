@@ -23,6 +23,11 @@ import { beginNativeUiInteraction } from '../../../interaction/nativeUiInteracti
 export type NativeOverlaySwipeDirection = 'previous' | 'next';
 
 const { instanceOverlaySwipe } = collectionExperienceParityContract;
+// Fire the native route handoff just ahead of the exit animation's final
+// callback. Vite's setTimeout runs independently of CSS; Android/React Native
+// otherwise pays a JS callback hop after the same nominal 120 ms and loses a
+// few milliseconds at the p95 despite showing identical motion.
+const NATIVE_ROUTE_HANDOFF_LEAD_MS = 4;
 const ROUTE_HANDOFF_TIMEOUT_MS = 1000;
 const swipeEasing = Easing.bezier(...instanceOverlaySwipe.transitionEasing);
 const backgroundEasing = Easing.bezier(0.25, 0.1, 0.25, 1);
@@ -342,7 +347,7 @@ export const useNativeOverlaySwipeNavigation = ({
     // let the native transform finish independently on the UI thread.
     exitHandoffTimerRef.current = setTimeout(
       handOffRoute,
-      instanceOverlaySwipe.swapDelayMs,
+      Math.max(0, instanceOverlaySwipe.swapDelayMs - NATIVE_ROUTE_HANDOFF_LEAD_MS),
     );
     animation.start(({ finished }) => {
       if (activeAnimationRef.current === animation) activeAnimationRef.current = null;

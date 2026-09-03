@@ -1,5 +1,5 @@
 import { useRouter } from 'expo-router';
-import { useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { NativePvpScreen } from '../../screens/NativePvpScreen';
 import { useNativeSession } from '../../auth/NativeSessionContext';
 import { runtimeConfig } from '../../config/runtimeConfig';
@@ -14,15 +14,30 @@ export default function NativePvpRoute() {
   const router = useRouter();
   const session = useNativeSession();
   const [menu, setMenu] = useState(false);
-  const catalogQuery = useNativeToolCatalogQuery();
-  const movesQuery = useNativeMovesDataQuery();
+  const [catalogRequested, setCatalogRequested] = useState(false);
+  const [ownedDataRequested, setOwnedDataRequested] = useState(false);
+  const catalogQuery = useNativeToolCatalogQuery(catalogRequested);
+  const movesQuery = useNativeMovesDataQuery(ownedDataRequested);
   const rankingsQuery = useNativePvpDataQuery();
-  const collectionQuery = useNativeCollectionSnapshotQuery(session.user?.user_id ?? null);
+  const collectionQuery = useNativeCollectionSnapshotQuery(
+    session.user?.user_id ?? null,
+    ownedDataRequested,
+  );
+  const requestCatalog = useCallback(() => setCatalogRequested(true), []);
+  const requestOwnedData = useCallback(() => {
+    setCatalogRequested(true);
+    setOwnedDataRequested(true);
+  }, []);
   const catalog = useMemo(
     () => hydrateNativeToolCatalog(catalogQuery.data ?? [], movesQuery.data ?? []),
     [catalogQuery.data, movesQuery.data],
   );
-  const error = [catalogQuery.error, movesQuery.error, rankingsQuery.error, collectionQuery.error]
+  const error = [
+    catalogRequested ? catalogQuery.error : null,
+    ownedDataRequested ? movesQuery.error : null,
+    rankingsQuery.error,
+    ownedDataRequested ? collectionQuery.error : null,
+  ]
     .find((value): value is Error => value instanceof Error)?.message ?? null;
   const navigate = (path: string) => {
     setMenu(false);
@@ -39,10 +54,20 @@ export default function NativePvpRoute() {
         catalog={catalog}
         error={error}
         instances={collectionQuery.data?.instances ?? {}}
-        isLoading={catalogQuery.isPending || movesQuery.isPending || rankingsQuery.isPending || Boolean(session.user && collectionQuery.isPending)}
+        isLoading={rankingsQuery.isPending
+          || Boolean(catalogRequested && catalogQuery.isPending)
+          || Boolean(ownedDataRequested && movesQuery.isPending)
+          || Boolean(session.user && ownedDataRequested && collectionQuery.isPending)}
         onBack={() => router.canGoBack() ? router.back() : router.replace('/native')}
+        onCatalogNeeded={requestCatalog}
         onMethodology={() => router.push('/native/pvp-methodology')}
-        onRetry={() => { void catalogQuery.refetch(); void movesQuery.refetch(); void rankingsQuery.refetch(); if (session.user) void collectionQuery.refetch(); }}
+        onOwnedDataNeeded={requestOwnedData}
+        onRetry={() => {
+          void rankingsQuery.refetch();
+          if (catalogRequested) void catalogQuery.refetch();
+          if (ownedDataRequested) void movesQuery.refetch();
+          if (session.user && ownedDataRequested) void collectionQuery.refetch();
+        }}
         payload={rankingsQuery.data ?? null}
         signedIn={Boolean(session.user)}
       />

@@ -31,6 +31,7 @@ type RuntimeMobileConfig = {
   experienceMode: MobileExperienceMode;
   deviceSmokeMode: boolean;
   deviceSmokeColorScheme: 'light' | 'dark' | null;
+  deviceSmokeHost: string;
 };
 
 type ExpoExtra = {
@@ -41,6 +42,7 @@ type ExpoExtra = {
     experienceMode?: unknown;
     deviceSmokeMode?: unknown;
     deviceSmokeColorScheme?: unknown;
+    deviceSmokeHost?: unknown;
   };
 };
 
@@ -205,5 +207,6 @@ export const runtimeConfig: {
       false,
     ),
     deviceSmokeColorScheme: sanitizeColorScheme(mobileOverrides.deviceSmokeColorScheme),
+    deviceSmokeHost: sanitizeString(mobileOverrides.deviceSmokeHost, '10.0.2.2'),
   },
 };

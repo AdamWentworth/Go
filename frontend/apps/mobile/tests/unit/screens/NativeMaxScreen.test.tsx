@@ -64,4 +64,39 @@ describe('NativeMaxScreen', () => {
     expect(screen.getByText('Attack index')).toBeTruthy();
     expect(screen.getByText('Max power')).toBeTruthy();
   });
+
+  it('matches Vite by rendering 18 rankings initially and paging the remainder', () => {
+    const manyCatalog = Array.from({ length: 19 }, (_, index) => {
+      const pokemonId = index + 1;
+      return {
+        ...catalog[0],
+        image_url: `/${pokemonId}.png`,
+        max: [{
+          pokemon_id: pokemonId,
+          dynamax: 1,
+          gigantamax: 0,
+          dynamax_release_date: null,
+          gigantamax_release_date: null,
+        }],
+        name: `Maxmon ${pokemonId}`,
+        pokedex_number: pokemonId,
+        pokemon_id: pokemonId,
+      };
+    }) as BasePokemon[];
+    render(
+      <SafeAreaProvider initialMetrics={{ frame: { x: 0, y: 0, width: 390, height: 844 }, insets: { top: 24, right: 0, bottom: 20, left: 0 } }}>
+        <NativeMaxScreen
+          assetBaseUrl="https://pokegonexus.com"
+          catalog={manyCatalog}
+          onBack={jest.fn()}
+          onOpenPokemon={jest.fn()}
+          onRetry={jest.fn()}
+          signedIn={false}
+        />
+      </SafeAreaProvider>,
+    );
+
+    fireEvent.press(screen.getByLabelText('Show 1 more Max rankings'));
+    expect(screen.queryByLabelText('Show 1 more Max rankings')).toBeNull();
+  });
 });

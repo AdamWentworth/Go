@@ -41,7 +41,9 @@ type Props = {
   instances?: Record<string, PokemonInstance>;
   isLoading?: boolean;
   onBack: () => void;
+  onCatalogNeeded?: () => void;
   onMethodology: () => void;
+  onOwnedDataNeeded?: () => void;
   onRetry: () => void;
   payload: PokemonPvPRankingsPayload | null;
   persistTeamBuilder?: boolean;
@@ -230,7 +232,9 @@ export const NativePvpScreen = ({
   instances = {},
   isLoading = false,
   onBack: _onBack,
+  onCatalogNeeded,
   onMethodology,
+  onOwnedDataNeeded,
   onRetry,
   payload,
   persistTeamBuilder = true,
@@ -257,6 +261,10 @@ export const NativePvpScreen = ({
   const [role, setRole] = useState<NativePvpRole>("overall");
   const [query, setQuery] = useState("");
   const [expanded, setExpanded] = useState<string | null>(null);
+  useEffect(() => {
+    if (workspace === "iv-rank" || scope === "owned") onCatalogNeeded?.();
+    if (scope === "owned") onOwnedDataNeeded?.();
+  }, [onCatalogNeeded, onOwnedDataNeeded, scope, workspace]);
   const deferredFormat = useDeferredValue(format);
   const deferredMechanics = useDeferredValue(mechanics);
   const deferredQuery = useDeferredValue(query);

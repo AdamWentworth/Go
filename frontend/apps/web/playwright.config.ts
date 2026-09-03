@@ -98,6 +98,9 @@ export default defineConfig({
     navigationTimeout: 30_000,
     launchOptions: {
       env: inheritedEnv,
+      ...(process.env.E2E_CHROMIUM_EXECUTABLE_PATH
+        ? { executablePath: process.env.E2E_CHROMIUM_EXECUTABLE_PATH }
+        : {}),
     },
   },
   webServer: shouldStartWebServer

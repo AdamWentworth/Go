@@ -1,0 +1,112 @@
+import assert from 'node:assert/strict';
+import { execFileSync, spawnSync } from 'node:child_process';
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { resolve } from 'node:path';
+import test from 'node:test';
+
+const frontendDirectory = resolve(import.meta.dirname, '../..');
+const builder = resolve(
+  frontendDirectory,
+  'apps/mobile/scripts/build-android-performance-report.mjs',
+);
+
+test('builds interaction, frame, jank, and memory evidence from Android diagnostics', () => {
+  const directory = mkdtempSync(resolve(tmpdir(), 'pokegonexus-performance-report-'));
+  try {
+    const logcat = resolve(directory, 'device-logcat.txt');
+    const gfxinfo = resolve(directory, 'flow-gfxinfo.txt');
+    const meminfo = resolve(directory, 'flow-meminfo.txt');
+    const output = resolve(directory, 'report.json');
+    writeFileSync(logcat, [
+      '[mobile:ui-perf] action_menu_surface_painted {',
+      '  interactionLatencyMs: 42,',
+      '}',
+      '[mobile:ui-perf] theme_visible_palette_committed {',
+      '  interactionLatencyMs: 17,',
+      '}',
+      '[mobile:ui-perf] instance_overlay_target_committed {',
+      '  interactionLatencyMs: 116,',
+      '}',
+      '[mobile:ui-perf] global_touch_next_frame {',
+      '  interactionLatencyMs: 8,',
+      '}',
+    ].join('\n'));
+    writeFileSync(gfxinfo, [
+      '---PROFILEDATA---',
+      'Flags,IntendedVsync,FrameCompleted',
+      '0,1000000000,1010000000',
+      '0,2000000000,2020000000',
+      '---PROFILEDATA---',
+    ].join('\n'));
+    writeFileSync(meminfo, 'TOTAL PSS: 123,456 KB\n');
+
+    execFileSync(process.execPath, [
+      builder,
+      '--output', output,
+      '--profile', 'physical-android',
+      '--device-id', 'physical-test-device',
+      '--device-kind', 'physical',
+      '--runtime', 'standalone',
+      '--repetitions', '5',
+      '--refresh-hz', '60',
+      '--workload-id', 'canonical-performance-fixtures-v1',
+      '--catalog-entries', '1097',
+      '--instance-entries', '180',
+      '--pvp-entries', '5',
+      '--logcat', logcat,
+      '--gfxinfo', gfxinfo,
+      '--meminfo', meminfo,
+    ]);
+    const report = JSON.parse(readFileSync(output, 'utf8'));
+    assert.equal(report.profile, 'physical-android');
+    assert.equal(report.implementation, 'native-android');
+    assert.equal(report.environment.runtime, 'standalone');
+    assert.equal(report.environment.repetitions, 5);
+    assert.equal(report.environment.instanceEntries, 180);
+    assert.ok(report.samples.some(({ scenarioId, metric, value }) => (
+      scenarioId === 'interaction.action-menu.open'
+        && metric === 'interaction_ready_ms'
+        && value === 42
+    )));
+    assert.ok(report.samples.some(({ scenarioId, metric, value }) => (
+      scenarioId === 'interaction.theme.toggle'
+        && metric === 'interaction_ready_ms'
+        && value === 17
+    )));
+    assert.ok(report.samples.some(({ scenarioId, metric, value }) => (
+      scenarioId === 'interaction.instance.navigate'
+        && metric === 'interaction_ready_ms'
+        && value === 116
+    )));
+    assert.ok(report.samples.some(({ metric, value }) => (
+      metric === 'frame_time_p95_ms' && value === 20
+    )));
+    assert.ok(report.samples.some(({ metric, value }) => (
+      metric === 'janky_frames_percent' && value === 50
+    )));
+    assert.ok(report.samples.some(({ metric, value }) => (
+      metric === 'memory_pss_bytes' && value === 123_456 * 1024
+    )));
+  } finally {
+    rmSync(directory, { recursive: true, force: true });
+  }
+});
+
+test('rejects development-client data as physical release evidence', () => {
+  const directory = mkdtempSync(resolve(tmpdir(), 'pokegonexus-performance-report-'));
+  try {
+    const result = spawnSync(process.execPath, [
+      builder,
+      '--output', resolve(directory, 'report.json'),
+      '--profile', 'physical-android',
+      '--device-id', 'physical-test-device',
+      '--device-kind', 'physical',
+      '--runtime', 'dev-client',
+    ], { encoding: 'utf8' });
+    assert.equal(result.status, 2);
+    assert.match(result.stderr, /standalone release APK/);
+  } finally {
+    rmSync(directory, { recursive: true, force: true });
+  }
+});

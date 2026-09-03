@@ -20,9 +20,14 @@ export const nativeToolQueryKeys = {
   rankings: ['native', 'tools', 'rankings'] as const,
 };
 
-export const useNativeToolCatalogQuery = () => {
+export const useNativeToolCatalogQuery = (enabled = true) => {
   const { pokemon } = useNativeApiClients();
-  return useQuery({ queryKey: nativeToolQueryKeys.catalog, queryFn: () => getNativeToolCatalog(pokemon), staleTime: 24 * 60 * 60_000 });
+  return useQuery({
+    queryKey: nativeToolQueryKeys.catalog,
+    queryFn: () => getNativeToolCatalog(pokemon),
+    enabled,
+    staleTime: 24 * 60 * 60_000,
+  });
 };
 
 export const useNativeRaidDataQuery = () => {
@@ -35,9 +40,14 @@ export const useNativeMaxDataQuery = () => {
   return useQuery({ queryKey: nativeToolQueryKeys.max, queryFn: () => getNativeMaxData(pokemon), staleTime: 24 * 60 * 60_000 });
 };
 
-export const useNativeMovesDataQuery = () => {
+export const useNativeMovesDataQuery = (enabled = true) => {
   const { pokemon } = useNativeApiClients();
-  return useQuery({ queryKey: nativeToolQueryKeys.moves, queryFn: () => getNativeMovesData(pokemon), staleTime: 24 * 60 * 60_000 });
+  return useQuery({
+    queryKey: nativeToolQueryKeys.moves,
+    queryFn: () => getNativeMovesData(pokemon),
+    enabled,
+    staleTime: 24 * 60 * 60_000,
+  });
 };
 
 export const useNativePokedexSpeciesQuery = () => {

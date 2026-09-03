@@ -210,9 +210,16 @@ const NativeThemeSwitch = ({
   const slideRef = useRef<Animated.CompositeAnimation | null>(null);
   const rotationRef = useRef<Animated.CompositeAnimation | null>(null);
   const targetDarkRef = useRef(dark);
+  const pressStartedAtRef = useRef<number | null>(null);
 
   const animateToTheme = useCallback((nextDark: boolean) => {
     targetDarkRef.current = nextDark;
+    const pressStartedAt = pressStartedAtRef.current;
+    pressStartedAtRef.current = null;
+    markNativeUiPerformance('theme_switch_animation_started', {
+      interactionLatencyMs: pressStartedAt === null ? undefined : Date.now() - pressStartedAt,
+      targetTheme: nextDark ? 'dark' : 'light',
+    });
     // Vite does not declare a background-color transition on .sun-moon.
     orbColorProgress.setValue(nextDark ? 1 : 0);
     slideRef.current?.stop();
@@ -265,9 +272,6 @@ const NativeThemeSwitch = ({
     });
     slideRef.current.start();
     rotationRef.current.start();
-    markNativeUiPerformance('theme_switch_animation_started', {
-      targetTheme: nextDark ? 'dark' : 'light',
-    });
   }, [active, decorationProgress, moonRotation, orbColorProgress, progress, reduceMotion]);
 
   useLayoutEffect(() => {
@@ -350,6 +354,7 @@ const NativeThemeSwitch = ({
 
   const handlePress = () => {
     const nextDark = !targetDarkRef.current;
+    pressStartedAtRef.current = Date.now();
     onPress();
     // Give the control immediate native-thread feedback. The matching prop
     // update from the menu's optimistic palette will not restart this motion.
@@ -579,6 +584,7 @@ export const NativeActionMenu = ({
   const closingRef = useRef(false);
   const menuInteractionReleaseRef = useRef<(() => void) | null>(null);
   const themeCommitFrameRef = useRef<number | null>(null);
+  const themeSwitchStartedAtRef = useRef<number | null>(null);
   const previousSchemeRef = useRef(scheme);
   const displayedScheme = optimisticScheme ?? scheme;
   const previousDisplayedSchemeRef = useRef(displayedScheme);
@@ -613,7 +619,12 @@ export const NativeActionMenu = ({
   useLayoutEffect(() => {
     if (previousDisplayedSchemeRef.current === displayedScheme) return;
     previousDisplayedSchemeRef.current = displayedScheme;
-    markNativeUiPerformance('theme_visible_palette_committed', { theme: displayedScheme });
+    const startedAt = themeSwitchStartedAtRef.current;
+    themeSwitchStartedAtRef.current = null;
+    markNativeUiPerformance('theme_visible_palette_committed', {
+      interactionLatencyMs: startedAt === null ? undefined : Date.now() - startedAt,
+      theme: displayedScheme,
+    });
   }, [displayedScheme]);
 
   useEffect(() => () => {
@@ -747,6 +758,7 @@ export const NativeActionMenu = ({
   }, [close, supportOpen, visible]);
   const toggleTheme = () => {
     const nextTheme = light ? 'dark' : 'light';
+    themeSwitchStartedAtRef.current = Date.now();
     markNativeUiPerformance('theme_switch_pressed', {
       currentTheme: displayedScheme,
       reduceMotion,

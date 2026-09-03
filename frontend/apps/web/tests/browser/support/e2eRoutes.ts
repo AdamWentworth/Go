@@ -14,6 +14,7 @@ export type E2eRouteOptions = {
   friendsOverview?: unknown;
   trainerPreferences?: unknown;
   userInstances?: unknown;
+  syncInstances?: Record<string, unknown>;
   publicUser?: unknown;
   userOverview?: unknown;
   trades?: unknown;
@@ -660,7 +661,13 @@ export async function installE2eRoutes(page: Page, options: E2eRouteOptions = {}
 
   for (const pathPattern of ['**/api/users/instances/sync**', '**/__e2e/users/instances/sync**']) {
     await page.route(pathPattern, async (route) => {
-      await fulfillJson(route, { checkpoint: 'e2e-checkpoint', not_modified: true });
+      await fulfillJson(route, options.syncInstances
+        ? {
+            checkpoint: 'e2e-performance-checkpoint',
+            instances: options.syncInstances,
+            not_modified: false,
+          }
+        : { checkpoint: 'e2e-checkpoint', not_modified: true });
     });
   }
 

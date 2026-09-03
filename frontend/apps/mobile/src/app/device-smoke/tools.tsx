@@ -26,7 +26,7 @@ import { NativeRouteActionMenu } from "../../components/NativeRouteActionMenu";
 const ASSET_BASE_URL = runtimeConfig.api.frontendAppUrl;
 const CATALOG_FIXTURE_URL = Platform.OS === "web"
   ? "http://127.0.0.1:8092/pokemons.json"
-  : "http://10.0.2.2:8092/pokemons.json";
+  : `http://${runtimeConfig.mobile.deviceSmokeHost}:8092/pokemons.json`;
 const imageUri = `${ASSET_BASE_URL}/images/shiny/shiny_pokemon_1.png`;
 const fastMove = {
   move_id: 1,

@@ -66,7 +66,7 @@ export const NativeRaidScreen = ({
   const light = useNativeColorScheme() === 'light';
   const insets = useSafeAreaInsets();
   const [view, setView] = useState<ViewMode>('rankings');
-  const [scope, setScope] = useState<NativeRosterScope>(signedIn ? 'owned' : 'catalog');
+  const [scopeOverride, setScope] = useState<NativeRosterScope | null>(null);
   const [selectedType, setSelectedType] = useState('');
   const [query, setQuery] = useState('');
   const [bossId, setBossId] = useState('');
@@ -92,7 +92,10 @@ export const NativeRaidScreen = ({
   const deferredEffectiveSettings = useDeferredValue(effectiveSettings);
   const deferredQuery = useDeferredValue(query);
   const deferredRankingMetric = useDeferredValue(rankingMetric);
-  const deferredScope = useDeferredValue(scope);
+  // Cold starts render once while the persisted session is restoring. Derive
+  // the correct signed-in default until the user explicitly changes it.
+  const effectiveScope = signedIn ? scopeOverride ?? 'owned' : 'catalog';
+  const deferredScope = useDeferredValue(effectiveScope);
   const deferredSelectedType = useDeferredValue(selectedType);
   const deferredSortDirection = useDeferredValue(sortDirection);
   const bosses = useMemo(() => buildNativeRaidBosses(catalog), [catalog]);
@@ -106,7 +109,6 @@ export const NativeRaidScreen = ({
     () => buildNativeRaidRosterSummary(catalog, instances),
     [catalog, instances],
   );
-  const effectiveScope = signedIn ? scope : 'catalog';
   const bossCounterKey = `${selectedBoss?.id ?? ''}:${effectiveScope}:${JSON.stringify(effectiveSettings)}`;
 
   useEffect(() => {

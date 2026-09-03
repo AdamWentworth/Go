@@ -50,6 +50,7 @@ type Props = {
 type MaxView = 'rankings' | 'bosses';
 
 const EMPTY_MAX_ROLE_CANDIDATES = { damage: [], healing: [], tank: [] };
+const MAX_RESULTS_PAGE_SIZE = 18;
 
 const absoluteUri = (base: string, value?: string | null) => {
   if (!value) return undefined;
@@ -94,14 +95,13 @@ export const NativeMaxScreen = ({
   const light = useNativeColorScheme() === 'light';
   const insets = useSafeAreaInsets();
   const [view, setView] = useState<MaxView>(initialView);
-  const [scope, setScope] = useState<NativeRosterScope>(
-    signedIn ? initialScope ?? 'owned' : 'catalog',
-  );
+  const [scopeOverride, setScope] = useState<NativeRosterScope | null>(null);
   const [role, setRole] = useState<NativeMaxRole>(initialRole);
   const [selectedType, setSelectedType] = useState(initialSelectedType);
   const [query, setQuery] = useState('');
   const [bossId, setBossId] = useState(initialBossId);
   const [methodOpen, setMethodOpen] = useState(false);
+  const [pagination, setPagination] = useState({ key: '', limit: MAX_RESULTS_PAGE_SIZE });
 
   // Canonical Max eligibility also includes special attackers such as crowned
   // Zacian/Zamazenta and Eternatus; they are not guaranteed to carry max[].
@@ -109,7 +109,12 @@ export const NativeMaxScreen = ({
   const selectedBoss = bossVariants.find((boss) => boss.variant_id === bossId)
     ?? bossVariants[0]
     ?? null;
-  const effectiveScope = signedIn ? scope : 'catalog';
+  // Session restoration is asynchronous on a cold app start. Derive the
+  // route default until the user explicitly overrides it, so restoration does
+  // not require a second cascading state commit.
+  const effectiveScope = signedIn
+    ? scopeOverride ?? initialScope ?? 'owned'
+    : 'catalog';
   const deferredBoss = useDeferredValue(selectedBoss);
   const deferredQuery = useDeferredValue(query);
   const deferredRole = useDeferredValue(role);
@@ -145,8 +150,16 @@ export const NativeMaxScreen = ({
       entry.fastMove?.name,
       entry.chargedMove?.name,
       ...entry.types,
-    ].some((value) => value?.toLocaleLowerCase().includes(normalized))).slice(0, 50);
+    ].some((value) => value?.toLocaleLowerCase().includes(normalized)));
   }, [catalog, deferredBoss, deferredQuery, deferredRole, deferredScope, deferredSelectedType, instances, view]);
+  const paginationKey = [bossId, query, role, effectiveScope, selectedType, view].join('\u0000');
+  const visibleLimit = pagination.key === paginationKey
+    ? pagination.limit
+    : MAX_RESULTS_PAGE_SIZE;
+  const visibleRankings = useMemo(
+    () => rankings.slice(0, visibleLimit),
+    [rankings, visibleLimit],
+  );
 
   const switchView = (next: MaxView) => {
     setView(next);
@@ -361,27 +374,45 @@ export const NativeMaxScreen = ({
     </View>
   );
 
+  const remainingRankings = rankings.length - visibleRankings.length;
   const footer = (
-    <Pressable
-      accessibilityRole="button"
-      accessibilityState={{ expanded: methodOpen }}
-      onPress={() => setMethodOpen((current) => !current)}
-      style={styles.method}
-    >
-      <Text style={[styles.methodTitle, light && styles.textLight]}>▸  How Max roles are ranked</Text>
-      {methodOpen ? (
-        <Text style={[styles.methodCopy, light && styles.mutedLight]}>
-          Damage uses Attack, active Max or G-Max power, STAB, and effectiveness. Tank uses effective bulk and boss pressure. Healing uses the active Max Spirit level and team recovery.
-        </Text>
+    <View style={styles.footer}>
+      {remainingRankings > 0 ? (
+        <Pressable
+          accessibilityLabel={`Show ${Math.min(MAX_RESULTS_PAGE_SIZE, remainingRankings)} more Max rankings`}
+          accessibilityRole="button"
+          onPress={() => setPagination({
+            key: paginationKey,
+            limit: Math.min(rankings.length, visibleLimit + MAX_RESULTS_PAGE_SIZE),
+          })}
+          style={[styles.showMore, light && styles.controlLight]}
+        >
+          <Text style={[styles.showMoreText, light && styles.textLight]}>
+            Show {Math.min(MAX_RESULTS_PAGE_SIZE, remainingRankings)} more
+          </Text>
+        </Pressable>
       ) : null}
-    </Pressable>
+      <Pressable
+        accessibilityRole="button"
+        accessibilityState={{ expanded: methodOpen }}
+        onPress={() => setMethodOpen((current) => !current)}
+        style={styles.method}
+      >
+        <Text style={[styles.methodTitle, light && styles.textLight]}>▸  How Max roles are ranked</Text>
+        {methodOpen ? (
+          <Text style={[styles.methodCopy, light && styles.mutedLight]}>
+            Damage uses Attack, active Max or G-Max power, STAB, and effectiveness. Tank uses effective bulk and boss pressure. Healing uses the active Max Spirit level and team recovery.
+          </Text>
+        ) : null}
+      </Pressable>
+    </View>
   );
 
   return (
     <View style={[styles.root, light && styles.rootLight]} testID="native-max-screen">
       <FlatList
         contentContainerStyle={{ paddingHorizontal: 7, paddingTop: 3 + insets.top, paddingBottom: 96 + insets.bottom }}
-        data={rankings}
+        data={visibleRankings}
         keyExtractor={(entry) => entry.id}
         keyboardShouldPersistTaps="always"
         nestedScrollEnabled
@@ -405,6 +436,9 @@ export const NativeMaxScreen = ({
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: '#090d0d' },
   rootLight: { backgroundColor: '#f8fff9' },
+  footer: { gap: 9 },
+  showMore: { minHeight: 44, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: '#405354', borderRadius: 12, backgroundColor: '#11191a' },
+  showMoreText: { color: '#edf6f5', fontSize: 11, fontWeight: '900', textTransform: 'uppercase' },
   textLight: { color: '#102829' },
   mutedLight: { color: '#617576' },
   accentLight: { color: '#08766b' },

@@ -24,6 +24,19 @@
         "EXPO_PUBLIC_MOBILE_EXPERIENCE": "native-preview"
       }
     },
+    "performance-android": {
+      "distribution": "internal",
+      "android": {
+        "buildType": "apk"
+      },
+      "env": {
+        "EXPO_PUBLIC_APP_ENV": "preview",
+        "EXPO_PUBLIC_DEVICE_SMOKE_MODE": "true",
+        "EXPO_PUBLIC_DEVICE_SMOKE_COLOR_SCHEME": "dark",
+        "EXPO_PUBLIC_DEVICE_SMOKE_HOST": "127.0.0.1",
+        "EXPO_PUBLIC_MOBILE_EXPERIENCE": "native-preview"
+      }
+    },
     "production": {
       "env": {
         "EXPO_PUBLIC_APP_ENV": "production",

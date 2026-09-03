@@ -442,6 +442,7 @@ export const NativePokemonOrganizerSheet = ({
       pointerEvents={visible ? 'auto' : 'none'}
       role="dialog"
       style={[styles.inlineRoot, !visible && styles.hiddenInline]}
+      testID="native-pokemon-organizer"
     >
       <View style={styles.backdrop}>
         <View style={[styles.sheet, light && styles.sheetLight]}>
