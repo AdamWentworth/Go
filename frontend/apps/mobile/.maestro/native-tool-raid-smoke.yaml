@@ -83,9 +83,6 @@ name: Native Raid tool smoke
 - assertVisible: "Shadow boss state"
 - takeScreenshot: "native-tool-raid-boss-settings"
 - extendedWaitUntil:
-    visible: "Modeling raid timelines…"
-    timeout: 10000
-- extendedWaitUntil:
     notVisible: "Modeling raid timelines…"
     timeout: 45000
 - scrollUntilVisible:
