@@ -13,6 +13,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { PokemonInstance } from '@pokemongonexus/shared-contracts/instances';
 import type { BasePokemon } from '@pokemongonexus/shared-contracts/pokemon';
 import { calculateRaidBossStats } from '@pokemongonexus/app-core/raid-combat';
+import { getRaidVariantBadge } from '@pokemongonexus/app-core/raid-presentation-model';
 import { NativeRaidBossSetupPanel } from '../components/tools/NativeRaidBossSetupPanel';
 import { NativeRaidRankingCard } from '../components/tools/NativeRaidRankingCard';
 import { NativeRaidSettingsPanel } from '../components/tools/NativeRaidSettingsPanel';
@@ -76,7 +77,7 @@ export const NativeRaidScreen = ({
   const [bossId, setBossId] = useState('');
   const [bossQuery, setBossQuery] = useState('');
   const [settingsOpen, setSettingsOpen] = useState(false);
-  const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [expandedIds, setExpandedIds] = useState<Set<string>>(() => new Set());
   const [rankingMetric, setRankingMetric] = useState<RankingMetric>('edps');
   const [sortDirection, setSortDirection] = useState<SortDirection>('descending');
   const [settings, setSettings] = useState<NativeRaidSettings>(DEFAULT_NATIVE_RAID_SETTINGS);
@@ -85,12 +86,11 @@ export const NativeRaidScreen = ({
   const [observedDodgeSuccessRate, setObservedDodgeSuccessRate] = useState<number | null>(null);
   const [bossCounterEntries, setBossCounterEntries] = useState<NativeCombatEntry[]>([]);
   const [bossCountersLoading, setBossCountersLoading] = useState(false);
-  const bossCounterCacheRef = useRef<{
+  const bossCounterCacheRef = useRef(new Map<string, {
     catalog: BasePokemon[];
     entries: NativeCombatEntry[];
     instances: Record<string, PokemonInstance>;
-    key: string;
-  } | null>(null);
+  }>());
   const performanceStartsRef = useRef(new Map<string, number>());
   const beginPerformance = useCallback((event: string) => {
     performanceStartsRef.current.set(event, Date.now());
@@ -122,6 +122,7 @@ export const NativeRaidScreen = ({
   const selectedBossStats = useMemo(() => selectedBoss
     ? calculateRaidBossStats(selectedBoss.variant, selectedBoss.tier, effectiveSettings.shadowBossMode)
     : null, [effectiveSettings.shadowBossMode, selectedBoss]);
+  const selectedBossBadge = selectedBoss ? getRaidVariantBadge(selectedBoss.variant) : 'Pokemon';
   const bossSuggestions = useMemo(() => {
     const normalized = bossQuery.trim().toLocaleLowerCase();
     if (!normalized) return [];
@@ -135,11 +136,10 @@ export const NativeRaidScreen = ({
 
   useEffect(() => {
     if (view !== 'boss' || !selectedBoss) return undefined;
-    const cached = bossCounterCacheRef.current;
+    const cached = bossCounterCacheRef.current.get(bossCounterKey);
     if (
       cached?.catalog === catalog
       && cached.instances === instances
-      && cached.key === bossCounterKey
     ) return undefined;
     let cancelled = false;
     const timer = setTimeout(() => {
@@ -155,12 +155,17 @@ export const NativeRaidScreen = ({
         shouldCancel: () => cancelled,
       }).then((entries) => {
         if (!cancelled) {
-          bossCounterCacheRef.current = {
+          bossCounterCacheRef.current.delete(bossCounterKey);
+          bossCounterCacheRef.current.set(bossCounterKey, {
             catalog,
             entries,
             instances,
-            key: bossCounterKey,
-          };
+          });
+          while (bossCounterCacheRef.current.size > 8) {
+            const oldestKey = bossCounterCacheRef.current.keys().next().value;
+            if (oldestKey == null) break;
+            bossCounterCacheRef.current.delete(oldestKey);
+          }
           setBossCounterEntries(entries);
           setBossCountersLoading(false);
         }
@@ -203,6 +208,7 @@ export const NativeRaidScreen = ({
       };
       rows.sort((left, right) => (
         (metricValue(right) - metricValue(left)) * (deferredSortDirection === 'descending' ? 1 : -1)
+        || left.name.localeCompare(right.name)
       ));
     }
     return rows.slice(0, 30);
@@ -236,6 +242,9 @@ export const NativeRaidScreen = ({
     if (selectedType === deferredSelectedType) finishPerformance('raid_type_result_painted');
   }, [deferredSelectedType, finishPerformance, rankings.length, selectedType]);
   useEffect(() => {
+    if (effectiveScope === deferredScope) finishPerformance('raid_roster_result_painted');
+  }, [deferredScope, effectiveScope, finishPerformance, rankings.length]);
+  useEffect(() => {
     if (query === deferredQuery) finishPerformance('raid_search_result_painted');
   }, [deferredQuery, finishPerformance, query, rankings.length]);
   useEffect(() => {
@@ -257,29 +266,16 @@ export const NativeRaidScreen = ({
     if (settingsOpen) finishPerformance('raid_settings_painted');
   }, [finishPerformance, settingsOpen]);
   useEffect(() => {
-    if (expandedId) finishPerformance('raid_row_detail_painted');
-  }, [expandedId, finishPerformance]);
-
-  const customSettingCount = [
-    settings.attackerLevel !== DEFAULT_NATIVE_RAID_SETTINGS.attackerLevel,
-    settings.friendship !== 'none',
-    settings.megaAllyBonus !== 'none',
-    settings.partyPower !== 'none',
-    settings.partyPower !== 'none' && settings.partyPowerStrategy !== 'immediate',
-    Boolean(selectedType) && settings.dodgeStrategy !== 'none',
-    Boolean(selectedType) && settings.bossMovesetMode !== 'expected',
-    settings.relobbySeconds !== DEFAULT_NATIVE_RAID_SETTINGS.relobbySeconds,
-    Boolean(settings.weatherBoostedType),
-  ].filter(Boolean).length;
+    if (expandedIds.size > 0) finishPerformance('raid_row_detail_painted');
+  }, [expandedIds, finishPerformance]);
 
   const switchView = (next: ViewMode) => {
     if (next === 'boss') beginPerformance('raid_boss_mode_painted');
     if (next === 'boss') {
-      const cached = bossCounterCacheRef.current;
+      const cached = bossCounterCacheRef.current.get(bossCounterKey);
       if (
         cached?.catalog === catalog
         && cached.instances === instances
-        && cached.key === bossCounterKey
       ) {
         setBossCounterEntries(cached.entries);
         setBossCountersLoading(false);
@@ -291,14 +287,13 @@ export const NativeRaidScreen = ({
       setBossCountersLoading(false);
     }
     setView(next);
-    setExpandedId(null);
-    setQuery('');
+    setExpandedIds(new Set());
   };
   const selectBoss = (id: string) => {
     beginPerformance('raid_boss_selected_result_painted');
     setBossId(id);
     setBossQuery('');
-    setExpandedId(null);
+    setExpandedIds(new Set());
   };
   const selectRankingMetric = (metric: RankingMetric) => {
     beginPerformance('raid_sort_result_painted');
@@ -314,6 +309,7 @@ export const NativeRaidScreen = ({
     setSettings(next);
   };
   const changeMovesetDetail = (bestOnly: boolean) => {
+    if (settings.bestOnly === bestOnly) return;
     beginPerformance('raid_moveset_result_painted');
     setSettings((current) => ({ ...current, bestOnly }));
   };
@@ -361,7 +357,7 @@ export const NativeRaidScreen = ({
           accessibilityState={{ disabled: value === 'owned' && !signedIn, selected: effectiveScope === value }}
           disabled={value === 'owned' && !signedIn}
           key={value}
-          onPress={() => setScope(value)}
+          onPress={() => { if (value === 'catalog') beginPerformance('raid_roster_result_painted'); setScope(value); }}
           style={[
             styles.rosterButton,
             light && styles.controlLight,
@@ -423,7 +419,7 @@ export const NativeRaidScreen = ({
           </Pressable>
         </View>
         {view === 'rankings' ? <Pressable
-          accessibilityLabel={`Ranking settings${customSettingCount ? `, ${customSettingCount} custom settings` : ''}`}
+          accessibilityLabel="Ranking settings"
           accessibilityRole="button"
           accessibilityState={{ expanded: settingsOpen }}
           onPress={() => { beginPerformance('raid_settings_painted'); setSettingsOpen((current) => !current); }}
@@ -432,7 +428,7 @@ export const NativeRaidScreen = ({
         >
           <View style={styles.iconLabelRow}>
             <NativeUiIcon color={light ? '#172124' : '#edf6f5'} name="filters" size={14} />
-            <Text style={[styles.settingsText, light && styles.textLight]}>SETTINGS{customSettingCount ? ` ${customSettingCount}` : ''} {settingsOpen ? '⌃' : '⌄'}</Text>
+            <Text style={[styles.settingsText, light && styles.textLight]}>SETTINGS {settingsOpen ? '⌃' : '⌄'}</Text>
           </View>
         </Pressable> : null}
       </View>
@@ -475,15 +471,17 @@ export const NativeRaidScreen = ({
           <View style={styles.bossSummaryCopy}>
             <Text style={[styles.eyebrow, light && styles.accentLight]}>RAID BOSS</Text>
             <Text style={[styles.bossTitle, light && styles.textLight]}>{selectedBoss.name}</Text>
-            <Text style={[styles.bossMeta, light && styles.mutedLight]}>{selectedBossStats ? `CP ${selectedBossStats.bossCp.toLocaleString()} · ` : ''}{selectedBoss.variant.type1_name}{selectedBoss.variant.type2_name ? ` / ${selectedBoss.variant.type2_name}` : ''}</Text>
+            <View style={styles.bossMetaRow}>{selectedBossBadge !== 'Pokemon' ? <Text style={styles.bossBadge}>{selectedBossBadge}</Text> : null}<Text style={[styles.bossMeta, light && styles.mutedLight]}>{selectedBossStats ? `CP ${selectedBossStats.bossCp.toLocaleString()} · ` : ''}{selectedBoss.variant.type1_name}{selectedBoss.variant.type2_name ? ` / ${selectedBoss.variant.type2_name}` : ''}</Text></View>
           </View>
         </View>
       ) : null}
       <TextInput
         accessibilityLabel="Find boss"
         onChangeText={(value) => { beginPerformance('raid_boss_search_result_painted'); setBossQuery(value); }}
+        onSubmitEditing={() => { if (bossSuggestions[0]) selectBoss(bossSuggestions[0].id); }}
         placeholder="Search raid bosses"
         placeholderTextColor={light ? '#708183' : '#809294'}
+        returnKeyType="search"
         style={[styles.search, styles.bossSearch, light && styles.inputLight]}
         value={bossQuery}
       />
@@ -511,7 +509,7 @@ export const NativeRaidScreen = ({
   const heading = view === 'boss'
     ? `Best counters${selectedBoss ? ` vs ${selectedBoss.name}` : ''}`
     : selectedType
-      ? `Top ${selectedType.charAt(0).toUpperCase() + selectedType.slice(1)} attackers`
+      ? `${effectiveScope === 'owned' ? 'Your top' : 'Top'} ${selectedType.charAt(0).toUpperCase() + selectedType.slice(1)} raid attackers`
       : effectiveScope === 'owned'
         ? 'Your top raid attackers'
         : 'Top raid attackers';
@@ -529,7 +527,7 @@ export const NativeRaidScreen = ({
         </Pressable>
       </View>
       {toolbar}
-      {view === 'boss' && selectedBoss ? <NativeRaidBossSetupPanel assetBaseUrl={assetBaseUrl} boss={selectedBoss} dodgeCalibrationApplied={observedDodgeSuccessRate != null} includeAttackerLevel={effectiveScope !== 'owned'} key={selectedBoss.id} onObservedDodgeRateChange={setObservedDodgeSuccessRate} onSettingsChange={changeSettings} onShadowBossModeChange={(mode) => { beginPerformance('raid_modifier_result_painted'); setShadowBossMode(mode); }} onShadowRaidChange={(enabled) => { beginPerformance('raid_modifier_result_painted'); setShadowRaid(enabled); }} ownerKey={ownerKey} scores={customPartyScores} selectedBossIsShadowRaid={selectedBossIsShadowRaid} settings={effectiveSettings} shadowBossMode={shadowBossMode} shadowMechanicsEnabled={shadowMechanicsEnabled} shadowRaid={shadowRaid} /> : null}
+      {view === 'boss' && selectedBoss ? <NativeRaidBossSetupPanel assetBaseUrl={assetBaseUrl} boss={selectedBoss} dodgeCalibrationApplied={observedDodgeSuccessRate != null} includeAttackerLevel={effectiveScope !== 'owned'} key={selectedBoss.id} onMethodology={onMethodology} onObservedDodgeRateChange={setObservedDodgeSuccessRate} onSettingsChange={changeSettings} onShadowBossModeChange={(mode) => { beginPerformance('raid_modifier_result_painted'); setShadowBossMode(mode); }} onShadowRaidChange={(enabled) => { beginPerformance('raid_modifier_result_painted'); setShadowRaid(enabled); }} ownerKey={ownerKey} scores={customPartyScores} selectedBossIsShadowRaid={selectedBossIsShadowRaid} settings={effectiveSettings} shadowBossMode={shadowBossMode} shadowMechanicsEnabled={shadowMechanicsEnabled} shadowRaid={shadowRaid} /> : null}
       {isLoading || bossCountersLoading ? <View accessibilityRole="progressbar" style={styles.state}><ActivityIndicator color="#2fd6d0" /><Text style={[styles.stateCopy, light && styles.mutedLight]}>{bossCountersLoading ? 'Modeling raid timelines…' : 'Loading battle data…'}</Text></View> : null}
       {error ? (
         <View accessibilityRole="alert" style={styles.error}>
@@ -540,6 +538,40 @@ export const NativeRaidScreen = ({
       ) : null}
     </View>
   );
+
+  const emptyPresentation = view === 'boss'
+    ? !selectedBoss
+      ? {
+          title: 'No raid boss data yet.',
+          copy: 'Overall and type leaderboards can still rank attackers while boss data loads.',
+        }
+      : bossCounterEntries.length > 0
+        ? { title: 'No counters match the current filters.', copy: '' }
+        : effectiveScope === 'owned' && rosterSummary.eligibleCount === 0
+          ? {
+              title: 'No caught raid-ready Pokémon',
+              copy: `Mark Pokémon as caught to build a personalized counter team for ${selectedBoss.name}.`,
+            }
+          : {
+              title: 'No compatible raid counters',
+              copy: 'The selected roster has no legal movesets for this battle.',
+            }
+    : effectiveScope === 'owned'
+      ? selectedType
+        ? {
+            title: 'No compatible attackers',
+            copy: `None of your caught Pokémon have a usable ${selectedType.charAt(0).toUpperCase() + selectedType.slice(1)} moveset for this ranking.`,
+          }
+        : {
+            title: 'No compatible attackers',
+            copy: 'No caught attackers match the current filters. Add level, IV, and move details to improve personalized rankings.',
+          }
+      : selectedType
+        ? {
+            title: 'No compatible attackers',
+            copy: `No eligible attackers have a ${selectedType.charAt(0).toUpperCase() + selectedType.slice(1)} fast or charged move.`,
+          }
+        : { title: 'No compatible attackers', copy: 'No attackers match the current filters.' };
 
   return (
     <View style={[styles.root, light && styles.rootLight]} testID="native-raid-screen">
@@ -552,16 +584,25 @@ export const NativeRaidScreen = ({
         ListHeaderComponent={header}
         ListEmptyComponent={!isLoading && !bossCountersLoading && !error ? (
           <View style={[styles.empty, light && styles.emptyLight]}>
-            <Text style={[styles.emptyTitle, light && styles.textLight]}>No compatible attackers</Text>
-            <Text style={[styles.stateCopy, light && styles.mutedLight]}>{effectiveScope === 'owned' ? 'No caught attackers match the current filters. Add level, IV, CP, and move details to improve personalized rankings.' : 'Try another boss, type, or search.'}</Text>
+            <Text style={[styles.emptyTitle, light && styles.textLight]}>{emptyPresentation.title}</Text>
+            {emptyPresentation.copy ? <Text style={[styles.stateCopy, light && styles.mutedLight]}>{emptyPresentation.copy}</Text> : null}
           </View>
         ) : null}
         renderItem={({ item, index }) => (
           <NativeRaidRankingCard
             assetBaseUrl={assetBaseUrl}
             entry={item}
-            expanded={expandedId === item.id}
-            onToggle={() => { beginPerformance('raid_row_detail_painted'); setExpandedId((current) => current === item.id ? null : item.id); }}
+            attackerLevel={settings.attackerLevel}
+            expanded={expandedIds.has(item.id)}
+            onToggle={() => {
+              beginPerformance('raid_row_detail_painted');
+              setExpandedIds((current) => {
+                const next = new Set(current);
+                if (next.has(item.id)) next.delete(item.id);
+                else next.add(item.id);
+                return next;
+              });
+            }}
             primaryMetric={view === 'rankings' ? rankingMetric : 'dps'}
             rank={index + 1}
           />
@@ -630,7 +671,9 @@ const styles = StyleSheet.create({
   selectedBossImage: { width: 72, height: 72 },
   bossSummaryCopy: { minWidth: 0, flex: 1 },
   bossTitle: { color: '#fff', fontSize: 19, fontWeight: '900' },
-  bossMeta: { marginTop: 3, color: '#9badae', fontSize: 9.5, fontWeight: '800' },
+  bossMetaRow: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: 5, marginTop: 3 },
+  bossBadge: { borderRadius: 999, paddingHorizontal: 6, paddingVertical: 2, overflow: 'hidden', color: '#f0dcff', backgroundColor: '#69409b', fontSize: 7.5, fontWeight: '900' },
+  bossMeta: { color: '#9badae', fontSize: 9.5, fontWeight: '800' },
   bossSearch: { marginTop: 0 },
   bossSuggestions: { gap: 3, borderWidth: 1, borderColor: '#355153', borderRadius: 12, padding: 5, backgroundColor: '#101819' },
   bossSuggestion: { minHeight: 48, flexDirection: 'row', alignItems: 'center', gap: 8, borderRadius: 9, paddingHorizontal: 7 },

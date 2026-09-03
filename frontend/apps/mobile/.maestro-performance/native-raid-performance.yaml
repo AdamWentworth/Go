@@ -21,6 +21,15 @@ tags:
 - extendedWaitUntil:
     visible: Your top raid attackers
     timeout: 45000
+- tapOn: ALL POKÉMON
+- extendedWaitUntil:
+    visible: Top raid attackers
+    timeout: 30000
+- tapOn:
+    text: "MY POKÉMON.*"
+- extendedWaitUntil:
+    visible: Your top raid attackers
+    timeout: 30000
 
 # Ranking result classes: type, text, moveset projection, settings, modifiers,
 # sorting, and mobile row expansion.
@@ -44,9 +53,9 @@ tags:
     timeout: 10000
 - scrollUntilVisible:
     element:
-      text: Best
+      text: '^Best \(1\.10x\)$'
     direction: DOWN
-- tapOn: Best
+- tapOn: '^Best \(1\.10x\)$'
 - scrollUntilVisible:
     element:
       text: eDPS

@@ -1,9 +1,14 @@
 import { Image, Pressable, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
-import type { NativeCombatEntry } from '../../features/tools/nativeBattleModels';
+import { formatSeconds } from '@pokemongonexus/app-core/raid-model';
+import type {
+  NativeCombatEntry,
+  NativeRaidAttackerLevel,
+} from '../../features/tools/nativeBattleModels';
 import { useNativeColorScheme } from '../../features/settings/useNativeColorScheme';
 
 type Props = {
   assetBaseUrl: string;
+  attackerLevel?: NativeRaidAttackerLevel;
   entry: NativeCombatEntry;
   expanded: boolean;
   onToggle: () => void;
@@ -11,12 +16,15 @@ type Props = {
   rank: number;
 };
 
+const formatOutcomeCount = (value: number) => Number.isInteger(value) ? String(value) : value.toFixed(1);
+const formatOutcomeLabel = (value: number, singular: string) => `${formatOutcomeCount(value)} ${value === 1 ? singular : singular.endsWith('y') ? `${singular.slice(0, -1)}ies` : `${singular}s`}`;
+
 const uri = (base: string, value: string | null) => {
   if (!value) return undefined;
   try { return new URL(value, base).toString(); } catch { return undefined; }
 };
 
-export const NativeRaidRankingCard = ({ assetBaseUrl, entry, expanded, onToggle, primaryMetric = 'edps', rank }: Props) => {
+export const NativeRaidRankingCard = ({ assetBaseUrl, attackerLevel = '50.0', entry, expanded, onToggle, primaryMetric = 'edps', rank }: Props) => {
   const light = useNativeColorScheme() === 'light';
   const compact = useWindowDimensions().width <= 520;
   const counter = entry.counter ?? null;
@@ -24,15 +32,16 @@ export const NativeRaidRankingCard = ({ assetBaseUrl, entry, expanded, onToggle,
     cp: { label: 'CP', value: entry.cp.toLocaleString() },
     dps: { label: 'DPS', value: entry.dps.toFixed(1) },
     edps: { label: 'eDPS', value: entry.score.toFixed(1) },
-    er: { label: 'ER', value: entry.er.toFixed(1) },
-    tdo: { label: 'TDO', value: entry.tdo.toFixed(0) },
+    er: { label: 'ER', value: entry.er.toFixed(2) },
+    tdo: { label: 'TDO', value: Math.round(entry.tdo).toLocaleString() },
   }[primaryMetric];
   const primaryLabel = rankingMetric.label;
   const primaryValue = rankingMetric.value;
   const detailRows = [
+    ['eDPS', entry.score.toFixed(1)],
     ['DPS', entry.dps.toFixed(1)],
-    ['TDO', entry.tdo.toFixed(0)],
-    ['ER', entry.er.toFixed(1)],
+    ['TDO', Math.round(entry.tdo).toLocaleString()],
+    ['ER', entry.er.toFixed(2)],
     ['CP', entry.cp.toLocaleString()],
   ];
   if (counter) {
@@ -40,7 +49,12 @@ export const NativeRaidRankingCard = ({ assetBaseUrl, entry, expanded, onToggle,
     const clearSeconds = distribution?.timeToWinSeconds.p50 ?? counter.soloTimeSeconds;
     const faints = distribution?.faints.p50 ?? counter.faints;
     const relobbies = distribution?.relobbies.p50 ?? counter.relobbies;
-    const formatCount = (value: number, singular: string) => `${Number.isInteger(value) ? value : value.toFixed(1)} ${value === 1 ? singular : singular.endsWith('y') ? `${singular.slice(0, -1)}ies` : `${singular}s`}`;
+    const clearTimeDetail = distribution
+      ? `Expected clear time ${formatSeconds(clearSeconds)}. Likely range ${formatSeconds(distribution.timeToWinSeconds.p10)} to ${formatSeconds(distribution.timeToWinSeconds.p90)}. Based on ${distribution.sampleCount} modeled outcomes.`
+      : `Expected clear time ${formatSeconds(clearSeconds)}.`;
+    const durabilityDetail = distribution
+      ? `Expected ${formatOutcomeLabel(faints, 'faint')} and ${formatOutcomeLabel(relobbies, 'relobby')}. High estimate ${formatOutcomeLabel(distribution.faints.p90, 'faint')} and ${formatOutcomeLabel(distribution.relobbies.p90, 'relobby')}. Based on ${distribution.sampleCount} modeled outcomes.`
+      : `Expected ${formatOutcomeLabel(faints, 'faint')} and ${formatOutcomeLabel(relobbies, 'relobby')}.`;
     return (
       <View accessibilityLabel={`Rank ${rank}, ${entry.name} raid counter`} style={[styles.counterCard, light && styles.cardLight]}>
         <View style={[styles.rank, rank <= 3 && styles.rankTop]}><Text style={styles.rankText}>{rank}</Text></View>
@@ -48,13 +62,13 @@ export const NativeRaidRankingCard = ({ assetBaseUrl, entry, expanded, onToggle,
         <View style={styles.counterMain}>
           <Text numberOfLines={1} style={[styles.counterName, light && styles.textLight]}>{entry.name}</Text>
           <View style={styles.counterMoves}>{[entry.fastMove, entry.chargedMove].map((move, index) => <View accessibilityLabel={`${index === 0 ? 'Fast' : 'Charged'} move: ${move?.name ?? 'Unknown'}, ${move?.type_name ?? 'unknown'} type`} key={`${move?.move_id ?? 'move'}-${index}`} style={styles.counterMove}>{move?.type_name ? <Image fadeDuration={0} accessibilityElementsHidden source={{ uri: uri(assetBaseUrl, `/images/types/${move.type_name.toLocaleLowerCase()}.png`) }} style={styles.moveType} /> : null}<Text numberOfLines={1} style={[styles.counterMoveName, light && styles.textLight]}>{move?.name ?? '—'}</Text></View>)}</View>
-          <Text numberOfLines={1} style={[styles.counterMeta, light && styles.mutedLight]}>CP {entry.cp.toLocaleString()}{entry.rosterDetail ? ` · ${entry.rosterDetail}` : ''}</Text>
+          <Text numberOfLines={1} style={[styles.counterMeta, light && styles.mutedLight]}>CP {entry.cp.toLocaleString()}{entry.rosterDetail ? ` · ${entry.rosterDetail}` : ` at level ${attackerLevel.replace('.0', '')}`}</Text>
         </View>
         <View style={styles.counterStats}>
-          <View style={styles.counterStat}><Text style={[styles.statLabel, light && styles.mutedLight]}>DPS</Text><Text style={[styles.counterStatValue, light && styles.textLight]}>{entry.score.toFixed(1)}</Text></View>
-          <View style={styles.counterStat}><Text style={[styles.statLabel, light && styles.mutedLight]}>TRAINERS</Text><Text style={[styles.counterStatValue, light && styles.textLight]}>{counter.trainersNeeded}</Text></View>
-          <View style={styles.counterStat}><Text style={[styles.statLabel, light && styles.mutedLight]}>CLEAR</Text><Text style={[styles.counterStatValue, light && styles.textLight]}>{Number.isFinite(clearSeconds) ? `${Math.round(clearSeconds)}s` : '—'}</Text></View>
-          <View style={styles.counterStat}><Text style={[styles.statLabel, light && styles.mutedLight]}>FAINTS</Text><Text style={[styles.counterStatValue, light && styles.textLight]}>{formatCount(faints, 'faint')}</Text>{relobbies > 0 ? <Text style={[styles.counterRelobbies, light && styles.mutedLight]}>{formatCount(relobbies, 'relobby')}</Text> : null}</View>
+          <View style={styles.counterStat}><Text style={[styles.statLabel, light && styles.mutedLight]}>DPS</Text><Text style={[styles.counterStatValue, light && styles.textLight]}>{entry.score.toFixed(1)} DPS</Text></View>
+          <View style={styles.counterStat}><Text style={[styles.statLabel, light && styles.mutedLight]}>TRAINERS</Text><Text style={[styles.counterStatValue, light && styles.textLight]}>{counter.trainersNeeded} trainer{counter.trainersNeeded === 1 ? '' : 's'}</Text></View>
+          <View accessibilityLabel={clearTimeDetail} style={styles.counterStat}><Text style={[styles.statLabel, light && styles.mutedLight]}>CLEAR</Text><Text style={[styles.counterStatValue, light && styles.textLight]}>{formatSeconds(clearSeconds)}</Text></View>
+          <View accessibilityLabel={durabilityDetail} style={styles.counterStat}><Text style={[styles.statLabel, light && styles.mutedLight]}>FAINTS</Text><Text style={[styles.counterStatValue, light && styles.textLight]}>{formatOutcomeLabel(faints, 'faint')}</Text>{relobbies > 0 ? <Text style={[styles.counterRelobbies, light && styles.mutedLight]}>{formatOutcomeLabel(relobbies, 'relobby')}</Text> : null}</View>
         </View>
       </View>
     );
@@ -89,7 +103,7 @@ export const NativeRaidRankingCard = ({ assetBaseUrl, entry, expanded, onToggle,
       </View>
       <View style={[styles.moves, light && styles.movesLight]}>
         {[entry.fastMove, entry.chargedMove].map((move, index) => (
-          <View key={`${move?.move_id ?? 'move'}-${index}`} style={styles.moveCell}>
+          <View key={`${move?.move_id ?? 'move'}-${index}`} style={[styles.moveCell, (index === 0 ? entry.fastMatchesType : entry.chargedMatchesType) && styles.moveCellTypeMatch]}>
             {move?.type_name ? (
               <Image fadeDuration={0}
                 accessibilityElementsHidden
@@ -156,6 +170,7 @@ const styles = StyleSheet.create({
   moves: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', minHeight: 32, marginHorizontal: 8, borderTopWidth: 1, borderTopColor: '#263b3c' },
   movesLight: { borderTopColor: '#d6e1e1' },
   moveCell: { minWidth: 0, flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6 },
+  moveCellTypeMatch: { borderRadius: 7, backgroundColor: 'rgba(47,214,208,.13)' },
   move: { minWidth: 0, maxWidth: '72%', color: '#dce9e9', fontSize: 9.5, fontWeight: '800' },
   moveType: { width: 18, height: 18 },
   details: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: 7, borderTopWidth: 1, borderTopColor: '#263b3c', padding: 9, backgroundColor: '#0d1415' },

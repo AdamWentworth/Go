@@ -29,6 +29,7 @@ type Props = {
   boss: NativeRaidBossEntry;
   dodgeCalibrationApplied?: boolean;
   includeAttackerLevel?: boolean;
+  onMethodology: () => void;
   onObservedDodgeRateChange?: (rate: number | null) => void;
   onSettingsChange: (settings: NativeRaidSettings) => void;
   onShadowBossModeChange: (mode: NativeRaidSettings['shadowBossMode']) => void;
@@ -55,6 +56,7 @@ export const NativeRaidBossSetupPanel = ({
   boss,
   dodgeCalibrationApplied = false,
   includeAttackerLevel = true,
+  onMethodology,
   onObservedDodgeRateChange,
   onSettingsChange,
   onShadowBossModeChange,
@@ -69,6 +71,7 @@ export const NativeRaidBossSetupPanel = ({
 }: Props) => {
   const light = useNativeColorScheme() === 'light';
   const [open, setOpen] = useState(false);
+  const [rulesOpen, setRulesOpen] = useState(false);
   const openStartedAtRef = useRef<number | null>(null);
   const [partyPrediction, setPartyPrediction] = useState<PartyPrediction | null>(null);
   const tier = useMemo(() => resolveNativeRaidTier(boss), [boss]);
@@ -150,8 +153,9 @@ export const NativeRaidBossSetupPanel = ({
           <NativeRaidCalibrationPanel
             bossName={boss.name}
             buildObservation={buildObservation}
-            defaultTrainerCount={Math.max(1, estimate?.minTrainers ?? 1)}
+            defaultTrainerCount={partyPrediction?.result.trainers.length ?? Math.max(1, estimate?.minTrainers ?? 1)}
             disabled={scores.length === 0}
+            key={ownerKey}
             modelVersion={RAID_SIMULATION_MODEL_VERSION}
             onObservedDodgeRateChange={onObservedDodgeRateChange}
             ownerKey={ownerKey}
@@ -174,8 +178,14 @@ export const NativeRaidBossSetupPanel = ({
             shadowRaid={shadowRaid}
           />
 
-          {shadow ? <View style={styles.shadowNote}><Text style={styles.shadowTitle}>Purified Gem reminder</Text><Text style={styles.shadowCopy}>Each Trainer can use up to 5 Purified Gems. Coordinate Gems to subdue an enraged Shadow Raid Boss.</Text></View> : null}
-          <Text style={[styles.rules, light && styles.mutedLight]}>Uses six distinct attackers and at most one Mega or Primal. One caught Pokémon cannot fill two form slots.{estimate?.superMega ? ' Super Mega estimates assume every Trainer brings an actual Mega; Primal Pokémon cannot break shields.' : ''}</Text>
+          {shadow ? <View style={styles.shadowNote}><Text style={styles.shadowTitle}>Purified Gem reminder</Text><Text style={styles.shadowCopy}>Each Trainer can use up to 5 Purified Gems. It takes coordinated Gems to subdue an enraged Shadow Raid Boss, so solo attempts should use the enraged estimate.</Text></View> : null}
+          <View style={[styles.rulesPanel, light && styles.subpanelLight]}>
+            <Pressable accessibilityLabel="Team estimate rules" accessibilityRole="button" accessibilityState={{ expanded: rulesOpen }} onPress={() => setRulesOpen((current) => !current)} style={styles.rulesToggle}>
+              <Text style={styles.rulesIcon}>ⓘ</Text><Text style={[styles.rulesTitle, light && styles.textLight]}>Team estimate rules</Text><Text style={[styles.chevron, light && styles.textLight]}>{rulesOpen ? '⌃' : '⌄'}</Text>
+            </Pressable>
+            {rulesOpen ? <Text style={[styles.rules, light && styles.mutedLight]}>Uses six distinct attackers and at most one Mega or Primal. One caught Pokémon cannot fill two form slots.{estimate?.superMega ? ' Super Mega estimates assume every Trainer brings an actual Mega; Primal Pokémon cannot break shields.' : ''}</Text> : null}
+          </View>
+          <Pressable accessibilityLabel="Ranking method" accessibilityRole="button" onPress={onMethodology} style={[styles.method, light && styles.subpanelLight]}><Text style={styles.rulesIcon}>ⓘ</Text><Text style={[styles.methodText, light && styles.textLight]}>Method</Text></Pressable>
         </View>
       ) : null}
     </View>
@@ -216,7 +226,13 @@ const styles = StyleSheet.create({
   shadowNote: { gap: 3, borderWidth: 1, borderColor: '#9569c7', borderRadius: 10, padding: 10, backgroundColor: '#2a183a' },
   shadowTitle: { color: '#ead6ff', fontSize: 11, fontWeight: '900' },
   shadowCopy: { color: '#ceb6e7', fontSize: 9.5, lineHeight: 13 },
-  rules: { color: '#8fa2a3', fontSize: 8.5, lineHeight: 12 },
+  rulesPanel: { overflow: 'hidden', borderRadius: 9, backgroundColor: '#172223' },
+  rulesToggle: { minHeight: 42, flexDirection: 'row', alignItems: 'center', gap: 7, paddingHorizontal: 9 },
+  rulesIcon: { color: '#50ddd4', fontSize: 14, fontWeight: '900' },
+  rulesTitle: { minWidth: 0, flex: 1, color: '#fff', fontSize: 10, fontWeight: '900' },
+  rules: { borderTopWidth: 1, borderTopColor: '#2c4243', padding: 9, color: '#8fa2a3', fontSize: 8.5, lineHeight: 12 },
+  method: { minHeight: 42, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, borderRadius: 9, backgroundColor: '#172223' },
+  methodText: { color: '#fff', fontSize: 10, fontWeight: '900' },
   textLight: { color: '#142629' },
   mutedLight: { color: '#657879' },
 });

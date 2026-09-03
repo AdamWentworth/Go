@@ -25,11 +25,25 @@ describe('native Raid parity controls', () => {
         settings={DEFAULT_NATIVE_RAID_SETTINGS}
       />,
     );
-    for (const label of ['Lv 40', 'Lv 50', 'Lv 51', 'Good', 'Great', 'Ultra', 'Best', 'Any Mega', 'Same type', '2', '3', '4', 'No dodging', 'Charged attacks', 'Expected', 'Monte Carlo', 'Favorable', 'Hostile']) {
+    for (const label of ['Level 40', 'Level 50', 'Level 51', 'Good (1.03x)', 'Great (1.05x)', 'Ultra (1.07x)', 'Best (1.10x)', 'Mega ally (1.1x)', 'Matching Mega (1.3x)', 'Party of 2', 'Party of 3', 'Party of 4', 'No dodging', 'Charged attacks', 'Expected across legal movesets', 'Monte Carlo distribution (32+ trials)', 'Favorable incoming moveset', 'Hostile incoming moveset']) {
       expect(screen.getByText(label)).toBeTruthy();
     }
-    fireEvent.press(screen.getByText('Best'));
+    fireEvent.press(screen.getByText('Best (1.10x)'));
     expect(onChange).toHaveBeenCalledWith(expect.objectContaining({ friendship: 'best' }));
+    fireEvent.press(screen.getByText('Level 40'));
+    expect(onChange).toHaveBeenCalledWith(expect.objectContaining({ attackerLevel: '40.0' }));
+    fireEvent.press(screen.getByText('Matching Mega (1.3x)'));
+    expect(onChange).toHaveBeenCalledWith(expect.objectContaining({ megaAllyBonus: 'matching' }));
+    fireEvent.press(screen.getByText('Party of 4'));
+    expect(onChange).toHaveBeenCalledWith(expect.objectContaining({ partyPower: 'party4' }));
+    fireEvent.press(screen.getByText('5 seconds'));
+    expect(onChange).toHaveBeenCalledWith(expect.objectContaining({ relobbySeconds: 5 }));
+    fireEvent.press(screen.getByText('Fire'));
+    expect(onChange).toHaveBeenCalledWith(expect.objectContaining({ weatherBoostedType: 'fire' }));
+    fireEvent.press(screen.getByText('Charged attacks'));
+    expect(onChange).toHaveBeenCalledWith(expect.objectContaining({ dodgeStrategy: 'charged' }));
+    fireEvent.press(screen.getByText('Hostile incoming moveset'));
+    expect(onChange).toHaveBeenCalledWith(expect.objectContaining({ bossMovesetMode: 'hostile' }));
     fireEvent.press(screen.getByText('Shadow raid'));
     expect(onShadowRaidChange).toHaveBeenCalledWith(true);
 
@@ -47,11 +61,13 @@ describe('native Raid parity controls', () => {
         shadowRaid
       />,
     );
-    for (const label of ['When ready', 'Next Charged', 'Strongest Charged', 'Manual', 'Subdued', 'Enraged']) {
+    for (const label of ['Activate as soon as ready', 'Use on next Charged Attack', 'Save for strongest Charged Attack', 'Manual timing (no automatic use)', 'Subdued', 'Enraged']) {
       expect(screen.getByText(label)).toBeTruthy();
     }
     fireEvent.press(screen.getByText('Enraged'));
     expect(onShadowBossModeChange).toHaveBeenCalledWith('enraged');
+    fireEvent.press(screen.getByText('Save for strongest Charged Attack'));
+    expect(onChange).toHaveBeenCalledWith(expect.objectContaining({ partyPowerStrategy: 'strongest-charged' }));
   });
 
   it('offers all 18 type filters plus the overall ranking', () => {

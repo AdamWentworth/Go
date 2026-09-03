@@ -30,6 +30,10 @@ import {
   type RaidTypeDpsScore,
 } from '@pokemongonexus/app-core/raid-model';
 import {
+  getRaidRosterDetail,
+  getRaidVariantDisplayName,
+} from '@pokemongonexus/app-core/raid-presentation-model';
+import {
   getMaxBattleCatalog,
   rankMaxBattlePokemon,
   type MaxRankingEntry,
@@ -148,6 +152,7 @@ export const DEFAULT_NATIVE_RAID_SETTINGS: NativeRaidSettings = {
 
 export type NativeCombatEntry = {
   chargedMove: Move | null;
+  chargedMatchesType?: boolean;
   counter?: {
     dodges: number;
     faints: number;
@@ -160,6 +165,7 @@ export type NativeCombatEntry = {
   dps: number;
   er: number;
   fastMove: Move | null;
+  fastMatchesType?: boolean;
   id: string;
   imageUri: string | null;
   maxKind: 'dynamax' | 'gigantamax' | null;
@@ -219,19 +225,6 @@ export const hydrateNativeMaxCatalog = (
   });
 };
 
-const describeInstance = (instance: PokemonInstance): string => {
-  const ivValues = [instance.attack_iv, instance.defense_iv, instance.stamina_iv];
-  const ivPercent = ivValues.every((value) => value != null)
-    ? Math.round(ivValues.reduce<number>((total, value) => total + Number(value), 0) / 45 * 100)
-    : null;
-  const details = [
-    instance.nickname?.trim() || null,
-    instance.level == null ? null : `Level ${instance.level}`,
-    ivPercent == null ? null : `${ivPercent}% IV`,
-  ].filter(Boolean);
-  return details.length > 0 ? details.join(' · ') : 'Caught copy';
-};
-
 export const canonicalNativeRaidSettings = (settings: NativeRaidSettings): RaidCounterSettings => ({
   attackerLevel: settings.attackerLevel,
   bossMovesetMode: settings.bossMovesetMode,
@@ -267,23 +260,25 @@ export const buildNativeRaidRosterSummary = (
 
 const canonicalCombatEntry = (
   score: RaidOverallScore | RaidTypeDpsScore,
-  _settings: NativeRaidSettings,
+  settings: NativeRaidSettings,
 ): NativeCombatEntry => {
   const variant = score.variant;
   const instance = variant.instanceData ?? null;
   return {
     chargedMove: score.chargedMove,
+    chargedMatchesType: 'chargedMatchesType' in score ? score.chargedMatchesType : undefined,
     counter: null,
     cp: score.cp,
     dps: score.dps,
     er: score.er,
     fastMove: score.fastMove,
+    fastMatchesType: 'fastMatchesType' in score ? score.fastMatchesType : undefined,
     id: `${variant.variant_id}-${score.fastMove.move_id}-${score.chargedMove.move_id}`,
     imageUri: variant.currentImage || variant.image_url || null,
     maxKind: null,
-    name: variant.name,
+    name: getRaidVariantDisplayName(variant),
     pokemonId: variant.pokemon_id,
-    rosterDetail: instance ? describeInstance(instance) : null,
+    rosterDetail: instance ? getRaidRosterDetail(variant, settings.attackerLevel) : null,
     score: score.eDps,
     sourceInstanceId: instance?.instance_id ?? null,
     tdo: score.tdo,
@@ -297,7 +292,7 @@ const canonicalCombatEntry = (
 const canonicalCounterEntry = (
   score: RaidCounterScore,
   tier: RaidTierPreset,
-  _settings: NativeRaidSettings,
+  settings: NativeRaidSettings,
 ): NativeCombatEntry => {
   const variant = score.variant;
   const instance = variant.instanceData ?? null;
@@ -319,9 +314,9 @@ const canonicalCounterEntry = (
     id: `${variant.variant_id}-${score.fastMove.move_id}-${score.chargedMove.move_id}`,
     imageUri: variant.currentImage || variant.image_url || null,
     maxKind: null,
-    name: variant.name,
+    name: getRaidVariantDisplayName(variant),
     pokemonId: variant.pokemon_id,
-    rosterDetail: instance ? describeInstance(instance) : null,
+    rosterDetail: instance ? getRaidRosterDetail(variant, settings.attackerLevel) : null,
     score: score.sustainedDps ?? score.dps,
     sourceInstanceId: instance?.instance_id ?? null,
     tdo: Math.max(0, estimatedShare),
@@ -454,9 +449,10 @@ export const buildNativeRaidCounterAttackersAsync = async ({
   }
 
   if (shouldCancel()) return [];
+  scores.sort(compareNativeRaidCounterScores);
   const selectedScores = resolvedSettings.bestOnly
     ? dedupeBestCounterPerVariant(scores)
-    : scores.sort(compareNativeRaidCounterScores);
+    : scores;
   return selectedScores.map((score) => canonicalCounterEntry(
     score,
     boss.tier,

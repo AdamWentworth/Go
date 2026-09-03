@@ -93,6 +93,7 @@
     { "id": "interaction.collection.organizer", "vite": "organizer visible", "nativeEvent": "collection_organizer_painted" },
     { "id": "interaction.instance.navigate", "vite": "adjacent instance content committed", "nativeEvent": "instance_overlay_target_committed" },
     { "id": "interaction.raid.mode-boss", "vite": "boss picker surface visible", "nativeEvent": "raid_boss_mode_painted" },
+    { "id": "interaction.raid.roster-result", "vite": "selected Raid roster ranking visible", "nativeEvent": "raid_roster_result_painted" },
     { "id": "interaction.raid.type-result", "vite": "selected type ranking visible", "nativeEvent": "raid_type_result_painted" },
     { "id": "interaction.raid.search-result", "vite": "matching attacker or counter visible", "nativeEvent": "raid_search_result_painted" },
     { "id": "interaction.raid.moveset-result", "vite": "requested moveset detail visible", "nativeEvent": "raid_moveset_result_painted" },

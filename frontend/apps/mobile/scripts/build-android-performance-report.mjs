@@ -54,6 +54,7 @@ const eventScenarios = {
   collection_organizer_painted: 'interaction.collection.organizer',
   instance_overlay_target_committed: 'interaction.instance.navigate',
   raid_boss_mode_painted: 'interaction.raid.mode-boss',
+  raid_roster_result_painted: 'interaction.raid.roster-result',
   raid_type_result_painted: 'interaction.raid.type-result',
   raid_search_result_painted: 'interaction.raid.search-result',
   raid_moveset_result_painted: 'interaction.raid.moveset-result',

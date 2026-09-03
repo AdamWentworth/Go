@@ -18,8 +18,19 @@ describe('NativeRaidPartyBuilder', () => {
     expect(screen.getByLabelText('Trainer 2 settings')).toBeTruthy();
     fireEvent.press(screen.getByLabelText('Add Trainer'));
     expect(screen.getByLabelText('Trainer 3 settings')).toBeTruthy();
+    fireEvent.press(screen.getByLabelText('Trainer 1 settings'));
+    expect(screen.getByLabelText('Trainer 1 name')).toBeTruthy();
+    expect(screen.getByLabelText('Trainer 3 name')).toBeTruthy();
     fireEvent.changeText(screen.getByLabelText('Trainer 3 name'), 'Remote friend');
     expect(screen.getByText('Remote friend')).toBeTruthy();
+    fireEvent.press(screen.getByLabelText('Trainer 1 team slot 1'));
+    expect(screen.getByText('Choose an attacker')).toBeTruthy();
+    fireEvent.press(screen.getByLabelText('Close attacker picker'));
+    expect(screen.queryByText('Choose an attacker')).toBeNull();
+    fireEvent.press(screen.getByLabelText('Trainer 1 team slot 1'));
+    fireEvent.press(screen.getByText('Empty slot'));
+    expect(screen.queryByText('Choose an attacker')).toBeNull();
+    fireEvent.press(screen.getAllByText(/Auto fill/)[0]);
     fireEvent.press(screen.getByText('Simulate'));
     await act(async () => { jest.runOnlyPendingTimers(); });
     expect(screen.getByLabelText('Raid party result')).toBeTruthy();
@@ -36,5 +47,7 @@ describe('NativeRaidPartyBuilder', () => {
       expect.stringMatching(/^party-/),
     );
     expect(screen.getByText('Lobby optimized')).toBeTruthy();
+    fireEvent.press(screen.getByLabelText('Remove Remote friend'));
+    expect(screen.queryByText('Remote friend')).toBeNull();
   });
 });

@@ -101,6 +101,28 @@ describe('native battle models', () => {
     const actual = await buildNativeRaidCounterAttackersAsync({ boss, catalog: [hydrated] });
     expect(actual).toEqual(expected);
   });
+  it('globally sorts cooperative chunks exactly like the canonical model', async () => {
+    const catalog = Array.from({ length: 24 }, (_, index) => ({
+      ...pokemon,
+      attack: 95 + (index * 11) % 137,
+      defense: 90 + (index * 7) % 89,
+      image_url: `/${index + 1}.png`,
+      moves: [
+        { ...fast, move_id: 1000 + index * 3, raid_power: 7 + index % 9 },
+        { ...charged, move_id: 1001 + index * 3, raid_power: 55 + (index * 17) % 80 },
+        { ...secondCharged, move_id: 1002 + index * 3, raid_power: 50 + (index * 13) % 90 },
+      ],
+      name: index === 0 ? 'Bulbasaur' : `Attacker ${index + 1}`,
+      pokemon_id: index + 1,
+      pokedex_number: index + 1,
+      raid_boss: index === 0 ? [raidBoss] : [],
+    })) as BasePokemon[];
+    const boss = buildNativeRaidBosses(catalog)[0];
+    const expected = buildNativeRaidAttackers({ boss, catalog, settings: { bestOnly: false } });
+    const actual = await buildNativeRaidCounterAttackersAsync({ boss, catalog, settings: { bestOnly: false } });
+    expect(actual.map((entry) => entry.id)).toEqual(expected.map((entry) => entry.id));
+    expect(actual).toEqual(expected);
+  });
   it('uses the calibrated dodge success rate instead of treating every dodge as successful', () => {
     const hydrated = { ...pokemon, moves: [fast, charged, secondCharged] } as BasePokemon;
     const boss = buildNativeRaidBosses(hydrateNativeToolCatalog(

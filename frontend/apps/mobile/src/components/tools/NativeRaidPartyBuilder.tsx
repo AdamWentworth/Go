@@ -15,6 +15,7 @@ import type {
   NativeRaidBossEntry,
   NativeRaidSettings,
 } from '../../features/tools/nativeBattleModels';
+import { RAID_PARTY_MAX_TRAINERS } from '@pokemongonexus/app-core/raid-rules';
 import {
   applyNativeRaidOptimization,
   createNativeRaidParty,
@@ -60,7 +61,7 @@ export const NativeRaidPartyBuilder = ({ assetBaseUrl, boss, onResultChange, sco
   const animationType = useNativeModalAnimation('slide');
   const [open, setOpen] = useState(false);
   const [trainers, setTrainers] = useState<NativeRaidPartyTrainerDraft[]>(() => createNativeRaidParty(scores, settings));
-  const [expandedId, setExpandedId] = useState('trainer-1');
+  const [expandedIds, setExpandedIds] = useState<Set<string>>(() => new Set(['trainer-1']));
   const [picker, setPicker] = useState<Picker>(null);
   const [result, setResult] = useState<NativeRaidPartyResult | null>(null);
   const [optimization, setOptimization] = useState<NativeRaidPartyOptimizationResult | null>(null);
@@ -123,7 +124,16 @@ export const NativeRaidPartyBuilder = ({ assetBaseUrl, boss, onResultChange, sco
     if (workTimerRef.current) clearTimeout(workTimerRef.current);
   }, []);
 
+  const cancelPendingWork = () => {
+    if (workTimerRef.current) {
+      clearTimeout(workTimerRef.current);
+      workTimerRef.current = null;
+    }
+    setRunning(false);
+    setOptimizing(false);
+  };
   const updateTrainer = (id: string, update: (trainer: NativeRaidPartyTrainerDraft) => NativeRaidPartyTrainerDraft) => {
+    cancelPendingWork();
     setTrainers((current) => current.map((trainer) => trainer.id === id ? update(trainer) : trainer));
     setResult(null);
     setOptimization(null);
@@ -141,8 +151,10 @@ export const NativeRaidPartyBuilder = ({ assetBaseUrl, boss, onResultChange, sco
       const request = { boss, drafts: trainers, scores, settings, tier };
       const next = simulateNativeRaidParty(request);
       const scenarioKey = getNativeRaidPartyScenarioKey(request);
-      if (!next || !scenarioKey) {
+      if (!scenarioKey) {
         setError('Every Trainer needs at least one valid team member.');
+      } else if (!next) {
+        setError('The boss has no usable raid movesets.');
       } else {
         setResult(next);
         onResultChangeRef.current(next, 'custom-party', scenarioKey);
@@ -175,19 +187,25 @@ export const NativeRaidPartyBuilder = ({ assetBaseUrl, boss, onResultChange, sco
     }, 0);
   };
   const addTrainer = () => {
-    if (trainers.length >= 20) return;
+    if (trainers.length >= RAID_PARTY_MAX_TRAINERS) return;
+    cancelPendingWork();
     const nextIndex = Math.max(0, ...trainers.map((trainer) => Number(trainer.id.match(/(\d+)$/)?.[1]) || 0));
     const next = createNativeRaidPartyTrainer(nextIndex, scores, settings);
     setTrainers((current) => [...current, next]);
-    setExpandedId(next.id);
+    setExpandedIds(new Set([next.id]));
     setResult(null);
     setOptimization(null);
     onResultChangeRef.current(null);
   };
   const removeTrainer = (id: string) => {
     if (trainers.length <= 1) return;
+    cancelPendingWork();
     setTrainers((current) => current.filter((trainer) => trainer.id !== id));
-    if (expandedId === id) setExpandedId('');
+    setExpandedIds((current) => {
+      const next = new Set(current);
+      next.delete(id);
+      return next;
+    });
     setResult(null);
     setOptimization(null);
     onResultChangeRef.current(null);
@@ -218,7 +236,7 @@ export const NativeRaidPartyBuilder = ({ assetBaseUrl, boss, onResultChange, sco
               <View style={styles.outcome}><Text style={[styles.outcomeTitle, outcome?.style, !result && light && styles.textLight]}>{outcome?.label ?? 'Ready to test'}</Text><Text style={[styles.meta, light && styles.mutedLight]}>{result ? `${seconds(result.projectedTimeToWinSeconds)} · ${Math.round(winRate * 100)}% clear` : 'Build and simulate this lobby'}</Text></View>
             </View>
             <View style={styles.lobbyActions}>
-              <Pressable accessibilityLabel="Add Trainer" accessibilityRole="button" disabled={trainers.length >= 20 || running || optimizing} onPress={addTrainer} style={[styles.secondary, light && styles.controlLight, (running || optimizing) && styles.disabled]}><Text style={[styles.secondaryText, light && styles.textLight]}>＋ Add</Text></Pressable>
+              <Pressable accessibilityLabel="Add Trainer" accessibilityRole="button" disabled={trainers.length >= RAID_PARTY_MAX_TRAINERS || running || optimizing} onPress={addTrainer} style={[styles.secondary, light && styles.controlLight, (running || optimizing) && styles.disabled]}><Text style={[styles.secondaryText, light && styles.textLight]}>＋ Add</Text></Pressable>
               <Pressable accessibilityRole="button" disabled={scores.length === 0 || running || optimizing} onPress={run} style={[styles.primary, (running || optimizing) && styles.disabled]}><View style={styles.primaryContent}>{running ? <ActivityIndicator color="#061816" size="small" /> : <NativeUiIcon color="#061816" name="bolt" size={14} />}<Text style={styles.primaryText}>{running ? 'Running…' : 'Simulate'}</Text></View></Pressable>
               <Pressable accessibilityRole="button" disabled={scores.length === 0 || running || optimizing} onPress={optimize} style={[styles.optimize, (running || optimizing) && styles.disabled]}>{optimizing ? <ActivityIndicator color="#071214" size="small" /> : null}<Text style={styles.primaryText}>{optimizing ? 'Optimizing…' : '✦ Optimize'}</Text></Pressable>
             </View>
@@ -226,11 +244,16 @@ export const NativeRaidPartyBuilder = ({ assetBaseUrl, boss, onResultChange, sco
 
           <View style={styles.trainers}>
             {trainers.map((trainer, trainerIndex) => {
-              const expanded = expandedId === trainer.id;
+              const expanded = expandedIds.has(trainer.id);
               const members = trainer.memberVariantIds.flatMap((id) => scoreById.get(id) ?? []);
               return (
                 <View key={trainer.id} style={[styles.trainer, light && styles.controlLight]}>
-                  <Pressable accessibilityLabel={`${trainer.label} settings`} accessibilityRole="button" accessibilityState={{ expanded }} onPress={() => setExpandedId(expanded ? '' : trainer.id)} style={styles.trainerHeader}>
+                  <Pressable accessibilityLabel={`${trainer.label} settings`} accessibilityRole="button" accessibilityState={{ expanded }} onPress={() => setExpandedIds((current) => {
+                    const next = new Set(current);
+                    if (next.has(trainer.id)) next.delete(trainer.id);
+                    else next.add(trainer.id);
+                    return next;
+                  })} style={styles.trainerHeader}>
                     <View style={styles.number}><Text style={styles.numberText}>{trainerIndex + 1}</Text></View>
                     <View style={styles.flex}><Text style={[styles.trainerTitle, light && styles.textLight]}>{trainer.label}</Text><Text style={[styles.meta, light && styles.mutedLight]}>{members.length} Pokémon{members.some(nativeRaidEntryUsesMegaSlot) ? ' · Mega/Primal' : ''}</Text></View>
                     <Text style={[styles.chevron, light && styles.textLight]}>{expanded ? '⌃' : '⌄'}</Text>
@@ -239,8 +262,8 @@ export const NativeRaidPartyBuilder = ({ assetBaseUrl, boss, onResultChange, sco
                     <View style={styles.trainerContent}>
                       <View style={styles.field}><Text style={[styles.label, light && styles.mutedLight]}>TRAINER NAME</Text><TextInput accessibilityLabel={`${trainer.label} name`} onChangeText={(label) => updateTrainer(trainer.id, (current) => ({ ...current, label }))} style={[styles.input, light && styles.inputLight]} value={trainer.label} /></View>
                       <View style={styles.settingsGrid}>
-                        <Setting label="Dodging" light={light} options={[['None', 'none'], ['Charged', 'charged']]} value={trainer.dodgeStrategy} onChange={(value) => updateTrainer(trainer.id, (current) => ({ ...current, dodgeStrategy: value as NativeRaidPartyTrainerDraft['dodgeStrategy'] }))} />
-                        <Setting disabled={trainer.dodgeStrategy === 'none'} label="Dodge success" light={light} options={[['25%', .25], ['50%', .5], ['75%', .75], ['100%', 1]]} value={trainer.dodgeSuccessRate} onChange={(value) => updateTrainer(trainer.id, (current) => ({ ...current, dodgeSuccessRate: value as NativeRaidPartyTrainerDraft['dodgeSuccessRate'] }))} />
+                        <Setting label="Dodging" light={light} options={[['No dodging', 'none'], ['Charged attacks', 'charged']]} value={trainer.dodgeStrategy} onChange={(value) => updateTrainer(trainer.id, (current) => ({ ...current, dodgeStrategy: value as NativeRaidPartyTrainerDraft['dodgeStrategy'] }))} />
+                        <Setting disabled={trainer.dodgeStrategy === 'none'} label="Dodge success" light={light} options={[['100%', 1], ['75%', .75], ['50%', .5], ['25%', .25]]} value={trainer.dodgeSuccessRate} onChange={(value) => updateTrainer(trainer.id, (current) => ({ ...current, dodgeSuccessRate: value as NativeRaidPartyTrainerDraft['dodgeSuccessRate'] }))} />
                         <Setting label="Relobby" light={light} options={[["5s", 5], ["10s", 10], ["15s", 15], ["20s", 20]]} value={trainer.relobbySeconds} onChange={(value) => updateTrainer(trainer.id, (current) => ({ ...current, relobbySeconds: value as NativeRaidPartyTrainerDraft['relobbySeconds'] }))} />
                         <Setting label="Action delay" light={light} options={[["None", 0], ["0.5s", .5], ["1.0s", 1]]} value={trainer.actionDelaySeconds} onChange={(value) => updateTrainer(trainer.id, (current) => ({ ...current, actionDelaySeconds: value as NativeRaidPartyTrainerDraft['actionDelaySeconds'] }))} />
                       </View>
@@ -268,7 +291,7 @@ export const NativeRaidPartyBuilder = ({ assetBaseUrl, boss, onResultChange, sco
           {error ? <Text accessibilityRole="alert" style={styles.error}>{error}</Text> : null}
 
           {result ? (
-            <View accessibilityLabel="Raid party result" style={[styles.result, winRate > 0 ? styles.resultClear : styles.resultFailed]}>
+            <View accessibilityLabel="Raid party result" style={[styles.result, winRate >= .5 ? styles.resultClear : winRate > 0 ? styles.resultRisky : styles.resultFailed]}>
               <Text style={styles.resultTitle}>{outcome?.label} · {seconds(result.projectedTimeToWinSeconds)}</Text>
               <Text style={styles.resultMeta}>{result.dps.toFixed(1)} DPS · {Math.round(result.faints)} faints · {Math.round(result.relobbies)} relobbies</Text>
               {result.distribution.sampleCount > 1 ? <Text style={styles.resultMeta}>{Math.round(winRate * 100)}% of modeled outcomes clear</Text> : null}
@@ -366,6 +389,7 @@ const styles = StyleSheet.create({
   removeText: { color: '#ff9bad', fontSize: 9, fontWeight: '900' },
   result: { gap: 7, borderWidth: 1, borderRadius: 10, padding: 9 },
   resultClear: { borderColor: '#39c99d', backgroundColor: '#12372e' },
+  resultRisky: { borderColor: '#d5a72f', backgroundColor: '#3c3013' },
   resultFailed: { borderColor: '#df5770', backgroundColor: '#39151e' },
   resultTitle: { color: '#fff', fontSize: 12, fontWeight: '900' },
   resultMeta: { color: '#dbe8e8', fontSize: 8.5 },

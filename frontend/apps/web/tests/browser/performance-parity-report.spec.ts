@@ -510,12 +510,13 @@ const collectSharedInteractions = async (
     await firstCaughtCard.click();
     const overlay = instance.locator('.instance-overlay.caught-mode');
     await overlay.waitFor({ state: 'visible' });
-    const initialText = await overlay.textContent() ?? '';
+    const previousButton = instance.getByRole('button', { name: 'Previous Pokemon', exact: true });
+    await expect(previousButton).toBeHidden();
     await instance.getByRole('button', { name: 'Next Pokemon', exact: true }).click();
-    await expect.poll(() => overlay.textContent()).not.toBe(initialText);
+    await previousButton.waitFor({ state: 'visible' });
     await recordInteraction(instance, 'interaction.instance.navigate', sampleIndex * 2);
-    await instance.getByRole('button', { name: 'Previous Pokemon', exact: true }).click();
-    await expect.poll(() => overlay.textContent()).toBe(initialText);
+    await previousButton.click();
+    await expect(previousButton).toBeHidden();
     await recordInteraction(instance, 'interaction.instance.navigate', sampleIndex * 2 + 1);
   } finally {
     await instance.close();
@@ -533,6 +534,12 @@ const collectRaidInteractions = async (
     await page.goto(`${webBaseUrl}/raid`, { waitUntil: 'domcontentloaded' });
     await waitUntilVisuallyReady(page);
     await expect(page.getByRole('heading', { name: /top raid attackers/i })).toBeVisible();
+
+    await page.getByRole('button', { name: 'All Pokémon', exact: true }).click();
+    await expect(page.getByRole('heading', { name: 'Top raid attackers', exact: true })).toBeVisible();
+    await recordInteraction(page, 'interaction.raid.roster-result', sampleIndex);
+    await page.getByRole('button', { name: 'My Pokémon', exact: true }).click();
+    await expect(page.getByRole('heading', { name: 'Your top raid attackers', exact: true })).toBeVisible();
 
     await page.getByRole('button', { name: 'Electric', exact: true }).click();
     await expect(page.getByRole('heading', { name: /Electric raid attackers/i })).toBeVisible();

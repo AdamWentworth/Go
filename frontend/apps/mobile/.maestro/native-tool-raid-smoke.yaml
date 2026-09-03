@@ -76,7 +76,7 @@ name: Native Raid tool smoke
 - scrollUntilVisible:
     element:
       text: "Custom raid party"
-    direction: DOWN
+    direction: UP
 - tapOn: "Custom raid party"
 - scrollUntilVisible:
     element:
@@ -103,7 +103,7 @@ name: Native Raid tool smoke
 - scrollUntilVisible:
     element:
       text: "Trainer 1 team slot 1"
-    direction: DOWN
+    direction: UP
     timeout: 20000
 - assertVisible: "Trainer 1 team slot 1"
 - takeScreenshot: "native-tool-raid-party-trainer"

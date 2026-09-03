@@ -1,5 +1,9 @@
 import { useEffect, useRef, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
+import {
+  FRIENDSHIP_DAMAGE_BONUS,
+  MEGA_ALLY_DAMAGE_BONUS,
+} from '@pokemongonexus/app-core/raid-model';
 import type {
   NativeRaidAttackerLevel,
   NativeRaidBossMovesetMode,
@@ -95,9 +99,10 @@ export const NativeRaidSettingsPanel = ({
     markNativeUiPerformanceAfterPaint('raid_battle_settings_painted', openStartedAtRef.current);
     openStartedAtRef.current = null;
   }, [collapsible, open]);
-  const update = <K extends keyof NativeRaidSettings>(key: K, value: NativeRaidSettings[K]) => (
-    onChange({ ...settings, [key]: value })
-  );
+  const update = <K extends keyof NativeRaidSettings>(key: K, value: NativeRaidSettings[K]) => {
+    if (settings[key] === value) return;
+    onChange({ ...settings, [key]: value });
+  };
   const customSettingCount = [
     includeAttackerLevel && settings.attackerLevel !== '50.0',
     settings.friendship !== 'none',
@@ -118,16 +123,18 @@ export const NativeRaidSettingsPanel = ({
       {includeAttackerLevel ? <ChoiceRow<NativeRaidAttackerLevel>
         label="Attacker level"
         onChange={(value) => update('attackerLevel', value)}
-        options={['40.0', '50.0', '51.0'].map((value) => ({ label: `Lv ${value.replace('.0', '')}`, value: value as NativeRaidAttackerLevel }))}
+        options={['40.0', '50.0', '51.0'].map((value) => ({ label: `Level ${value.replace('.0', '')}`, value: value as NativeRaidAttackerLevel }))}
         value={settings.attackerLevel}
       /> : null}
       <ChoiceRow<NativeRaidFriendship>
         label="Friendship"
         onChange={(value) => update('friendship', value)}
         options={[
-          { label: 'None', value: 'none' }, { label: 'Good', value: 'good' },
-          { label: 'Great', value: 'great' }, { label: 'Ultra', value: 'ultra' },
-          { label: 'Best', value: 'best' },
+          { label: `No friendship (${FRIENDSHIP_DAMAGE_BONUS.none.toFixed(2)}x)`, value: 'none' },
+          { label: `Good (${FRIENDSHIP_DAMAGE_BONUS.good.toFixed(2)}x)`, value: 'good' },
+          { label: `Great (${FRIENDSHIP_DAMAGE_BONUS.great.toFixed(2)}x)`, value: 'great' },
+          { label: `Ultra (${FRIENDSHIP_DAMAGE_BONUS.ultra.toFixed(2)}x)`, value: 'ultra' },
+          { label: `Best (${FRIENDSHIP_DAMAGE_BONUS.best.toFixed(2)}x)`, value: 'best' },
         ]}
         value={settings.friendship}
       />
@@ -135,8 +142,9 @@ export const NativeRaidSettingsPanel = ({
         label="Mega ally"
         onChange={(value) => update('megaAllyBonus', value)}
         options={[
-          { label: 'None', value: 'none' }, { label: 'Any Mega', value: 'general' },
-          { label: 'Same type', value: 'matching' },
+          { label: `No Mega ally (${MEGA_ALLY_DAMAGE_BONUS.none.toFixed(1)}x)`, value: 'none' },
+          { label: `Mega ally (${MEGA_ALLY_DAMAGE_BONUS.general.toFixed(1)}x)`, value: 'general' },
+          { label: `Matching Mega (${MEGA_ALLY_DAMAGE_BONUS.matching.toFixed(1)}x)`, value: 'matching' },
         ]}
         value={settings.megaAllyBonus}
       />
@@ -144,8 +152,8 @@ export const NativeRaidSettingsPanel = ({
         label="Party Power"
         onChange={(value) => update('partyPower', value)}
         options={[
-          { label: 'Off', value: 'none' }, { label: '2', value: 'party2' },
-          { label: '3', value: 'party3' }, { label: '4', value: 'party4' },
+          { label: 'No Party Power', value: 'none' }, { label: 'Party of 2', value: 'party2' },
+          { label: 'Party of 3', value: 'party3' }, { label: 'Party of 4', value: 'party4' },
         ]}
         value={settings.partyPower}
       />
@@ -154,10 +162,10 @@ export const NativeRaidSettingsPanel = ({
           label="Party Power timing"
           onChange={(value) => update('partyPowerStrategy', value)}
           options={[
-            { label: 'When ready', value: 'immediate' },
-            { label: 'Next Charged', value: 'next-charged' },
-            { label: 'Strongest Charged', value: 'strongest-charged' },
-            { label: 'Manual', value: 'manual' },
+            { label: 'Activate as soon as ready', value: 'immediate' },
+            { label: 'Use on next Charged Attack', value: 'next-charged' },
+            { label: 'Save for strongest Charged Attack', value: 'strongest-charged' },
+            { label: 'Manual timing (no automatic use)', value: 'manual' },
           ]}
           value={settings.partyPowerStrategy}
         />
@@ -165,14 +173,14 @@ export const NativeRaidSettingsPanel = ({
       {includeRelobbyControls ? <ChoiceRow<number>
         label="Relobby delay"
         onChange={(value) => update('relobbySeconds', value)}
-        options={[0, 5, 10, 15, 20].map((value) => ({ label: value === 0 ? 'None' : `${value}s`, value }))}
+        options={[0, 5, 10, 15, 20].map((value) => ({ label: value === 0 ? 'No delay' : `${value} seconds`, value }))}
         value={settings.relobbySeconds}
       /> : null}
       <ChoiceRow<string>
         label="Weather boost"
         onChange={(value) => update('weatherBoostedType', value)}
         options={[
-          { label: 'None', value: '' },
+          { label: 'No weather boost', value: '' },
           ...NATIVE_BATTLE_TYPES.map((value) => ({ label: value.charAt(0).toUpperCase() + value.slice(1), value })),
         ]}
         value={settings.weatherBoostedType}
@@ -192,10 +200,10 @@ export const NativeRaidSettingsPanel = ({
             label="Boss behavior"
             onChange={(value) => update('bossMovesetMode', value)}
             options={[
-              { label: 'Expected', value: 'expected' },
-              ...(includeMonteCarloOption ? [{ label: 'Monte Carlo', value: 'monte-carlo' } as const] : []),
-              { label: 'Favorable', value: 'favorable' },
-              { label: 'Hostile', value: 'hostile' },
+              { label: 'Expected across legal movesets', value: 'expected' },
+              ...(includeMonteCarloOption ? [{ label: 'Monte Carlo distribution (32+ trials)', value: 'monte-carlo' } as const] : []),
+              { label: 'Favorable incoming moveset', value: 'favorable' },
+              { label: 'Hostile incoming moveset', value: 'hostile' },
             ]}
             value={settings.bossMovesetMode}
           />
