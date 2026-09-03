@@ -20,7 +20,7 @@ tags:
       - tapOn: Close
 - extendedWaitUntil:
     visible: Your top raid attackers
-    timeout: 45000
+    timeout: 60000
 - tapOn:
     point: "26%,25%"
 - extendedWaitUntil:
@@ -117,9 +117,11 @@ tags:
     direction: DOWN
     timeout: 30000
 - tapOn: Battle settings
-- extendedWaitUntil:
-    visible: Boss behavior
-    timeout: 10000
+- scrollUntilVisible:
+    element:
+      text: Boss behavior
+    direction: DOWN
+    timeout: 30000
 - scrollUntilVisible:
     element:
       text: Custom raid party
