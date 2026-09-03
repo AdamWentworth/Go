@@ -82,9 +82,12 @@ name: Native Raid tool smoke
     direction: DOWN
 - assertVisible: "Shadow boss state"
 - takeScreenshot: "native-tool-raid-boss-settings"
-- extendedWaitUntil:
-    notVisible: "Modeling raid timelines…"
+- scrollUntilVisible:
+    element:
+      text: "Mega Rayquaza"
+    direction: DOWN
     timeout: 45000
+- assertVisible: "Mega Rayquaza"
 - scrollUntilVisible:
     element:
       text: "Custom raid party"
