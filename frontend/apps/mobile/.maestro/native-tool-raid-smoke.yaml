@@ -106,6 +106,8 @@ name: Native Raid tool smoke
       text: "^Simulate$"
     direction: UP
 - tapOn: "^Simulate$"
+- waitForAnimationToEnd
+- takeScreenshot: "native-tool-raid-after-simulate"
 - scrollUntilVisible:
     element:
       text: "^(Clear|Likely clear|Risky|Time expired) · .*$"

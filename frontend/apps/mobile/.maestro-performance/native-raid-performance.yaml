@@ -133,6 +133,7 @@ tags:
     direction: UP
     timeout: 30000
 - tapOn: "^Simulate$"
+- waitForAnimationToEnd
 - scrollUntilVisible:
     element:
       text: "^(Clear|Likely clear|Risky|Time expired) · .*$"
