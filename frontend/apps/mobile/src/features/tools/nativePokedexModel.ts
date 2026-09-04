@@ -62,6 +62,7 @@ export type NativePokedexManualRegistration = {
 export type NativePokedexEntry = PokemonCatalogEntry & {
   category: NativePokedexCategory;
   femaleImageUri?: string | null;
+  femalePurifiedImageUri?: string | null;
   generation: number;
   instanceRegistered: boolean;
   manualRegistrationIds: string[];
@@ -71,12 +72,21 @@ export type NativePokedexEntry = PokemonCatalogEntry & {
   registeredFacets: NativePokedexRegistrationFacets[];
   released: boolean;
   registeredSpecies: boolean;
+  purifiedImageUri?: string | null;
+  releaseDate?: string | null;
   supportedGenders?: ('Male' | 'Female')[];
 };
 
 type NativePokedexStaticEntry = PokemonCatalogEntry & Pick<
   NativePokedexEntry,
-  'category' | 'femaleImageUri' | 'generation' | 'released' | 'supportedGenders'
+  | 'category'
+  | 'femaleImageUri'
+  | 'femalePurifiedImageUri'
+  | 'generation'
+  | 'purifiedImageUri'
+  | 'releaseDate'
+  | 'released'
+  | 'supportedGenders'
 >;
 
 type NativePokedexCatalogProjection = {
@@ -125,6 +135,26 @@ const categoryFor = (entry: PokemonCatalogEntry): NativePokedexCategory => {
   if (shadow) return 'shadow';
   if (shiny) return 'shiny';
   return 'pokemon';
+};
+
+type NativeVariant = ReturnType<typeof createPokemonVariants>[number];
+
+const releaseDateFor = (
+  variant: NativeVariant | undefined,
+  category: NativePokedexCategory,
+): string | null => {
+  if (!variant || !category.includes('costume')) return null;
+  const costumeId = Number(String(variant.variantType ?? '').match(/costume_(\d+)/)?.[1]);
+  if (!Number.isFinite(costumeId)) return null;
+  const costume = variant.costumes?.find((candidate) => Number(candidate.costume_id) === costumeId);
+  if (!costume) return null;
+  if (category === 'shiny costume') {
+    return costume.date_shiny_available ?? costume.date_available ?? null;
+  }
+  if (category === 'shadow costume') {
+    return costume.shadow_costume?.date_available ?? costume.date_available ?? null;
+  }
+  return costume.date_available ?? null;
 };
 
 const matchesFacet = (
@@ -228,11 +258,19 @@ const getNativePokedexCatalogProjection = (
   const entries = buildPokemonCatalogEntries(catalog).map((entry) => {
     const pokemon = pokemonById.get(entry.pokemonId)!;
     const variant = variantById.get(entry.id);
+    const category = categoryFor(entry);
     return {
       ...entry,
-      category: categoryFor(entry),
+      category,
       femaleImageUri: variant ? determineImageUrl(true, variant) : entry.imageUri,
+      femalePurifiedImageUri: variant
+        ? determineImageUrl(true, variant, false, undefined, false, undefined, true)
+        : entry.imageUri,
       generation: generationByPokemon.get(entry.pokemonId) ?? 0,
+      purifiedImageUri: variant
+        ? determineImageUrl(false, variant, false, undefined, false, undefined, true)
+        : entry.imageUri,
+      releaseDate: releaseDateFor(variant, category),
       released: Number(pokemon.available ?? 1) !== 0,
       supportedGenders: supportedGendersFor(pokemon),
     } satisfies NativePokedexStaticEntry;

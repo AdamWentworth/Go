@@ -61,6 +61,7 @@ const reportPath = path.resolve(
 );
 const repetitions = Math.max(1, Number(process.env.POKEGONEXUS_PERFORMANCE_SAMPLES ?? 3));
 const workflowsOnly = process.env.POKEGONEXUS_PERFORMANCE_WORKFLOWS_ONLY === 'true';
+const workflowFilter = process.env.POKEGONEXUS_PERFORMANCE_WORKFLOW_FILTER?.trim().toLocaleLowerCase() ?? '';
 const routeFilter = process.env.POKEGONEXUS_PERFORMANCE_ROUTE_FILTER?.trim() ?? '';
 const samples: MetricSample[] = [];
 const androidDeviceId = process.env.POKEGONEXUS_ANDROID_DEVICE_ID?.trim() ?? '';
@@ -402,6 +403,14 @@ const collectSharedInteractions = async (
   context: BrowserContext,
   sampleIndex: number,
 ) => {
+  if (workflowFilter === 'pokedex') {
+    await collectPokedexInteractions(context, sampleIndex);
+    return;
+  }
+  if (workflowFilter === 'raid') {
+    await collectRaidInteractions(context, sampleIndex);
+    return;
+  }
   const home = await createMeasuredPage(context, 'signed-in', 'dark');
   try {
     await home.goto(`${webBaseUrl}/`, { waitUntil: 'domcontentloaded' });
@@ -522,7 +531,147 @@ const collectSharedInteractions = async (
     await instance.close();
   }
 
+  await collectPokedexInteractions(context, sampleIndex);
   await collectRaidInteractions(context, sampleIndex);
+};
+
+const collectPokedexInteractions = async (
+  context: BrowserContext,
+  sampleIndex: number,
+) => {
+  const page = await createMeasuredPage(context, 'signed-in', 'dark');
+  try {
+    await page.goto(`${webBaseUrl}/pokedex`, { waitUntil: 'domcontentloaded' });
+    await waitUntilVisuallyReady(page);
+    await expect(page.getByRole('heading', { name: 'Pokédex', exact: true })).toBeVisible();
+
+    const advanced = page.getByRole('switch', { name: /Advanced/i });
+    await advanced.click();
+    await expect(page.getByRole('button', { name: 'XS', exact: true })).toBeVisible();
+    await recordInteraction(page, 'interaction.pokedex.advanced-result', sampleIndex);
+
+    const shinyTab = page.getByRole('tab', { name: 'Shiny', exact: true });
+    await shinyTab.click();
+    await expect(shinyTab).toHaveAttribute('aria-selected', 'true');
+    await recordInteraction(page, 'interaction.pokedex.category-result', sampleIndex);
+
+    const lucky = page.getByRole('button', { name: 'Lucky', exact: true });
+    await lucky.click();
+    await expect(lucky).toHaveAttribute('aria-pressed', 'true');
+    await recordInteraction(page, 'interaction.pokedex.facet-result', sampleIndex);
+
+    const activeCategoryPanel = page.locator('.pokedex-category-panel[aria-hidden="false"]');
+    const kantoCard = activeCategoryPanel.locator('.pokedex-region-card').filter({ hasText: 'Kanto' }).first();
+    await kantoCard.click();
+    const kantoSection = page.locator('.pokedex-category-panel[aria-hidden="false"] .pokedex-region-detail__section').filter({ hasText: 'Kanto' }).first();
+    await kantoSection.waitFor({ state: 'visible' });
+    await recordInteraction(page, 'interaction.pokedex.region-index', sampleIndex);
+
+    const search = page.getByRole('searchbox', { name: 'Search', exact: true });
+    await search.fill('bulba');
+    const bulbasaurCell = page.locator('.pokedex-category-panel[aria-hidden="false"] .pokedex-region-grid__cell').filter({ hasText: /Bulbasaur/i }).first();
+    await bulbasaurCell.waitFor({ state: 'visible' });
+    await recordInteraction(page, 'interaction.pokedex.search-result', sampleIndex);
+
+    const kantoFolder = page.getByRole('button', { name: /Collapse Kanto/i });
+    await kantoFolder.click();
+    const expandKanto = page.getByRole('button', { name: /Expand Kanto/i });
+    await expect(expandKanto).toHaveAttribute('aria-expanded', 'false');
+    await recordInteraction(page, 'interaction.pokedex.region-section', sampleIndex * 2);
+    await expandKanto.click();
+    await expect(page.getByRole('button', { name: /Collapse Kanto/i })).toHaveAttribute('aria-expanded', 'true');
+    await bulbasaurCell.waitFor({ state: 'visible' });
+    await recordInteraction(page, 'interaction.pokedex.region-section', sampleIndex * 2 + 1);
+
+    const visibleActions = page.getByLabel('Visible registration actions');
+    await visibleActions.getByRole('button', { name: 'Register all', exact: true }).click();
+    const rootConfirmation = page.getByRole('dialog', { name: 'Confirm action' });
+    await rootConfirmation.waitFor({ state: 'visible' });
+    await recordInteraction(page, 'interaction.pokedex.bulk-dialog', sampleIndex);
+    await rootConfirmation.getByRole('button', { name: 'Cancel', exact: true }).click();
+
+    const registrationToggle = bulbasaurCell.locator('.pokedex-region-grid__registration-toggle');
+    const rootRegistrationBefore = await registrationToggle.getAttribute('aria-pressed');
+    await registrationToggle.click();
+    await expect(registrationToggle).toHaveAttribute('aria-pressed', rootRegistrationBefore === 'true' ? 'false' : 'true');
+    await recordInteraction(page, 'interaction.pokedex.registration-result', sampleIndex);
+
+    await bulbasaurCell.locator('.pokedex-region-grid__open').click();
+    const detail = page.locator('.pokedex-pokemon-detail');
+    await detail.waitFor({ state: 'visible' });
+    await recordInteraction(page, 'interaction.pokedex.detail-open', sampleIndex);
+
+    const shinySlot = detail.locator('.pokedex-pokemon-detail-card').filter({ hasText: /^Shiny/i }).first();
+    await shinySlot.locator('.pokedex-pokemon-detail-card__select').click();
+    await expect(shinySlot).toHaveClass(/is-selected/);
+    await recordInteraction(page, 'interaction.pokedex.detail.slot-result', sampleIndex);
+
+    const female = detail.getByTitle('Female');
+    await female.click();
+    await expect(female).toHaveAttribute('aria-pressed', 'true');
+    await recordInteraction(page, 'interaction.pokedex.detail.gender-result', sampleIndex);
+
+    await detail.getByLabel('Registered tab bulk actions').getByRole('button', { name: 'Register all', exact: true }).click();
+    const detailConfirmation = page.getByRole('dialog', { name: 'Confirm action' });
+    await detailConfirmation.waitFor({ state: 'visible' });
+    await recordInteraction(page, 'interaction.pokedex.detail.bulk-dialog', sampleIndex);
+    await detailConfirmation.getByRole('button', { name: 'Cancel', exact: true }).click();
+
+    const missingRegistration = detail.locator('.pokedex-pokemon-detail-card__registration-toggle[aria-pressed="false"]').first();
+    const missingRegistrationLabel = await missingRegistration.getAttribute('aria-label');
+    if (!missingRegistrationLabel?.startsWith('Register ')) {
+      throw new Error('Pokédex detail produced no registerable slot.');
+    }
+    await missingRegistration.click();
+    await detail.getByRole('button', {
+      name: missingRegistrationLabel.replace(/^Register /, 'Clear '),
+      exact: true,
+    }).waitFor({ state: 'visible' });
+    await recordInteraction(page, 'interaction.pokedex.detail.registration-result', sampleIndex);
+
+    const infoTab = detail.getByRole('tab', { name: 'Info', exact: true });
+    await infoTab.click();
+    await detail.getByRole('heading', { name: 'Size ranges', exact: true }).waitFor({ state: 'visible' });
+    await recordInteraction(page, 'interaction.pokedex.detail.tab-result', sampleIndex * 3);
+    const battleTab = detail.getByRole('tab', { name: 'Battle', exact: true });
+    await battleTab.click();
+    await detail.getByRole('heading', { name: 'Type effectiveness', exact: true }).waitFor({ state: 'visible' });
+    await recordInteraction(page, 'interaction.pokedex.detail.tab-result', sampleIndex * 3 + 1);
+    const moreTab = detail.getByRole('tab', { name: /More/i });
+    await moreTab.click();
+    let openComboSection = detail.locator('.pokedex-pokemon-detail__combo-section.is-open').first();
+    await openComboSection.waitFor({ state: 'visible' });
+    await recordInteraction(page, 'interaction.pokedex.detail.tab-result', sampleIndex * 3 + 2);
+    await recordInteraction(page, 'interaction.pokedex.detail.combo-section', sampleIndex * 3);
+
+    await openComboSection.locator('.pokedex-pokemon-detail__combo-section-button').click();
+    await expect(detail.locator('.pokedex-pokemon-detail__combo-section.is-open')).toHaveCount(0);
+    await recordInteraction(page, 'interaction.pokedex.detail.combo-section', sampleIndex * 3 + 1);
+    const shinyComboSection = detail.locator('.pokedex-pokemon-detail__combo-section').filter({ hasText: /^Shiny/i }).first();
+    await shinyComboSection.locator('.pokedex-pokemon-detail__combo-section-button').click();
+    openComboSection = detail.locator('.pokedex-pokemon-detail__combo-section.is-open').first();
+    await openComboSection.locator('.pokedex-pokemon-detail__combo-section-body').waitFor({ state: 'visible' });
+    await recordInteraction(page, 'interaction.pokedex.detail.combo-section', sampleIndex * 3 + 2);
+
+    const luckyFilter = openComboSection.getByRole('button', { name: 'Lucky', exact: true });
+    await luckyFilter.click();
+    await expect(openComboSection.getByText('Showing 30 of 60', { exact: true })).toBeVisible();
+    await recordInteraction(page, 'interaction.pokedex.detail.combo-filter', sampleIndex);
+
+    const comboSearch = openComboSection.getByRole('searchbox', { name: /Search combinations/i });
+    await comboSearch.fill('female');
+    await expect(openComboSection.getByText('Showing 10 of 60', { exact: true })).toBeVisible();
+    await recordInteraction(page, 'interaction.pokedex.detail.combo-query', sampleIndex);
+    await openComboSection.getByRole('button', { name: 'Clear', exact: true }).click();
+    await expect(openComboSection.getByText('Showing 60 of 60', { exact: true })).toBeVisible();
+
+    await openComboSection.getByLabel('Shown combination actions').getByRole('button', { name: 'Register all', exact: true }).click();
+    await page.getByRole('dialog', { name: 'Confirm action' }).waitFor({ state: 'visible' });
+    await recordInteraction(page, 'interaction.pokedex.detail.bulk-dialog', sampleIndex + repetitions);
+    await page.getByRole('dialog', { name: 'Confirm action' }).getByRole('button', { name: 'Cancel', exact: true }).click();
+  } finally {
+    await page.close();
+  }
 };
 
 const collectRaidInteractions = async (

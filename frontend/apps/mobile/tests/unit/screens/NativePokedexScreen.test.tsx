@@ -2,6 +2,10 @@ import { fireEvent, render, screen } from '@testing-library/react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { NativePokedexScreen } from '../../../src/screens/NativePokedexScreen';
 
+jest.mock('../../../src/observability/nativeUiInteractionTiming', () => ({
+  markNativeUiPerformanceAfterPaint: jest.fn(),
+}));
+
 const entry = { id: '0001-shiny', pokemonId: 1, pokedexNumber: 1, name: 'Shiny Bulbasaur', imageUri: '/bulbasaur.png', typeIconUris: [], maxKind: null, category: 'shiny' as const, generation: 1, instanceRegistered: true, manualRegistrationIds: [], registered: true, registeredFacets: [{}], released: true, registeredSpecies: true, supportedGenders: ['Male', 'Female'] as ('Male' | 'Female')[] };
 const unreleasedEntry = {
   ...entry,
@@ -13,6 +17,14 @@ const unreleasedEntry = {
   registered: false,
   registeredFacets: [],
   released: false,
+};
+const johtoEntry = {
+  ...entry,
+  id: '0152-shiny',
+  name: 'Shiny Chikorita',
+  pokedexNumber: 152,
+  pokemonId: 152,
+  generation: 2,
 };
 
 describe('NativePokedexScreen', () => {
@@ -65,5 +77,26 @@ describe('NativePokedexScreen', () => {
       expect.objectContaining({ entryId: entry.id }),
     ], true);
     expect(onOpenEntry).not.toHaveBeenCalled();
+  });
+
+  it('keeps every populated region in the detail index and independently collapses sections', () => {
+    render(<SafeAreaProvider initialMetrics={{ frame: { x: 0, y: 0, width: 390, height: 844 }, insets: { top: 24, right: 0, bottom: 20, left: 0 } }}><NativePokedexScreen assetBaseUrl="https://pokegonexus.com" entries={[entry, johtoEntry]} onBack={jest.fn()} onOpenEntry={jest.fn()} onRetry={jest.fn()} onSetRegistrations={jest.fn()} /></SafeAreaProvider>);
+
+    fireEvent.press(screen.getByText('Shiny'));
+    fireEvent.press(screen.getByLabelText('Open Johto'));
+
+    expect(screen.getByLabelText('Kanto region section')).toBeTruthy();
+    expect(screen.getByLabelText('Johto region section')).toBeTruthy();
+    expect(screen.getByLabelText('Open Shiny Bulbasaur')).toBeTruthy();
+    expect(screen.getByLabelText('Open Shiny Chikorita')).toBeTruthy();
+
+    fireEvent.press(screen.getByLabelText('Collapse Kanto Shiny'));
+    expect(screen.getByLabelText('Expand Kanto Shiny')).toBeTruthy();
+    expect(screen.queryByLabelText('Open Shiny Bulbasaur')).toBeNull();
+    expect(screen.getByLabelText('Open Shiny Chikorita')).toBeTruthy();
+
+    fireEvent.press(screen.getByText('‹ All regions'));
+    expect(screen.getByLabelText('Open Kanto')).toBeTruthy();
+    expect(screen.getByLabelText('Open Johto')).toBeTruthy();
   });
 });

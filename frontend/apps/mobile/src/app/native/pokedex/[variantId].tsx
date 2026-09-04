@@ -46,6 +46,7 @@ export default function NativePokedexDetailRoute() {
     <>
       <NativePokedexDetailScreen
         allEntries={entries}
+        allPokemon={mergedCatalog}
         assetBaseUrl={runtimeConfig.api.frontendAppUrl}
         entry={entry}
         error={[query.error, movesQuery.error, speciesQuery.error, snapshotQuery.error, registrationsQuery.error, mutation.error].find((value): value is Error => value instanceof Error)?.message ?? null}

@@ -1,4 +1,4 @@
-import type { BasePokemon } from '@pokemongonexus/shared-contracts/pokemon';
+import type { BasePokemon, Move } from '@pokemongonexus/shared-contracts/pokemon';
 import {
   buildNativePokedexRegistrationId,
   type NativePokedexEntry,
@@ -38,6 +38,7 @@ export type NativePokedexRegistrationSlot = {
   lockedByInstance: boolean;
   registered: boolean;
   registration: NativePokedexManualRegistration;
+  releaseDate: string | null;
   section: NativePokedexDetailSectionKey;
 };
 
@@ -57,6 +58,111 @@ export type NativePokedexCombinationSection = {
   id: string;
   label: string;
   registeredCount: number;
+};
+
+const TYPE_NAMES = [
+  'Normal', 'Fire', 'Water', 'Electric', 'Grass', 'Ice', 'Fighting', 'Poison', 'Ground',
+  'Flying', 'Psychic', 'Bug', 'Rock', 'Ghost', 'Dragon', 'Dark', 'Steel', 'Fairy',
+] as const;
+
+const ATTACK_TYPE_CHART: Record<string, { resisted: string[]; strong: string[] }> = {
+  bug: { strong: ['grass', 'psychic', 'dark'], resisted: ['fire', 'fighting', 'poison', 'flying', 'ghost', 'steel', 'fairy'] },
+  dark: { strong: ['psychic', 'ghost'], resisted: ['fighting', 'dark', 'fairy'] },
+  dragon: { strong: ['dragon'], resisted: ['steel', 'fairy'] },
+  electric: { strong: ['water', 'flying'], resisted: ['electric', 'grass', 'dragon', 'ground'] },
+  fairy: { strong: ['fighting', 'dragon', 'dark'], resisted: ['fire', 'poison', 'steel'] },
+  fighting: { strong: ['normal', 'ice', 'rock', 'dark', 'steel'], resisted: ['poison', 'flying', 'psychic', 'bug', 'ghost', 'fairy'] },
+  fire: { strong: ['grass', 'ice', 'bug', 'steel'], resisted: ['fire', 'water', 'rock', 'dragon'] },
+  flying: { strong: ['grass', 'fighting', 'bug'], resisted: ['electric', 'rock', 'steel'] },
+  ghost: { strong: ['psychic', 'ghost'], resisted: ['dark', 'normal'] },
+  grass: { strong: ['water', 'ground', 'rock'], resisted: ['fire', 'grass', 'poison', 'flying', 'bug', 'dragon', 'steel'] },
+  ground: { strong: ['fire', 'electric', 'poison', 'rock', 'steel'], resisted: ['grass', 'bug', 'flying'] },
+  ice: { strong: ['grass', 'ground', 'flying', 'dragon'], resisted: ['fire', 'water', 'ice', 'steel'] },
+  normal: { strong: [], resisted: ['rock', 'ghost', 'steel'] },
+  poison: { strong: ['grass', 'fairy'], resisted: ['poison', 'ground', 'rock', 'ghost', 'steel'] },
+  psychic: { strong: ['fighting', 'poison'], resisted: ['psychic', 'steel', 'dark'] },
+  rock: { strong: ['fire', 'ice', 'flying', 'bug'], resisted: ['fighting', 'ground', 'steel'] },
+  steel: { strong: ['ice', 'rock', 'fairy'], resisted: ['fire', 'water', 'electric', 'steel'] },
+  water: { strong: ['fire', 'ground', 'rock'], resisted: ['water', 'grass', 'dragon'] },
+};
+
+const evolutionIds = (pokemon: BasePokemon, key: 'evolves_from' | 'evolves_to'): number[] => {
+  const direct = pokemon[key];
+  const nested = pokemon.evolutionData?.[key];
+  const value = Array.isArray(direct) ? direct : nested;
+  return Array.isArray(value)
+    ? value.map(Number).filter((candidate) => Number.isFinite(candidate))
+    : [];
+};
+
+export const buildNativePokedexEvolutionLine = (
+  catalog: BasePokemon[],
+  pokemon: BasePokemon,
+): BasePokemon[] => {
+  const byId = new Map(catalog.map((candidate) => [candidate.pokemon_id, candidate]));
+  if (!byId.has(pokemon.pokemon_id)) byId.set(pokemon.pokemon_id, pokemon);
+  const adjacency = new Map<number, Set<number>>();
+  const connect = (left: number, right: number) => {
+    if (!byId.has(left) || !byId.has(right)) return;
+    adjacency.set(left, new Set([...(adjacency.get(left) ?? []), right]));
+    adjacency.set(right, new Set([...(adjacency.get(right) ?? []), left]));
+  };
+  byId.forEach((candidate) => {
+    [...evolutionIds(candidate, 'evolves_from'), ...evolutionIds(candidate, 'evolves_to')]
+      .forEach((linkedId) => connect(candidate.pokemon_id, linkedId));
+  });
+  const family = new Set<number>();
+  const pending = [pokemon.pokemon_id];
+  while (pending.length > 0) {
+    const current = pending.pop() as number;
+    if (family.has(current)) continue;
+    family.add(current);
+    adjacency.get(current)?.forEach((linkedId) => pending.push(linkedId));
+  }
+  const depthCache = new Map<number, number>();
+  const depth = (candidate: BasePokemon, trail = new Set<number>()): number => {
+    const cached = depthCache.get(candidate.pokemon_id);
+    if (cached != null) return cached;
+    const parents = evolutionIds(candidate, 'evolves_from').filter((id) => byId.has(id) && !trail.has(id));
+    if (parents.length === 0) return 0;
+    const nextTrail = new Set(trail).add(candidate.pokemon_id);
+    const result = 1 + Math.min(...parents.map((id) => depth(byId.get(id) as BasePokemon, nextTrail)));
+    depthCache.set(candidate.pokemon_id, result);
+    return result;
+  };
+  return [...family]
+    .map((id) => byId.get(id))
+    .filter((candidate): candidate is BasePokemon => Boolean(candidate))
+    .sort((left, right) => depth(left) - depth(right) || Number(left.pokedex_number ?? left.pokemon_id) - Number(right.pokedex_number ?? right.pokemon_id));
+};
+
+export const getNativePokedexTypeEffectiveness = (
+  pokemon: BasePokemon,
+): { resistantTo: string[]; weakTo: string[] } => {
+  const defendingTypes = [pokemon.type1_name, pokemon.type2_name]
+    .map((type) => String(type ?? '').trim().toLocaleLowerCase())
+    .filter(Boolean);
+  const resistantTo: string[] = [];
+  const weakTo: string[] = [];
+  TYPE_NAMES.forEach((typeName) => {
+    const attack = ATTACK_TYPE_CHART[typeName.toLocaleLowerCase()];
+    const multiplier = defendingTypes.reduce((current, defendingType) => {
+      if (attack.strong.includes(defendingType)) return current * 1.6;
+      if (attack.resisted.includes(defendingType)) return current * 0.625;
+      return current;
+    }, 1);
+    if (multiplier > 1.01) weakTo.push(typeName);
+    else if (multiplier < 0.99) resistantTo.push(typeName);
+  });
+  return { resistantTo, weakTo };
+};
+
+export const getNativePokedexMoveEnergyBarCount = (move: Move): number => {
+  const energy = Math.abs(Number(move.pvp_energy || move.raid_energy || 0));
+  if (energy >= 100) return 1;
+  if (energy >= 50) return 2;
+  if (energy > 0) return 3;
+  return 0;
 };
 
 const facetOrder: (keyof NativePokedexRegistrationFacets)[] = [
@@ -116,7 +222,17 @@ const createSlot = (
 ): NativePokedexRegistrationSlot => {
   const state = stateFor(entry, facets);
   const registration = registrationFor(entry, facets);
-  return { entry, facets, icon, id: registration.registrationId, label, section, registration, ...state };
+  return {
+    entry,
+    facets,
+    icon,
+    id: registration.registrationId,
+    label,
+    registration,
+    releaseDate: section === 'costume' ? entry.releaseDate ?? null : null,
+    section,
+    ...state,
+  };
 };
 
 const isShiny = (entry: NativePokedexEntry): boolean => entry.category.includes('shiny');

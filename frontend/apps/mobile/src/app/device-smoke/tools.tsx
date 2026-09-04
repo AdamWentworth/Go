@@ -502,6 +502,14 @@ const OWNED_PVP_INSTANCE = {
 } as PokemonInstance;
 const noOp = () => undefined;
 
+const updatePokedexRegistrations = (
+  existing: NativePokedexManualRegistration[],
+  nextRegistrations: NativePokedexManualRegistration[],
+  registered: boolean,
+) => registered
+  ? [...existing.filter(({ registrationId }) => !nextRegistrations.some((next) => next.registrationId === registrationId)), ...nextRegistrations]
+  : existing.filter(({ registrationId }) => !nextRegistrations.some((next) => next.registrationId === registrationId));
+
 const DeviceSmokeToolChrome = ({ children, currentPath, ready }: { children: ReactNode; currentPath: string; ready: boolean }) => (
   <View style={styles.screen}>
     {children}
@@ -529,24 +537,59 @@ function DeviceSmokePokedexDetail() {
   return (
     <NativePokedexDetailScreen
       allEntries={entries}
+      allPokemon={[detailPokemon]}
       assetBaseUrl={ASSET_BASE_URL}
       entry={current}
       onBack={noOp}
       onOpenEntry={noOp}
       onSetRegistrations={(nextRegistrations, registered) => {
-        setRegistrations((existing) => registered
-          ? [...existing.filter(({ registrationId }) => !nextRegistrations.some((next) => next.registrationId === registrationId)), ...nextRegistrations]
-          : existing.filter(({ registrationId }) => !nextRegistrations.some((next) => next.registrationId === registrationId)));
+        setRegistrations((existing) => updatePokedexRegistrations(existing, nextRegistrations, registered));
       }}
       onToggleRegistration={(registration, registered) => {
-        setRegistrations((existing) => registered
-          ? [...existing.filter(({ registrationId }) => registrationId !== registration.registrationId), registration]
-          : existing.filter(({ registrationId }) => registrationId !== registration.registrationId));
+        setRegistrations((existing) => updatePokedexRegistrations(existing, [registration], registered));
       }}
       pokemon={detailPokemon}
       signedIn
     />
   );
+}
+
+function DeviceSmokePokedex({ catalog }: { catalog: BasePokemon[] }) {
+  const [registrations, setRegistrations] = useState<NativePokedexManualRegistration[]>(POKEDEX_REGISTRATIONS);
+  const [selectedEntryId, setSelectedEntryId] = useState<string | null>(null);
+  const entries = useMemo(
+    () => buildNativePokedexEntries(catalog, {}, registrations),
+    [catalog, registrations],
+  );
+  const selectedEntry = entries.find(({ id }) => id === selectedEntryId) ?? null;
+  const selectedPokemon = catalog.find(({ pokemon_id: pokemonId }) => pokemonId === selectedEntry?.pokemonId) ?? null;
+  const setRegistrationState = (
+    nextRegistrations: NativePokedexManualRegistration[],
+    registered: boolean,
+  ) => setRegistrations((existing) => updatePokedexRegistrations(existing, nextRegistrations, registered));
+
+  if (selectedEntry) {
+    return <NativePokedexDetailScreen
+      allEntries={entries}
+      allPokemon={catalog}
+      assetBaseUrl={ASSET_BASE_URL}
+      entry={selectedEntry}
+      onBack={() => setSelectedEntryId(null)}
+      onOpenEntry={(nextEntry) => setSelectedEntryId(nextEntry.id)}
+      onSetRegistrations={setRegistrationState}
+      onToggleRegistration={(registration, registered) => setRegistrationState([registration], registered)}
+      pokemon={selectedPokemon}
+      signedIn
+    />;
+  }
+  return <NativePokedexScreen
+    assetBaseUrl={ASSET_BASE_URL}
+    entries={entries}
+    onBack={noOp}
+    onOpenEntry={(nextEntry) => setSelectedEntryId(nextEntry.id)}
+    onRetry={noOp}
+    onSetRegistrations={setRegistrationState}
+  />;
 }
 
 function DeviceSmokeRankings() {
@@ -606,23 +649,12 @@ export default function DeviceSmokeToolsRoute() {
       });
     return () => controller.abort();
   }, [needsCatalog]);
-  const parityPokedexEntries = useMemo(
-    () => buildNativePokedexEntries(catalog, {}, POKEDEX_REGISTRATIONS),
-    [catalog],
-  );
   if (!runtimeConfig.mobile.deviceSmokeMode) return <Redirect href="/" />;
 
   if (tool === "pokedex") {
     return (
       <DeviceSmokeToolChrome currentPath="/pokedex" ready={!needsCatalog || catalogReady}>
-        <NativePokedexScreen
-          assetBaseUrl={ASSET_BASE_URL}
-          entries={parityPokedexEntries}
-          onBack={noOp}
-          onOpenEntry={noOp}
-          onRetry={noOp}
-          onSetRegistrations={noOp}
-        />
+        <DeviceSmokePokedex catalog={catalog} />
       </DeviceSmokeToolChrome>
     );
   }

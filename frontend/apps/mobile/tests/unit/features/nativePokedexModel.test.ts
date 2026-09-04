@@ -17,7 +17,8 @@ describe('native Pokédex model', () => {
       caught: { instance_id: 'caught', pokemon_id: 25, variant_id: '0025-shiny', is_caught: true },
     } as never);
     expect(entries.find(({ id }) => id === '0025-shiny')?.registered).toBe(true);
-    expect(entries.some(({ category }) => category === 'costume')).toBe(true);
+    expect(entries.find(({ category }) => category === 'costume')?.releaseDate).toBe('2020-01-01');
+    expect(entries.find(({ category }) => category === 'shiny costume')?.releaseDate).toBe('2024-01-01');
     expect(entries.some(({ category }) => category === 'dynamax')).toBe(true);
     expect(entries.find(({ id }) => id === '0025-shiny')?.registeredSpecies).toBe(true);
   });

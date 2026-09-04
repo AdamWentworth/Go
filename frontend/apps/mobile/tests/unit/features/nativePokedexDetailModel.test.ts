@@ -1,8 +1,10 @@
 import type { BasePokemon } from '@pokemongonexus/shared-contracts/pokemon';
 import {
   buildNativePokedexCombinationSections,
+  buildNativePokedexEvolutionLine,
   buildNativePokedexRegistrationSlots,
   filterNativePokedexCombinations,
+  getNativePokedexTypeEffectiveness,
   toggleNativePokedexComboFilter,
 } from '../../../src/features/tools/nativePokedexDetailModel';
 import type { NativePokedexEntry } from '../../../src/features/tools/nativePokedexModel';
@@ -52,5 +54,19 @@ describe('native Pokédex detail model', () => {
     expect(filtered.length).toBeGreaterThan(0);
     expect(filtered.every(({ facets }) => facets.gender === 'Female' && facets.lucky && facets.appraisal === '4-star')).toBe(true);
     expect(toggleNativePokedexComboFilter(['male'], 'female')).toEqual(['female']);
+  });
+
+  it('builds the complete ordered evolution family and canonical defensive type chart', () => {
+    const bulbasaur = { pokemon_id: 1, pokedex_number: 1, name: 'Bulbasaur', evolves_to: [2], type1_name: 'Grass', type2_name: 'Poison' } as BasePokemon;
+    const ivysaur = { pokemon_id: 2, pokedex_number: 2, name: 'Ivysaur', evolves_from: [1], evolves_to: [3] } as BasePokemon;
+    const venusaur = { pokemon_id: 3, pokedex_number: 3, name: 'Venusaur', evolves_from: [2] } as BasePokemon;
+
+    expect(buildNativePokedexEvolutionLine([bulbasaur, ivysaur, venusaur], ivysaur).map(({ name }) => name)).toEqual([
+      'Bulbasaur', 'Ivysaur', 'Venusaur',
+    ]);
+    expect(getNativePokedexTypeEffectiveness(bulbasaur)).toEqual({
+      resistantTo: expect.arrayContaining(['Electric', 'Grass', 'Water', 'Fairy']),
+      weakTo: expect.arrayContaining(['Fire', 'Ice', 'Flying', 'Psychic']),
+    });
   });
 });
